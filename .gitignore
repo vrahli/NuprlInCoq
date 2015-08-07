@@ -4,3 +4,6 @@ debug
 per_props_more.v
 universe.v
 universe2.v
+*.vo
+*.glob
+*~

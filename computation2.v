@@ -6968,8 +6968,6 @@ Proof.
 Qed.
 Hint Resolve wf_utok_sub_nil : slow.
 
-Print wf_utok_sub.
-
 Lemma wf_utok_sub_cons {o} :
   forall a (t : @NTerm o) s,
     wf_term t -> wf_utok_sub s -> wf_utok_sub ((a,t) :: s).

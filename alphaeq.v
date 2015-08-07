@@ -3507,8 +3507,6 @@ Proof.
 Qed.
 
 
-SearchAbout isvalue isprogram.
-
 Lemma isvalue_change_subst_noncan {p} :
   forall e vx no lbt t,
     isvalue (subst e vx (oterm (NCan no) lbt))
