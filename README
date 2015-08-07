@@ -1,0 +1,102 @@
+====== MAKEFILE ======
+
+To generate a Makefile, run create_makefile.sh.  The script will
+generate a Makefile for rules.v and its dependencies.
+
+
+====== DESCRIPTION ======
+
+This library formalizes Nuprl's Constructive Type Theory (CTT) as of
+2015.  CTT is an extensional type theory originally inspired by
+Martin-Lof's extensional type theory, and that has since then been
+extended with several new types such as: intersection types, union
+types, image types, partial types, set types, quotient types, partial
+equivalence relation (per) types, simulation and bisimulation types,
+an atom type, and the "Base" type.
+
+Our formalization includes a definition of Nuprl's computation system,
+a definition of Howe's computational equivalence relation and a proof
+that it is a congruence, an impredicative definition of Nuprl's type
+system using Allen's PER semantics (using Prop's impredicativity, we
+can formalize Nuprl's infinite hierarchy of universes), definitions of
+most (but not all) of Nuprl's inference rules and proofs that these
+rules are valid w.r.t. Allen's PER semantics, and a proof of Nuprl's
+consistency.
+
+In addition to the standard introduction and elimination rules for
+Nuprl's types, we have also proved several Brouwerian rules.  Our
+computation system also contains: (1) free choice sequences that we
+used to prove Bar Induction rules; (2) named exceptions and a "fresh"
+operator to generate fresh names, that we used to prove a continuity
+rule.
+
+More information can be found here: http://www.nuprl.org/html/Nuprl2Coq/
+Feel free to send questions to the authors or to nuprl@cs.cornell.edu
+
+
+====== KEYWORDS ======
+
+Nuprl,
+Computational Type Theory,
+Extensional Type Theory,
+Intuitionistic Type Theory,
+Howe's computational equivalence relation,
+Partial Equivalence Relation (PER) semantics,
+Consistency,
+Continuity,
+Bar Induction
+
+
+====== ROADMAP =======
+
+o The term definition is in terms.v (see the definition of NTerm).
+
+o The definition of the computation system is in computation.v (see
+the definition of compute_step).
+
+o Howe's computational equivalence relation is defined in cequiv.v
+(see the definition of cequiv).  This relation is defined in terms of
+Howe's approximation relation defined in approx.v (see the definition
+approx).  Howe's computational equivalence relation is proved to be a
+congruence in approx_star.v
+
+o Types are defined in per.v using Allen's PER semantics.  Universes
+are closed under our various type constructor (see the inductive
+definition of close).
+
+o Universes and the nuprl type system are defined in nuprl.v.  We've
+proved that nuprl is indeed a type system in nuprl_type_sys.v.
+
+o Files such as per_props.v contain proofs of properties of the nuprl
+type system.
+
+o The definitions of sequents and rules are in sequents.v.  This file
+also contains the definition of what it means for sequents and rules
+to be valid.  We also prove in this file that Nuprl is consistent,
+meaning that there is no proof of False.
+
+o Our proofs of the validity of Nuprl's inference rules can be
+accessed from rules.v (see for example rules_function.v,
+rules_squiggle.v).
+
+o Our proof of our Bar Induction rule is in bar_induction3.v
+
+o Our proof of our continuity rule is in continuity_stuff.v.
+
+
+====== OLD WAY OF DOING THINGS ======
+
+o To generate a Makefile, type:
+   coq_makefile -f _CoqProject -o Makefile
+
+
+
+====== OLD OLD WAY OF DOING THINGS (NOW IN oldMakefile) ======
+
+o To compile VPrl make coqdoc-outputs-vo
+
+o If you're using Proof-General, open rules.v and compile the code there.
+
+o Our technical report provides a way to navigate through our code:
+
+   http://nuprl.org/html/verification/
