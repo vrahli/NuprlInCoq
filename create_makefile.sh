@@ -1,35 +1,35 @@
 #!/bin/bash
 
-if [ -e "universe.v" ]
+if [ -e "util/universe.v" ]
 then
-    echo "universe.v already exists"
+    echo "util/universe.v already exists"
 else
-    echo "coping universe-type.v to universe.v"
-    cp universe-type.v universe.v
+    echo "coping util/universe-type.v to util/universe.v"
+    cp util/universe-type.v util/universe.v
 fi
 
-if [ -e "universe2.v" ]
+if [ -e "per/universe2.v" ]
 then
-    echo "universe2.v already exists"
+    echo "per/universe2.v already exists"
 else
-    echo "coping universe2_prop.v to universe2.v"
-    cp universe2_prop.v universe2.v
+    echo "coping per/universe2_prop.v to per/universe2.v"
+    cp per/universe2_prop.v per/universe2.v
 fi
 
-if [ -e "choice.v" ]
+if [ -e "per/choice.v" ]
 then
-    echo "choice.v already exists"
+    echo "per/choice.v already exists"
 else
-    echo "coping choice-prop.v to choice.v"
-    cp choice-prop.v choice.v
+    echo "coping per/choice-prop.v to per/choice.v"
+    cp per/choice-prop.v per/choice.v
 fi
 
-if [ -e "per_props_more.v" ]
+if [ -e "per/per_props_more.v" ]
 then
-    echo "per_props_more.v already exists"
+    echo "per/per_props_more.v already exists"
 else
-    echo "coping per_props_more_prop.v to per_props_more.v"
-    cp per_props_more_prop.v per_props_more.v
+    echo "coping per/per_props_more_prop.v to per/per_props_more.v"
+    cp per/per_props_more_prop.v per/per_props_more.v
 fi
 
 function get_deps () {
@@ -75,18 +75,48 @@ do
 	deps=()
 	for f in $temp
 	do
-	    #echo $f
 	    if [ -e "${f}.v" ]
-	    then
-		#echo "./$f"
-		deps+=("$f")
+	    then deps+=("$f")
 	    else
 		if [ -e "close/${f}.v" ]
-		then
-		    #echo "close/$f"
-		    deps+=("close/$f")
+		then deps+=("close/$f")
 		else
-		    echo "${f} doesn't exist" >> debug
+		    if [ -e "axiom_choice/${f}.v" ]
+		    then deps+=("axiom_choice/$f")
+		    else
+			if [ -e "bar_induction/${f}.v" ]
+			then deps+=("bar_induction/$f")
+			else
+			    if [ -e "cequiv/${f}.v" ]
+			    then deps+=("cequiv/$f")
+			    else
+				if [ -e "computation/${f}.v" ]
+				then deps+=("computation/$f")
+				else
+				    if [ -e "continuity/${f}.v" ]
+				    then deps+=("continuity/$f")
+				    else
+					if [ -e "per/${f}.v" ]
+					then deps+=("per/$f")
+					else
+					    if [ -e "rules/${f}.v" ]
+					    then deps+=("rules/$f")
+					    else
+						if [ -e "terms/${f}.v" ]
+						then deps+=("terms/$f")
+						else
+						    if [ -e "util/${f}.v" ]
+						    then deps+=("util/$f")
+						    else echo "${f} doesn't exist" >> debug
+						    fi
+						fi
+					    fi
+					fi
+				    fi
+				fi
+			    fi
+			fi
+		    fi
 		fi
 	    fi	    
 	done
@@ -137,5 +167,5 @@ do
     fi
 
     echo "" >> Makefile
-    echo "	coqc -I close ${i}.v" >> Makefile
+    echo "	coqc -I axiom_choice -I bar_induction -I cequiv -I close -I computation -I continuity -I per -I rules -I terms -I util ${i}.v" >> Makefile
 done
