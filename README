@@ -1,7 +1,7 @@
 ====== MAKEFILE ======
 
-To generate a Makefile, run create_makefile.sh.  The script will
-generate a Makefile for rules.v and its dependencies.
+To generate a Makefile, run create_makefile.sh; this script requires bash v4.
+The script will generate a Makefile for rules.v and its dependencies.
 
 Then run "make" to see if everything compiles.  It should take a
 while.
