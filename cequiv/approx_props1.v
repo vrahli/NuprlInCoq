@@ -2293,4 +2293,12 @@ pose proof (hr (ren_utokens (ren ++ inv_utok_ren ren')
 *)
 
 Qed.
+ *)
+
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../terms/")
+*** End:
 *)

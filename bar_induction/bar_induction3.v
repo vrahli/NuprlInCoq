@@ -819,6 +819,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../close/" "../per/" "../cequiv/" "../terms/" "../computation/" "../util/")
 *** End:
 *)
