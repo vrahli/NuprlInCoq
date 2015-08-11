@@ -9,7 +9,7 @@ while.
 
 ====== DESCRIPTION ======
 
-This library formalizes Nuprl's Constructive Type Theory (CTT) as of
+This library formalizes Nuprl's Computational Type Theory (CTT) as of
 2015.  CTT is an extensional type theory originally inspired by
 Martin-Lof's extensional type theory, and that has since then been
 extended with several new types such as: intersection types, union
