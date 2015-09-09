@@ -554,6 +554,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../close/")
 *** End:
 *)
