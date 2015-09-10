@@ -251,7 +251,7 @@ Qed.
      By applyInr
 
      NoSubgoals
-    
+
  *)
 Definition rule_apply_inr {o}
            (H : barehypotheses)
@@ -316,6 +316,15 @@ Proof.
     unfold iscvalue, mkc_axiom; simpl; eauto 3 with slow.
 Qed.
 
+
+(*
+   H |- (z b) approx bottom
+
+     By applyInt
+
+     H |- z in Z
+
+ *)
 Definition rule_apply_int {o}
            (H : barehypotheses)
            (a b: @NTerm o)
@@ -324,50 +333,80 @@ Definition rule_apply_int {o}
     (mk_baresequent H (mk_conclax (mk_approx (mk_apply a b) mk_bottom)))
     [mk_baresequent H (mk_conclax (mk_member a mk_int))]
     [].
- 
+
 
 Lemma apply_int_not_valuelike {o} :
-   forall lib (a b : @NTerm o),
-   isprogram a ->
-   isprogram b ->
-   {n : Z $ reduces_to lib a (mk_integer n)} ->
-   !hasvalue_like lib (mk_apply a b).
-Proof. introv ispa ispb red hv. destruct hv as [v c]. destruct c as [red2 val].
-       exrepnd.
+  forall lib (a b : @NTerm o),
+    isprogram a
+    -> isprogram b
+    -> {n : Z $ reduces_to lib a (mk_integer n)}
+    -> !hasvalue_like lib (mk_apply a b).
+Proof.
+  introv ispa ispb red hv.
+  destruct hv as [v c].
+  destruct c as [red2 val].
+
+  assert (isprogram v) as ispv.
+  { eauto 3 with slow. }
+
+  exrepnd.
   apply  @reduces_to_implies_cequiv in red0; auto.
-   apply  @reduces_to_implies_cequiv in red2; try apply isprogram_apply; auto.
-   assert (cequiv lib (mk_apply (mk_integer n) b) (mk_apply a b)) as X.
-   {repeat (prove_cequiv). apply cequiv_sym; auto. destruct ispb; auto. }
-   
-   assert (cequiv lib (mk_apply (mk_integer n) b) v).
-   - eapply cequiv_trans; [exact X | auto].
-   - destruct val; destruct v; allsimpl; auto; destruct o0; allsimpl; auto.
-     + pose proof ( @cequiv_canonical_form o lib 
-                    (oterm (Can c) l) (mk_apply (mk_integer n) b) c l) as xx.
-       dimp xx. constructor. eauto 3 with slow. constructor.
-      apply cequiv_isprogram in X0. sp. exrepnd. destruct hyp1 as [r v]. destruct r as [k r].
-      * revert r. induction k; introv red.  
-        { rw @reduces_in_atmost_k_steps_0 in red. inversion red. }
-        { apply @reduces_in_atmost_k_steps_S in red. exrepnd.
-          apply compute_step_apply_can_success in red3. repndors; exrepnd. inversion red4. 
-          inversion red3.
-        }
-      * apply cequiv_sym. auto.
-      + dup red2 as red3. apply cequiv_isprogram in red3. destruct red3. sp.
-        apply isprogram_exception_implies in i1. exrepnd. subst.
-        assert (oterm Exc [bterm [] a0, bterm [] t] =e>( a0, lib)t) as yy.
-        * exists 0. apply reduces_in_atmost_k_steps_0. refl.
-        *  pose proof ( @cequiv_exception_weak o lib (oterm Exc [bterm [] a0, bterm [] t]) a0 t
+  apply  @reduces_to_implies_cequiv in red2; try apply isprogram_apply; auto.
+
+  assert (cequiv lib (mk_apply (mk_integer n) b) (mk_apply a b)) as ceq1.
+  {repeat (prove_cequiv). apply cequiv_sym; auto. destruct ispb; auto. }
+
+  assert (cequiv lib (mk_apply (mk_integer n) b) v) as ceq2.
+  { eapply cequiv_trans; [exact ceq1 | auto]. }
+
+  destruct val; destruct v as [v|f|op bs]; allsimpl; auto;
+  try (destruct op; allsimpl; auto).
+
+  - assert (cequiv lib mk_bottom (sterm f)) as ceq3.
+    { eapply cequiv_trans;[|exact ceq2].
+      split;[apply bottom_approx_any|]; eauto 3 with slow.
+      apply approx_assume_hasvalue; eauto 3 with slow.
+      introv hv; provefalse.
+      unfold hasvalue_like in hv; exrepnd.
+      apply reduces_to_split2 in hv1; repndors; exrepnd; subst; ginv.
+      unfold isvalue_like in hv0; allsimpl; tcsp. }
+    destruct ceq3 as [ap1 ap2].
+    apply hasvalue_approx in ap2;
+      [apply not_hasvalue_bot in ap2; tcsp|].
+    apply hasvalue_sterm; auto.
+
+  - pose proof (cequiv_canonical_form
+                  lib
+                  (oterm (Can c) bs)
+                  (mk_apply (mk_integer n) b) c bs) as xx.
+    repeat (autodimp xx hyp; eauto 3 with slow); exrepnd.
+    destruct xx1 as [r v].
+    destruct r as [k r].
+    revert r.
+    induction k; introv red.
+    { rw @reduces_in_atmost_k_steps_0 in red. inversion red. }
+    { apply @reduces_in_atmost_k_steps_S in red. exrepnd.
+      apply compute_step_apply_can_success in red3. repndors; exrepnd. inversion red4.
+      inversion red3.
+    }
+
+  - dup red2 as red3. apply cequiv_isprogram in red3. destruct red3. sp.
+    apply isprogram_exception_implies in i1. exrepnd. subst.
+    assert (oterm Exc [bterm [] a0, bterm [] t] =e>( a0, lib)t) as yy.
+    + exists 0. apply reduces_in_atmost_k_steps_0. refl.
+    + pose proof (cequiv_exception_weak
+                    lib
+                    (oterm Exc [bterm [] a0, bterm [] t]) a0 t
                     (mk_apply (mk_integer n) b) yy
-                        ) as xx. dimp xx.
-          { eapply @cequiv_trans; apply @cequiv_sym. exact red2. auto. }
-          { exrepnd. destruct hyp1 as [k r]. revert r. induction k; introv red.
-             { rw @reduces_in_atmost_k_steps_0 in red. inversion red. }
-             { apply @reduces_in_atmost_k_steps_S in red. exrepnd.
-               apply compute_step_apply_can_success in red3. repndors; exrepnd. inversion red4. 
-               inversion red3.
-        }
-          }
+                 ) as xx. dimp xx.
+       { eapply @cequiv_trans; apply @cequiv_sym. exact red2. auto. }
+       { exrepnd. destruct hyp1 as [k r]. revert r. induction k; introv red.
+         { rw @reduces_in_atmost_k_steps_0 in red. inversion red. }
+         { apply @reduces_in_atmost_k_steps_S in red. exrepnd.
+           apply compute_step_apply_can_success in red3. repndors; exrepnd. inversion red4. 
+           inversion red3.
+         }
+       }
 Qed.
 
 Lemma rule_apply_int_true {o} :
@@ -378,7 +417,7 @@ Proof.
   unfold rule_apply_int, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   clear cargs.
- 
+
   destseq; allsimpl.
   dLin_hyp; exrepnd.
   destseq; allsimpl; proof_irr; GC.
@@ -395,7 +434,7 @@ Proof.
   apply tequality_member_int in hyp0; auto.
   dup hyp1 as aint.
   unfold equality_of_int in hyp0. exrepnd. allsimpl. spcast.
-   
+
   assert (approxc lib (mkc_apply a1 b1) mkc_bottom) as appr1.
   { destruct_cterms; allunfold @approxc; allsimpl.
      apply approx_assume_hasvalue; eauto 3 with slow.
@@ -409,9 +448,9 @@ Proof.
     - apply isprogram_eq. apply isprog_apply; auto; apply isprog_inr; auto.
     - introv hvl; apply apply_int_not_valuelike in hvl; try apply isprog_eq; tcsp.
       exists k. unfold computes_to_valc in hyp4. allsimpl. destruct hyp4. auto.
-     }
-  
-  split. 
+  }
+
+  split.
   - (* tequality *)
     apply tequality_mkc_approx.
     split; intro; spcast; auto.
@@ -422,16 +461,9 @@ Proof.
 Qed.
 
 
-  
+
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)
-
-
-
-
-
-
-

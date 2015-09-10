@@ -70,6 +70,7 @@ Require Import rules_less_exception.
 
 (* Rules(callbyvalue): *)
 Require Import rules_arith_callbyvalue.
+Require Import rules_apply_callbyvalue.
 Require Import rules_cft_callbyvalue.
 Require Import rules_halts_spread.
 
