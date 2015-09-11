@@ -26,7 +26,7 @@
 
 
 Require Export bar_induction.
-Require Export bar_induction_util.
+Require Export seq_util.
 
 
 Lemma equality_in_free_from_atoms {o} :

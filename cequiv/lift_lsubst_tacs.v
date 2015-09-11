@@ -304,6 +304,20 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c2 name];
         clear_irr; tac
 
+    (* EOr *)
+    | context [lsubstc (mk_eor ?x ?y) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let w2 := fresh "w2" in
+      let c1 := fresh "c1" in
+      let c2 := fresh "c2" in
+      generalize (lsubstc_mk_eor_ex x y s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [w2 name];
+        destruct name as [c1 name];
+        destruct name as [c2 name];
+        clear_irr; tac
+
     (* Add *)
     | context [lsubstc (mk_add ?x ?y) ?w ?s ?c] =>
       let w1 := fresh "w1" in
@@ -317,7 +331,7 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c1 name];
         destruct name as [c2 name];
         clear_irr; tac
-    
+
     (* ArithOp *)
     | context [lsubstc (mk_arithop ?op ?x ?y) ?w ?s ?c] =>
       let w1 := fresh "w1" in
@@ -758,6 +772,24 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
       let c2 := fresh "c2" in
       let c3 := fresh "c3" in
       generalize (lsubstc_mk_isint_ex x y z s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [w2 name];
+        destruct name as [w3 name];
+        destruct name as [c1 name];
+        destruct name as [c2 name];
+        destruct name as [c3 name];
+        clear_irr; tac
+
+    (* IsLambda *)
+    | context [lsubstc (mk_islambda ?x ?y ?z) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let w2 := fresh "w2" in
+      let w3 := fresh "w3" in
+      let c1 := fresh "c1" in
+      let c2 := fresh "c2" in
+      let c3 := fresh "c3" in
+      generalize (lsubstc_mk_islambda_ex x y z s w c);
         intro name;
         destruct name as [w1 name];
         destruct name as [w2 name];
@@ -1219,13 +1251,13 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c2 name];
         clear_irr; tac
 
-    (* Union *)
+    (* TExc *)
     | context [lsubstc (mk_texc ?a1 ?a2) ?w ?s ?c] =>
       let w1 := fresh "w1" in
       let w2 := fresh "w2" in
       let c1 := fresh "c1" in
       let c2 := fresh "c2" in
-      generalize (lsubstc_mk_union_ex a1 a2 s w c);
+      generalize (lsubstc_mk_texc_ex a1 a2 s w c);
         intro name;
         destruct name as [w1 name];
         destruct name as [w2 name];
@@ -1240,6 +1272,20 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
       let c1 := fresh "c1" in
       let c2 := fresh "c2" in
       generalize (lsubstc_mk_union_ex a b s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [w2 name];
+        destruct name as [c1 name];
+        destruct name as [c2 name];
+        clear_irr; tac
+
+    (* EUnion *)
+    | context [lsubstc (mk_eunion ?a ?b) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let w2 := fresh "w2" in
+      let c1 := fresh "c1" in
+      let c2 := fresh "c2" in
+      generalize (lsubstc_mk_eunion_ex a b s w c);
         intro name;
         destruct name as [w1 name];
         destruct name as [w2 name];
@@ -1548,3 +1594,11 @@ Ltac lift_lsubsts2 :=
             | [ H : context [lsubstc _ _ _ _ ] |- _ ] => one_lift_lsubst2_hyp H
             | [ |- context [lsubstc _ _ _ _ ] ] => one_lift_lsubst2_concl
           end).
+
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
+*** End:
+*)

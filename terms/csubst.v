@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -913,6 +914,80 @@ Proof.
 
   exists w1 w2 c1 c2.
   apply lsubstc_mk_union.
+Qed.
+
+Lemma lsubstc_mk_eunion {p} :
+  forall t1 t2 sub,
+  forall w1 : wf_term t1,
+  forall w2 : @wf_term p t2,
+  forall w  : wf_term (mk_eunion t1 t2),
+  forall c1 : cover_vars t1 sub,
+  forall c2 : cover_vars t2 sub,
+  forall c  : cover_vars (mk_eunion t1 t2) sub,
+    lsubstc (mk_eunion t1 t2) w sub c
+    = mkc_eunion (lsubstc t1 w1 sub c1)
+                 (lsubstc t2 w2 sub c2).
+Proof.
+  sp; unfold lsubstc; simpl.
+  apply cterm_eq; simpl.
+  unfold csubst; simpl.
+  change_to_lsubst_aux4; simpl.
+  allrw @fold_nobnd.
+  rw @sub_filter_nil_r; sp.
+Qed.
+
+Lemma wf_eunion {p} :
+  forall a b : @NTerm p, wf_term (mk_eunion a b) <=> (wf_term a # wf_term b).
+Proof.
+  introv; split; intro w; repnd.
+  rw @wf_term_eq in w.
+  inversion w as [|?| o l bw e]; subst.
+  generalize (bw (nobnd a)) (bw (nobnd b)); simpl; intros bw1 bw2.
+  autodimp bw1 hyp.
+  autodimp bw2 hyp.
+  inversion bw1; subst.
+  inversion bw2; subst.
+  allrw @nt_wf_eq; sp.
+  apply nt_wf_eq.
+  constructor; simpl; sp; subst; constructor; rw @nt_wf_eq; sp.
+Qed.
+
+Lemma lsubstc_mk_eunion_ex {p} :
+  forall t1 t2 sub,
+  forall w  : wf_term (@mk_eunion p t1 t2),
+  forall c  : cover_vars (mk_eunion t1 t2) sub,
+    {w1 : wf_term t1
+     & {w2 : wf_term t2
+     & {c1 : cover_vars t1 sub
+     & {c2 : cover_vars t2 sub
+        & lsubstc (mk_eunion t1 t2) w sub c
+          = mkc_eunion (lsubstc t1 w1 sub c1)
+                       (lsubstc t2 w2 sub c2)}}}}.
+Proof.
+  sp.
+
+  assert (wf_term t1) as w1.
+  { allrw @wf_eunion; sp. }
+
+  assert (wf_term t2) as w2.
+  { allrw @wf_eunion; sp. }
+
+  assert (cover_vars t1 sub) as c1.
+  { unfold cover_vars in c.
+    simpl in c.
+    repeat (rw remove_nvars_nil_l in c).
+    rw app_nil_r in c.
+    repeat (rw @over_vars_app_l in c); sp. }
+
+  assert (cover_vars t2 sub) as c2.
+  { unfold cover_vars in c.
+    simpl in c.
+    repeat (rw remove_nvars_nil_l in c).
+    rw app_nil_r in c.
+    repeat (rw @over_vars_app_l in c); sp. }
+
+  exists w1 w2 c1 c2.
+  apply lsubstc_mk_eunion.
 Qed.
 
 Lemma lsubstc_mk_pertype {p} :
@@ -4022,6 +4097,38 @@ Proof.
   apply lsubstc_mk_union_ex.
 Qed.
 
+Lemma lsubstc_mk_eor {o} :
+  forall t1 t2 sub,
+  forall w1 : wf_term t1,
+  forall w2 : @wf_term o t2,
+  forall w  : wf_term (mk_eor t1 t2),
+  forall c1 : cover_vars t1 sub,
+  forall c2 : cover_vars t2 sub,
+  forall c  : cover_vars (mk_eor t1 t2) sub,
+    lsubstc (mk_eor t1 t2) w sub c
+    = mkc_eor (lsubstc t1 w1 sub c1)
+              (lsubstc t2 w2 sub c2).
+Proof.
+  sp.
+  apply lsubstc_mk_eunion.
+Qed.
+
+Lemma lsubstc_mk_eor_ex {o} :
+  forall t1 t2 sub,
+  forall w  : wf_term (@mk_eor o t1 t2),
+  forall c  : cover_vars (mk_eor t1 t2) sub,
+    {w1 : wf_term t1
+     & {w2 : wf_term t2
+     & {c1 : cover_vars t1 sub
+     & {c2 : cover_vars t2 sub
+        & lsubstc (mk_eor t1 t2) w sub c
+          = mkc_eor (lsubstc t1 w1 sub c1)
+                    (lsubstc t2 w2 sub c2)}}}}.
+Proof.
+  sp.
+  apply lsubstc_mk_eunion_ex.
+Qed.
+
 Lemma lsubstc_mk_not {o} :
   forall t1 sub,
   forall w1 : @wf_term o t1,
@@ -4564,3 +4671,30 @@ Proof.
   exists w1 c1.
   apply lsubstc_mk_eta_pair.
 Qed.
+
+Lemma lsubstc_mk_btrue {o} :
+  forall (w : @wf_term o mk_btrue) s c,
+    lsubstc mk_btrue w s c = mkc_btrue.
+Proof.
+  introv.
+  apply cterm_eq; simpl.
+  apply csubst_trivial; simpl; auto.
+Qed.
+Hint Rewrite @lsubstc_mk_btrue : slow.
+
+Lemma lsubstc_mk_bfalse {o} :
+  forall (w : @wf_term o mk_bfalse) s c,
+    lsubstc mk_bfalse w s c = mkc_bfalse.
+Proof.
+  introv.
+  apply cterm_eq; simpl.
+  apply csubst_trivial; simpl; auto.
+Qed.
+Hint Rewrite @lsubstc_mk_bfalse : slow.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/")
+*** End:
+*)

@@ -227,6 +227,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NPartial       : CanonicalOp
  | NTExc          : CanonicalOp
  | NUnion         : CanonicalOp
+ | NEUnion        : CanonicalOp
  | NUnion2        : CanonicalOp
  | NTUnion        : CanonicalOp
  | NApprox        : CanonicalOp
@@ -290,6 +291,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NPartial       => [0]
   | NTExc          => [0,0]
   | NUnion         => [0,0]
+  | NEUnion        => [0,0]
   | NUnion2        => [0,0]
   | NTUnion        => [0,1]
   | NApprox        => [0,0]

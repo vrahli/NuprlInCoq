@@ -35,6 +35,9 @@ Require Export per_props_nat.
 Require Export per_can.
 Require Export per_props_top.
 Require Export integer_type.
+Require Export subst_tacs_aeq.
+Require Export cequiv_tacs.
+Require Export seq_util.
 
 
 (*
@@ -43,7 +46,7 @@ Require Export integer_type.
      By callbyvalueApply
 
      H |- halts (t a)
-    
+
  *)
 Definition rule_callbyvalue_apply {o}
            (H : barehypotheses)
@@ -460,10 +463,163 @@ Proof.
     unfold iscvalue, mkc_axiom; simpl; eauto 3 with slow.
 Qed.
 
+(* !!MOVE *)
+Lemma type_mkc_cequiv {o} :
+  forall lib (a b : @CTerm o),
+    type lib (mkc_cequiv a b).
+Proof.
+  introv.
+  apply tequality_mkc_cequiv; tcsp.
+Qed.
+Hint Resolve type_mkc_cequiv : slow.
+
+(* !!MOVE *)
+Lemma type_mkc_approx {o} :
+  forall lib (a b : @CTerm o),
+    type lib (mkc_approx a b).
+Proof.
+  introv.
+  apply tequality_mkc_approx; tcsp.
+Qed.
+Hint Resolve type_mkc_approx : slow.
+
+Lemma implies_tequality_equality_mkc_squash {o} :
+  forall lib (t1 t2 : @CTerm o),
+    tequality lib t1 t2
+    -> inhabited_type lib t1
+    -> (tequality lib (mkc_squash t1) (mkc_squash t2)
+        # equality lib mkc_axiom mkc_axiom (mkc_squash t1)).
+Proof.
+  introv teq inh.
+  rw @equality_in_mkc_squash.
+  rw @tequality_mkc_squash.
+  dands; auto; spcast;
+  apply computes_to_valc_refl; eauto 3 with slow.
+Qed.
+
+(*
+   H |- f ~ \x.f x \/ (isect x : Nat. f x <= bot) ext (islambda(f;btrue;bfalse)
+
+     By CallbyvalueApplyCases a x
+
+     H |- halts(f a)
+
+ *)
+Definition rule_callbyvalue_apply_cases {o}
+           (H : barehypotheses)
+           (f a : @NTerm o)
+           (x : NVar)
+  :=
+    mk_rule
+      (mk_baresequent H (mk_concl
+                           (mk_or
+                              (mk_cequiv f (mk_lam x (mk_apply f (mk_var x))))
+                              (mk_isect
+                                 mk_tnat
+                                 x
+                                 (mk_approx (mk_apply f (mk_var x)) mk_bottom)))
+                           (mk_islambda f mk_btrue mk_bfalse)))
+      [mk_baresequent H (mk_conclax (mk_halts (mk_apply f a))),
+       mk_baresequent H (mk_conclax (mk_member f mk_base))]
+      [sarg_term f].
+
+Lemma rule_callbyvalue_apply_cases_true {o} :
+  forall lib (H : barehypotheses)
+         (f a : @NTerm o)
+         (x : NVar)
+         (nixf : !LIn x (free_vars f)),
+    rule_true lib (rule_callbyvalue_apply_cases H f a x).
+Proof.
+  unfold rule_callbyvalue_apply_cases, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+
+  unfold args_constraints in cargs; allsimpl.
+  pose proof (cargs (sarg_term f)) as argf; clear cargs; autodimp argf hyp; allsimpl.
+
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  rename Hyp1 into hyp2.
+  destseq; allsimpl; proof_irr; GC.
+
+  unfold closed_extract; simpl.
+  assert (covered (mk_islambda f mk_btrue mk_bfalse) (nh_vars_hyps H)) as cov.
+  { unfold covered; simpl; autorewrite with slow in *; auto. }
+  exists cov.
+
+  vr_seq_true.
+  vr_seq_true in hyp1.
+  vr_seq_true in hyp2.
+  pose proof (hyp1 s1 s2 eqh sim) as hyp; clear hyp1; exrepnd.
+  pose proof (hyp2 s1 s2 eqh sim) as ceq; clear hyp2; exrepnd.
+  lsubst_tac.
+  autorewrite with slow in *.
+
+  apply tequality_mkc_member_base in ceq0; spcast.
+  clear ceq1.
+
+  apply equality_in_halts in hyp1; repnd.
+  clear hyp3 hyp1.
+  clear hyp0.
+
+  dands.
+
+  - apply tequality_mkc_or; dands; auto;[|].
+
+    + apply tequality_mkc_cequiv; split; intro comp; spcast;[|].
+
+      * eapply cequivc_trans;[apply cequivc_sym;exact ceq0|].
+        eapply cequivc_trans;[exact comp|].
+
+        SearchAbout cequivc mkc_lam.
+
+        (*
+    + apply tequality_isect; dands; eauto 3 with slow; try (apply tnat_type);[].
+      introv en.
+      apply equality_in_tnat in en.
+      unfold equality_of_nat in en; exrepnd; spcast.
+      repeat (substc_lsubstc_vars3;[]).
+      lsubst_tac.
+
+      eapply tequality_respects_cequivc_left;
+        [apply cequivc_decomp_approx;dands;
+         [apply implies_cequivc_apply;
+           [apply cequivc_refl
+           |apply cequivc_sym;
+             apply computes_to_valc_implies_cequivc;eauto
+           ]
+         |apply cequivc_refl]
+        |].
+
+      eapply tequality_respects_cequivc_right;
+        [apply cequivc_decomp_approx;dands;
+         [apply implies_cequivc_apply;
+           [apply cequivc_refl
+           |apply cequivc_sym;
+             apply computes_to_valc_implies_cequivc;eauto
+           ]
+         |apply cequivc_refl]
+        |].
+
+      rw @fold_type; eauto 3 with slow.
+
+    +
+
+      apply tequality_mkc_approx.
+
+      SearchAbout tequality mkc_approx.
+
+XXXXXXX
+
+  apply hasvaluec_mkc_apply in hyp2.
+  SearchAbout hasvaluec mkc_apply.
+*)
+Abort.
+
 
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/" "../continuity/")
 *** End:
 *)

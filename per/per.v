@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -832,6 +833,30 @@ Definition per_union {p}
       # ts A1 A2 eqa
       # ts B1 B2 eqb
       # eq <=2=> (per_union_eq lib eqa eqb)}}.
+
+
+(* extensional union type *)
+
+Definition per_or {p} (eq1 eq2 : per) : per :=
+  fun t1 t2 : @CTerm p => eq1 t1 t2 {+} eq2 t1 t2.
+
+Notation "eq1 +2+ eq2" := (per_or eq1 eq2) (at level 0).
+
+Definition per_eunion {p}
+           lib
+           (ts : cts)
+           (T1 T2 : @CTerm p)
+           (eq : per(p)) : [U] :=
+  {eqa1, eqa2, eqb1, eqb2 : per
+   , {A1, A2, B1, B2 : CTerm
+   , T1 ===>(lib) (mkc_eunion A1 B1)
+   # T2 ===>(lib) (mkc_eunion A2 B2)
+   # ((eqa1 +2+ eqb1) <=2=> (eqa2 +2+ eqb2))
+   # ts A1 A1 eqa1
+   # ts A2 A2 eqa2
+   # ts B1 B1 eqb1
+   # ts B2 B2 eqb2
+   # eq <=2=> (per_union_eq lib eqa1 eqb1)}}.
 
 (* begin hide *)
 
@@ -1816,6 +1841,7 @@ Inductive close {p} lib (ts : cts) (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_pm       : per_pm       lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_texc     : per_texc     lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_union    : per_union    lib (close lib ts) T T' eq -> close lib ts T T' eq
+(*  | CL_eunion   : per_eunion   lib (close lib ts) T T' eq -> close lib ts T T' eq*)
 (*  | CL_union2   : per_union2   lib (close lib ts) T T' eq -> close lib ts T T' eq*)
   | CL_image    : per_image    lib (close lib ts) T T' eq -> close lib ts T T' eq
  (* | CL_eisect   : per_eisect   lib (close lib ts) T T' eq -> close lib ts T T' eq*)
@@ -1855,6 +1881,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
   | Case_aux c "CL_pm"
   | Case_aux c "CL_texc"
   | Case_aux c "CL_union"
+(*  | Case_aux c "CL_eunion"*)
 (*  | Case_aux c "CL_union2"*)
   | Case_aux c "CL_image"
 (*  | Case_aux c "CL_eisect"*)
@@ -2255,6 +2282,26 @@ Definition close_ind' {pp}
                   (eqiff : forall t t', eq t t' <=> per_union_eq lib eqa eqb t t')
                   (per : per_union lib (close lib ts) T T' eq),
             P ts T T' eq)
+(*  (eunion : forall (ts : cts)
+                  (T T' : @CTerm pp)
+                  (eq : per)
+                  (A A' B B' : @CTerm pp)
+                  (eqa1 eqa2 eqb1 eqb2 : per)
+                  (c1 : T ===>(lib) (mkc_eunion A B))
+                  (c2 : T' ===>(lib) (mkc_eunion A' B'))
+                  (iffa : eqa1 <=2=> eqa2)
+                  (iffb : eqb1 <=2=> eqb2)
+                  (cla1  : close lib ts A A eqa1)
+                  (reca1 : P ts A A eqa1)
+                  (cla2  : close lib ts A' A' eqa2)
+                  (reca2 : P ts A' A' eqa2)
+                  (clb1  : close lib ts B B eqb1)
+                  (recb1 : P ts B B eqb1)
+                  (clb2  : close lib ts B' B' eqb2)
+                  (recb2 : P ts B' B' eqb2)
+                  (eqiff : eq <=2=> (per_union_eq lib eqa1 eqb1))
+                  (per : per_eunion lib (close lib ts) T T' eq),
+            P ts T T' eq)*)
 (*  (union2 : forall (ts : cts)
                   (T T' : @CTerm pp)
                   (eq : per)
@@ -2912,6 +2959,38 @@ Definition close_ind' {pp}
                (rec ts B B' eqb tsb)
                eqiff
                pts
+(*   | CL_eunion pts =>
+       let (eqa1, x) := pts in
+       let (eqa2, x) := x in
+       let (eqb1, x) := x in
+       let (eqb2, x) := x in
+       let (A,    x) := x in
+       let (A',   x) := x in
+       let (B,    x) := x in
+       let (B',   x) := x in
+       let (c1,   x) := x in
+       let (c2,   x) := x in
+       let (iffa, x) := x in
+       let (iffb, x) := x in
+       let (tsa1, x) := x in
+       let (tsa2, x) := x in
+       let (tsb1, x) := x in
+       let (tsb2, eqiff) := x in
+         eunion ts T T' eq A A' B B' eqa1 eqa2 eqb1 eqb2
+                c1
+                c2
+                iffa
+                iffb
+                tsa1
+                (rec ts A A eqa1 tsa1)
+                tsa2
+                (rec ts A' A' eqa2 tsa2)
+                tsb1
+                (rec ts B B eqb1 tsb1)
+                tsb2
+                (rec ts B' B' eqb2 tsb2)
+                eqiff
+                pts*)
    | CL_image pts =>
        let (eqa, x) := pts in
        let (A,   x) := x in
@@ -3212,7 +3291,8 @@ Ltac one_unfold_per :=
     | [ H : per_pm       _ _ _ _ _ |- _ ] => unfold per_pm       in H; exrepd
     | [ H : per_texc     _ _ _ _ _ |- _ ] => unfold per_texc     in H; exrepd
     | [ H : per_union    _ _ _ _ _ |- _ ] => unfold per_union    in H; exrepd
-    | [ H : per_union2   _ _ _ _ _ |- _ ] => unfold per_union2   in H; exrepd
+(*    | [ H : per_eunion   _ _ _ _ _ |- _ ] => unfold per_eunion   in H; exrepd
+    | [ H : per_union2   _ _ _ _ _ |- _ ] => unfold per_union2   in H; exrepd*)
     | [ H : per_image    _ _ _ _ _ |- _ ] => unfold per_image    in H; exrepd
     | [ H : per_eisect   _ _ _ _ _ |- _ ] => unfold per_eisect   in H; exrepd
     | [ H : per_partial  _ _ _ _ _ |- _ ] => unfold per_partial  in H; exrepd
@@ -3245,3 +3325,10 @@ Ltac computes_to_valc_diff :=
   end.
 
 (* end hide *)
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/")
+*** End:
+*)

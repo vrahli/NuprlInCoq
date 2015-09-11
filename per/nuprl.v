@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -374,6 +375,12 @@ Proof.
     apply CL_union; unfold per_union; sp.
     exists eqa eqb A A' B B'; sp.
 
+    (*
+  - Case "CL_eunion".
+    apply CL_eunion; unfold per_eunion; sp.
+    exists eqa1 eqa2 eqb1 eqb2 A A' B B'; sp.
+     *)
+
   - Case "CL_image".
     apply CL_image; unfold per_image; sp.
     exists eqa A A' f f'; sp.
@@ -717,8 +724,18 @@ Proof.
     apply CL_union.
     unfold per_union; sp.
     exists eqa eqb A A' B B'; sp.
-    apply IHn1 with (i0 := i); sp.
-    apply IHn2 with (i0 := i); sp.
+    + apply IHn1 with (i0 := i); sp.
+    + apply IHn2 with (i0 := i); sp.
+
+      (*
+  - Case "CL_eunion".
+    apply CL_eunion.
+    unfold per_eunion; sp.
+    exists eqa1 eqa2 eqb1 eqb2 A A' B B'; sp.
+    + apply IHn1 with (i0 := i); sp.
+    + apply IHn2 with (i0 := i); sp.
+    + apply IHn3 with (i0 := i); sp.
+    + apply IHn4 with (i0 := i); sp.*)
 
   - Case "CL_image".
     apply CL_image.
@@ -920,3 +937,10 @@ Definition ltype {p} lib l (T : @CTerm p) := eqtypes lib l T T.
 (* begin hide *)
 
 (* end hide *)
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
+*** End:
+*)

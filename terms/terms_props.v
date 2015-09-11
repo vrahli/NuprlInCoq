@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -167,6 +168,13 @@ Qed.
 
 Lemma free_vars_union {o} :
   forall a b : @NTerm o, free_vars (mk_union a b) = free_vars a ++ free_vars b.
+Proof.
+  introv; simpl.
+  rw app_nil_r; sp.
+Qed.
+
+Lemma free_vars_eunion {o} :
+  forall a b : @NTerm o, free_vars (mk_eunion a b) = free_vars a ++ free_vars b.
 Proof.
   introv; simpl.
   rw app_nil_r; sp.

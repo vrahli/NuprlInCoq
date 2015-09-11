@@ -27,7 +27,7 @@
 
 Require Export approx_props3.
 Require Export bar_induction.
-Require Export bar_induction_util.
+Require Export seq_util.
 
 
 Definition const_seq {o} (n : nat) : @CTerm o := mkc_lam nvarx (mk_cv [nvarx] (mkc_nat n)).

@@ -26,7 +26,8 @@
 
 
 Require Export per_props_nat2.
-Require Export stronger_continuity_defs_typ.
+(*Require Export stronger_continuity_defs_typ.*)
+Require Export continuity_defs_ceq.
 
 
 Lemma isprog_vars_squash {p} :
@@ -944,6 +945,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
 *** End:
 *)

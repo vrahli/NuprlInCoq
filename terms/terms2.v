@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -132,6 +133,7 @@ Definition mk_sup {p} (a b : @NTerm p) := oterm (Can NSup) [nobnd a , nobnd b].
 Definition mk_texc {p} (T1 T2 : @NTerm p) := oterm (Can NTExc) [nobnd T1, nobnd T2].
 
 Definition mk_union {p} (T1 T2 : @NTerm p) := oterm (Can NUnion) [nobnd T1, nobnd T2].
+Definition mk_eunion {p} (T1 T2 : @NTerm p) := oterm (Can NEUnion) [nobnd T1, nobnd T2].
 
 Definition mk_union2 {p} (T1 T2 : @NTerm p) := oterm (Can NUnion2) [nobnd T1, nobnd T2].
 
@@ -409,6 +411,8 @@ Definition mk_lam3 {p} v1 v2 v3 (b : @NTerm p) := mk_lam v1 (mk_lam v2 (mk_lam v
 Definition mk_less_than {p} (a b : @NTerm p) := mk_less a b mk_true mk_false.
 
 Definition mk_or {p} (A B : @NTerm p) := mk_union A B.
+
+Definition mk_eor {p} (A B : @NTerm p) := mk_eunion A B.
 
 Definition mk_zero {p} : @NTerm p := mk_nat 0.
 Definition mk_one  {p} : @NTerm p := mk_nat 1.
@@ -696,6 +700,13 @@ Qed.
 Lemma fold_union {p} :
   forall (t1 : @NTerm p) t2,
     oterm (Can NUnion) [nobnd t1, nobnd t2] = mk_union t1 t2.
+Proof.
+  sp.
+Qed.
+
+Lemma fold_eunion {p} :
+  forall (t1 : @NTerm p) t2,
+    oterm (Can NEUnion) [nobnd t1, nobnd t2] = mk_eunion t1 t2.
 Proof.
   sp.
 Qed.
@@ -1076,6 +1087,7 @@ Definition IsTypeOpid {p} (opid : @Opid p) : bool :=
   | Can NPartial   => true
   | Can NTExc      => true
   | Can NUnion     => true
+  | Can NEUnion    => true
   | Can NUnion2    => true
   | Can NTUnion    => true
   | Can NApprox    => true
@@ -2941,6 +2953,14 @@ Proof.
   allrw; simpl; auto.
 Qed.
 
+Theorem closed_eunion {p} :
+  forall (a b : @NTerm p), closed a -> closed b -> closed (mk_eunion a b).
+Proof.
+  intros.
+  allunfold @closed; unfold mk_eunion; simpl.
+  allrw; simpl; auto.
+Qed.
+
 Theorem closed_union2 {p} :
   forall (a b : @NTerm p), closed a -> closed b -> closed (mk_union2 a b).
 Proof.
@@ -3337,6 +3357,23 @@ Proof.
   apply isprogram_union; auto.
 Qed.
 
+Theorem isprogram_eunion {p} :
+  forall a b : @NTerm p, isprogram a -> isprogram b -> isprogram (mk_eunion a b).
+Proof.
+  intros. allunfold @isprogram. repnd. split. apply closed_eunion; auto.
+  constructor; auto. intros ? Hin.
+  inverts Hin  as [Hgarbage | Hin]; subst;
+  try (constructor;auto).
+  inversion Hin.
+Qed.
+
+Theorem isprog_eunion {p} :
+  forall a b : @NTerm p, isprog a -> isprog b -> isprog (mk_eunion a b).
+Proof.
+  sp; allrw @isprog_eq.
+  apply isprogram_eunion; auto.
+Qed.
+
 Theorem isprogram_union2 {p} :
   forall a b : @NTerm p, isprogram a -> isprogram b -> isprogram (mk_union2 a b).
 Proof.
@@ -3415,6 +3452,13 @@ Theorem isvalue_union {p} :
 Proof.
  intros; constructor; simpl; auto.
  apply isprogram_union; auto.
+Qed.
+
+Theorem isvalue_eunion {p} :
+  forall a b :@NTerm p, isprogram a -> isprogram b -> isvalue (mk_eunion a b).
+Proof.
+ intros; constructor; simpl; auto.
+ apply isprogram_eunion; auto.
 Qed.
 
 Theorem isvalue_union2 {p} :
@@ -5743,6 +5787,22 @@ Proof.
   eauto with pi.
 Qed.
 
+Definition mkc_eunion {p} (t1 t2 : @CTerm p) : CTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+    exist isprog (mk_eunion a b) (isprog_eunion a b x y).
+
+Lemma mkc_eunion_eq {p} :
+  forall A1 A2 B1 B2 : @CTerm p,
+    mkc_eunion A1 A2 = mkc_eunion B1 B2
+    -> A1 = B1 # A2 = B2.
+Proof.
+  intros.
+  destruct_cterms; allsimpl.
+  inversion H; subst.
+  eauto with pi.
+Qed.
+
 Definition mkc_union2 {p} (t1 t2 : @CTerm p) : CTerm :=
   let (a,x) := t1 in
   let (b,y) := t2 in
@@ -7745,6 +7805,13 @@ Lemma iscvalue_mkc_union {p} :
 Proof.
   intro; destruct t1; destruct t2; unfold iscvalue; simpl.
   apply isvalue_union; allrw @isprog_eq; auto.
+Qed.
+
+Lemma iscvalue_mkc_eunion {p} :
+  forall t1 t2 : @CTerm p, iscvalue (mkc_eunion t1 t2).
+Proof.
+  intro; destruct t1; destruct t2; unfold iscvalue; simpl.
+  apply isvalue_eunion; allrw @isprog_eq; auto.
 Qed.
 
 Lemma iscvalue_mkc_union2 {p} :
@@ -9904,6 +9971,7 @@ Ltac unfold_all_mk :=
        ;allunfold mk_tuni
        ;allunfold mk_partial
        ;allunfold mk_union
+       ;allunfold mk_eunion
        ;allunfold mk_union2
        ;allunfold mk_approx
        ;allunfold mk_cequiv
@@ -9971,6 +10039,23 @@ Lemma isprogram_union_iff {p} :
 Proof.
   intros; split; intro i.
   apply isprogram_union; sp.
+  inversion i as [cl w].
+  allunfold @closed; allsimpl.
+  allrw remove_nvars_nil_l.
+  allrw app_nil_r.
+  allrw app_eq_nil_iff; repnd; allrw.
+  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  generalize (k (nobnd a)) (k (nobnd b)); intros i1 i2.
+  dest_imp i1 hyp; dest_imp i2 hyp.
+  unfold isprogram; allrw.
+  inversion i1; inversion i2; subst; sp.
+Qed.
+
+Lemma isprogram_eunion_iff {p} :
+  forall a b : @NTerm p, (isprogram a # isprogram b) <=> isprogram (mk_eunion a b).
+Proof.
+  intros; split; intro i.
+  apply isprogram_eunion; sp.
   inversion i as [cl w].
   allunfold @closed; allsimpl.
   allrw remove_nvars_nil_l.
@@ -10087,7 +10172,11 @@ Proof.
 Qed.
 
 Definition mkc_or {p} (A B : @CTerm p) := mkc_union A B.
+Definition mkc_eor {p} (A B : @CTerm p) := mkc_eunion A B.
 Definition mkc_not {p} (P : @CTerm p) := mkc_fun P mkc_void.
+
+Definition mkc_btrue {o} : @CTerm o := mkc_inl mkc_axiom.
+Definition mkc_bfalse {o} : @CTerm o := mkc_inr mkc_axiom.
 
 Lemma wf_fun {p} :
   forall A B : @NTerm p, wf_term (mk_fun A B) <=> (wf_term A # wf_term B).
@@ -12389,3 +12478,10 @@ Proof.
 Qed.
 
 (* end hide *)
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/")
+*** End:
+*)

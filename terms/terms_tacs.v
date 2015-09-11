@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -209,6 +210,7 @@ Ltac fold_terms_step :=
     | [ |- context[oterm (Can NFunction) [nobnd ?a, bterm [?v] ?b]] ] => fold (mk_function a v b)
     | [ |- context[oterm (Can NProduct) [nobnd ?a, bterm [?v] ?b]] ] => fold (mk_product a v b)
     | [ |- context[oterm (Can NUnion) [nobnd ?x, nobnd ?y]] ] => fold (mk_union x y)
+    | [ |- context[oterm (Can NEUnion) [nobnd ?x, nobnd ?y]] ] => fold (mk_eunion x y)
     | [ |- context[oterm (Can NTExc) [nobnd ?x, nobnd ?y]] ] => fold (mk_texc x y)
     | [ |- context[oterm (NCan NApply) [nobnd ?x, nobnd ?y]] ] => fold (mk_apply x y)
     | [ |- context[oterm (NCan NEApply) [nobnd ?x, nobnd ?y]] ] => fold (mk_eapply x y)
@@ -259,6 +261,7 @@ Ltac fold_terms_step :=
     | [ H : context[oterm (Can NFunction) [nobnd ?a, bterm [?v] ?b]] |- _ ] => fold (mk_function a v b) in H
     | [ H : context[oterm (Can NProduct) [nobnd ?a, bterm [?v] ?b]] |- _ ] => fold (mk_product a v b) in H
     | [ H : context[oterm (Can NUnion) [nobnd ?x, nobnd ?y]] |- _ ] => fold (mk_union x y) in H
+    | [ H : context[oterm (Can NEUnion) [nobnd ?x, nobnd ?y]] |- _ ] => fold (mk_eunion x y) in H
     | [ H : context[oterm (Can NTExc) [nobnd ?x, nobnd ?y]] |- _ ] => fold (mk_texc x y) in H
     | [ H : context[oterm (NCan NApply) [nobnd ?x, nobnd ?y]] |- _ ] => fold (mk_apply x y) in H
     | [ H : context[oterm (NCan NEApply) [nobnd ?x, nobnd ?y]] |- _ ] => fold (mk_eapply x y) in H

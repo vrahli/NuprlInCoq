@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -424,6 +425,27 @@ Proof.
   apply cterm_eq; simpl.
   apply csubst_trivial; simpl; auto.
 Qed.
+Hint Rewrite @lsubstc_mkc_tnat : slow.
+
+Lemma csubst_mk_tnat {o} :
+  forall sub, csubst mk_tnat sub = @mk_tnat o.
+Proof.
+  intro; unfold csubst; simpl; fold @mk_axiom.
+  change_to_lsubst_aux4; simpl; sp.
+  allrw @sub_filter_nil_r.
+  repeat (rw @sub_find_sub_filter; simpl; tcsp).
+Qed.
+Hint Rewrite @csubst_mk_tnat : slow.
+
+Lemma lsubstc_mk_tnat {o} :
+  forall p sub c,
+    lsubstc mk_tnat p sub c = @mkc_tnat o.
+Proof.
+  unfold lsubstc, mkc_tnat; sp.
+  apply cterm_eq; simpl.
+  apply csubst_mk_tnat; auto.
+Qed.
+Hint Rewrite @lsubstc_mk_tnat : slow.
 
 Lemma lsubstc_mk_less {o} :
   forall (a b c d : @NTerm o) sub,
@@ -609,24 +631,6 @@ Proof.
   pose proof (lsubstc_mk_not_ex (mk_less_than b a) sub wf cv) as k; exrepnd; clear_irr.
   rw k1; rw h1.
   rw @mkc_le_eq; auto.
-Qed.
-
-Lemma csubst_mk_tnat {o} :
-  forall sub, csubst mk_tnat sub = @mk_tnat o.
-Proof.
-  intro; unfold csubst; simpl; fold @mk_axiom.
-  change_to_lsubst_aux4; simpl; sp.
-  allrw @sub_filter_nil_r.
-  repeat (rw @sub_find_sub_filter; simpl; tcsp).
-Qed.
-
-Lemma lsubstc_mk_tnat {o} :
-  forall p sub c,
-    lsubstc mk_tnat p sub c = @mkc_tnat o.
-Proof.
-  unfold lsubstc, mkc_tnat; sp.
-  apply cterm_eq; simpl.
-  apply csubst_mk_tnat; auto.
 Qed.
 
 Lemma lsubstc_mk_minus {o} :

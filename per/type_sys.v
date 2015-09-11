@@ -1802,6 +1802,7 @@ Ltac eqconstr0 name :=
     | mkc_image _ _      = mkc_image _ _      => apply mkc_image_eq          in name
     | mkc_texc _ _       = mkc_texc _ _       => apply mkc_texc_eq           in name
     | mkc_union _ _      = mkc_union _ _      => apply mkc_union_eq          in name
+    | mkc_eunion _ _     = mkc_eunion _ _     => apply mkc_eunion_eq         in name
     | mkc_sup _ _        = mkc_sup _ _        => apply mkc_sup_eq            in name
     | mkc_pair _ _       = mkc_pair _ _       => apply mkc_pair_eq           in name
     | mkc_equality _ _ _ = mkc_equality _ _ _ => apply mkc_equality_eq       in name
