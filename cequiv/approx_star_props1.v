@@ -2140,3 +2140,10 @@ Proof.
 Qed.
 
 (* end hide *)
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../terms/" "../computation/" "../util/")
+*** End:
+*)

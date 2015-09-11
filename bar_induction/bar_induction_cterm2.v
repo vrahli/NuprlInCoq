@@ -26,7 +26,7 @@
 
 
 Require Export bar_induction_cterm.
-
+Require Export subst_tacs.
 
 Lemma isprog_implies_isprog_nout {o} :
   forall (t : @NTerm o),
@@ -948,8 +948,10 @@ Proof.
 Qed.
 
 
+
+
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)

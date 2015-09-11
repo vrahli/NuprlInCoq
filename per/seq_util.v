@@ -30,6 +30,7 @@ Require Export sequents_tacs2.
 Require Export per_props4.
 Require Export per_can.
 Require Export cnterm.
+Require Export per_props_atom.
 
 
 
@@ -2933,6 +2934,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
 *** End:
 *)

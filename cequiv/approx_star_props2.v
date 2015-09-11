@@ -1295,3 +1295,10 @@ Proof.
         apply extra_ren'11 in w; sp.
       }
 Qed.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../terms/" "../computation/" "../util/")
+*** End:
+*)
