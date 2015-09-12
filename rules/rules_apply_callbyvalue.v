@@ -515,6 +515,23 @@ Proof.
 Qed.
 
 (* !!MOVE *)
+Lemma implies_approx_isint {p} :
+  forall lib a1 b1 c1 a2 b2 c2,
+    @approx p lib a1 a2
+    -> approx lib b1 b2
+    -> approx lib c1 c2
+    -> approx lib (mk_isint a1 b1 c1) (mk_isint a2 b2 c2).
+Proof.
+  introv apa apb apc.
+  applydup @approx_relates_only_progs in apa.
+  applydup @approx_relates_only_progs in apb.
+  applydup @approx_relates_only_progs in apc.
+  repnd.
+  unfold mk_isint, mk_can_test.
+  repeat prove_approx; sp.
+Qed.
+
+(* !!MOVE *)
 Lemma implies_cequivc_islambda {p} :
   forall lib a1 b1 c1 a2 b2 c2,
     cequivc lib a1 a2
@@ -531,6 +548,41 @@ Proof.
   repnud ceqb.
   repnud ceqc.
   split; apply implies_approx_islambda; auto.
+Qed.
+
+(* !!MOVE *)
+Lemma implies_cequivc_isint {p} :
+  forall lib a1 b1 c1 a2 b2 c2,
+    cequivc lib a1 a2
+    -> cequivc lib b1 b2
+    -> @cequivc p lib c1 c2
+    -> cequivc lib (mkc_isint a1 b1 c1) (mkc_isint a2 b2 c2).
+Proof.
+  unfold cequivc.
+  introv ceqa ceqb ceqc.
+  destruct_cterms.
+  allsimpl.
+  allrw @isprog_eq.
+  repnud ceqa.
+  repnud ceqb.
+  repnud ceqc.
+  split; apply implies_approx_isint; auto.
+Qed.
+
+(* !!MOVE *)
+Lemma implies_cequiv_isint {p} :
+  forall lib a1 b1 c1 a2 b2 c2,
+    cequiv lib a1 a2
+    -> cequiv lib b1 b2
+    -> @cequiv p lib c1 c2
+    -> cequiv lib (mk_isint a1 b1 c1) (mk_isint a2 b2 c2).
+Proof.
+  introv ceqa ceqb ceqc.
+  allrw @isprog_eq.
+  repnud ceqa.
+  repnud ceqb.
+  repnud ceqc.
+  split; apply implies_approx_isint; auto.
 Qed.
 
 (* !!MOVE *)
@@ -752,9 +804,267 @@ Proof.
     apply cequivc_sym; auto.
 Qed.
 
+Lemma nt_wf_lambda_iff {p} :
+  forall (bs : list (@BTerm p)),
+    nt_wf (oterm (Can NLambda) bs)
+    <=> {v : NVar
+        $ {b : NTerm
+        $ bs = [bterm [v] b]
+        # nt_wf b}}.
+Proof.
+  introv; split; intro k.
+  - inversion k as [|?|? ? imp e]; clear k; subst.
+    allsimpl.
+    repeat (destruct bs; allsimpl; ginv).
+    destruct b as [l1 t1].
+    allunfold @num_bvars; allsimpl.
+    repeat (destruct l1; ginv).
+    pose proof (imp (bterm [n] t1)) as h1.
+    autodimp h1 hyp.
+    clear imp.
+    allrw @bt_wf_iff.
+    exists n t1; dands; auto.
+  - exrepnd; subst.
+    repeat constructor.
+    introv i; allsimpl; repndors; subst; tcsp.
+Qed.
+
+Lemma nt_wf_int_iff {p} :
+  forall (bs : list (@BTerm p)) z,
+    nt_wf (oterm (Can (Nint z)) bs)
+    <=> bs = [].
+Proof.
+  introv; split; intro k.
+  - inversion k as [|?|? ? imp e]; clear k; subst.
+    allsimpl.
+    repeat (destruct bs; allsimpl; ginv).
+  - exrepnd; subst.
+    repeat constructor.
+    introv i; allsimpl; repndors; subst; tcsp.
+Qed.
+
+Lemma dec_can_int {o} :
+  forall (op : @CanonicalOp o),
+    decidable {z : Z & op = Nint z}.
+Proof.
+  introv; unfold decidable.
+  destruct op; try (complete (right; sp; ginv)).
+  left; exists z; auto.
+Qed.
+
+Lemma hasvaluec_implies_cequivc_mkc_isint {o} :
+  forall lib (a b c : @CTerm o),
+    hasvaluec lib a
+    -> (cequivc lib (mkc_isint a b c) b [+] cequivc lib (mkc_isint a b c) c).
+Proof.
+  introv hv.
+  destruct_cterms; allsimpl.
+  unfold hasvaluec in hv; allsimpl.
+  unfold cequivc; simpl.
+  unfold hasvalue in hv; exrepnd.
+  unfold computes_to_value in hv0; repnd.
+  inversion hv0 as [v isp isc]; subst; clear hv0.
+  destruct t' as [v|f|op bs]; allsimpl; tcsp; GC.
+  - right.
+    eapply cequiv_trans;
+      [apply implies_cequiv_isint;
+        [apply reduces_to_implies_cequiv; eauto 3 with slow
+        |apply cequiv_refl;eauto 3 with slow
+        |apply cequiv_refl;eauto 3 with slow]
+      |].
+    apply reduces_to_implies_cequiv; eauto 3 with slow.
+    apply isprogram_isint; eauto 3 with slow.
+  - dopid op as [can|ncan|exc|abs] Case; tcsp; GC;[].
+    destruct (dec_can_int can) as [d|d]; exrepnd; subst.
+    + left.
+      eapply cequiv_trans;
+        [apply implies_cequiv_isint;
+          [apply reduces_to_implies_cequiv; eauto 3 with slow
+          |apply cequiv_refl;eauto 3 with slow
+          |apply cequiv_refl;eauto 3 with slow]
+        |].
+      inversion isp as [cl wf].
+      apply nt_wf_int_iff in wf; subst; fold_terms.
+      apply reduces_to_implies_cequiv; eauto 3 with slow.
+      apply isprogram_isint; eauto 3 with slow.
+    + right.
+      eapply cequiv_trans;
+        [apply implies_cequiv_isint;
+          [apply reduces_to_implies_cequiv; eauto 3 with slow
+          |apply cequiv_refl;eauto 3 with slow
+          |apply cequiv_refl;eauto 3 with slow]
+        |].
+      apply reduces_to_implies_cequiv; eauto 3 with slow.
+      { apply isprogram_isint; eauto 3 with slow. }
+      apply reduces_to_if_step.
+      csunf; simpl.
+      destruct can; simpl; auto.
+      destruct d; eexists; eauto.
+Qed.
+
+Definition isintegerc {o} (t : @CTerm o) := isinteger (get_cterm t).
+
+Lemma hasvaluec_implies_cequivc_mkc_isint2 {o} :
+  forall lib (a b c : @CTerm o),
+    hasvaluec lib a
+    -> {z : Z
+        & computes_to_valc lib a (mkc_integer z)
+        # cequivc lib (mkc_isint a b c) b}
+       [+]
+       {v : CTerm
+        & computes_to_valc lib a v
+        # !isintegerc v
+        # cequivc lib (mkc_isint a b c) c}.
+Proof.
+  introv hv.
+  destruct_cterms; allsimpl.
+  unfold hasvaluec in hv; allsimpl.
+  unfold cequivc, computes_to_valc, isintegerc; simpl.
+  unfold hasvalue in hv; exrepnd.
+  unfold computes_to_value in hv0; repnd.
+  inversion hv0 as [v isp isc]; subst; clear hv0.
+  destruct t' as [v|f|op bs]; allsimpl; tcsp; GC.
+
+  - right.
+    exists (mk_cterm (sterm f) isp); simpl.
+    dands.
+
+    + unfold computes_to_value; dands; eauto 3 with slow.
+
+    + unfold isinteger; intro h; exrepnd; ginv.
+
+    + eapply cequiv_trans;
+      [apply implies_cequiv_isint;
+        [apply reduces_to_implies_cequiv; eauto 3 with slow
+        |apply cequiv_refl;eauto 3 with slow
+        |apply cequiv_refl;eauto 3 with slow]
+      |].
+      apply reduces_to_implies_cequiv; eauto 3 with slow.
+      apply isprogram_isint; eauto 3 with slow.
+
+  - dopid op as [can|ncan|exc|abs] Case; tcsp; GC;[].
+    destruct (dec_can_int can) as [d|d]; exrepnd; subst.
+
+    + left.
+      inversion isp as [cl wf].
+      apply nt_wf_int_iff in wf; subst; fold_terms.
+      exists z; dands; auto.
+
+      * unfold computes_to_value; dands; eauto 3 with slow.
+
+      * eapply cequiv_trans;
+        [apply implies_cequiv_isint;
+          [apply reduces_to_implies_cequiv; eauto 3 with slow
+          |apply cequiv_refl;eauto 3 with slow
+          |apply cequiv_refl;eauto 3 with slow]
+        |].
+        apply reduces_to_implies_cequiv; eauto 3 with slow.
+        apply isprogram_isint; eauto 3 with slow.
+
+    + right.
+      exists (mk_cterm (oterm (Can can) bs) isp); simpl.
+      dands; auto.
+
+      * unfold computes_to_value; dands; eauto 3 with slow.
+
+      * intro h; unfold isinteger, mk_integer in h; exrepnd; ginv.
+        destruct d; eexists; eauto.
+
+      * eapply cequiv_trans;
+        [apply implies_cequiv_isint;
+          [apply reduces_to_implies_cequiv; eauto 3 with slow
+          |apply cequiv_refl;eauto 3 with slow
+          |apply cequiv_refl;eauto 3 with slow]
+        |].
+      apply reduces_to_implies_cequiv; eauto 3 with slow.
+      { apply isprogram_isint; eauto 3 with slow. }
+      apply reduces_to_if_step.
+      csunf; simpl.
+      destruct can; simpl; auto.
+      destruct d; eexists; eauto.
+Qed.
+
+Lemma implies_cequivc_halts {o} :
+  forall lib (a b : @CTerm o),
+    cequivc lib a b
+    -> cequivc lib (mkc_halts a) (mkc_halts b).
+Proof.
+  introv imp.
+  allrw <- @fold_mkc_halts.
+  apply cequivc_decomp_approx; dands; eauto 3 with slow.
+  apply simpl_cequivc_mkc_cbv; auto.
+Qed.
+
+Lemma hasvalue_likec_apply_nseq_implies_integer {o} :
+  forall lib s (v : @CTerm o),
+    iscvalue v
+    -> hasvalue_likec lib (mkc_apply (mkc_nseq s) v)
+    -> isintegerc v.
+Proof.
+  introv isv hv.
+  destruct_cterms.
+  unfold iscvalue in isv.
+  unfold hasvalue_likec in hv.
+  unfold isintegerc; allsimpl.
+  unfold hasvalue_like in hv; exrepnd.
+  apply isvalue_implies in isv; repnd.
+  apply reduces_to_split2 in hv1; repndors; subst.
+  - unfold isvalue_like in hv0; allsimpl; tcsp.
+  - exrepnd.
+    csunf hv1; allsimpl; ginv.
+    apply reduces_to_split2 in hv2; repndors; subst.
+    + unfold isvalue_like in hv0; allsimpl; tcsp.
+    + exrepnd.
+      csunf hv2; allsimpl.
+      apply iscan_implies in isv0; repndors; exrepnd; subst; ginv.
+      apply compute_step_apseq_success in hv2; exrepnd; subst; GC.
+      unfold isinteger; exists (Z.of_nat n); auto.
+Qed.
+
+Lemma hasvalue_likec_apply_ntseq_implies_integer {o} :
+  forall lib s (v : @CTerm o),
+    iscvalue v
+    -> hasvalue_likec lib (mkc_apply (mkc_ntseq s) v)
+    -> isintegerc v.
+Proof.
+  introv isv hv.
+  destruct_cterms.
+  unfold iscvalue in isv.
+  unfold hasvalue_likec in hv.
+  unfold isintegerc; allsimpl.
+  unfold hasvalue_like in hv; exrepnd.
+  apply isvalue_implies in isv; repnd.
+  apply reduces_to_split2 in hv1; repndors; subst.
+  - unfold isvalue_like in hv0; allsimpl; tcsp.
+  - exrepnd.
+    csunf hv1; allsimpl; ginv.
+    apply reduces_to_split2 in hv2; repndors; subst.
+    + unfold isvalue_like in hv0; allsimpl; tcsp.
+    + exrepnd.
+      csunf hv2; allsimpl.
+      apply iscan_implies in isv0; repndors; exrepnd; subst; ginv.
+      apply compute_step_eapply_success in hv2; exrepnd.
+      destruct l; allsimpl; ginv.
+      repndors; exrepnd; subst; GC; allsimpl; tcsp.
+      * destruct c; ginv.
+        destruct bterms; allsimpl; ginv.
+        exists z; auto.
+      * unfold isnoncan_like in hv5; allsimpl; tcsp.
+Qed.
+
+Lemma type_base {o} : forall lib, @type o lib mkc_base.
+Proof.
+  introv; apply tequality_base.
+Qed.
+Hint Resolve type_base : slow.
+
+Hint Rewrite @lsubstc_mk_true : slow.
+Hint Resolve tnat_type : slow.
+Hint Resolve type_mkc_true : slow.
+
 
 (*
-   H |- f ~ \x.f x \/ (isect x : Nat. f x <= bot) ext (islambda(f;btrue;bfalse)
+   H |- f ~ \x.f x \/ (isect (x : Base) (z : halts(x)). isint(x;True;f x <= bot)) ext (islambda(f;btrue;bfalse)
 
      By CallbyvalueApplyCases a x
 
@@ -764,16 +1074,19 @@ Qed.
 Definition rule_callbyvalue_apply_cases {o}
            (H : barehypotheses)
            (f a : @NTerm o)
-           (x : NVar)
+           (x z : NVar)
   :=
     mk_rule
       (mk_baresequent H (mk_concl
                            (mk_or
                               (mk_cequiv f (mk_lam x (mk_apply f (mk_var x))))
                               (mk_isect
-                                 mk_tnat
+                                 mk_base
                                  x
-                                 (mk_approx (mk_apply f (mk_var x)) mk_bottom)))
+                                 (mk_isect
+                                    (mk_halts (mk_var x))
+                                    z
+                                    (mk_isint (mk_var x) mk_true (mk_approx (mk_apply f (mk_var x)) mk_bottom)))))
                            (mk_islambda f mk_btrue mk_bfalse)))
       [mk_baresequent H (mk_conclax (mk_halts (mk_apply f a))),
        mk_baresequent H (mk_conclax (mk_member f mk_base))]
@@ -782,9 +1095,11 @@ Definition rule_callbyvalue_apply_cases {o}
 Lemma rule_callbyvalue_apply_cases_true {o} :
   forall lib (H : barehypotheses)
          (f a : @NTerm o)
-         (x : NVar)
-         (nixf : !LIn x (free_vars f)),
-    rule_true lib (rule_callbyvalue_apply_cases H f a x).
+         (x z : NVar)
+         (nxz : x <> z)
+         (nixf : !LIn x (free_vars f))
+         (nizf : !LIn z (free_vars f)),
+    rule_true lib (rule_callbyvalue_apply_cases H f a x z).
 Proof.
   unfold rule_callbyvalue_apply_cases, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -840,34 +1155,50 @@ Proof.
         apply sp_implies_cequivc_apply; auto.
         apply cequivc_sym; auto.
 
-    + apply tequality_isect; dands; eauto 3 with slow; try (apply tnat_type);[].
+    + apply tequality_isect; dands; eauto 3 with slow;[].
       introv en.
-      apply equality_in_tnat in en.
-      unfold equality_of_nat in en; exrepnd; spcast.
+      apply equality_in_base in en; spcast.
       repeat (substc_lsubstc_vars3;[]).
       lsubst_tac.
+      autorewrite with slow in *.
 
-      eapply tequality_respects_cequivc_left;
-        [apply cequivc_decomp_approx;dands;
-         [apply implies_cequivc_apply;
-           [apply cequivc_sym;exact ceq0
-           |apply cequivc_sym;
-             apply computes_to_valc_implies_cequivc;eauto
-           ]
-         |apply cequivc_refl]
-        |].
+      apply tequality_isect; dands; eauto 3 with slow;[|].
+
+      { eapply tequality_respects_cequivc_left;
+        [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
+        apply tequality_mkc_halts; auto. }
+
+      introv enh.
+      repeat (substc_lsubstc_vars3;[]).
+      lsubst_tac.
+      autorewrite with slow in *.
+
+      apply equality_in_halts in enh; repnd.
+      clear dependent a1.
+      clear dependent a'0.
+      spcast.
 
       eapply tequality_respects_cequivc_right;
-        [apply cequivc_decomp_approx;dands;
-         [apply implies_cequivc_apply;
-           [apply cequivc_refl
-           |apply cequivc_sym;
-             apply computes_to_valc_implies_cequivc;eauto
-           ]
-         |apply cequivc_refl]
-        |].
+        [apply implies_cequivc_isint;
+          [exact en
+          |apply cequivc_refl
+          |apply cequivc_decomp_approx;dands;
+           [apply implies_cequivc_apply;
+             [exact ceq0
+             |exact en
+             ]
+           |apply cequivc_refl]
+          ]
+         |].
 
       rw @fold_type; eauto 3 with slow.
+
+      apply (hasvaluec_implies_cequivc_mkc_isint
+               _ _ mkc_true (mkc_approx (mkc_apply (lsubstc f wt s1 ct1) a0) mkc_bottom))
+        in enh0; repndors;
+      eapply type_respects_cequivc;
+      try (complete (apply cequivc_sym;exact enh0));
+      eauto 3 with slow.
 
   - eapply equality_respects_cequivc_right;
     [apply implies_cequivc_islambda;
@@ -879,6 +1210,7 @@ Proof.
     clear dependent s2.
     rw @member_eq.
 
+    applydup @hasvaluec_mkc_apply_implies_hasvaluec in hyp2 as hv.
     apply hasvaluec_mkc_apply2 in hyp2.
     repndors; exrepnd; spcast.
 
@@ -894,32 +1226,48 @@ Proof.
 
       * apply tequality_isect; dands; eauto 3 with slow; try (apply tnat_type);[].
         introv en.
-        apply equality_in_tnat in en.
-        unfold equality_of_nat in en; exrepnd; spcast.
+        apply equality_in_base in en; spcast.
         repeat (substc_lsubstc_vars3;[]).
         lsubst_tac.
+        autorewrite with slow in *.
 
-        eapply tequality_respects_cequivc_left;
-          [apply cequivc_decomp_approx;dands;
-           [apply implies_cequivc_apply;
-             [apply cequivc_refl
-             |apply cequivc_sym;
-               apply computes_to_valc_implies_cequivc;eauto
-             ]
-           |apply cequivc_refl]
-          |].
+        apply tequality_isect; dands; eauto 3 with slow;[|].
+
+        { eapply tequality_respects_cequivc_left;
+          [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
+          apply tequality_mkc_halts; auto. }
+
+        introv enh.
+        repeat (substc_lsubstc_vars3;[]).
+        lsubst_tac.
+        autorewrite with slow in *.
+
+        apply equality_in_halts in enh; repnd.
+        clear dependent a1.
+        clear dependent a'0.
+        spcast.
 
         eapply tequality_respects_cequivc_right;
-          [apply cequivc_decomp_approx;dands;
-           [apply implies_cequivc_apply;
-             [apply cequivc_refl
-             |apply cequivc_sym;
-               apply computes_to_valc_implies_cequivc;eauto
-             ]
-           |apply cequivc_refl]
+          [apply implies_cequivc_isint;
+            [exact en
+            |apply cequivc_refl
+            |apply cequivc_decomp_approx;dands;
+             [apply implies_cequivc_apply;
+               [apply cequivc_refl
+               |exact en
+               ]
+             |apply cequivc_refl]
+            ]
           |].
 
         rw @fold_type; eauto 3 with slow.
+
+        apply (hasvaluec_implies_cequivc_mkc_isint
+                 _ _ mkc_true (mkc_approx (mkc_apply (lsubstc f wt s1 ct1) a0) mkc_bottom))
+          in enh0; repndors;
+        eapply type_respects_cequivc;
+        try (complete (apply cequivc_sym;exact enh0));
+        eauto 3 with slow.
 
       * apply member_cequiv.
         eapply cequivc_trans;
@@ -947,45 +1295,304 @@ Proof.
 
       * apply tequality_isect; dands; eauto 3 with slow; try (apply tnat_type);[].
         introv en.
-        apply equality_in_tnat in en.
-        unfold equality_of_nat in en; exrepnd; spcast.
+        apply equality_in_base in en; spcast.
         repeat (substc_lsubstc_vars3;[]).
         lsubst_tac.
+        autorewrite with slow in *.
 
-        eapply tequality_respects_cequivc_left;
-          [apply cequivc_decomp_approx;dands;
-           [apply implies_cequivc_apply;
-             [apply cequivc_refl
-             |apply cequivc_sym;
-               apply computes_to_valc_implies_cequivc;eauto
-             ]
-           |apply cequivc_refl]
-          |].
+        apply tequality_isect; dands; eauto 3 with slow;[|].
+
+        { eapply tequality_respects_cequivc_left;
+          [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
+          apply tequality_mkc_halts; auto. }
+
+        introv enh.
+        repeat (substc_lsubstc_vars3;[]).
+        lsubst_tac.
+        autorewrite with slow in *.
+
+        apply equality_in_halts in enh; repnd.
+        clear dependent a1.
+        clear dependent a'0.
+        spcast.
 
         eapply tequality_respects_cequivc_right;
-          [apply cequivc_decomp_approx;dands;
-           [apply implies_cequivc_apply;
-             [apply cequivc_refl
-             |apply cequivc_sym;
-               apply computes_to_valc_implies_cequivc;eauto
-             ]
-           |apply cequivc_refl]
+          [apply implies_cequivc_isint;
+            [exact en
+            |apply cequivc_refl
+            |apply cequivc_decomp_approx;dands;
+             [apply implies_cequivc_apply;
+               [apply cequivc_refl
+               |exact en
+               ]
+             |apply cequivc_refl]
+            ]
           |].
 
         rw @fold_type; eauto 3 with slow.
 
+        apply (hasvaluec_implies_cequivc_mkc_isint
+                 _ _ mkc_true (mkc_approx (mkc_apply (lsubstc f wt s1 ct1) a0) mkc_bottom))
+          in enh0; repndors;
+        eapply type_respects_cequivc;
+        try (complete (apply cequivc_sym;exact enh0));
+        eauto 3 with slow.
+
       * apply member_in_isect; dands; eauto 3 with slow.
         introv en.
-        apply equality_in_tnat in en.
-        unfold equality_of_nat in en; exrepnd; spcast.
+        apply equality_in_base in en; spcast.
         repeat (substc_lsubstc_vars3;[]).
         lsubst_tac.
-
+        autorewrite with slow in *.
         dands.
 
-        { apply member_approx.
+        { apply member_in_isect; dands; eauto 3 with slow.
+          introv enh.
+          apply equality_in_halts in enh; repnd.
+          repeat (substc_lsubstc_vars3;[]).
+          lsubst_tac.
+          autorewrite with slow in *.
 
-Abort.
+          clear dependent a1.
+          clear dependent a'0.
+          spcast.
+
+          dands.
+
+          { eapply member_respects_cequivc_type;
+            [apply implies_cequivc_isint;
+              [apply cequivc_refl
+              |apply cequivc_refl
+              |apply cequivc_decomp_approx;dands;
+               [apply cequivc_sym;apply sp_implies_cequivc_apply;
+                apply computes_to_valc_implies_cequivc;eauto
+               |apply cequivc_refl]
+              ]
+            |].
+
+            apply (hasvaluec_implies_cequivc_mkc_isint2
+                     _ _ mkc_true (mkc_approx (mkc_apply (mkc_nseq n) a0) mkc_bottom))
+              in enh0; repndors; exrepnd;
+            eapply member_respects_cequivc_type;
+            try (complete (apply cequivc_sym;exact enh1));
+            eauto 3 with slow.
+
+            - apply equality_in_true; dands; spcast; apply computes_to_valc_refl; eauto 3 with slow.
+
+            - apply member_approx.
+              eapply cequivc_approxc_trans;
+                [apply implies_cequivc_apply;
+                  [apply cequivc_refl
+                  |apply computes_to_valc_implies_cequivc;eauto]
+                |].
+              apply approxc_assume_hasvalue; introv hvl; provefalse.
+
+              apply hasvalue_likec_apply_nseq_implies_integer in hvl; tcsp.
+              rw @computes_to_valc_iff_reduces_toc in enh0; tcsp. }
+
+          { rw @fold_type; eauto 3 with slow.
+
+            apply (hasvaluec_implies_cequivc_mkc_isint
+                     _ _ mkc_true (mkc_approx (mkc_apply (lsubstc f wt s1 ct1) a0) mkc_bottom))
+              in enh0; repndors;
+            eapply type_respects_cequivc;
+            try (complete (apply cequivc_sym;exact enh0));
+            eauto 3 with slow. }
+        }
+
+        { apply tequality_isect; dands; eauto 3 with slow;[|].
+
+          { eapply tequality_respects_cequivc_left;
+            [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
+            apply tequality_mkc_halts; auto. }
+
+          introv enh.
+          repeat (substc_lsubstc_vars3;[]).
+          lsubst_tac.
+          autorewrite with slow in *.
+
+          apply equality_in_halts in enh; repnd.
+          clear dependent a1.
+          clear dependent a'0.
+          spcast.
+
+          eapply tequality_respects_cequivc_right;
+            [apply implies_cequivc_isint;
+              [exact en
+              |apply cequivc_refl
+              |apply cequivc_decomp_approx;dands;
+               [apply implies_cequivc_apply;
+                 [apply cequivc_refl
+                 |exact en
+                 ]
+               |apply cequivc_refl]
+              ]
+            |].
+
+          rw @fold_type; eauto 3 with slow.
+
+          apply (hasvaluec_implies_cequivc_mkc_isint
+                   _ _ mkc_true (mkc_approx (mkc_apply (lsubstc f wt s1 ct1) a0) mkc_bottom))
+            in enh0; repndors;
+          eapply type_respects_cequivc;
+          try (complete (apply cequivc_sym;exact enh0));
+          eauto 3 with slow. }
+
+    + eapply member_respects_cequivc;
+        [apply implies_cequivc_islambda;
+          [apply cequivc_sym;apply computes_to_valc_implies_cequivc;exact hyp0
+          |apply cequivc_refl
+          |apply cequivc_refl]
+        |].
+      eapply member_respects_cequivc;
+        [apply cequivc_sym;apply cequivc_mkc_islambda_mkc_ntseq|].
+      apply member_mkc_or_inr; dands; eauto 3 with slow.
+
+      * apply tequality_isect; dands; eauto 3 with slow; try (apply tnat_type);[].
+        introv en.
+        apply equality_in_base in en; spcast.
+        repeat (substc_lsubstc_vars3;[]).
+        lsubst_tac.
+        autorewrite with slow in *.
+
+        apply tequality_isect; dands; eauto 3 with slow;[|].
+
+        { eapply tequality_respects_cequivc_left;
+          [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
+          apply tequality_mkc_halts; auto. }
+
+        introv enh.
+        repeat (substc_lsubstc_vars3;[]).
+        lsubst_tac.
+        autorewrite with slow in *.
+
+        apply equality_in_halts in enh; repnd.
+        clear dependent a1.
+        clear dependent a'0.
+        spcast.
+
+        eapply tequality_respects_cequivc_right;
+          [apply implies_cequivc_isint;
+            [exact en
+            |apply cequivc_refl
+            |apply cequivc_decomp_approx;dands;
+             [apply implies_cequivc_apply;
+               [apply cequivc_refl
+               |exact en
+               ]
+             |apply cequivc_refl]
+            ]
+          |].
+
+        rw @fold_type; eauto 3 with slow.
+
+        apply (hasvaluec_implies_cequivc_mkc_isint
+                 _ _ mkc_true (mkc_approx (mkc_apply (lsubstc f wt s1 ct1) a0) mkc_bottom))
+          in enh0; repndors;
+        eapply type_respects_cequivc;
+        try (complete (apply cequivc_sym;exact enh0));
+        eauto 3 with slow.
+
+      * apply member_in_isect; dands; eauto 3 with slow.
+        introv en.
+        apply equality_in_base in en; spcast.
+        repeat (substc_lsubstc_vars3;[]).
+        lsubst_tac.
+        autorewrite with slow in *.
+        dands.
+
+        { apply member_in_isect; dands; eauto 3 with slow.
+          introv enh.
+          apply equality_in_halts in enh; repnd.
+          repeat (substc_lsubstc_vars3;[]).
+          lsubst_tac.
+          autorewrite with slow in *.
+
+          clear dependent a1.
+          clear dependent a'0.
+          spcast.
+
+          dands.
+
+          { eapply member_respects_cequivc_type;
+            [apply implies_cequivc_isint;
+              [apply cequivc_refl
+              |apply cequivc_refl
+              |apply cequivc_decomp_approx;dands;
+               [apply cequivc_sym;apply sp_implies_cequivc_apply;
+                apply computes_to_valc_implies_cequivc;eauto
+               |apply cequivc_refl]
+              ]
+            |].
+
+            apply (hasvaluec_implies_cequivc_mkc_isint2
+                     _ _ mkc_true (mkc_approx (mkc_apply (mkc_ntseq n) a0) mkc_bottom))
+              in enh0; repndors; exrepnd;
+            eapply member_respects_cequivc_type;
+            try (complete (apply cequivc_sym;exact enh1));
+            eauto 3 with slow.
+
+            - apply equality_in_true; dands; spcast; apply computes_to_valc_refl; eauto 3 with slow.
+
+            - apply member_approx.
+              eapply cequivc_approxc_trans;
+                [apply implies_cequivc_apply;
+                  [apply cequivc_refl
+                  |apply computes_to_valc_implies_cequivc;eauto]
+                |].
+              apply approxc_assume_hasvalue; introv hvl; provefalse.
+
+              apply hasvalue_likec_apply_ntseq_implies_integer in hvl; tcsp.
+              rw @computes_to_valc_iff_reduces_toc in enh0; tcsp. }
+
+          { rw @fold_type; eauto 3 with slow.
+
+            apply (hasvaluec_implies_cequivc_mkc_isint
+                     _ _ mkc_true (mkc_approx (mkc_apply (lsubstc f wt s1 ct1) a0) mkc_bottom))
+              in enh0; repndors;
+            eapply type_respects_cequivc;
+            try (complete (apply cequivc_sym;exact enh0));
+            eauto 3 with slow. }
+        }
+
+        { apply tequality_isect; dands; eauto 3 with slow;[|].
+
+          { eapply tequality_respects_cequivc_left;
+            [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
+            apply tequality_mkc_halts; auto. }
+
+          introv enh.
+          repeat (substc_lsubstc_vars3;[]).
+          lsubst_tac.
+          autorewrite with slow in *.
+
+          apply equality_in_halts in enh; repnd.
+          clear dependent a1.
+          clear dependent a'0.
+          spcast.
+
+          eapply tequality_respects_cequivc_right;
+            [apply implies_cequivc_isint;
+              [exact en
+              |apply cequivc_refl
+              |apply cequivc_decomp_approx;dands;
+               [apply implies_cequivc_apply;
+                 [apply cequivc_refl
+                 |exact en
+                 ]
+               |apply cequivc_refl]
+              ]
+            |].
+
+          rw @fold_type; eauto 3 with slow.
+
+          apply (hasvaluec_implies_cequivc_mkc_isint
+                   _ _ mkc_true (mkc_approx (mkc_apply (lsubstc f wt s1 ct1) a0) mkc_bottom))
+            in enh0; repndors;
+          eapply type_respects_cequivc;
+          try (complete (apply cequivc_sym;exact enh0));
+          eauto 3 with slow. }
+Qed.
 
 
 

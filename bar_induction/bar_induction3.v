@@ -26,6 +26,7 @@
 
 
 Require Export bar_induction2.
+Require Export subst_tacs.
 
 
 
