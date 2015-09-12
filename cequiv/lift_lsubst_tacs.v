@@ -37,6 +37,7 @@ Require Export terms_union.
 Require Export terms_image.
 Require Export arith_props.
 Require Export compare_cterm.
+Require Export terms_try.
 
 
 Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
@@ -50,7 +51,6 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
     | context [lsubstc mk_bottom ?w ?s ?c ] =>
       generalize (lsubstc_mk_bottom w s c);
         intro name; tac
-
 
     (* Base *)
     | context [lsubstc mk_base ?w ?s ?c ] =>
@@ -468,6 +468,7 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c2 name];
         destruct name as [c3 name];
         clear_irr; tac
+
     (* CanTest *)
     | context [lsubstc (mk_can_test ?test ?x ?y ?z) ?w ?s ?c] =>
       let w1 := fresh "w1" in
@@ -485,6 +486,7 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c2 name];
         destruct name as [c3 name];
         clear_irr; tac
+
     (* IntEq *)
     | context [lsubstc (mk_int_eq ?m ?n ?x ?y) ?w ?s ?c] =>
       let wm := fresh "wm" in
@@ -506,7 +508,8 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c1 name];
         destruct name as [c2 name];
         clear_irr; tac
-   (* AtomEq *)
+
+    (* AtomEq *)
     | context [lsubstc (mk_atom_eq ?m ?n ?x ?y) ?w ?s ?c] =>
       let wm := fresh "wm" in
       let wn := fresh "wn" in
@@ -516,7 +519,7 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
       let cm := fresh "cm" in
       let c1 := fresh "c1" in
       let c2 := fresh "c2" in
-      generalize (lsubstc_mk_int_eq_ex m n x y s w c);
+      generalize (lsubstc_mk_atom_eq_ex m n x y s w c);
         intro name;
         destruct name as [wm name];
         destruct name as [wn name];
@@ -527,7 +530,8 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c1 name];
         destruct name as [c2 name];
         clear_irr; tac
-   (* Less *)
+
+    (* Less *)
     | context [lsubstc (mk_less ?m ?n ?x ?y) ?w ?s ?c] =>
       let wm := fresh "wm" in
       let wn := fresh "wn" in
@@ -935,13 +939,31 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c2 name];
         clear_irr; tac
 
+    (* Try *)
+    | context [lsubstc (mk_try ?a ?n ?x ?b) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let w2 := fresh "w2" in
+      let w3 := fresh "w3" in
+      let c1 := fresh "c1" in
+      let c2 := fresh "c2" in
+      let c3 := fresh "c3" in
+      generalize (lsubstc_mk_try_ex a n x b s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [w2 name];
+        destruct name as [w3 name];
+        destruct name as [c1 name];
+        destruct name as [c2 name];
+        destruct name as [c3 name];
+        clear_irr; tac
+
     (* Inl *)
     | context [lsubstc (mk_inl ?a ) ?w ?s ?c] =>
       let w1 := fresh "w1" in
       let c1 := fresh "c1" in
       generalize (lsubstc_mk_inl_ex a s w c);
         intro name;
-        destruct name as [w1 name]; 
+        destruct name as [w1 name];
         destruct name as [c1 name];
         clear_irr; tac
 
@@ -951,7 +973,7 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
       let c1 := fresh "c1" in
       generalize (lsubstc_mk_inr_ex a s w c);
         intro name;
-        destruct name as [w1 name]; 
+        destruct name as [w1 name];
         destruct name as [c1 name];
         clear_irr; tac
 
@@ -961,7 +983,7 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
       let c1 := fresh "c1" in
       generalize (lsubstc_mk_outl_ex a s w c);
         intro name;
-        destruct name as [w1 name]; 
+        destruct name as [w1 name];
         destruct name as [c1 name];
         clear_irr; tac
 
@@ -971,7 +993,7 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
       let c1 := fresh "c1" in
       generalize (lsubstc_mk_outr_ex a s w c);
         intro name;
-        destruct name as [w1 name]; 
+        destruct name as [w1 name];
         destruct name as [c1 name];
         clear_irr; tac
 
@@ -985,8 +1007,8 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
       let c3 := fresh "c3" in
       generalize (lsubstc_mk_decide_ex a x u y v s w c);
         intro name;
-        destruct name as [w1 name]; 
-        destruct name as [w2 name]; 
+        destruct name as [w1 name];
+        destruct name as [w2 name];
         destruct name as [w3 name];
         destruct name as [c1 name];
         destruct name as [c2 name];

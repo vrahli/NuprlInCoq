@@ -60,6 +60,7 @@ Require Import rules_squiggle4.
 
 (* Rules(exception): *)
 Require Import rules_exception.
+Require Import rules_exception2.
 Require Import rules_decide_exception.
 Require Import rules_arith_exception.
 Require Import rules_cft_exception.
