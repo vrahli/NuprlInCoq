@@ -29,6 +29,7 @@ Require Export stronger_continuity_defs.
 Require Export stronger_continuity_defs0.
 Require Export per_props_atom.
 Require Export terms5.
+Require Export per_props_nat3.
 
 
 Lemma equality_mkc_union_tnat_unit {o} :
