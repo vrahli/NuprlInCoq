@@ -694,15 +694,14 @@ Proof.
   apply computes_to_valc_refl; eauto 3 with slow.
 Qed.
 
-Lemma implies_approxc_lam2 {o} :
-  forall lib v1 v2 (t1 : @CVTerm o [v1]) t2,
-    (forall u : CTerm, cequivc lib (substc u v1 t1) (substc u v2 t2))
-    -> approxc lib (mkc_lam v1 t1) (mkc_lam v2 t2).
+Lemma implies_approx_lam2 {o} :
+  forall lib v1 v2 (t1 t2 : @NTerm o),
+    isprog_vars [v1] t1
+    -> isprog_vars [v2] t2
+    -> (forall u : NTerm, isprog u -> cequiv lib (subst t1 v1 u) (subst t2 v2 u))
+    -> approx lib (mk_lam v1 t1) (mk_lam v2 t2).
 Proof.
-  introv imp.
-  destruct_cterms.
-  allunfold @cequivc; allsimpl.
-  allunfold @approxc; allsimpl.
+  introv isp1 isp2 imp.
 
   constructor.
   unfold close_comput; dands;
@@ -713,7 +712,7 @@ Proof.
     apply computes_to_value_isvalue_eq in comp;
       try (apply isvalue_mk_lam); eauto 3 with slow.
     unfold mk_lam in comp; ginv; fold_terms.
-    exists [bterm [v2] x]; fold_terms.
+    exists [bterm [v2] t2]; fold_terms.
     dands.
     { apply computes_to_value_isvalue_refl;
       try (apply isvalue_mk_lam); eauto 3 with slow. }
@@ -723,12 +722,12 @@ Proof.
     destruct n; try omega; clear ltn.
     unfold selectbt; simpl.
     unfold blift.
-    exists [v1] x0 (subst x v2 (mk_var v1)); dands; eauto 3 with slow.
+    exists [v1] t1 (subst t2 v2 (mk_var v1)); dands; eauto 3 with slow.
 
     + apply clearbots_olift.
       apply cl_olift_implies_olift; eauto 3 with slow.
 
-      pose proof (cl_olift_iff_pv_olift (approx lib) x0 (subst x v2 (mk_var v1)) [v1]) as xx.
+      pose proof (cl_olift_iff_pv_olift (approx lib) t1 (subst t2 v2 (mk_var v1)) [v1]) as xx.
       repeat (autodimp xx hyp).
       { clear imp; allrw @isprog_vars_eq; repnd; dands.
         - eapply subvars_eqvars;
@@ -747,7 +746,8 @@ Proof.
       destruct p as [z u]; allsimpl.
       allrw @fold_subst.
       allrw @prog_sub_cons; repnd.
-      pose proof (imp (mk_cterm u ps0)) as h; clear imp; allsimpl.
+      pose proof (imp u) as h; clear imp; allsimpl.
+      autodimp h hyp; eauto 3 with slow.
       destruct h; sp.
       eapply approx_trans; eauto.
 
@@ -759,29 +759,29 @@ Proof.
 
       destruct (deq_nvar v2 z); subst.
 
-      * pose proof (cl_lsubst_app_sub_filter x [(z,u)] [(z,u)]) as h; allsimpl.
+      * pose proof (cl_lsubst_app_sub_filter t2 [(z,u)] [(z,u)]) as h; allsimpl.
         autodimp h hyp; eauto 3 with slow.
         allrw memvar_singleton; boolvar; rw h; eauto 3 with slow.
 
-      * pose proof (lsubst_sub_filter_alpha x [(v2, u), (z, u)] [z]) as h.
+      * pose proof (lsubst_sub_filter_alpha t2 [(v2, u), (z, u)] [z]) as h.
         allrw disjoint_singleton_r; allsimpl.
         allrw memvar_singleton; boolvar; tcsp.
         autodimp h hyp.
         { allrw @isprog_vars_eq; repnd.
           allrw subvars_eq.
-          introv h; apply i1 in h; allsimpl; tcsp. }
+          introv h; apply isp0 in h; allsimpl; tcsp. }
 
         eapply approx_alpha_rw_r_aux;[exact h|].
         allrw @fold_subst; eauto 3 with slow.
 
-    + pose proof (alpha_eq_bterm_single_change x v2) as h.
+    + pose proof (alpha_eq_bterm_single_change t2 v2) as h.
       allrw subset_singleton_r.
       autodimp h hyp.
       { introv ix.
         clear imp.
         allrw @isprog_vars_eq; repnd.
         allrw subvars_eq.
-        apply i2 in ix; allsimpl; tcsp. }
+        apply isp3 in ix; allsimpl; tcsp. }
       apply h.
 
   - introv comp.
@@ -789,6 +789,22 @@ Proof.
 
   - introv comp.
     apply reduces_to_if_isvalue_like in comp; ginv; eauto 3 with slow.
+Qed.
+
+Lemma implies_approxc_lam2 {o} :
+  forall lib v1 v2 (t1 : @CVTerm o [v1]) t2,
+    (forall u : CTerm, cequivc lib (substc u v1 t1) (substc u v2 t2))
+    -> approxc lib (mkc_lam v1 t1) (mkc_lam v2 t2).
+Proof.
+  introv imp.
+  destruct_cterms.
+  allunfold @cequivc; allsimpl.
+  allunfold @approxc; allsimpl.
+
+  apply implies_approx_lam2; auto.
+  introv isp.
+  apply isprogram_eq in isp.
+  pose proof (imp (mk_cterm u isp)) as k; allsimpl; auto.
 Qed.
 
 Lemma implies_cequivc_lam2 {o} :
@@ -1592,6 +1608,290 @@ Proof.
           eapply type_respects_cequivc;
           try (complete (apply cequivc_sym;exact enh0));
           eauto 3 with slow. }
+Qed.
+
+
+Lemma hasvaluec_approxc_lam_implies_cequivc {o} :
+  forall lib (f : @CTerm o) x y a,
+    approxc lib f (mkc_lam y a)
+    -> hasvaluec lib f
+    -> cequivc lib f (mkc_lam x (mkcv_apply [x] (mk_cv [x] f) (mkc_var x))).
+Proof.
+  introv apr hv.
+  apply cequivc_iff_approxc; dands; auto; destruct_cterms;
+  allunfold @approxc; allunfold @hasvaluec; allunfold @cequivc; allsimpl;
+  rename x1 into a; rename x0 into f.
+
+  - unfold hasvalue in hv; exrepnd.
+    unfold computes_to_value in hv0; repnd.
+    apply isvalue_iff in hv0; repnd.
+    eapply approx_trans;
+      [apply reduces_to_implies_approx2;eauto 3 with slow|].
+
+    apply (approx_trans _ _ (mk_lam x (mk_apply t' (mk_var x)))).
+
+    + inversion apr as [cl]; clear apr.
+      unfold close_comput in cl; repnd; GC.
+      apply iscan_implies in hv2; repndors; exrepnd; subst.
+
+      * unfold close_compute_val in cl2.
+        pose proof (cl2 c bterms) as h.
+        clear cl2 cl3 cl4.
+        autodimp h hyp.
+        { unfold computes_to_value; dands; auto. }
+        exrepnd.
+        apply computes_to_value_isvalue_eq in h1; eauto 3 with slow;
+        try (apply isvalue_iff; dands; simpl; auto).
+        unfold mk_lam in h1; ginv.
+        dup hv0 as isp.
+        destruct hv0 as [c wf].
+        apply nt_wf_lambda_iff in wf; exrepnd; subst; fold_terms.
+
+        apply implies_approx_lam2.
+
+        { apply implies_isprogram_bt_lam in isp.
+          allrw <- @isprog_vars_iff_isprogram_bt; auto. }
+
+        { apply isprog_vars_apply_implies; eauto 3 with slow. }
+
+        introv ispu.
+        applydup @closed_if_isprog in ispu.
+        unfold subst.
+        repeat (rw @cl_lsubst_lsubst_aux;[|eauto 3 with slow]); simpl; fold_terms.
+        autorewrite with slow in *.
+        apply cequiv_sym.
+        eapply cequiv_trans.
+
+        { apply reduces_to_implies_cequiv.
+
+          - apply isprogram_apply; boolvar; eauto 2 with slow.
+            { rw @lsubst_aux_nil; auto. }
+            { apply isprogram_lam.
+              rw <- @cl_lsubst_lsubst_aux;[|eauto 3 with slow].
+              apply isprog_vars_lsubst_prog_sub; simpl; eauto 3 with slow.
+              apply implies_isprogram_bt_lam in isp.
+              apply isprog_vars_iff_isprogram_bt in isp.
+              eapply isprog_vars_subvars;[|eauto].
+              rw subvars_prop; simpl; tcsp. }
+
+          - apply reduces_to_if_step; csunf; simpl; eauto. }
+
+        unfold apply_bterm; simpl.
+        boolvar; try (rw @lsubst_aux_nil).
+
+        { rw <- @cl_lsubst_lsubst_aux;[|eauto 3 with slow].
+          apply cequiv_refl.
+          apply implies_isprogram_bt_lam in isp.
+          apply isprog_vars_iff_isprogram_bt in isp.
+          apply isprogram_lsubst_if_isprog_sub; simpl; eauto 3 with slow.
+          apply isprog_vars_eq in isp; repnd.
+          rw @subvars_eq in isp0; auto. }
+
+        rw (lsubst_aux_trivial_cl b [(x,u)]); simpl; eauto 3 with slow.
+
+        { rw <- @cl_lsubst_lsubst_aux;[|eauto 3 with slow].
+          apply cequiv_refl.
+          apply implies_isprogram_bt_lam in isp.
+          apply isprog_vars_iff_isprogram_bt in isp.
+          apply isprogram_lsubst_if_isprog_sub; simpl; eauto 3 with slow.
+          apply isprog_vars_eq in isp; repnd.
+          rw @subvars_eq in isp0; auto. }
+
+        apply disjoint_singleton_l; intro xx.
+        apply implies_isprogram_bt_lam in isp.
+        apply isprog_vars_iff_isprogram_bt in isp.
+        apply isprog_vars_eq in isp; repnd.
+        rw @subvars_eq in isp0; auto.
+        apply isp0 in xx; allsimpl; tcsp.
+
+      * apply cl4 in hv1; clear cl2 cl3 cl4.
+        exrepnd.
+        apply reduces_to_if_value in hv1; ginv;
+        try (apply isvalue_iff; dands; simpl; auto).
+
+    + apply implies_approx_lam2; try (apply isprog_vars_apply_implies);
+      eauto 3 with slow.
+
+      introv ispu.
+      unfold subst.
+      repeat (rw @cl_lsubst_lsubst_aux;[|eauto 3 with slow]); simpl.
+      boolvar; tcsp; fold_terms.
+      repeat (rw @lsubst_aux_trivial_cl_term2; eauto 3 with slow).
+      apply sp_implies_cequiv_apply; eauto 2 with slow.
+      apply cequiv_sym.
+      apply reduces_to_implies_cequiv; eauto 2 with slow.
+
+  - unfold hasvalue in hv; exrepnd.
+    unfold computes_to_value in hv0; repnd.
+    apply isvalue_iff in hv0; repnd.
+    eapply approx_trans;
+      [|apply reduces_to_implies_approx1;eauto 3 with slow].
+
+    apply (approx_trans _ _ (mk_lam x (mk_apply t' (mk_var x)))).
+
+    + apply implies_approx_lam2; try (apply isprog_vars_apply_implies);
+      eauto 3 with slow.
+
+      introv ispu.
+      unfold subst.
+      repeat (rw @cl_lsubst_lsubst_aux;[|eauto 3 with slow]); simpl.
+      boolvar; tcsp; fold_terms.
+      repeat (rw @lsubst_aux_trivial_cl_term2; eauto 3 with slow).
+      apply sp_implies_cequiv_apply; eauto 2 with slow.
+      apply reduces_to_implies_cequiv; eauto 2 with slow.
+
+    + inversion apr as [cl]; clear apr.
+      unfold close_comput in cl; repnd; GC.
+      apply iscan_implies in hv2; repndors; exrepnd; subst.
+
+      * unfold close_compute_val in cl2.
+        pose proof (cl2 c bterms) as h.
+        clear cl2 cl3 cl4.
+        autodimp h hyp.
+        { unfold computes_to_value; dands; auto. }
+        exrepnd.
+        apply computes_to_value_isvalue_eq in h1; eauto 3 with slow;
+        try (apply isvalue_iff; dands; simpl; auto).
+        unfold mk_lam in h1; ginv.
+        dup hv0 as isp.
+        destruct hv0 as [c wf].
+        apply nt_wf_lambda_iff in wf; exrepnd; subst; fold_terms.
+
+        apply implies_approx_lam2.
+
+        { apply isprog_vars_apply_implies; eauto 3 with slow. }
+
+        { apply implies_isprogram_bt_lam in isp.
+          allrw <- @isprog_vars_iff_isprogram_bt; auto. }
+
+        introv ispu.
+        applydup @closed_if_isprog in ispu.
+        unfold subst.
+        repeat (rw @cl_lsubst_lsubst_aux;[|eauto 3 with slow]); simpl; fold_terms.
+        autorewrite with slow in *.
+        eapply cequiv_trans.
+
+        { apply reduces_to_implies_cequiv.
+
+          - apply isprogram_apply; boolvar; eauto 2 with slow.
+            { rw @lsubst_aux_nil; auto. }
+            { apply isprogram_lam.
+              rw <- @cl_lsubst_lsubst_aux;[|eauto 3 with slow].
+              apply isprog_vars_lsubst_prog_sub; simpl; eauto 3 with slow.
+              apply implies_isprogram_bt_lam in isp.
+              apply isprog_vars_iff_isprogram_bt in isp.
+              eapply isprog_vars_subvars;[|eauto].
+              rw subvars_prop; simpl; tcsp. }
+
+          - apply reduces_to_if_step; csunf; simpl; eauto. }
+
+        unfold apply_bterm; simpl.
+        boolvar; try (rw @lsubst_aux_nil).
+
+        { rw <- @cl_lsubst_lsubst_aux;[|eauto 3 with slow].
+          apply cequiv_refl.
+          apply implies_isprogram_bt_lam in isp.
+          apply isprog_vars_iff_isprogram_bt in isp.
+          apply isprogram_lsubst_if_isprog_sub; simpl; eauto 3 with slow.
+          apply isprog_vars_eq in isp; repnd.
+          rw @subvars_eq in isp0; auto. }
+
+        rw (lsubst_aux_trivial_cl b [(x,u)]); simpl; eauto 3 with slow.
+
+        { rw <- @cl_lsubst_lsubst_aux;[|eauto 3 with slow].
+          apply cequiv_refl.
+          apply implies_isprogram_bt_lam in isp.
+          apply isprog_vars_iff_isprogram_bt in isp.
+          apply isprogram_lsubst_if_isprog_sub; simpl; eauto 3 with slow.
+          apply isprog_vars_eq in isp; repnd.
+          rw @subvars_eq in isp0; auto. }
+
+        apply disjoint_singleton_l; intro xx.
+        apply implies_isprogram_bt_lam in isp.
+        apply isprog_vars_iff_isprogram_bt in isp.
+        apply isprog_vars_eq in isp; repnd.
+        rw @subvars_eq in isp0; auto.
+        apply isp0 in xx; allsimpl; tcsp.
+
+      * apply cl4 in hv1; clear cl2 cl3 cl4.
+        exrepnd.
+        apply reduces_to_if_value in hv1; ginv;
+        try (apply isvalue_iff; dands; simpl; auto).
+Qed.
+
+Lemma mkc_cv_app_r_mkc_var {o} :
+  forall x, mk_cv_app_r [] [x] (mkc_var x) = @mkc_var o x.
+Proof.
+  introv.
+  apply cvterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @mkc_cv_app_r_mkc_var : slow.
+
+(*
+   H |- f ~ \x.f x
+
+     By squiggleLambda
+
+     H |- f <= \y.a
+     H |- halts(f)
+
+ *)
+Definition rule_squiggle_lambda {o}
+           (H : barehypotheses)
+           (f a : @NTerm o)
+           (x y : NVar)
+  :=
+    mk_rule
+      (mk_baresequent H (mk_conclax (mk_cequiv f (mk_lam x (mk_apply f (mk_var x))))))
+      [mk_baresequent H (mk_conclax (mk_approx f (mk_lam y a))),
+       mk_baresequent H (mk_conclax (mk_halts f))]
+      [].
+
+Lemma rule_squiggle_lambda_true {o} :
+  forall lib (H : barehypotheses)
+         (f a : @NTerm o)
+         (x y : NVar)
+         (nixf : !LIn x (free_vars f)),
+    rule_true lib (rule_squiggle_lambda H f a x y).
+Proof.
+  unfold rule_squiggle_lambda, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  rename Hyp1 into hyp2.
+  destseq; allsimpl; proof_irr; GC.
+
+  unfold closed_extract; simpl.
+  exists (@covered_axiom o (nh_vars_hyps H)).
+
+  vr_seq_true.
+  vr_seq_true in hyp1.
+  vr_seq_true in hyp2.
+  pose proof (hyp1 s1 s2 eqh sim) as hyp; clear hyp1; exrepnd.
+  pose proof (hyp2 s1 s2 eqh sim) as ceq; clear hyp2; exrepnd.
+  lsubst_tac.
+
+  allrw <- @member_cequiv_iff.
+  allrw <- @member_approx_iff.
+  allrw <- @member_halts_iff.
+  allrw @tequality_mkc_halts.
+  allrw @tequality_mkc_approx.
+  allrw @tequality_mkc_cequiv.
+  applydup ceq0 in ceq1; clear ceq0.
+  applydup hyp0 in hyp1; clear hyp0.
+  spcast.
+
+  apply (hasvaluec_approxc_lam_implies_cequivc _ _ x) in hyp1; auto;[].
+  apply (hasvaluec_approxc_lam_implies_cequivc _ _ x) in hyp2; auto;[].
+
+  repeat lsubstc_vars_as_mkcv.
+  autorewrite with slow.
+  dands; spcast; auto;[].
+  split; intro h; spcast; auto.
 Qed.
 
 
