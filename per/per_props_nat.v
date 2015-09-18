@@ -29,6 +29,8 @@ Require Export cvterm.
 Require Export nat_defs.
 Require Export per_props_set.
 Require Export per_props_union.
+Require Export per_props2.
+Require Export types_converge.
 Require Export per_props3.
 
 Require Export list.  (* ??? *)

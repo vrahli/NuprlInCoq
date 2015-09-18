@@ -943,3 +943,10 @@ Proof.
     repeat (apply cover_vars_snoc_weak); auto.
     apply wf_equality; auto.
 Qed.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
+*** End:
+*)

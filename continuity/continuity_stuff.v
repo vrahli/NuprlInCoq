@@ -91,7 +91,6 @@ Require Export stronger_continuity_rule4_v3.
 Require Export stronger_continuity_props1.
 
 
-
 (*Require Import continuity_axiom.*) (* !TO FIX---don't need anymore, we've got the strong version *)
 (*Require Import continuity_rule2. (* Can't prove that, right? *) *)
 (*
@@ -104,6 +103,6 @@ Require Import stronger_continuity_rule4_v2_2. (* slightly more general than rul
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)

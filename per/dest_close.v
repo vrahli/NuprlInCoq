@@ -795,6 +795,30 @@ Proof.
   inversion cl; subst; try close_diff; auto.
 Qed.
 
+Lemma dest_close_per_tuni_l {p} :
+  forall lib (ts : cts(p)) T i T' eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> computes_to_valc lib T (mkc_tuni i)
+    -> close lib ts T T' eq
+    -> ts T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff; auto.
+Qed.
+
+Lemma dest_close_per_tuni_r {p} :
+  forall lib (ts : cts(p)) T i T' eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> computes_to_valc lib T' (mkc_tuni i)
+    -> close lib ts T T' eq
+    -> ts T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff; auto.
+Qed.
+
 
 Ltac dest_close_lr h :=
   match goal with
@@ -1278,6 +1302,21 @@ Ltac dest_close_lr h :=
         H4 : close ?lib ?ts ?T ?T' ?eq
       |- _ ] =>
       generalize (dest_close_per_uni_r lib ts T i T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    (* tuni *)
+    | [ H1 : type_system ?lib ?ts,
+        H2 : defines_only_universes ?lib ?ts,
+        H3 : computes_to_valc ?lib ?T (mkc_tuni ?i),
+        H4 : close ?lib ?ts ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_tuni_l lib ts T i T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    | [ H1 : type_system ?lib ?ts,
+        H2 : defines_only_universes ?lib ?ts,
+        H3 : computes_to_valc ?lib ?T' (mkc_tuni ?i),
+        H4 : close ?lib ?ts ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_tuni_r lib ts T i T' eq H1 H2 H3 H4); intro h; no_duplicate h
 
   end.
 

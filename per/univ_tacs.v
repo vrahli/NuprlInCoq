@@ -222,3 +222,10 @@ Ltac duniv i h :=
   match goal with
     | [ H : univ _ _ _ _ |- _ ] => destruct H as [i h]
   end.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/")
+*** End:
+*)

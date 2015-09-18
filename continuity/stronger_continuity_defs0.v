@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -26,6 +27,7 @@
 
 Require Export per.
 Require Export continuity_defs_ceq.
+Require Export csubst_fresh.
 
 
 Definition is_spcan_not_atom {o} lib (t : @CTerm o) a : Type :=
@@ -42,10 +44,6 @@ Definition cis_spcan_not_atom {o} lib (t : @CTerm o) a :=
    # isccanc x
    # noc_bterms x
    # !LIn a (getc_utokens x)}.
-
-Definition mkc_fresh {o} (v : NVar) (t : @CVTerm o [v]) : CTerm :=
-  let (a,x) := t in
-    exist isprog (mk_fresh v a) (isprog_fresh_implies v a x).
 
 Definition getcv_utokens {o} vs (t : @CVTerm o vs) :=
   get_utokens (get_cvterm vs t).

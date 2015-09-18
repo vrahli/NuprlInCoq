@@ -28,6 +28,7 @@
 Require Export prog.
 Require Export cvterm.
 Require Export per_props2.
+Require Export per_props_compute.
 
 
 Lemma nuprl_mkc_not {o} :
@@ -69,74 +70,6 @@ Proof.
   - sp.
 Qed.
 
-Lemma fold_less {o} :
-  forall a b c d : @NTerm o,
-    oterm (NCan (NCompOp CompOpLess)) [nobnd a, nobnd b, nobnd c, nobnd d]
-    = mk_less a b c d.
-Proof. sp. Qed.
-
-Lemma mkc_less_than_comp1 {o} :
-  forall lib (a b : @CTerm o) n m,
-    computes_to_valc lib a (mkc_integer n)
-    -> computes_to_valc lib b (mkc_integer m)
-    -> (n < m)%Z
-    -> computes_to_valc lib (mkc_less_than a b) mkc_true.
-Proof.
-  introv comp1 comp2 h.
-  rw @mkc_less_than_eq.
-  destruct_cterms.
-  allunfold @computes_to_valc; allsimpl.
-  allunfold @computes_to_value; repnd; dands; auto.
-  pose proof (reduce_to_prinargs_comp
-                lib CompOpLess
-                x0 x
-                [nobnd mk_true, nobnd mk_false]
-                (mk_integer n)
-                (mk_integer m)) as r.
-  repeat (autodimp r hyp).
-  { unfold computes_to_value; dands; auto. }
-  { unfold iswfpk; eauto 3 with slow. }
-  allrw @fold_nobnd.
-  allrw @fold_less.
-  eapply reduces_to_trans; eauto.
-  apply reduces_to_if_step.
-  csunf; simpl.
-  dcwf q; allsimpl.
-  unfold compute_step_comp; simpl.
-  boolvar; auto; try omega.
-Qed.
-
-Lemma mkc_less_than_comp2 {o} :
-  forall lib (a b : @CTerm o) n m,
-    computes_to_valc lib a (mkc_integer n)
-    -> computes_to_valc lib b (mkc_integer m)
-    -> (m <= n)%Z
-    -> computes_to_valc lib (mkc_less_than a b) mkc_false.
-Proof.
-  introv comp1 comp2 h.
-  rw @mkc_less_than_eq.
-  destruct_cterms.
-  allunfold @computes_to_valc; allsimpl.
-  allunfold @computes_to_value; repnd; dands; auto.
-  pose proof (reduce_to_prinargs_comp
-                lib CompOpLess
-                x0 x
-                [nobnd mk_true, nobnd mk_false]
-                (mk_integer n)
-                (mk_integer m)) as r.
-  repeat (autodimp r hyp).
-  { unfold computes_to_value; dands; auto. }
-  { unfold iswfpk; eauto 3 with slow. }
-  allrw @fold_nobnd.
-  allrw @fold_less.
-  eapply reduces_to_trans; eauto.
-  apply reduces_to_if_step.
-  csunf; simpl.
-  dcwf q; allsimpl.
-  unfold compute_step_comp; simpl.
-  boolvar; auto; try omega.
-Qed.
-
 Lemma nuprl_mkc_true {o} :
   forall lib, @nuprl o lib
                      mkc_true
@@ -153,30 +86,6 @@ Proof.
   sp.
   introv; split; sp; spcast.
   apply approxc_refl.
-Qed.
-
-Lemma nuprl_computes_left {o} :
-  forall lib (t1 t2 t3 : @CTerm o) eq,
-    nuprl lib t1 t2 eq
-    -> computes_to_valc lib t3 t1
-    -> nuprl lib t3 t2 eq.
-Proof.
-  introv n c.
-  apply @nuprl_value_respecting_left with (t1 := t1); auto.
-  apply cequivc_sym.
-  apply computes_to_valc_implies_cequivc; auto.
-Qed.
-
-Lemma nuprl_computes_right {o} :
-  forall lib (t1 t2 t3 : @CTerm o) eq,
-    nuprl lib t1 t2 eq
-    -> computes_to_valc lib t3 t2
-    -> nuprl lib t1 t3 eq.
-Proof.
-  introv n c.
-  apply @nuprl_value_respecting_right with (t2 := t2); auto.
-  apply cequivc_sym.
-  apply computes_to_valc_implies_cequivc; auto.
 Qed.
 
 Lemma nuprl_tnat {o} :
@@ -343,43 +252,6 @@ Proof.
                                      else False) -> False)}); sp.
 Qed.
 
-Lemma computes_to_valc_tuni {o} :
-  forall lib (t : @CTerm o) k,
-    (0 <= k)%Z
-    -> computes_to_valc lib t (mkc_integer k)
-    -> computes_to_valc lib (mkc_tuni t) (mkc_uni (Z.to_nat k)).
-Proof.
-  introv le c.
-  destruct_cterms.
-  allunfold @computes_to_valc; allsimpl.
-  allunfold @computes_to_value; repnd; dands; auto; try (apply isvalue_mk_uni).
-  apply reduces_to_trans with (b := mk_tuni (mk_integer k)).
-  apply reduces_to_prinarg; auto.
-  apply reduces_to_if_step.
-  csunf; simpl.
-  unfold compute_step_tuni; simpl.
-  destruct (Z_le_gt_dec 0 k); auto; omega.
-Qed.
-
-Lemma ccomputes_to_valc_tuni {o} :
-  forall lib (t : @CTerm o) k,
-    (0 <= k)%Z
-    -> t ===>(lib) (mkc_integer k)
-    -> (mkc_tuni t) ===>(lib) (mkc_uni (Z.to_nat k)).
-Proof.
-  introv le c.
-  spcast.
-  destruct_cterms.
-  allunfold @computes_to_valc; allsimpl.
-  allunfold @computes_to_value; repnd; dands; auto; try (apply isvalue_mk_uni).
-  apply reduces_to_trans with (b := mk_tuni (mk_integer k)).
-  apply reduces_to_prinarg; auto.
-  apply reduces_to_if_step.
-  csunf; simpl.
-  unfold compute_step_tuni; simpl.
-  destruct (Z_le_gt_dec 0 k); auto; omega.
-Qed.
-
 (*
 
   We could also have defined this type using 0 < y.
@@ -407,7 +279,6 @@ Lemma isprog_tnatp {o} : @isprog o mk_tnatp.
 Proof.
   rw <- @isprog_set_iff.
   dands; eauto 3 with slow.
-  rw @isprog_vars_le; dands; eauto 3 with slow.
 Qed.
 
 Definition mkc_tnatp {o} : @CTerm o := exist isprog mk_tnatp isprog_tnatp.
@@ -1002,138 +873,9 @@ Proof.
   exists x; auto.
 Qed.
 
-Lemma tuni_fun {o} :
-  forall lib (v : NVar),
-    @type o lib (mkc_function mkc_tnat v (mkcv_tuni [v] (mkc_var v))).
-Proof.
-  introv.
-  unfold type, tequality.
-  eexists.
-  apply CL_func.
-  unfold per_func.
-
-  exists
-    (fun t t' : @CTerm o =>
-       { _ : equality_of_int lib t t'
-                             &
-                             inhabited
-                             (fun _ _ : @CTerm o =>
-                                forall u v : @CTerm o,
-                                  (forall k : Z,
-                                     computes_to_valc lib t (mkc_integer k) ->
-                                     if (k <? 0)%Z
-                                     then u ===>(lib) mkc_axiom # v ===>(lib) mkc_axiom
-                                     else False) -> False)}).
-
-  exists (fun (a a' : @CTerm o)
-              (e : { _ : equality_of_int lib a a'
-                                         &
-                                         inhabited
-                                         (fun _ _ : @CTerm o =>
-                                            forall u v : @CTerm o,
-                                              (forall k : Z,
-                                                 computes_to_valc lib a (mkc_integer k) ->
-                                                 if (k <? 0)%Z
-                                                 then u ===>(lib) mkc_axiom # v ===>(lib) mkc_axiom
-                                                 else False) -> False)})
-              (t t' : @CTerm o) =>
-            (exists eqa, close lib (univi lib (Z.to_nat (projT1 (equality_of_int_imp_t lib a a' (projT1 e)))))
-                               t t' eqa)).
-
-  dands; auto.
-
-  - unfold type_family.
-    eexists; eexists; eexists; eexists; eexists; eexists;
-    dands; auto; spcast; try (fold nuprl).
-    apply computes_to_valc_refl; apply iscvalue_mkc_function.
-    apply computes_to_valc_refl; apply iscvalue_mkc_function.
-    apply nuprl_tnat.
-    introv; simpl in e; exrepnd.
-    allrw @mkcv_tuni_substc.
-    allrw @mkc_var_substc.
-    unfold equality_of_int in v0; exrepnd.
-    unfold inhabited in e0; exrepnd.
-
-    pose proof (Z_lt_le_dec k 0) as oo; dorn oo.
-
-    + pose proof (e1 mkc_axiom mkc_axiom) as h.
-
-      autodimp h hyp; tcsp.
-      introv c.
-      spcast.
-      pose proof (computes_to_valc_eq lib a (mkc_integer k) (mkc_integer k0)) as e;
-        repeat (autodimp e hyp).
-      symmetry in e; inversion e; subst; GC.
-
-      remember ((k <? 0)%Z); symmetry in Heqb; destruct b.
-      sp; spcast; apply @computes_to_value_isvalue_refl; simpl; sp.
-      apply Z.ltb_ge in Heqb; omega.
-
-    + pose proof (ccomputes_to_valc_tuni lib a k) as c1; repeat (autodimp c1 hyp); try omega.
-      pose proof (ccomputes_to_valc_tuni lib a' k) as c2; repeat (autodimp c2 hyp); try omega.
-      destruct c1 as [c1].
-      destruct c2 as [c2].
-      apply nuprl_computes_left with (t1 := mkc_uni (Z.to_nat k)); auto.
-      apply nuprl_computes_right with (t2 := mkc_uni (Z.to_nat k)); auto.
-
-      remember (Z.to_nat k) as m.
-      apply CL_init.
-
-      exists (S m).
-      simpl; left; dands.
-      spcast; apply computes_to_value_isvalue_refl; simpl; apply isvalue_mk_uni.
-      spcast; apply computes_to_value_isvalue_refl; simpl; apply isvalue_mk_uni.
-
-      introv.
-
-      remember (equality_of_int_imp_t lib a a'
-                 (ex_intro
-                    (fun k0 : Z =>
-                     a ===>(lib) (mkc_integer k0) # a' ===>(lib) (mkc_integer k0))
-                    k (v0, v1))); clear Heqe.
-      unfold equality_of_int_t in e; exrepnd; simpl.
-      spcast.
-
-      pose proof (computes_to_valc_eq lib a (mkc_integer k) (mkc_integer k0)) as e.
-      repeat (autodimp e hyp); inversion e; subst; GC.
-      sp.
-
-  - introv.
-    apply t_iff_refl.
-Qed.
-
-Lemma computes_to_valc_implies_hasvaluec {o} :
-  forall lib (a b : @CTerm o), computes_to_valc lib a b -> hasvaluec lib a.
-Proof.
-  introv c.
-  unfold computes_to_valc in c.
-  unfold hasvaluec, hasvalue.
-  exists (get_cterm b); auto.
-Qed.
-
-Lemma types_converge {o} :
-  forall lib (t : @CTerm o), type lib t -> chaltsc lib t.
-Proof.
-  introv n.
-  unfold type, tequality, nuprl in n; exrepnd.
-  induction n0
-    as [ h | h | h | h | h
-         | h | h | h | h | h
-         | h | h | h | h | h
-         | h | h | h | h | h
-         | h | h | h | h | h
-         | h | h | h | h | h ];
-    allunfold_per; uncast; allapply @computes_to_valc_implies_hasvaluec;
-    try (complete (spcast; auto)).
-  inversion h as [i u].
-  rw @univi_exists_iff in u; exrepnd.
-  spcast.
-  apply computes_to_valc_implies_hasvaluec in u2; auto.
-Qed.
-
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
 *** End:
 *)

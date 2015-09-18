@@ -38,6 +38,7 @@ Require Export terms_image.
 Require Export arith_props.
 Require Export compare_cterm.
 Require Export terms_try.
+Require Export csubst_fresh.
 
 
 Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
@@ -1212,6 +1213,16 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
       let w1 := fresh "w1" in
       let c1 := fresh "c1" in
       generalize (lsubstc_mk_lam_ex x b s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [c1 name];
+        clear_irr; tac
+
+    (* Fresh *)
+    | context [lsubstc (mk_fresh ?x ?b) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let c1 := fresh "c1" in
+      generalize (lsubstc_mk_fresh_ex x b s w c);
         intro name;
         destruct name as [w1 name];
         destruct name as [c1 name];
