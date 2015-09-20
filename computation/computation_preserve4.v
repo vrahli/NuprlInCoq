@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -277,18 +278,23 @@ Proof.
 
             - apply compute_step_eapply2_success in comp1; repnd; subst; allsimpl.
               allrw app_nil_r.
-              repndors; exrepnd; subst; allsimpl; ginv;[].
+              repndors; exrepnd; subst; allsimpl; ginv;[|].
 
-              unfold mk_lam in comp3; ginv; allsimpl; autorewrite with slow in *.
-              fold_terms; unfold mk_eapply.
-              rw @compute_step_eapply_lam_iscan; eauto 3 with slow.
-              eexists; dands; eauto.
-              unfold apply_bterm; simpl; allrw @fold_subst.
-              allrw subvars_app_l; repnd.
+              { unfold mk_lam in comp3; ginv; allsimpl; autorewrite with slow in *.
+                fold_terms; unfold mk_eapply.
+                rw @compute_step_eapply_lam_iscan; eauto 3 with slow.
+                eexists; dands; eauto.
+                unfold apply_bterm; simpl; allrw @fold_subst.
+                allrw subvars_app_l; repnd.
 
-              pose proof (simple_lsubst_lsubst_aux_sub_aeq b [(v,arg2)] sub) as h.
-              repeat (autodimp h hyp).
-              rw @covered_sub_cons; dands; eauto 3 with slow.
+                pose proof (simple_lsubst_lsubst_aux_sub_aeq b [(v,arg2)] sub) as h.
+                repeat (autodimp h hyp).
+                rw @covered_sub_cons; dands; eauto 3 with slow. }
+
+              { allunfold @mk_nseq; allsimpl; ginv; GC; allsimpl; fold_terms.
+                csunf; simpl; dcwf h; simpl; boolvar; try omega.
+                rw @Znat.Nat2Z.id.
+                eexists; dands; eauto. }
 
             - fold_terms; unfold mk_eapply.
               rw @compute_step_eapply_iscan_isexc; simpl; eauto 3 with slow.
@@ -317,14 +323,14 @@ Proof.
                 apply eq_maps; introv i; destruct x0; unfold num_bvars; simpl; auto. }
           }
 
-          { SSSCase "NApseq".
+(*          { SSSCase "NApseq".
 
             clear ind; csunf comp; csunf; allsimpl.
             apply compute_step_apseq_success in comp; exrepnd; subst; allsimpl.
             boolvar; try omega.
             rw @Znat.Nat2Z.id.
             eexists; dands; eauto.
-          }
+          }*)
 
           { SSSCase "NFix".
 
@@ -2593,3 +2599,10 @@ Hint Resolve is_can_or_exc_sterm : slow.
 (* end hide *)
 
 (* begin hide *)
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)

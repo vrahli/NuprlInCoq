@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1623,9 +1624,16 @@ Qed.
 Lemma eapply_wf_def_lam {o} :
   forall v (b : @NTerm o), eapply_wf_def (mk_lam v b).
 Proof.
-  introv; right; eexists; eexists; eauto.
+  introv; right; right; eexists; eexists; eauto.
 Qed.
 Hint Resolve eapply_wf_def_lam : slow.
+
+Lemma eapply_wf_def_nseq {o} :
+  forall (s : nseq), @eapply_wf_def o (mk_nseq s).
+Proof.
+  introv; right; left; eexists; eexists; eauto.
+Qed.
+Hint Resolve eapply_wf_def_nseq : slow.
 
 Lemma compute_step_alpha_lib {p} :
   forall lib1 lib2 t1 t2,
@@ -1737,14 +1745,22 @@ Proof.
 
         { apply compute_step_eapply2_success in Hcomp1; repnd; subst.
           repndors; exrepnd; subst; ginv.
-          allunfold @mk_lam; ginv; fold_terms; unfold mk_eapply.
-          rw @compute_step_eapply_lam_iscan; auto.
-          eexists; dands; eauto. }
+          { allunfold @mk_lam; ginv; fold_terms; unfold mk_eapply.
+            rw @compute_step_eapply_lam_iscan; auto.
+            eexists; dands; eauto. }
+          { allunfold @mk_nseq; ginv; fold_terms.
+            csunf; simpl; dcwf h; simpl; boolvar; try omega.
+            rw Znat.Nat2Z.id.
+            eexists; dands; eauto. }
+        }
 
         { unfold eapply_wf_def in Hcomp2; repndors; exrepnd; ginv.
-          allunfold @mk_lam; ginv.
-          fold_terms; unfold mk_eapply.
-          rw @compute_step_eapply_iscan_isexc; simpl; eauto 3 with slow.  }
+          { allunfold @mk_nseq; ginv; allsimpl; fold_terms.
+            rw @compute_step_eapply_iscan_isexc; simpl; eauto 3 with slow. }
+          { allunfold @mk_lam; ginv.
+            fold_terms; unfold mk_eapply.
+            rw @compute_step_eapply_iscan_isexc; simpl; eauto 3 with slow.  }
+        }
 
         { pose proof (IHind arg2 arg2 []) as h; clear IHind.
           repeat (autodimp h hyp); eauto 3 with slow.
@@ -2735,3 +2751,10 @@ Proof.
   exists (change_bvars_alpha_lib lv lib).
   apply change_bvars_alpha_lib_spec.
 Qed.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)

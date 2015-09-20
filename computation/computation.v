@@ -186,7 +186,7 @@ Definition compute_step_can {o}
   match ncr with
     | NApply    => compute_step_apply   arg1c t arg1bts btsr
     | NEApply   => compute_step_eapply btsr t comp arg1 ncr
-    | NApseq f  => compute_step_apseq f arg1c t arg1bts btsr
+(*    | NApseq f  => compute_step_apseq f arg1c t arg1bts btsr*)
     | NFix      => compute_step_fix     t arg1 btsr
     | NSpread   => compute_step_spread  arg1c t arg1bts btsr
     | NDsup     => compute_step_dsup    arg1c t arg1bts btsr
@@ -263,7 +263,7 @@ Definition compute_step_seq {o}
   match ncr with
     | NApply    => compute_step_seq_apply t f bs
     | NEApply   => compute_step_eapply bs t cstep (mk_ntseq f) ncr
-    | NApseq _  => cfailure bad_args t
+(*    | NApseq _  => cfailure bad_args t*)
     | NFix      => compute_step_fix t (mk_ntseq f) bs
     | NSpread   => cfailure bad_args t
     | NDsup     => cfailure bad_args t

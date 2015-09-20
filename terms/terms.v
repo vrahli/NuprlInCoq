@@ -610,7 +610,9 @@ Definition mk_apply {p} (f a : @NTerm p) := oterm (NCan NApply) [nobnd f , nobnd
 
 Definition mk_eapply {p} (f a : @NTerm p) := oterm (NCan NEApply) [nobnd f , nobnd a].
 
+(*
 Definition mk_apseq {p} (f : nseq) (a : @NTerm p) := oterm (NCan (NApseq f)) [nobnd a].
+ *)
 
 Definition mk_token {p} s : @NTerm p := oterm (Can (NTok s)) [].
 
@@ -1849,3 +1851,10 @@ Proof. sp. Qed.
 Hint Resolve isvalue_like_exc : slow.
 
 (* end hide *)
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/")
+*** End:
+*)

@@ -67,7 +67,7 @@ Lemma compute_step_apply_can_success {o} :
     = csuccess u -> {v : NVar $ {b : NTerm $ c = NLambda
                                 # l =  [bterm [v] b] 
                                 # u = (apply_bterm (bterm [v] b) [a])}}
-                   [+] {n: nseq $ c = Nseq n #  l = [] # u = mk_apseq n a}.
+                   [+] {n: nseq $ c = Nseq n #  l = [] # u = mk_eapply (mk_nseq n) a}.
 Proof. introv cs. csunf cs; allsimpl.  allsimpl. 
       destruct c; inversion cs.
       - destruct l; inversion cs; destruct b; allsimpl; destruct l0; allsimpl; inversion cs.
@@ -319,3 +319,9 @@ Proof.
   constructor; simpl; eauto 3 with slow.
 Qed.
 
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)

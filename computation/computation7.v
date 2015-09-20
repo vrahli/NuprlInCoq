@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -129,3 +130,9 @@ Definition reduces_in_atmost_k_steps_exc {o} lib (t u : @NTerm o) k :=
 
 Definition reduces_in_atmost_k_steps_excc {o} lib (t u : @CTerm o) k :=
   reduces_in_atmost_k_steps_exc lib (get_cterm t) (get_cterm u) k.
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)

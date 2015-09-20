@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1829,17 +1830,24 @@ Proof.
 
             - apply compute_step_eapply2_success in comp1.
               repnd; subst; allsimpl; autorewrite with slow in *.
-              repndors; exrepnd; subst; ginv;[].
-              allunfold @mk_lam; ginv; simpl; fold_terms; unfold mk_eapply.
-              rw @compute_step_eapply_lam_iscan; eauto 3 with slow.
-              unfold apply_bterm; simpl; allrw @fold_subst.
-              rw @subst_ren_utokens; auto.
+              repndors; exrepnd; subst; ginv;[|].
+
+              { allunfold @mk_lam; ginv; simpl; fold_terms; unfold mk_eapply.
+                rw @compute_step_eapply_lam_iscan; eauto 3 with slow.
+                unfold apply_bterm; simpl; allrw @fold_subst.
+                rw @subst_ren_utokens; auto. }
+
+              { allunfold @mk_nseq; ginv; allsimpl; fold_terms; GC.
+                csunf; simpl; dcwf h; simpl; boolvar; try omega.
+                rw Znat.Nat2Z.id; auto. }
 
             - apply isexc_implies2 in comp0; exrepnd; subst; allsimpl.
               csunf; simpl.
-              unfold eapply_wf_def in comp2; repndors; exrepnd; subst;
-              allunfold @mk_lam; ginv; allsimpl; autorewrite with slow in *.
-              dcwf h; auto.
+              unfold eapply_wf_def in comp2; repndors; exrepnd; ginv; subst.
+              { allunfold @mk_nseq; ginv; allsimpl.
+                autorewrite with slow in *; dcwf h; auto. }
+              { allunfold @mk_lam; ginv; allsimpl; autorewrite with slow in *;
+                dcwf h; auto. }
 
             - allrw @nt_wf_eapply_iff; exrepnd; allunfold @nobnd; ginv; allsimpl.
               autorewrite with slow in *.
@@ -1852,20 +1860,24 @@ Proof.
               pose proof (h x ren) as ih; clear h.
               repeat (autodimp ih hyp).
               fold_terms; unfold mk_eapply;[].
-              unfold eapply_wf_def in comp2; repndors; exrepnd; subst;
-              allunfold @mk_lam; ginv; allsimpl; autorewrite with slow in *.
-              rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow.
-              { rw ih; auto. }
-              { apply eapply_wf_true; simpl; auto. }
+              unfold eapply_wf_def in comp2; repndors; exrepnd; subst; ginv.
+              { allunfold @mk_nseq; ginv; allsimpl; autorewrite with slow in *.
+                rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow.
+                { rw ih; auto. }
+                { apply eapply_wf_true; simpl; auto. } }
+              { allunfold @mk_lam; ginv; allsimpl; autorewrite with slow in *.
+                rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow.
+                { rw ih; auto. }
+                { apply eapply_wf_true; simpl; auto. } }
           }
 
-          { SSSCase "NApseq".
+(*          { SSSCase "NApseq".
 
             clear ind; csunf comp; csunf; simpl in comp.
             apply compute_step_apseq_success in comp; exrepnd; subst; allsimpl.
             rw @Znat.Nat2Z.id.
             boolvar; try omega; auto.
-          }
+          }*)
 
           { SSSCase "NFix".
 
@@ -4968,3 +4980,9 @@ Proof.
   allunfold @computes_to_marker; repnd; dands; eauto 2 with slow.
   apply (reduces_to_ren_utokens _ _ _ ren) in r0; auto.
 Qed.
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)

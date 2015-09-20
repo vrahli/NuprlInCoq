@@ -42,7 +42,7 @@ Lemma hasvalue_like_apply {o} :
          # hasvalue_like lib (subst b v u)}}
         [+] {s : nseq
              & reduces_to lib t (mk_nseq s)
-             # hasvalue_like lib (mk_apseq s u) }
+             # hasvalue_like lib (mk_eapply (mk_nseq s) u) }
         [+] {s : ntseq
              & reduces_to lib t (mk_ntseq s)
              # hasvalue_like lib (mk_eapply (sterm s) u) }
@@ -146,7 +146,7 @@ Qed.
 Lemma hasvalue_like_apseq {o} :
   forall lib s (t : @NTerm o),
     wf_term t
-    -> hasvalue_like lib (mk_apseq s t)
+    -> hasvalue_like lib (mk_eapply (mk_nseq s) t)
     -> {n : nat & computes_to_value lib t (mk_nat n) }
        [+] raises_exception lib t.
 Proof.
@@ -165,15 +165,24 @@ Proof.
 
     + Case "Can".
       clear IHk.
-      apply compute_step_apseq_success in comp1; repndors; exrepnd; subst; fold_terms; ginv.
-      apply computation3.reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow.
-      subst.
-      left; exists n.
-      eauto 3 with slow.
+      apply compute_step_eapply_success in comp1; exrepnd.
+      destruct l; try (complete (allsimpl; ginv)); ginv.
+      repndors; exrepnd; subst.
+
+      * apply compute_step_eapply2_success in comp1; repnd; GC.
+        repndors; exrepnd; subst; ginv.
+        allunfold @mk_nat; allunfold @mk_integer; ginv; fold_terms.
+        left; exists n; fold_terms.
+        apply computes_to_value_isvalue_refl; eauto 3 with slow.
+
+      * allsimpl; tcsp.
+
+      * allunfold @isnoncan_like; allsimpl; tcsp.
 
     + remember (compute_step lib (oterm (NCan ncan) bs)) as cs.
       symmetry in Heqcs; destruct cs; allsimpl; ginv; fold_terms.
       applydup @compute_step_preserves_wf in Heqcs; auto.
+      dcwf xx; allsimpl; ginv; fold_terms.
       apply IHk in comp0; auto; repndors; exrepnd.
 
       * left.
@@ -186,14 +195,16 @@ Proof.
         exists a e.
         eapply reduces_to_if_split2; eauto.
 
-    + apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow; subst.
+    + dcwf h; allsimpl; ginv.
+      apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow; subst.
       right.
       unfold raises_exception.
       allapply @wf_exception_implies; exrepnd; subst; fold_terms.
       exists a t.
       eapply reduces_to_symm.
 
-    + remember (compute_step lib (oterm (Abs abs) bs)) as cs.
+    + dcwf h; allsimpl; ginv.
+      remember (compute_step lib (oterm (Abs abs) bs)) as cs.
       symmetry in Heqcs; destruct cs; allsimpl; ginv; fold_terms.
       applydup @compute_step_preserves_wf in Heqcs; auto.
       apply IHk in comp0; auto; repndors; exrepnd.
@@ -414,7 +425,7 @@ Proof.
     apply subset_bound_vars_lsubst_aux in i; allsimpl; allrw app_nil_r.
     allrw in_app_iff; sp.
 
-  - pose proof (reduces_to_fresh2 lib (mk_apply t u) (mk_apseq s u) v a) as q.
+  - pose proof (reduces_to_fresh2 lib (mk_apply t u) (mk_eapply (mk_nseq s) u) v a) as q.
     repeat (autodimp q hyp); simpl;
     try (apply wf_apply); eauto 3 with slow;
     allrw app_nil_r; allrw in_app_iff; tcsp.
@@ -477,7 +488,7 @@ Proof.
 
     eapply cequiv_le_approx.
     apply cequiv_shadowed_fresh.
-    apply isprogram_apseq; eauto 3 with slow.
+    apply isprogram_eapply; eauto 3 with slow.
 
   - pose proof (reduces_to_fresh2 lib (mk_apply t u) (mk_eapply (sterm s) u) v a) as q.
     repeat (autodimp q hyp); simpl;
@@ -869,7 +880,7 @@ Proof.
     apply alpha_eq_mk_nseq in unf1; subst.
     clear unf0.
 
-    pose proof (reduces_to_fresh2 lib (mk_apply t u) (mk_apseq s u) v a) as q.
+    pose proof (reduces_to_fresh2 lib (mk_apply t u) (mk_eapply (mk_nseq s) u) v a) as q.
     repeat (autodimp q hyp); simpl;
     try (apply wf_apply); eauto 3 with slow;
     allrw app_nil_r; allrw in_app_iff; tcsp.
@@ -902,7 +913,7 @@ Proof.
     eapply cequiv_le_approx.
     apply cequiv_sym.
     apply cequiv_shadowed_fresh.
-    apply isprogram_apseq; eauto 3 with slow.
+    apply isprogram_eapply; eauto 3 with slow.
 
   - eapply approx_trans;
       [apply reduces_to_implies_approx2;
@@ -1159,6 +1170,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)

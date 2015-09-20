@@ -4267,6 +4267,28 @@ Proof.
   left; eexists; eexists; dands; eauto.
 Qed.
 
+Lemma differ_try_nseq_implies {o} :
+  forall a f g c s (t1 t2 : @NTerm o),
+    differ_try a f g c (mk_nseq s) t1 t2
+    -> (t1 = mk_nseq s
+        # t2 = mk_nseq s)
+       [+] (spfexc_pair a t1 t2).
+Proof.
+  introv d.
+  inversion d as [|?|?|?|? ? ? ? ? ? ? imp]; subst; allsimpl; cpx; clear d; allsimpl; GC.
+Qed.
+
+Lemma differ_try_nat_implies {o} :
+  forall a f g c n (t1 t2 : @NTerm o),
+    differ_try a f g c (mk_nat n) t1 t2
+    -> (t1 = mk_nat n
+        # t2 = mk_nat n)
+       [+] (spfexc_pair a t1 t2).
+Proof.
+  introv d.
+  inversion d as [|?|?|?|? ? ? ? ? ? ? imp]; subst; allsimpl; cpx; clear d; allsimpl; GC.
+Qed.
+
 Lemma differ_try_alpha_mk_lam {o} :
   forall a f g c v (t1 t2 t3 : @NTerm o),
     differ_try_alpha a f g c t1 t2 t3
@@ -4777,13 +4799,13 @@ Proof.
               clear imp1.
               fold_terms.
 
-              exists (mk_apseq f0 b1) (mk_apseq f0 b0) (mk_apseq f0 b).
+              exists (mk_eapply (mk_nseq f0) b1) (mk_eapply (mk_nseq f0) b0) (mk_eapply (mk_nseq f0) b).
               dands; eauto 3 with slow.
 
               apply differ_try_implies_differ_try_alpha.
               apply differ_try_oterm; simpl; tcsp.
-              introv j; repndors; cpx; tcsp.
-              constructor; auto.
+              introv j; repndors; cpx; tcsp; constructor; auto.
+              apply differ_try_refl; simpl; tcsp.
             }
 
           - SSSCase "NEApply".
@@ -4803,65 +4825,123 @@ Proof.
             inversion d2 as [? ? ? ? d4]; subst; clear d2.
             fold_terms.
             allrw <- @wf_eapply_iff; repnd.
-            apply eapply_wf_def_oterm_implies in comp2; exrepnd; ginv; fold_terms.
-            apply differ_try_lam_implies in d3; dorn d3;[|]; exrepnd; subst; fold_terms.
+            apply eapply_wf_def_oterm_implies in comp2.
 
-            { repndors; exrepnd; subst.
+            destruct comp2; exrepnd; ginv; fold_terms;[|].
 
-              + apply compute_step_eapply2_success in comp1; repnd; GC.
-                repndors; exrepnd; subst; ginv; allsimpl; GC.
-                allunfold @apply_bterm; allsimpl; allrw @fold_subst.
+            { apply differ_try_lam_implies in d3; dorn d3;[|]; exrepnd; subst; fold_terms.
 
-                applydup @differ_try_preserves_iscan in d4; auto.
-                repndors;repnd; [|].
+              { repndors; exrepnd; subst.
 
-                { exists (subst b1 v0 t0)
-                         (subst b2 v0 t4)
-                         (subst b0 v0 b).
+                + apply compute_step_eapply2_success in comp1; repnd; GC.
+                  repndors; exrepnd; subst; ginv; allsimpl; GC.
+                  allunfold @apply_bterm; allsimpl; allrw @fold_subst.
+
+                  applydup @differ_try_preserves_iscan in d4; auto.
+                  repndors;repnd; [|].
+
+                  { exists (subst b1 v0 t0)
+                           (subst b2 v0 t4)
+                           (subst b0 v0 b).
+                    dands; eauto 3 with slow.
+                    { apply eapply_lam_can_implies.
+                      unfold computes_to_can; dands; eauto 3 with slow. }
+                    { apply eapply_lam_can_implies.
+                      unfold computes_to_can; dands; eauto 3 with slow. }
+                  }
+
+                  { ex_spfexc. }
+
+                + apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl; eauto 3 with slow;[].
+                  apply differ_try_exception in d4; repndors; exrepnd; subst;[|].
+
+                  { exists (mk_exception n1 e1)
+                           (mk_exception n2 e2)
+                           (mk_exception a0 e).
+                    dands; eauto 3 with slow.
+                    apply implies_differ_try_alpha_exception; eauto 3 with slow.
+                  }
+
+                  { ex_spfexc. }
+
+                + pose proof (ind b b []) as h; clear ind.
+                  repeat (autodimp h hyp); eauto 3 with slow.
+                  pose proof (h t0 t4 x k) as ih; clear h.
+                  applydup @preserve_nt_wf_compute_step in comp1; auto.
+                  repeat (autodimp ih hyp); eauto 3 with slow.
+                  { apply has_value_like_k_eapply_lam_implies in hv; exrepnd; eauto 3 with slow;[].
+                    eapply has_value_like_k_lt; eauto. }
+                  exrepnd.
+
+                  exists (mk_eapply (mk_lam v b1) t2')
+                         (mk_eapply (mk_lam v b2) t3')
+                         (mk_eapply (mk_lam v t) u').
                   dands; eauto 3 with slow.
-                  { apply eapply_lam_can_implies.
-                    unfold computes_to_can; dands; eauto 3 with slow. }
-                  { apply eapply_lam_can_implies.
-                    unfold computes_to_can; dands; eauto 3 with slow. }
-                }
+                  { apply implies_eapply_red_aux; eauto 3 with slow. }
+                  { apply implies_eapply_red_aux; eauto 3 with slow. }
+                  { apply implies_eapply_red_aux; eauto 3 with slow. }
+                  { apply differ_try_alpha_mk_eapply; eauto 3 with slow.
+                    apply differ_try_alpha_mk_lam; eauto 3 with slow. }
+              }
 
-                { ex_spfexc. }
-
-              + apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl; eauto 3 with slow;[].
-                apply differ_try_exception in d4; repndors; exrepnd; subst;[|].
-
-                { exists (mk_exception n1 e1)
-                         (mk_exception n2 e2)
-                         (mk_exception a0 e).
-                  dands; eauto 3 with slow.
-                  apply implies_differ_try_alpha_exception; eauto 3 with slow.
-                }
-
-                { ex_spfexc. }
-
-              + pose proof (ind b b []) as h; clear ind.
-                repeat (autodimp h hyp); eauto 3 with slow.
-                pose proof (h t0 t4 x k) as ih; clear h.
-                applydup @preserve_nt_wf_compute_step in comp1; auto.
-                repeat (autodimp ih hyp); eauto 3 with slow.
-                { apply has_value_like_k_eapply_lam_implies in hv; exrepnd; eauto 3 with slow;[].
-                  eapply has_value_like_k_lt; eauto. }
-                exrepnd.
-
-                exists (mk_eapply (mk_lam v b1) t2')
-                       (mk_eapply (mk_lam v b2) t3')
-                       (mk_eapply (mk_lam v t) u').
-                dands; eauto 3 with slow.
-                { apply implies_eapply_red_aux; eauto 3 with slow. }
-                { apply implies_eapply_red_aux; eauto 3 with slow. }
-                { apply implies_eapply_red_aux; eauto 3 with slow. }
-                { apply differ_try_alpha_mk_eapply; eauto 3 with slow.
-                  apply differ_try_alpha_mk_lam; eauto 3 with slow. }
+              { ex_spfexc. }
             }
 
-            { ex_spfexc. }
+            { apply differ_try_nseq_implies in d3; dorn d3;[|]; exrepnd; subst; fold_terms.
 
-          - SSSCase "NApseq".
+              { repndors; exrepnd; subst.
+
+                + apply compute_step_eapply2_success in comp1; repnd; GC.
+                  repndors; exrepnd; subst; ginv; allsimpl; GC.
+                  allapply @differ_try_nat_implies; repndors; repnd; subst; [|].
+
+                  { exists (@mk_nat o (f0 n))
+                           (@mk_nat o (f0 n))
+                           (@mk_nat o (f0 n)).
+                    dands; eauto 3 with slow;
+                    try (complete (apply reduces_to_if_step; csunf; simpl; dcwf h;
+                                   simpl; boolvar; try omega;
+                                   rw @Znat.Nat2Z.id; auto)).
+                    eapply differ_try_alpha_refl; simpl; eauto 3 with slow; tcsp.
+                  }
+
+                  { ex_spfexc. }
+
+                + apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl; eauto 3 with slow;[].
+                  apply differ_try_exception in d4; repndors; exrepnd; subst;[|].
+
+                  { exists (mk_exception n1 e1)
+                           (mk_exception n2 e2)
+                           (mk_exception a0 e).
+                    dands; eauto 3 with slow.
+                    apply implies_differ_try_alpha_exception; eauto 3 with slow.
+                  }
+
+                  { ex_spfexc. }
+
+                + pose proof (ind b b []) as h; clear ind.
+                  repeat (autodimp h hyp); eauto 3 with slow.
+                  pose proof (h t0 t4 x k) as ih; clear h.
+                  applydup @preserve_nt_wf_compute_step in comp1; auto.
+                  repeat (autodimp ih hyp); eauto 3 with slow.
+                  { apply has_value_like_k_eapply_nseq_implies in hv; exrepnd; eauto 3 with slow;[].
+                    eapply has_value_like_k_lt; eauto. }
+                  exrepnd.
+
+                  exists (mk_eapply (mk_nseq s0) t2')
+                         (mk_eapply (mk_nseq s0) t3')
+                         (mk_eapply (mk_nseq s0) u').
+                  dands; eauto 3 with slow.
+                  { apply implies_eapply_red_aux; eauto 3 with slow. }
+                  { apply implies_eapply_red_aux; eauto 3 with slow. }
+                  { apply implies_eapply_red_aux; eauto 3 with slow. }
+                  { apply differ_try_alpha_mk_eapply; eauto 3 with slow. }
+              }
+
+              { ex_spfexc. }
+            }
+
+(*          - SSSCase "NApseq".
             clear ind indhyp.
             csunf comp; allsimpl.
             apply compute_step_apseq_success in comp; repndors; exrepnd; subst; allsimpl; fold_terms.
@@ -4899,7 +4979,7 @@ Proof.
               boolvar; try omega; auto. }
 
             { apply differ_try_implies_differ_try_alpha.
-              apply differ_try_oterm; simpl; tcsp. }
+              apply differ_try_oterm; simpl; tcsp. } *)
 
           - SSSCase "NFix".
             csunf comp; allsimpl.
@@ -6915,6 +6995,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)

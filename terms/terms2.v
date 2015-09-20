@@ -470,9 +470,11 @@ Lemma fold_eapply {p} :
   forall (a b : @NTerm p), oterm (NCan NEApply) [ nobnd a, nobnd b ] = mk_eapply a b.
 Proof. sp. Qed.
 
+(*
 Lemma fold_apseq {p} :
   forall f (a : @NTerm p), oterm (NCan (NApseq f)) [ nobnd a ] = mk_apseq f a.
 Proof. sp. Qed.
+*)
 
 Lemma fold_decide {p} :
   forall (d : @NTerm p) x f y g,
@@ -2808,6 +2810,7 @@ Proof.
 Qed.
 
 
+(*
 Lemma wf_apseq {p} :
   forall f (a : @NTerm p), wf_term a -> wf_term (mk_apseq f a).
 Proof.
@@ -2853,7 +2856,7 @@ Proof.
   sp; allrw @isprog_eq.
   apply isprogram_apseq; auto.
 Qed.
-
+*)
 
 (**useful for rewriting in complicated formulae*)
 Theorem bt_wf_iff {p} :
@@ -6555,6 +6558,7 @@ Proof.
   irr; sp.
 Qed.
 
+(*
 Definition mkc_apseq {p} f (t : @CTerm p) : CTerm :=
   let (a,x) := t in
     exist isprog (mk_apseq f a) (isprog_apseq f a x).
@@ -6567,6 +6571,7 @@ Proof.
   inversion e; subst.
   irr; sp.
 Qed.
+ *)
 
 (*Definition mkw_apply2 (t0 t1 t2 : WTerm) : WTerm :=
   let (f,z) := t0 in
@@ -8995,6 +9000,7 @@ Proof.
 Qed.
 
 
+(*
 Lemma wf_apseq_iff {p} :
   forall f (a : @NTerm p), wf_term a <=> wf_term (mk_apseq f a).
 Proof.
@@ -9018,6 +9024,7 @@ Proof.
   allrw <- @wf_term_eq.
   allrw <- @wf_apseq_iff; split; sp.
 Qed.
+ *)
 
 Lemma wf_parallel_iff {p} :
   forall (a b : @NTerm p),
@@ -9934,7 +9941,7 @@ Qed.
 Ltac unfold_all_mk :=
        allunfold mk_apply
        ;allunfold mk_eapply
-       ;allunfold mk_apseq
+(*       ;allunfold mk_apseq*)
        ;allunfold mk_parallel
        ;allunfold mk_bottom
        ;allunfold mk_fix
@@ -11521,6 +11528,7 @@ Proof.
   exists n n0; sp.
 Qed.
 
+(*
 Lemma isprogram_apseq_implies {p} :
   forall f (bterms : list (@BTerm p)),
     isprogram (oterm (NCan (NApseq f)) bterms)
@@ -11540,6 +11548,7 @@ Proof.
   apply isprogram_bt_nobnd in isp1.
   exists n; sp.
 Qed.
+ *)
 
 Lemma isprogram_parallel_implies {p} :
   forall bterms : list (@BTerm p),

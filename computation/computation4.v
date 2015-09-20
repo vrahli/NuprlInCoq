@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -2578,3 +2579,10 @@ Proof.
   apply isprogram_implies_wf; apply isprogram_eq; auto.
 Qed.
 Hint Resolve isprog_implies_wf : slow.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)

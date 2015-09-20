@@ -1031,10 +1031,11 @@ Proof.
     apply reduces_to_split2 in hv2; repndors; subst.
     + unfold isvalue_like in hv0; allsimpl; tcsp.
     + exrepnd.
-      csunf hv2; allsimpl.
+      csunf hv2; allsimpl; dcwf xx; allsimpl.
       apply iscan_implies in isv0; repndors; exrepnd; subst; ginv.
-      apply compute_step_apseq_success in hv2; exrepnd; subst; GC.
-      unfold isinteger; exists (Z.of_nat n); auto.
+      destruct c; allsimpl; ginv.
+      destruct bterms; allsimpl; ginv.
+      boolvar; ginv; fold_terms; eauto 3 with slow.
 Qed.
 
 Lemma hasvalue_likec_apply_ntseq_implies_integer {o} :

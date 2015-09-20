@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -811,7 +812,7 @@ Lemma if_hasvalue_apply {pp} :
         # hasvalue lib (subst b v a)}}
        [+] {s : nseq
             & computes_to_value lib f (mk_nseq s)
-            # hasvalue lib (mk_apseq s a)}
+            # hasvalue lib (mk_eapply (mk_nseq s) a)}
        [+] {s : ntseq
             & computes_to_value lib f (mk_ntseq s)
             # hasvalue lib (mk_eapply (mk_ntseq s) a)}.
@@ -934,7 +935,7 @@ Lemma if_computes_to_value_apply {o} :
         # computes_to_value lib (subst b v a) x}}
        [+] {s : nseq
             & computes_to_value lib f (mk_nseq s)
-            # computes_to_value lib (mk_apseq s a) x}
+            # computes_to_value lib (mk_eapply (mk_nseq s) a) x}
        [+] {s : ntseq
             & computes_to_value lib f (mk_ntseq s)
             # computes_to_value lib (mk_eapply (mk_ntseq s) a) x}.
@@ -1705,7 +1706,7 @@ Lemma apply_compute_step_prinargcan {p} :
               & arg1c = Nseq s
               # arg1lbt = []
               # lbt = [bterm [] arg]
-              # tc = mk_apseq s arg }}.
+              # tc = mk_eapply (mk_nseq s) arg }}.
 Proof.
   introv Hcomp.
   simpl in Hcomp.
@@ -2526,11 +2527,18 @@ Proof.
     csunf; simpl.
     remember (compute_step lib (oterm (NCan c) bterms)) as comp;
       destruct comp; simpl; auto.
+  - apply isnoncan_implies in isn; exrepnd; subst.
+    csunf; simpl.
+    remember (compute_step lib (oterm (NCan c) bterms)) as comp;
+      destruct comp; simpl; auto.
   - apply isabs_implies in isn; exrepnd; subst.
     csunf; simpl.
     remember (compute_step lib (oterm (Abs abs) bterms)) as comp;
       destruct comp; simpl; auto;
       try (complete (unfold compute_step_eapply; dcwf h)).
+  - apply isabs_implies in isn; exrepnd; subst.
+    csunf; simpl.
+    remember (compute_step lib (oterm (Abs abs) bterms)) as comp; destruct comp; simpl; auto.
   - apply isabs_implies in isn; exrepnd; subst.
     csunf; simpl.
     remember (compute_step lib (oterm (Abs abs) bterms)) as comp; destruct comp; simpl; auto.
@@ -3248,7 +3256,16 @@ Proof.
               repndors; exrepnd; subst; allsimpl; fold_terms.
 
               + apply compute_step_eapply2_success in Hcomp1; exrepnd; subst; allsimpl; cpx.
-                repndors; exrepnd; subst; allsimpl; ginv.
+                repndors; exrepnd; subst; allsimpl; ginv;
+                [|allunfold @mk_nseq; ginv; allsimpl; cpx; GC; fold_terms;
+                  pose proof (Hal 1) as q; autodimp q hyp;
+                  unfold selectbt in q; allsimpl;
+                  allapply @alpha_eq_bterm_nobnd; exrepnd; subst;
+                  allapply @alpha_eq_mk_nat; subst;
+                  csunf; allsimpl; dcwf h; allsimpl; boolvar; try omega;
+                  allrw Znat.Nat2Z.id;
+                  eexists; dands; eauto].
+
                 allunfold @mk_lam; ginv; allsimpl; cpx; fold_terms.
                 pose proof (H1alarg0 0) as aeq; autodimp aeq hyp.
                 unfold selectbt in aeq; allsimpl.
@@ -3292,6 +3309,7 @@ Proof.
                 apply alpha_eq_oterm_combine; simpl; dands; auto.
                 introv i; repndors; subst; ginv; auto; try (apply alphaeqbt_nilv2; auto); tcsp.
 
+                (*
             - SSSSSCase "NApseq".
 
               clear IHind.
@@ -3301,7 +3319,7 @@ Proof.
               allunfold @selectbt; allsimpl; fold_terms.
               csunf; simpl; boolvar; try omega.
               rw @Znat.Nat2Z.id.
-              eexists; dands; eauto.
+              eexists; dands; eauto.*)
 
             - SSSSSCase "NFix".
 
@@ -6664,3 +6682,10 @@ Proof.
   pose proof (w (bterm vs t)) as w1; autodimp w1 hyp.
   allrw @bt_wf_iff; auto.
 Qed.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)

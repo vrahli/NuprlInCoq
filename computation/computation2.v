@@ -1212,7 +1212,7 @@ Lemma compute_step_apply_success {p} :
            & arg1c = Nseq f
            # arg1bts = []
            # bstr = [bterm [] arg]
-           # u = mk_apseq f arg}}.
+           # u = mk_eapply (mk_nseq f) arg}}.
 Proof.
   introv e; allsimpl; destruct arg1c; destruct arg1bts; allsimpl; inversion e;
   thin_trivials.
@@ -1233,6 +1233,7 @@ Proof.
     exists n n0; sp.
 Qed.
 
+(*
 Lemma compute_step_apseq_success {o} :
   forall f arg1c (t : @NTerm o) arg1bts bstr u,
     compute_step_apseq f arg1c t arg1bts bstr = csuccess u
@@ -1249,6 +1250,7 @@ Proof.
   eexists; dands; eauto.
   rw Znat.Z2Nat.id; auto.
 Qed.
+ *)
 
 Lemma compute_step_fix_success {p} :
   forall t arg1 bstr u,
@@ -9461,13 +9463,15 @@ Proof.
   destruct t as [v|f|op bs]; allsimpl; tcsp; ginv.
   - left; eexists; eauto.
   - destruct op; allsimpl; tcsp; ginv;[].
-    destruct c; allsimpl; tcsp; ginv;[].
-    destruct bs as [|b bs]; allsimpl; tcsp.
-    destruct b as [l t]; allsimpl.
-    destruct l as [|v l]; allsimpl; tcsp.
-    destruct l as [|? l]; allsimpl; tcsp.
-    destruct bs as [|? bs]; allsimpl; tcsp; ginv.
-    right; eexists; eexists; unfold mk_lam; dands; eauto.
+    destruct c; allsimpl; tcsp; ginv;[|].
+    { destruct bs as [|b bs]; allsimpl; tcsp.
+      destruct b as [l t]; allsimpl.
+      destruct l as [|v l]; allsimpl; tcsp.
+      destruct l as [|? l]; allsimpl; tcsp.
+      destruct bs as [|? bs]; allsimpl; tcsp; ginv.
+      right; right; eexists; eexists; unfold mk_lam; dands; eauto. }
+    { destruct bs; allsimpl; ginv; fold_terms.
+      right; left; eexists; eauto. }
 Qed.
 
 Lemma co_wf_false_implies_not {o} :
@@ -9558,16 +9562,19 @@ Lemma eapply_wf_def_len_implies {o} :
 Proof.
   introv len w.
   allunfold @eapply_wf_def.
-  exrepnd; repndors; exrepnd; subst; allsimpl; cpx; ginv.
-  allunfold @mk_lam; ginv.
-  allsimpl; cpx.
-  destruct bs2 as [|b1 bs2]; allsimpl; ginv.
-  destruct bs2 as [|? bs2]; allsimpl; ginv.
-  destruct b1 as [l t]; allsimpl; ginv.
-  destruct l as [|x l]; allsimpl; ginv.
-  destruct l as [|? l]; allsimpl; ginv.
-  allunfold @num_bvars; allsimpl; GC.
-  right; eexists; eexists; dands; eauto.
+  exrepnd; repndors; exrepnd; subst; allsimpl; cpx; ginv;[|].
+  { allunfold @mk_nseq; ginv; allsimpl.
+    destruct bs2; allsimpl; ginv; fold_terms.
+    right; left; exists f; auto. }
+  { allunfold @mk_lam; ginv.
+    allsimpl; cpx.
+    destruct bs2 as [|b1 bs2]; allsimpl; ginv;[].
+    destruct bs2 as [|? bs2]; allsimpl; ginv.
+    destruct b1 as [l t]; allsimpl; ginv.
+    destruct l as [|x l]; allsimpl; ginv.
+    destruct l as [|? l]; allsimpl; ginv.
+    allunfold @num_bvars; allsimpl; GC.
+    right; right; eexists; eexists; dands; eauto. }
 Qed.
 Hint Resolve eapply_wf_def_len_implies : slow.
 
@@ -9717,6 +9724,12 @@ Lemma compute_step_eapply2_success {o} :
             & arg1 = mk_lam v b
             # u = apply_bterm (bterm [v] b) [arg2] }}
            [+]
+           {f : nseq
+            & {n : nat
+            & arg1 = mk_nseq f
+            # arg2 = mk_nat n
+            # u = mk_nat (f n) }}
+           [+]
            {f : ntseq
             & {n : nat
             & arg1 = mk_ntseq f
@@ -9732,19 +9745,30 @@ Proof.
     destruct can2; allsimpl; ginv.
     destruct bs2; allsimpl; ginv.
     boolvar; ginv.
-    right.
+    right; right.
     eexists; eexists; dands; eauto.
     unfold mk_nat.
     rw Znat.Z2Nat.id; auto.
   - destruct op1 as [can1|ncan1|exc1|abs1]; allsimpl; ginv;[].
-    destruct can1; allsimpl; ginv;[].
-    destruct bs1 as [|b bs1]; allsimpl; ginv;[].
-    destruct b as [vs b].
-    destruct vs as [|v vs]; ginv.
-    destruct vs; ginv.
-    destruct bs1; ginv.
-    left; fold_terms.
-    eexists; eexists; dands; eauto.
+    destruct can1; allsimpl; ginv;[|].
+    { destruct bs1 as [|b bs1]; allsimpl; ginv;[].
+      destruct b as [vs b].
+      destruct vs as [|v vs]; ginv.
+      destruct vs; ginv.
+      destruct bs1; ginv.
+      left; fold_terms.
+      eexists; eexists; dands; eauto. }
+    { destruct bs1 as [|b bs1]; allsimpl; ginv;[].
+      destruct arg2 as [v|f|op bs]; allsimpl; ginv;[].
+      dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv;[].
+      destruct can; allsimpl; ginv;[].
+      destruct bs; allsimpl; ginv.
+      boolvar; ginv.
+      right; left.
+      fold_terms.
+      exists n (Z.to_nat z); dands; auto.
+      unfold mk_nat.
+      rw Znat.Z2Nat.id; auto. }
 Qed.
 
 Definition get_cutokens_sub {o} (sub : @Sub o) :=
@@ -10476,3 +10500,9 @@ Qed.
 Hint Resolve osubset_oappl_nil_left : slow.
 
 (* end hide *)
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)

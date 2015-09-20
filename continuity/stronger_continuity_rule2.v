@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -748,12 +749,13 @@ Proof.
                 fold_terms.
                 clear imp1.
 
-                exists (mk_apseq f0 arg) (mk_apseq f0 t0); dands; eauto 3 with slow.
+                exists (mk_eapply (mk_nseq f0) arg) (mk_eapply (mk_nseq f0) t0); dands; eauto 3 with slow.
 
                 left.
                 apply differ_force_implies_differ_force_alpha.
                 apply differ_force_oterm; simpl; tcsp.
                 introv j; repndors; tcsp; ginv; constructor; auto.
+                apply differ_force_refl; simpl; tcsp.
               }
 
             * SSSCase "NEApply".
@@ -773,65 +775,124 @@ Proof.
               fold_terms.
               allrw <- @wf_eapply_iff; repnd.
               apply eapply_wf_def_oterm_implies in comp2; exrepnd; ginv; fold_terms.
-              apply differ_force_lam_implies in d3; exrepnd; subst; fold_terms.
 
-              { repndors; exrepnd; subst.
+              destruct comp2 as [comp2|comp2]; exrepnd; subst; ginv; fold_terms.
 
-                + apply compute_step_eapply2_success in comp1; repnd; GC.
-                  repndors; exrepnd; subst; ginv; allsimpl; GC.
-                  allunfold @apply_bterm; allsimpl; allrw @fold_subst.
+              { apply differ_force_lam_implies in d3; exrepnd; subst; fold_terms.
 
-                  applydup @differ_force_preserves_iscan in d4; auto.
-                  autorewrite with slow in *.
+                { repndors; exrepnd; subst.
 
-                  { exists (subst b1 v0 b0)
-                           (subst u1 v0 t0).
+                  + apply compute_step_eapply2_success in comp1; repnd; GC.
+                    repndors; exrepnd; subst; ginv; allsimpl; GC.
+                    allunfold @apply_bterm; allsimpl; allrw @fold_subst.
+
+                    applydup @differ_force_preserves_iscan in d4; auto.
+                    autorewrite with slow in *.
+
+                    { exists (subst b1 v0 b0)
+                             (subst u1 v0 t0).
+                      dands; eauto 3 with slow.
+                      { apply eapply_lam_can_implies.
+                        unfold computes_to_can; dands; eauto 3 with slow. }
+                      left; apply differ_force_subst; auto.
+                    }
+
+                  + apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl; eauto 3 with slow;[].
+                    apply differ_force_exception in d4; exrepnd; subst;[].
+
+                    exists (mk_exception a0 e)
+                           (mk_exception n1 e1).
                     dands; eauto 3 with slow.
-                    { apply eapply_lam_can_implies.
-                      unfold computes_to_can; dands; eauto 3 with slow. }
-                    left; apply differ_force_subst; auto.
-                  }
+                    left; apply implies_differ_force_alpha_exception; eauto 3 with slow.
 
-                + apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl; eauto 3 with slow;[].
-                  apply differ_force_exception in d4; exrepnd; subst;[].
+                  + allsimpl; autorewrite with slow in *.
+                    pose proof (ind1 b0 b0 []) as h; clear ind1.
+                    repeat (autodimp h hyp); eauto 3 with slow.
 
-                  exists (mk_exception a0 e)
-                         (mk_exception n1 e1).
-                  dands; eauto 3 with slow.
-                  left; apply implies_differ_force_alpha_exception; eauto 3 with slow.
+                    applydup @preserve_nt_wf_compute_step in comp1; auto.
+                    applydup @has_value_like_k_eapply_lam_implies in hv; exrepnd; auto;[].
+                    applydup @hasvalue_like_eapply_lam_implies in hvt2; eauto 3 with slow;[].
 
-                + allsimpl; autorewrite with slow in *.
-                  pose proof (ind1 b0 b0 []) as h; clear ind1.
-                  repeat (autodimp h hyp); eauto 3 with slow.
+                    pose proof (h t0 b a x f k) as ih; clear h.
+                    repeat (autodimp ih hyp); eauto 3 with slow.
+                    { eapply has_value_like_k_lt; eauto. }
+                    exrepnd.
 
-                  applydup @preserve_nt_wf_compute_step in comp1; auto.
-                  applydup @has_value_like_k_eapply_lam_implies in hv; exrepnd; auto;[].
-                  applydup @hasvalue_like_eapply_lam_implies in hvt2; eauto 3 with slow;[].
+                    repndors.
 
-                  pose proof (h t0 b a x f k) as ih; clear h.
-                  repeat (autodimp ih hyp); eauto 3 with slow.
-                  { eapply has_value_like_k_lt; eauto. }
-                  exrepnd.
+                    { exists (mk_eapply (mk_lam v t) t1')
+                             (mk_eapply (mk_lam v u1) t2').
+                      dands; eauto 3 with slow.
+                      { apply implies_eapply_red_aux; eauto 3 with slow. }
+                      { apply implies_eapply_red_aux; eauto 3 with slow. }
+                      { left; apply differ_force_alpha_mk_eapply; eauto 3 with slow.
+                        apply differ_force_alpha_mk_lam; eauto 3 with slow. }
+                    }
 
-                  repndors.
-
-                  { exists (mk_eapply (mk_lam v t) t1')
-                           (mk_eapply (mk_lam v u1) t2').
-                    dands; eauto 3 with slow.
-                    { apply implies_eapply_red_aux; eauto 3 with slow. }
-                    { apply implies_eapply_red_aux; eauto 3 with slow. }
-                    { left; apply differ_force_alpha_mk_eapply; eauto 3 with slow.
-                      apply differ_force_alpha_mk_lam; eauto 3 with slow. }
-                  }
-
-                  { exists (mk_eapply (mk_lam v t) x) t2'; dands; eauto 3 with slow.
-                    unfold ex_spfexc in ih1; exrepnd; subst.
-                    allunfold @spfexc.
-                    eapply eapply_red_lam_exception_implies; try (exact ih2).
-                    apply reduces_to_symm. }
+                    { exists (mk_eapply (mk_lam v t) x) t2'; dands; eauto 3 with slow.
+                      unfold ex_spfexc in ih1; exrepnd; subst.
+                      allunfold @spfexc.
+                      eapply eapply_red_lam_exception_implies; try (exact ih2).
+                      apply reduces_to_symm. }
+                }
               }
 
-            * SSSCase "NApseq".
+              { apply differ_force_nseq_implies in d3; exrepnd; subst; fold_terms.
+
+                { repndors; exrepnd; subst.
+
+                  + apply compute_step_eapply2_success in comp1; repnd; GC.
+                    repndors; exrepnd; subst; ginv; allsimpl; GC;[].
+                    allapply @differ_force_nat_implies; subst.
+
+                    { exists (@mk_nat o (f0 n))
+                             (@mk_nat o (f0 n)).
+                      dands; eauto 3 with slow.
+                      { apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
+                        boolvar; try omega; rw @Znat.Nat2Z.id; auto. }
+                      left; apply differ_force_alpha_refl; simpl; tcsp.
+                    }
+
+                  + apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl; eauto 3 with slow;[].
+                    apply differ_force_exception in d4; exrepnd; subst;[].
+
+                    exists (mk_exception a0 e)
+                           (mk_exception n1 e1).
+                    dands; eauto 3 with slow.
+                    left; apply implies_differ_force_alpha_exception; eauto 3 with slow.
+
+                  + allsimpl; autorewrite with slow in *.
+                    pose proof (ind1 b0 b0 []) as h; clear ind1.
+                    repeat (autodimp h hyp); eauto 3 with slow.
+
+                    applydup @preserve_nt_wf_compute_step in comp1; auto.
+                    applydup @has_value_like_k_eapply_nseq_implies in hv; exrepnd; auto;[].
+                    applydup @hasvalue_like_eapply_nseq_implies in hvt2; eauto 3 with slow;[].
+
+                    pose proof (h t0 b a x f k) as ih; clear h.
+                    repeat (autodimp ih hyp); eauto 3 with slow.
+                    { eapply has_value_like_k_lt; eauto. }
+                    exrepnd.
+
+                    repndors.
+
+                    { exists (mk_eapply (mk_nseq s) t1')
+                             (mk_eapply (mk_nseq s) t2').
+                      dands; eauto 3 with slow.
+                      { apply implies_eapply_red_aux; eauto 3 with slow. }
+                      { apply implies_eapply_red_aux; eauto 3 with slow. }
+                      { left; apply differ_force_alpha_mk_eapply; eauto 3 with slow. }
+                    }
+
+                    { exists (mk_eapply (mk_nseq s) x) t2'; dands; eauto 3 with slow.
+                      unfold ex_spfexc in ih1; exrepnd; subst.
+                      allunfold @spfexc.
+                      eapply reduces_to_trans;
+                        [apply implies_eapply_red_aux;[|eauto] |]; eauto 3 with slow. }
+                }
+              }
+
+(*            * SSSCase "NApseq".
 
               clear ind1 indhyp.
               csunf comp; allsimpl.
@@ -860,7 +921,7 @@ Proof.
 
               { left.
                 apply differ_force_implies_differ_force_alpha.
-                apply differ_force_oterm; simpl; tcsp. }
+                apply differ_force_oterm; simpl; tcsp. } *)
 
             * SSSCase "NFix".
               csunf comp; allsimpl.
@@ -2892,6 +2953,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)

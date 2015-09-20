@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -253,7 +254,7 @@ Proof.
             dands; eauto 3 with slow.
             allrw @nt_wf_eq.
             allrw <- @wf_apply_iff; repnd.
-            apply wf_apseq; auto.
+            apply wf_eapply; auto.
           }
         }
 
@@ -266,11 +267,10 @@ Proof.
 
           { clear ind.
             apply compute_step_eapply2_success in comp1; repnd; GC.
-            repndors; exrepnd; subst; allunfold @mk_lam; ginv; fold_terms; allsimpl.
-            allrw remove_nvars_nil_l; allrw app_nil_r.
-            unfold apply_bterm; simpl; allrw @fold_subst.
-
-            dands.
+            repndors; exrepnd; subst; allunfold @mk_lam; ginv; fold_terms; allsimpl;
+            autorewrite with slow;
+            unfold apply_bterm; simpl; allrw @fold_subst;
+            dands; eauto 3 with slow.
 
             - pose proof (eqvars_free_vars_disjoint b0 [(v,b)]) as h.
               allrw @fold_subst.
@@ -302,13 +302,13 @@ Proof.
           }
         }
 
-        { SSSCase "NApseq".
+(*        { SSSCase "NApseq".
 
           clear ind; allsimpl.
           apply compute_step_apseq_success in comp; exrepnd; subst; allsimpl.
           fold_terms.
           dands; eauto 3 with slow.
-        }
+        }*)
 
         { SSSCase "NFix".
 
@@ -992,3 +992,9 @@ Proof.
   introv Hred Hisp. exrepnud Hred.
   apply computek_preserves_program in Hred0; auto.
 Qed.
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)

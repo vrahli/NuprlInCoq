@@ -315,15 +315,15 @@ Proof.
     exists k; dands; spcast; auto.
 Qed.
 
-Lemma reduces_toc_apseq {o} :
+Lemma reduces_toc_eapply_nseq {o} :
   forall lib s (t u : @CTerm o),
     reduces_toc lib t u
-    -> reduces_toc lib (mkc_apseq s t) (mkc_apseq s u).
+    -> reduces_toc lib (mkc_eapply (mkc_nseq s) t) (mkc_eapply (mkc_nseq s) u).
 Proof.
   introv r.
   destruct_cterms.
   allunfold @reduces_toc; allsimpl.
-  apply reduces_to_prinarg; auto.
+  apply implies_eapply_red_aux; eauto 3 with slow.
 Qed.
 
 Lemma reduces_toc_trans {o} :
@@ -436,7 +436,7 @@ Proof.
     eapply reduces_to_if_split2.
     { csunf; simpl; auto. }
     apply reduces_to_if_step.
-    csunf; simpl.
+    csunf; simpl; dcwf h; simpl.
     boolvar; try omega.
     allrw @Znat.Nat2Z.id; auto.
   }

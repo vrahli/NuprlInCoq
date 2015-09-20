@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1123,6 +1124,18 @@ Proof.
   - repeat prove_alpha_eq4.
 Qed.
 
+Lemma computes_in_1step_alpha_nseq {o} :
+  forall lib s (t u : @NTerm o),
+    computes_in_1step_alpha lib t u
+    -> computes_in_1step_alpha lib (mk_eapply (mk_nseq s) t) (mk_eapply (mk_nseq s) u).
+Proof.
+  introv comp.
+  allunfold @computes_in_1step_alpha; exrepnd.
+  exists (mk_eapply (mk_nseq s) t2a); dands.
+  - inversion comp1; subst; constructor; csunf; simpl; dcwf h; simpl; allrw; simpl; auto.
+  - repeat prove_alpha_eq4.
+Qed.
+
 Hint Rewrite @lsubst_aux_nil : slow.
 
 Lemma iscan_lsubst_aux_implies {o} :
@@ -1531,7 +1544,7 @@ Proof.
           allrw app_nil_r; allrw remove_nvars_nil_l.
           fold_terms.
 
-          exists (mk_apseq f t).
+          exists (mk_eapply (mk_nseq f) t).
           introv Hp; allsimpl.
           fold_terms.
           apply computes_in_1step_to_alpha.
@@ -1551,155 +1564,94 @@ Proof.
         allunfold @nobnd; ginv.
 
         allapply @eapply_wf_def_oterm_implies; exrepnd; ginv.
-        repeat (destruct e1bt1lbt; allsimpl; ginv;[]).
-        destruct b as [l u].
-        repeat (destruct l; allsimpl; ginv;[]).
-        allsimpl; autorewrite with slow in *.
-        allrw in_app_iff; allrw not_over_or; repnd; fold_terms.
-        repeat (boolvar; tcsp;[]).
-        allrw subset_app; repnd.
+        destruct Hcs2 as [Hcs2|Hcs2]; exrepnd; ginv.
 
-        repndors; exrepnd; subst; ginv; fold_terms.
+        { repeat (destruct e1bt1lbt; allsimpl; ginv;[]).
+          destruct b as [l u].
+          repeat (destruct l; allsimpl; ginv;[]).
+          allsimpl; autorewrite with slow in *.
+          allrw in_app_iff; allrw not_over_or; repnd; fold_terms.
+          repeat (boolvar; tcsp;[]).
+          allrw subset_app; repnd.
 
-        { apply iscan_lsubst_aux_implies in Hcs0;
-          [|simpl; introv i; repndors; tcsp; ginv; eauto 3 with slow];[].
+          repndors; exrepnd; subst; ginv; fold_terms.
 
-          left.
-          exists (subst u v t).
-          introv isp'.
-          eexists;dands;
+          { apply iscan_lsubst_aux_implies in Hcs0;
+            [|simpl; introv i; repndors; tcsp; ginv; eauto 3 with slow];[].
+
+            left.
+            exists (subst u v t).
+            introv isp'.
+            eexists;dands;
             [constructor; fold_terms; unfold mk_eapply;
              rw @compute_step_eapply_lam_iscan;[|apply iscan_lsubst_aux;auto];
              eauto
             |].
-          unfold subst; rw @lsubst_lsubst_aux;
-          [|simpl; autorewrite with slow;
-            eapply subset_disjoint_r;[|eauto];
-            apply disjoint_singleton_r; auto].
-          rw @lsubst_lsubst_aux;
+            unfold subst; rw @lsubst_lsubst_aux;
             [|simpl; autorewrite with slow;
-              rw @free_vars_lsubst_aux_single_if_subset; auto].
-
-          rw <- @simple_lsubst_aux_lsubst_aux_sub; simpl; eauto 3 with slow;
-          [|simpl; autorewrite with slow;
-            eapply subset_disjoint_r;[|eauto];
-            apply disjoint_singleton_r; auto].
-          allrw memvar_singleton; boolvar; tcsp.
-        }
-
-        { apply subst_exc in Hcs0; exrepnd; subst; allsimpl.
-          allapply @isprogram_exception_implies; exrepnd.
-          repeat (destruct lbtc; allsimpl; ginv;[]).
-          destruct b as [l1 t1].
-          destruct b0 as [l2 t2].
-          destruct l1; allsimpl; fold_terms; ginv.
-          destruct l2; allsimpl; fold_terms; ginv.
-          allsimpl; autorewrite with slow in *.
-
-          allrw in_app_iff; allrw not_over_or; repnd.
-          allrw subset_app; repnd.
-
-          left.
-          exists (mk_exception t1 t2); introv isp'.
-          apply computes_in_1step_to_alpha.
-          constructor; csunf; simpl; auto. }
-
-        { apply computation_mark.isnoncan_like_lsubst_aux in Hcs2.
-
-          assert (!LIn vy (free_vars u)) as nivyu.
-          { intro i.
-            pose proof (Xsss0 vy) as h.
-            allrw in_remove_nvars; allrw in_single_iff.
-            autodimp h hyp; tcsp. }
-
-          repndors; exrepnd; subst; allsimpl; GC.
-
-          - allrw @singleton_subset; allrw in_single_iff; subst.
-            boolvar; tcsp;[]; ginv; GC.
-
-            right.
-            exists (mk_eapply (mk_lam v u) (mk_var vy)) x.
-            dands; auto.
-
-            + rw @lsubst_lsubst_aux;
+              eapply subset_disjoint_r;[|eauto];
+              apply disjoint_singleton_r; auto].
+            rw @lsubst_lsubst_aux;
               [|simpl; autorewrite with slow;
-                apply disjoint_cons_l; rw in_single_iff; rw disjoint_singleton_r;
-                dands; tcsp].
-              simpl; allrw memvar_singleton.
-              boolvar; tcsp;[]; fold_terms.
-              repeat prove_alpha_eq4;[].
-              apply alpha_eq_bterm_congr.
-              rw @lsubst_aux_trivial_cl_term; auto.
-              simpl; apply disjoint_singleton_r; tcsp.
+                rw @free_vars_lsubst_aux_single_if_subset; auto].
 
-            + constructor; auto.
+            rw <- @simple_lsubst_aux_lsubst_aux_sub; simpl; eauto 3 with slow;
+            [|simpl; autorewrite with slow;
+              eapply subset_disjoint_r;[|eauto];
+              apply disjoint_singleton_r; auto].
+            allrw memvar_singleton; boolvar; tcsp.
+          }
 
-            + introv isp1 isp2; dands; intro comp.
+          { apply subst_exc in Hcs0; exrepnd; subst; allsimpl.
+            allapply @isprogram_exception_implies; exrepnd.
+            repeat (destruct lbtc; allsimpl; ginv;[]).
+            destruct b as [l1 t1].
+            destruct b0 as [l2 t2].
+            destruct l1; allsimpl; fold_terms; ginv.
+            destruct l2; allsimpl; fold_terms; ginv.
+            allsimpl; autorewrite with slow in *.
 
-              * simpl; allrw memvar_singleton; boolvar; tcsp;[]; fold_terms.
-                allrw @two_as_app.
-                applydup@ computes_in_1step_program in comp; auto;[].
-                repeat (rw @cl_lsubst_aux_app; eauto 3 with slow;[]).
-                repeat (rw (lsubst_aux_trivial_cl_term (lsubst_aux u [(vx, t'')]));
-                        [|simpl; apply disjoint_singleton_r;
-                          rw @free_vars_lsubst_aux_cl; eauto 3 with slow;[];
-                          simpl; rw in_remove_nvars; rw in_single_iff; tcsp];[]).
-                apply computes_in_1step_to_alpha.
-                allrw @computes_in_1step_iff_isnoncan_like; repnd; dands; tcsp;[].
-                unfold mk_eapply.
-                rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow;[].
-                rw comp; auto.
+            allrw in_app_iff; allrw not_over_or; repnd.
+            allrw subset_app; repnd.
 
-              * simpl; allrw memvar_singleton; boolvar; tcsp;[].
-                applydup @isprogram_error_implies_isnoncan_like in comp; auto;[].
-                allunfold @computes_step_to_error.
-                fold_terms.
-                remember (compute_step lib td) as cs; symmetry in Heqcs; destruct cs; ginv; tcsp; GC;[].
-                unfold mk_eapply; rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow.
-                rw Heqcs; auto.
+            left.
+            exists (mk_exception t1 t2); introv isp'.
+            apply computes_in_1step_to_alpha.
+            constructor; csunf; simpl; auto. }
 
-          - pose proof (Hind t t []) as h; clear Hind.
-            repeat (autodimp h hyp); eauto 3 with slow;[].
-            pose proof (h x no lbt vx vy) as ih; clear h.
-            repeat (autodimp ih hyp).
-            { apply computes_in_1step_if_isnoncan_like; auto.
-              apply isnoncan_like_lsubst_aux; auto. }
+          { apply computation_mark.isnoncan_like_lsubst_aux in Hcs2.
 
-            repndors; exrepnd.
+            assert (!LIn vy (free_vars u)) as nivyu.
+            { intro i.
+              pose proof (Xsss0 vy) as h.
+              allrw in_remove_nvars; allrw in_single_iff.
+              autodimp h hyp; tcsp. }
 
-            { left.
-              exists (mk_eapply (mk_lam v u) e2'); introv isp'.
-              pose proof (ih0 t') as h'; clear ih0; autodimp h' hyp.
-              simpl; fold_terms.
-              allrw memvar_singleton; boolvar; tcsp;[].
-              eapply computes_in_1step_alpha_lam; auto. }
+            repndors; exrepnd; subst; allsimpl; GC.
 
-            { right.
-              exists (mk_eapply (mk_lam v u) e1') t'.
+            - allrw @singleton_subset; allrw in_single_iff; subst.
+              boolvar; tcsp;[]; ginv; GC.
+
+              right.
+              exists (mk_eapply (mk_lam v u) (mk_var vy)) x.
               dands; auto.
 
-              - pose proof (unfold_lsubst [(vy,mk_var vx)] (mk_eapply (mk_lam v u) e1')) as h.
-                exrepnd; rw h0; clear h0; allsimpl; allrw disjoint_singleton_r.
-                apply alpha_eq_mk_eapply in h1; exrepnd; subst; allsimpl; autorewrite with slow in *; fold_terms.
-                apply implies_alpha_eq_mk_eapply.
-                + rw @lsubst_aux_trivial_cl_term; auto.
-                  simpl; apply disjoint_singleton_r.
-                  apply alphaeq_preserves_free_vars in h3; rw <- h3; simpl; autorewrite with slow.
-                  rw in_remove_nvars; rw in_single_iff; tcsp.
-                + eapply alpha_eq_trans;[exact ih0|].
-                  pose proof (unfold_lsubst [(vy,mk_var vx)] e1') as q.
-                  exrepnd; rw q0; clear q0; allsimpl; allrw disjoint_singleton_r.
-                  allrw in_app_iff; allrw not_over_or; repnd.
-                  apply lsubst_aux_alpha_congr_same_disj; simpl; eauto 3 with slow;
-                  apply disjoint_singleton_r; tcsp.
+              + rw @lsubst_lsubst_aux;
+                [|simpl; autorewrite with slow;
+                  apply disjoint_cons_l; rw in_single_iff; rw disjoint_singleton_r;
+                  dands; tcsp].
+                simpl; allrw memvar_singleton.
+                boolvar; tcsp;[]; fold_terms.
+                repeat prove_alpha_eq4;[].
+                apply alpha_eq_bterm_congr.
+                rw @lsubst_aux_trivial_cl_term; auto.
+                simpl; apply disjoint_singleton_r; tcsp.
 
-              - introv isp1 isp2; simpl; fold_terms.
-                allrw memvar_singleton; boolvar; tcsp;[].
-                pose proof (ih1 t'' td td') as h; clear ih1.
-                repeat (autodimp h hyp);[].
-                repnd; dands; auto;[|].
-                + introv comp.
-                  autodimp h0 hyp.
+              + constructor; auto.
+
+              + introv isp1 isp2; dands; intro comp.
+
+                * simpl; allrw memvar_singleton; boolvar; tcsp;[]; fold_terms.
                   allrw @two_as_app.
                   applydup@ computes_in_1step_program in comp; auto;[].
                   repeat (rw @cl_lsubst_aux_app; eauto 3 with slow;[]).
@@ -1707,22 +1659,216 @@ Proof.
                           [|simpl; apply disjoint_singleton_r;
                             rw @free_vars_lsubst_aux_cl; eauto 3 with slow;[];
                             simpl; rw in_remove_nvars; rw in_single_iff; tcsp];[]).
-                  repeat (rw @cl_lsubst_aux_app in h0; eauto 3 with slow;[]).
-                  eapply computes_in_1step_alpha_lam; auto.
-                + introv comp.
-                  clear h0.
-                  autodimp h hyp.
-                  remember (lsubst_aux e1' [(vx, t''), (vy, td)]) as xx.
+                  apply computes_in_1step_to_alpha.
+                  allrw @computes_in_1step_iff_isnoncan_like; repnd; dands; tcsp;[].
+                  unfold mk_eapply.
+                  rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow;[].
+                  rw comp; auto.
+
+                * simpl; allrw memvar_singleton; boolvar; tcsp;[].
+                  applydup @isprogram_error_implies_isnoncan_like in comp; auto;[].
                   allunfold @computes_step_to_error.
-                  destruct xx as [v1|f1|op bs]; allsimpl; ginv;[].
-                  remember (compute_step lib (oterm op bs)) as cs; destruct cs; symmetry in Heqcs; ginv; tcsp;[].
-                  dopid op as [can|ncan|exc|abs] SSCase; allsimpl; ginv; tcsp;[|];
-                  csunf; simpl;
-                  unfold compute_step_eapply; simpl; allrw; simpl; auto.
-            }
+                  fold_terms.
+                  remember (compute_step lib td) as cs; symmetry in Heqcs; destruct cs; ginv; tcsp; GC;[].
+                  unfold mk_eapply; rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow.
+                  rw Heqcs; auto.
+
+            - pose proof (Hind t t []) as h; clear Hind.
+              repeat (autodimp h hyp); eauto 3 with slow;[].
+              pose proof (h x no lbt vx vy) as ih; clear h.
+              repeat (autodimp ih hyp).
+              { apply computes_in_1step_if_isnoncan_like; auto.
+                apply isnoncan_like_lsubst_aux; auto. }
+
+              repndors; exrepnd.
+
+              { left.
+                exists (mk_eapply (mk_lam v u) e2'); introv isp'.
+                pose proof (ih0 t') as h'; clear ih0; autodimp h' hyp.
+                simpl; fold_terms.
+                allrw memvar_singleton; boolvar; tcsp;[].
+                eapply computes_in_1step_alpha_lam; auto. }
+
+              { right.
+                exists (mk_eapply (mk_lam v u) e1') t'.
+                dands; auto.
+
+                - pose proof (unfold_lsubst [(vy,mk_var vx)] (mk_eapply (mk_lam v u) e1')) as h.
+                  exrepnd; rw h0; clear h0; allsimpl; allrw disjoint_singleton_r.
+                  apply alpha_eq_mk_eapply in h1; exrepnd; subst; allsimpl; autorewrite with slow in *; fold_terms.
+                  apply implies_alpha_eq_mk_eapply.
+                  + rw @lsubst_aux_trivial_cl_term; auto.
+                    simpl; apply disjoint_singleton_r.
+                    apply alphaeq_preserves_free_vars in h3; rw <- h3; simpl; autorewrite with slow.
+                    rw in_remove_nvars; rw in_single_iff; tcsp.
+                  + eapply alpha_eq_trans;[exact ih0|].
+                    pose proof (unfold_lsubst [(vy,mk_var vx)] e1') as q.
+                    exrepnd; rw q0; clear q0; allsimpl; allrw disjoint_singleton_r.
+                    allrw in_app_iff; allrw not_over_or; repnd.
+                    apply lsubst_aux_alpha_congr_same_disj; simpl; eauto 3 with slow;
+                    apply disjoint_singleton_r; tcsp.
+
+                - introv isp1 isp2; simpl; fold_terms.
+                  allrw memvar_singleton; boolvar; tcsp;[].
+                  pose proof (ih1 t'' td td') as h; clear ih1.
+                  repeat (autodimp h hyp);[].
+                  repnd; dands; auto;[|].
+                  + introv comp.
+                    autodimp h0 hyp.
+                    allrw @two_as_app.
+                    applydup@ computes_in_1step_program in comp; auto;[].
+                    repeat (rw @cl_lsubst_aux_app; eauto 3 with slow;[]).
+                    repeat (rw (lsubst_aux_trivial_cl_term (lsubst_aux u [(vx, t'')]));
+                            [|simpl; apply disjoint_singleton_r;
+                              rw @free_vars_lsubst_aux_cl; eauto 3 with slow;[];
+                              simpl; rw in_remove_nvars; rw in_single_iff; tcsp];[]).
+                    repeat (rw @cl_lsubst_aux_app in h0; eauto 3 with slow;[]).
+                    eapply computes_in_1step_alpha_lam; auto.
+                  + introv comp.
+                    clear h0.
+                    autodimp h hyp.
+                    remember (lsubst_aux e1' [(vx, t''), (vy, td)]) as xx.
+                    allunfold @computes_step_to_error.
+                    destruct xx as [v1|f1|op bs]; allsimpl; ginv;[].
+                    remember (compute_step lib (oterm op bs)) as cs; destruct cs; symmetry in Heqcs; ginv; tcsp;[].
+                    dopid op as [can|ncan|exc|abs] SSCase; allsimpl; ginv; tcsp;[|];
+                    csunf; simpl;
+                    unfold compute_step_eapply; simpl; allrw; simpl; auto.
+              }
+          }
         }
 
-      * SCase "NApseq". left.
+        { destruct e1bt1lbt; allsimpl; ginv;[].
+          autorewrite with slow in *.
+
+          repndors; exrepnd; subst; ginv; fold_terms.
+
+          - apply iscan_lsubst_aux_implies in Hcs0;
+            [|simpl; introv i; repndors; tcsp; ginv; eauto 3 with slow];[].
+
+            left.
+            destruct t as [v|f|op bs]; allsimpl; ginv; tcsp;[].
+            dopid op as [can|ncan|exc|abs] SSCase; allsimpl; ginv; tcsp; GC;[].
+            destruct can; allsimpl; ginv; tcsp;[].
+            destruct bs; allsimpl; ginv; tcsp;[].
+            boolvar; ginv; GC;[].
+
+            exists (@mk_nat p (s (Z.to_nat z))).
+            introv isp; simpl; fold_terms.
+            apply computes_in_1step_to_alpha.
+            constructor; csunf; simpl; dcwf h; simpl; boolvar; auto; try omega.
+
+          - apply subst_exc in Hcs0; exrepnd; subst; allsimpl.
+            allapply @isprogram_exception_implies; exrepnd.
+            repeat (destruct lbtc; allsimpl; ginv;[]).
+            destruct b as [l1 t1].
+            destruct b0 as [l2 t2].
+            destruct l1; allsimpl; fold_terms; ginv.
+            destruct l2; allsimpl; fold_terms; ginv.
+            allsimpl; autorewrite with slow in *.
+
+            allrw in_app_iff; allrw not_over_or; repnd.
+            allrw subset_app; repnd.
+
+            left.
+            exists (mk_exception t1 t2); introv isp'.
+            apply computes_in_1step_to_alpha.
+            constructor; csunf; simpl; auto.
+
+          - apply computation_mark.isnoncan_like_lsubst_aux in Hcs2.
+            repndors; exrepnd; subst; allsimpl; GC.
+
+            { allrw @singleton_subset; allrw in_single_iff; subst.
+              boolvar; tcsp;[]; ginv; GC.
+
+              right.
+              exists (mk_eapply (@mk_nseq p s) (mk_var vy)) x.
+              dands; auto.
+
+              + unfold lsubst; simpl; boolvar; tcsp.
+
+              + constructor; auto.
+
+              + introv isp1 isp2; dands; intro comp.
+
+                * simpl; boolvar; tcsp.
+                  apply computes_in_1step_to_alpha.
+                  allrw @computes_in_1step_iff_isnoncan_like; repnd; dands; tcsp;[].
+                  fold_terms; unfold mk_eapply.
+                  rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow;[].
+                  rw comp; auto.
+
+                * simpl; allrw memvar_singleton; boolvar; tcsp;[].
+                  applydup @isprogram_error_implies_isnoncan_like in comp; auto;[].
+                  allunfold @computes_step_to_error.
+                  fold_terms.
+                  remember (compute_step lib td) as cs; symmetry in Heqcs; destruct cs; ginv; tcsp; GC;[].
+                  unfold mk_eapply; rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow.
+                  rw Heqcs; auto. }
+
+            { pose proof (Hind t t []) as h; clear Hind.
+              repeat (autodimp h hyp); eauto 3 with slow;[].
+              pose proof (h x no lbt vx vy) as ih; clear h.
+              repeat (autodimp ih hyp).
+              { apply computes_in_1step_if_isnoncan_like; auto.
+                apply isnoncan_like_lsubst_aux; auto. }
+
+              repndors; exrepnd.
+
+              { left.
+                exists (mk_eapply (mk_nseq s) e2'); introv isp'.
+                pose proof (ih0 t') as h'; clear ih0; autodimp h' hyp.
+                simpl; fold_terms.
+                allrw memvar_singleton; boolvar; tcsp;[].
+                eapply computes_in_1step_alpha_nseq; auto. }
+
+              { right.
+                exists (mk_eapply (mk_nseq s) e1') t'.
+                dands; auto.
+
+                - pose proof (unfold_lsubst [(vy,mk_var vx)] (mk_eapply (mk_nseq s) e1')) as h.
+                  exrepnd; rw h0; clear h0; allsimpl; allrw disjoint_singleton_r.
+                  apply alpha_eq_mk_eapply in h1; exrepnd; subst; allsimpl; autorewrite with slow in *; fold_terms.
+                  inversion h3; subst; allsimpl; cpx; fold_terms; clear h3; allsimpl; fold_terms.
+                  apply implies_alpha_eq_mk_eapply; eauto 3 with slow.
+                  eapply alpha_eq_trans;[exact ih0|].
+                  pose proof (unfold_lsubst [(vy,mk_var vx)] e1') as q.
+                  exrepnd; rw q0; clear q0; allsimpl; allrw disjoint_singleton_r.
+                  allrw in_app_iff; allrw not_over_or; repnd.
+                  apply lsubst_aux_alpha_congr_same_disj; simpl; eauto 3 with slow;
+                  apply disjoint_singleton_r; tcsp.
+
+                - introv isp1 isp2; simpl; fold_terms.
+                  allrw memvar_singleton; boolvar; tcsp;[].
+                  pose proof (ih1 t'' td td') as h; clear ih1.
+                  repeat (autodimp h hyp);[].
+                  repnd; dands; auto;[|].
+                  + introv comp.
+                    autodimp h0 hyp.
+                    allrw @two_as_app.
+                    applydup@ computes_in_1step_program in comp; auto;[].
+                    repeat (rw @cl_lsubst_aux_app; eauto 3 with slow;[]).
+                    repeat (rw (lsubst_aux_trivial_cl_term (lsubst_aux u [(vx, t'')]));
+                            [|simpl; apply disjoint_singleton_r;
+                              rw @free_vars_lsubst_aux_cl; eauto 3 with slow;[];
+                              simpl; rw in_remove_nvars; rw in_single_iff; tcsp];[]).
+                    repeat (rw @cl_lsubst_aux_app in h0; eauto 3 with slow;[]).
+                    eapply computes_in_1step_alpha_nseq; auto.
+                  + introv comp.
+                    clear h0.
+                    autodimp h hyp.
+                    remember (lsubst_aux e1' [(vx, t''), (vy, td)]) as xx.
+                    allunfold @computes_step_to_error.
+                    destruct xx as [v1|f1|op bs]; allsimpl; ginv;[].
+                    remember (compute_step lib (oterm op bs)) as cs; destruct cs; symmetry in Heqcs; ginv; tcsp;[].
+                    dopid op as [can|ncan|exc|abs] SSCase; allsimpl; ginv; tcsp;[|];
+                    csunf; simpl;
+                    unfold compute_step_eapply; simpl; allrw; simpl; auto.
+              }
+          }
+        }
+
+(*      * SCase "NApseq". left.
         clear Hind.
         csunf Hcs; allsimpl.
         apply compute_step_apseq_success in Hcs; repndors; exrepnd; subst; allsimpl.
@@ -1736,7 +1882,7 @@ Proof.
         apply computes_in_1step_to_alpha.
         constructor; csunf; simpl.
         rw @Znat.Nat2Z.id.
-        boolvar; try omega; auto.
+        boolvar; try omega; auto.*)
 
       * SCase "NFix". left. clear Hind.
         csunf Hcs; allsimpl; apply compute_step_fix_success in Hcs; repnd; subst.
@@ -8645,6 +8791,7 @@ Proof.
   eauto 2 with slow.
 Qed.
 
+(*
 (* !!MOVE *)
 Lemma hasvalue_apseq {o} :
   forall lib s (t : @NTerm o),
@@ -8686,6 +8833,7 @@ Proof.
       allunfold @computes_to_value; repnd; dands; auto.
       eapply reduces_to_if_split2; eauto.
 Qed.
+*)
 
 Hint Resolve isprogram_fix : slow.
 
@@ -9416,4 +9564,10 @@ Lemma cequiv_approximations: forall f g s t,
             (apply_bterm (bterm [nvarx] t) [mk_fix g]).
 Proof.
   introv Hpf Hpg Hint.
+*)
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
+*** End:
 *)

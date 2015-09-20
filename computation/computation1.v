@@ -34,7 +34,7 @@ Require Export terms_pk.
 (* begin hide *)
 
 Definition compute_step_apply_not_well_formed := "lambda or apply not well-formed".
-Definition compute_step_apseq_not_well_formed := "apseq not well-formed".
+(*Definition compute_step_apseq_not_well_formed := "apseq not well-formed".*)
 Definition bad_first_arg := "bad first arg".
 Definition fix_not_well_formed := "fix not well-formed".
 Definition spread_or_pair_not_well_formed := "spread or pair not well-formed".
@@ -124,12 +124,13 @@ Definition compute_step_apply {p}
       end
     | Nseq f =>
       match arg1bts, btsr with
-        | [], [bterm [] arg] => csuccess (mk_apseq f arg)
+        | [], [bterm [] arg] => csuccess (mk_eapply (mk_nseq f) arg)
         | _,_ => cfailure compute_step_apply_not_well_formed t
       end
     | _ => cfailure bad_first_arg t
   end.
 
+(*
 Definition compute_step_apseq {o}
            (f     : nseq)
            (arg1c : @CanonicalOp o)
@@ -146,6 +147,7 @@ Definition compute_step_apseq {o}
       end
     | _ => cfailure bad_first_arg t
   end.
+*)
 
 Definition compute_step_eapply2 {o}
            (t arg1 arg2 : @NTerm o)
@@ -154,6 +156,14 @@ Definition compute_step_eapply2 {o}
     | [] =>
       match arg1 with
         | oterm (Can NLambda) [bterm [v] b] => csuccess (apply_bterm (bterm [v] b) [arg2])
+        | oterm (Can (Nseq f)) [] =>
+          match arg2 with
+            | oterm (Can (Nint z)) [] =>
+              if Z_le_gt_dec 0 z
+              then csuccess (mk_nat (f (Z.to_nat z)))
+              else cfailure bad_args t
+            | _ => cfailure bad_args t
+          end
         | sterm f =>
           match arg2 with
               | oterm (Can (Nint z)) [] =>
@@ -189,12 +199,14 @@ Definition compute_step_eapply1 {o}
 Definition eapply_wf {o} (t : @NTerm o) :=
   match t with
     | sterm _ => true
+    | oterm (Can (Nseq _)) [] => true
     | oterm (Can NLambda) [bterm [_] _] => true
     | _ => false
   end.
 
 Definition eapply_wf_def {o} (t : @NTerm o) :=
   {f : ntseq & t = sterm f}
+  [+] {f : nseq & t = mk_nseq f}
   [+] {v : NVar & {b : NTerm & t = mk_lam v b}}.
 
 Lemma eapply_wf_dec {o} :
@@ -208,16 +220,19 @@ Proof.
     try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
     destruct c; allsimpl; tcsp;
     try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-    destruct bs as [|b bs]; allsimpl; tcsp;
-    try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-    destruct bs as [|? bs]; allsimpl; tcsp;
-    try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-    destruct b as [l t].
-    destruct l as [|v l]; allsimpl; tcsp;
-    try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-    destruct l as [|? l]; allsimpl; tcsp;
-    try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-    left; right; eexists; eexists; unfold mk_lam; dands; eauto.
+    { destruct bs as [|b bs]; allsimpl; tcsp;
+      try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
+      destruct bs as [|? bs]; allsimpl; tcsp;
+      try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
+      destruct b as [l t].
+      destruct l as [|v l]; allsimpl; tcsp;
+      try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
+      destruct l as [|? l]; allsimpl; tcsp;
+      try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
+      left; right; right; eexists; eexists; unfold mk_lam; dands; eauto. }
+    { destruct bs as [|b bs]; allsimpl; tcsp;
+      try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
+      left; right; left; eexists; unfold mk_nseq; eauto. }
 Qed.
 
 Definition compute_step_eapply {o}
@@ -1497,3 +1512,10 @@ Definition compute_step_parallel {o}
    This means, I'll have to change the way computation on non-canonical
    terms and abstractions work :(
  *)
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)

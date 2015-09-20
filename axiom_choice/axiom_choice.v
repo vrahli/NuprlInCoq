@@ -148,8 +148,8 @@ Proof.
   assert {c : nat -> nat
           & forall a : CTerm,
               member lib a mkc_tnat
-              -> (member lib (mkc_apseq c a) mkc_tnat
-                  # inhabited_type lib (mkc_apply2 P a (mkc_apseq c a)))} as fs.
+              -> (member lib (mkc_eapply (mkc_nseq c) a) mkc_tnat
+                  # inhabited_type lib (mkc_apply2 P a (mkc_eapply (mkc_nseq c) a)))} as fs.
   { exists (fun n =>
               match member_tnat_implies_computes
                       lib
@@ -162,7 +162,7 @@ Proof.
 
     - apply member_tnat_iff in mem; exrepnd.
       allrw @computes_to_valc_iff_reduces_toc; repnd.
-      eapply member_respects_reduces_toc;[apply reduces_toc_apseq;exact mem1|].
+      eapply member_respects_reduces_toc;[apply reduces_toc_eapply_nseq;exact mem1|].
 
       remember (member_tnat_implies_computes
                   lib
@@ -174,7 +174,7 @@ Proof.
 
       + unfold reduces_toc; simpl.
         apply reduces_to_if_step.
-        csunf; allsimpl.
+        csunf; allsimpl; dcwf h; simpl.
         boolvar; try omega.
         rw @Znat.Nat2Z.id.
         rewrite <- Heqmt; auto.
@@ -209,7 +209,7 @@ Proof.
         allrw @computes_to_valc_iff_reduces_toc; repnd.
         eapply cequivc_trans;
           [apply reduces_toc_implies_cequivc;
-            apply reduces_toc_apseq;exact mem1
+            apply reduces_toc_eapply_nseq;exact mem1
           |].
 
         eapply cequivc_trans;
@@ -219,7 +219,7 @@ Proof.
         apply reduces_toc_implies_cequivc.
         unfold reduces_toc; simpl.
         apply reduces_to_if_step.
-        csunf; simpl.
+        csunf; simpl; dcwf h; simpl.
         boolvar; try omega.
         allrw @Znat.Nat2Z.id.
         allsimpl.
@@ -615,6 +615,6 @@ Abort.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)

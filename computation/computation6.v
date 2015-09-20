@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1009,3 +1010,10 @@ Proof.
     repndors; exrepnd; ginv; allsimpl.
     exists k1 k2 i en e; dands; eauto 3 with slow.
 Qed.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)

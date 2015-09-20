@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1498,7 +1499,7 @@ Proof.
               allrw @sub_filter_nil_r; fold_terms; ginv.
               allrw app_nil_r; allrw remove_nvars_nil_l.
 
-              exists (mk_apseq f t).
+              exists (mk_eapply (mk_nseq f) t).
               simpl; autorewrite with slow in *.
               dands; eauto 3 with slow.
 
@@ -1579,6 +1580,17 @@ Proof.
                   boolvar; simpl; boolvar; simpl; tcsp.
                   remember (sub_find sub' v0) as sf; destruct sf; simpl; tcsp.
 
+              + allunfold @mk_nseq; destruct bts; allsimpl; ginv; allsimpl; fold_terms.
+                eapply lsubst_aux_equal_mk_nat in comp4;[|eauto]; subst; allsimpl.
+                exists (@mk_nat o (f n)); simpl.
+                unflsubst; simpl; fold_terms.
+                dands; eauto 3 with slow.
+                introv nrut' eqdoms diff'.
+                unflsubst; simpl; fold_terms.
+                csunf; simpl; dcwf h; simpl; boolvar; try omega;[].
+                rw Znat.Nat2Z.id.
+                eexists; dands; eauto.
+
             - eapply isexc_lsubst_aux_nr_ut_sub in comp0; eauto;[].
               apply wf_isexc_implies in comp0; exrepnd; subst; allsimpl; autorewrite with slow in *; auto;[].
               allrw disjoint_app_r; repnd.
@@ -1642,7 +1654,7 @@ Proof.
                 prove_alpha_eq3.
           }
 
-          { SSSCase "NApseq".
+(*          { SSSCase "NApseq".
 
             clear ind.
             unflsubst in comp; allsimpl.
@@ -1662,7 +1674,7 @@ Proof.
             boolvar; try omega.
             rw @Znat.Nat2Z.id.
             eexists; dands; eauto.
-          }
+          }*)
 
           { SSSCase "NFix".
 
@@ -2966,4 +2978,11 @@ Proof.
   introv i.
   apply comp in i; sp.
 Qed.
+*)
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
 *)

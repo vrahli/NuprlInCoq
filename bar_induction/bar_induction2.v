@@ -548,7 +548,7 @@ Proof.
   apply reduces_to_implies_cequiv;
     [apply isprogram_apply;eauto 3 with slow;apply isprogram_mk_nseq|].
   eapply reduces_to_if_split2;[csunf;simpl;auto|].
-  apply reduces_to_if_step; csunf; simpl.
+  apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
   boolvar; try omega.
   rw Znat.Nat2Z.id; auto.
 Qed.
@@ -2271,6 +2271,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)

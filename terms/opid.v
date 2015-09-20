@@ -375,7 +375,7 @@ Defined.
 Inductive NonCanonicalOp : Set :=
  | NApply     : NonCanonicalOp
  | NEApply    : NonCanonicalOp
- | NApseq     : nseq -> NonCanonicalOp
+(* | NApseq     : nseq -> NonCanonicalOp*)
  | NFix       : NonCanonicalOp
  | NSpread    : NonCanonicalOp
  | NDsup      : NonCanonicalOp
@@ -401,7 +401,7 @@ Definition OpBindingsNCan (nc : NonCanonicalOp) : opsign :=
   match nc with
   | NApply       => [0,0]
   | NEApply      => [0,0]
-  | NApseq _     => [0]
+(*  | NApseq _     => [0]*)
   | NFix         => [0]
   | NSpread      => [0,2]
   | NDsup        => [0,2]
@@ -517,7 +517,7 @@ Tactic Notation "dopid_noncan" ident(onc) ident(c) :=
   destruct onc;
   [ Case_aux c "NApply"
   | Case_aux c "NEApply"
-  | Case_aux c "NApseq"
+(*  | Case_aux c "NApseq"*)
   | Case_aux c "NFix"
   | Case_aux c "NSpread"
   | Case_aux c "NDsup"
@@ -552,16 +552,18 @@ Definition no_seq_can {o} (c : @CanonicalOp o) :=
     | _ => true
   end.
 
+(*
 Definition no_seq_ncan (nc : NonCanonicalOp) :=
   match nc with
     | NApseq _ => false
     | _ => true
   end.
+*)
 
 Definition no_seq_o {o} (op : @Opid o) :=
   match op with
     | Can c => no_seq_can c
-    | NCan c => no_seq_ncan c
+(*    | NCan c => no_seq_ncan c*)
     | _ => true
   end.
 

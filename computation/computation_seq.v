@@ -125,6 +125,49 @@ Proof.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 Qed.
 
+Lemma reduces_in_atmost_k_steps_eapply_nseq_to_isvalue_like {o} :
+  forall lib s v k (a : @NTerm o),
+    reduces_in_atmost_k_steps lib (mk_eapply (mk_nseq s) a) v k
+    -> isvalue_like v
+    -> {n : nat
+        & {i : nat
+        & i < k
+        # reduces_in_atmost_k_steps lib a (mk_nat n) i
+        # v = mk_nat (s n) }}
+       [+] {j : nat & j < k # reduces_in_atmost_k_steps lib a v j # isexc v}.
+Proof.
+  induction k; introv comp isv.
+
+  - allrw @reduces_in_atmost_k_steps_0; subst.
+    unfold isvalue_like in isv; allsimpl; tcsp.
+
+  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
+    csunf comp1; allsimpl.
+    apply compute_step_eapply_success in comp1; exrepnd; ginv.
+    repndors; exrepnd; subst.
+
+    + apply compute_step_eapply2_success in comp1; repnd; GC.
+      repndors; exrepnd; ginv.
+      apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow; subst.
+      left.
+      exists n 0; dands; auto; try omega.
+      apply reduces_in_atmost_k_steps_0; auto.
+
+    + apply isexc_implies2 in comp2; exrepnd; subst.
+      apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow; subst.
+      right; exists 0; dands; eauto 3 with slow; try omega.
+      apply reduces_in_atmost_k_steps_refl; eauto 3 with slow.
+
+    + apply IHk in comp0; auto.
+      repndors; exrepnd.
+
+      * left; exists n (S i); dands; auto; try omega.
+        rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
+
+      * right; exists (S j); dands; auto; try omega.
+        rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
+Qed.
+
 Lemma isprogram_sterm_implies_isprogram_apply {o} :
   forall (f : @ntseq o) n, isprogram (sterm f) -> isprogram (f n).
 Proof.
@@ -139,9 +182,16 @@ Hint Resolve isprogram_sterm_implies_isprogram_apply : slow.
 Lemma eapply_wf_def_lam {o} :
   forall v (b : @NTerm o), eapply_wf_def (mk_lam v b).
 Proof.
-  introv; right; eexists; eexists; eauto.
+  introv; right; right; eexists; eexists; eauto.
 Qed.
 Hint Resolve eapply_wf_def_lam : slow.
+
+Lemma eapply_wf_def_nseq {o} :
+  forall (s : nseq), @eapply_wf_def o (mk_nseq s).
+Proof.
+  introv; right; left; eexists; eexists; eauto.
+Qed.
+Hint Resolve eapply_wf_def_nseq : slow.
 
 Lemma implies_eapply_red_aux {o} :
   forall lib (t a v : @NTerm o),
@@ -374,15 +424,32 @@ Proof.
     eauto 3 with slow.
 Qed.
 
+Lemma eapply_nseq_exception_implies {o} :
+  forall lib (t : @NTerm o) s a n e,
+    (t =v>(lib) (mk_nseq s))
+    -> (a =e>(n,lib) e)
+    -> ((mk_eapply t a) =e>(n,lib) e).
+Proof.
+  introv comp1 comp2.
+  unfold computes_to_value in comp1; repnd.
+  allunfold @computes_to_exception.
+  eapply reduces_to_trans;
+    [apply implies_eapply_red;[|eauto|eauto] |];
+    eauto 3 with slow.
+Qed.
+
 Lemma eapply_wf_def_oterm_implies {o} :
   forall (op : @Opid o) bs,
     eapply_wf_def (oterm op bs)
-    -> {v : NVar & {t : NTerm & op = Can NLambda # bs = [bterm [v] t] }}.
+    -> ({v : NVar & {t : NTerm & op = Can NLambda # bs = [bterm [v] t] }}
+        [+] {s : nseq & op = Can (Nseq s) # bs = [] }).
 Proof.
   introv w.
   unfold eapply_wf_def in w; repndors; exrepnd; ginv.
-  allunfold @mk_lam; ginv.
-  eexists; eexists; dands; eauto.
+  - allunfold @mk_nseq; ginv.
+    right; eexists; dands; auto.
+  - allunfold @mk_lam; ginv.
+    left; eexists; eexists; dands; eauto.
 Qed.
 
 Lemma raises_exception_step {o} :
@@ -479,6 +546,38 @@ Proof.
       eapply reduces_to_if_split2; eauto.
 Qed.
 
+Lemma hasvalue_like_eapply_nseq_implies {o} :
+  forall lib s (t : @NTerm o),
+    nt_wf t
+    -> hasvalue_like lib (mk_eapply (mk_nseq s) t)
+    -> hasvalue_like lib t.
+Proof.
+  introv wf hv.
+  allunfold @hasvalue_like; exrepnd.
+  unfold reduces_to in hv1; exrepnd.
+  revert dependent t; induction k; introv wf comp.
+
+  - allrw @reduces_in_atmost_k_steps_0; subst.
+    unfold isvalue_like in hv0; allsimpl; tcsp.
+
+  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
+    csunf comp1; allsimpl.
+    apply compute_step_eapply_success in comp1; exrepnd; ginv.
+    repndors; exrepnd; subst.
+
+    + apply compute_step_eapply2_success in comp1; repnd; GC.
+      repndors; exrepnd; subst; ginv.
+      exists (@mk_nat o n); dands; eauto 3 with slow.
+
+    + exists arg2; eauto 3 with slow.
+
+    + applydup @preserve_nt_wf_compute_step in comp1; auto.
+      apply IHk in comp0; auto.
+      exrepnd.
+      exists v0; dands; auto.
+      eapply reduces_to_if_split2; eauto.
+Qed.
+
 Lemma has_value_like_k_eapply_sterm_implies1 {o} :
   forall lib f k (t : @NTerm o),
     nt_wf t
@@ -569,6 +668,37 @@ Proof.
       apply has_value_like_S; eexists; dands; eauto.
 Qed.
 
+Lemma has_value_like_k_eapply_nseq_implies {o} :
+  forall lib s k (t : @NTerm o),
+    nt_wf t
+    -> has_value_like_k lib k (mk_eapply (mk_nseq s) t)
+    -> {j : nat & j < k # has_value_like_k lib j t}.
+Proof.
+  induction k; introv wf comp.
+
+  - allrw @has_value_like_0; subst.
+    allunfold @isvalue_like; allsimpl; tcsp.
+
+  - allrw @has_value_like_S; exrepnd.
+    csunf comp1; allsimpl.
+    apply compute_step_eapply_success in comp1; exrepnd; ginv.
+    repndors; exrepnd; subst.
+
+    + apply compute_step_eapply2_success in comp1; repnd; GC.
+      repndors; exrepnd; subst; ginv.
+      exists 0; dands; try omega.
+      apply has_value_like_0; eauto 3 with slow.
+
+    + exists 0; dands; try omega.
+      apply has_value_like_0; eauto 3 with slow.
+
+    + applydup @preserve_nt_wf_compute_step in comp1; auto.
+      apply IHk in comp0; auto.
+      exrepnd.
+      exists (S j); dands; auto; try omega.
+      apply has_value_like_S; eexists; dands; eauto.
+Qed.
+
 Lemma hasvalue_sterm {o} :
   forall lib (f : @ntseq o),
     isprogram (sterm f)
@@ -622,3 +752,10 @@ Qed.
 
 Definition mkc_ntseq {o} (f : @ntseqc o) : CTerm :=
   exist isprog (sterm (ntseqc2seq f)) (isprog_ntseqc f).
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)
