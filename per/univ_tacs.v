@@ -68,6 +68,17 @@ Proof.
   apply isprogram_free_from_atom; eauto 3 with slow.
 Qed.
 
+(* !!MOVE *)
+Lemma iscvalue_mkc_efree_from_atom {p} :
+  forall a b c : @CTerm p, iscvalue (mkc_efree_from_atom a b c).
+Proof.
+  introv; destruct_cterms; allsimpl; allsimpl.
+  unfold iscvalue; simpl.
+  constructor; simpl; auto.
+  apply isprogram_efree_from_atom; eauto 3 with slow.
+Qed.
+
+(* !!MOVE *)
 Lemma iscvalue_mkc_free_from_atoms {p} :
   forall a b : @CTerm p, iscvalue (mkc_free_from_atoms a b).
 Proof.
@@ -102,6 +113,7 @@ Ltac apply_iscvalue :=
             | apply iscvalue_mkc_admiss
             | apply iscvalue_mkc_mono
             | apply iscvalue_mkc_free_from_atom
+            | apply iscvalue_mkc_efree_from_atom
             | apply iscvalue_mkc_free_from_atoms
             | apply iscvalue_mkc_w
             | apply iscvalue_mkc_m
@@ -158,6 +170,7 @@ Ltac not_univ_p2 :=
     | [ H : univi _ _ (mkc_admiss _) _ _                 |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_mono _) _ _                   |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_free_from_atom _ _ _) _ _     |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_efree_from_atom _ _ _) _ _    |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_free_from_atoms _ _) _ _      |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_w _ _ _) _ _                  |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_m _ _ _) _ _                  |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
@@ -190,6 +203,7 @@ Ltac not_univ_p2 :=
     | [ H : univ _ (mkc_admiss _) _ _                 |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_mono _) _ _                   |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_free_from_atom _ _ _) _ _     |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_efree_from_atom _ _ _) _ _    |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_free_from_atoms _ _) _ _      |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_w _ _ _) _ _                  |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_m _ _ _) _ _                  |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2

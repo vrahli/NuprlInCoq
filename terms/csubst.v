@@ -270,6 +270,82 @@ Proof.
   apply lsubstc_mk_free_from_atom.
 Qed.
 
+Lemma lsubstc_mk_efree_from_atom {o} :
+  forall t1 t2 T sub,
+  forall w1 : @wf_term o t1,
+  forall w2 : wf_term t2,
+  forall wT : wf_term T,
+  forall w  : wf_term (mk_efree_from_atom t1 t2 T),
+  forall c1 : cover_vars t1 sub,
+  forall c2 : cover_vars t2 sub,
+  forall cT : cover_vars T sub,
+  forall c  : cover_vars (mk_efree_from_atom t1 t2 T) sub,
+    lsubstc (mk_efree_from_atom t1 t2 T) w sub c
+    = mkc_efree_from_atom (lsubstc t1 w1 sub c1)
+                   (lsubstc t2 w2 sub c2)
+                   (lsubstc T wT sub cT).
+Proof.
+  sp; unfold lsubstc; simpl.
+  assert (csubst (mk_efree_from_atom t1 t2 T) sub
+          = mk_efree_from_atom (csubst t1 sub) (csubst t2 sub) (csubst T sub))
+         by (unfold csubst; simpl;
+             change_to_lsubst_aux4; simpl;
+             rw @sub_filter_nil_r;
+             allrw @fold_nobnd;
+             rw @fold_efree_from_atom; sp).
+  apply cterm_eq; auto.
+Qed.
+
+Lemma lsubstc_mk_efree_from_atom_ex {o} :
+  forall t1 t2 T sub,
+  forall w  : wf_term (@mk_efree_from_atom o t1 t2 T),
+  forall c  : cover_vars (mk_efree_from_atom t1 t2 T) sub,
+  {w1 : wf_term t1
+   & {w2 : wf_term t2
+   & {wT : wf_term T
+   & {c1 : cover_vars t1 sub
+   & {c2 : cover_vars t2 sub
+   & {cT : cover_vars T sub
+      & lsubstc (mk_efree_from_atom t1 t2 T) w sub c
+           = mkc_efree_from_atom (lsubstc t1 w1 sub c1)
+                          (lsubstc t2 w2 sub c2)
+                          (lsubstc T wT sub cT)}}}}}}.
+Proof.
+  sp.
+
+  assert (wf_term t1) as w1.
+  { allrw <- @wf_efree_from_atom_iff; sp. }
+
+  assert (wf_term t2) as w2.
+  { allrw <- @wf_efree_from_atom_iff; sp. }
+
+  assert (wf_term T) as w3.
+  { allrw <- @wf_efree_from_atom_iff; sp. }
+
+  assert (cover_vars t1 sub) as c1.
+  { unfold cover_vars in c; allsimpl.
+    repeat (rw remove_nvars_nil_l in c).
+    rw app_nil_r in c.
+    repeat (rw @over_vars_app_l in c); sp. }
+
+  assert (cover_vars t2 sub) as c2.
+  { unfold cover_vars in c.
+    simpl in c.
+    repeat (rw remove_nvars_nil_l in c).
+    rw app_nil_r in c.
+    repeat (rw @over_vars_app_l in c); sp. }
+
+  assert (cover_vars T sub) as c3.
+  { unfold cover_vars in c.
+    simpl in c.
+    repeat (rw remove_nvars_nil_l in c).
+    rw app_nil_r in c.
+    repeat (rw @over_vars_app_l in c); sp. }
+
+  exists w1 w2 w3 c1 c2 c3.
+  apply lsubstc_mk_efree_from_atom.
+Qed.
+
 Lemma lsubstc_mk_free_from_atoms {o} :
   forall t1 t2 sub,
   forall w1 : @wf_term o t1,

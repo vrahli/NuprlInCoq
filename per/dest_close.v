@@ -531,6 +531,30 @@ Proof.
   inversion cl; subst; try close_diff; auto.
 Qed.
 
+Lemma dest_close_per_effatom_l {p} :
+  forall lib (ts : cts(p)) T A x a T' eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> computes_to_valc lib T (mkc_efree_from_atom A x a)
+    -> close lib ts T T' eq
+    -> per_effatom lib (close lib ts) T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff; auto.
+Qed.
+
+Lemma dest_close_per_effatom_r {p} :
+  forall lib (ts : cts(p)) T A x a T' eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> computes_to_valc lib T' (mkc_efree_from_atom A x a)
+    -> close lib ts T T' eq
+    -> per_effatom lib (close lib ts) T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff; auto.
+Qed.
+
 Lemma dest_close_per_ffatoms_l {p} :
   forall lib (ts : cts(p)) T A x T' eq,
     type_system lib ts
@@ -1137,6 +1161,21 @@ Ltac dest_close_lr h :=
         H4 : close ?lib ?ts ?T ?T' ?eq
       |- _ ] =>
       generalize (dest_close_per_ffatom_r lib ts T A x a T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    (* efree_from_atom *)
+    | [ H1 : type_system ?lib ?ts,
+        H2 : defines_only_universes ?lib ?ts,
+        H3 : computes_to_valc ?lib ?T (mkc_efree_from_atom ?A ?x ?a),
+        H4 : close ?lib ?ts ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_effatom_l lib ts T A x a T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    | [ H1 : type_system ?lib ?ts,
+        H2 : defines_only_universes ?lib ?ts,
+        H3 : computes_to_valc ?lib ?T' (mkc_efree_from_atom ?A ?x ?a),
+        H4 : close ?lib ?ts ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_effatom_r lib ts T A x a T' eq H1 H2 H3 H4); intro h; no_duplicate h
 
     (* free_from_atoms *)
     | [ H1 : type_system ?lib ?ts,

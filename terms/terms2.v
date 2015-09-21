@@ -145,6 +145,9 @@ Definition mk_compute {p} (a b n : @NTerm p) := oterm (Can NCompute) [nobnd a , 
 Definition mk_free_from_atom {p} (a b c : @NTerm p) :=
   oterm (Can NFreeFromAtom) [nobnd a,nobnd b,nobnd c].
 
+Definition mk_efree_from_atom {p} (a b c : @NTerm p) :=
+  oterm (Can NEFreeFromAtom) [nobnd a,nobnd b,nobnd c].
+
 Definition mk_free_from_atoms {p} (T t : @NTerm p) :=
   oterm (Can NFreeFromAtoms) [nobnd T, nobnd t].
 
@@ -558,6 +561,12 @@ Lemma fold_free_from_atom {p} :
   forall (a b c : @NTerm p),
     oterm (Can NFreeFromAtom) [ nobnd a, nobnd b, nobnd c ]
     = mk_free_from_atom a b c.
+Proof. sp. Qed.
+
+Lemma fold_efree_from_atom {p} :
+  forall (a b c : @NTerm p),
+    oterm (Can NEFreeFromAtom) [ nobnd a, nobnd b, nobnd c ]
+    = mk_efree_from_atom a b c.
 Proof. sp. Qed.
 
 Lemma fold_free_from_atoms {p} :
@@ -3532,6 +3541,15 @@ Proof.
   constructor; allsimpl; sp; subst; auto; constructor; auto.
 Qed.
 
+Lemma wf_efree_from_atom {p} :
+  forall a b T : @NTerm p,
+    wf_term a -> wf_term b -> wf_term T -> wf_term (mk_efree_from_atom a b T).
+Proof.
+  intros a b T; repeat (rw <- @nt_wf_eq).
+  intros nta ntb ntt; inversion nta; inversion ntb; subst;
+  constructor; allsimpl; sp; subst; auto; constructor; auto.
+Qed.
+
 Lemma wf_free_from_atoms {p} :
   forall T t : @NTerm p,
     wf_term T -> wf_term t -> wf_term (mk_free_from_atoms T t).
@@ -3566,6 +3584,22 @@ Lemma wf_free_from_atom_iff2 {p} :
     wf_term (mk_free_from_atom a b T) <=> (wf_term a # wf_term b # wf_term T).
 Proof.
   intros; rw @wf_free_from_atom_iff; sp.
+Qed.
+
+Lemma wf_efree_from_atom_iff {p} :
+  forall a b T : @NTerm p,
+    (wf_term a # wf_term b # wf_term T) <=> wf_term (mk_efree_from_atom a b T).
+Proof.
+  sp; split; introv h; repnd.
+  - apply wf_efree_from_atom; sp.
+  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term;try (exact h); simpl; sp.
+Qed.
+
+Lemma wf_efree_from_atom_iff2 {p} :
+  forall a b T : @NTerm p,
+    wf_term (mk_efree_from_atom a b T) <=> (wf_term a # wf_term b # wf_term T).
+Proof.
+  intros; rw @wf_efree_from_atom_iff; sp.
 Qed.
 
 Lemma wf_free_from_atoms_iff {p} :
@@ -3823,6 +3857,58 @@ Qed.
 Lemma isvalue_free_from_atom {p} :
   forall a b T : @NTerm p,
     isprogram (mk_free_from_atom a b T) -> isvalue (mk_free_from_atom a b T).
+Proof. sp; constructor; sp.
+Qed.
+
+Lemma isprogram_efree_from_atom {p} :
+  forall a b T : @NTerm p,
+    isprogram a
+    -> isprogram b
+    -> isprogram T
+    -> isprogram (mk_efree_from_atom a b T).
+Proof.
+  repeat constructor.
+  unfold closed; simpl.
+  allrw <- null_iff_nil.
+  repeat (rw null_app).
+  repeat (rw null_iff_nil).
+  allunfold @isprogram; allunfold @closed.
+  repeat (rewrite remove_nvars_nil_l); sp.
+  simpl; sp; allunfold @isprogram; sp; subst; constructor; auto.
+Qed.
+
+Lemma isprogram_efree_from_atom_iff {p} :
+  forall a b c : @NTerm p,
+    (isprogram a # isprogram b # isprogram c) <=> isprogram (mk_efree_from_atom a b c).
+Proof.
+  intros; split; intro i.
+  apply isprogram_efree_from_atom; sp.
+  inversion i as [cl w].
+  allunfold @closed; allsimpl.
+  allrw remove_nvars_nil_l.
+  allrw app_nil_r.
+  allrw app_eq_nil_iff; repnd; allrw.
+  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
+  dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
+  unfold isprogram; allrw.
+  inversion i1; inversion i2; inversion i3; subst; sp.
+Qed.
+
+Lemma isprog_efree_from_atom {p} :
+  forall a b T : @NTerm p,
+    isprog a
+    -> isprog b
+    -> isprog T
+    -> isprog (mk_efree_from_atom a b T).
+Proof.
+  sp; allrw @isprog_eq.
+  apply isprogram_efree_from_atom; auto.
+Qed.
+
+Lemma isvalue_efree_from_atom {p} :
+  forall a b T : @NTerm p,
+    isprogram (mk_efree_from_atom a b T) -> isvalue (mk_efree_from_atom a b T).
 Proof. sp; constructor; sp.
 Qed.
 
@@ -6596,6 +6682,23 @@ Proof.
   eauto 6 with pi.
 Qed.
 
+Definition mkc_efree_from_atom {p} (t1 t2 t3 : @CTerm p) : CTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  let (c,z) := t3 in
+    exist isprog (mk_efree_from_atom a b c) (isprog_efree_from_atom a b c x y z).
+
+Lemma mkc_efree_from_atom_eq {p} :
+  forall a b c d e f : @CTerm p,
+    mkc_efree_from_atom a b c = mkc_efree_from_atom d e f
+    -> a = d # b = e # c = f.
+Proof.
+  introv h.
+  destruct_cterms; allsimpl.
+  inversion h; subst.
+  eauto 6 with pi.
+Qed.
+
 Definition mkc_free_from_atoms {p} (t1 t2 : @CTerm p) : CTerm :=
   let (a,x) := t1 in
   let (b,y) := t2 in
@@ -9232,6 +9335,20 @@ Proof.
   constructor; simpl; sp; subst; constructor; sp.
 Qed.
 
+Lemma isprog_vars_efree_from_atom {p} :
+  forall vs (a b T : @NTerm p),
+    isprog_vars vs a
+    -> isprog_vars vs b
+    -> isprog_vars vs T
+    -> isprog_vars vs (mk_efree_from_atom a b T).
+Proof.
+  introv ipa ipb ipt.
+  allrw @isprog_vars_eq; allsimpl.
+  allrw remove_nvars_nil_l; allrw app_nil_r.
+  allrw subvars_app_l; sp.
+  constructor; simpl; sp; subst; constructor; sp.
+Qed.
+
 Lemma isprog_vars_free_from_atoms {p} :
   forall vs (a b : @NTerm p),
     isprog_vars vs a
@@ -9843,6 +9960,19 @@ Proof.
     allrw subvars_app_l; sp.
 Qed.
 
+Lemma isprog_vars_efree_from_atom_iff {p} :
+  forall vs (a b T : @NTerm p),
+    (isprog_vars vs a # isprog_vars vs b # isprog_vars vs T)
+    <=> isprog_vars vs (mk_efree_from_atom a b T).
+Proof.
+  introv; split; intro k.
+  - apply isprog_vars_efree_from_atom; sp.
+  - allrw @isprog_vars_eq; allsimpl; allrw @nt_wf_eq.
+    allrw remove_nvars_nil_l; allrw app_nil_r.
+    allrw <- @wf_efree_from_atom_iff.
+    allrw subvars_app_l; sp.
+Qed.
+
 Lemma isprog_vars_free_from_atoms_iff {p} :
   forall vs (a b : @NTerm p),
     (isprog_vars vs a # isprog_vars vs b)
@@ -9950,6 +10080,7 @@ Ltac unfold_all_mk :=
        ;allunfold mk_var
        ;allunfold mk_sup
        ;allunfold mk_free_from_atom
+       ;allunfold mk_efree_from_atom
        ;allunfold mk_free_from_atoms
        ;allunfold mk_equality
        ;allunfold mk_tequality

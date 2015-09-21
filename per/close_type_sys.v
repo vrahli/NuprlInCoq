@@ -53,6 +53,7 @@ Require Import close_type_sys_per_partial.
 Require Import close_type_sys_per_admiss.
 Require Import close_type_sys_per_mono.
 Require Import close_type_sys_per_ffatom.
+Require Import close_type_sys_per_effatom.
 Require Import close_type_sys_per_ffatoms.
 Require Import close_type_sys_per_set.
 Require Import close_type_sys_per_tunion.
@@ -444,6 +445,17 @@ Proof.
            (a2 := a2)
            (eqa := eqa)
            (u := u); auto.
+
+
+  - Case "CL_effatom".
+    apply @close_type_system_effatom
+    with (A1 := A1)
+           (A2 := A2)
+           (x1 := x1)
+           (x2 := x2)
+           (a1 := a1)
+           (a2 := a2)
+           (eqa := eqa); auto.
 
 
   - Case "CL_ffatoms".

@@ -406,6 +406,30 @@ Definition per_ffatom {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [
       # a2 ===>(lib) (mkc_utoken u)
       # eq <=2=> (per_ffatom_eq lib eqa u x1)}}}.
 
+Definition name_not_in_upto {o} lib (a x : @CTerm o) (eqa : per) :=
+  {u : get_patom_set o
+   , {y : CTerm
+   , a ===>(lib) (mkc_utoken u)
+   # eqa x y
+   # !LIn u (getc_utokens y)}}.
+
+Definition per_effatom_eq {p}
+           lib
+           (eqa : per)
+           (a x t1 t2 : @CTerm p) :=
+    t1 ===>(lib) mkc_axiom
+  # t2 ===>(lib) mkc_axiom
+  # name_not_in_upto lib a x eqa.
+
+Definition per_effatom {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+   {A1 , A2 , x1 , x2 , a1 , a2 : CTerm
+   , {eqa : per
+      , T1 ===>(lib) (mkc_efree_from_atom A1 x1 a1)
+      # T2 ===>(lib) (mkc_efree_from_atom A2 x2 a2)
+      # ts A1 A2 eqa
+      # (name_not_in_upto lib a1 x1 eqa <=> name_not_in_upto lib a2 x2 eqa)
+      # eq <=2=> (per_effatom_eq lib eqa a1 x1)}}.
+
 Definition noutokensc {o} (t : @CTerm o) := noutokens (get_cterm t).
 
 Definition per_ffatoms_eq {p}
@@ -1849,6 +1873,7 @@ Inductive close {p} lib (ts : cts) (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_admiss   : per_admiss   lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_mono     : per_mono     lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_ffatom   : per_ffatom   lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_effatom  : per_effatom  lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_ffatoms  : per_ffatoms  lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_set      : per_set      lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_tunion   : per_tunion   lib (close lib ts) T T' eq -> close lib ts T T' eq
@@ -1889,6 +1914,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
   | Case_aux c "CL_admiss"
   | Case_aux c "CL_mono"
   | Case_aux c "CL_ffatom"
+  | Case_aux c "CL_effatom"
   | Case_aux c "CL_ffatoms"
   | Case_aux c "CL_set"
   | Case_aux c "CL_tunion"
@@ -2428,6 +2454,19 @@ Definition close_ind' {pp}
                     (ca2 : a2 ===>(lib) (mkc_utoken u))
                     (eqiff : eq <=2=> (per_ffatom_eq lib eqa u x1))
                     (per : per_ffatom lib (close lib ts) T T' eq),
+               P ts T T' eq)
+  (effatom : forall (ts : cts)
+                    (T T' : @CTerm pp)
+                    (eq : per)
+                    (A1 A2 x1 x2 a1 a2 : @CTerm pp)
+                    (eqa : per)
+                    (c1 : T ===>(lib) (mkc_efree_from_atom A1 x1 a1))
+                    (c2 : T' ===>(lib) (mkc_efree_from_atom A2 x2 a2))
+                    (cla : close lib ts A1 A2 eqa)
+                    (reca : P ts A1 A2 eqa)
+                    (niff : name_not_in_upto lib a1 x1 eqa <=> name_not_in_upto lib a2 x2 eqa)
+                    (eqiff : eq <=2=> (per_effatom_eq lib eqa a1 x1))
+                    (per : per_effatom lib (close lib ts) T T' eq),
                P ts T T' eq)
   (ffatoms : forall (ts : cts)
                     (T T' : @CTerm pp)
@@ -3120,6 +3159,26 @@ Definition close_ind' {pp}
                 ex ca1 ca2
                 eqt
                 pts
+   | CL_effatom pts =>
+       let (A1,  x) := pts in
+       let (A2,  x) := x in
+       let (x1,  x) := x in
+       let (x2,  x) := x in
+       let (a1,  x) := x in
+       let (a2,  x) := x in
+       let (eqa, x) := x in
+       let (c1,  x) := x in
+       let (c2,  x) := x in
+       let (cla, x) := x in
+       let (ni,  eqt) := x in
+         effatom ts T T' eq A1 A2 x1 x2 a1 a2 eqa
+                 c1
+                 c2
+                 cla
+                 (rec ts A1 A2 eqa cla)
+                 ni
+                 eqt
+                 pts
    | CL_ffatoms pts =>
        let (A1,  x) := pts in
        let (A2,  x) := x in
@@ -3299,6 +3358,7 @@ Ltac one_unfold_per :=
     | [ H : per_admiss   _ _ _ _ _ |- _ ] => unfold per_admiss   in H; exrepd
     | [ H : per_mono     _ _ _ _ _ |- _ ] => unfold per_mono     in H; exrepd
     | [ H : per_ffatom   _ _ _ _ _ |- _ ] => unfold per_ffatom   in H; exrepd
+    | [ H : per_effatom  _ _ _ _ _ |- _ ] => unfold per_effatom  in H; exrepd
     | [ H : per_ffatoms  _ _ _ _ _ |- _ ] => unfold per_ffatoms  in H; exrepd
     | [ H : per_set      _ _ _ _ _ |- _ ] => unfold per_set      in H; exrepd
     | [ H : per_tunion   _ _ _ _ _ |- _ ] => unfold per_tunion   in H; exrepd

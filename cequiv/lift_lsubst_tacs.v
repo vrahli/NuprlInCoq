@@ -406,6 +406,24 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [ct name];
         clear_irr; tac
 
+    (* EFreshFromAtom *)
+    | context [lsubstc (mk_efree_from_atom ?x ?y ?T) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let w2 := fresh "w2" in
+      let wt := fresh "wT" in
+      let c1 := fresh "c1" in
+      let c2 := fresh "c2" in
+      let ct := fresh "cT" in
+      generalize (lsubstc_mk_efree_from_atom_ex x y T s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [w2 name];
+        destruct name as [wt name];
+        destruct name as [c1 name];
+        destruct name as [c2 name];
+        destruct name as [ct name];
+        clear_irr; tac
+
     (* FreshFromAtoms *)
     | context [lsubstc (mk_free_from_atoms ?x ?y) ?w ?s ?c] =>
       let w1 := fresh "w1" in

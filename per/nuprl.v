@@ -409,6 +409,10 @@ Proof.
     apply CL_ffatom; unfold per_ffatom; sp.
     exists A1 A2 x1 x2 a1 a2 eqa u; sp.
 
+  - Case "CL_effatom".
+    apply CL_effatom; unfold per_effatom; sp.
+    exists A1 A2 x1 x2 a1 a2 eqa; sp.
+
   - Case "CL_ffatoms".
     apply CL_ffatoms; unfold per_ffatoms; sp.
     exists A1 A2 x1 x2 eqa; sp.
@@ -778,6 +782,12 @@ Proof.
     apply CL_ffatom.
     unfold per_ffatom; sp.
     exists A1 A2 x1 x2 a1 a2 eqa u; sp.
+    apply IHn with (i0 := i); sp.
+
+  - Case "CL_effatom".
+    apply CL_effatom.
+    unfold per_effatom; sp.
+    exists A1 A2 x1 x2 a1 a2 eqa; sp.
     apply IHn with (i0 := i); sp.
 
   - Case "CL_ffatoms".

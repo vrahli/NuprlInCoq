@@ -37,7 +37,8 @@ Proof.
          | h | h | h | h | h
          | h | h | h | h | h
          | h | h | h | h | h
-         | h | h | h | h | h ];
+         | h | h | h | h | h
+         | h ];
     allunfold_per; uncast; allapply @computes_to_valc_implies_hasvaluec;
     try (complete (spcast; auto)).
   inversion h as [i u].

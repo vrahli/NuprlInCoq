@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1818,7 +1819,8 @@ Ltac eqconstr0 name :=
     | mkc_set _ _ _      = mkc_set _ _ _      => appdup mkc_set_eq1      name; repd; subst; apply mkc_set_eq2      in name
     | mkc_tunion _ _ _   = mkc_tunion _ _ _   => appdup mkc_tunion_eq1   name; repd; subst; apply mkc_tunion_eq2   in name
 
-    | mkc_free_from_atom _ _ _ = mkc_free_from_atom _ _ _ => apply mkc_free_from_atom_eq in name
+    | mkc_free_from_atom  _ _ _ = mkc_free_from_atom  _ _ _ => apply mkc_free_from_atom_eq  in name
+    | mkc_efree_from_atom _ _ _ = mkc_efree_from_atom _ _ _ => apply mkc_efree_from_atom_eq in name
 
     | mkc_free_from_atoms _ _ = mkc_free_from_atoms _ _ => apply mkc_free_from_atoms_eq in name
 
@@ -2075,3 +2077,10 @@ Ltac rev_implies_ts_or_eq T1 T2 T h :=
   end.
 
 (* end hide *)
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/")
+*** End:
+*)
