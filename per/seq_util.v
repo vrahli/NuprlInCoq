@@ -31,6 +31,7 @@ Require Export per_props4.
 Require Export per_can.
 Require Export cnterm.
 Require Export per_props_atom.
+Require Export per_props_ffatom.
 
 
 
@@ -1066,93 +1067,53 @@ Proof.
 Qed.
 Hint Resolve tequality_natk2nat_nat : slow.
 
-Lemma tequality_free_from_atom {o} :
-  forall lib (T1 T2 : @CTerm o) x1 x2 a1 a2,
-    tequality
-      lib
-      (mkc_free_from_atom T1 x1 a1)
-      (mkc_free_from_atom T2 x2 a2)
-      <=> (tequality lib T1 T2
-           # equality lib x1 x2 T1
-           # equality lib a1 a2 mkc_uatom).
+Lemma equality_in_nout {o} :
+  forall lib (a b : @CTerm o),
+    equality lib a b mkc_nout
+    <=> {u : CTerm
+         , noutokensc u
+         # ccequivc lib a u
+         # ccequivc lib b u}.
 Proof.
   introv.
-  sp_iff Case.
+  unfold mkc_nout.
+  rw @equality_in_set.
+  split; intro h; repnd.
 
-  - Case "->".
-    intros teq.
-    unfold tequality, nuprl in teq; exrepnd.
-    inversion teq0; subst; try not_univ.
-    allunfold_per.
-    computes_to_value_isvalue.
-    unfold tequality; dands; tcsp.
+  - allrw @mkcv_ffatoms_substc.
+    allrw @mkc_var_substc.
+    apply inhabited_free_from_atoms in h; exrepnd.
+    allrw @equality_in_base_iff; spcast.
+    exists u; dands; spcast; auto.
+    eapply cequivc_trans;[|eauto].
+    apply cequivc_sym; auto.
 
-    + exists eqa; auto.
+  - exrepnd.
+    dands.
 
-    + exists eqa; dands; auto.
-      allapply @nuprl_refl; auto.
+    + introv equ.
+      allrw @equality_in_base_iff; spcast.
+      allrw @mkcv_ffatoms_substc.
+      allrw @mkc_var_substc.
+      unfold mkc_ffatoms.
+      apply tequality_free_from_atoms; dands; eauto 3 with slow.
+      apply equality_in_base_iff; spcast; auto.
 
-    + rw @equality_in_uatom_iff.
-      exists u; dands; spcast; auto.
+    + spcast.
+      apply equality_in_base_iff; spcast; auto.
+      eapply cequivc_trans;[eauto|].
+      apply cequivc_sym; auto.
 
-  - Case "<-".
-    introv e; exrepnd.
-    rename e0 into teq.
-    rename e1 into eqx.
-    rename e into equ.
-    unfold tequality in teq; exrepnd.
-    allrw @equality_in_uatom_iff; exrepnd; spcast.
-    exists (per_ffatom_eq lib eq a x1).
-    apply CL_ffatom.
-    unfold per_ffatom.
-    exists T1 T2 x1 x2 a1 a2 eq a.
+    + spcast.
+      allrw @mkcv_ffatoms_substc.
+      allrw @mkc_var_substc.
+      unfold mkc_ffatoms.
+      apply inhabited_free_from_atoms.
+      exists u; dands; eauto 3 with slow.
 
-    dands; spcast; auto;
-    try (complete (spcast; apply computes_to_valc_refl;
-                   try (apply iscvalue_mkc_free_from_atom))).
-    eapply equality_eq1 in teq0; apply teq0; auto.
-Qed.
+      * apply tequality_base.
 
-Lemma tequality_free_from_atoms {o} :
-  forall lib (T1 T2 : @CTerm o) x1 x2,
-    tequality
-      lib
-      (mkc_free_from_atoms T1 x1)
-      (mkc_free_from_atoms T2 x2)
-      <=> (tequality lib T1 T2
-           # equality lib x1 x2 T1).
-Proof.
-  introv.
-  sp_iff Case.
-
-  - Case "->".
-    intros teq.
-    unfold tequality, nuprl in teq; exrepnd.
-    inversion teq0; subst; try not_univ.
-    allunfold_per.
-    computes_to_value_isvalue.
-    unfold tequality; dands; tcsp.
-
-    + exists eqa; auto.
-
-    + exists eqa; dands; auto.
-      allapply @nuprl_refl; auto.
-
-  - Case "<-".
-    introv e; exrepnd.
-    rename e0 into teq.
-    rename e into eqx.
-    unfold tequality in teq; exrepnd.
-    allrw @equality_in_uatom_iff; exrepnd; spcast.
-    exists (per_ffatoms_eq lib eq x1).
-    apply CL_ffatoms.
-    unfold per_ffatoms.
-    exists T1 T2 x1 x2 eq.
-
-    dands; spcast; auto;
-    try (complete (spcast; apply computes_to_valc_refl;
-                   try (apply iscvalue_mkc_free_from_atoms))).
-    eapply equality_eq1 in teq0; apply teq0; auto.
+      * apply equality_in_base_iff; spcast; auto.
 Qed.
 
 Lemma type_mkc_nout {o} :
