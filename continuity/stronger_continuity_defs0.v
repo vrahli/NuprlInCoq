@@ -28,6 +28,7 @@
 Require Export per.
 Require Export continuity_defs_ceq.
 Require Export csubst_fresh.
+Require Export cequiv_fresh2.
 
 
 Definition is_spcan_not_atom {o} lib (t : @CTerm o) a : Type :=
@@ -44,9 +45,6 @@ Definition cis_spcan_not_atom {o} lib (t : @CTerm o) a :=
    # isccanc x
    # noc_bterms x
    # !LIn a (getc_utokens x)}.
-
-Definition getcv_utokens {o} vs (t : @CVTerm o vs) :=
-  get_utokens (get_cvterm vs t).
 
 Lemma cequivc_fresh_subst1 {o} :
   forall lib v (t : @CVTerm o [v]) a,
@@ -91,6 +89,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/")
 *** End:
 *)
