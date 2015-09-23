@@ -153,6 +153,10 @@ Require Import rules_partial.
 Require Import rules_mono.
 
 
+(* Nominal rules *)
+Require Import rules_fresh.
+
+
 (* TO FIX!!
 
 (* Rules(atoms): *)
