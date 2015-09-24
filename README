@@ -6,6 +6,8 @@ The script will generate a Makefile for rules.v and its dependencies.
 Then run "make" to see if everything compiles.  It should take a
 while.
 
+Our implementation compiles with Coq version 8.4pl6.
+
 
 ====== DESCRIPTION ======
 
@@ -52,46 +54,61 @@ Bar Induction
 
 ====== ROADMAP =======
 
-o The term definition is in terms.v (see the definition of NTerm).
+o The term definition is in terms/terms.v (see the definition of
+NTerm).
 
-o The definition of the computation system is in computation.v (see
-the definition of compute_step).
+o The definition of the computation system is in
+computation/computation.v (see the definition of compute_step).
 
-o Howe's computational equivalence relation is defined in cequiv.v
-(see the definition of cequiv).  This relation is defined in terms of
-Howe's approximation relation defined in approx.v (see the definition
-approx).  Howe's computational equivalence relation is proved to be a
-congruence in approx_star.v
+o Howe's computational equivalence relation is defined in
+cequiv/cequiv.v (see the definition of cequiv).  This relation is
+defined in terms of Howe's approximation relation defined in
+cequiv/approx.v (see the definition approx).  Howe's computational
+equivalence relation is proved to be a congruence in
+cequiv/approx_star.v
 
-o Types are defined in per.v using Allen's PER semantics.  Universes
-are closed under our various type constructor (see the inductive
-definition of close).
+o Types are defined in per/per.v using Allen's PER semantics.
+Universes are closed under our various type constructor (see the
+inductive definition of close).
 
-o Universes and the nuprl type system are defined in nuprl.v.  We've
-proved that nuprl is indeed a type system in nuprl_type_sys.v.
+o Universes and the nuprl type system are defined in per/nuprl.v.
+We've proved that nuprl is indeed a type system in
+per/nuprl_type_sys.v.
 
-o Files such as per_props.v contain proofs of properties of the nuprl
-type system.
+o Files such as per/per_props.v contain proofs of properties of the
+nuprl type system.
 
-o The definitions of sequents and rules are in sequents.v.  This file
-also contains the definition of what it means for sequents and rules
-to be valid.  We also prove in this file that Nuprl is consistent,
-meaning that there is no proof of False.
+o The definitions of sequents and rules are in per/sequents.v.  This
+file also contains the definition of what it means for sequents and
+rules to be valid.  We also prove in this file that Nuprl is
+consistent, meaning that there is no proof of False.
 
 o Our proofs of the validity of Nuprl's inference rules can be
-accessed from rules.v (see for example rules_function.v,
-rules_squiggle.v).
+accessed from rules.v (see for example rules/rules_function.v,
+rules/rules_squiggle.v).
 
-o Our proof of our Bar Induction rule is in bar_induction3.v
+o The proof of our most general Bar Induction rule is in
+bar_induction/bar_induction_cterm2.v
 
-o Our proof of our continuity rule is in continuity_stuff.v.
+o The proof of our most general continuity rule is discussed in
+continuity/continuity_stuff.v.
+
+o In per/function_all_types.v (and similarly in per/union_all_types.v)
+we have a proof that the pi type [forall n : nat. Universe(n)] is
+indeed a Nuprl type even though it's not in any universe.
+
+
+====== CONTRIBUTORS ======
+
+Vincent Rahli
+Abhishek Anand
+Mark Bickford
 
 
 ====== OLD WAY OF DOING THINGS ======
 
 o To generate a Makefile, type:
    coq_makefile -f _CoqProject -o Makefile
-
 
 
 ====== OLD OLD WAY OF DOING THINGS (NOW IN oldMakefile) ======
