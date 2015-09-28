@@ -817,7 +817,7 @@ Proof.
       vr_seq_true in hyp2.
       pose proof (hyp2
                     (snoc (snoc s1 (a,mkc_utoken ua)) (z,mkc_axiom))
-                    (snoc (snoc s1 (a,mkc_utoken ua)) (z,mkc_axiom)))
+                    (snoc (snoc s2 (a,mkc_utoken ua)) (z,mkc_axiom)))
         as hyp; clear hyp2.
       repeat (autodimp hyp hh).
 
@@ -875,8 +875,6 @@ Proof.
 
         { sim_snoc2; eauto 3 with slow.
           dands; auto.
-
-          { apply similarity_refl in sim; auto. }
 
           lsubst_tac.
           apply equality_in_uatom_iff.
@@ -938,6 +936,7 @@ Proof.
 
         pose proof (cequivc_fresh_subst_gen
                       lib v (lsubstc_vars t w1 (csub_filter s1 [v]) [v] c1) u y) as ceq1; auto.
+
 
         (*
 
