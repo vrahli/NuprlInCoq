@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -61,3 +62,44 @@ Proof.
     spcast; apply computes_to_value_isvalue_refl; repeat constructor; simpl; sp.
     exists a; sp.
 Qed.
+
+Lemma tequality_atom {p} :
+  forall lib, @tequality p lib mkc_atom mkc_atom.
+Proof.
+  introv.
+  unfold tequality.
+  exists (@equality_of_atom p lib).
+  unfold nuprl.
+  apply CL_atom.
+  unfold per_atom; sp; spcast;
+  try (apply computes_to_valc_refl);
+  try (apply iscvalue_mkc_atom; auto).
+Qed.
+
+Lemma equality_in_atom_iff {p} :
+  forall lib (t1 t2 : @CTerm p),
+    equality lib t1 t2 mkc_atom
+    <=> {a : String.string
+        , t1 ===>(lib) (mkc_token a)
+        # t2 ===>(lib) (mkc_token a)}.
+Proof.
+  intros; split; intro i; exrepnd.
+  - unfold equality, nuprl in i; exrepnd.
+    inversion i1; subst; try not_univ.
+    allunfold @per_atom; repnd.
+    allunfold @eq_term_equals.
+    discover.
+    allunfold @equality_of_atom; exrepnd.
+    exists s; sp.
+  - exists (@equality_of_atom p lib); dands.
+    apply CL_atom; unfold per_atom; sp;
+    spcast; apply computes_to_value_isvalue_refl; repeat constructor; simpl; sp.
+    exists a; sp.
+Qed.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
+*** End:
+*)

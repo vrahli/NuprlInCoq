@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -29,6 +30,8 @@ Require Export per_props_equality.
 Require Export sequents_equality.
 Require Export lsubst_hyps.
 Require Export per_can.
+Require Export per_props_atom.
+Require Export per_props_nat.
 
 
 Fixpoint csub_keep {o} (sub : @CSub o) (vars : list NVar) : CSub :=
@@ -300,6 +303,165 @@ Proof.
     apply cequiv_stable in hyp0.
     repeat (erewrite lsubstc_mk_var_if_csub_find in hyp0;[|eauto]).
     auto. }
+Qed.
+
+
+(*
+   H |- a = b in Base
+
+     By AtomSubtypeBase
+
+     H |- a = b in Atom
+
+ *)
+Definition rule_atom_subtype_base {o}
+           (H : barehypotheses)
+           (a b : @NTerm o)
+  :=
+    mk_rule
+      (mk_baresequent H (mk_conclax (mk_equality a b mk_base)))
+      [mk_baresequent H (mk_conclax (mk_equality a b mk_atom))]
+      [].
+
+Lemma rule_atom_subtype_base_true {o} :
+  forall lib (H : barehypotheses)
+         (a b : @NTerm o),
+    rule_true lib (rule_atom_subtype_base H a b).
+Proof.
+  unfold rule_atom_subtype_base, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  destseq; allsimpl; proof_irr; GC.
+
+  exists (@covered_axiom o (nh_vars_hyps H)).
+
+  vr_seq_true.
+  lsubst_tac.
+  allrw <- @member_equality_iff.
+
+  teq_and_eq (@mk_base o) a b s1 s2 H; eauto 3 with slow.
+
+  vr_seq_true in hyp1.
+  pose proof (hyp1 s1 s2 hf sim) as hyp; clear hyp1; exrepnd.
+  lsubst_tac.
+  allrw <- @member_equality_iff.
+  apply equality_commutes in hyp0; auto; clear hyp1.
+  apply equality_in_atom_iff in hyp0; exrepnd; spcast.
+  apply equality_in_base_iff; spcast.
+  eapply cequivc_trans;
+    [apply computes_to_valc_implies_cequivc;eauto|].
+  eapply cequivc_trans;
+    [|apply cequivc_sym;apply computes_to_valc_implies_cequivc;eauto].
+  apply cequivc_refl.
+Qed.
+
+
+(*
+   H |- a = b in Base
+
+     By UAtomSubtypeBase
+
+     H |- a = b in UAtom
+
+ *)
+Definition rule_uatom_subtype_base {o}
+           (H : barehypotheses)
+           (a b : @NTerm o)
+  :=
+    mk_rule
+      (mk_baresequent H (mk_conclax (mk_equality a b mk_base)))
+      [mk_baresequent H (mk_conclax (mk_equality a b mk_uatom))]
+      [].
+
+Lemma rule_uatom_subtype_base_true {o} :
+  forall lib (H : barehypotheses)
+         (a b : @NTerm o),
+    rule_true lib (rule_uatom_subtype_base H a b).
+Proof.
+  unfold rule_uatom_subtype_base, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  destseq; allsimpl; proof_irr; GC.
+
+  exists (@covered_axiom o (nh_vars_hyps H)).
+
+  vr_seq_true.
+  lsubst_tac.
+  allrw <- @member_equality_iff.
+
+  teq_and_eq (@mk_base o) a b s1 s2 H; eauto 3 with slow.
+
+  vr_seq_true in hyp1.
+  pose proof (hyp1 s1 s2 hf sim) as hyp; clear hyp1; exrepnd.
+  lsubst_tac.
+  allrw <- @member_equality_iff.
+  apply equality_commutes in hyp0; auto; clear hyp1.
+  apply equality_in_uatom_iff in hyp0; exrepnd; spcast.
+  apply equality_in_base_iff; spcast.
+  eapply cequivc_trans;
+    [apply computes_to_valc_implies_cequivc;eauto|].
+  eapply cequivc_trans;
+    [|apply cequivc_sym;apply computes_to_valc_implies_cequivc;eauto].
+  apply cequivc_refl.
+Qed.
+
+(*
+   H |- a = b in Base
+
+     By IntSubtypeBase
+
+     H |- a = b in Int
+
+ *)
+Definition rule_int_subtype_base {o}
+           (H : barehypotheses)
+           (a b : @NTerm o)
+  :=
+    mk_rule
+      (mk_baresequent H (mk_conclax (mk_equality a b mk_base)))
+      [mk_baresequent H (mk_conclax (mk_equality a b mk_int))]
+      [].
+
+Lemma rule_int_subtype_base_true {o} :
+  forall lib (H : barehypotheses)
+         (a b : @NTerm o),
+    rule_true lib (rule_int_subtype_base H a b).
+Proof.
+  unfold rule_int_subtype_base, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  destseq; allsimpl; proof_irr; GC.
+
+  exists (@covered_axiom o (nh_vars_hyps H)).
+
+  vr_seq_true.
+  lsubst_tac.
+  allrw <- @member_equality_iff.
+
+  teq_and_eq (@mk_base o) a b s1 s2 H; eauto 3 with slow.
+
+  vr_seq_true in hyp1.
+  pose proof (hyp1 s1 s2 hf sim) as hyp; clear hyp1; exrepnd.
+  lsubst_tac.
+  allrw <- @member_equality_iff.
+  apply equality_commutes in hyp0; auto; clear hyp1.
+  apply equality_in_int_implies_cequiv in hyp0.
+  apply equality_in_base_iff; spcast; auto.
 Qed.
 
 
