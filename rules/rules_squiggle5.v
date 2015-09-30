@@ -215,7 +215,7 @@ Qed.
      By EqualInBase
 
      H |- a ~ b
-     forall v in (free_vars a ++ free_vars b), H |- v in Base
+     forall v in (free_vars a), H |- v in Base
 
  *)
 Definition rule_equal_in_base {o}
