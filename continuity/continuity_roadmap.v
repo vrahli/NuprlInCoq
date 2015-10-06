@@ -67,7 +67,7 @@ Require Export continuity_rule.
    both existential quantifiers are squashed using [mk_squash].
 
    Both of these are for sequences from nat to subtypes of nat.
-   We have a prove in stronger_continuity_rule4 for functions from nat to nat.
+   We have a proof in stronger_continuity_rule4 for functions from nat to nat.
 
    This strong continuity principle consists of a well-formedness lemma, and
    two conditions.

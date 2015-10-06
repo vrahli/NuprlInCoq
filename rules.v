@@ -90,7 +90,7 @@ Require Import rules_integer_ring.
 
 
 (* Continuity axiom and rule: *)
-Require Import continuity_stuff.
+Require Import continuity_roadmap.
 
 
 (* Functionality rules *)

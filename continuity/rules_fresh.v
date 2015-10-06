@@ -24,7 +24,8 @@
 
 *)
 
-Require Export continuity_stuff.
+
+Require Export continuity_roadmap.
 Require Export sequents_equality.
 Require Export seq_util.
 Require Export subst_tacs_aeq.
