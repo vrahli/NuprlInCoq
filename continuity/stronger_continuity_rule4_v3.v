@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -117,56 +118,6 @@ Proof.
   - sp.
   - sp.
 Qed.
-
-Lemma lsubstc_mk_psquash_ex2 {o} :
-  forall (t : @NTerm o) w s c,
-    {w' : wf_term t
-     & {c' : cover_vars t s
-     & alphaeqc (lsubstc (mk_psquash t) w s c)
-                (mkc_psquash (lsubstc t w' s c')) }}.
-Proof.
-  introv.
-  apply lsubstc_mk_psquash_ex.
-Qed.
-
-Tactic Notation "one_lift_lsubst_squash" constr(T) ident(name) tactic(tac) :=
-  match T with
-    | context [lsubstc (mk_psquash ?a) ?w ?s ?c] =>
-      let w1 := fresh "w1" in
-      let c1 := fresh "c1" in
-      pose proof (lsubstc_mk_psquash_ex2 a w s c) as name;
-        destruct name as [w1 name];
-        destruct name as [c1 name];
-        clear_irr; tac
-  end.
-
-Ltac one_lift_lsubst_squash_concl :=
-  match goal with
-    | [ |- ?T ] =>
-      let name := fresh "eq" in
-      one_lift_lsubst_squash
-        T
-        name
-        (first [ rewrite name
-               | progress (apply alphaeqc_sym in name; rwal_c name)
-               ]);
-        clear name
-  end.
-
-Ltac one_lift_lsubst_squash_hyp H :=
-  let T := type of H in
-  let name := fresh "eq" in
-  one_lift_lsubst_squash
-    T name
-    (first [ rewrite name in H
-           | progress (rwal_h name H)
-           ]); clear name.
-
-Ltac lift_lsubsts_squash :=
-  repeat (match goal with
-            | [ H : context [lsubstc _ _ _ _ ] |- _ ] => one_lift_lsubst_squash_hyp H
-            | [ |- context [lsubstc _ _ _ _ ] ] => one_lift_lsubst_squash_concl
-          end).
 
 Lemma covered_pair {o} :
   forall (a b : @NTerm o) vs,

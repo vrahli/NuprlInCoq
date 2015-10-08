@@ -5936,7 +5936,7 @@ Lemma cl_subst_swap {o} :
 Proof.
   introv cl1 cl2 d.
   unfold subst.
-  apply computation2.cl_lsubst_swap; simpl; eauto with slow.
+  apply substitution3.cl_lsubst_swap; simpl; eauto with slow.
 Qed.
 
 Definition is_utok {o} (t : @NTerm o) :=

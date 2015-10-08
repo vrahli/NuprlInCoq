@@ -39,6 +39,7 @@ Require Export arith_props.
 Require Export compare_cterm.
 Require Export terms_try.
 Require Export csubst_fresh.
+Require Export psquash.
 
 
 Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
@@ -1367,6 +1368,16 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [w1 name];
         destruct name as [c1 name];
         clear_irr; tac
+
+    (* PSquash *)
+    | context [lsubstc (mk_psquash ?x) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let c1 := fresh "c1" in
+      generalize (lsubstc_mk_psquash_ex2 x w s c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [c1 name];
+        clear_irr; tac
   end.
 
 Lemma implies_prod_left :
@@ -1644,6 +1655,45 @@ Ltac lift_lsubsts2 :=
   repeat (match goal with
             | [ H : context [lsubstc _ _ _ _ ] |- _ ] => one_lift_lsubst2_hyp H
             | [ |- context [lsubstc _ _ _ _ ] ] => one_lift_lsubst2_concl
+          end).
+
+Tactic Notation "one_lift_lsubst_squash" constr(T) ident(name) tactic(tac) :=
+  match T with
+    | context [lsubstc (mk_psquash ?a) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let c1 := fresh "c1" in
+      pose proof (lsubstc_mk_psquash_ex2 a w s c) as name;
+        destruct name as [w1 name];
+        destruct name as [c1 name];
+        clear_irr; tac
+  end.
+
+Ltac one_lift_lsubst_squash_concl :=
+  match goal with
+    | [ |- ?T ] =>
+      let name := fresh "eq" in
+      one_lift_lsubst_squash
+        T
+        name
+        (first [ rewrite name
+               | progress (apply alphaeqc_sym in name; rwal_c name)
+               ]);
+        clear name
+  end.
+
+Ltac one_lift_lsubst_squash_hyp H :=
+  let T := type of H in
+  let name := fresh "eq" in
+  one_lift_lsubst_squash
+    T name
+    (first [ rewrite name in H
+           | progress (rwal_h name H)
+           ]); clear name.
+
+Ltac lift_lsubsts_squash :=
+  repeat (match goal with
+            | [ H : context [lsubstc _ _ _ _ ] |- _ ] => one_lift_lsubst_squash_hyp H
+            | [ |- context [lsubstc _ _ _ _ ] ] => one_lift_lsubst_squash_concl
           end).
 
 

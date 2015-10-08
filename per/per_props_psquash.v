@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -625,9 +626,6 @@ Proof.
     allrw <- @member_member_iff.
     auto.
 Qed.
-
-Definition mkc_psquash {o} (t : @CTerm o) :=
-  mkc_pertype (mkc_psquash_per nvarx nvary t).
 
 Lemma implies_tequality_mkc_psquash {o} :
   forall lib (t1 t2 : @CTerm o),

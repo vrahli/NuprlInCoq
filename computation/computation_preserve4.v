@@ -757,7 +757,7 @@ Proof.
           exrepnd.
           rw <- @cl_lsubst_lsubst_aux in k1; eauto with slow.
           unfold subst in k1.
-          rw @computation2.cl_lsubst_swap in k1; simpl; eauto with slow;
+          rw @substitution3.cl_lsubst_swap in k1; simpl; eauto with slow;
           [|rw disjoint_singleton_l; rw <- @dom_sub_sub_filter; rw in_remove_nvars; simpl; complete sp].
           rw <- @cl_lsubst_lsubst_aux; eauto with slow.
           unfold subst.

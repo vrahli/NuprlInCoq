@@ -292,10 +292,8 @@ Proof.
           assert (!(LIn w (dom_csub s1a))).
           { allapply @similarity_dom; repnd; allrw; auto. }
           rw (@cl_lsubst_var_snoc_in p w); eauto 3 with slow;
-           [|repeat (apply implies_cl_sub_snoc);eauto 2 with slow
-           |repeat (rw @dom_sub_snoc); rw in_snoc; rw @dom_csub_eq; tcsp].
-          
-         
+           [|repeat (rw @dom_sub_snoc); rw in_snoc; rw @dom_csub_eq; tcsp].
+
           apply alpha_eq_hyps_lsubst_if_ext_eq; eauto 2 with slow.
 
           introv i; allsimpl.
@@ -534,14 +532,14 @@ Proof.
   * eapply eq_in_image_eq; [exact eq2 | spcast | spcast]; eauto 3 with slow.
     apply implies_cequivc_apply; auto; apply cequivc_sym; auto.
 Qed.
-    
-  
+
+
 Lemma rule_image_equality_true {p} :
   forall lib,
   forall A1 A2 f1 f2 : NTerm,
   forall i : nat,
   forall H : @barehypotheses p,
-    rule_true lib 
+    rule_true lib
          (rule_image_equality
                  A1 A2 f1 f2
                  i
@@ -588,12 +586,12 @@ Proof.
    (apply tequality_mkc_uni).
   assert (wf_term (mk_image A1 f1)) as wfa by (apply wf_image; auto).
   assert (wf_term (mk_image A2 f2)) as wfb by (apply wf_image; auto).
-   
+
   pose proof (teq_and_eq_if_equality lib (@mk_uni p i) (mk_image A1 f1) (mk_image A2 f2)
               s1 s2 H wT wfa wfb c1 c0 c2 c3 cT cT0 eqh sim) as X.
   lsubst_tac.
   allrw @member_eq;
-  allrw <- @member_equality_iff. 
+  allrw <- @member_equality_iff.
   apply X; auto.
   introv hfun ss.
   lsubst_tac.
@@ -602,7 +600,7 @@ Proof.
   rename s0 into s1.
   rename s3 into s2.
   apply equality_image.
-  rw @VR_sequent_true_ex in hyp1; rw @VR_sequent_true_ex in hyp2. allsimpl. 
+  rw @VR_sequent_true_ex in hyp1; rw @VR_sequent_true_ex in hyp2. allsimpl.
   generalize (hyp1 s1 s2) (hyp2 s1 s2); clear hyp1 hyp2; intros hyp1 hyp2.
   repeat (dest_imp hyp1 h); repeat (dest_imp hyp2 h); exrepnd.
   lsubst_tac.
@@ -614,20 +612,20 @@ Proof.
     generalize_lsubstc_terms A22.
     revert hyp0. generalize_lsubstc_terms A21.
     revert hyp9. generalize_lsubstc_terms A12.
-    introv aa. 
+    introv aa.
     assert (equality lib A11 A12 (mkc_uni i)) as eq1 by
       ( destruct aa; auto;
         spcast; apply equality_respects_cequivc; auto;
          eapply equality_refl; eauto).
     assert (equality lib A21 A11 (mkc_uni i)) by
       (apply equality_sym; auto).
-    introv bb. 
+    introv bb.
     assert (equality lib A21 A22 (mkc_uni i)) as eq2 by
       (destruct bb; auto;
         spcast; apply equality_respects_cequivc; auto;
          eapply equality_refl; eauto).
     eapply equality_trans; [exact hyp2 | auto].
-    
+
   - allrw @equality_in_base_iff.
     revert hyp3. revert hyp6.
     generalize_lsubstc_terms f11.
@@ -647,6 +645,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)

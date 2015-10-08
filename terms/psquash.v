@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -24,7 +25,7 @@
 *)
 
 
-Require Export computation8.
+(*Require Export computation8.*)
 Require Export substitution3.
 Require Export cvterm.
 Require Export alphaeq3.
@@ -93,7 +94,7 @@ Proof.
   rw eqvars_prop in eqvs; apply eqvs in i; sp.
 Qed.
 
-Lemma cover_vars_uand {o} :
+Lemma cover_vars_upto_uand {o} :
   forall (A B : @NTerm o) (s : CSub) vs,
     cover_vars_upto (mk_uand A B) s vs <=> (cover_vars_upto A s vs # cover_vars_upto B s vs).
 Proof.
@@ -156,7 +157,7 @@ Proof.
   unfold mk_psquash_per.
   rw @cover_vars_lam.
   rw @cover_vars_upto_lam.
-  rw @cover_vars_uand.
+  rw @cover_vars_upto_uand.
   allrw @cover_vars_upto_member.
   allrw @cover_vars_upto_var.
   simpl.
@@ -559,9 +560,23 @@ Proof.
     rw (lsubst_aux_trivial_cl_term2 (lsubst_aux t (csub2sub s))); auto. }
 Qed.
 
+Definition mkc_psquash {o} (t : @CTerm o) :=
+  mkc_pertype (mkc_psquash_per nvarx nvary t).
+
+Lemma lsubstc_mk_psquash_ex2 {o} :
+  forall (t : @NTerm o) w s c,
+    {w' : wf_term t
+     & {c' : cover_vars t s
+     & alphaeqc (lsubstc (mk_psquash t) w s c)
+                (mkc_psquash (lsubstc t w' s c')) }}.
+Proof.
+  introv.
+  apply lsubstc_mk_psquash_ex.
+Qed.
+
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/")
 *** End:
 *)

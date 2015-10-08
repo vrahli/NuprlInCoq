@@ -158,6 +158,10 @@ Require Import rules_mono.
 Require Import rules_fresh.
 
 
+(* Squash rules (derivable) *)
+Require Import rules_squash.
+
+
 (* TO FIX!!
 
 (* Rules(atoms): *)

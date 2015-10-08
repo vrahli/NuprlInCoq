@@ -347,8 +347,7 @@ Proof.
           rw (cl_lsubst_snoc_not_in (@mk_var o a) b); simpl; tcsp; eauto 2 with slow;
           [|repeat (apply implies_cl_sub_snoc);eauto 2 with slow].
           rw (@cl_lsubst_var_snoc_in o a); eauto 3 with slow;
-          [|repeat (apply implies_cl_sub_snoc);eauto 2 with slow
-           |repeat (rw @dom_sub_snoc); rw in_snoc; rw @dom_csub_eq; tcsp].
+          [|repeat (rw @dom_sub_snoc); rw in_snoc; rw @dom_csub_eq; tcsp].
           rw (@cl_lsubst_var_snoc_in o b); eauto 3 with slow;
           [|repeat (apply implies_cl_sub_snoc);eauto 2 with slow
            |repeat (rw @dom_sub_snoc); repeat (rw in_snoc); rw @dom_csub_eq; tcsp].
@@ -583,8 +582,7 @@ Proof.
         rw (cl_lsubst_snoc_not_in (@mk_var o a) b); simpl; tcsp; eauto 2 with slow;
         [|repeat (apply implies_cl_sub_snoc);eauto 2 with slow].
         rw (@cl_lsubst_var_snoc_in o a); eauto 3 with slow;
-        [|repeat (apply implies_cl_sub_snoc);eauto 2 with slow
-         |repeat (rw @dom_sub_snoc); rw in_snoc; rw @dom_csub_eq; tcsp];[].
+        [|repeat (rw @dom_sub_snoc); rw in_snoc; rw @dom_csub_eq; tcsp];[].
         rw (@cl_lsubst_var_snoc_in o b); eauto 3 with slow;
         [|repeat (apply implies_cl_sub_snoc);eauto 2 with slow
          |repeat (rw @dom_sub_snoc); repeat (rw in_snoc); rw @dom_csub_eq; tcsp];[].
@@ -2401,6 +2399,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)
