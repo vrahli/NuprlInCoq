@@ -159,7 +159,7 @@ Require Import rules_fresh.
 
 
 (* Squash rules (derivable) *)
-Require Import rules_squash.
+(* Require Import rules_squash. *)
 
 
 (* TO FIX!!
