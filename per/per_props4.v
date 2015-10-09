@@ -29,6 +29,7 @@ Require Export per_props_nat2.
 Require Export per_props_nat3.
 Require Export continuity_defs_ceq.
 Require Export per_props_equality.
+Require Export list. (* !!WTF *)
 
 
 Lemma isprog_vars_squash {p} :

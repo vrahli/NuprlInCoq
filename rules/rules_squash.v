@@ -29,6 +29,9 @@ Require Export sequents_equality.
 Require Export per_props_psquash.
 Require Export sequents_tacs2.
 Require Export per_can.
+Require Export per_respects.
+Require Export subst_tacs_aeq.
+Require Export lsubst_hyps.
 Require Export list. (* !!WTF *)
 
 
@@ -473,32 +476,96 @@ Proof.
 Qed.
 
 
+Lemma hyps_functionality_psquash_implies {o} :
+  forall lib (s1 s2 : @CSub o) T (wT : wf_term T) (cT : cover_vars T s1) x t H J,
+    length H = length s1
+    -> (forall s3 (cT' : cover_vars T s3),
+           similarity lib s1 s3 H
+           -> tequality lib (lsubstc T wT s1 cT) (lsubstc T wT s3 cT'))
+    -> hyps_functionality lib (snoc s1 (x, t) ++ s2) (snoc H (mk_hyp x (mk_psquash T)) ++ J)
+    -> hyps_functionality lib (snoc s1 (x, t) ++ s2) (snoc H (mk_hyp x T) ++ J).
+Proof.
+  introv len imp hf sim.
+
+  apply similarity_app in sim; exrepnd; subst.
+  allrw length_snoc.
+  apply app_split in sim0; repnd; subst; repeat (rw length_snoc); try (complete (allrw; sp)).
+  allrw length_snoc; cpx.
+  apply similarity_snoc in sim5; exrepnd; subst; allsimpl.
+  allrw length_snoc; cpx.
+  pose proof (hf (snoc s2a0 (x,t2) ++ s2b)) as xx; clear hf.
+  autodimp xx hyp.
+
+  - apply similarity_app.
+    eexists; eexists; eexists; eexists; dands; eauto;
+    allrw length_snoc; auto.
+
+    sim_snoc2; eauto 3 with slow;
+    try (apply wf_mk_psquash; auto);
+    try (apply cover_vars_psquash; auto);
+    dands; auto.
+
+    lsubst_tac.
+    apply implies_equality_in_mkc_psquash.
+
+    + apply equality_refl in sim2; auto.
+    + apply equality_sym in sim2; apply equality_refl in sim2; auto.
+
+  - apply eq_hyps_app in xx; exrepnd.
+    allrw length_snoc.
+
+    apply app_split in xx0; repnd; subst;
+    repeat (rw length_snoc); try (rw sim3; rw xx3; auto).
+
+    apply app_split in xx2; repnd; subst;
+    repeat (rw length_snoc); try (rw sim4; rw xx4; auto).
+
+    apply eq_hyps_snoc in xx5; exrepnd; allsimpl; cpx.
+
+    apply eq_hyps_app.
+    eexists; eexists; eexists; eexists; dands; eauto;
+    allrw length_snoc; auto.
+    apply eq_hyps_snoc; simpl.
+
+    assert (cover_vars T s2a) as c2.
+    { clear xx0; rw @cover_vars_psquash in p2; auto. }
+
+    exists s1a0 s2a t0 t3 w p c2; dands; auto.
+    proof_irr.
+    apply imp; auto.
+Qed.
+
+
 (*
    H, x : psquash(t), J |- a = b in C
 
      By PSquashElim i y z
 
-     H, x : t, y : t, J |- a = b in C
-     H |- t in U{i}  (* This is needed because psquash(t) is extensional *)
+     H, x : t, J, y : t |- a = b[x\y] in C
+     H, x : psquash(t), J |- C in U{i}  // Required to prove that C is functional
+     H |- t in U{i}                     // Required because psquash(t) is extensional
 
  *)
 Definition rule_psquash_elim {o}
            (H J : barehypotheses)
            (t a b C : @NTerm o)
-           (x : NVar)
+           (x y : NVar)
            (i : nat)
   :=
     mk_rule
       (mk_baresequent (snoc H (mk_hyp x (mk_psquash t)) ++ J) (mk_conclax (mk_equality a b C)))
-      [ mk_baresequent (snoc H (mk_hyp x t) ++ J) (mk_conclax (mk_equality a b C)),
+      [ mk_baresequent
+          (snoc (snoc H (mk_hyp x t) ++ J) (mk_hyp y t))
+          (mk_conclax (mk_equality a (subst b x (mk_var y)) C)),
+        mk_baresequent (snoc H (mk_hyp x (mk_psquash t)) ++ J) (mk_conclax (mk_member C (mk_uni i))),
         mk_baresequent H (mk_conclax (mk_member t (mk_uni i)))
       ]
       [].
 
 Lemma rule_psquash_elim_true {o} :
   forall lib (H J : barehypotheses)
-         (t a b C : @NTerm o) x i,
-    rule_true lib (rule_psquash_elim H J t a b C x i).
+         (t a b C : @NTerm o) x y i,
+    rule_true lib (rule_psquash_elim H J t a b C x y i).
 Proof.
   unfold rule_psquash_elim, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -508,16 +575,61 @@ Proof.
   dLin_hyp; exrepnd.
   rename Hyp0 into hyp1.
   rename Hyp1 into hyp2.
+  rename Hyp2 into hyp3.
   destseq; allsimpl; proof_irr; GC.
   unfold closed_extract; simpl.
   exists (@covered_axiom o (nh_vars_hyps (snoc H (mk_hyp x (mk_psquash t)) ++ J))).
+
+  assert (x <> y
+          # !LIn x (vars_hyps H)
+          # !LIn y (vars_hyps H)
+          # !LIn x (vars_hyps J)
+          # !LIn y (vars_hyps J)
+          # subset (free_vars t) (vars_hyps H)
+          # disjoint (vars_hyps H) (vars_hyps J)
+          # !LIn y (free_vars a)
+          # !LIn y (free_vars b)
+          # !LIn y (free_vars C)
+          # !LIn x (free_vars t)
+          # !LIn y (free_vars t)) as vhyps.
+
+  {
+    clear hyp1.
+    dwfseq.
+    sp;
+      try (complete (pose proof (cg y) as xx; autodimp xx hyp;
+                     rw in_app_iff in xx; rw in_snoc in xx; repndors; tcsp));
+      try (complete (pose proof (cg0 y) as xx; autodimp xx hyp;
+                     rw in_app_iff in xx; rw in_snoc in xx; repndors; tcsp));
+      try (complete (pose proof (cg1 y) as xx; autodimp xx hyp;
+                     rw in_app_iff in xx; rw in_snoc in xx; repndors; tcsp)).
+  }
+
+  destruct vhyps as [ nxy vhyps ].
+  destruct vhyps as [ nxH vhyps ].
+  destruct vhyps as [ nyH vhyps ].
+  destruct vhyps as [ nxJ vhyps ].
+  destruct vhyps as [ nyJ vhyps ].
+  destruct vhyps as [ stH vhyps ].
+  destruct vhyps as [ dHJ vhyps ].
+  destruct vhyps as [ nya vhyps ].
+  destruct vhyps as [ nyb vhyps ].
+  destruct vhyps as [ nyC vhyps ].
+  destruct vhyps as [ nxt nyt ].
 
   vr_seq_true.
   lsubst_tac.
   allrw <- @member_equality_iff.
   teq_and_eq C a b s1 s2 (snoc H (mk_hyp x (mk_psquash t)) ++ J).
 
-  - vr_seq_true in hyp1.
+  - vr_seq_true in hyp2.
+    pose proof (hyp2 s1 s2 eqh sim) as h; clear hyp2.
+    exrepnd; lsubst_tac.
+    apply tequality_in_uni_implies_tequality in h0; auto.
+    rw <- @member_member_iff in h1.
+    apply member_in_uni in h1; auto.
+
+  - dup sim as simbackup.
 
     apply similarity_app in sim; exrepnd; subst.
     allrw length_snoc.
@@ -527,87 +639,128 @@ Proof.
     lsubst_tac.
     allrw @equality_in_mkc_psquash; repnd.
 
+    assert (disjoint (free_vars t) (dom_csub s1b)) as disjts1b.
+    { introv k j.
+      apply stH in k.
+      apply dHJ in k.
+      apply similarity_dom in sim1; repnd.
+      autorewrite with slow in *.
+      rw sim5 in j; tcsp. }
+
+    vr_seq_true in hyp1.
     pose proof (hyp1
-                  (snoc s1a0 (x,t1) ++ s1b)
-                  (snoc s2a0 (x,t1) ++ s2b)) as hyp;
+                  (snoc (snoc s1a0 (x,t1) ++ s1b) (y,t2))
+                  (snoc (snoc s2a0 (x,t1) ++ s2b) (y,t2))) as hyp;
       clear hyp1; exrepnd; clear_irr.
     repeat (autodimp hyp hh).
 
-    { introv sim'.
-      apply similarity_app in sim'; exrepnd; subst.
-      allrw length_snoc.
-      apply app_split in sim'0; repnd; subst; repeat (rw length_snoc);
-      try (complete (allrw; sp)).
-      apply similarity_snoc in sim'5; exrepnd; subst; allsimpl.
-      allrw length_snoc; cpx.
+    { apply hyps_functionality_snoc2; simpl; auto;[|].
 
-      assert (cover_vars t s2a1) as cov2.
-      { allrw @cover_vars_eq.
-        allapply @similarity_dom; repnd.
-        rw sim'6; rw <- sim'3; auto. }
+      - introv equ sim'.
+        lsubst_tac.
+        apply similarity_app in sim'; exrepnd; subst.
+        allrw length_snoc.
+        apply app_split in sim'0; repnd; subst; repeat (rw length_snoc);
+        try (complete (allrw; sp)).
+        allrw length_snoc; cpx.
+        apply similarity_snoc in sim'5; exrepnd; subst; allsimpl.
+        allrw length_snoc; cpx.
 
-      apply eq_hyps_app.
-      exists (snoc s1a (x,t0)) s1b0 (snoc s2a1 (x,t3)) s2b0;
-        allrw length_snoc; dands; auto; proof_irr.
+        assert (disjoint (free_vars t) (dom_csub s2b0)) as disjts2b0.
+        { introv k j.
+          apply stH in k.
+          apply dHJ in k.
+          apply similarity_dom in sim'1; repnd.
+          autorewrite with slow in *.
+          rw sim'1 in j; tcsp. }
 
-      - apply eq_hyps_snoc; simpl.
-        exists s1a s2a1 t0 t3 w0 p0 cov2; dands; auto.
+        lsubst_tac.
 
-        + eapply hyps_functionality_init_seg in eqh;eauto.
-          pose proof (hyps_functionality_init_seg_snoc2
-                      lib s1a t0 t2 H x (mk_psquash t) w p eqh) as h.
-          autodimp h hh.
-          lsubst_tac.
-          apply implies_equality_in_mkc_psquash; auto.
-
-        + eapply hyps_functionality_init_seg in eqh;eauto.
-          pose proof (eqh (snoc s2a1 (x,t2))) as h.
-          autodimp h hyp.
-
-          * sim_snoc2.
-            dands; auto.
-            lsubst_tac.
-            apply implies_equality_in_mkc_psquash; auto.
-
-          * pose proof (hyps_functionality_init_seg_snoc2
-                          lib s1a t0 t2 H x (mk_psquash t) w p eqh) as q.
-            autodimp q hyp.
-            { lsubst_tac.
-              apply implies_equality_in_mkc_psquash; auto. }
-
-            vr_seq_true in hyp2.
-            pose proof (hyp2 s1a s2a1 q sim'6) as hh; clear hyp2; exrepnd.
-            lsubst_tac.
-            apply tequality_in_uni_implies_tequality in hh0; auto.
-            apply inhabited_implies_tequality in sim2; auto.
-
-      - pose proof (eqh (snoc s2a1 (x,t3) ++ s2b0)) as h; clear eqh.
+        eapply hyps_functionality_init_seg in hf;eauto.
+        pose proof (hyps_functionality_init_seg_snoc2
+                      lib s1a t0 t2 H x (mk_psquash t) w p hf) as h.
         autodimp h hh.
+        { lsubst_tac.
+          apply implies_equality_in_mkc_psquash; auto. }
 
-        + apply similarity_app.
-          eexists; eexists; eexists; eexists; dands; eauto; allrw length_snoc; auto.
-          sim_snoc2; dands; auto.
-          lsubst_tac.
-          apply implies_equality_in_mkc_psquash; auto.
-          apply equality_sym in sim'2; apply equality_refl in sim'2; auto.
+        vr_seq_true in hyp3.
+        pose proof (hyp3 s1a s2a1 h sim'5) as hh; clear hyp2; exrepnd.
+        lsubst_tac.
+        apply tequality_in_uni_implies_tequality in hh0; auto.
+        apply inhabited_implies_tequality in sim2; auto.
 
-        + apply eq_hyps_app in h; exrepnd; allsimpl; allrw length_snoc.
-          apply app_split in h0; repnd; subst; repeat (rw length_snoc);
-          try (complete (allrw; sp)).
-          apply app_split in h2; repnd; subst; repeat (rw length_snoc);
-          try (complete (allrw; sp)).
+      - apply (hyps_functionality_psquash_implies lib s1a0 s1b t w0 c1); auto.
+
+        introv sim'.
+
+        eapply hyps_functionality_init_seg in hf;eauto.
+        pose proof (hyps_functionality_init_seg_snoc2
+                      lib s1a0 t1 t2 H x (mk_psquash t) w p hf) as h.
+        autodimp h hh.
+        { lsubst_tac.
+          apply implies_equality_in_mkc_psquash; auto. }
+
+        vr_seq_true in hyp3.
+        pose proof (hyp3 s1a0 s3 h sim') as hh; clear hyp2; exrepnd.
+        lsubst_tac.
+        apply tequality_in_uni_implies_tequality in hh0; auto.
+        apply inhabited_implies_tequality in sim2; auto.
     }
 
-    { apply similarity_app.
-      eexists; eexists; eexists; eexists; dands; eauto; allrw length_snoc; auto.
-      sim_snoc2; dands; auto; proof_irr.
-      rw @member_eq; auto. }
+    { sim_snoc2.
+
+      { apply cover_vars_app_weak.
+        apply cover_vars_snoc_weak; auto. }
+
+      dands; lsubst_tac; auto;[].
+
+      apply similarity_app.
+      eexists; eexists; eexists; eexists; dands; eauto;
+      allrw length_snoc; auto.
+
+      sim_snoc2; dands; proof_irr; auto.
+    }
 
     exrepnd.
     lsubst_tac.
-    apply tequality_mkc_equality_sp in hyp0; repnd.
+    allrw <- @member_equality_iff.
+    apply equality_commutes4 in hyp0; auto.
+    eapply equality_respects_alphaeqc_right;[|exact hyp0].
+    clear hyp0 hyp1.
 
-    SearchAbout tequality mkc_equality.
+    assert (cover_vars (mk_var y) (snoc (snoc s1a0 (x, t1) ++ s1b) (y, t2))) as covy1.
+    { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+    assert (cover_vars (mk_var y) (snoc (snoc s2a0 (x, t1) ++ s2b) (y, t2))) as covy2.
+    { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+    assert (!LIn y (dom_csub (snoc s2a0 (x, t1) ++ s2b))) as niy.
+    { rw @dom_csub_app; rw @dom_csub_snoc; simpl; rw in_app_iff; rw in_snoc.
+      apply similarity_dom in sim6; repnd; rw sim6.
+      apply similarity_dom in sim1; repnd; rw sim1.
+      autorewrite with slow.
+      intro k; repndors; tcsp. }
+
+    lsubstc_subst_aeq.
+    substc_lsubstc_vars3.
+    revert c6.
+    lsubst_tac.
+    introv.
+    repeat (lsubstc_snoc2;[]).
+
+    unfold alphaeqc; simpl.
+    apply alpha_eq_lsubst_if_ext_eq; auto.
+    introv k.
+    simpl.
+    repeat (rw <- @csub2sub_app).
+    repeat (rw @csub2sub_snoc).
+    repeat (rw @sub_find_app).
+    repeat (rw @sub_find_snoc).
+    boolvar; eauto 3 with slow.
+
+    rw @sub_find_none_if; eauto 3 with slow.
+    rw @dom_csub_eq.
+    apply similarity_dom in sim6; repnd; rw sim6; auto.
 Qed.
 
 

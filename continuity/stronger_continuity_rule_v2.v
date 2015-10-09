@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -25,6 +26,7 @@
 
 
 Require Export stronger_continuity_rule.
+Require Export list. (* !!WTF *)
 
 
 Definition mk_nat2T {o} T : @NTerm o := mk_fun mk_tnat T.
@@ -2591,8 +2593,9 @@ Proof.
 Qed.
 
 
+
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)
