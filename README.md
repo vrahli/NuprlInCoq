@@ -46,15 +46,15 @@ Feel free to send questions to the authors or to nuprl@cs.cornell.edu
 KEYWORDS
 ========
 
-Nuprl,
-Computational Type Theory,
-Extensional Type Theory,
-Intuitionistic Type Theory,
-Howe's computational equivalence relation,
-Partial Equivalence Relation (PER) semantics,
-Consistency,
-Continuity,
-Bar Induction
+* Nuprl,
+* Computational Type Theory,
+* Extensional Type Theory,
+* Intuitionistic Type Theory,
+* Howe's computational equivalence relation,
+* Partial Equivalence Relation (PER) semantics,
+* Consistency,
+* Continuity,
+* Bar Induction
 
 
 ROADMAP
