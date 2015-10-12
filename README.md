@@ -16,12 +16,12 @@ DESCRIPTION
 
 This library formalizes Nuprl's Constructive Type Theory (CTT) as of
 2015.  More information can be found about Nuprl on the Nuprl website:
-http://www.nuprl.org/.  CTT is an extensional type theory originally
-inspired by Martin-Lof's extensional type theory, and that has since
-then been extended with several new types such as: intersection types,
-union types, image types, partial types, set types, quotient types,
-partial equivalence relation (per) types, simulation and bisimulation
-types, an atom type, and the "Base" type.
+[link](http://www.nuprl.org/).  CTT is an extensional type theory
+originally inspired by Martin-Lof's extensional type theory, and that
+has since then been extended with several new types such as:
+intersection types, union types, image types, partial types, set
+types, quotient types, partial equivalence relation (per) types,
+simulation and bisimulation types, an atom type, and the "Base" type.
 
 Our formalization includes a definition of Nuprl's computation system,
 a definition of Howe's computational equivalence relation and a proof
@@ -39,8 +39,10 @@ used to prove Bar Induction rules; (2) named exceptions and a "fresh"
 operator to generate fresh names, that we used to prove a continuity
 rule.
 
-More information can be found here: http://www.nuprl.org/html/Nuprl2Coq/
-Feel free to send questions to the authors or to nuprl@cs.cornell.edu
+More information can be found here:
+[link](http://www.nuprl.org/html/Nuprl2Coq/).  Feel free to send
+questions to the authors (preferably to Vincent) or to
+nuprl@cs.cornell.edu
 
 
 KEYWORDS
@@ -60,46 +62,46 @@ KEYWORDS
 ROADMAP
 =======
 
-o The term definition is in terms/terms.v (see the definition of
+* The term definition is in terms/terms.v (see the definition of
 NTerm).
 
-o The definition of the computation system is in
+* The definition of the computation system is in
 computation/computation.v (see the definition of compute_step).
 
-o Howe's computational equivalence relation is defined in
+* Howe's computational equivalence relation is defined in
 cequiv/cequiv.v (see the definition of cequiv).  This relation is
 defined in terms of Howe's approximation relation defined in
 cequiv/approx.v (see the definition approx).  Howe's computational
 equivalence relation is proved to be a congruence in
 cequiv/approx_star.v
 
-o Types are defined in per/per.v using Allen's PER semantics.
+* Types are defined in per/per.v using Allen's PER semantics.
 Universes are closed under our various type constructor (see the
 inductive definition of close).
 
-o Universes and the nuprl type system are defined in per/nuprl.v.
+* Universes and the nuprl type system are defined in per/nuprl.v.
 We've proved that nuprl is indeed a type system in
 per/nuprl_type_sys.v.
 
-o Files such as per/per_props.v contain proofs of properties of the
+* Files such as per/per_props.v contain proofs of properties of the
 nuprl type system.
 
-o The definitions of sequents and rules are in per/sequents.v.  This
+* The definitions of sequents and rules are in per/sequents.v.  This
 file also contains the definition of what it means for sequents and
 rules to be valid.  We also prove in this file that Nuprl is
 consistent, meaning that there is no proof of False.
 
-o Our proofs of the validity of Nuprl's inference rules can be
+* Our proofs of the validity of Nuprl's inference rules can be
 accessed from rules.v (see for example rules/rules_function.v,
 rules/rules_squiggle.v).
 
-o The proof of our most general Bar Induction rule is in
+* The proof of our most general Bar Induction rule is in
 bar_induction/bar_induction_cterm2.v
 
-o The proof of our most general continuity rule is discussed in
+* The proof of our most general continuity rule is discussed in
 continuity/continuity_stuff.v.
 
-o In per/function_all_types.v (and similarly in per/union_all_types.v)
+* In per/function_all_types.v (and similarly in per/union_all_types.v)
 we have a proof that the pi type [forall n : nat. Universe(n)] is
 indeed a Nuprl type even though it's not in any universe.
 
@@ -107,6 +109,6 @@ indeed a Nuprl type even though it's not in any universe.
 CONTRIBUTORS
 ============
 
-Vincent Rahli
-Abhishek Anand
-Mark Bickford
+* Vincent Rahli
+* Abhishek Anand
+* Mark Bickford
