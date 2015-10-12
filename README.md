@@ -42,21 +42,25 @@ rule.
 More information can be found on our [NuprlInCoq
 website](http://www.nuprl.org/html/Nuprl2Coq/).  Feel free to send
 questions to the authors (preferably to Vincent) or to
-nuprl@cs.cornell.edu
+nuprl@cs.cornell.edu.
 
 
 KEYWORDS
 ========
 
-* Nuprl,
-* Computational Type Theory,
-* Extensional Type Theory,
-* Intuitionistic Type Theory,
-* Howe's computational equivalence relation,
-* Partial Equivalence Relation (PER) semantics,
-* Consistency,
-* Continuity,
+* Nuprl
+* Coq
+* Constructive Type Theory
+* Computational Type Theory
+* Extensional Type Theory
+* Intuitionistic Type Theory
+* Nominal Type Theory
+* Howe's computational equivalence relation
+* Partial Equivalence Relation (PER) semantics
+* Consistency
+* Continuity
 * Bar Induction
+* Effects (exceptions)
 
 
 ROADMAP
