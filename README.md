@@ -1,12 +1,14 @@
 MAKEFILE
 ========
 
-To generate a Makefile, run create_makefile.sh; this script requires bash v4.
-The script will generate a Makefile for rules.v and its dependencies.
+To generate a Makefile, run create_makefile.sh.  This script requires
+bash v4.  It will generate a Makefile for rules.v and its
+dependencies.  Re-run create_makefile.sh everytime you pull to update
+the Makefile in case new files have been committed.
 
 Then run "make" (or alternatively if your machine has multiple cores,
 run make -j n, where n is the number of cores you want to use) to
-compile everything.  It should take a while.
+compile everything.  This will take a while.
 
 Our implementation compiles with Coq version 8.4pl6.
 
@@ -103,7 +105,7 @@ rules/rules_squiggle.v).
 bar_induction/bar_induction_cterm2.v
 
 * The proof of our most general continuity rule is discussed in
-continuity/continuity_stuff.v.
+continuity/continuity_roadmap.v.
 
 * In per/function_all_types.v (and similarly in per/union_all_types.v)
 we have a proof that the pi type [forall n : nat. Universe(n)] is
