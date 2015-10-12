@@ -15,8 +15,8 @@ DESCRIPTION
 ===========
 
 This library formalizes Nuprl's Constructive Type Theory (CTT) as of
-2015.  More information can be found about Nuprl on the Nuprl website:
-[link](http://www.nuprl.org/).  CTT is an extensional type theory
+2015.  More information can be found about Nuprl on the [Nuprl
+website](http://www.nuprl.org/).  CTT is an extensional type theory
 originally inspired by Martin-Lof's extensional type theory, and that
 has since then been extended with several new types such as:
 intersection types, union types, image types, partial types, set
@@ -39,8 +39,8 @@ used to prove Bar Induction rules; (2) named exceptions and a "fresh"
 operator to generate fresh names, that we used to prove a continuity
 rule.
 
-More information can be found here:
-[link](http://www.nuprl.org/html/Nuprl2Coq/).  Feel free to send
+More information can be found on our [NuprlInCoq
+website](http://www.nuprl.org/html/Nuprl2Coq/).  Feel free to send
 questions to the authors (preferably to Vincent) or to
 nuprl@cs.cornell.edu
 
