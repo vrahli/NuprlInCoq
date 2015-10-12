@@ -1,4 +1,5 @@
-====== MAKEFILE ======
+MAKEFILE
+========
 
 To generate a Makefile, run create_makefile.sh; this script requires bash v4.
 The script will generate a Makefile for rules.v and its dependencies.
@@ -10,15 +11,17 @@ compile everything.  It should take a while.
 Our implementation compiles with Coq version 8.4pl6.
 
 
-====== DESCRIPTION ======
+DESCRIPTION
+===========
 
 This library formalizes Nuprl's Constructive Type Theory (CTT) as of
-2015.  CTT is an extensional type theory originally inspired by
-Martin-Lof's extensional type theory, and that has since then been
-extended with several new types such as: intersection types, union
-types, image types, partial types, set types, quotient types, partial
-equivalence relation (per) types, simulation and bisimulation types,
-an atom type, and the "Base" type.
+2015.  More information can be found about Nuprl on the Nuprl website:
+http://www.nuprl.org/.  CTT is an extensional type theory originally
+inspired by Martin-Lof's extensional type theory, and that has since
+then been extended with several new types such as: intersection types,
+union types, image types, partial types, set types, quotient types,
+partial equivalence relation (per) types, simulation and bisimulation
+types, an atom type, and the "Base" type.
 
 Our formalization includes a definition of Nuprl's computation system,
 a definition of Howe's computational equivalence relation and a proof
@@ -40,7 +43,8 @@ More information can be found here: http://www.nuprl.org/html/Nuprl2Coq/
 Feel free to send questions to the authors or to nuprl@cs.cornell.edu
 
 
-====== KEYWORDS ======
+KEYWORDS
+========
 
 Nuprl,
 Computational Type Theory,
@@ -53,7 +57,8 @@ Continuity,
 Bar Induction
 
 
-====== ROADMAP =======
+ROADMAP
+=======
 
 o The term definition is in terms/terms.v (see the definition of
 NTerm).
@@ -99,25 +104,9 @@ we have a proof that the pi type [forall n : nat. Universe(n)] is
 indeed a Nuprl type even though it's not in any universe.
 
 
-====== CONTRIBUTORS ======
+CONTRIBUTORS
+============
 
 Vincent Rahli
 Abhishek Anand
 Mark Bickford
-
-
-====== OLD WAY OF DOING THINGS ======
-
-o To generate a Makefile, type:
-   coq_makefile -f _CoqProject -o Makefile
-
-
-====== OLD OLD WAY OF DOING THINGS (NOW IN oldMakefile) ======
-
-o To compile VPrl make coqdoc-outputs-vo
-
-o If you're using Proof-General, open rules.v and compile the code there.
-
-o Our technical report provides a way to navigate through our code:
-
-   http://nuprl.org/html/verification/
