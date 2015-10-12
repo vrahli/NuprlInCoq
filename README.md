@@ -1,9 +1,9 @@
 MAKEFILE
 ========
 
-To generate a Makefile, run create_makefile.sh.  This script requires
-bash v4.  It will generate a Makefile for rules.v and its
-dependencies.  Re-run create_makefile.sh everytime you pull to update
+To generate a Makefile, run `create_makefile.sh`.  This script requires
+bash v4.  It will generate a Makefile for `rules.v` and its
+dependencies.  Re-run `create_makefile.sh` everytime you pull to update
 the Makefile in case new files have been committed.
 
 Then run "make" (or alternatively if your machine has multiple cores,
@@ -68,46 +68,46 @@ KEYWORDS
 ROADMAP
 =======
 
-* The term definition is in terms/terms.v (see the definition of
-NTerm).
+* The term definition is in `terms/terms.v` (see the definition of
+`NTerm`).
 
 * The definition of the computation system is in
-computation/computation.v (see the definition of compute_step).
+`computation/computation.v` (see the definition of `compute_step`).
 
 * Howe's computational equivalence relation is defined in
-cequiv/cequiv.v (see the definition of cequiv).  This relation is
+`cequiv/cequiv.v` (see the definition of `cequiv`).  This relation is
 defined in terms of Howe's approximation relation defined in
-cequiv/approx.v (see the definition approx).  Howe's computational
+`cequiv/approx.v` (see the definition `approx`).  Howe's computational
 equivalence relation is proved to be a congruence in
-cequiv/approx_star.v
+`cequiv/approx_star.v`
 
-* Types are defined in per/per.v using Allen's PER semantics.
+* Types are defined in `per/per.v` using Allen's PER semantics.
 Universes are closed under our various type constructor (see the
-inductive definition of close).
+inductive definition of `close`).
 
-* Universes and the nuprl type system are defined in per/nuprl.v.
-We've proved that nuprl is indeed a type system in
-per/nuprl_type_sys.v.
+* Universes and the `nuprl` type system are defined in `per/nuprl.v`.
+We've proved that `nuprl` is indeed a type system in
+`per/nuprl_type_sys.v`.
 
-* Files such as per/per_props.v contain proofs of properties of the
-nuprl type system.
+* Files such as `per/per_props.v` contain proofs of properties of the
+`nuprl` type system.
 
-* The definitions of sequents and rules are in per/sequents.v.  This
+* The definitions of sequents and rules are in `per/sequents.v`.  This
 file also contains the definition of what it means for sequents and
 rules to be valid.  We also prove in this file that Nuprl is
 consistent, meaning that there is no proof of False.
 
 * Our proofs of the validity of Nuprl's inference rules can be
-accessed from rules.v (see for example rules/rules_function.v,
-rules/rules_squiggle.v).
+accessed from `rules.v` (see for example `rules/rules_function.v`,
+`rules/rules_squiggle.v`).
 
 * The proof of our most general Bar Induction rule is in
-bar_induction/bar_induction_cterm2.v
+`bar_induction/bar_induction_cterm2.v`.
 
 * The proof of our most general continuity rule is discussed in
-continuity/continuity_roadmap.v.
+`continuity/continuity_roadmap.v`.
 
-* In per/function_all_types.v (and similarly in per/union_all_types.v)
+* In `per/function_all_types.v` (and similarly in `per/union_all_types.v`)
 we have a proof that the pi type [forall n : nat. Universe(n)] is
 indeed a Nuprl type even though it's not in any universe.
 
