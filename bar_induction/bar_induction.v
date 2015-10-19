@@ -32,6 +32,7 @@ Require Export eq_rel.
 Require Export tactics.
 Require Export tactics2.
 
+
 Lemma contraposition :
   forall A B : Type, (A -> B) -> (!B -> !A).
 Proof. sp. Qed.

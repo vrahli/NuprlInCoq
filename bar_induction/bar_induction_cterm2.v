@@ -142,7 +142,7 @@ Qed.
 
      By bar_induction B i a s x m n t
 
-     H, n:nat, s: nat_n -> CNTerm |- (B n s) \/ not(B n s)   // B is decidable on consistent sequences in the spread
+     H, n:nat, s: nat_n -> CNTerm |- B n s in Type(i)        // B is a well-formed predicate on finite sequences
      H, s: nat -> CNTerm |- squash(exists n:nat. B n s)      // B is a bar
      H, n:nat, s: nat_n -> CNTerm, m: B n s |- X n s         // Base case: the conclusion is true at the bar
      H, n:nat, s: nat_n -> CNTerm, x: (forall m: CNTerm. X (n + 1) (ext(s,n,m))) |- X n s // induction case
@@ -151,14 +151,15 @@ Qed.
 *)
 
 Definition rule_bar_induction_nout {o}
-           (f X c B d e : @NTerm o)
+           (f X c B e : @NTerm o)
            (s n m v x : NVar)
+           (i : nat)
            (H : barehypotheses) :=
   mk_rule
     (mk_bseq H (mk_conclax (mk_squash (mk_apply2 X mk_zero (mk_seq2kseq c (mk_nat 0) v)))))
     [ mk_bseq (snoc (snoc H (mk_hyp n mk_tnat))
                     (mk_hyp s (mk_natk2nout (mk_var n))))
-              (mk_concl (mk_dec (mk_apply2 B (mk_var n) (mk_var s))) d),
+              (mk_conclax (mk_member (mk_apply2 B (mk_var n) (mk_var s)) (mk_uni i))),
       mk_bseq (snoc H (mk_hyp s mk_nat2nout))
               (mk_conclax (mk_squash
                              (mk_exists mk_tnat
@@ -179,8 +180,9 @@ Definition rule_bar_induction_nout {o}
     [].
 
 Lemma rule_bar_induction_nout_true {o} :
-  forall lib (f X c B d e : @NTerm o)
+  forall lib (f X c B e : @NTerm o)
          (s n m v x : NVar)
+         (i : nat)
          (H : @barehypotheses o)
          (dxv : x <> v)
          (dsv : s <> v)
@@ -191,7 +193,7 @@ Lemma rule_bar_induction_nout_true {o} :
          (nvc : !LIn v (free_vars c))
          (nnB : !LIn n (free_vars B))
          (nsB : !LIn s (free_vars B)),
-    rule_true lib (rule_bar_induction_nout f X c B d e s n m v x H).
+    rule_true lib (rule_bar_induction_nout f X c B e s n m v x i H).
 Proof.
   unfold rule_bar_induction_nout, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -200,7 +202,7 @@ Proof.
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
   dLin_hyp.
-  destruct Hyp  as [wf1 hyp_dec].
+  destruct Hyp  as [wf1 hyp_wfd].
   destruct Hyp0 as [wf2 hyp_bar].
   destruct Hyp1 as [wf3 hyp_imp].
   destruct Hyp2 as [wf4 hyp_ind].
@@ -225,7 +227,7 @@ Proof.
           # !LIn s (vars_hyps H)
           # !LIn n (vars_hyps H)) as vhyps.
 
-  { clear hyp_dec hyp_bar hyp_ind hyp_imp.
+  { clear hyp_wfd hyp_bar hyp_ind hyp_imp.
     dwfseq.
     assert (forall x : NVar, LIn x (free_vars c) -> x <> v -> LIn x (vars_hyps H)) as imp.
     { introv h1 h2.
@@ -297,21 +299,21 @@ Proof.
     rw sim; auto. }
 
   assert (wf_term B) as wB.
-  { clear hyp_dec.
-    allrw @wf_dec.
+  { clear hyp_wfd.
+    allrw @wf_member_iff2.
     allrw <- @wf_apply2_iff; sp.
   }
 
   assert (cover_vars B s1 # cover_vars B s2) as cB.
-  { clear hyp_dec.
-    allrw @covered_dec.
+  { clear hyp_wfd.
+    allrw @covered_member.
     allrw @covered_apply2; repnd.
     allrw @vars_hyps_snoc; allsimpl.
-    apply covered_snoc_implies in ct5; auto.
-    apply covered_snoc_implies in ct5; auto.
+    apply covered_snoc_implies in ct6; auto.
+    apply covered_snoc_implies in ct6; auto.
     dands.
-    - eapply s_cover_typ1;[exact ct5|exact sim].
-    - eapply s_cover_typ1;[exact ct5|].
+    - eapply s_cover_typ1;[exact ct6|exact sim].
+    - eapply s_cover_typ1;[exact ct6|].
       apply similarity_sym in sim;[exact sim|]; auto.
   }
   destruct cB as [cB1 cB2].
@@ -326,11 +328,11 @@ Proof.
                  (mkc_apply2 (lsubstc B wB s1a cB1) (mkc_nat k) seq1)
                  (mkc_apply2 (lsubstc B wB s2a cB2) (mkc_nat k) seq2)) as Bfunc.
   { introv sim0 hf0 eqk.
-    vr_seq_true in hyp_dec.
-    pose proof (hyp_dec
+    vr_seq_true in hyp_wfd.
+    pose proof (hyp_wfd
                   (snoc (snoc s1a (n,mkc_nat k)) (s,seq1))
                   (snoc (snoc s2a (n,mkc_nat k)) (s,seq2)))
-      as h; clear hyp_dec.
+      as h; clear hyp_wfd.
     repeat (autodimp h hyp).
 
     { apply hyps_functionality_snoc2; simpl; auto.
@@ -387,10 +389,10 @@ Proof.
     }
 
     exrepnd.
-    clear h1.
-    unfold mk_dec in h0.
     lsubst_tac.
-    apply tequality_mkc_or in h0; repnd; auto.
+    apply tequality_in_uni_implies_tequality in h0; auto.
+    apply member_if_inhabited in h1.
+    apply member_in_uni in h1; auto.
   }
 
   pose proof (bar_induction_cterm_meta

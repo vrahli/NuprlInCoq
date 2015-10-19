@@ -2891,6 +2891,14 @@ Proof.
   apply cequivc_mkc_natk; auto.
 Qed.
 
+Lemma covered_member {o} :
+  forall (a b : @NTerm o)s,
+    covered (mk_member a b) s <=> (covered a s # covered b s).
+Proof.
+  introv; unfold covered; simpl; autorewrite with slow.
+  allrw subvars_app_l; split; sp.
+Qed.
+
 
 
 (*
