@@ -162,13 +162,9 @@ Require Import rules_fresh.
 Require Import rules_squash.
 
 
-(* TO FIX!!
-
 (* Rules(atoms): *)
- Require Import rules_atom_atom.
- Require Import rules_atom_struct.
-
-*)
+Require Import rules_atom_atom.
+Require Import rules_atom_struct.
 
 
 (* Require Import rules_per_function. *)

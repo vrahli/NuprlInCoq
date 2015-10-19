@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -59,6 +60,20 @@ Proof.
   pose proof (f (existT _ x m)); auto.
 Defined.
 
+(* !! MOVE to lsubst_hyps *)
+Lemma wf_hyps_proof_irrelevance {o} :
+  forall (hs : @barehypotheses o)
+         (p1 p2 : wf_hyps hs),
+    p1 = p2.
+Proof.
+  introv.
+  allunfold @wf_hyps.
+  allunfold @wf_hyp.
+  apply functional_extensionality_dep; introv.
+  apply functional_extensionality_dep; introv.
+  apply wf_term_proof_irrelevance.
+Qed.
+
 Lemma rule_thin_hyps_atom_true {o} :
   forall lib (H J : @barehypotheses (s2s o))
          (C t : NTerm),
@@ -101,21 +116,25 @@ Proof.
                 (replace_utokens_library lib fl)
                 (replace_utokens_bhyps
                    H
+                   (wf_hyps_app_left H J (wf_sequent_2hyps (H ++ J) ||- (mk_concl C t) wg))
                    (utok_ren_bhyps_app_2bhyps1
                       H J
                       (utok_ren_bseq_2h (H ++ J) ||- (mk_concl C t) f)))
                 (replace_utokens_bhyps
                    J
+                   (wf_hyps_app_right H J (wf_sequent_2hyps (H ++ J) ||- (mk_concl C t) wg))
                    (utok_ren_bhyps_app_2bhyps2
                       H J
                       (utok_ren_bseq_2h (H ++ J) ||- (mk_concl C t) f)))
                 (replace_utokens_t
                    C
+                   (wf_concl_ext_2typ C t (wf_sequent_2concl (H ++ J) ||- (mk_concl C t) wg))
                    (utok_ren_concle_2t
                       C t
                       (utok_ren_bseq_2c (H ++ J) ||- (mk_concl C t) f)))
                 (replace_utokens_t
                    t
+                   (wf_concl_ext_2ext C t (wf_sequent_2concl (H ++ J) ||- (mk_concl C t) wg))
                    (utok_ren_concle_2e
                       C t
                       (utok_ren_bseq_2c (H ++ J) ||- (mk_concl C t) f)))
@@ -183,9 +202,23 @@ Proof.
     introv; exrepnd; simpl.
     gen_s2s; PI2.
 
-    rw <- (replace_utokens_bhyps_eq H _ _ e1).
-    rw <- (replace_utokens_t_eq C _ _ e2).
-    rw <- (replace_utokens_t_eq t _ _ e3).
+    remember (wf_hyps_app_left H J (wf_sequent_2hyps (H ++ J) ||- (mk_concl C t) wg)) as wH.
+    remember (wf_concl_ext_2typ C t (wf_sequent_2concl (H ++ J) ||- (mk_concl C t) wg)) as wC.
+    remember (wf_concl_ext_2ext C t (wf_sequent_2concl (H ++ J) ||- (mk_concl C t) wg)) as wt.
+
+    rw <- (replace_utokens_bhyps_eq H wH wH _ _ e1).
+    rw <- (replace_utokens_t_eq C wC wC _ _ e2).
+    rw <- (replace_utokens_t_eq t wt wt _ _ e3).
+
+    remember (wf_sequent_2hyps (H) ||- (mk_concl C t) wfs) as wH'.
+    remember (wf_concl_ext_2typ C t (wf_sequent_2concl (H) ||- (mk_concl C t) wfs)) as wC'.
+    remember (wf_concl_ext_2ext C t (wf_sequent_2concl (H) ||- (mk_concl C t) wfs)) as wt'.
+    allsimpl.
+
+    pose proof (wf_term_proof_irrelevance C wC wC') as e; rw e; clear e.
+    pose proof (wf_term_proof_irrelevance t wt wt') as e; rw e; clear e.
+    pose proof (wf_hyps_proof_irrelevance H wH wH') as e; rw e; clear e.
+
     exists w'; auto.
 
   - exrepnd.
@@ -193,3 +226,11 @@ Proof.
     unfold ext_wf_cseq in h0.
     rw @sequent_true_eq_VR in h0; auto.
 Qed.
+
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
+*** End:
+*)

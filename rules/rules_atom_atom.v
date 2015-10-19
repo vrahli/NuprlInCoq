@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -143,3 +144,10 @@ Lemma rule_utoken_exists_1to1_atom_true {o} :
     {e : NTerm & rule_atom_true lib (rule_utoken_exists_1to1 H J k f e) }.
 Proof.
 Abort.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
+*** End:
+*)

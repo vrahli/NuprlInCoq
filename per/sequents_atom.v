@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -26,6 +27,7 @@
 
 Require Export sequents_tacs.
 Require Export atoms.
+Require Export lsubst_hyps.
 Require Export list. (* why? *)
 
 
@@ -832,53 +834,55 @@ Definition app_utok_c {p d}
 
 Definition replace_can {p d} (c : @CanonicalOp p) : @utok_ren_c p d c -> @CanonicalOp (set_patom p d) :=
   match c with
-  | NUTok u       => fun s => @NUTok (set_patom p d) (@app_utok_c p d u s)
-  | NConstP x     => fun _ => @NConstP (set_patom p d) x
-  | NConstT x     => fun _ => @NConstT (set_patom p d) x
-  | NLambda       => fun _ => NLambda
-  | NAxiom        => fun _ => NAxiom
-  | NInl          => fun _ => NInl
-  | NInr          => fun _ => NInr
-  | NPair         => fun _ => NPair
-  | NSup          => fun _ => NSup
-  | Nint i        => fun _ => Nint i
-  | Nseq s        => fun _ => Nseq s
-  | NUni i        => fun _ => NUni i
-  | NTok t        => fun _ => NTok t
-  | NEquality     => fun _ => NEquality
-  | NFreeFromAtom => fun _ => NFreeFromAtom
-  | NTEquality    => fun _ => NTEquality
-  | NInt          => fun _ => NInt
-  | NBase         => fun _ => NBase
-  | NAtom         => fun _ => NAtom
-  | NUAtom        => fun _ => NUAtom
-  | NFunction     => fun _ => NFunction
-  | NProduct      => fun _ => NProduct
-  | NSet          => fun _ => NSet
-  | NTUnion       => fun _ => NTUnion
-  | NIsect        => fun _ => NIsect
-  | NDIsect       => fun _ => NDIsect
-  | NEIsect       => fun _ => NEIsect
-  | NW            => fun _ => NW
-  | NM            => fun _ => NM
-  | NPW           => fun _ => NPW
-  | NPM           => fun _ => NPM
-  | NEPertype     => fun _ => NEPertype
-  | NIPertype     => fun _ => NIPertype
-  | NSPertype     => fun _ => NSPertype
-  | NPartial      => fun _ => NPartial
-  | NTExc         => fun _ => NTExc
-  | NUnion        => fun _ => NUnion
-  | NUnion2       => fun _ => NUnion2
-  | NApprox       => fun _ => NApprox
-  | NCequiv       => fun _ => NCequiv
-  | NCompute      => fun _ => NCompute
-  | NRec          => fun _ => NRec
-  | NImage        => fun _ => NImage
-  | NQuotient     => fun _ => NQuotient
-  | NAdmiss       => fun _ => NAdmiss
-  | NMono         => fun _ => NMono
-  | NOmega        => fun _ => NOmega
+  | NUTok u        => fun s => @NUTok (set_patom p d) (@app_utok_c p d u s)
+  | NConstP x      => fun _ => @NConstP (set_patom p d) x
+  | NConstT x      => fun _ => @NConstT (set_patom p d) x
+  | NLambda        => fun _ => NLambda
+  | NAxiom         => fun _ => NAxiom
+  | NInj x         => fun _ => NInj x
+  | NPair          => fun _ => NPair
+  | NSup           => fun _ => NSup
+  | Nint i         => fun _ => Nint i
+  | Nseq s         => fun _ => Nseq s
+  | NUni i         => fun _ => NUni i
+  | NTok t         => fun _ => NTok t
+  | NEquality      => fun _ => NEquality
+  | NFreeFromAtom  => fun _ => NFreeFromAtom
+  | NEFreeFromAtom => fun _ => NEFreeFromAtom
+  | NFreeFromAtoms => fun _ => NFreeFromAtoms
+  | NTEquality     => fun _ => NTEquality
+  | NInt           => fun _ => NInt
+  | NBase          => fun _ => NBase
+  | NAtom          => fun _ => NAtom
+  | NUAtom         => fun _ => NUAtom
+  | NFunction      => fun _ => NFunction
+  | NProduct       => fun _ => NProduct
+  | NSet           => fun _ => NSet
+  | NTUnion        => fun _ => NTUnion
+  | NIsect         => fun _ => NIsect
+  | NDIsect        => fun _ => NDIsect
+  | NEIsect        => fun _ => NEIsect
+  | NW             => fun _ => NW
+  | NM             => fun _ => NM
+  | NPW            => fun _ => NPW
+  | NPM            => fun _ => NPM
+  | NEPertype      => fun _ => NEPertype
+  | NIPertype      => fun _ => NIPertype
+  | NSPertype      => fun _ => NSPertype
+  | NPartial       => fun _ => NPartial
+  | NTExc          => fun _ => NTExc
+  | NUnion         => fun _ => NUnion
+  | NEUnion        => fun _ => NEUnion
+  | NUnion2        => fun _ => NUnion2
+  | NApprox        => fun _ => NApprox
+  | NCequiv        => fun _ => NCequiv
+  | NCompute       => fun _ => NCompute
+  | NRec           => fun _ => NRec
+  | NImage         => fun _ => NImage
+  | NQuotient      => fun _ => NQuotient
+  | NAdmiss        => fun _ => NAdmiss
+  | NMono          => fun _ => NMono
+  | NOmega         => fun _ => NOmega
   end.
 
 (*
@@ -1013,30 +1017,237 @@ with replace_utokens_b {p d} (bt : @BTerm p) :
        end.
 *)
 
-Fixpoint replace_utokens_t {p d} (t : @NTerm p) :
-  @utok_ren p d t -> @NTerm (set_patom p d) :=
+Lemma noutokens_sterm_app {o} :
+  forall (f : @ntseq o) n,
+    wf_term (sterm f) -> noutokens (f n).
+Proof.
+  introv wf.
+  apply wf_term_eq in wf.
+  rw @nt_wf_sterm_iff in wf.
+  pose proof (wf n) as q; clear wf; repnd; auto.
+Qed.
+
+Lemma wf_term_sterm_app {o} :
+  forall (f : @ntseq o) n,
+    wf_term (sterm f) -> wf_term (f n).
+Proof.
+  introv wf.
+  allrw @wf_term_eq.
+  rw @nt_wf_sterm_iff in wf.
+  pose proof (wf n) as q; clear wf; repnd; auto.
+Qed.
+
+Definition noutokens_o {o} (op : @Opid o) :=
+  get_utokens_o op = [].
+
+Definition noutokens_c {o} (c : @CanonicalOp o) :=
+  get_utokens_c c = [].
+
+
+Definition set_patom_noutokens_c {p d} (c : @CanonicalOp p) :
+  noutokens_c c -> @CanonicalOp (set_patom p d) :=
+  match c with
+  | NUTok u        => fun nu : [u] = [] => match nu with end
+  | NConstP x      => fun _ => @NConstP (set_patom p d) x
+  | NConstT x      => fun _ => @NConstT (set_patom p d) x
+  | NLambda        => fun _ => NLambda
+  | NAxiom         => fun _ => NAxiom
+  | NInj x         => fun _ => NInj x
+  | NPair          => fun _ => NPair
+  | NSup           => fun _ => NSup
+  | Nint i         => fun _ => Nint i
+  | Nseq s         => fun _ => Nseq s
+  | NUni i         => fun _ => NUni i
+  | NTok t         => fun _ => NTok t
+  | NEquality      => fun _ => NEquality
+  | NFreeFromAtom  => fun _ => NFreeFromAtom
+  | NEFreeFromAtom => fun _ => NEFreeFromAtom
+  | NFreeFromAtoms => fun _ => NFreeFromAtoms
+  | NTEquality     => fun _ => NTEquality
+  | NInt           => fun _ => NInt
+  | NBase          => fun _ => NBase
+  | NAtom          => fun _ => NAtom
+  | NUAtom         => fun _ => NUAtom
+  | NFunction      => fun _ => NFunction
+  | NProduct       => fun _ => NProduct
+  | NSet           => fun _ => NSet
+  | NTUnion        => fun _ => NTUnion
+  | NIsect         => fun _ => NIsect
+  | NDIsect        => fun _ => NDIsect
+  | NEIsect        => fun _ => NEIsect
+  | NW             => fun _ => NW
+  | NM             => fun _ => NM
+  | NPW            => fun _ => NPW
+  | NPM            => fun _ => NPM
+  | NEPertype      => fun _ => NEPertype
+  | NIPertype      => fun _ => NIPertype
+  | NSPertype      => fun _ => NSPertype
+  | NPartial       => fun _ => NPartial
+  | NTExc          => fun _ => NTExc
+  | NUnion         => fun _ => NUnion
+  | NEUnion        => fun _ => NEUnion
+  | NUnion2        => fun _ => NUnion2
+  | NApprox        => fun _ => NApprox
+  | NCequiv        => fun _ => NCequiv
+  | NCompute       => fun _ => NCompute
+  | NRec           => fun _ => NRec
+  | NImage         => fun _ => NImage
+  | NQuotient      => fun _ => NQuotient
+  | NAdmiss        => fun _ => NAdmiss
+  | NMono          => fun _ => NMono
+  | NOmega         => fun _ => NOmega
+  end.
+
+Lemma noutokens_o2c {o} :
+  forall (c : @CanonicalOp o), noutokens_o (Can c) -> noutokens_c c.
+Proof.
+  auto.
+Qed.
+
+Definition set_patom_noutokens_o {p d} (op : @Opid p) :
+  noutokens_o op -> @Opid (set_patom p d) :=
+  match op with
+  | Can c   => fun nu => Can (set_patom_noutokens_c c (noutokens_o2c c nu))
+  | NCan nc => fun _ => NCan nc
+  | Exc     => fun _ => Exc
+  | Abs abs => fun _ => Abs abs
+  end.
+
+Lemma noutokens_2o {o} :
+  forall (op : @Opid o) bs, noutokens (oterm op bs) -> noutokens_o op.
+Proof.
+  introv no.
+  allunfold @noutokens; allsimpl.
+  allrw @app_eq_nil_iff; repnd; auto.
+Qed.
+
+Definition noutokens_b {o} (b : @BTerm o) :=
+  get_utokens_b b = [].
+
+Definition noutokens_bs {o} (bs : list (@BTerm o)) :=
+  get_utokens_bs bs = [].
+
+Lemma noutokens_2bs {o} :
+  forall (op : @Opid o) bs, noutokens (oterm op bs) -> noutokens_bs bs.
+Proof.
+  introv no.
+  allunfold @noutokens; allsimpl.
+  allrw @app_eq_nil_iff; repnd; auto.
+Qed.
+
+Lemma noutokens_bs2b {o} :
+  forall (b : @BTerm o) bs, noutokens_bs (b :: bs) -> noutokens_b b.
+Proof.
+  introv no.
+  allunfold @noutokens_bs; allsimpl.
+  allrw @app_eq_nil_iff; repnd; auto.
+Qed.
+
+Lemma noutokens_bs2bs {o} :
+  forall (b : @BTerm o) bs, noutokens_bs (b :: bs) -> noutokens_bs bs.
+Proof.
+  introv no.
+  allunfold @noutokens_bs; allsimpl.
+  allrw @app_eq_nil_iff; repnd; auto.
+Qed.
+
+Lemma wf_term_2bs {o} :
+  forall (op : @Opid o) bs, wf_term (oterm op bs) -> wf_bterms bs.
+Proof.
+  introv w.
+  allrw @wf_oterm_iff; repnd; auto.
+Qed.
+
+Lemma wf_bterms_2b {o} :
+  forall b (bs : list (@BTerm o)), wf_bterms (b :: bs) -> wf_bterm b.
+Proof.
+  introv w.
+  unfold wf_bterms in w; allsimpl.
+  apply w; tcsp.
+Qed.
+
+Lemma wf_bterms_2bs {o} :
+  forall b (bs : list (@BTerm o)), wf_bterms (b :: bs) -> wf_bterms bs.
+Proof.
+  introv w.
+  unfold wf_bterms in w; allsimpl.
+  introv i; apply w; tcsp.
+Qed.
+
+Lemma wf_bterm_2t {o} :
+  forall vs (t : @NTerm o), wf_bterm (bterm vs t) -> wf_term t.
+Proof.
+  introv w.
+  allrw @wf_bterm_iff; auto.
+Qed.
+
+Lemma noutokens_b2t {o} :
+  forall vs (t : @NTerm o), noutokens_b (bterm vs t) -> noutokens t.
+Proof.
+  introv w.
+  allunfold @noutokens_b; allsimpl; auto.
+Qed.
+
+Fixpoint set_patom_noutokens {p d} (t : @NTerm p) :
+  noutokens t -> wf_term t -> @NTerm (set_patom p d) :=
   match t with
-    | vterm v => fun _ => vterm v
-    | sterm f => fun s => sterm f
-    | oterm o bts =>
-      fun s =>
-        oterm (replace_opid o (utok_ren_2o o bts s))
-              ((fix F (bts : list (@BTerm p)) :
-                  @utok_ren_bs p d bts -> list (@BTerm (set_patom p d)) :=
-                  match bts with
-                    | [] => fun _ => []
-                    | bt :: bs =>
-                      fun s =>
-                        (replace_utokens_b bt (@utok_ren_bs_2b p d bt bs s))
-                          :: (F bs (@utok_ren_bs_2bs p d bt bs s))
-                  end) bts (utok_ren_2bs o bts s))
+  | vterm v => fun _ _ => vterm v
+  | sterm f =>
+    fun _ wf =>
+      sterm (fun n => set_patom_noutokens
+                        (f n)
+                        (noutokens_sterm_app f n wf)
+                        (wf_term_sterm_app f n wf))
+  | oterm op bs =>
+    fun nu wf =>
+      oterm (set_patom_noutokens_o op (noutokens_2o op bs nu))
+            ((fix F (bs : list (@BTerm p)) :
+                noutokens_bs bs
+                -> wf_bterms bs
+                -> list (@BTerm (set_patom p d)) :=
+                match bs with
+                | [] => fun _ _ => []
+                | b :: bs =>
+                  fun nu wf =>
+                    (set_patom_noutokens_b b (noutokens_bs2b b bs nu) (wf_bterms_2b b bs wf))
+                      :: (F bs (noutokens_bs2bs b bs nu) (wf_bterms_2bs b bs wf))
+                end) bs (noutokens_2bs op bs nu) (wf_term_2bs op bs wf))
+  end
+with set_patom_noutokens_b {p d} (b : @BTerm p) :
+       noutokens_b b -> wf_bterm b -> @BTerm (set_patom p d) :=
+       match b with
+         | bterm vs t =>
+           fun nu wf =>
+             bterm vs (@set_patom_noutokens
+                         p d t
+                         (noutokens_b2t vs t nu)
+                         (wf_bterm_2t vs t wf))
+       end.
+
+Fixpoint replace_utokens_t {p d} (t : @NTerm p) :
+  wf_term t -> @utok_ren p d t -> @NTerm (set_patom p d) :=
+  match t with
+  | vterm v => fun _ _ => vterm v
+  | sterm f => fun w _ => @set_patom_noutokens p d (sterm f) eq_refl w
+  | oterm o bts =>
+    fun w s =>
+      oterm (replace_opid o (utok_ren_2o o bts s))
+            ((fix F (bts : list (@BTerm p)) :
+                wf_bterms bts -> @utok_ren_bs p d bts -> list (@BTerm (set_patom p d)) :=
+                match bts with
+                | [] => fun _ _ => []
+                | bt :: bs =>
+                  fun w s =>
+                    (replace_utokens_b bt (wf_bterms_2b bt bs w) (@utok_ren_bs_2b p d bt bs s))
+                      :: (F bs (wf_bterms_2bs bt bs w) (@utok_ren_bs_2bs p d bt bs s))
+                end) bts (wf_term_2bs o bts w) (utok_ren_2bs o bts s))
   end
 with replace_utokens_b {p d} (bt : @BTerm p) :
-       @utok_ren_b p d bt -> @BTerm (set_patom p d) :=
+       wf_bterm bt -> @utok_ren_b p d bt -> @BTerm (set_patom p d) :=
        match bt with
-         | bterm vs t =>
-           fun s =>
-             bterm vs (@replace_utokens_t p d t (@utok_ren_b_2t p d vs t s))
+       | bterm vs t =>
+         fun w s =>
+           bterm vs (@replace_utokens_t p d t (wf_bterm_2t vs t w) (@utok_ren_b_2t p d vs t s))
        end.
 
 Fixpoint replace_utokens_so {p d} (t : @SOTerm p) :
@@ -1078,45 +1289,106 @@ with replace_utokens_so_b {p d} (b : @SOBTerm p) :
 
 Definition replace_utokens_hyp {p d}
            (h : @hypothesis p)
-           (r : @utok_ren_hyp p d h) : @hypothesis (set_patom p d) :=
+           (w : wf_term (htyp h))
+           (r : @utok_ren_hyp p d h) :
+  @hypothesis (set_patom p d) :=
   {|
     hvar   := hvar h ;
     hidden := hidden h;
-    htyp   := replace_utokens_t (htyp h) r;
+    htyp   := replace_utokens_t (htyp h) w r;
     lvl    := lvl h
   |}.
 
+Lemma wf_hyps_2h {o} :
+  forall h (hs : @bhyps o), wf_hyps (h :: hs) -> wf_hyp h.
+Proof.
+  introv wf.
+  allrw @wf_hyps_cons; sp.
+Qed.
+
+Lemma wf_hyps_2hs {o} :
+  forall h (hs : @bhyps o), wf_hyps (h :: hs) -> wf_hyps hs.
+Proof.
+  introv wf.
+  allrw @wf_hyps_cons; sp.
+Qed.
+
 Fixpoint replace_utokens_bhyps {p d}
-           (hs : @bhyps p) :
-  @utok_ren_bhyps p d hs -> @bhyps (set_patom p d) :=
+         (hs : @bhyps p) :
+  wf_hyps hs -> @utok_ren_bhyps p d hs -> @bhyps (set_patom p d) :=
   match hs with
-    | [] => fun _ => []
+    | [] => fun _ _ => []
     | h :: hs =>
-      fun r =>
-        (replace_utokens_hyp h (utok_ren_bhyps_2h h hs r))
-          :: (replace_utokens_bhyps hs (utok_ren_bhyps_2bhyps h hs r))
+      fun w r =>
+        (replace_utokens_hyp h (wf_hyps_2h h hs w) (utok_ren_bhyps_2h h hs r))
+          :: (replace_utokens_bhyps hs (wf_hyps_2hs h hs w) (utok_ren_bhyps_2bhyps h hs r))
   end.
+
+Lemma wf_concl_ext_2typ {o} :
+  forall (t e : @NTerm o),
+    wf_concl (concl_ext t e) -> wf_term t.
+Proof.
+  introv wf; unfold wf_concl in wf; allsimpl; sp.
+Qed.
+
+Lemma wf_concl_ext_2ext {o} :
+  forall (t e : @NTerm o),
+    wf_concl (concl_ext t e) -> wf_term e.
+Proof.
+  introv wf; unfold wf_concl in wf; allsimpl; sp.
+Qed.
+
+Lemma wf_concl_typ_2typ {o} :
+  forall (t : @NTerm o),
+    wf_concl (concl_typ t) -> wf_term t.
+Proof.
+  introv wf; unfold wf_concl in wf; allsimpl; sp.
+Qed.
 
 Definition replace_utokens_concl {p d}
            (c : @conclusion p) :
-  @utok_ren_concl p d c -> @conclusion (set_patom p d) :=
+  wf_concl c -> @utok_ren_concl p d c -> @conclusion (set_patom p d) :=
   match c with
-    | concl_ext ctype extract =>
-      fun s =>
+    | concl_ext t e =>
+      fun w s =>
         concl_ext
-          (replace_utokens_t ctype (utok_ren_concle_2t ctype extract s))
-          (replace_utokens_t extract (utok_ren_concle_2e ctype extract s))
-    | concl_typ ctype =>
-      fun s =>
-        concl_typ (replace_utokens_t ctype s)
+          (replace_utokens_t
+             t
+             (wf_concl_ext_2typ t e w)
+             (utok_ren_concle_2t t e s))
+          (replace_utokens_t
+             e
+             (wf_concl_ext_2ext t e w)
+             (utok_ren_concle_2e t e s))
+    | concl_typ t =>
+      fun w s =>
+        concl_typ (replace_utokens_t t (wf_concl_typ_2typ t w) s)
   end.
+
+Lemma wf_sequent_2hyps {o} :
+  forall (s : @baresequent o), wf_sequent s -> wf_hyps (hyps s).
+Proof.
+  introv wf.
+  destruct s; allsimpl.
+  unfold wf_sequent in wf; repnd; allsimpl.
+  apply wf_hypotheses_implies_wf_hyps; auto.
+Qed.
+
+Lemma wf_sequent_2concl {o} :
+  forall (s : @baresequent o), wf_sequent s -> wf_concl (concl s).
+Proof.
+  introv wf.
+  destruct s; allsimpl.
+  unfold wf_sequent in wf; repnd; allsimpl; auto.
+Qed.
 
 Definition replace_utokens_bseq {p d}
            (s : @baresequent p)
+           (w : wf_sequent s)
            (r : @utok_ren_bseq p d s) : @baresequent (set_patom p d) :=
   {|
-    hyps  := replace_utokens_bhyps (hyps s) (utok_ren_bseq_2h s r);
-    concl := replace_utokens_concl (concl s) (utok_ren_bseq_2c s r)
+    hyps  := replace_utokens_bhyps (hyps s) (wf_sequent_2hyps s w) (utok_ren_bseq_2h s r);
+    concl := replace_utokens_concl (concl s) (wf_sequent_2concl s w) (utok_ren_bseq_2c s r)
   |}.
 
 (*
@@ -1317,32 +1589,51 @@ Proof.
 Qed.
 
 Lemma replace_utokens_t_eq {p d} :
-  forall t (r1 r2 : @utok_ren p d t),
+  forall t (w1 w2 : wf_term t) (r1 r2 : @utok_ren p d t),
     eq_utok_ren t r1 r2
-    -> replace_utokens_t t r1 = replace_utokens_t t r2.
+    -> replace_utokens_t t w1 r1 = replace_utokens_t t w2 r2.
 Proof.
-  nterm_ind t as [|o lbt ind] Case; simpl; introv e; auto.
+  nterm_ind t as [|f|o lbt ind] Case; simpl; introv e; auto.
+
+  { f_equal.
+    apply functional_extensionality; introv.
+    f_equal; eauto with pi. }
+
   apply oterm_eq.
   apply eq_utok_ren_implies_o in e.
+
   - apply replace_opid_eq; auto.
+
   - apply eq_utok_ren_implies_bs in e.
+
     remember (utok_ren_2bs o lbt r1) as rs1.
     clear Heqrs1.
     remember (utok_ren_2bs o lbt r2) as rs2.
     clear Heqrs2.
-    revert rs1 rs2 e.
+    remember (wf_term_2bs o lbt w1) as ws1.
+    clear Heqws1.
+    remember (wf_term_2bs o lbt w2) as ws2.
+    clear Heqws2.
+
+    revert ws1 ws2 rs1 rs2 e.
+    allapply @wf_term_2bs.
+
     induction lbt; auto.
     introv e.
     apply eq_cons.
+
     + destruct a; simpl.
       apply bterm_eq; auto.
       apply ind with (lv := l); simpl; auto.
       unfold eq_utok_ren, utok_ren_b_2t, utok_ren_bs_2b, utok_ren_2bs.
       introv; exrepnd.
       apply e.
+
     + apply IHlbt.
       * introv i k.
         apply ind with (lv := lv); simpl; sp.
+      * allrw @wf_bterms_cons; sp.
+      * allrw @wf_bterms_cons; sp.
       * apply utok_ren_2o in r1.
         apply utok_ren_2ot; auto.
         clear e.
@@ -1355,9 +1646,9 @@ Proof.
 Qed.
 
 Lemma replace_utokens_hyp_eq {p d} :
-  forall h (r1 r2 : @utok_ren_hyp p d h),
+  forall h w1 w2 (r1 r2 : @utok_ren_hyp p d h),
     eq_utok_ren_hyp h r1 r2
-    -> replace_utokens_hyp h r1 = replace_utokens_hyp h r2.
+    -> replace_utokens_hyp h w1 r1 = replace_utokens_hyp h w2 r2.
 Proof.
   destruct h; simpl; introv e.
   unfold replace_utokens_hyp; simpl.
@@ -1366,9 +1657,9 @@ Proof.
 Qed.
 
 Lemma replace_utokens_bhyps_eq {p d} :
-  forall hs (r1 r2 : @utok_ren_bhyps p d hs),
+  forall hs w1 w2 (r1 r2 : @utok_ren_bhyps p d hs),
     eq_utok_ren_bhyps hs r1 r2
-    -> replace_utokens_bhyps hs r1 = replace_utokens_bhyps hs r2.
+    -> replace_utokens_bhyps hs w1 r1 = replace_utokens_bhyps hs w2 r2.
 Proof.
   induction hs; simpl; introv e; auto.
   apply eq_cons.
@@ -1384,9 +1675,9 @@ Proof.
 Qed.
 
 Lemma replace_utokens_concl_eq {p d} :
-  forall c (r1 r2 : @utok_ren_concl p d c),
+  forall c w1 w2 (r1 r2 : @utok_ren_concl p d c),
     eq_utok_ren_concl c r1 r2
-    -> replace_utokens_concl c r1 = replace_utokens_concl c r2.
+    -> replace_utokens_concl c w1 r1 = replace_utokens_concl c w2 r2.
 Proof.
   introv e.
   destruct c; allsimpl.
@@ -1395,9 +1686,9 @@ Proof.
 Qed.
 
 Lemma replace_utokens_bseq_eq {p d} :
-  forall s (r1 r2 : @utok_ren_bseq p d s),
+  forall s w1 w2 (r1 r2 : @utok_ren_bseq p d s),
     eq_utok_ren_bseq s r1 r2
-    -> replace_utokens_bseq s r1 = replace_utokens_bseq s r2.
+    -> replace_utokens_bseq s w1 r1 = replace_utokens_bseq s w2 r2.
 Proof.
   introv e.
   destruct s.
@@ -1409,15 +1700,29 @@ Proof.
     introv; exrepnd; simpl; auto.
 Qed.
 
+Lemma wf_hyps_snoc2h {o} :
+  forall h (hs : @bhyps o), wf_hyps (snoc hs h) -> wf_term (htyp h).
+Proof.
+  introv wf; allrw @wf_hyps_snoc; tcsp.
+Qed.
+
+Lemma wf_hyps_snoc2hs {o} :
+  forall h (hs : @bhyps o), wf_hyps (snoc hs h) -> wf_hyps hs.
+Proof.
+  introv wf; allrw @wf_hyps_snoc; tcsp.
+Qed.
+
 Lemma replace_utokens_bhyps_snoc {p d} :
   forall (h : hypothesis)
          (hs : list hypothesis)
+         (w : wf_hyps (snoc hs h))
          (r : @utok_ren_bhyps p d (snoc hs h)),
-    replace_utokens_bhyps (snoc hs h) r
-    = snoc (replace_utokens_bhyps hs (utok_ren_bhyps_snoc_2bhyps h hs r))
-           (replace_utokens_hyp h (utok_ren_bhyps_snoc_2h h hs r)).
+    replace_utokens_bhyps (snoc hs h) w r
+    = snoc (replace_utokens_bhyps hs (wf_hyps_snoc2hs h hs w) (utok_ren_bhyps_snoc_2bhyps h hs r))
+           (replace_utokens_hyp h (wf_hyps_snoc2h h hs w) (utok_ren_bhyps_snoc_2h h hs r)).
 Proof.
   induction hs; simpl; introv.
+
   - apply eq_cons; auto.
     apply replace_utokens_hyp_eq.
     introv; exrepnd; allsimpl.
@@ -1441,12 +1746,25 @@ Proof.
         gen_in_utok; PI2.
 Qed.
 
+Lemma wf_hyps_app_left {o} :
+  forall (hs1 hs2 : @bhyps o), wf_hyps (hs1 ++ hs2) -> wf_hyps hs1.
+Proof.
+  introv wf; allrw @wf_hyps_app; sp.
+Qed.
+
+Lemma wf_hyps_app_right {o} :
+  forall (hs1 hs2 : @bhyps o), wf_hyps (hs1 ++ hs2) -> wf_hyps hs2.
+Proof.
+  introv wf; allrw @wf_hyps_app; sp.
+Qed.
+
 Lemma replace_utokens_bhyps_app {p d} :
   forall (hs1 hs2 : list hypothesis)
+         (w : wf_hyps (hs1 ++ hs2))
          (r : @utok_ren_bhyps p d (hs1 ++ hs2)),
-    replace_utokens_bhyps (hs1 ++ hs2) r
-    = (replace_utokens_bhyps hs1 (utok_ren_bhyps_app_2bhyps1 hs1 hs2 r))
-        ++ (replace_utokens_bhyps hs2 (utok_ren_bhyps_app_2bhyps2 hs1 hs2 r)).
+    replace_utokens_bhyps (hs1 ++ hs2) w r
+    = (replace_utokens_bhyps hs1 (wf_hyps_app_left hs1 hs2 w) (utok_ren_bhyps_app_2bhyps1 hs1 hs2 r))
+        ++ (replace_utokens_bhyps hs2 (wf_hyps_app_right hs1 hs2 w) (utok_ren_bhyps_app_2bhyps2 hs1 hs2 r)).
 Proof.
   induction hs1; simpl; introv.
   - apply replace_utokens_bhyps_eq.
@@ -1472,8 +1790,8 @@ Proof.
 Qed.
 
 Lemma vars_hyps_replace_utokens_bhyps {p d} :
-  forall hs (r : @utok_ren_bhyps p d hs),
-    vars_hyps (replace_utokens_bhyps hs r)
+  forall hs w (r : @utok_ren_bhyps p d hs),
+    vars_hyps (replace_utokens_bhyps hs w r)
     = vars_hyps hs.
 Proof.
   induction hs; introv; allsimpl; auto.
@@ -1481,8 +1799,8 @@ Proof.
 Qed.
 
 Lemma nh_vars_hyps_replace_utokens_bhyps {p d} :
-  forall hs (r : @utok_ren_bhyps p d hs),
-    nh_vars_hyps (replace_utokens_bhyps hs r)
+  forall hs w (r : @utok_ren_bhyps p d hs),
+    nh_vars_hyps (replace_utokens_bhyps hs w r)
     = nh_vars_hyps hs.
 Proof.
   induction hs; introv; allsimpl; auto.
@@ -1504,19 +1822,30 @@ Proof.
 Qed.
 
 Lemma free_vars_replace_utokens {p d} :
-  forall t (r : @utok_ren p d t),
-    free_vars (replace_utokens_t t r) = free_vars t.
+  forall t w (r : @utok_ren p d t),
+    free_vars (replace_utokens_t t w r) = free_vars t.
 Proof.
-  nterm_ind t as [|o lbt ind] Case; simpl; auto; introv.
+  nterm_ind t as [|f|o lbt ind] Case; simpl; auto; introv.
+
   remember (utok_ren_2bs o lbt r) as rs.
   clear Heqrs r.
+  remember (wf_term_2bs o lbt w) as ws.
+  clear Heqws.
+
+  allapply @wf_term_2bs.
+
   induction lbt; allsimpl; auto.
   apply app_if.
+
   - destruct a; allsimpl.
     rw (ind n l); auto.
+
   - apply IHlbt.
-    introv k; introv.
-    apply (ind nt lv); sp.
+
+    + introv k; introv.
+      apply (ind nt lv); sp.
+
+    + allrw @wf_bterms_cons; sp.
 Qed.
 
 Lemma so_free_vars_replace_utokens_so {p d} :
@@ -1551,47 +1880,173 @@ Proof.
      apply (ind t0 vs); tcsp.
 Qed.
 
-Lemma nt_wf_replace_utokens {p d} :
-  forall t (r : @utok_ren p d t),
-    nt_wf t -> nt_wf (replace_utokens_t t r).
+Lemma free_vars_set_patom_noutokens {p d} :
+  forall t w nu, free_vars (@set_patom_noutokens p d t w nu) = free_vars t.
 Proof.
-  nterm_ind t as [|o lbt ind] Case; simpl; auto; introv w.
+  nterm_ind t as [|f|o lbt ind] Case; simpl; auto; introv.
+
+  remember (noutokens_2bs o lbt w) as nus.
+  clear Heqnus.
+  remember (wf_term_2bs o lbt nu) as ws.
+  clear Heqws.
+
+  clear w nu.
+
+  induction lbt; allsimpl; auto.
+  apply app_if.
+
+  - destruct a; allsimpl.
+    rw (ind n l); auto.
+
+  - apply IHlbt.
+    introv k; introv.
+    apply (ind nt lv); sp.
+Qed.
+
+Lemma get_utokens_set_patom_noutokens {p d} :
+  forall t wf nu, get_utokens (@set_patom_noutokens p d t wf nu) = [].
+Proof.
+  nterm_ind t as [|f ind|o lbt ind] Case; simpl; auto; introv.
+
+  apply app_eq_nil_iff; dands.
+
+  { destruct o; simpl; auto.
+    destruct c; allsimpl; auto.
+    unfold noutokens in wf; allsimpl; ginv. }
+
+  remember (noutokens_2bs o lbt wf) as nus.
+  clear Heqnus.
+  remember (wf_term_2bs o lbt nu) as ws.
+  clear Heqws.
+
+  clear wf nu.
+
+  induction lbt; allsimpl; auto.
+  apply app_eq_nil_iff; dands.
+
+  - destruct a; allsimpl.
+    rw (ind n l); auto.
+
+  - apply IHlbt.
+    introv k; introv.
+    apply (ind nt lv); sp.
+Qed.
+
+Lemma op_bindings_set_patom_noutokens_o {p d} :
+  forall o nu,
+    OpBindings (@set_patom_noutokens_o p d o nu)
+    = OpBindings o.
+Proof.
+  destruct o; introv; allsimpl; auto.
+  destruct c; simpl; auto.
+  unfold noutokens_o in nu; allsimpl; ginv.
+Qed.
+
+Lemma nt_wf_set_patom_noutokens {p d} :
+  forall t wf nu, nt_wf (@set_patom_noutokens p d t nu wf).
+Proof.
+  nterm_ind t as [|f ind|o lbt ind] Case; simpl; auto.
+
+  { introv nu.
+    dup wf as nwf; rw @wf_term_eq in nwf.
+    allrw @nt_wf_sterm_iff; introv.
+    pose proof (nwf n) as q; clear nwf; repnd.
+    unfold closed; rw @free_vars_set_patom_noutokens; rw q1.
+    unfold noutokens; rw @get_utokens_set_patom_noutokens.
+    dands; auto. }
+
+  introv.
+
+  remember (noutokens_2bs o lbt nu) as nus.
+  clear Heqnus.
+  remember (wf_term_2bs o lbt wf) as wfs.
+  clear Heqwfs.
+
+  rw @wf_term_eq in wf.
+  allrw @nt_wf_oterm_iff; repnd; dands.
+
+  - rw @op_bindings_set_patom_noutokens_o.
+    rw <- wf0.
+    clear nu wf0 wf ind.
+    induction lbt; simpl; auto.
+    apply eq_cons; auto.
+    destruct a; simpl; auto.
+
+  - introv k.
+    destruct b.
+    constructor.
+    clear wf0 nu.
+    induction lbt; allsimpl; auto; tcsp.
+    repndors.
+
+    + destruct a; allsimpl.
+      clear IHlbt.
+      inversion k; subst; GC.
+      apply ind with (lv := l); auto.
+
+    + apply IHlbt in k; auto; clear IHlbt.
+      introv j; introv.
+      apply ind with (lv := lv); sp.
+Qed.
+
+Lemma nt_wf_replace_utokens {p d} :
+  forall t w (r : @utok_ren p d t), nt_wf (replace_utokens_t t w r).
+Proof.
+  nterm_ind t as [|f ind|o lbt ind] Case; simpl; auto.
+
+  { introv s.
+    dup w as wf; rw @wf_term_eq in wf.
+    allrw @nt_wf_sterm_iff; introv.
+    pose proof (wf n) as q; clear wf; repnd.
+    unfold closed; rw @free_vars_set_patom_noutokens; rw q1.
+    unfold noutokens; rw @get_utokens_set_patom_noutokens.
+    dands; auto.
+    apply nt_wf_set_patom_noutokens. }
+
+  introv.
+
   remember (utok_ren_2bs o lbt r) as rs.
   clear Heqrs.
-  inversion w as [| ? ? i j]; subst.
-  constructor; simpl.
+  remember (wf_term_2bs o lbt w) as ws.
+  clear Heqws.
+
+  rw @wf_term_eq in w.
+  allrw @nt_wf_oterm_iff; repnd; dands.
+
+  - rw @op_bindings_replace_opid.
+    rw <- w0.
+    clear w0 r w ind.
+    induction lbt; simpl; auto.
+    apply eq_cons; auto.
+    destruct a; simpl; auto.
+
   - introv k.
-    destruct l.
+    destruct b.
     constructor.
-    clear j w.
+    clear w0.
     induction lbt; allsimpl; auto; tcsp.
     dorn k.
     + destruct a; allsimpl.
       clear IHlbt.
       inversion k; subst; GC.
       apply ind with (lv := l); auto.
-      pose proof (i (bterm l n0)) as h; autodimp h hyp.
-      inversion h; subst; sp.
+
     + apply IHlbt in k; auto.
-      introv kk ww.
-      apply ind with (lv := lv); sp.
-      apply utok_ren_2ot; auto.
-      apply utok_ren_2o in r; auto.
-      clear k.
-      apply utok_ren_bs_2bs in rs; auto.
-  - rw @op_bindings_replace_opid.
-    rw <- j.
-    clear i j r w ind.
-    induction lbt; simpl; auto.
-    apply eq_cons; auto.
-    destruct a; simpl; auto.
+
+      { introv kk; introv.
+        apply ind with (lv := lv); sp. }
+
+      { apply utok_ren_2ot; auto.
+        apply utok_ren_2o in r; auto.
+        clear k.
+        apply utok_ren_bs_2bs in rs; auto. }
 Qed.
 
 Lemma wf_term_replace_utokens {p d} :
-  forall (t : @NTerm p) (r : @utok_ren p d t),
-    wf_term t -> wf_term (replace_utokens_t t r).
+  forall (t : @NTerm p) w (r : @utok_ren p d t),
+    wf_term (replace_utokens_t t w r).
 Proof.
-  introv w.
+  introv.
   allrw @wf_term_eq.
   apply nt_wf_replace_utokens; auto.
 Qed.
@@ -1693,11 +2148,11 @@ Proof.
 Qed.
 
 Lemma isprog_vars_replace_utokens_t {p d} :
-  forall hs (r1 : @utok_ren_bhyps p d hs) t (r2 : @utok_ren p d t),
+  forall hs w1 (r1 : @utok_ren_bhyps p d hs) t w2 (r2 : @utok_ren p d t),
     isprog_vars (vars_hyps hs) t
     -> isprog_vars
-         (vars_hyps (replace_utokens_bhyps hs r1))
-         (replace_utokens_t t r2).
+         (vars_hyps (replace_utokens_bhyps hs w1 r1))
+         (replace_utokens_t t w2 r2).
 Proof.
   introv.
   rw @vars_hyps_replace_utokens_bhyps.
@@ -1707,14 +2162,16 @@ Proof.
   apply nt_wf_replace_utokens; auto.
 Qed.
 
-Lemma wf_hypotheses_replace {p d} :
-  forall (hyps : barehypotheses) (r : @utok_ren_bhyps p d hyps),
-    wf_hypotheses hyps
-    -> wf_hypotheses (replace_utokens_bhyps hyps r).
+Lemma wf_hypotheses_replace_aux {p d} :
+  forall (hyps : barehypotheses)
+         (r : @utok_ren_bhyps p d hyps)
+         (w : wf_hypotheses hyps)
+         (wf : wf_hyps hyps),
+    wf_hypotheses (replace_utokens_bhyps hyps wf r).
 Proof.
-  introv w.
+  introv w; introv.
   induction hyps using rev_list_indT; allsimpl; auto.
-  allrw @wf_hypotheses_snoc; repnd.
+  rw @wf_hypotheses_snoc in w; repnd.
   rw @replace_utokens_bhyps_snoc.
   apply hyps_cons; auto.
   - destruct a; allsimpl.
@@ -1723,29 +2180,39 @@ Proof.
     rw @vars_hyps_replace_utokens_bhyps; auto.
 Qed.
 
-Lemma wf_concl_replace {p d} :
-  forall (c : conclusion) (r : @utok_ren_concl p d c),
-    wf_concl c
-    -> wf_concl (replace_utokens_concl c r).
+Lemma wf_hypotheses_replace {p d} :
+  forall (hyps : barehypotheses)
+         (r : @utok_ren_bhyps p d hyps)
+         (w : wf_hypotheses hyps),
+    wf_hypotheses (replace_utokens_bhyps hyps (wf_hypotheses_implies_wf_hyps hyps w) r).
 Proof.
-  introv w.
+  introv.
+  apply wf_hypotheses_replace_aux; auto.
+Qed.
+
+Lemma wf_concl_replace {p d} :
+  forall (c : conclusion) (r : @utok_ren_concl p d c) (w : wf_concl c),
+    wf_concl (replace_utokens_concl c w r).
+Proof.
+  introv.
   destruct c; allsimpl; constructor; simpl; auto;
   inversion w as [wt we]; allsimpl; auto;
   apply wf_term_replace_utokens; auto.
 Qed.
 
 Lemma wf_sequent_replace {p d} :
-  forall (s : baresequent) (r : @utok_ren_bseq p d s),
-    wf_sequent s
-    -> wf_sequent (replace_utokens_bseq s r).
+  forall (s : baresequent) (r : @utok_ren_bseq p d s) (w : wf_sequent s),
+    wf_sequent (replace_utokens_bseq s w r).
 Proof.
-  introv w.
+  introv.
   unfold wf_sequent.
-  unfold wf_sequent in w.
+  unfold wf_sequent in w; repnd.
   destruct s; allsimpl; repnd; dands.
-  allrw @vswf_hypotheses_nil_eq.
-  apply wf_hypotheses_replace; auto.
-  apply wf_concl_replace; auto.
+
+  - allrw @vswf_hypotheses_nil_eq.
+    apply wf_hypotheses_replace_aux; auto.
+
+  - apply wf_concl_replace; auto.
 Qed.
 
 Definition replace_utokens_seq {p d}
@@ -1756,7 +2223,7 @@ Definition replace_utokens_seq {p d}
       fun r =>
         existT
           wf_sequent
-          (replace_utokens_bseq bs (utok_ren_seq_2bseq bs w r))
+          (replace_utokens_bseq bs w (utok_ren_seq_2bseq bs w r))
           (wf_sequent_replace bs (utok_ren_seq_2bseq bs w r) w)
   end.
 
@@ -2155,9 +2622,9 @@ Lemma replace_utokens_cseq_mk_wcseq {p d} :
   forall (s : baresequent)
          (w : wf_csequent s)
          (f : @utok_ren_cseq p d (mk_wcseq s w)),
-    {w' : wf_csequent (replace_utokens_bseq s f)
+    {w' : wf_csequent (replace_utokens_bseq s (fst w) f)
      & replace_utokens_cseq (mk_wcseq s w) f
-       = mk_wcseq (replace_utokens_bseq s f) w'}.
+       = mk_wcseq (replace_utokens_bseq s (fst w) f) w'}.
 Proof.
   introv.
   destruct s; allsimpl.
@@ -2167,44 +2634,44 @@ Proof.
 
   assert (wf_hypotheses
             (replace_utokens_bhyps
-               hyps
+               hyps (wf_sequent_2hyps {| hyps := hyps; concl := concl |} (w2, w0))
                (utok_ren_bseq_2h {| hyps := hyps; concl := concl |} f))) as wfh.
-  apply wf_hypotheses_replace; auto.
+  { apply wf_hypotheses_replace_aux; auto. }
 
   assert (wf_concl
             (replace_utokens_concl
-               concl
+               concl (wf_sequent_2concl {| hyps := hyps; concl := concl |} (w2, w0))
                (utok_ren_bseq_2c {| hyps := hyps; concl := concl |} f))) as wfc.
-  apply wf_concl_replace; auto.
+  { apply wf_concl_replace; auto. }
 
   assert (closed_type
             (replace_utokens_bhyps
-               hyps
+               hyps (wf_sequent_2hyps {| hyps := hyps; concl := concl |} (w2, w0))
                (utok_ren_bseq_2h {| hyps := hyps; concl := concl |} f))
             (replace_utokens_concl
-               concl
+               concl (wf_sequent_2concl {| hyps := hyps; concl := concl |} (w2, w0))
                (utok_ren_bseq_2c {| hyps := hyps; concl := concl |} f))) as ct.
-  allunfold @closed_type.
-  allunfold @covered; allsimpl.
-  destruct concl; allsimpl;
-  rw @free_vars_replace_utokens;
-  rw @vars_hyps_replace_utokens_bhyps; auto.
+  { allunfold @closed_type.
+    allunfold @covered; allsimpl.
+    destruct concl; allsimpl;
+    rw @free_vars_replace_utokens;
+    rw @vars_hyps_replace_utokens_bhyps; auto. }
 
   assert (closed_extract
             (replace_utokens_bhyps
-               hyps
+               hyps (wf_sequent_2hyps {| hyps := hyps; concl := concl |} (w2, w0))
                (utok_ren_bseq_2h {| hyps := hyps; concl := concl |} f))
             (replace_utokens_concl
-               concl
+               concl (wf_sequent_2concl {| hyps := hyps; concl := concl |} (w2, w0))
                (utok_ren_bseq_2c {| hyps := hyps; concl := concl |} f))) as ce.
-  allunfold @closed_extract.
-  allunfold @covered_op.
-  allunfold @covered.
-  destruct concl; allsimpl;
-  allrw @free_vars_replace_utokens;
-  allrw @vars_hyps_replace_utokens_bhyps;
-  allrw @nh_vars_hyps_replace_utokens_bhyps;
-  auto.
+  { allunfold @closed_extract.
+    allunfold @covered_op.
+    allunfold @covered.
+    destruct concl; allsimpl;
+    allrw @free_vars_replace_utokens;
+    allrw @vars_hyps_replace_utokens_bhyps;
+    allrw @nh_vars_hyps_replace_utokens_bhyps;
+    auto. }
 
   apply vswf_hypotheses_nil_eq in wfh.
 
@@ -2393,10 +2860,50 @@ Proof.
   introv; introv; exrepnd; sp.
 Qed.
 
-Lemma replace_utokens_t_id {o d} :
-  forall t, replace_utokens_t t (@utok_ren_t_id o d t) = t.
+Lemma set_patom_noutokens_t_id {o d} :
+  forall t wf nu, @set_patom_noutokens (set_patom o d) d t nu wf = t.
 Proof.
-  nterm_ind t as [|op lbt ind] Case; simpl; auto.
+  nterm_ind t as [|f ind|op lbt ind] Case; simpl; auto.
+
+  { introv nu.
+    f_equal.
+    apply functional_extensionality; introv; auto. }
+
+  introv.
+  apply oterm_eq.
+
+  - dopid op as [can|ncan|exc|abs] SCase; simpl; auto.
+
+    f_equal; destruct can; simpl; auto.
+    unfold noutokens in nu; allsimpl; ginv.
+
+  - remember (noutokens_2bs op lbt nu) as nus.
+    clear Heqnus.
+    remember (wf_term_2bs op lbt wf) as wfs.
+    clear Heqwfs.
+
+    clear wf nu.
+
+    induction lbt; introv; auto.
+    apply eq_cons; auto.
+    + destruct a; simpl.
+      apply bterm_eq; auto.
+      eapply ind; simpl; left; eauto.
+    + apply IHlbt; auto.
+      introv k; apply ind with (lv := lv); sp.
+Qed.
+
+Lemma replace_utokens_t_id {o d} :
+  forall t w, replace_utokens_t t w (@utok_ren_t_id o d t) = t.
+Proof.
+  nterm_ind t as [|f ind|op lbt ind] Case; simpl; auto.
+
+  { introv.
+    f_equal.
+    apply functional_extensionality; introv.
+    apply set_patom_noutokens_t_id. }
+
+  introv.
   apply oterm_eq.
 
   - dopid op as [can|ncan|exc|abs] SCase; simpl; auto.
@@ -2406,24 +2913,32 @@ Proof.
   - remember (utok_ren_2bs op lbt (utok_ren_t_id (oterm op lbt))) as i.
     assert (forall x, i x = (projT1 x)) as e by (introv; subst; exrepnd; sp).
     clear Heqi.
+    remember (wf_term_2bs op lbt w) as wfs.
+    clear Heqwfs.
+
+    clear w.
+
     induction lbt; introv; auto.
     apply eq_cons; auto.
+
     + destruct a; simpl.
-      apply bterm_eq; auto.
+      f_equal.
       assert (eq_utok_ren
                 n
                 (utok_ren_b_2t l n (utok_ren_bs_2b (bterm l n) lbt i))
                 (utok_ren_t_id n)) as x by (introv; exrepnd; apply e).
-      rw (replace_utokens_t_eq n _ _ x).
+
+      rewrite (replace_utokens_t_eq n _ (wf_bterm_2t l n (wf_bterms_2b (bterm l n) lbt wfs)) _ _ x).
       apply ind with (lv := l); sp.
+
     + apply IHlbt; auto.
       introv k; apply ind with (lv := lv); sp.
       introv; exrepnd; simpl; rw e; simpl; sp.
 Qed.
 
 Lemma replace_utokens_hyp_id {o d} :
-  forall a : hypothesis,
-    replace_utokens_hyp a (@utok_ren_hyp_id o d a) = a.
+  forall (a : hypothesis) w,
+    replace_utokens_hyp a w (@utok_ren_hyp_id o d a) = a.
 Proof.
   introv.
   destruct a; unfold replace_utokens_hyp; simpl.
@@ -2433,31 +2948,33 @@ Proof.
 Qed.
 
 Lemma replace_utokens_bhyps_id {o d} :
-  forall hyps : barehypotheses,
-    replace_utokens_bhyps hyps (@utok_ren_bhyps_id o d hyps) = hyps.
+  forall (hyps : barehypotheses) w,
+    replace_utokens_bhyps hyps w (@utok_ren_bhyps_id o d hyps) = hyps.
 Proof.
-  induction hyps; simpl; auto.
+  induction hyps; simpl; auto; introv.
   apply eq_cons.
   - rw (replace_utokens_hyp_eq
-          a _ _
+          a (wf_hyps_2h a hyps w) (wf_hyps_2h a hyps w) _ _
           (utok_ren_bhyps_id_2h a hyps)).
     apply replace_utokens_hyp_id.
-  - rw (replace_utokens_bhyps_eq hyps _ _ (utok_ren_bhyps_id_2bhyps a hyps)); auto.
+  - rw (replace_utokens_bhyps_eq
+          hyps (wf_hyps_2hs a hyps w) (wf_hyps_2hs a hyps w)
+          _ _ (utok_ren_bhyps_id_2bhyps a hyps)); auto.
 Qed.
 
 Lemma replace_utokens_concl_id {o d} :
-  forall c, replace_utokens_concl c (@utok_ren_concl_id o d c) = c.
+  forall c w, replace_utokens_concl c w (@utok_ren_concl_id o d c) = c.
 Proof.
-  destruct c; simpl.
+  destruct c; simpl; introv.
   - apply eq_concl_ext.
     rw (replace_utokens_t_eq
-          ctype _ _
-          (utok_ren_concle_id_2t ctype extract)).
+          ctype (wf_concl_ext_2typ ctype extract w) (wf_concl_ext_2typ ctype extract w)
+          _ _ (utok_ren_concle_id_2t ctype extract)).
     apply replace_utokens_t_id.
 
     rw (replace_utokens_t_eq
-          extract _ _
-          (utok_ren_concle_id_2e ctype extract)).
+          extract (wf_concl_ext_2ext ctype extract w) (wf_concl_ext_2ext ctype extract w)
+          _ _ (utok_ren_concle_id_2e ctype extract)).
     apply replace_utokens_t_id.
 
   - apply eq_concl_typ.
@@ -2465,19 +2982,25 @@ Proof.
 Qed.
 
 Lemma replace_utokens_bseq_id {o d} :
-  forall s : @baresequent (set_patom o d),
-    replace_utokens_bseq s (@utok_ren_bseq_id o d s) = s.
+  forall (s : @baresequent (set_patom o d)) w,
+    replace_utokens_bseq s w (@utok_ren_bseq_id o d s) = s.
 Proof.
   introv.
   destruct s.
   unfold replace_utokens_bseq; simpl.
   apply eq_baresequent; simpl.
   - rw (replace_utokens_bhyps_eq
-          hyps _ _
+          hyps
+          (wf_sequent_2hyps {| hyps := hyps; concl := concl |} w)
+          (wf_sequent_2hyps {| hyps := hyps; concl := concl |} w)
+          _ _
           (utok_ren_bseq_id_2h {| hyps := hyps; concl := concl |})); simpl.
     apply replace_utokens_bhyps_id.
   - rw (replace_utokens_concl_eq
-          concl _ _
+          concl
+          (wf_sequent_2concl {| hyps := hyps; concl := concl |} w)
+          (wf_sequent_2concl {| hyps := hyps; concl := concl |} w)
+          _ _
           (utok_ren_bseq_id_2c {| hyps := hyps; concl := concl |})); simpl.
     apply replace_utokens_concl_id.
 Qed.
@@ -2569,6 +3092,6 @@ Abort.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
 *** End:
 *)
