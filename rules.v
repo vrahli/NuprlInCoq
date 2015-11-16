@@ -116,6 +116,10 @@ Require Import rules_isect.
 Require Import rules_isect2.
 
 
+(* Derivation of False from false hypotheses *)
+Require Import rules_false.
+
+
 (* A few lemmas using our verified rules *)
 Require Import nuprl_lemmas1.
 Require Import nuprl_lemmas2.

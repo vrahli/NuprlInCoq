@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -26,6 +27,11 @@
 
 Require Export rules_useful.
 Require Export sequents_useful.
+Require Export sequents_tacs.
+Require Export sequents_tacs2.
+Require Export subst_tacs_aeq.
+Require Export cequiv_tacs.
+
 (** printing |- $\vdash$ *)
 (** printing ->  $\rightarrow$ *)
 (* begin hide *)
@@ -995,24 +1001,30 @@ Qed.
 >>
  *)
 
+Definition rule_cut_concl {o} (H : @bhyps o) C t x u :=
+  mk_baresequent H (mk_concl C (subst t x u)).
+
+Definition rule_cut_hyp1 {o} (H : @bhyps o) B u :=
+  mk_baresequent H (mk_concl B u).
+
+Definition rule_cut_hyp2 {o} (H : @bhyps o) x B C t :=
+  mk_baresequent (snoc H (mk_hyp x B)) (mk_concl C t).
+
 Definition rule_cut {o}
              (H : @barehypotheses o)
              (B C t u : NTerm)
              (x   : NVar) :=
   mk_rule
-    (mk_baresequent H (mk_concl C (subst t x u)))
-    [ mk_baresequent H (mk_concl B u),
-      mk_baresequent (snoc H (mk_hyp x B)) (mk_concl C t)
+    (rule_cut_concl H C t x u)
+    [ rule_cut_hyp1 H B u,
+      rule_cut_hyp2 H x B C t
     ]
     [sarg_var x].
 
 Lemma rule_cut_true {o} :
-  forall
-    lib
-    (H : @barehypotheses o)
-    (B C t u : NTerm)
-    (x : NVar)
-    (bc : disjoint (free_vars u) (bound_vars t)),
+  forall lib (H : @barehypotheses o)
+         (B C t u : NTerm)
+         (x : NVar),
     rule_true lib (rule_cut H B C t u x).
 Proof.
   unfold rule_cut, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -1020,49 +1032,47 @@ Proof.
 
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
-  generalize (hyps (mk_baresequent H (mk_concl B u))
-                   (inl eq_refl))
-             (hyps (mk_baresequent (snoc H (mk_hyp x B)) (mk_concl C t))
-                   (inr (inl eq_refl)));
-    simpl; intros hyp1 hyp2; clear hyps.
-  destruct hyp1 as [ ws1 hyp1 ].
-  destruct hyp2 as [ ws2 hyp2 ].
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  rename Hyp1 into hyp2.
   destseq; allsimpl; clear_irr; GC.
 
   assert (covered (subst t x u) (vars_hyps (filter is_nh H))) as cv.
-  clear hyp1 hyp2.
-  dwfseq.
-  introv i.
-  generalize (eqvars_free_vars_disjoint t [(x,u)]); intro eqv.
-  rw eqvars_prop in eqv.
-  rw @fold_subst in eqv.
-  rw eqv in i.
-  rw in_app_iff in i; rw in_remove_nvars in i; allsimpl; sp.
-  apply not_over_or in p; sp.
-  apply ce in p0.
-  apply in_snoc in p0; sp.
-  allapply @in_sub_free_vars; sp.
-  destruct (memvar x (free_vars t)); allsimpl; sp; cpx.
+  { clear hyp1 hyp2.
+    dwfseq.
+    introv i.
+    pose proof (eqvars_free_vars_disjoint t [(x,u)]) as eqv.
+    rw eqvars_prop in eqv.
+    rw @fold_subst in eqv.
+    rw eqv in i.
+    rw in_app_iff in i; rw in_remove_nvars in i; allsimpl; sp.
+    apply not_over_or in p; sp.
+    apply ce in p0.
+    apply in_snoc in p0; sp.
+    allapply @in_sub_free_vars; sp.
+    destruct (memvar x (free_vars t)); allsimpl; sp; cpx.
+  }
 
   exists cv.
 
   (* We prove some simple facts on our sequents *)
   assert (! LIn x (free_vars B)
-          /\ ! LIn x (free_vars C)
-          /\ ! LIn x (free_vars u)
-          /\ ! LIn x (vars_hyps H)
-          /\ wf_term u
-          /\ wf_term B
-          /\  covered u (nh_vars_hyps H)
-          /\  covered B (vars_hyps H)) as vhyps.
+          # ! LIn x (free_vars C)
+          # ! LIn x (free_vars u)
+          # ! LIn x (vars_hyps H)
+          # wf_term u
+          # wf_term B
+          # covered u (nh_vars_hyps H)
+          # covered B (vars_hyps H)) as vhyps.
 
-  clear hyp1 hyp2.
-  dwfseq.
-  sp;
-  try (complete (generalize (ce0 x); sp;
-                 generalize (subset_hs_vars_hyps H); intro k;
-                 apply k in X0; sp));
-  try (complete (rw subvars_eq; unfold subset; sp)).
+  { clear hyp1 hyp2.
+    dwfseq.
+    sp;
+      try (complete (generalize (ce0 x); sp;
+                     generalize (subset_hs_vars_hyps H); intro k;
+                     apply k in X0; sp));
+      try (complete (rw subvars_eq; unfold subset; sp)).
+  }
 
   destruct vhyps as [ nixb vhyps ].
   destruct vhyps as [ nixc vhyps ].
@@ -1096,69 +1106,88 @@ Proof.
                 (snoc s2 (x, lsubstc u wfce1 s2 cu2))); clear hyp2; intro hyp2.
 
   autodimp hyp2 hyp.
-  generalize (hyps_functionality_snoc lib H (mk_hyp x B) s1 (lsubstc u wfce1 s1 cu1)).
-  intro imp; apply imp; thin imp; try (complete auto).
-  introv eq sim'; allsimpl.
+  { apply hyps_functionality_snoc2; simpl; auto.
+    introv eq sim'; allsimpl.
 
-  vr_seq_true in hyp1.
-  generalize (hyp1 s1 s'); clear hyp1; intro hyp1.
-  repeat (autodimp hyp1 hyp); exrepnd; clear_irr; sp.
+    vr_seq_true in hyp1.
+    generalize (hyp1 s1 s'); clear hyp1; intro hyp1.
+    repeat (autodimp hyp1 hyp); exrepnd; clear_irr; sp.
+  }
 
   assert (cover_vars B s1) as cvbs1 by (rw @cover_vars_eq; insub).
 
   autodimp hyp2 hyp.
-  rw @similarity_snoc; simpl.
-  exists s1 s2 (lsubstc u wfce1 s1 cu1) (lsubstc u wfce1 s2 cu2) wfct1 cvbs1; sp.
-
-  vr_seq_true in hyp1.
-  generalize (hyp1 s1 s2); clear hyp1; intro hyp1.
-  repeat (autodimp hyp1 hyp); exrepnd; clear_irr; sp.
+  { sim_snoc; dands; auto.
+    vr_seq_true in hyp1.
+    generalize (hyp1 s1 s2); clear hyp1; intro hyp1.
+    repeat (autodimp hyp1 hyp); exrepnd; clear_irr; sp.
+  }
 
   exrepnd.
+  lsubst_tac.
+  dands; auto.
 
-  assert (lsubstc t wfce0 (snoc s1 (x, lsubstc u wfce1 s1 cu1)) pt0
-          = lsubstc (subst t x u) wfce s1 pt1) as eq1.
+  repeat lsubstc_subst_aeq2.
+  repeat substc_lsubstc_vars3.
+  proof_irr.
 
-  symmetry; apply lsubstc_eq_if_csubst.
-  unfold csubst, subst.
-  rw @csub2sub_snoc; simpl.
-  rw <- @lsubst_swap;
-    try (complete (sp; allapply @in_csub2sub; sp));
-    try (complete (apply @isprogram_csubst; sp; rw @nt_wf_eq; sp));
-    try (complete (rw @dom_csub_eq; insub)).
-  rw @simple_lsubst_lsubst;
-    try (complete (simpl; sp; cpx));
-    try (complete (sp; allapply @in_csub2sub; sp)).
-
-  assert (lsubstc t wfce0 (snoc s2 (x, lsubstc u wfce1 s2 cu2)) pt3
-          = lsubstc (subst t x u) wfce s2 pt2) as eq2.
-
-  symmetry; apply lsubstc_eq_if_csubst.
-  unfold csubst, subst.
-  rw @csub2sub_snoc; simpl.
-  rw <- @lsubst_swap;
-    try (complete (sp; allapply @in_csub2sub; sp));
-    try (complete (apply @isprogram_csubst; sp; rw @nt_wf_eq; sp));
-    try (complete (rw @dom_csub_eq; insub)).
-  rw @simple_lsubst_lsubst;
-    try (complete (simpl; sp; cpx));
-    try (complete (sp; allapply @in_csub2sub; sp)).
-
-  rw eq1 in hyp2; rw eq2 in hyp2.
-  lsubst_tac; sp.
+  pose proof (lsubstc_snoc_move t s1 [] x (lsubstc u wfce1 s1 cu1) wfce0) as e1.
+  pose proof (lsubstc_snoc_move t s2 [] x (lsubstc u wfce1 s2 cu2) wfce0) as e2.
+  allrw app_nil_r.
+  pose proof (e1 pt0) as k1; clear e1.
+  pose proof (e2 pt3) as k2; clear e2.
+  autodimp k1 hyp.
+  { apply similarity_dom in sim; repnd; rw sim0; auto. }
+  autodimp k2 hyp.
+  { apply similarity_dom in sim; repnd; rw sim; auto. }
+  exrepnd.
+  proof_irr.
+  rw <- k2; rw <- k0; auto.
 Qed.
 
 (* begin hide *)
 
 Lemma rule_cut_true_ex {o} :
-  forall lib (H : @bhyps o) B C t u x
-         (bc : disjoint (free_vars u) (bound_vars t)),
+  forall lib (H : @bhyps o) B C t u x,
     rule_true_if lib (rule_cut H B C t u x).
 Proof.
   intros.
-  generalize (rule_cut_true lib H B C t u x bc); intro rt.
+  generalize (rule_cut_true lib H B C t u x); intro rt.
   rw <- @rule_true_eq_ex in rt.
   unfold rule_true_ex in rt; sp.
+Qed.
+
+Lemma rule_cut_true2 {o} :
+  forall lib (H : @barehypotheses o)
+         (B C t u : NTerm)
+         (x : NVar),
+    rule_true2 lib (rule_cut H B C t u x).
+Proof.
+  introv.
+  apply rule_true_iff_rule_true2; sp.
+  apply rule_cut_true.
+Qed.
+
+Lemma rule_cut_wf {o} :
+  forall (H : @barehypotheses o)
+         (B C t u : NTerm)
+         (x : NVar),
+    wf_term B
+    -> wf_term u
+    -> covered B (vars_hyps H)
+    -> !LIn x (vars_hyps H)
+    -> wf_rule (rule_cut H B C t u x).
+Proof.
+  introv wB wu covB nixH pwf m; allsimpl; repndors; subst; tcsp;
+  allunfold @pwf_sequent; wfseq; tcsp.
+
+  - apply vswf_hypotheses_snoc; dands; simpl; auto.
+    apply isprog_vars_eq; dands; auto.
+    apply nt_wf_eq; auto.
+
+  - apply lsubst_wf_term in pwf0; auto.
+
+  - apply covered_snoc_weak; auto.
 Qed.
 
 
@@ -1194,11 +1223,9 @@ Definition rule_cutH {o}
     [sarg_var x].
 
 Lemma rule_cutH_true {o} :
-  forall
-    lib
-    (H : @barehypotheses o)
-    (B C t u : NTerm)
-    (x : NVar),
+  forall lib (H : @barehypotheses o)
+         (B C t u : NTerm)
+         (x : NVar),
     rule_true lib (rule_cutH H B C t u x).
 Proof.
   unfold rule_cutH, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -1313,5 +1340,11 @@ Proof.
 Qed.
 
 
-
 (* end hide *)
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/" "../per/")
+*** End:
+*)

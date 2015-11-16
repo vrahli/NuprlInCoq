@@ -27,6 +27,9 @@
 
 Require Export rules_isect.
 Require Export rules_squiggle.
+Require Export rules_false.
+Require Export rules_struct.
+
 
 Inductive valid_rule {o} : @rule o -> Type :=
 | valid_rule_isect_equality :
@@ -79,7 +82,19 @@ Inductive proof {o} : @baresequent o -> Type :=
     forall a b H,
       proof (rule_cequiv_approx_hyp1 a b H)
       -> proof (rule_cequiv_approx_hyp2 a b H)
-      -> proof (rule_cequiv_approx_concl a b H).
+      -> proof (rule_cequiv_approx_concl a b H)
+| proof_bottom_diverges :
+    forall x H J,
+      proof (rule_bottom_diverges_concl x H J)
+| proof_cut :
+    forall B C t u x H,
+      wf_term B
+      -> wf_term u (* !!Should get rid of that one *)
+      -> covered B (vars_hyps H)
+      -> !LIn x (vars_hyps H)
+      -> proof (rule_cut_hyp1 H B u)
+      -> proof (rule_cut_hyp2 H x B C t)
+      -> proof (rule_cut_concl H C t x u).
 
 Lemma valid_proof {o} :
   forall lib (seq : @baresequent o) (wf : pwf_sequent seq),
@@ -90,6 +105,8 @@ Proof.
     as [ a1 a2 b1 b2 x1 x2 y i hs niy p1 ih1 p2 ih2
        | a hs
        | a b hs p1 ih1 p2 ih2
+       | x hs js
+       | B C t u x hs wB wu covB nixH p1 ih1 p2 ih2
        ];
     allsimpl.
 
@@ -112,6 +129,20 @@ Proof.
 
     apply ih2; auto.
     apply (rule_cequiv_approx_wf a b hs); simpl; tcsp.
+
+  - apply (rule_bottom_diverges_true2 lib x hs js); simpl; tcsp.
+
+  - apply (rule_cut_true2 lib hs B C t u x); simpl; tcsp.
+
+    + unfold args_constraints; simpl; introv xx; repndors; subst; tcsp.
+
+    + introv xx; repndors; subst; tcsp.
+
+      * apply ih1.
+        apply (rule_cut_wf hs B C t u x); simpl; tcsp.
+
+      * apply ih2.
+        apply (rule_cut_wf hs B C t u x); simpl; tcsp.
 Qed.
 
 
