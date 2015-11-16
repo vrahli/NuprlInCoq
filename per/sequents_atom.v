@@ -108,8 +108,6 @@ Section ProofIrrelevantDSetMembership.
   Lemma dseq_member_eq_term {p} :
     forall (a : get_patom_set p) l (x : dset_member a l), False.
   Proof.
-    Print dset_member_eq.
-
     intros a l x.
     (*rw @dset_member_eq in x.*)
   Abort.

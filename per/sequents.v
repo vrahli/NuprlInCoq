@@ -1082,6 +1082,9 @@ Definition mk_concl_t {p} (typ : @NTerm p) : conclusion := concl_typ typ.
 Definition mk_concl {p} (typ e : @NTerm p) : conclusion := concl_ext typ e.
 Definition mk_conclax {p} (typ : @NTerm p) : conclusion := mk_concl typ mk_axiom.
 
+Definition mk_concleq {p} (t1 t2 T : @NTerm p) : conclusion :=
+  mk_conclax (mk_equality t1 t2 T).
+
 Lemma wf_term_op_proof_irrelevance {p} :
   forall c,
   forall x y : @wf_term_op p c,

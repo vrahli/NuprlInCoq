@@ -381,27 +381,34 @@ Qed.
 >>
  *)
 
+Definition rule_isect_equality_concl {o} a1 a2 x1 x2 b1 b2 i (H : @bhyps o) :=
+  mk_baresequent
+    H
+    (mk_concleq
+       (mk_isect a1 x1 b1)
+       (mk_isect a2 x2 b2)
+       (mk_uni i)).
+
+Definition rule_isect_equality_hyp1 {o} a1 a2 i (H : @bhyps o) :=
+  mk_baresequent H (mk_concleq a1 a2 (mk_uni i)).
+
+Definition rule_isect_equality_hyp2 {o} a1 b1 b2 x1 x2 y i (H : @bhyps o) :=
+  mk_baresequent
+    (snoc H (mk_hyp y a1))
+    (mk_concleq
+       (subst b1 x1 (mk_var y))
+       (subst b2 x2 (mk_var y))
+       (mk_uni i)).
+
 Definition rule_isect_equality {o}
            (a1 a2 b1 b2 : NTerm)
            (x1 x2 y : NVar)
            (i   : nat)
            (H   : @barehypotheses o) :=
   mk_rule
-    (mk_baresequent
-       H
-       (mk_conclax (mk_equality
-                      (mk_isect a1 x1 b1)
-                      (mk_isect a2 x2 b2)
-                      (mk_uni i))))
-    [ mk_baresequent
-        H
-        (mk_conclax (mk_equality a1 a2 (mk_uni i))),
-      mk_baresequent
-        (snoc H (mk_hyp y a1))
-        (mk_conclax (mk_equality
-                       (subst b1 x1 (mk_var y))
-                       (subst b2 x2 (mk_var y))
-                       (mk_uni i)))
+    (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
+    [ rule_isect_equality_hyp1 a1 a2 i H,
+      rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H
     ]
     [ sarg_var y ].
 
@@ -489,6 +496,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)

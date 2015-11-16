@@ -18,12 +18,18 @@ DESCRIPTION
 
 This library formalizes Nuprl's Constructive Type Theory (CTT) as of
 2015.  More information can be found about Nuprl on the [Nuprl
-website](http://www.nuprl.org/).  CTT is an extensional type theory
-originally inspired by Martin-Lof's extensional type theory, and that
-has since then been extended with several new types such as:
-intersection types, union types, image types, partial types, set
-types, quotient types, partial equivalence relation (per) types,
-simulation and bisimulation types, an atom type, and the "Base" type.
+website](http://www.nuprl.org/).  (Also check out
+[JonPRL](https://github.com/jonsterling/JonPRL) for a SML
+re-implementation of Nuprl.)  As for
+[Agda](http://wiki.portal.chalmers.se/agda/),
+[Coq](https://coq.inria.fr/), and [Idris](http://www.idris-lang.org/),
+Nuprl implements a dependent type theory à la Martin-Löf.  However,
+CTT is an extensional type theory originally inspired by Martin-Löf's
+extensional type theory.  It has since then been extended with several
+new types such as: intersection types, union types, image types,
+partial types, set types, quotient types, partial equivalence relation
+(per) types, simulation and bisimulation types, an atom type, and the
+"Base" type.
 
 Our formalization includes a definition of Nuprl's computation system,
 a definition of Howe's computational equivalence relation and a proof
