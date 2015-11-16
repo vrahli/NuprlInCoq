@@ -116,13 +116,16 @@ Qed.
 >>
  *)
 
+Definition rule_approx_refl_concl {o} a (H : @bhyps o) :=
+  mk_baresequent H (mk_conclax (mk_approx a a)).
+
 Definition rule_approx_refl {o}
            (H  : @barehypotheses o)
            (a  : NTerm) :=
-  mk_rule (mk_baresequent H (mk_conclax (mk_approx a a))) [] [].
+  mk_rule (rule_approx_refl_concl a H) [] [].
 
 Lemma rule_approx_refl_true {o} :
-  forall lib (H  : @barehypotheses o) (a  : NTerm),
+  forall lib (H : @bhyps o) (a  : NTerm),
     rule_true lib (rule_approx_refl H a).
 Proof.
   intros.
@@ -140,6 +143,15 @@ Proof.
   rw <- @member_approx_iff; sp;
   try (spcast; apply approx_refl; apply isprogram_get_cterm).
   apply equal_approx.
+Qed.
+
+Lemma rule_approx_refl_true2 {o} :
+  forall lib (H  : @bhyps o) (a  : NTerm),
+    rule_true2 lib (rule_approx_refl H a).
+Proof.
+  introv.
+  apply rule_true_iff_rule_true2.
+  apply rule_approx_refl_true.
 Qed.
 
 (* begin hide *)
@@ -412,13 +424,23 @@ Qed.
      H |- b <= a
 >>
  *)
+
+Definition rule_cequiv_approx_concl {o} (a b : @NTerm o) H :=
+  mk_baresequent H (mk_conclax (mk_cequiv a b)).
+
+Definition rule_cequiv_approx_hyp1 {o} (a b : @NTerm o) H :=
+  mk_baresequent H (mk_conclax (mk_approx a b)).
+
+Definition rule_cequiv_approx_hyp2 {o} (a b : @NTerm o) H :=
+  mk_baresequent H (mk_conclax (mk_approx b a)).
+
 Definition rule_cequiv_approx {o}
            (H   : @barehypotheses o)
            (a b : NTerm) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_cequiv a b)))
-    [ mk_baresequent H (mk_conclax (mk_approx a b)),
-      mk_baresequent H (mk_conclax (mk_approx b a))
+    (rule_cequiv_approx_concl a b H)
+    [ rule_cequiv_approx_hyp1 a b H,
+      rule_cequiv_approx_hyp2 a b H
     ]
     [].
 
@@ -468,6 +490,26 @@ Proof.
 
   spcast.
   rw @cequivc_iff_approxc; dands; auto.
+Qed.
+
+Lemma rule_cequiv_approx_true2 {o} :
+  forall lib (H : @barehypotheses o) (a b : NTerm),
+    rule_true2 lib (rule_cequiv_approx H a b).
+Proof.
+  introv.
+  apply rule_true_iff_rule_true2; auto.
+  apply rule_cequiv_approx_true.
+Qed.
+
+Lemma rule_cequiv_approx_wf {o} :
+  forall (a b : NTerm) (H : @barehypotheses o),
+    wf_rule (rule_cequiv_approx H a b).
+Proof.
+  introv pwf m.
+
+  allsimpl; repndors; tcsp; subst; allunfold @pwf_sequent; wfseq;
+  allrw @covered_cequiv; allrw @covered_approx; repnd; tcsp.
+  allrw <- @wf_cequiv_iff; tcsp.
 Qed.
 
 
@@ -532,3 +574,10 @@ Proof.
 Abort.
 
 (* end hide *)
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
+*** End:
+*)

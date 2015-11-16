@@ -119,6 +119,7 @@ Require Import rules_isect2.
 (* A few lemmas using our verified rules *)
 Require Import nuprl_lemmas1.
 Require Import nuprl_lemmas2.
+Require Import proof.
 
 
 (* Function/pi type *)

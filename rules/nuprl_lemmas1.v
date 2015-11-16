@@ -63,6 +63,7 @@ Proof.
   try (complete wfseq).
 
   revert c.
+  unfold rule_isect_equality_hyp2; simpl.
   assert ([mk_hyp nvary mk_false] = [] ++ [mk_hyp nvary (@mk_false o)])
     as eq2 by (simpl; sp).
   rw eq1; rw eq2.
@@ -118,6 +119,7 @@ Proof.
   try (complete wfseq).
 
   revert c.
+  unfold rule_isect_equality_hyp2; simpl.
   assert ([mk_hyp nvary mk_false] = [] ++ [mk_hyp nvary (@mk_false o)])
     as eq2 by (simpl; sp).
   rw eq1; rw eq2.
@@ -188,3 +190,10 @@ Proof.
   Grab Existential Variables.
   wfseq.
 Qed.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/" "../per/")
+*** End:
+*)

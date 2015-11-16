@@ -187,7 +187,7 @@ Ltac nuprl_refine_o o R :=
   let r := fresh "r" in
     match R with
       | isect_equality ?v ?n =>
-          pose proof (@rule_isect_equality_true2 o emlib v n) as r;
+        pose proof (@rule_isect_equality_true2 o emlib v n) as r;
           apply r;
           clear r;
           [ tc_prove_side_condition
@@ -198,11 +198,13 @@ Ltac nuprl_refine_o o R :=
               unfold wf_rule in w;
               simpl in w;
               match goal with
-                  [ H : pwf_sequent _ |- _ ] =>
-                    apply w in H;
+                [ H : pwf_sequent _ |- _ ] =>
+                apply w in H;
                   clear w;
                   [ introv i; simpl in i; repdors; subst;
                     unfold wf_subgoals in H; simpl in H;
+                    try ( unfold rule_isect_equality_hyp1 in * );
+                    try ( unfold rule_isect_equality_hyp2 in * );
                     [ apply in_lst_1_out_of_2 in H
                     | apply in_lst_2_out_of_2 in H
                     | complete sp
@@ -392,6 +394,6 @@ Defined.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/" "../per/")
 *** End:
 *)

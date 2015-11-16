@@ -26,6 +26,7 @@
 
 
 Require Export rules_isect.
+Require Export rules_squiggle.
 
 Inductive valid_rule {o} : @rule o -> Type :=
 | valid_rule_isect_equality :
@@ -65,19 +66,32 @@ Proof.
 Qed.
 
 Inductive proof {o} : @baresequent o -> Type :=
-| proof_cons :
+| proof_isect_eq :
     forall a1 a2 b1 b2 x1 x2 y i H,
       !LIn y (vars_hyps H)
       -> proof (rule_isect_equality_hyp1 a1 a2 i H)
       -> proof (rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H)
-      -> proof (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H).
+      -> proof (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
+| proof_approx_refl :
+    forall a H,
+      proof (rule_approx_refl_concl a H)
+| proof_cequiv_approx :
+    forall a b H,
+      proof (rule_cequiv_approx_hyp1 a b H)
+      -> proof (rule_cequiv_approx_hyp2 a b H)
+      -> proof (rule_cequiv_approx_concl a b H).
 
 Lemma valid_proof {o} :
   forall lib (seq : @baresequent o) (wf : pwf_sequent seq),
     proof seq -> sequent_true2 lib seq.
 Proof.
   introv wf p.
-  induction p as [a1 a2 b1 b2 x1 x2 y i hs niy p1 ih1 p2 ih2]; allsimpl.
+  induction p
+    as [ a1 a2 b1 b2 x1 x2 y i hs niy p1 ih1 p2 ih2
+       | a hs
+       | a b hs p1 ih1 p2 ih2
+       ];
+    allsimpl.
 
   - apply (rule_isect_equality_true2 lib y i a1 a2 b1 b2 x1 x2 hs); simpl; tcsp.
 
@@ -90,6 +104,14 @@ Proof.
 
       * apply ih2; auto.
         apply (rule_isect_equality_wf y i a1 a2 b1 b2 x1 x2 hs); simpl; tcsp.
+
+  - apply (rule_approx_refl_true2 lib hs a); simpl; tcsp.
+
+  - apply (rule_cequiv_approx_true2 lib hs a b); simpl; tcsp.
+    introv xx; repndors; subst; tcsp.
+
+    apply ih2; auto.
+    apply (rule_cequiv_approx_wf a b hs); simpl; tcsp.
 Qed.
 
 

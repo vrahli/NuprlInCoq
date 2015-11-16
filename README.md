@@ -19,7 +19,7 @@ DESCRIPTION
 This library formalizes Nuprl's Constructive Type Theory (CTT) as of
 2015.  More information can be found about Nuprl on the [Nuprl
 website](http://www.nuprl.org/).  (Also check out
-[JonPRL](https://github.com/jonsterling/JonPRL) for a SML
+[JonPRL](https://github.com/jonsterling/JonPRL) for an SML
 re-implementation of Nuprl.)  As for
 [Agda](http://wiki.portal.chalmers.se/agda/),
 [Coq](https://coq.inria.fr/), and [Idris](http://www.idris-lang.org/),

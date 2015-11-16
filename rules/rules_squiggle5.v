@@ -221,15 +221,24 @@ Qed.
      forall v in (free_vars a), H |- v in Base
 
  *)
+
+Definition rule_equal_in_base_concl {o} (a b : @NTerm o) H :=
+  mk_baresequent H (mk_conclax (mk_equality a b mk_base)).
+
+Definition rule_equal_in_base_hyp1 {o} (a b : @NTerm o) H :=
+  mk_baresequent H (mk_conclax (mk_cequiv a b)).
+
+Definition rule_equal_in_base_rest {o} (a : @NTerm o) (H : @bhyps o) :=
+  map (fun v => mk_baresequent H (mk_conclax (mk_member (mk_var v) mk_base)))
+      (free_vars a).
+
 Definition rule_equal_in_base {o}
            (H : barehypotheses)
            (a b : @NTerm o)
   :=
     mk_rule
-      (mk_baresequent H (mk_conclax (mk_equality a b mk_base)))
-      ((mk_baresequent H (mk_conclax (mk_cequiv a b)))
-         :: (map (fun v => mk_baresequent H (mk_conclax (mk_member (mk_var v) mk_base)))
-                 (free_vars a)))
+      (rule_equal_in_base_concl a b H)
+      (rule_equal_in_base_hyp1 a b H :: rule_equal_in_base_rest a H)
       [].
 
 Lemma rule_equal_in_base_true {o} :
@@ -303,6 +312,16 @@ Proof.
     apply cequiv_stable in hyp0.
     repeat (erewrite lsubstc_mk_var_if_csub_find in hyp0;[|eauto]).
     auto. }
+Qed.
+
+Lemma rule_equal_in_base_true2 {o} :
+  forall lib (H : barehypotheses)
+         (a b : @NTerm o),
+    rule_true2 lib (rule_equal_in_base H a b).
+Proof.
+  introv.
+  apply rule_true_iff_rule_true2; auto.
+  apply rule_equal_in_base_true; auto.
 Qed.
 
 
