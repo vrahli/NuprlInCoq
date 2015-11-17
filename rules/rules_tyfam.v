@@ -24,6 +24,7 @@
 
 *)
 
+Require Export sequents2.
 Require Export rules_useful.
 Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
@@ -53,7 +54,7 @@ Definition rule_tyfam_equality {p}
     ]
     [ sarg_var y ].
 
-Lemma rule_tyfam_equality_true {pp} :
+Lemma rule_tyfam_equality_true3 {pp} :
   forall lib C Cc (a1 a2 b1 b2 : NTerm),
   forall x1 x2 y : NVar,
   forall i   : nat,
@@ -75,14 +76,15 @@ Lemma rule_tyfam_equality_true {pp} :
                        # (forall a a',
                             equality lib a a' a1
                             -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))),
-    rule_true lib (rule_tyfam_equality
-                     C a1 a2 b1 b2
-                     x1 x2 y
-                     i
-                     H).
+    rule_true3 lib (rule_tyfam_equality
+                      C a1 a2 b1 b2
+                      x1 x2 y
+                      i
+                      H).
 Proof.
-  unfold rule_tyfam_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_tyfam_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
+  repnd.
 
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
@@ -91,7 +93,12 @@ Proof.
   destruct Hyp0 as [ ws2 hyp2 ].
   destseq; allsimpl; proof_irr; GC.
 
-  exists (@covered_axiom pp (nh_vars_hyps H)).
+  assert (wf_csequent ((H) ||- (mk_conclax (mk_equality (C a1 x1 b1) (C a2 x2 b2) (mk_uni i))))) as wfc.
+  { unfold wf_csequent, wf_sequent, wf_concl; simpl.
+    dands; auto. }
+
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
 
   (* We prove some simple facts on our sequents *)
   assert ((y <> x1 -> !LIn y (free_vars b1))
@@ -105,12 +112,12 @@ Proof.
     dwfseq.
     allrw fvsC.
     sp;
-      try (complete (generalize (cg0 y); intro p;
+      try (complete (generalize (wfc0 y); intro p;
                      allrw in_app_iff;
                      allrw in_remove_nvars; allsimpl;
                      autodimp p hyp; tcsp;
                      right; tcsp));
-      try (complete (generalize (cg y); intro p;
+      try (complete (generalize (wfc1 y); intro p;
                      allrw in_app_iff;
                      allrw in_remove_nvars; allsimpl;
                      autodimp p hyp; tcsp;
@@ -219,9 +226,42 @@ Proof.
   }
 Qed.
 
+Lemma rule_tyfam_equality_true {pp} :
+  forall lib C Cc (a1 a2 b1 b2 : NTerm),
+  forall x1 x2 y : NVar,
+  forall i   : nat,
+  forall H   : @barehypotheses pp,
+(*  forall bc1 : !LIn y (bound_vars b1),
+  forall bc2 : !LIn y (bound_vars b2), *)
+  forall fvsC : forall a x b, free_vars (C a x b) = free_vars a ++ remove_nvars [x] (free_vars b),
+  forall pd  : (forall a x b w s c,
+                  {wa : wf_term a
+                   & {wb : wf_term b
+                   & {ca : cover_vars a s
+                   & {cb : cover_vars_upto b (csub_filter s [x]) [x]
+                   & lsubstc (C a x b) w s c
+                     = Cc (lsubstc a wa s ca) x (lsubstc_vars b wb (csub_filter s [x]) [x] cb)
+               }}}}),
+  forall eqC : (forall a1 a2 v1 v2 b1 b2 i,
+                  equality lib (Cc a1 v1 b1) (Cc a2 v2 b2) (mkc_uni i)
+                  <=> (equality lib a1 a2 (mkc_uni i)
+                       # (forall a a',
+                            equality lib a a' a1
+                            -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))),
+    rule_true lib (rule_tyfam_equality
+                     C a1 a2 b1 b2
+                     x1 x2 y
+                     i
+                     H).
+Proof.
+  introv fvs lsub iff.
+  apply rule_true3_implies_rule_true.
+  eapply rule_tyfam_equality_true3; eauto.
+Qed.
+
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)

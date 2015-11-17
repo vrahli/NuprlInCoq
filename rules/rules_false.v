@@ -25,6 +25,7 @@
 *)
 
 
+Require Export sequents2.
 Require Export sequents_tacs.
 
 
@@ -42,18 +43,25 @@ Definition rule_bottom_diverges_concl {o} x (H J : @bhyps o) :=
 Definition rule_bottom_diverges {o} x (H J : @bhyps o) :=
   mk_rule (rule_bottom_diverges_concl x H J) [] [].
 
-
-Lemma rule_bottom_diverges_true {o} :
+Lemma rule_bottom_diverges_true3 {o} :
   forall lib x (H J : @bhyps o),
-    rule_true lib (rule_bottom_diverges x H J).
+    rule_true3 lib (rule_bottom_diverges x H J).
 Proof.
-  unfold rule_bottom_diverges, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_bottom_diverges, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
+  repnd.
   clear cargs.
 
   destseq; allsimpl.
   dLin_hyp; exrepnd.
-  exists (subvars_nil_l (nh_vars_hyps (snoc H (mk_hyp x (mk_halts mk_bottom)) ++ J))).
+
+  assert (wf_csequent (rule_bottom_diverges_concl x H J)) as wfc.
+  { prove_seq; auto.
+    apply vswf_hypotheses_nil_eq; auto. }
+
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
   vr_seq_true.
   lsubst_tac.
   allrw @lsubstc_mk_false.
@@ -65,6 +73,15 @@ Proof.
     apply equality_in_halts in sim2; repnd; spcast.
     unfold hasvaluec in sim0; allsimpl.
     apply not_hasvalue_bot in sim0; sp.
+Qed.
+
+Lemma rule_bottom_diverges_true {o} :
+  forall lib x (H J : @bhyps o),
+    rule_true lib (rule_bottom_diverges x H J).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_bottom_diverges_true3.
 Qed.
 
 Lemma rule_bottom_diverges_true2 {o} :

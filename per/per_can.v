@@ -26,6 +26,7 @@
 
 Require Export Coq.Logic.ConstructiveEpsilon.
 
+Require Export cequiv_bind.
 Require Export computation_dec1.
 (*Require Export computation_dec.*)
 Require Export sequents_tacs.
@@ -680,13 +681,6 @@ Proof.
       eapply reduces_to_eq_val_like in ca1;
         [|exact comp2|eauto 2 with slow|eauto 2 with slow].
       allunfold @mk_ntseq; ginv; auto. }
-Qed.
-
-Lemma cequivc_iff_approxc {o} :
-  forall lib (a b : @CTerm o),
-    cequivc lib a b <=> (approxc lib a b # approxc lib b a).
-Proof.
-  introv; destruct_cterms; unfold cequivc, approxc; simpl; sp.
 Qed.
 
 Lemma cequiv_stable {o} :

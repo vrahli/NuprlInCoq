@@ -220,7 +220,6 @@ Ltac nuprl_refine_o o R :=
           clear r;
           [ tc_prove_side_condition
           | tc_prove_side_condition
-          | tc_prove_side_condition
           | let w := fresh "w" in
             let i := fresh "i" in
               pose proof (@rule_isect_member_formation_wf o l v) as w;
@@ -236,7 +235,6 @@ Ltac nuprl_refine_o o R :=
                     | apply in_lst_2_out_of_2 in H
                     | complete sp
                     ]
-                  | tc_prove_side_condition
                   | tc_prove_side_condition
                   ]
               end

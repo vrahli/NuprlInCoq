@@ -25,8 +25,15 @@
 *)
 
 
+Require Export cequiv_bind.
+Require Export sequents2.
 Require Export sequents_tacs.
+Require Export sequents_tacs2.
 Require Export per_props_equality.
+Require Export per_can.
+Require Export subst_tacs_aeq.
+Require Export cequiv_tacs.
+
 (** printing |- $\vdash$ *)
 (** printing ->  $\rightarrow$ *)
 (* begin hide *)
@@ -124,18 +131,20 @@ Definition rule_approx_refl {o}
            (a  : NTerm) :=
   mk_rule (rule_approx_refl_concl a H) [] [].
 
-Lemma rule_approx_refl_true {o} :
+Lemma rule_approx_refl_true3 {o} :
   forall lib (H : @bhyps o) (a  : NTerm),
-    rule_true lib (rule_approx_refl H a).
+    rule_true3 lib (rule_approx_refl H a).
 Proof.
   intros.
-  unfold rule_approx_refl, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_approx_refl, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
+  repnd.
   clear cargs hyps.
 
   assert (closed_extract H (mk_conclax (mk_approx a a))) as ce by prove_seq.
+  assert (wf_csequent (rule_approx_refl_concl a H)) as wfc by prove_seq.
 
-  exists ce.
+  exists wfc.
 
   vr_seq_true.
   lift_lsubst.
@@ -143,6 +152,15 @@ Proof.
   rw <- @member_approx_iff; sp;
   try (spcast; apply approx_refl; apply isprogram_get_cterm).
   apply equal_approx.
+Qed.
+
+Lemma rule_approx_refl_true {o} :
+  forall lib (H : @bhyps o) (a  : NTerm),
+    rule_true lib (rule_approx_refl H a).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_approx_refl_true3.
 Qed.
 
 Lemma rule_approx_refl_true2 {o} :
@@ -444,12 +462,13 @@ Definition rule_cequiv_approx {o}
     ]
     [].
 
-Lemma rule_cequiv_approx_true {o} :
+Lemma rule_cequiv_approx_true3 {o} :
   forall lib (H : @barehypotheses o) (a b : NTerm),
-    rule_true lib (rule_cequiv_approx H a b).
+    rule_true3 lib (rule_cequiv_approx H a b).
 Proof.
-  unfold rule_cequiv_approx, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_cequiv_approx, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
+  repnd.
   clear cargs.
 
   (* We prove the well-formedness of things *)
@@ -460,11 +479,9 @@ Proof.
   destseq; allsimpl; proof_irr; GC.
 
   unfold closed_extract; simpl.
-  exists (@covered_axiom o (nh_vars_hyps H)).
-
-  (* We prove some simple facts on our sequents *)
-  (* xxx *)
-  (* done with proving these simple facts *)
+  assert (wf_csequent (rule_cequiv_approx_concl a b H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
 
   (* we now start proving the sequent *)
   vr_seq_true.
@@ -492,6 +509,15 @@ Proof.
   rw @cequivc_iff_approxc; dands; auto.
 Qed.
 
+Lemma rule_cequiv_approx_true {o} :
+  forall lib (H : @barehypotheses o) (a b : NTerm),
+    rule_true lib (rule_cequiv_approx H a b).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_cequiv_approx_true3.
+Qed.
+
 Lemma rule_cequiv_approx_true2 {o} :
   forall lib (H : @barehypotheses o) (a b : NTerm),
     rule_true2 lib (rule_cequiv_approx H a b).
@@ -508,6 +534,17 @@ Proof.
   introv pwf m.
 
   allsimpl; repndors; tcsp; subst; allunfold @pwf_sequent; wfseq;
+  allrw @covered_cequiv; allrw @covered_approx; repnd; tcsp.
+  allrw <- @wf_cequiv_iff; tcsp.
+Qed.
+
+Lemma rule_cequiv_approx_wf2 {o} :
+  forall (a b : NTerm) (H : @barehypotheses o),
+    wf_rule2 (rule_cequiv_approx H a b).
+Proof.
+  introv pwf m.
+
+  allsimpl; repndors; tcsp; subst; allunfold @wf_bseq; wfseq;
   allrw @covered_cequiv; allrw @covered_approx; repnd; tcsp.
   allrw <- @wf_cequiv_iff; tcsp.
 Qed.
@@ -539,7 +576,8 @@ Definition rule_cequiv_lambda_d {o}
     [].
 
 Lemma rule_cequiv_lambda_d_true {o} :
-  forall lib (H : @barehypotheses o) (x : NVar) (a b : NTerm),
+  forall lib (H : @barehypotheses o) (x : NVar) (a b : NTerm)
+         (cond : !LIn x (vars_hyps H)),
     rule_true lib (rule_cequiv_lambda_d H x a b).
 Proof.
   unfold rule_cequiv_lambda_d, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -555,10 +593,6 @@ Proof.
   unfold closed_extract; simpl.
   exists (@covered_axiom o (nh_vars_hyps H)).
 
-  (* We prove some simple facts on our sequents *)
-  (* xxx *)
-  (* done with proving these simple facts *)
-
   (* we now start proving the sequent *)
   vr_seq_true.
   lsubst_tac.
@@ -566,12 +600,134 @@ Proof.
   rw <- @member_cequiv_iff.
   rw @tequality_mkc_cequiv.
 
-  assert ((mkc_lam x (lsubstc_vars a w0 (csub_filter s1 [x]) [x] c0))
-            ~=~(lib) (mkc_lam x (lsubstc_vars b w3 (csub_filter s1 [x]) [x] c3))) as ceq.
-  (* begin proof of assert *)
-  spcast.
-  (* end proof of assert *)
-Abort.
+  dands.
+
+  - split; intro h; clear h.
+
+    + vr_seq_true in hyp1.
+      spcast.
+      apply implies_cequivc_lam2.
+      introv.
+      apply cequiv_stable.
+      pose proof (hyp1 (snoc s2 (x,u)) (snoc s2 (x,u))) as hh; clear hyp1.
+      repeat (autodimp hh hyp).
+
+      * apply hyps_functionality_snoc2; simpl; auto.
+
+        { introv equ sim'.
+          lsubst_tac; eauto 3 with slow. }
+
+        { eapply similarity_hyps_functionality_trans; eauto. }
+
+      * sim_snoc2; dands; auto.
+
+        { apply similarity_sym in sim; auto.
+          apply similarity_refl in sim; auto. }
+
+        { lsubst_tac.
+          apply equality_in_base_iff; spcast; auto. }
+
+      * exrepnd.
+        clear hh0.
+        lsubst_tac.
+        rw <- @member_cequiv_iff in hh1; spcast.
+
+        repeat (substc_lsubstc_vars3;[]).
+
+        pose proof (lsubstc_snoc_move a s2 [] x u w0) as e1.
+        pose proof (lsubstc_snoc_move b s2 [] x u w3) as e2.
+        allrw app_nil_r.
+        pose proof (e1 c8) as k1; clear e1.
+        pose proof (e2 c9) as k2; clear e2.
+        autodimp k1 hyp.
+        { apply similarity_dom in sim; repnd; rw sim; auto. }
+        autodimp k2 hyp.
+        { apply similarity_dom in sim; repnd; rw sim; auto. }
+        exrepnd.
+        proof_irr.
+        rw <- k2; rw <- k0; auto.
+
+    + vr_seq_true in hyp1.
+      spcast.
+      apply implies_cequivc_lam2.
+      introv.
+      apply cequiv_stable.
+      pose proof (hyp1 (snoc s1 (x,u)) (snoc s1 (x,u))) as hh; clear hyp1.
+      repeat (autodimp hh hyp).
+
+      * apply hyps_functionality_snoc2; simpl; auto.
+
+        introv equ sim'.
+        lsubst_tac; eauto 3 with slow.
+
+      * sim_snoc2; dands; auto.
+
+        { apply similarity_refl in sim; auto. }
+
+        { lsubst_tac.
+          apply equality_in_base_iff; spcast; auto. }
+
+      * exrepnd.
+        clear hh0.
+        lsubst_tac.
+        rw <- @member_cequiv_iff in hh1; spcast.
+
+        repeat (substc_lsubstc_vars3;[]).
+
+        pose proof (lsubstc_snoc_move a s1 [] x u w0) as e1.
+        pose proof (lsubstc_snoc_move b s1 [] x u w3) as e2.
+        allrw app_nil_r.
+        pose proof (e1 c8) as k1; clear e1.
+        pose proof (e2 c9) as k2; clear e2.
+        autodimp k1 hyp.
+        { apply similarity_dom in sim; repnd; rw sim0; auto. }
+        autodimp k2 hyp.
+        { apply similarity_dom in sim; repnd; rw sim0; auto. }
+        exrepnd.
+        proof_irr.
+        rw <- k2; rw <- k0; auto.
+
+  - vr_seq_true in hyp1.
+    spcast.
+    apply implies_cequivc_lam2.
+    introv.
+    apply cequiv_stable.
+    pose proof (hyp1 (snoc s1 (x,u)) (snoc s1 (x,u))) as hh; clear hyp1.
+    repeat (autodimp hh hyp).
+
+    * apply hyps_functionality_snoc2; simpl; auto.
+
+      introv equ sim'.
+      lsubst_tac; eauto 3 with slow.
+
+    * sim_snoc2; dands; auto.
+
+      { apply similarity_refl in sim; auto. }
+
+      { lsubst_tac.
+        apply equality_in_base_iff; spcast; auto. }
+
+    * exrepnd.
+      clear hh0.
+      lsubst_tac.
+      rw <- @member_cequiv_iff in hh1; spcast.
+
+      repeat (substc_lsubstc_vars3;[]).
+
+      pose proof (lsubstc_snoc_move a s1 [] x u w0) as e1.
+      pose proof (lsubstc_snoc_move b s1 [] x u w3) as e2.
+      allrw app_nil_r.
+      pose proof (e1 c8) as k1; clear e1.
+      pose proof (e2 c9) as k2; clear e2.
+      autodimp k1 hyp.
+      { apply similarity_dom in sim; repnd; rw sim0; auto. }
+      autodimp k2 hyp.
+      { apply similarity_dom in sim; repnd; rw sim0; auto. }
+      exrepnd.
+      proof_irr.
+      rw <- k2; rw <- k0; auto.
+Qed.
+
 
 (* end hide *)
 

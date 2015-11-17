@@ -89,15 +89,17 @@ Inductive proof {o} : @baresequent o -> Type :=
 | proof_cut :
     forall B C t u x H,
       wf_term B
-      -> wf_term u (* !!Should get rid of that one *)
       -> covered B (vars_hyps H)
       -> !LIn x (vars_hyps H)
       -> proof (rule_cut_hyp1 H B u)
       -> proof (rule_cut_hyp2 H x B C t)
       -> proof (rule_cut_concl H C t x u).
 
+(* By assuming [wf_bseq seq], when we start with a sequent with no hypotheses,
+   it means that we have to prove that the conclusion is well-formed and closed.
+ *)
 Lemma valid_proof {o} :
-  forall lib (seq : @baresequent o) (wf : pwf_sequent seq),
+  forall lib (seq : @baresequent o) (wf : wf_bseq seq),
     proof seq -> sequent_true2 lib seq.
 Proof.
   introv wf p.
@@ -106,43 +108,43 @@ Proof.
        | a hs
        | a b hs p1 ih1 p2 ih2
        | x hs js
-       | B C t u x hs wB wu covB nixH p1 ih1 p2 ih2
+       | B C t u x hs wB covB nixH p1 ih1 p2 ih2
        ];
     allsimpl.
 
-  - apply (rule_isect_equality_true2 lib y i a1 a2 b1 b2 x1 x2 hs); simpl; tcsp.
+  - apply (rule_isect_equality_true3 lib a1 a2 b1 b2 x1 x2 y i hs); simpl; tcsp.
 
     + unfold args_constraints; simpl; introv h; repndors; subst; tcsp.
 
     + introv e; repndors; subst; tcsp.
 
       * apply ih1; auto.
-        apply (rule_isect_equality_wf y i a1 a2 b1 b2 x1 x2 hs); simpl; tcsp.
+        apply (rule_isect_equality_wf2 y i a1 a2 b1 b2 x1 x2 hs); simpl; tcsp.
 
       * apply ih2; auto.
-        apply (rule_isect_equality_wf y i a1 a2 b1 b2 x1 x2 hs); simpl; tcsp.
+        apply (rule_isect_equality_wf2 y i a1 a2 b1 b2 x1 x2 hs); simpl; tcsp.
 
-  - apply (rule_approx_refl_true2 lib hs a); simpl; tcsp.
+  - apply (rule_approx_refl_true3 lib hs a); simpl; tcsp.
 
-  - apply (rule_cequiv_approx_true2 lib hs a b); simpl; tcsp.
+  - apply (rule_cequiv_approx_true3 lib hs a b); simpl; tcsp.
     introv xx; repndors; subst; tcsp.
 
     apply ih2; auto.
-    apply (rule_cequiv_approx_wf a b hs); simpl; tcsp.
+    apply (rule_cequiv_approx_wf2 a b hs); simpl; tcsp.
 
-  - apply (rule_bottom_diverges_true2 lib x hs js); simpl; tcsp.
+  - apply (rule_bottom_diverges_true3 lib x hs js); simpl; tcsp.
 
-  - apply (rule_cut_true2 lib hs B C t u x); simpl; tcsp.
+  - apply (rule_cut_true3 lib hs B C t u x); simpl; tcsp.
 
     + unfold args_constraints; simpl; introv xx; repndors; subst; tcsp.
 
     + introv xx; repndors; subst; tcsp.
 
       * apply ih1.
-        apply (rule_cut_wf hs B C t u x); simpl; tcsp.
+        apply (rule_cut_wf2 hs B C t u x); simpl; tcsp.
 
       * apply ih2.
-        apply (rule_cut_wf hs B C t u x); simpl; tcsp.
+        apply (rule_cut_wf2 hs B C t u x); simpl; tcsp.
 Qed.
 
 
