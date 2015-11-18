@@ -449,45 +449,49 @@ Qed.
 
      H |- t = t in C
 >>
-*)
+ *)
+
+Definition rule_introduction_concl {o} (H : @bhyps o) C t :=
+  mk_baresequent H (mk_concl C t).
+
+Definition rule_introduction_hyp {o} (H : @bhyps o) C t :=
+  mk_baresequent H (mk_conclax (mk_equality t t C)).
 
 Definition rule_introduction {o}
              (H : @barehypotheses o)
              (C t : NTerm) :=
   mk_rule
-    (mk_baresequent H (mk_concl C t))
-    [ mk_baresequent H (mk_conclax (mk_equality t t C)) ]
+    (rule_introduction_concl H C t)
+    [ rule_introduction_hyp H C t ]
     [ sarg_term t ].
 
-Lemma rule_introduction_true {o} :
-  forall
-    lib
-    (H : @barehypotheses o)
-    (C t : NTerm),
-    rule_true lib (rule_introduction H C t).
+Lemma rule_introduction_true3 {o} :
+  forall lib
+         (H : @barehypotheses o)
+         (C t : NTerm),
+    rule_true3 lib (rule_introduction H C t).
 Proof.
   intros.
-  unfold rule_introduction, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_introduction, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
+  repnd.
+
   unfold args_constraints in cargs; allsimpl.
   generalize (cargs (sarg_term t) (inl eq_refl)); clear cargs; intro arg1.
   unfold arg_constraints in arg1.
 
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
-  generalize (hyps (mk_baresequent H (mk_conclax (mk_equality t t C)))
-                   (inl eq_refl));
-    simpl; intros hyp1; clear hyps.
-  destruct hyp1 as [ ws1 hyp1 ].
-  destseq; allsimpl; proof_irr; GC.
+  dLin_hyp; exrepnd.
+  destruct Hyp as [ws1 hyp1].
+  destseq; allsimpl; clear_irr; GC.
 
-  duplicate ct as ct1.
-  allrw @covered_equality.
-  destruct ct as [ cth ct ].
-  destruct ct as [ cth2 cch ]; GC.
-
-  assert (covered t (nh_vars_hyps H)) as ws by sp.
-  exists ws; GC.
+  assert (wf_csequent (rule_introduction_concl H C t)) as wfc.
+  { clear hyp1.
+    unfold wf_csequent, wf_sequent, wf_concl; simpl; dands; auto.
+    allrw <- @wf_equality_iff; sp. }
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; repnd; allsimpl; proof_irr; GC.
 
   vr_seq_true.
 
@@ -507,7 +511,33 @@ Proof.
   allrewrite @fold_mkc_member.
   rw <- @member_member_iff in e.
 
-  spcast; apply @equality_respects_cequivc_right with (t2 := lsubstc t wfce s1 pt1); sp.
+  spcast; apply @equality_respects_cequivc_right with (t2 := lsubstc t wfc0 s1 pt1); sp.
+Qed.
+
+Lemma rule_introduction_true {o} :
+  forall lib
+         (H : @barehypotheses o)
+         (C t : NTerm),
+    rule_true lib (rule_introduction H C t).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_introduction_true3.
+Qed.
+
+Lemma rule_introduction_wf2 {o} :
+  forall (H : @barehypotheses o) (C t : NTerm),
+    wf_term t
+    -> covered t (vars_hyps H)
+    -> wf_rule2 (rule_introduction H C t).
+Proof.
+  introv wt cov wf m; allsimpl.
+  repndors; subst; tcsp.
+  allunfold @wf_bseq; allsimpl; repnd; dands; auto.
+  - apply wf_equality; auto.
+  - allunfold @closed_type_baresequent; allsimpl.
+    allunfold @closed_type; allsimpl.
+    apply covered_equality; dands; auto.
 Qed.
 
 (* begin hide *)
@@ -531,14 +561,72 @@ Qed.
 >>
  *)
 
+Definition rule_hypothesis_concl {o} (G J : @bhyps o) A x :=
+  mk_baresequent (snoc G (mk_hyp x A) ++ J) (mk_concl A (mk_var x)).
+
 Definition rule_hypothesis {o}
              (G J : @barehypotheses o)
              (A   : NTerm)
              (x   : NVar) :=
-  mk_rule
-    (mk_baresequent (snoc G (mk_hyp x A) ++ J) (mk_concl A (mk_var x)))
-    []
-    [].
+  mk_rule (rule_hypothesis_concl G J A x) [] [].
+
+Lemma rule_hypothesis_true3 {o} :
+  forall lib (G J : @barehypotheses o)
+         (A : NTerm)
+         (x : NVar),
+    rule_true3 lib (rule_hypothesis G J A x).
+Proof.
+  intros.
+  unfold rule_hypothesis, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+  clear cargs hyps.
+  destseq; allsimpl.
+
+  assert (wf_csequent (rule_hypothesis_concl G J A x)) as wfc.
+  { unfold wf_csequent, wf_sequent, wf_concl; simpl; dands; eauto 3 with slow.
+    - apply vswf_hypotheses_nil_eq; auto.
+    - unfold closed_extract; simpl.
+      rw @nh_vars_hyps_app.
+      rw @nh_vars_hyps_snoc; simpl.
+      unfold covered.
+      rw subvars_eq; simpl.
+      apply subset_cons_l; dands; auto.
+      rw in_app_iff; rw in_snoc; tcsp. }
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; repnd; allsimpl; proof_irr; GC.
+
+  vr_seq_true.
+
+  pose proof (eqh s2 sim) as h.
+  apply eq_hyps_app in h; exrepnd; subst.
+  apply eq_hyps_snoc in h5; exrepnd; subst.
+  allrw length_snoc; cpx.
+  allsimpl.
+
+  applydup @wf_hypotheses_disj in wf0; repnd.
+
+  assert (disjoint (free_vars A) (dom_csub s1b)) as d1.
+  { applydup @sub_eq_hyps_dom in h1; repnd.
+    rw h5; auto. }
+
+  assert (disjoint (free_vars A) (dom_csub s2b)) as d2.
+  { applydup @sub_eq_hyps_dom in h1; repnd.
+    rw h2; auto. }
+
+  lsubst_tac.
+  dands; auto;[].
+
+  applydup @eq_hyps_length in h6; repnd.
+
+  apply similarity_app in sim; exrepnd.
+  apply app_split in sim0; allrw length_snoc; auto; try omega.
+  apply app_split in sim2; allrw length_snoc; auto; try omega.
+  repnd; subst.
+
+  apply similarity_snoc in sim5; exrepnd; cpx; allsimpl.
+  ginv; proof_irr; auto.
+Qed.
 
 Lemma rule_hypothesis_true {o} :
   forall lib (G J : @barehypotheses o)
@@ -546,38 +634,20 @@ Lemma rule_hypothesis_true {o} :
          (x : NVar),
     rule_true lib (rule_hypothesis G J A x).
 Proof.
-  intros.
-
-  generalize (rule_introduction_true
-                lib
-                (snoc G (mk_hyp x A) ++ J)
-                A
-                (mk_var x)).
-
-  intro h.
-  rw <- @rule_true_eq_ex in h.
-  unfold rule_true_ex, rule_true_if in h; exrepd.
-
-  unfold rule_true; allsimpl; sp.
-  clear cargs hyps.
-
-  assert (closed_extract_baresequent
-            (mk_baresequent (snoc G (mk_hyp x A) ++ J) (mk_concl A (mk_var x))))
-    as ce by prove_seq.
-  exists ce; sp.
-
-  apply s; try (complete prove_seq).
-
-  sp; subst.
-
-  generalize (rule_hypothesis_equality_true lib G J A x).
-
-  intro h.
-  rw <- @rule_true_eq_ex in h.
-  unfold rule_true_ex, rule_true_if in h; exrepd.
-
-  apply s0; try (complete prove_seq).
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_hypothesis_true3.
 Qed.
+
+Lemma rule_hypothesis_wf2 {o} :
+  forall (G J : @barehypotheses o)
+         (A : NTerm)
+         (x : NVar),
+    wf_rule (rule_hypothesis G J A x).
+Proof.
+  introv wf i; allsimpl; tcsp.
+Qed.
+
 
 (* begin hide *)
 

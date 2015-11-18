@@ -148,7 +148,10 @@ Inductive proof {o} : @baresequent o -> Type :=
     forall a b H,
       proof (rule_equal_in_base_hyp1 a b H)
       -> (forall v, LIn v (free_vars a) -> proof (rule_equal_in_base_hyp2 v H))
-      -> proof (rule_equal_in_base_concl a b H).
+      -> proof (rule_equal_in_base_concl a b H)
+| proof_hypothesis :
+    forall x A G J,
+      proof (rule_hypothesis_concl G J A x).
 
 (* By assuming [wf_bseq seq], when we start with a sequent with no hypotheses,
    it means that we have to prove that the conclusion is well-formed and closed.
@@ -166,6 +169,7 @@ Proof.
        | x hs js
        | B C t u x hs wB covB nixH p1 ih1 p2 ih2
        | a b H p1 ih1 ps ihs
+       | x A G J
        ];
     allsimpl;
     allrw NVin_iff.
@@ -224,6 +228,8 @@ Proof.
     apply w; simpl; tcsp.
     right.
     rw in_map_iff; eexists; dands; eauto.
+
+  - apply (rule_hypothesis_true3 lib); simpl; tcsp.
 Qed.
 
 
