@@ -27,6 +27,7 @@
 
 Require Export rules_isect.
 Require Export rules_squiggle.
+Require Export rules_squiggle5.
 Require Export rules_squiggle6.
 Require Export rules_false.
 Require Export rules_struct.
@@ -71,6 +72,8 @@ Qed.
 
 Definition NVin v (vs : list NVar) := memvar v vs = false.
 
+Definition Vin v (vs : list NVar) := memvar v vs = true.
+
 Lemma NVin_iff :
   forall v vs, NVin v vs <=> !LIn v vs.
 Proof.
@@ -78,6 +81,36 @@ Proof.
   unfold NVin.
   rw <- (@assert_memberb NVar eq_var_dec).
   rw <- not_of_assert; sp.
+Qed.
+
+Lemma Vin_iff :
+  forall v vs, Vin v vs <=> LIn v vs.
+Proof.
+  introv.
+  unfold Vin.
+  rw <- (@assert_memberb NVar eq_var_dec); auto.
+Qed.
+
+Inductive Llist {A} (f : A -> Type) : list A -> Type :=
+| lnil : Llist f []
+| lcons : forall {h t}, (f h) -> Llist f t -> Llist f (h :: t).
+
+Lemma in_Llist {A} :
+  forall f (a : A) l,
+    LIn a l -> Llist f l -> f a.
+Proof.
+  induction l; introv i h; allsimpl; tcsp.
+  repndors; subst; auto.
+  - inversion h; subst; auto.
+  - apply IHl; auto.
+    inversion h; subst; auto.
+Qed.
+
+Lemma Llist_implies_forall {A f} {l : list A} :
+  Llist f l -> (forall v, LIn v l -> f v).
+Proof.
+  introv h i.
+  eapply in_Llist in h;eauto.
 Qed.
 
 Inductive proof {o} : @baresequent o -> Type :=
@@ -110,7 +143,12 @@ Inductive proof {o} : @baresequent o -> Type :=
       -> NVin x (vars_hyps H)
       -> proof (rule_cut_hyp1 H B u)
       -> proof (rule_cut_hyp2 H x B C t)
-      -> proof (rule_cut_concl H C t x u).
+      -> proof (rule_cut_concl H C t x u)
+| proof_equal_in_base :
+    forall a b H,
+      proof (rule_equal_in_base_hyp1 a b H)
+      -> (forall v, LIn v (free_vars a) -> proof (rule_equal_in_base_hyp2 v H))
+      -> proof (rule_equal_in_base_concl a b H).
 
 (* By assuming [wf_bseq seq], when we start with a sequent with no hypotheses,
    it means that we have to prove that the conclusion is well-formed and closed.
@@ -127,6 +165,7 @@ Proof.
        | a1 a2 b1 b2 i hs p1 ih1 p2 ih2
        | x hs js
        | B C t u x hs wB covB nixH p1 ih1 p2 ih2
+       | a b H p1 ih1 ps ihs
        ];
     allsimpl;
     allrw NVin_iff.
@@ -173,6 +212,18 @@ Proof.
 
       * apply ih2.
         apply (rule_cut_wf2 hs B C t u x); simpl; tcsp.
+
+  - apply (rule_equal_in_base_true3 lib); simpl; tcsp.
+
+    introv xx; repndors; subst; tcsp.
+    unfold rule_equal_in_base_rest in xx; rw in_map_iff in xx; exrepnd; subst.
+    applydup Vin_iff in xx1.
+    pose proof (ihs a0) as hh; clear ihs.
+    repeat (autodimp hh hyp).
+    pose proof (rule_equal_in_base_wf2 H a b) as w.
+    apply w; simpl; tcsp.
+    right.
+    rw in_map_iff; eexists; dands; eauto.
 Qed.
 
 

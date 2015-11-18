@@ -25,6 +25,7 @@
 *)
 
 
+Require Export sequents2.
 Require Export sequents_tacs.
 Require Export per_props_equality.
 Require Export sequents_equality.
@@ -228,8 +229,11 @@ Definition rule_equal_in_base_concl {o} (a b : @NTerm o) H :=
 Definition rule_equal_in_base_hyp1 {o} (a b : @NTerm o) H :=
   mk_baresequent H (mk_conclax (mk_cequiv a b)).
 
+Definition rule_equal_in_base_hyp2 {o} (v : NVar) (H : @bhyps o) :=
+  mk_baresequent H (mk_conclax (mk_member (mk_var v) mk_base)).
+
 Definition rule_equal_in_base_rest {o} (a : @NTerm o) (H : @bhyps o) :=
-  map (fun v => mk_baresequent H (mk_conclax (mk_member (mk_var v) mk_base)))
+  map (fun v => rule_equal_in_base_hyp2 v H)
       (free_vars a).
 
 Definition rule_equal_in_base {o}
@@ -241,22 +245,24 @@ Definition rule_equal_in_base {o}
       (rule_equal_in_base_hyp1 a b H :: rule_equal_in_base_rest a H)
       [].
 
-Lemma rule_equal_in_base_true {o} :
+Lemma rule_equal_in_base_true3 {o} :
   forall lib (H : barehypotheses)
          (a b : @NTerm o),
-    rule_true lib (rule_equal_in_base H a b).
+    rule_true3 lib (rule_equal_in_base H a b).
 Proof.
-  unfold rule_equal_in_base, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_equal_in_base, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
-
+  repnd.
   clear cargs.
 
   destseq; allsimpl.
   dLin_hyp; exrepnd.
-  rename Hyp0 into hyp1.
+  destruct Hyp as [ ws1 hyp1 ].
   destseq; allsimpl; proof_irr; GC.
 
-  exists (@covered_axiom o (nh_vars_hyps H)).
+  assert (wf_csequent (rule_equal_in_base_concl a b H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
 
   vr_seq_true.
   lsubst_tac.
@@ -302,16 +308,26 @@ Proof.
 
     { rw in_map_iff; eexists; dands; eauto. }
 
-    exrepnd.
+    destruct hyp as [ws hyp].
     destseq; allsimpl; proof_irr; GC.
-    vr_seq_true in hyp0.
-    pose proof (hyp0 s1 s2 hf sim) as hyp; clear hyp0; exrepnd.
+    vr_seq_true in hyp.
+    pose proof (hyp s1 s2 hf sim) as hyp0; clear hyp; exrepnd.
     lsubst_tac.
-    clear hyp1.
-    apply tequality_mkc_member_base in hyp0; spcast.
-    apply cequiv_stable in hyp0.
-    repeat (erewrite lsubstc_mk_var_if_csub_find in hyp0;[|eauto]).
+    clear hyp0.
+    apply tequality_mkc_member_base in hyp1; spcast.
+    apply cequiv_stable in hyp1.
+    repeat (erewrite lsubstc_mk_var_if_csub_find in hyp1;[|eauto]).
     auto. }
+Qed.
+
+Lemma rule_equal_in_base_true {o} :
+  forall lib (H : barehypotheses)
+         (a b : @NTerm o),
+    rule_true lib (rule_equal_in_base H a b).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true; auto.
+  apply rule_equal_in_base_true3; auto.
 Qed.
 
 Lemma rule_equal_in_base_true2 {o} :
@@ -322,6 +338,20 @@ Proof.
   introv.
   apply rule_true_iff_rule_true2; auto.
   apply rule_equal_in_base_true; auto.
+Qed.
+
+Lemma rule_equal_in_base_wf2 {o} :
+  forall (H : barehypotheses) (a b : @NTerm o),
+    wf_rule2 (rule_equal_in_base H a b).
+Proof.
+  introv wf i.
+
+  allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq; auto;
+  unfold rule_equal_in_base_rest in i; rw in_map_iff in i; exrepnd; subst; allsimpl; auto.
+  unfold covered; simpl.
+  allunfold @covered.
+  allrw subvars_eq.
+  repeat (rw subset_cons_l); dands; auto.
 Qed.
 
 

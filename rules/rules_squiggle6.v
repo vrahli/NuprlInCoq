@@ -134,6 +134,7 @@ Proof.
 Qed.
 
 
+
 (*
 *** Local Variables:
 *** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
