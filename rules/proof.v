@@ -28,6 +28,7 @@
 Require Export rules_isect.
 Require Export rules_squiggle.
 Require Export rules_squiggle2.
+Require Export rules_squiggle3.
 Require Export rules_squiggle5.
 Require Export rules_squiggle6.
 Require Export rules_false.
