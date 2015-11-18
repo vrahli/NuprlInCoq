@@ -27,6 +27,7 @@
 
 Require Export rules_isect.
 Require Export rules_squiggle.
+Require Export rules_squiggle6.
 Require Export rules_false.
 Require Export rules_struct.
 
@@ -68,10 +69,21 @@ Proof.
         apply (rule_isect_equality_wf y i a1 a2 b1 b2 x1 x2 hs); simpl; tcsp.
 Qed.
 
+Definition NVin v (vs : list NVar) := memvar v vs = false.
+
+Lemma NVin_iff :
+  forall v vs, NVin v vs <=> !LIn v vs.
+Proof.
+  introv.
+  unfold NVin.
+  rw <- (@assert_memberb NVar eq_var_dec).
+  rw <- not_of_assert; sp.
+Qed.
+
 Inductive proof {o} : @baresequent o -> Type :=
 | proof_isect_eq :
     forall a1 a2 b1 b2 x1 x2 y i H,
-      !LIn y (vars_hyps H)
+      NVin y (vars_hyps H)
       -> proof (rule_isect_equality_hyp1 a1 a2 i H)
       -> proof (rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H)
       -> proof (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
@@ -80,9 +92,14 @@ Inductive proof {o} : @baresequent o -> Type :=
       proof (rule_approx_refl_concl a H)
 | proof_cequiv_approx :
     forall a b H,
-      proof (rule_cequiv_approx_hyp1 a b H)
-      -> proof (rule_cequiv_approx_hyp2 a b H)
+      proof (rule_cequiv_approx_hyp a b H)
+      -> proof (rule_cequiv_approx_hyp b a H)
       -> proof (rule_cequiv_approx_concl a b H)
+| proof_approx_eq :
+    forall a1 a2 b1 b2 i H,
+      proof (rule_approx_eq_hyp a1 a2 H)
+      -> proof (rule_approx_eq_hyp b1 b2 H)
+      -> proof (rule_approx_eq_concl a1 a2 b1 b2 i H)
 | proof_bottom_diverges :
     forall x H J,
       proof (rule_bottom_diverges_concl x H J)
@@ -90,7 +107,7 @@ Inductive proof {o} : @baresequent o -> Type :=
     forall B C t u x H,
       wf_term B
       -> covered B (vars_hyps H)
-      -> !LIn x (vars_hyps H)
+      -> NVin x (vars_hyps H)
       -> proof (rule_cut_hyp1 H B u)
       -> proof (rule_cut_hyp2 H x B C t)
       -> proof (rule_cut_concl H C t x u).
@@ -107,10 +124,12 @@ Proof.
     as [ a1 a2 b1 b2 x1 x2 y i hs niy p1 ih1 p2 ih2
        | a hs
        | a b hs p1 ih1 p2 ih2
+       | a1 a2 b1 b2 i hs p1 ih1 p2 ih2
        | x hs js
        | B C t u x hs wB covB nixH p1 ih1 p2 ih2
        ];
-    allsimpl.
+    allsimpl;
+    allrw NVin_iff.
 
   - apply (rule_isect_equality_true3 lib a1 a2 b1 b2 x1 x2 y i hs); simpl; tcsp.
 
@@ -131,6 +150,15 @@ Proof.
 
     apply ih2; auto.
     apply (rule_cequiv_approx_wf2 a b hs); simpl; tcsp.
+
+  - apply (rule_approx_eq_true3 lib a1 a2 b1 b2 i hs); simpl; tcsp.
+    introv xx; repndors; subst; tcsp.
+
+    + apply ih1; auto.
+      apply (rule_approx_eq_wf2 a1 a2 b1 b2 i hs); simpl; tcsp.
+
+    + apply ih2; auto.
+      apply (rule_approx_eq_wf2 a1 a2 b1 b2 i hs); simpl; tcsp.
 
   - apply (rule_bottom_diverges_true3 lib x hs js); simpl; tcsp.
 

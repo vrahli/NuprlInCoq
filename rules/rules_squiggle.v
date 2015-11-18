@@ -446,19 +446,16 @@ Qed.
 Definition rule_cequiv_approx_concl {o} (a b : @NTerm o) H :=
   mk_baresequent H (mk_conclax (mk_cequiv a b)).
 
-Definition rule_cequiv_approx_hyp1 {o} (a b : @NTerm o) H :=
+Definition rule_cequiv_approx_hyp {o} (a b : @NTerm o) H :=
   mk_baresequent H (mk_conclax (mk_approx a b)).
-
-Definition rule_cequiv_approx_hyp2 {o} (a b : @NTerm o) H :=
-  mk_baresequent H (mk_conclax (mk_approx b a)).
 
 Definition rule_cequiv_approx {o}
            (H   : @barehypotheses o)
            (a b : NTerm) :=
   mk_rule
     (rule_cequiv_approx_concl a b H)
-    [ rule_cequiv_approx_hyp1 a b H,
-      rule_cequiv_approx_hyp2 a b H
+    [ rule_cequiv_approx_hyp a b H,
+      rule_cequiv_approx_hyp b a H
     ]
     [].
 

@@ -59,6 +59,7 @@ Require Import rules_squiggle2.
 Require Import rules_squiggle3.
 Require Import rules_squiggle4.
 Require Import rules_squiggle5.
+Require Import rules_squiggle6.
 
 
 (* Rules(exception): *)
