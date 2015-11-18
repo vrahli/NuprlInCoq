@@ -27,6 +27,7 @@
 
 Require Export rules_isect.
 Require Export rules_squiggle.
+Require Export rules_squiggle2.
 Require Export rules_squiggle5.
 Require Export rules_squiggle6.
 Require Export rules_false.
@@ -151,7 +152,16 @@ Inductive proof {o} : @baresequent o -> Type :=
       -> proof (rule_equal_in_base_concl a b H)
 | proof_hypothesis :
     forall x A G J,
-      proof (rule_hypothesis_concl G J A x).
+      proof (rule_hypothesis_concl G J A x)
+| proof_cequiv_subst_concl :
+    forall C x a b t H,
+      wf_term a
+      -> wf_term b
+      -> covered a (vars_hyps H)
+      -> covered b (vars_hyps H)
+      -> proof (rule_cequiv_subst_hyp1 H x C b t)
+      -> proof (rule_cequiv_subst_hyp2 H a b)
+      -> proof (rule_cequiv_subst_hyp1 H x C a t).
 
 (* By assuming [wf_bseq seq], when we start with a sequent with no hypotheses,
    it means that we have to prove that the conclusion is well-formed and closed.
@@ -170,6 +180,7 @@ Proof.
        | B C t u x hs wB covB nixH p1 ih1 p2 ih2
        | a b H p1 ih1 ps ihs
        | x A G J
+       | C x a b t H wfa wfb cova covb p1 ih1 p2 ih2
        ];
     allsimpl;
     allrw NVin_iff.
@@ -230,6 +241,16 @@ Proof.
     rw in_map_iff; eexists; dands; eauto.
 
   - apply (rule_hypothesis_true3 lib); simpl; tcsp.
+
+  - apply (rule_cequiv_subst_concl_true3 lib H x C a b t); allsimpl; tcsp.
+
+    introv i; repndors; subst; allsimpl; tcsp.
+
+    + apply ih1.
+      apply (rule_cequiv_subst_concl_wf2 H x C a b t); simpl; tcsp.
+
+    + apply ih2.
+      apply (rule_cequiv_subst_concl_wf2 H x C a b t); simpl; tcsp.
 Qed.
 
 
