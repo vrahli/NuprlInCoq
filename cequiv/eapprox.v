@@ -1852,7 +1852,9 @@ Definition approxow (a b : WTerm) :=
 Lemma ex_approx_exception {p} :
   forall lib ex en (a b : @NTerm p),
     ex_approx lib ex (mk_exception en a) b
-    -> {x : NTerm
+    -> (ex_approx lib ex en ex)
+       [+]
+       {x : NTerm
         & {c : @NTerm p
         & computes_to_exception lib x b c
         # ex_approx lib ex en x
@@ -1864,8 +1866,8 @@ Proof.
   generalize (ap3 en a); intro k; autodimp k hyp.
   { apply computes_to_exception_refl. }
   destruct k as [k|k]; exrepnd; GC; tcsp.
-  {  }
-  exists a' e'; sp; inversion b0.
+  { repndors; tcsp; allunfold @bot2; tcsp. }
+  { right; exists a' e'; sp; inversion b0. }
 Qed.
 
 (*
