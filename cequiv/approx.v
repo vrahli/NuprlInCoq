@@ -24,7 +24,7 @@
 *)
 
 
-Require Export bin_rels.
+Require Export bin_rels. 
 Require Export computation_seq.
 Require Export rel_nterm.
 
@@ -2614,3 +2614,10 @@ Qed.
 *)
 
 (* end hide *)
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
+*** End:
+*)
+
