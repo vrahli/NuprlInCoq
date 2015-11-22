@@ -133,6 +133,79 @@ Proof.
   allrw @covered_approx; repnd; auto.
 Qed.
 
+(**
+
+<<
+   H |- ax = ax in (a <= b)
+
+     By ApproxMemberEq ()
+
+     H |- a <= b
+>>
+ *)
+
+Definition rule_approx_member_eq_concl {o} a b (H : @bhyps o) :=
+  mk_baresequent H (mk_concleq mk_axiom mk_axiom (mk_approx a b)).
+
+Definition rule_approx_member_eq_hyp {o} a b (H : @bhyps o) :=
+  mk_baresequent H (mk_conclax (mk_approx a b)).
+
+Definition rule_approx_member_eq {o}
+           (a b : NTerm)
+           (H : @barehypotheses o) :=
+  mk_rule (rule_approx_member_eq_concl a b H)
+          [ rule_approx_member_eq_hyp a b H ]
+          [].
+
+Lemma rule_approx_member_eq_true3 {o} :
+  forall lib (a b : NTerm) (H : @barehypotheses o),
+    rule_true3 lib (rule_approx_member_eq a b H).
+Proof.
+  unfold rule_approx_member_eq, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp.
+  destruct Hyp  as [ ws1 hyp1 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent (rule_approx_member_eq_concl a b H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  lsubst_tac.
+  allrw @member_eq.
+  allrw <- @member_equality_iff.
+
+  dup pt1 as cv1.
+  dup pt2 as cv2.
+  dup wfce as wax.
+  teq_and_eq (mk_approx a b) (@mk_axiom o) (@mk_axiom o) s1 s2 H.
+
+  { vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 eqh sim) as h; clear hyp1; exrepnd.
+    lsubst_tac; auto. }
+
+  { vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    lsubst_tac; auto. }
+Qed.
+
+Lemma rule_approx_member_eq_wf2 {o} :
+  forall (a b : NTerm) (H : @barehypotheses o),
+    wf_rule2 (rule_approx_member_eq a b H).
+Proof.
+  introv wf j.
+
+  allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq;
+  allrw <- @wf_approx_iff; repnd; auto;
+  allrw @covered_approx; repnd; auto.
+Qed.
+
 
 
 (*

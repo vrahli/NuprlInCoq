@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -23,9 +24,11 @@
 
 *)
 
+Require Export sequents2.
 Require Export per_props_equality.
 Require Export per_props_equality_more.
 Require Export per_can.
+Require Export seq_util.
 
 (** printing |- $\vdash$ *)
 (** printing ->  $\rightarrow$ *)
@@ -45,54 +48,68 @@ Require Export per_can.
      H |- halts(a) in Prop(i)
      H |- is_exc(a) in Prop(i)
  *)
+
+Definition rule_convergence_concl {o} (H : @bhyps o) a b :=
+  mk_baresequent H (mk_conclax (mk_approx a b)).
+
+Definition rule_convergence_hyp1 {o} (H : @bhyps o) x a b :=
+  mk_baresequent (snoc H (mk_hyp x (mk_halts a))) (mk_conclax (mk_approx a b)).
+
+Definition rule_convergence_hyp2 {o} (H : @bhyps o) x a b :=
+  mk_baresequent (snoc H (mk_hyp x (mk_isexc a))) (mk_conclax (mk_approx a b)).
+
+Definition rule_convergence_hyp3 {o} (H : @bhyps o) a i :=
+  mk_baresequent H (mk_conclax (mk_member (mk_halts a) (mk_uni i))).
+
+Definition rule_convergence_hyp4 {o} (H : @bhyps o) a i :=
+  mk_baresequent H (mk_conclax (mk_member (mk_isexc a) (mk_uni i))).
+
 Definition rule_convergence {o}
            (H   : barehypotheses)
            (i   : nat)
            (a b : @NTerm o)
            (x   : NVar) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_approx a b)))
-    [ mk_baresequent (snoc H (mk_hyp x (mk_halts a))) (mk_conclax (mk_approx a b)),
-      mk_baresequent (snoc H (mk_hyp x (mk_isexc a))) (mk_conclax (mk_approx a b)),
-      mk_baresequent H (mk_conclax (mk_member (mk_halts a) (mk_uni i))),
-      mk_baresequent H (mk_conclax (mk_member (mk_isexc a) (mk_uni i)))
+    (rule_convergence_concl H a b)
+    [ rule_convergence_hyp1 H x a b,
+      rule_convergence_hyp2 H x a b,
+      rule_convergence_hyp3 H a i,
+      rule_convergence_hyp4 H a i
     ]
     [].
 
-Lemma rule_convergence_true {o} :
+Lemma rule_convergence_true3 {o} :
   forall lib
          (H : barehypotheses)
          (i : nat)
          (a b : @NTerm o)
          (x : NVar),
-    rule_true lib (rule_convergence H i a b x).
+    rule_true3 lib (rule_convergence H i a b x).
 Proof.
-  unfold rule_convergence, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
-  intros.
+  unfold rule_convergence, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros; repnd.
   clear cargs.
 
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
   dLin_hyp; exrepnd.
-  rename Hyp0 into hyp1.
-  rename Hyp1 into hyp2.
-  rename Hyp2 into hyp3.
-  rename Hyp3 into hyp4.
+  destruct Hyp  as [ws1 hyp1].
+  destruct Hyp0 as [ws2 hyp2].
+  destruct Hyp1 as [ws3 hyp3].
+  destruct Hyp2 as [ws4 hyp4].
   destseq; allsimpl; proof_irr; GC.
 
-  assert (closed_extract H (mk_conclax (mk_approx a b))) as cs.
-  clear hyp1 hyp2 hyp3 hyp4.
-  dwfseq; prove_seq; unfold covered; allrw subvars_prop; sp.
-
-  exists cs.
+  assert (wf_csequent ((H) ||- (mk_conclax (mk_approx a b)))) as wfs by prove_seq.
+  exists wfs.
+  unfold wf_csequent, wf_sequent, wf_bseq in wfs; allsimpl; repnd; proof_irr; GC.
 
   (* We prove some simple facts on our sequents *)
   assert (!LIn x (free_vars a)
           # !LIn x (free_vars b)) as vhyps.
 
-  clear hyp1 hyp2 hyp3 hyp4.
-  dwfseq.
-  sp.
+  { clear hyp1 hyp2 hyp3 hyp4.
+    dwfseq.
+    sp. }
 
   destruct vhyps as [ nixa nixb ].
   (* done with proving these simple facts *)
@@ -325,6 +342,80 @@ Proof.
   }
 Qed.
 
+Lemma rule_convergence_true {o} :
+  forall lib
+         (H : barehypotheses)
+         (i : nat)
+         (a b : @NTerm o)
+         (x : NVar),
+    rule_true lib (rule_convergence H i a b x).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_convergence_true3.
+Qed.
+
+(* !!MOVE *)
+Lemma covered_halts {o} :
+  forall (a : @NTerm o) vs,
+    covered (mk_halts a) vs <=> covered a vs.
+Proof.
+  introv; unfold covered; simpl; autorewrite with slow; sp.
+Qed.
+
+(* !!MOVE *)
+Lemma covered_isexc {o} :
+  forall (a : @NTerm o) vs,
+    covered (mk_isexc a) vs <=> covered a vs.
+Proof.
+  introv; unfold covered; simpl; autorewrite with slow; sp.
+Qed.
+
+Lemma rule_convergence_wf2 {o} :
+  forall (H : barehypotheses)
+         (i : nat)
+         (a b : @NTerm o)
+         (x : NVar),
+    !LIn x (vars_hyps H)
+    -> wf_rule2 (rule_convergence H i a b x).
+Proof.
+  introv nix wf j; allsimpl.
+
+  repndors; subst; allsimpl; tcsp; allunfold @wf_bseq; allsimpl;
+  repnd; dands; destseq; allsimpl; tcsp;
+  allrw @covered_approx; repnd;
+  allrw <- @wf_approx_iff; repnd;
+  allsimpl; dands; tcsp;
+  try (apply vswf_hypotheses_nil_eq);
+  try (complete (rw @vars_hyps_snoc; simpl; apply covered_snoc_weak; auto));
+  auto.
+
+  - apply wf_hypotheses_snoc; dands; simpl; auto.
+    apply isprog_vars_halts.
+    rw @isprog_vars_eq.
+    allunfold @covered; dands; eauto 3 with slow.
+
+  - apply wf_hypotheses_snoc; dands; simpl; auto.
+    apply isprog_vars_isexc.
+    rw @isprog_vars_eq.
+    allunfold @covered; dands; eauto 3 with slow.
+
+  - apply wf_member; eauto 3 with slow.
+    apply wf_halts; auto.
+
+  - unfold closed_type_baresequent, closed_type; simpl.
+    apply covered_member; dands; eauto 3 with slow.
+    apply covered_halts; auto.
+
+  - apply wf_member; eauto 3 with slow.
+    apply wf_isexc; auto.
+
+  - unfold closed_type_baresequent, closed_type; simpl.
+    apply covered_member; dands; eauto 3 with slow.
+    apply covered_isexc; auto.
+Qed.
+
+
 
 (*
    H |- a <= b
@@ -516,6 +607,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)
