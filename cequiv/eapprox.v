@@ -1364,6 +1364,13 @@ Proof.
 Qed.
 Hint Resolve ex_approx_open_trans: slow.
 
+
+(* =======================================================================
+   below here, I haven't changed from lemmas about approx to lemmas about
+   ex_approx.  
+  ========================================================================
+*)
+
 Definition simpl_olift {p} R (t1 t2: @NTerm p) :=
   nt_wf t1
   # nt_wf t2
