@@ -34,6 +34,7 @@ Require Export sequents_equality.
 Require Export per_props_nat.
 Require Export per_can.
 Require Export per_props_top.
+Require Export per_props_squash.
 Require Export integer_type.
 Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
@@ -483,20 +484,6 @@ Proof.
   apply tequality_mkc_approx; tcsp.
 Qed.
 Hint Resolve type_mkc_approx : slow.
-
-Lemma implies_tequality_equality_mkc_squash {o} :
-  forall lib (t1 t2 : @CTerm o),
-    tequality lib t1 t2
-    -> inhabited_type lib t1
-    -> (tequality lib (mkc_squash t1) (mkc_squash t2)
-        # equality lib mkc_axiom mkc_axiom (mkc_squash t1)).
-Proof.
-  introv teq inh.
-  rw @equality_in_mkc_squash.
-  rw @tequality_mkc_squash.
-  dands; auto; spcast;
-  apply computes_to_valc_refl; eauto 3 with slow.
-Qed.
 
 (* !!MOVE *)
 Lemma implies_approx_islambda {p} :
