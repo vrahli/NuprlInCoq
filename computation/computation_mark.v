@@ -24,6 +24,7 @@
 *)
 
 
+Require Export substitution4.
 Require Export computation4.
 Require Export alphaeq_sub.
 
@@ -199,64 +200,6 @@ Proof.
   induction vs; simpl; eauto with slow.
 Qed.
 Hint Resolve wf_sub_bot_sub : slow.
-
-Lemma sub_filter_eqvars {o} :
-  forall vs1 vs2 (sub : @Sub o),
-    eqvars vs1 vs2
-    -> sub_filter sub vs1 = sub_filter sub vs2.
-Proof.
-  induction sub; introv eqv; allsimpl; auto.
-  destruct a; boolvar; simpl; tcsp.
-  - rw eqvars_prop in eqv; apply eqv in Heqb; sp.
-  - rw eqvars_prop in eqv; apply eqv in Heqb0; sp.
-  - apply IHsub in eqv; rw eqv; auto.
-Qed.
-
-Lemma lsubst_aux_cons_sub_filter {o} :
-  forall (t : @NTerm o) v u sub,
-    lsubst_aux t ((v,u) :: sub_filter sub [v])
-    = lsubst_aux t ((v,u) :: sub).
-Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv; allsimpl; auto.
-
-  - Case "vterm".
-    boolvar; auto.
-    rw @sub_find_sub_filter_eta; simpl; auto; sp.
-
-  - Case "oterm".
-    f_equal.
-    apply eq_maps; introv i; destruct x; simpl.
-    f_equal.
-    boolvar; auto.
-
-    + rw <- @sub_filter_app_r; allsimpl.
-      rw (sub_filter_eqvars (v :: l) l sub); auto.
-      rw eqvars_prop; simpl; introv; split; intro k; tcsp.
-      dorn k; subst; tcsp.
-
-    + rw @sub_filter_swap.
-      eapply ind; eauto.
-Qed.
-
-Lemma lsubst_cons_sub_filter {o} :
-  forall (t : @NTerm o) v u sub,
-    disjoint (bound_vars t) (free_vars u)
-    -> disjoint (bound_vars t) (flat_map free_vars (range sub))
-    -> lsubst t ((v,u) :: sub_filter sub [v])
-       = lsubst t ((v,u) :: sub).
-Proof.
-  introv d1 d2.
-  change_to_lsubst_aux4; allsimpl.
-  - apply lsubst_aux_cons_sub_filter.
-  - allrw disjoint_app_r; repnd; dands; auto.
-  - allrw disjoint_app_r; dands; auto.
-    allrw disjoint_flat_map_r; introv i.
-    apply d2.
-    apply in_range in i; exrepnd.
-    apply in_range_iff.
-    apply in_sub_filter in i0; repnd.
-    eexists; eauto.
-Qed.
 
 (*
 Lemma not_marked_oterm {o} :

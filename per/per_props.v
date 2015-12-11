@@ -1559,7 +1559,7 @@ Proof.
     apply inhabited_type_if_inhabited with (U := mkc_apply2 R1 y z) (eq := eq0); sp;
     try (complete (allapply nuprli_implies_nuprl; sp; allapply nuprl_refl; sp)).
 (*Error: Universe inconsistency.*)
-Admitted.
+[Admitted.]
 *)
 
 Lemma type_mkc_pertype {p} :
@@ -2093,7 +2093,7 @@ Proof.
     apply inhabited_type_if_inhabited with (U := T2) (eq := eq); sp;
     try (complete (allapply nuprli_implies_nuprl; sp)).
 (*Error: Universe inconsistency.*)
-Admitted.
+[Admitted.]
 *)
 
 (*

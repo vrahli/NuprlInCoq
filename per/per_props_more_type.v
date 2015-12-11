@@ -148,7 +148,7 @@ Proof.
     allapply nuprli_implies_nuprl; sp.
     rw iff; sp.
 (*Error: Universe inconsistency.*)
-Admitted.
+[Admitted.]
 
 (*
 Lemma mkc_uni_in_nuprl :
@@ -180,7 +180,7 @@ Proof.
   generalize nuprl_mkc_uni; sp.
 (*Error: Universe inconsistency.*)
 *)
-Admitted.
+[Admitted.]
 
 Lemma mkc_sqequal_equality_in_uni :
   forall a b c d i,
@@ -211,7 +211,7 @@ Proof.
     apply CL_sqeq; unfold per_sqequal.
     exists a b c d; sp; spcast; try computes_to_value_refl.
 (*Error: Universe inconsistency.*)
-Admitted.
+[Admitted.]
 
 Lemma mkc_sqle_equality_in_uni :
   forall a b c d i,
@@ -242,7 +242,7 @@ Proof.
     apply CL_sqle; unfold per_sqle.
     exists a b c d; sp; spcast; try computes_to_value_refl.
 (*Error: Universe inconsistency.*)
-Admitted.
+[Admitted.]
 
 (*
 Lemma tequality_in_uni_iff_tequality :

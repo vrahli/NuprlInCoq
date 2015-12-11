@@ -148,10 +148,6 @@ Proof.
     allapply @nuprli_implies_nuprl; sp.
     rw iff; sp.
 Qed.
-(*
-(*Error: Universe inconsistency.*)
-Admitted.
-*)
 
 Lemma mkc_ipertype_equality_in_uni {p} :
   forall lib (R1 R2 : @CTerm p) i,
@@ -230,10 +226,6 @@ Proof.
     apply nuprl_refl in k1; sp.
     rw iff; sp.
 Qed.
-(*
-(*Error: Universe inconsistency.*)
-Admitted.
-*)
 
 Lemma equality_nuprli {p} :
   forall lib (A B C : @CTerm p) i eq,
@@ -370,10 +362,6 @@ Proof.
     apply nuprl_refl in k1; sp.
     rw iff; sp.
 Qed.
-(*
-(*Error: Universe inconsistency.*)
-Admitted.
-*)
 
 Lemma mkc_uni_in_nuprl {p} :
   forall lib (i : nat),
@@ -401,10 +389,6 @@ Lemma tequality_mkc_uni {p} :
 Proof.
   generalize (@nuprl_mkc_uni p); sp.
 Qed.
-(*
-(*Error: Universe inconsistency.*)
-Admitted.
-*)
 
 Lemma mkc_cequiv_equality_in_uni {p} :
   forall lib (a b c d : @CTerm p) i,
@@ -435,10 +419,6 @@ Proof.
     apply CL_cequiv; unfold per_cequiv.
     exists a b c d; sp; spcast; try computes_to_value_refl.
 Qed.
-(*
-(*Error: Universe inconsistency.*)
-Admitted.
-*)
 
 Lemma mkc_approx_equality_in_uni {p} :
   forall lib (a b c d : @CTerm p) i,
@@ -469,10 +449,6 @@ Proof.
     apply CL_approx; unfold per_approx.
     exists a b c d; sp; spcast; try computes_to_value_refl.
 Qed.
-(*
-(*Error: Universe inconsistency.*)
-Admitted.
-*)
 
 (*
 Lemma tequality_in_uni_iff_tequality {p} :
