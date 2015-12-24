@@ -94,9 +94,9 @@ Require Export stronger_continuity_props1.
 (*Require Import continuity_axiom.*) (* !TO FIX---don't need anymore, we've got the strong version *)
 (*Require Import continuity_rule2. (* Can't prove that, right? *) *)
 (*
-Require Import stronger_continuity_rule4.
-Require Import stronger_continuity_rule4_v2. (* slightly more general than rule4, uses a meta-hypothesis *)
-Require Import stronger_continuity_rule4_v2_2. (* slightly more general than rule4, uses an object-hypothesis (subtype of nat) *)
+  Require Import stronger_continuity_rule4.
+  Require Import stronger_continuity_rule4_v2. (* slightly more general than rule4, uses a meta-hypothesis *)
+  Require Import stronger_continuity_rule4_v2_2. (* slightly more general than rule4, uses an object-hypothesis (subtype of nat) *)
 *)
 
 

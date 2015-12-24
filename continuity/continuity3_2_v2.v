@@ -1,6 +1,7 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -15,7 +16,7 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
   Website: http://nuprl.org/html/verification/
@@ -26,6 +27,8 @@
 
 Require Export continuity3_2.
 Require Export continuity_defs_ceq.
+Require Export list.  (* WTF!! *)
+
 
 Definition agree_upto {o} lib b (f g : @NTerm o) :=
   forall (i : Z),
@@ -64,12 +67,17 @@ Lemma comp_force_int_step3_2 {o} :
            # reduces_to lib u u'
            # differ3_alpha b f g u' t}}.
 Proof.
-  nterm_ind1s t1 as [v|op bs ind] Case;
+  nterm_ind1s t1 as [v|s ind|op bs ind] Case;
   introv ispf ispg wt1 wt2 agree d comp hv compind.
 
   - Case "vterm".
     simpl.
     inversion d; subst; allsimpl; ginv.
+
+  - Case "sterm".
+    inversion d; subst; clear d; allsimpl; auto.
+    csunf comp; allsimpl; ginv.
+    exists (sterm s) (sterm s); dands; eauto 3 with slow.
 
   - Case "oterm".
     dopid op as [can|ncan|exc|abs] SCase; ginv.
@@ -87,11 +95,170 @@ Proof.
       destruct l1; try (complete (csunf comp; simpl in comp; ginv));[|].
 
       {
-      destruct t1 as [v1|op1 bs1].
+      destruct t1 as [v1|f1|op1 bs1].
 
-      * destruct t2 as [v2|op2 bs2]; try (complete (inversion d));[].
+      * destruct t2 as [v2|f2|op2 bs2]; try (complete (inversion d));[].
 
-        inversion d as [? ? ? ? d1|?|? ? ? len imp]; subst; simphyps; cpx; ginv.
+        inversion d as [? ? ? ? d1|s|?|? ? ? len imp]; subst; simphyps; cpx; ginv.
+
+      * destruct t2 as [v2|f2|op2 bs2]; try (complete (inversion d));[].
+        csunf comp; allsimpl.
+        dopid_noncan ncan SSCase; allsimpl; ginv.
+
+        { SSCase "NApply".
+          apply compute_step_seq_apply_success in comp; exrepnd; subst; allsimpl.
+          inversion d as [? ? ? ? d1|?|?|? ? ? len imp]; subst; simphyps; cpx; ginv; clear d.
+          allsimpl.
+
+          pose proof (imp (nobnd (sterm f1)) x) as d1; autodimp d1 hyp.
+          pose proof (imp (nobnd arg) y) as d2; autodimp d2 hyp.
+          clear imp.
+
+          inversion d1 as [? ? ? df3 dg3 d3]; subst; clear d1.
+          inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
+          inversion d3; subst; clear d3.
+          fold_terms.
+
+          exists (mk_eapply (sterm f1) t0)
+                 (mk_eapply (sterm f1) arg).
+          dands; eauto 3 with slow.
+          apply differ3_implies_differ3_alpha.
+          apply differ3_mk_eapply; auto.
+        }
+
+        { SSCase "NEApply".
+          apply compute_step_eapply_success in comp; exrepnd; subst; allsimpl.
+          inversion d as [? ? ? ? d1|?|?|? ? ? len imp]; subst; simphyps; cpx; ginv; clear d.
+          rw @wf_term_eq in wt1; rw @nt_wf_eapply_iff in wt1; exrepnd; allunfold @nobnd; subst; ginv.
+          simpl in len; repeat cpx.
+          simpl in imp.
+
+          pose proof (imp (nobnd (sterm f1)) x) as d1; autodimp d1 hyp.
+          pose proof (imp (nobnd b0) y) as d2; autodimp d2 hyp.
+          clear imp.
+
+          inversion d1 as [? ? ? df3 dg3 d3]; subst; clear d1.
+          inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
+          inversion d3; subst; clear d3.
+          fold_terms.
+          allrw <- @wf_eapply_iff; repnd.
+
+          repndors; exrepnd; subst.
+
+          - apply compute_step_eapply2_success in comp1; repnd; GC.
+            repndors; exrepnd; subst; ginv; allsimpl; GC.
+            inversion d4 as [?|?|?|? ? ? len1 imp1]; subst; allsimpl;
+            clear d4; cpx; clear imp1; fold_terms.
+
+            exists (f0 n) (f0 n); dands; eauto 3 with slow.
+            { apply reduces_to_if_step.
+              csunf; simpl.
+              dcwf h; simpl; boolvar; try omega.
+              rw @Znat.Nat2Z.id; auto. }
+            { apply differ3_implies_differ3_alpha.
+              allapply @closed_if_isprog.
+              apply differ3_refl; simpl; try (rw ispf); try (rw ispg); auto. }
+
+          - apply isexc_implies2 in comp0; exrepnd; subst.
+            inversion d4 as [?|?|?|? ? ? len1 imp1]; subst; allsimpl; clear d4.
+            exists (oterm Exc bs2) (oterm Exc l); dands; eauto 3 with slow.
+
+          - pose proof (ind b0 b0 []) as h; clear ind.
+            repeat (autodimp h hyp); eauto 3 with slow.
+            pose proof (h t0 kk x) as ih; clear h.
+            applydup @preserve_nt_wf_compute_step in comp1; eauto 3 with slow.
+            allsimpl; autorewrite with slow in *; auto.
+            repeat (autodimp ih hyp); eauto 3 with slow.
+
+            { eapply has_value_k_like_eapply_sterm_implies in hv; auto; exrepnd.
+              eapply has_value_like_k_lt; eauto. }
+
+            exrepnd.
+
+            exists (mk_eapply (sterm f1) t) (mk_eapply (sterm f1) u'); dands; eauto 3 with slow.
+            { apply implies_eapply_red_aux; eauto 3 with slow. }
+            { apply implies_eapply_red_aux; eauto 3 with slow. }
+            { apply differ3_alpha_mk_eapply; eauto 3 with slow. }
+        }
+
+        { SSCase "NFix".
+          apply compute_step_fix_success in comp; repnd; subst; allsimpl.
+          inversion d as [? ? ? ? d1|?|?|? ? ? len imp]; subst; simphyps; cpx; ginv; clear d; allsimpl.
+
+          pose proof (imp (nobnd (sterm f1)) x) as d1; autodimp d1 hyp.
+          clear imp.
+
+          inversion d1 as [? ? ? df2 dg2 d2]; subst; clear d1.
+          inversion d2; subst; clear d2.
+          fold_terms.
+
+          exists (mk_apply (sterm f1) (mk_fix (sterm f1)))
+                 (mk_apply (sterm f1) (mk_fix (sterm f1))).
+          dands; eauto 3 with slow.
+        }
+
+        { SSCase "NCbv".
+          apply compute_step_cbv_success in comp; exrepnd; subst; allsimpl.
+          inversion d as [? ? ? d1|?|? xxx|? ? ? len imp]; subst; simphyps; cpx; ginv; clear d; allsimpl; fold_terms.
+
+          pose proof (imp (nobnd (sterm f1)) x0) as d1; autodimp d1 hyp.
+          pose proof (imp (bterm [v] x) y) as d2; autodimp d2 hyp.
+          clear imp.
+
+          inversion d1 as [? ? ? df3 dg3 d3]; subst; clear d1.
+          inversion d3; subst; clear d3.
+          inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
+          fold_terms.
+
+          exists (subst t2 v (sterm f1))
+                 (subst x v (sterm f1)).
+          dands; eauto 3 with slow.
+          allapply @closed_if_isprog.
+          apply differ3_subst; simpl; try (rw ispf); try (rw ispg); simpl; tcsp.
+        }
+
+        { SSCase "NTryCatch".
+          apply compute_step_try_success in comp; exrepnd; subst; allsimpl.
+          inversion d as [? ? ? d1|?|? xxx|? ? ? len imp]; subst; simphyps; cpx; ginv; clear d; allsimpl; fold_terms.
+
+          pose proof (imp (nobnd (sterm f1)) x0) as d1; autodimp d1 hyp.
+          pose proof (imp (nobnd a) y) as d2; autodimp d2 hyp.
+          pose proof (imp (bterm [v] x) z) as d3; autodimp d3 hyp.
+          clear imp.
+
+          inversion d1 as [? ? ? dfx dgx d4]; subst; clear d1.
+          inversion d4; subst; clear d4.
+          inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
+          inversion d3 as [? ? ? df5 dg5 d5]; subst; clear d3.
+          fold_terms.
+
+          exists (mk_atom_eq t2 t2 (sterm f1) mk_bot)
+                 (mk_atom_eq a a (sterm f1) mk_bot).
+          dands; eauto 3 with slow.
+          apply differ3_alpha_mk_atom_eq; eauto 3 with slow.
+          apply differ3_implies_differ3_alpha.
+          allapply @closed_if_isprog.
+          apply differ3_refl; simpl; try (rw ispf); try (rw ispg); auto.
+        }
+
+        { SSCase "NCanTest".
+          apply compute_step_seq_can_test_success in comp; exrepnd; subst; allsimpl.
+          inversion d as [? ? ? d1|?|? xxx|? ? ? len imp]; subst; simphyps; cpx; ginv; clear d; allsimpl; fold_terms.
+
+          pose proof (imp (nobnd (sterm f1)) x) as d1; autodimp d1 hyp.
+          pose proof (imp (nobnd a) y) as d2; autodimp d2 hyp.
+          pose proof (imp (nobnd b0) z) as d3; autodimp d3 hyp.
+          clear imp.
+
+          inversion d1 as [? ? ? dfx dgx d4]; subst; clear d1.
+          inversion d4; subst; clear d4.
+          inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
+          inversion d3 as [? ? ? df5 dg5 d5]; subst; clear d3.
+          fold_terms.
+
+          exists t0 b0.
+          dands; eauto 3 with slow.
+        }
 
       * (* Now destruct op2 *)
         dopid op1 as [can1|ncan1|exc1|abs1] SSCase; ginv.
@@ -103,39 +270,162 @@ Proof.
 
           - SSSCase "NApply".
             csunf comp; allsimpl.
-            apply compute_step_apply_success in comp; exrepnd; subst; allsimpl.
+            apply compute_step_apply_success in comp; repndors; exrepnd; subst; allsimpl.
 
-            inversion d as [?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
-            destruct bs2; allsimpl; cpx.
-            cpx; allsimpl.
+            { inversion d as [?|?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
+              destruct bs2; allsimpl; cpx.
+              cpx; allsimpl.
 
-            pose proof (imp (bterm [] (oterm (Can NLambda) [bterm [v] b0])) b1) as d1.
-            autodimp d1 hyp.
-            pose proof (imp (bterm [] arg) x) as d2.
-            autodimp d2 hyp.
+              pose proof (imp (bterm [] (oterm (Can NLambda) [bterm [v] b0])) b1) as d1.
+              autodimp d1 hyp.
+              pose proof (imp (bterm [] arg) x) as d2.
+              autodimp d2 hyp.
+              clear imp.
+
+              inversion d1 as [? ? ? df3 dg3 d3]; subst; clear d1.
+              inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
+
+              inversion d3 as [?|?|?|? ? ? len1 imp1]; subst; allsimpl; GC; clear d3.
+              destruct bs2; allsimpl; cpx.
+              cpx.
+
+              pose proof (imp1 (bterm [v] b0) b1) as d1.
+              autodimp d1 hyp.
+              clear imp1.
+              inversion d1 as [? ? ? df2 dg2 d2]; subst; clear d1.
+
+              exists (subst t2 v t0) (subst b0 v arg); dands; eauto 3 with slow.
+
+              apply differ3_subst; simpl; eauto 3 with slow.
+            }
+
+            { inversion d as [?|?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
+              destruct bs2; allsimpl; cpx.
+              cpx; allsimpl.
+
+              pose proof (imp (nobnd (mk_nseq f0)) b0) as d1.
+              autodimp d1 hyp.
+              pose proof (imp (nobnd arg) x) as d2.
+              autodimp d2 hyp.
+              clear imp.
+
+              inversion d1 as [? ? ? df3 dg3 d3]; subst; clear d1.
+              inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
+              GC.
+
+              inversion d3 as [|?|?|? ? ? len1 imp1]; subst; allsimpl; GC; clear d3.
+              cpx; clear imp1; fold_terms.
+
+              exists (mk_eapply (mk_nseq f0) t0) (mk_eapply (mk_nseq f0) arg); dands; eauto 3 with slow.
+
+              apply differ3_implies_differ3_alpha.
+              apply differ3_oterm; simpl; tcsp.
+              introv j; repndors; cpx; repeat (constructor; auto).
+              simpl; tcsp.
+            }
+
+          - SSSCase "NEApply".
+            csunf comp; allsimpl.
+            apply compute_step_eapply_success in comp; exrepnd; subst.
+            rw @wf_term_eq in wt1; rw @nt_wf_eapply_iff in wt1; exrepnd; allunfold @nobnd; ginv.
+
+            inversion d as [? ? ? ? d1|?|?|? ? ? len imp]; subst; clear d.
+            simpl in len; cpx; simpl in imp.
+
+            pose proof (imp (nobnd (oterm (Can can1) bs1)) x) as d1; autodimp d1 hyp.
+            pose proof (imp (nobnd b0) y) as d2; autodimp d2 hyp.
             clear imp.
 
             inversion d1 as [? ? ? df3 dg3 d3]; subst; clear d1.
             inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
+            fold_terms.
+            allrw <- @wf_eapply_iff; repnd.
+            apply eapply_wf_def_oterm_implies in comp2; exrepnd; ginv; fold_terms.
+            destruct comp2 as [comp2|comp2]; exrepnd; ginv; fold_terms.
 
-            inversion d3 as [?|?|? ? ? len1 imp1]; subst; allsimpl; GC; clear d3.
-            destruct bs2; allsimpl; cpx.
-            cpx.
+            { apply differ3_lam_implies in d3; exrepnd; subst; fold_terms.
 
-            pose proof (imp1 (bterm [v] b0) b1) as d1.
-            autodimp d1 hyp.
-            clear imp1.
-            inversion d1 as [? ? ? df2 dg2 d2]; subst; clear d1.
+              repndors; exrepnd; subst.
 
-            exists (subst t2 v t0) (subst b0 v arg); dands; eauto 3 with slow.
+              + apply compute_step_eapply2_success in comp1; repnd; GC.
+                repndors; exrepnd; subst; ginv; allsimpl; GC.
+                allunfold @apply_bterm; allsimpl; allrw @fold_subst.
 
-            apply differ3_subst; simpl; eauto 3 with slow.
+                exists (subst a' v0 t0) (subst b1 v0 b0); dands; eauto 3 with slow.
+                { apply eapply_lam_can_implies.
+                  apply differ3_preserves_iscan in d4; auto.
+                  unfold computes_to_can; dands; eauto 3 with slow. }
+                { apply differ3_subst; auto; simpl;
+                  allapply @closed_if_isprog; try (rw ispf); try (rw ispg); auto. }
+
+              + apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl.
+                apply differ3_exception_implies in d4; exrepnd; subst.
+                exists (mk_exception a'0 e') (mk_exception a e); dands; eauto 3 with slow.
+                apply differ3_alpha_mk_exception; eauto 3 with slow.
+
+              + pose proof (ind b0 b0 []) as h; clear ind.
+                repeat (autodimp h hyp); eauto 3 with slow.
+                pose proof (h t0 kk x) as ih; clear h.
+                applydup @preserve_nt_wf_compute_step in comp1; auto.
+                repeat (autodimp ih hyp); eauto 3 with slow.
+                { apply has_value_like_k_eapply_lam_implies in hv; auto.
+                  exrepnd.
+                  eapply has_value_like_k_lt; eauto. }
+                exrepnd.
+
+                exists (mk_eapply (mk_lam v a') t1) (mk_eapply (mk_lam v t) u'); dands; eauto 3 with slow.
+                { apply implies_eapply_red_aux; eauto 3 with slow. }
+                { apply implies_eapply_red_aux; eauto 3 with slow. }
+                { apply differ3_alpha_mk_eapply; eauto 3 with slow.
+                  apply differ3_alpha_mk_lam; eauto 3 with slow;
+                  allapply @closed_if_isprog; try (rw ispf); try (rw ispg); simpl; tcsp. }
+            }
+
+            { inversion d3 as [|?|?|? ? ? len imp]; subst; simphyps; clear d3.
+              clear imp.
+              allsimpl; cpx; allsimpl; fold_terms.
+              repndors; exrepnd; subst; allsimpl.
+
+              - destruct b0 as [v|f'|op bs]; ginv;[].
+                dopid op as [can|ncan|exc|abs] SSSSCase; ginv;[].
+                destruct can; ginv;[].
+                destruct bs; allsimpl; ginv; GC.
+                boolvar; ginv; try omega; fold_terms.
+                inversion d4 as [|?|?|? ? ? len imp]; subst; simphyps; clear d4.
+                allsimpl; cpx; fold_terms; allsimpl.
+                clear imp.
+
+                exists (@mk_nat o (s (Z.to_nat z))) (@mk_nat o (s (Z.to_nat z))); dands; eauto 3 with slow.
+                apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
+                boolvar; try omega; auto.
+
+              - apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl.
+                apply differ3_exception_implies in d4; exrepnd; subst.
+                exists (mk_exception a' e') (mk_exception a e); dands; eauto 3 with slow.
+                apply differ3_alpha_mk_exception; eauto 3 with slow.
+
+              - pose proof (ind b0 b0 []) as h; clear ind.
+                repeat (autodimp h hyp); eauto 3 with slow.
+                pose proof (h t0 kk x) as ih; clear h.
+                applydup @preserve_nt_wf_compute_step in comp1; auto.
+                allsimpl; autorewrite with slow in *.
+                repeat (autodimp ih hyp); eauto 3 with slow.
+                { apply has_value_like_k_eapply_nseq_implies in hv; auto.
+                  exrepnd.
+                  eapply has_value_like_k_lt; eauto. }
+                exrepnd.
+
+                exists (mk_eapply (mk_nseq s) t) (mk_eapply (mk_nseq s) u'); dands; eauto 3 with slow.
+                { apply implies_eapply_red_aux; eauto 3 with slow. }
+                { apply implies_eapply_red_aux; eauto 3 with slow. }
+                { apply differ3_alpha_mk_eapply; eauto 3 with slow. }
+            }
 
           - SSSCase "NFix".
             csunf comp; allsimpl.
             apply compute_step_fix_success in comp; exrepnd; subst; allsimpl.
 
-            inversion d as [?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
+            inversion d as [?|?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
             destruct bs2; allsimpl; cpx.
             destruct bs2; allsimpl; cpx.
             cpx; GC.
@@ -146,7 +436,7 @@ Proof.
 
             inversion d1 as [? ? ? df3 dg3 d3]; subst; clear d1.
 
-            inversion d3 as [?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d3.
+            inversion d3 as [?|?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d3.
 
             exists (mk_apply (oterm (Can can1) bs2)
                              (mk_fix (oterm (Can can1) bs2)))
@@ -167,7 +457,7 @@ Proof.
             csunf comp; allsimpl.
             apply compute_step_spread_success in comp; exrepnd; subst; allsimpl.
 
-            inversion d as [?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
+            inversion d as [?|?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
             destruct bs2; allsimpl; cpx.
             cpx; allsimpl.
 
@@ -180,7 +470,7 @@ Proof.
             inversion d1 as [? ? ? df3 dg3 d3]; subst; clear d1.
             inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
 
-            inversion d3 as [?|?|? ? ? len1 imp1]; subst; allsimpl; GC; clear d3.
+            inversion d3 as [?|?|?|? ? ? len1 imp1]; subst; allsimpl; GC; clear d3.
             destruct bs2; allsimpl; cpx.
             cpx; allsimpl.
 
@@ -199,7 +489,7 @@ Proof.
             csunf comp; allsimpl.
             apply compute_step_dsup_success in comp; exrepnd; subst; allsimpl.
 
-            inversion d as [?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
+            inversion d as [?|?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
             destruct bs2; allsimpl; cpx.
             cpx; allsimpl.
 
@@ -212,7 +502,7 @@ Proof.
             inversion d1 as [? ? ? df3 dg3 d3]; subst; clear d1.
             inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
 
-            inversion d3 as [?|?|? ? ? len1 imp1]; subst; allsimpl; GC; clear d3.
+            inversion d3 as [?|?|?|? ? ? len1 imp1]; subst; allsimpl; GC; clear d3.
             destruct bs2; allsimpl; cpx.
             cpx; allsimpl.
 
@@ -231,7 +521,7 @@ Proof.
             csunf comp; allsimpl.
             apply compute_step_decide_success in comp; exrepnd; subst; allsimpl.
 
-            inversion d as [?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
+            inversion d as [?|?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
             destruct bs2; allsimpl; cpx.
             destruct bs2; allsimpl; cpx.
             cpx; allsimpl.
@@ -248,7 +538,7 @@ Proof.
             inversion d2 as [? ? ? df5 dg5 d5]; subst; clear d2.
             inversion d3 as [? ? ? df6 dg6 d6]; subst; clear d3.
 
-            inversion d4 as [?|?|? ? ? len1 imp1]; subst; allsimpl; GC; clear d4.
+            inversion d4 as [?|?|?|? ? ? len1 imp1]; subst; allsimpl; GC; clear d4.
             cpx; allsimpl.
 
             pose proof (imp1 (bterm [] d0) x) as d1.
@@ -268,7 +558,7 @@ Proof.
             csunf comp; allsimpl.
             apply compute_step_cbv_success in comp; exrepnd; subst; allsimpl.
 
-            inversion d as [?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
+            inversion d as [?|?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
             destruct bs2; allsimpl; cpx.
             cpx; allsimpl.
 
@@ -281,7 +571,7 @@ Proof.
             inversion d1 as [? ? ? df3 dg3 d3]; subst; clear d1.
             inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
 
-            inversion d3 as [?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d3.
+            inversion d3 as [?|?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d3.
 
             exists (subst t0 v (oterm (Can can1) bs2))
                    (subst x v (oterm (Can can1) bs1)); dands; eauto 3 with slow.
@@ -291,7 +581,7 @@ Proof.
             csunf comp; allsimpl.
             apply compute_step_sleep_success in comp; exrepnd; subst; allsimpl.
 
-            inversion d as [?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
+            inversion d as [?|?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
             cpx; allsimpl.
 
             pose proof (imp (bterm [] (oterm (Can (Nint z)) [])) x) as d1.
@@ -300,7 +590,7 @@ Proof.
 
             inversion d1 as [? ? ? df2 sg2 d2]; subst; clear d1.
 
-            inversion d2 as [?|?|? ? ? len1 imp1]; subst; allsimpl; GC; clear d2.
+            inversion d2 as [?|?|?|? ? ? len1 imp1]; subst; allsimpl; GC; clear d2.
             cpx; allsimpl.
 
             exists (@mk_axiom o)
@@ -311,7 +601,7 @@ Proof.
             csunf comp; allsimpl.
             apply compute_step_tuni_success in comp; exrepnd; subst; allsimpl.
 
-            inversion d as [?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
+            inversion d as [?|?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
             cpx; allsimpl.
 
             pose proof (imp (bterm [] (oterm (Can (Nint (Z.of_nat n))) [])) x) as d1.
@@ -320,7 +610,7 @@ Proof.
 
             inversion d1 as [? ? ? df2 dg2 d2]; subst; clear d1.
 
-            inversion d2 as [?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d2.
+            inversion d2 as [?|?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d2.
             cpx; allsimpl.
 
             exists (@mk_uni o n)
@@ -334,7 +624,7 @@ Proof.
             csunf comp; allsimpl.
             apply compute_step_minus_success in comp; exrepnd; subst; allsimpl.
 
-            inversion d as [?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
+            inversion d as [?|?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
             cpx; allsimpl.
 
             pose proof (imp (bterm [] (oterm (Can (Nint z)) [])) x) as d1.
@@ -343,7 +633,7 @@ Proof.
 
             inversion d1 as [? ? ? df2 dg2 d2]; subst; clear d1.
 
-            inversion d2 as [?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d2.
+            inversion d2 as [?|?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d2.
             cpx; allsimpl.
 
             exists (@mk_integer o (- z))
@@ -357,7 +647,7 @@ Proof.
             csunf comp; allsimpl.
             apply compute_step_try_success in comp; exrepnd; subst; allsimpl.
 
-            inversion d as [?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
+            inversion d as [?|?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
             destruct bs2; allsimpl; cpx.
             cpx; allsimpl.
 
@@ -374,7 +664,7 @@ Proof.
             inversion d3 as [? ? ? df6 dg6 d6]; subst; clear d3.
             allrw disjoint_singleton_l.
 
-            inversion d4 as [?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d4.
+            inversion d4 as [?|?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d4.
 
             exists (mk_atom_eq t0 t0 (oterm (Can can1) bs2) mk_bot)
                    (mk_atom_eq a a (oterm (Can can1) bs1) mk_bot);
@@ -390,22 +680,22 @@ Proof.
           - SSSCase "NParallel".
             csunf comp; allsimpl.
             apply compute_step_parallel_success in comp; subst; allsimpl.
-            inversion d as [?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
+            inversion d as [?|?|?|? ? ? len imp]; subst; allsimpl; GC; clear d.
             destruct bs2; allsimpl; cpx.
 
             pose proof (imp (bterm [] (oterm (Can can1) bs1)) b0) as d1.
             autodimp d1 hyp.
             inversion d1 as [? ? ? df2 dg2 d2]; subst; clear d1.
-            inversion d2 as [?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d2.
+            inversion d2 as [?|?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d2.
 
             exists (@mk_axiom o) (@mk_axiom o); dands; eauto 3 with slow.
 
           - SSSCase "NCompOp".
             destruct bs; try (complete (csunf comp; allsimpl; dcwf h));[].
             destruct b0 as [l t].
-            destruct l; destruct t as [v|op bs2]; try (complete (csunf comp; allsimpl; dcwf h));[].
+            destruct l; destruct t as [v|f2|op bs2]; try (complete (csunf comp; allsimpl; dcwf h));[].
 
-            inversion d as [?|?|? ? ? len imp]; subst; clear d.
+            inversion d as [?|?|?|? ? ? len imp]; subst; clear d.
             allsimpl.
             destruct bs3; allsimpl; cpx.
             destruct bs3; allsimpl; cpx.
@@ -418,7 +708,7 @@ Proof.
             inversion d1 as [? ? ? df3 dg3 d3]; subst; clear d1.
             inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
 
-            inversion d3 as [|?|? ? ? ni1 len1 imp1]; subst; clear d3; cpx.
+            inversion d3 as [|?|?|? ? ? ni1 len1 imp1]; subst; clear d3; cpx.
 
             dopid op as [can3|ncan3|exc3|abs3] SSSSCase.
 
@@ -426,7 +716,7 @@ Proof.
               csunf comp; allsimpl.
               dcwf h.
 
-              inversion d4 as [|?|? ? ? len2 imp2]; subst; clear d4; cpx.
+              inversion d4 as [|?|?|? ? ? len2 imp2]; subst; clear d4; cpx.
 
               apply compute_step_compop_success_can_can in comp.
               exrepnd; subst.
@@ -471,7 +761,7 @@ Proof.
               destruct comp1; ginv.
 
               pose proof (ind (oterm (NCan ncan3) bs2) (oterm (NCan ncan3) bs2) []) as h; clear ind.
-              repeat (autodimp h hyp); tcsp.
+              repeat (autodimp h hyp); tcsp; eauto 2 with slow.
 
               pose proof (h t0 kk n) as k; clear h.
               repeat (autodimp k hyp).
@@ -530,7 +820,7 @@ Proof.
             + SSSSCase "Exc".
               csunf comp; allsimpl; ginv.
               dcwf h; ginv; allsimpl.
-              inversion d4 as [|?|? ? ? len2 imp2]; subst; clear d4; cpx.
+              inversion d4 as [|?|?|? ? ? len2 imp2]; subst; clear d4; cpx.
               exists (oterm Exc bs5) (oterm Exc bs2); dands; eauto with slow.
               apply reduces_to_if_step; csunf; allsimpl; dcwf h.
 
@@ -542,7 +832,7 @@ Proof.
               symmetry in Heqcomp1; destruct comp1; ginv.
               apply compute_step_lib_success in Heqcomp1; exrepnd; subst.
 
-              inversion d4 as [|?|? ? ? ni2 len2 imp2]; subst; simphyps; clear d4.
+              inversion d4 as [|?|?|? ? ? ni2 len2 imp2]; subst; simphyps; clear d4.
 
               assert (differ3_bterms b f g bs2 bs5) as dbs.
               { unfold differ3_bterms, br_bterms, br_list; auto. }
@@ -606,9 +896,9 @@ Proof.
           - SSSCase "NArithOp".
             destruct bs; try (complete (csunf comp; allsimpl; dcwf h));[].
             destruct b0 as [l t].
-            destruct l; destruct t as [v|op bs2]; try (complete (csunf comp; allsimpl; dcwf h));[].
+            destruct l; destruct t as [v|f2|op bs2]; try (complete (csunf comp; allsimpl; dcwf h));[].
 
-            inversion d as [?|?|? ? ? len imp]; subst; clear d.
+            inversion d as [?|?|?|? ? ? len imp]; subst; clear d.
             simpl in len; GC.
 
             destruct bs3; simpl in len; cpx.
@@ -623,7 +913,7 @@ Proof.
             inversion d1 as [? ? ? df3 dg3 d3]; subst; clear d1.
             inversion d2 as [? ? ? df4 dg4 d4]; subst; clear d2.
 
-            inversion d3 as [|?|? ? ? ni1 len1 imp1]; subst; clear d3; cpx.
+            inversion d3 as [|?|?|? ? ? ni1 len1 imp1]; subst; clear d3; cpx.
 
             dopid op as [can3|ncan3|exc3|abs3] SSSSCase.
 
@@ -631,7 +921,7 @@ Proof.
               csunf comp; simpl in comp.
               dcwf h; allsimpl.
 
-              inversion d4 as [|?|? ? ? ni2 len2 imp2]; subst; clear d4; cpx.
+              inversion d4 as [|?|?|? ? ? ni2 len2 imp2]; subst; clear d4; cpx.
 
               apply compute_step_arithop_success_can_can in comp.
               exrepnd; subst.
@@ -651,7 +941,7 @@ Proof.
               destruct comp1; ginv.
 
               pose proof (ind (oterm (NCan ncan3) bs2) (oterm (NCan ncan3) bs2) []) as h; clear ind.
-              repeat (autodimp h hyp); tcsp.
+              repeat (autodimp h hyp); tcsp; eauto 2 with slow.
 
               pose proof (h t0 kk n) as k; clear h.
               repeat (autodimp k hyp).
@@ -709,7 +999,7 @@ Proof.
             + SSSSCase "Exc".
               csunf comp; allsimpl; ginv.
               dcwf h; allsimpl; ginv.
-              inversion d4 as [|?|? ? ? len2 imp2]; subst; clear d4; cpx.
+              inversion d4 as [|?|?|? ? ? len2 imp2]; subst; clear d4; cpx.
               exists (oterm Exc bs5) (oterm Exc bs2); dands; eauto with slow.
               apply reduces_to_if_step; csunf; simpl; dcwf h.
 
@@ -720,7 +1010,7 @@ Proof.
               symmetry in Heqcomp1; destruct comp1; ginv.
               apply compute_step_lib_success in Heqcomp1; exrepnd; subst.
 
-              inversion d4 as [|?|? ? ? ni2 len2 imp2]; subst; simphyps; clear d4.
+              inversion d4 as [|?|?|? ? ? ni2 len2 imp2]; subst; simphyps; clear d4.
 
               assert (differ3_bterms b f g bs2 bs5) as dbs.
               { unfold differ3_bterms, br_bterms, br_list; auto. }
@@ -784,7 +1074,7 @@ Proof.
           - SSSCase "NCanTest".
             csunf comp; allsimpl.
             apply compute_step_can_test_success in comp; exrepnd; subst; allsimpl.
-            inversion d as [?|?|? ? ? len imp]; subst; allsimpl; clear d.
+            inversion d as [|?|?|? ? ? len imp]; subst; allsimpl; clear d.
             destruct bs2; allsimpl; cpx.
             destruct bs2; allsimpl; cpx.
             cpx; allsimpl; GC.
@@ -801,7 +1091,7 @@ Proof.
             inversion d2 as [? ? ? df5 dg5 d5]; subst; clear d2.
             inversion d3 as [? ? ? df6 dg6 d6]; subst; clear d3.
 
-            inversion d4 as [?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; clear d4.
+            inversion d4 as [|?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; clear d4.
 
             exists (if canonical_form_test_for c can1 then t0 else t3)
                    (if canonical_form_test_for c can1 then arg2nt else arg3nt).
@@ -815,7 +1105,7 @@ Proof.
             symmetry in Heqcomp1.
           destruct comp1; ginv.
 
-          inversion d as [? ? ? ? ? ni1 ni2 d1 aeq1 aeq2|?|? ? ? len imp];
+          inversion d as [? ? ? ? ? ni1 ni2 d1 aeq1 aeq2|?|?|? ? ? len imp];
             subst; clear d.
 
           - (* let's prove that t1 computes to an integer in less than kk steps *)
@@ -861,6 +1151,10 @@ Proof.
                             (mk_apply ga (mk_integer z))
                             v2) as k.
               repeat (autodimp k hyp).
+
+              { apply nt_wf_eq.
+                apply wf_apply; eauto 3 with slow. }
+
               { prove_alpha_eq4.
                 introv k; destruct n0;[|destruct n0]; cpx.
                 apply alphaeqbt_nilv2; auto. }
@@ -872,6 +1166,10 @@ Proof.
                             (mk_apply fa (mk_integer z))
                             v1) as r.
               repeat (autodimp r hyp).
+
+              { apply nt_wf_eq.
+                apply wf_apply; eauto 3 with slow. }
+
               { prove_alpha_eq4.
                 introv r; destruct n0;[|destruct n0]; cpx.
                 apply alphaeqbt_nilv2; auto. }
@@ -940,7 +1238,7 @@ Proof.
             inversion d1 as [? ? ? df2 dg2 d2]; subst; clear d1.
 
             pose proof (ind (oterm (NCan ncan1) bs1) (oterm (NCan ncan1) bs1) []) as h; clear ind.
-            repeat (autodimp h hyp); tcsp.
+            repeat (autodimp h hyp); tcsp; eauto 2 with slow.
 
             pose proof (h t2 kk n) as k; clear h.
             repeat (autodimp k hyp); tcsp.
@@ -985,12 +1283,12 @@ Proof.
           csunf comp; allsimpl.
           apply compute_step_catch_success in comp.
 
-          inversion d as [?|?|? ? ? len imp]; subst; allsimpl; cpx; clear d.
+          inversion d as [|?|?|? ? ? len imp]; subst; allsimpl; cpx; clear d.
           destruct bs2; allsimpl; cpx.
           pose proof (imp (bterm [] (oterm Exc bs1)) b0) as d1.
           autodimp d1 hyp.
           inversion d1 as [? ? ? df2 dg2 d2]; subst; clear d1.
-          inversion d2 as [?|?|? ? ? len1 imp1]; subst; allsimpl; cpx; clear d2.
+          inversion d2 as [|?|?|? ? ? len1 imp1]; subst; allsimpl; cpx; clear d2.
 
           repndors; exrepnd; subst; allsimpl; cpx; allsimpl.
 
@@ -1011,7 +1309,7 @@ Proof.
                      | [ H : disjoint [] _ |- _ ] => clear H
                    end.
 
-            inversion d6 as [?|?|? ? ? len1 imp1]; subst; allsimpl; cpx; clear d6.
+            inversion d6 as [|?|?|? ? ? len1 imp1]; subst; allsimpl; cpx; clear d6.
             pose proof (imp1 (bterm [] a') (bterm [] t3)) as d1; autodimp d1 hyp.
             pose proof (imp1 (bterm [] e) (bterm [] t4)) as d2; autodimp d2 hyp.
             clear imp1.
@@ -1042,12 +1340,12 @@ Proof.
             symmetry in Heqcomp1.
           destruct comp1; ginv.
 
-          inversion d as [?|?|? ? ? len imp]; subst; clear d.
+          inversion d as [|?|?|? ? ? len imp]; subst; clear d.
           destruct bs2; allsimpl; cpx.
           pose proof (imp (bterm [] (oterm (Abs abs1) bs1)) b0) as d1.
           autodimp d1 hyp.
           inversion d1 as [? ? ? df2 sg2 d2]; subst; clear d1.
-          inversion d2 as [?|?|? ? ? len1 imp1]; subst; allsimpl; cpx; clear d2.
+          inversion d2 as [|?|?|? ? ? len1 imp1]; subst; allsimpl; cpx; clear d2.
 
           apply compute_step_lib_success in Heqcomp1; exrepnd; subst.
 
@@ -1109,7 +1407,7 @@ Proof.
         csunf comp; allsimpl.
         apply compute_step_fresh_success in comp; repnd; subst; allsimpl.
 
-        inversion d as [?|?|? ? ? len1 imp1]; subst; clear d.
+        inversion d as [|?|?|? ? ? len1 imp1]; subst; clear d.
         allsimpl; cpx; allsimpl.
         pose proof (imp1 (bterm [n] t1) x) as d1; autodimp d1 hyp.
         clear imp1.
@@ -1138,6 +1436,7 @@ Proof.
           allrw @get_utokens_sub_cons; allrw @get_utokens_sub_nil; allsimpl.
           allrw disjoint_singleton_l.
           repeat (autodimp comp' hyp); try (apply get_fresh_atom_prop).
+          { apply wf_fresh_iff in wt1; eauto 2 with slow. }
           { apply nr_ut_sub_cons; eauto with slow.
             intro j; apply get_fresh_atom_prop. }
           exrepnd.
@@ -1157,6 +1456,10 @@ Proof.
 
           pose proof (compute_step_alpha lib (lsubst t1 [(n, mk_utoken a)]) u1 s) as comp'''.
           repeat (autodimp comp''' hyp); exrepnd.
+
+          { apply wf_fresh_iff in wt1.
+            apply nt_wf_subst; eauto 2 with slow. }
+
           rename t2' into s'.
 
           assert (wf_term x) as wfx.
@@ -1168,22 +1471,42 @@ Proof.
           { intro i; apply compute_step_preserves in comp2; repnd.
             rw subvars_prop in comp0; apply comp0 in i; clear comp0.
             apply eqset_free_vars_disjoint in i; allsimpl.
-            allrw in_app_iff; allrw in_remove_nvars; allsimpl; boolvar; allsimpl; tcsp. }
+            allrw in_app_iff; allrw in_remove_nvars; allsimpl; boolvar; allsimpl; tcsp.
+            apply wf_fresh_iff in wt1.
+            apply nt_wf_subst; eauto 2 with slow.
+          }
 
           pose proof (ind t1 u1 [n]) as q; clear ind.
-          repeat (autodimp q hyp).
-          { apply alpha_eq_preserves_size in daeq0; rw <- daeq0; allrw @fold_subst.
-            rw @simple_size_subst; auto. }
+          repeat (autodimp q hyp); eauto 2 with slow.
+          { apply alpha_eq_preserves_osize in daeq0.
+            rw <- daeq0; allrw @fold_subst.
+            rw @simple_osize_subst; eauto 2 with slow. }
           pose proof (q u2 kk s') as ih; clear q.
+
+          assert (wf_term t1) as wft1.
+          { apply wf_fresh_iff in wt1; auto. }
+
+          assert (wf_term t2) as wft2.
+          { apply wf_fresh_iff in wt2; auto. }
+
+          assert (wf_term u1) as wfu1.
+          { apply alphaeq_preserves_wf_term in daeq0; eauto 2 with slow.
+            apply wf_term_subst; eauto 2 with slow. }
+
+          assert (wf_term u2) as wfu2.
+          { apply alphaeq_preserves_wf_term in daeq2; eauto 2 with slow.
+            apply wf_term_subst; eauto 2 with slow. }
+
+          assert (wf_term s') as wfs'.
+          { apply compute_step_preserves_wf in comp'''1; auto. }
+
+          assert (wf_term s) as wfs.
+          { apply alpha_eq_sym in comp'''0.
+            apply alphaeq_preserves_wf_term in comp'''0; eauto 2 with slow. }
+
           repeat (autodimp ih hyp); fold_terms.
-          { apply alphaeq_preserves_wf_term in daeq0; auto.
-            apply lsubst_preserves_wf_term; eauto 3 with slow.
-            allrw @wf_fresh_iff; auto. }
-          { apply alphaeq_preserves_wf_term in daeq2; auto.
-            apply lsubst_preserves_wf_term; eauto 3 with slow.
-            allrw @wf_fresh_iff; auto. }
-          { eapply alphaeq_preserves_has_value_like_k;[exact comp'''0|].
-            eapply alphaeq_preserves_has_value_like_k;[apply alpha_eq_sym;exact comp''0|].
+          { eapply alphaeq_preserves_has_value_like_k;[|exact comp'''0|]; eauto 2 with slow.
+            eapply alphaeq_preserves_has_value_like_k;[|apply alpha_eq_sym;exact comp''0|]; eauto 3 with slow.
             pose proof (has_value_like_k_ren_utokens
                           lib
                           kk
@@ -1192,20 +1515,23 @@ Proof.
             allsimpl.
             allrw disjoint_singleton_l; allrw in_remove.
             repeat (autodimp hvl hyp).
+            { apply alphaeq_preserves_wf_term in comp'1; eauto 2 with slow. }
             { intro k; repnd.
               apply get_utokens_lsubst_subset in k; unfold get_utokens_sub in k; allsimpl.
               allrw in_app_iff; allsimpl; repndors; tcsp. }
-            { eapply alphaeq_preserves_has_value_like_k;[exact comp'1|].
+            { eapply alphaeq_preserves_has_value_like_k;[|exact comp'1|]; eauto 3 with slow.
               apply (has_value_like_k_fresh_implies lib kk (get_fresh_atom t1)) in hv; auto;
               [|apply wf_subst_utokens; eauto 3 with slow
                |intro i; apply get_utokens_subst_utokens_subset in i; allsimpl;
                 unfold get_utokens_utok_ren in i; allsimpl; allrw app_nil_r;
-                rw in_remove in i; repnd;
+                rw in_remove in i; repnd; eauto 3 with slow;
                 apply compute_step_preserves_utokens in comp2; apply comp2 in i;
                 apply get_utokens_subst in i; allsimpl; boolvar; tcsp].
               pose proof (simple_subst_subst_utokens_aeq x (get_fresh_atom t1) n) as h.
               repeat (autodimp h hyp).
-              eapply alphaeq_preserves_has_value_like_k in h;[exact h|]; auto.
+              eapply alphaeq_preserves_has_value_like_k in h;[exact h| |]; auto.
+              apply nt_wf_subst; eauto 2 with slow.
+              apply nt_wf_eq; apply wf_subst_utokens; eauto 3 with slow.
             }
             rw @lsubst_ren_utokens in hvl; allsimpl; fold_terms.
             unfold ren_atom in hvl; allsimpl; boolvar; tcsp.
@@ -1215,14 +1541,14 @@ Proof.
           exrepnd.
 
           pose proof (reduces_to_alpha lib u2 (lsubst t2 [(n, mk_utoken a)]) t) as r1.
-          repeat (autodimp r1 hyp); eauto with slow.
+          repeat (autodimp r1 hyp); eauto 3 with slow.
           exrepnd.
 
           pose proof (reduces_to_change_utok_sub
                         lib t2 t2' [(n,mk_utoken a)] [(n,mk_utoken (get_fresh_atom t2))]) as r1'.
           allrw @get_utokens_sub_cons; allrw @get_utokens_sub_nil; allsimpl.
           allrw disjoint_singleton_l.
-          repeat (autodimp r1' hyp); try (apply get_fresh_atom_prop).
+          repeat (autodimp r1' hyp); try (apply get_fresh_atom_prop); eauto 2 with slow.
           { apply nr_ut_sub_cons; eauto with slow.
             intro j; apply get_fresh_atom_prop. }
           exrepnd.
@@ -1231,7 +1557,6 @@ Proof.
 
           pose proof (reduces_to_fresh lib t2 s0 n) as q; simpl in q.
           repeat (autodimp q hyp).
-          { allrw @wf_fresh_iff; auto. }
           exrepnd.
 
           (* 1st exists *)
@@ -1255,8 +1580,7 @@ Proof.
           rename t2'0 into u''.
 
           assert (wf_term w) as wfw.
-          { allrw @wf_fresh_iff.
-            apply compute_step_preserves_wf in comp2;
+          { apply compute_step_preserves_wf in comp2;
               [|apply wf_term_subst;eauto with slow].
             apply alphaeq_preserves_wf_term in comp'1; auto.
             apply lsubst_wf_term in comp'1; auto.
@@ -1271,6 +1595,7 @@ Proof.
                         (mk_fresh n (subst_utokens x [(get_fresh_atom t1, mk_var n)]))
                         (mk_fresh n z0)) as r'.
           repeat (autodimp r' hyp).
+          { apply nt_wf_fresh; eauto 2 with slow. }
           { apply implies_alpha_eq_mk_fresh; eauto with slow. }
           exrepnd.
           rename t2'0 into f'.
@@ -1303,14 +1628,14 @@ Proof.
     + SCase "Exc".
       csunf comp; allsimpl; ginv.
 
-      inversion d as [?|?|? ? ? ni len imp]; subst; allsimpl; cpx; clear d.
+      inversion d as [|?|?|? ? ? ni len imp]; subst; allsimpl; cpx; clear d.
 
       exists (oterm Exc bs2) (oterm Exc bs); dands; eauto with slow.
 
     + SCase "Abs".
       csunf comp; allsimpl.
 
-      inversion d as [?|?|? ? ? ni len imp]; subst; clear d.
+      inversion d as [|?|?|? ? ? ni len imp]; subst; clear d.
 
       apply compute_step_lib_success in comp; exrepnd; subst.
 
@@ -1409,9 +1734,24 @@ Proof.
 
     unfold differ3_alpha in h1; exrepnd.
 
+    assert (wf_term u0) as wfu0.
+    { apply compute_step_preserves_wf in r1; auto. }
+
+    assert (wf_term u') as wfu'.
+    { apply reduces_to_preserves_wf in h2; auto. }
+
+    assert (wf_term u1) as wfu1.
+    { apply alphaeq_preserves_wf_term in h3; auto. }
+
+    assert (wf_term t) as wft.
+    { apply reduces_to_preserves_wf in h0; auto. }
+
+    assert (wf_term u2) as wfu2.
+    { apply alphaeq_preserves_wf_term in h4; auto. }
+
     pose proof (reduces_in_atmost_k_steps_alpha
                   lib u' u1) as h''.
-    autodimp h'' hyp.
+    repeat (autodimp h'' hyp); eauto 3 with slow.
 
     pose proof (h'' k' u) as h'''; clear h''.
     autodimp h''' hyp; exrepnd.
@@ -1420,15 +1760,6 @@ Proof.
     autodimp h hyp;[omega|].
     pose proof (h u1 u2 t2') as r'; clear h.
     repeat (autodimp r' hyp).
-
-    { eapply alphaeq_preserves_wf_term; eauto.
-      apply reduces_to_preserves in h2; repnd.
-      apply h2; auto.
-      apply compute_step_preserves_wf in r1; auto. }
-
-    { eapply alphaeq_preserves_wf_term; eauto.
-      apply reduces_to_preserves in h0; repnd.
-      apply h0; auto. }
 
     { eapply alpha_eq_preserves_isvalue_like in h'''0; eauto. }
 
@@ -1489,3 +1820,10 @@ Proof.
 
   apply differ_app_F3; auto; allrw; tcsp.
 Qed.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
+*** End:
+*)

@@ -19,36 +19,38 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
  *)
 
 
 Require Export continuity_type.
-Require Export psquash.
+Require Export continuity_type_v2.
+Require Export sequents2.
 
-
-Definition rule_continuity2 {o}
-           (F f : @NTerm o)
+Definition rule_continuity {o}
+           (F f T : @NTerm o)
            (H : barehypotheses) :=
     mk_rule
-      (mk_baresequent H (mk_conclax (mk_psquash (continuous_type F f))))
+      (mk_baresequent H (mk_conclax (mk_squash (continuous_type_v2 F f T))))
       [
-        mk_baresequent H (mk_conclax (mk_member F (mk_fun (mk_fun mk_int mk_int) mk_int))),
-        mk_baresequent H (mk_conclax (mk_member f (mk_fun mk_int mk_int)))
+        mk_baresequent H (mk_conclax (mk_member F (mk_fun (mk_fun mk_int T) mk_int))),
+        mk_baresequent H (mk_conclax (mk_member f (mk_fun mk_int T)))
       ]
       [].
 
-Lemma rule_continuity2_true {p} :
+Lemma rule_continuity_true3 {p} :
   forall lib
-         (F f : NTerm)
+         (F f T : NTerm)
          (H : @barehypotheses p),
-    rule_true lib (rule_continuity2
-                     F f
-                     H).
+    rule_true3 lib (rule_continuity
+                      F f T
+                      H).
 Proof.
-  unfold rule_continuity2, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_continuity, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   clear cargs.
 
@@ -62,7 +64,11 @@ Proof.
   destseq; allsimpl; proof_irr; GC.
   unfold closed_extract; simpl.
 
-  exists (@covered_axiom p (nh_vars_hyps H)).
+  assert (wf_csequent ((H) ||- (mk_conclax (mk_squash (continuous_type_v2 F f T))))) as wfs.
+  { clear hyp1 hyp2.
+    wfseq. }
+
+  exists wfs.
 
   (* We prove some simple facts on our sequents *)
   (* done with proving these simple facts *)
@@ -113,7 +119,7 @@ Proof.
     allrw @tequality_mkc_member_sp; repnd.
     allrw @fold_equorsq.
 
-    unfold continuous_type, continuous_type_aux; simpl.
+    unfold continuous_type_v2, continuous_type_aux_v2; simpl.
     lsubst_tac.
 
     apply tequality_product; dands; eauto with slow.
@@ -531,6 +537,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)
