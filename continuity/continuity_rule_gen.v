@@ -324,7 +324,10 @@ Proof.
                   (lsubstc T wt s1 ct2)) as cont.
     autodimp cont hyp.
     {
-      Print simple_eq_type.
+      (* need to generalize agree_upto in Lemma comp_force_int_step3_2 in continuity3_2_v2
+         which is used in Lemma continuity_axiom_v2 in continuity_axiom2_v2.
+         Try to generalize the modulo alpha to modulo squiggle for now.
+       *)
       revert h1; unfold member; intro h.
       repeat (one_lift_lsubst_hyp h).
       allfold (@int2int p).
