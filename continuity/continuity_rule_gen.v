@@ -33,22 +33,25 @@ Require Export sequents2.
 
 Definition rule_continuity {o}
            (F f T : @NTerm o)
-           (H : barehypotheses) :=
+           (H : barehypotheses)
+           (i : nat) :=
     mk_rule
       (mk_baresequent H (mk_conclax (mk_squash (continuous_type_v2 F f T))))
       [
         mk_baresequent H (mk_conclax (mk_member F (mk_fun (mk_fun mk_int T) mk_int))),
-        mk_baresequent H (mk_conclax (mk_member f (mk_fun mk_int T)))
+        mk_baresequent H (mk_conclax (mk_member f (mk_fun mk_int T))),
+        mk_baresequent H (mk_conclax (mk_member T (mk_uni i)))
       ]
       [].
 
 Lemma rule_continuity_true3 {p} :
   forall lib
          (F f T : NTerm)
-         (H : @barehypotheses p),
+         (H : @barehypotheses p)
+         (i : nat),
     rule_true3 lib (rule_continuity
                       F f T
-                      H).
+                      H i).
 Proof.
   unfold rule_continuity, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -59,14 +62,15 @@ Proof.
   dLin_hyp.
   rename Hyp into hyp1.
   rename Hyp0 into hyp2.
+  rename Hyp1 into hyp3.
   destruct hyp1 as [wc1 hyp1].
   destruct hyp2 as [wc2 hyp2].
+  destruct hyp3 as [wc3 hyp3].
   destseq; allsimpl; proof_irr; GC.
   unfold closed_extract; simpl.
 
   assert (wf_csequent ((H) ||- (mk_conclax (mk_squash (continuous_type_v2 F f T))))) as wfs.
-  { clear hyp1 hyp2.
-    wfseq. }
+  { wfseq. }
 
   exists wfs.
 
@@ -81,30 +85,45 @@ Proof.
   vr_seq_true in hyp2.
   pose proof (hyp2 s1 s2 eqh sim) as k; exrepnd; clear hyp2.
 
+  vr_seq_true in hyp3.
+  pose proof (hyp3 s1 s2 eqh sim) as q; exrepnd; clear hyp3.
+
   lsubst_tac.
 
-  assert ((newvarlst [F, f]
+  apply equality_in_member in q1; repnd.
+  clear q2 q3.
+  apply member_in_uni in q1; auto.
+  apply tequality_in_uni_implies_tequality in q0; auto;[].
+
+  assert ((newvarlst [F, f, T]
            <> newvarlst
-                [F, f, mk_var (newvarlst [F, f]),
-                 mk_var (newvarlst [F, f, mk_var (newvarlst [F, f])])])
-            # (newvarlst [F, f]
-               <> newvarlst [F, f, mk_var (newvarlst [F, f])])
-            # (newvarlst [F, f, mk_var (newvarlst [F, f])]
+                [F, f, T, mk_var (newvarlst [F, f, T]),
+                 mk_var (newvarlst [F, f, T, mk_var (newvarlst [F, f, T])])])
+            # (newvarlst [F, f, T]
+               <> newvarlst [F, f, T, mk_var (newvarlst [F, f, T])])
+            # (newvarlst [F, f, T, mk_var (newvarlst [F, f, T])]
                <> newvarlst
-                    [F, f, mk_var (newvarlst [F, f]),
-                     mk_var (newvarlst [F, f, mk_var (newvarlst [F, f])])])
+                    [F, f, T, mk_var (newvarlst [F, f, T]),
+                     mk_var (newvarlst [F, f, T, mk_var (newvarlst [F, f, T])])])
             # (!LIn (newvarlst
-                       [F, f, mk_var (newvarlst [F, f]),
-                        mk_var (newvarlst [F, f, mk_var (newvarlst [F, f])])])
+                       [F, f, T, mk_var (newvarlst [F, f, T]),
+                        mk_var (newvarlst [F, f, T, mk_var (newvarlst [F, f, T])])])
                 (free_vars f))
-            # (!LIn (newvarlst [F, f, mk_var (newvarlst [F, f])]) (free_vars f))
-            # (!LIn (newvarlst [F, f]) (free_vars f))
+            # (!LIn (newvarlst [F, f, T, mk_var (newvarlst [F, f, T])]) (free_vars f))
+            # (!LIn (newvarlst [F, f, T]) (free_vars f))
             # (!LIn (newvarlst
-                       [F, f, mk_var (newvarlst [F, f]),
-                        mk_var (newvarlst [F, f, mk_var (newvarlst [F, f])])])
+                       [F, f, T, mk_var (newvarlst [F, f, T]),
+                        mk_var (newvarlst [F, f, T, mk_var (newvarlst [F, f, T])])])
                 (free_vars F))
-            # (!LIn (newvarlst [F, f, mk_var (newvarlst [F, f])]) (free_vars F))
-            # (!LIn (newvarlst [F, f]) (free_vars F))) as d.
+            # (!LIn (newvarlst [F, f, T, mk_var (newvarlst [F, f, T])]) (free_vars F))
+            # (!LIn (newvarlst [F, f, T]) (free_vars F))
+            # (!LIn (newvarlst
+                       [F, f, T, mk_var (newvarlst [F, f, T]),
+                        mk_var (newvarlst [F, f, T, mk_var (newvarlst [F, f, T])])])
+                (free_vars T))
+            # (!LIn (newvarlst [F, f, T, mk_var (newvarlst [F, f, T])]) (free_vars T))
+            # (!LIn (newvarlst [F, f, T]) (free_vars T))
+         ) as d.
   { repeat gen_newvar.
     repeat get_newvar_prop.
     allsimpl; allrw in_app_iff.
@@ -133,12 +152,9 @@ Proof.
 
     apply tequality_isect; dands.
 
-    { unfold int2int.
-      lsubst_tac.
-      repeat one_lift_lsubst2_concl.
-      apply tequality_fun; dands.
-      - apply tequality_int.
-      - introv x; apply tequality_int. }
+    { lsubst_tac.
+      apply tequality_fun; dands; tcsp.
+      apply tequality_int. }
 
     introv e2.
 
@@ -146,7 +162,7 @@ Proof.
     repeat one_lift_lsubst_concl.
     apply tequality_mkc_ufun; dands.
 
-    { unfold agree_upto_b_type.
+    { unfold agree_upto_b_type_v2.
       repeat one_lift_lsubst_concl.
       repeat one_lift_lsubst2_concl.
 
@@ -234,9 +250,7 @@ Proof.
         lsubstc_snoc.
         clear_cv.
 
-        apply tequality_mkc_equality_sp; dands.
-
-        { apply tequality_int. }
+        apply tequality_mkc_equality_sp; dands; tcsp.
 
         { revert k0.
           repeat one_lift_lsubst2_concl; intro k.
@@ -304,9 +318,13 @@ Proof.
     allrw @tequality_mkc_member_sp; repnd.
     allrw @fold_equorsq.
 
-    pose proof (continuity_axiom lib (lsubstc F wt0 s1 ct2)) as cont.
+    pose proof (continuity_axiom_v2
+                  lib
+                  (lsubstc F wt1 s1 ct4)
+                  (lsubstc T wt s1 ct2)) as cont.
     autodimp cont hyp.
     {
+      Print simple_eq_type.
       revert h1; unfold member; intro h.
       repeat (one_lift_lsubst_hyp h).
       allfold (@int2int p).

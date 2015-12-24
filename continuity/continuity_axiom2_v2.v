@@ -268,7 +268,7 @@ Definition continuous_T {o} lib (F : @CTerm o) T :=
     F g -> z
 
 *)
-Lemma continuity_axiom {o} :
+Lemma continuity_axiom_v2 {o} :
   forall lib (F : @CTerm o) T,
     simple_eq_type lib T
     -> member lib F (mkc_fun (mkc_fun mkc_int T) mkc_int)
