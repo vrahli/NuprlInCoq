@@ -31,6 +31,10 @@ Require Export continuity_type.
 Require Export continuity_type_v2.
 Require Export sequents2.
 
+
+Definition simple_eq_typec {o} lib (T : @NTerm o) :=
+  forall w s c, simple_eq_type lib (lsubstc T w s c).
+
 Definition rule_continuity {o}
            (F f T : @NTerm o)
            (H : barehypotheses)
@@ -48,7 +52,8 @@ Lemma rule_continuity_true3 {p} :
   forall lib
          (F f T : NTerm)
          (H : @barehypotheses p)
-         (i : nat),
+         (i : nat)
+         (se : simple_eq_typec lib T),
     rule_true3 lib (rule_continuity
                       F f T
                       H i).
@@ -322,21 +327,25 @@ Proof.
                   lib
                   (lsubstc F wt1 s1 ct4)
                   (lsubstc T wt s1 ct2)) as cont.
-    autodimp cont hyp.
+    repeat (autodimp cont hyp).
+    (* I need to generalize agree_upto in Lemma comp_force_int_step3_2 in continuity3_2_v2,
+       which is used in Lemma continuity_axiom_v2 in continuity_axiom2_v2.
+       First, I should try to generalize the "modulo alpha" to "modulo squiggle".
+     *)
     {
-      (* need to generalize agree_upto in Lemma comp_force_int_step3_2 in continuity3_2_v2
-         which is used in Lemma continuity_axiom_v2 in continuity_axiom2_v2.
-         Try to generalize the modulo alpha to modulo squiggle for now.
-       *)
       revert h1; unfold member; intro h.
       repeat (one_lift_lsubst_hyp h).
-      allfold (@int2int p).
-      allrw (@lsubstc_int2int).
-      repeat (one_lift_lsubst2_hyp h).
-      auto.
+      eapply alphaeqc_preserving_equality;[apply h|].
+      apply alphaeqc_mkc_fun; eauto 2 with slow.
+
+      pose proof (lsubstc_mk_fun_ex mk_int T s1 wT0 cT0) as xx; exrepnd.
+      eapply alphaeqc_trans;[exact xx1|clear xx1].
+      clear_irr.
+      rw @lsubstc_mk_int.
+      apply alphaeqc_refl.
     }
 
-    pose proof (cont (lsubstc f wt s1 ct1)) as cont1; clear cont.
+    pose proof (cont (lsubstc f wt0 s1 ct3)) as cont1; clear cont.
     autodimp cont1 hyp.
     {
       revert k1; unfold member; intro h.
@@ -346,7 +355,7 @@ Proof.
     }
 
     exrepnd.
-    unfold continuous_type, continuous_type_aux; simpl.
+    unfold continuous_type_v2, continuous_type_aux_v2; simpl.
     repeat (one_lift_lsubst_concl).
     repeat (one_lift_lsubst2_concl).
     exists (@mkc_pair p (mkc_nat b) mkc_axiom).
@@ -354,7 +363,7 @@ Proof.
     rw @tequality_mkc_squash in teq.
     apply tequality_refl in teq.
     rw @fold_type in teq.
-    unfold continuous_type, continuous_type_aux in teq; simpl in teq.
+    unfold continuous_type_v2, continuous_type_aux_v2 in teq; simpl in teq.
     repeat (one_lift_lsubst_hyp teq).
     repeat (one_lift_lsubst2_hyp teq).
 
@@ -408,6 +417,10 @@ Proof.
       intro teq3.
       apply tequality_mkc_equality_sp in teq3; repnd.
 
+      revert e1; intro e1.
+      repeat (one_lift_lsubst_hyp e1).
+      revert e1; lsubstc_snoc_concl; intro e1.
+
       pose proof (cont0 g1) as cont1; clear cont0.
       autodimp cont1 hyp.
       { apply equality_refl in e1; auto. }
@@ -415,9 +428,8 @@ Proof.
       keepdimp cont1 cont2.
       {
         introv r1 r2 l.
-        unfold agree_upto_b_type in inh.
+        unfold agree_upto_b_type_v2 in inh.
         repeat (one_lift_lsubst_hyp inh).
-        apply equality_of_int_imp_tt.
         unfold inhabited_type in inh; exrepnd.
         rw @equality_in_isect in inh0; repnd.
         pose proof (inh0 t2 t2) as inh; clear inh0.
@@ -430,7 +442,7 @@ Proof.
           assert (equality lib t2 t2 mkc_int) as ei.
           {
             apply equality_in_int.
-            exists i; dands; spcast; auto;
+            exists i0; dands; spcast; auto;
             apply computes_to_valc_iff_reduces_toc; eauto with slow.
           }
 
@@ -464,7 +476,7 @@ Proof.
           {
             apply equality_in_int.
             unfold equality_of_int.
-            exists (Z.abs i).
+            exists (Z.abs i0).
             dands; spcast; apply computes_to_valc_absolute_value; auto;
             apply computes_to_valc_iff_reduces_toc; eauto with slow.
           }
@@ -495,14 +507,14 @@ Proof.
             lsubstc_snoc_concl.
             lsubstc_snoc_hyp inh1.
             apply inhabited_le.
-            exists (0%Z) (Z.abs i).
+            exists (0%Z) (Z.abs i0).
             dands; spcast;
             try (complete (unfold computes_to_valc; simpl;
                            unfold computes_to_value; dands;
                            eauto with slow));
             try (complete (apply computes_to_valc_absolute_value; auto;
                            apply computes_to_valc_iff_reduces_toc; eauto with slow)).
-            destruct i; allsimpl; try omega; apply Pos2Z.is_nonneg.
+            destruct i0; allsimpl; try omega; apply Pos2Z.is_nonneg.
           }
 
           {
@@ -514,7 +526,7 @@ Proof.
             lsubstc_snoc_concl.
             lsubstc_snoc_hyp inh.
             apply inhabited_less_than.
-            exists (Z.abs i) (Z.of_nat b).
+            exists (Z.abs i0) (Z.of_nat b).
             dands; spcast;
             try (complete (unfold computes_to_valc; simpl;
                            unfold computes_to_value; dands;
@@ -522,7 +534,7 @@ Proof.
             try (complete (apply computes_to_valc_absolute_value; auto;
                            apply computes_to_valc_iff_reduces_toc; eauto with slow)).
             revert l; intro l.
-            destruct i; allsimpl; try omega; rw <- Znat.positive_nat_Z; apply Znat.inj_lt; auto.
+            destruct i0; allsimpl; try omega; rw <- Znat.positive_nat_Z; apply Znat.inj_lt; auto.
           }
         }
 
@@ -533,16 +545,21 @@ Proof.
         lsubstc_snoc_concl.
         intro inh.
         revert k1; intro k1.
+        repeat (one_lift_lsubst_hyp k1).
+
+        pose proof (lsubstc_mk_fun_ex mk_int T s1 wT0 cT0) as xx; exrepnd.
+        eapply alphaeqc_preserving_equality in k1;[clear xx1|exact xx1]; clear_irr.
+        rw @lsubstc_mk_int in k1.
+
         rw @equality_in_fun in k1; repnd.
         pose proof (k1 t1 t2) as ef; autodimp ef hyp.
         {
           apply equality_in_int.
-          exists i; dands; spcast; auto;
+          exists i0; dands; spcast; auto;
           apply computes_to_valc_iff_reduces_toc; eauto with slow.
         }
 
         apply equality_in_mkc_equality in inh; repnd.
-        apply equality_in_int.
         eapply equality_trans;[exact ef|]; auto.
       }
 
