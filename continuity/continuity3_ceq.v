@@ -313,6 +313,8 @@ Proof.
           exists (mk_apply (sterm f1) (mk_fix (sterm f1)))
                  (mk_apply (sterm f1) (mk_fix (sterm f1))).
           dands; eauto 3 with slow.
+          apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow;
+          apply nt_wf_eq; apply wf_apply; eauto 3 with slow.
         }
 
         { SSCase "NCbv".
@@ -332,6 +334,9 @@ Proof.
                  (subst x v (sterm f1)).
           dands; eauto 3 with slow.
           allapply @closed_if_isprog.
+          allrw <- @wf_cbv_iff; repnd.
+          apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+          try (apply nt_wf_subst; eauto 3 with slow).
           apply differ3_subst; simpl; try (rw ispf); try (rw ispg); simpl; tcsp.
         }
 
@@ -353,6 +358,11 @@ Proof.
           exists (mk_atom_eq t2 t2 (sterm f1) mk_bot)
                  (mk_atom_eq a a (sterm f1) mk_bot).
           dands; eauto 3 with slow.
+
+          allrw <- @wf_try_iff; repnd.
+          apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+          try (apply nt_wf_eq; apply wf_atom_eq; dands; eauto 3 with slow).
+
           apply differ3_alpha_mk_atom_eq; eauto 3 with slow.
           apply differ3_implies_differ3_alpha.
           allapply @closed_if_isprog.
@@ -376,6 +386,10 @@ Proof.
 
           exists t0 b0.
           dands; eauto 3 with slow.
+
+          allrw @wf_can_test_iff; repnd.
+          apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+          try (apply nt_wf_eq; apply wf_atom_eq; dands; eauto 3 with slow).
         }
 
       * (* Now destruct op2 *)
@@ -414,6 +428,13 @@ Proof.
 
               exists (subst t2 v t0) (subst b0 v arg); dands; eauto 3 with slow.
 
+              fold_terms.
+              allrw <- @wf_apply_iff; repnd.
+              allrw <- @wf_lam_iff.
+
+              apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+              try (apply nt_wf_subst; eauto 3 with slow).
+
               apply differ3_subst; simpl; eauto 3 with slow.
             }
 
@@ -435,6 +456,8 @@ Proof.
               cpx; clear imp1; fold_terms.
 
               exists (mk_eapply (mk_nseq f0) t0) (mk_eapply (mk_nseq f0) arg); dands; eauto 3 with slow.
+
+              apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow.
 
               apply differ3_implies_differ3_alpha.
               apply differ3_oterm; simpl; tcsp.
@@ -473,12 +496,17 @@ Proof.
                 { apply eapply_lam_can_implies.
                   apply differ3_preserves_iscan in d4; auto.
                   unfold computes_to_can; dands; eauto 3 with slow. }
-                { apply differ3_subst; auto; simpl;
+                { allrw @nt_wf_eq.
+                  allrw <- @wf_lam_iff.
+                  apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+                  try (apply nt_wf_subst; eauto 3 with slow).
+                  apply differ3_subst; auto; simpl;
                   allapply @closed_if_isprog; try (rw ispf); try (rw ispg); auto. }
 
               + apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl.
                 apply differ3_exception_implies in d4; exrepnd; subst.
                 exists (mk_exception a'0 e') (mk_exception a e); dands; eauto 3 with slow.
+                apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow.
                 apply differ3_alpha_mk_exception; eauto 3 with slow.
 
               + pose proof (ind b0 b0 []) as h; clear ind.
@@ -494,7 +522,11 @@ Proof.
                 exists (mk_eapply (mk_lam v a') t1) (mk_eapply (mk_lam v t) u'); dands; eauto 3 with slow.
                 { apply implies_eapply_red_aux; eauto 3 with slow. }
                 { apply implies_eapply_red_aux; eauto 3 with slow. }
-                { apply differ3_alpha_mk_eapply; eauto 3 with slow.
+                { apply differ3_ceq_mk_eapply; eauto 2 with slow.
+                  allrw @nt_wf_eq.
+                  allrw <- @wf_lam_iff.
+                  apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+                  try (apply nt_wf_eq; apply wf_lam; eauto 2 with slow).
                   apply differ3_alpha_mk_lam; eauto 3 with slow;
                   allapply @closed_if_isprog; try (rw ispf); try (rw ispg); simpl; tcsp. }
             }
@@ -514,8 +546,12 @@ Proof.
                 clear imp.
 
                 exists (@mk_nat o (s (Z.to_nat z))) (@mk_nat o (s (Z.to_nat z))); dands; eauto 3 with slow.
-                apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
-                boolvar; try omega; auto.
+
+                { apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
+                  boolvar; try omega; auto. }
+
+                {
+                }
 
               - apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl.
                 apply differ3_exception_implies in d4; exrepnd; subst.
