@@ -150,6 +150,109 @@ Proof.
   introv i; repndors; cpx; constructor; auto.
 Qed.
 
+Lemma implies_approx_compop {o} :
+  forall lib c (a1 a2 b1 b2 c1 c2 d1 d2 : @NTerm o),
+    approx lib a1 a2
+    -> approx lib b1 b2
+    -> approx lib c1 c2
+    -> approx lib d1 d2
+    -> approx lib (mk_compop c a1 b1 c1 d1) (mk_compop c a2 b2 c2 d2).
+Proof.
+  introv H1p H2p H3p H4p.
+  applydup @approx_relates_only_progs in H1p.
+  applydup @approx_relates_only_progs in H2p.
+  applydup @approx_relates_only_progs in H3p.
+  applydup @approx_relates_only_progs in H4p.
+  repnd.
+  unfold mk_compop.
+  repeat (prove_approx);sp.
+Qed.
+
+Lemma implies_cequiv_compop {o} :
+  forall lib c (a1 a2 b1 b2 c1 c2 d1 d2 : @NTerm o),
+    cequiv lib a1 a2
+    -> cequiv lib b1 b2
+    -> cequiv lib c1 c2
+    -> cequiv lib d1 d2
+    -> cequiv lib (mk_compop c a1 b1 c1 d1) (mk_compop c a2 b2 c2 d2).
+Proof.
+  introv H1p H2p H3p H4p.
+  allunfold @cequiv; repnd; dands;
+  apply implies_approx_compop; auto.
+Qed.
+
+Lemma isprogram_compop {o} :
+  forall x (a b c d : @NTerm o),
+    isprogram (mk_compop x a b c d)
+              <=> (isprogram a # isprogram b # isprogram c # isprogram d).
+Proof.
+  introv; unfold isprogram; allrw @nt_wf_eq.
+  rw @wf_compop_iff; unfold closed; simpl; autorewrite with slow.
+  repeat (rw app_eq_nil_iff).
+  split; intro h; tcsp.
+Qed.
+
+Lemma cequiv_open_compop {o} :
+  forall lib c (a1 a2 b1 b2 c1 c2 d1 d2 : @NTerm o),
+    cequiv_open lib a1 a2
+    -> cequiv_open lib b1 b2
+    -> cequiv_open lib c1 c2
+    -> cequiv_open lib d1 d2
+    -> cequiv_open lib (mk_compop c a1 b1 c1 d1) (mk_compop c a2 b2 c2 d2).
+Proof.
+  introv da1 da2 da3 da4.
+  allunfold @cequiv_open.
+  apply cl_olift_iff_olift; auto; try (apply respects_alpha_cequiv).
+  apply cl_olift_iff_olift in da1; auto; try (apply respects_alpha_cequiv).
+  apply cl_olift_iff_olift in da2; auto; try (apply respects_alpha_cequiv).
+  apply cl_olift_iff_olift in da3; auto; try (apply respects_alpha_cequiv).
+  apply cl_olift_iff_olift in da4; auto; try (apply respects_alpha_cequiv).
+  allunfold @cl_olift; repnd.
+  dands; eauto 2 with slow;
+  try (apply nt_wf_eq; apply wf_compop; eauto 3 with slow).
+  introv ps isp1 isp2.
+
+  repeat (rw @lsubst_lsubst_aux_prog_sub; auto).
+  repeat (rw @lsubst_lsubst_aux_prog_sub in isp1; auto).
+  repeat (rw @lsubst_lsubst_aux_prog_sub in isp2; auto).
+  allsimpl; fold_terms; autorewrite with slow in *.
+  allrw @isprogram_compop; repnd.
+
+  pose proof (da1 sub) as h; repeat (autodimp h hyp);
+  try  (complete (repeat (rw @lsubst_lsubst_aux_prog_sub; auto))).
+
+  pose proof (da2 sub) as q; repeat (autodimp q hyp);
+  try  (complete (repeat (rw @lsubst_lsubst_aux_prog_sub; auto))).
+
+  pose proof (da3 sub) as z; repeat (autodimp z hyp);
+  try  (complete (repeat (rw @lsubst_lsubst_aux_prog_sub; auto))).
+
+  pose proof (da4 sub) as w; repeat (autodimp w hyp);
+  try  (complete (repeat (rw @lsubst_lsubst_aux_prog_sub; auto))).
+
+  repeat (rw @lsubst_lsubst_aux_prog_sub in h; auto).
+  repeat (rw @lsubst_lsubst_aux_prog_sub in q; auto).
+  repeat (rw @lsubst_lsubst_aux_prog_sub in z; auto).
+  repeat (rw @lsubst_lsubst_aux_prog_sub in w; auto).
+  apply implies_cequiv_compop; auto.
+Qed.
+
+Lemma differ3_ceq_mk_compop {o} :
+  forall lib b f g c (a1 a2 b1 b2 c1 c2 d1 d2 : @NTerm o),
+    differ3_ceq lib b f g a1 a2
+    -> differ3_ceq lib b f g b1 b2
+    -> differ3_ceq lib b f g c1 c2
+    -> differ3_ceq lib b f g d1 d2
+    -> differ3_ceq lib b f g (mk_compop c a1 b1 c1 d1) (mk_compop c a2 b2 c2 d2).
+Proof.
+  introv da1 da2 da3 da4.
+  allunfold @differ3_ceq; exrepnd.
+  exists (mk_compop c u6 u4 u0 u1) (mk_compop c u7 u5 u3 u2); dands; auto;
+  try (apply cequiv_open_compop; auto).
+  constructor; simpl; auto.
+  introv i; repndors; cpx; constructor; auto.
+Qed.
+
 Lemma comp_force_int_step3_2 {o} :
   forall lib b f g (t1 t2 : @NTerm o) kk u,
     isprog f
@@ -545,17 +648,18 @@ Proof.
                 allsimpl; cpx; fold_terms; allsimpl.
                 clear imp.
 
-                exists (@mk_nat o (s (Z.to_nat z))) (@mk_nat o (s (Z.to_nat z))); dands; eauto 3 with slow.
+                exists (@mk_nat o (s (Z.to_nat z))) (@mk_nat o (s (Z.to_nat z)));
+                  dands; eauto 3 with slow.
 
                 { apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
                   boolvar; try omega; auto. }
 
-                {
-                }
+                { apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow. }
 
               - apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl.
                 apply differ3_exception_implies in d4; exrepnd; subst.
                 exists (mk_exception a' e') (mk_exception a e); dands; eauto 3 with slow.
+                apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow.
                 apply differ3_alpha_mk_exception; eauto 3 with slow.
 
               - pose proof (ind b0 b0 []) as h; clear ind.
@@ -572,7 +676,8 @@ Proof.
                 exists (mk_eapply (mk_nseq s) t) (mk_eapply (mk_nseq s) u'); dands; eauto 3 with slow.
                 { apply implies_eapply_red_aux; eauto 3 with slow. }
                 { apply implies_eapply_red_aux; eauto 3 with slow. }
-                { apply differ3_alpha_mk_eapply; eauto 3 with slow. }
+                { apply differ3_ceq_mk_eapply; eauto 3 with slow.
+                  apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow. }
             }
 
           - SSSCase "NFix".
@@ -598,6 +703,11 @@ Proof.
                              (mk_fix (oterm (Can can1) bs1))).
             dands; eauto 3 with slow.
 
+            fold_terms.
+            allrw @wf_fix_iff.
+            apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+            try (apply nt_wf_eq; apply wf_apply; eauto 2 with slow);
+            try (apply wf_fix; auto).
             apply differ3_implies_differ3_alpha.
             apply differ3_oterm; simpl; tcsp.
             introv j; repndors; cpx; tcsp.
@@ -636,7 +746,13 @@ Proof.
             inversion d1 as [? ? ? df5 dg5 d5]; subst; clear d1.
             inversion d2 as [? ? ? df6 dg6 d6]; subst; clear d2.
 
+            fold_terms.
+            allrw @wf_spread; repnd.
+            allrw @wf_pair; repnd.
+
             exists (lsubst t0 [(va,t2),(vb,t3)]) (lsubst arg [(va,a),(vb,b0)]); dands; eauto 3 with slow.
+            apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+            try (apply lsubst_wf_if_eauto; eauto 3 with slow).
             apply differ3_subst; simpl; eauto 3 with slow.
 
           - SSSCase "NDsup".
@@ -669,6 +785,14 @@ Proof.
             inversion d2 as [? ? ? df6 dg6 d6]; subst; clear d2.
 
             exists (lsubst t0 [(va,t2),(vb,t3)]) (lsubst arg [(va,a),(vb,b0)]); dands; eauto 3 with slow.
+
+            fold_terms.
+            allrw @wf_dsup; repnd.
+            allrw @wf_sup_iff; repnd.
+
+            apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+            try (apply lsubst_wf_if_eauto; eauto 3 with slow).
+
             apply differ3_subst; simpl; eauto 3 with slow.
 
           - SSSCase "NDecide".
@@ -700,12 +824,21 @@ Proof.
             clear imp1.
             inversion d1 as [? ? ? df2 dg2 d2]; subst; clear d1.
 
+            fold_terms.
+            allrw @wf_decide; repnd.
+
             dorn comp0; repnd; subst.
 
             + exists (subst t4 v1 t3) (subst t1 v1 d0); dands; eauto 3 with slow.
+              allrw @wf_inl.
+              apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+              try (apply lsubst_wf_if_eauto; eauto 3 with slow).
               apply differ3_subst; simpl; eauto 3 with slow.
 
             + exists (subst t5 v2 t3) (subst t0 v2 d0); dands; eauto 3 with slow.
+              allrw @wf_inr.
+              apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+              try (apply lsubst_wf_if_eauto; eauto 3 with slow).
               apply differ3_subst; simpl; eauto 3 with slow.
 
           - SSSCase "NCbv".
@@ -729,6 +862,11 @@ Proof.
 
             exists (subst t0 v (oterm (Can can1) bs2))
                    (subst x v (oterm (Can can1) bs1)); dands; eauto 3 with slow.
+
+            allrw <- @wf_cbv_iff; repnd.
+            apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+            try (apply lsubst_wf_if_eauto; eauto 3 with slow).
+
             apply differ3_subst; simpl; eauto 3 with slow.
 
           - SSSCase "NSleep".
@@ -750,6 +888,8 @@ Proof.
             exists (@mk_axiom o)
                    (@mk_axiom o).
             dands; eauto 3 with slow.
+
+            apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow.
 
           - SSSCase "NTUni".
             csunf comp; allsimpl.
@@ -774,6 +914,8 @@ Proof.
               csunf; simpl; unfold compute_step_tuni; simpl; boolvar; try omega.
               rw Znat.Nat2Z.id; auto. }
 
+            apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow.
+
           - SSSCase "NMinus".
             csunf comp; allsimpl.
             apply compute_step_minus_success in comp; exrepnd; subst; allsimpl.
@@ -793,6 +935,8 @@ Proof.
             exists (@mk_integer o (- z))
                    (@mk_integer o (- z)).
             dands; eauto 3 with slow.
+
+            apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow.
 
           - SSSCase "NFresh".
             csunf comp; allsimpl; ginv.
@@ -824,6 +968,10 @@ Proof.
                    (mk_atom_eq a a (oterm (Can can1) bs1) mk_bot);
               dands; eauto 3 with slow.
 
+            allrw <- @wf_try_iff; repnd.
+            apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+            try (apply nt_wf_eq; apply wf_atom_eq; dands; eauto 3 with slow).
+
             apply differ3_implies_differ3_alpha.
             constructor; simpl; auto.
             introv i; repndors; ginv; tcsp; constructor; eauto 3 with slow.
@@ -843,6 +991,7 @@ Proof.
             inversion d2 as [?|?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; GC; clear d2.
 
             exists (@mk_axiom o) (@mk_axiom o); dands; eauto 3 with slow.
+            apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow.
 
           - SSSCase "NCompOp".
             destruct bs; try (complete (csunf comp; allsimpl; dcwf h));[].
@@ -888,13 +1037,16 @@ Proof.
               inversion d1 as [? ? ? df33 dg33 d3]; subst; clear d1.
               inversion d2 as [? ? ? df44 dg44 d4]; subst; clear d2.
 
+              allrw @wf_compop_iff; repnd.
+
               repndors; exrepnd; subst.
 
               * allapply @get_param_from_cop_pki; subst; allsimpl.
                 exists (if Z_lt_le_dec n1 n2 then t3 else t4)
                        (if Z_lt_le_dec n1 n2 then t1 else t2);
                   dands; eauto 3 with slow.
-                boolvar; eauto 3 with slow.
+                boolvar; eauto 3 with slow;
+                apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow.
 
               * allrw @get_param_from_cop_some; subst; allsimpl.
                 exists (if param_kind_deq pk1 pk2 then t3 else t4)
@@ -905,7 +1057,8 @@ Proof.
                   dcwf h; allsimpl.
                   unfold compute_step_comp; allrw @get_param_from_cop_pk2can; auto. }
 
-                boolvar; eauto 3 with slow.
+                boolvar; eauto 3 with slow;
+                apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow.
 
             + SSSSCase "NCan".
               rw @compute_step_ncompop_ncan2 in comp.
@@ -933,14 +1086,22 @@ Proof.
 
               exrepnd.
 
+              apply nt_wf_eq in wt1; apply nt_wf_NCompOp in wt1.
+              apply nt_wf_eq in wt2; apply nt_wf_NCompOp in wt2.
+              exrepnd; fold_terms; ginv; allsimpl; cpx.
+
               exists (oterm (NCan (NCompOp c))
                             (bterm [] (oterm (Can can1) bs4)
-                                   :: bterm [] t
-                                   :: bs3))
+                                   :: nobnd t
+                                   :: nobnd t3
+                                   :: nobnd t4
+                                   :: []))
                      (oterm (NCan (NCompOp c))
                             (bterm [] (oterm (Can can1) bs1)
-                                   :: bterm [] u'
-                                   :: bs)).
+                                   :: nobnd u'
+                                   :: nobnd t7
+                                   :: nobnd t8
+                                   :: [])).
               dands; eauto 3 with slow.
 
               * apply reduce_to_prinargs_comp2; eauto with slow; sp.
@@ -949,34 +1110,28 @@ Proof.
 
               * apply reduce_to_prinargs_comp2; eauto with slow; sp.
 
-              * unfold differ3_alpha in k1; exrepnd.
-                exists (oterm (NCan (NCompOp c))
-                              (bterm [] (oterm (Can can1) bs1)
-                                     :: bterm [] u1
-                                     :: bs))
-                       (oterm (NCan (NCompOp c))
-                              (bterm [] (oterm (Can can1) bs4)
-                                     :: bterm [] u2
-                                     :: bs3)).
-                dands.
+              * apply differ3_ceq_mk_compop; auto;
+                apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+                apply differ3_implies_differ3_alpha.
 
-                { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
-                  apply alphaeqbt_nilv2; auto. }
+                { pose proof (imp (nobnd (oterm (Can can1) bs1))
+                                  (nobnd (oterm (Can can1) bs4))) as xx.
+                  autodimp xx hyp. }
 
-                { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
-                  apply alphaeqbt_nilv2; auto. }
+                { pose proof (imp (nobnd t7) (nobnd t3)) as xx.
+                  autodimp xx hyp; inversion xx; subst; auto. }
 
-                { apply differ3_oterm; simpl; tcsp.
-                  introv j; repndors; cpx. }
+                { pose proof (imp (nobnd t8) (nobnd t4)) as xx.
+                  autodimp xx hyp; inversion xx; subst; auto. }
 
             + SSSSCase "Exc".
               csunf comp; allsimpl; ginv.
               dcwf h; ginv; allsimpl.
               inversion d4 as [|?|?|? ? ? len2 imp2]; subst; clear d4; cpx.
-              exists (oterm Exc bs5) (oterm Exc bs2); dands; eauto with slow.
-              apply reduces_to_if_step; csunf; allsimpl; dcwf h.
+              exists (oterm Exc bs5) (oterm Exc bs2); dands; eauto 3 with slow.
+              { apply reduces_to_if_step; csunf; allsimpl; dcwf h. }
+              {
+              }
 
             + SSSSCase "Abs".
               csunf comp; allsimpl; csunf comp; allsimpl.
