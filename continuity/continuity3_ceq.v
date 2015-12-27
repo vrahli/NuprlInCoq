@@ -253,6 +253,89 @@ Proof.
   introv i; repndors; cpx; constructor; auto.
 Qed.
 
+Lemma implies_approx_arithop {o} :
+  forall lib c (a1 a2 b1 b2 : @NTerm o),
+    approx lib a1 a2
+    -> approx lib b1 b2
+    -> approx lib (mk_arithop c a1 b1) (mk_arithop c a2 b2).
+Proof.
+  introv H1p H2p.
+  applydup @approx_relates_only_progs in H1p.
+  applydup @approx_relates_only_progs in H2p.
+  repnd.
+  unfold mk_arithop.
+  repeat (prove_approx);sp.
+Qed.
+
+Lemma implies_cequiv_arithop {o} :
+  forall lib c (a1 a2 b1 b2 : @NTerm o),
+    cequiv lib a1 a2
+    -> cequiv lib b1 b2
+    -> cequiv lib (mk_arithop c a1 b1) (mk_arithop c a2 b2).
+Proof.
+  introv H1p H2p.
+  allunfold @cequiv; repnd; dands;
+  apply implies_approx_arithop; auto.
+Qed.
+
+Lemma isprogram_arithop {o} :
+  forall x (a b : @NTerm o),
+    isprogram (mk_arithop x a b)
+              <=> (isprogram a # isprogram b).
+Proof.
+  introv; unfold isprogram; allrw @nt_wf_eq.
+  rw @wf_arithop_iff; unfold closed; simpl; autorewrite with slow.
+  repeat (rw app_eq_nil_iff).
+  split; intro h; tcsp.
+Qed.
+
+Lemma cequiv_open_arithop {o} :
+  forall lib c (a1 a2 b1 b2 : @NTerm o),
+    cequiv_open lib a1 a2
+    -> cequiv_open lib b1 b2
+    -> cequiv_open lib (mk_arithop c a1 b1) (mk_arithop c a2 b2).
+Proof.
+  introv da1 da2.
+  allunfold @cequiv_open.
+  apply cl_olift_iff_olift; auto; try (apply respects_alpha_cequiv).
+  apply cl_olift_iff_olift in da1; auto; try (apply respects_alpha_cequiv).
+  apply cl_olift_iff_olift in da2; auto; try (apply respects_alpha_cequiv).
+  allunfold @cl_olift; repnd.
+  dands; eauto 2 with slow;
+  try (apply nt_wf_eq; apply wf_arithop; eauto 3 with slow).
+  introv ps isp1 isp2.
+
+  repeat (rw @lsubst_lsubst_aux_prog_sub; auto).
+  repeat (rw @lsubst_lsubst_aux_prog_sub in isp1; auto).
+  repeat (rw @lsubst_lsubst_aux_prog_sub in isp2; auto).
+  allsimpl; fold_terms; autorewrite with slow in *.
+  allrw @isprogram_arithop; repnd.
+
+  pose proof (da1 sub) as h; repeat (autodimp h hyp);
+  try  (complete (repeat (rw @lsubst_lsubst_aux_prog_sub; auto))).
+
+  pose proof (da2 sub) as q; repeat (autodimp q hyp);
+  try  (complete (repeat (rw @lsubst_lsubst_aux_prog_sub; auto))).
+
+  repeat (rw @lsubst_lsubst_aux_prog_sub in h; auto).
+  repeat (rw @lsubst_lsubst_aux_prog_sub in q; auto).
+  apply implies_cequiv_arithop; auto.
+Qed.
+
+Lemma differ3_ceq_mk_arithop {o} :
+  forall lib b f g c (a1 a2 b1 b2 : @NTerm o),
+    differ3_ceq lib b f g a1 a2
+    -> differ3_ceq lib b f g b1 b2
+    -> differ3_ceq lib b f g (mk_arithop c a1 b1) (mk_arithop c a2 b2).
+Proof.
+  introv da1 da2.
+  allunfold @differ3_ceq; exrepnd.
+  exists (mk_arithop c u0 u1) (mk_arithop c u3 u2); dands; auto;
+  try (apply cequiv_open_arithop; auto).
+  constructor; simpl; auto.
+  introv i; repndors; cpx; constructor; auto.
+Qed.
+
 Lemma comp_force_int_step3_2 {o} :
   forall lib b f g (t1 t2 : @NTerm o) kk u,
     isprog f
@@ -1130,8 +1213,10 @@ Proof.
               inversion d4 as [|?|?|? ? ? len2 imp2]; subst; clear d4; cpx.
               exists (oterm Exc bs5) (oterm Exc bs2); dands; eauto 3 with slow.
               { apply reduces_to_if_step; csunf; allsimpl; dcwf h. }
-              {
-              }
+              { apply wf_term_ncompop_iff in wt1.
+                apply wf_term_ncompop_iff in wt2.
+                exrepnd; ginv; allsimpl; cpx.
+                apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow. }
 
             + SSSSCase "Abs".
               csunf comp; allsimpl; csunf comp; allsimpl.
@@ -1160,7 +1245,7 @@ Proof.
                             :: bterm [] (mk_instance vars bs2 rhs)
                             :: bs)).
 
-             dands; eauto with slow.
+             dands; eauto 3 with slow.
 
              * apply reduces_to_if_step.
                csunf; simpl; csunf; simpl.
@@ -1180,27 +1265,28 @@ Proof.
                unfold differ3_alpha in h.
                exrepnd.
 
-               exists
-                 (oterm (NCan (NCompOp c))
-                        (bterm [] (oterm (Can can1) bs1)
-                               :: bterm [] u1
-                               :: bs))
-                 (oterm (NCan (NCompOp c))
-                        (bterm [] (oterm (Can can1) bs4)
-                               :: bterm [] u2
-                               :: bs3)).
-               dands.
+               apply wf_term_ncompop_iff in wt1.
+               apply wf_term_ncompop_iff in wt2.
+               exrepnd; ginv; allsimpl; cpx.
+               apply wf_oterm_iff in wt4.
+               apply wf_oterm_iff in wt8.
+               repnd.
 
-               { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
-                 apply alphaeqbt_nilv2; auto. }
+               apply differ3_ceq_mk_compop; eauto 2 with slow.
 
-               { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
-                 apply alphaeqbt_nilv2; auto. }
+               { apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow. }
 
-               { apply differ3_oterm; allsimpl; tcsp.
-                 introv j; repndors; cpx. }
+               { apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+                 try (apply nt_wf_eq; eapply wf_mk_instance; eauto).
+                 exists u1 u2; dands; auto. }
+
+               { apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow.
+                 pose proof (imp (nobnd c1) (nobnd c0)) as xx; autodimp xx hyp.
+                 inversion xx; subst; eauto 3 with slow. }
+
+               { apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow.
+                 pose proof (imp (nobnd d0) (nobnd d)) as xx; autodimp xx hyp.
+                 inversion xx; subst; eauto 3 with slow. }
 
           - SSSCase "NArithOp".
             destruct bs; try (complete (csunf comp; allsimpl; dcwf h));[].
@@ -1240,7 +1326,8 @@ Proof.
               allapply @get_param_from_cop_pki; subst; allsimpl; GC.
               exists (@oterm o (Can (Nint (get_arith_op a n1 n2))) [])
                      (@oterm o (Can (Nint (get_arith_op a n1 n2))) []);
-                dands; eauto with slow.
+                dands; eauto 3 with slow.
+              apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow.
 
             + SSSSCase "NCan".
               rw @compute_step_narithop_ncan2 in comp.
@@ -1268,49 +1355,43 @@ Proof.
 
               exrepnd.
 
+              apply nt_wf_eq in wt1; apply nt_wf_NArithOp in wt1.
+              apply nt_wf_eq in wt2; apply nt_wf_NArithOp in wt2.
+              exrepnd; fold_terms; ginv; allsimpl; cpx.
+
               exists (oterm (NCan (NArithOp a))
                             (bterm [] (oterm (Can can1) bs4)
                                    :: bterm [] t
-                                   :: bs3))
+                                   :: []))
                      (oterm (NCan (NArithOp a))
                             (bterm [] (oterm (Can can1) bs1)
                                    :: bterm [] u'
-                                   :: bs)).
-              dands; eauto with slow.
+                                   :: [])).
+              dands; eauto 3 with slow.
 
               * apply reduce_to_prinargs_arith2; eauto with slow; sp.
                 allunfold @ca_wf_def; exrepnd; subst; allsimpl; cpx; fold_terms; eauto 3 with slow.
 
               * apply reduce_to_prinargs_arith2; eauto with slow; sp.
 
-              * unfold differ3_alpha in k1; exrepnd.
-                exists (oterm (NCan (NArithOp a))
-                              (bterm [] (oterm (Can can1) bs1)
-                                     :: bterm [] u1
-                                     :: bs))
-                       (oterm (NCan (NArithOp a))
-                              (bterm [] (oterm (Can can1) bs4)
-                                     :: bterm [] u2
-                                     :: bs3)).
-                dands.
+              * apply differ3_ceq_mk_arithop; auto;
+                apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+                apply differ3_implies_differ3_alpha.
 
-                { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
-                  apply alphaeqbt_nilv2; auto. }
-
-                { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
-                  apply alphaeqbt_nilv2; auto. }
-
-                { apply differ3_oterm; simpl; tcsp.
-                  introv j; repndors; cpx. }
+                { pose proof (imp (nobnd (oterm (Can can1) bs1))
+                                  (nobnd (oterm (Can can1) bs4))) as xx.
+                  autodimp xx hyp. }
 
             + SSSSCase "Exc".
               csunf comp; allsimpl; ginv.
               dcwf h; allsimpl; ginv.
               inversion d4 as [|?|?|? ? ? len2 imp2]; subst; clear d4; cpx.
-              exists (oterm Exc bs5) (oterm Exc bs2); dands; eauto with slow.
-              apply reduces_to_if_step; csunf; simpl; dcwf h.
+              exists (oterm Exc bs5) (oterm Exc bs2); dands; eauto 3 with slow.
+              { apply reduces_to_if_step; csunf; simpl; dcwf h. }
+              { apply wf_term_narithop_iff in wt1.
+                apply wf_term_narithop_iff in wt2.
+                exrepnd; ginv; allsimpl; cpx.
+                apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow. }
 
             + SSSSCase "Abs".
               csunf comp; allsimpl; csunf comp; allsimpl.
@@ -1338,7 +1419,7 @@ Proof.
                             :: bterm [] (mk_instance vars bs2 rhs)
                             :: bs)).
 
-             dands; eauto with slow.
+             dands; eauto 3 with slow.
 
              * apply reduces_to_if_step.
                csunf; simpl; csunf; simpl.
@@ -1358,27 +1439,20 @@ Proof.
                unfold differ3_alpha in h.
                exrepnd.
 
-               exists
-                 (oterm (NCan (NArithOp a))
-                        (bterm [] (oterm (Can can1) bs1)
-                               :: bterm [] u1
-                               :: bs))
-                 (oterm (NCan (NArithOp a))
-                        (bterm [] (oterm (Can can1) bs4)
-                               :: bterm [] u2
-                               :: bs3)).
-               dands.
+               apply wf_term_narithop_iff in wt1.
+               apply wf_term_narithop_iff in wt2.
+               exrepnd; ginv; allsimpl; cpx.
+               apply wf_oterm_iff in wt1.
+               apply wf_oterm_iff in wt2.
+               repnd.
 
-               { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
-                 apply alphaeqbt_nilv2; auto. }
+               apply differ3_ceq_mk_arithop; eauto 2 with slow.
 
-               { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
-                 apply alphaeqbt_nilv2; auto. }
+               { apply differ3_alpha_implies_differ3_ceq; eauto 3 with slow. }
 
-               { apply differ3_oterm; allsimpl; tcsp.
-                 introv j; repndors; cpx. }
+               { apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow;
+                 try (apply nt_wf_eq; eapply wf_mk_instance; eauto).
+                 exists u1 u2; dands; auto. }
 
           - SSSCase "NCanTest".
             csunf comp; allsimpl.
@@ -1402,10 +1476,13 @@ Proof.
 
             inversion d4 as [|?|?|? ? ? ni1 len1 imp1]; subst; allsimpl; clear d4.
 
+            allrw @wf_can_test_iff; repnd.
+
             exists (if canonical_form_test_for c can1 then t0 else t3)
                    (if canonical_form_test_for c can1 then arg2nt else arg3nt).
-            dands; eauto with slow.
-            destruct (canonical_form_test_for c can1); eauto with slow.
+            dands; eauto 3 with slow.
+            destruct (canonical_form_test_for c can1); eauto 3 with slow;
+            apply differ3_alpha_implies_differ3_ceq; eauto 2 with slow.
         }
 
         { SSCase "NCan".
