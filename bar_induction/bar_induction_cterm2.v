@@ -19,8 +19,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
