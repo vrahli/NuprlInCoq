@@ -1,11 +1,19 @@
-o Divide cequiv/approx_star.v into several files, one for each non
+* Divide cequiv/approx_star.v into several files, one for each non
   canonical operator so that they can be compiled in parallel.
 
-o not not semantics.
+* not not semantics.
 
-o Move from using rule_true to rule_true3.
+* Move from using rule_true to rule_true3.
 
-o Pointwise functionality vs. pairwise functionality.
+* Pointwise functionality vs. pairwise functionality.
 
-o Currently, sequences are not allowed in the library: not soseq case
+* Currently, sequences are not allowed in the library: not soseq case
   in SOTerm's definition in terms/sovar.v
+
+* Get rid of the use of functional extensionality and UIP by not using
+  all these _proof_irrelevance lemmas.
+
+* In the proof of continuity use a squashed relation instead of a
+  function.
+
+* Get rid of the noatoms in the definition of sequences.
