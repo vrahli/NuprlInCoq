@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,8 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -56,6 +59,7 @@ Require Export continuity_rule.
    slightly more general version that for function of type (Z -> T) -> Z
    where T's PER is alphaeq.
  *)
+
 Require Export continuity_rule_gen.
 
 

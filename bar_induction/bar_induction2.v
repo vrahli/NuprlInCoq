@@ -2268,6 +2268,7 @@ Proof.
   sp.
 Qed.
 
+(*Print Assumptions bar_induction_meta4.*)
 
 (*
 *** Local Variables:
