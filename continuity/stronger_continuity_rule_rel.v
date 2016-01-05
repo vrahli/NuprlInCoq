@@ -29,9 +29,55 @@
 
 
 Require Export stronger_continuity_rule4_v3.
+Require Export sequents2.
 
 Definition spMp_rel {o} (F : @NTerm o) :=
   spMp (mk_lam nvarf (mk_pi1 (mk_apply F (mk_var nvarf)))).
+
+Lemma wf_term_spMp_rel {o} :
+  forall (F : @NTerm o),
+    wf_term (spMp_rel F) <=> wf_term F.
+Proof.
+  introv.
+  unfold spMp_rel.
+  rw @wf_term_spMp.
+  rw @wf_term_spM.
+  rw <- @wf_lam_iff.
+  rw @wf_pi1.
+  rw <- @wf_apply_iff.
+  split; tcsp.
+Qed.
+
+Lemma free_vars_spMp_rel {o} :
+  forall (F : @NTerm o),
+    !LIn nvare (free_vars F)
+    -> !LIn nvarf (free_vars F)
+    -> !LIn nvarn (free_vars F)
+    -> eqvars (free_vars (spMp_rel F)) (free_vars F).
+Proof.
+  introv nie nif nin.
+  simpl; autorewrite with slow.
+  repeat (rewrite remove_nvars_app_l); simpl.
+  repeat (rewrite remove_nvars_app_r); simpl.
+  repeat (rewrite remove_nvars_app_l); simpl.
+  repeat (rewrite remove_nvars_cons_r); simpl.
+  autorewrite with slow.
+  repeat (rewrite remove_nvars_cons_l_weak; auto).
+Qed.
+
+Lemma covered_spMp_rel {o} :
+  forall (F : @NTerm o) vs,
+    !LIn nvare (free_vars F)
+    -> !LIn nvarf (free_vars F)
+    -> !LIn nvarn (free_vars F)
+    -> (covered (spMp_rel F) vs <=> covered F vs).
+Proof.
+  introv nie nif nin.
+  unfold covered.
+  split; intro h.
+  - eapply subvars_eqvars;[|apply free_vars_spMp_rel]; auto.
+  - eapply subvars_eqvars;[|apply eqvars_sym; apply free_vars_spMp_rel]; auto.
+Qed.
 
 Definition functional_rel {o} (P T : @NTerm o) f n :=
   mk_all
@@ -39,7 +85,7 @@ Definition functional_rel {o} (P T : @NTerm o) f n :=
     f
     (mk_psqexists mk_tnat n (mk_apply2 P (mk_var f) (mk_var n))).
 
-Definition strong_continuous_type_gen {o} (x M f n : NVar) (F P : @NTerm o) T :=
+Definition strong_continuous_type_gen {o} (x M f n m k : NVar) (F P T : @NTerm o) :=
   mk_psqexists
     (mod_fun_type_v2 x T)
     M
@@ -50,35 +96,45 @@ Definition strong_continuous_type_gen {o} (x M f n : NVar) (F P : @NTerm o) T :=
           (mk_sqexists
              mk_tnat
              n
-             (mk_equality
-                (mk_apply2 (mk_var M) (mk_var n) (mk_var f))
-                (mk_apply F (mk_var f))
-                mk_natU))
-          (mk_all
+             (mk_exists
+                mk_tnat
+                k
+                (mk_prod
+                   (mk_equality
+                      (mk_apply2 (mk_var M) (mk_var n) (mk_var f))
+                      (mk_var k)
+                      mk_natU)
+                   (mk_apply2 P (mk_var f) (mk_var k)))))
+          (mk_uall
              mk_tnat
              n
-             (mk_ufun
-                (mk_isint (mk_apply2 (mk_var M) (mk_var n) (mk_var f)) mk_true mk_false)
-                (mk_equality
-                   (mk_apply2 (mk_var M) (mk_var n) (mk_var f))
-                   (mk_apply F (mk_var f))
-                   mk_tnat))))).
+             (mk_uall
+                mk_tnat
+                m
+                (mk_ufun
+                   (mk_isint (mk_apply2 (mk_var M) (mk_var n) (mk_var f)) mk_true mk_false)
+                   (mk_ufun
+                      (mk_isint (mk_apply2 (mk_var M) (mk_var m) (mk_var f)) mk_true mk_false)
+                      (mk_equality
+                         (mk_apply2 (mk_var M) (mk_var n) (mk_var f))
+                         (mk_apply2 (mk_var M) (mk_var m) (mk_var f))
+                         mk_tnat))))))).
 
 Definition rule_strong_continuity_rel {o}
            (F T t P : @NTerm o)
-           (x M f n : NVar)
+           (x M f n m k : NVar)
            (H : barehypotheses) :=
     mk_rule
-      (mk_baresequent H (mk_concl (strong_continuous_type2_v3 x M f n F T)
+      (mk_baresequent H (mk_concl (strong_continuous_type_gen x M f n m k F P T)
                                   (spMp_rel F)))
       [ mk_baresequent H (mk_conclax (mk_member F (functional_rel P T f n))),
         mk_baresequent H (mk_conclax (mk_member t T)) ]
       [].
 
-Lemma rule_strong_continuity_true2_v3 {p} :
+Lemma rule_strong_continuity_rel_true3 {p} :
   forall lib
-         (F T t : NTerm)
-         (x M f n : NVar)
+         (F P T t : NTerm)
+         (x M f n m k : NVar)
          (H : @barehypotheses p)
          (d1 : M <> f)
          (d2 : n <> f)
@@ -93,35 +149,33 @@ Lemma rule_strong_continuity_true2_v3 {p} :
          (d11 : !LIn nvarn (free_vars F))
          (cov : covered F (nh_vars_hyps H))
          (nut : has_eq_value_type_nut_sim lib H T),
-    rule_true lib (rule_strong_continuity2_v3
-                     F T t
-                     x M f n
+    rule_true3 lib (rule_strong_continuity_rel
+                     F T t P
+                     x M f n m k
                      H).
 Proof.
-  unfold rule_strong_continuity2_v3, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
-  intros.
+  unfold rule_strong_continuity_rel, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros; repnd.
   clear cargs.
 
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
   dLin_hyp.
-  rename Hyp into hyp1.
-  destruct hyp1 as [wc1 hyp1].
-  rename Hyp0 into hyp2.
-  destruct hyp2 as [wc2 hyp2].
+  destruct Hyp  as [wc1 hyp1].
+  destruct Hyp0 as [wc2 hyp2].
   destseq; allsimpl; proof_irr; GC.
-  unfold closed_extract; simpl.
 
-  dup ct0 as cmF.
-  apply covered_equality in cmF; repnd.
-  clear cmF1 cmF.
+  assert (wf_csequent ((H)
+                         ||- (mk_concl (strong_continuous_type_gen x M f n m k F P T)
+                                       (spMp_rel F)))) as wfs.
+  { clear hyp1 hyp2.
+    wfseq.
+    { apply wf_term_spMp_rel; auto. }
+    { apply covered_spMp_rel; auto. }
+  }
+  exists wfs.
 
-  pose proof (covered_spM F (nh_vars_hyps H)) as cF.
-  repeat (autodimp cF hyp).
-  applydup cF in cov.
-  apply covered_spM_iff_spMp in cov0.
-
-  exists cov0.
+  (* XXXXXXXXXXXXXXXXXXXXX *)
 
   (* We prove some simple facts on our sequents *)
   (* done with proving these simple facts *)
