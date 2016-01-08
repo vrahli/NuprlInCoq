@@ -19,8 +19,11 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli & Mark Bickford
+  Websites: http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
+           Mark Bickford
 
 *)
 
@@ -132,9 +135,14 @@ Inductive proof {o} : @baresequent o -> Type :=
       -> proof (rule_cequiv_approx_concl a b H)
 | proof_approx_eq :
     forall a1 a2 b1 b2 i H,
-      proof (rule_approx_eq_hyp a1 a2 H)
-      -> proof (rule_approx_eq_hyp b1 b2 H)
+      proof (rule_eq_base_hyp a1 a2 H)
+      -> proof (rule_eq_base_hyp b1 b2 H)
       -> proof (rule_approx_eq_concl a1 a2 b1 b2 i H)
+| proof_cequiv_eq :
+    forall a1 a2 b1 b2 i H,
+      proof (rule_eq_base_hyp a1 a2 H)
+      -> proof (rule_eq_base_hyp b1 b2 H)
+      -> proof (rule_cequiv_eq_concl a1 a2 b1 b2 i H)
 | proof_bottom_diverges :
     forall x H J,
       proof (rule_bottom_diverges_concl x H J)
@@ -177,16 +185,17 @@ Lemma valid_proof {o} :
 Proof.
   introv wf p.
   induction p
-    as [ a1 a2 b1 b2 x1 x2 y i hs niy p1 ih1 p2 ih2
-       | a hs
-       | a b hs p1 ih1 p2 ih2
-       | a1 a2 b1 b2 i hs p1 ih1 p2 ih2
-       | x hs js
-       | B C t u x hs wB covB nixH p1 ih1 p2 ih2
-       | a b H p1 ih1 ps ihs
-       | x A G J
-       | C x a b t H wfa wfb cova covb p1 ih1 p2 ih2
-       | a b H p ih
+    as [ (* isect_eq           *) a1 a2 b1 b2 x1 x2 y i hs niy p1 ih1 p2 ih2
+       | (* approx_refl        *) a hs
+       | (* cequiv_approx      *) a b hs p1 ih1 p2 ih2
+       | (* approx_eq          *) a1 a2 b1 b2 i hs p1 ih1 p2 ih2
+       | (* cequiv_eq          *) a1 a2 b1 b2 i hs p1 ih1 p2 ih2
+       | (* bottom_diverges    *) x hs js
+       | (* cut                *) B C t u x hs wB covB nixH p1 ih1 p2 ih2
+       | (* equal_in_base      *) a b H p1 ih1 ps ihs
+       | (* hypothesis         *) x A G J
+       | (* cequiv_subst_concl *) C x a b t H wfa wfb cova covb p1 ih1 p2 ih2
+       | (* approx_member_eq   *) a b H p ih
        ];
     allsimpl;
     allrw NVin_iff.
@@ -219,6 +228,15 @@ Proof.
 
     + apply ih2; auto.
       apply (rule_approx_eq_wf2 a1 a2 b1 b2 i hs); simpl; tcsp.
+
+  - apply (rule_cequiv_eq_true3 lib a1 a2 b1 b2 i hs); simpl; tcsp.
+    introv xx; repndors; subst; tcsp.
+
+    + apply ih1; auto.
+      apply (rule_cequiv_eq_wf2 a1 a2 b1 b2 i hs); simpl; tcsp.
+
+    + apply ih2; auto.
+      apply (rule_cequiv_eq_wf2 a1 a2 b1 b2 i hs); simpl; tcsp.
 
   - apply (rule_bottom_diverges_true3 lib x hs js); simpl; tcsp.
 
