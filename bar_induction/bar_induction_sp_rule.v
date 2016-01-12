@@ -367,7 +367,7 @@ Proof.
 
     pose proof (lsubstc_mk_seq2kseq2
                   (mk_var s) (mk_var n) v w6
-                  ((n, a) :: snoc s1 (s, seq1)) c14) as ss1.
+                  ((n, a) :: snoc s1 (s, seq1)) c15) as ss1.
     simpl in ss1.
     repeat (autodimp ss1 hyp); try (complete (intro xx; repndors; tcsp)).
     exrepnd.
@@ -377,11 +377,10 @@ Proof.
 
     pose proof (lsubstc_mk_seq2kseq2
                   (mk_var s) (mk_var n) v w6
-                  ((n, a) :: snoc s2 (s, seq2)) c16) as ss2.
+                  ((n, a) :: snoc s2 (s, seq2)) c17) as ss1.
     simpl in ss1.
     repeat (autodimp ss1 hyp); try (complete (intro xx; repndors; tcsp)).
     exrepnd.
-    rw ss1 in hf4.
     rw ss1 in teq.
     clear ss1.
 
@@ -389,23 +388,45 @@ Proof.
     proof_irr.
     lsubst_tac.
 
-    eapply inhabited_type_cequivc in hf3;
+    eapply inhabited_type_cequivc in hf4;
       [|apply implies_cequivc_apply2;
          [apply cequivc_refl
-         |apply computes_to_valc_implies_cequivc;exact hf2
+         |apply computes_to_valc_implies_cequivc;exact hf0
          |apply cequivc_refl]
       ].
-    eapply inhabited_type_cequivc in hf3;
+    eapply inhabited_type_cequivc in hf4;
       [|apply implies_cequivc_apply2;
          [apply cequivc_refl
          |apply cequivc_refl
          |apply implies_cequivc_seq2kseq2;
            [apply cequivc_refl
-           |apply computes_to_valc_implies_cequivc;exact hf2]
+           |apply computes_to_valc_implies_cequivc;exact hf0]
          ]
       ].
+
+    eapply tequality_respects_cequivc_left in teq;
+      [|apply implies_cequivc_apply2;
+         [apply cequivc_refl
+         |apply computes_to_valc_implies_cequivc;exact hf0
+         |apply implies_cequivc_seq2kseq2;
+           [apply cequivc_refl
+           |apply computes_to_valc_implies_cequivc;exact hf0]
+         ]
+      ].
+
+    eapply tequality_respects_cequivc_right in teq;
+      [|apply implies_cequivc_apply2;
+         [apply cequivc_refl
+         |apply computes_to_valc_implies_cequivc;exact hf0
+         |apply implies_cequivc_seq2kseq2;
+           [apply cequivc_refl
+           |apply computes_to_valc_implies_cequivc;exact hf0]
+         ]
+      ].
+
     allrw @seq2kseq2_as_seq2kseq2.
     dands; auto.
+
 
 (*
   - intros k seq1 iss sb C seq2 eqs fse.
@@ -531,15 +552,13 @@ Proof.
     dands; auto.
 *)
 
-  - intros k seq1 iss ind C seq2 eqs fse.
-    clear iss.
-    unfold fun_sim_eq in fse; exrepnd; subst.
+  - intros k seq1 seq2 eqs ind.
 
     vr_seq_true in hyp_ind.
 
     pose proof (hyp_ind
                   (snoc (snoc (snoc s1 (n,mkc_nat k)) (s,seq1)) (x,lam_axiom))
-                  (snoc (snoc (snoc s0 (n,mkc_nat k)) (s,seq2)) (x,lam_axiom)))
+                  (snoc (snoc (snoc s2 (n,mkc_nat k)) (s,seq2)) (x,lam_axiom)))
       as hf; clear hyp_ind.
     repeat (autodimp hf hyp).
 
@@ -598,8 +617,8 @@ Proof.
           |].
 
         pose proof (ind k0) as h; clear ind.
-        unfold meta2_fun_on_upd_seq in h.
-        unfold meta2_fun_on_seq in h; repnd.
+        unfold fun_on_upd_seq_sp in h.
+        unfold fun_on_seq_sp in h; repnd; auto.
 
         pose proof (h (lsubstc X w0 s2a0 c27) (update_seq t2 k k0 v)) as q; clear h.
         repeat (autodimp q hyp).
