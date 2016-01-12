@@ -14,6 +14,6 @@
   all these _proof_irrelevance lemmas.
 
 * In the proof of continuity use a squashed relation instead of a
-  function.
+  function.  (We can prove that directly in Nuprl.)
 
 * Get rid of the noatoms in the definition of sequences.

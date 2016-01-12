@@ -288,29 +288,28 @@ Proof.
   }
  *)
 
-  pose proof (bar_induction_meta_sp
+  pose proof (bar_induction_meta_sp2
                 lib
-                (fun_sim_eq lib s1 H X w0)
                 (lsubstc X w0 s1 c0)
+                (lsubstc X w0 s2 c5)
                 (lsubstc c wt s1 ct1)
+                (lsubstc c wt s2 ct2)
                 v)
     as bi.
 
   repeat (autodimp bi hyp);
     [idtac
     |idtac
-    |pose proof (bi (lsubstc X w0 s2 c5) (seq2kseq (lsubstc c wt s2 ct2) 0 v)) as h;
-      allrw <- @mkc_zero_eq;
-      repeat (autodimp h hyp);[apply eq_kseq_seq2kseq_0|idtac|repnd; dands; complete auto];
-      exists s2 c5;
-      dands; complete auto].
+    |unfold fun_on_seq_sp in bi;
+     allrw <- @mkc_zero_eq;
+     dands; repnd; auto ];[|].
 
-  - intros seq1 iss.
+  - intros seq1 seq2 eqs.
 
     vr_seq_true in hyp_bar.
     pose proof (hyp_bar
                   (snoc s1 (s,seq1))
-                  (snoc s1 (s,seq1)))
+                  (snoc s2 (s,seq2)))
       as hf; clear hyp_bar.
     repeat (autodimp hf hyp).
 
@@ -334,7 +333,6 @@ Proof.
       { apply cover_vars_mk_nat2nat. }
       sim_snoc.
       dands; auto.
-      { eapply similarity_refl; eauto. }
       eapply alphaeqc_preserving_equality;
         [|apply alphaeqc_sym;
            apply lsubstc_mk_nat2nat; auto].
@@ -360,8 +358,7 @@ Proof.
     apply member_tnat_implies_computes in hf1; exrepnd.
 
     exists k.
-    introv eqs fse.
-    unfold fun_sim_eq in fse; exrepnd; subst.
+    unfold fun_on_seq_sp.
 
     repeat substc_lsubstc_vars3.
     lsubst_tac.
@@ -370,11 +367,22 @@ Proof.
 
     pose proof (lsubstc_mk_seq2kseq2
                   (mk_var s) (mk_var n) v w6
-                  ((n, a) :: snoc s1 (s, seq1)) c10) as ss.
-    simpl in ss.
-    repeat (autodimp ss hyp); try (complete (intro xx; repndors; tcsp)).
+                  ((n, a) :: snoc s1 (s, seq1)) c14) as ss1.
+    simpl in ss1.
+    repeat (autodimp ss1 hyp); try (complete (intro xx; repndors; tcsp)).
     exrepnd.
-    rw ss1 in hf3.
+    rw ss1 in hf4.
+    rw ss1 in teq.
+    clear ss1.
+
+    pose proof (lsubstc_mk_seq2kseq2
+                  (mk_var s) (mk_var n) v w6
+                  ((n, a) :: snoc s2 (s, seq2)) c16) as ss2.
+    simpl in ss1.
+    repeat (autodimp ss1 hyp); try (complete (intro xx; repndors; tcsp)).
+    exrepnd.
+    rw ss1 in hf4.
+    rw ss1 in teq.
     clear ss1.
 
     clear_wf_hyps.

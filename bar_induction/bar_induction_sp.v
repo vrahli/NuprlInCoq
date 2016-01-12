@@ -683,15 +683,35 @@ Proof.
 (* XXXXXXXXXXXXXXX *)
 
   subst; allsimpl.
-  remember (meta2_fun_alpha lib P X (seq2kseq c 0 v) v nc ni f ind m) as am.
-  unfold meta2_fun_kseq_NA in am; exrepnd; allsimpl.
+  remember (alpha_sp lib A1 A2 (seq2kseq c1 0 v) (seq2kseq c2 0 v) v nc1 nc2 ni f ind m) as am.
+  unfold fun_kseq_sp_NA in am; exrepnd; allsimpl.
 
-  remember (f (mk_meta2_fun_seq_NA (S m) s am0 am1)) as fn.
+  remember (f (mk_fun_seq_sp_NA (S m) s1 s2 am1 am0)) as fn.
 
-  assert (eq_kseq lib (update_seq s (S m) fn v) s (S m)) as ee1.
+  assert (eq_kseq lib (update_seq s1 (S m) fn v) s1 (S m)) as ee1.
   { unfold eq_kseq.
     apply implies_equality_natk2nat; introv ltm1.
-    dup am0 as e.
+    dup am1 as e.
+    apply equality_refl in e.
+    eapply member_natk2nat_implies in e;[|exact ltm1]; exrepnd.
+    exists k; dands; auto.
+    unfold update_seq.
+    apply cequivc_nat_implies_computes_to_valc.
+    eapply cequivc_trans;[apply cequivc_beta|].
+    allrw @mkcv_inteq_substc.
+    allrw @mkcv_apply_substc.
+    allrw @mkc_var_substc.
+    allrw @csubst_mk_cv.
+    eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+    boolvar; tcsp; GC; try omega.
+    apply computes_to_valc_implies_cequivc; auto.
+  }
+
+  assert (eq_kseq lib (update_seq s2 (S m) fn v) s2 (S m)) as ee2.
+  { unfold eq_kseq.
+    apply implies_equality_natk2nat; introv ltm1.
+    dup am1 as e.
+    apply equality_sym in e; apply equality_refl in e.
     eapply member_natk2nat_implies in e;[|exact ltm1]; exrepnd.
     exists k; dands; auto.
     unfold update_seq.
@@ -707,12 +727,17 @@ Proof.
   }
 
   apply (seq2kseq_prop2 _ v) in ee1.
-  eapply cequivc_preserves_meta2_fun_on_seq in b;[|exact ee1].
-  clear ee1.
+  apply (seq2kseq_prop2 _ v) in ee2.
+  eapply cequivc_preserves_fun_on_seq_sp_left  in b;[|exact ee1].
+  eapply cequivc_preserves_fun_on_seq_sp_right in b;[|exact ee2].
+  clear ee1 ee2.
 
   unfold seq_normalizable in am2.
-  eapply cequivc_preserves_meta2_fun_on_seq in b;
+  unfold seq_normalizable in am3.
+  eapply cequivc_preserves_fun_on_seq_sp_left in b;
     [|apply cequivc_sym;exact am2].
+  eapply cequivc_preserves_fun_on_seq_sp_right in b;
+    [|apply cequivc_sym;exact am3].
   sp.
 Qed.
 
