@@ -78,7 +78,8 @@ Lemma rule_bar_induction_nat_sp_true3 {o} :
          (dnv : m <> v)
          (dnm : n <> m)
          (dsm : s <> m)
-         (nvc : !LIn v (free_vars c)),
+         (nvc : !LIn v (free_vars c))
+         (nmx : !LIn m (free_vars X)),
     rule_true3 lib (rule_bar_induction_nat_sp X c s n m v x H).
 Proof.
   unfold rule_bar_induction_nat_sp, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -120,7 +121,7 @@ Proof.
     dwfseq.
     assert (forall x : NVar, LIn x (free_vars c) -> x <> v -> LIn x (vars_hyps H)) as imp.
     { introv h1 h2.
-      apply cg.
+      apply wf.
       repeat (first [rw remove_nvars_cons_r|rw remove_nvars_app_r]).
       allrw memvar_singleton.
       allrw <- beq_var_refl.
@@ -188,6 +189,7 @@ Proof.
   { apply similarity_dom in sim; repnd.
     rw sim; auto. }
 
+(*
   assert (wf_term B) as wB.
   { clear hyp_wfd.
     allrw @wf_member_iff2.
@@ -284,22 +286,20 @@ Proof.
     apply member_if_inhabited in h1.
     apply member_in_uni in h1; auto.
   }
+ *)
 
-  pose proof (bar_induction_meta4
+  pose proof (bar_induction_meta_sp
                 lib
-                (fun_sim_eq lib s1 H B wB)
                 (fun_sim_eq lib s1 H X w0)
-                (lsubstc B wB s1 cB1)
                 (lsubstc X w0 s1 c0)
-                (lsubstc c wt s1 ct3)
+                (lsubstc c wt s1 ct1)
                 v)
     as bi.
 
   repeat (autodimp bi hyp);
     [idtac
     |idtac
-    |idtac
-    |pose proof (bi (lsubstc X w0 s2 c5) (seq2kseq (lsubstc c wt s2 ct4) 0 v)) as h;
+    |pose proof (bi (lsubstc X w0 s2 c5) (seq2kseq (lsubstc c wt s2 ct2) 0 v)) as h;
       allrw <- @mkc_zero_eq;
       repeat (autodimp h hyp);[apply eq_kseq_seq2kseq_0|idtac|repnd; dands; complete auto];
       exists s2 c5;
@@ -342,15 +342,20 @@ Proof.
     }
 
     exrepnd.
-    clear hf0.
     lsubst_tac.
     apply equality_in_mkc_squash in hf1; exrepnd.
-    clear hf0 hf2.
+    rw @tequality_mkc_squash in hf0.
+    clear hf2 hf3.
     allunfold @mk_exists.
     lsubst_tac.
     allrw @lsubstc_mkc_tnat.
     apply inhabited_product in hf1; exrepnd.
-    clear hf2.
+    clear hf3.
+    apply tequality_product in hf0; repnd.
+    clear hf3.
+
+    pose proof (hf0 a a) as teq; clear hf0.
+    autodimp teq hyp;[].
 
     apply member_tnat_implies_computes in hf1; exrepnd.
 
@@ -394,6 +399,7 @@ Proof.
     allrw @seq2kseq2_as_seq2kseq2.
     dands; auto.
 
+(*
   - intros k seq1 iss sb C seq2 eqs fse.
     clear iss.
     unfold fun_sim_eq in fse; exrepnd; subst.
@@ -515,6 +521,7 @@ Proof.
     apply inhabited_type_if_equality in hf1.
     unfold meta_fun_on_seq.
     dands; auto.
+*)
 
   - intros k seq1 iss ind C seq2 eqs fse.
     clear iss.
