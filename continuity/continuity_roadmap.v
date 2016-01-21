@@ -55,6 +55,7 @@
 
 Require Export continuity_rule.
 
+
 (**
    slightly more general version that for function of type (Z -> T) -> Z
    where T's PER is alphaeq.

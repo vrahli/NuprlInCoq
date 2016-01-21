@@ -17,3 +17,15 @@
   function.  (We can prove that directly in Nuprl.)
 
 * Get rid of the noatoms in the definition of sequences.
+
+* Bar induction: In bar_induction_sp_rule.v trying to prove a squashed
+  bar induction rule that does not mention a separate bar predicate.
+  In bar_induction_sp_wf_rule.v, as in bar_induction_sp_rule.v, trying
+  to prove a squashed bar induction rule that does not mention a
+  separate bar predicate, but because I don't know whether it's going
+  to work without assuming that the predicate we're trying to prove is
+  well-formed, in the _wf_ version I'm assuming that the predicate is
+  well-formed on finite sequences.
+
+* Continuity: In continuity3_ceq.v, trying to prove a more general
+  continuity principle for sequences of terms closed under squiggle.
