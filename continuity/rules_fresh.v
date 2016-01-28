@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,8 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -446,6 +449,773 @@ Proof.
           repeat (lsubstc_snoc2;[]).
           GC; proof_irr; auto. }
 Qed.
+
+
+
+Definition rule_fresh_equality_concl {o} (H : @bhyps o) t1 t2 T v1 v2 :=
+  mk_baresequent H (mk_conclax (mk_equality (mk_fresh v1 t1) (mk_fresh v2 t2) T)).
+
+Definition rule_fresh_equality_hyp_eq {o} (H : @bhyps o) t1 t2 T v1 v2 z w a :=
+  mk_baresequent
+    (snoc (snoc (snoc H (mk_hyp a mk_uatom))
+                (mk_hyp z (mk_free_from_atom mk_base (mk_fresh v1 t1) (mk_var a))))
+          (mk_hyp w (mk_free_from_atom mk_base (mk_fresh v2 t2) (mk_var a))))
+    (mk_conclax (mk_equality (subst t1 v1 (mk_var a)) (subst t2 v2 (mk_var a)) T)).
+
+Definition rule_fresh_equality_hyp_free {o} (H : @bhyps o) t v z a :=
+  mk_baresequent
+    (snoc (snoc H (mk_hyp a mk_uatom)) (mk_hyp z (mk_free_from_atom mk_base (mk_fresh v t) (mk_var a))))
+    (mk_conclax (mk_free_from_atom mk_base (subst t v (mk_var a)) (mk_var a))).
+
+Definition rule_fresh_equality_hyp_base {o} (H : @bhyps o) t v :=
+  mk_baresequent H (mk_conclax (mk_member (mk_fresh v t) mk_base)).
+
+(*
+   H |- fresh(v1.t1) = fresh(v2.t2)in T
+
+     By freshEquality a z
+
+     H, a : Name, z : fresh(v1.t1)#a, w : fresh(v2.t2)#a |- t1[v1\a]=t2[v2\a] in T
+     H, a : Name, z : fresh(v1.t1)#a |- t1[v1\a]#a
+     H, a : Name, w : fresh(v2.t2)#a |- t2[v2\a]#a
+     H |- fresh(v1.t1) in Base
+     H |- fresh(v2.t2) in Base
+
+ *)
+Definition rule_fresh_equality {o}
+           (H : barehypotheses)
+           (t1 t2 T : @NTerm o)
+           (v1 v2 z w a : NVar) :=
+  mk_rule
+    (rule_fresh_equality_concl H t1 t2 T v1 v2)
+    [ rule_fresh_equality_hyp_eq H t1 t2 T v1 v2 z w a,
+      rule_fresh_equality_hyp_free H t1 v1 z a,
+      rule_fresh_equality_hyp_free H t2 v2 w a,
+      rule_fresh_equality_hyp_base H t1 v1,
+      rule_fresh_equality_hyp_base H t2 v2
+    ]
+    [].
+
+Lemma rule_fresh_equality_true3 {o} :
+  forall lib (H : barehypotheses)
+         (t1 t2 T : @NTerm o)
+         (v1 v2 z w a : NVar),
+    rule_true3 lib (rule_fresh_equality H t1 t2 T v1 v2 z w a).
+Proof.
+  unfold rule_fresh_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros; repnd.
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  destruct Hyp  as [ws1 hyp1].
+  destruct Hyp0 as [ws2 hyp2].
+  destruct Hyp1 as [ws3 hyp3].
+  destruct Hyp2 as [ws4 hyp4].
+  destruct Hyp3 as [ws5 hyp5].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent (rule_fresh_equality_concl H t1 t2 T v1 v2)) as wfs.
+  { clear hyp1 hyp2 hyp3 hyp4 hyp5.
+    prove_seq. }
+  exists wfs.
+  unfold wf_csequent, wf_sequent, wf_concl in wfs; allsimpl; repnd; proof_irr; GC.
+
+  assert ((a <> v1 -> !LIn a (free_vars t1))
+          # (z <> v1 -> !LIn z (free_vars t1))
+          # (w <> v1 -> !LIn w (free_vars t1))
+          # (a <> v2 -> !LIn a (free_vars t2))
+          # (z <> v2 -> !LIn z (free_vars t2))
+          # (w <> v2 -> !LIn w (free_vars t2))
+          # a <> z
+          # a <> w
+          # z <> w
+          # !LIn a (vars_hyps H)
+          # !LIn z (vars_hyps H)
+          # !LIn w (vars_hyps H)
+          # !LIn a (free_vars T)
+          # !LIn z (free_vars T)
+          # !LIn w (free_vars T)) as vhyps.
+
+  {
+    clear hyp1 hyp2 hyp3 hyp4 hyp5.
+    dwfseq.
+    sp;
+      try (complete (pose proof (wfs0 a) as xx;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp xx hyp; tcsp));
+      try (complete (pose proof (wfs0 z) as xx;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp xx hyp; tcsp));
+      try (complete (pose proof (wfs0 w) as xx;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp xx hyp; tcsp));
+      try (complete (pose proof (wfs2 a) as xx;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp xx hyp; tcsp));
+      try (complete (pose proof (wfs2 z) as xx;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp xx hyp; tcsp));
+      try (complete (pose proof (wfs2 w) as xx;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp xx hyp; tcsp)).
+  }
+
+  destruct vhyps as [ nat1 vhyps ].
+  destruct vhyps as [ nzt1 vhyps ].
+  destruct vhyps as [ nwt1 vhyps ].
+  destruct vhyps as [ nat2 vhyps ].
+  destruct vhyps as [ nzt2 vhyps ].
+  destruct vhyps as [ nwt2 vhyps ].
+  destruct vhyps as [ daz vhyps ].
+  destruct vhyps as [ daw vhyps ].
+  destruct vhyps as [ dzw vhyps ].
+  destruct vhyps as [ naH vhyps ].
+  destruct vhyps as [ nzH vhyps ].
+  destruct vhyps as [ nwH vhyps ].
+  destruct vhyps as [ naT vhyps ].
+  destruct vhyps as [ nzT nwT ].
+
+  vr_seq_true.
+  lsubst_tac.
+  allrw <- @member_equality_iff.
+
+  pose proof (teq_and_eq_if_equality
+                lib T (mk_fresh v1 t1) (mk_fresh v2 t2) s1 s2 H wT w1 w2 c1 c0 c2 c3 cT cT0)
+    as teq.
+  repeat (autodimp teq hyp); auto;[| |lsubst_tac; auto];[|].
+
+  - destruct (fresh_atom o (get_utokens t1 ++ get_utokens t2 ++ get_utokens_csub s1)) as [ua fa].
+    repeat (rw in_app_iff in fa); repeat (rw not_over_or in fa); repnd.
+
+    vr_seq_true in hyp1.
+    pose proof (hyp1
+                  (snoc (snoc (snoc s1 (a,mkc_utoken ua)) (z,mkc_axiom)) (w,mkc_axiom))
+                  (snoc (snoc (snoc s2 (a,mkc_utoken ua)) (z,mkc_axiom)) (w,mkc_axiom)))
+      as hyp; clear hyp1.
+    repeat (autodimp hyp hh).
+
+    + apply hyps_functionality_snoc2; simpl; auto.
+
+      { introv equ' sim'.
+        apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+        apply similarity_snoc in sim'3; exrepnd; cpx; ginv.
+        allsimpl.
+        lsubst_tac.
+        apply tequality_free_from_atom; dands; eauto 3 with slow;[].
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 (snoc s1a (a,mkc_utoken ua)) z mkc_axiom [v2] c13) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd;[].
+        rw equ0; clear equ0.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 s1a a (mkc_utoken ua) [v2] cv') as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd;[].
+        rw equ0; clear equ0.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 (snoc s2a0 (a,t4)) z t3 [v2] c16) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd;[].
+        rw equ0; clear equ0.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 s2a0 a t4 [v2] cv'1) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd;[].
+        rw equ0; clear equ0.
+
+        vr_seq_true in hyp5.
+        pose proof (hyp5 s1a s2a0 eqh sim'4) as hyp; clear hyp5; exrepnd.
+        lsubst_tac.
+        apply tequality_mkc_member_base in hyp0; spcast.
+        apply equality_in_base_iff; spcast; auto. }
+
+      apply hyps_functionality_snoc2; simpl; auto.
+
+      { introv equ' sim'.
+        apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+        allsimpl.
+        lsubst_tac.
+        apply tequality_free_from_atom; dands; eauto 3 with slow;[].
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t1 w0 s1a a (mkc_utoken ua) [v1] c10) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd;[].
+        rw equ0; clear equ0.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t1 w0 s2a a t3 [v1] c13) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd;[].
+        rw equ0; clear equ0.
+
+        vr_seq_true in hyp4.
+        pose proof (hyp4 s1a s2a eqh sim'3) as hyp; clear hyp4; exrepnd.
+        lsubst_tac.
+        apply tequality_mkc_member_base in hyp0; spcast.
+        apply equality_in_base_iff; spcast; auto. }
+
+      apply hyps_functionality_snoc2; simpl; auto.
+      introv equ' sim'.
+      lsubst_tac.
+      apply tequality_uatom.
+
+    + sim_snoc2.
+
+      { apply wf_free_from_atom; eauto 2 with slow. }
+
+      { apply cover_vars_free_from_atom; dands; eauto 3 with slow;
+        try (complete (repeat (apply cover_vars_snoc_weak); auto)).
+        apply cover_vars_var_iff; repeat (rw @dom_csub_snoc; simpl; rw in_snoc; tcsp). }
+
+      dands; auto.
+
+      * sim_snoc2.
+
+        { apply wf_free_from_atom; eauto 2 with slow. }
+
+        { apply cover_vars_free_from_atom; dands; eauto 3 with slow;
+          try (complete (repeat (apply cover_vars_snoc_weak); auto)).
+          apply cover_vars_var_iff; repeat (rw @dom_csub_snoc; simpl; rw in_snoc; tcsp). }
+
+        dands; auto.
+
+        { sim_snoc2.
+          dands; auto.
+          lsubst_tac.
+          apply equality_in_uatom_iff.
+          exists ua; dands; spcast; apply computes_to_valc_refl; eauto 3 with slow. }
+
+        lsubst_tac.
+        apply equality_in_free_from_atom.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t1 w0 s1 a (mkc_utoken ua) [v1] c11) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd.
+        rw equ0; clear equ0.
+
+        exists (mkc_fresh v1 (lsubstc_vars t1 w0 (csub_filter s1 [v1]) [v1] cv')) ua.
+        dands; spcast; try (complete (apply computes_to_valc_refl; eauto 3 with slow));
+        try (apply tequality_base).
+
+        { apply equality_in_base_iff; spcast; eauto 3 with slow. }
+
+        unfold getc_utokens; simpl; autorewrite with slow.
+        intro i.
+        apply atoms2.get_utokens_lsubst_subset in i.
+        rw in_app_iff in i; repndors; tcsp;[].
+        rw @get_utokens_csub_as in fa.
+        rw <- @sub_filter_csub2sub in i.
+        allrw @in_get_utokens_sub.
+        exrepnd.
+        apply in_sub_filter in i0; repnd.
+        destruct fa.
+        exists v t; dands; auto.
+
+      * lsubst_tac.
+        apply equality_in_free_from_atom.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 (snoc s1 (a,mkc_utoken ua)) z mkc_axiom [v2] c10) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd.
+        rw equ0; clear equ0.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 s1 a (mkc_utoken ua) [v2] cv') as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd.
+        rw equ0; clear equ0.
+
+        exists (mkc_fresh v2 (lsubstc_vars t2 w3 (csub_filter s1 [v2]) [v2] cv'0)) ua.
+        dands; spcast; try (complete (apply computes_to_valc_refl; eauto 3 with slow));
+        try (apply tequality_base).
+
+        { apply equality_in_base_iff; spcast; eauto 3 with slow. }
+
+        unfold getc_utokens; simpl; autorewrite with slow.
+        intro i.
+        apply atoms2.get_utokens_lsubst_subset in i.
+        rw in_app_iff in i; repndors; tcsp;[].
+        rw @get_utokens_csub_as in fa.
+        rw <- @sub_filter_csub2sub in i.
+        allrw @in_get_utokens_sub.
+        exrepnd.
+        apply in_sub_filter in i0; repnd.
+        destruct fa.
+        exists v t; dands; auto.
+
+    + exrepnd.
+      lsubst_tac.
+      apply tequality_mkc_equality_sp in hyp0; repnd; auto.
+
+  - clear dependent s1.
+    clear dependent s2.
+
+    introv hf sim.
+    lsubst_tac.
+
+    assert (!LIn a (dom_csub s1)) as nias1.
+    { allapply @similarity_dom; repnd; allrw; auto. }
+
+    assert (!LIn z (dom_csub s1)) as nizs1.
+    { allapply @similarity_dom; repnd; allrw; auto. }
+
+    assert (!LIn w (dom_csub s1)) as niws1.
+    { allapply @similarity_dom; repnd; allrw; auto. }
+
+    assert (cover_vars (mk_fresh v2 t2) s1) as cov21.
+    { eapply similarity_cover_vars; try apply similarity_sym; eauto. }
+
+    assert (cover_vars (mk_fresh v1 t1) s2) as cov12.
+    { eapply similarity_cover_vars; eauto. }
+
+    destruct (fresh_atom o (get_utokens t1 ++ get_utokens t2 ++ get_utokens_csub s1 ++ get_utokens_csub s2)) as [ua fa].
+    repeat (rw in_app_iff in fa); repeat (rw not_over_or in fa); repnd.
+
+    vr_seq_true in hyp1.
+    pose proof (hyp1
+                  (snoc (snoc (snoc s1 (a,mkc_utoken ua)) (z,mkc_axiom)) (w,mkc_axiom))
+                  (snoc (snoc (snoc s2 (a,mkc_utoken ua)) (z,mkc_axiom)) (w,mkc_axiom)))
+      as hyp; clear hyp1.
+    repeat (autodimp hyp hh).
+
+    + apply hyps_functionality_snoc2; simpl; auto.
+
+      { introv equ' sim'.
+        apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+        apply similarity_snoc in sim'3; exrepnd; cpx; ginv.
+        allsimpl.
+        lsubst_tac.
+        apply tequality_free_from_atom; dands; eauto 3 with slow;[].
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 (snoc s1a (a,mkc_utoken ua)) z mkc_axiom [v2] c7) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd;[].
+        rw equ0; clear equ0.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 s1a a (mkc_utoken ua) [v2] cv') as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd;[].
+        rw equ0; clear equ0.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 (snoc s2a0 (a,t4)) z t3 [v2] c10) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd;[].
+        rw equ0; clear equ0.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 s2a0 a t4 [v2] cv'1) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd;[].
+        rw equ0; clear equ0.
+
+        vr_seq_true in hyp5.
+        pose proof (hyp5 s1a s2a0 hf sim'4) as hyp; clear hyp5; exrepnd.
+        lsubst_tac.
+        apply tequality_mkc_member_base in hyp0; spcast.
+        apply equality_in_base_iff; spcast; auto. }
+
+      apply hyps_functionality_snoc2; simpl; auto.
+
+      { introv equ' sim'.
+        apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+        allsimpl.
+        lsubst_tac.
+        apply tequality_free_from_atom; dands; eauto 3 with slow;[].
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t1 w0 s1a a (mkc_utoken ua) [v1] c4) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd;[].
+        rw equ0; clear equ0.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t1 w0 s2a a t3 [v1] c7) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd;[].
+        rw equ0; clear equ0.
+
+        vr_seq_true in hyp4.
+        pose proof (hyp4 s1a s2a hf sim'3) as hyp; clear hyp4; exrepnd.
+        lsubst_tac.
+        apply tequality_mkc_member_base in hyp0; spcast.
+        apply equality_in_base_iff; spcast; auto. }
+
+      apply hyps_functionality_snoc2; simpl; auto.
+      introv equ' sim'.
+      lsubst_tac.
+      apply tequality_uatom.
+
+    + sim_snoc2.
+
+      { apply wf_free_from_atom; eauto 2 with slow. }
+
+      { apply cover_vars_free_from_atom; dands; eauto 3 with slow;
+        try (complete (repeat (apply cover_vars_snoc_weak); auto)).
+        apply cover_vars_var_iff; repeat (rw @dom_csub_snoc; simpl; rw in_snoc; tcsp). }
+
+      dands; auto.
+
+      * sim_snoc2.
+
+        { apply wf_free_from_atom; eauto 2 with slow. }
+
+        { apply cover_vars_free_from_atom; dands; eauto 3 with slow;
+          try (complete (repeat (apply cover_vars_snoc_weak); auto)).
+          apply cover_vars_var_iff; repeat (rw @dom_csub_snoc; simpl; rw in_snoc; tcsp). }
+
+        dands; auto.
+
+        { sim_snoc2; eauto 3 with slow.
+          dands; auto.
+          lsubst_tac.
+          apply equality_in_uatom_iff.
+          exists ua; dands; spcast; apply computes_to_valc_refl; eauto 3 with slow. }
+
+        lsubst_tac.
+        apply equality_in_free_from_atom.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t1 w0 s1 a (mkc_utoken ua) [v1] c5) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd.
+        rw equ0; clear equ0.
+
+        exists (mkc_fresh v1 (lsubstc_vars t1 w0 (csub_filter s1 [v1]) [v1] cv')) ua.
+        dands; spcast; try (complete (apply computes_to_valc_refl; eauto 3 with slow));
+        try (apply tequality_base).
+
+        { apply equality_in_base_iff; spcast; eauto 3 with slow. }
+
+        unfold getc_utokens; simpl; autorewrite with slow.
+        intro i.
+        apply atoms2.get_utokens_lsubst_subset in i.
+        rw in_app_iff in i; repndors; tcsp;[].
+        rw @get_utokens_csub_as in fa2.
+        rw <- @sub_filter_csub2sub in i.
+        allrw @in_get_utokens_sub.
+        exrepnd.
+        apply in_sub_filter in i0; repnd.
+        destruct fa2.
+        exists v t; dands; auto.
+
+      * lsubst_tac.
+        apply equality_in_free_from_atom.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 (snoc s1 (a,mkc_utoken ua)) z mkc_axiom [v2] c4) as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd.
+        rw equ0; clear equ0.
+
+        pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 s1 a (mkc_utoken ua) [v2] cv') as equ.
+        rw in_single_iff in equ.
+        autodimp equ hyp; exrepnd.
+        rw equ0; clear equ0.
+
+        exists (mkc_fresh v2 (lsubstc_vars t2 w3 (csub_filter s1 [v2]) [v2] cv'0)) ua.
+        dands; spcast; try (complete (apply computes_to_valc_refl; eauto 3 with slow));
+        try (apply tequality_base).
+
+        { apply equality_in_base_iff; spcast; eauto 3 with slow. }
+
+        unfold getc_utokens; simpl; autorewrite with slow.
+        intro i.
+        apply atoms2.get_utokens_lsubst_subset in i.
+        rw in_app_iff in i; repndors; tcsp;[].
+        rw @get_utokens_csub_as in fa2.
+        rw <- @sub_filter_csub2sub in i.
+        allrw @in_get_utokens_sub.
+        exrepnd.
+        apply in_sub_filter in i0; repnd.
+        destruct fa2.
+        exists v t; dands; auto.
+
+    + exrepnd.
+      lsubst_tac.
+      allrw <- @member_equality_iff.
+
+      assert (cover_vars (mk_var a) (snoc (snoc (snoc s1 (a, mkc_utoken ua)) (z, mkc_axiom)) (w,mkc_axiom))) as cova1.
+      { apply cover_vars_var; allrw @dom_csub_snoc; simpl.
+        repeat (rw in_snoc); tcsp. }
+
+      assert (cover_vars (mk_var a) (snoc (snoc (snoc s2 (a, mkc_utoken ua)) (z, mkc_axiom)) (w,mkc_axiom))) as cova2.
+      { apply cover_vars_var; allrw @dom_csub_snoc; simpl.
+        repeat (rw in_snoc); tcsp. }
+
+      apply equality_commutes4 in hyp0; auto;[]; clear hyp1.
+
+      repeat (lsubstc_subst_aeq2;[]).
+      repeat (substc_lsubstc_vars3;[]).
+      lsubst_tac.
+      repeat (lsubstc_snoc2;[]).
+      GC; proof_irr; auto.
+
+      vr_seq_true in hyp2.
+      pose proof (hyp2
+                    (snoc (snoc s1 (a,mkc_utoken ua)) (z,mkc_axiom))
+                    (snoc (snoc s1 (a,mkc_utoken ua)) (z,mkc_axiom)))
+        as hyp; clear hyp2.
+      repeat (autodimp hyp hh).
+
+      { apply hyps_functionality_snoc2; simpl; auto.
+
+        { introv equ' sim'.
+          apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+          allsimpl.
+          lsubst_tac.
+          apply tequality_free_from_atom; dands; eauto 3 with slow.
+
+          pose proof (lsubstc_vars_csub_filter_snoc_ex t1 w0 s1a a (mkc_utoken ua) [v1] c25) as equ.
+          rw in_single_iff in equ.
+          autodimp equ hyp; exrepnd.
+          rw equ0; clear equ0.
+
+          pose proof (lsubstc_vars_csub_filter_snoc_ex t1 w0 s2a a t3 [v1] c28) as equ.
+          rw in_single_iff in equ.
+          autodimp equ hyp; exrepnd.
+          rw equ0; clear equ0.
+
+          vr_seq_true in hyp4.
+          pose proof (hyp4 s1a s2a hf sim'3) as hyp; clear hyp4; exrepnd.
+          lsubst_tac.
+          apply tequality_mkc_member_base in hyp1; spcast.
+          apply equality_in_base_iff; spcast; auto.
+        }
+
+        { apply hyps_functionality_snoc2; simpl; auto.
+          introv equ' sim'.
+          lsubst_tac_c.
+          apply tequality_uatom.
+        }
+      }
+
+      { sim_snoc2.
+
+        { apply wf_free_from_atom; eauto 2 with slow. }
+
+        { apply cover_vars_free_from_atom; dands; eauto 3 with slow;
+          try (complete (apply cover_vars_snoc_weak; auto)).
+        }
+
+        dands; auto.
+
+        { sim_snoc2; eauto 3 with slow.
+          dands; auto; [|].
+          { eapply similarity_refl; eauto. }
+
+          lsubst_tac_c.
+          apply equality_in_uatom_iff.
+          exists ua; dands; spcast; apply computes_to_valc_refl; eauto 3 with slow.
+        }
+
+        { lsubst_tac.
+          apply equality_in_free_from_atom.
+
+          pose proof (lsubstc_vars_csub_filter_snoc_ex t1 w0 s1 a (mkc_utoken ua) [v1] c25) as equ.
+          rw in_single_iff in equ.
+          autodimp equ hyp; exrepnd.
+          rw equ0; clear equ0.
+
+          exists (mkc_fresh v1 (lsubstc_vars t1 w0 (csub_filter s1 [v1]) [v1] cv')) ua.
+          dands; spcast; try (complete (apply computes_to_valc_refl; eauto 3 with slow));
+          try (apply tequality_base).
+
+          { apply equality_in_base_iff; spcast; eauto 3 with slow. }
+
+          unfold getc_utokens; simpl; autorewrite with slow.
+          intro i.
+          apply atoms2.get_utokens_lsubst_subset in i.
+          rw in_app_iff in i; repndors; tcsp;[].
+          rw @get_utokens_csub_as in fa2.
+          rw <- @sub_filter_csub2sub in i.
+          allrw @in_get_utokens_sub.
+          exrepnd.
+          apply in_sub_filter in i0; repnd.
+          destruct fa2.
+          exists v t; dands; auto.
+        }
+      }
+
+      exrepnd.
+      lsubst_tac.
+      clear hyp1.
+      apply equality_in_free_from_atom in hyp2; exrepnd.
+      clear hyp1 hyp6.
+      apply equality_in_base_iff in hyp9.
+      spcast.
+      apply computes_to_valc_isvalue_eq in hyp7;[eqconstr hyp7|eauto 3 with slow].
+
+      repeat (lsubstc_subst_aeq2;[]).
+      repeat (substc_lsubstc_vars3;[]).
+      lsubst_tac.
+      repeat (lsubstc_snoc2;[]).
+      GC; proof_irr; auto.
+
+      pose proof (cequivc_fresh_subst_gen
+                    lib v1
+                    (lsubstc_vars t1 w0 (csub_filter s1 [v1]) [v1] c1)
+                    u y
+                 ) as ceq1.
+
+      repeat (autodimp ceq1 hyp).
+
+      { unfold getcv_utokens; simpl.
+        intro i.
+        apply atoms2.get_utokens_lsubst_subset in i.
+        rw in_app_iff in i; repndors; tcsp;[].
+        rw @get_utokens_csub_as in fa2.
+        rw <- @sub_filter_csub2sub in i.
+        allrw @in_get_utokens_sub.
+        exrepnd.
+        apply in_sub_filter in i0; repnd.
+        destruct fa2.
+        exists v t; dands; auto.
+      }
+
+      { repeat (substc_lsubstc_vars3;[]); auto. }
+
+      repeat (lsubstc_subst_aeq2;[]).
+      repeat (substc_lsubstc_vars3;[]).
+      lsubst_tac.
+      repeat (lsubstc_snoc2;[]).
+      GC; proof_irr; auto.
+
+      eapply equality_respects_cequivc_left;[apply cequivc_sym;eauto|].
+      clear ceq1.
+      clear dependent y.
+      rename u into ua.
+
+      vr_seq_true in hyp3.
+      pose proof (hyp3
+                    (snoc (snoc s2 (a,mkc_utoken ua)) (w,mkc_axiom))
+                    (snoc (snoc s2 (a,mkc_utoken ua)) (w,mkc_axiom)))
+        as hyp; clear hyp3.
+      repeat (autodimp hyp hh).
+
+      { apply hyps_functionality_snoc2; simpl; auto.
+
+        { introv equ' sim'.
+          apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+          allsimpl.
+          lsubst_tac.
+          apply tequality_free_from_atom; dands; eauto 3 with slow.
+
+          pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 s1a a (mkc_utoken ua) [v2] c26) as equ.
+          rw in_single_iff in equ.
+          autodimp equ hyp; exrepnd.
+          rw equ0; clear equ0.
+
+          pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 s2a a t3 [v2] c29) as equ.
+          rw in_single_iff in equ.
+          autodimp equ hyp; exrepnd.
+          rw equ0; clear equ0.
+
+          pose proof (similarity_hyps_functionality_trans lib s1 s1a H sim hf) as hf2.
+
+          vr_seq_true in hyp5.
+          pose proof (hyp5 s1a s2a hf2 sim'3) as hyp; clear hyp4; exrepnd.
+          lsubst_tac.
+          apply tequality_mkc_member_base in hyp1; spcast.
+          apply equality_in_base_iff; spcast; auto.
+        }
+
+        { apply hyps_functionality_snoc2; simpl; auto;
+          [|eapply similarity_hyps_functionality_trans; eauto].
+          introv equ' sim'.
+          lsubst_tac_c.
+          apply tequality_uatom.
+        }
+      }
+
+      { sim_snoc2.
+
+        { apply wf_free_from_atom; eauto 2 with slow. }
+
+        { apply cover_vars_free_from_atom; dands; eauto 3 with slow;
+          try (complete (apply cover_vars_snoc_weak; auto)).
+        }
+
+        dands; auto.
+
+        { sim_snoc2; eauto 3 with slow.
+          dands; auto; [|].
+          { eapply similarity_refl; apply similarity_sym; eauto. }
+
+          lsubst_tac_c.
+          apply equality_in_uatom_iff.
+          exists ua; dands; spcast; apply computes_to_valc_refl; eauto 3 with slow.
+        }
+
+        { lsubst_tac.
+          apply equality_in_free_from_atom.
+
+          pose proof (lsubstc_vars_csub_filter_snoc_ex t2 w3 s2 a (mkc_utoken ua) [v2] c26) as equ.
+          rw in_single_iff in equ.
+          autodimp equ hyp; exrepnd.
+          rw equ0; clear equ0.
+
+          exists (mkc_fresh v2 (lsubstc_vars t2 w3 (csub_filter s2 [v2]) [v2] cv')) ua.
+          dands; spcast; try (complete (apply computes_to_valc_refl; eauto 3 with slow));
+          try (apply tequality_base).
+
+          { apply equality_in_base_iff; spcast; eauto 3 with slow. }
+
+          unfold getc_utokens; simpl; autorewrite with slow.
+          intro i.
+          apply atoms2.get_utokens_lsubst_subset in i.
+          rw in_app_iff in i; repndors; tcsp;[].
+          rw @get_utokens_csub_as in fa.
+          rw <- @sub_filter_csub2sub in i.
+          allrw @in_get_utokens_sub.
+          exrepnd.
+          apply in_sub_filter in i0; repnd.
+          destruct fa.
+          exists v t; dands; auto.
+        }
+      }
+
+      exrepnd.
+      lsubst_tac.
+      clear hyp1.
+      apply equality_in_free_from_atom in hyp2; exrepnd.
+      clear hyp1 hyp3.
+      apply equality_in_base_iff in hyp9.
+      spcast.
+      apply computes_to_valc_isvalue_eq in hyp6;[eqconstr hyp6|eauto 3 with slow].
+
+      repeat (lsubstc_subst_aeq2;[]).
+      repeat (substc_lsubstc_vars3;[]).
+      lsubst_tac.
+      repeat (lsubstc_snoc2;[]).
+      GC; proof_irr; auto.
+
+      pose proof (cequivc_fresh_subst_gen
+                    lib v2
+                    (lsubstc_vars t2 w3 (csub_filter s2 [v2]) [v2] c0)
+                    u y
+                 ) as ceq1.
+
+      repeat (autodimp ceq1 hyp).
+
+      { unfold getcv_utokens; simpl.
+        intro i.
+        apply atoms2.get_utokens_lsubst_subset in i.
+        rw in_app_iff in i; repndors; tcsp;[].
+        rw @get_utokens_csub_as in fa.
+        rw <- @sub_filter_csub2sub in i.
+        allrw @in_get_utokens_sub.
+        exrepnd.
+        apply in_sub_filter in i0; repnd.
+        destruct fa.
+        exists v t; dands; auto.
+      }
+
+      { repeat (substc_lsubstc_vars3;[]); auto. }
+
+      repeat (lsubstc_subst_aeq2;[]).
+      repeat (substc_lsubstc_vars3;[]).
+      lsubst_tac.
+      repeat (lsubstc_snoc2;[]).
+      GC; proof_irr; auto.
+
+      eapply equality_respects_cequivc_right;[apply cequivc_sym;eauto|].
+      auto.
+Qed.
+
 
 
 (*
