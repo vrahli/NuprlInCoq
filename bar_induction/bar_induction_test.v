@@ -128,19 +128,32 @@ Definition barred {o} lib (P : @CTerm o) :=
     is_seq lib s ->
     {n : nat & inhabited_type lib (mkc_apply2 P (mkc_nat n) s)}.
 
-(* s2 is of length n (from 0 to n-1) and s1 of length n+1 *)
+Definition KSeq {o lib} := {s : @CTerm o & {n : nat & is_kseq lib s n}}.
+
+(* s2 is of length n (from 0 to n-1) and s1 of length n+1 (from 0 to n) *)
 Definition lt_seq {o}
-           lib P (b : barred lib P) (v : NVar) n
-           (s1 s2 : @CTerm o)
-           (i1 : is_kseq lib s1 (n + 1))
-           (i2 : is_kseq lib s2 n) : Prop :=
-  (forall m,
-     m < n ->
-     ccequivc lib (mkc_apply s1 (mkc_nat m)) (mkc_apply s2 (mkc_nat m)))
-  /\ match b (update_seq_from s1 (n + 1) 0 v)
-             (is_seq_update_seq_from lib s1 (n + 1) 0 v i1) with
-       | existT m inh => m >= n + 1
-     end.
+           lib P (b : barred lib P) (v : NVar)
+           (ks1 ks2 : @KSeq o lib) : Prop :=
+  match ks1, ks2 with
+    | existT s1 (existT n1 i1), existT s2 (existT n2 i2) =>
+      n1 = n2 + 1
+      /\ (forall m,
+            m < n2 ->
+            ccequivc lib (mkc_apply s1 (mkc_nat m)) (mkc_apply s2 (mkc_nat m)))
+      /\ match b (update_seq_from s1 n1 0 v)
+                 (is_seq_update_seq_from lib s1 n1 0 v i1) with
+           | existT m inh => m >= n1
+         end
+  end.
+
+Lemma well_founded_lt_seq {o} :
+  forall lib P (b : @barred o lib P) v,
+    well_founded (lt_seq lib P b v).
+Proof.
+  introv; unfold well_founded; introv.
+  destruct a as [s a].
+  destruct a as [n i].
+Qed.
 
 Lemma bar_induction_meta_sp {o} :
   forall lib P (X c : @CTerm o) v,
