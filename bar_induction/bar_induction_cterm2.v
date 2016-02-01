@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -130,17 +131,64 @@ Proof.
       boolvar; tcsp; GC.
 Qed.
 
+Lemma equality_nat2nout_apply {o} :
+  forall lib (f g a b : @CTerm o),
+    equality lib f g nat2nout
+    -> equality lib a b mkc_tnat
+    -> equality lib (mkc_apply f a) (mkc_apply g b) mkc_nout.
+Proof.
+  introv eqf eqn.
+  unfold nat2nat in eqf.
+  apply equality_in_fun in eqf; repnd.
+  apply eqf in eqn; auto.
+Qed.
+
+Lemma eq_kseq_nout_of_seq {o} :
+  forall lib (s : @CTerm o) v k,
+    is_seq_nout lib s
+    -> eq_kseq_nout lib s (seq2kseq s k v) k.
+Proof.
+  introv iss.
+  unfold eq_kseq_nout.
+  apply implies_equality_natk2nout2.
+  introv l.
+  unfold is_seq_nout in iss.
+
+  assert (equality lib (mkc_nat m) (mkc_nat m) mkc_tnat) as equ by (eauto with slow).
+
+  eapply equality_nat2nout_apply in iss;[|eauto].
+  allrw @member_eq.
+  apply equality_in_nout in iss; exrepnd; spcast; GC.
+  exists u; dands; spcast; auto.
+  unfold seq2kseq.
+
+  eapply cequivc_trans;[apply cequivc_beta|].
+  repeat (rewrite mkcv_less_substc).
+  repeat (rewrite mkcv_apply_substc).
+  repeat (rewrite mkcv_bot_substc).
+  repeat (rewrite mkcv_nat_substc).
+  repeat (rewrite mkcv_zero_substc).
+  repeat (rewrite mkc_var_substc).
+  repeat (rewrite csubst_mk_cv).
+  rewrite mkc_zero_eq.
+
+  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
+  boolvar; try omega.
+  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
+  boolvar; try omega.
+  auto.
+Qed.
+Hint Resolve eq_kseq_nout_of_seq : slow.
+
 
 (**
 
   Bar induction, where
-    T is a type
-    R is the spread law
+    X is the proposition
     B is the bar
-    con stands for consistent with the spread law
     ext(s,n,t) = \m. if m=n then t else s m
 <<
-   H |- squash (X 0 c)
+   H |- squash (X 0 (norm c 0))
 
      By bar_induction B i a s x m n t
 
@@ -166,7 +214,7 @@ Definition rule_bar_induction_nout {o}
               (mk_conclax (mk_squash
                              (mk_exists mk_tnat
                                         n
-                                        (mk_apply2 B (mk_var n) (mk_seq2kseq (mk_var s) (mk_var n) v))))),
+                                        (mk_apply2 B (mk_var n) (mk_var s))))),
       mk_bseq (snoc (snoc (snoc H (mk_hyp n mk_tnat))
                           (mk_hyp s (mk_natk2nout (mk_var n))))
                     (mk_hyp m (mk_apply2 B (mk_var n) (mk_var s))))
@@ -466,35 +514,19 @@ Proof.
     clear_wf_hyps.
     proof_irr.
 
-    pose proof (lsubstc_mk_seq2kseq2
-                  (mk_var s) (mk_var n) v w6
-                  ((n, a) :: snoc s1 (s, seq1)) c10) as ss.
-    simpl in ss.
-    repeat (autodimp ss hyp); try (complete (intro xx; repndors; tcsp)).
-    exrepnd.
-    rw ss1 in hf3.
-    clear ss1.
-
-    clear_wf_hyps.
-    proof_irr.
-    lsubst_tac.
+    pose proof (Bfunc k seq1 (seq2kseq seq1 k v) s1 s1 cB1 cB1) as h.
+    repeat (autodimp h hyp); eauto 3 with slow.
+    { eapply similarity_refl; eauto. }
 
     eapply inhabited_type_cequivc in hf3;
       [|apply implies_cequivc_apply2;
          [apply cequivc_refl
-         |apply computes_to_valc_implies_cequivc;exact hf2
+         |apply computes_to_valc_implies_cequivc;eauto
          |apply cequivc_refl]
       ].
-    eapply inhabited_type_cequivc in hf3;
-      [|apply implies_cequivc_apply2;
-         [apply cequivc_refl
-         |apply cequivc_refl
-         |apply implies_cequivc_seq2kseq2;
-           [apply cequivc_refl
-           |apply computes_to_valc_implies_cequivc;exact hf2]
-         ]
-      ].
-    allrw @seq2kseq2_as_seq2kseq2.
+
+    eapply inhabited_type_tequality in hf3;[|eauto].
+
     dands; auto.
 
   - intros k seq1 iss sb C seq2 eqs fse.
