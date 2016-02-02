@@ -72,6 +72,152 @@ Proof.
 Qed.
 Hint Resolve eq_kseq_of_seq : slow.
 
+Lemma approxc_bot {o} :
+  forall lib (t : @CTerm o), approxc lib mkc_bot t.
+Proof.
+  introv; destruct_cterms; unfold approxc; simpl.
+  unfold mk_bot.
+  apply bottom_approx_any; eauto 3 with slow.
+Qed.
+Hint Resolve approxc_bot : slow.
+
+Lemma mk_seq2kseq0 {o} :
+  forall lib (c : @CTerm o) v,
+    cequivc lib (seq2kseq c 0 v) (mkc_lam v (mkcv_bot [v])).
+Proof.
+  introv.
+  unfold seq2kseq.
+  apply implies_cequivc_lam; introv.
+
+  eapply cequivc_trans;[apply cequivc_sym;apply cequivc_beta|].
+  eapply cequivc_trans;[apply cequivc_beta|].
+  repeat (rewrite mkcv_less_substc).
+  repeat (rewrite mkcv_apply_substc).
+  repeat (rewrite mkc_var_substc).
+  repeat (rewrite mkcv_nat_substc).
+  repeat (rewrite mkcv_zero_substc).
+  repeat (rewrite mkcv_bot_substc).
+  repeat (rewrite csubst_mk_cv).
+
+  apply cequivc_iff_approxc; dands; eauto 3 with slow.
+  apply approxc_assume_hasvalue; intro hv.
+
+  destruct_cterms.
+  unfold hasvalue_likec in hv; unfold approxc; allsimpl.
+  apply hasvalue_like_implies_or in hv;
+    [|repeat (apply isprogram_mk_less; dands; eauto 2 with slow);
+       apply isprogram_apply; eauto 3 with slow].
+
+  destruct hv as [hv|hv].
+
+  - apply hasvalue_mk_less in hv; eauto 2 with slow;
+    [|apply wf_less; eauto 2 with slow; apply wf_apply; eauto 2 with slow].
+    exrepnd; repndors; repnd.
+
+    { apply not_hasvalue_bot in hv1; tcsp. }
+
+    apply reduces_to_if_isvalue_like in hv2; eauto 3 with slow.
+    rw <- @int_zero in hv2; ginv.
+
+    eapply approx_trans;
+      [apply approx_mk_less;
+        [apply reduces_to_implies_approx2;eauto 2 with slow
+        |apply approx_refl; eauto 2 with slow
+        |apply approx_refl; eauto 2 with slow
+        |apply approx_refl; eauto 2 with slow;
+         apply isprogram_mk_less; dands; eauto 2 with slow;
+         apply isprogram_apply; eauto 3 with slow]
+      |].
+
+    rw <- @int_zero.
+
+    eapply approx_trans;
+      [apply reduces_to_implies_approx2;
+        [repeat (apply isprogram_mk_less; dands; eauto 2 with slow);
+          apply isprogram_apply; eauto 3 with slow
+        |apply reduces_to_if_step; csunf; simpl; dcwf h; simpl;
+         unfold compute_step_comp; simpl; boolvar; try omega; reflexivity]
+      |].
+
+    apply hasvalue_mk_less in hv1; eauto 2 with slow;
+    [|apply wf_apply; eauto 2 with slow].
+    exrepnd.
+
+    eapply reduces_to_eq_val_like in hv0;try (exact hv2); eauto 2 with slow; ginv.
+    apply reduces_to_if_isvalue_like in hv4; eauto 3 with slow.
+    unfold mk_nat in hv4; ginv.
+
+    repndors; repnd;
+    [|apply not_hasvalue_bot in hv1; tcsp].
+
+    eapply approx_trans;
+      [apply approx_mk_less;
+        [apply reduces_to_implies_approx2;eauto 2 with slow
+        |apply approx_refl; eauto 2 with slow
+        |apply approx_refl; eauto 2 with slow;
+         apply isprogram_apply; eauto 2 with slow
+        |apply approx_refl; eauto 2 with slow]
+      |].
+
+    eapply approx_trans;
+      [apply reduces_to_implies_approx2;
+        [repeat (apply isprogram_mk_less; dands; eauto 2 with slow);
+          apply isprogram_apply; eauto 3 with slow
+        |apply reduces_to_if_step; csunf; simpl; dcwf h; simpl;
+         unfold compute_step_comp; simpl; boolvar;[|reflexivity]; try omega]
+      |].
+
+    eauto 3 with slow.
+
+  - unfold raises_exception in hv; exrepnd.
+    apply computes_to_exception_mk_less in hv1; eauto 2 with slow;
+    [|apply wf_less; eauto 2 with slow; apply wf_apply; eauto 2 with slow].
+    repndors; exrepnd; repndors; exrepnd.
+
+    + apply bottom_doesnt_raise_an_exception in hv1; tcsp.
+
+    + apply reduces_to_if_isvalue_like in hv2; eauto 3 with slow.
+      rw <- @int_zero in hv2; ginv.
+
+      eapply approx_trans;
+        [apply approx_mk_less;
+          [apply reduces_to_implies_approx2;eauto 2 with slow
+          |apply approx_refl; eauto 2 with slow
+          |apply approx_refl; eauto 2 with slow
+          |apply approx_refl; eauto 2 with slow;
+           apply isprogram_mk_less; dands; eauto 2 with slow;
+           apply isprogram_apply; eauto 3 with slow]
+        |].
+
+      rw <- @int_zero.
+
+      eapply approx_trans;
+        [apply reduces_to_implies_approx2;
+          [repeat (apply isprogram_mk_less; dands; eauto 2 with slow);
+            apply isprogram_apply; eauto 3 with slow
+          |apply reduces_to_if_step; csunf; simpl; dcwf h; simpl;
+           unfold compute_step_comp; simpl; boolvar; try omega; reflexivity]
+        |].
+
+      apply computes_to_exception_mk_less in hv1; eauto 2 with slow;
+      [|apply wf_apply; eauto 2 with slow].
+      repndors; exrepnd; repndors; exrepnd.
+
+      * eapply reduces_to_eq_val_like in hv0;try (exact hv2); eauto 2 with slow; ginv.
+        apply reduces_to_if_isvalue_like in hv4; eauto 3 with slow.
+        unfold mk_nat in hv4; ginv.
+        try omega.
+
+      * apply bottom_doesnt_raise_an_exception in hv1; tcsp.
+
+      * eapply reduces_to_exception_eq in hv0;[|eauto].
+        apply iscancan_doesnt_raise_an_exception in hv0; eauto 2 with slow; tcsp.
+
+      * apply iscancan_doesnt_raise_an_exception in hv2; eauto 2 with slow; tcsp.
+
+    +
+Abort.
+
 
 (**
 
