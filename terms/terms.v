@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1680,7 +1682,7 @@ Definition sat_ntseq {o} (f : ntseq) (P : @NTerm o -> Prop) : Prop :=
 Inductive nt_wf {p} : @NTerm p -> [univ] :=
 | wfvt: forall nv, nt_wf (vterm nv)
 | wfst: forall f,
-          (forall n, nt_wf (f n) # closed (f n) # noutokens (f n))
+          (forall n, nt_wf (f n) # closed (f n) (*# noutokens (f n)*))
           -> nt_wf (sterm f)
 | wfot: forall (o: Opid) (lnt: list BTerm),
           (forall l, LIn l lnt -> bt_wf l)

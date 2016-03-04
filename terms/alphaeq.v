@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -704,7 +706,7 @@ Qed.
 
 Lemma nt_wf_sterm_iff {o} :
   forall f : @ntseq o,
-    nt_wf (sterm f) <=> forall n, nt_wf (f n) # closed (f n) # noutokens (f n).
+    nt_wf (sterm f) <=> forall n, nt_wf (f n) # closed (f n) (*# noutokens (f n)*).
 Proof.
   introv.
   split; intro h; auto.

@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1130,10 +1131,13 @@ Definition no_vars_like {o} (t : @NTerm o) :=
 Definition no_vars_like_b {o} (t : @NTerm o) : bool :=
   nullb (free_vars t) && nullb (get_utokens t).
 
+Definition closed_b {o} (t : @NTerm o) : bool :=
+  nullb (free_vars t).
+
 Fixpoint wft {o} (t : @NTerm o) : obool :=
   match t with
     | vterm _ => otrue
-    | sterm f => obseq (fun n => oband (bool2obool (no_vars_like_b (f n))) (wft (f n)))
+    | sterm f => obseq (fun n => oband (bool2obool (closed_b (f n))) (wft (f n)))
     | oterm op bts =>
       oband (bool2obool (beq_list eq_nat_dec (map (num_bvars) bts) (OpBindings op)))
             (oball (map wftb bts))
@@ -1470,6 +1474,23 @@ Proof.
   apply no_vars_like_b_true_iff; sp.
 Qed.
 
+Lemma closed_b_true_iff {o} :
+  forall (t : @NTerm o), closed_b t = true <=> closed t.
+Proof.
+  introv; unfold closed_b, closed.
+  allrw @assert_nullb.
+  allrw @null_iff_nil; sp.
+Qed.
+
+Lemma implies_closed_b_true {o} :
+  forall (t : @NTerm o),
+    closed t
+    -> closed_b t = true.
+Proof.
+  introv cl.
+  apply closed_b_true_iff; sp.
+Qed.
+
 Lemma nt_wf_eq {p} :
   forall (t : @NTerm p),
     nt_wf t <=> wf_term t.
@@ -1490,7 +1511,7 @@ Proof.
       apply functional_extensionality.
       introv.
       pose proof (imp x) as h; clear imp; repnd.
-      rw @implies_no_vars_like_b_true; simpl; auto.
+      rw @implies_closed_b_true; simpl; auto.
       apply ind; auto.
 
     + SCase "<-".
@@ -1498,9 +1519,9 @@ Proof.
       constructor; introv.
       inversion wf as [w]; clear wf.
       apply equal_f with (x := n) in w.
-      remember (no_vars_like_b (f n)) as nv; symmetry in Heqnv; destruct nv; allsimpl.
+      remember (closed_b (f n)) as nv; symmetry in Heqnv; destruct nv; allsimpl.
 
-      * apply no_vars_like_b_true_iff in Heqnv; repnd; dands; auto.
+      * apply closed_b_true_iff in Heqnv; repnd; dands; auto.
         apply ind in w; dands; auto.
 
       * symmetry in w; apply term2otrue_not_ofalse in w; sp.
@@ -8792,7 +8813,7 @@ Definition selectnt {p} (n:nat) (lnt : list NTerm): @NTerm p :=
 Inductive nt_wf2 {p} : @NTerm p -> [univ] :=
   | wfvt2 : forall nv : NVar, nt_wf2 (vterm nv)
   | wfst2: forall f,
-             (forall n, nt_wf2 (f n) # closed (f n) # noutokens (f n))
+             (forall n, nt_wf2 (f n) # closed (f n) (*# noutokens (f n)*))
              -> nt_wf2 (sterm f)
   | wfot2 : forall (o : Opid) (lnt : list BTerm),
             length lnt = length (OpBindings o)

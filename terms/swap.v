@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -2285,16 +2287,15 @@ Proof.
       pose proof (imp n) as h; clear imp; repnd.
       pose proof (ind n s) as q; repnd.
       rw <- q0.
-      unfold closed, noutokens.
-      rw q; rw q1; rw h1; simpl; dands; auto.
+      unfold closed.
+      rw q1; rw h; simpl; dands; auto.
 
     + inversion wf as [|? imp|];subst; clear wf.
       constructor; introv.
       pose proof (imp n) as h; clear imp; repnd.
       pose proof (ind n s) as q; repnd.
-      rw <- q0 in h0.
-      unfold noutokens in h; unfold closed in h1; rw q in h; rw q1 in h1; allsimpl.
-      dands; auto.
+      rw <- q0 in h0; dands; auto.
+      unfold closed in h; rw q1 in h; allsimpl.
       unfold closed.
       remember (free_vars (f n)) as fvs; destruct fvs; ginv.
 

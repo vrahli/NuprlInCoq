@@ -71,8 +71,8 @@ Definition CSubstitution  {p} : tuniv := lmap NVar (@CTerm p).
 (* end hide *)
 
 (** % \noindent %
-  The function [var_ren] below provides a way to 
-  define the specialized substitutions that are 
+  The function [var_ren] below provides a way to
+  define the specialized substitutions that are
   variable renamings (substituting one variable for another).
   The %\coqslibref{combine}{Coq.Lists.List}{\coqdocdefinition{combine}}% function
   from the standard library takes two lists and zips them up.
