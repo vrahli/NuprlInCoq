@@ -27,16 +27,10 @@
 *)
 
 
+Require Export cequiv_cnterm.
 Require Export bar_induction.
 Require Export seq_util.
 
-
-Definition is_seq_nout {o} lib (s : @CTerm o) := member lib s nat2nout.
-
-Definition eq_kseq_nout {o} lib (s1 s2 : @CTerm o) (n : nat) :=
-  equality lib s1 s2 (natk2nout (mkc_nat n)).
-
-Definition is_kseq_nout {o} lib (s : @CTerm o) (n : nat) := eq_kseq_nout lib s s n.
 
 Definition nout_on_seq {o} lib P (A1 : @CTerm o) (n : nat) (s1 : CTerm) :=
   forall A2 s2,
@@ -58,13 +52,6 @@ Definition barind_nout_imp {o} lib Q P (B X : @CTerm o) :=
 
 Definition nout_on_upd_seq {o} lib P (X s : @CTerm o) (n : nat) (u : CTerm) (v : NVar) :=
   nout_on_seq lib P X (S n) (update_seq_nout s n u v).
-
-Definition cnterm2cterm {o} (t : @CNTerm o) : CTerm :=
-  let (x,p) := t in
-  existT isprog x (isprog_nout_implies_isprog x p).
-
-Definition cnout_cterm {o} (t : @CNTerm o) : CTerm := cnterm2cterm t.
-Definition cnout_term {o} (t : @CNTerm o) : NTerm := get_cterm (cnout_cterm t).
 
 Definition barind_nout_ind {o} lib P (X : @CTerm o) v :=
   forall (n : nat) (s : CTerm),
@@ -211,197 +198,6 @@ Definition nout_kseq_NA_seq {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
   match x with
     | existT _ (existT s _) => s
   end.
-
-Lemma implies_equality_natk2nout {o} :
-  forall lib (f g : @CTerm o) n,
-    (forall m,
-       m < n
-       -> {t1 : CTerm
-           & {t2 : CTerm
-           & {u : CTerm
-           & computes_to_valc lib (mkc_apply f (mkc_nat m)) t1
-           # computes_to_valc lib (mkc_apply g (mkc_nat m)) t2
-           # cequivc lib t1 u
-           # cequivc lib t2 u
-           # noutokensc u }}})
-    -> equality lib f g (natk2nout (mkc_nat n)).
-Proof.
-  introv imp.
-  apply equality_in_fun; dands; eauto 3 with slow.
-
-  { apply type_mkc_natk.
-    exists (Z.of_nat n); spcast.
-    apply computes_to_valc_refl; eauto 3 with slow. }
-
-  introv e.
-  apply equality_in_natk in e; exrepnd; spcast.
-
-  eapply equality_respects_cequivc_left;
-    [apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply cequivc_sym;
-        apply computes_to_valc_implies_cequivc;
-        exact e0]
-    |].
-
-  eapply equality_respects_cequivc_right;
-    [apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply cequivc_sym;
-        apply computes_to_valc_implies_cequivc;
-        exact e2]
-    |].
-
-  clear dependent a.
-  clear dependent a'.
-
-  apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
-  rw @mkc_nat_eq in e3; ginv.
-
-  assert (m < n) as ltm by omega.
-  clear e1.
-
-  pose proof (imp m ltm) as h; exrepnd.
-
-  apply equality_in_nout.
-  exists u; dands; spcast; auto.
-
-  { eapply cequivc_trans;[|exact h3].
-    apply computes_to_valc_implies_cequivc; auto. }
-
-  { eapply cequivc_trans;[|exact h4].
-    apply computes_to_valc_implies_cequivc; auto. }
-Qed.
-
-Lemma implies_member_natk2nout {o} :
-  forall lib (f : @CTerm o) n,
-    (forall m,
-       m < n
-       -> {t : CTerm
-           & {u : CTerm
-           & computes_to_valc lib (mkc_apply f (mkc_nat m)) t
-           # cequivc lib t u
-           # noutokensc u }})
-    -> member lib f (natk2nout (mkc_nat n)).
-Proof.
-  introv imp.
-  apply implies_equality_natk2nout.
-  introv ltm.
-  apply imp in ltm; exrepnd.
-  exists t t u; dands; auto.
-Qed.
-
-Lemma implies_equality_natk2nout2 {o} :
-  forall lib (f g : @CTerm o) n,
-    (forall m,
-       m < n
-       -> {u : CTerm
-           , ccequivc lib (mkc_apply f (mkc_nat m)) u
-           # ccequivc lib (mkc_apply g (mkc_nat m)) u
-           # noutokensc u })
-    -> equality lib f g (natk2nout (mkc_nat n)).
-Proof.
-  introv imp.
-  apply equality_in_fun; dands; eauto 3 with slow.
-
-  { apply type_mkc_natk.
-    exists (Z.of_nat n); spcast.
-    apply computes_to_valc_refl; eauto 3 with slow. }
-
-  introv e.
-  apply equality_in_natk in e; exrepnd; spcast.
-
-  eapply equality_respects_cequivc_left;
-    [apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply cequivc_sym;
-        apply computes_to_valc_implies_cequivc;
-        exact e0]
-    |].
-
-  eapply equality_respects_cequivc_right;
-    [apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply cequivc_sym;
-        apply computes_to_valc_implies_cequivc;
-        exact e2]
-    |].
-
-  clear dependent a.
-  clear dependent a'.
-
-  apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
-  rw @mkc_nat_eq in e3; ginv.
-
-  assert (m < n) as ltm by omega.
-  clear e1.
-
-  pose proof (imp m ltm) as h; exrepnd.
-
-  apply equality_in_nout.
-  exists u; dands; spcast; auto.
-Qed.
-
-Lemma implies_member_natk2nout2 {o} :
-  forall lib (f : @CTerm o) n,
-    (forall m,
-       m < n
-       -> {u : CTerm
-           , ccequivc lib (mkc_apply f (mkc_nat m)) u
-           # noutokensc u })
-    -> member lib f (natk2nout (mkc_nat n)).
-Proof.
-  introv imp.
-  apply implies_equality_natk2nout2.
-  introv ltm.
-  apply imp in ltm; exrepnd.
-  exists u; dands; auto.
-Qed.
-
-Lemma equality_natk2nout_implies {o} :
-  forall lib m (f g : @CTerm o) n,
-    m < n
-    -> equality lib f g (natk2nout (mkc_nat n))
-    -> {u : CTerm
-        , ccequivc lib (mkc_apply f (mkc_nat m)) u
-        # ccequivc lib (mkc_apply g (mkc_nat m)) u
-        # noutokensc u }.
-Proof.
-  introv ltm mem.
-  apply equality_in_fun in mem; repnd.
-  clear mem0 mem1.
-  pose proof (mem (mkc_nat m) (mkc_nat m)) as h; clear mem.
-  autodimp h hyp.
-
-  { apply equality_in_natk.
-    exists m (Z.of_nat n); dands; spcast; try omega;
-    try (apply computes_to_valc_refl; eauto 2 with slow). }
-
-  apply equality_in_nout in h; exrepnd; spcast.
-  exists u; dands; spcast; auto.
-Qed.
-
-Lemma member_natk2nout_implies {o} :
-  forall lib m (f : @CTerm o) n,
-    m < n
-    -> member lib f (natk2nout (mkc_nat n))
-    -> {u : CTerm , ccequivc lib (mkc_apply f (mkc_nat m)) u # noutokensc u}.
-Proof.
-  introv ltm mem.
-  eapply equality_natk2nout_implies in mem;[|exact ltm].
-  exrepnd; spcast.
-  exists u; dands; spcast; auto.
-Qed.
-
-Lemma noutokensc_cnterm2cterm {o} :
-  forall (u : @CNTerm o), noutokensc (cnterm2cterm u).
-Proof.
-  introv.
-  unfold noutokensc.
-  destruct u; simpl.
-  allrw @isprog_nout_iff; sp.
-Qed.
-Hint Resolve noutokensc_cnterm2cterm : slow.
 
 Lemma eq_kseq_nout_update {o} :
   forall lib (s1 s2 : @CTerm o) (n : nat) (u : CNTerm) (v : NVar),
@@ -665,9 +461,6 @@ Fixpoint nout_alpha {o}
         (ind p)
   end.
 
-Definition ntseqc2ntseq {o} (f : @ntseqc o) : CTerm :=
-  exist isprog (sterm (ntseqc2seq f)) (isprog_ntseqc f).
-
 Lemma noutokensc_nout_kseq_NA_cterm :
   forall {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
          (x : nout_kseq_NA lib P n A v),
@@ -677,33 +470,6 @@ Proof.
   unfold nout_kseq_NA_cterm; eauto 3 with slow.
 Qed.
 Hint Resolve noutokensc_nout_kseq_NA_cterm : slow.
-
-Lemma cequivc_beta_ntseqc2ntseq {o} :
-  forall (lib : @library o) s n,
-    cequivc
-      lib
-      (mkc_apply (ntseqc2ntseq s) (mkc_nat n))
-      (cnterm2cterm (s n)).
-Proof.
-  introv.
-  unfold cequivc; simpl.
-  apply reduces_to_implies_cequiv;
-    [apply isprogram_apply;
-      eauto 3 with slow;
-      apply nt_wf_sterm_implies_isprogram;
-      apply nt_wf_sterm_iff;
-      introv; simpl; unfold ntseqc2seq;
-      remember (s n0) as t; destruct t; simpl; clear Heqt;
-     allrw @isprog_nout_iff; sp
-    |].
-  eapply reduces_to_if_split2;[csunf;simpl;auto|].
-  apply reduces_to_if_step; csunf; simpl.
-  unfold compute_step_eapply; simpl.
-  boolvar; try omega.
-  rw Znat.Nat2Z.id; auto.
-  unfold ntseqc2seq, get_cnterm, cnterm2cterm, get_cterm; simpl.
-  remember (s n) as t; destruct t; simpl; auto.
-Qed.
 
 Lemma is_kseq_nout_implies {o} :
   forall lib m (s : @CTerm o) n,
@@ -774,58 +540,6 @@ Proof.
     eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
     boolvar; tcsp; GC; try omega.
 Qed.
-
-Lemma member_ntseqc2ntseq_nat2nout {o} :
-  forall (lib : @library o) (s : ntseqc),
-    member lib (ntseqc2ntseq s) nat2nout.
-Proof.
-  introv.
-  unfold nat2nout.
-  apply equality_in_fun; dands; tcsp; eauto 3 with slow.
-  introv eqn.
-  applydup @equality_int_nat_implies_cequivc in eqn.
-  apply equality_respects_cequivc.
-  { apply implies_cequivc_apply; auto. }
-  clear eqn0.
-  apply equality_refl in eqn.
-  apply member_tnat_iff in eqn; exrepnd.
-
-  eapply member_respects_cequivc.
-  { apply cequivc_sym.
-    apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply computes_to_valc_implies_cequivc;exact eqn0]. }
-
-  apply (member_respects_cequivc _ (cnterm2cterm (s k))).
-  { apply cequivc_sym.
-    apply reduces_toc_implies_cequivc.
-    unfold reduces_toc; simpl.
-    eapply reduces_to_if_split2.
-    { csunf; simpl; auto. }
-    apply reduces_to_if_step.
-    csunf; simpl.
-    unfold compute_step_eapply; simpl.
-    boolvar; try omega.
-    allrw @Znat.Nat2Z.id; auto.
-    unfold ntseqc2seq, get_cnterm, cnterm2cterm, get_cterm; simpl.
-    remember (s k) as t; destruct t; simpl; auto.
-  }
-
-  remember (s k) as t; clear Heqt.
-  clear eqn0.
-
-  apply equality_in_nout.
-  exists (cnterm2cterm t); dands; spcast; eauto 3 with slow.
-Qed.
-
-Lemma is_seq_nout_ntseqc2ntseq {o} :
-  forall (lib : @library o) s, is_seq_nout lib (ntseqc2ntseq s).
-Proof.
-  introv.
-  unfold is_seq_nout.
-  apply member_ntseqc2ntseq_nat2nout.
-Qed.
-Hint Resolve is_seq_nout_ntseqc2ntseq : slow.
 
 Lemma eq_kseq_nout_seq2kseq_0 {o} :
   forall lib v (s1 s2 : @CTerm o),

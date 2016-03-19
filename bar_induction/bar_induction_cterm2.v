@@ -31,22 +31,6 @@
 Require Export bar_induction_cterm.
 Require Export subst_tacs.
 
-Lemma isprog_implies_isprog_nout {o} :
-  forall (t : @NTerm o),
-    noutokens t -> isprog t -> isprog_nout t.
-Proof.
-  introv nout isp.
-  apply isprog_nout_iff.
-  applydup @isprog_implies_wf in isp.
-  apply closed_if_isprog in isp.
-  allrw @nt_wf_eq; sp.
-Qed.
-
-Definition cterm2cnterm {o} (t : @CTerm o) : noutokensc t -> CNTerm :=
-  match t with
-    | exist x p => fun n => existT isprog_nout x (isprog_implies_isprog_nout x n p)
-  end.
-
 Lemma implies_cequivc_update_seq_nout {o} :
   forall lib (t : @CTerm o) k a b v,
     cequivc lib a b
@@ -60,15 +44,6 @@ Proof.
   allrw @mkc_var_substc.
   allrw @csubst_mk_cv.
   apply cequivc_mkc_inteq; auto.
-Qed.
-
-Lemma cnterm2cterm2cnterm {o} :
-  forall (t : @CTerm o) (p : noutokensc t),
-    (cnterm2cterm (cterm2cnterm t p)) = t.
-Proof.
-  introv.
-  apply cterm_eq; simpl.
-  destruct_cterms; simpl; auto.
 Qed.
 
 Lemma eq_kseq_nout_update2 {o} :
@@ -130,55 +105,6 @@ Proof.
       eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
       boolvar; tcsp; GC.
 Qed.
-
-Lemma equality_nat2nout_apply {o} :
-  forall lib (f g a b : @CTerm o),
-    equality lib f g nat2nout
-    -> equality lib a b mkc_tnat
-    -> equality lib (mkc_apply f a) (mkc_apply g b) mkc_nout.
-Proof.
-  introv eqf eqn.
-  unfold nat2nat in eqf.
-  apply equality_in_fun in eqf; repnd.
-  apply eqf in eqn; auto.
-Qed.
-
-Lemma eq_kseq_nout_of_seq {o} :
-  forall lib (s : @CTerm o) v k,
-    is_seq_nout lib s
-    -> eq_kseq_nout lib s (seq2kseq s k v) k.
-Proof.
-  introv iss.
-  unfold eq_kseq_nout.
-  apply implies_equality_natk2nout2.
-  introv l.
-  unfold is_seq_nout in iss.
-
-  assert (equality lib (mkc_nat m) (mkc_nat m) mkc_tnat) as equ by (eauto with slow).
-
-  eapply equality_nat2nout_apply in iss;[|eauto].
-  allrw @member_eq.
-  apply equality_in_nout in iss; exrepnd; spcast; GC.
-  exists u; dands; spcast; auto.
-  unfold seq2kseq.
-
-  eapply cequivc_trans;[apply cequivc_beta|].
-  repeat (rewrite mkcv_less_substc).
-  repeat (rewrite mkcv_apply_substc).
-  repeat (rewrite mkcv_bot_substc).
-  repeat (rewrite mkcv_nat_substc).
-  repeat (rewrite mkcv_zero_substc).
-  repeat (rewrite mkc_var_substc).
-  repeat (rewrite csubst_mk_cv).
-  rewrite mkc_zero_eq.
-
-  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-  boolvar; try omega.
-  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-  boolvar; try omega.
-  auto.
-Qed.
-Hint Resolve eq_kseq_nout_of_seq : slow.
 
 
 (**
