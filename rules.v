@@ -55,6 +55,7 @@ Require Import bar_induction_cterm2.
 
 (* Axiom of Choice: *)
 Require Import axiom_choice.
+Require Import axiom_choice_gen.
 (*Require Import axiom_choice2.*)
 
 
