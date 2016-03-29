@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -3126,7 +3130,7 @@ Qed.
 
 Lemma wf_sterm_iff {o} :
   forall (f : @ntseq o),
-    wf_term (sterm f) <=> (forall n : nat, isprog_nout (f n)).
+    wf_term (sterm f) <=> (forall n : nat, isprog (f n)).
 Proof.
   introv.
   split; intro h.
@@ -3134,11 +3138,13 @@ Proof.
     apply wf_term_eq in h.
     inversion h as [|? imp|]; subst; clear h.
     pose proof (imp n) as h; repnd.
-    apply isprog_nout_iff; sp.
+    apply isprog_eq.
+    constructor; auto.
   - apply wf_term_eq.
     constructor; introv.
     pose proof (h n) as q; clear h.
-    apply isprog_nout_iff in q; sp.
+    apply isprog_eq in q.
+    inversion q; auto.
 Qed.
 
 Lemma wf_subst_utokens_aux {o} :

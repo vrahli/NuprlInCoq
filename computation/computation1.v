@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -1369,15 +1373,15 @@ Proof.
 Qed.
 
 Definition get_fresh_atom {o} (t : @NTerm o) : get_patom_set o :=
-  projT1 (fresh_atom o (get_utokens t)).
+  projT1 (fresh_atom o (get_utokens_step_seq t)).
 
 Lemma get_fresh_atom_prop {o} :
   forall (t : @NTerm o),
-    !LIn (get_fresh_atom t) (get_utokens t).
+    !LIn (get_fresh_atom t) (get_utokens_step_seq t).
 Proof.
   introv i.
   unfold get_fresh_atom in i.
-  destruct (fresh_atom o (get_utokens t)); allsimpl; sp.
+  destruct (fresh_atom o (get_utokens_step_seq t)); allsimpl; sp.
 Qed.
 
 Lemma get_fresh_atom_prop2 {o} :
@@ -1385,13 +1389,13 @@ Lemma get_fresh_atom_prop2 {o} :
     !LIn (get_fresh_atom t) (get_utokens t).
 Proof.
   introv i.
-(*  apply subset_get_utokens_get_utokens_step_seq in i.*)
+  apply subset_get_utokens_get_utokens_step_seq in i.
   apply get_fresh_atom_prop in i; auto.
 Qed.
 
 Lemma eq_fresh_atom {o} :
   forall (t1 t2 : @NTerm o),
-    get_utokens t1 = get_utokens t2
+    get_utokens_step_seq t1 = get_utokens_step_seq t2
     -> get_fresh_atom t1 = get_fresh_atom t2.
 Proof.
   introv e.
