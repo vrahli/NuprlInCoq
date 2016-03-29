@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -39,48 +43,87 @@ Require Export computation_preserve4.
 
  *)
 
-Lemma compute_decompose_aux {p} :
-forall lib (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm),
-  isprogram (oterm (NCan op) lbt)
-  -> computes_to_val_like_in_max_k_steps lib (oterm (NCan op) lbt) a (S k)
-  -> { la : NTerm
-      $ { lbtt: list BTerm
-      $ { t : @NTerm p
-      $ { m : nat
-        $ m <= k
-        # lbt = bterm [] la :: lbtt
-        # reduces_in_atmost_k_steps lib la t m
-        # reduces_in_atmost_k_steps lib
-             (oterm (NCan op) lbt)
-             (oterm (NCan op) ((bterm [] t)::lbtt))
-             m
-        # is_can_or_exc t}}}}
-     [+]
-     {v : NVar
-      & {t : NTerm
-      & {u : NTerm
-      & {x : NTerm
-      & {w : NTerm
-      & {m : nat
-      & m <= k
-      # op = NFresh
-      # lbt = [bterm [v] t]
-      # let a := get_fresh_atom t in
-        reduces_in_atmost_k_steps lib (subst t v (mk_utoken a)) x m
-        # alpha_eq x (subst u v (mk_utoken a))
-        # subset (get_utokens u) (get_utokens t)
-        # reduces_in_atmost_k_steps lib (oterm (NCan op) lbt) (mk_fresh v w) m
-        # alpha_eq u w
-        # isvalue_like u
-     }}}}}}.
+Lemma implies_reduces_in_atmost_k_steps_S {o} :
+  forall (lib : library) (t v : @NTerm o) (k : nat),
+    reduces_in_atmost_k_steps lib t v (S k)
+    -> {u : NTerm
+        & compute_step lib t = csuccess u
+        # reduces_in_atmost_k_steps lib u v k}.
 Proof.
-  induction k as [| k Hind]; introv Hpr Hcv.
-  - repnud Hcv.
-    unfold reduces_in_atmost_k_steps in Hcv0.
-    simpl in Hcv0.
-    rename Hcv0 into Hcomp.
-    dlist lbt SSCase as [| arg1]; invertsn Hcomp.
-             (**takes care of nilcase as no ncop takes 0 bterms*)
+  introv comp.
+  apply reduces_in_atmost_k_steps_S; auto.
+Qed.
+
+Fixpoint get_names_from_reduces_in_atmost_k_steps {o}
+           {lib : @library o}
+           {t u : @NTerm o}
+           {k : nat} : reduces_in_atmost_k_steps lib t u k
+                       -> list (get_patom_set o) :=
+  match k with
+    | 0 => fun comp => get_utokens_step_seq t
+    | S n =>
+      fun comp =>
+        get_utokens_step_seq t
+                 ++ match implies_reduces_in_atmost_k_steps_S lib t u n comp with
+                      | existT w (c,r) => get_names_from_reduces_in_atmost_k_steps r
+                    end
+  end.
+
+Definition get_names_from_computes_to_val_like_in_max_k_steps {o}
+           {lib : @library o}
+           {t u : @NTerm o}
+           {k : nat}
+           (c : computes_to_val_like_in_max_k_steps lib t u k)
+  : list (get_patom_set o) :=
+  get_names_from_reduces_in_atmost_k_steps (fst c).
+
+Definition get_fresh_atom_list {o} (l : list (get_patom_set o)) : get_patom_set o :=
+  projT1 (fresh_atom o l).
+
+Lemma compute_decompose_aux {p} :
+forall lib (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm)
+       (comp : computes_to_val_like_in_max_k_steps lib (oterm (NCan op) lbt) a (S k))
+       (isp : isprogram (oterm (NCan op) lbt)),
+  {la : NTerm
+    $ {lbtt: list BTerm
+    $ { t : @NTerm p
+    $ { m : nat
+    $ m <= k
+    # lbt = bterm [] la :: lbtt
+    # reduces_in_atmost_k_steps lib la t m
+    # reduces_in_atmost_k_steps lib
+         (oterm (NCan op) lbt)
+         (oterm (NCan op) ((bterm [] t)::lbtt))
+         m
+    # is_can_or_exc t}}}}
+   [+]
+   {v : NVar
+    & {t : NTerm
+    & {u : NTerm
+    & {x : NTerm
+    & {w : NTerm
+    & {m : nat
+    & m <= k
+    # op = NFresh
+    # lbt = [bterm [v] t]
+    # let names := get_names_from_computes_to_val_like_in_max_k_steps comp in
+      let a := get_fresh_atom_list names in
+      reduces_in_atmost_k_steps lib (subst t v (mk_utoken a)) x m
+      # alpha_eq x (subst u v (mk_utoken a))
+      # subset (get_utokens u) (get_utokens t)
+      # reduces_in_atmost_k_steps lib (oterm (NCan op) lbt) (mk_fresh v w) m
+      # alpha_eq u w
+      # isvalue_like u
+   }}}}}}.
+Proof.
+  induction k as [| k Hind]; introv isp.
+  - repnud comp.
+    unfold reduces_in_atmost_k_steps in comp0.
+    simpl in comp0.
+    rename comp0 into Hcomp.
+    dlist lbt SSCase as [| arg1].
+    inversion Hcomp.
+    (**takes care of nilcase as no ncop takes 0 bterms*)
 
     SSCase "conscase".
     destruct arg1 as [arg1vs arg1nt];
@@ -264,6 +307,9 @@ Proof.
 
           pose proof (compute_step_subst_utoken lib arg1nt x [(v,mk_utoken ua)]) as h.
           repeat (autodimp h hyp); eauto 3 with slow.
+          { apply nr_ut_sub_cons_iff; eexists; dands; eauto.
+            introv i j.
+            apply subset_get_utokens_get_utokens_step_seq in j; sp. }
           { unfold get_utokens_sub; simpl; rw disjoint_singleton_l; tcsp. }
           exrepnd.
           unfold get_utokens_sub in h2; allsimpl; allrw disjoint_singleton_l.

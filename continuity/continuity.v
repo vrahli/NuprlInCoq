@@ -3066,17 +3066,6 @@ Fixpoint get_ints_from_comp_at_most_k_steps {o}
                   end
   end.
 
-Lemma implies_reduces_in_atmost_k_steps_S {o} :
-  forall (lib : library) (t v : @NTerm o) (k : nat),
-    reduces_in_atmost_k_steps lib t v (S k)
-    -> {u : NTerm
-        & compute_step lib t = csuccess u
-        # reduces_in_atmost_k_steps lib u v k}.
-Proof.
-  introv comp.
-  apply reduces_in_atmost_k_steps_S; auto.
-Qed.
-
 Fixpoint get_ints_from_red_atmost {o}
            (lib : @library o)
            (t u : @NTerm o)

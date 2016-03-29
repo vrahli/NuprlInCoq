@@ -104,8 +104,11 @@ match goal with
     pose proof (socovered_proof_irrelevance t vs H2 H1) as h; subst
 end : pi.
 
-Definition no_utokens {o} (t : @SOTerm o) :=
+Definition old_no_utokens {o} (t : @SOTerm o) :=
   get_utokens_so t = [].
+
+Definition no_utokens {o} (t : @SOTerm o) :=
+  get_cutokens_so t = onil.
 
 Lemma no_utokens_proof_irrelevance {p} :
   forall t : @SOTerm p,
