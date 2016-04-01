@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -1109,7 +1114,6 @@ Proof.
     pose proof (imp n) as h; clear imp.
     pose proof (aop0 n) as q; clear aop0; repnd.
     applydup @alphaeq_preserves_closed in h as i; rw i; clear i.
-    applydup @alphaeq_preserves_noutokens in h as i; rw i; clear i.
     applydup @alphaeq_preserves_wf in h as i; rw <- i; clear i.
     dands; auto.
 

@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli & Mark Bickford
 
 *)
@@ -214,6 +218,8 @@ Proof.
   unfolds_base; exists j; eauto.
 Qed.
 
+(*
+(* TOFIX *)
 Lemma reduces_to_fresh2 {o} :
   forall (lib : library) (t u : @NTerm o) (v : NVar) a,
   wf_term t
@@ -267,6 +273,7 @@ Proof.
   autodimp aeqs3 hyp.
   eapply alpha_eq_trans in aeqs3;[|exact aeqs1]; eauto with slow.
 Qed.
+*)
 
 Lemma alpha_eq_subst_utokens_same {o} :
   forall (t1 t2 : @NTerm o) (s : utok_sub),

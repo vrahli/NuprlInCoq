@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -438,18 +443,17 @@ Qed.
 Lemma isprogram_mk_ntseq {o} :
   forall (f : @ntseq o),
     isprogram (mk_ntseq f)
-    <=> (forall n, isprogram (f n) # noutokens (f n)).
+    <=> (forall n, isprogram (f n)).
 Proof.
   introv; split; intro h.
   - introv; inversion h as [c w]; clear c.
     rw @nt_wf_sterm_iff in w.
     pose proof (w n) as q; repnd.
-    dands; auto.
-    constructor; auto.
+    dands; auto; try (constructor; auto).
   - constructor; unfold closed; simpl; auto.
     constructor; introv.
     pose proof (h n) as q; repnd.
-    inversion q0 as [c w]; dands; auto.
+    inversion q as [c w]; dands; auto.
 Qed.
 
 (* end hide *)
@@ -2614,3 +2618,9 @@ Qed.
 *)
 
 (* end hide *)
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
+*** End:
+*)

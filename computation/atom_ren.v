@@ -1734,6 +1734,7 @@ Proof.
 Qed.
 
 (*
+(* TOFIX *)
 Lemma compute_step_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
     nt_wf t
@@ -2328,6 +2329,7 @@ Qed.
 *)
 
 (*
+(* TOFIX *)
 Lemma reduces_in_atmost_k_steps_ren_utokens {o} :
   forall lib k (t u : @NTerm o) ren,
     nt_wf t
@@ -2352,6 +2354,7 @@ Qed.
 *)
 
 (*
+(* TOFIX *)
 Lemma reduces_to_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
     nt_wf t
@@ -2389,6 +2392,7 @@ Qed.
 Hint Resolve isvalue_ren_utokens : slow.
 
 (*
+(* TOFIX *)
 Lemma computes_to_value_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
     nt_wf t
@@ -2583,6 +2587,7 @@ Proof.
 Qed.
 
 (*
+(* TOFIX *)
 Lemma reduces_in_atmost_k_steps_preserves_utokens {o} :
   forall lib k (t u : @NTerm o),
     nt_wf t
@@ -2599,6 +2604,7 @@ Qed.
 *)
 
 (*
+(* TOFIX *)
 Lemma reduces_to_preserves_utokens {o} :
   forall lib (t u : @NTerm o),
     nt_wf t
@@ -2612,6 +2618,7 @@ Qed.
  *)
 
 (*
+(* TOFIX *)
 Lemma computes_to_value_preserves_utokens {o} :
   forall lib (t u : @NTerm o),
     nt_wf t
@@ -3112,6 +3119,7 @@ Proof.
 Qed.
 
 (*
+(* TOFIX *)
 Lemma computes_to_value_change_utok_sub {o} :
   forall lib (t u : @NTerm o) (sub sub' : Sub),
     nt_wf t
@@ -4973,6 +4981,7 @@ Proof.
 Qed.
 
 (*
+(* TOFIX *)
 Lemma computes_to_exception_ren_utokens {o} :
   forall lib (t a e : NTerm) ren,
     nt_wf t
@@ -4988,6 +4997,7 @@ Qed.
 *)
 
 (*
+(* TOFIX *)
 Lemma computes_to_exception_preserves_utokens {o} :
   forall lib (t a e : @NTerm o),
     nt_wf t
@@ -5003,6 +5013,7 @@ Qed.
 *)
 
 (*
+(* TOFIX *)
 Lemma computes_to_marker_ren_utokens {o} :
   forall lib (t : @NTerm o) m ren,
     nt_wf t

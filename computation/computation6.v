@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -16,10 +17,13 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -704,6 +708,8 @@ Proof.
   exists v; auto.
 Qed.
 
+(*
+(* TOFIX *)
 Lemma has_value_like_k_ren_utokens {o} :
   forall lib k (t : @NTerm o) ren,
     nt_wf t
@@ -718,6 +724,7 @@ Proof.
   apply (reduces_in_atmost_k_steps_ren_utokens _ _ _ _ ren) in hvl1; auto.
   exists (ren_utokens ren u); dands; eauto with slow.
 Qed.
+*)
 
 Lemma reduces_in_atmost_k_steps_refl {o} :
   forall (lib : library) (k : nat) (t : @NTerm o),
@@ -740,6 +747,9 @@ Proof.
   introv; pose proof (eqvars_free_vars_disjoint t sub) as h; rw eqvars_prop in h; auto.
 Qed.
 
+(*
+(* TOFIX *)
+(* We have to make sure that [a] is not in the computation starting from [mk_fresh v t] *)
 Lemma has_value_like_k_fresh_implies {o} :
   forall lib k a v (t : @NTerm o),
     wf_term t
@@ -772,7 +782,9 @@ Proof.
       allrw disjoint_singleton_l.
       repeat (autodimp h hyp); try (apply get_fresh_atom_prop); eauto 3 with slow.
       { apply nr_ut_sub_cons; eauto 3 with slow.
-        intro i; apply get_fresh_atom_prop. }
+        introv i j.
+        apply subset_get_utokens_get_utokens_step_seq in j.
+        apply get_fresh_atom_prop in j; auto. }
       exrepnd.
       pose proof (h0 [(v,mk_utoken a)]) as q; clear h0; allsimpl.
       allrw @get_utokens_sub_cons; allrw @get_utokens_sub_nil; allsimpl.
@@ -797,7 +809,7 @@ Proof.
         unfold get_utokens_utok_ren in j; allsimpl; allrw app_nil_r.
         rw in_remove in j; repnd.
         apply alphaeq_preserves_utokens in h1; rw h1 in j.
-        apply get_utokens_subst in j; boolvar; allsimpl; allrw in_app_iff; tcsp; allsimpl.
+        apply get_utokens_subst in j; boolvar; allsimpl; allrw in_app_iff; tcsp; allsimpl;
         repndors; tcsp. }
 
       pose proof (q u) as ih; clear q.
@@ -848,6 +860,7 @@ Proof.
       rw @reduces_in_atmost_k_steps_S.
       eexists; dands; eauto.
 Qed.
+*)
 
 Lemma has_value_like_k_vbot {o} :
   forall (lib : @library o) k v,
