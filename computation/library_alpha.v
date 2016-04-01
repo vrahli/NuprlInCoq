@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -2259,6 +2263,65 @@ Proof.
     eapply ind; eauto.
 Qed.
 
+Lemma get_cutokens_so_soalphaeq {o} :
+  forall (t1 t2 : @SOTerm o),
+    so_alphaeq t1 t2
+    -> get_cutokens_so t1 = get_cutokens_so t2.
+Proof.
+  soterm_ind1s t1 as [v ts ind|op bs ind] Case; introv aeq; allsimpl.
+
+  - Case "sovar".
+    inversion aeq as [? ? ? len imp|]; subst; simpl; auto.
+    apply f_equal.
+    apply eq_maps3; auto.
+    introv i.
+    apply ind; eauto 3 with slow.
+    apply imp in i; auto.
+
+  - Case "soterm".
+    inversion aeq as [| ? ? ? len imp]; subst; clear aeq.
+    simpl.
+    apply f_equal.
+    apply app_if; auto.
+    apply eq_maps3; auto.
+    introv i.
+    applydup imp in i.
+    applydup in_combine in i; repnd.
+    destruct a as [l1 t1].
+    destruct c as [l2 t2].
+    simpl.
+    inversion i0 as [? ? ? ? ? len1 len2 disj norep a]; subst; allsimpl.
+    pose proof (ind t1 (so_swap (mk_swapping l1 vs) t1) l1) as h; clear ind.
+    repeat (autodimp h hyp).
+    { rw @sosize_so_swap; auto. }
+    pose proof (h (so_swap (mk_swapping l2 vs) t2)) as k; clear h.
+    autodimp k hyp.
+    allrw @get_cutokens_so_swap; auto.
+Qed.
+
+Lemma get_cutokens_soswap {o} :
+  forall s (t : @SOTerm o),
+    get_cutokens_so (soswap s t) = get_cutokens_so t.
+Proof.
+  soterm_ind t as [v ts ind|op bs ind] Case; introv; allsimpl.
+
+  - Case "sovar".
+    rewrite map_map; unfold compose.
+    apply f_equal.
+    apply eq_maps3; auto; introv i.
+    apply in_combine_same in i; repnd; subst.
+    apply ind; auto.
+
+  - Case "soterm".
+    f_equal.
+    apply app_if; auto.
+    rewrite map_map; unfold compose.
+    apply eq_maps3; auto; introv i.
+    apply in_combine_same in i; repnd; subst.
+    destruct c; simpl.
+    eapply ind; eauto.
+Qed.
+
 Lemma correct_change_bvars_entry {o} :
   forall (disj    : list NVar)
          (opabs   : opabs)
@@ -2312,8 +2375,8 @@ Proof.
                   disj (soswap (mk_soswapping vars fv) rhs)) as k.
     simpl in k; repnd.
     unfold no_utokens.
-    apply get_utokens_so_soalphaeq in k; rw <- k.
-    rw @get_utokens_soswap; auto.
+    apply get_cutokens_so_soalphaeq in k; rw <- k.
+    rw @get_cutokens_soswap; auto.
 Defined.
 
 Definition change_bvars_alpha_entry {o} (disj : list NVar) (entry : @library_entry o) : @library_entry o.

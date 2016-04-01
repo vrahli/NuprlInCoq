@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -4440,6 +4445,7 @@ Proof.
 Qed.
 *)
 
+(*
 Lemma reduces_to_preserves {o} :
   forall lib (t u : @NTerm o),
     wf_term t
@@ -4461,7 +4467,9 @@ Proof.
     dands; eauto 3 with slow.
     apply compute_step_preserves_utokens in comp1; auto.
 Qed.
+*)
 
+(*
 Lemma reduces_to_preserves_wf {o} :
   forall lib (t u : @NTerm o),
     reduces_to lib t u
@@ -4470,6 +4478,7 @@ Lemma reduces_to_preserves_wf {o} :
 Proof.
   introv r w; apply reduces_to_preserves in r; sp.
 Qed.
+*)
 
 Lemma lsubst_aux_trim_cl_sub {o} :
   forall (t : @NTerm o) (sub : @Sub o),
