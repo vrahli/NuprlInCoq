@@ -143,7 +143,13 @@ Proof.
   pose proof (q zeros) as h.
   clear q.
 
-  apply FunctionalChoice_on in h; exrepnd.
+  apply (FunctionalChoice_on
+           (baire -> nat)
+           nat) in h; exrepnd.
+  (* This is a version of AC20.
+   * We know that the q-truncated (i.e., quotiented by True) version
+   * of this axiom is false in Nuprl, while it's consistent with Coq.
+   *)
   rename f into M.
 
   remember (M (fun a => 0)) as m.
