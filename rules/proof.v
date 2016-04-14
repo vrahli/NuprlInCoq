@@ -394,9 +394,14 @@ Definition zzz {n : nat} (t : test n) : test n :=
   end.
 *)
 
+Definition proof_update_fun {o} (hole : bool) (s seq : @baresequent o) :=
+  iproof hole s -> iproof hole seq.
+
+Definition proof_update {o} (hole : bool) (seq : @baresequent o) :=
+  {s : @baresequent o & proof_update_fun hole s seq}.
 
 Definition ProofUpdate {o} (hole : bool) (seq : @baresequent o) :=
-  option {s : @baresequent o & iproof hole s -> iproof hole seq}.
+  option (proof_update hole seq).
 
 Definition retProofUpd
            {o} {hole : bool} {seq : @baresequent o}
@@ -756,7 +761,11 @@ Inductive command {o} :=
            (correct : correct_abs opabs vars rhs),
       command
 (* tries to complete a proof if it has no holes *)
-| COM_finish_proof : proof_name -> command.
+| COM_finish_proof :
+    proof_name -> command
+(* focuses to a node in a proof *)
+| COM_focus_proof :
+    proof_name -> address -> command.
 
 Record proof_library_entry {o} :=
   MkProofLibEntry
@@ -781,11 +790,25 @@ Definition proof_library_entry_upd_proof {o}
 
 Definition proof_library {o} := list (@proof_library_entry o).
 
+Record proof_update_seq {o} :=
+  MkProofUpdateSeq
+    {
+      PUS_name  : proof_name;
+      PUS_hole  : bool;
+      PUS_seq   : @baresequent o;
+      PUS_focus : baresequent;
+      PUS_upd   : proof_update_fun PUS_hole PUS_focus PUS_seq
+    }.
+
+Definition ProofUpdateSeq {o} :=
+  option (@proof_update_seq o).
+
 Record NuprlState {o} :=
   MkNuprlState
     {
       NuprlState_def_library   : @library o;
-      NuprlState_proof_library : @proof_library o
+      NuprlState_proof_library : @proof_library o;
+      NuprlState_focus         : @ProofUpdateSeq o
     }.
 
 Definition NuprlState_upd_def_lib {o}
@@ -794,7 +817,8 @@ Definition NuprlState_upd_def_lib {o}
   @MkNuprlState
     o
     lib
-    (NuprlState_proof_library state).
+    (NuprlState_proof_library state)
+    (NuprlState_focus state).
 
 Definition NuprlState_upd_proof_lib {o}
            (state : @NuprlState o)
@@ -802,7 +826,17 @@ Definition NuprlState_upd_proof_lib {o}
   @MkNuprlState
     o
     (NuprlState_def_library state)
-    lib.
+    lib
+    (NuprlState_focus state).
+
+Definition NuprlState_upd_focus {o}
+           (state : @NuprlState o)
+           (upd   : @ProofUpdateSeq o) : NuprlState :=
+  @MkNuprlState
+    o
+    (NuprlState_def_library state)
+    (NuprlState_proof_library state)
+    upd.
 
 Fixpoint finish_proof_in_library {o}
            (lib : @proof_library o)
@@ -811,7 +845,7 @@ Fixpoint finish_proof_in_library {o}
   | [] => []
   | p :: ps =>
     if String.string_dec (proof_library_entry_name p) name
-    then if proof_library_entry_hole p
+    then if proof_library_entry_hole p (* no need to finish the proof if it is already finished *)
          then let p' := option_with_default
                           (option_map (fun p' => proof_library_entry_upd_proof p p')
                                       (finish_proof (proof_library_entry_proof p)))
@@ -819,6 +853,28 @@ Fixpoint finish_proof_in_library {o}
               in p' :: ps
          else p :: ps
     else p :: finish_proof_in_library ps name
+  end.
+
+Fixpoint focus_proof_in_library {o}
+           (lib : @proof_library o)
+           (name : proof_name)
+           (addr : address) : ProofUpdateSeq :=
+  match lib with
+  | [] => None
+  | p :: ps =>
+    if String.string_dec (proof_library_entry_name p) name
+    then match get_sequent_fun_at_address (proof_library_entry_proof p) addr with
+         | Some (existT s f) =>
+           Some (MkProofUpdateSeq
+                   o
+                   name
+                   (proof_library_entry_hole p)
+                   (proof_library_entry_seq p)
+                   s
+                   f)
+         | None => None
+         end
+    else focus_proof_in_library ps name addr
   end.
 
 Definition update {o}
@@ -833,6 +889,9 @@ Definition update {o}
   | COM_finish_proof name =>
     let lib := NuprlState_proof_library state in
     NuprlState_upd_proof_lib state (finish_proof_in_library lib name)
+  | COM_focus_proof name addr =>
+    let lib := NuprlState_proof_library state in
+    NuprlState_upd_focus state (focus_proof_in_library lib name addr)
   end.
 
 CoInductive Loop {o} : Type :=
