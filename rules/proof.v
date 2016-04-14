@@ -225,8 +225,8 @@ Fixpoint map_option_in_fun
   end.
 
 Fixpoint finish_proof
-         {o} {seq : @baresequent o}
-         (prf: iproof true seq) : option (iproof false seq) :=
+         {o} {seq : @baresequent o} {h : bool}
+         (prf: iproof h seq) : option (iproof false seq) :=
   match prf with
   | iproof_hole s e => None
   | iproof_isect_eq a1 a2 b1 b2 x1 x2 y i H niyH pa pb =>
@@ -745,38 +745,101 @@ Definition abs_in_lib {o} opabs1 vars1 (lib : @library o) : bool :=
        end)
     lib.
 
+Definition proof_name := String.string.
+
 Inductive command {o} :=
+(* add a definition at the head *)
 | COM_add_def :
     forall (opabs   : opabs)
            (vars    : list sovar_sig)
            (rhs     : @SOTerm o)
            (correct : correct_abs opabs vars rhs),
-      command.
+      command
+(* tries to complete a proof if it has no holes *)
+| COM_finish_proof : proof_name -> command.
 
 Record proof_library_entry {o} :=
-  {
-    proof_library_entry_name  : String.string;
-    proof_library_entry_seq   : @baresequent o;
-    proof_library_entry_proof : proof proof_library_entry_seq
-  }.
+  MkProofLibEntry
+    {
+      proof_library_entry_name  : proof_name;
+      proof_library_entry_seq   : @baresequent o;
+      proof_library_entry_hole  : bool;
+      proof_library_entry_proof : iproof proof_library_entry_hole proof_library_entry_seq
+    }.
+
+Definition proof_library_entry_upd_proof {o}
+           (e : @proof_library_entry o)
+           {h : bool}
+           (p : iproof h (proof_library_entry_seq e))
+  : proof_library_entry :=
+  MkProofLibEntry
+    o
+    (proof_library_entry_name e)
+    (proof_library_entry_seq e)
+    h
+    p.
 
 Definition proof_library {o} := list (@proof_library_entry o).
 
+Record NuprlState {o} :=
+  MkNuprlState
+    {
+      NuprlState_def_library   : @library o;
+      NuprlState_proof_library : @proof_library o
+    }.
+
+Definition NuprlState_upd_def_lib {o}
+           (state : @NuprlState o)
+           (lib   : @library o) : NuprlState :=
+  @MkNuprlState
+    o
+    lib
+    (NuprlState_proof_library state).
+
+Definition NuprlState_upd_proof_lib {o}
+           (state : @NuprlState o)
+           (lib   : @proof_library o) : NuprlState :=
+  @MkNuprlState
+    o
+    (NuprlState_def_library state)
+    lib.
+
+Fixpoint finish_proof_in_library {o}
+           (lib : @proof_library o)
+           (name : proof_name) : proof_library :=
+  match lib with
+  | [] => []
+  | p :: ps =>
+    if String.string_dec (proof_library_entry_name p) name
+    then if proof_library_entry_hole p
+         then let p' := option_with_default
+                          (option_map (fun p' => proof_library_entry_upd_proof p p')
+                                      (finish_proof (proof_library_entry_proof p)))
+                          p
+              in p' :: ps
+         else p :: ps
+    else p :: finish_proof_in_library ps name
+  end.
+
 Definition update {o}
-           (lib : @library o)
-           (com : command) : library :=
+           (state : @NuprlState o)
+           (com   : command) : NuprlState :=
   match com with
   | COM_add_def opabs vars rhs correct =>
+    let lib := NuprlState_def_library state in
     if abs_in_lib opabs vars lib
-    then lib
-    else lib ++ [lib_abs opabs vars rhs correct]
+    then state
+    else NuprlState_upd_def_lib state (lib_abs opabs vars rhs correct :: lib)
+  | COM_finish_proof name =>
+    let lib := NuprlState_proof_library state in
+    NuprlState_upd_proof_lib state (finish_proof_in_library lib name)
   end.
 
 CoInductive Loop {o} : Type :=
 | proc : (@command o -> Loop) -> Loop.
 
-CoFixpoint loop {o} (lib : @library o) : Loop :=
-  proc (fun c => loop (update lib c)).
+CoFixpoint loop {o} (state : @NuprlState o) : Loop :=
+  proc (fun c => loop (update state c)).
 
 
 (*
