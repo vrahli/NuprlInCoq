@@ -66,6 +66,7 @@ Require Import rules_squiggle3.
 Require Import rules_squiggle4.
 Require Import rules_squiggle5.
 Require Import rules_squiggle6.
+Require Import rules_squiggle7.
 
 
 (* Rules(exception): *)
@@ -130,7 +131,7 @@ Require Import rules_false.
 (* A few lemmas using our verified rules *)
 Require Import nuprl_lemmas1.
 Require Import nuprl_lemmas2.
-Require Import proof.
+(*Require Import proof.*)
 
 
 (* Function/pi type *)

@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -25,15 +26,246 @@
 *)
 
 
+Require Export sequents2.
+Require Export sequents_tacs.
+Require Export sequents_tacs2.
 Require Export rules_useful.
-Require Export subst_tacs.
-Require Export cequiv_tacs.
 Require Export per_props_equality.
 Require Export sequents_equality.
 Require Export rules_tyfam.
+Require Export subst_tacs_aeq.
+Require Export cequiv_tacs.
+
 (** printing |- $\vdash$ *)
 (** printing ->  $\rightarrow$ *)
 (* begin hide *)
+
+
+Hint Resolve wf_term_subst : slow.
+Hint Rewrite @nh_vars_hyps_app : slow.
+Hint Rewrite @nh_vars_hyps_snoc : slow.
+
+Lemma subset_free_vars_csub_app3 {o} :
+  forall (t : @NTerm o) sub1 sub2,
+    disjoint (remove_nvars (dom_csub sub1) (free_vars t)) (dom_csub sub2)
+    -> csubst t (sub1 ++ sub2) = csubst t sub1.
+Proof.
+  unfold csubst; introv disj.
+  rw <- @csub2sub_app.
+  apply simple_lsubst_app2.
+  - introv i j k.
+    assert (cl_sub (csub2sub sub1)) as cl by eauto 3 with slow.
+    apply in_sub_eta in i; repnd.
+    pose proof (flat_map_free_vars_range_cl_sub (csub2sub sub1) cl) as h.
+    assert (LIn t0 (flat_map free_vars (range (csub2sub sub1)))) as it.
+    { rw lin_flat_map; eexists; dands; eauto. }
+    rw h in it; simpl in it; tcsp.
+  - introv i.
+    assert (prog_sub (csub2sub sub2)) as prog by eauto 3 with slow.
+    rw <- @prog_sub_eq in prog; apply prog.
+    apply in_sub_eta in i; tcsp.
+  - introv i j k.
+    allrw @dom_csub_eq.
+    pose proof (disj v) as xx.
+    rw in_remove_nvars in xx.
+    autodimp xx hyp; tcsp.
+Qed.
+
+Lemma lsubstc_app_weak_r {o} :
+  forall (t : @NTerm o) w x u s1 s2 c,
+    disjoint (remove_nvars [x] (free_vars t)) (dom_csub s2)
+    -> {c' : cover_vars t ((x,u) :: s1)
+        & lsubstc
+            t
+            w
+            ((x,u) :: s1 ++ s2)
+            c
+          = lsubstc t w ((x,u) :: s1) c'}.
+Proof.
+  introv disj.
+
+  assert (cover_vars t ((x,u) :: s1)) as cov.
+  {
+    allrw @cover_vars_eq.
+    allrw subvars_eq.
+    introv i; applydup c in i; allsimpl; clear c.
+    allrw @dom_csub_app.
+    allrw in_app_iff.
+    repndors; tcsp.
+    apply disjoint_sym in disj.
+    apply disj in i0.
+    rw in_remove_nvars in i0; simpl in i0.
+    destruct (deq_nvar x x0); auto.
+    destruct i0; tcsp.
+  }
+
+  exists cov.
+
+  apply lsubstc_eq_if_csubst.
+  rewrite @app_comm_cons.
+  apply subset_free_vars_csub_app3; simpl.
+  introv i.
+  apply disj.
+  allrw in_remove_nvars; repnd; dands; auto.
+  allsimpl.
+  intro j; destruct i; tcsp.
+Qed.
+
+Lemma lsubstc_snoc_weak_r {o} :
+  forall (t : @NTerm o) w x u s y v c,
+    (x <> y -> !LIn y (free_vars t))
+    -> {c' : cover_vars t ((x,u) :: s)
+        & lsubstc
+            t
+            w
+            ((x,u) :: snoc s (y,v))
+            c
+          = lsubstc t w ((x,u) :: s) c'}.
+Proof.
+  introv disj.
+
+  assert (cover_vars t ((x,u) :: s)) as cov.
+  {
+    allrw @cover_vars_eq.
+    allrw subvars_eq.
+    introv i; applydup c in i; allsimpl; clear c.
+    allrw @dom_csub_snoc; allsimpl.
+    allrw in_snoc.
+    repndors; subst; tcsp.
+    destruct (deq_nvar x y); tcsp.
+  }
+
+  exists cov.
+
+  apply lsubstc_eq_if_csubst.
+  rewrite snoc_as_append.
+  rewrite @app_comm_cons.
+  apply subset_free_vars_csub_app3; simpl.
+  introv i j; allsimpl; repndors; subst; tcsp.
+  allrw in_remove_nvars; repnd; allsimpl.
+  allrw not_over_or; repnd; tcsp.
+Qed.
+
+Ltac lsubstc_weak :=
+  match goal with
+  | [ |- context[lsubstc ?t ?w ((?x,?u) :: ?s1 ++ ?s2) ?c] ] =>
+    let disj := fresh "disj" in
+    let h    := fresh "h" in
+    let cov  := fresh "cov" in
+    assert (disjoint (remove_nvars [x] (free_vars t)) (dom_csub s2)) as disj;
+      [ auto
+      | pose proof (lsubstc_app_weak_r t w x u s1 s2 c disj) as h;
+        destruct h as [ cov h ];
+        rewrite h; clear h
+      ]
+
+  | [ |- context[lsubstc ?t ?w ((?x,?u) :: snoc ?s (?y,?v)) ?c] ] =>
+    let disj := fresh "disj" in
+    let h    := fresh "h" in
+    let cov  := fresh "cov" in
+    assert (x <> y -> !LIn y (free_vars t)) as disj;
+      [ auto
+      | pose proof (lsubstc_snoc_weak_r t w x u s y v c disj) as h;
+        destruct h as [ cov h ];
+        rewrite h; clear h
+      ]
+  end.
+
+(* !!MOVE *)
+Lemma isprog_vars_equality {p} :
+  forall (a b c : @NTerm p) vs,
+    isprog_vars vs (mk_equality a b c)
+                <=> (isprog_vars vs a # isprog_vars vs b # isprog_vars vs c).
+Proof.
+  introv.
+  repeat (rw @isprog_vars_eq; simpl).
+  autorewrite with slow.
+  allrw subvars_app_l.
+  allrw <- @wf_term_eq.
+  allrw <- @wf_equality_iff; split; sp.
+Qed.
+
+(* !!MOVE *)
+Lemma isprog_vars_member {p} :
+  forall (a b : @NTerm p) vs,
+    isprog_vars vs (mk_member a b)
+                <=> (isprog_vars vs a # isprog_vars vs b).
+Proof.
+  introv.
+  repeat (rw @isprog_vars_eq; simpl).
+  autorewrite with slow.
+  allrw subvars_app_l.
+  allrw <- @wf_term_eq.
+  allrw <- @wf_equality_iff; split; sp.
+Qed.
+
+(* !!MOVE *)
+Lemma isprog_vars_iff_covered {o} :
+  forall (t : @NTerm o) (vs : list NVar),
+    isprog_vars vs t <=> (covered t vs # wf_term t).
+Proof.
+  tcsp.
+Qed.
+
+(* !!MOVE *)
+Lemma isprog_vars_lsubst2 {o} :
+  forall (t : @NTerm o) vs sub,
+    wf_term t
+    -> (forall v u, LIn (v, u) sub -> isprog_vars vs u)
+    -> isprog_vars (vs ++ dom_sub sub) t
+    -> isprog_vars vs (lsubst t sub).
+Proof.
+  introv w k1 k2.
+  allrw @isprog_vars_eq; repnd.
+  dands.
+
+  {
+    eapply subvars_eqvars;[|apply eqvars_sym; apply eqvars_free_vars_disjoint].
+    rw subvars_app_l; dands.
+
+    - rw subvars_remove_nvars; auto.
+
+    - eapply subvars_trans;[apply sub_free_vars_sub_keep_first_subvars|].
+      rw subvars_eq; introv i.
+      apply in_sub_free_vars in i; exrepnd.
+      apply k1 in i0.
+      apply isprog_vars_eq in i0; repnd.
+      rw subvars_eq in i2; apply i2 in i1; auto.
+  }
+
+  { apply nt_wf_lsubst_iff; dands; auto.
+    introv i j.
+    apply sub_find_some in j.
+    apply k1 in j; eauto 3 with slow.
+  }
+Qed.
+
+(* !!MOVE *)
+Lemma isprog_vars_comm {o} :
+  forall (t : @NTerm o) vs1 vs2,
+    isprog_vars (vs1 ++ vs2) t
+    -> isprog_vars (vs2 ++ vs1) t.
+Proof.
+  introv isp.
+  allrw @isprog_vars_eq; repnd; dands; auto.
+  apply subvars_comm_r; auto.
+Qed.
+
+(* !!MOVE *)
+Lemma isprog_vars_subst2 {o} :
+  forall (t : @NTerm o) v u vs,
+    wf_term t
+    -> isprog_vars vs u
+    -> isprog_vars (v :: vs) t
+    -> isprog_vars vs (subst t v u).
+Proof.
+  introv w k1 k2.
+  apply isprog_vars_lsubst2; simpl; auto.
+
+  - introv i; repndors; cpx.
+
+  - apply isprog_vars_comm; simpl; auto.
+Qed.
 
 
 (* end hide *)
@@ -70,74 +302,75 @@ Require Export rules_tyfam.
 
  *)
 
+Definition rule_function_elimination_concl {o}
+           (A : @NTerm o) B C e f x z H J :=
+  mk_baresequent
+    (snoc H (mk_hyp f (mk_function A x B)) ++ J)
+    (mk_concl C (subst e z mk_axiom)).
+
+Definition rule_function_elimination_hyp1 {o}
+           (A : @NTerm o) B a f x H J :=
+  mk_baresequent
+    (snoc H (mk_hyp f (mk_function A x B)) ++ J)
+    (mk_conclax (mk_member a A)).
+
+Definition rule_function_elimination_hyp2 {o}
+           (A : @NTerm o) B C a e f x z H J :=
+  mk_baresequent
+    (snoc (snoc H (mk_hyp f (mk_function A x B)) ++ J)
+          (mk_hyp z (mk_member (mk_apply (mk_var f) a)
+                               (subst B x a))))
+    (mk_concl C e).
+
 Definition rule_function_elimination {p}
            (A B C a e : NTerm)
            (f x z : NVar)
            (H J : @barehypotheses p) :=
   mk_rule
-    (mk_baresequent
-       (snoc H (mk_hyp f (mk_function A x B)) ++ J)
-       (mk_concl C (subst e z mk_axiom)))
-    [ mk_baresequent
-        (snoc H (mk_hyp f (mk_function A x B)) ++ J)
-        (mk_conclax (mk_member a A)),
-      mk_baresequent
-        (snoc (snoc H (mk_hyp f (mk_function A x B)) ++ J)
-              (mk_hyp z (mk_member (mk_apply (mk_var f) a)
-                                   (subst B x a))))
-        (mk_concl C e)
+    (rule_function_elimination_concl A B C e f x z H J)
+    [
+      rule_function_elimination_hyp1 A B a f x H J,
+      rule_function_elimination_hyp2 A B C a e f x z H J
     ]
     [sarg_term a, sarg_var z].
 
-Lemma rule_function_elimination_true {p} :
+Lemma rule_function_elimination_true3 {p} :
   forall lib (A B C a e : NTerm),
   forall f x z : NVar,
   forall H J : @barehypotheses p,
-  forall bc1 : x <> f,
-  forall bc2 : disjoint (vars_hyps H) (bound_vars B),
-  forall bc3 : disjoint (vars_hyps J) (bound_vars B),
-  forall bc4 : !LIn f (bound_vars B),
-    rule_true lib (rule_function_elimination
+    rule_true3 lib (rule_function_elimination
                  A B C a e
                  f x z
                  H J).
 Proof.
-  unfold rule_function_elimination, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
-  intros.
+  unfold rule_function_elimination, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros; repnd.
   clear cargs.
 
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
-  generalize (hyps (mk_baresequent
-                      (snoc H (mk_hyp f (mk_function A x B)) ++ J)
-                      (mk_conclax (mk_member a A)))
-                   (inl eq_refl))
-             (hyps (mk_baresequent
-                      (snoc (snoc H (mk_hyp f (mk_function A x B)) ++ J)
-                            (mk_hyp z (mk_member (mk_apply (mk_var f) a) (subst B x a))))
-                      (mk_concl C e))
-                   (inr (inl eq_refl)));
-    simpl; intros hyp1 hyp2; clear hyps.
+  dLin_hyp; exrepnd.
+  rename Hyp into hyp1.
+  rename Hyp0 into hyp2.
   destruct hyp1 as [ ws1 hyp1 ].
   destruct hyp2 as [ ws2 hyp2 ].
   destseq; allsimpl; proof_irr; GC.
 
-  assert (covered
-            (subst e z mk_axiom)
-            (vars_hyps (filter is_nh (snoc H (mk_hyp f (mk_function A x B)) ++ J)))) as cv.
-  clear hyp1 hyp2.
-  dwfseq.
-  intros.
-  generalize (isprogram_lsubst2 e [(z,mk_axiom)]); simpl; intro k.
-  autodimp k hyp; sp; cpx.
-  unfold subst in X; rw k in X; clear k.
-  rw in_remove_nvars in X; simpl in X; sp.
-  apply not_over_or in X; sp.
-  generalize (ce x0); sp.
-  allrw in_app_iff; allrw in_snoc; sp.
-  allrw in_app_iff; allrw in_snoc; sp.
-
-  exists cv.
+  assert (wf_csequent (snoc H (mk_hyp f (mk_function A x B)) ++ J)
+                      ||- (mk_concl C (subst e z mk_axiom))) as wfc.
+  {
+    clear hyp1 hyp2.
+    unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl; simpl.
+    prove_seq; eauto 3 with slow.
+    apply covered_subst; eauto 2 with slow.
+    eapply covered_subvars;[|eauto].
+    autorewrite with slow; simpl.
+    rw subvars_eq; introv i; simpl.
+    repeat (allrw @in_snoc; allrw @in_app_iff).
+    repndors; tcsp.
+  }
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
 
   (* We prove some simple facts on our sequents *)
   assert (disjoint (free_vars A) (vars_hyps J)
@@ -151,28 +384,22 @@ Proof.
           # !LIn f (vars_hyps H)
           # !LIn f (vars_hyps J)
           # !LIn f (free_vars A)
-          # !LIn f (free_vars B)) as vhyps.
-
-  clear hyp1 hyp2.
-  dwfseq.
-  sp;
-    try (complete (introv i; discover; allunfold @disjoint; discover; auto));
-    try (complete (assert (LIn f (remove_nvars [x] (free_vars B)))
-                    by (rw in_remove_nvars; rw in_single_iff; sp);
-                   discover; auto));
-    try (complete (generalize (wg7 f);
-                   rw in_remove_nvars; simpl; sp;
-                   dest_imp X0 h));
-    try (complete (unfold disjoint; introv i;
-                   generalize (wfh10 t); sp;
-                   apply wfh11 in X; sp));
-    try (complete (apply wf_member_iff in wfct1; sp));
-    try (complete (generalize (wfh10 z); rw in_app_iff; rw in_snoc; sp));
-    try (complete (apply cg in X; allrw in_app_iff; allrw in_snoc; sp;
-                   generalize (wfh10 f); rw in_remove_nvars; simpl; intro i;
-                   dest_imp i hyp));
-    try (complete (generalize (wfh10 f); rw in_remove_nvars; simpl; intro i;
-                   dest_imp i hyp)).
+          # (x <> f -> !LIn f (free_vars B))) as vhyps.
+  {
+    clear hyp1 hyp2.
+    dwfseq.
+    sp;
+      try (complete (introv i; discover; allunfold @disjoint; discover; auto));
+      try (complete (assert (LIn f (remove_nvars [x] (free_vars B)))
+                      by (rw in_remove_nvars; rw in_single_iff; sp);
+                     discover; auto));
+      try (complete (apply wf_member_iff in wfct0; sp));
+      try (complete (generalize (wfh10 z); rw in_app_iff; rw in_snoc; sp));
+      try (complete (generalize (wfh10 f); rw in_remove_nvars; simpl; intro i;
+                     dest_imp i hyp));
+      try complete (pose proof (wfc1 z) as xx; autodimp xx hyp;
+                    rw in_app_iff in xx; rw in_snoc in xx; repndors; tcsp).
+  }
 
   destruct vhyps as [ daj vhyps ].
   destruct vhyps as [ dbj vhyps ].
@@ -202,182 +429,412 @@ Proof.
     clear hyp2; intros hyp2.
   repeat (autodimp hyp2 h); exrepnd.
 
-  (* hyps_functionality *)
+  {
+    (* hyps_functionality *)
 
-  generalize (hyps_functionality_snoc lib
-                (snoc H (mk_hyp f (mk_function A x B)) ++ J)
-                (mk_hyp z (mk_member (mk_apply (mk_var f) a) (subst B x a)))
-                (snoc s1a0 (f, t1) ++ s1b)
-                mkc_axiom); simpl; intro k.
-  apply k; try (complete auto); clear k.
-  introv eq sim; GC; lsubst_tac.
-  rw @tequality_mkc_member_sp.
-  apply equality_refl in eq.
-  rw <- @member_member_iff in eq.
+    pose proof (hyps_functionality_snoc
+                  lib
+                  (snoc H (mk_hyp f (mk_function A x B)) ++ J)
+                  (mk_hyp z (mk_member (mk_apply (mk_var f) a) (subst B x a)))
+                  (snoc s1a0 (f, t1) ++ s1b)
+                  mkc_axiom) as k; simpl in k.
+    apply k; try (complete auto); clear k.
+    introv eq sim; GC; lsubst_tac.
+    rw @tequality_mkc_member_sp.
+    apply equality_refl in eq.
+    rw <- @member_member_iff in eq.
 
-  vr_seq_true in hyp1.
-  generalize (hyp1 (snoc s1a0 (f, t1) ++ s1b) s'); clear hyp1; intros hyp1.
-  repeat (autodimp hyp1 h); exrepnd.
-  lsubst_tac.
-  rw @member_eq in hyp1.
-  rw <- @member_member_iff in hyp1.
-  rw @tequality_mkc_member_sp in hyp0; repnd.
+    vr_seq_true in hyp1.
+    generalize (hyp1 (snoc s1a0 (f, t1) ++ s1b) s'); clear hyp1; intros hyp1.
+    repeat (autodimp hyp1 h); exrepnd.
+    lsubst_tac.
+    rw @member_eq in hyp1.
+    rw <- @member_member_iff in hyp1.
+    rw @tequality_mkc_member_sp in hyp0; repnd.
 
-  assert (equality lib (lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) c3)
-                   (lsubstc a wa s' c5)
-                   (lsubstc A w1 s1a0 c1)) as eqa.
-  sp.
-  unfold member in hyp1.
-  spcast; apply @equality_respects_cequivc_right with (t2 := lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) c3); sp.
+    assert (equality lib (lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) c3)
+                     (lsubstc a wa s' c5)
+                     (lsubstc A w1 s1a0 c1)) as eqa.
+    {
+      sp.
+      unfold member in hyp1.
+      spcast; apply @equality_respects_cequivc_right with (t2 := lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) c3); sp.
+    }
 
-  applydup sim5 in eqa.
+    applydup sim5 in eqa.
 
-  duplicate sim as sim'.
-  apply eqh in sim'.
+    duplicate sim as sim'.
+    apply eqh in sim'.
 
-  rw @eq_hyps_app in sim'; simpl in sim'; exrepnd; subst; cpx.
-  apply app_split in sim'0; repnd; allrw length_snoc;
-  try (complete (allrw; sp)); subst; cpx.
+    rw @eq_hyps_app in sim'; simpl in sim'; exrepnd; subst; cpx.
+    apply app_split in sim'0; repnd; allrw length_snoc;
+    try (complete (allrw; sp)); subst; cpx.
 
-  rw @eq_hyps_snoc in sim'5; simpl in sim'5; exrepnd; subst; cpx.
-  lsubst_tac.
-  rw @tequality_function in sim'0; repnd.
+    rw @eq_hyps_snoc in sim'5; simpl in sim'5; exrepnd; subst; cpx.
+    lsubst_tac.
+    rw @tequality_function in sim'0; repnd.
 
-  applydup sim'0 in eqa as teq.
+    applydup sim'0 in eqa as teq.
 
-  assert (substc (lsubstc a wa (snoc s1a (f, t0) ++ s1b0) c3) x
-                 (lsubstc_vars B w2 (csub_filter s1a [x]) [x] c2)
-          = lsubstc (subst B x a) wT (snoc s1a (f, t0) ++ s1b0) cT)
-         as eq1
-         by (apply substc_lsubstc_type_family_codom; sp; repeat insub).
-  rw eq1 in teq.
+    assert (disjoint (remove_nvars [x] (free_vars B)) (dom_csub s1b0)) as disj1.
+    {
+      apply similarity_dom in sim1; repnd.
+      rw sim7.
+      rewrite vars_hyps_substitute_hyps; auto.
+    }
 
-  assert (substc (lsubstc a wa (snoc s2a1 (f, t3) ++ s2b0) c5) x
-                 (lsubstc_vars B w2 (csub_filter s2a1 [x]) [x] c9)
-          = lsubstc (subst B x a) wT (snoc s2a1 (f, t3) ++ s2b0) cT0)
-         as eq2
-         by (apply substc_lsubstc_type_family_codom; sp; repeat insub).
-  rw eq2 in teq.
+    assert (disjoint (remove_nvars [x] (free_vars B)) (dom_csub s2b0)) as disj2.
+    {
+      apply sub_eq_hyps_dom in sim'1; repnd.
+      rw sim'1; auto.
+    }
 
-  split; try (complete auto).
+    repeat (substc_lsubstc_vars3;[]).
 
-  rw @similarity_app in sim; simpl in sim; exrepnd; subst; cpx.
-  apply app_split in sim7; repnd; allrw length_snoc;
-  try (complete (allrw; sp)); subst; cpx.
-  apply app_split in sim9; repnd; allrw length_snoc;
-  try (complete (allrw; sp)); subst; cpx.
-  rw @similarity_snoc in sim12; simpl in sim12; exrepnd; subst; cpx.
-  lsubst_tac.
-  rw @equality_in_function in sim9; repnd.
-  applydup sim9 in eqa as eqf.
-  rw eq1 in eqf.
+    dands.
 
-  left; sp.
+    {
+      repeat (lsubstc_subst_aeq2;[]).
+      repeat (substc_lsubstc_vars3;[]).
+      repeat (lsubstc_weak;[]).
+      proof_irr.
+      auto.
+    }
 
-  (* similarity *)
+    rw @similarity_app in sim; simpl in sim; exrepnd; subst; cpx.
+    apply app_split in sim7; repnd; allrw length_snoc;
+    try (complete (allrw; sp)); subst; cpx.
+    apply app_split in sim9; repnd; allrw length_snoc;
+    try (complete (allrw; sp)); subst; cpx.
+    rw @similarity_snoc in sim12; simpl in sim12; exrepnd; subst; cpx.
+    lsubst_tac.
+    rw @equality_in_function in sim9; repnd.
+    applydup sim9 in eqa as eqf.
 
-  assert (wf_term (mk_member (mk_apply (mk_var f) a) (subst B x a))) as wm.
-  apply wf_member; sp; try (apply wf_apply; sp).
-  apply subst_preserves_wf_term; sp.
+    left.
+    repeat (lsubstc_subst_aeq2;[]).
+    repeat (substc_lsubstc_vars3;[]).
+    repeat (lsubstc_weak;[]).
+    proof_irr.
+    auto.
+  }
 
-  assert (cover_vars (mk_member (mk_apply (mk_var f) a) (subst B x a))
-                     (snoc s1a0 (f, t1) ++ s1b)) as cm.
-  apply cover_vars_member; sp.
-  apply cover_vars_apply; sp.
-  apply cover_vars_var.
-  rw @dom_csub_app; rw @dom_csub_snoc; rw in_app_iff; rw in_snoc; simpl; sp.
-  rw @cover_vars_eq; rw @dom_csub_app; rw @dom_csub_snoc; insub.
-  (* begin proof of last cover_vars *)
-  rw @cover_vars_eq; rw @cover_vars_covered; apply covered_subst; sp.
-  rw @dom_csub_app; rw @dom_csub_snoc; simpl.
-  rw cons_app; apply covered_app_weak_l.
-  clear sim2 sim5; unfold cover_vars_upto in c2; unfold covered.
-  prove_subvars c2; allsimpl; sp.
-  rw @dom_csub_csub_filter in l; rw in_remove_nvars in l; rw in_single_iff in l.
-  rw in_snoc; sp.
-  clear hyp1; rw @covered_equality in ct0; repnd.
-  unfold covered; unfold covered in ct1.
-  rw @vars_hyps_app in ct1; rw @vars_hyps_snoc in ct1; simpl in ct1.
-  rw @dom_csub_app; rw @dom_csub_snoc; simpl.
-  allapply @similarity_dom; repnd; allrw; rw @vars_hyps_substitute_hyps; sp.
-  (* end proof of last cover_vars *)
 
-  rw @similarity_snoc; simpl.
-  exists (snoc s1a0 (f, t1) ++ s1b)
-         (snoc s2a0 (f, t2) ++ s2b)
-         (@mkc_axiom p) (@mkc_axiom p)
-         wm cm; sp.
-  lsubst_tac.
-  rw @member_eq.
-  rw <- @member_member_iff.
+  {
+    (* similarity *)
 
-  vr_seq_true in hyp1.
-  generalize (hyp1 (snoc s1a0 (f, t1) ++ s1b)
-                   (snoc s2a0 (f, t2) ++ s2b));
-    clear hyp1; intros hyp1.
-  repeat (autodimp hyp1 h); exrepnd.
-  lsubst_tac.
-  rw @member_eq in hyp1.
-  rw <- @member_member_iff in hyp1.
-  rw @tequality_mkc_member_sp in hyp0; repnd.
-  unfold member in hyp1.
-  apply sim2 in hyp1.
+    assert (wf_term (mk_member (mk_apply (mk_var f) a) (subst B x a))) as wm.
+    {
+      apply wf_member; sp; try (apply wf_apply; sp).
+      apply subst_preserves_wf_term; sp.
+    }
 
-  assert (substc (lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) c3) x
-                 (lsubstc_vars B w2 (csub_filter s1a0 [x]) [x] c2)
-          = lsubstc (subst B x a) wT (snoc s1a0 (f, t1) ++ s1b) cT)
-         as eq1
-         by (apply substc_lsubstc_type_family_codom; sp; repeat insub).
-  rw eq1 in hyp1.
-  apply equality_refl in hyp1; sp.
+    assert (cover_vars (mk_member (mk_apply (mk_var f) a) (subst B x a))
+                       (snoc s1a0 (f, t1) ++ s1b)) as cm.
+    {
+      apply cover_vars_member; sp.
+      apply cover_vars_apply; sp.
+      apply cover_vars_var.
+      rw @dom_csub_app; rw @dom_csub_snoc; rw in_app_iff; rw in_snoc; simpl; sp.
+      rw @cover_vars_eq; rw @dom_csub_app; rw @dom_csub_snoc; insub.
+      (* begin proof of last cover_vars *)
+      rw @cover_vars_eq; rw @cover_vars_covered; apply covered_subst; sp.
+      rw @dom_csub_app; rw @dom_csub_snoc; simpl.
+      rw cons_app; apply covered_app_weak_l.
+      clear sim2 sim5; unfold cover_vars_upto in c2; unfold covered.
+      prove_subvars c2; allsimpl; sp.
+      rw @dom_csub_csub_filter in l; rw in_remove_nvars in l; rw in_single_iff in l.
+      rw in_snoc; sp.
+      clear hyp1; rw @covered_equality in ct0; repnd.
+      unfold covered; unfold covered in ct1.
+      rw @vars_hyps_app in ct1; rw @vars_hyps_snoc in ct1; simpl in ct1.
+      rw @dom_csub_app; rw @dom_csub_snoc; simpl.
+      allapply @similarity_dom; repnd; allrw; rw @vars_hyps_substitute_hyps; sp.
+      (* end proof of last cover_vars *)
+    }
+
+    sim_snoc.
+    dands; auto.
+    lsubst_tac.
+    rw @member_eq.
+    rw <- @member_member_iff.
+
+    vr_seq_true in hyp1.
+    generalize (hyp1 (snoc s1a0 (f, t1) ++ s1b)
+                     (snoc s2a0 (f, t2) ++ s2b));
+      clear hyp1; intros hyp1.
+    repeat (autodimp hyp1 h); exrepnd.
+    lsubst_tac.
+    rw @member_eq in hyp1.
+    rw <- @member_member_iff in hyp1.
+    rw @tequality_mkc_member_sp in hyp0; repnd.
+    unfold member in hyp1.
+    apply sim2 in hyp1.
+
+    assert (disjoint (remove_nvars [x] (free_vars B)) (dom_csub s1b)) as disj1.
+    {
+      apply similarity_dom in sim1; repnd.
+      rw sim7.
+      rewrite vars_hyps_substitute_hyps; auto.
+    }
+
+    apply equality_refl in hyp1.
+    unfold member in *.
+    repeat (lsubstc_subst_aeq2;[]).
+    repeat (substc_lsubstc_vars3;[]).
+    repeat (lsubstc_weak;[]).
+    proof_irr.
+    auto.
+  }
 
   (* conclusion *)
 
   lsubst_tac; sp.
 
-  assert (lsubstc e wfce0 (snoc (snoc s1a0 (f, t1) ++ s1b) (z, mkc_axiom)) pt0
-          = lsubstc (subst e z mk_axiom) wfce (snoc s1a0 (f, t1) ++ s1b) pt1) as eq1.
-  apply lsubstc_eq_if_csubst.
-  rw <- @csubst_swap.
-  rw cons_as_app.
-  rw <- @csubst_app.
-  unfold csubst, subst; simpl; sp.
-  rw @dom_csub_app; rw @dom_csub_snoc; simpl; rw in_app_iff; rw in_snoc.
-  insub.
+  repeat (lsubstc_subst_aeq2;[]).
+  allrw @lsubstc_mk_axiom.
+  repeat (substc_lsubstc_vars3;[]).
+  proof_irr.
 
-  assert (lsubstc e wfce0 (snoc (snoc s2a0 (f, t2) ++ s2b) (z, mkc_axiom)) pt3
-          = lsubstc (subst e z mk_axiom) wfce (snoc s2a0 (f, t2) ++ s2b) pt2) as eq2.
-  apply lsubstc_eq_if_csubst.
-  rw <- @csubst_swap.
-  rw cons_as_app.
-  rw <- @csubst_app.
-  unfold csubst, subst; simpl; sp.
-  rw @dom_csub_app; rw @dom_csub_snoc; simpl; rw in_app_iff; rw in_snoc.
-  insub.
+  pose proof (lsubstc_snoc_move
+                e
+                (snoc s1a0 (f, t1) ++ s1b)
+                []
+                z
+                mkc_axiom
+                wfce) as xx1.
+  allrw app_nil_r.
+  allrw @dom_csub_app.
+  allrw @dom_csub_snoc.
+  allsimpl.
+  pose proof (xx1 pt0) as xx2; clear xx1.
+  autodimp xx2 hyp.
+  { apply similarity_dom in sim6; repnd.
+    rewrite sim7.
+    apply similarity_dom in sim1; repnd.
+    rewrite sim8.
+    rewrite vars_hyps_substitute_hyps; auto.
+    rw in_app_iff; rw in_snoc; intro i; repndors; tcsp.
+  }
+  exrepnd.
+  proof_irr.
+  rewrite <- xx0; clear xx0.
 
-  rw eq1 in hyp2; rw eq2 in hyp2; sp.
+  pose proof (lsubstc_snoc_move
+                e
+                (snoc s2a0 (f, t2) ++ s2b)
+                []
+                z
+                mkc_axiom
+                wfce) as xx1.
+  allrw app_nil_r.
+  allrw @dom_csub_app.
+  allrw @dom_csub_snoc.
+  allsimpl.
+  pose proof (xx1 pt3) as xx2; clear xx1.
+  autodimp xx2 hyp.
+  { apply similarity_dom in sim6; repnd.
+    rewrite sim6.
+    apply similarity_dom in sim1; repnd.
+    rewrite sim1.
+    rewrite vars_hyps_substitute_hyps; auto.
+    rw in_app_iff; rw in_snoc; intro i; repndors; tcsp.
+  }
+  exrepnd.
+  proof_irr.
+  rewrite <- xx0; clear xx0.
+
+  auto.
 Qed.
 
 (* begin hide *)
 
+Lemma rule_function_elimination_true {p} :
+  forall lib (A B C a e : NTerm),
+  forall f x z : NVar,
+  forall H J : @barehypotheses p,
+    rule_true lib (rule_function_elimination
+                     A B C a e
+                     f x z
+                     H J).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_function_elimination_true3.
+Qed.
+
+Lemma rule_function_elimination_true2 {o} :
+  forall lib A B C a e f x z H J,
+    @rule_true2 o lib (rule_function_elimination A B C a e f x z H J).
+Proof.
+  intros.
+  apply rule_true_iff_rule_true2.
+  apply rule_function_elimination_true.
+Qed.
 
 Lemma rule_function_elimination_true_ex {p} :
   forall lib (A B C a e : NTerm),
   forall f x z : NVar,
   forall H J : @barehypotheses p,
-  forall bc1 : x <> f,
-  forall bc2 : disjoint (vars_hyps H) (bound_vars B),
-  forall bc3 : disjoint (vars_hyps J) (bound_vars B),
-  forall bc4 : !LIn f (bound_vars B),
     rule_true_if lib (rule_function_elimination
                     A B C a e
                     f x z
                     H J).
 Proof.
   intros.
-  generalize (rule_function_elimination_true lib A B C a e f x z H J bc1 bc2 bc3 bc4); intro rt.
+  generalize (rule_function_elimination_true lib A B C a e f x z H J); intro rt.
   rw <- @rule_true_eq_ex in rt.
   unfold rule_true_ex in rt; sp.
+Qed.
+
+Lemma rule_function_elimination_wf {o} :
+  forall (A B C a e : @NTerm o) f x z H J,
+    wf_term a
+    -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
+    -> !LIn z (vars_hyps H)
+    -> !LIn z (vars_hyps J)
+    -> z <> f
+    -> wf_rule (rule_function_elimination A B C a e f x z H J).
+Proof.
+  introv wa cov nizH nizJ dzf.
+
+  introv pwf m; allsimpl; repdors; subst; sp;
+  allunfold @pwf_sequent; wfseq; sp.
+
+  {
+    allrw @vswf_hypotheses_nil_eq.
+    allrw @wf_hypotheses_app; repnd.
+    allrw @wf_hypotheses_snoc; repnd.
+    allsimpl.
+    allapply @isprog_vars_implies_wf.
+    allrw <- @wf_function_iff; tcsp.
+  }
+
+  {
+    allrw @vswf_hypotheses_nil_eq.
+    allrw @wf_hypotheses_app; repnd.
+    allrw @wf_hypotheses_snoc; repnd.
+    allsimpl.
+    allapply @isprog_vars_implies_covered.
+    allrw @covered_function; repnd.
+    apply covered_snoc_app_weak.
+    apply covered_app_weak_l; auto.
+  }
+
+  {
+    allrw @vswf_hypotheses_nil_eq.
+    rw @wf_hypotheses_snoc; simpl; dands; tcsp.
+    - apply isprog_vars_member; dands.
+      + apply isprog_vars_apply; dands.
+        * apply isprog_vars_var_iff.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl.
+          rw in_app_iff.
+          rw in_snoc; tcsp.
+        * rw @isprog_vars_iff_covered; dands; auto.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl; auto.
+      + apply isprog_vars_subst2; auto.
+        * allrw @wf_hypotheses_app; repnd.
+          allrw @wf_hypotheses_snoc; repnd.
+          allsimpl.
+          allapply @isprog_vars_implies_wf.
+          allrw <- @wf_function_iff; tcsp.
+        * rw @isprog_vars_iff_covered; dands; auto.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl; auto.
+        * allrw @wf_hypotheses_app; repnd.
+          allrw @wf_hypotheses_snoc; repnd.
+          allsimpl.
+          allrw <- @isprog_vars_function_iff; repnd.
+          allrw @vars_hyps_app.
+          allrw @vars_hyps_snoc; simpl.
+          eapply isprog_vars_subvars;[|eauto].
+          rw subvars_eq; introv i; allsimpl.
+          allrw in_app_iff; allrw in_snoc; tcsp.
+    - intro i.
+      allrw @vars_hyps_app.
+      allrw @vars_hyps_snoc; allsimpl.
+      allrw in_app_iff; allrw in_snoc.
+      repndors; tcsp.
+  }
+
+  {
+    allrw @wf_term_eq.
+    allrw @nt_wf_lsubst_iff; tcsp.
+  }
+
+  {
+    apply covered_snoc_weak; auto.
+  }
+Qed.
+
+Lemma rule_function_elimination_wf2 {o} :
+  forall (A B C a e : @NTerm o) f x z H J,
+    wf_term a
+    -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
+    -> !LIn z (vars_hyps H)
+    -> !LIn z (vars_hyps J)
+    -> z <> f
+    -> wf_rule2 (rule_function_elimination A B C a e f x z H J).
+Proof.
+  introv wa cova nizH nizJ dzf wf j.
+  allsimpl; repndors; subst; tcsp;
+  allunfold @wf_bseq; repnd; allsimpl; wfseq.
+
+  - allrw @vswf_hypotheses_nil_eq.
+    allrw @wf_hypotheses_app; repnd.
+    allrw @wf_hypotheses_snoc; repnd.
+    allapply @isprog_vars_implies_wf.
+    allrw <- @wf_function_iff; tcsp.
+
+  - allrw @vswf_hypotheses_nil_eq.
+    allrw @wf_hypotheses_app; repnd.
+    allrw @wf_hypotheses_snoc; repnd.
+    allapply @isprog_vars_implies_covered.
+    allrw @covered_function; repnd.
+    apply covered_snoc_app_weak.
+    apply covered_app_weak_l; auto.
+
+  - allrw @vswf_hypotheses_nil_eq.
+    rw @wf_hypotheses_snoc; simpl; dands; tcsp.
+    { apply isprog_vars_member; dands.
+      + apply isprog_vars_apply; dands.
+        * apply isprog_vars_var_iff.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl.
+          rw in_app_iff.
+          rw in_snoc; tcsp.
+        * rw @isprog_vars_iff_covered; dands; auto.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl; auto.
+      + apply isprog_vars_subst2; auto.
+        * allrw @wf_hypotheses_app; repnd.
+          allrw @wf_hypotheses_snoc; repnd.
+          allsimpl.
+          allapply @isprog_vars_implies_wf.
+          allrw <- @wf_function_iff; tcsp.
+        * rw @isprog_vars_iff_covered; dands; auto.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl; auto.
+        * allrw @wf_hypotheses_app; repnd.
+          allrw @wf_hypotheses_snoc; repnd.
+          allsimpl.
+          allrw <- @isprog_vars_function_iff; repnd.
+          allrw @vars_hyps_app.
+          allrw @vars_hyps_snoc; simpl.
+          eapply isprog_vars_subvars;[|eauto].
+          rw subvars_eq; introv i; allsimpl.
+          allrw in_app_iff; allrw in_snoc; tcsp.
+    }
+    { intro i.
+      allrw @vars_hyps_app.
+      allrw @vars_hyps_snoc; allsimpl.
+      allrw in_app_iff; allrw in_snoc.
+      repndors; tcsp.
+    }
+
+  - apply covered_snoc_weak; auto.
 Qed.
 
 
@@ -1907,6 +2364,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)
