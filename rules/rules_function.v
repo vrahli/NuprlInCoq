@@ -332,7 +332,7 @@ Definition rule_function_elimination {p}
       rule_function_elimination_hyp1 A B a f x H J,
       rule_function_elimination_hyp2 A B C a e f x z H J
     ]
-    [sarg_term a, sarg_var z].
+    [(*sarg_term a, sarg_var z*)].
 
 Lemma rule_function_elimination_true3 {p} :
   forall lib (A B C a e : NTerm),

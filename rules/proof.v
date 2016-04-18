@@ -120,6 +120,94 @@ Proof.
   eapply in_Llist in h;eauto.
 Qed.
 
+Inductive pre_conclusion {o} :=
+| pre_concl_ext : forall (ctype : @NTerm o), pre_conclusion
+| pre_concl_typ : forall (ctype : @NTerm o), pre_conclusion.
+
+Definition mk_pre_concl {o} (t : @NTerm o) : pre_conclusion :=
+  pre_concl_ext t.
+
+Definition mk_pre_concleq {o} (t1 t2 T : @NTerm o) : pre_conclusion :=
+  mk_pre_concl (mk_equality t1 t2 T).
+
+Record pre_baresequent {p} :=
+  MkPreBaresequent
+    {
+      pre_hyps  : @barehypotheses p;
+      pre_concl : @pre_conclusion p
+    }.
+
+Definition mk_pre_bseq {o} H (c : @pre_conclusion o) : pre_baresequent :=
+  MkPreBaresequent o H c.
+
+Definition pre_rule_isect_equality_concl {o} a1 a2 x1 x2 b1 b2 i (H : @bhyps o) :=
+  mk_pre_bseq
+    H
+    (mk_pre_concleq
+       (mk_isect a1 x1 b1)
+       (mk_isect a2 x2 b2)
+       (mk_uni i)).
+
+Definition pre_rule_isect_equality_hyp1 {o} a1 a2 i (H : @bhyps o) :=
+  mk_pre_bseq H (mk_pre_concleq a1 a2 (mk_uni i)).
+
+Definition pre_rule_isect_equality_hyp2 {o} a1 b1 b2 x1 x2 y i (H : @bhyps o) :=
+  mk_pre_bseq
+    (snoc H (mk_hyp y a1))
+    (mk_pre_concleq
+       (subst b1 x1 (mk_var y))
+       (subst b2 x2 (mk_var y))
+       (mk_uni i)).
+
+Definition pre_rule_cequiv_concl {o} a b (H : @bhyps o) :=
+  mk_pre_bseq H (mk_pre_concl (mk_cequiv a b)).
+
+Definition pre_rule_function_elimination_concl {o}
+           (A : @NTerm o) B C f x H J :=
+  mk_pre_bseq
+    (snoc H (mk_hyp f (mk_function A x B)) ++ J)
+    (mk_pre_concl C).
+
+Definition pre_rule_function_elimination_hyp1 {o}
+           (A : @NTerm o) B a f x H J :=
+  mk_pre_bseq
+    (snoc H (mk_hyp f (mk_function A x B)) ++ J)
+    (mk_pre_concl (mk_member a A)).
+
+Definition pre_rule_function_elimination_hyp2 {o}
+           (A : @NTerm o) B C a f x z H J :=
+  mk_pre_bseq
+    (snoc (snoc H (mk_hyp f (mk_function A x B)) ++ J)
+          (mk_hyp z (mk_member (mk_apply (mk_var f) a)
+                               (subst B x a))))
+    (mk_pre_concl C).
+
+(* A pre-proof is a proof without the extracts, which we can build aposteriori *)
+Inductive pre_proof {o} (hole : bool) lib : @pre_baresequent o -> Type :=
+| pre_proof_hole : forall s, hole = true -> pre_proof hole lib s
+| pre_proof_isect_eq :
+    forall a1 a2 b1 b2 x1 x2 y i H,
+      NVin y (vars_hyps H)
+      -> pre_proof hole lib (pre_rule_isect_equality_hyp1 a1 a2 i H)
+      -> pre_proof hole lib (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H)
+      -> pre_proof hole lib (pre_rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
+| pre_proof_cequiv_computation :
+    forall a b H,
+      reduces_to lib a b
+      -> pre_proof hole lib (pre_rule_cequiv_concl a b H)
+| pre_proof_function_elimination :
+    (* e is not supposed to be given but inferred from the second sequent *)
+    forall A B C a f x z H J,
+      wf_term a
+      -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
+      -> !LIn z (vars_hyps H)
+      -> !LIn z (vars_hyps J)
+      -> z <> f
+      -> pre_proof hole lib (pre_rule_function_elimination_hyp1 A B a f x H J)
+      -> pre_proof hole lib (pre_rule_function_elimination_hyp2 A B C a f x z H J)
+      -> pre_proof hole lib (pre_rule_function_elimination_concl A B C f x H J).
+(* TO FINISH *)
+
 (* incomplete proof---bool is true if holes *)
 Inductive iproof {o} (hole : bool) lib : @baresequent o -> Type :=
 | iproof_hole : forall s, hole = true -> iproof hole lib s
@@ -184,9 +272,14 @@ Inductive iproof {o} (hole : bool) lib : @baresequent o -> Type :=
       reduces_to lib a b
       -> iproof hole lib (rule_cequiv_concl a b H)
 | iproof_function_elimination :
-    (* e is not supposed to be given but built up from second sequent *)
+    (* e is not supposed to be given but inferred from the second sequent *)
     forall A B C a e f x z H J,
-      iproof hole lib (rule_function_elimination_hyp1 A B a f x H J)
+      wf_term a
+      -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
+      -> !LIn z (vars_hyps H)
+      -> !LIn z (vars_hyps J)
+      -> z <> f
+      -> iproof hole lib (rule_function_elimination_hyp1 A B a f x H J)
       -> iproof hole lib (rule_function_elimination_hyp2 A B C a e f x z H J)
       -> iproof hole lib (rule_function_elimination_concl A B C e f x z H J).
 
@@ -194,18 +287,19 @@ Definition FHole : bool := false.
 
 Definition proof {o} lib (s : @baresequent o) : Type := iproof FHole lib s.
 
-Definition proof_isect_eq           {o} := @iproof_isect_eq           o FHole.
-Definition proof_approx_refl        {o} := @iproof_approx_refl        o FHole.
-Definition proof_cequiv_approx      {o} := @iproof_cequiv_approx      o FHole.
-Definition proof_approx_eq          {o} := @iproof_approx_eq          o FHole.
-Definition proof_cequiv_eq          {o} := @iproof_cequiv_eq          o FHole.
-Definition proof_bottom_diverges    {o} := @iproof_bottom_diverges    o FHole.
-Definition proof_cut                {o} := @iproof_cut                o FHole.
-Definition proof_equal_in_base      {o} := @iproof_equal_in_base      o FHole.
-Definition proof_hypothesis         {o} := @iproof_hypothesis         o FHole.
-Definition proof_cequiv_subst_concl {o} := @iproof_cequiv_subst_concl o FHole.
-Definition proof_approx_member_eq   {o} := @iproof_approx_member_eq   o FHole.
-Definition proof_cequiv_computation {o} := @iproof_cequiv_computation o FHole.
+Definition proof_isect_eq             {o} := @iproof_isect_eq             o FHole.
+Definition proof_approx_refl          {o} := @iproof_approx_refl          o FHole.
+Definition proof_cequiv_approx        {o} := @iproof_cequiv_approx        o FHole.
+Definition proof_approx_eq            {o} := @iproof_approx_eq            o FHole.
+Definition proof_cequiv_eq            {o} := @iproof_cequiv_eq            o FHole.
+Definition proof_bottom_diverges      {o} := @iproof_bottom_diverges      o FHole.
+Definition proof_cut                  {o} := @iproof_cut                  o FHole.
+Definition proof_equal_in_base        {o} := @iproof_equal_in_base        o FHole.
+Definition proof_hypothesis           {o} := @iproof_hypothesis           o FHole.
+Definition proof_cequiv_subst_concl   {o} := @iproof_cequiv_subst_concl   o FHole.
+Definition proof_approx_member_eq     {o} := @iproof_approx_member_eq     o FHole.
+Definition proof_cequiv_computation   {o} := @iproof_cequiv_computation   o FHole.
+Definition proof_function_elimination {o} := @iproof_function_elimination o FHole.
 
 (* By assuming [wf_bseq seq], when we start with a sequent with no hypotheses,
    it means that we have to prove that the conclusion is well-formed and closed.
@@ -216,19 +310,20 @@ Lemma valid_proof {o} :
 Proof.
   introv wf p.
   induction p
-    as [ (* hole               *) s f
-       | (* isect_eq           *) a1 a2 b1 b2 x1 x2 y i hs niy p1 ih1 p2 ih2
-       | (* approx_refl        *) a hs
-       | (* cequiv_approx      *) a b hs p1 ih1 p2 ih2
-       | (* approx_eq          *) a1 a2 b1 b2 i hs p1 ih1 p2 ih2
-       | (* cequiv_eq          *) a1 a2 b1 b2 i hs p1 ih1 p2 ih2
-       | (* bottom_diverges    *) x hs js
-       | (* cut                *) B C t u x hs wB covB nixH p1 ih1 p2 ih2
-       | (* equal_in_base      *) a b H p1 ih1 ps ihs
-       | (* hypothesis         *) x A G J
-       | (* cequiv_subst_concl *) C x a b t H wfa wfb cova covb p1 ih1 p2 ih2
-       | (* approx_member_eq   *) a b H p ih
-       | (* cequiv_computation *) a b H p ih
+    as [ (* hole                 *) s f
+       | (* isect_eq             *) a1 a2 b1 b2 x1 x2 y i hs niy p1 ih1 p2 ih2
+       | (* approx_refl          *) a hs
+       | (* cequiv_approx        *) a b hs p1 ih1 p2 ih2
+       | (* approx_eq            *) a1 a2 b1 b2 i hs p1 ih1 p2 ih2
+       | (* cequiv_eq            *) a1 a2 b1 b2 i hs p1 ih1 p2 ih2
+       | (* bottom_diverges      *) x hs js
+       | (* cut                  *) B C t u x hs wB covB nixH p1 ih1 p2 ih2
+       | (* equal_in_base        *) a b H p1 ih1 ps ihs
+       | (* hypothesis           *) x A G J
+       | (* cequiv_subst_concl   *) C x a b t H wfa wfb cova covb p1 ih1 p2 ih2
+       | (* approx_member_eq     *) a b H p ih
+       | (* cequiv_computation   *) a b H p ih
+       | (* function elimination *) A B C a e f x z H J wa cova nizH nizJ dzf p1 ih1 p2 ih2
        ];
     allsimpl;
     allrw NVin_iff.
@@ -317,6 +412,20 @@ Proof.
     apply (rule_approx_member_eq_wf2 a b H); simpl; tcsp.
 
   - apply (rule_cequiv_computation_true3 lib); simpl; tcsp.
+
+  - apply (rule_function_elimination_true3 lib A B C a e f x z); simpl; tcsp.
+
+    introv ih; repndors; subst; tcsp.
+
+    + apply ih1.
+      pose proof (rule_function_elimination_wf2 A B C a e f x z H J) as h.
+      unfold wf_rule2, wf_subgoals2 in h; simpl in h.
+      repeat (autodimp h hyp).
+
+    + apply ih2.
+      pose proof (rule_function_elimination_wf2 A B C a e f x z H J) as h.
+      unfold wf_rule2, wf_subgoals2 in h; simpl in h.
+      repeat (autodimp h hyp).
 Qed.
 
 Lemma test {o} :
