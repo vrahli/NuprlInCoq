@@ -137,6 +137,88 @@ Proof.
 Qed.
 
 
+(* same as above but we don't force the extract of subgoals to be anything *)
+
+Definition rule_eq_base2_hyp {o} a1 a2 e (H : @bhyps o) :=
+  mk_baresequent H (mk_concl (mk_equality a1 a2 mk_base) e).
+
+Definition rule_approx_eq2 {o}
+           (a1 a2 b1 b2 : NTerm) e1 e2
+           (i : nat)
+           (H : @barehypotheses o) :=
+  mk_rule
+    (rule_approx_eq_concl a1 a2 b1 b2 i H)
+    [ rule_eq_base2_hyp a1 a2 e1 H,
+      rule_eq_base2_hyp b1 b2 e2 H
+    ]
+    [].
+
+Lemma rule_approx_eq2_true3 {o} :
+  forall lib (a1 a2 b1 b2 : NTerm) e1 e2 (i : nat) (H : @barehypotheses o),
+    rule_true3 lib (rule_approx_eq2 a1 a2 b1 b2 e1 e2 i H).
+Proof.
+  unfold rule_approx_eq2, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+  clear cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp.
+  destruct Hyp  as [ ws1 hyp1 ].
+  destruct Hyp0 as [ ws2 hyp2 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent (rule_approx_eq_concl a1 a2 b1 b2 i H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  lsubst_tac.
+  allrw @member_eq.
+  allrw <- @member_equality_iff.
+  teq_and_eq (@mk_uni o i) (mk_approx a1 b1) (mk_approx a2 b2) s1 s2 H.
+  { apply tequality_mkc_uni. }
+
+  vr_seq_true in hyp1.
+  vr_seq_true in hyp2.
+  generalize (hyp1 s1 s2 hf sim); clear hyp1; intro hyp1.
+  generalize (hyp2 s1 s2 hf sim); clear hyp2; intro hyp2.
+  exrepnd.
+  lsubst_tac.
+  allrw @equality_in_mkc_equality; repnd.
+  rw @tequality_mkc_equality_base_iff in hyp3; repnd; spcast.
+  rw @tequality_mkc_equality_base_iff in hyp0; repnd; spcast.
+  allrw @equality_in_base_iff; spcast.
+  apply mkc_approx_equality_in_uni.
+  split; intro h; spcast; auto.
+
+  { eapply approxc_cequivc_trans;[|eauto].
+    eapply cequivc_approxc_trans;[apply cequivc_sym; eauto|].
+    eapply approxc_cequivc_trans;[|eauto].
+    eapply cequivc_approxc_trans;[apply cequivc_sym; eauto|].
+    auto. }
+
+  { eapply approxc_cequivc_trans;[|apply cequivc_sym; eauto].
+    eapply cequivc_approxc_trans;[eauto|].
+    eapply approxc_cequivc_trans;[|apply cequivc_sym; eauto].
+    eapply cequivc_approxc_trans;[eauto|].
+    auto. }
+Qed.
+
+Lemma rule_approx_eq2_wf2 {o} :
+  forall (a1 a2 b1 b2 : NTerm) e1 e2 (i : nat) (H : @barehypotheses o),
+    wf_rule2 (rule_approx_eq2 a1 a2 b1 b2 e1 e2 i H).
+Proof.
+  introv wf j.
+
+  allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq;
+  allrw <- @wf_approx_iff; repnd; auto;
+  allrw @covered_approx; repnd; auto.
+Qed.
+
+
 
 (**
 
@@ -236,6 +318,85 @@ Proof.
 Qed.
 
 
+(* same as above but we don't force the extacts of subgoals to be anything *)
+
+Definition rule_cequiv_eq2 {o}
+           (a1 a2 b1 b2 : NTerm) e1 e2
+           (i : nat)
+           (H : @barehypotheses o) :=
+  mk_rule
+    (rule_cequiv_eq_concl a1 a2 b1 b2 i H)
+    [ rule_eq_base2_hyp a1 a2 e1 H,
+      rule_eq_base2_hyp b1 b2 e2 H
+    ]
+    [].
+
+Lemma rule_cequiv_eq2_true3 {o} :
+  forall lib (a1 a2 b1 b2 : NTerm) e1 e2 (i : nat) (H : @barehypotheses o),
+    rule_true3 lib (rule_cequiv_eq2 a1 a2 b1 b2 e1 e2 i H).
+Proof.
+  unfold rule_cequiv_eq2, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+  clear cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp.
+  destruct Hyp  as [ ws1 hyp1 ].
+  destruct Hyp0 as [ ws2 hyp2 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent (rule_cequiv_eq_concl a1 a2 b1 b2 i H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  lsubst_tac.
+  allrw @member_eq.
+  allrw <- @member_equality_iff.
+  teq_and_eq (@mk_uni o i) (mk_cequiv a1 b1) (mk_cequiv a2 b2) s1 s2 H.
+  { apply tequality_mkc_uni. }
+
+  vr_seq_true in hyp1.
+  vr_seq_true in hyp2.
+  generalize (hyp1 s1 s2 hf sim); clear hyp1; intro hyp1.
+  generalize (hyp2 s1 s2 hf sim); clear hyp2; intro hyp2.
+  exrepnd.
+  lsubst_tac.
+  allrw @equality_in_mkc_equality; repnd.
+  rw @tequality_mkc_equality_base_iff in hyp3; repnd; spcast.
+  rw @tequality_mkc_equality_base_iff in hyp0; repnd; spcast.
+  allrw @equality_in_base_iff; spcast.
+  apply mkc_cequiv_equality_in_uni.
+  split; intro h; spcast; auto.
+
+  { eapply cequivc_trans;[apply cequivc_sym; eauto|].
+    eapply cequivc_trans;[apply cequivc_sym; eauto|].
+    eapply cequivc_trans;[|eauto].
+    eapply cequivc_trans;[|eauto].
+    auto. }
+
+  { eapply cequivc_trans;[|apply cequivc_sym; eauto].
+    eapply cequivc_trans;[eauto|].
+    eapply cequivc_trans;[|apply cequivc_sym; eauto].
+    eapply cequivc_trans;[eauto|].
+    auto. }
+Qed.
+
+Lemma rule_cequiv_eq2_wf2 {o} :
+  forall (a1 a2 b1 b2 : NTerm) e1 e2 (i : nat) (H : @barehypotheses o),
+    wf_rule2 (rule_cequiv_eq2 a1 a2 b1 b2 e1 e2 i H).
+Proof.
+  introv wf j.
+
+  allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq;
+  allrw <- @wf_cequiv_iff; repnd; auto;
+  allrw @covered_cequiv; repnd; auto.
+Qed.
+
+
 (**
 
 <<
@@ -301,6 +462,71 @@ Qed.
 Lemma rule_approx_member_eq_wf2 {o} :
   forall (a b : NTerm) (H : @barehypotheses o),
     wf_rule2 (rule_approx_member_eq a b H).
+Proof.
+  introv wf j.
+
+  allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq;
+  allrw <- @wf_approx_iff; repnd; auto;
+  allrw @covered_approx; repnd; auto.
+Qed.
+
+
+(* same as above but we don't force the extacts of subgoals to be anything *)
+
+Definition rule_approx_member_eq2_hyp {o} a b e (H : @bhyps o) :=
+  mk_baresequent H (mk_concl (mk_approx a b) e).
+
+Definition rule_approx_member_eq2 {o}
+           (a b : NTerm) e
+           (H : @barehypotheses o) :=
+  mk_rule (rule_approx_member_eq_concl a b H)
+          [ rule_approx_member_eq2_hyp a b e H ]
+          [].
+
+Lemma rule_approx_member_eq2_true3 {o} :
+  forall lib (a b : NTerm) e (H : @barehypotheses o),
+    rule_true3 lib (rule_approx_member_eq2 a b e H).
+Proof.
+  unfold rule_approx_member_eq2, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp.
+  destruct Hyp  as [ ws1 hyp1 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent (rule_approx_member_eq_concl a b H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  lsubst_tac.
+  allrw @member_eq.
+  allrw <- @member_equality_iff.
+
+  dup pt1 as cv1.
+  dup pt2 as cv2.
+  dup wfc0 as wax.
+  teq_and_eq (mk_approx a b) (@mk_axiom o) (@mk_axiom o) s1 s2 H.
+
+  { vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 eqh sim) as h; clear hyp1; exrepnd.
+    lsubst_tac; auto. }
+
+  { vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    lsubst_tac; auto.
+    allrw <- @equality_in_approx; repnd.
+    dands; spcast; eauto 2 with slow;
+    apply computes_to_valc_refl; eauto 2 with slow. }
+Qed.
+
+Lemma rule_approx_member_eq2_wf2 {o} :
+  forall (a b : NTerm) e (H : @barehypotheses o),
+    wf_rule2 (rule_approx_member_eq2 a b e H).
 Proof.
   introv wf j.
 
@@ -456,6 +682,76 @@ Qed.
 Lemma rule_apply_in_base_wf2 {o} :
   forall (f1 f2 a1 a2 : NTerm) (H : @barehypotheses o),
     wf_rule2 (rule_apply_in_base f1 f2 a1 a2 H).
+Proof.
+  introv wf j.
+
+  allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq;
+  allrw <- @wf_cequiv_iff; repnd; auto;
+  allrw @covered_cequiv; repnd; auto.
+Qed.
+
+
+
+(* same as above but we don't force the extacts of subgoals to be anything *)
+
+Definition rule_apply_in_base2 {o}
+           (f1 f2 a1 a2 : NTerm) e1 e2
+           (H : @barehypotheses o) :=
+  mk_rule (rule_apply_in_base_concl f1 f2 a1 a2 H)
+          [ rule_eq_base2_hyp f1 f2 e1 H,
+            rule_eq_base2_hyp a1 a2 e2 H ]
+          [].
+
+Lemma rule_apply_in_base2_true3 {o} :
+  forall lib (f1 f2 a1 a2 : NTerm) e1 e2 (H : @barehypotheses o),
+    rule_true3 lib (rule_apply_in_base2 f1 f2 a1 a2 e1 e2 H).
+Proof.
+  unfold rule_apply_in_base2, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp.
+  destruct Hyp  as [ ws1 hyp1 ].
+  destruct Hyp0 as [ ws2 hyp2 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent (rule_apply_in_base_concl f1 f2 a1 a2 H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  lsubst_tac.
+  allrw @member_eq.
+  allrw <- @member_equality_iff.
+
+  teq_and_eq (@mk_base o) (mk_apply f1 a1) (mk_apply f2 a2) s1 s2 H;
+    eauto 3 with slow.
+
+  vr_seq_true in hyp1.
+  pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+  vr_seq_true in hyp2.
+  pose proof (hyp2 s1 s2 hf sim) as q; clear hyp2; exrepnd.
+  lsubst_tac; auto.
+
+  allrw <- @member_equality_iff.
+  allrw @equality_in_mkc_equality; repnd.
+  allrw @equality_in_base_iff.
+  allrw @tequality_mkc_equality_base_iff; repnd.
+
+  spcast.
+  apply implies_cequivc_apply; auto.
+
+  { eapply cequivc_trans;[exact h2|]; auto. }
+
+  { eapply cequivc_trans;[exact q2|]; auto. }
+Qed.
+
+Lemma rule_apply_in_base2_wf2 {o} :
+  forall (f1 f2 a1 a2 : NTerm) e1 e2 (H : @barehypotheses o),
+    wf_rule2 (rule_apply_in_base2 f1 f2 a1 a2 e1 e2 H).
 Proof.
   introv wf j.
 

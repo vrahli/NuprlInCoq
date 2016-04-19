@@ -309,10 +309,10 @@ Definition rule_function_elimination_concl {o}
     (mk_concl C (subst e z mk_axiom)).
 
 Definition rule_function_elimination_hyp1 {o}
-           (A : @NTerm o) B a f x H J :=
+           (A : @NTerm o) B a ea f x H J :=
   mk_baresequent
     (snoc H (mk_hyp f (mk_function A x B)) ++ J)
-    (mk_conclax (mk_member a A)).
+    (mk_concl (mk_member a A) ea).
 
 Definition rule_function_elimination_hyp2 {o}
            (A : @NTerm o) B C a e f x z H J :=
@@ -323,23 +323,24 @@ Definition rule_function_elimination_hyp2 {o}
     (mk_concl C e).
 
 Definition rule_function_elimination {p}
-           (A B C a e : NTerm)
+           (A B C a e : NTerm) ea
            (f x z : NVar)
            (H J : @barehypotheses p) :=
   mk_rule
     (rule_function_elimination_concl A B C e f x z H J)
     [
-      rule_function_elimination_hyp1 A B a f x H J,
+      rule_function_elimination_hyp1 A B a ea f x H J,
       rule_function_elimination_hyp2 A B C a e f x z H J
     ]
     [(*sarg_term a, sarg_var z*)].
 
 Lemma rule_function_elimination_true3 {p} :
-  forall lib (A B C a e : NTerm),
+  forall lib (A B C a e : NTerm) ea,
   forall f x z : NVar,
   forall H J : @barehypotheses p,
     rule_true3 lib (rule_function_elimination
                  A B C a e
+                 ea
                  f x z
                  H J).
 Proof.
@@ -448,8 +449,7 @@ Proof.
     generalize (hyp1 (snoc s1a0 (f, t1) ++ s1b) s'); clear hyp1; intros hyp1.
     repeat (autodimp hyp1 h); exrepnd.
     lsubst_tac.
-    rw @member_eq in hyp1.
-    rw <- @member_member_iff in hyp1.
+    allapply @member_if_inhabited.
     rw @tequality_mkc_member_sp in hyp0; repnd.
 
     assert (equality lib (lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) c3)
@@ -565,8 +565,7 @@ Proof.
       clear hyp1; intros hyp1.
     repeat (autodimp hyp1 h); exrepnd.
     lsubst_tac.
-    rw @member_eq in hyp1.
-    rw <- @member_member_iff in hyp1.
+    allapply @member_if_inhabited.
     rw @tequality_mkc_member_sp in hyp0; repnd.
     unfold member in hyp1.
     apply sim2 in hyp1.
@@ -590,6 +589,8 @@ Proof.
   (* conclusion *)
 
   lsubst_tac; sp.
+
+  assert (wf_term (@mk_axiom p)) as wfax by eauto 2 with slow.
 
   repeat (lsubstc_subst_aeq2;[]).
   allrw @lsubstc_mk_axiom.
@@ -650,11 +651,12 @@ Qed.
 (* begin hide *)
 
 Lemma rule_function_elimination_true {p} :
-  forall lib (A B C a e : NTerm),
+  forall lib (A B C a e : NTerm) ea,
   forall f x z : NVar,
   forall H J : @barehypotheses p,
     rule_true lib (rule_function_elimination
                      A B C a e
+                     ea
                      f x z
                      H J).
 Proof.
@@ -664,8 +666,8 @@ Proof.
 Qed.
 
 Lemma rule_function_elimination_true2 {o} :
-  forall lib A B C a e f x z H J,
-    @rule_true2 o lib (rule_function_elimination A B C a e f x z H J).
+  forall lib A B C a e ea f x z H J,
+    @rule_true2 o lib (rule_function_elimination A B C a e ea f x z H J).
 Proof.
   intros.
   apply rule_true_iff_rule_true2.
@@ -673,30 +675,32 @@ Proof.
 Qed.
 
 Lemma rule_function_elimination_true_ex {p} :
-  forall lib (A B C a e : NTerm),
+  forall lib (A B C a e : NTerm) ea,
   forall f x z : NVar,
   forall H J : @barehypotheses p,
     rule_true_if lib (rule_function_elimination
-                    A B C a e
-                    f x z
-                    H J).
+                        A B C a e
+                        ea
+                        f x z
+                        H J).
 Proof.
   intros.
-  generalize (rule_function_elimination_true lib A B C a e f x z H J); intro rt.
+  generalize (rule_function_elimination_true lib A B C a e ea f x z H J); intro rt.
   rw <- @rule_true_eq_ex in rt.
   unfold rule_true_ex in rt; sp.
 Qed.
 
 Lemma rule_function_elimination_wf {o} :
-  forall (A B C a e : @NTerm o) f x z H J,
+  forall (A B C a e : @NTerm o) ea f x z H J,
     wf_term a
     -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
     -> !LIn z (vars_hyps H)
     -> !LIn z (vars_hyps J)
     -> z <> f
-    -> wf_rule (rule_function_elimination A B C a e f x z H J).
+    -> wf_term ea
+    -> wf_rule (rule_function_elimination A B C a e ea f x z H J).
 Proof.
-  introv wa cov nizH nizJ dzf.
+  introv wa cov nizH nizJ dzf wea.
 
   introv pwf m; allsimpl; repdors; subst; sp;
   allunfold @pwf_sequent; wfseq; sp.
@@ -770,13 +774,13 @@ Proof.
 Qed.
 
 Lemma rule_function_elimination_wf2 {o} :
-  forall (A B C a e : @NTerm o) f x z H J,
+  forall (A B C a e : @NTerm o) ea f x z H J,
     wf_term a
     -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
     -> !LIn z (vars_hyps H)
     -> !LIn z (vars_hyps J)
     -> z <> f
-    -> wf_rule2 (rule_function_elimination A B C a e f x z H J).
+    -> wf_rule2 (rule_function_elimination A B C a e ea f x z H J).
 Proof.
   introv wa cova nizH nizJ dzf wf j.
   allsimpl; repndors; subst; tcsp;

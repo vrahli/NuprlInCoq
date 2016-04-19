@@ -30,6 +30,7 @@ Require Export sequents_tacs.
 Require Export sequents_tacs2.
 Require Export per_props_equality.
 Require Export rules_tyfam.
+Require Export rules_tyfam2.
 Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
 
@@ -534,6 +535,164 @@ Proof.
   apply nt_wf_eq; auto.
 Qed.
 
+
+(* Another version that doesn't force the subgoals to have a given extract (axiom here) *)
+
+Definition rule_isect_equality2_hyp1 {o} a1 a2 e1 i (H : @bhyps o) :=
+  mk_baresequent H (mk_concl (mk_equality a1 a2 (mk_uni i)) e1).
+
+Definition rule_isect_equality2_hyp2 {o} a1 b1 b2 e2 x1 x2 y i (H : @bhyps o) :=
+  mk_baresequent
+    (snoc H (mk_hyp y a1))
+    (mk_concl
+       (mk_equality
+          (subst b1 x1 (mk_var y))
+          (subst b2 x2 (mk_var y))
+          (mk_uni i))
+       e2).
+
+Definition rule_isect_equality2 {o}
+           (a1 a2 b1 b2 : @NTerm o)
+           (e1 e2 : NTerm)
+           (x1 x2 y : NVar)
+           (i   : nat)
+           (H   : barehypotheses) :=
+  mk_rule
+    (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
+    [ rule_isect_equality2_hyp1 a1 a2 e1 i H,
+      rule_isect_equality2_hyp2 a1 b1 b2 e2 x1 x2 y i H
+    ]
+    [ sarg_var y ].
+
+Lemma rule_isect_equality2_true3 {o} :
+  forall lib (a1 a2 b1 b2 : NTerm) e1 e2,
+  forall x1 x2 y : NVar,
+  forall i   : nat,
+  forall H   : @barehypotheses o,
+    rule_true3 lib (rule_isect_equality2
+                      a1 a2 b1 b2
+                      e1 e2
+                      x1 x2 y
+                      i
+                      H).
+Proof.
+  intros.
+  apply (rule_tyfam_equality2_true3 _ _ mkc_isect); auto.
+
+  - introv; simpl; allrw remove_nvars_nil_l; allrw app_nil_r; auto.
+
+  - introv; apply lsubstc_mk_isect_ex.
+
+  - introv; apply equality_isect.
+Qed.
+
+Lemma rule_isect_equality2_true {o} :
+  forall lib (a1 a2 b1 b2 : NTerm) e1 e2,
+  forall x1 x2 y : NVar,
+  forall i   : nat,
+  forall H   : @barehypotheses o,
+    rule_true lib (rule_isect_equality2
+                     a1 a2 b1 b2
+                     e1 e2
+                     x1 x2 y
+                     i
+                     H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_isect_equality2_true3.
+Qed.
+
+Lemma rule_isect_equality2_true_ex {o} :
+  forall lib y i a1 a2 b1 b2 e1 e2 x1 x2 H,
+    @rule_true_if o lib (rule_isect_equality2 a1 a2 b1 b2 e1 e2 x1 x2 y i H).
+Proof.
+  intros.
+  generalize (rule_isect_equality2_true lib a1 a2 b1 b2 e1 e2 x1 x2 y i H); intro rt.
+  rw <- @rule_true_eq_ex in rt.
+  unfold rule_true_ex in rt; sp.
+Qed.
+
+Lemma rule_isect_equality2_true2 {o} :
+  forall lib (y : NVar),
+  forall i : nat,
+  forall a1 a2 b1 b2 : NTerm,
+  forall e1 e2,
+  forall x1 x2 : NVar,
+  forall H   : @barehypotheses o,
+    rule_true2 lib (rule_isect_equality2
+                      a1 a2 b1 b2
+                      e1 e2
+                      x1 x2 y
+                      i
+                      H).
+Proof.
+  introv.
+  apply rule_true_iff_rule_true2; auto.
+  apply rule_isect_equality2_true; auto.
+Qed.
+
+Lemma rule_isect_equality2_wf {o} :
+  forall y : NVar,
+  forall i : nat,
+  forall a1 a2 b1 b2 : NTerm,
+  forall e1 e2,
+  forall x1 x2 : NVar,
+  forall H   : @barehypotheses o,
+  forall c1  : !LIn y (vars_hyps H),
+  forall w1  : wf_term e1,
+  forall w2  : wf_term e2,
+    wf_rule (rule_isect_equality2
+               a1 a2 b1 b2
+               e1 e2
+               x1 x2 y
+               i
+               H).
+Proof.
+  introv c1 w1 w2 pwf m.
+
+  allsimpl; repdors; sp; subst; allunfold @pwf_sequent; wfseq;
+  allapply @wf_isect_iff; repnd; auto;
+  allrw @covered_isect; repnd; auto;
+  try (apply subst_preserves_wf_term; auto);
+  try (apply @covered_subst; try (apply @covered_var; rw in_snoc; sp));
+  try (complete (rw cons_snoc; apply @covered_snoc_weak; auto)).
+
+  allrw @vswf_hypotheses_nil_eq.
+  apply wf_hypotheses_snoc; simpl; dands; auto.
+  apply isprog_vars_eq; dands; auto.
+  apply nt_wf_eq; auto.
+Qed.
+
+Lemma rule_isect_equality2_wf2 {o} :
+  forall y : NVar,
+  forall i : nat,
+  forall a1 a2 b1 b2 : NTerm,
+  forall e1 e2,
+  forall x1 x2 : NVar,
+  forall H   : @barehypotheses o,
+  forall c1  : !LIn y (vars_hyps H),
+    wf_rule2 (rule_isect_equality2
+                a1 a2 b1 b2
+                e1 e2
+                x1 x2 y
+                i
+                H).
+Proof.
+  introv c1 pwf m.
+
+  allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq;
+  allapply @wf_isect_iff; repnd; auto;
+  allrw @covered_isect; repnd; auto;
+  try (apply subst_preserves_wf_term; auto);
+  try (apply @covered_subst; try (apply @covered_var; rw in_snoc; sp));
+  try (complete (rw cons_snoc; apply @covered_snoc_weak; auto)).
+
+  allrw @vswf_hypotheses_nil_eq.
+  apply wf_hypotheses_snoc; simpl; dands; auto.
+  apply isprog_vars_eq; dands; auto.
+  apply nt_wf_eq; auto.
+Qed.
 
 (* end hide *)
 
