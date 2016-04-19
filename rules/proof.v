@@ -39,6 +39,8 @@ Require Export rules_false.
 Require Export rules_struct.
 Require Export rules_function.
 
+Require Export computation_preserves_lib.
+
 
 Inductive valid_rule {o} : @rule o -> Type :=
 | valid_rule_isect_equality :
@@ -1129,49 +1131,6 @@ Qed.
 
 (* Looking at how we can define a Nuprl process *)
 
-Lemma eq_opabs_implies :
-  forall x y : opabs,
-    x = y -> (opabs_name x = opabs_name y
-              # opabs_params x = opabs_params y
-              # opabs_sign x = opabs_sign y).
-Proof.
-  introv xx; subst; auto.
-Qed.
-
-Lemma opabs_deq : Deq opabs.
-Proof.
-  introv.
-  destruct (decidable_eq_opabs_name x y);
-    destruct (decidable_eq_opabs_sign x y);
-    destruct (parameters_dec (opabs_params x) (opabs_params y));
-    destruct x, y; simpl in *; subst; tcsp;
-    try (complete (right; intro xx; apply eq_opabs_implies in xx; tcsp)).
-Qed.
-
-Lemma sovar_sig_deq : Deq sovar_sig.
-Proof.
-  introv.
-  destruct x, y.
-  destruct (deq_nat n0 n2); subst; tcsp;
-  try (complete (right; intro xx; inversion xx; subst; tcsp)).
-  destruct (deq_nvar n n1); subst; tcsp;
-  try (complete (right; intro xx; inversion xx; subst; tcsp)).
-Qed.
-
-Definition same_lib_abs : Deq (opabs # list sovar_sig) :=
-  deq_prod _ _ opabs_deq (deq_list sovar_sig_deq).
-
-Definition abs_in_lib {o} opabs1 vars1 (lib : @library o) : bool :=
-  existsb
-    (fun e =>
-       match e with
-       | lib_abs opabs vars rhs correct =>
-         if same_lib_abs (opabs, vars) (opabs1, vars1)
-         then true
-         else false
-       end)
-    lib.
-
 Definition proof_name := String.string.
 
 Inductive command {o} :=
@@ -1234,14 +1193,74 @@ Record NuprlState {o} :=
       NuprlState_focus         : @ProofUpdateSeq o NuprlState_def_library
     }.
 
-Definition NuprlState_upd_def_lib {o}
-           (state : @NuprlState o)
-           (lib   : @library o) : NuprlState :=
-  @MkNuprlState
-    o
-    lib
-    (NuprlState_proof_library state)
-    (NuprlState_focus state).
+Fixpoint proof_consistent_with_new_definition
+         {o} {seq : @baresequent o} {h : bool} {lib}
+         (prf : iproof h lib seq)
+         (e   : library_entry)
+         (p   : !in_lib (opabs_of_lib_entry e) lib)
+  : iproof h (e :: lib) seq :=
+  match prf with
+  | iproof_hole s e => iproof_hole _ _ s e
+  | iproof_isect_eq a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH pa pb =>
+    let p1 := proof_consistent_with_new_definition pa e p in
+    let p2 := proof_consistent_with_new_definition pb e p in
+    iproof_isect_eq _ _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH p1 p2
+  | iproof_approx_refl a H => iproof_approx_refl _ _ a H
+  | iproof_cequiv_approx a b e1 e2 H p1 p2 =>
+    let p1 := proof_consistent_with_new_definition p1 e p in
+    let p2 := proof_consistent_with_new_definition p2 e p in
+    iproof_cequiv_approx _ _ a b e1 e2 H p1 p2
+  | iproof_approx_eq a1 a2 b1 b2 e1 e2 i H p1 p2 =>
+    let p1 := proof_consistent_with_new_definition p1 e p in
+    let p2 := proof_consistent_with_new_definition p2 e p in
+    iproof_approx_eq _ _ a1 a2 b1 b2 e1 e2 i H p1 p2
+  | iproof_cequiv_eq a1 a2 b1 b2 e1 e2 i H p1 p2 =>
+    let p1 := proof_consistent_with_new_definition p1 e p in
+    let p2 := proof_consistent_with_new_definition p2 e p in
+    iproof_cequiv_eq _ _ a1 a2 b1 b2 e1 e2 i H p1 p2
+  | iproof_bottom_diverges x H J => iproof_bottom_diverges _ _ x H J
+  | iproof_cut B C t u x H wB cBH nixH pu pt =>
+    let p1 := proof_consistent_with_new_definition pu e p in
+    let p2 := proof_consistent_with_new_definition pt e p in
+    iproof_cut _ _ B C t u x H wB cBH nixH p1 p2
+  | iproof_equal_in_base a b ee F H p1 pl =>
+    let p1 := proof_consistent_with_new_definition p1 e p in
+    let g := fun v (i : LIn v (free_vars a)) => proof_consistent_with_new_definition (pl v i) e p in
+    iproof_equal_in_base _ _ a b ee F H p1 g
+  | iproof_hypothesis x A G J => iproof_hypothesis _ _ x A G J
+  | iproof_cequiv_subst_concl C x a b t ee H wa wb ca cb p1 p2 =>
+    let p1 := proof_consistent_with_new_definition p1 e p in
+    let p2 := proof_consistent_with_new_definition p2 e p in
+    iproof_cequiv_subst_concl _ _ C x a b t ee H wa wb ca cb p1 p2
+  | iproof_approx_member_eq a b ee H p1 =>
+    let p1 := proof_consistent_with_new_definition p1 e p in
+    iproof_approx_member_eq _ _ a b ee H p1
+  | iproof_cequiv_computation a b H r =>
+    iproof_cequiv_computation
+      _ _ a b H
+      (reduces_to_consistent_with_new_definition a b r e p)
+  | iproof_function_elimination A B C a ee ea f x z H J wa cova nizH nizJ dzf p1 p2 =>
+    let p1 := proof_consistent_with_new_definition p1 e p in
+    let p2 := proof_consistent_with_new_definition p2 e p in
+    iproof_function_elimination _ _ A B C a ee ea f x z H J wa cova nizH nizJ dzf p1 p2
+  end.
+
+Definition NuprlState_add_def_lib {o}
+           (state   : @NuprlState o)
+           (opabs   : opabs)
+           (vars    : list sovar_sig)
+           (rhs     : SOTerm)
+           (correct : correct_abs opabs vars rhs) : NuprlState :=
+  let lib := NuprlState_def_library state in
+  match in_lib_dec opabs lib with
+  | inl _ => state
+  | inr p =>
+    @MkNuprlState
+      o
+      (lib_abs opabs vars rhs correct :: lib)
+      (NuprlState_proof_library state)
+      (NuprlState_focus state)
+  end.
 
 Definition NuprlState_upd_proof_lib {o}
            (state : @NuprlState o)
@@ -1305,10 +1324,7 @@ Definition update {o}
            (com   : command) : NuprlState :=
   match com with
   | COM_add_def opabs vars rhs correct =>
-    let lib := NuprlState_def_library state in
-    if abs_in_lib opabs vars lib
-    then state
-    else NuprlState_upd_def_lib state (lib_abs opabs vars rhs correct :: lib)
+    NuprlState_add_def_lib state opabs vars rhs correct
   | COM_finish_proof name =>
     let lib := NuprlState_proof_library state in
     NuprlState_upd_proof_lib state (finish_proof_in_library lib name)
