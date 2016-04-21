@@ -1,10 +1,11 @@
 MAKEFILE
 ========
 
-To generate a Makefile, run `create_makefile.sh`.  This script requires
-bash v4.  It will generate a Makefile for `rules.v` and its
-dependencies.  Re-run `create_makefile.sh` everytime you pull to update
-the Makefile in case new files have been committed.
+To generate a Makefile, run `create_makefile.sh`.  This script
+requires bash v4.  It will generate a Makefile for `rules.v` and its
+dependencies.  Re-run `create_makefile.sh` everytime you pull to
+update the Makefile in case new files have been committed, or files
+have been moved around.
 
 Then run "make" (or alternatively if your machine has multiple cores,
 run make -j n, where n is the number of cores you want to use) to

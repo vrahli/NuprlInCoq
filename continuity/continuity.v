@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -16,11 +17,14 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -752,8 +756,8 @@ Lemma differ_sosub_aux {o} :
     -> cover_so_vars t sub2
     -> differ b (sosub_aux sub1 t) (sosub_aux sub2 t).
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case;
-  introv ds disj1 disj2 disj3 disj4 disj5 disj6 cov1 cov2; allsimpl.
+  soterm_ind t as [v ts ind| |op bs ind] Case;
+  introv ds disj1 disj2 disj3 disj4 disj5 disj6 cov1 cov2; allsimpl; auto.
 
   - Case "sovar".
     allrw @cover_so_vars_sovar; repnd.

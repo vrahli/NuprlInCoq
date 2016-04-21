@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -2714,16 +2718,29 @@ Proof.
   destruct ask as [ask1 ask2]; sp.
 Qed.
 
+Lemma wf_term_alphaeq {o} :
+  forall (t1 t2 : @NTerm o),
+    alphaeq t1 t2
+    -> wf_term t1
+    -> wf_term t2.
+Proof.
+  introv aeq wf.
+  allrw @wf_term_eq.
+  apply alphaeq_eq in aeq.
+  apply alphaeq_preserves_wf in aeq.
+  apply aeq; auto.
+Qed.
+
 Lemma wf_soterm_so_alphaeq {o} :
   forall (t1 t2 : @SOTerm o),
     so_alphaeq t1 t2
     -> wf_soterm t1
     -> wf_soterm t2.
 Proof.
-  soterm_ind1s t1 as [v1 ts1 ind1|op1 bs1 ind1] Case; introv aeq wf.
+  soterm_ind1s t1 as [v1 ts1 ind1 | | op1 bs1 ind1] Case; introv aeq wf; tcsp.
 
   - Case "sovar".
-    inversion aeq as [? ? ? len imp|]; subst; clear aeq.
+    inversion aeq as [? ? ? len imp | |]; subst; clear aeq.
     allrw @wf_sovar.
     introv i.
     pose proof (combine_in_right _ _ ts2 ts1) as h.
@@ -2734,8 +2751,14 @@ Proof.
     applydup wf in k3.
     eapply ind1; eauto.
 
+  - Case "soseq".
+    inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
+    unfold wf_soterm in *; allsimpl.
+    eapply wf_term_alphaeq;[|eauto].
+    constructor; auto.
+
   - Case "soterm".
-    inversion aeq as [|? ? ? len imp]; subst; clear aeq.
+    inversion aeq as [ | |? ? ? len imp]; subst; clear aeq.
     allrw @wf_soterm_iff; repnd; dands; auto.
 
     + rw <- wf0.
@@ -4578,7 +4601,8 @@ Lemma lsubst_aux_sosub_aux_aeq {o} :
     -> lsubst_aux (sosub_aux sub1 t) sub2
        = sosub_aux (lsubst_aux_sosub sub2 sub1 ++ sub2sosub sub2) t.
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case; introv cl socov disj1 disj2 disj3.
+  soterm_ind t as [v ts ind | | op bs ind] Case;
+  introv cl socov disj1 disj2 disj3; tcsp.
 
   - Case "sovar".
     allsimpl.
@@ -5035,7 +5059,7 @@ Lemma fo_bound_vars_subvars_all_fo_vars {o} :
   forall t : @SOTerm o,
     subvars (fo_bound_vars t) (all_fo_vars t).
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case; simpl.
+  soterm_ind t as [v ts ind | | op bs ind] Case; simpl; tcsp.
 
   - Case "sovar".
     apply subvars_cons_r.
@@ -5163,7 +5187,7 @@ Lemma sosub_aux_trim_aux {o} :
     (forall v, LIn v (so_free_vars t) -> LIn v (sodom sub2) -> LIn v (sodom sub1))
     -> sosub_aux (sub1 ++ sub2) t = sosub_aux sub1 t.
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case; introv sv; allsimpl.
+  soterm_ind t as [v ts ind | | op bs ind] Case; introv sv; allsimpl; tcsp.
 
   - Case "sovar".
     rw @sosub_find_app.
@@ -6560,7 +6584,7 @@ Lemma get_utokens_so_swap {o} :
   forall s (t : @SOTerm o),
     get_utokens_so (so_swap s t) = get_utokens_so t.
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case; introv; allsimpl.
+  soterm_ind t as [v ts ind | | op bs ind] Case; introv; allsimpl; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl; auto.
@@ -6580,18 +6604,21 @@ Lemma get_utokens_so_soalphaeq {o} :
     so_alphaeq t1 t2
     -> get_utokens_so t1 = get_utokens_so t2.
 Proof.
-  soterm_ind1s t1 as [v ts ind|op bs ind] Case; introv aeq; allsimpl.
+  soterm_ind1s t1 as [v ts ind | | op bs ind] Case; introv aeq; allsimpl; tcsp.
 
   - Case "sovar".
-    inversion aeq as [? ? ? len imp|]; subst; simpl; auto.
+    inversion aeq as [? ? ? len imp | |]; subst; simpl; auto.
     apply eq_flat_maps_diff; auto.
     introv i.
     applydup imp in i.
     applydup in_combine in i; repnd.
     apply ind in i0; auto.
 
+  - Case "soseq".
+    inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
+
   - Case "soterm".
-    inversion aeq as [| ? ? ? len imp]; subst; clear aeq.
+    inversion aeq as [| | ? ? ? len imp]; subst; clear aeq.
     simpl.
     apply app_if; auto.
     apply eq_flat_maps_diff; auto.
@@ -6727,7 +6754,7 @@ Lemma get_utokens_sosub_aux_subset {o} :
       (get_utokens (sosub_aux sub t))
       (get_utokens_so t ++ get_utokens_sosub sub).
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case; introv; allsimpl.
+  soterm_ind t as [v ts ind | |op bs ind] Case; introv; allsimpl; tcsp.
 
   - Case "sovar".
     remember (sosub_find sub (v,length ts)) as f.
@@ -9481,7 +9508,7 @@ Lemma get_cutokens_so_swap {o} :
   forall s (t : @SOTerm o),
     get_cutokens_so (so_swap s t) = get_cutokens_so t.
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case; introv; allsimpl.
+  soterm_ind t as [v ts ind | |op bs ind] Case; introv; allsimpl; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl; auto.
@@ -9502,10 +9529,10 @@ Lemma get_cutokens_so_soalphaeq {o} :
     so_alphaeq t1 t2
     -> get_cutokens_so t1 = get_cutokens_so t2.
 Proof.
-  soterm_ind1s t1 as [v ts ind|op bs ind] Case; introv aeq; allsimpl.
+  soterm_ind1s t1 as [v ts ind | |op bs ind] Case; introv aeq; allsimpl; tcsp.
 
   - Case "sovar".
-    inversion aeq as [? ? ? len imp|]; subst; simpl; auto.
+    inversion aeq as [? ? ? len imp | |]; subst; simpl; auto.
     f_equal.
     apply eq_maps3; auto.
     introv i.
@@ -9513,8 +9540,14 @@ Proof.
     applydup in_combine in i; repnd.
     apply ind in i0; auto.
 
+  - Case "soseq".
+    inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
+    f_equal.
+    apply functional_extensionality; introv.
+    apply alphaeq_preserves_cutokens; apply alphaeq_eq; apply F.
+
   - Case "soterm".
-    inversion aeq as [| ? ? ? len imp]; subst; clear aeq.
+    inversion aeq as [| | ? ? ? len imp]; subst; clear aeq.
     simpl.
     f_equal; f_equal.
     apply eq_maps3; auto.
@@ -9724,7 +9757,7 @@ Lemma get_cutokens_sosub_aux_subset {o} :
       (get_cutokens (sosub_aux sub t))
       (oapp (get_cutokens_so t) (get_cutokens_sosub sub)).
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case; introv; allsimpl.
+  soterm_ind t as [v ts ind | |op bs ind] Case; introv; allsimpl; tcsp.
 
   - Case "sovar".
     remember (sosub_find sub (v,length ts)) as f.
@@ -9767,6 +9800,9 @@ Proof.
       apply implies_osubset_oappl_right.
       eexists;dands;[|eauto 3 with slow].
       rw in_map_iff; eexists; eauto.
+
+  - Case "soseq".
+    apply implies_osubset_oapp; left; eauto 3 with slow.
 
   - Case "soterm".
     allrw map_map; unfold compose.

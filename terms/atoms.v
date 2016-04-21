@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,8 +20,11 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -56,23 +61,25 @@ with get_cutokens_b {p} (bt : @BTerm p) : oatom p :=
 
 Fixpoint get_utokens_so {p} (t : @SOTerm p) : list (get_patom_set p) :=
   match t with
-    | sovar _ ts => flat_map get_utokens_so ts
-    | soterm op bs => (get_utokens_o op) ++ (flat_map get_utokens_b_so bs)
+  | sovar _ ts => flat_map get_utokens_so ts
+  | soseq s => []
+  | soterm op bs => (get_utokens_o op) ++ (flat_map get_utokens_b_so bs)
   end
 with get_utokens_b_so {p} (bt : @SOBTerm p) : list (get_patom_set p) :=
        match bt with
-         | sobterm _ t => get_utokens_so t
+       | sobterm _ t => get_utokens_so t
        end.
 
 Fixpoint get_cutokens_so {p} (t : @SOTerm p) : oatom p :=
   match t with
-    | sovar _ ts => oappl (map get_cutokens_so ts)
-    | soterm op bs => oappl ((oatomvs (get_utokens_o op))
-                               ++ (map get_cutokens_b_so bs))
+  | sovar _ ts => oappl (map get_cutokens_so ts)
+  | soseq s => oatoms (fun n => get_cutokens (s n))
+  | soterm op bs => oappl ((oatomvs (get_utokens_o op))
+                             ++ (map get_cutokens_b_so bs))
   end
 with get_cutokens_b_so {p} (bt : @SOBTerm p) : oatom p :=
        match bt with
-         | sobterm _ t => get_cutokens_so t
+       | sobterm _ t => get_cutokens_so t
        end.
 
 Definition get_utokens_bs {p} (bts : list (@BTerm p)) : list (get_patom_set p) :=

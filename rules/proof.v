@@ -122,6 +122,107 @@ Proof.
   eapply in_Llist in h;eauto.
 Qed.
 
+Definition ProofName := opname.
+Definition ProofNames := list ProofName.
+
+(*
+Record ProofLibSig {o} lib :=
+  {
+    ProofLib_type : Type;
+    ProofLib_access :
+      ProofLib_type
+      -> ProofName
+      -> option {seq : @baresequent o &  sequent_true2 lib seq}
+  }.
+*)
+
+Record ProofContext {o} :=
+  MkProofContext
+    {
+      PC_lib :> @library o;
+      PC_proof_names : ProofNames
+    }.
+
+Inductive proof {o} ctxt : @baresequent o -> Type :=
+| proof_from_lib :
+    forall name seq,
+      LIn name (@PC_proof_names o ctxt)
+      -> proof ctxt seq
+| proof_isect_eq :
+    forall a1 a2 b1 b2 e1 e2 x1 x2 y i H,
+      NVin y (vars_hyps H)
+      -> proof ctxt (rule_isect_equality2_hyp1 a1 a2 e1 i H)
+      -> proof ctxt (rule_isect_equality2_hyp2 a1 b1 b2 e2 x1 x2 y i H)
+      -> proof ctxt (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
+| proof_approx_refl :
+    forall a H,
+      proof ctxt (rule_approx_refl_concl a H)
+| proof_cequiv_approx :
+    forall a b e1 e2 H,
+      proof ctxt (rule_cequiv_approx2_hyp a b e1 H)
+      -> proof ctxt (rule_cequiv_approx2_hyp b a e2 H)
+      -> proof ctxt (rule_cequiv_approx_concl a b H)
+| proof_approx_eq :
+    forall a1 a2 b1 b2 e1 e2 i H,
+      proof ctxt (rule_eq_base2_hyp a1 a2 e1 H)
+      -> proof ctxt (rule_eq_base2_hyp b1 b2 e2 H)
+      -> proof ctxt (rule_approx_eq_concl a1 a2 b1 b2 i H)
+| proof_cequiv_eq :
+    forall a1 a2 b1 b2 e1 e2 i H,
+      proof ctxt (rule_eq_base2_hyp a1 a2 e1 H)
+      -> proof ctxt (rule_eq_base2_hyp b1 b2 e2 H)
+      -> proof ctxt (rule_cequiv_eq_concl a1 a2 b1 b2 i H)
+| proof_bottom_diverges :
+    forall x H J,
+      proof ctxt (rule_bottom_diverges_concl x H J)
+| proof_cut :
+    forall B C t u x H,
+      wf_term B
+      -> covered B (vars_hyps H)
+      -> NVin x (vars_hyps H)
+      -> proof ctxt (rule_cut_hyp1 H B u)
+      -> proof ctxt (rule_cut_hyp2 H x B C t)
+      -> proof ctxt (rule_cut_concl H C t x u)
+| proof_equal_in_base :
+    forall a b e F H,
+      proof ctxt (rule_equal_in_base2_hyp1 a b e H)
+      -> (forall v (i : LIn v (free_vars a)),
+             proof ctxt (rule_equal_in_base2_hyp2 v (F v i) H))
+      -> proof ctxt (rule_equal_in_base_concl a b H)
+| proof_hypothesis :
+    forall x A G J,
+      proof ctxt (rule_hypothesis_concl G J A x)
+| proof_cequiv_subst_concl :
+    forall C x a b t e H,
+      wf_term a
+      -> wf_term b
+      -> covered a (vars_hyps H)
+      -> covered b (vars_hyps H)
+      -> proof ctxt (rule_cequiv_subst_hyp1 H x C b t)
+      -> proof ctxt (rule_cequiv_subst2_hyp2 H a b e)
+      -> proof ctxt (rule_cequiv_subst_hyp1 H x C a t)
+| proof_approx_member_eq :
+    forall a b e H,
+      proof ctxt (rule_approx_member_eq2_hyp a b e H)
+      -> proof ctxt (rule_approx_member_eq_concl a b H)
+| proof_cequiv_computation :
+    forall a b H,
+      reduces_to ctxt a b
+      -> proof ctxt (rule_cequiv_concl a b H)
+| proof_function_elimination :
+    (* When deriving a sequent, e is not supposed to be given but inferred
+     * from the second sequent.  That's the case in a pre_proof
+     *)
+    forall A B C a e ea f x z H J,
+      wf_term a
+      -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
+      -> !LIn z (vars_hyps H)
+      -> !LIn z (vars_hyps J)
+      -> z <> f
+      -> proof ctxt (rule_function_elimination_hyp1 A B a ea f x H J)
+      -> proof ctxt (rule_function_elimination_hyp2 A B C a e f x z H J)
+      -> proof ctxt (rule_function_elimination_concl A B C e f x z H J).
+
 Inductive pre_conclusion {o} :=
 | pre_concl_ext : forall (ctype : @NTerm o), pre_conclusion
 | pre_concl_typ : forall (ctype : @NTerm o), pre_conclusion.
@@ -255,79 +356,282 @@ Definition pre_rule_approx_member_eq_hyp {o} a b (H : @bhyps o) :=
   mk_pre_bseq H (mk_pre_concl (mk_approx a b)).
 
 (* A pre-proof is a proof without the extracts, which we can build a posteriori *)
-Inductive pre_proof {o} (hole : bool) lib : @pre_baresequent o -> Type :=
-| pre_proof_hole : forall s, hole = true -> pre_proof hole lib s
+Inductive pre_proof {o} (hole : bool) ctxt : @pre_baresequent o -> Type :=
+| pre_proof_from_lib :
+    forall name seq,
+      LIn name (@PC_proof_names o ctxt)
+      -> pre_proof hole ctxt seq
+| pre_proof_hole : forall s, hole = true -> pre_proof hole ctxt s
 | pre_proof_isect_eq :
     forall a1 a2 b1 b2 x1 x2 y i H,
       NVin y (vars_hyps H)
-      -> pre_proof hole lib (pre_rule_isect_equality_hyp1 a1 a2 i H)
-      -> pre_proof hole lib (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H)
-      -> pre_proof hole lib (pre_rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
+      -> pre_proof hole ctxt (pre_rule_isect_equality_hyp1 a1 a2 i H)
+      -> pre_proof hole ctxt (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H)
+      -> pre_proof hole ctxt (pre_rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
 | pre_proof_approx_refl :
     forall a H,
-      pre_proof hole lib (pre_rule_approx_refl_concl a H)
+      pre_proof hole ctxt (pre_rule_approx_refl_concl a H)
 | pre_proof_cequiv_approx :
     forall a b H,
-      pre_proof hole lib (pre_rule_cequiv_approx_hyp a b H)
-      -> pre_proof hole lib (pre_rule_cequiv_approx_hyp b a H)
-      -> pre_proof hole lib (pre_rule_cequiv_approx_concl a b H)
+      pre_proof hole ctxt (pre_rule_cequiv_approx_hyp a b H)
+      -> pre_proof hole ctxt (pre_rule_cequiv_approx_hyp b a H)
+      -> pre_proof hole ctxt (pre_rule_cequiv_approx_concl a b H)
 | pre_proof_approx_eq :
     forall a1 a2 b1 b2 i H,
-      pre_proof hole lib (pre_rule_eq_base_hyp a1 a2 H)
-      -> pre_proof hole lib (pre_rule_eq_base_hyp b1 b2 H)
-      -> pre_proof hole lib (pre_rule_approx_eq_concl a1 a2 b1 b2 i H)
+      pre_proof hole ctxt (pre_rule_eq_base_hyp a1 a2 H)
+      -> pre_proof hole ctxt (pre_rule_eq_base_hyp b1 b2 H)
+      -> pre_proof hole ctxt (pre_rule_approx_eq_concl a1 a2 b1 b2 i H)
 | pre_proof_cequiv_eq :
     forall a1 a2 b1 b2 i H,
-      pre_proof hole lib (pre_rule_eq_base_hyp a1 a2 H)
-      -> pre_proof hole lib (pre_rule_eq_base_hyp b1 b2 H)
-      -> pre_proof hole lib (pre_rule_cequiv_eq_concl a1 a2 b1 b2 i H)
+      pre_proof hole ctxt (pre_rule_eq_base_hyp a1 a2 H)
+      -> pre_proof hole ctxt (pre_rule_eq_base_hyp b1 b2 H)
+      -> pre_proof hole ctxt (pre_rule_cequiv_eq_concl a1 a2 b1 b2 i H)
 | pre_proof_bottom_diverges :
     forall x H J,
-      pre_proof hole lib (pre_rule_bottom_diverges_concl x H J)
+      pre_proof hole ctxt (pre_rule_bottom_diverges_concl x H J)
 | pre_proof_cut :
     forall B C x H,
       wf_term B
       -> covered B (vars_hyps H)
       -> NVin x (vars_hyps H)
-      -> pre_proof hole lib (pre_rule_cut_hyp1 H B)
-      -> pre_proof hole lib (pre_rule_cut_hyp2 H x B C)
-      -> pre_proof hole lib (pre_rule_cut_concl H C)
+      -> pre_proof hole ctxt (pre_rule_cut_hyp1 H B)
+      -> pre_proof hole ctxt (pre_rule_cut_hyp2 H x B C)
+      -> pre_proof hole ctxt (pre_rule_cut_concl H C)
 | pre_proof_equal_in_base :
     forall a b H,
-      pre_proof hole lib (pre_rule_equal_in_base_hyp1 a b H)
-      -> (forall v, LIn v (free_vars a) -> pre_proof hole lib (pre_rule_equal_in_base_hyp2 v H))
-      -> pre_proof hole lib (pre_rule_equal_in_base_concl a b H)
+      pre_proof hole ctxt (pre_rule_equal_in_base_hyp1 a b H)
+      -> (forall v, LIn v (free_vars a) -> pre_proof hole ctxt (pre_rule_equal_in_base_hyp2 v H))
+      -> pre_proof hole ctxt (pre_rule_equal_in_base_concl a b H)
 | pre_proof_hypothesis :
     forall x A G J,
-      pre_proof hole lib (pre_rule_hypothesis_concl G J A x)
+      pre_proof hole ctxt (pre_rule_hypothesis_concl G J A x)
 | pre_proof_cequiv_subst_concl :
     forall C x a b H,
       wf_term a
       -> wf_term b
       -> covered a (vars_hyps H)
       -> covered b (vars_hyps H)
-      -> pre_proof hole lib (pre_rule_cequiv_subst_hyp1 H x C b)
-      -> pre_proof hole lib (pre_rule_cequiv_subst_hyp2 H a b)
-      -> pre_proof hole lib (pre_rule_cequiv_subst_hyp1 H x C a)
+      -> pre_proof hole ctxt (pre_rule_cequiv_subst_hyp1 H x C b)
+      -> pre_proof hole ctxt (pre_rule_cequiv_subst_hyp2 H a b)
+      -> pre_proof hole ctxt (pre_rule_cequiv_subst_hyp1 H x C a)
 | pre_proof_approx_member_eq :
     forall a b H,
-      pre_proof hole lib (pre_rule_approx_member_eq_hyp a b H)
-      -> pre_proof hole lib (pre_rule_approx_member_eq_concl a b H)
+      pre_proof hole ctxt (pre_rule_approx_member_eq_hyp a b H)
+      -> pre_proof hole ctxt (pre_rule_approx_member_eq_concl a b H)
 | pre_proof_cequiv_computation :
     forall a b H,
-      reduces_to lib a b
-      -> pre_proof hole lib (pre_rule_cequiv_concl a b H)
+      reduces_to ctxt a b
+      -> pre_proof hole ctxt (pre_rule_cequiv_concl a b H)
 | pre_proof_function_elimination :
-    (* e is not supposed to be given but inferred from the second sequent *)
     forall A B C a f x z H J,
       wf_term a
       -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
       -> !LIn z (vars_hyps H)
       -> !LIn z (vars_hyps J)
       -> z <> f
-      -> pre_proof hole lib (pre_rule_function_elimination_hyp1 A B a f x H J)
-      -> pre_proof hole lib (pre_rule_function_elimination_hyp2 A B C a f x z H J)
-      -> pre_proof hole lib (pre_rule_function_elimination_concl A B C f x H J).
+      -> pre_proof hole ctxt (pre_rule_function_elimination_hyp1 A B a f x H J)
+      -> pre_proof hole ctxt (pre_rule_function_elimination_hyp2 A B C a f x z H J)
+      -> pre_proof hole ctxt (pre_rule_function_elimination_concl A B C f x H J).
+
+Definition PreStatement {o} (T : @NTerm o) : pre_baresequent :=
+  mk_pre_bseq [] (mk_pre_concl T).
+
+Definition Statement {o} (T : @NTerm o) (e : NTerm) : baresequent :=
+  mk_baresequent [] (mk_concl T e).
+
+Inductive proof_library_entry {o} lib :=
+| PLE_tmp :
+    forall (name : ProofName)
+           (stmt : @NTerm o)
+           (hole : bool),
+      pre_proof hole lib (PreStatement stmt)
+      -> proof_library_entry lib
+| PLE_final :
+    forall (name : ProofName)
+           (stmt : @NTerm o)
+           (ext  : NTerm),
+      proof lib (Statement stmt ext)
+      -> proof_library_entry lib.
+
+(* proof name *)
+Definition PLE_name {o} {lib} (ple : @proof_library_entry o lib) : ProofName :=
+  match ple with
+  | PLE_tmp name _ _ _ => name
+  | PLE_final name _ _ _ => name
+  end.
+
+(* only for final proofs *)
+Definition PLE_fname {o} {lib} (ple : @proof_library_entry o lib) : option ProofName :=
+  match ple with
+  | PLE_tmp name _ _ _ => None
+  | PLE_final name _ _ _ => Some name
+  end.
+
+Definition PLE_extract {o} {lib} (ple : @proof_library_entry o lib) : option NTerm :=
+  match ple with
+  | PLE_tmp _ _ _ _ => None
+  | PLE_final _ _ ext _ => Some ext
+  end.
+
+Definition option2list {T} (x : option T) : list T :=
+  match x with
+  | Some t => [t]
+  | None => []
+  end.
+
+Definition PLE2def {o} {lib} (ple : @proof_library_entry o lib) : option library_entry :=
+  match ple with
+  | PLE_tmp _ _ _ _ => None
+  | PLE_final name stmt ext p =>
+    Some (lib_abs opabs [] ext correct)
+  end.
+
+Inductive Library {o} :
+  @library o    (* list of abstractions       *)
+  -> ProofNames (* names of unfinished proofs *)
+  -> ProofNames (* names of finished proofs   *)
+  -> Type :=
+| Library_Empty :
+    Library [] [] []
+| Library_Abs :
+    forall {lib unames fnames}
+           (c : Library lib unames fnames)
+           (e : @library_entry o)
+           (n : assert (isInr (in_lib_dec (opabs_of_lib_entry e) lib))),
+      Library (e :: lib) unames fnames
+| Library_Proof :
+    forall {lib names}
+           (c  : Library lib names)
+           (p  : proof_library_entry (MkProofContext o lib names))
+           (n1 : !LIn (PLE_name p) names)
+           (n2 : assert (isInr (in_lib_dec  lib))),
+      Library (option2list (PLE_extract p) ++ lib) (option2list (PLE_fname p) ++ names).
+
+(* By assuming [wf_bseq seq], when we start with a sequent with no hypotheses,
+   it means that we have to prove that the conclusion is well-formed and closed.
+ *)
+Lemma valid_proof {o} :
+  forall lib (seq : @baresequent o) (wf : wf_bseq seq),
+    proof lib seq -> sequent_true2 lib seq.
+Proof.
+  introv wf p.
+  induction p
+    as [ (* proved sequent       *) name seq p
+       | (* isect_eq             *) a1 a2 b1 b2 e1 e2 x1 x2 y i hs niy p1 ih1 p2 ih2
+       | (* approx_refl          *) a hs
+       | (* cequiv_approx        *) a b e1 e2 hs p1 ih1 p2 ih2
+       | (* approx_eq            *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
+       | (* cequiv_eq            *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
+       | (* bottom_diverges      *) x hs js
+       | (* cut                  *) B C t u x hs wB covB nixH p1 ih1 p2 ih2
+       | (* equal_in_base        *) a b e F H p1 ih1 ps ihs
+       | (* hypothesis           *) x A G J
+       | (* cequiv_subst_concl   *) C x a b t e H wfa wfb cova covb p1 ih1 p2 ih2
+       | (* approx_member_eq     *) a b e H p ih
+       | (* cequiv_computation   *) a b H p ih
+       | (* function elimination *) A B C a e ea f x z H J wa cova nizH nizJ dzf p1 ih1 p2 ih2
+       ];
+    allsimpl;
+    allrw NVin_iff.
+
+  - exact p.
+
+  - apply (rule_isect_equality2_true3 lib a1 a2 b1 b2 e1 e2 x1 x2 y i hs); simpl; tcsp.
+
+    + unfold args_constraints; simpl; introv h; repndors; subst; tcsp.
+
+    + introv e; repndors; subst; tcsp.
+
+      * apply ih1; auto.
+        apply (rule_isect_equality2_wf2 y i a1 a2 b1 b2 e1 e2 x1 x2 hs); simpl; tcsp.
+
+      * apply ih2; auto.
+        apply (rule_isect_equality2_wf2 y i a1 a2 b1 b2 e1 e2 x1 x2 hs); simpl; tcsp.
+
+  - apply (rule_approx_refl_true3 lib hs a); simpl; tcsp.
+
+  - apply (rule_cequiv_approx2_true3 lib hs a b e1 e2); simpl; tcsp.
+    introv xx; repndors; subst; tcsp.
+
+    apply ih2; auto.
+    apply (rule_cequiv_approx2_wf2 a b e1 e2 hs); simpl; tcsp.
+
+  - apply (rule_approx_eq2_true3 lib a1 a2 b1 b2 e1 e2 i hs); simpl; tcsp.
+    introv xx; repndors; subst; tcsp.
+
+    + apply ih1; auto.
+      apply (rule_approx_eq2_wf2 a1 a2 b1 b2 e1 e2 i hs); simpl; tcsp.
+
+    + apply ih2; auto.
+      apply (rule_approx_eq2_wf2 a1 a2 b1 b2 e1 e2 i hs); simpl; tcsp.
+
+  - apply (rule_cequiv_eq2_true3 lib a1 a2 b1 b2 e1 e2 i hs); simpl; tcsp.
+    introv xx; repndors; subst; tcsp.
+
+    + apply ih1; auto.
+      apply (rule_cequiv_eq2_wf2 a1 a2 b1 b2 e1 e2 i hs); simpl; tcsp.
+
+    + apply ih2; auto.
+      apply (rule_cequiv_eq2_wf2 a1 a2 b1 b2 e1 e2 i hs); simpl; tcsp.
+
+  - apply (rule_bottom_diverges_true3 lib x hs js); simpl; tcsp.
+
+  - apply (rule_cut_true3 lib hs B C t u x); simpl; tcsp.
+
+    + unfold args_constraints; simpl; introv xx; repndors; subst; tcsp.
+
+    + introv xx; repndors; subst; tcsp.
+
+      * apply ih1.
+        apply (rule_cut_wf2 hs B C t u x); simpl; tcsp.
+
+      * apply ih2.
+        apply (rule_cut_wf2 hs B C t u x); simpl; tcsp.
+
+  - apply (rule_equal_in_base2_true3 lib H a b e F); simpl; tcsp.
+
+    introv xx; repndors; subst; tcsp.
+    unfold rule_equal_in_base2_rest in xx; apply in_mapin in xx; exrepnd; subst.
+    pose proof (ihs a0 i) as hh; clear ihs.
+    repeat (autodimp hh hyp).
+    pose proof (rule_equal_in_base2_wf2 H a b e F) as w.
+    apply w; simpl; tcsp.
+    right.
+    apply in_mapin; eauto.
+
+  - apply (rule_hypothesis_true3 lib); simpl; tcsp.
+
+  - apply (rule_cequiv_subst_concl2_true3 lib H x C a b t e); allsimpl; tcsp.
+
+    introv i; repndors; subst; allsimpl; tcsp.
+
+    + apply ih1.
+      apply (rule_cequiv_subst_concl2_wf2 H x C a b t e); simpl; tcsp.
+
+    + apply ih2.
+      apply (rule_cequiv_subst_concl2_wf2 H x C a b t e); simpl; tcsp.
+
+  - apply (rule_approx_member_eq2_true3 lib a b e); simpl; tcsp.
+    introv xx; repndors; subst; tcsp.
+    apply ih.
+    apply (rule_approx_member_eq2_wf2 a b e H); simpl; tcsp.
+
+  - apply (rule_cequiv_computation_true3 lib); simpl; tcsp.
+
+  - apply (rule_function_elimination_true3 lib A B C a e ea f x z); simpl; tcsp.
+
+    introv ih; repndors; subst; tcsp.
+
+    + apply ih1.
+      pose proof (rule_function_elimination_wf2 A B C a e ea f x z H J) as h.
+      unfold wf_rule2, wf_subgoals2 in h; simpl in h.
+      repeat (autodimp h hyp).
+
+    + apply ih2.
+      pose proof (rule_function_elimination_wf2 A B C a e ea f x z H J) as h.
+      unfold wf_rule2, wf_subgoals2 in h; simpl in h.
+      repeat (autodimp h hyp).
+Qed.
 
 Fixpoint map_option
          {T U : Type}
@@ -481,82 +785,6 @@ Fixpoint finish_pre_proof
     end
   end.
 
-(* incomplete proof---bool is true if holes *)
-Inductive iproof {o} (hole : bool) lib : @baresequent o -> Type :=
-| iproof_hole : forall s, hole = true -> iproof hole lib s
-| iproof_isect_eq :
-    forall a1 a2 b1 b2 e1 e2 x1 x2 y i H,
-      NVin y (vars_hyps H)
-      -> iproof hole lib (rule_isect_equality2_hyp1 a1 a2 e1 i H)
-      -> iproof hole lib (rule_isect_equality2_hyp2 a1 b1 b2 e2 x1 x2 y i H)
-      -> iproof hole lib (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
-| iproof_approx_refl :
-    forall a H,
-      iproof hole lib (rule_approx_refl_concl a H)
-| iproof_cequiv_approx :
-    forall a b e1 e2 H,
-      iproof hole lib (rule_cequiv_approx2_hyp a b e1 H)
-      -> iproof hole lib (rule_cequiv_approx2_hyp b a e2 H)
-      -> iproof hole lib (rule_cequiv_approx_concl a b H)
-| iproof_approx_eq :
-    forall a1 a2 b1 b2 e1 e2 i H,
-      iproof hole lib (rule_eq_base2_hyp a1 a2 e1 H)
-      -> iproof hole lib (rule_eq_base2_hyp b1 b2 e2 H)
-      -> iproof hole lib (rule_approx_eq_concl a1 a2 b1 b2 i H)
-| iproof_cequiv_eq :
-    forall a1 a2 b1 b2 e1 e2 i H,
-      iproof hole lib (rule_eq_base2_hyp a1 a2 e1 H)
-      -> iproof hole lib (rule_eq_base2_hyp b1 b2 e2 H)
-      -> iproof hole lib (rule_cequiv_eq_concl a1 a2 b1 b2 i H)
-| iproof_bottom_diverges :
-    forall x H J,
-      iproof hole lib (rule_bottom_diverges_concl x H J)
-| iproof_cut :
-    forall B C t u x H,
-      wf_term B
-      -> covered B (vars_hyps H)
-      -> NVin x (vars_hyps H)
-      -> iproof hole lib (rule_cut_hyp1 H B u)
-      -> iproof hole lib (rule_cut_hyp2 H x B C t)
-      -> iproof hole lib (rule_cut_concl H C t x u)
-| iproof_equal_in_base :
-    forall a b e F H,
-      iproof hole lib (rule_equal_in_base2_hyp1 a b e H)
-      -> (forall v (i : LIn v (free_vars a)),
-             iproof hole lib (rule_equal_in_base2_hyp2 v (F v i) H))
-      -> iproof hole lib (rule_equal_in_base_concl a b H)
-| iproof_hypothesis :
-    forall x A G J,
-      iproof hole lib (rule_hypothesis_concl G J A x)
-| iproof_cequiv_subst_concl :
-    forall C x a b t e H,
-      wf_term a
-      -> wf_term b
-      -> covered a (vars_hyps H)
-      -> covered b (vars_hyps H)
-      -> iproof hole lib (rule_cequiv_subst_hyp1 H x C b t)
-      -> iproof hole lib (rule_cequiv_subst2_hyp2 H a b e)
-      -> iproof hole lib (rule_cequiv_subst_hyp1 H x C a t)
-| iproof_approx_member_eq :
-    forall a b e H,
-      iproof hole lib (rule_approx_member_eq2_hyp a b e H)
-      -> iproof hole lib (rule_approx_member_eq_concl a b H)
-| iproof_cequiv_computation :
-    forall a b H,
-      reduces_to lib a b
-      -> iproof hole lib (rule_cequiv_concl a b H)
-| iproof_function_elimination :
-    (* e is not supposed to be given but inferred from the second sequent *)
-    forall A B C a e ea f x z H J,
-      wf_term a
-      -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
-      -> !LIn z (vars_hyps H)
-      -> !LIn z (vars_hyps J)
-      -> z <> f
-      -> iproof hole lib (rule_function_elimination_hyp1 A B a ea f x H J)
-      -> iproof hole lib (rule_function_elimination_hyp2 A B C a e f x z H J)
-      -> iproof hole lib (rule_function_elimination_concl A B C e f x z H J).
-
 Definition pre2conclusion {o} (c : @pre_conclusion o) (e : @NTerm o) :=
   match c with
   | pre_concl_ext T => concl_ext T e
@@ -569,12 +797,12 @@ Definition pre2baresequent {o} (s : @pre_baresequent o) (e : @NTerm o) :=
     (pre2conclusion (pre_concl s) e).
 
 Definition ExtractProof {o} (seq : @pre_baresequent o) lib :=
-  {e : NTerm & iproof false lib (pre2baresequent seq e)}.
+  {e : NTerm & proof lib (pre2baresequent seq e)}.
 
 Definition mkExtractProof {o} {lib}
            (seq : @pre_baresequent o)
            (e : @NTerm o)
-           (p : iproof false lib (pre2baresequent seq e))
+           (p : proof lib (pre2baresequent seq e))
   : ExtractProof seq lib :=
   existT _ e p.
 
@@ -593,21 +821,21 @@ Fixpoint pre_proof2iproof
       mkExtractProof
         (pre_rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
         mk_axiom
-        (iproof_isect_eq _ _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH p1 p2)
+        (proof_isect_eq _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH p1 p2)
  (* I need to generalize the rule a bit to allow any extract in subgoals *)
     end
   | pre_proof_approx_refl a H =>
     mkExtractProof
       (pre_rule_approx_refl_concl a H)
       mk_axiom
-      (iproof_approx_refl _ _ a H)
+      (proof_approx_refl _ a H)
   | pre_proof_cequiv_approx a b H p1 p2 =>
     match pre_proof2iproof p1, pre_proof2iproof p2 with
     | existT e1 p1, existT e2 p2 =>
       mkExtractProof
         (pre_rule_cequiv_approx_concl a b H)
         mk_axiom
-        (iproof_cequiv_approx _ _ a b e1 e2 H p1 p2)
+        (proof_cequiv_approx _ a b e1 e2 H p1 p2)
     end
   | pre_proof_approx_eq a1 a2 b1 b2 i H p1 p2 =>
     match pre_proof2iproof p1, pre_proof2iproof p2 with
@@ -615,7 +843,7 @@ Fixpoint pre_proof2iproof
       mkExtractProof
         (pre_rule_approx_eq_concl a1 a2 b1 b2 i H)
         mk_axiom
-        (iproof_approx_eq _ _ a1 a2 b1 b2 e1 e2 i H p1 p2)
+        (proof_approx_eq _ a1 a2 b1 b2 e1 e2 i H p1 p2)
     end
   | pre_proof_cequiv_eq a1 a2 b1 b2 i H p1 p2 =>
     match pre_proof2iproof p1, pre_proof2iproof p2 with
@@ -623,20 +851,20 @@ Fixpoint pre_proof2iproof
       mkExtractProof
         (pre_rule_cequiv_eq_concl a1 a2 b1 b2 i H)
         mk_axiom
-        (iproof_cequiv_eq _ _ a1 a2 b1 b2 e1 e2 i H p1 p2)
+        (proof_cequiv_eq _ a1 a2 b1 b2 e1 e2 i H p1 p2)
     end
   | pre_proof_bottom_diverges x H J =>
     mkExtractProof
       (pre_rule_bottom_diverges_concl x H J)
       mk_bottom
-      (iproof_bottom_diverges _ _ x H J)
+      (proof_bottom_diverges _ x H J)
   | pre_proof_cut B C x H wB cBH nixH pu pt =>
     match pre_proof2iproof pu, pre_proof2iproof pt with
     | existT u p1, existT t p2 =>
       mkExtractProof
         (pre_rule_cut_concl H C)
         (subst t x u)
-        (iproof_cut _ _ B C t u x H wB cBH nixH p1 p2)
+        (proof_cut _ B C t u x H wB cBH nixH p1 p2)
     end
   | pre_proof_equal_in_base a b H p1 pl =>
     let F := fun v (i : LIn v (free_vars a)) => pre_proof2iproof (pl v i) in
@@ -647,20 +875,20 @@ Fixpoint pre_proof2iproof
       mkExtractProof
         (pre_rule_equal_in_base_concl a b H)
         mk_axiom
-        (iproof_equal_in_base _ _ a b e E H p1 P)
+        (proof_equal_in_base _ a b e E H p1 P)
     end
   | pre_proof_hypothesis x A G J =>
     mkExtractProof
       (pre_rule_hypothesis_concl G J A x)
       (mk_var x)
-      (iproof_hypothesis _ _ x A G J)
+      (proof_hypothesis _ x A G J)
   | pre_proof_cequiv_subst_concl C x a b H wa wb ca cb p1 p2 =>
     match pre_proof2iproof p1, pre_proof2iproof p2 with
     | existT t p1, existT e p2 =>
       mkExtractProof
         (pre_rule_cequiv_subst_hyp1 H x C a)
         t
-        (iproof_cequiv_subst_concl _ _ C x a b t e H wa wb ca cb p1 p2)
+        (proof_cequiv_subst_concl _ C x a b t e H wa wb ca cb p1 p2)
     end
   | pre_proof_approx_member_eq a b H p1 =>
     match pre_proof2iproof p1 with
@@ -668,166 +896,22 @@ Fixpoint pre_proof2iproof
       mkExtractProof
         (pre_rule_approx_member_eq_concl a b H)
         mk_axiom
-        (iproof_approx_member_eq _ _ a b e1 H p1)
+        (proof_approx_member_eq _ a b e1 H p1)
     end
   | pre_proof_cequiv_computation a b H r =>
     mkExtractProof
       (pre_rule_cequiv_concl a b H)
       mk_axiom
-      (iproof_cequiv_computation _ _ a b H r)
+      (proof_cequiv_computation _ a b H r)
   | pre_proof_function_elimination A B C a f x z H J wa cova nizH nizJ dzf p1 p2 =>
     match pre_proof2iproof p1, pre_proof2iproof p2 with
     | existT ea p1, existT e p2 =>
       mkExtractProof
         (pre_rule_function_elimination_concl A B C f x H J)
         (subst e z mk_axiom)
-        (iproof_function_elimination _ _ A B C a e ea f x z H J wa cova nizH nizJ dzf p1 p2)
+        (proof_function_elimination _ A B C a e ea f x z H J wa cova nizH nizJ dzf p1 p2)
     end
   end.
-
-Definition FHole : bool := false.
-
-Definition proof {o} lib (s : @baresequent o) : Type := iproof FHole lib s.
-
-Definition proof_isect_eq             {o} := @iproof_isect_eq             o FHole.
-Definition proof_approx_refl          {o} := @iproof_approx_refl          o FHole.
-Definition proof_cequiv_approx        {o} := @iproof_cequiv_approx        o FHole.
-Definition proof_approx_eq            {o} := @iproof_approx_eq            o FHole.
-Definition proof_cequiv_eq            {o} := @iproof_cequiv_eq            o FHole.
-Definition proof_bottom_diverges      {o} := @iproof_bottom_diverges      o FHole.
-Definition proof_cut                  {o} := @iproof_cut                  o FHole.
-Definition proof_equal_in_base        {o} := @iproof_equal_in_base        o FHole.
-Definition proof_hypothesis           {o} := @iproof_hypothesis           o FHole.
-Definition proof_cequiv_subst_concl   {o} := @iproof_cequiv_subst_concl   o FHole.
-Definition proof_approx_member_eq     {o} := @iproof_approx_member_eq     o FHole.
-Definition proof_cequiv_computation   {o} := @iproof_cequiv_computation   o FHole.
-Definition proof_function_elimination {o} := @iproof_function_elimination o FHole.
-
-(* By assuming [wf_bseq seq], when we start with a sequent with no hypotheses,
-   it means that we have to prove that the conclusion is well-formed and closed.
- *)
-Lemma valid_proof {o} :
-  forall lib (seq : @baresequent o) (wf : wf_bseq seq),
-    proof lib seq -> sequent_true2 lib seq.
-Proof.
-  introv wf p.
-  induction p
-    as [ (* hole                 *) s f
-       | (* isect_eq             *) a1 a2 b1 b2 e1 e2 x1 x2 y i hs niy p1 ih1 p2 ih2
-       | (* approx_refl          *) a hs
-       | (* cequiv_approx        *) a b e1 e2 hs p1 ih1 p2 ih2
-       | (* approx_eq            *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
-       | (* cequiv_eq            *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
-       | (* bottom_diverges      *) x hs js
-       | (* cut                  *) B C t u x hs wB covB nixH p1 ih1 p2 ih2
-       | (* equal_in_base        *) a b e F H p1 ih1 ps ihs
-       | (* hypothesis           *) x A G J
-       | (* cequiv_subst_concl   *) C x a b t e H wfa wfb cova covb p1 ih1 p2 ih2
-       | (* approx_member_eq     *) a b e H p ih
-       | (* cequiv_computation   *) a b H p ih
-       | (* function elimination *) A B C a e ea f x z H J wa cova nizH nizJ dzf p1 ih1 p2 ih2
-       ];
-    allsimpl;
-    allrw NVin_iff.
-
-  - inversion f.
-
-  - apply (rule_isect_equality2_true3 lib a1 a2 b1 b2 e1 e2 x1 x2 y i hs); simpl; tcsp.
-
-    + unfold args_constraints; simpl; introv h; repndors; subst; tcsp.
-
-    + introv e; repndors; subst; tcsp.
-
-      * apply ih1; auto.
-        apply (rule_isect_equality2_wf2 y i a1 a2 b1 b2 e1 e2 x1 x2 hs); simpl; tcsp.
-
-      * apply ih2; auto.
-        apply (rule_isect_equality2_wf2 y i a1 a2 b1 b2 e1 e2 x1 x2 hs); simpl; tcsp.
-
-  - apply (rule_approx_refl_true3 lib hs a); simpl; tcsp.
-
-  - apply (rule_cequiv_approx2_true3 lib hs a b e1 e2); simpl; tcsp.
-    introv xx; repndors; subst; tcsp.
-
-    apply ih2; auto.
-    apply (rule_cequiv_approx2_wf2 a b e1 e2 hs); simpl; tcsp.
-
-  - apply (rule_approx_eq2_true3 lib a1 a2 b1 b2 e1 e2 i hs); simpl; tcsp.
-    introv xx; repndors; subst; tcsp.
-
-    + apply ih1; auto.
-      apply (rule_approx_eq2_wf2 a1 a2 b1 b2 e1 e2 i hs); simpl; tcsp.
-
-    + apply ih2; auto.
-      apply (rule_approx_eq2_wf2 a1 a2 b1 b2 e1 e2 i hs); simpl; tcsp.
-
-  - apply (rule_cequiv_eq2_true3 lib a1 a2 b1 b2 e1 e2 i hs); simpl; tcsp.
-    introv xx; repndors; subst; tcsp.
-
-    + apply ih1; auto.
-      apply (rule_cequiv_eq2_wf2 a1 a2 b1 b2 e1 e2 i hs); simpl; tcsp.
-
-    + apply ih2; auto.
-      apply (rule_cequiv_eq2_wf2 a1 a2 b1 b2 e1 e2 i hs); simpl; tcsp.
-
-  - apply (rule_bottom_diverges_true3 lib x hs js); simpl; tcsp.
-
-  - apply (rule_cut_true3 lib hs B C t u x); simpl; tcsp.
-
-    + unfold args_constraints; simpl; introv xx; repndors; subst; tcsp.
-
-    + introv xx; repndors; subst; tcsp.
-
-      * apply ih1.
-        apply (rule_cut_wf2 hs B C t u x); simpl; tcsp.
-
-      * apply ih2.
-        apply (rule_cut_wf2 hs B C t u x); simpl; tcsp.
-
-  - apply (rule_equal_in_base2_true3 lib H a b e F); simpl; tcsp.
-
-    introv xx; repndors; subst; tcsp.
-    unfold rule_equal_in_base2_rest in xx; apply in_mapin in xx; exrepnd; subst.
-    pose proof (ihs a0 i) as hh; clear ihs.
-    repeat (autodimp hh hyp).
-    pose proof (rule_equal_in_base2_wf2 H a b e F) as w.
-    apply w; simpl; tcsp.
-    right.
-    apply in_mapin; eauto.
-
-  - apply (rule_hypothesis_true3 lib); simpl; tcsp.
-
-  - apply (rule_cequiv_subst_concl2_true3 lib H x C a b t e); allsimpl; tcsp.
-
-    introv i; repndors; subst; allsimpl; tcsp.
-
-    + apply ih1.
-      apply (rule_cequiv_subst_concl2_wf2 H x C a b t e); simpl; tcsp.
-
-    + apply ih2.
-      apply (rule_cequiv_subst_concl2_wf2 H x C a b t e); simpl; tcsp.
-
-  - apply (rule_approx_member_eq2_true3 lib a b e); simpl; tcsp.
-    introv xx; repndors; subst; tcsp.
-    apply ih.
-    apply (rule_approx_member_eq2_wf2 a b e H); simpl; tcsp.
-
-  - apply (rule_cequiv_computation_true3 lib); simpl; tcsp.
-
-  - apply (rule_function_elimination_true3 lib A B C a e ea f x z); simpl; tcsp.
-
-    introv ih; repndors; subst; tcsp.
-
-    + apply ih1.
-      pose proof (rule_function_elimination_wf2 A B C a e ea f x z H J) as h.
-      unfold wf_rule2, wf_subgoals2 in h; simpl in h.
-      repeat (autodimp h hyp).
-
-    + apply ih2.
-      pose proof (rule_function_elimination_wf2 A B C a e ea f x z H J) as h.
-      unfold wf_rule2, wf_subgoals2 in h; simpl in h.
-      repeat (autodimp h hyp).
-Qed.
 
 Lemma test {o} :
   @sequent_true2 o emlib (mk_baresequent [] (mk_conclax ((mk_member mk_axiom mk_unit)))).
@@ -838,65 +922,6 @@ Proof.
           (* This last bit was generated by JonPRL; I've got to generate the whole thing now *)
   ].
 Qed.
-
-Fixpoint finish_proof
-         {o} {seq : @baresequent o} {h : bool} {lib}
-         (prf: iproof h lib seq) : option (iproof false lib seq) :=
-  match prf with
-  | iproof_hole s e => None
-  | iproof_isect_eq a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH pa pb =>
-    match finish_proof pa, finish_proof pb with
-    | Some p1, Some p2 => Some (iproof_isect_eq _ _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH p1 p2)
-    | _, _ => None
-    end
-  | iproof_approx_refl a H => Some (iproof_approx_refl _ _ a H)
-  | iproof_cequiv_approx a b e1 e2 H p1 p2 =>
-    match finish_proof p1, finish_proof p2 with
-    | Some p1, Some p2 => Some (iproof_cequiv_approx _ _ a b e1 e2 H p1 p2)
-    | _, _ => None
-    end
-  | iproof_approx_eq a1 a2 b1 b2 e1 e2 i H p1 p2 =>
-    match finish_proof p1, finish_proof p2 with
-    | Some p1, Some p2 => Some (iproof_approx_eq _ _ a1 a2 b1 b2 e1 e2 i H p1 p2)
-    | _, _ => None
-    end
-  | iproof_cequiv_eq a1 a2 b1 b2 e1 e2 i H p1 p2 =>
-    match finish_proof p1, finish_proof p2 with
-    | Some p1, Some p2 => Some (iproof_cequiv_eq _ _ a1 a2 b1 b2 e1 e2 i H p1 p2)
-    | _, _ => None
-    end
-  | iproof_bottom_diverges x H J => Some (iproof_bottom_diverges _ _ x H J)
-  | iproof_cut B C t u x H wB cBH nixH pu pt =>
-    match finish_proof pu, finish_proof pt with
-    | Some p1, Some p2 => Some (iproof_cut _ _ B C t u x H wB cBH nixH p1 p2)
-    | _, _ => None
-    end
-  | iproof_equal_in_base a b e F H p1 pl =>
-    let op := map_option_in_fun2 (free_vars a) _ (fun v i => finish_proof (pl v i)) in
-    match finish_proof p1, op with
-    | Some p1, Some g => Some (iproof_equal_in_base _ _ a b e F H p1 g)
-    | _, _ => None
-    end
-  | iproof_hypothesis x A G J => Some (iproof_hypothesis _ _ x A G J)
-  | iproof_cequiv_subst_concl C x a b t e H wa wb ca cb p1 p2 =>
-    match finish_proof p1, finish_proof p2 with
-    | Some p1, Some p2 => Some (iproof_cequiv_subst_concl _ _ C x a b t e H wa wb ca cb p1 p2)
-    | _, _ => None
-    end
-  | iproof_approx_member_eq a b e H p1 =>
-    match finish_proof p1 with
-    | Some p1 => Some (iproof_approx_member_eq _ _ a b e H p1)
-    | _ => None
-    end
-  | iproof_cequiv_computation a b H r => Some (iproof_cequiv_computation _ _ a b H r)
-  | iproof_function_elimination A B C a e ea f x z H J wa cova nizH nizJ dzf p1 p2 =>
-    match finish_proof p1, finish_proof p2 with
-    | Some p1, Some p2 => Some (iproof_function_elimination _ _ A B C a e ea f x z H J wa cova nizH nizJ dzf p1 p2)
-    | _, _ => None
-    end
-  end.
-
-Definition address := list nat.
 
 
 (*
@@ -933,190 +958,185 @@ Definition zzz {n : nat} (t : test n) : test n :=
   end.
 *)
 
-Definition proof_update_fun {o} (hole : bool) lib (s seq : @baresequent o) :=
-  iproof hole lib s -> iproof hole lib seq.
+Definition proof_update_fun {o} lib (s seq : @baresequent o) :=
+  proof lib s -> proof lib seq.
 
-Definition proof_update {o} (hole : bool) lib (seq : @baresequent o) :=
-  {s : @baresequent o & proof_update_fun hole lib s seq}.
+Definition proof_update {o} lib (seq : @baresequent o) :=
+  {s : @baresequent o & proof_update_fun lib s seq}.
 
-Definition ProofUpdate {o} (hole : bool) lib (seq : @baresequent o) :=
-  option (proof_update hole lib seq).
+Definition ProofUpdate {o} lib (seq : @baresequent o) :=
+  option (proof_update lib seq).
 
 Definition retProofUpd
-           {o} {hole : bool} {lib} {seq : @baresequent o}
+           {o} {lib} {seq : @baresequent o}
            (s : @baresequent o)
-           (f : iproof hole lib s -> iproof hole lib seq)
-  : ProofUpdate hole lib seq :=
+           (f : proof lib s -> proof lib seq)
+  : ProofUpdate lib seq :=
   Some (existT _ s f).
 
 Definition idProofUpd
-           {o} {hole : bool} {lib}
+           {o} {lib}
            (seq : @baresequent o)
-  : ProofUpdate hole lib seq :=
+  : ProofUpdate lib seq :=
   retProofUpd seq (fun p => p).
 
-Definition noProofUpd {o} {hole : bool} {lib} {seq : @baresequent o}
-  : ProofUpdate hole lib seq :=
+Definition noProofUpd {o} {lib} {seq : @baresequent o}
+  : ProofUpdate lib seq :=
   None.
 
 Definition bindProofUpd
-           {o} {hole : bool} {lib} {seq1 seq2 : @baresequent o}
-           (pu  : ProofUpdate hole lib seq1)
-           (puf : iproof hole lib seq1 -> iproof hole lib seq2)
-  : ProofUpdate hole lib seq2 :=
+           {o} {lib} {seq1 seq2 : @baresequent o}
+           (pu  : ProofUpdate lib seq1)
+           (puf : proof lib seq1 -> proof lib seq2)
+  : ProofUpdate lib seq2 :=
   match pu with
   | Some (existT s f) => retProofUpd s (fun p => puf (f p))
   | None => None
   end.
 
+Definition address := list nat.
+
 Fixpoint get_sequent_fun_at_address {o}
-         {hole : bool}
          {lib}
          {seq  : @baresequent o}
-         (prf  : iproof hole lib seq)
-         (addr : address) : ProofUpdate hole lib seq :=
+         (prf  : proof lib seq)
+         (addr : address) : ProofUpdate lib seq :=
   match prf with
-  | iproof_hole s e =>
-    match addr with
-    | [] => idProofUpd s
-    | _ => noProofUpd
-    end
-  | iproof_isect_eq a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH pa pb =>
+  | proof_isect_eq a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH pa pb =>
     match addr with
     | [] => idProofUpd (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
     | 1 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address pa addr)
-        (fun x => iproof_isect_eq _ _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH x pb)
+        (fun x => proof_isect_eq _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH x pb)
     | 2 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address pb addr)
-        (fun x => iproof_isect_eq _ _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH pa x)
+        (fun x => proof_isect_eq _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH pa x)
     | _ => noProofUpd
     end
-  | iproof_approx_refl a H =>
+  | proof_approx_refl a H =>
     match addr with
     | [] => idProofUpd (rule_approx_refl_concl a H)
     | _ => noProofUpd
     end
-  | iproof_cequiv_approx a b e1 e2 H p1 p2 =>
+  | proof_cequiv_approx a b e1 e2 H p1 p2 =>
     match addr with
     | [] => idProofUpd (rule_cequiv_approx_concl a b H)
     | 1 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address p1 addr)
-        (fun x => iproof_cequiv_approx _ _ a b e1 e2 H x p2)
+        (fun x => proof_cequiv_approx _ a b e1 e2 H x p2)
     | 2 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address p2 addr)
-        (fun x => iproof_cequiv_approx _ _ a b e1 e2 H p1 x)
+        (fun x => proof_cequiv_approx _ a b e1 e2 H p1 x)
     | _ => noProofUpd
     end
-  | iproof_approx_eq a1 a2 b1 b2 e1 e2 i H p1 p2 =>
+  | proof_approx_eq a1 a2 b1 b2 e1 e2 i H p1 p2 =>
     match addr with
     | [] => idProofUpd (rule_approx_eq_concl a1 a2 b1 b2 i H)
     | 1 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address p1 addr)
-        (fun x => iproof_approx_eq _ _ a1 a2 b1 b2 e1 e2 i H x p2)
+        (fun x => proof_approx_eq _ a1 a2 b1 b2 e1 e2 i H x p2)
     | 2 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address p2 addr)
-        (fun x => iproof_approx_eq _ _ a1 a2 b1 b2 e1 e2 i H p1 x)
+        (fun x => proof_approx_eq _ a1 a2 b1 b2 e1 e2 i H p1 x)
     | _ => noProofUpd
     end
-  | iproof_cequiv_eq a1 a2 b1 b2 e1 e2 i H p1 p2 =>
+  | proof_cequiv_eq a1 a2 b1 b2 e1 e2 i H p1 p2 =>
     match addr with
     | [] => idProofUpd (rule_cequiv_eq_concl a1 a2 b1 b2 i H)
     | 1 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address p1 addr)
-        (fun x => iproof_cequiv_eq _ _ a1 a2 b1 b2 e1 e2 i H x p2)
+        (fun x => proof_cequiv_eq _ a1 a2 b1 b2 e1 e2 i H x p2)
     | 2 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address p2 addr)
-        (fun x => iproof_cequiv_eq _ _ a1 a2 b1 b2 e1 e2 i H p1 x)
+        (fun x => proof_cequiv_eq _ a1 a2 b1 b2 e1 e2 i H p1 x)
     | _ => noProofUpd
     end
-  | iproof_bottom_diverges x H J =>
+  | proof_bottom_diverges x H J =>
     match addr with
     | [] => idProofUpd (rule_bottom_diverges_concl x H J)
     | _ => noProofUpd
     end
-  | iproof_cut B C t u x H wB cBH nixH pu pt =>
+  | proof_cut B C t u x H wB cBH nixH pu pt =>
     match addr with
     | [] => idProofUpd (rule_cut_concl H C t x u)
     | 1 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address pu addr)
-        (fun z => iproof_cut _ _ B C t u x H wB cBH nixH z pt)
+        (fun z => proof_cut _ B C t u x H wB cBH nixH z pt)
     | 2 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address pt addr)
-        (fun z => iproof_cut _ _ B C t u x H wB cBH nixH pu z)
+        (fun z => proof_cut _ B C t u x H wB cBH nixH pu z)
     | _ => noProofUpd
     end
-  | iproof_equal_in_base a b e F H p1 pl =>
+  | proof_equal_in_base a b e F H p1 pl =>
     match addr with
     | [] => idProofUpd (rule_equal_in_base_concl a b H)
     | 1 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address p1 addr)
-        (fun z => iproof_equal_in_base _ _ a b e F H z pl)
+        (fun z => proof_equal_in_base _ a b e F H z pl)
     | _ => noProofUpd (* TODO *)
     end
-  | iproof_hypothesis x A G J =>
+  | proof_hypothesis x A G J =>
     match addr with
     | [] => idProofUpd (rule_hypothesis_concl G J A x)
     | _ => noProofUpd
     end
-  | iproof_cequiv_subst_concl C x a b t e H wa wb ca cb p1 p2 =>
+  | proof_cequiv_subst_concl C x a b t e H wa wb ca cb p1 p2 =>
     match addr with
     | [] => idProofUpd (rule_cequiv_subst_hyp1 H x C a t)
     | 1 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address p1 addr)
-        (fun z => iproof_cequiv_subst_concl _ _ C x a b t e H wa wb ca cb z p2)
+        (fun z => proof_cequiv_subst_concl _ C x a b t e H wa wb ca cb z p2)
     | 2 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address p2 addr)
-        (fun z => iproof_cequiv_subst_concl _ _ C x a b t e H wa wb ca cb p1 z)
+        (fun z => proof_cequiv_subst_concl _ C x a b t e H wa wb ca cb p1 z)
     | _ => noProofUpd
     end
-  | iproof_approx_member_eq a b e H p1 =>
+  | proof_approx_member_eq a b e H p1 =>
     match addr with
     | [] => idProofUpd (rule_approx_member_eq_concl a b H)
     | 1 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address p1 addr)
-        (fun z => iproof_approx_member_eq _ _ a b e H z)
+        (fun z => proof_approx_member_eq _ a b e H z)
     | _ => noProofUpd
     end
-  | iproof_cequiv_computation a b H r =>
+  | proof_cequiv_computation a b H r =>
     match addr with
     | [] => idProofUpd (rule_cequiv_concl a b H)
     | _ => noProofUpd
     end
-  | iproof_function_elimination A B C a e ea f x z H J wa cova nizH nizJ dzf p1 p2 =>
+  | proof_function_elimination A B C a e ea f x z H J wa cova nizH nizJ dzf p1 p2 =>
     match addr with
     | [] => idProofUpd (rule_function_elimination_concl A B C e f x z H J)
     | 1 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address p1 addr)
-        (fun p => iproof_function_elimination _ _ A B C a e ea f x z H J wa cova nizH nizJ dzf p p2)
+        (fun p => proof_function_elimination _ A B C a e ea f x z H J wa cova nizH nizJ dzf p p2)
     | 2 :: addr =>
       bindProofUpd
         (get_sequent_fun_at_address p2 addr)
-        (fun p => iproof_function_elimination _ _ A B C a e ea f x z H J wa cova nizH nizJ dzf p1 p)
+        (fun p => proof_function_elimination _ A B C a e ea f x z H J wa cova nizH nizJ dzf p1 p)
     | _ => noProofUpd
     end
   end.
 
 Fixpoint get_sequent_at_address {o}
-           {ib   : bool}
            {seq  : @baresequent o}
            {lib}
-           (prf  : iproof ib lib seq)
+           (prf  : proof lib seq)
            (addr : address) : option baresequent :=
   match get_sequent_fun_at_address prf addr with
   | Some (existT s _) => Some s
@@ -1131,8 +1151,6 @@ Qed.
 
 (* Looking at how we can define a Nuprl process *)
 
-Definition proof_name := String.string.
-
 Inductive command {o} :=
 (* add a definition at the head *)
 | COM_add_def :
@@ -1143,43 +1161,20 @@ Inductive command {o} :=
       command
 (* tries to complete a proof if it has no holes *)
 | COM_finish_proof :
-    proof_name -> command
+    ProofName -> command
 (* focuses to a node in a proof *)
 | COM_focus_proof :
-    proof_name -> address -> command.
-
-Record proof_library_entry {o} lib :=
-  MkProofLibEntry
-    {
-      proof_library_entry_name  : proof_name;
-      proof_library_entry_seq   : @baresequent o;
-      proof_library_entry_hole  : bool;
-      proof_library_entry_proof : iproof proof_library_entry_hole lib proof_library_entry_seq
-    }.
-
-Definition proof_library_entry_upd_proof {o} {lib}
-           (e : @proof_library_entry o lib)
-           {h : bool}
-           (p : iproof h lib (proof_library_entry_seq lib e))
-  : proof_library_entry lib :=
-  MkProofLibEntry
-    _
-    _
-    (proof_library_entry_name _ e)
-    (proof_library_entry_seq _ e)
-    h
-    p.
+    ProofName -> address -> command.
 
 Definition proof_library {o} lib := list (@proof_library_entry o lib).
 
 Record proof_update_seq {o} lib :=
   MkProofUpdateSeq
     {
-      PUS_name  : proof_name;
-      PUS_hole  : bool;
+      PUS_name  : ProofName;
       PUS_seq   : @baresequent o;
       PUS_focus : baresequent;
-      PUS_upd   : proof_update_fun PUS_hole lib PUS_focus PUS_seq
+      PUS_upd   : proof_update_fun lib PUS_focus PUS_seq
     }.
 
 Definition ProofUpdateSeq {o} lib :=
@@ -1194,55 +1189,54 @@ Record NuprlState {o} :=
     }.
 
 Fixpoint proof_consistent_with_new_definition
-         {o} {seq : @baresequent o} {h : bool} {lib}
-         (prf : iproof h lib seq)
+         {o} {seq : @baresequent o} {lib}
+         (prf : proof lib seq)
          (e   : library_entry)
          (p   : !in_lib (opabs_of_lib_entry e) lib)
-  : iproof h (e :: lib) seq :=
+  : proof (e :: lib) seq :=
   match prf with
-  | iproof_hole s e => iproof_hole _ _ s e
-  | iproof_isect_eq a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH pa pb =>
+  | proof_isect_eq a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH pa pb =>
     let p1 := proof_consistent_with_new_definition pa e p in
     let p2 := proof_consistent_with_new_definition pb e p in
-    iproof_isect_eq _ _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH p1 p2
-  | iproof_approx_refl a H => iproof_approx_refl _ _ a H
-  | iproof_cequiv_approx a b e1 e2 H p1 p2 =>
+    proof_isect_eq _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH p1 p2
+  | proof_approx_refl a H => proof_approx_refl _ a H
+  | proof_cequiv_approx a b e1 e2 H p1 p2 =>
     let p1 := proof_consistent_with_new_definition p1 e p in
     let p2 := proof_consistent_with_new_definition p2 e p in
-    iproof_cequiv_approx _ _ a b e1 e2 H p1 p2
-  | iproof_approx_eq a1 a2 b1 b2 e1 e2 i H p1 p2 =>
+    proof_cequiv_approx _ a b e1 e2 H p1 p2
+  | proof_approx_eq a1 a2 b1 b2 e1 e2 i H p1 p2 =>
     let p1 := proof_consistent_with_new_definition p1 e p in
     let p2 := proof_consistent_with_new_definition p2 e p in
-    iproof_approx_eq _ _ a1 a2 b1 b2 e1 e2 i H p1 p2
-  | iproof_cequiv_eq a1 a2 b1 b2 e1 e2 i H p1 p2 =>
+    proof_approx_eq _ a1 a2 b1 b2 e1 e2 i H p1 p2
+  | proof_cequiv_eq a1 a2 b1 b2 e1 e2 i H p1 p2 =>
     let p1 := proof_consistent_with_new_definition p1 e p in
     let p2 := proof_consistent_with_new_definition p2 e p in
-    iproof_cequiv_eq _ _ a1 a2 b1 b2 e1 e2 i H p1 p2
-  | iproof_bottom_diverges x H J => iproof_bottom_diverges _ _ x H J
-  | iproof_cut B C t u x H wB cBH nixH pu pt =>
+    proof_cequiv_eq _ a1 a2 b1 b2 e1 e2 i H p1 p2
+  | proof_bottom_diverges x H J => proof_bottom_diverges _ x H J
+  | proof_cut B C t u x H wB cBH nixH pu pt =>
     let p1 := proof_consistent_with_new_definition pu e p in
     let p2 := proof_consistent_with_new_definition pt e p in
-    iproof_cut _ _ B C t u x H wB cBH nixH p1 p2
-  | iproof_equal_in_base a b ee F H p1 pl =>
+    proof_cut _ B C t u x H wB cBH nixH p1 p2
+  | proof_equal_in_base a b ee F H p1 pl =>
     let p1 := proof_consistent_with_new_definition p1 e p in
     let g := fun v (i : LIn v (free_vars a)) => proof_consistent_with_new_definition (pl v i) e p in
-    iproof_equal_in_base _ _ a b ee F H p1 g
-  | iproof_hypothesis x A G J => iproof_hypothesis _ _ x A G J
-  | iproof_cequiv_subst_concl C x a b t ee H wa wb ca cb p1 p2 =>
+    proof_equal_in_base _ a b ee F H p1 g
+  | proof_hypothesis x A G J => proof_hypothesis _ x A G J
+  | proof_cequiv_subst_concl C x a b t ee H wa wb ca cb p1 p2 =>
     let p1 := proof_consistent_with_new_definition p1 e p in
     let p2 := proof_consistent_with_new_definition p2 e p in
-    iproof_cequiv_subst_concl _ _ C x a b t ee H wa wb ca cb p1 p2
-  | iproof_approx_member_eq a b ee H p1 =>
+    proof_cequiv_subst_concl _ C x a b t ee H wa wb ca cb p1 p2
+  | proof_approx_member_eq a b ee H p1 =>
     let p1 := proof_consistent_with_new_definition p1 e p in
-    iproof_approx_member_eq _ _ a b ee H p1
-  | iproof_cequiv_computation a b H r =>
-    iproof_cequiv_computation
-      _ _ a b H
+    proof_approx_member_eq _ a b ee H p1
+  | proof_cequiv_computation a b H r =>
+    proof_cequiv_computation
+      _ a b H
       (reduces_to_consistent_with_new_definition a b r e p)
-  | iproof_function_elimination A B C a ee ea f x z H J wa cova nizH nizJ dzf p1 p2 =>
+  | proof_function_elimination A B C a ee ea f x z H J wa cova nizH nizJ dzf p1 p2 =>
     let p1 := proof_consistent_with_new_definition p1 e p in
     let p2 := proof_consistent_with_new_definition p2 e p in
-    iproof_function_elimination _ _ A B C a ee ea f x z H J wa cova nizH nizJ dzf p1 p2
+    proof_function_elimination _ A B C a ee ea f x z H J wa cova nizH nizJ dzf p1 p2
   end.
 
 Definition NuprlState_add_def_lib {o}
@@ -1280,9 +1274,21 @@ Definition NuprlState_upd_focus {o}
     (NuprlState_proof_library state)
     upd.
 
+Definition proof_library_entry_upd_proof {o} {lib}
+           (e : @proof_library_entry o lib)
+           (p : proof lib (proof_library_entry_seq lib e))
+  : proof_library_entry lib :=
+  MkProofLibEntry
+    _
+    _
+    (proof_library_entry_name _ e)
+    (proof_library_entry_seq _ e)
+    h
+    p.
+
 Fixpoint finish_proof_in_library {o}
            (lib : @proof_library o)
-           (name : proof_name) : proof_library :=
+           (name : ProofName) : proof_library :=
   match lib with
   | [] => []
   | p :: ps =>
@@ -1299,7 +1305,7 @@ Fixpoint finish_proof_in_library {o}
 
 Fixpoint focus_proof_in_library {o}
            (lib : @proof_library o)
-           (name : proof_name)
+           (name : ProofName)
            (addr : address) : ProofUpdateSeq :=
   match lib with
   | [] => None

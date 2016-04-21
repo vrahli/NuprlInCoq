@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,8 +20,11 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -966,6 +970,12 @@ Proof.
   - unfold oapp, onil.
     autorewrite with slow.
     rw <- @oappl_nil.
+    rw cons_as_app.
+    rw @oappl_app_oappl; autorewrite with slow; auto.
+
+  - unfold oapp, onil.
+    autorewrite with slow.
+    rw <- @oappl_nil.
     rw @oappl_app_oappl; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @get_cutokens_so_onil : slow.
@@ -1077,7 +1087,7 @@ Lemma ren_utokens_sosub_aux {o} :
     -> ren_utokens ren (sosub_aux sub t)
        = sosub_aux (ren_utokens_sosub ren sub) t.
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case; introv nu; allsimpl.
+  soterm_ind t as [v ts ind| |op bs ind] Case; introv nu; allsimpl; auto.
 
   - Case "sovar".
     rw @sosub_find_ren_utokens_sosub.
@@ -1220,7 +1230,7 @@ Lemma get_utokens_so_fo_change_bvars_alpha {o} :
     get_utokens_so (fo_change_bvars_alpha l ren t)
     = get_utokens_so t.
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case; introv; simpl.
+  soterm_ind t as [v ts ind| |op bs ind] Case; introv; simpl; auto.
 
   - Case "sovar".
     boolvar; subst; simpl; auto.
@@ -1241,7 +1251,7 @@ Lemma get_cutokens_so_fo_change_bvars_alpha {o} :
     get_cutokens_so (fo_change_bvars_alpha l ren t)
     = get_cutokens_so t.
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case; introv; simpl.
+  soterm_ind t as [v ts ind| |op bs ind] Case; introv; simpl; auto.
 
   - Case "sovar".
     boolvar; subst; simpl; auto.
