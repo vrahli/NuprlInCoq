@@ -524,46 +524,28 @@ Proof.
     rewrite n; auto.
 Qed.
 
-Inductive proof_library_entry {o} lib :=
-| PLE_tmp :
-    forall (name : ProofName)
-           (stmt : @NTerm o)
-           (hole : bool),
-      pre_proof hole lib (PreStatement stmt)
-      -> proof_library_entry lib
-| PLE_final :
-    forall (name : ProofName)
-           (stmt : @NTerm o)
-           (ext  : NTerm),
-      proof lib (Statement stmt ext)
-      -> proof_library_entry lib.
+Definition extract2def {o}
+           (name : ProofName)
+           (ext  : @NTerm o)
+           (wf   : wf_term ext)
+           (cl   : closed ext)
+           (nout : noutokens ext) : library_entry :=
+  lib_abs
+    (opname2opabs name)
+    []
+    (nterm2soterm ext)
+    (extract2correct ext wf cl nout name).
 
-(* proof name *)
-Definition PLE_name {o} {lib} (ple : @proof_library_entry o lib) : ProofName :=
-  match ple with
-  | PLE_tmp name _ _ _ => name
-  | PLE_final name _ _ _ => name
-  end.
+Definition not_in_lib_entry {o} (e : @library_entry o) lib :=
+  !@in_lib o (opabs_of_lib_entry e) lib.
 
-(* only for final proofs *)
-Definition PLE_fname {o} {lib} (ple : @proof_library_entry o lib) : option ProofName :=
-  match ple with
-  | PLE_tmp name _ _ _ => None
-  | PLE_final name _ _ _ => Some name
-  end.
+Definition not_in_lib_name {o} (name : ProofName) lib :=
+  !@in_lib o (opname2opabs name) lib.
 
-Definition PLE_extract {o} {lib} (ple : @proof_library_entry o lib) : option NTerm :=
-  match ple with
-  | PLE_tmp _ _ _ _ => None
-  | PLE_final _ _ ext _ => Some ext
-  end.
-
-Definition PLE2def {o} {lib} (ple : @proof_library_entry o lib) : option library_entry :=
-  match ple with
-  | PLE_tmp _ _ _ _ => None
-  | PLE_final name stmt ext p =>
-    Some (lib_abs (opname2opabs name) [] (nterm2soterm ext) correct)
-  end.
+Definition not_in_names {o} (e : @library_entry o) (names : list ProofName) :=
+  forall opabs,
+    LIn opabs (map opname2opabs names)
+    -> !same_opabs (opabs_of_lib_entry e) opabs.
 
 Inductive Library {o} :
   @library o    (* list of abstractions       *)
@@ -574,17 +556,40 @@ Inductive Library {o} :
     Library [] [] []
 | Library_Abs :
     forall {lib unames fnames}
-           (c : Library lib unames fnames)
-           (e : @library_entry o)
-           (n : assert (isInr (in_lib_dec (opabs_of_lib_entry e) lib))),
+           (c  : Library lib unames fnames)
+           (e  : @library_entry o)
+           (n1 : not_in_lib_entry e lib)
+           (n2 : not_in_names e unames)
+           (n3 : not_in_names e fnames),
       Library (e :: lib) unames fnames
-| Library_Proof :
-    forall {lib names}
-           (c  : Library lib names)
-           (p  : proof_library_entry (MkProofContext o lib names))
-           (n1 : !LIn (PLE_name p) names)
-           (n2 : assert (isInr (in_lib_dec  lib))),
-      Library (option2list (PLE_extract p) ++ lib) (option2list (PLE_fname p) ++ names).
+| Library_Proof_tmp :
+    forall {lib unames fnames}
+           (name : ProofName)
+           (stmt : @NTerm o)
+           (hole : bool)
+           (c    : Library lib unames fnames)
+           (p    : pre_proof hole (MkProofContext o lib fnames) (PreStatement stmt))
+           (n1   : !LIn name unames)
+           (n2   : !LIn name fnames)
+           (n3   : not_in_lib_name name lib),
+      Library lib (name :: unames) fnames
+| Library_Proof_final :
+    forall {lib unames fnames}
+           (name : ProofName)
+           (stmt : @NTerm o)
+           (ext  : NTerm)
+           (wf   : wf_term ext)
+           (cl   : closed ext)
+           (nout : noutokens ext)
+           (c    : Library lib unames fnames)
+           (p    : proof (MkProofContext o lib fnames) (Statement stmt ext))
+           (n1   : !LIn name unames)
+           (n2   : !LIn name fnames)
+           (n3   : not_in_lib_name name lib),
+      Library
+        (extract2def name ext wf cl nout :: lib)
+        unames
+        (name :: fnames).
 
 (* By assuming [wf_bseq seq], when we start with a sequent with no hypotheses,
    it means that we have to prove that the conclusion is well-formed and closed.
@@ -613,7 +618,7 @@ Proof.
     allsimpl;
     allrw NVin_iff.
 
-  - exact p.
+  -
 
   - apply (rule_isect_equality2_true3 lib a1 a2 b1 b2 e1 e2 x1 x2 y i hs); simpl; tcsp.
 
