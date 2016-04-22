@@ -439,6 +439,91 @@ Definition PreStatement {o} (T : @NTerm o) : pre_baresequent :=
 Definition Statement {o} (T : @NTerm o) (e : NTerm) : baresequent :=
   mk_baresequent [] (mk_concl T e).
 
+Definition option2list {T} (x : option T) : list T :=
+  match x with
+  | Some t => [t]
+  | None => []
+  end.
+
+Definition opname2opabs (op : opname) : opabs :=
+  mk_opabs op [] [].
+
+(* !!MOVE *)
+Lemma soterm2nterm_nterm2soterm {o} :
+  forall (t : @NTerm o), soterm2nterm (nterm2soterm t) = t.
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
+  Case "oterm".
+  f_equal.
+  rewrite map_map; unfold compose.
+  apply eq_map_l; introv i.
+  destruct x as [vs t]; simpl.
+  f_equal.
+  eapply ind; eauto.
+Qed.
+Hint Rewrite @soterm2nterm_nterm2soterm : slow.
+
+(* !!MOVE *)
+Lemma injective_fun_var2sovar : injective_fun var2sovar.
+Proof.
+  introv e.
+  destruct a1, a2.
+  unfold var2sovar in e; ginv; auto.
+Qed.
+Hint Resolve injective_fun_var2sovar : slow.
+
+(* !!MOVE *)
+Lemma so_free_vars_nterm2soterm {o} :
+  forall (t : @NTerm o),
+    so_free_vars (nterm2soterm t)
+    = vars2sovars (free_vars t).
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
+  rewrite flat_map_map; unfold compose.
+  unfold vars2sovars.
+  rewrite map_flat_map; unfold compose.
+  apply eq_flat_maps; introv i.
+  destruct x as [vs t]; simpl.
+  rewrite (ind t vs); auto.
+  unfold remove_so_vars.
+  unfold vars2sovars.
+  rewrite <- (map_diff_commute deq_nvar); eauto 2 with slow.
+Qed.
+
+Lemma get_utokens_so_nterm2soterm {o} :
+  forall (t : @NTerm o),
+    get_utokens_so (nterm2soterm t) = get_utokens t.
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
+  f_equal.
+  rewrite flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i.
+  destruct x as [vs t]; simpl.
+  eapply ind; eauto.
+Qed.
+
+Lemma extract2correct {o} :
+  forall (t  : @NTerm o)
+         (w  : wf_term t)
+         (c  : closed t)
+         (n  : noutokens t)
+         (op : opname),
+    correct_abs (opname2opabs op) [] (nterm2soterm t).
+Proof.
+  introv w c n; introv.
+  unfold correct_abs; simpl.
+  dands.
+  - unfold wf_soterm.
+    rewrite soterm2nterm_nterm2soterm; auto.
+  - unfold socovered; simpl.
+    rewrite so_free_vars_nterm2soterm.
+    rewrite c; simpl; auto.
+  - constructor.
+  - unfold no_utokens.
+    rewrite get_utokens_so_nterm2soterm.
+    rewrite n; auto.
+Qed.
+
 Inductive proof_library_entry {o} lib :=
 | PLE_tmp :
     forall (name : ProofName)
@@ -473,17 +558,11 @@ Definition PLE_extract {o} {lib} (ple : @proof_library_entry o lib) : option NTe
   | PLE_final _ _ ext _ => Some ext
   end.
 
-Definition option2list {T} (x : option T) : list T :=
-  match x with
-  | Some t => [t]
-  | None => []
-  end.
-
 Definition PLE2def {o} {lib} (ple : @proof_library_entry o lib) : option library_entry :=
   match ple with
   | PLE_tmp _ _ _ _ => None
   | PLE_final name stmt ext p =>
-    Some (lib_abs opabs [] ext correct)
+    Some (lib_abs (opname2opabs name) [] (nterm2soterm ext) correct)
   end.
 
 Inductive Library {o} :
