@@ -136,93 +136,6 @@ Record ProofLibSig {o} lib :=
   }.
 *)
 
-Record ProofContext {o} :=
-  MkProofContext
-    {
-      PC_lib :> @library o;
-      PC_proof_names : ProofNames
-    }.
-
-Inductive proof {o} ctxt : @baresequent o -> Type :=
-| proof_from_lib :
-    forall name seq,
-      LIn name (@PC_proof_names o ctxt)
-      -> proof ctxt seq
-| proof_isect_eq :
-    forall a1 a2 b1 b2 e1 e2 x1 x2 y i H,
-      NVin y (vars_hyps H)
-      -> proof ctxt (rule_isect_equality2_hyp1 a1 a2 e1 i H)
-      -> proof ctxt (rule_isect_equality2_hyp2 a1 b1 b2 e2 x1 x2 y i H)
-      -> proof ctxt (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
-| proof_approx_refl :
-    forall a H,
-      proof ctxt (rule_approx_refl_concl a H)
-| proof_cequiv_approx :
-    forall a b e1 e2 H,
-      proof ctxt (rule_cequiv_approx2_hyp a b e1 H)
-      -> proof ctxt (rule_cequiv_approx2_hyp b a e2 H)
-      -> proof ctxt (rule_cequiv_approx_concl a b H)
-| proof_approx_eq :
-    forall a1 a2 b1 b2 e1 e2 i H,
-      proof ctxt (rule_eq_base2_hyp a1 a2 e1 H)
-      -> proof ctxt (rule_eq_base2_hyp b1 b2 e2 H)
-      -> proof ctxt (rule_approx_eq_concl a1 a2 b1 b2 i H)
-| proof_cequiv_eq :
-    forall a1 a2 b1 b2 e1 e2 i H,
-      proof ctxt (rule_eq_base2_hyp a1 a2 e1 H)
-      -> proof ctxt (rule_eq_base2_hyp b1 b2 e2 H)
-      -> proof ctxt (rule_cequiv_eq_concl a1 a2 b1 b2 i H)
-| proof_bottom_diverges :
-    forall x H J,
-      proof ctxt (rule_bottom_diverges_concl x H J)
-| proof_cut :
-    forall B C t u x H,
-      wf_term B
-      -> covered B (vars_hyps H)
-      -> NVin x (vars_hyps H)
-      -> proof ctxt (rule_cut_hyp1 H B u)
-      -> proof ctxt (rule_cut_hyp2 H x B C t)
-      -> proof ctxt (rule_cut_concl H C t x u)
-| proof_equal_in_base :
-    forall a b e F H,
-      proof ctxt (rule_equal_in_base2_hyp1 a b e H)
-      -> (forall v (i : LIn v (free_vars a)),
-             proof ctxt (rule_equal_in_base2_hyp2 v (F v i) H))
-      -> proof ctxt (rule_equal_in_base_concl a b H)
-| proof_hypothesis :
-    forall x A G J,
-      proof ctxt (rule_hypothesis_concl G J A x)
-| proof_cequiv_subst_concl :
-    forall C x a b t e H,
-      wf_term a
-      -> wf_term b
-      -> covered a (vars_hyps H)
-      -> covered b (vars_hyps H)
-      -> proof ctxt (rule_cequiv_subst_hyp1 H x C b t)
-      -> proof ctxt (rule_cequiv_subst2_hyp2 H a b e)
-      -> proof ctxt (rule_cequiv_subst_hyp1 H x C a t)
-| proof_approx_member_eq :
-    forall a b e H,
-      proof ctxt (rule_approx_member_eq2_hyp a b e H)
-      -> proof ctxt (rule_approx_member_eq_concl a b H)
-| proof_cequiv_computation :
-    forall a b H,
-      reduces_to ctxt a b
-      -> proof ctxt (rule_cequiv_concl a b H)
-| proof_function_elimination :
-    (* When deriving a sequent, e is not supposed to be given but inferred
-     * from the second sequent.  That's the case in a pre_proof
-     *)
-    forall A B C a e ea f x z H J,
-      wf_term a
-      -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
-      -> !LIn z (vars_hyps H)
-      -> !LIn z (vars_hyps J)
-      -> z <> f
-      -> proof ctxt (rule_function_elimination_hyp1 A B a ea f x H J)
-      -> proof ctxt (rule_function_elimination_hyp2 A B C a e f x z H J)
-      -> proof ctxt (rule_function_elimination_concl A B C e f x z H J).
-
 Inductive pre_conclusion {o} :=
 | pre_concl_ext : forall (ctype : @NTerm o), pre_conclusion
 | pre_concl_typ : forall (ctype : @NTerm o), pre_conclusion.
@@ -242,6 +155,161 @@ Record pre_baresequent {p} :=
 
 Definition mk_pre_bseq {o} H (c : @pre_conclusion o) : pre_baresequent :=
   MkPreBaresequent o H c.
+
+Definition concl2pre {o} (c : @conclusion o) : pre_conclusion :=
+  match c with
+  | concl_ext t _ => pre_concl_ext t
+  | concl_typ t => pre_concl_typ t
+  end.
+
+Definition concl2pre_baresequent {o} (c : @conclusion o) : pre_baresequent :=
+  mk_pre_bseq [] (concl2pre c).
+
+Definition baresequent2pre {o} (s : @baresequent o) : pre_baresequent :=
+  mk_pre_bseq (hyps s) (concl2pre (concl s)).
+
+Definition PreStatement {o} (T : @NTerm o) : pre_baresequent :=
+  mk_pre_bseq [] (mk_pre_concl T).
+
+Definition Statement {o} (T : @NTerm o) (e : NTerm) : baresequent :=
+  mk_baresequent [] (mk_concl T e).
+
+Definition option2list {T} (x : option T) : list T :=
+  match x with
+  | Some t => [t]
+  | None => []
+  end.
+
+Definition opname2opabs (op : opname) : opabs :=
+  mk_opabs op [] [].
+
+(* !!MOVE *)
+Lemma soterm2nterm_nterm2soterm {o} :
+  forall (t : @NTerm o), soterm2nterm (nterm2soterm t) = t.
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
+  Case "oterm".
+  f_equal.
+  rewrite map_map; unfold compose.
+  apply eq_map_l; introv i.
+  destruct x as [vs t]; simpl.
+  f_equal.
+  eapply ind; eauto.
+Qed.
+Hint Rewrite @soterm2nterm_nterm2soterm : slow.
+
+(* !!MOVE *)
+Lemma injective_fun_var2sovar : injective_fun var2sovar.
+Proof.
+  introv e.
+  destruct a1, a2.
+  unfold var2sovar in e; ginv; auto.
+Qed.
+Hint Resolve injective_fun_var2sovar : slow.
+
+(* !!MOVE *)
+Lemma so_free_vars_nterm2soterm {o} :
+  forall (t : @NTerm o),
+    so_free_vars (nterm2soterm t)
+    = vars2sovars (free_vars t).
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
+  rewrite flat_map_map; unfold compose.
+  unfold vars2sovars.
+  rewrite map_flat_map; unfold compose.
+  apply eq_flat_maps; introv i.
+  destruct x as [vs t]; simpl.
+  rewrite (ind t vs); auto.
+  unfold remove_so_vars.
+  unfold vars2sovars.
+  rewrite <- (map_diff_commute deq_nvar); eauto 2 with slow.
+Qed.
+
+Lemma get_utokens_so_nterm2soterm {o} :
+  forall (t : @NTerm o),
+    get_utokens_so (nterm2soterm t) = get_utokens t.
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
+  f_equal.
+  rewrite flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i.
+  destruct x as [vs t]; simpl.
+  eapply ind; eauto.
+Qed.
+
+Lemma extract2correct {o} :
+  forall (t  : @NTerm o)
+         (w  : wf_term t)
+         (c  : closed t)
+         (n  : noutokens t)
+         (op : opname),
+    correct_abs (opname2opabs op) [] (nterm2soterm t).
+Proof.
+  introv w c n; introv.
+  unfold correct_abs; simpl.
+  dands.
+  - unfold wf_soterm.
+    rewrite soterm2nterm_nterm2soterm; auto.
+  - unfold socovered; simpl.
+    rewrite so_free_vars_nterm2soterm.
+    rewrite c; simpl; auto.
+  - constructor.
+  - unfold no_utokens.
+    rewrite get_utokens_so_nterm2soterm.
+    rewrite n; auto.
+Qed.
+
+Definition extract2def {o}
+           (name : ProofName)
+           (ext  : @NTerm o)
+           (wf   : wf_term ext)
+           (cl   : closed ext)
+           (nout : noutokens ext) : library_entry :=
+  lib_abs
+    (opname2opabs name)
+    []
+    (nterm2soterm ext)
+    (extract2correct ext wf cl nout name).
+
+Record ProofContext {o} :=
+  MkProofContext
+    {
+      PC_lib :> @library o;
+      PC_proof_names : ProofNames;
+      PC_conclusions : list (@conclusion o)
+    }.
+
+Definition not_in_lib_entry {o} (e : @library_entry o) ctxt :=
+  !@in_lib o (opabs_of_lib_entry e) (PC_lib ctxt).
+
+Definition not_in_lib_name {o} (name : ProofName) ctxt :=
+  !@in_lib o (opname2opabs name) (PC_lib ctxt).
+
+Definition not_in_names {o} (e : @library_entry o) (ctxt : @ProofContext o) :=
+  forall opabs,
+    LIn opabs (map opname2opabs (PC_proof_names ctxt))
+    -> !same_opabs (opabs_of_lib_entry e) opabs.
+
+Definition updLibProofContext {o} (pc : @ProofContext o) e :=
+  MkProofContext
+    o
+    (e :: PC_lib pc)
+    (PC_proof_names pc)
+    (PC_conclusions pc).
+
+Definition updNameProofContext {o} (pc : @ProofContext o) name :=
+  MkProofContext
+    o
+    (PC_lib pc)
+    (name :: PC_proof_names pc)
+    (PC_conclusions pc).
+
+Definition updSeqProofContext {o} (pc : @ProofContext o) seq :=
+  MkProofContext
+    o
+    (PC_lib pc)
+    (PC_proof_names pc)
+    (seq :: PC_conclusions pc).
 
 Definition pre_rule_isect_equality_concl {o} a1 a2 x1 x2 b1 b2 i (H : @bhyps o) :=
   mk_pre_bseq
@@ -356,11 +424,11 @@ Definition pre_rule_approx_member_eq_hyp {o} a b (H : @bhyps o) :=
   mk_pre_bseq H (mk_pre_concl (mk_approx a b)).
 
 (* A pre-proof is a proof without the extracts, which we can build a posteriori *)
-Inductive pre_proof {o} (hole : bool) ctxt : @pre_baresequent o -> Type :=
+Inductive pre_proof {o} (hole : bool) (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
 | pre_proof_from_lib :
-    forall name seq,
-      LIn name (@PC_proof_names o ctxt)
-      -> pre_proof hole ctxt seq
+    forall c,
+      LIn c (@PC_conclusions o ctxt)
+      -> pre_proof hole ctxt (concl2pre_baresequent c)
 | pre_proof_hole : forall s, hole = true -> pre_proof hole ctxt s
 | pre_proof_isect_eq :
     forall a1 a2 b1 b2 x1 x2 y i H,
@@ -433,174 +501,291 @@ Inductive pre_proof {o} (hole : bool) ctxt : @pre_baresequent o -> Type :=
       -> pre_proof hole ctxt (pre_rule_function_elimination_hyp2 A B C a f x z H J)
       -> pre_proof hole ctxt (pre_rule_function_elimination_concl A B C f x H J).
 
-Definition PreStatement {o} (T : @NTerm o) : pre_baresequent :=
-  mk_pre_bseq [] (mk_pre_concl T).
+Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
+| proof_from_lib :
+    forall c,
+      LIn c (@PC_conclusions o ctxt)
+      -> proof ctxt (mk_baresequent [] c)
+| proof_isect_eq :
+    forall a1 a2 b1 b2 e1 e2 x1 x2 y i H,
+      NVin y (vars_hyps H)
+      -> proof ctxt (rule_isect_equality2_hyp1 a1 a2 e1 i H)
+      -> proof ctxt (rule_isect_equality2_hyp2 a1 b1 b2 e2 x1 x2 y i H)
+      -> proof ctxt (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
+| proof_approx_refl :
+    forall a H,
+      proof ctxt (rule_approx_refl_concl a H)
+| proof_cequiv_approx :
+    forall a b e1 e2 H,
+      proof ctxt (rule_cequiv_approx2_hyp a b e1 H)
+      -> proof ctxt (rule_cequiv_approx2_hyp b a e2 H)
+      -> proof ctxt (rule_cequiv_approx_concl a b H)
+| proof_approx_eq :
+    forall a1 a2 b1 b2 e1 e2 i H,
+      proof ctxt (rule_eq_base2_hyp a1 a2 e1 H)
+      -> proof ctxt (rule_eq_base2_hyp b1 b2 e2 H)
+      -> proof ctxt (rule_approx_eq_concl a1 a2 b1 b2 i H)
+| proof_cequiv_eq :
+    forall a1 a2 b1 b2 e1 e2 i H,
+      proof ctxt (rule_eq_base2_hyp a1 a2 e1 H)
+      -> proof ctxt (rule_eq_base2_hyp b1 b2 e2 H)
+      -> proof ctxt (rule_cequiv_eq_concl a1 a2 b1 b2 i H)
+| proof_bottom_diverges :
+    forall x H J,
+      proof ctxt (rule_bottom_diverges_concl x H J)
+| proof_cut :
+    forall B C t u x H,
+      wf_term B
+      -> covered B (vars_hyps H)
+      -> NVin x (vars_hyps H)
+      -> proof ctxt (rule_cut_hyp1 H B u)
+      -> proof ctxt (rule_cut_hyp2 H x B C t)
+      -> proof ctxt (rule_cut_concl H C t x u)
+| proof_equal_in_base :
+    forall a b e F H,
+      proof ctxt (rule_equal_in_base2_hyp1 a b e H)
+      -> (forall v (i : LIn v (free_vars a)),
+             proof ctxt (rule_equal_in_base2_hyp2 v (F v i) H))
+      -> proof ctxt (rule_equal_in_base_concl a b H)
+| proof_hypothesis :
+    forall x A G J,
+      proof ctxt (rule_hypothesis_concl G J A x)
+| proof_cequiv_subst_concl :
+    forall C x a b t e H,
+      wf_term a
+      -> wf_term b
+      -> covered a (vars_hyps H)
+      -> covered b (vars_hyps H)
+      -> proof ctxt (rule_cequiv_subst_hyp1 H x C b t)
+      -> proof ctxt (rule_cequiv_subst2_hyp2 H a b e)
+      -> proof ctxt (rule_cequiv_subst_hyp1 H x C a t)
+| proof_approx_member_eq :
+    forall a b e H,
+      proof ctxt (rule_approx_member_eq2_hyp a b e H)
+      -> proof ctxt (rule_approx_member_eq_concl a b H)
+| proof_cequiv_computation :
+    forall a b H,
+      reduces_to ctxt a b
+      -> proof ctxt (rule_cequiv_concl a b H)
+| proof_function_elimination :
+    (* When deriving a sequent, e is not supposed to be given but inferred
+     * from the second sequent.  That's the case in a pre_proof
+     *)
+    forall A B C a e ea f x z H J,
+      wf_term a
+      -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
+      -> !LIn z (vars_hyps H)
+      -> !LIn z (vars_hyps J)
+      -> z <> f
+      -> proof ctxt (rule_function_elimination_hyp1 A B a ea f x H J)
+      -> proof ctxt (rule_function_elimination_hyp2 A B C a e f x z H J)
+      -> proof ctxt (rule_function_elimination_concl A B C e f x z H J).
 
-Definition Statement {o} (T : @NTerm o) (e : NTerm) : baresequent :=
-  mk_baresequent [] (mk_concl T e).
-
-Definition option2list {T} (x : option T) : list T :=
-  match x with
-  | Some t => [t]
-  | None => []
-  end.
-
-Definition opname2opabs (op : opname) : opabs :=
-  mk_opabs op [] [].
-
-(* !!MOVE *)
-Lemma soterm2nterm_nterm2soterm {o} :
-  forall (t : @NTerm o), soterm2nterm (nterm2soterm t) = t.
-Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
-  Case "oterm".
-  f_equal.
-  rewrite map_map; unfold compose.
-  apply eq_map_l; introv i.
-  destruct x as [vs t]; simpl.
-  f_equal.
-  eapply ind; eauto.
-Qed.
-Hint Rewrite @soterm2nterm_nterm2soterm : slow.
-
-(* !!MOVE *)
-Lemma injective_fun_var2sovar : injective_fun var2sovar.
-Proof.
-  introv e.
-  destruct a1, a2.
-  unfold var2sovar in e; ginv; auto.
-Qed.
-Hint Resolve injective_fun_var2sovar : slow.
-
-(* !!MOVE *)
-Lemma so_free_vars_nterm2soterm {o} :
-  forall (t : @NTerm o),
-    so_free_vars (nterm2soterm t)
-    = vars2sovars (free_vars t).
-Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
-  rewrite flat_map_map; unfold compose.
-  unfold vars2sovars.
-  rewrite map_flat_map; unfold compose.
-  apply eq_flat_maps; introv i.
-  destruct x as [vs t]; simpl.
-  rewrite (ind t vs); auto.
-  unfold remove_so_vars.
-  unfold vars2sovars.
-  rewrite <- (map_diff_commute deq_nvar); eauto 2 with slow.
-Qed.
-
-Lemma get_utokens_so_nterm2soterm {o} :
-  forall (t : @NTerm o),
-    get_utokens_so (nterm2soterm t) = get_utokens t.
-Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
-  f_equal.
-  rewrite flat_map_map; unfold compose.
-  apply eq_flat_maps; introv i.
-  destruct x as [vs t]; simpl.
-  eapply ind; eauto.
-Qed.
-
-Lemma extract2correct {o} :
-  forall (t  : @NTerm o)
-         (w  : wf_term t)
-         (c  : closed t)
-         (n  : noutokens t)
-         (op : opname),
-    correct_abs (opname2opabs op) [] (nterm2soterm t).
-Proof.
-  introv w c n; introv.
-  unfold correct_abs; simpl.
-  dands.
-  - unfold wf_soterm.
-    rewrite soterm2nterm_nterm2soterm; auto.
-  - unfold socovered; simpl.
-    rewrite so_free_vars_nterm2soterm.
-    rewrite c; simpl; auto.
-  - constructor.
-  - unfold no_utokens.
-    rewrite get_utokens_so_nterm2soterm.
-    rewrite n; auto.
-Qed.
-
-Definition extract2def {o}
-           (name : ProofName)
-           (ext  : @NTerm o)
-           (wf   : wf_term ext)
-           (cl   : closed ext)
-           (nout : noutokens ext) : library_entry :=
-  lib_abs
-    (opname2opabs name)
-    []
-    (nterm2soterm ext)
-    (extract2correct ext wf cl nout name).
-
-Definition not_in_lib_entry {o} (e : @library_entry o) lib :=
-  !@in_lib o (opabs_of_lib_entry e) lib.
-
-Definition not_in_lib_name {o} (name : ProofName) lib :=
-  !@in_lib o (opname2opabs name) lib.
-
-Definition not_in_names {o} (e : @library_entry o) (names : list ProofName) :=
-  forall opabs,
-    LIn opabs (map opname2opabs names)
-    -> !same_opabs (opabs_of_lib_entry e) opabs.
-
-Inductive Library {o} :
-  @library o    (* list of abstractions       *)
-  -> ProofNames (* names of unfinished proofs *)
-  -> ProofNames (* names of finished proofs   *)
-  -> Type :=
+Inductive Library {o} : @ProofContext o -> Type :=
 | Library_Empty :
-    Library [] [] []
+    Library (MkProofContext o [] [] [])
 | Library_Abs :
-    forall {lib unames fnames}
-           (c  : Library lib unames fnames)
+    forall {pc}
+           (c  : Library pc)
            (e  : @library_entry o)
-           (n1 : not_in_lib_entry e lib)
-           (n2 : not_in_names e unames)
-           (n3 : not_in_names e fnames),
-      Library (e :: lib) unames fnames
+           (n1 : not_in_lib_entry e pc)
+           (n2 : not_in_names e pc),
+      Library (updLibProofContext pc e)
 | Library_Proof_tmp :
-    forall {lib unames fnames}
+    forall {pc}
+           (c    : Library pc)
            (name : ProofName)
            (stmt : @NTerm o)
            (hole : bool)
-           (c    : Library lib unames fnames)
-           (p    : pre_proof hole (MkProofContext o lib fnames) (PreStatement stmt))
-           (n1   : !LIn name unames)
-           (n2   : !LIn name fnames)
-           (n3   : not_in_lib_name name lib),
-      Library lib (name :: unames) fnames
+           (p    : pre_proof hole pc (PreStatement stmt))
+           (n1   : !LIn name (PC_proof_names pc))
+           (n2   : not_in_lib_name name pc),
+      Library (updNameProofContext pc name)
 | Library_Proof_final :
-    forall {lib unames fnames}
+    forall {pc}
+           (c    : Library pc)
            (name : ProofName)
            (stmt : @NTerm o)
            (ext  : NTerm)
            (wf   : wf_term ext)
            (cl   : closed ext)
            (nout : noutokens ext)
-           (c    : Library lib unames fnames)
-           (p    : proof (MkProofContext o lib fnames) (Statement stmt ext))
-           (n1   : !LIn name unames)
-           (n2   : !LIn name fnames)
-           (n3   : not_in_lib_name name lib),
-      Library
-        (extract2def name ext wf cl nout :: lib)
-        unames
-        (name :: fnames).
+           (p    : proof pc (Statement stmt ext))
+           (n1   : !LIn name (PC_proof_names pc))
+           (n2   : not_in_lib_name name pc),
+      Library (updLibProofContext
+                 (updSeqProofContext
+                    (updNameProofContext pc name)
+                    (mk_concl stmt ext))
+                 (extract2def name ext wf cl nout)).
+
+Lemma similarity_nil_implies {o} :
+  forall lib (s1 s2 : @CSub o),
+    similarity lib s1 s2 [] -> (s1 = [] # s2 = []).
+Proof.
+  introv sim; inversion sim; cpx.
+Qed.
+
+Ltac clear_eq1 x :=
+  match goal with
+    | [ H : x = _ |- _ ] => clear H
+  end.
+
+Lemma computes_to_valc_consistent_with_new_definition {o} {lib} :
+  forall (a b : @CTerm o)
+         (r   : computes_to_valc lib a b)
+         (e   : library_entry)
+         (p   : !in_lib (opabs_of_lib_entry e) lib),
+    computes_to_valc (e :: lib) a b.
+Proof.
+  introv r p.
+  allunfold @computes_to_valc.
+  allunfold @computes_to_value; repnd; dands; auto.
+  eapply reduces_to_consistent_with_new_definition; auto.
+Qed.
+
+Lemma tequality_cons_library_entry {o} :
+  forall lib e (t1 t2 : @CTerm o),
+    !in_lib (opabs_of_lib_entry e) lib
+    -> tequality lib t1 t2
+    -> tequality (e :: lib) t1 t2.
+Proof.
+  introv p teq.
+  allunfold @tequality; exrepnd.
+
+  (* Do we want to use the same equality here?
+     This per is supposed to be larger because we have more reductions...
+   *)
+  exists eq.
+  allunfold @nuprl.
+
+  remember (univ lib) as ts.
+  close_cases (induction teq0 using @close_ind') Case; subst.
+
+  Focus 2.
+
+  - Case "CL_int".
+    apply CL_int.
+    allunfold @per_int; repnd; dands; auto; spcast;
+    try (complete (apply computes_to_valc_consistent_with_new_definition; auto)).
+
+    introv; allrw.
+    unfold equality_of_int; split; intro h; exrepnd; exists k; dands; spcast; auto;
+    try (complete (apply computes_to_valc_consistent_with_new_definition; auto)).
+
+  - Case "CL_init".
+    apply CL_init.
+    allunfold @univ; exrepnd.
+    exists i.
+
+    induction i; allsimpl; tcsp.
+    repndors; exrepnd.
+    + left; dands; auto; spcast;
+      try (complete (apply computes_to_valc_consistent_with_new_definition; auto)).
+      introv.
+      allrw.
+
+      split; intro q; exrepnd; exists eqa.
+
+      *
+Qed.
+
+Lemma cover_vars_nil_iff_closed {o} :
+  forall (t : @NTerm o), cover_vars t [] <=> closed t.
+Proof.
+  introv.
+  rw @cover_vars_eq; simpl.
+  unfold closed.
+  rw subvars_eq; split; intro h; try (rewrite h); auto.
+  remember (free_vars t) as l; clear Heql; destruct l; auto.
+  apply subset_cons_nil in h; tcsp.
+Qed.
+
+Lemma cover_vars_nil2closed {o} :
+  forall {t : @NTerm o}, cover_vars t [] -> closed t.
+Proof.
+  introv cov.
+  apply cover_vars_nil_iff_closed; auto.
+Qed.
+
+Lemma wfClosed2isprogram {o} :
+  forall {t : @NTerm o},
+    wf_term t
+    -> closed t
+    -> isprogram t.
+Proof.
+  introv w c.
+  constructor; eauto 3 with slow.
+Qed.
+
+Definition mk_cterm_wc {o}
+           (t : @NTerm o)
+           (w : wf_term t)
+           (c : cover_vars t []) : CTerm :=
+  mk_cterm t (wfClosed2isprogram w (cover_vars_nil2closed c)).
+
+Lemma lsubstc_sub_nil {o} :
+  forall (t : @NTerm o) w c,
+    lsubstc t w [] c = mk_cterm_wc t w c.
+Proof.
+  introv.
+  apply cterm_eq; simpl.
+  apply csubst_nil.
+Qed.
+
+Lemma sequent_true2_cons_library_entry {o} :
+  forall lib e (c : @conclusion o),
+    sequent_true2 lib (mk_baresequent [] c)
+    -> sequent_true2 (e :: lib) (mk_baresequent [] c).
+Proof.
+  introv h.
+  allunfold @sequent_true2; exrepnd.
+  exists c0.
+  allrw @sequent_true_eq_VR.
+  allunfold @VR_sequent_true; introv.
+  pose proof (h0 s1 s2) as q; clear h0; simpl in *.
+  intros sim hf.
+  dup sim as sim'.
+  apply similarity_nil_implies in sim'; repnd; subst; allsimpl.
+  pose proof (q (sim_nil lib) (hyps_functionality_nil lib)) as h; clear q; repnd.
+
+  dands.
+
+  - clear h.
+
+    match goal with [ |- tequality _ (lsubstc _ _ _ ?c) _ ] => let c := fresh "c" in remember c; clear_eq1 c end.
+    match goal with [ |- tequality _ _ (lsubstc _ _ _ ?c) ] => let c := fresh "c" in remember c; clear_eq1 c end.
+    match goal with [ H : tequality _ (lsubstc _ _ _ ?c) _ |- _ ] => let c := fresh "c" in remember c; clear_eq1 c end.
+    match goal with [ H : tequality _ _ (lsubstc _ _ _ ?c) |- _ ] => let c := fresh "c" in remember c; clear_eq1 c end.
+    proof_irr.
+    allrw @lsubstc_sub_nil.
+
+Qed.
+
+Lemma seq_in_library_is_true {o} :
+  forall (ctxt : @ProofContext o) c,
+    Library ctxt
+    -> LIn c (PC_conclusions ctxt)
+    -> sequent_true2 ctxt (mk_baresequent [] c).
+Proof.
+  introv Lib.
+  induction Lib; simpl; introv i; tcsp.
+  - autodimp IHLib hyp.
+
+Qed.
 
 (* By assuming [wf_bseq seq], when we start with a sequent with no hypotheses,
    it means that we have to prove that the conclusion is well-formed and closed.
  *)
 Lemma valid_proof {o} :
-  forall lib (seq : @baresequent o) (wf : wf_bseq seq),
-    proof lib seq -> sequent_true2 lib seq.
+  forall ctxt (seq : @baresequent o) (wf : wf_bseq seq),
+    Library ctxt
+    -> proof ctxt seq
+    -> sequent_true2 ctxt seq.
 Proof.
-  introv wf p.
+  introv wf Lib p.
   induction p
-    as [ (* proved sequent       *) name seq p
+    as [ (* proved sequent       *) seq p
        | (* isect_eq             *) a1 a2 b1 b2 e1 e2 x1 x2 y i hs niy p1 ih1 p2 ih2
        | (* approx_refl          *) a hs
        | (* cequiv_approx        *) a b e1 e2 hs p1 ih1 p2 ih2
