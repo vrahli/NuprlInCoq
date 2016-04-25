@@ -224,7 +224,9 @@ Proof.
   unfold vars2sovars.
   rewrite <- (map_diff_commute deq_nvar); eauto 2 with slow.
 Qed.
+Hint Rewrite @so_free_vars_nterm2soterm : slow.
 
+(* !!MOVE *)
 Lemma get_utokens_so_nterm2soterm {o} :
   forall (t : @NTerm o),
     get_utokens_so (nterm2soterm t) = get_utokens t.
@@ -236,6 +238,7 @@ Proof.
   destruct x as [vs t]; simpl.
   eapply ind; eauto.
 Qed.
+Hint Rewrite @get_utokens_so_nterm2soterm : slow.
 
 Lemma extract2correct {o} :
   forall (t  : @NTerm o)
@@ -660,6 +663,248 @@ Proof.
   spcast; auto.
 Qed.
 
+Lemma simpleCorrectAbs {o}
+           (op : opname)
+           (t  : @NTerm o)
+           (wf : wf_term t)
+           (cl : closed t)
+           (nu : noutokens t)
+  : correct_abs (opname2opabs op) [] (nterm2soterm t).
+Proof.
+  unfold correct_abs; simpl; dands; auto.
+  - unfold wf_soterm.
+    autorewrite with slow; auto.
+  - unfold socovered.
+    autorewrite with slow; auto.
+    rw cl; simpl; auto.
+  - unfold correct_abs_params, correct_abs_params_b; simpl; auto.
+  - unfold no_utokens; simpl; auto.
+    autorewrite with slow; auto.
+Qed.
+
+Definition simpleDef {o}
+           (op : opname)
+           (t  : @NTerm o)
+           (wf : wf_term t)
+           (cl : closed t)
+           (nu : noutokens t)
+  : @library_entry o :=
+  lib_abs (opname2opabs op)
+          []
+          (nterm2soterm t)
+          (simpleCorrectAbs op t wf cl nu).
+
+Definition simpleAbs {o} (op : opname) : @NTerm o :=
+  oterm (Abs (opname2opabs op)) [].
+
+Lemma isprogram_simpleAbs {o} :
+  forall op, @isprogram o (simpleAbs op).
+Proof.
+  introv.
+  unfold isprogram, closed; simpl; dands; tcsp.
+  constructor; simpl; tcsp.
+Qed.
+Hint Resolve isprogram_simpleAbs : slow.
+
+Lemma approx_abs_in_empty_lib {o} :
+  forall op (u : @NTerm o),
+    isprogram u
+    -> approx emlib (simpleAbs op) u.
+Proof.
+  introv ispu.
+  apply approx_assume_hasvalue; eauto 2 with slow.
+  introv hv.
+  unfold hasvalue_like in hv; exrepnd.
+  apply reduces_to_split2 in hv1; repndors; exrepnd; subst; allsimpl; tcsp.
+
+  - unfold isvalue_like in hv0; allsimpl; tcsp.
+
+  - csunf hv1; allsimpl.
+    apply compute_step_lib_success in hv1; exrepnd; subst.
+    unfold found_entry in hv3; allsimpl; ginv.
+Qed.
+
+Lemma wf_zero {o} : @wf_term o mk_zero.
+Proof.
+  eauto 3 with slow.
+Qed.
+
+Lemma closed_zero {o} : @closed o mk_zero.
+Proof.
+  eauto 3 with slow.
+Qed.
+
+Lemma noutokens_zero {o} : @noutokens o mk_zero.
+Proof.
+  unfold noutokens; simpl; auto.
+Qed.
+
+Definition simpleDef0 {o} (op : opname) : @library_entry o :=
+  simpleDef op mk_zero wf_zero closed_zero noutokens_zero.
+
+Lemma not_approx_abs_in_single_lib {o} :
+  forall op, !(@approx o [simpleDef0 op] (simpleAbs op) mk_bot).
+Proof.
+  introv apr.
+  destruct apr as [c].
+  unfold close_comput in c; repnd; allsimpl.
+  pose proof (c2 (Nint 0) []) as h.
+  fold_terms.
+  autodimp h hyp.
+  {
+    unfold computes_to_value; simpl; dands; eauto 3 with slow.
+    apply reduces_to_if_step.
+    csunf; simpl.
+    unfold compute_step_lib; simpl; boolvar; tcsp.
+    unfold not_matching_entry in n; allsimpl; repndors; tcsp.
+    - unfold matching_parameters, assert in *; allsimpl; tcsp.
+    - unfold matching_bterms, assert in *; allsimpl; tcsp.
+  }
+
+  exrepnd.
+  apply bottom_diverges in h1; auto.
+Qed.
+
+Lemma not_approx_cons_library_entry {o} :
+  !(forall lib e (t1 t2 : @NTerm o),
+       !in_lib (opabs_of_lib_entry e) lib
+       -> approx lib t1 t2
+       -> approx (e :: lib) t1 t2).
+Proof.
+  introv h.
+
+  pose proof (h emlib
+                (simpleDef0 "foo")
+                (simpleAbs "foo")
+                mk_bot) as q;
+    clear h.
+
+  repeat (autodimp q hyp).
+  { unfold in_lib; simpl; intro h; exrepnd; tcsp. }
+  { apply approx_abs_in_empty_lib; auto. }
+
+  apply not_approx_abs_in_single_lib in q; auto.
+Qed.
+
+Lemma not_cequiv_cons_library_entry {o} :
+  !(forall lib e (t1 t2 : @NTerm o),
+       !in_lib (opabs_of_lib_entry e) lib
+       -> cequiv lib t1 t2
+       -> cequiv (e :: lib) t1 t2).
+Proof.
+  introv h.
+
+  pose proof (h emlib
+                (simpleDef0 "foo")
+                (simpleAbs "foo")
+                mk_bot) as q;
+    clear h.
+
+  repeat (autodimp q hyp).
+  { unfold in_lib; simpl; intro h; exrepnd; tcsp. }
+  { split; try (apply approx_abs_in_empty_lib; auto).
+    unfold mk_bot.
+    apply bottom_approx_any; eauto 3 with slow. }
+
+  destruct q as [c1 c2].
+  apply not_approx_abs_in_single_lib in c1; auto.
+Qed.
+
+Lemma not_cequivc_cons_library_entry {o} :
+  !(forall lib e (t1 t2 : @CTerm o),
+       !in_lib (opabs_of_lib_entry e) lib
+       -> cequivc lib t1 t2
+       -> cequivc (e :: lib) t1 t2).
+Proof.
+  introv h.
+  allunfold @cequivc; destruct_cterms; allsimpl.
+  pose proof (h emlib
+                (simpleDef0 "foo")
+                (mk_cterm (simpleAbs "foo") (isprogram_simpleAbs "foo"))
+                mkc_bot) as q; clear h; allsimpl.
+
+  repeat (autodimp q hyp).
+  { unfold in_lib; simpl; intro h; exrepnd; tcsp. }
+  { split; try (apply approx_abs_in_empty_lib; auto).
+    unfold mk_bot.
+    apply bottom_approx_any; eauto 3 with slow. }
+
+  destruct q as [c1 c2].
+  apply not_approx_abs_in_single_lib in c1; auto.
+Qed.
+
+Lemma not_eqorceq_cons_library_entry_sp {o} :
+  forall eq,
+    !(forall lib e (t1 t2 : @CTerm o),
+       !in_lib (opabs_of_lib_entry e) lib
+       -> eqorceq lib eq t1 t2
+       -> eqorceq (e :: lib) (ccequivc (e :: lib)) t1 t2).
+Proof.
+  introv h.
+  pose proof (@not_cequivc_cons_library_entry o) as q; destruct q; introv ni ceq.
+  pose proof (h lib e t1 t2) as z; clear h.
+  repeat (autodimp z hyp; auto).
+  - right; spcast; auto.
+  - unfold eqorceq in z.
+    apply cequiv_stable; repndors; auto.
+Qed.
+
+Lemma not_eqorceq_cons_library_entry_sp2 {o} :
+  !(forall lib e (t1 t2 : @CTerm o),
+       !in_lib (opabs_of_lib_entry e) lib
+       -> eqorceq lib (ccequivc (e :: lib)) t1 t2
+       -> eqorceq (e :: lib) (ccequivc (e :: lib)) t1 t2).
+Proof.
+  introv h.
+  pose proof (@not_cequivc_cons_library_entry o) as q; destruct q; introv ni ceq.
+  pose proof (h lib e t1 t2) as z; clear h.
+  repeat (autodimp z hyp; auto).
+  - right; spcast; auto.
+  - unfold eqorceq in z.
+    apply cequiv_stable; repndors; auto.
+Qed.
+
+Lemma not_eqorceq_cons_library_entry_sp3 {o} :
+  !(forall lib e (t1 t2 : @CTerm o),
+       !in_lib (opabs_of_lib_entry e) lib
+       -> eqorceq lib (ccequivc lib) t1 t2
+       -> eqorceq (e :: lib) (ccequivc (e :: lib)) t1 t2).
+Proof.
+  introv h.
+  pose proof (@not_cequivc_cons_library_entry o) as q; destruct q; introv ni ceq.
+  pose proof (h lib e t1 t2) as z; clear h.
+  repeat (autodimp z hyp; auto).
+  - right; spcast; auto.
+  - unfold eqorceq in z.
+    apply cequiv_stable; repndors; auto.
+Qed.
+
+Lemma not_eqorceq_cons_library_entry {o} :
+  !(forall lib e eq (t1 t2 : @CTerm o),
+       !in_lib (opabs_of_lib_entry e) lib
+       -> eqorceq lib eq t1 t2
+       -> eqorceq (e :: lib) eq t1 t2).
+Proof.
+  introv h.
+  pose proof (@not_eqorceq_cons_library_entry_sp2 o) as q; destruct q; introv ni ceq.
+  apply h; auto.
+Qed.
+
+Lemma not_tequality_cons_library_entry {o} :
+  !(forall lib e (t1 t2 : @CTerm o),
+       !in_lib (opabs_of_lib_entry e) lib
+       -> tequality lib t1 t2
+       -> tequality (e :: lib) t1 t2).
+Proof.
+  introv h.
+  pose proof (@not_cequivc_cons_library_entry o) as q; destruct q; introv ni eor.
+  pose proof (h lib e (mkc_equality t1 t1 mkc_base) (mkc_equality t2 t2 mkc_base) ni) as z; clear h.
+  repeat (rw @tequality_mkc_equality_base_iff in z).
+  autodimp z hyp; repnd; dands; spcast; auto.
+  apply cequiv_stable; auto.
+Qed.
+
+(*
 Lemma tequality_cons_library_entry {o} :
   forall lib e (t1 t2 : @CTerm o),
     !in_lib (opabs_of_lib_entry e) lib
@@ -723,7 +968,29 @@ Proof.
     try (complete (apply computes_to_valc_consistent_with_new_definition; eauto));
     try (complete (introv; apply t_iff_refl)).
     allrw @approx_stable_iff; auto.
+
+  - Case "CL_cequiv".
+    unfold per_cequiv in per; exrepnd; spcast.
+    eexists.
+    apply CL_cequiv.
+    unfold per_cequiv.
+    eexists; eexists; eexists; eexists; dands; spcast;
+    try (complete (apply computes_to_valc_consistent_with_new_definition; eauto));
+    try (complete (introv; apply t_iff_refl)).
+    allrw @cequiv_stable_iff; auto.
+
+  - Case "CL_eq".
+    clear per.
+    autodimp IHteq0 hyp; exrepnd.
+    eexists.
+    apply CL_eq.
+    unfold per_eq.
+    eexists; eexists; eexists; eexists; eexists; eexists; eexists; dands; spcast;
+    try (complete (apply computes_to_valc_consistent_with_new_definition; eauto));
+    try (complete (introv; apply t_iff_refl)); eauto.
+    allrw @cequiv_stable_iff; auto.
 Qed.
+*)
 
 Lemma cover_vars_nil_iff_closed {o} :
   forall (t : @NTerm o), cover_vars t [] <=> closed t.
