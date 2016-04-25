@@ -644,6 +644,22 @@ Proof.
   eapply reduces_to_consistent_with_new_definition; auto.
 Qed.
 
+Lemma approx_stable_iff {o} :
+  forall lib (a b : @CTerm o),
+    (a) ~<~( lib)(b) <=> approxc lib a b.
+Proof.
+  introv; split; intro h; try (apply approx_stable; auto).
+  spcast; auto.
+Qed.
+
+Lemma cequiv_stable_iff {o} :
+  forall lib (a b : @CTerm o),
+    (a) ~=~( lib)(b) <=> cequivc lib a b.
+Proof.
+  introv; split; intro h; try (apply cequiv_stable; auto).
+  spcast; auto.
+Qed.
+
 Lemma tequality_cons_library_entry {o} :
   forall lib e (t1 t2 : @CTerm o),
     !in_lib (opabs_of_lib_entry e) lib
@@ -652,42 +668,61 @@ Lemma tequality_cons_library_entry {o} :
 Proof.
   introv p teq.
   allunfold @tequality; exrepnd.
-
-  (* Do we want to use the same equality here?
-     This per is supposed to be larger because we have more reductions...
-   *)
-  exists eq.
   allunfold @nuprl.
 
   remember (univ lib) as ts.
   close_cases (induction teq0 using @close_ind') Case; subst.
 
-  Focus 2.
+  - Case "CL_init".
+    duniv i h.
+
+    induction i; allsimpl; tcsp.
+    repndors; exrepnd; spcast.
+
+    + exists (fun A A' => exists eqa, close (e :: lib) (univi (e :: lib) i) A A' eqa).
+      apply CL_init.
+      exists (S i); simpl.
+      left; dands; auto; spcast;
+      try (complete (apply computes_to_valc_consistent_with_new_definition; auto)).
+
+    + autodimp IHi hyp.
 
   - Case "CL_int".
+    exists (equality_of_int (e :: lib)).
     apply CL_int.
     allunfold @per_int; repnd; dands; auto; spcast;
     try (complete (apply computes_to_valc_consistent_with_new_definition; auto)).
 
-    introv; allrw.
-    unfold equality_of_int; split; intro h; exrepnd; exists k; dands; spcast; auto;
+  - Case "CL_atom".
+    unfold per_atom in per; repnd; spcast.
+    eexists.
+    apply CL_atom.
+    unfold per_atom; repnd; dands; auto; spcast;
     try (complete (apply computes_to_valc_consistent_with_new_definition; auto)).
 
-  - Case "CL_init".
-    apply CL_init.
-    allunfold @univ; exrepnd.
-    exists i.
+  - Case "CL_uatom".
+    unfold per_uatom in per; repnd; spcast.
+    eexists.
+    apply CL_uatom.
+    unfold per_uatom; repnd; dands; auto; spcast;
+    try (complete (apply computes_to_valc_consistent_with_new_definition; auto)).
 
-    induction i; allsimpl; tcsp.
-    repndors; exrepnd.
-    + left; dands; auto; spcast;
-      try (complete (apply computes_to_valc_consistent_with_new_definition; auto)).
-      introv.
-      allrw.
+  - Case "CL_base".
+    unfold per_base in per; repnd; spcast.
+    eexists.
+    apply CL_base.
+    unfold per_base; repnd; dands; auto; spcast;
+    try (complete (apply computes_to_valc_consistent_with_new_definition; auto)).
 
-      split; intro q; exrepnd; exists eqa.
-
-      *
+  - Case "CL_approx".
+    unfold per_approx in per; exrepnd; spcast.
+    eexists.
+    apply CL_approx.
+    unfold per_approx.
+    eexists; eexists; eexists; eexists; dands; spcast;
+    try (complete (apply computes_to_valc_consistent_with_new_definition; eauto));
+    try (complete (introv; apply t_iff_refl)).
+    allrw @approx_stable_iff; auto.
 Qed.
 
 Lemma cover_vars_nil_iff_closed {o} :
