@@ -128,6 +128,14 @@ match goal with
     pose proof (no_utokens_proof_irrelevance t H2 H1) as h; subst
 end : pi.
 
+Definition matching_sign (vars : list sovar_sig) (sign : opsign) : Prop :=
+  map (fun v => snd v) vars = sign.
+
+Definition matching_entry_sign oa1 oa2 :=
+  opabs_name oa1 = opabs_name oa2
+  # opabs_sign oa1 = opabs_sign oa2
+  # matching_parameters (opabs_params oa1) (opabs_params oa2).
+
 (* the variables can also be second-order variables *)
 Definition correct_abs {o}
            (opabs : opabs)
@@ -647,3 +655,9 @@ Proof.
     destruct bt1, bt2; simpl.
     apply alphaeq_sk_iff_alphaeq_bterm; auto.
 Qed.
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)
