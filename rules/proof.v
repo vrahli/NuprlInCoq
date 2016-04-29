@@ -939,14 +939,6 @@ Proof.
                                  e))); sp.
 Qed.
 
-Definition matching_sign (vars : list sovar_sig) (sign : opsign) : Prop :=
-  map (fun v => snd v) vars = sign.
-
-Definition matching_entry_sign oa1 oa2 :=
-  opabs_name oa1 = opabs_name oa2
-  # opabs_sign oa1 = opabs_sign oa2
-  # matching_parameters (opabs_params oa1) (opabs_params oa2).
-
 Lemma matching_entry_sign_deq :
   forall oa1 oa2, decidable (matching_entry_sign oa1 oa2).
 Proof.
