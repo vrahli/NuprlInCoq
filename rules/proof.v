@@ -977,15 +977,17 @@ Fixpoint found_entry_sign {o} (lib : @library o) opabs : bool :=
     else found_entry_sign l opabs
   end.
 
+Definition get_all_abs_opid {o} (op : @Opid o) : OList opabs :=
+  match op with
+  | Abs abs => OLO abs
+  | _ => onil
+  end.
+
 Fixpoint get_all_abs {o} (t : @NTerm o) : OList opabs :=
   match t with
   | vterm _ => onil
   | sterm f => OLS (fun n => get_all_abs (f n))
-  | oterm op bs =>
-    match op with
-    | Abs abs => OLL (OLO abs :: map get_all_abs_b bs)
-    | _ => OLL (map get_all_abs_b bs)
-    end
+  | oterm op bs => oapp (get_all_abs_opid op) (OLL (map get_all_abs_b bs))
   end
 with get_all_abs_b {o} (b : @BTerm o) : OList opabs :=
        match b with
@@ -1072,7 +1074,7 @@ Proof.
       dopid op as [can|ncan|exc|abs] SCase; allsimpl; auto.
       SCase "Abs".
       apply h.
-      constructor; simpl; eexists; dands;[left;eauto|]; auto.
+      apply in_olist_oapp; left; eauto.
 
     + apply isotrue_oball_map; introv i.
       destruct x as [vs t]; allsimpl.
@@ -1080,33 +1082,100 @@ Proof.
       apply q; auto.
       introv j.
       apply h.
-      destruct op;
-        try (apply in_olist_OLL_cons; right);
-        try apply in_olist_OLL_map;
-        try (complete (eexists; dands; eauto)).
+      apply in_olist_oapp.
+      right.
+      apply in_olist_OLL_map.
+      eexists; dands; eauto.
 
   - Case "oterm".
     introv i.
     allrw isotrue_oband; repnd.
     allrw isotrue_oball_map.
     allrw isotrue_bool2obool_iff.
+    apply in_olist_oapp in i.
+    repndors.
 
-    destruct op; allsimpl; auto;
-    allrw @in_olist_OLL_map; exrepnd;
-    try (destruct a as [l t]);
-    try (pose proof (h (bterm l t)) as q; autodimp q hyp);
-    try (pose proof (ind t l) as z; autodimp z hyp);
-    allsimpl; try (apply z in q; apply q; auto).
-
-    apply in_olist_OLL_cons in i; repndors.
-
-    + inversion i; subst; clear i; auto.
+    + destruct op; allsimpl; try (complete (inversion i; subst; tcsp)).
 
     + apply in_olist_OLL_map in i; exrepnd.
-      applydup h in i1.
       destruct a as [l t]; allsimpl.
-      pose proof (ind t l) as q; autodimp q hyp.
-      apply q in i2; apply i2; auto.
+      applydup h in i1; allsimpl.
+      pose proof (ind t l i1) as q.
+      apply q in i2.
+      apply i2; auto.
+Qed.
+
+Lemma isotrue_all_abstractions_are_defined_implies_eq_term2otrue {o} :
+  forall lib (t : @NTerm o),
+    isotrue (all_abstractions_are_defined lib t)
+    -> all_abstractions_are_defined lib t = term2otrue t.
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; introv; intro h; allsimpl; auto.
+
+  - Case "sterm".
+    f_equal.
+    apply functional_extensionality.
+    introv.
+    pose proof (h x) as q.
+    apply ind in q; auto.
+
+  - Case "oterm".
+    allrw isotrue_oband; repnd.
+    allrw isotrue_oball_map.
+    apply isotrue_bool2obool in h0.
+    rewrite h0; simpl.
+    f_equal.
+    apply eq_maps; introv i.
+    destruct x as [l t]; allsimpl.
+    applydup h in i; allsimpl.
+    pose proof (ind t l i) as q; apply q in i0; auto.
+Qed.
+
+Lemma oball_map_all_abstractions_are_defined_eq_implies {o} :
+  forall lib (bs : list (@BTerm o)) b,
+    oball (map (all_abstractions_are_defined_b lib) bs) = oball (map bterm2otrue bs)
+    -> LIn b bs
+    -> all_abstractions_are_defined_b lib b = bterm2otrue b.
+Proof.
+  introv e i.
+  pose proof (isotrue_oball_map_bterm2otrue bs) as h.
+  rewrite <- e in h; clear e.
+  rw @isotrue_oball_map in h.
+  applydup h in i.
+  destruct b as [l t]; allsimpl.
+  apply isotrue_all_abstractions_are_defined_implies_eq_term2otrue; auto.
+Qed.
+
+Lemma isotrue_all_abstractions_are_defined_if_eq_term2otrue {o} :
+  forall lib (t : @NTerm o),
+    all_abstractions_are_defined lib t = term2otrue t
+    -> isotrue (all_abstractions_are_defined lib t).
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; introv; intro h; allsimpl; auto.
+
+  - Case "sterm".
+    introv; apply ind.
+    inversion h as [e]; clear h.
+    eapply equal_f in e; eauto.
+
+  - Case "oterm".
+    remember (found_opid_in_library_sign lib op) as b; destruct b; allsimpl; auto;
+    try (complete (symmetry in h; apply oball_map_bterm2otrue_not_ofalse in h; sp)).
+    apply isotrue_oball_map; introv i.
+    destruct x as [l t]; allsimpl.
+    pose proof (ind t l i) as q; clear ind; apply q.
+    eapply oball_map_all_abstractions_are_defined_eq_implies in h;[|eauto]; allsimpl; auto.
+Qed.
+
+Lemma isotrue_all_abstractions_are_defined_iff_eq_term2otrue {o} :
+  forall lib (t : @NTerm o),
+    isotrue (all_abstractions_are_defined lib t)
+    <=>
+    all_abstractions_are_defined lib t = term2otrue t.
+Proof.
+  introv; split; intro h.
+  - apply isotrue_all_abstractions_are_defined_implies_eq_term2otrue; auto.
+  - apply isotrue_all_abstractions_are_defined_if_eq_term2otrue; auto.
 Qed.
 
 Definition all_abstractions_are_defined_cterm {o} lib (t : @CTerm o) : obool :=
@@ -1128,6 +1197,23 @@ Proof.
   - apply in_range in i; exrepnd; eauto.
 Qed.
 
+Definition all_abstractions_are_defined_utok_sub {o} lib (sub : @utok_sub o) : obool :=
+  oball (map (all_abstractions_are_defined lib) (utok_sub_range sub)).
+
+Lemma isotrue_all_abstractions_are_defined_utok_sub_iff {o} :
+  forall lib (sub : @utok_sub o),
+    isotrue (all_abstractions_are_defined_utok_sub lib sub)
+    <=> (forall a t, LIn (a,t) sub -> isotrue (all_abstractions_are_defined lib t)).
+Proof.
+  introv.
+  unfold all_abstractions_are_defined_utok_sub.
+  rw isotrue_oball_map; split; introv h; introv i.
+  - apply h.
+    apply in_utok_sub_eta in i; tcsp.
+  - unfold utok_sub_range in i; apply in_map_iff in i; exrepnd; allsimpl; subst.
+    eapply h; eauto.
+Qed.
+
 Lemma implies_isotrue_all_abstractions_are_defined_sub_sub_filter {o} :
   forall lib (sub : @Sub o) l,
     isotrue (all_abstractions_are_defined_sub lib sub)
@@ -1141,7 +1227,7 @@ Proof.
 Qed.
 Hint Resolve implies_isotrue_all_abstractions_are_defined_sub_sub_filter : slow.
 
-Lemma implies_isotrue_all_abstraction_are_defined_lsubst_aux {o} :
+Lemma implies_isotrue_all_abstractions_are_defined_lsubst_aux {o} :
   forall lib (t : @NTerm o) sub,
     isotrue (all_abstractions_are_defined lib t)
     -> isotrue (all_abstractions_are_defined_sub lib sub)
@@ -1172,8 +1258,9 @@ Proof.
 Qed.
 
 Hint Rewrite @osize_cswap : slow.
+Hint Rewrite @sosize_so_swap : slow.
 
-Lemma isotrue_all_abstraction_are_defined_lsubst_preserves_cswap {o} :
+Lemma all_abstractions_are_defined_preserves_cswap {o} :
   forall lib (t : @NTerm o) sw,
     all_abstractions_are_defined lib (cswap sw t)
     = all_abstractions_are_defined lib t.
@@ -1188,9 +1275,48 @@ Proof.
   destruct x as [l t]; allsimpl.
   eapply ind; eauto 3 with slow.
 Qed.
-Hint Rewrite @isotrue_all_abstraction_are_defined_lsubst_preserves_cswap : slow.
+Hint Rewrite @all_abstractions_are_defined_preserves_cswap : slow.
 
-Lemma isotrue_all_abstraction_are_defined_lsubst_preserves_alphaeq {o} :
+Lemma all_abstractions_are_defined_apply_list {o} :
+  forall lib ts (t : @NTerm o),
+    all_abstractions_are_defined lib (apply_list t ts)
+    = oband (all_abstractions_are_defined lib t)
+            (oball (map (all_abstractions_are_defined lib) ts)).
+Proof.
+  induction ts; simpl; introv; autorewrite with slow; auto.
+  rewrite IHts; simpl.
+  rewrite oband_assoc; autorewrite with slow; auto.
+Qed.
+
+Definition all_abstractions_are_defined_so {o} lib (t : @SOTerm o) :=
+  all_abstractions_are_defined lib (soterm2nterm t).
+
+Lemma all_abstractions_are_defined_so_preserves_so_swap {o} :
+  forall lib (t : @SOTerm o) sw,
+    all_abstractions_are_defined_so lib (so_swap sw t)
+    = all_abstractions_are_defined_so lib t.
+Proof.
+  soterm_ind1s t as [v ts ind|f ind|op bs ind] Case; allsimpl; introv; tcsp.
+
+  - Case "sovar".
+    boolvar; subst; allsimpl; unfold all_abstractions_are_defined_so; simpl; auto.
+    repeat (rewrite all_abstractions_are_defined_apply_list); simpl.
+    repeat (rewrite map_map); unfold compose; simpl.
+    f_equal.
+    apply eq_maps; introv i; simpl.
+    apply ind; auto.
+
+  - Case "soterm".
+    unfold all_abstractions_are_defined_so; simpl.
+    f_equal; f_equal.
+    repeat (rewrite map_map); unfold compose.
+    apply eq_maps; introv i.
+    destruct x as [l t]; allsimpl.
+    eapply ind; eauto 3 with slow.
+Qed.
+Hint Rewrite @all_abstractions_are_defined_so_preserves_so_swap : slow.
+
+Lemma all_abstractions_are_defined_preserves_alphaeq {o} :
   forall lib (t u : @NTerm o),
     alphaeq t u
     -> all_abstractions_are_defined lib t = all_abstractions_are_defined lib u.
@@ -1226,7 +1352,54 @@ Proof.
     autorewrite with slow in *; auto.
 Qed.
 
-Lemma implies_isotrue_all_abstraction_are_defined_lsubst {o} :
+Lemma all_abstractions_are_defined_so_preserves_so_alphaeq {o} :
+  forall lib (t u : @SOTerm o),
+    so_alphaeq t u
+    -> all_abstractions_are_defined_so lib t = all_abstractions_are_defined_so lib u.
+Proof.
+  soterm_ind1s t as [v ts ind|f ind|op bs ind] Case; allsimpl; introv aeq.
+
+  - Case "sovar".
+    inversion aeq as [? ? ? len imp| |]; subst; simpl; auto; clear aeq.
+    unfold all_abstractions_are_defined_so; simpl; auto.
+    allrw @all_abstractions_are_defined_apply_list.
+    f_equal; f_equal.
+    allrw map_map; unfold compose.
+    apply eq_maps3; auto.
+    introv i.
+    applydup imp in i.
+    apply ind; auto.
+    apply in_combine in i; sp.
+
+  - Case "soseq".
+    inversion aeq as [|? g q|]; subst; simpl.
+    unfold all_abstractions_are_defined_so; simpl.
+    f_equal.
+    apply functional_extensionality; introv.
+    apply all_abstractions_are_defined_preserves_alphaeq.
+    apply q.
+
+  - Case "soterm".
+    inversion aeq as [| |? ? ? len imp]; subst; clear aeq.
+    unfold all_abstractions_are_defined_so; simpl.
+    f_equal; f_equal.
+    repeat (rewrite map_map); unfold compose.
+    apply eq_maps3; auto.
+    introv i.
+    applydup imp in i.
+    destruct a as [l1 t1].
+    destruct c as [l2 t2].
+    allsimpl.
+    inversion i0 as [? ? ? ? ? len1 len2 disj norep aeq]; allsimpl; subst; clear i0.
+    applydup in_combine in i; repnd.
+    pose proof (ind t1 (so_swap (mk_swapping l1 vs) t1) l1) as h; clear ind.
+    autorewrite with slow in *.
+    repeat (autodimp h hyp); eauto 3 with slow.
+    apply h in aeq.
+    autorewrite with slow in *; auto.
+Qed.
+
+Lemma implies_isotrue_all_abstractions_are_defined_lsubst {o} :
   forall lib (t : @NTerm o) sub,
     isotrue (all_abstractions_are_defined lib t)
     -> isotrue (all_abstractions_are_defined_sub lib sub)
@@ -1235,20 +1408,20 @@ Proof.
   introv isot isos.
   pose proof (unfold_lsubst sub t) as q; exrepnd.
   rewrite q0.
-  apply implies_isotrue_all_abstraction_are_defined_lsubst_aux; auto.
-  erewrite isotrue_all_abstraction_are_defined_lsubst_preserves_alphaeq; eauto.
+  apply implies_isotrue_all_abstractions_are_defined_lsubst_aux; auto.
+  erewrite all_abstractions_are_defined_preserves_alphaeq; eauto.
   apply alphaeq_sym; auto.
   apply alphaeq_eq; auto.
 Qed.
 
-Lemma implies_isotrue_all_abstraction_are_defined_subst {o} :
+Lemma implies_isotrue_all_abstractions_are_defined_subst {o} :
   forall lib (t : @NTerm o) x u,
     isotrue (all_abstractions_are_defined lib t)
     -> isotrue (all_abstractions_are_defined lib u)
     -> isotrue (all_abstractions_are_defined lib (subst t x u)).
 Proof.
   introv isot isou.
-  apply implies_isotrue_all_abstraction_are_defined_lsubst; auto.
+  apply implies_isotrue_all_abstractions_are_defined_lsubst; auto.
   apply isotrue_all_abstractions_are_defined_sub_iff; simpl; introv i.
   repndors; ginv; tcsp.
 Qed.
@@ -1265,27 +1438,107 @@ Proof.
   remember (found_opid_in_library_sign lib op) as b; destruct b; simpl; split; tcsp.
 Qed.
 
-Lemma compute_step_preseves_all_abstractions_are_defined {o} :
+Lemma implies_isotrue_all_abstractions_are_defined_subst_utokens_aux {o} :
+  forall lib (t : @NTerm o) sub,
+    isotrue (all_abstractions_are_defined lib t)
+    -> isotrue (all_abstractions_are_defined_utok_sub lib sub)
+    -> isotrue (all_abstractions_are_defined lib (subst_utokens_aux t sub)).
+Proof.
+  nterm_ind1s t as [v|f ind|op bs ind] Case;
+  introv isot isos; tcsp.
+  Case "oterm".
+  rewrite subst_utokens_aux_oterm.
+  remember (get_utok op) as guo; symmetry in Heqguo; destruct guo.
+
+  - apply get_utok_some in Heqguo; subst; allsimpl.
+    unfold subst_utok; simpl.
+    remember (utok_sub_find sub g) as sf; symmetry in Heqsf; destruct sf.
+
+    + rw @isotrue_all_abstractions_are_defined_utok_sub_iff in isos.
+      apply utok_sub_find_some in Heqsf; auto.
+      eapply isos; eauto.
+
+    + simpl.
+      rewrite map_map; unfold compose.
+      apply isotrue_oball_map; introv i.
+      destruct x as [l t]; simpl.
+      pose proof (ind t t l) as q; clear ind.
+      repeat (autodimp q hyp); eauto 2 with slow.
+      apply q; auto.
+      rw isotrue_oball_map in isot.
+      apply isot in i; auto.
+
+  - allrw @isotrue_all_abstractions_are_defined_oterm; repnd; dands; auto.
+    introv i.
+    allrw in_map_iff; exrepnd; subst; allsimpl.
+    destruct a as [l t]; allsimpl.
+    pose proof (ind t t l) as q; clear ind.
+    repeat (autodimp q hyp); eauto 2 with slow.
+    apply q; auto.
+    apply isot in i1; auto.
+Qed.
+
+Lemma implies_isotrue_all_abstractions_are_defined_subst_utokens {o} :
+  forall lib (t : @NTerm o) sub,
+    isotrue (all_abstractions_are_defined lib t)
+    -> isotrue (all_abstractions_are_defined_utok_sub lib sub)
+    -> isotrue (all_abstractions_are_defined lib (subst_utokens t sub)).
+Proof.
+  introv isot isos.
+  pose proof (unfold_subst_utokens sub t) as q; exrepnd.
+  rewrite q0.
+  apply implies_isotrue_all_abstractions_are_defined_subst_utokens_aux; auto.
+  erewrite all_abstractions_are_defined_preserves_alphaeq; eauto.
+  apply alphaeq_sym; auto.
+  apply alphaeq_eq; auto.
+Qed.
+
+Lemma implies_osubset_OLL_cons {T} :
+  forall x1 x2 (l1 l2 : list (OList T)),
+    osubset x1 x2
+    -> osubset (OLL l1) (OLL l2)
+    -> osubset (OLL (x1 :: l1)) (OLL (x2 :: l2)).
+Proof.
+  introv o1 o2 i.
+  allrw @in_olist_OLL_cons; repndors; tcsp.
+Qed.
+
+Lemma osubset_OLL_singleton_r {T} :
+  forall (s1 s2 : OList T),
+    osubset s1 (OLL [s2]) <=> osubset s1 s2.
+Proof.
+  introv; split; introv h i; apply h in i; clear h.
+  - inversion i; subst; clear i; exrepnd; allsimpl; repndors; tcsp; subst; auto.
+  - constructor; simpl; eexists; dands; eauto.
+Qed.
+
+Lemma osubset_OLL_singleton_l {T} :
+  forall (s1 s2 : OList T),
+    osubset (OLL [s1]) s2 <=> osubset s1 s2.
+Proof.
+  introv; split; introv h i; apply h; clear h.
+  - constructor; simpl; eexists; dands; eauto.
+  - inversion i; subst; clear i; exrepnd; allsimpl; repndors; tcsp; subst; auto.
+Qed.
+
+(*Lemma compute_step_preseves_get_all_abs {o} :
   forall lib (t : @NTerm o) u,
     compute_step lib t = csuccess u
-    -> isotrue (all_abstractions_are_defined lib t)
-    -> isotrue (all_abstractions_are_defined lib u).
+    -> osubset (get_all_abs u) (get_all_abs t).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv comp allabs.
+  nterm_ind1s t as [v|f ind|op bs ind] Case; introv comp.
 
   - Case "vterm".
     csunf comp; allsimpl; ginv.
 
   - Case "sterm".
-    csunf comp; allsimpl; ginv; auto.
+    csunf comp; allsimpl; ginv; eauto 2 with slow.
 
   - Case "oterm".
-    apply isotrue_all_abstractions_are_defined_oterm in allabs; repnd.
     dopid op as [can|ncan|exc|abs] SCase.
 
     + SCase "Can".
-      csunf comp; allsimpl; ginv; auto.
-      apply isotrue_all_abstractions_are_defined_oterm; auto.
+      csunf comp; allsimpl; ginv; eauto 2 with slow.
 
     + SCase "NCan".
       destruct bs as [|b1 bs]; try (complete (allsimpl; ginv)).
@@ -1293,7 +1546,7 @@ Proof.
       destruct l; try (complete (allsimpl; ginv)).
 
       {
-        destruct t as [x|f|op bts]; try (complete (allsimpl; ginv));[|].
+        destruct t as [v|f|op bts]; try (complete (allsimpl; ginv));[|].
 
         - csunf comp; allsimpl.
           dopid_noncan ncan SSCase; allsimpl; ginv; auto.
@@ -1301,7 +1554,7 @@ Proof.
           {
             SSCase "NApply".
             apply compute_step_seq_apply_success in comp; exrepnd; subst.
-            apply isotrue_all_abstractions_are_defined_oterm; auto.
+            allsimpl; eauto 2 with slow.
           }
 
           {
@@ -1312,25 +1565,29 @@ Proof.
 
             + apply compute_step_eapply2_success in comp1; repnd; subst.
               repndors; exrepnd; subst; ginv; auto.
-              apply (allabs (nobnd (sterm f0))); tcsp.
+              allsimpl; autorewrite with slow.
+              apply implies_osubset_oapp_right.
+              eapply osubset_in_trans; simpl;[|left;eauto].
+              eapply implies_osubset_singleton_OLS_r; eauto 2 with slow.
 
-            + apply (allabs (nobnd arg2)); tcsp.
+            + apply implies_osubset_oapp_right.
+              eapply osubset_in_trans; simpl;[apply osubset_refl|]; tcsp.
 
-            + fold_terms.
-              apply isotrue_all_abstractions_are_defined_oterm; simpl; dands; auto.
-              introv i; repndors; subst; try (complete (apply allabs; tcsp)).
-              allsimpl.
-              pose proof (ind arg2 arg2 []) as h; clear ind.
-              repeat (autodimp h hyp); eauto 3 with slow.
-              apply h in comp1; auto; try (complete (apply (allabs (nobnd arg2)); tcsp)).
+            + allsimpl.
+              apply osubset_oapp_if; eauto 3 with slow.
+              apply implies_osubset_OLL_cons; eauto 3 with slow.
+              apply implies_osubset_OLL_cons; eauto 3 with slow.
+              eapply ind;[right;left;reflexivity| |]; eauto 2 with slow.
           }
 
           {
             SSCase "NFix".
             apply compute_step_fix_success in comp; exrepnd; subst.
-            apply isotrue_all_abstractions_are_defined_oterm; simpl; dands; auto.
-            introv i; repndors; subst; try (complete (apply allabs; tcsp)).
-            apply isotrue_all_abstractions_are_defined_oterm; simpl; dands; auto.
+            allsimpl.
+            apply osubset_oapp_if; eauto 3 with slow.
+            rw @osubset_OLL_singleton_r.
+            apply osubset_singleton_OLL_l; simpl; introv i;
+            repndors; tcsp; subst; eauto 3 with slow.
           }
 
           {
@@ -1391,7 +1648,7 @@ Proof.
                   dcwf h; simpl.
                   apply iscan_implies in comp0; repndors; exrepnd; subst; simpl; auto.
 
-                + unfold mk_nseq in *; allsimpl; ginv.
+                + unfold mk_nseq in *; allsimpl; ginv.@136
                   csunf; simpl.
                   dcwf h; simpl.
                   boolvar; simpl; auto; try omega.
@@ -1619,7 +1876,658 @@ Proof.
       apply (found_entry_implies_compute_step_lib_success _ _ _ _ _ _ correct).
 
       apply found_entry_add_new_abs; auto.
+Qed.*)
 
+Lemma matching_entry_implies_sign {o} :
+  forall abs oa vars (bts : list (@BTerm o)),
+    matching_entry abs oa vars bts
+    -> matching_entry_sign abs oa.
+Proof.
+  introv m.
+  unfold matching_entry in m.
+  unfold matching_entry_sign; sp.
+Qed.
+Hint Resolve matching_entry_implies_sign : slow.
+
+Lemma found_entry_implies_sign {o} :
+  forall lib abs bts oa vars (rhs : @SOTerm o) correct,
+    found_entry lib abs bts oa vars rhs correct
+    -> found_entry_sign lib abs = true.
+Proof.
+  introv fe.
+  unfold found_entry in fe.
+  unfold find_entry.
+  induction lib; allsimpl; tcsp.
+  destruct a.
+  destruct (matching_entry_deq abs opabs vars0 bts).
+  - inversion fe; clear fe; subst.
+    destruct (matching_entry_sign_deq abs oa); auto.
+    apply matching_entry_implies_sign in m; tcsp.
+  - autodimp IHlib hyp.
+    destruct (matching_entry_sign_deq abs opabs); auto.
+Qed.
+Hint Resolve found_entry_implies_sign : slow.
+
+Lemma all_abstractions_are_defined_pushdown_fresh {o} :
+  forall lib n (t : @NTerm o),
+    all_abstractions_are_defined lib (pushdown_fresh n t)
+    = all_abstractions_are_defined lib t.
+Proof.
+  introv.
+  destruct t; allsimpl; auto.
+  f_equal; f_equal.
+  unfold mk_fresh_bterms.
+  rw map_map; unfold compose.
+  apply eq_maps; introv i.
+  destruct x as [vs t].
+  simpl.
+  autorewrite with slow; auto.
+Qed.
+Hint Rewrite @all_abstractions_are_defined_pushdown_fresh : slow.
+
+Definition all_abstractions_are_defined_sosub {o} lib (sub : @SOSub o) : obool :=
+  oball (map (fun x => all_abstractions_are_defined lib (sosk_t (snd x))) sub).
+
+Lemma isotrue_all_abstractions_are_defined_sosub_iff {o} :
+  forall lib (sub : @SOSub o),
+    isotrue (all_abstractions_are_defined_sosub lib sub)
+    <=> (forall v t, LIn (v,t) sub -> isotrue (all_abstractions_are_defined lib (sosk_t t))).
+Proof.
+  introv.
+  unfold all_abstractions_are_defined_sosub.
+  rw isotrue_oball_map; split; introv h; introv i.
+  - pose proof (h (v,t)) as q; allsimpl; tcsp.
+  - destruct x; simpl.
+    eapply h; eauto.
+Qed.
+
+Lemma implies_isotrue_all_abstractions_are_defined_sosub_sub_filter {o} :
+  forall lib (sub : @SOSub o) l,
+    isotrue (all_abstractions_are_defined_sosub lib sub)
+    -> isotrue (all_abstractions_are_defined_sosub lib (sosub_filter sub l)).
+Proof.
+  introv i.
+  allrw @isotrue_all_abstractions_are_defined_sosub_iff.
+  introv j.
+  destruct t.
+  apply in_sosub_filter in j; repnd.
+  eapply i; eauto.
+Qed.
+Hint Resolve implies_isotrue_all_abstractions_are_defined_sosub_sub_filter : slow.
+
+Lemma implies_isotrue_all_abstractions_are_defined_sosub_aux {o} :
+  forall lib (t : @SOTerm o) sub,
+    isotrue (all_abstractions_are_defined_so lib t)
+    -> isotrue (all_abstractions_are_defined_sosub lib sub)
+    -> isotrue (all_abstractions_are_defined lib (sosub_aux sub t)).
+Proof.
+  soterm_ind1s t as [v ts ind|f ind|op bs ind] Case;
+  introv isot isos; allsimpl; auto.
+
+  - Case "sovar".
+    remember (sosub_find sub (v,length ts)) as sf; symmetry in Heqsf; destruct sf; allsimpl.
+
+    + destruct s.
+      apply implies_isotrue_all_abstractions_are_defined_lsubst_aux; auto.
+
+      * apply sosub_find_some in Heqsf; repnd.
+        rw @isotrue_all_abstractions_are_defined_sosub_iff in isos.
+        pose proof (isos v (sosk l n)) as h; autodimp h hyp.
+
+      * apply isotrue_all_abstractions_are_defined_sub_iff; introv i.
+        apply in_combine in i; repnd.
+        apply in_map_iff in i; exrepnd; subst.
+        eapply ind in i2; eauto.
+        unfold all_abstractions_are_defined_so in isot; allsimpl.
+        rewrite all_abstractions_are_defined_apply_list in isot.
+        allrw isotrue_oband; repnd.
+        allrw isotrue_oball_map; allsimpl.
+        apply isot.
+        apply in_map_iff; eexists; dands; eauto.
+
+    + unfold all_abstractions_are_defined_so in isot; allsimpl.
+      allrw @all_abstractions_are_defined_apply_list.
+      allrw isotrue_oband; repnd; dands; auto.
+      rewrite map_map; unfold compose.
+      apply isotrue_oball_map; introv i.
+      rw @isotrue_oball_map in isot.
+      eapply ind in i; eauto.
+      apply isot.
+      apply in_map_iff; eexists; dands; eauto.
+
+  - Case "soterm".
+    allrw isotrue_oband; repnd; dands; auto.
+    rewrite map_map; unfold compose; simpl.
+    apply isotrue_oball_map; introv i.
+    rw @isotrue_oball_map in isot.
+    destruct x as [l t]; allsimpl.
+    eapply ind; eauto 3 with slow.
+    apply (isot (bterm l (soterm2nterm t))).
+    apply in_map_iff; eexists; dands; eauto.
+Qed.
+
+Hint Rewrite @sosize_so_swap : slow.
+
+Lemma cswap_apply_list {o} :
+  forall sw ts (t : @NTerm o),
+    cswap sw (apply_list t ts)
+    = apply_list (cswap sw t) (map (cswap sw) ts).
+Proof.
+  induction ts; introv; allsimpl; auto.
+  rewrite IHts; simpl; fold_terms; auto.
+Qed.
+
+Lemma all_abstractions_are_defined_sosub_preserves_alphaeq_sosub {o} :
+  forall lib (sub1 sub2 : @SOSub o),
+    alphaeq_sosub sub1 sub2
+    -> all_abstractions_are_defined_sosub lib sub1
+       = all_abstractions_are_defined_sosub lib sub2.
+Proof.
+  induction sub1; introv aeq.
+  - inversion aeq; subst; auto.
+  - inversion aeq as [|? ? ? ? ? aeq1 aeq2]; subst; clear aeq.
+    unfold all_abstractions_are_defined_sosub; simpl.
+    f_equal.
+    + destruct sk1, sk2; simpl.
+      apply alphaeq_sk_iff_alphaeq_bterm in aeq1.
+      inversion aeq1 as [? ? ? ? ? len1 len2 disj norep aeq]; allsimpl; subst; clear aeq1.
+      apply (all_abstractions_are_defined_preserves_alphaeq lib) in aeq.
+      autorewrite with slow in *; auto.
+    + apply IHsub1; auto.
+Qed.
+
+Lemma implies_isotrue_all_abstractions_are_defined_sosub {o} :
+  forall lib (t : @SOTerm o) sub,
+    isotrue (all_abstractions_are_defined_so lib t)
+    -> isotrue (all_abstractions_are_defined_sosub lib sub)
+    -> isotrue (all_abstractions_are_defined lib (sosub sub t)).
+Proof.
+  introv isot isos.
+  pose proof (unfold_sosub sub t) as q; exrepnd.
+  rewrite q1; clear q1.
+  apply implies_isotrue_all_abstractions_are_defined_sosub_aux; auto.
+  - erewrite all_abstractions_are_defined_so_preserves_so_alphaeq;[eauto|].
+    apply so_alphaeq_sym; auto.
+  - apply (all_abstractions_are_defined_sosub_preserves_alphaeq_sosub lib) in q0.
+    rewrite <- q0; auto.
+Qed.
+
+Lemma implies_isotrue_all_abstractions_are_defined_mk_instance {o} :
+  forall lib vars bs (t : @SOTerm o),
+    isotrue (all_abstractions_are_defined_so lib t)
+    -> (forall b : BTerm, LIn b bs -> isotrue (all_abstractions_are_defined_b lib b))
+    -> isotrue (all_abstractions_are_defined lib (mk_instance vars bs t)).
+Proof.
+  introv isot isobs.
+  unfold mk_instance.
+  apply implies_isotrue_all_abstractions_are_defined_sosub; auto.
+  unfold all_abstractions_are_defined_sosub.
+  apply isotrue_oball_map; introv i.
+  destruct x as [v sk]; allsimpl.
+  destruct sk as [l u]; allsimpl.
+  apply (isobs (bterm l u)).
+  apply mk_abs_subst_some_prop1 in i; auto.
+Qed.
+
+Definition no_undefined_abs_in_entry {o} lib (entry : @library_entry o) :=
+  match entry with
+  | lib_abs opabs vars rhs correct =>
+    isotrue (all_abstractions_are_defined_so lib rhs)
+  end.
+
+(* entries can only depend on earlier abstractions, i.e., on the right in the list *)
+Fixpoint no_undefined_abs_in_lib {o} (lib : @library o) :=
+  match lib with
+  | [] => True
+  | entry :: entries =>
+    no_undefined_abs_in_lib entries
+    # no_undefined_abs_in_entry entries entry
+  end.
+
+Definition entry2soterm {o} (entry : @library_entry o) : @SOTerm o :=
+  match entry with
+  | lib_abs opabs vars rhs correct => rhs
+  end.
+
+Definition simple_no_undefined_abs_in_lib {o} (lib : @library o) :=
+  forall entry,
+    LIn entry lib
+    -> isotrue (all_abstractions_are_defined_so lib (entry2soterm entry)).
+
+Lemma compute_step_preseves_all_abstractions_are_defined {o} :
+  forall lib,
+    simple_no_undefined_abs_in_lib lib
+    -> forall (t : @NTerm o) u,
+      compute_step lib t = csuccess u
+      -> isotrue (all_abstractions_are_defined lib t)
+      -> isotrue (all_abstractions_are_defined lib u).
+Proof.
+  introv undef; nterm_ind1s t as [v|f ind|op bs ind] Case; introv comp allabs.
+
+  - Case "vterm".
+    csunf comp; allsimpl; ginv.
+
+  - Case "sterm".
+    csunf comp; allsimpl; ginv; auto.
+
+  - Case "oterm".
+    apply isotrue_all_abstractions_are_defined_oterm in allabs; repnd.
+    dopid op as [can|ncan|exc|abs] SCase.
+
+    + SCase "Can".
+      csunf comp; allsimpl; ginv; auto.
+      apply isotrue_all_abstractions_are_defined_oterm; auto.
+
+    + SCase "NCan".
+      destruct bs as [|b1 bs]; try (complete (allsimpl; ginv)).
+      destruct b1 as [l t]; try (complete (allsimpl; ginv)).
+      destruct l; try (complete (allsimpl; ginv)).
+
+      {
+        destruct t as [x|f|op bts]; try (complete (allsimpl; ginv));[|].
+
+        - csunf comp; allsimpl.
+          dopid_noncan ncan SSCase; allsimpl; ginv; auto.
+
+          {
+            SSCase "NApply".
+            apply compute_step_seq_apply_success in comp; exrepnd; subst.
+            apply isotrue_all_abstractions_are_defined_oterm; auto.
+          }
+
+          {
+            SSCase "NEApply".
+
+            apply compute_step_eapply_success in comp; exrepnd; subst.
+            repndors; exrepnd; allsimpl; subst; auto.
+
+            + apply compute_step_eapply2_success in comp1; repnd; subst.
+              repndors; exrepnd; subst; ginv; auto.
+              apply (allabs (nobnd (sterm f0))); tcsp.
+
+            + apply (allabs (nobnd arg2)); tcsp.
+
+            + fold_terms.
+              apply isotrue_all_abstractions_are_defined_oterm; simpl; dands; auto.
+              introv i; repndors; subst; try (complete (apply allabs; tcsp)).
+              allsimpl.
+              pose proof (ind arg2 arg2 []) as h; clear ind.
+              repeat (autodimp h hyp); eauto 3 with slow.
+              apply h in comp1; auto; try (complete (apply (allabs (nobnd arg2)); tcsp)).
+          }
+
+          {
+            SSCase "NFix".
+            apply compute_step_fix_success in comp; exrepnd; subst.
+            apply isotrue_all_abstractions_are_defined_oterm; simpl; dands; auto.
+            introv i; repndors; subst; try (complete (apply allabs; tcsp)).
+            apply isotrue_all_abstractions_are_defined_oterm; simpl; dands; auto.
+          }
+
+          {
+            SSCase "NCbv".
+            apply compute_step_cbv_success in comp; exrepnd; subst; allsimpl; auto.
+            apply implies_isotrue_all_abstractions_are_defined_subst.
+            - apply (allabs (bterm [v] x)); tcsp.
+            - apply (allabs (nobnd (sterm f))); tcsp.
+          }
+
+          {
+            SSCase "NTryCatch".
+            apply compute_step_try_success in comp; exrepnd; subst.
+            apply isotrue_all_abstractions_are_defined_oterm; simpl; dands; auto.
+            introv i; repndors; subst; tcsp; try (complete (apply allabs; tcsp)).
+          }
+
+          {
+            SSCase "NCanTest".
+            apply compute_step_seq_can_test_success in comp; exrepnd; subst.
+            apply (allabs (nobnd b)); tcsp.
+          }
+
+        - dopid op as [can2|ncan2|exc2|abs2] SSCase.
+
+          + SSCase "Can".
+            dopid_noncan ncan SSSCase.
+
+            {
+              SSSCase "NApply".
+
+              csunf comp; allsimpl.
+              apply compute_step_apply_success in comp.
+              repndors; exrepnd; subst; auto.
+
+              - apply implies_isotrue_all_abstractions_are_defined_subst;
+                try (apply (allabs (nobnd arg)); tcsp).
+                pose proof (allabs (nobnd (mk_lam v b))) as q.
+                autodimp q hyp.
+                allsimpl; autorewrite with slow in *; auto.
+
+              - apply isotrue_all_abstractions_are_defined_oterm; simpl; dands; auto.
+            }
+
+            {
+              SSSCase "NEApply".
+
+              csunf comp; allsimpl.
+              apply compute_step_eapply_success in comp.
+              repndors; exrepnd; subst; auto.
+              repndors; exrepnd; subst; allsimpl; auto.
+
+              - apply compute_step_eapply2_success in comp1; repnd; subst.
+                repndors; exrepnd; subst; auto; ginv.
+                unfold mk_lam in *; ginv; fold_terms.
+                apply implies_isotrue_all_abstractions_are_defined_subst; auto; simpl;
+                try (apply (allabs (nobnd arg2)); tcsp).
+                pose proof (allabs (nobnd (mk_lam v b))) as q.
+                autodimp q hyp.
+                allsimpl; autorewrite with slow in *; auto.
+
+              - apply (allabs (nobnd arg2)); auto.
+
+              - allrw isotrue_oband.
+                dands; auto.
+
+                + apply (allabs (nobnd (oterm (Can can2) bts))); tcsp.
+
+                + pose proof (ind arg2 arg2 []) as q; clear ind.
+                  repeat (autodimp q hyp); eauto 2 with slow.
+                  apply q in comp1; clear q; auto.
+                  apply (allabs (nobnd arg2)); auto.
+
+                + apply isotrue_oball_map; auto.
+            }
+
+            {
+              SSSCase "NFix".
+
+              csunf comp; allsimpl; GC.
+              apply compute_step_fix_success in comp.
+              repndors; exrepnd; subst; auto.
+              simpl.
+              allrw isotrue_oband.
+              dands; simpl; auto; apply (allabs (nobnd (oterm (Can can2) bts))); tcsp.
+            }
+
+            {
+              SSSCase "NSpread".
+
+              csunf comp; allsimpl.
+              apply compute_step_spread_success in comp.
+              repndors; exrepnd; subst; auto.
+              apply implies_isotrue_all_abstractions_are_defined_lsubst; auto; simpl.
+              try (apply (allabs (bterm [va,vb] arg)); tcsp).
+              apply isotrue_all_abstractions_are_defined_sub_iff.
+
+              simpl; introv i; repndors; ginv; tcsp.
+
+              - pose proof (allabs (nobnd (mk_pair t b))) as q; autodimp q hyp.
+                allsimpl.
+                allrw isotrue_oband; tcsp.
+
+              - pose proof (allabs (nobnd (mk_pair a t))) as q; autodimp q hyp.
+                allsimpl.
+                allrw isotrue_oband; tcsp.
+            }
+
+            {
+              SSSCase "NDsup".
+
+              csunf comp; allsimpl.
+              apply compute_step_dsup_success in comp.
+              repndors; exrepnd; subst; auto; GC.
+              apply implies_isotrue_all_abstractions_are_defined_lsubst; auto; simpl.
+              try (apply (allabs (bterm [va,vb] arg)); tcsp).
+              apply isotrue_all_abstractions_are_defined_sub_iff.
+
+              simpl; introv i; repndors; ginv; tcsp.
+
+              - pose proof (allabs (nobnd (mk_sup t b))) as q; autodimp q hyp.
+                allsimpl.
+                allrw isotrue_oband; tcsp.
+
+              - pose proof (allabs (nobnd (mk_sup a t))) as q; autodimp q hyp.
+                allsimpl.
+                allrw isotrue_oband; tcsp.
+            }
+
+            {
+              SSSCase "NDecide".
+
+              csunf comp; allsimpl.
+              apply compute_step_decide_success in comp.
+              repndors; exrepnd; subst; auto; GC.
+
+              repndors; exrepnd; subst; auto;
+              apply implies_isotrue_all_abstractions_are_defined_subst; auto; simpl;
+              try (apply (allabs (bterm [v1] t1)); tcsp);
+              try (apply (allabs (bterm [v2] t2)); tcsp).
+
+              - pose proof (allabs (nobnd (mk_inl d))) as q; autodimp q hyp.
+                allsimpl.
+                allrw isotrue_oband; tcsp.
+
+              - pose proof (allabs (nobnd (mk_inr d))) as q; autodimp q hyp.
+                allsimpl.
+                allrw isotrue_oband; tcsp.
+            }
+
+            {
+              SSSCase "NCbv".
+
+              csunf comp; allsimpl.
+              apply compute_step_cbv_success in comp.
+              repndors; exrepnd; subst; auto; GC.
+              apply implies_isotrue_all_abstractions_are_defined_subst; auto; simpl;
+              try (apply (allabs (bterm [v] x)); tcsp).
+
+              pose proof (allabs (nobnd (oterm (Can can2) bts))) as q.
+              autodimp q hyp.
+            }
+
+            {
+              SSSCase "NSleep".
+
+              csunf comp; allsimpl.
+              apply compute_step_sleep_success in comp.
+              repndors; exrepnd; subst; simpl; auto.
+            }
+
+            {
+              SSSCase "NTUni".
+
+              csunf comp; allsimpl.
+              apply compute_step_tuni_success in comp.
+              repndors; exrepnd; subst; simpl; auto.
+            }
+
+            {
+              SSSCase "NMinus".
+
+              csunf comp; allsimpl.
+              apply compute_step_minus_success in comp.
+              repndors; exrepnd; subst; simpl; auto.
+            }
+
+            {
+              SSSCase "NFresh".
+
+              csunf comp; allsimpl; ginv.
+            }
+
+            {
+              SSSCase "NTryCatch".
+
+              csunf comp; allsimpl.
+              apply compute_step_try_success in comp.
+              repndors; exrepnd; subst; simpl; auto.
+              allrw isotrue_oband; allsimpl; dands; tcsp;
+              try (apply (allabs (bterm [] a)); tcsp).
+
+              pose proof (allabs (nobnd (oterm (Can can2) bts))) as q.
+              autodimp q hyp.
+            }
+
+            {
+              SSSCase "NParallel".
+
+              csunf comp; allsimpl.
+              apply compute_step_parallel_success in comp.
+              repndors; exrepnd; subst; simpl; auto.
+            }
+
+            {
+              SSSCase "NCompOp".
+
+              apply compute_step_ncompop_can1_success in comp; repnd.
+              repndors; exrepnd; allsimpl; subst; tcsp; GC.
+
+              - apply compute_step_compop_success_can_can in comp1;
+                repndors; exrepnd; subst; ginv;
+                repndors; exrepnd; subst; allsimpl; boolvar;
+                try (apply (allabs (nobnd t0)); tcsp);
+                try (apply (allabs (nobnd t3)); tcsp).
+
+              - pose proof (ind t t []) as q; clear ind.
+                repeat (autodimp q hyp); eauto 2 with slow.
+                allsimpl.
+                apply q in comp4; clear q;
+                try (apply (allabs (nobnd t)); tcsp).
+                allrw isotrue_oband; dands; auto.
+
+                + pose proof (allabs (nobnd (oterm (Can can2) bts))) as q.
+                  autodimp q hyp.
+
+                + apply isotrue_oball_map; auto.
+
+              - apply isexc_implies2 in comp1; exrepnd; subst; allsimpl.
+                pose proof (allabs (nobnd (oterm Exc l))) as q; autodimp q hyp.
+            }
+
+            {
+              SSSCase "NArithOp".
+
+              apply compute_step_narithop_can1_success in comp; repnd.
+              repndors; exrepnd; allsimpl; subst; tcsp.
+
+              - apply compute_step_arithop_success_can_can in comp1;
+                repndors; exrepnd; subst; ginv; simpl; auto.
+
+              - pose proof (ind t t []) as q; clear ind.
+                repeat (autodimp q hyp); eauto 2 with slow.
+                allsimpl.
+                apply q in comp4; clear q;
+                try (apply (allabs (nobnd t)); tcsp).
+                allrw isotrue_oband; dands; auto.
+
+                + pose proof (allabs (nobnd (oterm (Can can2) bts))) as q.
+                  autodimp q hyp.
+
+                + apply isotrue_oball_map; auto.
+
+              - apply isexc_implies2 in comp1; exrepnd; subst; allsimpl.
+                pose proof (allabs (nobnd (oterm Exc l))) as q; autodimp q hyp.
+            }
+
+            {
+              SSSCase "NCanTest".
+
+              csunf comp; allsimpl.
+              apply compute_step_can_test_success in comp.
+              repndors; exrepnd; subst; auto; GC.
+              allsimpl.
+              destruct (canonical_form_test_for c can2) as [d|d];
+                try (apply (allabs (nobnd arg2nt)); tcsp);
+                try (apply (allabs (nobnd arg3nt)); tcsp).
+            }
+
+          + SSCase "NCan".
+
+            csunf comp; allsimpl.
+            remember (compute_step lib (oterm (NCan ncan2) bts)) as c.
+            destruct c; allsimpl; ginv.
+            symmetry in Heqc.
+
+            pose proof (ind (oterm (NCan ncan2) bts) (oterm (NCan ncan2) bts) []) as q; clear ind.
+            repeat (autodimp q hyp); eauto 2 with slow.
+            apply q in Heqc; clear q;
+            try (apply (allabs (nobnd (oterm (NCan ncan2) bts))); tcsp).
+            simpl.
+            allrw isotrue_oband; dands; tcsp.
+            apply isotrue_oball_map; auto.
+
+          + SSCase "Exc".
+
+            csunf comp; allsimpl; GC.
+            apply compute_step_catch_success in comp.
+
+            pose proof (allabs (nobnd (oterm Exc bts))) as q.
+            autodimp q hyp; allsimpl.
+
+            repndors; exrepnd; subst; allsimpl; ginv;
+            allrw isotrue_oband; allsimpl; repnd; dands; auto;
+            try (apply (allabs (nobnd a)); tcsp).
+
+            apply implies_isotrue_all_abstractions_are_defined_subst; simpl; auto;
+            try (apply (allabs (bterm [v] b)); tcsp).
+
+          + SSCase "Abs".
+
+            csunf comp; allsimpl.
+            remember (compute_step lib (oterm (Abs abs2) bts)) as c.
+            destruct c; allsimpl; ginv.
+            symmetry in Heqc.
+
+            pose proof (ind (oterm (Abs abs2) bts) (oterm (Abs abs2) bts) []) as q; clear ind.
+            repeat (autodimp q hyp); eauto 2 with slow.
+            apply q in Heqc; clear q; allsimpl; allrw isotrue_oband; dands; auto.
+
+            * apply isotrue_oball_map; auto.
+
+            * apply isotrue_bool2obool_iff.
+              csunf Heqc.
+              unfold compute_step_unfold in Heqc.
+              apply compute_step_lib_success in Heqc; exrepnd; subst; eauto 2 with slow.
+
+            * pose proof (allabs (nobnd (oterm (Abs abs2) bts))) as q; autodimp q hyp.
+              allsimpl; allrw isotrue_oband; tcsp.
+      }
+
+      {
+        csunf comp; allsimpl.
+        apply compute_step_fresh_success in comp; exrepnd; subst.
+        repndors; exrepnd; subst; allsimpl; ginv;
+        autorewrite with slow in *.
+
+        - apply (allabs (bterm [n] t)); auto.
+
+        - pose proof (ind t (subst t n (mk_utoken (get_fresh_atom t))) [n]) as q; clear ind.
+          repeat (autodimp q hyp); eauto 2 with slow.
+          { rewrite simple_osize_subst; eauto 2 with slow. }
+          apply q in comp2; clear q.
+
+          + apply implies_isotrue_all_abstractions_are_defined_subst_utokens; simpl; auto.
+
+          + apply implies_isotrue_all_abstractions_are_defined_subst; simpl; auto.
+            apply (allabs (bterm [n] t)); auto.
+      }
+
+    + SCase "Exc".
+
+      csunf comp; allsimpl; ginv.
+      simpl.
+      apply isotrue_oball_map; auto.
+
+    + SCase "Abs".
+
+      csunf comp; allsimpl.
+      apply compute_step_lib_success in comp.
+      exrepnd; subst.
+
+      apply implies_isotrue_all_abstractions_are_defined_mk_instance; auto.
+
+      pose proof (undef (lib_abs oa2 vars rhs correct)) as q; allsimpl; apply q; clear q.
+      eapply found_entry_in; eauto.
 Qed.
 
 Lemma tequality_cons_library_entry {o} :
