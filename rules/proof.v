@@ -39,6 +39,7 @@ Require Export rules_false.
 Require Export rules_struct.
 Require Export rules_function.
 
+Require Export computation10.
 Require Export computation_preserves_lib.
 
 
@@ -2530,32 +2531,321 @@ Proof.
       eapply found_entry_in; eauto.
 Qed.
 
-Fixpoint find_entry_sign {o} (lib : @library o) opabs : option SOTerm :=
+Fixpoint find_entry_sign {o} (lib : @library o) opabs : option library_entry :=
   match lib with
   | [] => None
-  | lib_abs oa vars rhs correct :: l =>
+  | (lib_abs oa vars rhs correct as entry) :: l =>
     if matching_entry_sign_deq opabs oa
-    then Some rhs
+    then Some entry
     else find_entry_sign l opabs
   end.
 
 Definition libraries_agree_on_intersection {o} (lib1 lib2 : @library o) : Type :=
   forall opabs,
     match find_entry_sign lib1 opabs, find_entry_sign lib2 opabs with
-    | Some t1, Some t2 => so_alphaeq t1 t2
+    | Some (lib_abs opabs1 vars1 rhs1 correct1),
+      Some (lib_abs opabs2 vars2 rhs2 correct2) =>
+      opabs1 = opabs2 # vars1 = vars2 # rhs1 = rhs2 (* could use alpha_eq_entry instead *)
     | _, _ => True
     end.
 
+Lemma matching_sign_dec :
+  forall (vars : list sovar_sig) (sign : opsign),
+    decidable (matching_sign vars sign).
+Proof.
+  introv.
+  unfold matching_sign, decidable.
+  destruct (opsign_dec (map (fun v : NVar # nat => snd v) vars) sign); tcsp.
+Qed.
+
+Definition wf_entry {o} (e : @library_entry o) : bool :=
+  match e with
+  | lib_abs opabs vars rhs correct =>
+    if matching_sign_dec vars (opabs_sign opabs) then true else false
+  end.
+
+Definition wf_library {o} (lib : @library o) : bool :=
+  ball (map wf_entry lib).
+
+Lemma matching_bterms_as_matching_sign {o} :
+  forall vars (bs : list (@BTerm o)),
+    matching_bterms vars bs
+    <=> matching_sign vars (map num_bvars bs).
+Proof.
+  sp.
+Qed.
+
+Lemma wf_abs_implies {o} :
+  forall abs (bs : list (@BTerm o)),
+    wf_term (oterm (Abs abs) bs)
+    -> opabs_sign abs = map num_bvars bs.
+Proof.
+  introv wf.
+  apply wf_term_eq in wf.
+  inversion wf; auto.
+Qed.
+
+Lemma found_entry_iff_sign {o} :
+  forall (lib : @library o) opabs bs oa vars rhs correct,
+    opabs_sign opabs = map num_bvars bs (* i.e., wf_term (oterm (Abs opabs) bs) *)
+    -> assert (wf_library lib)
+    -> (found_entry lib opabs bs oa vars rhs correct
+        <=> find_entry_sign lib opabs = Some (lib_abs oa vars rhs correct)).
+Proof.
+  induction lib; introv wfa wfl; unfold found_entry; introv; simpl; split; intro h; ginv.
+
+  - destruct a.
+    unfold wf_library in wfl; allsimpl; allrw assert_andb; repnd.
+    boolvar; auto; try (complete (allunfold assert; ginv)).
+
+    + unfold not_matching_entry in n.
+      unfold matching_entry_sign in m; repnd.
+      repndors; tcsp.
+      rw @matching_bterms_as_matching_sign in n.
+      destruct n.
+      allunfold matching_sign; rewrite m0.
+      rewrite <- m2; auto.
+
+    + inversion h; clear h; subst.
+      apply matching_entry_implies_sign in m; sp.
+
+    + pose proof (IHlib opabs bs oa vars rhs correct wfa wfl) as q; clear IHlib.
+      apply q; auto.
+
+  - destruct a.
+    unfold wf_library in wfl; allsimpl; allrw assert_andb; repnd.
+    boolvar; auto; try (complete (allunfold assert; ginv)).
+
+    + apply matching_entry_implies_sign in m; sp.
+
+    + inversion h; clear h; subst.
+      unfold not_matching_entry in n.
+      unfold matching_entry_sign in m; repnd.
+      repndors; tcsp.
+      rw @matching_bterms_as_matching_sign in n.
+      destruct n.
+      allunfold matching_sign; rewrite m0.
+      rewrite <- m2; auto.
+
+    + pose proof (IHlib opabs bs oa vars rhs correct wfa wfl) as q; clear IHlib.
+      apply q; auto.
+Qed.
+
+Lemma wf_term_eapply_iff {o} :
+  forall (bs : list (@BTerm o)),
+    wf_term (oterm (NCan NEApply) bs)
+    <=> {a, b : NTerm $ bs = [bterm [] a, bterm [] b] # wf_term a # wf_term b}.
+Proof.
+  introv.
+  rw @wf_oterm_iff; simpl.
+  split; intro k; exrepnd; subst; allsimpl.
+  - repeat (destruct bs; allsimpl; tcsp).
+    destruct b as [l1 t1]; destruct b0 as [l2 t2].
+    allunfold @num_bvars; allsimpl.
+    destruct l1, l2; ginv.
+    pose proof (k (nobnd t1)) as h1; autodimp h1 hyp.
+    pose proof (k (nobnd t2)) as h2; autodimp h2 hyp.
+    allrw @wf_bterm_iff.
+    exists t1 t2; dands; auto.
+  - unfold num_bvars; simpl; dands; auto.
+    introv i; repndors; subst; tcsp.
+Qed.
+
+Inductive no_repeats_lib {o} : @library o -> Type :=
+| no_rep_lib_em : no_repeats_lib []
+| no_rep_lib_cons :
+    forall e l,
+      !in_lib (opabs_of_lib_entry e) l
+      -> no_repeats_lib l
+      -> no_repeats_lib (e :: l).
+
+Lemma matching_entry_sign_trans :
+  forall abs1 abs2 abs3,
+    matching_entry_sign abs1 abs2
+    -> matching_entry_sign abs2 abs3
+    -> matching_entry_sign abs1 abs3.
+Proof.
+  introv m1 m2.
+  allunfold @matching_entry_sign; repnd; dands; allrw; tcsp.
+  eapply matching_parameters_trans; eauto.
+Qed.
+
+Lemma matching_entry_sign_sym :
+  forall abs1 abs2,
+    matching_entry_sign abs1 abs2
+    -> matching_entry_sign abs2 abs1.
+Proof.
+  introv m.
+  allunfold @matching_entry_sign; repnd; dands; allrw; tcsp.
+  eapply matching_parameters_sym; eauto.
+Qed.
+
+Lemma implies_matching_parameters_refl :
+  forall params1 params2,
+    matching_parameters params1 params2
+    -> matching_parameters params1 params1.
+Proof.
+  introv m.
+  unfold matching_parameters in *.
+  revert dependent params2.
+  induction params1; allsimpl; introv m; destruct params2; allsimpl; tcsp.
+  - inversion m.
+  - allrw assert_andb; repnd; dands; auto.
+    + unfold matching_paramsb in *.
+      destruct a.
+      destruct pt; tcsp.
+    + eapply IHparams1; eauto.
+Qed.
+
+Lemma implies_matching_entry_sign_refl :
+  forall abs1 abs2,
+    matching_entry_sign abs1 abs2
+    -> matching_entry_sign abs1 abs1.
+Proof.
+  introv m.
+  allunfold matching_entry_sign; repnd; dands; auto.
+  eapply implies_matching_parameters_refl; eauto.
+Qed.
+
+Lemma matching_entry_preserves_find_entry {o} :
+  forall (lib : @library o) abs1 abs2 e,
+    find_entry_sign lib abs1 = Some e
+    -> matching_entry_sign abs1 abs2
+    -> find_entry_sign lib abs2 = Some e.
+Proof.
+  induction lib; introv fe me; allsimpl; ginv.
+  destruct a; boolvar; ginv; tcsp.
+
+  - eapply matching_entry_sign_trans in m;[|exact me]; tcsp.
+
+  - apply matching_entry_sign_sym in m.
+    eapply matching_entry_sign_trans in me;[|exact m]; tcsp.
+    apply matching_entry_sign_sym in me; tcsp.
+
+  - pose proof (IHlib abs1 abs2 e) as q; repeat (autodimp q hyp).
+Qed.
+
+Lemma find_entry_sign_implies_in_lib {o} :
+  forall (lib : @library o) opabs e,
+    find_entry_sign lib opabs = Some e
+    -> in_lib opabs lib.
+Proof.
+  induction lib; introv fe; allsimpl; ginv.
+  destruct a; allsimpl.
+  boolvar; ginv; allsimpl.
+  - unfold in_lib; simpl.
+    eexists; dands;[left;eauto|].
+    simpl; auto.
+  - apply IHlib in fe.
+    unfold in_lib in *; exrepnd.
+    exists e0; simpl; tcsp.
+Qed.
+
+Lemma matching_entry_sign_is_same_opabs :
+  forall opabs1 opabs2,
+    matching_entry_sign opabs1 opabs2
+    <=> same_opabs opabs1 opabs2.
+Proof.
+  sp.
+Qed.
+
+Lemma same_opabs_trans :
+  forall opabs1 opabs2 opabs3,
+    same_opabs opabs1 opabs2
+    -> same_opabs opabs2 opabs3
+    -> same_opabs opabs1 opabs3.
+Proof.
+  introv same1 same2.
+  allrw <- matching_entry_sign_is_same_opabs.
+  eapply matching_entry_sign_trans; eauto.
+Qed.
+
+Lemma same_opabs_sym :
+  forall opabs1 opabs2,
+    same_opabs opabs1 opabs2
+    -> same_opabs opabs2 opabs1.
+Proof.
+  introv same.
+  allrw <- matching_entry_sign_is_same_opabs.
+  apply matching_entry_sign_sym; auto.
+Qed.
+
+Lemma same_opabs_preserves_in_lib {o} :
+  forall (lib : @library o) opabs1 opabs2,
+    same_opabs opabs1 opabs2
+    -> in_lib opabs1 lib
+    -> in_lib opabs2 lib.
+Proof.
+  introv same i.
+  unfold in_lib in *; exrepnd.
+  exists e; dands; auto.
+  eapply same_opabs_trans;[|eauto].
+  apply same_opabs_sym; auto.
+Qed.
+
+Lemma agreeing_libraries_cons_right_implies {o} :
+  forall (lib1 lib2 : @library o) e,
+    !in_lib (opabs_of_lib_entry e) lib2
+    -> libraries_agree_on_intersection lib1 (e :: lib2)
+    -> libraries_agree_on_intersection lib1 lib2.
+Proof.
+  introv norep agree; introv.
+  pose proof (agree opabs) as h; clear agree.
+  remember (find_entry_sign lib1 opabs) as fe1; destruct fe1 as [e1|]; allsimpl; auto.
+  destruct e1; allsimpl.
+  destruct e; allsimpl.
+  boolvar; repnd; subst.
+  - remember (find_entry_sign lib2 opabs) as fe2; destruct fe2 as [e2|]; allsimpl; auto.
+    destruct e2.
+    symmetry in Heqfe2.
+    apply find_entry_sign_implies_in_lib in Heqfe2.
+    eapply same_opabs_preserves_in_lib in Heqfe2; [|exact m]; tcsp.
+  - remember (find_entry_sign lib2 opabs) as fe2; destruct fe2 as [e2|]; allsimpl; auto.
+Qed.
+
+Lemma agreeing_libraries_no_rep_find_entry_sign {o} :
+  forall (lib1 lib2 : @library o) abs oa vars rhs correct,
+    libraries_agree_on_intersection lib1 lib2
+    -> no_repeats_lib lib2
+    -> find_entry_sign lib1 abs = Some (lib_abs oa vars rhs correct)
+    -> found_entry_sign lib2 abs = true
+    -> find_entry_sign lib2 abs = Some (lib_abs oa vars rhs correct).
+Proof.
+  induction lib2; introv agree norep fe1 fe2; allsimpl; ginv.
+  destruct a; boolvar; GC.
+
+  - pose proof (agree opabs) as h.
+    eapply matching_entry_preserves_find_entry in fe1;[|exact m].
+    rewrite fe1 in h.
+    simpl in h.
+    boolvar; repnd; subst; tcsp.
+
+    + eauto with pi.
+
+    + destruct n; eapply implies_matching_entry_sign_refl;
+      apply matching_entry_sign_sym; eauto.
+
+  - inversion norep; clear norep; subst; allsimpl.
+    apply IHlib2; auto.
+    allsimpl.
+    eapply agreeing_libraries_cons_right_implies; eauto.
+    simpl; auto.
+Qed.
+
 Lemma compute_step_preserves_agreeing_libraries {o} :
   forall lib1 lib2,
-    libraries_agree_on_intersection lib1 lib2
+    assert (wf_library lib1)
+    -> assert (wf_library lib2)
+    -> libraries_agree_on_intersection lib1 lib2
+    -> no_repeats_lib lib2
     -> forall (t : @NTerm o) u,
-      isotrue (all_abstractions_are_defined lib1 t)
-      -> isotrue (all_abstractions_are_defined lib2 t)
-      -> compute_step lib1 t = csuccess u
-      -> compute_step lib2 t = csuccess u.
+        wf_term t
+        -> isotrue (all_abstractions_are_defined lib1 t)
+        -> isotrue (all_abstractions_are_defined lib2 t)
+        -> compute_step lib1 t = csuccess u
+        -> compute_step lib2 t = csuccess u.
 Proof.
-  introv agree; nterm_ind1s t as [v|f ind|op bs ind] Case; introv allabs1 allabs2 comp.
+  introv wflib1 wflib2 agree norep; nterm_ind1s t as [v|f ind|op bs ind] Case; introv wft allabs1 allabs2 comp.
 
   - Case "vterm".
     csunf comp; allsimpl; ginv.
@@ -2599,11 +2889,12 @@ Proof.
 
             + fold_terms.
               rewrite compute_step_eapply_iscan_isnoncan_like; auto.
-              pose proof (ind arg2 arg2 []) as h; clear ind.
+              apply wf_term_eapply_iff in wft; exrepnd; allunfold @nobnd; ginv.
+              pose proof (ind b b []) as h; clear ind.
               repeat (autodimp h hyp); eauto 3 with slow.
               apply h in comp1; auto; clear h;
-              try (complete (apply (allabs1 (nobnd arg2)); tcsp));
-              try (complete (apply (allabs2 (nobnd arg2)); tcsp)).
+              try (complete (apply (allabs1 (nobnd b)); tcsp));
+              try (complete (apply (allabs2 (nobnd b)); tcsp)).
               rewrite comp1; auto.
           }
 
@@ -2642,11 +2933,12 @@ Proof.
               - fold_terms; rewrite compute_step_eapply_iscan_isexc; auto.
 
               - fold_terms; rewrite compute_step_eapply_iscan_isnoncan_like; auto.
-                pose proof (ind arg2 arg2 []) as q; clear ind.
+                apply wf_term_eapply_iff in wft; exrepnd; allunfold @nobnd; ginv.
+                pose proof (ind b b []) as q; clear ind.
                 repeat (autodimp q hyp); eauto 2 with slow.
                 apply q in comp1; clear q; auto;
-                try (complete (apply (allabs1 (nobnd arg2)); tcsp));
-                try (complete (apply (allabs2 (nobnd arg2)); tcsp)).
+                try (complete (apply (allabs1 (nobnd b)); tcsp));
+                try (complete (apply (allabs2 (nobnd b)); tcsp)).
                 rewrite comp1; auto.
             }
 
@@ -2760,9 +3052,10 @@ Proof.
               - pose proof (ind t t []) as q; clear ind.
                 repeat (autodimp q hyp); eauto 2 with slow.
                 allsimpl.
-                apply q in comp4; clear q;
-                try (apply (allabs1 (nobnd t)); tcsp);
-                try (apply (allabs2 (nobnd t)); tcsp).
+                apply wf_term_ncompop_iff in wft; exrepnd; ginv.
+                apply q in comp4; clear q; auto;
+                try (apply (allabs1 (nobnd b)); tcsp);
+                try (apply (allabs2 (nobnd b)); tcsp).
                 rewrite compute_step_ncompop_ncanlike2; auto; dcwf h.
                 rewrite comp4; auto.
 
@@ -2783,9 +3076,10 @@ Proof.
               - pose proof (ind t t []) as q; clear ind.
                 repeat (autodimp q hyp); eauto 2 with slow.
                 allsimpl.
-                apply q in comp4; clear q;
-                try (apply (allabs1 (nobnd t)); tcsp);
-                try (apply (allabs2 (nobnd t)); tcsp).
+                apply wf_term_narithop_iff in wft; exrepnd; ginv.
+                apply q in comp4; clear q; auto;
+                try (apply (allabs1 (nobnd b)); tcsp);
+                try (apply (allabs2 (nobnd b)); tcsp).
                 rewrite compute_step_narithop_ncanlike2; auto; dcwf h.
                 allrw; auto.
 
@@ -2810,7 +3104,12 @@ Proof.
 
             pose proof (ind (oterm (NCan ncan2) bts) (oterm (NCan ncan2) bts) []) as q; clear ind.
             repeat (autodimp q hyp); eauto 2 with slow.
-            apply q in Heqc; clear q;
+
+            apply wf_oterm_iff in wft; repnd; allsimpl.
+            pose proof (wft (nobnd (oterm (NCan ncan2) bts))) as wf2; autodimp wf2 hyp.
+            allrw @wf_bterm_iff.
+
+            apply q in Heqc; clear q; auto;
             try (apply (allabs1 (nobnd (oterm (NCan ncan2) bts))); tcsp);
             try (apply (allabs2 (nobnd (oterm (NCan ncan2) bts))); tcsp).
             csunf; simpl; allrw; simpl; auto.
@@ -2833,6 +3132,11 @@ Proof.
 
             pose proof (ind (oterm (Abs abs2) bts) (oterm (Abs abs2) bts) []) as q; clear ind.
             repeat (autodimp q hyp); eauto 2 with slow.
+
+            apply wf_oterm_iff in wft; repnd; allsimpl.
+            pose proof (wft (nobnd (oterm (Abs abs2) bts))) as wf2; autodimp wf2 hyp.
+            allrw @wf_bterm_iff.
+
             apply q in Heqc; clear q; allsimpl;
             allrw isotrue_oband; dands; auto.
 
@@ -2871,7 +3175,10 @@ Proof.
           repeat (autodimp q hyp); eauto 2 with slow.
           { rewrite simple_osize_subst; eauto 2 with slow. }
           rewrite compute_step_fresh_if_isnoncan_like; auto.
+          allrw @wf_fresh_iff.
           apply q in comp2; auto; allrw; simpl; auto.
+
+          + apply wf_term_subst; eauto 3 with slow.
 
           + apply implies_isotrue_all_abstractions_are_defined_subst; simpl; auto.
             try (apply (allabs1 (bterm [n] t)); tcsp).
@@ -2891,16 +3198,18 @@ Proof.
       exrepnd; subst.
 
       csunf; simpl.
-      eapply found_entry_implies_compute_step_lib_success.
-      Print sovar_sig.
-      Print opabs.
-      SearchAbout opsign sovar_sig.
-      SearchAbout compute_step_lib.
+      apply (found_entry_implies_compute_step_lib_success lib2 abs oa2 bs vars rhs correct).
+      apply wf_abs_implies in wft.
 
-      apply implies_isotrue_all_abstractions_are_defined_mk_instance; auto.
+      pose proof (found_entry_iff_sign lib1 abs bs oa2 vars rhs correct) as h1.
+      repeat (autodimp h1 hyp).
 
-      pose proof (undef (lib_abs oa2 vars rhs correct)) as q; allsimpl; apply q; clear q.
-      eapply found_entry_in; eauto.
+      pose proof (found_entry_iff_sign lib2 abs bs oa2 vars rhs correct) as h2.
+      repeat (autodimp h2 hyp).
+
+      apply h1 in comp0; clear h1.
+      apply h2; clear h2.
+      eapply agreeing_libraries_no_rep_find_entry_sign; eauto.
 Qed.
 
 Lemma reduces_to_preserves_all_abstractions_are_defined {o} :
