@@ -20,7 +20,8 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Websites: http://nuprl.org/html/Nuprl2Coq
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
   Authors: Vincent Rahli
@@ -940,6 +941,184 @@ Proof.
                                  e))); sp.
 Qed.
 
+Hint Resolve computes_to_valc_implies_cequivc : slow.
+
+(*
+Definition unfold_entry_abs {o}
+           (e  : library_entry)
+           (op : @Opid o)
+           (bs : list (@BTerm o)) : NTerm :=
+  match op with
+  | Abs abs =>
+    match unfold_abs_entry e abs bs with
+    | Some u => u
+    | None => mk_bottom
+    end
+  | _ => oterm op bs
+  end.
+
+Fixpoint unfold_entry {o} (e : library_entry) (t : @NTerm o) : NTerm :=
+  match t with
+  | vterm v => vterm v
+  | sterm f => sterm (fun n => unfold_entry e (f n))
+  | oterm op bs => unfold_entry_abs e op (map (unfold_entry_bterm e) bs)
+  end
+with unfold_entry_bterm {o} (e : library_entry) (b : @BTerm o) : BTerm :=
+       match b with
+       | bterm l t => bterm l (unfold_entry e t)
+       end.
+
+Fixpoint unfold_lib {o} (lib : @library o) (t : @NTerm o) : NTerm :=
+  match lib with
+  | [] => t
+  | entry :: entries => unfold_lib entries (unfold_entry entry t)
+  end.
+ *)
+
+Fixpoint unfold_library {o} (a : library * @NTerm o) : NTerm :=
+  match a with
+  | (l,t) =>
+    match t with
+    | vterm v => vterm v
+    | sterm f => sterm (fun n => unfold_library (l,f n))
+    | oterm (Abs abs) bs =>
+      match l with
+      | [] => mk_bottom
+      | entry :: entries =>
+        match unfold_abs_entry entry abs bs with
+        | Some u => unfold_library (entries, u)
+        | None => unfold_library (entries,oterm (Abs abs) bs)
+        end
+      end
+    | oterm op bs => oterm op (map (fun b => unfold_library_bterm (l,b)) bs)
+    end
+  end
+with unfold_library_bterm {o} (a : library * @BTerm o) : BTerm :=
+       match a with
+       | (l,b) =>
+         match b with
+         | bterm vs t => bterm vs (unfold_library (l,t))
+         end
+       end.
+
+Fixpoint unfold_library {o} (l : library) (t : @NTerm o) : NTerm :=
+  match t with
+  | vterm v => vterm v
+  | sterm f => sterm (fun n => unfold_library l (f n))
+  | oterm op bs => unfold_library_abs l op (map (unfold_library_bterm l) bs)
+  end
+with unfold_library_bterm {o} (l : library) (b : @BTerm o) : BTerm :=
+       match b with
+       | bterm vs t => bterm vs (unfold_library l t)
+       end
+with unfold_library_abs {o} (l : library) (op : @Opid o) (bs : list (@BTerm o)) : NTerm :=
+       match op with
+       | Abs abs =>
+         match l with
+         | [] => mk_bottom
+         | entry :: entries =>
+           match unfold_abs_entry entry abs bs with
+           | Some u => unfold_library entries u
+           | None => unfold_library_abs entries op bs
+           end
+         end
+       | _ => oterm op bs
+       end.
+
+Lemma exists_all_defined {o} :
+  forall lib,
+    no_undefined_abs_in_lib lib
+    -> forall (t : @NTerm o),
+      isprog t
+      -> cequiv lib t (unfold_lib lib t)
+         # isotrue (all_abstractions_are_defined lib (unfold_lib lib t)).
+Proof.
+  induction  lib; intro nodef; simpl.
+  - introv isp; dands.
+    + apply cequiv_refl; eauto 2 with slow.
+    + SearchAbout all_abstractions_are_defined [].
+
+Lemma isotrue_all_abstractions_are_defined_nil {o} :
+  forall (t : @NTerm o), isotrue (all_abstractions_are_defined [] t).
+Proof.
+  nterm_ind1s t as [v|f ind|op bs ind] Case; introv; allsimpl; auto.
+  apply isotrue_oband.
+  rw isotrue_bool2obool_iff.
+  dands.
+  - destruct op; simpl; auto.
+Qed.
+
+  nterm_ind1s t as [v|f ind|op bs ind] Case; introv; allsimpl.
+Qed.
+
+Definition ex_all_defined {o} lib (t : @CTerm o) :=
+  {u : CTerm
+   , ccequivc lib t u
+   /\ isotrue (all_abstractions_are_defined_cterm lib u) }.
+
+Lemma restrict_to_lib_eq_in_nuprl {o} :
+  forall lib (T T' : @CTerm o) eq,
+    nuprl lib T T' eq
+    ->
+    (
+      ex_all_defined lib T
+      /\ forall t t', eq t t' -> ex_all_defined lib t
+    ).
+Proof.
+  introv n.
+  unfold nuprl in n.
+  remember (univ lib) as ts.
+  close_cases (induction n using @close_ind') Case; subst; introv.
+
+  - Case "CL_init".
+    duniv i h.
+
+    revert dependent eq.
+    revert dependent T.
+    revert dependent T'.
+    induction i; introv u; allsimpl; tcsp.
+    repndors; exrepnd; spcast; try (complete (apply IHi in u; tcsp)).
+
+    dands.
+
+    + exists (@mkc_uni o i); dands; simpl; auto.
+      spcast; eauto 3 with slow.
+
+    + introv e.
+      apply u in e; exrepnd.
+
+      remember (univi lib i) as ts.
+      close_cases (induction e0 using @close_ind') SCase; subst; introv.
+
+      * SCase "CL_init".
+        match goal with
+        | [ H : univi _ _ _ _ _ |- _ ] => apply IHi in H; sp
+        end.
+
+      * SCase "CL_int".
+        allunfold @per_int; repnd; spcast.
+        exists (@mkc_int o); simpl; dands; spcast; eauto 3 with slow.
+
+      * SCase "CL_atom".
+        allunfold @per_atom; repnd; spcast.
+        exists (@mkc_atom o); simpl; dands; spcast; eauto 3 with slow.
+
+      * SCase "CL_uatom".
+        allunfold @per_uatom; repnd; spcast.
+        exists (@mkc_uatom o); simpl; dands; spcast; eauto 3 with slow.
+
+      * SCase "CL_base".
+        allunfold @per_base; repnd; spcast.
+        exists (@mkc_base o); simpl; dands; spcast; eauto 3 with slow.
+
+      * SCase "CL_approx".
+        allunfold @per_approx; exrepnd; spcast.
+
+        exists (mkc_approx a b); simpl; dands; spcast; eauto 3 with slow.
+        simpl.
+
+Qed.
+
 Lemma tequality_cons_library_entry {o} :
   forall lib1 lib2 (t1 t2 : @CTerm o) eq,
     assert (wf_library lib1)
@@ -962,8 +1141,22 @@ Proof.
   remember (univ lib1) as ts.
   close_cases (induction n using @close_ind') Case; subst.
 
-  Focus 6.
+  (*
+  - Case "CL_init".
+    duniv i h.
 
+    induction i; allsimpl; tcsp.
+    repndors; exrepnd; spcast;
+    try (complete (autodimp IHi hyp)).
+
+    apply CL_init.
+    exists (S i); simpl.
+    left; dands; auto; spcast;
+    try (complete (apply computes_to_valc_consistent_with_new_definition; auto)).
+*)
+
+(*
+Focus 6.
   - Case "CL_approx".
     unfold per_approx in per; exrepnd; spcast.
     eexists.
@@ -973,6 +1166,9 @@ Proof.
     try (complete (apply computes_to_valc_consistent_with_new_definition; eauto));
     try (complete (introv; apply t_iff_refl)).
     allrw @approx_stable_iff; auto.
+*)
+
+  Focus 11.
 
   - Case "CL_func".
     clear per; spcast.
@@ -994,7 +1190,9 @@ Proof.
 
     }
 
-    { introv.
+    {
+      introv.
+
       apply recb; auto.
     }
 

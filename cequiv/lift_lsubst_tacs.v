@@ -573,6 +573,19 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c2 name];
         clear_irr; tac
 
+    (* le *)
+    | context [lsubstc (mk_le ?a ?b) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let w2 := fresh "w2" in
+      let c1 := fresh "c1" in
+      let c2 := fresh "c2" in
+      pose proof (lsubstc_mk_le_ex a b s w c) as name;
+        destruct name as [w1 name];
+        destruct name as [w2 name];
+        destruct name as [c1 name];
+        destruct name as [c2 name];
+        clear_irr; tac
+
     (* IsInl *)
     | context [lsubstc (mk_isinl ?x ?y ?z) ?w ?s ?c] =>
       let w1 := fresh "w1" in

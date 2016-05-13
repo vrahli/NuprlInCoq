@@ -109,7 +109,7 @@ accessed from `rules.v` (see for example `rules/rules_function.v`,
 `rules/rules_squiggle.v`).
 
 * The proof of our most general Bar Induction rule is in
-`bar_induction/bar_induction_cterm2.v`.
+`bar_induction/bar_induction_cterm3.v`.
 
 * The proof of our most general continuity rule is discussed in
 `continuity/continuity_roadmap.v`.

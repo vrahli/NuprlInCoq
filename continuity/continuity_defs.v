@@ -2756,7 +2756,7 @@ Proof.
   rw <- @wf_less_iff.
   unfold absolute_value.
   rw <- @wf_less_iff.
-  rw @wf_minus.
+  rw <- @wf_minus_iff.
   split; introv k; repndors; repnd; dands; tcsp.
 Qed.
 

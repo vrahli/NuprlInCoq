@@ -49,6 +49,7 @@ Require Import rules_move.
 Require Import bar_induction3.
 (* Bar Induction on sequences of closed terms without atoms: *)
 Require Import bar_induction_cterm2.
+Require Import bar_induction_cterm3.
 
 (* Require Import rules_barind. *)
 
@@ -185,6 +186,6 @@ Require Import rules_atom_struct.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "util/" "terms/" "computation/" "cequiv/" "per/" "close/" "rules/" "bar_induction/" "continuity/")
 *** End:
 *)
