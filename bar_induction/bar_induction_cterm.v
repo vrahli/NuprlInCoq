@@ -1781,6 +1781,93 @@ Proof.
   sp.
 Qed.
 
+Lemma implies_cequivc_update_seq_nout {o} :
+  forall lib (t : @CTerm o) k a b v,
+    cequivc lib a b
+    -> cequivc lib (update_seq_nout t k a v) (update_seq_nout t k b v).
+Proof.
+  introv ceq.
+  unfold update_seq_nout.
+  apply implies_cequivc_lam; introv.
+  allrw @mkcv_inteq_substc.
+  allrw @mkcv_apply_substc.
+  allrw @mkc_var_substc.
+  allrw @csubst_mk_cv.
+  apply cequivc_mkc_inteq; auto.
+Qed.
+
+Lemma eq_kseq_nout_update2 {o} :
+  forall lib (s1 s2 : @CTerm o) (n : nat) (u : CTerm) (v : NVar),
+    noutokensc u
+    -> eq_kseq_nout lib s1 s2 n
+    -> eq_kseq_nout
+         lib
+         (update_seq_nout s1 n u v)
+         (update_seq_nout s2 n u v)
+         (S n).
+Proof.
+  introv nout i.
+  allunfold @eq_kseq_nout.
+  unfold update_seq.
+  apply implies_equality_natk2nout2.
+  introv ltm.
+
+  destruct (deq_nat m n) as [d|d]; subst.
+
+  - exists u.
+    dands; eauto 3 with slow; tcsp; spcast;[|].
+
+    + eapply cequivc_trans;[apply cequivc_beta|].
+      allrw @mkcv_inteq_substc.
+      allrw @mkcv_apply_substc.
+      allrw @mkc_var_substc.
+      allrw @csubst_mk_cv.
+      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+      boolvar; tcsp.
+
+    + eapply cequivc_trans;[apply cequivc_beta|].
+      allrw @mkcv_inteq_substc.
+      allrw @mkcv_apply_substc.
+      allrw @mkc_var_substc.
+      allrw @csubst_mk_cv.
+      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+      boolvar; tcsp.
+
+  - pose proof (equality_natk2nout_implies lib m s1 s2 n) as h.
+    repeat (autodimp h hyp); try omega;[].
+    exrepnd; spcast.
+    exists u0.
+    dands; spcast; auto.
+
+    + eapply cequivc_trans;[apply cequivc_beta|].
+      allrw @mkcv_inteq_substc.
+      allrw @mkcv_apply_substc.
+      allrw @mkc_var_substc.
+      allrw @csubst_mk_cv.
+      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+      boolvar; tcsp; GC.
+
+    + eapply cequivc_trans;[apply cequivc_beta|].
+      allrw @mkcv_inteq_substc.
+      allrw @mkcv_apply_substc.
+      allrw @mkc_var_substc.
+      allrw @csubst_mk_cv.
+      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+      boolvar; tcsp; GC.
+Qed.
+
+Lemma lsubstc_cbv_emseq {o} :
+  forall v w (s : @CSub o) c, lsubstc (cbv_emseq v) w s c = cbv_emseqc v.
+Proof.
+  introv.
+  apply cterm_eq; simpl.
+  unfold cbv_emseq, csubst; simpl.
+  unflsubst; simpl.
+  autorewrite with slow; auto.
+Qed.
+Hint Rewrite @lsubstc_cbv_emseq : slow.
+
+
 
 
 (*

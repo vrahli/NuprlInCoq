@@ -40,25 +40,25 @@ Require Export subst_tacs.
     B is the bar
     ext(s,n,t) = \m. if m=n then t else s m
 <<
-   H |- squash (X 0 (norm c 0))
+   H |- squash (X 0 (\v.let _ := v in bot))
 
      By bar_induction B i a s x m n t
 
      H, n:nat, s: nat_n -> CNTerm |- B n s in Type(i)        // B is a well-formed predicate on finite sequences
      H, s: nat -> CNTerm |- squash(exists n:nat. B n s)      // B is a bar
-     H, n:nat, s: nat_n -> CNTerm, m: B n s |- X n s         // Base case: the conclusion is true at the bar
+     H, n:nat, s: nat_n -> CNTerm, m: squash(B n s) |- X n s         // Base case: the conclusion is true at the bar
      H, n:nat, s: nat_n -> CNTerm, x: (forall m: CNTerm. X (n + 1) (ext(s,n,m))) |- X n s // induction case
 >>
 
 *)
 
-Definition rule_bar_induction_nout {o}
-           (f X c B e : @NTerm o)
+Definition rule_bar_induction_nout3 {o}
+           (f X B e : @NTerm o)
            (s n m v x : NVar)
            (i : nat)
            (H : barehypotheses) :=
   mk_rule
-    (mk_bseq H (mk_conclax (mk_squash (mk_apply2 X mk_zero (mk_seq2kseq c (mk_nat 0) v)))))
+    (mk_bseq H (mk_conclax (mk_squash (mk_apply2 X mk_zero (cbv_emseq v)))))
     [ mk_bseq (snoc (snoc H (mk_hyp n mk_tnat))
                     (mk_hyp s (mk_natk2nout (mk_var n))))
               (mk_conclax (mk_member (mk_apply2 B (mk_var n) (mk_var s)) (mk_uni i))),
@@ -69,7 +69,7 @@ Definition rule_bar_induction_nout {o}
                                         (mk_apply2 B (mk_var n) (mk_var s))))),
       mk_bseq (snoc (snoc (snoc H (mk_hyp n mk_tnat))
                           (mk_hyp s (mk_natk2nout (mk_var n))))
-                    (mk_hyp m (mk_apply2 B (mk_var n) (mk_var s))))
+                    (mk_hyp m (mk_squash (mk_apply2 B (mk_var n) (mk_var s)))))
               (mk_concl (mk_apply2 X (mk_var n) (mk_var s)) e),
       mk_bseq (snoc (snoc (snoc H (mk_hyp n mk_tnat))
                           (mk_hyp s (mk_natk2nout (mk_var n))))
@@ -81,8 +81,8 @@ Definition rule_bar_induction_nout {o}
     ]
     [].
 
-Lemma rule_bar_induction_nout_true {o} :
-  forall lib (f X c B e : @NTerm o)
+Lemma rule_bar_induction_nout3_true {o} :
+  forall lib (f X B e : @NTerm o)
          (s n m v x : NVar)
          (i : nat)
          (H : @barehypotheses o)
@@ -92,12 +92,11 @@ Lemma rule_bar_induction_nout_true {o} :
          (dnv : m <> v)
          (dnm : n <> m)
          (dsm : s <> m)
-         (nvc : !LIn v (free_vars c))
          (nnB : !LIn n (free_vars B))
          (nsB : !LIn s (free_vars B)),
-    rule_true lib (rule_bar_induction_nout f X c B e s n m v x i H).
+    rule_true lib (rule_bar_induction_nout3 f X B e s n m v x i H).
 Proof.
-  unfold rule_bar_induction_nout, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_bar_induction_nout3, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   clear cargs.
 
@@ -118,9 +117,6 @@ Proof.
   assert (s <> n
           # s <> x
           # n <> x
-          # !LIn x (free_vars c)
-          # !LIn s (free_vars c)
-          # !LIn n (free_vars c)
           # !LIn x (free_vars X)
           # !LIn s (free_vars X)
           # !LIn n (free_vars X)
@@ -131,23 +127,12 @@ Proof.
 
   { clear hyp_wfd hyp_bar hyp_ind hyp_imp.
     dwfseq.
-    assert (forall x : NVar, LIn x (free_vars c) -> x <> v -> LIn x (vars_hyps H)) as imp.
-    { introv h1 h2.
-      apply cg.
-      repeat (first [rw remove_nvars_cons_r|rw remove_nvars_app_r]).
-      allrw memvar_singleton.
-      allrw <- beq_var_refl.
-      allrw remove_nvars_nil_r; allrw app_nil_r.
-      rw in_remove_nvars; rw in_single_iff; sp. }
     sp; GC;
     try (complete (discover; allapply @subset_hs_vars_hyps; sp)). }
 
   destruct vhyps as [ nsn vhyps ].
   destruct vhyps as [ nsx vhyps ].
   destruct vhyps as [ nnx vhyps ].
-  destruct vhyps as [ nxc vhyps ].
-  destruct vhyps as [ nsc vhyps ].
-  destruct vhyps as [ nnc vhyps ].
   destruct vhyps as [ nxX vhyps ].
   destruct vhyps as [ nsX vhyps ].
   destruct vhyps as [ nnX vhyps ].
@@ -159,17 +144,7 @@ Proof.
   vr_seq_true.
   lsubst_tac.
 
-  pose proof (lsubstc_mk_seq2kseq c 0 v w3 s1 c3) as sc1.
-  repeat (autodimp sc1 hyp).
-  exrepnd.
-  rw sc1.
-
-  pose proof (lsubstc_mk_seq2kseq c 0 v w3 s2 c7) as sc2.
-  autodimp sc2 hyp.
-  exrepnd.
-  rw sc2.
-
-  clear sc1 sc2.
+  autorewrite with slow in *.
   clear_irr.
   clear_wf_hyps.
 
@@ -211,11 +186,11 @@ Proof.
     allrw @covered_member.
     allrw @covered_apply2; repnd.
     allrw @vars_hyps_snoc; allsimpl.
-    apply covered_snoc_implies in ct6; auto.
-    apply covered_snoc_implies in ct6; auto.
+    apply covered_snoc_implies in ct4; auto.
+    apply covered_snoc_implies in ct4; auto.
     dands.
-    - eapply s_cover_typ1;[exact ct6|exact sim].
-    - eapply s_cover_typ1;[exact ct6|].
+    - eapply s_cover_typ1;[exact ct4|exact sim].
+    - eapply s_cover_typ1;[exact ct4|].
       apply similarity_sym in sim;[exact sim|]; auto.
   }
   destruct cB as [cB1 cB2].
@@ -297,13 +272,12 @@ Proof.
     apply member_in_uni in h1; auto.
   }
 
-  pose proof (bar_induction_cterm_meta
+  pose proof (bar_induction_cterm_meta2
                 lib
                 (fun_sim_eq lib s1 H B wB)
                 (fun_sim_eq lib s1 H X w0)
                 (lsubstc B wB s1 cB1)
                 (lsubstc X w0 s1 c0)
-                (lsubstc c wt s1 ct3)
                 v)
     as bi.
 
@@ -311,11 +285,12 @@ Proof.
     [idtac
     |idtac
     |idtac
-    |pose proof (bi (lsubstc X w0 s2 c5) (seq2kseq (lsubstc c wt s2 ct4) 0 v)) as h;
+    |pose proof (bi (lsubstc X w0 s2 c5) (cbv_emseqc v)) as h;
       allrw <- @mkc_zero_eq;
-      repeat (autodimp h hyp);[apply eq_kseq_nout_seq2kseq_0|idtac|repnd; dands; complete auto];
+      repeat (autodimp h hyp);[apply eq_kseq_nout_0|idtac|repnd; dands; complete auto];
       exists s2 c5;
-      dands; complete auto].
+      dands; complete auto
+    ].
 
   - intros seq1 iss.
 
@@ -401,8 +376,8 @@ Proof.
 
     vr_seq_true in hyp_imp.
     pose proof (hyp_imp
-                  (snoc (snoc (snoc s1 (n,mkc_nat k)) (s,seq1)) (m,t))
-                  (snoc (snoc (snoc s0 (n,mkc_nat k)) (s,seq2)) (m,t)))
+                  (snoc (snoc (snoc s1 (n,mkc_nat k)) (s,seq1)) (m,mkc_axiom))
+                  (snoc (snoc (snoc s0 (n,mkc_nat k)) (s,seq2)) (m,mkc_axiom)))
       as hf.
     repeat (autodimp hf hyp).
 
@@ -418,6 +393,7 @@ Proof.
         apply equality_int_nat_implies_cequivc in sim'2.
         eapply alphaeqc_preserving_equality in sim'1;
           [|apply lsubstc_mk_natk2nout_sp2; auto].
+        apply tequality_mkc_squash.
         eapply tequality_respects_cequivc_right;
           [apply implies_cequivc_apply2;
             [apply cequivc_refl
@@ -457,10 +433,12 @@ Proof.
       apply tnat_type.
     }
 
-    { assert (wf_term (mk_apply2 B (mk_var n) (mk_var s))) as wfn.
-      { apply wf_apply2; eauto 3 with slow. }
-      assert (cover_vars (mk_apply2 B (mk_var n) (mk_var s)) (snoc (snoc s1 (n,mkc_nat k)) (s,seq1))) as cvn.
-      { apply cover_vars_apply2.
+    { assert (wf_term (mk_squash (mk_apply2 B (mk_var n) (mk_var s)))) as wfn.
+      { apply wf_squash.
+        apply wf_apply2; eauto 3 with slow. }
+      assert (cover_vars (mk_squash (mk_apply2 B (mk_var n) (mk_var s))) (snoc (snoc s1 (n,mkc_nat k)) (s,seq1))) as cvn.
+      { apply cover_vars_squash.
+        apply cover_vars_apply2.
         repeat (rw @cover_vars_var_iff).
         repeat (rw @dom_csub_snoc); simpl.
         repeat (rw in_snoc).
@@ -494,7 +472,10 @@ Proof.
         auto.
       }
 
-      { lsubst_tac; auto. }
+      { lsubst_tac; auto.
+        apply member_mkc_squash.
+        exists t; auto.
+      }
     }
 
     exrepnd.
@@ -590,10 +571,10 @@ Proof.
         allunfold @cnout_cterm.
         allrw @cnterm2cterm2cnterm.
 
-        pose proof (h (lsubstc X w0 s2a0 c28) (update_seq_nout t2 k u v)) as q; clear h.
+        pose proof (h (lsubstc X w0 s2a0 c27) (update_seq_nout t2 k u v)) as q; clear h.
         repeat (autodimp q hyp); repnd; auto;[|].
         { apply eq_kseq_nout_update2; auto. }
-        { exists s2a0 c28; dands; auto. }
+        { exists s2a0 c27; dands; auto. }
       }
 
       apply hyps_functionality_snoc2; simpl; auto.

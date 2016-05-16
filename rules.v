@@ -49,7 +49,10 @@ Require Import rules_move.
 Require Import bar_induction3.
 (* Bar Induction on sequences of closed terms without atoms: *)
 Require Import bar_induction_cterm2.
+(* Same as bar_induction_cterm2 but a simpler 0-sequence *)
 Require Import bar_induction_cterm3.
+(* Same as bar_induction_cterm3 but squashed bar in base hyp *)
+Require Import bar_induction_cterm4.
 
 (* Require Import rules_barind. *)
 
