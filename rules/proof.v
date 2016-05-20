@@ -975,24 +975,143 @@ Fixpoint unfold_lib {o} (lib : @library o) (t : @NTerm o) : NTerm :=
   end.
  *)
 
-Fixpoint unfold_library {o} (a : library * @NTerm o) : NTerm :=
-  match a with
-  | (l,t) =>
-    match t with
-    | vterm v => vterm v
-    | sterm f => sterm (fun n => unfold_library (l,f n))
-    | oterm (Abs abs) bs =>
-      match l with
-      | [] => mk_bottom
-      | entry :: entries =>
-        match unfold_abs_entry entry abs bs with
-        | Some u => unfold_library (entries, u)
-        | None => unfold_library (entries,oterm (Abs abs) bs)
-        end
-      end
-    | oterm op bs => oterm op (map (fun b => unfold_library_bterm (l,b)) bs)
+Record LibTerm {o} :=
+  MkLibTerm
+    {
+      LT_lib  : @library o;
+      LT_term : @NTerm o
+    }.
+
+Definition size_lib_term {o} (LT : @LibTerm o) : (nat * ord) :=
+  (length (LT_lib LT), osize (LT_term LT)).
+
+Inductive lt_lib_term {o} (lt1 lt2 : @LibTerm o) : Prop :=
+| lt_lib_term_lib :
+    length (LT_lib lt1) < length (LT_lib lt2)
+    -> lt_lib_term lt1 lt2
+| lt_lib_term_term :
+    length (LT_lib lt1) = length (LT_lib lt2)
+    -> ord_lt (osize (LT_term lt1)) (osize (LT_term lt2))
+    -> lt_lib_term lt1 lt2.
+
+Lemma lt_lib_term_wf {o} :
+  well_founded (@lt_lib_term o).
+Proof.
+  introv.
+  destruct a as [l t].
+  remember (length l) as n.
+  revert dependent l.
+  revert t.
+  induction n as [n ind1] using comp_ind.
+  intro t.
+  remember (osize t) as s.
+  revert dependent t.
+  induction s as [s ind2] using comp_ind_ord.
+  introv es en; subst.
+
+  constructor.
+  destruct l; allsimpl; ginv; introv ltlt.
+
+  - inversion ltlt as [ltl|]; allsimpl; clear ltlt.
+
+    + destruct y as [l1 t1]; allsimpl.
+      destruct l1; allsimpl; ginv; try omega.
+
+    + destruct y as [l1 t1]; allsimpl.
+      destruct l1; allsimpl; ginv.
+      pose proof (ind2 (osize t1)) as h; autodimp h hyp.
+
+  - inversion ltlt as [ltl|ltl ltt]; allsimpl; clear ltlt.
+
+    + destruct y as [l1 t1]; allsimpl.
+      eapply ind1;[exact ltl|]; auto.
+
+    + destruct y as [l1 t1]; allsimpl.
+      destruct l1 as [|e1 l1]; allsimpl; ginv; inj.
+      eapply ind2;[exact ltt| |]; simpl; auto.
+Qed.
+
+Definition unfold_entry_op {o}
+           (entry : library_entry)
+           (op : @Opid o)
+           (bs : list BTerm) : NTerm :=
+  match op with
+  | Abs abs =>
+    match unfold_abs_entry entry abs bs with
+    | Some u => u
+    | None => oterm op bs
     end
+  | _ => oterm op bs
+  end.
+
+Fixpoint unfold_entry {o} (e : library_entry) (t : @NTerm o) : NTerm :=
+  match t with
+  | vterm v => vterm v
+  | sterm f => sterm (fun n => unfold_entry e (f n))
+  | oterm op bs =>
+    unfold_entry_op e op (map (unfold_entry_bterm e) bs)
   end
+with unfold_entry_bterm {o} (e : library_entry) (b : @BTerm o) : BTerm :=
+       match b with
+       | bterm vs t => bterm vs (unfold_entry e t)
+       end.
+
+Fixpoint unfold_library {o} (l : library) (t : @NTerm o) : NTerm :=
+  match l with
+  | [] => t
+  | entry :: entries =>
+    unfold_library entries (unfold_entry entry t)
+  end.
+
+Definition abs2bot_op {o}
+           (op : @Opid o)
+           (bs : list BTerm) : NTerm :=
+  match op with
+  | Abs abs => mk_bot
+  | _ => oterm op bs
+  end.
+
+Fixpoint abs2bot {o} (t : @NTerm o) : NTerm :=
+  match t with
+  | vterm v => vterm v
+  | sterm f => sterm (fun n => abs2bot (f n))
+  | oterm op bs => abs2bot_op op (map abs2bot_bterm bs)
+  end
+with abs2bot_bterm {o} (b : @BTerm o) : BTerm :=
+       match b with
+       | bterm vs t => bterm vs (abs2bot t)
+       end.
+
+Definition unfold_lib {o} lib (t : @NTerm o) : NTerm :=
+  abs2bot (unfold_library lib t).
+
+(* then replace non-unfolded abs by bottom.
+   then what? *)
+
+(*
+Definition unfold_library {o} (LT : @LibTerm o) : NTerm :=
+  @Fix LibTerm
+       (fun a b => lt_lib_term a b)
+       lt_lib_term_wf
+       (fun _ => NTerm)
+       (fun LT =>
+          match LT with
+          | MkLibTerm l t =>
+            match t with
+            | vterm v => vterm v
+            | sterm f => sterm (fun n => unfold_library (l,f n))
+            | oterm (Abs abs) bs =>
+              match l with
+              | [] => mk_bottom
+              | entry :: entries =>
+                match unfold_abs_entry entry abs bs with
+                | Some u => unfold_library (entries, u)
+                | None => unfold_library (entries,oterm (Abs abs) bs)
+                end
+              end
+            | oterm op bs => oterm op (map (fun b => unfold_library_bterm (l,b)) bs)
+            end
+          end
 with unfold_library_bterm {o} (a : library * @BTerm o) : BTerm :=
        match a with
        | (l,b) =>
@@ -1024,6 +1143,50 @@ with unfold_library_abs {o} (l : library) (op : @Opid o) (bs : list (@BTerm o)) 
          end
        | _ => oterm op bs
        end.
+ *)
+
+Lemma implies_approx_sterm {o} :
+  forall lib (f1 f2 : @ntseq o),
+    isprog (sterm f1)
+    -> isprog (sterm f2)
+    -> (forall n, alpha_eq (f1 n) (f2 n))
+    -> approx lib (sterm f1) (sterm f2).
+Proof.
+  introv isp1 isp2 h.
+  constructor; unfold close_comput; dands; eauto 3 with slow.
+
+  - introv comp.
+    apply computes_to_value_isvalue_eq in comp; eauto 3 with slow; ginv.
+
+  - introv comp.
+    eapply computes_to_value_and_exception_false in comp;
+      [|apply computes_to_value_isvalue_refl]; eauto 2 with slow.
+    tcsp.
+
+  - introv comp.
+    apply reduces_to_if_isvalue_like in comp; eauto 3 with slow.
+    inversion comp; subst; clear comp.
+    exists f2; dands; eauto 3 with slow; auto.
+    apply reduces_to_symm.
+Qed.
+
+Lemma approx_nil_abs2bot_1 {o} :
+  forall (t : @NTerm o), isprog t -> approx [] t (abs2bot t).
+Proof.
+  nterm_ind1s t as [v|f ind|op bs ind] Case; introv isp; allsimpl; auto.
+
+  - Case "vterm".
+    apply isprog_vterm in isp; tcsp.
+
+  - Case "sterm".
+    apply implies_approx_sterm.
+    SearchAbout approx sterm.
+Qed.
+
+Lemma cequiv_nil_abs2bot {o} :
+  forall (t : @NTerm o), isprog t -> cequiv [] t (abs2bot t).
+Proof.
+Qed.
 
 Lemma exists_all_defined {o} :
   forall lib,
@@ -1033,9 +1196,11 @@ Lemma exists_all_defined {o} :
       -> cequiv lib t (unfold_lib lib t)
          # isotrue (all_abstractions_are_defined lib (unfold_lib lib t)).
 Proof.
-  induction  lib; intro nodef; simpl.
+  induction lib; intro nodef; simpl.
   - introv isp; dands.
-    + apply cequiv_refl; eauto 2 with slow.
+    + unfold unfold_lib; simpl.
+
+      apply cequiv_refl; eauto 2 with slow.
     + SearchAbout all_abstractions_are_defined [].
 
 Lemma isotrue_all_abstractions_are_defined_nil {o} :
