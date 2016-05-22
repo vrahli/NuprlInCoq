@@ -1149,7 +1149,7 @@ Lemma implies_approx_sterm {o} :
   forall lib (f1 f2 : @ntseq o),
     isprog (sterm f1)
     -> isprog (sterm f2)
-    -> (forall n, alpha_eq (f1 n) (f2 n))
+    -> (forall n, approx lib (f1 n) (f2 n))
     -> approx lib (sterm f1) (sterm f2).
 Proof.
   introv isp1 isp2 h.
@@ -1168,6 +1168,502 @@ Proof.
     inversion comp; subst; clear comp.
     exists f2; dands; eauto 3 with slow; auto.
     apply reduces_to_symm.
+    introv; left; apply h.
+Qed.
+
+Lemma subset_nil_implies_nil :
+  forall T (l : list T), subset l [] -> l = [].
+Proof.
+  introv ss.
+  destruct l as [|x l]; allsimpl; auto.
+  pose proof (ss x); allsimpl; tcsp.
+Qed.
+Hint Resolve subset_nil_implies_nil : slow.
+
+Lemma implies_props_abs2bot {o} :
+  forall (t : @NTerm o),
+    (nt_wf t -> nt_wf (abs2bot t))
+      # (subset (free_vars (abs2bot t)) (free_vars t))
+      # (subset (get_utokens (abs2bot t)) (get_utokens t)).
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; dands; introv h; allsimpl; auto.
+
+  - Case "sterm".
+    inversion h as [|? imp|]; subst.
+    constructor; introv.
+    pose proof (imp n) as q; clear imp; repnd.
+    pose proof (ind n) as z; clear ind; repnd.
+    apply z0 in q0.
+    rw q1 in z1.
+    rw q in z.
+    dands; auto.
+
+    + unfold closed; eauto 3 with slow.
+
+    + unfold noutokens; eauto 3 with slow.
+
+  - Case "oterm".
+    unfold abs2bot_op.
+    inversion  h as [| |? ? imp e]; subst; clear h.
+
+    destruct op; allsimpl; eauto 2 with slow;
+    constructor; simpl; allrw map_map; allunfold @compose.
+
+    + introv i; allrw in_map_iff; exrepnd; subst.
+      destruct a as [l t]; simpl.
+      applydup ind in i1; repnd.
+      constructor.
+      apply i2.
+      apply imp in i1.
+      allrw @bt_wf_iff. auto.
+
+    + rw <- e.
+      apply eq_maps; introv i.
+      destruct x as [l t]; simpl; auto.
+
+    + introv i; allrw in_map_iff; exrepnd; subst.
+      destruct a as [l t]; simpl.
+      applydup ind in i1; repnd.
+      constructor.
+      apply i2.
+      apply imp in i1.
+      allrw @bt_wf_iff. auto.
+
+    + rw <- e.
+      apply eq_maps; introv i.
+      destruct x as [l t]; simpl; auto.
+
+    + introv i; allrw in_map_iff; exrepnd; subst.
+      destruct a as [l t]; simpl.
+      applydup ind in i1; repnd.
+      constructor.
+      apply i2.
+      apply imp in i1.
+      allrw @bt_wf_iff. auto.
+
+    + rw <- e.
+      apply eq_maps; introv i.
+      destruct x as [l t]; simpl; auto.
+
+  - Case "oterm".
+    destruct op; allsimpl; tcsp; allrw lin_flat_map; exrepnd;
+    allrw in_map_iff; exrepnd; subst;
+    destruct a as [l t]; allsimpl;
+    eexists; dands; eauto; allsimpl;
+    allrw in_remove_nvars; repnd; dands; auto;
+    apply ind in h1; repnd;
+    apply h4 in h2; auto.
+
+  - Case "oterm".
+    destruct op; allsimpl; tcsp; allrw in_app_iff; repndors; tcsp;
+    allrw lin_flat_map; exrepnd; try right;
+    destruct x0 as [l t]; allsimpl;
+    allrw in_map_iff; exrepnd;
+    destruct a as [l1 t1]; allsimpl; ginv;
+    applydup ind in h1; repnd;
+    eexists; dands; eauto.
+Qed.
+
+Lemma isprog_sterm_abs2bot {o} :
+  forall (f : @ntseq o),
+    isprog (sterm f)
+    -> isprog (sterm (fun n => abs2bot (f n))).
+Proof.
+  introv isp.
+  allrw @isprog_eq.
+  inversion isp as [cl wf].
+  rw @nt_wf_sterm_iff in wf.
+  apply nt_wf_sterm_implies_isprogram.
+  apply wfst; introv.
+  pose proof (wf n) as k; clear wf; repnd.
+  pose proof (implies_props_abs2bot (f n)) as h; repnd.
+  autodimp h0 hyp.
+  rw k1 in h1.
+  rw k in h.
+  apply subset_nil_implies_nil in h1.
+  apply subset_nil_implies_nil in h.
+  dands; auto.
+Qed.
+Hint Resolve isprog_sterm_abs2bot : slow.
+
+Lemma implies_isprog_abs2bot {o} :
+  forall (t : @NTerm o),
+    isprog t
+    -> isprog (abs2bot t).
+Proof.
+  introv isp.
+  allrw @isprog_eq.
+  inversion isp as [cl wf].
+  pose proof (implies_props_abs2bot t) as h; repnd.
+  constructor; auto.
+  rw cl in h1.
+  apply subset_nil_implies_nil; auto.
+Qed.
+Hint Resolve implies_isprog_abs2bot : slow.
+
+Lemma isnoncan_like_abs2bot {o} :
+  forall (t : @NTerm o),
+    isnoncan_like t -> isnoncan_like (abs2bot t).
+Proof.
+  destruct t as [v|f|op bs]; unfold isnoncan_like; simpl; tcsp.
+  intro h.
+  destruct op; tcsp.
+Qed.
+Hint Resolve isnoncan_like_abs2bot : slow.
+
+Lemma eapply_wf_def_sterm {o} :
+  forall (f : @ntseq o),
+    eapply_wf_def (sterm f).
+Proof.
+  introv.
+  unfold eapply_wf_def; left; eexists; eauto.
+Qed.
+Hint Resolve eapply_wf_def_sterm : slow.
+
+Lemma compute_step_abs2bot {o} :
+  forall (t : @NTerm o) u,
+    compute_step [] t = csuccess u
+    -> compute_step [] (abs2bot t) = csuccess (abs2bot u).
+Proof.
+  nterm_ind1s t as [v|f ind|op bs ind] Case; introv comp.
+
+  - Case "vterm".
+    csunf; allsimpl; ginv.
+
+  - Case "sterm".
+    csunf comp; allsimpl; ginv; auto.
+
+  - Case "oterm".
+    dopid op as [can|ncan|exc|abs] SCase.
+
+    + SCase "Can".
+      csunf comp; allsimpl; ginv; auto.
+
+    + SCase "NCan".
+      destruct bs as [|b1 bs]; try (complete (allsimpl; ginv)).
+      destruct b1 as [l t]; try (complete (allsimpl; ginv)).
+      destruct l; try (complete (allsimpl; ginv)).
+
+      {
+        destruct t as [x|f|op bts]; try (complete (allsimpl; ginv));[|].
+
+        - csunf comp; allsimpl.
+          dopid_noncan ncan SSCase; allsimpl; ginv; auto.
+
+          {
+            SSCase "NApply".
+            apply compute_step_seq_apply_success in comp; exrepnd; subst; allsimpl.
+            csunf; simpl; auto.
+          }
+
+          {
+            SSCase "NEApply".
+
+            apply compute_step_eapply_success in comp; exrepnd; subst.
+            repndors; exrepnd; allsimpl; subst.
+
+            + apply compute_step_eapply2_success in comp1; repnd; subst.
+              repndors; exrepnd; subst; ginv.
+              csunf; simpl.
+              dcwf h; simpl.
+              boolvar; try omega.
+              rewrite Znat.Nat2Z.id; auto.
+
+            + csunf; simpl.
+              apply isexc_implies2 in comp0; exrepnd; subst.
+              dcwf h; simpl; auto.
+
+            + fold_terms.
+              rewrite compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow.
+              pose proof (ind arg2 arg2 []) as h; clear ind.
+              repeat (autodimp h hyp); eauto 3 with slow.
+              apply h in comp1; clear h.
+              rewrite comp1; auto.
+          }
+
+          {
+            SSCase "NFix".
+            apply compute_step_fix_success in comp; repnd; subst.
+            csunf; simpl; auto.
+          }
+
+          {
+            SSCase "NCbv".
+            apply compute_step_cbv_success in comp; exrepnd; subst.
+            csunf; simpl; auto.
+          }
+
+        - dopid op as [can2|ncan2|exc2|abs2] SSCase.
+
+          + SSCase "Can".
+            dopid_noncan ncan SSSCase.
+
+            {
+              SSSCase "NApply".
+
+              csunf comp; allsimpl.
+              apply compute_step_apply_success in comp.
+              repndors; exrepnd; subst; auto.
+            }
+
+            {
+              SSSCase "NEApply".
+
+              csunf comp; allsimpl.
+              apply compute_step_eapply_success in comp.
+              repndors; exrepnd; subst; auto.
+              repndors; exrepnd; subst; allsimpl; auto.
+
+              - apply compute_step_eapply2_success in comp1; repnd; subst.
+                repndors; exrepnd; subst; auto; ginv.
+
+                + unfold mk_lam in *; ginv.
+                  csunf; simpl.
+                  dcwf h; simpl.
+                  apply iscan_implies in comp0; repndors; exrepnd; subst; simpl; auto.
+
+                + unfold mk_nseq in *; allsimpl; ginv.
+                  csunf; simpl.
+                  dcwf h; simpl.
+                  boolvar; simpl; auto; try omega.
+                  rewrite Znat.Nat2Z.id; auto.
+
+              - fold_terms; rewrite compute_step_eapply_iscan_isexc; auto.
+
+              - fold_terms; rewrite compute_step_eapply_iscan_isnoncan_like; auto.
+
+                pose proof (ind arg2 arg2 []) as q; clear ind.
+                repeat (autodimp q hyp); eauto 2 with slow.
+                apply q in comp1; clear q.
+                rewrite comp1; auto.
+            }
+
+            {
+              SSSCase "NFix".
+
+              csunf comp; allsimpl.
+              apply compute_step_fix_success in comp.
+              repndors; exrepnd; subst; auto.
+            }
+
+            {
+              SSSCase "NSpread".
+
+              csunf comp; allsimpl.
+              apply compute_step_spread_success in comp.
+              repndors; exrepnd; subst; auto.
+            }
+
+            {
+              SSSCase "NDsup".
+
+              csunf comp; allsimpl.
+              apply compute_step_dsup_success in comp.
+              repndors; exrepnd; subst; auto.
+            }
+
+            {
+              SSSCase "NDecide".
+
+              csunf comp; allsimpl.
+              apply compute_step_decide_success in comp.
+              repndors; exrepnd; subst; auto.
+              repndors; exrepnd; subst; auto.
+            }
+
+            {
+              SSSCase "NCbv".
+
+              csunf comp; allsimpl.
+              apply compute_step_cbv_success in comp.
+              repndors; exrepnd; subst; auto.
+            }
+
+            {
+              SSSCase "NSleep".
+
+              csunf comp; allsimpl.
+              apply compute_step_sleep_success in comp.
+              repndors; exrepnd; subst; auto.
+            }
+
+            {
+              SSSCase "NTUni".
+
+              csunf comp; allsimpl.
+              apply compute_step_tuni_success in comp.
+              repndors; exrepnd; subst; auto.
+              csunf; simpl.
+              unfold compute_step_tuni; simpl.
+              boolvar; try omega.
+              rewrite Znat.Nat2Z.id; auto.
+            }
+
+            {
+              SSSCase "NMinus".
+
+              csunf comp; allsimpl.
+              apply compute_step_minus_success in comp.
+              repndors; exrepnd; subst; auto.
+            }
+
+            {
+              SSSCase "NFresh".
+
+              csunf comp; allsimpl; ginv.
+            }
+
+            {
+              SSSCase "NTryCatch".
+
+              csunf comp; allsimpl.
+              apply compute_step_try_success in comp.
+              repndors; exrepnd; subst; auto.
+            }
+
+            {
+              SSSCase "NParallel".
+
+              csunf comp; allsimpl.
+              apply compute_step_parallel_success in comp.
+              repndors; exrepnd; subst; auto.
+            }
+
+            {
+              SSSCase "NCompOp".
+
+              apply compute_step_ncompop_can1_success in comp; repnd.
+              repndors; exrepnd; allsimpl; subst; tcsp.
+
+              - csunf; simpl.
+                dcwf h.
+
+              - rewrite compute_step_ncompop_ncanlike2; auto.
+                dcwf h.
+                pose proof (ind t t []) as q; clear ind.
+                repeat (autodimp q hyp); eauto 2 with slow.
+                apply q in comp4; clear q.
+                rewrite comp4; auto.
+
+              - csunf; simpl.
+                apply isexc_implies2 in comp1; exrepnd; subst.
+                dcwf h; simpl; auto.
+            }
+
+            {
+              SSSCase "NArithOp".
+
+              apply compute_step_narithop_can1_success in comp; repnd.
+              repndors; exrepnd; allsimpl; subst; tcsp.
+
+              - csunf; simpl.
+                dcwf h.
+
+              - rewrite compute_step_narithop_ncanlike2; auto.
+                dcwf h.
+                pose proof (ind t t []) as q; clear ind.
+                repeat (autodimp q hyp); eauto 2 with slow.
+                apply q in comp4; clear q.
+                rewrite comp4; auto.
+
+              - csunf; simpl.
+                apply isexc_implies2 in comp1; exrepnd; subst.
+                dcwf h; simpl; auto.
+            }
+
+            {
+              SSSCase "NCanTest".
+
+              csunf comp; allsimpl.
+              apply compute_step_can_test_success in comp.
+              repndors; exrepnd; subst; auto.
+            }
+
+          + SSCase "NCan".
+
+            csunf comp; allsimpl.
+            remember (compute_step lib (oterm (NCan ncan2) bts)) as c.
+            destruct c; allsimpl; ginv.
+            symmetry in Heqc.
+
+            pose proof (ind (oterm (NCan ncan2) bts) (oterm (NCan ncan2) bts) []) as q; clear ind.
+            repeat (autodimp q hyp); eauto 2 with slow.
+            apply q in Heqc; clear q.
+            csunf; simpl.
+            rewrite Heqc; auto.
+
+          + SSCase "Exc".
+
+            csunf comp; allsimpl.
+            apply compute_step_catch_success in comp.
+            repndors; exrepnd; subst; allsimpl; ginv.
+
+            * csunf; simpl; auto.
+
+            * csunf; simpl; auto.
+              rewrite compute_step_catch_if_diff; auto.
+
+          + SSCase "Abs".
+
+            csunf comp; allsimpl.
+            remember (compute_step lib (oterm (Abs abs2) bts)) as c.
+            destruct c; allsimpl; ginv.
+            symmetry in Heqc.
+
+            pose proof (ind (oterm (Abs abs2) bts) (oterm (Abs abs2) bts) []) as q; clear ind.
+            repeat (autodimp q hyp); eauto 2 with slow.
+            apply q in Heqc; clear q.
+            csunf; simpl.
+            rewrite Heqc; auto.
+      }
+
+      {
+        csunf comp; allsimpl.
+        apply compute_step_fresh_success in comp; exrepnd; subst.
+        repndors; exrepnd; subst; ginv.
+
+        - csunf; simpl; boolvar; auto.
+
+        - rewrite compute_step_fresh_if_isvalue_like2; auto.
+
+        - rewrite compute_step_fresh_if_isnoncan_like; auto.
+
+          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom t))) [n]) as q; clear ind.
+          repeat (autodimp q hyp); eauto 2 with slow.
+          { rewrite simple_osize_subst; eauto 2 with slow. }
+          apply q in comp2; clear q.
+          rewrite comp2; simpl; auto.
+      }
+
+    + SCase "Exc".
+
+      csunf comp; allsimpl; ginv.
+
+    + SCase "Abs".
+
+      csunf comp; allsimpl.
+      apply compute_step_lib_success in comp.
+      exrepnd; subst.
+
+      csunf; simpl.
+      destruct e.
+      apply (found_entry_implies_compute_step_lib_success _ _ _ _ _ _ correct).
+
+      apply found_entry_add_new_abs; auto.
+Qed.
+
+Lemma approx_nil_abs2bot_1 {o} :
+  forall (t : @NTerm o), isprog t -> approx [] t (abs2bot t).
+Proof.
+  cofix CIH.
+
+  introv isp.
+  constructor.
+  unfold close_comput; dands; eauto 3 with slow;
+  introv comp.
+
+  - SearchAbout abs2bot.
+
 Qed.
 
 Lemma approx_nil_abs2bot_1 {o} :
@@ -1179,8 +1675,56 @@ Proof.
     apply isprog_vterm in isp; tcsp.
 
   - Case "sterm".
-    apply implies_approx_sterm.
-    SearchAbout approx sterm.
+    apply implies_approx_sterm; eauto 3 with slow.
+    introv; apply ind.
+    allrw @isprog_eq; apply isprogram_sterm_implies_isprogram_apply; auto.
+
+  - Case "oterm".
+    destruct op; allsimpl.
+
+    + apply approx_congruence_sub; eauto 3 with slow.
+
+      * apply lblift_sub_eq; rw map_length; dands; auto.
+        introv i.
+        rewrite combine_map_l in i.
+        rw in_map_iff in i; exrepnd; ginv.
+        destruct a as [l t]; allsimpl.
+
+        unfold blift_sub.
+        exists l t (abs2bot t); dands; eauto 3 with slow.
+        left; dands; auto; try (complete (intro xx; ginv)).
+        apply approx_open_simpler_equiv.
+        apply isprog_ot_iff in isp; repnd.
+        applydup isp in i1.
+        apply isprogram_bt_eq in i0.
+        apply isprog_vars_isprogrambt in i0.
+        unfold simpl_olift; dands; eauto 3 with slow.
+
+        {
+          pose proof (implies_props_abs2bot t) as h; repnd.
+          eauto 3 with slow.
+        }
+
+        introv ps isp1 isp2.
+        repeat (rw @cl_lsubst_lsubst_aux; eauto 2 with slow); simpl.
+
+
+Lemma lsubst_aux_abs2bot {o} :
+  forall (t : @NTerm o) sub,
+    lsubst_aux (abs2bot t) sub = abs2bot (lsubst_aux t sub).
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; introv; simpl; auto.
+
+  - Case "vterm".
+    remember (sub_find sub v) as sf; symmetry in Heqsf; destruct sf; simpl; auto.
+Qed.
+
+
+        rw @cl_lsubst_lsubst_aux; eauto 2 with slow.
+        pose proof (ind t t l i1) as h; clear ind.
+        repeat (autodimp h hyp); eauto 3 with slow.
+
+        SearchAbout blift_sub.
 Qed.
 
 Lemma cequiv_nil_abs2bot {o} :

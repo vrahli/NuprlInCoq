@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -55,6 +60,132 @@ Proof.
   inversion isp; auto.
 Qed.
 Hint Resolve isprogram_implies_nt_wf : slow.
+
+Definition is_prog_refl {o} (R : bin_rel (@NTerm o)) :=
+  forall a b, isprog a -> alpha_eq a b -> R a b.
+
+Lemma is_prog_refl_or {o} :
+  forall r1 r2 : @bin_rel (@NTerm o),
+    (is_prog_refl r1 [+] is_prog_refl r2)
+    -> is_prog_refl (r1 \2/ r2).
+Proof.
+  introv h isp aeq; simpl.
+  repndors;[left|right]; auto.
+Qed.
+Hint Resolve is_prog_refl_or : slow.
+
+Lemma is_prog_refl_or_left {o} :
+  forall r1 r2 : @bin_rel (@NTerm o),
+    is_prog_refl r1
+    -> is_prog_refl (r1 \2/ r2).
+Proof.
+  introv h isp aeq; simpl; auto.
+Qed.
+Hint Resolve is_prog_refl_or_left : slow.
+
+Lemma is_prog_refl_or_right {o} :
+  forall r1 r2 : @bin_rel (@NTerm o),
+    is_prog_refl r2
+    -> is_prog_refl (r1 \2/ r2).
+Proof.
+  introv h isp aeq; simpl; auto.
+Qed.
+Hint Resolve is_prog_refl_or_right : slow.
+
+Theorem approx_acc_resp_refl {p} :
+  forall (lib : library)
+         (l r0 : bin_rel (@NTerm p))
+         (resp_l_l : respects_alpha_l l)
+         (resp_r_l : respects_alpha_r l)
+         (resp_l_r0 : respects_alpha_l r0)
+         (resp_r_r0 : respects_alpha_r r0)
+         (resp_refl_l : is_prog_refl l)
+         (OBG : forall (r: bin_rel NTerm)
+                       (INC: r0 =2> r)
+                       (CIH: l =2> r)
+                       (resp_r : respects_alpha_r r)
+                       (resp_l : respects_alpha_l r)
+                       (resp_refl : is_prog_refl r),
+                  l =2> approx_aux lib r),
+    l =2> approx_aux lib r0.
+Proof.
+  intros.
+  assert (SIM: approx_aux lib (r0 \2/ l) x0 x1).
+  { apply OBG; eauto 2 with slow. }
+  clear PR; revert x0 x1 SIM; cofix CIH.
+  intros; destruct SIM; econstructor; eauto.
+  invertsna c Hcl. repnd.
+  unfold close_comput.
+  dands; eauto.
+
+  - introv Hcomp.
+    apply Hcl2 in Hcomp.
+    exrepnd. exists tr_subterms. split; eauto.
+    eapply le_lblift2; eauto.
+    apply le_olift.
+
+    unfold le_bin_rel.
+    introv Hap.
+    repndors; tcsp.
+    left.
+    apply CIH; apply OBG; eauto 3 with slow.
+
+  - introv Hcomp.
+    apply Hcl3 in Hcomp; exrepnd.
+    exists a' e'; dands; auto; repndors; auto; tcsp;
+    try (complete (left; apply CIH; apply OBG; tcsp; eauto 3 with slow)).
+
+  - introv comp.
+    apply Hcl4 in comp; exrepnd.
+    eexists; dands; eauto.
+    introv.
+    pose proof (comp0 n) as h; clear comp0; repndors; tcsp.
+    left.
+    apply CIH; apply OBG; tcsp; eauto 3 with slow.
+Qed.
+
+Lemma approx_aux_refl {o} :
+  forall lib r (t : @NTerm o),
+    isprogram t
+    -> approx_aux lib r t t.
+Proof.
+  unfold approx.
+  intros lib r.
+  pose proof (@approx_acc o lib (fun x y => isprogram x # y=x)) as HH.
+  allsimpl.
+  assert (forall x0 x1, isprogram x0 # x1 = x0 -> approx_aux lib r x0 x1);[| spcf;fail].
+  eapply HH.
+  intros.
+  rename x0 into t.
+  exrepnd. subst.
+  constructor.
+  unfold close_comput; dands; tcsp; introv comp; auto.
+
+  - exists tl_subterms. split; auto.
+    unfold lblift.  split; auto.
+    intros ? Hlt. unfold blift.
+    apply preserve_program in comp; auto.
+    pose proof (selectbt_in2 _ tl_subterms Hlt) as Hbt.
+    exrepnd.
+    destruct bt as [lv nt].
+    rw Hbt0.
+    exists lv nt nt.
+    split; eauto with slow.
+    apply isprogram_ot_iff in comp. repnd.
+    apply comp in Hbt1. repnud Hbt1.
+    inverts Hbt1.
+    unfold olift.
+    dands; auto.
+
+  - applydup @preserve_program_exc2 in comp; auto; repnd.
+    exists a e; dands; auto.
+
+  - eexists; dands; eauto.
+    introv.
+    applydup @reduces_to_preserves_program in comp as wf; auto.
+    right; apply CIH; dands; eauto 3 with slow.
+Qed.
+Hint Resolve approx_aux_refl : slow.
 
 Lemma approx_shadowed_fresh1 {o} :
   forall lib v (t : @NTerm o),
@@ -334,8 +465,14 @@ Proof.
 
     destruct u as [vu|f'|op bs]; allsimpl; GC; try (complete (inversion q0));[].
 
-    exists f'; dands; auto;[].
     apply alpha_eq_sym in q0; inversion q0; subst; auto.
+
+    eexists; dands; eauto.
+    introv.
+
+    applydup @alphaeq_preserves_program in q0; auto.
+    applydup q2 in ispu.
+    left; eapply approxr_alpha_rw_r_aux;[|eauto|]; eauto 3 with slow.
 Qed.
 
 Lemma map_combine_right :
@@ -651,6 +788,12 @@ Proof.
       csunf; simpl; auto. }
 
     exists f2; dands; auto.
+    applydup @reduces_to_preserves_program in comp; auto.
+
+    introv; left.
+    pose proof (imp n) as h.
+    eapply respects_alpha_r_approx_aux;try (exact h); auto.
+    eauto 3 with slow.
 Qed.
 
 Lemma cequiv_shadowed_fresh {o} :
@@ -663,3 +806,10 @@ Proof.
   - apply approx_shadowed_fresh1; auto.
   - apply approx_shadowed_fresh2; auto.
 Qed.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
+*** End:
+*)

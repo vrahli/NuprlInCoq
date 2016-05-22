@@ -1115,7 +1115,9 @@ Proof.
     applydup @computes_to_value_mk_less in comp; exrepnd; eauto 2 with slow;
     try (apply wf_less; eauto 3 with slow).
 
-    exists f; dands; auto.
+    exists f; dands; auto;
+    [|destruct comp as [comp isv]; inversion isv;
+       introv;left;apply approx_refl; eauto 3 with slow].
     eapply reduces_to_trans;
       [apply reduce_to_prinargs_comp;
         [unfold computes_to_value; dands;[exact comp1|]
@@ -1335,7 +1337,9 @@ Proof.
     applydup @computes_to_value_mk_less in comp; exrepnd; eauto 2 with slow;
     try (apply wf_less; eauto 3 with slow).
 
-    exists f; dands; auto.
+    exists f; dands; auto;
+    [|destruct comp as [comp isv]; inversion isv;
+       introv;left;apply approx_refl; eauto 3 with slow].
     eapply reduces_to_trans;
       [apply reduce_to_prinargs_comp;
         [unfold computes_to_value; dands;[exact comp1|]
@@ -1734,7 +1738,6 @@ Proof.
     pose proof (eq_kseq_nout_0 lib (ntseqc2ntseq s) (cbv_emseqc v)) as h1.
     apply (seq2kseq_prop2_nout _ v) in h1.
     eapply cequivc_preserves_nout_on_seq in b;[|exact h1]; auto.
-    Print seq_normalizable.
     eapply cequivc_preserves_nout_on_seq in b;[|apply cequivc_sym;exact nc]; auto.
   }
 

@@ -188,7 +188,7 @@ Proof.
 
   - Case "sterm".
     allsimpl.
-    inversion Hap as [|? ? ? ? imp aop|]; subst; clear Hap.
+    inversion Hap as [|? ? ? ? wf1 wf2 imp aop|]; subst; clear Hap.
     econstructor; eauto.
     apply (approx_open_lsubst_congr _ _ _ (combine lvi lnta')) in aop; eauto 3 with slow.
     autorewrite with slow in *.
@@ -1070,11 +1070,11 @@ Lemma howe_lemma2_seq {o} :
     -> isprogram b
     -> approx_star lib (sterm f) b
     -> {f' : ntseq
-        & (forall n, alpha_eq (f n) (f' n))
+        & (forall n, approx_star lib (f n) (f' n))
         # computes_to_seq lib b f'}.
 Proof.
   introv Hprt Hprb Hap.
-  inversion Hap as [|? ? ? ? imp aop|]; clear Hap; subst.
+  inversion Hap as [|? ? ? ? wf1 wf2 imp aop|]; clear Hap; subst.
 
   apply approx_open_approx in aop; eauto 3 with slow.
   invertsna aop Hclose.
@@ -1083,6 +1083,11 @@ Proof.
   exrepnd.
   eexists; dands;[|eauto].
   introv; eauto 3 with slow.
+  pose proof (hyp0 n) as h; clear hyp0.
+  pose proof(imp n) as q; clear imp.
+  eapply approx_star_open_trans;[eauto|].
+  apply approx_implies_approx_open; auto.
+  apply remove_bot_approx; auto.
 Qed.
 
 Lemma howe_lemma2_implies_iscan {p} :
@@ -1107,8 +1112,9 @@ Proof.
     exrepnd.
     unfold computes_to_value.
     unfold computes_to_seq in apr0.
+    applydup @reduces_to_preserves_program in apr0; auto.
     eexists;dands;[|eauto| |]; simpl; eauto 3 with slow.
-    apply alpha_implies_approx_star; eauto 3 with slow.
+    eapply apss;[| |eauto|]; eauto 3 with slow.
 Qed.
 
 Lemma howe_lemma2_exc {p} :
@@ -2047,15 +2053,20 @@ Proof.
         repeat (autodimp z hyp); eauto 2 with slow;[].
         apply approx_star_nat in z; auto.
 
-        apply approx_open_implies_approx_star.
+        pose proof (q1 n) as qn; clear q1.
+
+        apply no_change_after_val_like with (k2:=k) in XX1; eauto 2 with slow; try omega.
+        make_red_val_like XX1 ca1.
+        applydup @reduces_to_preserves_program in q0; auto.
+        pose proof (Hi (f0 n) a (f' n)) as q.
+        repeat (autodimp q hyp); eauto 2 with slow.
+
+        eapply approx_star_open_trans;[exact q|].
+
         apply approx_implies_approx_open.
-        eapply approx_trans;
-          [apply reduces_to_implies_approx_eauto;[|eexists;exact XX1];eauto 3 with slow
-          |].
-        eapply approx_trans;
-          [|apply reduces_to_implies_approx_eauto;[|apply apply_sterm_nat_implies; eauto];
-            eauto 3 with slow].
-        apply alpha_implies_approx3; eauto 3 with slow.
+        apply reduces_to_implies_approx_eauto;
+          [|apply apply_sterm_nat_implies;[exact q0|exact z] ];
+          eauto 3 with slow.
 
       - apply isexc_implies in XX1; auto; exrepnd; subst.
         apply no_change_after_val_like with (k2:=k) in XX2; try splr; try omega.
@@ -2354,8 +2365,7 @@ Proof.
         apply no_change_after_val_like with (k2:=k) in XX0; eauto 2 with slow; try omega;[].
         make_red_val_like XX0 ca0.
         pose proof (Hi (f n) a (f' n)) as z.
-        repeat (autodimp z hyp); eauto 2 with slow;[|].
-        { apply alpha_implies_approx_star; eauto 3 with slow. }
+        repeat (autodimp z hyp); eauto 2 with slow;[].
 
         eapply approx_star_open_trans;[eauto|].
         apply approx_implies_approx_open.
@@ -2387,8 +2397,7 @@ Proof.
           apply no_change_after_val_like with (k2:=k) in XX2; eauto 2 with slow; try omega;[].
           make_red_val_like XX2 caf.
           pose proof (Hi (f0 n) a (f' n)) as w.
-          repeat (autodimp w hyp); eauto 2 with slow;[|].
-          { apply alpha_implies_approx_star; eauto 3 with slow. }
+          repeat (autodimp w hyp); eauto 2 with slow;[].
           eapply approx_star_open_trans;[eauto|].
 
           apply approx_implies_approx_open.
@@ -2577,14 +2586,14 @@ Proof.
       apply (Hi _ _ f0) in h; auto.
       apply howe_lemma2_seq in h; exrepnd; auto.
 
+      applydup @reduces_to_preserves_program in h0; auto.
+
       apply no_change_after_val_like with (k2:=k) in XX0; auto.
       make_red_val_like XX0 ca0.
       apply (Hi _ _ (mk_apply (mk_ntseq f') (oterm (NCan NFix) [bterm [] (sterm f')]))) in ca0;
         try prove_isprogram;
-        [|apply isprogram_apply; eauto 2 with slow;
-          apply isprogram_fix; eauto 2 with slow
-         |repeat (prove_approx_star; eauto 2 with slow; prove_isprogram);
-           try (apply alpha_implies_approx_star; eauto 3 with slow)];[].
+        [|repeat (prove_approx_star; eauto 2 with slow; prove_isprogram);
+           eapply apss;try (exact h1); eauto 3 with slow].
 
       eapply approx_star_open_trans;[exact ca0|].
       apply approx_implies_approx_open.
@@ -4972,9 +4981,10 @@ Proof.
 
   - Case "soseq".
     inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
-    eapply apss;[introv; apply alphaeq_eq;apply F|].
-    apply approx_open_refl.
-    apply nt_wf_eq; auto.
+    eapply apss; try (apply approx_open_refl); eauto 3 with slow.
+    introv.
+    apply alpha_implies_approx_star; eauto 3 with slow.
+    apply alphaeq_eq;apply F.
 
   - Case "soterm".
     applydup @eq_sodoms_implies_eq_so_doms in eqdoms as eqdoms'.
@@ -5396,13 +5406,14 @@ Definition get_op {o} (t : @NTerm o) : Opid :=
     | oterm op _ => op
   end.
 
-Inductive same_value_like {o} : @NTerm o -> @NTerm o -> Type :=
-| svl_c : forall c bs1 bs2, same_value_like (oterm (Can c) bs1) (oterm (Can c) bs2)
-| svl_e : forall bs1 bs2, same_value_like (oterm Exc bs1) (oterm Exc bs2)
+Inductive same_value_like {o} lib : @NTerm o -> @NTerm o -> Type :=
+| svl_c : forall c bs1 bs2, same_value_like lib (oterm (Can c) bs1) (oterm (Can c) bs2)
+| svl_e : forall bs1 bs2, same_value_like lib (oterm Exc bs1) (oterm Exc bs2)
 | svl_s :
     forall f1 f2,
-      (forall n, alpha_eq (f1 n) (f2 n))
-      -> same_value_like (sterm f1) (sterm f2).
+      (*(forall n, alpha_eq (f1 n) (f2 n))*)
+      (forall n, approx_star lib (f1 n) (f2 n))
+      -> same_value_like lib (sterm f1) (sterm f2).
 Hint Constructors same_value_like.
 
 Lemma approx_starbts_nil {o} :
@@ -5419,7 +5430,7 @@ Lemma howe_lemma2_implies_same_value_like {o} :
     -> isvalue_like t
     -> approx_star lib t u
     -> {v : NTerm
-        & same_value_like t v
+        & same_value_like lib t v
         # approx_starbts lib (get_op t) (get_bterms t) (get_bterms v)
         # reduces_to lib u v}.
 Proof.
@@ -5449,10 +5460,10 @@ Proof.
 Qed.
 
 Lemma same_value_like_alpha_eq_r {o} :
-  forall (t u v : @NTerm o),
-    same_value_like t u
+  forall lib (t u v : @NTerm o),
+    same_value_like lib t u
     -> alpha_eq u v
-    -> same_value_like t v.
+    -> same_value_like lib t v.
 Proof.
   introv svl aeq.
   inversion svl as [| |? ? imp1]; clear svl; subst;
@@ -5461,10 +5472,10 @@ Proof.
 Qed.
 
 Lemma same_value_like_alpha_eq_l {o} :
-  forall (t u v : @NTerm o),
-    same_value_like t u
+  forall lib (t u v : @NTerm o),
+    same_value_like lib t u
     -> alpha_eq t v
-    -> same_value_like v u.
+    -> same_value_like lib v u.
 Proof.
   introv svl aeq.
   inversion svl as [| |? ? imp1]; clear svl; subst;
@@ -5564,8 +5575,8 @@ Proof.
 Qed.
 
 Lemma same_value_like_implies_same_op {o} :
-  forall op1 op2 (bs1 bs2 : list (@BTerm o)),
-    same_value_like (oterm op1 bs1) (oterm op2 bs2)
+  forall lib op1 op2 (bs1 bs2 : list (@BTerm o)),
+    same_value_like lib (oterm op1 bs1) (oterm op2 bs2)
     -> op1 = op2.
 Proof.
   introv s; inversion s; auto.
@@ -6486,6 +6497,7 @@ Proof.
 Qed.
 Hint Rewrite @subst_sterm : slow.
 
+(*
 Lemma same_value_like_sterm_implies_approx_star {o} :
   forall lib (f1 f2 : @ntseq o),
     nt_wf (sterm f2)
@@ -6498,6 +6510,7 @@ Proof.
   apply approx_open_refl; auto.
 Qed.
 Hint Resolve same_value_like_sterm_implies_approx_star : slow.
+*)
 
 Lemma approx_star_pushdown_fresh_if_subst {o} :
   forall lib (t1 t2 : @NTerm o) v1 v2 a,
@@ -6505,7 +6518,7 @@ Lemma approx_star_pushdown_fresh_if_subst {o} :
     -> !LIn a (get_utokens t2)
     -> isprog_vars [v1] t1
     -> isprog_vars [v2] t2
-    -> same_value_like (subst t1 v1 (mk_utoken a)) (subst t2 v2 (mk_utoken a))
+    -> same_value_like lib (subst t1 v1 (mk_utoken a)) (subst t2 v2 (mk_utoken a))
     -> approx_starbts lib (get_op t1) (get_bterms (subst t1 v1 (mk_utoken a))) (get_bterms (subst t2 v2 (mk_utoken a)))
     -> approx_star lib (pushdown_fresh v1 t1) (pushdown_fresh v2 t2).
 Proof.
@@ -6597,6 +6610,9 @@ Proof.
   - autorewrite with slow in *.
     destruct t2 as [v2|f2|op bs]; allsimpl; boolvar; allsimpl;
     try (complete (inversion svl)); eauto 4 with slow.
+    inversion svl; subst; clear svl.
+    allrw @isprog_vars_eq; repnd.
+    econstructor;[| |eauto|]; eauto 3 with slow.
 
   - allsimpl.
     destruct t2 as [x|f|op' bs']; allsimpl; GC; try (complete (inversion svl)).
@@ -7241,7 +7257,8 @@ Proof.
     + apply howe_lemma2_seq in ap; auto; exrepnd.
       apply computes_to_val_like_in_max_k_steps_if_isvalue_like in comp;
         eauto 2 with slow; subst.
-      econstructor;[eauto|].
+      applydup @reduces_to_preserves_program in ap0; auto.
+      econstructor;[| |eauto|]; eauto 3 with slow.
       apply approx_implies_approx_open.
       apply reduces_to_implies_approx1; auto.
 
@@ -7423,7 +7440,11 @@ Proof.
     applydup @reduces_to_preserves_program in comp; auto.
     eapply howe_lemma3_seq in Has0; eauto.
     apply howe_lemma2_seq in Has0; auto; exrepnd.
+    applydup @reduces_to_preserves_program in Has2; auto.
     eexists; dands; eauto.
+    introv.
+    pose proof (Has0 n) as q; clear Has0.
+    right; apply Cih; dands; eauto 3 with slow.
 Qed.
 
 (* end hide *)

@@ -679,14 +679,18 @@ Proof.
     { exists x; auto. }
 
     { introv.
-      apply alpha_stable; spcast.
+      left.
+      apply CIH; eauto 3 with slow.
+      spcast.
       inversion h as [cl].
       unfold close_comput in cl; repnd.
       apply cl4 in comp; exrepnd.
       allapply @reduces_in_atmost_k_steps_implies_reduces_to.
       eapply reduces_to_eq_val_like in ca1;
         [|exact comp2|eauto 2 with slow|eauto 2 with slow].
-      allunfold @mk_ntseq; ginv; auto. }
+      allunfold @mk_ntseq; ginv; auto.
+      pose proof (comp1 n) as q; repndors; tcsp.
+      inversion q. }
 Qed.
 
 Lemma cequiv_stable {o} :

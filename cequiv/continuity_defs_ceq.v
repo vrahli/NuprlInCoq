@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -488,8 +492,11 @@ Proof.
     exrepnd.
     exists (sterm f'); dands; eauto 3 with slow.
     apply howetheorem1; eauto 3 with slow.
-    econstructor; eauto.
-    apply approx_open_refl; eauto 3 with slow.
+    applydup @reduces_to_preserves_program in h1; auto.
+    econstructor; eauto; try (apply approx_open_refl); eauto 3 with slow.
+    introv.
+    apply le_bin_rel_approx1_eauto.
+    apply remove_bot_approx; auto.
 Qed.
 
 Lemma approx_sterm {o} :
@@ -498,7 +505,7 @@ Lemma approx_sterm {o} :
     -> approx lib t t'
     -> {f' : ntseq
         & (t' =v>(lib) (sterm f'))
-        # (forall n, alpha_eq (f n) (f' n)) }.
+        # (forall n, approx lib (f n) (f' n)) }.
 Proof.
   introv comp ap.
   applydup @approx_relates_only_progs in ap; repnd.
@@ -509,7 +516,9 @@ Proof.
   apply howe_lemma2_seq in ap; auto.
   exrepnd.
   exists f'; dands; auto.
-  unfold computes_to_value; dands; eauto 3 with slow.
+  - unfold computes_to_value; dands; eauto 3 with slow.
+  - introv.
+    apply howetheorem1; auto; eauto 3 with slow.
 Qed.
 
 Lemma approx_open_mk_less {o} :
@@ -667,21 +676,27 @@ Proof.
 
     + eapply approx_sterm in h5;[|eauto]; exrepnd.
       allunfold @computes_to_value; repnd.
-      exists f'; dands; auto;[].
-      eapply reduces_to_trans;
+      exists f'; dands; auto;[|].
+      {
+        eapply reduces_to_trans;
         [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
-      eapply reduces_to_if_split2;
-        [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
-      boolvar;tcsp;try omega.
+        eapply reduces_to_if_split2;
+          [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
+        boolvar;tcsp;try omega.
+      }
+      { introv; apply remove_bot_approx; auto. }
 
     + eapply approx_sterm in h5;[|eauto]; exrepnd.
       allunfold @computes_to_value; repnd.
-      exists f'; dands; auto;[].
-      eapply reduces_to_trans;
+      exists f'; dands; auto;[|].
+      {
+        eapply reduces_to_trans;
         [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
-      eapply reduces_to_if_split2;
-        [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
-      boolvar;tcsp;try omega.
+        eapply reduces_to_if_split2;
+          [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
+        boolvar;tcsp;try omega.
+      }
+      { introv; apply remove_bot_approx; auto. }
 Qed.
 
 Lemma approx_open_mk_less_than {o} :
@@ -2731,6 +2746,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
 *** End:
 *)

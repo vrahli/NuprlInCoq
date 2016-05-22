@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -1471,7 +1475,7 @@ Proof.
     repndors; repnd; subst;[|].
 
     + eapply approx_sterm in h3;[|eauto]; exrepnd.
-      exists f'; dands; auto.
+      exists f'; dands; auto;[|introv; left; apply h0].
       eapply reduces_to_trans;
         [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
       eapply reduces_to_if_split2;
@@ -1483,7 +1487,7 @@ Proof.
       allunfold @computes_to_value; sp.
 
     + eapply approx_sterm in h4;[|eauto]; exrepnd.
-      exists f'; dands; auto.
+      exists f'; dands; auto;[|introv; left; apply h0].
       eapply reduces_to_trans;
         [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
       eapply reduces_to_if_split2;
@@ -1807,7 +1811,10 @@ Proof.
     repndors; repnd; subst.
 
     + exists f.
-      dands; auto.
+      dands; auto;
+      [|introv; left; apply approx_refl;
+        destruct comp1 as [comp isv];
+        inversion isv; eauto 3 with slow].
 
       allunfold @computes_to_value; repnd; dands; auto.
       eapply reduces_to_trans;
@@ -1833,7 +1840,10 @@ Proof.
       repndors; repnd; subst.
 
       * exists f.
-        dands; auto.
+        dands; auto;
+        [|introv; left; apply approx_refl;
+          destruct comp1 as [comp isv];
+          inversion isv; eauto 3 with slow].
 
         allunfold @computes_to_value; repnd; dands; auto.
         eapply reduces_to_trans;
@@ -1843,7 +1853,10 @@ Proof.
         boolvar; try omega; auto.
 
       * exists f.
-        dands; auto.
+        dands; auto;
+        [|introv; left; apply approx_refl;
+          destruct comp1 as [comp isv];
+          inversion isv; eauto 3 with slow].
 
         allunfold @computes_to_value; repnd; dands; auto.
         eapply reduces_to_trans;
@@ -2062,7 +2075,10 @@ Proof.
     repndors; repnd; subst.
 
     + exists f.
-      dands; auto.
+      dands; auto;
+      [|introv; left; apply approx_refl;
+        destruct comp1 as [comp isv];
+        inversion isv; eauto 3 with slow].
 
       allunfold @computes_to_value; repnd; dands; auto.
       eapply reduces_to_trans;
@@ -2089,7 +2105,10 @@ Proof.
       repndors; repnd; subst; ginv.
 
       * exists f.
-        dands; auto.
+        dands; auto;
+        [|introv; left; apply approx_refl;
+          destruct comp1 as [comp isv];
+          inversion isv; eauto 3 with slow].
 
         allunfold @computes_to_value; repnd; dands; auto.
         eapply reduces_to_trans;
@@ -2099,7 +2118,10 @@ Proof.
         boolvar; try omega; tcsp.
 
       * exists f.
-        dands; auto.
+        dands; auto;
+        [|introv; left; apply approx_refl;
+          destruct comp1 as [comp isv];
+          inversion isv; eauto 3 with slow].
 
         allunfold @computes_to_value; repnd; dands; auto.
         eapply reduces_to_trans;
