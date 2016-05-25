@@ -1311,7 +1311,10 @@ Proof.
 
     right.
 
-    (* It should be allowed to only replace some abstractions by bottom! *)
+   (* It should be allowed to only replace some abstractions by bottom!
+       Maybe using something like (lsubst (abs2bot u) sub)
+    *)
+
 
   -
 
