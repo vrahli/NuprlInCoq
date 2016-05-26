@@ -1588,11 +1588,16 @@ Lemma exists_all_defined {o} :
          # isotrue (all_abstractions_are_defined lib (unfold_lib lib t)).
 Proof.
   induction lib; intro nodef; simpl.
-  - introv isp; dands.
-    + unfold unfold_lib; simpl.
 
-      apply cequiv_refl; eauto 2 with slow.
-    + SearchAbout all_abstractions_are_defined [].
+  - introv isp; dands.
+
+    + unfold unfold_lib; simpl.
+      apply cequiv_nil_abs2bot; auto.
+
+    + Print all_abstractions_are_defined.
+      SearchAbout all_abstractions_are_defined [].
+      Print no_undefined_abs_in_lib.
+      Print no_undefined_abs_in_entry.
 
 Lemma isotrue_all_abstractions_are_defined_nil {o} :
   forall (t : @NTerm o), isotrue (all_abstractions_are_defined [] t).
