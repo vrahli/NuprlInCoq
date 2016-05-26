@@ -495,6 +495,7 @@ Proof.
   allunfold @diff_abs_bot_alpha; exrepnd.
   exists u1 u2; dands; eauto 3 with slow.
 Qed.
+Hint Resolve diff_abs_bot_alpha_l : slow.
 
 Lemma diff_abs_bot_alpha_r {o} :
   forall (t1 t2 t3 : @NTerm o),
@@ -506,6 +507,7 @@ Proof.
   allunfold @diff_abs_bot_alpha; exrepnd.
   exists u1 u2; dands; eauto 3 with slow.
 Qed.
+Hint Resolve diff_abs_bot_alpha_r : slow.
 
 Definition diff_abs_bot_bterms {o} (bs1 bs2 : list (@BTerm o)) :=
   br_bterms diff_abs_bot_b bs1 bs2.
@@ -1217,7 +1219,7 @@ Proof.
   apply diff_abs_bot_subst_utokens_aux; auto.
 Qed.
 
-Lemma compute_step_abs2bot_lsubst_aux {o} :
+Lemma compute_step_diff_abs_bot {o} :
   forall (t : @NTerm o) t' u,
     wf_term t
     -> wf_term t'
@@ -1327,7 +1329,8 @@ Proof.
             apply compute_step_try_success in comp; exrepnd; subst; allsimpl.
             invdiff.
             csunf; simpl.
-            eexists; dands; eauto 7 with slow.
+            eexists; dands; eauto 4 with slow.
+            apply diff_abs_bot_alpha_atom_eq; eauto 3 with slow.
           }
 
           {
@@ -1519,7 +1522,8 @@ Proof.
               repndors; exrepnd; subst; auto.
               invdiff.
               csunf; simpl.
-              eexists; dands; eauto 7 with slow.
+              eexists; dands; eauto 3 with slow.
+              apply diff_abs_bot_alpha_atom_eq; eauto 3 with slow.
             }
 
             {
@@ -1807,6 +1811,200 @@ Proof.
       apply compute_step_lib_success in comp.
       exrepnd; subst.
       unfold found_entry in comp0; allsimpl; ginv.
+Qed.
+
+Lemma hasvalue_like_preserves_alpha_eq {o} :
+  forall lib (t u : @NTerm o),
+    wf_term t
+    -> alpha_eq t u
+    -> hasvalue_like lib t
+    -> hasvalue_like lib u.
+Proof.
+  introv wf aeq comp.
+  allunfold @hasvalue_like; exrepnd.
+  pose proof (reduces_to_steps_alpha lib t u v) as h.
+  repeat (autodimp h hyp); eauto 3 with slow.
+  exrepnd.
+  exists u0; dands; eauto 3 with slow.
+Qed.
+
+Lemma compute_step_diff_abs_bot_alpha {o} :
+  forall (t : @NTerm o) t' u,
+    wf_term t
+    -> wf_term t'
+    -> compute_step [] t = csuccess u
+    -> hasvalue_like [] u
+    -> diff_abs_bot_alpha t t'
+    -> {u' : NTerm
+        & compute_step [] t' = csuccess u'
+        # diff_abs_bot_alpha u u'}.
+Proof.
+  introv wf1 wf2 comp hv diff.
+  unfold diff_abs_bot_alpha in diff; exrepnd.
+  applydup @alphaeq_preserves_wf_term in diff0; auto.
+  applydup @alphaeq_preserves_wf_term in diff2; auto.
+
+  pose proof (compute_step_alpha [] t u1 u) as h.
+  repeat (autodimp h hyp); eauto 3 with slow.
+  exrepnd.
+  applydup (@hasvalue_like_preserves_alpha_eq o []) in h0; eauto 3 with slow.
+
+  pose proof (compute_step_diff_abs_bot u1 u2 t2') as q.
+  repeat (autodimp q hyp).
+  exrepnd.
+
+  pose proof (compute_step_alpha [] u2 t' u') as z.
+  repeat (autodimp z hyp); eauto 3 with slow.
+  exrepnd.
+
+  eexists; dands; eauto 3 with slow.
+Qed.
+
+Lemma reduces_to_diff_abs_bot_alpha {o} :
+  forall (t : @NTerm o) t' u,
+    wf_term t
+    -> wf_term t'
+    -> reduces_to [] t u
+    -> hasvalue_like [] u
+    -> diff_abs_bot_alpha t t'
+    -> {u' : NTerm
+        & reduces_to [] t' u'
+        # diff_abs_bot_alpha u u'}.
+Proof.
+  introv wf1 wf2 comp.
+  allunfold @reduces_to; exrepnd.
+  revert dependent t'.
+  revert dependent t.
+  induction k; introv wf1 comp wf2 hv diff.
+
+  - allrw @reduces_in_atmost_k_steps_0; subst.
+    exists t'.
+    dands; eauto 3 with slow.
+    exists 0.
+    apply reduces_in_atmost_k_steps_0; auto.
+
+  - rw @reduces_in_atmost_k_steps_S in comp; exrepnd.
+
+    assert (hasvalue_like [] u0) as hv0.
+    {
+      allunfold @hasvalue_like; exrepnd.
+      exists v; dands; auto.
+      eapply reduces_to_trans;[|exact hv1].
+      exists k; auto.
+    }
+
+    pose proof (compute_step_diff_abs_bot_alpha t t' u0 wf1 wf2 comp1 hv0 diff) as h; exrepnd.
+
+    applydup @preserve_nt_wf_compute_step in comp1; eauto 3 with slow.
+    applydup @preserve_nt_wf_compute_step in h1; eauto 3 with slow.
+
+    pose proof (IHk u0) as q; clear IHk.
+    repeat (autodimp q hyp); eauto 3 with slow.
+    pose proof (q u') as h; clear q.
+    repeat (autodimp h hyp); eauto 3 with slow.
+    exrepnd.
+
+    exists u'0; dands; eauto 3 with slow.
+    exists (S k0).
+    rw @reduces_in_atmost_k_steps_S.
+    eexists; dands; eauto.
+Qed.
+
+Lemma isvalue_like_implies_hasvalue_like {o} :
+  forall lib (t : @NTerm o),
+    isvalue_like t
+    -> hasvalue_like lib t.
+Proof.
+  introv isv.
+  exists t; dands; auto.
+  eauto 3 with slow.
+Qed.
+Hint Resolve isvalue_like_implies_hasvalue_like : slow.
+
+Lemma diff_abs_bot_preserves_iscan {o} :
+  forall (t1 t2 : @NTerm o),
+    diff_abs_bot t1 t2
+    -> iscan t1
+    -> iscan t2.
+Proof.
+  introv d ise.
+  apply iscan_implies in ise; repndors; exrepnd; subst;
+  invdiff; simpl; auto.
+Qed.
+Hint Resolve diff_abs_bot_preserves_iscan : slow.
+
+Lemma diff_abs_bot_alpha_preserves_iscan {o} :
+  forall (t1 t2 : @NTerm o),
+    diff_abs_bot_alpha t1 t2
+    -> iscan t1
+    -> iscan t2.
+Proof.
+  introv d ise.
+  unfold diff_abs_bot_alpha in d; exrepnd.
+  apply alphaeq_preserves_iscan in d0; auto.
+  apply diff_abs_bot_preserves_iscan in d1; auto.
+  apply alpha_eq_sym in d2; apply alphaeq_preserves_iscan in d2; auto.
+Qed.
+Hint Resolve diff_abs_bot_alpha_preserves_iscan : slow.
+
+Lemma computes_to_value_diff_abs_bot_alpha {o} :
+  forall (t : @NTerm o) t' u,
+    isprog t
+    -> isprog t'
+    -> computes_to_value [] t u
+    -> diff_abs_bot_alpha t t'
+    -> {u' : NTerm
+        & computes_to_value [] t' u'
+        # diff_abs_bot_alpha u u'}.
+Proof.
+  introv isp1 isp2 comp diff.
+  allunfold @computes_to_value; repnd.
+  pose proof (reduces_to_diff_abs_bot_alpha t t' u) as h.
+  repeat (autodimp h hyp); eauto 3 with slow.
+  exrepnd.
+  exists u'; dands; eauto 3 with slow.
+  applydup @reduces_to_preserves_program in h1; eauto 3 with slow.
+  apply isv_can; eauto 3 with slow.
+Qed.
+
+Lemma diff_abs_bot_alpha_exception_implies {o} :
+  forall (n e t : @NTerm o),
+    diff_abs_bot_alpha (mk_exception n e) t
+    -> {n' : NTerm
+        & {e' : NTerm
+        & t = mk_exception n' e'
+        # diff_abs_bot_alpha n n'
+        # diff_abs_bot_alpha e e'}}.
+Proof.
+  introv d.
+  unfold diff_abs_bot_alpha in d; exrepnd.
+  apply alpha_eq_exception in d0; exrepnd; subst.
+  unfold mk_exception in d1.
+  invdiff; fold_terms.
+  apply alpha_eq_sym in d2.
+  apply alpha_eq_exception in d2; exrepnd; subst.
+  eexists; eexists; dands; eauto 4 with slow.
+Qed.
+
+Lemma computes_to_exception_diff_abs_bot_alpha {o} :
+  forall (t : @NTerm o) t' n e,
+    isprog t
+    -> isprog t'
+    -> computes_to_exception [] n t e
+    -> diff_abs_bot_alpha t t'
+    -> {n' : NTerm
+        & {e' : NTerm
+        & computes_to_exception [] n' t' e'
+        # diff_abs_bot_alpha n n'
+        # diff_abs_bot_alpha e e'}}.
+Proof.
+  introv isp1 isp2 comp diff.
+  allunfold @computes_to_exception; repnd.
+  pose proof (reduces_to_diff_abs_bot_alpha t t' (mk_exception n e)) as h.
+  repeat (autodimp h hyp); eauto 3 with slow.
+  exrepnd.
+  apply diff_abs_bot_alpha_exception_implies in h0; exrepnd; subst.
+  exists n' e'; dands; eauto 3 with slow.
 Qed.
 
 
