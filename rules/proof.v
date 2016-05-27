@@ -44,6 +44,7 @@ Require Export computation10.
 Require Export computation_preserves_lib.
 Require Export computation_preserves_abs2bot.
 Require Export computation_preserves_diff_abs_bot.
+Require Export cequiv_lsubst.
 
 
 Inductive valid_rule {o} : @rule o -> Type :=
@@ -1421,6 +1422,210 @@ Proof.
   eexists; dands; eauto 4 with slow.
 Qed.
 
+Lemma diff_abs_bot_alpha_vterm_implies {o} :
+  forall v (t : @NTerm o),
+    diff_abs_bot_alpha (vterm v) t
+    -> t = vterm v.
+Proof.
+  introv d.
+  unfold diff_abs_bot_alpha in d; exrepnd.
+  inversion d0; subst; clear d0.
+  invdiff.
+  inversion  d2; subst; clear d2.
+  auto.
+Qed.
+
+Lemma implies_approx_open_sterm {o} :
+  forall lib (f g : @ntseq o),
+    wf_term (sterm f)
+    -> wf_term (sterm g)
+    -> (forall n, approx_open lib (f n) (g n))
+    -> approx_open lib (sterm f) (sterm g).
+Proof.
+  introv wf1 wf2 imp.
+  apply approx_open_simpler_equiv.
+  unfold simpl_olift; dands; eauto 3 with slow.
+  introv ps isp1 isp2.
+  repeat (rw @cl_lsubst_lsubst_aux; eauto 2 with slow;[]).
+  simpl.
+  apply implies_approx_sterm; eauto 3 with slow.
+  introv.
+  apply approx_open_approx; try (apply imp); eauto 3 with slow.
+Qed.
+
+Lemma implies_cequiv_open_sterm {o} :
+  forall lib (f g : @ntseq o),
+    wf_term (sterm f)
+    -> wf_term (sterm g)
+    -> (forall n, cequiv_open lib (f n) (g n))
+    -> cequiv_open lib (sterm f) (sterm g).
+Proof.
+  introv wf1 wf2 imp.
+  apply olift_approx_cequiv; apply implies_approx_open_sterm; auto;
+  introv; pose proof (imp n) as h; clear imp; apply olift_cequiv_approx in h; sp.
+Qed.
+
+Lemma wf_sterm_implies_wf_app {o} :
+  forall (f : @ntseq o) (n : nat),
+    wf_term (sterm f) -> wf_term (f n).
+Proof.
+  introv wf.
+  allrw @wf_term_eq.
+  eauto 3 with slow.
+Qed.
+Hint Resolve wf_sterm_implies_wf_app : slow.
+
+Lemma alpha_eq_mk_vid_implies {o} :
+  forall v (t : @NTerm o),
+    alpha_eq (mk_vid v) t -> {z : NVar & t = mk_vid z}.
+Proof.
+  introv aeq.
+  apply alpha_eq_mk_lam in aeq; exrepnd; subst.
+  apply alphaeqbt_1v in aeq1; exrepnd; ginv.
+  allrw disjoint_singleton_l.
+  allrw in_app_iff; allrw not_over_or; repnd; GC.
+
+  unfold lsubst in aeq0; allsimpl.
+  boolvar; allrw disjoint_singleton_r; tcsp.
+  inversion aeq0; clear aeq0; subst; GC.
+  destruct nt2; allsimpl; ginv; GC.
+  allrw not_over_or; repnd; GC.
+  boolvar; ginv; tcsp.
+  unfold mk_vid, mk_var.
+  eexists; eauto.
+Qed.
+
+Lemma diff_abs_bot_alpha_oterm_implies {o} :
+  forall op (bs : list (@BTerm o)) t,
+    diff_abs_bot_alpha (oterm op bs) t
+    -> {bs' : list BTerm
+        & t = oterm op bs'
+        # diff_abs_bot_bs_alpha bs bs'}
+       [+]
+       {v : NVar
+        & {abs : opabs
+        & t = mk_vbot v
+        # op = Abs abs}}
+       [+]
+       {v : NVar
+        & {abs : opabs
+        & {bs' : list BTerm
+        & t = oterm (Abs abs) bs'
+        # op = NCan NFix
+        # bs = [nobnd (mk_vid v)] }}}.
+Proof.
+  introv diff.
+  unfold diff_abs_bot_alpha in diff; exrepnd.
+  apply alpha_eq_oterm_implies_combine2 in diff0; exrepnd; subst.
+  invdiff.
+
+  - assert (diff_abs_bot_bterms bs' bs2) as d.
+    { unfold diff_abs_bot_bterms, br_bterms, br_list; auto. }
+    clear imp.
+    apply alpha_eq_sym in diff2.
+    apply alpha_eq_oterm_implies_combine2 in diff2; exrepnd; subst.
+    left; eexists; dands; eauto 4 with slow.
+
+  - apply alpha_eq_sym in diff2; apply alpha_eq_mk_vbot_implies in diff2; exrepnd; subst.
+    right; left.
+    eexists; eexists; dands; eauto.
+
+  - apply alpha_eq_sym in diff2.
+    apply alpha_eq_oterm_implies_combine2 in diff2; exrepnd; subst.
+    unfold alpha_eq_bterms in diff3; allsimpl; repnd; cpx.
+    allsimpl.
+    pose proof (diff3 x (nobnd (mk_vid v))) as h; clear diff3.
+    autodimp h hyp.
+    apply alpha_eq_bterm_sym in h; apply alpha_eq_bterm_nobnd in h; exrepnd; subst.
+    apply alpha_eq_mk_vid_implies in h0; exrepnd; subst.
+    right; right.
+    eexists; eexists; eexists; dands; eauto.
+Qed.
+
+Hint Resolve diff_abs_bot_bs_alpha_implies_eq_len : slow.
+
+Lemma abs_not_hasvalue_like {o} :
+  forall lib abs (bs : list (@BTerm o)),
+    find_entry lib abs bs = None
+    -> !hasvalue_like lib (oterm (Abs abs) bs).
+Proof.
+  introv f comp.
+  unfold hasvalue_like in comp; exrepnd.
+  apply reduces_to_split2 in comp1; repndors; subst; tcsp.
+  { unfold isvalue_like in comp0; allsimpl; tcsp. }
+  exrepnd.
+  csunf comp1; allsimpl.
+  apply compute_step_lib_success in comp1; exrepnd; subst.
+  unfold found_entry in comp3.
+  rewrite f in comp3; ginv.
+Qed.
+
+(* can be generalized to libraries that are disjoint from the terms *)
+Lemma approx_open_nil_diff_abs_bot {o} :
+  forall (t u : @NTerm o),
+    wf_term t
+    -> wf_term u
+    -> diff_abs_bot_alpha t u
+    -> approx_open [] t u.
+Proof.
+  nterm_ind1s t as [v|f ind|op bs ind] Case; introv wf1 wf2 diff.
+
+  - Case "vterm".
+    apply diff_abs_bot_alpha_vterm_implies in diff; subst; eauto 3 with slow.
+
+  - Case "sterm".
+    apply diff_abs_bot_alpha_sterm_implies in diff; exrepnd; subst.
+    apply implies_approx_open_sterm; auto.
+    introv.
+    apply ind; eauto 3 with slow.
+
+  - Case "oterm".
+    apply diff_abs_bot_alpha_oterm_implies in diff.
+    repndors; exrepnd; subst; allsimpl; auto.
+
+    + apply approx_open_congruence; eauto 3 with slow.
+      apply lblift_as_combine; dands; eauto 3 with slow.
+      introv i.
+      unfold diff_abs_bot_bs_alpha, br_bterms, br_list in diff0; repnd.
+      applydup diff0 in i.
+
+      apply diff_abs_bot_b_alpha_implies in i0; exrepnd.
+      exists l t1 t2; dands; auto.
+
+      applydup in_combine in i; repnd.
+
+      destruct b1 as [l1 u1].
+      applydup @alpha_eq_bterm_preserves_osize in i0.
+      pose proof (ind u1 t1 l1) as h; clear ind.
+      repeat (autodimp h hyp);[allrw; eauto 3 with slow|].
+
+      allrw @wf_oterm_iff; repnd.
+      applydup wf2 in i3 as w2.
+      applydup wf1 in i4 as w1.
+      applydup @alpha_eq_bterm_preserves_wf_bterm in i0; auto.
+      applydup @alpha_eq_bterm_preserves_wf_bterm in i2; auto.
+      allrw @wf_bterm_iff.
+      apply h; eauto 3 with slow.
+
+    + apply approx_open_simpler_equiv.
+      unfold simpl_olift; dands; eauto 3 with slow.
+      introv ps isp1 isp2.
+      apply approx_assume_hasvalue; eauto 2 with slow.
+      repeat (rw @cl_lsubst_lsubst_aux; eauto 3 with slow;[]).
+      simpl; autorewrite with slow; fold_terms.
+      introv hv.
+      apply abs_not_hasvalue_like in hv; tcsp.
+
+    + apply approx_open_simpler_equiv.
+      unfold simpl_olift; dands; eauto 3 with slow.
+      introv ps isp1 isp2.
+      apply approx_assume_hasvalue; eauto 2 with slow.
+      repeat (rw @cl_lsubst_lsubst_aux; eauto 3 with slow;[]).
+      simpl; autorewrite with slow; fold_terms.
+      introv hv.
+      apply not_hasvalue_like_vbot in hv; tcsp.
+Qed.
+
 Lemma approx_nil_diff_abs_bot {o} :
   forall (t u : @NTerm o),
     isprog t
@@ -1428,96 +1633,9 @@ Lemma approx_nil_diff_abs_bot {o} :
     -> diff_abs_bot_alpha t u
     -> approx [] t u.
 Proof.
-  unfold approx.
-  pose proof (@approx_acc_resp o [] (fun x y => isprog x # isprog y # diff_abs_bot_alpha x y)) as HH.
-  allsimpl.
-
-  assert (forall x y : @NTerm o, (isprog x # isprog y # diff_abs_bot_alpha x y) -> approx_aux [] bot2 x y);[|tcsp];[].
-  apply HH; eauto 3 with slow;
-  try (complete (introv aeq h; allsimpl; repnd; subst; dands; eauto 3 with slow)).
-
-  introv hr1 hr2 resp1 resp2 diff; repnd.
-  rename x1 into u.
-  rename x0 into t.
-
-  constructor.
-  unfold close_comput; dands; eauto 3 with slow; introv comp.
-
-  - pose proof (computes_to_value_diff_abs_bot_alpha t u (oterm (Can c) tl_subterms)) as comp'.
-    repeat (autodimp comp' hyp); exrepnd.
-    apply diff_abs_bot_alpha_oterm_can_implies in comp'0; exrepnd; subst.
-    applydup @diff_abs_bot_bs_alpha_implies_eq_len in comp'2 as len.
-    exists bs'; dands; auto.
-
-    apply lblift_as_combine; dands; auto.
-    introv i.
-
-    unfold diff_abs_bot_bs_alpha, br_bterms, br_list in comp'2; repnd.
-    applydup comp'2 in i; clear comp'2.
-    apply diff_abs_bot_b_alpha_implies in i0; exrepnd.
-    eapply blift_alpha_fun_r;[|apply alpha_eq_bterm_sym; exact i2].
-    eapply blift_alpha_fun_l;[|apply alpha_eq_bterm_sym; exact i0].
-
-    apply in_combine in i; repnd.
-
-    unfold computes_to_value in comp; repnd.
-    inversion comp as [? isp isc]; subst; clear comp.
-    apply isprogram_eq in isp.
-    apply isprog_ot_iff in isp; repnd.
-    applydup isp in i3.
-
-    unfold computes_to_value in comp'1; repnd.
-    inversion comp'1 as [? isp' isc']; subst; clear comp'1.
-    apply isprogram_eq in isp'.
-    apply isprog_ot_iff in isp'; repnd.
-    applydup isp' in i.
-
-    applydup @alpha_eq_bterm_preserves_isprog_bt in i0; auto.
-    applydup @alpha_eq_bterm_preserves_isprog_bt in i2; auto.
-    clear dependent b1.
-    clear dependent b2.
-    apply isprogram_bt_eq in i6.
-    apply isprogam_bt_nt_wf_eauto in i6.
-    apply isprogram_bt_eq in i7.
-    apply isprogam_bt_nt_wf_eauto in i7.
-
-    unfold blift.
-    exists l t1 t2.
-    dands; auto.
-
-    apply approx_open_simpler_equiv_r; eauto 3 with slow.
-    unfold simpl_olift; dands; eauto 3 with slow.
-    introv ps isp1 isp2.
-
-    right.
-
-    apply hr2; dands; eauto 3 with slow.
-    apply diff_abs_bot_alpha_lsubst; eauto 3 with slow.
-
-  - pose proof (computes_to_exception_diff_abs_bot_alpha t u a e) as comp'.
-    repeat (autodimp comp' hyp); exrepnd.
-
-    applydup @reduces_to_preserves_isprog in comp; auto.
-    applydup @reduces_to_preserves_isprog in comp'0; auto.
-    allrw @isprog_exception_iff; repnd.
-
-    exists n' e'; dands; eauto 3 with slow;
-    right; apply hr2; dands; eauto 3 with slow.
-
-  - pose proof (reduces_to_diff_abs_bot_alpha t u (sterm f)) as comp'.
-    repeat (autodimp comp' hyp); eauto 3 with slow.
-    exrepnd.
-    apply diff_abs_bot_alpha_sterm_implies in comp'0; exrepnd; subst.
-    exists g; dands; auto.
-
-    applydup @reduces_to_preserves_isprog in comp; auto.
-    applydup @reduces_to_preserves_isprog in comp'1; auto.
-
-    introv; right.
-    allrw @isprog_eq.
-    apply (isprogram_sterm_implies_isprogram_apply _ n) in comp0.
-    apply (isprogram_sterm_implies_isprogram_apply _ n) in comp'0.
-    apply hr2; dands; eauto 3 with slow.
+  introv isp1 isp2 diff.
+  apply approx_open_nil_diff_abs_bot in diff; eauto 3 with slow.
+  apply approx_open_approx; eauto 3 with slow.
 Qed.
 
 Lemma diff_abs_bot_abs2bot_r {o} :
@@ -1660,7 +1778,7 @@ Proof.
   destruct c; tcsp.
 Qed.
 
-Lemma utokens_unfold_entry {o} :
+Lemma get_utokens_unfold_entry {o} :
   forall entry (t : @NTerm o),
     subset (get_utokens (unfold_entry entry t)) (get_utokens t).
 Proof.
@@ -1799,7 +1917,7 @@ Proof.
       rewrite h1 in s.
       apply subset_nil_implies_nil in s; auto.
 
-    + pose proof (utokens_unfold_entry entry (f n)) as s.
+    + pose proof (get_utokens_unfold_entry entry (f n)) as s.
       rewrite h in s.
       apply subset_nil_implies_nil in s; auto.
 
@@ -1857,6 +1975,7 @@ Proof.
         eapply ind; eauto.
       }
 Qed.
+Hint Resolve wf_unfold_entry : slow.
 
 Lemma implies_isprog_unfold_entry {o} :
   forall entry (t : @NTerm o),
@@ -1873,25 +1992,154 @@ Proof.
 Qed.
 Hint Resolve implies_isprog_unfold_entry : slow.
 
-      (* THIS IS WHERE I'M AT *)
+Lemma implies_isprog_nout_unfold_entry {o} :
+  forall entry (t : @NTerm o),
+    isprog_nout t
+    -> isprog_nout (unfold_entry entry t).
+Proof.
+  introv isp.
+  allrw @isprog_nout_iff; repnd.
+  allrw @nt_wf_eq; dands; eauto 2 with slow.
+  - pose proof (free_vars_unfold_entry entry t) as s.
+    rewrite isp1 in s.
+    apply subset_nil_implies_nil in s; auto.
+  - pose proof (get_utokens_unfold_entry entry t) as s.
+    rewrite isp in s.
+    apply subset_nil_implies_nil in s; auto.
+Qed.
+Hint Resolve implies_isprog_nout_unfold_entry : slow.
+
+Lemma isotrue_all_abs_are_defined_abs2bot {o} :
+  forall lib (t : @NTerm o),
+    isotrue (all_abstractions_are_defined lib (abs2bot t)).
+Proof.
+  nterm_ind1s t as [v|f ind|op bs ind] Case; introv; allsimpl; auto;[].
+
+  Case "oterm".
+  rewrite abs2bot_op_eq.
+  boolvar; exrepnd; subst; simpl; auto;[].
+  apply isotrue_oband.
+  rw @isotrue_bool2obool_iff.
+  dands; auto.
+
+  {
+    destruct op; simpl; auto.
+    destruct n; eexists; eauto.
+  }
+
+  apply isotrue_oball_map.
+  introv i.
+  apply in_map_iff in i; exrepnd; subst.
+  destruct a as [l t]; allsimpl.
+  eapply ind; eauto 3 with slow.
+Qed.
+Hint Resolve isotrue_all_abs_are_defined_abs2bot : slow.
+
+Hint Resolve olift_approx_cequiv : slow.
+
+Lemma le_bin_rel_cequiv_open_approx_open {o} :
+  forall (lib : @library o), le_bin_rel (cequiv_open lib) (approx_open lib).
+Proof.
+  introv h.
+  apply olift_cequiv_approx in h; sp.
+Qed.
+Hint Resolve le_bin_rel_cequiv_open_approx_open : slow.
+
+Lemma olift_symm {o} :
+  forall (R : bin_rel (@NTerm o)),
+    symm_rel R
+    -> respects_alpha R
+    -> symm_rel (olift R).
+Proof.
+  introv sym resp h.
+  apply olift_iff_oliftp in h; auto.
+  apply olift_iff_oliftp; auto.
+  allunfold @oliftp; repnd; dands; auto.
+Qed.
+Hint Resolve olift_symm : slow.
+
+Lemma symm_blift {o} :
+  forall (R : bin_rel (@NTerm o)),
+    symm_rel R
+    -> respects_alpha R
+    -> symm_rel (blift R).
+Proof.
+  introv sym resp h.
+  allunfold @blift; exrepnd.
+  eexists; eexists; eexists; eauto.
+Qed.
+Hint Resolve symm_blift : slow.
+
+Lemma sym_lblift {o} :
+  forall (R : bin_rel (@NTerm o)),
+    symm_rel R
+    -> respects_alpha R
+    -> symm_rel (lblift R).
+Proof.
+  introv sym res h.
+  allrw @lblift_as_combine; repnd; dands; auto.
+  introv i.
+  applydup @in_combine_swap in i; auto.
+  apply h in i0; auto.
+  apply symm_blift; auto.
+Qed.
+Hint Resolve sym_lblift : slow.
+
+Lemma cequiv_open_sym {o} :
+   forall lib (t1 t2 : (@NTerm o)),
+     cequiv_open lib t1 t2
+     -> cequiv_open lib t2 t1.
+Proof.
+  introv e.
+  apply olift_symm; eauto 3 with slow;
+  try (apply respects_alpha_cequiv).
+  introv h; apply cequiv_sym; auto.
+Qed.
+Hint Resolve cequiv_open_sym : slow.
+
+Lemma symm_rel_cequiv_open {o} :
+  forall (lib : @library o), symm_rel (cequiv_open lib).
+Proof.
+  introv h; eauto 3 with slow.
+Qed.
+Hint Resolve symm_rel_cequiv_open : slow.
+
+Lemma respects_alpha_cequiv_open {o} :
+  forall (lib : @library o), respects_alpha (cequiv_open lib).
+Proof.
+  introv.
+  split; introv aeq ceq; eauto 3 with slow.
+Qed.
+Hint Resolve respects_alpha_cequiv_open : slow.
+
+Lemma cequiv_open_congruence {o} :
+  forall lib op (bs1 bs2 : list (@BTerm o)),
+    lblift (cequiv_open lib) bs1 bs2
+    -> nt_wf (oterm op bs1)
+    -> nt_wf (oterm op bs2)
+    -> cequiv_open lib (oterm op bs1) (oterm op bs2).
+Proof.
+  introv h wf1 wf2.
+  apply olift_approx_cequiv; apply approx_open_congruence; eauto 3 with slow;
+  apply (le_lblift (cequiv_open lib) (approx_open lib)); eauto 3 with slow.
+  apply sym_lblift; eauto 3 with slow.
+Qed.
+
+(* THIS IS WHERE I'M AT *)
 
 Lemma exists_all_defined {o} :
   forall lib,
     no_undefined_abs_in_lib lib
     -> forall (t : @NTerm o),
       isprog t
-      -> cequiv lib t (unfold_lib lib t)
-         # isotrue (all_abstractions_are_defined lib (unfold_lib lib t)).
+      -> cequiv lib t (unfold_lib lib t).
 Proof.
   induction lib; intro nodef; simpl.
 
   - introv isp; dands.
 
-    + unfold unfold_lib; simpl.
-      apply cequiv_nil_abs2bot; auto.
-
-    + unfold unfold_lib; simpl.
-      apply isotrue_all_abstractions_are_defined_nil_abs2bot.
+    unfold unfold_lib; simpl.
+    apply cequiv_nil_abs2bot; auto.
 
   - introv isp.
     unfold unfold_lib; allsimpl; repnd.
@@ -1899,7 +2147,70 @@ Proof.
     pose proof (IHlib (unfold_entry a t)) as h; clear IHlib.
     autodimp h hyp; eauto 3 with slow; repnd.
 
-    (* first prove the all_abstractions_are_defined by induction on t? *)
+    unfold unfold_lib in h.
+
+    assert (cequiv
+              (a :: lib)
+              (unfold_entry a t)
+              (abs2bot (unfold_library lib (unfold_entry a t)))) as ceq.
+
+    (* we prove that using add_entry_to_cequiv (see below) *)
+
+    Focus 2.
+
+    clear h.
+    eapply cequiv_trans;[|exact ceq]; clear ceq.
+
+Lemma cequiv_unfold_entry {o} :
+  forall entry lib (t : @NTerm o),
+    wf_term t
+    -> cequiv_open (entry :: lib) t (unfold_entry entry t).
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; introv wf; simpl; eauto 3 with slow.
+
+  - Case "sterm".
+    apply implies_cequiv_open_sterm; eauto 3 with slow.
+    allrw @wf_sterm_iff; introv; eauto 3 with slow.
+
+  - Case "oterm".
+    rewrite unfold_entry_op_eq.
+    destruct (dec_op_abs op) as [d|d]; exrepd; subst; allsimpl.
+
+    + destruct entry; simpl; boolvar.
+
+      * apply (cequiv_open_trans _ _ (oterm (Abs abs) (map (unfold_entry_bterm (lib_abs opabs vars rhs correct)) bs)));
+        [|apply reduces_to_implies_cequiv_open;eauto 3 with slow].
+
+        {
+          apply cequiv_open_congruence.
+        }
+
+Qed.
+
+Fixpoint all_abstractions_not_defined {o} lib (t : @NTerm o) : obool :=
+  match t with
+  | vterm _ => otrue
+  | sterm f => obseq (fun n => all_abstractions_not_defined lib (f n))
+  | oterm op bs =>
+    oband
+      (bool2obool (negb (found_opid_in_library_sign lib op)))
+      (oball (map (all_abstractions_not_defined_b lib) bs))
+  end
+with all_abstractions_not_defined_b {o} lib (b : @BTerm o) : obool :=
+       match b with
+       | bterm vs t => all_abstractions_not_defined lib t
+       end.
+
+Lemma add_entry_to_cequiv {o} :
+  forall entry lib (t1 t2 : @NTerm o),
+    isotrue (all_abstractions_not_defined [entry] t1)
+    -> isotrue (all_abstractions_not_defined [entry] t2)
+    -> cequiv lib t1 t2
+    -> cequiv (entry :: lib) t1 t2.
+Proof.
+Qed.
+
+Focus 2.
 
 XXXXXXXXXXX
 
