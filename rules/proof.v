@@ -1577,7 +1577,303 @@ Proof.
   - apply approx_nil_abs2bot_l; auto.
 Qed.
 
-(* THIS IS WHERE I'M AT *)
+Lemma isotrue_all_abstractions_are_defined_nil_abs2bot {o} :
+  forall (t : @NTerm o), isotrue (all_abstractions_are_defined [] (abs2bot t)).
+Proof.
+  nterm_ind1s t as [v|f ind|op bs ind] Case; introv; allsimpl; auto.
+  rewrite abs2bot_op_eq; boolvar; simpl; auto.
+  apply isotrue_oband.
+  rw isotrue_bool2obool_iff.
+  dands.
+  - destruct op; simpl; auto.
+    destruct n; eexists; eauto.
+  - rewrite map_map.
+    apply isotrue_oball_map; introv i.
+    destruct x as [l t]; simpl.
+    unfold compose; simpl.
+    eapply ind; eauto 3 with slow.
+Qed.
+
+Lemma isprogram_sterm_iff {o} :
+  forall (f : @ntseq o),
+    isprogram (sterm f) <=> forall n, isprogram (f n) # noutokens (f n).
+Proof.
+  introv; split; intro h.
+
+  - inversion h as [cl wf]; clear h.
+    introv.
+    allrw @nt_wf_sterm_iff.
+    pose proof (wf n) as h; clear wf; repnd; dands; auto.
+    constructor; auto.
+
+  - constructor; tcsp.
+    constructor; introv.
+    pose proof (h n) as q; clear h; repnd.
+    inversion q0.
+    dands; auto.
+Qed.
+
+Lemma isprog_sterm_iff {o} :
+  forall (f : @ntseq o),
+    isprog (sterm f) <=> forall n, isprog (f n) # noutokens (f n).
+Proof.
+  introv; rw @isprog_eq.
+  rw @isprogram_sterm_iff.
+  split; introv h; introv; pose proof (h n) as q; clear h;
+  repnd; dands; eauto 3 with slow.
+Qed.
+
+Lemma unfold_entry_op_eq {o} :
+  forall entry op (bs : list (@BTerm o)),
+    unfold_entry_op entry op bs
+    = match dec_op_abs op with
+      | inl (existT abs _) =>
+        match unfold_abs_entry entry abs bs with
+        | Some u => u
+        | None => oterm op bs
+        end
+      | _  => oterm op bs
+      end.
+Proof.
+  introv.
+  destruct (dec_op_abs op); exrepnd; subst; simpl; auto.
+  destruct op; simpl; auto.
+  destruct n; eexists; eauto.
+Qed.
+
+Lemma matching_entry_implies_matching_bterms {o} :
+  forall abs opabs vars (bs : list (@BTerm o)),
+    matching_entry abs opabs vars bs
+    -> matching_bterms vars bs.
+Proof.
+  introv m.
+  destruct m; tcsp.
+Qed.
+Hint Resolve matching_entry_implies_matching_bterms : slow.
+
+Lemma correct_abs_implies_get_utokens_so_nil {o} :
+  forall opabs vars (t : @SOTerm o),
+    correct_abs opabs vars t
+    -> get_utokens_so t = [].
+Proof.
+  introv c.
+  destruct c; tcsp.
+Qed.
+
+Lemma utokens_unfold_entry {o} :
+  forall entry (t : @NTerm o),
+    subset (get_utokens (unfold_entry entry t)) (get_utokens t).
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
+  Case "oterm".
+  rewrite unfold_entry_op_eq.
+  destruct (dec_op_abs op); exrepnd; subst; simpl.
+
+  - unfold unfold_abs_entry.
+    destruct entry.
+    boolvar; simpl.
+
+    + eapply subset_trans;[apply get_utokens_mk_instance|]; eauto 3 with slow.
+      dup correct as e.
+      apply correct_abs_implies_get_utokens_so_nil in e; rewrite e; simpl.
+
+      unfold get_utokens_bs.
+      rewrite flat_map_map; unfold compose; simpl.
+      apply subset_flat_map2; introv i.
+      destruct x as [l t]; simpl.
+      eapply ind; eauto.
+
+    + rewrite flat_map_map; unfold compose; simpl.
+      apply subset_flat_map2; introv i.
+      destruct x as [l t]; simpl.
+      eapply ind; eauto.
+
+  - apply subset_app_lr; auto.
+    rewrite flat_map_map; unfold compose; simpl.
+    apply subset_flat_map2; introv i.
+    destruct x as [l t]; simpl.
+    eapply ind; eauto.
+Qed.
+
+Lemma correct_abs_implies_wf {o} :
+  forall opabs vars (rhs : @SOTerm o),
+    correct_abs opabs vars rhs
+    -> wf_soterm rhs.
+Proof.
+  introv c; destruct c; tcsp.
+Qed.
+Hint Resolve correct_abs_implies_wf : slow.
+
+Lemma correct_abs_implies_covered {o} :
+  forall opabs vars (rhs : @SOTerm o),
+    correct_abs opabs vars rhs
+    -> socovered rhs vars.
+Proof.
+  introv c; destruct c; tcsp.
+Qed.
+Hint Resolve correct_abs_implies_covered : slow.
+
+Lemma isprogram_mk_instance {o} :
+  forall opabs vars rhs (bs : list (@BTerm o)),
+    correct_abs opabs vars rhs
+    -> matching_bterms vars bs
+    -> (forall b, LIn b bs -> isprogram_bt b)
+    -> isprogram (mk_instance vars bs rhs).
+Proof.
+  introv correct m i.
+  apply isprogram_sosub; eauto 3 with slow.
+  - rw <- @mk_abs_subst_some_prop2; auto.
+    eapply correct_abs_implies_covered; eauto.
+  - apply sosub_prog_prop1.
+    introv k.
+    rw @sorange_mk_abs_subst in k; auto.
+Qed.
+
+Lemma wf_term_mk_instance {o} :
+  forall opabs vars rhs (bs : list (@BTerm o)),
+    correct_abs opabs vars rhs
+    -> matching_bterms vars bs
+    -> (forall b, LIn b bs -> wf_bterm b)
+    -> wf_term (mk_instance vars bs rhs).
+Proof.
+  introv correct m i.
+  apply wf_sosub; auto; eauto 3 with slow.
+  apply sosub_wf_mk_abs_subst; auto.
+Qed.
+
+Lemma free_vars_unfold_entry {o} :
+  forall entry (t : @NTerm o),
+    subset (free_vars (unfold_entry entry t)) (free_vars t).
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
+
+  Case "oterm".
+  rewrite unfold_entry_op_eq.
+  destruct (dec_op_abs op); exrepnd; subst; simpl.
+
+  - unfold unfold_abs_entry; destruct entry; simpl.
+    boolvar.
+
+    + apply subvars_eq.
+      eapply subvars_trans;[apply subvars_free_vars_mk_instance|]; eauto 3 with slow.
+      apply subvars_eq.
+      rewrite flat_map_map; unfold compose.
+      apply subset_flat_map2; introv i.
+      destruct x as [l t]; simpl.
+      applydup ind in i.
+      introv j.
+      allrw in_remove_nvars; repnd; dands; auto.
+
+    + simpl.
+      rewrite flat_map_map; unfold compose.
+      apply subset_flat_map2; introv i.
+      destruct x as [l t]; simpl.
+      applydup ind in i.
+      introv j.
+      allrw in_remove_nvars; repnd; dands; auto.
+
+  - rewrite flat_map_map; unfold compose.
+    apply subset_flat_map2; introv i.
+    destruct x as [l t]; simpl.
+    applydup ind in i.
+    introv j.
+    allrw in_remove_nvars; repnd; dands; auto.
+Qed.
+
+Lemma wf_unfold_entry {o} :
+  forall entry (t : @NTerm o),
+    wf_term t
+    -> wf_term (unfold_entry entry t).
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; introv wf; simpl; auto.
+
+  - Case "sterm".
+    allrw @wf_sterm_iff; introv.
+    pose proof (wf n) as h; clear wf; repnd.
+    pose proof (ind n) as q; clear ind.
+    allrw @isprog_nout_iff; repnd.
+    autodimp q hyp; eauto 3 with slow.
+    dands; eauto 3 with slow.
+
+    + pose proof (free_vars_unfold_entry entry (f n)) as s.
+      rewrite h1 in s.
+      apply subset_nil_implies_nil in s; auto.
+
+    + pose proof (utokens_unfold_entry entry (f n)) as s.
+      rewrite h in s.
+      apply subset_nil_implies_nil in s; auto.
+
+  - Case "oterm".
+    rewrite unfold_entry_op_eq.
+    destruct (dec_op_abs op); exrepnd; subst; simpl.
+
+    + unfold unfold_abs_entry; destruct entry; simpl.
+      boolvar.
+
+      * eapply wf_term_mk_instance; eauto 3 with slow.
+        introv i.
+        apply in_map_iff in i; exrepnd; subst.
+        apply wf_oterm_iff in wf; repnd.
+        applydup wf in i1.
+        destruct a as [l t]; allsimpl.
+        allrw @wf_bterm_iff.
+        eapply ind; eauto.
+
+      * allrw @wf_oterm_iff; repnd.
+        rewrite <- wf0.
+        rewrite map_map; unfold compose; simpl.
+        dands.
+
+        {
+          apply eq_maps; introv i.
+          destruct x; unfold num_bvars; simpl; auto.
+        }
+
+        {
+          introv i.
+          apply in_map_iff in i; exrepnd; subst.
+          destruct a as [l t]; allsimpl.
+          applydup wf in i1.
+          allrw @wf_bterm_iff.
+          eapply ind; eauto.
+        }
+
+    + allrw @wf_oterm_iff; repnd.
+      rewrite <- wf0.
+      rewrite map_map; unfold compose; simpl.
+      dands.
+
+      {
+        apply eq_maps; introv i.
+        destruct x; unfold num_bvars; simpl; auto.
+      }
+
+      {
+        introv i.
+        apply in_map_iff in i; exrepnd; subst.
+        destruct a as [l t]; allsimpl.
+        applydup wf in i1.
+        allrw @wf_bterm_iff.
+        eapply ind; eauto.
+      }
+Qed.
+
+Lemma implies_isprog_unfold_entry {o} :
+  forall entry (t : @NTerm o),
+    isprog t
+    -> isprog (unfold_entry entry t).
+Proof.
+  introv isp.
+  allrw @isprog_eq.
+  inversion isp as [cl wf]; clear isp.
+  constructor; allrw @nt_wf_eq; try (apply wf_unfold_entry); auto.
+  pose proof (free_vars_unfold_entry entry t) as s.
+  rewrite cl in s.
+  apply subset_nil_implies_nil in s; auto.
+Qed.
+Hint Resolve implies_isprog_unfold_entry : slow.
+
+      (* THIS IS WHERE I'M AT *)
 
 Lemma exists_all_defined {o} :
   forall lib,
@@ -1594,20 +1890,18 @@ Proof.
     + unfold unfold_lib; simpl.
       apply cequiv_nil_abs2bot; auto.
 
-    + Print all_abstractions_are_defined.
-      SearchAbout all_abstractions_are_defined [].
-      Print no_undefined_abs_in_lib.
-      Print no_undefined_abs_in_entry.
+    + unfold unfold_lib; simpl.
+      apply isotrue_all_abstractions_are_defined_nil_abs2bot.
 
-Lemma isotrue_all_abstractions_are_defined_nil {o} :
-  forall (t : @NTerm o), isotrue (all_abstractions_are_defined [] t).
-Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv; allsimpl; auto.
-  apply isotrue_oband.
-  rw isotrue_bool2obool_iff.
-  dands.
-  - destruct op; simpl; auto.
-Qed.
+  - introv isp.
+    unfold unfold_lib; allsimpl; repnd.
+    autodimp IHlib hyp.
+    pose proof (IHlib (unfold_entry a t)) as h; clear IHlib.
+    autodimp h hyp; eauto 3 with slow; repnd.
+
+    (* first prove the all_abstractions_are_defined by induction on t? *)
+
+XXXXXXXXXXX
 
   nterm_ind1s t as [v|f ind|op bs ind] Case; introv; allsimpl.
 Qed.
