@@ -26,53 +26,10 @@
 
 
 Require Export natk.
+Require Export natk2.
 Require Export per_respects.
 Require Export per_props_nat.
 
-
-Definition natU {o} : @CTerm o := mkc_bunion mkc_tnat mkc_unit.
-
-Definition mk_natU {o} : @NTerm o := mk_bunion mk_tnat mk_unit.
-Definition mk_nat2nat {o} : @NTerm o := mk_fun mk_tnat mk_tnat.
-Definition mk_natk2nat {o} (t : @NTerm o) : @NTerm o := mk_fun (mk_natk t) mk_tnat.
-
-Lemma wf_term_mk_natk2nat {o} :
-  forall (t : @NTerm o),
-    wf_term (mk_natk2nat t) <=> wf_term t.
-Proof.
-  introv.
-  unfold mk_natk2nat.
-  rw @wf_fun_iff.
-  rw @wf_term_mk_natk.
-  split; tcsp.
-Qed.
-
-Lemma wf_term_mk_natk2nat_implies {o} :
-  forall (t : @NTerm o),
-    wf_term (mk_natk2nat t) -> wf_term t.
-Proof.
-  introv w.
-  rw @wf_term_mk_natk2nat in w; auto.
-Qed.
-
-Lemma cover_vars_mk_natk2nat {o} :
-  forall (t : @NTerm o) s,
-    cover_vars (mk_natk2nat t) s <=> cover_vars t s.
-Proof.
-  introv.
-  unfold mk_natk2nat.
-  rw @cover_vars_fun.
-  rw @cover_vars_mk_natk.
-  split; intro k; repnd; dands; eauto 3 with slow.
-Qed.
-
-Lemma cover_vars_mk_natk2nat_implies {o} :
-  forall (t : @NTerm o) s,
-    cover_vars (mk_natk2nat t) s -> cover_vars t s.
-Proof.
-  introv cv.
-  rw @cover_vars_mk_natk2nat in cv; auto.
-Qed.
 
 Lemma lsubstc_mk_natk2nat_sp1 {o} :
   forall v (t : @CTerm o) w s c,
