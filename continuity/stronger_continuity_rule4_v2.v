@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -285,7 +289,7 @@ Proof.
 
   - apply tequality_mkc_squash.
 
-    unfold mk_exists.
+    try (unfold csubst6.mk_exists); try (unfold csubst6.mk_exists).
     lsubst_tac.
 
     apply tequality_product.
@@ -426,7 +430,7 @@ Proof.
   - apply equality_in_mkc_squash; dands;
     try (spcast; apply computes_to_valc_refl; eauto 3 with slow);[].
 
-    unfold mk_exists.
+    try (unfold csubst6.mk_exists); try (unfold mk_exists).
     lsubst_tac.
 
     exists (mkc_pair (spM_c (lsubstc F wt0 s1 ct2))
@@ -1209,6 +1213,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../close/" "../per/" "../cequiv/" "../terms/" "../computation/" "../continuity/" "../util/")
 *** End:
 *)

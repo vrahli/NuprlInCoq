@@ -66,52 +66,6 @@ Proof.
   destruct n; tcsp; cpx.
 Qed.
 
-Lemma cl_lsubst_aux_swap_filter0 {o} :
-  forall (t : @NTerm o) (s : Substitution) vs,
-    cl_sub s
-    -> (forall v, LIn v (dom_sub s) -> LIn v vs -> !LIn v (free_vars t))
-    -> lsubst_aux t (sub_filter s vs) = lsubst_aux t s.
-Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv cl disj; allsimpl; auto.
-
-  - Case "vterm".
-    rw @sub_find_sub_filter_eq; boolvar; tcsp.
-    remember (sub_find s v) as sf; symmetry in Heqsf; destruct sf; auto.
-    provefalse.
-    apply sub_find_some in Heqsf.
-    apply in_sub_eta in Heqsf; repnd.
-    eapply disj in Heqsf0; eauto.
-
-  - Case "oterm".
-    f_equal.
-    apply eq_maps; introv i.
-    disj_flat_map.
-    destruct x as [l t]; allsimpl.
-    f_equal.
-    rw @sub_filter_swap.
-    apply (ind t l); eauto 3 with slow.
-
-    introv j k q.
-    allrw <- @dom_sub_sub_filter.
-    allrw in_remove_nvars; repnd.
-    eapply disj in j0; eauto.
-    destruct j0; rw lin_flat_map.
-    eexists; dands; eauto; simpl.
-    rw in_remove_nvars; sp.
-Qed.
-
-Lemma cl_lsubst_aux_swap_filter {o} :
-  forall (t : @NTerm o) (s : Substitution) vs,
-    cl_sub s
-    -> disjoint (free_vars t) vs
-    -> lsubst_aux t (sub_filter s vs) = lsubst_aux t s.
-Proof.
-  introv cl disj.
-  apply cl_lsubst_aux_swap_filter0; auto.
-  introv i j k.
-  apply disj in k; sp.
-Qed.
-
 Lemma cl_disjoint_free_vars_lsubst_aux_dom {o} :
   forall (t : @NTerm o) sub,
     cl_sub sub

@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -31,31 +35,6 @@ Require Export continuity_defs_ceq.
 Require Export per_props_equality.
 Require Export list. (* !!WTF *)
 
-
-Lemma isprog_vars_squash {p} :
-  forall (a : @NTerm p) vs,
-    isprog_vars vs (mk_squash a) <=> isprog_vars vs a.
-Proof.
-  introv.
-  repeat (rw @isprog_vars_eq; simpl).
-  repeat (rw @remove_nvars_nil_l).
-  rw @app_nil_r.
-  allrw <- @wf_term_eq.
-  allrw @wf_squash; split; sp.
-Qed.
-
-Lemma isprog_vars_squash_implies {p} :
-  forall (a : @NTerm p) vs,
-    isprog_vars vs a
-    -> isprog_vars vs (mk_squash a).
-Proof.
-  introv ispa.
-  apply isprog_vars_squash; sp.
-Qed.
-
-Definition mkcv_squash {p} vs (t : @CVTerm p vs) : CVTerm vs :=
-  let (a,x) := t in
-    exist (isprog_vars vs) (mk_squash a) (isprog_vars_squash_implies a vs x).
 
 Lemma inhabited_squash {o} :
   forall lib (t : @CTerm o),
@@ -70,164 +49,6 @@ Proof.
     apply equality_in_mkc_squash; dands; spcast; auto;
     try (apply computes_to_valc_refl; eauto 3 with slow).
     exists t0; auto.
-Qed.
-
-Definition mkcv_product {o} vs (t1 : @CVTerm o vs) (v : NVar) (t2 : CVTerm (v :: vs)) : CVTerm vs :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist (isprog_vars vs) (mk_product a v b) (isprog_vars_product vs a v b x y).
-
-Definition mkcv_exists {o} vs (t1 : @CVTerm o vs) (v : NVar) (t2 : CVTerm (v :: vs)) : CVTerm vs :=
-  mkcv_product vs t1 v t2.
-
-Definition mkcv_forall {o} vs (t1 : @CVTerm o vs) (v : NVar) (t2 : CVTerm (v :: vs)) : CVTerm vs :=
-  mkcv_function vs t1 v t2.
-
-Definition mk_forall {o} (t1 : @NTerm o) (v : NVar) (t2 : NTerm) : NTerm :=
-  mk_function t1 v t2.
-
-Definition mkc_forall {o} (t1 : @CTerm o) (v : NVar) (t2 : CVTerm [v]) : CTerm :=
-  mkc_function t1 v t2.
-
-Definition mk_exists {o} (t1 : @NTerm o) (v : NVar) (t2 : NTerm) : NTerm :=
-  mk_product t1 v t2.
-
-Definition mkc_exists {o} (t1 : @CTerm o) (v : NVar) (t2 : CVTerm [v]) : CTerm :=
-  mkc_product t1 v t2.
-
-Lemma implies_isprog_vars_apply2 {o} :
-  forall vs (f a b : @NTerm o),
-    isprog_vars vs f
-    -> isprog_vars vs a
-    -> isprog_vars vs b
-    -> isprog_vars vs (mk_apply2 f a b).
-Proof.
-  introv isp1 isp2 isp3.
-  apply isprog_vars_apply2; sp.
-Qed.
-
-Definition mkcv_apply2 {o} vs (f t1 t2 : @CVTerm o vs) : CVTerm vs :=
-  let (a,pa) := f in
-  let (b,pb) := t1 in
-  let (c,pc) := t2 in
-    exist (isprog_vars vs) (mk_apply2 a b c) (implies_isprog_vars_apply2 vs a b c pa pb pc).
-
-Lemma isprog_vars_image {p} :
-  forall (f a : @NTerm p) vs,
-    isprog_vars vs (mk_image f a) <=> (isprog_vars vs f # isprog_vars vs a).
-Proof.
-  introv.
-  repeat (rw @isprog_vars_eq; simpl).
-  repeat (rw @remove_nvars_nil_l).
-  rw @app_nil_r.
-  rw subvars_app_l.
-  allrw <- @wf_term_eq.
-  allrw <- @wf_image_iff; split; sp.
-Qed.
-
-Lemma isprog_vars_image_implies {p} :
-  forall (a b : @NTerm p) vs,
-    isprog_vars vs a
-    -> isprog_vars vs b
-    -> isprog_vars vs (mk_image a b).
-Proof.
-  introv ispa ispb.
-  apply isprog_vars_image; sp.
-Qed.
-
-Definition mkcv_image {p} vs (t1 t2 : @CVTerm p vs) : CVTerm vs :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist (isprog_vars vs) (mk_image a b) (isprog_vars_image_implies a b vs x y).
-
-Lemma mkcv_image_substc {o} :
-  forall v a b (t : @CTerm o),
-    substc t v (mkcv_image [v] a b)
-    = mkc_image (substc t v a) (substc t v b).
-Proof.
-  introv.
-  destruct_cterms.
-  apply cterm_eq; simpl.
-  repeat unfsubst.
-Qed.
-
-Lemma substc_mkcv_squash {o} :
-  forall v a (t : @CTerm o),
-    substc t v (mkcv_squash [v] a) = mkc_squash (substc t v a).
-Proof.
-  introv.
-  destruct_cterms.
-  apply cterm_eq; simpl.
-  repeat unfsubst.
-Qed.
-
-Lemma mkcv_product_substc {o} :
-  forall v x (a : @CVTerm o [v]) (b : @CVTerm o [x,v]) (t : CTerm),
-    x <> v
-    -> substc t v (mkcv_product [v] a x b)
-       = mkc_product (substc t v a) x (substc2 x t v b).
-Proof.
-  introv d.
-  destruct_cterms.
-  apply cterm_eq; simpl.
-  repeat unfsubst.
-  simpl.
-  allrw memvar_singleton; boolvar; allrw @lsubst_aux_nil; tcsp.
-Qed.
-
-Lemma mkcv_exists_substc {o} :
-  forall v x (a : @CVTerm o [v]) (b : @CVTerm o [x,v]) (t : CTerm),
-    x <> v
-    -> substc t v (mkcv_exists [v] a x b)
-       = mkc_exists (substc t v a) x (substc2 x t v b).
-Proof.
-  introv d.
-  unfold mkcv_exists.
-  rw @mkcv_product_substc; auto.
-Qed.
-
-Lemma substc_mkcv_axiom {o} :
-  forall (t : @CTerm o) v,
-    substc t v (mkcv_axiom v) = mkc_axiom.
-Proof.
-  introv.
-  unfold mkcv_exists.
-  destruct_cterms.
-  apply cterm_eq; simpl.
-  unfold subst, lsubst; simpl; auto.
-Qed.
-
-Lemma substc2_apply2 {o} :
-  forall v x (w : @CTerm o) (a b c : CVTerm [v,x]),
-    substc2 v w x (mkcv_apply2 [v,x] a b c)
-    = mkcv_apply2 [v] (substc2 v w x a) (substc2 v w x b) (substc2 v w x c).
-Proof.
-  introv.
-  destruct_cterms.
-  apply cvterm_eq; simpl.
-  repeat unfsubst.
-Qed.
-
-Lemma substc2_apply {o} :
-  forall v x (w : @CTerm o) (a b : CVTerm [v,x]),
-    substc2 v w x (mkcv_apply [v,x] a b)
-    = mkcv_apply [v] (substc2 v w x a) (substc2 v w x b).
-Proof.
-  introv.
-  destruct_cterms.
-  apply cvterm_eq; simpl.
-  repeat unfsubst.
-Qed.
-
-Lemma substc2_squash {o} :
-  forall v x (w : @CTerm o) (a : CVTerm [v,x]),
-    substc2 v w x (mkcv_squash [v,x] a)
-    = mkcv_squash [v] (substc2 v w x a).
-Proof.
-  introv.
-  destruct_cterms.
-  apply cvterm_eq; simpl.
-  repeat unfsubst.
 Qed.
 
 Lemma inhabited_product {p} :
@@ -270,17 +91,6 @@ Proof.
   introv.
   unfold mkc_exists.
   rw @inhabited_product; auto.
-Qed.
-
-Lemma mkcv_apply2_substc {o} :
-  forall v a b c (t : @CTerm o),
-    substc t v (mkcv_apply2 [v] a b c)
-    = mkc_apply2 (substc t v a) (substc t v b) (substc t v c).
-Proof.
-  introv.
-  destruct_cterms.
-  apply cterm_eq; simpl.
-  repeat unfsubst.
 Qed.
 
 Lemma nat_in_nat {o} :
@@ -607,15 +417,6 @@ Proof.
   fold_terms.
   allrw @sub_filter_nil_r; auto.
   rw @sub_filter_csub2sub; auto.
-Qed.
-
-Lemma lsubstc_vars_mk_tnat_as_mkcv {o} :
-  forall (w : @wf_term o mk_tnat) s vs c,
-    lsubstc_vars mk_tnat w s vs c = mkcv_tnat vs.
-Proof.
-  introv.
-  apply cvterm_eq; simpl.
-  rw @csubst_mk_tnat; auto.
 Qed.
 
 Lemma lsubstc_vars_mk_var_as_mkcv1 {o} :

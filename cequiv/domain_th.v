@@ -34,7 +34,7 @@ Require Export sqle.
 Require Export subst_props.
 Require Export library_alpha.
 Require Export computation8.
-Require Export terms4.
+Require Export terms5.
 
 
 (** printing #  $\times$ #×# *)
@@ -4921,7 +4921,7 @@ Proof.
 
   { csunf Hcv; allsimpl; ginv.
     allunfold @apply_bterm; allsimpl.
-    unflsubst in Heqe1s.
+    unflsubst in Heqe1s; [|eauto 5 with slow].
     destruct e1 as [v|f1|op bs]; allsimpl; ginv.
     - boolvar; ginv.
     - exists (sterm f1); autorewrite with slow; dands; auto.
@@ -4979,7 +4979,7 @@ Proof.
 
   { csunf Hcv; allsimpl; ginv.
     allunfold @apply_bterm; allsimpl.
-    unflsubst in Heqe1s.
+    unflsubst in Heqe1s;[|eauto 5 with slow].
     destruct e1 as [v|f1|op bs]; allsimpl; ginv.
     - boolvar; ginv.
     - exists (sterm f1); autorewrite with slow; dands; auto.

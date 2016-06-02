@@ -27,6 +27,7 @@
 
 Require Export prog.
 Require Export cvterm.
+Require Export csubst6.
 Require Export per_props2.
 Require Export per_props_compute.
 
@@ -260,21 +261,6 @@ Qed.
  *)
 Definition mk_tnatp {o} := @mk_set o mk_int nvary (mk_le mk_one (mk_var nvary)).
 
-Lemma isprogram_mk_one {o} :
-  @isprogram o mk_one.
-Proof.
-  repeat constructor; simpl; sp.
-Qed.
-Hint Immediate isprogram_mk_one.
-
-Lemma isprog_mk_one {o} :
-  @isprog o mk_one.
-Proof.
-  rw @isprog_eq.
-  apply isprogram_mk_one.
-Qed.
-Hint Immediate isprog_mk_one.
-
 Lemma isprog_tnatp {o} : @isprog o mk_tnatp.
 Proof.
   rw <- @isprog_set_iff.
@@ -282,10 +268,6 @@ Proof.
 Qed.
 
 Definition mkc_tnatp {o} : @CTerm o := exist isprog mk_tnatp isprog_tnatp.
-
-Definition mkc_one {o} : @CTerm o := exist isprog mk_one isprog_mk_one.
-
-Definition mkcv_one {o} (vs : list NVar) : @CVTerm o vs := mk_cv vs mkc_one.
 
 Lemma mkc_tnatp_eq {o} :
   @mkc_tnatp o = mkc_set mkc_int nvary (mkcv_le [nvary] (mkcv_one [nvary]) (mkc_var nvary)).

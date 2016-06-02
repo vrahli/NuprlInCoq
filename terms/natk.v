@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -16,10 +17,13 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -221,6 +225,7 @@ Proof.
   introv.
   rw @sub_find_sub_filter_eq; rw memvar_singleton; boolvar; auto.
 Qed.
+Hint Rewrite @sub_find_sub_filter_trivial : slow.
 
 Lemma sub_find_sub_filter_trivial2 {o} :
   forall (s : @Sub o) x y, sub_find (sub_filter (sub_filter s [x]) [y]) x = None.
@@ -229,6 +234,7 @@ Proof.
   allrw @sub_find_sub_filter_eq.
   allrw memvar_singleton; boolvar; auto.
 Qed.
+Hint Rewrite @sub_find_sub_filter_trivial2 : slow.
 
 Lemma beq_var_newvar_trivial1 {o} :
   forall v (t : @NTerm o),

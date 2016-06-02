@@ -24,24 +24,46 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
 
 *)
 
+Require Export cequiv.
 
-Require Export cvterm2.
-
-
-Lemma isprog_vars_vbot {o} :
-  forall vs v, @isprog_vars o vs (mk_vbot v).
+Lemma bcequiv_refl {o} :
+  forall lib (b : @BTerm o),
+    wf_bterm b
+    -> bcequiv lib b b.
 Proof.
-  introv.
-  apply isprog_vars_fix.
-  apply isprog_vars_lam; auto.
-  apply isprog_vars_var_if; simpl; auto.
+  introv wf.
+  destruct b as [l t].
+  allrw @wf_bterm_iff.
+  apply blift_approx_cequiv.
+  - unfold approx_open_bterm, blift.
+    exists l t t; dands; eauto 3 with slow.
+  - unfold approx_open_bterm, blift.
+    exists l t t; dands; eauto 3 with slow.
 Qed.
-Hint Resolve isprog_vars_vbot : slow.
 
+Lemma bcequiv_nobnd {o} :
+  forall lib (t u : @NTerm o),
+    wf_term t
+    -> wf_term u
+    -> cequiv lib t u
+    -> bcequiv lib (nobnd t) (nobnd u).
+Proof.
+  introv wft wfu ceq.
+  applydup @cequiv_sym in ceq.
+  apply cequiv_le_approx in ceq.
+  apply cequiv_le_approx in ceq0.
+  apply blift_approx_cequiv.
+  - unfold approx_open_bterm, blift.
+    exists ([] : list NVar) t u; dands; eauto 3 with slow.
+    apply approx_implies_approx_open; auto.
+  - unfold approx_open_bterm, blift.
+    exists ([] : list NVar) u t; dands; eauto 3 with slow.
+    apply approx_implies_approx_open; auto.
+Qed.
 
 
 (*

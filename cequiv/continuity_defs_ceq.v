@@ -32,6 +32,7 @@
 Require Export prog.
 Require Export cequiv.
 Require Export csubst2.
+Require Export substc_more.
 Require Export terms5.
 Require Export computation_exc.
 Require Export computation_dec1.
@@ -1458,21 +1459,6 @@ Proof.
   allrw memvar_singleton.
   repeat (boolvar; allsimpl; tcsp).
 Qed.
-
-Lemma isprog_vars_substc2 {o} :
-  forall x (a : @NTerm o) v b,
-    isprog b
-    -> isprog_vars [x,v] a
-    -> isprog_vars [x] (subst a v b).
-Proof.
-  introv ispb ispa.
-  apply subst_preserves_isprog_vars; auto.
-Qed.
-
-Definition substc2 {o} x (u : @CTerm o) (v : NVar) (t : CVTerm [x,v]) : CVTerm [x] :=
-  let (a,pa) := t in
-  let (b,pb) := u in
-  exist (isprog_vars [x]) (subst a v b) (isprog_vars_substc2 x a v b pb pa).
 
 Lemma mkcv_try_substc {o} :
   forall v (a b : @CVTerm o [v]) x (c : CVTerm [x,v]) (t : CTerm),

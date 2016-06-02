@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -35,7 +39,7 @@ Require Export csubst_arith.
 Require Export csubst_cft.
 Require Export terms_union.
 Require Export terms_image.
-Require Export arith_props.
+Require Export cequiv_arith_props.
 Require Export compare_cterm.
 Require Export terms_try.
 Require Export csubst_fresh.

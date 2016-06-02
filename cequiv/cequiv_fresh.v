@@ -29,6 +29,7 @@
 *)
 
 
+Require Export csubst6.
 Require Export approx_props3.
 Require Export cequiv.
 Require Export continuity_defs_ceq.

@@ -612,7 +612,7 @@ Proof.
     { introv.
       pose proof (hv1 x) as h; clear hv1; repnd.
       destruct h0 as [cl wf].
-      apply computation2.isprog_nout_iff; dands; auto. }
+      apply isprog_nout_iff; dands; auto. }
 
     exists (fun x => mk_cnterm (n x) (nout x)).
     unfold computes_to_valc, computes_to_value; simpl; auto.
@@ -621,7 +621,7 @@ Proof.
     apply nt_wf_sterm_implies_isprogram.
     apply nt_wf_sterm_iff; introv.
     pose proof (nout n0) as h.
-    apply computation2.isprog_nout_iff in h; auto.
+    apply isprog_nout_iff in h; sp.
 Qed.
 
 Lemma cequivc_mkc_islambda_mkc_lam {o} :
@@ -1832,7 +1832,7 @@ Proof.
     { introv.
       pose proof (hv1 x) as h; clear hv1; repnd.
       destruct h0 as [cl wf].
-      apply computation2.isprog_nout_iff; dands; auto. }
+      apply isprog_nout_iff; dands; auto. }
 
     exists (fun x => mk_cnterm (n x) (nout x)).
     unfold computes_to_valc, computes_to_value; simpl; auto.
@@ -1841,7 +1841,7 @@ Proof.
     apply nt_wf_sterm_implies_isprogram.
     apply nt_wf_sterm_iff; introv.
     pose proof (nout n0) as h.
-    apply computation2.isprog_nout_iff in h; auto.
+    apply isprog_nout_iff in h; sp.
 Qed.
 
 Lemma inhabited_type_or {o} :

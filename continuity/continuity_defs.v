@@ -33,7 +33,7 @@ Require Export computation8.
 Require Export list_tacs.
 Require Export alphaeq2.
 Require Export substitution2.
-Require Export terms4.
+Require Export terms5.
 Require Export computation10.
 Require Export computation11.
 Require Export nat_defs.

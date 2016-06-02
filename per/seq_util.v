@@ -31,6 +31,7 @@
 
 Require Export cequiv_bind.
 Require Export cvterm4.
+Require Export csubst7.
 Require Export sequents_tacs2.
 Require Export per_props4.
 Require Export per_can.
@@ -114,11 +115,6 @@ Proof.
   introv h.
   inversion h as [q].
   apply Znat.Nat2Z.inj in q; auto.
-Qed.
-
-Lemma wf_tnat {p} : @wf_term p mk_tnat.
-Proof.
-  sp.
 Qed.
 
 Lemma wf_or {o} :
