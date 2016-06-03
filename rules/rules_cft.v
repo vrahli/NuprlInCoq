@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,12 +20,17 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
 
+Require Export cover.
+Require Export terms2.
 Require Export sequents_tacs.
 Require Export cequiv_props.
 Require Export subst_tacs.
@@ -52,17 +59,6 @@ Proof.
   repeat (apply @wf_isect); eauto 3 with slow.
   apply wf_cequiv; eauto 3 with slow.
   apply wf_ispair; eauto 3 with slow.
-Qed.
-
-Lemma cover_vars_upto_cequiv {o} :
-  forall vs (a b : @NTerm o) sub,
-    cover_vars_upto (mk_cequiv a b) sub vs
-    <=> cover_vars_upto a sub vs
-        # cover_vars_upto b sub vs.
-Proof.
-  intros; unfold cover_vars_upto; simpl.
-  allrw remove_nvars_nil_l; allrw app_nil_r.
-  allrw subvars_app_l; sp.
 Qed.
 
 Lemma cover_vars_mk_not_pair {o} :
@@ -553,6 +549,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)

@@ -29,6 +29,7 @@
 *)
 
 
+Require Export cequiv_cvterm.
 Require Export seq_util.
 
 

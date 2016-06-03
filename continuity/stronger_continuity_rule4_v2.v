@@ -289,7 +289,7 @@ Proof.
 
   - apply tequality_mkc_squash.
 
-    try (unfold csubst6.mk_exists); try (unfold csubst6.mk_exists).
+    unfold mk_exists.
     lsubst_tac.
 
     apply tequality_product.
@@ -430,7 +430,7 @@ Proof.
   - apply equality_in_mkc_squash; dands;
     try (spcast; apply computes_to_valc_refl; eauto 3 with slow);[].
 
-    try (unfold csubst6.mk_exists); try (unfold mk_exists).
+    unfold mk_exists.
     lsubst_tac.
 
     exists (mkc_pair (spM_c (lsubstc F wt0 s1 ct2))

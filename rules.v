@@ -57,6 +57,10 @@ Require Import bar_induction_cterm4.
 (* Require Import rules_barind. *)
 
 
+(* Choice sequences: *)
+Require Import choice_sequence_ind.
+
+
 (* Axiom of Choice: *)
 Require Import axiom_choice.
 Require Import axiom_choice_gen.

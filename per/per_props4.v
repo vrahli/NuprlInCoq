@@ -17,7 +17,7 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
   Websites: http://nuprl.org/html/verification/
@@ -29,6 +29,9 @@
 *)
 
 
+Require Export cover.
+Require Export cvterm4.
+Require Export cequiv_seq_util.
 Require Export per_props_nat2.
 Require Export per_props_nat3.
 Require Export continuity_defs_ceq.
@@ -300,6 +303,60 @@ Proof.
   split; sp.
 Qed.
 
+Lemma lsubstc_vars_mk_cequiv_as_mkcv {o} :
+  forall (t1 t2 : @NTerm o) w s vs c,
+    {w1 : wf_term t1
+     & {w2 : wf_term t2
+     & {c1 : cover_vars_upto t1 s vs
+     & {c2 : cover_vars_upto t2 s vs
+     & lsubstc_vars (mk_cequiv t1 t2) w s vs c
+       = mkcv_cequiv
+           vs
+           (lsubstc_vars t1 w1 s vs c1)
+           (lsubstc_vars t2 w2 s vs c2) }}}}.
+Proof.
+  introv.
+
+  dup w as w'.
+  rw <- @wf_cequiv_iff in w'; repnd.
+  dup c as c'.
+  rw @cover_vars_upto_cequiv in c'; repnd.
+
+  exists w'0 w' c'0 c'.
+  apply cvterm_eq; simpl.
+  unfold csubst.
+  repeat unflsubst.
+  simpl; fold_terms.
+  allrw @sub_filter_nil_r; auto.
+Qed.
+
+Lemma lsubstc_vars_mk_approx_as_mkcv {o} :
+  forall (t1 t2 : @NTerm o) w s vs c,
+    {w1 : wf_term t1
+     & {w2 : wf_term t2
+     & {c1 : cover_vars_upto t1 s vs
+     & {c2 : cover_vars_upto t2 s vs
+     & lsubstc_vars (mk_approx t1 t2) w s vs c
+       = mkcv_approx
+           vs
+           (lsubstc_vars t1 w1 s vs c1)
+           (lsubstc_vars t2 w2 s vs c2) }}}}.
+Proof.
+  introv.
+
+  dup w as w'.
+  rw <- @wf_cequiv_iff in w'; repnd.
+  dup c as c'.
+  rw @cover_vars_upto_approx in c'; repnd.
+
+  exists w'0 w' c'0 c'.
+  apply cvterm_eq; simpl.
+  unfold csubst.
+  repeat unflsubst.
+  simpl; fold_terms.
+  allrw @sub_filter_nil_r; auto.
+Qed.
+
 Lemma lsubstc_vars_mk_apply_as_mkcv {o} :
   forall (t1 t2 : @NTerm o) w s vs c,
     {w1 : wf_term t1
@@ -460,6 +517,67 @@ Proof.
   apply cvterm_eq; simpl; auto.
 Qed.
 
+Lemma lsubstc_vars_mk_lam_as_mkcv {o} :
+  forall (v : NVar) (t : @NTerm o) w s vs c,
+    {w1 : wf_term t
+     & {c1 : cover_vars_upto t (csub_filter s [v]) (v :: vs)
+     & lsubstc_vars (mk_lam v t) w s vs c
+       = mkcv_lam
+           vs
+           v
+           (lsubstc_vars t w1 (csub_filter s [v]) (v :: vs) c1)}}.
+Proof.
+  introv.
+
+  dup w as w'.
+  rw <- @wf_lam_iff in w'; repnd.
+  exists w'.
+
+  dup c as c'.
+  rw @cover_vars_upto_lam in c'; repnd.
+  exists c'.
+
+  apply cvterm_eq; simpl.
+  unfold csubst.
+  repeat unflsubst; simpl.
+  fold_terms.
+  allrw @sub_filter_nil_r; auto.
+  rw @sub_filter_csub2sub; auto.
+Qed.
+
+Lemma lsubstc_vars_mk_int_eq_as_mkcv {o} :
+  forall (t1 t2 t3 t4 : @NTerm o) w s vs c,
+    {w1 : wf_term t1
+     & {w2 : wf_term t2
+     & {w3 : wf_term t3
+     & {w4 : wf_term t4
+     & {c1 : cover_vars_upto t1 s vs
+     & {c2 : cover_vars_upto t2 s vs
+     & {c3 : cover_vars_upto t3 s vs
+     & {c4 : cover_vars_upto t4 s vs
+     & lsubstc_vars (mk_int_eq t1 t2 t3 t4) w s vs c
+       = mkcv_inteq
+           vs
+           (lsubstc_vars t1 w1 s vs c1)
+           (lsubstc_vars t2 w2 s vs c2)
+           (lsubstc_vars t3 w3 s vs c3)
+           (lsubstc_vars t4 w4 s vs c4) }}}}}}}}.
+Proof.
+  introv.
+
+  dup w as w'.
+  rw <- @wf_int_eq_iff in w'; repnd.
+  dup c as c'.
+  rw @cover_vars_upto_int_eq in c'; repnd.
+
+  exists w'0 w'1 w'2 w' c'0 c'1 c'2 c'.
+  apply cvterm_eq; simpl.
+  unfold csubst.
+  repeat unflsubst.
+  simpl; fold_terms.
+  allrw @sub_filter_nil_r; auto.
+Qed.
+
 Ltac lsubstc_vars_as_mkcv :=
   match goal with
 
@@ -478,6 +596,36 @@ Ltac lsubstc_vars_as_mkcv :=
       pose proof (lsubstc_vars_mk_squash_as_mkcv t w s vs c) as hyp;
         destruct hyp as [wf hyp];
         destruct hyp as [cv hyp];
+        rewrite hyp in H;
+        clear hyp;
+        proof_irr
+
+    | [ H : context[lsubstc_vars (mk_cequiv ?t1 ?t2) ?w ?s ?vs ?c] |- _ ] =>
+      let hyp := fresh "hyp" in
+      let wf1 := fresh "w1" in
+      let wf2 := fresh "w2" in
+      let cv1 := fresh "c1" in
+      let cv2 := fresh "c2" in
+      pose proof (lsubstc_vars_mk_cequiv_as_mkcv t1 t2 w s vs c) as hyp;
+        destruct hyp as [wf1 hyp];
+        destruct hyp as [wf2 hyp];
+        destruct hyp as [cv1 hyp];
+        destruct hyp as [cv2 hyp];
+        rewrite hyp in H;
+        clear hyp;
+        proof_irr
+
+    | [ H : context[lsubstc_vars (mk_approx ?t1 ?t2) ?w ?s ?vs ?c] |- _ ] =>
+      let hyp := fresh "hyp" in
+      let wf1 := fresh "w1" in
+      let wf2 := fresh "w2" in
+      let cv1 := fresh "c1" in
+      let cv2 := fresh "c2" in
+      pose proof (lsubstc_vars_mk_approx_as_mkcv t1 t2 w s vs c) as hyp;
+        destruct hyp as [wf1 hyp];
+        destruct hyp as [wf2 hyp];
+        destruct hyp as [cv1 hyp];
+        destruct hyp as [cv2 hyp];
         rewrite hyp in H;
         clear hyp;
         proof_irr
@@ -512,6 +660,40 @@ Ltac lsubstc_vars_as_mkcv :=
         destruct hyp as [cv1 hyp];
         destruct hyp as [cv2 hyp];
         destruct hyp as [cv3 hyp];
+        rewrite hyp in H;
+        clear hyp;
+        proof_irr
+
+    | [ H : context[lsubstc_vars (mk_int_eq ?t1 ?t2 ?t3 ?t4) ?w ?s ?vs ?c] |- _ ] =>
+      let hyp := fresh "hyp" in
+      let wf1 := fresh "w1" in
+      let wf2 := fresh "w2" in
+      let wf3 := fresh "w3" in
+      let wf4 := fresh "w4" in
+      let cv1 := fresh "c1" in
+      let cv2 := fresh "c2" in
+      let cv3 := fresh "c3" in
+      let cv4 := fresh "c4" in
+      pose proof (lsubstc_vars_mk_int_eq_as_mkcv t1 t2 t3 t4 w s vs c) as hyp;
+        destruct hyp as [wf1 hyp];
+        destruct hyp as [wf2 hyp];
+        destruct hyp as [wf3 hyp];
+        destruct hyp as [wf4 hyp];
+        destruct hyp as [cv1 hyp];
+        destruct hyp as [cv2 hyp];
+        destruct hyp as [cv3 hyp];
+        destruct hyp as [cv4 hyp];
+        rewrite hyp in H;
+        clear hyp;
+        proof_irr
+
+    | [ H : context[lsubstc_vars (mk_lam ?v ?t) ?w ?s ?vs ?c] |- _ ] =>
+      let hyp := fresh "hyp" in
+      let wf1 := fresh "w1" in
+      let cv1 := fresh "c1" in
+      pose proof (lsubstc_vars_mk_lam_as_mkcv v t w s vs c) as hyp;
+        destruct hyp as [wf1 hyp];
+        destruct hyp as [cv1 hyp];
         rewrite hyp in H;
         clear hyp;
         proof_irr
@@ -611,6 +793,36 @@ Ltac lsubstc_vars_as_mkcv :=
         clear hyp;
         proof_irr
 
+    | [ |- context[lsubstc_vars (mk_cequiv ?t1 ?t2) ?w ?s ?vs ?c] ] =>
+      let hyp := fresh "hyp" in
+      let wf1 := fresh "w1" in
+      let wf2 := fresh "w2" in
+      let cv1 := fresh "c1" in
+      let cv2 := fresh "c2" in
+      pose proof (lsubstc_vars_mk_cequiv_as_mkcv t1 t2 w s vs c) as hyp;
+        destruct hyp as [wf1 hyp];
+        destruct hyp as [wf2 hyp];
+        destruct hyp as [cv1 hyp];
+        destruct hyp as [cv2 hyp];
+        rewrite hyp;
+        clear hyp;
+        proof_irr
+
+    | [ |- context[lsubstc_vars (mk_approx ?t1 ?t2) ?w ?s ?vs ?c] ] =>
+      let hyp := fresh "hyp" in
+      let wf1 := fresh "w1" in
+      let wf2 := fresh "w2" in
+      let cv1 := fresh "c1" in
+      let cv2 := fresh "c2" in
+      pose proof (lsubstc_vars_mk_approx_as_mkcv t1 t2 w s vs c) as hyp;
+        destruct hyp as [wf1 hyp];
+        destruct hyp as [wf2 hyp];
+        destruct hyp as [cv1 hyp];
+        destruct hyp as [cv2 hyp];
+        rewrite hyp;
+        clear hyp;
+        proof_irr
+
     | [ |- context[lsubstc_vars (mk_apply ?t1 ?t2) ?w ?s ?vs ?c] ] =>
       let hyp := fresh "hyp" in
       let wf1 := fresh "w1" in
@@ -641,6 +853,40 @@ Ltac lsubstc_vars_as_mkcv :=
         destruct hyp as [cv1 hyp];
         destruct hyp as [cv2 hyp];
         destruct hyp as [cv3 hyp];
+        rewrite hyp;
+        clear hyp;
+        proof_irr
+
+    | [ |- context[lsubstc_vars (mk_int_eq ?t1 ?t2 ?t3 ?t4) ?w ?s ?vs ?c] ] =>
+      let hyp := fresh "hyp" in
+      let wf1 := fresh "w1" in
+      let wf2 := fresh "w2" in
+      let wf3 := fresh "w3" in
+      let wf4 := fresh "w4" in
+      let cv1 := fresh "c1" in
+      let cv2 := fresh "c2" in
+      let cv3 := fresh "c3" in
+      let cv4 := fresh "c4" in
+      pose proof (lsubstc_vars_mk_int_eq_as_mkcv t1 t2 t3 t4 w s vs c) as hyp;
+        destruct hyp as [wf1 hyp];
+        destruct hyp as [wf2 hyp];
+        destruct hyp as [wf3 hyp];
+        destruct hyp as [wf4 hyp];
+        destruct hyp as [cv1 hyp];
+        destruct hyp as [cv2 hyp];
+        destruct hyp as [cv3 hyp];
+        destruct hyp as [cv4 hyp];
+        rewrite hyp;
+        clear hyp;
+        proof_irr
+
+    | [ |- context[lsubstc_vars (mk_lam ?v ?t) ?w ?s ?vs ?c] ] =>
+      let hyp := fresh "hyp" in
+      let wf1 := fresh "w1" in
+      let cv1 := fresh "c1" in
+      pose proof (lsubstc_vars_mk_lam_as_mkcv v t w s vs c) as hyp;
+        destruct hyp as [wf1 hyp];
+        destruct hyp as [cv1 hyp];
         rewrite hyp;
         clear hyp;
         proof_irr
@@ -745,6 +991,7 @@ Proof.
   repndors; tcsp; spcast.
   eapply equality_respects_cequivc_right;[exact teq|]; auto.
 Qed.
+
 
 (*
 *** Local Variables:

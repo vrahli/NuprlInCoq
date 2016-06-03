@@ -99,9 +99,6 @@ Definition mk_forall {o} (t1 : @NTerm o) (v : NVar) (t2 : NTerm) : NTerm :=
 Definition mkc_forall {o} (t1 : @CTerm o) (v : NVar) (t2 : CVTerm [v]) : CTerm :=
   mkc_function t1 v t2.
 
-Definition mk_exists {o} (t1 : @NTerm o) (v : NVar) (t2 : NTerm) : NTerm :=
-  mk_product t1 v t2.
-
 Definition mkc_exists {o} (t1 : @CTerm o) (v : NVar) (t2 : CVTerm [v]) : CTerm :=
   mkc_product t1 v t2.
 

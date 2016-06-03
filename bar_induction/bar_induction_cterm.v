@@ -30,6 +30,7 @@
 
 
 Require Export cequiv_cnterm.
+Require Export cequiv_cvterm.
 Require Export bar_induction.
 Require Export seq_util.
 

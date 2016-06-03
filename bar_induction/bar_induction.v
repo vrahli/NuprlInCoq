@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,8 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Websites: http://nuprl.org/html/Nuprl2Coq
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
   Authors: Vincent Rahli
@@ -82,14 +85,14 @@ Definition emseq : seq := fun x => 0.
 Definition emkseq : kseq 0 := fun x => 0.
 Definition empseq : pseq := mk_pseq emkseq.
 
-Definition seq2kseq (s : seq) (n : nat) : kseq n :=
+Definition m_seq2kseq (s : seq) (n : nat) : kseq n :=
   fun x =>
     match x with
       | existT k ltk => s k
     end.
 
-Definition seq2pseq (s : seq) (n : nat) : pseq :=
-  mk_pseq (seq2kseq s n).
+Definition m_seq2pseq (s : seq) (n : nat) : pseq :=
+  mk_pseq (m_seq2kseq s n).
 
 Definition extend1 (n : nat) (f : kseq n) (k : nat) : kseq (S n) :=
   fun x =>
@@ -111,7 +114,7 @@ Definition barind_dec (R : pseq -> Type) : Type :=
 
 Definition barind_bared (R : pseq -> Type) : Prop :=
   forall (s : seq),
-    exists n, Cast (R (seq2pseq s n)).
+    exists n, Cast (R (m_seq2pseq s n)).
 
 Definition barind_imp (R : pseq -> Type) (A : pseq -> Prop) : Type :=
   forall (s : pseq), R s -> A s.
@@ -321,7 +324,7 @@ Proof.
 Qed.
 
 Lemma emkseq_eq :
-  forall s, emkseq = seq2kseq s 0.
+  forall s, emkseq = m_seq2kseq s 0.
 Proof.
   introv.
   apply functional_extensionality_dep; introv; allsimpl.
@@ -364,15 +367,15 @@ Proof.
   remember (fun m => kseqNA2m (g m)) as s.
 
   assert (forall n,
-            seq2pseq s n
+            m_seq2pseq s n
             = mk_pseq (kseqS2kseq n (kseqNA2seq (g n)))) as e.
-  { introv; unfold seq2pseq.
+  { introv; unfold m_seq2pseq.
     f_equal.
     subst.
     apply functional_extensionality_dep; introv.
     destruct x.
 
-    unfold seq2kseq.
+    unfold m_seq2kseq.
     unfold kseqS2kseq.
 
     unfold mk_nat_k1.
@@ -408,7 +411,7 @@ Proof.
 
   induction n; allsimpl.
 
-  { unfold seq2pseq in b; allsimpl.
+  { unfold m_seq2pseq in b; allsimpl.
     rw <- emkseq_eq in b; auto. }
 
   pose proof (e (S n)) as q1.
@@ -439,3 +442,10 @@ Proof.
 
   rw ee in b; auto.
 Qed.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
+*** End:
+*)

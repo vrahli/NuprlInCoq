@@ -574,7 +574,7 @@ Proof.
       assert (tequality l x y) as teq
   end.
 
-  - try (unfold csubst6.mk_exists); try (unfold mk_exists).
+  - unfold mk_exists.
     lsubst_tac.
 
     apply tequality_product.
@@ -719,7 +719,7 @@ Proof.
     apply equality_in_mkc_psquash; dands.
 
     {
-    try (unfold csubst6.mk_exists); try (unfold mk_exists).
+    unfold mk_exists.
     lsubst_tac.
 
     apply equality_in_product.
@@ -1496,7 +1496,7 @@ Proof.
     clear teq.
     rw @member_eq.
 
-    try (unfold csubst6.mk_exists); try (unfold mk_exists).
+    unfold mk_exists.
     lsubst_tac.
 
     apply equality_in_product.
