@@ -817,7 +817,7 @@ Proof.
             |].
 
             apply (hasvaluec_implies_cequivc_mkc_isint2
-                     _ _ mkc_true (mkc_approx (mkc_apply (mkc_ntseq n) a0) mkc_bottom))
+                     _ _ mkc_true (mkc_approx (mkc_apply (computation_seq.mkc_ntseq n) a0) mkc_bottom))
               in enh0; repndors; exrepnd;
             eapply member_respects_cequivc_type;
             try (complete (apply cequivc_sym;exact enh1));
@@ -1373,7 +1373,7 @@ Proof.
             |].
 
             apply (hasvaluec_implies_cequivc_mkc_isint2
-                     _ _ mkc_true (mkc_approx (mkc_apply (mkc_ntseq n) a0) mkc_bottom))
+                     _ _ mkc_true (mkc_approx (mkc_apply (computation_seq.mkc_ntseq n) a0) mkc_bottom))
               in enh0; repndors; exrepnd;
             eapply member_respects_cequivc_type;
             try (complete (apply cequivc_sym;exact enh1));
