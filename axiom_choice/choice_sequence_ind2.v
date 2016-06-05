@@ -32,6 +32,7 @@
 Require Export choice_sequence_ind.
 Require Export per_props_cequiv2.
 Require Export types_converge.
+Require Export subst_tacs.
 Require Export list. (* WTF! *)
 
 
@@ -814,6 +815,12 @@ Lemma ind_nwf_pred {o} :
     -> z <> f
     -> f <> n
     -> k <> m
+    -> z <> m
+    -> n <> m
+    -> f <> m
+    -> v <> n
+    -> v <> f
+    -> v <> m
     -> !LIn n (vars_hyps H)
     -> !LIn f (vars_hyps H)
     -> !LIn z (vars_hyps H)
@@ -823,7 +830,9 @@ Lemma ind_nwf_pred {o} :
          lib
          (choice_sequence_ind_ind H (nwf_pred k s) f n m z v).
 Proof.
-  introv d1 d2 d3 d4 d5 ni1 ni2 ni3 wfH.
+  introv d1 d2 d3 d4 d5;
+  introv d6 d7 d8 d9 d10 d11;
+  introv ni1 ni2 ni3 wfH.
 
   assert (wf_csequent (choice_sequence_ind_ind H (nwf_pred k s) f n m z v)) as wfc.
   {
@@ -870,12 +879,10 @@ Proof.
     repeat (lsubstc_vars_as_mkcv; clear_wf_cov).
     autorewrite with slow.
 
-    pose proof (lsubstc_vars_mk_add_as_mkcv
-                  (mk_var n) mk_one w4 (csub_filter s1 [m]) [m] c7) as h1.
+    pose proof (lsubstc_mk_add_ex (mk_var n) mk_one s1 w4 c4) as h1.
     exrepnd; rewrite h1; clear h1.
 
-    pose proof (lsubstc_vars_mk_add_as_mkcv
-                  (mk_var n) mk_one w4 (csub_filter s2 [m]) [m] c10) as h1.
+    pose proof (lsubstc_mk_add_ex (mk_var n) mk_one s2 w4 c) as h1.
     exrepnd; rewrite h1; clear h1.
 
     repeat (lsubstc_vars_as_mkcv; clear_wf_cov).
@@ -891,13 +898,137 @@ Proof.
       apply similarity_dom in sim5; repnd; allrw; auto.
     }
 
+    assert (!LIn f (dom_csub s1a)) as nif1.
+    {
+      apply similarity_dom in sim5; repnd; allrw; auto.
+    }
+
+    assert (!LIn n (dom_csub s2a)) as nin2.
+    {
+      apply similarity_dom in sim5; repnd; allrw; auto.
+    }
+
+    assert (!LIn f (dom_csub s2a)) as nif2.
+    {
+      apply similarity_dom in sim5; repnd; allrw; auto.
+    }
+
     eapply alphaeqc_preserving_equality in sim2;
       [|apply lsubstc_mk_natk2nat_sp2; auto];[].
     lsubst_tac.
     clear_wf_cov.
     autorewrite with slow in *.
 
-    apply equality_in_mkc_apply2_mkc_nwf_pred_iff in sim1.
+    apply equality_in_mkc_apply2_mkc_nwf_pred_iff in sim1; auto.
+    repeat substc_lsubstc_vars3.
+
+    assert (!LIn z (@free_vars o (mk_update_seq (mk_var f) (mk_var n) (mk_var m) v))) as niz.
+    {
+      simpl; autorewrite with slow.
+      rw in_remove_nvars; simpl; sp.
+    }
+
+    revert dependent c24; revert dependent c25.
+    repeat rewrite cons_snoc; introv.
+    lsubst_tac.
+    revert dependent c26; revert dependent c27.
+    repeat rewrite <- cons_snoc; introv.
+
+    apply equality_in_tnat in ea.
+    unfold equality_of_nat in ea; exrepnd; spcast.
+
+    apply equality_in_tnat in sim3.
+    unfold equality_of_nat in sim3; exrepnd; spcast.
+
+    repndors; exrepnd; spcast.
+
+    - eapply computes_to_valc_eq in sim3;[|exact sim7].
+      rewrite mkc_zero_eq in sim3.
+      apply mkc_nat_eq_implies in sim3; subst.
+      rewrite <- mkc_zero_eq in sim0.
+
+      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w5 s1a a 0 k0 t0 t4 c26) as h1.
+      repeat (autodimp h1 hyp); tcsp.
+      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w5 s2a a' 0 k0 t3 t5 c27) as h2.
+      repeat (autodimp h2 hyp); tcsp.
+      eapply tequality_respects_cequivc_left;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_refl
+          |exact h1]
+        |].
+      eapply tequality_respects_cequivc_right;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_refl
+          |exact h2]
+        |].
+      clear h1 h2; proof_irr.
+
+      eapply tequality_respects_cequivc_left;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply implies_cequivc_mkc_add;
+            [apply computes_to_valc_implies_cequivc;exact sim7
+            |apply cequivc_refl]
+          |apply cequivc_refl]
+        |].
+      eapply tequality_respects_cequivc_right;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply implies_cequivc_mkc_add;
+            [apply computes_to_valc_implies_cequivc;exact sim0
+            |apply cequivc_refl]
+          |apply cequivc_refl]
+        |].
+      eapply tequality_respects_cequivc_left;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_mkc_add_integer
+          |apply cequivc_refl]
+        |].
+      eapply tequality_respects_cequivc_right;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_mkc_add_integer
+          |apply cequivc_refl]
+        |].
+
+      assert (@mkc_integer o (Z.of_nat 0 + Z.of_nat 1) = mkc_one) as e.
+      { apply cterm_eq; simpl; auto. }
+      rewrite e; clear e.
+
+Lemma tequality_in_mkc_apply2_mkc_nwf_pred_implies {o} :
+  forall lib (n1 n2 f1 f2 : @CTerm o) k s,
+    s <> k
+    -> tequality
+         lib
+         (mkc_apply2 (mkc_nwf_pred k s) n1 f1)
+         (mkc_apply2 (mkc_nwf_pred k s) n2 f2)
+    -> False.
+Proof.
+  introv d1 e.
+  unfold mkc_nwf_pred in e.
+  eapply tequality_respects_cequivc_left in e;[|apply cequivc_beta2].
+  eapply tequality_respects_cequivc_right in e;[|apply cequivc_beta2].
+  repeat (rewrite mkcv_lam_substc in e; auto;[]).
+  eapply tequality_respects_cequivc_left in e;[|apply cequivc_beta].
+  eapply tequality_respects_cequivc_right in e;[|apply cequivc_beta].
+  autorewrite with slow in e.
+  repeat (rewrite substc2_mk_cv_app_r in e; auto;[]).
+  autorewrite with slow in e.
+
+  (* need something like equality_in_inteq_iff but for tequality *)
+
+Qed.
+
+    (* need same as equality_in_mkc_apply2_mkc_nwf_pred_iff but for tequality! *)
 
   }
 Qed.
