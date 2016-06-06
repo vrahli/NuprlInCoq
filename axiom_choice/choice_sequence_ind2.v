@@ -33,9 +33,20 @@ Require Export choice_sequence_ind.
 Require Export per_props_cequiv2.
 Require Export types_converge.
 Require Export subst_tacs.
+Require Export sequents_equality.
 Require Export list. (* WTF! *)
 
 
+(*
+
+ Change this for:
+
+   \n,s. if n = 0 then True
+         if n = 1 then s(0) ~ 0
+         if s(0) = 0 then True
+         else *
+
+*)
 Definition nwf_pred {o} (n s : NVar) :=
   @mk_lam
     o
@@ -663,23 +674,22 @@ Lemma equality_in_mkc_apply2_mkc_nwf_pred_implies {o} :
     -> equality lib t1 t2 (mkc_apply2 (mkc_nwf_pred k s) n f)
     ->
     (
+      ccomputes_to_valc lib t1 mkc_axiom
+      /\ ccomputes_to_valc lib t2 mkc_axiom
+      /\ ccomputes_to_valc lib (mkc_apply f mkc_zero) mkc_zero
+      /\
       (
-        ccomputes_to_valc lib t1 mkc_axiom
-        /\ ccomputes_to_valc lib t2 mkc_axiom
-        /\ ccomputes_to_valc lib n mkc_zero
-        /\ ccomputes_to_valc lib (mkc_apply f mkc_zero) mkc_zero
-        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n f) (mkc_cequiv (mkc_apply f mkc_zero) mkc_zero)
-
-      )
+        (
+          ccomputes_to_valc lib n mkc_zero
+          /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n f) (mkc_cequiv (mkc_apply f mkc_zero) mkc_zero)
+        )
         {+}
         {pk : param_kind
          , ccomputes_to_valc lib n (pk2termc pk)
          /\ pk <> PKi 0
-         /\ ccomputes_to_valc lib t1 mkc_axiom
-         /\ ccomputes_to_valc lib t2 mkc_axiom
-         /\ ccomputes_to_valc lib (mkc_apply f mkc_zero) mkc_zero
          /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n f) mkc_true
         }
+      )
     ).
 Proof.
   introv d1 e.
@@ -706,6 +716,7 @@ Proof.
       [|rewrite mkc_zero_eq; apply computes_to_valc_refl; eauto 3 with slow].
     rewrite <- mkc_zero_eq in e1.
 
+    dands; spcast; auto.
     left; dands; spcast; auto.
 
     unfold mkc_nwf_pred.
@@ -729,6 +740,7 @@ Proof.
       rewrite <- mkc_nat_eq in e4.
       rewrite <- mkc_zero_eq in e4.
 
+      dands; spcast; auto.
       right.
       exists pk1; dands; spcast; auto.
 
@@ -750,32 +762,32 @@ Lemma implies_equality_in_mkc_apply2_mkc_nwf_pred {o} :
     s <> k
     ->
     (
+      ccomputes_to_valc lib t1 mkc_axiom
+      /\ ccomputes_to_valc lib t2 mkc_axiom
+      /\ ccomputes_to_valc lib (mkc_apply f mkc_zero) mkc_zero
+      /\
       (
-        ccomputes_to_valc lib t1 mkc_axiom
-        /\ ccomputes_to_valc lib t2 mkc_axiom
-        /\ ccomputes_to_valc lib n mkc_zero
-        /\ ccomputes_to_valc lib (mkc_apply f mkc_zero) mkc_zero
-        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n f) (mkc_cequiv (mkc_apply f mkc_zero) mkc_zero)
-      )
+        (
+          ccomputes_to_valc lib n mkc_zero
+          /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n f) (mkc_cequiv (mkc_apply f mkc_zero) mkc_zero)
+        )
         {+}
         {pk : param_kind
          , ccomputes_to_valc lib n (pk2termc pk)
          /\ pk <> PKi 0
-         /\ ccomputes_to_valc lib t1 mkc_axiom
-         /\ ccomputes_to_valc lib t2 mkc_axiom
-         /\ ccomputes_to_valc lib (mkc_apply f mkc_zero) mkc_zero
          /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n f) mkc_true
         }
+      )
     )
     -> equality lib t1 t2 (mkc_apply2 (mkc_nwf_pred k s) n f).
 Proof.
   introv d comp.
-  repndors; exrepnd; spcast.
+  repnd; repndors; exrepnd; spcast.
 
   - eapply cequivc_preserving_equality;[|apply cequivc_sym;exact comp].
     apply equality_in_mkc_cequiv; dands; spcast; eauto 3 with slow.
 
-  - eapply cequivc_preserving_equality;[|apply cequivc_sym;exact comp0].
+  - eapply cequivc_preserving_equality;[|apply cequivc_sym;exact comp3].
     apply equality_in_true; dands; spcast; eauto 3 with slow.
 Qed.
 
@@ -784,28 +796,482 @@ Lemma equality_in_mkc_apply2_mkc_nwf_pred_iff {o} :
     equality lib t1 t2 (mkc_apply2 (mkc_nwf_pred k s) n f)
     <=>
     (
+      ccomputes_to_valc lib t1 mkc_axiom
+      /\ ccomputes_to_valc lib t2 mkc_axiom
+      /\ ccomputes_to_valc lib (mkc_apply f mkc_zero) mkc_zero
+      /\
       (
-        ccomputes_to_valc lib t1 mkc_axiom
-        /\ ccomputes_to_valc lib t2 mkc_axiom
-        /\ ccomputes_to_valc lib n mkc_zero
-        /\ ccomputes_to_valc lib (mkc_apply f mkc_zero) mkc_zero
-        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n f) (mkc_cequiv (mkc_apply f mkc_zero) mkc_zero)
-
-      )
+        (
+          ccomputes_to_valc lib n mkc_zero
+          /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n f) (mkc_cequiv (mkc_apply f mkc_zero) mkc_zero)
+        )
         {+}
         {pk : param_kind
          , ccomputes_to_valc lib n (pk2termc pk)
          /\ pk <> PKi 0
-         /\ ccomputes_to_valc lib t1 mkc_axiom
-         /\ ccomputes_to_valc lib t2 mkc_axiom
-         /\ ccomputes_to_valc lib (mkc_apply f mkc_zero) mkc_zero
          /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n f) mkc_true
         }
+      )
     ).
 Proof.
   introv d; split; intro h.
   - apply equality_in_mkc_apply2_mkc_nwf_pred_implies; auto.
   - apply implies_equality_in_mkc_apply2_mkc_nwf_pred; auto.
+Qed.
+
+Lemma tequality_implies_type {o}:
+  forall lib (t1 t2 : @CTerm o),
+    tequality lib t1 t2 -> (type lib t1 # type lib t2).
+Proof.
+  introv t.
+  applydup @tequality_refl in t.
+  apply tequality_sym in t.
+  applydup @tequality_refl in t.
+  sp.
+Qed.
+
+Lemma tequality_inteq_left_implies {o} :
+  forall lib (a b c d u : @CTerm o),
+    tequality lib (mkc_inteq a b c d) u
+    -> {pka : param_kind
+        , {pkb : param_kind
+        , ccomputes_to_valc lib a (pk2termc pka)
+        /\ ccomputes_to_valc lib b (pk2termc pkb)
+        /\
+        (
+          (pka = pkb
+           /\ ccequivc lib (mkc_inteq a b c d) c
+           /\ tequality lib c u)
+            {+}
+            (pka <> pkb
+             /\ ccequivc lib (mkc_inteq a b c d) d
+             /\ tequality lib d u
+            )
+       ) }}.
+Proof.
+  introv t.
+  applydup @tequality_implies_type in t; repnd.
+  apply types_converge in t1; spcast.
+  apply hasvaluec_implies_computes_to_valc in t1.
+  exrepnd.
+  applydup @computes_to_valc_mkc_inteq in t2; exrepnd.
+
+  exists pk1 pk2.
+  dands; spcast; auto;
+  try (apply computes_to_valc_iff_reduces_toc; dands; eauto 3 with slow).
+
+  repndors; repnd;[left|right]; dands; auto; spcast.
+
+  - eapply cequivc_trans;[apply computes_to_valc_implies_cequivc;exact t2|].
+    apply cequivc_sym; eauto 3 with slow.
+
+  - eapply tequality_respects_cequivc_left;
+    [apply cequivc_sym;apply computes_to_valc_implies_cequivc;exact t1|].
+    eapply tequality_respects_cequivc_left;
+      [apply computes_to_valc_implies_cequivc;exact t2|].
+    auto.
+
+  - eapply cequivc_trans;[apply computes_to_valc_implies_cequivc;exact t2|].
+    apply cequivc_sym; eauto 3 with slow.
+
+  - eapply tequality_respects_cequivc_left;
+    [apply cequivc_sym;apply computes_to_valc_implies_cequivc;exact t1|].
+    eapply tequality_respects_cequivc_left;
+      [apply computes_to_valc_implies_cequivc;exact t2|].
+    auto.
+Qed.
+
+Lemma implies_tequality_inteq_left {o} :
+  forall lib (a b c d u : @CTerm o),
+    {pka : param_kind
+     , {pkb : param_kind
+     , ccomputes_to_valc lib a (pk2termc pka)
+     /\ ccomputes_to_valc lib b (pk2termc pkb)
+     /\
+     (
+       (pka = pkb
+        /\ ccequivc lib (mkc_inteq a b c d) c
+        /\ tequality lib c u)
+         {+}
+         (pka <> pkb
+          /\ ccequivc lib (mkc_inteq a b c d) d
+          /\ tequality lib d u)
+    ) }}
+    -> tequality lib (mkc_inteq a b c d) u.
+Proof.
+  introv comp; exrepnd; spcast.
+
+  eapply tequality_respects_cequivc_left;
+    [apply cequivc_sym;apply cequivc_mkc_inteq;
+     [apply computes_to_valc_implies_cequivc;exact comp0
+     |apply computes_to_valc_implies_cequivc;exact comp2
+     |apply cequivc_refl
+     |apply cequivc_refl]
+    |].
+
+  repndors; repnd; subst.
+
+  - eapply tequality_respects_cequivc_left;
+    [apply cequivc_sym;
+      apply reduces_toc_implies_cequivc;
+      apply reduces_toc_mkc_inteq_eq|].
+    auto.
+
+  - eapply tequality_respects_cequivc_left;
+    [apply cequivc_sym;
+      apply reduces_toc_implies_cequivc;
+      apply reduces_toc_mkc_inteq_diff;auto|].
+    auto.
+Qed.
+
+Lemma tequality_inteq_left_iff {o} :
+  forall lib (a b c d u : @CTerm o),
+    tequality lib (mkc_inteq a b c d) u
+    <=>
+    {pka : param_kind
+     , {pkb : param_kind
+     , ccomputes_to_valc lib a (pk2termc pka)
+     /\ ccomputes_to_valc lib b (pk2termc pkb)
+     /\
+     (
+       (pka = pkb
+        /\ ccequivc lib (mkc_inteq a b c d) c
+        /\ tequality lib c u)
+         {+}
+         (pka <> pkb
+          /\ ccequivc lib (mkc_inteq a b c d) d
+          /\ tequality lib d u)
+    ) }}.
+Proof.
+  introv; split; intro h.
+  - apply tequality_inteq_left_implies; auto.
+  - apply implies_tequality_inteq_left; auto.
+Qed.
+
+Lemma tequality_cequiv_left_implies {o} :
+  forall lib (a b c : @CTerm o),
+    tequality lib (mkc_cequiv a b) c
+    -> {a' : CTerm
+        , {b' : CTerm
+        , ccomputes_to_valc lib c (mkc_cequiv a' b') }}.
+Proof.
+  introv teq.
+  unfold tequality, nuprl in teq; exrepnd.
+  inversion teq0; try not_univ.
+  allunfold @per_cequiv; exrepnd.
+  eexists; eexists; eauto.
+Qed.
+
+Hint Resolve iscvalue_mkc_true : slow.
+
+Lemma tequality_in_mkc_apply2_mkc_nwf_pred_implies {o} :
+  forall lib (n1 n2 f1 f2 : @CTerm o) k s,
+    s <> k
+    -> tequality
+         lib
+         (mkc_apply2 (mkc_nwf_pred k s) n1 f1)
+         (mkc_apply2 (mkc_nwf_pred k s) n2 f2)
+    ->
+    (
+      (
+        ccomputes_to_valc lib n1 mkc_zero
+        /\ ccomputes_to_valc lib n2 mkc_zero
+        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n1 f1) (mkc_cequiv (mkc_apply f1 mkc_zero) mkc_zero)
+        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n2 f2) (mkc_cequiv (mkc_apply f2 mkc_zero) mkc_zero)
+        /\ (((mkc_apply f1 mkc_zero) ~=~(lib) (mkc_zero))
+            <=>
+            ((mkc_apply f2 mkc_zero) ~=~(lib) (mkc_zero)))
+      )
+      {+}
+      {pk1 : param_kind
+       , {pk2 : param_kind
+       , ccomputes_to_valc lib n1 (pk2termc pk1)
+       /\ ccomputes_to_valc lib n2 (pk2termc pk2)
+       /\ pk1 <> PKi 0
+       /\ pk2 <> PKi 0
+       /\ ccomputes_to_valc lib (mkc_apply f1 mkc_zero) mkc_zero
+       /\ ccomputes_to_valc lib (mkc_apply f2 mkc_zero) mkc_zero
+       /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n1 f1) mkc_true
+       /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n2 f2) mkc_true }}
+    ).
+Proof.
+  introv d1 e.
+  unfold mkc_nwf_pred in e.
+  eapply tequality_respects_cequivc_left in e;[|apply cequivc_beta2].
+  eapply tequality_respects_cequivc_right in e;[|apply cequivc_beta2].
+  repeat (rewrite mkcv_lam_substc in e; auto;[]).
+  eapply tequality_respects_cequivc_left in e;[|apply cequivc_beta].
+  eapply tequality_respects_cequivc_right in e;[|apply cequivc_beta].
+  autorewrite with slow in e.
+  repeat (rewrite substc2_mk_cv_app_r in e; auto;[]).
+  autorewrite with slow in e.
+
+  applydup @tequality_inteq_left_iff in e.
+  apply tequality_sym in e.
+  applydup @tequality_inteq_left_iff in e.
+  exrepnd; spcast.
+
+  apply computes_to_valc_isvalue_eq in e5; eauto 3 with slow.
+  apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
+  apply mkc_zero_eq_pk2term_implies in e5.
+  apply mkc_zero_eq_pk2term_implies in e3.
+  subst.
+
+  repndors; exrepnd; subst; spcast.
+
+  - rewrite <- mkc_integer_eq_pk2termc in e4.
+    rewrite <- mkc_integer_eq_pk2termc in e2.
+    assert (0%Z = Z.of_nat 0) as xx by auto.
+    rewrite xx in e4; rewrite xx in e2; clear xx.
+    rewrite <- mkc_nat_eq in e2.
+    rewrite <- mkc_nat_eq in e4.
+    rewrite <- mkc_zero_eq in e4.
+    rewrite <- mkc_zero_eq in e2.
+    eapply tequality_respects_cequivc_right in e0;[|exact e7].
+    apply tequality_mkc_cequiv in e0.
+
+    left.
+    dands; spcast; auto.
+
+    + unfold mkc_nwf_pred.
+      eapply cequivc_trans;[apply cequivc_beta2|].
+      rewrite mkcv_lam_substc; auto.
+      eapply cequivc_trans;[apply cequivc_beta|].
+      autorewrite with slow.
+      repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+      autorewrite with slow.
+      auto.
+
+    + unfold mkc_nwf_pred.
+      eapply cequivc_trans;[apply cequivc_beta2|].
+      rewrite mkcv_lam_substc; auto.
+      eapply cequivc_trans;[apply cequivc_beta|].
+      autorewrite with slow.
+      repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+      autorewrite with slow.
+      auto.
+
+  - eapply tequality_respects_cequivc_right in e0;[|exact e7].
+
+    apply tequality_sym in e0.
+    applydup @tequality_inteq_left_iff in e0.
+    exrepnd; spcast.
+
+    apply computes_to_valc_isvalue_eq in e9; eauto 3 with slow.
+    apply mkc_zero_eq_pk2term_implies in e9; subst.
+
+    repndors; exrepnd.
+
+    + apply tequality_sym in e3.
+      apply tequality_cequiv_left_implies in e3; exrepnd; spcast.
+      apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
+
+      assert (get_cterm mkc_true = get_cterm (mkc_cequiv a' b')) as xx by (rewrite e3; auto).
+      destruct_cterms; inversion xx.
+
+    + apply tequality_sym in e3.
+      apply tequality_cequiv_left_implies in e3; exrepnd; spcast.
+      apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
+
+      assert (get_cterm mkc_axiom = get_cterm (mkc_cequiv a' b')) as xx by (rewrite e3; auto).
+      destruct_cterms; inversion xx.
+
+  - eapply tequality_respects_cequivc_right in e0;[|exact e7].
+
+    applydup @tequality_inteq_left_iff in e0.
+    exrepnd; spcast.
+
+    apply computes_to_valc_isvalue_eq in e9; eauto 3 with slow.
+    apply mkc_zero_eq_pk2term_implies in e9; subst.
+
+    repndors; exrepnd.
+
+    + apply tequality_sym in e6.
+      apply tequality_cequiv_left_implies in e6; exrepnd; spcast.
+      apply computes_to_valc_isvalue_eq in e6; eauto 3 with slow.
+
+      assert (get_cterm mkc_true = get_cterm (mkc_cequiv a' b')) as xx by (rewrite e6; auto).
+      destruct_cterms; inversion xx.
+
+    + apply tequality_sym in e6.
+      apply tequality_cequiv_left_implies in e6; exrepnd; spcast.
+      apply computes_to_valc_isvalue_eq in e6; eauto 3 with slow.
+
+      assert (get_cterm mkc_axiom = get_cterm (mkc_cequiv a' b')) as xx by (rewrite e6; auto).
+      destruct_cterms; inversion xx.
+
+  - eapply tequality_respects_cequivc_right in e0;[|exact e7].
+    applydup @tequality_inteq_left_iff in e0.
+    apply tequality_sym in e0.
+    applydup @tequality_inteq_left_iff in e0.
+    exrepnd; spcast.
+
+    apply computes_to_valc_isvalue_eq in e13; eauto 3 with slow.
+    apply computes_to_valc_isvalue_eq in e11; eauto 3 with slow.
+    apply mkc_zero_eq_pk2term_implies in e13.
+    apply mkc_zero_eq_pk2term_implies in e11.
+    subst.
+
+    repndors; exrepnd; subst; spcast.
+
+    + rewrite <- mkc_integer_eq_pk2termc in e10.
+      rewrite <- mkc_integer_eq_pk2termc in e12.
+      assert (0%Z = Z.of_nat 0) as xx by auto.
+      rewrite xx in e10; rewrite xx in e12; clear xx.
+      rewrite <- mkc_nat_eq in e10.
+      rewrite <- mkc_nat_eq in e12.
+      rewrite <- mkc_zero_eq in e10.
+      rewrite <- mkc_zero_eq in e12.
+
+      right.
+      exists pka0 pka.
+      dands; spcast; auto.
+
+      * unfold mkc_nwf_pred.
+        eapply cequivc_trans;[apply cequivc_beta2|].
+        rewrite mkcv_lam_substc; auto.
+        eapply cequivc_trans;[apply cequivc_beta|].
+        autorewrite with slow.
+        repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+        autorewrite with slow.
+        auto.
+        eapply cequivc_trans;[exact e5|].
+        auto.
+
+      * unfold mkc_nwf_pred.
+        eapply cequivc_trans;[apply cequivc_beta2|].
+        rewrite mkcv_lam_substc; auto.
+        eapply cequivc_trans;[apply cequivc_beta|].
+        autorewrite with slow.
+        repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+        autorewrite with slow.
+        auto.
+        eapply cequivc_trans;[exact e7|].
+        auto.
+
+    + apply tequality_refl in e9.
+      apply not_type_axiom in e9; sp.
+
+    + apply tequality_refl in e8.
+      apply not_type_axiom in e8; sp.
+
+    + apply tequality_refl in e8.
+      apply not_type_axiom in e8; sp.
+Qed.
+
+Lemma implies_tequality_in_mkc_apply2_mkc_nwf_pred {o} :
+  forall lib (n1 n2 f1 f2 : @CTerm o) k s,
+    s <> k
+    ->
+    (
+      (
+        ccomputes_to_valc lib n1 mkc_zero
+        /\ ccomputes_to_valc lib n2 mkc_zero
+        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n1 f1) (mkc_cequiv (mkc_apply f1 mkc_zero) mkc_zero)
+        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n2 f2) (mkc_cequiv (mkc_apply f2 mkc_zero) mkc_zero)
+        /\ (((mkc_apply f1 mkc_zero) ~=~(lib) (mkc_zero))
+            <=>
+            ((mkc_apply f2 mkc_zero) ~=~(lib) (mkc_zero)))
+      )
+      {+}
+      {pk1 : param_kind
+       , {pk2 : param_kind
+       , ccomputes_to_valc lib n1 (pk2termc pk1)
+       /\ ccomputes_to_valc lib n2 (pk2termc pk2)
+       /\ pk1 <> PKi 0
+       /\ pk2 <> PKi 0
+       /\ ccomputes_to_valc lib (mkc_apply f1 mkc_zero) mkc_zero
+       /\ ccomputes_to_valc lib (mkc_apply f2 mkc_zero) mkc_zero
+       /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n1 f1) mkc_true
+       /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n2 f2) mkc_true }}
+    )
+    -> tequality
+         lib
+         (mkc_apply2 (mkc_nwf_pred k s) n1 f1)
+         (mkc_apply2 (mkc_nwf_pred k s) n2 f2).
+Proof.
+  introv d1 h.
+
+  repndors; exrepnd; spcast.
+
+  - eapply tequality_respects_cequivc_left;[apply cequiv_sym;exact h2|].
+    eapply tequality_respects_cequivc_right;[apply cequiv_sym;exact h3|].
+    apply tequality_mkc_cequiv; auto.
+
+  - eapply tequality_respects_cequivc_left;[apply cequiv_sym;exact h7|].
+    eapply tequality_respects_cequivc_right;[apply cequiv_sym;exact h1|].
+    eauto 3 with slow.
+Qed.
+
+Lemma tequality_in_mkc_apply2_mkc_nwf_pred_iff {o} :
+  forall lib (n1 n2 f1 f2 : @CTerm o) k s,
+    s <> k
+    ->
+    (
+      tequality
+        lib
+        (mkc_apply2 (mkc_nwf_pred k s) n1 f1)
+        (mkc_apply2 (mkc_nwf_pred k s) n2 f2)
+      <=>
+    (
+      (
+        ccomputes_to_valc lib n1 mkc_zero
+        /\ ccomputes_to_valc lib n2 mkc_zero
+        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n1 f1) (mkc_cequiv (mkc_apply f1 mkc_zero) mkc_zero)
+        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n2 f2) (mkc_cequiv (mkc_apply f2 mkc_zero) mkc_zero)
+        /\ (((mkc_apply f1 mkc_zero) ~=~(lib) (mkc_zero))
+            <=>
+            ((mkc_apply f2 mkc_zero) ~=~(lib) (mkc_zero)))
+      )
+      {+}
+      {pk1 : param_kind
+       , {pk2 : param_kind
+       , ccomputes_to_valc lib n1 (pk2termc pk1)
+       /\ ccomputes_to_valc lib n2 (pk2termc pk2)
+       /\ pk1 <> PKi 0
+       /\ pk2 <> PKi 0
+       /\ ccomputes_to_valc lib (mkc_apply f1 mkc_zero) mkc_zero
+       /\ ccomputes_to_valc lib (mkc_apply f2 mkc_zero) mkc_zero
+       /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n1 f1) mkc_true
+       /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n2 f2) mkc_true }}
+    )).
+Proof.
+  introv d1; split; introv h.
+  - apply tequality_in_mkc_apply2_mkc_nwf_pred_implies; auto.
+  - apply implies_tequality_in_mkc_apply2_mkc_nwf_pred; auto.
+Qed.
+
+Lemma isvalue_one {o} : @isvalue o mk_one.
+Proof.
+  constructor; eauto 3 with slow; sp.
+Qed.
+Hint Resolve isvalue_one : slow.
+
+Lemma iscvalue_one {o} : @iscvalue o mkc_one.
+Proof.
+  unfold iscvalue; simpl; eauto 3 with slow.
+Qed.
+Hint Resolve iscvalue_one : slow.
+
+Lemma reduce_toc_beta {o} :
+  forall lib (v : NVar) (b : CVTerm [v]) (a : @CTerm o),
+    reduces_toc lib (mkc_apply (mkc_lam v b) a) (substc a v b).
+Proof.
+  introv.
+  destruct_cterms; unfold reduces_toc; simpl.
+  apply reduces_to_if_step; csunf; simpl; auto.
+Qed.
+
+Lemma computes_to_valc_reduces_toc_trans {o} :
+  forall lib (a b v : @CTerm o),
+    reduces_toc lib a b
+    -> computes_to_valc lib b v
+    -> computes_to_valc lib a v.
+Proof.
+  introv comp1 comp2; destruct_cterms; allunfold @computes_to_valc;
+  allunfold @reduces_toc; allsimpl.
+  allunfold @computes_to_value; repnd; dands; auto.
+  eapply reduces_to_trans; eauto.
 Qed.
 
 Lemma ind_nwf_pred {o} :
@@ -867,72 +1333,107 @@ Proof.
   unfold mk_exists.
   lsubst_tac.
 
+  apply similarity_snoc in sim; simpl in sim; exrepnd; subst.
+  apply similarity_snoc in sim3; simpl in sim3; exrepnd; subst.
+  apply similarity_snoc in sim4; simpl in sim4; exrepnd; subst.
+  autorewrite with slow in *.
+
+  assert (!LIn n (dom_csub s1a)) as nin1.
+  {
+    apply similarity_dom in sim5; repnd; allrw; auto.
+  }
+
+  assert (!LIn f (dom_csub s1a)) as nif1.
+  {
+    apply similarity_dom in sim5; repnd; allrw; auto.
+  }
+
+  assert (!LIn n (dom_csub s2a)) as nin2.
+  {
+    apply similarity_dom in sim5; repnd; allrw; auto.
+  }
+
+  assert (!LIn f (dom_csub s2a)) as nif2.
+  {
+    apply similarity_dom in sim5; repnd; allrw; auto.
+  }
+
+  eapply alphaeqc_preserving_equality in sim2;
+    [|apply lsubstc_mk_natk2nat_sp2; auto];[].
+  lsubst_tac.
+  clear_wf_cov.
+  autorewrite with slow in *.
+
+  dup sim1 as eqnwf.
+  apply equality_in_mkc_apply2_mkc_nwf_pred_iff in sim1; auto.
+  repeat substc_lsubstc_vars3.
+
+  assert (!LIn z (@free_vars o (mk_update_seq (mk_var f) (mk_var n) (mk_var m) v))) as niz.
+  {
+    simpl; autorewrite with slow.
+    rw in_remove_nvars; simpl; sp.
+  }
+
+  pose proof (eqh (snoc (snoc (snoc s2a (n, t5)) (f, t3)) (z, t2))) as hf.
+  autodimp hf hyp.
+
+  {
+    sim_snoc2; dands; auto.
+
+    {
+      sim_snoc2; dands; auto.
+
+      {
+        sim_snoc2; dands; auto.
+        autorewrite with slow; auto.
+      }
+
+      {
+        eapply alphaeqc_preserving_equality;
+        [|apply alphaeqc_sym; apply lsubstc_mk_natk2nat_sp2; auto];[].
+        auto.
+      }
+    }
+
+    {
+      lsubst_tac_c.
+      autorewrite with slow.
+      auto.
+    }
+  }
+
+  apply eq_hyps_snoc in hf; simpl in hf; exrepnd.
+  apply snoc_inj in hf1; apply snoc_inj in hf2; repnd; subst; ginv; spcast.
+  lsubst_tac_h hf0.
+  autorewrite with slow in hf0.
+  clear_wf_cov.
+
+  apply tequality_in_mkc_apply2_mkc_nwf_pred_iff in hf0; auto;[].
+  clear sim1.
+
   apply implies_tequality_equality_mkc_squash_and.
   rw @tequality_product.
   rw @inhabited_product.
+  autorewrite with slow.
+
+  repeat (lsubstc_vars_as_mkcv; clear_wf_cov).
+  autorewrite with slow.
+
+  assert (!LIn z (free_vars (@mk_var o n))) as nizn by (simpl; introv h; repndors; subst; tcsp).
+  assert (!LIn f (free_vars (@mk_var o n))) as nifn by (simpl; introv h; repndors; subst; tcsp).
+  assert (!LIn z (free_vars (@mk_one o))) as nizo by (simpl; introv h; repndors; subst; tcsp).
+  assert (!LIn f (free_vars (@mk_one o))) as nifo by (simpl; introv h; repndors; subst; tcsp).
+
+  lift_lsubst_concl.
+  repeat (lsubstc_snoc_step_concl auto).
+  lift_lsubst_concl.
   autorewrite with slow.
 
   dands; eauto 3 with slow.
 
   {
     introv ea.
-    repeat (lsubstc_vars_as_mkcv; clear_wf_cov).
     autorewrite with slow.
-
-    pose proof (lsubstc_mk_add_ex (mk_var n) mk_one s1 w4 c4) as h1.
-    exrepnd; rewrite h1; clear h1.
-
-    pose proof (lsubstc_mk_add_ex (mk_var n) mk_one s2 w4 c) as h1.
-    exrepnd; rewrite h1; clear h1.
-
-    repeat (lsubstc_vars_as_mkcv; clear_wf_cov).
-    autorewrite with slow.
-
-    apply similarity_snoc in sim; simpl in sim; exrepnd; subst.
-    apply similarity_snoc in sim3; simpl in sim3; exrepnd; subst.
-    apply similarity_snoc in sim4; simpl in sim4; exrepnd; subst.
-    autorewrite with slow in *.
-
-    assert (!LIn n (dom_csub s1a)) as nin1.
-    {
-      apply similarity_dom in sim5; repnd; allrw; auto.
-    }
-
-    assert (!LIn f (dom_csub s1a)) as nif1.
-    {
-      apply similarity_dom in sim5; repnd; allrw; auto.
-    }
-
-    assert (!LIn n (dom_csub s2a)) as nin2.
-    {
-      apply similarity_dom in sim5; repnd; allrw; auto.
-    }
-
-    assert (!LIn f (dom_csub s2a)) as nif2.
-    {
-      apply similarity_dom in sim5; repnd; allrw; auto.
-    }
-
-    eapply alphaeqc_preserving_equality in sim2;
-      [|apply lsubstc_mk_natk2nat_sp2; auto];[].
-    lsubst_tac.
-    clear_wf_cov.
-    autorewrite with slow in *.
-
-    apply equality_in_mkc_apply2_mkc_nwf_pred_iff in sim1; auto.
-    repeat substc_lsubstc_vars3.
-
-    assert (!LIn z (@free_vars o (mk_update_seq (mk_var f) (mk_var n) (mk_var m) v))) as niz.
-    {
-      simpl; autorewrite with slow.
-      rw in_remove_nvars; simpl; sp.
-    }
-
-    revert dependent c24; revert dependent c25.
-    repeat rewrite cons_snoc; introv.
-    lsubst_tac.
-    revert dependent c26; revert dependent c27.
-    repeat rewrite <- cons_snoc; introv.
 
     apply equality_in_tnat in ea.
     unfold equality_of_nat in ea; exrepnd; spcast.
@@ -942,14 +1443,24 @@ Proof.
 
     repndors; exrepnd; spcast.
 
-    - eapply computes_to_valc_eq in sim3;[|exact sim7].
+    - eapply computes_to_valc_eq in sim3;[|exact hf1].
       rewrite mkc_zero_eq in sim3.
       apply mkc_nat_eq_implies in sim3; subst.
-      rewrite <- mkc_zero_eq in sim0.
+      rewrite <- mkc_zero_eq in sim1; GC.
 
-      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w5 s1a a 0 k0 t0 t4 c26) as h1.
+      repeat substc_lsubstc_vars3.
+      revert dependent c0; revert dependent c4.
+      repeat (rewrite cons_snoc).
+      introv.
+      lsubst_tac.
+      clear_wf_cov.
+      revert dependent c26; revert dependent c28.
+      repeat (rewrite <- cons_snoc).
+      introv.
+
+      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w8 s1a a 0 k0 t0 t4 c26) as h1.
       repeat (autodimp h1 hyp); tcsp.
-      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w5 s2a a' 0 k0 t3 t5 c27) as h2.
+      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w8 s2a a' 0 k0 t3 t5 c28) as h2.
       repeat (autodimp h2 hyp); tcsp.
       eapply tequality_respects_cequivc_left;
         [apply cequivc_sym;
@@ -972,7 +1483,7 @@ Proof.
           apply implies_cequivc_apply2;
           [apply cequivc_refl
           |apply implies_cequivc_mkc_add;
-            [apply computes_to_valc_implies_cequivc;exact sim7
+            [apply computes_to_valc_implies_cequivc;exact hf1
             |apply cequivc_refl]
           |apply cequivc_refl]
         |].
@@ -981,7 +1492,7 @@ Proof.
           apply implies_cequivc_apply2;
           [apply cequivc_refl
           |apply implies_cequivc_mkc_add;
-            [apply computes_to_valc_implies_cequivc;exact sim0
+            [apply computes_to_valc_implies_cequivc;exact hf2
             |apply cequivc_refl]
           |apply cequivc_refl]
         |].
@@ -1004,31 +1515,30 @@ Proof.
       { apply cterm_eq; simpl; auto. }
       rewrite e; clear e.
 
-Lemma tequality_in_mkc_apply2_mkc_nwf_pred_implies {o} :
-  forall lib (n1 n2 f1 f2 : @CTerm o) k s,
-    s <> k
-    -> tequality
-         lib
-         (mkc_apply2 (mkc_nwf_pred k s) n1 f1)
-         (mkc_apply2 (mkc_nwf_pred k s) n2 f2)
-    -> False.
-Proof.
-  introv d1 e.
-  unfold mkc_nwf_pred in e.
-  eapply tequality_respects_cequivc_left in e;[|apply cequivc_beta2].
-  eapply tequality_respects_cequivc_right in e;[|apply cequivc_beta2].
-  repeat (rewrite mkcv_lam_substc in e; auto;[]).
-  eapply tequality_respects_cequivc_left in e;[|apply cequivc_beta].
-  eapply tequality_respects_cequivc_right in e;[|apply cequivc_beta].
-  autorewrite with slow in e.
-  repeat (rewrite substc2_mk_cv_app_r in e; auto;[]).
-  autorewrite with slow in e.
+      apply tequality_in_mkc_apply2_mkc_nwf_pred_iff; auto.
 
-  (* need something like equality_in_inteq_iff but for tequality *)
+      right.
+      exists (@PKi o 1) (@PKi o 1).
 
-Qed.
+      rewrite <- mkc_integer_eq_pk2termc.
+      assert (1%Z = Z.of_nat 1) as xx by auto; rewrite xx.
+      rewrite <- mkc_nat_eq.
+      rewrite <- mkc_one_as_mkc_nat.
+      rewrite <- xx; clear xx.
+      dands; spcast; auto;
+      try (apply computes_to_valc_refl; eauto 3 with slow);
+      try (complete (intro xx; inversion xx)).
 
-    (* need same as equality_in_mkc_apply2_mkc_nwf_pred_iff but for tequality! *)
+      + unfold update_seq.
+        eapply computes_to_valc_reduces_toc_trans;[apply reduce_toc_beta|].
+        autorewrite with slow.
+        rewrite mkc_zero_eq.
+        rewrite mkc_nat_eq.
+        rewrite mkc_integer_eq_pk2termc.
+        eapply computes_to_valc_reduces_toc_trans;[apply reduces_toc_mkc_inteq_eq|].
+        rewrite <- mkc_integer_eq_pk2termc.
+        rewrite <- mkc_nat_eq.
+        rewrite <- mkc_zero_eq.
 
   }
 Qed.

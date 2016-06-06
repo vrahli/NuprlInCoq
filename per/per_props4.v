@@ -578,6 +578,17 @@ Proof.
   allrw @sub_filter_nil_r; auto.
 Qed.
 
+Ltac propagate_true_step :=
+  match goal with
+  | [ |- context[?x = ?x] ] => trw true_eq_same
+  | [ |- context[True [+] _] ] => trw or_true_l
+  | [ |- context[_ [+] True] ] => trw or_true_r
+  | [ |- context[True # _] ] => trw and_true_l
+  | [ |- context[_ # True] ] => trw and_true_r
+  | [ |- context[False [+] _] ] => trw or_false_l
+  | [ |- context[_ [+] False] ] => trw or_false_r
+  end.
+
 Ltac lsubstc_vars_as_mkcv :=
   match goal with
 
@@ -758,7 +769,16 @@ Ltac lsubstc_vars_as_mkcv :=
       let cv  := fresh "c" in
       assert (disjoint vs (free_vars t)) as ni
           by (repeat (trw disjoint_cons_l);
-              simpl; tcsp);
+              repeat (trw not_over_or);
+              simpl;
+              repeat (rewrite app_nil_r);
+              repeat (trw in_remove_nvars);
+              simpl;
+              repeat propagate_true_step;
+              dands; auto;
+              intro xxx; repnd; repndors; auto;
+              GC; match xxx with | _ => idtac end;
+              tcsp);
         pose proof (lsubstc_vars_as_mk_cv t w s vs c ni) as hyp;
         destruct hyp as [cv hyp];
         rewrite hyp in H;
@@ -949,9 +969,19 @@ Ltac lsubstc_vars_as_mkcv :=
       let ni  := fresh "ni" in
       let hyp := fresh "hyp" in
       let cv  := fresh "c" in
+      let xxx := fresh "xxx" in
       assert (disjoint vs (free_vars t)) as ni
           by (repeat (trw disjoint_cons_l);
-              simpl; tcsp);
+              repeat (trw not_over_or);
+              simpl;
+              repeat (rewrite app_nil_r);
+              repeat (trw in_remove_nvars);
+              simpl;
+              repeat propagate_true_step;
+              dands; auto;
+              intro xxx; repnd; repndors; auto;
+              GC; match xxx with | _ => idtac end;
+              tcsp);
         pose proof (lsubstc_vars_as_mk_cv t w s vs c ni) as hyp;
         destruct hyp as [cv hyp];
         rewrite hyp;
