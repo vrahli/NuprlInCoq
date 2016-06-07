@@ -56,11 +56,3 @@ Proof.
     apply equality_in_false in e; sp.
 Qed.
 Hint Resolve equality_mkc_top : slow.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

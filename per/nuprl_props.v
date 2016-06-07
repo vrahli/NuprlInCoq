@@ -24,8 +24,6 @@
 *)
 
 
-Add LoadPath "close".
-
 Require Export nuprl_type_sys.
 Require Export univ_tacs.
 Require Import rel_nterm.
@@ -862,9 +860,3 @@ Proof.
   right; spcast; sp; apply cequivc_sym; sp.
 Qed.
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

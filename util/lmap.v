@@ -210,8 +210,8 @@ Qed.
 Definition proj_as_option {A Q: Type} {P : A->Type} (a': {a : A & (P a)} + Q)
   : option A :=
   match a' with
-    | inl (existT a' _) => Some a'
-    |  inr _ => None
+    | inl (existT _ a' _) => Some a'
+    | inr _ => None
   end.
 
 
@@ -242,4 +242,3 @@ Proof.
   pose proof (tiff_fst (lin_combine_injective (fun x:A => x) f Hi p
   _ _ _ _) l). allsimpl. auto.
 Qed.
-

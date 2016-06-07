@@ -24,8 +24,6 @@
 *)
 
 
-Add LoadPath "../".
-
 Require Export type_sys.
 Require Import dest_close.
 
@@ -195,9 +193,3 @@ Proof.
     dands; apply CL_uatom; allunfold @per_uatom; sp.
 Qed.
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("../")
-*** End:
-*)

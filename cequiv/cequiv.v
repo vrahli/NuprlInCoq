@@ -745,7 +745,7 @@ Proof.
   allunfold @nobnd.
   repeat(alpharelbtd).
   foldlifts.
-  eexists; eexists; eexists; dands; eauto 10 with slow.
+  eexists; eexists; eexists; dands; try reflexivity; eauto 4 with slow.
 Qed.
 
 Lemma lblift_cequiv2 {p} :
@@ -761,7 +761,7 @@ Proof.
   allunfold @nobnd.
   repeat(alpharelbtd).
   foldlifts.
-  eexists; eexists; dands; eauto 10 with slow.
+  eexists; eexists; dands; try reflexivity; eauto 4 with slow.
 Qed.
 
 
@@ -778,7 +778,7 @@ Proof.
   dands; spc.
 
   foldlifts.
-  eauto 10 with slow.
+  eauto 4 with slow.
 Qed.
 
 Lemma lblift_cequiv0 {p} :
@@ -803,11 +803,9 @@ Proof.
   repeat(alpharelbtd).
   dest_bterms.
   foldlifts.
-  eexists; eexists ; eexists; dands; eauto 10 with slow.
-  eexists; eexists ; eexists; dands; eauto 10 with slow.
+  eexists; eexists ; eexists; dands; try reflexivity; eauto 4 with slow.
+  eexists; eexists ; eexists; dands; try reflexivity; eauto 4 with slow.
 Qed.
-
-
 
 Lemma lblift_cequiv01 {p} :
   forall lib a v b bterms,
@@ -829,7 +827,7 @@ Proof.
   exrepnd ; subst.
   exists nt4 v'0 n.
   dands; eauto; foldlifts.
-  - eauto 10 with slow.
+  - eauto 4 with slow.
   - unfold bcequiv, blift.
     exists [v'].
     eexists nt1; eexists nt2; dands; eauto with slow.
@@ -3190,7 +3188,7 @@ Proof.
   applydup @cequiv_isprog in k2 as ispa.
   applydup @cequiv_isprog in k1 as ispb.
   repnd.
-  exists (existT _ a' ispa) (existT _ b' ispb); simpl.
+  exists (mk_ct a' ispa) (mk_ct b' ispb); simpl.
   dands; auto.
 Qed.
 

@@ -1655,10 +1655,3 @@ Proof.
       allrw Znat.Zabs2Nat.id.
       destruct z; allsimpl; try omega.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

@@ -492,7 +492,7 @@ Proof.
     { apply reduces_to_symm. }
     exrepnd.
     exists (sterm f'); dands; eauto 3 with slow.
-    apply howetheorem1; eauto 3 with slow.
+    apply howetheorem1; auto;[|destruct h1;eauto 2 with slow].
     applydup @reduces_to_preserves_program in h1; auto.
     econstructor; eauto; try (apply approx_open_refl); eauto 3 with slow.
     introv.
@@ -1011,7 +1011,7 @@ Proof.
   applydup @cequiv_isprog in ceq2 as isp1.
   applydup @cequiv_isprog in ceq0 as isp2.
   repnd.
-  exists (existT _ x2 isp1) (existT _ c isp2); unfold computes_to_excc; simpl; dands; auto.
+  exists (mk_ct x2 isp1) (mk_ct c isp2); unfold computes_to_excc; simpl; dands; auto.
 Qed.
 
 Lemma cequivc_utoken_implies {o} :
@@ -2258,7 +2258,7 @@ Proof.
   apply reduces_in_atmost_k_steps_exc_decompose in r; auto; exrepnd.
   applydup @reduces_atmost_preserves_program in r2;
     allrw @isprogram_exception_iff; allrw @isprogram_eq; repnd; auto.
-  exists k1 k2 k3 (existT _ a' r5) (existT _ e' r4); dands; auto.
+  exists k1 k2 k3 (mk_ct a' r5) (mk_ct e' r4); dands; auto.
 Qed.
 
 Lemma dec_reduces_in_atmost_k_steps_exc {o} :
@@ -2420,7 +2420,7 @@ Proof.
   unfold cequivc in ceq; allsimpl.
   apply cequiv_spexc in ceq; exrepnd.
   applydup @preserve_program_exc2 in ceq0; allrw @isprogram_eq; repnd; auto.
-  exists (existT _ n ceq4) (existT _ e ceq3).
+  exists (mk_ct n ceq4) (mk_ct e ceq3).
   unfold computes_to_excc, computes_to_valc; simpl; dands; auto.
 Qed.
 
@@ -2727,11 +2727,3 @@ Proof.
   exists a' e'; dands; eauto 3 with slow.
   exists k1; auto.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

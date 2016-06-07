@@ -25,8 +25,6 @@
 *)
 
 
-Add LoadPath "close".
-
 Require Export type_sys_useful2.
 Require Import close_type_sys_per_init.
 Require Import close_type_sys_per_int.
@@ -562,10 +560,3 @@ Proof.
 Qed.
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

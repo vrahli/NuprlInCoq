@@ -635,8 +635,9 @@ Proof.
          rw flat_map_map; unfold compose; simpl
        |rw <- @lsubst_lsubst_aux;
          [apply btchange_alpha_aux;try omega;auto;
-          allrw disjoint_app_l;dands;eauto 3 with slow;
-          apply disjoint_singleton_l;auto|];[];
+          allrw disjoint_app_l;simpl;dands;eauto 3 with slow;
+          simpl;apply disjoint_singleton_l;auto
+         |];[];
          rw @flat_map_free_var_vars_range; eauto 3 with slow; try omega;
          simpl;allrw app_nil_r; allrw disjoint_cons_l; dands; eauto 3 with slow];
       [].
@@ -807,10 +808,3 @@ Proof.
   - apply approx_shadowed_fresh1; auto.
   - apply approx_shadowed_fresh2; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

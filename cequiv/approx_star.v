@@ -804,7 +804,9 @@ Proof.
         }
 
         { apply reduces_to_implies_approx1; auto.
-          { apply isprogram_fix; eauto 3 with slow. }
+          { apply isprogram_fix.
+            rw <- @isprogram_fix_iff in Hpr0.
+            apply reduces_to_preserves_program in Hv0; auto. }
           { apply reduces_to_if_step; reflexivity. }
         }
 
@@ -821,7 +823,6 @@ Proof.
         apply approx_trans with (b := mk_fix (mk_exception a e)).
 
         apply approx_trans with (b := mk_exception a e).
-
         apply reduces_to_implies_approx2; auto.
         apply isprogram_apply; auto.
         apply reduces_to_if_step; reflexivity.
@@ -832,11 +833,5 @@ Proof.
 
         apply implies_approx_fix.
         apply reduces_to_implies_approx1; auto.
+        Grab Existential Variables.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

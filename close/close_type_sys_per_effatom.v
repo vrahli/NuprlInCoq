@@ -409,9 +409,3 @@ Proof.
           apply eq_term_equals_sym; auto. }
 Qed.
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("./" "../util/" "../terms/" "../computation/" "../cequiv/" "../per/")
-*** End:
-*)

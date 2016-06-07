@@ -32,7 +32,7 @@ Require Export Basics.
 Require Export Bool.
 Require Export Arith.
 Require Export Arith.EqNat.
-Require Omega.
+Require Export Omega.
 
 
 (* Prop/Type exists depending on the switch universe-type.v/universe-prop.v *)
@@ -364,9 +364,9 @@ match d with
 | inl a => f a
 | inr _ => false
 end.
-  
-Notation deq_nat := NPeano.Nat.eq_dec.
-Hint Resolve NPeano.Nat.eq_dec : Deq.
+
+Notation deq_nat := Nat.eq_dec.
+Hint Resolve Nat.eq_dec : Deq.
 
 
 
@@ -520,7 +520,7 @@ Lemma Fin_decidable : forall (n:nat), Deq (Fin n).
 Proof.
   unfold Deq.
   intros.
-  destruct (NPeano.Nat.eq_dec (projT1 x) (projT1 y)) as [T|F];[left|right].
+  destruct (Nat.eq_dec (projT1 x) (projT1 y)) as [T|F];[left|right].
   - apply Fin_eq; auto.
   - intro Heq. destruct F. destruct x. destruct y.
     inverts Heq. allsimpl. reflexivity.
@@ -683,7 +683,7 @@ Qed.
  Let projT {A : Type} {x: A} (dec: Deq A)
   {P:A -> Type} (exP: sigT P) (def:P x) : P x :=
    match exP with
-     | existT x' prf =>
+     | existT _ x' prf =>
        match dec x' x with
          | left eqprf => eq_rect x' P prf x eqprf
          | _ => def
@@ -791,7 +791,7 @@ Definition sigTDeq
     apply Hneq. exact Heq.
 Defined.
 
-Definition Deq2Bool {A : Type} (deq : Deq A) (a b : A) 
+Definition Deq2Bool {A : Type} (deq : Deq A) (a b : A)
   : bool.
 destruct (deq a b);[exact true | exact false].
 Defined.

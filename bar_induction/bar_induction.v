@@ -88,7 +88,7 @@ Definition empseq : pseq := mk_pseq emkseq.
 Definition m_seq2kseq (s : seq) (n : nat) : kseq n :=
   fun x =>
     match x with
-      | existT k ltk => s k
+      | existT _ k ltk => s k
     end.
 
 Definition m_seq2pseq (s : seq) (n : nat) : pseq :=
@@ -97,7 +97,7 @@ Definition m_seq2pseq (s : seq) (n : nat) : pseq :=
 Definition extend1 (n : nat) (f : kseq n) (k : nat) : kseq (S n) :=
   fun x =>
     match x with
-      | existT m _ =>
+      | existT _ m _ =>
         match lt_dec m n with
           | left p => f (mk_nat_k1 m p)
           | _ => k
@@ -106,7 +106,7 @@ Definition extend1 (n : nat) (f : kseq n) (k : nat) : kseq (S n) :=
 
 Definition extend (s : pseq) (k : nat) : pseq :=
   match s with
-    | existT n f => mk_pseq (extend1 n f k)
+    | existT _ n f => mk_pseq (extend1 n f k)
   end.
 
 Definition barind_dec (R : pseq -> Type) : Type :=
@@ -181,13 +181,13 @@ Definition kseqNA (n : nat) (A : pseq -> Prop) :=
 Definition kseqNA2seq {n : nat} {A : pseq -> Prop}
            (k : kseqNA n A) : kseq (S n) :=
   match k with
-    | existT _ (existT s _) => s
+    | existT _ _ (existT _ s _) => s
   end.
 
 Definition kseqNA2m {n : nat} {A : pseq -> Prop}
            (k : kseqNA n A) : nat :=
   match k with
-    | existT m _ => m
+    | existT _ m _ => m
   end.
 
 Definition mk_kseqna {n : nat} {A : pseq -> Prop}
@@ -233,13 +233,13 @@ Fixpoint alpha
 Definition kseq2kseq (n m : nat) (s : kseq n) (lemn : m <= n) : kseq m :=
   fun x =>
     match x with
-      | existT k ltkm => s (mk_nat_k1 k (lt_le_trans k m n (Ltb_lt ltkm) lemn))
+      | existT _ k ltkm => s (mk_nat_k1 k (lt_le_trans k m n (Ltb_lt ltkm) lemn))
     end.
 
 Definition kseqS2kseq (n : nat) (s : kseq (S n)) : kseq n :=
   fun x =>
     match x with
-      | existT k ltkn => s (mk_nat_k1 k (lt_trans k n (S n) (Ltb_lt ltkn) (nat_lt_S n)))
+      | existT _ k ltkn => s (mk_nat_k1 k (lt_trans k n (S n) (Ltb_lt ltkn) (nat_lt_S n)))
     end.
 
 Axiom functional_extensionality_dep : forall {A} {B : A -> Type},
@@ -442,10 +442,3 @@ Proof.
 
   rw ee in b; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

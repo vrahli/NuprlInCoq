@@ -3848,7 +3848,7 @@ Definition fresh_nrut_sub {o}
            (vs : list NVar) : Sub :=
   let atoms' := remove_repeats (get_patom_deq o) atoms in
   match fresh_vars (length atoms') vs with
-    | existT l _ => combine l (map mk_utoken atoms')
+    | existT _ l _ => combine l (map mk_utoken atoms')
   end.
 
 Lemma nrut_sub_fresh_nrut_sub {o} :
@@ -4990,9 +4990,3 @@ Proof.
   allunfold @computes_to_marker; repnd; dands; eauto 2 with slow.
   apply (reduces_to_ren_utokens _ _ _ ren) in r0; auto.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

@@ -24,8 +24,6 @@
 *)
 
 
-Add LoadPath "../".
-
 Require Import type_sys_useful.
 Require Import dest_close.
 
@@ -230,9 +228,3 @@ Proof.
           generalize (type_sys_props_ts_trans4 lib (close lib ts) E0 B2 E2 B1 eqe0 eqe eqb); sp. }
 Qed.
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("../")
-*** End:
-*)

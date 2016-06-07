@@ -24,8 +24,6 @@
 *)
 
 
-Add LoadPath "../".
-
 Require Import type_sys_useful.
 Require Import dest_close.
 
@@ -299,9 +297,3 @@ Proof.
         apply tygs in cl; auto.
 Qed.
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("../")
-*** End:
-*)

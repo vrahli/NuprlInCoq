@@ -119,6 +119,7 @@ Lemma is_approx_chain_fix_aprox {o} : forall lib (f : @NTerm o),
   -> is_approx_chain lib (fun n => fix_approx n f).
 Proof.
   introv Hpr. unfolds_base.
+  introv.
   induction n as [| n Hind].
   - simpl. apply bottom_approx_any. repeat(decomp_progc); sp. split; sp.
   - remember (S n) as sn. simpl. remember (mk_apply f (fix_approx sn f)) as XX.
@@ -137,13 +138,14 @@ Lemma fix_approx_ub {o} : forall lib f,
   -> is_approx_ub lib (fun n => fix_approx n f) (mk_fix f).
 Proof.
   introv Hpr. unfolds_base.
+  introv.
   induction n as [| n Hind].
   - simpl. apply bottom_approx_any. repeat(decomp_progc); sp.
   - simpl. apply approx_trans with (b:= (mk_apply f (mk_fix f))).
     + repeat(prove_approx); eauto 2 with slow.
     + apply fix_unfold_approx_fix;sp.
 Qed.
-  
+
 (** One of the main goals of this section is to prove
     that it is infact the least upper bound (upto [cequiv]).
     We will hereby call it the LUB principle(theorem 5.9 in %\cite{Crary:1998}%).
@@ -9493,7 +9495,9 @@ Proof.
       applydup @cequiv_isprogram in Hcv1; repnd.
       allunfold @computes_to_value; repnd.
 
-      eapply crary_5_9_really_aux_seq in comp1; try (exact Hub1); try (exact IHmm); try (exact comp5); eauto 2 with slow;
+      eapply crary_5_9_really_aux_seq in comp1;
+        try (exact Hub1); try (exact IHmm); try (exact comp5);
+          simpl; auto;
       [|unfold apply_bterm; simpl; autorewrite with slow; auto];[].
       exrepnd.
       eexists; dands; eauto.
@@ -9527,7 +9531,9 @@ Proof.
 
       allunfold @computes_to_value; repnd.
 
-      eapply crary_5_9_really_aux_seq in comp1; try (exact Hub1); try (exact IHmm); try (exact comp5); eauto 2 with slow;
+      eapply crary_5_9_really_aux_seq in comp1;
+        try (exact Hub1); try (exact IHmm); try (exact comp5);
+          simpl;auto;
       [|unfold apply_bterm; simpl; autorewrite with slow; auto];[].
       exrepnd.
       eexists; dands; eauto.
@@ -9540,7 +9546,7 @@ Proof.
       eapply @dummy_context_crary_5_8 with (f:=f) in Hcv; eauto.
       exrepnd. clear Hub. rename Hubbb into Hub1.
       simpl in Hcv0. exrepnd.
-      eapply @crary_5_9_really_aux_seq with (f:=f); eauto.
+      eapply @crary_5_9_really_aux_seq with (f:=f); eauto 3 with slow.
 Qed.
 
 Lemma crary5_9_no_context {o} : forall lib f t,
@@ -9580,11 +9586,4 @@ Lemma cequiv_approximations: forall f g s t,
             (apply_bterm (bterm [nvarx] t) [mk_fix g]).
 Proof.
   introv Hpf Hpg Hint.
-*)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
 *)
