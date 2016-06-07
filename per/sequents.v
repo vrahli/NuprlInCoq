@@ -5355,6 +5355,12 @@ Proof.
     apply pw_assign_eq_implies_similarity; sp.
 Qed.
 
+Lemma weak_consistency {o} :
+  forall lib (t : @NTerm o),
+    wf_term t
+    -> !(rule_true lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] [])).
+Proof.
+
 (* begin hide *)
 
 Lemma sequent_true_eq_VR {o} :
@@ -5696,53 +5702,6 @@ Qed.
 *)
 
 
-
-(* ========= CONSISTENCY ========= *)
-
-Lemma args_constraints_nil {o} :
-  forall (hs : @bhyps o), args_constraints [] hs.
-Proof.
-  unfold args_constraints; simpl; sp.
-Qed.
-Hint Immediate args_constraints_nil.
-
-(* end hide *)
-
-(**
-
-  Using our definition of [mk_false] and the meaning of sequents, we
-  can prove that the following sequent is not true, is this for any
-  extract [t]:
-<<
-      |- False ext t
->>
-
- *)
-
-Lemma weak_consistency {o} :
-  forall lib (t : @NTerm o),
-    wf_term t
-    -> !(rule_true lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] [])).
-Proof.
-  introv wft rt; unfold rule_true in rt; allsimpl.
-  assert (wf_sequent (mk_baresequent [] (mk_concl mk_false t))) as wg
-         by (repeat constructor; simpl; sp).
-  generalize (rt wg); clear rt; intro rt.
-  assert (closed_type_baresequent
-            (mk_baresequent [] (mk_concl mk_false t))) as cg
-         by (unfold closed_type_baresequent, closed_type; simpl; sp).
-  generalize (rt cg); clear rt; intro rt.
-  repeat (dest_imp rt hyp; sp).
-  rw @sequent_true_eq_VR in s.
-  rw @VR_sequent_true_ex in s; allsimpl.
-  generalize (s [] []); clear s; intro s.
-  dest_imp s hyp; sp.
-  dest_imp s hyp; sp; allsimpl.
-  allrewrite @lsubstc_mk_false.
-  proof_irr.
-  allapply @equality_refl.
-  allapply @false_not_inhabited; sp.
-Qed.
 
 
 (* begin hide *)
