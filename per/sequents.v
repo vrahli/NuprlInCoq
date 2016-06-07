@@ -5355,12 +5355,6 @@ Proof.
     apply pw_assign_eq_implies_similarity; sp.
 Qed.
 
-Lemma weak_consistency {o} :
-  forall lib (t : @NTerm o),
-    wf_term t
-    -> !(rule_true lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] [])).
-Proof.
-
 (* begin hide *)
 
 Lemma sequent_true_eq_VR {o} :
