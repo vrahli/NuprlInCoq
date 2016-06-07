@@ -117,23 +117,26 @@ Proof.
 Qed.
 
 Lemma base_nwf_pred {o} :
-  forall lib H n s,
+  forall lib H n s f,
     s <> n
+    -> wf_term f
     -> wf_hypotheses H
+    -> covered f (vars_hyps H)
     -> @sequent_true2
          o
          lib
-         (choice_sequence_ind_base H (nwf_pred n s) lam0 mk_axiom).
+         (choice_sequence_ind_base H (nwf_pred n s) f mk_axiom).
 Proof.
-  introv d1 wfH.
+  introv d1 wf wfH covf.
 
-  assert (wf_csequent (choice_sequence_ind_base H (nwf_pred n s) lam0 mk_axiom)) as wfc.
+  assert (wf_csequent (choice_sequence_ind_base H (nwf_pred n s) f mk_axiom)) as wfc.
   {
     unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl; simpl.
     dwfseq.
+    rw <- @wf_apply_iff.
     dands; tcsp;
     try (complete (rw @vswf_hypotheses_nil_eq; auto)).
-    introv i; allrw in_remove_nvars; allsimpl; allrw not_over_or.
+    introv i; allrw in_app_iff; allrw in_remove_nvars; allsimpl; allrw not_over_or.
     repnd; repndors; tcsp.
   }
 
@@ -159,21 +162,6 @@ Proof.
     eapply tequality_respects_cequivc_left;[apply cequivc_sym;apply cequivc_mkc_inteq_nat|].
     eapply tequality_respects_cequivc_right;[apply cequivc_sym;apply cequivc_mkc_inteq_nat|].
     boolvar; try omega; GC;[]; eauto 3 with slow.
-
-    (*
-    eapply tequality_respects_cequivc_left;
-      [apply cequivc_sym;
-        apply implies_cequivc_cequiv;
-        [apply cequivc_beta|apply cequivc_refl]
-      |].
-    eapply tequality_respects_cequivc_right;
-      [apply cequivc_sym;
-        apply implies_cequivc_cequiv;
-        [apply cequivc_beta|apply cequivc_refl]
-      |].
-    autorewrite with slow.
-    eauto 3 with slow.
-     *)
 
   - eapply cequivc_preserving_equality;[|apply cequivc_sym;apply cequivc_beta2].
     repeat lsubstc_vars_as_mkcv.
@@ -1676,6 +1664,409 @@ Proof.
   eapply reduces_to_trans; eauto.
 Qed.
 
+Lemma isprogram_mk_two {o} :
+  @isprogram o mk_two.
+Proof.
+  repeat constructor; simpl; sp.
+Qed.
+Hint Immediate isprogram_mk_two.
+
+Lemma isprog_mk_two {o} :
+  @isprog o mk_two.
+Proof.
+  rw @isprog_eq.
+  apply isprogram_mk_two.
+Qed.
+Hint Immediate isprog_mk_two.
+
+Definition mkc_two {o} : @CTerm o := exist isprog mk_two isprog_mk_two.
+Definition mkcv_two {o} (vs : list NVar) : @CVTerm o vs := mk_cv vs mkc_two.
+
+Lemma lsubstc_vars_two {o} :
+  forall (w : @wf_term o mk_two) s vs c,
+    lsubstc_vars mk_two w s vs c
+    = mkcv_two vs.
+Proof.
+  introv; apply cvterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @lsubstc_vars_two : slow.
+
+Lemma substc3_mkcv_two {o} :
+  forall (u : @CTerm o) v w x,
+    substc3 v w u x (mkcv_two [v,w,x])
+    = mkcv_two [v,w].
+Proof.
+  introv.
+  destruct_cterms.
+  apply cvterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @substc3_mkcv_two : slow.
+
+Lemma substc2_mkcv_two {o} :
+  forall (u : @CTerm o) v x,
+    substc2 v u x (mkcv_two [v,x])
+    = mkcv_two [v].
+Proof.
+  introv.
+  destruct_cterms.
+  apply cvterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @substc2_mkcv_two : slow.
+
+Lemma mkcv_two_substc {o} :
+  forall v (t : @CTerm o),
+    substc t v (mkcv_two [v]) = mkc_two.
+Proof.
+  introv.
+  destruct_cterms.
+  apply cterm_eq; simpl; sp.
+Qed.
+Hint Rewrite @mkcv_two_substc : slow.
+
+Lemma mkc_integer_as_mkc_two {o} : @mkc_integer o 2 = mkc_two.
+Proof.
+  introv.
+  destruct_cterms.
+  apply cterm_eq; simpl; sp.
+Qed.
+
+Lemma mkc_two_eq {o} : @mkc_two o = mkc_nat 2.
+Proof.
+  introv.
+  destruct_cterms.
+  apply cterm_eq; simpl; sp.
+Qed.
+
+Lemma isvalue_two {o} : @isvalue o mk_two.
+Proof.
+  constructor; eauto 3 with slow; sp.
+Qed.
+Hint Resolve isvalue_two : slow.
+
+Lemma iscvalue_two {o} : @iscvalue o mkc_two.
+Proof.
+  unfold iscvalue; simpl; eauto 3 with slow.
+Qed.
+Hint Resolve iscvalue_two : slow.
+
+Lemma cequivc_mkc_inteq_one_one {o} :
+  forall lib (t1 t2 : @CTerm o),
+  cequivc lib (mkc_inteq mkc_one mkc_one t1 t2) t1.
+Proof.
+  introv.
+  rw @mkc_one_eq.
+  eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+  boolvar; auto; try omega.
+Qed.
+
+Lemma cequivc_mkc_inteq_zero_zero {o} :
+  forall lib (t1 t2 : @CTerm o),
+  cequivc lib (mkc_inteq mkc_zero mkc_zero t1 t2) t1.
+Proof.
+  introv.
+  rw @mkc_zero_eq.
+  eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+  boolvar; auto; try omega.
+Qed.
+
+Lemma cequivc_mkc_inteq_one_zero {o} :
+  forall lib (t1 t2 : @CTerm o),
+  cequivc lib (mkc_inteq mkc_one mkc_zero t1 t2) t2.
+Proof.
+  introv.
+  rw @mkc_one_eq.
+  rw @mkc_zero_eq.
+  eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+  boolvar; auto; try omega.
+Qed.
+
+Lemma cequivc_mkc_inteq_zero_one {o} :
+  forall lib (t1 t2 : @CTerm o),
+  cequivc lib (mkc_inteq mkc_zero mkc_one t1 t2) t2.
+Proof.
+  introv.
+  rw @mkc_one_eq.
+  rw @mkc_zero_eq.
+  eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+  boolvar; auto; try omega.
+Qed.
+
+Lemma cequivc_mkc_inteq_two_zero {o} :
+  forall lib (t1 t2 : @CTerm o),
+  cequivc lib (mkc_inteq mkc_two mkc_zero t1 t2) t2.
+Proof.
+  introv.
+  rw @mkc_two_eq.
+  rw @mkc_zero_eq.
+  eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+  boolvar; auto; try omega.
+Qed.
+
+Lemma cequivc_mkc_inteq_zero_two {o} :
+  forall lib (t1 t2 : @CTerm o),
+  cequivc lib (mkc_inteq mkc_zero mkc_two t1 t2) t2.
+Proof.
+  introv.
+  rw @mkc_two_eq.
+  rw @mkc_zero_eq.
+  eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+  boolvar; auto; try omega.
+Qed.
+
+Lemma cequivc_mkc_inteq_two_one {o} :
+  forall lib (t1 t2 : @CTerm o),
+  cequivc lib (mkc_inteq mkc_two mkc_one t1 t2) t2.
+Proof.
+  introv.
+  rw @mkc_two_eq.
+  rw @mkc_one_eq.
+  eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+  boolvar; auto; try omega.
+Qed.
+
+Lemma cequivc_mkc_inteq_one_two {o} :
+  forall lib (t1 t2 : @CTerm o),
+  cequivc lib (mkc_inteq mkc_one mkc_two t1 t2) t2.
+Proof.
+  introv.
+  rw @mkc_two_eq.
+  rw @mkc_one_eq.
+  eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+  boolvar; auto; try omega.
+Qed.
+
+Lemma reduces_toc_mkc_inteq_one_one {o} :
+  forall lib (t1 t2 : @CTerm o),
+  reduces_toc lib (mkc_inteq mkc_one mkc_one t1 t2) t1.
+Proof.
+  introv.
+  rw @mkc_one_eq.
+  rewrite mkc_nat_eq.
+  rewrite mkc_integer_eq_pk2termc.
+  apply reduces_toc_mkc_inteq_eq.
+Qed.
+
+Lemma reduces_to_mkc_inteq_zero_zero {o} :
+  forall lib (t1 t2 : @CTerm o),
+  reduces_toc lib (mkc_inteq mkc_zero mkc_zero t1 t2) t1.
+Proof.
+  introv.
+  rw @mkc_zero_eq.
+  rewrite mkc_nat_eq.
+  rewrite mkc_integer_eq_pk2termc.
+  apply reduces_toc_mkc_inteq_eq.
+Qed.
+
+Lemma reduces_toc_mkc_inteq_one_zero {o} :
+  forall lib (t1 t2 : @CTerm o),
+  reduces_toc lib (mkc_inteq mkc_one mkc_zero t1 t2) t2.
+Proof.
+  introv.
+  rw @mkc_one_eq.
+  rw @mkc_zero_eq.
+  repeat rewrite mkc_nat_eq.
+  repeat rewrite mkc_integer_eq_pk2termc.
+  apply reduces_toc_mkc_inteq_diff.
+  intro xx; inversion xx.
+Qed.
+
+Lemma reduces_toc_mkc_inteq_zero_one {o} :
+  forall lib (t1 t2 : @CTerm o),
+  reduces_toc lib (mkc_inteq mkc_zero mkc_one t1 t2) t2.
+Proof.
+  introv.
+  rw @mkc_one_eq.
+  rw @mkc_zero_eq.
+  repeat rewrite mkc_nat_eq.
+  repeat rewrite mkc_integer_eq_pk2termc.
+  apply reduces_toc_mkc_inteq_diff.
+  intro xx; inversion xx.
+Qed.
+
+Lemma tequality_equality_in_mkc_apply2_mkc_nwf_pred_iff {o} :
+  forall lib (t1 t2 n1 n2 f1 f2 : @CTerm o) k s,
+    s <> k
+    ->
+    (
+      (
+        equality lib t1 t2 (mkc_apply2 (mkc_nwf_pred k s) n1 f1)
+        /\ tequality
+             lib
+             (mkc_apply2 (mkc_nwf_pred k s) n1 f1)
+             (mkc_apply2 (mkc_nwf_pred k s) n2 f2)
+      )
+      <=>
+    (
+    ccomputes_to_valc lib t1 mkc_axiom
+    /\ ccomputes_to_valc lib t2 mkc_axiom
+    /\
+    (
+      (
+        ccomputes_to_valc lib n1 mkc_zero
+        /\ ccomputes_to_valc lib n2 mkc_zero
+        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n1 f1) mkc_true
+        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n2 f2) mkc_true
+      )
+      {+}
+      (
+        ccomputes_to_valc lib n1 mkc_one
+        /\ ccomputes_to_valc lib n2 mkc_one
+        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n1 f1) (mkc_cequiv (mkc_apply f1 mkc_zero) mkc_zero)
+        /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n2 f2) (mkc_cequiv (mkc_apply f2 mkc_zero) mkc_zero)
+        /\ ccomputes_to_valc lib (mkc_apply f1 mkc_zero) mkc_zero
+        /\ ccomputes_to_valc lib (mkc_apply f2 mkc_zero) mkc_zero
+      )
+      {+}
+      {pk : param_kind
+       , ccomputes_to_valc lib n1 mkc_zero
+       /\ ccomputes_to_valc lib n2 (pk2termc pk)
+       /\ pk <> PKi 0
+       /\ pk <> PKi 1
+       /\ ccomputes_to_valc lib (mkc_apply f2 mkc_zero) mkc_zero
+       /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n1 f1) mkc_true
+       /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n2 f2) mkc_true }
+      {+}
+      {pk : param_kind
+       , ccomputes_to_valc lib n1 (pk2termc pk)
+       /\ ccomputes_to_valc lib n2 mkc_zero
+       /\ pk <> PKi 0
+       /\ pk <> PKi 1
+       /\ ccomputes_to_valc lib (mkc_apply f1 mkc_zero) mkc_zero
+       /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n1 f1) mkc_true
+       /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n2 f2) mkc_true }
+      {+}
+      {pk1 : param_kind
+       , {pk2 : param_kind
+       , ccomputes_to_valc lib n1 (pk2termc pk1)
+       /\ ccomputes_to_valc lib n2 (pk2termc pk2)
+       /\ pk1 <> PKi 0
+       /\ pk2 <> PKi 0
+       /\ pk1 <> PKi 1
+       /\ pk2 <> PKi 1
+       /\ ccomputes_to_valc lib (mkc_apply f1 mkc_zero) mkc_zero
+       /\ ccomputes_to_valc lib (mkc_apply f2 mkc_zero) mkc_zero
+       /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n1 f1) mkc_true
+       /\ ccequivc lib (mkc_apply2 (mkc_nwf_pred k s) n2 f2) mkc_true }}
+    )
+   )
+    ).
+Proof.
+  introv d1; split; introv h; repnd.
+
+  - apply tequality_in_mkc_apply2_mkc_nwf_pred_implies in h; auto.
+    apply equality_in_mkc_apply2_mkc_nwf_pred_implies in h0; auto.
+    repnd; repndors; exrepnd; dands; auto.
+
+    + spcast.
+      eapply computes_to_valc_eq in h3;[|exact h7].
+      apply implies_eq_get_cterm in h3; simpl in h3.
+      inversion h3.
+
+    + right; left; dands; eauto 3 with slow.
+      destruct h as [ceq1 ceq2]; clear ceq2.
+      autodimp ceq1 hyp; spcast; eauto 3 with slow.
+      allrw @mkc_zero_eq.
+      apply cequivc_nat_implies_computes_to_valc in ceq1; auto.
+
+    + spcast.
+      eapply computes_to_valc_eq in h3;[|exact h0].
+      symmetry in h3; apply mkc_one_eq_pk2term_implies in h3; subst; tcsp.
+
+    + right; right; left.
+      exists pk; dands; auto.
+
+    + spcast.
+      eapply computes_to_valc_eq in h3;[|exact h6].
+      apply implies_eq_get_cterm in h3; simpl in h3.
+      inversion h3.
+
+    + right; right; left.
+      exists pk; dands; auto.
+
+    + spcast.
+      eapply computes_to_valc_eq in h3;[|exact h6].
+      symmetry in h3; apply mkc_one_eq_pk2term_implies in h3; subst; tcsp.
+
+    + right; right; right; left.
+      exists pk; dands; auto.
+
+    + spcast.
+      eapply computes_to_valc_eq in h3;[|exact h4].
+      symmetry in h3; apply mkc_zero_eq_pk2term_implies in h3; subst; tcsp.
+
+    + spcast.
+      eapply computes_to_valc_eq in h3;[|exact h5].
+      symmetry in h3; apply mkc_one_eq_pk2term_implies in h3; subst; tcsp.
+
+    + right; right; right; right.
+      exists pk1 pk2; dands; auto.
+
+  - dands.
+
+    + apply equality_in_mkc_apply2_mkc_nwf_pred_iff; auto.
+      dands; auto.
+      repndors; exrepnd; auto.
+
+      * right; right.
+        exists pk; dands; auto.
+
+      * right; right.
+        exists pk1; dands; auto.
+
+    + apply tequality_in_mkc_apply2_mkc_nwf_pred_iff; auto.
+      repndors; exrepnd; auto.
+
+      * right; left.
+        dands; auto.
+        split; introv ceq; spcast; eauto 3 with slow.
+
+      * right; right; left.
+        exists pk; dands; auto.
+
+      * right; right; right; left.
+        exists pk; dands; auto.
+
+      * right; right; right; right.
+        exists pk1 pk2; dands; auto.
+Qed.
+
+Lemma mkc_nat_eq_pk2term_implies {o} :
+  forall k pk, @mkc_nat o k = pk2termc pk -> pk = PKi (Z.of_nat k).
+Proof.
+  introv e.
+  destruct pk; allsimpl; inversion e; auto.
+Qed.
+
+Lemma eq_PKi_implies {o} :
+  forall i1 i2, @PKi o i1 = PKi i2 -> i1 = i2.
+Proof.
+  introv e; injection e; auto.
+Qed.
+
+Lemma reduces_toc_mkc_inteq_nat_diff {o} :
+  forall lib n1 n2 (a b : @CTerm o),
+    n1 <> n2
+    -> reduces_toc lib (mkc_inteq (mkc_nat n1) (mkc_nat n2) a b) b.
+Proof.
+  introv d.
+  allrw @mkc_nat_eq.
+  allrw @mkc_integer_eq_pk2termc.
+  apply reduces_toc_mkc_inteq_diff; auto.
+  intro xx.
+  apply eq_PKi_implies in xx.
+  apply Znat.Nat2Z.inj in xx; tcsp.
+Qed.
+
+Lemma reduces_toc_mkc_inteq_nat_eq {o} :
+  forall lib n (a b : @CTerm o),
+    reduces_toc lib (mkc_inteq (mkc_nat n) (mkc_nat n) a b) a.
+Proof.
+  introv.
+  allrw @mkc_nat_eq.
+  allrw @mkc_integer_eq_pk2termc.
+  apply reduces_toc_mkc_inteq_eq; auto.
+Qed.
+
 Lemma ind_nwf_pred {o} :
   forall lib H k s f n m z v,
     s <> k
@@ -1766,10 +2157,6 @@ Proof.
   clear_wf_cov.
   autorewrite with slow in *.
 
-  dup sim1 as eqnwf.
-  apply equality_in_mkc_apply2_mkc_nwf_pred_iff in sim1; auto.
-  repeat substc_lsubstc_vars3.
-
   assert (!LIn z (@free_vars o (mk_update_seq (mk_var f) (mk_var n) (mk_var m) v))) as niz.
   {
     simpl; autorewrite with slow.
@@ -1810,8 +2197,11 @@ Proof.
   autorewrite with slow in hf0.
   clear_wf_cov.
 
-  apply tequality_in_mkc_apply2_mkc_nwf_pred_iff in hf0; auto;[].
-  clear sim1.
+  pose proof (tequality_equality_in_mkc_apply2_mkc_nwf_pred_iff
+                lib t6 t7 t4 t5 t0 t3 k s) as comp.
+  repeat (autodimp comp hyp).
+  destruct comp as [comp comp2]; clear comp2.
+  autodimp comp hyp.
 
   apply implies_tequality_equality_mkc_squash_and.
   rw @tequality_product.
@@ -1831,6 +2221,28 @@ Proof.
   lift_lsubst_concl.
   autorewrite with slow.
 
+  match goal with
+  | [ |- (_ # ?a) # (_ # _ # ?b) ] => rev_assert (a /\ b) xx
+  end.
+
+  {
+    repnd; dands; eauto 3 with slow.
+    introv ea.
+    applydup xx0 in ea.
+    apply equality_in_tnat in ea.
+    unfold equality_of_nat in ea; exrepnd; spcast.
+    eapply tequality_respects_cequivc_left;
+      [apply substc_cequivc;apply cequivc_sym;
+       apply computes_to_valc_implies_cequivc;exact ea2|].
+    eapply tequality_respects_cequivc_right;
+      [apply substc_cequivc;apply cequivc_sym;
+       apply computes_to_valc_implies_cequivc;exact ea1|].
+    rewrite @fold_type.
+    eapply tequality_respects_cequivc_left in ea0;
+      [|apply substc_cequivc;apply computes_to_valc_implies_cequivc;exact ea2].
+    apply tequality_refl in ea0; auto.
+  }
+
   dands; eauto 3 with slow.
 
   {
@@ -1845,10 +2257,10 @@ Proof.
 
     repndors; exrepnd; spcast.
 
-    - eapply computes_to_valc_eq in sim3;[|exact hf1].
+    - eapply computes_to_valc_eq in sim3;[|exact comp2].
       rewrite mkc_zero_eq in sim3.
       apply mkc_nat_eq_implies in sim3; subst.
-      rewrite <- mkc_zero_eq in sim1; GC.
+      rewrite <- mkc_zero_eq in sim0; GC.
 
       repeat substc_lsubstc_vars3.
       revert dependent c0; revert dependent c4.
@@ -1885,7 +2297,7 @@ Proof.
           apply implies_cequivc_apply2;
           [apply cequivc_refl
           |apply implies_cequivc_mkc_add;
-            [apply computes_to_valc_implies_cequivc;exact hf1
+            [apply computes_to_valc_implies_cequivc;exact comp2
             |apply cequivc_refl]
           |apply cequivc_refl]
         |].
@@ -1894,7 +2306,7 @@ Proof.
           apply implies_cequivc_apply2;
           [apply cequivc_refl
           |apply implies_cequivc_mkc_add;
-            [apply computes_to_valc_implies_cequivc;exact hf2
+            [apply computes_to_valc_implies_cequivc;exact comp3
             |apply cequivc_refl]
           |apply cequivc_refl]
         |].
@@ -1919,38 +2331,796 @@ Proof.
 
       apply tequality_in_mkc_apply2_mkc_nwf_pred_iff; auto.
 
-      right.
-      exists (@PKi o 1) (@PKi o 1).
-
-      rewrite <- mkc_integer_eq_pk2termc.
-      assert (1%Z = Z.of_nat 1) as xx by auto; rewrite xx.
-      rewrite <- mkc_nat_eq.
-      rewrite <- mkc_one_as_mkc_nat.
-      rewrite <- xx; clear xx.
+      right; left.
       dands; spcast; auto;
       try (apply computes_to_valc_refl; eauto 3 with slow);
       try (complete (intro xx; inversion xx)).
 
-      + unfold update_seq.
-        eapply computes_to_valc_reduces_toc_trans;[apply reduce_toc_beta|].
+      + eapply cequivc_trans;[apply cequivc_beta2|].
+        rewrite mkcv_lam_substc; auto.
+        eapply cequivc_trans;[apply cequivc_beta|].
+        autorewrite with slow.
+        repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+        autorewrite with slow.
+
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_one_zero|].
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_one_one|].
+        auto.
+
+      + unfold mkc_nwf_pred.
+        eapply cequivc_trans;[apply cequivc_beta2|].
+        rewrite mkcv_lam_substc; auto.
+        eapply cequivc_trans;[apply cequivc_beta|].
+        autorewrite with slow.
+        repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+        autorewrite with slow.
+
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_one_zero|].
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_one_one|].
+        auto.
+
+      + unfold update_seq; split; intro h; spcast;
+        eapply cequivc_trans; try (apply cequivc_beta);
+        eapply cequivc_trans in h; try (apply cequivc_sym; apply cequivc_beta);
+        autorewrite with slow in *;
+        rewrite <- mkc_zero_eq in *.
+
+        * autorewrite with slow in h.
+          rewrite <- mkc_zero_eq in h.
+          eapply cequivc_trans;[apply cequivc_mkc_inteq_zero_zero|].
+          eapply cequivc_trans in h;[|apply cequivc_sym;apply cequivc_mkc_inteq_zero_zero].
+          auto.
+
+        * autorewrite with slow in h.
+          rewrite <- mkc_zero_eq in h.
+          eapply cequivc_trans;[apply cequivc_mkc_inteq_zero_zero|].
+          eapply cequivc_trans in h;[|apply cequivc_sym;apply cequivc_mkc_inteq_zero_zero].
+          auto.
+
+    - eapply computes_to_valc_eq in sim3;[|exact comp2].
+      rewrite mkc_one_eq in sim3.
+      apply mkc_nat_eq_implies in sim3; subst.
+      GC.
+
+      repeat substc_lsubstc_vars3.
+      revert dependent c0; revert dependent c4.
+      repeat (rewrite cons_snoc).
+      introv.
+      lsubst_tac.
+      clear_wf_cov.
+      revert dependent c26; revert dependent c28.
+      repeat (rewrite <- cons_snoc).
+      introv.
+
+      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w8 s1a a 1 k0 t0 t4 c26) as h1.
+      repeat (autodimp h1 hyp); tcsp.
+      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w8 s2a a' 1 k0 t3 t5 c28) as h2.
+      repeat (autodimp h2 hyp); tcsp.
+      eapply tequality_respects_cequivc_left;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_refl
+          |exact h1]
+        |].
+      eapply tequality_respects_cequivc_right;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_refl
+          |exact h2]
+        |].
+      clear h1 h2; proof_irr.
+
+      eapply tequality_respects_cequivc_left;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply implies_cequivc_mkc_add;
+            [apply computes_to_valc_implies_cequivc;exact comp2
+            |apply cequivc_refl]
+          |apply cequivc_refl]
+        |].
+      eapply tequality_respects_cequivc_right;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply implies_cequivc_mkc_add;
+            [apply computes_to_valc_implies_cequivc;exact comp3
+            |apply cequivc_refl]
+          |apply cequivc_refl]
+        |].
+      eapply tequality_respects_cequivc_left;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_mkc_add_integer
+          |apply cequivc_refl]
+        |].
+      eapply tequality_respects_cequivc_right;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_mkc_add_integer
+          |apply cequivc_refl]
+        |].
+
+      assert (@mkc_integer o (Z.of_nat 1 + Z.of_nat 1) = mkc_two) as e.
+      { apply cterm_eq; simpl; auto. }
+      rewrite e; clear e.
+
+      apply tequality_in_mkc_apply2_mkc_nwf_pred_iff; auto.
+
+      right; right; right; right.
+      exists (@PKi o 2) (@PKi o 2).
+      rewrite <- mkc_integer_eq_pk2termc.
+      rewrite mkc_integer_as_mkc_two.
+      dands; spcast; auto;
+      try (apply computes_to_valc_refl; eauto 3 with slow);
+      try (complete (intro xx; inversion xx)).
+
+      + eapply computes_to_valc_reduces_toc_trans;[apply reduce_toc_beta|].
+        autorewrite with slow.
+        rewrite <- mkc_one_eq.
+        eapply computes_to_valc_reduces_toc_trans;[apply reduces_toc_mkc_inteq_zero_one|].
+        auto.
+
+      + eapply computes_to_valc_reduces_toc_trans;[apply reduce_toc_beta|].
+        autorewrite with slow.
+        rewrite <- mkc_one_eq.
+        eapply computes_to_valc_reduces_toc_trans;[apply reduces_toc_mkc_inteq_zero_one|].
+        auto.
+
+      + eapply cequivc_trans;[apply cequivc_beta2|].
+        rewrite mkcv_lam_substc; auto.
+        eapply cequivc_trans;[apply cequivc_beta|].
+        autorewrite with slow.
+        repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+        autorewrite with slow.
+
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_two_zero|].
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_two_one|].
+
+        eapply cequivc_trans;
+          [apply cequivc_mkc_inteq;
+            [apply cequivc_beta
+            |apply cequivc_refl
+            |apply cequivc_refl
+            |apply cequivc_refl] |].
+        autorewrite with slow.
+        rewrite <- mkc_one_eq.
+        eapply cequivc_trans;
+          [apply cequivc_mkc_inteq;
+            [apply cequivc_mkc_inteq_zero_one
+            |apply cequivc_refl
+            |apply cequivc_refl
+            |apply cequivc_refl] |].
+        eapply cequivc_trans;
+          [apply cequivc_mkc_inteq;
+            [apply computes_to_valc_implies_cequivc;exact comp6
+            |apply cequivc_refl
+            |apply cequivc_refl
+            |apply cequivc_refl] |].
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_zero_zero|].
+        auto.
+
+      + unfold mkc_nwf_pred.
+        eapply cequivc_trans;[apply cequivc_beta2|].
+        rewrite mkcv_lam_substc; auto.
+        eapply cequivc_trans;[apply cequivc_beta|].
+        autorewrite with slow.
+        repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+        autorewrite with slow.
+
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_two_zero|].
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_two_one|].
+        eapply cequivc_trans;
+          [apply cequivc_mkc_inteq;
+            [apply cequivc_beta
+            |apply cequivc_refl
+            |apply cequivc_refl
+            |apply cequivc_refl] |].
+        autorewrite with slow.
+        rewrite <- mkc_one_eq.
+        eapply cequivc_trans;
+          [apply cequivc_mkc_inteq;
+            [apply cequivc_mkc_inteq_zero_one
+            |apply cequivc_refl
+            |apply cequivc_refl
+            |apply cequivc_refl] |].
+        eapply cequivc_trans;
+          [apply cequivc_mkc_inteq;
+            [apply computes_to_valc_implies_cequivc;exact comp
+            |apply cequivc_refl
+            |apply cequivc_refl
+            |apply cequivc_refl] |].
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_zero_zero|].
+        auto.
+
+    - (* false *)
+      eapply computes_to_valc_eq in sim3;[|exact comp3].
+      rewrite mkc_zero_eq in sim3.
+      apply mkc_nat_eq_implies in sim3; subst.
+      eapply computes_to_valc_eq in sim0;[|exact comp4].
+      symmetry in sim0.
+      rewrite <- mkc_zero_eq in sim0.
+      apply mkc_zero_eq_pk2term_implies in sim0; subst; tcsp.
+
+    - (* false *)
+      eapply computes_to_valc_eq in sim3;[|exact comp3].
+      eapply computes_to_valc_eq in sim0;[|exact comp4].
+      rewrite mkc_zero_eq in sim0.
+      apply mkc_nat_eq_implies in sim0; subst.
+      symmetry in sim3.
+      rewrite <- mkc_zero_eq in sim3.
+      apply mkc_zero_eq_pk2term_implies in sim3; subst; tcsp.
+
+    - repeat substc_lsubstc_vars3.
+      revert dependent c37; revert dependent c38.
+      repeat (rewrite cons_snoc).
+      introv.
+      lsubst_tac.
+      clear_wf_cov.
+      revert dependent c39; revert dependent c40.
+      repeat (rewrite <- cons_snoc).
+      introv.
+
+      eapply computes_to_valc_eq in sim3;[|exact comp2].
+      eapply computes_to_valc_eq in sim0;[|exact comp4].
+      symmetry in sim3; apply mkc_nat_eq_pk2term_implies in sim3.
+      symmetry in sim0; apply mkc_nat_eq_pk2term_implies in sim0.
+      subst; GC.
+      rewrite <- mkc_integer_eq_pk2termc in comp4; rewrite <- mkc_nat_eq in comp4.
+      rewrite <- mkc_integer_eq_pk2termc in comp2; rewrite <- mkc_nat_eq in comp2.
+
+      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w8 s1a a k1 k0 t0 t4 c39) as h1.
+      repeat (autodimp h1 hyp); tcsp.
+      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w8 s2a a' k1 k0 t3 t5 c40) as h2.
+      repeat (autodimp h2 hyp); tcsp.
+      eapply tequality_respects_cequivc_left;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_refl
+          |exact h1]
+        |].
+      eapply tequality_respects_cequivc_right;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_refl
+          |exact h2]
+        |].
+      clear h1 h2; proof_irr.
+
+      eapply tequality_respects_cequivc_left;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply implies_cequivc_mkc_add;
+            [apply computes_to_valc_implies_cequivc;exact comp2
+            |apply cequivc_refl]
+          |apply cequivc_refl]
+        |].
+      eapply tequality_respects_cequivc_right;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply implies_cequivc_mkc_add;
+            [apply computes_to_valc_implies_cequivc;exact comp4
+            |apply cequivc_refl]
+          |apply cequivc_refl]
+        |].
+      eapply tequality_respects_cequivc_left;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_mkc_add_integer
+          |apply cequivc_refl]
+        |].
+      eapply tequality_respects_cequivc_right;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_mkc_add_integer
+          |apply cequivc_refl]
+        |].
+
+      assert (@mkc_integer o (Z.of_nat k1 + Z.of_nat 1) = mkc_nat (S k1)) as e.
+      { rewrite <- Znat.Nat2Z.inj_add.
+        rewrite <- mkc_nat_eq.
+        rewrite plus_comm; auto. }
+      rewrite e; clear e.
+
+      assert (k1 > 1) as k1gt1.
+      { destruct k1; allsimpl; tcsp.
+        destruct k1; allsimpl; tcsp.
+        omega. }
+
+      apply tequality_in_mkc_apply2_mkc_nwf_pred_iff; auto.
+
+      right; right; right; right.
+      exists (@PKi o (Z.of_nat (S k1))) (@PKi o (Z.of_nat (S k1))).
+      rewrite <- mkc_integer_eq_pk2termc.
+      rewrite <- mkc_nat_eq.
+      dands; spcast; auto;
+      try (apply computes_to_valc_refl; eauto 3 with slow);
+      try (complete (intro xx; inversion xx)).
+
+      + introv xx.
+        apply eq_PKi_implies in xx.
+        assert (1%Z = Z.of_nat 1) as yy by auto; rewrite yy in xx; clear yy.
+        apply Znat.Nat2Z.inj in xx.
+        destruct k1; try omega.
+
+      + introv xx.
+        apply eq_PKi_implies in xx.
+        assert (1%Z = Z.of_nat 1) as yy by auto; rewrite yy in xx; clear yy.
+        apply Znat.Nat2Z.inj in xx.
+        destruct k1; try omega.
+
+      + eapply computes_to_valc_reduces_toc_trans;[apply reduce_toc_beta|].
         autorewrite with slow.
         rewrite mkc_zero_eq.
-        rewrite mkc_nat_eq.
-        rewrite mkc_integer_eq_pk2termc.
-        eapply computes_to_valc_reduces_toc_trans;[apply reduces_toc_mkc_inteq_eq|].
-        rewrite <- mkc_integer_eq_pk2termc.
-        rewrite <- mkc_nat_eq.
+        eapply computes_to_valc_reduces_toc_trans;[apply reduces_toc_mkc_inteq_nat_diff|]; try omega.
         rewrite <- mkc_zero_eq.
+        auto.
 
+      + eapply computes_to_valc_reduces_toc_trans;[apply reduce_toc_beta|].
+        autorewrite with slow.
+        rewrite mkc_zero_eq.
+        eapply computes_to_valc_reduces_toc_trans;[apply reduces_toc_mkc_inteq_nat_diff|]; try omega.
+        rewrite <- mkc_zero_eq.
+        auto.
+
+      + eapply cequivc_trans;[apply cequivc_beta2|].
+        rewrite mkcv_lam_substc; auto.
+        eapply cequivc_trans;[apply cequivc_beta|].
+        autorewrite with slow.
+        repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+        autorewrite with slow.
+
+        rewrite mkc_zero_eq.
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|]; boolvar; try omega.
+        rewrite mkc_one_eq.
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|]; boolvar; try omega.
+
+        eapply cequivc_trans;
+          [apply cequivc_mkc_inteq;
+            [apply cequivc_beta
+            |apply cequivc_refl
+            |apply cequivc_refl
+            |apply cequivc_refl] |].
+        autorewrite with slow.
+        eapply cequivc_trans;
+          [apply cequivc_mkc_inteq;
+            [apply cequivc_mkc_inteq_nat
+            |apply cequivc_refl
+            |apply cequivc_refl
+            |apply cequivc_refl] |].
+        boolvar; try omega.
+        rewrite <- mkc_zero_eq.
+        eapply cequivc_trans;
+          [apply cequivc_mkc_inteq;
+            [apply computes_to_valc_implies_cequivc;exact comp9
+            |apply cequivc_refl
+            |apply cequivc_refl
+            |apply cequivc_refl] |].
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_zero_zero|].
+        auto.
+
+      + eapply cequivc_trans;[apply cequivc_beta2|].
+        rewrite mkcv_lam_substc; auto.
+        eapply cequivc_trans;[apply cequivc_beta|].
+        autorewrite with slow.
+        repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+        autorewrite with slow.
+
+        rewrite mkc_zero_eq.
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|]; boolvar; try omega.
+        rewrite mkc_one_eq.
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|]; boolvar; try omega.
+
+        eapply cequivc_trans;
+          [apply cequivc_mkc_inteq;
+            [apply cequivc_beta
+            |apply cequivc_refl
+            |apply cequivc_refl
+            |apply cequivc_refl] |].
+        autorewrite with slow.
+        eapply cequivc_trans;
+          [apply cequivc_mkc_inteq;
+            [apply cequivc_mkc_inteq_nat
+            |apply cequivc_refl
+            |apply cequivc_refl
+            |apply cequivc_refl] |].
+        boolvar; try omega.
+        rewrite <- mkc_zero_eq.
+        eapply cequivc_trans;
+          [apply cequivc_mkc_inteq;
+            [apply computes_to_valc_implies_cequivc;exact comp10
+            |apply cequivc_refl
+            |apply cequivc_refl
+            |apply cequivc_refl] |].
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_zero_zero|].
+        auto.
+  }
+
+  {
+    repnd; repndors; exrepnd; spcast.
+
+    - exists (@mkc_zero o).
+      rewrite mkc_zero_eq.
+      dands;[apply nat_in_nat|].
+      autorewrite with slow.
+      rewrite <- mkc_zero_eq.
+
+      repeat substc_lsubstc_vars3.
+      revert dependent c37.
+      repeat (rewrite cons_snoc).
+      introv.
+      lsubst_tac.
+      clear_wf_cov.
+      revert dependent c38.
+      repeat (rewrite <- cons_snoc).
+      introv.
+
+      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w8 s1a mkc_zero 0 0 t0 t4 c38) as h1.
+      rewrite <- mkc_zero_eq in h1.
+      repeat (autodimp h1 hyp); tcsp.
+      { apply computes_to_valc_refl; eauto 3 with slow. }
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_refl
+          |exact h1]
+        |].
+      clear h1; proof_irr.
+
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply implies_cequivc_mkc_add;
+            [apply computes_to_valc_implies_cequivc;exact comp2
+            |apply cequivc_refl]
+          |apply cequivc_refl]
+        |].
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_mkc_add_integer
+          |apply cequivc_refl]
+        |].
+
+      assert (@mkc_integer o (Z.of_nat 0 + Z.of_nat 1) = mkc_one) as e.
+      { apply cterm_eq; simpl; auto. }
+      rewrite e; clear e.
+
+      eapply inhabited_type_cequivc;[apply cequivc_sym;apply cequivc_beta2|].
+      rewrite mkcv_lam_substc; auto.
+      eapply inhabited_type_cequivc;[apply cequivc_sym;apply cequivc_beta|].
+      autorewrite with slow.
+      repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+      autorewrite with slow.
+      eapply inhabited_type_cequivc;[apply cequivc_sym;apply cequivc_mkc_inteq_one_zero|].
+      eapply inhabited_type_cequivc;[apply cequivc_sym;apply cequivc_mkc_inteq_one_one|].
+
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;apply implies_cequivc_cequiv;
+         [apply cequivc_beta|apply cequivc_refl]
+        |].
+      autorewrite with slow.
+      rewrite <- mkc_zero_eq.
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;apply implies_cequivc_cequiv;
+         [apply cequivc_mkc_inteq_zero_zero|apply cequivc_refl]
+        |].
+      apply inhabited_cequiv; spcast; eauto 3 with slow.
+
+    - exists (@mkc_zero o).
+      rewrite mkc_zero_eq.
+      dands;[apply nat_in_nat|].
+      autorewrite with slow.
+      rewrite <- mkc_zero_eq.
+
+      repeat substc_lsubstc_vars3.
+      revert dependent c37.
+      repeat (rewrite cons_snoc).
+      introv.
+      lsubst_tac.
+      clear_wf_cov.
+      revert dependent c38.
+      repeat (rewrite <- cons_snoc).
+      introv.
+
+      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w8 s1a mkc_zero 1 0 t0 t4 c38) as h1.
+      rewrite <- mkc_zero_eq in h1.
+      repeat (autodimp h1 hyp); tcsp.
+      { apply computes_to_valc_refl; eauto 3 with slow. }
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_refl
+          |exact h1]
+        |].
+      clear h1; proof_irr.
+
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply implies_cequivc_mkc_add;
+            [apply computes_to_valc_implies_cequivc;exact comp2
+            |apply cequivc_refl]
+          |apply cequivc_refl]
+        |].
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_mkc_add_integer
+          |apply cequivc_refl]
+        |].
+
+      assert (@mkc_integer o (Z.of_nat 1 + Z.of_nat 1) = mkc_two) as e.
+      { apply cterm_eq; simpl; auto. }
+      rewrite e; clear e.
+
+      eapply inhabited_type_cequivc;[apply cequivc_sym;apply cequivc_beta2|].
+      rewrite mkcv_lam_substc; auto.
+      eapply inhabited_type_cequivc;[apply cequivc_sym;apply cequivc_beta|].
+      autorewrite with slow.
+      repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+      autorewrite with slow.
+      eapply inhabited_type_cequivc;[apply cequivc_sym;apply cequivc_mkc_inteq_two_zero|].
+      eapply inhabited_type_cequivc;[apply cequivc_sym;apply cequivc_mkc_inteq_two_one|].
+
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;apply cequivc_mkc_inteq;
+         [apply cequivc_beta|apply cequivc_refl|apply cequivc_refl|apply cequivc_refl]
+        |].
+      autorewrite with slow.
+      rewrite <- mkc_zero_eq.
+      rewrite <- mkc_one_eq.
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;apply cequivc_mkc_inteq;
+         [apply cequivc_mkc_inteq_zero_one|apply cequivc_refl|apply cequivc_refl|apply cequivc_refl]
+        |].
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;apply cequivc_mkc_inteq;
+         [apply computes_to_valc_implies_cequivc; exact comp6
+         |apply cequivc_refl|apply cequivc_refl|apply cequivc_refl]
+        |].
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;apply cequivc_mkc_inteq_zero_zero|].
+      exists (@mkc_axiom o); eauto 3 with slow.
+      apply equality_in_true; dands; spcast;
+      try (apply computes_to_valc_refl; eauto 3 with slow).
+
+    - (* false *)
+      apply equality_in_tnat in sim3.
+      unfold equality_of_nat in sim3; exrepnd; spcast.
+      eapply computes_to_valc_eq in sim3;[|exact comp3].
+      rewrite mkc_zero_eq in sim3.
+      apply mkc_nat_eq_implies in sim3; subst.
+      eapply computes_to_valc_eq in sim0;[|exact comp4].
+      symmetry in sim0.
+      rewrite <- mkc_zero_eq in sim0.
+      apply mkc_zero_eq_pk2term_implies in sim0; subst; tcsp.
+
+    - (* false *)
+      apply equality_in_tnat in sim3.
+      unfold equality_of_nat in sim3; exrepnd; spcast.
+      eapply computes_to_valc_eq in sim3;[|exact comp3].
+      eapply computes_to_valc_eq in sim0;[|exact comp4].
+      rewrite mkc_zero_eq in sim0.
+      apply mkc_nat_eq_implies in sim0; subst.
+      symmetry in sim3.
+      rewrite <- mkc_zero_eq in sim3.
+      apply mkc_zero_eq_pk2term_implies in sim3; subst; tcsp.
+
+    - exists (@mkc_zero o).
+      rewrite mkc_zero_eq.
+      dands;[apply nat_in_nat|].
+      autorewrite with slow.
+      rewrite <- mkc_zero_eq.
+
+      repeat substc_lsubstc_vars3.
+      revert dependent c37.
+      repeat (rewrite cons_snoc).
+      introv.
+      lsubst_tac.
+      clear_wf_cov.
+      revert dependent c38.
+      repeat (rewrite <- cons_snoc).
+      introv.
+
+      apply equality_in_tnat in sim3.
+      unfold equality_of_nat in sim3; exrepnd; spcast.
+
+      eapply computes_to_valc_eq in sim3;[|exact comp2].
+      eapply computes_to_valc_eq in sim0;[|exact comp4].
+      symmetry in sim3; apply mkc_nat_eq_pk2term_implies in sim3.
+      symmetry in sim0; apply mkc_nat_eq_pk2term_implies in sim0.
+      subst; GC.
+      rewrite <- mkc_integer_eq_pk2termc in comp4; rewrite <- mkc_nat_eq in comp4.
+      rewrite <- mkc_integer_eq_pk2termc in comp2; rewrite <- mkc_nat_eq in comp2.
+
+      assert (k0 > 1) as k0gt1.
+      { destruct k0; allsimpl; tcsp.
+        destruct k0; allsimpl; tcsp.
+        omega. }
+
+      pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w8 s1a mkc_zero k0 0 t0 t4 c38) as h1.
+      rewrite <- mkc_zero_eq in h1.
+      repeat (autodimp h1 hyp); tcsp.
+      { apply computes_to_valc_refl; eauto 3 with slow. }
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_refl
+          |exact h1]
+        |].
+      clear h1; proof_irr.
+
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply implies_cequivc_mkc_add;
+            [apply computes_to_valc_implies_cequivc;exact comp2
+            |apply cequivc_refl]
+          |apply cequivc_refl]
+        |].
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;
+          apply implies_cequivc_apply2;
+          [apply cequivc_refl
+          |apply cequivc_mkc_add_integer
+          |apply cequivc_refl]
+        |].
+
+      assert (@mkc_integer o (Z.of_nat k0 + Z.of_nat 1) = mkc_nat (S k0)) as e.
+      { rewrite <- Znat.Nat2Z.inj_add.
+        rewrite <- mkc_nat_eq.
+        rewrite plus_comm; auto. }
+      rewrite e; clear e.
+
+      eapply inhabited_type_cequivc;[apply cequivc_sym;apply cequivc_beta2|].
+      rewrite mkcv_lam_substc; auto.
+      eapply inhabited_type_cequivc;[apply cequivc_sym;apply cequivc_beta|].
+      autorewrite with slow.
+      repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+      autorewrite with slow.
+      rewrite mkc_zero_eq.
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;apply cequivc_mkc_inteq_nat|].
+      boolvar; try omega;[].
+      rewrite mkc_one_eq.
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;apply cequivc_mkc_inteq_nat|].
+      boolvar; try omega;[].
+      rewrite <- mkc_zero_eq.
+
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;apply cequivc_mkc_inteq;
+         [apply cequivc_beta|apply cequivc_refl|apply cequivc_refl|apply cequivc_refl]
+        |].
+      autorewrite with slow.
+      rewrite mkc_zero_eq.
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;apply cequivc_mkc_inteq;
+         [apply cequivc_mkc_inteq_nat
+         |apply cequivc_refl|apply cequivc_refl|apply cequivc_refl]
+        |].
+      boolvar;try omega;[].
+      rewrite <- mkc_zero_eq.
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;apply cequivc_mkc_inteq;
+         [apply computes_to_valc_implies_cequivc; exact comp9
+         |apply cequivc_refl|apply cequivc_refl|apply cequivc_refl]
+        |].
+      eapply inhabited_type_cequivc;
+        [apply cequivc_sym;apply cequivc_mkc_inteq_zero_zero|].
+      exists (@mkc_axiom o); eauto 3 with slow.
+      apply equality_in_true; dands; spcast;
+      try (apply computes_to_valc_refl; eauto 3 with slow).
   }
 Qed.
 
-Lemma not_well_formed {o} :
-  forall lib,
-    not (tequality
-           lib
-           ()
-        )
+Definition lamc1 {o} : @CTerm o := mkc_lam nvarx (mkcv_one [nvarx]).
+
+Lemma equality_lamc1_nat2nat {o} :
+  forall lib, @equality o lib lamc1 lamc1 nat2nat.
+Proof.
+  introv.
+  apply equality_in_fun; dands; eauto 3 with slow.
+  introv ea.
+
+  eapply equality_respects_cequivc_left;[apply cequivc_sym;apply cequivc_beta|].
+  eapply equality_respects_cequivc_right;[apply cequivc_sym;apply cequivc_beta|].
+  autorewrite with slow.
+  rewrite mkc_one_eq.
+  eauto 3 with slow.
+Qed.
+Hint Resolve equality_lamc1_nat2nat : slow.
+
+Lemma not_concl_nwf_pred {o} :
+  forall lib H k s f n s1,
+    f <> n
+    -> s <> k
+    -> hyps_functionality lib s1 H
+    -> similarity lib s1 s1 H
+    -> !@sequent_true2
+        o
+        lib
+        (choice_sequence_ind_concl H (nwf_pred k s) f n).
+Proof.
+  introv d1 d2 hf sim seq.
+  destruct seq as [wf seq].
+  vr_seq_true in seq.
+
+  pose proof (seq s1 s1) as h; clear seq; repeat (autodimp h hyp).
+  exrepnd.
+  unfold mk_exists in *.
+  unfold mk_forall in *.
+  lsubst_tac.
+
+  clear h0.
+  apply equality_in_mkc_squash in h1; repnd.
+  clear h0 h2.
+  apply inhabited_product in h1; repnd.
+  clear h0 h1.
+
+  pose proof (h2 lamc1 lamc1) as h; clear h2.
+  autodimp h hyp.
+  {
+    eapply respects_alphaeqc_equality;[apply alphaeqc_sym;apply lsubstc_mk_nat2nat|].
+    eauto 3 with slow.
+  }
+
+  repeat lsubstc_vars_as_mkcv.
+  autorewrite with slow in h.
+  rewrite substc_mkcv_function in h; auto;[].
+  autorewrite with slow in h.
+  apply tequality_function in h; repnd.
+  clear h0.
+  pose proof (h mkc_two mkc_two) as q; clear h.
+  autodimp q hyp.
+  { rw @mkc_two_eq; eauto 3 with slow. }
+
+  autorewrite with slow in q.
+  repeat (rewrite substcv_as_substc2 in q).
+  autorewrite with slow in q.
+  rw @tequality_mkc_squash in q.
+  repeat (rewrite substc2_mk_cv_app_r in q; auto;[]).
+  autorewrite with slow in q.
+
+  apply tequality_in_mkc_apply2_mkc_nwf_pred_iff in q; auto.
+  repndors; exrepnd; spcast.
+
+  - apply computes_to_valc_isvalue_eq in q0; eauto 3 with slow.
+    apply implies_eq_get_cterm in q0; simpl in q0; inversion q0.
+
+  - apply computes_to_valc_isvalue_eq in q0; eauto 3 with slow.
+    apply implies_eq_get_cterm in q0; simpl in q0; inversion q0.
+
+  - apply computes_to_valc_isvalue_eq in q1; eauto 3 with slow.
+    apply implies_eq_get_cterm in q1; simpl in q1; inversion q1.
+
+  - apply computes_to_valc_isvalue_eq in q2; eauto 3 with slow.
+    apply implies_eq_get_cterm in q2; simpl in q2; inversion q2.
+
+  - eapply computes_to_valc_reduces_toc in q7;[|apply reduce_toc_beta].
+    autorewrite with slow in q7.
+    apply computes_to_valc_isvalue_eq in q7; eauto 3 with slow.
+    apply implies_eq_get_cterm in q7; simpl in q7; inversion q7.
+Qed.
 
 
 (*
