@@ -87,9 +87,9 @@ Fixpoint inh_seq_alpha0 {o}
     | 0 => b
     | S m =>
       match inh_seq_alpha0 lib P v b ind m with
-      | MkInhSeq s isk inh =>
+      | MkInhSeq _ _ _ _ s isk inh =>
         match ind m s isk inh with
-        | existT k i =>
+        | existT _ k i =>
           MkInhSeq
             o
             lib
@@ -125,7 +125,7 @@ Fixpoint inh_seq_alpha {o}
   | 0 => MkInhSeq3 o lib P 0 0 base
   | S m =>
     match inh_seq_alpha lib P v base f ind m with
-    | MkInhSeq3 _ (MkInhSeq s isk inh) =>
+    | MkInhSeq3 _ _ _ _ _ (MkInhSeq _ _ _ _ s isk inh) =>
       let k := f (MkInhSeq2 o lib P m (MkInhSeq o lib P m s isk inh)) in
       let i := ind (MkInhSeq2 o lib P m (MkInhSeq o lib P m s isk inh)) in
       MkInhSeq3
@@ -913,10 +913,3 @@ Proof.
     apply cequivc_sym; eauto 3 with slow.
   }
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

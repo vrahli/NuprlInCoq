@@ -86,7 +86,7 @@ Definition nout_seq_NA_nat {o} {lib} {P} {X : @CTerm o} (x : nout_seq_NA lib P X
 
 Definition nout_seq_NA_seq {o} {lib} {P} {X : @CTerm o} (x : nout_seq_NA lib P X) : CTerm :=
   match x with
-    | existT _ (existT s _) => s
+    | existT _ _ (existT _ s _) => s
   end.
 
 Definition barind_nout_ind_cont2 {o} lib P (X : @CTerm o) v :=
@@ -189,7 +189,7 @@ Definition mk_nout_kseq_NA {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
 Definition nout_kseq_NA_nout {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
            (x : nout_kseq_NA lib P n A v) : CNTerm :=
   match x with
-    | existT u _ => u
+    | existT _ u _ => u
   end.
 
 Definition nout_kseq_NA_cterm {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
@@ -199,7 +199,7 @@ Definition nout_kseq_NA_cterm {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
 Definition nout_kseq_NA_seq {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
            (x : nout_kseq_NA lib P n A v) : CTerm:=
   match x with
-    | existT _ (existT s _) => s
+    | existT _ _ (existT _ s _) => s
   end.
 
 Lemma eq_kseq_nout_update {o} :
@@ -1870,12 +1870,3 @@ Proof.
   autorewrite with slow; auto.
 Qed.
 Hint Rewrite @lsubstc_cbv_emseq : slow.
-
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

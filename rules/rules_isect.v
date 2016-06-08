@@ -208,7 +208,7 @@ Proof.
 
           repeat (lsubstc_subst_aeq2;[]).
           repeat (substc_lsubstc_vars3;[]).
-          revert c5 c6 t.
+          revert c c4 t.
           lsubst_tac.
           introv t.
           repeat (lsubstc_snoc2;[]).
@@ -695,10 +695,3 @@ Proof.
 Qed.
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

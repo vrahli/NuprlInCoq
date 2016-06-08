@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -26,13 +31,6 @@
 Require Export sequents.
 
 (* ========= CONSISTENCY ========= *)
-
-Lemma args_constraints_nil {o} :
-  forall (hs : @bhyps o), args_constraints [] hs.
-Proof.
-  unfold args_constraints; simpl; sp.
-Qed.
-Hint Immediate args_constraints_nil.
 
 (* end hide *)
 
@@ -73,9 +71,12 @@ Proof.
   allapply @false_not_inhabited; sp.
 Qed.
 
+(*
+(* get a universe inconsistency error *)
 Lemma weak_consistency2 {o} :
   forall lib (t : @NTerm o),
     wf_term t
     -> !(rule_true lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] [])).
 Proof.
 Qed.
+*)

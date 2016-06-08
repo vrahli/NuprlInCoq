@@ -20,7 +20,8 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Websites: http://nuprl.org/html/Nuprl2Coq
+  Websites: http://nuprl.org/html/verification
+            http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
   Authors: Vincent Rahli
@@ -38,6 +39,10 @@ Require Import swap.
 Require Import function_all_types.
 (* contains a proof that U(n:Nat;Univ(n)) is a Nuprl type: *)
 Require Import union_all_types.
+
+
+(* weak consistency *)
+Require Import weak_consistency.
 
 
 (* Rules(structural): *)
@@ -59,6 +64,7 @@ Require Import bar_induction_cterm4.
 
 (* Choice sequences: *)
 Require Import choice_sequence_ind.
+Require Import choice_sequence_ind2.
 
 
 (* Axiom of Choice: *)

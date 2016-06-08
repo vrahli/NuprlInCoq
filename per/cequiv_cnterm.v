@@ -20,7 +20,8 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Websites: http://nuprl.org/html/Nuprl2Coq
+  Websites: http://nuprl.org/html/verification
+            http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
   Authors: Vincent Rahli
@@ -35,7 +36,7 @@ Require Export seq_util.
 
 Definition cnterm2cterm {o} (t : @CNTerm o) : CTerm :=
   let (x,p) := t in
-  existT isprog x (isprog_nout_implies_isprog x p).
+  mk_ct x (isprog_nout_implies_isprog x p).
 
 Definition cnout_cterm {o} (t : @CNTerm o) : CTerm := cnterm2cterm t.
 Definition cnout_term {o} (t : @CNTerm o) : NTerm := get_cterm (cnout_cterm t).
@@ -157,9 +158,11 @@ Proof.
   allrw @nt_wf_eq; sp.
 Qed.
 
+Definition mk_cnt {p} (t : @NTerm p) (p : isprog_nout t) : CNTerm := exist isprog_nout t p.
+
 Definition cterm2cnterm {o} (t : @CTerm o) : noutokensc t -> CNTerm :=
   match t with
-    | exist x p => fun n => existT isprog_nout x (isprog_implies_isprog_nout x n p)
+    | exist _ x p => fun n => mk_cnt x (isprog_implies_isprog_nout x n p)
   end.
 
 Lemma cnterm2cterm2cnterm {o} :
@@ -406,10 +409,3 @@ Proof.
   auto.
 Qed.
 Hint Resolve eq_kseq_nout_of_seq : slow.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../close/" "../cequiv/")
-*** End:
-*)

@@ -5595,6 +5595,13 @@ Proof.
   rw @sequent_true_at_all; simpl; sp.
 Qed.
 
+Lemma args_constraints_nil {o} :
+  forall (hs : @bhyps o), args_constraints [] hs.
+Proof.
+  unfold args_constraints; simpl; sp.
+Qed.
+Hint Immediate args_constraints_nil.
+
 
 (* --------- Now we prove that there is a simple way to prove that
  * sequents are true when the hypotheses don't change between the

@@ -5,3 +5,5 @@
 -R per per
 -R close close
 -R rules rules
+-R axiom_choice axiom_choice
+-R bar_induction bar_induction
