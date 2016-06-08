@@ -258,10 +258,3 @@ Proof.
   apply rule_true3_implies_rule_true.
   eapply rule_tyfam_equality_true3; eauto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

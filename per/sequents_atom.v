@@ -2348,7 +2348,7 @@ Definition replace_utokens_seq {p d}
            (s : @sequent p) :
   @utok_ren_seq p d s -> @sequent (set_patom p d) :=
   match s with
-    | existT bs w =>
+    | existT _ bs w =>
       fun r =>
         existT
           wf_sequent
@@ -2382,7 +2382,7 @@ Definition replace_utokens_ctseq {p d}
            (cts : @ctsequent p) :
   @utok_ren_ctseq p d cts -> @ctsequent (set_patom p d) :=
   match cts with
-    | existT s q =>
+    | existT _ s q =>
       fun r =>
         existT
           closed_type_sequent
@@ -2429,7 +2429,7 @@ Definition replace_utokens_cseq {p d}
            (cs : @csequent p) :
   @utok_ren_cseq p d cs -> @csequent (set_patom p d) :=
   match cs with
-    | existT s q =>
+    | existT _ s q =>
       fun r =>
         existT
           closed_extract_ctsequent
@@ -3236,11 +3236,4 @@ Proof.
     introv kelts; introv.
     rw <- @sequent_true_eq_VR.
 Abort.
-*)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
 *)

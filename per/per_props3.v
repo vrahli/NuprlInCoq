@@ -633,9 +633,9 @@ Definition inv_before_witness :
           in before_witness _ _
           return (forall z n, k = z + n -> ~ P (Z.of_nat z) n # ~ P (Z.opp (Z.of_nat z)) n)
                  -> before_witness P (S k) with
-      | stop_pos z n e p => fun f => match fst (f z n e) p with end
-      | stop_neg z n e p => fun f => match snd (f z n e) p with end
-      | next b => fun _ => b
+      | stop_pos _ _ z n e p => fun f => match fst (f z n e) p with end
+      | stop_neg _ _ z n e p => fun f => match snd (f z n e) p with end
+      | next _ _ b => fun _ => b
     end.
 
 Lemma leS:
@@ -760,7 +760,7 @@ Fixpoint linear_search
       (P : Z -> nat -> Prop)
       (dec : forall z n, P z n [+] !P z n)
       (k : nat)
-      (b : before_witness P k) : {x : Z # nat | P (fst x) (snd x)} :=
+      (b : before_witness P k) : {x : Z # nat & P (fst x) (snd x)} :=
   match P_search P dec k with
     | inl p => p
     | inr a => linear_search P dec (S k) (inv_before_witness P k b a)
@@ -769,7 +769,7 @@ Fixpoint linear_search
 Definition constructive_indefinite_ground_description_nat {o}
            lib (t1 t2 : @CTerm o) :
   equality_of_int_p_2_c lib t1 t2
-  -> {x : Z # nat | reducek_pair lib (get_cterm t1) (get_cterm t2) (fst x) (snd x)}.
+  -> {x : Z # nat & reducek_pair lib (get_cterm t1) (get_cterm t2) (fst x) (snd x)}.
 Proof.
   introv pex.
   apply linear_search with (k := 0).
@@ -854,10 +854,3 @@ Proof.
   dands; try (apply isvalue_mk_integer);
   exists x; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)
