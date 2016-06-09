@@ -100,8 +100,6 @@ Proof.
   introv nieF niefF nienF.
   unfold spM.
   allrw @covered_lam.
-  unfold test2.
-  rw @covered_fresh.
   unfold test_try2.
   rw @covered_try.
   rw @covered_var; simpl.
@@ -320,7 +318,7 @@ Proof.
   pose proof (cover_vars_spM F s nieF nifF ninF) as h; apply h in c'; clear h.
 
   dup w as w'.
-  apply wf_term_spMp in w'.
+  rw @wf_term_spMp in w'.
   rw @wf_term_spM in w'.
 
   exists w' c'.
@@ -2370,10 +2368,3 @@ Proof.
   allunfold @ext_wf_cseq; allsimpl.
   proof_irr; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../close/" "../per/" "../cequiv/" "../terms/" "../computation/" "../continuity/" "../util/")
-*** End:
-*)

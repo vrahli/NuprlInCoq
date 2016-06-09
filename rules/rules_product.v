@@ -801,17 +801,18 @@ Proof.
         repeat (rw @sub_find_snoc); simpl.
 
         boolvar; tcsp;
-        try (complete (remember (sub_find (csub2sub s1a0) v) as sf;
-                       symmetry in Heqsf; destruct sf; eauto 3 with slow;
-                       remember (sub_find (csub2sub s1b) v) as sg;
-                       symmetry in Heqsg; destruct sg; eauto 3 with slow;
-                       provefalse;
-                       allapply @sub_find_some;
-                       allapply @in_sub_eta;
-                       allrw @dom_csub_eq;
-                       revert Heqsf; revert Heqsg;
-                       allapply @similarity_dom; repnd; allrw;
-                       autorewrite with slow core; tcsp)).
+          remember (sub_find (csub2sub s1a0) v) as sf;
+          symmetry in Heqsf; destruct sf; eauto 3 with slow;
+            remember (sub_find (csub2sub s1b) v) as sg;
+            symmetry in Heqsg; destruct sg; eauto 3 with slow;
+              try subst v; tcsp;
+                provefalse;
+                allapply @sub_find_some;
+                allapply @in_sub_eta;
+                allrw @dom_csub_eq;
+                revert Heqsf; revert Heqsg;
+                  allapply @similarity_dom; repnd; allrw;
+                    autorewrite with slow core; tcsp.
 
     - unfold cequivc; simpl.
       rw @csubst_app; simpl.
@@ -872,17 +873,18 @@ Proof.
         repeat (rw @sub_find_snoc); simpl.
 
         boolvar; tcsp;
-        try (complete (remember (sub_find (csub2sub s2a0) v) as sf;
-                       symmetry in Heqsf; destruct sf; eauto 3 with slow;
-                       remember (sub_find (csub2sub s2b) v) as sg;
-                       symmetry in Heqsg; destruct sg; eauto 3 with slow;
-                       provefalse;
-                       allapply @sub_find_some;
-                       allapply @in_sub_eta;
-                       allrw @dom_csub_eq;
-                       revert Heqsf; revert Heqsg;
-                       allapply @similarity_dom; repnd; allrw;
-                       autorewrite with slow core; tcsp)).
+          remember (sub_find (csub2sub s2a0) v) as sf;
+          symmetry in Heqsf; destruct sf; eauto 3 with slow;
+            remember (sub_find (csub2sub s2b) v) as sg;
+            symmetry in Heqsg; destruct sg; eauto 3 with slow;
+              try subst v; tcsp;
+                provefalse;
+                allapply @sub_find_some;
+                allapply @in_sub_eta;
+                allrw @dom_csub_eq;
+                revert Heqsf; revert Heqsg;
+                  allapply @similarity_dom; repnd; allrw;
+                    autorewrite with slow core; tcsp.
 
     - unfold cequivc; simpl.
       apply cequiv_lsubst.

@@ -868,7 +868,7 @@ Proof.
 
       apply (reduces_in_atmost_k_steps_excc_le_exc _ (k1 + k + k0));
         eauto 3 with slow; tcsp;
-        try (apply NPeano.Nat.le_max_l; auto).
+        try (apply Nat.le_max_l; auto).
       pose proof (reduces_in_atmost_k_steps_excc_exception
                     lib k k0 n e (mkc_utoken a) mkc_axiom) as h.
       repeat (autodimp h hyp); tcsp; exrepnd.
@@ -1520,7 +1520,7 @@ Proof.
     applydup @reduces_to_preserves_isprog in h2;
     [|apply isprog_apply; complete (eauto 3 with slow)].
 
-    exists (existT _ t2' h3) (existT _ t3' h4); simpl.
+    exists (mk_ct t2' h3) (mk_ct t3' h4); simpl.
     unfold spfexc_pair in h1; exrepnd; subst.
     dands; auto.
     right; dands; tcsp; apply cequiv_spfexc.
@@ -2491,11 +2491,3 @@ Proof.
             auto.
         }
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

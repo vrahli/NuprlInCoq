@@ -7,3 +7,4 @@
 -R rules rules
 -R axiom_choice axiom_choice
 -R bar_induction bar_induction
+-R continuity continuity
