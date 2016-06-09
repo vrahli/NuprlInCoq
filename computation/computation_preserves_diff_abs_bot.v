@@ -107,7 +107,7 @@ Ltac inv_diff_imp :=
     let h2 := fresh H in
     let i  := fresh "i" in
     assert (diff_abs_bot_b b1 b2) as h1 by (apply H; auto);
-      assert (forall b1 b2, LIn (b1,b2) (combine bs1 bs2) -> diff_abs_bot_b b1 b2) as h2 by (introv i; apply H; auto);
+      assert (forall a b, LIn (a,b) (combine bs1 bs2) -> diff_abs_bot_b a b) as h2 by (introv i; apply H; auto);
       clear H
   | [ H : forall _ _ : _, (?b1,?b2) = _ [+] (?b3,?b4) = _ [+] LIn _ (combine ?bs1 ?bs2) -> _ |- _ ] =>
     let h1 := fresh H in
@@ -116,7 +116,7 @@ Ltac inv_diff_imp :=
     let i  := fresh "i" in
     assert (diff_abs_bot_b b1 b2) as h1 by (apply H; auto);
       assert (diff_abs_bot_b b3 b4) as h2 by (apply H; auto);
-      assert (forall b1 b2, LIn (b1,b2) (combine bs1 bs2) -> diff_abs_bot_b b1 b2) as h3 by (introv i; apply H; auto);
+      assert (forall a b, LIn (a,b) (combine bs1 bs2) -> diff_abs_bot_b a b) as h3 by (introv i; apply H; auto);
       clear H
   | [ H : forall _ _ : _, (?b1,?b2) = _ [+] (?b3,?b4) = _ [+] (?b5,?b6) = _ [+] LIn _ (combine ?bs1 ?bs2) -> _ |- _ ] =>
     let h1 := fresh H in
@@ -127,7 +127,7 @@ Ltac inv_diff_imp :=
     assert (diff_abs_bot_b b1 b2) as h1 by (apply H; auto);
       assert (diff_abs_bot_b b3 b4) as h2 by (apply H; auto);
       assert (diff_abs_bot_b b5 b6) as h3 by (apply H; auto);
-      assert (forall b1 b2, LIn (b1,b2) (combine bs1 bs2) -> diff_abs_bot_b b1 b2) as h4 by (introv i; apply H; auto);
+      assert (forall a b, LIn (a,b) (combine bs1 bs2) -> diff_abs_bot_b a b) as h4 by (introv i; apply H; auto);
       clear H
   | [ H : forall _ _ : _, (?b1,?b2) = _ [+] (?b3,?b4) = _ [+] (?b5,?b6) = _ [+] (?b7,?b8) = _ [+] LIn _ (combine ?bs1 ?bs2) -> _ |- _ ] =>
     let h1 := fresh H in
@@ -140,7 +140,7 @@ Ltac inv_diff_imp :=
       assert (diff_abs_bot_b b3 b4) as h2 by (apply H; auto);
       assert (diff_abs_bot_b b5 b6) as h3 by (apply H; auto);
       assert (diff_abs_bot_b b7 b8) as h4 by (apply H; auto);
-      assert (forall b1 b2, LIn (b1,b2) (combine bs1 bs2) -> diff_abs_bot_b b1 b2) as h5 by (introv i; apply H; auto);
+      assert (forall a b, LIn (a,b) (combine bs1 bs2) -> diff_abs_bot_b a b) as h5 by (introv i; apply H; auto);
       clear H
   end.
 
@@ -2006,10 +2006,3 @@ Proof.
   apply diff_abs_bot_alpha_exception_implies in h0; exrepnd; subst.
   exists n' e'; dands; eauto 3 with slow.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

@@ -388,6 +388,7 @@ Proof.
   allsimpl; dands; tcsp;
   try (apply vswf_hypotheses_nil_eq);
   try (complete (rw @vars_hyps_snoc; simpl; apply covered_snoc_weak; auto));
+  try (apply wf_cbv; eauto 2 with slow);
   auto.
 
   - apply wf_hypotheses_snoc; dands; simpl; auto.
@@ -400,19 +401,11 @@ Proof.
     rw @isprog_vars_eq.
     allunfold @covered; dands; eauto 3 with slow.
 
-  - apply wf_member; eauto 3 with slow.
-    apply wf_halts; auto.
+  - unfold mk_cbv, covered; simpl.
+    autorewrite with slow; auto.
 
-  - unfold closed_type_baresequent, closed_type; simpl.
-    apply covered_member; dands; eauto 3 with slow.
-    apply covered_halts; auto.
-
-  - apply wf_member; eauto 3 with slow.
-    apply wf_isexc; auto.
-
-  - unfold closed_type_baresequent, closed_type; simpl.
-    apply covered_member; dands; eauto 3 with slow.
-    apply covered_isexc; auto.
+  - unfold mk_cbv, covered; simpl.
+    autorewrite with slow; auto.
 Qed.
 
 
@@ -602,11 +595,3 @@ Qed.
 
 
 (* end hide *)
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

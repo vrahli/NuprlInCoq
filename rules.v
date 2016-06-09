@@ -145,7 +145,7 @@ Require Import rules_false.
 (* A few lemmas using our verified rules *)
 Require Import nuprl_lemmas1.
 Require Import nuprl_lemmas2.
-(*Require Import proof.*)
+Require Import proof1.
 
 
 (* Function/pi type *)

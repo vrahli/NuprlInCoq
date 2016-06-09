@@ -692,10 +692,10 @@ Proof.
       dands; eauto 3 with slow; spcast.
       + apply reduces_in_atmost_k_steps_excc_can; eauto 3 with slow.
         eapply reduces_in_atmost_k_stepsc_le;[|idtac|exact equ6]; auto;
-        try (apply NPeano.Nat.le_max_l; auto).
+        try (apply Nat.le_max_l; auto).
       + apply reduces_in_atmost_k_steps_excc_can; eauto 3 with slow.
         eapply reduces_in_atmost_k_stepsc_le;[|idtac|exact equ7]; auto;
-        try (apply NPeano.Nat.le_max_r; auto).
+        try (apply Nat.le_max_r; auto).
 
     - repnd; spcast.
       apply cequivc_spexcc in equ.
@@ -709,7 +709,7 @@ Proof.
 
       + apply (reduces_in_atmost_k_steps_excc_le_exc _ (k3 + k + k0));
         eauto 3 with slow; tcsp;
-        try (apply NPeano.Nat.le_max_l; auto).
+        try (apply Nat.le_max_l; auto).
         pose proof (reduces_in_atmost_k_steps_excc_exception
                       lib k k0 n0 e0 (mkc_utoken a) mkc_axiom) as h.
         repeat (autodimp h hyp); tcsp; exrepnd.
@@ -723,7 +723,7 @@ Proof.
 
       + apply (reduces_in_atmost_k_steps_excc_le_exc _ (k4 + k1 + k2));
         eauto 3 with slow; tcsp;
-        try (apply NPeano.Nat.le_max_r; auto).
+        try (apply Nat.le_max_r; auto).
         pose proof (reduces_in_atmost_k_steps_excc_exception
                       lib k1 k2 n e (mkc_utoken a) mkc_axiom) as h.
         repeat (autodimp h hyp); tcsp; exrepnd.

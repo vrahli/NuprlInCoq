@@ -3050,16 +3050,18 @@ Proof.
 Qed.
 Hint Resolve equality_lamc1_nat2nat : slow.
 
+(* I get a universe inconsistency error when using notT instead of _ -> False *)
 Lemma not_concl_nwf_pred {o} :
   forall lib H k s f n s1,
     f <> n
     -> s <> k
     -> hyps_functionality lib s1 H
     -> similarity lib s1 s1 H
-    -> !@sequent_true2
-        o
-        lib
-        (choice_sequence_ind_concl H (nwf_pred k s) f n).
+    -> @sequent_true2
+         o
+         lib
+         (choice_sequence_ind_concl H (nwf_pred k s) f n)
+    -> False.
 Proof.
   introv d1 d2 hf sim seq.
   destruct seq as [wf seq].
@@ -3121,10 +3123,3 @@ Proof.
     apply computes_to_valc_isvalue_eq in q7; eauto 3 with slow.
     apply implies_eq_get_cterm in q7; simpl in q7; inversion q7.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

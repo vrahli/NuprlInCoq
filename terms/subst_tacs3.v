@@ -28,7 +28,8 @@
 
 *)
 
-Require Export subst_tacs.
+Require Import csubst.
+Require Import subst_tacs.
 
 Tactic Notation "lsubstc_snoc_move2" ident(h) :=
   match type of h with
@@ -36,7 +37,7 @@ Tactic Notation "lsubstc_snoc_move2" ident(h) :=
       let ni := fresh "ni" in
       let e  := fresh "e"  in
       let ch := fresh "c"  in
-      assert (!LIn x (dom_csub s1)) as ni by auto;
+      assert (!(LIn x (dom_csub s1))) as ni by auto;
         pose proof (lsubstc_snoc_move t s1 s2 x a w c ni) as e;
         destruct e as [ch e];
         rewrite e in h; clear e; clear_irr
