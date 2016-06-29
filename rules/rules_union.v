@@ -462,6 +462,18 @@ Qed.
 
 
 
+Lemma covered_decide {o} :
+  forall (a : @NTerm o) v b w c vs,
+    covered (mk_decide a v b w c) vs
+    <=> (covered a vs # covered b (v :: vs) # covered c (w :: vs)).
+Proof.
+  unfold covered; sp; simpl.
+  repeat (rw remove_nvars_nil_l).
+  rewrite app_nil_r.
+  repeat (rw subvars_app_l); sp.
+Qed.
+
+
 (**
 
 <<
@@ -484,11 +496,11 @@ Definition rule_union_elimination {p}
        (snoc H (mk_hyp z (mk_union A B)) ++ J)
        (mk_concl C (mk_decide (mk_var z) x l y r )))
     [ mk_baresequent
-        ((snoc (snoc H (mk_hyp z (mk_union A B))) (mk_hyp x A))  
+        ((snoc (snoc H (mk_hyp z (mk_union A B))) (mk_hyp x A))
            ++ (lsubst_hyps [(z, mk_inl (mk_var x))] J))
         (mk_concl (lsubst  C [(z, mk_inl (mk_var x))] ) l),
      mk_baresequent
-        ((snoc (snoc H (mk_hyp z (mk_union A B))) (mk_hyp y B))  
+        ((snoc (snoc H (mk_hyp z (mk_union A B))) (mk_hyp y B))
            ++ (lsubst_hyps [(z, mk_inr (mk_var y))] J))
         (mk_concl (lsubst  C [(z, mk_inr (mk_var y))] ) r)
     ]
@@ -496,6 +508,7 @@ Definition rule_union_elimination {p}
 
 Hint Rewrite @nh_vars_hyps_app : core.
 Hint Rewrite @nh_vars_hyps_snoc : core.
+Hint Rewrite @nh_vars_hyps_lsubst_hyps : slow core.
 
 Lemma rule_union_elimination_true {p} :
   forall lib,
@@ -506,21 +519,38 @@ Lemma rule_union_elimination_true {p} :
          (rule_union_elimination
                  A B C l r z x y H J).
 Proof.
-   unfold rule_union_elimination, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_union_elimination, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   clear cargs.
-    (* We prove the well-formedness of things *)
+
+  (* We prove the well-formedness of things *)
   destseq; allsimpl.
   dLin_hyp; exrepnd.
   rename Hyp0 into hyp1.
   rename Hyp1 into hyp2.
   destseq; allsimpl; proof_irr; GC.
-  assert (covered (mk_decide (mk_var z) x l y r) (nh_vars_hyps (snoc H (mk_hyp z (mk_union A B)) ++ J))) as ce2.
-  - clear hyp1. clear hyp2.
-    autorewrite with core in *. allsimpl; auto.
-  - exists ce2.
 
-   (* We prove some simple facts about our sequents *)
+  assert (covered (mk_decide (mk_var z) x l y r) (nh_vars_hyps (snoc H (mk_hyp z (mk_union A B)) ++ J))) as ce2.
+  { clear hyp1. clear hyp2.
+    dwfseq.
+    introv i; allrw in_app_iff; allrw in_remove_nvars; allrw in_single_iff.
+    rw in_snoc.
+    repndors; repnd; subst; tcsp.
+    - apply ce0 in i0.
+      allrw in_app_iff.
+      allrw in_snoc.
+      autorewrite with slow core in *.
+      tcsp.
+    - apply ce in i0.
+      allrw in_app_iff.
+      allrw in_snoc.
+      autorewrite with slow core in *.
+      tcsp. }
+  exists ce2.
+Abort.
+
+(*
+  (* We prove some simple facts about our sequents *)
   assert (disjoint (free_vars A) (vars_hyps J)
           # disjoint (free_vars f) (vars_hyps J)
           # subset (free_vars_hyps J) (x :: vars_hyps H)
@@ -722,23 +752,10 @@ Proof.
       - lsubst_tac.
         apply tequality_union in eqhh6; repnd.
         auto.
-        
      }
-        
 
-    
-
-
-   
-     
 
 (* UNIFINISHED *)
 
 Abort.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
 *)

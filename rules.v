@@ -108,6 +108,7 @@ Require Import rules_axiom_cases.
 
 
 (* Arithmetic Rules *)
+Require Import rules_arith.
 Require Import rules_integer_ring.
 
 
@@ -127,6 +128,7 @@ Require Import rules_set.
 Require Import rules_equality.
 Require Import rules_equality2.
 Require Import rules_equality3.
+Require Import rules_equality4.
 
 
 (* Type equality type *)
@@ -183,6 +185,18 @@ Require Import rules_mono.
 
 (* Nominal rules *)
 Require Import rules_fresh.
+
+
+(* Universe type *)
+Require Import rules_uni.
+
+
+(* Void type: *)
+Require Import rules_void.
+
+
+(* Union type: *)
+Require Import rules_union.
 
 
 (* Squash rules (derivable) *)
