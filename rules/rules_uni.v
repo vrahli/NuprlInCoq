@@ -32,30 +32,13 @@
 Require Export sequents2.
 Require Export sequents_tacs.
 Require Export sequents_equality.
-
-Lemma uni_in_uni {o} :
-  forall lib i j, i < j -> @member o lib (mkc_uni i) (mkc_uni j).
-Proof.
-  introv h.
-  unfold member, equality, nuprl.
-  exists (fun A A' => {eqa : per , close lib (univi lib j) A A' eqa}).
-  dands.
-
-  { apply mkc_uni_in_nuprl. }
-
-  {
-    exists (fun A A' => {eqa : per , close lib (univi lib i) A A' eqa}).
-    apply CL_init.
-    apply univi_exists_iff.
-    exists i; dands; spcast; tcsp; try (apply computes_to_valc_refl; eauto 3 with slow).
-  }
-Qed.
+Require Export per_props_uni.
 
 
 (*
    H |- Type(i) = Type(i) in Type(j)
 
-     By universeEquality
+     By universeEquality (i < j)
  *)
 Definition rule_universe_equality {o}
            (H : @bhyps o)
@@ -101,4 +84,74 @@ Proof.
   introv hf sim.
   lsubst_tac.
   apply uni_in_uni; auto.
+Qed.
+
+
+(*
+   H |- T in Type(j)
+
+     By cumulativity (i < j)
+
+     H |- T in Type(i)
+ *)
+Definition rule_cumulativity {o}
+           (H : @bhyps o)
+           (T : NTerm)
+           (i j : nat) :=
+  mk_rule
+    (mk_baresequent H (mk_conclax (mk_member T (mk_uni j))))
+    [
+      mk_baresequent H (mk_conclax (mk_member T (mk_uni i)))
+    ]
+    [].
+
+Lemma rule_cumulativity_true3 {o} :
+  forall lib (H : @bhyps o) T (i j : nat),
+    i < j -> rule_true3 lib (rule_cumulativity H T i j).
+Proof.
+  intros.
+  unfold rule_cumulativity, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros; repnd.
+  clear cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  destruct Hyp  as [ ws1 hyp1 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent (H) ||- (mk_conclax (mk_member T (mk_uni j)))) as wfc.
+  { clear hyp1.
+    unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl; simpl.
+    dwfseq.
+    rw @vswf_hypotheses_nil_eq.
+    dands; tcsp.
+    introv xx; allrw in_app_iff; tcsp. }
+
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* We prove some simple facts on our sequents *)
+  (* done with proving these simple facts *)
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  lsubst_tac.
+  rw <- @member_member_iff.
+  pose proof (teq_and_member_if_member lib (mk_uni j) T s1 s2 H wT wt ct0 ct1 cT cT0) as q.
+  lsubst_tac.
+  apply q; auto.
+  { apply tequality_mkc_uni. }
+  clear dependent s1; clear dependent s2.
+
+  introv hf sim.
+  vr_seq_true in hyp1.
+  pose proof (hyp1 s1 s2 hf sim) as q; clear hyp1; exrepnd.
+  lsubst_tac.
+  rw <- @member_member_iff in q1.
+
+  apply tequality_mkc_member_sp in q0; repnd; clear q2.
+  repndors; spcast;
+    [|eapply equality_respects_cequivc_right;[exact q0|] ];
+    eapply cumulativity;eauto.
 Qed.
