@@ -58,7 +58,7 @@
 {5,callbyvalueAtomEq}                       .                                         : .
 {6,callbyvalueAtomnEq}                      .                                         : .
 {149,callbyvalueCallbyvalue}                rules/rules_cft_callbyvalue.v             : rule_callbyvalue_cbv_true
-{142,callbyvalueDecide}                     .                                         : .
+{142,callbyvalueDecide}                     rules/rules_halts_decide.v                : rule_halt_decide_true3
 {6,callbyvalueDivide}                       rules/rules_arith_callbyvalue.v           : rule_callbyvalue_arith_true
 {116,callbyvalueExceptionCases}             rules/rules_cbv_exception.v               : rule_cbv_exception_cases_true
 {6,callbyvalueInt}                          .                                         : .
@@ -114,8 +114,8 @@
 {3049,equalityElimination}                  .                                         : .
 {6351,equalityEquality}                     .                                         : .
 {3,equalityEqualityBase}                    rules/rules_equality.v                    : rule_equality_equality_base_or_true
-{10012,equalitySymmetry}                    .                                         : .
-{9855,equalityTransitivity}                 .                                         : .
+{10012,equalitySymmetry}                    rules/rules_equality5.v                   : rule_equality_symmetry_true3
+{9855,equalityTransitivity}                 rules/rules_equality5.v                   : rule_equality_transitivity_true3
 {450,equalityUniverse}                      .                                         : .
 {1,equalityUniverseElim}                    rules/rules_equality.v                    : rule_equality_universe_elim_true
 {1,exceptionAdd}                            rules/rules_arith_exception.v             : rule_exception_arith_true3
@@ -329,4 +329,4 @@
 {7964,voidElimination}                      rules/rules_void.v                        : rule_void_elimination_true
 {6596,voidEquality}                         rules/rules_void.v                        : rule_void_equality_true3
 
-TOTAL RULES PROVED: 123 out of 332
+TOTAL RULES PROVED: 126 out of 332

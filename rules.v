@@ -100,6 +100,7 @@ Require Import rules_arith_callbyvalue.
 Require Import rules_apply_callbyvalue.
 Require Import rules_cft_callbyvalue.
 Require Import rules_halts_spread.
+Require Import rules_halts_decide.
 
 
 (* Cases rules for canonical form tests *)
@@ -130,6 +131,7 @@ Require Import rules_equality.
 Require Import rules_equality2.
 Require Import rules_equality3.
 Require Import rules_equality4.
+Require Import rules_equality5.
 
 
 (* Type equality type *)
