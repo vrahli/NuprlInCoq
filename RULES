@@ -328,3 +328,5 @@
 {7415,universeEquality}                     rules/rules_uni.v                         : rule_universe_equality_true3
 {7964,voidElimination}                      rules/rules_void.v                        : rule_void_elimination_true
 {6596,voidEquality}                         rules/rules_void.v                        : rule_void_equality_true3
+
+TOTAL RULES PROVED: 111 out of 332
