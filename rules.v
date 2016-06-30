@@ -81,6 +81,7 @@ Require Import rules_squiggle4.
 Require Import rules_squiggle5.
 Require Import rules_squiggle6.
 Require Import rules_squiggle7.
+Require Import rules_base.
 
 
 (* Rules(exception): *)

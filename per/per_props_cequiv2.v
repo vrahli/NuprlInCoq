@@ -945,9 +945,19 @@ Proof.
       apply inhabited_implies_tequality in h1; auto.
 Qed.
 
+Lemma base_in_uni {p} :
+  forall lib i, @member p lib mkc_base (mkc_uni i).
+Proof.
+  introv.
+  unfold member, equality.
+  exists (fun A A' => {eqa : per , close lib (univi lib i) A A' eqa}).
+  unfold nuprl.
+  dands.
 
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)
+  { apply mkc_uni_in_nuprl. }
+
+  { exists (fun t t' => t ~=~(lib) t').
+    apply CL_base.
+    unfold per_base; dands; spcast; auto;
+      apply computes_to_valc_refl; eauto 3 with slow. }
+Qed.
