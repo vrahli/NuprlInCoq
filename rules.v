@@ -108,12 +108,14 @@ Require Import rules_halts_decide.
 Require Import rules_cft.
 Require Import rules_inl_inr_cases.
 Require Import rules_axiom_cases.
+Require Import rules_isint.
 
 
 (* Arithmetic Rules *)
 Require Import rules_arith.
 Require Import rules_integer_ring.
 Require Import rules_minus.
+Require Import rules_number.
 
 
 (* Continuity axiom and rule: *)
