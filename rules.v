@@ -81,6 +81,7 @@ Require Import rules_squiggle4.
 Require Import rules_squiggle5.
 Require Import rules_squiggle6.
 Require Import rules_squiggle7.
+Require Import rules_squiggle8.
 Require Import rules_base.
 
 
@@ -112,6 +113,7 @@ Require Import rules_axiom_cases.
 (* Arithmetic Rules *)
 Require Import rules_arith.
 Require Import rules_integer_ring.
+Require Import rules_minus.
 
 
 (* Continuity axiom and rule: *)
