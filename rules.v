@@ -47,6 +47,7 @@ Require Import weak_consistency.
 
 (* Rules(structural): *)
 Require Import rules_struct.
+Require Import rules_struct2.
 Require Import rules_move.
 
 
@@ -136,6 +137,7 @@ Require Import rules_equality2.
 Require Import rules_equality3.
 Require Import rules_equality4.
 Require Import rules_equality5.
+Require Import rules_equality6.
 
 
 (* Type equality type *)
@@ -213,6 +215,7 @@ Require Import rules_squash.
 (* Rules(atoms): *)
 Require Import rules_atom_atom.
 Require Import rules_atom_struct.
+Require Import rules_free_from_atom.
 
 
 (* Require Import rules_per_function. *)

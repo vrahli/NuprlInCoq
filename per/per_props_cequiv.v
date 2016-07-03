@@ -566,10 +566,3 @@ Lemma member_in_base_iff {o} :
 Proof.
   intros; split; intro; auto; apply member_base.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

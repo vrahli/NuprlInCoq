@@ -74,6 +74,95 @@ Proof.
     eapply equality_eq1 in teq0; apply teq0; auto.
 Qed.
 
+Hint Resolve iscvalue_mkc_uatom : slow.
+
+Lemma equality_free_from_atom_in_uni {o} :
+  forall lib (T1 T2 : @CTerm o) x1 x2 a1 a2 i,
+    equality
+      lib
+      (mkc_free_from_atom T1 x1 a1)
+      (mkc_free_from_atom T2 x2 a2)
+      (mkc_uni i)
+      <=> (equality lib T1 T2 (mkc_uni i)
+           # equality lib x1 x2 T1
+           # equality lib a1 a2 mkc_uatom).
+Proof.
+  introv.
+  sp_iff Case.
+
+  - Case "->".
+    intros teq.
+    unfold equality, nuprl in teq; exrepnd.
+    inversion teq1; subst; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepd.
+    computes_to_value_isvalue; GC.
+    discover; exrepnd.
+    rename eqa into eqi.
+    ioneclose; subst; try not_univ.
+
+    unfold per_ffatom in *; exrepnd; spcast.
+    computes_to_value_isvalue; GC.
+    dands.
+
+    {
+      exists eq; sp.
+      allrw.
+      exists eqa; sp.
+    }
+
+    {
+      exists eqa; sp.
+      allfold (@nuprli o lib j0).
+      apply nuprli_implies_nuprl with (i := j0); sp.
+      allapply @nuprli_refl; sp.
+    }
+
+    {
+      exists (equality_of_uatom lib).
+      dands; auto.
+      - apply CL_uatom; unfold per_uatom; dands; spcast; auto;
+          apply computes_to_valc_refl; eauto 2 with slow.
+      - exists u; dands; spcast; auto.
+    }
+
+  - Case "<-".
+    intro eqs.
+    destruct eqs as [eqa eqb].
+    destruct eqb as [eqb eqc].
+
+    unfold equality in eqb; exrepnd.
+    rename eq into eqT.
+    apply equality_in_uatom_iff in eqc; exrepnd; spcast.
+
+    unfold equality in eqa; exrepnd.
+    rename eq into eqi.
+
+    exists eqi; dands; auto.
+    inversion eqa1; subst; try not_univ;[].
+    duniv j h.
+    allrw @univi_exists_iff; exrepd; spcast.
+    computes_to_value_isvalue; GC.
+    discover; exrepnd.
+
+    allrw.
+    exists (per_ffatom_eq lib eqT a x1).
+    apply CL_ffatom.
+    unfold per_ffatom.
+    exists T1 T2 x1 x2 a1 a2 eqT a.
+
+    dands; spcast; auto;
+    try (complete (spcast; apply computes_to_valc_refl;
+                   try (apply iscvalue_mkc_free_from_atom))).
+
+    fold (nuprli lib j0) in *.
+    applydup @nuprli_implies_nuprl in h0.
+    pose proof (nuprl_uniquely_valued lib T1 eqT eqa) as q.
+    repeat (autodimp q hyp);[eapply nuprl_refl; eauto|].
+    eapply nuprli_ext;[exact h0|].
+    apply eq_term_equals_sym; auto.
+Qed.
+
 Lemma tequality_free_from_atoms {o} :
   forall lib (T1 T2 : @CTerm o) x1 x2,
     tequality
@@ -356,10 +445,3 @@ Proof.
       exists u y.
       dands; spcast; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)
