@@ -379,7 +379,7 @@ Qed.
 
 Definition unfold_libc {o} lib (t : @CTerm o) :=
   match t with
-  | exist a p => mk_ct (unfold_lib lib a) (isprog_unfold_lib lib a p)
+  | exist _ a p => mk_ct (unfold_lib lib a) (isprog_unfold_lib lib a p)
   end.
 
 Lemma isotrue_all_abs_are_defined_unfold_lib {o} :
