@@ -157,6 +157,7 @@ Require Import rules_false.
 Require Import nuprl_lemmas1.
 Require Import nuprl_lemmas2.
 Require Import proof1.
+Require Import sterm.
 
 
 (* Function/pi type *)

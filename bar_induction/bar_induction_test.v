@@ -39,7 +39,7 @@ Proof.
   - constructor; introv h; omega.
   - inversion IHa as [imp].
     constructor; introv h.
-    rewrite NPeano.Nat.lt_succ_r in h.
+    rewrite Nat.lt_succ_r in h.
     destruct h; auto.
     apply imp; omega.
 Qed.
@@ -119,6 +119,7 @@ Proof.
   introv h; introv.
   unfold strong_wf in h.
   constructor.
+
 Abort.
 
 Inductive almost_full {X} : (brel X) -> Prop :=
@@ -428,10 +429,3 @@ is well-founded?
   Print well_founded.
 
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)
