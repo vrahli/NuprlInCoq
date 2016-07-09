@@ -69,7 +69,7 @@
 {26,callbyvalueLess}                        .                                         : .
 {7,callbyvalueMinus}                        rules/rules_arith_callbyvalue.v           : rule_callbyvalue_minus_true
 {12,callbyvalueMultiply}                    rules/rules_arith_callbyvalue.v           : rule_callbyvalue_arith_true
-{757,callbyvalueReduce}                     .                                         : .
+{757,callbyvalueReduce}                     rules/rules_callbyvalue.v                 : rule_callbyvalue_reduce_true3
 {2,callbyvalueRemainder}                    rules/rules_arith_callbyvalue.v           : rule_callbyvalue_arith_true
 {26,callbyvalueSpread}                      rules/rules_halts_spread.v                : rule_halt_spread_true
 {1,callbyvalueType}                         rules/rules_uni.v                         : rule_callbyvalue_type_true3
@@ -282,4 +282,5 @@
 {7964,voidElimination}                      rules/rules_void.v                        : rule_void_elimination_true
 {6596,voidEquality}                         rules/rules_void.v                        : rule_void_equality_true3
 
-TOTAL RULES PROVED: 143 out of 283
+TOTAL RULES PROVED: 142 out of 283
+(not counting 2 UNFINISHED)

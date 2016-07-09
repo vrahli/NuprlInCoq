@@ -103,6 +103,7 @@ Require Import rules_apply_callbyvalue.
 Require Import rules_cft_callbyvalue.
 Require Import rules_halts_spread.
 Require Import rules_halts_decide.
+Require Import rules_callbyvalue.
 
 
 (* Cases rules for canonical form tests *)
