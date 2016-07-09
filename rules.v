@@ -138,6 +138,7 @@ Require Import rules_equality3.
 Require Import rules_equality4.
 Require Import rules_equality5.
 Require Import rules_equality6.
+Require Import rules_equality7.
 
 
 (* Type equality type *)

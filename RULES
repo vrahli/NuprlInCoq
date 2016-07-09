@@ -135,7 +135,7 @@
 {5937,functionEquality}                     rules/rules_function.v                    : rule_function_equality_true
 {840,functionExtensionality}                .                                         : .
 {1,functionUniverseElim}                    .                                         : .
-{221,hyp_replacement}                       .                                         : .
+{221,hyp_replacement}                       rules/rules_equality7.v                   : rule_hyp_replacement_true3
 {14505,hypothesis}                          rules/rules_struct.v                      : rule_hypothesis_true3
 {13819,hypothesisEquality}                  rules/rules_struct.v                      : rule_hypothesis_equality_true
 {1172,hypothesis_subsumption}               .                                         : .
@@ -282,4 +282,4 @@
 {7964,voidElimination}                      rules/rules_void.v                        : rule_void_elimination_true
 {6596,voidEquality}                         rules/rules_void.v                        : rule_void_equality_true3
 
-TOTAL RULES PROVED: 142 out of 283
+TOTAL RULES PROVED: 143 out of 283
