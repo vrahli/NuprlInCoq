@@ -164,6 +164,7 @@ Require Import sterm.
 
 (* Function/pi type *)
 Require Import rules_function.
+Require Import rules_function2.
 
 
 (* Product/sum type *)
