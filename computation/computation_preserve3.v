@@ -216,7 +216,7 @@ Proof.
   introv wf ise.
   unfold isexc in ise.
   destruct t as [v|f|op bs]; allsimpl; tcsp.
-  destruct op as [can|ncan|exc|abs]; allsimpl; tcsp; GC.
+  destruct op as [can|ncan|exc|abs|comp]; allsimpl; tcsp; GC.
   apply nt_wf_Exc in wf; exrepnd; subst.
   eexists; eexists; reflexivity.
 Qed.
@@ -427,7 +427,7 @@ Proof.
     eapply ind; eauto.
   - apply subset_app_l.
     apply subset_app_l.
-    dopid op as [can|ncan|exc|abs] SCase; simpl; auto;[].
+    dopid op as [can|ncan|exc|abs|comp] SCase; simpl; auto;[].
     SCase "NCan".
     allrw @fold_get_utokens_step_seq_ncan_seq.
     destruct ncan; simpl; auto;[|].
@@ -688,7 +688,7 @@ Proof.
     apply is_utok_implies in Heqsf; exrepnd; subst; simpl; auto.
 
   - Case "oterm".
-    dopid op as [can|ncan|exc|abs] SCase; simpl; autorewrite with slow;
+    dopid op as [can|ncan|exc|abs|comp] SCase; simpl; autorewrite with slow;
     try (complete (apply eqset_flat_map_get_utokens_step_seq_b_is_utok_sub; auto));[|].
 
     + rw <- app_assoc.
@@ -849,7 +849,7 @@ Proof.
     eexists; dands; eauto.
 
   - Case "oterm".
-    dopid op as [can|ncan|exc|abs] SCase.
+    dopid op as [can|ncan|exc|abs|comp] SCase.
 
     + SCase "Can".
       unflsubst in comp; allsimpl.
@@ -1429,7 +1429,7 @@ Proof.
             unflsubst; auto.
         }
 
-        dopid op as [can2|ncan2|exc2|abs2] SSCase.
+        dopid op as [can2|ncan2|exc2|abs2|comp2] SSCase.
 
         * SSCase "Can".
           dopid_noncan ncan SSSCase.
