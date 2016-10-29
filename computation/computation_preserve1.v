@@ -120,7 +120,7 @@ Proof.
 
   - Case "oterm".
     rw @compute_step_eq_unfold in comp.
-    dopid op as [can|ncan|exc|abs] SCase.
+    dopid op as [can|ncan|exc|abs|comp] SCase.
 
     + SCase "Can".
       simphyps; ginv; dands; try (complete (allsimpl; tcsp)).
@@ -216,7 +216,7 @@ Proof.
             dands; eauto 3 with slow.
         }
 
-        dopid op as [can2|ncan2|exc2|abs2] SSCase.
+        dopid op as [can2|ncan2|exc2|abs2|comp2] SSCase.
 
         * SSCase "Can".
           dopid_noncan ncan SSSCase.
@@ -544,7 +544,7 @@ Proof.
           allrw @nt_wf_NCompOp; exrepnd; allunfold @nobnd; ginv; fold_terms.
           allsimpl; allrw remove_nvars_nil_l; allrw app_nil_r.
 
-          dopid op as [can3|ncan3|exc3|abs3] SSSSCase.
+          dopid op as [can3|ncan3|exc3|abs3|comp3] SSSSCase.
 
           - SSSSCase "Can".
             simpl in comp.
@@ -623,6 +623,10 @@ Proof.
               eapply wf_mk_instance; eauto.
               inversion wf3 as [|?|? ? imp]; auto.
               introv i; apply bt_wf_eq; apply imp; auto.
+
+          - SSSSCase "Comp".
+            simpl in comp.
+            dcwf h.
         }
 
         { SSSCase "NArithOp".
@@ -634,7 +638,7 @@ Proof.
           allrw @nt_wf_NArithOp; exrepnd; allunfold @nobnd; ginv; fold_terms.
           allsimpl; allrw remove_nvars_nil_l; allrw app_nil_r.
 
-          dopid op as [can3|ncan3|exc3|abs3] SSSSCase.
+          dopid op as [can3|ncan3|exc3|abs3|comp3] SSSSCase.
 
           - SSSSCase "Can".
             simpl in comp.
@@ -702,6 +706,10 @@ Proof.
               eapply wf_mk_instance; eauto.
               inversion wf1 as [|?|? ? imp]; auto.
               introv i; apply bt_wf_eq; apply imp; auto.
+
+          - SSSSCase "Comp".
+            simpl in comp.
+            dcwf h.
         }
 
         { SSSCase "NCanTest".
@@ -827,6 +835,52 @@ Proof.
           introv k; apply w in k.
           apply bt_wf_eq; auto.
         }
+
+      * SSCase "Comp".
+        dopid_noncan ncan SSSCase;
+          try (complete (simpl in *; ginv; autorewrite with core; dands; auto)).
+
+        { SSSCase "NCbv".
+          simpl in *; autorewrite with core.
+          apply compute_step_cbv_success in comp; exrepnd; subst.
+          simpl in *; autorewrite with core.
+          dands.
+
+          - pose proof (eqvars_free_vars_disjoint x [(v,oterm Comp bts)]) as h.
+            allrw @fold_subst.
+            apply eqvars_sym in h.
+            eapply subvars_eqvars;[|exact h].
+            simpl; allrw remove_nvars_nil_l; allrw app_nil_r.
+            boolvar; simpl; allrw app_nil_r; auto; allrw subvars_app_l; dands;
+            try (complete (apply subvars_app_weak_l; auto));
+            try (complete (apply subvars_app_weak_r; auto)).
+
+          - allrw @nt_wf_eq.
+            allrw <- @wf_cbv_iff; repnd.
+            apply wf_term_subst; auto.
+        }
+
+        { SSSCase "NTryCatch".
+
+          clear ind; simpl in comp.
+          apply compute_step_try_success in comp; exrepnd; subst; fold_terms.
+
+          simpl; allrw remove_nvars_nil_l; allrw app_nil_r.
+          allrw subvars_app_l.
+          allrw subset_app.
+
+          unfold oatoml; autorewrite with slow.
+          dands; tcsp; eauto 4 with slow.
+
+          { allrw @nt_wf_eq.
+            allrw @wf_atom_eq.
+            allrw <- @wf_try_iff; sp. }
+        }
+
+        { SSSCase "NParallel".
+          allsimpl; ginv; allsimpl; autorewrite with core.
+          dands; auto; eauto 3 with slow.
+        }
       }
 
       { allsimpl.
@@ -909,6 +963,9 @@ Proof.
         allrw @wf_oterm_iff; repnd.
         eapply wf_mk_instance; eauto.
       }
+
+    + SCase "Comp".
+      simpl in *; ginv; dands; auto.
 Qed.
 
 Lemma preserve_compute_step {p} :

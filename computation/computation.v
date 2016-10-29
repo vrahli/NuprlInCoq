@@ -175,6 +175,9 @@ Definition size_bs {o} (bs : list (@BTerm o)) :=
     while evaluating a non-canonical term, its priciple argumens
     must be first evaluated down to a normal form. *)
 
+Definition compute_ill_formed := "ill-formed computation on compute term".
+Definition fresh_must_have_bound_var := "fresh must have a bound variables".
+
 Definition compute_step_can {o}
            (t : @NTerm o)
            (ncr : NonCanonicalOp)
@@ -195,12 +198,36 @@ Definition compute_step_can {o}
     | NSleep    => compute_step_sleep   arg1c t arg1bts btsr
     | NTUni     => compute_step_tuni    arg1c t arg1bts btsr
     | NMinus    => compute_step_minus   arg1c t arg1bts btsr
-    | NFresh    => cfailure "fresh has a bound variable" t
+    | NFresh    => cfailure fresh_must_have_bound_var t
     | NTryCatch      => compute_step_try t arg1 btsr
     | NParallel      => compute_step_parallel arg1c t arg1bts btsr
     | NCompOp    op  => co btsr t arg1bts arg1c op comp arg1 ncr
     | NArithOp   op  => ca btsr t arg1bts arg1c op comp arg1 ncr
     | NCanTest   top => compute_step_can_test top arg1c t arg1bts btsr
+  end.
+
+Definition compute_step_compute {o}
+           (t : @NTerm o)
+           (ncr : NonCanonicalOp)
+           (arg1 : NTerm)
+           (btsr : list BTerm) :=
+  match ncr with
+    | NApply    => cfailure compute_ill_formed t
+    | NEApply   => cfailure compute_ill_formed t
+    | NFix      => cfailure compute_ill_formed t
+    | NSpread   => cfailure compute_ill_formed t
+    | NDsup     => cfailure compute_ill_formed t
+    | NDecide   => cfailure compute_ill_formed t
+    | NCbv      => compute_step_cbv t arg1 btsr
+    | NSleep    => cfailure compute_ill_formed t
+    | NTUni     => cfailure compute_ill_formed t
+    | NMinus    => cfailure compute_ill_formed t
+    | NFresh    => cfailure fresh_must_have_bound_var t
+    | NTryCatch      => compute_step_try t arg1 btsr
+    | NParallel      => csuccess mk_axiom
+    | NCompOp    op  => cfailure compute_ill_formed t
+    | NArithOp   op  => cfailure compute_ill_formed t
+    | NCanTest   top => cfailure compute_ill_formed t
   end.
 
 (*
@@ -490,6 +517,7 @@ Definition compute_step {o}
             | sterm _ => fun _ => csuccess t
             | oterm (Can _) _ => fun _ => csuccess t
             | oterm Exc _ => fun _ => csuccess t
+            | oterm Comp _ => fun _ => csuccess t
             | oterm (NCan _) [] => fun _ => cfailure "no args supplied" t
             | oterm (NCan nc) (bterm [] (vterm v) :: bs) => fun _ => cfailure compute_step_error_not_closed t
             | oterm (NCan ncan) (bterm (v::vs) u :: bs) =>
@@ -512,6 +540,8 @@ Definition compute_step {o}
                                             | bterm l x :: bs => fun F => F x (compute_step'_size4 ncr f l x bs)
                                             | _ => fun _ => cfailure bad_args t
                                           end) F)
+            | oterm (NCan ncr) (bterm [] (oterm Comp arg1bts as arg1) :: btsr) =>
+              fun _ => compute_step_compute t ncr arg1 btsr
             (* assuming qst arg is always principal *)
             (* if the principal argument is an exception, we raise the exception *)
             | oterm (NCan ncr) ((bterm [] (oterm Exc arg1bts))::btsr) =>
@@ -531,6 +561,7 @@ Definition compute_step_unfold {o}
     | sterm _ => csuccess t
     | oterm (Can _) _ => csuccess t
     | oterm Exc _ => csuccess t
+    | oterm Comp _ => csuccess t
     | oterm (NCan _) [] => cfailure "no args supplied" t
     | oterm (NCan nc) (bterm [] (vterm v) :: bs) => cfailure compute_step_error_not_closed t
     | oterm (NCan ncan) (bterm (v::vs) u :: bs) =>
@@ -550,6 +581,8 @@ Definition compute_step_unfold {o}
                           | bterm _ x :: _ => compute_step lib x
                           | _ => cfailure bad_args t
                         end)
+    | oterm (NCan ncr) (bterm [] (oterm Comp arg1bts as arg1) :: btsr) =>
+      compute_step_compute t ncr arg1 btsr
     (* assuming qst arg is always principal *)
     (* if the principal argument is an exception, we raise the exception *)
     | oterm (NCan ncr) ((bterm [] (oterm Exc arg1bts))::btsr) =>
@@ -566,7 +599,7 @@ Lemma compute_step_eq_unfold {o} :
     compute_step lib t = compute_step_unfold lib t.
 Proof.
   destruct t as [v|f|op bs]; simpl; try reflexivity.
-  dopid op as [can|ncan|exc|abs] Case; try reflexivity.
+  dopid op as [can|ncan|exc|abs|comp] Case; try reflexivity.
   destruct bs as [|b bs]; try reflexivity.
   destruct b as [l t].
   destruct l as [|v vs]; try reflexivity.
@@ -596,7 +629,7 @@ Proof.
           f_equal; tcsp.
       - f_equal; tcsp.
     }
-    dopid op1 as [can1|ncan1|exc1|abs2] SCase; try reflexivity.
+    dopid op1 as [can1|ncan1|exc1|abs2|comp2] SCase; try reflexivity.
     + unfold compute_step at 1.
       destruct bs; try reflexivity.
       destruct b.

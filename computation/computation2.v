@@ -240,6 +240,20 @@ Definition computes_to_val_like {p} lib (t1 t2 : @NTerm p) :=
 
 (* begin hide *)
 
+(*
+Lemma alphaeq_preserves_iscomp {o} :
+  forall (t1 t2 : @NTerm o),
+    alpha_eq t1 t2
+    -> iscomp t1
+    -> iscomp t2.
+Proof.
+  introv aeq ise.
+  destruct t1 as [| |op bs]; try (complete (inversion ise)).
+  destruct op; try (complete (inversion ise)).
+  invertsn aeq; constructor.
+Qed.
+*)
+
 Lemma alpha_eq_preserves_isvalue_like {o} :
   forall (a b : @NTerm o),
     alpha_eq a b
@@ -248,10 +262,9 @@ Lemma alpha_eq_preserves_isvalue_like {o} :
 Proof.
   introv aeq iv.
   unfold isvalue_like in iv.
-  dorn iv.
-  - apply iscan_implies in iv; repndors; exrepnd; subst.
-    + inversion aeq; subst; left; sp.
-    + inversion aeq; subst; left; sp.
+  repndors.
+  - apply iscan_implies in iv; repndors; exrepnd; subst;
+      inversion aeq; subst; left; sp.
   - apply alphaeq_preserves_isexc in aeq; sp.
 Qed.
 
@@ -264,7 +277,8 @@ Definition reduces_toc {p} lib (t1 t2 : @CTerm p) :=
 Definition compute_1_step {p} lib (t : @NTerm p) :=
   match t with
     | oterm (Can _) _ => cfailure "term is already a value" t
-    | oterm Exc _ => cfailure "term is already a exception" t
+    | oterm Exc _ => cfailure "term is already an exception" t
+    | oterm Comp _ => cfailure "term is already a computation" t
     | sterm _ => cfailure "term is already a value" t
     | vterm _ => compute_step lib t
     | oterm (NCan _) _ => compute_step lib t
@@ -540,6 +554,7 @@ Lemma computes_to_value_can {p} :
     -> {c : CanonicalOp
         & {bts : list BTerm
         & v = oterm (Can c) bts}}
+       [+] {bts : list BTerm & v = oterm Comp bts}
        [+] {f : ntseq & v = sterm f}.
 Proof.
   unfold computes_to_value; introv Hcv; repnd; sp.
@@ -547,7 +562,8 @@ Proof.
   allapply @iscan_implies.
   repndors; exrepnd; subst; allsimpl.
   - left; eexists; eexists; sp.
-  - right; eexists; eauto.
+  - right; right; eexists; eauto.
+  - right; left; eexists; eauto.
 Qed.
 
 Lemma compute_at_most_k_steps_eq {p} :
@@ -1373,6 +1389,7 @@ Lemma compute_step_try_catch {p} :
             | [bterm [] a', bterm [] x] => csuccess (mk_atom_eq a a' (subst b v x) e)
             | _ => cfailure inappropriate_args_to_catch (mk_try e a v b)
           end
+        | oterm Comp _ => csuccess (mk_atom_eq a a e mk_bot)
         | oterm _ _ =>
           match compute_step lib e with
             | csuccess f => csuccess (mk_try f a v b)
@@ -1382,7 +1399,7 @@ Lemma compute_step_try_catch {p} :
 Proof.
   introv.
   destruct e as [x|f|op bs]; auto.
-  dopid op as [can|ncan|exc|abs] Case; simpl; auto.
+  dopid op as [can|ncan|exc|abs|comp] Case; simpl; auto.
   csunf; simpl; auto.
 Qed.
 
@@ -1790,15 +1807,12 @@ Proof.
   - boolvar; ginv; tcsp.
   - right; left.
     dands; eauto 3 with slow.
-  - dopid op1 as [can1|ncan1|exc1|abs1] Case; ginv.
-    + Case "Can".
-      right; left; dands; eauto with slow.
+  - dopid op1 as [can1|ncan1|exc1|abs1|comp1] Case; ginv;
+      try (complete (right; left; dands; eauto 2 with slow)).
     + Case "NCan".
       right; right.
       destruct comp; allsimpl; ginv.
       exists n; dands; tcsp.
-    + Case "Exc".
-      right; left; dands; eauto with slow.
     + Case "Abs".
       right; right.
       destruct comp; allsimpl; ginv.
@@ -2915,7 +2929,7 @@ Lemma get_utok_some {o} :
     -> op = Can (NUTok a).
 Proof.
   introv e.
-  dopid op as [can|ncan|exc|abs] Case; try (complete (allsimpl; sp)).
+  dopid op as [can|ncan|exc|abs|comp] Case; try (complete (allsimpl; sp)).
   destruct can; allsimpl; ginv; auto.
 Qed.
 
@@ -2928,7 +2942,7 @@ Lemma subst_utokens_aux_oterm {o} :
       end.
 Proof.
   introv.
-  dopid op as [can|ncan|exc|abs] Case; tcsp.
+  dopid op as [can|ncan|exc|abs|comp] Case; tcsp.
   destruct can; simpl; auto.
 Qed.
 
@@ -7108,7 +7122,7 @@ Lemma get_utokens_o_eqset_ut_ot {o} :
   forall (op : @Opid o),
     eqset (get_utokens_o op) (get_utokens_o_ut op ++ get_utokens_o_ot op).
 Proof.
-  introv; dopid op as [can|ncan|exc|abs] Case.
+  introv; dopid op as [can|ncan|exc|abs|comp] Case.
   - destruct can; allsimpl; tcsp.
   - destruct ncan; allsimpl; tcsp.
   - destruct exc; allsimpl; tcsp.
@@ -7220,7 +7234,7 @@ Lemma get_utok_none_ut {o} :
     -> get_utokens_o_ut op = [].
 Proof.
   introv e.
-  dopid op as [can|ncan|exc|abs] Case; allsimpl; auto.
+  dopid op as [can|ncan|exc|abs|comp] Case; allsimpl; auto.
   destruct can; auto; ginv.
 Qed.
 
@@ -7384,7 +7398,7 @@ Lemma get_utok_none {o} :
     -> get_utokens_o op = [].
 Proof.
   introv e.
-  dopid op as [can|ncan|exc|abs] Case; allsimpl; auto.
+  dopid op as [can|ncan|exc|abs|comp] Case; allsimpl; auto.
   destruct can; auto; ginv.
 Qed.
 
@@ -8745,7 +8759,7 @@ Proof.
   exists arg2 l; dands; auto.
   destruct arg2 as [|f|op bs2]; ginv.
   - left; dands; simpl; auto.
-  - dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv.
+  - dopid op as [can|ncan|exc|abs|comp] Case; allsimpl; ginv.
     + right; right.
       destruct cstep; allsimpl; ginv.
       eexists; dands; eauto.
@@ -8867,7 +8881,7 @@ Proof.
   dands; auto;[].
   destruct arg1 as [|f1|op1 bs1]; allsimpl; ginv;[|].
   - destruct arg2 as [|f2|op2 bs2]; allsimpl; ginv.
-    destruct op2 as [can2|ncan2|exc2|abs2]; allsimpl; ginv;[].
+    destruct op2 as [can2|ncan2|exc2|abs2|comp2]; allsimpl; ginv;[].
     destruct can2; allsimpl; ginv.
     destruct bs2; allsimpl; ginv.
     boolvar; ginv.
@@ -8875,7 +8889,7 @@ Proof.
     eexists; eexists; dands; eauto.
     unfold mk_nat.
     rw Znat.Z2Nat.id; auto.
-  - destruct op1 as [can1|ncan1|exc1|abs1]; allsimpl; ginv;[].
+  - destruct op1 as [can1|ncan1|exc1|abs1|comp1]; allsimpl; ginv;[].
     destruct can1; allsimpl; ginv;[|].
     { destruct bs1 as [|b bs1]; allsimpl; ginv;[].
       destruct b as [vs b].
@@ -8886,7 +8900,7 @@ Proof.
       eexists; eexists; dands; eauto. }
     { destruct bs1 as [|b bs1]; allsimpl; ginv;[].
       destruct arg2 as [v|f|op bs]; allsimpl; ginv;[].
-      dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv;[].
+      dopid op as [can|ncan|exc|abs|comp] Case; allsimpl; ginv;[].
       destruct can; allsimpl; ginv;[].
       destruct bs; allsimpl; ginv.
       boolvar; ginv.
@@ -9734,9 +9748,3 @@ Hint Resolve computes_to_name_utoken : slow.
 
 
 (* end hide *)
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

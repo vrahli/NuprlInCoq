@@ -468,12 +468,6 @@ Proof.
     allrw disjoint_app_r; sp.
 Qed.
 
-Lemma prog_sub_nil {o} : @prog_sub o [].
-Proof.
-  unfold prog_sub, sub_range_sat; simpl; sp.
-Qed.
-Hint Immediate prog_sub_nil.
-
 Lemma closed_sub_cl {p} :
   forall (sub : @Sub p),
     (forall v t, LIn (v, t) sub -> closed t)

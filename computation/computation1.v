@@ -190,6 +190,8 @@ Definition compute_step_eapply1 {o}
     | bterm [] (oterm (Can _) _ as arg2) :: bs2 =>
       compute_step_eapply2 t arg1 arg2 bs2
     | bterm [] (oterm Exc _ as arg2) :: _ => csuccess arg2
+    | bterm [] (oterm Comp _ as arg2) :: bs2 =>
+      compute_step_eapply2 t arg1 arg2 bs2
     | bterm [] (oterm _ _) :: bs2 => (* ncan/abs *)
       on_success cstep (fun f => oterm (NCan ncr) (nobnd arg1 :: nobnd f :: bs2))
     | bterm [] (sterm _ as arg2) :: btsr3 =>
@@ -745,6 +747,7 @@ Definition ca_aux {o} btsr (t : @NTerm o) arg1bts arg1c op cstep arg1 ncr :=
     | (bterm [] (oterm (Can arg2c) arg2bts)::btsr3) =>
       compute_step_arith op arg1c arg2c arg1bts arg2bts btsr3 t
     | bterm [] (oterm Exc _ as arg2nt) :: _ => csuccess arg2nt
+    | bterm [] (oterm Comp _ as arg2nt) :: _ => cfailure cop_malformed_2nd_arg t
     | bterm [] (oterm _ _) :: btsr3 => (* ncan/abs *)
       on_success cstep (fun f => oterm (NCan ncr) (bterm [] arg1::bterm [] f::btsr3))
     | bterm [] (sterm _) :: btsr3 => cfailure cop_malformed_2nd_arg t
@@ -836,6 +839,7 @@ Definition co_aux {o} btsr (t : @NTerm o) arg1bts arg1c op cstep arg1 ncr :=
     | bterm [] (oterm (Can arg2c) arg2bts) :: btsr3 =>
       compute_step_comp op arg1c arg2c arg1bts arg2bts btsr3 t
     | bterm [] (oterm Exc _ as arg2nt) :: _ => csuccess arg2nt
+    | bterm [] (oterm Comp _ as arg2nt) :: _ => cfailure cop_malformed_2nd_arg t
     | bterm [] (oterm _ _) :: btsr3 => (* ncan/abs *)
       on_success cstep (fun f => oterm (NCan ncr) (bterm [] arg1::bterm [] f::btsr3))
     | bterm [] (sterm _) :: btsr3 => cfailure cop_malformed_2nd_arg t
@@ -1315,7 +1319,7 @@ Proof.
     destruct x as [l t]; simpl.
     eapply ind; eauto 3 with slow.
 
-  - dopid op as [can|ncan|exc|abs] SCase; simpl; eauto 3 with slow;[].
+  - dopid op as [can|ncan|exc|abs|comp] SCase; simpl; eauto 3 with slow;[].
     SCase "NCan".
     dopid_noncan ncan SSCase; simpl; eauto 3 with slow;[|].
 
@@ -1328,7 +1332,7 @@ Proof.
       destruct b2 as [l2 t2].
       destruct l2; simpl; eauto 3 with slow;[].
       destruct t2 as [v2|f2|op2 bs2]; simpl; eauto 3 with slow;[].
-      dopid op2 as [can2|ncan2|exc2|abs2] SSSCase; simpl; eauto 3 with slow;[].
+      dopid op2 as [can2|ncan2|exc2|abs2|comp2] SSSCase; simpl; eauto 3 with slow;[].
 
       SSSCase "Can".
       destruct can2; simpl; eauto 3 with slow; [].
@@ -1352,7 +1356,7 @@ Proof.
       destruct b2 as [l2 t2].
       destruct l2; simpl; eauto 3 with slow;[].
       destruct t2 as [v2|f2|op2 bs2]; simpl; eauto 3 with slow;[].
-      dopid op2 as [can2|ncan2|exc2|abs2] SSSCase; simpl; eauto 3 with slow;[].
+      dopid op2 as [can2|ncan2|exc2|abs2|comp2] SSSCase; simpl; eauto 3 with slow;[].
 
       SSSCase "Can".
       destruct can2; simpl; eauto 3 with slow; [].
@@ -1464,6 +1468,7 @@ Definition compute_step_fresh {o}
         | oterm Exc _ => csuccess (pushdown_fresh v u)
         | oterm (Abs  _) _ => on_success comp (fun r => mk_fresh v (subst_utokens r [(a,mk_var v)]))
         | oterm (NCan _) _ => on_success comp (fun r => mk_fresh v (subst_utokens r [(a,mk_var v)]))
+        | oterm Comp _ => csuccess (pushdown_fresh v u) (* because computations are some sort of quoted terms I'm not sure we should push fresh down *)
       end
     | _,_,_ => cfailure "check 1st arg" t
   end.
@@ -1512,10 +1517,3 @@ Definition compute_step_parallel {o}
    This means, I'll have to change the way computation on non-canonical
    terms and abstractions work :(
  *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

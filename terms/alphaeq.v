@@ -3469,16 +3469,23 @@ Lemma subst_val {p} : forall e vx no lbt,
   -> {c : CanonicalOp
       $ {lbtc : list (@BTerm p)
       $ e = oterm (Can c) lbtc}}
-     [+] {f : ntseq $ e = sterm f}.
+     [+] {f : ntseq $ e = sterm f}
+     [+] {a, b, n : NTerm $ e = mk_compute a b n}.
 Proof.
   unfold subst_aux.
   introv Hisv.
   destruct e as [v | f | oo llbt]; allsimpl;
   [revert Hisv; cases_if; simpl; introv Hisv; inverts Hisv; allsimpl; tcsp
   | | ].
-  - right; eexists; eauto.
+  - right; left; eexists; eauto.
   - destruct oo; inverts Hisv; allsimpl; tcsp.
-    left; eexists; eauto.
+    + left; eexists; eauto.
+    + right; right.
+      allapply @isprogram_compute_implies; exrepnd.
+      repeat (destruct llbt; ginv).
+      destruct b0 as [l1 t1], b1 as [l2 t2], b2 as [l3 t3].
+      destruct l1, l2, l3; ginv; GC.
+      eexists; eexists; eexists; reflexivity.
 Qed.
 
 Lemma alpha_eq_bterm_lenbvars {p} : forall lv1 lv2 nt1 nt2,
@@ -3490,13 +3497,13 @@ Qed.
 
 Lemma alpha_eq_bterm_unify {p} : forall a b,
   alpha_eq_bterm a b
-  -> {lv : list NVar $ {nta, ntb : @NTerm p $ 
+  -> {lv : list NVar $ {nta, ntb : @NTerm p $
         alpha_eq_bterm a (bterm lv nta)
         # alpha_eq_bterm b (bterm lv ntb)}}.
 Proof.
   introv Hbal.
   destruct_bterms.
-  applydup @alpha_eq_bterm_lenbvars in Hbal.  
+  applydup @alpha_eq_bterm_lenbvars in Hbal.
   pose proof (fresh_vars(length blv) (all_vars bnt ++ all_vars ant)) as Hfr.
   exrepnd. duplicate Hbal.
   apply @alpha_bterm_change with (lvn:=lvn) in Hbal; auto; disjoint_reasoningv.
@@ -3506,6 +3513,43 @@ Proof.
   rep_eexists; dands; eauto.
 Qed.
 
+
+(** replace simpl_sub with this *)
+Ltac simpl_sub2 :=
+(match goal with
+| [ H : context[dom_sub (combine _ _)] |- _] => rewrite dom_sub_combine in H;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
+| [ |-  context[dom_sub (combine _ _)] ] => rewrite dom_sub_combine;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
+| [ H : context[range (combine _ _)] |- _] => rewrite dom_range_combine in H;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
+| [ |-  context[range (combine _ _)] ] => rewrite dom_range_combine;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
+| [ H : context[range (var_ren _ _)] |- _] => unfold var_ren in H
+| [ |-  context[range (var_ren _ _)] ] => unfold var_ren
+| [ H : context[dom_sub (var_ren _ _)] |- _] => unfold var_ren in H
+| [ |-  context[dom_sub (var_ren _ _)] ] => unfold var_ren
+| [ H : context[flat_map free_vars (map vterm _)] |- _] => rewrite flat_map_free_var_vterm in H
+| [ |-  context[flat_map free_vars (map vterm _)] ] => rewrite flat_map_free_var_vterm
+| [ H : context[flat_map bound_vars (map vterm _)] |- _] => rewrite flat_map_bound_var_vterm in H
+| [ |-  context[flat_map bound_vars (map vterm _)] ] => rewrite flat_map_bound_var_vterm
+| [ H : isprogram _ |- _ ] => allrewrite (fst (H))
+end).
+
+Ltac simpl_sub4 :=
+(match goal with
+| [ H : (prog_sub _) |- _ ] => (allrewrite (prog_sub_flatmap_range _ H))
+| [ H : isprogram _ |- _ ] => allrewrite (fst (H))
+| [ H : (forall _ _, LIn (_, _) _  -> isprogram _) |- _ ] => (allrewrite (prog_sub_flatmap_range _ H))
+| [ H : context[dom_sub (combine _ _)] |- _] => rewrite dom_sub_combine in H;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
+| [ |-  context[dom_sub (combine _ _)] ] => rewrite dom_sub_combine;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
+| [ H : context[range (combine _ _)] |- _] => rewrite dom_range_combine in H;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
+| [ |-  context[range (combine _ _)] ] => rewrite dom_range_combine;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
+| [ H : context[range (var_ren _ _)] |- _] => unfold var_ren in H
+| [ |-  context[range (var_ren _ _)] ] => unfold var_ren
+| [ H : context[dom_sub (var_ren _ _)] |- _] => unfold var_ren in H
+| [ |-  context[dom_sub (var_ren _ _)] ] => unfold var_ren
+| [ H : context[flat_map free_vars (map vterm _)] |- _] => rewrite flat_map_free_var_vterm in H
+| [ |-  context[flat_map free_vars (map vterm _)] ] => rewrite flat_map_free_var_vterm
+| [ H : context[flat_map bound_vars (map vterm _)] |- _] => rewrite flat_map_bound_var_vterm in H
+| [ |-  context[flat_map bound_vars (map vterm _)] ] => rewrite flat_map_bound_var_vterm
+end).
 
 Lemma isvalue_change_subst_noncan {p} :
   forall e vx no lbt t,
@@ -3538,6 +3582,11 @@ Proof.
 
   { allsimpl.
     constructor; simpl; auto. }
+
+  { allsimpl.
+    constructor; simpl; auto.
+    unfold subst in Hvv.
+    rewrite lsubst_lsubst_aux_prog_sub in Hvv; eauto 3 with slow. }
 Qed.
 
 Lemma noncan_lsubst_aux {p} : forall e vy t1 t2,
@@ -3745,43 +3794,6 @@ Proof.
   eexists; eauto.
 Qed.
 
-(** replace simpl_sub with this *)
-Ltac simpl_sub2 :=
-(match goal with
-| [ H : context[dom_sub (combine _ _)] |- _] => rewrite dom_sub_combine in H;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
-| [ |-  context[dom_sub (combine _ _)] ] => rewrite dom_sub_combine;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
-| [ H : context[range (combine _ _)] |- _] => rewrite dom_range_combine in H;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
-| [ |-  context[range (combine _ _)] ] => rewrite dom_range_combine;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
-| [ H : context[range (var_ren _ _)] |- _] => unfold var_ren in H
-| [ |-  context[range (var_ren _ _)] ] => unfold var_ren
-| [ H : context[dom_sub (var_ren _ _)] |- _] => unfold var_ren in H
-| [ |-  context[dom_sub (var_ren _ _)] ] => unfold var_ren
-| [ H : context[flat_map free_vars (map vterm _)] |- _] => rewrite flat_map_free_var_vterm in H
-| [ |-  context[flat_map free_vars (map vterm _)] ] => rewrite flat_map_free_var_vterm
-| [ H : context[flat_map bound_vars (map vterm _)] |- _] => rewrite flat_map_bound_var_vterm in H
-| [ |-  context[flat_map bound_vars (map vterm _)] ] => rewrite flat_map_bound_var_vterm
-| [ H : isprogram _ |- _ ] => allrewrite (fst (H))
-end).
-
-Ltac simpl_sub4 :=
-(match goal with
-| [ H : (prog_sub _) |- _ ] => (allrewrite (prog_sub_flatmap_range _ H))
-| [ H : isprogram _ |- _ ] => allrewrite (fst (H))
-| [ H : (forall _ _, LIn (_, _) _  -> isprogram _) |- _ ] => (allrewrite (prog_sub_flatmap_range _ H))
-| [ H : context[dom_sub (combine _ _)] |- _] => rewrite dom_sub_combine in H;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
-| [ |-  context[dom_sub (combine _ _)] ] => rewrite dom_sub_combine;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
-| [ H : context[range (combine _ _)] |- _] => rewrite dom_range_combine in H;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
-| [ |-  context[range (combine _ _)] ] => rewrite dom_range_combine;[|try(simpl_list);spc;idtac "check lengths in combine";fail]
-| [ H : context[range (var_ren _ _)] |- _] => unfold var_ren in H
-| [ |-  context[range (var_ren _ _)] ] => unfold var_ren
-| [ H : context[dom_sub (var_ren _ _)] |- _] => unfold var_ren in H
-| [ |-  context[dom_sub (var_ren _ _)] ] => unfold var_ren
-| [ H : context[flat_map free_vars (map vterm _)] |- _] => rewrite flat_map_free_var_vterm in H
-| [ |-  context[flat_map free_vars (map vterm _)] ] => rewrite flat_map_free_var_vterm
-| [ H : context[flat_map bound_vars (map vterm _)] |- _] => rewrite flat_map_bound_var_vterm in H
-| [ |-  context[flat_map bound_vars (map vterm _)] ] => rewrite flat_map_bound_var_vterm
-end).
-
 Lemma lsubst_nest3_1vars {p} :  forall t lvi lvo sub subc,
   length lvi = length lvo
   -> disjoint (dom_sub subc) (lvi++lvo)
@@ -3981,17 +3993,19 @@ Proof.
   apply subst_change_prog with (td:=t) in Hv; auto.
 Qed.
 
-Lemma subst_can {p} :
-  forall e vx no lbt,
+Lemma subst_can {o} :
+  forall (e : @NTerm o) vx no lbt,
     iscan (subst_aux e vx (oterm (NCan no) lbt))
-    -> {c : CanonicalOp $ {lbtc : list (@BTerm p) $ e = oterm (Can c) lbtc}}
+    -> {c : CanonicalOp $ {lbtc : list BTerm $ e = oterm (Can c) lbtc}}
+       [+] {lbtc : list BTerm $ e = oterm Comp lbtc}
        [+] {f : ntseq $ e = sterm f}.
 Proof.
   unfold subst_aux. introv Hisv. destruct e as [v | f | oo llbt]; allsimpl;
   [revert Hisv; cases_if; simpl; introv Hisv; inverts Hisv | sp |].
-  { right; eexists; eauto. }
+  { right; right; eexists; eauto. }
   destruct oo; inverts Hisv.
-  left; eexists; eauto.
+  { left; eexists; eauto. }
+  { right; left; eexists; eauto. }
 Qed.
 
 Lemma subst_exc {p} :

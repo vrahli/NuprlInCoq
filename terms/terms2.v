@@ -140,7 +140,7 @@ Definition mk_union2 {p} (T1 T2 : @NTerm p) := oterm (Can NUnion2) [nobnd T1, no
 Definition mk_approx {p} (a b : @NTerm p) := oterm (Can NApprox) [nobnd a , nobnd b].
 Definition mk_cequiv {p} (a b : @NTerm p) := oterm (Can NCequiv) [nobnd a , nobnd b].
 
-Definition mk_compute {p} (a b n : @NTerm p) := oterm (Can NCompute) [nobnd a , nobnd b , nobnd n].
+Definition mk_compute {p} (a b n : @NTerm p) := oterm Comp [nobnd a , nobnd b , nobnd n].
 
 Definition mk_free_from_atom {p} (a b c : @NTerm p) :=
   oterm (Can NFreeFromAtom) [nobnd a,nobnd b,nobnd c].
@@ -547,7 +547,7 @@ Qed.
 
 Lemma fold_compute {p} :
   forall (a b n : @NTerm p),
-    oterm (Can NCompute) [ nobnd a, nobnd b, nobnd n ]
+    oterm Comp [ nobnd a, nobnd b, nobnd n ]
     = mk_compute a b n.
 Proof. sp. Qed.
 
@@ -1103,7 +1103,6 @@ Definition IsTypeOpid {p} (opid : @Opid p) : bool :=
   | Can NTUnion    => true
   | Can NApprox    => true
   | Can NCequiv    => true
-  | Can NCompute   => true
   | Can NRec       => true
   | Can NImage     => true
   | _ => false
@@ -9569,10 +9568,20 @@ Proof.
 Qed.
 
 
+Lemma iscan_comp {o} :
+  forall (l : list (@BTerm o)),
+    iscan (oterm Comp l).
+Proof. sp. Qed.
+Hint Resolve iscan_comp.
+
 Lemma isprogram_noncan {p} :
   forall v,
     @isprogram p v
-    -> (isvalue v [+] isnoncan v [+] isexc v [+] isabs v [+] isseq v).
+    -> (isvalue v
+        [+] isnoncan v
+        [+] isexc v
+        [+] isabs v
+        [+] isseq v).
 Proof.
   introv Hp.
   applydup @isprogramd in Hp.
@@ -11500,14 +11509,16 @@ Lemma iscan_implies {p} :
     -> {c : CanonicalOp
         & {bterms : list BTerm
         & t = oterm (Can c) bterms}}
-       [+] {f : ntseq & t = sterm f}.
+       [+] {f : ntseq & t = sterm f}
+       [+] {bs : list BTerm & t = oterm Comp bs}.
 Proof.
   introv isc.
   destruct t as [v|f|op bs]; try (complete (inversion isc)).
-  - right.
+  - right; left.
     eexists; eauto.
   - destruct op; try (complete (inversion isc)).
-    left; exists c bs; sp.
+    + left; exists c bs; sp.
+    + right; right; eexists; eauto.
 Qed.
 
 Lemma isexc_implies {p} :
@@ -12616,5 +12627,131 @@ Proof.
     repeat constructor.
     introv i; allsimpl; repndors; subst; tcsp.
 Qed.
+
+Hint Rewrite app_nil_r : core.
+
+Lemma wf_compute {o} :
+  forall (a b n : @NTerm o),
+    wf_term a
+    -> wf_term b
+    -> wf_term n
+    -> wf_term (mk_compute a b n).
+Proof.
+  introv h1 h2 h3.
+  allrw <- @nt_wf_eq.
+  intros; inversion h1; inversion h2; inversion h3; subst;
+  constructor; allsimpl; sp;
+  subst; auto; simpl; constructor; auto.
+Qed.
+
+(*
+Lemma isprogram_compute {o} :
+  forall (a b n : @NTerm o),
+    isprogram a
+    -> isprogram b
+    -> isprogram n
+    -> isprogram (mk_compute a b n).
+Proof.
+  sp; allunfold @isprogram; sp.
+
+  { allunfold @closed; simpl; autorewrite with core.
+    rw <- null_iff_nil.
+    repeat (rw null_app).
+    repeat (rw null_iff_nil).
+    allrw; simpl; sp. }
+
+  { apply nt_wf_eq.
+    allrw @nt_wf_eq.
+    apply wf_compute; sp. }
+Qed.
+*)
+
+Lemma isprogram_compute_iff {o} :
+  forall (a b n : @NTerm o),
+    isprogram (mk_compute a b n) <=> (isprogram a # isprogram b # isprogram n).
+Proof.
+  intros; split; intro i.
+  - inversion i as [cl w].
+    allunfold @closed; allsimpl.
+    autorewrite with core in *.
+    allrw app_eq_nil_iff; repnd; allrw.
+    inversion w as [|?| op lnt k meq ]; allsimpl; subst.
+    generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd n)); intros i1 i2 i3.
+    dest_imp i1 hyp.
+    dest_imp i2 hyp.
+    dest_imp i3 hyp.
+    unfold isprogram; allrw.
+    inversion i1; subst; tcsp.
+    inversion i2; subst; tcsp.
+    inversion i3; subst; tcsp.
+  - apply isprogram_compute; sp.
+Qed.
+
+Lemma isprogram_compute_implies {p} :
+  forall (bterms : list (@BTerm p)),
+    isprogram (oterm Comp bterms)
+    -> {a : NTerm
+        $ {b : NTerm
+        $ {n : NTerm
+        $ bterms = [bterm [] a, bterm [] b, bterm [] n]
+        # isprogram a
+        # isprogram b
+        # isprogram n}}}.
+Proof.
+  introv isp.
+  inversion isp as [c w].
+  inversion w as [|?|op lnt bw m]; subst; allsimpl.
+  repeat (destruct bterms; ginv).
+  allsimpl; ginv.
+  destruct b as [l1 t1], b0 as [l2 t2], b1 as [l3 t3].
+  destruct l1, l2, l3; ginv.
+  allunfold @num_bvars; allsimpl; GC.
+  unfold closed in c; allsimpl.
+  autorewrite with core in *.
+  allrw app_eq_nil_iff.
+  pose proof (bw (bterm [] t1)) as w1.
+  pose proof (bw (bterm [] t2)) as w2.
+  pose proof (bw (bterm [] t3)) as w3.
+  repeat (autodimp w1 hyp); repeat (autodimp w2 hyp); repeat (autodimp w3 hyp).
+  inversion w1; inversion w2; inversion w3; subst.
+  exists t1 t2 t3; dands; auto; constructor; sp.
+Qed.
+
+(*
+Lemma iscomp_implies {o} :
+  forall (t : @NTerm o),
+    iscomp t
+    -> isprogram t
+    -> {a : NTerm & {b : NTerm & {n : NTerm & t = mk_compute a b n}}}.
+Proof.
+  introv isc isp.
+  destruct t as [| |op bs]; try (complete (inversion isc)).
+  destruct op; try (complete (inversion isc)).
+  apply isprogram_compute_implies in isp; sp; subst.
+  eexists; eexists; eexists; reflexivity.
+Qed.
+
+Lemma iscomp_implies2 {p} :
+  forall t : @NTerm p,
+    iscomp t
+    -> {l : list BTerm & t = oterm Comp l}.
+Proof.
+  introv isc.
+  destruct t as [| |op bs]; try (complete (inversion isc)).
+  destruct op; try (complete (inversion isc)).
+  eexists; sp.
+Qed.
+
+Lemma iscomp_comp {o} :
+  forall (l : list (@BTerm o)),
+    iscomp (oterm Comp l).
+Proof. sp. Qed.
+Hint Resolve iscomp_comp.
+
+Lemma isvalue_like_comp {o} :
+  forall t : @NTerm o, iscomp t -> isvalue_like t.
+Proof. sp. Qed.
+Hint Resolve isvalue_like_comp : slow.
+*)
 
 (* end hide *)

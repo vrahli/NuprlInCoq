@@ -2599,6 +2599,12 @@ Proof.
   exact prog_sub_implies_wf_sub.
 Qed.
 
+Lemma prog_sub_nil {o} : @prog_sub o [].
+Proof.
+  unfold prog_sub, sub_range_sat; simpl; sp.
+Qed.
+Hint Immediate prog_sub_nil.
+
 Lemma prog_sub_cons {p} :
   forall sub v t,
     @prog_sub p ((v,t) :: sub) <=> (isprogram t # prog_sub sub).
@@ -2609,6 +2615,17 @@ Proof.
   apply k with (v0 := v); sp.
   apply k with (v0 := v0); sp.
 Qed.
+
+Lemma implies_prog_sub_cons {o} :
+  forall (sub : @Sub o) (v : NVar) (t : NTerm),
+    isprogram t
+    -> prog_sub sub
+    -> prog_sub ((v, t) :: sub).
+Proof.
+  introv a b.
+  rw @prog_sub_cons; auto.
+Qed.
+Hint Resolve implies_prog_sub_cons : slow.
 
 Lemma in_range_iff {p} :
   forall (t : @NTerm p) (sub : Substitution),
@@ -8236,6 +8253,7 @@ Proof.
   introv i.
   apply in_sub_filter in i; repnd; discover; sp.
 Qed.
+Hint Resolve prog_sub_sub_filter : slow.
 
 Lemma prog_sub_snoc {p} :
   forall s v t,

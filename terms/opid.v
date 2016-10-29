@@ -233,7 +233,6 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NTUnion        : CanonicalOp
  | NApprox        : CanonicalOp
  | NCequiv        : CanonicalOp
- | NCompute       : CanonicalOp
  | NRec           : CanonicalOp
  | NImage         : CanonicalOp
  | NAdmiss        : CanonicalOp
@@ -298,7 +297,6 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NTUnion        => [0,1]
   | NApprox        => [0,0]
   | NCequiv        => [0,0]
-  | NCompute       => [0,0,0]
   | NRec           => [1]
   | NImage         => [0,0]
   | NQuotient      => [0,2]
@@ -481,7 +479,9 @@ Inductive Opid {p} : tuniv :=
 | Can  : @CanonicalOp p -> Opid
 | NCan : NonCanonicalOp -> Opid
 | Exc  : Opid
-| Abs  : opabs -> Opid.
+| Abs  : opabs -> Opid
+| Comp : Opid
+.
 
 (** %\noindent \\*% The following function defines
     the binding structure of any [Opid].
@@ -496,6 +496,7 @@ Definition OpBindings {p} (op : @Opid p) : opsign :=
     | NCan nc   => OpBindingsNCan nc
     | Exc       => [0,0] (* 1: name; 2: value *)
     | Abs opabs => opabs_sign opabs
+    | Comp      => [0,0,0] (* 1 computes to 2 in 3 numbers of steps --- some sort of quoted operator *)
   end.
 
 (* begin hide *)
@@ -512,6 +513,7 @@ Tactic Notation "dopid" ident(o) "as" simple_intropattern(I) ident(c) :=
   | Case_aux c "NCan"
   | Case_aux c "Exc"
   | Case_aux c "Abs"
+  | Case_aux c "Comp"
   ].
 
 
@@ -648,8 +650,8 @@ Lemma opid_dec {o} :
 Proof.
   introv dc ns.
   introv.
-  dopid x as [can1|ncan1|exc1|abs1] Case;
-  dopid y as [can2|ncan2|exc2|abs2] SCase;
+  dopid x as [can1|ncan1|exc1|abs1|com1] Case;
+  dopid y as [can2|ncan2|exc2|abs2|com2] SCase;
   try (left; auto; fail);
   try (right; sp; inversion H; fail).
 
@@ -731,8 +733,8 @@ Lemma opid_dec_no_const {p} :
     -> {x = y} + {x <> y}.
 Proof.
   introv nc ns.
-  dopid x as [can1|ncan1|exc1|abs1] Case;
-  dopid y as [can2|ncan2|exc2|abs2] SCase;
+  dopid x as [can1|ncan1|exc1|abs1|com1] Case;
+  dopid y as [can2|ncan2|exc2|abs2|com2] SCase;
   try (left; auto; fail);
   try (right; sp; inversion H; fail).
 

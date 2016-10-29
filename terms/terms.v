@@ -461,21 +461,29 @@ Definition isvariable {p} (t : @NTerm p) :=
     | _ => False
   end.
 
+(**
+   Canonical values are either:
+    (1) of the [Can] form
+    (2) or choice sequences
+    (3) or computation terms
+ *)
 Definition iscanonical {p} (t : @NTerm p) :=
   match t with
-    | oterm (Can _) _ => true
-    | sterm _ => true
-    | _ => false
+  | oterm (Can _) _ => true
+  | oterm Comp _ => true
+  | sterm _ => true
+  | _ => false
   end.
 
 Definition iscan {p} (t : @NTerm p) :=
   match t with
-    | oterm (Can _) _ => True
-    | sterm _ => True
-    | _ => False
+  | oterm (Can _) _ => True
+  | oterm Comp _ => True
+  | sterm _ => True
+  | _ => False
   end.
 
-Definition isnoncan {p} (t : @NTerm p) :=
+Definition isnoncan {p} (t : @NTerm p) : Prop :=
   match t with
     | vterm _ => False
     | sterm _ => False
@@ -486,7 +494,31 @@ Definition isnoncan {p} (t : @NTerm p) :=
       end
   end.
 
-Definition isexception {p} (t: @NTerm p) :=
+(*
+Definition iscomp {p} (t : @NTerm p) : Prop :=
+  match t with
+    | vterm _ => False
+    | sterm _ => False
+    | oterm o _ =>
+      match o with
+        | Comp => True
+        | _ => False
+      end
+  end.
+
+Definition iscomputation {p} (t : @NTerm p) : bool :=
+  match t with
+    | vterm _ => false
+    | sterm _ => false
+    | oterm o _ =>
+      match o with
+        | Comp => true
+        | _ => false
+      end
+  end.
+*)
+
+Definition isexception {p} (t: @NTerm p) : bool :=
   match t with
     | vterm _ => false
     | sterm _ => false
@@ -497,7 +529,7 @@ Definition isexception {p} (t: @NTerm p) :=
       end
   end.
 
-Definition isexc {p} (t: @NTerm p) :=
+Definition isexc {p} (t: @NTerm p) : Prop :=
   match t with
     | vterm _ => False
     | sterm _ => False
@@ -529,49 +561,77 @@ Definition isseq {p} (t : @NTerm p) :=
 Ltac d_isnoncan H :=
   match type of H with
       isnoncan ?t =>
-      let tlbt := fresh t "lbt" in
-      let tnc := fresh t "nc" in
-      let tt := fresh "temp" in
-      destruct t as [tt|tt|tt tlbt];
-        [complete (inverts H as H)|complete (inverts H as H)|];
-        destruct tt as [tt|tnc|tex|tabs];
-        [ complete(inverts H as H)
-        | idtac
-        | complete(inverts H as H)
-        | complete(inverts H as H)
-        ]
+      let lbt := fresh t "lbt" in
+      let nc  := fresh t "nc" in
+      let tt  := fresh "temp" in
+      destruct t as [(*var*)tt|(*seq*)tt|(*oterm*)tt lbt];
+      [ (*var*)   complete (inverts H as H)
+      | (*seq*)   complete (inverts H as H)
+      | (*oterm*) destruct tt as [(*can*)tt|(*ncan*)nc|(*exc*)|(*abs*)tt|(*comp*)];
+                  [ (*can*)  complete(inverts H as H)
+                  | (*ncan*) idtac
+                  | (*exc*)  complete(inverts H as H)
+                  | (*abs*)  complete(inverts H as H)
+                  | (*comp*) complete(inverts H as H)
+                  ]
+      ]
   end.
+
+(*
+Ltac d_iscomp H :=
+  match type of H with
+      iscomp ?t =>
+      let bterms := fresh t "bterms" in
+      let tt     := fresh "temp" in
+      destruct t as [(*var*)tt|(*seq*)tt|(*oterm*)tt bterms];
+      [ (*var*)    complete (inverts H as H)
+      | (*seq*)    complete (inverts H as H)
+      | (*oterm *) destruct tt as [(*can*)tt|(*ncan*)tt|(*exc*)|(*ncan*)tt|(*comp*)];
+                   [ (*can*)  complete(inverts H as H)
+                   | (*ncan*) complete(inverts H as H)
+                   | (*exc*)  complete(inverts H as H)
+                   | (*abs*)  complete(inverts H as H)
+                   | (*comp*) idtac
+        ]
+      ]
+  end.
+*)
 
 Ltac d_isexc H :=
   match type of H with
       isexc ?t =>
       let tlbt := fresh t "lbt" in
-      let tnc := fresh t "nc" in
-      let tt := fresh "temp" in
-      destruct t as [tt|tt|tt tlbt];
-        [complete (inverts H as H)|complete (inverts H as H)|];
-        destruct tt as [tt|tnc|tex|tabs];
-        [ complete(inverts H as H)
-        | complete(inverts H as H)
-        | idtac
-        | complete(inverts H as H)
-        ]
+      let tt   := fresh "temp" in
+      destruct t as [(*var*)tt|(*seq*)tt|(*oterm*)tt tlbt];
+      [ (*var*)   complete (inverts H as H)
+      | (*seq*)   complete (inverts H as H)
+      | (*oterm*) destruct tt as [(*can*)tt|(*ncan*)tt|(*exc*)|(*abs*)tt|(*comp*)];
+                  [ (*can*)  complete(inverts H as H)
+                  | (*ncan*) complete(inverts H as H)
+                  | (*exc*)  idtac
+                  | (*abs*)  complete(inverts H as H)
+                  | (*comp*) complete(inverts H as H)
+                  ]
+      ]
   end.
 
 Ltac d_isabs H :=
   match type of H with
       isabs ?t =>
-      let x  := fresh t "x" in
-      let bs := fresh t "bs" in
-      let tt := fresh "temp" in
-      destruct t as [tt|tt|tt tlbt];
-        [complete (inverts H as H)|complete (inverts H as H)|];
-        destruct tt as [tt|tnc|tex|tabs];
-        [ complete(inverts H as H)
-        | complete(inverts H as H)
-        | complete(inverts H as H)
-        | idtac
-        ]
+      let abs := fresh t "x"  in
+      let bs  := fresh t "bs" in
+      let tt  := fresh "temp" in
+      destruct t as [(*var*)tt|(*seq*)tt|(*oterm*)tt tlbt];
+      [ (*var*)   complete (inverts H as H)
+      | (*seq*)   complete (inverts H as H)
+      | (*oterm*) destruct tt as [(*can*)tt|(*ncan*)tt|(*exc*)|(*abs*)abs|(*comp*)];
+                  [ (*can*)  complete(inverts H as H)
+                  | (*ncan*) complete(inverts H as H)
+                  | (*exc*)  complete(inverts H as H)
+                  | (*abs*)  idtac
+                  | (*comp*) complete(inverts H as H)
+                  ]
+      ]
   end.
 
 
@@ -1851,4 +1911,3 @@ Proof. sp. Qed.
 Hint Resolve isvalue_like_exc : slow.
 
 (* end hide *)
-

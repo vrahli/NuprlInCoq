@@ -354,8 +354,10 @@ Definition iscan_op {o} (op : @Opid o) : Type :=
 
 Definition isexc_op {o} (op : @Opid o) := op = Exc.
 
+Definition iscomp_op {o} (op : @Opid o) := op = Comp.
+
 Definition iscan_like_op {o} (op : @Opid o) :=
-  iscan_op op [+] isexc_op op.
+  iscan_op op [+] isexc_op op [+] iscomp_op op.
 
 Lemma isvalue_like_implies1 {o} :
   forall (t : @NTerm o),
@@ -374,6 +376,9 @@ Proof.
       left; eexists; eauto.
     + right.
       eexists; eauto.
+    + left.
+      eexists; eexists; dands; eauto.
+      right; right; reflexivity.
   - apply isexc_implies2 in isv; exrepnd; subst.
     left.
     eexists; eexists; dands; eauto.
@@ -389,6 +394,7 @@ Proof.
   unfold iscan_like_op in isc; repndors.
   - unfold iscan_op in isc; exrepnd; subst; tcsp.
   - unfold isexc_op in isc; exrepnd; subst; tcsp.
+  - unfold iscomp_op in isc; exrepnd; subst; tcsp.
 Qed.
 
 Definition spoterm {o} (op : @Opid o) := oterm op [].
