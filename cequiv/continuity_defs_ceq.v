@@ -1178,21 +1178,6 @@ Proof.
   destruct t as [x|f|op bs]; allsimpl; auto.
 Qed.
 
-Lemma combine_implies_approx_bts {o} :
-  forall lib (bts1 bts2 : list (@BTerm o)),
-    length bts1 = length bts2
-    -> (forall b1 b2, LIn (b1,b2) (combine bts1 bts2) -> approx_open_bterm lib b1 b2)
-    -> approx_bts lib bts1 bts2.
-Proof.
-  introv len imp.
-  unfold approx_bts, lblift; dands; auto.
-  introv i.
-  pose proof (imp (bts1 {[n]}) (bts2 {[n]})) as h.
-  autodimp h hyp.
-  pose proof (select2bts bts1 bts2 n) as h.
-  repeat (autodimp h hyp); exrepnd; subst; auto.
-Qed.
-
 Lemma covered_mk_utoken {o} :
   forall (a : get_patom_set o) vs,
     covered (mk_utoken a) vs.

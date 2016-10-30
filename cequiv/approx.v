@@ -63,12 +63,25 @@ Qed.
 (** printing =v>  $\Downarrow$ #=v># *)
 
 
-Definition close_compute_val {p} lib (R: NTrel) (tl tr : NTerm) : [univ]:=
+Definition close_compute_val {o} lib (R: NTrel) (tl tr : @NTerm o) : [univ] :=
   forall (c : CanonicalOp) (tl_subterms : list BTerm),
     (tl =v>(lib) (oterm (Can c) tl_subterms))
-    -> {tr_subterms : list (@BTerm p)
+    -> c <> NCompute
+    -> {tr_subterms : list BTerm
         & (tr =v>(lib) (oterm (Can c) tr_subterms))
         # lblift (olift R) tl_subterms tr_subterms }.
+
+Definition is_compute {o} (t : @NTerm o) : bool :=
+  match t with
+  | oterm (Can NCompute) _ => true
+  | _ => false
+  end.
+
+Definition close_compute_comp {o} lib (tl tr : @NTerm o) : [univ] :=
+  forall u,
+    (tl =v>(lib) u)
+    -> is_compute u = true
+    -> {w : NTerm & alpha_eq u w # (tr =v>(lib) w)}.
 
 (*
 Definition close_compute_exc (R: NTerm -> NTerm -> [univ]) (tl tr : NTerm): [univ]:=
@@ -96,13 +109,18 @@ Definition close_compute_seq {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
 Definition close_compute_mrk {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
   forall m, (tl =m>(lib) m) -> (tr =m>(lib) m).
 
-Definition close_comput {p} lib (R: NTrel) (tl tr : @NTerm p) : [univ]:=
-  isprogram tl
-  # isprogram tr
-  # close_compute_val lib R tl tr
-  # close_compute_exc lib R tl tr
-  # close_compute_seq lib R tl tr
-  # True (*close_compute_mrk lib R tl tr*).
+Record close_comput {p} lib (R: NTrel) (tl tr : @NTerm p) : [univ] :=
+  MkClosComp
+    {
+      cc_ispl      : isprogram tl;
+      cc_ispr      : isprogram tr;
+      cc_comp_val  : close_compute_val  lib R tl tr;
+      cc_comp_exc  : close_compute_exc  lib R tl tr;
+      cc_comp_seq  : close_compute_seq  lib R tl tr;
+      cc_comp_comp : close_compute_comp lib tl tr
+    }.
+
+(*close_compute_mrk lib R tl tr*)
 
 (** % \noindent \\* %  At this point, one could directly define [approx] as: *)
 
@@ -166,12 +184,11 @@ Proof.
   intros. assert (SIM: approx_aux lib (r0 \2/ l) x0 x1) by eauto.
   clear PR; revert x0 x1 SIM; cofix CIH.
   intros; destruct SIM; econstructor; eauto.
-  invertsna c Hcl. repnd.
-  unfold close_comput.
-  dands; eauto.
+  invertsna c Hcl.
+  split; eauto.
 
-  - introv Hcomp.
-    apply Hcl2 in Hcomp.
+  - introv Hcomp ncomp.
+    apply Hcl1 in Hcomp; auto; repeat (autodimp Hcomp hyp).
     exrepnd. exists tr_subterms. split; eauto.
     eapply le_lblift2; eauto.
     apply le_olift.
@@ -181,11 +198,11 @@ Proof.
     dorn Hap; spc.
 
   - introv Hcomp.
-    apply Hcl3 in Hcomp; exrepnd.
+    apply Hcl2 in Hcomp; exrepnd.
     exists a' e'; dands; auto; repdors; auto.
 
   - introv comp; allsimpl.
-    apply Hcl4 in comp; exrepnd.
+    apply Hcl3 in comp; exrepnd.
     eexists; dands; eauto.
     introv.
     pose proof (comp0 n) as h; clear comp0.
@@ -270,18 +287,18 @@ Lemma approx_assume_hasvalue {p} :
 Proof.
   introv Hpa Hpb Hha.
   constructor.
-  unfold close_comput.
-  dands; auto; introv Hcomp.
+  split; auto; introv Hcomp.
 
-  - assert (hasvalue lib a) as Xh by (eexists; eauto); sp.
+  - introv ncomp.
+    assert (hasvalue lib a) as Xh by (eexists; eauto); sp.
     autodimp Hha hyp; eauto with slow.
     invertsn Hha.
-    unfold close_comput in Hha; repnd; eauto.
+    destruct Hha; eauto.
 
   - assert (raises_exception lib a) as Xh by (eexists;eauto).
     autodimp Hha hyp; eauto with slow.
     invertsn Hha.
-    unfold close_comput in Hha; repnd; eauto.
+    destruct Hha; eauto.
 
 (*
   - autodimp Hha hyp.
@@ -292,7 +309,12 @@ Proof.
 
   - autodimp Hha hyp; eauto 3 with slow.
     invertsn Hha.
-    unfold close_comput in Hha; repnd; eauto.
+    destruct Hha; eauto.
+
+  - assert (hasvalue lib a) as Xh by (eexists; eauto); sp.
+    autodimp Hha hyp; eauto with slow.
+    invertsn Hha.
+    destruct Hha; eauto.
 Qed.
 
 (** %\noindent \\*% The following is an easy corollary of the above.
@@ -329,7 +351,7 @@ Proof.
   introv isp; split; intro k.
 
   - constructor.
-    unfold close_comput; dands; tcsp.
+    split; tcsp.
 
     + apply isprogram_cbv; sp.
       rw @nt_wf_eq; sp.
@@ -350,16 +372,20 @@ Proof.
     + introv comp.
       apply axiom_doesnt_compute_to_seq in comp; sp.
 
+    + introv comp isc.
+      apply computes_to_value_isvalue_eq in comp; auto; subst.
+      simpl in *; ginv.
+
 (*
     + introv cm.
       apply axiom_doesnt_mark in cm; sp.
 *)
 
   - inversion k as [c].
-    unfold close_comput in c; repnd.
-    pose proof (c2 NAxiom []) as h.
+    destruct c.
+    pose proof (cc_comp_val0 NAxiom []) as h.
     allfold (@mk_axiom pp).
-    autodimp h hyp.
+    repeat (autodimp h hyp); try (complete (intro xx; inversion xx)).
     + apply computes_to_value_isvalue_refl; sp.
     + exrepnd.
       inversion h0 as [? imp]; allsimpl; cpx.
@@ -422,7 +448,9 @@ Qed.
 Lemma approx_relates_only_progs {p} :
   forall lib (a b : @NTerm p), approx lib a b -> isprogram a # isprogram b.
 Proof.
-  intros. invertsn X. repnud X; sp.
+  intros.
+  invertsn X.
+  destruct X; sp.
 Qed.
 
 Lemma preserve_program_exc2 {p} :
@@ -472,9 +500,10 @@ Proof.
   eapply HH.
   intros.
   rename x0 into t.
-  exrepnd. subst.
+  exrepnd.
+  subst.
   constructor.
-  unfold close_comput; dands; tcsp; introv comp; auto.
+  split; tcsp; introv comp; auto.
 
   - exists tl_subterms. split; auto.
     unfold lblift.  split; auto.
@@ -501,6 +530,9 @@ Proof.
     apply CIH; dands; auto.
     rw @isprogram_mk_ntseq in wf.
     pose proof (wf n) as q; tcsp.
+
+  - intro isc.
+    eexists; dands; eauto.
 Qed.
 
 Definition approx_open {p} lib := olift (@approx p lib).
@@ -538,7 +570,7 @@ Proof.
   generalize (lsubst_mk_bot sub); intro k; exrepnd; rw k0; clear k0.
   introv wfs ispb ispv.
   constructor.
-  unfold close_comput; dands; auto; introv comp; tcsp.
+  split; auto; introv comp; tcsp.
 
   - apply vbot_diverges in comp; sp.
 
@@ -549,6 +581,8 @@ Proof.
  *)
 
   - apply vbot_doesnt_compute_to_seq in comp; tcsp.
+
+  - apply vbot_diverges in comp; sp.
 Qed.
 
 (* begin hide *)
@@ -570,19 +604,20 @@ Lemma close_comput_mon {p} :
     -> le_bin_rel (@close_comput p lib l) (close_comput lib r).
 Proof.
   intros lib t1 t2 ra rb Hcl Hrab.
-  allunfold @close_comput. repnd.
-  dands; auto; introv comp.
+  destruct Hrab.
+  split; auto; introv comp.
 
-  - apply Hrab2 in comp.
+  - introv ncomp.
+    apply cc_comp_val0 in comp; repeat (autodimp comp hyp).
     parallel tr_subterms Hrelbt.
     repnd.
     split;auto.
     eapply le_lblift2;[|eauto]; eauto 3 with slow.
 
-  - apply Hrab3 in comp; exrepnd.
+  - apply cc_comp_exc0 in comp; exrepnd.
     exists a' e'; dands; auto.
 
-  - apply Hrab4 in comp; exrepnd.
+  - apply cc_comp_seq0 in comp; exrepnd.
     eexists; dands; eauto.
 Defined.
 
@@ -633,19 +668,14 @@ Proof.
   cofix IND.
   introv aeq ap.
   destruct ap as [cc].
-  destruct cc as [isp1 cc].
-  destruct cc as [isp2 cc].
-  destruct cc as [cv cc].
-  destruct cc as [ce cc].
-  destruct cc as [cs cc].
+  destruct cc.
   constructor.
-  unfold close_comput; dands; auto.
+  split; auto.
 
   - apply alphaeq_preserves_program in aeq; apply aeq; auto.
 
-  - clear ce; allunfold @close_compute_val;
-    introv ca.
-    apply cv in ca; exrepnd; clear cv.
+  - allunfold @close_compute_val; introv ca ncomp.
+    apply cc_comp_val0 in ca; exrepnd; clear cc_comp_val0; auto.
     eapply compute_to_value_alpha with (t1' := oterm (Can c) tr_subterms) in aeq;
       eauto 3 with slow; exrepnd.
     inversion aeq0 as [|f| ? ? ? leq aeqbt]; subst; eauto 3 with slow.
@@ -657,9 +687,8 @@ Proof.
     applydup aeqbt in k.
     apply blift_alpha_fun_r with (nt2 := (tr_subterms {[n]})); auto.
 
-  - clear cv; allunfold @close_compute_exc;
-    introv ca.
-    apply ce in ca; exrepnd; clear ce.
+  - allunfold @close_compute_exc; introv ca.
+    apply cc_comp_exc0 in ca; exrepnd; clear cc_comp_exc0.
     repdors; try (complete (allunfold @bot2; sp)).
     eapply compute_to_exception_alpha with (t1' := e') in aeq;
       eauto 3 with slow; exrepnd.
@@ -678,7 +707,7 @@ Proof.
  *)
 
   - introv comp.
-    apply cs in comp; exrepnd.
+    apply cc_comp_seq0 in comp; exrepnd.
     eapply computes_to_seq_alpha in comp1; eauto 3 with slow.
     exrepnd.
     eexists; dands; eauto.
@@ -688,6 +717,12 @@ Proof.
     repndors; eauto 3 with slow.
     left.
     eapply IND; eauto.
+
+  - introv comp isc.
+    apply cc_comp_comp0 in comp; repeat (autodimp comp hyp); exrepnd.
+    eapply compute_to_value_alpha in comp0;[| |exact aeq]; eauto 3 with slow.
+    exrepnd.
+    exists t2'; dands; eauto 3 with slow.
 Qed.
 
 Lemma respects_alpha_r_approx_aux_bot2_or_bot2 {p} :
@@ -699,30 +734,53 @@ Proof.
   apply (respects_alpha_r_approx_aux_bot2 _ _ _ b') in ap; auto.
 Qed.
 
+Lemma is_compute_iff {o} :
+  forall (t : @NTerm o),
+    is_compute t = true <=> {bs : list BTerm $ t = oterm (Can NCompute) bs}.
+Proof.
+  introv; split; intro h.
+
+  { introv; destruct t as [| |op bs]; simpl in *; ginv.
+    dopid op as [can|ncan|exc|abs] Case; simpl in *; ginv.
+    destruct can; simpl in *; ginv.
+    eexists; eauto. }
+
+  { exrepnd; subst; simpl; auto. }
+Qed.
+
+Lemma is_compute_respects_alpha_eq {o} :
+  forall (t u : @NTerm o),
+    alpha_eq t u
+    -> is_compute t = true
+    -> is_compute u = true.
+Proof.
+  introv aeq isc.
+  allrw @is_compute_iff; exrepnd; subst.
+  apply alpha_eq_oterm_implies_combine in aeq; exrepnd; subst.
+  eexists; auto.
+Qed.
+Hint Resolve is_compute_respects_alpha_eq : slow.
+
 Lemma respects_alpha_l_approx_aux_bot2 {p} :
   forall lib, respects_alpha_l (@approx_aux p lib bot2).
 Proof.
   cofix IND.
   introv aeq ap.
   destruct ap as [cc].
-  destruct cc as [isp1 cc].
-  destruct cc as [isp2 cc].
-  destruct cc as [cv cc].
-  destruct cc as [ce cc].
-  destruct cc as [cs cc].
+  destruct cc.
   constructor.
-  unfold close_comput; dands; auto.
+  split; auto.
 
   - apply alphaeq_preserves_program in aeq; apply aeq; auto.
 
-  - clear ce; allunfold @close_compute_val;
-    introv ca'.
+  - allunfold @close_compute_val;
+    introv ca' ncomp.
     applydup @alpha_prog_eauto in aeq as ispa'; auto.
     apply alpha_eq_sym in aeq.
     eapply compute_to_value_alpha with (t1' := oterm (Can c) tl_subterms) in aeq;
       eauto 3 with slow; exrepnd.
     inversion aeq0 as [|?| ? ? ? leq aeqbt]; subst.
-    apply cv in aeq1; exrepnd; clear cv.
+    apply cc_comp_val0 in aeq1; exrepnd; auto.
     exists tr_subterms; dands; auto.
     allunfold @lblift; dands; repnd; auto; try omega.
     introv k.
@@ -732,13 +790,13 @@ Proof.
     apply blift_alpha_fun_l with (nt1 := (lbt2 {[n]})); auto.
     apply alpha_eq_bterm_sym; auto.
 
-  - clear cv; allunfold @close_compute_exc;
+  - allunfold @close_compute_exc;
     introv ca.
     applydup @alpha_prog_eauto in aeq as ispa'; auto.
     apply alpha_eq_sym in aeq.
     eapply compute_to_exception_alpha with (t1' := e) in aeq;
       eauto 3 with slow; exrepnd.
-    apply ce in aeq0; exrepnd; clear ce.
+    apply cc_comp_exc0 in aeq0; exrepnd.
     repdors; try (complete (allunfold @bot2; sp)).
     exists a'1 e'; dands; auto.
     + left.
@@ -761,7 +819,7 @@ Proof.
     apply alpha_eq_sym in aeq.
     eapply computes_to_seq_alpha in comp;[| |eauto]; eauto 3 with slow.
     exrepnd.
-    apply cs in comp1; exrepnd.
+    apply cc_comp_seq0 in comp1; exrepnd.
     eexists; dands; eauto.
     introv.
     pose proof (comp0 n) as h; clear comp0.
@@ -770,6 +828,12 @@ Proof.
     left.
     apply alpha_eq_sym in h.
     eapply IND; eauto.
+
+  - introv comp isc.
+    eapply compute_to_value_alpha in comp;[| |apply alpha_eq_sym;exact aeq]; eauto 3 with slow.
+    exrepnd.
+    apply cc_comp_comp0 in comp1; repeat (autodimp comp1 hyp); exrepnd; eauto 3 with slow.
+    exists w; dands; eauto 3 with slow.
 Qed.
 
 Lemma respects_alpha_l_approx_aux_bot2_or_bot2 {p} :
@@ -787,20 +851,22 @@ Lemma respects_alphal_closed_comput {p} :
     -> respects_alpha_l (@close_comput p lib R).
 Proof.
   introv rR Hal Hap.
-  repnud Hap.
-  unfolds_base.
+  destruct Hap.
   alpha_hyps Hal.
-  dands; eauto 2 with slow.
+  split; eauto 2 with slow.
 
-  - introv Hcv.
+  - introv Hcv ncomp.
     eapply compute_to_value_alpha with (t2:=a) in Hcv; eauto with slow.
     exrepnd.
     applydup @computes_to_value_can in Hcv1.
     repndors; exrepnd.
 
     + rename bts into clbt2.
-      subst. duplicate Hcv0 as H1cv. inverts Hcv0 as Hclen Hcal. rename c0 into c.
-      apply Hap2 in Hcv1. eauto.
+      subst.
+      duplicate Hcv0 as H1cv.
+      inverts Hcv0 as Hclen Hcal.
+      rename c0 into c.
+      apply cc_comp_val0 in Hcv1; repeat (autodimp Hcv1 hyp).
       exrepnd.
       exists tr_subterms.
       split; auto;[].
@@ -822,7 +888,7 @@ Proof.
   - introv comp.
     eapply compute_to_exception_alpha with (t2:=a) in comp; eauto with slow.
     exrepnd.
-    apply Hap3 in comp0; exrepnd.
+    apply cc_comp_exc0 in comp0; exrepnd.
     exists a'1 e'; dands; auto.
     + apply (rR _ _ a0) in comp4; auto.
       apply alpha_eq_sym; auto.
@@ -839,7 +905,7 @@ Proof.
     applydup @alpha_prog_eauto in Hal as wfa'; auto.
     apply alpha_eq_sym in Hal.
     eapply computes_to_seq_alpha in comp;[| |eauto]; eauto 3 with slow; exrepnd.
-    apply Hap4 in comp1; exrepnd.
+    apply cc_comp_seq0 in comp1; exrepnd.
     eexists; dands; eauto.
     introv.
     pose proof (comp2 n) as q; clear comp2.
@@ -847,6 +913,12 @@ Proof.
     eauto 3 with slow.
 (*    apply alpha_eq_sym in h.
     eapply rR; eauto.*)
+
+  - introv comp isc.
+    eapply compute_to_value_alpha in comp;[| |apply alpha_eq_sym;exact Hal]; eauto 3 with slow.
+    exrepnd.
+    apply cc_comp_comp0 in comp1; repeat (autodimp comp1 hyp); exrepnd; eauto 3 with slow.
+    exists w; dands; eauto 3 with slow.
 Qed.
 
 Lemma approxr_alpha_rw_l_aux {p} :
@@ -883,13 +955,12 @@ Lemma respects_alphar_closed_comput {p} :
     -> respects_alpha_r (@close_comput p lib R).
 Proof.
   introv rR Hal Hap.
-  repnud Hap.
-  unfolds_base.
+  destruct Hap.
   alpha_hyps Hal.
-  dands; eauto 2 with slow.
+  split; eauto 2 with slow.
 
-  - introv Hcv.
-    apply Hap2 in Hcv.
+  - introv Hcv ncomp.
+    apply cc_comp_val0 in Hcv; repeat (autodimp Hcv hyp).
     exrepnd.
     eapply compute_to_value_alpha with (t2:=b') in Hcv1; eauto with slow.
     exrepnd.
@@ -911,7 +982,7 @@ Proof.
     eauto with slow.
 
   - introv comp.
-    apply Hap3 in comp; exrepnd.
+    apply cc_comp_exc0 in comp; exrepnd.
     eapply compute_to_exception_alpha with (t2:=b') in comp0; eauto with slow.
     exrepnd.
     exists a'0 t2'; dands; auto.
@@ -925,9 +996,15 @@ Proof.
  *)
 
   - introv comp.
-    apply Hap4 in comp; exrepnd.
+    apply cc_comp_seq0 in comp; exrepnd.
     eapply computes_to_seq_alpha in comp1;[| |eauto]; eauto 3 with slow; exrepnd.
     eexists; dands; eauto.
+
+  - introv comp isc.
+    apply cc_comp_comp0 in comp; repeat (autodimp comp hyp); exrepnd; eauto 3 with slow.
+    eapply compute_to_value_alpha in comp0;[| |exact Hal]; eauto 3 with slow.
+    exrepnd.
+    exists t2'; dands; eauto 3 with slow.
 Qed.
 
 Lemma approxr_alpha_rw_r_aux {p} :
@@ -1208,14 +1285,14 @@ Proof.
   invertsn Hab.
   invertsn Hbc.
   constructor.
-  unfold close_comput in Hab at 1.
-  unfold close_comput in Hbc at 1.
-  unfold close_comput at 1; dands; spcf.
+  destruct Hab.
+  destruct Hbc.
+  split; spcf.
 
-  - introv Hcv.
-    applydup_clear Hab in Hcv. exrepnd.
+  - introv Hcv ncomp.
+    applydup_clear cc_comp_val0 in Hcv; repeat (autodimp Hcv0 hyp); exrepnd.
     rename Hcv0 into Hcb.
-    applydup_clear Hbc2 in Hcb. exrepnd.
+    applydup_clear cc_comp_val1 in Hcb; repeat (autodimp Hcb0 hyp); exrepnd.
     exists tr_subterms0; sp.
     allunfold @lblift; dands; spcf; try omega;[].
 
@@ -1297,7 +1374,7 @@ Proof.
     clear dependent tl_subterms.
     clear dependent tr_subterms.
     clear dependent lv.
-    clear lv0 nt0 nt1 nt2 nt3 nt1n nt2n nt1n0 nt2n0 tr_subterms0 c0.
+    clear lv0 nt0 nt1 nt2 nt3 nt1n nt2n nt1n0 nt2n0 tr_subterms0 c0 ncomp.
 
     repnud Hab. repnud Hbc2.
     unfold olift. split;auto;try(complete (allunfold @olift; sp)).
@@ -1335,12 +1412,10 @@ Proof.
       dands; spc;
       ((rw  Heqc; eapply Hbc2) || (rw Heqa; eapply Hab)); eauto.
 
-  - repnd.
-    clear Hab2 Hbc2 Hab Hbc.
-    introv ce.
+  - introv ce.
     allunfold @close_compute_exc.
-    applydup Hab3 in ce; exrepnd; repdors; try (complete (allunfold @bot2; sp)).
-    applydup Hbc3 in ce1; exrepnd; repdors; try (complete (allunfold @bot2; sp)).
+    applydup cc_comp_exc0 in ce; exrepnd; repdors; try (complete (allunfold @bot2; sp)).
+    applydup cc_comp_exc1 in ce1; exrepnd; repdors; try (complete (allunfold @bot2; sp)).
     exists a'1 e'0; dands; auto.
     + generalize (CIH a0 a'1); intro k.
       autodimp k hyp.
@@ -1356,10 +1431,9 @@ Proof.
     apply Hab in comp; apply Hbc in comp; auto.
  *)
 
-  - repnd.
-    introv comp.
-    apply Hab4 in comp; exrepnd.
-    apply Hbc4 in comp1; exrepnd.
+  - introv comp.
+    apply cc_comp_seq0 in comp; exrepnd.
+    apply cc_comp_seq1 in comp1; exrepnd.
     eexists; dands; eauto.
     introv.
     pose proof (comp2 n) as h; clear comp2.
@@ -1369,6 +1443,11 @@ Proof.
     right.
     apply CIH.
     eexists; eexists; eexists; dands; eauto.
+
+  - introv comp isc.
+    apply cc_comp_comp0 in comp; repeat (autodimp comp hyp); exrepnd.
+    apply cc_comp_comp1 in comp0; repeat (autodimp comp0 hyp); exrepnd; eauto 3 with slow.
+    exists w0; dands; eauto 3 with slow.
 Qed.
 
 
@@ -1389,16 +1468,17 @@ Lemma approx_wf_term {p} :
   forall lib (a b : @NTerm p),
     approx lib a b -> wf_term a # wf_term b.
 Proof.
-  intros. inversion X; subst.
-  unfold close_comput in X0; sp; subst; allunfold @isprogram; sp; allrw @nt_wf_eq; sp.
+  intros.
+  inversion X; subst.
+  destruct X0; sp; subst; allunfold @isprogram; sp; allrw @nt_wf_eq; sp.
 Qed.
 
 Lemma approx_isprog {p} :
   forall lib (a b : @NTerm p),
     approx lib a b -> isprog a # isprog b.
 Proof.
-  intros. inversion X; subst.
-  unfold close_comput in X0; sp; allrw @isprog_eq; sp.
+  intros; inversion X; subst.
+  destruct X0; sp; allrw @isprog_eq; sp.
 Qed.
 
 Lemma approxc_refl {p} :
@@ -1417,6 +1497,125 @@ Proof.
 Qed.
 
 
+Lemma approx_canonical_form0 {p} :
+  forall lib t t' op bterms,
+    op <> NCompute
+    -> computes_to_value lib t (oterm (Can op) bterms)
+    -> approx lib t t'
+    -> {bterms' : list (@BTerm p) &
+         computes_to_value lib t' (oterm (Can op) bterms')
+         # lblift (approx_open lib) bterms bterms' }.
+Proof.
+  introv ncomp Hcomp Hap.
+  invertsn Hap.
+  destruct Hap.
+  apply cc_comp_val0 in Hcomp; repeat (autodimp Hcomp hyp).
+  exrepnd.
+
+  apply clearbot_relbt in Hcomp0.
+  eexists; eauto with slow.
+Qed.
+
+Lemma dec_can_eq_compute {o} :
+  forall (c : @CanonicalOp o),
+    decidable (c = NCompute).
+Proof.
+  introv; unfold decidable.
+  destruct c; tcsp; try (complete (right; sp; ginv)).
+Qed.
+
+Lemma select2bts {o} :
+  forall (bs1 bs2 : list (@BTerm o)) n,
+    n < length bs1
+    -> length bs1 = length bs2
+    -> {b1 : BTerm
+        & {b2 : BTerm
+        & selectbt bs1 n = b1
+        # selectbt bs2 n = b2
+        # LIn (b1,b2) (combine bs1 bs2)}}.
+Proof.
+  introv len1 len2.
+  exists (selectbt bs1 n) (selectbt bs2 n); dands; auto.
+  unfold selectbt.
+  revert dependent n.
+  revert dependent bs2.
+  induction bs1; destruct bs2; introv len1 len2; allsimpl; tcsp; cpx.
+  destruct n; tcsp; cpx.
+Qed.
+
+Lemma combine_implies_approx_bts {o} :
+  forall lib (bts1 bts2 : list (@BTerm o)),
+    length bts1 = length bts2
+    -> (forall b1 b2, LIn (b1,b2) (combine bts1 bts2) -> approx_open_bterm lib b1 b2)
+    -> approx_bts lib bts1 bts2.
+Proof.
+  introv len imp.
+  unfold approx_bts, lblift; dands; auto.
+  introv i.
+  pose proof (imp (bts1 {[n]}) (bts2 {[n]})) as h.
+  autodimp h hyp.
+  pose proof (select2bts bts1 bts2 n) as h.
+  repeat (autodimp h hyp); exrepnd; subst; auto.
+Qed.
+
+Lemma alpha_eq_bterm_implies_approx_open_bterm {o} :
+  forall lib (b1 b2 : @BTerm o),
+    wf_bterm b1
+    -> alpha_eq_bterm b1 b2
+    -> approx_open_bterm lib b1 b2.
+Proof.
+  introv wf aeq.
+  inversion aeq as [? ? ? ? ? disj len1 len2 norep aeq1]; subst.
+  exists lv (lsubst nt1 (var_ren lv1 lv)) (lsubst nt2 (var_ren lv2 lv)).
+  apply disjoint_app_r in disj; repnd.
+  dands; auto.
+
+  { eapply approx_open_alpha_rw_l_aux;[apply alpha_eq_sym;exact aeq1|].
+    apply approx_open_refl.
+    apply lsubst_wf_iff_vars.
+    apply alpha_eq_bterm_preserves_wf_bterm in aeq; auto.
+    allrw @wf_bterm_iff; eauto 3 with slow. }
+
+  { apply alpha_bterm_change; auto.
+    apply disjoint_sym; auto. }
+
+  { apply alpha_bterm_change; auto; try omega.
+    apply disjoint_sym; auto. }
+Qed.
+
+Lemma isprogram_compute_iff {o} :
+  forall (bterms : list (@BTerm o)),
+    isprogram (oterm (Can NCompute) bterms)
+    <=> {a : NTerm
+         & {b : NTerm
+         & {n : NTerm
+         & bterms = [nobnd a, nobnd b, nobnd n]
+         # isprogram a
+         # isprogram b
+         # isprogram n }}}.
+Proof.
+  intros; split; intro i.
+
+  { inversion i as [cl w].
+    inversion w as [|?| op lnt k meq ]; allsimpl; subst.
+    repeat (destruct bterms; simpl; ginv).
+    destruct b as [l1 t1], b0 as [l2 t2], b1 as [l3 t3]; unfold num_bvars in *; simpl in *.
+    destruct l1, l2, l3; simpl in *; ginv.
+    generalize (k (nobnd t1)) (k (nobnd t2)) (k (nobnd t3)); intros i1 i2 i3.
+    dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
+    unfold closed in *; simpl in *; autorewrite with slow in *.
+    allrw @app_eq_nil_iff; repnd.
+    inversion i1; inversion i2; inversion i3; subst.
+    exists t1 t2 t3; dands; auto; split; auto. }
+
+  { exrepnd; subst.
+    destruct i0, i2, i3.
+    constructor; unfold closed; simpl; autorewrite with slow.
+    { rewrite c0, c1, c; simpl; auto. }
+    constructor; unfold num_bvars; simpl; auto.
+    introv i; repndors; subst; tcsp; constructor; auto. }
+Qed.
+
 Lemma approx_canonical_form {p} :
   forall lib t t' op bterms,
     computes_to_value lib t (oterm (Can op) bterms)
@@ -1425,14 +1624,24 @@ Lemma approx_canonical_form {p} :
          computes_to_value lib t' (oterm (Can op) bterms')
          # lblift (approx_open lib) bterms bterms' }.
 Proof.
-  intros ? ? ? ? ? Hcomp Hap.
-  invertsn Hap. repnud Hap.
-  apply Hap2 in Hcomp. exrepnd.
-
-  apply clearbot_relbt in Hcomp0.
-  eexists; eauto with slow.
+  introv Hcomp Hap.
+  destruct (dec_can_eq_compute op) as [d|d]; subst;
+    [|eapply approx_canonical_form0;eauto].
+  invertsn Hap.
+  destruct Hap.
+  applydup cc_comp_comp0 in Hcomp; repeat (autodimp Hcomp0 hyp).
+  exrepnd.
+  apply alpha_eq_oterm_implies_combine in Hcomp0; exrepnd; subst.
+  exists bs'; dands; auto.
+  apply combine_implies_approx_bts; auto.
+  introv i; applydup Hcomp2 in i.
+  apply alpha_eq_bterm_implies_approx_open_bterm; auto.
+  destruct Hcomp as [r isv].
+  inversion isv as [? isp isc]; subst.
+  apply isprogram_compute_iff in isp; exrepnd; subst; simpl in *.
+  repeat (destruct bs'; simpl in *; ginv).
+  repndors; ginv; tcsp; allrw @wf_bterm_iff; eauto 3 with slow.
 Qed.
-
 
 Lemma exception_approx {p} :
   forall lib t t' a e,
@@ -1445,9 +1654,10 @@ Lemma exception_approx {p} :
          # (approx_aux lib bot2 e e'[+]bot2 e e') }}.
 Proof.
   introv Hcomp Hap.
-  invertsn Hap. repnud Hap.
+  invertsn Hap.
+  destruct Hap.
 
-  apply Hap3 in Hcomp. exrepnd.
+  apply cc_comp_exc0 in Hcomp. exrepnd.
   exists a' e'. split. auto. split; auto.
 Qed.
 
@@ -1457,16 +1667,17 @@ Lemma approx_comput_functionality_left {p} :
     -> approx lib a b
     -> approx lib a' b.
 Proof.
-  intros ? ? ? ? Hred Hap. invertsn Hap. constructor. repnud Hap.
-  unfold close_comput. applydup @reduces_to_preserves_program in Hred; auto.
-  dands; tcsp; introv comp.
+  intros ? ? ? ? Hred Hap. invertsn Hap. constructor.
+  destruct Hap.
+  applydup @reduces_to_preserves_program in Hred; auto.
+  split; tcsp; introv comp.
 
-  - apply Hap2.
+  - apply cc_comp_val0.
     allunfold @computes_to_value.
     repnd; dands; auto.
     apply @reduces_to_trans with (b:=a'); auto.
 
-  - apply Hap3.
+  - apply cc_comp_exc0.
     apply @reduces_to_computes_to_exception with (b := a'); auto.
 
 (*
@@ -1475,8 +1686,14 @@ Proof.
     eapply reduces_to_trans; eauto.
  *)
 
-  - apply Hap4.
+  - apply cc_comp_seq0.
     eapply reduces_to_trans; eauto.
+
+  - intro isc.
+    apply cc_comp_comp0; auto.
+    allunfold @computes_to_value.
+    repnd; dands; auto.
+    apply @reduces_to_trans with (b:=a'); auto.
 Qed.
 
 Lemma reduces_to_isvalue_like_eq {o} :
@@ -1498,15 +1715,19 @@ Lemma approx_comput_functionality_right {p} :
     -> approx lib a b
     -> approx lib a b'.
 Proof.
-  intros ? ? ? ? Hred Hap. invertsn Hap. constructor. repnud Hap.
-  unfold close_comput. applydup @reduces_to_preserves_program in Hred; auto.
-  dands; tcsp; introv comp.
+  intros ? ? ? ? Hred Hap. invertsn Hap. constructor.
+  destruct Hap.
+  applydup @reduces_to_preserves_program in Hred; auto.
+  split; tcsp; introv comp.
 
-  - apply Hap2 in comp. exrepnd. exists tr_subterms.
+  - introv ncomp.
+    apply cc_comp_val0 in comp; repeat (autodimp comp hyp).
+    exrepnd.
+    exists tr_subterms.
     split; auto.
     apply reduces_to_value_eq with (t:=b); auto.
 
-  - apply Hap3 in comp; exrepnd; repdors; try (complete (allunfold @bot2; sp)).
+  - apply cc_comp_exc0 in comp; exrepnd; repdors; try (complete (allunfold @bot2; sp)).
     exists a' e'; dands; auto.
     apply reduces_to_exception_eq with (t := b); auto.
 
@@ -1515,9 +1736,16 @@ Proof.
     eapply reduces_to_marker_eq in comp; eauto.
  *)
 
-  - apply Hap4 in comp; exrepnd.
+  - apply cc_comp_seq0 in comp; exrepnd.
     exists f'; dands; auto.
     eapply reduces_to_isvalue_like_eq; eauto 3 with slow.
+
+  - introv isc.
+    apply cc_comp_comp0 in comp; repeat (autodimp comp hyp).
+    exrepnd.
+    exists w.
+    split; auto.
+    apply reduces_to_value_eq with (t:=b); auto.
 Qed.
 
 Lemma reduces_to_implies_approx {p} :
@@ -1652,12 +1880,20 @@ Lemma hasvalue_approx {p} :
 Proof.
   unfold hasvalue; introv ap hvt; exrepd.
   inversion ap as [cc]; subst.
-  unfold close_comput in cc; repnd.
+  destruct cc; repnd.
   applydup @computes_to_value_can in c; repndors; exrepd; subst.
-  - apply cc2 in c; sp.
-    exists (oterm (Can c1) tr_subterms); sp.
+
+  - destruct (dec_can_eq_compute c1) as [d|d]; subst.
+
+    + apply cc_comp_comp0 in c; simpl in c; repeat (autodimp c hyp); exrepnd.
+      exists w; auto.
+
+    + applydup cc_comp_val0 in c.
+      repeat (autodimp c0 hyp); tcsp; exrepnd.
+      exists (oterm (Can c1) tr_subterms); sp.
+
   - unfold computes_to_value in c; repnd.
-    apply cc4 in c0; exrepnd.
+    apply cc_comp_seq0 in c0; exrepnd.
     unfold computes_to_value.
     eexists; dands; eauto 3 with slow.
 Qed.
@@ -1771,14 +2007,13 @@ Lemma not_axiom_approx_bot {pp} :
 Proof.
   introv ap.
   inversion ap as [cc]; subst.
-  unfold close_comput in cc; repnd.
-  generalize (cc2 NAxiom []); intro h.
-  dest_imp h hyp; sp.
-  apply computes_to_value_isvalue_refl; sp.
-  inversion p; allsimpl; cpx.
-  inversion p0.
-  allfold @mk_axiom.
-  apply not_bot_reduces_to_value in H; sp.
+  destruct cc; repnd.
+  generalize (cc_comp_val0 NAxiom []); intro h.
+  repeat (autodimp h hyp); tcsp; try (complete (intro xx; inversion xx)).
+  { apply computes_to_value_isvalue_refl; sp. }
+  exrepnd.
+  destruct h1 as [r v].
+  apply not_bot_reduces_to_value in r; sp.
 Qed.
 
 Lemma not_axiom_approxc_bot {p} :
@@ -1854,7 +2089,8 @@ Lemma approx_canonical_form2 {p} :
     approx lib (oterm (@Can p op) bterms1) (oterm (Can op) bterms2)
     -> lblift (approx_open lib) bterms1 bterms2.
 Proof.
-  introv Hap. applydup @approx_relates_only_progs in Hap. repnd.
+  introv Hap.
+  applydup @approx_relates_only_progs in Hap; repnd.
   eapply approx_canonical_form in Hap; exrepnd; eauto with slow.
   apply computes_to_value_isvalue_eq in Hap3;
   inverts Hap3; eauto with slow.
@@ -1874,7 +2110,7 @@ Qed.
 
 Ltac alpharelbtd :=
 
-  match goal with 
+  match goal with
   | [H: 1 = length _ |- _ ] => symmetry in H; apply length1 in H; exrepnd; subst
   | [H: 2 = length _ |- _ ] => symmetry in H; apply length2 in H; exrepnd; subst
   | [H: 0 = length _ |- _ ] => symmetry in H; apply length0 in H; subst
@@ -2305,13 +2541,15 @@ Qed.
 
 Lemma approx_canonical_form3 {p} :
   forall lib op bterms1 bterms2,
-    isprogram (oterm (@Can p op) bterms1)
+    op <> NCompute
+    -> isprogram (oterm (@Can p op) bterms1)
     -> isprogram (oterm (Can op) bterms2)
     -> lblift (approx_open lib) bterms1 bterms2
     -> approx lib (oterm (Can op) bterms1) (oterm (Can op) bterms2).
 Proof.
-  introv H1p H2p Hap. constructor. unfold close_comput.
-  dands; eauto; introv comp.
+  introv ncomp H1p H2p Hap.
+  constructor.
+  split; eauto; introv comp.
 
   - apply computes_to_value_isvalue_eq in comp; eauto with slow;[].
     inverts comp.
@@ -2325,6 +2563,11 @@ Proof.
 *)
 
   - apply reduces_to_if_isvalue_like in comp; eauto 3 with slow; ginv.
+
+  - introv isc.
+    apply computes_to_value_isvalue_eq in comp; eauto with slow;[].
+    subst; simpl in *.
+    destruct op; simpl in *; ginv; tcsp.
 Qed.
 
 Lemma approx_canonical_form_exc {o} :
@@ -2337,8 +2580,7 @@ Proof.
   applydup @approx_relates_only_progs in ap1; repnd.
   applydup @approx_relates_only_progs in ap2; repnd.
   constructor.
-  unfold close_comput.
-  dands; eauto; try (rw @isprogram_exception_iff; tcsp); introv comp.
+  split; eauto; try (rw @isprogram_exception_iff; tcsp); introv comp.
 
   - apply computes_to_value_exception in comp; sp.
 
@@ -2351,6 +2593,8 @@ Proof.
 *)
 
   - apply reduces_to_exception in comp; eauto 3 with slow; ginv.
+
+  - apply computes_to_value_exception in comp; sp.
 Qed.
 
 
@@ -2370,7 +2614,7 @@ Proof.
     eapply blift_approx_open_nobnd in Hyp0bt; eauto 3 with slow.
   - repnd. applydup @approx_relates_only_progs in Hyp. repnd.
     applydup @approx_relates_only_progs in Hyp0. repnd.
-    apply approx_canonical_form3.
+    apply approx_canonical_form3; try (complete (intro xx; inversion xx)).
     + apply isprogram_ot_iff. allsimpl. dands; auto. introv Hin.
       dorn Hin;[| dorn Hin]; sp;[|];
       subst; apply implies_isprogram_bt0; eauto with slow.
@@ -2559,8 +2803,8 @@ Lemma approx_exception {p} :
 Proof.
   introv ap.
   invertsn ap.
-  unfold close_comput in ap; repnd.
-  generalize (ap3 en a); intro k; autodimp k hyp.
+  destruct ap; repnd.
+  generalize (cc_comp_exc0 en a); intro k; autodimp k hyp.
   { apply computes_to_exception_refl. }
   exrepnd.
   exists a' e'; sp; inversion b0.
@@ -2609,10 +2853,3 @@ Qed.
 *)
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

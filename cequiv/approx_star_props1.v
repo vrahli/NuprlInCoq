@@ -47,25 +47,6 @@ Proof.
     exists ((v,mk_utoken a) :: sub); simpl; dands; auto.
 Qed.
 
-Lemma select2bts {o} :
-  forall (bs1 bs2 : list (@BTerm o)) n,
-    n < length bs1
-    -> length bs1 = length bs2
-    -> {b1 : BTerm
-        & {b2 : BTerm
-        & selectbt bs1 n = b1
-        # selectbt bs2 n = b2
-        # LIn (b1,b2) (combine bs1 bs2)}}.
-Proof.
-  introv len1 len2.
-  exists (selectbt bs1 n) (selectbt bs2 n); dands; auto.
-  unfold selectbt.
-  revert dependent n.
-  revert dependent bs2.
-  induction bs1; destruct bs2; introv len1 len2; allsimpl; tcsp; cpx.
-  destruct n; tcsp; cpx.
-Qed.
-
 Lemma cl_disjoint_free_vars_lsubst_aux_dom {o} :
   forall (t : @NTerm o) sub,
     cl_sub sub
