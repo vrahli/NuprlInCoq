@@ -97,11 +97,10 @@ Proof.
 
   inversion ap as [? ? ? cl]; subst; clear ap.
   constructor.
-  allunfold @close_comput; repnd; dands; auto.
+  destruct cl; split; auto.
 
-  - introv comp.
-    clear cl3 cl.
-    apply cl2 in comp; exrepnd.
+  - introv comp ncomp.
+    apply cc_comp_val in comp; repeat (autodimp comp hyp); exrepnd.
     eexists; dands; eauto.
     allunfold @lblift; dands; repnd; auto.
     introv i.
@@ -111,12 +110,11 @@ Proof.
     allunfold @olift; repnd; dands; auto.
 
   - introv comp.
-    clear cl2 cl.
-    apply cl3 in comp; exrepnd.
+    apply cc_comp_exc in comp; exrepnd.
     eexists; eexists; dands; eauto.
 
   - introv comp.
-    apply cl4 in comp; exrepnd.
+    apply cc_comp_seq in comp; exrepnd.
     eexists; dands; eauto.
 Qed.
 
@@ -129,11 +127,10 @@ Proof.
   introv apr.
   inversion apr as [cl].
   constructor.
-  allunfold @close_comput; repnd; dands; auto.
+  destruct cl; split; auto.
 
-  - introv comp.
-    clear cl3 cl.
-    apply cl2 in comp; exrepnd.
+  - introv comp ncomp.
+    apply cc_comp_val in comp; repeat (autodimp comp hyp); exrepnd.
     eexists; dands; eauto.
     allunfold @lblift; dands; repnd; auto.
     introv i.
@@ -148,13 +145,12 @@ Proof.
     + unfold bot2 in h; tcsp.
 
   - introv comp.
-    clear cl2 cl.
-    apply cl3 in comp; exrepnd.
+    apply cc_comp_exc in comp; exrepnd.
     repndors; try (complete (allunfold @bot2; sp)).
     eexists; eexists; dands; eauto.
 
   - introv comp.
-    apply cl4 in comp; exrepnd.
+    apply cc_comp_seq in comp; exrepnd.
     eexists; dands; eauto.
     introv.
     pose proof (comp0 n) as h; repndors; tcsp.
@@ -570,14 +566,13 @@ Proof.
   rename x0 into a.
   rename c into b.
   rename x1 into c.
-  allunfold @close_comput; repnd; dands; tcsp.
+  destruct cl; split; tcsp.
 
   - apply alphaeq_preserves_program in aeq; apply aeq; auto.
 
-  - clear cl3 cl.
-    introv comp.
-    apply cl2 in comp.
-    exrepnd.
+  - introv comp ncomp.
+    apply cc_comp_val in comp.
+    repeat (autodimp comp hyp); exrepnd.
     eapply compute_to_value_alpha in comp1; eauto 3 with slow; exrepnd.
     applydup @alpha_eq_oterm_implies_combine in comp2; exrepnd; subst.
     exists bs'; dands; auto.
@@ -598,9 +593,8 @@ Proof.
     right; apply hr.
     exists (lsubst nt2 sub); dands; auto.
 
-  - clear cl2 cl.
-    introv comp.
-    apply cl3 in comp.
+  - introv comp.
+    apply cc_comp_exc in comp.
     exrepnd.
     eapply compute_to_exception_alpha in comp0; eauto 3 with slow; exrepnd.
     exists a'0 t2'; dands; auto.
@@ -635,7 +629,7 @@ Proof.
 *)
 
   - introv comp.
-    apply cl4 in comp; exrepnd.
+    apply cc_comp_seq in comp; exrepnd.
     eapply computes_to_seq_alpha in comp1; eauto 3 with slow; exrepnd.
     eexists; dands; eauto.
     introv.
@@ -649,6 +643,13 @@ Proof.
 
     + apply hb.
       eapply resp; eauto.
+
+  - introv comp isc.
+    apply cc_comp_comp in comp; repeat (autodimp comp hyp).
+    exrepnd.
+    eapply compute_to_value_alpha in comp0;[| |exact aeq]; eauto 3 with slow.
+    exrepnd.
+    exists t2'; dands; eauto 3 with slow.
 Qed.
 Hint Resolve respects_alpha_r_approx_aux : slow.
 
@@ -708,17 +709,16 @@ Proof.
   rename x0 into a.
   rename c into b.
   rename x1 into c.
-  allunfold @close_comput; repnd; dands; tcsp.
+  destruct cl; split; tcsp.
 
   - apply alphaeq_preserves_program in aeq; apply aeq; auto.
 
-  - clear cl3 cl.
-    introv comp.
+  - introv comp ncomp.
     eapply compute_to_value_alpha in comp;[| |exact aeq]; eauto 3 with slow.
     exrepnd.
     apply @alpha_eq_oterm_implies_combine in comp0; exrepnd; subst.
-    apply cl2 in comp1; clear cl2.
-    exrepnd.
+    apply cc_comp_val in comp1.
+    repeat (autodimp comp1 hyp); exrepnd.
     exists tr_subterms; dands; auto.
     allunfold @lblift; repnd; dands; auto; try omega.
     introv i.
@@ -738,10 +738,9 @@ Proof.
     right; apply hr.
     exists (lsubst nt1 sub); dands; auto.
 
-  - clear cl2 cl.
-    introv comp.
+  - introv comp.
     eapply compute_to_exception_alpha in comp; eauto 3 with slow; exrepnd.
-    apply cl3 in comp0.
+    apply cc_comp_exc in comp0.
     exrepnd.
     exists a'0 e'; dands; auto.
 
@@ -775,7 +774,7 @@ Proof.
 
   - introv comp.
     eapply computes_to_seq_alpha in comp;[| | eauto]; eauto 3 with slow; exrepnd.
-    apply cl4 in comp1; exrepnd.
+    apply cc_comp_seq in comp1; exrepnd.
     eexists; dands; eauto.
     introv.
     pose proof (comp0 n) as h; clear comp0.
@@ -789,6 +788,13 @@ Proof.
     + apply hb.
       apply alpha_eq_sym in h.
       eapply resp; eauto.
+
+  - introv comp isc.
+    eapply compute_to_value_alpha in comp;[| |exact aeq]; eauto 3 with slow.
+    exrepnd.
+    apply cc_comp_comp in comp1.
+    repeat (autodimp comp1 hyp); exrepnd; eauto 3 with slow.
+    exists w; dands; eauto 3 with slow.
 Qed.
 Hint Resolve respects_alpha_l_approx_aux : slow.
 
@@ -811,13 +817,13 @@ Proof.
   assert (SIM: approx_aux lib (r0 \2/ l) x0 x1) by eauto 6 with slow.
   clear PR; revert x0 x1 SIM; cofix CIH.
   intros; destruct SIM; econstructor; eauto.
-  invertsna c Hcl. repnd.
-  unfold close_comput.
-  dands; eauto.
+  invertsna c Hcl.
+  split; eauto.
 
-  - introv Hcomp.
-    apply Hcl2 in Hcomp.
-    exrepnd. exists tr_subterms. split; eauto.
+  - introv Hcomp ncomp.
+    apply Hcl1 in Hcomp.
+    repeat (autodimp Hcomp hyp); exrepnd.
+    exists tr_subterms. split; eauto.
     eapply le_lblift2; eauto.
     apply le_olift.
 
@@ -828,12 +834,12 @@ Proof.
     apply CIH; apply OBG; eauto 3 with slow.
 
   - introv Hcomp.
-    apply Hcl3 in Hcomp; exrepnd.
+    apply Hcl2 in Hcomp; exrepnd.
     exists a' e'; dands; auto; repndors; auto; tcsp;
     try (complete (left; apply CIH; apply OBG; tcsp; eauto 3 with slow)).
 
   - introv comp.
-    apply Hcl4 in comp; exrepnd.
+    apply Hcl3 in comp; exrepnd.
     eexists; dands; eauto.
     introv.
     pose proof (comp0 n) as h; clear comp0; repndors; tcsp.
@@ -1559,6 +1565,18 @@ SearchAbout (lsubst (lsubst _ _) _).
 Qed.
 *)
 
+Lemma ren_utokens_preserves_is_compute {o} :
+  forall (t : @NTerm o) ren,
+    is_compute t = true
+    -> is_compute (ren_utokens (inv_utok_ren ren) t) = true.
+Proof.
+  introv isc.
+  destruct t as [| |op bs]; simpl in *; ginv.
+  destruct op; simpl in *; ginv.
+  destruct c; simpl in *; ginv.
+Qed.
+Hint Resolve ren_utokens_preserves_is_compute : slow.
+
 Require Import sqle.
 
 Lemma approx_change_utoks {o} :
@@ -1587,9 +1605,9 @@ Proof.
   constructor.
   (*inversion apr as [? ? ? cl]; subst; clear apr.*)
   inversion apr as [|? ? ? cl]; clear apr; subst.
-  allunfold @close_comput; repnd; dands; tcsp; eauto with slow; introv comp.
+  destruct cl; split; tcsp; eauto with slow; introv comp.
 
-  - clear cl3 cl.
+  - introv ncomp.
     dup comp as comp1.
     apply (computes_to_value_ren_utokens _ _ _ (inv_utok_ren ren)) in comp1;
     allrw @range_utok_ren_inv_utok_ren;
@@ -1600,7 +1618,11 @@ Proof.
     rw @ren_utokens_can in comp1.
 
     dup comp1 as comp2.
-    apply cl2 in comp2; exrepnd.
+    apply cc_comp_val in comp2.
+    repeat (autodimp comp2 hyp); exrepnd.
+    { remember (get_utok_c c) as guo; symmetry in Heqguo; destruct guo; ginv;
+        try (complete (intro xx; inversion xx)). }
+
     dup comp2 as comp22.
     apply (computes_to_value_ren_utokens _ _ _ ren) in comp2; eauto 3 with slow;[].
     rw @ren_utokens_can in comp2.
@@ -1775,8 +1797,7 @@ Proof.
       repeat (rw @ren_utokens_app_weak_l in sqn; eauto 2 with slow).
     }
 
-  - clear cl2 cl.
-    dup comp as comp1.
+  - dup comp as comp1.
 
     apply (computes_to_exception_ren_utokens _ _ _ _ (inv_utok_ren ren)) in comp1;
     allrw @range_utok_ren_inv_utok_ren;
@@ -1785,7 +1806,7 @@ Proof.
     rw @inv_ren_utokens in comp1; auto.
 
     dup comp1 as comp2.
-    apply cl3 in comp2; exrepnd.
+    apply cc_comp_exc in comp2; exrepnd.
     dup comp0 as comp00.
     apply (computes_to_exception_ren_utokens _ _ _ _ ren) in comp0; eauto 3 with slow.
 
@@ -1864,11 +1885,50 @@ Proof.
     rw @inv_ren_utokens in comp1; allsimpl; auto.
 
     dup comp1 as comp2.
-    apply cl4 in comp2; exrepnd.
+    apply cc_comp_seq in comp2; exrepnd.
     dup comp0 as comp00.
     apply (reduces_to_ren_utokens _ _ _ ren) in comp2; eauto 3 with slow; allsimpl.
 
     eexists; dands; eauto.
+
+  - introv isc.
+    dup comp as comp1.
+    apply (computes_to_value_ren_utokens _ _ _ (inv_utok_ren ren)) in comp1;
+    allrw @range_utok_ren_inv_utok_ren;
+    allrw @dom_utok_ren_inv_utok_ren;
+    eauto 3 with slow;[|rw @get_utokens_ren_utokens; apply disjoint_dom_diff_range_map_ren_atom].
+    rw @inv_ren_utokens in comp1; auto.
+
+    dup comp1 as comp2.
+    apply cc_comp_comp in comp2.
+    repeat (autodimp comp2 hyp); exrepnd; eauto 3 with slow.
+
+    dup comp0 as comp00.
+    apply (computes_to_value_ren_utokens _ _ _ ren) in comp0; eauto 3 with slow;[].
+    eexists;dands;[|exact comp0].
+
+    apply (alpha_eq_ren_utokens _ _ ren) in comp2.
+    eapply alpha_eq_trans;[|exact comp2]; clear comp2.
+
+    rewrite inv_ren_utokens2; auto.
+
+    SearchAbout reduces_to ren_utokens.
+    SearchAbout ren_utokens inv_utok_ren.
+
+    introv i j.
+    apply in_diff in j; repnd.
+    apply computes_to_value_preserves_utokens in comp; allsimpl; eauto 3 with slow.
+    apply comp in j0.
+    rewrite get_utokens_ren_utokens in j0.
+    apply in_map_iff in j0; exrepnd; subst.
+
+
+    SearchAbout get_utokens ren_utokens.
+
+    Check disjoint_dom_diff_range_map_ren_atom.
+    SearchAbout get_utokens map ren_atom.
+    SearchAbout ren_utokens computes_to_value.
+
 Qed.
 
 (*

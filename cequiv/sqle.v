@@ -145,21 +145,23 @@ Lemma trans_rel_close_comput {o} :
   -> trans_rel (close_comput lib R).
 Proof.
   intros lib R Ht Hra a b c Hab Hbc.
-  allunfold @close_comput.
-  repnd; dands; auto.
+  destruct Hab, Hbc.
+  split; auto.
 
-  - introv Hcv.
-    applydup_clear Hab2 in Hcv. exrepnd.
+  - introv Hcv ncomp.
+    applydup_clear cc_comp_val in Hcv.
+    repeat (autodimp Hcv0 hyp); exrepnd.
     rename Hcv0 into Hcb.
-    applydup_clear Hbc2 in Hcb. exrepnd.
+    applydup_clear cc_comp_val0 in Hcb.
+    repeat (autodimp Hcb0 hyp); exrepnd.
     exists tr_subterms0; sp.
     revert Hcv1 Hcb1.
     apply trans_lblift; auto; eauto with respects_alpha.
 
   - introv Hcv.
-    applydup_clear Hab3 in Hcv. exrepnd.
+    applydup_clear cc_comp_exc in Hcv. exrepnd.
     rename Hcv1 into Hcb.
-    applydup_clear Hbc3 in Hcb. exrepnd.
+    applydup_clear cc_comp_exc0 in Hcb. exrepnd.
     exists a'0 e'0; sp.
     + revert Hcv2 Hcb2.
       apply Ht.
@@ -175,9 +177,17 @@ Proof.
 *)
 
   - introv comp.
-    apply Hab4 in comp; exrepnd.
-    apply Hbc4 in comp1; exrepnd.
+    apply cc_comp_seq in comp; exrepnd.
+    apply cc_comp_seq0 in comp1; exrepnd.
     eexists; dands; eauto.
+
+  - introv Hcv isc.
+    applydup_clear cc_comp_comp in Hcv.
+    repeat (autodimp Hcv0 hyp); exrepnd.
+    rename Hcv1 into Hcb.
+    applydup_clear cc_comp_comp0 in Hcb.
+    repeat (autodimp Hcb0 hyp); exrepnd; eauto 3 with slow.
+    exists w0; dands; eauto 3 with slow.
 Qed.
 
 Lemma sqlen_n_trans {o} : forall lib n, trans_rel (@sqle_n o lib n).
@@ -198,11 +208,11 @@ Qed.
 
 
 Theorem sqlen_closed {o} : forall lib n, is_rel_on_progs (@sqle_n o lib n).
-Proof. induction n as [| n Hind]; intros t1 t2 Hsq;
- invertsn Hsq; auto.
- rename Hsq into Hclose.
- unfold close_comput in Hclose.
- sp; auto.
+Proof.
+  induction n as [| n Hind]; intros t1 t2 Hsq;
+    invertsn Hsq; auto.
+  rename Hsq into Hclose.
+  destruct Hclose; tcsp.
 Qed.
 
 (* end hide *)
@@ -227,13 +237,15 @@ Proof.
   gen a b. repnd.
   induction n; intros a b Hrp; constructor;
   try (apply Hsat0 in Hrp; sp; auto; fail).
-  apply Hsat in Hrp. clear Hsat.
-  allunfold @close_comput; repnd.
+  apply Hsat in Hrp.
+  clear Hsat.
+  destruct Hrp.
   repeat(split;auto).
 
-  - intros c tl_subterms Hcv.
-    apply Hrp2 in Hcv. exrepnd.
-    exists tr_subterms. sp; auto.
+  - introv Hcv ncomp.
+    apply cc_comp_val in Hcv.
+    repeat (autodimp Hcv hyp); exrepnd.
+    exists tr_subterms; dands; tcsp.
     clear Hcv1.
     gen tl_subterms tr_subterms.
     fold (@le_bin_rel  NTerm Rp (sqle_n lib n)) in IHn.
@@ -242,11 +254,11 @@ Proof.
     auto.
 
   - introv ce.
-    apply Hrp3 in ce; exrepnd.
+    apply cc_comp_exc in ce; exrepnd.
     exists a' e'; auto.
 
   - introv comp.
-    apply Hrp4 in comp; exrepnd.
+    apply cc_comp_seq in comp; exrepnd.
     eexists; dands; eauto.
 Qed.
 
@@ -313,23 +325,27 @@ Qed.
 Theorem close_comput_mono {o}: forall lib R1 R2, (le_bin_rel R1 R2)
   -> le_bin_rel (@close_comput o lib R1) (close_comput lib R2).
 Proof.
-  intros ? ? ? Hle. intros ? ? Hcr1.
-  allunfold @close_comput. repnd.
+  introv Hle Hcr1.
+  destruct Hcr1.
   repeat(split;auto).
 
-  - intros ? ? Hcomp.
-    apply Hcr3 in Hcomp. parallel tr_subterms Hrelbt.
-    repnd. split;auto. allunfold @lblift.
+  - introv Hcomp ncomp.
+    apply cc_comp_val in Hcomp.
+    repeat (autodimp Hcomp hyp).
+    parallel tr_subterms Hrelbt.
+    repnd.
+    split;auto.
+    allunfold @lblift.
     exrepnd.
     dands;sp.
     eapply le_blift_olift; eauto.
 
   - introv ce.
-    apply Hcr4 in ce; exrepnd.
+    apply cc_comp_exc in ce; exrepnd.
     exists a' e'; auto.
 
   - introv comp.
-    apply Hcr5 in comp; exrepnd.
+    apply cc_comp_seq in comp; exrepnd.
     eexists; dands; eauto.
 Qed.
 
@@ -410,11 +426,12 @@ Proof.
   - Case "->"; intro Hap.
     unfold sqle; intro.
     revert a b Hap.
-    induction n; constructor; invertsn Hap; unfold close_comput in Hap; sp.
-    unfold close_comput. dands; auto.
+    induction n; constructor; invertsn Hap; destruct Hap; auto.
+    split; auto.
 
-    + introv Hcv.
-      applydup Hap2 in Hcv. exrepnd.
+    + introv Hcv ncomp.
+      applydup cc_comp_val in Hcv.
+      repeat (autodimp Hcv0 hyp); exrepnd.
       exists tr_subterms; sp.
       apply clearbot_relbt in Hcv1.
       unfold lblift in Hcv1; exrepnd.
@@ -423,11 +440,11 @@ Proof.
       eapply le_blift_olift; eauto.
 
     + introv ce.
-      applydup Hap3 in ce; exrepnd.
+      applydup cc_comp_exc in ce; exrepnd.
       exists a' e'; sp; inversion b0.
 
     + introv comp.
-      apply Hap4 in comp; exrepnd.
+      apply cc_comp_seq in comp; exrepnd.
       eexists; dands; eauto.
       introv.
       apply IHn; auto.
@@ -437,22 +454,26 @@ Proof.
   - Case "<-"; introv Hsq.
     revert a b Hsq.
     apply (approx_acc).
-    introv  Hb Hs. intros a b Hsq.
-    constructor. repnud Hsq. pose proof (Hsq 1) as H1s.
-    applydup @sqlen_closed in H1s. repnd.
+    introv Hb Hs.
+    intros a b Hsq.
+    constructor.
+    repnud Hsq.
+    pose proof (Hsq 1) as H1s.
+    applydup @sqlen_closed in H1s; repnd.
+    invertsn H1s.
+    destruct H1s.
     split; auto.
-    dands; auto.
 
-    + introv Hcv.
-      invertsn H1s.
-      repnud H1s. duplicate Hcv as Hcvb.
-      apply H1s4 in Hcv.
-      exrepnd.
+    + introv Hcv ncomp.
+      duplicate Hcv as Hcvb.
+      apply cc_comp_val in Hcv.
+      repeat (autodimp Hcv hyp); exrepnd.
       exists tr_subterms.
       dands;auto.
       apply (le_lblift (olift (sqle lib))).
       * apply le_olift. introv Hss. right. eauto.
-      * repnud Hcv0.  clear H1s. unfolds_base. dands; auto.
+      * repnud Hcv0.
+        unfolds_base. dands; auto.
         introv Hpt. unfolds_base. duplicate Hpt as Hptb. apply Hcv0 in Hpt.
         repnud Hpt. parallel lv Hpt. parallel  nt1 Hpt .
         parallel  nt2 Hpt. exrepnd.
@@ -462,12 +483,11 @@ Proof.
         unfolds_base. intro nn.
         pose proof (Hsq (S nn)) as Hnn.
         invertsn Hnn.
-        repnud Hnn.
-        apply Hnn2 in Hcvb.
-        exrepnd.
+        destruct Hnn.
+        apply cc_comp_val0 in Hcvb.
+        repeat (autodimp Hcvb hyp); exrepnd.
         eapply computes_to_value_eq in Hcv1; eauto.
         invertsn Hcv1.
-        clear Hnn Hcv0.
         repnud Hcvb0.
         apply Hcvb0 in Hptb.
         apply (blift_alpha_fun_r _ _ _ _ Hptb) in Hpt.
@@ -477,9 +497,7 @@ Proof.
         apply Hpt1; auto.
 
     + introv ce.
-      invertsn H1s.
-      repnud H1s.
-      applydup H1s5 in ce; exrepnd.
+      applydup cc_comp_exc in ce; exrepnd.
       exists a' e'; sp.
 
       {
@@ -488,8 +506,8 @@ Proof.
         generalize (Hsq (S n)); intro k.
 
         invertsn k; auto.
-        repnud k.
-        apply k3 in ce; exrepnd.
+        destruct k.
+        apply cc_comp_exc0 in ce; exrepnd.
         eapply computes_to_exception_eq in ce3; eauto; repnd; subst; auto.
       }
 
@@ -499,8 +517,8 @@ Proof.
         generalize (Hsq (S n)); intro k.
 
         invertsn k; auto.
-        repnud k.
-        apply k3 in ce; exrepnd.
+        destruct k.
+        apply cc_comp_exc0 in ce; exrepnd.
         eapply computes_to_exception_eq in ce3; eauto; repnd; subst; auto.
       }
 
@@ -512,9 +530,7 @@ Proof.
 *)
 
     + introv comp.
-      invertsn H1s.
-      repnud H1s.
-      applydup H1s6 in comp; exrepnd.
+      applydup cc_comp_seq in comp; exrepnd.
       eexists; dands; eauto.
 
       introv.
@@ -522,16 +538,9 @@ Proof.
       intro k.
       pose proof (Hsq (S k)) as h.
       invertsn h.
-      repnud h.
-      apply h4 in comp; exrepnd.
+      destruct h.
+      apply cc_comp_seq0 in comp; exrepnd.
       eapply reduces_to_eq_val_like in comp3;
         try (exact comp0); eauto 3 with slow; ginv; auto.
 Qed.
 (* begin hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)
