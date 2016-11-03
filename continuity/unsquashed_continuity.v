@@ -27,9 +27,83 @@
 
  *)
 
-Require Export tactics2.
-Require Export terms_tacs.
+
+Require Export Omega.
+Require Export Bool.
 Require Export Eqdep_dec.
+Require Export Arith.
+
+
+(* ============================================= *)
+(* First some notations and tactics *)
+
+Notation "! x" := (notT x)%type (at level 75, right associativity).
+
+Ltac exrepnd :=
+   repeat match goal with
+           | [ H : _ /\ _ |- _ ] => let name := fresh H in destruct H as [name H]
+           | [ H : prod _ _ |- _ ] => let name := fresh H in destruct H as [name H]
+           | [ H : exists (v : _),_  |- _ ] =>
+               let vname := fresh v in
+               let hname := fresh H in
+               destruct H as [vname hname]
+           | [ H : { v : _ | _ }  |- _ ] =>
+               let vname := fresh v in
+               let hname := fresh H in
+               destruct H as [vname hname]
+           | [ H : { v : _ & _ }  |- _ ] =>
+               let vname := fresh v in
+               let hname := fresh H in
+               destruct H as [vname hname]
+         end.
+
+Tactic Notation "complete" tactic(tac) := tac; fail.
+
+Ltac autodimp H hyp :=
+  match type of H with
+    | ?T1 -> ?T2 =>
+      assert T1 as hyp;
+        [ clear H; try (complete auto)
+        | try (let concl := fresh "hyp" in
+                 pose proof (H hyp) as concl;
+               clear hyp;
+               clear H;
+               rename concl into H)
+          ; try (complete auto)
+        ]
+  end.
+
+Ltac clear_eq x y :=
+  match goal with
+    | [ H : x = y |- _ ] => clear H
+  end.
+
+Tactic Notation "applydup" constr(l) "in" ident(H) :=
+  let newH := fresh H in
+    remember H as newH; clear_eq newH H; apply l in newH.
+
+Ltac introv_arg H :=
+  hnf;
+  match goal with
+  | |- ?P -> ?Q => intros H
+  | |- forall _, _ => intro; introv_arg H
+  end.
+
+Ltac introv_noarg :=
+  hnf;
+  repeat match goal with
+         | |- ?P -> ?Q => idtac
+         | |- forall _, _ => intro
+         end.
+
+Tactic Notation "introv" := introv_noarg.
+Tactic Notation "introv" simple_intropattern(I1) := introv_arg I1.
+Tactic Notation "introv" simple_intropattern(I1) simple_intropattern(I2) := introv I1; introv I2.
+Tactic Notation "introv" simple_intropattern(I1) simple_intropattern(I2) simple_intropattern(I3) := introv I1; introv I2 I3.
+Tactic Notation "introv" simple_intropattern(I1) simple_intropattern(I2) simple_intropattern(I3) simple_intropattern(I4) := introv I1; introv I2 I3 I4.
+
+(* ============================================= *)
+
 
 Definition baire := nat -> nat.
 
@@ -53,7 +127,7 @@ Lemma eq_upto_zero_until :
 Proof.
   introv h q.
   unfold zero_until, zeros.
-  boolvar; omega.
+  destruct (lt_dec m0 n); try omega.
 Qed.
 
 Lemma zero_until_prop2 :
@@ -61,27 +135,58 @@ Lemma zero_until_prop2 :
 Proof.
   introv.
   unfold zero_until.
-  boolvar; omega.
+  destruct (lt_dec n n); try omega.
 Qed.
+
+Definition nat_n (n : nat) := {m : nat | m <? n = true}.
+
+Lemma ltb2lt : forall {n m : nat}, (n <? m) = true -> n < m.
+Proof.
+  apply Nat.ltb_lt.
+Qed.
+
+Lemma lt2ltb : forall {n m : nat}, n < m -> (n <? m) = true.
+Proof.
+  apply Nat.ltb_lt.
+Qed.
+
+Definition baire_n (n : nat) := nat_n n -> nat.
+
+Definition emseq : baire_n 0 :=
+  fun (m : nat_n 0) =>
+    match m with
+    | exist _ z p => match Nat.nlt_0_r z (ltb2lt p) with end
+    end.
+
+Definition seqp := forall n : nat, baire_n n -> Type.
+
+Definition baire2baire_n (s : baire) (n : nat) : baire_n n :=
+  fun (m : nat_n n) => s (proj1_sig m).
 
 Definition S0 := nat.
 Definition S1 := baire.
 Definition S2 := baire -> nat.
 
-(* unsquashed continuity *)
-Definition usq_continuity :=
+(* non-squashed/non-truncated continuity principle *)
+Definition nsq_continuity :=
   forall (F : S2) (f : S1),
     {n : S0 & forall g : S1, eq_upto n f g -> F f = F g}.
 
-(* Escardo's proof *)
-Lemma continuity_false : usq_continuity -> False.
+(* [usq_continuity_zeros] is [usq_continuity] for [f=zeros] *)
+Definition nsq_continuity_zeros :=
+  forall (F : S2), {n : S0 & forall g : S1, eq_upto n zeros g -> F zeros = F g}.
+
+(*
+
+  Escardo and Xu's proof that the non-squashed continuity principle if
+  false in Martin-Lof-like type theories (see
+  http://www.cs.bham.ac.uk/~mhe/papers/escardo-xu-inconsistency-continuity.pdf).
+
+ *)
+
+Lemma continuity_zeros_false : !nsq_continuity_zeros.
 Proof.
   introv h.
-  assert (forall (f : baire) (F : baire -> nat),
-             {n : nat & forall g : baire, eq_upto n f g -> F f = F g}) as q by auto.
-  clear h.
-  pose proof (q zeros) as h.
-  clear q.
 
   remember (fun F => projT1 (h F)) as M.
 
@@ -127,23 +232,61 @@ Proof.
   rewrite Heqb in h5.
   rewrite zero_until_prop2 in h5.
   unfold zero_until in h5.
-  boolvar; try omega.
+  destruct (lt_dec 0 (M f + 1)) in *; try omega.
 Qed.
 
+Lemma continuity_false : !nsq_continuity.
+Proof.
+  introv h.
+  apply continuity_zeros_false; introv.
+  apply h.
+Qed.
 
-(* It also works using an existential proposition *)
+(*
+
+  It also works using an existential proposition when assuming AC20.
+  See lemma [sq_continuity_prop_false] below.
+  That's because we can prove that [!nsq_continuity_zeros]
+  implies [!sq_continuity_prop_zeros], assuming [AC20].
+  See lemma [not_usq_continuity_zeros_implies_not_sq_continuity_prop_zeros].
+
+  AC20 is false in Nuprl.
+
+ *)
 
 Definition AC20 :=
   forall (R : S2 -> S0 -> Prop),
     (forall a : S2, exists (b : S0), R a b)
     -> (exists (f : S2 -> S0), forall a : S2, R a (f a)).
 
+Inductive Cast (t : Type) : Prop :=
+| cast : t -> Cast t.
+Hint Constructors Cast.
+
+(*
+
+  squashed/truncated continuity principle.
+  To truncate here we use the [Cast] operator.
+  Equivalently we can use the propositional existential.
+
+*)
 Definition sq_continuity :=
   forall (F : S2) (f : S1), Cast {n : nat & forall g : S1, eq_upto n f g -> F f = F g}.
+
+Definition sq_continuity_zeros :=
+  forall (F : S2), Cast {n : nat & forall g : S1, eq_upto n zeros g -> F zeros = F g}.
 
 Definition sq_continuity_prop :=
   forall (F : S2) (f : S1), exists n, forall g : S1, eq_upto n f g -> F f = F g.
 
+Definition sq_continuity_prop_zeros :=
+  forall (F : S2), exists n, forall g : S1, eq_upto n zeros g -> F zeros = F g.
+
+(*
+
+  This show that we can interchangeably use of the Propositional existential or Cast.
+
+ *)
 Lemma sq_continuity_iff_prop :
   sq_continuity <-> sq_continuity_prop.
 Proof.
@@ -157,89 +300,136 @@ Proof.
     constructor; exists n; auto. }
 Qed.
 
+(*
+
+  We can trivially show that AC20 (false in Nuprl) and the negation of
+  the non-squashed continuity principle (this negation is true
+  Martin-Lof-like type theories) for the sequence of zeros imply the
+  negation the squashed continuity principle (this negation is false
+  in Nuprl because the squashed continuity principle is true in Nuprl)
+  for the sequence of zeros.
+
+ *)
+Lemma not_nsq_continuity_zeros_implies_not_sq_continuity_prop_zeros :
+  AC20 -> !nsq_continuity_zeros -> !sq_continuity_prop_zeros.
+Proof.
+  introv ac nucont scont.
+  unfold sq_continuity_prop_zeros in scont.
+  unfold nsq_continuity_zeros in nucont.
+
+  apply ac in scont; exrepnd.
+  destruct nucont; introv.
+  pose proof (scont0 F) as q; clear scont0.
+  exists (f F); auto.
+Qed.
+
+Definition choice_principle (T : Type) :=
+  forall (P : T -> Type),
+    (forall t, Cast (P t)) <-> Cast (forall t, P t).
+
+(* AC10 is true in Nuprl *)
+Definition AC10 :=
+  forall (R : S1 -> S0 -> Prop),
+    (forall (a : S1), exists (b : S0), R a b)
+    -> (exists (f : S1 -> S0), forall a : S1, R a (f a)).
+
+(*
+
+  This shows that the negation of the non-squashed continuity
+  principle (this negation is true in Martin-Lof-like type theories)
+  and the squashed continuity principle (true in Nuprl) imply the
+  negation of the choice principle for [S2].  We also assume AC1,
+  which is true in Nuprl.
+
+ *)
+Lemma not_nsq_continuity_and_sq_continuity_prop_implies_not_choice_principle :
+  AC10 -> !nsq_continuity -> sq_continuity_prop -> !(choice_principle S2).
+Proof.
+  introv ac10 nnsqcont sqcont cp.
+  pose proof (cp (fun (F : S2) => {M : S2 & forall (f g : S1), eq_upto (M f) f g -> F f = F g} )) as h; simpl in h.
+  clear cp.
+  destruct h as [h1 h2].
+  clear h2.
+  autodimp h1 hyp.
+
+  { introv.
+    pose proof (sqcont t) as h; clear sqcont.
+    apply ac10 in h; exrepnd.
+    constructor.
+    exists f; auto. }
+
+  inversion h1 as [q]; clear h1.
+  destruct nnsqcont.
+  unfold nsq_continuity.
+  introv.
+  pose proof (q F) as h; clear q; exrepnd.
+  exists (M f); auto.
+Qed.
+
+Definition AC20_cast :=
+  forall (R : S2 -> S0 -> Type),
+    (forall a : S2, Cast {b : S0 & R a b})
+    -> Cast {f : S2 -> S0 & forall a : S2, R a (f a)}.
+
+(*
+
+  From
+  [not_nsq_continuity_and_sq_continuity_prop_implies_not_choice_principle]
+  we deduce that the negation of the non-squashed continuity principle
+  (this negation is true in Martin-Lof-like type theories) and the
+  squashed continuity principle (true in Nuprl) imply the negation of
+  AC20_cast.  We also assume AC1, which is true in Nuprl.
+
+ *)
+Lemma not_nsq_continuity_and_sq_continuity_prop_implies_not_ac20 :
+  AC10 -> !nsq_continuity -> sq_continuity_prop -> !AC20_cast.
+Proof.
+  introv ac10 nnsqcont sqcont ac20.
+  apply not_nsq_continuity_and_sq_continuity_prop_implies_not_choice_principle; auto.
+  introv; split; intro h;[|destruct h as [h]; introv; constructor; auto];[].
+
+  unfold AC20 in ac20.
+  pose proof (ac20 (fun F n => P F)) as q; simpl in q.
+  autodimp q hyp.
+  { introv; pose proof (h a) as q; destruct q; constructor; eexists 0; auto. }
+  clear h.
+  destruct q as [h]; exrepnd.
+  constructor; auto.
+Qed.
+
+Lemma sq_continuity_prop_zeros_false :
+  AC20
+  -> !sq_continuity_prop_zeros.
+Proof.
+  introv ac.
+  apply not_nsq_continuity_zeros_implies_not_sq_continuity_prop_zeros; auto.
+  apply continuity_zeros_false.
+Qed.
+
 Lemma sq_continuity_prop_false :
   AC20
-  -> sq_continuity_prop
-  -> False.
+  -> !sq_continuity_prop.
 Proof.
-  introv ac h.
-  assert (forall (f : S1) (F : S2),
-             exists n, forall g : S1, eq_upto n f g -> F f = F g) as q by auto.
-  clear h.
-  pose proof (q zeros) as h.
-  clear q.
-
-  apply ac in h; exrepnd.
-  (* This is a version of AC20.
-   * We know that the q-truncated (i.e., quotiented by True) version
-   * of this axiom is false in Nuprl, while it's consistent with Coq.
-   *)
-  rename f into M.
-
-  remember (M (fun a => 0)) as m.
-
-  remember (fun b => M (fun a => b (a m))) as f.
-
-  assert (f zeros = m) as h1.
-  { subst; auto. }
-
-  assert (forall (b : S1), eq_upto (M f) zeros b -> m = f b) as h2.
-  { introv q.
-    pose proof (h0 f b) as zz.
-    rewrite h1 in zz; auto. }
-
-  assert (forall (b a : baire), eq_upto (f b) zeros a -> b 0 = b (a m)) as h3.
-  { introv.
-    rewrite Heqf.
-    apply h0. }
-
-  remember (zero_until (M f + 1) 1) as b.
-
-  assert (f b = m) as e.
-  { symmetry; apply h2.
-    subst b.
-    apply eq_upto_sym.
-    apply eq_upto_zero_until; omega. }
-
-  pose proof (h3 b) as h4.
-  rewrite e in h4.
-
-  pose proof (h4 (zero_until m (M f + 1))) as h5.
-  autodimp h5 hyp.
-  { apply eq_upto_sym.
-    apply eq_upto_zero_until; omega. }
-
-  rewrite zero_until_prop2 in h5.
-  rewrite Heqb in h5.
-  rewrite zero_until_prop2 in h5.
-  unfold zero_until in h5.
-  boolvar; try omega.
+  introv ac cont.
+  apply sq_continuity_prop_zeros_false; auto.
+  introv; apply cont.
 Qed.
 
-Definition nat_n (n : nat) := {m : nat | m <? n = true}.
 
-Lemma ltb2lt : forall {n m : nat}, (n <? m) = true -> n < m.
-Proof.
-  apply Nat.ltb_lt.
-Qed.
+(*
 
-Lemma lt2ltb : forall {n m : nat}, n < m -> (n <? m) = true.
-Proof.
-  apply Nat.ltb_lt.
-Qed.
+  Let's now look at bar induction now.
+  First we introduce some auxiliary definitions.
+  Then we define [bar_induction].
 
-Definition baire_n (n : nat) := nat_n n -> nat.
+  Then we prove that the squashed continuity principle [sq_continuity]
+  and [bar_induction] imply the non-squashed continuity principle [nsq_continuity]
+  in [bar_induction_implies_continuity].
 
-Definition emseq : baire_n 0 :=
-  fun (m : nat_n 0) =>
-    match m with
-    | exist _ z p => match Nat.nlt_0_r z (ltb2lt p) with end
-    end.
+  Finally that means that we can prove the negation of [bar_induction] from
+  [sq_continuity].  See lemma [untruncated_bar_induction_false].
 
-Definition seqp := forall n : nat, baire_n n -> Type.
-
-Definition baire2baire_n (s : baire) (n : nat) : baire_n n :=
-  fun (m : nat_n n) => s (proj1_sig m).
+ *)
 
 Definition ext (n : nat) (s : baire_n n) (m : nat) : baire_n (S n) :=
   fun (k : nat_n (S n)) =>
@@ -325,7 +515,7 @@ Proof.
 Qed.
 
 Lemma bar_induction_implies_continuity :
-   sq_continuity -> bar_induction -> usq_continuity.
+   sq_continuity -> bar_induction -> nsq_continuity.
 Proof.
   introv scont bi; introv.
 
@@ -359,14 +549,16 @@ Proof.
     introv bh.
     unfold PP.
     unfold BB in bh.
-    exists n (le_n n); auto.
+    exists n.
+    exists (le_n n); auto.
   }
 
   { (* inductive *)
     introv h.
     pose proof (h (f n)) as q; clear h.
     unfold PP in *; exrepnd.
-    exists m (le_Sn_le n m p); introv z.
+    exists m.
+    exists (le_Sn_le n m p); introv z.
     pose proof (q1 g) as q; clear q1.
     rewrite updf_ext in *; auto. }
 
