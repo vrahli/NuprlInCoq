@@ -34,6 +34,35 @@ Require Export Eqdep_dec.
 Require Export Arith.
 
 
+(*
+
+  This file presents some results that we have proved in Nuprl,
+  namely:
+
+  (1) Following Escardo and Xu's proof, we show that the non-squashed
+  continuity principle if false in Coq.
+
+  See lemma [continuity_false].
+
+  (2) We then show that the squashed continuity principle is also
+  false in Coq, when assuming AC20.  Note that AC20 is false in Nuprl,
+  while the squashed continuity principle is true.
+
+  See lemma [sq_continuity_prop_false].
+
+  (3) Equivalently, the squashed continuity principle implies the
+  negation of AC20.
+
+  See lemma [sq_continuity_prop_implies_not_ac20].
+
+  (4) Finally, we show that the squashed continuity principle implies
+  the negation of the monotone bar induction principle.
+
+  See lemma [untruncated_monotone_bar_induction_false].
+
+*)
+
+
 (* ============================================= *)
 (* First some notations and tactics *)
 
@@ -415,19 +444,28 @@ Proof.
   introv; apply cont.
 Qed.
 
+Lemma sq_continuity_prop_implies_not_ac20 :
+  sq_continuity_prop -> !AC20.
+Proof.
+  introv cont ac.
+  apply sq_continuity_prop_zeros_false; auto.
+  introv; apply cont.
+Qed.
+
 
 (*
 
-  Let's now look at bar induction now.
-  First we introduce some auxiliary definitions.
-  Then we define [bar_induction].
+  Let's now look at bar induction now.  First we introduce some
+  auxiliary definitions.  Then we define [monotone_bar_induction].
 
   Then we prove that the squashed continuity principle [sq_continuity]
-  and [bar_induction] imply the non-squashed continuity principle [nsq_continuity]
-  in [bar_induction_implies_continuity].
+  and [monotone_bar_induction] imply the non-squashed continuity
+  principle [nsq_continuity] in
+  [monotone_bar_induction_implies_continuity].
 
-  Finally that means that we can prove the negation of [bar_induction] from
-  [sq_continuity].  See lemma [untruncated_bar_induction_false].
+  Finally that means that we can prove the negation of
+  [monotone_bar_induction] from [sq_continuity].  See lemma
+  [untruncated_monotone_bar_induction_false].
 
  *)
 
@@ -449,7 +487,7 @@ Definition inductive (P : seqp) := forall n (s : baire_n n), (forall m, P (S n) 
 
 Definition monotone (B : seqp) := forall n m (s : baire_n n), B n s -> B (S n) (ext n s m).
 
-Definition bar_induction :=
+Definition monotone_bar_induction :=
   forall (B P : seqp),
     bar B
     -> base B P
@@ -514,8 +552,8 @@ Proof.
   apply UIP_dec; apply bool_dec.
 Qed.
 
-Lemma bar_induction_implies_continuity :
-   sq_continuity -> bar_induction -> nsq_continuity.
+Lemma monotone_bar_induction_implies_continuity :
+   sq_continuity -> monotone_bar_induction -> nsq_continuity.
 Proof.
   introv scont bi; introv.
 
@@ -611,10 +649,10 @@ Proof.
     apply e; auto. }
 Qed.
 
-Lemma untruncated_bar_induction_false :
-  sq_continuity -> !(bar_induction).
+Lemma untruncated_monotone_bar_induction_false :
+  sq_continuity -> !(monotone_bar_induction).
 Proof.
   introv scont bi.
   pose proof continuity_false as ucont.
-  apply bar_induction_implies_continuity in bi; auto.
+  apply monotone_bar_induction_implies_continuity in bi; auto.
 Qed.
