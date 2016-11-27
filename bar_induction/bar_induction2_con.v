@@ -152,7 +152,12 @@ Definition meta2_fun_con_kseq_NA_seq {o} {lib} {C P} {n : nat} {R A : @CTerm o} 
   end.
 
 Hint Rewrite @mkcv_inteq_substc : slow.
+Hint Rewrite @mkcv_less_substc  : slow.
 Hint Rewrite @mkcv_apply_substc : slow.
+Hint Rewrite @mkcv_zero_substc  : slow.
+Hint Rewrite @mkcv_bot_substc   : slow.
+Hint Rewrite @mkcv_nat_substc   : slow.
+
 
 Lemma eq_kseq_update_seq_implies {o} :
   forall lib (s : @CTerm o) n k v s2,
@@ -296,14 +301,68 @@ Proof.
     apply computes_to_valc_implies_cequivc; auto.
 Qed.
 
+Definition barind_meta2_fun_wf {o} lib C (R : @CTerm o) :=
+  forall s1 s2 n,
+    eq_kseq lib s1 s2 n
+    -> meta2_fun_on_seq lib C R n s1
+    -> meta2_fun_on_seq lib C R n s2.
+
+Lemma eq_kseq_sym {o} :
+  forall lib (s1 s2 : @CTerm o) n,
+    eq_kseq lib s1 s2 n
+    -> eq_kseq lib s2 s1 n.
+Proof.
+  introv eqk.
+  unfold eq_kseq in *.
+  apply equality_sym; auto.
+Qed.
+
+Lemma is_kseq_if_eq_kseq {o} :
+  forall lib (s1 s2 : @CTerm o) n,
+    eq_kseq lib s1 s2 n
+    -> (is_kseq lib s1 n /\ is_kseq lib s2 n).
+Proof.
+  introv eqk.
+  unfold is_kseq.
+  unfold eq_kseq in *.
+  dands.
+  { apply equality_refl in eqk; auto. }
+  { apply equality_sym in eqk; apply equality_refl in eqk; auto. }
+Qed.
+
+Lemma seq2kseq_prop3 {o} :
+  forall lib (s : @CTerm o) n v,
+    is_kseq lib s n
+    -> eq_kseq lib s (seq2kseq s n v) n.
+Proof.
+  introv isk.
+  unfold is_kseq in isk.
+  unfold eq_kseq in *.
+  apply implies_equality_natk2nat; introv ltmn.
+  apply (equality_natk2nat_implies _ m) in isk; auto; exrepnd.
+  exists k; dands; auto.
+  unfold seq2kseq.
+  clear isk0.
+  apply cequivc_nat_implies_computes_to_valc.
+  apply computes_to_valc_implies_cequivc in isk1.
+  eapply cequivc_trans;[apply cequivc_beta|].
+  autorewrite with slow.
+  allrw @mkc_zero_eq.
+  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
+  boolvar; try omega.
+  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
+  boolvar; try omega; auto.
+Qed.
+
 Lemma bar_induction_meta4_con {o} :
   forall lib Q C P (B R X c : @CTerm o) v,
-    barind_meta2_fun_bar_con lib Q C B R v
+    barind_meta2_fun_wf lib C R
+    -> barind_meta2_fun_bar_con lib Q C B R v
     -> barind_meta2_fun_imp_con lib Q C P B R X
     -> barind_meta2_fun_ind_con lib C P R X v
     -> meta2_fun_on_seq lib P X 0 (seq2kseq c 0 v).
 Proof.
-  introv bar imp ind.
+  introv wfR bar imp ind.
   pose proof (classic (meta2_fun_on_seq lib P X 0 (seq2kseq c 0 v))) as ni.
   repndors; auto.
   provefalse.
@@ -363,15 +422,29 @@ Proof.
   repeat (autodimp b hyp); eauto 3 with slow.
   {
     introv.
+    pose proof (e m) as q; clear e.
+    eapply wfR;[apply eq_kseq_sym; exact q|]; auto.
+    subst.
+    remember (meta2_fun_con_alpha lib C P R X (seq2kseq c 0 v) v nc ni f ind m) as a.
+    unfold meta2_fun_con_kseq_NA in a; exrepnd; simpl in *; auto.
   }
   exrepnd.
   rename b0 into b.
 
-  apply imp in b;[|apply implies_is_kseq_seq2kseq; eauto 3 with slow].
+  apply imp in b;
+    [|apply implies_is_kseq_seq2kseq; eauto 3 with slow
+     |pose proof (e m) as q; clear e;
+      eapply wfR;[apply seq2kseq_prop3;apply is_kseq_if_eq_kseq in q; tcsp|];
+      eapply wfR;[apply eq_kseq_sym;exact q|];
+      subst;
+      remember (meta2_fun_con_alpha lib C P R X (seq2kseq c 0 v) v nc ni f ind m) as a;
+      unfold meta2_fun_con_kseq_NA in a; exrepnd; simpl in *; auto
+    ].
 
   induction m; allsimpl.
 
-  { pose proof (eq_kseq_0 lib (mkc_nseq s) c) as h1.
+  {
+    pose proof (eq_kseq_0 lib (mkc_nseq s) c) as h1.
     apply (seq2kseq_prop2 _ v) in h1.
     eapply cequivc_preserves_meta2_fun_on_seq in b;[|exact h1].
     auto.
@@ -389,13 +462,18 @@ Proof.
   clear q1 q2 e.
 
   subst; allsimpl.
-  remember (meta2_fun_alpha lib P X (seq2kseq c 0 v) v nc ni f ind m) as am.
-  unfold meta2_fun_kseq_NA in am; exrepnd; allsimpl.
+  remember (meta2_fun_con_alpha lib C P R X (seq2kseq c 0 v) v nc ni f ind m) as am.
+  unfold meta2_fun_con_kseq_NA in am; exrepnd; allsimpl.
 
-  remember (f (mk_meta2_fun_seq_NA (S m) s am0 am1)) as fn.
+  remember (f (mk_meta2_fun_seq_NA
+                 (S m)
+                 (update_seq s m m0 v)
+                 (is_kseq_update lib s m m0 v am0)
+                 am3)) as fn.
 
   assert (eq_kseq lib (update_seq s (S m) fn v) s (S m)) as ee1.
-  { unfold eq_kseq.
+  {
+    unfold eq_kseq.
     apply implies_equality_natk2nat; introv ltm1.
     dup am0 as e.
     eapply member_natk2nat_implies in e;[|exact ltm1]; exrepnd.
