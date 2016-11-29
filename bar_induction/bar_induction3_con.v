@@ -523,80 +523,16 @@ Proof.
     { eapply eq_kseq_trans; eauto. }
     repnd.
 
-    vr_seq_true in hyp_wfr.
-    pose proof (hyp_wfr
-                  (snoc (snoc s1 (n,mkc_nat n0)) (s, s0))
-                  (snoc (snoc s1 (n,mkc_nat n0)) (s, s3)))
-      as h; clear hyp_wfr.
-    repeat (autodimp h hyp).
+    pose proof (Rfunc n0 s0 s3 s1 s1 cR1 cR1) as hr.
+    repeat (autodimp hr hyp).
+    { eapply similarity_refl; eauto. }
 
-    {
-      apply hyps_functionality_snoc2; simpl; auto.
+    dands.
 
-      {
-        introv equ' sim'.
-        apply similarity_snoc in sim'; simpl in sim'.
-        exrepnd; subst; ginv; inj.
-        assert (!LIn n (dom_csub s2a)) as nns2a.
-        { apply similarity_dom in sim'3; repnd.
-          rw sim'3; auto. }
-        eapply tequality_respects_alphaeqc_left;
-          [apply alphaeqc_sym;
-            apply lsubstc_mk_natk2nat_sp2; auto
-          |].
-        eapply tequality_respects_alphaeqc_right;
-          [apply alphaeqc_sym;
-            apply lsubstc_mk_natk2nat_sp2; auto
-          |].
-        rw @lsubstc_mkc_tnat in sim'1.
-        apply equality_int_nat_implies_cequivc in sim'1.
-        eapply tequality_respects_cequivc_right;
-          [apply implies_cequivc_natk2nat; exact sim'1|].
-        eauto 3 with slow.
-      }
+    { eapply inhabited_type_tequality; eauto. }
 
-      apply hyps_functionality_snoc2; simpl; auto.
-
-      introv equ' sim'.
-      allrw @lsubstc_mkc_tnat.
-      apply tnat_type.
-    }
-
-    {
-      assert (cover_vars (mk_natk2nat (mk_var n)) (snoc s1 (n, mkc_nat n0))) as covn.
-      {
-        apply cover_vars_mk_natk2nat.
-        apply cover_vars_var_iff.
-        rw @dom_csub_snoc; simpl.
-        apply in_snoc; tcsp.
-      }
-      sim_snoc2; dands; auto.
-
-      {
-        assert (cover_vars mk_tnat s1) as cvt.
-        { apply cover_vars_mk_tnat. }
-        sim_snoc2; dands; auto.
-        { apply similarity_refl in sim; auto. }
-        allrw @lsubstc_mkc_tnat.
-        eauto 3 with slow.
-      }
-
-      eapply alphaeqc_preserving_equality;
-        [|apply alphaeqc_sym; apply lsubstc_mk_natk2nat_sp2; auto].
-      auto.
-    }
-
-    {
-      exrepnd.
-      lsubst_tac.
-      apply member_member_iff in h1.
-      apply member_in_uni in h1.
-      apply tequality_in_uni_implies_tequality in h0; auto;[].
-      applydup @inhabited_type_tequality in h0; auto;[].
-      dands; auto;[].
-      eapply tequality_trans;[apply tequality_sym;exact h0|].
-      auto.
-    }
+    { eapply tequality_trans;[|exact q].
+      apply tequality_sym; auto. }
 
   - (* base hypothesis *)
     intros seq1 iss mR.
@@ -628,77 +564,31 @@ Proof.
         lsubst_tac_c.
         apply tequality_mkc_squash.
 
-        vr_seq_true in hyp_wfr.
-        pose proof (hyp_wfr
-                      (snoc (snoc s1a (n,a)) (s,t1))
-                      (snoc (snoc s2a (n,a')) (s,t2)))
-          as h; clear hyp_wfr.
-        repeat (autodimp h hyp).
+        apply equality_in_tnat in equn.
+        unfold equality_of_nat in equn; exrepnd; spcast.
 
-        {
-          apply hyps_functionality_snoc2; simpl; auto.
 
-          {
-            introv equ'' sim''.
-            apply similarity_snoc in sim''; simpl in sim''.
-            exrepnd; subst; ginv; inj.
-            assert (!LIn n (dom_csub s2a0)) as nns2a.
-            { apply similarity_dom in sim''3; repnd.
-              rw sim''3; auto. }
-            eapply tequality_respects_alphaeqc_left;
-              [apply alphaeqc_sym;
-               apply lsubstc_mk_natk2nat_sp2; auto
-              |].
-            eapply tequality_respects_alphaeqc_right;
-              [apply alphaeqc_sym;
-               apply lsubstc_mk_natk2nat_sp2; auto
-              |].
-            rw @lsubstc_mkc_tnat in sim''1.
-            apply equality_int_nat_implies_cequivc in sim''1.
-            eapply tequality_respects_cequivc_right;
-              [apply implies_cequivc_natk2nat; exact sim''1|].
-
-            apply type_natk2nat_if_member_nat.
-            apply equality_refl in equn; auto.
-          }
-
-          apply hyps_functionality_snoc2; simpl; auto.
-
-          introv equ'' sim''.
-          allrw @lsubstc_mkc_tnat.
-          apply tnat_type.
-        }
-
-        {
-          assert (cover_vars (mk_natk2nat (mk_var n)) (snoc s1a (n,a))) as covn.
-          {
-            apply cover_vars_mk_natk2nat.
-            apply cover_vars_var_iff.
-            rw @dom_csub_snoc; simpl.
-            apply in_snoc; tcsp.
-          }
-          sim_snoc2; dands; auto.
-
-          {
-            assert (cover_vars mk_tnat s1a) as cvt.
-            { apply cover_vars_mk_tnat. }
-            sim_snoc2; dands; auto.
-            allrw @lsubstc_mkc_tnat; auto.
-          }
-
-          eapply alphaeqc_preserving_equality;
-            [|apply alphaeqc_sym; apply lsubstc_mk_natk2nat_sp2; auto].
+        pose proof (Rfunc k t1 t2 s1a s2a cR1 c22) as hr.
+        repeat (autodimp hr hyp).
+        { unfold eq_kseq.
           apply equality_nat2nat_to_natk2nat; auto.
-          apply equality_refl in equn; auto.
-        }
+          apply nat_in_nat. }
 
-        {
-          exrepnd.
-          lsubst_tac.
-          apply member_member_iff in h1.
-          apply member_in_uni in h1.
-          apply tequality_in_uni_implies_tequality in h0; auto.
-        }
+        eapply tequality_respects_cequivc_left;
+          [apply cequivc_sym;
+           apply implies_cequivc_apply2;
+           [apply cequivc_refl
+           |apply computes_to_valc_implies_cequivc;exact equn1
+           |apply cequivc_refl]
+          |].
+        eapply tequality_respects_cequivc_right;
+          [apply cequivc_sym;
+           apply implies_cequivc_apply2;
+           [apply cequivc_refl
+           |apply computes_to_valc_implies_cequivc;exact equn0
+           |apply cequivc_refl]
+          |].
+        auto.
       }
 
       apply hyps_functionality_snoc2; simpl; auto.
@@ -1067,46 +957,8 @@ Proof.
              |apply cequivc_refl]
             |].
 
-          vr_seq_true in hyp_wfr.
-          pose proof (hyp_wfr
-                        (snoc (snoc s1a (n,mkc_nat k)) (s,t1))
-                        (snoc (snoc s2a0 (n,mkc_nat k)) (s,t2)))
-            as h; clear hyp_wfr.
-          repeat (autodimp h hyp).
-
-          {
-            apply hyps_functionality_snoc2; simpl; auto.
-
-            {
-              introv equ'' sim''.
-              apply similarity_snoc in sim''; simpl in sim''.
-              exrepnd; subst; ginv; inj.
-              assert (!LIn n (dom_csub s2a)) as nns2a.
-              { apply similarity_dom in sim''3; repnd.
-                rw sim''3; auto. }
-              eapply tequality_respects_alphaeqc_left;
-                [apply alphaeqc_sym;
-                 apply lsubstc_mk_natk2nat_sp2; auto
-              |].
-              eapply tequality_respects_alphaeqc_right;
-                [apply alphaeqc_sym;
-                 apply lsubstc_mk_natk2nat_sp2; auto
-                |].
-              rw @lsubstc_mkc_tnat in sim''1.
-              apply equality_int_nat_implies_cequivc in sim''1.
-              eapply tequality_respects_cequivc_right;
-                [apply implies_cequivc_natk2nat; exact sim''1|].
-
-              apply type_natk2nat_if_member_nat.
-              apply nat_in_nat.
-            }
-
-            apply hyps_functionality_snoc2; simpl; auto.
-
-            introv equ'' sim''.
-            allrw @lsubstc_mkc_tnat.
-            apply tnat_type.
-          }
+          pose proof (Rfunc k t1 t2 s1a s2a0 cR1 c44) as hr.
+          repeat (autodimp hr hyp).
         }
 
         introv inh.
@@ -1193,38 +1045,63 @@ Proof.
       apply tnat_type.
     }
 
-XXXXXXXXXX
 
-    { assert (wf_term (mk_all mk_tnat m
-                              (mk_squash
-                                 (mk_apply2 X (mk_plus1 (mk_var n))
-                                            (mk_update_seq (mk_var s) (mk_var n) (mk_var m) v))))) as wa.
-      { apply wf_function; auto.
-        apply wf_squash.
-        apply wf_apply2; auto. }
-      assert (cover_vars (mk_all mk_tnat m
-                              (mk_squash
-                                 (mk_apply2 X (mk_plus1 (mk_var n))
-                                            (mk_update_seq (mk_var s) (mk_var n) (mk_var m) v))))
-                         (snoc (snoc s1 (n, mkc_nat k)) (s, seq1))) as ca.
-      { apply cover_vars_function; dands; auto.
-        { apply cover_vars_mk_tnat. }
-        apply cover_vars_upto_squash.
-        apply cover_vars_upto_apply2; dands; auto.
-        { repeat (rw @csub_filter_snoc).
-          allrw memvar_singleton.
-          boolvar;tcsp;GC;[].
-          repeat (apply cover_vars_upto_snoc_weak).
-          apply cover_vars_upto_csub_filter_disjoint; auto.
+    { assert (wf_term
+                (mk_isect
+                   mk_tnat m
+                   (mk_ufun
+                      (mk_squash (mk_apply2 R (mk_var n) (mk_var s)))
+                      (mk_squash
+                         (mk_apply2
+                            X
+                            (mk_plus1 (mk_var n))
+                            (mk_update_seq (mk_var s) (mk_var n) (mk_var m) v)))))) as wa.
+      { apply wf_isect; auto.
+        apply wf_ufun; dands; auto;
+          apply wf_squash; apply wf_apply2; auto. }
+
+      assert (cover_vars
+                (mk_isect
+                   mk_tnat m
+                   (mk_ufun
+                      (mk_squash (mk_apply2 R (mk_var n) (mk_var s)))
+                      (mk_squash
+                         (mk_apply2
+                            X (mk_plus1 (mk_var n))
+                            (mk_update_seq (mk_var s) (mk_var n) (mk_var m) v)))))
+                (snoc (snoc s1 (n, mkc_nat k)) (s, seq1))) as ca.
+      { apply cover_vars_isect; dands; eauto 3 with slow.
+        apply cover_vars_upto_ufun; dands; auto;
+          apply cover_vars_upto_squash;
+          apply cover_vars_upto_apply2; dands; eauto 3 with slow.
+        { apply cover_vars_upto_csub_filter_snoc_weak.
+          apply cover_vars_upto_csub_filter_snoc_weak.
+          apply cover_vars_upto_csub_filter_disjoint; eauto 2 with slow.
           apply disjoint_singleton_r; auto. }
-        { apply cover_vars_upto_add; dands; eauto 3 with slow.
-          repeat (rw @csub_filter_snoc).
-          allrw memvar_singleton.
-          boolvar;tcsp;GC;[].
+        { apply cover_vars_upto_var; simpl.
+          rw @dom_csub_csub_filter.
+          repeat (rw @dom_csub_snoc); simpl.
+          rw in_remove_nvars; simpl.
+          repeat (rw in_snoc).
+          right; dands; tcsp. }
+        { apply cover_vars_upto_var; simpl.
+          rw @dom_csub_csub_filter.
+          repeat (rw @dom_csub_snoc); simpl.
+          rw in_remove_nvars; simpl.
+          repeat (rw in_snoc).
+          right; dands; tcsp. }
+        { apply cover_vars_upto_csub_filter_snoc_weak.
+          apply cover_vars_upto_csub_filter_snoc_weak.
+          apply cover_vars_upto_csub_filter_disjoint; eauto 2 with slow.
+          apply disjoint_singleton_r; auto. }
+        { unfold mk_plus1.
+          apply cover_vars_upto_add; dands; eauto 3 with slow.
           apply cover_vars_upto_var; simpl.
-          repeat (rw @dom_csub_snoc).
-          repeat (rw in_snoc;simpl).
-          sp. }
+          rw @dom_csub_csub_filter.
+          repeat (rw @dom_csub_snoc); simpl.
+          rw in_remove_nvars; simpl.
+          repeat (rw in_snoc).
+          right; dands; tcsp. }
         { unfold mk_update_seq.
           apply cover_vars_upto_lam.
           rw @csub_filter_swap.
@@ -1257,6 +1134,7 @@ XXXXXXXXXX
           }
         }
       }
+
       sim_snoc.
       dands; auto.
 
@@ -1285,81 +1163,155 @@ XXXXXXXXXX
         auto.
       }
 
-      { unfold mk_all.
+      { lsubst_tac.
+        apply member_in_isect.
+        rewrite lsubstc_mk_tnat.
+        dands; eauto 2 with slow.
+        introv en.
+        repeat substc_lsubstc_vars3.
         lsubst_tac.
-        allrw @lsubstc_mkc_tnat.
-        apply equality_in_function.
-        dands; auto.
 
-        { apply tnat_type. }
+        apply equality_in_tnat in en.
+        unfold equality_of_nat in en; exrepnd; spcast.
 
-        { introv en.
-          repeat substc_lsubstc_vars3.
-          lsubst_tac.
-          apply equality_in_tnat in en.
-          unfold equality_of_nat in en; exrepnd; spcast.
+        dands.
 
+        {
+          apply equality_in_ufun.
+          dands.
+
+          {
+            apply tequality_mkc_squash.
+            apply Rfunc; auto.
+            { eapply similarity_refl; eauto. }
+            { apply is_kseq_if_eq_kseq in eqs; tcsp. }
+          }
+
+          {
+            introv inh.
+            apply tequality_mkc_squash.
+            rw @inhabited_squash in inh.
+
+            eapply tequality_respects_cequivc_left;
+              [apply cequivc_sym;
+               apply implies_cequivc_apply2;
+               [apply cequivc_refl
+               |apply cequivc_lsubstc_mk_plus1_sp1;auto
+               |apply cequivc_lsubstc_mk_update_seq_sp1;auto;
+                exact en1]
+              |].
+
+            eapply tequality_respects_cequivc_right;
+              [apply cequivc_sym;
+               apply implies_cequivc_apply2;
+               [apply cequivc_refl
+               |apply cequivc_lsubstc_mk_plus1_sp2; auto;
+                apply cequivc_sym;exact sim'2
+               |apply cequivc_lsubstc_mk_update_seq_sp1;auto;
+                exact en1]
+              |].
+
+            pose proof (ind k0) as h; clear ind.
+            autodimp h hyp.
+
+            {
+              introv eqk funsim.
+              unfold fun_sim_eq in funsim; exrepnd; subst.
+              dands; auto.
+            }
+
+            unfold meta2_fun_on_upd_seq in h.
+            unfold meta2_fun_on_seq in h; repnd.
+
+            pose proof (h (lsubstc X w0 s1 c0) (update_seq seq1 k k0 v)) as q; clear h.
+            repeat (autodimp q hyp).
+            { apply eq_kseq_update; auto.
+              eapply eq_kseq_left; eauto. }
+            { exists s1 c0; dands; auto.
+              eapply similarity_refl; eauto. }
+            repnd; auto.
+          }
+
+          {
+            introv inh.
+            rw @inhabited_squash in inh.
+            apply member_mkc_squash.
+
+            eapply inhabited_type_cequivc;
+              [apply cequivc_sym;
+               apply implies_cequivc_apply2;
+               [apply cequivc_refl
+               |apply cequivc_lsubstc_mk_plus1_sp1;auto
+               |apply cequivc_lsubstc_mk_update_seq_sp1;auto;
+                exact en1]
+              |].
+
+            pose proof (ind k0) as h; clear ind.
+
+            autodimp h hyp.
+
+            {
+              introv eqk funsim.
+              unfold fun_sim_eq in funsim; exrepnd; subst.
+              dands; auto.
+            }
+
+            unfold meta2_fun_on_upd_seq in h.
+            unfold meta2_fun_on_seq in h; repnd.
+
+            pose proof (h (lsubstc X w0 s1 c0) (update_seq seq1 k k0 v)) as q; clear h.
+            repeat (autodimp q hyp).
+            { apply eq_kseq_update; auto.
+              eapply eq_kseq_left; eauto. }
+            { exists s1 c0; dands; auto.
+              eapply similarity_refl; eauto. }
+            repnd; auto.
+          }
+        }
+
+        {
+          apply tequality_mkc_ufun.
+          dands.
+
+          {
+            apply tequality_mkc_squash.
+            apply Rfunc; auto.
+            { eapply similarity_refl; eauto. }
+            { apply is_kseq_if_eq_kseq in eqs; tcsp. }
+          }
+
+          introv inh.
+          rw @inhabited_squash in inh.
           apply tequality_mkc_squash.
 
           eapply tequality_respects_cequivc_left;
             [apply cequivc_sym;
-              apply implies_cequivc_apply2;
-              [apply cequivc_refl
-              |apply cequivc_lsubstc_mk_plus1_sp1;auto
-              |apply cequivc_lsubstc_mk_update_seq_sp1;auto;
-               exact en1]
+             apply implies_cequivc_apply2;
+             [apply cequivc_refl
+             |apply cequivc_lsubstc_mk_plus1_sp1;auto
+             |apply cequivc_lsubstc_mk_update_seq_sp1;auto;
+              exact en1]
             |].
 
           eapply tequality_respects_cequivc_right;
             [apply cequivc_sym;
-              apply implies_cequivc_apply2;
-              [apply cequivc_refl
-              |apply cequivc_lsubstc_mk_plus1_sp2; auto;
-               apply cequivc_sym;exact sim'2
-              |apply cequivc_lsubstc_mk_update_seq_sp1;auto;
-               exact en0]
+             apply implies_cequivc_apply2;
+             [apply cequivc_refl
+             |apply cequivc_lsubstc_mk_plus1_sp2; auto;
+              apply cequivc_sym;exact sim'2
+             |apply cequivc_lsubstc_mk_update_seq_sp1;auto;
+              exact en0]
             |].
 
           pose proof (ind k0) as h; clear ind.
-          unfold meta2_fun_on_upd_seq in h.
-          unfold meta2_fun_on_seq in h; repnd.
+          autodimp h hyp.
 
-          pose proof (h (lsubstc X w0 s1 c0) (update_seq seq1 k k0 v)) as q; clear h.
-          repeat (autodimp q hyp).
-          { apply eq_kseq_update; auto.
-            eapply eq_kseq_left; eauto. }
-          { exists s1 c0; dands; auto.
-            eapply similarity_refl; eauto. }
-          repnd; auto.
-        }
+          {
+            introv eqk funsim.
+            unfold fun_sim_eq in funsim; exrepnd; subst.
+            dands; auto.
+          }
 
-        { introv en.
-          repeat substc_lsubstc_vars3.
-          eapply equality_respects_cequivc_left;
-            [apply cequivc_sym;apply cequivc_mkc_apply_lam_axiom|].
-          eapply equality_respects_cequivc_right;
-            [apply cequivc_sym;apply cequivc_mkc_apply_lam_axiom|].
-
-          clear_wf_hyps.
-          proof_irr.
-          lsubst_tac.
-
-          apply equality_in_mkc_squash; dands; spcast;
-          try (apply computes_to_valc_refl; eauto 3 with slow).
-
-          apply equality_in_tnat in en.
-          unfold equality_of_nat in en; exrepnd; spcast.
-
-          eapply inhabited_type_cequivc;
-            [apply cequivc_sym;
-              apply implies_cequivc_apply2;
-              [apply cequivc_refl
-              |apply cequivc_lsubstc_mk_plus1_sp1;auto
-              |apply cequivc_lsubstc_mk_update_seq_sp1;auto;
-               exact en1]
-            |].
-
-          pose proof (ind k0) as h; clear ind.
           unfold meta2_fun_on_upd_seq in h.
           unfold meta2_fun_on_seq in h; repnd.
 
