@@ -1028,11 +1028,9 @@ Proof.
 
     vr_seq_true in hyp_ind.
 
-    XXXXXXXX
-
     pose proof (hyp_ind
-                  (snoc (snoc (snoc s1 (n,mkc_nat k)) (s,seq1)) (x,lam_axiom))
-                  (snoc (snoc (snoc s0 (n,mkc_nat k)) (s,seq2)) (x,lam_axiom)))
+                  (snoc (snoc (snoc s1 (n,mkc_nat k)) (s,seq1)) (x,mkc_axiom))
+                  (snoc (snoc (snoc s0 (n,mkc_nat k)) (s,seq2)) (x,mkc_axiom)))
       as hf; clear hyp_ind.
     repeat (autodimp hf hyp).
 
@@ -1043,20 +1041,76 @@ Proof.
         exrepnd; subst; ginv; inj.
         apply similarity_snoc in sim'3; simpl in sim'3.
         exrepnd; subst; ginv; inj.
-        allunfold @mk_all.
         lsubst_tac.
         allrw @lsubstc_mkc_tnat.
         apply equality_int_nat_implies_cequivc in sim'2.
         eapply alphaeqc_preserving_equality in sim'1;
           [|apply lsubstc_mk_natk2nat_sp2; auto].
 
-        apply tequality_function; dands.
+        apply tequality_isect; dands.
         { apply tnat_type. }
         introv en.
         repeat substc_lsubstc_vars3.
         lsubst_tac.
+
         apply equality_in_tnat in en.
         unfold equality_of_nat in en; exrepnd; spcast.
+
+        apply tequality_mkc_ufun; dands.
+
+        {
+          apply tequality_mkc_squash.
+          eapply tequality_respects_cequivc_right;
+            [apply implies_cequivc_apply2;
+             [apply cequivc_refl
+             |exact sim'2
+             |apply cequivc_refl]
+            |].
+
+          vr_seq_true in hyp_wfr.
+          pose proof (hyp_wfr
+                        (snoc (snoc s1a (n,mkc_nat k)) (s,t1))
+                        (snoc (snoc s2a0 (n,mkc_nat k)) (s,t2)))
+            as h; clear hyp_wfr.
+          repeat (autodimp h hyp).
+
+          {
+            apply hyps_functionality_snoc2; simpl; auto.
+
+            {
+              introv equ'' sim''.
+              apply similarity_snoc in sim''; simpl in sim''.
+              exrepnd; subst; ginv; inj.
+              assert (!LIn n (dom_csub s2a)) as nns2a.
+              { apply similarity_dom in sim''3; repnd.
+                rw sim''3; auto. }
+              eapply tequality_respects_alphaeqc_left;
+                [apply alphaeqc_sym;
+                 apply lsubstc_mk_natk2nat_sp2; auto
+              |].
+              eapply tequality_respects_alphaeqc_right;
+                [apply alphaeqc_sym;
+                 apply lsubstc_mk_natk2nat_sp2; auto
+                |].
+              rw @lsubstc_mkc_tnat in sim''1.
+              apply equality_int_nat_implies_cequivc in sim''1.
+              eapply tequality_respects_cequivc_right;
+                [apply implies_cequivc_natk2nat; exact sim''1|].
+
+              apply type_natk2nat_if_member_nat.
+              apply nat_in_nat.
+            }
+
+            apply hyps_functionality_snoc2; simpl; auto.
+
+            introv equ'' sim''.
+            allrw @lsubstc_mkc_tnat.
+            apply tnat_type.
+          }
+        }
+
+        introv inh.
+        rw @inhabited_squash in inh.
 
         apply tequality_mkc_squash.
 
@@ -1094,10 +1148,18 @@ Proof.
         unfold meta2_fun_on_upd_seq in h.
         unfold meta2_fun_on_seq in h; repnd.
 
-        pose proof (h (lsubstc X w0 s2a0 c27) (update_seq t2 k k0 v)) as q; clear h.
+        autodimp h hyp.
+
+        {
+          introv eqk funsim.
+          unfold fun_sim_eq in funsim; exrepnd; subst.
+          dands; auto.
+        }
+
+        pose proof (h (lsubstc X w0 s2a0 c50) (update_seq t2 k k0 v)) as q; clear h.
         repeat (autodimp q hyp).
         { apply eq_kseq_update; auto. }
-        { exists s2a0 c27; dands; auto. }
+        { exists s2a0 c50; dands; auto. }
         repnd; auto.
       }
 
@@ -1130,6 +1192,8 @@ Proof.
       allrw @lsubstc_mkc_tnat.
       apply tnat_type.
     }
+
+XXXXXXXXXX
 
     { assert (wf_term (mk_all mk_tnat m
                               (mk_squash
