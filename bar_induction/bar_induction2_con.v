@@ -441,7 +441,7 @@ Proof.
       unfold meta2_fun_con_kseq_NA in a; exrepnd; simpl in *; auto
     ].
 
-  induction m; allsimpl.
+  destruct m; allsimpl.
 
   {
     pose proof (eq_kseq_0 lib (mkc_nseq s) c) as h1.
@@ -452,50 +452,17 @@ Proof.
 
   pose proof (e (S m)) as q1.
   apply (seq2kseq_prop2 _ v) in q1.
-
-  eapply cequivc_preserves_meta2_fun_on_seq in b;[|exact q1].
-
-  pose proof (e m) as q2.
-  apply (seq2kseq_prop2 _ v) in q2.
-
-  eapply cequivc_preserves_not_meta2_fun_on_seq in IHm;[|exact q2].
-  clear q1 q2 e.
+  eapply cequivc_preserves_meta2_fun_on_seq in b;[clear q1|exact q1].
+  clear e.
 
   subst; allsimpl.
   remember (meta2_fun_con_alpha lib C P R X (seq2kseq c 0 v) v nc ni f ind m) as am.
   unfold meta2_fun_con_kseq_NA in am; exrepnd; allsimpl.
 
-  remember (f (mk_meta2_fun_seq_NA
-                 (S m)
-                 (update_seq s m m0 v)
-                 (is_kseq_update lib s m m0 v am0)
-                 am3)) as fn.
-
-  assert (eq_kseq lib (update_seq s (S m) fn v) s (S m)) as ee1.
-  {
-    unfold eq_kseq.
-    apply implies_equality_natk2nat; introv ltm1.
-    dup am0 as e.
-    eapply member_natk2nat_implies in e;[|exact ltm1]; exrepnd.
-    exists k; dands; auto.
-    unfold update_seq.
-    apply cequivc_nat_implies_computes_to_valc.
-    eapply cequivc_trans;[apply cequivc_beta|].
-    allrw @mkcv_inteq_substc.
-    allrw @mkcv_apply_substc.
-    allrw @mkc_var_substc.
-    allrw @csubst_mk_cv.
-    eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-    boolvar; tcsp; GC; try omega.
-    apply computes_to_valc_implies_cequivc; auto.
-  }
-
-  apply (seq2kseq_prop2 _ v) in ee1.
-  eapply cequivc_preserves_meta2_fun_on_seq in b;[|exact ee1].
-  clear ee1.
-
+  clear Heqam.
+  apply (seq_normalizable_update _ _ _ m0) in am2.
   unfold seq_normalizable in am2.
   eapply cequivc_preserves_meta2_fun_on_seq in b;
     [|apply cequivc_sym;exact am2].
-  sp.
+  tcsp.
 Qed.
