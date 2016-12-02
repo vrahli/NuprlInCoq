@@ -55,6 +55,9 @@ Require Import rules_move.
 Require Import bar_induction3.
 (* Bar Induction on nats with constraint on the spread: *)
 Require Import bar_induction3_con.
+(* A more useful version than the one proved in bar_induction3_con
+   (the inductive case is inductive over R too): *)
+Require Import bar_induction5_con.
 (* Bar Induction on sequences of closed terms without atoms: *)
 Require Import bar_induction_cterm2.
 (* Same as bar_induction_cterm2 but a simpler 0-sequence: *)

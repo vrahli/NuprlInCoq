@@ -28,8 +28,105 @@
 
 *)
 
+
 Require Export bar_induction2.
 
+
+Hint Rewrite @mkcv_inteq_substc : slow.
+Hint Rewrite @mkcv_less_substc  : slow.
+Hint Rewrite @mkcv_apply_substc : slow.
+Hint Rewrite @mkcv_zero_substc  : slow.
+Hint Rewrite @mkcv_bot_substc   : slow.
+Hint Rewrite @mkcv_nat_substc   : slow.
+
+(* !!MOVE *)
+Lemma eq_kseq_trans {o} :
+  forall lib (s1 s2 s3 : @CTerm o) n,
+    eq_kseq lib s1 s2 n
+    -> eq_kseq lib s2 s3 n
+    -> eq_kseq lib s1 s3 n.
+Proof.
+  introv eqk1 eqk2.
+  unfold eq_kseq in *.
+  eapply equality_trans; eauto.
+Qed.
+
+(* !!MOVE *)
+Lemma type_natk2nat_if_member_nat {o} :
+  forall lib (t : @CTerm o),
+    member lib t mkc_tnat
+    -> type lib (natk2nat t).
+Proof.
+  introv mem.
+  apply tequality_natk2nat.
+  apply member_tnat_implies_computes in mem; exrepnd.
+  exists (Z.of_nat k) (Z.of_nat k).
+  rewrite <- mkc_nat_eq; dands; spcast; auto.
+  introv lek.
+  destruct (Z.le_gt_cases (Z.of_nat k) k0) as [d|d]; tcsp.
+Qed.
+
+(* !!MOVE *)
+Lemma is_seq_implies_is_kseq {o} :
+  forall lib (s : @CTerm o) n,
+    is_seq lib s
+    -> is_kseq lib s n.
+Proof.
+  introv iss.
+  unfold is_seq in iss; unfold is_kseq, eq_kseq.
+  apply equality_nat2nat_to_natk2nat; auto.
+  apply nat_in_nat.
+Qed.
+
+(* !!MOVE *)
+Lemma eq_kseq_sym {o} :
+  forall lib (s1 s2 : @CTerm o) n,
+    eq_kseq lib s1 s2 n
+    -> eq_kseq lib s2 s1 n.
+Proof.
+  introv eqk.
+  unfold eq_kseq in *.
+  apply equality_sym; auto.
+Qed.
+
+(* !!MOVE *)
+Lemma is_kseq_if_eq_kseq {o} :
+  forall lib (s1 s2 : @CTerm o) n,
+    eq_kseq lib s1 s2 n
+    -> (is_kseq lib s1 n /\ is_kseq lib s2 n).
+Proof.
+  introv eqk.
+  unfold is_kseq.
+  unfold eq_kseq in *.
+  dands.
+  { apply equality_refl in eqk; auto. }
+  { apply equality_sym in eqk; apply equality_refl in eqk; auto. }
+Qed.
+
+(* !!MOVE *)
+Lemma seq2kseq_prop3 {o} :
+  forall lib (s : @CTerm o) n v,
+    is_kseq lib s n
+    -> eq_kseq lib s (seq2kseq s n v) n.
+Proof.
+  introv isk.
+  unfold is_kseq in isk.
+  unfold eq_kseq in *.
+  apply implies_equality_natk2nat; introv ltmn.
+  apply (equality_natk2nat_implies _ m) in isk; auto; exrepnd.
+  exists k; dands; auto.
+  unfold seq2kseq.
+  clear isk0.
+  apply cequivc_nat_implies_computes_to_valc.
+  apply computes_to_valc_implies_cequivc in isk1.
+  eapply cequivc_trans;[apply cequivc_beta|].
+  autorewrite with slow.
+  allrw @mkc_zero_eq.
+  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
+  boolvar; try omega.
+  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
+  boolvar; try omega; auto.
+Qed.
 
 Definition barind_meta2_fun_bar_con {o} lib Q S (B R : @CTerm o) v :=
   forall (s : CTerm),
@@ -150,13 +247,6 @@ Definition meta2_fun_con_kseq_NA_seq {o} {lib} {C P} {n : nat} {R A : @CTerm o} 
   match x with
     | existT _ _ (existT _ s _) => s
   end.
-
-Hint Rewrite @mkcv_inteq_substc : slow.
-Hint Rewrite @mkcv_less_substc  : slow.
-Hint Rewrite @mkcv_apply_substc : slow.
-Hint Rewrite @mkcv_zero_substc  : slow.
-Hint Rewrite @mkcv_bot_substc   : slow.
-Hint Rewrite @mkcv_nat_substc   : slow.
 
 
 Lemma eq_kseq_update_seq_implies {o} :
@@ -306,53 +396,6 @@ Definition barind_meta2_fun_wf {o} lib C (R : @CTerm o) :=
     eq_kseq lib s1 s2 n
     -> meta2_fun_on_seq lib C R n s1
     -> meta2_fun_on_seq lib C R n s2.
-
-Lemma eq_kseq_sym {o} :
-  forall lib (s1 s2 : @CTerm o) n,
-    eq_kseq lib s1 s2 n
-    -> eq_kseq lib s2 s1 n.
-Proof.
-  introv eqk.
-  unfold eq_kseq in *.
-  apply equality_sym; auto.
-Qed.
-
-Lemma is_kseq_if_eq_kseq {o} :
-  forall lib (s1 s2 : @CTerm o) n,
-    eq_kseq lib s1 s2 n
-    -> (is_kseq lib s1 n /\ is_kseq lib s2 n).
-Proof.
-  introv eqk.
-  unfold is_kseq.
-  unfold eq_kseq in *.
-  dands.
-  { apply equality_refl in eqk; auto. }
-  { apply equality_sym in eqk; apply equality_refl in eqk; auto. }
-Qed.
-
-Lemma seq2kseq_prop3 {o} :
-  forall lib (s : @CTerm o) n v,
-    is_kseq lib s n
-    -> eq_kseq lib s (seq2kseq s n v) n.
-Proof.
-  introv isk.
-  unfold is_kseq in isk.
-  unfold eq_kseq in *.
-  apply implies_equality_natk2nat; introv ltmn.
-  apply (equality_natk2nat_implies _ m) in isk; auto; exrepnd.
-  exists k; dands; auto.
-  unfold seq2kseq.
-  clear isk0.
-  apply cequivc_nat_implies_computes_to_valc.
-  apply computes_to_valc_implies_cequivc in isk1.
-  eapply cequivc_trans;[apply cequivc_beta|].
-  autorewrite with slow.
-  allrw @mkc_zero_eq.
-  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-  boolvar; try omega.
-  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-  boolvar; try omega; auto.
-Qed.
 
 Lemma bar_induction_meta4_con {o} :
   forall lib Q C P (B R X c : @CTerm o) v,
