@@ -69,6 +69,8 @@ Proof.
   erewrite IHsub1; eauto.
 Qed.
 
+(*
+(* TOFIX *)
 Lemma approx_star_change_nrut_sub {o} :
   forall lib (t1 t2 : @NTerm o) sub l sub' l',
     nrut_sub l sub
@@ -139,6 +141,7 @@ Proof.
     repeat (rw @ren_utokens_trivial in h;[|erewrite @dom_utok_ren_nrut_subs_to_utok_ren; eauto]).
     erewrite @ren_utokens_sub_nrut_subs_to_utok_ren in h; eauto.
 Qed.
+*)
 
 Lemma alpha_eq_bterm_preserves_osize2 {p} :
   forall bt1 bt2,
@@ -210,13 +213,17 @@ Proof.
     lsubst_lsubst_aux_eq_hyp X99 Hao0; simpl; simpl_vlist; clear X99;[].
     apply approx_star_open_trans with (b:=lsubst_aux (oterm o lbt') (combine lvi lnta'));spc;[].
     allsimpl.
-    apply approx_open_relates_only_wf in Hao0. repnd.
+    apply approx_open_relates_only_wf in Hao0.
+    repnd.
+    (* can we assume that the LHS converges?  I don't suppose we can do that
+     * easily until we've linked approx_star to approx *)
     apply approx_star_congruence2;spc;[].
     clear Hao0 Hao4.
     unfold approx_starbts, lblift_sub; allunfold @blift_sub;repeat(simpl_list).
     dands; spcf.
     exrepnd. GC.
-    introv Hlt. rw @selectbt_map;spc;[].  rw @selectbt_map;spc;[].
+    introv Hlt.
+    repeat (rw @selectbt_map;spc;[]).
     duplicate Hlt as Hlt99. apply Hao2 in Hlt.
 
     destruct (dec_op_eq_fresh o) as [e|e].
@@ -244,6 +251,8 @@ Proof.
 
       dands; auto;[].
       right.
+
+      (* Is that the right names we want here? *)
 
       pose proof (exists_nrut_sub
                     lvn
