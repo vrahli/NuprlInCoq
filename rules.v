@@ -127,6 +127,8 @@ Require Import rules_number.
 
 (* Continuity axiom and rule: *)
 Require Import continuity_roadmap.
+(* Some results related to continuity and bar induction *)
+Require Import unsquashed_continuity.
 
 
 (* Functionality rules *)
