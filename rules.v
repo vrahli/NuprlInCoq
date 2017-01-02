@@ -68,6 +68,10 @@ Require Import bar_induction_cterm4.
 (* Require Import rules_barind. *)
 
 
+(* Kripke's Schema *)
+Require Import kripkes_schema.
+
+
 (* Choice sequences: *)
 Require Import choice_sequence_ind.
 Require Import choice_sequence_ind2.
