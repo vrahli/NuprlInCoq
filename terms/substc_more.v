@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,13 +20,17 @@
   along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
  *)
 
 
-Require Export continuity_defs_ceq.
+(*Require Export continuity_defs_ceq.*)
+Require Export terms5.
 Require Export alphaeq3.
 Require Export subst_per.
 
@@ -61,6 +67,21 @@ Ltac nvo :=
 
 Definition alphaeqcv {o} vs (t1 t2 : @CVTerm o vs) :=
   alpha_eq (get_cvterm vs t1) (get_cvterm vs t2).
+
+Lemma isprog_vars_substc2 {o} :
+  forall x (a : @NTerm o) v b,
+    isprog b
+    -> isprog_vars [x,v] a
+    -> isprog_vars [x] (subst a v b).
+Proof.
+  introv ispb ispa.
+  apply subst_preserves_isprog_vars; auto.
+Qed.
+
+Definition substc2 {o} x (u : @CTerm o) (v : NVar) (t : CVTerm [x,v]) : CVTerm [x] :=
+  let (a,pa) := t in
+  let (b,pb) := u in
+  exist (isprog_vars [x]) (subst a v b) (isprog_vars_substc2 x a v b pb pa).
 
 Lemma substc2_uand {o} :
   forall v x (w : @CTerm o) (t u : CVTerm [v,x]),
@@ -466,6 +487,29 @@ Proof.
   apply cvterm_eq; simpl; auto.
 Qed.
 
+Lemma cl_lsubst_trivial {o} :
+  forall (t : @NTerm o) sub,
+    disjoint (dom_sub sub) (free_vars t)
+    -> cl_sub sub
+    -> lsubst t sub = t.
+Proof.
+  introv d cl.
+  apply lsubst_trivial4; auto.
+  introv i.
+  rw @cl_sub_eq2 in cl; apply cl in i; rw i; auto.
+Qed.
+
+Lemma cl_subst_trivial {o} :
+  forall (t : @NTerm o) v u,
+    !LIn v (free_vars t)
+    -> closed u
+    -> subst t v u = t.
+Proof.
+  introv d cl.
+  unfold subst; apply cl_lsubst_trivial; simpl; eauto with slow.
+  apply disjoint_singleton_l; auto.
+Qed.
+
 Lemma substc2_mk_cv_app_r {o} :
   forall (u : @CTerm o) v x (t : CVTerm [v]),
     v <> x
@@ -733,6 +777,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/")
 *** End:
 *)

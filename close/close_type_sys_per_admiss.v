@@ -24,8 +24,6 @@
 *)
 
 
-Add LoadPath "../".
-
 Require Import type_sys_useful.
 Require Import dest_close.
 
@@ -222,9 +220,3 @@ Proof.
         onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
         generalize (tymt A2 A4 A3 eqa1 eqa0); sp.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("../")
-*** End:
-*)

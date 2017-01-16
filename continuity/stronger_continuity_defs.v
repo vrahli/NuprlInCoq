@@ -24,6 +24,7 @@
 *)
 
 
+Require Export csubst7.
 Require Export continuity_type.
 Require Export per_props_set.
 Require Export per_props_union.

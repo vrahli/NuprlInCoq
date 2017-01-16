@@ -7510,7 +7510,7 @@ Definition mkc_subtype {p} (T1 : @CTerm p) (T2 : CTerm) : CTerm :=
   exist isprog (mk_subtype a b) (isprog_subtype a b x y).
 
 (** newvar on closed terms *)
-Definition cnewvar {p} (t : @CTerm p) := newvar (projT1 t).
+Definition cnewvar {p} (t : @CTerm p) := newvar (proj1_sig t).
 
 Lemma cnewvar_eq {p} :
   forall t : @CTerm p, cnewvar t = nvarx.
@@ -7526,7 +7526,7 @@ Qed.
 Lemma isprog_vars_cvterm_var {p} :
   forall v : NVar,
   forall t : @CTerm p,
-    isprog_vars [v] (projT1 t).
+    isprog_vars [v] (proj1_sig t).
 Proof.
   destruct t; unfold cnewvar.
   rw @isprog_vars_eq; simpl.
@@ -7538,7 +7538,7 @@ Qed.
 
 Lemma isprog_vars_cvterm_newvar {p} :
   forall t : @CTerm p,
-    isprog_vars [cnewvar t] (projT1 t).
+    isprog_vars [cnewvar t] (proj1_sig t).
 Proof.
   sp; apply isprog_vars_cvterm_var.
 Qed.
@@ -7548,7 +7548,7 @@ Qed.
  * The term is the same.  Only the proof of closeness changes. *)
 Definition cvterm_var {p} (v : NVar) (t : @CTerm p) : CVTerm [v] :=
   exist (isprog_vars [v])
-        (projT1 t)
+        (proj1_sig t)
         (isprog_vars_cvterm_var v t).
 
 Definition cvterm_newvar {p} (t : @CTerm p) : CVTerm [cnewvar t] :=
@@ -12639,10 +12639,3 @@ Proof.
 Qed.
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

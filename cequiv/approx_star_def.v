@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -88,7 +93,9 @@ Inductive approx_star {p} :
           (approx_open lib (vterm v) t2)
           -> (approx_star lib (vterm v) t2)
 | apss: forall lib t (f1 f2 : ntseq),
-          (forall n, alpha_eq (f1 n) (f2 n))
+          wf_term (sterm f1)
+          -> wf_term (sterm f2)
+          -> (forall n, approx_star lib (f1 n) (f2 n))
           -> approx_open lib (sterm f2) t
           -> approx_star lib (sterm f1) t
 | apso: forall lib
@@ -105,3 +112,10 @@ Definition approx_star_bterm {o} (lib : @library o) op :=
   blift_sub op (approx_star lib).
 Definition approx_starbts {o} (lib : @library o) op :=
   lblift_sub op (approx_star lib).
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
+*** End:
+*)

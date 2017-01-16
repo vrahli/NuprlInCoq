@@ -437,11 +437,11 @@ Proof.
       left; dands; spcast.
 
       + apply (reduces_in_atmost_k_stepsc_le _ _ _ _ (Peano.max k0 k1)) in equ4; eauto 3 with slow;
-        try (apply NPeano.Nat.le_max_l; auto).
+        try (apply Nat.le_max_l; auto).
         apply reduces_in_atmost_k_steps_excc_can in equ4; tcsp.
 
       + apply (reduces_in_atmost_k_stepsc_le _ _ _ _ (Peano.max k0 k1)) in equ2; eauto 3 with slow;
-        try (apply NPeano.Nat.le_max_r; auto).
+        try (apply Nat.le_max_r; auto).
         apply reduces_in_atmost_k_steps_excc_can in equ2; tcsp.
 
     - repnd; spcast.
@@ -456,7 +456,7 @@ Proof.
 
       + apply (reduces_in_atmost_k_steps_excc_le_exc _ (k3 + k + k0));
         eauto 3 with slow; tcsp;
-        try (apply NPeano.Nat.le_max_l; auto).
+        try (apply Nat.le_max_l; auto).
         pose proof (reduces_in_atmost_k_steps_excc_exception
                       lib k k0 n0 e0 (mkc_utoken a) mkc_axiom) as h.
         repeat (autodimp h hyp); tcsp; exrepnd.
@@ -470,7 +470,7 @@ Proof.
 
       + apply (reduces_in_atmost_k_steps_excc_le_exc _ (k4 + k1 + k2));
         eauto 3 with slow; tcsp;
-        try (apply NPeano.Nat.le_max_r; auto).
+        try (apply Nat.le_max_r; auto).
         pose proof (reduces_in_atmost_k_steps_excc_exception
                       lib k1 k2 n e (mkc_utoken a) mkc_axiom) as h.
         repeat (autodimp h hyp); tcsp; exrepnd.
@@ -648,11 +648,3 @@ Proof.
   - apply equality_in_unit in mem; repnd; spcast.
     exists (@mkc_axiom o); dands; spcast; simpl; tcsp.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/" "../per/")
-*** End:
-*)

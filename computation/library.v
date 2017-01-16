@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,8 +20,11 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -122,6 +127,14 @@ match goal with
   | [ H1 : no_utokens ?t , H2 : no_utokens ?t |- _ ] =>
     pose proof (no_utokens_proof_irrelevance t H2 H1) as h; subst
 end : pi.
+
+Definition matching_sign (vars : list sovar_sig) (sign : opsign) : Prop :=
+  map (fun v => snd v) vars = sign.
+
+Definition matching_entry_sign oa1 oa2 :=
+  opabs_name oa1 = opabs_name oa2
+  # opabs_sign oa1 = opabs_sign oa2
+  # matching_parameters (opabs_params oa1) (opabs_params oa2).
 
 (* the variables can also be second-order variables *)
 Definition correct_abs {o}
@@ -642,3 +655,9 @@ Proof.
     destruct bt1, bt2; simpl.
     apply alphaeq_sk_iff_alphaeq_bterm; auto.
 Qed.
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/")
+*** End:
+*)

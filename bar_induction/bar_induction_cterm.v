@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,8 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Websites: http://nuprl.org/html/Nuprl2Coq
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
   Authors: Vincent Rahli
@@ -27,16 +29,11 @@
 *)
 
 
+Require Export cequiv_cnterm.
+Require Export cequiv_cvterm.
 Require Export bar_induction.
 Require Export seq_util.
 
-
-Definition is_seq_nout {o} lib (s : @CTerm o) := member lib s nat2nout.
-
-Definition eq_kseq_nout {o} lib (s1 s2 : @CTerm o) (n : nat) :=
-  equality lib s1 s2 (natk2nout (mkc_nat n)).
-
-Definition is_kseq_nout {o} lib (s : @CTerm o) (n : nat) := eq_kseq_nout lib s s n.
 
 Definition nout_on_seq {o} lib P (A1 : @CTerm o) (n : nat) (s1 : CTerm) :=
   forall A2 s2,
@@ -58,13 +55,6 @@ Definition barind_nout_imp {o} lib Q P (B X : @CTerm o) :=
 
 Definition nout_on_upd_seq {o} lib P (X s : @CTerm o) (n : nat) (u : CTerm) (v : NVar) :=
   nout_on_seq lib P X (S n) (update_seq_nout s n u v).
-
-Definition cnterm2cterm {o} (t : @CNTerm o) : CTerm :=
-  let (x,p) := t in
-  existT isprog x (isprog_nout_implies_isprog x p).
-
-Definition cnout_cterm {o} (t : @CNTerm o) : CTerm := cnterm2cterm t.
-Definition cnout_term {o} (t : @CNTerm o) : NTerm := get_cterm (cnout_cterm t).
 
 Definition barind_nout_ind {o} lib P (X : @CTerm o) v :=
   forall (n : nat) (s : CTerm),
@@ -96,7 +86,7 @@ Definition nout_seq_NA_nat {o} {lib} {P} {X : @CTerm o} (x : nout_seq_NA lib P X
 
 Definition nout_seq_NA_seq {o} {lib} {P} {X : @CTerm o} (x : nout_seq_NA lib P X) : CTerm :=
   match x with
-    | existT _ (existT s _) => s
+    | existT _ _ (existT _ s _) => s
   end.
 
 Definition barind_nout_ind_cont2 {o} lib P (X : @CTerm o) v :=
@@ -199,7 +189,7 @@ Definition mk_nout_kseq_NA {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
 Definition nout_kseq_NA_nout {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
            (x : nout_kseq_NA lib P n A v) : CNTerm :=
   match x with
-    | existT u _ => u
+    | existT _ u _ => u
   end.
 
 Definition nout_kseq_NA_cterm {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
@@ -209,199 +199,8 @@ Definition nout_kseq_NA_cterm {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
 Definition nout_kseq_NA_seq {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
            (x : nout_kseq_NA lib P n A v) : CTerm:=
   match x with
-    | existT _ (existT s _) => s
+    | existT _ _ (existT _ s _) => s
   end.
-
-Lemma implies_equality_natk2nout {o} :
-  forall lib (f g : @CTerm o) n,
-    (forall m,
-       m < n
-       -> {t1 : CTerm
-           & {t2 : CTerm
-           & {u : CTerm
-           & computes_to_valc lib (mkc_apply f (mkc_nat m)) t1
-           # computes_to_valc lib (mkc_apply g (mkc_nat m)) t2
-           # cequivc lib t1 u
-           # cequivc lib t2 u
-           # noutokensc u }}})
-    -> equality lib f g (natk2nout (mkc_nat n)).
-Proof.
-  introv imp.
-  apply equality_in_fun; dands; eauto 3 with slow.
-
-  { apply type_mkc_natk.
-    exists (Z.of_nat n); spcast.
-    apply computes_to_valc_refl; eauto 3 with slow. }
-
-  introv e.
-  apply equality_in_natk in e; exrepnd; spcast.
-
-  eapply equality_respects_cequivc_left;
-    [apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply cequivc_sym;
-        apply computes_to_valc_implies_cequivc;
-        exact e0]
-    |].
-
-  eapply equality_respects_cequivc_right;
-    [apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply cequivc_sym;
-        apply computes_to_valc_implies_cequivc;
-        exact e2]
-    |].
-
-  clear dependent a.
-  clear dependent a'.
-
-  apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
-  rw @mkc_nat_eq in e3; ginv.
-
-  assert (m < n) as ltm by omega.
-  clear e1.
-
-  pose proof (imp m ltm) as h; exrepnd.
-
-  apply equality_in_nout.
-  exists u; dands; spcast; auto.
-
-  { eapply cequivc_trans;[|exact h3].
-    apply computes_to_valc_implies_cequivc; auto. }
-
-  { eapply cequivc_trans;[|exact h4].
-    apply computes_to_valc_implies_cequivc; auto. }
-Qed.
-
-Lemma implies_member_natk2nout {o} :
-  forall lib (f : @CTerm o) n,
-    (forall m,
-       m < n
-       -> {t : CTerm
-           & {u : CTerm
-           & computes_to_valc lib (mkc_apply f (mkc_nat m)) t
-           # cequivc lib t u
-           # noutokensc u }})
-    -> member lib f (natk2nout (mkc_nat n)).
-Proof.
-  introv imp.
-  apply implies_equality_natk2nout.
-  introv ltm.
-  apply imp in ltm; exrepnd.
-  exists t t u; dands; auto.
-Qed.
-
-Lemma implies_equality_natk2nout2 {o} :
-  forall lib (f g : @CTerm o) n,
-    (forall m,
-       m < n
-       -> {u : CTerm
-           , ccequivc lib (mkc_apply f (mkc_nat m)) u
-           # ccequivc lib (mkc_apply g (mkc_nat m)) u
-           # noutokensc u })
-    -> equality lib f g (natk2nout (mkc_nat n)).
-Proof.
-  introv imp.
-  apply equality_in_fun; dands; eauto 3 with slow.
-
-  { apply type_mkc_natk.
-    exists (Z.of_nat n); spcast.
-    apply computes_to_valc_refl; eauto 3 with slow. }
-
-  introv e.
-  apply equality_in_natk in e; exrepnd; spcast.
-
-  eapply equality_respects_cequivc_left;
-    [apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply cequivc_sym;
-        apply computes_to_valc_implies_cequivc;
-        exact e0]
-    |].
-
-  eapply equality_respects_cequivc_right;
-    [apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply cequivc_sym;
-        apply computes_to_valc_implies_cequivc;
-        exact e2]
-    |].
-
-  clear dependent a.
-  clear dependent a'.
-
-  apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
-  rw @mkc_nat_eq in e3; ginv.
-
-  assert (m < n) as ltm by omega.
-  clear e1.
-
-  pose proof (imp m ltm) as h; exrepnd.
-
-  apply equality_in_nout.
-  exists u; dands; spcast; auto.
-Qed.
-
-Lemma implies_member_natk2nout2 {o} :
-  forall lib (f : @CTerm o) n,
-    (forall m,
-       m < n
-       -> {u : CTerm
-           , ccequivc lib (mkc_apply f (mkc_nat m)) u
-           # noutokensc u })
-    -> member lib f (natk2nout (mkc_nat n)).
-Proof.
-  introv imp.
-  apply implies_equality_natk2nout2.
-  introv ltm.
-  apply imp in ltm; exrepnd.
-  exists u; dands; auto.
-Qed.
-
-Lemma equality_natk2nout_implies {o} :
-  forall lib m (f g : @CTerm o) n,
-    m < n
-    -> equality lib f g (natk2nout (mkc_nat n))
-    -> {u : CTerm
-        , ccequivc lib (mkc_apply f (mkc_nat m)) u
-        # ccequivc lib (mkc_apply g (mkc_nat m)) u
-        # noutokensc u }.
-Proof.
-  introv ltm mem.
-  apply equality_in_fun in mem; repnd.
-  clear mem0 mem1.
-  pose proof (mem (mkc_nat m) (mkc_nat m)) as h; clear mem.
-  autodimp h hyp.
-
-  { apply equality_in_natk.
-    exists m (Z.of_nat n); dands; spcast; try omega;
-    try (apply computes_to_valc_refl; eauto 2 with slow). }
-
-  apply equality_in_nout in h; exrepnd; spcast.
-  exists u; dands; spcast; auto.
-Qed.
-
-Lemma member_natk2nout_implies {o} :
-  forall lib m (f : @CTerm o) n,
-    m < n
-    -> member lib f (natk2nout (mkc_nat n))
-    -> {u : CTerm , ccequivc lib (mkc_apply f (mkc_nat m)) u # noutokensc u}.
-Proof.
-  introv ltm mem.
-  eapply equality_natk2nout_implies in mem;[|exact ltm].
-  exrepnd; spcast.
-  exists u; dands; spcast; auto.
-Qed.
-
-Lemma noutokensc_cnterm2cterm {o} :
-  forall (u : @CNTerm o), noutokensc (cnterm2cterm u).
-Proof.
-  introv.
-  unfold noutokensc.
-  destruct u; simpl.
-  allrw @isprog_nout_iff; sp.
-Qed.
-Hint Resolve noutokensc_cnterm2cterm : slow.
 
 Lemma eq_kseq_nout_update {o} :
   forall lib (s1 s2 : @CTerm o) (n : nat) (u : CNTerm) (v : NVar),
@@ -665,9 +464,6 @@ Fixpoint nout_alpha {o}
         (ind p)
   end.
 
-Definition ntseqc2ntseq {o} (f : @ntseqc o) : CTerm :=
-  exist isprog (sterm (ntseqc2seq f)) (isprog_ntseqc f).
-
 Lemma noutokensc_nout_kseq_NA_cterm :
   forall {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
          (x : nout_kseq_NA lib P n A v),
@@ -677,33 +473,6 @@ Proof.
   unfold nout_kseq_NA_cterm; eauto 3 with slow.
 Qed.
 Hint Resolve noutokensc_nout_kseq_NA_cterm : slow.
-
-Lemma cequivc_beta_ntseqc2ntseq {o} :
-  forall (lib : @library o) s n,
-    cequivc
-      lib
-      (mkc_apply (ntseqc2ntseq s) (mkc_nat n))
-      (cnterm2cterm (s n)).
-Proof.
-  introv.
-  unfold cequivc; simpl.
-  apply reduces_to_implies_cequiv;
-    [apply isprogram_apply;
-      eauto 3 with slow;
-      apply nt_wf_sterm_implies_isprogram;
-      apply nt_wf_sterm_iff;
-      introv; simpl; unfold ntseqc2seq;
-      remember (s n0) as t; destruct t; simpl; clear Heqt;
-     allrw @isprog_nout_iff; sp
-    |].
-  eapply reduces_to_if_split2;[csunf;simpl;auto|].
-  apply reduces_to_if_step; csunf; simpl.
-  unfold compute_step_eapply; simpl.
-  boolvar; try omega.
-  rw Znat.Nat2Z.id; auto.
-  unfold ntseqc2seq, get_cnterm, cnterm2cterm, get_cterm; simpl.
-  remember (s n) as t; destruct t; simpl; auto.
-Qed.
 
 Lemma is_kseq_nout_implies {o} :
   forall lib m (s : @CTerm o) n,
@@ -774,58 +543,6 @@ Proof.
     eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
     boolvar; tcsp; GC; try omega.
 Qed.
-
-Lemma member_ntseqc2ntseq_nat2nout {o} :
-  forall (lib : @library o) (s : ntseqc),
-    member lib (ntseqc2ntseq s) nat2nout.
-Proof.
-  introv.
-  unfold nat2nout.
-  apply equality_in_fun; dands; tcsp; eauto 3 with slow.
-  introv eqn.
-  applydup @equality_int_nat_implies_cequivc in eqn.
-  apply equality_respects_cequivc.
-  { apply implies_cequivc_apply; auto. }
-  clear eqn0.
-  apply equality_refl in eqn.
-  apply member_tnat_iff in eqn; exrepnd.
-
-  eapply member_respects_cequivc.
-  { apply cequivc_sym.
-    apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply computes_to_valc_implies_cequivc;exact eqn0]. }
-
-  apply (member_respects_cequivc _ (cnterm2cterm (s k))).
-  { apply cequivc_sym.
-    apply reduces_toc_implies_cequivc.
-    unfold reduces_toc; simpl.
-    eapply reduces_to_if_split2.
-    { csunf; simpl; auto. }
-    apply reduces_to_if_step.
-    csunf; simpl.
-    unfold compute_step_eapply; simpl.
-    boolvar; try omega.
-    allrw @Znat.Nat2Z.id; auto.
-    unfold ntseqc2seq, get_cnterm, cnterm2cterm, get_cterm; simpl.
-    remember (s k) as t; destruct t; simpl; auto.
-  }
-
-  remember (s k) as t; clear Heqt.
-  clear eqn0.
-
-  apply equality_in_nout.
-  exists (cnterm2cterm t); dands; spcast; eauto 3 with slow.
-Qed.
-
-Lemma is_seq_nout_ntseqc2ntseq {o} :
-  forall (lib : @library o) s, is_seq_nout lib (ntseqc2ntseq s).
-Proof.
-  introv.
-  unfold is_seq_nout.
-  apply member_ntseqc2ntseq_nat2nout.
-Qed.
-Hint Resolve is_seq_nout_ntseqc2ntseq : slow.
 
 Lemma eq_kseq_nout_seq2kseq_0 {o} :
   forall lib v (s1 s2 : @CTerm o),
@@ -1069,8 +786,7 @@ Proof.
   unfold barind_nout_ind_cont3 in ind; exrepnd.
   rename ind0 into ind.
 
-  remember (seq_normalizable_seq2kseq lib c 0 v) as nc.
-  clear Heqnc.
+  pose proof (seq_normalizable_seq2kseq lib c 0 v) as nc.
 
   remember (nout_alpha lib P X (seq2kseq c 0 v) v nc ni f ind) as g.
   remember (fun m => nout_kseq_NA_nout (g m)) as s.
@@ -1168,8 +884,989 @@ Proof.
 Qed.
 
 
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)
+Definition cbv_emseq {o} (v : NVar) : @NTerm o :=
+  mk_lam v (mk_cbv (mk_var v) v mk_bot).
+
+Definition cbv_emseqc {o} (v : NVar) : @CTerm o :=
+  mkc_lam v (mkcv_cbv [v] (mkc_var v) v (mkcv_bot [v,v])).
+
+Lemma approx_mk_less_twice_false1 {o} :
+  forall lib (a b c d e : @NTerm o),
+    isprog a
+    -> isprog b
+    -> isprog c
+    -> isprog d
+    -> isprog e
+    -> approx
+         lib
+         (mk_less
+            a
+            b
+            c
+            (mk_less a b d e))
+         (mk_less a b c e).
+Proof.
+  introv ispa ispb ispc ispd ispe.
+  constructor.
+  unfold close_comput; dands; auto;
+  try (repeat (apply isprogram_mk_less; dands; eauto 3 with slow)).
+
+  - introv comp.
+    apply computes_to_value_mk_less in comp; eauto 2 with slow;
+    try (apply wf_less; eauto 2 with slow).
+    exrepnd.
+
+    repndors; repnd.
+
+    + exists tl_subterms.
+      dands.
+
+      * allunfold @computes_to_value; repnd; dands; eauto 2 with slow.
+
+        eapply reduces_to_trans;
+        [apply reduce_to_prinargs_comp;
+          [unfold computes_to_value; dands;[exact comp0|]
+          |eauto 3 with slow
+          |exact comp2]
+        |]; eauto 2 with slow.
+
+        eapply reduces_to_if_split2;
+          [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+            boolvar; try omega; reflexivity
+           |].
+        auto.
+
+      * apply clearbot_relbt2.
+        apply (approx_canonical_form2 _ c0).
+        apply approx_refl.
+        allunfold @computes_to_value; repnd.
+        eauto 3 with slow.
+
+    + apply computes_to_value_mk_less in comp1; eauto 2 with slow;
+      try (apply wf_less; eauto 2 with slow).
+      exrepnd.
+
+      eapply reduces_to_eq_val_like in comp0; try (exact comp4); eauto 3 with slow.
+      eapply reduces_to_eq_val_like in comp2; try (exact comp5); eauto 3 with slow.
+      ginv.
+
+      repndors; repnd; try omega; GC.
+
+      exists tl_subterms.
+      dands.
+
+      * allunfold @computes_to_value; repnd; dands; eauto 2 with slow.
+
+        eapply reduces_to_trans;
+        [apply reduce_to_prinargs_comp;
+          [unfold computes_to_value; dands;[exact comp4|]
+          |eauto 3 with slow
+          |exact comp5]
+        |]; eauto 2 with slow.
+
+        eapply reduces_to_if_split2;
+          [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+            boolvar; try omega; reflexivity
+           |].
+        auto.
+
+      * apply clearbot_relbt2.
+        apply (approx_canonical_form2 _ c0).
+        apply approx_refl.
+        allunfold @computes_to_value; repnd.
+        eauto 3 with slow.
+
+  - introv comp.
+    apply computes_to_exception_mk_less in comp; eauto 3 with slow;
+    try (apply wf_less; eauto 3 with slow).
+    repeat (repndors; exrepnd).
+
+    + exists a0 e0; dands; tcsp.
+
+      * eapply reduces_to_trans;
+        [apply reduce_to_prinargs_comp;
+          [unfold computes_to_value; dands;[exact comp0|]
+          |eauto 3 with slow
+          |exact comp2]
+        |]; eauto 2 with slow.
+
+        eapply reduces_to_if_split2;
+          [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+            boolvar; try omega; reflexivity
+           |].
+        auto.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp1; auto.
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp1; auto.
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+    + exists a0 e0; dands; tcsp.
+
+      * apply computes_to_exception_mk_less in comp1; eauto 3 with slow.
+        repeat (repndors; exrepnd).
+
+        {
+          eapply reduces_to_eq_val_like in comp0; try (exact comp4); eauto 3 with slow.
+          eapply reduces_to_eq_val_like in comp2; try (exact comp5); eauto 3 with slow.
+          ginv.
+
+          eapply reduces_to_trans;
+            [apply reduce_to_prinargs_comp;
+              [unfold computes_to_value; dands;[exact comp4|]
+              |eauto 3 with slow
+              |exact comp5]
+            |]; eauto 2 with slow.
+
+          eapply reduces_to_if_split2;
+            [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+              boolvar; try omega; reflexivity
+             |].
+          auto.
+        }
+
+        {
+          eapply reduces_to_eq_val_like in comp0; try (exact comp4); eauto 3 with slow.
+          eapply reduces_to_eq_val_like in comp2; try (exact comp5); eauto 3 with slow.
+          ginv.
+
+          eapply reduces_to_trans;
+            [apply reduce_to_prinargs_comp;
+              [unfold computes_to_value; dands;[exact comp4|]
+              |eauto 3 with slow
+              |exact comp5]
+            |]; eauto 2 with slow.
+
+          eapply reduces_to_if_split2;
+            [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+              boolvar; try omega; reflexivity
+             |].
+          auto.
+        }
+
+        {
+          eapply computes_to_value_and_exception_false in comp1; tcsp.
+          split; [exact comp0|]; eauto 3 with slow.
+        }
+
+        {
+          eapply computes_to_value_and_exception_false in comp4; tcsp.
+          split; [exact comp2|]; eauto 3 with slow.
+        }
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp1; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp1; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+    + exists a0 e0; dands; auto.
+
+      * eapply reduces_to_trans;
+        [apply reduces_to_prinarg;exact comp
+        |]; eauto 2 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+    + exists a0 e0; dands; auto.
+
+      * eapply reduces_to_trans;
+        [apply reduce_to_prinargs_comp;
+          [unfold computes_to_value; dands;[exact comp1|]
+          |eauto 3 with slow
+          |exact comp0]
+        |]; eauto 2 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp0; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp0; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+  - introv comp; allsimpl.
+    apply computes_to_seq_implies_computes_to_value in comp;
+      [|repeat (apply isprogram_mk_less; dands; eauto 2 with slow)].
+    applydup @computes_to_value_mk_less in comp; exrepnd; eauto 2 with slow;
+    try (apply wf_less; eauto 3 with slow).
+
+    exists f; dands; auto;
+    [|destruct comp as [comp isv]; inversion isv;
+       introv;left;apply approx_refl; eauto 3 with slow].
+    eapply reduces_to_trans;
+      [apply reduce_to_prinargs_comp;
+        [unfold computes_to_value; dands;[exact comp1|]
+        |eauto 3 with slow
+        |exact comp2]
+      |]; eauto 2 with slow.
+
+    repndors; repnd.
+
+    + eapply reduces_to_if_split2;
+      [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+        boolvar; try omega; reflexivity
+       |].
+      allunfold @computes_to_value; tcsp.
+
+    + eapply reduces_to_if_split2;
+      [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+        boolvar; try omega; reflexivity
+       |].
+
+      applydup @computes_to_value_mk_less in comp0; exrepnd; eauto 2 with slow;
+      try (apply wf_less; eauto 3 with slow).
+
+      eapply reduces_to_eq_val_like in comp1; try (exact comp5); eauto 3 with slow.
+      eapply reduces_to_eq_val_like in comp2; try (exact comp6); eauto 3 with slow.
+      ginv.
+
+      repndors; repnd; try omega; GC.
+      allunfold @computes_to_value; tcsp.
+Qed.
+
+Lemma approx_mk_less_twice_false2 {o} :
+  forall lib (a b c d e : @NTerm o),
+    isprog a
+    -> isprog b
+    -> isprog c
+    -> isprog d
+    -> isprog e
+    -> approx
+         lib
+         (mk_less a b c e)
+         (mk_less
+            a
+            b
+            c
+            (mk_less a b d e)).
+Proof.
+  introv ispa ispb ispc ispd ispe.
+  constructor.
+  unfold close_comput; dands; auto;
+  try (repeat (apply isprogram_mk_less; dands; eauto 3 with slow)).
+
+  - introv comp.
+    apply computes_to_value_mk_less in comp; eauto 2 with slow;
+    try (apply wf_less; eauto 2 with slow).
+    exrepnd.
+
+    exists tl_subterms.
+    dands;[repndors; repnd|].
+
+    + allunfold @computes_to_value; repnd; dands; eauto 2 with slow.
+
+      eapply reduces_to_trans;
+        [apply reduce_to_prinargs_comp;
+          [unfold computes_to_value; dands;[exact comp0|]
+          |eauto 3 with slow
+          |exact comp2]
+        |]; eauto 2 with slow.
+
+      eapply reduces_to_if_split2;
+        [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+          boolvar; try omega; reflexivity
+         |].
+      auto.
+
+    + allunfold @computes_to_value; repnd; dands; eauto 2 with slow.
+
+      eapply reduces_to_trans;
+        [apply reduce_to_prinargs_comp;
+          [unfold computes_to_value; dands;[exact comp0|]
+          |eauto 3 with slow
+          |exact comp2]
+        |]; eauto 2 with slow.
+
+      eapply reduces_to_if_split2;
+        [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+          boolvar; try omega; reflexivity
+         |].
+
+      eapply reduces_to_trans;
+        [apply reduce_to_prinargs_comp;
+          [unfold computes_to_value; dands;[exact comp0|]
+          |eauto 3 with slow
+          |exact comp2]
+        |]; eauto 2 with slow.
+
+      eapply reduces_to_if_split2;
+        [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+          boolvar; try omega; reflexivity
+         |].
+      auto.
+
+    + apply clearbot_relbt2.
+      apply (approx_canonical_form2 _ c0).
+      apply approx_refl.
+      repndors; allunfold @computes_to_value; repnd; eauto 3 with slow.
+
+  - introv comp.
+    apply computes_to_exception_mk_less in comp; eauto 3 with slow;
+    try (apply wf_less; eauto 3 with slow).
+    repeat (repndors; exrepnd).
+
+    + exists a0 e0; dands; tcsp.
+
+      * eapply reduces_to_trans;
+        [apply reduce_to_prinargs_comp;
+          [unfold computes_to_value; dands;[exact comp0|]
+          |eauto 3 with slow
+          |exact comp2]
+        |]; eauto 2 with slow.
+
+        eapply reduces_to_if_split2;
+          [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+            boolvar; try omega; reflexivity
+           |].
+        auto.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp1; auto.
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp1; auto.
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+    + exists a0 e0; dands; tcsp.
+
+      * eapply reduces_to_trans;
+        [apply reduce_to_prinargs_comp;
+          [unfold computes_to_value; dands;[exact comp0|]
+          |eauto 3 with slow
+          |exact comp2]
+        |]; eauto 2 with slow.
+
+        eapply reduces_to_if_split2;
+          [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+            boolvar; try omega; reflexivity
+           |].
+
+        eapply reduces_to_trans;
+        [apply reduce_to_prinargs_comp;
+          [unfold computes_to_value; dands;[exact comp0|]
+          |eauto 3 with slow
+          |exact comp2]
+        |]; eauto 2 with slow.
+
+        eapply reduces_to_if_split2;
+          [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+            boolvar; try omega; reflexivity
+           |].
+        auto.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp1; auto.
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp1; auto.
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+    + exists a0 e0; dands; auto.
+
+      * eapply reduces_to_trans;
+        [apply reduces_to_prinarg;exact comp
+        |]; eauto 2 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+    + exists a0 e0; dands; auto.
+
+      * eapply reduces_to_trans;
+        [apply reduce_to_prinargs_comp;
+          [unfold computes_to_value; dands;[exact comp1|]
+          |eauto 3 with slow
+          |exact comp0]
+        |]; eauto 2 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp0; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp0; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+  - introv comp; allsimpl.
+    apply computes_to_seq_implies_computes_to_value in comp;
+      [|repeat (apply isprogram_mk_less; dands; eauto 2 with slow)].
+    applydup @computes_to_value_mk_less in comp; exrepnd; eauto 2 with slow;
+    try (apply wf_less; eauto 3 with slow).
+
+    exists f; dands; auto;
+    [|destruct comp as [comp isv]; inversion isv;
+       introv;left;apply approx_refl; eauto 3 with slow].
+    eapply reduces_to_trans;
+      [apply reduce_to_prinargs_comp;
+        [unfold computes_to_value; dands;[exact comp1|]
+        |eauto 3 with slow
+        |exact comp2]
+      |]; eauto 2 with slow.
+
+    repndors; repnd.
+
+    + eapply reduces_to_if_split2;
+      [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+        boolvar; try omega; reflexivity
+       |].
+      allunfold @computes_to_value; tcsp.
+
+    + eapply reduces_to_if_split2;
+      [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+        boolvar; try omega; reflexivity
+       |].
+
+      eapply reduces_to_trans;
+        [apply reduce_to_prinargs_comp;
+          [unfold computes_to_value; dands;[exact comp1|]
+          |eauto 3 with slow
+          |exact comp2]
+        |]; eauto 2 with slow.
+
+      eapply reduces_to_if_split2;
+        [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
+          boolvar; try omega; reflexivity
+         |].
+      allunfold @computes_to_value; tcsp.
+Qed.
+
+Lemma cequiv_mk_less_twice_false {o} :
+  forall lib (a b c d e : @NTerm o),
+    isprog a
+    -> isprog b
+    -> isprog c
+    -> isprog d
+    -> isprog e
+    -> cequiv
+         lib
+         (mk_less
+            a
+            b
+            c
+            (mk_less a b d e))
+         (mk_less a b c e).
+Proof.
+  introv ispa ispb ispc ispd ispe.
+  split.
+  - apply approx_mk_less_twice_false1; auto.
+  - apply approx_mk_less_twice_false2; auto.
+Qed.
+
+Lemma cequivc_mkc_less_twice_false {o} :
+  forall lib (a b c d e : @CTerm o),
+    cequivc
+      lib
+      (mkc_less
+         a
+         b
+         c
+         (mkc_less a b d e))
+      (mkc_less a b c e).
+Proof.
+  introv.
+  destruct_cterms.
+  unfold cequivc; simpl.
+  apply cequiv_mk_less_twice_false; auto.
+Qed.
+
+Lemma mkcv_cont1_bot {o} :
+  forall v, @mkcv_cont1 o v (mkcv_bot [v, v]) = mkcv_bot [v].
+Proof.
+  introv.
+  apply cvterm_eq; simpl; auto.
+Qed.
+
+Lemma if_computes_to_value_cbv0 {o} :
+  forall lib (t : @NTerm o) v u x,
+    isprog t
+    -> computes_to_value lib (mk_cbv t v u) x
+    -> {z : NTerm
+        & computes_to_value lib t z
+        # computes_to_value lib (subst u v z) x}.
+Proof.
+  unfold computes_to_value, reduces_to.
+  introv isp h; exrepnd.
+  revert dependent t.
+  induction k; simpl; introv isp comp; ginv; tcsp.
+
+  - allrw @reduces_in_atmost_k_steps_0; subst.
+    inversion h; subst; allsimpl; tcsp.
+
+  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
+    csunf comp1; allsimpl.
+    destruct t as [y|f|op bs]; ginv.
+
+    {
+      exists (sterm f); dands; eauto 3 with slow.
+      exists 1.
+      unfold reduces_in_atmost_k_steps; simpl; csunf; simpl; auto.
+    }
+
+    dopid op as [c|nc|exc|abs] Case; ginv.
+
+    + Case "Can".
+      exists (oterm (Can c) bs); dands; tcsp; eauto.
+      * exists 0; simpl; eauto 3 with slow; tcsp.
+      * constructor; simpl; eauto 3 with slow.
+
+    + Case "NCan".
+      remember (compute_step lib (oterm (NCan nc) bs)); symmetry in Heqc; destruct c;
+      allsimpl; ginv.
+
+      applydup @preserve_compute_step in Heqc; eauto 2 with slow;[].
+
+      pose proof (IHk n) as q.
+      repeat (autodimp q hyp); eauto 2 with slow; exrepnd.
+      exists z; dands; eauto.
+      exists (S k1).
+      rw @reduces_in_atmost_k_steps_S.
+      eexists; dands; eauto.
+
+    + Case "Exc".
+      apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; subst; eauto 2 with slow.
+      inversion h; subst; allsimpl; tcsp.
+
+   + Case "Abs".
+      remember (compute_step lib (oterm (Abs abs) bs)); symmetry in Heqc; destruct c;
+      allsimpl; ginv.
+
+      applydup @preserve_compute_step in Heqc; eauto 2 with slow;[].
+
+      pose proof (IHk n) as q.
+      repeat (autodimp q hyp); eauto 2 with slow; exrepnd.
+      exists z; dands; eauto.
+      exists (S k1).
+      rw @reduces_in_atmost_k_steps_S.
+      eexists; dands; eauto.
+Qed.
+
+Lemma approx_cbv_less_bot1 {o} :
+  forall lib (t : @NTerm o) i v,
+    isprog t
+    -> approx
+         lib
+         (mk_cbv t v mk_bot)
+         (mk_less t (mk_integer i) mk_bot mk_bot).
+Proof.
+  introv isp.
+  constructor.
+  unfold close_comput; dands; auto;
+  try (repeat (apply isprogram_mk_less; dands; eauto 3 with slow));
+  try (repeat (apply isprogram_cbv; dands; eauto 3 with slow)).
+
+  - introv comp.
+    apply if_computes_to_value_cbv0 in comp; exrepnd; auto.
+    unfold computes_to_value in comp1; repnd.
+    rw @subst_trivial in comp0; eauto 4 with slow.
+    apply bottom_diverges in comp0; tcsp.
+
+  - introv comp.
+    apply if_computes_to_exception_cbv0 in comp; eauto 2 with slow.
+    repndors; exrepnd.
+
+    + exists a e; dands; auto.
+
+      * eapply reduces_to_trans;
+        [apply reduces_to_prinarg;exact comp
+        |]; eauto 2 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+    + unfold computes_to_value in comp1; repnd.
+      rw @subst_trivial in comp0; eauto 4 with slow.
+      apply bottom_doesnt_raise_an_exception in comp0; tcsp.
+
+  - introv comp.
+    apply computes_to_seq_implies_computes_to_value in comp;
+      try (apply isprogram_cbv; eauto 3 with slow);[].
+    apply if_computes_to_value_cbv0 in comp; exrepnd; auto.
+    unfold computes_to_value in comp1; repnd.
+    rw @subst_trivial in comp0; eauto 4 with slow.
+    apply bottom_diverges in comp0; tcsp.
+Qed.
+
+Lemma approx_cbv_less_bot2 {o} :
+  forall lib (t : @NTerm o) i v,
+    isprog t
+    -> approx
+         lib
+         (mk_less t (mk_integer i) mk_bot mk_bot)
+         (mk_cbv t v mk_bot).
+Proof.
+  introv isp.
+  constructor.
+  unfold close_comput; dands; auto;
+  try (repeat (apply isprogram_mk_less; dands; eauto 3 with slow));
+  try (repeat (apply isprogram_cbv; dands; eauto 3 with slow)).
+
+  - introv comp.
+    apply computes_to_value_mk_less in comp; eauto 3 with slow.
+    exrepnd.
+    assert (mk_bot =v>( lib)oterm (Can c) tl_subterms) as r by tcsp.
+    apply bottom_diverges in r; tcsp.
+
+  - introv comp.
+    apply computes_to_exception_mk_less in comp; eauto 3 with slow.
+    repndors; exrepnd.
+
+    + assert (mk_bot =e>( a, lib)e) as r by tcsp.
+      apply bottom_doesnt_raise_an_exception in r; tcsp.
+
+    + exists a e; dands; tcsp.
+
+      * eapply reduces_to_trans;
+        [apply reduces_to_prinarg;exact comp
+        |]; eauto 2 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+      * apply remove_bot_approx.
+        applydup @reduces_to_preserves_isprog in comp; auto;
+        try (apply isprog_less_implies; auto).
+        allrw @isprog_exception_iff; repnd.
+        apply approx_refl; eauto 3 with slow.
+
+    + apply can_doesnt_raise_an_exception in comp0; tcsp.
+
+  - introv comp.
+    apply computes_to_seq_implies_computes_to_value in comp;
+      try (apply isprogram_mk_less; dands; eauto 3 with slow);[].
+    apply computes_to_value_mk_less in comp; eauto 3 with slow.
+    exrepnd.
+    assert (mk_bot =v>( lib)sterm f) as r by tcsp.
+    apply bottom_diverges in r; tcsp.
+Qed.
+
+Lemma cequiv_cbv_less_bot {o} :
+  forall lib (t : @NTerm o) i v,
+    isprog t
+    -> cequiv
+         lib
+         (mk_cbv t v mk_bot)
+         (mk_less t (mk_integer i) mk_bot mk_bot).
+Proof.
+  introv isp.
+  split.
+  - apply approx_cbv_less_bot1; auto.
+  - apply approx_cbv_less_bot2; auto.
+Qed.
+
+Lemma cequivc_cbv_less_bot {o} :
+  forall lib (t : @CTerm o) i v,
+    cequivc
+      lib
+      (mkc_cbv t v (mkcv_bot [v]))
+      (mkc_less t (mkc_integer i) mkc_bot mkc_bot).
+Proof.
+  introv.
+  destruct_cterms; simpl.
+  unfold cequivc; simpl.
+  apply cequiv_cbv_less_bot; auto.
+Qed.
+
+Lemma seq_normalizable_cbv_emseqc_0 {o} :
+  forall lib v, @seq_normalizable o lib (cbv_emseqc v) 0 v.
+Proof.
+  introv.
+  unfold seq_normalizable.
+  unfold cbv_emseqc, seq2kseq.
+
+  apply implies_cequivc_lam.
+  introv.
+  allrw @mkcv_less_substc.
+  allrw @mkcv_cbv_substc_same.
+  allrw @mkcv_apply_substc.
+  allrw @mkc_var_substc.
+  allrw @mkcv_bot_substc.
+  allrw @csubst_mk_cv.
+  allrw @mkcv_nat_substc.
+  allrw @mkcv_zero_substc.
+
+  allrw <- @mkc_zero_eq.
+
+  eapply cequivc_trans;
+    [
+    |apply cequivc_mkc_less;
+      [apply cequivc_refl
+      |apply cequivc_refl
+      |apply cequivc_refl
+      |apply cequivc_mkc_less;
+        [apply cequivc_refl
+        |apply cequivc_refl
+        |apply cequivc_sym; apply cequivc_beta
+        |apply cequivc_refl]
+      ]
+    ].
+
+  allrw @mkcv_cbv_substc_same.
+  allrw @mkc_var_substc.
+
+  eapply cequivc_trans;
+    [|apply cequivc_sym; apply cequivc_mkc_less_twice_false].
+  rewrite mkcv_cont1_bot.
+  rewrite mkc_zero_eq; rewrite mkc_nat_eq.
+  apply cequivc_cbv_less_bot.
+Qed.
+
+Lemma bar_induction_cterm_meta2 {o} :
+  forall lib Q P (B X : @CTerm o) v,
+    barind_nout_bar lib Q B v
+    -> barind_nout_imp lib Q P B X
+    -> barind_nout_ind lib P X v
+    -> nout_on_seq lib P X 0 (cbv_emseqc v).
+Proof.
+  introv bar imp ind.
+  pose proof (classic (nout_on_seq lib P X 0 (cbv_emseqc v))) as ni.
+  repndors; auto.
+  provefalse.
+
+  apply barind_nout_ind_implies_cont in ind.
+  apply barind_nout_ind_cont_implies_cont2 in ind.
+  apply barind_nout_ind_cont2_implies_cont3 in ind.
+  unfold barind_nout_ind_cont3 in ind; exrepnd.
+  rename ind0 into ind.
+
+  pose proof (seq_normalizable_cbv_emseqc_0 lib v) as nc.
+
+  remember (nout_alpha lib P X (cbv_emseqc v) v nc ni f ind) as g.
+  remember (fun m => nout_kseq_NA_nout (g m)) as s.
+
+  assert (forall n, eq_kseq_nout lib (ntseqc2ntseq s) (nout_kseq_NA_seq (g n)) n) as e.
+  { introv.
+    apply implies_equality_natk2nout2; introv ltm.
+    subst.
+    exists (nout_kseq_NA_cterm (nout_alpha lib P X (cbv_emseqc v) v nc ni f ind m)).
+    dands; spcast; eauto 3 with slow.
+
+    - eapply cequivc_trans;[apply cequivc_beta_ntseqc2ntseq|].
+      simpl; auto.
+
+    - pose proof (nout_alpha_prop1 lib P X (cbv_emseqc v) v nc ni f ind n (S m)) as q.
+      autodimp q hyp; try omega.
+      apply (equality_natk2nout_implies lib m) in q; try omega.
+      apply cequiv_stable; exrepnd; spcast.
+
+      apply cequivc_sym in q1.
+      eapply cequivc_trans in q1;[|exact q2].
+      clear q2.
+      eapply cequivc_trans;[apply cequivc_sym;exact q1|].
+      clear q1.
+      simpl.
+
+      remember (nout_alpha lib P X (cbv_emseqc v) v nc ni f ind m) as am.
+      unfold nout_kseq_NA in am; exrepnd; simphyps.
+      rw @nout_kseq_NA_seq_mk_nout_kseq_NA.
+      unfold update_seq_nout.
+      eapply cequivc_trans;[apply cequivc_beta|].
+      allrw @mkcv_inteq_substc.
+      allrw @mkcv_apply_substc.
+      allrw @mkc_var_substc.
+      allrw @csubst_mk_cv.
+      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+      boolvar; auto; try omega.
+  }
+
+  pose proof (bar (ntseqc2ntseq s)) as b.
+  autodimp b hyp; eauto 3 with slow.
+
+  exrepnd.
+  rename b0 into b.
+
+  apply imp in b;[|apply implies_is_kseq_nout_seq2kseq; eauto 3 with slow].
+
+  induction m; allsimpl.
+
+  {
+    pose proof (eq_kseq_nout_0 lib (ntseqc2ntseq s) (cbv_emseqc v)) as h1.
+    apply (seq2kseq_prop2_nout _ v) in h1.
+    eapply cequivc_preserves_nout_on_seq in b;[|exact h1]; auto.
+    eapply cequivc_preserves_nout_on_seq in b;[|apply cequivc_sym;exact nc]; auto.
+  }
+
+  pose proof (e (S m)) as q1.
+  apply (seq2kseq_prop2_nout _ v) in q1.
+
+  eapply cequivc_preserves_nout_on_seq in b;[|exact q1].
+
+  pose proof (e m) as q2.
+  apply (seq2kseq_prop2_nout _ v) in q2.
+
+  eapply cequivc_preserves_not_nout_on_seq in IHm;[|exact q2].
+  clear q1 q2 e.
+
+  subst; allsimpl.
+  remember (nout_alpha lib P X (cbv_emseqc v) v nc ni f ind m) as am.
+  unfold nout_kseq_NA in am; exrepnd; allsimpl.
+
+  remember (f (mk_nout_seq_NA (S m) s am0 am1)) as fn.
+
+  assert (eq_kseq_nout lib (update_seq_nout s (S m) (cnterm2cterm fn) v) s (S m)) as ee1.
+  { unfold eq_kseq_nout.
+    apply implies_equality_natk2nout2; introv ltm1.
+    dup am0 as e.
+    eapply member_natk2nout_implies in e;[|exact ltm1]; exrepnd; spcast.
+    exists u0; dands; spcast; auto;[].
+    unfold update_seq_nout.
+    eapply cequivc_trans;[apply cequivc_beta|].
+    allrw @mkcv_inteq_substc.
+    allrw @mkcv_apply_substc.
+    allrw @mkc_var_substc.
+    allrw @csubst_mk_cv.
+    eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+    boolvar; tcsp; GC; try omega.
+  }
+
+  apply (seq2kseq_prop2_nout _ v) in ee1.
+  eapply cequivc_preserves_nout_on_seq in b;[|exact ee1].
+  clear ee1.
+
+  unfold seq_normalizable in am2.
+  eapply cequivc_preserves_nout_on_seq in b;
+    [|apply cequivc_sym;exact am2].
+  sp.
+Qed.
+
+Lemma implies_cequivc_update_seq_nout {o} :
+  forall lib (t : @CTerm o) k a b v,
+    cequivc lib a b
+    -> cequivc lib (update_seq_nout t k a v) (update_seq_nout t k b v).
+Proof.
+  introv ceq.
+  unfold update_seq_nout.
+  apply implies_cequivc_lam; introv.
+  allrw @mkcv_inteq_substc.
+  allrw @mkcv_apply_substc.
+  allrw @mkc_var_substc.
+  allrw @csubst_mk_cv.
+  apply cequivc_mkc_inteq; auto.
+Qed.
+
+Lemma eq_kseq_nout_update2 {o} :
+  forall lib (s1 s2 : @CTerm o) (n : nat) (u : CTerm) (v : NVar),
+    noutokensc u
+    -> eq_kseq_nout lib s1 s2 n
+    -> eq_kseq_nout
+         lib
+         (update_seq_nout s1 n u v)
+         (update_seq_nout s2 n u v)
+         (S n).
+Proof.
+  introv nout i.
+  allunfold @eq_kseq_nout.
+  unfold update_seq.
+  apply implies_equality_natk2nout2.
+  introv ltm.
+
+  destruct (deq_nat m n) as [d|d]; subst.
+
+  - exists u.
+    dands; eauto 3 with slow; tcsp; spcast;[|].
+
+    + eapply cequivc_trans;[apply cequivc_beta|].
+      allrw @mkcv_inteq_substc.
+      allrw @mkcv_apply_substc.
+      allrw @mkc_var_substc.
+      allrw @csubst_mk_cv.
+      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+      boolvar; tcsp.
+
+    + eapply cequivc_trans;[apply cequivc_beta|].
+      allrw @mkcv_inteq_substc.
+      allrw @mkcv_apply_substc.
+      allrw @mkc_var_substc.
+      allrw @csubst_mk_cv.
+      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+      boolvar; tcsp.
+
+  - pose proof (equality_natk2nout_implies lib m s1 s2 n) as h.
+    repeat (autodimp h hyp); try omega;[].
+    exrepnd; spcast.
+    exists u0.
+    dands; spcast; auto.
+
+    + eapply cequivc_trans;[apply cequivc_beta|].
+      allrw @mkcv_inteq_substc.
+      allrw @mkcv_apply_substc.
+      allrw @mkc_var_substc.
+      allrw @csubst_mk_cv.
+      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+      boolvar; tcsp; GC.
+
+    + eapply cequivc_trans;[apply cequivc_beta|].
+      allrw @mkcv_inteq_substc.
+      allrw @mkcv_apply_substc.
+      allrw @mkc_var_substc.
+      allrw @csubst_mk_cv.
+      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
+      boolvar; tcsp; GC.
+Qed.
+
+Lemma lsubstc_cbv_emseq {o} :
+  forall v w (s : @CSub o) c, lsubstc (cbv_emseq v) w s c = cbv_emseqc v.
+Proof.
+  introv.
+  apply cterm_eq; simpl.
+  unfold cbv_emseq, csubst; simpl.
+  unflsubst; simpl.
+  autorewrite with slow; auto.
+Qed.
+Hint Rewrite @lsubstc_cbv_emseq : slow.

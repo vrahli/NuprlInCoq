@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -35,7 +39,7 @@ Require Export csubst_arith.
 Require Export csubst_cft.
 Require Export terms_union.
 Require Export terms_image.
-Require Export arith_props.
+Require Export cequiv_arith_props.
 Require Export compare_cterm.
 Require Export terms_try.
 Require Export csubst_fresh.
@@ -569,6 +573,19 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [w2 name];
         destruct name as [cm name];
         destruct name as [cn name];
+        destruct name as [c1 name];
+        destruct name as [c2 name];
+        clear_irr; tac
+
+    (* le *)
+    | context [lsubstc (mk_le ?a ?b) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let w2 := fresh "w2" in
+      let c1 := fresh "c1" in
+      let c2 := fresh "c2" in
+      pose proof (lsubstc_mk_le_ex a b s w c) as name;
+        destruct name as [w1 name];
+        destruct name as [w2 name];
         destruct name as [c1 name];
         destruct name as [c2 name];
         clear_irr; tac

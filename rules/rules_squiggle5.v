@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -23,7 +24,6 @@
             https://github.com/vrahli/NuprlInCoq
 
   Authors: Vincent Rahli
-           Mark Bickford
 
 *)
 
@@ -179,6 +179,149 @@ Proof.
   allrw subvars_eq.
   repeat (rw subset_cons_l); dands; auto.
 Qed.
+
+
+
+(* same as above but we don't force the subgoals to have given extracts *)
+
+Definition rule_equal_in_base2_hyp1 {o} (a b : @NTerm o) e H :=
+  mk_baresequent H (mk_concl (mk_cequiv a b) e).
+
+Definition rule_equal_in_base2_hyp2 {o} (v : NVar) e (H : @bhyps o) :=
+  mk_baresequent H (mk_concl (mk_member (mk_var v) mk_base) e).
+
+Definition rule_equal_in_base2_rest {o}
+           (a : @NTerm o)
+           (F : forall v (i : LIn v (free_vars a)), @NTerm o)
+           (H : @bhyps o) :=
+  mapin
+    (free_vars a)
+    (fun v i => rule_equal_in_base2_hyp2 v (F v i) H).
+
+Definition rule_equal_in_base2 {o}
+           (H : barehypotheses)
+           (a b : @NTerm o)
+           (e : NTerm)
+           (F : forall v (i : LIn v (free_vars a)), @NTerm o)
+  :=
+    mk_rule
+      (rule_equal_in_base_concl a b H)
+      (rule_equal_in_base2_hyp1 a b e H :: rule_equal_in_base2_rest a F H)
+      [].
+
+Lemma rule_equal_in_base2_true3 {o} :
+  forall lib (H : barehypotheses)
+         (a b : @NTerm o) e F,
+    rule_true3 lib (rule_equal_in_base2 H a b e F).
+Proof.
+  unfold rule_equal_in_base2, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  destruct Hyp as [ ws1 hyp1 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent (rule_equal_in_base_concl a b H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  vr_seq_true.
+  lsubst_tac.
+  allrw <- @member_equality_iff.
+
+  teq_and_eq (@mk_base o) a b s1 s2 H; eauto 3 with slow.
+
+  vr_seq_true in hyp1.
+  pose proof (hyp1 s1 s2 hf sim) as hyp; clear hyp1; exrepnd.
+  lsubst_tac.
+  allrw <- @member_equality_iff.
+  allrw @equality_in_mkc_cequiv; repnd.
+  apply tequality_mkc_cequiv in hyp0.
+  applydup hyp0 in hyp1; clear hyp0; spcast.
+  spcast.
+  apply equality_in_base_iff; spcast.
+  eapply cequivc_trans;[|eauto].
+
+  clear dependent b.
+
+  pose proof (lsubstc_csub_filter_free_vars a w1 s1 ca1) as e1; exrepnd; rw e0; clear e0.
+  pose proof (lsubstc_csub_filter_free_vars a w1 s2 c1) as e2; exrepnd; rw e0; clear e0.
+
+  apply cequivc_lsubstc; try (apply isprogram_csubst; eauto 3 with slow).
+  apply implies_cequiv_csub_if_eq_doms; auto.
+
+  { rw @dom_csub_csub_keep.
+    apply implies_no_repeats_lkeep.
+    apply similarity_dom in sim; repnd.
+    rw sim0.
+    eapply vswf_hypotheses_implies_no_repeats; eauto. }
+
+  { allrw @dom_csub_csub_keep.
+    apply similarity_dom in sim; repnd.
+    rw sim0; rw sim; auto. }
+
+  { introv e1 e2.
+    rw @csub_find_csub_keep in e1.
+    rw @csub_find_csub_keep in e2.
+    boolvar; ginv.
+    pose proof (hyps (mk_baresequent H (mk_concl (mk_member (mk_var v) mk_base) (F v Heqb)))) as hyp.
+    autodimp hyp h.
+
+    { unfold rule_equal_in_base2_rest.
+      apply in_mapin.
+      eexists; eexists.
+      unfold rule_equal_in_base2_hyp2; eauto. }
+
+    destruct hyp as [ws hyp].
+    destseq; allsimpl; proof_irr; GC.
+    vr_seq_true in hyp.
+    pose proof (hyp s1 s2 hf sim) as hyp0; clear hyp; exrepnd.
+    lsubst_tac.
+    clear hyp0.
+    apply tequality_mkc_member_base in hyp1; spcast.
+    apply cequiv_stable in hyp1.
+    repeat (erewrite lsubstc_mk_var_if_csub_find in hyp1;[|eauto]).
+    auto. }
+Qed.
+
+Lemma rule_equal_in_base2_true {o} :
+  forall lib (H : barehypotheses)
+         (a b : @NTerm o) e F,
+    rule_true lib (rule_equal_in_base2 H a b e F).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true; auto.
+  apply rule_equal_in_base2_true3; auto.
+Qed.
+
+Lemma rule_equal_in_base2_true2 {o} :
+  forall lib (H : barehypotheses)
+         (a b : @NTerm o) e F,
+    rule_true2 lib (rule_equal_in_base2 H a b e F).
+Proof.
+  introv.
+  apply rule_true_iff_rule_true2; auto.
+  apply rule_equal_in_base2_true; auto.
+Qed.
+
+Lemma rule_equal_in_base2_wf2 {o} :
+  forall (H : barehypotheses) (a b : @NTerm o) e F,
+    wf_rule2 (rule_equal_in_base2 H a b e F).
+Proof.
+  introv wf i.
+
+  allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq; auto;
+  unfold rule_equal_in_base_rest in i; apply in_mapin in i; exrepnd; subst; allsimpl; auto.
+  unfold covered; simpl.
+  allunfold @covered.
+  allrw subvars_eq.
+  repeat (rw subset_cons_l); dands; auto.
+Qed.
+
+
 
 
 (*

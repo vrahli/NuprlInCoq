@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -28,6 +32,7 @@
 Require Export prog.
 Require Export cequiv.
 Require Export csubst2.
+Require Export substc_more.
 Require Export terms5.
 Require Export computation_exc.
 Require Export computation_dec1.
@@ -487,9 +492,12 @@ Proof.
     { apply reduces_to_symm. }
     exrepnd.
     exists (sterm f'); dands; eauto 3 with slow.
-    apply howetheorem1; eauto 3 with slow.
-    econstructor; eauto.
-    apply approx_open_refl; eauto 3 with slow.
+    apply howetheorem1; auto;[|destruct h1;eauto 2 with slow].
+    applydup @reduces_to_preserves_program in h1; auto.
+    econstructor; eauto; try (apply approx_open_refl); eauto 3 with slow.
+    introv.
+    apply le_bin_rel_approx1_eauto.
+    apply remove_bot_approx; auto.
 Qed.
 
 Lemma approx_sterm {o} :
@@ -498,7 +506,7 @@ Lemma approx_sterm {o} :
     -> approx lib t t'
     -> {f' : ntseq
         & (t' =v>(lib) (sterm f'))
-        # (forall n, alpha_eq (f n) (f' n)) }.
+        # (forall n, approx lib (f n) (f' n)) }.
 Proof.
   introv comp ap.
   applydup @approx_relates_only_progs in ap; repnd.
@@ -509,7 +517,9 @@ Proof.
   apply howe_lemma2_seq in ap; auto.
   exrepnd.
   exists f'; dands; auto.
-  unfold computes_to_value; dands; eauto 3 with slow.
+  - unfold computes_to_value; dands; eauto 3 with slow.
+  - introv.
+    apply howetheorem1; auto; eauto 3 with slow.
 Qed.
 
 Lemma approx_open_mk_less {o} :
@@ -667,21 +677,27 @@ Proof.
 
     + eapply approx_sterm in h5;[|eauto]; exrepnd.
       allunfold @computes_to_value; repnd.
-      exists f'; dands; auto;[].
-      eapply reduces_to_trans;
+      exists f'; dands; auto;[|].
+      {
+        eapply reduces_to_trans;
         [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
-      eapply reduces_to_if_split2;
-        [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
-      boolvar;tcsp;try omega.
+        eapply reduces_to_if_split2;
+          [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
+        boolvar;tcsp;try omega.
+      }
+      { introv; apply remove_bot_approx; auto. }
 
     + eapply approx_sterm in h5;[|eauto]; exrepnd.
       allunfold @computes_to_value; repnd.
-      exists f'; dands; auto;[].
-      eapply reduces_to_trans;
+      exists f'; dands; auto;[|].
+      {
+        eapply reduces_to_trans;
         [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
-      eapply reduces_to_if_split2;
-        [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
-      boolvar;tcsp;try omega.
+        eapply reduces_to_if_split2;
+          [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
+        boolvar;tcsp;try omega.
+      }
+      { introv; apply remove_bot_approx; auto. }
 Qed.
 
 Lemma approx_open_mk_less_than {o} :
@@ -995,7 +1011,7 @@ Proof.
   applydup @cequiv_isprog in ceq2 as isp1.
   applydup @cequiv_isprog in ceq0 as isp2.
   repnd.
-  exists (existT _ x2 isp1) (existT _ c isp2); unfold computes_to_excc; simpl; dands; auto.
+  exists (mk_ct x2 isp1) (mk_ct c isp2); unfold computes_to_excc; simpl; dands; auto.
 Qed.
 
 Lemma cequivc_utoken_implies {o} :
@@ -1443,21 +1459,6 @@ Proof.
   allrw memvar_singleton.
   repeat (boolvar; allsimpl; tcsp).
 Qed.
-
-Lemma isprog_vars_substc2 {o} :
-  forall x (a : @NTerm o) v b,
-    isprog b
-    -> isprog_vars [x,v] a
-    -> isprog_vars [x] (subst a v b).
-Proof.
-  introv ispb ispa.
-  apply subst_preserves_isprog_vars; auto.
-Qed.
-
-Definition substc2 {o} x (u : @CTerm o) (v : NVar) (t : CVTerm [x,v]) : CVTerm [x] :=
-  let (a,pa) := t in
-  let (b,pb) := u in
-  exist (isprog_vars [x]) (subst a v b) (isprog_vars_substc2 x a v b pb pa).
 
 Lemma mkcv_try_substc {o} :
   forall v (a b : @CVTerm o [v]) x (c : CVTerm [x,v]) (t : CTerm),
@@ -2257,7 +2258,7 @@ Proof.
   apply reduces_in_atmost_k_steps_exc_decompose in r; auto; exrepnd.
   applydup @reduces_atmost_preserves_program in r2;
     allrw @isprogram_exception_iff; allrw @isprogram_eq; repnd; auto.
-  exists k1 k2 k3 (existT _ a' r5) (existT _ e' r4); dands; auto.
+  exists k1 k2 k3 (mk_ct a' r5) (mk_ct e' r4); dands; auto.
 Qed.
 
 Lemma dec_reduces_in_atmost_k_steps_exc {o} :
@@ -2419,7 +2420,7 @@ Proof.
   unfold cequivc in ceq; allsimpl.
   apply cequiv_spexc in ceq; exrepnd.
   applydup @preserve_program_exc2 in ceq0; allrw @isprogram_eq; repnd; auto.
-  exists (existT _ n ceq4) (existT _ e ceq3).
+  exists (mk_ct n ceq4) (mk_ct e ceq3).
   unfold computes_to_excc, computes_to_valc; simpl; dands; auto.
 Qed.
 
@@ -2726,11 +2727,3 @@ Proof.
   exists a' e'; dands; eauto 3 with slow.
   exists k1; auto.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

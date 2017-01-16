@@ -373,32 +373,32 @@ Tactic Notation "lsubstc_snoc_step_vs" constr(T) tactic(tac) :=
 
 Tactic Notation "lsubstc_snoc_step_hyp" ident(H) tactic(tac) :=
   let T := type of H in
-  lsubstc_snoc_step T tac.
+  progress (lsubstc_snoc_step T tac).
 
 Tactic Notation "lsubstc_snoc_step_concl" tactic(tac) :=
   match goal with
-    | [ |- ?T ] => lsubstc_snoc_step T tac
+  | [ |- ?T ] => progress (lsubstc_snoc_step T tac)
   end.
 
 Tactic Notation "lsubstc_snoc_step_all" tactic(tac) :=
   match goal with
-    | [ |- ?T ] => lsubstc_snoc_step T tac
-    | [ H : ?T |- _ ] => lsubstc_snoc_step T tac
+  | [ |- ?T ] => progress (lsubstc_snoc_step T tac)
+  | [ H : ?T |- _ ] => progress (lsubstc_snoc_step T tac)
   end.
 
 Tactic Notation "lsubstc_snoc_step_vs_hyp" ident(H) tactic(tac) :=
   let T := type of H in
-  lsubstc_snoc_step_vs T tac.
+  progress (lsubstc_snoc_step_vs T tac).
 
 Tactic Notation "lsubstc_snoc_step_vs_concl" tactic(tac) :=
   match goal with
-    | [ |- ?T ] => lsubstc_snoc_step_vs T tac
+  | [ |- ?T ] => progress (lsubstc_snoc_step_vs T tac)
   end.
 
 Tactic Notation "lsubstc_snoc_step_vs_all" tactic(tac) :=
   match goal with
-    | [ |- ?T ] => lsubstc_snoc_step_vs T tac
-    | [ H : ?T |- _ ] => lsubstc_snoc_step_vs T tac
+  | [ |- ?T ] => progress (lsubstc_snoc_step_vs T tac)
+  | [ H : ?T |- _ ] => progress (lsubstc_snoc_step_vs T tac)
   end.
 
 Ltac lsubstc_snoc := repeat (lsubstc_snoc_step_all insub).

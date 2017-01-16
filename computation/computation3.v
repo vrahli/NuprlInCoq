@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -16,14 +17,19 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
+
+Require Export subst_tacs2.
 Require Export computation_preserve1.
 (*Require Export list. (* WTF!! *)*)
 (** printing #  $\times$ #×# *)
@@ -4762,37 +4768,6 @@ Proof.
     apply (k v0 t0); auto.
 Qed.
 
-Lemma covered_implies_remove_nvars {o} :
-  forall (t : @NTerm o) vs1 vs2,
-    subvars vs1 vs2
-    -> covered t vs1
-    -> remove_nvars vs2 (free_vars t) = [].
-Proof.
-  introv sv cov.
-  unfold covered in cov.
-  remember (free_vars t) as vs; clear Heqvs.
-  rw subvars_prop in cov.
-  rw subvars_prop in sv.
-  apply null_iff_nil.
-  apply null_remove_nvars.
-  introv i.
-  apply cov in i.
-  apply sv in i; auto.
-Qed.
-
-Lemma closed_lsubst_aux {o} :
-  forall (t : @NTerm o) sub,
-    cl_sub sub
-    -> covered t (dom_sub sub)
-    -> closed (lsubst_aux t sub).
-Proof.
-  introv cl cov.
-  pose proof (free_vars_lsubst_aux_cl t sub) as fv.
-  autodimp fv hyp.
-  unfold closed; rw fv; simpl.
-  apply (covered_implies_remove_nvars _ (dom_sub sub)); auto.
-Qed.
-
 Lemma implies_cl_sub_lsubst_aux_sub {o} :
   forall (sub1 sub2 : @Sub o),
     cl_sub sub2
@@ -5061,46 +5036,6 @@ Proof.
   apply alpha_eq_preserves_isnoncan_like in h1; auto.
 Qed.
 Hint Resolve isnoncan_like_lsubst : slow.
-
-Tactic Notation "unfsubst" "in" ident(H) :=
-  rewrite @cl_subst_subst_aux in H;
-  eauto with slow;
-  unfold subst_aux in H.
-
-Tactic Notation "unfsubst" constr(t) "in" ident(H) :=
-  rewrite (cl_subst_subst_aux t) in H;
-  eauto with slow;
-  unfold subst_aux in H.
-
-Tactic Notation "unfsubst" :=
-  rewrite @cl_subst_subst_aux;
-  eauto with slow;
-  unfold subst_aux.
-
-Tactic Notation "unfsubst" constr(t) :=
-  rewrite (cl_subst_subst_aux t);
-  eauto with slow;
-  unfold subst_aux.
-
-Tactic Notation "unflsubst" "in" ident(H) :=
-  rewrite @cl_lsubst_lsubst_aux in H;
-  eauto with slow;
-  unfold subst_aux in H.
-
-Tactic Notation "unflsubst" constr(t) "in" ident(H) :=
-  rewrite (cl_lsubst_lsubst_aux t) in H;
-  eauto with slow;
-  unfold subst_aux in H.
-
-Tactic Notation "unflsubst" :=
-  rewrite @cl_lsubst_lsubst_aux;
-  eauto with slow;
-  unfold subst_aux.
-
-Tactic Notation "unflsubst" constr(t) :=
-  rewrite (cl_lsubst_lsubst_aux t);
-  eauto with slow;
-  unfold subst_aux.
 
 Lemma compute_step_ncan_vterm_success {o} :
   forall lib ncan (bs : list (@BTerm o)) u a,

@@ -24,8 +24,6 @@
 *)
 
 
-Add LoadPath "../".
-
 Require Export type_sys.
 Require Import dest_close.
 
@@ -260,9 +258,3 @@ Proof.
     try (complete (apply eqorceq_sym; auto)).
 Qed.
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("../")
-*** End:
-*)

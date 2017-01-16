@@ -391,7 +391,7 @@ Proof.
     applydup @reduces_to_preserves_isprog in h2;
     [|apply isprog_apply; complete (eauto 3 with slow)].
 
-    exists (existT _ t2' h3) (existT _ t3' h4); simpl.
+    exists (mk_ct t2' h3) (mk_ct t3' h4); simpl.
     unfold spfexc_pair in h1; exrepnd; subst.
     dands; auto.
     right; dands; tcsp; apply cequiv_spfexc.
@@ -1069,7 +1069,7 @@ Proof.
   allrw @prog_sub_cons; repnd.
   allrw @isprogram_eq.
   allrw @fold_subst.
-  pose proof (ceq (existT _ t ps0)) as h.
+  pose proof (ceq (mk_ct t ps0)) as h.
   allsimpl; auto.
 Qed.
 
@@ -1103,7 +1103,7 @@ Proof.
   allrw @prog_sub_cons; repnd.
   allrw @isprogram_eq.
   allrw @fold_subst.
-  pose proof (ceq2 (existT _ t ps0)) as h.
+  pose proof (ceq2 (mk_ct t ps0)) as h.
   allsimpl; auto.
 Qed.
 
@@ -1440,10 +1440,10 @@ Proof.
     boolvar; allsimpl; auto.
   - right; left.
     applydup @preserve_program_exc2 in comp0; allrw @isprogram_eq; repnd; auto.
-    exists (existT _ a comp3) (existT _ e comp2); allsimpl; dands; auto.
+    exists (mk_ct a comp3) (mk_ct e comp2); allsimpl; dands; auto.
   - right; right.
     applydup @preserve_program_exc2 in comp2; allrw @isprogram_eq; repnd; auto.
-    exists i3 (existT _ a comp5) (existT _ e comp4); allsimpl; dands; auto.
+    exists i3 (mk_ct a comp5) (mk_ct e comp4); allsimpl; dands; auto.
 Qed.
 
 Lemma reduces_toc_trans {o} :
@@ -1478,7 +1478,7 @@ Proof.
   unfold raises_exception.
   split; intro h; exrepnd.
   - applydup @preserve_program_exc2 in h1; allrw @isprogram_eq; auto; repnd.
-    exists (existT _ a h2) (existT _ e h0); simpl; auto.
+    exists (mk_ct a h2) (mk_ct e h0); simpl; auto.
   - destruct_cterms; allsimpl.
     eexists; eexists; eauto.
 Qed.
@@ -2400,10 +2400,3 @@ Proof.
   repeat (autodimp h hyp); try (complete (intro xx; ginv)).
 
 Abort.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

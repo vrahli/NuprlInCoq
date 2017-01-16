@@ -161,7 +161,7 @@ Fixpoint opred (o : ord) : opred_type o -> ord :=
                           | Some t  => opred o' t
                         end
     | OL f  => fun i => match i with
-                          | existT n t => opred (f n) t
+                          | existT _ n t => opred (f n) t
                         end
   end.
 
@@ -1854,9 +1854,3 @@ Hint Resolve isvalue_like_exc : slow.
 
 (* end hide *)
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

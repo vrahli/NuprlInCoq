@@ -36,13 +36,6 @@ Proof.
   unfold computes_to_value in hv0; repnd.
   applydup @isvalue_implies in hv0; repnd.
   allrw @isprogram_eq.
-  exists (existT _ t' hv2).
+  exists (mk_ct t' hv2).
   unfold computes_to_valc, computes_to_value; simpl; dands; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

@@ -25,6 +25,8 @@
 *)
 
 
+Require Export list_tacs.
+Require Export swap_props.
 Require Export csubst.
 Require Export cvterm2.
 
@@ -877,6 +879,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/")
 *** End:
 *)

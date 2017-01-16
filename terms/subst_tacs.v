@@ -291,30 +291,30 @@ Qed.
 Ltac lsubstc_snoc_app :=
   match goal with
     | [ H1 : !LIn ?x (free_vars ?t), H2 : context[lsubstc ?t ?w ((?v, ?b) :: snoc ?s1 (?x, ?a) ++ ?s2) ?c] |- _ ] =>
-      let h := fresh "h" in
-      let c := fresh "c" in
-      pose proof (lsubstc_cons_snoc_app t s1 s2 v b x a w c H1) as h;
-        destruct h as [c h];
-        rewrite h in H2;
-        clear h;
+      let hh := fresh "h" in
+      let ch := fresh "c" in
+      pose proof (lsubstc_cons_snoc_app t s1 s2 v b x a w c H1) as hh;
+        destruct hh as [ch hh];
+        rewrite hh in H2;
+        clear hh;
         clear_irr
 
     | [ H : context[lsubstc ?t ?w ((?v, ?b) :: snoc ?s1 (?v, ?a) ++ ?s2) ?c] |- _ ] =>
-      let h := fresh "h" in
-      let c := fresh "c" in
-      pose proof (lsubstc_cons_snoc_app_dup t s1 s2 v b a w c) as h;
-        destruct h as [c h];
-        rewrite h in H;
-        clear h;
+      let hh := fresh "h" in
+      let ch := fresh "c" in
+      pose proof (lsubstc_cons_snoc_app_dup t s1 s2 v b a w c) as hh;
+        destruct hh as [ch hh];
+        rewrite hh in H;
+        clear hh;
         clear_irr
 
     | [ H1 : !LIn ?x (free_vars ?t), H2 : context[lsubstc ?t ?w (snoc ?s1 (?x, ?a) ++ ?s2) ?c] |- _ ] =>
-      let h := fresh "h" in
-      let c := fresh "c" in
-      pose proof (lsubstc_snoc_app t s1 s2 x a w c H1) as h;
-        destruct h as [c h];
-        rewrite h in H2;
-        clear h;
+      let hh := fresh "h" in
+      let ch := fresh "c" in
+      pose proof (lsubstc_snoc_app t s1 s2 x a w c H1) as hh;
+        destruct hh as [ch hh];
+        rewrite hh in H2;
+        clear hh;
         clear_irr
   end.
 
@@ -365,19 +365,19 @@ Ltac lsubstc_snoc2 :=
     | [ |- context[lsubstc ?t ?w ((?x,?a) :: snoc ?s (?v,?b)) ?c] ] =>
       let imp := fresh "imp" in
       let eq  := fresh "eq"  in
-      let c   := fresh "c"   in
+      let ch  := fresh "c"   in
       assert (x <> v -> !LIn v (free_vars t)) as imp by auto;
         pose proof (lsubstc_cons_snoc_not_in_ex t w x a s v b c imp) as eq;
-        destruct eq as [c eq];
+        destruct eq as [ch eq];
         rewrite eq; clear eq
 
     | [ H : context[lsubstc ?t ?w ((?x,?a) :: snoc ?s (?v,?b)) ?c] |- _ ] =>
       let imp := fresh "imp" in
       let eq  := fresh "eq"  in
-      let c   := fresh "c"   in
+      let ch  := fresh "c"   in
       assert (x <> v -> !LIn v (free_vars t)) as imp by auto;
         pose proof (lsubstc_cons_snoc_not_in_ex t w x a s v b c imp) as eq;
-        destruct eq as [c eq];
+        destruct eq as [ch eq];
         rewrite eq in H; clear eq
   end.
 

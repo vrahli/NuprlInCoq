@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -59,52 +64,6 @@ Proof.
   revert dependent bs2.
   induction bs1; destruct bs2; introv len1 len2; allsimpl; tcsp; cpx.
   destruct n; tcsp; cpx.
-Qed.
-
-Lemma cl_lsubst_aux_swap_filter0 {o} :
-  forall (t : @NTerm o) (s : Substitution) vs,
-    cl_sub s
-    -> (forall v, LIn v (dom_sub s) -> LIn v vs -> !LIn v (free_vars t))
-    -> lsubst_aux t (sub_filter s vs) = lsubst_aux t s.
-Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv cl disj; allsimpl; auto.
-
-  - Case "vterm".
-    rw @sub_find_sub_filter_eq; boolvar; tcsp.
-    remember (sub_find s v) as sf; symmetry in Heqsf; destruct sf; auto.
-    provefalse.
-    apply sub_find_some in Heqsf.
-    apply in_sub_eta in Heqsf; repnd.
-    eapply disj in Heqsf0; eauto.
-
-  - Case "oterm".
-    f_equal.
-    apply eq_maps; introv i.
-    disj_flat_map.
-    destruct x as [l t]; allsimpl.
-    f_equal.
-    rw @sub_filter_swap.
-    apply (ind t l); eauto 3 with slow.
-
-    introv j k q.
-    allrw <- @dom_sub_sub_filter.
-    allrw in_remove_nvars; repnd.
-    eapply disj in j0; eauto.
-    destruct j0; rw lin_flat_map.
-    eexists; dands; eauto; simpl.
-    rw in_remove_nvars; sp.
-Qed.
-
-Lemma cl_lsubst_aux_swap_filter {o} :
-  forall (t : @NTerm o) (s : Substitution) vs,
-    cl_sub s
-    -> disjoint (free_vars t) vs
-    -> lsubst_aux t (sub_filter s vs) = lsubst_aux t s.
-Proof.
-  introv cl disj.
-  apply cl_lsubst_aux_swap_filter0; auto.
-  introv i j k.
-  apply disj in k; sp.
 Qed.
 
 Lemma cl_disjoint_free_vars_lsubst_aux_dom {o} :
@@ -338,7 +297,7 @@ Proof.
 
   - Case "sterm".
     allsimpl.
-    inversion ap as [|? ? ? ? imp aop|]; clear ap; subst.
+    inversion ap as [|? ? ? ? wf1 wf2 imp aop|]; clear ap; subst.
     apply (apss _ _ _ f2); auto.
     allrw <- @approx_open_simpler_equiv.
     allunfold @simpl_olift; repnd; dands; eauto 3 with slow.
@@ -472,10 +431,8 @@ Lemma approx_star_refl {p} : forall lib t, @nt_wf p t -> approx_star lib t t.
 Proof.
   nterm_ind1s t as [?|f ind |o lbt Hind] Case; introv Hwf; eauto 3 with slow.
 
-(*
   - Case "sterm".
     apply (apss _ _ _ f); eauto 3 with slow.
-*)
 
   - Case "oterm".
 
@@ -532,15 +489,15 @@ Lemma approx_open_implies_approx_star {p} :
 Proof.
   nterm_ind t1 as [v|f ind|op bs ind] Case; eauto 3 with slow.
 
-(*
   - Case "sterm".
     introv Hap.
-    apply (apss _ _ _ f); auto.
+    applydup @approx_open_relates_only_wf in Hap; repnd.
+
+    apply (apss _ _ _ f); eauto 2 with slow.
     introv.
     apply ind.
     apply approx_open_relates_only_wf in Hap; repnd.
     apply approx_open_refl; eauto 3 with slow.
-*)
 
   - Case "oterm".
     introv Hap.
@@ -1103,15 +1060,8 @@ Proof.
     invertsn Hap. apply approx_open_relates_only_wf in Hap; sp.
 
   - Case "sterm".
-    inversion Hap as [|? ? ? ? imp aop|]; clear Hap; subst.
-    allapply @approx_open_relates_only_wf; repnd; dands; auto.
-    allrw @nt_wf_sterm_iff; introv.
-    pose proof (imp n) as h; clear imp.
-    pose proof (aop0 n) as q; clear aop0; repnd.
-    applydup @alphaeq_preserves_closed in h as i; rw i; clear i.
-    applydup @alphaeq_preserves_noutokens in h as i; rw i; clear i.
-    applydup @alphaeq_preserves_wf in h as i; rw <- i; clear i.
-    dands; auto.
+    inversion Hap as [|? ? ? ? wf1 wf2 imp aop|]; clear Hap; subst.
+    allapply @approx_open_relates_only_wf; repnd; dands; eauto 3 with slow.
 
   - Case "oterm".
     inverts Hap as Hlen Hrel Hapo.
@@ -1237,9 +1187,8 @@ Proof.
   inverts Hal as Hal Hlen; sp;[|].
 
   { Case "sterm".
-    inversion Has as [|? ? ? ? imp aop|]; clear Has; subst.
-    econstructor;[|eauto].
-    introv; eauto 3 with slow. }
+    inversion Has as [|? ? ? ? wf1 wf2 imp aop|]; clear Has; subst.
+    econstructor;[| | |eauto]; eauto 3 with slow. }
 
   Case "oterm".
   inverts Has as H1as H2as H3as.
@@ -1767,7 +1716,7 @@ Proof.
 
   - Case "sterm".
     autorewrite with slow.
-    inversion Hap as [|? ? ? ? imp aop|]; subst; clear Hap.
+    inversion Hap as [|? ? ? ? wf1 wf2 imp aop|]; subst; clear Hap.
     econstructor; eauto.
     apply (approx_open_lsubst _ _ _ lvi lvo) in aop;
       autorewrite with slow in *; auto.
@@ -2144,6 +2093,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "../terms/" "../computation/" "../util/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
 *** End:
 *)

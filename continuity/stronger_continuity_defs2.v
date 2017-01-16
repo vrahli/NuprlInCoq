@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -16,11 +17,14 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -688,10 +692,10 @@ Proof.
       dands; eauto 3 with slow; spcast.
       + apply reduces_in_atmost_k_steps_excc_can; eauto 3 with slow.
         eapply reduces_in_atmost_k_stepsc_le;[|idtac|exact equ6]; auto;
-        try (apply NPeano.Nat.le_max_l; auto).
+        try (apply Nat.le_max_l; auto).
       + apply reduces_in_atmost_k_steps_excc_can; eauto 3 with slow.
         eapply reduces_in_atmost_k_stepsc_le;[|idtac|exact equ7]; auto;
-        try (apply NPeano.Nat.le_max_r; auto).
+        try (apply Nat.le_max_r; auto).
 
     - repnd; spcast.
       apply cequivc_spexcc in equ.
@@ -705,7 +709,7 @@ Proof.
 
       + apply (reduces_in_atmost_k_steps_excc_le_exc _ (k3 + k + k0));
         eauto 3 with slow; tcsp;
-        try (apply NPeano.Nat.le_max_l; auto).
+        try (apply Nat.le_max_l; auto).
         pose proof (reduces_in_atmost_k_steps_excc_exception
                       lib k k0 n0 e0 (mkc_utoken a) mkc_axiom) as h.
         repeat (autodimp h hyp); tcsp; exrepnd.
@@ -719,7 +723,7 @@ Proof.
 
       + apply (reduces_in_atmost_k_steps_excc_le_exc _ (k4 + k1 + k2));
         eauto 3 with slow; tcsp;
-        try (apply NPeano.Nat.le_max_r; auto).
+        try (apply Nat.le_max_r; auto).
         pose proof (reduces_in_atmost_k_steps_excc_exception
                       lib k1 k2 n e (mkc_utoken a) mkc_axiom) as h.
         repeat (autodimp h hyp); tcsp; exrepnd.
@@ -3358,10 +3362,10 @@ Lemma differ_try_sosub_aux {o} :
     -> cover_so_vars t sub3
     -> differ_try a f g c (sosub_aux sub1 t) (sosub_aux sub2 t) (sosub_aux sub3 t).
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case;
+  soterm_ind t as [v ts ind| |op bs ind] Case;
   introv nut df dg dc ds;
   introv disj1 disj2 disj3 disj4 disj5 disj6 disj7 disj8 disj9;
-  introv cov1 cov2 cov3; allsimpl.
+  introv cov1 cov2 cov3; allsimpl; tcsp.
 
   - Case "sovar".
     allrw @cover_so_vars_sovar; repnd.

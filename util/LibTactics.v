@@ -610,9 +610,10 @@ Definition eq' := @eq.
 
 Hint Unfold eq'.
 
+(*
 Notation "x '='' y" := (@eq' _ x y) 
   (at level 70, arguments at next level).
-
+*)
 
 
 (* ********************************************************************** *)

@@ -48,9 +48,9 @@ Proof.
   allrw @computes_to_valc_iff_reduces_in_atmost_k_stepsc; exrepnd.
   exists (Peano.max k1 k0); exists k; dands; spcast.
   - eapply reduces_in_atmost_k_stepsc_le;[|idtac|exact e4]; auto;
-    apply NPeano.Nat.le_max_r; auto.
+    apply Nat.le_max_r; auto.
   - eapply reduces_in_atmost_k_stepsc_le;[|idtac|exact e2]; auto;
-    apply NPeano.Nat.le_max_l; auto.
+    apply Nat.le_max_l; auto.
 Qed.
 
 Lemma equality_of_nat2_implies_nat {o} :
@@ -185,10 +185,3 @@ Proof.
   dands; spcast; apply computes_to_valc_refl; eauto 3 with slow.
 Qed.
 Hint Resolve equality_in_tnat_nat : slow.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

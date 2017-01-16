@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -538,6 +542,111 @@ Qed.
 Lemma rule_cequiv_approx_wf2 {o} :
   forall (a b : NTerm) (H : @barehypotheses o),
     wf_rule2 (rule_cequiv_approx H a b).
+Proof.
+  introv pwf m.
+
+  allsimpl; repndors; tcsp; subst; allunfold @wf_bseq; wfseq;
+  allrw @covered_cequiv; allrw @covered_approx; repnd; tcsp.
+  allrw <- @wf_cequiv_iff; tcsp.
+Qed.
+
+
+(* same as above but here we don't constrain the extract of subgoals *)
+
+Definition rule_cequiv_approx2_hyp {o} (a b : @NTerm o) e H :=
+  mk_baresequent H (mk_concl (mk_approx a b) e).
+
+Definition rule_cequiv_approx2 {o}
+           (H   : @barehypotheses o)
+           (a b : NTerm) e1 e2 :=
+  mk_rule
+    (rule_cequiv_approx_concl a b H)
+    [ rule_cequiv_approx2_hyp a b e1 H,
+      rule_cequiv_approx2_hyp b a e2 H
+    ]
+    [].
+
+Lemma rule_cequiv_approx2_true3 {o} :
+  forall lib (H : @barehypotheses o) (a b : NTerm) e1 e2,
+    rule_true3 lib (rule_cequiv_approx2 H a b e1 e2).
+Proof.
+  unfold rule_cequiv_approx2, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+  clear cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp.
+  destruct Hyp  as [ ws1 hyp1 ].
+  destruct Hyp0 as [ ws2 hyp2 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  unfold closed_extract; simpl.
+  assert (wf_csequent (rule_cequiv_approx_concl a b H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  vr_seq_true in hyp1.
+  vr_seq_true in hyp2.
+  generalize (hyp1 s1 s2 eqh sim); clear hyp1; intro hyp1.
+  generalize (hyp2 s1 s2 eqh sim); clear hyp2; intro hyp2.
+  exrepnd.
+  lsubst_tac.
+  allrw @member_eq.
+  rw <- @member_cequiv_iff.
+  allrw <- @equality_in_approx; repnd.
+  rw @tequality_mkc_cequiv.
+  allrw @tequality_mkc_approx.
+  applydup hyp3 in hyp4; clear hyp3.
+  applydup hyp0 in hyp6; clear hyp0.
+
+  dands.
+
+  split; intro k; spcast.
+  rw @cequivc_iff_approxc; dands; auto.
+  rw @cequivc_iff_approxc; dands; auto.
+
+  spcast.
+  rw @cequivc_iff_approxc; dands; auto.
+Qed.
+
+Lemma rule_cequiv_approx2_true {o} :
+  forall lib (H : @barehypotheses o) (a b : NTerm) e1 e2,
+    rule_true lib (rule_cequiv_approx2 H a b e1 e2).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_cequiv_approx2_true3.
+Qed.
+
+Lemma rule_cequiv_approx2_true2 {o} :
+  forall lib (H : @barehypotheses o) (a b : NTerm) e1 e2,
+    rule_true2 lib (rule_cequiv_approx2 H a b e1 e2).
+Proof.
+  introv.
+  apply rule_true_iff_rule_true2; auto.
+  apply rule_cequiv_approx2_true.
+Qed.
+
+Lemma rule_cequiv_approx2_wf {o} :
+  forall (a b : NTerm) e1 e2 (H : @barehypotheses o),
+    wf_term e1
+    -> wf_term e2
+    -> wf_rule (rule_cequiv_approx2 H a b e1 e2).
+Proof.
+  introv w1 w2 pwf m.
+
+  allsimpl; repndors; tcsp; subst; allunfold @pwf_sequent; wfseq;
+  allrw @covered_cequiv; allrw @covered_approx; repnd; tcsp.
+  allrw <- @wf_cequiv_iff; tcsp.
+Qed.
+
+Lemma rule_cequiv_approx2_wf2 {o} :
+  forall (a b : NTerm) e1 e2 (H : @barehypotheses o),
+    wf_rule2 (rule_cequiv_approx2 H a b e1 e2).
 Proof.
   introv pwf m.
 

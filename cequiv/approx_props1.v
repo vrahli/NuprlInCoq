@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -110,10 +115,9 @@ Proof.
     apply cl3 in comp; exrepnd.
     eexists; eexists; dands; eauto.
 
-(*
   - introv comp.
     apply cl4 in comp; exrepnd.
-    eexists; dands; eauto. *)
+    eexists; dands; eauto.
 Qed.
 
 Lemma approx_implies_approx_bad {o} :
@@ -149,13 +153,12 @@ Proof.
     repndors; try (complete (allunfold @bot2; sp)).
     eexists; eexists; dands; eauto.
 
-(*
   - introv comp.
     apply cl4 in comp; exrepnd.
     eexists; dands; eauto.
     introv.
     pose proof (comp0 n) as h; repndors; tcsp.
-    unfold bot2 in h; tcsp. *)
+    unfold bot2 in h; tcsp.
 Qed.
 
 Lemma approx_open_simpler_equiv_r {o} :
@@ -638,15 +641,14 @@ Proof.
     introv.
     pose proof (comp0 n) as h; clear comp0.
     pose proof (comp2 n) as q; clear comp2.
-    eapply alpha_eq_trans; eauto.
 
-(*    repndors; tcsp; right.
+    repndors; tcsp; right.
 
     + apply hr.
       eexists; dands; eauto.
 
     + apply hb.
-      eapply resp; eauto. *)
+      eapply resp; eauto.
 Qed.
 Hint Resolve respects_alpha_r_approx_aux : slow.
 
@@ -778,16 +780,15 @@ Proof.
     introv.
     pose proof (comp0 n) as h; clear comp0.
     pose proof (comp2 n) as q; clear comp2.
-    eapply alpha_eq_trans; eauto.
 
-(*    repndors; tcsp; right.
+    repndors; tcsp; right.
 
     + apply hr.
       eexists; dands; eauto.
 
     + apply hb.
       apply alpha_eq_sym in h.
-      eapply resp; eauto.*)
+      eapply resp; eauto.
 Qed.
 Hint Resolve respects_alpha_l_approx_aux : slow.
 
@@ -831,14 +832,13 @@ Proof.
     exists a' e'; dands; auto; repndors; auto; tcsp;
     try (complete (left; apply CIH; apply OBG; tcsp; eauto 3 with slow)).
 
-(*
   - introv comp.
     apply Hcl4 in comp; exrepnd.
     eexists; dands; eauto.
     introv.
     pose proof (comp0 n) as h; clear comp0; repndors; tcsp.
     left.
-    apply CIH; apply OBG; tcsp; eauto 3 with slow. *)
+    apply CIH; apply OBG; tcsp; eauto 3 with slow.
 Qed.
 
 (*
@@ -2296,9 +2296,8 @@ Qed.
  *)
 
 
-
 (*
 *** Local Variables:
-*** coq-load-path: ("." "../terms/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
 *** End:
 *)

@@ -1,23 +1,24 @@
 MAKEFILE
 ========
 
-To generate a Makefile, run `create_makefile.sh`.  This script requires
-bash v4.  It will generate a Makefile for `rules.v` and its
-dependencies.  Re-run `create_makefile.sh` everytime you pull to update
-the Makefile in case new files have been committed.
+To generate a Makefile, run `create_makefile.sh`.  This script
+requires bash v4.  It will generate a Makefile for `rules.v` and its
+dependencies.  Re-run `create_makefile.sh` everytime you pull to
+update the Makefile in case new files have been committed, or files
+have been moved around.
 
 Then run "make" (or alternatively if your machine has multiple cores,
 run make -j n, where n is the number of cores you want to use) to
 compile everything.  This will take a while.
 
-Our implementation compiles with Coq version 8.4pl6.
+Our implementation compiles with Coq version 8.5pl1.
 
 
 DESCRIPTION
 ===========
 
 This library formalizes Nuprl's Constructive Type Theory (CTT) as of
-2015.  More information can be found about Nuprl on the [Nuprl
+2016.  More information can be found about Nuprl on the [Nuprl
 website](http://www.nuprl.org/).  (Also check out
 [JonPRL](https://github.com/jonsterling/JonPRL) for an SML
 re-implementation of Nuprl.)  As for
@@ -49,8 +50,7 @@ rule.
 
 More information can be found on our [NuprlInCoq
 website](http://www.nuprl.org/html/Nuprl2Coq/).  Feel free to send
-questions to the authors (preferably to Vincent) or to
-nuprl@cs.cornell.edu.
+questions to the authors (preferably to Vincent).
 
 
 KEYWORDS
@@ -68,6 +68,7 @@ KEYWORDS
 * Consistency
 * Continuity
 * Bar Induction
+* Choice Sequences
 * Effects (exceptions)
 
 
@@ -101,14 +102,15 @@ We've proved that `nuprl` is indeed a type system in
 * The definitions of sequents and rules are in `per/sequents.v`.  This
 file also contains the definition of what it means for sequents and
 rules to be valid.  We also prove in this file that Nuprl is
-consistent, meaning that there is no proof of False.
+consistent in `per/weak_consistency.v`, meaning that there is no proof
+of False.
 
 * Our proofs of the validity of Nuprl's inference rules can be
 accessed from `rules.v` (see for example `rules/rules_function.v`,
 `rules/rules_squiggle.v`).
 
 * The proof of our most general Bar Induction rule is in
-`bar_induction/bar_induction_cterm2.v`.
+`bar_induction/bar_induction_cterm3.v`.
 
 * The proof of our most general continuity rule is discussed in
 `continuity/continuity_roadmap.v`.
@@ -116,6 +118,12 @@ accessed from `rules.v` (see for example `rules/rules_function.v`,
 * In `per/function_all_types.v` (and similarly in `per/union_all_types.v`)
 we have a proof that the pi type [forall n : nat. Universe(n)] is
 indeed a Nuprl type even though it's not in any universe.
+
+* In `axiom_choice/axiom_choice_gen.v` we have proved a version of the
+axiom of choice AC00 for squashed sums.
+
+* In `axiom_choice/choice_sequence_ind.v` we have proved the validity
+of a principle to recursively define choice sequences.
 
 
 CONTRIBUTORS

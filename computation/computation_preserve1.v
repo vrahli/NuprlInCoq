@@ -254,7 +254,7 @@ Proof.
             dands; eauto 3 with slow.
             allrw @nt_wf_eq.
             allrw <- @wf_apply_iff; repnd.
-            apply wf_eapply; auto.
+            dands; auto.
           }
         }
 
@@ -992,9 +992,3 @@ Proof.
   introv Hred Hisp. exrepnud Hred.
   apply computek_preserves_program in Hred0; auto.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

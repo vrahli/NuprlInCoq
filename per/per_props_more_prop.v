@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -475,38 +480,3 @@ Proof.
 Qed.
 *)
 
-Lemma equality_in_uni_mkc_halts {p} :
-  forall lib i (a b : @CTerm p),
-    equality lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
-    <=>
-    (chaltsc lib a <=> chaltsc lib b).
-Proof.
-  intros; repeat (rewrite <- fold_mkc_halts).
-  rw @mkc_approx_equality_in_uni.
-  allrw @chasvaluec_as_capproxc; sp.
-Qed.
-
-Lemma cequorsq_mkc_halts_implies {p} :
-  forall lib i (a b : @CTerm p),
-    equorsq lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
-    -> (chaltsc lib a <=> chaltsc lib b).
-Proof.
-  unfold equorsq; intros; sp;
-  allrw @equality_in_uni_mkc_halts; sp.
-  uncast; allrw @cequivc_decomp_halts; sp;
-  split; sp; spcast; discover; sp.
-Qed.
-
-Lemma cequorsq_mkc_halts {p} :
-  forall lib i (a b : @CTerm p),
-    equorsq lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
-    <=>
-    (chaltsc lib a <=> chaltsc lib b).
-Proof.
-  unfold equorsq; intros; split; sp; try right;
-  allrw @equality_in_uni_mkc_halts; sp; uncast;
-  allrw @cequivc_decomp_halts; try split; sp; spcast;
-  discover; sp.
-Abort.
-(* This is not true in Prop with Cast around hasvalue *)
-(*Qed.*)

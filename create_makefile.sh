@@ -167,5 +167,5 @@ do
     fi
 
     echo "" >> Makefile
-    echo "	coqc -I axiom_choice -I bar_induction -I cequiv -I close -I computation -I continuity -I per -I rules -I terms -I util ${i}.v" >> Makefile
+    echo "	coqc -R axiom_choice axiom_choice -R bar_induction bar_induction -R cequiv cequiv -R close close -R computation computation -R continuity continuity -R per per -R rules rules -R terms terms -R util util ${i}.v" >> Makefile
 done

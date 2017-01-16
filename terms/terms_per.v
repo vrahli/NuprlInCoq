@@ -161,10 +161,10 @@ Hint Resolve isprog_vars_erase_rel : isprog.
 Hint Resolve isprog_vars_erase : isprog.
 
 Definition erasec_rel {p} (A : @CTerm p) : CTerm :=
-  let (a,x) := A in existT isprog (erase_rel a) (isprog_erase_rel a x).
+  let (a,x) := A in mk_ct (erase_rel a) (isprog_erase_rel a x).
 
 Definition erasec {p} (A : @CTerm p) : CTerm :=
-  let (a,x) := A in existT isprog (erase a) (isprog_erase a x).
+  let (a,x) := A in mk_ct (erase a) (isprog_erase a x).
 
 Lemma erasec_eq {p} :
   forall A, @erasec p A = mkc_pertype (erasec_rel A).
@@ -377,7 +377,7 @@ Qed.
 Definition mkc_per_function_rel {o} (A B : @CTerm o) : CTerm :=
   let (a,x) := A in
   let (b,y) := B in
-  existT isprog (mk_per_function_rel a b) (isprog_mk_per_function_rel a b x y).
+  mk_ct (mk_per_function_rel a b) (isprog_mk_per_function_rel a b x y).
 
 
 (* ------ iper-function ------ *)
@@ -464,8 +464,6 @@ Proof.
 
   allrw @isprog_vars_lam_iff.
   rw <- @isprog_vars_isect_iff.
-  rw <- @isprog_vars_isect_iff.
-  rw <- @isprog_vars_isect_iff.
   rw @isprog_vars_uand.
   allrw <- @isprog_vars_equality_iff.
   allrw <- @isprog_vars_tequality_iff.
@@ -479,37 +477,38 @@ Proof.
 
   split; intro k; repnd; dands.
 
-  repeat (apply isprog_vars_cons).
-  apply isprog_vars_app1; sp.
+  {
+    repeat (apply isprog_vars_cons).
+    apply isprog_vars_app1; sp.
+  }
 
-  repeat (apply isprog_vars_cons).
-  apply isprog_vars_app1; sp.
+  {
+    repeat (apply isprog_vars_cons).
+    apply isprog_vars_app1; sp.
+  }
 
-  repeat (apply isprog_vars_cons).
-  apply isprog_vars_app1; sp.
+  {
+    repeat (apply isprog_vars_cons).
+    apply isprog_vars_app1; sp.
+  }
 
-  repeat (apply isprog_vars_cons).
-  apply isprog_vars_app1; sp.
+  {
+    repeat (apply isprog_vars_cons).
+    apply isprog_vars_app1; sp.
+  }
 
-  apply isprog_vars_cons_if2 in k0;
-    try (complete (repeat (rw in_app_iff in Heqp1); repeat (rw not_over_or in Heqp1); sp)).
-  apply isprog_vars_cons_if2 in k0;
-    try (complete (repeat (rw in_app_iff in Heqp0); repeat (rw not_over_or in Heqp0); sp)).
-  apply isprog_vars_cons_app1 in k0; try (complete sp).
-  introv i; simpl in i; repdors; try (complete sp); subst.
-  repeat (rw in_app_iff in Heqp2); repeat (rw not_over_or in Heqp2); sp.
-  repeat (rw in_app_iff in Heqp3); repeat (rw not_over_or in Heqp3); sp.
+  {
+    apply isprog_vars_cons_app1 in k0; auto.
+    allrw in_app_iff; allrw not_over_or; repnd.
+    simpl; introv xx; repndors; subst; tcsp.
+  }
 
-  apply isprog_vars_cons_if2 in k;
-    try (complete (repeat (rw in_app_iff in Heqp); repeat (rw not_over_or in Heqp); sp)).
-  apply isprog_vars_cons_if2 in k;
-    try (complete (repeat (rw in_app_iff in Heqp1); repeat (rw not_over_or in Heqp1); sp)).
-  apply isprog_vars_cons_if2 in k;
-    try (complete (repeat (rw in_app_iff in Heqp0); repeat (rw not_over_or in Heqp0); sp)).
-  apply isprog_vars_cons_app1 in k; try (complete sp).
-  introv i; simpl in i; repdors; try (complete sp); subst.
-  repeat (rw in_app_iff in Heqp2); repeat (rw not_over_or in Heqp2); sp.
-  repeat (rw in_app_iff in Heqp3); repeat (rw not_over_or in Heqp3); sp.
+  {
+    allrw in_app_iff; allrw not_over_or; repnd.
+    apply isprog_vars_cons_if2 in k1; auto.
+    apply isprog_vars_cons_app1 in k1; auto.
+    simpl; introv xx; repndors; subst; tcsp.
+  }
 Qed.
 
 Lemma isprog_vars_mk_iper_function_iff {o} :
@@ -554,7 +553,7 @@ Qed.
 Definition mkc_iper_function_rel {o} (A B : @CTerm o) : CTerm :=
   let (a,x) := A in
   let (b,y) := B in
-  existT isprog (mk_iper_function_rel a b) (isprog_mk_iper_function_rel a b x y).
+  mk_ct (mk_iper_function_rel a b) (isprog_mk_iper_function_rel a b x y).
 
 
 

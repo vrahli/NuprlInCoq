@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -711,57 +716,6 @@ Proof.
   apply lsubstc_erase.
 Qed.
 
-Lemma isprogram_isaxiom {o} :
-  forall a b c,
-    isprogram a
-    -> isprogram b
-    -> @isprogram o c
-    -> isprogram (mk_isaxiom a b c).
-Proof.
-  repeat constructor.
-  unfold closed; simpl.
-  allrw <- null_iff_nil.
-  repeat (rw null_app).
-  repeat (rw null_iff_nil).
-  allunfold @isprogram; allunfold @closed.
-  repeat (rewrite remove_nvars_nil_l); sp.
-  simpl; sp; allunfold @isprogram; sp; subst; constructor; auto.
-Qed.
-
-Lemma isprogram_isaxiom_iff {p} :
-  forall a b c, (isprogram a # isprogram b # @isprogram p c) <=> isprogram (mk_isaxiom a b c).
-Proof.
-  intros; split; intro i.
-  apply isprogram_isaxiom; sp.
-  inversion i as [cl w].
-  allunfold @closed; allsimpl.
-  allrw remove_nvars_nil_l.
-  allrw app_nil_r.
-  allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [| | o lnt k meq ]; allsimpl; subst.
-  generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
-  dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
-  unfold isprogram; allrw.
-  inversion i1; inversion i2; inversion i3; subst; sp.
-Qed.
-
-Lemma isprog_isaxiom {p} :
-  forall a b c,
-    isprog a
-    -> isprog b
-    -> @isprog p c
-    -> isprog (mk_isaxiom a b c).
-Proof.
-  sp; allrw @isprog_eq.
-  apply isprogram_isaxiom; auto.
-Qed.
-
-Definition mkc_isaxiom {p} (t1 t2 t3 : @CTerm p) : CTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  let (c,z) := t3 in
-    exist isprog (mk_isaxiom a b c) (isprog_isaxiom a b c x y z).
-
 Lemma mkc_isaxiom_eq {p} :
   forall a b c d e f,
     mkc_isaxiom a b c = @mkc_isaxiom p d e f
@@ -771,14 +725,6 @@ Proof.
   destruct_cterms.
   allunfold @mkc_isaxiom.
   inversion eq; subst; dands; tcsp; eauto with pi.
-Qed.
-
-Lemma fold_isaxiom {p} :
-  forall a b c,
-    oterm (NCan (NCanTest CanIsaxiom)) [ nobnd a, nobnd b, @nobnd p c ]
-    = mk_isaxiom a b c.
-Proof.
-  sp.
 Qed.
 
 Lemma lsubstc_mk_isaxiom {p} :

@@ -24,8 +24,6 @@
 *)
 
 
-Add LoadPath "../".
-
 Require Export type_sys_pfam.
 Require Import dest_close.
 Require Import pmeq_lemmas.
@@ -504,9 +502,3 @@ Proof.
     apply j5; sp.
 Qed.
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("../")
-*** End:
-*)

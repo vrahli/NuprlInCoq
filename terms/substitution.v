@@ -281,7 +281,7 @@ Qed.
 
 Definition lmap_apply {A : Set} (eqdec: Deq A) (sub: lmap A A) (a:A): A :=
   match lmap_find eqdec sub a with
-    | inl (existT a' _) =>  a'
+    | inl (existT _ a' _) =>  a'
     | inr _ => a
   end.
 

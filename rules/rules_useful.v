@@ -721,10 +721,3 @@ Proof.
   revert c''.
   rw <- snoc_as_append; introv; proof_irr; sp.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

@@ -1,5 +1,5 @@
-* Divide cequiv/approx_star.v into several files, one for each non
-  canonical operator so that they can be compiled in parallel.
+* [DONE] Divide cequiv/approx_star.v into several files, one for each
+  non canonical operator so that they can be compiled in parallel.
 
 * not not semantics.
 
@@ -7,14 +7,14 @@
 
 * Pointwise functionality vs. pairwise functionality.
 
-* Currently, sequences are not allowed in the library: not soseq case
-  in SOTerm's definition in terms/sovar.v
+* [DONE] Currently, sequences are not allowed in the library: no soseq
+  case in SOTerm's definition in terms/sovar.v
 
 * Get rid of the use of functional extensionality and UIP by not using
-  all these _proof_irrelevance lemmas.
+  all these xxx_proof_irrelevance lemmas.
 
-* In the proof of continuity use a squashed relation instead of a
-  function.  (We can prove that directly in Nuprl.)
+* [DONE] In the proof of continuity use a squashed relation instead of
+  a function.  (We can prove that directly in Nuprl.)
 
 * Get rid of the noatoms in the definition of sequences.
 
