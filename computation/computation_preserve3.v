@@ -2984,10 +2984,3 @@ Proof.
   apply comp in i; sp.
 Qed.
 *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

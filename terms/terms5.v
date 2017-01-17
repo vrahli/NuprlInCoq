@@ -325,7 +325,7 @@ Qed.
 
 Lemma wf_sterm_iff {o} :
   forall (f : @ntseq o),
-    wf_term (sterm f) <=> (forall n : nat, isprog_nout (f n)).
+    wf_term (sterm f) <=> (forall n : nat, isprog (f n)).
 Proof.
   introv.
   split; intro h.
@@ -333,11 +333,11 @@ Proof.
     apply wf_term_eq in h.
     inversion h as [|? imp|]; subst; clear h.
     pose proof (imp n) as h; repnd.
-    apply isprog_nout_iff; sp.
+    apply isprog_eq; split; auto.
   - apply wf_term_eq.
     constructor; introv.
     pose proof (h n) as q; clear h.
-    apply isprog_nout_iff in q; sp.
+    apply isprog_eq in q; destruct q; auto.
 Qed.
 
 Lemma wf_isint {p} :
@@ -817,10 +817,3 @@ Proof.
   introv; destruct_cterms; simpl.
   rw @isprog_vars_cont1_dup1; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)
