@@ -792,23 +792,33 @@ Lemma no_utokens_implies_get_utokens_so_nil {o} :
 Proof.
   introv h.
   unfold no_utokens in h; auto.
+  pose proof (get_utokens_so_subset_get_cutokens_so t) as s.
+  rw h in s; clear h.
+  remember (get_utokens_so t) as l; clear Heql.
+  destruct l as [|v l]; auto; provefalse.
+  pose proof (s v) as h; allsimpl.
+  autodimp h hyp.
+  apply not_in_olist in h; sp.
 Qed.
+
+Hint Resolve osubset_oappl_nil_left : slow.
 
 Lemma compute_step_subst_utoken {o} :
   forall lib (t u : @NTerm o) sub,
     nt_wf t
     -> compute_step lib (lsubst t sub) = csuccess u
     -> nr_ut_sub t sub
-    -> disjoint (get_utokens_sub sub) (get_utokens t)
+    -> disjoint (get_utokens_sub sub) (get_utokens_step_seq t)
     -> {w : NTerm
         & alpha_eq u (lsubst w sub)
         # disjoint (get_utokens_sub sub) (get_utokens w)
         # subvars (free_vars w) (free_vars t)
-        # subset (get_utokens w) (get_utokens t)
+        # osubset (get_cutokens w) (get_cutokens t)
+        # subset (get_utokens w) (get_utokens_step_seq t)
         # (forall sub',
              nr_ut_sub t sub'
              -> dom_sub sub = dom_sub sub'
-             -> disjoint (get_utokens_sub sub') (get_utokens t)
+             -> disjoint (get_utokens_sub sub') (get_utokens_step_seq t)
              -> {s : NTerm
                  & compute_step lib (lsubst t sub') = csuccess s
                  # alpha_eq s (lsubst w sub')})}.
@@ -881,7 +891,8 @@ Proof.
           repndors; exrepnd; subst.
 
           - exists (@mk_axiom o); allsimpl.
-            rw @cl_lsubst_trivial; simpl; dands; eauto with slow.
+            rw @cl_lsubst_trivial; simpl; dands; eauto with slow;
+            try (apply (osubset_oappl_nil_left)).
             introv nrut' eqdoms disj'.
             exists (@mk_axiom o); allsimpl.
             rw (@cl_lsubst_trivial o mk_axiom); simpl; dands; eauto 3 with slow.
@@ -930,9 +941,14 @@ Proof.
               unfold dom_sub; simpl; boolvar; simpl; allrw app_nil_r; eauto with slow.
 
             + autorewrite with slow.
-              eapply subset_eqset_l;[apply eqset_sym;apply get_utokens_lsubst|].
+              eapply oeqset_osubset;[apply get_cutokens_lsubst|].
               unfold get_cutokens_sub; simpl; boolvar; simpl;
               autorewrite with slow; eauto 3 with slow.
+
+            + autorewrite with slow.
+              eapply subset_eqset_l;[apply eqset_sym;apply get_utokens_lsubst|].
+              apply subset_app; dands; eauto 3 with slow.
+              unfold get_utokens_sub; simpl; boolvar; simpl; auto.
 
             + introv nrut' eqdoms disj'.
               unflsubst; simpl; allrw @sub_filter_nil_r.
@@ -970,6 +986,11 @@ Proof.
 
             { allrw subvars_app_l; dands; eauto 3 with slow. }
 
+            { unfold oatoml.
+              autorewrite with slow.
+              allrw @oeqset_oappl_cons.
+              repeat (apply osubset_oapp_left); dands; eauto 3 with slow. }
+
             introv nrut' eqdoms disj'.
             unflsubst; simpl; allrw @sub_filter_nil_r.
             pose proof (sub_find_some_eq_doms_nr_ut_sub
@@ -1003,6 +1024,10 @@ Proof.
               * exists u2.
                 unflsubst; dands; eauto 4 with slow.
 
+                { autorewrite with slow.
+                  allrw @oeqset_oappl_cons.
+                  eauto 3 with slow. }
+
                 introv nrut' eqdoms disj'.
                 pose proof (sub_find_some_eq_doms_nr_ut_sub
                               sub sub' x
@@ -1010,12 +1035,13 @@ Proof.
                                      [nobnd (mk_var x), nobnd u1, nobnd u2, nobnd u3])) as h; repeat (autodimp h hyp).
                 rw Heqsf in h; exrepnd.
                 unflsubst; simpl; allrw @sub_filter_nil_r; allrw.
-                assert (disjoint (get_utokens_sub sub) (get_utokens u1)) as ni2.
+                assert (disjoint (get_utokens_sub sub) (get_utokens_step_seq u1)) as ni2.
                 { allrw disjoint_app_r; sp. }
                 applydup @sub_find_some in Heqsf.
                 unfold get_utokens_sub in ni2.
                 apply in_sub_eta in Heqsf0; repnd.
                 disj_flat_map; allsimpl; allrw disjoint_singleton_l.
+                eapply subset_not_in in Heqsf2;[|apply subset_get_utokens_get_utokens_step_seq].
                 eapply lsubst_aux_utoken_eq_utoken_implies in Heqsf2; eauto; exrepnd; subst; allsimpl; allrw Heqsf2; GC.
                 pose proof (nr_ut_sub_some_eq
                               sub v x a (oterm (NCan (NCompOp CompOpEq))
@@ -1029,6 +1055,10 @@ Proof.
 
               * exists u3.
                 unflsubst; dands; eauto 4 with slow.
+
+                { autorewrite with slow.
+                  allrw @oeqset_oappl_cons.
+                  eauto 4 with slow. }
 
                 introv nrut' eqdoms disj'.
                 pose proof (sub_find_some_eq_doms_nr_ut_sub
@@ -1108,6 +1138,10 @@ Proof.
               * rw disjoint_app_r; dands; auto.
                 allrw disjoint_app_r; dands; eauto 3 with slow.
 
+              * autorewrite with slow.
+                allrw @oeqset_oappl_cons.
+                repeat (apply osubset_oapp_left); dands; eauto 4 with slow.
+
               * introv nrut' eqdoms disj'.
                 unflsubst; simpl; allrw @sub_filter_nil_r.
                 pose proof (sub_find_some_eq_doms_nr_ut_sub
@@ -1151,6 +1185,15 @@ Proof.
               exists (oterm Exc l0).
               unflsubst; simpl; dands; eauto 4 with slow.
 
+              { eapply subset_disjoint_r;[exact disj|].
+                allrw app_nil_r.
+                apply subset_app_r.
+                apply subset_app_l.
+                apply subset_flat_map2; introv i; destruct x0; allsimpl; eauto 3 with slow. }
+
+              { autorewrite with slow.
+                apply osubset_oappl_app_r; eauto 3 with slow. }
+
               introv nrut' eqdoms disj'.
               pose proof (sub_find_some_eq_doms_nr_ut_sub
                             sub sub' x
@@ -1171,6 +1214,10 @@ Proof.
 
             + exists u1; unflsubst; dands; eauto 4 with slow.
 
+              { autorewrite with slow.
+                allrw @oeqset_oappl_cons.
+                repeat (apply osubset_oapp_left); dands; eauto 3 with slow. }
+
               introv nrut' eqdoms disj'.
               unflsubst; simpl; boolvar.
               allrw @sub_filter_nil_r.
@@ -1183,6 +1230,10 @@ Proof.
               unflsubst.
 
             + exists u2; unflsubst; dands; eauto with slow.
+
+              { autorewrite with slow.
+                allrw @oeqset_oappl_cons.
+                repeat (apply osubset_oapp_left); dands; eauto 3 with slow. }
 
               introv nrut' eqdoms disj'.
               unflsubst; simpl; boolvar.
@@ -1257,6 +1308,8 @@ Proof.
               try (rewrite seq).
               try (rewrite seq1).
               dands; eauto 3 with slow.
+
+              * eapply implies_osubset_singleton_OLS_r; eauto 3 with slow.
 
               * introv nrut' eqdoms' disj'.
                 unflsubst; simpl.
@@ -1368,8 +1421,15 @@ Proof.
               apply subvars_app_l; dands; auto.
               boolvar; simpl; auto.
 
-            + eapply subset_eqset_l;[apply eqset_sym;apply get_utokens_subst|].
-              boolvar; simpl; autorewrite with slow; auto.
+            + eapply oeqset_osubset;[apply get_cutokens_subst|].
+              allrw @oeqset_oappl_cons.
+              repeat (apply osubset_oapp_left); dands; eauto 3 with slow.
+              boolvar; eauto 3 with slow.
+
+            + autorewrite with slow.
+              eapply subset_eqset_l;[apply eqset_sym;apply get_utokens_lsubst|].
+              apply subset_app; dands; eauto 3 with slow.
+              unfold get_utokens_sub; simpl; boolvar; simpl; auto.
 
             + introv nrut' eqdoms' disj'.
               unflsubst; simpl.
@@ -1421,6 +1481,9 @@ Proof.
             unflsubst.
             dands; eauto 3 with slow.
 
+            { apply implies_osubset_oappl_right; simpl.
+              eexists; dands;[|apply osubset_refl]; auto. }
+
             introv nrut' eqdoms' disj'.
             allrw disjoint_app_r.
             unflsubst; simpl; autorewrite with slow in *.
@@ -1471,6 +1534,11 @@ Proof.
                 + allrw remove_nvars_nil_l; allrw app_nil_r.
                   eapply subvars_eqvars;[|apply eqvars_sym; apply eqvars_free_vars_disjoint].
                   simpl; boolvar; simpl; allrw app_nil_r; eauto with slow.
+
+                + allrw @oeqset_oappl_cons.
+                  allrw @fold_subst.
+                  eapply oeqset_osubset;[apply get_cutokens_subst|].
+                  boolvar; autorewrite with slow; eauto 3 with slow.
 
                 + autorewrite with slow.
                   eapply subset_eqset_l;[apply eqset_sym;apply get_utokens_lsubst|].
@@ -1563,6 +1631,11 @@ Proof.
                   simpl; allrw subvars_app_l; dands; eauto 3 with slow.
                   boolvar; simpl; autorewrite with slow; eauto 3 with slow.
 
+                * allrw @oeqset_oappl_cons.
+                  allrw @fold_subst.
+                  eapply oeqset_osubset;[apply get_cutokens_subst|].
+                  boolvar; autorewrite with slow; eauto 3 with slow.
+
                 * autorewrite with slow.
                   eapply subset_eqset_l;[apply eqset_sym;apply get_utokens_lsubst|].
                   apply subset_app; dands; eauto 3 with slow.
@@ -1636,6 +1709,8 @@ Proof.
               dands; eauto 3 with slow.
 
               + prove_alpha_eq3.
+
+              + repeat (apply osubset_oapp_left); dands; eauto 4 with slow.
 
               + introv nrut' eqdoms' disj'.
                 unflsubst; simpl; autorewrite with slow in *.
@@ -1742,6 +1817,14 @@ Proof.
                 eapply subvars_eqvars;[|apply eqvars_sym; apply eqvars_free_vars_disjoint].
                 simpl; boolvar; simpl; allrw app_nil_r; eauto with slow.
 
+              + eapply oeqset_osubset;[apply get_cutokens_lsubst|].
+                allrw @oeqset_oappl_cons; autorewrite with slow in *.
+                allrw @osubset_oapp_left_iff; dands; eauto 3 with slow.
+
+                unfold get_cutokens_sub; simpl; boolvar; simpl;
+                allrw @oeqset_oappl_cons; allrw @osubset_oapp_left_iff; dands;
+                autorewrite with slow; eauto 3 with slow.
+
               + eapply subset_eqset_l;[apply eqset_sym;apply get_utokens_lsubst|].
                 apply subset_app; dands; eauto 3 with slow.
                 unfold get_utokens_sub; simpl; boolvar; simpl;
@@ -1802,6 +1885,14 @@ Proof.
               + allrw remove_nvars_nil_l; allrw app_nil_r.
                 eapply subvars_eqvars;[|apply eqvars_sym; apply eqvars_free_vars_disjoint].
                 simpl; boolvar; simpl; allrw app_nil_r; eauto with slow.
+
+              + eapply oeqset_osubset;[apply get_cutokens_lsubst|].
+                allrw @oeqset_oappl_cons; autorewrite with slow in *.
+                allrw @osubset_oapp_left_iff; dands; eauto 3 with slow.
+
+                unfold get_cutokens_sub; simpl; boolvar; simpl;
+                allrw @oeqset_oappl_cons; allrw @osubset_oapp_left_iff; dands;
+                autorewrite with slow; eauto 3 with slow.
 
               + eapply subset_eqset_l;[apply eqset_sym;apply get_utokens_lsubst|].
                 apply subset_app; dands; eauto 3 with slow.
@@ -1867,6 +1958,15 @@ Proof.
                 eapply subvars_eqvars;[|apply eqvars_sym; apply eqvars_free_vars_disjoint].
                 simpl; boolvar; simpl; allrw app_nil_r; eauto with slow.
 
+              + eapply oeqset_osubset;[apply get_cutokens_lsubst|].
+                allrw @oappl_app_as_oapp; autorewrite with slow in *.
+                allrw @oeqset_oappl_cons; autorewrite with slow in *.
+                allrw @osubset_oapp_left_iff; dands; eauto 4 with slow.
+
+                unfold get_cutokens_sub; simpl; boolvar; simpl;
+                allrw @oeqset_oappl_cons; allrw @osubset_oapp_left_iff; dands;
+                autorewrite with slow; eauto 3 with slow.
+
               + eapply subset_eqset_l;[apply eqset_sym;apply get_utokens_lsubst|].
                 apply subset_app; dands; eauto 3 with slow.
                 unfold get_utokens_sub; simpl; boolvar; simpl;
@@ -1915,6 +2015,15 @@ Proof.
               + allrw remove_nvars_nil_l; allrw app_nil_r.
                 eapply subvars_eqvars;[|apply eqvars_sym; apply eqvars_free_vars_disjoint].
                 simpl; boolvar; simpl; allrw app_nil_r; eauto with slow.
+
+              + eapply oeqset_osubset;[apply get_cutokens_lsubst|].
+                allrw @oappl_app_as_oapp; autorewrite with slow in *.
+                allrw @oeqset_oappl_cons; autorewrite with slow in *.
+                allrw @osubset_oapp_left_iff; dands; eauto 4 with slow.
+
+                unfold get_cutokens_sub; simpl; boolvar; simpl;
+                allrw @oeqset_oappl_cons; allrw @osubset_oapp_left_iff; dands;
+                autorewrite with slow; eauto 3 with slow.
 
               + eapply subset_eqset_l;[apply eqset_sym;apply get_utokens_lsubst|].
                 apply subset_app; dands; eauto 3 with slow.
@@ -1975,6 +2084,16 @@ Proof.
               + allrw remove_nvars_nil_l; allrw app_nil_r.
                 eapply subvars_eqvars;[|apply eqvars_sym; apply eqvars_free_vars_disjoint].
                 simpl; boolvar; simpl; allrw app_nil_r; eauto with slow.
+
+              + eapply oeqset_osubset;[apply get_cutokens_lsubst|].
+                allrw @oappl_app_as_oapp; autorewrite with slow in *.
+                allrw @oeqset_oappl_cons; autorewrite with slow in *.
+                allrw @osubset_oapp_left_iff; dands; eauto 4 with slow.
+
+                unfold get_cutokens_sub; simpl; boolvar; simpl;
+                allrw @oappl_app_as_oapp;
+                allrw @oeqset_oappl_cons; allrw @osubset_oapp_left_iff; dands;
+                autorewrite with slow; eauto 3 with slow.
 
               + eapply subset_eqset_l;[apply eqset_sym;apply get_utokens_lsubst|].
                 apply subset_app; dands; eauto 3 with slow.
@@ -2589,6 +2708,16 @@ Proof.
               allsimpl; boolvar; allsimpl; allrw app_nil_r;
               allrw subvars_app_l; dands; eauto with slow.
 
+            + eapply oeqset_osubset;[apply get_cutokens_lsubst|].
+              allrw @oappl_app_as_oapp; autorewrite with slow in *.
+              allrw @oeqset_oappl_cons; autorewrite with slow in *.
+              allrw @osubset_oapp_left_iff; dands; eauto 4 with slow.
+
+              unfold get_cutokens_sub; simpl; boolvar; simpl;
+              allrw @oappl_app_as_oapp;
+              allrw @oeqset_oappl_cons; allrw @osubset_oapp_left_iff; dands;
+              autorewrite with slow; eauto 3 with slow.
+
             + eapply subset_eqset_l;[apply eqset_sym;apply get_utokens_lsubst|].
               apply subset_app; dands; eauto 3 with slow.
               unfold get_utokens_sub; simpl; boolvar; simpl;
@@ -2725,6 +2854,7 @@ Proof.
             rw <- @cl_lsubst_lsubst_aux; eauto 3 with slow.
             rw @get_utokens_pushdown_fresh.
             rw @free_vars_pushdown_fresh.
+            rw @get_cutokens_pushdown_fresh.
             dands; eauto 3 with slow.
 
             * apply alpha_eq_sym.
@@ -2793,6 +2923,8 @@ Proof.
               { rw subvars_prop; introv i; rw in_app_iff; rw in_remove_nvars; simpl.
                 destruct (deq_nvar x0 n); tcsp.
                 left; sp. }
+            - constructor; auto; introv i j;[].
+              allapply @subset_get_utokens_get_utokens_step_seq; sp.
           }
 
           { rw @get_utokens_sub_app; rw @get_utokens_sub_cons; rw @get_utokens_sub_nil; rw app_nil_r; simpl.
@@ -2801,8 +2933,7 @@ Proof.
               apply get_utokens_sub_filter_subset.
             - intro i; destruct fap.
               unflsubst.
-              apply get_utokens_lsubst_aux; auto.
-              rw in_app_iff; sp.
+              apply subset_get_utokens_step_seq_lsubst_aux; auto.
           }
 
           exrepnd.
@@ -2830,8 +2961,12 @@ Proof.
             repndors; tcsp;[].
 
             destruct fap.
+            unflsubst.
+            apply get_utokens_step_seq_lsubst_aux_is_utok_sub; eauto 3 with slow;[].
+            allrw in_app_iff.
             allrw @in_get_utokens_sub; exrepnd.
-            exists v t0; dands; auto;[].
+            right.
+            exists v t0; dands; auto.
             allrw @in_sub_keep_first; repnd; dands; auto.
             rw subvars_prop in k3; apply k3 in h0; auto.
 
@@ -2857,6 +2992,9 @@ Proof.
                 { rw subvars_prop; introv i; rw in_app_iff; rw in_remove_nvars; simpl.
                   destruct (deq_nvar x0 n); tcsp.
                   left; sp. }
+              - constructor; auto.
+                introv i j.
+                apply subset_get_utokens_get_utokens_step_seq in j; sp.
             }
 
             { allrw @dom_sub_app; simpl; allrw <- @dom_sub_sub_filter; allrw; auto. }
@@ -2867,7 +3005,7 @@ Proof.
                 apply get_utokens_sub_filter_subset.
               - intro i; destruct fap'.
                 unflsubst.
-                apply get_utokens_lsubst_aux; eauto 3 with slow.
+                apply get_utokens_step_seq_lsubst_aux_is_utok_sub; eauto 3 with slow.
                 rw in_app_iff; tcsp.
             }
 
@@ -2886,11 +3024,14 @@ Proof.
             rw h; clear h; allrw @fold_subst.
             eapply alpha_eq_trans;[apply implies_alpha_eq_mk_fresh; apply simple_alphaeq_subst_utokens_subst|].
 
-            { intro h; destruct fap'.
+            { intro h.
+              pose proof (get_utokens_step_seq_lsubst_aux_is_utok_sub t (sub_filter sub' [n])) as e.
+              autodimp e hyp; eauto 3 with slow;[].
+              unflsubst in fap'.
+              rw e in fap'; clear e.
               allrw @get_utokens_lsubst; allrw in_app_iff; allrw not_over_or; repnd.
-              repndors; tcsp.
+              repndors; tcsp; destruct fap'.
               allrw @in_get_utokens_sub; exrepnd.
-              right.
               exists v t0; dands; auto.
               allrw @in_sub_keep_first; repnd; dands; auto.
               rw subvars_prop in k3; apply k3 in h2; auto. }
@@ -2935,6 +3076,12 @@ Proof.
       { eapply subvars_trans;[apply subvars_free_vars_mk_instance|]; auto.
         unfold correct_abs in correct; sp. }
 
+      { eapply osubset_trans;[apply get_cutokens_mk_instance|]; auto.
+        unfold correct_abs in correct; repnd.
+        rw correct.
+        eapply osubset_oeqset;[|apply oeqset_sym;apply oeqset_oappl_OLL].
+        apply osubset_oapp_left_iff; dands; eauto 3 with slow. }
+
       { eapply subset_trans;[apply get_utokens_mk_instance|]; auto.
         unfold correct_abs in correct; repnd.
         dup correct as c.
@@ -2959,17 +3106,17 @@ Proof.
       }
 Qed.
 
-Lemma compute_step_preserves_utokens {o} :
+Lemma compute_step_preserves_cutokens {o} :
   forall lib (t u : @NTerm o),
     nt_wf t
     -> compute_step lib t = csuccess u
-    -> subset (get_utokens u) (get_utokens t).
+    -> osubset (get_cutokens u) (get_cutokens t).
 Proof.
   introv wf comp.
   pose proof (compute_step_subst_utoken lib t u []) as h.
   autorewrite with slow in *.
   repeat (autodimp h hyp); exrepnd; autorewrite with slow in *.
-  apply alphaeq_preserves_utokens in h1; rw h1; auto.
+  apply alphaeq_preserves_cutokens in h1; rw h1; auto.
 Qed.
 
 (*

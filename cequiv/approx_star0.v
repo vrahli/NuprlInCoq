@@ -86,6 +86,10 @@ Proof.
   pose proof (length_dom sub) as len.
   rw eqdoms in len; rw @length_dom in len.
 
+  Print nrut_sub.
+  Print get_utokens.
+  Print ut_sub.
+
   pose proof (change_nr_ut_sub_in_lsubst_aux_approx_star
                 lib (lsubst t1 sub) (lsubst t2 sub)
                 (nrut_subs_to_utok_ren sub sub')) as h.
@@ -2289,10 +2293,3 @@ Proof.
       rw @computes_to_val_like_in_max_k_steps_S.
       exists u; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

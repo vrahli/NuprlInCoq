@@ -3095,6 +3095,58 @@ Proof.
 Qed.
 *)
 
+Lemma wf_oterm_iff {o} :
+  forall (op : Opid) (bs : list (@BTerm o)),
+    wf_term (oterm op bs)
+    <=>
+    (map num_bvars bs = OpBindings op
+     # (forall b : BTerm, LIn b bs -> wf_bterm b)).
+Proof.
+  introv.
+  rw @wf_term_eq.
+  rw @nt_wf_oterm_iff.
+  split; intro k; repnd; dands; auto; introv i; apply k in i;
+  apply bt_wf_eq; auto.
+Qed.
+
+Lemma wf_bterm_iff {o} :
+  forall l (t : @NTerm o),
+    wf_bterm (bterm l t) <=> wf_term t.
+Proof.
+  introv.
+  unfold wf_bterm, wf_term; simpl; sp.
+Qed.
+
+Lemma isprog_nout_iff {o} :
+  forall (t : @NTerm o),
+    isprog_nout t <=> (nt_wf t # closed t # noutokens t).
+Proof.
+  introv.
+  unfold isprog_nout.
+  rw @wf_term_eq.
+  rw @no_vars_like_b_true_iff.
+  split; sp.
+Qed.
+
+Lemma wf_sterm_iff {o} :
+  forall (f : @ntseq o),
+    wf_term (sterm f) <=> (forall n : nat, isprog (f n)).
+Proof.
+  introv.
+  split; intro h.
+  - introv.
+    apply wf_term_eq in h.
+    inversion h as [|? imp|]; subst; clear h.
+    pose proof (imp n) as h; repnd.
+    apply isprog_eq.
+    constructor; auto.
+  - apply wf_term_eq.
+    constructor; introv.
+    pose proof (h n) as q; clear h.
+    apply isprog_eq in q.
+    inversion q; auto.
+Qed.
+
 Lemma wf_subst_utokens_aux {o} :
   forall (t : @NTerm o) (sub : utok_sub),
     wf_term t
@@ -9734,9 +9786,3 @@ Hint Resolve computes_to_name_utoken : slow.
 
 
 (* end hide *)
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

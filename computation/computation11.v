@@ -1202,7 +1202,8 @@ Proof.
       allrw disjoint_singleton_l.
       repeat (autodimp h hyp); try (apply get_fresh_atom_prop); eauto 3 with slow.
       { apply nr_ut_sub_cons; eauto 3 with slow.
-        intro i; apply get_fresh_atom_prop. }
+        Check get_fresh_atom_prop.
+        intro i; apply get_fresh_atom_prop2. }
       exrepnd.
       pose proof (h0 [(v,mk_utoken a)]) as q; clear h0; allsimpl.
       allrw @get_utokens_sub_cons; allrw @get_utokens_sub_nil; allsimpl.
@@ -1224,12 +1225,17 @@ Proof.
       pose proof (IHk a (subst_utokens x [(get_fresh_atom t, mk_var v)])) as q; clear IHk.
       repeat (autodimp q hyp).
       { apply wf_subst_utokens; eauto 3 with slow. }
-      { intro j; apply get_utokens_subst_utokens_subset in j; allsimpl.
+      {
+        intro j; apply get_utokens_subst_utokens_subset in j; allsimpl.
         unfold get_utokens_utok_ren in j; allsimpl; allrw app_nil_r.
         rw in_remove in j; repnd.
         apply alphaeq_preserves_utokens in h1; rw h1 in j.
-        apply get_utokens_subst in j; boolvar; allsimpl; allrw in_app_iff; tcsp; allsimpl.
-        repndors; tcsp. }
+        apply get_utokens_subst in j; boolvar; allsimpl; allrw in_app_iff; tcsp; allsimpl;
+          repndors; tcsp.
+        {
+          SearchAbout get_cutokens get_utokens_step_seq.
+        }
+      }
 
       pose proof (q v0) as ih; clear q.
       repeat (autodimp ih hyp); exrepnd.

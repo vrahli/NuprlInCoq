@@ -992,21 +992,6 @@ Proof.
 Qed.
 Hint Rewrite @oappl_get_cutokens_so_singleton : slow.
 
-Lemma no_utokens_sovar {o} :
-  forall v (ts : list (@SOTerm o)),
-    no_utokens (sovar v ts)
-    <=> (forall t, LIn t ts -> no_utokens t).
-Proof.
-  introv.
-  unfold no_utokens; simpl.
-  rw flat_map_empty; sp.
-Qed.
-
-Definition no_utokens_b {o} (b : @SOBTerm o) :=
-  match b with
-    | sobterm _ t => no_utokens t
-  end.
-
 Lemma oappl_map_onil {T A} :
   forall (l : list A) (f : A -> OList T),
     oappl (map f l) = onil
@@ -1023,6 +1008,25 @@ Proof.
     rw IHl.
     dands; tcsp.
 Qed.
+
+Lemma no_utokens_sovar {o} :
+  forall v (ts : list (@SOTerm o)),
+    no_utokens (sovar v ts)
+    <=> (forall t, LIn t ts -> no_utokens t).
+Proof.
+  introv.
+  unfold no_utokens; simpl.
+  unfold oatom.
+  rw @oappl_map_onil; simpl.
+  split; introv h j; introv; apply h in j.
+  - rw @oappl_get_cutokens_so_singleton in j; auto.
+  - rw @oappl_get_cutokens_so_singleton; auto.
+Qed.
+
+Definition no_utokens_b {o} (b : @SOBTerm o) :=
+  match b with
+    | sobterm _ t => no_utokens t
+  end.
 
 Lemma oappl_map_OLO_onil {T} :
   forall (l : list T),
@@ -1042,11 +1046,16 @@ Lemma no_utokens_soterm {o} :
 Proof.
   introv.
   unfold no_utokens; simpl.
-  rw app_eq_nil_iff.
-  rw flat_map_empty.
-  split; intro k; repnd; dands; auto; introv i; apply k in i.
-  - destruct b; allsimpl; tcsp.
-  - destruct a; allsimpl; tcsp.
+  rw @oappl_app_as_oapp.
+  rw @oapp_eq_onil; autorewrite with slow.
+  unfold oatomvs, oatomv.
+  allrw @oappl_map_OLO_onil.
+  allrw @oappl_map_onil.
+  split; intro h; repnd; dands; auto; introv i; autorewrite with slow in *.
+  - apply h in i.
+    destruct b; allsimpl; autorewrite with slow in *; auto.
+  - apply h in i.
+    destruct a; allsimpl; autorewrite with slow in *; auto.
 Qed.
 
 Lemma ren_utokens_apply_list {o} :
@@ -1285,10 +1294,10 @@ Proof.
   try (complete (apply ren_utokens_sosub_aux; auto)).
   - rw @ren_utokens_sosub_aux; auto.
     unfold no_utokens.
-    rw @get_utokens_so_fo_change_bvars_alpha; auto.
+    rw @get_cutokens_so_fo_change_bvars_alpha; auto.
   - rw @ren_utokens_sosub_aux; auto.
     + rw @sosub_change_bvars_alpha_ren_utokens_sosub; auto.
-    + unfold no_utokens; rw @get_utokens_so_fo_change_bvars_alpha; auto.
+    + unfold no_utokens; rw @get_cutokens_so_fo_change_bvars_alpha; auto.
 Qed.
 
 Lemma ren_utokens_sosub_mk_abs_subst {o} :
@@ -1730,11 +1739,14 @@ Proof.
   allrw @bt_wf_iff; auto.
 Qed.
 
+(*
+(* TOFIX *)
 Lemma compute_step_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
-    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens t))
+    -> disjoint (range_utok_ren ren)
+                (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_step_seq t))
     -> compute_step lib t = csuccess u
     -> compute_step lib (ren_utokens ren t) = csuccess (ren_utokens ren u).
 Proof.
@@ -2320,7 +2332,10 @@ Proof.
       unfold correct_abs in correct; repnd.
       rw @ren_utokens_mk_instance; auto.
 Qed.
+*)
 
+(*
+(* TOFIX *)
 Lemma reduces_in_atmost_k_steps_ren_utokens {o} :
   forall lib k (t u : @NTerm o) ren,
     nt_wf t
@@ -2342,7 +2357,10 @@ Proof.
       allrw in_diff; repnd; dands; auto.
       apply compute_step_preserves_utokens in r1; auto.
 Qed.
+*)
 
+(*
+(* TOFIX *)
 Lemma reduces_to_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
     nt_wf t
@@ -2356,6 +2374,7 @@ Proof.
   exists k.
   eapply reduces_in_atmost_k_steps_ren_utokens; eauto.
 Qed.
+*)
 
 Lemma isvalue_ren_utokens {o} :
   forall (t : @NTerm o) ren,
@@ -2378,6 +2397,8 @@ Proof.
 Qed.
 Hint Resolve isvalue_ren_utokens : slow.
 
+(*
+(* TOFIX *)
 Lemma computes_to_value_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
     nt_wf t
@@ -2390,6 +2411,7 @@ Proof.
   allunfold @computes_to_value; repnd; dands; eauto 2 with slow.
   eapply reduces_to_ren_utokens; auto.
 Qed.
+*)
 
 Fixpoint inv_utok_ren {o} (ren : @utok_ren o) : utok_ren :=
   match ren with
@@ -2570,6 +2592,8 @@ Proof.
   f_equal; apply inv_ren_utokens2; auto.
 Qed.
 
+(*
+(* TOFIX *)
 Lemma reduces_in_atmost_k_steps_preserves_utokens {o} :
   forall lib k (t u : @NTerm o),
     nt_wf t
@@ -2583,7 +2607,10 @@ Proof.
     apply compute_step_preserves_utokens in r1; auto.
     apply IHk in r0; auto.
 Qed.
+*)
 
+(*
+(* TOFIX *)
 Lemma reduces_to_preserves_utokens {o} :
   forall lib (t u : @NTerm o),
     nt_wf t
@@ -2594,7 +2621,10 @@ Proof.
   allunfold @reduces_to; exrepnd.
   eapply reduces_in_atmost_k_steps_preserves_utokens; eauto.
 Qed.
+ *)
 
+(*
+(* TOFIX *)
 Lemma computes_to_value_preserves_utokens {o} :
   forall lib (t u : @NTerm o),
     nt_wf t
@@ -2605,6 +2635,7 @@ Proof.
   allunfold @computes_to_value; repnd; dands; eauto 2 with slow.
   eapply reduces_to_preserves_utokens; eauto.
 Qed.
+*)
 
 Lemma alpha_eq_ren_utokens {o} :
   forall (t1 t2 : @NTerm o) ren,
@@ -3093,6 +3124,8 @@ Proof.
     unfold lsubst; simpl; rw k2; auto.
 Qed.
 
+(*
+(* TOFIX *)
 Lemma computes_to_value_change_utok_sub {o} :
   forall lib (t u : @NTerm o) (sub sub' : Sub),
     nt_wf t
@@ -3129,6 +3162,7 @@ Proof.
     rw comp7 in h; exrepnd.
     exists v (mk_utoken a); dands; eauto with slow.
 Qed.
+*)
 
  (*
  Lemma alpha_eq_swap_lsubst_aux_var_ren {o} :
@@ -4952,6 +4986,8 @@ Proof.
   f_equal; apply inv_ren_utokens; auto.
 Qed.
 
+(*
+(* TOFIX *)
 Lemma computes_to_exception_ren_utokens {o} :
   forall lib (t a e : NTerm) ren,
     nt_wf t
@@ -4964,7 +5000,10 @@ Proof.
   allunfold @computes_to_exception; repnd; dands; eauto 2 with slow.
   apply (reduces_to_ren_utokens _ _ _ ren) in r; auto.
 Qed.
+*)
 
+(*
+(* TOFIX *)
 Lemma computes_to_exception_preserves_utokens {o} :
   forall lib (t a e : @NTerm o),
     nt_wf t
@@ -4977,7 +5016,10 @@ Proof.
   - apply reduces_to_preserves_utokens in r; allsimpl; allrw app_nil_r; allrw subset_app; sp.
   - apply reduces_to_preserves_utokens in r; allsimpl; allrw app_nil_r; allrw subset_app; sp.
 Qed.
+*)
 
+(*
+(* TOFIX *)
 Lemma computes_to_marker_ren_utokens {o} :
   forall lib (t : @NTerm o) m ren,
     nt_wf t
@@ -4990,3 +5032,4 @@ Proof.
   allunfold @computes_to_marker; repnd; dands; eauto 2 with slow.
   apply (reduces_to_ren_utokens _ _ _ ren) in r0; auto.
 Qed.
+*)

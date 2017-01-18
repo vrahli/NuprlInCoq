@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -37,6 +38,17 @@ Require Export approx_props1.
 
 (* begin hide *)
 
+Definition odisj {T} (l1 l2 : OList T) : Prop :=
+  forall x, in_olist x l1 -> !in_olist x l2.
+
+Definition l2ol {T} (l : list T) : OList T :=
+  OLL (map (@OLO T) l).
+
+Definition nrut_osub {o} (l : @oatom o) (sub : @Sub o) :=
+  ut_sub sub
+  # no_repeats (get_utokens_sub sub)
+  # odisj l (l2ol (get_utokens_sub sub)).
+
 Definition blift_sub {o}
            (op : @Opid o)
            (R : NTrel)
@@ -49,7 +61,7 @@ Definition blift_sub {o}
       {sub : Sub
        & op = NCan NFresh
        # R (lsubst nt1 sub) (lsubst nt2 sub)
-       # nrut_sub (get_utokens nt1 ++ get_utokens nt2) sub
+       # nrut_osub (oapp (get_cutokens nt1) (get_cutokens nt2)) sub
        # lv = dom_sub sub}
      )
    # alpha_eq_bterm b1 (bterm lv nt1)
@@ -112,10 +124,3 @@ Definition approx_star_bterm {o} (lib : @library o) op :=
   blift_sub op (approx_star lib).
 Definition approx_starbts {o} (lib : @library o) op :=
   lblift_sub op (approx_star lib).
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

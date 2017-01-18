@@ -1561,6 +1561,8 @@ Qed.
 
 Require Import sqle.
 
+(*
+(* TOFIX *)
 Lemma approx_change_utoks {o} :
   forall lib (t1 t2 : @NTerm o) ren,
     no_repeats (range_utok_ren ren)
@@ -1870,6 +1872,7 @@ Proof.
 
     eexists; dands; eauto.
 Qed.
+*)
 
 (*
 XXXXXXXXXXXXXXX

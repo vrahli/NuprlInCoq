@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -727,17 +731,20 @@ Proof.
           pose proof (compute_step_subst_utoken lib t x [(n, mk_utoken a')]) as ch.
           allrw @nt_wf_fresh.
           repeat (autodimp ch hyp); eauto with slow.
+          { apply nr_ut_sub_cons; auto; introv i j.
+            apply subset_get_utokens_get_utokens_step_seq in j; sp. }
           { unfold get_utokens_sub; simpl; apply disjoint_singleton_l; tcsp. }
           exrepnd.
 
           pose proof (ch0 [(n,mk_utoken a'')]) as comp'; clear ch0; allsimpl.
           repeat (autodimp comp' hyp).
           { apply nr_ut_sub_cons; auto; introv i j.
-            destruct fa''.
-            apply get_utokens_lsubst_aux; rw in_app_iff; tcsp. }
+            apply subset_get_utokens_get_utokens_step_seq in j.
+            eapply subset_get_utokens_step_seq_lsubst_aux in j.
+            apply fa'' in j; sp. }
           { unfold get_utokens_sub; simpl; rw disjoint_singleton_l; intro i.
-            destruct fa''.
-            apply get_utokens_lsubst_aux; rw in_app_iff; tcsp. }
+            eapply subset_get_utokens_step_seq_lsubst_aux in i.
+            apply fa'' in i; sp. }
           exrepnd.
           allrw @fold_subst.
 
@@ -788,14 +795,20 @@ Proof.
           { intro h.
             allrw @get_utokens_lsubst; allrw in_app_iff; allrw not_over_or; repnd.
             repndors; tcsp.
+            - apply ch5 in h.
+              eapply subset_get_utokens_step_seq_lsubst_aux in h.
+              unflsubst in fa''.
             - eapply get_utokens_sub_sub_keep_first_subset in h;
-              [|apply subvars_eq in ch3;eauto]; tcsp. }
+              [|apply subvars_eq in ch3;eauto].
+              unflsubst in fa''.
+              apply get_utokens_sub_sub_keep_first_subset_get_utokens_step_seq_lsubst_aux in h.
+              tcsp. }
 
           apply implies_alpha_eq_mk_fresh.
           apply (alpha_eq_subst_utokens _ _ [(a',mk_var n)] [(a',mk_var n)]) in ch1; eauto 3 with slow.
           pose proof (simple_alphaeq_subst_utokens_subst w n a') as aeq1.
           autodimp aeq1 hyp.
-          { intro k; apply ch4 in k; tcsp. }
+          { intro k; apply ch5 in k; tcsp. }
 
           assert (alpha_eq (subst_utokens x [(a', mk_var n)]) w) as aeq2; eauto 3 with slow; clear aeq1.
 
@@ -2525,6 +2538,132 @@ Proof.
   apply disjoint_singleton_r; auto.
 Qed.
 
+Lemma compute_step_subst_utoken2 {o} :
+  forall lib (t u : @NTerm o) sub,
+    nt_wf t
+    -> compute_step lib (lsubst t sub) = csuccess u
+    -> nr_ut_sub t sub
+    -> no_repeats (get_utokens_sub sub)
+    -> disjoint (get_utokens_sub sub) (get_utokens_step_seq t)
+    -> {w : NTerm
+        $ alpha_eq u (lsubst w sub)
+        # nt_wf w
+        # nr_ut_sub w sub
+        # disjoint (get_utokens_sub sub) (get_utokens w)
+        # subvars (free_vars w) (free_vars t)
+        # osubset (get_cutokens w) (get_cutokens t)
+        # subset (get_utokens w) (get_utokens_step_seq t)
+        # (forall sub' : Sub,
+             nr_ut_sub t sub'
+             -> dom_sub sub = dom_sub sub'
+             -> no_repeats (get_utokens_sub sub')
+             -> disjoint (get_utokens_sub sub') (get_utokens_step_seq t)
+             -> (nr_ut_sub w sub'
+                 # {s : NTerm
+                    $ compute_step lib (lsubst t sub') = csuccess s
+                    # alpha_eq s (lsubst w sub')
+                    }))}.
+Proof.
+  introv wf comp nrut norep disj.
+  pose proof (compute_step_subst_utoken lib t u sub wf comp nrut disj) as h; exrepnd.
+  exists w; dands; auto.
+  - apply preserve_nt_wf_compute_step in comp;
+    [|apply lsubst_wf_if_eauto;eauto 3 with slow].
+    apply alphaeq_preserves_wf in h1; apply h1 in comp.
+    apply lsubst_wf_iff in comp; eauto 3 with slow.
+  - eapply norep_disjoint_implies_nr_ut_sub; eauto.
+  - introv nrut' eqdoms' norep' disj'.
+    dands; auto.
+    eapply norep_disjoint_implies_nr_ut_sub; eauto 3 with slow.
+Qed.
+
+Fixpoint disjoint_get_utokens_kstep_seq {o}
+         (lib   : library)
+         (k     : nat)
+         (sub1  : Sub)
+         (sub2  : Sub)
+         (edoms : dom_sub sub1 = dom_sub sub2)
+         (nrep1 : no_repeats (get_utokens_sub sub1))
+         (nrep2 : no_repeats (get_utokens_sub sub2))
+         (t     : @NTerm o)
+         (wf    : nt_wf t)
+         (nrut1 : nr_ut_sub t sub1)
+         (nrut2 : nr_ut_sub t sub2) : Type :=
+  match k with
+    | 0 =>
+      disjoint (get_utokens_sub sub1) (get_utokens t)
+      # disjoint (get_utokens_sub sub2) (get_utokens t)
+    | S n =>
+      {disj1 : disjoint (get_utokens_sub sub1) (get_utokens_step_seq t)
+       & {disj2 : disjoint (get_utokens_sub sub2) (get_utokens_step_seq t)
+       & {u : NTerm
+       & {comp : compute_step lib (lsubst t sub1) = csuccess u
+       & match compute_step_subst_utoken2 lib t u sub1 wf comp nrut1 nrep1 disj1 with
+           | existT _ w (aeq,(wfw,(nrutw,(disjw,(sv,(oss,(ss,F))))))) =>
+             disjoint_get_utokens_kstep_seq
+               lib n sub1 sub2 edoms nrep1 nrep2 w wfw nrutw
+               (fst (F sub2 nrut2 edoms nrep2 disj2))
+         end }}}}
+  end.
+
+Lemma reduces_in_atmost_k_steps_change_utok_sub_norep {o} :
+  forall lib k (t u : @NTerm o) (wf : nt_wf t)
+         sub sub'
+         (edoms : dom_sub sub = dom_sub sub')
+         (nrep  : no_repeats (get_utokens_sub sub))
+         (nrep' : no_repeats (get_utokens_sub sub'))
+         (nrut  : nr_ut_sub t sub)
+         (nrut' : nr_ut_sub t sub'),
+    reduces_in_atmost_k_steps lib (lsubst t sub) u k
+    -> disjoint_get_utokens_kstep_seq lib k sub sub' edoms nrep nrep' t wf nrut nrut'
+    -> {w : NTerm
+        & {s : NTerm
+        & alpha_eq u (lsubst w sub)
+        # disjoint (get_utokens_sub sub) (get_utokens w)
+        # subvars (free_vars w) (free_vars t)
+        # osubset (get_cutokens w) (get_cutokens t)
+        # reduces_in_atmost_k_steps lib (lsubst t sub') s k
+        # alpha_eq s (lsubst w sub')}}.
+Proof.
+  induction k; introv comp disj.
+
+  - allrw @reduces_in_atmost_k_steps_0; subst; allsimpl; repnd.
+    exists t (lsubst t sub'); dands; eauto 3 with slow.
+    rw @reduces_in_atmost_k_steps_0; auto.
+
+  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
+
+    allsimpl; exrepnd.
+    destruct (compute_step_subst_utoken2 lib t u1 sub wf comp nrut nrep disj1).
+    repnd; allsimpl.
+    rw comp in comp1; ginv.
+    destruct (p sub' nrut' edoms nrep' disj2); exrepnd; allsimpl; clear p.
+
+    applydup @compute_step_preserves in comp as wfu; repnd;
+    [|apply lsubst_wf_if_eauto; eauto 3 with slow];[].
+
+    pose proof (reduces_in_atmost_k_steps_alpha lib u0 (lsubst x sub) wfu p0 k u comp0) as comp'.
+    exrepnd.
+
+    pose proof (IHk x t2' p1 sub sub' edoms nrep nrep' p2 n comp'1 disj3) as q; clear IHk.
+    exrepnd.
+
+    pose proof (reduces_in_atmost_k_steps_alpha lib (lsubst x sub') s0) as c.
+    repeat (autodimp c hyp); eauto 3 with slow.
+
+    { apply lsubst_wf_iff; eauto 3 with slow. }
+
+    pose proof (c k s q5) as comp'; clear c; exrepnd.
+
+    exists w t2'0; dands; eauto 3 with slow.
+
+    { eapply osubset_trans; eauto. }
+
+    { rw @reduces_in_atmost_k_steps_S.
+      exists s0; dands; auto. }
+Qed.
+
+(*
 Lemma reduces_in_atmost_k_steps_change_utok_sub {o} :
   forall lib k (t u : @NTerm o) sub sub',
     nt_wf t
@@ -2580,7 +2719,7 @@ Proof.
     rw @reduces_in_atmost_k_steps_S.
     exists s; dands; auto.
 Qed.
-
+*)
 
 Lemma iscan_sterm {o} :
   forall (f : @ntseq o), iscan (sterm f).

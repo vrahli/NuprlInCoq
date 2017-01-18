@@ -43,48 +43,88 @@ Require Export computation_preserve4.
 
  *)
 
-Lemma compute_decompose_aux {p} :
-forall lib (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm),
-  isprogram (oterm (NCan op) lbt)
-  -> computes_to_val_like_in_max_k_steps lib (oterm (NCan op) lbt) a (S k)
-  -> { la : NTerm
-      $ { lbtt: list BTerm
-      $ { t : @NTerm p
-      $ { m : nat
-        $ m <= k
-        # lbt = bterm [] la :: lbtt
-        # reduces_in_atmost_k_steps lib la t m
-        # reduces_in_atmost_k_steps lib
-             (oterm (NCan op) lbt)
-             (oterm (NCan op) ((bterm [] t)::lbtt))
-             m
-        # is_can_or_exc t}}}}
-     [+]
-     {v : NVar
-      & {t : NTerm
-      & {u : NTerm
-      & {x : NTerm
-      & {w : NTerm
-      & {m : nat
-      & m <= k
-      # op = NFresh
-      # lbt = [bterm [v] t]
-      # let a := get_fresh_atom t in
-        reduces_in_atmost_k_steps lib (subst t v (mk_utoken a)) x m
-        # alpha_eq x (subst u v (mk_utoken a))
-        # subset (get_utokens u) (get_utokens t)
-        # reduces_in_atmost_k_steps lib (oterm (NCan op) lbt) (mk_fresh v w) m
-        # alpha_eq u w
-        # isvalue_like u
-     }}}}}}.
+Lemma implies_reduces_in_atmost_k_steps_S {o} :
+  forall (lib : library) (t v : @NTerm o) (k : nat),
+    reduces_in_atmost_k_steps lib t v (S k)
+    -> {u : NTerm
+        & compute_step lib t = csuccess u
+        # reduces_in_atmost_k_steps lib u v k}.
 Proof.
-  induction k as [| k Hind]; introv Hpr Hcv.
-  - repnud Hcv.
-    unfold reduces_in_atmost_k_steps in Hcv0.
-    simpl in Hcv0.
-    rename Hcv0 into Hcomp.
-    dlist lbt SSCase as [| arg1]; invertsn Hcomp.
-             (**takes care of nilcase as no ncop takes 0 bterms*)
+  introv comp.
+  apply reduces_in_atmost_k_steps_S; auto.
+Qed.
+
+Fixpoint get_names_from_reduces_in_atmost_k_steps {o}
+           {lib : @library o}
+           {t u : @NTerm o}
+           {k : nat} : reduces_in_atmost_k_steps lib t u k
+                       -> list (get_patom_set o) :=
+  match k with
+    | 0 => fun comp => get_utokens_step_seq t
+    | S n =>
+      fun comp =>
+        get_utokens_step_seq t
+                 ++ match implies_reduces_in_atmost_k_steps_S lib t u n comp with
+                      | existT _ w (c,r) => get_names_from_reduces_in_atmost_k_steps r
+                    end
+  end.
+
+Definition get_names_from_computes_to_val_like_in_max_k_steps {o}
+           {lib : @library o}
+           {t u : @NTerm o}
+           {k : nat}
+           (c : computes_to_val_like_in_max_k_steps lib t u k)
+  : list (get_patom_set o) :=
+  get_names_from_reduces_in_atmost_k_steps (fst c).
+
+Definition get_fresh_atom_list {o} (l : list (get_patom_set o)) : get_patom_set o :=
+  projT1 (fresh_atom o l).
+
+(*
+Lemma compute_decompose_aux {p} :
+forall lib (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm)
+       (comp : computes_to_val_like_in_max_k_steps lib (oterm (NCan op) lbt) a (S k))
+       (isp : isprogram (oterm (NCan op) lbt)),
+  {la : NTerm
+    $ {lbtt: list BTerm
+    $ { t : @NTerm p
+    $ { m : nat
+    $ m <= k
+    # lbt = bterm [] la :: lbtt
+    # reduces_in_atmost_k_steps lib la t m
+    # reduces_in_atmost_k_steps lib
+         (oterm (NCan op) lbt)
+         (oterm (NCan op) ((bterm [] t)::lbtt))
+         m
+    # is_can_or_exc t}}}}
+   [+]
+   {v : NVar
+    & {t : NTerm
+    & {u : NTerm
+    & {x : NTerm
+    & {w : NTerm
+    & {m : nat
+    & m <= k
+    # op = NFresh
+    # lbt = [bterm [v] t]
+    # let names := get_names_from_computes_to_val_like_in_max_k_steps comp in
+      let a := get_fresh_atom_list names in
+      reduces_in_atmost_k_steps lib (subst t v (mk_utoken a)) x m
+      # alpha_eq x (subst u v (mk_utoken a))
+      # subset (get_utokens u) (get_utokens t)
+      # reduces_in_atmost_k_steps lib (oterm (NCan op) lbt) (mk_fresh v w) m
+      # alpha_eq u w
+      # isvalue_like u
+   }}}}}}.
+Proof.
+  induction k as [| k Hind]; introv isp.
+  - repnud comp.
+    unfold reduces_in_atmost_k_steps in comp0.
+    simpl in comp0.
+    rename comp0 into Hcomp.
+    dlist lbt SSCase as [| arg1].
+    inversion Hcomp.
+    (**takes care of nilcase as no ncop takes 0 bterms*)
 
     SSCase "conscase".
     destruct arg1 as [arg1vs arg1nt];
@@ -268,6 +308,9 @@ Proof.
 
           pose proof (compute_step_subst_utoken lib arg1nt x [(v,mk_utoken ua)]) as h.
           repeat (autodimp h hyp); eauto 3 with slow.
+          { apply nr_ut_sub_cons_iff; eexists; dands; eauto.
+            introv i j.
+            apply subset_get_utokens_get_utokens_step_seq in j; sp. }
           { unfold get_utokens_sub; simpl; rw disjoint_singleton_l; tcsp. }
           exrepnd.
           unfold get_utokens_sub in h2; allsimpl; allrw disjoint_singleton_l.
@@ -377,7 +420,9 @@ Proof.
           { apply nt_wf_subst; eauto 3 with slow. }
     }
 Qed.
+*)
 
+(*
 Lemma compute_decompose {p} :
 forall lib (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm),
   isprogram (oterm (NCan op) lbt)
@@ -420,6 +465,7 @@ Proof.
   left.
   inversion comp; subst; sp.
 Qed.
+*)
 
 Lemma nterm_trico_like {o} :
   forall (t : @NTerm o),
@@ -541,6 +587,7 @@ Proof.
   apply alphaeq_preserves_free_vars in aeq1; rw <- aeq1 in i; sp.
 Qed.
 
+(*
 Lemma reduces_to_fresh {o} :
   forall lib (t : @NTerm o) u v,
     let a := get_fresh_atom t in
@@ -560,7 +607,8 @@ Proof.
     exists t; dands; eauto 1 with slow.
     apply alpha_eq_sym.
     apply simple_alphaeq_subst_utokens_subst.
-    pose proof (get_fresh_atom_prop t) as h; eauto 3 with slow.
+    intro i; apply subset_get_utokens_get_utokens_step_seq in i.
+    apply get_fresh_atom_prop in i; auto.
 
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
 
@@ -589,6 +637,7 @@ Proof.
       apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 1 with slow; subst.
       exists t; dands; eauto 1 with slow.
       apply alpha_eq_sym; apply simple_alphaeq_subst_utokens_subst; eauto 3 with slow.
+      intro i; apply subset_get_utokens_get_utokens_step_seq in i; tcsp.
     }
 
     assert (compute_step lib (mk_fresh v t)
@@ -665,7 +714,9 @@ Proof.
       eapply alpha_eq_trans;[exact h1|]; eauto with slow.
     }
 Qed.
+*)
 
+(*
 Lemma reduces_to_change_utok_sub {o} :
   forall lib (t u : @NTerm o) sub sub',
     nt_wf t
@@ -689,10 +740,4 @@ Proof.
   repeat (autodimp h hyp); exrepnd.
   eexists; eexists; dands; eauto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
 *)

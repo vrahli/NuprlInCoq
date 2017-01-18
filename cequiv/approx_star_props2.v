@@ -400,6 +400,8 @@ Proof.
   rw IHsub; rw @isprogram_ren_utokens_iff; sp.
 Qed.
 
+(*
+(* TOFIX *)
 Lemma approx_open_change_utoks {o} :
   forall lib (t1 t2 : @NTerm o) ren,
     no_repeats (range_utok_ren ren)
@@ -497,6 +499,7 @@ Proof.
       repeat (rw @ren_utokens_app_weak_l in k; eauto 2 with slow).
     }
 Qed.
+*)
 
 Definition utok_ren_cond2 {o} atoms (ren ren' : @utok_ren o) :=
   forall a,
@@ -947,6 +950,8 @@ Proof.
 Qed.
 Hint Resolve nrut_sub_implies_no_repeats : slow.
 
+(*
+(* TOFIX *)
 Lemma change_nr_ut_sub_in_lsubst_aux_approx_star {o} :
   forall lib (t1 t2 : @NTerm o) ren,
     no_repeats (range_utok_ren ren)
@@ -1300,6 +1305,7 @@ Proof.
         apply extra_ren'11 in w; sp.
       }
 Qed.
+*)
 
 
 (*

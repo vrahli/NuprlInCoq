@@ -427,6 +427,47 @@ Hint Resolve nrut_sub_implies_oshallow_sub : slow.
 
 (* end hide *)
 
+Lemma odisj_oapp_l :
+  forall {T} (l1 l2 l : OList T),
+    odisj (oapp l1 l2) l
+    <-> (odisj l1 l /\ odisj l2 l).
+Proof.
+  introv.
+  unfold odisj.
+  split; introv h; repnd; dands.
+
+  {
+    introv i j.
+    apply h in j; auto.
+    apply in_olist_oapp; auto.
+  }
+
+  {
+    introv i j.
+    apply h in j; auto.
+    apply in_olist_oapp; auto.
+  }
+
+  {
+    introv i j.
+    apply in_olist_oapp in i; repndors.
+    - apply h0 in i; auto.
+    - apply h in i; auto.
+  }
+Qed.
+
+Lemma implies_nrut_osub_oapp {o} :
+  forall (sub : Sub) (l1 l2 : @oatom o),
+    nrut_osub l1 sub
+    -> nrut_osub l2 sub
+    -> nrut_osub (oapp l1 l2) sub.
+Proof.
+  introv nr1 nr2.
+  unfold nrut_osub in *; repnd; dands; auto.
+  apply odisj_oapp_l; dands; auto.
+Qed.
+Hint Resolve implies_nrut_osub_oapp : slow.
+
 Lemma approx_star_refl {p} : forall lib t, @nt_wf p t -> approx_star lib t t.
 Proof.
   nterm_ind1s t as [?|f ind |o lbt Hind] Case; introv Hwf; eauto 3 with slow.
@@ -450,6 +491,12 @@ Proof.
     destruct (dec_op_eq_fresh o) as [e|e]; subst.
 
     + right.
+(*
+
+What should we do here (without using classical logic) because [t] might contain
+names and we can't compute them all!
+
+*)
       pose proof (exists_nrut_sub lv (get_utokens nt)) as h; exrepnd; subst.
       exists sub; dands; auto.
 
@@ -457,7 +504,10 @@ Proof.
         repeat (autodimp h hyp); eauto 3 with slow.
         rw @simple_osize_lsubst; eauto with slow.
 
-      * eapply nrut_sub_subset;[|exact h1].
+      * apply implies_nrut_osub_oapp; auto.
+
+        nrut_osub+oap SearchAbout nrut_sub List.app.
+        eapply nrut_sub_subset;[|exact h1].
         introv i; allrw in_app_iff; sp.
 
     + left.
@@ -2089,10 +2139,3 @@ Proof.
 Qed.
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

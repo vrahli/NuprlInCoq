@@ -3834,8 +3834,8 @@ Proof.
             rw @compute_step_fresh_if_isnoncan_like; auto.
             simpl; unfold on_success.
 
-            applydup @alphaeq_preserves_utokens in aeq'.
-            repeat (rw @get_utokens_subst_aux_trivial1 in aeq'0; simpl; auto).
+            applydup @alphaeq_preserves_get_utokens_step_seq in aeq'.
+            repeat (rw @get_utokens_step_seq_subst_aux_trivial1 in aeq'0; simpl; auto).
             pose proof (eq_fresh_atom arg1nt a' aeq'0) as e; rw <- e; rw <- Heqa.
 
             rw k1; eexists; dands; eauto.
