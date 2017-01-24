@@ -106,6 +106,10 @@ Require Import rules_cbv_exception.
 Require Import rules_less_exception.
 
 
+(* Rules(try): *)
+Require Import rules_try.
+
+
 (* Rules(callbyvalue): *)
 Require Import rules_arith_callbyvalue.
 Require Import rules_apply_callbyvalue.
