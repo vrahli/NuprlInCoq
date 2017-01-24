@@ -84,7 +84,19 @@ Lemma isprog_atom_eq_implies {o} :
     -> isprog (mk_atom_eq a b c d).
 Proof.
   introv u v w z.
-  apply isprog_less; sp.
+  apply isprog_atom_eq; sp.
+Qed.
+
+Lemma implies_isprog_atom_eq {o} :
+  forall (a b c d : @NTerm o),
+    isprog a
+    -> isprog b
+    -> isprog c
+    -> isprog d
+    -> isprog (mk_atom_eq a b c d).
+Proof.
+  introv ispa ispb ispc ispd.
+  apply isprog_atom_eq; sp.
 Qed.
 
 Definition mkc_atom_eq {o} (t1 t2 t3 t4 : @CTerm o) : CTerm :=

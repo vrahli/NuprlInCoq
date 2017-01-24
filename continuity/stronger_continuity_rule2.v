@@ -25,6 +25,7 @@
 *)
 
 
+Require Export compare_cterm.
 Require Export stronger_continuity_rule.
 
 
@@ -2758,39 +2759,6 @@ Proof.
   repeat (autodimp h hyp).
   repndors;[left|right]; auto.
 Qed.
-
-Lemma isprog_atom_eq {o} :
-  forall (a b c d : @NTerm o),
-    isprog (mk_atom_eq a b c d) <=> (isprog a # isprog b # isprog c # isprog d).
-Proof.
-  introv.
-  rw @isprog_ot_iff; simpl; unfold num_bvars; simpl.
-  split; introv h; repnd; dands; auto; GC.
-  - pose proof (h (nobnd a)) as k; autodimp k hyp.
-  - pose proof (h (nobnd b)) as k; autodimp k hyp.
-  - pose proof (h (nobnd c)) as k; autodimp k hyp.
-  - pose proof (h (nobnd d)) as k; autodimp k hyp.
-  - introv i; repndors; tcsp; subst; eauto 3 with slow.
-Qed.
-
-Lemma implies_isprog_atom_eq {o} :
-  forall (a b c d : @NTerm o),
-    isprog a
-    -> isprog b
-    -> isprog c
-    -> isprog d
-    -> isprog (mk_atom_eq a b c d).
-Proof.
-  introv ispa ispb ispc ispd.
-  apply isprog_atom_eq; sp.
-Qed.
-
-Definition mkc_atom_eq {p} (a b c d : @CTerm p) : CTerm :=
-  let (ta,pa) := a in
-  let (tb,pb) := b in
-  let (tc,pc) := c in
-  let (td,pd) := d in
-  exist isprog (mk_atom_eq ta tb tc td) (implies_isprog_atom_eq ta tb tc td pa pb pc pd).
 
 Lemma computes_to_value_mk_atom_eq_pk_implies {o} :
   forall lib (a b c d : @NTerm o) v,
