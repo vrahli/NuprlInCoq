@@ -60,14 +60,90 @@ Proof.
   dands; auto.
 Qed.
 
+Lemma compute_step_apply_if_free_from_token {o} :
+  forall lib (f t d v : @NTerm o) u,
+    !LIn u (get_utokens f)
+    -> compute_step lib (mk_apply f (mk_exception (mk_utoken u) d)) = csuccess v
+    -> hasvalue lib v
+    -> compute_step lib (mk_apply f t) = csuccess v.
+Proof.
+  nterm_ind1s f as [v|F ind|op bs ind] Case; introv ni comp hv; tcsp.
+
+  - Case "vterm".
+    csunf comp; simpl in comp; ginv.
+
+  - Case "sterm".
+    csunf comp; simpl in comp; ginv.
+    assert False; tcsp.
+    unfold hasvalue in hv; exrepnd.
+    destruct hv0 as [rt isv].
+    apply reduces_to_split2 in rt; repndors; subst.
+
+    { inversion isv; simpl in *; tcsp. }
+
+    exrepnd.
+    csunf rt1; simpl in rt1.
+    apply compute_step_eapply_success in rt1.
+    exrepnd; ginv; simpl in *; GC.
+    repndors; repnd; tcsp; subst; GC.
+
+    { apply reduces_to_if_isvalue_like in rt0; eauto 3 with slow.
+      subst.
+      inversion isv; subst; simpl in *; tcsp. }
+
+    { exrepnd; subst.
+      csunf rt1; simpl in rt1; ginv.
+      unfold isnoncan_like in rt4; simpl in *; tcsp. }
+
+  - Case "oterm".
+
+    dopid op as [can|ncan|exc|abs] SCase.
+
+    + SCase "Can".
+      csunf comp; simpl in comp.
+      apply compute_step_apply_success in comp.
+      repndors; exrepnd; subst; unfold nobnd in *; ginv.
+
+      { csunf; simpl.
+
+        (* instead of apply we need to use subst in the statement *)
+      }
+
+    + SCase "NCan".
+
+    + SCase "Exc".
+
+    + SCase "Abs".
+
+
+Qed.
+
 Lemma reduces_to_apply_if_free_from_token {o} :
-  forall lib (f t n d v : @CTerm o) u,
-    computes_to_valc lib n (mkc_utoken u)
-    -> !LIn u (getc_utokens f)
-    -> reduces_toc lib (mkc_apply f (mkc_exception n d)) v
+  forall lib (f t d v : @NTerm o) u,
+    !LIn u (get_utokens f)
+    -> reduces_to lib (mk_apply f (mk_exception (mk_utoken u) d)) v
+    -> isvalue v
+    -> reduces_to lib (mk_apply f t) v.
+Proof.
+  introv ni rt isv.
+
+Qed.
+
+Lemma reduces_toc_apply_if_free_from_token {o} :
+  forall lib (f t d v : @CTerm o) u,
+    !LIn u (getc_utokens f)
+    -> reduces_toc lib (mkc_apply f (mkc_exception (mkc_utoken u) d)) v
     -> iscvalue v
     -> reduces_toc lib (mkc_apply f t) v.
 Proof.
+  introv ni rt isv.
+  destruct_cterms; simpl in *.
+  unfold getc_utokens in ni; simpl in ni.
+  unfold reduces_toc in rt; simpl in rt.
+  unfold iscvalue in isv; simpl in isv.
+  unfold reduces_toc; simpl.
+
+  apply reduces_to_apply_if_free_from_token.
 Qed.
 
 
@@ -216,6 +292,17 @@ Proof.
     [|apply sp_implies_cequivc_apply;exact hyp_ffa6].
 
   clear hyp_ffa6.
+
+  rw @computes_to_valc_iff_reduces_toc in hyp_ffa4; repnd.
+  clear hyp_ffa4.
+
+  eapply hasvaluec_cequivc in hyp_halts2;
+    [|apply implies_cequivc_apply;[apply cequivc_refl|];
+      apply implies_cequivc_exception;[|apply cequivc_refl];
+      apply reduces_toc_implies_cequivc;
+      exact hyp_ffa0].
+
+  clear hyp_ffa0.
 
   apply hasvaluec_iff_reduces_toc_iscvalue in hyp_halts2; exrepnd.
 
