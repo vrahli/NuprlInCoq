@@ -27,6 +27,7 @@
 
 Require Export compare_cterm.
 Require Export stronger_continuity_rule.
+Require Export list. (* WTF! *)
 
 
 
@@ -2916,11 +2917,4 @@ Proof.
       apply computes_to_excc_iff_reduces_toc.
       apply reduces_to_symm.
 Qed.
-*)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
 *)
