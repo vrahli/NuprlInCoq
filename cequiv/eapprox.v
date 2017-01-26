@@ -64,13 +64,18 @@ Definition ex_close_comput {p} lib ex (R: NTrel) (tl tr : @NTerm p) : [univ]:=
   # close_compute_seq lib R tl tr
   # True (*close_compute_mrk lib R tl tr*).
 
+CoInductive ex_approx_bad {o} :
+  @library o -> @NTerm o -> @NTerm o -> @NTerm o -> [univ] :=
+| ex_approxC: forall lib ex tl tr,
+    ex_close_comput lib ex (ex_approx_bad lib ex) tl tr
+    -> ex_approx_bad lib ex tl tr.
 
 CoInductive ex_approx_aux {p}
             (lib : library)
             (ex : NTerm)
             (R : bin_rel NTerm)
             (tl tr: @NTerm p): [univ] :=
-|ex_approx_fold:
+| ex_approx_fold:
    ex_close_comput lib ex (ex_approx_aux lib ex R \2/ R) tl tr
    -> ex_approx_aux lib ex R tl tr.
 
@@ -298,24 +303,75 @@ Proof.
   intros. invertsn X. repnud X; sp.
 Qed.
 
-Print isvalue_like.
-Lemma approxc_assume_hasvalue {p} :
-  forall (lib : @library p) a b,
-    (hasvalue_likec lib a -> approxc lib a b)
-    -> approxc lib a b.
+Lemma ex_approxc_assume_hasvalue {p} :
+  forall (lib : @library p) ex a b,
+    (hasvalue_likec lib a -> ex_approxc lib ex a b)
+    -> ex_approxc lib ex a b.
 Proof.
   destruct a; destruct b; unfold hasvaluec, approxc; allsimpl; sp.
-  apply approx_assume_hasvalue; sp; allrw @isprogram_eq; sp.
+  apply ex_approx_assume_hasvalue; sp; allrw @isprogram_eq; sp.
 Qed.
 
-Lemma hasvaluec_as_approxc {p} :
-  forall lib a,
+Lemma hasvalue_as_ex_approx {o} :
+  forall lib ex (a : @NTerm o),
+    isprogram a
+    -> (hasvalue lib a
+        <=>
+        ex_approx lib ex mk_axiom (mk_cbv a nvarx mk_axiom)).
+Proof.
+  introv isp; split; intro k.
+
+  - constructor.
+    unfold ex_close_comput; dands; tcsp.
+
+    + apply isprogram_cbv; sp.
+      rw @nt_wf_eq; sp.
+
+    + introv comp.
+      exists ([] : list (@BTerm o)).
+      apply computes_to_value_isvalue_eq in comp; dands; auto;
+      inversion comp; subst; fold_terms;
+      fold (@mk_axiom o); GC; tcsp.
+      * unfold computes_to_value; sp.
+        apply cbv_reduce0; sp.
+        rw @isprog_eq; sp.
+      * constructor; simpl; sp.
+
+    + introv ce.
+      apply axiom_doesnt_raise_an_exception in ce; sp.
+
+    + introv comp.
+      apply axiom_doesnt_compute_to_seq in comp; sp.
+
+(*
+    + introv cm.
+      apply axiom_doesnt_mark in cm; sp.
+*)
+
+  - inversion k as [c].
+    unfold ex_close_comput in c; repnd.
+    pose proof (c2 NAxiom []) as h.
+    allfold (@mk_axiom o).
+    autodimp h hyp.
+    + apply computes_to_value_isvalue_refl; sp.
+    + exrepnd.
+      inversion h0 as [? imp]; allsimpl; cpx.
+      allfold (@mk_axiom o).
+      assert (hasvalue lib (mk_cbv a nvarx mk_axiom)) as hv.
+      * unfold hasvalue.
+        exists (@mk_axiom o); sp.
+      * apply if_hasvalue_cbv0 in hv; sp.
+        rw @isprog_eq; sp.
+Qed.
+
+Lemma hasvaluec_as_ex_approxc {p} :
+  forall lib ex a,
     hasvaluec lib a
     <=>
-    approxc lib mkc_axiom (mkc_cbv a nvarx (@mkcv_axiom p nvarx)).
+    ex_approxc lib ex mkc_axiom (mkc_cbv a nvarx (@mkcv_axiom p nvarx)).
 Proof.
   destruct a; unfold hasvaluec, approxc; simpl.
-  apply hasvalue_as_approx.
+  apply hasvalue_as_ex_approx.
   allrw @isprogram_eq; sp.
 Qed.
 
@@ -331,7 +387,7 @@ Proof.
   induction nt as [v|f| op bts Hind] using NTerm_better_ind; intros Hwf;
   constructor; try split; auto; intros  ? Hcl Hisp ?; apply ex_approx_refl; auto.
 Qed.
-
+Hint Resolve approx_open_refl: slow.
 
 Lemma ex_close_comput_mon {p} :
   forall lib ex l r,
@@ -685,6 +741,7 @@ Proof.
   - apply respects_alphal_ex_closed_comput; auto.
   - apply respects_alphar_ex_closed_comput; auto.
 Qed.
+Hint Resolve respects_alpha_ex_closed_comput : respects.
 
 Corollary respects_alpha_ex_approx {p} :
   forall lib ex, respects_alpha (@ex_approx p lib ex).
@@ -692,9 +749,7 @@ Proof.
   split; introv; intros; eauto with slowbad.
 Qed.
 Hint Immediate respects_alpha_ex_approx.
-
-
-Hint Resolve respects_alpha_ex_closed_comput : respects.
+Hint Resolve respects_alpha_ex_approx : respects.
 
 Theorem ex_approx_open_relates_only_wf {p} :
   forall lib ex (t1 t2 : @NTerm p),
@@ -704,14 +759,14 @@ Proof.
   introv.
   apply olift_relates_only_wf.
 Qed.
+Hint Resolve ex_approx_open_relates_only_wf : slow.
 
 
-Hint Resolve respects_alpha_ex_approx : respects.
 
 (** key helper for lemma 0.6 in annotated paper *)
 Theorem ex_approx_open_lsubst {p} :
   forall lib ex a b lvi lvo,
-    let sub := @var_ren p lvi lvo in 
+    let sub := @var_ren p lvi lvo in
     ex_approx_open lib ex a b
     -> ex_approx_open lib ex (lsubst a sub) (lsubst b sub).
 Proof.
@@ -1375,8 +1430,8 @@ Ltac ex_prove_program :=
   match goal with
   | [ |- isprogram ?t] =>
     match goal with
-    | [ H: approx t ?t2 |- _] => apply ex_approx_relates_only_progs in H; repnd;sp
-    | [ H: approx ?t2 t |- _ ] => apply ex_approx_relates_only_progs in H; repnd;sp
+    | [ H: ex_approx _ _ t ?t2 |- _] => apply ex_approx_relates_only_progs in H; repnd;sp
+    | [ H: ex_approx _ _ ?t2 t |- _ ] => apply ex_approx_relates_only_progs in H; repnd;sp
     end
   end
   ).
@@ -1392,12 +1447,12 @@ Proof.
   - exact ex_approx_trans.
   - exact respects_alpha_ex_approx.
 Qed.
-Hint Resolve ex_approx_open_trans: slow.
+Hint Resolve ex_approx_open_trans: slow approx_open_trans.
 
 
 (* =======================================================================
    below here, I haven't changed from lemmas about approx to lemmas about
-   ex_approx.  
+   ex_approx.
   ========================================================================
 *)
 
@@ -1536,11 +1591,7 @@ Proof.
   apply alpha_implies_ex_approx; sp.
   apply lsubst_alpha_congr2;sp.
 Qed.
-
 Hint Resolve alpha_implies_ex_approx_open : slowbad.
-
-Hint Resolve ex_approx_open_relates_only_wf
-  ex_approx_open_trans approx_open_refl: slow.
 
 
 Lemma ex_approx_open_alpha_rw_l {p} : forall lib ex a b a',
@@ -1593,8 +1644,6 @@ Ltac prove_wf1 :=
     end
   end
   ).
-
-Hint Resolve ex_approx_open_trans : approx_open_trans.
 
 
 (* end hide *)
