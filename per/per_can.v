@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
  *)
@@ -30,6 +35,7 @@ Require Export cequiv_bind.
 Require Export computation_dec1.
 (*Require Export computation_dec.*)
 Require Export sequents_tacs.
+Require Export per_props_cequiv.
 
 
 Lemma hasvalue_likec_eq {o} :
@@ -673,14 +679,18 @@ Proof.
     { exists x; auto. }
 
     { introv.
-      apply alpha_stable; spcast.
+      left.
+      apply CIH; eauto 3 with slow.
+      spcast.
       inversion h as [cl].
       unfold close_comput in cl; repnd.
       apply cl4 in comp; exrepnd.
       allapply @reduces_in_atmost_k_steps_implies_reduces_to.
       eapply reduces_to_eq_val_like in ca1;
         [|exact comp2|eauto 2 with slow|eauto 2 with slow].
-      allunfold @mk_ntseq; ginv; auto. }
+      allunfold @mk_ntseq; ginv; auto.
+      pose proof (comp1 n) as q; repndors; tcsp.
+      inversion q. }
 Qed.
 
 Lemma cequiv_stable {o} :
@@ -1357,6 +1367,6 @@ Qed.
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
 *** End:
 *)

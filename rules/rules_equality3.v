@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -28,6 +32,7 @@
 Require Export rules_useful.
 Require Export per_props_equality.
 Require Export per_props_union.
+Require Export per_props_cequiv.
 Require Export subst_tacs.
 Require Export sequents_equality.
 Require Export sequents_tacs2.
@@ -66,46 +71,6 @@ Proof.
       right.
       exists t t; dands; auto; spcast;
       apply computes_to_valc_refl; eauto 3 with slow.
-Qed.
-
-Lemma equality_in_mkc_cequiv {o} :
-  forall lib a b (t1 t2 : @CTerm o),
-    equality lib a b (mkc_cequiv t1 t2)
-             <=> (a ===>(lib) mkc_axiom
-                    # b ===>(lib) mkc_axiom
-                    # ccequivc lib t1 t2).
-Proof.
-  introv; split; intro h.
-
-  - unfold equality, nuprl in h; exrepnd.
-    inversion h1; subst; try not_univ.
-    match goal with
-      | [ H : per_cequiv _ _ _ _ _ |- _ ] => rename H into p
-    end.
-    allunfold @per_cequiv; exrepnd; spcast.
-    computes_to_value_isvalue.
-    apply p1 in h0; clear p1; repnd; spcast.
-    dands; spcast; auto.
-
-  - unfold equality.
-    exists (fun (t t' : CTerm) => t ===>(lib) mkc_axiom
-                      # t' ===>(lib) mkc_axiom
-                      # ccequivc lib t1 t2);
-      sp; spcast; try computes_to_value_refl; sp.
-    apply CL_cequiv.
-    unfold per_cequiv.
-    exists t1 t2 t1 t2; sp; spcast; try computes_to_value_refl.
-Qed.
-
-Lemma inhabited_cequiv {o} :
-  forall lib (t1 t2 : @CTerm o),
-    inhabited_type lib (mkc_cequiv t1 t2) <=> ccequivc lib t1 t2.
-Proof.
-  unfold inhabited_type.
-  introv; split; intro h; exrepnd.
-  - rw @equality_in_mkc_cequiv in h0; tcsp.
-  - exists (@mkc_axiom o).
-    apply member_cequiv_iff; auto.
 Qed.
 
 

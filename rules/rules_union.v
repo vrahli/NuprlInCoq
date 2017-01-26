@@ -19,12 +19,18 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand &  Vincent Rahli & Mark Bickford
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Abhishek Anand
+           Vincent Rahli
+           Mark Bickford
 
 *)
 
 
+Require Export sequents2.
 Require Import sequents_tacs.
 Require Import subst_tacs_aeq.
 Require Import cequiv_tacs.
@@ -99,10 +105,10 @@ Qed.
 
 
 
-(* [17] ============ UNION EQUALITY ============ *)
+(* ============ UNION EQUALITY ============ *)
 
   (*
-   H |-union(A1,B1) = union(A2,B2) in Type
+   H |- union(A1,B1) = union(A2,B2) in Type
 
      By unionEquality ()
 
@@ -125,10 +131,10 @@ Definition rule_union_equality {p}
     ]
     [].
 
-(* [17] ============ INL  EQUALITY ============ *)
+(* ============ INL EQUALITY ============ *)
 
   (*
-   H |-inl a1 = inl a2 in union(A,B)
+   H |- inl a1 = inl a2 in union(A,B)
 
      By inlEquality i
 
@@ -152,10 +158,10 @@ Definition rule_inl_equality {p}
     ]
     [].
 
-(* [17] ============ INR  EQUALITY ============ *)
+(* ============ INR EQUALITY ============ *)
 
   (*
-   H |-inr b1 = inr b2 in union(A,B)
+   H |- inr b1 = inr b2 in union(A,B)
 
      By inrEquality i
 
@@ -177,6 +183,51 @@ Definition rule_inr_equality {p}
                       )))
     [ mk_baresequent H (mk_conclax (mk_equality b1 b2 B)),
       mk_baresequent H (mk_conclax (mk_equality A A (mk_uni i)))
+    ]
+    [].
+
+(* ============ INL FORMATION ============ *)
+
+  (*
+   H |- union(A,B) ext inl(s)
+
+     By inlEquality i
+
+     H |- A ext s
+     H |- B in U_i
+ *)
+Definition rule_inl_formation {p}
+           (A B s : NTerm)
+           (i : nat)
+           (H : @barehypotheses p) :=
+  mk_rule
+    (mk_baresequent H (mk_concl (mk_union A B) (mk_inl s)))
+    [
+      mk_baresequent H (mk_concl A s),
+      mk_baresequent H (mk_conclax (mk_member B (mk_uni i)))
+    ]
+    [].
+
+(* ============ INR FORMATION ============ *)
+
+  (*
+   H |- union(A,B) ext inr(s)
+
+     By inrEquality i
+
+     H |- B ext s
+     H |- A in U_i
+ *)
+
+Definition rule_inr_formation {p}
+           (A B s : NTerm)
+           (i : nat)
+           (H : @barehypotheses p) :=
+  mk_rule
+    (mk_baresequent H (mk_concl (mk_union A B) (mk_inr s)))
+    [
+      mk_baresequent H (mk_concl B s),
+      mk_baresequent H (mk_conclax (mk_member A (mk_uni i)))
     ]
     [].
 
@@ -269,7 +320,7 @@ Lemma rule_inr_equality_true {p} :
   forall A B b1 b2 : NTerm,
   forall i : nat,
   forall H : @barehypotheses p,
-    rule_true lib 
+    rule_true lib
          (rule_inr_equality
                  A B b1 b2 i H).
 Proof.
@@ -302,9 +353,9 @@ Proof.
   apply tequality_mkc_equality_implies in h2.
   repnd.
   generalize (teq_and_eq_if_equality lib (mk_union A B) (mk_inr b1) (mk_inr b2) s1 s2 H
-              wT w1 w2 c1 c0 c2 c3  cT cT0  eqh sim 
+              wT w1 w2 c1 c0 c2 c3  cT cT0  eqh sim
               ); intro k; lsubst_tac; apply k; clear k; auto.
- 
+
   - apply tequality_mkc_union; dands; auto; destruct h2 as [xx | yy];  auto.
     + apply equality_in_uni in xx; auto.
     + spcast. eapply equality_in_uni. apply equality_respects_cequivc; eauto.
@@ -335,9 +386,9 @@ Proof.
   assert ( type lib A1 ) as Atyp.
   { apply equality_in_uni in hyp2.
    eapply tequality_refl; eauto. }
-  
+
   assert (equality lib b11 b22  B1) as eq2.
-  + eapply equality_trans with (t2 := b12). 
+  + eapply equality_trans with (t2 := b12).
     { destruct teq; auto; spcast. apply equality_respects_cequivc; auto. eapply equality_refl. eauto. }
     { eapply tequality_preserving_equality; [exact hyp |apply tequality_sym;auto ]. }
   + apply equality_mkc_union; dands; auto.
@@ -345,8 +396,111 @@ Proof.
   * right. eexists; eexists; dands; [spcast | spcast | exact eq2];
     apply computes_to_valc_refl; apply iscvalue_mkc_inr.
 Qed.
-    
-  
+
+Lemma rule_inl_formation_true3 {p} :
+  forall lib,
+  forall A B s : NTerm,
+  forall i : nat,
+  forall H : @barehypotheses p,
+    rule_true3 lib (rule_inl_formation A B s i H).
+Proof.
+  unfold rule_inl_formation, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros; repnd.
+  clear cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  destruct Hyp  as [ ws1 hyp1 ].
+  destruct Hyp0 as [ ws2 hyp2 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent ((H) ||- (mk_concl (mk_union A B) (mk_inl s)))) as wfs.
+  { clear hyp1 hyp2.
+    unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl; simpl.
+    dwfseq.
+    rw @vswf_hypotheses_nil_eq.
+    dands; tcsp; try (apply wf_inl; auto).
+    introv xx; allrw in_app_iff; tcsp. }
+  exists wfs.
+  unfold wf_csequent, wf_sequent, wf_concl in wfs; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  vr_seq_true in hyp1.
+  vr_seq_true in hyp2.
+  pose proof (hyp1 s1 s2 eqh sim) as q.
+  pose proof (hyp2 s1 s2 eqh sim) as h.
+  clear hyp1 hyp2.
+  exrepnd.
+  lsubst_tac.
+
+  rw <- @member_member_iff in h1.
+  apply tequality_in_uni_implies_tequality in h0;
+    [|eapply member_in_uni; eauto].
+  rw @tequality_mkc_union.
+  rw @equality_mkc_union.
+  dands; auto;
+    try (complete (eapply member_in_uni; eauto));
+    try (complete (eapply inhabited_implies_tequality; eauto)).
+
+  left.
+  exists (lsubstc s wfce0 s1 pt4) (lsubstc s wfce0 s2 pt5).
+  dands; spcast; auto; try (apply computes_to_valc_refl; eauto 3 with slow).
+Qed.
+
+Lemma rule_inr_formation_true3 {p} :
+  forall lib,
+  forall A B s : NTerm,
+  forall i : nat,
+  forall H : @barehypotheses p,
+    rule_true3 lib (rule_inr_formation A B s i H).
+Proof.
+  unfold rule_inl_formation, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros; repnd.
+  clear cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  destruct Hyp  as [ ws1 hyp1 ].
+  destruct Hyp0 as [ ws2 hyp2 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent ((H) ||- (mk_concl (mk_union A B) (mk_inr s)))) as wfs.
+  { clear hyp1 hyp2.
+    unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl; simpl.
+    dwfseq.
+    rw @vswf_hypotheses_nil_eq.
+    dands; tcsp; try (apply wf_inl; auto).
+    introv xx; allrw in_app_iff; tcsp. }
+  exists wfs.
+  unfold wf_csequent, wf_sequent, wf_concl in wfs; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  vr_seq_true in hyp1.
+  vr_seq_true in hyp2.
+  pose proof (hyp1 s1 s2 eqh sim) as q.
+  pose proof (hyp2 s1 s2 eqh sim) as h.
+  clear hyp1 hyp2.
+  exrepnd.
+  lsubst_tac.
+
+  rw <- @member_member_iff in h1.
+  apply tequality_in_uni_implies_tequality in h0;
+    [|eapply member_in_uni; eauto].
+  rw @tequality_mkc_union.
+  rw @equality_mkc_union.
+  dands; auto;
+    try (complete (eapply member_in_uni; eauto));
+    try (complete (eapply inhabited_implies_tequality; eauto)).
+
+  right.
+  exists (lsubstc s wfce0 s1 pt4) (lsubstc s wfce0 s2 pt5).
+  dands; spcast; auto; try (apply computes_to_valc_refl; eauto 3 with slow).
+Qed.
+
 Lemma rule_union_equality_true {p} :
   forall lib,
   forall A1 A2 B1 B2 : NTerm,
@@ -462,6 +616,18 @@ Qed.
 
 
 
+Lemma covered_decide {o} :
+  forall (a : @NTerm o) v b w c vs,
+    covered (mk_decide a v b w c) vs
+    <=> (covered a vs # covered b (v :: vs) # covered c (w :: vs)).
+Proof.
+  unfold covered; sp; simpl.
+  repeat (rw remove_nvars_nil_l).
+  rewrite app_nil_r.
+  repeat (rw subvars_app_l); sp.
+Qed.
+
+
 (**
 
 <<
@@ -484,11 +650,11 @@ Definition rule_union_elimination {p}
        (snoc H (mk_hyp z (mk_union A B)) ++ J)
        (mk_concl C (mk_decide (mk_var z) x l y r )))
     [ mk_baresequent
-        ((snoc (snoc H (mk_hyp z (mk_union A B))) (mk_hyp x A))  
+        ((snoc (snoc H (mk_hyp z (mk_union A B))) (mk_hyp x A))
            ++ (lsubst_hyps [(z, mk_inl (mk_var x))] J))
         (mk_concl (lsubst  C [(z, mk_inl (mk_var x))] ) l),
      mk_baresequent
-        ((snoc (snoc H (mk_hyp z (mk_union A B))) (mk_hyp y B))  
+        ((snoc (snoc H (mk_hyp z (mk_union A B))) (mk_hyp y B))
            ++ (lsubst_hyps [(z, mk_inr (mk_var y))] J))
         (mk_concl (lsubst  C [(z, mk_inr (mk_var y))] ) r)
     ]
@@ -496,6 +662,7 @@ Definition rule_union_elimination {p}
 
 Hint Rewrite @nh_vars_hyps_app : core.
 Hint Rewrite @nh_vars_hyps_snoc : core.
+Hint Rewrite @nh_vars_hyps_lsubst_hyps : slow core.
 
 Lemma rule_union_elimination_true {p} :
   forall lib,
@@ -506,21 +673,38 @@ Lemma rule_union_elimination_true {p} :
          (rule_union_elimination
                  A B C l r z x y H J).
 Proof.
-   unfold rule_union_elimination, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_union_elimination, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   clear cargs.
-    (* We prove the well-formedness of things *)
+
+  (* We prove the well-formedness of things *)
   destseq; allsimpl.
   dLin_hyp; exrepnd.
   rename Hyp0 into hyp1.
   rename Hyp1 into hyp2.
   destseq; allsimpl; proof_irr; GC.
-  assert (covered (mk_decide (mk_var z) x l y r) (nh_vars_hyps (snoc H (mk_hyp z (mk_union A B)) ++ J))) as ce2.
-  - clear hyp1. clear hyp2.
-    autorewrite with core in *. allsimpl; auto.
-  - exists ce2.
 
-   (* We prove some simple facts about our sequents *)
+  assert (covered (mk_decide (mk_var z) x l y r) (nh_vars_hyps (snoc H (mk_hyp z (mk_union A B)) ++ J))) as ce2.
+  { clear hyp1. clear hyp2.
+    dwfseq.
+    introv i; allrw in_app_iff; allrw in_remove_nvars; allrw in_single_iff.
+    rw in_snoc.
+    repndors; repnd; subst; tcsp.
+    - apply ce0 in i0.
+      allrw in_app_iff.
+      allrw in_snoc.
+      autorewrite with slow core in *.
+      tcsp.
+    - apply ce in i0.
+      allrw in_app_iff.
+      allrw in_snoc.
+      autorewrite with slow core in *.
+      tcsp. }
+  exists ce2.
+Abort.
+
+(*
+  (* We prove some simple facts about our sequents *)
   assert (disjoint (free_vars A) (vars_hyps J)
           # disjoint (free_vars f) (vars_hyps J)
           # subset (free_vars_hyps J) (x :: vars_hyps H)
@@ -722,23 +906,10 @@ Proof.
       - lsubst_tac.
         apply tequality_union in eqhh6; repnd.
         auto.
-        
      }
-        
 
-    
-
-
-   
-     
 
 (* UNIFINISHED *)
 
 Abort.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
 *)

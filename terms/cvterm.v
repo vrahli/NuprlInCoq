@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -15,10 +17,13 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -651,6 +656,24 @@ Definition mkcv_cequiv {o} vs (a b : @CVTerm o vs) : CVTerm vs :=
   let (ta,pa) := a in
   let (tb,pb) := b in
     exist (isprog_vars vs) (mk_cequiv ta tb) (isprog_vars_cequiv vs ta tb pa pb).
+
+Lemma isprog_vars_approx {p} :
+  forall vs (a b : @NTerm p),
+    isprog_vars vs a
+    -> isprog_vars vs b
+    -> isprog_vars vs (mk_approx a b).
+Proof.
+  introv ipa ipb.
+  allrw @isprog_vars_eq; allsimpl.
+  allrw remove_nvars_nil_l; allrw app_nil_r.
+  allrw subvars_app_l; sp.
+  constructor; simpl; sp; subst; constructor; sp.
+Qed.
+
+Definition mkcv_approx {o} vs (a b : @CVTerm o vs) : CVTerm vs :=
+  let (ta,pa) := a in
+  let (tb,pb) := b in
+    exist (isprog_vars vs) (mk_approx ta tb) (isprog_vars_approx vs ta tb pa pb).
 
 Definition mkc_singleton_uatom {o} (a : @get_patom_set o) :=
   mkc_set

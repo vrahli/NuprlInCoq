@@ -24,8 +24,6 @@
 *)
 
 
-Add LoadPath "../".
-
 Require Export type_sys_useful.
 Require Import dest_close.
 
@@ -321,9 +319,3 @@ Proof.
     rw <- l; sp.
 Qed.
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("../")
-*** End:
-*)

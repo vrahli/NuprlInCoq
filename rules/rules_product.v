@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -27,6 +31,7 @@
 
 Require Export rules_useful.
 Require Export subst_tacs_aeq.
+Require Export subst_tacs3.
 Require Export cequiv_tacs.
 Require Export cequiv_props3.
 Require Export per_props_equality.
@@ -661,13 +666,10 @@ Proof.
   assert (!LIn p (dom_csub s2a0)) as nip2.
   { allapply @similarity_dom; repnd; allrw; auto. }
 
-  repeat lsubstc_snoc_move.
+  repeat lsubstc_snoc_move2.
 
   (* some cleaning up *)
-  assert (cover_vars C ((p, mkc_pair a1 b1) :: s1a0 ++ s1b)) as cov1 by auto.
-  assert (c15 = cov1) as xx by (apply cover_vars_proof_irrelevance); subst.
-  assert (cover_vars C ((p, mkc_pair a2 b2) :: s2a0 ++ s2b)) as cov2 by auto.
-  assert (c14 = cov2) as xx by (apply cover_vars_proof_irrelevance); subst.
+  proof_irr.
   clear_cover.
 
   dands.
@@ -799,17 +801,18 @@ Proof.
         repeat (rw @sub_find_snoc); simpl.
 
         boolvar; tcsp;
-        try (complete (remember (sub_find (csub2sub s1a0) v) as sf;
-                       symmetry in Heqsf; destruct sf; eauto 3 with slow;
-                       remember (sub_find (csub2sub s1b) v) as sg;
-                       symmetry in Heqsg; destruct sg; eauto 3 with slow;
-                       provefalse;
-                       allapply @sub_find_some;
-                       allapply @in_sub_eta;
-                       allrw @dom_csub_eq;
-                       revert Heqsf; revert Heqsg;
-                       allapply @similarity_dom; repnd; allrw;
-                       autorewrite with slow core; tcsp)).
+          remember (sub_find (csub2sub s1a0) v) as sf;
+          symmetry in Heqsf; destruct sf; eauto 3 with slow;
+            remember (sub_find (csub2sub s1b) v) as sg;
+            symmetry in Heqsg; destruct sg; eauto 3 with slow;
+              try subst v; tcsp;
+                provefalse;
+                allapply @sub_find_some;
+                allapply @in_sub_eta;
+                allrw @dom_csub_eq;
+                revert Heqsf; revert Heqsg;
+                  allapply @similarity_dom; repnd; allrw;
+                    autorewrite with slow core; tcsp.
 
     - unfold cequivc; simpl.
       rw @csubst_app; simpl.
@@ -870,17 +873,18 @@ Proof.
         repeat (rw @sub_find_snoc); simpl.
 
         boolvar; tcsp;
-        try (complete (remember (sub_find (csub2sub s2a0) v) as sf;
-                       symmetry in Heqsf; destruct sf; eauto 3 with slow;
-                       remember (sub_find (csub2sub s2b) v) as sg;
-                       symmetry in Heqsg; destruct sg; eauto 3 with slow;
-                       provefalse;
-                       allapply @sub_find_some;
-                       allapply @in_sub_eta;
-                       allrw @dom_csub_eq;
-                       revert Heqsf; revert Heqsg;
-                       allapply @similarity_dom; repnd; allrw;
-                       autorewrite with slow core; tcsp)).
+          remember (sub_find (csub2sub s2a0) v) as sf;
+          symmetry in Heqsf; destruct sf; eauto 3 with slow;
+            remember (sub_find (csub2sub s2b) v) as sg;
+            symmetry in Heqsg; destruct sg; eauto 3 with slow;
+              try subst v; tcsp;
+                provefalse;
+                allapply @sub_find_some;
+                allapply @in_sub_eta;
+                allrw @dom_csub_eq;
+                revert Heqsf; revert Heqsg;
+                  allapply @similarity_dom; repnd; allrw;
+                    autorewrite with slow core; tcsp.
 
     - unfold cequivc; simpl.
       apply cequiv_lsubst.
@@ -2394,11 +2398,3 @@ Proof.
   - eapply @equality_respects_cequivc_left;[apply cequivc_sym;exact ceq1|].
     auto.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

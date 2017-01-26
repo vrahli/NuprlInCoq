@@ -803,9 +803,3 @@ Proof.
       apply equality_refl in h1.
       eexists; eauto.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

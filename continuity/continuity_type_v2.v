@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -15,11 +17,14 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -250,35 +255,42 @@ Proof.
   autodimp nve hyp;[intro k; repndors; tcsp; ginv|rw nve; clear nve].
   fold (agree_upto_b_type_v2 n1 (mk_var n) (lsubst_aux f (csub2sub s)) (mk_var n0) (lsubst_aux T (csub2sub s))).
   fold (agree_upto_b_type_v2 nvarx (mk_var nvarb) (lsubst_aux f (csub2sub s)) (mk_var nvarg) (lsubst_aux T (csub2sub s))).
-  fold (continuous_type_aux_aux_v2 n n0 n1 n5 (lsubst_aux F (csub2sub s)) (lsubst_aux f (csub2sub s)) (lsubst_aux T (csub2sub s))).
-  unfold mk_ufun.
-  gen_newvar.
-  fold (continuous_type_aux_aux nvarb nvarg nvarx n6 (lsubst_aux F (csub2sub s)) (lsubst_aux f (csub2sub s))).
+
+  fold (int2Tv n3 (lsubst_aux T (csub2sub s))).
+  fold (continuous_type_aux_aux_v2v n n3 n0 n1 n5 (lsubst_aux F (csub2sub s)) (lsubst_aux f (csub2sub s)) (lsubst_aux T (csub2sub s))).
+
+  unfold mk_fun, mk_ufun.
+  repeat gen_newvar.
+  fold (int2Tv n6 (lsubst_aux T (csub2sub s))).
+  fold (continuous_type_aux_aux_v2v nvarb n6 nvarg nvarx n7 (lsubst_aux F (csub2sub s)) (lsubst_aux f (csub2sub s)) (lsubst_aux T (csub2sub s))).
   clear dependent n2.
-  clear dependent n3.
   clear dependent n4.
 
   apply alphaeq_eq.
   repeat get_newvar_prop.
   allsimpl; allrw remove_nvars_nil_l; allrw app_nil_r.
   allrw in_app_iff; allsimpl; allrw not_over_or; repnd; GC.
-  apply alphaeq_continuous_type_aux_aux; tcsp;
+  apply alphaeq_continuous_type_aux_aux_v2v; tcsp;
   try (complete (apply cover_vars_iff_closed_lsubst_aux; auto));
   try (complete (intro k; inversion k)).
 Qed.
 
 Tactic Notation "one_lift_lsubst_cont" constr(T) ident(name) tactic(tac) :=
   match T with
-    | context [lsubstc (continuous_type ?a ?b) ?w ?s ?c] =>
+    | context [lsubstc (continuous_type_v2 ?F ?f ?T) ?w ?s ?c] =>
       let w1 := fresh "w1" in
       let w2 := fresh "w2" in
+      let w3 := fresh "w3" in
       let c1 := fresh "c1" in
       let c2 := fresh "c2" in
-      pose proof (lsubstc_continuous_type a b w s c) as name;
+      let c3 := fresh "c3" in
+      pose proof (lsubstc_continuous_type_v2 F f T w s c) as name;
         destruct name as [w1 name];
         destruct name as [w2 name];
+        destruct name as [w3 name];
         destruct name as [c1 name];
         destruct name as [c2 name];
+        destruct name as [c3 name];
         clear_irr; tac
   end.
 
@@ -313,6 +325,6 @@ Ltac lift_lsubsts_cont :=
 
 (*
 *** Local Variables:
-*** coq-load-path: ("." "./close/")
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
 *** End:
 *)

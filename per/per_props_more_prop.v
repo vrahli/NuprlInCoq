@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -148,10 +153,6 @@ Proof.
     allapply @nuprli_implies_nuprl; sp.
     rw iff; sp.
 Qed.
-(*
-(*Error: Universe inconsistency.*)
-Admitted.
-*)
 
 Lemma mkc_ipertype_equality_in_uni {p} :
   forall lib (R1 R2 : @CTerm p) i,
@@ -230,10 +231,6 @@ Proof.
     apply nuprl_refl in k1; sp.
     rw iff; sp.
 Qed.
-(*
-(*Error: Universe inconsistency.*)
-Admitted.
-*)
 
 Lemma equality_nuprli {p} :
   forall lib (A B C : @CTerm p) i eq,
@@ -370,10 +367,6 @@ Proof.
     apply nuprl_refl in k1; sp.
     rw iff; sp.
 Qed.
-(*
-(*Error: Universe inconsistency.*)
-Admitted.
-*)
 
 Lemma mkc_uni_in_nuprl {p} :
   forall lib (i : nat),
@@ -401,10 +394,6 @@ Lemma tequality_mkc_uni {p} :
 Proof.
   generalize (@nuprl_mkc_uni p); sp.
 Qed.
-(*
-(*Error: Universe inconsistency.*)
-Admitted.
-*)
 
 Lemma mkc_cequiv_equality_in_uni {p} :
   forall lib (a b c d : @CTerm p) i,
@@ -435,10 +424,6 @@ Proof.
     apply CL_cequiv; unfold per_cequiv.
     exists a b c d; sp; spcast; try computes_to_value_refl.
 Qed.
-(*
-(*Error: Universe inconsistency.*)
-Admitted.
-*)
 
 Lemma mkc_approx_equality_in_uni {p} :
   forall lib (a b c d : @CTerm p) i,
@@ -469,10 +454,6 @@ Proof.
     apply CL_approx; unfold per_approx.
     exists a b c d; sp; spcast; try computes_to_value_refl.
 Qed.
-(*
-(*Error: Universe inconsistency.*)
-Admitted.
-*)
 
 (*
 Lemma tequality_in_uni_iff_tequality {p} :
@@ -499,38 +480,3 @@ Proof.
 Qed.
 *)
 
-Lemma equality_in_uni_mkc_halts {p} :
-  forall lib i (a b : @CTerm p),
-    equality lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
-    <=>
-    (chaltsc lib a <=> chaltsc lib b).
-Proof.
-  intros; repeat (rewrite <- fold_mkc_halts).
-  rw @mkc_approx_equality_in_uni.
-  allrw @chasvaluec_as_capproxc; sp.
-Qed.
-
-Lemma cequorsq_mkc_halts_implies {p} :
-  forall lib i (a b : @CTerm p),
-    equorsq lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
-    -> (chaltsc lib a <=> chaltsc lib b).
-Proof.
-  unfold equorsq; intros; sp;
-  allrw @equality_in_uni_mkc_halts; sp.
-  uncast; allrw @cequivc_decomp_halts; sp;
-  split; sp; spcast; discover; sp.
-Qed.
-
-Lemma cequorsq_mkc_halts {p} :
-  forall lib i (a b : @CTerm p),
-    equorsq lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
-    <=>
-    (chaltsc lib a <=> chaltsc lib b).
-Proof.
-  unfold equorsq; intros; split; sp; try right;
-  allrw @equality_in_uni_mkc_halts; sp; uncast;
-  allrw @cequivc_decomp_halts; try split; sp; spcast;
-  discover; sp.
-Abort.
-(* This is not true in Prop with Cast around hasvalue *)
-(*Qed.*)

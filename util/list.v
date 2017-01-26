@@ -2898,9 +2898,9 @@ Lemma FilterLIn : forall
 forall x l, LIn x (filter f l) <=> LIn x l # f x = true.
 Proof.
   induction l; simpl.
-  intuition.
-  intros.
-  case_eq (f a); intros; simpl; intuition congruence.
+  - split; sp.
+  - case_eq (f a); intros; simpl; rw IHl; split; sp; subst; sp.
+    assert (true = false) as h; allrw <-; ginv.
 Qed.
 
 Lemma monotoneFilter:
@@ -2914,7 +2914,6 @@ Proof.
   apply FilterLIn in Hin.
   repnd. dands; cpx.
 Qed.
- 
 
 Hint Unfold monotoneSetFn : SetReasoning.
 Hint Resolve monotoneSetFnFlatMap monotoneSetFnMap
@@ -3158,7 +3157,7 @@ Proof.
   repnd; cpx.
   dorn Hyp0; subst; cpx;
   [|apply IHlen in Hyp0; dands; cpx; 
-      rewrite <- NPeano.Nat.add_succ_r ; cpx].
+      rewrite <- Nat.add_succ_r ; cpx].
   dands; cpx.
   introv Hgt Hlt.
   SetReasoning.

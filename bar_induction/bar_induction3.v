@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,8 +20,11 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -30,16 +34,200 @@ Require Export subst_tacs.
 
 
 
+Lemma eq_kseq_of_seq {o} :
+  forall lib (s : @CTerm o) v k,
+    is_seq lib s
+    -> eq_kseq lib s (seq2kseq s k v) k.
+Proof.
+  introv iss.
+  unfold eq_kseq.
+  apply implies_equality_natk2nat.
+  introv l.
+  unfold is_seq in iss.
+
+  assert (equality lib (mkc_nat m) (mkc_nat m) mkc_tnat) as equ by (eauto with slow).
+
+  eapply equality_nat2nat_apply in iss;[|eauto].
+  allrw @member_eq.
+  apply member_tnat_implies_computes in iss; exrepnd.
+  eexists; dands; eauto.
+  unfold seq2kseq.
+
+  apply cequivc_nat_implies_computes_to_valc.
+  apply computes_to_valc_implies_cequivc in iss0.
+  eapply cequivc_trans;[apply cequivc_beta|].
+  repeat (rewrite mkcv_less_substc).
+  repeat (rewrite mkcv_apply_substc).
+  repeat (rewrite mkcv_bot_substc).
+  repeat (rewrite mkcv_nat_substc).
+  repeat (rewrite mkcv_zero_substc).
+  repeat (rewrite mkc_var_substc).
+  repeat (rewrite csubst_mk_cv).
+  rewrite mkc_zero_eq.
+
+  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
+  boolvar; try omega.
+  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
+  boolvar; try omega.
+  auto.
+Qed.
+Hint Resolve eq_kseq_of_seq : slow.
+
+Lemma approxc_bot {o} :
+  forall lib (t : @CTerm o), approxc lib mkc_bot t.
+Proof.
+  introv; destruct_cterms; unfold approxc; simpl.
+  unfold mk_bot.
+  apply bottom_approx_any; eauto 3 with slow.
+Qed.
+Hint Resolve approxc_bot : slow.
+
+Lemma mk_seq2kseq0 {o} :
+  forall lib (c : @CTerm o) v,
+    cequivc lib (seq2kseq c 0 v) (mkc_lam v (mkcv_bot [v])).
+Proof.
+  introv.
+  unfold seq2kseq.
+  apply implies_cequivc_lam; introv.
+
+  eapply cequivc_trans;[apply cequivc_sym;apply cequivc_beta|].
+  eapply cequivc_trans;[apply cequivc_beta|].
+  repeat (rewrite mkcv_less_substc).
+  repeat (rewrite mkcv_apply_substc).
+  repeat (rewrite mkc_var_substc).
+  repeat (rewrite mkcv_nat_substc).
+  repeat (rewrite mkcv_zero_substc).
+  repeat (rewrite mkcv_bot_substc).
+  repeat (rewrite csubst_mk_cv).
+
+  apply cequivc_iff_approxc; dands; eauto 3 with slow.
+  apply approxc_assume_hasvalue; intro hv.
+
+  destruct_cterms.
+  unfold hasvalue_likec in hv; unfold approxc; allsimpl.
+  apply hasvalue_like_implies_or in hv;
+    [|repeat (apply isprogram_mk_less; dands; eauto 2 with slow);
+       apply isprogram_apply; eauto 3 with slow].
+
+  destruct hv as [hv|hv].
+
+  - apply hasvalue_mk_less in hv; eauto 2 with slow;
+    [|apply wf_less; eauto 2 with slow; apply wf_apply; eauto 2 with slow].
+    exrepnd; repndors; repnd.
+
+    { apply not_hasvalue_bot in hv1; tcsp. }
+
+    apply reduces_to_if_isvalue_like in hv2; eauto 3 with slow.
+    rw <- @int_zero in hv2; ginv.
+
+    eapply approx_trans;
+      [apply approx_mk_less;
+        [apply reduces_to_implies_approx2;eauto 2 with slow
+        |apply approx_refl; eauto 2 with slow
+        |apply approx_refl; eauto 2 with slow
+        |apply approx_refl; eauto 2 with slow;
+         apply isprogram_mk_less; dands; eauto 2 with slow;
+         apply isprogram_apply; eauto 3 with slow]
+      |].
+
+    rw <- @int_zero.
+
+    eapply approx_trans;
+      [apply reduces_to_implies_approx2;
+        [repeat (apply isprogram_mk_less; dands; eauto 2 with slow);
+          apply isprogram_apply; eauto 3 with slow
+        |apply reduces_to_if_step; csunf; simpl; dcwf h; simpl;
+         unfold compute_step_comp; simpl; boolvar; try omega; reflexivity]
+      |].
+
+    apply hasvalue_mk_less in hv1; eauto 2 with slow;
+    [|apply wf_apply; eauto 2 with slow].
+    exrepnd.
+
+    eapply reduces_to_eq_val_like in hv0;try (exact hv2); eauto 2 with slow; ginv.
+    apply reduces_to_if_isvalue_like in hv4; eauto 3 with slow.
+    unfold mk_nat in hv4; ginv.
+
+    repndors; repnd;
+    [|apply not_hasvalue_bot in hv1; tcsp].
+
+    eapply approx_trans;
+      [apply approx_mk_less;
+        [apply reduces_to_implies_approx2;eauto 2 with slow
+        |apply approx_refl; eauto 2 with slow
+        |apply approx_refl; eauto 2 with slow;
+         apply isprogram_apply; eauto 2 with slow
+        |apply approx_refl; eauto 2 with slow]
+      |].
+
+    eapply approx_trans;
+      [apply reduces_to_implies_approx2;
+        [repeat (apply isprogram_mk_less; dands; eauto 2 with slow);
+          apply isprogram_apply; eauto 3 with slow
+        |apply reduces_to_if_step; csunf; simpl; dcwf h; simpl;
+         unfold compute_step_comp; simpl; boolvar;[|reflexivity]; try omega]
+      |].
+
+    eauto 3 with slow.
+
+  - unfold raises_exception in hv; exrepnd.
+    apply computes_to_exception_mk_less in hv1; eauto 2 with slow;
+    [|apply wf_less; eauto 2 with slow; apply wf_apply; eauto 2 with slow].
+    repndors; exrepnd; repndors; exrepnd.
+
+    + apply bottom_doesnt_raise_an_exception in hv1; tcsp.
+
+    + apply reduces_to_if_isvalue_like in hv2; eauto 3 with slow.
+      rw <- @int_zero in hv2; ginv.
+
+      eapply approx_trans;
+        [apply approx_mk_less;
+          [apply reduces_to_implies_approx2;eauto 2 with slow
+          |apply approx_refl; eauto 2 with slow
+          |apply approx_refl; eauto 2 with slow
+          |apply approx_refl; eauto 2 with slow;
+           apply isprogram_mk_less; dands; eauto 2 with slow;
+           apply isprogram_apply; eauto 3 with slow]
+        |].
+
+      rw <- @int_zero.
+
+      eapply approx_trans;
+        [apply reduces_to_implies_approx2;
+          [repeat (apply isprogram_mk_less; dands; eauto 2 with slow);
+            apply isprogram_apply; eauto 3 with slow
+          |apply reduces_to_if_step; csunf; simpl; dcwf h; simpl;
+           unfold compute_step_comp; simpl; boolvar; try omega; reflexivity]
+        |].
+
+      apply computes_to_exception_mk_less in hv1; eauto 2 with slow;
+      [|apply wf_apply; eauto 2 with slow].
+      repndors; exrepnd; repndors; exrepnd.
+
+      * eapply reduces_to_eq_val_like in hv0;try (exact hv2); eauto 2 with slow; ginv.
+        apply reduces_to_if_isvalue_like in hv4; eauto 3 with slow.
+        unfold mk_nat in hv4; ginv.
+        try omega.
+
+      * apply bottom_doesnt_raise_an_exception in hv1; tcsp.
+
+      * eapply reduces_to_exception_eq in hv0;[|eauto].
+        apply iscancan_doesnt_raise_an_exception in hv0; eauto 2 with slow; tcsp.
+
+      * apply iscancan_doesnt_raise_an_exception in hv2; eauto 2 with slow; tcsp.
+
+    +
+Abort.
+
+
 (**
 
   Bar induction, where
-    T is a type
-    R is the spread law
+    X is the proposition
     B is the bar
-    con stands for consistent with the spread law
     ext(s,n,t) = \m. if m=n then t else s m
 <<
-   H |- squash(X 0 c)
+   H |- squash(X 0 (norm c 0))
 
      By bar_induction B i a s x m n t
 
@@ -65,7 +253,7 @@ Definition rule_bar_induction_nat {o}
               (mk_conclax (mk_squash
                              (mk_exists mk_tnat
                                         n
-                                        (mk_apply2 B (mk_var n) (mk_seq2kseq (mk_var s) (mk_var n) v))))),
+                                        (mk_apply2 B (mk_var n) (mk_var s))))),
       mk_bseq (snoc (snoc (snoc H (mk_hyp n mk_tnat))
                           (mk_hyp s (mk_natk2nat (mk_var n))))
                     (mk_hyp m (mk_apply2 B (mk_var n) (mk_var s))))
@@ -375,35 +563,19 @@ Proof.
     clear_wf_hyps.
     proof_irr.
 
-    pose proof (lsubstc_mk_seq2kseq2
-                  (mk_var s) (mk_var n) v w6
-                  ((n, a) :: snoc s1 (s, seq1)) c10) as ss.
-    simpl in ss.
-    repeat (autodimp ss hyp); try (complete (intro xx; repndors; tcsp)).
-    exrepnd.
-    rw ss1 in hf3.
-    clear ss1.
-
-    clear_wf_hyps.
-    proof_irr.
-    lsubst_tac.
+    pose proof (Bfunc k seq1 (seq2kseq seq1 k v) s1 s1 cB1 cB1) as h.
+    repeat (autodimp h hyp); eauto 3 with slow.
+    { eapply similarity_refl; eauto. }
 
     eapply inhabited_type_cequivc in hf3;
       [|apply implies_cequivc_apply2;
          [apply cequivc_refl
-         |apply computes_to_valc_implies_cequivc;exact hf2
+         |apply computes_to_valc_implies_cequivc;eauto
          |apply cequivc_refl]
       ].
-    eapply inhabited_type_cequivc in hf3;
-      [|apply implies_cequivc_apply2;
-         [apply cequivc_refl
-         |apply cequivc_refl
-         |apply implies_cequivc_seq2kseq2;
-           [apply cequivc_refl
-           |apply computes_to_valc_implies_cequivc;exact hf2]
-         ]
-      ].
-    allrw @seq2kseq2_as_seq2kseq2.
+
+    eapply inhabited_type_tequality in hf3;[|eauto].
+
     dands; auto.
 
   - intros k seq1 iss sb C seq2 eqs fse.

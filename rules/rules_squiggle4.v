@@ -166,7 +166,114 @@ Qed.
 
 
 (*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)
+   H |- a ~ b = c ~ d
+
+     By cequivExtensionalEquality
+
+     H |- a ~ b <=> b ~ a
+ *)
+Definition rule_cequiv_extensional_equality {o}
+           (H : barehypotheses)
+           (i : nat)
+           (a b c d e : @NTerm o) :=
+  mk_rule
+    (mk_baresequent H (mk_conclax (mk_equality (mk_cequiv a b) (mk_cequiv c d) (mk_uni i))))
+    [ mk_baresequent H (mk_concl (mk_iff (mk_cequiv a b) (mk_cequiv c d)) e)
+    ]
+    [].
+
+Lemma rule_cequiv_extensional_equality_true {o} :
+  forall lib (H : barehypotheses) (i : nat)
+         (a b c d e : @NTerm o),
+    rule_true lib (rule_cequiv_extensional_equality H i a b c d e).
+Proof.
+  unfold rule_cequiv_extensional_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  clear cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (closed_extract H (mk_conclax (mk_equality (mk_cequiv a b) (mk_cequiv c b) (mk_uni i)))) as cs.
+  clear hyp1.
+  dwfseq; prove_seq; unfold covered; allrw subvars_prop; sp.
+
+  exists cs.
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+
+  lsubst_tac.
+  rw @member_eq.
+  rw <- @member_equality_iff.
+
+  pose proof (teq_and_eq_if_equality
+                lib
+                (mk_uni i)
+                (mk_cequiv a b)
+                (mk_cequiv c d)
+                s1 s2 H wT w1 w2 c1 c0 c2 c3 cT cT0) as h.
+  lsubst_tac.
+  apply h; auto; clear h.
+
+  { apply tequality_mkc_uni. }
+
+  { clear dependent s1.
+    clear dependent s2.
+    introv hf sim.
+
+    vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as hyp; clear hyp1.
+    exrepnd.
+    lsubst_tac.
+    apply equality_in_iff in hyp1; exrepnd; spcast.
+    pose proof (hyp6 mkc_axiom mkc_axiom) as h1; clear hyp6.
+    pose proof (hyp1 mkc_axiom mkc_axiom) as h2; clear hyp1.
+    clear hyp2 hyp3 hyp4 hyp5.
+    allrw @equality_in_mkc_cequiv.
+    apply tequality_mkc_iff in hyp0; repnd.
+    allrw @tequality_mkc_cequiv.
+    allrw @inhabited_cequiv.
+
+    apply mkc_cequiv_equality_in_uni.
+    split; intro h.
+
+    - autodimp hyp2 hyp; auto;[].
+      apply hyp2.
+      autodimp h1 hyp; repnd; dands; auto;
+      try (spcast; apply computes_to_valc_refl; eauto 3 with slow).
+
+    - autodimp hyp0 hyp.
+
+      { exists (@mkc_id o).
+        apply equality_in_fun; dands.
+
+        - apply tequality_mkc_cequiv; sp.
+
+        - introv inh.
+          apply tequality_mkc_cequiv; sp.
+
+        - introv ea.
+          allrw @equality_in_mkc_cequiv; repnd.
+          dands; tcsp.
+
+          + spcast.
+            allrw @computes_to_valc_iff_reduces_toc; repnd; dands; auto.
+            eapply reduces_toc_trans;[apply reduces_toc_apply_id|]; auto.
+
+          + spcast.
+            allrw @computes_to_valc_iff_reduces_toc; repnd; dands; auto.
+            eapply reduces_toc_trans;[apply reduces_toc_apply_id|]; auto.
+
+          + autodimp h1 hyp; repnd; dands; auto;
+            try (spcast; apply computes_to_valc_refl; eauto 3 with slow).
+      }
+
+      apply hyp0 in h; clear hyp0.
+      autodimp h2 hyp; repnd; dands; auto; spcast;
+      apply computes_to_valc_refl; eauto 3 with slow.
+  }
+Qed.

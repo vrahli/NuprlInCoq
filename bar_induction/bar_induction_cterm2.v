@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,8 +20,11 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -28,117 +32,15 @@
 Require Export bar_induction_cterm.
 Require Export subst_tacs.
 
-Lemma isprog_implies_isprog_nout {o} :
-  forall (t : @NTerm o),
-    noutokens t -> isprog t -> isprog_nout t.
-Proof.
-  introv nout isp.
-  apply isprog_nout_iff.
-  applydup @isprog_implies_wf in isp.
-  apply closed_if_isprog in isp.
-  allrw @nt_wf_eq; sp.
-Qed.
-
-Definition cterm2cnterm {o} (t : @CTerm o) : noutokensc t -> CNTerm :=
-  match t with
-    | exist x p => fun n => existT isprog_nout x (isprog_implies_isprog_nout x n p)
-  end.
-
-Lemma implies_cequivc_update_seq_nout {o} :
-  forall lib (t : @CTerm o) k a b v,
-    cequivc lib a b
-    -> cequivc lib (update_seq_nout t k a v) (update_seq_nout t k b v).
-Proof.
-  introv ceq.
-  unfold update_seq_nout.
-  apply implies_cequivc_lam; introv.
-  allrw @mkcv_inteq_substc.
-  allrw @mkcv_apply_substc.
-  allrw @mkc_var_substc.
-  allrw @csubst_mk_cv.
-  apply cequivc_mkc_inteq; auto.
-Qed.
-
-Lemma cnterm2cterm2cnterm {o} :
-  forall (t : @CTerm o) (p : noutokensc t),
-    (cnterm2cterm (cterm2cnterm t p)) = t.
-Proof.
-  introv.
-  apply cterm_eq; simpl.
-  destruct_cterms; simpl; auto.
-Qed.
-
-Lemma eq_kseq_nout_update2 {o} :
-  forall lib (s1 s2 : @CTerm o) (n : nat) (u : CTerm) (v : NVar),
-    noutokensc u
-    -> eq_kseq_nout lib s1 s2 n
-    -> eq_kseq_nout
-         lib
-         (update_seq_nout s1 n u v)
-         (update_seq_nout s2 n u v)
-         (S n).
-Proof.
-  introv nout i.
-  allunfold @eq_kseq_nout.
-  unfold update_seq.
-  apply implies_equality_natk2nout2.
-  introv ltm.
-
-  destruct (deq_nat m n) as [d|d]; subst.
-
-  - exists u.
-    dands; eauto 3 with slow; tcsp; spcast;[|].
-
-    + eapply cequivc_trans;[apply cequivc_beta|].
-      allrw @mkcv_inteq_substc.
-      allrw @mkcv_apply_substc.
-      allrw @mkc_var_substc.
-      allrw @csubst_mk_cv.
-      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; tcsp.
-
-    + eapply cequivc_trans;[apply cequivc_beta|].
-      allrw @mkcv_inteq_substc.
-      allrw @mkcv_apply_substc.
-      allrw @mkc_var_substc.
-      allrw @csubst_mk_cv.
-      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; tcsp.
-
-  - pose proof (equality_natk2nout_implies lib m s1 s2 n) as h.
-    repeat (autodimp h hyp); try omega;[].
-    exrepnd; spcast.
-    exists u0.
-    dands; spcast; auto.
-
-    + eapply cequivc_trans;[apply cequivc_beta|].
-      allrw @mkcv_inteq_substc.
-      allrw @mkcv_apply_substc.
-      allrw @mkc_var_substc.
-      allrw @csubst_mk_cv.
-      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; tcsp; GC.
-
-    + eapply cequivc_trans;[apply cequivc_beta|].
-      allrw @mkcv_inteq_substc.
-      allrw @mkcv_apply_substc.
-      allrw @mkc_var_substc.
-      allrw @csubst_mk_cv.
-      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; tcsp; GC.
-Qed.
-
 
 (**
 
   Bar induction, where
-    T is a type
-    R is the spread law
+    X is the proposition
     B is the bar
-    con stands for consistent with the spread law
     ext(s,n,t) = \m. if m=n then t else s m
 <<
-   H |- squash (X 0 c)
+   H |- squash (X 0 (norm c 0))
 
      By bar_induction B i a s x m n t
 
@@ -164,7 +66,7 @@ Definition rule_bar_induction_nout {o}
               (mk_conclax (mk_squash
                              (mk_exists mk_tnat
                                         n
-                                        (mk_apply2 B (mk_var n) (mk_seq2kseq (mk_var s) (mk_var n) v))))),
+                                        (mk_apply2 B (mk_var n) (mk_var s))))),
       mk_bseq (snoc (snoc (snoc H (mk_hyp n mk_tnat))
                           (mk_hyp s (mk_natk2nout (mk_var n))))
                     (mk_hyp m (mk_apply2 B (mk_var n) (mk_var s))))
@@ -464,35 +366,19 @@ Proof.
     clear_wf_hyps.
     proof_irr.
 
-    pose proof (lsubstc_mk_seq2kseq2
-                  (mk_var s) (mk_var n) v w6
-                  ((n, a) :: snoc s1 (s, seq1)) c10) as ss.
-    simpl in ss.
-    repeat (autodimp ss hyp); try (complete (intro xx; repndors; tcsp)).
-    exrepnd.
-    rw ss1 in hf3.
-    clear ss1.
-
-    clear_wf_hyps.
-    proof_irr.
-    lsubst_tac.
+    pose proof (Bfunc k seq1 (seq2kseq seq1 k v) s1 s1 cB1 cB1) as h.
+    repeat (autodimp h hyp); eauto 3 with slow.
+    { eapply similarity_refl; eauto. }
 
     eapply inhabited_type_cequivc in hf3;
       [|apply implies_cequivc_apply2;
          [apply cequivc_refl
-         |apply computes_to_valc_implies_cequivc;exact hf2
+         |apply computes_to_valc_implies_cequivc;eauto
          |apply cequivc_refl]
       ].
-    eapply inhabited_type_cequivc in hf3;
-      [|apply implies_cequivc_apply2;
-         [apply cequivc_refl
-         |apply cequivc_refl
-         |apply implies_cequivc_seq2kseq2;
-           [apply cequivc_refl
-           |apply computes_to_valc_implies_cequivc;exact hf2]
-         ]
-      ].
-    allrw @seq2kseq2_as_seq2kseq2.
+
+    eapply inhabited_type_tequality in hf3;[|eauto].
+
     dands; auto.
 
   - intros k seq1 iss sb C seq2 eqs fse.

@@ -25,7 +25,9 @@
 *)
 
 
+Require Export substitution4.
 Require Export alphaeq2.
+
 
 Lemma wf_sub_csub2sub {p} :
   forall sub, wf_sub (@csub2sub p sub).

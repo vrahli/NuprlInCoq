@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,13 +20,16 @@
   along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
 
-Require Export terms4.
+Require Export terms3.
 
 
 Lemma isprog_vars_ax {p} :
@@ -151,6 +155,30 @@ Definition mkcv_inl {p} vs (t : @CVTerm p vs) : CVTerm vs :=
   let (a,x) := t in
     exist (isprog_vars vs) (mk_inl a) (implies_isprog_vars_inl vs a x).
 
+Lemma wf_int_eq {p} :
+  forall a b c d : @NTerm p,
+    wf_term (mk_int_eq a b c d) <=> (wf_term a # wf_term b # wf_term c # wf_term d).
+Proof.
+  introv; allrw <- @nt_wf_eq.
+  split; intro k.
+
+  - inversion k as [|?|? ? imp e]; subst; allsimpl.
+    allunfold @num_bvars; allsimpl; GC.
+    pose proof (imp (nobnd a)) as i1.
+    pose proof (imp (nobnd b)) as i2.
+    pose proof (imp (nobnd c)) as i3.
+    pose proof (imp (nobnd d)) as i4.
+    autodimp i1 hyp.
+    autodimp i2 hyp.
+    autodimp i3 hyp.
+    autodimp i4 hyp.
+    allrw @bt_wf_iff; sp.
+
+  - repnd.
+    constructor; allunfold @num_bvars; simpl; auto.
+    introv i; repndors; subst; tcsp; allrw @bt_wf_iff; auto.
+Qed.
+
 Lemma wf_int_eq_iff {p} :
   forall a b c d : @NTerm p,
     (wf_term a # wf_term b # wf_term c # wf_term d) <=> wf_term (mk_int_eq a b c d).
@@ -261,6 +289,56 @@ Proof.
   apply nt_wf_eq; auto.
 Qed.
 Hint Resolve implies_isprog_vars : slow.
+
+Lemma wf_oterm_iff {o} :
+  forall (op : Opid) (bs : list (@BTerm o)),
+    wf_term (oterm op bs)
+    <=>
+    (map num_bvars bs = OpBindings op
+     # (forall b : BTerm, LIn b bs -> wf_bterm b)).
+Proof.
+  introv.
+  rw @wf_term_eq.
+  rw @nt_wf_oterm_iff.
+  split; intro k; repnd; dands; auto; introv i; apply k in i;
+  apply bt_wf_eq; auto.
+Qed.
+
+Lemma wf_bterm_iff {o} :
+  forall l (t : @NTerm o),
+    wf_bterm (bterm l t) <=> wf_term t.
+Proof.
+  introv.
+  unfold wf_bterm, wf_term; simpl; sp.
+Qed.
+
+Lemma isprog_nout_iff {o} :
+  forall (t : @NTerm o),
+    isprog_nout t <=> (nt_wf t # closed t # noutokens t).
+Proof.
+  introv.
+  unfold isprog_nout.
+  rw @wf_term_eq.
+  rw @no_vars_like_b_true_iff.
+  split; sp.
+Qed.
+
+Lemma wf_sterm_iff {o} :
+  forall (f : @ntseq o),
+    wf_term (sterm f) <=> (forall n : nat, isprog_nout (f n)).
+Proof.
+  introv.
+  split; intro h.
+  - introv.
+    apply wf_term_eq in h.
+    inversion h as [|? imp|]; subst; clear h.
+    pose proof (imp n) as h; repnd.
+    apply isprog_nout_iff; sp.
+  - apply wf_term_eq.
+    constructor; introv.
+    pose proof (h n) as q; clear h.
+    apply isprog_nout_iff in q; sp.
+Qed.
 
 Lemma wf_isint {p} :
   forall (a b c : @NTerm p),
@@ -739,3 +817,10 @@ Proof.
   introv; destruct_cterms; simpl.
   rw @isprog_vars_cont1_dup1; auto.
 Qed.
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/")
+*** End:
+*)

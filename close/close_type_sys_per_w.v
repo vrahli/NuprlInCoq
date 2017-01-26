@@ -24,8 +24,6 @@
 *)
 
 
-Add LoadPath "../".
-
 Require Import type_sys_useful.
 Require Import dest_close.
 
@@ -282,9 +280,3 @@ Proof.
     apply @weq_eq_term_equals with (eqa1 := eqa) (eqb1 := eqb); sp.
 Qed.
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("../")
-*** End:
-*)

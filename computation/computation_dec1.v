@@ -62,7 +62,7 @@ Proof.
   destruct h as [h|h];[left|right].
   - exrepnd.
     applydup @reduces_in_atmost_k_steps_preserves_isprog in h0; auto.
-    exists (existT _ v h1); simpl; auto.
+    exists (mk_ct v h1); simpl; auto.
   - intro q; exrepnd.
     destruct h.
     destruct_cterms; allsimpl.

@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -240,12 +245,6 @@ Proof.
   exists (@mkc_axiom o).
   rw @equality_in_erasec.
   exists t0; auto.
-Qed.
-
-Lemma member_in_base_iff {o} :
-  forall lib (t : @CTerm o), member lib t mkc_base <=> True.
-Proof.
-  intros; split; intro; auto; apply member_base.
 Qed.
 
 Lemma equality_in_isect2 {o} :
@@ -471,3 +470,11 @@ Proof.
     apply nuprl_refl in k0; auto.
     apply nuprl_sym in k0; apply nuprl_refl in k0; auto.
 Qed.
+
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
+*** End:
+*)

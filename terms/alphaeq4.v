@@ -1420,5 +1420,5 @@ Proof.
     ginv.
     repeat (rw <- @cl_lsubst_lsubst_aux; eauto 3 with slow).
     allrw @fold_subst.
-    pose proof (aeq2 (existT _ t2 cl3)) as h; allsimpl; auto.
+    pose proof (aeq2 (mk_ct t2 cl3)) as h; allsimpl; auto.
 Qed.

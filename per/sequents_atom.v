@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,8 +20,11 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -1179,6 +1183,85 @@ Proof.
   allrw @wf_bterm_iff; auto.
 Qed.
 
+Definition wf_sobterms {o} (bs : list (@SOBTerm o)) :=
+  forall b : SOBTerm, LIn b bs -> wf_sobterm b.
+
+Definition wf_soterms {o} (ts : list (@SOTerm o)) :=
+  forall t : SOTerm, LIn t ts -> wf_soterm t.
+
+Lemma wf_soterm_2bs {o} :
+  forall (op : @Opid o) bs, wf_soterm (soterm op bs) -> wf_sobterms bs.
+Proof.
+  introv w.
+  allrw @wf_soterm_iff; repnd; auto.
+  introv i.
+  destruct b.
+  apply (w l); auto.
+Qed.
+
+Lemma wf_soterms_2t {o} :
+  forall (t : @SOTerm o) ts, wf_soterms (t :: ts) -> wf_soterm t.
+Proof.
+  introv w.
+  unfold wf_soterms in w; allsimpl.
+  apply w; auto.
+Qed.
+
+Lemma wf_soterms_2ts {o} :
+  forall (t : @SOTerm o) ts, wf_soterms (t :: ts) -> wf_soterms ts.
+Proof.
+  introv w i.
+  unfold wf_soterms in w; allsimpl.
+  apply w; auto.
+Qed.
+
+Lemma wf_sobterms_2b {o} :
+  forall (b : @SOBTerm o) bs, wf_sobterms (b :: bs) -> wf_sobterm b.
+Proof.
+  introv w.
+  unfold wf_sobterms in w; allsimpl.
+  apply w; auto.
+Qed.
+
+Lemma wf_sobterms_2bs {o} :
+  forall (b : @SOBTerm o) bs, wf_sobterms (b :: bs) -> wf_sobterms bs.
+Proof.
+  introv w i.
+  unfold wf_sobterms in w; allsimpl.
+  apply w; auto.
+Qed.
+
+Lemma wf_sobterm_2t {o} :
+  forall vs (t : @SOTerm o), wf_sobterm (sobterm vs t) -> wf_soterm t.
+Proof.
+  introv w.
+  unfold wf_sobterm in w; allsimpl.
+  unfold wf_soterm.
+  rw @wf_bterm_iff in w; auto.
+Qed.
+
+Lemma wf_sovar_2ts {o} :
+  forall v (ts : list (@SOTerm o)), wf_soterm (sovar v ts) -> wf_soterms ts.
+Proof.
+  introv w.
+  rw @wf_sovar in w; auto.
+Qed.
+
+Lemma wf_soterms_2sovar {o} :
+  forall v (ts : list (@SOTerm o)), wf_soterms ts -> wf_soterm (sovar v ts).
+Proof.
+  introv w.
+  apply @wf_sovar; auto.
+Qed.
+
+Lemma wf_soseq_2t {o} :
+  forall (f : @ntseq o) n, wf_soterm (soseq f) -> wf_term (f n).
+Proof.
+  introv w.
+  unfold wf_soterm in w; allsimpl.
+  apply wf_term_sterm_app; auto.
+Qed.
+
 Lemma noutokens_b2t {o} :
   forall vs (t : @NTerm o), noutokens_b (bterm vs t) -> noutokens t.
 Proof.
@@ -1222,6 +1305,13 @@ with set_patom_noutokens_b {p d} (b : @BTerm p) :
                          (wf_bterm_2t vs t wf))
        end.
 
+Definition set_patom_noutokens_ntseq {p d} (f : @ntseq p) :
+  wf_term (sterm f) -> @ntseq (set_patom p d) :=
+  fun w n => set_patom_noutokens
+               (f n)
+               (noutokens_sterm_app f n w)
+               (wf_term_sterm_app f n w).
+
 Fixpoint replace_utokens_t {p d} (t : @NTerm p) :
   wf_term t -> @utok_ren p d t -> @NTerm (set_patom p d) :=
   match t with
@@ -1249,40 +1339,45 @@ with replace_utokens_b {p d} (bt : @BTerm p) :
        end.
 
 Fixpoint replace_utokens_so {p d} (t : @SOTerm p) :
-  @utok_ren_so p d t -> @SOTerm (set_patom p d) :=
+  wf_soterm t -> @utok_ren_so p d t -> @SOTerm (set_patom p d) :=
   match t with
     | sovar v ts =>
-      fun s =>
+      fun w s =>
         sovar
           v
           ((fix F (ts : list (@SOTerm p)) :
-              @utok_ren_so_ts p d ts -> list (@SOTerm (set_patom p d)) :=
+              wf_soterms ts -> @utok_ren_so_ts p d ts -> list (@SOTerm (set_patom p d)) :=
               match ts with
-                | [] => fun _ => []
+                | [] => fun _ _ => []
                 | t :: ts =>
-                  fun s =>
-                    (replace_utokens_so t (@utok_ren_so_ts_2t p d t ts s))
-                      :: (F ts (@utok_ren_so_ts_2ts p d t ts s))
-              end) ts (utok_ren_so_2ts v ts s))
+                  fun w s =>
+                    (replace_utokens_so t (wf_soterms_2t t ts w) (@utok_ren_so_ts_2t p d t ts s))
+                      :: (F ts (wf_soterms_2ts t ts w) (@utok_ren_so_ts_2ts p d t ts s))
+              end) ts (wf_sovar_2ts v ts w) (utok_ren_so_2ts v ts s))
+    | soseq f =>
+      fun w _ => soseq (set_patom_noutokens_ntseq f w)
     | soterm o bs =>
-      fun s =>
+      fun w s =>
         soterm (replace_opid o (utok_ren_so_2o o bs s))
                ((fix F (bs : list (@SOBTerm p)) :
-                   @utok_ren_so_bs p d bs -> list (@SOBTerm (set_patom p d)) :=
+                   wf_sobterms bs -> @utok_ren_so_bs p d bs -> list (@SOBTerm (set_patom p d)) :=
                    match bs with
-                     | [] => fun _ => []
+                     | [] => fun _ _ => []
                      | b :: bs =>
-                       fun s =>
-                         (replace_utokens_so_b b (@utok_ren_so_bs_2b p d b bs s))
-                           :: (F bs (@utok_ren_so_bs_2bs p d b bs s))
-                   end) bs (utok_ren_so_2bs o bs s))
+                       fun w s =>
+                         (replace_utokens_so_b b (wf_sobterms_2b b bs w) (@utok_ren_so_bs_2b p d b bs s))
+                           :: (F bs (wf_sobterms_2bs b bs w) (@utok_ren_so_bs_2bs p d b bs s))
+                   end) bs (wf_soterm_2bs o bs w) (utok_ren_so_2bs o bs s))
   end
 with replace_utokens_so_b {p d} (b : @SOBTerm p) :
-       @utok_ren_so_b p d b -> @SOBTerm (set_patom p d) :=
+       wf_sobterm b -> @utok_ren_so_b p d b -> @SOBTerm (set_patom p d) :=
        match b with
          | sobterm vs t =>
-           fun s =>
-             sobterm vs (@replace_utokens_so p d t (@utok_ren_so_b_2t p d vs t s))
+           fun w s =>
+             sobterm vs (@replace_utokens_so
+                           p d t
+                           (wf_sobterm_2t vs t w)
+                           (@utok_ren_so_b_2t p d vs t s))
        end.
 
 Definition replace_utokens_hyp {p d}
@@ -1847,35 +1942,54 @@ Proof.
 Qed.
 
 Lemma so_free_vars_replace_utokens_so {p d} :
-  forall (t : @SOTerm p) (r : @utok_ren_so p d t),
-    so_free_vars (replace_utokens_so t r) = so_free_vars t.
+  forall (t : @SOTerm p) (w : wf_soterm t) (r : @utok_ren_so p d t),
+    so_free_vars (replace_utokens_so t w r) = so_free_vars t.
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case; introv; allsimpl.
+  soterm_ind t as [v ts ind| |op bs ind] Case; introv; allsimpl; auto.
 
   - Case "sovar".
     f_equal; tcsp.
 
     + f_equal.
-      remember (utok_ren_so_2ts v ts r) as rs; clear Heqrs r ind.
+      remember (utok_ren_so_2ts v ts r) as rs.
+      remember (wf_sovar_2ts v ts w) as ws.
+      clear Heqrs Heqws r ind.
       induction ts; simpl; tcsp.
+      rewrite IHts; auto.
+      apply wf_sovar; introv i.
+      apply wf_soterms_2ts in ws.
+      apply ws; auto.
 
-    + remember (utok_ren_so_2ts v ts r) as rs; clear Heqrs r.
+    + remember (utok_ren_so_2ts v ts r) as rs.
+      remember (wf_sovar_2ts v ts w) as ws.
+      clear Heqrs Heqws r.
       induction ts; simpl; tcsp.
       rw ind; tcsp.
       apply app_if; auto.
       apply IHts.
-      introv i; introv.
-      apply ind; tcsp.
+      { introv i; introv.
+        apply ind; tcsp. }
+      { apply wf_sovar; introv i.
+        apply wf_soterms_2ts in ws.
+        apply ws; auto. }
 
   - Case "soterm".
-     remember (utok_ren_so_2bs op bs r) as r'; clear Heqr' r.
-     induction bs; simpl; auto.
-     destruct a as [l t]; simpl.
-     rw (ind t l); tcsp.
-     apply app_if; auto.
-     apply IHbs.
-     introv i; introv.
-     apply (ind t0 vs); tcsp.
+    remember (utok_ren_so_2bs op bs r) as r'.
+    remember (wf_soterm_2bs op bs w) as w'.
+    clear Heqr' Heqw' r.
+
+    apply wf_soterm_iff in w; repnd.
+    clear w0.
+
+    induction bs; simpl; auto.
+    destruct a as [l t]; simpl.
+    rw (ind t l); tcsp.
+    apply app_if; auto.
+    apply IHbs.
+    { introv i; introv.
+      apply (ind t0 vs); tcsp. }
+    { introv i.
+      eapply w; simpl; eauto. }
 Qed.
 
 Lemma free_vars_set_patom_noutokens {p d} :
@@ -2090,37 +2204,56 @@ Proof.
 Qed.
 
 Lemma wf_term_replace_utokens_so {p d} :
-  forall (t : @SOTerm p) (r : @utok_ren_so p d t),
-    wf_soterm t -> wf_soterm (replace_utokens_so t r).
+  forall (t : @SOTerm p) (w : wf_soterm t) (r : @utok_ren_so p d t),
+    wf_soterm (replace_utokens_so t w r).
 Proof.
   unfold wf_soterm.
-  soterm_ind t as [v ts ind|op bs ind] Case; introv wf; allsimpl.
+  soterm_ind t as [v ts ind| |op bs ind] Case; introv; allsimpl; auto.
 
   - Case "sovar".
-    allrw @wf_apply_solist; repnd; dands; auto.
     remember (utok_ren_so_2ts v ts r) as r'.
-    clear Heqr'.
+    remember (wf_sovar_2ts v ts w) as w'.
+    clear Heqr' Heqw'.
+
+    allrw @wf_apply_solist; repnd; dands; auto.
 
     induction ts; simpl; introv i; tcsp.
-    dorn i; subst.
+    repndors; subst; auto.
 
     + apply ind; tcsp.
-      apply wf; tcsp.
 
     + apply IHts in i; auto.
-      * introv k w; apply ind; sp.
+      * introv k; apply ind; sp.
       * apply utok_ren_sovar_tl in r; auto.
-      * introv k; apply wf; sp.
+      * introv k; apply w; sp.
+
+  - Case "soseq".
+    apply wf_sterm_iff.
+    dup w as w'; rw @wf_sterm_iff in w'.
+    introv.
+    pose proof (w' n) as h.
+    allrw @isprog_nout_iff.
+    unfold set_patom_noutokens_ntseq; simpl.
+    repnd; dands.
+
+    + apply nt_wf_set_patom_noutokens.
+
+    + unfold closed.
+      rewrite free_vars_set_patom_noutokens; auto.
+
+    + unfold noutokens.
+      rewrite get_utokens_set_patom_noutokens; auto.
 
   - Case "soterm".
+    remember (utok_ren_so_2bs op bs r) as r'; clear Heqr'.
+    remember (wf_soterm_2bs op bs w) as w'; clear Heqw'.
     allrw @wf_term_oterm; repnd.
     allrw map_map.
     dands.
 
     + rw @op_bindings_replace_opid.
-      rw <- wf0.
-      remember (utok_ren_so_2bs op bs r) as r'; clear Heqr'.
-      clear wf wf0 r ind.
+      rw <- w0.
+      clear w w0 r ind.
       induction bs; simpl; auto.
       f_equal; auto.
       unfold compose.
@@ -2132,15 +2265,13 @@ Proof.
       apply bt_wf_eq.
       constructor.
       apply nt_wf_eq.
-      remember (utok_ren_so_2bs op bs r) as r'; clear Heqr'.
-      clear wf0 r.
+      clear w0 r.
       induction bs; allsimpl; tcsp.
       dorn i1.
 
       * destruct a as [l' t']; allsimpl.
         inversion i1; subst l t; clear i1.
         eapply ind; eauto.
-        pose proof (wf (bterm l' (soterm2nterm t'))) as w; tcsp.
 
       * eapply IHbs; eauto.
 Qed.
@@ -2217,7 +2348,7 @@ Definition replace_utokens_seq {p d}
            (s : @sequent p) :
   @utok_ren_seq p d s -> @sequent (set_patom p d) :=
   match s with
-    | existT bs w =>
+    | existT _ bs w =>
       fun r =>
         existT
           wf_sequent
@@ -2251,7 +2382,7 @@ Definition replace_utokens_ctseq {p d}
            (cts : @ctsequent p) :
   @utok_ren_ctseq p d cts -> @ctsequent (set_patom p d) :=
   match cts with
-    | existT s q =>
+    | existT _ s q =>
       fun r =>
         existT
           closed_type_sequent
@@ -2298,7 +2429,7 @@ Definition replace_utokens_cseq {p d}
            (cs : @csequent p) :
   @utok_ren_cseq p d cs -> @csequent (set_patom p d) :=
   match cs with
-    | existT s q =>
+    | existT _ s q =>
       fun r =>
         existT
           closed_extract_ctsequent
@@ -2389,27 +2520,32 @@ Definition utok_ren_bs_agree {o d}
      & u (existT _ a i) = r (existT _ a j)}.
 
 Lemma get_utokens_so_replace_utokens_so {o d} :
-  forall (t : @SOTerm o) (r : @utok_ren_so o d t),
-    get_utokens_so (replace_utokens_so t r)
+  forall (t : @SOTerm o) (w : wf_soterm t) (r : @utok_ren_so o d t),
+    get_utokens_so (replace_utokens_so t w r)
     = mapin (get_utokens_so t)
             (fun (a : get_patom_set o)
                  (i : LIn a (get_utokens_so t)) =>
                r (existT _ a (dset_member_if a (get_utokens_so t) i))).
 Proof.
-  soterm_ind t as [v ts ind|op bs ind] Case; introv; allsimpl.
+  soterm_ind t as [v ts ind| |op bs ind] Case; introv; allsimpl; auto.
 
   - Case "sovar".
-    remember (utok_ren_so_2ts v ts r).
+    remember (utok_ren_so_2ts v ts r) as u.
+    remember (wf_sovar_2ts v ts w) as wf.
+
     assert (utok_ren_ts_agree ts (sovar v ts) u r) as agree.
     { subst; introv; exists (in_utok_so_if_ts _ v _ i); auto. }
+
     clear Hequ.
+    clear Heqwf.
+    allrw @wf_sovar.
 
     induction ts; simpl; tcsp.
     rw mapin_app; apply app_if; simpl.
 
     + unfold fmapin_app_fst.
       pose proof (ind a) as h1; simpl in h1; autodimp h1 hyp; clear ind.
-      pose proof (h1 (utok_ren_so_ts_2t a ts u)) as h2; clear h1.
+      pose proof (h1 (wf_soterms_2t a ts wf) (utok_ren_so_ts_2t a ts u)) as h2; clear h1.
       rw h2.
       apply eq_mapins.
       introv; simpl.
@@ -2419,14 +2555,17 @@ Proof.
       f_equal; f_equal.
       apply dset_member_proof_irrelevance.
 
-    + autodimp IHts hyp.
+    + repeat (autodimp IHts hyp).
       {
         introv i; introv.
         pose proof (ind t) as h; simpl in h; autodimp h hyp.
       }
 
-      pose proof (IHts (utok_ren_sovar_tl _ _ _ r) (utok_ren_so_ts_2ts a ts u)) as h; clear IHts.
-      autodimp h hyp.
+      pose proof (IHts
+                    (utok_ren_sovar_tl _ _ _ r)
+                    (utok_ren_so_ts_2ts a ts u)
+                    (wf_soterms_2ts a ts wf)) as h; clear IHts.
+      repeat (autodimp h hyp).
       {
         introv.
         pose proof (agree a0 (in_utok_so_ts_if_ts _ _ _ i)) as k; exrepnd.
@@ -2435,6 +2574,8 @@ Proof.
         f_equal; f_equal.
         apply dset_member_proof_irrelevance.
       }
+
+      { allsimpl; introv i; apply w; simpl; auto. }
 
       rw h; clear h.
       apply eq_mapins.
@@ -2456,9 +2597,15 @@ Proof.
         apply dset_member_proof_irrelevance.
 
     + remember (utok_ren_so_2bs op bs r) as u.
+      remember (wf_soterm_2bs op bs w) as wf.
+
       assert (utok_ren_bs_agree bs (soterm op bs) u r) as agree.
       { subst; introv; exists (in_utok_so_if_bts _ op _ i); auto. }
+
       clear Hequ.
+      clear Heqwf.
+      allrw @wf_soterm_iff; repnd.
+      clear w0.
 
       induction bs; simpl; auto.
       rw mapin_app; apply app_if; simpl.
@@ -2476,7 +2623,7 @@ Proof.
         f_equal; f_equal.
         apply dset_member_proof_irrelevance.
 
-      * autodimp IHbs hyp.
+      * repeat (autodimp IHbs hyp).
         {
           introv i; introv.
           apply (ind t vs); simpl; auto.
@@ -2484,8 +2631,9 @@ Proof.
 
         pose proof (IHbs
                       (utok_ren_soterm_tl _ _ _ r)
-                      (utok_ren_so_bs_2bs a bs u)) as h; clear IHbs.
-        autodimp h hyp.
+                      (utok_ren_so_bs_2bs a bs u)
+                      (wf_sobterms_2bs a bs wf)) as h; clear IHbs.
+        repeat (autodimp h hyp).
         {
           introv.
           pose proof (agree a0 (in_utok_so_bs_if_bs _ _ _ i)) as k; exrepnd.
@@ -2494,6 +2642,9 @@ Proof.
           f_equal; f_equal.
           apply dset_member_proof_irrelevance.
         }
+
+        { introv i.
+          pose proof (w vs t) as xx; simpl in xx; autodimp xx hyp. }
 
         rw h; clear h.
         apply eq_mapins.
@@ -2504,8 +2655,8 @@ Proof.
 Qed.
 
 Lemma no_utokens_replace_utokens_so {p d} :
-  forall (t : @SOTerm p) (r : @utok_ren_so p d t),
-    no_utokens t -> no_utokens (replace_utokens_so t r).
+  forall (t : @SOTerm p) (w : wf_soterm t) (r : @utok_ren_so p d t),
+    no_utokens t -> no_utokens (replace_utokens_so t w r).
 Proof.
   introv nu.
   allunfold @no_utokens.
@@ -2522,16 +2673,16 @@ Definition replace_utokens_correct_abs {p d}
            (rhs : @SOTerm p)
            (correct : correct_abs opabs vars rhs)
            (r : @utok_ren_so p d rhs) :
-  correct_abs opabs vars (replace_utokens_so rhs r) :=
+  correct_abs opabs vars (replace_utokens_so rhs (fst correct) r) :=
   match correct with
     | (w,(sv,(cap,nu))) =>
-      (wf_term_replace_utokens_so rhs r w,
+      (wf_term_replace_utokens_so rhs w r,
        (subsovars_eq_l (so_free_vars rhs)
-                       (so_free_vars (replace_utokens_so rhs r))
+                       (so_free_vars (replace_utokens_so rhs w r))
                        vars
-                       (so_free_vars_replace_utokens_so rhs r)
+                       (so_free_vars_replace_utokens_so rhs w r)
                        sv,
-        (cap, no_utokens_replace_utokens_so rhs r nu)))
+        (cap, no_utokens_replace_utokens_so rhs w r nu)))
   end.
 
 Definition replace_utokens_library_entry {p d}
@@ -2543,7 +2694,7 @@ Definition replace_utokens_library_entry {p d}
         lib_abs
           opabs
           vars
-          (replace_utokens_so rhs (utok_ren_lib_entry_2rhs opabs vars rhs correct r))
+          (replace_utokens_so rhs (fst correct) (utok_ren_lib_entry_2rhs opabs vars rhs correct r))
           (replace_utokens_correct_abs opabs vars rhs correct r)
   end.
 
@@ -3085,11 +3236,4 @@ Proof.
     introv kelts; introv.
     rw <- @sequent_true_eq_VR.
 Abort.
-*)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
 *)

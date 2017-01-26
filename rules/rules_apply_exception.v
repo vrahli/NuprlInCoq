@@ -42,10 +42,11 @@ Require Export list. (* why? *)
 
      By applyExceptionCases
 
-     H |- isexc(it t is a pair then u else v )
-     H, x : has_value(u) |- a = b in T
+     H |- isexc(t u)
+     H, x : halts(t) |- a = b in T
      H, x : isexc(t) |- a = b in T
      H |- t in Base
+
         ( note: we don't need  H |- u in Base )
  *)
 Definition rule_apply_exception_cases {o}
@@ -55,10 +56,10 @@ Definition rule_apply_exception_cases {o}
   mk_rule
     (mk_baresequent H (mk_conclax (mk_equality a b T)))
     [ mk_baresequent H (mk_conclax (mk_isexc (mk_apply t u))),
-      mk_baresequent (snoc H (mk_hyp x ( mk_halts t)))
+      mk_baresequent (snoc H (mk_hyp x (mk_halts t)))
                      (mk_conclax (mk_equality a b T)),
       mk_baresequent (snoc H (mk_hyp x (mk_isexc t)))
-                     (mk_conclax (mk_equality a b T)), 
+                     (mk_conclax (mk_equality a b T)),
       mk_baresequent H (mk_conclax (mk_member t mk_base))
     ]
     [].
@@ -112,7 +113,7 @@ Proof.
   vr_seq_true in hyp1.
   pose proof (hyp1 s1 s2 eqh sim) as hyp; clear hyp1.
   exrepnd.
-  
+
   lsubst_tac.
   allrw @tequality_mkc_isexc.
   allrw <- @member_isexc_iff.
@@ -124,7 +125,7 @@ Proof.
   apply apply_raises_exceptionc_two_cases in hyp1.
   repndors; exrepnd.
 
-  - (* t raises exception *) 
+  - (* t raises exception *)
     vr_seq_true in hyp3.
     pose proof (hyp3 (snoc s1 (x,mkc_axiom)) (snoc s2 (x,mkc_axiom))) as hyp.
     clear hyp3.
@@ -189,8 +190,8 @@ Proof.
       apply cequivc_preserves_chaltsc in hyp0; auto.
       apply cequivc_sym in hyp0.
       apply cequivc_preserves_chaltsc in hyp0; auto.
-      } 
-    { (* Similarity *) 
+      }
+    { (* Similarity *)
       assert (wf_term (mk_halts t)) as wit. apply wf_halts; auto.
       assert (cover_vars (mk_halts t) s1) as cvit.
       { apply cover_vars_halts; dands; auto.
@@ -208,20 +209,5 @@ Proof.
     rw <- @member_equality_iff in hyp2.
     rw @tequality_mkc_equality_sp in hyp0; repnd.
     sp.
-   }  
+   }
 Qed.
-   
-    
-
- 
-
-(* begin hide *)
-
-(* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

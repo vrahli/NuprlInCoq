@@ -58,7 +58,7 @@ Definition mkc_bunion {p} (A B : @CTerm p) : CTerm :=
   exist isprog (mk_bunion a b) (isprog_bunion a b x y).
 
 Definition cnewvarlst {p} (ts : list (@CTerm p)) :=
-  newvarlst (map (fun t : CTerm => projT1 t) ts).
+  newvarlst (map (fun t : CTerm => proj1_sig t) ts).
 
 Lemma fold_mkc_bunion {p} :
   forall (A B : @CTerm p),

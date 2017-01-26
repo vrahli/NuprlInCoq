@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,13 +20,15 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
 
-Require Export cequiv.
 Require Export cvterm2.
 
 Lemma wf_inteq_iff {p} :
@@ -126,32 +129,9 @@ Proof.
   repeat unfsubst.
 Qed.
 
-Lemma cequivc_mkc_inteq_int {o} :
-  forall lib i1 i2 (t1 t2 : @CTerm o),
-    cequivc
-      lib
-      (mkc_inteq (mkc_integer i1) (mkc_integer i2) t1 t2)
-      (if Z.eq_dec i1 i2 then t1 else t2).
-Proof.
-  introv.
-  destruct_cterms.
-  unfold cequivc; simpl.
-  boolvar; subst; simpl; apply reduces_to_implies_cequiv;
-  allrw @isprogram_eq; try (apply isprog_inteq_implies); eauto 3 with slow;
-  apply reduces_to_if_step; csunf; simpl; dcwf h; simpl;
-  unfold compute_step_comp; simpl;
-  boolvar; tcsp; try omega.
-  ginv; tcsp.
-Qed.
 
-Lemma cequivc_mkc_inteq_nat {o} :
-  forall lib (i1 i2 : nat) (t1 t2 : @CTerm o),
-    cequivc lib
-            (mkc_inteq (mkc_nat i1) (mkc_nat i2) t1 t2)
-            (if eq_nat_dec i2 i1 then t1 else t2).
-Proof.
-  introv.
-  allrw @mkc_nat_eq.
-  eapply cequivc_trans;[apply cequivc_mkc_inteq_int|].
-  boolvar; tcsp; try omega.
-Qed.
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/")
+*** End:
+*)

@@ -1,6 +1,8 @@
  (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -15,11 +17,14 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -155,7 +160,7 @@ Proof.
                       lib
                       (f1 (existT _ (mkc_nat n) (nat_in_nat lib n)))
                       (fst (fc (existT _ (mkc_nat n) (nat_in_nat lib n)))) with
-                | existT k _ => k
+                | existT _ k _ => k
               end).
     introv mem.
     dands.
@@ -611,10 +616,3 @@ Proof.
   clear q.
 
 Abort.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

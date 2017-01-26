@@ -24,8 +24,6 @@
 *)
 
 
-Add LoadPath "close".
-
 Require Export close_type_sys.
 Require Export Peano.
 (** printing #  $\times$ #×# *)
@@ -364,9 +362,3 @@ Qed.
 
 (* end hide *)
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

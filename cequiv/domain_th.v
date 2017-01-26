@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -30,7 +34,7 @@ Require Export sqle.
 Require Export subst_props.
 Require Export library_alpha.
 Require Export computation8.
-Require Export terms4.
+Require Export terms5.
 
 
 (** printing #  $\times$ #×# *)
@@ -115,6 +119,7 @@ Lemma is_approx_chain_fix_aprox {o} : forall lib (f : @NTerm o),
   -> is_approx_chain lib (fun n => fix_approx n f).
 Proof.
   introv Hpr. unfolds_base.
+  introv.
   induction n as [| n Hind].
   - simpl. apply bottom_approx_any. repeat(decomp_progc); sp. split; sp.
   - remember (S n) as sn. simpl. remember (mk_apply f (fix_approx sn f)) as XX.
@@ -133,13 +138,14 @@ Lemma fix_approx_ub {o} : forall lib f,
   -> is_approx_ub lib (fun n => fix_approx n f) (mk_fix f).
 Proof.
   introv Hpr. unfolds_base.
+  introv.
   induction n as [| n Hind].
   - simpl. apply bottom_approx_any. repeat(decomp_progc); sp.
   - simpl. apply approx_trans with (b:= (mk_apply f (mk_fix f))).
     + repeat(prove_approx); eauto 2 with slow.
     + apply fix_unfold_approx_fix;sp.
 Qed.
-  
+
 (** One of the main goals of this section is to prove
     that it is infact the least upper bound (upto [cequiv]).
     We will hereby call it the LUB principle(theorem 5.9 in %\cite{Crary:1998}%).
@@ -4917,7 +4923,7 @@ Proof.
 
   { csunf Hcv; allsimpl; ginv.
     allunfold @apply_bterm; allsimpl.
-    unflsubst in Heqe1s.
+    unflsubst in Heqe1s; [|eauto 5 with slow].
     destruct e1 as [v|f1|op bs]; allsimpl; ginv.
     - boolvar; ginv.
     - exists (sterm f1); autorewrite with slow; dands; auto.
@@ -4975,7 +4981,7 @@ Proof.
 
   { csunf Hcv; allsimpl; ginv.
     allunfold @apply_bterm; allsimpl.
-    unflsubst in Heqe1s.
+    unflsubst in Heqe1s;[|eauto 5 with slow].
     destruct e1 as [v|f1|op bs]; allsimpl; ginv.
     - boolvar; ginv.
     - exists (sterm f1); autorewrite with slow; dands; auto.
@@ -8317,14 +8323,14 @@ Proof.
 Qed.
 
 Lemma sqlen_rel_rw_seq {o} :
-  forall lib (f fv e : @NTerm o) v s,
+  forall lib k (f fv e : @NTerm o) v s,
     reduces_to lib f fv
     -> isprogram f
     -> isprogram (apply_bterm (bterm [v] e) [mk_fix f])
     -> computes_to_seq lib (apply_bterm (bterm [v] e) [mk_fix f]) s
     -> {s' : ntseq
         $ computes_to_seq lib (apply_bterm (bterm [v] e) [mk_fix fv]) s'
-        # (forall n, alpha_eq (s n) (s' n)) }.
+        # (forall n, sqle_n lib k (s n) (s' n)) }.
 Proof.
   introv Hred Hprf Hpr Hcv.
   duplicate Hred as Hc.
@@ -8332,9 +8338,11 @@ Proof.
   simpl in Hpr0.
   eapply reduces_to_subst_fix in Hc; eauto.
   repnud Hc.
-  clear Hc. rename Hc0 into Hap.
+  clear Hc.
+  rename Hc0 into Hap.
   apply approx_sqle in Hap.
-  specialize (Hap (S 0)). invertsn Hap.
+  specialize (Hap (S k)).
+  invertsn Hap.
   repnud Hap; GC.
   apply Hap4 in Hcv; exrepnd.
   clear Hap2 Hap3 Hap4.
@@ -8641,7 +8649,7 @@ forall k : nat,
           eapply hasvalue_approx; eauto with slow. }
 
     { allunfold @computes_to_value; repnd.
-      eapply sqlen_rel_rw_seq in Hcvb0; try (exact Hred); auto; exrepnd.
+      eapply (sqlen_rel_rw_seq _ 1) in Hcvb0; try (exact Hred); auto; exrepnd.
       clear Hcvb1.
 
       pose proof (weaker_crary_5_8 lib t' e (sterm s')) as h; simpl in h.
@@ -8716,7 +8724,7 @@ forall k : nat,
           eapply hasvalue_approx; eauto with slow. }
 
     { allunfold @computes_to_value; repnd.
-      eapply sqlen_rel_rw_seq in Hcvb0; try (exact Hred); auto; exrepnd.
+      eapply (sqlen_rel_rw_seq _ 1) in Hcvb0; try (exact Hred); auto; exrepnd.
       clear Hcvb1.
 
       pose proof (weaker_crary_5_8_isp_can_or_exc lib (mk_exception a e0) e (sterm s')) as h; simpl in h.
@@ -9231,7 +9239,7 @@ Lemma crary_5_9_really_aux_seq {o} :
                                   (apply_bterm (bterm [nvarx] e) [fix_approx k f]))
                         -> {s' : ntseq
                             $ computes_to_seq lib t s'
-                            # (forall n, alpha_eq (s n) (s' n))}.
+                            # (forall n, sqle_n lib mm (s n) (s' n))}.
 Proof.
     intros lib mm IHmm t e XX Hispbt s f Hp XX0 Hcvb Hub1 e2' Hcv1 Hcv2 j Hcv3.
     rename Hcv3 into Hapa.
@@ -9266,6 +9274,12 @@ Proof.
     exrepnd.
     exists f'; dands; auto.
     introv; eauto 3 with slow.
+    pose proof (H0a1 n) as q.
+    apply howetheorem1 in q; eauto 3 with slow.
+    apply approx_sqle in q.
+    specialize (q mm).
+    eapply (fst (respects_alpha_sqlen _ _));[|exact q].
+    eauto 3 with slow.
 Qed.
 
 (* end hide *)
@@ -9462,7 +9476,7 @@ Proof.
       duplicate XX0 as XXb.
       apply (apply_bterm_fix_program_rw _ _ _ _ Hcv1) in XX0; auto.
 
-      eapply sqlen_rel_rw_seq in comp; eauto; exrepnd.
+      eapply (sqlen_rel_rw_seq _ mm) in comp; eauto; exrepnd.
       apply reduces_to_implies_cequiv in Hcv1; auto. clear Hub.
       apply (cequiv_approx_ub_rw _ _ _ _ _ Hcv1) in Hubbb.
       rename Hubbb into Hub1.
@@ -9481,18 +9495,22 @@ Proof.
       applydup @cequiv_isprogram in Hcv1; repnd.
       allunfold @computes_to_value; repnd.
 
-      eapply crary_5_9_really_aux_seq in comp1; try (exact Hub1); try (exact IHmm); try (exact comp5); eauto 2 with slow;
+      eapply crary_5_9_really_aux_seq in comp1;
+        try (exact Hub1); try (exact IHmm); try (exact comp5);
+          simpl; auto;
       [|unfold apply_bterm; simpl; autorewrite with slow; auto];[].
       exrepnd.
       eexists; dands; eauto.
       introv; eauto 3 with slow.
+
+      eapply sqlen_n_trans; eauto.
 
     + repnud Hcv; exrepnd.
       repnud Hcv1.
       duplicate XX0 as XXb.
       apply (apply_bterm_fix_program_rw _ _ _ _ Hcv1) in XX0; auto.
 
-      eapply sqlen_rel_rw_seq in comp; eauto; exrepnd.
+      eapply (sqlen_rel_rw_seq _ mm) in comp; eauto; exrepnd.
       apply reduces_to_implies_cequiv in Hcv1; auto. clear Hub.
       apply (cequiv_approx_ub_rw _ _ _ _ _ Hcv1) in Hubbb.
       rename Hubbb into Hub1.
@@ -9513,18 +9531,22 @@ Proof.
 
       allunfold @computes_to_value; repnd.
 
-      eapply crary_5_9_really_aux_seq in comp1; try (exact Hub1); try (exact IHmm); try (exact comp5); eauto 2 with slow;
+      eapply crary_5_9_really_aux_seq in comp1;
+        try (exact Hub1); try (exact IHmm); try (exact comp5);
+          simpl;auto;
       [|unfold apply_bterm; simpl; autorewrite with slow; auto];[].
       exrepnd.
       eexists; dands; eauto.
       introv; eauto 3 with slow.
+
+      eapply sqlen_n_trans; eauto.
 
     + exrepnd.
       applydup @computes_to_seq_implies_computes_to_value in comp as comp'; eauto 3 with slow;[].
       eapply @dummy_context_crary_5_8 with (f:=f) in Hcv; eauto.
       exrepnd. clear Hub. rename Hubbb into Hub1.
       simpl in Hcv0. exrepnd.
-      eapply @crary_5_9_really_aux_seq with (f:=f); eauto.
+      eapply @crary_5_9_really_aux_seq with (f:=f); eauto 3 with slow.
 Qed.
 
 Lemma crary5_9_no_context {o} : forall lib f t,
@@ -9564,10 +9586,4 @@ Lemma cequiv_approximations: forall f g s t,
             (apply_bterm (bterm [nvarx] t) [mk_fix g]).
 Proof.
   introv Hpf Hpg Hint.
-*)
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
 *)

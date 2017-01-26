@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,154 +20,19 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
 
 Require Export approx_props3.
 Require Export bar_induction.
-Require Export seq_util.
+Require Export seq_util2.
 
-
-Definition const_seq {o} (n : nat) : @CTerm o := mkc_lam nvarx (mk_cv [nvarx] (mkc_nat n)).
-
-Definition emseqc {o} : @CTerm o := const_seq 0.
-
-Definition eq_seq {o} lib (s1 s2 : @CTerm o) :=
-  equality lib s1 s2 nat2nat.
-
-Lemma eq_seq_implies_eq_kseq {o} :
-  forall lib (s1 s2 : @CTerm o),
-    eq_seq lib s1 s2
-    -> forall n, eq_kseq lib s1 s2 n.
-Proof.
-  introv e; introv.
-  unfold eq_kseq.
-  unfold eq_seq in e.
-  apply equality_nat2nat_to_natk2nat; auto.
-  apply nat_in_nat.
-Qed.
-
-Lemma seq2kseq_prop1 {o} :
-  forall lib (s1 s2 : @CTerm o) n v,
-    eq_kseq lib s1 s2 n
-    -> eq_kseq lib (seq2kseq s1 n v) (seq2kseq s2 n v) n.
-Proof.
-  introv equ.
-  apply implies_equality_natk2nat.
-  introv ltm.
-  apply (equality_natk2nat_implies _ m) in equ; auto; exrepnd.
-  exists k.
-  dands.
-
-  - apply cequivc_nat_implies_computes_to_valc.
-    unfold seq2kseq.
-    eapply cequivc_trans;[apply cequivc_beta|].
-    allrw @mkcv_less_substc.
-    allrw @mkcv_apply_substc.
-    allrw @mkc_var_substc.
-    allrw @mkcv_bot_substc.
-    allrw @csubst_mk_cv.
-    allrw @mkcv_nat_substc.
-    allrw @mkcv_zero_substc.
-    allrw @mkc_zero_eq.
-    eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-    boolvar; try omega.
-    eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-    boolvar; try omega.
-    apply computes_to_valc_implies_cequivc; auto.
-
-  - apply cequivc_nat_implies_computes_to_valc.
-    unfold seq2kseq.
-    eapply cequivc_trans;[apply cequivc_beta|].
-    allrw @mkcv_less_substc.
-    allrw @mkcv_apply_substc.
-    allrw @mkc_var_substc.
-    allrw @mkcv_bot_substc.
-    allrw @csubst_mk_cv.
-    allrw @mkcv_nat_substc.
-    allrw @mkcv_zero_substc.
-    allrw @mkc_zero_eq.
-    eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-    boolvar; try omega.
-    eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-    boolvar; try omega.
-    apply computes_to_valc_implies_cequivc; auto.
-Qed.
-
-Lemma seq2kseq_prop2 {o} :
-  forall lib v (s1 s2 : @CTerm o) n,
-    eq_kseq lib s1 s2 n
-    -> cequivc lib (seq2kseq s1 n v) (seq2kseq s2 n v).
-Proof.
-  introv equ.
-  apply implies_cequivc_lam.
-  introv.
-  allrw @mkcv_less_substc.
-  allrw @mkcv_apply_substc.
-  allrw @mkc_var_substc.
-  allrw @mkcv_bot_substc.
-  allrw @csubst_mk_cv.
-  allrw @mkcv_nat_substc.
-  allrw @mkcv_zero_substc.
-
-  apply implies_cequivc_mkc_less1.
-  introv compu.
-  allrw @mkc_zero_eq.
-  allrw (@mkc_nat_eq o 0).
-
-  eapply cequivc_trans;[apply cequivc_mkc_less_int|].
-  eapply cequivc_trans;[|apply cequivc_sym;apply cequivc_mkc_less_int].
-  boolvar; auto.
-
-  eapply cequivc_trans;
-    [apply cequivc_mkc_less;
-      [apply computes_to_valc_implies_cequivc;exact compu
-      |apply cequivc_refl
-      |apply cequivc_refl
-      |apply cequivc_refl]
-    |].
-
-  eapply cequivc_trans;
-    [|apply cequivc_sym;apply cequivc_mkc_less;
-      [apply computes_to_valc_implies_cequivc;exact compu
-      |apply cequivc_refl
-      |apply cequivc_refl
-      |apply cequivc_refl]
-    ].
-
-  apply Wf_Z.Z_of_nat_complete_inf in l; exrepnd; subst; fold_terms.
-  allrw <- @mkc_nat_eq.
-
-  eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-  eapply cequivc_trans;[|apply cequivc_sym;apply cequivc_mkc_less_nat].
-
-  boolvar; auto.
-
-  eapply cequivc_trans;
-    [apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply computes_to_valc_implies_cequivc;exact compu]
-    |].
-
-  eapply cequivc_trans;
-    [|apply cequivc_sym;apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply computes_to_valc_implies_cequivc;exact compu]
-    ].
-
-  apply (equality_natk2nat_implies _ n0) in equ; auto.
-  exrepnd.
-  eapply cequivc_trans;
-    [apply computes_to_valc_implies_cequivc;exact equ1
-    |apply cequivc_sym;apply computes_to_valc_implies_cequivc;exact equ0].
-Qed.
-
-Definition is_kseq {o} lib (s : @CTerm o) (n : nat) := eq_kseq lib s s n.
-
-Definition is_seq {o} lib (s : @CTerm o) := member lib s nat2nat.
 
 Definition barind_meta_dec {o} lib (B : @CTerm o) :=
   forall (n : nat) (s : CTerm),
@@ -224,7 +90,7 @@ Definition meta_seq_NA_nat {o} {lib} {X : @CTerm o} (x : meta_seq_NA lib X) : na
 
 Definition meta_seq_NA_seq {o} {lib} {X : @CTerm o} (x : meta_seq_NA lib X) : CTerm :=
   match x with
-    | existT _ (existT s _) => s
+    | existT _ _ (existT _ s _) => s
   end.
 
 Definition barind_meta_ind_cont2 {o} lib (X : @CTerm o) v :=
@@ -307,38 +173,14 @@ Definition mk_meta_kseq_NA {o} {lib} {n : nat} {A : @CTerm o}
 Definition meta_kseq_NA_nat {o} {lib} {n : nat} {A : @CTerm o}
            (x : meta_kseq_NA lib n A) : nat:=
   match x with
-    | existT m _ => m
+    | existT _ m _ => m
   end.
 
 Definition meta_kseq_NA_seq {o} {lib} {n : nat} {A : @CTerm o}
            (x : meta_kseq_NA lib n A) : CTerm:=
   match x with
-    | existT _ (existT s _) => s
+    | existT _ _ (existT _ s _) => s
   end.
-
-Lemma eq_kseq_0 {o} :
-  forall lib (s1 s2 : @CTerm o),
-    eq_kseq lib s1 s2 0.
-Proof.
-  introv.
-  unfold eq_kseq, natk2nat.
-  apply equality_in_fun; dands; eauto 3 with slow.
-
-  { apply type_mkc_natk.
-    exists 0%Z; spcast.
-    apply computes_to_valc_refl; eauto 3 with slow. }
-
-  introv e.
-  apply equality_in_natk in e; exrepnd; spcast.
-  apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
-  allrw @mkc_nat_eq; ginv; omega.
-Qed.
-
-Lemma is_kseq_0 {o} : forall lib (t : @CTerm o), is_kseq lib t 0.
-Proof.
-  introv.
-  apply eq_kseq_0.
-Qed.
 
 Lemma meta_kseq_at_is_update {o} :
   forall lib (s : @CTerm o) (n m : nat) (v : NVar),
@@ -353,100 +195,6 @@ Proof.
   allrw @csubst_mk_cv.
   eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
   boolvar; tcsp; GC.
-Qed.
-
-Lemma eq_kseq_update {o} :
-  forall lib (s1 s2 : @CTerm o) (n m : nat) (v : NVar),
-    eq_kseq lib s1 s2 n
-    -> eq_kseq lib (update_seq s1 n m v) (update_seq s2 n m v) (S n).
-Proof.
-  introv i.
-  allunfold @eq_kseq.
-  unfold update_seq.
-  apply implies_equality_natk2nat.
-  introv ltm0.
-
-  destruct (deq_nat m0 n) as [d|d]; subst.
-
-  - exists m.
-    dands.
-
-    + apply cequivc_nat_implies_computes_to_valc.
-      eapply cequivc_trans;[apply cequivc_beta|].
-      allrw @mkcv_inteq_substc.
-      allrw @mkcv_apply_substc.
-      allrw @mkc_var_substc.
-      allrw @csubst_mk_cv.
-      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; tcsp.
-
-    + apply cequivc_nat_implies_computes_to_valc.
-      eapply cequivc_trans;[apply cequivc_beta|].
-      allrw @mkcv_inteq_substc.
-      allrw @mkcv_apply_substc.
-      allrw @mkc_var_substc.
-      allrw @csubst_mk_cv.
-      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; tcsp.
-
-  - pose proof (equality_natk2nat_implies lib m0 s1 s2 n) as h.
-    repeat (autodimp h hyp); try omega.
-    exrepnd.
-    exists k.
-    dands.
-
-    + apply cequivc_nat_implies_computes_to_valc.
-      eapply cequivc_trans;[apply cequivc_beta|].
-      allrw @mkcv_inteq_substc.
-      allrw @mkcv_apply_substc.
-      allrw @mkc_var_substc.
-      allrw @csubst_mk_cv.
-      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; tcsp; GC.
-      apply computes_to_valc_implies_cequivc; auto.
-
-    + apply cequivc_nat_implies_computes_to_valc.
-      eapply cequivc_trans;[apply cequivc_beta|].
-      allrw @mkcv_inteq_substc.
-      allrw @mkcv_apply_substc.
-      allrw @mkc_var_substc.
-      allrw @csubst_mk_cv.
-      eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; tcsp; GC.
-      apply computes_to_valc_implies_cequivc; auto.
-Qed.
-
-Lemma is_kseq_update {o} :
-  forall lib (s : @CTerm o) (n m : nat) (v : NVar),
-    is_kseq lib s n
-    -> is_kseq lib (update_seq s n m v) (S n).
-Proof.
-  introv i.
-  apply eq_kseq_update; auto.
-Qed.
-
-Lemma eq_kseq_implies {o} :
-  forall lib m (s1 s2 : @CTerm o) n,
-    m < n
-    -> eq_kseq lib s1 s2 n
-    -> {k : nat
-        & computes_to_valc lib (mkc_apply s1 (mkc_nat m)) (mkc_nat k)
-        # computes_to_valc lib (mkc_apply s2 (mkc_nat m)) (mkc_nat k)}.
-Proof.
-  introv ltm i.
-  unfold eq_kseq in i.
-  eapply equality_natk2nat_implies in i;[|exact ltm]; auto.
-Qed.
-
-Lemma is_kseq_implies {o} :
-  forall lib m (s : @CTerm o) n,
-    m < n
-    -> is_kseq lib s n
-    -> {k : nat & computes_to_valc lib (mkc_apply s (mkc_nat m)) (mkc_nat k)}.
-Proof.
-  introv ltm i.
-  unfold is_kseq in i.
-  eapply member_natk2nat_implies in i;[|exact ltm]; auto.
 Qed.
 
 Lemma meta_kseq_NA_seq_mk_meta_kseq_NA {o} :
@@ -538,46 +286,6 @@ Proof.
     boolvar; tcsp; GC; try omega.
     apply computes_to_valc_implies_cequivc; auto.
 Qed.
-
-Lemma cequivc_beta_nseq {o} :
-  forall (lib : @library o) s n,
-    cequivc lib (mkc_apply (mkc_nseq s) (mkc_nat n)) (mkc_nat (s n)).
-Proof.
-  introv.
-  unfold cequivc; simpl.
-  apply reduces_to_implies_cequiv;
-    [apply isprogram_apply;eauto 3 with slow;apply isprogram_mk_nseq|].
-  eapply reduces_to_if_split2;[csunf;simpl;auto|].
-  apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
-  boolvar; try omega.
-  rw Znat.Nat2Z.id; auto.
-Qed.
-
-Lemma is_seq_nseq {o} :
-  forall (lib : @library o) s, is_seq lib (mkc_nseq s).
-Proof.
-  introv.
-  apply member_nseq_nat2nat.
-Qed.
-Hint Resolve is_seq_nseq : slow.
-
-Lemma eq_seq_nseq {o} :
-  forall (lib : @library o) s, eq_seq lib (mkc_nseq s) (mkc_nseq s).
-Proof.
-  introv.
-  apply member_nseq_nat2nat.
-Qed.
-Hint Resolve eq_seq_nseq : slow.
-
-Lemma is_kseq_nseq {o} :
-  forall (lib : @library o) s n, is_kseq lib (mkc_nseq s) n.
-Proof.
-  introv.
-  pose proof (is_seq_nseq lib s) as h.
-  apply equality_nat2nat_to_natk2nat; auto.
-  apply nat_in_nat.
-Qed.
-Hint Resolve is_kseq_nseq : slow.
 
 Definition barind_meta_fun_n {o} lib (A : @CTerm o) (n : nat) :=
   forall s1 s2,
@@ -732,15 +440,6 @@ Proof.
   apply implies_cequivc_apply2; auto.
 Qed.
 
-Lemma implies_is_kseq_seq2kseq {o} :
-  forall lib (s : @CTerm o) m v,
-    is_kseq lib s m
-    -> is_kseq lib (seq2kseq s m v) m.
-Proof.
-  introv i.
-  apply seq2kseq_prop1; auto.
-Qed.
-
 Lemma cequivc_preserves_not_meta_on_seq {o} :
   forall lib (A : @CTerm o) n s1 s2,
     cequivc lib s1 s2
@@ -780,148 +479,14 @@ Definition mk_meta_kseq_NA2 {o} {lib} {n : nat} {A : @CTerm o} {v}
 Definition meta_kseq_NA2_nat {o} {lib} {n : nat} {A : @CTerm o} {v}
            (x : meta_kseq_NA2 lib n A v) : nat:=
   match x with
-    | existT m _ => m
+    | existT _ m _ => m
   end.
 
 Definition meta_kseq_NA2_seq {o} {lib} {n : nat} {A : @CTerm o} {v}
            (x : meta_kseq_NA2 lib n A v) : CTerm:=
   match x with
-    | existT _ (existT s _) => s
+    | existT _ _ (existT _ s _) => s
   end.
-
-Lemma seq_normalizable_update {o} :
-  forall lib (s : @CTerm o) n k v,
-    seq_normalizable lib s n v
-    -> seq_normalizable lib (update_seq s n k v) (S n) v.
-Proof.
-  introv norm.
-  allunfold @seq_normalizable.
-
-  unfold update_seq, seq2kseq.
-  apply implies_cequivc_lam.
-  introv.
-  allrw @mkcv_inteq_substc.
-  allrw @mkcv_less_substc.
-  allrw @mkcv_apply_substc.
-  allrw @mkc_var_substc.
-  allrw @mkcv_bot_substc.
-  allrw @csubst_mk_cv.
-  allrw @mkcv_nat_substc.
-  allrw @mkcv_zero_substc.
-
-  eapply cequivc_trans;
-    [|apply cequivc_mkc_less;
-       [apply cequivc_refl
-       |apply cequivc_refl
-       |apply cequivc_refl
-       |apply cequivc_mkc_less;
-         [apply cequivc_refl
-         |apply cequivc_refl
-         |apply cequivc_sym;apply cequivc_beta
-         |apply cequivc_refl]
-       ]
-    ].
-  allrw @mkcv_inteq_substc.
-  allrw @mkcv_apply_substc.
-  allrw @mkc_var_substc.
-  allrw @csubst_mk_cv.
-
-  eapply cequivc_trans;
-    [apply cequivc_mkc_inteq;
-      [apply cequivc_refl
-      |apply cequivc_refl
-      |apply cequivc_refl
-      |apply implies_cequivc_apply;
-        [exact norm|apply cequivc_refl]
-      ]
-    |].
-  unfold seq2kseq.
-
-  eapply cequivc_trans;
-    [apply cequivc_mkc_inteq;
-      [apply cequivc_refl
-      |apply cequivc_refl
-      |apply cequivc_refl
-      |apply cequivc_beta]
-    |].
-  allrw @mkcv_less_substc.
-  allrw @mkcv_apply_substc.
-  allrw @mkc_var_substc.
-  allrw @mkcv_bot_substc.
-  allrw @csubst_mk_cv.
-  allrw @mkcv_nat_substc.
-  allrw @mkcv_zero_substc.
-
-  eapply cequivc_trans;
-    [allrw @mkc_zero_eq; apply cequivc_inteq_less_swap1; try omega|].
-  allrw <- @mkc_zero_eq.
-
-  apply implies_cequivc_mkc_less1.
-  introv compu.
-  allrw @mkc_zero_eq.
-  allrw @mkc_nat_eq.
-
-  eapply cequivc_trans;
-    [apply cequivc_mkc_less_int|].
-  eapply cequivc_trans;
-    [|apply cequivc_sym;apply cequivc_mkc_less_int].
-  boolvar; tcsp.
-  apply Wf_Z.Z_of_nat_complete_inf in l; exrepnd; subst; fold_terms.
-  allrw <- @mkc_nat_eq.
-
-  eapply cequivc_trans;
-    [apply cequivc_mkc_inteq;
-      [apply computes_to_valc_implies_cequivc; exact compu
-      |apply cequivc_refl
-      |apply cequivc_refl
-      |apply cequivc_mkc_less;
-        [apply computes_to_valc_implies_cequivc; exact compu
-        |apply cequivc_refl
-        |apply cequivc_refl
-        |apply cequivc_refl]
-      ]
-    |].
-
-  eapply cequivc_trans;
-    [|apply cequivc_sym;apply cequivc_mkc_less;
-       [apply computes_to_valc_implies_cequivc; exact compu
-       |apply cequivc_refl
-       |apply cequivc_mkc_inteq;
-         [apply computes_to_valc_implies_cequivc; exact compu
-         |apply cequivc_refl
-         |apply cequivc_refl
-         |apply cequivc_refl]
-       |apply cequivc_refl
-       ]
-    ].
-
-  eapply cequivc_trans;
-    [apply cequivc_inteq_less_swap1; try omega|].
-
-  eapply cequivc_trans;
-    [apply cequivc_mkc_less;
-      [apply cequivc_refl
-      |apply cequivc_refl
-      |apply cequivc_refl
-      |apply cequivc_mkc_inteq_nat]
-    |].
-
-  eapply cequivc_trans;
-    [apply cequivc_mkc_less_nat|].
-
-  eapply cequivc_trans;
-    [|apply cequivc_sym;apply cequivc_mkc_less;
-      [apply cequivc_refl
-      |apply cequivc_refl
-      |apply cequivc_mkc_inteq_nat
-      |apply cequivc_refl]
-    ].
-
-  eapply cequivc_trans;
-    [|apply cequivc_sym;apply cequivc_mkc_less_nat].
-
-  boolvar; subst; tcsp; try omega.
-Qed.
 
 Fixpoint malpha2 {o}
          (lib : library)
@@ -1178,12 +743,12 @@ Definition meta_fun_seq_NA_nat {o} {lib} {X1 X2 : @CTerm o} (x : meta_fun_seq_NA
 
 Definition meta_fun_seq_NA_seq1 {o} {lib} {X1 X2 : @CTerm o} (x : meta_fun_seq_NA lib X1 X2) : CTerm :=
   match x with
-    | existT _ (existT s _) => s
+    | existT _ _ (existT _ s _) => s
   end.
 
 Definition meta_fun_seq_NA_seq2 {o} {lib} {X1 X2 : @CTerm o} (x : meta_fun_seq_NA lib X1 X2) : CTerm :=
   match x with
-    | existT _ (existT _ (existT s _)) => s
+    | existT _ _ (existT _ _ (existT _ s _)) => s
   end.
 
 Definition barind_meta_fun_ind_cont2 {o} lib (X1 X2 : @CTerm o) v :=
@@ -1264,19 +829,19 @@ Definition mk_meta_fun_kseq_NA {o} {lib} {n : nat} {A1 A2 : @CTerm o} {v}
 Definition meta_fun_kseq_NA_nat {o} {lib} {n : nat} {A1 A2 : @CTerm o} {v}
            (x : meta_fun_kseq_NA lib n A1 A2 v) : nat:=
   match x with
-    | existT m _ => m
+    | existT _ m _ => m
   end.
 
 Definition meta_fun_kseq_NA_seq1 {o} {lib} {n : nat} {A1 A2 : @CTerm o} {v}
            (x : meta_fun_kseq_NA lib n A1 A2 v) : CTerm:=
   match x with
-    | existT _ (existT s _) => s
+    | existT _ _ (existT _ s _) => s
   end.
 
 Definition meta_fun_kseq_NA_seq2 {o} {lib} {n : nat} {A1 A2 : @CTerm o} {v}
            (x : meta_fun_kseq_NA lib n A1 A2 v) : CTerm:=
   match x with
-    | existT _ (existT _ (existT s _)) => s
+    | existT _ _ (existT _ _ (existT _ s _)) => s
   end.
 
 Fixpoint m_fun_alpha {o}
@@ -1481,75 +1046,6 @@ Proof.
       eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
       boolvar; tcsp; GC; try omega.
       apply computes_to_valc_implies_cequivc; auto.
-Qed.
-
-Lemma eq_kseq_seq2kseq_0 {o} :
-  forall lib v (s1 s2 : @CTerm o),
-    eq_kseq lib (seq2kseq s1 0 v) (seq2kseq s2 0 v) 0.
-Proof.
-  introv.
-  apply implies_equality_natk2nat.
-  introv ltm; omega.
-Qed.
-
-Lemma cequivc_seq2kseq_0 {o} :
-  forall lib v (s1 s2 : @CTerm o),
-    cequivc lib (seq2kseq s1 0 v) (seq2kseq s2 0 v).
-Proof.
-  introv.
-  eapply cequivc_trans;[apply cequivc_seq2kseq_twice|].
-  eapply cequivc_trans;[|apply cequivc_sym;apply cequivc_seq2kseq_twice].
-  apply seq2kseq_prop2.
-  apply eq_kseq_seq2kseq_0.
-Qed.
-
-Lemma implies_cequivc_seq2kseq {o} :
-  forall lib v n (s1 s2 : @CTerm o),
-    cequivc lib s1 s2
-    -> cequivc lib (seq2kseq s1 n v) (seq2kseq s2 n v).
-Proof.
-  introv ceq.
-  unfold seq2kseq.
-  apply implies_cequivc_lam; introv.
-  allrw @mkcv_less_substc.
-  allrw @mkcv_apply_substc.
-  allrw @mkc_var_substc.
-  allrw @csubst_mk_cv.
-  allrw @mkcv_bot_substc.
-  allrw @mkcv_nat_substc.
-  allrw @mkcv_zero_substc.
-
-  eapply cequivc_mkc_less;
-    [apply cequivc_refl
-    |apply cequivc_refl
-    |apply cequivc_refl
-    |eapply cequivc_mkc_less;
-      [apply cequivc_refl
-      |apply cequivc_refl
-      |apply sp_implies_cequivc_apply;auto
-      |apply cequivc_refl]
-    ].
-Qed.
-
-Lemma cequivc_update_seq {o} :
-  forall lib (s1 s2 : @CTerm o) n m v,
-    cequivc lib s1 s2
-    -> cequivc lib (update_seq s1 n m v) (update_seq s2 n m v).
-Proof.
-  introv ceq.
-
-  unfold update_seq.
-  apply implies_cequivc_lam; introv.
-  allrw @mkcv_inteq_substc.
-  allrw @mkcv_apply_substc.
-  allrw @mkc_var_substc.
-  allrw @csubst_mk_cv.
-
-  eapply cequivc_mkc_inteq;
-    [apply cequivc_refl
-    |apply cequivc_refl
-    |apply cequivc_refl
-    |apply sp_implies_cequivc_apply;auto].
 Qed.
 
 Lemma m_fun_alpha_prop3 {o} :
@@ -1873,7 +1369,7 @@ Definition meta2_fun_seq_NA_nat {o} {lib} {P} {X : @CTerm o} (x : meta2_fun_seq_
 
 Definition meta2_fun_seq_NA_seq {o} {lib} {P} {X : @CTerm o} (x : meta2_fun_seq_NA lib P X) : CTerm :=
   match x with
-    | existT _ (existT s _) => s
+    | existT _ _ (existT _ s _) => s
   end.
 
 Definition barind_meta2_fun_ind_cont2 {o} lib P (X : @CTerm o) v :=
@@ -1947,13 +1443,13 @@ Definition mk_meta2_fun_kseq_NA {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
 Definition meta2_fun_kseq_NA_nat {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
            (x : meta2_fun_kseq_NA lib P n A v) : nat:=
   match x with
-    | existT m _ => m
+    | existT _ m _ => m
   end.
 
 Definition meta2_fun_kseq_NA_seq {o} {lib} {P} {n : nat} {A : @CTerm o} {v}
            (x : meta2_fun_kseq_NA lib P n A v) : CTerm:=
   match x with
-    | existT _ (existT s _) => s
+    | existT _ _ (existT _ s _) => s
   end.
 
 Fixpoint meta2_fun_alpha {o}
@@ -2058,15 +1554,6 @@ Proof.
     apply computes_to_valc_implies_cequivc; auto.
 Qed.
 
-Lemma is_kseq_seq2kseq_0 {o} :
-  forall lib v (s : @CTerm o),
-    is_kseq lib (seq2kseq s 0 v) 0.
-Proof.
-  introv.
-  apply implies_equality_natk2nat.
-  introv ltm; omega.
-Qed.
-
 Definition barind_meta2_fun_bar {o} lib Q (B : @CTerm o) v :=
   forall (s : CTerm),
     is_seq lib s
@@ -2077,28 +1564,6 @@ Definition barind_meta2_fun_imp {o} lib Q P (B X : @CTerm o) :=
     is_kseq lib s n
     -> meta2_fun_on_seq lib Q B n s
     -> meta2_fun_on_seq lib P X n s.
-
-Lemma cequivc_preserves_eq_kseq_left {o} :
-  forall lib (s s1 s2 : @CTerm o) n,
-    cequivc lib s1 s2
-    -> eq_kseq lib s1 s n
-    -> eq_kseq lib s2 s n.
-Proof.
-  introv ceq ek.
-  allunfold @eq_kseq.
-  eapply equality_respects_cequivc_left;[|exact ek]; auto.
-Qed.
-
-Lemma cequivc_preserves_eq_kseq_right {o} :
-  forall lib (s s1 s2 : @CTerm o) n,
-    cequivc lib s1 s2
-    -> eq_kseq lib s s1 n
-    -> eq_kseq lib s s2 n.
-Proof.
-  introv ceq ek.
-  allunfold @eq_kseq.
-  eapply equality_respects_cequivc_right;[|exact ek]; auto.
-Qed.
 
 Lemma cequivc_preserves_meta2_fun_on_seq {o} :
   forall lib P (A : @CTerm o) n s1 s2,
@@ -2268,9 +1733,4 @@ Proof.
   sp.
 Qed.
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)
+(*Print Assumptions bar_induction_meta4.*)

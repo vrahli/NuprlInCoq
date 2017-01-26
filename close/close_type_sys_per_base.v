@@ -24,8 +24,6 @@
 *)
 
 
-Add LoadPath "../".
-
 Require Export type_sys.
 Require Import dest_close.
 
@@ -190,10 +188,3 @@ Proof.
   + SCase "type_mtransitive"; repdors; subst; dclose_lr;
     dands; apply CL_base; allunfold @per_base; sp.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("../")
-*** End:
-*)

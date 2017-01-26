@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,13 +20,16 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
 
-Require Export bin_rels. 
+Require Export bin_rels.
 Require Export computation_seq.
 Require Export rel_nterm.
 
@@ -85,7 +90,7 @@ Definition close_compute_seq {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
 Definition close_compute_seq {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
   forall f,
     (tl =s>(lib) f)
-    -> {f' : ntseq & (tr =s>(lib) f') # (forall n, alpha_eq (f n) (f' n)) }.
+    -> {f' : ntseq & (tr =s>(lib) f') # (forall n, R (f n) (f' n)) }.
 
 
 Definition close_compute_mrk {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
@@ -179,14 +184,12 @@ Proof.
     apply Hcl3 in Hcomp; exrepnd.
     exists a' e'; dands; auto; repdors; auto.
 
-(*
   - introv comp; allsimpl.
     apply Hcl4 in comp; exrepnd.
     eexists; dands; eauto.
     introv.
     pose proof (comp0 n) as h; clear comp0.
     repndors; auto.
-*)
 Qed.
 
 (* begin hide *)
@@ -492,13 +495,12 @@ Proof.
     exists a e; dands; auto.
 
   - eexists; dands; eauto.
-(*    introv.
+    introv.
     right.
     applydup @reduces_to_preserves_program in comp as wf; auto.
     apply CIH; dands; auto.
     rw @isprogram_mk_ntseq in wf.
     pose proof (wf n) as q; tcsp.
-*)
 Qed.
 
 Definition approx_open {p} lib := olift (@approx p lib).
@@ -580,10 +582,8 @@ Proof.
   - apply Hrab3 in comp; exrepnd.
     exists a' e'; dands; auto.
 
-(*
   - apply Hrab4 in comp; exrepnd.
     eexists; dands; eauto.
-*)
 Defined.
 
 Lemma le_bin_rel_approx {p} :
@@ -686,9 +686,8 @@ Proof.
     pose proof (comp0 n) as h; clear comp0.
     pose proof (comp2 n) as q; clear comp2.
     repndors; eauto 3 with slow.
-(*    left.
+    left.
     eapply IND; eauto.
-*)
 Qed.
 
 Lemma respects_alpha_r_approx_aux_bot2_or_bot2 {p} :
@@ -768,9 +767,9 @@ Proof.
     pose proof (comp0 n) as h; clear comp0.
     pose proof (comp2 n) as q; clear comp2.
     repndors; eauto 3 with slow.
-(*    left.
+    left.
     apply alpha_eq_sym in h.
-    eapply IND; eauto. *)
+    eapply IND; eauto.
 Qed.
 
 Lemma respects_alpha_l_approx_aux_bot2_or_bot2 {p} :
@@ -929,7 +928,6 @@ Proof.
     apply Hap4 in comp; exrepnd.
     eapply computes_to_seq_alpha in comp1;[| |eauto]; eauto 3 with slow; exrepnd.
     eexists; dands; eauto.
-    introv; eapply alpha_eq_trans; eauto.
 Qed.
 
 Lemma approxr_alpha_rw_r_aux {p} :
@@ -1368,12 +1366,9 @@ Proof.
     pose proof (comp0 n) as q; clear comp0.
     repndors; eauto;[].
 
-    eapply alpha_eq_trans; eauto.
-
-(*
     right.
     apply CIH.
-    eexists; eexists; eexists; dands; eauto. *)
+    eexists; eexists; eexists; dands; eauto.
 Qed.
 
 
@@ -2614,10 +2609,3 @@ Qed.
 *)
 
 (* end hide *)
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)
-

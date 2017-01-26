@@ -1,11 +1,31 @@
-o Divide cequiv/approx_star.v into several files, one for each non
-  canonical operator so that they can be compiled in parallel.
+* [DONE] Divide cequiv/approx_star.v into several files, one for each
+  non canonical operator so that they can be compiled in parallel.
 
-o not not semantics.
+* not not semantics.
 
-o Move from using rule_true to rule_true3.
+* Move from using rule_true to rule_true3.
 
-o Pointwise functionality vs. pairwise functionality.
+* Pointwise functionality vs. pairwise functionality.
 
-o Currently, sequences are not allowed in the library: not soseq case
-  in SOTerm's definition in terms/sovar.v
+* [DONE] Currently, sequences are not allowed in the library: no soseq
+  case in SOTerm's definition in terms/sovar.v
+
+* Get rid of the use of functional extensionality and UIP by not using
+  all these xxx_proof_irrelevance lemmas.
+
+* [DONE] In the proof of continuity use a squashed relation instead of
+  a function.  (We can prove that directly in Nuprl.)
+
+* Get rid of the noatoms in the definition of sequences.
+
+* Bar induction: In bar_induction_sp_rule.v trying to prove a squashed
+  bar induction rule that does not mention a separate bar predicate.
+  In bar_induction_sp_wf_rule.v, as in bar_induction_sp_rule.v, trying
+  to prove a squashed bar induction rule that does not mention a
+  separate bar predicate, but because I don't know whether it's going
+  to work without assuming that the predicate we're trying to prove is
+  well-formed, in the _wf_ version I'm assuming that the predicate is
+  well-formed on finite sequences.
+
+* Continuity: In continuity3_ceq.v, trying to prove a more general
+  continuity principle for sequences of terms closed under squiggle.

@@ -1880,6 +1880,38 @@ Inductive close {p} lib (ts : cts) (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_product  : per_product  lib (close lib ts) T T' eq -> close lib ts T T' eq.
 Hint Constructors close.
 
+Arguments CL_init     {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_int      {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_atom     {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_uatom    {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_base     {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_approx   {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_cequiv   {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_eq       {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_teq      {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_isect    {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_func     {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_disect   {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_pertype  {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_ipertype {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_spertype {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_w        {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_m        {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_pw       {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_pm       {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_texc     {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_union    {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_image    {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_partial  {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_admiss   {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_mono     {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_ffatom   {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_effatom  {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_ffatoms  {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_set      {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_tunion   {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_product  {p} [lib] [ts] [T] [T'] [eq] _.
+
 (* begin hide *)
 
 
@@ -3385,10 +3417,3 @@ Ltac computes_to_valc_diff :=
   end.
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/")
-*** End:
-*)

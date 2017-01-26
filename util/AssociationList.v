@@ -82,7 +82,7 @@ Defined.
 Definition ALFindDef2 
     (al : AssocList) (key : Key) (def: Value):  Value :=
 match (ALFind2 al key) with
-| inl (existT  v _) => v
+| inl (existT _  v _) => v
 | inr _ => def
 end.
 

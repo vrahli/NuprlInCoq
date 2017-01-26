@@ -25,68 +25,16 @@
 *)
 
 
+Require Export natk2.
 Require Export stronger_continuity_rule.
 Require Export list. (* !!WTF *)
 
-
-Definition mk_nat2T {o} T : @NTerm o := mk_fun mk_tnat T.
-Definition mk_natk2T {o} (t : @NTerm o) T : @NTerm o := mk_fun (mk_natk t) T.
-
-Definition natk2T {o} (t T : @CTerm o) := mkc_fun (mkc_natk t) T.
-Definition nat2T {o} (T : @CTerm o) := mkc_fun mkc_tnat T.
 
 Definition mod_fun_type_v2 {o} (x : NVar) (T : @NTerm o) : NTerm :=
   mk_function
     mk_tnat
     x
     (mk_fun (mk_natk2T (mk_var x) T) mk_natU).
-
-Lemma wf_term_mk_natk2T {o} :
-  forall (t T : @NTerm o),
-    wf_term (mk_natk2T t T) <=> (wf_term t # wf_term T).
-Proof.
-  introv.
-  rw @wf_fun_iff.
-  rw @wf_term_mk_natk; sp.
-Qed.
-
-Lemma wf_term_mk_zero {o} :
-  @wf_term o mk_zero.
-Proof.
-  introv.
-  unfold mk_zero.
-  eauto 3 with slow.
-Qed.
-Hint Resolve wf_term_mk_zero : slow.
-
-Lemma wf_term_mk_tnat {o} :
-  @wf_term o mk_tnat.
-Proof.
-  introv.
-  unfold mk_tnat.
-  apply wf_set; auto.
-  - apply wf_int.
-  - apply wf_le; dands; eauto 3 with slow.
-Qed.
-Hint Resolve wf_term_mk_tnat : slow.
-
-Lemma wf_term_mk_nat2T {o} :
-  forall (T : @NTerm o),
-    wf_term (mk_nat2T T) <=> wf_term T.
-Proof.
-  introv.
-  rw @wf_fun_iff.
-  split; intro k; repnd; dands; eauto 3 with slow.
-Qed.
-
-Lemma wf_term_mk_natU {o} :
-  @wf_term o mk_natU.
-Proof.
-  introv.
-  unfold mk_natU.
-  apply wf_bunion; dands; eauto 3 with slow.
-Qed.
-Hint Resolve wf_term_mk_natU.
 
 Lemma wf_term_mod_fun_type_v2 {o} :
   forall v (T : @NTerm o),
@@ -120,24 +68,6 @@ Proof.
 Qed.
 Hint Resolve cover_vars_upto_bool : slow.
 
-Lemma cover_vars_upto_csub_filter_single_cons_disj {o} :
-  forall (t : @NTerm o) s v vs,
-    !LIn v (free_vars t)
-    -> (cover_vars_upto t (csub_filter s [v]) (v :: vs)
-        <=> cover_vars_upto t s vs).
-Proof.
-  introv niv.
-  unfold cover_vars_upto; simpl.
-  rw @dom_csub_csub_filter.
-  allrw subvars_eq.
-  split; intros ss i x; applydup ss in x; allsimpl;
-  allrw in_app_iff; allrw in_remove_nvars; allsimpl;
-  allrw not_over_or; repndors; subst; tcsp.
-  right; right.
-  dands; tcsp.
-  intro xx; subst; tcsp.
-Qed.
-
 Lemma cover_vars_upto_bunion {o} :
   forall a b (s : @CSub o) vs,
     cover_vars_upto (mk_bunion a b) s vs
@@ -159,14 +89,6 @@ Proof.
   split; intro k; repnd; dands; eauto 3 with slow.
 Qed.
 
-Lemma cover_vars_upto_int {o} :
-  forall (s : @CSub o) vs, cover_vars_upto mk_int s vs.
-Proof.
-  introv.
-  unfold cover_vars_upto; simpl; auto.
-Qed.
-Hint Resolve cover_vars_upto_int : slow.
-
 Lemma cover_vars_upto_tnat {o} :
   forall (s : @CSub o) vs, cover_vars_upto mk_tnat s vs.
 Proof.
@@ -186,28 +108,6 @@ Proof.
   apply cover_vars_upto_bunion; dands; eauto 3 with slow.
 Qed.
 Hint Resolve cover_vars_upto_natU : slow.
-
-Lemma cover_vars_upto_natk {o} :
-  forall (t : @NTerm o) s vs,
-    cover_vars_upto (mk_natk t) s vs
-    <=> cover_vars_upto t s vs.
-Proof.
-  introv.
-  unfold mk_natk, mk_natk_aux.
-  rw @cover_vars_upto_set.
-  rw @cover_vars_upto_prod.
-  rw @cover_vars_upto_le.
-  rw @cover_vars_upto_less_than.
-  rw @cover_vars_upto_var.
-
-  pose proof (newvar_prop t) as p.
-  remember (newvar t) as v; clear Heqv.
-
-  rw (cover_vars_upto_csub_filter_single_cons_disj t s v vs p).
-  simpl.
-
-  split; intro k; repnd; dands; eauto 3 with slow.
-Qed.
 
 Lemma cover_vars_upto_natk2T {o} :
   forall (t1 t2 : @NTerm o) s vs,
@@ -968,7 +868,7 @@ Proof.
 
       apply (reduces_in_atmost_k_steps_excc_le_exc _ (k1 + k + k0));
         eauto 3 with slow; tcsp;
-        try (apply NPeano.Nat.le_max_l; auto).
+        try (apply Nat.le_max_l; auto).
       pose proof (reduces_in_atmost_k_steps_excc_exception
                     lib k k0 n e (mkc_utoken a) mkc_axiom) as h.
       repeat (autodimp h hyp); tcsp; exrepnd.
@@ -1620,7 +1520,7 @@ Proof.
     applydup @reduces_to_preserves_isprog in h2;
     [|apply isprog_apply; complete (eauto 3 with slow)].
 
-    exists (existT _ t2' h3) (existT _ t3' h4); simpl.
+    exists (mk_ct t2' h3) (mk_ct t3' h4); simpl.
     unfold spfexc_pair in h1; exrepnd; subst.
     dands; auto.
     right; dands; tcsp; apply cequiv_spfexc.
@@ -2591,11 +2491,3 @@ Proof.
             auto.
         }
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

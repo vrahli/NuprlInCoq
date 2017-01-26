@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -173,7 +178,6 @@ Proof.
     apply Hab4 in comp; exrepnd.
     apply Hbc4 in comp1; exrepnd.
     eexists; dands; eauto.
-    introv; eapply alpha_eq_trans; eauto.
 Qed.
 
 Lemma sqlen_n_trans {o} : forall lib n, trans_rel (@sqle_n o lib n).
@@ -241,10 +245,9 @@ Proof.
     apply Hrp3 in ce; exrepnd.
     exists a' e'; auto.
 
-(*
   - introv comp.
     apply Hrp4 in comp; exrepnd.
-    eexists; dands; eauto. *)
+    eexists; dands; eauto.
 Qed.
 
 (*
@@ -325,10 +328,9 @@ Proof.
     apply Hcr4 in ce; exrepnd.
     exists a' e'; auto.
 
-(*
   - introv comp.
     apply Hcr5 in comp; exrepnd.
-    eexists; dands; eauto. *)
+    eexists; dands; eauto.
 Qed.
 
 Definition nt_id_prog {o} :=
@@ -424,7 +426,6 @@ Proof.
       applydup Hap3 in ce; exrepnd.
       exists a' e'; sp; inversion b0.
 
-(*
     + introv comp.
       apply Hap4 in comp; exrepnd.
       eexists; dands; eauto.
@@ -432,7 +433,6 @@ Proof.
       apply IHn; auto.
       pose proof (comp0 n0) as h; repndors; tcsp.
       unfold bot2 in h; tcsp.
-*)
 
   - Case "<-"; introv Hsq.
     revert a b Hsq.
@@ -517,7 +517,7 @@ Proof.
       applydup H1s6 in comp; exrepnd.
       eexists; dands; eauto.
 
-(*      introv.
+      introv.
       right; apply Hs.
       intro k.
       pose proof (Hsq (S k)) as h.
@@ -525,6 +525,13 @@ Proof.
       repnud h.
       apply h4 in comp; exrepnd.
       eapply reduces_to_eq_val_like in comp3;
-        try (exact comp0); eauto 3 with slow; ginv; auto. *)
+        try (exact comp0); eauto 3 with slow; ginv; auto.
 Qed.
 (* begin hide *)
+
+
+(*
+*** Local Variables:
+*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
+*** End:
+*)

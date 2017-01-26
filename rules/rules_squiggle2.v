@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,8 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -31,11 +34,32 @@ Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
 Require Export per_can.
 Require Export cequiv_util.
+Require Export per_props_cequiv.
 
 (** printing |- $\vdash$ *)
 (** printing ->  $\rightarrow$ *)
 (* begin hide *)
 
+
+(* !!MOVE *)
+Lemma covered_subst_implies {o} :
+  forall (t : @NTerm o) x u vs,
+    covered (subst t x u) vs
+    -> covered t (x :: vs).
+Proof.
+  introv cov.
+  allunfold @covered.
+  allrw subvars_eq.
+  introv i.
+  pose proof (eqset_free_vars_disjoint t [(x,u)]) as h.
+  eapply subset_eqset_l in h;[|eauto]; allsimpl.
+  rw subset_app in h; repnd.
+  rw <- subvars_eq in h0.
+  rw subvars_remove_nvars in h0.
+  rw subvars_eq in h0.
+  apply h0 in i.
+  rw in_app_iff in i; allsimpl; repndors; tcsp.
+Qed.
 
 
 (* end hide *)
@@ -194,26 +218,6 @@ Proof.
   apply rule_cequiv_subst_concl_true3.
 Qed.
 
-(* !!MOVE *)
-Lemma covered_subst_implies {o} :
-  forall (t : @NTerm o) x u vs,
-    covered (subst t x u) vs
-    -> covered t (x :: vs).
-Proof.
-  introv cov.
-  allunfold @covered.
-  allrw subvars_eq.
-  introv i.
-  pose proof (eqset_free_vars_disjoint t [(x,u)]) as h.
-  eapply subset_eqset_l in h;[|eauto]; allsimpl.
-  rw subset_app in h; repnd.
-  rw <- subvars_eq in h0.
-  rw subvars_remove_nvars in h0.
-  rw subvars_eq in h0.
-  apply h0 in i.
-  rw in_app_iff in i; allsimpl; repndors; tcsp.
-Qed.
-
 Lemma rule_cequiv_subst_concl_wf2 {o} :
   forall (H  : @barehypotheses o)
          (x : NVar)
@@ -223,6 +227,164 @@ Lemma rule_cequiv_subst_concl_wf2 {o} :
     -> covered a (vars_hyps H)
     -> covered b (vars_hyps H)
     -> wf_rule2 (rule_cequiv_subst_concl H x C a b t).
+Proof.
+  introv wa wb cova covb wf i; allsimpl; repndors; subst; tcsp;
+  allunfold @wf_bseq; repnd; wfseq; auto.
+
+  - apply wf_term_subst; auto.
+    apply lsubst_wf_term in wf1; auto.
+
+  - apply covered_subst; auto.
+    apply covered_subst_implies in wf; auto.
+
+  - apply wf_cequiv; auto.
+Qed.
+
+
+(* same as above but we don't force the subgoals to have given extracts *)
+
+Definition rule_cequiv_subst2_hyp2 {o} (H : @bhyps o) a b e :=
+  mk_baresequent H (mk_concl (mk_cequiv a b) e).
+
+Definition rule_cequiv_subst_concl2 {o}
+           (H : @barehypotheses o)
+           (x : NVar)
+           (C a b t  : NTerm) e :=
+  mk_rule
+    (rule_cequiv_subst_hyp1 H x C a t)
+    [ rule_cequiv_subst_hyp1 H x C b t,
+      rule_cequiv_subst2_hyp2 H a b e
+    ]
+    [].
+
+Lemma rule_cequiv_subst_concl2_true3 {o} :
+  forall lib (H  : @barehypotheses o)
+         (x : NVar)
+         (C a b t  : NTerm) e,
+    rule_true3 lib (rule_cequiv_subst_concl2 H x C a b t e).
+Proof.
+  intros.
+  unfold rule_cequiv_subst_concl2, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros; repnd.
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp.
+  destruct Hyp as [ws1 hyp1].
+  destruct Hyp0 as [ws2 hyp2].
+
+  assert (wf_csequent (rule_cequiv_subst_hyp1 H x C a t)) as wfs by prove_seq.
+  exists wfs.
+  unfold wf_csequent, wf_sequent, wf_bseq in wfs; allsimpl; repnd; proof_irr; GC.
+  destseq; allsimpl; proof_irr; GC.
+
+  vr_seq_true.
+  vr_seq_true in hyp1.
+  vr_seq_true in hyp2.
+
+  pose proof (hyp1 s1 s2 eqh sim) as hh; clear hyp1; exrepnd.
+
+  assert (wf_term a # wf_term b) as wfab.
+  { clear hyp2; allrw <- @wf_cequiv_iff; auto. }
+  repnd.
+
+  assert (cover_vars a s1 # cover_vars b s1) as cov1.
+  { clear hyp2.
+    allrw @covered_cequiv; repnd.
+    dands; eapply s_cover_typ1; eauto. }
+
+  assert (cover_vars a s2 # cover_vars b s2) as cov2.
+  { clear hyp2.
+    allrw @covered_cequiv; repnd.
+    dands; eapply s_cover_typ2; eauto. }
+
+  repnd.
+  dands.
+
+  - repeat (lsubstc_subst_aeq2;[]).
+    repeat (substc_lsubstc_vars3;[]).
+
+    eapply tequality_respects_cequivc_left;
+      [|eapply tequality_respects_cequivc_right;
+         [|exact hh0]
+      ].
+
+    + pose proof (hyp2 s1 s1) as qq; clear hyp2.
+      repeat (autodimp qq hyp); eauto 3 with slow.
+      { apply similarity_refl in sim; auto. }
+      exrepnd.
+      lsubst_tac.
+      allrw @equality_in_mkc_cequiv; repnd.
+      apply cequiv_stable; spcast; proof_irr.
+
+      apply cequivc_lsubstc.
+
+      { apply isprogram_csubst; eauto 2 with slow. }
+      { apply isprogram_csubst; eauto 2 with slow. }
+
+      apply ceq_csub_cons; eauto 3 with slow.
+      apply cequivc_sym; auto.
+
+    + pose proof (hyp2 s2 s2) as qq; clear hyp2.
+      repeat (autodimp qq hyp); eauto 3 with slow.
+      { eapply similarity_hyps_functionality_trans; eauto. }
+      { applydup @similarity_sym in sim as sim'; apply similarity_refl in sim'; auto. }
+      exrepnd.
+      lsubst_tac.
+      allrw @equality_in_mkc_cequiv; repnd.
+      apply cequiv_stable; spcast; proof_irr.
+
+      apply cequivc_lsubstc.
+
+      { apply isprogram_csubst; eauto 2 with slow. }
+      { apply isprogram_csubst; eauto 2 with slow. }
+
+      apply ceq_csub_cons; eauto 3 with slow.
+      apply cequivc_sym; auto.
+
+  - repeat (lsubstc_subst_aeq2;[]).
+    repeat (substc_lsubstc_vars3;[]).
+    proof_irr.
+
+    eapply cequivc_preserving_equality;[eauto|].
+
+    apply cequivc_lsubstc.
+
+    { apply isprogram_csubst; eauto 2 with slow. }
+    { apply isprogram_csubst; eauto 2 with slow. }
+
+    apply ceq_csub_cons; eauto 3 with slow.
+    apply cequivc_sym; auto.
+
+    pose proof (hyp2 s1 s1) as qq; clear hyp2.
+    repeat (autodimp qq hyp); eauto 3 with slow.
+    { apply similarity_refl in sim; auto. }
+    exrepnd.
+    lsubst_tac.
+    allrw @equality_in_mkc_cequiv; repnd.
+    apply cequiv_stable; spcast; proof_irr; auto.
+Qed.
+
+Lemma rule_cequiv_subst_concl2_true {o} :
+  forall lib (H  : @barehypotheses o)
+         (x : NVar)
+         (C a b t  : NTerm) e,
+    rule_true lib (rule_cequiv_subst_concl2 H x C a b t e).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_cequiv_subst_concl2_true3.
+Qed.
+
+Lemma rule_cequiv_subst_concl2_wf2 {o} :
+  forall (H  : @barehypotheses o)
+         (x : NVar)
+         (C a b t  : NTerm) e,
+    wf_term a
+    -> wf_term b
+    -> covered a (vars_hyps H)
+    -> covered b (vars_hyps H)
+    -> wf_rule2 (rule_cequiv_subst_concl2 H x C a b t e).
 Proof.
   introv wa wb cova covb wf i; allsimpl; repndors; subst; tcsp;
   allunfold @wf_bseq; repnd; wfseq; auto.

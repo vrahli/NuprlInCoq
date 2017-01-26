@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +20,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -963,7 +968,7 @@ Proof.
 
   - Case "sterm".
     allsimpl.
-    inversion apr as [|? ? ? ? imp aop|]; subst; clear apr.
+    inversion apr as [|? ? ? ? wf1 wf2 imp aop|]; subst; clear apr.
     econstructor; eauto.
     apply (approx_open_change_utoks _ _ _ ren) in aop; auto.
 

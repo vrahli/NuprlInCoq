@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,8 +20,11 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
  *)
 
@@ -104,9 +108,46 @@ Proof.
     dands; spcast; auto.
 Qed.
 
+Lemma uni_in_uni {o} :
+  forall lib i j, i < j -> @member o lib (mkc_uni i) (mkc_uni j).
+Proof.
+  introv h.
+  unfold member, equality, nuprl.
+  exists (fun A A' => {eqa : per , close lib (univi lib j) A A' eqa}).
+  dands.
 
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)
+  { apply mkc_uni_in_nuprl. }
+
+  {
+    exists (fun A A' => {eqa : per , close lib (univi lib i) A A' eqa}).
+    apply CL_init.
+    apply univi_exists_iff.
+    exists i; dands; spcast; tcsp; try (apply computes_to_valc_refl; eauto 3 with slow).
+  }
+Qed.
+
+Lemma cumulativity {o} :
+  forall lib i j (A B : @CTerm o),
+    i < j
+    -> equality lib A B (mkc_uni i)
+    -> equality lib A B (mkc_uni j).
+Proof.
+  introv h equ.
+  unfold member, equality, nuprl in *; destruct equ as [eqa equ]; repnd.
+  exists (fun A A' => {eqa : per , close lib (univi lib j) A A' eqa}).
+  dands.
+
+  { apply mkc_uni_in_nuprl. }
+
+  {
+    dup equ0 as n.
+    eapply nuprl_uniquely_valued in equ0;[|apply mkc_uni_in_nuprl].
+    apply equ0 in equ; exrepnd; clear equ0.
+    fold (nuprli lib i) in equ1.
+    exists eqa0.
+    fold (nuprli lib j).
+    pose proof (typable_in_higher_univ lib i A B eqa0 equ1 (j - i)) as q.
+    rewrite minus_plus_n in q; auto; try omega.
+  }
+Qed.
+

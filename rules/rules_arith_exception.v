@@ -1,6 +1,8 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,12 +20,18 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli & Mark Bickford
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Abhishek Anand
+           Vincent Rahli
+           Mark Bickford
 
 *)
 
 
+Require Export sequents2.
 Require Export computation_minus.
 Require Export approx_props2.
 Require Export sequents_tacs.
@@ -34,6 +42,8 @@ Require Export per_props_nat.
 Require Export per_can.
 Require Export per_props_top.
 Require Export integer_type.
+Require Export cequiv_arith_props2.
+
 
 (*
    H |- a = b in T
@@ -61,28 +71,6 @@ Definition rule_arith_exception_cases {o}
                      (mk_conclax (mk_equality a b T)),
       mk_baresequent H (mk_conclax (mk_member u mk_base)), 
       mk_baresequent H (mk_conclax (mk_member v mk_base))
-    ]
-    [].
-
-(*
-   H |- a = b in T
-
-     By minusExceptionCases
-
-     H |- isexc(-t)
-     H, x : isexc(t) |- a = b in T
-     H |- t in Base
- *)
-Definition rule_minus_exception_cases {o}
-           (H : barehypotheses)
-           (a b T t: @NTerm o)
-           (x : NVar) :=
-  mk_rule
-    (mk_baresequent H (mk_conclax (mk_equality a b T)))
-    [ mk_baresequent H (mk_conclax (mk_isexc (mk_minus t))),
-      mk_baresequent (snoc H (mk_hyp x (mk_isexc t)))
-                     (mk_conclax (mk_equality a b T)), 
-      mk_baresequent H (mk_conclax (mk_member t mk_base))
     ]
     [].
 
@@ -270,9 +258,31 @@ Proof.
     rw <- @member_equality_iff in hyp7.
     rw @tequality_mkc_equality_sp in hyp2; repnd.
     sp.
-   } 
-
+   }
 Qed.
+
+
+(*
+   H |- a = b in T
+
+     By minusExceptionCases
+
+     H |- isexc(-t)
+     H, x : isexc(t) |- a = b in T
+     H |- t in Base
+ *)
+Definition rule_minus_exception_cases {o}
+           (H : barehypotheses)
+           (a b T t: @NTerm o)
+           (x : NVar) :=
+  mk_rule
+    (mk_baresequent H (mk_conclax (mk_equality a b T)))
+    [ mk_baresequent H (mk_conclax (mk_isexc (mk_minus t))),
+      mk_baresequent (snoc H (mk_hyp x (mk_isexc t)))
+                     (mk_conclax (mk_equality a b T)), 
+      mk_baresequent H (mk_conclax (mk_member t mk_base))
+    ]
+    [].
 
 Lemma rule_minus_exception_cases_true {o} :
   forall lib (H : barehypotheses)
@@ -364,9 +374,100 @@ Proof.
     rw @tequality_mkc_equality_sp in hyp0; repnd.
     sp.
 Qed.
-  
+
+
+
 (*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)
+   H |- op x exc(a,b) ~ exc(a,b)
+
+     By exceptionArith
+
+     H |- x in Z
+ *)
+Definition rule_exception_arith {o}
+           (H : barehypotheses)
+           (op: ArithOp )
+           (x a b : @NTerm o) :=
+  mk_rule
+    (mk_baresequent H (mk_conclax (mk_cequiv (mk_arithop op x (mk_exception a b)) (mk_exception a b))))
+    [
+      mk_baresequent H (mk_conclax (mk_member x mk_int))
+    ]
+    [].
+
+
+Lemma rule_exception_arith_true3 {o} :
+  forall lib (H : barehypotheses)
+         op
+         (x a b : @NTerm o),
+    rule_true3 lib (rule_exception_arith H op x a b).
+Proof.
+  intros.
+  unfold rule_exception_arith, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros; repnd.
+  clear cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  destruct Hyp as [ws1 hyp1].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent (H)
+                      ||- (mk_conclax
+                             (mk_cequiv (mk_arithop op x (mk_exception a b)) (mk_exception a b)))) as wfc.
+  { clear hyp1.
+    unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl; simpl.
+    dwfseq.
+    rw @vswf_hypotheses_nil_eq.
+    dands; tcsp.
+    introv i; allrw in_app_iff; repndors; tcsp. }
+
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* We prove some simple facts on our sequents *)
+  (* done with proving these simple facts *)
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  vr_seq_true in hyp1.
+  pose proof (hyp1 s1 s2 eqh sim) as hyp; clear hyp1.
+  exrepnd.
+
+  lsubst_tac.
+  rw @tequality_mkc_cequiv.
+  rw @equality_in_mkc_cequiv.
+  apply member_if_inhabited in hyp1.
+  apply tequality_member_int in hyp0; auto;[].
+  clear hyp1.
+  unfold equality_of_int in hyp0; exrepnd; spcast.
+  dands; spcast; try (apply computes_to_valc_refl; eauto 2 with slow).
+
+  {
+    split; introv h; spcast.
+
+    - eapply cequivc_trans;
+      [apply implies_cequivc_mkc_arithop;
+       [apply computes_to_valc_implies_cequivc;exact hyp1
+       |apply cequivc_refl]
+      |].
+      apply cequivc_arithop_integer_exception.
+
+    - eapply cequivc_trans;
+      [apply implies_cequivc_mkc_arithop;
+       [apply computes_to_valc_implies_cequivc;exact hyp0
+       |apply cequivc_refl]
+      |].
+      apply cequivc_arithop_integer_exception.
+  }
+
+  {
+    eapply cequivc_trans;
+      [apply implies_cequivc_mkc_arithop;
+       [apply computes_to_valc_implies_cequivc;exact hyp0
+       |apply cequivc_refl]
+      |].
+    apply cequivc_arithop_integer_exception.
+  }
+Qed.

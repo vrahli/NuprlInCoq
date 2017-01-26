@@ -281,7 +281,7 @@ Qed.
 
 Definition lmap_apply {A : Set} (eqdec: Deq A) (sub: lmap A A) (a:A): A :=
   match lmap_find eqdec sub a with
-    | inl (existT a' _) =>  a'
+    | inl (existT _ a' _) =>  a'
     | inr _ => a
   end.
 
@@ -5050,51 +5050,6 @@ Lemma csub2sub_cons {p} :
 Proof.
   sp.
 Qed.
-
-Lemma csubst_cons_trim {p} :
-  forall t x a s,
-    @csubst p t ((x, a) :: s)
-    = csubst t ((x, a) :: csub_filter s [x]).
-Proof.
-  unfold csubst; sp; simpl.
-  rewrite <- sub_filter_csub2sub.
-
-  revert s.
-  nterm_ind t Case; simpl; sp.
-
-  - Case "vterm".
-    destruct (eq_var_dec x n); subst.
- (*   rewrite <- beq_var_refl; sp.
-    rewrite not_eq_beq_var_false; sp.
-    remember (sub_find (sub_filter (csub2sub s) [x]) n); symmetry in Heqo; destruct o.
-    rw sub_find_sub_filter_some in Heqo; sp.
-    allrw; sp.
-    rw sub_find_sub_filter_none in Heqo; sp; allsimpl; sp.
-    allrw; sp.
-
-  - Case "oterm".
-    apply oterm_eq; sp.
-    apply eq_maps; sp.
-    destruct x0; simpl.
-    repeat (rw bvar_renamings_subst_isprogram; sp); allsimpl; sp; cpx.
-    repeat (rw app_nil_l); simpl.
-    rewrite sub_filter_swap.
-    remember (memvar x l); symmetry in Heqb; destruct b.
-    rewrite <- sub_filter_app_r.
-    rewrite fold_assert in Heqb.
-    rw assert_memvar in Heqb.
-    rewrite sub_filter_app_as_remove_nvars.
-    assert (remove_nvars l [x] = []) as eq
-      by (rw <- null_iff_nil; rw null_remove_nvars; simpl; sp; subst; sp).
-    rewrite eq.
-    rewrite app_nil_r; sp.
-    rewrite sub_filter_csub2sub.
-    rewrite H with (lv := l); auto.
-    rw in_sub_filter in l0; sp; allsimpl.
-    allapply in_csub2sub; sp.
-    allapply in_csub2sub; sp.
-*) Admitted.
-
 
 Lemma csub_filter_snoc1 {p} :
   forall sub v t,

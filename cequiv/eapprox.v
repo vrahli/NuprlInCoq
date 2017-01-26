@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,13 +21,19 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Mark Bickford & Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Mark Bickford
+           Abhishek Anand
+           Vincent Rahli
 
 *)
 
 
 Require Export approx.
+
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #<=># *)
@@ -32,7 +41,7 @@ Require Export approx.
 (** printing &  $\times$ #×# *)
 
 
-(** We make a variants of  [close_comput], and [approx] 
+(** We make a variants of  [close_comput], and [approx]
     that treat exceptions of a given name e like bottom.
     That is, when the canonical form of the first, approximating, term
     is exception, then the relation holds if the name computes to e.
@@ -91,7 +100,7 @@ Proof.
   intros; destruct SIM; econstructor; eauto.
   invertsna e Hcl. repnd.
   unfold ex_close_comput.
-  dands; eauto.
+  dands; eauto; GC.
 
   - introv Hcomp.
     apply Hcl2 in Hcomp.
@@ -110,6 +119,12 @@ Proof.
     + right.
       exrepnd.
       exists a' e'; dands; auto; repdors; auto.
+
+  - introv Hcomp.
+    apply Hcl4 in Hcomp; exrepnd.
+    exists f'; dands; auto.
+    introv.
+    pose proof (Hcomp0 n) as q; repndors; auto.
 Qed.
 
 Corollary ex_approx_acc2 {p} :
@@ -137,23 +152,32 @@ Proof.
   allsimpl. apply HH; auto. introv CIH apr.
   clear tl tr app HH. rename x0 into tl. rename x1 into tr.
   constructor.
-  applydup @approx_relates_only_progs in apr. 
-  rename apr0 into pr. 
+  applydup @approx_relates_only_progs in apr.
+  rename apr0 into pr.
   exrepnd.
   unfold ex_close_comput; dands; tcsp; introv comp; auto.
+
   - eapply approx_canonical_form in comp; eauto; exrepnd.
     exists bterms'; split; auto.
-    eapply le_lblift2; eauto. introv apo. 
+    eapply le_lblift2; eauto. introv apo.
     pose proof @le_olift p r (ex_approx_aux lib ex r \2/ r) as X.
     unfold le_bin_rel in X. eapply X; auto. clear X.
     destruct apo; exrepnd. split; auto.
+
   - destruct apr. destruct c; exrepnd. pose proof p3 a e comp as X; exrepnd.
     right. exists a' e'. split; auto; split; right.
     + clear X1. destruct X2.
       * pose proof CIH a a' a0; auto.
       * destruct b.
     + clear X2. destruct X1. pose proof CIH e e' a0; auto. destruct b.
-  -  destruct apr. destruct c; exrepnd. pose proof p4 f comp; auto.
+
+  - destruct apr as [cl].
+    destruct cl; exrepnd; GC.
+    apply p4 in comp; exrepnd.
+    exists f'; dands; auto.
+    introv.
+    pose proof (comp0 n) as q; repndors; dands; auto.
+    unfold bot2 in *; simpl in *; tcsp.
 Qed.
 
 Lemma ex_approx_refl {p}:
@@ -324,8 +348,13 @@ Proof.
     split;auto.
     eapply le_lblift2;[|eauto]; eauto 3 with slow.
 
-  - apply Hrab3 in comp; exrepnd. destruct comp; exrepnd. left. auto. right.
+  - apply Hrab3 in comp; exrepnd.
+    destruct comp; exrepnd.
+    left. auto. right.
     exists a' e'; dands; auto.
+
+  - apply Hrab4 in comp; exrepnd.
+    exists f'; dands; auto.
 Defined.
 
 
@@ -392,7 +421,8 @@ Proof.
     pose proof (comp0 n) as h; clear comp0.
     pose proof (comp2 n) as q; clear comp2.
     repndors; eauto 3 with slow.
-
+    left.
+    eapply IND; eauto.
 Qed.
 
 Lemma respects_alpha_r_ex_approx_aux_bot2_or_bot2 {p} :
@@ -443,7 +473,7 @@ Proof.
     apply alpha_eq_sym in aeq.
     eapply compute_to_exception_alpha with (t1' := e) in aeq;
       eauto 3 with slow; exrepnd.
-    apply ce in aeq0; exrepnd; clear ce. 
+    apply ce in aeq0; exrepnd; clear ce.
     destruct aeq0.
     + left. repdors; try (complete (allunfold @bot2; sp));  left.
       apply (IND _ _ _ _ a0) in s0; auto. apply alpha_eq_sym; auto.
@@ -465,7 +495,7 @@ Proof.
     pose proof (comp0 n) as h; clear comp0.
     pose proof (comp2 n) as q; clear comp2.
     repndors; eauto 3 with slow.
-
+    left; eapply IND;[apply alpha_eq_sym;eauto|]; auto.
 Qed.
 
 Lemma respects_alpha_l_ex_approx_aux_bot2_or_bot2 {p} :
@@ -515,19 +545,18 @@ Proof.
 
     + subst; allsimpl.
       inversion Hcv0.
-  
 
   - introv comp.
     eapply compute_to_exception_alpha with (t2:=a) in comp; eauto with slow.
     exrepnd.
     apply Hap3 in comp0; exrepnd.
-    destruct comp0. left. auto. apply alpha_eq_sym in comp2. 
+    destruct comp0. left. auto. apply alpha_eq_sym in comp2.
     pose proof rR a'0 ex a0 comp2 r; auto.
     exrepnd. right.
     exists a'1 e'; dands; auto.
     + apply alpha_eq_sym in comp2; pose proof rR a'0 a'1 a0; auto.
     + apply alpha_eq_sym in comp1. pose proof rR t2' e' e comp1; auto.
-   
+
   - introv comp.
     applydup @alpha_prog_eauto in Hal as wfa'; auto.
     apply alpha_eq_sym in Hal.
@@ -537,7 +566,7 @@ Proof.
     introv.
     pose proof (comp2 n) as q; clear comp2.
     pose proof (comp0 n) as h; clear comp0.
-    eauto 3 with slow. 
+    eauto 3 with slow.
 Qed.
 
 Lemma ex_approxr_alpha_rw_l_aux {p} :
@@ -613,7 +642,6 @@ Proof.
     apply Hap4 in comp; exrepnd.
     eapply computes_to_seq_alpha in comp1;[| |eauto]; eauto 3 with slow; exrepnd.
     eexists; dands; eauto.
-    introv; eapply alpha_eq_trans; eauto.
 Qed.
 
 Lemma ex_approxr_alpha_rw_r_aux {p} :
@@ -1050,7 +1078,9 @@ Proof.
     pose proof (comp0 n) as q; clear comp0.
     repndors; eauto;[].
 
-    eapply alpha_eq_trans; eauto.
+    right.
+    apply CIH; auto.
+    exists (f' n) (f n) (f'0 n); dands; auto.
 Qed.
 
 
@@ -1913,10 +1943,3 @@ Qed.
 *)
 
 (* end hide *)
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)
-

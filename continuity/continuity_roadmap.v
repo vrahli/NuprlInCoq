@@ -2,6 +2,7 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,8 +20,11 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Vincent Rahli
 
 *)
 
@@ -51,6 +55,14 @@
 *)
 
 Require Export continuity_rule.
+
+
+(**
+   slightly more general version that for function of type (Z -> T) -> Z
+   where T's PER is alphaeq.
+ *)
+
+Require Export continuity_rule_gen.
 
 
 (**
@@ -94,9 +106,9 @@ Require Export stronger_continuity_props1.
 (*Require Import continuity_axiom.*) (* !TO FIX---don't need anymore, we've got the strong version *)
 (*Require Import continuity_rule2. (* Can't prove that, right? *) *)
 (*
-Require Import stronger_continuity_rule4.
-Require Import stronger_continuity_rule4_v2. (* slightly more general than rule4, uses a meta-hypothesis *)
-Require Import stronger_continuity_rule4_v2_2. (* slightly more general than rule4, uses an object-hypothesis (subtype of nat) *)
+  Require Import stronger_continuity_rule4.
+  Require Import stronger_continuity_rule4_v2. (* slightly more general than rule4, uses a meta-hypothesis *)
+  Require Import stronger_continuity_rule4_v2_2. (* slightly more general than rule4, uses an object-hypothesis (subtype of nat) *)
 *)
 
 
