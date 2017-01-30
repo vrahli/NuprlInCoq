@@ -248,7 +248,7 @@ Proof.
     eexists; dands; eauto.
 Qed.
 
-Lemma approx_ex_sqle {o} :
+Lemma ex_approx_ex_sqle {o} :
   forall lib (ex : @NTerm o) a b,
     ex_approx lib ex a b <=> ex_sqle lib ex a b.
 Proof.
