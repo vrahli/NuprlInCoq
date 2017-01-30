@@ -32,6 +32,7 @@
 Require Export sqle.
 Require Export eapprox.
 
+
 Inductive ex_sqle_n {o} (lib : @library o) (ex : @NTerm o)
   :  nat -> @NTerm o -> @NTerm o -> [univ] :=
 | ex_sql0 : forall tl tr, isprogram tl -> isprogram tr -> ex_sqle_n lib ex 0 tl tr
@@ -52,6 +53,72 @@ Proof.
 Qed.
 Hint Resolve respects_alpha_ex_sqlen : respects.
 
+Definition respects_renaming {o} (R : bin_rel (@NTerm o)) :=
+  forall t1 t2 l1 l2,
+    R t1 t2
+    -> R (lsubst t1 (var_ren l1 l2)) (lsubst t2 (var_ren l1 l2)).
+
+Lemma blift_trans {o} :
+  forall R (b1 b2 b3 : @BTerm o),
+    trans_rel R
+    -> respects_alpha R
+    -> respects_renaming R
+    -> blift R b1 b2
+    -> blift R b2 b3
+    -> blift R b1 b3.
+Proof.
+  introv tr ra rr h1 h2.
+  unfold blift in *; exrepnd.
+
+  pose proof (fresh_vars
+                (length lv0)
+                (all_vars nt0 ++ all_vars nt3 ++ all_vars nt1 ++ all_vars nt2)) as q.
+  exrepnd.
+  apply disjoint_app_r in q2; destruct q2 as [disj1 disj2].
+  apply disjoint_app_r in disj2; destruct disj2 as [disj2 disj3].
+  apply disjoint_app_r in disj3; destruct disj3 as [disj3 disj4].
+
+  eapply alpha_eq_bterm_trans in h3;[|apply alpha_eq_bterm_sym; exact h4].
+  applydup @alpha_eq_bterm_lenbvars in h3.
+
+  pose proof (alpha_bterm_change b1 lv0 nt0 lvn) as z1.
+  repeat (autodimp z1 hyp); eauto 2 with slow.
+
+  pose proof (alpha_bterm_change b3 lv nt2 lvn) as z2.
+  repeat (autodimp z2 hyp); eauto 2 with slow; try omega.
+
+  exists lvn (lsubst nt0 (var_ren lv0 lvn)) (lsubst nt2 (var_ren lv lvn)).
+  dands; auto.
+
+  pose proof (alphabt_change_var nt3 nt1 lv0 lv lvn) as w.
+  repeat (autodimp w hyp); try (complete (apply disjoint_app_r; dands; auto)).
+  repnd.
+
+  apply (rr _ _ lv0 lvn) in h1.
+  apply (rr _ _ lv lvn) in h2.
+
+  eapply tr;[|exact h2].
+  eapply ra;[exact w0|]; auto.
+Qed.
+
+Lemma lblift_trans {o} :
+  forall R (l1 l2 l3 : list (@BTerm o)),
+    trans_rel R
+    -> respects_alpha R
+    -> respects_renaming R
+    -> lblift R l1 l2
+    -> lblift R l2 l3
+    -> lblift R l1 l3.
+Proof.
+  introv tr ra rr  h1 h2.
+  unfold lblift in *; repnd; dands; auto; try omega.
+  introv ln.
+  applydup h1 in ln.
+  rewrite h3 in ln.
+  applydup h2 in ln.
+  eapply blift_trans;[| | |exact ln0|exact ln1]; auto.
+Qed.
+
 Lemma trans_rel_ex_close_comput {o} :
   forall lib ex (R : @NTerm o -> @NTerm o -> [univ]),
   trans_rel R
@@ -70,22 +137,19 @@ Proof.
     revert Hcv1 Hcb1.
     apply trans_lblift; auto; eauto with respects_alpha.
 
-  - introv Hcv.
-    applydup_clear Hab3 in Hcv.
-    repndors; exrepnd; tcsp.
-    rename Hcv1 into Hcb.
-    applydup_clear Hbc3 in Hcb.
-    repndors; exrepnd; tcsp.
+  - introv comp.
+    applydup Hab3 in comp; repndors; exrepnd; tcsp.
+    applydup @preserve_program_exc2 in comp1; auto; repnd.
+    applydup Hbc3 in comp1; repndors; exrepnd; tcsp.
 
-    { left.
-      eapply Ht; eauto. }
+    {
+      left.
+      eapply compute_to_same_name_respects_alpha_l;[| |exact comp5];
+        eauto 3 with slow.
+    }
 
     right.
-    exists a'0 e'0; sp.
-    + revert Hcv2 Hcb2.
-      apply Ht.
-    + revert Hcv0 Hcb0.
-      apply Ht.
+    eexists; eexists; dands;[eauto| |]; eauto 3 with slow.
 
   - introv comp.
     apply Hab4 in comp; exrepnd.
@@ -97,9 +161,9 @@ Lemma ex_sqlen_n_trans {o} :
   forall lib (ex : @NTerm o) n, trans_rel (ex_sqle_n lib ex n).
 Proof.
   induction n; intros a b c Hab Hbc;
-  invertsn Hab; invertsn Hbc; constructor; auto;[].
-  revert Hab Hbc.
-  apply trans_rel_ex_close_comput; eauto with respects.
+    invertsn Hab; invertsn Hbc; constructor; auto;[].
+  eapply trans_rel_ex_close_comput;[| |eauto|eauto]; eauto 3 with slow.
+  apply respects_alpha_ex_sqlen.
 Qed.
 
 Lemma trans_rel_olift_ex_sqlen {o} :
@@ -157,11 +221,6 @@ Proof.
     apply le_lblift. apply le_olift in IHn.
     auto.
 
-  - introv ce.
-    apply Hrp3 in ce; repndors; exrepnd; tcsp.
-    right.
-    exists a' e'; auto.
-
   - introv comp.
     apply Hrp4 in comp; exrepnd.
     eexists; dands; eauto.
@@ -183,11 +242,6 @@ Proof.
     exrepnd.
     dands;sp.
     eapply le_blift_olift; eauto.
-
-  - introv ce.
-    apply Hcr4 in ce; repndors; exrepnd; tcsp.
-    right.
-    exists a' e'; auto.
 
   - introv comp.
     apply Hcr5 in comp; exrepnd.
@@ -214,14 +268,6 @@ Proof.
       split; auto. introv Hlt.
       apply Hcv1 in Hlt.
       eapply le_blift_olift; eauto.
-
-    + introv ce.
-      applydup Hap3 in ce; repndors; exrepnd; tcsp.
-
-      { inversion ce0. }
-
-      right.
-      exists a' e'; sp; inversion b0.
 
     + introv comp.
       apply Hap4 in comp; exrepnd.
@@ -278,43 +324,6 @@ Proof.
       repnud H1s.
       applydup H1s5 in ce.
       repndors; exrepnd; tcsp.
-
-      {
-        (* WARNING: how can we ever hope to prove this? *)
-        left.
-        apply Hs; auto.
-      }
-
-      exists a' e'; sp.
-
-      {
-        assert (sqle lib a0 a'); [|complete auto].
-        intro n.
-        generalize (Hsq (S n)); intro k.
-
-        invertsn k; auto.
-        repnud k.
-        apply k3 in ce; exrepnd.
-        eapply computes_to_exception_eq in ce3; eauto; repnd; subst; auto.
-      }
-
-      {
-        assert (sqle lib e e'); [|complete auto].
-        intro n.
-        generalize (Hsq (S n)); intro k.
-
-        invertsn k; auto.
-        repnud k.
-        apply k3 in ce; exrepnd.
-        eapply computes_to_exception_eq in ce3; eauto; repnd; subst; auto.
-      }
-
-(*
-    + introv ce.
-      invertsn H1s.
-      repnud H1s.
-      applydup H1s in ce; exrepnd; auto.
-*)
 
     + introv comp.
       invertsn H1s.
