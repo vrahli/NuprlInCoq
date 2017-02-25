@@ -35,6 +35,13 @@
 Require Export approx.
 
 
+(*
+
+  This is a variant of eapprox.v that's using computes_to_same_name.
+
+ *)
+
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #<=># *)
 (** printing $  $\times$ #×# *)
@@ -72,7 +79,6 @@ and
     exc(ex,d) eapprox(ex) t
 
 but then it's not clear how we can prove that it's equivalent to esqle(ex)
-(see esqle3.v)
 
 ---------------------------------------------------------------------
 The one with compute_to_same_name is not transitive because
@@ -84,32 +90,14 @@ but
 
 ---------------------------------------------------------------------
 What's wrong with computes_to_same_name again?
-(see where esqle2.v fails)
 
 *)
-Definition old1_ex_close_compute_exc {o} lib ex (R: @NTrel o) (tl tr : @NTerm o) : [univ]:=
-  forall a e,
-    (tl =e>(a,lib) e)
-    -> (*compute_to_same_name lib ex a*) R a ex
-       +
-       {a' : NTerm & {e' : NTerm & (tr =e>(a',lib) e') # R a a' # R e e' }}.
-
-(* !! Not reflexive *)
-Definition old2_ex_close_compute_exc {o} lib ex (R: @NTrel o) (tl tr : @NTerm o) : [univ]:=
-  forall a e,
-    (tl =e>(a,lib) e)
-    -> compute_to_same_name lib a ex.
-
 Definition ex_close_compute_exc {o} lib ex (R: @NTrel o) (tl tr : @NTerm o) : [univ]:=
   forall a e,
     (tl =e>(a,lib) e)
-    -> compute_to_same_name lib a ex
+    -> computes_to_same_name lib a ex (*R a ex*)
        +
-       {a' : NTerm
-        & {e' : NTerm
-        & (tr =e>(a',lib) e')
-        # alpha_eq a a'
-        # alpha_eq e e' }}.
+       {a' : NTerm & {e' : NTerm & (tr =e>(a',lib) e') # R a a' # R e e' }}.
 
 Definition ex_close_comput {p} lib ex (R: NTrel) (tl tr : @NTerm p) : [univ]:=
   isprogram tl
@@ -174,6 +162,12 @@ Proof.
     introv Hap.
     dorn Hap; spc.
 
+  - introv comp.
+    apply Hcl3 in comp; repndors; tcsp.
+    exrepnd.
+    right.
+    eexists; eexists; dands;[eauto| |]; repndors; tcsp.
+
   - introv Hcomp.
     apply Hcl4 in Hcomp; exrepnd.
     exists f'; dands; auto.
@@ -229,6 +223,13 @@ Proof.
     allunfold @olift; repnd; dands; auto.
 
   - introv comp.
+    apply cl3 in comp.
+    repndors; tcsp.
+    exrepnd.
+    right.
+    eexists; eexists; dands;[eauto| |]; tcsp.
+
+  - introv comp.
     apply cl4 in comp; exrepnd.
     eexists; dands; eauto.
 Qed.
@@ -259,6 +260,12 @@ Proof.
     repndors.
     + apply IND; auto.
     + unfold bot2 in h; tcsp.
+
+  - introv comp.
+    apply cl3 in comp; repndors; tcsp.
+    exrepnd.
+    right.
+    eexists; eexists; dands;[eauto| |]; unfold bot2 in *; repndors; tcsp.
 
   - introv comp.
     apply cl4 in comp; exrepnd.
@@ -381,7 +388,8 @@ Proof.
     exists l u u; dands; auto.
     unfold olift; dands; auto; apply nt_wf_eq; auto.
 
-  - right; exists a e; dands; eauto 2 with slow.
+  - applydup @preserve_program_exc2 in comp; auto; repnd.
+    right; exists a e; dands; eauto 2 with slow.
 
   - exists f; dands; auto.
     introv.
@@ -631,6 +639,10 @@ Proof.
     split;auto.
     eapply le_lblift2;[|eauto]; eauto 3 with slow.
 
+  - apply Hrab3 in comp; repndors; tcsp; exrepnd.
+    right.
+    eexists; eexists; dands;[eauto| |]; tcsp.
+
   - apply Hrab4 in comp; exrepnd.
     exists f'; dands; auto.
 Defined.
@@ -687,7 +699,8 @@ Proof.
     eapply compute_to_exception_alpha with (t1' := e') in aeq;
       eauto 3 with slow; exrepnd.
 
-    eexists; eexists; dands;[eauto| |]; eauto 3 with slow.
+    eexists; eexists; dands;[eauto| |]; eauto 3 with slow;
+      repndors; tcsp; left; eapply IND; eauto.
 
   - introv comp.
     apply cs in comp; exrepnd.
@@ -847,13 +860,16 @@ Proof.
     applydup @preserve_program_exc2 in ca; auto; repnd.
     eapply compute_to_exception_alpha with (t1' := e) in aeq;
       eauto 3 with slow; exrepnd.
-    apply ce in aeq0; repndors; exrepnd; clear ce; auto;
-      [left;
-       eapply compute_to_same_name_respects_alpha_l;[| |exact aeq0];
-       eauto 3 with slow|].
+    apply ce in aeq0; repndors; exrepnd; clear ce; auto.
+
+    {
+      left.
+      eapply computes_to_same_name_respects_alpha_l;[| |eauto]; eauto 3 with slow.
+    }
 
     right.
-    eexists; eexists; dands;[eauto| |]; eauto 3 with slow.
+    eexists; eexists; dands;[eauto| |]; eauto 3 with slow;
+      repndors; tcsp; left; eapply IND; try (apply alpha_eq_sym); eauto.
 
   - introv comp.
     applydup @alpha_prog_eauto in aeq as wfa'; auto.
@@ -923,10 +939,14 @@ Proof.
     exrepnd.
     applydup @alphaeq_preserves_program in comp4 as iffisp.
     applydup iffisp in comp1; clear iffisp.
-    apply Hap3 in comp2; repndors; exrepnd; auto;
-      [left;
-       eapply compute_to_same_name_respects_alpha_l;[| |exact comp2];
-       eauto 3 with slow|].
+    apply Hap3 in comp2; repndors; exrepnd; auto.
+
+    {
+      left.
+      eapply computes_to_same_name_respects_alpha_l;[| |exact comp2];
+        eauto 3 with slow.
+    }
+
     right.
     eexists; eexists; dands;[eauto| |]; eauto 3 with slow.
 
@@ -1258,6 +1278,19 @@ Proof.
   destruct tr_subterms in *; simpl in *; ginv.
 Qed.
 
+Lemma computes_to_name_name_respects_ex_approx_aux {o} :
+  forall lib ex (a b c : @NTerm o),
+    ex_approx_aux lib ex bot2 a b
+    -> computes_to_same_name lib b c
+    -> computes_to_same_name lib a c.
+Proof.
+  introv apr comp h.
+  inversion apr as [cl].
+  unfold ex_close_comput in cl; repnd.
+  apply cl2 in h; exrepnd.
+  unfold lblift in h0; simpl in *; repnd; cpx.
+Qed.
+
 (** %\noindent% Now, we wish to prove that [ex_approx] is transitive.
     The proof is essentially a co-indictive argument.
     However, to get a strong enough co-induction hypothesis
@@ -1440,12 +1473,16 @@ Proof.
     applydup @preserve_program_exc2 in ce1; auto; repnd.
 
     applydup_clear Hbc3 in ce1; repndors; exrepnd; repndors; tcsp;
-      [left;
-       eapply compute_to_same_name_respects_alpha_l;[| |exact ce5];
-       eauto 3 with slow|].
+      try (complete (unfold bot2 in *; tcsp)).
+
+    {
+      left.
+      eapply computes_to_name_name_respects_ex_approx_aux;[eauto|]; auto.
+    }
 
     right.
-    eexists; eexists; dands; [eauto| |]; eauto 3 with slow.
+    eexists; eexists; dands; [eauto| |]; eauto 3 with slow;
+      right; apply CIH; eexists; eexists; eexists; eauto.
 
   - repnd.
     introv comp.

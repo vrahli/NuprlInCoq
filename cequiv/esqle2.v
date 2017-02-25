@@ -31,7 +31,7 @@
 
 
 Require Export sqle.
-Require Export eapprox.
+Require Export eapprox2.
 
 
 Inductive ex_sqle_n {o} (lib : @library o) (ex : @NTerm o)
@@ -120,13 +120,20 @@ Proof.
   eapply blift_trans;[| | |exact ln0|exact ln1]; auto.
 Qed.
 
+Definition respects_computes_to_same_name_l {o} lib (R : bin_rel (@NTerm o)) :=
+  forall a b c,
+    R a b
+    -> computes_to_same_name lib b c
+    -> computes_to_same_name lib a c.
+
 Lemma trans_rel_ex_close_comput {o} :
   forall lib ex (R : @NTerm o -> @NTerm o -> [univ]),
   trans_rel R
   -> respects_alpha R
+  -> respects_computes_to_same_name_l lib R
   -> trans_rel (ex_close_comput lib ex R).
 Proof.
-  intros lib ex R Ht Hra a b c Hab Hbc.
+  intros lib ex R Ht Hra respSN a b c Hab Hbc.
   allunfold @ex_close_comput.
   repnd; dands; auto; GC.
 
@@ -145,8 +152,7 @@ Proof.
 
     {
       left.
-      eapply compute_to_same_name_respects_alpha_l;[| |exact comp5];
-        eauto 3 with slow.
+      eapply respSN; eauto.
     }
 
     right.
@@ -158,13 +164,158 @@ Proof.
     eexists; dands; eauto.
 Qed.
 
+Definition ex_sqle {o} lib ex (tl tr : @NTerm o) :=
+  forall n, ex_sqle_n lib ex n tl tr.
+
+Theorem ex_sqlen_closed {o} :
+  forall lib (ex : @NTerm o) n, is_rel_on_progs (ex_sqle_n lib ex n).
+Proof.
+  induction n as [| n Hind]; intros t1 t2 Hsq;
+    invertsn Hsq; auto.
+  rename Hsq into Hclose.
+  unfold ex_close_comput in Hclose.
+  sp; auto.
+Qed.
+
+Lemma respects_computes_to_same_name_l_ex_sqle_n {o} :
+  forall lib (ex : @NTerm o) n,
+    0 < n
+    -> respects_computes_to_same_name_l lib (ex_sqle_n lib ex n).
+Proof.
+  introv lt0n sqle comp h.
+  inversion sqle as [|? ? ? ecc]; subst; tcsp.
+  unfold ex_close_comput in ecc; repnd.
+  apply ecc2 in h; exrepnd.
+  unfold lblift in *; simpl in *; repnd; cpx.
+Qed.
+
+Lemma ex_approx_ex_sqle {o} :
+  forall lib (ex : @NTerm o) a b,
+    ex_approx lib ex a b <=> ex_sqle lib ex a b.
+Proof.
+  intros; sp_iff Case.
+
+  - Case "->"; intro Hap.
+    unfold sqle; intro.
+    revert a b Hap.
+    induction n; constructor; invertsn Hap; unfold ex_close_comput in Hap; sp.
+    unfold ex_close_comput. dands; auto.
+
+    + introv Hcv.
+      applydup Hap2 in Hcv. exrepnd.
+      exists tr_subterms; sp.
+      apply ex_clearbot_relbt in Hcv1.
+      unfold lblift in Hcv1; exrepnd.
+      split; auto. introv Hlt.
+      apply Hcv1 in Hlt.
+      eapply le_blift_olift; eauto.
+
+    + introv comp.
+      apply Hap3 in comp.
+      repndors; tcsp.
+      exrepnd.
+      repndors; try (complete (unfold bot2 in *; tcsp)).
+      right; eexists; eexists; dands;[eauto| |]; auto.
+
+    + introv comp.
+      apply Hap4 in comp; exrepnd.
+      eexists; dands; eauto.
+      introv.
+      apply IHn; auto.
+      pose proof (comp0 n0) as h; repndors; tcsp.
+      unfold bot2 in h; tcsp.
+
+  - Case "<-"; introv Hsq.
+    revert a b Hsq.
+    apply (ex_approx_acc).
+    introv  Hb Hs.
+    intros a b Hsq.
+    constructor.
+    repnud Hsq.
+    pose proof (Hsq 2) as H1s.
+    applydup @ex_sqlen_closed in H1s.
+    repnd.
+    split; auto.
+    dands; auto.
+
+    + introv Hcv.
+      invertsn H1s.
+      repnud H1s. duplicate Hcv as Hcvb.
+      apply H1s4 in Hcv.
+      exrepnd.
+      exists tr_subterms.
+      dands;auto.
+      apply (le_lblift (olift (ex_sqle lib ex))).
+      * apply le_olift. introv Hss. right. eauto.
+      * repnud Hcv0.  clear H1s. unfolds_base. dands; auto.
+        introv Hpt. unfolds_base. duplicate Hpt as Hptb. apply Hcv0 in Hpt.
+        repnud Hpt. parallel lv Hpt. parallel  nt1 Hpt .
+        parallel  nt2 Hpt. exrepnd.
+        dands;sp. repnud Hpt0.
+        split; auto. split;auto.
+        introv Hwf H1p H2p.
+        unfolds_base. intro nn.
+        pose proof (Hsq (S nn)) as Hnn.
+        invertsn Hnn.
+        repnud Hnn.
+        apply Hnn2 in Hcvb.
+        exrepnd.
+        eapply computes_to_value_eq in Hcv1; eauto.
+        invertsn Hcv1.
+        clear Hnn Hcv0.
+        repnud Hcvb0.
+        apply Hcvb0 in Hptb.
+        apply (blift_alpha_fun_r _ _ _ _ Hptb) in Hpt.
+        apply (blift_alpha_fun_l _ _ _ _ Hpt) in Hpt1.
+        clear Hpt Hptb Hcvb0 Hcvb1.
+        apply blift_selen_triv in Hpt1; eauto 1 with respects.
+        apply Hpt1; auto.
+
+    + introv ce.
+      invertsn H1s.
+      repnud H1s.
+      applydup H1s5 in ce.
+      repndors; exrepnd; tcsp.
+
+      right.
+      eexists; eexists; dands;[eauto| |].
+
+      {
+        assert (ex_sqle lib ex a0 a'); [|complete auto].
+        intro n.
+        generalize (Hsq (S n)); intro k.
+
+        invertsn k; auto.
+        repnud k.
+        apply k3 in ce; repndors; exrepnd;
+          [|eapply computes_to_exception_eq in ce3; eauto; repnd; subst; auto].
+      }
+
+    + introv comp.
+      invertsn H1s.
+      repnud H1s.
+      applydup H1s6 in comp; exrepnd.
+      eexists; dands; eauto.
+
+      introv.
+      right; apply Hs.
+      intro k.
+      pose proof (Hsq (S k)) as h.
+      invertsn h.
+      repnud h.
+      apply h4 in comp; exrepnd.
+      eapply reduces_to_eq_val_like in comp3;
+        try (exact comp0); eauto 3 with slow; ginv; auto.
+Qed.
+
 Lemma ex_sqlen_n_trans {o} :
   forall lib (ex : @NTerm o) n, trans_rel (ex_sqle_n lib ex n).
 Proof.
   induction n; intros a b c Hab Hbc;
     invertsn Hab; invertsn Hbc; constructor; auto;[].
-  eapply trans_rel_ex_close_comput;[| |eauto|eauto]; eauto 3 with slow.
-  apply respects_alpha_ex_sqlen.
+  eapply trans_rel_ex_close_comput;[| | |eauto|eauto]; eauto 3 with slow.
+  { apply respects_alpha_ex_sqlen. }
+
 Qed.
 
 Lemma trans_rel_olift_ex_sqlen {o} :
@@ -177,19 +328,6 @@ Proof.
 Qed.
 
 
-
-Theorem ex_sqlen_closed {o} :
-  forall lib (ex : @NTerm o) n, is_rel_on_progs (ex_sqle_n lib ex n).
-Proof.
-  induction n as [| n Hind]; intros t1 t2 Hsq;
-    invertsn Hsq; auto.
-  rename Hsq into Hclose.
-  unfold ex_close_comput in Hclose.
-  sp; auto.
-Qed.
-
-Definition ex_sqle {o} lib ex (tl tr : @NTerm o) :=
-  forall n, ex_sqle_n lib ex n tl tr.
 
 Definition ex_sq_closure {o} lib ex :=
   fun (R : @NTerm o -> @NTerm o -> [univ]) =>
@@ -247,98 +385,4 @@ Proof.
   - introv comp.
     apply Hcr5 in comp; exrepnd.
     eexists; dands; eauto.
-Qed.
-
-Lemma ex_approx_ex_sqle {o} :
-  forall lib (ex : @NTerm o) a b,
-    ex_approx lib ex a b <=> ex_sqle lib ex a b.
-Proof.
-  intros; sp_iff Case.
-
-  - Case "->"; intro Hap.
-    unfold sqle; intro.
-    revert a b Hap.
-    induction n; constructor; invertsn Hap; unfold ex_close_comput in Hap; sp.
-    unfold ex_close_comput. dands; auto.
-
-    + introv Hcv.
-      applydup Hap2 in Hcv. exrepnd.
-      exists tr_subterms; sp.
-      apply ex_clearbot_relbt in Hcv1.
-      unfold lblift in Hcv1; exrepnd.
-      split; auto. introv Hlt.
-      apply Hcv1 in Hlt.
-      eapply le_blift_olift; eauto.
-
-    + introv comp.
-      apply Hap4 in comp; exrepnd.
-      eexists; dands; eauto.
-      introv.
-      apply IHn; auto.
-      pose proof (comp0 n0) as h; repndors; tcsp.
-      unfold bot2 in h; tcsp.
-
-  - Case "<-"; introv Hsq.
-    revert a b Hsq.
-    apply (ex_approx_acc).
-    introv  Hb Hs. intros a b Hsq.
-    constructor. repnud Hsq. pose proof (Hsq 1) as H1s.
-    applydup @ex_sqlen_closed in H1s. repnd.
-    split; auto.
-    dands; auto.
-
-    + introv Hcv.
-      invertsn H1s.
-      repnud H1s. duplicate Hcv as Hcvb.
-      apply H1s4 in Hcv.
-      exrepnd.
-      exists tr_subterms.
-      dands;auto.
-      apply (le_lblift (olift (ex_sqle lib ex))).
-      * apply le_olift. introv Hss. right. eauto.
-      * repnud Hcv0.  clear H1s. unfolds_base. dands; auto.
-        introv Hpt. unfolds_base. duplicate Hpt as Hptb. apply Hcv0 in Hpt.
-        repnud Hpt. parallel lv Hpt. parallel  nt1 Hpt .
-        parallel  nt2 Hpt. exrepnd.
-        dands;sp. repnud Hpt0.
-        split; auto. split;auto.
-        introv Hwf H1p H2p.
-        unfolds_base. intro nn.
-        pose proof (Hsq (S nn)) as Hnn.
-        invertsn Hnn.
-        repnud Hnn.
-        apply Hnn2 in Hcvb.
-        exrepnd.
-        eapply computes_to_value_eq in Hcv1; eauto.
-        invertsn Hcv1.
-        clear Hnn Hcv0.
-        repnud Hcvb0.
-        apply Hcvb0 in Hptb.
-        apply (blift_alpha_fun_r _ _ _ _ Hptb) in Hpt.
-        apply (blift_alpha_fun_l _ _ _ _ Hpt) in Hpt1.
-        clear Hpt Hptb Hcvb0 Hcvb1.
-        apply blift_selen_triv in Hpt1; eauto 1 with respects.
-        apply Hpt1; auto.
-
-    + introv ce.
-      invertsn H1s.
-      repnud H1s.
-      applydup H1s5 in ce.
-      repndors; exrepnd; tcsp.
-
-    + introv comp.
-      invertsn H1s.
-      repnud H1s.
-      applydup H1s6 in comp; exrepnd.
-      eexists; dands; eauto.
-
-      introv.
-      right; apply Hs.
-      intro k.
-      pose proof (Hsq (S k)) as h.
-      invertsn h.
-      repnud h.
-      apply h4 in comp; exrepnd.
-      eapply reduces_to_eq_val_like in comp3;
-        try (exact comp0); eauto 3 with slow; ginv; auto.
 Qed.

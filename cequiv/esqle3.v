@@ -31,7 +31,7 @@
 
 
 Require Export sqle.
-Require Export eapprox.
+Require Export eapprox3.
 
 
 Inductive ex_sqle_n {o} (lib : @library o) (ex : @NTerm o)
@@ -120,6 +120,12 @@ Proof.
   eapply blift_trans;[| | |exact ln0|exact ln1]; auto.
 Qed.
 
+Definition respects_computes_to_same_name_l {o} lib (R : bin_rel (@NTerm o)) :=
+  forall a b c,
+    R a b
+    -> computes_to_same_name lib b c
+    -> computes_to_same_name lib a c.
+
 Lemma trans_rel_ex_close_comput {o} :
   forall lib ex (R : @NTerm o -> @NTerm o -> [univ]),
   trans_rel R
@@ -145,8 +151,7 @@ Proof.
 
     {
       left.
-      eapply compute_to_same_name_respects_alpha_l;[| |exact comp5];
-        eauto 3 with slow.
+      eapply Ht; eauto.
     }
 
     right.
@@ -164,7 +169,7 @@ Proof.
   induction n; intros a b c Hab Hbc;
     invertsn Hab; invertsn Hbc; constructor; auto;[].
   eapply trans_rel_ex_close_comput;[| |eauto|eauto]; eauto 3 with slow.
-  apply respects_alpha_ex_sqlen.
+  { apply respects_alpha_ex_sqlen. }
 Qed.
 
 Lemma trans_rel_olift_ex_sqlen {o} :
@@ -223,6 +228,12 @@ Proof.
     auto.
 
   - introv comp.
+    apply Hrp3 in comp; repndors; tcsp.
+    exrepnd.
+    right.
+    eexists; eexists; dands;[eauto| |]; auto.
+
+  - introv comp.
     apply Hrp4 in comp; exrepnd.
     eexists; dands; eauto.
 Qed.
@@ -243,6 +254,12 @@ Proof.
     exrepnd.
     dands;sp.
     eapply le_blift_olift; eauto.
+
+  - introv comp.
+    apply Hcr4 in comp; repndors; tcsp.
+    exrepnd.
+    right.
+    eexists; eexists; dands;[eauto| |]; auto.
 
   - introv comp.
     apply Hcr5 in comp; exrepnd.
@@ -271,6 +288,13 @@ Proof.
       eapply le_blift_olift; eauto.
 
     + introv comp.
+      apply Hap3 in comp; repndors; tcsp; try (complete (unfold bot2 in *; tcsp)).
+      exrepnd.
+      repndors; tcsp; try (complete (unfold bot2 in *; tcsp)).
+      right.
+      eexists; eexists; dands;[eauto| |]; auto.
+
+    + introv comp.
       apply Hap4 in comp; exrepnd.
       eexists; dands; eauto.
       introv.
@@ -282,7 +306,9 @@ Proof.
     revert a b Hsq.
     apply (ex_approx_acc).
     introv  Hb Hs. intros a b Hsq.
-    constructor. repnud Hsq. pose proof (Hsq 1) as H1s.
+    constructor.
+    repnud Hsq.
+    pose proof (Hsq 2) as H1s.
     applydup @ex_sqlen_closed in H1s. repnd.
     split; auto.
     dands; auto.
@@ -325,6 +351,22 @@ Proof.
       repnud H1s.
       applydup H1s5 in ce.
       repndors; exrepnd; tcsp.
+
+      {
+        assert (ex_sqle lib ex a0 ex);[|complete auto].
+        intro n.
+        generalize (Hsq (S n)); intro k.
+
+        invertsn k; auto.
+        repnud k.
+        applydup k3 in ce; exrepnd.
+        repndors; tcsp.
+        exrepnd.
+
+        eapply computes_to_exception_eq in ce3; eauto; repnd; subst; auto.
+      }
+
+      }
 
     + introv comp.
       invertsn H1s.
