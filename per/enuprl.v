@@ -21,7 +21,6 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
   Websites: http://nuprl.org/html/verification/
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq

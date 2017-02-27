@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -155,6 +160,9 @@ Definition mk_free_from_atoms {p} (T t : @NTerm p) :=
 
 Definition mk_equality {p} (t1 t2 T : @NTerm p) :=
   oterm (Can NEquality) [nobnd t1,nobnd t2,nobnd T].
+
+Definition mk_aequality {p} (t1 t2 T : @NTerm p) :=
+  oterm (Can NAEquality) [nobnd t1,nobnd t2,nobnd T].
 
 Definition mk_tequality {p} (t1 t2 : @NTerm p) :=
   oterm (Can NTEquality) [nobnd t1,nobnd t2].
@@ -397,6 +405,8 @@ Definition mk_top {p} : @NTerm p := mk_isect mk_false nvarx mk_false.
 
 Definition mk_member {p} (t T : @NTerm p) := mk_equality t t T.
 
+Definition mk_amember {p} (t T : @NTerm p) := mk_aequality t t T.
+
 Definition mk_type {p} (t : @NTerm p) := mk_tequality t t.
 
 Definition mk_bool {p} : @NTerm p := mk_union mk_unit mk_unit.
@@ -559,6 +569,12 @@ Lemma fold_equality {p} :
     = mk_equality a b c.
 Proof. sp. Qed.
 
+Lemma fold_aequality {p} :
+  forall (a b c : @NTerm p),
+    oterm (Can NAEquality) [ nobnd a, nobnd b, nobnd c ]
+    = mk_aequality a b c.
+Proof. sp. Qed.
+
 Lemma fold_free_from_atom {p} :
   forall (a b c : @NTerm p),
     oterm (Can NFreeFromAtom) [ nobnd a, nobnd b, nobnd c ]
@@ -590,6 +606,11 @@ Proof. sp. Qed.
 Lemma fold_member {p} :
   forall (t T : @NTerm p),
     mk_equality t t T = mk_member t T.
+Proof. sp. Qed.
+
+Lemma fold_amember {p} :
+  forall (t T : @NTerm p),
+    mk_aequality t t T = mk_amember t T.
 Proof. sp. Qed.
 
 Lemma fold_mk_type {p} :
@@ -3716,6 +3737,56 @@ Proof.
   intros; rw @wf_member_iff; sp.
 Qed.
 
+Lemma wf_aequality {p} :
+  forall a b T : @NTerm p,
+    wf_term a -> wf_term b -> wf_term T -> wf_term (mk_aequality a b T).
+Proof.
+  intros a b T; repeat (rw <- @nt_wf_eq).
+  intros nta ntb ntt; inversion nta; inversion ntb; subst;
+  constructor; allsimpl; sp; subst; auto; constructor; auto.
+Qed.
+
+Lemma wf_aequality_iff {p} :
+  forall a b T : @NTerm p,
+    (wf_term a # wf_term b # wf_term T) <=> wf_term (mk_aequality a b T).
+Proof.
+  sp; split; introv h; repnd.
+  - apply wf_aequality; sp.
+  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term;try (exact h); simpl; sp.
+Qed.
+
+Lemma wf_qequality_iff2 {p} :
+  forall a b T : @NTerm p,
+    wf_term (mk_aequality a b T) <=> (wf_term a # wf_term b # wf_term T).
+Proof.
+  intros; rw @wf_aequality_iff; sp.
+Qed.
+
+Lemma wf_amember {p} :
+  forall a T : @NTerm p,
+    wf_term a -> wf_term T -> wf_term (mk_amember a T).
+Proof.
+  sp; unfold mk_amember; apply wf_aequality; sp.
+Qed.
+
+Lemma wf_amember_iff {p} :
+  forall a T : @NTerm p, (wf_term a # wf_term T) <=> wf_term (mk_amember a T).
+Proof.
+  sp; split; intro i.
+  apply wf_member; sp.
+  allrw @wf_term_eq.
+  inversion i as [|?| o lnt k e ]; subst; allsimpl.
+  generalize (k (nobnd a)) (k (nobnd T)); intros i1 i2.
+  dest_imp i1 hyp; dest_imp i2 hyp.
+  inversion i1; inversion i2; subst; sp.
+Qed.
+
+Lemma wf_amember_iff2 {p} :
+  forall a T : @NTerm p, wf_term (mk_amember a T) <=> (wf_term a # wf_term T).
+Proof.
+  intros; rw @wf_amember_iff; sp.
+Qed.
+
 Lemma wf_tequality {p} :
   forall a b : @NTerm p, wf_term a -> wf_term b -> wf_term (mk_tequality a b).
 Proof.
@@ -4080,6 +4151,79 @@ Lemma isprog_member {p} :
 Proof.
   unfold mk_member; sp; apply isprog_equality; sp.
 Qed.
+
+Lemma isprogram_aequality {p} :
+  forall a b T : @NTerm p,
+    isprogram a
+    -> isprogram b
+    -> isprogram T
+    -> isprogram (mk_aequality a b T).
+Proof.
+  repeat constructor.
+  unfold closed; simpl.
+  allrw <- null_iff_nil.
+  repeat (rw null_app).
+  repeat (rw null_iff_nil).
+  allunfold @isprogram; allunfold @closed.
+  repeat (rewrite remove_nvars_nil_l); sp.
+  simpl; sp; allunfold @isprogram; sp; subst; constructor; auto.
+Qed.
+
+Lemma isprogram_aequality_iff {p} :
+  forall a b c : @NTerm p,
+    (isprogram a # isprogram b # isprogram c) <=> isprogram (mk_aequality a b c).
+Proof.
+  intros; split; intro i.
+  apply isprogram_aequality; sp.
+  inversion i as [cl w].
+  allunfold @closed; allsimpl.
+  allrw remove_nvars_nil_l.
+  allrw app_nil_r.
+  allrw app_eq_nil_iff; repnd; allrw.
+  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
+  dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
+  unfold isprogram; allrw.
+  inversion i1; inversion i2; inversion i3; subst; sp.
+Qed.
+
+Lemma isprog_aequality {p} :
+  forall a b T : @NTerm p,
+    isprog a
+    -> isprog b
+    -> isprog T
+    -> isprog (mk_aequality a b T).
+Proof.
+  sp; allrw @isprog_eq.
+  apply isprogram_aequality; auto.
+Qed.
+
+Lemma isvalue_aequality {p} :
+  forall a b T : @NTerm p,
+    isprogram (mk_aequality a b T) -> isvalue (mk_aequality a b T).
+Proof.
+ intros; constructor; simpl; auto.
+Qed.
+
+Lemma isprogram_amember {p} :
+  forall t T : @NTerm p,
+    isprogram t
+    -> isprogram T
+    -> isprogram (mk_amember t T).
+Proof.
+  unfold mk_amember; sp.
+  apply isprogram_aequality; sp.
+Qed.
+
+Lemma isprog_amember {p} :
+  forall t T : @NTerm p,
+    isprog t
+    -> isprog T
+    -> isprog (mk_amember t T).
+Proof.
+  unfold mk_amember; sp; apply isprog_aequality; sp.
+Qed.
+
 
 Lemma isprogram_tequality {p} :
   forall a b : @NTerm p,
@@ -6816,6 +6960,36 @@ Proof.
   introv; destruct_cterms; apply cterm_eq; auto.
 Qed.
 
+Definition mkc_aequality {p} (t1 t2 T : @CTerm p) : CTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  let (c,z) := T in
+    exist isprog (mk_aequality a b c) (isprog_aequality a b c x y z).
+
+Lemma mkc_aequality_eq {p} :
+  forall a b c d T U : @CTerm p,
+    mkc_aequality a b T = mkc_aequality c d U
+    -> a = c # b = d # T = U.
+Proof.
+  intros.
+  destruct a, b, c, d, T, U.
+  allunfold @mkc_aequality.
+  inversion H; subst.
+  eauto 6 with pi.
+Qed.
+
+Definition mkc_amember {p} (t T : @CTerm p) : CTerm :=
+  let (a,x) := t in
+  let (b,y) := T in
+    exist isprog (mk_amember a b) (isprog_amember a b x y).
+
+Lemma fold_mkc_amember {p} :
+  forall t T : @CTerm p,
+    mkc_aequality t t T = mkc_amember t T.
+Proof.
+  introv; destruct_cterms; apply cterm_eq; auto.
+Qed.
+
 Definition mkc_tequality {p} (t1 t2 : @CTerm p) : CTerm :=
   let (a,x) := t1 in
   let (b,y) := t2 in
@@ -9450,6 +9624,20 @@ Proof.
   constructor; simpl; sp; subst; constructor; sp.
 Qed.
 
+Lemma isprog_vars_aequality {p} :
+  forall vs (a b T : @NTerm p),
+    isprog_vars vs a
+    -> isprog_vars vs b
+    -> isprog_vars vs T
+    -> isprog_vars vs (mk_aequality a b T).
+Proof.
+  introv ipa ipb ipt.
+  allrw @isprog_vars_eq; allsimpl.
+  allrw remove_nvars_nil_l; allrw app_nil_r.
+  allrw subvars_app_l; sp.
+  constructor; simpl; sp; subst; constructor; sp.
+Qed.
+
 Lemma isprog_vars_tequality {p} :
   forall vs (a b : @NTerm p),
     isprog_vars vs a
@@ -10073,6 +10261,19 @@ Proof.
   allrw subvars_app_l; sp.
 Qed.
 
+Lemma isprog_vars_aequality_iff {p} :
+  forall vs (a b T : @NTerm p),
+    (isprog_vars vs a # isprog_vars vs b # isprog_vars vs T)
+    <=> isprog_vars vs (mk_aequality a b T).
+Proof.
+  introv; split; intro k.
+  apply isprog_vars_aequality; sp.
+  allrw @isprog_vars_eq; allsimpl; allrw @nt_wf_eq.
+  allrw remove_nvars_nil_l; allrw app_nil_r.
+  allrw <- @wf_aequality_iff.
+  allrw subvars_app_l; sp.
+Qed.
+
 Lemma isprog_vars_tequality_iff {p} :
   forall vs (a b : @NTerm p),
     (isprog_vars vs a # isprog_vars vs b)
@@ -10157,6 +10358,7 @@ Ltac unfold_all_mk :=
        ;allunfold mk_efree_from_atom
        ;allunfold mk_free_from_atoms
        ;allunfold mk_equality
+       ;allunfold mk_aequality
        ;allunfold mk_tequality
        ;allunfold mk_cequiv
        ;allunfold mk_inl

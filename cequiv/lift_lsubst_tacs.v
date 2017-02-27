@@ -463,6 +463,24 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [ct name];
         clear_irr; tac
 
+    (* AEquality *)
+    | context [lsubstc (mk_aequality ?x ?y ?T) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let w2 := fresh "w2" in
+      let wt := fresh "wT" in
+      let c1 := fresh "c1" in
+      let c2 := fresh "c2" in
+      let ct := fresh "cT" in
+      generalize (lsubstc_mk_aequality_ex x y T s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [w2 name];
+        destruct name as [wt name];
+        destruct name as [c1 name];
+        destruct name as [c2 name];
+        destruct name as [ct name];
+        clear_irr; tac
+
     (* TEquality *)
     | context [lsubstc (mk_tequality ?x ?y) ?w ?s ?c] =>
       let w1 := fresh "w1" in
@@ -849,6 +867,20 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
       let ct := fresh "ct" in
       let cT := fresh "cT" in
       generalize (lsubstc_mk_member_ex x T s w c);
+        intro name;
+        destruct name as [wt name];
+        destruct name as [wT name];
+        destruct name as [ct name];
+        destruct name as [cT name];
+        clear_irr; tac
+
+    (* AMember *)
+    | context [lsubstc (mk_amember ?x ?T) ?w ?s ?c] =>
+      let wt := fresh "wt" in
+      let wT := fresh "wT" in
+      let ct := fresh "ct" in
+      let cT := fresh "cT" in
+      generalize (lsubstc_mk_amember_ex x T s w c);
         intro name;
         destruct name as [wt name];
         destruct name as [wT name];
