@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -41,39 +47,47 @@ Lemma equality_in_subtype_rel {p} :
   forall lib (t u A B : @CTerm p),
     equality lib t u (mkc_subtype_rel A B)
     <=>
-    ((t ===>(lib) mkc_axiom)
-     # (u ===>(lib) mkc_axiom)
-     # type lib A
-     # (inhabited_type lib A -> type lib B)
-     # subtype_rel lib A B).
+    { x , y : CTerm
+    , (t ===>(lib) (mkc_refl x))
+    # (u ===>(lib) (mkc_refl y))
+    # equality lib x mkc_id (mkc_fun A B)
+    # equality lib y mkc_id (mkc_fun A B)
+    # type lib A
+    # (inhabited_type lib A -> type lib B)
+    # subtype_rel lib A B }.
 Proof.
   introv.
   rw @mkc_subtype_rel_eq.
   rw @equality_in_member.
-  rw @equality_in_fun.
-  split; intro k; repnd; dands; auto.
 
-  - introv e.
-    apply k in e.
-    pose proof (cequivc_apply_id lib a) as e1.
-    pose proof (cequivc_apply_id lib a') as e2.
-    apply (equality_trans _ _ (mkc_apply mkc_id a)).
-    + apply equality_sym; apply equality_respects_cequivc; auto.
-      apply equality_refl in e; auto.
-    + apply (equality_trans _ _ (mkc_apply mkc_id a')); auto.
-      apply equality_respects_cequivc; auto.
-      apply equality_sym in e; apply equality_refl in e; auto.
+  split; intro k; exrepnd.
 
-  - introv e.
-    apply k in e.
-    pose proof (cequivc_apply_id lib a) as e1.
-    pose proof (cequivc_apply_id lib a') as e2.
-    rwg e1.
-    rwg e2; auto.
+  - exists x y; dands; auto.
+
+    { apply equality_sym; auto. }
+
+    { apply equality_sym; auto. }
+
+    { rw @equality_in_fun in k1; tcsp. }
+
+    { rw @equality_in_fun in k1; tcsp. }
+
+    { apply equality_refl in k1.
+      rw @equality_in_fun in k1; repnd.
+      introv xx.
+      applydup k1 in xx.
+      eapply equality_respects_cequivc_left in xx0;[|apply cequivc_apply_id].
+      eapply equality_respects_cequivc_right in xx0;[|apply cequivc_apply_id].
+      auto. }
+
+  - exists x y.
+    dands; auto.
+    { apply equality_sym; auto. }
+    { apply equality_sym; auto. }
 Qed.
 
-Lemma inhabited_subtype_rel {p} :
-  forall lib (A B : @CTerm p),
+Lemma inhabited_subtype_rel {o} :
+  forall lib (A B : @CTerm o),
     inhabited_type lib (mkc_subtype_rel A B)
     <=>
     (type lib A
@@ -81,18 +95,29 @@ Lemma inhabited_subtype_rel {p} :
      # subtype_rel lib A B).
 Proof.
   introv; split; intro k.
+
   - unfold inhabited_type in k; exrepnd.
-    rw @equality_in_subtype_rel in k0; repnd; dands; auto.
+    rw @equality_in_subtype_rel in k0; exrepnd.
+    dands; auto.
+
   - repnd.
     unfold inhabited_type.
-    exists (@mkc_axiom p).
+    exists (@mkc_refl o mkc_id).
     apply equality_in_subtype_rel.
-    dands; spcast; auto; apply computes_to_valc_refl; auto.
+    exists (@mkc_id o) (@mkc_id o).
+    dands; spcast; auto; try (apply computes_to_valc_refl; auto; eauto 2 with slow).
+
+    + apply equality_in_fun; dands; auto.
+      introv e.
+      applydup k in e.
+      eapply equality_respects_cequivc_left;[apply cequivc_sym;apply cequivc_apply_id|].
+      eapply equality_respects_cequivc_right;[apply cequivc_sym;apply cequivc_apply_id|].
+      auto.
+
+    + apply equality_in_fun; dands; auto.
+      introv e.
+      applydup k in e.
+      eapply equality_respects_cequivc_left;[apply cequivc_sym;apply cequivc_apply_id|].
+      eapply equality_respects_cequivc_right;[apply cequivc_sym;apply cequivc_apply_id|].
+      auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

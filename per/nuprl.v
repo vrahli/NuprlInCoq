@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -305,6 +310,10 @@ Proof.
   remember (univi lib (k + i)) as u; revert Hequ.
   clear cl.
   close_cases (induction IHk using @close_ind') Case; sp; subst.
+
+  - Case "CL_aeq".
+    apply CL_aeq; unfold per_aeq; sp.
+    exists A B a1 a2 b1 b2 eqa; sp.
 
   - Case "CL_eq".
     apply CL_eq; unfold per_eq; sp.
@@ -621,6 +630,12 @@ Proof.
   - Case "CL_init".
     apply CL_init.
     exists i; sp.
+
+  - Case "CL_aeq".
+    apply CL_aeq.
+    unfold per_aeq; sp.
+    exists A B a1 a2 b1 b2 eqa; sp.
+    apply IHn with (i0 := i); sp.
 
   - Case "CL_eq".
     apply CL_eq.

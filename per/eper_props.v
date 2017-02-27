@@ -30,9 +30,8 @@
 *)
 
 
-Require Export nuprl_props.
-Require Export choice.
-Require Export cvterm.
+Require Export enuprl_props.
+Require Export per_props.
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
@@ -50,17 +49,15 @@ Require Export cvterm.
 
 (* begin hide *)
 
-Notation "term-equality" := (CTerm -> CTerm -> [U]).
-
 
 (* =============== Some general properties ================= *)
 
-Lemma equality_in_uni {p} :
+Lemma eequality_in_uni {p} :
   forall lib a b i,
-    @equality p lib a b (mkc_uni i)
-    -> tequality lib a b.
+    @eequality p lib a b (mkc_uni i)
+    -> etequality lib a b.
 Proof.
-  unfold tequality, equality, nuprl; introv e; exrepnd.
+  unfold etequality, eequality, enuprl; introv e; exrepnd.
 
   inversion e1; subst; try not_univ.
   duniv j h.

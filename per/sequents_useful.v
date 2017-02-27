@@ -21,7 +21,6 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
   Websites: http://nuprl.org/html/verification/
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
@@ -1051,26 +1050,28 @@ Proof.
                    (snoc (snoc s2 (x, x0)) (y, y0))); clear seqt; intro seqt.
   repeat (autodimp seqt hyp); exrepnd.
 
-  (* hyps_functionality *)
-  apply hyps_functionality_snoc2; simpl; auto.
-  introv e sim'; lsubst_tac; try (apply tequality_base).
-  apply hyps_functionality_snoc2; simpl; auto.
-  introv e sim'; lsubst_tac; try (apply tequality_base).
+  {
+    (* hyps_functionality *)
+    apply hyps_functionality_snoc2; simpl; auto.
+    introv e sim'; lsubst_tac; try (apply tequality_base).
+    apply hyps_functionality_snoc2; simpl; auto.
+    introv e sim'; lsubst_tac; try (apply tequality_base).
+  }
 
-  (* similarity *)
-  apply similarity_snoc; simpl.
-  exists (snoc s1 (x, x0)) (snoc s2 (x, x0)) y0 y0 (@wf_base o)
-         (cover_vars_base (snoc s1 (x, x0))); sp;
-  try (complete (lift_lsubst; rw @equality_in_base_iff; spcast; apply cequivc_refl)).
-  apply similarity_snoc; simpl.
-  exists s1 s2 x0 x0 (@wf_base o) (cover_vars_base s1); sp;
-  try (complete (lift_lsubst; rw @equality_in_base_iff; spcast; apply cequivc_refl)).
+  {
+    (* similarity *)
+    apply similarity_snoc; simpl.
+    exists (snoc s1 (x, x0)) (snoc s2 (x, x0)) y0 y0 (@wf_base o)
+           (cover_vars_base (snoc s1 (x, x0))); sp;
+      try (complete (lift_lsubst; rw @equality_in_base_iff; spcast; apply cequivc_refl)).
+    apply similarity_snoc; simpl.
+    exists s1 s2 x0 x0 (@wf_base o) (cover_vars_base s1); sp;
+      try (complete (lift_lsubst; rw @equality_in_base_iff; spcast; apply cequivc_refl)).
+  }
 
   lsubst_tac.
-
-  SearchAbout equality mkc_equality.
-  rw @member_eq in seqt1.
-  rw <- @member_equality_iff in seqt1; sp.
+  dands; auto.
+  apply equality_in_mkc_equality in seqt1; exrepnd; auto.
 Qed.
 
 Lemma sequent_equality_implies_member {o} :
@@ -1088,11 +1089,13 @@ Proof.
   vr_seq_true.
   generalize (seq s1 s2 eqh sim); clear seq; intro seq; exrepnd.
   lsubst_tac.
-  allrw @member_eq.
-  rw <- @member_member_iff.
-  rw <- @member_equality_iff in seq1.
-  dands; try (complete (apply equality_refl in seq1; auto)).
+
+  apply tequality_mkc_equality_sp in seq0; repnd.
   rw @tequality_mkc_member_sp.
-  rw @tequality_mkc_equality in seq0; repnd.
-  dands; auto.
+  dands; tcsp.
+
+  apply equality_in_mkc_equality in seq1; exrepnd.
+  rw @equality_in_member.
+  exists x1 x2; dands; auto.
+  eapply equality_trans;[|eauto]; auto.
 Qed.

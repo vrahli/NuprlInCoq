@@ -46,11 +46,3 @@ Proof.
       apply equality_sym in eqa; apply equality_refl in eqa; auto.
   - apply tequality_mkc_equality_sp; dands; auto.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

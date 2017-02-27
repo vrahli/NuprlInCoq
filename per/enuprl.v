@@ -135,6 +135,10 @@ Proof.
   clear cl.
   close_cases (induction IHk using @close_ind') Case; sp; subst.
 
+  - Case "CL_aeq".
+    apply CL_aeq; unfold per_aeq; sp.
+    exists A B a1 a2 b1 b2 eqa; sp.
+
   - Case "CL_eq".
     apply CL_eq; unfold per_eq; sp.
     exists A B a1 a2 b1 b2 eqa; sp.
@@ -317,7 +321,7 @@ Proof.
   rww e; sp.
 Qed.
 
-Lemma enuprli_implies_nuprl {pp} :
+Lemma enuprli_implies_enuprl {pp} :
   forall lib (a b : @CTerm pp) i eq,
     enuprli lib i a b eq
     -> enuprl lib a b eq.
@@ -330,6 +334,12 @@ Proof.
   - Case "CL_init".
     apply CL_init.
     exists i; sp.
+
+  - Case "CL_aeq".
+    apply CL_aeq.
+    unfold per_aeq; sp.
+    exists A B a1 a2 b1 b2 eqa; sp.
+    apply IHn with (i0 := i); sp.
 
   - Case "CL_eq".
     apply CL_eq.

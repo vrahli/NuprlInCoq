@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -1079,6 +1085,7 @@ Ltac unfold_all_mk2 :=
     allunfold mk_var;
     allunfold mk_sup;
     allunfold mk_equality;
+    allunfold mk_aequality;
     allunfold mk_tequality;
     allunfold mk_cequiv;
     allunfold mk_exception;
@@ -1324,6 +1331,37 @@ Proof.
   applydup @computes_to_value_isvalue in k1 as j.
   inversion j as [u isp v]; subst.
   allrw <- @isprogram_equality_iff; repnd.
+  exists (mk_cterm a' isp0) (mk_cterm b' isp1) (mk_cterm T' isp); simpl; sp.
+Qed.
+
+Lemma cequiv_mk_aequality {p} :
+  forall lib t t' a b T,
+    computes_to_value lib t (mk_aequality a b T)
+    -> cequiv lib t t'
+    -> {a', b', T' : @NTerm p $
+         computes_to_value lib t' (mk_aequality a' b' T')
+         # cequiv lib a a'
+         # cequiv lib b b'
+         # cequiv lib T T'}.
+Proof. prove_cequiv_mk.
+Qed.
+
+Lemma cequivc_mkc_aequality {p} :
+  forall lib t t' a b T,
+    computes_to_valc lib t (mkc_aequality a b T)
+    -> cequivc lib t t'
+    -> {a', b', T' : @CTerm p $
+         computes_to_valc lib t' (mkc_aequality a' b' T')
+         # cequivc lib a a'
+         # cequivc lib b b'
+         # cequivc lib T T'}.
+Proof.
+  unfold computes_to_valc, cequivc; intros; destruct_cterms; allsimpl.
+  generalize (cequiv_mk_aequality lib x3 x2 x1 x0 x); intro k.
+  repeat (dest_imp k hyp); exrepnd.
+  applydup @computes_to_value_isvalue in k1 as j.
+  inversion j as [u isp v]; subst.
+  allrw <- @isprogram_aequality_iff; repnd.
   exists (mk_cterm a' isp0) (mk_cterm b' isp1) (mk_cterm T' isp); simpl; sp.
 Qed.
 

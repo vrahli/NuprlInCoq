@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -34,6 +39,7 @@ Require Import close_type_sys_per_base.
 Require Import close_type_sys_per_sqle.
 Require Import close_type_sys_per_sqequal.
 Require Import close_type_sys_per_eq.
+Require Import close_type_sys_per_aeq.
 Require Import close_type_sys_per_teq.
 Require Import close_type_sys_per_isect.
 (*Require Import close_type_sys_per_eisect.*)
@@ -107,6 +113,10 @@ Proof.
     admit.
 
   - Case "CL_cequiv".
+    admit.
+
+  - Case "CL_aeq".
+
     admit.
 
   - Case "CL_eq".
@@ -209,6 +219,17 @@ Proof.
 
   - Case "CL_cequiv".
     apply close_type_system_cequiv; auto.
+
+
+  - Case "CL_aeq".
+    apply @close_type_system_aeq
+    with (A := A)
+           (B := B)
+           (a1 := a1)
+           (a2 := a2)
+           (b1 := b1)
+           (b2 := b2)
+           (eqa := eqa); auto.
 
 
   - Case "CL_eq".
