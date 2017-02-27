@@ -35,11 +35,15 @@ Require Export nuprl.
 
 (* extensional Nuprl *)
 
+Inductive eclose {o} lib ts (A B : @CTerm o) eq :=
+| EClose :
+    close lib ts A A eq
+    -> close lib ts B B eq
+    -> eclose lib ts A B eq.
+Hint Constructors eclose.
+
 Definition eunivi_eq {o} lib ts (A A' : @CTerm o) :=
-  { eqa , eqa' : per(o)
-  , close lib ts A A eqa
-  # close lib ts A' A' eqa'
-  # eqa <=2=> eqa' }.
+  { eqa : per(o) , eclose lib ts A A' eqa }.
 
 Fixpoint eunivi {o} lib (i : nat) (T T' : @CTerm o) (eq : per(o)) : [U] :=
   match i with
@@ -104,13 +108,16 @@ Proof.
   exists j; sp; omega.
 Qed.
 
-Definition enuprli {p} lib (i : nat) := @close p lib (eunivi lib i).
+Definition enuprli {o} lib (i : nat) (A B : @CTerm o) (eq : per(o)) :=
+  eclose lib (eunivi lib i) A B eq.
 
+(*
 Lemma fold_enuprli {p} :
   forall lib i, close lib (eunivi lib i) = @enuprli p lib i.
 Proof.
   sp.
 Qed.
+*)
 
 Definition euniv {p} lib (T T' : @CTerm p) (eq : per) :=
   {i : nat , eunivi lib i T T' eq}.
@@ -122,16 +129,17 @@ Proof.
   sp; split; sp.
 Qed.
 
-Definition enuprl {p} lib := @close p lib (euniv lib).
+Definition enuprl {o} lib (A B : @CTerm o) (eq : per(o)) :=
+  eclose lib (euniv lib) A B eq.
 
-Lemma etypable_in_higher_univ {o} :
+Lemma etypable_close_eunivi_in_higher_univ {o} :
   forall lib i (T T' : @CTerm o) eq,
-    enuprli lib i T T' eq
-    -> forall k, enuprli lib (k + i) T T' eq.
+    close lib (eunivi lib i) T T' eq
+    -> forall k, close lib (eunivi lib (k + i)) T T' eq.
 Proof.
-  unfold enuprli; introv cl; induction k; simpl; sp.
+  introv cl; induction k; simpl; tcsp.
 
-  remember (univi lib (k + i)) as u; revert Hequ.
+  remember (eunivi lib (k + i)) as u; revert Hequ.
   clear cl.
   close_cases (induction IHk using @close_ind') Case; sp; subst.
 
@@ -240,7 +248,7 @@ Proof.
 
   - Case "CL_ffatom".
     apply CL_ffatom; unfold per_ffatom; sp.
-    exists A1 A2 x1 x2 a1 a2 eqa u0; sp.
+    exists A1 A2 x1 x2 a1 a2 eqa u; sp.
 
   - Case "CL_effatom".
     apply CL_effatom; unfold per_effatom; sp.
@@ -264,6 +272,19 @@ Proof.
     apply CL_product; unfold per_product; sp.
     exists eqa eqb; sp.
     exists A A' v v' B B'; sp.
+Qed.
+
+Lemma etypable_in_higher_univ {o} :
+  forall lib i (T T' : @CTerm o) eq,
+    enuprli lib i T T' eq
+    -> forall k, enuprli lib (k + i) T T' eq.
+Proof.
+  introv n; introv.
+  unfold enuprli in n.
+  inversion n as [n1 n2].
+  apply etypable_close_eunivi_in_higher_univ with (k0 := k) in n1.
+  apply etypable_close_eunivi_in_higher_univ with (k0 := k) in n2.
+  constructor; auto.
 Qed.
 
 Lemma etypable_in_higher_univ_r {p} :
@@ -321,12 +342,12 @@ Proof.
   rww e; sp.
 Qed.
 
-Lemma enuprli_implies_enuprl {pp} :
-  forall lib (a b : @CTerm pp) i eq,
-    enuprli lib i a b eq
-    -> enuprl lib a b eq.
+Lemma close_eunivi_implies_close_euniv {o} :
+  forall lib (a b : @CTerm o) i eq,
+    close lib (eunivi lib i) a b eq
+    -> close lib (euniv lib) a b eq.
 Proof.
-  unfold enuprli, enuprl; introv n.
+  introv n.
   remember (eunivi lib i) as k.
   revert i Heqk.
   close_cases (induction n using @close_ind') Case; sp; subst.
@@ -535,6 +556,18 @@ Proof.
     exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
     apply IHn with (i0 := i); sp.
     apply recb with (i0 := i); sp.
+Qed.
+
+Lemma enuprli_implies_enuprl {pp} :
+  forall lib (a b : @CTerm pp) i eq,
+    enuprli lib i a b eq
+    -> enuprl lib a b eq.
+Proof.
+  unfold enuprli, enuprl; introv n.
+  inversion n as [n1 n2].
+  apply close_eunivi_implies_close_euniv in n1.
+  apply close_eunivi_implies_close_euniv in n2.
+  auto.
 Qed.
 
 Definition etequality {p} lib (T1 T2 : @CTerm p) :=

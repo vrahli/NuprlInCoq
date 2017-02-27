@@ -576,6 +576,7 @@ Lemma etequalityi_preserving_eequality {p} :
     -> eequality lib a b B.
 Proof.
   unfold etequalityi, eequality; introv e teq; exrepnd.
+  destruct teq1 as [teq1 xx]; GC.
   inversion teq1; try not_univ.
   duniv j h.
   allrw @eunivi_exists_iff; exrepd.
@@ -588,9 +589,9 @@ Proof.
   ents.
 
   pose proof (nts_uv A A eqa eq0) as q1; repeat (autodimp q1 hyp).
-  eapply nts_ext;[|eauto].
-  eapply nts_ext;[|apply eq_term_equals_sym;exact teq0].
-  auto.
+  { apply enuprl_refl in teq2; auto. }
+  { eapply nts_ext;[|eauto].
+    apply enuprl_sym in teq2; apply enuprl_refl in teq2; auto. }
 Qed.
 
 Lemma eeqtypes_preserving_eequality {p} :
@@ -774,11 +775,27 @@ Qed.
 Lemma enuprl_ext {p} :
   forall lib t1 t2 eq1 eq2,
     @enuprl p lib t1 t2 eq1
-    -> eq_term_equals eq1 eq2
+    -> (eq1 <=2=> eq2)
     -> enuprl lib t1 t2 eq2.
 Proof.
   introv n1 eqs; ents.
   apply nts_ext with (eq := eq1); sp.
+Qed.
+
+Lemma enuprl_ext2 {o} :
+  forall lib (eq1 eq2 : per(o)) A B,
+    (eq1 <=2=> eq2)
+    -> enuprl lib A A eq1
+    -> enuprl lib B B eq2
+    -> enuprl lib A B eq1.
+Proof.
+  introv eqiff en1 en2.
+  inversion en1 as [a1 a2]; clear en1; GC.
+  inversion en2 as [b1 b2]; clear en2; GC.
+  split; auto.
+  ents.
+  eapply nts_ext;[split;exact b1|].
+  apply eq_term_equals_sym;auto.
 Qed.
 
 Lemma enuprli_ext {p} :

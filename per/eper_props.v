@@ -62,9 +62,21 @@ Proof.
   inversion e1; subst; try not_univ.
   duniv j h.
   induction j; allsimpl; sp.
+  computes_to_value_isvalue.
+  match goal with
+  | [ H : _ <=2=> _ |- _ ] => apply H in e0; clear H
+  end.
+  unfold eunivi_eq in e0; exrepnd.
+  allapply @enuprli_implies_enuprl; auto.
+  fold (enuprl lib).
+
+  exists eqa.
+
+XXXXXXXXXXXX
+  ents.
+  SearchAbout enuprl.
   discover; exrepnd.
   exists eqa; sp.
-  allapply @nuprli_implies_nuprl; auto.
 Qed.
 
 Lemma member_in_uni {p} :

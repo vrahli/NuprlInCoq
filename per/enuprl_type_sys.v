@@ -67,6 +67,130 @@ Proof.
 Qed.
 Hint Resolve defines_only_universes_euniv : slow.
 
+Lemma type_system_eclose {o} :
+  forall lib (ts : cts(o)),
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> type_system lib (eclose lib ts).
+Proof.
+  introv tsym dou.
+  pose proof (close_type_system lib ts) as q; repeat (autodimp q hyp).
+  unfold type_system in *; repnd; dands; auto.
+
+  - introv e1 e2.
+    inversion e1 as [a1 a2]; clear e1.
+    inversion e2 as [b1 b2]; clear e2.
+    eapply q0; eauto.
+
+  - introv e eqiff.
+    inversion e as [e1 e2]; clear e.
+    split; eapply q1; eauto.
+
+  - introv e.
+    inversion e as [e1 e2]; clear e.
+    split; eapply q2; eauto.
+
+  - introv e1 e2.
+    inversion e1 as [a1 a2]; clear e1.
+    inversion e2 as [b1 b2]; clear e2.
+    split; eapply q3; eauto.
+
+  - introv e ceq.
+    inversion e as [e1 e2]; clear e.
+    split;[eapply q4; eauto|].
+    apply (q3 _ T);[apply q2|]; apply q4; auto.
+
+  - introv e.
+    inversion e as [e1 e2]; clear e.
+    eapply q5; eauto.
+
+  - introv e.
+    inversion e as [e1 e2]; clear e.
+    eapply q6; eauto.
+
+  - introv e.
+    inversion e as [e1 e2]; clear e.
+    eapply q; eauto.
+Qed.
+
+Lemma type_symmetric_eclose {o} :
+  forall lib (ts : cts(o)),
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> type_symmetric (eclose lib ts).
+Proof.
+  introv tsym dou.
+  apply type_system_eclose in tsym; auto.
+  unfold type_system in tsym; tcsp.
+Qed.
+
+Lemma type_transitive_eclose {o} :
+  forall lib (ts : cts(o)),
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> type_transitive (eclose lib ts).
+Proof.
+  introv tsym dou.
+  apply type_system_eclose in tsym; auto.
+  unfold type_system in tsym; tcsp.
+Qed.
+
+Lemma type_value_respecting_eclose {o} :
+  forall lib (ts : cts(o)),
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> type_value_respecting lib (eclose lib ts).
+Proof.
+  introv tsym dou.
+  apply type_system_eclose in tsym; auto.
+  unfold type_system in tsym; tcsp.
+Qed.
+
+Lemma uniquely_valued_eclose {o} :
+  forall lib (ts : cts(o)),
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> uniquely_valued (eclose lib ts).
+Proof.
+  introv tsym dou.
+  apply type_system_eclose in tsym; auto.
+  unfold type_system in tsym; tcsp.
+Qed.
+
+Lemma type_extensionality_eclose {o} :
+  forall lib (ts : cts(o)),
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> type_extensionality (eclose lib ts).
+Proof.
+  introv tsym dou.
+  apply type_system_eclose in tsym; auto.
+  unfold type_system in tsym; tcsp.
+Qed.
+
+Lemma eclose_refl_l {o} :
+  forall lib ts (A B : @CTerm o) eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> eclose lib ts A B eq
+    -> eclose lib ts A A eq.
+Proof.
+  introv tsys dou e.
+  eapply type_transitive_eclose; try (exact e); auto.
+  apply type_symmetric_eclose; auto.
+Qed.
+
+Lemma eclose_refl_r {o} :
+  forall lib ts (A B : @CTerm o) eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> eclose lib ts A B eq
+    -> eclose lib ts B B eq.
+Proof.
+  introv tsys dou e.
+  eapply type_transitive_eclose; try (exact e); auto.
+  apply type_symmetric_eclose; auto.
+Qed.
 
 (* end hide *)
 
@@ -115,8 +239,8 @@ Proof.
     | [ K : ?x _ _ , H : ?x <=2=> _ |- _ ] => apply H in K; apply H; clear H
     end.
     unfold eunivi_eq in *; exrepnd.
-    exists eqa' eqa; dands; auto.
-    apply eq_term_equals_sym; auto.
+    exists eqa; dands; auto.
+    apply type_symmetric_eclose; auto; eauto 2 with slow.
 
   - unfold term_transitive, term_equality_transitive; introv u e1 e2.
     allrw @eunivi_exists_iff; exrepnd.
@@ -125,23 +249,20 @@ Proof.
     pose proof (@close_type_system o lib (eunivi lib j)) as k.
     repeat (dest_imp k hyp); eauto 2 with slow;[].
     unfold type_system in k; repnd.
-    exists eqa0 eqa'; dands; auto.
+    exists eqa; dands; auto.
 
-    eapply eq_term_equals_trans;[eauto|].
-    eapply eq_term_equals_trans;[|eauto].
-    match goal with
-    | [ H : uniquely_valued _ |- _ ] => eapply H; eauto
-    end.
+    eapply type_transitive_eclose;try (exact e0); eauto 2 with slow.
+    eapply type_extensionality_eclose; try (exact e2); eauto 2 with slow.
+    apply eclose_refl_r in e2; eauto 2 with slow.
+    apply eclose_refl_l in e0; eauto 2 with slow.
+    eapply uniquely_valued_eclose; try (exact e0); eauto 2 with slow.
 
   - unfold term_value_respecting, term_equality_respecting; introv u e c; spcast.
     allrw @eunivi_exists_iff; exrepnd; GC; spcast.
     apply u0 in e; apply u0; clear u0.
     unfold eunivi_eq in *; exrepnd.
-    exists eqa eqa; dands; tcsp.
-    pose proof (@close_type_system o lib (eunivi lib j)) as k.
-    repeat (dest_imp k hyp); eauto 2 with slow.
-    unfold type_system in k; repnd.
-    apply (type_reduces_to_symm lib _ t' t t'); auto.
+    exists eqa; dands; tcsp.
+    apply type_value_respecting_eclose; eauto 2 with slow.
 Qed.
 Hint Resolve eunivi_type_system : slow.
 
@@ -151,7 +272,7 @@ Lemma enuprli_type_system {o} :
   forall lib (i : nat), @type_system o lib (enuprli lib i).
 Proof.
   unfold enuprli; sp.
-  apply close_type_system; eauto 3 with slow.
+  apply type_system_eclose; eauto 3 with slow.
 Qed.
 
 Lemma enuprli_uniquely_valued {o} :
@@ -273,7 +394,7 @@ Hint Resolve euniv_type_system : slow.
 Lemma enuprl_type_system {p} : forall lib, @type_system p lib (enuprl lib).
 Proof.
   introv.
-  apply close_type_system; eauto 2 with slow.
+  apply type_system_eclose; eauto 2 with slow.
 Qed.
 
 (* begin hide *)
