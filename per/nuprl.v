@@ -947,10 +947,3 @@ Definition ltype {p} lib l (T : @CTerm p) := eqtypes lib l T T.
 (* begin hide *)
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -50,20 +51,31 @@ Require Export per_props_cequiv.
 
 (* begin hide *)
 
-Lemma member_equality {p} :
-  forall lib (t1 t2 T : @CTerm p),
-    equality lib t1 t2 T
-    -> member lib mkc_axiom (mkc_equality t1 t2 T).
+Lemma iscvalue_mkc_refl {p} :
+  forall t : @CTerm p, iscvalue (mkc_refl t).
 Proof.
-  unfold member, equality; sp.
-  exists (fun (t t' : @CTerm p) => t ===>(lib) mkc_axiom
-                      # t' ===>(lib) mkc_axiom
-                      # eq t1 t2);
-    sp; spcast; try computes_to_value_refl.
-  apply CL_eq.
-  unfold per_eq.
-  exists T T t1 t2 t1 t2 eq; sp; spcast; try computes_to_value_refl;
-  pose proof (nuprl_eq_implies_eqorceq_refl lib T T eq t1 t2); sp.
+  intro; destruct t; unfold iscvalue; simpl.
+  apply isvalue_refl; allrw @isprog_eq; auto.
+Qed.
+Hint Resolve iscvalue_mkc_refl : slow.
+
+Lemma member_equality {o} :
+  forall lib (t1 t2 T : @CTerm o),
+    equality lib t1 t2 T
+    -> equality lib (mkc_refl t1) (mkc_refl t2) (mkc_equality t1 t2 T).
+Proof.
+  unfold equality; introv h; exrepnd.
+  exists (per_eq_eq lib t1 t2 eq); dands; spcast; tcsp.
+  { apply CL_eq.
+    unfold per_eq.
+    exists T T t1 t2 t1 t2 eq; sp; spcast; try computes_to_value_refl;
+      pose proof (nuprl_eq_implies_eqorceq_refl lib T T eq t1 t2); sp. }
+  { exists t1 t2; dands; auto; spcast;
+      try (apply computes_to_valc_refl; eauto 3 with slow).
+    { eapply equality_eq_refl;[eauto|];eauto. }
+    { eapply equality_eq_refl;[eauto|].
+      eapply equality_eq_sym;[eauto|]; eauto. }
+  }
 (* universe inconsistency *)
 Qed.
 
@@ -84,18 +96,22 @@ Qed.
 Lemma member_equality_iff {p} :
   forall lib (t1 t2 T : @CTerm p),
     equality lib t1 t2 T
-    <=> member lib mkc_axiom (mkc_equality t1 t2 T).
+    <=> equality lib (mkc_refl t1) (mkc_refl t2) (mkc_equality t1 t2 T).
 Proof.
-  sp; split; intro e.
-  apply member_equality; sp.
-  allunfold @member; allunfold @equality; exrepnd.
+  introv; split; intro e.
+
+  { apply member_equality; sp. }
+
+  allunfold @equality; exrepnd.
 
   inversion e1; subst; try not_univ.
 
   allunfold_per.
   computes_to_value_isvalue.
   exists eqa; sp.
-  discover; sp.
+  apply e3 in e0.
+  unfold per_eq_eq in e0; exrepnd.
+  computes_to_value_isvalue.
 Qed.
 
 (* begin hide *)
@@ -103,24 +119,64 @@ Qed.
 Lemma member_member_iff {p} :
   forall lib (t T : @CTerm p),
     member lib t T
-    <=> member lib mkc_axiom (mkc_member t T).
+    <=> member lib (mkc_refl t) (mkc_member t T).
 Proof.
   sp; rewrite <- fold_mkc_member.
   apply member_equality_iff.
 Qed.
 
+Lemma equality_mkc_equality_implies {p} :
+  forall lib (t1 t2 T : @CTerm p) a b,
+    equality lib a b (mkc_equality t1 t2 T)
+    ->
+    { x1 , x2 : CTerm
+    , a ===>(lib) (mkc_refl x1)
+    # b ===>(lib) (mkc_refl x2)
+    # equality lib t1 x1 T
+    # equality lib t2 x2 T
+    # equality lib t1 t2 T }.
+Proof.
+  introv e.
+
+  allunfold @equality; exrepnd.
+
+  inversion e1; subst; try not_univ.
+
+  allunfold_per.
+  computes_to_value_isvalue.
+  apply e3 in e0.
+  unfold per_eq_eq in e0; exrepnd.
+  exists x1 x2; dands; auto; exists eqa; dands; auto.
+Qed.
+
+Lemma member_mkc_member_implies {p} :
+  forall lib (t T : @CTerm p) a,
+    member lib a (mkc_member t T)
+    ->
+    { x : CTerm
+    , a ===>(lib) (mkc_refl x)
+    # member lib t T
+    # equality lib t x T }.
+Proof.
+  introv e.
+  rewrite <- fold_mkc_member in e.
+  apply equality_mkc_equality_implies in e; exrepnd.
+  ccomputes_to_eqval.
+  exists x1; dands; spcast; auto.
+Qed.
+
 Lemma if_member_vsubtype {p} :
-  forall lib (A : @CTerm p) v B,
-    member lib mkc_axiom (mkc_vsubtype A v B)
+  forall lib (A : @CTerm p) v B r,
+    member lib r (mkc_vsubtype A v B)
     -> forall x y, equality lib x y A -> equality lib x y B.
 Proof.
   introv; rewrite <- fold_mkc_vsubtype; introv m e.
-  apply member_member_iff in m.
+  apply member_mkc_member_implies in m; exrepnd.
+  clear m1.
 
   apply @if_member_function with (f := mkc_id)
                                   (v := v)
                                   (B := cvterm_var v B) in e; sp.
-
 
   apply equality_respects_cequivc_left with (t := x) in e;
     try (apply reduces_toc_implies_cequivc; apply reduces_toc_apply_id).
@@ -130,17 +186,15 @@ Proof.
   rewrite substc_cvterm_var in e; sp.
 Qed.
 
-Lemma member_equality_is_axiom {p} :
+Lemma member_equality_is_refl {p} :
   forall lib (t1 t2 T a b : @CTerm p),
     equality lib a b (mkc_equality t1 t2 T)
-    -> a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom.
+    -> { x1 , x2 : CTerm
+       , a ===>(lib) (mkc_refl x1)
+       # b ===>(lib) (mkc_refl x2) }.
 Proof.
-  unfold equality, nuprl; introv e; exrepd.
-  inversion c; subst; try not_univ.
-
-  allunfold @per_eq; exrepnd.
-  computes_to_value_isvalue.
-  discover; sp.
+  introv e; apply equality_mkc_equality_implies in e; exrepnd.
+  exists x1 x2; dands; auto.
 Qed.
 
 Lemma tequality_equality_if_cequivc {p} :
@@ -148,30 +202,16 @@ Lemma tequality_equality_if_cequivc {p} :
     tequality lib A B
     -> cequivc lib t1 t3
     -> cequivc lib t2 t4
-    -> tequality lib (mkc_equality t1 t2 A)
-                 (mkc_equality t3 t4 B).
+    -> tequality lib (mkc_equality t1 t2 A) (mkc_equality t3 t4 B).
 Proof.
   unfold tequality, equality; sp.
-  exists (fun a b : @CTerm p =>
-            a ===>(lib) mkc_axiom
-            # b ===>(lib) mkc_axiom
-            # eq t3 t4).
+  exists (per_eq_eq lib t1 t2 eq).
   unfold nuprl.
   apply CL_eq; unfold per_eq.
   exists A B t1 t2 t3 t4 eq; sp; spcast;
   try (apply computes_to_valc_refl);
   try (apply iscvalue_mkc_equality; auto);
   try (unfold eqorceq; right; auto; spcast; sp).
-
-  allapply @nuprl_refl.
-  split; sp; spcast.
-
-  apply (eqorceq_commutes_nuprl lib) with (a := t3) (c := t4) (A := A) (B := A); sp.
-  apply @eqorceq_sym_trans with (A := A) (B := A); sp; try (complete (right; spcast; sp)).
-  apply @eqorceq_sym_trans with (A := A) (B := A); sp; try (complete (right; spcast; sp)).
-
-  apply (eqorceq_commutes_nuprl lib) with (a := t1) (c := t2) (A := A) (B := A); sp;
-  try (complete (right; spcast; sp)).
 Qed.
 
 Lemma tequality_mkc_equality_implies {p} :
@@ -259,9 +299,7 @@ Proof.
     allunfold @tequality; exrepnd.
     assert (nuprl lib A A eq) as n by (allapplydup @nuprl_refl; sp).
 
-    exists (fun x y : @CTerm p => x ===>(lib) mkc_axiom
-                       # y ===>(lib) mkc_axiom
-                       # eq a1 a2).
+    exists (per_eq_eq lib a1 a2 eq).
     apply CL_eq; unfold per_eq; fold @nuprl.
 
     exists A B a1 a2 b1 b2 eq; dands; auto.
@@ -300,9 +338,7 @@ Proof.
     allunfold @tequality; exrepnd.
     assert (nuprl lib A A eq) as n by (allapplydup @nuprl_refl; sp).
 
-    exists (fun x y : @CTerm p => x ===>(lib) mkc_axiom
-                       # y ===>(lib) mkc_axiom
-                       # eq a1 a2).
+    exists (per_eq_eq lib a1 a2 eq).
     apply CL_eq; unfold per_eq; fold @nuprl.
 
     exists A B a1 a2 b1 b2 eq; dands; auto.
@@ -450,31 +486,33 @@ Qed.
 Lemma equality_in_mkc_equality {p} :
   forall lib (t1 t2 T a b : @CTerm p),
     equality lib a b (mkc_equality t1 t2 T)
-    <=> (equality lib t1 t2 T
-         # a ===>(lib) mkc_axiom
-         # b ===>(lib) mkc_axiom).
+    <=>
+    { x1 , x2 : CTerm
+    , a ===>(lib) (mkc_refl x1)
+    # b ===>(lib) (mkc_refl x2)
+    # equality lib t1 x1 T
+    # equality lib t2 x2 T
+    # equality lib t1 t2 T }.
 Proof.
   introv; split; intro i.
 
-  applydup @member_equality_is_axiom in i; repnd; sp.
-  allunfold @equality; allunfold @nuprl; exrepnd.
-  inversion i3; subst; try not_univ.
-  allunfold @per_eq; exrepnd.
-  computes_to_value_isvalue.
-  exists eqa; sp.
-  discover; sp.
+  { apply equality_mkc_equality_implies; auto. }
 
-  repnd.
-  allunfold @equality; allunfold @nuprl; exrepnd.
-  exists (fun t t' : @CTerm p => t ===>(lib) mkc_axiom
-              # t' ===>(lib) mkc_axiom
-              # eq t1 t2); sp.
-  apply CL_eq.
-  unfold per_eq.
-  exists T T t1 t2 t1 t2 eq; sp; spcast;
-  try (apply computes_to_valc_refl);
-  try (apply iscvalue_mkc_equality; auto);
-  pose proof (nuprl_eq_implies_eqorceq_refl lib T T eq t1 t2); sp.
+  exrepnd.
+  unfold equality in *; exrepnd.
+  eapply nuprl_uniquely_valued in i3;[|exact i1].
+  eapply nuprl_uniquely_valued in i4;[|exact i1].
+
+  exists (per_eq_eq lib t1 t2 eq); dands; auto.
+
+  { apply CL_eq.
+    unfold per_eq.
+    exists T T t1 t2 t1 t2 eq; sp; spcast;
+      try (apply computes_to_valc_refl);
+      try (apply iscvalue_mkc_equality; auto);
+      pose proof (nuprl_eq_implies_eqorceq_refl lib T T eq t1 t2); sp. }
+
+  { exists x1 x2; dands; auto;[apply i3|apply i4];auto. }
 Qed.
 
 Lemma tequality_equality_in_mkc_spertype_implies_tequality_apply {p} :
@@ -535,25 +573,21 @@ Proof.
     sp; discover; sp.
 
   - repnd; unfold tequality.
-    exists (fun t t' : @CTerm p => t ===>(lib) mkc_axiom
-              # t' ===>(lib) mkc_axiom
-              # ccequivc lib t1 t2).
-
+    exists (per_eq_eq lib t1 t2 (ccequivc lib)).
     apply CL_eq; unfold per_eq.
     exists (@mkc_base p) (@mkc_base p) t1 t2 t3 t4 (@ccequivc p lib); dands; spcast;
-    try (apply computes_to_valc_refl);
-    try (apply iscvalue_mkc_equality);
-    try (apply iscvalue_mkc_base);
-    try (complete (left; spcast; sp));
-    auto.
+      try (apply computes_to_valc_refl);
+      try (apply iscvalue_mkc_equality);
+      try (apply iscvalue_mkc_base);
+      try (complete (left; spcast; sp));
+      auto.
 
     apply CL_base.
     unfold per_base; sp;
-    try (spcast; apply computes_to_valc_refl);
-    try (apply iscvalue_mkc_base);
-    auto;
-
-    try (introv; split; sp).
+      try (spcast; apply computes_to_valc_refl);
+      try (apply iscvalue_mkc_base);
+      auto;
+      try (introv; split; sp).
 Qed.
 
 Lemma tequality_equality_if_eqorceq {p} :
@@ -631,10 +665,12 @@ Lemma inhabited_mkc_equality {p} :
     inhabited_type lib (mkc_equality x y A) <=> equality lib x y A.
 Proof.
   introv; split; intro k.
-  unfold inhabited_type in k; exrepnd.
-  rw @equality_in_mkc_equality in k0; sp.
-  exists (@mkc_axiom p).
-  apply member_equality; sp.
+  { unfold inhabited_type in k; exrepnd.
+    rw @equality_in_mkc_equality in k0; sp. }
+  { exists (mkc_refl x).
+    apply (equality_trans _ _ (mkc_refl y)).
+    - apply member_equality; sp.
+    - apply equality_sym; apply member_equality; sp. }
 Qed.
 
 Lemma inhabited_type_mkc_equality_sym {p} :
@@ -667,9 +703,12 @@ Proof.
 
   inversion i1; try not_univ.
   allunfold @per_eq; sp.
-  computes_to_value_isvalue; subst.
+  computes_to_value_isvalue; repeat subst.
   exists eqa; sp.
-  subst; discover; sp.
+  match goal with
+  | [ H : _ <=2=> _ |- _ ] => apply H in i0
+  end.
+  unfold per_eq_eq in i0; exrepnd; auto.
 Qed.
 
 Lemma tequality_in_uni_implies_tequality {p} :
@@ -762,7 +801,7 @@ Proof.
     exists eq; sp.
     allrw.
 
-    exists (fun t1 t2 : @CTerm p => (t1 ===>(lib) mkc_axiom # t2 ===>(lib) mkc_axiom # eqa a1 a2)).
+    exists (per_eq_eq lib a1 a2 eqa).
     apply CL_eq; fold (@nuprli p lib j0).
     unfold per_eq.
     exists A B a1 a2 b1 b2 eqa; dands; auto;
@@ -779,24 +818,24 @@ Proof.
     apply h; auto.
 Qed.
 
-Lemma equality_in_member {p} :
-  forall lib (a b t T : @CTerm p),
+Lemma equality_in_member {o} :
+  forall lib (a b t T : @CTerm o),
     equality lib a b (mkc_member t T)
-    <=> ((a ===>(lib) mkc_axiom)
-         # (b ===>(lib) mkc_axiom)
-         # member lib t T).
+    <=> { x , y : @CTerm o
+        , a ===>(lib) (mkc_refl x)
+        # b ===>(lib) (mkc_refl y)
+        # equality lib t x T
+        # equality lib t y T }.
 Proof.
   introv.
   rw <- @fold_mkc_member.
   rw @equality_in_mkc_equality.
-  split; sp.
+  split; intro xx; exrepnd.
+
+  - exists x1 x2; dands; auto.
+
+  - exists x y; dands; auto.
+    eapply equality_refl; eauto.
 Qed.
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

@@ -123,6 +123,8 @@ Definition mk_axiom {p} : @NTerm p := oterm (Can NAxiom) [].
 Definition mk_atom  {p} : @NTerm p := oterm (Can NAtom)  [].
 Definition mk_uatom {p} : @NTerm p := oterm (Can NUAtom) [].
 
+Definition mk_refl {o} (t : @NTerm o) : NTerm := oterm (Can NRefl) [nobnd t].
+
 Definition mk_inl {p} (x : @NTerm p) := oterm (Can (NInj NInl)) [nobnd x].
 Definition mk_inr {p} (x : @NTerm p) := oterm (Can (NInj NInr)) [nobnd x].
 
@@ -2129,6 +2131,40 @@ Proof.
   repeat constructor.
 Qed.
 
+Hint Rewrite remove_var_nil : list.
+
+(**useful for rewriting in complicated formulae*)
+Theorem bt_wf_iff {p} :
+  forall lv (nt : @NTerm p),
+    bt_wf (bterm lv nt)
+    <=> nt_wf nt.
+Proof. sp_iff Case; introv H.
+  Case "->". inverts H as Hwf;  auto.
+  Case "<-".  constructor; auto.
+Qed.
+
+Lemma isprogram_refl {o} :
+  forall (t : @NTerm o), isprogram (mk_refl t) <=> isprogram t.
+Proof.
+  introv; split; intro h.
+  - inversion h as [cl wf].
+    unfold closed in cl; simpl in cl; autorewrite with list in *.
+    inversion wf as [| |? ? imp xx]; simpl in *; subst; clear xx wf.
+    pose proof (imp (nobnd t)) as q; autodimp q hyp.
+    allrw @bt_wf_iff.
+    constructor; auto.
+  - inversion h as [cl wf].
+    constructor; unfold closed; simpl; autorewrite with list; auto.
+    constructor; unfold nobnd; simpl; auto.
+    introv xx; repndors; subst; tcsp.
+Qed.
+
+Theorem isprog_refl {o} :
+  forall (t : @NTerm o), isprog (mk_refl t) <=> isprog t.
+Proof.
+  introv; allrw @isprog_eq; apply isprogram_refl.
+Qed.
+
 
 
 Theorem isprog_bottom {p} : @isprog p mk_bottom.
@@ -2138,8 +2174,8 @@ Qed.
 
 Lemma isprogram_bottom {p} : @isprogram p mk_bottom.
 Proof.
-  rw @isprogram_eq.  repeat constructor.
- 
+  rw @isprogram_eq.
+  repeat constructor.
 Qed.
 
 Theorem isvalue_axiom {p} : @isvalue p mk_axiom.
@@ -2150,6 +2186,27 @@ Qed.
 Theorem wf_axiom {p} : @wf_term p mk_axiom.
 Proof.
   sp.
+Qed.
+
+Theorem isvalue_refl {o} :
+  forall (t : @NTerm o), isprogram t -> isvalue (mk_refl t).
+Proof.
+  introv isp.
+  inversion isp as [cl wf].
+  repeat constructor; unfold closed; simpl; autorewrite with list; tcsp.
+  introv i; repndors; subst; tcsp.
+  apply bt_wf_iff; auto.
+Qed.
+
+Theorem wf_refl {o} :
+  forall (t : @NTerm o), wf_term (mk_refl t) <=> wf_term t.
+Proof.
+  introv; split; intro wf; allrw @wf_term_eq.
+  - inversion wf as [| |? ? imp xx]; simpl in *; subst; clear xx wf.
+    pose proof (imp (nobnd t)) as q; autodimp q hyp.
+    allrw @bt_wf_iff; auto.
+  - constructor; unfold nobnd; simpl; auto.
+    introv xx; repndors; subst; tcsp.
 Qed.
 
 Theorem isprogram_base {p} : @isprogram p mk_base.
@@ -2866,16 +2923,6 @@ Proof.
   apply isprogram_apseq; auto.
 Qed.
 *)
-
-(**useful for rewriting in complicated formulae*)
-Theorem bt_wf_iff {p} :
-  forall lv (nt : @NTerm p),
-    bt_wf (bterm lv nt)
-    <=> nt_wf nt.
-Proof. sp_iff Case; introv H.
-  Case "->". inverts H as Hwf;  auto.
-  Case "<-".  constructor; auto.
-Qed.
 
 Theorem wf_parallel {p} :
   forall (a b : @NTerm p),
@@ -5733,6 +5780,15 @@ Definition mkc_axiom {p} : @CTerm p :=
 Definition mkw_axiom {p} : @WTerm p :=
   exist wf_term mk_axiom wf_axiom.
 
+Theorem implies_isprog_refl {o} :
+  forall {t : @NTerm o}, isprog t -> isprog (mk_refl t).
+Proof.
+  introv h; apply isprog_refl; auto.
+Qed.
+
+Definition mkc_refl {p} (t : CTerm) : @CTerm p :=
+  let (a,x) := t in exist isprog (mk_refl a) (implies_isprog_refl x).
+
 Definition mkc_bottom {p} : @CTerm p :=
   exist isprog mk_bottom isprog_bottom.
 
@@ -6804,6 +6860,24 @@ Qed.
 
 Definition mkcv_axiom {p} (v : NVar) : @CVTerm p [v] :=
   exist (isprog_vars [v]) mk_axiom (isprog_vars_axiom v).
+
+Lemma isprog_vars_refl {o} :
+  forall v (t : @NTerm o),
+    isprog_vars [v] (mk_refl t) <=> isprog_vars [v] t.
+Proof.
+  introv; unfold isprog_vars; simpl; autorewrite with list.
+  rw @wf_refl; tcsp.
+Qed.
+
+Lemma implies_isprog_vars_refl {o} :
+  forall {v} {t : @NTerm o}, isprog_vars [v] t -> isprog_vars [v] (mk_refl t).
+Proof.
+  introv isp; apply isprog_vars_refl; auto.
+Qed.
+
+Definition mkcv_refl {o} (v : NVar) (t : @CVTerm o [v]) : CVTerm [v] :=
+  let (a,x) := t in
+  exist (isprog_vars [v]) (mk_refl a) (implies_isprog_vars_refl x).
 
 Lemma fold_mkc_halts {p} :
   forall t : @CTerm p,

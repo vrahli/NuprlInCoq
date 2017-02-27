@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -44,6 +45,7 @@ Require Export compare_cterm.
 Require Export terms_try.
 Require Export csubst_fresh.
 Require Export psquash.
+Require Export cequiv_refl.
 
 
 Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
@@ -994,6 +996,16 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c3 name];
         clear_irr; tac
 
+    (* Refl *)
+    | context [lsubstc (mk_refl ?a ) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let c1 := fresh "c1" in
+      generalize (lsubstc_mk_refl_ex a s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [c1 name];
+        clear_irr; tac
+
     (* Inl *)
     | context [lsubstc (mk_inl ?a ) ?w ?s ?c] =>
       let w1 := fresh "w1" in
@@ -1712,11 +1724,3 @@ Ltac lift_lsubsts_squash :=
             | [ H : context [lsubstc _ _ _ _ ] |- _ ] => one_lift_lsubst_squash_hyp H
             | [ |- context [lsubstc _ _ _ _ ] ] => one_lift_lsubst_squash_concl
           end).
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

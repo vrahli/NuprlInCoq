@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,11 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -27,6 +34,11 @@
 Require Import sequents_tacs.
 Require Export per_props_equality.
 
+Definition mk_concl_mem {o} (t T : @NTerm o) : conclusion :=
+  mk_concl (mk_member t T) (mk_refl t).
+
+Definition mk_concl_eq {o} (t1 t2 T : @NTerm o) : conclusion :=
+  mk_concl (mk_equality t1 t2 T) (mk_refl t1).
 
 Lemma subtype_equality {o} :
   forall lib (t1 t2 : @CTerm o) T U s s' wt wu ct cu H x wc,
@@ -40,7 +52,7 @@ Lemma subtype_equality {o} :
     -> sequent_true lib
          (mk_wcseq
             (mk_baresequent (snoc H (mk_hyp x T))
-                           (mk_conclax (mk_member (mk_var x) U)))
+                            (mk_concl_mem (mk_var x) U))
             wc)
     -> equality lib t1 t2 (lsubstc U wu s cu).
 Proof.
@@ -49,20 +61,19 @@ Proof.
 
   generalize (seqt (snoc s (x, t1)) (snoc s' (x, t2))); intro i.
   repeat (autodimp i hyp); exrepnd.
-  assert (similarity lib (snoc s (hvar (mk_hyp x T), t1))
-                     (snoc s' (hvar (mk_hyp x T), t2))
-                     (snoc H (mk_hyp x T))); try (complete (allsimpl; sp)).
 
-  apply sim_cons with (w := wt) (p := ct); sp.
+  { assert (similarity lib (snoc s (hvar (mk_hyp x T), t1))
+                       (snoc s' (hvar (mk_hyp x T), t2))
+                       (snoc H (mk_hyp x T))); try (complete (allsimpl; sp)).
+
+    apply sim_cons with (w := wt) (p := ct); sp. }
 
   ai_lsubst_tac.
 
-  rw @member_eq in i1.
-  rw <- @member_member_iff in i1.
+  apply equality_in_member in i1; exrepnd.
   allrw <- @fold_mkc_member.
-  unfold member in i1.
-
-  apply @equality_commutes3 with (a3 := t2) (a4 := t2) (U := lsubstc U wu s' c) in i1; sp.
+  apply equality_commutes3 in i0; auto.
+  apply equality_refl in i4; auto.
 Qed.
 
 Lemma subtype_tequality {o} :
@@ -75,7 +86,7 @@ Lemma subtype_tequality {o} :
     -> sequent_true lib
          (mk_wcseq
             (mk_baresequent (snoc H (mk_hyp x T))
-                           (mk_conclax (mk_member (mk_var x) U)))
+                           (mk_concl_mem (mk_var x) U))
             wc)
     -> tequality lib (lsubstc U wu s1 cu1) (lsubstc U wu s2 cu2).
 Proof.
@@ -86,8 +97,8 @@ Proof.
   generalize (seqt (snoc s1 (x, t)) (snoc s2 (x, t'))); clear seqt; intro seqt.
   repeat (autodimp seqt hyp); exrepnd.
 
-  rw @similarity_snoc; simpl.
-  exists s1 s2 t t' wt ct1; sp.
+  { rw @similarity_snoc; simpl.
+    exists s1 s2 t t' wt ct1; sp. }
 
   ai_lsubst_tac.
   rw @tequality_mkc_member in seqt0; sp.
@@ -106,9 +117,9 @@ Lemma hyps_functionality_widening {o} :
     -> sequent_true lib
          (mk_wcseq
             (mk_baresequent (snoc H (mk_hyp x T))
-                           (mk_conclax (mk_member (mk_var x) U)))
+                            (mk_concl_mem (mk_var x) U))
             wc)
-    -> hyps_functionality lib (snoc (snoc (snoc s1 (x, t)) (y, t)) (z, mkc_axiom))
+    -> hyps_functionality lib (snoc (snoc (snoc s1 (x, t)) (y, t)) (z, mkc_refl t))
                           (snoc (snoc (snoc H (mk_hyp x T)) (mk_hyp y U))
                                 (mk_hyp z (mk_equality (mk_var x) (mk_var y) U))).
 Proof.
@@ -130,26 +141,27 @@ Proof.
 
   rw @eq_hyps_snoc; simpl.
   exists (snoc (snoc s1 (x, t1)) (y, t1)) (snoc s2a0 (y, t0))
-         (@mkc_axiom o) t2
+         (mkc_refl t1) t2
          w0 p c2; sp.
 
-  assert (cover_vars U s2a0)
-    as c3
-      by (apply @cover_vars_dom_csub_eq with (s1 := snoc s1 (x, t1)); sp;
-          allrw @dom_csub_snoc; simpl;
-          allapply @similarity_dom; repd; allrw; sp;
-          allrw @vars_hyps_snoc; simpl; sp).
+  { assert (cover_vars U s2a0)
+      as c3
+        by (apply @cover_vars_dom_csub_eq with (s1 := snoc s1 (x, t1)); sp;
+            allrw @dom_csub_snoc; simpl;
+            allapply @similarity_dom; repd; allrw; sp;
+            allrw @vars_hyps_snoc; simpl; sp).
 
-  rw @eq_hyps_snoc; simpl.
-  exists (snoc s1 (x, t1)) s2a0 t1 t0 w1 p0 c3; sp.
+    rw @eq_hyps_snoc; simpl.
+    exists (snoc s1 (x, t1)) s2a0 t1 t0 w1 p0 c3; sp.
 
-  rw @eq_hyps_snoc in i; exrepnd; allsimpl; cpx.
-  ai_lsubst_tac.
+    rw @eq_hyps_snoc in i; exrepnd; allsimpl; cpx.
+    ai_lsubst_tac.
 
-  generalize (subtype_tequality lib s1a s2a H T U x t3 t' w w1 p1 c c4 wc); intro i.
-  repeat (autodimp i hyp).
+    generalize (subtype_tequality lib s1a s2a H T U x t3 t' w w1 p1 c c4 wc); intro i.
+    repeat (autodimp i hyp).
 
-  allrw @similarity_snoc; exrepnd; allsimpl; cpx.
+    allrw @similarity_snoc; exrepnd; allsimpl; cpx. }
+
   allrw @similarity_snoc; exrepnd; simphyps; cpx; clear_irr.
 
   lsubst_tac.
@@ -179,10 +191,12 @@ Lemma similarity_widening {o} :
     -> equality lib t t1 (lsubstc T wt s1 ct)
     -> equality lib t t2 (lsubstc U wu s1 cu)
     -> similarity lib s1 s2 H
-    -> similarity lib (snoc (snoc (snoc s1 (x, t)) (y, t)) (z, mkc_axiom))
-                  (snoc (snoc (snoc s2 (x, t1)) (y, t2)) (z, mkc_axiom))
-                  (snoc (snoc (snoc H (mk_hyp x T)) (mk_hyp y U))
-                        (mk_hyp z (mk_equality (mk_var x) (mk_var y) U))).
+    -> similarity
+         lib
+         (snoc (snoc (snoc s1 (x, t)) (y, t)) (z, mkc_refl t))
+         (snoc (snoc (snoc s2 (x, t1)) (y, t2)) (z, mkc_refl t2))
+         (snoc (snoc (snoc H (mk_hyp x T)) (mk_hyp y U))
+               (mk_hyp z (mk_equality (mk_var x) (mk_var y) U))).
 Proof.
   introv nixu niyu nixh niyh nxy eqt equ sim.
 
@@ -200,25 +214,26 @@ Proof.
   rw @similarity_snoc; simpl.
   exists (snoc (snoc s1 (x, t)) (y, t))
          (snoc (snoc s2 (x, t1)) (y, t2))
-         (@mkc_axiom o)
-         (@mkc_axiom o)
+         (mkc_refl t)
+         (mkc_refl t2)
          wfe cvu1; sp.
 
-  assert (cover_vars U (snoc s1 (x, t)))
-    as cvu2 by (apply cover_vars_snoc_weak; sp).
+  { assert (cover_vars U (snoc s1 (x, t)))
+      as cvu2 by (apply cover_vars_snoc_weak; sp).
 
-  rw @similarity_snoc; simpl.
-  exists (snoc s1 (x, t)) (snoc s2 (x, t1)) t t2 wu cvu2; sp.
+    rw @similarity_snoc; simpl.
+    exists (snoc s1 (x, t)) (snoc s2 (x, t1)) t t2 wu cvu2; sp.
 
-  rw @similarity_snoc; simpl.
-  exists s1 s2 t t1 wt ct; sp.
+    { rw @similarity_snoc; simpl.
+      exists s1 s2 t t1 wt ct; sp. }
 
-  ai_lsubst_tac; sp.
+    ai_lsubst_tac; sp. }
 
   lsubst_tac.
-  rw @member_eq.
-  rw <- @member_equality_iff.
-  apply equality_refl in equ; sp.
+  apply equality_in_mkc_equality.
+  exists t t2; dands; auto;
+    try (spcast; apply computes_to_valc_refl; eauto 3 with slow);
+    apply equality_refl in equ; sp.
 Qed.
 
 Lemma strong_subtype_equality {o} :
@@ -235,14 +250,14 @@ Lemma strong_subtype_equality {o} :
     -> sequent_true lib
          (mk_wcseq
             (mk_baresequent (snoc H (mk_hyp x T))
-                           (mk_conclax (mk_member (mk_var x) U)))
+                           (mk_concl_mem (mk_var x) U))
             ws1)
     -> sequent_true lib
          (mk_wcseq
             (mk_baresequent
                (snoc (snoc (snoc H (mk_hyp x T)) (mk_hyp y U))
                      (mk_hyp z (mk_equality (mk_var x) (mk_var y) U)))
-               (mk_conclax (mk_equality (mk_var x) (mk_var y) T)))
+               (mk_concl_eq (mk_var x) (mk_var y) T))
             ws2)
     -> equality lib t t1 (lsubstc T wt s1 ct1)
     -> equality lib t t2 (lsubstc U wu s1 cu1)
@@ -257,13 +272,13 @@ Proof.
 
   vr_seq_true in seqt2.
 
-  generalize (seqt2 (snoc (snoc (snoc s1 (x,t)) (y, t)) (z, mkc_axiom))
-                    (snoc (snoc (snoc s2 (x,t1)) (y, t2)) (z, mkc_axiom)));
+  generalize (seqt2 (snoc (snoc (snoc s1 (x,t)) (y, t)) (z, mkc_refl t))
+                    (snoc (snoc (snoc s2 (x,t1)) (y, t2)) (z, mkc_refl t2)));
     clear seqt2; intro seqt2.
   autodimp seqt2 hyp.
 
-  generalize (hyps_functionality_widening lib s1 s2 x y z t t1 T U H wt ct1 ws1);
-    intro h; repeat (autodimp h hyp).
+  { generalize (hyps_functionality_widening lib s1 s2 x y z t t1 T U H wt ct1 ws1);
+      intro h; repeat (autodimp h hyp). }
 
   autodimp seqt2 hyp.
 
@@ -273,11 +288,9 @@ Proof.
   exrepnd.
 
   lsubst_tac.
+  dands; auto;[].
 
-  rw @member_eq in seqt2.
-  rw <- @member_equality_iff in seqt2.
-  rw @member_eq in seqt2.
-  sp.
+  apply equality_in_mkc_equality in seqt2; exrepnd; tcsp.
 Qed.
 
 
@@ -294,7 +307,7 @@ Lemma membership_apply2 {o} :
       (mk_wcseq
          (mk_baresequent
             (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp y mk_base))
-            (mk_conclax (mk_member (mk_apply2 R (mk_var x) (mk_var y)) (mk_uni i))))
+            (mk_concl_mem (mk_apply2 R (mk_var x) (mk_var y)) (mk_uni i)))
          ws)
     -> hyps_functionality lib s1 H
     -> similarity lib s1 s2 H
@@ -349,8 +362,8 @@ Proof.
   try (complete (lift_lsubst; rw @equality_in_base_iff; spcast; apply cequivc_refl)).
 
   lsubst_tac.
-  rw @member_eq in seqt1.
-  rw <- @member_member_iff in seqt1; sp.
+  apply member_if_inhabited in seqt1.
+  dands; auto.
 Qed.
 
 Lemma implies_inhabited_apply2_all {o} :
@@ -368,7 +381,7 @@ Lemma implies_inhabited_apply2_all {o} :
          (mk_wcseq
             (mk_baresequent
                (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp y mk_base))
-               (mk_conclax (mk_member (mk_apply2 R1 (mk_var x) (mk_var y)) (mk_uni i))))
+               (mk_concl_mem (mk_apply2 R1 (mk_var x) (mk_var y)) (mk_uni i)))
             ws1)
     -> sequent_true lib
          (mk_wcseq
@@ -396,75 +409,82 @@ Proof.
     clear seqt2; intro seqt2.
   repeat (autodimp seqt2 hyp); exrepnd.
 
-  (* hyps_functionality *)
-  generalize (hyps_functionality_snoc lib
-                (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp y mk_base))
-                (mk_hyp z (mk_apply2 R1 (mk_var x) (mk_var y)))
-                (snoc (snoc s1 (x, x0)) (y, y0))
-                t); simpl; intro p.
-  apply p; clear p; try (complete sp).
-  introv eq s; lift_lsubst; lift_lsubst in eq.
-  rw @similarity_snoc in s; simpl in s; exrepnd; cpx.
-  rw @similarity_snoc in s5; simpl in s5; exrepnd; cpx.
+  {
+    (* hyps_functionality *)
+    generalize (hyps_functionality_snoc
+                  lib
+                  (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp y mk_base))
+                  (mk_hyp z (mk_apply2 R1 (mk_var x) (mk_var y)))
+                  (snoc (snoc s1 (x, x0)) (y, y0))
+                  t); simpl; intro p.
+    apply p; clear p; try (complete sp).
+    introv eq s; lift_lsubst; lift_lsubst in eq.
+    rw @similarity_snoc in s; simpl in s; exrepnd; cpx.
+    rw @similarity_snoc in s5; simpl in s5; exrepnd; cpx.
 
-  lsubst_tac.
-  allrw @equality_in_base_iff.
+    lsubst_tac.
+    allrw @equality_in_base_iff.
 
-  generalize (membership_apply2 lib H R1 x y i s1a s2a0 w1 c1 c11 ws1);
-    intro q; repeat (destimp q hyp).
-  generalize (q t0 t1); clear q; intro q; repnd.
+    generalize (membership_apply2 lib H R1 x y i s1a s2a0 w1 c1 c11 ws1);
+      intro q; repeat (destimp q hyp).
+    generalize (q t0 t1); clear q; intro q; repnd.
 
-  spcast.
-  generalize (implies_cequivc_apply2 lib
-                (lsubstc R1 w1 s2a0 c11)
-                (lsubstc R1 w1 s2a0 c11)
-                t3 t2 t0 t1);
-    intro ceq; repeat (autodimp ceq hyp); try (complete (apply cequivc_sym; auto)).
+    spcast.
+    generalize (implies_cequivc_apply2
+                  lib
+                  (lsubstc R1 w1 s2a0 c11)
+                  (lsubstc R1 w1 s2a0 c11)
+                  t3 t2 t0 t1);
+      intro ceq; repeat (autodimp ceq hyp); try (complete (apply cequivc_sym; auto)).
 
-  apply tequality_in_uni_implies_tequality in q0; sp.
-  spcast; apply tequality_respects_cequivc_right with (T2 := mkc_apply2 (lsubstc R1 w1 s2a0 c11) t0 t1); sp.
-  apply cequivc_sym; sp.
-  apply member_in_uni in q; sp.
+    apply tequality_in_uni_implies_tequality in q0; sp.
+    spcast; apply tequality_respects_cequivc_right with (T2 := mkc_apply2 (lsubstc R1 w1 s2a0 c11) t0 t1); sp.
+    apply cequivc_sym; sp.
+    apply member_in_uni in q; sp.
 
-  generalize (hyps_functionality_snoc lib
-                (snoc H (mk_hyp x mk_base))
-                (mk_hyp y mk_base)
-                (snoc s1 (x, x0))
-                y0); simpl; intro p.
-  apply p; try (complete sp).
-  introv eq; lift_lsubst; sp; try (apply tequality_base).
-  generalize (hyps_functionality_snoc lib H (mk_hyp x mk_base) s1 x0); simpl; intro q.
-  apply q; try (complete sp).
-  introv eq; lift_lsubst; sp; try (apply tequality_base).
+    generalize (hyps_functionality_snoc
+                  lib
+                  (snoc H (mk_hyp x mk_base))
+                  (mk_hyp y mk_base)
+                  (snoc s1 (x, x0))
+                  y0); simpl; intro p.
+    apply p; try (complete sp).
+    introv eq; lift_lsubst; sp; try (apply tequality_base).
+    generalize (hyps_functionality_snoc lib H (mk_hyp x mk_base) s1 x0); simpl; intro q.
+    apply q; try (complete sp).
+    introv eq; lift_lsubst; sp; try (apply tequality_base).
+  }
 
-  (* similarity *)
+  {
+    (* similarity *)
 
-  assert (wf_term (mk_apply2 R1 (mk_var x) (mk_var y)))
-    as wfap by (apply wf_apply2; sp).
+    assert (wf_term (mk_apply2 R1 (mk_var x) (mk_var y)))
+      as wfap by (apply wf_apply2; sp).
 
-  assert (cover_vars (mk_apply2 R1 (mk_var x) (mk_var y))
-                     (snoc (snoc s1 (x, x0)) (y, y0)))
-    as cvap
-      by (apply @cover_vars_apply2; sp;
-          try (apply @cover_vars_var);
-          repeat (apply @cover_vars_snoc_weak); sp;
-          repeat (rw @dom_csub_snoc); simpl; repeat (rw in_snoc); sp).
+    assert (cover_vars (mk_apply2 R1 (mk_var x) (mk_var y))
+                       (snoc (snoc s1 (x, x0)) (y, y0)))
+      as cvap
+        by (apply @cover_vars_apply2; sp;
+            try (apply @cover_vars_var);
+            repeat (apply @cover_vars_snoc_weak); sp;
+            repeat (rw @dom_csub_snoc); simpl; repeat (rw in_snoc); sp).
 
-  apply similarity_snoc; simpl.
-  exists (snoc (snoc s1 (x, x0)) (y, y0))
-         (snoc (snoc s2 (x, x0)) (y, y0))
-         t t
-         wfap cvap; sp.
-  apply similarity_snoc; simpl.
-  exists (snoc s1 (x, x0)) (snoc s2 (x, x0)) y0 y0 (@wf_base o)
-         (cover_vars_base (snoc s1 (x, x0))); sp;
-  try (complete (lift_lsubst; rw @equality_in_base_iff; spcast; apply cequivc_refl)).
-  apply similarity_snoc; simpl.
-  exists s1 s2 x0 x0 (@wf_base o) (cover_vars_base s1); sp;
-  try (complete (lift_lsubst; rw @equality_in_base_iff; spcast; apply cequivc_refl)).
+    apply similarity_snoc; simpl.
+    exists (snoc (snoc s1 (x, x0)) (y, y0))
+           (snoc (snoc s2 (x, x0)) (y, y0))
+           t t
+           wfap cvap; sp.
+    apply similarity_snoc; simpl.
+    exists (snoc s1 (x, x0)) (snoc s2 (x, x0)) y0 y0 (@wf_base o)
+           (cover_vars_base (snoc s1 (x, x0))); sp;
+      try (complete (lift_lsubst; rw @equality_in_base_iff; spcast; apply cequivc_refl)).
+    apply similarity_snoc; simpl.
+    exists s1 s2 x0 x0 (@wf_base o) (cover_vars_base s1); sp;
+      try (complete (lift_lsubst; rw @equality_in_base_iff; spcast; apply cequivc_refl)).
 
-  lsubst_tac.
-  rw @member_eq; sp.
+    lsubst_tac.
+    rw @member_eq; sp.
+  }
 
   lsubst_tac.
   apply inhabited_type_if_equality in seqt2; sp.
@@ -485,7 +505,7 @@ Lemma implies_inhabited_apply2 {o} :
          (mk_wcseq
             (mk_baresequent
                (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp y mk_base))
-               (mk_conclax (mk_member (mk_apply2 R1 (mk_var x) (mk_var y)) (mk_uni i))))
+               (mk_concl_mem (mk_apply2 R1 (mk_var x) (mk_var y)) (mk_uni i)))
             ws1)
     -> sequent_true lib
          (mk_wcseq
@@ -520,13 +540,13 @@ Lemma implies_sym_type {o} :
          (mk_wcseq
             (mk_baresequent
                (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp y mk_base))
-               (mk_conclax (mk_member (mk_apply2 R1 (mk_var x) (mk_var y)) (mk_uni i))))
+               (mk_concl_mem (mk_apply2 R1 (mk_var x) (mk_var y)) (mk_uni i)))
             ws1)
     -> sequent_true lib
          (mk_wcseq
             (mk_baresequent
                (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp y mk_base))
-               (mk_conclax (mk_member (mk_apply2 R2 (mk_var x) (mk_var y)) (mk_uni i))))
+               (mk_concl_mem (mk_apply2 R2 (mk_var x) (mk_var y)) (mk_uni i)))
             ws2)
     -> sequent_true lib
          (mk_wcseq
@@ -582,13 +602,13 @@ Lemma implies_trans_type {o} :
          (mk_wcseq
             (mk_baresequent
                (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp y mk_base))
-               (mk_conclax (mk_member (mk_apply2 R1 (mk_var x) (mk_var y)) (mk_uni i))))
+               (mk_concl_mem (mk_apply2 R1 (mk_var x) (mk_var y)) (mk_uni i)))
             ws1)
     -> sequent_true lib
          (mk_wcseq
             (mk_baresequent
                (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp y mk_base))
-               (mk_conclax (mk_member (mk_apply2 R2 (mk_var x) (mk_var y)) (mk_uni i))))
+               (mk_concl_mem (mk_apply2 R2 (mk_var x) (mk_var y)) (mk_uni i)))
             ws2)
     -> sequent_true lib
          (mk_wcseq
@@ -647,7 +667,7 @@ Lemma is_sym_type {o} :
          (mk_wcseq
             (mk_baresequent
                (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp y mk_base))
-               (mk_conclax (mk_member (mk_apply2 R (mk_var x) (mk_var y)) (mk_uni i))))
+               (mk_concl_mem (mk_apply2 R (mk_var x) (mk_var y)) (mk_uni i)))
             ws1)
     -> sequent_true lib
          (mk_wcseq
@@ -768,7 +788,7 @@ Lemma is_trans_type {o} :
          (mk_wcseq
             (mk_baresequent
                (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp y mk_base))
-               (mk_conclax (mk_member (mk_apply2 R (mk_var x) (mk_var y)) (mk_uni i))))
+               (mk_concl_mem (mk_apply2 R (mk_var x) (mk_var y)) (mk_uni i)))
             ws1)
     -> sequent_true lib
          (mk_wcseq
@@ -982,9 +1002,10 @@ Lemma membership_apply2_eq {o} :
       (mk_wcseq
          (mk_baresequent
             (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp y mk_base))
-            (mk_conclax (mk_equality (mk_apply2 R1 (mk_var x) (mk_var y))
-                                     (mk_apply2 R2 (mk_var x) (mk_var y))
-                                     (mk_uni i))))
+            (mk_concl_eq
+               (mk_apply2 R1 (mk_var x) (mk_var y))
+               (mk_apply2 R2 (mk_var x) (mk_var y))
+               (mk_uni i)))
          ws)
     -> hyps_functionality lib s1 H
     -> similarity lib s1 s2 H
@@ -1046,19 +1067,21 @@ Proof.
   try (complete (lift_lsubst; rw @equality_in_base_iff; spcast; apply cequivc_refl)).
 
   lsubst_tac.
+
+  SearchAbout equality mkc_equality.
   rw @member_eq in seqt1.
   rw <- @member_equality_iff in seqt1; sp.
 Qed.
 
 Lemma sequent_equality_implies_member {o} :
   forall lib (H : @bhyps o) a b T wc,
-    sequent_true lib (mk_wcseq (mk_bseq H (mk_conclax (mk_equality a b T))) wc)
-    -> {wc' : wf_csequent (mk_bseq H (mk_conclax (mk_member a T)))
-        $ sequent_true lib (mk_wcseq (mk_bseq H (mk_conclax (mk_member a T))) wc')}.
+    sequent_true lib (mk_wcseq (mk_bseq H (mk_concl_eq a b T)) wc)
+    -> {wc' : wf_csequent (mk_bseq H (mk_concl_mem a T))
+        $ sequent_true lib (mk_wcseq (mk_bseq H (mk_concl_mem a T)) wc')}.
 Proof.
   introv seq.
 
-  assert (wf_csequent (mk_bseq H (mk_conclax (mk_member a T)))) as wc' by (clear seq; wfseq).
+  assert (wf_csequent (mk_bseq H (mk_concl_mem a T))) as wc' by (clear seq; wfseq).
   exists wc'.
 
   vr_seq_true in seq.

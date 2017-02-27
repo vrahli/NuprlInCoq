@@ -26,6 +26,8 @@
 
 
 Require Export nuprl.
+Require Export cequiv_refl.
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ #⪯# *)
@@ -1783,11 +1785,13 @@ Ltac appdup l H :=
   let newH := fresh H in
     remember H as newH; clear_eq newH H; apply l in newH.
 
+
 Ltac eqconstr0 name :=
   match type of name with
     | mkc_uni _          = mkc_uni _          => apply mkc_uni_eq            in name
     | mkc_inl _          = mkc_inl _          => apply mkc_inl_eq            in name
     | mkc_inr _          = mkc_inr _          => apply mkc_inr_eq            in name
+    | mkc_refl _         = mkc_refl _         => apply mkc_refl_eq           in name
     | mkc_integer _      = mkc_integer _      => apply mkc_integer_eq        in name
     | mkc_token _        = mkc_token _        => apply mkc_token_eq          in name
     | mkc_utoken _       = mkc_utoken _       => apply mkc_utoken_eq         in name
@@ -2077,10 +2081,3 @@ Ltac rev_implies_ts_or_eq T1 T2 T h :=
   end.
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/")
-*** End:
-*)

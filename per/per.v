@@ -606,6 +606,29 @@ Definition eqorceq {p} lib (eq : per(p)) a b : [U] := eq a b {+} a ~=~(lib) b.
 
  *)
 
+Definition per_aeq_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) : [U] :=
+  (t ===>(lib) mkc_axiom)
+  # (t' ===>(lib) mkc_axiom)
+  # eqa a1 a2.
+
+Definition per_aeq {p} lib (ts : cts(p)) T1 T2 (eq : per(p)) : [U] :=
+  {A, B, a1, a2, b1, b2 : CTerm
+   , {eqa : per
+      , T1 ===>(lib) (mkc_equality a1 a2 A)
+      # T2 ===>(lib) (mkc_equality b1 b2 B)
+      # ts A B eqa
+      # eqorceq lib eqa a1 b1
+      # eqorceq lib eqa a2 b2
+      # eq <=2=> (per_aeq_eq lib a1 a2 eqa) }}.
+
+Definition per_eq_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) : [U] :=
+  { x1 , x2 : CTerm
+  , (t ===>(lib) (mkc_refl x1))
+  # (t' ===>(lib) (mkc_refl x2))
+  # eqa a1 a2
+  # eqa a1 x1
+  # eqa a2 x2 }.
+
 Definition per_eq {p} lib (ts : cts(p)) T1 T2 (eq : per(p)) : [U] :=
   {A, B, a1, a2, b1, b2 : CTerm
    , {eqa : per
@@ -614,8 +637,7 @@ Definition per_eq {p} lib (ts : cts(p)) T1 T2 (eq : per(p)) : [U] :=
       # ts A B eqa
       # eqorceq lib eqa a1 b1
       # eqorceq lib eqa a2 b2
-      # (forall t t',
-           eq t t' <=> (t ===>(lib) mkc_axiom # t' ===>(lib) mkc_axiom # eqa a1 a2)) }}.
+      # eq <=2=> (per_eq_eq lib a1 a2 eqa) }}.
 
 (**
 
@@ -1851,6 +1873,7 @@ Inductive close {p} lib (ts : cts) (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_base     : per_base     lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_approx   : per_approx   lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_cequiv   : per_cequiv   lib (close lib ts) T T' eq -> close lib ts T T' eq
+(*  | CL_aeq      : per_aeq      lib (close lib ts) T T' eq -> close lib ts T T' eq*)
   | CL_eq       : per_eq       lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_teq      : per_teq      lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_isect    : per_isect    lib (close lib ts) T T' eq -> close lib ts T T' eq
@@ -1887,6 +1910,7 @@ Arguments CL_uatom    {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_base     {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_approx   {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_cequiv   {p} [lib] [ts] [T] [T'] [eq] _.
+(*Arguments CL_aeq      {p} [lib] [ts] [T] [T'] [eq] _.*)
 Arguments CL_eq       {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_teq      {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_isect    {p} [lib] [ts] [T] [T'] [eq] _.
@@ -1924,6 +1948,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
   | Case_aux c "CL_base"
   | Case_aux c "CL_approx"
   | Case_aux c "CL_cequiv"
+(*  | Case_aux c "CL_aeq"*)
   | Case_aux c "CL_eq"
   | Case_aux c "CL_teq"
   | Case_aux c "CL_isect"
@@ -1990,6 +2015,20 @@ Definition close_ind' {pp}
                 (eq : per)
                 (per : per_cequiv lib (close lib ts) T T' eq),
            P ts T T' eq)
+(*  (aequ  : forall (ts : cts)
+                 (T T' : @CTerm pp)
+                 (eq : per)
+                 (A B a1 a2 b1 b2 : @CTerm pp)
+                 (eqa : per)
+                 (c1 : T ===>(lib) (mkc_equality a1 a2 A))
+                 (c2 : T' ===>(lib) (mkc_equality b1 b2 B))
+                 (cla : close lib ts A B eqa)
+                 (reca : P ts A B eqa)
+                 (eos1 : eqorceq lib eqa a1 b1)
+                 (eos2 : eqorceq lib eqa a2 b2)
+                 (eqiff : eq <=2=> (per_aeq_eq lib a1 a2 eqa))
+                 (per : per_aeq lib (close lib ts) T T' eq),
+            P ts T T' eq)*)
   (equ  : forall (ts : cts)
                  (T T' : @CTerm pp)
                  (eq : per)
@@ -2001,11 +2040,7 @@ Definition close_ind' {pp}
                  (reca : P ts A B eqa)
                  (eos1 : eqorceq lib eqa a1 b1)
                  (eos2 : eqorceq lib eqa a2 b2)
-                 (eqiff : forall t t',
-                            eq t t'
-                               <=> t ===>(lib) mkc_axiom
-                               # t' ===>(lib) mkc_axiom
-                               # eqa a1 a2)
+                 (eqiff : eq <=2=> (per_eq_eq lib a1 a2 eqa))
                  (per : per_eq lib (close lib ts) T T' eq),
             P ts T T' eq)
   (tequ : forall (ts : cts)
