@@ -494,4 +494,280 @@ Proof.
     apply nts_tes with (T := T1) (T' := T2); sp. }
 Qed.
 
+
+Notation "a =2=> b" := (forall x y, a x y -> b x y) (at level 0).
+
+Require Export ChoiceFacts.
+
+Record tyFamIn {o} (eq : per(o)) :=
+  MkTyFamIn
+    {
+      ty_fam_in1 : CTerm;
+      ty_fam_in2 : CTerm;
+      ty_fam_ine : eq ty_fam_in1 ty_fam_in2
+    }.
+Arguments ty_fam_in1 [o] [eq] _.
+Arguments ty_fam_in2 [o] [eq] _.
+Arguments ty_fam_ine [o] [eq] _.
+
+Lemma implies_ty_fam_eq {o} :
+  forall lib i
+         v (B : @CVTerm o [v])
+         v' (B' : @CVTerm o [v'])
+         (eqa eqa' : per(o)) (eqb : per-fam(eqa)),
+    (forall (A B : Type), FunctionalChoice_on A B)
+    -> (eqa =2=> eqa')
+    -> (forall (a a' : CTerm) (e : eqa a a'),
+           exists eq',
+             close lib (eunivi lib i) (B) [[v \\ a]] (B') [[v' \\ a']] eq'
+                   # (eqb a a' e) =2=> (eq'))
+    ->
+    exists (eqb' : per-fam(eqa')),
+    forall (a a' : CTerm) (e : eqa a a') (e' : eqa' a a'),
+      close lib (eunivi lib i) (B) [[v \\ a]] (B') [[v' \\ a']] (eqb' a a' e')
+            # (eqb a a' e) =2=> (eqb' a a' e').
+Proof.
+  introv fc eqaimp imp.
+  pose proof (fc (tyFamIn eqa)
+                 (per(o))
+                 (fun a b =>
+                    close lib (eunivi lib i) (B) [[v \\ ty_fam_in1 a]] (B') [[v' \\ ty_fam_in2 a]] b
+                          # (eqb (ty_fam_in1 a) (ty_fam_in2 a) (ty_fam_ine a)) =2=> b)) as q.
+  simpl in q.
+  autodimp q hyp.
+
+  exrepnd.
+
+  (* We cannot build such a per-fam because we don't have the other direction of eqaimp! *)
+
+  (*exists (fun a a' (e :  => f (MkTyFamIn o eqa' a a' e)).*)
+Abort.
+
+(* I don't think we can prove this because for type families we need
+   the other direction of this implication
+
+   Couldn't we convert the per though instead of saying that there exists one?
+ *)
+Lemma univ_implies_euniv {o} :
+  forall lib (A B : @CTerm o) eq,
+    univ lib A B eq
+    -> { eq' : per
+       , euniv lib A B eq'
+       # eq =2=> eq' }.
+Proof.
+  introv h.
+  unfold univ in h; exrepnd.
+  assert { eq' : per , eunivi lib i A B eq' # eq =2=> eq' } as h;
+    [|exrepnd; exists eq'; dands; auto; exists i; auto];[].
+  revert A B eq h0.
+  induction i; introv u; simpl in *; tcsp.
+
+  repndors; repnd.
+
+  - exists (eunivi_eq lib (eunivi lib i)).
+    dands; auto.
+    introv xx; apply u in xx; exrepnd; clear u.
+    clear dependent A.
+    clear dependent B.
+    clear dependent eq.
+
+    rename x into A.
+    rename y into B.
+    rename eqa into eq.
+    rename xx0 into h.
+
+    assert { eq' : per
+           , close lib (eunivi lib i) A B eq'
+                   # eq =2=> eq'} as q;
+      [|exrepnd; exists eq'; split; auto;
+        [eapply close_type_transitive; try (exact h1); eauto 2 with slow;
+         apply close_type_symmetric; auto; eauto 2 with slow
+        |eapply close_type_transitive; try (exact h1); eauto 2 with slow;
+         apply close_type_symmetric; auto; eauto 2 with slow]
+      ];[].
+
+    remember (univi lib i) as u.
+    revert Hequ.
+
+    close_cases (induction h using @close_ind') Case; introv xx; subst; tcsp;
+      try (complete (exists eq; tcsp)).
+
+    + Case "CL_init".
+
+      match goal with
+      | [ H : univi _ _ _ _ _ |- _ ] => rename H into u
+      end.
+
+      apply IHi in u.
+      exrepnd.
+      exists eq'; dands; auto.
+
+    + Case "CL_aeq".
+      repeat (autodimp IHh hyp); exrepnd.
+      exists (per_aeq_eq lib a1 a2 eq').
+      dands; auto.
+
+      * apply CL_aeq.
+        exists A B a1 a2 b1 b2 eq'; dands; auto;
+          try (complete (unfold eqorceq in *; tcsp)).
+
+      * introv xx.
+        apply eqiff in xx.
+        unfold per_aeq_eq in *; tcsp.
+
+    + Case "CL_eq".
+      repeat (autodimp IHh hyp); exrepnd.
+      exists (per_eq_eq lib a1 a2 eq').
+      dands; auto.
+
+      * apply CL_eq.
+        exists A B a1 a2 b1 b2 eq'; dands; auto;
+          try (complete (unfold eqorceq in *; tcsp)).
+
+      * introv xx.
+        apply eqiff in xx.
+        unfold per_eq_eq in *; exrepnd.
+        exists x1 x2; dands; tcsp.
+
+    + Case "CL_teq".
+      repeat (autodimp IHh1 hyp); exrepnd.
+      repeat (autodimp IHh2 hyp); exrepnd.
+      repeat (autodimp IHh3 hyp); exrepnd.
+      exists (@true_per o).
+      dands; tcsp.
+
+      assert (eq' <=2=> eq'1) as eqiff1.
+      {
+        dup IHh1 as xx.
+        eapply close_type_transitive in IHh1; eauto 2 with slow.
+        autodimp IHh1 hyp;[apply close_type_symmetric;eauto 2 with slow|].
+
+        dup IHh3 as yy.
+        eapply close_type_transitive in IHh3; eauto 2 with slow.
+        autodimp IHh3 hyp;[apply close_type_symmetric;eauto 2 with slow|].
+
+        eapply close_uniquely_valued in IHh1; eauto 2 with slow.
+      }
+
+      assert (eq'0 <=2=> eq'1) as eqiff2.
+      {
+        dup IHh2 as xx.
+        eapply close_type_transitive in IHh2; eauto 2 with slow.
+        autodimp IHh2 hyp;[apply close_type_symmetric;eauto 2 with slow|].
+
+        apply close_type_symmetric in IHh3; eauto 2 with slow.
+        dup IHh3 as yy.
+        eapply close_type_transitive in IHh3; eauto 2 with slow.
+        autodimp IHh3 hyp;[apply close_type_symmetric;eauto 2 with slow|].
+
+        eapply close_uniquely_valued in IHh2; eauto 2 with slow.
+      }
+
+      apply CL_teq.
+      exists a1 a2 b1 b2 eq'; dands; auto.
+
+      {
+        eapply close_type_extensionality; eauto 3 with slow.
+        eapply eq_term_equals_trans;[exact eqiff2|].
+        eapply eq_term_equals_sym; auto.
+      }
+
+      {
+        eapply close_type_extensionality; eauto 3 with slow.
+        eapply eq_term_equals_sym; auto.
+      }
+
+    + Case "CL_isect".
+      repeat (autodimp IHh hyp); exrepnd.
+
+      assert (forall (a a' : CTerm) (e : eqa a a'),
+                 exists eq',
+                   close lib (eunivi lib i) (B) [[v \\ a]] (B') [[v' \\ a']] eq'
+                         # (eqb a a' e) =2=> (eq')) as impb.
+      { introv; apply recb; auto. }
+      clear recb.
+
+      (* We probably cannot prove that because we would need the other direction
+         for the domain *)
+
+Abort.
+
+(*
+Lemma close_univ_implies_close_euniv {o} :
+  forall lib (A B : @CTerm o) eq,
+    close lib (univ lib) A B eq
+    -> { eq' : per
+       , close lib (euniv lib) A B eq'
+       # forall a b, eq a b -> eq' a b}.
+Proof.
+  introv h.
+  remember (univ lib) as u; revert Hequ.
+  close_cases (induction h using @close_ind') Case; introv xx; subst; tcsp;
+    try (complete (exists eq; tcsp)).
+
+  - Case "CL_init".
+
+    match goal with
+    | [ H : univ _ _ _ _ |- _ ] => rename H into u
+    end.
+    unfold univ in u; exrepnd.
+
+    assert { eq' : per , eunivi lib i T T' eq' # eq =2=> eq' } as h;
+      [|exrepnd; exists eq'; dands; auto; apply CL_init; exists i; auto];[].
+    revert T T' eq u0.
+    induction i; introv u; simpl in *; tcsp.
+
+    repndors; repnd.
+
+    + exists (eunivi_eq lib (eunivi lib i)).
+      dands; auto.
+      introv xx; apply u in xx; exrepnd.
+      exists
+
+      left; dands; auto.
+
+    + apply IHi in u; exrepnd.
+      exists eq0; tcsp.
+
+
+    match goal with
+    | [ H : univ _ _ _ _ |- _ ] => apply univ_implies_euniv in H
+    end; exrepnd.
+    exists eq0.
+    dands; auto.
+    apply CL_init; auto.
+
+  - Case "CL_aeq".
+    autodimp IHh hyp; exrepnd.
+    exists (per_aeq_eq lib a1 a2 eq0).
+    apply CL_aeq.
+    exists A B a1 a2 b1 b2 eq0.
+    dands; auto.
+
+    { unfold eqorceq in *.
+      destruct eos1 as [eos1|eos1]; tcsp;[].
+      left.
+
+Qed.
+
+Lemma nuprl_implies_enuprl {o} :
+  forall lib (A B : @CTerm o) eq,
+    nuprl lib A B eq -> { eq : per , enuprl lib A B eq }.
+Proof.
+  introv h; unfold nuprl in h.
+  split.
+  induction h.
+
+  - apply CL_init.
+  split; auto.
+Qed.
+
+Lemma enuprl_as_nuprl {o} :
+  forall lib (A : @CTerm o) eq,
+    enuprl lib A A eq <=> nuprl lib A A eq.
+Proof.
+  introv; split; introv h.
+Qed.
+*)
+
 (* end hide *)

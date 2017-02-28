@@ -34,6 +34,7 @@ Require Export cequiv_bind.
 Require Export sequents2.
 Require Export sequents_tacs.
 Require Export sequents_tacs2.
+Require Export sequents_useful.
 Require Export per_props_equality.
 Require Export per_can.
 Require Export subst_tacs_aeq.
@@ -204,10 +205,12 @@ Definition rule_cequiv_intensional_equality_simple {o}
            (i : nat)
            (a b : @NTerm o) :=
   mk_rule
-    (mk_baresequent []
-                   (mk_conclax (mk_equality (mk_cequiv a b)
-                                            (mk_cequiv a b)
-                                            (mk_uni i))))
+    (mk_baresequent
+       []
+       (mk_concl_eq
+          (mk_cequiv a b)
+          (mk_cequiv a b)
+          (mk_uni i)))
     []
     [].
 
@@ -225,6 +228,14 @@ Proof.
   destseq; allsimpl.
 
   allunfold @closed_type; allunfold @closed_extract; allunfold @nh_vars_hyps; allsimpl.
+
+  match goal with
+  | [ |- context[covered ?x ?y] ] => assert (covered x y) as cov
+  end.
+
+  { allrw @covered_equality; repnd.
+    SearchAbout covered mk_refl.
+    Locate covered.
 
   exists (@covered_axiom o []).
 

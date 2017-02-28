@@ -96,10 +96,16 @@ Lemma cover_vars_refl {o} :
     <=> cover_vars a sub.
 Proof.
   sp; repeat (rw @cover_vars_eq); unfold cover_vars_upto; simpl.
-  rw @remove_nvars_nil_l; rw app_nil_r.
-  allrw subvars_app_l.
-  allrw subvars_remove_nvars; simpl.
-  allrw @dom_csub_csub_filter; sp.
+  autorewrite with slow in *; tcsp.
+Qed.
+
+Lemma covered_refl {o} :
+  forall (a : @NTerm o) l,
+    covered (mk_refl a ) l
+    <=> covered a l.
+Proof.
+  unfold covered; simpl; introv.
+  autorewrite with slow in *; tcsp.
 Qed.
 
 Lemma lsubstc_mk_refl_ex {o} :

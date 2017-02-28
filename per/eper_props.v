@@ -31,7 +31,8 @@
 
 
 Require Export enuprl_props.
-Require Export per_props.
+Require Export echoice.
+Require Export cvterm.
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
@@ -59,39 +60,33 @@ Lemma eequality_in_uni {p} :
 Proof.
   unfold etequality, eequality, enuprl; introv e; exrepnd.
 
-  inversion e1; subst; try not_univ.
+  inversion e1 as [e e']; GC; clear e1.
+  inversion e; clear e; subst; try not_univ.
   duniv j h.
-  induction j; allsimpl; sp.
+  induction j; allsimpl; sp; GC.
   computes_to_value_isvalue.
   match goal with
   | [ H : _ <=2=> _ |- _ ] => apply H in e0; clear H
   end.
   unfold eunivi_eq in e0; exrepnd.
   allapply @enuprli_implies_enuprl; auto.
-  fold (enuprl lib).
-
-  exists eqa.
-
-XXXXXXXXXXXX
-  ents.
-  SearchAbout enuprl.
-  discover; exrepnd.
-  exists eqa; sp.
+  exists eqa; auto.
 Qed.
 
-Lemma member_in_uni {p} :
-  forall lib a i, @member p lib a (mkc_uni i) -> type lib a.
+Lemma emember_in_uni {p} :
+  forall lib a i, @emember p lib a (mkc_uni i) -> etype lib a.
 Proof.
-  unfold member, type; introv e.
-  apply equality_in_uni in e; sp.
+  unfold emember, etype; introv e.
+  apply eequality_in_uni in e; sp.
 Qed.
 
+(*
 (* This is not provable, because in general we can't find the type level
  * of a type family. *)
-Lemma equality_in_uni_iff {p} :
+Lemma eequality_in_uni_iff {p} :
   forall lib a b,
-    {i : nat , @equality p lib a b (mkc_uni i)}
-    <=> tequality lib a b.
+    {i : nat , @eequality p lib a b (mkc_uni i)}
+    <=> etequality lib a b.
 Proof.
   sp; split; introv e; exrepnd.
   apply equality_in_uni in e0; sp.
@@ -158,64 +153,98 @@ Proof.
     admit.
 (*Error: Universe inconsistency.*)
 Abort.
+*)
 
 
 
 (* =============== More specific properties ================= *)
 
-Lemma nuprl_int {p} :
-  forall lib, @nuprl p lib mkc_int mkc_int (equality_of_int lib).
+Lemma enuprl_same :
+  forall {o} lib (A : @CTerm o) eq,
+    enuprl lib A A eq <=> close lib (euniv lib) A A eq.
 Proof.
-  sp.
+  introv; split; intro h.
+  - inversion h; auto.
+  - constructor; auto.
+Qed.
+
+Lemma enuprl_int {p} :
+  forall lib, @enuprl p lib mkc_int mkc_int (equality_of_int lib).
+Proof.
+  introv.
+  apply enuprl_same.
   apply CL_int.
   unfold per_int; sp; spcast; try computes_to_value_refl.
 Qed.
 
-Lemma equality_of_int_xxx {p} :
+(*
+Lemma eequality_of_int_xxx {p} :
   forall lib, @close p lib (univ lib) mkc_int mkc_int (equality_of_int lib).
 Proof.
-  apply nuprl_int.
+  apply enuprl_int.
 Qed.
+*)
 
-Lemma tequality_int {p} : forall lib, @tequality p lib mkc_int mkc_int.
+Lemma etequality_int {p} : forall lib, @etequality p lib mkc_int mkc_int.
 Proof.
   introv.
   exists (@equality_of_int p lib).
-  sp. apply equality_of_int_xxx.
+  apply enuprl_int.
 Qed.
 
-Lemma nat_in_int {p} : forall lib (n : nat), @member p lib (mkc_nat n) mkc_int.
+Lemma enat_in_int {p} : forall lib (n : nat), @emember p lib (mkc_nat n) mkc_int.
 Proof.
-  unfold member, equality; sp.
+  unfold emember, eequality; introv.
   exists (@equality_of_int p lib).
-  sp;[apply equality_of_int_xxx|].
+  dands;[apply enuprl_int|].
   exists (Z_of_nat n); sp;
   unfold mkc_nat, mkc_integer, isprog_mk_nat, isprog_mk_integer, mk_nat;
     spcast; computes_to_value_refl.
 Qed.
 
+(*
+
+The -> shouldn't be true anymore because, e.g.,
+
+ False -> Bool and Nat -> Top
+
+are equal types
+
+================================================
+
 (* This is basically 'functionEquality' *)
-Lemma tequality_function {p} :
+Lemma etequality_function {p} :
   forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2,
-    tequality lib
-              (mkc_function A1 v1 B1)
-              (mkc_function A2 v2 B2)
+    etequality
+      lib
+      (mkc_function A1 v1 B1)
+      (mkc_function A2 v2 B2)
     <=>
-    (tequality lib A1 A2
-     # forall a a', equality lib a a' A1 -> tequality lib (substc a v1 B1) (substc a' v2 B2)).
+    (etequality lib A1 A2
+     # forall a a', eequality lib a a' A1 -> etequality lib (substc a v1 B1) (substc a' v2 B2)).
 Proof.
   intros.
   sp_iff Case.
 
   - Case "->".
-    intros teq.
-    unfold tequality, nuprl in teq; exrepnd.
-    inversion teq0; subst; try not_univ.
+    intro teq.
+    unfold etequality, enuprl in teq; exrepnd.
+    destruct teq0 as [teq1 teq2].
+    inversion teq1; subst; try not_univ.
+    match goal with
+    | [ H : per_func _ _ _ _ _ |- _ ] => rename H into perf1
+    end.
+    inversion teq2; subst; try not_univ.
+    match goal with
+    | [ H : per_func _ _ _ _ _ |- _ ] => rename H into perf2
+    end.
+    clear teq1 teq2.
     allunfold_per.
     computes_to_value_isvalue.
-    unfold tequality; sp.
+    unfold etequality; dands.
 
-    exists eqa; sp.
+    {
+      exists eqa; sp.
 
     assert (eqa a a') as xa
       by (generalize (equality_eq1 lib A A' a a' eqa); intro e;
@@ -249,6 +278,69 @@ Proof.
     exists A1 A2 v1 v2 B1 B2; sp;
     try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
 Qed.
+ *)
+
+
+Lemma implies_etequality_function {p} :
+  forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2,
+    etequality lib A1 A2
+    -> (forall a a', eequality lib a a' A1 -> etequality lib (substc a v1 B1) (substc a' v2 B2))
+    -> etequality lib (mkc_function A1 v1 B1) (mkc_function A2 v2 B2).
+Proof.
+  introv teqa teqb.
+
+  unfold etequality in teqa; exrepnd.
+  rename eq into eqa.
+
+  pose proof (echoice_teq lib A1 v1 B1 v2 B2 teqb) as fteqb; exrepnd.
+  clear teqb.
+
+  exists (fun t1 t2 =>
+            forall (a1 a2 : CTerm) (e : eqa a1 a2),
+              f a1
+                a2
+                (eq_eequality2 lib a1 a2 A1 A2 eqa e teqa0)
+                (mkc_apply t1 a1)
+                (mkc_apply t2 a2)).
+  split.
+
+  - apply CL_func; fold (@enuprl p lib).
+    unfold per_func.
+    exists eqa.
+
+    exists (fun a1 a2 e => f a1 a2 (eq_eequality2 lib a1 a2 A1 A2 eqa e teqa0)); sp.
+
+    exists A1 A1 v1 v1 B1 B1; dands;  tcsp;
+      try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
+
+    { destruct teqa0 as [t1 t2]; auto. }
+
+    introv.
+
+    dup e as e1.
+    eapply eequality_eq_refl in e1;[|eauto].
+
+    dup e as e2.
+    eapply eequality_eq_sym in e2;[|eauto].
+    eapply eequality_eq_refl in e2;[|eauto].
+
+    pose proof (fteqb0 a a' (eq_eequality2 lib a a' A1 A2 eqa e teqa0)) as q.
+    destruct q as [q1 q2]; auto.
+
+    pose proof (fteqb0 a a (eq_eequality2 lib a a A1 A2 eqa e1 teqa0)) as h.
+    destruct h as [h1 h2]; auto.
+
+    pose proof (fteqb0 a' a' (eq_eequality2 lib a' a' A1 A2 eqa e2 teqa0)) as z.
+    destruct z as [z1 z2]; auto.
+
+    remember (f a a' (eq_eequality2 lib a a' A1 A2 eqa e teqa0)) as eqb1; clear Heqeqb1.
+    remember (f a a (eq_eequality2 lib a a A1 A2 eqa e1 teqa0)) as eqb2; clear Heqeqb2.
+    remember (f a' a' (eq_eequality2 lib a' a' A1 A2 eqa e2 teqa0)) as eqb3; clear Heqeqb3.
+
+    exists A1 A2 v1 v2 B1 B2; sp;
+    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
+Qed.
+
 
 Definition get_per_of {p} lib (T t1 t2: @CTerm p) :=
   equality lib t1 t2 T.

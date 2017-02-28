@@ -115,7 +115,7 @@ Definition term_equality_respecting {p} lib (eq : per(p)) :=
 
 Definition uniquely_valued {p} (ts : cts(p)) :=
   forall T T' eq eq',
-       ts T T' eq -> ts T T' eq' -> eq <=2=> eq'.
+    ts T T' eq -> ts T T' eq' -> eq <=2=> eq'.
 
 Definition type_extensionality {p} (ts : cts(p)) :=
   forall T T' eq eq', ts T T' eq -> eq <=2=> eq' -> ts T T' eq'.

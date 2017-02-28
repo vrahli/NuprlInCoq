@@ -47,6 +47,7 @@ Require Export per.
 (* begin hide *)
 
 
+(*
 (** Empty candidate type system *)
 Definition cts_bot {p} (T T' : @CTerm p) (eq : @CTerm p -> @CTerm p -> Type) : Set := False.
 
@@ -68,6 +69,7 @@ Definition univ3 {p} lib (T T' : @CTerm p) eq := close lib (univ_def lib (univ2 
 
 Definition univ' {p} lib (T T' : @CTerm p) eq :=
   univ0 lib T T' eq [+] univ1 lib T T' eq [+] univ2 lib T T' eq [+] univ3 lib T T' eq.
+ *)
 
 (* end hide *)
 
@@ -95,15 +97,20 @@ Definition univ' {p} lib (T T' : @CTerm p) eq :=
 
  *)
 
-Fixpoint univi {p} lib (i : nat) (T T' : @CTerm p) (eq : per(p)) : [U] :=
+Definition univi_eq {o} lib ts (A A' : @CTerm o) :=
+  { eqa : per(o)
+  , close lib ts A eqa
+  # close lib ts A' eqa }.
+
+Fixpoint univi {p} lib (i : nat) (T : @CTerm p) (eq : per(p)) : [U] :=
   match i with
   | 0 => False
   | S n =>
-    (T ===>(lib) (mkc_uni n)
-     # T' ===>(lib) (mkc_uni n)
-     # forall A A',
-         eq A A' <=> {eqa : per , close lib (univi lib n) A A' eqa})
-    {+} univi lib n T T' eq
+    (
+      T ===>(lib) (mkc_uni n)
+      # eq <=2=> (univi_eq lib (univi lib n))
+    )
+    {+} univi lib n T eq
   end.
 
 (**
@@ -143,59 +150,57 @@ Check (fun T T' => univi 1 T T' (fun A A' => {eqa : per & close (univi 0) A A' e
 *)
 
 
-Lemma univi_mkc_uni {p} :
+Lemma univi_mkc_uni {o} :
   forall lib (i : nat),
     univi lib
           (S i)
           (mkc_uni i)
-          (mkc_uni i)
-          (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}).
+          (@univi_eq o lib (univi lib i)).
 Proof.
-  intros.
-  simpl.
-  left.
-  dands; try (spcast; apply computes_to_valc_refl; sp).
-  sp.
+  introv; simpl.
+  left; dands; tcsp.
+  spcast; apply computes_to_valc_refl; sp.
 Qed.
 
 Lemma univi_exists {p} :
-  forall lib i (T T' : @CTerm p) eq,
-    univi lib i T T' eq
+  forall lib i (T : @CTerm p) eq,
+    univi lib i T eq
     -> {j : nat
-        , j < i
-         # T ===>(lib) (mkc_uni j)
-         # T' ===>(lib) (mkc_uni j)
-         # forall A A',
-              eq A A' <=> {eqa : per , close lib (univi lib j) A A' eqa}}.
+       , j < i
+       # T ===>(lib) (mkc_uni j)
+       # eq <=2=> (univi_eq lib (univi lib j))}.
 Proof.
-  induction i; simpl; sp.
-  exists i; sp; omega.
-  discover; sp.
-  exists j; sp; omega.
+  induction i; simpl; introv u; tcsp.
+  repndors; repnd; tcsp.
+
+  - exists i; sp; omega.
+
+  - apply IHi in u; exrepnd.
+    exists j; sp; omega.
 Qed.
 
 Lemma univi_exists_iff {p} :
-  forall lib i (T T' : @CTerm p) eq,
-    univi lib i T T' eq
+  forall lib i (T : @CTerm p) eq,
+    univi lib i T eq
     <=> {j : nat
-          , j < i
-          # T ===>(lib) (mkc_uni j)
-          # T' ===>(lib) (mkc_uni j)
-          # forall A A',
-               eq A A' <=> {eqa : per , close lib (univi lib j) A A' eqa}}.
+        , j < i
+        # T ===>(lib) (mkc_uni j)
+        # eq <=2=> (univi_eq lib (univi lib j)) }.
 Proof.
-  sp; split; intro k.
-  apply univi_exists; auto.
-  revert T T' eq k.
-  induction i; simpl; sp.
-  destruct (eq_nat_dec j i); subst; sp.
-  right.
-  apply IHi with (T := T) (T' := T') (eq := eq); sp.
-  exists j; sp; omega.
+  introv; split; intro k.
+
+  - apply univi_exists; auto.
+
+  - revert T eq k.
+    induction i; simpl; introv h; tcsp; exrepnd.
+    destruct (eq_nat_dec j i); subst; tcsp;[].
+    right.
+    apply IHi.
+    exists j; dands; auto; omega.
 Qed.
 
 
-Definition nuprli {p} lib (i : nat) := @close p lib (univi lib i).
+Definition nuprli {o} lib (i : nat) := @close o lib (univi lib i).
 
 Lemma fold_nuprli {p} :
   forall lib i, close lib (univi lib i) = @nuprli p lib i.
@@ -221,8 +226,8 @@ Qed.
 
  *)
 
-Definition univ {p} lib (T T' : @CTerm p) (eq : per) :=
-  {i : nat , univi lib i T T' eq}.
+Definition univ {p} lib (T : @CTerm p) (eq : per) :=
+  {i : nat , univi lib i T eq}.
 
 (**
 
@@ -233,13 +238,13 @@ Definition univ {p} lib (T T' : @CTerm p) (eq : per) :=
 *)
 
 Definition defines_only_universes {p} lib (ts : cts(p)) :=
-  forall T eq, ts T T eq -> {i : nat , T ===>(lib) (mkc_uni i)}.
+  forall T eq, ts T eq -> {i : nat , T ===>(lib) (mkc_uni i)}.
 
 (* begin hide *)
 
 Lemma univi_iff_univ {p} :
-  forall lib (a b : @CTerm p) eq,
-    univ lib a b eq <=> {i : nat , univi lib i a b eq}.
+  forall lib (A : @CTerm p) eq,
+    univ lib A eq <=> {i : nat , univi lib i A eq}.
 Proof.
   sp; split; sp.
 Qed.
@@ -257,7 +262,7 @@ Definition nuprl {p} lib := @close p lib (univ lib).
 
 (* begin hide *)
 
-
+(*
 (* ============ Extension of the type system with a new universe of types ============ *)
 Inductive closep {p} lib (ts : cts) (T T' : @CTerm p) (eq : per) : [U] :=
   | CLp_init    : ts T T' eq -> closep lib ts T T' eq
@@ -298,12 +303,12 @@ Definition nuprlp {p} lib := @closep p lib (univp lib).
 Definition Nuprl {p} lib (T T' : @CTerm p) (eq : per) :=
   nuprl lib T T' eq [+] univp lib T T' eq.
 (* ==================================================================================*)
-
+*)
 
 Lemma typable_in_higher_univ {pp} :
-  forall lib i (T T' : @CTerm pp) eq,
-    nuprli lib i T T' eq
-    -> forall k, nuprli lib (k + i) T T' eq.
+  forall lib i (T : @CTerm pp) eq,
+    nuprli lib i T eq
+    -> forall k, nuprli lib (k + i) T eq.
 Proof.
   unfold nuprli; introv cl; induction k; simpl; sp.
 
@@ -313,53 +318,73 @@ Proof.
 
   - Case "CL_aeq".
     apply CL_aeq; unfold per_aeq; sp.
-    exists A B a1 a2 b1 b2 eqa; sp.
+    exists A a b eqa; sp.
 
   - Case "CL_eq".
     apply CL_eq; unfold per_eq; sp.
-    exists A B a1 a2 b1 b2 eqa; sp.
+    exists A a b eqa; sp.
 
   - Case "CL_teq".
     apply CL_teq; unfold per_teq; sp.
-    exists a1 a2 b1 b2 eqa; sp.
+    exists A B eqa; sp.
 
   - Case "CL_isect".
     apply CL_isect; unfold per_isect; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A v B; dands; auto.
+    split; dands; auto.
+    + eapply recb; eauto.
+    + eapply recb'; eauto.
 
   - Case "CL_func".
     apply CL_func; unfold per_func; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A v B; sp.
+    split; dands; auto.
+    + eapply recb; eauto.
+    + eapply recb'; eauto.
 
   - Case "CL_disect".
     apply CL_disect; unfold per_disect; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A v B; sp.
+    split; dands; auto.
+    + eapply recb; eauto.
+    + eapply recb'; eauto.
 
   - Case "CL_pertype".
     apply CL_pertype; unfold per_pertype; sp.
-    exists R1 R2 eq1 eq2; sp.
+    exists R eqr; sp.
 
+    (*
   - Case "CL_ipertype".
     apply CL_ipertype; unfold per_ipertype; sp.
     exists R1 R2 eq1; sp.
+*)
 
+    (*
   - Case "CL_spertype".
     apply CL_spertype; unfold per_spertype; sp.
     exists R1 R2 eq1; sp.
+*)
 
   - Case "CL_w".
     apply CL_w; unfold per_w; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A v B; sp.
+    split; dands; auto.
+    + eapply recb; eauto.
+    + eapply recb'; eauto.
 
   - Case "CL_m".
     apply CL_m; unfold per_m; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A v B; sp.
+    split; dands; auto.
+    + eapply recb; eauto.
+    + eapply recb'; eauto.
 
+      (*
   - Case "CL_pw".
     apply CL_pw; unfold per_pw; sp.
     exists eqp eqa eqb p p' cp cp' ca ca'.
@@ -367,7 +392,9 @@ Proof.
     unfold type_pfamily.
     exists Pr Pr' ap ap' A A' bp bp'.
     exists ba ba' B B'; sp.
+*)
 
+      (*
   - Case "CL_pm".
     apply CL_pm; unfold per_pm; sp.
     exists eqp eqa eqb p p' cp cp' ca ca'.
@@ -375,14 +402,15 @@ Proof.
     unfold type_pfamily.
     exists Pr Pr' ap ap' A A' bp bp'.
     exists ba ba' B B'; sp.
+*)
 
   - Case "CL_texc".
     apply CL_texc; unfold per_texc; sp.
-    exists eqn eqe N N' E E'; sp.
+    exists eqn eqe N E; sp.
 
   - Case "CL_union".
     apply CL_union; unfold per_union; sp.
-    exists eqa eqb A A' B B'; sp.
+    exists eqa eqb A B; sp.
 
     (*
   - Case "CL_eunion".
@@ -392,7 +420,7 @@ Proof.
 
   - Case "CL_image".
     apply CL_image; unfold per_image; sp.
-    exists eqa A A' f f'; sp.
+    exists eqa A f; sp.
 
 (*
   - Case "CL_eisect".
@@ -404,51 +432,62 @@ Proof.
 
   - Case "CL_partial".
     apply CL_partial; unfold per_partial; sp.
-    exists A1 A2 eqa; sp.
+    exists A eqa; sp.
 
   - Case "CL_admiss".
     apply CL_admiss; unfold per_partial; sp.
-    exists A1 A2 eqa; sp.
+    exists A eqa; sp.
 
   - Case "CL_mono".
     apply CL_mono; unfold per_partial; sp.
-    exists A1 A2 eqa; sp.
+    exists A eqa; sp.
 
   - Case "CL_ffatom".
     apply CL_ffatom; unfold per_ffatom; sp.
-    exists A1 A2 x1 x2 a1 a2 eqa u; sp.
+    exists A x a eqa u; sp.
 
+    (*
   - Case "CL_effatom".
     apply CL_effatom; unfold per_effatom; sp.
     exists A1 A2 x1 x2 a1 a2 eqa; sp.
+*)
 
   - Case "CL_ffatoms".
     apply CL_ffatoms; unfold per_ffatoms; sp.
-    exists A1 A2 x1 x2 eqa; sp.
+    exists A x eqa; sp.
 
   - Case "CL_set".
     apply CL_set; unfold per_set; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A v B; sp.
+    split; dands; auto.
+    + eapply recb; eauto.
+    + eapply recb'; eauto.
 
   - Case "CL_tunion".
     apply CL_tunion; unfold per_tunion; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A v B; sp.
+    split; dands; auto.
+    + eapply recb; eauto.
+    + eapply recb'; eauto.
 
   - Case "CL_product".
     apply CL_product; unfold per_product; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A v B; sp.
+    split; dands; auto.
+    + eapply recb; eauto.
+    + eapply recb'; eauto.
 Qed.
 
 Lemma typable_in_higher_univ_r {p} :
-  forall lib i (T T' : @CTerm p) eq,
-    nuprli lib i T T' eq
-    -> forall k, nuprli lib (i + k) T T' eq.
+  forall lib i (T : @CTerm p) eq,
+    nuprli lib i T eq
+    -> forall k, nuprli lib (i + k) T eq.
 Proof.
   unfold nuprli; introv n; sp.
-  generalize (typable_in_higher_univ lib i T T' eq n k); sp.
+  generalize (typable_in_higher_univ lib i T eq n k); sp.
   assert (k + i = i + k) as e by omega.
   rww e; sp.
 Qed.
@@ -466,18 +505,18 @@ Proof.
 Qed.
 
 Lemma typable_in_higher_univ_max {p} :
-  forall lib i1 i2 (A1 B1 A2 B2 : @CTerm p) eq1 eq2,
-    nuprli lib i1 A1 B1 eq1
-    -> nuprli lib i2 A2 B2 eq2
-    -> nuprli lib (Peano.max i1 i2) A1 B1 eq1
-       # nuprli lib (Peano.max i1 i2) A2 B2 eq2.
+  forall lib i1 i2 (A B : @CTerm p) eq1 eq2,
+    nuprli lib i1 A eq1
+    -> nuprli lib i2 B eq2
+    -> nuprli lib (Peano.max i1 i2) A eq1
+       # nuprli lib (Peano.max i1 i2) B eq2.
 Proof.
   introv n1 n2.
   generalize (typable_in_higher_univ
-                lib i1 A1 B1 eq1 n1 ((Peano.max i1 i2) - i1));
+                lib i1 A eq1 n1 ((Peano.max i1 i2) - i1));
     intro k1.
   generalize (typable_in_higher_univ
-                lib i2 A2 B2 eq2 n2 ((Peano.max i1 i2) - i2));
+                lib i2 B eq2 n2 ((Peano.max i1 i2) - i2));
     intro k2.
   assert (((Peano.max i1 i2) - i1) + i1 = Peano.max i1 i2) as max1.
   apply minus_plus_n; sp.
@@ -491,20 +530,20 @@ Proof.
 Qed.
 
 Lemma uni_in_higher_univ {p} :
-  forall lib i (T T' : @CTerm p) eq,
-    univi lib i T T' eq
-    -> forall k, univi lib (k + i) T T' eq.
+  forall lib i (T : @CTerm p) eq,
+    univi lib i T eq
+    -> forall k, univi lib (k + i) T eq.
 Proof.
   induction k; simpl; sp.
 Qed.
 
 Lemma uni_in_higher_univ_r {p} :
-  forall lib i (T T' : @CTerm p) eq,
-    univi lib i T T' eq
-    -> forall k, univi lib (i + k) T T' eq.
+  forall lib i (T : @CTerm p) eq,
+    univi lib i T eq
+    -> forall k, univi lib (i + k) T eq.
 Proof.
   introv u; sp.
-  generalize (uni_in_higher_univ lib i T T' eq u k); sp.
+  generalize (uni_in_higher_univ lib i T eq u k); sp.
   assert (k + i = i + k) as e by omega.
   rww e; sp.
 Qed.
@@ -618,9 +657,9 @@ Qed.
 *)
 
 Lemma nuprli_implies_nuprl {pp} :
-  forall lib (a b : @CTerm pp) i eq,
-    nuprli lib i a b eq
-    -> nuprl lib a b eq.
+  forall lib (A : @CTerm pp) i eq,
+    nuprli lib i A eq
+    -> nuprl lib A eq.
 Proof.
   unfold nuprli, nuprl; introv n.
   remember (univi lib i) as k.
@@ -634,58 +673,67 @@ Proof.
   - Case "CL_aeq".
     apply CL_aeq.
     unfold per_aeq; sp.
-    exists A B a1 a2 b1 b2 eqa; sp.
+    exists A a b eqa; sp.
     apply IHn with (i0 := i); sp.
 
   - Case "CL_eq".
     apply CL_eq.
     unfold per_eq; sp.
-    exists A B a1 a2 b1 b2 eqa; sp.
+    exists A a b eqa; sp.
     apply IHn with (i0 := i); sp.
 
   - Case "CL_teq".
     apply CL_teq.
     unfold per_teq; sp.
-    exists a1 a2 b1 b2 eqa; sp.
-    apply IHn1 with (i0 := i); sp.
-    apply IHn2 with (i0 := i); sp.
-    apply IHn3 with (i0 := i); sp.
+    exists A B eqa; sp.
+    { apply IHn1 with (i0 := i); sp. }
+    { apply IHn2 with (i0 := i); sp. }
 
   - Case "CL_isect".
     apply CL_isect.
     unfold per_isect, type_family; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
-    apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    exists A v B; sp.
+    { apply IHn with (i0 := i); sp. }
+    split; dands; auto.
+    { eapply recb; eauto. }
+    { eapply recb'; eauto. }
 
   - Case "CL_func".
     apply CL_func.
     unfold per_func, type_family; sp.
-    exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
-    apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    exists eqa eqb; sp.
+    exists A v B; sp.
+    { apply IHn with (i0 := i); sp. }
+    split; dands; auto.
+    { eapply recb; eauto. }
+    { eapply recb'; eauto. }
 
   - Case "CL_disect".
     apply CL_disect.
     unfold per_disect, type_family; sp.
-    exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
-    apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    exists eqa eqb; sp.
+    exists A v B; sp.
+    { apply IHn with (i0 := i); sp. }
+    split; dands; auto.
+    { eapply recb; eauto. }
+    { eapply recb'; eauto. }
 
   - Case "CL_pertype".
     apply CL_pertype.
     unfold per_pertype; sp.
-    exists R1 R2 eq1 eq2; sp.
+    exists R eqr; sp.
     apply rec1 with (i0 := i); sp.
-    apply rec2 with (i0 := i); sp.
 
+    (*
   - Case "CL_ipertype".
     apply CL_ipertype.
     unfold per_ipertype; sp.
     exists R1 R2 eq1; sp.
     apply rec1 with (i0 := i); sp.
+*)
 
+    (*
   - Case "CL_spertype".
     apply CL_spertype.
     unfold per_spertype; sp.
@@ -693,21 +741,29 @@ Proof.
     apply rec1 with (i0 := i); sp.
     apply rec2 with (i0 := i); sp.
     apply rec3 with (i0 := i); sp.
+*)
 
   - Case "CL_w".
     apply CL_w.
     unfold per_w, type_family; sp.
-    exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
-    apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    exists eqa eqb; sp.
+    exists A v B; sp.
+    { apply IHn with (i0 := i); sp. }
+    split; dands; auto.
+    { eapply recb; eauto. }
+    { eapply recb'; eauto. }
 
   - Case "CL_m".
     apply CL_m.
     unfold per_m, type_family; sp.
-    exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
-    apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    exists eqa eqb; sp.
+    exists A v B; sp.
+    { apply IHn with (i0 := i); sp. }
+    split; dands; auto.
+    { eapply recb; eauto. }
+    { eapply recb'; eauto. }
 
+    (*
   - Case "CL_pw".
     apply CL_pw.
     unfold per_pw, type_pfamily; sp.
@@ -719,7 +775,9 @@ Proof.
     apply IHn with (i0 := i); sp.
     apply reca with (i0 := i); sp.
     apply recb with (i0 := i); sp.
+*)
 
+    (*
   - Case "CL_pm".
     apply CL_pm.
     unfold per_pm, type_pfamily; sp.
@@ -731,18 +789,19 @@ Proof.
     apply IHn with (i0 := i); sp.
     apply reca with (i0 := i); sp.
     apply recb with (i0 := i); sp.
+*)
 
   - Case "CL_texc".
     apply CL_texc.
     unfold per_texc; sp.
-    exists eqn eqe N N' E E'; sp.
+    exists eqn eqe N E; sp.
     { apply IHn1 with (i0 := i); sp. }
     { apply IHn2 with (i0 := i); sp. }
 
   - Case "CL_union".
     apply CL_union.
     unfold per_union; sp.
-    exists eqa eqb A A' B B'; sp.
+    exists eqa eqb A B; sp.
     + apply IHn1 with (i0 := i); sp.
     + apply IHn2 with (i0 := i); sp.
 
@@ -759,7 +818,7 @@ Proof.
   - Case "CL_image".
     apply CL_image.
     unfold per_image; sp.
-    exists eqa A A' f f'; sp.
+    exists eqa A f; sp.
     apply IHn with (i0 := i); sp.
 
 (*
@@ -778,59 +837,70 @@ Proof.
   - Case "CL_partial".
     apply CL_partial.
     unfold per_partial; sp.
-    exists A1 A2 eqa; sp.
+    exists A eqa; sp.
     apply IHn with (i0 := i); sp.
 
   - Case "CL_admiss".
     apply CL_admiss.
     unfold per_admiss; sp.
-    exists A1 A2 eqa; sp.
+    exists A eqa; sp.
     apply IHn with (i0 := i); sp.
 
   - Case "CL_mono".
     apply CL_mono.
     unfold per_mono; sp.
-    exists A1 A2 eqa; sp.
+    exists A eqa; sp.
     apply IHn with (i0 := i); sp.
 
   - Case "CL_ffatom".
     apply CL_ffatom.
     unfold per_ffatom; sp.
-    exists A1 A2 x1 x2 a1 a2 eqa u; sp.
+    exists A x a eqa u; sp.
     apply IHn with (i0 := i); sp.
 
+    (*
   - Case "CL_effatom".
     apply CL_effatom.
     unfold per_effatom; sp.
     exists A1 A2 x1 x2 a1 a2 eqa; sp.
     apply IHn with (i0 := i); sp.
+*)
 
   - Case "CL_ffatoms".
     apply CL_ffatoms.
     unfold per_ffatoms; sp.
-    exists A1 A2 x1 x2 eqa; sp.
+    exists A x eqa; sp.
     apply IHn with (i0 := i); sp.
 
   - Case "CL_set".
     apply CL_set.
     unfold per_set, type_family; sp.
-    exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
-    apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    exists eqa eqb; sp.
+    exists A v B; sp.
+    { apply IHn with (i0 := i); sp. }
+    split; dands; auto.
+    { eapply recb; eauto. }
+    { eapply recb'; eauto. }
 
   - Case "CL_tunion".
     apply CL_tunion.
     unfold per_tunion, type_family; sp.
-    exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
-    apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    exists eqa eqb; sp.
+    exists A v B; sp.
+    { apply IHn with (i0 := i); sp. }
+    split; dands; auto.
+    { eapply recb; eauto. }
+    { eapply recb'; eauto. }
 
   - Case "CL_product".
     apply CL_product.
     unfold per_product, type_family; sp.
-    exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
-    apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    exists eqa eqb; sp.
+    exists A v B; sp.
+    { apply IHn with (i0 := i); sp. }
+    split; dands; auto.
+    { eapply recb; eauto. }
+    { eapply recb'; eauto. }
 Qed.
 
 
@@ -846,7 +916,9 @@ Qed.
  *)
 
 Definition tequality {p} lib (T1 T2 : @CTerm p) :=
-  { eq : per , nuprl lib T1 T2 eq }.
+  { eq : per
+  , nuprl lib T1 eq
+  # nuprl lib T2 eq }.
 
 (**
 
@@ -855,7 +927,7 @@ Definition tequality {p} lib (T1 T2 : @CTerm p) :=
 
  *)
 
-Definition type {p} lib (T : @CTerm p) := tequality lib T T.
+Definition type {p} lib (T : @CTerm p) := { eq : per , nuprl lib T eq }.
 
 (**
 
@@ -865,7 +937,7 @@ Definition type {p} lib (T : @CTerm p) := tequality lib T T.
  *)
 
 Definition equality {p} lib (t1 t2 T : @CTerm p) :=
-  { eq : per , nuprl lib T T eq # eq t1 t2 }.
+  { eq : per , nuprl lib T eq # eq t1 t2 }.
 
 (**
 
