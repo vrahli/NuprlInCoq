@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -27,7 +33,7 @@
 Require Export type_sys.
 Require Import dest_close.
 
-
+(*
 Lemma per_atom_uniquely_valued {p} :
   forall lib (ts : cts(p)), uniquely_valued (per_atom lib ts).
 Proof.
@@ -110,31 +116,6 @@ Proof.
   ccomputes_to_eqval; spcast; sp.
 Qed.
 
-(* !! MOVE to cequiv *)
-Lemma cequiv_token {pp} :
-  forall lib T T' s,
-    @computes_to_value pp lib T (mk_token s)
-    -> cequiv lib T T'
-    -> computes_to_value lib T' (mk_token s).
-Proof.
-  sp.
-  apply cequiv_canonical_form with (t' := T') in X; sp.
-  apply @lblift_cequiv0 in p; subst; auto.
-Qed.
-
-(* !! MOVE to cequiv *)
-Lemma cequivc_token {pp} :
-  forall lib T T' s,
-    computes_to_valc lib T (mkc_token s)
-    -> @cequivc pp lib T T'
-    -> computes_to_valc lib T' (mkc_token s).
-Proof.
-  sp.
-  allapply @computes_to_valc_to_valuec; allsimpl.
-  apply cequivc_canonical_form with (t' := T') in X; sp.
-  apply lblift_cequiv0 in p; subst; auto.
-Qed.
-
 Lemma per_atom_term_value_respecting {p} :
   forall lib (ts : cts(p)), term_value_respecting lib (per_atom lib ts).
 Proof.
@@ -161,85 +142,95 @@ Proof.
   try apply per_atom_term_transitive; auto.
   try apply per_atom_term_value_respecting; auto.
 Qed.
+*)
+
+(* !! MOVE to cequiv *)
+Lemma cequiv_token {pp} :
+  forall lib T T' s,
+    @computes_to_value pp lib T (mk_token s)
+    -> cequiv lib T T'
+    -> computes_to_value lib T' (mk_token s).
+Proof.
+  sp.
+  apply cequiv_canonical_form with (t' := T') in X; sp.
+  apply @lblift_cequiv0 in p; subst; auto.
+Qed.
+
+(* !! MOVE to cequiv *)
+Lemma cequivc_token {pp} :
+  forall lib T T' s,
+    computes_to_valc lib T (mkc_token s)
+    -> @cequivc pp lib T T'
+    -> computes_to_valc lib T' (mkc_token s).
+Proof.
+  sp.
+  allapply @computes_to_valc_to_valuec; allsimpl.
+  apply cequivc_canonical_form with (t' := T') in X; sp.
+  apply lblift_cequiv0 in p; subst; auto.
+Qed.
+
+(* !! MOVE to cequiv *)
+Lemma cequivc_atom {o} :
+  forall lib (T T' : @CTerm o),
+    computes_to_valc lib T mkc_atom
+    -> cequivc lib T T'
+    -> computes_to_valc lib T' mkc_atom.
+Proof.
+  sp.
+  allapply @computes_to_valc_to_valuec; allsimpl.
+  apply cequivc_canonical_form with (t' := T') in X; sp.
+  apply lblift_cequiv0 in p; subst; auto.
+Qed.
 
 
 Lemma close_type_system_atom {p} :
-  forall lib (ts : cts(p)),
-  forall T T' eq,
+  forall lib (ts : cts(p)) T eq,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> per_atom lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+    -> per_atom lib (close lib ts) T eq
+    -> type_system_props lib (close lib ts) T eq.
 Proof.
-  introv X X0 per.
+  introv tysys dou per.
+  unfold per_atom in per; repnd; spcast.
 
-  duplicate per as pi.
-  unfold per_atom in pi; repnd; spcast.
-
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_ts_props Case.
 
   + SCase "uniquely_valued".
-    dclose_lr.
+    introv cl.
+    eapply eq_term_equals_trans;[eauto|].
+    dest_close_lr h.
+    onedts uv tye tyvr tes tet tevr.
+    unfold per_atom in h; repnd.
+    apply eq_term_equals_sym; auto.
 
-    * SSCase "CL_atom".
-      assert (uniquely_valued (per_atom lib (close lib ts))) as uv
-        by (apply per_atom_uniquely_valued).
-      apply uv with (T := T) (T' := T'); auto.
-      apply uniquely_valued_trans5 with (T2 := T3) (eq2 := eq); auto.
-      apply per_atom_type_extensionality.
-      apply per_atom_type_symmetric.
-      apply per_atom_type_transitive.
+  + SCase "type_extensionality".
+    introv eqt.
+    apply CL_atom.
+    split; spcast; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
 
-  + SCase "type_symmetric"; repdors; subst; dclose_lr;
-    apply CL_atom; auto;
-    assert (type_symmetric (per_atom lib (close lib ts))) as tys
-      by (apply per_atom_type_symmetric);
-    assert (type_extensionality (per_atom lib (close lib ts))) as tye
-      by (apply per_atom_type_extensionality);
-    apply tye with (eq := eq); auto.
-
-  + SCase "type_value_respecting"; sp; subst; apply CL_atom;
-    assert (type_value_respecting lib (per_atom lib (close lib ts)))
-           as tvr
-           by (apply per_atom_type_value_respecting).
-
-    apply tvr; auto;
-    apply @type_system_type_mem with (T' := T'); auto;
-    try (apply per_atom_type_symmetric);
-    try (apply per_atom_type_transitive).
-
-    apply tvr; auto.
-    apply @type_system_type_mem1 with (T := T); auto;
-    try (apply per_atom_type_transitive);
-    try (apply per_atom_type_symmetric).
+  + SCase "type_value_respecting".
+    introv ceq.
+    apply CL_atom.
+    apply cequivc_atom in ceq; auto.
+    split; spcast; auto.
 
   + SCase "term_symmetric".
-    assert (term_symmetric (per_atom lib (close lib ts))) as tes
-      by (apply per_atom_term_symmetric).
-    apply tes with (T := T) (T' := T'); auto.
+    introv e.
+    apply per in e; apply per; clear per.
+    unfold equality_of_atom in *; exrepnd; exists s; auto.
 
   + SCase "term_transitive".
-    assert (term_transitive (per_atom lib (close lib ts))) as tet
-      by (apply per_atom_term_transitive).
-    apply tet with (T := T) (T' := T'); auto.
+    introv e1 e2.
+    apply per in e1; apply per in e2; apply per; clear per.
+    unfold equality_of_atom in *; exrepnd; exists s; auto.
+    ccomputes_to_eqval; dands; spcast; auto.
 
   + SCase "term_value_respecting".
-    assert (term_value_respecting lib (per_atom lib (close lib ts))) as tvr
-      by (apply per_atom_term_value_respecting).
-    apply tvr with (T := T); auto.
-    apply @type_system_type_mem with (T' := T'); auto.
-    apply per_atom_type_symmetric.
-    apply per_atom_type_transitive.
-
-  + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.
-
-    apply CL_atom; allunfold @per_atom; sp.
-    apply CL_atom; allunfold @per_atom; sp.
-
-  + SCase "type_gtransitive"; sp.
-
-  + SCase "type_mtransitive"; repdors; subst; dclose_lr;
-    dands; apply CL_atom; allunfold @per_atom; sp.
+    introv e c; spcast.
+    apply per in e; apply per; clear per.
+    unfold equality_of_atom in *; exrepnd; spcast.
+    exists s; dands; spcast; auto.
+    eapply cequivc_token; eauto.
 Qed.
-

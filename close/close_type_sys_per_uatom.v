@@ -27,7 +27,7 @@
 Require Export type_sys.
 Require Import dest_close.
 
-
+(*
 Lemma per_uatom_uniquely_valued {p} :
   forall lib (ts : cts(p)), uniquely_valued (per_uatom lib ts).
 Proof.
@@ -111,85 +111,56 @@ Proof.
   try apply per_uatom_term_transitive; auto.
   try apply per_uatom_term_value_respecting; auto.
 Qed.
-
+*)
 
 Lemma close_type_system_uatom {p} :
-  forall lib (ts : cts(p)),
-  forall T T' eq,
+  forall lib (ts : cts(p)) T eq,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> per_uatom lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+    -> per_uatom lib (close lib ts) T eq
+    -> type_system_props lib (close lib ts) T eq.
 Proof.
-  introv X X0 per.
+  introv tysys dou per.
+  unfold per_uatom in per; repnd; spcast.
 
-  duplicate per as pi.
-  unfold per_uatom in pi; repnd; spcast.
-
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_ts_props Case.
 
   + SCase "uniquely_valued".
-    dclose_lr.
+    introv cl.
+    eapply eq_term_equals_trans;[eauto|].
+    dest_close_lr h.
+    onedts uv tye tyvr tes tet tevr.
+    unfold per_uatom in h; repnd.
+    apply eq_term_equals_sym; auto.
 
-    * SSCase "CL_uatom".
-      assert (uniquely_valued (per_uatom lib (close lib ts))) as uv
-        by (apply per_uatom_uniquely_valued).
-      apply uv with (T := T) (T' := T'); auto.
-      apply uniquely_valued_trans5 with (T2 := T3) (eq2 := eq); auto.
-      apply per_uatom_type_extensionality.
-      apply per_uatom_type_symmetric.
-      apply per_uatom_type_transitive.
+  + SCase "type_extensionality".
+    introv eqt.
+    apply CL_uatom.
+    split; spcast; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
 
-  + SCase "type_symmetric"; repdors; subst; dclose_lr;
-    apply CL_uatom; auto;
-    assert (type_symmetric (per_uatom lib (close lib ts))) as tys
-      by (apply per_uatom_type_symmetric);
-    assert (type_extensionality (per_uatom lib (close lib ts))) as tye
-      by (apply per_uatom_type_extensionality);
-    apply tye with (eq := eq); auto.
-
-  + SCase "type_value_respecting"; sp; subst; apply CL_uatom;
-    assert (type_value_respecting lib (per_uatom lib (close lib ts)))
-           as tvr
-           by (apply per_uatom_type_value_respecting).
-
-    apply tvr; auto;
-    apply @type_system_type_mem with (T' := T'); auto;
-    try (apply per_uatom_type_symmetric);
-    try (apply per_uatom_type_transitive).
-
-    apply tvr; auto.
-    apply @type_system_type_mem1 with (T := T); auto;
-    try (apply per_uatom_type_transitive);
-    try (apply per_uatom_type_symmetric).
+  + SCase "type_value_respecting".
+    introv ceq.
+    apply CL_uatom.
+    apply cequivc_uatom in ceq; auto.
+    split; spcast; auto.
 
   + SCase "term_symmetric".
-    assert (term_symmetric (per_uatom lib (close lib ts))) as tes
-      by (apply per_uatom_term_symmetric).
-    apply tes with (T := T) (T' := T'); auto.
+    introv e.
+    apply per in e; apply per; clear per.
+    unfold equality_of_uatom in *; exrepnd; exists u; auto.
 
   + SCase "term_transitive".
-    assert (term_transitive (per_uatom lib (close lib ts))) as tet
-      by (apply per_uatom_term_transitive).
-    apply tet with (T := T) (T' := T'); auto.
+    introv e1 e2.
+    apply per in e1; apply per in e2; apply per; clear per.
+    unfold equality_of_uatom in *; exrepnd; exists u; auto.
+    ccomputes_to_eqval; dands; spcast; auto.
 
   + SCase "term_value_respecting".
-    assert (term_value_respecting lib (per_uatom lib (close lib ts))) as tvr
-      by (apply per_uatom_term_value_respecting).
-    apply tvr with (T := T); auto.
-    apply @type_system_type_mem with (T' := T'); auto.
-    apply per_uatom_type_symmetric.
-    apply per_uatom_type_transitive.
-
-  + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.
-
-    apply CL_uatom; allunfold @per_uatom; sp.
-    apply CL_uatom; allunfold @per_uatom; sp.
-
-  + SCase "type_gtransitive"; sp.
-
-  + SCase "type_mtransitive"; repdors; subst; dclose_lr;
-    dands; apply CL_uatom; allunfold @per_uatom; sp.
+    introv e c; spcast.
+    apply per in e; apply per; clear per.
+    unfold equality_of_uatom in *; exrepnd; spcast.
+    exists u; dands; spcast; auto.
+    eapply cequivc_utoken; eauto.
 Qed.
-

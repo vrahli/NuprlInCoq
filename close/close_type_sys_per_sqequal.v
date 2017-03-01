@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -28,7 +34,7 @@ Require Export type_sys.
 Require Import dest_close.
 
 
-
+(*
 Lemma per_cequiv_uniquely_valued {p} :
   forall lib (ts : cts(p)), uniquely_valued (per_cequiv lib ts).
 Proof.
@@ -120,119 +126,57 @@ Proof.
   try apply per_cequiv_term_transitive; auto.
   try apply per_cequiv_term_value_respecting; auto.
 Qed.
-
+*)
 
 Lemma close_type_system_cequiv {p} :
-  forall lib (ts : cts(p)),
-  forall T T' eq,
+  forall lib (ts : cts(p)) T eq,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> per_cequiv lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+    -> per_cequiv lib (close lib ts) T eq
+    -> type_system_props lib (close lib ts) T eq.
 Proof.
-  introv X X0 per.
+  introv tysys dou per.
+  unfold per_cequiv in per; exrepnd; spcast.
 
-  dup per as ps; unfold per_cequiv in ps; exrepnd; spcast.
-
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_ts_props Case.
 
   + SCase "uniquely_valued".
-    dclose_lr.
+    introv cl.
+    eapply eq_term_equals_trans;[eauto|].
+    dest_close_lr h.
+    onedts uv tye tyvr tes tet tevr.
+    unfold per_cequiv in h; exrepnd.
+    ccomputes_to_eqval.
+    apply eq_term_equals_sym; auto.
 
-    * SSCase "CL_cequiv".
-      assert (uniquely_valued (per_cequiv lib (close lib ts)))
-        as uv
-          by (apply per_cequiv_uniquely_valued).
-      apply uv with (T := T) (T' := T'); auto.
-      apply uniquely_valued_trans5 with (T2 := T3) (eq2 := eq); auto.
-      apply per_cequiv_type_extensionality.
-      apply per_cequiv_type_symmetric.
-      apply per_cequiv_type_transitive.
+  + SCase "type_extensionality".
+    introv eqt.
+    apply CL_cequiv.
+    exists a b; dands; spcast; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
 
-  + SCase "type_symmetric"; repdors; subst; dclose_lr;
-    apply CL_cequiv; auto;
-    assert (type_symmetric (per_cequiv lib (close lib ts)))
-      as tys
-        by (apply per_cequiv_type_symmetric);
-    assert (type_extensionality (per_cequiv lib (close lib ts)))
-      as tye
-        by (apply per_cequiv_type_extensionality);
-    apply tye with (eq := eq); auto.
-
-  + SCase "type_value_respecting"; repdors; subst;
-    apply CL_cequiv;
-    assert (type_value_respecting lib (per_cequiv lib (close lib ts)))
-           as tvr
-           by (apply per_cequiv_type_value_respecting).
-
-    apply tvr; auto.
-    apply @type_system_type_mem with (T' := T'); auto.
-    apply per_cequiv_type_symmetric.
-    apply per_cequiv_type_transitive.
-
-    apply tvr; auto.
-    apply @type_system_type_mem1 with (T := T); auto.
-    apply per_cequiv_type_symmetric.
-    apply per_cequiv_type_transitive.
+  + SCase "type_value_respecting".
+    introv ceq.
+    apply CL_cequiv.
+    eapply cequivc_mkc_cequiv in ceq;[|eauto]; exrepnd.
+    exists a' b'; dands; spcast; auto.
+    eapply eq_term_equals_trans;[eauto|].
+    split; introv h; spcast.
+    { eapply cequivc_trans;[|eauto].
+      eapply cequivc_trans;[eapply cequivc_sym;eauto|]; auto. }
+    { eapply cequivc_trans;[eauto|].
+      eapply cequivc_trans;[|eapply cequivc_sym;eauto]; auto. }
 
   + SCase "term_symmetric".
-    assert (term_symmetric (per_cequiv lib (close lib ts)))
-      as tes
-        by (apply per_cequiv_term_symmetric).
-    apply tes with (T := T) (T' := T'); auto.
+    introv e.
+    apply per1 in e; apply per1; clear per1; auto.
 
   + SCase "term_transitive".
-    assert (term_transitive (per_cequiv lib (close lib ts)))
-      as tet
-        by (apply per_cequiv_term_transitive).
-    apply tet with (T := T) (T' := T'); auto.
+    introv e1 e2.
+    apply per1 in e1; apply per1 in e2; apply per1; clear per1; auto.
 
   + SCase "term_value_respecting".
-    assert (term_value_respecting lib (per_cequiv lib (close lib ts)))
-      as tvr
-        by (apply per_cequiv_term_value_respecting).
-    apply tvr with (T := T); auto.
-    apply @type_system_type_mem with (T' := T'); auto.
-    apply per_cequiv_type_symmetric.
-    apply per_cequiv_type_transitive.
-
-  + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.
-
-    apply CL_cequiv; apply per_cequiv_type_symmetric; auto.
-    apply CL_cequiv; apply per_cequiv_type_symmetric; auto.
-
-  + SCase "type_gtransitive"; sp.
-
-  + SCase "type_mtransitive".
-    repdors; subst; dclose_lr.
-
-    dands; apply CL_cequiv.
-
-    apply per_cequiv_type_transitive with (T2 := T); auto.
-    allunfold @per_cequiv; sp.
-    ccomputes_to_eqval.
-    exists a2 b2 c1 d1; sp; spcast; sp.
-    allrw; sp.
-
-    apply per_cequiv_type_transitive with (T2 := T); auto.
-    allunfold @per_cequiv; sp.
-    ccomputes_to_eqval.
-    exists a0 b0 a2 b2; sp; spcast; sp.
-    allrw; sp.
-
-    dands; apply CL_cequiv.
-
-    apply per_cequiv_type_transitive with (T2 := T'); auto.
-    allunfold @per_cequiv; sp.
-    ccomputes_to_eqval.
-    exists c2 d2 c1 d1; sp; spcast; sp.
-    allrw; sp.
-
-    apply per_cequiv_type_transitive with (T2 := T'); auto.
-    allunfold @per_cequiv; sp.
-    ccomputes_to_eqval.
-    exists a0 b0 c2 d2; sp; spcast; sp.
-    allrw; sp.
+    introv e c; spcast.
+    apply per1 in e; apply per1; clear per1; auto.
 Qed.
-

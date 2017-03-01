@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -28,6 +34,7 @@ Require Export type_sys.
 Require Import dest_close.
 
 
+(*
 Lemma per_int_uniquely_valued {p} :
   forall lib (ts : cts(p)), uniquely_valued (per_int lib ts).
 Proof.
@@ -42,18 +49,6 @@ Proof.
   allrw <-; sp.
 Qed.
 
-Lemma per_int_type_symmetric {p} :
-  forall lib (ts : cts(p)), type_symmetric (per_int lib ts).
-Proof.
-  unfold type_symmetric, per_int; sp.
-Qed.
-
-Lemma per_int_type_transitive {p} :
-  forall lib (ts : cts(p)), type_transitive (per_int lib ts).
-Proof.
-  unfold type_transitive, per_int; sp.
-Qed.
-
 Lemma per_int_type_value_respecting {p} :
   forall lib (ts : cts(p)), type_value_respecting lib (per_int lib ts).
 Proof.
@@ -64,21 +59,18 @@ Qed.
 Lemma per_int_term_symmetric {p} :
   forall lib (ts : cts(p)), term_symmetric (per_int lib ts).
 Proof.
- unfold term_symmetric, term_equality_symmetric, per_int; sp.
- allrw.
- apply_in_hyp pp; sp.
- allunfold @equality_of_int; exrepnd.
- exists k; sp.
+  unfold term_symmetric, term_equality_symmetric, per_int; introv ts h e; repnd; spcast.
+  apply h in e; apply h.
+  allunfold @equality_of_int; exrepnd.
+  exists k; sp.
 Qed.
 
 Lemma per_int_term_transitive {p} :
   forall lib (ts : cts(p)), term_transitive (per_int lib ts).
 Proof.
   unfold term_transitive, term_equality_transitive, per_int.
-  introv cts i e1 e2.
-  destruct i as [ ct i ].
-  destruct i as [ ct' i ].
-  rw i in e1; rw i in e2; rw i; sp.
+  introv cts i e1 e2; repnd; spcast.
+  apply i in e1; apply i in e2; apply i; clear i.
   allunfold @equality_of_int; exrepnd.
   exists k; sp.
   ccomputes_to_eqval; spcast; sp.
@@ -87,11 +79,9 @@ Qed.
 Lemma per_int_term_value_respecting {p} :
   forall lib (ts : cts(p)), term_value_respecting lib (per_int lib ts).
 Proof.
-  sp; unfold term_value_respecting, term_equality_respecting, per_int.
-  introv i e c.
-  destruct i as [ ct i ].
-  destruct i as [ ct' i ].
-  rw i in e; rw i; sp.
+  unfold term_value_respecting, term_equality_respecting, per_int.
+  introv cts i e c; repnd.
+  apply i in e; apply i.
   allunfold @equality_of_int; exrepnd.
   exists k; sp.
   spcast; apply @cequivc_integer with (t := t); auto.
@@ -100,94 +90,64 @@ Qed.
 Lemma per_int_type_system {p} :
   forall lib (ts : cts(p)), type_system lib (per_int lib ts).
 Proof.
-  intros; unfold type_system; sp.
-  try apply per_int_uniquely_valued; auto.
-  try apply per_int_type_extensionality; auto.
-  try apply per_int_type_symmetric; auto.
-  try apply per_int_type_transitive; auto.
-  try apply per_int_type_value_respecting; auto.
-  try apply per_int_term_symmetric; auto.
-  try apply per_int_term_transitive; auto.
-  try apply per_int_term_value_respecting; auto.
+  intros; unfold type_system; sp;
+    try apply per_int_uniquely_valued; auto;
+      try apply per_int_type_extensionality; auto;
+        try apply per_int_type_value_respecting; auto;
+          try apply per_int_term_symmetric; auto;
+            try apply per_int_term_transitive; auto;
+              try apply per_int_term_value_respecting; auto.
 Qed.
-
+*)
 
 Lemma close_type_system_int {p} :
-  forall lib (ts : cts(p)) T T' eq,
+  forall lib (ts : cts(p)) T eq,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> per_int lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+    -> per_int lib (close lib ts) T eq
+    -> type_system_props lib (close lib ts) T eq.
 Proof.
-  introv X X0 per.
+  introv tysys dou per.
+  unfold per_int in per; repnd; spcast.
 
-  duplicate per as pi.
-  unfold per_int in pi; repnd; spcast.
-
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_ts_props Case.
 
   + SCase "uniquely_valued".
-    dclose_lr.
+    introv cl.
+    eapply eq_term_equals_trans;[eauto|].
+    dest_close_lr h.
+    onedts uv tye tyvr tes tet tevr.
+    unfold per_int in h; repnd.
+    apply eq_term_equals_sym; auto.
 
-    * SSCase "CL_int".
-      assert (uniquely_valued (per_int lib (close lib ts))) as uv
-        by (apply per_int_uniquely_valued).
-      apply uv with (T := T) (T' := T'); auto.
-      apply uniquely_valued_trans5 with (T2 := T3) (eq2 := eq); auto.
-      apply per_int_type_extensionality.
-      apply per_int_type_symmetric.
-      apply per_int_type_transitive.
+  + SCase "type_extensionality".
+    introv eqt.
+    apply CL_int.
+    split; spcast; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
 
-  + SCase "type_symmetric"; repdors; subst; dclose_lr;
-    apply CL_int; auto;
-    assert (type_symmetric (per_int lib (close lib ts))) as tys
-      by (apply per_int_type_symmetric);
-    assert (type_extensionality (per_int lib (close lib ts))) as tye
-      by (apply per_int_type_extensionality);
-    apply tye with (eq := eq); auto.
-
-  + SCase "type_value_respecting"; sp; subst; apply CL_int;
-    assert (type_value_respecting lib (per_int lib (close lib ts)))
-           as tvr
-           by (apply per_int_type_value_respecting).
-
-    apply tvr; auto;
-    apply @type_system_type_mem with (T' := T'); auto;
-    try (apply per_int_type_symmetric);
-    try (apply per_int_type_transitive).
-
-    apply tvr; auto.
-    apply @type_system_type_mem1 with (T := T); auto;
-    try (apply per_int_type_transitive);
-    try (apply per_int_type_symmetric).
+  + SCase "type_value_respecting".
+    introv ceq.
+    apply CL_int.
+    apply cequivc_int in ceq; auto.
+    split; spcast; auto.
 
   + SCase "term_symmetric".
-    assert (term_symmetric (per_int lib (close lib ts))) as tes
-      by (apply per_int_term_symmetric).
-    apply tes with (T := T) (T' := T'); auto.
+    introv e.
+    apply per in e; apply per; clear per.
+    unfold equality_of_int in *; exrepnd; exists k; auto.
 
   + SCase "term_transitive".
-    assert (term_transitive (per_int lib (close lib ts))) as tet
-      by (apply per_int_term_transitive).
-    apply tet with (T := T) (T' := T'); auto.
+    introv e1 e2.
+    apply per in e1; apply per in e2; apply per; clear per.
+    unfold equality_of_int in *; exrepnd; exists k; auto.
+    ccomputes_to_eqval; dands; spcast; auto.
 
   + SCase "term_value_respecting".
-    assert (term_value_respecting lib (per_int lib (close lib ts))) as tvr
-      by (apply per_int_term_value_respecting).
-    apply tvr with (T := T); auto.
-    apply @type_system_type_mem with (T' := T'); auto.
-    apply per_int_type_symmetric.
-    apply per_int_type_transitive.
-
-  + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.
-
-    apply CL_int; allunfold @per_int; sp.
-    apply CL_int; allunfold @per_int; sp.
-
-  + SCase "type_gtransitive"; sp.
-
-  + SCase "type_mtransitive"; repdors; subst; dclose_lr;
-    dands; apply CL_int; allunfold @per_int; sp.
+    introv e c; spcast.
+    apply per in e; apply per; clear per.
+    unfold equality_of_int in *; exrepnd; spcast.
+    exists k; dands; spcast; auto.
+    eapply cequivc_integer; eauto.
 Qed.
-

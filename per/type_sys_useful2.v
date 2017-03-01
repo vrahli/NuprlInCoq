@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,9 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -62,79 +66,49 @@ Proof.
   allrw <- eqt; sp.
 Qed.
 
-Lemma type_sys_props_uv {p} :
-  forall lib (ts : cts(p)) A B eq eq',
-    type_sys_props lib ts A B eq
-    -> eq_term_equals eq eq'
-    -> type_sys_props lib ts A B eq'.
+Lemma type_system_props_uv {p} :
+  forall lib (ts : cts(p)) A eq eq',
+    type_system_props lib ts A eq
+    -> (eq <=2=> eq')
+    -> type_system_props lib ts A eq'.
 Proof.
   introv tsp eqt.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-  prove_type_sys_props Case.
+  dts_props tsp uv tv te tes tet tev.
+
+  prove_ts_props Case.
 
   - Case "uniquely_valued".
+    introv tsa.
+    eapply uv in tsa.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+
+  - Case "type_extensionality".
     introv e.
-    apply uv in e.
-    apply eq_term_equals_trans with (eq2 := eq); sp.
-    apply eq_term_equals_sym; sp.
-
-  - Case "type_symmetric".
-    introv e1 e2 e3.
-    generalize (tys T T3 eq'0); introv k.
-    repeat (dest_imp k hyp).
-    generalize (tyt A eq); introv j; repeat (dest_imp j hyp); repnd.
-    apply tygs; sp.
-    generalize (tyst B eq); introv u; repeat (dest_imp u hyp); repnd.
-    repdors; subst.
-    generalize (tymt A A T3 eq eq'); sp.
-    generalize (tymt B B T3 eq eq'); sp.
-    apply eq_term_equals_trans with (eq2 := eq'); sp.
-
-  - Case "type_transitive".
-    introv e1.
-    generalize (tyt T3 eq'0); introv k; dest_imp k hyp.
-
-  - Case "type_stransitive".
-    introv e.
-    generalize (tyst T3 eq'0); introv k; dest_imp k hyp.
+    apply tv.
+    eapply eq_term_equals_trans; eauto.
 
   - Case "type_value_respecting".
-    introv e c.
-    generalize (tyvr T T3); introv k; dest_imp k hyp.
+    introv c.
+    apply te in c.
 
-  - Case "term_symmetric".
-    apply @term_equality_symmetric_eq_term_equals with (eq := eq); sp.
+    (* ARG! *)
+Abort.
 
-  - Case "term_transitive".
-    apply @term_equality_transitive_eq_term_equals with (eq := eq); sp.
-
-  - Case "term_value_respecting".
-    apply @term_equality_respecting_eq_term_equals with (eq := eq); sp.
-
-  - Case "type_gsymmetric".
-    introv e.
-    generalize (tygs T T3 eq'0); sp.
-
-  - Case "type_gtransitive".
-    sp.
-
-  - Case "type_mtransitive".
-    introv e1 e2 e3.
-    generalize (tymt T T3 T4 eq1 eq2); sp.
-Qed.
-
-Lemma type_sys_props_implies_term_eq_sym {p} :
-  forall lib (ts : cts(p)) P P' eqp,
-    type_sys_props lib ts P P' eqp
+Lemma type_system_props_implies_term_eq_sym {p} :
+  forall lib (ts : cts(p)) P eqp,
+    type_system_props lib ts P eqp
     -> term_equality_symmetric eqp.
 Proof.
-  intros; onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1; sp.
+  introv tsp.
+  dts_props tsp uv tv te tes tet tev; auto.
 Qed.
 
-Lemma type_sys_props_implies_term_eq_trans {p} :
-  forall lib (ts : cts(p)) P P' eqp,
-    type_sys_props lib ts P P' eqp
+Lemma type_system_props_implies_term_eq_trans {p} :
+  forall lib (ts : cts(p)) P eqp,
+    type_system_props lib ts P eqp
     -> term_equality_transitive eqp.
 Proof.
-  intros; onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1; sp.
+  introv tsp.
+  dts_props tsp uv tv te tes tet tev; auto.
 Qed.

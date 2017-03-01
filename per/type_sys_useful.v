@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -41,8 +46,30 @@ Require Export type_sys.
 (** printing mkc_integer $\mathtt{int}$ *)
 
 
+Lemma eqbs_trans {o} :
+  forall lib (ts : cts(o)) v B (eqa1 eqa2 : per(o)) eqb1 eqb2,
+    (eqa1 <=2=> eqa2)
+    -> (forall (a a' : CTerm),
+           eqa1 a a' -> type_system_props lib ts (substc a v B) (eqb1 a))
+    -> type_family_members_eq ts v B eqa2 eqb2
+    -> (forall (a a' : CTerm), eqa1 a a' -> (eqb1 a) <=2=> (eqb2 a')).
+Proof.
+  introv eqas tsb tf e.
+  applydup eqas in e.
+  unfold type_family_members_eq in tf.
+  applydup tf in e0; repnd.
+  applydup tsb in e.
+
+  dts_props e3 uv tv te tes tet tev.
+  apply uv in e2.
+
+  eapply eq_term_equals_trans; eauto.
+Qed.
+
+
+(*
 Lemma eq_term_equals_sym_tsp {p} :
-  forall lib (ts : cts(p)) eqa (eqb : per-fam(eqa))
+  forall lib (ts : CTS(p)) eqa (eqb : per-fam(eqa))
          a1 a2
          (e : eqa a1 a1) (e1 : eqa a1 a2) (e2 : eqa a2 a1)
          v1 B1 v2 B2,
@@ -92,7 +119,7 @@ Qed.
 
 Lemma eq_term_equals_sym_tsp2 {p} :
   forall lib
-         (ts : cts(p))
+         (ts : CTS(p))
          (eqa : per)
          (eqb : per-fam(eqa))
          v1 B1 v2 B2,
@@ -151,7 +178,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_eqb_comm {p} :
-  forall lib (ts : cts(p)) eqa (eqb : per-fam(eqa))
+  forall lib (ts : CTS(p)) eqa (eqb : per-fam(eqa))
          a1 a2
          (e : eqa a1 a2) (e1 : eqa a2 a1) (e2 : eqa a1 a1) (e3 : eqa a2 a2)
          v1 B1 v2 B2,
@@ -580,7 +607,7 @@ Proof.
 Qed.
 
 Lemma type_family_trans {p} :
-  forall lib C (ts : cts(p)) T1 T2 T3 eqa eqb eqa1 eqb1 eqa2 eqb2 A v B A' v' B',
+  forall lib C (ts : CTS(p)) T1 T2 T3 eqa eqb eqa1 eqb1 eqa2 eqb2 A v B A' v' B',
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
     -> computes_to_valc lib T1 (C A v B)
@@ -677,7 +704,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_eq {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : CTS(p)) A B C eq1 eq2,
     type_sys_props lib ts A C eq1
     -> type_sys_props lib ts B C eq2
     -> ts A B eq1.
@@ -691,7 +718,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_trans2 {p} :
-  forall lib (ts : cts(p)) A B C D eq1 eq2 eq,
+  forall lib (ts : CTS(p)) A B C D eq1 eq2 eq,
     ts A B eq1
     -> ts A C eq2
     -> type_sys_props lib ts A D eq
@@ -706,7 +733,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_trans3 {p} :
-  forall lib (ts : cts(p)) A B C D eq1 eq2 eq,
+  forall lib (ts : CTS(p)) A B C D eq1 eq2 eq,
     ts A B eq1
     -> ts B C eq2
     -> type_sys_props lib ts B D eq
@@ -718,7 +745,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_trans4 {p} :
-  forall lib (ts : cts(p)) A B C D eq1 eq2 eq,
+  forall lib (ts : CTS(p)) A B C D eq1 eq2 eq,
     ts A B eq1
     -> ts B C eq2
     -> type_sys_props lib ts B D eq
@@ -730,7 +757,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_trans5 {p} :
-  forall lib (ts : cts(p)) A B C D eq1 eq2 eq,
+  forall lib (ts : CTS(p)) A B C D eq1 eq2 eq,
     ts A B eq1
     -> ts A C eq2
     -> type_sys_props lib ts A D eq
@@ -747,7 +774,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_trans6 {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2 eq,
+  forall lib (ts : CTS(p)) A B C eq1 eq2 eq,
     ts A B eq1
     -> ts B C eq2
     -> type_sys_props lib ts A B eq
@@ -760,7 +787,7 @@ Proof.
 Qed.
 
 Lemma type_family_refl {p} :
-  forall lib C (ts : cts(p)) T1 T2 eqa eqb A v B A' v' B',
+  forall lib C (ts : CTS(p)) T1 T2 eqa eqb A v B A' v' B',
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
     -> type_sys_props lib ts A A' eqa
@@ -879,7 +906,7 @@ Qed.
 *)
 
 Lemma type_family_trans2 {p} :
-  forall lib C (ts : cts(p)) T1 T2 T3 eqa1 eqb1 eqa2 eqb2 A v B A' v' B',
+  forall lib C (ts : CTS(p)) T1 T2 T3 eqa1 eqb1 eqa2 eqb2 A v B A' v' B',
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
     -> computes_to_valc lib T2 (C A v B)
@@ -940,7 +967,7 @@ Proof.
 Qed.
 
 Lemma type_family_cequivc {p} :
-  forall lib C (ts : cts(p)) T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
+  forall lib C (ts : CTS(p)) T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
     cequivc lib T1 T2
     -> computes_to_valc lib T1 (C A1 v1 B1)
     -> computes_to_valc lib T2 (C A2 v2 B2)
@@ -979,7 +1006,7 @@ Proof.
 Qed.
 
 Lemma type_family_cequivc2 {p} :
-  forall lib C (ts : cts(p)) T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
+  forall lib C (ts : CTS(p)) T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
     cequivc lib T1 T2
     -> computes_to_valc lib T1 (C A1 v1 B1)
     -> computes_to_valc lib T2 (C A2 v2 B2)
@@ -1033,7 +1060,7 @@ Proof.
   exists A A' v v' B B'; sp.
 Qed.
 *)
-
+*)
 
 
 Lemma is_per_iff {p} :
@@ -1081,27 +1108,26 @@ Proof.
   generalize (isper a b c); sp.
 Qed.
 
-Lemma type_sys_props_pertype_eq_term_equals {p} :
-  forall lib (ts : cts(p)) R eq1 eq2,
-    (forall x y, type_sys_props lib ts (mkc_apply2 R x y) (mkc_apply2 R x y) (eq1 x y))
-    -> (forall x y, ts (mkc_apply2 R x y) (mkc_apply2 R x y) (eq2 x y))
-    -> (forall x y, eq_term_equals (eq1 x y) (eq2 x y)).
+Lemma type_system_props_pertype_eq_term_equals {p} :
+  forall lib (ts : cts(p)) R eqr1 eqr2,
+    (forall x y, type_system_props lib ts (mkc_apply2 R x y) (eqr1 x y))
+    -> (forall x y, ts (mkc_apply2 R x y) (eqr2 x y))
+    -> (forall x y, (eqr1 x y) <=2=> (eqr2 x y)).
 Proof.
   introv tsp tseq; intros.
-  generalize (tseq x y); intro j.
-  generalize (tsp x y); intro k.
-  repeat (dest_imp k h).
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-  implies_ts_or (mkc_apply2 R x y) j.
-  apply uv in j; sp.
+  pose proof (tseq x y) as j.
+  pose proof (tsp x y) as k.
+
+  dts_props k uv tv te tes tet tev.
+  apply uv in j; auto.
 Qed.
 
-
+(*
 Lemma weq_eq_term_equals {p} :
   forall lib (eqa1 eqa2 : per(p))
          eqb1 eqb2 t1 t2,
     (forall (a1 a2 : CTerm) (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
-       eq_term_equals (eqb1 a1 a2 e1) (eqb2 a1 a2 e2))
+        eq_term_equals (eqb1 a1 a2 e1) (eqb2 a1 a2 e2))
     -> eq_term_equals eqa1 eqa2
     -> weq lib eqa1 eqb1 t1 t2
     -> weq lib eqa2 eqb2 t1 t2.
@@ -1117,7 +1143,7 @@ Proof.
 Qed.
 
 Lemma weq_sym {p} :
-  forall lib eqa eqb t1 t2 v1 v2 B1 B2 (ts : cts(p)),
+  forall lib eqa eqb t1 t2 v1 v2 B1 B2 (ts : CTS(p)),
     term_equality_symmetric eqa
     -> term_equality_transitive eqa
     -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
@@ -1291,16 +1317,17 @@ Proof.
 
   apply sp_implies_cequivc_apply; sp.
 Qed.
+ *)
 
-Lemma type_sys_props_cequivc {p} :
-  forall lib (ts : cts(p)) A B C eq,
-    type_sys_props lib ts A B eq
-    -> cequivc lib A C
-    -> ts A C eq.
+Lemma type_system_props_cequivc {p} :
+  forall lib (ts : cts(p)) A B eq,
+    type_system_props lib ts A eq
+    -> cequivc lib A B
+    -> ts B eq.
 Proof.
   introv tsp ceq.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-  generalize (tyvr A C); sp.
+  dts_props tsp uv tv te tes tet tev.
+  apply te; auto.
 Qed.
 
 Lemma iff_inhabited_if_eq_term_equals {p} :
@@ -1312,10 +1339,11 @@ Proof.
   allrw; sp; allrw <-; sp.
 Qed.
 
-Lemma type_sys_props_pertype_eq_term_equals1 {p} :
-  forall lib (ts : cts(p)) R R1 R2 eq1 eq2,
-    (forall x y, type_sys_props lib ts (mkc_apply2 R x y) (mkc_apply2 R1 x y) (eq1 x y))
-    -> (forall x y, ts (mkc_apply2 R x y) (mkc_apply2 R2 x y) (eq2 x y))
+(*
+Lemma type_system_props_pertype_eq_term_equals1 {p} :
+  forall lib (ts : CTS(p)) R R1 R2 eq1 eq2,
+    (forall x y, type_system_props lib ts (mkc_apply2 R x y) (eq1 x y))
+    -> (forall x y, ts (mkc_apply2 R x y) (eq2 x y))
     -> (forall x y, (eq1 x y) <=2=> (eq2 x y)).
 Proof.
   introv tsp k; intros t1 t2.
@@ -1330,7 +1358,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_pertype_eq_term_equals2 {p} :
-  forall lib (ts : cts(p)) R1 R2 R3 eq1 eq2,
+  forall lib (ts : CTS(p)) R1 R2 R3 eq1 eq2,
     (forall x y, type_sys_props lib ts (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (eq1 x y))
     -> (forall x y, ts (mkc_apply2 R2 x y) (mkc_apply2 R3 x y) (eq2 x y))
     -> (forall x y, (eq1 x y) <=2=> (eq2 x y)).
@@ -1345,3 +1373,4 @@ Proof.
                 (mkc_apply2 R1 t1 t2)
                 (eq2 t1 t2) (eq1 t1 t2) k tsp); sp.
 Qed.
+*)

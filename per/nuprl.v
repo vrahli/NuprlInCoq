@@ -31,6 +31,7 @@
 
 
 Require Export per.
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ #⪯# *)
@@ -200,7 +201,7 @@ Proof.
 Qed.
 
 
-Definition nuprli {o} lib (i : nat) := @close o lib (univi lib i).
+Definition nuprli {o} lib (i : nat) T eq := @close o lib (univi lib i) T eq.
 
 Lemma fold_nuprli {p} :
   forall lib i, close lib (univi lib i) = @nuprli p lib i.
@@ -258,7 +259,10 @@ Qed.
 
  *)
 
-Definition nuprl {p} lib := @close p lib (univ lib).
+Definition nuprl {o} lib (T : @CTerm o) eq := close lib (univ lib) T eq.
+
+Definition Nuprl {o} lib (T T' : @CTerm o) eq :=
+  nuprl lib T eq # nuprl lib T' eq.
 
 (* begin hide *)
 
@@ -333,24 +337,21 @@ Proof.
     exists eqa eqb; sp.
     exists A v B; dands; auto.
     split; dands; auto.
-    + eapply recb; eauto.
-    + eapply recb'; eauto.
+    eapply recb; eauto.
 
   - Case "CL_func".
     apply CL_func; unfold per_func; sp.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    + eapply recb; eauto.
-    + eapply recb'; eauto.
+    eapply recb; eauto.
 
   - Case "CL_disect".
     apply CL_disect; unfold per_disect; sp.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    + eapply recb; eauto.
-    + eapply recb'; eauto.
+    eapply recb; eauto.
 
   - Case "CL_pertype".
     apply CL_pertype; unfold per_pertype; sp.
@@ -373,16 +374,14 @@ Proof.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    + eapply recb; eauto.
-    + eapply recb'; eauto.
+    eapply recb; eauto.
 
   - Case "CL_m".
     apply CL_m; unfold per_m; sp.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    + eapply recb; eauto.
-    + eapply recb'; eauto.
+    eapply recb; eauto.
 
       (*
   - Case "CL_pw".
@@ -461,24 +460,21 @@ Proof.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    + eapply recb; eauto.
-    + eapply recb'; eauto.
+    eapply recb; eauto.
 
   - Case "CL_tunion".
     apply CL_tunion; unfold per_tunion; sp.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    + eapply recb; eauto.
-    + eapply recb'; eauto.
+    eapply recb; eauto.
 
   - Case "CL_product".
     apply CL_product; unfold per_product; sp.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    + eapply recb; eauto.
-    + eapply recb'; eauto.
+    eapply recb; eauto.
 Qed.
 
 Lemma typable_in_higher_univ_r {p} :
@@ -697,7 +693,6 @@ Proof.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { eapply recb; eauto. }
-    { eapply recb'; eauto. }
 
   - Case "CL_func".
     apply CL_func.
@@ -707,7 +702,6 @@ Proof.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { eapply recb; eauto. }
-    { eapply recb'; eauto. }
 
   - Case "CL_disect".
     apply CL_disect.
@@ -717,7 +711,6 @@ Proof.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { eapply recb; eauto. }
-    { eapply recb'; eauto. }
 
   - Case "CL_pertype".
     apply CL_pertype.
@@ -751,7 +744,6 @@ Proof.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { eapply recb; eauto. }
-    { eapply recb'; eauto. }
 
   - Case "CL_m".
     apply CL_m.
@@ -761,7 +753,6 @@ Proof.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { eapply recb; eauto. }
-    { eapply recb'; eauto. }
 
     (*
   - Case "CL_pw".
@@ -880,7 +871,6 @@ Proof.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { eapply recb; eauto. }
-    { eapply recb'; eauto. }
 
   - Case "CL_tunion".
     apply CL_tunion.
@@ -890,7 +880,6 @@ Proof.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { eapply recb; eauto. }
-    { eapply recb'; eauto. }
 
   - Case "CL_product".
     apply CL_product.
@@ -900,7 +889,6 @@ Proof.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { eapply recb; eauto. }
-    { eapply recb'; eauto. }
 Qed.
 
 
@@ -916,9 +904,7 @@ Qed.
  *)
 
 Definition tequality {p} lib (T1 T2 : @CTerm p) :=
-  { eq : per
-  , nuprl lib T1 eq
-  # nuprl lib T2 eq }.
+  { eq : per , Nuprl lib T1 T2 eq }.
 
 (**
 

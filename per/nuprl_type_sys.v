@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,14 +21,21 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
-*)
+ *)
 
 
-Require Export close_type_sys.
+Require Export type_sys.
+
+(*Require Export close_type_sys.*)
 Require Export Peano.
+
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ *)
@@ -40,6 +50,58 @@ Require Export Peano.
 (** printing mkc_integer $\mathtt{int}$ *)
 (* begin hide *)
 
+Lemma nuprl_type_system_implies_Nuprl_etype_system {o} :
+  forall (lib : @library o),
+    type_system lib (nuprl lib) -> etype_system lib (Nuprl lib).
+Proof.
+  introv ts.
+  dest_ts ts.
+
+  prove_etype_system Case; tcsp.
+
+  - Case "uniquely_valued".
+    introv n e.
+    destruct n as [n1 n2].
+    destruct e as [e1 e2].
+    eapply ts_uv; eauto.
+
+  - Case "type_extensionality".
+    introv n e.
+    destruct n as [n1 n2].
+    split; eapply ts_ext; eauto.
+
+  - Case "type_symmetric".
+    introv n.
+    destruct n as [n1 n2].
+    split; tcsp.
+
+  - Case "type_transitive".
+    introv n m.
+    destruct n as [n1 n2].
+    destruct m as [m1 m2].
+    split; tcsp.
+
+  - Case "type_value_respecting".
+    introv n c.
+    destruct n as [n1 n2].
+    split; auto.
+    eapply ts_tyv; eauto.
+
+  - Case "term_symmetric".
+    introv n.
+    destruct n as [n1 n2].
+    eapply ts_tes; eauto.
+
+  - Case "term_transitive".
+    introv n.
+    destruct n as [n1 n2].
+    eapply ts_tet; eauto.
+
+  - Case "term_value_respecting".
+    introv n.
+    destruct n as [n1 n2].
+    eapply ts_tev; eauto.
+Qed.
 
 Lemma defines_only_universes_univi {o} :
   forall lib i, @defines_only_universes o lib (univi lib i).
@@ -65,37 +127,55 @@ Qed.
   We prove that all the Nuprl universes satisfy the type system
   properties.
 
-*)
+ *)
+
+Hint Resolve eq_term_equals_trans : slow.
+Hint Resolve eq_term_equals_sym : slow.
 
 Lemma univi_type_system {o} :
   forall lib (i : nat), @type_system o lib (univi lib i).
 Proof.
-  induction i using comp_ind_type.
-  unfold type_system; sp.
+  induction i as [? IH] using comp_ind_type.
+  prove_type_system Case; tcsp.
 
-  - unfold uniquely_valued, eq_term_equals; sp.
+  - Case "uniquely_valued".
+    introv u1 u2.
     allrw @univi_exists_iff; sp.
     spcast; computes_to_eqval.
-    allrw; sp.
+    eapply eq_term_equals_trans;[eauto|].
+    apply eq_term_equals_sym; auto.
 
-  - introv q h.
+  - Case "type_extensionality".
+    introv n e.
     allrw @univi_exists_iff; exrepnd.
     exists j; sp.
-    rw <- h; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
 
-  - unfold type_symmetric; sp.
+  - Case "type_value_respecting".
+    introv n c.
     allrw @univi_exists_iff; sp.
     exists j; sp.
+    spcast.
+    eapply cequivc_uni; eauto.
 
-  - unfold type_transitive; sp.
-    allrw @univi_exists_iff; sp.
-    spcast; computes_to_eqval.
-    eexists; sp; spcast; sp.
+  - Case "term_symmetric".
+    introv n e.
+    allrw @univi_exists_iff; exrepnd.
+    apply n0 in e.
+    apply n0.
+    unfold univi_eq in *; exrepnd.
+    exists eqa; tcsp.
 
-  - unfold type_value_respecting; sp.
-    allrw @univi_exists_iff; sp.
-    exists j; sp; thin_trivials.
-    spcast; apply cequivc_uni with (t := T); auto.
+  - Case "term_transitive".
+    introv u e1 e2.
+    allrw @univi_exists_iff; exrepnd.
+    apply u0 in e1.
+    apply u0 in e2.
+    apply u0; clear u0.
+    unfold univi_eq in *; exrepnd.
+    exists eqa; dands; auto.
+
 
   - unfold term_symmetric, term_equality_symmetric; sp.
     allrw @univi_exists_iff; sp; spcast.

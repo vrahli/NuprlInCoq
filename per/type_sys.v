@@ -114,16 +114,26 @@ Definition term_equality_respecting {p} lib (eq : per(p)) :=
  *)
 
 Definition uniquely_valued {p} (ts : cts(p)) :=
+  forall T eq eq',
+    ts T eq -> ts T eq' -> eq <=2=> eq'.
+
+(* extensional type system *)
+Definition ects o := @CTerm o -> @CTerm o -> per(o) -> [U].
+
+Definition euniquely_valued {p} (ts : ects(p)) :=
   forall T T' eq eq',
     ts T T' eq -> ts T T' eq' -> eq <=2=> eq'.
 
 Definition type_extensionality {p} (ts : cts(p)) :=
+  forall T eq eq', ts T eq -> eq <=2=> eq' -> ts T eq'.
+
+Definition etype_extensionality {p} (ts : ects(p)) :=
   forall T T' eq eq', ts T T' eq -> eq <=2=> eq' -> ts T T' eq'.
 
-Definition type_symmetric {p} (ts : cts(p)) :=
+Definition etype_symmetric {p} (ts : ects(p)) :=
   forall T T' eq, ts T T' eq -> ts T' T eq.
 
-Definition type_transitive {p} (ts : cts(p)) :=
+Definition etype_transitive {p} (ts : ects(p)) :=
   forall T1 T2 T3 eq, ts T1 T2 eq -> ts T2 T3 eq -> ts T1 T3 eq.
 
 (*
@@ -136,42 +146,71 @@ Definition type_trans (ts : cts) :=
 *)
 
 Definition type_value_respecting {p} lib (ts : cts(p)) :=
+  forall T T' eq, ts T eq -> cequivc lib T T' -> ts T' eq.
+
+Definition etype_value_respecting {p} lib (ts : ects(p)) :=
   forall T T' eq, ts T T eq -> cequivc lib T T' -> ts T T' eq.
 
 Definition term_symmetric {p} (ts : cts(p)) :=
+  forall T eq, ts T eq -> term_equality_symmetric eq.
+
+Definition eterm_symmetric {p} (ts : ects(p)) :=
   forall T T' eq, ts T T' eq -> term_equality_symmetric eq.
 
 Definition term_transitive {p} (ts : cts(p)) :=
+  forall T eq, ts T eq -> term_equality_transitive eq.
+
+Definition eterm_transitive {p} (ts : ects(p)) :=
   forall T T' eq, ts T T' eq -> term_equality_transitive eq.
 
 Definition term_value_respecting {p} lib (ts : cts(p)) :=
-  forall T eq, ts T T eq -> term_equality_respecting lib eq.
+  forall T eq, ts T eq -> term_equality_respecting lib eq.
+
+Definition eterm_value_respecting {p} lib (ts : ects(p)) :=
+  forall T T' eq, ts T T' eq -> term_equality_respecting lib eq.
 
 (* begin hide *)
 
-Definition pre_type_system {p} (ts : cts(p)) : Type :=
+(*
+Definition pre_type_system {p} (ts : ects(p)) : Type :=
   uniquely_valued ts
    # type_extensionality ts
    # type_symmetric ts
    # type_transitive ts
    # term_symmetric ts
    # term_transitive ts.
+*)
 
 (* end hide *)
 
-Definition type_system {p} lib (ts : cts(p)) : Type :=
+Definition type_system {p} (lib : @library p) (ts : candidate_type_system) : Type :=
   uniquely_valued ts
    # type_extensionality ts
-   # type_symmetric ts
-   # type_transitive ts
    # type_value_respecting lib ts
    # term_symmetric ts
    # term_transitive ts
    # term_value_respecting lib ts.
 
+Definition etype_system {p} lib (ts : ects(p)) : Type :=
+  euniquely_valued ts
+   # etype_extensionality ts
+   # etype_symmetric ts
+   # etype_transitive ts
+   # etype_value_respecting lib ts
+   # eterm_symmetric ts
+   # eterm_transitive ts
+   # eterm_value_respecting lib ts.
+
 (* begin hide *)
 
 Ltac dest_ts ts :=
+  destruct ts as [ ts_uv ts ];
+  destruct ts as [ ts_ext ts ];
+  destruct ts as [ ts_tyv ts ];
+  destruct ts as [ ts_tes ts ];
+  destruct ts as [ ts_tet ts_tev ].
+
+Ltac dest_ets ts :=
   destruct ts as [ ts_uv ts ];
   destruct ts as [ ts_ext ts ];
   destruct ts as [ ts_tys ts ];
@@ -181,9 +220,22 @@ Ltac dest_ts ts :=
   destruct ts as [ ts_tet ts_tev ].
 
 (** Destruct type_system *)
-Ltac onedts uv tye tys tyt tyvr tes tet tevr :=
+Ltac onedts uv tye tyvr tes tet tevr :=
   match goal with
       [ H : type_system _ _ |- _ ] =>
+      let tmp := fresh "tmp" in
+      unfold type_system in H;
+        destruct H   as [ uv   tmp ];
+        destruct tmp as [ tye  tmp ];
+        destruct tmp as [ tyvr tmp ];
+        destruct tmp as [ tes  tmp ];
+        destruct tmp as [ tet  tevr ]
+  end.
+
+(** Destruct etype_system *)
+Ltac onedets uv tye tys tyt tyvr tes tet tevr :=
+  match goal with
+      [ H : etype_system _ _ |- _ ] =>
       let tmp := fresh "tmp" in
       unfold type_system in H;
         destruct H   as [ uv   tmp ];
@@ -200,6 +252,17 @@ Tactic Notation "prove_type_system" ident(c) :=
   dands;
   [ Case_aux c "uniquely_valued"
   | Case_aux c "type_extensionality"
+  | Case_aux c "type_value_respecting"
+  | Case_aux c "term_symmetric"
+  | Case_aux c "term_transitive"
+  | Case_aux c "term_value_respecting"
+  ].
+
+Tactic Notation "prove_etype_system" ident(c) :=
+  unfold etype_system;
+  dands;
+  [ Case_aux c "uniquely_valued"
+  | Case_aux c "type_extensionality"
   | Case_aux c "type_symmetric"
   | Case_aux c "type_transitive"
   | Case_aux c "type_value_respecting"
@@ -208,26 +271,35 @@ Tactic Notation "prove_type_system" ident(c) :=
   | Case_aux c "term_value_respecting"
   ].
 
-Definition uniquely_valued_body {p}
-           (ts : cts(p))
+Definition uniquely_valued_body {p} (ts : cts(p)) (T : CTerm) (eq : per) :=
+  forall eq' : per, ts T eq' -> eq <=2=> eq'.
+
+Definition euniquely_valued_body {p}
+           (ts : ects(p))
            (T1 T2 : CTerm)
            (eq : per) :=
-  forall eq' : per, ts T1 T2 eq' -> eq_term_equals eq eq'.
+  forall eq' : per, ts T1 T2 eq' -> eq <=2=> eq'.
 
 Definition type_extensionality_body {p}
            (ts : cts(p))
+           (T : CTerm)
+           (eq : per) :=
+  forall eq' : per, eq <=2=> eq' -> ts T eq'.
+
+Definition etype_extensionality_body {p}
+           (ts : ects(p))
            (T1 T2 : CTerm)
            (eq : per) :=
-  forall eq' : per, eq_term_equals eq eq' -> ts T1 T2 eq'.
+  forall (eq' : per), eq <=2=> eq' -> ts T1 T2 eq'.
 
-Definition type_symmetric_body {p}
-           (ts : cts(p))
+Definition etype_symmetric_body {p}
+           (ts : ects(p))
            (T1 T2 : CTerm)
            (eq : per) :=
   ts T2 T1 eq.
 
-Definition type_transitive_body {p}
-           (ts : cts(p))
+Definition etype_transitive_body {p}
+           (ts : ects(p))
            (T1 T2 : CTerm)
            (eq : per) :=
   forall T3, ts T2 T3 eq -> ts T1 T3 eq.
@@ -235,6 +307,13 @@ Definition type_transitive_body {p}
 Definition type_value_respecting_body {p}
            lib
            (ts : cts(p))
+           (T : @CTerm p)
+           (eq : per) :=
+  forall T', cequivc lib T T' -> ts T' eq.
+
+Definition etype_value_respecting_body {p}
+           lib
+           (ts : ects(p))
            (T1 T2 : @CTerm p)
            (eq : per) :=
   forall T3, cequivc lib T1 T3 -> ts T1 T3 eq.
@@ -242,26 +321,53 @@ Definition type_value_respecting_body {p}
 Definition type_system_props {p}
            lib
            (ts : cts(p))
+           (T : CTerm)
+           (eq : per) :=
+  uniquely_valued_body ts T eq
+   # type_extensionality_body ts T eq
+   # type_value_respecting_body lib ts T eq
+   # term_equality_symmetric eq
+   # term_equality_transitive eq
+   # term_equality_respecting lib eq.
+
+Definition etype_system_props {p}
+           lib
+           (ts : ects(p))
            (T1 T2 : CTerm)
            (eq : per) :=
-  uniquely_valued_body ts T1 T2 eq
-   # type_extensionality_body ts T1 T2 eq
-   # type_symmetric_body ts T1 T2 eq
-   # type_transitive_body ts T1 T2 eq
-   # type_value_respecting_body lib ts T1 T2 eq
+  euniquely_valued_body ts T1 T2 eq
+   # etype_extensionality_body ts T1 T2 eq
+   # etype_symmetric_body ts T1 T2 eq
+   # etype_transitive_body ts T1 T2 eq
+   # etype_value_respecting_body lib ts T1 T2 eq
    # term_equality_symmetric eq
    # term_equality_transitive eq
    # term_equality_respecting lib eq.
 
 Definition is_type_system {p} lib (ts : cts(p)) :=
-  forall T1 T2 eq,
-    ts T1 T2 eq -> type_system_props lib ts T1 T2 eq.
+  forall T eq, ts T eq -> type_system_props lib ts T eq.
 
-Ltac dest_is_ts uv tye tys tyt tyvr tes tet tevr :=
+Definition is_etype_system {p} lib (ts : ects(p)) :=
+  forall T1 T2 eq,
+    ts T1 T2 eq -> etype_system_props lib ts T1 T2 eq.
+
+Ltac dest_is_ts uv tye tyvr tes tet tevr :=
   match goal with
-      [ H : type_system_props _ _ _ _ _ |- _ ] =>
+      [ H : type_system_props _ _ _ _ |- _ ] =>
       let tmp := fresh "tmp" in
       unfold type_system in H;
+        destruct H   as [ uv   tmp ];
+        destruct tmp as [ tye  tmp ];
+        destruct tmp as [ tyvr tmp ];
+        destruct tmp as [ tes  tmp ];
+        destruct tmp as [ tet  tevr ]
+  end.
+
+Ltac dest_is_ets uv tye tys tyt tyvr tes tet tevr :=
+  match goal with
+      [ H : etype_system_props _ _ _ _ _ |- _ ] =>
+      let tmp := fresh "tmp" in
+      unfold etype_system in H;
         destruct H   as [ uv   tmp ];
         destruct tmp as [ tye  tmp ];
         destruct tmp as [ tys  tmp ];
@@ -271,8 +377,29 @@ Ltac dest_is_ts uv tye tys tyt tyvr tes tet tevr :=
         destruct tmp as [ tet  tevr ]
   end.
 
+Tactic Notation "prove_ts_props" ident(c) :=
+  unfold type_system_props; dands; introv;
+  [ Case_aux c "uniquely_valued"
+  | Case_aux c "type_extensionality"
+  | Case_aux c "type_value_respecting"
+  | Case_aux c "term_symmetric"
+  | Case_aux c "term_transitive"
+  | Case_aux c "term_value_respecting"
+  ].
+
 Tactic Notation "prove_is_ts" ident(c) :=
   unfold is_type_system, type_system_props; introv cl;
+  dands;
+  [ Case_aux c "uniquely_valued"
+  | Case_aux c "type_extensionality"
+  | Case_aux c "type_value_respecting"
+  | Case_aux c "term_symmetric"
+  | Case_aux c "term_transitive"
+  | Case_aux c "term_value_respecting"
+  ].
+
+Tactic Notation "prove_is_ets" ident(c) :=
+  unfold is_etype_system, etype_system_props; introv cl;
   dands;
   [ Case_aux c "uniquely_valued"
   | Case_aux c "type_extensionality"
@@ -290,119 +417,199 @@ Lemma type_system_iff_is_type_system {p} :
 Proof.
   introv; split; intro k.
 
-  - onedts uv tye tys tyt tyvr tes tet tevr.
+  - onedts uv tye tyvr tes tet tevr.
     prove_is_ts Case.
 
     + Case "uniquely_valued".
       unfold uniquely_valued_body; introv e.
       unfold uniquely_valued in uv.
-      generalize (uv T1 T2 eq eq'); sp.
+      generalize (uv T eq eq'); sp.
 
     + Case "type_extensionality".
       unfold type_extensionality_body; introv teq.
       unfold type_extensionality in tye.
-      generalize (tye T1 T2 eq eq'); sp.
-
-    + Case "type_symmetric".
-      unfold type_symmetric_body.
-      unfold type_symmetric in tys.
-      generalize (tys T1 T2 eq); sp.
-
-    + Case "type_transitive".
-      unfold type_transitive_body; introv e.
-      unfold type_transitive in tyt.
-      generalize (tyt T1 T2 T3 eq); sp.
+      generalize (tye T eq eq'); sp.
 
     + Case "type_value_respecting".
       unfold type_value_respecting_body; introv c.
       unfold type_value_respecting in tyvr.
-      generalize (tyvr T1 T3 eq); intro k.
-      repeat (dest_imp k hyp).
-      unfold type_transitive in tyt.
-      generalize (tyt T1 T2 T1 eq); intro k.
+      generalize (tyvr T T' eq); intro k.
       repeat (dest_imp k hyp).
 
     + Case "term_symmetric".
       unfold term_symmetric in tes.
-      generalize (tes T1 T2 eq); sp.
+      generalize (tes T eq); sp.
 
     + Case "term_transitive".
       unfold term_transitive in tet.
-      generalize (tet T1 T2 eq); sp.
+      generalize (tet T eq); sp.
 
     + Case "term_value_respecting".
       unfold term_value_respecting in tevr.
-      generalize (tevr T1 eq); intro k.
+      generalize (tevr T eq); intro k.
       repeat (dest_imp k hyp).
-      unfold type_transitive in tyt.
-      generalize (tyt T1 T2 T1 eq); intro k.
-      repeat (dest_imp k hyp).
-
 
   - prove_type_system Case.
 
     + Case "uniquely_valued".
       unfold uniquely_valued; introv e1 e2.
-      generalize (k T T' eq); clear k; intro k.
+      generalize (k T eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr.
+      dest_is_ts uv tye tyvr tes tet tevr.
       unfold uniquely_valued_body in uv.
       generalize (uv eq'); sp.
 
     + Case "type_extensionality".
       unfold type_extensionality; introv e teq.
-      generalize (k T T' eq); clear k; intro k.
+      generalize (k T eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr.
+      dest_is_ts uv tye tyvr tes tet tevr.
       unfold type_extensionality_body in tye.
       generalize (tye eq'); sp.
 
-    + Case "type_symmetric".
-      unfold type_symmetric; introv e.
-      generalize (k T T' eq); clear k; intro k.
-      dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr.
-      unfold type_symmetric_body in tys; sp.
-
-    + Case "type_transitive".
-      unfold type_transitive; introv e1 e2.
-      generalize (k T1 T2 eq); clear k; intro k.
-      dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr.
-      unfold type_transitive_body in tyt.
-      generalize (tyt T3); sp.
-
     + Case "type_value_respecting".
       unfold type_value_respecting; introv e c.
-      generalize (k T T eq); clear k; intro k.
+      generalize (k T eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr.
-      unfold type_value_respecting_body in tyvr.
-      generalize (tyt T'); sp.
+      dest_is_ts uv tye tyvr tes tet tevr.
+      apply tyvr; auto.
 
     + Case "term_symmetric".
       unfold term_symmetric; introv e.
-      generalize (k T T' eq); clear k; intro k.
+      generalize (k T eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr; auto.
+      dest_is_ts uv tye tyvr tes tet tevr; auto.
 
     + Case "term_transitive".
       unfold term_transitive; introv e.
-      generalize (k T T' eq); clear k; intro k.
+      generalize (k T eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr; auto.
+      dest_is_ts uv tye tyvr tes tet tevr; auto.
 
     + Case "term_value_respecting".
       unfold term_value_respecting; introv e.
+      generalize (k T eq); clear k; intro k.
+      dest_imp k hyp.
+      dest_is_ts uv tye tyvr tes tet tevr; auto.
+Qed.
+
+Lemma etype_system_iff_is_etype_system {p} :
+  forall lib (ts : ects(p)),
+    etype_system lib ts <=> is_etype_system lib ts.
+Proof.
+  introv; split; intro k.
+
+  - onedets uv tye tys tyt tyvr tes tet tevr.
+    prove_is_ets Case.
+
+    + Case "uniquely_valued".
+      unfold euniquely_valued_body; introv e.
+      unfold euniquely_valued in uv.
+      generalize (uv T1 T2 eq eq'); sp.
+
+    + Case "type_extensionality".
+      unfold etype_extensionality_body; introv teq.
+      unfold etype_extensionality in tye.
+      generalize (tye T1 T2 eq eq'); sp.
+
+    + Case "type_symmetric".
+      unfold etype_symmetric_body.
+      unfold etype_symmetric in tys.
+      generalize (tys T1 T2 eq); sp.
+
+    + Case "type_transitive".
+      unfold etype_transitive_body; introv e.
+      unfold etype_transitive in tyt.
+      generalize (tyt T1 T2 T3 eq); sp.
+
+    + Case "type_value_respecting".
+      unfold etype_value_respecting_body; introv c.
+      unfold etype_value_respecting in tyvr.
+      generalize (tyvr T1 T3 eq); intro k.
+      repeat (dest_imp k hyp).
+      unfold etype_transitive in tyt.
+      generalize (tyt T1 T2 T1 eq); intro k.
+      repeat (dest_imp k hyp).
+
+    + Case "term_symmetric".
+      unfold eterm_symmetric in tes.
+      generalize (tes T1 T2 eq); sp.
+
+    + Case "term_transitive".
+      unfold eterm_transitive in tet.
+      generalize (tet T1 T2 eq); sp.
+
+    + Case "term_value_respecting".
+      unfold eterm_value_respecting in tevr.
+      generalize (tevr T1 T2 eq); intro k.
+      repeat (dest_imp k hyp).
+
+
+  - prove_etype_system Case.
+
+    + Case "uniquely_valued".
+      unfold euniquely_valued; introv e1 e2.
+      generalize (k T T' eq); clear k; intro k.
+      dest_imp k hyp.
+      dest_is_ets uv tye tys tyt tyvr tes tet tevr.
+      unfold uniquely_valued_body in uv.
+      generalize (uv eq'); sp.
+
+    + Case "type_extensionality".
+      unfold etype_extensionality; introv e teq.
+      generalize (k T T' eq); clear k; intro k.
+      dest_imp k hyp.
+      dest_is_ets uv tye tys tyt tyvr tes tet tevr.
+      unfold etype_extensionality_body in tye.
+      generalize (tye eq'); sp.
+
+    + Case "type_symmetric".
+      unfold etype_symmetric; introv e.
+      generalize (k T T' eq); clear k; intro k.
+      dest_imp k hyp.
+      dest_is_ets uv tye tys tyt tyvr tes tet tevr.
+      unfold etype_symmetric_body in tys; sp.
+
+    + Case "type_transitive".
+      unfold etype_transitive; introv e1 e2.
+      generalize (k T1 T2 eq); clear k; intro k.
+      dest_imp k hyp.
+      dest_is_ets uv tye tys tyt tyvr tes tet tevr.
+      unfold etype_transitive_body in tyt.
+      generalize (tyt T3); sp.
+
+    + Case "type_value_respecting".
+      unfold etype_value_respecting; introv e c.
       generalize (k T T eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr; auto.
+      dest_is_ets uv tye tys tyt tyvr tes tet tevr.
+      unfold etype_value_respecting_body in tyvr.
+      generalize (tyt T'); sp.
+
+    + Case "term_symmetric".
+      unfold eterm_symmetric; introv e.
+      generalize (k T T' eq); clear k; intro k.
+      dest_imp k hyp.
+      dest_is_ets uv tye tys tyt tyvr tes tet tevr; auto.
+
+    + Case "term_transitive".
+      unfold eterm_transitive; introv e.
+      generalize (k T T' eq); clear k; intro k.
+      dest_imp k hyp.
+      dest_is_ets uv tye tys tyt tyvr tes tet tevr; auto.
+
+    + Case "term_value_respecting".
+      unfold eterm_value_respecting; introv e.
+      generalize (k T T' eq); clear k; intro k.
+      dest_imp k hyp.
+      dest_is_ets uv tye tys tyt tyvr tes tet tevr; auto.
 Qed.
 
 
+(*
 Definition type_sys_props {p}
            (lib : library)
-           (ts : cts(p))
+           (ts : ects(p))
            (T1 T2 : CTerm)
            (eq : per) :=
   (* uniquely valued *)
@@ -447,7 +654,7 @@ Definition type_sys_props {p}
        -> ts T T4 eq2
        -> ts T3 T4 eq1 # ts T3 T4 eq2 # ts T T3 eq1).
 
-Definition type_sys {p} lib (ts : cts(p)) :=
+Definition type_sys {p} lib (ts : ects(p)) :=
   forall T1 T2 eq,
     ts T1 T2 eq -> type_sys_props lib ts T1 T2 eq.
 
@@ -510,7 +717,7 @@ Tactic Notation "prove_type_sys_props" ident(c) :=
 
 Definition type_sys_props2 {p}
            (lib : library)
-           (ts : cts(p))
+           (ts : ects(p))
            (T1 T2 : CTerm)
            (eq : per) :=
   (* uniquely valued *)
@@ -547,7 +754,7 @@ Definition type_sys_props2 {p}
        -> ts T T4 eq2
        -> ts T3 T4 eq1 # ts T3 T4 eq2 # ts T T3 eq1).
 
-Definition type_sys2 {p} lib (ts : cts(p)) :=
+Definition type_sys2 {p} lib (ts : ects(p)) :=
   forall T1 T2 eq,
     ts T1 T2 eq -> type_sys_props2 lib ts T1 T2 eq.
 
@@ -585,7 +792,7 @@ Tactic Notation "prove_type_sys_props2" ident(c) :=
   ].
 
 Lemma type_sys_props_iff_type_sys_props2 {p} :
-  forall lib (ts : cts(p)) T1 T2 eq,
+  forall lib (ts : ects(p)) T1 T2 eq,
     type_sys_props lib ts T1 T2 eq <=> type_sys_props2 lib ts T1 T2 eq.
 Proof.
   introv; split; intro tsp.
@@ -616,7 +823,7 @@ Proof.
 Qed.
 
 Lemma type_sys_iff_type_sys2 {p} :
-  forall lib (ts : cts(p)), type_sys lib ts <=> type_sys2 lib ts.
+  forall lib (ts : ects(p)), type_sys lib ts <=> type_sys2 lib ts.
 Proof.
   introv; unfold type_sys, type_sys2; split; intro k; introv e;
   try (complete (apply type_sys_props_iff_type_sys_props2; sp)).
@@ -626,7 +833,7 @@ Qed.
 
 Definition type_sys_props3 {p}
            (lib : library)
-           (ts : cts(p))
+           (ts : ects(p))
            (T1 T2 : CTerm)
            (eq : per) :=
   (* uniquely valued *)
@@ -652,7 +859,7 @@ Definition type_sys_props3 {p}
        -> ts T T4 eq2
        -> ts T3 T4 eq1 # ts T3 T4 eq2).
 
-Definition type_sys3 {p} lib (ts : cts(p)) :=
+Definition type_sys3 {p} lib (ts : ects(p)) :=
   forall T1 T2 eq,
     ts T1 T2 eq -> type_sys_props3 lib ts T1 T2 eq.
 
@@ -690,7 +897,7 @@ Tactic Notation "prove_type_sys_props3" ident(c) :=
   ].
 
 Lemma type_sys_props_iff_type_sys_props3 {p} :
-  forall lib (ts : cts(p)) T1 T2 eq,
+  forall lib (ts : ects(p)) T1 T2 eq,
     type_sys_props lib ts T1 T2 eq <=> type_sys_props3 lib ts T1 T2 eq.
 Proof.
   introv.
@@ -762,11 +969,12 @@ Proof.
 Qed.
 
 Lemma type_sys_iff_type_sys3 {p} :
-  forall lib (ts : cts(p)), type_sys lib ts <=> type_sys3 lib ts.
+  forall lib (ts : ects(p)), type_sys lib ts <=> type_sys3 lib ts.
 Proof.
   introv; unfold type_sys, type_sys3; split; intro k; introv e;
   try (complete (apply type_sys_props_iff_type_sys_props3; sp)).
 Qed.
+*)
 
 Ltac implies_ts_or T H :=
   match type of H with
@@ -786,8 +994,9 @@ Ltac rev_implies_ts_or T H :=
        rename name into H)
   end.
 
+(*
 Lemma type_sys_props_ts_refl {p} :
-  forall lib (ts : cts(p)) A B eq,
+  forall lib (ts : ects(p)) A B eq,
     type_sys_props lib ts A B eq
     -> ts A A eq # ts B B eq.
 Proof.
@@ -797,7 +1006,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_refl2 {p} :
-  forall lib (ts : cts(p)) A B eq1 eq2,
+  forall lib (ts : ects(p)) A B eq1 eq2,
     type_sys_props lib ts A B eq1
     -> eq_term_equals eq1 eq2
     -> ts A A eq2 # ts B B eq2.
@@ -808,7 +1017,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_uv {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : ects(p)) A B C eq1 eq2,
     ts A B eq1
     -> type_sys_props lib ts B C eq2
     -> ts A B eq2.
@@ -827,7 +1036,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_uv2 {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : ects(p)) A B C eq1 eq2,
     ts B A eq1
     -> type_sys_props lib ts B C eq2
     -> ts B A eq2.
@@ -841,7 +1050,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_uv3 {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2 eq3,
+  forall lib (ts : ects(p)) A B C eq1 eq2 eq3,
     ts A B eq1
     -> type_sys_props lib ts A C eq2
     -> eq_term_equals eq2 eq3
@@ -855,7 +1064,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_uv4 {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2 eq3,
+  forall lib (ts : ects(p)) A B C eq1 eq2 eq3,
     ts A B eq1
     -> type_sys_props lib ts B C eq2
     -> eq_term_equals eq2 eq3
@@ -874,7 +1083,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_sym {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : ects(p)) A B C eq1 eq2,
     type_sys_props lib ts A C eq1
     -> ts B A eq2
     -> ts A B eq1.
@@ -887,7 +1096,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_sym2 {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : ects(p)) A B C eq1 eq2,
     type_sys_props lib ts A C eq1
     -> ts B A eq2
     -> ts A B eq2.
@@ -900,7 +1109,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_sym3 {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : ects(p)) A B C eq1 eq2,
     type_sys_props lib ts A C eq1
     -> ts A B eq2
     -> ts B A eq2.
@@ -912,7 +1121,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_sym4 {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : ects(p)) A B C eq1 eq2,
     type_sys_props lib ts A C eq1
     -> ts A B eq2
     -> ts B A eq1.
@@ -926,7 +1135,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_sym5 {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : ects(p)) A B C eq1 eq2,
     type_sys_props lib ts C A eq1
     -> ts A B eq2
     -> ts B A eq1.
@@ -941,7 +1150,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_sym6 {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : ects(p)) A B C eq1 eq2,
     type_sys_props lib ts C A eq1
     -> ts A B eq2
     -> ts B A eq2.
@@ -953,7 +1162,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_ts_trans {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2 eq,
+  forall lib (ts : ects(p)) A B C eq1 eq2 eq,
     ts A B eq1
     -> ts B C eq2
     -> type_sys_props lib ts A B eq
@@ -965,7 +1174,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_eq_term_equals {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : ects(p)) A B C eq1 eq2,
     ts A B eq1
     -> type_sys_props lib ts B C eq2
     -> eq_term_equals eq2 eq1.
@@ -978,7 +1187,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_eq_term_equals2 {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : ects(p)) A B C eq1 eq2,
     ts A B eq1
     -> type_sys_props lib ts C B eq2
     -> eq_term_equals eq2 eq1.
@@ -991,7 +1200,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_eq_term_equals3 {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : ects(p)) A B C eq1 eq2,
     ts B A eq1
     -> type_sys_props lib ts C B eq2
     -> eq_term_equals eq2 eq1.
@@ -1002,7 +1211,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props_eq_term_equals4 {p} :
-  forall lib (ts : cts(p)) A B C eq1 eq2,
+  forall lib (ts : ects(p)) A B C eq1 eq2,
     ts A B eq1
     -> type_sys_props lib ts A C eq2
     -> eq_term_equals eq2 eq1.
@@ -1016,7 +1225,7 @@ Qed.
     apply tys in X; sp.*)
 
 Lemma type_sys_props_sym {p} :
-  forall lib (ts : cts(p)) A B eq,
+  forall lib (ts : ects(p)) A B eq,
     type_sys_props lib ts A B eq
     -> type_sys_props lib ts B A eq.
 Proof.
@@ -1070,22 +1279,23 @@ Proof.
 Qed.
 
 Lemma type_system_type_symm {p} :
- forall (ts : cts(p)) T T' eq,
+ forall (ts : ects(p)) T T' eq,
    type_symmetric ts
    -> ts T T' eq
    -> ts T' T eq.
 Proof.
   sp.
 Qed.
+*)
 
 Ltac use_trans_tac x :=
   match goal with
-    | [ H : type_transitive _ |- _ ] => apply H with (T2 := x)
+    | [ H : etype_transitive _ |- _ ] => apply H with (T2 := x)
   end.
 
 Ltac use_trans_tac_in x h :=
   match goal with
-    | [ H : type_transitive _ |- _ ] => apply H with (T2 := x) in h
+    | [ H : etype_transitive _ |- _ ] => apply H with (T2 := x) in h
   end.
 
 Tactic Notation "use_trans" constr(x) "in" ident(H) := use_trans_tac_in x H.
@@ -1093,12 +1303,12 @@ Tactic Notation "use_trans" constr(x) := use_trans_tac x.
 
 Ltac use_ext_tac x :=
   match goal with
-    | [ H : type_extensionality _ |- _ ] => apply H with (eq := x)
+    | [ H : etype_extensionality _ |- _ ] => apply H with (eq := x)
   end.
 
 Ltac use_ext_tac_in x h :=
   match goal with
-    | [ H : type_extensionality _ |- _ ] => apply H with (eq := x) in h
+    | [ H : etype_extensionality _ |- _ ] => apply H with (eq := x) in h
   end.
 
 Tactic Notation "use_ext" constr(x) "in" ident(H) := use_ext_tac_in x H.
@@ -1106,12 +1316,12 @@ Tactic Notation "use_ext" constr(x) := use_ext_tac x.
 
 Ltac use_sym_tac :=
   match goal with
-    | [ H : type_symmetric _ |- _ ] => apply H
+    | [ H : etype_symmetric _ |- _ ] => apply H
   end.
 
 Ltac use_sym_tac_in h :=
   match goal with
-    | [ H : type_symmetric _ |- _ ] => apply H in h
+    | [ H : etype_symmetric _ |- _ ] => apply H in h
   end.
 
 Tactic Notation "use_sym" "in" ident(H) := use_sym_tac_in H.
@@ -1119,17 +1329,23 @@ Tactic Notation "use_sym" := use_sym_tac.
 
 Ltac use_vresp_tac :=
   match goal with
-    | [ H : type_value_respecting _ _ |- _ ] => apply H
+    | [ H : etype_value_respecting _ _ |- _ ] => apply H
   end.
 
 Ltac use_vresp_tac_in h :=
   match goal with
-    | [ H : type_value_respecting _ _ |- _ ] => apply H in h
+    | [ H : etype_value_respecting _ _ |- _ ] => apply H in h
   end.
 
 Tactic Notation "use_vresp" "in" ident(H) := use_vresp_tac_in H.
 Tactic Notation "use_vresp" := use_vresp_tac.
 
+Ltac ren_vresp h :=
+  match goal with
+    | [ H : etype_value_respecting _ _ |- _ ] => rename H into h
+  end.
+
+(*
 Ltac use_tvresp_tac x :=
   match goal with
     | [ H : term_value_respecting _ _ |- _ ] => apply H with (T := x)
@@ -1157,25 +1373,24 @@ Tactic Notation "use_uval" constr(T) constr(U) "in" ident(H) :=
        use_uval_tac_in T U H.
 Tactic Notation "use_uval" constr(T) constr(U) :=
        use_uval_tac T U.
+*)
 
-Lemma type_system_ts_refl {p} :
-  forall lib (ts : cts(p)) A B eq,
-    type_system lib ts
+Lemma etype_system_ts_refl {p} :
+  forall lib (ts : ects(p)) A B eq,
+    etype_system lib ts
     -> ts A B eq
     -> ts A A eq # ts B B eq.
 Proof.
   introv tysys tsab.
-  allunfold @type_system; sp.
-  use_trans B; sp.
-  use_trans A; sp.
+  allunfold @etype_system; sp.
+  - use_trans B; sp.
+  - use_trans A; sp.
 Qed.
 
-Lemma type_system_type_mem {p} :
- forall ts : cts(p),
- forall T T' : CTerm,
- forall eq : per,
-   type_symmetric ts
-   -> type_transitive ts
+Lemma etype_system_type_mem {p} :
+ forall (ts : ects(p)) (T T' : CTerm) (eq : per),
+   etype_symmetric ts
+   -> etype_transitive ts
    -> ts T T' eq
    -> ts T T eq.
 Proof.
@@ -1183,12 +1398,10 @@ Proof.
   use_trans T'; auto.
 Qed.
 
-Lemma type_system_type_mem1 {p} :
- forall ts : cts(p),
- forall T T' : CTerm,
- forall eq : per,
-   type_symmetric ts
-   -> type_transitive ts
+Lemma etype_system_type_mem1 {p} :
+ forall (ts : ects(p)) (T T' : CTerm) (eq : per),
+   etype_symmetric ts
+   -> etype_transitive ts
    -> ts T T' eq
    -> ts T' T' eq.
 Proof.
@@ -1196,18 +1409,16 @@ Proof.
   use_trans T; auto.
 Qed.
 
-Lemma type_system_type_mem2 {p} :
- forall ts : cts(p),
- forall T T' : CTerm,
- forall eq : per,
-   type_symmetric ts
-   -> type_transitive ts
+Lemma etype_system_type_mem2 {p} :
+ forall (ts : ects(p)) (T T' : CTerm) (eq : per),
+   etype_symmetric ts
+   -> etype_transitive ts
    -> ts T T' eq
    -> ts T T eq # ts T' T' eq.
 Proof.
   sp.
-  use_trans T'; auto.
-  use_trans T; auto.
+  - use_trans T'; auto.
+  - use_trans T; auto.
 Qed.
 
 (*
@@ -1219,72 +1430,80 @@ Definition ex_proj (A : Prop) P (ex : exists (x : A), P x) : A :=
   end.
 *)
 
-Lemma uniquely_valued_eq {p} :
-  forall ts : cts(p),
-  forall T T1 T2 : CTerm,
-  forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_symmetric ts
-    -> type_transitive ts
+Lemma euniquely_valued_eq {p} :
+  forall (ts : ects(p)) (T T1 T2 : CTerm) (eq1 eq2 : per),
+    euniquely_valued ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T T1 eq1
     -> ts T T2 eq2
-    -> eq_term_equals eq1 eq2.
+    -> eq1 <=2=> eq2.
 Proof.
  introv uv tys tyt t1 t2.
- assert (ts T T eq1) by (apply type_system_type_mem with (T' := T1); auto).
- assert (ts T T eq2) by (apply type_system_type_mem with (T' := T2); auto).
+ assert (ts T T eq1) by (apply etype_system_type_mem with (T' := T1); auto).
+ assert (ts T T eq2) by (apply etype_system_type_mem with (T' := T2); auto).
  apply uv with (T := T) (T' := T); auto.
+Qed.
+
+Lemma euniquely_valued_eq_ts {p} :
+  forall lib (ts : ects(p)) (T T1 T2 : CTerm) (eq1 eq2 : per),
+    etype_system lib ts
+    -> ts T T1 eq1
+    -> ts T T2 eq2
+    -> eq1 <=2=> eq2.
+Proof.
+  intros.
+  allunfold @etype_system; sp.
+  apply @euniquely_valued_eq with (ts := ts) (T := T) (T1 := T1) (T2 := T2); sp.
 Qed.
 
 Lemma uniquely_valued_eq_ts {p} :
-  forall lib (ts : cts(p)) (T T1 T2 : CTerm) (eq1 eq2 : per),
+  forall lib (ts : cts(p)) (T : CTerm) (eq1 eq2 : per),
     type_system lib ts
-    -> ts T T1 eq1
-    -> ts T T2 eq2
-    -> eq_term_equals eq1 eq2.
+    -> ts T eq1
+    -> ts T eq2
+    -> eq1 <=2=> eq2.
 Proof.
-  intros.
-  allunfold @type_system; sp.
-  apply @uniquely_valued_eq with (ts := ts) (T := T) (T1 := T1) (T2 := T2); sp.
+  introv h ts1 ts2.
+  onedts uv tye tyvr tes tet tevr.
+  eapply uv; eauto.
 Qed.
 
-Lemma uniquely_valued_eq2 {p} :
-  forall ts : cts(p),
-  forall T T1 T2 : CTerm,
-  forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_symmetric ts
-    -> type_transitive ts
+Lemma euniquely_valued_eq2 {p} :
+  forall (ts : ects(p)) (T T1 T2 : CTerm) (eq1 eq2 : per),
+    euniquely_valued ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T eq1
     -> ts T T2 eq2
-    -> eq_term_equals eq1 eq2.
+    -> eq1 <=2=> eq2.
 Proof.
  introv uv tys tyt t1 t2.
- assert (ts T T eq1) by (apply type_system_type_mem with (T' := T1); auto).
- assert (ts T T eq2) by (apply type_system_type_mem with (T' := T2); auto).
+ assert (ts T T eq1) by (apply etype_system_type_mem with (T' := T1); auto).
+ assert (ts T T eq2) by (apply etype_system_type_mem with (T' := T2); auto).
  apply uv with (T := T) (T' := T); auto.
 Qed.
 
-Lemma uniquely_valued_eq2_ts {p} :
-  forall lib (ts : cts(p)) (T T1 T2 : CTerm) (eq1 eq2 : per),
-    type_system lib ts
+Lemma euniquely_valued_eq2_ts {p} :
+  forall lib (ts : ects(p)) (T T1 T2 : CTerm) (eq1 eq2 : per),
+    etype_system lib ts
     -> ts T1 T eq1
     -> ts T T2 eq2
     -> eq_term_equals eq1 eq2.
 Proof.
   intros.
-  allunfold @type_system; sp.
-  apply @uniquely_valued_eq2 with (ts := ts) (T := T) (T1 := T1) (T2 := T2); sp.
+  allunfold @etype_system; sp.
+  apply @euniquely_valued_eq2 with (ts := ts) (T := T) (T1 := T1) (T2 := T2); sp.
 Qed.
 
-Lemma uniquely_valued_trans {p} :
-  forall ts : cts(p),
+Lemma euniquely_valued_trans {p} :
+  forall ts : ects(p),
   forall T1 T2 T3 : CTerm,
   forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_extensionality ts
-    -> type_symmetric ts
-    -> type_transitive ts
+    euniquely_valued ts
+    -> etype_extensionality ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T2 eq1
     -> ts T2 T3 eq2
     -> ts T1 T2 eq2.
@@ -1292,201 +1511,201 @@ Proof.
   sp.
   assert (ts T2 T1 eq1) by (use_sym; auto).
   assert (eq_term_equals eq1 eq2) as eq.
-  apply @uniquely_valued_eq with (ts := ts) (T := T2) (T1 := T1) (T2 := T3); auto.
+  apply @euniquely_valued_eq with (ts := ts) (T := T2) (T1 := T1) (T2 := T3); auto.
   use_ext eq1; auto.
 Qed.
 
-Lemma uniquely_valued_trans2 {p} :
-  forall ts : cts(p),
+Lemma euniquely_valued_trans2 {p} :
+  forall ts : ects(p),
   forall T1 T2 T3 : CTerm,
   forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_extensionality ts
-    -> type_symmetric ts
-    -> type_transitive ts
+    euniquely_valued ts
+    -> etype_extensionality ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T2 eq1
     -> ts T2 T3 eq2
     -> ts T1 T3 eq1.
 Proof.
   introv uv tye tys tyt t1 t2.
   assert (ts T1 T2 eq2)
-    by (apply @uniquely_valued_trans with (T3 := T3) (eq1 := eq1); auto).
+    by (apply @euniquely_valued_trans with (T3 := T3) (eq1 := eq1); auto).
   assert (ts T1 T3 eq2) by (use_trans T2; auto).
   assert (eq_term_equals eq2 eq1) by (apply uv with (T := T1) (T' := T2); auto).
   use_ext eq2; auto.
 Qed.
 
-Lemma uniquely_valued_trans2_r {p} :
-  forall ts : cts(p),
+Lemma euniquely_valued_trans2_r {p} :
+  forall ts : ects(p),
   forall T1 T2 T3 : CTerm,
   forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_extensionality ts
-    -> type_symmetric ts
-    -> type_transitive ts
+    euniquely_valued ts
+    -> etype_extensionality ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T2 eq1
     -> ts T2 T3 eq2
     -> ts T3 T3 eq1.
 Proof.
   sp.
-  generalize (uniquely_valued_trans2 ts T1 T2 T3 eq1 eq2); sp.
+  generalize (euniquely_valued_trans2 ts T1 T2 T3 eq1 eq2); sp.
   use_trans T1; sp.
 Qed.
 
-Lemma uniquely_valued_trans3 {p} :
-  forall ts : cts(p),
+Lemma euniquely_valued_trans3 {p} :
+  forall ts : ects(p),
   forall T1 T2 T3 : CTerm,
   forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_extensionality ts
-    -> type_symmetric ts
-    -> type_transitive ts
+    euniquely_valued ts
+    -> etype_extensionality ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T2 eq1
     -> ts T2 T3 eq2
     -> ts T2 T3 eq1.
 Proof.
   introv uv tye tys tyt t1 t2.
   assert (ts T1 T3 eq1)
-    by (apply @uniquely_valued_trans2 with (T2 := T2) (eq2 := eq2); auto).
+    by (apply @euniquely_valued_trans2 with (T2 := T2) (eq2 := eq2); auto).
   assert (ts T2 T1 eq1) by sp.
   use_trans T1; auto.
 Qed.
 
-Lemma uniquely_valued_trans4 {p} :
-  forall ts : cts(p),
+Lemma euniquely_valued_trans4 {p} :
+  forall ts : ects(p),
   forall T1 T2 T3 : CTerm,
   forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_extensionality ts
-    -> type_symmetric ts
-    -> type_transitive ts
+    euniquely_valued ts
+    -> etype_extensionality ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T2 eq1
     -> ts T2 T3 eq2
     -> ts T1 T3 eq2.
 Proof.
   sp.
   assert (ts T1 T2 eq2).
-  apply @uniquely_valued_trans with (T3 := T3) (eq1 := eq1); auto.
+  apply @euniquely_valued_trans with (T3 := T3) (eq1 := eq1); auto.
   use_trans T2; auto.
 Qed.
 
-Lemma uniquely_valued_trans4_r {p} :
-  forall ts : cts(p),
+Lemma euniquely_valued_trans4_r {p} :
+  forall ts : ects(p),
   forall T1 T2 T3 : CTerm,
   forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_extensionality ts
-    -> type_symmetric ts
-    -> type_transitive ts
+    euniquely_valued ts
+    -> etype_extensionality ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T2 eq1
     -> ts T2 T3 eq2
     -> ts T3 T3 eq2.
 Proof.
   sp.
-  generalize (uniquely_valued_trans4 ts T1 T2 T3 eq1 eq2); sp.
+  generalize (euniquely_valued_trans4 ts T1 T2 T3 eq1 eq2); sp.
   use_trans T1; sp.
 Qed.
 
-Lemma uniquely_valued_trans5 {p} :
-  forall ts : cts(p),
+Lemma euniquely_valued_trans5 {p} :
+  forall ts : ects(p),
   forall T1 T2 T3 : CTerm,
   forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_extensionality ts
-    -> type_symmetric ts
-    -> type_transitive ts
+    euniquely_valued ts
+    -> etype_extensionality ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T2 eq1
     -> ts T1 T3 eq2
     -> ts T1 T3 eq1.
 Proof.
   sp.
   assert (ts T2 T1 eq1) by (use_sym; auto).
-  apply @uniquely_valued_trans3 with (T1 := T2) (eq2 := eq2); auto.
+  apply @euniquely_valued_trans3 with (T1 := T2) (eq2 := eq2); auto.
 Qed.
 
-Lemma uniquely_valued_trans6 {p} :
-  forall ts : cts(p),
+Lemma euniquely_valued_trans6 {p} :
+  forall ts : ects(p),
   forall T1 T2 T3 : CTerm,
   forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_extensionality ts
-    -> type_symmetric ts
-    -> type_transitive ts
+    euniquely_valued ts
+    -> etype_extensionality ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T2 eq1
     -> ts T1 T3 eq2
     -> ts T1 T2 eq2.
 Proof.
   sp.
   assert (eq_term_equals eq1 eq2).
-  apply @uniquely_valued_eq with (ts := ts) (T := T1) (T1 := T2) (T2 := T3); auto.
+  apply @euniquely_valued_eq with (ts := ts) (T := T1) (T1 := T2) (T2 := T3); auto.
   use_ext eq1; auto.
 Qed.
 
-Lemma uniquely_valued_trans7 {p} :
-  forall ts : cts(p),
+Lemma euniquely_valued_trans7 {p} :
+  forall ts : ects(p),
   forall T1 T2 T3 : CTerm,
   forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_extensionality ts
-    -> type_symmetric ts
-    -> type_transitive ts
+    euniquely_valued ts
+    -> etype_extensionality ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T2 eq1
     -> ts T1 T3 eq2
     -> ts T2 T3 eq1.
 Proof.
   sp.
   assert (ts T2 T1 eq1) by (use_sym; auto).
-  apply @uniquely_valued_trans2 with (T2 := T1) (eq2 := eq2); auto.
+  apply @euniquely_valued_trans2 with (T2 := T1) (eq2 := eq2); auto.
 Qed.
 
-Lemma uniquely_valued_trans7_r {p} :
-  forall ts : cts(p),
+Lemma euniquely_valued_trans7_r {p} :
+  forall ts : ects(p),
   forall T1 T2 T3 : CTerm,
   forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_extensionality ts
-    -> type_symmetric ts
-    -> type_transitive ts
+    euniquely_valued ts
+    -> etype_extensionality ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T2 eq1
     -> ts T1 T3 eq2
     -> ts T3 T3 eq1.
 Proof.
   sp.
-  generalize (uniquely_valued_trans7 ts T1 T2 T3 eq1 eq2); sp.
+  generalize (euniquely_valued_trans7 ts T1 T2 T3 eq1 eq2); sp.
   use_trans T2; sp.
 Qed.
 
-Lemma uniquely_valued_trans8 {p} :
-  forall ts : cts(p),
+Lemma euniquely_valued_trans8 {p} :
+  forall ts : ects(p),
   forall T1 T2 T3 : CTerm,
   forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_extensionality ts
-    -> type_symmetric ts
-    -> type_transitive ts
+    euniquely_valued ts
+    -> etype_extensionality ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T2 eq1
     -> ts T1 T3 eq2
     -> ts T2 T3 eq2.
 Proof.
   sp.
   assert (ts T2 T1 eq1) by (use_sym; auto).
-  apply @uniquely_valued_trans4 with (T2 := T1) (eq1 := eq1); auto.
+  apply @euniquely_valued_trans4 with (T2 := T1) (eq1 := eq1); auto.
 Qed.
 
-Lemma uniquely_valued_trans8_r {p} :
-  forall ts : cts(p),
+Lemma euniquely_valued_trans8_r {p} :
+  forall ts : ects(p),
   forall T1 T2 T3 : CTerm,
   forall eq1 eq2 : per,
-    uniquely_valued ts
-    -> type_extensionality ts
-    -> type_symmetric ts
-    -> type_transitive ts
+    euniquely_valued ts
+    -> etype_extensionality ts
+    -> etype_symmetric ts
+    -> etype_transitive ts
     -> ts T1 T2 eq1
     -> ts T1 T3 eq2
     -> ts T3 T3 eq2.
 Proof.
   sp.
-  generalize (uniquely_valued_trans8 ts T1 T2 T3 eq1 eq2); sp.
+  generalize (euniquely_valued_trans8 ts T1 T2 T3 eq1 eq2); sp.
   use_trans T2; sp.
 Qed.
 
@@ -1512,12 +1731,12 @@ Proof.
   sp.
 Qed.
 
-Lemma type_system_term_mem {p} :
- forall ts : cts(p),
+Lemma etype_system_term_mem {p} :
+ forall ts : ects(p),
  forall T T' t1 t2 : CTerm,
  forall eq : per,
-   term_symmetric ts
-   -> term_transitive ts
+   eterm_symmetric ts
+   -> eterm_transitive ts
    -> ts T T' eq
    -> eq t1 t2
    -> eq t1 t1.
@@ -1528,12 +1747,12 @@ Proof.
   apply tet with (T := T) (T' := T'); auto.
 Qed.
 
-Lemma type_extensionality_symm {p} :
-  forall ts : cts(p),
+Lemma etype_extensionality_symm {p} :
+  forall ts : ects(p),
   forall T1 T2 : CTerm,
   forall eq eq' : per,
-    type_symmetric ts
-    -> type_extensionality ts
+    etype_symmetric ts
+    -> etype_extensionality ts
     -> ts T1 T2 eq
     -> eq_term_equals eq eq'
     -> ts T2 T1 eq'.
@@ -1543,34 +1762,35 @@ Proof.
   use_ext eq; auto.
 Qed.
 
-Lemma type_reduces_to_symm {p} :
-  forall lib (ts : cts(p)) (T1 T2 T3 : CTerm) (eq : per),
-   type_symmetric ts
-   -> type_transitive ts
-   -> type_value_respecting lib ts
+Lemma etype_reduces_to_symm {p} :
+  forall lib (ts : ects(p)) (T1 T2 T3 : CTerm) (eq : per),
+   etype_symmetric ts
+   -> etype_transitive ts
+   -> etype_value_respecting lib ts
    -> ts T1 T2 eq
    -> cequivc lib T1 T3
    -> ts T1 T3 eq.
 Proof.
   intros.
-  use_vresp; auto.
-  apply type_system_type_mem with (T' := T2); auto.
+  ren_vresp h; apply h; auto.
+  apply etype_system_type_mem with (T' := T2); auto.
 Qed.
 
-Lemma type_reduces_to_symm2 {p} :
-  forall lib (ts : cts(p)) (T1 T2 T3 : CTerm) (eq : per),
-   type_symmetric ts
-   -> type_transitive ts
-   -> type_value_respecting lib ts
+Lemma etype_reduces_to_symm2 {p} :
+  forall lib (ts : ects(p)) (T1 T2 T3 : CTerm) (eq : per),
+   etype_symmetric ts
+   -> etype_transitive ts
+   -> etype_value_respecting lib ts
    -> ts T2 T1 eq
    -> cequivc lib T1 T3
    -> ts T1 T3 eq.
 Proof.
-  sp; generalize (type_reduces_to_symm lib ts T1 T2 T3 eq); sp.
+  sp; generalize (etype_reduces_to_symm lib ts T1 T2 T3 eq); sp.
 Qed.
 
+(*
 Lemma term_reduces_to_symm {p} :
-  forall lib (ts : cts(p)) (T1 T2 : CTerm) (eq : per),
+  forall lib (ts : ects(p)) (T1 T2 : CTerm) (eq : per),
    type_symmetric ts
    -> type_transitive ts
    -> term_value_respecting lib ts
@@ -1583,7 +1803,7 @@ Proof.
 Qed.
 
 Lemma type_system_prop {p} :
-  forall lib (ts : cts(p)),
+  forall lib (ts : ects(p)),
     type_system lib ts <=> type_sys lib ts.
 Proof.
   introv; split_iff Case.
@@ -1669,6 +1889,7 @@ Proof.
       discover.
       d_tsp; sp.
 Qed.
+*)
 
 Lemma eqorceq_implies_eq {p} :
   forall lib eq (a b c : @CTerm p),
@@ -1777,6 +1998,61 @@ Proof.
   apply tet with (t2 := a); sp.
 Qed.
 
+Tactic Notation "dts_props" ident(h) ident(uv) ident(te) ident(tv) ident(tes) ident(tet) ident(ter) :=
+  unfold type_system_props in h;
+  destruct h as [uv  h];
+  destruct h as [te  h];
+  destruct h as [tv  h];
+  destruct h as [tes h];
+  destruct h as [tet ter].
+
+Lemma eq_ts_cequivc {o} :
+  forall lib (a b c d : @CTerm o) (eq : per(o)),
+    term_equality_symmetric eq
+    -> term_equality_transitive eq
+    -> term_equality_respecting lib eq
+    -> eq a b
+    -> cequivc lib a c
+    -> cequivc lib b d
+    -> eq c d.
+Proof.
+  introv sym trans resp e1 c1 c2.
+  unfold eqorceq in *.
+
+  apply (trans _ a).
+
+  - apply sym.
+    apply resp; spcast; auto.
+    apply (trans _ b); auto.
+
+  - apply (trans _ b); auto.
+    apply resp; spcast; auto.
+    apply (trans _ a); auto.
+Qed.
+
+Lemma eqorceq_cequivc {o} :
+  forall lib (a b c d : @CTerm o) (eq : per(o)),
+    term_equality_symmetric eq
+    -> term_equality_transitive eq
+    -> term_equality_respecting lib eq
+    -> eqorceq lib eq a b
+    -> cequivc lib a c
+    -> cequivc lib b d
+    -> eqorceq lib eq c d.
+Proof.
+  introv sym trans resp e1 c1 c2.
+  unfold eqorceq in *.
+  repndors; spcast.
+
+  - left.
+    eapply eq_ts_cequivc; eauto.
+
+  - right; spcast.
+    eapply cequivc_trans;[|eauto].
+    eapply cequivc_trans;[|eauto].
+    apply cequivc_sym; auto.
+Qed.
+
 
 (* --------- A FEW TACTICS --------- *)
 
@@ -1860,6 +2136,8 @@ Ltac computes_to_eqval :=
        eqconstr name
   end.
 
+
+(*
 Ltac apply_defines_only_universes :=
   match goal with
     | [ H1 : type_system ?lib ?ts, H2 : defines_only_universes ?lib ?ts, H3 : ?ts ?T1 ?T2 ?eq |- _ ] =>
@@ -1867,7 +2145,7 @@ Ltac apply_defines_only_universes :=
       let h' := fresh "h'" in
       let e1 := fresh "e1" in
       let e2 := fresh "e2" in
-      generalize (type_system_ts_refl lib ts T1 T2 eq);
+      generalize (etype_system_ts_refl lib ts T1 T2 eq);
         intro h;
         repeat (dest_imp h h');
         destruct h as [e1 e2];
@@ -1881,6 +2159,23 @@ Ltac close_diff :=
   try (apply_defines_only_universes);
   uncast;
   computes_to_valc_diff.
+*)
+
+Ltac use_dou :=
+  match goal with
+    | [ H1 : defines_only_universes ?lib ?ts, H2 : ?ts ?T ?eq |- _ ] =>
+      let c := fresh "c" in
+      let i := fresh "i" in
+      assert ({i : nat , ccomputes_to_valc lib T (mkc_uni i)}) as c
+          by (apply H1 in H2; auto);
+      exrepnd
+  end.
+
+Ltac close_diff :=
+  allunfold_per;
+  try (use_dou; exrepnd);
+  uncast;
+  computes_to_valc_diff.
 
 Ltac ccomputes_to_eqval :=
   uncast; repeat computes_to_eqval.
@@ -1892,63 +2187,30 @@ Ltac dupcomp T h :=
   end.
 
 
-Ltac use_dou :=
-  match goal with
-    | [ H1 : defines_only_universes ?lib ?ts, H2 : ?ts ?T1 ?T2 ?eq |- _ ] =>
-      let c1 := fresh "c1" in
-      let c2 := fresh "c2" in
-      let h  := fresh "h" in
-      let h' := fresh "h'" in
-      let i  := fresh "i" in
-      assert ({i : nat , ccomputes_to_valc lib T1 (mkc_uni i)})
-        as c1
-          by (unfold defines_only_universes in H1;
-              generalize (type_system_type_mem ts T1 T2 eq);
-              intro h;
-              dest_imp h h'; try (complete (allunfold type_system; sp));
-              dest_imp h h'; try (complete (allunfold type_system; sp));
-              dest_imp h h';
-              apply H1 in h;
-              auto;
-              clear h);
-      assert ({i : nat , ccomputes_to_valc lib T2 (mkc_uni i)})
-        as c2
-          by (unfold defines_only_universes in H1;
-              generalize (type_system_type_mem1 ts T1 T2 eq);
-              intro h;
-              dest_imp h h'; try (complete (allunfold type_system; sp));
-              dest_imp h h'; try (complete (allunfold type_system; sp));
-              dest_imp h h';
-              apply H1 in h;
-              auto;
-              clear h);
-      exrepnd
-  end.
-
 Ltac dclose h1 h2 :=
   match goal with
-    | [ H : close _ _ _ _ _ [+] close _ _ _ _ _ |- _ ] => destruct H as [h1 | h2]
-    | [ H : close _ _ _ _ _ {+} close _ _ _ _ _ |- _ ] => destruct H as [h1 | h2]
+    | [ H : close _ _ _ _ [+] close _ _ _ _ |- _ ] => destruct H as [h1 | h2]
+    | [ H : close _ _ _ _ {+} close _ _ _ _ |- _ ] => destruct H as [h1 | h2]
   end.
 
 Ltac doneclose :=
   match goal with
-    | [ H : close _ _ _ _ _ |- _ ] => destruct H
+    | [ H : close _ _ _ _ |- _ ] => destruct H
   end.
 
 Ltac ioneclose :=
   match goal with
-    | [ H : close _ _ _ _ _ |- _ ] => inversion H
+    | [ H : close _ _ _ _ |- _ ] => inversion H
   end.
 
 Ltac cioneclose :=
   match goal with
-    | [ H : close _ _ _ _ _ |- _ ] => inversion H; clear H
+    | [ H : close _ _ _ _ |- _ ] => inversion H; clear H
   end.
 
 Ltac cioneclose_eq eq :=
   match goal with
-    | [ H : close _ _ _ _ eq |- _ ] => inversion H; clear H
+    | [ H : close _ _ _ eq |- _ ] => inversion H; clear H
   end.
 
 Ltac find_term_equalities_step :=
@@ -1957,13 +2219,13 @@ Ltac find_term_equalities_step :=
       let h := fresh "h" in
       assert (eq_term_equals eq1 eq2)
         as h
-          by (generalize (uniquely_valued_eq_ts lib ts T T1 T2 eq1 eq2); sp);
+          by (generalize (euniquely_valued_eq_ts lib ts T T1 T2 eq1 eq2); sp);
         no_duplicate h
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T ?eq1, H2 : ?ts ?T ?T2 ?eq2 |- _ ] =>
       let h := fresh "h" in
       assert (eq_term_equals eq1 eq2)
         as h
-          by (generalize (uniquely_valued_eq2_ts lib ts T T1 T2 eq1 eq2); sp);
+          by (generalize (euniquely_valued_eq2_ts lib ts T T1 T2 eq1 eq2); sp);
         no_duplicate h
   end.
 
@@ -1972,14 +2234,19 @@ Ltac find_term_equalities := repeat find_term_equalities_step.
 (* simple reasoning on type systems *)
 Ltac spts :=
   match goal with
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T ?T1 ?eq1, H2 : ?ts ?T ?T2 ?eq2
+    | [ H : etype_system ?lib ?ts, H1 : ?ts ?T ?T1 ?eq1, H2 : ?ts ?T ?T2 ?eq2
         |- eq_term_equals ?eq1 ?eq2 ] =>
-      generalize (uniquely_valued_eq_ts lib ts T T1 T2 eq1 eq2);
+      generalize (euniquely_valued_eq_ts lib ts T T1 T2 eq1 eq2);
+        complete sp
+
+    | [ H : type_system ?lib ?ts, H1 : ?ts ?T ?eq1, H2 : ?ts ?T ?eq2
+        |- eq_term_equals ?eq1 ?eq2 ] =>
+      generalize (uniquely_valued_eq_ts lib ts T eq1 eq2);
         complete sp
 
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T ?eq1, H2 : ?ts ?T ?T2 ?eq2
         |- eq_term_equals ?eq1 ?eq2 ] =>
-      generalize (uniquely_valued_eq2_ts lib ts T T1 T2 eq1 eq2);
+      generalize (euniquely_valued_eq2_ts lib ts T T1 T2 eq1 eq2);
         complete sp
 
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T ?T' ?eq1, H2 : eq_term_equals ?eq1 ?eq2
@@ -1987,8 +2254,8 @@ Ltac spts :=
       unfold type_system in H;
         repnd;
         match goal with
-            [ H3 : type_extensionality ts |- _ ] =>
-            unfold type_extensionality in H3;
+            [ H3 : etype_extensionality ts |- _ ] =>
+            unfold etype_extensionality in H3;
               generalize (H3 T T' eq1 eq2);
               complete sp
         end
@@ -1997,70 +2264,70 @@ Ltac spts :=
         |- ?ts ?T1 ?T3 ?eq1 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans2 ts T1 T2 T3 eq1 eq2);
+        generalize (euniquely_valued_trans2 ts T1 T2 T3 eq1 eq2);
         complete sp
 
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T2 ?T3 ?eq2
         |- ?ts ?T3 ?T3 ?eq1 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans2_r ts T1 T2 T3 eq1 eq2);
+        generalize (euniquely_valued_trans2_r ts T1 T2 T3 eq1 eq2);
         complete sp
 
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T2 ?T3 ?eq2
         |- ?ts ?T1 ?T3 ?eq2 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans4 ts T1 T2 T3 eq1 eq2);
+        generalize (euniquely_valued_trans4 ts T1 T2 T3 eq1 eq2);
         complete sp
 
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T2 ?T3 ?eq2
         |- ?ts ?T3 ?T3 ?eq2 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans4_r ts T1 T2 T3 eq1 eq2);
+        generalize (euniquely_valued_trans4_r ts T1 T2 T3 eq1 eq2);
         complete sp
 
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T1 ?T3 ?eq2
         |- ?ts ?T2 ?T3 ?eq1 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans7 ts T1 T2 T3 eq1 eq2);
+        generalize (euniquely_valued_trans7 ts T1 T2 T3 eq1 eq2);
         complete sp
 
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T1 ?T3 ?eq2
         |- ?ts ?T3 ?T3 ?eq1 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans7_r ts T1 T2 T3 eq1 eq2);
+        generalize (euniquely_valued_trans7_r ts T1 T2 T3 eq1 eq2);
         complete sp
 
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T1 ?T3 ?eq2
         |- ?ts ?T2 ?T3 ?eq2 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans8 ts T1 T2 T3 eq1 eq2);
+        generalize (euniquely_valued_trans8 ts T1 T2 T3 eq1 eq2);
         complete sp
 
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T1 ?T3 ?eq2
         |- ?ts ?T3 ?T3 ?eq2 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans8_r ts T1 T2 T3 eq1 eq2);
+        generalize (euniquely_valued_trans8_r ts T1 T2 T3 eq1 eq2);
         complete sp
 
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq, H2 : cequivc ?lib ?T1 ?T3
         |- ?ts ?T1 ?T3 ?eq ] =>
       unfold type_system in H;
         repnd;
-        generalize (type_reduces_to_symm lib ts T1 T2 T3 eq);
+        generalize (etype_reduces_to_symm lib ts T1 T2 T3 eq);
         complete sp
 
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T2 ?T1 ?eq, H2 : cequivc ?lib ?T1 ?T3
         |- ?ts ?T1 ?T3 ?eq ] =>
       unfold type_system in H;
         repnd;
-        generalize (type_reduces_to_symm2 lib ts T1 T2 T3 eq);
+        generalize (etype_reduces_to_symm2 lib ts T1 T2 T3 eq);
         complete sp
 
     | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq

@@ -34,20 +34,19 @@ Require Export type_sys.
 Require Import dest_close.
 
 
-Lemma close_type_system_teq {p} :
-  forall lib (ts : cts(p)) T (eq : per) A B eqa,
+Lemma close_type_system_aeq {o} :
+  forall lib (ts : cts(o)) T eq A a b eqa,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_tequality A B)
+    -> computes_to_valc lib T (mkc_aequality a b A)
     -> close lib ts A eqa
+    -> eqorceq lib eqa a b
+    -> (eq <=2=> (per_aeq_eq lib a b eqa))
+    -> per_aeq lib (close lib ts) T eq
     -> type_system_props lib (close lib ts) A eqa
-    -> close lib ts B eqa
-    -> type_system_props lib (close lib ts) B eqa
-    -> eq <=2=> true_per
-    -> per_teq lib (close lib ts) T eq
     -> type_system_props lib (close lib ts) T eq.
 Proof.
-  introv tysys dou comp cla tsa clb tsb eqiff per.
+  introv tysys dou comp cla eoc eqiff per props.
   clear per.
 
   prove_ts_props SCase.
@@ -56,40 +55,57 @@ Proof.
     introv cls.
     dest_close_lr h.
     clear cls.
-    unfold per_teq in h; exrepnd; spcast.
+    unfold per_aeq in h; exrepnd; spcast.
     ccomputes_to_eqval.
     eapply eq_term_equals_trans;[eauto|].
     eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
-    tcsp.
+    dts_props props uv tv te tes tet tev.
+    eapply uv in h2.
+    unfold per_aeq_eq; split; introv q; exrepnd; dands; auto;
+      try (apply h2); auto.
 
   - SCase "type_extensionality".
     introv eqt.
-    apply CL_teq.
-    exists A B eqa; dands; spcast; auto.
+    apply CL_aeq.
+    exists A a b eqa; dands; spcast; auto.
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
   - SCase "type_value_respecting".
     introv ceq.
-    apply CL_teq.
-    eapply cequivc_mkc_tequality in comp;[|eauto]; exrepnd.
-    exists a' b' eqa.
-    dands; spcast; auto.
+    apply CL_aeq.
+    eapply cequivc_mkc_aequality in comp;[|eauto]; exrepnd.
+    exists T'0 a' b' eqa.
 
-    { dts_props tsa uv tv te tes tet tev.
-      apply te; auto. }
-    { dts_props tsb uv tv te tes tet tev.
-      apply te; auto. }
+    dts_props props uv tv te tes tet tev.
+    dands; spcast; auto.
+    { eapply eqorceq_cequivc; eauto. }
+    { eapply eq_term_equals_trans;[eauto|].
+      unfold per_aeq_eq; split; intro q; exrepnd; dands; auto.
+      - apply (eq_ts_cequivc lib a b a' b' eqa); auto.
+      - apply (eq_ts_cequivc lib a' b' a b eqa); auto; apply cequivc_sym; auto. }
 
   - SCase "term_symmetric".
     introv e.
-    apply eqiff in e; apply eqiff; tcsp.
+    apply eqiff in e; apply eqiff.
+    unfold per_aeq_eq in e; unfold per_aeq_eq; exrepnd.
+    dts_props props uv tv te tes tet tev.
+    dands; auto.
 
   - SCase "term_transitive".
     introv e1 e2.
-    apply eqiff in e1; apply eqiff in e2; apply eqiff; tcsp.
+    apply eqiff in e1; apply eqiff in e2; apply eqiff.
+    unfold per_aeq_eq in e1, e2; unfold per_aeq_eq; exrepnd.
+    dts_props props uv tv te tes tet tev.
+    ccomputes_to_eqval.
+    dands; spcast; auto.
 
   - SCase "term_value_respecting".
     introv e c; spcast.
-    apply eqiff in e; apply eqiff; tcsp.
+    apply eqiff in e; apply eqiff.
+    unfold per_aeq_eq in e; unfold per_aeq_eq; exrepnd.
+    ccomputes_to_eqval.
+    eapply cequivc_axiom in c;[|eauto]; exrepnd.
+    dts_props props uv tv te tes tet tev.
+    dands; spcast; auto.
 Qed.

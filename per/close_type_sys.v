@@ -30,7 +30,12 @@
 *)
 
 
+Require Export type_sys.
+Require Import dest_close.
+
+(*
 Require Export type_sys_useful2.
+*)
 Require Import close_type_sys_per_init.
 Require Import close_type_sys_per_int.
 Require Import close_type_sys_per_atom.
@@ -45,6 +50,7 @@ Require Import close_type_sys_per_isect.
 (*Require Import close_type_sys_per_eisect.*)
 Require Import close_type_sys_per_func.
 Require Import close_type_sys_per_disect.
+(*
 Require Import close_type_sys_per_pertype.
 Require Import close_type_sys_per_ipertype.
 Require Import close_type_sys_per_spertype.
@@ -64,6 +70,7 @@ Require Import close_type_sys_per_tunion.
 Require Import close_type_sys_per_product.
 Require Import close_type_sys_per_pw.
 Require Import close_type_sys_per_pm.
+*)
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
@@ -90,74 +97,52 @@ Lemma close_ts {o} :
 Proof.
   introv tysys dou.
   rw @type_system_iff_is_type_system.
-  unfold is_type_system; introv cl.
+  introv cl.
 
-  close_cases (induction cl using @close_ind') Case.
+  close_cases (induction cl using @close_ind') Case; spcast.
 
   - Case "CL_init".
-    admit.
+    apply close_type_system_init; auto.
 
   - Case "CL_int".
-    admit.
+    apply close_type_system_int; auto.
 
   - Case "CL_atom".
-    admit.
+    apply close_type_system_atom; auto.
 
   - Case "CL_uatom".
-    admit.
+    apply close_type_system_uatom; auto.
 
   - Case "CL_base".
-    admit.
+    apply close_type_system_base; auto.
 
   - Case "CL_approx".
-    admit.
+    apply close_type_system_approx; auto.
 
   - Case "CL_cequiv".
-    admit.
+    apply close_type_system_cequiv; auto.
 
   - Case "CL_aeq".
-
-    admit.
+    eapply close_type_system_aeq; eauto.
 
   - Case "CL_eq".
+    eapply close_type_system_eq; eauto.
 
-    assert (forall ts : cts(o),
-              type_system lib ts
-              -> type_system lib (per_eq lib ts)) as eqts by admit.
+  - Case "CL_teq".
+    eapply close_type_system_teq; eauto.
 
-    repeat (dest_imp IHcl hyp).
+  - Case "CL_isect".
+    eapply close_type_system_isect; eauto.
 
-    generalize (eqts ts); intro k; autodimp k hyp.
-    rw @type_system_iff_is_type_system in k.
-    generalize (k T T' eq); intro j.
-    autodimp j hyp.
-    exists A B a1 a2 b1 b2 eqa; sp.
-Abort.
+  - Case "CL_func".
+    eapply close_type_system_func; eauto.
 
-Lemma close_type_system_eq_implies {o} :
-  forall lib (ts : cts(o)),
-    type_system lib ts
-    -> is_type_system lib (per_eq lib ts)
-    -> forall T T' (eq : per) A B a1 a2 b1 b2 eqa,
-         defines_only_universes lib ts
-         -> computes_to_valc lib T (mkc_equality a1 a2 A)
-         -> computes_to_valc lib T' (mkc_equality b1 b2 B)
-         -> close lib ts A B eqa
-         -> eqorceq lib eqa a1 b1
-         -> eqorceq lib eqa a2 b2
-         -> (forall t t' : CTerm,
-               eq t t' <=>
-                  ccomputes_to_valc lib t mkc_axiom
-                  # ccomputes_to_valc lib t' mkc_axiom
-                  # eqa a1 a2)
-         -> per_eq lib (close lib ts) T T' eq
-         -> type_sys_props lib (close lib ts) A B eqa
-         -> type_sys_props lib (close lib ts) T T' eq.
-Proof.
-  introv tysys istysys dou c1 c2 cl eos1 eos2.
-  introv eqiff peq tsp.
-  unfold is_type_system in istysys.
-Abort.
+  - Case "CL_disect".
+    eapply close_type_system_disect; eauto.
+
+  - Case "CL_pertype".
+
+Qed.
 
 
 

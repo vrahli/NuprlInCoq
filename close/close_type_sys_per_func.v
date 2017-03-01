@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -28,328 +34,184 @@ Require Export type_sys_useful.
 Require Import dest_close.
 
 
+Lemma eq_term_equals_per_func_eq {o} :
+  forall (eqa1 eqa2 : per(o)) eqb1 eqb2,
+    term_equality_symmetric eqa1
+    -> term_equality_transitive eqa1
+    -> (eqa1 <=2=> eqa2)
+    -> (forall a a' : CTerm, eqa1 a a' -> (eqb1 a) <=2=> (eqb2 a'))
+    -> (per_func_eq eqa1 eqb1) <=2=> (per_func_eq eqa2 eqb2).
+Proof.
+  introv syma trana eaiff ebiff.
+  unfold per_func_eq.
+  split; introv h e.
+
+  - applydup eaiff in e.
+    applydup h in e0.
+
+    assert (eqa1 a a) as q.
+    { eapply trana;[eauto|].
+      apply syma; auto. }
+
+    apply ebiff in q.
+    apply q in e1; auto.
+
+  - assert (eqa1 a a) as q.
+    { eapply trana;[eauto|].
+      apply syma; auto. }
+
+    applydup ebiff in q.
+    apply q0.
+    apply h.
+    apply eaiff; auto.
+Qed.
+
+Lemma per_func_eq_sym {o} :
+  forall lib ts v B (eqa : per(o)) eqb t1 t2,
+    term_equality_symmetric eqa
+    -> (forall a a' : CTerm,
+           eqa a a' -> type_system_props lib ts (B) [[v \\ a]] (eqb a))
+    -> (forall a a' : CTerm, eqa a a' -> (eqb a) <=2=> (eqb a'))
+    -> per_func_eq eqa eqb t1 t2
+    -> per_func_eq eqa eqb t2 t1.
+Proof.
+  introv syma tsb eqbiff per.
+  unfold per_func_eq in *.
+  introv e.
+  applydup syma in e.
+  applydup per in e0.
+
+  applydup tsb in e.
+  dts_props e2 uv tv te tes tet tev.
+  apply tes.
+  eapply eqbiff; auto; auto.
+Qed.
+
+Lemma per_func_eq_trans {o} :
+  forall lib ts v B (eqa : per(o)) eqb t1 t2 t3,
+    term_equality_symmetric eqa
+    -> term_equality_transitive eqa
+    -> (forall a a' : CTerm,
+           eqa a a' -> type_system_props lib ts (B) [[v \\ a]] (eqb a))
+    -> per_func_eq eqa eqb t1 t2
+    -> per_func_eq eqa eqb t2 t3
+    -> per_func_eq eqa eqb t1 t3.
+Proof.
+  introv syma trana tsb per1 per2.
+  unfold per_func_eq in *.
+  introv e.
+
+  assert (eqa a a) as q.
+  { eapply trana;[eauto|].
+    apply syma; auto. }
+
+  applydup per1 in q.
+  applydup per2 in e.
+  applydup tsb in e.
+  dts_props e1 uv tv te tes tet tev.
+  eapply tet; eauto.
+Qed.
+
+Lemma per_func_eq_cequivc {o} :
+  forall lib ts v B (eqa : per(o)) eqb t1 t2,
+    (forall a a' : CTerm,
+        eqa a a' -> type_system_props lib ts (B) [[v \\ a]] (eqb a))
+    -> cequivc lib t1 t2
+    -> per_func_eq eqa eqb t1 t1
+    -> per_func_eq eqa eqb t1 t2.
+Proof.
+  introv tsb ceq per.
+  unfold per_func_eq in *.
+  introv e.
+
+  applydup per in e.
+  applydup tsb in e.
+  dts_props e1 uv tv te tes tet tev.
+  eapply tet;[eauto|].
+  apply tev;[eapply tet;eauto|].
+  spcast.
+  apply implies_cequivc_apply; auto.
+Qed.
+
 Lemma close_type_system_func {p} :
-  forall lib (ts : cts(p))
-         T T'
-         (eq : per)
-         A A' v v' B B' eqa eqb,
+  forall lib (ts : cts(p)) T (eq : per) A v B eqa eqb,
     type_system lib ts
     -> defines_only_universes lib ts
     -> computes_to_valc lib T (mkc_function A v B)
-    -> computes_to_valc lib T' (mkc_function A' v' B')
-    -> close lib ts A A' eqa
+    -> close lib ts A eqa
+    -> type_system_props lib (close lib ts) A eqa
+    -> (forall (a a' : CTerm) (e : eqa a a'), close lib ts (substc a v B) (eqb a))
     -> (forall (a a' : CTerm) (e : eqa a a'),
-          close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-    -> (forall (a a' : CTerm) (e : eqa a a'),
-          type_system lib ts ->
-          defines_only_universes lib ts ->
-          type_sys_props lib (close lib ts) (substc a v B) (substc a' v' B')
-                         (eqb a a' e))
-    -> (forall t t' : CTerm,
-          eq t t' <=> (forall (a a' : CTerm) (e : eqa a a'), eqb a a' e (mkc_apply t a) (mkc_apply t' a')))
-    -> per_func lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) A A' eqa
-    -> type_sys_props lib (close lib ts) T T' eq.
+           type_system_props lib (close lib ts) (substc a v B) (eqb a))
+    -> (forall (a a' : CTerm) (e : eqa a a'), (eqb a) <=2=> (eqb a'))
+    -> eq <=2=> (per_func_eq eqa eqb)
+    -> per_func lib (close lib ts) T eq
+    -> type_system_props lib (close lib ts) T eq.
 Proof.
-  introv X X0 c1 c2 X1 clb recb eqiff per IHX1.
+  introv tysys dou comp cla tsa clb tsb eqbiff eqiff per.
+  clear per.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_ts_props SCase.
 
-  + SCase "uniquely_valued".
-    dclose_lr.
+  - SCase "uniquely_valued".
+    introv cls.
+    dest_close_lr h.
+    clear cls.
+    unfold per_func in h; exrepnd; spcast.
+    unfold type_family in h0; exrepnd.
+    ccomputes_to_eqval.
+    eapply eq_term_equals_trans;[eauto|].
+    eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
 
-    SSCase "CL_func".
-    allunfold @per_func; exrepd.
-    generalize (eq_term_equals_type_family lib T T3 eqa0 eqa eqb0 eqb (close lib ts) A v B A' v' B' mkc_function); intro i.
-    repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp))); repnd.
+    dts_props tsa uv tv te tes tet tev.
+    apply uv in h3.
 
-    unfold eq_term_equals; sp.
-    rw t0; rw eqiff; split; sp.
+    pose proof (eqbs_trans lib (close lib ts) v B eqa eqa0 eqb eqb0) as q.
+    repeat (autodimp q hyp).
 
-    duplicate e as e'; rw <- i0 in e.
-    generalize (i1 a a' e' e); intro k.
-    rw k; sp.
+    apply eq_term_equals_per_func_eq; auto.
 
-    duplicate e as e'; rw i0 in e.
-    generalize (i1 a a' e e'); intro k.
-    rw <- k; sp.
+  - SCase "type_extensionality".
+    introv eqt.
+    apply CL_func.
+    exists eqa eqb; dands; auto.
+    { exists A v B; dands; spcast; auto.
+      introv e; dands; tcsp.
+      eapply clb; eauto. }
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
 
-  + SCase "type_symmetric"; repdors; subst;
-    dclose_lr;
-    apply CL_func;
-    clear per;
-    allunfold @per_func; exrepd;
-    unfold per_func;
-    exists eqa0 eqb0; sp;
-    allrw <-; sp.
+  - SCase "type_value_respecting".
+    introv ceq.
+    apply CL_func.
+    eapply cequivc_mkc_function in comp;[|eauto]; exrepnd.
+    exists eqa eqb; dands; auto.
 
-  + SCase "type_value_respecting"; repdors; subst;
-    apply CL_func; unfold per_func; exists eqa eqb; sp.
+    exists A' v' B'; dands; spcast; auto.
 
-    duplicate c1 as ct.
-    apply @cequivc_mkc_function with (T' := T3) in ct; sp.
+    { dts_props tsa uv tv te tes tet tev.
+      apply te; auto. }
 
-    apply @type_family_cequivc
-          with
-          (A1 := A)
-          (v1 := v)
-          (B1 := B)
-          (A2 := A'0)
-          (v2 := v'0)
-          (B2 := B'0)
-          (A := A')
-          (v := v')
-          (B := B'); sp.
+    introv e; dands; auto.
+    applydup tsb in e.
+    dts_props e0 uv tv te tes tet tev.
+    apply te.
+    apply bcequivc1; auto.
 
-    duplicate c2 as ct.
-    apply @cequivc_mkc_function with (T' := T3) in ct; sp.
+  - SCase "term_symmetric".
+    introv e.
+    apply eqiff in e; apply eqiff.
+    dts_props tsa uv tv te tes tet tev.
+    eapply per_func_eq_sym; eauto.
 
-    apply @type_family_cequivc2
-          with
-          (A1 := A')
-          (v1 := v')
-          (B1 := B')
-          (A2 := A'0)
-          (v2 := v'0)
-          (B2 := B'0)
-          (A := A)
-          (v := v)
-          (B := B); sp.
+  - SCase "term_transitive".
+    introv e1 e2.
+    apply eqiff in e1; apply eqiff in e2; apply eqiff.
+    dts_props tsa uv tv te tes tet tev.
+    eapply per_func_eq_trans; eauto.
 
-  + SCase "term_symmetric".
-    unfold term_equality_symmetric; sp.
-    onedtsp e pp p0 p1 c t t0 t3 tygs tygt dum.
-    apply eqiff; sp.
-    assert (eqa a a) as eqaa by (apply t0 with (t2 := a'); auto).
-    assert (eqa a' a) as e' by auto.
-    assert (eq t1 t2) as eq12 by auto.
-    apply eqiff with (a := a') (a' := a) (e := e') in eq12; auto.
-
-    generalize (eq_term_equals_sym_tsp lib (close lib ts) eqa eqb a a' eqaa e0 e'
-                                       v B v' B'); intro i.
-    autodimp i h; repnd.
-
-    (* Now we prove the equality between the applies *)
-    unfold eq_term_equals in i.
-    apply i in eq12.
-    generalize (recb a a' e0); sp.
-    onedtsp X5 X6 X7 X8 X9 X10 X11 X4 tygs1 tygt1 dum1; sp.
-
-  + SCase "term_transitive".
-    unfold term_equality_transitive; sp.
-    apply eqiff; sp.
-    assert (eq t1 t2) as eqt12 by auto.
-    assert (eq t2 t3) as eqt23 by auto.
-    assert (eq t1 t2) as eq12 by auto.
-    assert (eq t2 t3) as eq23 by auto.
-    apply eqiff with (a := a) (a' := a') (e := e) in eqt12; auto.
-    apply eqiff with (a := a) (a' := a') (e := e) in eqt23; auto.
-
-    assert (eqb a a' e (mkc_apply t2 a') (mkc_apply t2 a));
-      try (complete (generalize (recb a a' e); sp;
-                     onedtsp X6 X7 X8 X9 X10 X11 X12 X5 tygs1 tygt1 dum1; sp;
-                     apply X12 with (mkc_apply t2 a'); auto;
-                     apply X12 with (mkc_apply t2 a); auto)).
-
-    assert (eq t2 t2) as eqt2;
-      try (complete (apply eqiff with (a := a) (a' := a') (e := e) in eqt2; auto;
-                     generalize (recb a a' e); sp;
-                     allunfold @type_sys_props; sp)).
-
-    apply eqiff; sp.
-    duplicate eq23 as eq2.
-    apply eqiff with (a := a0) (a' := a'0) (e := e0) in eq23; auto.
-    assert (eqa a'0 a'0) as eqa'
-           by (unfold type_sys_props in IHX1; sp; apply IHX7 with (t2 := a0); sp).
-    apply eqiff with (a := a'0) (a' := a'0) (e := eqa') in eq2; auto.
-
-    assert (eq_term_equals (eqb a0 a'0 e0) (eqb a'0 a'0 eqa')) as eqteq;
-      try (complete (unfold eq_term_equals in eqteq;
-                     apply eqteq in eq2;
-                     generalize (recb a0 a'0 e0); sp;
-                     onedtsp X6 X7 X8 X9 X10 X11 X12 X5 tygs1 tygt1 dum1; sp;
-                     apply X12 with (t2 := mkc_apply t3 a'0); sp)).
-
-    allunfold @per_func; exrepd.
-    generalize (eq_term_equals_type_family
-                  lib T T' eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_function); intro i.
-    repeat (autodimp i hyp; try (complete (introv f; eqconstr f; sp))).
-    repnd.
-    apply eq_term_equals_sym; sp.
-
-  + SCase "term_value_respecting".
-    unfold term_equality_respecting; sp.
-    apply eqiff; sp.
-    assert (eq t t) as eqtt by auto.
-    apply eqiff with (a := a) (a' := a') (e := e) in eqtt; auto.
-
-    generalize (recb a a' e); sp.
-    onedtsp X5 X6 X7 X8 X9 X10 X11 X4 tygs1 tygt1 dum1; sp.
-    apply X11 with (t2 := mkc_apply t a'); auto.
-    apply X4.
-    apply term_equality_refl with (t2 := mkc_apply t a); auto.
-
-    spcast; apply sp_implies_cequivc_apply; sp.
-
-  + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr;
-    apply CL_func;
-    clear per;
-    allunfold @per_func; exrepd.
-
-    (* 1 *)
-    generalize (eq_term_equals_type_family
-                  lib T T3 eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_function); intro i.
-    repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp))).
-    repnd.
-
-    unfold per_func.
-    exists eqa eqb; sp.
-
-    rw t0; split; intro pp; sp.
-
-    duplicate e as e'.
-    rw i0 in e.
-    generalize (pp a a' e); intro j.
-    generalize (i1 a a' e e'); intro eqt.
-    rw eqt in j; sp.
-
-    duplicate e as e'.
-    rw <- i0 in e.
-    generalize (pp a a' e); intro j.
-    generalize (i1 a a' e' e); intro eqt.
-    rw <- eqt in j; sp.
-
-    (* 2 *)
-    generalize (eq_term_equals_type_family2
-                  lib T3 T eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_function); intro i;
-    repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp)));
-    repnd.
-
-    unfold per_func.
-    exists eqa eqb; sp.
-
-    rw t0; split; intro pp; sp.
-
-    duplicate e as e'.
-    rw i0 in e.
-    generalize (pp a a' e); intro j.
-    generalize (i1 a a' e e'); intro eqt.
-    rw eqt in j; sp.
-
-    duplicate e as e'.
-    rw <- i0 in e.
-    generalize (pp a a' e); intro j.
-    generalize (i1 a a' e' e); intro eqt.
-    rw <- eqt in j; sp.
-
-  + SCase "type_gtransitive"; sp.
-
-  + SCase "type_mtransitive".
-    repdors; subst; dclose_lr;
-    try (move_term_to_top (per_func lib (close lib ts) T T4 eq2));
-    try (move_term_to_top (per_func lib (close lib ts) T' T4 eq2)).
-
-    (* 1 *)
-    clear per.
-    allunfold @per_func; exrepd.
-
-    generalize (eq_term_equals_type_family2
-                  lib T3 T eqa1 eqa eqb1 eqb (close lib ts)
-                  A v B A' v' B' mkc_function); intro i.
-    repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp))).
-    repnd.
-
-    generalize (type_family_trans2
-                  lib mkc_function (close lib ts) T3 T T4 eqa eqb eqa0 eqb0 A v B A' v' B');
-      intro j.
-    repeat (autodimp j hyp; try (complete (introv e; eqconstr e; sp))).
-    repnd.
-
-    dands; apply CL_func; unfold per_func; exists eqa eqb; sp; allrw.
-
-    split; intro pp; sp.
-
-    assert (eqa1 a a') as e' by (rw <- i0; auto).
-    generalize (pp a a' e'); intro k.
-    generalize (i1 a a' e' e); intro l.
-    rw <- l; sp.
-
-    assert (eqa a a') as e' by (rw i0; auto).
-    generalize (pp a a' e'); intro k.
-    generalize (i1 a a' e e'); intro l.
-    rw l; sp.
-
-    split; intro pp; sp.
-
-    assert (eqa0 a a') as e' by (rw <- j0; auto).
-    generalize (pp a a' e'); intro k.
-    generalize (j1 a a' e e'); intro l.
-    rw l; sp.
-
-    assert (eqa a a') as e' by (rw j0; auto).
-    generalize (pp a a' e'); intro k.
-    generalize (j1 a a' e' e); intro l.
-    rw <- l; sp.
-
-    (* 2 *)
-    clear per.
-    allunfold @per_func; exrepd.
-
-    generalize (eq_term_equals_type_family2
-                  lib T3 T' eqa1 eqa eqb1 eqb (close lib ts)
-                  A' v' B' A v B mkc_function); intro i.
-    repeat (autodimp i hyp;
-            try (complete (introv e; eqconstr e; sp));
-            try (complete (apply type_sys_props_sym; sp))).
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-    intros.
-    apply type_sys_props_sym.
-    apply type_sys_props_eqb_comm; sp.
-    apply tet with (t2 := a'); sp.
-    apply tet with (t2 := a); sp.
-    repnd.
-
-    generalize (type_family_trans2
-                  lib mkc_function (close lib ts) T3 T' T4 eqa eqb eqa0 eqb0 A' v' B' A v B); intro j.
-    repeat (autodimp j hyp;
-            try (complete (introv e; eqconstr e; sp));
-            try (complete (apply type_sys_props_sym; sp))).
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-    intros.
-    apply type_sys_props_sym.
-    apply type_sys_props_eqb_comm; sp.
-    apply tet with (t2 := a'); sp.
-    apply tet with (t2 := a); sp.
-    repnd.
-
-    dands; apply CL_func; unfold per_func; exists eqa eqb; sp; allrw.
-
-    split; intro pp; sp.
-
-    assert (eqa1 a a') as e' by (rw <- i0; auto).
-    generalize (pp a a' e'); intro k.
-    generalize (i1 a a' e' e); intro l.
-    rw <- l; sp.
-
-    assert (eqa a a') as e' by (rw i0; auto).
-    generalize (pp a a' e'); intro k.
-    generalize (i1 a a' e e'); intro l.
-    rw l; sp.
-
-    split; intro pp; sp.
-
-    assert (eqa0 a a') as e' by (rw <- j0; auto).
-    generalize (pp a a' e'); intro k.
-    generalize (j1 a a' e e'); intro l.
-    rw l; sp.
-
-    assert (eqa a a') as e' by (rw j0; auto).
-    generalize (pp a a' e'); intro k.
-    generalize (j1 a a' e' e); intro l.
-    rw <- l; sp.
+  - SCase "term_value_respecting".
+    introv e c; spcast.
+    apply eqiff in e; apply eqiff.
+    eapply per_func_eq_cequivc; eauto.
 Qed.
-
