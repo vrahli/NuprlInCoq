@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -28,14 +34,13 @@ Require Import type_sys_useful.
 Require Import dest_close.
 
 
-
 Lemma eq_term_equals_per_partial_eq_if {p} :
   forall lib (eqa1 eqa2 : per(p)),
-    eq_term_equals eqa1 eqa2
-    -> eq_term_equals (per_partial_eq lib eqa1) (per_partial_eq lib eqa2).
+    eqa1 <=2=> eqa2
+    -> (per_partial_eq lib eqa1) <=2=> (per_partial_eq lib eqa2).
 Proof.
   introv eqt.
-  unfold eq_term_equals, per_partial_eq; introv; split; intro k; repnd;
+  unfold per_partial_eq; introv; split; intro k; repnd;
   dands; auto; intro hv; autodimp k hyp.
   allrw <-; sp.
   allrw; sp.
@@ -95,132 +100,65 @@ Qed.
 
 
 Lemma close_type_system_partial {p} :
-  forall lib (ts : cts(p))
-         T T'
-         (eq : per)
-         A1 A2 eqa,
+  forall lib (ts : cts(p)) T (eq : per) A eqa,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_partial A1)
-    -> computes_to_valc lib T' (mkc_partial A2)
-    -> close lib ts A1 A2 eqa
-    -> type_sys_props lib (close lib ts) A1 A2 eqa
+    -> computes_to_valc lib T (mkc_partial A)
+    -> close lib ts A eqa
+    -> type_system_props lib (close lib ts) A eqa
     -> (forall a, eqa a a -> chaltsc lib a)
-    -> (forall t t' : CTerm, eq t t' <=> per_partial_eq lib eqa t t')
-    -> per_partial lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+    -> eq <=2=> (per_partial_eq lib eqa)
+    -> per_partial lib (close lib ts) T eq
+    -> type_system_props lib (close lib ts) T eq.
 Proof.
-  introv tysys dou c1 c2 cla reca hv eqiff per.
+  introv tysys dou comp cla tsa hv eqiff per.
+  clear per.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_ts_props SCase.
 
   - SCase "uniquely_valued".
-    dclose_lr.
-
-    + SSCase "CL_partial".
-      clear per.
-      allunfold @per_partial; exrepd.
-      unfold eq_term_equals; intros.
-      allrw.
-      ccomputes_to_eqval.
-      revert t1 t2; rw @fold_eq_term_equals.
-      apply eq_term_equals_per_partial_eq_if.
-      onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-      generalize (uv A3 eqa0); sp.
-
-  - SCase "type_symmetric"; repdors; subst; dclose_lr;
-    apply CL_partial;
-    clear per;
-    allunfold @per_partial; exrepd;
-    unfold per_partial;
+    introv cls.
+    dest_close_lr h.
+    clear cls.
+    unfold per_partial in h; exrepnd; spcast.
     ccomputes_to_eqval.
+    eapply eq_term_equals_trans;[eauto|].
+    eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
 
-    + exists A1 A3 eqa0; sp; spcast; sp.
-      apply eq_term_equals_trans with (eq2 := eq); sp.
-      apply eq_term_equals_sym; sp.
+    apply eq_term_equals_per_partial_eq_if; auto.
 
-  - SCase "type_value_respecting"; repdors; subst;
-    apply CL_partial; unfold per_partial.
+    dts_props tsa uv tv te tes tet tev.
+    eapply uv; auto.
 
-    (* 1 *)
-    generalize (cequivc_mkc_partial lib T T3 A1); introv k; repeat (autodimp k hyp); exrepnd.
-    exists A1 b eqa; sp; spcast; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr A1 b); sp.
+  - SCase "type_extensionality".
+    introv eqt.
+    apply CL_partial.
+    exists A eqa; dands; spcast; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
 
-    (* 2 *)
-    generalize (cequivc_mkc_partial lib T' T3 A2); introv k; repeat (autodimp k hyp); exrepnd.
-    exists A2 b eqa; sp; spcast; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr A2 b); sp.
+  - SCase "type_value_respecting".
+    introv ceq.
+    apply CL_partial.
+    eapply cequivc_mkc_partial in comp;[|eauto]; exrepnd.
+    exists b eqa; dands; spcast; auto.
+    dts_props tsa uv tv te tes tet tev; tcsp.
 
   - SCase "term_symmetric".
-    unfold term_equality_symmetric; introv eqt.
-    rw eqiff in eqt; rw eqiff.
-    apply per_partial_eq_symmetric; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; sp.
+    introv e.
+    apply eqiff in e; apply eqiff.
+    eapply per_partial_eq_symmetric; eauto.
+    dts_props tsa uv tv te tes tet tev; tcsp.
 
   - SCase "term_transitive".
-    unfold term_equality_transitive; introv eqt1 eqt2.
-    rw eqiff in eqt1; rw eqiff in eqt2; rw eqiff.
-    apply @per_partial_eq_transitive with (t2 := t2); sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; sp.
+    introv e1 e2.
+    apply eqiff in e1; apply eqiff in e2; apply eqiff.
+    eapply per_partial_eq_transitive; eauto.
+    dts_props tsa uv tv te tes tet tev; tcsp.
 
   - SCase "term_value_respecting".
-    unfold term_equality_respecting; introv eqt ceq.
-    rw eqiff in eqt; rw eqiff.
-    spcast.
-    apply per_partial_eq_cequiv; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; sp.
-
-  - SCase "type_gsymmetric".
-    repdors; subst; split; sp; dclose_lr;
-    apply CL_partial;
-    clear per;
-    allunfold @per_partial; exrepd;
-    ccomputes_to_eqval;
-    unfold per_partial.
-
-    (* 1 *)
-    exists A3 A1 eqa0; sp; spcast; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tygs A1 A3 eqa0); intro k; repeat (autodimp k hyp).
-    rw <- k; sp.
-
-    (* 2 *)
-    exists A1 A0 eqa0; sp; spcast; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tygs A1 A0 eqa0); intro k; repeat (autodimp k hyp).
-    rw k; sp.
-
-  - SCase "type_gtransitive"; sp.
-
-  - SCase "type_mtransitive".
-    repdors; subst; dclose_lr;
-    try (move_term_to_top (per_partial lib (close lib ts) T T4 eq2));
-    try (move_term_to_top (per_partial lib (close lib ts) T' T4 eq2));
-    allunfold @per_partial; exrepd;
-    ccomputes_to_eqval.
-
-    + dands; apply CL_partial; unfold per_partial.
-
-      * exists A4 A3 eqa1; sp; spcast; sp.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tymt A1 A4 A3 eqa1 eqa0); sp.
-
-      * exists A4 A3 eqa0; sp; spcast; sp.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tymt A1 A4 A3 eqa1 eqa0); sp.
-
-    + dands; apply CL_partial; unfold per_partial.
-
-      * exists A4 A3 eqa1; sp; spcast; sp.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tymt A2 A4 A3 eqa1 eqa0); sp.
-
-      * exists A4 A3 eqa0; sp; spcast; sp.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tymt A2 A4 A3 eqa1 eqa0); sp.
+    introv e c; spcast.
+    apply eqiff in e; apply eqiff; clear eqiff.
+    dts_props tsa uva tva tea tesa teta teva; repnd.
+    eapply per_partial_eq_cequiv; spcast; eauto.
 Qed.
-

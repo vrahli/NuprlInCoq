@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -30,15 +36,13 @@ Require Import dest_close.
 
 Lemma per_mono_eq_congr {p} :
   forall lib (eqa eqb : per(p)),
-  eq_term_equals eqa eqb
-  -> (mono_equality lib eqa  <=> mono_equality lib eqb).
+    (eqa <=2=> eqb)
+    -> (mono_equality lib eqa  <=> mono_equality lib eqb).
 Proof.
-  introv; unfold eq_term_equals, mono_equality, cofinite_subst_fapprox_eqc,
-    subst_fix_eqc; split; spc;
-  dtiffs2;
-  match goal with
-  [ H : forall _ _ , _  |- _] => (apply H)
-  end; eauto.
+  introv eqs;
+    unfold mono_equality, cofinite_subst_fapprox_eqc,
+    subst_fix_eqc; split; introv h e a;
+      dtiffs2; apply eqs; apply h; auto; apply eqs; auto.
 Qed.
 
 (* !! Move to eq_rel.v *)
@@ -46,14 +50,12 @@ Hint Immediate t_iff_refl.
 
 Lemma eq_term_equals_per_mono_eq_if {p} :
   forall lib (eqa1 eqa2 : per(p)),
-    eq_term_equals eqa1 eqa2
-    -> eq_term_equals (per_mono_eq lib eqa1) (per_mono_eq lib eqa2).
+    eqa1 <=2=> eqa2
+    -> (per_mono_eq lib eqa1) <=2=> (per_mono_eq lib eqa2).
 Proof.
   introv eqt.
-  unfold eq_term_equals.
   allunfold @per_mono_eq. introv.
-  apply (per_mono_eq_congr lib) in eqt.
-  rw eqt. auto.
+  apply (per_mono_eq_congr lib) in eqt; tcsp.
 Qed.
 
 Lemma per_mono_eq_symmetric {p} :
@@ -87,137 +89,69 @@ Lemma per_mono_eq_cequiv {p} :
 Proof.
   introv res ceq per.
   allunfold @per_mono_eq; repnd; dands; auto.
-  GC; try (spcast; apply cequivc_axiom with (t := t1); sp).
 Qed.
 
 
 
 Lemma close_type_system_mono {p} :
-  forall lib (ts : cts(p))
-         T T'
-         (eq : per)
-         A1 A2 eqa,
+  forall lib (ts : cts(p)) T (eq : per) A eqa,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_mono A1)
-    -> computes_to_valc lib T' (mkc_mono A2)
-    -> close lib ts A1 A2 eqa
-    -> type_sys_props lib (close lib ts) A1 A2 eqa
-    -> (forall t t' : CTerm, eq t t' <=> per_mono_eq lib eqa t t')
-    -> per_mono lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+    -> computes_to_valc lib T (mkc_mono A)
+    -> close lib ts A eqa
+    -> type_system_props lib (close lib ts) A eqa
+    -> eq <=2=> (per_mono_eq lib eqa)
+    -> per_mono lib (close lib ts) T eq
+    -> type_system_props lib (close lib ts) T eq.
 Proof.
-  introv tysys dou c1 c2 cla reca eqiff per.
+  introv tysys dou comp cla tsa eqiff per.
+  clear per.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_ts_props SCase.
 
   - SCase "uniquely_valued".
-    dclose_lr.
-
-    + SSCase "CL_mono".
-      clear per.
-      allunfold @per_mono; exrepd.
-      unfold eq_term_equals; intros.
-      allrw.
-      ccomputes_to_eqval.
-      revert t1 t2; rw @fold_eq_term_equals.
-      apply eq_term_equals_per_mono_eq_if.
-      onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-      generalize (uv A3 eqa0); sp.
-
-  - SCase "type_symmetric"; repdors; subst; dclose_lr;
-    apply CL_mono;
-    clear per;
-    allunfold @per_mono; exrepd;
-    unfold per_mono;
+    introv cls.
+    dest_close_lr h.
+    clear cls.
+    unfold per_mono in h; exrepnd; spcast.
     ccomputes_to_eqval.
+    eapply eq_term_equals_trans;[eauto|].
+    eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
 
-    + exists A1 A3 eqa0; sp; spcast; sp.
-      apply eq_term_equals_trans with (eq2 := eq); sp.
-      apply eq_term_equals_sym; sp.
+    apply eq_term_equals_per_mono_eq_if; auto.
 
-  - SCase "type_value_respecting"; repdors; subst;
-    apply CL_mono; unfold per_mono.
+    dts_props tsa uv tv te tes tet tev.
+    eapply uv; auto.
 
-    (* 1 *)
-    generalize (cequivc_mkc_mono lib T T3 A1); introv k; repeat (autodimp k hyp); exrepnd.
-    exists A1 b eqa; sp; spcast; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr A1 b); sp.
+  - SCase "type_extensionality".
+    introv eqt.
+    apply CL_mono.
+    exists A eqa; dands; spcast; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
 
-    (* 2 *)
-    generalize (cequivc_mkc_mono lib T' T3 A2); introv k; repeat (autodimp k hyp); exrepnd.
-    exists A2 b eqa; sp; spcast; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr A2 b); sp.
+  - SCase "type_value_respecting".
+    introv ceq.
+    apply CL_mono.
+    eapply cequivc_mkc_mono in comp;[|eauto]; exrepnd.
+    exists b eqa; dands; spcast; auto.
+    dts_props tsa uv tv te tes tet tev; tcsp.
 
   - SCase "term_symmetric".
-    unfold term_equality_symmetric; introv eqt.
-    rw eqiff in eqt; rw eqiff.
-    apply per_mono_eq_symmetric; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; sp.
+    introv e.
+    apply eqiff in e; apply eqiff.
+    eapply per_mono_eq_symmetric; eauto.
+    dts_props tsa uv tv te tes tet tev; tcsp.
 
   - SCase "term_transitive".
-    unfold term_equality_transitive; introv eqt1 eqt2.
-    rw eqiff in eqt1; rw eqiff in eqt2; rw eqiff.
-    apply @per_mono_eq_transitive with (t2 := t2); sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; sp.
+    introv e1 e2.
+    apply eqiff in e1; apply eqiff in e2; apply eqiff.
+    eapply per_mono_eq_transitive; eauto.
+    dts_props tsa uv tv te tes tet tev; tcsp.
 
   - SCase "term_value_respecting".
-    unfold term_equality_respecting; introv eqt ceq.
-    rw eqiff in eqt; rw eqiff.
-    spcast.
-    apply per_mono_eq_cequiv; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; sp.
-
-  - SCase "type_gsymmetric".
-    repdors; subst; split; sp; dclose_lr;
-    apply CL_mono;
-    clear per;
-    allunfold @per_mono; exrepd;
-    ccomputes_to_eqval;
-    unfold per_mono.
-
-    (* 1 *)
-    exists A3 A1 eqa0; sp; spcast; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tygs A1 A3 eqa0); intro k; repeat (autodimp k hyp).
-    rw <- k; sp.
-
-    (* 2 *)
-    exists A1 A0 eqa0; sp; spcast; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tygs A1 A0 eqa0); intro k; repeat (autodimp k hyp).
-    rw k; sp.
-
-  - SCase "type_gtransitive"; sp.
-
-  - SCase "type_mtransitive".
-    repdors; subst; dclose_lr;
-    try (move_term_to_top (per_mono lib (close lib ts) T T4 eq2));
-    try (move_term_to_top (per_mono lib (close lib ts) T' T4 eq2));
-    allunfold @per_mono; exrepd;
-    ccomputes_to_eqval.
-
-    + dands; apply CL_mono; unfold per_mono.
-
-      * exists A4 A3 eqa1; sp; spcast; sp.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tymt A1 A4 A3 eqa1 eqa0); sp.
-
-      * exists A4 A3 eqa0; sp; spcast; sp.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tymt A1 A4 A3 eqa1 eqa0); sp.
-
-    + dands; apply CL_mono; unfold per_mono.
-
-      * exists A4 A3 eqa1; sp; spcast; sp.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tymt A2 A4 A3 eqa1 eqa0); sp.
-
-      * exists A4 A3 eqa0; sp; spcast; sp.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tymt A2 A4 A3 eqa1 eqa0); sp.
+    introv e c; spcast.
+    apply eqiff in e; apply eqiff; clear eqiff.
+    dts_props tsa uva tva tea tesa teta teva; repnd.
+    eapply per_mono_eq_cequiv; spcast; eauto.
 Qed.
-

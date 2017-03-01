@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -32,13 +37,11 @@ Require Import dest_close.
 
 Lemma eq_term_equals_per_ffatoms_eq_if {p} :
   forall lib (eqa1 eqa2 : per(p)) x,
-    eq_term_equals eqa1 eqa2
-    -> eq_term_equals
-         (per_ffatoms_eq lib eqa1 x)
-         (per_ffatoms_eq lib eqa2 x).
+    (eqa1 <=2=> eqa2)
+    -> (per_ffatoms_eq lib eqa1 x) <=2=> (per_ffatoms_eq lib eqa2 x).
 Proof.
   introv eqt.
-  unfold eq_term_equals, per_ffatoms_eq; introv; split; intro k; exrepnd;
+  unfold per_ffatoms_eq; introv; split; intro k; exrepnd;
   dands; auto; exists y; dands; auto; apply eqt; auto.
 Qed.
 
@@ -134,234 +137,71 @@ Proof.
 Qed.
 
 Lemma close_type_system_ffatoms {p} :
-  forall lib (ts : cts(p))
-         T T'
-         (eq : per)
-         A1 A2 x1 x2
-         eqa,
+  forall lib (ts : cts(p)) T (eq : per) A x eqa,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_free_from_atoms A1 x1)
-    -> computes_to_valc lib T' (mkc_free_from_atoms A2 x2)
-    -> close lib ts A1 A2 eqa
-    -> type_sys_props lib (close lib ts) A1 A2 eqa
-    -> eqa x1 x2
-    -> (eq <=2=> (per_ffatoms_eq lib eqa x1))
-    -> per_ffatoms lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+    -> computes_to_valc lib T (mkc_free_from_atoms A x)
+    -> close lib ts A eqa
+    -> type_system_props lib (close lib ts) A eqa
+    -> eqa x x
+    -> (eq <=2=> (per_ffatoms_eq lib eqa x))
+    -> per_ffatoms lib (close lib ts) T eq
+    -> type_system_props lib (close lib ts) T eq.
 Proof.
-  introv tysys dou c1 c2 cla reca eqxs eqiff; introv per.
+  introv tysys dou comp cla tsa eqxs eqiff per.
+  clear per.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_ts_props SCase.
 
   - SCase "uniquely_valued".
-    dclose_lr.
-
-    + SSCase "CL_ffatoms".
-      clear per.
-      allunfold @per_ffatoms; exrepd.
-      unfold eq_term_equals; intros.
-      allrw.
-      ccomputes_to_eqval.
-      revert t1 t2; rw @fold_eq_term_equals.
-      apply eq_term_equals_per_ffatoms_eq_if; auto.
-      onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-      generalize (uv A3 eqa0); sp.
-
-  - SCase "type_symmetric"; repdors; subst; dclose_lr;
-    apply CL_ffatoms;
-    clear per;
-    allunfold @per_ffatoms; exrepd;
-    unfold per_ffatoms;
+    introv cls.
+    dest_close_lr h.
+    clear cls.
+    unfold per_ffatoms in h; exrepnd; spcast.
     ccomputes_to_eqval.
+    eapply eq_term_equals_trans;[eauto|].
+    eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
 
-    + exists A1 A3 x1 x3 eqa0; sp; spcast; sp.
-      apply eq_term_equals_trans with (eq2 := eq); sp.
-      apply eq_term_equals_sym; sp.
+    apply eq_term_equals_per_ffatoms_eq_if; auto.
 
-  - SCase "type_value_respecting"; repdors; subst;
-    apply CL_ffatoms; unfold per_ffatoms.
+    dts_props tsa uv tv te tes tet tev.
+    eapply uv; auto.
 
-    { (* 1 *)
-      generalize (cequivc_mkc_ffatoms lib T T3 A1 x1); introv k; repeat (autodimp k hyp); exrepnd.
-      exists A1 T'0 x1 x' eqa; sp; spcast; sp.
-      { onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tyvr A1 T'0); sp. }
-      { onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        pose proof (tevr x1 x') as h; repeat (autodimp h hyp).
-        eapply tet; eauto.
-        spcast; auto. }
-    }
+  - SCase "type_extensionality".
+    introv eqt.
+    apply CL_ffatoms.
+    exists A x eqa; dands; spcast; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
 
-    { (* 2 *)
-      generalize (cequivc_mkc_ffatoms lib T' T3 A2 x2); introv k; repeat (autodimp k hyp); exrepnd.
-      exists A2 T'0 x2 x' eqa; sp; spcast; sp.
-      { onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tyvr A2 T'0); sp. }
-      { onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        pose proof (tevr x2 x') as h; repeat (autodimp h hyp).
-        eapply tet; eauto.
-        spcast; auto. }
-      { onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        pose proof (per_ffatoms_eq_elt lib eqa x1 x2) as h; repeat (autodimp h hyp).
-        eapply eq_term_equals_trans; eauto. }
-    }
+  - SCase "type_value_respecting".
+    introv ceq.
+    apply CL_ffatoms.
+    eapply cequivc_mkc_ffatoms in comp;[|eauto]; exrepnd.
+    exists T'0 x' eqa; dands; spcast; auto.
+    { dts_props tsa uv tv te tes tet tev; tcsp. }
+    { dts_props tsa uv tv te tes tet tev.
+      apply (tet _ x);[apply tes|]; apply tev; spcast; auto. }
+    { eapply eq_term_equals_trans;[eauto|].
+      dts_props tsa uv tv te tes tet tev; repnd.
+      apply per_ffatoms_eq_elt; auto.
+      apply tev; spcast; auto. }
 
   - SCase "term_symmetric".
-    unfold term_equality_symmetric; introv eqt.
-    rw eqiff in eqt; rw eqiff.
-    apply per_ffatoms_eq_symmetric; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; sp.
+    introv e.
+    apply eqiff in e; apply eqiff.
+    eapply per_ffatoms_eq_symmetric; eauto.
+    dts_props tsa uv tv te tes tet tev; tcsp.
 
   - SCase "term_transitive".
-    unfold term_equality_transitive; introv eqt1 eqt2.
-    rw eqiff in eqt1; rw eqiff in eqt2; rw eqiff.
-    apply @per_ffatoms_eq_transitive with (t2 := t2); sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; sp.
+    introv e1 e2.
+    apply eqiff in e1; apply eqiff in e2; apply eqiff.
+    eapply per_ffatoms_eq_transitive; eauto.
+    dts_props tsa uv tv te tes tet tev; tcsp.
 
   - SCase "term_value_respecting".
-    unfold term_equality_respecting; introv eqt ceq.
-    rw eqiff in eqt; rw eqiff.
-    spcast.
-    apply per_ffatoms_eq_cequiv; sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; sp.
-
-  - SCase "type_gsymmetric".
-    repdors; subst; split; sp; dclose_lr;
-    apply CL_ffatoms;
-    clear per;
-    allunfold @per_ffatoms; exrepd;
-    ccomputes_to_eqval;
-    unfold per_partial.
-
-    { (* 1 *)
-      exists A3 A1 x3 x1 eqa0; sp; spcast; sp.
-      { onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tygs A1 A3 eqa0); intro k; repeat (autodimp k hyp).
-        rw <- k; sp. }
-      { onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; auto.
-        pose proof (uv A3 eqa0) as h; autodimp h hyp.
-        apply h; apply h in e; auto. }
-      { eapply eq_term_equals_trans; eauto.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; auto.
-        pose proof (uv A3 eqa0) as h; autodimp h hyp.
-        pose proof (eq_term_equals_per_ffatoms_eq_if lib eqa0 eqa x1) as h1.
-        autodimp h1 hyp; [apply eq_term_equals_sym; auto|].
-        eapply eq_term_equals_trans; eauto.
-        pose proof (per_ffatoms_eq_elt lib eqa x1 x3) as h2; repeat (autodimp h2 hyp).
-        apply h; auto.
-        eapply eq_term_equals_trans; eauto.
-        apply eq_term_equals_per_ffatoms_eq_if; auto. }
-    }
-
-    { (* 2 *)
-      exists A1 A0 x1 x0 eqa0; sp; spcast; sp.
-      { onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tygs A1 A0 eqa0); intro k; repeat (autodimp k hyp).
-        rw k; sp. }
-      { onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; auto.
-        pose proof (tygs A1 A0 eqa0) as k; repeat (autodimp k hyp); apply k in c3; clear k.
-        pose proof (uv A0 eqa0) as h; autodimp h hyp.
-        apply h; apply h in e; auto. }
-      { eapply eq_term_equals_trans; eauto.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt; auto.
-        pose proof (tygs A1 A0 eqa0) as k; repeat (autodimp k hyp); apply k in c3; clear k.
-        pose proof (uv A0 eqa0) as h; autodimp h hyp.
-        pose proof (eq_term_equals_per_ffatoms_eq_if lib eqa0 eqa x0) as h1.
-        autodimp h1 hyp; [apply eq_term_equals_sym; auto|].
-        eapply eq_term_equals_trans; eauto.
-        pose proof (per_ffatoms_eq_elt lib eqa x0 x1) as h2; repeat (autodimp h2 hyp).
-        apply h; auto.
-        eapply eq_term_equals_trans; eauto.
-        apply eq_term_equals_per_ffatoms_eq_if; auto. }
-    }
-
-  - SCase "type_gtransitive"; sp.
-
-  - SCase "type_mtransitive".
-    repdors; subst; dclose_lr;
-    try (move_term_to_top (per_ffatoms lib (close lib ts) T T4 eq2));
-    try (move_term_to_top (per_ffatoms lib (close lib ts) T' T4 eq2));
-    allunfold @per_ffatoms; exrepd;
-    ccomputes_to_eqval.
-
-    + dands; apply CL_ffatoms; unfold per_ffatoms.
-
-      * exists A4 A3 x4 x3 eqa1; sp; spcast; sp.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tymt A1 A4 A3 eqa1 eqa0); sp.
-
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        pose proof (tygs A1 A4 eqa1) as k; repeat (autodimp k hyp).
-        apply k in c6.
-        pose proof (uv A4 eqa1) as h1; autodimp h1 hyp.
-        pose proof (uv A3 eqa0) as h2; autodimp h2 hyp.
-        apply h1; apply h1 in e1; apply h2 in e.
-        eapply tet; eauto.
-
-      * exists A4 A3 x4 x3 eqa0; sp; spcast; sp.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tymt A1 A4 A3 eqa1 eqa0); sp.
-
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        pose proof (tygs A1 A4 eqa1) as k; repeat (autodimp k hyp).
-        apply k in c6.
-        pose proof (uv A4 eqa1) as h1; autodimp h1 hyp.
-        pose proof (uv A3 eqa0) as h2; autodimp h2 hyp.
-        apply h2; apply h1 in e1; apply h2 in e.
-        eapply tet; eauto.
-
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        pose proof (tygs A1 A4 eqa1) as k; repeat (autodimp k hyp).
-        apply k in c6.
-        pose proof (uv A4 eqa1) as h1; autodimp h1 hyp.
-        pose proof (uv A3 eqa0) as h2; autodimp h2 hyp.
-        apply h1 in e1; apply h2 in e.
-        eapply eq_term_equals_trans; eauto.
-        apply per_ffatoms_eq_elt; auto.
-        introv z; apply h2 in z; apply h2; auto.
-        introv z1 z2; apply h2 in z1; apply h2 in z2; apply h2; auto.
-        eapply tet; eauto.
-        apply h2; eapply tet; eauto.
-
-    + dands; apply CL_ffatoms; unfold per_ffatoms.
-
-      * exists A4 A3 x4 x3 eqa1; sp; spcast; sp.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tymt A2 A4 A3 eqa1 eqa0); sp.
-
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        pose proof (tygs A2 A4 eqa1) as k; repeat (autodimp k hyp).
-        apply k in c6.
-        pose proof (uv A4 eqa1) as h1; autodimp h1 hyp.
-        pose proof (uv A3 eqa0) as h2; autodimp h2 hyp.
-        apply h1; apply h1 in e1; apply h2 in e.
-        eapply tet; eauto.
-
-      * exists A4 A3 x4 x3 eqa0; sp; spcast; sp.
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        generalize (tymt A2 A4 A3 eqa1 eqa0); sp.
-
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        pose proof (tygs A2 A4 eqa1) as k; repeat (autodimp k hyp).
-        apply k in c6.
-        pose proof (uv A4 eqa1) as h1; autodimp h1 hyp.
-        pose proof (uv A3 eqa0) as h2; autodimp h2 hyp.
-        apply h2; apply h1 in e1; apply h2 in e.
-        eapply tet; eauto.
-
-        onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-        pose proof (tygs A2 A4 eqa1) as k; repeat (autodimp k hyp).
-        apply k in c6.
-        pose proof (uv A4 eqa1) as h1; autodimp h1 hyp.
-        pose proof (uv A3 eqa0) as h2; autodimp h2 hyp.
-        apply h1 in e1; apply h2 in e.
-        eapply eq_term_equals_trans; eauto.
-        apply per_ffatoms_eq_elt; auto.
-        introv z; apply h2 in z; apply h2; auto.
-        introv z1 z2; apply h2 in z1; apply h2 in z2; apply h2; auto.
-        eapply tet; eauto.
-        apply h2; eapply tet; eauto.
+    introv e c; spcast.
+    apply eqiff in e; apply eqiff; clear eqiff.
+    dts_props tsa uva tva tea tesa teta teva; repnd.
+    eapply per_ffatoms_eq_cequiv; spcast; eauto.
 Qed.
-
