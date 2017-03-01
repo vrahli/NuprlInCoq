@@ -264,6 +264,9 @@ Definition nuprl {o} lib (T : @CTerm o) eq := close lib (univ lib) T eq.
 Definition Nuprl {o} lib (T T' : @CTerm o) eq :=
   nuprl lib T eq # nuprl lib T' eq.
 
+Definition Nuprli {o} lib i (T T' : @CTerm o) eq :=
+  nuprli lib i T eq # nuprli lib i T' eq.
+
 (* begin hide *)
 
 (*
@@ -337,21 +340,18 @@ Proof.
     exists eqa eqb; sp.
     exists A v B; dands; auto.
     split; dands; auto.
-    eapply recb; eauto.
 
   - Case "CL_func".
     apply CL_func; unfold per_func; sp.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    eapply recb; eauto.
 
   - Case "CL_disect".
     apply CL_disect; unfold per_disect; sp.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    eapply recb; eauto.
 
   - Case "CL_pertype".
     apply CL_pertype; unfold per_pertype; sp.
@@ -374,14 +374,12 @@ Proof.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    eapply recb; eauto.
 
   - Case "CL_m".
     apply CL_m; unfold per_m; sp.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    eapply recb; eauto.
 
       (*
   - Case "CL_pw".
@@ -460,21 +458,18 @@ Proof.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    eapply recb; eauto.
 
   - Case "CL_tunion".
     apply CL_tunion; unfold per_tunion; sp.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    eapply recb; eauto.
 
   - Case "CL_product".
     apply CL_product; unfold per_product; sp.
     exists eqa eqb; sp.
     exists A v B; sp.
     split; dands; auto.
-    eapply recb; eauto.
 Qed.
 
 Lemma typable_in_higher_univ_r {p} :
@@ -692,7 +687,7 @@ Proof.
     exists A v B; sp.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
-    { eapply recb; eauto. }
+    { introv; eapply recb; eauto. }
 
   - Case "CL_func".
     apply CL_func.
@@ -701,7 +696,7 @@ Proof.
     exists A v B; sp.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
-    { eapply recb; eauto. }
+    { introv; eapply recb; eauto. }
 
   - Case "CL_disect".
     apply CL_disect.
@@ -710,7 +705,7 @@ Proof.
     exists A v B; sp.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
-    { eapply recb; eauto. }
+    { introv; eapply recb; eauto. }
 
   - Case "CL_pertype".
     apply CL_pertype.
@@ -743,7 +738,7 @@ Proof.
     exists A v B; sp.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
-    { eapply recb; eauto. }
+    { introv; eapply recb; eauto. }
 
   - Case "CL_m".
     apply CL_m.
@@ -752,7 +747,7 @@ Proof.
     exists A v B; sp.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
-    { eapply recb; eauto. }
+    { introv; eapply recb; eauto. }
 
     (*
   - Case "CL_pw".
@@ -870,7 +865,7 @@ Proof.
     exists A v B; sp.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
-    { eapply recb; eauto. }
+    { introv; eapply recb; eauto. }
 
   - Case "CL_tunion".
     apply CL_tunion.
@@ -879,7 +874,7 @@ Proof.
     exists A v B; sp.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
-    { eapply recb; eauto. }
+    { introv; eapply recb; eauto. }
 
   - Case "CL_product".
     apply CL_product.
@@ -888,7 +883,7 @@ Proof.
     exists A v B; sp.
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
-    { eapply recb; eauto. }
+    { introv; eapply recb; eauto. }
 Qed.
 
 

@@ -38,74 +38,67 @@ Lemma eq_term_equals_per_isect_eq {o} :
   forall (eqa1 eqa2 : per(o)) eqb1 eqb2,
     term_equality_symmetric eqa1
     -> (eqa1 <=2=> eqa2)
-    -> (forall a a' : CTerm, eqa1 a a' -> (eqb1 a) <=2=> (eqb2 a'))
+    -> (forall a a' (e1 : eqa1 a a') (e2 : eqa2 a a'), (eqb1 a a' e1) <=2=> (eqb2 a a' e2))
     -> (per_isect_eq eqa1 eqb1) <=2=> (per_isect_eq eqa2 eqb2).
 Proof.
   introv syma eaiff ebiff.
   unfold per_isect_eq.
-  split; introv h e.
+  split; introv h; introv.
 
-  - applydup eaiff in e.
-    apply syma in e0.
-    applydup h in e0.
-    apply ebiff in e0.
-    apply e0 in e1; auto.
+  - appdup eaiff in e.
+    pose proof (h a a' e0) as q.
+    eapply ebiff; eauto.
 
-  - applydup ebiff in e.
-    apply e0.
-    apply syma in e.
-    apply eaiff in e.
-    eapply h; eauto.
+  - appdup eaiff in e.
+    pose proof (h a a' e0) as q.
+    eapply ebiff; eauto.
 Qed.
 
 Lemma per_isect_eq_sym {o} :
   forall lib ts v B (eqa : per(o)) eqb t1 t2,
-    (forall a a' : CTerm,
-        eqa a a' -> type_system_props lib ts (B) [[v \\ a]] (eqb a))
+    (forall a a' (e : eqa a a'), type_system_props lib ts (B) [[v \\ a]] (eqb a a' e))
     -> per_isect_eq eqa eqb t1 t2
     -> per_isect_eq eqa eqb t2 t1.
 Proof.
   introv tsb per.
   unfold per_isect_eq in *.
-  introv e.
-  applydup per in e.
-  applydup tsb in e.
-  dts_props e1 uv tv te tes tet tev.
-  apply tes; auto.
+  introv.
+  pose proof (per a a' e) as q.
+  pose proof (tsb a a' e) as w.
+  dts_props w uv tv te tes tet tev.
+  eapply tes; auto.
 Qed.
 
 Lemma per_isect_eq_trans {o} :
   forall lib ts v B (eqa : per(o)) eqb t1 t2 t3,
-    (forall a a' : CTerm,
-        eqa a a' -> type_system_props lib ts (B) [[v \\ a]] (eqb a))
+    (forall a a' (e : eqa a a'), type_system_props lib ts (B) [[v \\ a]] (eqb a a' e))
     -> per_isect_eq eqa eqb t1 t2
     -> per_isect_eq eqa eqb t2 t3
     -> per_isect_eq eqa eqb t1 t3.
 Proof.
   introv tsb per1 per2.
   unfold per_isect_eq in *.
-  introv e.
-  applydup per1 in e.
-  applydup per2 in e.
-  applydup tsb in e.
-  dts_props e2 uv tv te tes tet tev.
+  introv.
+  pose proof (per1 a a' e) as e1.
+  pose proof (per2 a a' e) as e2.
+  pose proof (tsb a a' e) as h.
+  dts_props h uv tv te tes tet tev.
   eapply tet; eauto.
 Qed.
 
 Lemma per_isect_eq_cequivc {o} :
   forall lib ts v B (eqa : per(o)) eqb t1 t2,
-    (forall a a' : CTerm,
-        eqa a a' -> type_system_props lib ts (B) [[v \\ a]] (eqb a))
+    (forall a a' (e : eqa a a'), type_system_props lib ts (B) [[v \\ a]] (eqb a a' e))
     -> cequivc lib t1 t2
     -> per_isect_eq eqa eqb t1 t1
     -> per_isect_eq eqa eqb t1 t2.
 Proof.
   introv tsb ceq per.
   unfold per_isect_eq in *.
-  introv e.
-  applydup per in e.
-  applydup tsb in e.
-  dts_props e1 uv tv te tes tet tev.
+  introv.
+  pose proof (per a a' e) as e1.
+  pose proof (tsb a a' e) as h.
+  dts_props h uv tv te tes tet tev.
   eapply tev; spcast; eauto.
 Qed.
 
@@ -116,10 +109,10 @@ Lemma close_type_system_isect {p} :
     -> computes_to_valc lib T (mkc_isect A v B)
     -> close lib ts A eqa
     -> type_system_props lib (close lib ts) A eqa
-    -> (forall (a a' : CTerm) (e : eqa a a'), close lib ts (substc a v B) (eqb a))
+    -> (forall (a a' : CTerm) (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
     -> (forall (a a' : CTerm) (e : eqa a a'),
-           type_system_props lib (close lib ts) (substc a v B) (eqb a))
-    -> (forall (a a' : CTerm) (e : eqa a a'), (eqb a) <=2=> (eqb a'))
+           type_system_props lib (close lib ts) (substc a v B) (eqb a a' e))
+    -> per_fam_equiv eqb
     -> eq <=2=> (per_isect_eq eqa eqb)
     -> per_isect lib (close lib ts) T eq
     -> type_system_props lib (close lib ts) T eq.
@@ -152,8 +145,7 @@ Proof.
     apply CL_isect.
     exists eqa eqb; dands; auto.
     { exists A v B; dands; spcast; auto.
-      introv e; dands; tcsp.
-      eapply clb; eauto. }
+      split; auto. }
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
@@ -168,9 +160,9 @@ Proof.
     { dts_props tsa uv tv te tes tet tev.
       apply te; auto. }
 
-    introv e; dands; auto.
-    applydup tsb in e.
-    dts_props e0 uv tv te tes tet tev.
+    split; dands; auto; introv.
+    pose proof (tsb a a' e) as q.
+    dts_props q uv tv te tes tet tev.
     apply te.
     apply bcequivc1; auto.
 

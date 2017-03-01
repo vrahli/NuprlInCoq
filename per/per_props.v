@@ -65,18 +65,23 @@ Proof.
   inversion e1; subst; try not_univ.
   duniv j h.
   induction j; allsimpl; sp.
-  discover; exrepnd.
-  exists eqa; sp.
-  allapply @nuprli_implies_nuprl; auto.
+  computes_to_value_isvalue.
+  match goal with
+  | [ H : _ <=2=> _ |- _ ] => apply H in e0; clear H
+  end.
+  unfold univi_eq in e0; exrepnd.
+  exists eqa.
+  eapply Nuprli_implies_Nuprl; split; eauto.
 Qed.
 
 Lemma member_in_uni {p} :
   forall lib a i, @member p lib a (mkc_uni i) -> type lib a.
 Proof.
-  unfold member, type; introv e.
-  apply equality_in_uni in e; sp.
+  unfold member; introv e.
+  apply equality_in_uni in e; eauto 2 with slow.
 Qed.
 
+(*
 (* This is not provable, because in general we can't find the type level
  * of a type family. *)
 Lemma equality_in_uni_iff {p} :
@@ -85,7 +90,8 @@ Lemma equality_in_uni_iff {p} :
     <=> tequality lib a b.
 Proof.
   sp; split; introv e; exrepnd.
-  apply equality_in_uni in e0; sp.
+
+  { apply equality_in_uni in e0; sp. }
 
   allunfold @tequality; allunfold @equality; exrepnd.
   unfold nuprl in e0; sp.
@@ -149,21 +155,22 @@ Proof.
     admit.
 (*Error: Universe inconsistency.*)
 Abort.
-
+*)
 
 
 (* =============== More specific properties ================= *)
 
 Lemma nuprl_int {p} :
-  forall lib, @nuprl p lib mkc_int mkc_int (equality_of_int lib).
+  forall lib, @nuprl p lib mkc_int (equality_of_int lib).
 Proof.
   sp.
   apply CL_int.
   unfold per_int; sp; spcast; try computes_to_value_refl.
 Qed.
+Hint Resolve nuprl_int : slow.
 
 Lemma equality_of_int_xxx {p} :
-  forall lib, @close p lib (univ lib) mkc_int mkc_int (equality_of_int lib).
+  forall lib, @close p lib (univ lib) mkc_int (equality_of_int lib).
 Proof.
   apply nuprl_int.
 Qed.
@@ -172,7 +179,8 @@ Lemma tequality_int {p} : forall lib, @tequality p lib mkc_int mkc_int.
 Proof.
   introv.
   exists (@equality_of_int p lib).
-  sp. apply equality_of_int_xxx.
+  split; eauto 3 with slow.
+
 Qed.
 
 Lemma nat_in_int {p} : forall lib (n : nat), @member p lib (mkc_nat n) mkc_int.
@@ -184,6 +192,17 @@ Proof.
   unfold mkc_nat, mkc_integer, isprog_mk_nat, isprog_mk_integer, mk_nat;
     spcast; computes_to_value_refl.
 Qed.
+
+(*
+
+This is not true anymore because for example
+   False -> Nat and Bool -> Top
+are equal types.
+
+The <- direction should be true though.
+
+===========================================
+
 
 (* This is basically 'functionEquality' *)
 Lemma tequality_function {p} :
@@ -240,6 +259,39 @@ Proof.
     exists A1 A2 v1 v2 B1 B2; sp;
     try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
 Qed.
+ *)
+
+
+(* This is basically 'functionEquality' *)
+Lemma implies_tequality_function {p} :
+  forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2,
+    tequality lib A1 A2
+    -> (forall a a', equality lib a a' A1 -> tequality lib (substc a v1 B1) (substc a' v2 B2))
+    -> tequality lib (mkc_function A1 v1 B1) (mkc_function A2 v2 B2).
+Proof.
+  introv teqa teqb.
+
+  unfold tequality in teqa; exrepnd.
+  rename eq into eqa.
+  generalize (choice_teq lib A1 v1 B1 v2 B2 teqb); intro n; exrepnd.
+
+  exists (fun t1 t2 =>
+            forall (a1 a2 : CTerm) (e : eqa a1 a2),
+              f a1
+                a2
+                (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)
+                (mkc_apply t1 a1)
+                (mkc_apply t2 a2)).
+
+  split; apply CL_func; fold (@nuprl p lib).
+
+  - exists eqa.
+    exists (fun a1 => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)); sp.
+
+  exists A1 A2 v1 v2 B1 B2; sp;
+    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
+Qed.
+
 
 Definition get_per_of {p} lib (T t1 t2: @CTerm p) :=
   equality lib t1 t2 T.

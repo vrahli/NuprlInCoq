@@ -48,12 +48,12 @@ Require Export Peano.
 (** printing mkc_integer $\mathtt{int}$ *)
 (* begin hide *)
 
-Lemma nuprl_type_system_implies_Nuprl_etype_system {o} :
-  forall (lib : @library o),
-    type_system lib (nuprl lib) -> etype_system lib (Nuprl lib).
+Lemma type_system_implies_etype_system {o} :
+  forall lib (ts : cts(o)),
+    type_system lib ts -> etype_system lib (fun A A' eq => ts A eq # ts A' eq).
 Proof.
-  introv ts.
-  dest_ts ts.
+  introv tys.
+  dest_ts tys.
 
   prove_etype_system Case; tcsp.
 
@@ -99,6 +99,22 @@ Proof.
     introv n.
     destruct n as [n1 n2].
     eapply ts_tev; eauto.
+Qed.
+
+Lemma nuprl_type_system_implies_Nuprl_etype_system {o} :
+  forall (lib : @library o),
+    type_system lib (nuprl lib) -> etype_system lib (Nuprl lib).
+Proof.
+  introv ts.
+  apply type_system_implies_etype_system; auto.
+Qed.
+
+Lemma nuprli_type_system_implies_Nuprli_etype_system {o} :
+  forall (lib : @library o) i,
+    type_system lib (nuprli lib i) -> etype_system lib (Nuprli lib i).
+Proof.
+  introv ts.
+  apply type_system_implies_etype_system; auto.
 Qed.
 
 Lemma defines_only_universes_univi {o} :
@@ -323,6 +339,22 @@ Proof.
   apply defines_only_universes_univ.
 Qed.
 
+Lemma Nuprl_etype_system {o} :
+  forall (lib : @library o), etype_system lib (Nuprl lib).
+Proof.
+  introv.
+  apply nuprl_type_system_implies_Nuprl_etype_system.
+  apply nuprl_type_system.
+Qed.
+
+Lemma Nuprli_etype_system {o} :
+  forall lib (i : nat), @etype_system o lib (Nuprli lib i).
+Proof.
+  introv.
+  apply nuprli_type_system_implies_Nuprli_etype_system.
+  apply nuprli_type_system.
+Qed.
+
 (* begin hide *)
 
 (** Here is a tactic to use the fact that nuprl is a type system *)
@@ -337,34 +369,47 @@ Ltac nts :=
         destruct nts as [ nts_tet nts_tev ]
   end.
 
-(*
-Lemma nuprl_refl {p} :
+Ltac ents :=
+  match goal with
+      [ p : POpid , lib : library |- _ ] =>
+      pose proof (@Nuprl_etype_system p lib) as nts;
+        destruct nts as [ nts_uv nts ];
+        destruct nts as [ nts_ext nts ];
+        destruct nts as [ nts_tys nts ];
+        destruct nts as [ nts_tyt nts ];
+        destruct nts as [ nts_tyv nts ];
+        destruct nts as [ nts_tes nts ];
+        destruct nts as [ nts_tet nts_tev ]
+  end.
+
+Lemma Nuprl_refl {p} :
   forall lib (t1 t2 : @CTerm p) eq,
-    nuprl lib t1 t2 eq -> nuprl lib t1 t1 eq.
+    Nuprl lib t1 t2 eq -> Nuprl lib t1 t1 eq.
 Proof.
   intros.
-  nts.
-  assert (nuprl lib t2 t1 eq); sp.
-  use_trans t2; sp.
+  ents.
+  eapply nts_tyt; eauto.
 Qed.
 
-Lemma nuprl_sym {p} :
+Lemma Nuprl_sym {p} :
   forall lib (t1 t2 : @CTerm p) eq,
-    nuprl lib t1 t2 eq -> nuprl lib t2 t1 eq.
+    Nuprl lib t1 t2 eq -> Nuprl lib t2 t1 eq.
 Proof.
-  intros; nts; sp.
+  intros; ents; sp.
 Qed.
 
-Lemma nuprl_trans {p} :
+Lemma Nuprl_trans {p} :
   forall lib (t1 t2 t3 : @CTerm p) eq1 eq2,
-    nuprl lib t1 t2 eq1 -> nuprl lib t2 t3 eq2 -> nuprl lib t1 t3 eq1.
+    Nuprl lib t1 t2 eq1 -> Nuprl lib t2 t3 eq2 -> Nuprl lib t1 t3 eq1.
 Proof.
-  introv n1 n2; nts.
-  use_trans t2; sp.
-  use_ext eq2; sp.
-  apply uniquely_valued_eq with (ts := nuprl lib) (T := t2) (T1 := t3) (T2 := t1); sp.
+  introv n1 n2; ents.
+  eapply nts_tyt; eauto.
+  eapply nts_ext;[eauto|].
+  apply Nuprl_sym in n1.
+  apply Nuprl_refl in n1.
+  apply Nuprl_refl in n2.
+  eapply nts_uv; eauto.
 Qed.
-*)
 
 Lemma nuprl_uniquely_valued {p} :
   forall lib (t : @CTerm p) eq1 eq2,
@@ -386,21 +431,29 @@ Proof.
   nts.
   eapply nts_tyv; eauto.
 Qed.
+Hint Resolve nuprl_value_respecting : slow.
 
-(*
-Lemma nuprl_value_respecting_right {p} :
-  forall lib t1 t2 t3 eq,
-    @nuprl p lib t1 t2 eq
-    -> cequivc lib t2 t3
-    -> nuprl lib t1 t3 eq.
+Lemma Nuprl_value_respecting_left {o} :
+  forall lib (t1 t2 t3 : @CTerm o) eq,
+    Nuprl lib t1 t2 eq
+    -> cequivc lib t1 t3
+    -> Nuprl lib t3 t2 eq.
 Proof.
-  intros.
-  nts.
-  assert (nuprl lib t2 t3 eq) as eq23
-    by (apply nts_tyv; auto; apply nts_tyt with (T2 := t1); auto).
-  apply nts_tyt with (T2 := t2); auto.
+  introv n c.
+  destruct n as [n1 n2]; split; eauto 2 with slow.
 Qed.
-*)
+Hint Resolve Nuprl_value_respecting_left : slow.
+
+Lemma Nuprl_value_respecting_right {o} :
+  forall lib (t1 t2 t3 : @CTerm o) eq,
+    Nuprl lib t1 t2 eq
+    -> cequivc lib t2 t3
+    -> Nuprl lib t1 t3 eq.
+Proof.
+  introv n c.
+  destruct n as [n1 n2]; split; eauto 2 with slow.
+Qed.
+Hint Resolve Nuprl_value_respecting_right : slow.
 
 Lemma nuprl_eq_implies_eqorceq_refl {o} :
   forall lib (T : @CTerm o) eq t1 t2,
@@ -415,4 +468,3 @@ Proof.
 Qed.
 
 (* end hide *)
-

@@ -1731,6 +1731,20 @@ Proof.
   sp.
 Qed.
 
+Lemma type_system_term_mem {p} :
+ forall (ts : cts(p)) (T t1 t2 : CTerm) (eq : per),
+   term_symmetric ts
+   -> term_transitive ts
+   -> ts T eq
+   -> eq t1 t2
+   -> eq t1 t1.
+Proof.
+  introv tes tet e.
+  apply @term_equality_refl with (t2 := t2); auto.
+  - eapply tes; eauto.
+  - eapply tet; eauto.
+Qed.
+
 Lemma etype_system_term_mem {p} :
  forall ts : ects(p),
  forall T T' t1 t2 : CTerm,

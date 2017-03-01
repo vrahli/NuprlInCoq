@@ -33,6 +33,7 @@
 Require Export nuprl_type_sys.
 Require Export univ_tacs.
 Require Import rel_nterm.
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ *)
@@ -47,7 +48,7 @@ Require Import rel_nterm.
 (** printing mkc_int     $\intg$ *)
 (** printing mkc_integer $\mathtt{int}$ *)
 
-
+(*
 Lemma nuprli_refl {p} :
   forall lib i t1 t2 eq,
     @nuprli p lib i t1 t2 eq -> nuprli lib i t1 t1 eq.
@@ -57,6 +58,7 @@ Proof.
   dest_ts nts.
   apply ts_tyt with (T2 := t2); sp.
 Qed.
+*)
 
 (*
 (* COMMENTED OUT BECAUSE MIGHT CAUSE A UNIVERSE INCONSISTENCY *)
@@ -105,8 +107,8 @@ Qed.
 *)
 
 Lemma equality_eq_refl {p} :
-  forall lib A B a b eq,
-    @nuprl p lib A B eq
+  forall lib A a b eq,
+    @nuprl p lib A eq
     -> eq a b
     -> eq a a.
 Proof.
@@ -115,24 +117,24 @@ Proof.
 Qed.
 
 Lemma equality_eq_sym {p} :
-  forall lib A B a b eq,
-    @nuprl p lib A B eq
+  forall lib A a b eq,
+    @nuprl p lib A eq
     -> eq a b
     -> eq b a.
 Proof.
   sp; nts.
-  apply nts_tes with (T := A) (T' := B); sp.
+  eapply nts_tes; eauto.
 Qed.
 
 Lemma equality_eq_trans {p} :
-  forall lib A B a b c eq,
-    @nuprl p lib A B eq
+  forall lib A a b c eq,
+    @nuprl p lib A eq
     -> eq a b
     -> eq b c
     -> eq a c.
 Proof.
   sp; nts.
-  apply nts_tet with (T := A) (T' := B) (t2 := b); sp.
+  eapply nts_tet; eauto.
 Qed.
 
 Lemma equality_sym {p} :
@@ -163,7 +165,7 @@ Lemma tequality_sym {p} :
 Proof.
   unfold tequality; sp.
   exists eq.
-  apply nuprl_sym; sp.
+  apply Nuprl_sym; sp.
 Qed.
 Hint Resolve tequality_sym : nequality.
 
@@ -173,7 +175,7 @@ Lemma tequality_refl {p} :
 Proof.
   unfold tequality; introv t; exrepnd.
   exists eq.
-  apply nuprl_refl in t0; sp.
+  apply Nuprl_refl in t0; sp.
 Qed.
 Hint Resolve tequality_refl : nequality.
 
@@ -183,7 +185,7 @@ Lemma tequality_trans {p} :
 Proof.
   unfold tequality; sp.
   exists eq0.
-  eapply nuprl_trans; eauto.
+  eapply Nuprl_trans; eauto.
 Qed.
 Hint Resolve tequality_trans : nequality.
 
@@ -194,11 +196,11 @@ Proof.
   unfold member; auto.
 Qed.
 
-Lemma fold_type {p} :
-  forall lib T,
-    @tequality p lib T T = type lib T.
+Lemma fold_type {o} :
+  forall lib (T : @CTerm o),
+    tequality lib T T <-> type lib T.
 Proof.
-  unfold type; auto.
+  unfold tequality, type, Nuprl; introv; split; intro h; exrepnd; eexists; eauto.
 Qed.
 
 Lemma fold_equorsq {p} :
@@ -223,14 +225,14 @@ Hint Resolve equality_refl : nequality.
 
 Lemma tequality_iff_nuprl {p} :
   forall lib a b,
-    {eq : per(p) , nuprl lib a b eq} <=> tequality lib a b.
+    {eq : per(p) , Nuprl lib a b eq} <=> tequality lib a b.
 Proof.
   sp.
 Qed.
 
 Lemma tequality_if_nuprl {p} :
   forall lib a b eq,
-    @nuprl p lib a b eq -> tequality lib a b.
+    @Nuprl p lib a b eq -> tequality lib a b.
 Proof.
   sp.
   apply tequality_iff_nuprl; exists eq; sp.
@@ -238,7 +240,7 @@ Qed.
 
 Lemma equality_eq {p} :
   forall lib A a b eq,
-    @nuprl p lib A A eq
+    @nuprl p lib A eq
     -> (eq a b <=> equality lib a b A).
 Proof.
   sp; split; intro k.
@@ -252,56 +254,56 @@ Qed.
 
 Lemma equality_eq1 {p} :
   forall lib A B a b eq,
-    @nuprl p lib A B eq
+    @Nuprl p lib A B eq
     -> (eq a b <=> equality lib a b A).
 Proof.
   introv n; split; intro k.
-  unfold equality; exists eq; sp.
-  apply nuprl_refl in n; sp.
-  unfold equality in k; sp.
-  assert (eq_term_equals eq eq0) as eqt.
-  eapply nuprl_uniquely_valued with (t := A); eauto.
-  apply nuprl_refl in n; sp.
-  unfold eq_term_equals in eqt.
-  apply eqt; sp.
+
+  { unfold equality; exists eq; sp.
+    unfold Nuprl in n; tcsp. }
+
+  { unfold equality in k; exrepnd.
+    unfold Nuprl in n; repnd.
+    assert (eq_term_equals eq eq0) as eqt.
+    { eapply nuprl_uniquely_valued with (t := A); eauto. }
+    apply eqt; auto. }
 Qed.
 
 Lemma eqorceq_commutes_equality {p} :
   forall lib a b c d eq A B,
-    @nuprl p lib A B eq
+    @Nuprl p lib A B eq
     -> eqorceq lib eq a b
     -> eqorceq lib eq c d
     -> (equality lib a c A <=> equality lib b d B).
 Proof.
   introv n eos1 eos2.
-  applydup @nuprl_sym  in n  as n0.
-  applydup @nuprl_refl in n0 as n1.
-  applydup @nuprl_refl in n  as n2.
-  rw <- (equality_eq1 lib A B a c eq n).
-  rw <- (equality_eq1 lib B A b d eq n0).
+  unfold Nuprl in n; repnd.
+  rw <- (equality_eq lib A a c eq n0).
+  rw <- (equality_eq lib B b d eq n).
   nts.
-  split; sp.
-  apply (eqorceq_commutes lib) with (a := a) (c := c); auto.
-  apply nts_tev with (T := A); auto.
-  apply nts_tes with (T := A) (T' := A); auto.
-  apply nts_tet with (T := A) (T' := A); auto.
-  apply (eqorceq_commutes lib) with (a := b) (c := d); auto.
-  apply nts_tev with (T := A); auto.
-  apply nts_tes with (T := A) (T' := A); auto.
-  apply nts_tet with (T := A) (T' := A); auto.
-  apply eqorceq_sym; auto.
-  apply nts_tes with (T := A) (T' := A); auto.
-  apply eqorceq_sym; auto.
-  apply nts_tes with (T := A) (T' := A); auto.
+  split; intro h.
+
+  { apply (eqorceq_commutes lib) with (a := a) (c := c); auto.
+    - eapply nts_tev; eauto.
+    - eapply nts_tes; eauto.
+    - eapply nts_tet; eauto. }
+
+  { apply (eqorceq_commutes lib) with (a := b) (c := d); auto.
+    - eapply nts_tev; eauto.
+    - eapply nts_tes; eauto.
+    - eapply nts_tet; eauto.
+    - eapply eqorceq_sym; eauto.
+    - eapply eqorceq_sym; eauto. }
 Qed.
 
 Lemma eq_equality1 {p} :
   forall lib a b A (eq : per(p)),
     eq a b
-    -> nuprl lib A A eq
+    -> Nuprl lib A A eq
     -> equality lib a b A.
 Proof.
   introv e n.
+  unfold Nuprl in n; repnd.
   unfold equality.
   exists eq; sp.
 Defined.
@@ -309,25 +311,52 @@ Defined.
 Lemma eq_equality2 {p} :
   forall lib a b A B (eq : per(p)),
     eq a b
-    -> nuprl lib A B eq
+    -> Nuprl lib A B eq
     -> equality lib a b A.
 Proof.
   introv e n.
+  unfold Nuprl in n; repnd.
   unfold equality.
   exists eq; sp.
-  apply nuprl_refl in n; sp.
 Defined.
+
+Lemma Nuprli_implies_Nuprl {o} :
+  forall lib (A B : @CTerm o) i eq,
+    Nuprli lib i A B eq
+    -> Nuprl lib A B eq.
+Proof.
+  introv n; destruct n as [n1 n2].
+  split; auto; eapply nuprli_implies_nuprl; eauto.
+Qed.
+Hint Resolve Nuprli_implies_Nuprl : slow.
+
+Lemma Nuprl_implies_nuprl_left {o} :
+  forall lib (A B : @CTerm o) eq,
+    Nuprl lib A B eq
+    -> nuprl lib A eq.
+Proof.
+  introv n; destruct n as [n1 n2]; tcsp.
+Qed.
+Hint Resolve Nuprl_implies_nuprl_left : slow.
+
+Lemma Nuprl_implies_nuprl_right {o} :
+  forall lib (A B : @CTerm o) eq,
+    Nuprl lib A B eq
+    -> nuprl lib B eq.
+Proof.
+  introv n; destruct n as [n1 n2]; tcsp.
+Qed.
+Hint Resolve Nuprl_implies_nuprl_right : slow.
 
 Lemma eq_equality3 {p} :
   forall lib a b A B (eq : per(p)) i,
     eq a b
-    -> nuprli lib i A B eq
+    -> Nuprli lib i A B eq
     -> equality lib a b A.
 Proof.
   introv e n.
-  exists eq; sp.
-  apply nuprli_implies_nuprl in n; sp.
-  apply nuprl_refl in n; sp.
+  exists eq; dands; auto.
+  eauto 3 with slow.
 Qed.
 
 Lemma equality_respects_cequivc {p} :
@@ -423,7 +452,7 @@ Lemma tequality_respects_cequivc_left {p} :
 Proof.
   unfold tequality; sp.
   exists eq.
-  apply nuprl_value_respecting_left with (t1 := T1); auto.
+  eauto 2 with slow.
 Qed.
 Hint Resolve tequality_respects_cequivc_left : nequality.
 
@@ -435,9 +464,11 @@ Lemma tequality_respects_cequivc_right {p} :
 Proof.
   unfold tequality; sp.
   exists eq.
-  apply nuprl_value_respecting_right with (t2 := T2); auto.
+  eauto 2 with slow.
 Qed.
 Hint Resolve tequality_respects_cequivc_right : nequality.
+
+Hint Resolve alphaeqc_implies_cequivc : slow.
 
 Lemma tequality_respects_alphaeqc_left {p} :
   forall lib T1 T2 T3,
@@ -447,8 +478,7 @@ Lemma tequality_respects_alphaeqc_left {p} :
 Proof.
   unfold tequality; sp.
   exists eq.
-  apply nuprl_value_respecting_left with (t1 := T1); auto.
-  apply alphaeqc_implies_cequivc; sp.
+  eauto 3 with slow.
 Qed.
 Hint Resolve tequality_respects_alphaeqc_left : nequality.
 
@@ -460,8 +490,7 @@ Lemma tequality_respects_alphaeqc_right {p} :
 Proof.
   unfold tequality; sp.
   exists eq.
-  apply nuprl_value_respecting_right with (t2 := T2); auto.
-  apply alphaeqc_implies_cequivc; sp.
+  eauto 3 with slow.
 Qed.
 Hint Resolve tequality_respects_alphaeqc_right : nequality.
 
@@ -472,7 +501,7 @@ Lemma type_respects_cequivc_left {p} :
     -> tequality lib T' T.
 Proof.
   unfold type; sp.
-  apply tequality_respects_cequivc_left with (T1 := T); auto.
+  exists eq; split; eauto 2 with slow.
 Qed.
 Hint Resolve type_respects_cequivc_left : nequality.
 
@@ -483,7 +512,7 @@ Lemma type_respects_cequivc_right {p} :
     -> tequality lib T T'.
 Proof.
   unfold type; sp.
-  apply tequality_respects_cequivc_right with (T2 := T); auto.
+  exists eq; split; eauto 2 with slow.
 Qed.
 Hint Resolve type_respects_cequivc_right : nequality.
 
@@ -494,7 +523,7 @@ Lemma type_respects_alphaeqc_left {p} :
     -> tequality lib T' T.
 Proof.
   unfold type; sp.
-  apply tequality_respects_alphaeqc_left with (T1 := T); auto.
+  exists eq; split; eauto 3 with slow.
 Qed.
 
 Lemma type_respects_alphaeqc_right {p} :
@@ -504,7 +533,7 @@ Lemma type_respects_alphaeqc_right {p} :
     -> tequality lib T T'.
 Proof.
   unfold type; sp.
-  apply tequality_respects_alphaeqc_right with (T2 := T); auto.
+  exists eq; split; eauto 3 with slow.
 Qed.
 
 Lemma cequivc_preserving_equality {p} :
@@ -514,11 +543,8 @@ Lemma cequivc_preserving_equality {p} :
     -> equality lib a b B.
 Proof.
   unfold equality; introv e c; exrepnd.
-  nts.
-  unfold type_value_respecting in nts_tyv.
-  apply nts_tyv with (eq := eq) in c; sp.
-  exists eq; sp.
-  generalize (type_system_type_mem2 (nuprl lib) A B eq); sp.
+  exists eq; dands; auto.
+  eauto 3 with slow.
 Qed.
 
 Lemma alphaeqc_preserving_equality {p} :
@@ -528,12 +554,8 @@ Lemma alphaeqc_preserving_equality {p} :
     -> equality lib a b B.
 Proof.
   unfold equality; introv e al; exrepnd.
-  nts.
-  unfold type_value_respecting in nts_tyv.
-  apply (alphaeqc_implies_cequivc lib) in al.
-  apply nts_tyv with (eq := eq) in al; sp.
-  exists eq; sp.
-  generalize (type_system_type_mem2 (nuprl lib) A B eq); sp.
+  exists eq; dands; auto.
+  eauto 3 with slow.
 Qed.
 
 Lemma tequality_preserving_equality {p} :
@@ -543,13 +565,9 @@ Lemma tequality_preserving_equality {p} :
     -> equality lib a b B.
 Proof.
   unfold tequality, equality; introv e t; exrepnd.
-  nts.
-  assert (nuprl lib A A eq # nuprl lib B B eq) as n; repd.
-  apply type_system_type_mem2; sp.
-  exists eq; sp.
-  assert (eq_term_equals eq0 eq) as eqt.
-  apply uniquely_valued_eq with (ts := nuprl lib) (T := A) (T1 := A) (T2 := A); sp.
-  apply eqt; sp.
+  exists eq; dands; eauto 3 with slow.
+  eapply nuprl_uniquely_valued;eauto.
+  eauto 2 with slow.
 Qed.
 Hint Resolve tequality_preserving_equality : nequality.
 
@@ -578,17 +596,12 @@ Proof.
   inversion teq1; try not_univ.
   duniv j h.
   allrw @univi_exists_iff; exrepd.
-  discover; exrepnd.
-  allfold (@nuprli p lib j0).
+  computes_to_value_isvalue; GC.
+  apply e in teq0.
+  unfold univi_eq in teq0; exrepnd.
   allapply @nuprli_implies_nuprl.
-  nts.
-  assert (nuprl lib A A eqa # nuprl lib B B eqa); repd.
-  apply type_system_type_mem2; sp.
-  exists eqa; sp.
-  assert (eq_term_equals eq0 eqa) as k.
-  apply uniquely_valued_eq with (ts := nuprl lib) (T := A) (T1 := A) (T2 := A); sp.
-  allunfold @eq_term_equals.
-  apply k; auto.
+  eapply nuprl_uniquely_valued in e1;[|eauto].
+  exists eqa; dands; auto; apply e1; auto.
 Qed.
 
 Lemma eqtypes_preserving_equality {p} :
@@ -779,46 +792,68 @@ Hint Resolve respects_cequivc_equality : respects.
 
 Lemma nuprli_sym {p} :
   forall lib i t1 t2 eq,
-    @nuprli p lib i t1 t2 eq -> nuprli lib i t2 t1 eq.
+    @Nuprli p lib i t1 t2 eq -> Nuprli lib i t2 t1 eq.
 Proof.
-  intros.
-  generalize (@nuprli_type_system p lib i); intro nts.
-  dest_ts nts.
+  introv n.
+  pose proof (@Nuprli_etype_system p lib i) as nts.
+  dest_ets nts.
   apply ts_tys; sp.
 Qed.
 
-Lemma nuprl_ext {p} :
-  forall lib t1 t2 eq1 eq2,
-    @nuprl p lib t1 t2 eq1
-    -> eq_term_equals eq1 eq2
-    -> nuprl lib t1 t2 eq2.
+Lemma nuprl_ext {o} :
+  forall lib (t : @CTerm o) eq1 eq2,
+    nuprl lib t eq1
+    -> (eq1 <=2=> eq2)
+    -> nuprl lib t eq2.
 Proof.
   introv n1 eqs; nts.
   apply nts_ext with (eq := eq1); sp.
 Qed.
 
-Lemma nuprli_ext {p} :
-  forall lib i t1 t2 eq1 eq2,
-    @nuprli p lib i t1 t2 eq1
+Lemma Nuprl_ext {o} :
+  forall lib (t1 t2 : @CTerm o) eq1 eq2,
+    Nuprl lib t1 t2 eq1
+    -> (eq1 <=2=> eq2)
+    -> Nuprl lib t1 t2 eq2.
+Proof.
+  introv n1 eqs; ents.
+  apply nts_ext with (eq := eq1); sp.
+Qed.
+
+Lemma nuprli_ext {o} :
+  forall lib i (t : @CTerm o) eq1 eq2,
+    nuprli lib i t eq1
     -> eq1 <=2=> eq2
-    -> nuprli lib i t1 t2 eq2.
+    -> nuprli lib i t eq2.
 Proof.
   introv n1 eqs.
-  generalize (@nuprli_type_system p lib i); intro nts.
+  pose proof (nuprli_type_system lib i) as nts.
   dest_ts nts.
+  eapply ts_ext; eauto.
+Qed.
+
+Lemma Nuprli_ext {o} :
+  forall lib i (t1 t2 : @CTerm o) eq1 eq2,
+    Nuprli lib i t1 t2 eq1
+    -> eq1 <=2=> eq2
+    -> Nuprli lib i t1 t2 eq2.
+Proof.
+  introv n1 eqs.
+  pose proof (Nuprli_etype_system lib i) as nts.
+  dest_ets nts.
   apply ts_ext with (eq := eq1); sp.
 Qed.
 
 Lemma eqorceq_iff_equorsq {o} :
   forall lib (A B a b : @CTerm o) eq,
-    nuprl lib A B eq
+    Nuprl lib A B eq
     -> (eqorceq lib eq a b <=> equorsq lib a b A).
 Proof.
   introv n.
   unfold eqorceq, equorsq.
-  split; intro k; dorn k; auto; left; apply nuprl_refl in n; auto.
-  - exists eq; dands; auto.
-  - pose proof (equality_eq lib A a b eq n) as h; apply h; auto.
+  split; intro k; repndors; tcsp.
+  - left; exists eq; dands; eauto 2 with slow.
+  - left; eapply equality_eq; eauto; eauto 2 with slow.
 Qed.
 
 Lemma equorsq_tequality {o} :
@@ -866,3 +901,30 @@ Proof.
   right; spcast; sp; apply cequivc_sym; sp.
 Qed.
 
+Lemma tequality_implies_type_left {o} :
+  forall lib (a b : @CTerm o),
+    tequality lib a b -> type lib a.
+Proof.
+  introv teq.
+  unfold tequality in teq; exrepnd; exists eq; eauto 3 with slow.
+Qed.
+Hint Resolve tequality_implies_type_left : slow.
+
+Lemma tequality_implies_type_right {o} :
+  forall lib (a b : @CTerm o),
+    tequality lib a b -> type lib b.
+Proof.
+  introv teq.
+  unfold tequality in teq; exrepnd; exists eq; eauto 3 with slow.
+Qed.
+Hint Resolve tequality_implies_type_right : slow.
+
+Lemma nuprl_implies_Nuprl {o} :
+  forall lib (t1 t2 : @CTerm o) eq,
+    nuprl lib t1 eq
+    -> nuprl lib t2 eq
+    -> Nuprl lib t1 t2 eq.
+Proof.
+  introv n1 n2; split; auto.
+Qed.
+Hint Resolve nuprl_implies_Nuprl : slow.

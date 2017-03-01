@@ -30,7 +30,6 @@
 *)
 
 
-Require Export enuprl.
 Require Export type_sys.
 
 
@@ -39,31 +38,16 @@ Ltac not_univ_p1 :=
     | [ H : _ _ _ (@close _ _ (@univ _ _)) _ _ |- _ ] =>
         inversion H; exrepd; subst;
       try (match goal with
-             | [ H : type_family _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+             | [ H : type_family _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+(*             | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst*)
+             | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
            end)
     | [ H : _ _ _ (@close _ _ (@univi _ _ _)) _ _ |- _ ] =>
         inversion H; exrepd; subst;
       try (match goal with
-             | [ H : type_family _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-           end)
-
-    | [ H : _ _ _ (@close _ _ (@euniv _ _)) _ _ |- _ ] =>
-        inversion H; exrepd; subst;
-      try (match goal with
-             | [ H : type_family _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-           end)
-    | [ H : _ _ _ (@close _ _ (@eunivi _ _ _)) _ _ |- _ ] =>
-        inversion H; exrepd; subst;
-      try (match goal with
              | [ H : type_family _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+(*             | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst*)
+             | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
            end)
   end.
 
@@ -187,144 +171,74 @@ Ltac not_univ_p2 :=
     | [ H : ccomputes_to_valc _ _ _ |- _ ] => complete computes_to_value_isvalue
 
     (* univi cases *)
-    | [ H : univi _ _ (mkc_equality _ _ _) _ _           |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_aequality _ _ _) _ _          |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_tequality _ _) _ _            |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_approx _ _) _ _               |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_cequiv _ _) _ _               |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_function _ _ _) _ _           |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_isect _ _ _) _ _              |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_eisect _ _ _) _ _             |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_disect _ _ _) _ _             |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_pertype _) _ _                |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_ipertype _) _ _               |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_spertype _) _ _               |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_partial _) _ _                |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_admiss _) _ _                 |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_mono _) _ _                   |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_free_from_atom _ _ _) _ _     |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_efree_from_atom _ _ _) _ _    |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_free_from_atoms _ _) _ _      |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_w _ _ _) _ _                  |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_m _ _ _) _ _                  |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_pw _ _ _ _ _ _ _ _ _ _ _) _ _ |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_pm _ _ _ _ _ _ _ _ _ _ _) _ _ |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_texc _ _) _ _                 |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_union _ _) _ _                |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_image _ _) _ _                |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_set _ _ _) _ _                |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_tunion _ _ _) _ _             |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ (mkc_product _ _ _) _ _            |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-(*    | [ H : univi _ _ (mkc_esquash _) _ _      |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2*)
-    | [ H : univi _ _ mkc_base _ _                       |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ mkc_uatom _ _                      |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ mkc_atom _ _                       |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
-    | [ H : univi _ _ mkc_int _ _                        |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_equality _ _ _) _           |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_aequality _ _ _) _          |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_tequality _ _) _            |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_approx _ _) _               |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_cequiv _ _) _               |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_function _ _ _) _           |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_isect _ _ _) _              |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_eisect _ _ _) _             |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_disect _ _ _) _             |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_pertype _) _                |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_ipertype _) _               |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_spertype _) _               |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_partial _) _                |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_admiss _) _                 |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_mono _) _                   |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_free_from_atom _ _ _) _     |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_efree_from_atom _ _ _) _    |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_free_from_atoms _ _) _      |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_w _ _ _) _                  |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_m _ _ _) _                  |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_pw _ _ _ _ _ _ _ _ _ _ _) _ |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_pm _ _ _ _ _ _ _ _ _ _ _) _ |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_texc _ _) _                 |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_union _ _) _                |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_image _ _) _                |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_set _ _ _) _                |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_tunion _ _ _) _             |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_product _ _ _) _            |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+(*    | [ H : univi _ _ (mkc_esquash _) _      |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2*)
+    | [ H : univi _ _ mkc_base _                       |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ mkc_uatom _                      |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ mkc_atom _                       |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ mkc_int _                        |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
 
     (* univ cases *)
-    | [ H : univ _ (mkc_equality _ _ _) _ _           |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_aequality _ _ _) _ _          |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_tequality _ _) _ _            |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_approx _ _) _ _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_cequiv _ _) _ _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_function _ _ _) _ _           |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_isect _ _ _) _ _              |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_eisect _ _ _) _ _             |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_disect _ _ _) _ _             |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_pertype _) _ _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_ipertype _) _ _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_spertype _) _ _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_partial _) _ _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_admiss _) _ _                 |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_mono _) _ _                   |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_free_from_atom _ _ _) _ _     |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_efree_from_atom _ _ _) _ _    |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_free_from_atoms _ _) _ _      |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_w _ _ _) _ _                  |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_m _ _ _) _ _                  |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_pw _ _ _ _ _ _ _ _ _ _ _) _ _ |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_pm _ _ _ _ _ _ _ _ _ _ _) _ _ |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_texc _ _) _ _                 |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_union _ _) _ _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_image _ _) _ _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_set _ _ _) _ _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_tunion _ _ _) _ _             |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ (mkc_product _ _ _) _ _            |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-(*    | [ H : univ _ (mkc_esquash _) _ _      |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2*)
-    | [ H : univ _ mkc_base _ _                       |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ mkc_uatom _ _                      |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ mkc_atom _ _                       |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : univ _ mkc_int _ _                        |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-
-    (* eunivi cases *)
-    | [ H : eunivi _ _ (mkc_equality _ _ _) _ _           |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_aequality _ _ _) _ _          |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_tequality _ _) _ _            |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_approx _ _) _ _               |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_cequiv _ _) _ _               |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_function _ _ _) _ _           |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_isect _ _ _) _ _              |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_eisect _ _ _) _ _             |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_disect _ _ _) _ _             |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_pertype _) _ _                |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_ipertype _) _ _               |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_spertype _) _ _               |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_partial _) _ _                |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_admiss _) _ _                 |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_mono _) _ _                   |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_free_from_atom _ _ _) _ _     |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_efree_from_atom _ _ _) _ _    |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_free_from_atoms _ _) _ _      |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_w _ _ _) _ _                  |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_m _ _ _) _ _                  |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_pw _ _ _ _ _ _ _ _ _ _ _) _ _ |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_pm _ _ _ _ _ _ _ _ _ _ _) _ _ |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_texc _ _) _ _                 |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_union _ _) _ _                |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_image _ _) _ _                |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_set _ _ _) _ _                |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_tunion _ _ _) _ _             |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ (mkc_product _ _ _) _ _            |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-(*    | [ H : eunivi _ _ (mkc_esquash _) _ _      |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2*)
-    | [ H : eunivi _ _ mkc_base _ _                       |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ mkc_uatom _ _                      |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ mkc_atom _ _                       |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-    | [ H : eunivi _ _ mkc_int _ _                        |- _ ] => trw_h eunivi_exists_iff H; exrepd; not_univ_p2
-
-    (* euniv cases *)
-    | [ H : euniv _ (mkc_equality _ _ _) _ _           |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_aequality _ _ _) _ _          |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_tequality _ _) _ _            |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_approx _ _) _ _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_cequiv _ _) _ _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_function _ _ _) _ _           |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_isect _ _ _) _ _              |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_eisect _ _ _) _ _             |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_disect _ _ _) _ _             |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_pertype _) _ _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_ipertype _) _ _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_spertype _) _ _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_partial _) _ _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_admiss _) _ _                 |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_mono _) _ _                   |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_free_from_atom _ _ _) _ _     |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_efree_from_atom _ _ _) _ _    |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_free_from_atoms _ _) _ _      |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_w _ _ _) _ _                  |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_m _ _ _) _ _                  |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_pw _ _ _ _ _ _ _ _ _ _ _) _ _ |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_pm _ _ _ _ _ _ _ _ _ _ _) _ _ |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_texc _ _) _ _                 |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_union _ _) _ _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_image _ _) _ _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_set _ _ _) _ _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_tunion _ _ _) _ _             |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ (mkc_product _ _ _) _ _            |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-(*    | [ H : euniv _ (mkc_esquash _) _ _      |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2*)
-    | [ H : euniv _ mkc_base _ _                       |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ mkc_uatom _ _                      |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ mkc_atom _ _                       |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
-    | [ H : euniv _ mkc_int _ _                        |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_equality _ _ _) _           |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_aequality _ _ _) _          |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_tequality _ _) _            |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_approx _ _) _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_cequiv _ _) _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_function _ _ _) _           |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_isect _ _ _) _              |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_eisect _ _ _) _             |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_disect _ _ _) _             |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_pertype _) _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_ipertype _) _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_spertype _) _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_partial _) _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_admiss _) _                 |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_mono _) _                   |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_free_from_atom _ _ _) _     |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_efree_from_atom _ _ _) _    |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_free_from_atoms _ _) _      |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_w _ _ _) _                  |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_m _ _ _) _                  |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_pw _ _ _ _ _ _ _ _ _ _ _) _ |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_pm _ _ _ _ _ _ _ _ _ _ _) _ |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_texc _ _) _                 |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_union _ _) _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_image _ _) _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_set _ _ _) _                |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_tunion _ _ _) _             |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_product _ _ _) _            |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+(*    | [ H : univ _ (mkc_esquash _) _      |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2*)
+    | [ H : univ _ mkc_base _                       |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ mkc_uatom _                      |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ mkc_atom _                       |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ mkc_int _                        |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
   end.
 
 
@@ -339,6 +253,5 @@ Ltac computes_to_value_refl :=
 
 Ltac duniv i h :=
   match goal with
-  | [ H : univ _ _ _ _ |- _ ] => destruct H as [i h]
-  | [ H : euniv _ _ _ _ |- _ ] => destruct H as [i h]
+  | [ H : univ _ _ _ |- _ ] => destruct H as [i h]
   end.

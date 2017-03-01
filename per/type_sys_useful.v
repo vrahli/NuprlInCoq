@@ -31,6 +31,7 @@
 
 
 Require Export type_sys.
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ #⪯# *)
@@ -46,24 +47,68 @@ Require Export type_sys.
 (** printing mkc_integer $\mathtt{int}$ *)
 
 
+Tactic Notation "appdup" constr(l) "in" ident(H) :=
+  let newH := fresh H in
+  let T := type of H in
+  assert T as newH by auto;
+  apply l in newH.
+
+Lemma per_fam_equiv_refl {o} :
+  forall {eqa : per(o)} (eqb : per-fam(o,eqa)) a a' (e : eqa a a') (e' : eqa a a),
+    per_fam_equiv eqb
+    -> (eqb a a' e) <=2=> (eqb a a e').
+Proof.
+  introv pfb.
+  destruct pfb as [symb tranb].
+  pose proof (tranb a a a' e' e) as q.
+  apply eq_term_equals_sym; auto.
+Qed.
+
+Lemma per_fam_equiv_trans_r {o} :
+  forall {eqa : per(o)} (eqb : per-fam(o,eqa)) a a1 a2 (e1 : eqa a a1) (e2 : eqa a a2),
+    term_equality_symmetric eqa
+    -> term_equality_transitive eqa
+    -> per_fam_equiv eqb
+    -> (eqb a a1 e1) <=2=> (eqb a a2 e2).
+Proof.
+  introv syma trana pfb.
+  destruct pfb as [symb tranb].
+  appdup syma in e1.
+  pose proof (symb a a1 e1 e0) as q.
+  eapply eq_term_equals_trans;[eauto|].
+  pose proof (tranb a1 a a2 e0 e2) as w; auto.
+Qed.
+
+Lemma per_fam_equiv_trans_l {o} :
+  forall {eqa : per(o)} (eqb : per-fam(o,eqa)) a a1 a2 (e1 : eqa a1 a) (e2 : eqa a2 a),
+    term_equality_symmetric eqa
+    -> term_equality_transitive eqa
+    -> per_fam_equiv eqb
+    -> (eqb a1 a e1) <=2=> (eqb a2 a e2).
+Proof.
+  introv syma trana pfb.
+  destruct pfb as [symb tranb].
+  appdup syma in e1.
+  pose proof (symb a1 a e1 e0) as q.
+  eapply eq_term_equals_trans;[eauto|].
+  apply eq_term_equals_sym.
+  pose proof (tranb a2 a a1 e2 e0) as w; auto.
+Qed.
+
 Lemma eqbs_trans {o} :
   forall lib (ts : cts(o)) v B (eqa1 eqa2 : per(o)) eqb1 eqb2,
     (eqa1 <=2=> eqa2)
-    -> (forall (a a' : CTerm),
-           eqa1 a a' -> type_system_props lib ts (substc a v B) (eqb1 a))
+    -> (forall a a' (e : eqa1 a a'), type_system_props lib ts (substc a v B) (eqb1 a a' e))
     -> type_family_members_eq ts v B eqa2 eqb2
-    -> (forall (a a' : CTerm), eqa1 a a' -> (eqb1 a) <=2=> (eqb2 a')).
+    -> (forall a a' (e1 : eqa1 a a') (e2 : eqa2 a a'), (eqb1 a a' e1) <=2=> (eqb2 a a' e2)).
 Proof.
-  introv eqas tsb tf e.
-  applydup eqas in e.
-  unfold type_family_members_eq in tf.
-  applydup tf in e0; repnd.
-  applydup tsb in e.
+  introv eqas tsb tf; introv.
+  unfold type_family_members_eq in tf; repnd.
+  pose proof (tf0 a a' e2) as q.
+  pose proof (tsb a a' e1) as w.
 
-  dts_props e3 uv tv te tes tet tev.
-  apply uv in e2.
-
-  eapply eq_term_equals_trans; eauto.
+  dts_props w uv tv te tes tet tev.
+  apply uv in q; auto.
 Qed.
 
 (*
@@ -1137,7 +1182,7 @@ Lemma weq_eq_term_equals {p} :
     term_equality_symmetric eqa1
     -> term_equality_transitive eqa1
     -> (eqa1 <=2=> eqa2)
-    -> (forall a1 a2, eqa1 a1 a2 -> (eqb1 a1) <=2=> (eqb2 a2))
+    -> (forall a1 a2 (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2), (eqb1 a1 a2 e1) <=2=> (eqb2 a1 a2 e2))
     -> (weq lib eqa1 eqb1) <=2=> (weq lib eqa2 eqb2).
 Proof.
   introv syma trana eqas eqbs.
@@ -1149,9 +1194,7 @@ Proof.
     econstructor; try (exact e); eauto.
     introv e2.
     apply h'.
-    eapply eqbs;[|eauto].
-    eapply trana;[eauto|].
-    apply syma; auto.
+    apply (eqbs _ _ e' e); eauto.
 
   - induction weqt as [t t' a f a' f' e c c' h h'].
     duplicate e as e'.
@@ -1159,31 +1202,31 @@ Proof.
     econstructor; try (exact e); eauto.
     introv e2.
     apply h'.
-    eapply eqbs;[|eauto].
-    eapply trana;[eauto|].
-    apply syma; auto.
+    apply (eqbs _ _ e e'); eauto.
 Qed.
 
 Lemma weq_sym {p} :
   forall lib eqa eqb t1 t2 v B (ts : cts(p)),
     term_equality_symmetric eqa
     -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
-          type_system_props lib ts (substc a1 v B) (eqb a1))
-    -> (forall (a a' : CTerm) (e : eqa a a'), (eqb a) <=2=> (eqb a'))
+          type_system_props lib ts (substc a1 v B) (eqb a1 a2 e))
+    -> per_fam_equiv eqb
     -> weq lib eqa eqb t1 t2
     -> weq lib eqa eqb t2 t1.
 Proof.
   introv teqsa ftsp eqbs weq1.
+  destruct eqbs as [symb tranb].
   induction weq1 as [t t' a f a' f' e c c' h h'].
   duplicate e as e'.
   apply teqsa in e.
   econstructor; try (exact c); try (exact c'); auto.
   introv eb.
   apply h'.
-  eapply eqbs in eb;[|eauto].
+  apply (symb a a' e' e).
 
-  apply ftsp in e'.
-  dts_props e' uv tv te tes tet tev; tcsp.
+  pose proof (ftsp a' a e) as w.
+  dts_props w uv tv te tes tet tev.
+  apply tes; eauto.
 Qed.
 
 (*
@@ -1214,8 +1257,8 @@ Lemma weq_trans {o} :
   forall lib eqa eqb (t1 t2 t3 : @CTerm o) ts v B,
     term_equality_symmetric eqa
     -> term_equality_transitive eqa
-    -> (forall a1 a2, eqa a1 a2 -> type_system_props lib ts (substc a1 v B) (eqb a1))
-    -> (forall (a a' : CTerm) (e : eqa a a'), (eqb a) <=2=> (eqb a'))
+    -> (forall a1 a2 (e : eqa a1 a2), type_system_props lib ts (substc a1 v B) (eqb a1 a2 e))
+    -> per_fam_equiv eqb
     -> weq lib eqa eqb t1 t2
     -> weq lib eqa eqb t2 t3
     -> weq lib eqa eqb t1 t3.
@@ -1235,13 +1278,14 @@ Proof.
   econstructor; spcast; try (exact c); try (exact d'); auto.
 
   introv eb.
-  eapply h';[eauto|].
+  eapply h';[|].
+  { apply (per_fam_equiv_trans_r _ a a'0 a' e' e); try (exact eb); auto. }
   apply h1.
-  eapply eqbs;[exact e1|].
 
-  apply tsb in e.
-  dts_props e uv tv te tes tet tev; tcsp.
-  eapply tet; eauto.
+  pose proof (tsb a' a'0 e0) as q.
+  dts_props q uv tv te tes tet tev; tcsp.
+  eapply tet;[apply tes|];
+    apply (per_fam_equiv_trans_l _ a'0 a' a e0 e'); try (exact eb); auto.
 Qed.
 
 (*
@@ -1293,12 +1337,13 @@ Lemma weq_cequivc {o} :
     term_equality_respecting lib eqa
     -> term_equality_symmetric eqa
     -> term_equality_transitive eqa
-    -> (forall a1 a2, eqa a1 a2 -> type_system_props lib ts (substc a1 v B) (eqb a1))
+    -> per_fam_equiv eqb
+    -> (forall a1 a2 (e : eqa a1 a2), type_system_props lib ts (substc a1 v B) (eqb a1 a2 e))
     -> weq lib eqa eqb t t1
     -> cequivc lib t1 t2
     -> weq lib eqa eqb t t2.
 Proof.
-  introv respa syma trana tsb weq.
+  introv respa syma trana pfb tsb weq.
   revert t2.
 
   induction weq as [t t' a f a' f' e c c' h h'].
@@ -1322,7 +1367,8 @@ Proof.
 
   econstructor; spcast; try (exact c); try (exact i0); auto.
   introv eb.
-  eapply h';[eauto|].
+  eapply h';[apply (per_fam_equiv_trans_r _ a a1 a2 e e2); try (exact eb); auto|].
+
   apply sp_implies_cequivc_apply; sp.
 Qed.
 
