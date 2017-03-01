@@ -40,14 +40,14 @@ Ltac not_univ_p1 :=
       try (match goal with
              | [ H : type_family _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
 (*             | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst*)
-             | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+(*             | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst*)
            end)
     | [ H : _ _ _ (@close _ _ (@univi _ _ _)) _ _ |- _ ] =>
         inversion H; exrepd; subst;
       try (match goal with
              | [ H : type_family _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
 (*             | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst*)
-             | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+(*             | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst*)
            end)
   end.
 

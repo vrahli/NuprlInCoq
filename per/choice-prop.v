@@ -175,7 +175,7 @@ Proof.
     allrw @univi_exists_iff; exrepnd.
     computes_to_value_isvalue; GC.
     apply h0 in teq0.
-    unfold univi_eq in teq0; exrepnd.
+    unfold univi_eq, extts in teq0; exrepnd.
     exists eqa; split; auto.
   }
 
@@ -219,7 +219,7 @@ Proof.
     allrw @univi_exists_iff; exrepnd.
     computes_to_value_isvalue; GC.
     apply h0 in teq0.
-    unfold univi_eq in teq0; exrepnd.
+    unfold univi_eq, extts in teq0; exrepnd.
     exists eqa; split; auto.
   }
 

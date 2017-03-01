@@ -180,7 +180,7 @@ Proof.
     allrw @univi_exists_iff; exrepnd.
     apply n0 in e.
     apply n0.
-    unfold univi_eq in *; exrepnd.
+    unfold univi_eq, extts in *; exrepnd.
     exists eqa; tcsp.
 
   - Case "term_transitive".
@@ -189,7 +189,7 @@ Proof.
     apply u0 in e1.
     apply u0 in e2.
     apply u0; clear u0.
-    unfold univi_eq in *; exrepnd.
+    unfold univi_eq, extts in *; exrepnd.
     exists eqa; dands; auto.
     pose proof (close_type_system lib (univi lib j)) as k.
     repeat (autodimp k hyp); eauto 2 with slow.
@@ -203,7 +203,7 @@ Proof.
     allrw @univi_exists_iff; exrepnd; spcast.
     apply u0 in e.
     apply u0; clear u0.
-    unfold univi_eq in *; exrepnd.
+    unfold univi_eq, extts in *; exrepnd.
     exists eqa; dands; auto.
     pose proof (close_type_system lib (univi lib j)) as k.
     repeat (autodimp k hyp); eauto 2 with slow.

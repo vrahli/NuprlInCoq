@@ -200,7 +200,7 @@ Lemma fold_type {o} :
   forall lib (T : @CTerm o),
     tequality lib T T <-> type lib T.
 Proof.
-  unfold tequality, type, Nuprl; introv; split; intro h; exrepnd; eexists; eauto.
+  unfold tequality, type, Nuprl, extts; introv; split; intro h; exrepnd; eexists; eauto.
 Qed.
 
 Lemma fold_equorsq {p} :
@@ -260,10 +260,10 @@ Proof.
   introv n; split; intro k.
 
   { unfold equality; exists eq; sp.
-    unfold Nuprl in n; tcsp. }
+    unfold Nuprl, extts in n; tcsp. }
 
   { unfold equality in k; exrepnd.
-    unfold Nuprl in n; repnd.
+    unfold Nuprl, extts in n; repnd.
     assert (eq_term_equals eq eq0) as eqt.
     { eapply nuprl_uniquely_valued with (t := A); eauto. }
     apply eqt; auto. }
@@ -277,7 +277,7 @@ Lemma eqorceq_commutes_equality {p} :
     -> (equality lib a c A <=> equality lib b d B).
 Proof.
   introv n eos1 eos2.
-  unfold Nuprl in n; repnd.
+  unfold Nuprl, extts in n; repnd.
   rw <- (equality_eq lib A a c eq n0).
   rw <- (equality_eq lib B b d eq n).
   nts.
@@ -303,8 +303,7 @@ Lemma eq_equality1 {p} :
     -> equality lib a b A.
 Proof.
   introv e n.
-  unfold Nuprl in n; repnd.
-  unfold equality.
+  unfold Nuprl, extts in n; repnd.
   exists eq; sp.
 Defined.
 
@@ -315,8 +314,7 @@ Lemma eq_equality2 {p} :
     -> equality lib a b A.
 Proof.
   introv e n.
-  unfold Nuprl in n; repnd.
-  unfold equality.
+  unfold Nuprl, extts in n; repnd.
   exists eq; sp.
 Defined.
 
@@ -598,7 +596,7 @@ Proof.
   allrw @univi_exists_iff; exrepd.
   computes_to_value_isvalue; GC.
   apply e in teq0.
-  unfold univi_eq in teq0; exrepnd.
+  unfold univi_eq, extts in teq0; exrepnd.
   allapply @nuprli_implies_nuprl.
   eapply nuprl_uniquely_valued in e1;[|eauto].
   exists eqa; dands; auto; apply e1; auto.
@@ -928,3 +926,31 @@ Proof.
   introv n1 n2; split; auto.
 Qed.
 Hint Resolve nuprl_implies_Nuprl : slow.
+
+Lemma Nuprl_uniquely_valued_left {o} :
+  forall lib (t1 t2 t3 : @CTerm o) eq1 eq2,
+    Nuprl lib t1 t2 eq1
+    -> Nuprl lib t1 t3 eq2
+    -> (eq1) <=2=> (eq2).
+Proof.
+  introv n1 n2.
+  ents.
+  apply Nuprl_refl in n1.
+  apply Nuprl_refl in n2.
+  eapply nts_uv;eauto.
+Qed.
+
+Lemma Nuprl_uniquely_valued_right {o} :
+  forall lib (t1 t2 t3 : @CTerm o) eq1 eq2,
+    Nuprl lib t2 t1 eq1
+    -> Nuprl lib t3 t1 eq2
+    -> (eq1) <=2=> (eq2).
+Proof.
+  introv n1 n2.
+  ents.
+  apply Nuprl_sym in n1.
+  apply Nuprl_sym in n2.
+  apply Nuprl_refl in n1.
+  apply Nuprl_refl in n2.
+  eapply nts_uv;eauto.
+Qed.

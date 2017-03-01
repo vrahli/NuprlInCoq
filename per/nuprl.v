@@ -98,10 +98,12 @@ Definition univ' {p} lib (T T' : @CTerm p) eq :=
 
  *)
 
+Definition extts {o} (ts : cts(o)) T T' eq : [U] :=
+  ts T eq # ts T' eq.
+
 Definition univi_eq {o} lib ts (A A' : @CTerm o) :=
   { eqa : per(o)
-  , close lib ts A eqa
-  # close lib ts A' eqa }.
+  , extts (close lib ts) A A' eqa }.
 
 Fixpoint univi {p} lib (i : nat) (T : @CTerm p) (eq : per(p)) : [U] :=
   match i with
@@ -259,13 +261,11 @@ Qed.
 
  *)
 
-Definition nuprl {o} lib (T : @CTerm o) eq := close lib (univ lib) T eq.
+Definition nuprl {o} lib := @close o lib (univ lib).
 
-Definition Nuprl {o} lib (T T' : @CTerm o) eq :=
-  nuprl lib T eq # nuprl lib T' eq.
+Definition Nuprl {o} lib := @extts o (nuprl lib).
 
-Definition Nuprli {o} lib i (T T' : @CTerm o) eq :=
-  nuprli lib i T eq # nuprli lib i T' eq.
+Definition Nuprli {o} lib i := @extts o (nuprli lib i).
 
 (* begin hide *)
 

@@ -69,7 +69,7 @@ Proof.
   match goal with
   | [ H : _ <=2=> _ |- _ ] => apply H in e0; clear H
   end.
-  unfold univi_eq in e0; exrepnd.
+  unfold univi_eq, extts in e0; exrepnd.
   exists eqa.
   eapply Nuprli_implies_Nuprl; split; eauto.
 Qed.
@@ -286,10 +286,87 @@ Proof.
   split; apply CL_func; fold (@nuprl p lib).
 
   - exists eqa.
-    exists (fun a1 => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)); sp.
+    exists (fun a1 a2 e => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)); sp.
 
-  exists A1 A2 v1 v2 B1 B2; sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
+    exists A1 v1 B1; sp; eauto 3 with slow;
+      try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
+    split; auto.
+
+    + introv; apply n0.
+
+    + split; introv.
+
+      * assert (eqa a a) as ea.
+        { ents; eapply nts_tet; eauto. }
+
+        pose proof (n0 a a' (eq_equality2 lib a a' A1 A2 eqa e1 teqa0)) as h1.
+        pose proof (n0 a' a (eq_equality2 lib a' a A1 A2 eqa e2 teqa0)) as h2.
+        pose proof (n0 a a (eq_equality2 lib a a A1 A2 eqa ea teqa0)) as h3.
+
+        eapply Nuprl_uniquely_valued_left in h1;[|exact h3].
+        eapply Nuprl_uniquely_valued_right in h2;[|exact h3].
+        eapply eq_term_equals_trans;[|eauto].
+        apply eq_term_equals_sym; auto.
+
+      * assert (eqa a2 a2) as ea.
+        { ents; eapply nts_tet; eauto.
+          eapply nts_tes; eauto. }
+
+        pose proof (n0 a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e1 teqa0)) as h1.
+        pose proof (n0 a2 a3 (eq_equality2 lib a2 a3 A1 A2 eqa e2 teqa0)) as h2.
+        pose proof (n0 a2 a2 (eq_equality2 lib a2 a2 A1 A2 eqa ea teqa0)) as h3.
+
+        eapply Nuprl_uniquely_valued_right in h1;[|exact h3].
+        eapply Nuprl_uniquely_valued_left in h2;[|exact h3].
+        eapply eq_term_equals_trans;[|eauto].
+        apply eq_term_equals_sym; auto.
+
+  - exists eqa.
+    exists (fun a1 a2 e => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)); sp.
+
+    exists A2 v2 B2; sp; eauto 3 with slow;
+      try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
+    split; auto.
+
+    + introv.
+      assert (eqa a a) as ea.
+      { ents; eapply nts_tet; eauto.
+        eapply nts_tes; eauto. }
+
+      pose proof (n0 a a' (eq_equality2 lib a a' A1 A2 eqa e teqa0)) as h1.
+      pose proof (n0 a a (eq_equality2 lib a a A1 A2 eqa ea teqa0)) as h2.
+
+      eapply Nuprl_uniquely_valued_left in h1;[|exact h2].
+      apply Nuprl_sym in h2.
+      eapply Nuprl_ext in h2;[|eauto].
+      eauto 2 with slow.
+
+    + split; introv.
+
+      * assert (eqa a a) as ea.
+        { ents; eapply nts_tet; eauto. }
+
+        pose proof (n0 a a' (eq_equality2 lib a a' A1 A2 eqa e1 teqa0)) as h1.
+        pose proof (n0 a' a (eq_equality2 lib a' a A1 A2 eqa e2 teqa0)) as h2.
+        pose proof (n0 a a (eq_equality2 lib a a A1 A2 eqa ea teqa0)) as h3.
+
+        eapply Nuprl_uniquely_valued_left in h1;[|exact h3].
+        eapply Nuprl_uniquely_valued_right in h2;[|exact h3].
+        eapply eq_term_equals_trans;[|eauto].
+        apply eq_term_equals_sym; auto.
+
+      * assert (eqa a2 a2) as ea.
+        { ents; eapply nts_tet; eauto.
+          eapply nts_tes; eauto. }
+
+        pose proof (n0 a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e1 teqa0)) as h1.
+        pose proof (n0 a2 a3 (eq_equality2 lib a2 a3 A1 A2 eqa e2 teqa0)) as h2.
+        pose proof (n0 a2 a2 (eq_equality2 lib a2 a2 A1 A2 eqa ea teqa0)) as h3.
+
+        eapply Nuprl_uniquely_valued_right in h1;[|exact h3].
+        eapply Nuprl_uniquely_valued_left in h2;[|exact h3].
+        eapply eq_term_equals_trans;[|eauto].
+        apply eq_term_equals_sym; auto.
 Qed.
 
 
@@ -305,7 +382,7 @@ Proof.
   sp_iff Case.
 
   - Case "->".
-    intros teq.
+    introv teq.
     unfold tequality, nuprl in teq; exrepnd.
     inversion teq0; subst; try not_univ.
     allunfold @per_admiss; exrepnd.
