@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,265 +21,99 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
 
-Require Import type_sys_useful.
+Require Export type_sys_useful.
 Require Import dest_close.
 
 
-
-
 Lemma close_type_system_w {p} :
-  forall lib (ts : cts(p))
-         T T'
-         (eq : per)
-         A A' v v' B B' eqa eqb,
+  forall lib (ts : cts(p)) T (eq : per) A v B eqa eqb,
     type_system lib ts
     -> defines_only_universes lib ts
     -> computes_to_valc lib T (mkc_w A v B)
-    -> computes_to_valc lib T' (mkc_w A' v' B')
-    -> close lib ts A A' eqa
+    -> close lib ts A eqa
+    -> type_system_props lib (close lib ts) A eqa
+    -> (forall (a a' : CTerm) (e : eqa a a'), close lib ts (substc a v B) (eqb a))
     -> (forall (a a' : CTerm) (e : eqa a a'),
-          close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-    -> (forall (a a' : CTerm) (e : eqa a a'),
-          type_system lib ts ->
-          defines_only_universes lib ts ->
-          type_sys_props lib (close lib ts) (substc a v B) (substc a' v' B')
-                         (eqb a a' e))
-    -> (forall t t' : CTerm, eq t t' <=> weq lib eqa eqb t t')
-    -> per_w lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) A A' eqa
-    -> type_sys_props lib (close lib ts) T T' eq.
+           type_system_props lib (close lib ts) (substc a v B) (eqb a))
+    -> (forall (a a' : CTerm) (e : eqa a a'), (eqb a) <=2=> (eqb a'))
+    -> eq <=2=> (weq lib eqa eqb)
+    -> per_w lib (close lib ts) T eq
+    -> type_system_props lib (close lib ts) T eq.
 Proof.
-  introv X X0 c1 c2 X1 clb recb eqiff per IHX1.
+  introv tysys dou comp cla tsa clb tsb eqbiff eqiff per.
+  clear per.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_ts_props SCase.
 
-  + SCase "uniquely_valued".
-    dclose_lr.
+  - SCase "uniquely_valued".
+    introv cls.
+    dest_close_lr h.
+    clear cls.
+    unfold per_w in h; exrepnd; spcast.
+    unfold type_family in h0; exrepnd.
+    ccomputes_to_eqval.
+    eapply eq_term_equals_trans;[eauto|].
+    eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
 
-    SSCase "CL_w".
-    allunfold @per_w; exrepd.
-    generalize (eq_term_equals_type_family lib T T3 eqa0 eqa eqb0 eqb (close lib ts) A v B A' v' B' mkc_w); intro i.
-    repeat (autodimp i hyp; try (complete (introv eqw; eqconstr eqw; sp))); repnd.
+    dts_props tsa uv tv te tes tet tev.
+    apply uv in h3.
 
-    unfold eq_term_equals; sp.
-    rw e; rw eqiff; split; sp.
+    pose proof (eqbs_trans lib (close lib ts) v B eqa eqa0 eqb eqb0) as q.
+    repeat (autodimp q hyp).
 
-    apply @weq_eq_term_equals with (eqa1 := eqa) (eqb1 := eqb); sp.
-    generalize (i1 a1 a2 e2 e1); sp; apply eq_term_equals_sym; sp.
+    apply weq_eq_term_equals; auto.
 
-    apply @weq_eq_term_equals with (eqa1 := eqa0) (eqb1 := eqb0); sp.
-    apply eq_term_equals_sym; sp.
+  - SCase "type_extensionality".
+    introv eqt.
+    apply CL_w.
+    exists eqa eqb; dands; auto.
+    { exists A v B; dands; spcast; auto.
+      introv e; dands; tcsp.
+      eapply clb; eauto. }
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
 
-  + SCase "type_symmetric"; repdors; subst; dclose_lr;
-    apply CL_w;
-    clear per;
-    allunfold @per_w; exrepd;
-    unfold per_w;
-    exists eqa0 eqb0; sp;
-    allrw <-; sp;
-    apply eq_term_equals_trans with (eq2 := eq); sp;
-    try (complete (apply eq_term_equals_sym; auto)).
+  - SCase "type_value_respecting".
+    introv ceq.
+    apply CL_w.
+    eapply cequivc_mkc_w in comp;[|eauto]; exrepnd.
+    exists eqa eqb; dands; auto.
 
-  + SCase "type_value_respecting"; repdors; subst;
-    apply CL_w; unfold per_w; exists eqa eqb; sp.
+    exists A' v' B'; dands; spcast; auto.
 
-    duplicate c1 as ct.
-    apply @cequivc_mkc_w with (T' := T3) in ct; sp.
+    { dts_props tsa uv tv te tes tet tev.
+      apply te; auto. }
 
-    apply @type_family_cequivc
-          with
-          (A1 := A)
-          (v1 := v)
-          (B1 := B)
-          (A2 := A'0)
-          (v2 := v'0)
-          (B2 := B'0)
-          (A := A')
-          (v := v')
-          (B := B'); sp.
+    introv e; dands; auto.
+    applydup tsb in e.
+    dts_props e0 uv tv te tes tet tev.
+    apply te.
+    apply bcequivc1; auto.
 
-    duplicate c2 as ct.
-    apply @cequivc_mkc_w with (T' := T3) in ct; sp.
+  - SCase "term_symmetric".
+    introv e.
+    apply eqiff in e; apply eqiff.
+    dts_props tsa uv tv te tes tet tev.
+    eapply weq_sym; eauto.
 
-    apply @type_family_cequivc2
-          with
-          (A1 := A')
-          (v1 := v')
-          (B1 := B')
-          (A2 := A'0)
-          (v2 := v'0)
-          (B2 := B'0)
-          (A := A)
-          (v := v)
-          (B := B); sp.
+  - SCase "term_transitive".
+    introv e1 e2.
+    apply eqiff in e1; apply eqiff in e2; apply eqiff.
+    dts_props tsa uv tv te tes tet tev.
+    eapply weq_trans; eauto.
 
-  + SCase "term_symmetric".
-    unfold term_equality_symmetric; sp.
-    onedtsp e pp p0 p1 c t t0 t3 tygs tygt dum.
-    apply eqiff; sp.
-    assert (eq t1 t2) as eq12 by auto.
-    apply eqiff in eq12.
-
-    apply @weq_sym with (v1 := v) (v2 := v') (B1 := B) (B2 := B') (ts := close lib ts); sp.
-
-  + SCase "term_transitive".
-    unfold term_equality_transitive; sp.
-    apply eqiff; sp.
-    assert (eq t1 t2) as eq12 by auto.
-    assert (eq t2 t3) as eq23 by auto.
-    apply eqiff in eq12.
-    apply eqiff in eq23.
-    onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1; sp.
-    apply @weq_trans with (t2 := t2) (ts := close lib ts) (v1 := v) (B1 := B) (v2 := v') (B2 := B'); sp.
-
-  + SCase "term_value_respecting".
-    unfold term_equality_respecting; sp.
-    apply eqiff; sp.
-    assert (eq t t) as eqtt by auto.
-    apply eqiff in eqtt.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-
-    spcast; apply @weq_cequivc with (t1 := t) (ts := close lib ts) (v1 := v) (B1 := B) (v2 := v') (B2 := B'); sp.
-
-  + SCase "type_gsymmetric".
-    repdors; subst; split; sp; dclose_lr;
-    apply CL_w;
-    clear per;
-    allunfold @per_w; exrepd.
-
-    (* 1 *)
-    generalize (eq_term_equals_type_family
-                  lib T T3 eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_w); intro i.
-    repeat (autodimp i hyp; try (complete (introv eqw; eqconstr eqw; sp))).
-    repnd.
-
-    unfold per_w.
-    exists eqa eqb; sp.
-
-    apply eq_term_equals_trans with (eq2 := weq lib eqa0 eqb0);
-      try (complete sp); split; sp.
-
-    apply weq_eq_term_equals with (eqa1 := eqa0) (eqb1 := eqb0); sp.
-    apply eq_term_equals_sym; sp.
-
-    apply weq_eq_term_equals with (eqa1 := eqa) (eqb1 := eqb); sp.
-    apply eq_term_equals_sym; sp.
-
-    (* 2 *)
-    generalize (eq_term_equals_type_family2
-                  lib T3 T eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_w); intro i;
-    repeat (autodimp i hyp; try (complete (introv eqw; eqconstr eqw; sp)));
-    repnd.
-
-    unfold per_w.
-    exists eqa eqb; sp.
-
-    apply eq_term_equals_trans with (eq2 := weq lib eqa0 eqb0);
-      try (complete sp); split; sp.
-
-    apply weq_eq_term_equals with (eqa1 := eqa0) (eqb1 := eqb0); sp.
-    apply eq_term_equals_sym; sp.
-
-    apply weq_eq_term_equals with (eqa1 := eqa) (eqb1 := eqb); sp.
-    apply eq_term_equals_sym; sp.
-
-  + SCase "type_gtransitive"; sp.
-
-  + SCase "type_mtransitive".
-    repdors; subst; dclose_lr;
-    try (move_term_to_top (per_w lib (close lib ts) T T4 eq2));
-    try (move_term_to_top (per_w lib (close lib ts) T' T4 eq2)).
-
-    (* 1 *)
-    clear per.
-    allunfold @per_w; exrepd.
-
-    generalize (eq_term_equals_type_family2
-                  lib T3 T eqa1 eqa eqb1 eqb (close lib ts)
-                  A v B A' v' B' mkc_w); intro i.
-    repeat (autodimp i hyp; try (complete (introv eqw; eqconstr eqw; sp))).
-    repnd.
-
-    generalize (type_family_trans2
-                  lib mkc_w (close lib ts) T3 T T4 eqa eqb eqa0 eqb0 A v B A' v' B');
-      intro j.
-    repeat (autodimp j hyp; try (complete (introv eqw; eqconstr eqw; sp))).
-    repnd.
-
-    dands; apply CL_w; unfold per_w; exists eqa eqb; unfold eq_term_equals; sp; allrw.
-
-    split; sp.
-
-    apply @weq_eq_term_equals with (eqa1 := eqa1) (eqb1 := eqb1); sp.
-    apply eq_term_equals_sym; sp.
-
-    apply @weq_eq_term_equals with (eqa1 := eqa) (eqb1 := eqb); sp.
-    apply eq_term_equals_sym; sp; try (complete (allrw <-; sp)).
-
-    split; sp.
-
-    apply @weq_eq_term_equals with (eqa1 := eqa0) (eqb1 := eqb0); sp.
-    apply eq_term_equals_sym; sp.
-    apply eq_term_equals_sym; sp.
-
-    apply @weq_eq_term_equals with (eqa1 := eqa) (eqb1 := eqb); sp.
-
-    (* 2 *)
-    clear per.
-    allunfold @per_w; exrepd.
-
-    generalize (eq_term_equals_type_family2
-                  lib T3 T' eqa1 eqa eqb1 eqb (close lib ts)
-                  A' v' B' A v B mkc_w); intro i.
-    repeat (autodimp i hyp;
-            try (complete (introv eqw; eqconstr eqw; sp));
-            try (complete (apply type_sys_props_sym; sp))).
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-    intros.
-    apply type_sys_props_sym.
-    apply type_sys_props_eqb_comm; sp.
-    apply tet with (t2 := a'); sp.
-    apply tet with (t2 := a); sp.
-    repnd.
-
-    generalize (type_family_trans2
-                  lib mkc_w (close lib ts) T3 T' T4 eqa eqb eqa0 eqb0 A' v' B' A v B); intro j.
-    repeat (autodimp j hyp;
-            try (complete (introv eqw; eqconstr eqw; sp));
-            try (complete (apply type_sys_props_sym; sp))).
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-    intros.
-    apply type_sys_props_sym.
-    apply type_sys_props_eqb_comm; sp.
-    apply tet with (t2 := a'); sp.
-    apply tet with (t2 := a); sp.
-    repnd.
-
-    dands; apply CL_w; unfold per_w; exists eqa eqb; unfold eq_term_equals; sp; allrw.
-
-    split; sp.
-
-    apply @weq_eq_term_equals with (eqa1 := eqa1) (eqb1 := eqb1); sp.
-    apply eq_term_equals_sym; sp.
-
-    apply @weq_eq_term_equals with (eqa1 := eqa) (eqb1 := eqb); sp.
-    apply eq_term_equals_sym; sp.
-
-    split; sp.
-
-    apply @weq_eq_term_equals with (eqa1 := eqa0) (eqb1 := eqb0); sp.
-    apply eq_term_equals_sym; sp.
-    apply eq_term_equals_sym; sp.
-
-    apply @weq_eq_term_equals with (eqa1 := eqa) (eqb1 := eqb); sp.
+  - SCase "term_value_respecting".
+    introv e c; spcast.
+    apply eqiff in e; apply eqiff.
+    dts_props tsa uv tv te tes tet tev.
+    eapply weq_cequivc; eauto.
 Qed.
-

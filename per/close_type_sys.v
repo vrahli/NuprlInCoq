@@ -30,12 +30,9 @@
 *)
 
 
-Require Export type_sys.
+Require Export type_sys_useful2.
 Require Import dest_close.
 
-(*
-Require Export type_sys_useful2.
-*)
 Require Import close_type_sys_per_init.
 Require Import close_type_sys_per_int.
 Require Import close_type_sys_per_atom.
@@ -50,12 +47,14 @@ Require Import close_type_sys_per_isect.
 (*Require Import close_type_sys_per_eisect.*)
 Require Import close_type_sys_per_func.
 Require Import close_type_sys_per_disect.
-(*
 Require Import close_type_sys_per_pertype.
+(*
 Require Import close_type_sys_per_ipertype.
 Require Import close_type_sys_per_spertype.
+*)
 Require Import close_type_sys_per_w.
 Require Import close_type_sys_per_m.
+(*
 Require Import close_type_sys_per_texc.
 Require Import close_type_sys_per_union.
 Require Import close_type_sys_per_image.
@@ -141,6 +140,13 @@ Proof.
     eapply close_type_system_disect; eauto.
 
   - Case "CL_pertype".
+    eapply close_type_system_pertype; eauto.
+
+  - Case "CL_w".
+    eapply close_type_system_w; eauto.
+
+  - Case "CL_m".
+    eapply close_type_system_m; eauto.
 
 Qed.
 

@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -29,238 +35,143 @@ Require Import dest_close.
 
 
 
-Lemma close_type_system_pertype {p} :
-  forall lib (ts : cts(p))
-         T T'
-         (eq : per)
-         R1 R2 eq1 eq2,
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_pertype R1)
-    -> computes_to_valc lib T' (mkc_pertype R2)
-    -> (forall x y : CTerm,
-          close lib ts (mkc_apply2 R1 x y) (mkc_apply2 R1 x y) (eq1 x y))
-    -> (forall x y : CTerm,
-          type_system lib ts
-          -> defines_only_universes lib ts
-          -> type_sys_props lib (close lib ts)
-                            (mkc_apply2 R1 x y)
-                            (mkc_apply2 R1 x y)
-                            (eq1 x y))
-    -> (forall x y : CTerm,
-          close lib ts (mkc_apply2 R2 x y) (mkc_apply2 R2 x y) (eq2 x y))
-    -> (forall x y : CTerm,
-          type_system lib ts
-          -> defines_only_universes lib ts
-          -> type_sys_props lib (close lib ts)
-                            (mkc_apply2 R2 x y)
-                            (mkc_apply2 R2 x y)
-                            (eq2 x y))
-    -> (forall x y : CTerm, inhabited (eq1 x y) <=> inhabited (eq2 x y))
-    -> is_per eq1
-    -> (forall t t' : CTerm, eq t t' <=> inhabited (eq1 t t'))
-    -> per_pertype lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+Lemma eq_term_equals_per_pertype_eq {o} :
+  forall (eqr1 eqr2 : CTerm -> CTerm -> per(o)),
+    (forall x y, (eqr1 x y) <=2=> (eqr2 x y))
+    -> (per_pertype_eq eqr1) <=2=> (per_pertype_eq eqr2).
 Proof.
-  introv X X0 c1 c2 cl1 rec1 cl2 rec2 inh isper.
-  intros eqiff per.
+  introv eiff.
+  unfold per_pertype_eq, inhabited.
+  split; introv h; exrepnd.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  - exists t.
+    apply eiff; auto.
 
-  - SCase "uniquely_valued".
-    dclose_lr.
-
-    SSCase "CL_pertype".
-    clear per.
-    allunfold @per_pertype; exrepd.
-    unfold eq_term_equals; intros.
-    allrw.
-    ccomputes_to_eqval.
-    rw <- t; rw <- inh.
-    generalize (c3 t1 t2); intro clt1.
-    generalize (rec1 t1 t2); sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-    implies_ts_or (mkc_apply2 R1 t1 t2) clt1.
-    apply uv in clt1.
-    unfold eq_term_equals in clt1.
-    unfold inhabited; split; sp.
-    exists t3; rw <- clt1; sp.
-    exists t3; rw clt1; sp.
-
-  - SCase "type_symmetric"; repdors; subst; dclose_lr;
-    apply CL_pertype;
-    clear per;
-    allunfold @per_pertype; exrepd;
-    unfold per_pertype;
-    ccomputes_to_eqval.
-
-    + exists R1 R3 eq1 eq3; sp; spcast; sp.
-      rw <- t; rw <- eqiff; rw <- t0; sp.
-      allrw <-; sp.
-
-  - SCase "type_value_respecting"; repdors; subst;
-    apply CL_pertype; unfold per_pertype.
-
-    (* 1 *)
-    apply cequivc_mkc_pertype with (a := R1) in X1; sp.
-    exists R1 b eq1 eq1; sp; spcast; sp.
-    generalize (cl1 x y); intro clt1.
-    generalize (rec1 x y); sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr (mkc_apply2 R1 x y) (mkc_apply2 b x y)); intro imp1.
-    repeat (autodimp imp1 hyp).
-    repeat (rw @mkc_apply2_eq).
-    repeat (apply sp_implies_cequivc_apply); auto.
-
-    generalize (tyt (mkc_apply2 b x y) (eq1 x y)); sp.
-
-    (* 2 *)
-    apply @cequivc_mkc_pertype with (a := R2) in X1; sp.
-    exists R2 b eq2 eq2; sp; spcast; sp.
-    generalize (cl2 x y); intro clt1.
-    generalize (rec2 x y); sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr (mkc_apply2 R2 x y) (mkc_apply2 b x y)); intro imp1.
-    repeat (autodimp imp1 hyp).
-    repeat (rw @mkc_apply2_eq).
-    repeat (apply sp_implies_cequivc_apply); auto.
-
-    generalize (tyt (mkc_apply2 b x y) (eq2 x y)); sp.
-
-    apply @is_per_iff with (eq1 := eq1); auto.
-
-    rw eqiff; sp.
-
-  - SCase "term_symmetric".
-    unfold term_equality_symmetric; introv eqt.
-    rw eqiff in eqt; rw eqiff.
-    apply is_per_sym; sp.
-
-  - SCase "term_transitive".
-    unfold term_equality_transitive; introv eqt1 eqt2.
-    rw eqiff in eqt1; rw eqiff in eqt2; rw eqiff.
-    apply is_per_trans with (b := t2); sp.
-
-  - SCase "term_value_respecting".
-    unfold term_equality_respecting; introv eqt ceq.
-    rw eqiff in eqt; rw eqiff.
-
-    spcast.
-    assert (eq_term_equals (eq1 t t') (eq1 t t)) as eqteq.
-    generalize (rec1 t t); sp.
-    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr (mkc_apply2 R1 t t) (mkc_apply2 R1 t t')); intro i; repeat (autodimp i h).
-    repeat (rw @mkc_apply2_eq).
-    apply implies_cequivc_apply; sp.
-    generalize (rec1 t t'); sp.
-    onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
-    generalize (tygs (mkc_apply2 R1 t t) (mkc_apply2 R1 t t') (eq1 t t)); intro k; repeat (autodimp k h).
-    rw k in i.
-    generalize (uv2 (mkc_apply2 R1 t t) (eq1 t t)); intro j; repeat (autodimp j h).
-
-    apply eq_term_equals_implies_inhabited in eqteq.
-    rw eqteq; sp.
-
-  - SCase "type_gsymmetric".
-    repdors; subst; split; sp; dclose_lr;
-    apply CL_pertype;
-    clear per;
-    allunfold @per_pertype; exrepd;
-    ccomputes_to_eqval;
-    unfold per_pertype.
-
-    (* 1 *)
-    assert (forall x y, eq_term_equals (eq1 x y) (eq0 x y))
-           as eqteq1
-           by (apply (type_sys_props_pertype_eq_term_equals lib) with (ts := close lib ts) (R := R1); sp).
-
-    exists R3 R1 eq3 eq1; sp; spcast; sp.
-    rw <- t.
-    apply eq_term_equals_implies_inhabited; sp.
-    apply eq_term_equals_sym; sp.
-
-    apply @is_per_iff with (eq1 := eq0); auto.
-
-    rw t0; auto.
-
-    (* 2 *)
-    assert (forall x y, eq_term_equals (eq1 x y) (eq3 x y))
-           as eqteq1
-           by (apply (type_sys_props_pertype_eq_term_equals lib) with (ts := close lib ts) (R := R1); sp).
-
-    exists R1 R0 eq1 eq0; sp; spcast; sp.
-    rw t.
-    apply eq_term_equals_implies_inhabited; sp.
-
-    rw t0.
-    rw t.
-    apply eq_term_equals_implies_inhabited; sp.
-    apply eq_term_equals_sym; sp.
-
-  - SCase "type_gtransitive"; sp.
-
-  - SCase "type_mtransitive".
-    repdors; subst; dclose_lr;
-    try (move_term_to_top (per_pertype lib (close lib ts) T T4 eq3));
-    try (move_term_to_top (per_pertype lib (close lib ts) T' T4 eq3));
-    allunfold @per_pertype; exrepd;
-    ccomputes_to_eqval;
-    try (assert (forall x y, eq_term_equals (eq1 x y) (eq8 x y))
-                as eqteq1
-                by (apply (type_sys_props_pertype_eq_term_equals lib) with (ts := close lib ts) (R := R1); sp));
-    try (assert (forall x y, eq_term_equals (eq1 x y) (eq7 x y))
-                as eqteq2
-                by (apply (type_sys_props_pertype_eq_term_equals lib) with (ts := close lib ts) (R := R1); sp));
-    try (assert (forall x y, eq_term_equals (eq1 x y) (eq4 x y))
-                as eqteq3
-                by (apply (type_sys_props_pertype_eq_term_equals lib) with (ts := close lib ts) (R := R1); sp));
-    try (assert (forall x y, eq_term_equals (eq2 x y) (eq9 x y))
-                as eqteq4
-                by (apply (type_sys_props_pertype_eq_term_equals lib) with (ts := close lib ts) (R := R2); sp));
-    try (assert (forall x y, eq_term_equals (eq2 x y) (eq7 x y))
-                as eqteq5
-                by (apply (type_sys_props_pertype_eq_term_equals lib) with (ts := close lib ts) (R := R2); sp));
-    try (assert (forall x y, eq_term_equals (eq2 x y) (eq4 x y))
-                as eqteq6
-                by (apply (type_sys_props_pertype_eq_term_equals lib) with (ts := close lib ts) (R := R2); sp)).
-
-    + dands; apply CL_pertype; unfold per_pertype.
-
-      * exists R4 R3 eq6 eq5; sp; spcast; sp.
-        rw <- t; rw t1.
-        apply eq_term_equals_implies_inhabited; sp.
-        apply @eq_term_equals_trans with (eq2 := eq1 x y); sp.
-        apply eq_term_equals_sym; sp.
-
-      * exists R4 R3 eq6 eq5; sp; spcast; sp.
-        rw <- t; rw t1.
-        apply eq_term_equals_implies_inhabited; sp.
-        apply @eq_term_equals_trans with (eq2 := eq1 x y); sp.
-        apply eq_term_equals_sym; sp.
-
-        rw t0; rw t1.
-        apply eq_term_equals_implies_inhabited; sp.
-        apply @eq_term_equals_trans with (eq2 := eq1 t5 t'); sp.
-        apply eq_term_equals_sym; sp.
-
-    + dands; apply CL_pertype; unfold per_pertype.
-
-      * exists R4 R3 eq6 eq5; sp; spcast; sp.
-        rw <- t; rw t1.
-        apply eq_term_equals_implies_inhabited; sp.
-        apply @eq_term_equals_trans with (eq2 := eq2 x y); sp.
-        apply eq_term_equals_sym; sp.
-
-      * exists R4 R3 eq6 eq5; sp; spcast; sp.
-        rw <- t; rw t1.
-        apply eq_term_equals_implies_inhabited; sp.
-        apply @eq_term_equals_trans with (eq2 := eq2 x y); sp.
-        apply eq_term_equals_sym; sp.
-
-        rw t0; rw t1.
-        apply eq_term_equals_implies_inhabited; sp.
-        apply @eq_term_equals_trans with (eq2 := eq2 t5 t'); sp.
-        apply eq_term_equals_sym; sp.
+  - exists t.
+    apply eiff; auto.
 Qed.
 
+Lemma per_pertype_eq_sym {o} :
+  forall (eqr : CTerm -> CTerm -> per(o)) t1 t2,
+    is_per eqr
+    -> per_pertype_eq eqr t1 t2
+    -> per_pertype_eq eqr t2 t1.
+Proof.
+  introv isp per.
+  unfold per_pertype_eq in *; exrepnd.
+  destruct isp as [sym trans].
+  apply sym; auto.
+Qed.
+
+Lemma per_pertype_eq_trans {o} :
+  forall (eqr : CTerm -> CTerm -> per(o)) t1 t2 t3,
+    is_per eqr
+    -> per_pertype_eq eqr t1 t2
+    -> per_pertype_eq eqr t2 t3
+    -> per_pertype_eq eqr t1 t3.
+Proof.
+  introv isp per1 per2.
+  unfold per_pertype_eq in *.
+  destruct isp as [sym trans].
+  eapply trans; eauto.
+Qed.
+
+Lemma per_pertype_eq_cequivc {o} :
+  forall lib ts R (eqr : CTerm -> CTerm -> per(o)) t1 t2,
+    (forall x y, type_system_props lib ts (mkc_apply2 R x y) (eqr x y))
+    -> cequivc lib t1 t2
+    -> per_pertype_eq eqr t1 t1
+    -> per_pertype_eq eqr t1 t2.
+Proof.
+  introv tsb ceq per.
+  unfold per_pertype_eq in *.
+  pose proof (tsb t1 t2) as q.
+
+  dts_props q uv tv te tes tet tev.
+
+  unfold type_value_respecting_body in *.
+
+  pose proof (te (mkc_apply2 R t1 t1)) as q.
+  autodimp q hyp.
+  { apply implies_cequivc_apply2; auto; apply cequivc_sym; auto. }
+
+  pose proof (tsb t1 t1) as h.
+
+  dts_props h uv2 tv2 te2 tes2 tet2 tev2.
+
+  apply uv2 in q.
+
+  unfold inhabited in *; exrepnd.
+  exists t.
+  apply q; auto.
+Qed.
+
+Lemma close_type_system_pertype {p} :
+  forall lib (ts : cts(p)) T (eq : per) R eqr,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> computes_to_valc lib T (mkc_pertype R)
+    -> (forall x y : CTerm, close lib ts (mkc_apply2 R x y) (eqr x y))
+    -> (forall x y : CTerm,
+           type_system_props lib (close lib ts)
+                             (mkc_apply2 R x y)
+                             (eqr x y))
+    -> is_per eqr
+    -> eq <=2=> (per_pertype_eq eqr)
+    -> per_pertype lib (close lib ts) T eq
+    -> type_system_props lib (close lib ts) T eq.
+Proof.
+  introv tysys dou comp clr tsr isp eqiff per.
+  clear per.
+
+  prove_ts_props SCase.
+
+  - SCase "uniquely_valued".
+    introv cls.
+    dest_close_lr h.
+    clear cls.
+    unfold per_pertype in h; exrepnd; spcast.
+    ccomputes_to_eqval.
+    eapply eq_term_equals_trans;[eauto|].
+    eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
+
+    pose proof (type_system_props_pertype_eq_term_equals lib (close lib ts) R eqr eqr0) as q.
+    repeat (autodimp q hyp).
+
+    apply eq_term_equals_per_pertype_eq; auto.
+
+  - SCase "type_extensionality".
+    introv eqt.
+    apply CL_pertype.
+    exists R eqr; dands; spcast; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+
+  - SCase "type_value_respecting".
+    introv ceq.
+    apply CL_pertype.
+    eapply cequivc_mkc_pertype in comp;[|eauto]; exrepnd.
+    exists b eqr; dands; spcast; auto.
+
+    introv.
+    pose proof (tsr x y) as q.
+    dts_props q uv tv te tes tet tev.
+    apply te.
+    apply implies_cequivc_apply2; auto.
+
+  - SCase "term_symmetric".
+    introv e.
+    apply eqiff in e; apply eqiff.
+    eapply per_pertype_eq_sym; eauto.
+
+  - SCase "term_transitive".
+    introv e1 e2.
+    apply eqiff in e1; apply eqiff in e2; apply eqiff.
+    eapply per_pertype_eq_trans; eauto.
+
+  - SCase "term_value_respecting".
+    introv e c; spcast.
+    apply eqiff in e; apply eqiff; clear eqiff.
+
+    eapply per_pertype_eq_cequivc; eauto.
+Qed.
