@@ -53,7 +53,7 @@ Tactic Notation "appdup" constr(l) "in" ident(H) :=
   assert T as newH by auto;
   apply l in newH.
 
-Lemma per_fam_equiv_refl {o} :
+Lemma per_fam_equiv_refl_l {o} :
   forall {eqa : per(o)} (eqb : per-fam(o,eqa)) a a' (e : eqa a a') (e' : eqa a a),
     per_fam_equiv eqb
     -> (eqb a a' e) <=2=> (eqb a a e').
@@ -62,6 +62,25 @@ Proof.
   destruct pfb as [symb tranb].
   pose proof (tranb a a a' e' e) as q.
   apply eq_term_equals_sym; auto.
+Qed.
+
+Lemma per_fam_equiv_refl_r {o} :
+  forall {eqa : per(o)} (eqb : per-fam(o,eqa)) a a' (e : eqa a a') (e' : eqa a' a'),
+    per_fam_equiv eqb
+    -> (eqb a a' e) <=2=> (eqb a' a' e').
+Proof.
+  introv pfb.
+  destruct pfb as [symb tranb].
+  pose proof (tranb a a' a' e e') as q; auto.
+Qed.
+
+Lemma per_fam_equiv_sym {o} :
+  forall {eqa : per(o)} (eqb : per-fam(o,eqa)) a1 a2 (e1 : eqa a1 a2) (e2 : eqa a2 a1),
+    per_fam_equiv eqb
+    -> (eqb a1 a2 e1) <=2=> (eqb a2 a1 e2).
+Proof.
+  introv pfb.
+  destruct pfb as [symb tranb]; tcsp.
 Qed.
 
 Lemma per_fam_equiv_trans_r {o} :

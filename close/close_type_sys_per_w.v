@@ -41,10 +41,10 @@ Lemma close_type_system_w {p} :
     -> computes_to_valc lib T (mkc_w A v B)
     -> close lib ts A eqa
     -> type_system_props lib (close lib ts) A eqa
-    -> (forall (a a' : CTerm) (e : eqa a a'), close lib ts (substc a v B) (eqb a))
+    -> (forall (a a' : CTerm) (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
     -> (forall (a a' : CTerm) (e : eqa a a'),
-           type_system_props lib (close lib ts) (substc a v B) (eqb a))
-    -> (forall (a a' : CTerm) (e : eqa a a'), (eqb a) <=2=> (eqb a'))
+           type_system_props lib (close lib ts) (substc a v B) (eqb a a' e))
+    -> per_fam_equiv eqb
     -> eq <=2=> (weq lib eqa eqb)
     -> per_w lib (close lib ts) T eq
     -> type_system_props lib (close lib ts) T eq.
@@ -77,8 +77,7 @@ Proof.
     apply CL_w.
     exists eqa eqb; dands; auto.
     { exists A v B; dands; spcast; auto.
-      introv e; dands; tcsp.
-      eapply clb; eauto. }
+      split; auto. }
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
@@ -93,9 +92,9 @@ Proof.
     { dts_props tsa uv tv te tes tet tev.
       apply te; auto. }
 
-    introv e; dands; auto.
-    applydup tsb in e.
-    dts_props e0 uv tv te tes tet tev.
+    split; dands; auto; introv.
+    pose proof (tsb a a' e) as h.
+    dts_props h uv tv te tes tet tev.
     apply te.
     apply bcequivc1; auto.
 

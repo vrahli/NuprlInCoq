@@ -40,16 +40,15 @@ Lemma per_product_eq_preserves_eq_term_equals {p} :
     term_equality_symmetric eqa1
     -> term_equality_transitive eqa1
     -> (eqa1 <=2=> eqa2)
-    -> (forall a1 a2, eqa1 a1 a2 -> (eqb1 a1) <=2=> (eqb2 a2))
+    -> (forall a1 a2 (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2), (eqb1 a1 a2 e1) <=2=> (eqb2 a1 a2 e2))
     -> per_product_eq lib eqa1 eqb1 t1 t2
     -> per_product_eq lib eqa2 eqb2 t1 t2.
 Proof.
   introv syma trana eqta eqtb peq.
   allunfold @per_product_eq; exrepnd.
   assert (eqa2 a a') as e' by (rw <- eqta; sp).
-  exists a a' b b'; sp.
-  eapply eqtb;[|eauto].
-  eapply trana; eauto.
+  exists a a' b b' e'; sp.
+  eapply eqtb; eauto.
 Qed.
 
 Lemma per_product_eq_term_equals {p} :
@@ -57,7 +56,7 @@ Lemma per_product_eq_term_equals {p} :
     term_equality_symmetric eqa1
     -> term_equality_transitive eqa1
     -> (eqa1 <=2=> eqa2)
-    -> (forall a1 a2, eqa1 a1 a2 -> (eqb1 a1) <=2=> (eqb2 a2))
+    -> (forall a1 a2 (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2), (eqb1 a1 a2 e1) <=2=> (eqb2 a1 a2 e2))
     -> (per_product_eq lib eqa1 eqb1) <=2=> (per_product_eq lib eqa2 eqb2).
 Proof.
   introv syma trana eqta eqtb.
@@ -67,21 +66,21 @@ Proof.
   { introv h; apply eqta in h; apply eqta; auto. }
   { introv h1 h2; apply eqta in h1; apply eqta in h2; apply eqta; eapply trana; eauto. }
   { apply eq_term_equals_sym; auto. }
-  { introv e; apply eq_term_equals_sym; apply eqtb; apply eqta in e; auto. }
+  { introv; apply eq_term_equals_sym; apply eqtb; apply eqta in e; auto. }
 Qed.
 
 Lemma per_product_eq_sym {p} :
   forall lib (eqa : per(p)) eqb t1 t2,
     term_equality_symmetric eqa
-    -> (forall a1 a2, eqa a1 a2 -> term_equality_symmetric (eqb a1))
-    -> (forall a1 a2, eqa a1 a2 -> (eqb a1) <=2=> (eqb a2))
+    -> (forall a1 a2 (e : eqa a1 a2), term_equality_symmetric (eqb a1 a2 e))
+    -> per_fam_equiv eqb
     -> per_product_eq lib eqa eqb t1 t2
     -> per_product_eq lib eqa eqb t2 t1.
 Proof.
   introv syma symb symb2 peq.
   allunfold @per_product_eq; exrepnd.
   assert (eqa a' a) as e' by (apply syma; sp).
-  exists a' a b' b; sp.
+  exists a' a b' b e'; sp.
   eapply symb; eauto.
   eapply symb2; eauto.
 Qed.
@@ -90,8 +89,8 @@ Lemma per_product_eq_trans {p} :
   forall lib (eqa : per(p)) eqb t1 t2 t3,
     term_equality_symmetric eqa
     -> term_equality_transitive eqa
-    -> (forall a1 a2, eqa a1 a2 -> term_equality_transitive (eqb a1))
-    -> (forall a1 a2, eqa a1 a2 -> (eqb a1) <=2=> (eqb a2))
+    -> (forall a1 a2 (e : eqa a1 a2), term_equality_transitive (eqb a1 a2 e))
+    -> per_fam_equiv eqb
     -> per_product_eq lib eqa eqb t1 t2
     -> per_product_eq lib eqa eqb t2 t3
     -> per_product_eq lib eqa eqb t1 t3.
@@ -99,28 +98,36 @@ Proof.
   introv syma trana trb eqbs peq1 peq2.
   allunfold @per_product_eq; exrepnd.
   spcast; computes_to_eqval.
-  eexists; eexists; eexists; eexists; dands; spcast; eauto.
+  assert (eqa a0 a') as e1.
+  { eapply trana; eauto. }
+  eexists; eexists; eexists; eexists; eexists; dands; spcast; eauto.
   eapply trb; eauto.
-  eapply eqbs; eauto.
+  { apply (per_fam_equiv_trans_r _ _ _ _ e1 e0); try (exact peq4); auto. }
+  { apply (per_fam_equiv_trans_l _ _ _ _ e1 e); auto. }
 Qed.
 
 Lemma per_product_eq_cequivc {p} :
   forall lib (eqa : per(p)) eqb t1 t2,
     term_equality_respecting lib eqa
-    -> (forall a1 a2, eqa a1 a2 -> term_equality_respecting lib (eqb a1))
-    -> (forall a1 a2, eqa a1 a2 -> (eqb a1) <=2=> (eqb a2))
+    -> term_equality_symmetric eqa
+    -> term_equality_transitive eqa
+    -> (forall a1 a2 (e : eqa a1 a2), term_equality_respecting lib (eqb a1 a2 e))
+    -> per_fam_equiv eqb
     -> cequivc lib t1 t2
     -> per_product_eq lib eqa eqb t1 t1
     -> per_product_eq lib eqa eqb t1 t2.
 Proof.
-  introv respa trb eqbs ceq peq.
+  introv respa syma trana trb eqbs ceq peq.
   allunfold @per_product_eq; exrepnd.
   spcast; computes_to_eqval.
   eapply cequivc_mkc_pair in ceq;[|eauto];exrepnd.
 
-  eexists; eexists; eexists; eexists; dands; spcast; eauto.
+  assert (eqa a a') as ea.
   { apply respa; spcast; auto. }
-  { eapply trb; spcast; eauto. }
+
+  eexists; eexists; eexists; eexists; eexists; dands; spcast; eauto.
+  eapply trb; spcast; eauto.
+  apply (per_fam_equiv_trans_r _ _ _ _ ea e); auto.
 Qed.
 
 Lemma close_type_system_product {p} :
@@ -130,10 +137,10 @@ Lemma close_type_system_product {p} :
     -> computes_to_valc lib T (mkc_product A v B)
     -> close lib ts A eqa
     -> type_system_props lib (close lib ts) A eqa
-    -> (forall (a a' : CTerm) (e : eqa a a'), close lib ts (substc a v B) (eqb a))
+    -> (forall (a a' : CTerm) (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
     -> (forall (a a' : CTerm) (e : eqa a a'),
-           type_system_props lib (close lib ts) (substc a v B) (eqb a))
-    -> (forall (a a' : CTerm) (e : eqa a a'), (eqb a) <=2=> (eqb a'))
+           type_system_props lib (close lib ts) (substc a v B) (eqb a a' e))
+    -> per_fam_equiv eqb
     -> eq <=2=> (per_product_eq lib eqa eqb)
     -> per_product lib (close lib ts) T eq
     -> type_system_props lib (close lib ts) T eq.
@@ -166,8 +173,7 @@ Proof.
     apply CL_product.
     exists eqa eqb; dands; auto.
     { exists A v B; dands; spcast; auto.
-      introv e; dands; tcsp.
-      eapply clb; eauto. }
+      split; auto. }
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
@@ -182,9 +188,9 @@ Proof.
     { dts_props tsa uv tv te tes tet tev.
       apply te; auto. }
 
-    introv e; dands; auto.
-    applydup tsb in e.
-    dts_props e0 uv tv te tes tet tev.
+    split; dands; auto; introv.
+    pose proof (tsb a a' e) as q.
+    dts_props q uv tv te tes tet tev.
     apply te.
     apply bcequivc1; auto.
 
@@ -194,8 +200,7 @@ Proof.
     dts_props tsa uv tv te tes tet tev.
     eapply per_product_eq_sym; eauto.
 
-    introv xx; apply tsb in xx.
-    dts_props xx uv2 tv2 te2 tes2 tet2 tev2; auto.
+    introv; apply tsb.
 
   - SCase "term_transitive".
     introv e1 e2.
@@ -203,8 +208,7 @@ Proof.
     dts_props tsa uv tv te tes tet tev.
     eapply per_product_eq_trans; eauto.
 
-    introv xx; apply tsb in xx.
-    dts_props xx uv2 tv2 te2 tes2 tet2 tev2; auto.
+    introv; apply tsb.
 
   - SCase "term_value_respecting".
     introv e c; spcast.
@@ -212,6 +216,5 @@ Proof.
     dts_props tsa uv tv te tes tet tev.
     eapply per_product_eq_cequivc; eauto.
 
-    introv xx; apply tsb in xx.
-    dts_props xx uv2 tv2 te2 tes2 tet2 tev2; auto.
+    introv; apply tsb.
 Qed.

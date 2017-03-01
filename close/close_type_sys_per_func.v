@@ -95,8 +95,8 @@ Proof.
   pose proof (per1 a a q) as h1.
   pose proof (per2 a a' e) as h2.
 
-  apply (per_fam_equiv_refl eqb a a' e q) in h2; auto.
-  apply (per_fam_equiv_refl eqb a a' e q); auto.
+  apply (per_fam_equiv_refl_l eqb a a' e q) in h2; auto.
+  apply (per_fam_equiv_refl_l eqb a a' e q); auto.
 
   pose proof (tsb a a q) as w.
   dts_props w uv tv te tes tet tev.

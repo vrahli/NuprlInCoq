@@ -40,7 +40,7 @@ Lemma meq_eq_term_equals {p} :
     term_equality_symmetric eqa1
     -> term_equality_transitive eqa1
     -> (eqa1 <=2=> eqa2)
-    -> (forall a1 a2, eqa1 a1 a2 -> (eqb1 a1) <=2=> (eqb2 a2))
+    -> (forall a1 a2 (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2), (eqb1 a1 a2 e1) <=2=> (eqb2 a1 a2 e2))
     -> (meq lib eqa1 eqb1) <=2=> (meq lib eqa2 eqb2).
 Proof.
   introv syma trana eqas eqbs.
@@ -51,33 +51,31 @@ Proof.
     cofix MEQIH.
     introv meqt.
     destruct meqt as [? ? ? ? ea c1 c2 imp].
-    applydup eqas in ea.
+    appdup eqas in ea.
     econstructor; try (exact c1); try (exact c2); auto.
     introv eb.
     apply MEQIH.
     apply imp.
-    eapply eqbs;[|exact eb].
-    eapply trana; eauto.
+    apply (eqbs a a' ea ea0); exact eb.
 
   - revert t1 t2.
     cofix MEQIH.
     introv meqt.
     destruct meqt as [? ? ? ? ea c1 c2 imp].
-    applydup eqas in ea.
+    appdup eqas in ea.
     econstructor; try (exact c1); try (exact c2); auto.
     introv eb.
     apply MEQIH.
     apply imp.
-    eapply eqbs;[|exact eb].
-    eapply trana; eauto.
+    apply (eqbs a a' ea0 ea); exact eb.
 Qed.
 
 Lemma meq_sym {o} :
   forall lib eqa eqb (t1 t2 : @CTerm o) v B ts,
     term_equality_symmetric eqa
     -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
-          type_system_props lib ts (substc a1 v B) (eqb a1))
-    -> (forall (a a' : CTerm) (e : eqa a a'), (eqb a) <=2=> (eqb a'))
+          type_system_props lib ts (substc a1 v B) (eqb a1 a2 e))
+    -> per_fam_equiv eqb
     -> meq lib eqa eqb t1 t2
     -> meq lib eqa eqb t2 t1.
 Proof.
@@ -87,23 +85,25 @@ Proof.
   introv meqt.
   destruct meqt as [? ? ? ? ea c1 c2 imp].
 
+  appdup syma in ea.
+
   econstructor; try (exact c1); try (exact c2); auto.
   introv eb.
 
   apply MEQIH.
   apply imp.
-  eapply eqbs in eb;[|eauto].
-
-  applydup tsb in ea.
-  dts_props ea0 uv tv te tes tet tev; tcsp.
+  pose proof (tsb a a' ea) as q.
+  dts_props q uv tv te tes tet tev; tcsp.
+  apply tes.
+  apply (per_fam_equiv_sym _ _ _ ea ea0); auto; exact eb.
 Qed.
 
 Lemma meq_trans {o} :
   forall lib eqa eqb (t1 t2 t3 : @CTerm o) ts v B,
     term_equality_symmetric eqa
     -> term_equality_transitive eqa
-    -> (forall a1 a2, eqa a1 a2 -> type_system_props lib ts (substc a1 v B) (eqb a1))
-    -> (forall (a a' : CTerm) (e : eqa a a'), (eqb a) <=2=> (eqb a'))
+    -> (forall a1 a2 (e : eqa a1 a2), type_system_props lib ts (substc a1 v B) (eqb a1 a2 e))
+    -> per_fam_equiv eqb
     -> meq lib eqa eqb t1 t2
     -> meq lib eqa eqb t2 t3
     -> meq lib eqa eqb t1 t3.
@@ -121,13 +121,19 @@ Proof.
 
   econstructor; spcast; try (exact c1); try (exact c4); auto.
   introv eb.
-  eapply MEQIH;[|apply imp2;eapply eqbs;[|eauto];auto ].
+  eapply MEQIH;
+    [|apply imp2;
+      apply (per_fam_equiv_trans_l _ a'0 a' a ea2 e');
+      auto; exact eb].
 
   apply imp1.
 
-  apply tsb in ea1.
-  dts_props ea1 uv tv te tes tet tev; tcsp.
-  eapply tet; eauto.
+  pose proof (tsb a a' ea1) as q.
+  dts_props q uv tv te tes tet tev; tcsp.
+  eapply tet; eauto;
+    [apply (per_fam_equiv_trans_r _ a a'0 a' e' ea1); auto; exact eb|].
+  apply tes.
+  apply (per_fam_equiv_trans_r _ a a'0 a' e' ea1); auto; exact eb.
 Qed.
 
 Lemma meq_cequivc {o} :
@@ -135,12 +141,13 @@ Lemma meq_cequivc {o} :
     term_equality_respecting lib eqa
     -> term_equality_symmetric eqa
     -> term_equality_transitive eqa
-    -> (forall a1 a2, eqa a1 a2 -> type_system_props lib ts (substc a1 v B) (eqb a1))
+    -> per_fam_equiv eqb
+    -> (forall a1 a2 (e : eqa a1 a2), type_system_props lib ts (substc a1 v B) (eqb a1 a2 e))
     -> meq lib eqa eqb t t1
     -> cequivc lib t1 t2
     -> meq lib eqa eqb t t2.
 Proof.
-  introv respa syma trana tsb.
+  introv respa syma trana pfb tsb.
   revert t t1 t2.
   cofix MEQIH.
   introv meq1 ceq.
@@ -159,7 +166,8 @@ Proof.
   econstructor; spcast; try (exact c1); try (exact c0); auto.
   introv eb.
 
-  eapply MEQIH;[apply imp1;eauto|].
+  eapply MEQIH;
+    [apply imp1; apply (per_fam_equiv_trans_r _ a a2 a' ea2 ea1); auto; exact eb|].
   apply sp_implies_cequivc_apply; sp.
 Qed.
 
@@ -171,10 +179,10 @@ Lemma close_type_system_m {p} :
     -> computes_to_valc lib T (mkc_m A v B)
     -> close lib ts A eqa
     -> type_system_props lib (close lib ts) A eqa
-    -> (forall (a a' : CTerm) (e : eqa a a'), close lib ts (substc a v B) (eqb a))
+    -> (forall (a a' : CTerm) (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
     -> (forall (a a' : CTerm) (e : eqa a a'),
-           type_system_props lib (close lib ts) (substc a v B) (eqb a))
-    -> (forall (a a' : CTerm) (e : eqa a a'), (eqb a) <=2=> (eqb a'))
+           type_system_props lib (close lib ts) (substc a v B) (eqb a a' e))
+    -> per_fam_equiv eqb
     -> eq <=2=> (meq lib eqa eqb)
     -> per_m lib (close lib ts) T eq
     -> type_system_props lib (close lib ts) T eq.
@@ -207,8 +215,7 @@ Proof.
     apply CL_m.
     exists eqa eqb; dands; auto.
     { exists A v B; dands; spcast; auto.
-      introv e; dands; tcsp.
-      eapply clb; eauto. }
+      split; auto. }
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
@@ -223,9 +230,9 @@ Proof.
     { dts_props tsa uv tv te tes tet tev.
       apply te; auto. }
 
-    introv e; dands; auto.
-    applydup tsb in e.
-    dts_props e0 uv tv te tes tet tev.
+    split; dands; auto; introv.
+    pose proof (tsb a a' e) as h.
+    dts_props h uv tv te tes tet tev.
     apply te.
     apply bcequivc1; auto.
 

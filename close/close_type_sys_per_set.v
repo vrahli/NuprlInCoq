@@ -39,69 +39,70 @@ Lemma eq_term_equals_per_set_eq {o} :
     term_equality_symmetric eqa1
     -> term_equality_transitive eqa1
     -> (eqa1 <=2=> eqa2)
-    -> (forall a a' : CTerm, eqa1 a a' -> (eqb1 a) <=2=> (eqb2 a'))
+    -> (forall a a' (e1 : eqa1 a a') (e2 : eqa2 a a'), (eqb1 a a' e1) <=2=> (eqb2 a a' e2))
     -> (per_set_eq eqa1 eqb1) <=2=> (per_set_eq eqa2 eqb2).
 Proof.
   introv syma trana eaiff ebiff.
   unfold per_set_eq.
-  split; introv h; repnd; dands; auto.
+  split; introv h; exrepnd; dands; auto.
 
-  - apply eaiff; auto.
-
-  - assert (eqa1 t1 t1) as q.
-    { eapply trana;eauto. }
-
-    applydup ebiff in q.
+  - appdup eaiff in e; exists e0.
     eapply iff_inhabited_if_eq_term_equals;[|eauto]; auto.
     apply eq_term_equals_sym; auto.
 
-  - apply eaiff; auto.
-
-  - assert (eqa1 t1 t1) as q.
-    { eapply trana;[apply eaiff;eauto|]; apply syma; apply eaiff; auto. }
-
-    applydup ebiff in q.
+  - appdup eaiff in e; exists e0.
     eapply iff_inhabited_if_eq_term_equals;[|eauto]; auto.
 Qed.
 
 Lemma per_set_eq_sym {o} :
   forall (eqa : per(o)) eqb t1 t2,
     term_equality_symmetric eqa
-    -> (forall a a' : CTerm, eqa a a' -> (eqb a) <=2=> (eqb a'))
+    -> per_fam_equiv eqb
     -> per_set_eq eqa eqb t1 t2
     -> per_set_eq eqa eqb t2 t1.
 Proof.
   introv syma eqbiff per.
   unfold per_set_eq in *.
-  repnd; dands; auto.
+  exrepnd; dands; auto.
+  appdup syma in e; exists e0.
   eapply iff_inhabited_if_eq_term_equals;[|eauto]; auto.
+  destruct eqbiff as [symb transb]; apply symb; auto.
 Qed.
 
 Lemma per_set_eq_trans {o} :
   forall (eqa : per(o)) eqb t1 t2 t3,
     term_equality_symmetric eqa
     -> term_equality_transitive eqa
+    -> per_fam_equiv eqb
     -> per_set_eq eqa eqb t1 t2
     -> per_set_eq eqa eqb t2 t3
     -> per_set_eq eqa eqb t1 t3.
 Proof.
-  introv syma trana per1 per2.
+  introv syma trana pfb per1 per2.
   unfold per_set_eq in *.
-  repnd; dands; auto.
-  eapply trana; eauto.
+  exrepnd; dands; auto.
+  pose proof (trana t1 t2 t3 e0 e) as q; exists q.
+  eapply eq_term_equals_implies_inhabited;[|exact per2].
+  apply per_fam_equiv_trans_r; auto.
 Qed.
 
 Lemma per_set_eq_cequivc {o} :
   forall lib (eqa : per(o)) eqb t1 t2,
     term_equality_respecting lib eqa
+    -> term_equality_symmetric eqa
+    -> term_equality_transitive eqa
+    -> per_fam_equiv eqb
     -> cequivc lib t1 t2
     -> per_set_eq eqa eqb t1 t1
     -> per_set_eq eqa eqb t1 t2.
 Proof.
-  introv respa ceq per.
+  introv respa syma trana pfb ceq per.
   unfold per_set_eq in *.
-  repnd; dands; auto.
-  apply respa; spcast; auto.
+  exrepnd; dands; auto.
+  pose proof (respa t1 t2) as q; repeat (autodimp q hyp); spcast; auto.
+  exists q.
+  eapply eq_term_equals_implies_inhabited;[|exact per0].
+  apply per_fam_equiv_trans_r; auto.
 Qed.
 
 Lemma close_type_system_set {p} :
@@ -111,10 +112,10 @@ Lemma close_type_system_set {p} :
     -> computes_to_valc lib T (mkc_set A v B)
     -> close lib ts A eqa
     -> type_system_props lib (close lib ts) A eqa
-    -> (forall (a a' : CTerm) (e : eqa a a'), close lib ts (substc a v B) (eqb a))
+    -> (forall (a a' : CTerm) (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
     -> (forall (a a' : CTerm) (e : eqa a a'),
-           type_system_props lib (close lib ts) (substc a v B) (eqb a))
-    -> (forall (a a' : CTerm) (e : eqa a a'), (eqb a) <=2=> (eqb a'))
+           type_system_props lib (close lib ts) (substc a v B) (eqb a a' e))
+    -> per_fam_equiv eqb
     -> eq <=2=> (per_set_eq eqa eqb)
     -> per_set lib (close lib ts) T eq
     -> type_system_props lib (close lib ts) T eq.
@@ -147,8 +148,7 @@ Proof.
     apply CL_set.
     exists eqa eqb; dands; auto.
     { exists A v B; dands; spcast; auto.
-      introv e; dands; tcsp.
-      eapply clb; eauto. }
+      split; auto. }
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
@@ -163,9 +163,9 @@ Proof.
     { dts_props tsa uv tv te tes tet tev.
       apply te; auto. }
 
-    introv e; dands; auto.
-    applydup tsb in e.
-    dts_props e0 uv tv te tes tet tev.
+    split; dands; auto; introv.
+    pose proof (tsb a a' e) as q.
+    dts_props q uv tv te tes tet tev.
     apply te.
     apply bcequivc1; auto.
 
