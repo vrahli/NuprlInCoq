@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -29,9 +30,20 @@
 *)
 
 
-Require Export per_props.
-Require Export subst_per.
-Require Export sequents_tacs.
-Require Import cequiv_tacs.
-Require Import subst_tacs.
+Require Export nuprl_props.
+Require Export univ_tacs.
+Require Import rel_nterm.
 
+
+Lemma false_not_inhabited {p} :
+  forall lib (t : @CTerm p), !member lib t mkc_false.
+Proof.
+  introv m.
+  rewrite mkc_false_eq in m.
+  unfold member, equality, nuprl in m; exrepnd.
+  inversion m1; subst; try not_univ.
+  allunfold @per_approx; exrepnd.
+  computes_to_value_isvalue.
+  discover; sp; GC.
+  spcast; allapply @not_axiom_approxc_bot; sp.
+Qed.

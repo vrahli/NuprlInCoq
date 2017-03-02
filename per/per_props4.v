@@ -1021,10 +1021,3 @@ Proof.
   repndors; tcsp; spcast.
   eapply equality_respects_cequivc_right;[exact teq|]; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

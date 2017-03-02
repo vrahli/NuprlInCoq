@@ -3215,7 +3215,7 @@ Definition close_ind' {pp}
                pts*)
    end.
 
-Ltac dest_per_fam h eqa eqb A A' v v' B B' c1 c2 tsa tsb eqt :=
+Ltac dest_per_fam h eqa eqb A v B c tsa tsb eqt :=
   (unfold per_func in h
           || unfold per_product in h
           || unfold per_set     in h
@@ -3234,14 +3234,15 @@ Ltac dest_per_fam h eqa eqb A A' v v' B B' c1 c2 tsa tsb eqt :=
   destruct h as [eqb h];
   destruct h as [h eqt];
   destruct h as [A h];
-  destruct h as [A' h];
   destruct h as [v h];
-  destruct h as [v' h];
   destruct h as [B h];
-  destruct h as [B' h];
-  destruct h as [c1 h];
-  destruct h as [c2 h];
+  destruct h as [c h];
   destruct h as [tsa tsb].
+
+Ltac one_dest_per_fam eqa feqb A v B c tsa tsb eqt :=
+  match goal with
+    | [ H : _ |- _ ] => dest_per_fam H eqa feqb A v B c tsa tsb eqt
+  end.
 
 Ltac one_unfold_per :=
   match goal with

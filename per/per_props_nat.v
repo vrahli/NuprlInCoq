@@ -40,6 +40,41 @@ Require Export per_props3.
 
 Require Export list.  (* ??? *)
 
+
+Lemma nuprl_int {p} :
+  forall lib, @nuprl p lib mkc_int (equality_of_int lib).
+Proof.
+  sp.
+  apply CL_int.
+  unfold per_int; sp; spcast; try computes_to_value_refl.
+Qed.
+Hint Resolve nuprl_int : slow.
+
+Lemma equality_of_int_xxx {p} :
+  forall lib, @close p lib (univ lib) mkc_int (equality_of_int lib).
+Proof.
+  apply nuprl_int.
+Qed.
+
+Lemma tequality_int {p} : forall lib, @tequality p lib mkc_int mkc_int.
+Proof.
+  introv.
+  exists (@equality_of_int p lib).
+  split; eauto 3 with slow.
+
+Qed.
+
+Lemma nat_in_int {p} : forall lib (n : nat), @member p lib (mkc_nat n) mkc_int.
+Proof.
+  unfold member, equality; sp.
+  exists (@equality_of_int p lib).
+  sp;[apply equality_of_int_xxx|].
+  exists (Z_of_nat n); sp;
+  unfold mkc_nat, mkc_integer, isprog_mk_nat, isprog_mk_integer, mk_nat;
+    spcast; computes_to_value_refl.
+Qed.
+
+
 Lemma equality_in_int {p} :
   forall lib (t1 t2 : @CTerm p),
     equality lib t1 t2 mkc_int <=> equality_of_int lib t1 t2.

@@ -32,6 +32,32 @@
 Require Export per_props_nat.
 
 
+Lemma equality_in_uni {p} :
+  forall lib a b i,
+    @equality p lib a b (mkc_uni i)
+    -> tequality lib a b.
+Proof.
+  unfold tequality, equality, nuprl; introv e; exrepnd.
+
+  inversion e1; subst; try not_univ.
+  duniv j h.
+  induction j; allsimpl; sp.
+  computes_to_value_isvalue.
+  match goal with
+  | [ H : _ <=2=> _ |- _ ] => apply H in e0; clear H
+  end.
+  unfold univi_eq, extts in e0; exrepnd.
+  exists eqa.
+  eapply Nuprli_implies_Nuprl; split; eauto.
+Qed.
+
+Lemma member_in_uni {p} :
+  forall lib a i, @member p lib a (mkc_uni i) -> type lib a.
+Proof.
+  unfold member; introv e.
+  apply equality_in_uni in e; eauto 2 with slow.
+Qed.
+
 Lemma computes_to_valc_tuni_implies {o} :
   forall lib (t : @CTerm o) v,
     computes_to_valc lib (mkc_tuni t) v

@@ -203,7 +203,7 @@ Proof.
 Qed.
 
 
-Definition nuprli {o} lib (i : nat) T eq := @close o lib (univi lib i) T eq.
+Definition nuprli {o} lib (i : nat) := @close o lib (univi lib i).
 
 Lemma fold_nuprli {p} :
   forall lib i, close lib (univi lib i) = @nuprli p lib i.

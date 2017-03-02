@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -29,9 +30,29 @@
 *)
 
 
-Require Export per_props.
-Require Export subst_per.
-Require Export sequents_tacs.
-Require Import cequiv_tacs.
-Require Import subst_tacs.
+Require Export nuprl_props.
+Require Export choice.
+Require Export cvterm.
 
+
+Lemma tequality_mkc_ufun {p} :
+  forall lib (A1 A2 B1 B2 : @CTerm p),
+    tequality lib (mkc_ufun A1 B1) (mkc_ufun A2 B2)
+    <=> (tequality lib A1 A2 # (inhabited_type lib A1 -> tequality lib B1 B2)).
+Proof.
+  introv.
+  allrw <- @fold_mkc_ufun.
+  rw @tequality_isect.
+  split; intro k; repnd; dands; auto.
+
+  introv i.
+  unfold inhabited_type in i; exrepnd.
+  generalize (k t t i0); intro teq.
+  allrw @csubst_mk_cv; auto.
+
+  introv e.
+  allrw @csubst_mk_cv; auto.
+  apply equality_refl in e.
+  autodimp k hyp.
+  exists a; auto.
+Qed.

@@ -87,10 +87,3 @@ Proof.
   - apply (cequivc_trans lib a b b'); auto; apply alphaeqc_implies_cequivc; auto.
 Qed.
 Hint Resolve respects_alphaeqc_cequivc : respects.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

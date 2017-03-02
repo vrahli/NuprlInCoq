@@ -29,9 +29,82 @@
 *)
 
 
-Require Export per_props.
+Require Export per_props_image.
 Require Export sequents.
 
+
+Lemma equality_in_mkc_squash {p} :
+  forall lib (t1 t2 T : @CTerm p),
+    equality lib t1 t2 (mkc_squash T)
+    <=> (t1 ===>(lib) mkc_axiom
+         # t2 ===>(lib) mkc_axiom
+         # inhabited_type lib T).
+Proof.
+  intros.
+  rw @equality_in_mkc_image; split; intro e; exrepnd; spcast.
+
+  - applydup @equal_in_image_prop in e; exrepnd; spcast.
+
+    generalize (cequivc_beta lib nvarx (mk_cv [nvarx] mkc_axiom) a1); intro c1.
+    generalize (cequivc_beta lib nvarx (mk_cv [nvarx] mkc_axiom) a2); intro c2.
+
+    allrw @mk_cv_as_cvterm_var.
+    allrw @substc_cvterm_var.
+
+    assert (cequivc lib t1 mkc_axiom) as c3.
+    eapply cequivc_trans.
+    exact e2.
+    sp.
+
+    assert (cequivc lib t2 mkc_axiom) as c4.
+    eapply cequivc_trans.
+    exact e3.
+    sp.
+
+    generalize (cequivc_axiom lib mkc_axiom t1); intro i1.
+    dest_imp i1 hyp.
+    apply computes_to_valc_refl; apply isvalue_axiom.
+    dest_imp i1 hyp.
+    apply cequivc_sym; sp.
+
+    generalize (cequivc_axiom lib mkc_axiom t2); intro i2.
+    dest_imp i2 hyp.
+    apply computes_to_valc_refl; apply isvalue_axiom.
+    dest_imp i2 hyp.
+    apply cequivc_sym; sp.
+
+    sp; try (complete (spcast; sp)).
+    exists a1.
+    allapply @equality_refl; sp.
+
+  - unfold inhabited_type in e; exrepnd.
+    applydup @inhabited_implies_tequality in e2; dands; auto.
+    apply eq_in_image_eq with (a1 := t) (a2 := t); auto; spcast.
+
+    apply cequivc_trans with (b := mkc_axiom).
+    apply computes_to_valc_implies_cequivc; sp.
+    apply cequivc_sym.
+    generalize (cequivc_beta lib nvarx (mk_cv [nvarx] mkc_axiom) t); intro c.
+    allrw @mk_cv_as_cvterm_var.
+    allrw @substc_cvterm_var; sp.
+
+    apply cequivc_trans with (b := mkc_axiom).
+    apply computes_to_valc_implies_cequivc; sp.
+    apply cequivc_sym.
+    generalize (cequivc_beta lib nvarx (mk_cv [nvarx] mkc_axiom) t); intro c.
+    allrw @mk_cv_as_cvterm_var.
+    allrw @substc_cvterm_var; sp.
+Qed.
+
+Lemma tequality_mkc_squash {p} :
+  forall lib (T1 T2 : @CTerm p),
+    tequality lib (mkc_squash T1) (mkc_squash T2)
+    <=> tequality lib T1 T2.
+Proof.
+  introv.
+  rw @tequality_mkc_image; split; sp; spcast.
+  apply cequivc_refl.
+Qed.
 
 Lemma implies_tequality_equality_mkc_squash {o} :
   forall lib (t1 t2 : @CTerm o),
