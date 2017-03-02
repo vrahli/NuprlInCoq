@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -30,41 +31,10 @@
 
 
 Require Export natk2.
-Require Export per_props.
 Require Export terms_union.
 Require Export cequiv_props.
 Require Export per_props_cequiv.
 
-
-Lemma tequality_mkc_union {p} :
-  forall lib (A1 B1 A2 B2 : @CTerm p),
-    tequality lib (mkc_union A1 B1) (mkc_union A2 B2)
-    <=> (tequality lib A1 A2 # tequality lib B1 B2).
-Proof.
-  introv; split; intro teq; repnd.
-
-  - unfold tequality in teq; exrepnd.
-    inversion teq0; try not_univ; allunfold @per_union; exrepnd.
-    computes_to_value_isvalue; sp; try (complete (spcast; sp)).
-    exists eqa; sp.
-    exists eqb; sp.
-
-  - unfold tequality in teq0; exrepnd.
-    rename eq into eqa.
-    unfold tequality in teq; exrepnd.
-    rename eq into eqb.
-    exists (per_union_eq lib eqa eqb); apply CL_union; unfold per_union.
-    exists eqa eqb A1 A2 B1 B2; sp; spcast;
-    try (apply computes_to_valc_refl; apply iscvalue_mkc_union).
-Qed.
-
-Lemma tequality_mkc_or {p} :
-  forall lib (A1 B1 A2 B2 : @CTerm p),
-    tequality lib (mkc_or A1 B1) (mkc_or A2 B2)
-    <=> (tequality lib A1 A2 # tequality lib B1 B2).
-Proof.
-  introv; rw @tequality_mkc_union; sp.
-Qed.
 
 Lemma equality_mkc_union {p} :
   forall lib (t1 t2 A B : @CTerm p),
@@ -103,30 +73,174 @@ Proof.
     exists eqb; sp.
 
   - exrepnd.
-    unfold type, tequality in e0; exrepnd.
+    unfold type in e0; exrepnd.
     rename eq into eqa.
-    unfold type, tequality in e1; exrepnd.
+    unfold type in e1; exrepnd.
     rename eq into eqb.
     exists (per_union_eq lib eqa eqb); dands.
-    apply CL_union; unfold per_union.
-    exists eqa eqb A A B B; sp; spcast; sp;
-    try (apply computes_to_valc_refl; apply iscvalue_mkc_union).
+
+    { apply CL_union; unfold per_union.
+      exists eqa eqb A B; sp; spcast; sp;
+        try (apply computes_to_valc_refl; apply iscvalue_mkc_union). }
+
     unfold per_union_eq.
     repdors; exrepnd.
 
+    { left.
+      unfold per_union_eq_L.
+      exists a1 a2; sp.
+      allunfold @equality; exrepnd.
+      generalize (nuprl_uniquely_valued lib A eqa eq); intro h; repeat (dest_imp h hyp).
+      rw h; sp. }
+
+    { right.
+      unfold per_union_eq_R.
+      exists b1 b2; sp.
+      allunfold @equality; exrepnd.
+      generalize (nuprl_uniquely_valued lib B eqb eq); intro h; repeat (dest_imp h hyp).
+      rw h; sp. }
+Qed.
+
+Lemma nuprl_implies_ext_eq_union_one_direction {o} :
+  forall lib (A1 A2 B1 B2 : @CTerm o) eqa1 eqa2 eqb1 eqb2,
+    nuprl lib A1 eqa1
+    -> nuprl lib A2 eqa2
+    -> nuprl lib B1 eqb1
+    -> nuprl lib B2 eqb2
+    -> (forall a b, per_union_eq lib eqa1 eqb1 a b -> per_union_eq lib eqa2 eqb2 a b)
+    -> forall a b, equality lib a b (mkc_union A1 B1)
+                   -> equality lib a b (mkc_union A2 B2).
+Proof.
+  introv na1 na2 nb1 nb2 imp e.
+
+  apply equality_mkc_union in e; apply equality_mkc_union; repnd.
+
+  dands; eauto 2 with slow.
+  { exists eqa2; auto. }
+  { exists eqb2; auto. }
+
+  repndors; exrepnd; spcast.
+
+  - pose proof (imp a b) as h; autodimp h hyp.
+
+    {
+      left.
+      exists a1 a2; dands; spcast; auto.
+      eapply equality_eq in e3; eauto.
+    }
+
+    unfold per_union_eq, per_union_eq_L, per_union_eq_R in h.
+    repndors; exrepnd; spcast; repeat computes_to_eqval.
+
     left.
-    unfold per_union_eq_L.
-    exists a1 a2; sp.
-    allunfold @equality; exrepnd.
-    generalize (nuprl_uniquely_valued lib A eqa eq); intro h; repeat (dest_imp h hyp).
-    rw h; sp.
+    exists a1 a2; dands; spcast; auto.
+    apply (equality_eq lib A2 a1 a2 eqa2); auto.
+
+  - pose proof (imp a b) as h; autodimp h hyp.
+
+    {
+      right.
+      exists b1 b2; dands; spcast; auto.
+      eapply equality_eq in e3; eauto.
+    }
+
+    unfold per_union_eq, per_union_eq_L, per_union_eq_R in h.
+    repndors; exrepnd; spcast; repeat computes_to_eqval.
 
     right.
-    unfold per_union_eq_R.
-    exists b1 b2; sp.
-    allunfold @equality; exrepnd.
-    generalize (nuprl_uniquely_valued lib B eqb eq); intro h; repeat (dest_imp h hyp).
-    rw h; sp.
+    exists b1 b2; dands; spcast; auto.
+    apply (equality_eq lib B2 b1 b2 eqb2); auto.
+Qed.
+
+Hint Resolve iscvalue_mkc_union : slow.
+
+Lemma nuprl_implies_ext_eq_union {o} :
+  forall lib (A1 A2 B1 B2 : @CTerm o) eqa1 eqa2 eqb1 eqb2,
+    nuprl lib A1 eqa1
+    -> nuprl lib A2 eqa2
+    -> nuprl lib B1 eqb1
+    -> nuprl lib B2 eqb2
+    -> ((per_union_eq lib eqa1 eqb1) <=2=> (per_union_eq lib eqa2 eqb2))
+    -> ext_eq lib (mkc_union A1 B1) (mkc_union A2 B2).
+Proof.
+  introv na1 na2 nb1 nb2 imp; introv; split; intro h.
+
+  - apply (nuprl_implies_ext_eq_union_one_direction lib A1 A2 B1 B2 eqa1 eqa2 eqb1 eqb2); auto.
+    introv q; apply imp; auto.
+
+  - apply (nuprl_implies_ext_eq_union_one_direction lib A2 A1 B2 B1 eqa2 eqa1 eqb2 eqb1); auto.
+    introv q; apply imp; auto.
+Qed.
+
+Lemma tequality_mkc_union {p} :
+  forall lib (A1 B1 A2 B2 : @CTerm p),
+    tequality lib (mkc_union A1 B1) (mkc_union A2 B2)
+    <=>
+    (
+      type lib A1
+      # type lib A2
+      # type lib B1
+      # type lib B2
+      # ext_eq lib (mkc_union A1 B1) (mkc_union A2 B2)
+    ).
+Proof.
+  introv; split; intro teq; repnd.
+
+  - unfold tequality in teq; exrepnd.
+    destruct teq0 as [h1 h2].
+    inversion h1; subst; try not_univ; clear h1.
+    inversion h2; subst; try not_univ; clear h2.
+
+    match goal with
+    | [ H1 : per_union _ _ _ _, H2 : per_union _ _ _ _ |- _ ] =>
+      rename H1 into h1; rename H2 into h2
+    end.
+
+    allunfold @per_union; exrepnd.
+    computes_to_value_isvalue; try (complete (spcast; sp)).
+
+    dands.
+
+    + exists eqa0; auto.
+    + exists eqa; auto.
+    + exists eqb0; auto.
+    + exists eqb; auto.
+
+    + eapply eq_term_equals_trans in h2;[|apply eq_term_equals_sym;exact h1].
+      clear h1.
+      eapply nuprl_implies_ext_eq_union; eauto.
+
+  - unfold type in teq0; exrepnd.
+    rename eq into eqa1.
+    unfold type in teq2; exrepnd.
+    rename eq into eqb1.
+    unfold type in teq1; exrepnd.
+    rename eq into eqa2.
+    unfold type in teq3; exrepnd.
+    rename eq into eqb2.
+
+    apply (nuprl_ext_eq_implies_eq_term_equals
+             _ _ _
+             (per_union_eq lib eqa1 eqb1)
+             (per_union_eq lib eqa2 eqb2)) in teq;
+      [|apply CL_union;unfold per_union;exists eqa1 eqb1 A1 B1;dands;auto;spcast;apply computes_to_valc_refl;eauto 2 with slow
+       |apply CL_union;unfold per_union;exists eqa2 eqb2 A2 B2;dands;auto;spcast;apply computes_to_valc_refl;eauto 2 with slow].
+
+    exists (per_union_eq lib eqa1 eqb1); split; apply CL_union; unfold per_union.
+
+    + exists eqa1 eqb1 A1 B1; sp; spcast;
+        try (apply computes_to_valc_refl; apply iscvalue_mkc_union).
+
+    + exists eqa2 eqb2 A2 B2; sp; spcast;
+        try (apply computes_to_valc_refl; apply iscvalue_mkc_union).
+Qed.
+
+Lemma tequality_mkc_or {p} :
+  forall lib (A1 B1 A2 B2 : @CTerm p),
+    tequality lib (mkc_or A1 B1) (mkc_or A2 B2)
+    <=> (tequality lib A1 A2 # tequality lib B1 B2).
+Proof.
+  introv; rw @tequality_mkc_union; sp.
 Qed.
 
 Lemma equality_mkc_or {p} :
@@ -881,11 +995,3 @@ Proof.
     + apply eq_in_bunion_eq1; auto.
     + apply eq_in_bunion_eq2; auto.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

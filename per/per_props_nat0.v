@@ -1665,6 +1665,7 @@ Proof.
     destruct (Z_lt_le_dec kb ka); tcsp.
 Qed.
 
+(*
 Lemma type_mkc_less_than {o} :
   forall lib (a b : @CTerm o),
     type lib (mkc_less_than a b) <=>
@@ -1679,3 +1680,4 @@ Proof.
   - exists ka kb ka kb; dands; spcast; auto.
     destruct (Z_lt_le_dec ka kb); tcsp.
 Qed.
+*)

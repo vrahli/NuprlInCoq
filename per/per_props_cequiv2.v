@@ -599,44 +599,6 @@ Proof.
        }
 Qed.
 
-Lemma implies_approx_mk_le {o} :
-  forall lib (a1 a2 b1 b2 : @NTerm o),
-    approx lib a1 a2
-    -> approx lib b1 b2
-    -> approx lib (mk_le a1 b1) (mk_le a2 b2).
-Proof.
-  introv apra aprb.
-
-  applydup @approx_isprog in apra.
-  applydup @approx_isprog in aprb.
-  repnd.
-
-  apply approx_open_approx; allrw @isprogram_eq; try (apply isprog_le_implies); auto.
-  apply approx_open_mk_le; apply approx_implies_approx_open; auto.
-Qed.
-
-Lemma implies_cequiv_mk_le {o} :
-  forall lib (a1 a2 b1 b2 : @NTerm o),
-    cequiv lib a1 a2
-    -> cequiv lib b1 b2
-    -> cequiv lib (mk_le a1 b1) (mk_le a2 b2).
-Proof.
-  introv ceqa ceqb.
-  allunfold @cequiv; allsimpl; repnd; dands; apply implies_approx_mk_le; auto.
-Qed.
-
-Lemma implies_cequivc_mkc_le {o} :
-  forall lib (a1 a2 b1 b2 : @CTerm o),
-    cequivc lib a1 a2
-    -> cequivc lib b1 b2
-    -> cequivc lib (mkc_le a1 b1) (mkc_le a2 b2).
-Proof.
-  introv ceqa ceqb.
-  destruct_cterms.
-  allunfold @cequivc; allsimpl.
-  apply implies_cequiv_mk_le; auto.
-Qed.
-
 Definition isNat {o} (t : @NTerm o) : NTerm := mk_le mk_zero t.
 Definition diverges {o} (t: @NTerm o) : NTerm := mk_approx t mk_bot.
 

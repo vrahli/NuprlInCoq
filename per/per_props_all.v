@@ -39,6 +39,7 @@ Require Export per_props_nat0.
 Require Export per_props_product.
 
 (* working on *)
+Require Export per_props_union.
 Require Export per_props_nat.
 
 (* not fixed *)
@@ -72,7 +73,6 @@ Require Export per_props_subtype_rel.
 Require Export per_props_tequality.
 Require Export per_props_top.
 Require Export per_props_ufun.
-Require Export per_props_union.
 Require Export per_props_uni.
 Require Export per_props.
 Require Export per_props_w.

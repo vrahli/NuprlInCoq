@@ -30,6 +30,8 @@
 *)
 
 
+Require Export csubst6.
+
 Require Export per_props_uni0.
 
 
@@ -641,4 +643,25 @@ Proof.
 
   - apply (ext_eq_implies_tequalityi lib i) in h; auto; clear h;
       apply implies_equality_product; auto.
+Qed.
+
+Hint Resolve inhabited_implies_tequality : slow.
+
+Lemma inhabited_prod {o} :
+  forall lib (A B : @CTerm o),
+    inhabited_type lib (mkc_prod A B)
+    <=> (inhabited_type lib A # inhabited_type lib B).
+Proof.
+  introv; split; intro h; repnd; auto.
+
+  - unfold inhabited_type in h; exrepnd.
+    apply equality_in_prod in h0; exrepnd.
+    dands;[exists a1|exists b1]; eapply equality_refl; eauto.
+
+  - unfold inhabited_type in *; repnd; exrepnd.
+    exists (mkc_pair t0 t).
+    apply equality_in_prod; dands; eauto 2 with slow.
+
+    exists t0 t0 t t; dands; spcast;
+      try (complete (apply computes_to_valc_refl; eauto 3 with slow)); auto.
 Qed.
