@@ -238,7 +238,14 @@ Qed.
 Lemma tequality_mkc_or {p} :
   forall lib (A1 B1 A2 B2 : @CTerm p),
     tequality lib (mkc_or A1 B1) (mkc_or A2 B2)
-    <=> (tequality lib A1 A2 # tequality lib B1 B2).
+    <=>
+    (
+      type lib A1
+      # type lib A2
+      # type lib B1
+      # type lib B2
+      # ext_eq lib (mkc_or A1 B1) (mkc_or A2 B2)
+    ).
 Proof.
   introv; rw @tequality_mkc_union; sp.
 Qed.
@@ -261,10 +268,13 @@ Proof.
   introv; rw @equality_mkc_union; sp.
 Qed.
 
+(*
 Lemma tequality_tunion {p} :
   forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2,
-    tequality lib (mkc_tunion A1 v1 B1)
-              (mkc_tunion A2 v2 B2)
+    tequality
+      lib
+      (mkc_tunion A1 v1 B1)
+      (mkc_tunion A2 v2 B2)
     <=>
     (tequality lib A1 A2
      # forall a a', equality lib a a' A1 -> tequality lib (substc a v1 B1) (substc a' v2 B2)).
@@ -312,77 +322,159 @@ Proof.
     exists A1 A2 v1 v2 B1 B2; sp;
     try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_tunion))).
 Qed.
+ *)
+
+
+Lemma tequality_tunion {p} :
+  forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2,
+    tequality lib (mkc_tunion A1 v1 B1) (mkc_tunion A2 v2 B2)
+    <=>
+    (
+      type lib A1
+      # type lib A2
+      # (forall a a', equality lib a a' A1 -> tequality lib (substc a v1 B1) (substc a' v1 B1))
+      # (forall a a', equality lib a a' A2 -> tequality lib (substc a v2 B2) (substc a' v2 B2))
+      # ext_eq lib (mkc_tunion A1 v1 B1) (mkc_tunion A2 v2 B2)
+    ).
+Proof.
+  introv; split; intro h; repnd.
+
+  - unfold tequality in h; exrepnd.
+    destruct h0 as [h1 h2].
+    inversion h1; subst; try not_univ.
+    inversion h2; subst; try not_univ.
+
+    allunfold_per; spcast; computes_to_value_isvalue.
+    allfold (@nuprl p lib).
+
+    dands.
+
+    + exists eqa0; auto.
+
+    + exists eqa; auto.
+
+    + introv ea.
+      eapply nuprl_type_family_members_eq_implies_tequality; try (exact t0); eauto.
+      eapply equality_eq; eauto.
+
+    + introv ea.
+      eapply nuprl_type_family_members_eq_implies_tequality; try (exact t); eauto.
+      eapply equality_eq; eauto.
+
+    + introv.
+
+      split; introv h.
+
+      * unfold equality in *; exrepnd.
+        eapply nuprl_uniquely_valued in h3; try (exact h1).
+        exists eq0; dands; auto.
+        eapply nuprl_ext; eauto.
+
+      * unfold equality in *; exrepnd.
+        eapply nuprl_uniquely_valued in h3; try (exact h2).
+        exists eq0; dands; auto.
+        eapply nuprl_ext; eauto.
+
+  - apply ext_eq_implies_tequality; auto.
+
+    + generalize (choice_teq lib A1 v1 B1 v1 B1 h2); intro n; exrepnd.
+
+      unfold type in h0; exrepnd.
+      rename eq into eqa1.
+
+      pose proof (Nuprl_type_family_equality_to_eq2 lib A1 v1 v1 B1 B1 eqa1 f h4 n0) as imp1.
+      clear n0.
+
+      exists (per_tunion_eq eqa1 (fun a1 a2 e => f a1 a2 (eq_equality0 lib a1 a2 A1 eqa1 e h4))).
+
+      apply CL_tunion; fold (@nuprl p lib).
+
+      exists eqa1.
+      exists (fun a1 a2 e => f a1 a2 (eq_equality0 lib a1 a2 A1 eqa1 e h4)); sp.
+
+      exists A1 v1 B1; sp; eauto 3 with slow;
+        try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_tunion))).
+
+      eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
+
+    + generalize (choice_teq lib A2 v2 B2 v2 B2 h3); intro w; exrepnd.
+
+      unfold type in h1; exrepnd.
+      rename eq into eqa2.
+
+      pose proof (Nuprl_type_family_equality_to_eq2 lib A2 v2 v2 B2 B2 eqa2 f h4 w0) as imp2.
+      clear w0.
+
+      exists (per_tunion_eq eqa2 (fun a1 a2 e => f a1 a2 (eq_equality0 lib a1 a2 A2 eqa2 e h4))).
+
+      apply CL_tunion; fold (@nuprl p lib).
+
+      exists eqa2.
+      exists (fun a1 a2 e => f a1 a2 (eq_equality0 lib a1 a2 A2 eqa2 e h4)); sp.
+
+      exists A2 v2 B2; sp; eauto 3 with slow;
+        try (complete (spcast; apply computes_to_valc_refl; eauto 3 with slow)).
+
+      eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
+Qed.
+
 
 Lemma tequality_bool {o} :
   forall lib, @tequality o lib mkc_bool mkc_bool.
 Proof.
   introv.
   allrw <- @fold_mkc_bool.
-  rw @tequality_mkc_union; dands; auto; apply tequality_unit.
+  rw @tequality_mkc_union; dands; auto.
+  introv; split; intro h; apply equality_mkc_union in h;
+    apply equality_mkc_union; repnd; dands; auto.
 Qed.
+Hint Resolve tequality_bool : slow.
+
+Lemma type_bool {o} :
+  forall lib, @type o lib mkc_bool.
+Proof.
+  introv; allrw <- @fold_type; eauto 2 with slow.
+Qed.
+Hint Resolve type_bool : slow.
+
+Hint Resolve equality_in_unit : slow.
 
 Lemma equality_in_bool {o} :
   forall lib (a b : @CTerm o),
     equality lib a b mkc_bool
     <=>
-    (
-      (a ~=~(lib) tt # b ~=~(lib) tt)
+    exists t u,
+      (a ~=~(lib) (mkc_inl t) # b ~=~(lib) (mkc_inl u))
       {+}
-      (a ~=~(lib) ff # b ~=~(lib) ff)
-    ).
+      (a ~=~(lib) (mkc_inr t) # b ~=~(lib) (mkc_inr u)).
 Proof.
   introv.
   allrw <- @fold_mkc_bool.
-  rw @equality_mkc_union; split; intro k; repnd.
+  rw @equality_mkc_union; split; intro k; exrepnd.
 
   - dorn k; exrepnd.
 
-    + allrw @equality_in_unit; repnd.
-      left; dands; spcast.
+    + exists a1 a2.
+      left; dands; spcast; allapply @computes_to_valc_implies_cequivc; auto.
 
-      * allapply @computes_to_valc_implies_cequivc.
-        apply (cequivc_trans lib a (mkc_inl a1) tt); auto.
-        apply cequivc_mkc_inl_if; auto.
-
-      * allapply @computes_to_valc_implies_cequivc.
-        apply (cequivc_trans lib b (mkc_inl a2) tt); auto.
-        apply cequivc_mkc_inl_if; auto.
-
-    + allrw @equality_in_unit; repnd.
-      right; dands; spcast.
-
-      * allapply @computes_to_valc_implies_cequivc.
-        apply (cequivc_trans lib a (mkc_inr b1) ff); auto.
-        apply cequivc_mkc_inr_if; auto.
-
-      * allapply @computes_to_valc_implies_cequivc.
-        apply (cequivc_trans lib b (mkc_inr b2) ff); auto.
-        apply cequivc_mkc_inr_if; auto.
+    + exists b1 b2.
+      right; dands; spcast; allapply @computes_to_valc_implies_cequivc; auto.
 
   - dands; auto.
-    dorn k; repnd.
+    dorn k1; repnd; spcast.
 
     + left.
-      spcast.
-      apply cequivc_sym in k0.
-      apply cequivc_sym in k.
-      apply cequivc_mkc_inl_implies in k0.
-      apply cequivc_mkc_inl_implies in k.
+      apply cequivc_sym in k0; apply cequivc_mkc_inl_implies in k0.
+      apply cequivc_sym in k1; apply cequivc_mkc_inl_implies in k1.
       exrepnd.
-      exists b1 b0; dands; auto; spcast; sp.
-      apply equality_in_unit; sp; spcast; sp; apply cequivc_axiom_implies; sp.
+      exists b1 b0; dands; spcast; eauto 2 with slow.
 
     + right.
-      spcast.
-      apply cequivc_sym in k0.
-      apply cequivc_sym in k.
-      apply cequivc_mkc_inr_implies in k0.
-      apply cequivc_mkc_inr_implies in k.
+      apply cequivc_sym in k0; apply cequivc_mkc_inr_implies in k0.
+      apply cequivc_sym in k1; apply cequivc_mkc_inr_implies in k1.
       exrepnd.
-      exists b1 b0; dands; auto; spcast; sp.
-      apply equality_in_unit; sp; spcast; sp; apply cequivc_axiom_implies; sp.
+      exists b1 b0; dands; spcast; eauto 2 with slow.
 Qed.
-
 
 Lemma substc_mkcv_ite {o} :
   forall v (t a b : @CTerm o),
@@ -393,29 +485,30 @@ Proof.
   apply cterm_eq; simpl.
   destruct_cterms; simpl.
   unfold mk_ite, subst.
-  change_to_lsubst_aux4; simpl.
-  pose proof (newvar_prog x1 i1) as e1.
-  pose proof (newvar_prog x0 i0) as e2.
-  pose proof (newvar_prog x i) as e3.
-  rw e2; rw e3.
-  boolvar; allrw @lsubst_aux_nil; sp.
-  allrw @lsubst_aux_trivial; auto.
+  change_to_lsubst_aux4; simpl in *; autorewrite with slow in *; auto;
+    try (rewrite (newvar_prog x1) in *; auto);
+    try (rewrite (newvar_prog x0) in *; auto);
+    try (rewrite (newvar_prog x) in *; auto).
 
-  introv k; simpl in k; dorn k; cpx.
-  dands; auto.
-  apply isprogram_eq; sp.
-  intro k.
-  rw @isprog_eq in i.
-  destruct i as [c w]; rw c in k; allsimpl; sp.
+  {
+    boolvar; simpl in *; allrw @lsubst_aux_nil; sp.
+    allrw @lsubst_aux_trivial; auto.
 
-  introv k; simpl in k; dorn k; cpx.
-  dands; auto.
-  apply isprogram_eq; sp.
-  intro k.
-  rw @isprog_eq in i0.
-  destruct i0 as [c w]; rw c in k; allsimpl; sp.
+    { introv k; simpl in k; dorn k; cpx.
+      dands; auto.
+      apply isprogram_eq; sp.
+      intro k.
+      rw @isprog_eq in i.
+      destruct i as [c w]; rw c in k; allsimpl; sp. }
 
-  allrw app_nil_r.
+    { introv k; simpl in k; dorn k; cpx.
+      dands; auto.
+      apply isprogram_eq; sp.
+      intro k.
+      rw @isprog_eq in i0.
+      destruct i0 as [c w]; rw c in k; allsimpl; sp. }
+  }
+
   rw @isprog_eq in i1.
   destruct i1 as [c w]; rw c; sp.
 Qed.
@@ -429,45 +522,45 @@ Proof.
   destruct_cterms; allunfold @cequivc; allsimpl.
   apply cequiv_trans with (b := mk_decide (mk_inl mk_axiom) nvarx x0 nvarx x).
 
-  allunfold @mk_decide.
-  applydup @cequiv_isprogram in ceq; repnd.
-  repeat(prove_cequiv); auto.
+  { allunfold @mk_decide.
+    applydup @cequiv_isprogram in ceq; repnd.
+    repeat(prove_cequiv); auto.
 
-  unfold blift; exists [nvarx] x0 x0; dands; auto.
-  apply olift_approx_cequiv; sp;apply approx_open_refl;
-  rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+    - unfold blift; exists [nvarx] x0 x0; dands; auto.
+      apply olift_approx_cequiv; sp;apply approx_open_refl;
+        rw @isprog_eq in i0; destruct i0 as [c w]; sp.
 
-  unfold blift; exists [nvarx] x x; dands; auto.
-  apply olift_approx_cequiv; sp;apply approx_open_refl;
-  rw @isprog_eq in i; destruct i as [c w]; sp.
+    - unfold blift; exists [nvarx] x x; dands; auto.
+      apply olift_approx_cequiv; sp;apply approx_open_refl;
+        rw @isprog_eq in i; destruct i as [c w]; sp.
 
-  constructor; unfold closed_bt; simpl.
-  rw @isprog_eq in i0; destruct i0 as [c w]; rw c; rw remove_nvars_nil_r; sp.
-  constructor.
-  rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i0; destruct i0 as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i0; destruct i0 as [c w]; sp.
 
-  constructor; unfold closed_bt; simpl.
-  rw @isprog_eq in i; destruct i as [c w]; rw c; rw remove_nvars_nil_r; sp.
-  constructor.
-  rw @isprog_eq in i; destruct i as [c w]; sp.
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i; destruct i as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i; destruct i as [c w]; sp.
 
-  constructor; unfold closed_bt; simpl.
-  rw @isprog_eq in i0; destruct i0 as [c w]; rw c; rw remove_nvars_nil_r; sp.
-  constructor.
-  rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i0; destruct i0 as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i0; destruct i0 as [c w]; sp.
 
-  constructor; unfold closed_bt; simpl.
-  rw @isprog_eq in i; destruct i as [c w]; rw c; rw remove_nvars_nil_r; sp.
-  constructor.
-  rw @isprog_eq in i; destruct i as [c w]; sp.
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i; destruct i as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i; destruct i as [c w]; sp. }
 
   apply reduces_to_implies_cequiv.
-  apply isprogram_decide; sp.
-  apply isprogram_inl; sp.
-  rw @isprog_eq in i0; destruct i0 as [c w]; rw c; sp.
-  rw @isprog_eq in i0; destruct i0 as [c w]; sp.
-  rw @isprog_eq in i; destruct i as [c w]; rw c; sp.
-  rw @isprog_eq in i; destruct i as [c w]; sp.
+  { apply isprogram_decide; sp.
+    - apply isprogram_inl; sp.
+    - rw @isprog_eq in i0; destruct i0 as [c w]; rw c; sp.
+    - rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+    - rw @isprog_eq in i; destruct i as [c w]; rw c; sp.
+    - rw @isprog_eq in i; destruct i as [c w]; sp. }
   apply reduces_to_if_step; simpl.
   csunf; simpl.
   unfold apply_bterm; simpl.
@@ -485,50 +578,164 @@ Proof.
   destruct_cterms; allunfold @cequivc; allsimpl.
   apply cequiv_trans with (b := mk_decide (mk_inr mk_axiom) nvarx x0 nvarx x).
 
-  allunfold @mk_decide.
-  applydup @cequiv_isprogram in ceq; repnd.
-  repeat(prove_cequiv); auto.
+  { allunfold @mk_decide.
+    applydup @cequiv_isprogram in ceq; repnd.
+    repeat(prove_cequiv); auto.
 
-  unfold blift; exists [nvarx] x0 x0; dands; auto.
-  apply olift_approx_cequiv; sp;apply approx_open_refl;
-  rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+    - unfold blift; exists [nvarx] x0 x0; dands; auto.
+      apply olift_approx_cequiv; sp;apply approx_open_refl;
+        rw @isprog_eq in i0; destruct i0 as [c w]; sp.
 
-  unfold blift; exists [nvarx] x x; dands; auto.
-  apply olift_approx_cequiv; sp;apply approx_open_refl;
-  rw @isprog_eq in i; destruct i as [c w]; sp.
+    - unfold blift; exists [nvarx] x x; dands; auto.
+      apply olift_approx_cequiv; sp;apply approx_open_refl;
+        rw @isprog_eq in i; destruct i as [c w]; sp.
 
-  constructor; unfold closed_bt; simpl.
-  rw @isprog_eq in i0; destruct i0 as [c w]; rw c; rw remove_nvars_nil_r; sp.
-  constructor.
-  rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i0; destruct i0 as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i0; destruct i0 as [c w]; sp.
 
-  constructor; unfold closed_bt; simpl.
-  rw @isprog_eq in i; destruct i as [c w]; rw c; rw remove_nvars_nil_r; sp.
-  constructor.
-  rw @isprog_eq in i; destruct i as [c w]; sp.
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i; destruct i as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i; destruct i as [c w]; sp.
 
-  constructor; unfold closed_bt; simpl.
-  rw @isprog_eq in i0; destruct i0 as [c w]; rw c; rw remove_nvars_nil_r; sp.
-  constructor.
-  rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i0; destruct i0 as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i0; destruct i0 as [c w]; sp.
 
-  constructor; unfold closed_bt; simpl.
-  rw @isprog_eq in i; destruct i as [c w]; rw c; rw remove_nvars_nil_r; sp.
-  constructor.
-  rw @isprog_eq in i; destruct i as [c w]; sp.
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i; destruct i as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i; destruct i as [c w]; sp. }
 
   apply reduces_to_implies_cequiv.
-  apply isprogram_decide; sp.
-  apply isprogram_inr; sp.
-  rw @isprog_eq in i0; destruct i0 as [c w]; rw c; sp.
-  rw @isprog_eq in i0; destruct i0 as [c w]; sp.
-  rw @isprog_eq in i; destruct i as [c w]; rw c; sp.
-  rw @isprog_eq in i; destruct i as [c w]; sp.
+  { apply isprogram_decide; sp.
+    - apply isprogram_inr; sp.
+    - rw @isprog_eq in i0; destruct i0 as [c w]; rw c; sp.
+    - rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+    - rw @isprog_eq in i; destruct i as [c w]; rw c; sp.
+    - rw @isprog_eq in i; destruct i as [c w]; sp. }
+
   apply reduces_to_if_step; simpl.
   csunf; simpl.
   unfold apply_bterm; simpl.
   rw @lsubst_trivial; auto.
   introv k; simpl in k; dorn k; cpx.
+  rw @isprog_eq in i; destruct i as [c w]; rw c; sp.
+Qed.
+
+Lemma mkc_ite_ceq_inl {o} :
+  forall lib z (a A B : @CTerm o),
+    cequivc lib a (mkc_inl z)
+    -> cequivc lib (mkc_ite a A B) A.
+Proof.
+  introv ceq.
+  destruct_cterms; allunfold @cequivc; allsimpl.
+  apply cequiv_trans with (b := mk_decide (mk_inl x2) nvarx x0 nvarx x).
+
+  { allunfold @mk_decide.
+    applydup @cequiv_isprogram in ceq; repnd.
+    repeat(prove_cequiv); auto.
+
+    - unfold blift; exists [nvarx] x0 x0; dands; auto.
+      apply olift_approx_cequiv; sp;apply approx_open_refl;
+        rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+
+    - unfold blift; exists [nvarx] x x; dands; auto.
+      apply olift_approx_cequiv; sp;apply approx_open_refl;
+        rw @isprog_eq in i; destruct i as [c w]; sp.
+
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i0; destruct i0 as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i; destruct i as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i; destruct i as [c w]; sp.
+
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i0; destruct i0 as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i; destruct i as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i; destruct i as [c w]; sp. }
+
+  apply reduces_to_implies_cequiv.
+  { apply isprogram_decide; sp.
+    - apply isprogram_inl; eauto 2 with slow.
+    - rw @isprog_eq in i0; destruct i0 as [c w]; rw c; sp.
+    - rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+    - rw @isprog_eq in i; destruct i as [c w]; rw c; sp.
+    - rw @isprog_eq in i; destruct i as [c w]; sp. }
+  apply reduces_to_if_step; simpl.
+  csunf; simpl.
+  unfold apply_bterm; simpl.
+  rw @lsubst_trivial; auto.
+  introv k; simpl in k; dorn k; cpx; dands; eauto 2 with slow.
+  rw @isprog_eq in i0; destruct i0 as [c w]; rw c; sp.
+Qed.
+
+Lemma mkc_ite_ceq_inr {o} :
+  forall lib z (a A B : @CTerm o),
+    cequivc lib a (mkc_inr z)
+    -> cequivc lib (mkc_ite a A B) B.
+Proof.
+  introv ceq.
+  destruct_cterms; allunfold @cequivc; allsimpl.
+  apply cequiv_trans with (b := mk_decide (mk_inr x2) nvarx x0 nvarx x).
+
+  { allunfold @mk_decide.
+    applydup @cequiv_isprogram in ceq; repnd.
+    repeat(prove_cequiv); auto.
+
+    - unfold blift; exists [nvarx] x0 x0; dands; auto.
+      apply olift_approx_cequiv; sp;apply approx_open_refl;
+        rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+
+    - unfold blift; exists [nvarx] x x; dands; auto.
+      apply olift_approx_cequiv; sp;apply approx_open_refl;
+        rw @isprog_eq in i; destruct i as [c w]; sp.
+
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i0; destruct i0 as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i; destruct i as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i; destruct i as [c w]; sp.
+
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i0; destruct i0 as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+
+    - constructor; unfold closed_bt; simpl.
+      rw @isprog_eq in i; destruct i as [c w]; rw c; rw remove_nvars_nil_r; sp.
+      constructor.
+      rw @isprog_eq in i; destruct i as [c w]; sp. }
+
+  apply reduces_to_implies_cequiv.
+  { apply isprogram_decide; sp.
+    - apply isprogram_inr; sp; eauto 2 with slow.
+    - rw @isprog_eq in i0; destruct i0 as [c w]; rw c; sp.
+    - rw @isprog_eq in i0; destruct i0 as [c w]; sp.
+    - rw @isprog_eq in i; destruct i as [c w]; rw c; sp.
+    - rw @isprog_eq in i; destruct i as [c w]; sp. }
+
+  apply reduces_to_if_step; simpl.
+  csunf; simpl.
+  unfold apply_bterm; simpl.
+  rw @lsubst_trivial; auto.
+  introv k; simpl in k; dorn k; cpx; dands; eauto 2 with slow.
   rw @isprog_eq in i; destruct i as [c w]; rw c; sp.
 Qed.
 
@@ -548,58 +755,23 @@ Proof.
   apply mkc_ite_ceq_ff; sp.
 Qed.
 
-Lemma tequality_bunion {o} :
-  forall lib (A B C D : @CTerm o),
-    tequality lib (mkc_bunion A B) (mkc_bunion C D)
-    <=> (tequality lib A C # tequality lib B D).
+Lemma tt_in_bool {o} :
+  forall lib, @equality o lib tt tt mkc_bool.
 Proof.
-  introv.
-  allrw <- @fold_mkc_bunion.
-  rw @tequality_tunion.
-
-  split; intro k; repnd.
-
-  - pose proof (k tt tt) as h1.
-    autodimp h1 hyp.
-    apply equality_in_bool; left; sp; spcast; sp.
-
-    pose proof (k ff ff) as h2.
-    autodimp h2 hyp.
-    apply equality_in_bool; right; sp; spcast; sp.
-
-    allrw @substc_mkcv_ite.
-    pose proof (mkc_ite_tt lib A B) as c1.
-    pose proof (mkc_ite_ff lib A B) as c2.
-    pose proof (mkc_ite_tt lib C D) as c3.
-    pose proof (mkc_ite_ff lib C D) as c4.
-    apply tequality_respects_cequivc_left with (T3 := A) in h1; auto.
-    apply tequality_respects_cequivc_left with (T3 := B) in h2; auto.
-    apply tequality_respects_cequivc_right with (T3 := C) in h1; auto.
-    apply tequality_respects_cequivc_right with (T3 := D) in h2; auto.
-
-  - dands; auto.
-    apply tequality_bool.
-    introv e.
-    rw @equality_in_bool in e; dorn e; repnd; spcast.
-
-    + allrw @substc_mkcv_ite.
-      pose proof (mkc_ite_ceq_tt lib a A B e0) as c1.
-      pose proof (mkc_ite_ceq_tt lib a' C D e) as c2.
-      apply tequality_respects_cequivc_left with (T1 := A); auto.
-      apply cequivc_sym; auto.
-      apply tequality_respects_cequivc_right with (T2 := C); auto.
-      apply cequivc_sym; auto.
-
-    + allrw @substc_mkcv_ite.
-      pose proof (mkc_ite_ceq_ff lib a A B e0) as c1.
-      pose proof (mkc_ite_ceq_ff lib a' C D e) as c2.
-      apply tequality_respects_cequivc_left with (T1 := B); auto.
-      apply cequivc_sym; auto.
-      apply tequality_respects_cequivc_right with (T2 := D); auto.
-      apply cequivc_sym; auto.
+  introv; apply equality_in_bool.
+  exists (@mkc_axiom o) (@mkc_axiom o); left.
+  dands; spcast; auto.
 Qed.
+Hint Resolve tt_in_bool : slow.
 
-
+Lemma ff_in_bool {o} :
+  forall lib, @equality o lib ff ff mkc_bool.
+Proof.
+  introv; apply equality_in_bool.
+  exists (@mkc_axiom o) (@mkc_axiom o); right.
+  dands; spcast; auto.
+Qed.
+Hint Resolve ff_in_bool : slow.
 
 Inductive equal_in_tunion {p} lib A v B (t1 t2 : @CTerm p) : [U] :=
 | eq_in_tunion_cl :
@@ -623,23 +795,17 @@ Proof.
   intros; split; intro e.
 
   - unfold equality in e; exrepnd.
-    inversion e1; subst; try not_univ.
-    one_dest_per_fam eqa feqb A3 A4 v3 v4 B3 B4 c1 c2 tsa tsb eqt.
+    inversion e1; subst; try not_univ; clear e1.
+    one_dest_per_fam eqa feqb A3 v3 B3 c1 tsa tsb eqt.
     computes_to_value_isvalue.
     allfold (@nuprl p).
-    dands.
+    dands; eauto 2 with slow.
 
-    + apply tequality_if_nuprl in tsa; auto.
+    + exists eqa; auto.
 
     + introv ea.
-      assert (eqa a a')
-        as xa
-          by (generalize (equality_eq1 lib A3 A3 a a' eqa); intro e;
-              dest_imp e hyp;
-              try (exists i; auto);
-              apply e; auto).
-      pose proof (tsb a a' xa) as h.
-      apply tequality_if_nuprl in h; auto.
+      eapply nuprl_type_family_members_eq_implies_tequality; try (exact tsb); eauto.
+      eapply equality_eq in ea; eauto.
 
     + rw eqt in e0.
       induction e0.
@@ -650,17 +816,17 @@ Proof.
         rw (equality_eq lib A3 a1 a2 _ tsa) in e'.
         apply equality_refl in e'; auto.
 
-      * pose proof (tsb a1 a2 e) as h.
-        apply (equality_eq1 lib
-              (substc a1 v3 B3) (substc a2 v3 B3)
-              t1 t2 (feqb a1 a2 e) h); auto.
+      * destruct tsb as [tsb fam].
+        pose proof (tsb a1 a2 e) as h.
+        eapply eq_equality0; eauto.
 
   - repnd.
 
-    unfold type, tequality in e0; exrepnd.
+    unfold type in e0; exrepnd.
     rename eq into eqa.
 
-    pose proof (choice_teq1 lib A eqa v B v B e2 e1) as h.
+    pose proof (choice_teq1 lib A eqa v B v B) as h.
+    repeat (autodimp h hyp); eauto 2 with slow.
     exrepnd.
     rename f into eqb.
 
@@ -669,15 +835,17 @@ Proof.
 
     + apply CL_tunion.
       exists eqa eqb; dands; auto.
-      exists A A v v B B; dands; spcast; auto;
+      exists A v B; dands; spcast; auto;
       try (apply computes_to_valc_refl; apply iscvalue_mkc_tunion).
+      eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
 
     + induction e.
-      apply @tunion_eq_cl with (t := t); sp.
-      pose proof (equality_eq lib A a a _ e2).
+      { apply @tunion_eq_cl with (t := t); sp. }
+      pose proof (equality_eq lib A a a _ e2) as z.
       assert (eqa a a) as e by (allrw; sp).
       apply @tunion_eq_eq with (a1 := a) (a2 := a) (e := e); sp.
       pose proof (h0 a a e) as t.
+      destruct t as [t t'].
       pose proof (equality_eq lib (substc a v B) t1 t2 _ t).
       allrw; auto.
 Qed.
@@ -686,11 +854,102 @@ Lemma member_in_bool {o} :
   forall lib (a : @CTerm o),
     member lib a mkc_bool
     <=>
-    (a ~=~(lib) tt {+} a ~=~(lib) ff).
+    { t : CTerm , a ~=~(lib) (mkc_inl t) {+} a ~=~(lib) (mkc_inr t)}.
 Proof.
   introv.
-  rw @equality_in_bool; split; sp.
+  rw @equality_in_bool; split; intro h; exrepnd; exists t;
+    repndors; tcsp;
+    exists t; tcsp.
 Qed.
+
+Lemma tequality_bunion {o} :
+  forall lib (A B C D : @CTerm o),
+    tequality lib (mkc_bunion A B) (mkc_bunion C D)
+    <=> (type lib A # type lib C # type lib B # type lib D).
+Proof.
+  introv.
+  allrw <- @fold_mkc_bunion.
+  rw @tequality_tunion.
+
+  split; intro k; repnd.
+
+  - pose proof (k2 tt tt) as h1.
+    autodimp h1 hyp; eauto 2 with slow.
+
+    pose proof (k2 ff ff) as h2.
+    autodimp h2 hyp; eauto 2 with slow.
+
+    pose proof (k3 tt tt) as h3.
+    autodimp h3 hyp; eauto 2 with slow.
+
+    pose proof (k3 ff ff) as h4.
+    autodimp h4 hyp; eauto 2 with slow.
+
+    allrw @substc_mkcv_ite.
+    pose proof (mkc_ite_tt lib A B) as c1.
+    pose proof (mkc_ite_ff lib A B) as c2.
+    pose proof (mkc_ite_tt lib C D) as c3.
+    pose proof (mkc_ite_ff lib C D) as c4.
+    apply tequality_respects_cequivc_left with (T3 := A) in h1; auto.
+    apply tequality_respects_cequivc_left with (T3 := B) in h2; auto.
+    apply tequality_respects_cequivc_left with (T3 := C) in h3; auto.
+    apply tequality_respects_cequivc_left with (T3 := D) in h4; auto.
+
+    dands; eauto 2 with slow.
+
+  - dands; auto; eauto 2 with slow.
+
+    + introv e.
+      rw @equality_in_bool in e; exrepnd; repndors; repnd; spcast.
+
+      * allrw @substc_mkcv_ite.
+        pose proof (mkc_ite_ceq_inl lib t a A B e0) as c1.
+        pose proof (mkc_ite_ceq_inl lib u a' A B e1) as c2.
+        eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+        eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+        eauto 2 with slow.
+
+      * allrw @substc_mkcv_ite.
+        pose proof (mkc_ite_ceq_inr lib t a A B e0) as c1.
+        pose proof (mkc_ite_ceq_inr lib u a' A B e1) as c2.
+        eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+        eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+        eauto 2 with slow.
+
+    + introv e.
+      rw @equality_in_bool in e; exrepnd; repndors; repnd; spcast.
+
+      * allrw @substc_mkcv_ite.
+        pose proof (mkc_ite_ceq_inl lib t a C D e0) as c1.
+        pose proof (mkc_ite_ceq_inl lib u a' C D e1) as c2.
+        eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+        eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+        eauto 2 with slow.
+
+      * allrw @substc_mkcv_ite.
+        pose proof (mkc_ite_ceq_inr lib t a C D e0) as c1.
+        pose proof (mkc_ite_ceq_inr lib u a' C D e1) as c2.
+        eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+        eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+        eauto 2 with slow.
+
+    + introv; split; intro e;
+        apply equality_in_mkc_tunion in e;
+        apply equality_in_mkc_tunion; repnd; dands; tcsp.
+
+      *
+      SearchAbout equality mkc_tunion.
+XXXXXXXXXXXXXX
+      allrw @substc_mkcv_ite.
+      pose proof (mkc_ite_ceq_ff lib a A B e0) as c1.
+      pose proof (mkc_ite_ceq_ff lib a' C D e) as c2.
+      apply tequality_respects_cequivc_left with (T1 := B); auto.
+      apply cequivc_sym; auto.
+      apply tequality_respects_cequivc_right with (T2 := D); auto.
+      apply cequivc_sym; auto.
+Qed.
+
+
 
 Inductive equal_in_bunion {p} lib (A B t1 t2 : @CTerm p) : [U] :=
 | eq_in_bunion_cl :
