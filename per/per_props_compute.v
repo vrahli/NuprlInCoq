@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,13 +21,20 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
 
-Require Export per_props.
+
+Require Export nuprl_props.
+Require Export choice.
+Require Export cvterm.
+
 
 Lemma fold_less {o} :
   forall a b c d : @NTerm o,
@@ -95,26 +104,38 @@ Proof.
   boolvar; auto; try omega.
 Qed.
 
-Lemma nuprl_computes_left {o} :
-  forall lib (t1 t2 t3 : @CTerm o) eq,
-    nuprl lib t1 t2 eq
-    -> computes_to_valc lib t3 t1
-    -> nuprl lib t3 t2 eq.
+Lemma nuprl_computes {o} :
+  forall lib (t1 t2 : @CTerm o) eq,
+    nuprl lib t1 eq
+    -> computes_to_valc lib t2 t1
+    -> nuprl lib t2 eq.
 Proof.
   introv n c.
-  apply @nuprl_value_respecting_left with (t1 := t1); auto.
+  apply @nuprl_value_respecting with (t1 := t1); auto.
   apply cequivc_sym.
   apply computes_to_valc_implies_cequivc; auto.
 Qed.
 
-Lemma nuprl_computes_right {o} :
+Lemma Nuprl_computes_left {o} :
   forall lib (t1 t2 t3 : @CTerm o) eq,
-    nuprl lib t1 t2 eq
-    -> computes_to_valc lib t3 t2
-    -> nuprl lib t1 t3 eq.
+    Nuprl lib t1 t2 eq
+    -> computes_to_valc lib t3 t1
+    -> Nuprl lib t3 t2 eq.
 Proof.
   introv n c.
-  apply @nuprl_value_respecting_right with (t2 := t2); auto.
+  apply @Nuprl_value_respecting_left with (t1 := t1); auto.
+  apply cequivc_sym.
+  apply computes_to_valc_implies_cequivc; auto.
+Qed.
+
+Lemma Nuprl_computes_right {o} :
+  forall lib (t1 t2 t3 : @CTerm o) eq,
+    Nuprl lib t1 t2 eq
+    -> computes_to_valc lib t3 t2
+    -> Nuprl lib t1 t3 eq.
+Proof.
+  introv n c.
+  apply @Nuprl_value_respecting_right with (t2 := t2); auto.
   apply cequivc_sym.
   apply computes_to_valc_implies_cequivc; auto.
 Qed.
@@ -164,10 +185,3 @@ Proof.
   unfold hasvaluec, hasvalue.
   exists (get_cterm b); auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

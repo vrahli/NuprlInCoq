@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -28,10 +33,11 @@
 Require Export prog.
 Require Export cvterm.
 Require Export csubst6.
-Require Export per_props2.
+
 Require Export per_props_compute.
 
 
+(*
 Lemma nuprl_mkc_not {o} :
   forall lib (a b : @CTerm o) eq,
     nuprl lib a b eq
@@ -70,7 +76,9 @@ Proof.
 
   - sp.
 Qed.
+*)
 
+(*
 Lemma nuprl_mkc_true {o} :
   forall lib, @nuprl o lib
                      mkc_true
@@ -87,6 +95,30 @@ Proof.
   sp.
   introv; split; sp; spcast.
   apply approxc_refl.
+Qed.
+*)
+
+Lemma tnat_type {o} : forall lib, @type o lib mkc_tnat.
+Proof.
+  introv.
+  rw @mkc_tnat_eq.
+
+XXXXXXXXXXX
+  SearchAbout mkc_tnat.
+  unfold type, tequality.
+  pose proof @nuprl_tnat as h.
+  exists
+    (fun (t t' : @CTerm o) =>
+       { _ : equality_of_int lib t t'
+                             &
+                             inhabited
+                             (fun _ _ : @CTerm o =>
+                                forall u v : @CTerm o,
+                                  (forall k : Z,
+                                     computes_to_valc lib t (mkc_integer k) ->
+                                     if (k <? 0)%Z
+                                     then u ===>(lib) mkc_axiom # v ===>(lib) mkc_axiom
+                                     else False) -> False)}); sp.
 Qed.
 
 Lemma nuprl_tnat {o} :
@@ -232,25 +264,6 @@ Proof.
     split; intro k; exrepnd.
     exists v; sp.
     exists e; sp.
-Qed.
-
-Lemma tnat_type {o} : forall lib, @type o lib mkc_tnat.
-Proof.
-  introv.
-  unfold type, tequality.
-  pose proof @nuprl_tnat as h.
-  exists
-    (fun (t t' : @CTerm o) =>
-       { _ : equality_of_int lib t t'
-                             &
-                             inhabited
-                             (fun _ _ : @CTerm o =>
-                                forall u v : @CTerm o,
-                                  (forall k : Z,
-                                     computes_to_valc lib t (mkc_integer k) ->
-                                     if (k <? 0)%Z
-                                     then u ===>(lib) mkc_axiom # v ===>(lib) mkc_axiom
-                                     else False) -> False)}); sp.
 Qed.
 
 (*

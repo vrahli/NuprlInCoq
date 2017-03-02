@@ -24,13 +24,16 @@ else
     cp per/choice-prop.v per/choice.v
 fi
 
-if [ -e "per/per_props_more.v" ]
-then
-    echo "per/per_props_more.v already exists"
-else
-    echo "coping per/per_props_more_prop.v to per/per_props_more.v"
-    cp per/per_props_more_prop.v per/per_props_more.v
-fi
+##
+## I got rid of this file now
+##
+# if [ -e "per/per_props_more.v" ]
+# then
+#     echo "per/per_props_more.v already exists"
+# else
+#     echo "coping per/per_props_more_prop.v to per/per_props_more.v"
+#     cp per/per_props_more_prop.v per/per_props_more.v
+# fi
 
 function get_deps () {
     grep "^Require" $1.v \

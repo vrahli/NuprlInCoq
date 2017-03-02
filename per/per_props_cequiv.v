@@ -30,8 +30,70 @@
 *)
 
 
-Require Export per_props_more.
+Require Export nuprl_props.
+Require Export choice.
+Require Export cvterm.
 
+
+Lemma mkc_cequiv_equality_in_uni {p} :
+  forall lib (a b c d : @CTerm p) i,
+    equality lib (mkc_cequiv a b) (mkc_cequiv c d) (mkc_uni i)
+    <=>
+    (ccequivc lib a b <=> ccequivc lib c d).
+Proof.
+  sp; sp_iff Case; intro e.
+
+  - Case "->".
+    unfold equality in e; exrepnd.
+    allunfold @nuprl.
+    inversion e1; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepnd.
+    computes_to_value_isvalue; GC.
+    rw h0 in e0; exrepnd.
+    inversion e2; try not_univ.
+
+  - Case "<-".
+    exists (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}); sp.
+    apply CL_init.
+    exists (S i); simpl; left; sp;
+    spcast; try computes_to_value_refl.
+    exists (fun t t' : @CTerm p => t ===>(lib) mkc_axiom
+                      # t' ===>(lib) mkc_axiom
+                      # ccequivc lib a b).
+    apply CL_cequiv; unfold per_cequiv.
+    exists a b c d; sp; spcast; try computes_to_value_refl.
+Qed.
+
+Lemma mkc_approx_equality_in_uni {p} :
+  forall lib (a b c d : @CTerm p) i,
+    equality lib (mkc_approx a b) (mkc_approx c d) (mkc_uni i)
+    <=>
+    (capproxc lib a b <=> capproxc lib c d).
+Proof.
+  sp; sp_iff Case; intro e.
+
+  - Case "->".
+    unfold equality in e; exrepnd.
+    unfold nuprl in e1.
+    inversion e1; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepnd.
+    computes_to_value_isvalue; GC.
+    rw h0 in e0; exrepnd.
+    inversion e2; try not_univ.
+
+  - Case "<-".
+    exists (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}); sp.
+    apply CL_init.
+    exists (S i); simpl; left; sp;
+    spcast; try computes_to_value_refl.
+    exists (fun t t' : @CTerm p => t ===>(lib) mkc_axiom
+                      # t' ===>(lib) mkc_axiom
+                      # capproxc lib a b).
+    apply CL_approx; unfold per_approx.
+    exists a b c d; sp; spcast; try computes_to_value_refl.
+Qed.
 
 
 Lemma member_approx_refl {p} :

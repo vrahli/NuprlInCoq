@@ -65,6 +65,7 @@ Require Export per_props_tequality.
 Require Export per_props_top.
 Require Export per_props_ufun.
 Require Export per_props_union.
+Require Export per_props_uni0.
 Require Export per_props_uni.
 Require Export per_props.
 Require Export per_props_w.

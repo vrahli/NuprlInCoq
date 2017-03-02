@@ -28,15 +28,26 @@
 
 *)
 
+
+Require Export nuprl_props.
+Require Export choice.
+Require Export cvterm.
+
 Require Export alphaeq5.
 Require Export cvterm.
 Require Export nat_defs.
 Require Export cequiv_props4.
+Require Export types_converge.
+
+Require Export sequents_tacs.
+Require Import cequiv_tacs.
+Require Import subst_tacs.
+
 Require Export per_props_set.
 Require Export per_props_union.
-Require Export per_props2.
-Require Export types_converge.
 Require Export per_props3.
+
+Require Export subst_per.
 
 Require Export list.  (* ??? *)
 

@@ -30,9 +30,7 @@
 *)
 
 
-Require Export nuprl_props.
-Require Export choice.
-Require Export cvterm.
+Require Export per_props_uni0.
 
 
 (*
@@ -209,11 +207,11 @@ Proof.
     + exists eqa; auto.
 
     + introv ea.
-      eapply type_family_members_eq_implies_tequality; try (exact t0); eauto.
+      eapply nuprl_type_family_members_eq_implies_tequality; try (exact t0); eauto.
       eapply equality_eq; eauto.
 
     + introv ea.
-      eapply type_family_members_eq_implies_tequality; try (exact t); eauto.
+      eapply nuprl_type_family_members_eq_implies_tequality; try (exact t); eauto.
       eapply equality_eq; eauto.
 
     + introv.
@@ -230,54 +228,59 @@ Proof.
         exists eq0; dands; auto.
         eapply nuprl_ext; eauto.
 
-  - generalize (choice_teq lib A1 v1 B1 v1 B1 h2); intro n; exrepnd.
+  - apply ext_eq_implies_tequality; auto.
 
-    unfold type in h0; exrepnd.
-    rename eq into eqa.
+    + generalize (choice_teq lib A1 v1 B1 v1 B1 h2); intro n; exrepnd.
 
-    exists (fun t1 t2 =>
-              forall (a1 a2 : CTerm) (e : eqa a1 a2),
-                f a1
-                  a2
-                  (eq_equality0 lib a1 a2 A1 eqa e h4)
-                  (mkc_apply t1 a1)
-                  (mkc_apply t2 a2)).
+      unfold type in h0; exrepnd.
+      rename eq into eqa1.
 
-    split; apply CL_func; fold (@nuprl p lib).
+      pose proof (Nuprl_type_family_equality_to_eq2 lib A1 v1 v1 B1 B1 eqa1 f h4 n0) as imp1.
+      clear n0.
 
-XXXXXXXXXXXXXXX
+      exists (fun t1 t2 =>
+                forall (a1 a2 : CTerm) (e : eqa1 a1 a2),
+                  f a1
+                    a2
+                    (eq_equality0 lib a1 a2 A1 eqa1 e h4)
+                    (mkc_apply t1 a1)
+                    (mkc_apply t2 a2)).
 
-    + exists eqa.
-      exists (fun a1 a2 e => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)); sp.
+      apply CL_func; fold (@nuprl p lib).
 
-    exists A1 v1 B1; sp; eauto 3 with slow;
-      try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
+      exists eqa1.
+      exists (fun a1 a2 e => f a1 a2 (eq_equality0 lib a1 a2 A1 eqa1 e h4)); sp.
 
-    pose proof (Nuprl_type_family_equality_to_eq lib A1 A2 v1 v2 B1 B2 eqa f teqa0 n0) as imp.
-    clear n0.
+      exists A1 v1 B1; sp; eauto 3 with slow;
+        try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
 
-    pose proof (Nuprl_type_family_equality_to_Nuprl_left
-                  lib A1 v1 v2 B1 B2 eqa
-                  (fun a1 a2 e => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0))) as imp1.
-    simpl in imp1; repeat (autodimp imp1 hyp); clear imp; eauto 3 with slow;[].
+      eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
 
-    eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
+    + generalize (choice_teq lib A2 v2 B2 v2 B2 h3); intro w; exrepnd.
 
-  - exists eqa.
-    exists (fun a1 a2 e => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)); sp.
+      unfold type in h1; exrepnd.
+      rename eq into eqa2.
 
-    exists A2 v2 B2; sp; eauto 3 with slow;
-      try (complete (spcast; apply computes_to_valc_refl; eauto 3 with slow)).
+      pose proof (Nuprl_type_family_equality_to_eq2 lib A2 v2 v2 B2 B2 eqa2 f h4 w0) as imp2.
+      clear w0.
 
-    pose proof (Nuprl_type_family_equality_to_eq lib A1 A2 v1 v2 B1 B2 eqa f teqa0 n0) as imp.
-    clear n0.
+      exists (fun t1 t2 =>
+                forall (a1 a2 : CTerm) (e : eqa2 a1 a2),
+                  f a1
+                    a2
+                    (eq_equality0 lib a1 a2 A2 eqa2 e h4)
+                    (mkc_apply t1 a1)
+                    (mkc_apply t2 a2)).
 
-    pose proof (Nuprl_type_family_equality_to_Nuprl_right
-                  lib A1 v1 v2 B1 B2 eqa
-                  (fun a1 a2 e => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0))) as imp1.
-    simpl in imp1; repeat (autodimp imp1 hyp); clear imp; eauto 3 with slow;[].
+      apply CL_func; fold (@nuprl p lib).
 
-    eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
+      exists eqa2.
+      exists (fun a1 a2 e => f a1 a2 (eq_equality0 lib a1 a2 A2 eqa2 e h4)); sp.
+
+      exists A2 v2 B2; sp; eauto 3 with slow;
+        try (complete (spcast; apply computes_to_valc_refl; eauto 3 with slow)).
+
+      eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
 Qed.
 
 Lemma if_member_function {p} :
@@ -410,7 +413,7 @@ Proof.
     generalize (nuprl_uniquely_valued lib A1 eqa eq); intro k; repeat (dest_imp k hyp).
     apply k in e1.
     clear dependent eq.
-    eapply type_family_members_eq_implies_tequality; eauto. }
+    eapply nuprl_type_family_members_eq_implies_tequality; eauto. }
 
   { introv e.
     unfold equality in e; exrepnd.
@@ -575,6 +578,148 @@ Proof.
     eapply Nuprli_implies_type_family_members_eq; auto; eauto 2 with slow.
 Qed.
 
+Lemma nuprli_eq_type_family_members_eq_implies_ext_eq_one_direction {o} :
+  forall lib i (A1 A2 : @CTerm o) v1 v2 B1 B2 eqa1 eqa2 eqb1 eqb2,
+    nuprli lib i A1 eqa1
+    -> nuprli lib i A2 eqa2
+    -> type_family_members_eq (nuprli lib i) v1 B1 eqa1 eqb1
+    -> type_family_members_eq (nuprli lib i) v2 B2 eqa2 eqb2
+    -> (forall a b, per_func_eq eqa1 eqb1 a b -> per_func_eq eqa2 eqb2 a b)
+    -> forall a b, equality lib a b (mkc_function A1 v1 B1)
+                   -> equality lib a b (mkc_function A2 v2 B2).
+Proof.
+  introv na1 na2 tf1 tf2 imp h.
+
+  apply equality_in_function in h; repnd.
+  apply equality_in_function.
+
+  dands; eauto 2 with slow.
+
+  {
+    introv ea.
+    apply (tequalityi_implies_tequality lib i).
+    eapply nuprli_type_family_members_eq_implies_tequalityi;[|exact tf2|]; eauto.
+    eapply equality_eq;[|exact ea]; eauto 2 with slow.
+  }
+
+  {
+    introv ea.
+    pose proof (imp a b) as q; clear imp.
+
+    assert (eqa2 a0 a') as ea2.
+    { eapply equality_eq;[|exact ea]; eauto 2 with slow. }
+
+    unfold per_func_eq in q.
+    autodimp q hyp.
+
+    {
+      introv.
+
+      pose proof (eq_equality4 lib a1 a'0 A1 eqa1 i e na1) as q.
+      applydup h in q.
+
+      destruct tf1 as [tfb famb].
+      pose proof (tfb a1 a'0 e) as w.
+      eapply nuprli_implies_equality_eq; eauto.
+    }
+
+    {
+      pose proof (q a0 a' ea2) as w; clear q.
+      destruct tf2 as [tfb famb].
+      pose proof (tfb a0 a' ea2) as z.
+      eapply nuprli_and_eq_implies_equality; eauto.
+    }
+  }
+Qed.
+
+Lemma nuprli_eq_type_family_members_eq_implies_ext_eq {o} :
+  forall lib i (A1 A2 : @CTerm o) v1 v2 B1 B2 eqa1 eqa2 eqb1 eqb2,
+    nuprli lib i A1 eqa1
+    -> nuprli lib i A2 eqa2
+    -> type_family_members_eq (nuprli lib i) v1 B1 eqa1 eqb1
+    -> type_family_members_eq (nuprli lib i) v2 B2 eqa2 eqb2
+    -> ((per_func_eq eqa1 eqb1) <=2=> (per_func_eq eqa2 eqb2))
+    -> ext_eq lib (mkc_function A1 v1 B1) (mkc_function A2 v2 B2).
+Proof.
+  introv na1 na2 tf1 tf2 eqiff.
+  split; intro h.
+
+  - eapply nuprli_eq_type_family_members_eq_implies_ext_eq_one_direction;
+      try (exact h); eauto.
+    introv xx; apply eqiff; auto.
+
+  - eapply nuprli_eq_type_family_members_eq_implies_ext_eq_one_direction;
+      try (exact h); eauto.
+    introv xx; apply eqiff; auto.
+Qed.
+
+Lemma equality_function {p} :
+  forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2 i,
+    equality
+      lib
+      (mkc_function A1 v1 B1)
+      (mkc_function A2 v2 B2)
+      (mkc_uni i)
+    <=>
+    (
+      member lib A1 (mkc_uni i)
+      # member lib A2 (mkc_uni i)
+      # (forall a a', equality lib a a' A1 -> equality lib (substc a v1 B1) (substc a' v1 B1) (mkc_uni i))
+      # (forall a a', equality lib a a' A2 -> equality lib (substc a v2 B2) (substc a' v2 B2) (mkc_uni i))
+      # ext_eq lib (mkc_function A1 v1 B1) (mkc_function A2 v2 B2)
+    ).
+Proof.
+  introv; split; intro h; repnd.
+
+  - unfold equality, nuprl in h; exrepnd.
+    inversion h1; subst; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepd.
+    computes_to_value_isvalue; GC.
+    apply e in h0; unfold univi_eq, extts in h0; exrepnd.
+
+    cioneclose_eq eqa; subst; try not_univ.
+    cioneclose_eq eqa; subst; try not_univ.
+
+    one_dest_per_fam eqa1 feqb1 A3 v3 B3 c1 tsa1 tsb1 eqt1.
+    match goal with
+    | [ H : per_func _ _ _ _ |- _ ] => dest_per_fam H eqa2 feqb2 A4 v4 B4 c2 tsa2 tsb2 eqt2
+    end.
+    computes_to_value_isvalue; GC.
+
+    fold (nuprli lib j0) in *.
+    fold (nuprl lib) in *.
+
+    dands.
+
+    { exists eq; dands; auto.
+      apply e.
+      exists eqa1; split; auto. }
+
+    { exists eq; dands; auto.
+      apply e.
+      exists eqa2; split; auto. }
+
+    { introv ea.
+      rewrite @equality_in_uni_as_tequalityi.
+      eapply nuprli_type_family_members_eq_implies_tequalityi; eauto.
+
+      eapply equality_eq;[|eauto]; eauto 2 with slow. }
+
+    { introv ea.
+      rewrite @equality_in_uni_as_tequalityi.
+      eapply nuprli_type_family_members_eq_implies_tequalityi; try (exact tsb2); eauto.
+
+      eapply equality_eq;[|eauto]; eauto 2 with slow. }
+
+    { eapply nuprli_eq_type_family_members_eq_implies_ext_eq; eauto.
+      eapply eq_term_equals_trans;[|eauto].
+      apply eq_term_equals_sym; auto. }
+
+  - apply (ext_eq_implies_tequalityi lib i) in h; auto; clear h;
+      apply implies_equality_function; auto.
+Qed.
+
 Lemma equality_in_function2 {p} :
   forall lib (f g : @CTerm p) A v B,
     equality lib f g (mkc_function A v B)
@@ -587,16 +732,13 @@ Proof.
   introv.
   split; intro h.
 
-  { dup h as q; rw @equality_in_function in h; repnd; dands; tcsp.
-    apply inhabited_implies_tequality in q; auto. }
+  - dup h as q; rw @equality_in_function in h; repnd; dands; tcsp.
+    apply inhabited_implies_tequality in q; auto.
 
-  { repnd.
+  - repnd.
+    apply fold_type in h0.
+    rw @tequality_function in h0; repnd; GC.
     apply equality_in_function; dands; auto.
-  { unfold type; rw @tequality_function; sp.
-
-  rw @tequality_function in k0; sp.
-
-  rw @tequality_function in k0; sp.
 Qed.
 
 Lemma inhabited_function {p} :
@@ -634,6 +776,24 @@ Proof.
   introv; rw @equality_in_function; split; sp; discover; sp.
 Qed.
 
+(* !!MOVE to nuprl_props *)
+Lemma type_implies_tequality {o} :
+  forall lib (T : @CTerm o),
+    type lib T -> tequality lib T T.
+Proof.
+  introv t; apply fold_type; auto.
+Qed.
+Hint Resolve type_implies_tequality : slow.
+
+(* !!MOVE to nuprl_props *)
+Lemma tequality_implies_type {o} :
+  forall lib (T : @CTerm o),
+    tequality lib T T -> type lib T.
+Proof.
+  introv t; apply fold_type; auto.
+Qed.
+Hint Resolve tequality_implies_type : slow.
+
 Lemma tequality_function_fun {p} :
   forall lib (A : @CTerm p) v B,
     (type lib (mkc_function A v (mk_cv [v] B)) {+} type lib (mkc_fun A B))
@@ -642,10 +802,12 @@ Lemma tequality_function_fun {p} :
 Proof.
   introv o; repdors.
 
-  apply tequality_respects_alphaeqc_right with (T2 := mkc_function A v (mk_cv [v] B)); sp.
+  - apply tequality_respects_alphaeqc_right with (T2 := mkc_function A v (mk_cv [v] B));
+      tcsp; eauto 2 with slow.
 
-  apply tequality_respects_alphaeqc_left with (T1 := mkc_fun A B); sp.
-  apply alphaeqc_sym; sp.
+  - apply tequality_respects_alphaeqc_left with (T1 := mkc_fun A B);
+      sp; eauto 2 with slow.
+    apply alphaeqc_sym; sp.
 Qed.
 
 Lemma tequality_mkc_fun_dom {p} :
@@ -656,8 +818,15 @@ Lemma tequality_mkc_fun_dom {p} :
 Proof.
   introv teqa teqf.
   allrw <- @fold_mkc_fun.
-  allrw @tequality_function; repnd; dands; auto.
+  apply fold_type in teqf.
+  apply tequality_function in teqf; repnd.
+  apply implies_tequality_function; auto.
 Qed.
+
+(*
+Again, this is not true anymore:
+
+========================================
 
 Lemma tequality_fun {p} :
   forall lib (A1 A2 B1 B2 : @CTerm p),
@@ -678,61 +847,13 @@ Proof.
     exists a; allapply @equality_refl; sp.
     repeat (rw @csubst_mk_cv); sp.
 Qed.
+*)
 
-Lemma tequality_mkc_fun_l {p} :
-  forall lib (A1 A2 B1 B2 : @CTerm p),
-    tequality lib (mkc_fun A1 B1) (mkc_fun A2 B2)
-    -> tequality lib A1 A2.
-Proof.
-  introv Hpart1.
-  rw @tequality_fun in Hpart1; sp.
-Qed.
-
-Lemma equality_in_fun {p} :
-  forall lib (f g A B : @CTerm p),
-    equality lib f g (mkc_fun A B)
-    <=>
-    (type lib A
-     # (inhabited_type lib A -> type lib B)
-     # (forall a a',
-          equality lib a a' A
-          -> equality lib (mkc_apply f a) (mkc_apply g a') B)).
-Proof.
-  introv.
-  rw <- @fold_mkc_fun.
-  rw @equality_in_function.
-  split; intro k; repnd; dands; auto.
-
-  introv i.
-  unfold inhabited_type in i; exrepnd.
-  generalize (k1 t t); intro j; autodimp j hyp.
-  repeat (rw @csubst_mk_cv in j); sp.
-
-  introv e.
-  apply k in e.
-  repeat (rw @csubst_mk_cv in e); sp.
-
-  introv e.
-  repeat (rw @csubst_mk_cv); sp.
-  autodimp k1 hyp.
-  exists a; allapply @equality_refl; sp.
-
-  introv e.
-  repeat (rw @csubst_mk_cv); sp.
-Qed.
-
-Lemma type_mkc_fun {p} :
-  forall lib (A B : @CTerm p),
-    type lib (mkc_fun A B) <=> (type lib A # (inhabited_type lib A -> type lib B)).
-Proof.
-  introv.
-  rw @tequality_mkc_fun; sp.
-Qed.
-
+(*
 Lemma tequality_mkc_fun {p} :
   forall lib (A1 A2 B1 B2 : @CTerm p),
     tequality lib (mkc_fun A1 B1) (mkc_fun A2 B2)
-              <=> (tequality lib A1 A2 # (inhabited_type lib A1 -> tequality lib B1 B2)).
+    <=> (tequality lib A1 A2 # (inhabited_type lib A1 -> tequality lib B1 B2)).
 Proof.
   introv.
   allrw <- @fold_mkc_fun.
@@ -749,4 +870,103 @@ Proof.
   apply equality_refl in e.
   autodimp k hyp.
   exists a; auto.
+Qed.
+*)
+
+Lemma tequality_fun {p} :
+  forall lib (A1 A2 B1 B2 : @CTerm p),
+    tequality lib (mkc_fun A1 B1) (mkc_fun A2 B2)
+    <=>
+    (
+      type lib A1
+      # type lib A2
+      # (inhabited_type lib A1 -> type lib B1)
+      # (inhabited_type lib A2 -> type lib B2)
+      # ext_eq lib (mkc_fun A1 B1) (mkc_fun A2 B2)
+    ).
+Proof.
+  introv.
+  allrw <- @fold_mkc_fun.
+  rw @tequality_function.
+  split; intro teq; repnd; dands; auto; introv e.
+
+  - unfold inhabited_type in e; exrepnd.
+    generalize (teq2 t t); intro k; autodimp k hyp.
+    repeat (rw @csubst_mk_cv in k); sp; eauto 2 with slow.
+
+  - unfold inhabited_type in e; exrepnd.
+    generalize (teq3 t t); intro k; autodimp k hyp.
+    repeat (rw @csubst_mk_cv in k); sp; eauto 2 with slow.
+
+  - autodimp teq2 hyp.
+    { exists a; allapply @equality_refl; sp. }
+    repeat (rw @csubst_mk_cv); sp; eauto 2 with slow.
+
+  - autodimp teq3 hyp.
+    { exists a; allapply @equality_refl; sp. }
+    repeat (rw @csubst_mk_cv); sp; eauto 2 with slow.
+Qed.
+
+(*
+Lemma tequality_mkc_fun_l {p} :
+  forall lib (A1 A2 B1 B2 : @CTerm p),
+    tequality lib (mkc_fun A1 B1) (mkc_fun A2 B2)
+    -> tequality lib A1 A2.
+Proof.
+  introv Hpart1.
+  rw @tequality_fun in Hpart1; sp.
+Qed.
+*)
+
+Lemma equality_in_fun {p} :
+  forall lib (f g A B : @CTerm p),
+    equality lib f g (mkc_fun A B)
+    <=>
+    (type lib A
+     # (inhabited_type lib A -> type lib B)
+     # (forall a a',
+          equality lib a a' A
+          -> equality lib (mkc_apply f a) (mkc_apply g a') B)).
+Proof.
+  introv.
+  rw <- @fold_mkc_fun.
+  rw @equality_in_function.
+  split; intro k; repnd; dands; auto.
+
+  { introv i.
+    unfold inhabited_type in i; exrepnd.
+    generalize (k1 t t); intro j; autodimp j hyp.
+    repeat (rw @csubst_mk_cv in j); sp; eauto 2 with slow. }
+
+  { introv e.
+    apply k in e.
+    repeat (rw @csubst_mk_cv in e); sp. }
+
+  { introv e.
+    repeat (rw @csubst_mk_cv); sp.
+    autodimp k1 hyp; eauto 2 with slow.
+    exists a; allapply @equality_refl; sp. }
+
+  { introv e.
+    repeat (rw @csubst_mk_cv); sp. }
+Qed.
+
+(* !!MOVE to nuprl_props *)
+Lemma ext_eq_refl {o} :
+  forall lib (T : @CTerm o), ext_eq lib T T.
+Proof.
+  introv; intros a b; tcsp.
+Qed.
+Hint Resolve ext_eq_refl : slow.
+
+Lemma type_mkc_fun {p} :
+  forall lib (A B : @CTerm p),
+    type lib (mkc_fun A B) <=> (type lib A # (inhabited_type lib A -> type lib B)).
+Proof.
+  introv.
+  split; intro h.
+  - apply fold_type in h.
+    rw @tequality_fun in h; tcsp.
+  - apply fold_type.
+    apply tequality_fun; repnd; dands; tcsp; eauto 2 with slow.
 Qed.

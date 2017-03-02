@@ -1498,7 +1498,7 @@ Proof.
   eapply Nuprl_trans; eauto.
 Qed.
 
-Lemma type_family_members_eq_implies_tequality {o} :
+Lemma nuprl_type_family_members_eq_implies_tequality {o} :
   forall lib (A : @CTerm o) v B eqa eqb a1 a2,
     nuprl lib A eqa
     -> type_family_members_eq (nuprl lib) v B eqa eqb
@@ -1520,28 +1520,6 @@ Proof.
 
   eapply nuprl_ext;eauto.
   apply eq_term_equals_sym; apply tran.
-Qed.
-
-Lemma Nuprli_type_family_equality_to_eq {o} :
-  forall lib i (A : @CTerm o) v1 v2 B1 B2 eqa f (n : nuprli lib i A eqa),
-    (forall (a1 a2 : CTerm) (e : equality lib a1 a2 A),
-        Nuprli lib i (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 e))
-    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
-           Nuprli lib i (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 (eq_equality4 lib a1 a2 A eqa i e n))).
-Proof.
-  introv imp; introv.
-  apply imp.
-Qed.
-
-Lemma Nuprli_type_family_equality_to_nuprli_left {o} :
-  forall lib i v1 v2 B1 B2 (eqa : per(o)) f,
-    (forall (a1 a2 : CTerm) (e : eqa a1 a2),
-        Nuprli lib i (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 e))
-    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
-           nuprli lib i (B1) [[v1 \\ a1]] (f a1 a2 e)).
-Proof.
-  introv imp; introv.
-  apply imp.
 Qed.
 
 Ltac ntsi i :=
@@ -1567,6 +1545,60 @@ Ltac entsi i :=
         destruct nts as [ nts_tes nts ];
         destruct nts as [ nts_tet nts_tev ]
   end.
+
+Lemma nuprli_type_family_members_eq_implies_tequalityi {o} :
+  forall lib i (A : @CTerm o) v B eqa eqb a1 a2,
+    nuprli lib i A eqa
+    -> type_family_members_eq (nuprli lib i) v B eqa eqb
+    -> eqa a1 a2
+    -> tequalityi lib i (B)[[v\\a1]] (B)[[v\\a2]].
+Proof.
+  introv n tf ea.
+  destruct tf as [tb tf].
+
+  pose proof (tb a1 a2 ea) as q.
+  destruct tf as [sym tran].
+
+  exists (univi_eq lib (univi lib i)); dands.
+
+  { apply CL_init.
+    exists (S i).
+    apply univi_mkc_uni. }
+
+  exists (eqb a1 a2 ea); split; auto.
+  fold (nuprli lib i).
+
+  assert (eqa a2 a2) as ea2.
+  { ntsi i; eapply nts_tet; eauto.
+    eapply nts_tes; eauto. }
+
+  pose proof (tb a2 a2 ea2) as h.
+
+  eapply nuprli_ext;eauto.
+  apply eq_term_equals_sym; apply tran.
+Qed.
+
+Lemma Nuprli_type_family_equality_to_eq {o} :
+  forall lib i (A : @CTerm o) v1 v2 B1 B2 eqa f (n : nuprli lib i A eqa),
+    (forall (a1 a2 : CTerm) (e : equality lib a1 a2 A),
+        Nuprli lib i (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 e))
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+           Nuprli lib i (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 (eq_equality4 lib a1 a2 A eqa i e n))).
+Proof.
+  introv imp; introv.
+  apply imp.
+Qed.
+
+Lemma Nuprli_type_family_equality_to_nuprli_left {o} :
+  forall lib i v1 v2 B1 B2 (eqa : per(o)) f,
+    (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+        Nuprli lib i (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 e))
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+           nuprli lib i (B1) [[v1 \\ a1]] (f a1 a2 e)).
+Proof.
+  introv imp; introv.
+  apply imp.
+Qed.
 
 Lemma Nuprli_refl {p} :
   forall lib i (t1 t2 : @CTerm p) eq,
@@ -1744,3 +1776,177 @@ Proof.
   introv; nts; tcsp.
 Qed.
 Hint Resolve uniquely_valued_nuprl : slow.
+
+Lemma nuprli_implies_type {o} :
+  forall lib i (A : @CTerm o) eq,
+    nuprli lib i A eq -> type lib A.
+Proof.
+  introv n.
+  unfold type; exists eq; eauto 2 with slow.
+Qed.
+Hint Resolve nuprli_implies_type : slow.
+
+Lemma nuprli_implies_equality_eq {o} :
+  forall lib i (A : @CTerm o) a b eq,
+    nuprli lib i A eq
+    -> (eq a b <=> equality lib a b A).
+Proof.
+  introv n; split; intro h.
+
+  - exists eq; sp; eauto 2 with slow.
+
+  - unfold equality in h; exrepnd.
+    apply nuprli_implies_nuprl in n.
+    eapply nuprl_uniquely_valued in h1;[|exact n].
+    apply h1; auto.
+Qed.
+
+Lemma nuprli_and_eq_implies_equality {o} :
+  forall lib i (A : @CTerm o) a b eq,
+    nuprli lib i A eq
+    -> eq a b
+    -> equality lib a b A.
+Proof.
+  introv n e.
+  apply (nuprli_implies_equality_eq lib i A a b eq n); auto.
+Qed.
+
+(*
+Lemma nuprl_implies_nuprli_if_per_at_level_i {o} :
+  forall lib i (A B : @CTerm o) eq,
+    nuprli lib i A eq
+    -> nuprl lib B eq
+    -> nuprli lib i B eq.
+Proof.
+  unfold nuprli, nuprl; introv n m.
+  remember (univ lib) as k.
+  revert Heqk i A n.
+
+  close_cases (induction m using @close_ind') Case; introv Heqts; introv; subst.
+
+  - Case "CL_init".
+    intro cl.
+    duniv j h.
+
+  SearchAbout nuprl nuprli.
+Qed.
+
+Lemma typei_and_tequality_implies_tequalityi {o} :
+  forall lib i (A B : @CTerm o),
+    typei lib i A
+    -> tequality lib A B
+    -> tequalityi lib i A B.
+Proof.
+  introv ty teq.
+  unfold typei in ty.
+  unfold tequalityi in *.
+  unfold tequality in teq.
+  unfold equality in *.
+  exrepnd.
+  destruct teq0 as [teq1 teq2].
+
+  inversion ty1; subst; try not_univ.
+  duniv j h.
+  allrw @univi_exists_iff; exrepd.
+  computes_to_value_isvalue; GC.
+  apply e in ty0; unfold univi_eq, extts in ty0; exrepnd.
+  fold (nuprli lib j0) in *; GC.
+  appdup @nuprli_implies_nuprl in ty0.
+  eapply nuprl_uniquely_valued in ty2;[|exact teq1].
+  exists eq0; dands; auto.
+  apply e.
+  exists eqa; split; fold (nuprli lib j0); auto.
+  eapply nuprl_ext in teq2;[|eauto].
+  clear dependent eq.
+
+Qed.
+*)
+
+Lemma nuprl_ext_eq_implies_eq_term_equals {o} :
+  forall lib (A B : @CTerm o) eqa eqb,
+    nuprl lib A eqa
+    -> nuprl lib B eqb
+    -> ext_eq lib A B
+    -> eqa <=2=> eqb.
+Proof.
+  introv na nb e.
+
+  unfold ext_eq in e.
+
+  intros a b.
+  pose proof (e a b) as q.
+  unfold equality in q.
+  destruct q as [q1 q2].
+  split; introv h;[clear q2|clear q1].
+
+  - autodimp q1 hyp.
+
+    { exists eqa; dands; auto. }
+
+    exrepnd.
+
+    eapply nuprl_uniquely_valued in q1;[|exact nb].
+    apply q1; auto.
+
+  - autodimp q2 hyp.
+
+    { exists eqb; dands; auto. }
+
+    exrepnd.
+
+    eapply nuprl_uniquely_valued in q1;[|exact na].
+    apply q1; auto.
+Qed.
+
+Lemma ext_eq_implies_tequality {o} :
+  forall lib (A B : @CTerm o),
+    type lib A
+    -> type lib B
+    -> ext_eq lib A B
+    -> tequality lib A B.
+Proof.
+  introv ta tb e.
+
+  unfold type in *; exrepnd.
+  rename eq0 into eqa.
+  rename eq into eqb.
+
+  eapply nuprl_ext_eq_implies_eq_term_equals in e; eauto.
+  exists eqa; split; auto.
+  eapply nuprl_ext; eauto.
+  apply eq_term_equals_sym; auto.
+Qed.
+
+Lemma ext_eq_implies_tequalityi {o} :
+  forall lib i (A B : @CTerm o),
+    typei lib i A
+    -> typei lib i B
+    -> ext_eq lib A B
+    -> tequalityi lib i A B.
+Proof.
+  introv ta tb e.
+
+  unfold typei, tequalityi, equality in *; exrepnd.
+  eapply nuprl_uniquely_valued in ta1;[|exact tb1].
+  apply ta1 in ta0.
+  clear dependent eq0.
+  exists eq; dands; auto.
+
+  inversion tb1; subst; try not_univ; clear tb1.
+  duniv j h.
+  allrw @univi_exists_iff; exrepd.
+  computes_to_value_isvalue; GC.
+  apply e0 in ta0; unfold univi_eq, extts in ta0; exrepnd; GC.
+  apply e0 in tb0; unfold univi_eq, extts in tb0; exrepnd; GC.
+  rename eqa0 into eqb.
+  apply e0.
+  exists eqa.
+  fold (nuprli lib j0) in *.
+
+  split; auto.
+
+  eapply nuprl_ext_eq_implies_eq_term_equals in e;
+    try (eapply nuprli_implies_nuprl; eauto).
+  eapply nuprli_ext; eauto.
+  apply eq_term_equals_sym; auto.
+Qed.

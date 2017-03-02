@@ -30,7 +30,10 @@
 *)
 
 
-Require Export per_props.
+Require Export nuprl_props.
+Require Export choice.
+Require Export cvterm.
+
 
 Lemma tequality_set {p} :
   forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2,

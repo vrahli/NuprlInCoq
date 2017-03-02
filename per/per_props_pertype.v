@@ -837,3 +837,318 @@ Proof.
     repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
     allrw @inhabited_type_erasec; auto.
 Qed.
+
+Lemma mkc_pertype_equality_in_uni {p} :
+  forall lib (R1 R2 : @CTerm p) i,
+    equality lib (mkc_pertype R1) (mkc_pertype R2) (mkc_uni i)
+    <=> (forall x y, member lib (mkc_apply2 R1 x y) (mkc_uni i))
+      # (forall x y, member lib (mkc_apply2 R2 x y) (mkc_uni i))
+      # (forall x y,
+           inhabited_type lib (mkc_apply2 R1 x y)
+           <=>
+           inhabited_type lib (mkc_apply2 R2 x y))
+      # is_per_type lib R1.
+Proof.
+  introv; split; intro equ; repnd.
+
+  - unfold equality, nuprl in equ; exrepnd.
+    inversion equ1; subst; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepnd.
+    computes_to_value_isvalue; GC.
+    rw h0 in equ0; exrepnd.
+    inversion equ2; subst; try not_univ.
+    dest_per.
+    allfold (@nuprl p); allfold (@nuprli p lib j0).
+    computes_to_value_isvalue.
+
+    dands; introv.
+
+    generalize (typ1 x y); intro k.
+    unfold member, equality.
+    exists eq; sp.
+    allrw.
+    exists (eq1 x y); sp.
+
+    generalize (typ2 x y); intro k.
+    unfold member, equality.
+    exists eq; sp.
+    allrw.
+    exists (eq2 x y); sp.
+
+    generalize (typ1 x y); intro k1.
+    generalize (typ2 x y); intro k2.
+    allapply @nuprli_implies_nuprl.
+
+    generalize (inhabited_type_iff lib (mkc_apply2 R0 x y) (mkc_apply2 R3 x y) (eq1 x y) (eq2 x y)); intro iff; repeat (dest_imp iff hyp).
+    rw <- iff; sp.
+
+    generalize (is_per_type_iff_is_per lib R0 eq1); introv iff.
+    dest_imp iff hyp.
+    intros.
+    generalize (typ1 x y); intro k1.
+    allapply @nuprli_implies_nuprl; sp.
+    rw <- iff; sp.
+
+  - repnd.
+    unfold equality, nuprl.
+
+    exists (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}); sp.
+    apply CL_init.
+    exists (S i); simpl; left; sp; spcast; try computes_to_value_refl.
+
+    fold (@nuprli p lib i).
+
+    assert (forall x y : CTerm,
+              {eq : per
+               , nuprli lib i (mkc_apply2 R1 x y) (mkc_apply2 R1 x y) eq}) as f1.
+    (* begin proof of the assert *)
+    intros.
+    unfold member, equality in equ0.
+    generalize (equ0 x y); intro k; exrepnd.
+    inversion k1; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepnd.
+    computes_to_value_isvalue; GC.
+    rw h0 in k0; exrepnd.
+    allfold (@nuprli p lib j0).
+    exists eqa; sp.
+    (* end of proof of the assert *)
+
+    assert (forall x y : CTerm,
+              {eq : per
+               , nuprli lib i (mkc_apply2 R2 x y) (mkc_apply2 R2 x y) eq}) as f2.
+    (* begin proof of the assert *)
+    intros.
+    unfold member, equality in equ1.
+    generalize (equ1 x y); intro k; exrepnd.
+    inversion k1; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepnd.
+    computes_to_value_isvalue; GC.
+    rw h0 in k0; exrepnd.
+    allfold (@nuprli p lib j0).
+    exists eqa; sp.
+    (* end of proof of the assert *)
+
+    generalize (choice_spteqi lib i (mkc_apply2 R1) (mkc_apply2 R1)); intro fn1.
+    generalize (choice_spteqi lib i (mkc_apply2 R2) (mkc_apply2 R2)); intro fn2.
+    dest_imp fn1 hyp.
+    dest_imp fn2 hyp.
+    exrepnd.
+
+    exists (fun t t' => inhabited (f0 t t')).
+    apply CL_pertype.
+    fold (@nuprli p lib i).
+    unfold per_pertype.
+    exists R1 R2
+           (fun t t' => f0 t t')
+           (fun t t' => f t t');
+      sp; try (spcast; computes_to_value_refl); try (fold nuprl).
+
+    generalize (fn0 x y); intro n1.
+    generalize (fn2 x y); intro n2.
+    allapply @nuprli_implies_nuprl.
+    generalize (inhabited_type_iff lib (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (f0 x y) (f x y)); intro iff; repeat (dest_imp iff hyp).
+    rw iff; sp.
+
+    generalize (is_per_type_iff_is_per lib R1 f0); introv iff.
+    dest_imp iff hyp.
+    intros.
+    generalize (fn2 x y); intro k1.
+    allapply @nuprli_implies_nuprl; sp.
+    rw iff; sp.
+Qed.
+
+Lemma mkc_ipertype_equality_in_uni {p} :
+  forall lib (R1 R2 : @CTerm p) i,
+    equality lib (mkc_ipertype R1) (mkc_ipertype R2) (mkc_uni i)
+    <=> (forall x y, equality lib (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (mkc_uni i))
+        # is_per_type lib R1.
+Proof.
+  introv; split; intro equ; repnd.
+
+  - unfold equality, nuprl in equ; exrepnd.
+    inversion equ1; subst; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepnd.
+    computes_to_value_isvalue; GC.
+    rw h0 in equ0; exrepnd.
+    inversion equ2; subst; try not_univ.
+    dest_per.
+    allfold (@nuprl p lib); allfold (@nuprli p lib j0).
+    computes_to_value_isvalue.
+
+    dands; introv.
+
+    generalize (eqtyps x y); intro k.
+    exists eq; sp; allrw.
+    exists (eq1 x y); sp.
+
+    generalize (is_per_type_iff_is_per lib R0 eq1); introv iff.
+    dest_imp iff hyp.
+    intros.
+    generalize (eqtyps x y); intro k1.
+    allapply @nuprli_implies_nuprl; sp.
+    apply nuprl_refl in k1; sp.
+    rw <- iff; sp.
+
+  - repnd.
+    unfold equality, nuprl.
+
+    exists (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}); sp.
+    apply CL_init.
+    exists (S i); simpl; left; sp; spcast; try computes_to_value_refl.
+
+    fold (@nuprli p lib i).
+
+    assert (forall x y : CTerm,
+              {eq : term-equality
+               , nuprli lib i (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) eq}) as f1.
+    (* begin proof of the assert *)
+    intros.
+    unfold member, equality in equ0.
+    generalize (equ0 x y); intro k; exrepnd.
+    inversion k1; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepnd.
+    computes_to_value_isvalue; GC.
+    rw h0 in k0; exrepnd.
+    allfold (@nuprli p lib j0).
+    exists eqa; sp.
+    (* end of proof of the assert *)
+
+    generalize (choice_spteqi lib i (mkc_apply2 R1) (mkc_apply2 R2)); intro fn1.
+    dest_imp fn1 hyp.
+    exrepnd.
+
+    exists (pertype_eq f).
+    apply CL_ipertype.
+    fold (@nuprli p lib i).
+    unfold per_ipertype.
+    exists R1 R2 f;
+      sp; try (spcast; computes_to_value_refl); try (fold nuprl).
+
+    generalize (is_per_type_iff_is_per lib R1 f); introv iff.
+    dest_imp iff hyp.
+    intros.
+    generalize (fn0 x y); intro k1.
+    allapply @nuprli_implies_nuprl; sp.
+    apply nuprl_refl in k1; sp.
+    rw iff; sp.
+Qed.
+
+Lemma mkc_spertype_equality_in_uni {p} :
+  forall lib (R1 R2 : @CTerm p) i,
+    equality lib (mkc_spertype R1) (mkc_spertype R2) (mkc_uni i)
+    <=> (forall x y, equality lib (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (mkc_uni i))
+        # (forall x y z,
+             inhabited_type lib (mkc_apply2 R1 x z)
+             -> equality lib (mkc_apply2 R1 x y) (mkc_apply2 R1 z y) (mkc_uni i))
+        # (forall x y z,
+             inhabited_type lib (mkc_apply2 R1 y z)
+             -> equality lib (mkc_apply2 R1 x y) (mkc_apply2 R1 x z) (mkc_uni i))
+        # is_per_type lib R1.
+Proof.
+  introv; split; intro equ; repnd.
+
+  - unfold equality, nuprl in equ; exrepnd.
+    inversion equ1; subst; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepnd.
+    computes_to_value_isvalue; GC.
+    rw h0 in equ0; exrepnd.
+    inversion equ2; subst; try not_univ.
+    dest_per.
+    allfold (@nuprl p); allfold (@nuprli p lib j0).
+    computes_to_value_isvalue.
+
+    dands; introv.
+
+    generalize (eqtyps1 x y); intro k.
+    exists eq; sp; allrw.
+    exists (eq1 x y); sp.
+
+    intro inh.
+    generalize (eqtyps1 x z); intro n.
+    apply inhabited_if_inhabited_type_i in n; auto.
+    generalize (eqtyps2 x y z n); intro ni.
+    exists eq; sp.
+    allrw; exists (eq1 x y); sp.
+
+    intro inh.
+    generalize (eqtyps1 y z); intro n.
+    apply inhabited_if_inhabited_type_i in n; auto.
+    generalize (eqtyps3 x y z n); intro ni.
+    exists eq; sp.
+    allrw; exists (eq1 x y); sp.
+
+    generalize (is_per_type_iff_is_per lib R0 eq1); introv iff.
+    dest_imp iff hyp.
+    intros.
+    generalize (eqtyps1 x y); intro k1.
+    allapply @nuprli_implies_nuprl; sp.
+    apply nuprl_refl in k1; sp.
+    rw <- iff; sp.
+
+  - repnd.
+    unfold equality, nuprl.
+
+    exists (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}); sp.
+    apply CL_init.
+    exists (S i); simpl; left; sp; spcast; try computes_to_value_refl.
+
+    fold (@nuprli p lib i).
+
+    assert (forall x y : CTerm,
+              {eq : term-equality
+               , nuprli lib i (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) eq}) as f1.
+    (* begin proof of the assert *)
+    intros.
+    unfold member, equality in equ0.
+    generalize (equ0 x y); intro k; exrepnd.
+    inversion k1; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepnd.
+    computes_to_value_isvalue; GC.
+    rw h0 in k0; exrepnd.
+    allfold (@nuprli p lib j0).
+    exists eqa; sp.
+    (* end of proof of the assert *)
+
+    generalize (choice_spteqi lib i (mkc_apply2 R1) (mkc_apply2 R2)); intro fn1.
+    dest_imp fn1 hyp.
+    exrepnd.
+
+    exists (pertype_eq f).
+    apply CL_spertype.
+    fold (@nuprli p lib i).
+    unfold per_spertype.
+    exists R1 R2 f;
+      dands; introv;
+      try (spcast; computes_to_value_refl);
+      try (fold nuprl);
+      try (complete sp).
+
+    intro inh.
+    generalize (fn0 x z); intro ni.
+    apply inhabited_type_if_inhabited_i in ni; auto.
+    generalize (equ1 x y z ni); intro e.
+    generalize (fn0 x y); intro n.
+    apply equality_nuprli with (C := mkc_apply2 R2 x y); auto.
+
+    intro inh.
+    generalize (fn0 y z); intro ni.
+    apply inhabited_type_if_inhabited_i in ni; auto.
+    generalize (equ2 x y z ni); intro e.
+    generalize (fn0 x y); intro n.
+    apply equality_nuprli with (C := mkc_apply2 R2 x y); auto.
+
+    generalize (is_per_type_iff_is_per lib R1 f); introv iff.
+    dest_imp iff hyp.
+    intros.
+    generalize (fn0 x y); intro k1.
+    allapply @nuprli_implies_nuprl; sp.
+    apply nuprl_refl in k1; sp.
+    rw iff; sp.
+Qed.

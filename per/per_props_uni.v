@@ -29,34 +29,9 @@
  *)
 
 
+Require Export per_props_uni0.
 Require Export per_props_nat.
 
-
-Lemma equality_in_uni {p} :
-  forall lib a b i,
-    @equality p lib a b (mkc_uni i)
-    -> tequality lib a b.
-Proof.
-  unfold tequality, equality, nuprl; introv e; exrepnd.
-
-  inversion e1; subst; try not_univ.
-  duniv j h.
-  induction j; allsimpl; sp.
-  computes_to_value_isvalue.
-  match goal with
-  | [ H : _ <=2=> _ |- _ ] => apply H in e0; clear H
-  end.
-  unfold univi_eq, extts in e0; exrepnd.
-  exists eqa.
-  eapply Nuprli_implies_Nuprl; split; eauto.
-Qed.
-
-Lemma member_in_uni {p} :
-  forall lib a i, @member p lib a (mkc_uni i) -> type lib a.
-Proof.
-  unfold member; introv e.
-  apply equality_in_uni in e; eauto 2 with slow.
-Qed.
 
 Lemma computes_to_valc_tuni_implies {o} :
   forall lib (t : @CTerm o) v,
@@ -133,47 +108,3 @@ Proof.
     left.
     dands; spcast; auto.
 Qed.
-
-Lemma uni_in_uni {o} :
-  forall lib i j, i < j -> @member o lib (mkc_uni i) (mkc_uni j).
-Proof.
-  introv h.
-  unfold member, equality, nuprl.
-  exists (fun A A' => {eqa : per , close lib (univi lib j) A A' eqa}).
-  dands.
-
-  { apply mkc_uni_in_nuprl. }
-
-  {
-    exists (fun A A' => {eqa : per , close lib (univi lib i) A A' eqa}).
-    apply CL_init.
-    apply univi_exists_iff.
-    exists i; dands; spcast; tcsp; try (apply computes_to_valc_refl; eauto 3 with slow).
-  }
-Qed.
-
-Lemma cumulativity {o} :
-  forall lib i j (A B : @CTerm o),
-    i < j
-    -> equality lib A B (mkc_uni i)
-    -> equality lib A B (mkc_uni j).
-Proof.
-  introv h equ.
-  unfold member, equality, nuprl in *; destruct equ as [eqa equ]; repnd.
-  exists (fun A A' => {eqa : per , close lib (univi lib j) A A' eqa}).
-  dands.
-
-  { apply mkc_uni_in_nuprl. }
-
-  {
-    dup equ0 as n.
-    eapply nuprl_uniquely_valued in equ0;[|apply mkc_uni_in_nuprl].
-    apply equ0 in equ; exrepnd; clear equ0.
-    fold (nuprli lib i) in equ1.
-    exists eqa0.
-    fold (nuprli lib j).
-    pose proof (typable_in_higher_univ lib i A B eqa0 equ1 (j - i)) as q.
-    rewrite minus_plus_n in q; auto; try omega.
-  }
-Qed.
-
