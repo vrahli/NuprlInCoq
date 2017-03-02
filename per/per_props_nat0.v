@@ -534,6 +534,150 @@ Proof.
   apply not_axiom_approxc_bot in w; sp.
 Qed.
 
+Lemma equality_in_less {o} :
+  forall lib (u v a b c d : @CTerm o),
+    equality lib u v (mkc_less a b c d)
+    <=>
+    {ka : Z
+     , {kb : Z
+        , a ===>(lib) (mkc_integer ka)
+        # b ===>(lib) (mkc_integer kb)
+        # (
+            ((ka < kb)%Z # equality lib u v c)
+            {+}
+            ((kb <= ka)%Z # equality lib u v d)
+          )}}.
+Proof.
+  introv.
+
+  split; intro k; exrepnd.
+
+  - applydup @inhabited_implies_tequality in k.
+    apply types_converge in k0.
+    spcast.
+    apply hasvaluec_mkc_less in k0.
+    exrepnd.
+
+    exists k1 k0; dands; spcast; eauto with slow;
+    try (complete (apply computes_to_valc_iff_reduces_toc; dands; eauto with slow)).
+
+    assert (cequivc lib
+                    (mkc_less a b c d)
+                    (mkc_less (mkc_integer k1) (mkc_integer k0) c d)) as c1.
+    { apply reduces_toc_implies_cequivc.
+      destruct_cterms; allunfold @reduces_toc; allunfold @computes_to_valc; allsimpl.
+      apply reduce_to_prinargs_comp; eauto with slow.
+      allunfold @computes_to_value; sp; eauto with slow. }
+
+    repndors; repnd.
+
+    + left; dands; auto.
+
+      assert (cequivc lib
+                      (mkc_less (mkc_integer k1) (mkc_integer k0) c d)
+                      c) as c2.
+      { apply reduces_toc_implies_cequivc.
+        destruct_cterms; unfold reduces_toc; simpl.
+        apply reduces_to_if_step; csunf; simpl.
+        dcwf h; simpl.
+        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+
+      apply cequivc_sym in c1.
+      apply cequivc_sym in c2.
+      rwg c2.
+      rwg c1; auto.
+
+    + right; dands; auto.
+
+      assert (cequivc lib
+                      (mkc_less (mkc_integer k1) (mkc_integer k0) c d)
+                      d) as c2.
+      { apply reduces_toc_implies_cequivc.
+        destruct_cterms; unfold reduces_toc; simpl.
+        apply reduces_to_if_step; csunf; simpl.
+        dcwf h; simpl.
+        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+
+      apply cequivc_sym in c1.
+      apply cequivc_sym in c2.
+      rwg c2.
+      rwg c1; auto.
+
+  - spcast.
+    assert (cequivc lib
+                    (mkc_less a b c d)
+                    (mkc_less (mkc_integer ka) (mkc_integer kb) c d)) as c1.
+    { apply reduces_toc_implies_cequivc.
+      destruct_cterms; allunfold @reduces_toc; allunfold @computes_to_valc; allsimpl.
+      apply reduce_to_prinargs_comp; eauto with slow. }
+
+    rwg c1.
+
+    repndors; repnd.
+
+    + assert (cequivc lib
+                      (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
+                      c) as c2.
+      { apply reduces_toc_implies_cequivc.
+        destruct_cterms; unfold reduces_toc; simpl.
+        apply reduces_to_if_step; csunf; simpl.
+        dcwf h; simpl.
+        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+
+      rwg c2; auto.
+
+    + assert (cequivc lib
+                      (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
+                      d) as c2.
+      { apply reduces_toc_implies_cequivc.
+        destruct_cterms; unfold reduces_toc; simpl.
+        apply reduces_to_if_step; csunf; simpl.
+        dcwf h; simpl.
+        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+
+      rwg c2; auto.
+Qed.
+
+Lemma equality_in_less_than {o} :
+  forall lib (u v a b : @CTerm o),
+    equality lib u v (mkc_less_than a b)
+    <=>
+    {ka : Z , {kb : Z
+    , a ===>(lib) (mkc_integer ka)
+    # b ===>(lib) (mkc_integer kb)
+    # (ka < kb)%Z}}.
+Proof.
+  introv.
+  rw @mkc_less_than_eq.
+  rw @equality_in_less.
+  split; intro k; exrepnd; spcast.
+  - repndors; repnd.
+    + exists ka kb; dands; spcast; auto.
+    + apply equality_in_false in k1; sp.
+  - exists ka kb; dands; spcast; auto.
+    left; dands; auto.
+    apply equality_in_true; dands; spcast; auto.
+Qed.
+
+Lemma inhabited_less_than {o} :
+  forall lib (a b : @CTerm o),
+    inhabited_type lib (mkc_less_than a b)
+    <=>
+    {ka : Z , {kb : Z
+    , a ===>(lib) (mkc_integer ka)
+    # b ===>(lib) (mkc_integer kb)
+    # (ka < kb)%Z}}.
+Proof.
+  introv.
+  unfold inhabited_type; split; intro k; exrepnd; spcast.
+  - rw @equality_in_less_than in k0; exrepnd; spcast.
+    exists ka kb; dands; spcast; auto.
+  - exists (@mkc_axiom o).
+    apply equality_in_less_than.
+    exists ka kb; dands; spcast; auto;
+    apply computes_to_valc_refl; eauto with slow.
+Qed.
+
 Lemma tequality_mkc_less_than {o} :
   forall lib (a b c d : @CTerm o),
     tequality lib (mkc_less_than a b) (mkc_less_than c d)
@@ -573,6 +717,73 @@ Proof.
     left; sp; eauto 2 with slow.
 Qed.
 
+Lemma type_mkc_less_than {o} :
+  forall lib (a b : @CTerm o),
+    type lib (mkc_less_than a b)
+    <=>
+    {ka : Z , {kb : Z
+    , a ===>(lib) (mkc_integer ka)
+    # b ===>(lib) (mkc_integer kb) }}.
+Proof.
+  introv.
+  rw <- @fold_type.
+  rw @tequality_mkc_less_than.
+  split; intro h; exrepnd; spcast; repeat computes_to_eqval.
+
+  - exists ka kb; dands; spcast; auto.
+
+  - exists ka kb ka kb; dands; spcast; auto.
+    destruct (Z_lt_le_dec ka kb); tcsp.
+Qed.
+
+Lemma equality_in_le {o} :
+  forall lib (u v a b : @CTerm o),
+    equality lib u v (mkc_le a b)
+    <=>
+    {ka : Z , {kb : Z
+    , a ===>(lib) (mkc_integer ka)
+    # b ===>(lib) (mkc_integer kb)
+    # (ka <= kb)%Z}}.
+Proof.
+  introv.
+  rw @mkc_le_eq.
+  rw @equality_in_not.
+  rw @type_mkc_less_than.
+  rw @inhabited_less_than.
+  split; intro k; exrepnd; spcast; dands.
+
+  - repeat computes_to_eqval.
+    exists kb ka; dands; spcast; auto.
+
+    destruct (Z_lt_le_dec ka kb); tcsp.
+    destruct k.
+    exists ka kb; dands; spcast; auto.
+
+  - exists kb ka; dands; spcast; auto.
+
+  - intro h; exrepnd; spcast.
+    repeat computes_to_eqval.
+    omega.
+Qed.
+
+Lemma inhabited_le {o} :
+  forall lib (a b : @CTerm o),
+    inhabited_type lib (mkc_le a b)
+    <=>
+    {ka : Z , {kb : Z
+    , a ===>(lib) (mkc_integer ka)
+    # b ===>(lib) (mkc_integer kb)
+    # (ka <= kb)%Z}}.
+Proof.
+  introv.
+  unfold inhabited_type; split; intro k; exrepnd; spcast.
+  - apply equality_in_le in k0; exrepnd; spcast.
+    exists ka kb; dands; spcast; auto.
+  - exists (@mkc_axiom o).
+    apply equality_in_le.
+    exists ka kb; dands; spcast; auto.
+Qed.
+
 Lemma tequality_mkc_le {o} :
   forall lib (a b c d : @CTerm o),
     tequality lib (mkc_le a b) (mkc_le c d)
@@ -594,15 +805,41 @@ Proof.
   introv.
   allrw @mkc_le_eq.
   rw @tequality_not.
-  rw @tequality_mkc_less_than.
+  repeat (rw @type_mkc_less_than).
+  repeat (rw @inhabited_less_than).
 
-  split; intro k; exrepnd.
+  split; intro k; exrepnd; dands; spcast; tcsp.
 
-  - exists kb ka kd kc; dands; auto.
-    repndors; repnd; tcsp.
+  - exists kb0 ka0 kb ka; dands; spcast; auto.
 
-  - exists kb ka kd kc; dands; auto.
-    repndors; repnd; tcsp.
+    destruct (Z_lt_le_dec ka0 kb0); tcsp.
+
+    + destruct (Z_lt_le_dec ka kb); tcsp.
+      destruct k as [k' k]; clear k'.
+      autodimp k hyp.
+      { introv q; exrepnd; spcast.
+        repeat computes_to_eqval; omega. }
+      destruct k.
+      exists ka0 kb0; dands; spcast; auto.
+
+    + destruct (Z_lt_le_dec ka kb); tcsp.
+      destruct k as [k k']; clear k'.
+      autodimp k hyp.
+      { introv q; exrepnd; spcast.
+        repeat computes_to_eqval; omega. }
+      destruct k.
+      exists ka kb; dands; spcast; auto.
+
+  - exists kb ka; dands; spcast; auto.
+
+  - exists kd kc; dands; spcast; auto.
+
+  - split; introv q h; exrepnd; spcast; repeat computes_to_eqval;
+      repndors; repnd; try omega; GC; destruct q.
+
+    + exists kb ka; dands; spcast; auto.
+
+    + exists kd kc; dands; spcast; auto.
 Qed.
 
 Lemma tnat_type {o} : forall lib, @type o lib mkc_tnat.
@@ -615,29 +852,14 @@ Proof.
   apply equality_in_int in ea.
   unfold equality_of_int in ea; exrepnd; spcast.
   autorewrite with slow in *.
+  apply tequality_mkc_le.
+  exists (Z.of_nat 0) k (Z.of_nat 0) k; dands; spcast; auto;
+    try (rw @mkc_zero_eq; rw @mkc_nat_eq; apply computes_to_valc_refl; eauto 2 with slow).
 
-  SearchAbout tequality mkc_le.
-
-  SearchAbout type mkc_int.
-
-XXXXXXXXXXX
-  SearchAbout mkc_tnat.
-  unfold type, tequality.
-  pose proof @nuprl_tnat as h.
-  exists
-    (fun (t t' : @CTerm o) =>
-       { _ : equality_of_int lib t t'
-                             &
-                             inhabited
-                             (fun _ _ : @CTerm o =>
-                                forall u v : @CTerm o,
-                                  (forall k : Z,
-                                     computes_to_valc lib t (mkc_integer k) ->
-                                     if (k <? 0)%Z
-                                     then u ===>(lib) mkc_axiom # v ===>(lib) mkc_axiom
-                                     else False) -> False)}); sp.
+  destruct (Z_lt_le_dec k (Z.of_nat 0)); tcsp.
 Qed.
 
+(*
 Lemma nuprl_tnat {o} :
   forall lib,
   @nuprl o
@@ -782,6 +1004,7 @@ Proof.
     exists v; sp.
     exists e; sp.
 Qed.
+*)
 
 (*
 
@@ -814,6 +1037,7 @@ Proof.
   apply cterm_eq; simpl; sp.
 Qed.
 
+(*
 Lemma nuprl_tnatp {o} :
   forall lib,
   nuprl
@@ -958,24 +1182,28 @@ Proof.
     exists v; sp.
     exists e; sp.
 Qed.
+*)
+
+Lemma mkc_one_eq {o} :
+  @mkc_one o = mkc_nat 1.
+Proof.
+  apply cterm_eq; simpl; auto.
+Qed.
 
 Lemma tnatp_type {o} : forall lib, @type o lib mkc_tnatp.
 Proof.
   introv.
-  unfold type, tequality.
-  pose proof @nuprl_tnatp as h.
-  exists
-    (fun (t t' : @CTerm o) =>
-       { _ : equality_of_int lib t t'
-                             &
-                             inhabited
-                             (fun _ _ : @CTerm o =>
-                                forall u v : @CTerm o,
-                                  (forall k : Z,
-                                     computes_to_valc lib t (mkc_integer k) ->
-                                     if (k <? 1)%Z
-                                     then u ===>(lib) mkc_axiom # v ===>(lib) mkc_axiom
-                                     else False) -> False)}); sp.
+  rw @mkc_tnatp_eq.
+  apply type_set; dands; eauto 2 with slow.
+  introv ea.
+  apply equality_in_int in ea.
+  unfold equality_of_int in ea; exrepnd; spcast.
+  autorewrite with slow in *.
+  apply tequality_mkc_le.
+  exists (Z.of_nat 1) k (Z.of_nat 1) k; dands; spcast; auto;
+    try (rw @mkc_one_eq; rw @mkc_nat_eq; apply computes_to_valc_refl; eauto 2 with slow).
+
+  destruct (Z_lt_le_dec k (Z.of_nat 1)); tcsp.
 Qed.
 
 Definition reducek_pair {o} lib (t1 t2 : @NTerm o) (k : Z) (n : nat) :=
@@ -1383,4 +1611,71 @@ Proof.
   unfold computes_to_valc, computes_to_value; simpl;
   dands; try (apply isvalue_mk_integer);
   exists x; auto.
+Qed.
+
+Lemma nuprl_int {p} :
+  forall lib, @nuprl p lib mkc_int (equality_of_int lib).
+Proof.
+  sp.
+  apply CL_int.
+  unfold per_int; sp; spcast; try computes_to_value_refl.
+Qed.
+Hint Resolve nuprl_int : slow.
+
+Lemma equality_of_int_xxx {p} :
+  forall lib, @close p lib (univ lib) mkc_int (equality_of_int lib).
+Proof.
+  apply nuprl_int.
+Qed.
+
+Lemma nat_in_int {p} : forall lib (n : nat), @member p lib (mkc_nat n) mkc_int.
+Proof.
+  unfold member, equality; sp.
+  exists (@equality_of_int p lib).
+  sp;[apply equality_of_int_xxx|].
+  exists (Z_of_nat n); sp;
+  unfold mkc_nat, mkc_integer, isprog_mk_nat, isprog_mk_integer, mk_nat;
+    spcast; computes_to_value_refl.
+Qed.
+
+Lemma zero_on_int {o} :
+  forall lib, @equality o lib mkc_zero mkc_zero mkc_int.
+Proof.
+  introv.
+  apply equality_in_int.
+  exists 0%Z; rw @mkc_zero_eq; rw @mkc_nat_eq; simpl; dands; spcast;
+    apply computes_to_valc_refl; eauto 2 with slow.
+Qed.
+Hint Resolve zero_on_int : slow.
+
+Hint Rewrite @mkcv_less_than_substc : slow.
+
+Lemma type_mkc_le {o} :
+  forall lib (a b : @CTerm o),
+  type lib (mkc_le a b) <=>
+       (exists ka kb
+        , (a) ===>( lib)(mkc_integer ka)
+        # (b) ===>( lib)(mkc_integer kb)).
+Proof.
+  introv.
+  rw <- @fold_type.
+  rw @tequality_mkc_le; split; intro h; exrepnd; spcast; repeat computes_to_eqval.
+  - exists ka kb; dands; spcast; auto.
+  - exists ka kb ka kb; dands; spcast; auto.
+    destruct (Z_lt_le_dec kb ka); tcsp.
+Qed.
+
+Lemma type_mkc_less_than {o} :
+  forall lib (a b : @CTerm o),
+    type lib (mkc_less_than a b) <=>
+         (exists ka kb
+          , (a) ===>( lib)(mkc_integer ka)
+          # (b) ===>( lib)(mkc_integer kb)).
+Proof.
+  introv.
+  rw <- @fold_type.
+  rw @tequality_mkc_less_than; split; intro h; exrepnd; spcast; repeat computes_to_eqval.
+  - exists ka kb; dands; spcast; auto.
+  - exists ka kb ka kb; dands; spcast; auto.
+    destruct (Z_lt_le_dec ka kb); tcsp.
 Qed.

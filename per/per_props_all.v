@@ -35,9 +35,10 @@ Require Export per_props_function.
 Require Export per_props_cequiv.
 Require Export per_props_set.
 Require Export per_props_not.
+Require Export per_props_nat0.
+Require Export per_props_product.
 
 (* working on *)
-Require Export per_props_nat0.
 Require Export per_props_nat.
 
 (* not fixed *)
@@ -65,7 +66,6 @@ Require Export per_props_nat3.
 Require Export per_props_nat.
 Require Export per_props_pertype.
 Require Export per_props_per.
-Require Export per_props_product.
 Require Export per_props_psquash.
 Require Export per_props_squash.
 Require Export per_props_subtype_rel.
