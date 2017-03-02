@@ -198,7 +198,7 @@ Qed.
 
 Lemma fold_type {o} :
   forall lib (T : @CTerm o),
-    tequality lib T T <-> type lib T.
+    tequality lib T T <=> type lib T.
 Proof.
   unfold tequality, type, Nuprl, extts; introv; split; intro h; exrepnd; eexists; eauto.
 Qed.
@@ -1950,3 +1950,26 @@ Proof.
   eapply nuprli_ext; eauto.
   apply eq_term_equals_sym; auto.
 Qed.
+
+Lemma type_implies_tequality {o} :
+  forall lib (T : @CTerm o),
+    type lib T -> tequality lib T T.
+Proof.
+  introv t; apply fold_type; auto.
+Qed.
+Hint Resolve type_implies_tequality : slow.
+
+Lemma tequality_implies_type {o} :
+  forall lib (T : @CTerm o),
+    tequality lib T T -> type lib T.
+Proof.
+  introv t; apply fold_type; auto.
+Qed.
+Hint Resolve tequality_implies_type : slow.
+
+Lemma ext_eq_refl {o} :
+  forall lib (T : @CTerm o), ext_eq lib T T.
+Proof.
+  introv; intros a b; tcsp.
+Qed.
+Hint Resolve ext_eq_refl : slow.

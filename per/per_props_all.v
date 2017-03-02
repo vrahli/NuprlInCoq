@@ -29,7 +29,18 @@
 
 *)
 
+(* fixed *)
+Require Export per_props_uni0.
+Require Export per_props_function.
+Require Export per_props_cequiv.
+Require Export per_props_set.
+Require Export per_props_not.
 
+(* working on *)
+Require Export per_props_nat0.
+Require Export per_props_nat.
+
+(* not fixed *)
 Require Export per_props2.
 Require Export per_props3.
 Require Export per_props4.
@@ -38,7 +49,6 @@ Require Export per_props_aequality.
 Require Export per_props_atom.
 Require Export per_props_cequiv2.
 Require Export per_props_cequiv3.
-Require Export per_props_cequiv.
 Require Export per_props_compute.
 Require Export per_props_equality2.
 Require Export per_props_equality_more.
@@ -46,7 +56,6 @@ Require Export per_props_equality.
 Require Export per_props_erase.
 Require Export per_props_false.
 Require Export per_props_ffatom.
-Require Export per_props_function.
 Require Export per_props_halts.
 Require Export per_props_iff.
 Require Export per_props_image.
@@ -58,14 +67,12 @@ Require Export per_props_pertype.
 Require Export per_props_per.
 Require Export per_props_product.
 Require Export per_props_psquash.
-Require Export per_props_set.
 Require Export per_props_squash.
 Require Export per_props_subtype_rel.
 Require Export per_props_tequality.
 Require Export per_props_top.
 Require Export per_props_ufun.
 Require Export per_props_union.
-Require Export per_props_uni0.
 Require Export per_props_uni.
 Require Export per_props.
 Require Export per_props_w.
