@@ -57,8 +57,6 @@ Proof.
 
     dands; eauto 2 with slow.
 
-    { exists eqa; sp. }
-
     { introv ea.
       unfold equality in ea; exrepnd.
       pose proof (nuprl_uniquely_valued lib A1 eqa eq0) as k; repeat (autodimp k hyp).

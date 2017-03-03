@@ -909,8 +909,6 @@ Proof.
     allfold (@nuprl p).
     dands; eauto 2 with slow.
 
-    + exists eqa; auto.
-
     + introv ea.
       eapply nuprl_type_family_members_eq_implies_tequality; try (exact tsb); eauto.
       eapply equality_eq in ea; eauto.
