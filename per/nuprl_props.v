@@ -1973,3 +1973,10 @@ Proof.
   introv; intros a b; tcsp.
 Qed.
 Hint Resolve ext_eq_refl : slow.
+
+Lemma nuprl_implies_type {o} :
+  forall lib (A : @CTerm o) eq, nuprl lib A eq -> type lib A.
+Proof.
+  introv n; exists eq; auto.
+Qed.
+Hint Resolve nuprl_implies_type : slow.

@@ -30,9 +30,7 @@
 *)
 
 
-Require Export nuprl_props.
-Require Export choice.
-Require Export cvterm.
+Require Export per_props_isect.
 
 
 Lemma tequality_mkc_ufun {p} :
@@ -55,4 +53,39 @@ Proof.
   apply equality_refl in e.
   autodimp k hyp.
   exists a; auto.
+Qed.
+
+Lemma equality_in_ufun {p} :
+  forall lib (f g A B : @CTerm p),
+    equality lib f g (mkc_ufun A B)
+    <=>
+    (type lib A
+     # (inhabited_type lib A -> type lib B)
+     # (inhabited_type lib A -> equality lib f g B)).
+Proof.
+  introv.
+  rw <- @fold_mkc_ufun.
+  rw @equality_in_isect.
+  split; intro k; repnd; dands; auto.
+
+  - introv i.
+    unfold inhabited_type in i; exrepnd.
+    generalize (k1 t t); intro j; autodimp j hyp.
+    repeat (rw @csubst_mk_cv in j); sp.
+
+  - introv e.
+    unfold inhabited_type in e; exrepnd.
+    unfold member in e0.
+    apply k in e0.
+    repeat (rw @csubst_mk_cv in e0); sp.
+
+  - introv e.
+    repeat (rw @csubst_mk_cv); sp.
+    autodimp k1 hyp.
+    exists a; apply equality_refl in e; auto.
+
+  - introv e.
+    repeat (rw @csubst_mk_cv); sp.
+    apply k.
+    exists a; apply equality_refl in e; auto.
 Qed.

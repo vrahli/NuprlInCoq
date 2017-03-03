@@ -58,6 +58,7 @@ Require Export cequiv_seq_util.
 
 Require Export per_props_nat0.
 Require Export per_props_product.
+Require Export per_props_union.
 
 
 Lemma zero_as_integer {o} :
@@ -1021,6 +1022,7 @@ Proof.
   introv e.
   apply equality_mkc_union in e; exrepnd.
   apply equality_in_bool.
+  exists (@mkc_axiom o) (@mkc_axiom o).
   repndors; exrepnd; spcast;[left|right]; dands; spcast.
   - eapply computes_to_valc_inl_implies_cequivc_isl_tt; eauto.
   - eapply computes_to_valc_inl_implies_cequivc_isl_tt; eauto.
@@ -1057,14 +1059,57 @@ Proof.
   apply tt_not_cequiv_ff.
 Qed.
 
-Lemma equality_tt_in_bool_implies_cequiv {o} :
+Lemma inl_not_approx_inr {o} :
+  forall (lib : @library o) a b,
+    !approx lib (mk_inl a) (mk_inr b).
+Proof.
+  introv apr.
+  inversion apr as [cl]; clear apr.
+  unfold close_comput in cl; repnd.
+  unfold close_compute_val in cl2.
+  pose proof (cl2 (NInj NInl) [nobnd a]) as h; fold_terms.
+  autodimp h hyp; eauto 3 with slow.
+  exrepnd.
+  apply computes_to_value_isvalue_eq in h1; ginv; eauto 3 with slow.
+Qed.
+
+Lemma inl_not_cequiv_inr {o} :
+  forall (lib : @library o) a b, !cequiv lib (mk_inl a) (mk_inr b).
+Proof.
+  introv ceq.
+  apply cequiv_le_approx in ceq.
+  apply inl_not_approx_inr in ceq; sp.
+Qed.
+
+Lemma inl_not_cequivc_inr {o} :
+  forall (lib : @library o) a b, !cequivc lib (mkc_inl a) (mkc_inr b).
+Proof.
+  introv.
+  destruct_cterms; simpl.
+  unfold cequivc; simpl.
+  apply inl_not_cequiv_inr.
+Qed.
+
+(* This is not true about bool because [t] could be any left injection *)
+Lemma equality_tt_in_abool_implies_cequiv {o} :
   forall lib (t : @CTerm o),
-    equality lib t tt mkc_bool
+    equality lib t tt mkc_abool
     -> ccequivc lib t tt.
 Proof.
   introv e.
-  apply equality_in_bool in e; repndors; repnd; spcast; eauto with slow.
+  apply equality_in_abool in e; repndors; repnd; spcast; eauto 3 with slow.
   apply tt_not_cequivc_ff in e; sp.
+Qed.
+
+Lemma equality_tt_in_bool_implies_cequiv {o} :
+  forall lib (t : @CTerm o),
+    equality lib t tt mkc_bool
+    -> { u : CTerm , ccequivc lib t (mkc_inl u) }.
+Proof.
+  introv e.
+  apply equality_in_bool in e; exrepnd; repndors; repnd; spcast; eauto 3 with slow.
+  - exists t0; spcast; auto.
+  - apply inl_not_cequivc_inr in e1; tcsp.
 Qed.
 
 Lemma isprogram_mk_assert {o} :
@@ -1117,13 +1162,10 @@ Lemma type_tnat {o} :
 Proof.
   introv.
   rw @mkc_tnat_eq.
-  apply tequality_set; dands; auto.
-  { apply tequality_int. }
+  apply type_set; dands; auto; eauto 2 with slow.
 
   introv e.
-  allrw @substc_mkcv_le.
-  allrw @substc_mkcv_zero.
-  allrw @mkc_var_substc.
+  autorewrite with slow.
   apply equality_in_int in e.
   unfold equality_of_int in e; exrepnd; spcast.
 
@@ -1155,16 +1197,16 @@ Proof.
   rw @equality_in_set.
   rw @equality_in_int.
   unfold equality_of_int, equality_of_nat.
-  rw @substc_mkcv_le.
-  rw @substc_mkcv_zero.
-  rw @mkc_var_substc.
+  autorewrite with slow.
   rw @inhabited_le.
   split; introv k; exrepnd; spcast; dands;
-  repeat computes_to_eqval;
-  computes_to_value_isvalue; ginv.
+    repeat computes_to_eqval;
+    computes_to_value_isvalue; ginv.
+
   - inversion k2; subst.
     apply Wf_Z.Z_of_nat_complete in k3; exrepnd; subst.
     exists n; dands; spcast; auto.
+
   - introv e.
     allrw @substc_mkcv_le.
     allrw @substc_mkcv_zero.
@@ -1178,7 +1220,9 @@ Proof.
                    eauto with slow)).
     destruct (Z_le_gt_dec 0 k); sp.
     right; sp; omega.
+
   - exists (Z.of_nat k0); dands; spcast; auto.
+
   - exists (0%Z) (Z.of_nat k0); dands; spcast; auto;
     try omega;
     try (complete (unfold computes_to_valc; simpl;
@@ -1235,60 +1279,4 @@ Proof.
   - apply cequiv_sym.
     apply reduces_to_implies_cequiv; auto.
     apply isprogram_eq; auto.
-Qed.
-
-Lemma member_product2 {o} :
-  forall lib (p : @CTerm o) A v B,
-    member lib p (mkc_product A v B)
-    <=>
-    (type lib (mkc_product A v B)
-     # {a, b : CTerm
-        , p ===>(lib) (mkc_pair a b)
-        # member lib a A
-        # member lib b (substc a v B)}).
-Proof.
-  introv.
-  rw @equality_in_product; split; intro k; exrepnd.
-  - dands; auto.
-    + apply tequality_product; auto.
-    + allapply @equality_refl.
-      exists a1 b1; dands; auto.
-  - apply @tequality_product in k0; repnd.
-    dands; auto.
-    exists a a b b; dands; auto.
-Qed.
-
-Lemma equality_in_ufun {p} :
-  forall lib (f g A B : @CTerm p),
-    equality lib f g (mkc_ufun A B)
-    <=>
-    (type lib A
-     # (inhabited_type lib A -> type lib B)
-     # (inhabited_type lib A -> equality lib f g B)).
-Proof.
-  introv.
-  rw <- @fold_mkc_ufun.
-  rw @equality_in_isect.
-  split; intro k; repnd; dands; auto.
-
-  - introv i.
-    unfold inhabited_type in i; exrepnd.
-    generalize (k1 t t); intro j; autodimp j hyp.
-    repeat (rw @csubst_mk_cv in j); sp.
-
-  - introv e.
-    unfold inhabited_type in e; exrepnd.
-    unfold member in e0.
-    apply k in e0.
-    repeat (rw @csubst_mk_cv in e0); sp.
-
-  - introv e.
-    repeat (rw @csubst_mk_cv); sp.
-    autodimp k1 hyp.
-    exists a; apply equality_refl in e; auto.
-
-  - introv e.
-    repeat (rw @csubst_mk_cv); sp.
-    apply k.
-    exists a; apply equality_refl in e; auto.
 Qed.

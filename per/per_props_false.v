@@ -30,9 +30,7 @@
 *)
 
 
-Require Export nuprl_props.
-Require Export univ_tacs.
-Require Import rel_nterm.
+Require Export per_props_cequiv.
 
 
 Lemma false_not_inhabited {p} :
@@ -40,10 +38,6 @@ Lemma false_not_inhabited {p} :
 Proof.
   introv m.
   rewrite mkc_false_eq in m.
-  unfold member, equality, nuprl in m; exrepnd.
-  inversion m1; subst; try not_univ.
-  allunfold @per_approx; exrepnd.
-  computes_to_value_isvalue.
-  discover; sp; GC.
+  apply equality_in_approx in m.
   spcast; allapply @not_axiom_approxc_bot; sp.
 Qed.

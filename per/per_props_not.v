@@ -44,6 +44,14 @@ Proof.
 Qed.
 Hint Immediate tequality_false.
 
+Lemma type_false {p} :
+  forall lib, @type p lib mkc_false.
+Proof.
+  introv.
+  apply fold_type; auto.
+Qed.
+Hint Immediate type_false : slow.
+
 Lemma tequality_void {p} :
   forall lib, @tequality p lib mkc_void mkc_void.
 Proof.

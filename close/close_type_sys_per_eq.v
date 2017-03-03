@@ -40,13 +40,13 @@ Lemma close_type_system_eq {o} :
     -> defines_only_universes lib ts
     -> computes_to_valc lib T (mkc_equality a b A)
     -> close lib ts A eqa
-    -> eqorceq lib eqa a b
+(*    -> eqorceq lib eqa a b*)
     -> (eq <=2=> (per_eq_eq lib a b eqa))
     -> per_eq lib (close lib ts) T eq
     -> type_system_props lib (close lib ts) A eqa
     -> type_system_props lib (close lib ts) T eq.
 Proof.
-  introv tysys dou comp cla eoc eqiff per props.
+  introv tysys dou comp cla (*eoc*) eqiff per props.
   clear per.
 
   prove_ts_props SCase.
@@ -79,7 +79,7 @@ Proof.
 
     dts_props props uv tv te tes tet tev.
     dands; spcast; auto.
-    { eapply eqorceq_cequivc; eauto. }
+(*    { eapply eqorceq_cequivc; eauto. }*)
     { eapply eq_term_equals_trans;[eauto|].
       unfold per_eq_eq; split; intro q; exrepnd; exists x1 x2; dands; auto.
       - apply (eq_ts_cequivc lib a b a' b' eqa); auto.

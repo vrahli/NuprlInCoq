@@ -33,6 +33,7 @@
 Require Import sequents_tacs.
 Require Export per_props_equality.
 
+
 Definition mk_concl_mem {o} (t T : @NTerm o) : conclusion :=
   mk_concl (mk_member t T) (mk_refl t).
 

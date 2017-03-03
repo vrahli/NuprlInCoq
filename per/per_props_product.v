@@ -343,6 +343,20 @@ Proof.
     repeat (rw @csubst_mk_cv); sp; eauto 2 with slow.
 Qed.
 
+Lemma type_product {p} :
+  forall lib (A : @CTerm p) v B,
+    type lib (mkc_product A v B)
+    <=>
+    (
+      type lib A
+      # (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
+    ).
+Proof.
+  introv.
+  rw <- @fold_type.
+  rw @tequality_product; split; intro h; repnd; dands; eauto 2 with slow.
+Qed.
+
 Lemma type_mkc_prod {p} :
   forall lib (A B : @CTerm p),
     type lib (mkc_prod A B)
@@ -664,4 +678,29 @@ Proof.
 
     exists t0 t0 t t; dands; spcast;
       try (complete (apply computes_to_valc_refl; eauto 3 with slow)); auto.
+Qed.
+
+Lemma member_product2 {o} :
+  forall lib (p : @CTerm o) A v B,
+    member lib p (mkc_product A v B)
+    <=>
+    (type lib (mkc_product A v B)
+     # {a, b : CTerm
+        , p ===>(lib) (mkc_pair a b)
+        # member lib a A
+        # member lib b (substc a v B)}).
+Proof.
+  introv.
+  rw @equality_in_product; split; intro k; exrepnd.
+
+  - dands; auto.
+
+    + apply type_product; tcsp.
+
+    + allapply @equality_refl.
+      exists a1 b1; dands; auto.
+
+  - apply @type_product in k0; repnd.
+    dands; auto.
+    exists a a b b; dands; auto.
 Qed.

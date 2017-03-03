@@ -102,6 +102,15 @@ Proof.
   apply isprogram_aequality; sp.
 Qed.
 
+(* !!MOVE *)
+Lemma iscvalue_mkc_refl {p} :
+  forall t : @CTerm p, iscvalue (mkc_refl t).
+Proof.
+  intro; destruct t; unfold iscvalue; simpl.
+  apply isvalue_refl; allrw @isprog_eq; auto.
+Qed.
+Hint Resolve iscvalue_mkc_refl : slow.
+
 Ltac apply_iscvalue :=
   match goal with
     | [ |- iscvalue _ ] =>
@@ -143,6 +152,7 @@ Ltac apply_iscvalue :=
             | apply iscvalue_mkc_axiom
             | apply iscvalue_mkc_inl
             | apply iscvalue_mkc_inr
+            | apply iscvalue_mkc_refl
             ]
   end.
 

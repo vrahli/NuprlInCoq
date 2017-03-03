@@ -599,7 +599,7 @@ Definition per_aeq {p} lib (ts : cts(p)) T (eq : per(p)) : [U] :=
   , {eqa : per
   , T ===>(lib) (mkc_aequality a b A)
   # ts A eqa
-  # eqorceq lib eqa a b
+(*  # eqorceq lib eqa a b*)
   # eq <=2=> (per_aeq_eq lib a b eqa) }}.
 
 Definition per_eq_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) : [U] :=
@@ -615,7 +615,7 @@ Definition per_eq {p} lib (ts : cts(p)) T (eq : per(p)) : [U] :=
   , {eqa : per
   , T ===>(lib) (mkc_equality a b A)
   # ts A eqa
-  # eqorceq lib eqa a b
+(*  # eqorceq lib eqa a b*)
   # eq <=2=> (per_eq_eq lib a b eqa) }}.
 
 (**
@@ -2017,7 +2017,7 @@ Definition close_ind' {pp}
                   (comp  : T ===>(lib) (mkc_aequality a b A))
                   (cla   : close lib ts A eqa)
                   (reca  : P ts A eqa)
-                  (eoc   : eqorceq lib eqa a b)
+(*                  (eoc   : eqorceq lib eqa a b)*)
                   (eqiff : eq <=2=> (per_aeq_eq lib a b eqa))
                   (per   : per_aeq lib (close lib ts) T eq),
             P ts T eq)
@@ -2029,7 +2029,7 @@ Definition close_ind' {pp}
                  (comp  : T ===>(lib) (mkc_equality a b A))
                  (cla   : close lib ts A eqa)
                  (reca  : P ts A eqa)
-                 (eoc   : eqorceq lib eqa a b)
+(*                 (eoc   : eqorceq lib eqa a b)*)
                  (eqiff : eq <=2=> (per_eq_eq lib a b eqa))
                  (per   : per_eq lib (close lib ts) T eq),
             P ts T eq)
@@ -2586,13 +2586,13 @@ Definition close_ind' {pp}
        let (b,    x) := x in
        let (eqa,  x) := x in
        let (comp, x) := x in
-       let (tsa,  x) := x in
-       let (eoc,  eiff) := x in
+       let (tsa,  eiff) := x in
+(*       let (eoc,  eiff) := x in*)
          aequ ts T eq A a b eqa
               comp
               tsa
               (rec ts A eqa tsa)
-              eoc
+(*              eoc*)
               eiff
               pts
    | CL_eq pts =>
@@ -2601,13 +2601,13 @@ Definition close_ind' {pp}
        let (b,    x) := x in
        let (eqa,  x) := x in
        let (comp, x) := x in
-       let (tsa,  x) := x in
-       let (eoc,  eiff) := x in
+       let (tsa,  eiff) := x in
+(*       let (eoc,  eiff) := x in*)
          equ ts T eq A a b eqa
              comp
              tsa
              (rec ts A eqa tsa)
-             eoc
+(*             eoc*)
              eiff
              pts
    | CL_teq pts =>

@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -28,16 +29,19 @@
 
 *)
 
-Require Export per_props_cequiv.
+
+(*Require Export per_props_cequiv.*)
+Require Export per_props_isect.
+Require Export per_props_not.
+
+Hint Rewrite @csubst_mk_cv : slow.
 
 Lemma type_mkc_top {o} : forall lib, @type o lib mkc_top.
 Proof.
   introv.
-  rw @tequality_isect; dands.
-  apply tequality_false.
+  rw @type_isect; dands; eauto 2 with slow.
   introv ea.
-  allrw @csubst_mk_cv.
-  apply tequality_false.
+  autorewrite with slow; eauto 2 with slow.
 Qed.
 Hint Resolve type_mkc_top : slow.
 
@@ -45,14 +49,8 @@ Lemma equality_mkc_top {o} :
   forall lib (a b : @CTerm o), equality lib a b mkc_top.
 Proof.
   introv.
-  rw @equality_in_isect; dands; introv.
-
-  - apply tequality_false.
-
-  - introv e.
-    apply equality_in_false in e; sp.
-
-  - introv e.
-    apply equality_in_false in e; sp.
+  rw @equality_in_isect; dands; introv; eauto 2 with slow; introv e;
+    autorewrite with slow; eauto 2 with slow.
+  apply equality_in_false in e; sp.
 Qed.
 Hint Resolve equality_mkc_top : slow.
