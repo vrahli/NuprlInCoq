@@ -166,6 +166,7 @@ Proof.
   apply CL_base.
   unfold per_base; sp; spcast; try computes_to_value_refl.
 Qed.
+Hint Resolve member_base : slow.
 
 Lemma member_cequiv {p} :
   forall lib t1 t2,
@@ -589,3 +590,11 @@ Lemma member_in_base_iff {o} :
 Proof.
   intros; split; intro; auto; apply member_base.
 Qed.
+
+Lemma equality_in_base_true {o} :
+  forall lib (t : @CTerm o), equality lib t t mkc_base.
+Proof.
+  introv.
+  apply member_in_base_iff; auto.
+Qed.
+Hint Resolve equality_in_base_true : slow.

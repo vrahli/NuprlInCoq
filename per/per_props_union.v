@@ -119,8 +119,6 @@ Proof.
   apply equality_mkc_union in e; apply equality_mkc_union; repnd.
 
   dands; eauto 2 with slow.
-  { exists eqa2; auto. }
-  { exists eqb2; auto. }
 
   repndors; exrepnd; spcast.
 
