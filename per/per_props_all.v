@@ -45,10 +45,10 @@ Require Export per_props_false.
 Require Export per_props_nat.
 Require Export per_props_isect.
 Require Export per_props_top.
-
-(* working on *)
 Require Export per_props_equality.
 Require Export per_props_subtype_rel.
+
+(* working on *)
 Require Export sequents_useful.
 
 (* not fixed *)

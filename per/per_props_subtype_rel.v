@@ -31,8 +31,12 @@
 
 
 Require Export per_props_equality.
+Require Export per_props_function.
 Require Export cequiv_tacs.
 
+
+Hint Rewrite @mkc_var_substc : slow.
+Hint Rewrite @substc_cvterm_var : slow.
 
 Lemma if_member_vsubtype {p} :
   forall lib (A : @CTerm p) v B r,
@@ -40,19 +44,16 @@ Lemma if_member_vsubtype {p} :
     -> forall x y, equality lib x y A -> equality lib x y B.
 Proof.
   introv; rewrite <- fold_mkc_vsubtype; introv m e.
-  apply member_mkc_member_implies in m; exrepnd.
-  clear m1.
+  apply member_mkc_member_implies in m; exrepnd; spcast.
+  clear m1 m0.
 
-  apply @if_member_function with (f := mkc_id)
-                                  (v := v)
-                                  (B := cvterm_var v B) in e; sp.
+  apply equality_in_function in m2; repnd.
 
-  apply equality_respects_cequivc_left with (t := x) in e;
-    try (apply reduces_toc_implies_cequivc; apply reduces_toc_apply_id).
-  apply equality_respects_cequivc_right with (t := y) in e;
-    try (apply reduces_toc_implies_cequivc; apply reduces_toc_apply_id).
+  appdup m2 in e.
 
-  rewrite substc_cvterm_var in e; sp.
+  eapply equality_respects_cequivc_left in e0;[|apply cequivc_beta].
+  eapply equality_respects_cequivc_right in e0;[|apply cequivc_beta].
+  autorewrite with slow in *; auto.
 Qed.
 
 
