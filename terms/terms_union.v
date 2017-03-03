@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -30,14 +35,38 @@ Require Export cvterm2.
 Require Export terms_props.
 
 
+(* This is a variant of unit that contains only axiom *)
+Definition mk_aunit {o} := @mk_squash o mk_true.
+Definition mkc_aunit {o} := @mkc_squash o mkc_true.
+
+Lemma isprog_aunit {p} : @isprog p mk_aunit.
+Proof.
+  unfold isprog; simpl.
+  rw assert_true_iff; dands; sp.
+Qed.
+Hint Resolve isprog_aunit : slow.
+
+(* This is a variant of bool that contains only tt and ff *)
+Definition mk_abool {p} : @NTerm p := mk_union mk_aunit mk_aunit.
+
+Definition mkc_abool {p} : @CTerm p :=
+  exist isprog mk_abool (isprog_union mk_aunit mk_aunit isprog_aunit isprog_aunit).
+
 Definition mk_bunion {p} (A B : @NTerm p) :=
   let v := newvarlst [A,B] in
-  mk_tunion mk_bool v (mk_ite (mk_var v) A B).
+  mk_tunion mk_abool v (mk_ite (mk_var v) A B).
 
 Lemma isprog_bool {o} : @isprog o mk_bool.
 Proof.
   apply isprog_union; auto.
 Qed.
+Hint Resolve isprog_bool : slow.
+
+Lemma isprog_abool {o} : @isprog o mk_abool.
+Proof.
+  apply isprog_union; auto; eauto with slow.
+Qed.
+Hint Resolve isprog_abool : slow.
 
 Lemma isprog_bunion {p} :
   forall a b : @NTerm p,
@@ -46,8 +75,7 @@ Lemma isprog_bunion {p} :
     -> isprog (mk_bunion a b).
 Proof.
   unfold mk_bunion; introv ipa ipb.
-  apply isprog_tunion; auto.
-  apply isprog_bool.
+  apply isprog_tunion; auto; eauto 2 with slow.
   apply isprog_vars_decide; try (complete (apply isprog_vars_if_isprog; auto)).
   apply isprog_vars_var.
 Qed.
@@ -63,7 +91,7 @@ Definition cnewvarlst {p} (ts : list (@CTerm p)) :=
 Lemma fold_mkc_bunion {p} :
   forall (A B : @CTerm p),
     let v := cnewvarlst [A,B] in
-    mkc_tunion mkc_bool v (mkcv_ite [v] (mkc_var v) (mk_cv [v] A) (mk_cv [v] B))
+    mkc_tunion mkc_abool v (mkcv_ite [v] (mkc_var v) (mk_cv [v] A) (mk_cv [v] B))
     = mkc_bunion A B.
 Proof.
   unfold mkc_bunion, mk_bunion, cnewvarlst; introv; destruct_cterms; simpl.
@@ -326,7 +354,20 @@ Proof.
   introv i; allsimpl; sp.
 Qed.
 
+Lemma cover_vars_abool {o} : forall sub, @cover_vars o mk_abool sub.
+Proof.
+  introv.
+  rw @cover_vars_eq; rw subvars_eq.
+  introv i; allsimpl; sp.
+Qed.
+
 Lemma cover_vars_bool_iff {o} : forall sub, @cover_vars o mk_bool sub <=> True.
+Proof.
+  introv; split; sp.
+  apply cover_vars_bool.
+Qed.
+
+Lemma cover_vars_abool_iff {o} : forall sub, @cover_vars o mk_abool sub <=> True.
 Proof.
   introv; split; sp.
   apply cover_vars_bool.
@@ -390,6 +431,12 @@ Definition ff {o} := @mkc_inr o mkc_axiom.
 
 Lemma fold_mkc_bool {o} :
   @mkc_union o mkc_unit mkc_unit = mkc_bool.
+Proof.
+  apply cterm_eq; simpl; auto.
+Qed.
+
+Lemma fold_mkc_abool {o} :
+  @mkc_union o mkc_aunit mkc_aunit = mkc_abool.
 Proof.
   apply cterm_eq; simpl; auto.
 Qed.
@@ -499,6 +546,20 @@ Proof.
   repeat (rw remove_trivial); auto; apply newvar_prop.
 Qed.
 
+Lemma free_vars_aunit {o} :
+  @free_vars o mk_aunit = [].
+Proof.
+  reflexivity.
+Qed.
+Hint Rewrite @free_vars_aunit : slow.
+
+Lemma free_vars_abool {o} :
+  @free_vars o mk_abool = [].
+Proof.
+  reflexivity.
+Qed.
+Hint Rewrite @free_vars_abool : slow.
+
 Lemma free_vars_bunion {o} :
   forall A B, free_vars (@mk_bunion o A B) = free_vars A ++ free_vars B.
 Proof.
@@ -510,9 +571,9 @@ Proof.
 
   rw @free_vars_tunion.
   rw @free_vars_ite.
-  rw @free_vars_bool.
+  simpl; autorewrite with slow.
   rw remove_nvars_cons; rw remove_nvars_nil_l; simpl.
-  destruct (eq_var_dec p p); tcsp.
+  boolvar; tcsp; GC.
   rw remove_trivial; auto.
   simpl in ni; allrw app_nil_r; auto.
 Qed.

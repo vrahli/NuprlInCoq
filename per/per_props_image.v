@@ -57,29 +57,41 @@ Proof.
 
   - unfold equality in e; exrepnd.
     inversion e1; subst; try not_univ.
+
+    match goal with
+    | [ H : per_image _ _ _ _ |- _ ] => rename H into h
+    end.
+
     allunfold @per_image; exrepnd; spcast; computes_to_value_isvalue.
     allunfold @eq_term_equals; discover.
     dands.
-    exists eqa; sp.
+    { exists eqa; sp. }
+
     induction h.
-    apply @eq_in_image_cl with (t := t).
-    apply IHh1; allrw; sp.
-    apply IHh2; allrw; sp.
-    apply @eq_in_image_eq with (a1 := a1) (a2 := a2); sp.
-    exists eqa; sp.
+
+    { apply @eq_in_image_cl with (t := t).
+      - apply IHh1; apply h0; auto.
+      - apply IHh2; apply h0; auto. }
+
+    { apply @eq_in_image_eq with (a1 := a1) (a2 := a2); sp.
+      exists eqa; sp. }
 
   - exrepnd.
     unfold type, tequality in e0; exrepnd.
     exists (per_image_eq lib eq f); dands.
-    apply CL_image; unfold per_image.
-    exists eq T T f f; sp; spcast; sp;
-    try (apply computes_to_valc_refl; apply iscvalue_mkc_image).
+
+    { apply CL_image; unfold per_image.
+      exists eq T f; sp; spcast; sp;
+        try (apply computes_to_valc_refl; apply iscvalue_mkc_image). }
+
     induction e.
-    apply @image_eq_cl with (t := t); sp.
-    apply @image_eq_eq with (a1 := a1) (a2 := a2); sp.
-    allunfold @equality; exrepnd.
-    generalize (nuprl_uniquely_valued lib T eq eq0); intro h; repeat (dest_imp h hyp).
-    rw h; sp.
+
+    { apply @image_eq_cl with (t := t); sp. }
+
+    { apply @image_eq_eq with (a1 := a1) (a2 := a2); sp.
+      allunfold @equality; exrepnd.
+      generalize (nuprl_uniquely_valued lib T eq eq0); intro h; repeat (dest_imp h hyp).
+      rw h; sp. }
 Qed.
 
 Lemma equal_in_image_prop {p} :
@@ -101,20 +113,91 @@ Proof.
   apply @equality_refl with (t2 := a1); apply equality_sym; sp.
 Qed.
 
+Lemma per_image_eq_as_equal_in_image {o} :
+  forall lib (A : @CTerm o) f eqa,
+    nuprl lib A eqa
+    -> (per_image_eq lib eqa f) <=2=> (equal_in_image lib A f).
+Proof.
+  introv n; split; intro h; induction h.
+  { eapply eq_in_image_cl; eauto. }
+  { spcast.
+    eapply eq_in_image_eq; spcast; eauto.
+    apply (equality_eq lib A a1 a2 eqa); auto. }
+  { eapply image_eq_cl; eauto. }
+  { spcast.
+    eapply image_eq_eq; spcast; eauto.
+    apply (equality_eq lib A a1 a2 eqa); auto. }
+Qed.
+
+Lemma implies_eq_equal_in_image {o} :
+  forall lib (A1 A2 : @CTerm o) f1 f2 eqa1 eqa2,
+    nuprl lib A1 eqa1
+    -> nuprl lib A2 eqa2
+    -> ((per_image_eq lib eqa1 f1) <=2=> (per_image_eq lib eqa2 f2))
+    -> (equal_in_image lib A1 f1) <=2=> (equal_in_image lib A2 f2).
+Proof.
+  introv na1 na2 eqiff; split; intro h.
+  { eapply per_image_eq_as_equal_in_image;[eauto|].
+    apply eqiff; eapply per_image_eq_as_equal_in_image;eauto. }
+  { eapply per_image_eq_as_equal_in_image;[eauto|].
+    apply eqiff; eapply per_image_eq_as_equal_in_image;eauto. }
+Qed.
+
+Lemma implies_eq_per_image_eq {o} :
+  forall lib (A1 A2 : @CTerm o) f1 f2 eqa1 eqa2,
+    nuprl lib A1 eqa1
+    -> nuprl lib A2 eqa2
+    -> ((equal_in_image lib A1 f1) <=2=> (equal_in_image lib A2 f2))
+    -> ((per_image_eq lib eqa1 f1) <=2=> (per_image_eq lib eqa2 f2)).
+Proof.
+  introv na1 na2 eqiff; split; intro h.
+  { eapply per_image_eq_as_equal_in_image;[eauto|].
+    apply eqiff; eapply per_image_eq_as_equal_in_image;eauto. }
+  { eapply per_image_eq_as_equal_in_image;[eauto|].
+    apply eqiff; eapply per_image_eq_as_equal_in_image;eauto. }
+Qed.
+
+Hint Resolve iscvalue_mkc_image : slow.
+
 Lemma tequality_mkc_image {p} :
   forall lib (T1 T2 f1 f2 : @CTerm p),
     tequality lib (mkc_image T1 f1) (mkc_image T2 f2)
-    <=> (tequality lib T1 T2 # ccequivc lib f1 f2).
+    <=>
+    (
+      type lib T1
+      # type lib T2
+      # ((equal_in_image lib T1 f1) <=2=> (equal_in_image lib T2 f2))
+    ).
 Proof.
   introv; split; intro teq; repnd.
 
   - unfold tequality in teq; exrepnd.
-    inversion teq0; try not_univ; allunfold @per_image; exrepnd.
-    computes_to_value_isvalue; sp; try (complete (spcast; sp)).
-    exists eqa; sp.
+    destruct teq0 as [teq1 teq2].
+    inversion teq1; try not_univ; clear teq1.
+    inversion teq2; try not_univ; clear teq2.
 
-  - unfold tequality in teq0; exrepnd.
-    exists (per_image_eq lib eq f1); apply CL_image; unfold per_image.
-    exists eq T1 T2 f1 f2; sp; spcast;
-    apply computes_to_valc_refl; apply iscvalue_mkc_image.
+    match goal with
+    | [ H1 : per_image _ _ _ _ , H2 : per_image _ _ _ _ |- _ ] =>
+      rename H1 into h; rename H2 into q
+    end.
+
+    allunfold @per_image; exrepnd.
+    computes_to_value_isvalue; sp; try (complete (spcast; sp)).
+
+    { exists eqa0; sp. }
+
+    { exists eqa; sp. }
+
+    {
+      eapply eq_term_equals_trans in q0;[|apply eq_term_equals_sym;exact h0].
+      clear h0.
+      eapply implies_eq_equal_in_image; eauto.
+    }
+
+  - unfold type in teq0; exrepnd.
+    unfold type in teq1; exrepnd.
+    exists (per_image_eq lib eq f1); split; apply CL_image; unfold per_image.
+    { exists eq T1 f1; sp; spcast; apply computes_to_valc_refl; eauto 2 with slow. }
+    { exists eq0 T2 f2; sp; spcast; try (apply computes_to_valc_refl; eauto 2 with slow).
+      eapply implies_eq_per_image_eq; eauto. }
 Qed.

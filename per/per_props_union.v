@@ -33,7 +33,10 @@
 Require Export natk2.
 Require Export terms_union.
 Require Export cequiv_props.
+
 Require Export per_props_cequiv.
+Require Export per_props_squash.
+Require Export per_props_true.
 
 
 Lemma equality_mkc_union {p} :
@@ -430,12 +433,77 @@ Proof.
 Qed.
 Hint Resolve tequality_bool : slow.
 
+Lemma type_mkc_aunit {p} : forall lib, @type p lib mkc_aunit.
+Proof.
+  unfold mkc_aunit; introv.
+  apply type_mkc_squash; eauto 2 with slow.
+Qed.
+Hint Immediate type_mkc_aunit.
+Hint Resolve type_mkc_aunit : slow.
+
+Lemma tequality_aunit {o} :
+  forall lib, @tequality o lib mkc_aunit mkc_aunit.
+Proof.
+  introv; apply fold_type; eauto 2 with slow.
+Qed.
+Hint Resolve tequality_aunit : slow.
+
+Lemma inhabited_true {o} :
+  forall lib, @inhabited_type o lib mkc_true.
+Proof.
+  introv.
+  exists (@mkc_axiom o).
+  apply equality_in_true.
+Qed.
+Hint Resolve inhabited_true : slow.
+
+Lemma equality_in_aunit {o} :
+  forall lib (a b : @CTerm o),
+    equality lib a b mkc_aunit <=> (a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom).
+Proof.
+  introv.
+  unfold mkc_aunit.
+  rw @equality_in_mkc_squash.
+  split; intro h; repnd; dands; auto; eauto 2 with slow.
+Qed.
+
+Lemma implies_equality_in_aunit {o} :
+  forall lib (a b : @CTerm o),
+    cequivc lib a mkc_axiom
+    -> cequivc lib b mkc_axiom
+    -> equality lib a b mkc_aunit.
+Proof.
+  introv ceq1 ceq2.
+  apply cequivc_sym in ceq1; apply cequivc_axiom_implies in ceq1.
+  apply cequivc_sym in ceq2; apply cequivc_axiom_implies in ceq2.
+  apply equality_in_aunit; dands; spcast; auto.
+Qed.
+Hint Resolve implies_equality_in_aunit : slow.
+
+Lemma tequality_abool {o} :
+  forall lib, @tequality o lib mkc_abool mkc_abool.
+Proof.
+  introv.
+  allrw <- @fold_mkc_abool.
+  rw @tequality_mkc_union; dands; auto.
+  introv; split; intro h; apply equality_mkc_union in h;
+    apply equality_mkc_union; repnd; dands; auto.
+Qed.
+Hint Resolve tequality_abool : slow.
+
 Lemma type_bool {o} :
   forall lib, @type o lib mkc_bool.
 Proof.
   introv; allrw <- @fold_type; eauto 2 with slow.
 Qed.
 Hint Resolve type_bool : slow.
+
+Lemma type_abool {o} :
+  forall lib, @type o lib mkc_abool.
+Proof.
+  introv; allrw <- @fold_type; eauto 2 with slow.
+Qed.
+Hint Resolve type_abool : slow.
 
 Hint Resolve equality_in_unit : slow.
 
@@ -474,6 +542,48 @@ Proof.
       apply cequivc_sym in k1; apply cequivc_mkc_inr_implies in k1.
       exrepnd.
       exists b1 b0; dands; spcast; eauto 2 with slow.
+Qed.
+
+Lemma equality_in_abool {o} :
+  forall lib (a b : @CTerm o),
+    equality lib a b mkc_abool
+    <=>
+      (a ~=~(lib) tt # b ~=~(lib) tt)
+      {+}
+      (a ~=~(lib) ff # b ~=~(lib) ff).
+Proof.
+  introv.
+  allrw <- @fold_mkc_abool.
+  rw @equality_mkc_union; split; intro k; exrepnd.
+
+  - dorn k; exrepnd.
+
+    + apply equality_in_aunit in k3; repnd.
+      left; dands; spcast; allapply @computes_to_valc_implies_cequivc; auto.
+      { eapply cequivc_trans;[eauto|]; apply cequivc_mkc_inl_if; auto. }
+      { eapply cequivc_trans;[eauto|]; apply cequivc_mkc_inl_if; auto. }
+
+    + apply equality_in_aunit in k3; repnd.
+      right; dands; spcast; allapply @computes_to_valc_implies_cequivc; auto.
+      { eapply cequivc_trans;[eauto|]; apply cequivc_mkc_inr_if; auto. }
+      { eapply cequivc_trans;[eauto|]; apply cequivc_mkc_inr_if; auto. }
+
+  - dands; auto.
+    dorn k; repnd; spcast.
+
+    + left.
+      apply cequivc_sym in k0; apply cequivc_mkc_inl_implies in k0.
+      apply cequivc_sym in k; apply cequivc_mkc_inl_implies in k.
+      exrepnd.
+      exists b1 b0; dands; spcast; eauto 2 with slow.
+      apply implies_equality_in_aunit; apply cequivc_sym; auto.
+
+    + right.
+      apply cequivc_sym in k0; apply cequivc_mkc_inr_implies in k0.
+      apply cequivc_sym in k; apply cequivc_mkc_inr_implies in k.
+      exrepnd.
+      exists b1 b0; dands; spcast; eauto 2 with slow.
+      apply implies_equality_in_aunit; apply cequivc_sym; auto.
 Qed.
 
 Lemma substc_mkcv_ite {o} :
@@ -862,10 +972,172 @@ Proof.
     exists t; tcsp.
 Qed.
 
+Lemma member_in_abool {o} :
+  forall lib (a : @CTerm o),
+    member lib a mkc_abool
+    <=>
+    a ~=~(lib) tt {+} a ~=~(lib) ff.
+Proof.
+  introv.
+  rw @equality_in_abool; split; intro h; exrepnd; repndors; tcsp.
+Qed.
+
+Hint Rewrite @substc_mkcv_ite : slow.
+
+Lemma eq_tt_in_abool {o} :
+  forall lib, @equality o lib tt tt mkc_abool.
+Proof.
+  introv.
+  apply member_in_abool; left; spcast; auto.
+Qed.
+Hint Resolve eq_tt_in_abool : slow.
+
+Lemma eq_ff_in_abool {o} :
+  forall lib, @equality o lib ff ff mkc_abool.
+Proof.
+  introv.
+  apply member_in_abool; right; spcast; auto.
+Qed.
+Hint Resolve eq_ff_in_abool : slow.
+
+Inductive equal_in_bunion {p} lib (A B t1 t2 : @CTerm p) : [U] :=
+| eq_in_bunion_cl :
+    forall t,
+      equal_in_bunion lib A B t1 t
+      -> equal_in_bunion lib A B t t2
+      -> equal_in_bunion lib A B t1 t2
+| eq_in_bunion_eq1 :
+    equality lib t1 t2 A
+    -> equal_in_bunion lib A B t1 t2
+| eq_in_bunion_eq2 :
+    equality lib t1 t2 B
+    -> equal_in_bunion lib A B t1 t2.
+
+Lemma equality_in_mkc_bunion {p} :
+  forall lib (A B t1 t2 : @CTerm p),
+    equality lib t1 t2 (mkc_bunion A B)
+    <=> (type lib A # type lib B
+         # equal_in_bunion lib A B t1 t2).
+Proof.
+  introv.
+  rw <- @fold_mkc_bunion.
+  rw @equality_in_mkc_tunion.
+  split; intro k; repnd.
+
+  - pose proof (k1 tt tt) as h1.
+    autodimp h1 hyp; eauto 2 with slow.
+
+    pose proof (k1 ff ff) as h2.
+    autodimp h2 hyp; eauto 2 with slow.
+
+    clear k1.
+
+    autorewrite with slow in *.
+    pose proof (mkc_ite_tt lib A B) as c1.
+    pose proof (mkc_ite_ff lib A B) as c2.
+    apply tequality_respects_cequivc_left with (T3 := A) in h1; auto.
+    apply tequality_respects_cequivc_left with (T3 := B) in h2; auto.
+    apply tequality_respects_cequivc_right with (T3 := A) in h1; auto.
+    apply tequality_respects_cequivc_right with (T3 := B) in h2; auto.
+
+    dands; eauto 2 with slow.
+
+    induction k.
+    { apply @eq_in_bunion_cl with (t := t); auto. }
+    autorewrite with slow in *.
+    allrw @member_in_abool; sp; spcast.
+
+    { pose proof (mkc_ite_ceq_tt lib a A B) as c3; autodimp c3 hyp.
+      eapply cequivc_preserving_equality in c3; eauto.
+      apply @eq_in_bunion_eq1; auto. }
+
+    { pose proof (mkc_ite_ceq_ff lib a A B) as c3; autodimp c3 hyp.
+      eapply cequivc_preserving_equality in c3; eauto.
+      apply @eq_in_bunion_eq2; auto. }
+
+  - dands; auto; eauto 2 with slow.
+
+    + introv e.
+      rw @equality_in_abool in e.
+      autorewrite with slow in *.
+      repndors; repnd; spcast.
+
+      * pose proof (mkc_ite_ceq_tt lib a A B e0) as c1.
+        pose proof (mkc_ite_ceq_tt lib a' A B e) as c2.
+        apply tequality_respects_cequivc_left with (T1 := A); auto.
+        { apply cequivc_sym; auto. }
+        apply tequality_respects_cequivc_right with (T2 := A); auto.
+        { apply cequivc_sym; auto. }
+        eauto 2 with slow.
+
+      * pose proof (mkc_ite_ceq_ff lib a A B e0) as c1.
+        pose proof (mkc_ite_ceq_ff lib a' A B e) as c2.
+        apply tequality_respects_cequivc_left with (T1 := B); auto.
+        { apply cequivc_sym; auto. }
+        apply tequality_respects_cequivc_right with (T2 := B); auto.
+        { apply cequivc_sym; auto. }
+        eauto 2 with slow.
+
+    + induction k.
+
+      * apply @eq_in_tunion_cl with (t := t); auto.
+
+      * apply @eq_in_tunion_eq with (a := tt).
+        apply member_in_abool; left; spcast; sp.
+        autorewrite with slow.
+        pose proof (mkc_ite_tt lib A B) as c.
+        eapply cequivc_preserving_equality; eauto.
+        apply cequivc_sym; auto.
+
+      * apply @eq_in_tunion_eq with (a := ff).
+        apply member_in_abool; right; spcast; sp.
+        autorewrite with slow.
+        pose proof (mkc_ite_ff lib A B) as c.
+        eapply cequivc_preserving_equality; eauto.
+        apply cequivc_sym; auto.
+Qed.
+
+Lemma equal_in_bunion_as_equal_in_tunion {o} :
+  forall lib (A B : @CTerm o) v,
+    (equal_in_bunion lib A B)
+    <=2=>
+    (equal_in_tunion lib mkc_abool v (mkcv_ite [v] (mkc_var v)(mk_cv [v] A) (mk_cv [v] B))).
+Proof.
+  introv; introv; split; intro h.
+
+  - induction h; auto.
+
+    + eapply eq_in_tunion_cl; eauto.
+
+    + apply eq_in_tunion_eq with (a := tt); eauto 2 with slow.
+      autorewrite with slow.
+      eapply cequivc_preserving_equality;[|apply cequivc_sym;apply mkc_ite_ceq_tt;auto]; auto.
+
+    + apply eq_in_tunion_eq with (a := ff); eauto 2 with slow.
+      autorewrite with slow.
+      eapply cequivc_preserving_equality;[|apply cequivc_sym;apply mkc_ite_ceq_ff;auto]; auto.
+
+  - induction h.
+
+    + eapply eq_in_bunion_cl; eauto.
+
+    + autorewrite with slow in *.
+      allrw @equality_in_abool; repndors; repnd; GC; spcast;
+        [apply eq_in_bunion_eq1
+        |apply eq_in_bunion_eq2].
+
+      * eapply cequivc_preserving_equality;[eauto|].
+        apply mkc_ite_ceq_tt; auto.
+
+      * eapply cequivc_preserving_equality;[eauto|].
+        apply mkc_ite_ceq_ff; auto.
+Qed.
+
 Lemma tequality_bunion {o} :
   forall lib (A B C D : @CTerm o),
     tequality lib (mkc_bunion A B) (mkc_bunion C D)
-    <=> (type lib A # type lib C # type lib B # type lib D).
+    <=> (type lib A # type lib C # type lib B # type lib D
+         # ((equal_in_bunion lib A B) <=2=> (equal_in_bunion lib C D))).
 Proof.
   introv.
   allrw <- @fold_mkc_bunion.
@@ -897,38 +1169,50 @@ Proof.
 
     dands; eauto 2 with slow.
 
+    introv.
+    pose proof (k t1 t2) as q; clear k.
+    repeat (rw @fold_mkc_bunion in q).
+    repeat (rw @equality_in_mkc_bunion in q).
+    split; intro h.
+
+    { destruct q as [q q']; clear q'.
+      autodimp q hyp; tcsp; dands; eauto 2 with slow. }
+
+    { destruct q as [q' q]; clear q'.
+      autodimp q hyp; tcsp; dands; eauto 2 with slow. }
+
   - dands; auto; eauto 2 with slow.
 
     + introv e.
-      rw @equality_in_bool in e; exrepnd; repndors; repnd; spcast.
+      rw @equality_in_abool in e; exrepnd; repndors; repnd; spcast.
 
       * allrw @substc_mkcv_ite.
-        pose proof (mkc_ite_ceq_inl lib t a A B e0) as c1.
-        pose proof (mkc_ite_ceq_inl lib u a' A B e1) as c2.
+        pose proof (mkc_ite_ceq_tt lib a A B e0) as c1.
+        pose proof (mkc_ite_ceq_tt lib a' A B e) as c2.
         eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
         eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
         eauto 2 with slow.
 
       * allrw @substc_mkcv_ite.
-        pose proof (mkc_ite_ceq_inr lib t a A B e0) as c1.
-        pose proof (mkc_ite_ceq_inr lib u a' A B e1) as c2.
+        pose proof (mkc_ite_ceq_ff lib a A B e0) as c1.
+        pose proof (mkc_ite_ceq_ff lib a' A B e) as c2.
         eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
         eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
         eauto 2 with slow.
 
     + introv e.
-      rw @equality_in_bool in e; exrepnd; repndors; repnd; spcast.
+      rw @equality_in_abool in e; exrepnd; repndors; repnd; spcast.
 
       * allrw @substc_mkcv_ite.
-        pose proof (mkc_ite_ceq_inl lib t a C D e0) as c1.
-        pose proof (mkc_ite_ceq_inl lib u a' C D e1) as c2.
+        pose proof (mkc_ite_ceq_tt lib a C D e0) as c1.
+        pose proof (mkc_ite_ceq_tt lib a' C D e) as c2.
         eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
         eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
         eauto 2 with slow.
 
       * allrw @substc_mkcv_ite.
-        pose proof (mkc_ite_ceq_inr lib t a C D e0) as c1.
-        pose proof (mkc_ite_ceq_inr lib u a' C D e1) as c2.
+        pose proof (mkc_ite_ceq_ff lib a C D e0) as c1.
+        pose proof (mkc_ite_ceq_ff lib a' C D e) as c2.
         eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
         eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
         eauto 2 with slow.
@@ -937,115 +1221,49 @@ Proof.
         apply equality_in_mkc_tunion in e;
         apply equality_in_mkc_tunion; repnd; dands; tcsp.
 
-      *
-      SearchAbout equality mkc_tunion.
-XXXXXXXXXXXXXX
-      allrw @substc_mkcv_ite.
-      pose proof (mkc_ite_ceq_ff lib a A B e0) as c1.
-      pose proof (mkc_ite_ceq_ff lib a' C D e) as c2.
-      apply tequality_respects_cequivc_left with (T1 := B); auto.
-      apply cequivc_sym; auto.
-      apply tequality_respects_cequivc_right with (T2 := D); auto.
-      apply cequivc_sym; auto.
-Qed.
+      * introv ea.
+        autorewrite with slow.
+        apply equality_in_abool in ea; exrepnd.
+        repndors; exrepnd; spcast.
 
+        { pose proof (mkc_ite_ceq_tt lib a0 C D ea0) as c1.
+          pose proof (mkc_ite_ceq_tt lib a' C D ea) as c2.
+          eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+          eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+          eauto 2 with slow. }
 
+        { pose proof (mkc_ite_ceq_ff lib a0 C D ea0) as c1.
+          pose proof (mkc_ite_ceq_ff lib a' C D ea) as c2.
+          eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+          eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+          eauto 2 with slow. }
 
-Inductive equal_in_bunion {p} lib (A B t1 t2 : @CTerm p) : [U] :=
-| eq_in_bunion_cl :
-    forall t,
-      equal_in_bunion lib A B t1 t
-      -> equal_in_bunion lib A B t t2
-      -> equal_in_bunion lib A B t1 t2
-| eq_in_bunion_eq1 :
-    equality lib t1 t2 A
-    -> equal_in_bunion lib A B t1 t2
-| eq_in_bunion_eq2 :
-    equality lib t1 t2 B
-    -> equal_in_bunion lib A B t1 t2.
+      * clear e1.
+        apply equal_in_bunion_as_equal_in_tunion.
+        apply equal_in_bunion_as_equal_in_tunion in e.
+        apply k; auto.
 
-Lemma equality_in_mkc_bunion {p} :
-  forall lib (A B t1 t2 : @CTerm p),
-    equality lib t1 t2 (mkc_bunion A B)
-    <=> (type lib A # type lib B
-         # equal_in_bunion lib A B t1 t2).
-Proof.
-  introv.
-  rw <- @fold_mkc_bunion.
-  rw @equality_in_mkc_tunion.
-  split; intro k; repnd.
+      * introv ea.
+        autorewrite with slow.
+        apply equality_in_abool in ea; exrepnd.
+        repndors; exrepnd; spcast.
 
-  - pose proof (k1 tt tt) as h1.
-    autodimp h1 hyp.
-    apply equality_in_bool; left; sp; spcast; sp.
+        { pose proof (mkc_ite_ceq_tt lib a0 A B ea0) as c1.
+          pose proof (mkc_ite_ceq_tt lib a' A B ea) as c2.
+          eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+          eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+          eauto 2 with slow. }
 
-    pose proof (k1 ff ff) as h2.
-    autodimp h2 hyp.
-    apply equality_in_bool; right; sp; spcast; sp.
+        { pose proof (mkc_ite_ceq_ff lib a0 A B ea0) as c1.
+          pose proof (mkc_ite_ceq_ff lib a' A B ea) as c2.
+          eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+          eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+          eauto 2 with slow. }
 
-    allrw @substc_mkcv_ite.
-    pose proof (mkc_ite_tt lib A B) as c1.
-    pose proof (mkc_ite_ff lib A B) as c2.
-    apply tequality_respects_cequivc_left with (T3 := A) in h1; auto.
-    apply tequality_respects_cequivc_left with (T3 := B) in h2; auto.
-    apply tequality_respects_cequivc_right with (T3 := A) in h1; auto.
-    apply tequality_respects_cequivc_right with (T3 := B) in h2; auto.
-
-    dands; auto.
-
-    induction k.
-    apply @eq_in_bunion_cl with (t := t); auto.
-    allrw @substc_mkcv_ite.
-    allrw @member_in_bool; sp; spcast.
-
-    pose proof (mkc_ite_ceq_tt lib a A B) as c3; autodimp c3 hyp.
-    eapply cequivc_preserving_equality in c3; eauto.
-    apply @eq_in_bunion_eq1; auto.
-
-    pose proof (mkc_ite_ceq_ff lib a A B) as c3; autodimp c3 hyp.
-    eapply cequivc_preserving_equality in c3; eauto.
-    apply @eq_in_bunion_eq2; auto.
-
-  - dands; auto.
-
-    + apply tequality_bool.
-
-    + introv e.
-      rw @equality_in_bool in e.
-      allrw @substc_mkcv_ite.
-      dorn e; repnd; spcast.
-
-      * pose proof (mkc_ite_ceq_tt lib a A B e0) as c1.
-        pose proof (mkc_ite_ceq_tt lib a' A B e) as c2.
-        apply tequality_respects_cequivc_left with (T1 := A); auto.
-        apply cequivc_sym; auto.
-        apply tequality_respects_cequivc_right with (T2 := A); auto.
-        apply cequivc_sym; auto.
-
-      * pose proof (mkc_ite_ceq_ff lib a A B e0) as c1.
-        pose proof (mkc_ite_ceq_ff lib a' A B e) as c2.
-        apply tequality_respects_cequivc_left with (T1 := B); auto.
-        apply cequivc_sym; auto.
-        apply tequality_respects_cequivc_right with (T2 := B); auto.
-        apply cequivc_sym; auto.
-
-    + induction k.
-
-      * apply @eq_in_tunion_cl with (t := t); auto.
-
-      * apply @eq_in_tunion_eq with (a := tt).
-        apply member_in_bool; left; spcast; sp.
-        rw @substc_mkcv_ite.
-        pose proof (mkc_ite_tt lib A B) as c.
-        eapply cequivc_preserving_equality; eauto.
-        apply cequivc_sym; auto.
-
-      * apply @eq_in_tunion_eq with (a := ff).
-        apply member_in_bool; right; spcast; sp.
-        rw @substc_mkcv_ite.
-        pose proof (mkc_ite_ff lib A B) as c.
-        eapply cequivc_preserving_equality; eauto.
-        apply cequivc_sym; auto.
+      * clear e1.
+        apply equal_in_bunion_as_equal_in_tunion.
+        apply equal_in_bunion_as_equal_in_tunion in e.
+        apply k; auto.
 Qed.
 
 

@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -30,7 +31,6 @@
 
 
 Require Export per_props_image.
-Require Export sequents.
 
 
 Lemma equality_in_mkc_squash {p} :
@@ -96,15 +96,88 @@ Proof.
     allrw @substc_cvterm_var; sp.
 Qed.
 
-Lemma tequality_mkc_squash {p} :
-  forall lib (T1 T2 : @CTerm p),
+Hint Resolve equality_refl : slow.
+Hint Rewrite @csubst_mk_cv : slow.
+
+Lemma equal_in_image_squash_fun_iff_inhabited_type {o} :
+  forall lib (T : @CTerm o) a b,
+    type lib T
+    -> (equal_in_image lib T (mkc_lam nvarx (mk_cv [nvarx] mkc_axiom)) a b
+        <=> (inhabited_type lib T # ccequivc lib a mkc_axiom # ccequivc lib b mkc_axiom)).
+Proof.
+  introv ty; split; intro h; repnd.
+
+  - induction h; auto; spcast; repnd; dands; auto.
+    { exists a1; eauto 2 with slow. }
+    { match goal with
+      | [ H1 : cequivc _ _ _, H2 : cequivc _ _ _ |- _ ] => rename H1 into ceq1; rename H2 into ceq2
+      end.
+      apply cequivc_sym in ceq1.
+      eapply cequivc_trans in ceq1;[|apply cequivc_sym;apply cequivc_beta].
+      autorewrite with slow in *.
+      spcast; apply cequivc_sym; auto. }
+    { match goal with
+      | [ H1 : cequivc _ _ _, H2 : cequivc _ _ _ |- _ ] => rename H1 into ceq1; rename H2 into ceq2
+      end.
+      apply cequivc_sym in ceq2.
+      eapply cequivc_trans in ceq2;[|apply cequivc_sym;apply cequivc_beta].
+      autorewrite with slow in *.
+      spcast; apply cequivc_sym; auto. }
+
+  - spcast.
+    unfold inhabited_type in h0; exrepnd.
+    eapply eq_in_image_eq; try (exact h2); spcast.
+    + eapply cequivc_trans;[|apply cequivc_sym;apply cequivc_beta].
+      autorewrite with slow; auto.
+    + eapply cequivc_trans;[|apply cequivc_sym;apply cequivc_beta].
+      autorewrite with slow; auto.
+Qed.
+
+Lemma equal_in_image_squash_fun_iff_inhabited_type_ax {o} :
+  forall lib (T : @CTerm o),
+    type lib T
+    -> (equal_in_image lib T (mkc_lam nvarx (mk_cv [nvarx] mkc_axiom)) mkc_axiom mkc_axiom
+        <=> inhabited_type lib T).
+Proof.
+  introv ty.
+  split; intro h.
+  - apply equal_in_image_squash_fun_iff_inhabited_type in h; tcsp.
+  - apply equal_in_image_squash_fun_iff_inhabited_type; dands; spcast; auto.
+Qed.
+
+Lemma tequality_mkc_squash {o} :
+  forall lib (T1 T2 : @CTerm o),
     tequality lib (mkc_squash T1) (mkc_squash T2)
-    <=> tequality lib T1 T2.
+    <=>
+    (
+      type lib T1
+      # type lib T2
+      # (inhabited_type lib T1 <=> inhabited_type lib T2)
+    ).
 Proof.
   introv.
-  rw @tequality_mkc_image; split; sp; spcast.
-  apply cequivc_refl.
+  rw @tequality_mkc_image; split; intro h; repnd; dands; auto.
+
+  - pose proof (h (@mkc_axiom o) (@mkc_axiom o)) as q; clear h.
+    split; intro h; apply equal_in_image_squash_fun_iff_inhabited_type_ax; auto;
+      apply q; apply equal_in_image_squash_fun_iff_inhabited_type_ax; auto.
+
+  - introv; split; intro q; apply equal_in_image_squash_fun_iff_inhabited_type in q; auto;
+      apply equal_in_image_squash_fun_iff_inhabited_type; repnd; dands; auto; apply h; auto.
 Qed.
+
+Lemma type_mkc_squash {o} :
+  forall lib (T : @CTerm o),
+    type lib (mkc_squash T)
+    <=>
+    type lib T.
+Proof.
+  introv.
+  rw <- @fold_type.
+  rw @tequality_mkc_squash; split; intro h; repnd; dands; auto.
+Qed.
+
+Hint Resolve inhabited_type_tequality : slow.
 
 Lemma implies_tequality_equality_mkc_squash {o} :
   forall lib (t1 t2 : @CTerm o),
@@ -116,8 +189,9 @@ Proof.
   introv teq inh.
   rw @equality_in_mkc_squash.
   rw @tequality_mkc_squash.
-  dands; auto; spcast;
-  apply computes_to_valc_refl; eauto 3 with slow.
+  dands; auto; spcast; eauto 2 with slow;
+    try (apply computes_to_valc_refl; eauto 3 with slow).
+  split; intro h; auto; eauto 2 with slow.
 Qed.
 
 Lemma implies_tequality_equality_mkc_squash_and {o} :
@@ -138,29 +212,4 @@ Proof.
   introv.
   rw @equality_in_mkc_squash; split; intro h; repnd; dands; auto; spcast;
     apply computes_to_valc_refl; eauto 3 with slow.
-Qed.
-
-Lemma teq_and_eq_if_squash {o} :
-  forall lib (a : @NTerm o) s1 s2 H wa ca1 ca2,
-    hyps_functionality lib s1 H
-    -> similarity lib s1 s2 H
-    -> inhabited_type lib (lsubstc a wa s1 ca1)
-    -> tequality lib (lsubstc a wa s1 ca1) (lsubstc a wa s2 ca2)
-    -> (tequality lib
-          (mkc_squash (lsubstc a wa s1 ca1))
-          (mkc_squash (lsubstc a wa s2 ca2))
-        # (inhabited_type lib (lsubstc a wa s1 ca1))).
-Proof.
-  introv hf sim ceq1 ceq2.
-
-  assert (hyps_functionality lib s2 H)
-    as hf2
-      by (apply @similarity_hyps_functionality_trans with (s1 := s1); auto).
-
-  assert (similarity lib s2 s1 H) as sim21 by (apply similarity_sym; auto).
-  assert (similarity lib s1 s1 H) as sim11 by (apply similarity_refl in sim; auto).
-  assert (similarity lib s2 s2 H) as sim22 by (apply similarity_refl in sim21; auto).
-
-  dands; auto.
-  rw @tequality_mkc_squash; auto.
 Qed.

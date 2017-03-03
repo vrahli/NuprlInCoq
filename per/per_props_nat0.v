@@ -38,7 +38,7 @@ Require Export types_converge.
 
 Require Export per_props_compute.
 Require Export per_props_set.
-Require Export per_props_not.
+Require Export per_props_true.
 
 
 (*
@@ -480,58 +480,6 @@ Proof.
 
     + right; left; dands; auto; try omega.
       repndors; repnd; try omega; auto.
-Qed.
-
-Lemma equality_in_true {o} :
-  forall lib (u v : @CTerm o), equality lib u v mkc_true.
-Proof.
-  introv.
-  rw @mkc_true_eq.
-  apply equality_in_approx; spcast; eauto 2 with slow.
-Qed.
-Hint Resolve equality_in_true : slow.
-
-Lemma tequality_mkc_true {o} :
-  forall (lib : @library o), tequality lib mkc_true mkc_true.
-Proof.
-  introv; rw @mkc_true_eq.
-  apply tequality_mkc_approx; sp.
-Qed.
-Hint Resolve tequality_mkc_true : slow.
-
-Lemma type_mkc_true {o} :
-  forall (lib : @library o), type lib mkc_true.
-Proof.
-  introv; rw @mkc_true_eq.
-  apply fold_type.
-  apply tequality_mkc_approx; sp.
-Qed.
-Hint Resolve type_mkc_true : slow.
-
-Lemma true_not_equal_to_false {o} :
-  forall (lib : @library o),
-    !tequality lib mkc_true mkc_false.
-Proof.
-  introv teq.
-  unfold tequality, nuprl in teq; exrepnd.
-  destruct teq0 as [teq1 teq2].
-  rw @mkc_true_eq in teq1.
-  inversion teq1; subst; try not_univ; clear teq1.
-  rw @mkc_false_eq in teq2.
-  inversion teq2; subst; try not_univ; clear teq2.
-
-  match goal with
-  | [ H1 : per_approx _ _ _ _ , H2 : per_approx _ _ _ _ |- _ ] =>
-    rename H1 into h; rename H2 into q
-  end.
-
-  unfold per_approx in *; exrepnd.
-  computes_to_value_isvalue; GC.
-  eapply eq_term_equals_trans in q1;[|apply eq_term_equals_sym;exact h1].
-  pose proof (q1 (@mkc_axiom o) (@mkc_axiom o)) as w; simpl in w; auto.
-  destruct w as [w w']; clear w'.
-  autodimp w hyp; spcast; eauto 2 with slow.
-  apply not_axiom_approxc_bot in w; sp.
 Qed.
 
 Lemma equality_in_less {o} :
