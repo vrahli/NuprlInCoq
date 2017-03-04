@@ -1980,3 +1980,39 @@ Proof.
   introv n; exists eq; auto.
 Qed.
 Hint Resolve nuprl_implies_type : slow.
+
+Lemma nuprl_ext_eq_iff_eq_term_equals {o} :
+  forall lib (A B : @CTerm o) (eqa eqb : per(o)),
+    nuprl lib A eqa
+    -> nuprl lib B eqb
+    -> (ext_eq lib A B <=> ((eqa) <=2=> (eqb))).
+Proof.
+  introv na nb; split; intro h.
+  { eapply nuprl_ext_eq_implies_eq_term_equals; eauto. }
+
+  introv.
+  rw <- (equality_eq lib A a b eqa na).
+  rw <- (equality_eq lib B a b eqb nb); auto.
+Qed.
+
+Lemma tequality_iff_ext_eq {o} :
+  forall lib (A B : @CTerm o),
+    tequality lib A B <=> (type lib A # type lib B # ext_eq lib A B).
+Proof.
+  introv; split; intro h; repnd;[|apply ext_eq_implies_tequality; auto].
+  unfold tequality in h; exrepnd.
+  destruct h0 as [h1 h2]; dands; eauto 2 with slow.
+  eapply nuprl_ext_eq_iff_eq_term_equals; eauto.
+Qed.
+
+Lemma tequality_implies_eq_members_upto {o} :
+  forall lib (A B : @CTerm o) a b,
+    tequality lib A B
+    -> equality lib a b A
+    -> forall x, equality lib x a A <=> equality lib x b B.
+Proof.
+  introv teq e; apply tequality_iff_ext_eq in teq; repnd.
+  introv.
+  rw <- (teq x b).
+  split; intro q; eauto 3 with slow nequality.
+Qed.

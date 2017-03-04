@@ -413,32 +413,6 @@ Proof.
   apply @equality_in_uni with (i := i); sp.
 Qed.
 
-(* MOVE to nuprl_props *)
-Lemma nuprl_ext_eq_iff_eq_term_equals {o} :
-  forall lib (A B : @CTerm o) (eqa eqb : per(o)),
-    nuprl lib A eqa
-    -> nuprl lib B eqb
-    -> (ext_eq lib A B <=> ((eqa) <=2=> (eqb))).
-Proof.
-  introv na nb; split; intro h.
-  { eapply nuprl_ext_eq_implies_eq_term_equals; eauto. }
-
-  introv.
-  rw <- (equality_eq lib A a b eqa na).
-  rw <- (equality_eq lib B a b eqb nb); auto.
-Qed.
-
-(* MOVE to nuprl_props *)
-Lemma tequality_iff_ext_eq {o} :
-  forall lib (A B : @CTerm o),
-    tequality lib A B <=> (type lib A # type lib B # ext_eq lib A B).
-Proof.
-  introv; split; intro h; repnd;[|apply ext_eq_implies_tequality; auto].
-  unfold tequality in h; exrepnd.
-  destruct h0 as [h1 h2]; dands; eauto 2 with slow.
-  eapply nuprl_ext_eq_iff_eq_term_equals; eauto.
-Qed.
-
 Lemma type_mkc_equality {o} :
   forall lib (a1 a2 A : @CTerm o),
     type lib (mkc_equality a1 a2 A)

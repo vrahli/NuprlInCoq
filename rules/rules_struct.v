@@ -311,7 +311,7 @@ Definition rule_hypothesis_equality {o}
   mk_rule
     (mk_baresequent
        (snoc G (mk_hyp x A) ++ J)
-       (mk_conclax (mk_equality (mk_var x) (mk_var x) A)))
+       (mk_concl_eq (mk_var x) (mk_var x) A))
     []
     [].
 
@@ -327,6 +327,7 @@ Proof.
   clear cargs.
 
   (* We prove the well-formedness of things *)
+  clear hyps.
   destseq; allsimpl.
   duplicate wfh as wfh'.
   allunfold @closed_type; allunfold @closed_extract; allsimpl.
@@ -349,7 +350,16 @@ Proof.
   destruct wfct as [ wa wtt ].
   destruct wtt as [ wb wtA ].
 
-  exists (@covered_axiom o (nh_vars_hyps (snoc G (mk_hyp x A) ++ J))).
+  match goal with
+  | [ |- context[covered ?a ?b] ] => assert (covered a b) as cov
+  end.
+  { apply covered_refl.
+    apply covered_var; simpl.
+    rw @nh_vars_hyps_app.
+    rw @nh_vars_hyps_snoc; simpl.
+    rw in_app_iff.
+    rw in_snoc; tcsp. }
+  exists cov.
 
   (* We prove some simple facts on our sequents *)
   assert (!LIn x (free_vars A)
@@ -357,10 +367,12 @@ Proof.
           # subset (free_vars A) (vars_hyps G)
           # disjoint (free_vars A) (vars_hyps J)) as vhyps.
 
-  dwfseq.
-  sp;
-  try (complete (apply subset_disjoint with (l1 := free_vars A) in wfj2; auto;
-                 apply subset_snoc_r; sp)).
+  {
+    dwfseq.
+    sp;
+      try (complete (apply subset_disjoint with (l1 := free_vars A) in wfj2; auto;
+                     apply subset_snoc_r; sp)).
+  }
 
   destruct vhyps as [ nixa vhyps ].
   destruct vhyps as [ nixj vhyps ].
@@ -372,8 +384,7 @@ Proof.
   lift_lsubst.
 
   repeat (rewrite fold_mkc_member).
-  rewrite member_eq.
-  rw <- @member_member_iff.
+  rw @equality_in_member.
   rw @tequality_mkc_member.
 
   applydup eqh in sim; clear eqh.
@@ -425,13 +436,12 @@ Proof.
 
   lsubst_tac.
 
-  applydup @equality_refl in e3; sp.
+  sp; eauto 2 with slow.
 
-  split; sp; GC.
-  apply @tequality_preserving_equality with (A := lsubstc A wtA s1a p1); auto.
-  rewrite member_eq.
-  apply equality_sym in e3.
-  apply equality_refl in e3; sp.
+  { apply tequality_implies_eq_members_upto; auto. }
+
+  exists t0 t3; dands; spcast; try (apply computes_to_valc_refl; eauto 2 with slow);
+    eauto 3 with slow nequality.
 Qed.
 
 (* begin hide *)
@@ -460,7 +470,7 @@ Definition rule_introduction_concl {o} (H : @bhyps o) C t :=
   mk_baresequent H (mk_concl C t).
 
 Definition rule_introduction_hyp {o} (H : @bhyps o) C t :=
-  mk_baresequent H (mk_conclax (mk_equality t t C)).
+  mk_baresequent H (mk_concl_eq t t C).
 
 Definition rule_introduction {o}
              (H : @barehypotheses o)
@@ -509,7 +519,16 @@ Proof.
 
   lift_lsubst in t0; lift_lsubst in e; clear_irr.
 
-  rw @tequality_mkc_equality in t0; sp.
+  rw @tequality_mkc_equality in t0; repnd.
+  apply equality_mkc_equality_implies in e; exrepnd.
+  spcast; computes_to_value_isvalue.
+
+  dands; auto.
+
+  apply tequality_iff_ext_eq; dands; auto.
+  introv.
+
+XXXXXXXXXX
 
   allrewrite @lsubstc_mk_axiom.
   allrewrite @member_eq.

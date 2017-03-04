@@ -47,9 +47,12 @@ Require Export per_props_isect.
 Require Export per_props_top.
 Require Export per_props_equality.
 Require Export per_props_subtype_rel.
+Require Export sequents_useful. (* commented out lots of stuff there *)
+
 
 (* working on *)
-Require Export sequents_useful.
+Require Export rules_struct.
+
 
 (* not fixed *)
 Require Export per_props4.

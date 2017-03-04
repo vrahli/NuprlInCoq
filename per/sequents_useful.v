@@ -76,6 +76,15 @@ Proof.
   apply equality_refl in i4; auto.
 Qed.
 
+(*
+
+Not true anymore because the two instance of U are not extensionally
+but extensionally equal up to x (see tequality_mkc_equality)
+
+Could we get the same effect if we use a squashed equality type instead?
+
+=====================================================================
+
 Lemma subtype_tequality {o} :
   forall lib (s1 s2 : @CSub o) H T U x t t' wt wu ct1 cu1 cu2 wc,
     !LIn x (vars_hyps H)
@@ -103,6 +112,13 @@ Proof.
   ai_lsubst_tac.
   rw @tequality_mkc_member in seqt0; sp.
 Qed.
+*)
+
+(*
+
+depends on subtype_tequality
+
+=====================================================================
 
 Lemma hyps_functionality_widening {o} :
   forall lib (s1 s2 : @CSub o) x y z t t' T U H w c wc,
@@ -180,6 +196,7 @@ Proof.
     as eq by (apply @equality_trans with (t2 := t3); sp).
   apply tequality_preserving_equality with (A := lsubstc U w1 s1a c5); sp.
 Qed.
+*)
 
 Lemma similarity_widening {o} :
   forall lib (s1 s2 : @CSub o) x y z t t1 t2 T U H wt wu ct cu,
@@ -236,6 +253,7 @@ Proof.
     apply equality_refl in equ; sp.
 Qed.
 
+(*
 Lemma strong_subtype_equality {o} :
   forall lib (s1 s2 : @CSub o) t t1 t2 T U wt wu ct1 cu1 ct2 H x y z ws1 ws2 ,
     !LIn x (vars_hyps H)
@@ -292,6 +310,7 @@ Proof.
 
   apply equality_in_mkc_equality in seqt2; exrepnd; tcsp.
 Qed.
+*)
 
 
 (** This is saying that if the sequent
@@ -365,6 +384,10 @@ Proof.
   apply member_if_inhabited in seqt1.
   dands; auto.
 Qed.
+
+(*
+
+Still true?
 
 Lemma implies_inhabited_apply2_all {o} :
   forall lib (H : @bhyps o) x y z R1 R2 i e s1 s2 w1 w2 c1 c2 ws1 ws2,
@@ -489,7 +512,9 @@ Proof.
   lsubst_tac.
   apply inhabited_type_if_equality in seqt2; sp.
 Qed.
+*)
 
+(*
 Lemma implies_inhabited_apply2 {o} :
   forall lib (H : @bhyps o) x y z x0 y0 R1 R2 i e s1 s2 w1 w2 c1 c2 ws1 ws2,
     !LIn x (vars_hyps H)
@@ -524,7 +549,9 @@ Proof.
   generalize (implies_inhabited_apply2_all lib
                 H x y z R1 R2 i e s1 s2 w1 w2 c1 c2 ws1 ws2); sp.
 Qed.
+*)
 
+(*
 Lemma implies_sym_type {o} :
   forall lib (H : @bhyps o) x y z R1 R2 i e1 e2 s1 s2 w1 w2 c1 c2 ws1 ws2 ws3 ws4,
     !LIn x (vars_hyps H)
@@ -586,7 +613,9 @@ Proof.
                 seqt1 seqt3 hf sim
                 y0 x0 inh2); sp.
 Qed.
+*)
 
+(*
 Lemma implies_trans_type {o} :
   forall lib (H : @bhyps o) x y z R1 R2 i e1 e2 s1 s2 w1 w2 c1 c2 ws1 ws2 ws3 ws4,
     !LIn x (vars_hyps H)
@@ -654,7 +683,9 @@ Proof.
                 seqt1 seqt3 hf sim
                 x0 z0 inh); sp.
 Qed.
+*)
 
+(*
 Lemma is_sym_type {o} :
   forall lib R (H : @bhyps o) i x y z e s1 s2 w c ws1 ws2,
     !LIn x (vars_hyps H)
@@ -720,6 +751,7 @@ Proof.
     intro ceq; repeat (autodimp ceq hyp); try (complete (apply cequivc_sym; auto)).
 
   lsubst_tac.
+
   apply tequality_in_uni_implies_tequality in q0; sp.
   apply tequality_respects_cequivc_right with (T2 := mkc_apply2 (lsubstc R w s2a0 c10) t0 t1); sp.
   apply cequivc_sym; sp.
@@ -770,7 +802,9 @@ Proof.
   lsubst_tac.
   apply inhabited_type_if_equality in seqt2; sp.
 Qed.
+*)
 
+(*
 Lemma is_trans_type {o} :
   forall lib R (H : @bhyps o) i x y z u v e s1 s2 w c ws1 ws2,
     !LIn x (vars_hyps H)
@@ -987,6 +1021,7 @@ Proof.
   lsubst_tac.
   apply inhabited_type_if_equality in seqt2; sp.
 Qed.
+*)
 
 
 (** This is saying that if the sequent
@@ -1088,15 +1123,34 @@ Proof.
 
   vr_seq_true in seq.
   vr_seq_true.
-  generalize (seq s1 s2 eqh sim); clear seq; intro seq; exrepnd.
+
+  pose proof (similarity_hyps_functionality_trans lib s1 s2 H) as hf; repeat (autodimp hf hyp).
+  appdup @similarity_sym in sim; auto.
+  apply similarity_refl in sim0.
+
+  pose proof (seq s1 s2 eqh sim) as hseq; exrepnd.
+  pose proof (seq s2 s2 hf sim0) as qseq; exrepnd.
   lsubst_tac.
 
-  apply tequality_mkc_equality_sp in seq0; repnd.
-  rw @tequality_mkc_member_sp.
+  apply tequality_mkc_equality in hseq0; repnd.
+  apply equality_in_mkc_equality in hseq1; exrepnd.
+  apply tequality_mkc_equality in qseq0; repnd.
+  apply equality_in_mkc_equality in qseq1; exrepnd.
+  spcast; computes_to_value_isvalue.
+
+  rw @tequality_mkc_member.
   dands; tcsp.
 
-  apply equality_in_mkc_equality in seq1; exrepnd.
-  rw @equality_in_member.
-  exists x1 x2; dands; auto.
-  eapply equality_trans;[|eauto]; auto.
+  { introv; split; intro q.
+
+    - pose proof (hseq0 x) as h; destruct h as [h h']; clear h'.
+      autodimp h hyp; repnd; dands; eauto 3 with slow nequality.
+
+    - pose proof (hseq0 x) as h; destruct h as [h' h]; clear h'.
+      autodimp h hyp; repnd; dands; eauto 3 with slow nequality. }
+
+  { apply equality_in_member.
+    eexists; eexists; dands; spcast;
+      try (apply computes_to_valc_refl; eauto 2 with slow);
+      eauto 3 with slow nequality. }
 Qed.
