@@ -589,19 +589,22 @@ Definition eqorceq {p} lib (eq : per(p)) a b : [U] := eq a b {+} a ~=~(lib) b.
 
  *)
 
+(* The PER of this equality type is the type as the PER of A *)
 Definition per_aeq_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) : [U] :=
-  (t ===>(lib) mkc_axiom)
-  # (t' ===>(lib) mkc_axiom)
-  # eqa a1 a2.
+  { x1 , x2 : CTerm
+  , (t ===>(lib) (mkc_refl x1))
+  # (t' ===>(lib) (mkc_refl x2))
+  # eqa a1 a2
+  # eqa x1 x2 }.
 
 Definition per_aeq {p} lib (ts : cts(p)) T (eq : per(p)) : [U] :=
   {A, a, b : CTerm
   , {eqa : per
   , T ===>(lib) (mkc_aequality a b A)
   # ts A eqa
-(*  # eqorceq lib eqa a b*)
   # eq <=2=> (per_aeq_eq lib a b eqa) }}.
 
+(* The PER of this equality type is all the elements equal to a1 *)
 Definition per_eq_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) : [U] :=
   { x1 , x2 : CTerm
   , (t ===>(lib) (mkc_refl x1))
@@ -615,7 +618,6 @@ Definition per_eq {p} lib (ts : cts(p)) T (eq : per(p)) : [U] :=
   , {eqa : per
   , T ===>(lib) (mkc_equality a b A)
   # ts A eqa
-(*  # eqorceq lib eqa a b*)
   # eq <=2=> (per_eq_eq lib a b eqa) }}.
 
 (**

@@ -52,12 +52,12 @@ Require Export sequents_useful. (* commented out lots of stuff there *)
 
 (* working on *)
 Require Export rules_struct.
+Require Export per_props_aequality. (* commented out lots of stuff here *)
 
 
 (* not fixed *)
 Require Export per_props4.
 Require Export per_props_admiss.
-Require Export per_props_aequality.
 Require Export per_props_atom.
 Require Export per_props_cequiv2.
 Require Export per_props_cequiv3.

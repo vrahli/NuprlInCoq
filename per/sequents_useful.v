@@ -40,6 +40,14 @@ Definition mk_concl_mem {o} (t T : @NTerm o) : conclusion :=
 Definition mk_concl_eq {o} (t1 t2 T : @NTerm o) : conclusion :=
   mk_concl (mk_equality t1 t2 T) (mk_refl t1).
 
+(* in general we cannot assume that the extract we get from subgoals
+   is anything in particular *)
+Definition mk_concl_mem_ext {o} (t T e : @NTerm o) : conclusion :=
+  mk_concl (mk_member t T) e.
+
+Definition mk_concl_eq_ext {o} (t1 t2 T e : @NTerm o) : conclusion :=
+  mk_concl (mk_equality t1 t2 T) e.
+
 Lemma subtype_equality {o} :
   forall lib (t1 t2 : @CTerm o) T U s s' wt wu ct cu H x wc,
     !LIn x (vars_hyps H)

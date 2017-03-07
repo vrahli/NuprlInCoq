@@ -98,8 +98,25 @@ Definition univ' {p} lib (T T' : @CTerm p) eq :=
 
  *)
 
+Inductive extensional_outer_equality_types {o} lib (ts : cts(o)) : CTerm -> CTerm -> Prop :=
+| eet :
+    forall T T',
+      (forall a1 a2 A b1 b2 B,
+          T ===>(lib) (mkc_equality a1 a2 A)
+          -> T' ===>(lib) (mkc_equality b1 b2 B)
+          ->
+          { eqa : per(o)
+          , ts A eqa
+          # ts B eqa
+          # extensional_outer_equality_types lib ts A B
+          }
+      )
+      -> extensional_outer_equality_types lib ts T T'.
+
 Definition extts {o} (ts : cts(o)) T T' eq : [U] :=
-  ts T eq # ts T' eq.
+  ts T eq
+  # ts T' eq
+  (*# extensional_equality_types lib T T'*).
 
 Definition univi_eq {o} lib ts (A A' : @CTerm o) :=
   { eqa : per(o)
@@ -115,6 +132,17 @@ Fixpoint univi {p} lib (i : nat) (T : @CTerm p) (eq : per(p)) : [U] :=
     )
     {+} univi lib n T eq
   end.
+
+Definition univ {p} lib (T : @CTerm p) (eq : per) :=
+  {i : nat , univi lib i T eq}.
+
+Definition nuprli {o} lib (i : nat) := @close o lib (univi lib i).
+
+Definition Nuprli {o} lib i := @extts o (nuprli lib i).
+
+Definition nuprl {o} lib := @close o lib (univ lib).
+
+Definition Nuprl {o} lib := @extts o (nuprl lib).
 
 (**
 
@@ -203,14 +231,6 @@ Proof.
 Qed.
 
 
-Definition nuprli {o} lib (i : nat) := @close o lib (univi lib i).
-
-Lemma fold_nuprli {p} :
-  forall lib i, close lib (univi lib i) = @nuprli p lib i.
-Proof.
-  sp.
-Qed.
-
 (*
 (*Polymorphic*) Definition univ (T T' : CTerm) (eq : per) :=
   {n : nat
@@ -228,9 +248,6 @@ Qed.
   universes.
 
  *)
-
-Definition univ {p} lib (T : @CTerm p) (eq : per) :=
-  {i : nat , univi lib i T eq}.
 
 (**
 
@@ -261,11 +278,11 @@ Qed.
 
  *)
 
-Definition nuprl {o} lib := @close o lib (univ lib).
-
-Definition Nuprl {o} lib := @extts o (nuprl lib).
-
-Definition Nuprli {o} lib i := @extts o (nuprli lib i).
+Lemma fold_nuprli {p} :
+  forall lib i, close lib (univi lib i) = @nuprli p lib i.
+Proof.
+  sp.
+Qed.
 
 (* begin hide *)
 

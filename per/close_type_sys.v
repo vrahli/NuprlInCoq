@@ -48,8 +48,8 @@ Require Import close_type_sys_per_isect.
 Require Import close_type_sys_per_func.
 Require Import close_type_sys_per_disect.
 Require Import close_type_sys_per_pertype.
-(*Require Import close_type_sys_per_ipertype.
-Require Import close_type_sys_per_spertype.*)
+(*Require Import close_type_sys_per_ipertype.*)
+(*Require Import close_type_sys_per_spertype.*)
 Require Import close_type_sys_per_w.
 Require Import close_type_sys_per_m.
 Require Import close_type_sys_per_texc.
@@ -64,8 +64,8 @@ Require Import close_type_sys_per_ffatoms.
 Require Import close_type_sys_per_set.
 Require Import close_type_sys_per_tunion.
 Require Import close_type_sys_per_product.
-(*Require Import close_type_sys_per_pw.
-Require Import close_type_sys_per_pm.*)
+(*Require Import close_type_sys_per_pw.*)
+(*Require Import close_type_sys_per_pm.*)
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)

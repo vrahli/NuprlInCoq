@@ -38,6 +38,9 @@ Require Export sequents_tacs2.
 Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
 
+Require Export per_props_aequality.
+
+
 (** printing |- $\vdash$ *)
 (** printing ->  $\rightarrow$ *)
 (* begin hide *)
@@ -469,22 +472,25 @@ Qed.
 Definition rule_introduction_concl {o} (H : @bhyps o) C t :=
   mk_baresequent H (mk_concl C t).
 
-Definition rule_introduction_hyp {o} (H : @bhyps o) C t :=
-  mk_baresequent H (mk_concl_eq t t C).
+Definition rule_introduction_hyp {o} (H : @bhyps o) C t e :=
+  mk_baresequent H (mk_concl_mem_ext t C e).
+
+Definition rule_introduction_wf_ext {o} (H : @bhyps o) i C e :=
+  mk_baresequent H (mk_concl_mem_ext C (mk_uni i) e).
 
 Definition rule_introduction {o}
              (H : @barehypotheses o)
-             (C t : NTerm) :=
+             (C t e : NTerm) :=
   mk_rule
     (rule_introduction_concl H C t)
-    [ rule_introduction_hyp H C t ]
+    [ rule_introduction_hyp H C t e ]
     [ sarg_term t ].
 
 Lemma rule_introduction_true3 {o} :
   forall lib
          (H : @barehypotheses o)
-         (C t : NTerm),
-    rule_true3 lib (rule_introduction H C t).
+         (C t e : NTerm),
+    rule_true3 lib (rule_introduction H C t e).
 Proof.
   intros.
   unfold rule_introduction, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -517,10 +523,10 @@ Proof.
   autodimp hyp1 h.
   exrepd.
 
-  lift_lsubst in t0; lift_lsubst in e; clear_irr.
+  lsubst_tac.
 
-  rw @tequality_mkc_equality in t0; repnd.
-  apply equality_mkc_equality_implies in e; exrepnd.
+  rw @tequality_mkc_member in t0; repnd.
+  apply equality_in_member in e0; exrepnd.
   spcast; computes_to_value_isvalue.
 
   dands; auto.

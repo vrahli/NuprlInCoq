@@ -34,13 +34,77 @@ Require Export type_sys.
 Require Import dest_close.
 
 
+Lemma eq_term_equals_implies_per_aeq_eq {o} :
+  forall lib (a b : @CTerm o) (eqa1 eqa2 : per(o)),
+    (eqa1 <=2=> eqa2)
+    -> (per_aeq_eq lib a b eqa1) <=2=> (per_aeq_eq lib a b eqa2).
+Proof.
+  introv h; introv; unfold per_aeq_eq; split; intro q; exrepnd;
+    exists x1 x2; dands; auto; apply h; auto.
+Qed.
+
+Lemma cequivc_implies_per_aeq_eq {o} :
+  forall lib (a a' b b' : @CTerm o) eqa,
+    term_equality_symmetric eqa
+    -> term_equality_transitive eqa
+    -> term_equality_respecting lib eqa
+    -> cequivc lib a a'
+    -> cequivc lib b b'
+    -> (per_aeq_eq lib a b eqa) <=2=> (per_aeq_eq lib a' b' eqa).
+Proof.
+  introv sym trans resp ceq1 ceq2; introv;
+    unfold per_aeq_eq; split; intro h; exrepnd;
+      exists x1 x2; dands; auto.
+  - apply (eq_ts_cequivc lib a b a' b' eqa); auto.
+  - apply (eq_ts_cequivc lib a' b' a b eqa); auto; apply cequivc_sym; auto.
+Qed.
+
+Lemma per_aeq_eq_sym {o} :
+  forall lib (a b t1 t2 : @CTerm o) eqa,
+    term_equality_symmetric eqa
+    -> per_aeq_eq lib a b eqa t1 t2
+    -> per_aeq_eq lib a b eqa t2 t1.
+Proof.
+  introv sym per.
+  unfold per_aeq_eq in *; exrepnd.
+  exists x2 x1; dands; auto.
+Qed.
+
+Lemma per_aeq_eq_trans {o} :
+  forall lib (a b t1 t2 t3 : @CTerm o) eqa,
+    term_equality_transitive eqa
+    -> per_aeq_eq lib a b eqa t1 t2
+    -> per_aeq_eq lib a b eqa t2 t3
+    -> per_aeq_eq lib a b eqa t1 t3.
+Proof.
+  introv tran per1 per2.
+  unfold per_aeq_eq in *; exrepnd.
+  ccomputes_to_eqval.
+  exists x0 x2; dands; spcast; auto.
+  eapply tran; eauto.
+Qed.
+
+Lemma per_aeq_eq_resp {o} :
+  forall lib (a b t t' : @CTerm o) eqa,
+    term_equality_respecting lib eqa
+    -> cequivc lib t t'
+    -> per_aeq_eq lib a b eqa t t
+    -> per_aeq_eq lib a b eqa t t'.
+Proof.
+  introv resp ceq per.
+  unfold per_aeq_eq in *; exrepnd.
+  spcast; computes_to_eqval.
+  eapply cequivc_mkc_refl in ceq;[|eauto]; exrepnd.
+  exists x1 b0; dands; spcast; auto.
+  eapply resp; spcast; eauto.
+Qed.
+
 Lemma close_type_system_aeq {o} :
   forall lib (ts : cts(o)) T eq A a b eqa,
     type_system lib ts
     -> defines_only_universes lib ts
     -> computes_to_valc lib T (mkc_aequality a b A)
     -> close lib ts A eqa
-(*    -> eqorceq lib eqa a b*)
     -> (eq <=2=> (per_aeq_eq lib a b eqa))
     -> per_aeq lib (close lib ts) T eq
     -> type_system_props lib (close lib ts) A eqa
@@ -61,8 +125,7 @@ Proof.
     eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
     dts_props props uv tv te tes tet tev.
     eapply uv in h2.
-    unfold per_aeq_eq; split; introv q; exrepnd; dands; auto;
-      try (apply h2); auto.
+    apply eq_term_equals_implies_per_aeq_eq; auto.
 
   - SCase "type_extensionality".
     introv eqt.
@@ -79,33 +142,24 @@ Proof.
 
     dts_props props uv tv te tes tet tev.
     dands; spcast; auto.
-(*    { eapply eqorceq_cequivc; eauto. }*)
-    { eapply eq_term_equals_trans;[eauto|].
-      unfold per_aeq_eq; split; intro q; exrepnd; dands; auto.
-      - apply (eq_ts_cequivc lib a b a' b' eqa); auto.
-      - apply (eq_ts_cequivc lib a' b' a b eqa); auto; apply cequivc_sym; auto. }
+    eapply eq_term_equals_trans;[eauto|].
+    apply cequivc_implies_per_aeq_eq; auto.
 
   - SCase "term_symmetric".
     introv e.
     apply eqiff in e; apply eqiff.
-    unfold per_aeq_eq in e; unfold per_aeq_eq; exrepnd.
     dts_props props uv tv te tes tet tev.
-    dands; auto.
+    eapply per_aeq_eq_sym; eauto.
 
   - SCase "term_transitive".
     introv e1 e2.
     apply eqiff in e1; apply eqiff in e2; apply eqiff.
-    unfold per_aeq_eq in e1, e2; unfold per_aeq_eq; exrepnd.
     dts_props props uv tv te tes tet tev.
-    ccomputes_to_eqval.
-    dands; spcast; auto.
+    eapply per_aeq_eq_trans; eauto.
 
   - SCase "term_value_respecting".
     introv e c; spcast.
     apply eqiff in e; apply eqiff.
-    unfold per_aeq_eq in e; unfold per_aeq_eq; exrepnd.
-    ccomputes_to_eqval.
-    eapply cequivc_axiom in c;[|eauto]; exrepnd.
     dts_props props uv tv te tes tet tev.
-    dands; spcast; auto.
+    eapply per_aeq_eq_resp; eauto.
 Qed.
