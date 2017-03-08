@@ -196,11 +196,39 @@ Proof.
   unfold member; auto.
 Qed.
 
+Lemma Nuprl_implies_nuprl_left {o} :
+  forall lib (A B : @CTerm o) eq,
+    Nuprl lib A B eq
+    -> nuprl lib A eq.
+Proof.
+  introv n; destruct n as [n1 n2]; tcsp.
+Qed.
+Hint Resolve Nuprl_implies_nuprl_left : slow.
+
+Lemma Nuprl_implies_nuprl_right {o} :
+  forall lib (A B : @CTerm o) eq,
+    Nuprl lib A B eq
+    -> nuprl lib B eq.
+Proof.
+  introv n; destruct n as [n1 n2]; tcsp.
+Qed.
+Hint Resolve Nuprl_implies_nuprl_right : slow.
+
+Lemma nuprl_implies_Nuprl {o} :
+  forall lib (T : @CTerm o) eq,
+    nuprl lib T eq -> Nuprl lib T T eq.
+Proof.
+  introv n.
+  unfold Nuprl; eauto 2 with slow.
+Qed.
+Hint Resolve nuprl_implies_Nuprl : slow.
+
 Lemma fold_type {o} :
   forall lib (T : @CTerm o),
     tequality lib T T <=> type lib T.
 Proof.
-  unfold tequality, type, Nuprl, extts; introv; split; intro h; exrepnd; eexists; eauto.
+  introv; unfold tequality, type; split; intro h; exrepnd;
+    eauto 2 with slow; exists eq; eauto 2 with slow.
 Qed.
 
 Lemma fold_equorsq {p} :
@@ -259,16 +287,14 @@ Lemma equality_eq1 {p} :
 Proof.
   introv n; split; intro k.
 
-  { unfold equality; exists eq; sp.
-    unfold Nuprl, extts in n; tcsp. }
+  { unfold equality; exists eq; sp; eauto 2 with slow. }
 
   { unfold equality in k; exrepnd.
-    unfold Nuprl, extts in n; repnd.
-    assert (eq_term_equals eq eq0) as eqt.
-    { eapply nuprl_uniquely_valued with (t := A); eauto. }
-    apply eqt; auto. }
+    apply Nuprl_implies_nuprl_left in n.
+    eapply uniquely_valued_nuprl; eauto. }
 Qed.
 
+(*
 Lemma eqorceq_commutes_equality {p} :
   forall lib a b c d eq A B,
     @Nuprl p lib A B eq
@@ -295,6 +321,7 @@ Proof.
     - eapply eqorceq_sym; eauto.
     - eapply eqorceq_sym; eauto. }
 Qed.
+*)
 
 Lemma eq_equality0 {p} :
   forall lib a b A (eq : per(p)),
@@ -313,7 +340,7 @@ Lemma eq_equality1 {p} :
     -> equality lib a b A.
 Proof.
   introv e n.
-  unfold Nuprl, extts in n; repnd.
+  apply Nuprl_implies_nuprl_left in n.
   exists eq; sp.
 Defined.
 
@@ -324,7 +351,7 @@ Lemma eq_equality2 {p} :
     -> equality lib a b A.
 Proof.
   introv e n.
-  unfold Nuprl, extts in n; repnd.
+  apply Nuprl_implies_nuprl_left in n.
   exists eq; sp.
 Defined.
 
@@ -333,28 +360,10 @@ Lemma Nuprli_implies_Nuprl {o} :
     Nuprli lib i A B eq
     -> Nuprl lib A B eq.
 Proof.
-  introv n; destruct n as [n1 n2].
+  introv n; destruct n as [n1 n2 e].
   split; auto; eapply nuprli_implies_nuprl; eauto.
 Qed.
 Hint Resolve Nuprli_implies_Nuprl : slow.
-
-Lemma Nuprl_implies_nuprl_left {o} :
-  forall lib (A B : @CTerm o) eq,
-    Nuprl lib A B eq
-    -> nuprl lib A eq.
-Proof.
-  introv n; destruct n as [n1 n2]; tcsp.
-Qed.
-Hint Resolve Nuprl_implies_nuprl_left : slow.
-
-Lemma Nuprl_implies_nuprl_right {o} :
-  forall lib (A B : @CTerm o) eq,
-    Nuprl lib A B eq
-    -> nuprl lib B eq.
-Proof.
-  introv n; destruct n as [n1 n2]; tcsp.
-Qed.
-Hint Resolve Nuprl_implies_nuprl_right : slow.
 
 Lemma eq_equality3 {p} :
   forall lib a b A B (eq : per(p)) i,

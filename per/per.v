@@ -541,7 +541,9 @@ Definition per_compute {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] 
 
  *)
 
+(*
 Definition eqorceq {p} lib (eq : per(p)) a b : [U] := eq a b {+} a ~=~(lib) b.
+*)
 
 (**
 

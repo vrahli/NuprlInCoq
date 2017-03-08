@@ -1910,6 +1910,7 @@ Proof.
 Qed.
 *)
 
+(*
 Lemma eqorceq_implies_eq {p} :
   forall lib eq (a b c : @CTerm p),
     term_equality_respecting lib eq
@@ -2016,6 +2017,7 @@ Proof.
   apply ter; auto.
   apply tet with (t2 := a); sp.
 Qed.
+*)
 
 Tactic Notation "dts_props" ident(h) ident(uv) ident(te) ident(tv) ident(tes) ident(tet) ident(ter) :=
   unfold type_system_props in h;
@@ -2036,7 +2038,6 @@ Lemma eq_ts_cequivc {o} :
     -> eq c d.
 Proof.
   introv sym trans resp e1 c1 c2.
-  unfold eqorceq in *.
 
   apply (trans _ a).
 
@@ -2049,6 +2050,7 @@ Proof.
     apply (trans _ a); auto.
 Qed.
 
+(*
 Lemma eqorceq_cequivc {o} :
   forall lib (a b c d : @CTerm o) (eq : per(o)),
     term_equality_symmetric eq
@@ -2071,6 +2073,7 @@ Proof.
     eapply cequivc_trans;[|eauto].
     apply cequivc_sym; auto.
 Qed.
+*)
 
 
 (* --------- A FEW TACTICS --------- *)

@@ -204,6 +204,167 @@ Proof.
 Qed.
 Hint Resolve computes_to_equality_implies_either_right : slow.
 
+Lemma either_computes_to_equality_same_implies {o} :
+  forall lib (T : @CTerm o),
+    either_computes_to_equality lib T T
+    -> exists a b A, T ===>(lib) (mkc_equality a b A).
+Proof.
+  introv e; destruct e as [e|e]; auto.
+Qed.
+
+Lemma extts_close_refl {o} :
+  forall lib (ts : cts(o)) (T : @CTerm o) eq,
+    defines_only_universes lib ts
+    -> close lib ts T eq
+    -> extts lib (close lib ts) T T eq.
+Proof.
+  introv dou c.
+
+  close_cases (destruct c using @close_ind') Case; introv;
+    try (complete (allunfold_per; ccomputes_to_eqval)).
+
+  - Case "CL_init".
+    use_dou.
+    constructor; auto.
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    ccomputes_to_eqval.
+
+  - Case "CL_int".
+    constructor; try (apply CL_int; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_atom".
+    constructor; try (apply CL_atom; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_uatom".
+    constructor; try (apply CL_uatom; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_base".
+    constructor; try (apply CL_base; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_approx".
+    constructor; try (apply CL_approx; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_cequiv".
+    constructor; try (apply CL_cequiv; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_aeq".
+    constructor; try (apply CL_aeq; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_eq".
+    constructor; try (apply CL_eq; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+    assert (exists eqa, extts lib (close lib ts) A A eqa);
+      [|exrepnd; exists a b A a b A eqa; dands; spcast; auto].
+    autodimp IHc hyp.
+    exists eqa; auto.
+
+  - Case "CL_teq".
+    constructor; try (apply CL_teq; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_isect".
+    constructor; try (apply CL_isect; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_func".
+    constructor; try (apply CL_func; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_disect".
+    constructor; try (apply CL_disect; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_pertype".
+    constructor; try (apply CL_pertype; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_w".
+    constructor; try (apply CL_w; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_m".
+    constructor; try (apply CL_m; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_texc".
+    constructor; try (apply CL_texc; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_union".
+    constructor; try (apply CL_union; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_image".
+    constructor; try (apply CL_image; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_partial".
+    constructor; try (apply CL_partial; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_admiss".
+    constructor; try (apply CL_admiss; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_mono".
+    constructor; try (apply CL_mono; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_ffatom".
+    constructor; try (apply CL_ffatom; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_ffatoms".
+    constructor; try (apply CL_ffatoms; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_set".
+    constructor; try (apply CL_set; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_tunion".
+    constructor; try (apply CL_tunion; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+
+  - Case "CL_product".
+    constructor; try (apply CL_product; auto).
+    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
+    allunfold_per; ccomputes_to_eqval.
+Qed.
+
 Lemma extts_extensional {o} :
   forall lib ts (A B C : @CTerm o) eq eq',
     uniquely_valued ts
@@ -479,6 +640,16 @@ Proof.
   exists i; sp.
 Qed.
 Hint Resolve defines_only_universes_univ : slow.
+
+Lemma extts_nuprl_refl {o} :
+  forall lib (T : @CTerm o) eq,
+    nuprl lib T eq
+    -> extts lib (nuprl lib) T T eq.
+Proof.
+  introv n.
+  apply extts_close_refl; eauto 2 with slow.
+Qed.
+Hint Resolve extts_nuprl_refl : slow.
 
 
 (* end hide *)
@@ -835,6 +1006,7 @@ Proof.
 Qed.
 Hint Resolve Nuprl_value_respecting_right : slow.
 
+(*
 Lemma nuprl_eq_implies_eqorceq_refl {o} :
   forall lib (T : @CTerm o) eq t1 t2,
     nuprl lib T eq
@@ -846,5 +1018,6 @@ Proof.
     eapply nts_tet; eauto;
       eapply nts_tes; eauto.
 Qed.
+*)
 
 (* end hide *)
