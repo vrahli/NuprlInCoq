@@ -32,6 +32,31 @@
 
 Require Import type_sys.
 
+
+Lemma dest_close_per_uni {p} :
+  forall lib (ts : cts(p)) T i eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> computes_to_valc lib T (mkc_uni i)
+    -> close lib ts T eq
+    -> ts T eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff; auto.
+Qed.
+
+Lemma dest_close_per_tuni {p} :
+  forall lib (ts : cts(p)) T i eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> computes_to_valc lib T (mkc_tuni i)
+    -> close lib ts T eq
+    -> ts T eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff; auto.
+Qed.
+
 Lemma dest_close_per_func {p} :
   forall lib (ts : cts(p)) T A v B eq,
     type_system lib ts
@@ -521,31 +546,6 @@ Proof.
   introv tysys dou comp cl.
   inversion cl; subst; try close_diff; auto.
 Qed.
-
-Lemma dest_close_per_uni {p} :
-  forall lib (ts : cts(p)) T i eq,
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_uni i)
-    -> close lib ts T eq
-    -> ts T eq.
-Proof.
-  introv tysys dou comp cl.
-  inversion cl; subst; try close_diff; auto.
-Qed.
-
-Lemma dest_close_per_tuni {p} :
-  forall lib (ts : cts(p)) T i eq,
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_tuni i)
-    -> close lib ts T eq
-    -> ts T eq.
-Proof.
-  introv tysys dou comp cl.
-  inversion cl; subst; try close_diff; auto.
-Qed.
-
 
 Ltac dest_close_lr h :=
   match goal with

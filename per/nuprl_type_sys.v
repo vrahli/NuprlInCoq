@@ -101,12 +101,357 @@ Proof.
     eapply ts_tev; eauto.
 Qed.
 
+Definition computes_to_refl {o} lib (x y : @CTerm o) :=
+  { t , u : CTerm , x ===>(lib) (mkc_refl t) # y ===>(lib) (mkc_refl u) }.
+
+Notation "a =2=> b" := (forall x y, a x y -> b x y) (at level 0).
+
+Definition refl_inhabit_equality_types {o} lib (ts : cts(o)) :=
+  forall T eq a b A,
+    ts T eq
+    -> T ===>(lib) (mkc_equality a b A)
+    -> eq =2=> (computes_to_refl lib).
+
+Lemma close_satisfies_refl_inhabit_equality_types {o} :
+  forall lib (ts : cts(o)),
+    defines_only_universes lib ts
+    -> refl_inhabit_equality_types lib (close lib ts).
+Proof.
+  introv dou cl.
+  revert a b A.
+
+  close_cases (destruct cl using @close_ind') Case; introv compeq exy;
+    try (complete (allunfold_per; ccomputes_to_eqval)).
+
+  - Case "CL_init".
+    use_dou; ccomputes_to_eqval.
+
+  - Case "CL_eq".
+    clear per IHcl.
+    ccomputes_to_eqval.
+    apply eqiff in exy; unfold per_eq_eq in exy; exrepnd.
+    exists x1 x2; dands; auto.
+Qed.
+
+(*
+Lemma close_ext_equality_types {o} :
+  forall lib (ts : cts(o)) (T1 T2 : @CTerm o) eq a1 a2 A,
+    defines_only_universes lib ts
+    -> close lib ts T1 eq
+    -> close lib ts T2 eq
+    -> (T1 ===>(lib) (mkc_equality a1 a2 A))
+    -> { b1 , b2 , B : CTerm , T2 ===>(lib) (mkc_equality b1 b2 B) }.
+Proof.
+  introv dou cl.
+  revert a1 a2 A T2.
+
+  close_cases (destruct cl using @close_ind') Case; introv clt2 compt1;
+    try (complete (allunfold_per; ccomputes_to_eqval)).
+
+  - Case "CL_init".
+    use_dou; ccomputes_to_eqval.
+
+  - Case "CL_eq".
+    autodimp IHcl hyp.
+    ccomputes_to_eqval.
+    clear per.
+
+    close_cases (destruct clt2 using @close_ind') SCase.
+
+    Focus 2.
+    allunfold_per.
+Qed.
+*)
+
+Ltac dextts H ts1 ts2 imp := destruct H as [ts1 ts2 imp].
+Ltac iextts H ts1 ts2 imp := induction H as [ts1 ts2 imp] using extts_ind'.
+
+Lemma either_computes_to_equality_sym {o} :
+  forall lib (T1 T2 : @CTerm o),
+    either_computes_to_equality lib T1 T2
+    -> either_computes_to_equality lib T2 T1.
+Proof.
+  introv e.
+  destruct e as [e|e];[right|left]; auto.
+Qed.
+Hint Resolve either_computes_to_equality_sym : slow.
+
+Lemma implies_computes_to_equality {o} :
+  forall lib (T : @CTerm o) a b A,
+    T ===>(lib) (mkc_equality a b A)
+    -> computes_to_equality lib T.
+Proof.
+  introv comp.
+  exists a b A; auto.
+Qed.
+Hint Resolve implies_computes_to_equality : slow.
+
+Lemma computes_to_equality_implies_either_left {o} :
+  forall lib (T1 T2 : @CTerm o),
+    computes_to_equality lib T1
+    -> either_computes_to_equality lib T1 T2.
+Proof.
+  tcsp.
+Qed.
+Hint Resolve computes_to_equality_implies_either_left : slow.
+
+Lemma computes_to_equality_implies_either_right {o} :
+  forall lib (T1 T2 : @CTerm o),
+    computes_to_equality lib T2
+    -> either_computes_to_equality lib T1 T2.
+Proof.
+  tcsp.
+Qed.
+Hint Resolve computes_to_equality_implies_either_right : slow.
+
+Lemma extts_extensional {o} :
+  forall lib ts (A B C : @CTerm o) eq eq',
+    uniquely_valued ts
+    -> type_extensionality ts
+    -> extts lib ts A B eq
+    -> extts lib ts B C eq'
+    -> extts lib ts B C eq.
+Proof.
+  introv u ext e1 e2.
+  dextts e1 ts1 ts2 imp1.
+  dextts e2 ts3 ts4 imp2.
+  constructor; auto.
+  eapply ext;[eauto|].
+  eapply u; eauto.
+Qed.
+
+Lemma extts_trans_and {o} :
+  forall lib ts (A B C : @CTerm o) eq eq',
+    uniquely_valued ts
+    -> type_extensionality ts
+    -> extts lib ts A B eq
+    -> extts lib ts B C eq'
+    -> (extts lib ts A C eq # extts lib ts A C eq').
+Proof.
+  introv u ext e1.
+
+  revert C eq'.
+
+  apply (extts_ind'
+           lib ts
+           (fun A B eq =>
+              forall C eq',
+                extts lib ts B C eq'
+                -> (extts lib ts A C eq # extts lib ts A C eq')));
+    auto;[]; clear e1.
+  introv ts1 ts2 imp1 e2.
+  dextts e2 ts3 ts4 imp2.
+  constructor; auto; constructor; auto.
+
+  - eapply ext;[eauto|].
+    eapply u; eauto.
+
+  - introv e.
+    unfold equal_equality_types in *.
+
+    destruct e as [e|e].
+
+    + autodimp imp1 hyp; eauto 3 with slow;[]; exrepnd.
+      autodimp imp2 hyp; eauto 3 with slow;[]; exrepnd.
+      ccomputes_to_eqval.
+      eexists; eexists; eexists; eexists; eexists; eexists; exists eqa;
+        dands; spcast; eauto.
+      pose proof (imp0 B1 eqa0) as q; autodimp q hyp; tcsp.
+
+    + autodimp imp2 hyp; eauto 3 with slow;[]; exrepnd.
+      autodimp imp1 hyp; eauto 3 with slow;[]; exrepnd.
+      ccomputes_to_eqval.
+      eexists; eexists; eexists; eexists; eexists; eexists; exists eqa;
+        dands; spcast; eauto.
+      eapply imp4; eauto.
+
+  - eapply ext;[eauto|].
+    eapply u; eauto.
+
+  - introv e.
+    unfold equal_equality_types in *.
+
+    destruct e as [e|e].
+
+    + autodimp imp1 hyp; eauto 3 with slow;[]; exrepnd.
+      autodimp imp2 hyp; eauto 3 with slow;[]; exrepnd.
+      ccomputes_to_eqval.
+      eexists; eexists; eexists; eexists; eexists; eexists; exists eqa;
+        dands; spcast; eauto.
+      pose proof (imp0 B1 eqa0) as q; autodimp q hyp; tcsp.
+
+    + autodimp imp2 hyp; eauto 3 with slow;[]; exrepnd.
+      autodimp imp1 hyp; eauto 3 with slow;[]; exrepnd.
+      ccomputes_to_eqval.
+      eexists; eexists; eexists; eexists; eexists; eexists; exists eqa;
+        dands; spcast; eauto.
+      eapply imp4; eauto.
+Qed.
+
+Lemma extts_sym {o} :
+  forall lib ts (T T' : @CTerm o) eq,
+    extts lib ts T T' eq
+    -> extts lib ts T' T eq.
+Proof.
+  introv n.
+
+  (* Why is that not working?
+    induction n using (extts_ind' lib ts). *)
+  apply (extts_ind' lib ts (fun T T' eq => extts lib ts T' T eq)); auto;[]; clear n.
+  introv ts1 ts2 imp.
+  constructor; auto.
+  introv e.
+
+  autodimp imp hyp; eauto 2 with slow.
+  exrepnd.
+  eexists; eexists; eexists; eexists; eexists; eexists; eexists; eauto.
+Qed.
+
+Lemma extts_trans_left {o} :
+  forall lib ts (A B C : @CTerm o) eq eq',
+    uniquely_valued ts
+    -> type_extensionality ts
+    -> extts lib ts A B eq
+    -> extts lib ts B C eq'
+    -> extts lib ts A C eq.
+Proof.
+  introv u e e1 e2.
+  pose proof (extts_trans_and lib ts A B C eq eq') as h; repeat (autodimp h hyp); tcsp.
+Qed.
+
+Lemma extts_trans_right {o} :
+  forall lib ts (A B C : @CTerm o) eq eq',
+    uniquely_valued ts
+    -> type_extensionality ts
+    -> extts lib ts A B eq
+    -> extts lib ts B C eq'
+    -> extts lib ts A C eq'.
+Proof.
+  introv u e e1 e2.
+  pose proof (extts_trans_and lib ts A B C eq eq') as h; repeat (autodimp h hyp); tcsp.
+Qed.
+
+Lemma either_computes_to_equality_if_cequivc_left {o} :
+  forall lib (T1 T2 T : @CTerm o),
+    cequivc lib T1 T2
+    -> either_computes_to_equality lib T1 T2
+    -> either_computes_to_equality lib T1 T.
+Proof.
+  introv ceq e.
+  destruct e as [e|e]; tcsp.
+  left.
+  unfold computes_to_equality in *; exrepnd; spcast.
+  eapply cequivc_mkc_equality in e0;[|apply cequivc_sym;eauto]; exrepnd.
+  eexists; eexists; eexists; spcast; eauto.
+Qed.
+Hint Resolve either_computes_to_equality_if_cequivc_left : slow.
+
+Lemma extts_respect_cequivc_left {o} :
+  forall lib (ts : cts(o)) (T1 T2 T : @CTerm o) eq,
+    type_value_respecting lib ts
+    -> extts lib ts T1 T2 eq
+    -> cequivc lib T1 T
+    -> extts lib ts T1 T eq.
+Proof.
+  introv resp n.
+  revert T.
+
+  eapply (extts_ind'
+            lib ts
+            (fun T1 T2 eq =>
+               forall T, cequivc lib T1 T -> extts lib ts T1 T eq));
+    eauto; []; clear n.
+  introv ceq ts1 ts2 imp.
+  constructor; auto.
+
+  { eapply resp;[|eauto]; auto. }
+
+  introv e.
+  autodimp ts2 hyp; eauto 2 with slow.
+  exrepnd; spcast.
+  eapply cequivc_mkc_equality in imp;[|eauto].
+  exrepnd.
+  eexists; eexists; eexists; eexists; eexists; eexists; eexists;
+   dands; spcast; eauto.
+Qed.
+
+Lemma extts_ext {o} :
+  forall lib ts (T T' : @CTerm o) eq eq',
+    type_extensionality ts
+    -> extts lib ts T T' eq
+    -> (eq <=2=> eq')
+    -> extts lib ts T T' eq'.
+Proof.
+  introv ext n eqiff.
+  dextts n ts1 ts2 imp.
+  constructor; auto; try (complete (eapply ext; eauto)).
+Qed.
+
+Lemma extts_uniquely_valued {o} :
+  forall lib ts (T T' : @CTerm o) eq eq',
+    uniquely_valued ts
+    -> extts lib ts T T' eq
+    -> extts lib ts T T' eq'
+    -> (eq <=2=> eq').
+Proof.
+  introv uv n m.
+  destruct n as [n1 n2].
+  destruct m as [e1 e2].
+  eapply uv; eauto.
+Qed.
+
+Lemma type_system_implies_etype_system_extts {o} :
+  forall lib (ts : cts(o)),
+    type_system lib ts
+    -> etype_system lib (extts lib ts).
+Proof.
+  introv tys.
+  dest_ts tys.
+
+  prove_etype_system Case; tcsp.
+
+  - Case "uniquely_valued".
+    introv n e.
+    eapply extts_uniquely_valued; eauto.
+
+  - Case "type_extensionality".
+    introv n e.
+    eapply extts_ext; eauto.
+
+  - Case "type_symmetric".
+    introv n.
+    eapply extts_sym; eauto.
+
+  - Case "type_transitive".
+    introv n m.
+    eapply extts_trans_left; eauto.
+
+  - Case "type_value_respecting".
+    introv n c.
+    eapply extts_respect_cequivc_left; eauto.
+
+  - Case "term_symmetric".
+    introv n.
+    destruct n as [n1 n2].
+    eapply ts_tes; eauto.
+
+  - Case "term_transitive".
+    introv n.
+    destruct n as [n1 n2].
+    eapply ts_tet; eauto.
+
+  - Case "term_value_respecting".
+    introv n.
+    destruct n as [n1 n2].
+    eapply ts_tev; eauto.
+Qed.
+
 Lemma nuprl_type_system_implies_Nuprl_etype_system {o} :
   forall (lib : @library o),
     type_system lib (nuprl lib) -> etype_system lib (Nuprl lib).
 Proof.
   introv ts.
-  apply type_system_implies_etype_system; auto.
+  apply type_system_implies_etype_system_extts; auto.
 Qed.
 
 Lemma nuprli_type_system_implies_Nuprli_etype_system {o} :
@@ -114,7 +459,7 @@ Lemma nuprli_type_system_implies_Nuprli_etype_system {o} :
     type_system lib (nuprli lib i) -> etype_system lib (Nuprli lib i).
 Proof.
   introv ts.
-  apply type_system_implies_etype_system; auto.
+  apply type_system_implies_etype_system_extts; auto.
 Qed.
 
 Lemma defines_only_universes_univi {o} :
@@ -180,35 +525,44 @@ Proof.
     allrw @univi_exists_iff; exrepnd.
     apply n0 in e.
     apply n0.
-    unfold univi_eq, extts in *; exrepnd.
-    exists eqa; tcsp.
+    clear dependent eq.
+
+    unfold univi_eq in *; exrepnd.
+    exists eqa.
+    apply extts_sym; auto.
 
   - Case "term_transitive".
     introv u e1 e2.
     allrw @univi_exists_iff; exrepnd.
     apply u0 in e1.
     apply u0 in e2.
-    apply u0; clear u0.
-    unfold univi_eq, extts in *; exrepnd.
-    exists eqa; dands; auto.
+    apply u0.
+    clear dependent eq.
+
     pose proof (close_type_system lib (univi lib j)) as k.
     repeat (autodimp k hyp); eauto 2 with slow.
-    dts_props k uv tv te tes tet tev.
 
-    eapply uv in e3; autodimp e3 hyp;[exact e2|].
-    eapply tv; eauto.
+    unfold univi_eq in *; exrepnd.
+    exists eqa.
+
+    eapply extts_trans_right; eauto;
+      dts_props k uv tv te tes tet tev; tcsp.
 
   - Case "term_value_respecting".
     introv u e c; spcast.
     allrw @univi_exists_iff; exrepnd; spcast.
     apply u0 in e.
-    apply u0; clear u0.
-    unfold univi_eq, extts in *; exrepnd.
-    exists eqa; dands; auto.
+    apply u0.
+    clear dependent eq.
+
     pose proof (close_type_system lib (univi lib j)) as k.
     repeat (autodimp k hyp); eauto 2 with slow.
-    dts_props k uv tv te tes tet tev.
-    eapply te; eauto.
+
+    unfold univi_eq in *; exrepnd.
+    exists eqa.
+
+    eapply extts_respect_cequivc_left; eauto;
+      dts_props k uv tv te tes tet tev; tcsp.
 Qed.
 
 (* begin hide *)
@@ -433,6 +787,26 @@ Proof.
 Qed.
 Hint Resolve nuprl_value_respecting : slow.
 
+Lemma type_value_respecting_nuprl {o} :
+  forall lib, @type_value_respecting o lib (nuprl lib).
+Proof.
+  introv; nts; auto.
+Qed.
+Hint Resolve type_value_respecting_nuprl : slow.
+
+Lemma uniquely_valued_nuprl {o} :
+  forall lib, @uniquely_valued o (nuprl lib).
+  introv; nts; auto.
+Qed.
+Hint Resolve uniquely_valued_nuprl : slow.
+
+Lemma type_extensionality_nuprl {o} :
+  forall lib, @type_extensionality o (nuprl lib).
+Proof.
+  introv; nts; auto.
+Qed.
+Hint Resolve type_extensionality_nuprl : slow.
+
 Lemma Nuprl_value_respecting_left {o} :
   forall lib (t1 t2 t3 : @CTerm o) eq,
     Nuprl lib t1 t2 eq
@@ -440,7 +814,10 @@ Lemma Nuprl_value_respecting_left {o} :
     -> Nuprl lib t3 t2 eq.
 Proof.
   introv n c.
-  destruct n as [n1 n2]; split; eauto 2 with slow.
+  unfold Nuprl in *.
+  eapply extts_respect_cequivc_left in c;[| |eauto]; eauto 2 with slow.
+  apply extts_sym in c.
+  eapply extts_trans_left in n;[| | |eauto]; eauto 2 with slow.
 Qed.
 Hint Resolve Nuprl_value_respecting_left : slow.
 
@@ -451,7 +828,10 @@ Lemma Nuprl_value_respecting_right {o} :
     -> Nuprl lib t1 t3 eq.
 Proof.
   introv n c.
-  destruct n as [n1 n2]; split; eauto 2 with slow.
+  unfold Nuprl in *.
+  eapply extts_respect_cequivc_left in c;
+    [| |apply extts_sym;eauto]; eauto 2 with slow.
+  eapply extts_trans_left in c;[| | |eauto]; eauto 2 with slow.
 Qed.
 Hint Resolve Nuprl_value_respecting_right : slow.
 

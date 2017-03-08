@@ -40,7 +40,6 @@ Lemma close_type_system_eq {o} :
     -> defines_only_universes lib ts
     -> computes_to_valc lib T (mkc_equality a b A)
     -> close lib ts A eqa
-(*    -> eqorceq lib eqa a b*)
     -> (eq <=2=> (per_eq_eq lib a b eqa))
     -> per_eq lib (close lib ts) T eq
     -> type_system_props lib (close lib ts) A eqa

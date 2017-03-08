@@ -98,29 +98,119 @@ Definition univ' {p} lib (T T' : @CTerm p) eq :=
 
  *)
 
-Inductive extensional_outer_equality_types {o} lib (ts : cts(o)) : CTerm -> CTerm -> Prop :=
-| eet :
-    forall T T',
-      (forall a1 a2 A b1 b2 B,
-          T ===>(lib) (mkc_equality a1 a2 A)
-          -> T' ===>(lib) (mkc_equality b1 b2 B)
-          ->
-          { eqa : per(o)
-          , ts A eqa
-          # ts B eqa
-          # extensional_outer_equality_types lib ts A B
-          }
-      )
-      -> extensional_outer_equality_types lib ts T T'.
+Definition computes_to_equality {o} lib (T : @CTerm o) :=
+  { x , y , X : CTerm , T ===>(lib) (mkc_equality x y X) }.
 
-Definition extts {o} (ts : cts(o)) T T' eq : [U] :=
-  ts T eq
-  # ts T' eq
-  (*# extensional_equality_types lib T T'*).
+Definition either_computes_to_equality {o} lib (T T' : @CTerm o) :=
+  computes_to_equality lib T {+} computes_to_equality lib T'.
+
+Definition equal_equality_types {o} lib R (T T' : @CTerm o) :=
+  either_computes_to_equality lib T T'
+  -> { a1 , a2 , A , b1 , b2 , B : CTerm
+     , { eqa : per(o)
+     , T ===>(lib) (mkc_equality a1 a2 A)
+     /\ T' ===>(lib) (mkc_equality b1 b2 B)
+     /\ R A B eqa }}.
+
+Inductive extts {o} lib (ts : cts(o)) (T T' : CTerm) (eq :per(o)) : Prop :=
+| EXTTS :
+    ts T eq
+    -> ts T' eq
+    -> equal_equality_types lib (extts lib ts) T T'
+    -> extts lib ts T T' eq.
+
+Arguments EXTTS {o} [lib] [ts] [T] [T'] [eq] _ _ _.
+
+Definition extts_ind' {o}
+           (lib : library)
+           (ts  : cts(o))
+           (P   : CTerm -> CTerm -> per(o) -> Prop)
+           (C   :
+              forall (T T' : CTerm) (eq : per( o)),
+                ts T eq
+                -> ts T' eq
+                -> (either_computes_to_equality lib T T'
+                    -> { a1 , a2 , A , b1 , b2 , B : CTerm
+                       , { eqa : per(o)
+                       , T ===>(lib) (mkc_equality a1 a2 A)
+                       /\ T' ===>(lib) (mkc_equality b1 b2 B)
+                       /\ extts lib ts A B eqa
+                       /\ P A B eqa }})
+                -> P T T' eq) :
+  forall (T T' : CTerm) (eq : per(o)) (t : extts lib ts T T' eq), P T T' eq :=
+  fix rec (T T' : CTerm) (eq : per(o)) (t : extts lib ts T T' eq) : P T T' eq :=
+    match t in extts _ _ _ _ _ return P T T' eq with
+    | EXTTS ts1 ts2 imp =>
+      C T T' eq ts1 ts2
+        (fun either =>
+           let (a1, e) := imp either in
+           let (a2, e) := e in
+           let (A,  e) := e in
+           let (b1, e) := e in
+           let (b2, e) := e in
+           let (B,  e) := e in
+           let (eqa, e) := e in
+           let (comp1, e) := e in
+           let (comp2, r) := e in
+           ex_intro
+             (fun a1 => { a2 , A , b1 , b2 , B : CTerm
+                        , { eqa : per(o)
+                        , T ===>(lib) (mkc_equality a1 a2 A)
+                        /\ T' ===>(lib) (mkc_equality b1 b2 B)
+                        /\ extts lib ts A B eqa
+                        /\ P A B eqa }})
+             a1
+             (ex_intro
+                (fun a2 => { A , b1 , b2 , B : CTerm
+                           , { eqa : per(o)
+                           , T ===>(lib) (mkc_equality a1 a2 A)
+                           /\ T' ===>(lib) (mkc_equality b1 b2 B)
+                           /\ extts lib ts A B eqa
+                           /\ P A B eqa }})
+                a2
+                (ex_intro
+                   (fun A => { b1 , b2 , B : CTerm
+                              , { eqa : per(o)
+                              , T ===>(lib) (mkc_equality a1 a2 A)
+                              /\ T' ===>(lib) (mkc_equality b1 b2 B)
+                              /\ extts lib ts A B eqa
+                              /\ P A B eqa }})
+                   A
+                   (ex_intro
+                      (fun b1 => { b2 , B : CTerm
+                                 , { eqa : per(o)
+                                 , T ===>(lib) (mkc_equality a1 a2 A)
+                                 /\ T' ===>(lib) (mkc_equality b1 b2 B)
+                                 /\ extts lib ts A B eqa
+                                 /\ P A B eqa }})
+                      b1
+                      (ex_intro
+                         (fun b2 => { B : CTerm
+                                    , { eqa : per(o)
+                                    , T ===>(lib) (mkc_equality a1 a2 A)
+                                    /\ T' ===>(lib) (mkc_equality b1 b2 B)
+                                    /\ extts lib ts A B eqa
+                                    /\ P A B eqa }})
+                         b2
+                         (ex_intro
+                            (fun B => { eqa : per(o)
+                                      , T ===>(lib) (mkc_equality a1 a2 A)
+                                      /\ T' ===>(lib) (mkc_equality b1 b2 B)
+                                      /\ extts lib ts A B eqa
+                                      /\ P A B eqa })
+                            B
+                            (ex_intro
+                               (fun eqa => (T ===>(lib) (mkc_equality a1 a2 A)
+                                            /\ T' ===>(lib) (mkc_equality b1 b2 B)
+                                            /\ extts lib ts A B eqa
+                                            /\ P A B eqa))
+                               eqa
+                               (conj comp1 (conj comp2 (conj r (rec A B eqa r)))))))))))
+    end.
 
 Definition univi_eq {o} lib ts (A A' : @CTerm o) :=
   { eqa : per(o)
-  , extts (close lib ts) A A' eqa }.
+  , extts lib (close lib ts) A A' eqa }.
 
 Fixpoint univi {p} lib (i : nat) (T : @CTerm p) (eq : per(p)) : [U] :=
   match i with
@@ -138,11 +228,11 @@ Definition univ {p} lib (T : @CTerm p) (eq : per) :=
 
 Definition nuprli {o} lib (i : nat) := @close o lib (univi lib i).
 
-Definition Nuprli {o} lib i := @extts o (nuprli lib i).
+Definition Nuprli {o} lib i := @extts o lib (nuprli lib i).
 
 Definition nuprl {o} lib := @close o lib (univ lib).
 
-Definition Nuprl {o} lib := @extts o (nuprl lib).
+Definition Nuprl {o} lib := @extts o lib (nuprl lib).
 
 (**
 
