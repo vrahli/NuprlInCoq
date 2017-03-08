@@ -267,7 +267,7 @@ Proof.
   unfold tequality, equality; introv teq ceq1 ceq2; exrepnd.
   exists (per_eq_eq lib t1 t2 eq).
 
-  split; apply CL_eq; unfold per_eq; try (fold (nuprl lib)).
+  split; try (apply CL_eq; unfold per_eq; try (fold (nuprl lib))).
 
   - exists A t1 t2 eq; sp; spcast;
       try (apply computes_to_valc_refl);
@@ -281,6 +281,9 @@ Proof.
 
     destruct teq0 as [teq1 teq2].
     eapply per_eq_eq_preserves_cequivc; eauto.
+
+  - introv e.
+    exists t1 t2 A t3 t4 B eq; dands; spcast; eauto 2 with slow.
 Qed.
 
 Lemma per_eq_eq_iff_equality {o} :
@@ -553,52 +556,17 @@ Proof.
       repnd; eauto 3 with nequality.
 Qed.
 
-Lemma tequality_mkc_equality0 {p} :
-  forall lib (a1 a2 b1 b2 A B : @CTerm p),
-    tequality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
-    <=>
-    (
-      type lib A
-      # type lib B
-      # (forall a, equality lib a a1 A -> equality lib a a2 A -> equality lib a b1 B # equality lib a b2 B)
-      # (forall b, equality lib b b1 B -> equality lib b b2 B -> equality lib b a1 A # equality lib b a2 A)
-(*      # (equality lib a1 a2 A <=> equality lib b1 b2 B)*)
-(*      # (equality lib a1 b1 A {+} ccequivc lib a1 b1)
-      # (equality lib a2 b2 A {+} ccequivc lib a2 b2)*)
-    ).
-Proof.
-  introv.
-  rw @tequality_iff_ext_eq.
-  allrw @type_mkc_equality.
-  rw @ext_eq_mkc_equality_iff.
-  tcsp.
-Qed.
-
 Lemma tequality_mkc_equality {p} :
   forall lib (a1 a2 b1 b2 A B : @CTerm p),
     tequality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
     <=>
-    (
-      type lib A
-      # type lib B
-      # forall x,
-          (equality lib x a1 A # equality lib x a2 A)
-            <=>
-            (equality lib x b1 B # equality lib x b2 B)
-    ).
+    (tequality lib A B
+     # (forall x,
+           (equality lib x a1 A # equality lib x a2 A)
+             <=>
+             (equality lib x b1 B # equality lib x b2 B))).
 Proof.
-  introv.
-  rw @tequality_mkc_equality0; split; intro h; repnd; dands; tcsp.
-
-  - introv; split; intro q.
-    + apply h2; tcsp.
-    + apply h; tcsp.
-
-  - introv e1 e2.
-    apply h; tcsp.
-
-  - introv e1 e2.
-    apply h; tcsp.
+  apply tequality_iff_ext_eq2.
 Qed.
 
 (*
@@ -702,8 +670,7 @@ Lemma tequality_mkc_member {p} :
     tequality lib (mkc_member a A) (mkc_member b B)
     <=>
     (
-      type lib A
-      # type lib B
+      tequality lib A B
       # (forall x, equality lib x a A <=> equality lib x b B)
     ).
 Proof.
@@ -762,8 +729,6 @@ Proof.
 
   pose proof (teq a1) as q; destruct q as [q q']; clear q'.
   repeat (autodimp q hyp); dands; tcsp; repnd; eauto 3 with slow nequality.
-  pose proof (teq a3) as z; destruct z as [z' z]; clear z'.
-  repeat (autodimp z hyp); dands; tcsp; repnd; eauto 3 with slow nequality.
 Qed.
 
 Lemma equality_commutes4 {p} :
@@ -777,8 +742,6 @@ Proof.
 
   pose proof (teq a1) as q; destruct q as [q q']; clear q'.
   repeat (autodimp q hyp); dands; tcsp; repnd; eauto 3 with slow nequality.
-  pose proof (teq a4) as z; destruct z as [z' z]; clear z'.
-  repeat (autodimp z hyp); dands; tcsp; repnd; eauto 3 with slow nequality.
 Qed.
 
 Lemma equality_commutes5 {p} :
@@ -792,8 +755,6 @@ Proof.
 
   pose proof (teq a2) as q; destruct q as [q q']; clear q'.
   repeat (autodimp q hyp); dands; tcsp; repnd; eauto 3 with slow nequality.
-  pose proof (teq a4) as z; destruct z as [z' z]; clear z'.
-  repeat (autodimp z hyp); dands; tcsp; repnd; eauto 3 with slow nequality.
 Qed.
 
 (*
@@ -1048,8 +1009,7 @@ Lemma equality_mkc_equality2_sp_in_uni {p} :
   forall lib i (a1 a2 b1 b2 A B : @CTerm p),
     equality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) (mkc_uni i)
     <=>
-    (member lib A (mkc_uni i)
-     # member lib B (mkc_uni i)
+    (equality lib A B (mkc_uni i)
      # forall x,
           (equality lib x a1 A # equality lib x a2 A)
             <=>
@@ -1066,11 +1026,15 @@ Proof.
     allrw @univi_exists_iff; exrepd.
     computes_to_value_isvalue; GC.
     apply e in e0.
-    unfold univi_eq, extts in e0; exrepnd.
+    unfold univi_eq in e0; exrepnd.
     rename eqa into eqi.
 
-    inversion e0; try not_univ; clear e0.
-    inversion e2; try not_univ; clear e2.
+    dextts e2 ts1 ts2 ext.
+    unfold equal_equality_types in ext; autodimp ext hyp; eauto 2 with slow.
+    exrepnd; computes_to_value_isvalue.
+
+    inversion ts1; try not_univ; clear ts1.
+    inversion ts2; try not_univ; clear ts2.
     match goal with
     | [ H1 : per_eq _ _ _ _ , H2 : per_eq _ _ _ _ |- _ ] =>
       rename H1 into h; rename H2 into q
@@ -1080,129 +1044,58 @@ Proof.
     eapply eq_term_equals_trans in q1;[|apply eq_term_equals_sym;exact h1].
     clear h1.
 
+    fold (nuprli lib j0) in *.
+
     dands; auto; eauto 2 with slow.
 
     {
       exists eq; dands; auto.
-      apply e; unfold univi_eq, extts.
-      exists eqa0; dands; auto.
+      apply e; unfold univi_eq.
+      exists eqa; auto.
     }
 
     {
-      exists eq; dands; auto.
-      apply e; unfold univi_eq, extts.
-      exists eqa; dands; auto.
+      apply nuprli_implies_nuprl in h2.
+      apply nuprli_implies_nuprl in q2.
+
+      eapply eq_per_eq_eq_iff_eq_equality; eauto.
     }
-
-    apply nuprli_implies_nuprl in h2.
-    apply nuprli_implies_nuprl in q2.
-
-    introv; split; intro h; repnd.
-
-    + pose proof (q1 (mkc_refl x) (mkc_refl x)) as z.
-      destruct z as [z z']; clear z'.
-      rw (per_eq_eq_iff_equality_refl lib A1 eqa0 a0 b0 x x h2) in z.
-      autodimp z hyp;[dands; auto; eauto 3 with nequality|].
-
-      apply (per_eq_eq_iff_equality_refl lib A0 eqa a b x x q2) in z.
-      repnd; dands; eauto 3 with nequality.
-
-    + pose proof (q1 (mkc_refl x) (mkc_refl x)) as z.
-      destruct z as [z' z]; clear z'.
-      rw (per_eq_eq_iff_equality_refl lib A0 eqa a b x x q2) in z.
-      autodimp z hyp;[dands; auto; eauto 3 with nequality|].
-
-      apply (per_eq_eq_iff_equality_refl lib A1 eqa0 a0 b0 x x h2) in z.
-      repnd; dands; eauto 3 with nequality.
 
   - Case "<-".
     intro e; repnd.
 
     exists (univi_eq lib (univi lib i)).
     dands; eauto 2 with slow.
-    unfold univi_eq, extts.
+    unfold univi_eq.
 
-    unfold member, equality in e0; exrepnd.
-    unfold member, equality in e1; exrepnd.
-
-    eapply nuprl_uniquely_valued in e1;[|exact e0].
-    apply e1 in e3; clear dependent eq0.
+    unfold equality in e0; exrepnd.
 
     inversion e0; subst; try not_univ; clear e0.
     duniv j h.
     allrw @univi_exists_iff; exrepd.
     computes_to_value_isvalue; GC.
 
-    apply e0 in e2; apply e0 in e3.
+    apply e0 in e1.
     clear dependent eq.
 
-    unfold univi_eq, extts in *; exrepnd.
+    unfold univi_eq in *; exrepnd.
 
     allfold (nuprli lib j0).
+    dup e0 as ext.
+    dextts e0 tsa1 tsa2 exta.
 
-    exists (per_eq_eq lib a1 a2 eqa0); dands; apply CL_eq; unfold per_eq.
+    exists (per_eq_eq lib a1 a2 eqa); split; try (apply CL_eq; unfold per_eq).
 
-    + exists A a1 a2 eqa0; dands; auto;
-        try (complete (spcast; apply computes_to_valc_refl; eauto 2 with slow)).
+    + exists A a1 a2 eqa; dands; spcast; eauto 2 with slow.
 
-    + exists B b1 b2 eqa; dands; auto;
-        try (complete (spcast; apply computes_to_valc_refl; eauto 2 with slow)).
+    + exists B b1 b2 eqa; dands; spcast; eauto 2 with slow.
 
-      introv; unfold per_eq_eq; split; intro h; exrepnd; spcast.
+      eapply eq_per_eq_eq_iff_eq_equality;
+        try (eapply nuprli_implies_nuprl);
+        [exact tsa1|exact tsa2|];auto.
 
-      * pose proof (e x1) as w; destruct w as [w w']; clear w'.
-        autodimp w hyp.
-        {
-          dands; eauto 3 with slow nequality.
-          apply (equality_trans _ _ a1); eauto 3 with slow nequality.
-        }
-        repnd.
-
-        pose proof (e x2) as z; destruct z as [z z']; clear z'.
-        autodimp z hyp.
-        {
-          dands; eauto 3 with slow nequality.
-          apply (equality_trans _ _ a2); eauto 3 with slow nequality.
-        }
-        repnd.
-
-        exists x1 x2; dands; spcast; auto.
-
-        { apply (nuprli_implies_equality_eq lib j0 B b1 b2 eqa e1).
-          eapply (equality_trans _ _ x1); eauto 3 with nequality. }
-
-        { apply (nuprli_implies_equality_eq lib j0 B b1 x1 eqa e1).
-          apply equality_sym; auto. }
-
-        { apply (nuprli_implies_equality_eq lib j0 B b2 x2 eqa e1).
-          apply equality_sym; auto. }
-
-      * pose proof (e x1) as w; destruct w as [w' w]; clear w'.
-        autodimp w hyp.
-        {
-          dands; eauto 3 with slow nequality.
-          apply (equality_trans _ _ b1); eauto 3 with slow nequality.
-        }
-        repnd.
-
-        pose proof (e x2) as z; destruct z as [z' z]; clear z'.
-        autodimp z hyp.
-        {
-          dands; eauto 3 with slow nequality.
-          apply (equality_trans _ _ b2); eauto 3 with slow nequality.
-        }
-        repnd.
-
-        exists x1 x2; dands; spcast; auto.
-
-        { apply (nuprli_implies_equality_eq lib j0 A a1 a2 eqa0 e2).
-          eapply (equality_trans _ _ x1); eauto 3 with nequality. }
-
-        { apply (nuprli_implies_equality_eq lib j0 A a1 x1 eqa0 e2).
-          apply equality_sym; auto. }
-
-        { apply (nuprli_implies_equality_eq lib j0 A a2 x2 eqa0 e2).
-          apply equality_sym; auto. }
+    + introv z; clear z.
+      exists a1 a2 A b1 b2 B eqa; dands; spcast; eauto 3 with slow.
 Qed.
 
 

@@ -33,6 +33,58 @@
 Require Export per_props_uni0.
 
 
+Lemma either_computes_to_equality_mkc_cequiv_false {o} :
+  forall lib (a b c d : @CTerm o),
+    either_computes_to_equality lib (mkc_cequiv a b) (mkc_cequiv c d) -> False.
+Proof.
+  introv e.
+  unfold either_computes_to_equality, computes_to_equality in e.
+  repndors; exrepnd; spcast; computes_to_value_isvalue.
+Qed.
+
+Lemma equal_equality_types_mkc_cequiv {o} :
+  forall lib ts (a b c d : @CTerm o),
+    equal_equality_types lib ts (mkc_cequiv a b) (mkc_cequiv c d).
+Proof.
+  introv e.
+  apply either_computes_to_equality_mkc_cequiv_false in e; tcsp.
+Qed.
+Hint Resolve equal_equality_types_mkc_cequiv : slow.
+
+Lemma either_computes_to_equality_mkc_approx_false {o} :
+  forall lib (a b c d : @CTerm o),
+    either_computes_to_equality lib (mkc_approx a b) (mkc_approx c d) -> False.
+Proof.
+  introv e.
+  unfold either_computes_to_equality, computes_to_equality in e.
+  repndors; exrepnd; spcast; computes_to_value_isvalue.
+Qed.
+
+Lemma equal_equality_types_mkc_approx {o} :
+  forall lib ts (a b c d : @CTerm o),
+    equal_equality_types lib ts (mkc_approx a b) (mkc_approx c d).
+Proof.
+  introv e.
+  apply either_computes_to_equality_mkc_approx_false in e; tcsp.
+Qed.
+Hint Resolve equal_equality_types_mkc_approx : slow.
+
+Lemma either_computes_to_equality_mkc_base_false {o} :
+  forall lib, @either_computes_to_equality o lib mkc_base mkc_base -> False.
+Proof.
+  introv e.
+  unfold either_computes_to_equality, computes_to_equality in e.
+  repndors; exrepnd; spcast; computes_to_value_isvalue.
+Qed.
+
+Lemma equal_equality_types_mkc_base {o} :
+  forall lib ts, @equal_equality_types o lib ts mkc_base mkc_base.
+Proof.
+  introv e.
+  apply either_computes_to_equality_mkc_base_false in e; tcsp.
+Qed.
+Hint Resolve equal_equality_types_mkc_base : slow.
+
 Lemma mkc_cequiv_equality_in_uni {o} :
   forall lib (a b c d : @CTerm o) i,
     equality lib (mkc_cequiv a b) (mkc_cequiv c d) (mkc_uni i)
@@ -49,9 +101,11 @@ Proof.
     allrw @univi_exists_iff; exrepnd.
     computes_to_value_isvalue; GC.
     rw h0 in e0; clear h0.
-    unfold univi_eq, extts in e0; exrepnd.
-    inversion e0; try not_univ; clear e0.
-    inversion e2; try not_univ; clear e2.
+    unfold univi_eq in e0; exrepnd.
+    dextts e2 ts1 ts2 ext.
+    clear ext.
+    inversion ts1; try not_univ; clear ts1.
+    inversion ts2; try not_univ; clear ts2.
     match goal with
     | [ H1 : per_cequiv _ _ _ _ , H2 : per_cequiv _ _ _ _ |- _ ] =>
       rename H1 into h; rename H2 into q
@@ -64,7 +118,7 @@ Proof.
   - Case "<-".
     exists (univi_eq lib (univi lib i)); sp; eauto 2 with slow.
     exists (fun (_ _ : @CTerm o) => ccequivc lib a b).
-    split; apply CL_cequiv; unfold per_cequiv;
+    split; eauto 2 with slow; apply CL_cequiv; unfold per_cequiv;
       [exists a b|exists c d];
       sp; spcast; try computes_to_value_refl.
     introv z w; auto.
@@ -86,9 +140,10 @@ Proof.
     allrw @univi_exists_iff; exrepnd.
     computes_to_value_isvalue; GC.
     rw h0 in e0; clear h0.
-    unfold univi_eq, extts in e0; exrepnd.
-    inversion e0; try not_univ; clear e0.
-    inversion e2; try not_univ; clear e2.
+    unfold univi_eq in e0; exrepnd.
+    dextts e2 ts1 ts2 ext; clear ext.
+    inversion ts1; try not_univ; clear ts1.
+    inversion ts2; try not_univ; clear ts2.
     match goal with
     | [ H1 : per_approx _ _ _ _ , H2 : per_approx _ _ _ _ |- _ ] =>
       rename H1 into h; rename H2 into q
@@ -101,7 +156,7 @@ Proof.
   - Case "<-".
     exists (univi_eq lib (univi lib i)); sp; eauto 2 with slow.
     exists (fun (_ _ : @CTerm o) => capproxc lib a b).
-    split; apply CL_approx; unfold per_approx;
+    split; eauto 2 with slow; apply CL_approx; unfold per_approx;
       [exists a b|exists c d];
       sp; spcast; try computes_to_value_refl.
     introv z w; auto.
@@ -140,7 +195,7 @@ Proof.
   intros.
   unfold tequality.
   exists (fun (a b : @CTerm p) => capproxc lib t t).
-  split; apply CL_approx; [exists t t|exists u u];
+  split; eauto 2 with slow; apply CL_approx; [exists t t|exists u u];
     sp; spcast; try computes_to_value_refl.
   introv z w; split; sp; spcast; apply approxc_refl; sp.
 Qed.
@@ -152,7 +207,7 @@ Proof.
   intros.
   unfold tequality.
   exists (fun (a b : @CTerm p) => ccequivc lib t t).
-  split; apply CL_cequiv; [exists t t|exists u u];
+  split; eauto 2 with slow; apply CL_cequiv; [exists t t|exists u u];
     sp; spcast; try computes_to_value_refl;
   try (split; sp; spcast; sp).
 Qed.
@@ -271,7 +326,7 @@ Proof.
   introv.
   unfold tequality.
   exists (fun a b : @CTerm p => ccequivc lib a b).
-  split; apply CL_base; unfold per_base; sp; spcast;
+  split; eauto 2 with slow; apply CL_base; unfold per_base; sp; spcast;
     try (apply computes_to_valc_refl);
     try (apply iscvalue_mkc_base; auto).
 Qed.
@@ -302,7 +357,7 @@ Proof.
     pose proof (q1 (@mkc_axiom o) (@mkc_axiom o)) as h; simpl in h; auto. }
 
   { exists (fun x y : @CTerm o => capproxc lib a b).
-    split; apply CL_approx; unfold per_approx;
+    split; eauto 2 with slow; apply CL_approx; unfold per_approx;
       [exists a b|exists c d]; sp; tcsp; spcast;
         try (apply computes_to_valc_refl; eauto 2 with slow).
     introv z w; auto. }
@@ -399,7 +454,7 @@ Proof.
     pose proof (q1 (@mkc_axiom o) (@mkc_axiom o)) as h; simpl in h; auto. }
 
   { exists (fun x y : @CTerm o => ccequivc lib a b).
-    split; apply CL_cequiv; [exists a b|exists c d]; sp;
+    split; eauto 2 with slow; apply CL_cequiv; [exists a b|exists c d]; sp;
       spcast; try (apply computes_to_valc_refl; eauto 2 with slow).
     introv z w; auto. }
 Qed.

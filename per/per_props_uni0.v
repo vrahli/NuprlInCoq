@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -55,9 +56,9 @@ Proof.
   match goal with
   | [ H : _ <=2=> _ |- _ ] => apply H in e0; clear H
   end.
-  unfold univi_eq, extts in e0; exrepnd.
+  unfold univi_eq in e0; exrepnd.
   exists eqa.
-  eapply Nuprli_implies_Nuprl; split; eauto.
+  eapply Nuprli_implies_Nuprl in e2; auto.
 Qed.
 
 Lemma tequalityi_implies_tequality {o} :
@@ -84,9 +85,6 @@ Lemma equality_Nuprli {p} :
     -> Nuprli lib i A B eq.
 Proof.
   introv e n.
-  destruct n as [n1 n2].
-  split; auto.
-  clear dependent C.
 
   unfold equality, nuprl in e; exrepnd.
   inversion e1; try not_univ.
@@ -94,12 +92,11 @@ Proof.
   allrw @univi_exists_iff; exrepnd.
   computes_to_value_isvalue; GC.
   apply h0 in e0.
-  unfold univi_eq, extts in e0; exrepnd.
+  unfold univi_eq in e0; exrepnd.
   allfold (@nuprli p lib j0).
 
-  pose proof (nuprli_uniquely_valued lib j0 j0 A eqa eq) as k.
-  repeat (autodimp k hyp).
-  eapply nuprli_ext; eauto.
+  eapply Nuprli_ext;[exact e2|].
+  eapply Nuprli_uniquely_valued_left; eauto.
 Qed.
 
 Lemma equality_uprli {p} :
@@ -116,8 +113,10 @@ Proof.
   allrw @univi_exists_iff; exrepnd.
   computes_to_value_isvalue; GC.
   apply h0 in e0.
-  unfold univi_eq, extts in e0; exrepnd.
+  unfold univi_eq in e0; exrepnd.
   allfold (@nuprli p lib j0).
+
+  destruct e2 as [n1 n2 ext].
 
   pose proof (nuprli_uniquely_valued lib j0 j0 A eqa eq) as k.
   repeat (autodimp k hyp).
@@ -163,6 +162,22 @@ Proof.
   introv; apply CL_init; eauto 2 with slow.
 Qed.
 Hint Resolve mkc_uni_in_nuprl : slow.
+
+Lemma either_computes_to_equality_uni_false {o} :
+  forall lib i, @either_computes_to_equality o lib (mkc_uni i) (mkc_uni i) -> False.
+Proof.
+  introv h; unfold either_computes_to_equality, computes_to_equality in h.
+  repndors; exrepnd; spcast; computes_to_value_isvalue.
+Qed.
+
+Lemma equal_equality_types_mkc_uni {o} :
+  forall lib ts i,
+    @equal_equality_types o lib ts (mkc_uni i) (mkc_uni i).
+Proof.
+  introv e.
+  apply either_computes_to_equality_uni_false in e; tcsp.
+Qed.
+Hint Resolve equal_equality_types_mkc_uni : slow.
 
 Lemma tequality_mkc_uni {p} :
   forall lib (i : nat), @tequality p lib (mkc_uni i) (mkc_uni i).
@@ -218,11 +233,22 @@ Proof.
 
   eapply nuprl_uniquely_valued in equ0;[|apply mkc_uni_in_nuprl].
   apply equ0 in equ.
-  unfold univi_eq, extts in equ; exrepnd.
   clear equ0.
+  unfold univi_eq in equ; exrepnd.
+  exists eqa0.
 
   fold (nuprli lib i) in *.
   fold (nuprli lib j) in *.
 
-  exists eqa0; split; apply (typable_in_higher_univ_lt _ i j); auto; omega.
+  apply (extts_ind'
+           lib (nuprli lib i)
+           (fun A B eq => extts lib (nuprli lib j) A B eq));
+    auto;[]; clear equ0.
+  introv ts1 ts2 imp.
+  constructor; auto; eauto 2 with slow;
+    try (apply (typable_in_higher_univ_lt _ i j); auto; omega).
+
+  intro e.
+  autodimp imp hyp; exrepnd.
+  exists a1 a2 A0 b1 b2 B0 eqa1; dands; auto.
 Qed.

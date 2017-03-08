@@ -4178,9 +4178,6 @@ Definition guard_equality_type {o} lib (T e : @NTerm o) :=
     -> e = mk_refl a.
 *)
 
-Definition seq_true_equal_types {o} (lib : @library o) (t1 t2 : @CTerm o) :=
-  tequality lib t1 t2.
-
 Definition sequent_true_at {o}
            (lib : library)
            (S : @csequent o)
@@ -4193,7 +4190,7 @@ Definition sequent_true_at {o}
             let sub1 := mk_hs_subst ts  hs in
             let sub2 := mk_hs_subst ts' hs in
               (
-                seq_true_equal_types lib
+                tequality lib
                   (lsubstc T wt sub1 (seq_cover_typ1 lib T ts ts' hs ct e))
                   (lsubstc T wt sub2 (seq_cover_typ2 lib T ts ts' hs ct e))
                 #
@@ -4254,7 +4251,7 @@ Lemma sequent_true_at_all {o} :
                 | Some (existT _ ext (we, ce)) =>
                     forall pt1 : cover_vars ext sub1,
                     forall pt2 : cover_vars ext sub2,
-                      seq_true_equal_types
+                      tequality
                         lib
                         (lsubstc T wt sub1 pC1)
                         (lsubstc T wt sub2 pC2)
@@ -4263,7 +4260,7 @@ Lemma sequent_true_at_all {o} :
                                (lsubstc ext we sub2 pt2)
                                (lsubstc T wt sub1 pC1)
                 | None =>
-                  seq_true_equal_types
+                  tequality
                     lib
                     (lsubstc T wt sub1 pC1)
                     (lsubstc T wt sub2 pC2)
@@ -4304,7 +4301,7 @@ Lemma sequent_true_at_ex {o} :
             let sub2 := mk_hs_subst ts' hs in
             {pC1 : cover_vars T sub1
              & {pC2 : cover_vars T sub2
-             & seq_true_equal_types
+             & tequality
                  lib
                  (lsubstc T wt sub1 pC1)
                  (lsubstc T wt sub2 pC2)
@@ -4440,7 +4437,7 @@ Definition KC_sequent_true {o} lib (S : @csequent o) : Type :=
     match destruct_csequent S with
       | cseq_comps H T wh wt ct ec =>
           forall p : pw_assign_eq lib s1 s2 H,
-            seq_true_equal_types
+            tequality
               lib
               (lsubstc T wt s1 (scover_typ1 lib T s1 s2 H ct p))
               (lsubstc T wt s2 (scover_typ2 lib T s1 s2 H ct p))
@@ -4470,14 +4467,14 @@ Lemma KC_sequent_true_all {o} :
                 | Some (existT _ ext (we, ce)) =>
                     forall pt1 : cover_vars ext s1,
                     forall pt2 : cover_vars ext s2,
-                      seq_true_equal_types
+                      tequality
                         lib
                         (lsubstc T wt s1 pC1)
                         (lsubstc T wt s2 pC2)
                       # equality lib (lsubstc ext we s1 pt1)
                                  (lsubstc ext we s2 pt2)
                                  (lsubstc T wt s1 pC1)
-                | None => seq_true_equal_types
+                | None => tequality
                             lib
                             (lsubstc T wt s1 pC1)
                             (lsubstc T wt s2 pC2)
@@ -4514,7 +4511,7 @@ Lemma KC_sequent_true_ex {o} :
             forall p : pw_assign_eq lib s1 s2 H,
               {pC1 : cover_vars T s1
                & {pC2 : cover_vars T s2
-               & seq_true_equal_types lib (lsubstc T wt s1 pC1)
+               & tequality lib (lsubstc T wt s1 pC1)
                            (lsubstc T wt s2 pC2)
                  #
                  match ec with
@@ -4632,7 +4629,7 @@ Definition AN_sequent_true {o} lib (S : @csequent o) : Type :=
           -> hyps_functionality lib s1 H
           -> forall s2,
              forall p : similarity lib s1 s2 H,
-               seq_true_equal_types lib
+               tequality lib
                  (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
                  (lsubstc T wt s2 (s_cover_typ2 lib T s1 s2 H ct p))
                #
@@ -4663,7 +4660,7 @@ Definition VR_sequent_true {o} lib (S : @csequent o) : Type :=
       | cseq_comps H T wh wt ct ec =>
           forall p : similarity lib s1 s2 H,
             hyps_functionality lib s1 H
-            -> seq_true_equal_types lib
+            -> tequality lib
                  (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
                  (lsubstc T wt s2 (s_cover_typ2 lib T s1 s2 H ct p))
                # match ec with
@@ -4685,7 +4682,7 @@ Definition AN_sequent_true_pairwise {o} lib (S : @csequent o) : Type :=
       | cseq_comps H T wh wt ct ec =>
           forall p : similarity lib s1 s2 H,
             eq_hyps lib s1 s2 H
-            -> seq_true_equal_types lib (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
+            -> tequality lib (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
                          (lsubstc T wt s2 (s_cover_typ2 lib T s1 s2 H ct p))
                # match ec with
                    | Some (existT _ ext (we, ce)) =>
@@ -4748,7 +4745,7 @@ Definition AN_sp_sequent_true {o} lib (S : @csequent o) : Type :=
     match destruct_csequent S with
       | cseq_comps H T wh wt ct ec =>
           forall p : eqhyps lib s1 s2 H,
-            seq_true_equal_types lib (lsubstc T wt s1 (s_cover_typ_1 lib T s1 s2 H ct p))
+            tequality lib (lsubstc T wt s1 (s_cover_typ_1 lib T s1 s2 H ct p))
                       (lsubstc T wt s2 (s_cover_typ_2 lib T s1 s2 H ct p))
             # match ec with
                 | Some (existT _ ext (we, ce)) =>
@@ -4776,12 +4773,12 @@ Lemma AN_sequent_true_all {o} :
                         | Some (existT _ ext (we, ce)) =>
                             forall pt1 : cover_vars ext s1,
                             forall pt2 : cover_vars ext s2,
-                              seq_true_equal_types lib (lsubstc T wt s1 pC1)
+                              tequality lib (lsubstc T wt s1 pC1)
                                         (lsubstc T wt s2 pC2)
                               # equality lib (lsubstc ext we s1 pt1)
                                          (lsubstc ext we s2 pt2)
                                          (lsubstc T wt s1 pC1)
-                        | None => seq_true_equal_types lib (lsubstc T wt s1 pC1)
+                        | None => tequality lib (lsubstc T wt s1 pC1)
                                             (lsubstc T wt s2 pC2)
                       end
       end.
@@ -4822,7 +4819,7 @@ Lemma AN_sequent_true_ex {o} :
                    similarity lib s1 s2 H
                    -> {pC1 : cover_vars T s1
                        & {pC2 : cover_vars T s2
-                          & seq_true_equal_types lib (lsubstc T wt s1 pC1)
+                          & tequality lib (lsubstc T wt s1 pC1)
                                       (lsubstc T wt s2 pC2)
                             #
                             match ec with
@@ -4894,12 +4891,12 @@ Lemma VR_sequent_true_all {o} :
                    | Some (existT _ ext (we, ce)) =>
                        forall pt1 : cover_vars ext s1,
                        forall pt2 : cover_vars ext s2,
-                         seq_true_equal_types lib (lsubstc T wt s1 pC1)
+                         tequality lib (lsubstc T wt s1 pC1)
                                    (lsubstc T wt s2 pC2)
                          # equality lib (lsubstc ext we s1 pt1)
                                     (lsubstc ext we s2 pt2)
                                     (lsubstc T wt s1 pC1)
-                   | None => seq_true_equal_types lib (lsubstc T wt s1 pC1)
+                   | None => tequality lib (lsubstc T wt s1 pC1)
                                        (lsubstc T wt s2 pC2)
                  end
       end.
@@ -4939,7 +4936,7 @@ Lemma VR_sequent_true_ex {o} :
               -> similarity lib s1 s2 H
               -> {pC1 : cover_vars T s1
                   & {pC2 : cover_vars T s2
-                     & seq_true_equal_types lib (lsubstc T wt s1 pC1)
+                     & tequality lib (lsubstc T wt s1 pC1)
                                  (lsubstc T wt s2 pC2)
                        #
                        match ec with
@@ -5010,12 +5007,12 @@ Lemma AN_sp_sequent_true_all {o} :
               | Some (existT _ ext (we, ce)) =>
                   forall pt1 : cover_vars ext s1,
                   forall pt2 : cover_vars ext s2,
-                    seq_true_equal_types lib (lsubstc T wt s1 pC1)
+                    tequality lib (lsubstc T wt s1 pC1)
                               (lsubstc T wt s2 pC2)
                     # equality lib (lsubstc ext we s1 pt1)
                                (lsubstc ext we s2 pt2)
                                (lsubstc T wt s1 pC1)
-              | None => seq_true_equal_types lib (lsubstc T wt s1 pC1)
+              | None => tequality lib (lsubstc T wt s1 pC1)
                                   (lsubstc T wt s2 pC2)
             end
     end.
@@ -5052,7 +5049,7 @@ Lemma AN_sp_sequent_true_ex {o} :
           forall p : eqhyps lib s1 s2 H,
             {pC1 : cover_vars T s1
              & {pC2 : cover_vars T s2
-                & seq_true_equal_types lib (lsubstc T wt s1 pC1)
+                & tequality lib (lsubstc T wt s1 pC1)
                             (lsubstc T wt s2 pC2)
                   #
                   match ec with
