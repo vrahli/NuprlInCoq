@@ -38,7 +38,7 @@ Require Export sequents_tacs2.
 Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
 
-Require Export per_props_aequality.
+(*Require Export per_props_aequality.*)
 
 
 (** printing |- $\vdash$ *)
@@ -518,37 +518,31 @@ Proof.
 
   vr_seq_true in hyp1.
 
-  generalize (hyp1 s1 s2); clear hyp1; intro hyp1.
-  autodimp hyp1 h.
-  autodimp hyp1 h.
-  exrepd.
-
+  pose proof (hyp1 s1 s2) as h1hyp.
+  repeat (autodimp h1hyp hyp).
+  exrepnd.
   lsubst_tac.
 
-  rw @tequality_mkc_member in t0; repnd.
-  apply equality_in_member in e0; exrepnd.
-  spcast; computes_to_value_isvalue.
+  rw @tequality_mkc_member in h1hyp0; repnd.
+  apply equality_in_member in h1hyp1; exrepnd.
+
+  ccomputes_to_eqval.
+  clear h1hyp3 h1hyp4.
 
   dands; auto.
 
-  apply tequality_iff_ext_eq; dands; auto.
-  introv.
-
-XXXXXXXXXX
-
-  allrewrite @lsubstc_mk_axiom.
-  allrewrite @member_eq.
-  allrewrite @fold_mkc_member.
-  rw <- @member_member_iff in e.
-
-  spcast; apply @equality_respects_cequivc_right with (t2 := lsubstc t wfc0 s1 pt1); sp.
+  pose proof (h1hyp0 x) as q; destruct q as [q q']; clear q'.
+  autodimp q hyp; eauto 2 with nequality.
+  apply equality_sym.
+  apply h1hyp0.
+  eapply equality_trans;[|eauto]; eauto 2 with nequality.
 Qed.
 
 Lemma rule_introduction_true {o} :
   forall lib
          (H : @barehypotheses o)
-         (C t : NTerm),
-    rule_true lib (rule_introduction H C t).
+         (C t e : NTerm),
+    rule_true lib (rule_introduction H C t e).
 Proof.
   introv.
   apply rule_true3_implies_rule_true.
@@ -556,10 +550,10 @@ Proof.
 Qed.
 
 Lemma rule_introduction_wf2 {o} :
-  forall (H : @barehypotheses o) (C t : NTerm),
+  forall (H : @barehypotheses o) (C t e : NTerm),
     wf_term t
     -> covered t (vars_hyps H)
-    -> wf_rule2 (rule_introduction H C t).
+    -> wf_rule2 (rule_introduction H C t e).
 Proof.
   introv wt cov wf m; allsimpl.
   repndors; subst; tcsp.
@@ -569,6 +563,8 @@ Proof.
     allunfold @closed_type; allsimpl.
     apply covered_equality; dands; auto.
 Qed.
+
+XXXXXXXXXXXXXXXXX
 
 (* begin hide *)
 
