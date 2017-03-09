@@ -35,49 +35,6 @@ Require Export choice.
 Require Export cvterm.
 
 
-Lemma equality_in_uni_as_tequalityi {o} :
-  forall lib i (A B : @CTerm o),
-    equality lib A B (mkc_uni i) = tequalityi lib i A B.
-Proof.
-  auto.
-Qed.
-
-Lemma equality_in_uni {p} :
-  forall lib a b i,
-    @equality p lib a b (mkc_uni i)
-    -> tequality lib a b.
-Proof.
-  unfold tequality, equality, nuprl; introv e; exrepnd.
-
-  inversion e1; subst; try not_univ.
-  duniv j h.
-  induction j; allsimpl; sp.
-  computes_to_value_isvalue.
-  match goal with
-  | [ H : _ <=2=> _ |- _ ] => apply H in e0; clear H
-  end.
-  unfold univi_eq in e0; exrepnd.
-  exists eqa.
-  eapply Nuprli_implies_Nuprl in e2; auto.
-Qed.
-
-Lemma tequalityi_implies_tequality {o} :
-  forall lib i (A B : @CTerm o),
-    tequalityi lib i A B -> tequality lib A B.
-Proof.
-  introv n.
-  unfold tequalityi in n.
-  apply equality_in_uni in n; auto.
-Qed.
-Hint Resolve tequalityi_implies_tequality : slow.
-
-Lemma member_in_uni {p} :
-  forall lib a i, @member p lib a (mkc_uni i) -> type lib a.
-Proof.
-  unfold member; introv e.
-  apply equality_in_uni in e; eauto 2 with slow.
-Qed.
-
 Lemma equality_Nuprli {p} :
   forall lib (A B C : @CTerm p) i eq,
     equality lib A B (mkc_uni i)
@@ -148,20 +105,6 @@ Proof.
   apply mkc_uni_in_nuprl.
 Qed.
 *)
-
-Lemma mkc_uni_in_uni {o} :
-  forall lib j, @univ o lib (mkc_uni j) (univi_eq lib (univi lib j)).
-Proof.
-  introv; exists (S j); apply univi_mkc_uni.
-Qed.
-Hint Resolve mkc_uni_in_uni : slow.
-
-Lemma mkc_uni_in_nuprl {o} :
-  forall lib i, @nuprl o lib (mkc_uni i) (univi_eq lib (univi lib i)).
-Proof.
-  introv; apply CL_init; eauto 2 with slow.
-Qed.
-Hint Resolve mkc_uni_in_nuprl : slow.
 
 Lemma either_computes_to_equality_uni_false {o} :
   forall lib i, @either_computes_to_equality o lib (mkc_uni i) (mkc_uni i) -> False.

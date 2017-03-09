@@ -167,3 +167,47 @@ Proof.
         apply equality_in_void in w; auto. }
       { destruct h; exists a0; eauto 2 with slow. }
 Qed.
+
+Lemma either_computes_to_equality_mkc_not_false {o} :
+  forall lib (A1 A2 : @CTerm o),
+    !either_computes_to_equality lib (mkc_not A1) (mkc_not A2).
+Proof.
+  unfold mkc_not.
+  eauto 2 with slow.
+Qed.
+Hint Resolve either_computes_to_equality_mkc_not_false : slow.
+
+Lemma equal_equality_types_mkc_not {o} :
+  forall lib ts (A1 A2 : @CTerm o),
+    equal_equality_types lib ts (mkc_not A1) (mkc_not A2).
+Proof.
+  introv e.
+  apply either_computes_to_equality_mkc_not_false in e; tcsp.
+Qed.
+Hint Resolve equal_equality_types_mkc_not : slow.
+
+Lemma utequality_not_iff_tequality {p} :
+  forall lib (A1 A2 : @CTerm p),
+    utequality lib (mkc_not A1) (mkc_not A2)
+    <=> tequality lib (mkc_not A1) (mkc_not A2).
+Proof.
+  introv.
+  unfold mkc_not.
+  apply utequality_fun_iff_tequality.
+Qed.
+
+Lemma utequality_not {p} :
+  forall lib (A1 A2 : @CTerm p),
+    utequality lib (mkc_not A1) (mkc_not A2)
+    <=>
+    (
+      type lib A1
+      # type lib A2
+      # (!inhabited_type lib A1 <=> !inhabited_type lib A2)
+    ).
+(* tequality lib A1 A2.*)
+Proof.
+  introv.
+  rw @utequality_not_iff_tequality.
+  apply tequality_not.
+Qed.

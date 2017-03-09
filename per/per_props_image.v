@@ -35,6 +35,26 @@ Require Export choice.
 Require Export cvterm.
 
 
+Lemma either_computes_to_equality_mkc_image_false {o} :
+  forall lib (T1 T2 f1 f2 : @CTerm o),
+    !either_computes_to_equality lib (mkc_image T1 f1) (mkc_image T2 f2).
+Proof.
+  introv e.
+  unfold either_computes_to_equality, computes_to_equality in e.
+  repndors; exrepnd; spcast; computes_to_value_isvalue.
+Qed.
+Hint Resolve either_computes_to_equality_mkc_image_false : slow.
+
+Lemma equal_equality_types_mkc_image {o} :
+  forall lib ts (T1 T2 f1 f2 : @CTerm o),
+    equal_equality_types lib ts (mkc_image T1 f1) (mkc_image T2 f2).
+Proof.
+  introv e.
+  apply either_computes_to_equality_mkc_image_false in e; tcsp.
+Qed.
+Hint Resolve equal_equality_types_mkc_image : slow.
+
+
 Inductive equal_in_image {p} lib (A f t1 t2 : @CTerm p) : [U] :=
 | eq_in_image_cl :
     forall t,
@@ -196,7 +216,7 @@ Proof.
 
   - unfold type in teq0; exrepnd.
     unfold type in teq1; exrepnd.
-    exists (per_image_eq lib eq f1); split; apply CL_image; unfold per_image.
+    exists (per_image_eq lib eq f1); split; eauto 2 with slow; apply CL_image; unfold per_image.
     { exists eq T1 f1; sp; spcast; apply computes_to_valc_refl; eauto 2 with slow. }
     { exists eq0 T2 f2; sp; spcast; try (apply computes_to_valc_refl; eauto 2 with slow).
       eapply implies_eq_per_image_eq; eauto. }

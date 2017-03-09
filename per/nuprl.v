@@ -1122,3 +1122,17 @@ Definition ltype {p} lib l (T : @CTerm p) := eqtypes lib l T T.
 (* begin hide *)
 
 (* end hide *)
+
+(* These are unconstrained versions of extts/Nuprl/tequality*)
+Definition uextts {o} (ts : cts(o)) (T T' : CTerm) (eq : per(o)) : Prop :=
+  ts T eq # ts T' eq.
+
+Definition uNuprl {o} lib := @uextts o (nuprl lib).
+
+Definition uNuprli {o} lib i := @uextts o (nuprli lib i).
+
+Definition utequality {p} lib (T1 T2 : @CTerm p) :=
+  { eq : per , uNuprl lib T1 T2 eq }.
+
+Definition utequalityi {p} lib i (T1 T2 : @CTerm p) :=
+  { eq : per , uNuprli lib i T1 T2 eq }.

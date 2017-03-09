@@ -79,10 +79,3 @@ Proof.
   try (apply computes_to_valc_refl; eauto 3 with slow).
   apply equality_refl in h1; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli & Mark Bickford
 
 *)
@@ -30,36 +35,38 @@ Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
 Require Export per_props_equality.
 Require Export sequents_equality.
+Require Export sequents_useful.
 
 
 Definition rule_tyfam_equality {p}
            C
-           (a1 a2 b1 b2 : NTerm)
+           (a1 a2 b1 b2 e1 e2 : NTerm)
            (x1 x2 y : NVar)
            (i   : nat)
            (H   : @barehypotheses p) :=
   mk_rule
     (mk_baresequent
        H
-       (mk_conclax (mk_equality (C a1 x1 b1) (C a2 x2 b2) (mk_uni i))))
+       (mk_concl_eq (C a1 x1 b1) (C a2 x2 b2) (mk_uni i)))
     [ mk_baresequent
         H
-        (mk_conclax (mk_equality a1 a2 (mk_uni i))),
+        (mk_concl_eq_ext a1 a2 (mk_uni i) e1),
       mk_baresequent
         (snoc H (mk_hyp y a1))
-        (mk_conclax (mk_equality
-                       (subst b1 x1 (mk_var y))
-                       (subst b2 x2 (mk_var y))
-                       (mk_uni i)))
+        (mk_concl_eq_ext
+           (subst b1 x1 (mk_var y))
+           (subst b2 x2 (mk_var y))
+           (mk_uni i)
+           e2)
     ]
     [ sarg_var y ].
 
 Lemma rule_tyfam_equality_true3 {pp} :
-  forall lib C Cc (a1 a2 b1 b2 : NTerm),
-  forall x1 x2 y : NVar,
-  forall i   : nat,
-  forall H   : @barehypotheses pp,
-(*  forall bc1 : !LIn y (bound_vars b1),
+  forall lib C Cc (a1 a2 b1 b2 : NTerm) e1 e2
+         (x1 x2 y : NVar)
+         (i   : nat)
+         (H   : @barehypotheses pp),
+    (*  forall bc1 : !LIn y (bound_vars b1),
   forall bc2 : !LIn y (bound_vars b2), *)
   forall fvsC : forall a x b, free_vars (C a x b) = free_vars a ++ remove_nvars [x] (free_vars b),
   forall pd  : (forall a x b w s c,
@@ -78,6 +85,7 @@ Lemma rule_tyfam_equality_true3 {pp} :
                             -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))),
     rule_true3 lib (rule_tyfam_equality
                       C a1 a2 b1 b2
+                      e1 e2
                       x1 x2 y
                       i
                       H).
@@ -93,9 +101,19 @@ Proof.
   destruct Hyp0 as [ ws2 hyp2 ].
   destseq; allsimpl; proof_irr; GC.
 
-  assert (wf_csequent ((H) ||- (mk_conclax (mk_equality (C a1 x1 b1) (C a2 x2 b2) (mk_uni i))))) as wfc.
-  { unfold wf_csequent, wf_sequent, wf_concl; simpl.
-    dands; auto. }
+  match goal with
+  | [ |- context[?H ||- ?C] ] => assert (wf_csequent (H ||- C)) as wfc
+  end.
+  { clear hyp1 hyp2.
+    unfold wf_csequent, wf_sequent, wf_concl; simpl.
+    allrw @wf_refl.
+    allrw <- @wf_equality_iff; repnd.
+    allrw @covered_equality; repnd.
+    dands; auto.
+    unfold closed_extract; simpl.
+    apply covered_refl; auto.
+
+  }
 
   exists wfc.
   unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.

@@ -74,6 +74,42 @@ Proof.
                                  e))); simpl; sp.
 Qed.
 
+Lemma choice_uteq {p} :
+  forall lib (A : @CTerm p) v1 B1 v2 B2,
+    (forall a1 a2 : CTerm,
+       equality lib a1 a2 A
+       -> utequality lib (substc a1 v1 B1) (substc a2 v2 B2))
+    -> {f : forall (a1 a2 : CTerm) (e : equality lib a1 a2 A), per
+        , forall (a1 a2 : CTerm) (e : equality lib a1 a2 A),
+            uNuprl lib (substc a1 v1 B1) (substc a2 v2 B2) (f a1 a2 e)}.
+Proof.
+  introv F.
+  generalize (FunctionalChoice_on
+                {a1 : CTerm & {a2 : CTerm & equality lib a1 a2 A}}
+                per
+                (fun a b => uNuprl lib (substc (projT1 a) v1 B1) (substc (projT1 (projT2 a)) v2 B2) b));
+    intro C.
+  dest_imp C hyp.
+
+  intros; exrepnd.
+  generalize (F a1 a2 a3); intros teq.
+  unfold utequality in teq; exrepnd; simpl.
+  { exists eq; sp. }
+
+  exrepnd.
+
+  exists (fun a1 a2 e => f (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+                                   a1
+                                   (existT (fun a2 => equality lib a1 a2 A)
+                                           a2
+                                           e))); introv.
+  generalize (C0 (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+                         a1
+                         (existT (fun a2 => equality lib a1 a2 A)
+                                 a2
+                                 e))); simpl; sp.
+Qed.
+
 Lemma choice_spteq {p} :
   forall lib F1 F2,
     (forall x y : CTerm, tequality lib (F1 x y) (F2 x y))
@@ -175,8 +211,51 @@ Proof.
     allrw @univi_exists_iff; exrepnd.
     computes_to_value_isvalue; GC.
     apply h0 in teq0.
-    unfold univi_eq, extts in teq0; exrepnd.
-    exists eqa; split; auto.
+    unfold univi_eq in teq0; exrepnd.
+    exists eqa; auto.
+  }
+
+  exrepnd.
+
+  exists (fun a1 a2 e => f (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+                                   a1
+                                   (existT (fun a2 => equality lib a1 a2 A)
+                                           a2
+                                           e))); introv.
+  generalize (C0 (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+                         a1
+                         (existT (fun a2 => equality lib a1 a2 A)
+                                 a2
+                                 e))); simpl; sp.
+Qed.
+
+Lemma choice_uteqi {p} :
+  forall lib i (A : @CTerm p) v1 B1 v2 B2,
+    (forall a1 a2 : CTerm,
+       equality lib a1 a2 A
+       -> utequalityi lib i (substc a1 v1 B1) (substc a2 v2 B2))
+    -> {f : forall a1 a2 : CTerm,
+            forall e : equality lib a1 a2 A,
+              per
+        , forall a1 a2 : CTerm,
+          forall e : equality lib a1 a2 A,
+            uNuprli lib i (substc a1 v1 B1) (substc a2 v2 B2) (f a1 a2 e)}.
+Proof.
+  introv F.
+  generalize (FunctionalChoice_on
+                {a1 : CTerm & {a2 : CTerm & equality lib a1 a2 A}}
+                per
+                (fun a b => uNuprli lib
+                                   i
+                                   (substc (projT1 a) v1 B1)
+                                   (substc (projT1 (projT2 a)) v2 B2)
+                                   b));
+    intro C.
+  dest_imp C hyp.
+
+  {
+    intros; exrepnd.
+    generalize (F a1 a2 a3); intros teq; simpl; sp.
   }
 
   exrepnd.
@@ -219,8 +298,8 @@ Proof.
     allrw @univi_exists_iff; exrepnd.
     computes_to_value_isvalue; GC.
     apply h0 in teq0.
-    unfold univi_eq, extts in teq0; exrepnd.
-    exists eqa; split; auto.
+    unfold univi_eq in teq0; exrepnd.
+    exists eqa; auto.
   }
 
   exrepnd.
@@ -298,6 +377,45 @@ Proof.
     intros; exrepnd.
     generalize (F a1 a2 a3); intros teq.
     unfold tequality in teq; exrepnd; simpl.
+    exists eq; sp.
+  }
+
+  exrepnd.
+
+  exists (fun a1 a2 e => f (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+                                   a1
+                                   (existT (fun a2 => equality lib a1 a2 A)
+                                           a2
+                                           (eq_equality1 lib a1 a2 A eqa e na)))); introv.
+  generalize (C0 (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+                         a1
+                         (existT (fun a2 => equality lib a1 a2 A)
+                                 a2
+                                 (eq_equality1 lib a1 a2 A eqa e na)))); simpl; sp.
+Qed.
+
+Lemma choice_uteq1 {p} :
+  forall lib (A : @CTerm p) eqa v1 B1 v2 B2,
+    Nuprl lib A A eqa
+    -> (forall a1 a2 : CTerm,
+          equality lib a1 a2 A
+          -> utequality lib (substc a1 v1 B1) (substc a2 v2 B2))
+    -> {f : (forall a1 a2 (e : eqa a1 a2), per)
+        , forall a1 a2 (e : eqa a1 a2),
+            uNuprl lib (substc a1 v1 B1) (substc a2 v2 B2) (f a1 a2 e)}.
+Proof.
+  introv na F.
+  generalize (FunctionalChoice_on
+                {a1 : CTerm & {a2 : CTerm & equality lib a1 a2 A}}
+                per
+                (fun a b => uNuprl lib (substc (projT1 a) v1 B1) (substc (projT1 (projT2 a)) v2 B2) b));
+    intro C.
+  dest_imp C hyp.
+
+  {
+    intros; exrepnd.
+    generalize (F a1 a2 a3); intros teq.
+    unfold utequality in teq; exrepnd; simpl.
     exists eq; sp.
   }
 

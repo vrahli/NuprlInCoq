@@ -39,6 +39,44 @@ Require Export per_props_squash.
 Require Export per_props_true.
 
 
+Lemma either_computes_to_equality_mkc_union_false {o} :
+  forall lib (A1 A2 B1 B2 : @CTerm o),
+    !either_computes_to_equality lib (mkc_union A1 B1) (mkc_union A2 B2).
+Proof.
+  introv e.
+  unfold either_computes_to_equality, computes_to_equality in e.
+  repndors; exrepnd; spcast; computes_to_value_isvalue.
+Qed.
+Hint Resolve either_computes_to_equality_mkc_union_false : slow.
+
+Lemma equal_equality_types_mkc_union {o} :
+  forall lib ts (A1 A2 B1 B2 : @CTerm o),
+    equal_equality_types lib ts (mkc_union A1 B1) (mkc_union A2 B2).
+Proof.
+  introv e.
+  apply either_computes_to_equality_mkc_union_false in e; tcsp.
+Qed.
+Hint Resolve equal_equality_types_mkc_union : slow.
+
+Lemma either_computes_to_equality_mkc_tunion_false {o} :
+  forall lib (A1 A2 : @CTerm o) v1 v2 B1 B2,
+    !either_computes_to_equality lib (mkc_tunion A1 v1 B1) (mkc_tunion A2 v2 B2).
+Proof.
+  introv e.
+  unfold either_computes_to_equality, computes_to_equality in e.
+  repndors; exrepnd; spcast; computes_to_value_isvalue.
+Qed.
+Hint Resolve either_computes_to_equality_mkc_tunion_false : slow.
+
+Lemma equal_equality_types_mkc_tunion {o} :
+  forall lib ts (A1 A2 : @CTerm o) v1 v2 B1 B2,
+    equal_equality_types lib ts (mkc_tunion A1 v1 B1) (mkc_tunion A2 v2 B2).
+Proof.
+  introv e.
+  apply either_computes_to_equality_mkc_tunion_false in e; tcsp.
+Qed.
+Hint Resolve equal_equality_types_mkc_tunion : slow.
+
 Lemma equality_mkc_union {p} :
   forall lib (t1 t2 A B : @CTerm p),
     equality lib t1 t2 (mkc_union A B)
@@ -227,7 +265,7 @@ Proof.
       [|apply CL_union;unfold per_union;exists eqa1 eqb1 A1 B1;dands;auto;spcast;apply computes_to_valc_refl;eauto 2 with slow
        |apply CL_union;unfold per_union;exists eqa2 eqb2 A2 B2;dands;auto;spcast;apply computes_to_valc_refl;eauto 2 with slow].
 
-    exists (per_union_eq lib eqa1 eqb1); split; apply CL_union; unfold per_union.
+    exists (per_union_eq lib eqa1 eqb1); split; eauto 2 with slow; apply CL_union; unfold per_union.
 
     + exists eqa1 eqb1 A1 B1; sp; spcast;
         try (apply computes_to_valc_refl; apply iscvalue_mkc_union).
@@ -333,8 +371,8 @@ Lemma tequality_tunion {p} :
     (
       type lib A1
       # type lib A2
-      # (forall a a', equality lib a a' A1 -> tequality lib (substc a v1 B1) (substc a' v1 B1))
-      # (forall a a', equality lib a a' A2 -> tequality lib (substc a v2 B2) (substc a' v2 B2))
+      # (forall a a', equality lib a a' A1 -> utequality lib (substc a v1 B1) (substc a' v1 B1))
+      # (forall a a', equality lib a a' A2 -> utequality lib (substc a v2 B2) (substc a' v2 B2))
       # ext_eq lib (mkc_tunion A1 v1 B1) (mkc_tunion A2 v2 B2)
     ).
 Proof.
@@ -355,11 +393,11 @@ Proof.
     + exists eqa; auto.
 
     + introv ea.
-      eapply nuprl_type_family_members_eq_implies_tequality; try (exact t0); eauto.
+      eapply nuprl_type_family_members_eq_implies_utequality; try (exact t0); eauto.
       eapply equality_eq; eauto.
 
     + introv ea.
-      eapply nuprl_type_family_members_eq_implies_tequality; try (exact t); eauto.
+      eapply nuprl_type_family_members_eq_implies_utequality; try (exact t); eauto.
       eapply equality_eq; eauto.
 
     + introv.
@@ -376,14 +414,14 @@ Proof.
         exists eq0; dands; auto.
         eapply nuprl_ext; eauto.
 
-  - apply ext_eq_implies_tequality; auto.
+  - apply ext_eq_implies_tequality; auto; eauto 2 with slow;[|].
 
-    + generalize (choice_teq lib A1 v1 B1 v1 B1 h2); intro n; exrepnd.
+    + generalize (choice_uteq lib A1 v1 B1 v1 B1 h2); intro n; exrepnd.
 
       unfold type in h0; exrepnd.
       rename eq into eqa1.
 
-      pose proof (Nuprl_type_family_equality_to_eq2 lib A1 v1 v1 B1 B1 eqa1 f h4 n0) as imp1.
+      pose proof (uNuprl_type_family_equality_to_eq2 lib A1 v1 v1 B1 B1 eqa1 f h4 n0) as imp1.
       clear n0.
 
       exists (per_tunion_eq eqa1 (fun a1 a2 e => f a1 a2 (eq_equality0 lib a1 a2 A1 eqa1 e h4))).
@@ -396,14 +434,14 @@ Proof.
       exists A1 v1 B1; sp; eauto 3 with slow;
         try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_tunion))).
 
-      eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
+      eapply uNuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
 
-    + generalize (choice_teq lib A2 v2 B2 v2 B2 h3); intro w; exrepnd.
+    + generalize (choice_uteq lib A2 v2 B2 v2 B2 h3); intro w; exrepnd.
 
       unfold type in h1; exrepnd.
       rename eq into eqa2.
 
-      pose proof (Nuprl_type_family_equality_to_eq2 lib A2 v2 v2 B2 B2 eqa2 f h4 w0) as imp2.
+      pose proof (uNuprl_type_family_equality_to_eq2 lib A2 v2 v2 B2 B2 eqa2 f h4 w0) as imp2.
       clear w0.
 
       exists (per_tunion_eq eqa2 (fun a1 a2 e => f a1 a2 (eq_equality0 lib a1 a2 A2 eqa2 e h4))).
@@ -416,7 +454,7 @@ Proof.
       exists A2 v2 B2; sp; eauto 3 with slow;
         try (complete (spcast; apply computes_to_valc_refl; eauto 3 with slow)).
 
-      eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
+      eapply uNuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
 Qed.
 
 
@@ -897,7 +935,7 @@ Lemma equality_in_mkc_tunion {p} :
   forall lib A v B (t1 t2 : @CTerm p),
     equality lib t1 t2 (mkc_tunion A v B)
     <=> (type lib A
-         # (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
+         # (forall a a', equality lib a a' A -> utequality lib (substc a v B) (substc a' v B))
          # equal_in_tunion lib A v B t1 t2).
 Proof.
   intros; split; intro e.
@@ -910,7 +948,7 @@ Proof.
     dands; eauto 2 with slow.
 
     + introv ea.
-      eapply nuprl_type_family_members_eq_implies_tequality; try (exact tsb); eauto.
+      eapply nuprl_type_family_members_eq_implies_utequality; try (exact tsb); eauto.
       eapply equality_eq in ea; eauto.
 
     + rw eqt in e0.
@@ -931,7 +969,7 @@ Proof.
     unfold type in e0; exrepnd.
     rename eq into eqa.
 
-    pose proof (choice_teq1 lib A eqa v B v B) as h.
+    pose proof (choice_uteq1 lib A eqa v B v B) as h.
     repeat (autodimp h hyp); eauto 2 with slow.
     exrepnd.
     rename f into eqb.
@@ -943,7 +981,7 @@ Proof.
       exists eqa eqb; dands; auto.
       exists A v B; dands; spcast; auto;
       try (apply computes_to_valc_refl; apply iscvalue_mkc_tunion).
-      eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
+      eapply uNuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
 
     + induction e.
       { apply @tunion_eq_cl with (t := t); sp. }
@@ -1031,10 +1069,10 @@ Proof.
     autorewrite with slow in *.
     pose proof (mkc_ite_tt lib A B) as c1.
     pose proof (mkc_ite_ff lib A B) as c2.
-    apply tequality_respects_cequivc_left with (T3 := A) in h1; auto.
-    apply tequality_respects_cequivc_left with (T3 := B) in h2; auto.
-    apply tequality_respects_cequivc_right with (T3 := A) in h1; auto.
-    apply tequality_respects_cequivc_right with (T3 := B) in h2; auto.
+    apply utequality_respects_cequivc_left with (T3 := A) in h1; auto.
+    apply utequality_respects_cequivc_left with (T3 := B) in h2; auto.
+    apply utequality_respects_cequivc_right with (T3 := A) in h1; auto.
+    apply utequality_respects_cequivc_right with (T3 := B) in h2; auto.
 
     dands; eauto 2 with slow.
 
@@ -1060,17 +1098,17 @@ Proof.
 
       * pose proof (mkc_ite_ceq_tt lib a A B e0) as c1.
         pose proof (mkc_ite_ceq_tt lib a' A B e) as c2.
-        apply tequality_respects_cequivc_left with (T1 := A); auto.
+        apply utequality_respects_cequivc_left with (T1 := A); auto.
         { apply cequivc_sym; auto. }
-        apply tequality_respects_cequivc_right with (T2 := A); auto.
+        apply utequality_respects_cequivc_right with (T2 := A); auto.
         { apply cequivc_sym; auto. }
         eauto 2 with slow.
 
       * pose proof (mkc_ite_ceq_ff lib a A B e0) as c1.
         pose proof (mkc_ite_ceq_ff lib a' A B e) as c2.
-        apply tequality_respects_cequivc_left with (T1 := B); auto.
+        apply utequality_respects_cequivc_left with (T1 := B); auto.
         { apply cequivc_sym; auto. }
-        apply tequality_respects_cequivc_right with (T2 := B); auto.
+        apply utequality_respects_cequivc_right with (T2 := B); auto.
         { apply cequivc_sym; auto. }
         eauto 2 with slow.
 
@@ -1154,14 +1192,15 @@ Proof.
     autodimp h4 hyp; eauto 2 with slow.
 
     allrw @substc_mkcv_ite.
+    allrw @utequality_iff_type.
     pose proof (mkc_ite_tt lib A B) as c1.
     pose proof (mkc_ite_ff lib A B) as c2.
     pose proof (mkc_ite_tt lib C D) as c3.
     pose proof (mkc_ite_ff lib C D) as c4.
-    apply tequality_respects_cequivc_left with (T3 := A) in h1; auto.
-    apply tequality_respects_cequivc_left with (T3 := B) in h2; auto.
-    apply tequality_respects_cequivc_left with (T3 := C) in h3; auto.
-    apply tequality_respects_cequivc_left with (T3 := D) in h4; auto.
+    eapply type_respects_cequivc in h1;[|eauto].
+    eapply type_respects_cequivc in h2;[|eauto].
+    eapply type_respects_cequivc in h3;[|eauto].
+    eapply type_respects_cequivc in h4;[|eauto].
 
     dands; eauto 2 with slow.
 
@@ -1185,15 +1224,15 @@ Proof.
       * allrw @substc_mkcv_ite.
         pose proof (mkc_ite_ceq_tt lib a A B e0) as c1.
         pose proof (mkc_ite_ceq_tt lib a' A B e) as c2.
-        eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
-        eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+        eapply utequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+        eapply utequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
         eauto 2 with slow.
 
       * allrw @substc_mkcv_ite.
         pose proof (mkc_ite_ceq_ff lib a A B e0) as c1.
         pose proof (mkc_ite_ceq_ff lib a' A B e) as c2.
-        eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
-        eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+        eapply utequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+        eapply utequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
         eauto 2 with slow.
 
     + introv e.
@@ -1202,15 +1241,15 @@ Proof.
       * allrw @substc_mkcv_ite.
         pose proof (mkc_ite_ceq_tt lib a C D e0) as c1.
         pose proof (mkc_ite_ceq_tt lib a' C D e) as c2.
-        eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
-        eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+        eapply utequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+        eapply utequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
         eauto 2 with slow.
 
       * allrw @substc_mkcv_ite.
         pose proof (mkc_ite_ceq_ff lib a C D e0) as c1.
         pose proof (mkc_ite_ceq_ff lib a' C D e) as c2.
-        eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
-        eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+        eapply utequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+        eapply utequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
         eauto 2 with slow.
 
     + introv; split; intro e;
@@ -1224,14 +1263,14 @@ Proof.
 
         { pose proof (mkc_ite_ceq_tt lib a0 C D ea0) as c1.
           pose proof (mkc_ite_ceq_tt lib a' C D ea) as c2.
-          eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
-          eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+          eapply utequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+          eapply utequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
           eauto 2 with slow. }
 
         { pose proof (mkc_ite_ceq_ff lib a0 C D ea0) as c1.
           pose proof (mkc_ite_ceq_ff lib a' C D ea) as c2.
-          eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
-          eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+          eapply utequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+          eapply utequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
           eauto 2 with slow. }
 
       * clear e1.
@@ -1246,14 +1285,14 @@ Proof.
 
         { pose proof (mkc_ite_ceq_tt lib a0 A B ea0) as c1.
           pose proof (mkc_ite_ceq_tt lib a' A B ea) as c2.
-          eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
-          eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+          eapply utequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+          eapply utequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
           eauto 2 with slow. }
 
         { pose proof (mkc_ite_ceq_ff lib a0 A B ea0) as c1.
           pose proof (mkc_ite_ceq_ff lib a' A B ea) as c2.
-          eapply tequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
-          eapply tequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
+          eapply utequality_respects_cequivc_left;[apply cequivc_sym; exact c1|].
+          eapply utequality_respects_cequivc_right;[apply cequivc_sym; exact c2|].
           eauto 2 with slow. }
 
       * clear e1.

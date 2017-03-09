@@ -33,6 +33,25 @@
 Require Export per_props_image.
 
 
+Lemma either_computes_to_equality_mkc_squash_false {o} :
+  forall lib (T1 T2 : @CTerm o),
+    !either_computes_to_equality lib (mkc_squash T1) (mkc_squash T2).
+Proof.
+  introv e.
+  unfold either_computes_to_equality, computes_to_equality in e.
+  repndors; exrepnd; spcast; computes_to_value_isvalue.
+Qed.
+Hint Resolve either_computes_to_equality_mkc_squash_false : slow.
+
+Lemma equal_equality_types_mkc_squash {o} :
+  forall lib ts (T1 T2 : @CTerm o),
+    equal_equality_types lib ts (mkc_squash T1) (mkc_squash T2).
+Proof.
+  introv e.
+  apply either_computes_to_equality_mkc_squash_false in e; tcsp.
+Qed.
+Hint Resolve equal_equality_types_mkc_squash : slow.
+
 Lemma equality_in_mkc_squash {p} :
   forall lib (t1 t2 T : @CTerm p),
     equality lib t1 t2 (mkc_squash T)

@@ -100,13 +100,30 @@ Proof.
   introv; split; sp; spcast.
   apply approxc_refl.
 Qed.
-*)
+ *)
+
+Lemma not_either_computes_to_equality {o} :
+  forall lib, ! @either_computes_to_equality o lib mkc_int mkc_int.
+Proof.
+  introv e.
+  unfold either_computes_to_equality, computes_to_equality in e.
+  repndors; exrepnd; spcast; computes_to_value_isvalue.
+Qed.
+Hint Resolve not_either_computes_to_equality : slow.
+
+Lemma equal_equality_types_mkc_int {o} :
+  forall lib ts, @equal_equality_types o lib ts mkc_int mkc_int.
+Proof.
+  introv e.
+  apply not_either_computes_to_equality in e; tcsp.
+Qed.
+Hint Resolve equal_equality_types_mkc_int : slow.
 
 Lemma tequality_int {p} : forall lib, @tequality p lib mkc_int mkc_int.
 Proof.
   introv.
   exists (@equality_of_int p lib).
-  split; apply CL_int; unfold per_int; dands; tcsp;
+  split; eauto 2 with slow; apply CL_int; unfold per_int; dands; tcsp;
     spcast; apply computes_to_valc_refl; eauto 2 with slow.
 Qed.
 Hint Resolve tequality_int : slow.
@@ -790,6 +807,31 @@ Proof.
     + exists kd kc; dands; spcast; auto.
 Qed.
 
+Lemma utequality_mkc_le {o} :
+  forall lib (a b c d : @CTerm o),
+    utequality lib (mkc_le a b) (mkc_le c d)
+    <=>
+    {ka : Z
+     , {kb : Z
+     , {kc : Z
+     , {kd : Z
+        , a ===>(lib) (mkc_integer ka)
+        # b ===>(lib) (mkc_integer kb)
+        # c ===>(lib) (mkc_integer kc)
+        # d ===>(lib) (mkc_integer kd)
+        # (
+            ((ka <= kb)%Z # (kc <= kd)%Z)
+            {+}
+            ((kb < ka)%Z # (kd < kc)%Z)
+          )}}}}.
+Proof.
+  introv.
+  allrw @mkc_le_eq.
+  rw @utequality_not_iff_tequality.
+  allrw <- @mkc_le_eq.
+  apply tequality_mkc_le.
+Qed.
+
 Lemma tnat_type {o} : forall lib, @type o lib mkc_tnat.
 Proof.
   introv.
@@ -800,7 +842,7 @@ Proof.
   apply equality_in_int in ea.
   unfold equality_of_int in ea; exrepnd; spcast.
   autorewrite with slow in *.
-  apply tequality_mkc_le.
+  apply utequality_mkc_le.
   exists (Z.of_nat 0) k (Z.of_nat 0) k; dands; spcast; auto;
     try (rw @mkc_zero_eq; rw @mkc_nat_eq; apply computes_to_valc_refl; eauto 2 with slow).
 
@@ -1147,7 +1189,7 @@ Proof.
   apply equality_in_int in ea.
   unfold equality_of_int in ea; exrepnd; spcast.
   autorewrite with slow in *.
-  apply tequality_mkc_le.
+  apply utequality_mkc_le.
   exists (Z.of_nat 1) k (Z.of_nat 1) k; dands; spcast; auto;
     try (rw @mkc_one_eq; rw @mkc_nat_eq; apply computes_to_valc_refl; eauto 2 with slow).
 

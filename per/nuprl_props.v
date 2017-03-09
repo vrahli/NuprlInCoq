@@ -992,18 +992,26 @@ Proof.
 Qed.
 Hint Resolve tequality_implies_type_right : slow.
 
-(*
-(* This is not true anymore when t1 or t2 is an equality type *)
-Lemma nuprl_implies_Nuprl {o} :
+Lemma not_either_computes_to_equality_implies_equal_equality_types {o} :
+  forall lib ts (A B : @CTerm o),
+    !either_computes_to_equality lib A B
+    -> equal_equality_types lib ts A B.
+Proof.
+  introv ne e; tcsp.
+Qed.
+Hint Resolve not_either_computes_to_equality_implies_equal_equality_types : slow.
+
+(* NOTE: This is not true anymore when t1 or t2 is an equality type *)
+Lemma nuprl_implies_Nuprl_neq {o} :
   forall lib (t1 t2 : @CTerm o) eq,
-    nuprl lib t1 eq
+    !either_computes_to_equality lib t1 t2
+    -> nuprl lib t1 eq
     -> nuprl lib t2 eq
     -> Nuprl lib t1 t2 eq.
 Proof.
-  introv n1 n2; split; auto.
+  introv ne n1 n2; split; eauto 2 with slow.
 Qed.
 Hint Resolve nuprl_implies_Nuprl : slow.
-*)
 
 Lemma Nuprl_uniquely_valued_left {o} :
   forall lib (t1 t2 t3 : @CTerm o) eq1 eq2,
@@ -1557,13 +1565,12 @@ Proof.
   eapply Nuprl_trans; eauto.
 Qed.
 
-(*
-Lemma nuprl_type_family_members_eq_implies_tequality {o} :
+Lemma nuprl_type_family_members_eq_implies_utequality {o} :
   forall lib (A : @CTerm o) v B eqa eqb a1 a2,
     nuprl lib A eqa
     -> type_family_members_eq (nuprl lib) v B eqa eqb
     -> eqa a1 a2
-    -> tequality lib (B)[[v\\a1]] (B)[[v\\a2]].
+    -> utequality lib (B)[[v\\a1]] (B)[[v\\a2]].
 Proof.
   introv n tf ea.
   destruct tf as [tb tf].
@@ -1582,7 +1589,6 @@ Proof.
   eapply nuprl_ext;eauto.
   apply eq_term_equals_sym; apply tran.
 Qed.
-*)
 
 Ltac ntsi i :=
   match goal with
@@ -1608,13 +1614,12 @@ Ltac entsi i :=
         destruct nts as [ nts_tet nts_tev ]
   end.
 
-(*
-Lemma nuprli_type_family_members_eq_implies_tequalityi {o} :
+Lemma nuprli_type_family_members_eq_implies_utequalityi {o} :
   forall lib i (A : @CTerm o) v B eqa eqb a1 a2,
     nuprli lib i A eqa
     -> type_family_members_eq (nuprli lib i) v B eqa eqb
     -> eqa a1 a2
-    -> tequalityi lib i (B)[[v\\a1]] (B)[[v\\a2]].
+    -> utequalityi lib i (B)[[v\\a1]] (B)[[v\\a2]].
 Proof.
   introv n tf ea.
   destruct tf as [tb tf].
@@ -1622,14 +1627,7 @@ Proof.
   pose proof (tb a1 a2 ea) as q.
   destruct tf as [sym tran].
 
-  exists (univi_eq lib (univi lib i)); dands.
-
-  { apply CL_init.
-    exists (S i).
-    apply univi_mkc_uni. }
-
   exists (eqb a1 a2 ea); split; auto.
-  fold (nuprli lib i).
 
   assert (eqa a2 a2) as ea2.
   { ntsi i; eapply nts_tet; eauto.
@@ -1640,7 +1638,41 @@ Proof.
   eapply nuprli_ext;eauto.
   apply eq_term_equals_sym; apply tran.
 Qed.
- *)
+
+Lemma mkc_uni_in_uni {o} :
+  forall lib j, @univ o lib (mkc_uni j) (univi_eq lib (univi lib j)).
+Proof.
+  introv; exists (S j); apply univi_mkc_uni.
+Qed.
+Hint Resolve mkc_uni_in_uni : slow.
+
+Lemma mkc_uni_in_nuprl {o} :
+  forall lib i, @nuprl o lib (mkc_uni i) (univi_eq lib (univi lib i)).
+Proof.
+  introv; apply CL_init; eauto 2 with slow.
+Qed.
+Hint Resolve mkc_uni_in_nuprl : slow.
+
+Lemma tequalityi_iff_Nuprli {o} :
+  forall lib i (T1 T2 : @CTerm o),
+    tequalityi lib i T1 T2 <=> { eq : per(o) , Nuprli lib i T1 T2 eq }.
+Proof.
+  introv; split; intro h.
+
+  - unfold tequalityi, equality in h; exrepnd.
+    inversion h1; subst; try not_univ; clear h1.
+    duniv j h.
+    allrw @univi_exists_iff; exrepd.
+    computes_to_value_isvalue; GC.
+    apply e in h0.
+    unfold univi_eq in h0; exrepnd.
+    exists eqa; auto.
+
+  - exrepnd.
+    exists (univi_eq lib (univi lib i)).
+    dands; eauto 2 with slow.
+    exists eq; auto.
+Qed.
 
 Lemma Nuprli_type_family_equality_to_eq {o} :
   forall lib i (A : @CTerm o) v1 v2 B1 B2 eqa f (n : nuprli lib i A eqa),
@@ -1962,15 +1994,6 @@ Proof.
     apply q1; auto.
 Qed.
 
-Lemma not_either_computes_to_equality_implies_equal_equality_types {o} :
-  forall lib ts (A B : @CTerm o),
-    !either_computes_to_equality lib A B
-    -> equal_equality_types lib ts A B.
-Proof.
-  introv ne e; tcsp.
-Qed.
-Hint Resolve not_either_computes_to_equality_implies_equal_equality_types : slow.
-
 (* This is not true anymore in the case where A or B is an equality type *)
 Lemma ext_eq_implies_tequality {o} :
   forall lib (A B : @CTerm o),
@@ -2086,17 +2109,17 @@ Proof.
   eapply nuprl_ext_eq_iff_eq_term_equals; eauto.
 Qed.
 
-(* This is not true anymore in the case where A or B is an equality type
+(* NOTE: This is not true anymore in the case where A or B is an equality type *)
 Lemma tequality_iff_ext_eq {o} :
   forall lib (A B : @CTerm o),
-    tequality lib A B <=> (type lib A # type lib B # ext_eq lib A B).
+    !either_computes_to_equality lib A B
+    -> (tequality lib A B <=> (type lib A # type lib B # ext_eq lib A B)).
 Proof.
-  introv; split; intro h; repnd;[|apply ext_eq_implies_tequality; auto].
+  introv ne; split; intro h; repnd;[|apply ext_eq_implies_tequality; auto].
   unfold tequality in h; exrepnd.
   destruct h0 as [h1 h2]; dands; eauto 2 with slow.
   eapply nuprl_ext_eq_iff_eq_term_equals; eauto.
 Qed.
-*)
 
 Hint Resolve computes_to_valc_refl : slow.
 Hint Resolve iscvalue_mkc_equality : slow.
@@ -2303,3 +2326,798 @@ Proof.
     + introv e; clear e.
       exists a1 a2 A b1 b2 B eq; dands; spcast; eauto 3 with slow.
 Qed.
+
+Lemma uNuprl_type_family_equality_to_eq2 {o} :
+  forall lib (A : @CTerm o) v1 v2 B1 B2 eqa f (n : nuprl lib A eqa),
+    (forall (a1 a2 : CTerm) (e : equality lib a1 a2 A),
+        uNuprl lib (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 e))
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+           uNuprl lib (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 (eq_equality0 lib a1 a2 A eqa e n))).
+Proof.
+  introv imp; introv.
+  apply imp.
+Qed.
+
+Lemma uextts_close_refl {o} :
+  forall (ts : cts(o)) (T : @CTerm o) eq,
+    ts T eq -> uextts ts T T eq.
+Proof.
+  introv c.
+  split; auto.
+Qed.
+
+Lemma uextts_extensional {o} :
+  forall ts (A B C : @CTerm o) eq eq',
+    uniquely_valued ts
+    -> type_extensionality ts
+    -> uextts ts A B eq
+    -> uextts ts B C eq'
+    -> uextts ts B C eq.
+Proof.
+  introv u ext e1 e2.
+  dextts e1 ts1 ts2 imp1.
+  dextts e2 ts3 ts4 imp2.
+  constructor; auto.
+  eapply ext;[eauto|].
+  eapply u; eauto.
+Qed.
+
+Lemma uextts_trans_and {o} :
+  forall ts (A B C : @CTerm o) eq eq',
+    uniquely_valued ts
+    -> type_extensionality ts
+    -> uextts ts A B eq
+    -> uextts ts B C eq'
+    -> (uextts ts A C eq # uextts ts A C eq').
+Proof.
+  introv u ext e1 e2.
+  dextts e1 ts1 ts2 imp1.
+  dextts e2 ts3 ts4 imp2.
+  constructor; auto; constructor; auto.
+
+  - eapply ext;[eauto|].
+    eapply u; eauto.
+
+  - eapply ext;[eauto|].
+    eapply u; eauto.
+Qed.
+
+Lemma uextts_sym {o} :
+  forall ts (T T' : @CTerm o) eq,
+    uextts ts T T' eq
+    -> uextts ts T' T eq.
+Proof.
+  introv n.
+  dextts n ts1 ts2 imp; split; auto.
+Qed.
+
+Lemma uextts_trans_left {o} :
+  forall ts (A B C : @CTerm o) eq eq',
+    uniquely_valued ts
+    -> type_extensionality ts
+    -> uextts ts A B eq
+    -> uextts ts B C eq'
+    -> uextts ts A C eq.
+Proof.
+  introv u e e1 e2.
+  pose proof (uextts_trans_and ts A B C eq eq') as h; repeat (autodimp h hyp); tcsp.
+Qed.
+
+Lemma uextts_trans_right {o} :
+  forall ts (A B C : @CTerm o) eq eq',
+    uniquely_valued ts
+    -> type_extensionality ts
+    -> uextts ts A B eq
+    -> uextts ts B C eq'
+    -> uextts ts A C eq'.
+Proof.
+  introv u e e1 e2.
+  pose proof (uextts_trans_and ts A B C eq eq') as h; repeat (autodimp h hyp); tcsp.
+Qed.
+
+Lemma uextts_respect_cequivc_left {o} :
+  forall lib (ts : cts(o)) (T1 T2 T : @CTerm o) eq,
+    type_value_respecting lib ts
+    -> uextts ts T1 T2 eq
+    -> cequivc lib T1 T
+    -> uextts ts T1 T eq.
+Proof.
+  introv resp n ceq.
+  dextts n ts1 ts2 imp.
+  split; auto.
+  eapply resp;[|eauto]; auto.
+Qed.
+
+Lemma uextts_ext {o} :
+  forall ts (T T' : @CTerm o) eq eq',
+    type_extensionality ts
+    -> uextts ts T T' eq
+    -> (eq <=2=> eq')
+    -> uextts ts T T' eq'.
+Proof.
+  introv ext n eqiff.
+  dextts n ts1 ts2 imp.
+  constructor; auto; try (complete (eapply ext; eauto)).
+Qed.
+
+Lemma uextts_uniquely_valued {o} :
+  forall ts (T T' : @CTerm o) eq eq',
+    uniquely_valued ts
+    -> uextts ts T T' eq
+    -> uextts ts T T' eq'
+    -> (eq <=2=> eq').
+Proof.
+  introv uv n m.
+  destruct n as [n1 n2].
+  destruct m as [e1 e2].
+  eapply uv; eauto.
+Qed.
+
+Lemma type_system_implies_etype_system_uextts {o} :
+  forall lib (ts : cts(o)),
+    type_system lib ts
+    -> etype_system lib (uextts ts).
+Proof.
+  introv tys.
+  dest_ts tys.
+
+  prove_etype_system Case; tcsp.
+
+  - Case "uniquely_valued".
+    introv n e.
+    eapply uextts_uniquely_valued; eauto.
+
+  - Case "type_extensionality".
+    introv n e.
+    eapply uextts_ext; eauto.
+
+  - Case "type_symmetric".
+    introv n.
+    eapply uextts_sym; eauto.
+
+  - Case "type_transitive".
+    introv n m.
+    eapply uextts_trans_left; eauto.
+
+  - Case "type_value_respecting".
+    introv n c.
+    eapply uextts_respect_cequivc_left; eauto.
+
+  - Case "term_symmetric".
+    introv n.
+    destruct n as [n1 n2].
+    eapply ts_tes; eauto.
+
+  - Case "term_transitive".
+    introv n.
+    destruct n as [n1 n2].
+    eapply ts_tet; eauto.
+
+  - Case "term_value_respecting".
+    introv n.
+    destruct n as [n1 n2].
+    eapply ts_tev; eauto.
+Qed.
+
+Lemma nuprl_type_system_implies_uNuprl_etype_system {o} :
+  forall (lib : @library o),
+    type_system lib (nuprl lib) -> etype_system lib (uNuprl lib).
+Proof.
+  introv ts.
+  unfold uNuprl.
+  apply type_system_implies_etype_system_uextts; auto.
+Qed.
+
+Lemma uNuprl_etype_system {o} :
+  forall (lib : @library o), etype_system lib (uNuprl lib).
+Proof.
+  introv.
+  apply nuprl_type_system_implies_uNuprl_etype_system.
+  apply nuprl_type_system.
+Qed.
+
+Ltac eunts :=
+  match goal with
+      [ p : POpid , lib : library |- _ ] =>
+      pose proof (@uNuprl_etype_system p lib) as nts;
+        destruct nts as [ nts_uv nts ];
+        destruct nts as [ nts_ext nts ];
+        destruct nts as [ nts_tys nts ];
+        destruct nts as [ nts_tyt nts ];
+        destruct nts as [ nts_tyv nts ];
+        destruct nts as [ nts_tes nts ];
+        destruct nts as [ nts_tet nts_tev ]
+  end.
+
+Lemma uNuprl_refl {p} :
+  forall lib (t1 t2 : @CTerm p) eq,
+    uNuprl lib t1 t2 eq -> uNuprl lib t1 t1 eq.
+Proof.
+  introv n.
+  destruct n; split; auto.
+Qed.
+
+Lemma uNuprl_sym {p} :
+  forall lib (t1 t2 : @CTerm p) eq,
+    uNuprl lib t1 t2 eq -> uNuprl lib t2 t1 eq.
+Proof.
+  introv n; destruct n; split; auto.
+Qed.
+
+Lemma uNuprl_trans {p} :
+  forall lib (t1 t2 t3 : @CTerm p) eq1 eq2,
+    uNuprl lib t1 t2 eq1 -> uNuprl lib t2 t3 eq2 -> uNuprl lib t1 t3 eq1.
+Proof.
+  introv n1 n2; eunts.
+  eapply nts_tyt; eauto.
+  eapply nts_ext;[eauto|].
+  apply uNuprl_sym in n1.
+  apply uNuprl_refl in n1.
+  apply uNuprl_refl in n2.
+  eapply nts_uv; eauto.
+Qed.
+
+Lemma uNuprl_uniquely_valued_left {o} :
+  forall lib (t1 t2 t3 : @CTerm o) eq1 eq2,
+    uNuprl lib t1 t2 eq1
+    -> uNuprl lib t1 t3 eq2
+    -> (eq1) <=2=> (eq2).
+Proof.
+  introv n1 n2.
+  eunts.
+  apply uNuprl_refl in n1.
+  apply uNuprl_refl in n2.
+  eapply nts_uv;eauto.
+Qed.
+
+Lemma uNuprl_uniquely_valued_right {o} :
+  forall lib (t1 t2 t3 : @CTerm o) eq1 eq2,
+    uNuprl lib t2 t1 eq1
+    -> uNuprl lib t3 t1 eq2
+    -> (eq1) <=2=> (eq2).
+Proof.
+  introv n1 n2.
+  eunts.
+  apply uNuprl_sym in n1.
+  apply uNuprl_sym in n2.
+  apply uNuprl_refl in n1.
+  apply uNuprl_refl in n2.
+  eapply nts_uv;eauto.
+Qed.
+
+Lemma uNuprl_implies_type_family_members_eq {o} :
+  forall lib A v B (eqa : per(o)) f,
+    nuprl lib A eqa
+    -> (forall a1 a2 (e : eqa a1 a2), uNuprl lib (B)[[v\\a1]] (B)[[v\\a2]] (f a1 a2 e))
+    -> type_family_members_eq (nuprl lib) v B eqa f.
+Proof.
+  introv na imp.
+
+  split; auto.
+
+  { introv; apply imp. }
+
+  split; introv.
+
+  - assert (eqa a a) as ea.
+    { nts; eapply nts_tet; eauto. }
+
+    pose proof (imp a a' e1) as h1.
+    pose proof (imp a' a e2) as h2.
+    pose proof (imp a a ea) as h3.
+
+    eapply uNuprl_uniquely_valued_left in h1;[|exact h3].
+    eapply uNuprl_uniquely_valued_right in h2;[|exact h3].
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+
+  - assert (eqa a2 a2) as ea.
+    { nts; eapply nts_tet; eauto.
+      eapply nts_tes; eauto. }
+
+    pose proof (imp a1 a2 e1) as h1.
+    pose proof (imp a2 a3 e2) as h2.
+    pose proof (imp a2 a2 ea) as h3.
+
+    eapply uNuprl_uniquely_valued_right in h1;[|exact h3].
+    eapply uNuprl_uniquely_valued_left in h2;[|exact h3].
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+Qed.
+
+Lemma tequality_implies_utequality {o} :
+  forall lib (A B : @CTerm o),
+    tequality lib A B -> utequality lib A B.
+Proof.
+  introv teq.
+  unfold tequality in teq; exrepnd.
+  exists eq.
+  dextts teq0 ts1 ts2 ext.
+  constructor; auto.
+Qed.
+Hint Resolve tequality_implies_utequality : slow.
+
+Lemma equality_in_uni_as_tequalityi {o} :
+  forall lib i (A B : @CTerm o),
+    equality lib A B (mkc_uni i) = tequalityi lib i A B.
+Proof.
+  auto.
+Qed.
+
+Lemma equality_in_uni {p} :
+  forall lib a b i,
+    @equality p lib a b (mkc_uni i)
+    -> tequality lib a b.
+Proof.
+  unfold tequality, equality, nuprl; introv e; exrepnd.
+
+  inversion e1; subst; try not_univ.
+  duniv j h.
+  induction j; allsimpl; sp.
+  computes_to_value_isvalue.
+  match goal with
+  | [ H : _ <=2=> _ |- _ ] => apply H in e0; clear H
+  end.
+  unfold univi_eq in e0; exrepnd.
+  exists eqa.
+  eapply Nuprli_implies_Nuprl in e2; auto.
+Qed.
+
+Lemma member_in_uni {p} :
+  forall lib a i, @member p lib a (mkc_uni i) -> type lib a.
+Proof.
+  unfold member; introv e.
+  apply equality_in_uni in e; eauto 2 with slow.
+Qed.
+
+Lemma tequalityi_implies_tequality {o} :
+  forall lib i (A B : @CTerm o),
+    tequalityi lib i A B -> tequality lib A B.
+Proof.
+  introv n.
+  unfold tequalityi in n.
+  apply equality_in_uni in n; auto.
+Qed.
+Hint Resolve tequalityi_implies_tequality : slow.
+
+Lemma uNuprli_implies_uNuprl {o} :
+  forall lib (A B : @CTerm o) i eq,
+    uNuprli lib i A B eq
+    -> uNuprl lib A B eq.
+Proof.
+  introv n.
+  unfold uNuprli in n.
+  unfold uNuprl.
+
+  destruct n as [ts1 ts2].
+  constructor; auto; eauto 2 with slow.
+Qed.
+Hint Resolve uNuprli_implies_uNuprl : slow.
+
+Lemma utequalityi_implies_utequality {o} :
+  forall lib i (A B : @CTerm o),
+    utequalityi lib i A B -> utequality lib A B.
+Proof.
+  introv n.
+  unfold utequalityi in n; exrepnd.
+  exists eq; eauto 2 with slow.
+Qed.
+Hint Resolve utequalityi_implies_utequality : slow.
+
+Lemma uNuprli_type_family_equality_to_eq {o} :
+  forall lib i (A : @CTerm o) v1 v2 B1 B2 eqa f (n : nuprli lib i A eqa),
+    (forall (a1 a2 : CTerm) (e : equality lib a1 a2 A),
+        uNuprli lib i (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 e))
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+           uNuprli lib i (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 (eq_equality4 lib a1 a2 A eqa i e n))).
+Proof.
+  introv imp; introv.
+  apply imp.
+Qed.
+
+Lemma uNuprli_type_family_equality_to_nuprli_left {o} :
+  forall lib i v1 v2 B1 B2 (eqa : per(o)) f,
+    (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+        uNuprli lib i (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 e))
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+           nuprli lib i (B1) [[v1 \\ a1]] (f a1 a2 e)).
+Proof.
+  introv imp; introv.
+  apply imp.
+Qed.
+
+Lemma nuprli_type_system_implies_uNuprli_etype_system {o} :
+  forall (lib : @library o) i,
+    type_system lib (nuprli lib i) -> etype_system lib (uNuprli lib i).
+Proof.
+  introv ts.
+  apply type_system_implies_etype_system_uextts; auto.
+Qed.
+
+Lemma uNuprli_etype_system {o} :
+  forall lib (i : nat), @etype_system o lib (uNuprli lib i).
+Proof.
+  introv.
+  apply nuprli_type_system_implies_uNuprli_etype_system.
+  apply nuprli_type_system.
+Qed.
+
+Ltac euntsi i :=
+  match goal with
+      [ p : POpid , lib : library |- _ ] =>
+      pose proof (@uNuprli_etype_system p lib i) as nts;
+        destruct nts as [ nts_uv nts ];
+        destruct nts as [ nts_ext nts ];
+        destruct nts as [ nts_tys nts ];
+        destruct nts as [ nts_tyt nts ];
+        destruct nts as [ nts_tyv nts ];
+        destruct nts as [ nts_tes nts ];
+        destruct nts as [ nts_tet nts_tev ]
+  end.
+
+Lemma uNuprli_refl {p} :
+  forall lib i (t1 t2 : @CTerm p) eq,
+    uNuprli lib i t1 t2 eq -> uNuprli lib i t1 t1 eq.
+Proof.
+  intros.
+  euntsi i.
+  eapply nts_tyt; eauto.
+Qed.
+
+Lemma uNuprli_sym {p} :
+  forall lib i (t1 t2 : @CTerm p) eq,
+    uNuprli lib i t1 t2 eq -> uNuprli lib i t2 t1 eq.
+Proof.
+  intros; euntsi i; sp.
+Qed.
+
+Lemma uNuprli_trans {p} :
+  forall lib i (t1 t2 t3 : @CTerm p) eq1 eq2,
+    uNuprli lib i t1 t2 eq1 -> uNuprli lib i t2 t3 eq2 -> uNuprli lib i t1 t3 eq1.
+Proof.
+  introv n1 n2; euntsi i.
+  eapply nts_tyt; eauto.
+  eapply nts_ext;[eauto|].
+  apply uNuprli_sym in n1.
+  apply uNuprli_refl in n1.
+  apply uNuprli_refl in n2.
+  eapply nts_uv; eauto.
+Qed.
+
+Lemma uNuprli_type_family_equality_to_uNuprli_left {o} :
+  forall lib i A v1 v2 B1 B2 (eqa : per(o)) f,
+    nuprli lib i A eqa
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+        uNuprli lib i (B1)[[v1\\a1]] (B2)[[v2\\a2]] (f a1 a2 e))
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+           uNuprli lib i (B1)[[v1\\a1]] (B1)[[v1\\a2]] (f a1 a2 e)).
+Proof.
+  introv na imp; introv.
+
+  assert (eqa a2 a2) as ea.
+  { ntsi i; eapply nts_tet; eauto.
+    eapply nts_tes; eauto. }
+
+  pose proof (imp a1 a2 e) as h1.
+  pose proof (imp a2 a2 ea) as h2.
+
+  apply uNuprli_sym in h2.
+  eapply uNuprli_trans; eauto.
+Qed.
+
+Lemma uNuprli_uniquely_valued_left {o} :
+  forall lib i (t1 t2 t3 : @CTerm o) eq1 eq2,
+    uNuprli lib i t1 t2 eq1
+    -> uNuprli lib i t1 t3 eq2
+    -> (eq1) <=2=> (eq2).
+Proof.
+  introv n1 n2.
+  euntsi i.
+  apply uNuprli_refl in n1.
+  apply uNuprli_refl in n2.
+  eapply nts_uv;eauto.
+Qed.
+
+Lemma uNuprli_uniquely_valued_right {o} :
+  forall lib i (t1 t2 t3 : @CTerm o) eq1 eq2,
+    uNuprli lib i t2 t1 eq1
+    -> uNuprli lib i t3 t1 eq2
+    -> (eq1) <=2=> (eq2).
+Proof.
+  introv n1 n2.
+  euntsi i.
+  apply uNuprli_sym in n1.
+  apply uNuprli_sym in n2.
+  apply uNuprli_refl in n1.
+  apply uNuprli_refl in n2.
+  eapply nts_uv;eauto.
+Qed.
+
+Lemma uNuprli_ext {o} :
+  forall lib i (t1 t2 : @CTerm o) eq1 eq2,
+    uNuprli lib i t1 t2 eq1
+    -> eq1 <=2=> eq2
+    -> uNuprli lib i t1 t2 eq2.
+Proof.
+  introv n1 eqs.
+  euntsi i.
+  apply nts_ext with (eq := eq1); sp.
+Qed.
+
+Lemma uNuprli_trans2 {o} :
+  forall lib i (t1 t2 t3 : @CTerm o) (eq1 eq2 : per(o)),
+    uNuprli lib i t1 t2 eq1 -> uNuprli lib i t2 t3 eq2 -> uNuprli lib i t1 t3 eq2.
+Proof.
+  introv n1 n2.
+  pose proof (uNuprli_trans lib i t1 t2 t3 eq1 eq2) as q; repeat (autodimp q hyp).
+  dup q as h.
+  eapply uNuprli_uniquely_valued_right in q;[|exact n2].
+  eapply uNuprli_ext;[|apply eq_term_equals_sym;eauto]; auto.
+Qed.
+
+Lemma uNuprli_type_family_equality_to_uNuprli_right {o} :
+  forall lib i A v1 v2 B1 B2 (eqa : per(o)) f,
+    nuprli lib i A eqa
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+        uNuprli lib i (B1)[[v1\\a1]] (B2)[[v2\\a2]] (f a1 a2 e))
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+           uNuprli lib i (B2)[[v2\\a1]] (B2)[[v2\\a2]] (f a1 a2 e)).
+Proof.
+  introv na imp; introv.
+
+  assert (eqa a1 a1) as ea.
+  { ntsi i; eapply nts_tet; eauto.
+    eapply nts_tes; eauto. }
+
+  pose proof (imp a1 a2 e) as h1.
+  pose proof (imp a1 a1 ea) as h2.
+
+  apply uNuprli_sym in h2.
+  eapply uNuprli_trans2; eauto.
+Qed.
+
+Lemma uNuprli_implies_type_family_members_eq {o} :
+  forall lib i A v B (eqa : per(o)) f,
+    nuprli lib i A eqa
+    -> (forall a1 a2 (e : eqa a1 a2), uNuprli lib i (B)[[v\\a1]] (B)[[v\\a2]] (f a1 a2 e))
+    -> type_family_members_eq (nuprli lib i) v B eqa f.
+Proof.
+  introv na imp.
+
+  split; auto.
+
+  { introv; apply imp. }
+
+  split; introv.
+
+  - assert (eqa a a) as ea.
+    { ntsi i; eapply nts_tet; eauto. }
+
+    pose proof (imp a a' e1) as h1.
+    pose proof (imp a' a e2) as h2.
+    pose proof (imp a a ea) as h3.
+
+    eapply uNuprli_uniquely_valued_left in h1;[|exact h3].
+    eapply uNuprli_uniquely_valued_right in h2;[|exact h3].
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+
+  - assert (eqa a2 a2) as ea.
+    { ntsi i; eapply nts_tet; eauto.
+      eapply nts_tes; eauto. }
+
+    pose proof (imp a1 a2 e1) as h1.
+    pose proof (imp a2 a3 e2) as h2.
+    pose proof (imp a2 a2 ea) as h3.
+
+    eapply uNuprli_uniquely_valued_right in h1;[|exact h3].
+    eapply uNuprli_uniquely_valued_left in h2;[|exact h3].
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+Qed.
+
+Lemma Nuprl_implies_uNuprl {o} :
+  forall lib (A B : @CTerm o) eq,
+    Nuprl lib A B eq -> uNuprl lib A B eq.
+Proof.
+  introv n.
+  dextts n n1 n2 ext.
+  split; auto.
+Qed.
+Hint Resolve Nuprl_implies_uNuprl : slow.
+
+Lemma uNuprl_type_family_equality_to_eq3 {o} :
+  forall lib (A : @CTerm o) v1 v2 B1 B2 eqa f1 f2 (n : nuprl lib A eqa),
+    (forall (a1 a2 : CTerm) (e : equality lib a1 a2 A),
+        Nuprl lib (B1)[[v1\\a1]] (B2)[[v2\\a1]] (f1 a1 a2 e))
+    -> (forall (a1 a2 : CTerm) (e : equality lib a1 a2 A),
+           uNuprl lib (B1)[[v1\\a1]] (B2)[[v2\\a2]] (f2 a1 a2 e))
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+           uNuprl lib (B1)[[v1\\a1]] (B2)[[v2\\a2]] (f1 a1 a2 (eq_equality0 lib a1 a2 A eqa e n))).
+Proof.
+  introv imp1 imp2; introv.
+
+  pose proof (imp1 a1 a2 (eq_equality0 lib a1 a2 A eqa e n)) as h1.
+  pose proof (imp2 a1 a2 (eq_equality0 lib a1 a2 A eqa e n)) as h2.
+
+  apply Nuprl_refl in h1.
+
+  eapply uNuprl_trans; eauto 2 with slow.
+Qed.
+
+Lemma uNuprl_type_family_equality_to_eq {o} :
+  forall lib (A1 A2 : @CTerm o) v1 v2 B1 B2 eqa f (n : Nuprl lib A1 A2 eqa),
+    (forall (a1 a2 : CTerm) (e : equality lib a1 a2 A1),
+        uNuprl lib (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 e))
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+           uNuprl lib (B1) [[v1 \\ a1]] (B2) [[v2 \\ a2]] (f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e n))).
+Proof.
+  introv imp; introv.
+  apply imp.
+Qed.
+
+Lemma uNuprl_type_family_equality_to_uNuprl_left {o} :
+  forall lib A v1 v2 B1 B2 (eqa : per(o)) f,
+    nuprl lib A eqa
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+        uNuprl lib (B1)[[v1\\a1]] (B2)[[v2\\a2]] (f a1 a2 e))
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+           uNuprl lib (B1)[[v1\\a1]] (B1)[[v1\\a2]] (f a1 a2 e)).
+Proof.
+  introv na imp; introv.
+
+  assert (eqa a2 a2) as ea.
+  { nts; eapply nts_tet; eauto.
+    eapply nts_tes; eauto. }
+
+  pose proof (imp a1 a2 e) as h1.
+  pose proof (imp a2 a2 ea) as h2.
+
+  apply uNuprl_sym in h2.
+  eapply uNuprl_trans; eauto.
+Qed.
+
+Lemma uNuprl_ext {o} :
+  forall lib (t1 t2 : @CTerm o) eq1 eq2,
+    uNuprl lib t1 t2 eq1
+    -> (eq1 <=2=> eq2)
+    -> uNuprl lib t1 t2 eq2.
+Proof.
+  introv n1 eqs; eunts.
+  apply nts_ext with (eq := eq1); sp.
+Qed.
+
+Lemma uNuprl_trans2 {o} :
+  forall lib (t1 t2 t3 : @CTerm o) (eq1 eq2 : per(o)),
+    uNuprl lib t1 t2 eq1 -> uNuprl lib t2 t3 eq2 -> uNuprl lib t1 t3 eq2.
+Proof.
+  introv n1 n2.
+  pose proof (uNuprl_trans lib t1 t2 t3 eq1 eq2) as q; repeat (autodimp q hyp).
+  dup q as h.
+  eapply uNuprl_uniquely_valued_right in q;[|exact n2].
+  eapply uNuprl_ext;[|apply eq_term_equals_sym;eauto]; auto.
+Qed.
+
+Lemma uNuprl_type_family_equality_to_uNuprl_right {o} :
+  forall lib A v1 v2 B1 B2 (eqa : per(o)) f,
+    nuprl lib A eqa
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+        uNuprl lib (B1)[[v1\\a1]] (B2)[[v2\\a2]] (f a1 a2 e))
+    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+           uNuprl lib (B2)[[v2\\a1]] (B2)[[v2\\a2]] (f a1 a2 e)).
+Proof.
+  introv na imp; introv.
+
+  assert (eqa a1 a1) as ea.
+  { nts; eapply nts_tet; eauto.
+    eapply nts_tes; eauto. }
+
+  pose proof (imp a1 a2 e) as h1.
+  pose proof (imp a1 a1 ea) as h2.
+
+  apply uNuprl_sym in h2.
+  eapply uNuprl_trans2; eauto.
+Qed.
+
+Lemma utequality_iff_type {o} :
+  forall lib (A : @CTerm o),
+    utequality lib A A <=> type lib A.
+Proof.
+  introv.
+  unfold utequality, type; split; intro h; exrepnd; exists eq.
+  - destruct h0; auto.
+  - split; auto.
+Qed.
+
+Lemma utequality_implies_type {o} :
+  forall lib (A : @CTerm o),
+    utequality lib A A -> type lib A.
+Proof.
+  introv h; apply utequality_iff_type in h; auto.
+Qed.
+Hint Resolve utequality_implies_type : slow.
+
+Lemma type_implies_utequality {o} :
+  forall lib (A : @CTerm o),
+    type lib A -> utequality lib A A.
+Proof.
+  introv h; apply utequality_iff_type in h; auto.
+Qed.
+Hint Resolve type_implies_utequality : slow.
+
+
+Lemma uNuprl_value_respecting_left {o} :
+  forall lib (t1 t2 t3 : @CTerm o) eq,
+    uNuprl lib t1 t2 eq
+    -> cequivc lib t1 t3
+    -> uNuprl lib t3 t2 eq.
+Proof.
+  introv n c.
+  unfold uNuprl in *.
+  eapply uextts_respect_cequivc_left in c;[| |eauto]; eauto 2 with slow.
+  apply uextts_sym in c.
+  eapply uextts_trans_left in n;[| | |eauto]; eauto 2 with slow.
+Qed.
+Hint Resolve uNuprl_value_respecting_left : slow.
+
+Lemma uNuprl_value_respecting_right {o} :
+  forall lib (t1 t2 t3 : @CTerm o) eq,
+    uNuprl lib t1 t2 eq
+    -> cequivc lib t2 t3
+    -> uNuprl lib t1 t3 eq.
+Proof.
+  introv n c.
+  unfold uNuprl in *.
+  eapply uextts_respect_cequivc_left in c;
+    [| |apply uextts_sym;eauto]; eauto 2 with slow.
+  eapply uextts_trans_left in c;[| | |eauto]; eauto 2 with slow.
+Qed.
+Hint Resolve uNuprl_value_respecting_right : slow.
+
+Lemma utequality_respects_cequivc_left {p} :
+  forall lib T1 T2 T3,
+    @cequivc p lib T1 T3
+    -> utequality lib T1 T2
+    -> utequality lib T3 T2.
+Proof.
+  unfold utequality; sp.
+  exists eq.
+  eauto 2 with slow.
+Qed.
+Hint Resolve utequality_respects_cequivc_left : nequality.
+
+Lemma utequality_respects_cequivc_right {p} :
+  forall lib T1 T2 T3,
+    @cequivc p lib T2 T3
+    -> utequality lib T1 T2
+    -> utequality lib T1 T3.
+Proof.
+  unfold utequality; sp.
+  exists eq.
+  eauto 2 with slow.
+Qed.
+Hint Resolve utequality_respects_cequivc_right : nequality.
+
+Lemma utequality_respects_alphaeqc_left {p} :
+  forall lib T1 T2 T3,
+    @alphaeqc p T1 T3
+    -> utequality lib T1 T2
+    -> utequality lib T3 T2.
+Proof.
+  unfold utequality; sp.
+  exists eq.
+  eauto 3 with slow.
+Qed.
+Hint Resolve utequality_respects_alphaeqc_left : nequality.
+
+Lemma utequality_respects_alphaeqc_right {p} :
+  forall lib T1 T2 T3,
+    @alphaeqc p T2 T3
+    -> utequality lib T1 T2
+    -> utequality lib T1 T3.
+Proof.
+  unfold utequality; sp.
+  exists eq.
+  eauto 3 with slow.
+Qed.
+Hint Resolve utequality_respects_alphaeqc_right : nequality.
