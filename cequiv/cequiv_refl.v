@@ -129,3 +129,127 @@ Proof.
   exists w c.
   apply lsubstc_mk_refl.
 Qed.
+
+Lemma mkc_prefl_eq {p} :
+  forall a b c d : @CTerm p,
+    mkc_prefl a c = mkc_prefl b d
+    -> a = b # c = d.
+Proof.
+  introv h.
+  destruct_cterms; allsimpl.
+  inversion h; subst.
+  eauto with pi.
+Qed.
+
+Lemma cequiv_mk_prefl {o} :
+  forall lib (t t' a b : @NTerm o),
+    computes_to_value lib t (mk_prefl a b)
+    -> cequiv lib t t'
+    -> {c : NTerm
+        & {d : NTerm
+        & computes_to_value lib t' (mk_prefl c d)
+        # cequiv lib a c
+        # cequiv lib b d}}.
+Proof.
+  prove_cequiv_mk.
+  allrw @isprogram_prefl; tcsp.
+Qed.
+
+Lemma cequivc_mkc_prefl {o} :
+  forall lib (t t' a b : @CTerm o),
+    computes_to_valc lib t (mkc_prefl a b)
+    -> cequivc lib t t'
+    -> {c : CTerm
+        & {d : CTerm
+        & computes_to_valc lib t' (mkc_prefl c d)
+        # cequivc lib a c
+        # cequivc lib b d}}.
+Proof.
+  unfold computes_to_valc, cequivc; intros; destruct_cterms; allsimpl.
+  pose proof (cequiv_mk_prefl lib x2 x1 x0 x) as k.
+  repeat (autodimp k hyp); exrepnd.
+  applydup @computes_to_value_isvalue in k0 as j.
+  inversion j as [u isp v]; subst.
+  rw @isprogram_prefl in isp; repnd.
+  exists (mk_cterm c isp0) (mk_cterm d isp); simpl; sp.
+Qed.
+
+Lemma lsubstc_mk_prefl {o} :
+  forall (t1 t2 : @NTerm o)
+         (sub : CSub)
+         (w1  : wf_term t1)
+         (w2  : wf_term t2)
+         (w   : wf_term (mk_prefl t1 t2))
+         (c1  : cover_vars t1 sub)
+         (c2  : cover_vars t2 sub)
+         (c   : cover_vars (mk_prefl t1 t2) sub),
+    lsubstc (mk_prefl t1 t2) w sub c
+    = mkc_prefl (lsubstc t1 w1 sub c1) (lsubstc t2 w2 sub c2).
+Proof.
+  sp; unfold lsubstc; simpl.
+  apply cterm_eq; simpl.
+  unfold csubst; simpl.
+  change_to_lsubst_aux4; simpl.
+  rw @sub_filter_nil_r; allrw @fold_nobnd.
+  allrw @sub_filter_csub2sub; sp.
+Qed.
+
+Lemma cover_vars_prefl {o} :
+  forall (a b : @NTerm o) sub,
+    cover_vars (mk_prefl a b) sub
+    <=> (cover_vars a sub # cover_vars b sub).
+Proof.
+  sp; repeat (rw @cover_vars_eq); unfold cover_vars_upto; simpl.
+  autorewrite with slow in *; tcsp.
+  rw subvars_app_l; tcsp.
+Qed.
+
+Lemma covered_prefl {o} :
+  forall (a b : @NTerm o) l,
+    covered (mk_prefl a b) l
+    <=> (covered a l # covered b l).
+Proof.
+  unfold covered; simpl; introv.
+  autorewrite with slow in *; tcsp.
+  allrw subvars_app_l; tcsp.
+Qed.
+
+Lemma lsubstc_mk_prefl_ex {o} :
+  forall (t1 t2 : @NTerm o)
+         (sub : CSub)
+         (w   : wf_term (mk_prefl t1 t2))
+         (c   : cover_vars (mk_prefl t1 t2) sub),
+    {w1 : wf_term t1
+     & {w2 : wf_term t2
+     & {c1 : cover_vars t1 sub
+     & {c2 : cover_vars t2 sub
+     & lsubstc (mk_prefl t1 t2) w sub c
+       = mkc_prefl (lsubstc t1 w1 sub c1) (lsubstc t2 w2 sub c2)}}}}.
+Proof.
+  sp.
+
+  duplicate w.
+  rw @wf_prefl in w; repnd.
+
+  duplicate c.
+  rw @cover_vars_prefl in c; repnd.
+
+  exists w1 w c1 c.
+  apply lsubstc_mk_prefl.
+Qed.
+
+Lemma iscvalue_mkc_refl {p} :
+  forall t : @CTerm p, iscvalue (mkc_refl t).
+Proof.
+  intro; destruct t; unfold iscvalue; simpl.
+  apply isvalue_refl; allrw @isprog_eq; auto.
+Qed.
+Hint Resolve iscvalue_mkc_refl : slow.
+
+Lemma iscvalue_mkc_prefl {p} :
+  forall t u : @CTerm p, iscvalue (mkc_prefl t u).
+Proof.
+  introv; destruct_cterms; unfold iscvalue; simpl.
+  apply isvalue_prefl; allrw @isprog_eq; auto.
+Qed.
+Hint Resolve iscvalue_mkc_prefl : slow.

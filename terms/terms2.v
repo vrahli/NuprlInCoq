@@ -130,6 +130,8 @@ Definition mk_uatom {p} : @NTerm p := oterm (Can NUAtom) [].
 
 Definition mk_refl {o} (t : @NTerm o) : NTerm := oterm (Can NRefl) [nobnd t].
 
+Definition mk_prefl {o} (t u : @NTerm o) : NTerm := oterm (Can NPRefl) [nobnd t, nobnd u].
+
 Definition mk_inl {p} (x : @NTerm p) := oterm (Can (NInj NInl)) [nobnd x].
 Definition mk_inr {p} (x : @NTerm p) := oterm (Can (NInj NInr)) [nobnd x].
 
@@ -2186,6 +2188,32 @@ Proof.
   introv; allrw @isprog_eq; apply isprogram_refl.
 Qed.
 
+Lemma isprogram_prefl {o} :
+  forall (t u : @NTerm o), isprogram (mk_prefl t u) <=> (isprogram t # isprogram u).
+Proof.
+  introv; split; intro h.
+  - inversion h as [cl wf].
+    unfold closed in cl; simpl in cl; autorewrite with list in *.
+    allrw @app_eq_nil_iff; repnd.
+    inversion wf as [| |? ? imp xx]; simpl in *; subst; clear xx wf.
+    pose proof (imp (nobnd t)) as q; autodimp q hyp.
+    pose proof (imp (nobnd u)) as z; autodimp z hyp.
+    allrw @bt_wf_iff.
+    repeat (constructor; auto).
+  - repnd.
+    inversion h as [cl1 wf1].
+    inversion h0 as [cl2 wf2].
+    constructor; unfold closed; simpl; autorewrite with list; auto; allrw; auto.
+    constructor; unfold nobnd; simpl; auto.
+    introv xx; repndors; subst; tcsp.
+Qed.
+
+Theorem isprog_prefl {o} :
+  forall (t u : @NTerm o), isprog (mk_prefl t u) <=> (isprog t # isprog u).
+Proof.
+  introv; allrw @isprog_eq; apply isprogram_prefl.
+Qed.
+
 
 
 Theorem isprog_bottom {p} : @isprog p mk_bottom.
@@ -2225,6 +2253,28 @@ Proof.
   introv; split; intro wf; allrw @wf_term_eq.
   - inversion wf as [| |? ? imp xx]; simpl in *; subst; clear xx wf.
     pose proof (imp (nobnd t)) as q; autodimp q hyp.
+    allrw @bt_wf_iff; auto.
+  - constructor; unfold nobnd; simpl; auto.
+    introv xx; repndors; subst; tcsp.
+Qed.
+
+Theorem isvalue_prefl {o} :
+  forall (t u : @NTerm o), isprogram t -> isprogram u -> isvalue (mk_prefl t u).
+Proof.
+  introv ispt ispu.
+  inversion ispt as [clt wft].
+  inversion ispu as [clu wfu].
+  repeat constructor; unfold closed; simpl; autorewrite with list; allrw; tcsp.
+  introv i; repndors; subst; tcsp; apply bt_wf_iff; auto.
+Qed.
+
+Theorem wf_prefl {o} :
+  forall (t u : @NTerm o), wf_term (mk_prefl t u) <=> (wf_term t # wf_term u).
+Proof.
+  introv; split; intro wf; allrw @wf_term_eq.
+  - inversion wf as [| |? ? imp xx]; simpl in *; subst; clear xx wf.
+    pose proof (imp (nobnd t)) as q; autodimp q hyp.
+    pose proof (imp (nobnd u)) as z; autodimp z hyp.
     allrw @bt_wf_iff; auto.
   - constructor; unfold nobnd; simpl; auto.
     introv xx; repndors; subst; tcsp.
@@ -5933,6 +5983,17 @@ Qed.
 Definition mkc_refl {p} (t : CTerm) : @CTerm p :=
   let (a,x) := t in exist isprog (mk_refl a) (implies_isprog_refl x).
 
+Theorem implies_isprog_prefl {o} :
+  forall {t u : @NTerm o}, isprog t -> isprog u -> isprog (mk_prefl t u).
+Proof.
+  introv h q; apply isprog_prefl; auto.
+Qed.
+
+Definition mkc_prefl {p} (t u : CTerm) : @CTerm p :=
+  let (a,x) := t in
+  let (b,y) := u in
+  exist isprog (mk_prefl a b) (implies_isprog_prefl x y).
+
 Definition mkc_bottom {p} : @CTerm p :=
   exist isprog mk_bottom isprog_bottom.
 
@@ -7052,6 +7113,73 @@ Qed.
 Definition mkcv_refl {o} (v : NVar) (t : @CVTerm o [v]) : CVTerm [v] :=
   let (a,x) := t in
   exist (isprog_vars [v]) (mk_refl a) (implies_isprog_vars_refl x).
+
+Lemma nullb_app :
+  forall {A} (l1 l2 : list A),
+    nullb (l1 ++ l2) = nullb l1 && nullb l2.
+Proof.
+  destruct l1; simpl; auto.
+Qed.
+Hint Rewrite @nullb_app : list.
+
+Hint Rewrite diff_app_r : list.
+
+Lemma subsetb_app_l :
+  forall {A} (d : Deq A) (l1 l2 l : list A),
+    subsetb d (l1 ++ l2) l
+    = subsetb d l1 l && subsetb d l2 l.
+Proof.
+  introv; unfold subsetb; autorewrite with list; auto.
+Qed.
+Hint Rewrite @subsetb_app_l : list.
+
+Lemma sub_vars_app_l :
+  forall (l1 l2 l : list NVar),
+    sub_vars (l1 ++ l2) l = sub_vars l1 l && sub_vars l2 l.
+Proof.
+  introv; unfold sub_vars; autorewrite with list; auto.
+Qed.
+Hint Rewrite sub_vars_app_l : list.
+
+Hint Rewrite diff_nil : list.
+
+Lemma subsetb_nil_l :
+  forall {A} (d : Deq A) (l : list A),
+    subsetb d [] l = true.
+Proof.
+  introv; unfold subsetb; autorewrite with list; auto.
+Qed.
+Hint Rewrite @subsetb_nil_l : list.
+
+Lemma sub_vars_nil_l :
+  forall (l : list NVar),
+    sub_vars [] l = true.
+Proof.
+  introv; unfold sub_vars; autorewrite with list; auto.
+Qed.
+Hint Rewrite sub_vars_nil_l : list.
+
+Lemma isprog_vars_prefl {o} :
+  forall v (t u : @NTerm o),
+    isprog_vars [v] (mk_prefl t u) <=> (isprog_vars [v] t # isprog_vars [v] u).
+Proof.
+  introv; unfold isprog_vars; simpl; autorewrite with list.
+  allrw @assert_of_andb.
+  rw @wf_prefl; tcsp.
+  split; intro h; tcsp.
+Qed.
+
+Lemma implies_isprog_vars_prefl {o} :
+  forall {v} {t u : @NTerm o},
+    isprog_vars [v] t -> isprog_vars [v] u -> isprog_vars [v] (mk_prefl t u).
+Proof.
+  introv ispt ispu; apply isprog_vars_prefl; auto.
+Qed.
+
+Definition mkcv_prefl {o} (v : NVar) (t u : @CVTerm o [v]) : CVTerm [v] :=
+  let (a,x) := t in
+  let (b,y) := u in
+  exist (isprog_vars [v]) (mk_prefl a b) (implies_isprog_vars_prefl x y).
 
 Lemma fold_mkc_halts {p} :
   forall t : @CTerm p,

@@ -113,6 +113,7 @@ Proof.
     unfold closed_extract; simpl.
     apply covered_refl; auto.
 
+    (* it looks like we're going to have to add [sarg_term (C a1 x1 b1)] *)
   }
 
   exists wfc.

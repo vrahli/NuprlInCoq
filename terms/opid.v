@@ -182,6 +182,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NLambda    : CanonicalOp
  | NAxiom     : CanonicalOp
  | NRefl      : CanonicalOp
+ | NPRefl     : CanonicalOp
  | NInj       : CanInj -> CanonicalOp
  | NPair      : CanonicalOp
  | NSup       : CanonicalOp
@@ -263,6 +264,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NLambda        => [1]
   | NAxiom         => []
   | NRefl          => [0]
+  | NPRefl         => [0,0]
   | NInj _         => [0]
   | NPair          => [0,0]
   | NSup           => [0,0]
