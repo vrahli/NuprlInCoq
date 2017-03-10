@@ -1039,7 +1039,7 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         clear_irr; tac
 
     (* PRefl *)
-    | context [lsubstc (mk_refl ?a ?b) ?w ?s ?c] =>
+    | context [lsubstc (mk_prefl ?a ?b) ?w ?s ?c] =>
       let w1 := fresh "w1" in
       let w2 := fresh "w2" in
       let c1 := fresh "c1" in

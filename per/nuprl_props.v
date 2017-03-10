@@ -2951,3 +2951,38 @@ Proof.
 Qed.
 Hint Resolve utequality_respects_alphaeqc_right : nequality.
 *)
+
+Lemma nuprli_implies_typei {o} :
+  forall lib i (A : @CTerm o) eq,
+    nuprli lib i A eq
+    -> typei lib i A.
+Proof.
+  introv n.
+  exists (univi_eq lib (univi lib i)); dands; eauto 2 with slow.
+  exists eq; split; auto.
+Qed.
+Hint Resolve nuprli_implies_typei : slow.
+
+Lemma tequalityi_iff_ext_eq {o} :
+  forall lib (i : nat) (A B : @CTerm o),
+    tequalityi lib i A B <=> (typei lib i A # typei lib i B # ext_eq lib A B).
+Proof.
+  introv; split; intro h; repnd; try (apply ext_eq_implies_tequalityi;auto).
+  unfold tequalityi, equality in h; exrepnd.
+  inversion h1; subst; try not_univ; clear h1.
+  duniv j h.
+  allrw @univi_exists_iff; exrepd; computes_to_value_isvalue.
+  apply e in h0.
+  unfold univi_eq in h0; exrepnd.
+  fold (nuprli lib j0) in *.
+  destruct h1 as [n1 n2].
+  dands; eauto 2 with slow.
+  introv.
+
+  pose proof (nuprli_implies_equality_eq lib j0 A a b eqa) as q.
+  autodimp q hyp.
+  rw <- q; clear q.
+
+  pose proof (nuprli_implies_equality_eq lib j0 B a b eqa) as q.
+  autodimp q hyp.
+Qed.

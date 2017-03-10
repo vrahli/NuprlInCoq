@@ -35,10 +35,10 @@ Require Export per_props_equality.
 
 
 Definition mk_concl_mem {o} (t T : @NTerm o) : conclusion :=
-  mk_concl (mk_member t T) (mk_refl t).
+  mk_concl (mk_member t T) (mk_prefl t t).
 
 Definition mk_concl_eq {o} (t1 t2 T : @NTerm o) : conclusion :=
-  mk_concl (mk_equality t1 t2 T) (mk_refl t1).
+  mk_concl (mk_equality t1 t2 T) (mk_prefl t1 t1).
 
 (* in general we cannot assume that the extract we get from subgoals
    is anything in particular *)
@@ -206,6 +206,10 @@ Proof.
 Qed.
 *)
 
+(*
+
+TO FIX
+
 Lemma similarity_widening {o} :
   forall lib (s1 s2 : @CSub o) x y z t t1 t2 T U H wt wu ct cu,
     !LIn x (free_vars U)
@@ -260,6 +264,7 @@ Proof.
     try (spcast; apply computes_to_valc_refl; eauto 3 with slow);
     apply equality_refl in equ; sp.
 Qed.
+*)
 
 (*
 Lemma strong_subtype_equality {o} :
@@ -1147,18 +1152,17 @@ Proof.
   spcast; computes_to_value_isvalue.
 
   rw @tequality_mkc_member.
-  dands; tcsp.
+  rw @equality_in_member.
+  dands; auto.
 
-  { introv; split; intro q.
+  { introv.
+    pose proof (hseq0 x y z) as q; split; intro h;
+      [destruct q as [q q']; clear q'
+      |destruct q as [q' q]; clear q']; repnd;
+        autodimp q hyp; repnd; dands; eauto 2 with slow nequality. }
 
-    - pose proof (hseq0 x) as h; destruct h as [h h']; clear h'.
-      autodimp h hyp; repnd; dands; eauto 3 with slow nequality.
-
-    - pose proof (hseq0 x) as h; destruct h as [h' h]; clear h'.
-      autodimp h hyp; repnd; dands; eauto 3 with slow nequality. }
-
-  { apply equality_in_member.
-    eexists; eexists; dands; spcast;
-      try (apply computes_to_valc_refl; eauto 2 with slow);
-      eauto 3 with slow nequality. }
+  { exists (lsubstc a w1 s1 c0)
+           (lsubstc a w1 s2 c1)
+           (lsubstc a w1 s1 c0)
+           (lsubstc a w1 s2 c1); dands; spcast; eauto 2 with slow. }
 Qed.

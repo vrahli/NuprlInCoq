@@ -289,8 +289,6 @@ Qed.
 
 (* begin hide *)
 
-
-
 (* end hide *)
 
 (* [4] ============ HYPOTHESIS EQUALITY ============ *)
@@ -356,8 +354,7 @@ Proof.
   match goal with
   | [ |- context[covered ?a ?b] ] => assert (covered a b) as cov
   end.
-  { apply covered_refl.
-    apply covered_var; simpl.
+  { apply covered_prefl_same; apply covered_var; simpl.
     rw @nh_vars_hyps_app.
     rw @nh_vars_hyps_snoc; simpl.
     rw in_app_iff.
@@ -441,13 +438,15 @@ Proof.
 
   sp; eauto 2 with slow.
 
-  { apply tequality_implies_eq_members_upto; auto. }
+  { split; intro h; repnd; dands; auto; eauto 3 with nequality.
+    eapply equality_trans;[|apply equality_sym; eauto].
+    eauto 3 with nequality. }
 
-  exists t0 t3; dands; spcast; try (apply computes_to_valc_refl; eauto 2 with slow);
-    eauto 3 with slow nequality.
+  exists t0 t3 t0 t3; dands; spcast; eauto 3 with slow nequality.
 Qed.
 
 (* begin hide *)
+
 
 
 
@@ -518,24 +517,31 @@ Proof.
 
   vr_seq_true in hyp1.
 
-  pose proof (hyp1 s1 s2) as h1hyp.
-  repeat (autodimp h1hyp hyp).
+  assert (hyps_functionality lib s2 H) as hf2.
+  { eapply similarity_hyps_functionality_trans; eauto. }
+
+  assert (similarity lib s2 s2 H) as sim2.
+  { applydup @similarity_sym in sim; apply similarity_refl in sim0; tcsp. }
+
+  pose proof (hyp1 s1 s2) as h1hyp; repeat (autodimp h1hyp hyp).
+  pose proof (hyp1 s2 s2) as h2hyp; repeat (autodimp h2hyp hyp).
   exrepnd.
+
   lsubst_tac.
 
-  rw @tequality_mkc_member in h1hyp0; repnd.
   apply equality_in_member in h1hyp1; exrepnd.
-
+  apply equality_in_member in h2hyp1; exrepnd.
   ccomputes_to_eqval.
-  clear h1hyp3 h1hyp4.
+  clear h1hyp2 h1hyp3.
 
-  dands; auto.
+  dands.
 
-  pose proof (h1hyp0 x) as q; destruct q as [q q']; clear q'.
-  autodimp q hyp; eauto 2 with nequality.
-  apply equality_sym.
-  apply h1hyp0.
-  eapply equality_trans;[|eauto]; eauto 2 with nequality.
+  { eapply tequality_implies_if_member; try (exact h1hyp0); eauto 2 with nequality. }
+
+  rw @tequality_mkc_member in h1hyp0; repnd.
+
+  pose proof (h1hyp0 (lsubstc t wfc0 s2 pt2) y y) as q; destruct q as [q' q]; clear q'.
+  autodimp q hyp; repnd; dands; eauto 3 with nequality.
 Qed.
 
 Lemma rule_introduction_true {o} :
