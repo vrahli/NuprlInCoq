@@ -104,6 +104,7 @@ Qed.
 Definition computes_to_refl {o} lib (x y : @CTerm o) :=
   { t , u : CTerm , x ===>(lib) (mkc_refl t) # y ===>(lib) (mkc_refl u) }.
 
+(*
 Notation "a =2=> b" := (forall x y, a x y -> b x y) (at level 0).
 
 Definition refl_inhabit_equality_types {o} lib (ts : cts(o)) :=
@@ -132,6 +133,7 @@ Proof.
     apply eqiff in exy; unfold per_eq_eq in exy; exrepnd.
     exists x1 x2; dands; auto.
 Qed.
+*)
 
 (*
 Lemma close_ext_equality_types {o} :
@@ -163,8 +165,8 @@ Proof.
 Qed.
 *)
 
-Ltac dextts H ts1 ts2 imp := destruct H as [ts1 ts2 imp].
-Ltac iextts H ts1 ts2 imp := induction H as [ts1 ts2 imp] using extts_ind'.
+Ltac dextts H ts1 ts2 := destruct H as [ts1 ts2].
+(*Ltac iextts H ts1 ts2 imp := induction H as [ts1 ts2 imp] using extts_ind'.*)
 
 Lemma either_computes_to_equality_sym {o} :
   forall lib (T1 T2 : @CTerm o),
@@ -216,280 +218,79 @@ Lemma extts_close_refl {o} :
   forall lib (ts : cts(o)) (T : @CTerm o) eq,
     defines_only_universes lib ts
     -> close lib ts T eq
-    -> extts lib (close lib ts) T T eq.
+    -> extts (close lib ts) T T eq.
 Proof.
   introv dou c.
-
-  close_cases (destruct c using @close_ind') Case; introv;
-    try (complete (allunfold_per; ccomputes_to_eqval)).
-
-  - Case "CL_init".
-    use_dou.
-    constructor; auto.
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    ccomputes_to_eqval.
-
-  - Case "CL_int".
-    constructor; try (apply CL_int; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_atom".
-    constructor; try (apply CL_atom; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_uatom".
-    constructor; try (apply CL_uatom; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_base".
-    constructor; try (apply CL_base; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_approx".
-    constructor; try (apply CL_approx; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_cequiv".
-    constructor; try (apply CL_cequiv; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_aeq".
-    constructor; try (apply CL_aeq; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_eq".
-    constructor; try (apply CL_eq; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-    assert (exists eqa, extts lib (close lib ts) A A eqa);
-      [|exrepnd; exists a b A a b A eqa; dands; spcast; auto].
-    autodimp IHc hyp.
-    exists eqa; auto.
-
-  - Case "CL_teq".
-    constructor; try (apply CL_teq; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_isect".
-    constructor; try (apply CL_isect; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_func".
-    constructor; try (apply CL_func; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_disect".
-    constructor; try (apply CL_disect; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_pertype".
-    constructor; try (apply CL_pertype; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_w".
-    constructor; try (apply CL_w; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_m".
-    constructor; try (apply CL_m; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_texc".
-    constructor; try (apply CL_texc; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_union".
-    constructor; try (apply CL_union; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_image".
-    constructor; try (apply CL_image; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_partial".
-    constructor; try (apply CL_partial; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_admiss".
-    constructor; try (apply CL_admiss; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_mono".
-    constructor; try (apply CL_mono; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_ffatom".
-    constructor; try (apply CL_ffatom; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_ffatoms".
-    constructor; try (apply CL_ffatoms; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_set".
-    constructor; try (apply CL_set; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_tunion".
-    constructor; try (apply CL_tunion; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
-
-  - Case "CL_product".
-    constructor; try (apply CL_product; auto).
-    introv e; apply either_computes_to_equality_same_implies in e; exrepnd.
-    allunfold_per; ccomputes_to_eqval.
+  split; auto.
 Qed.
 
 Lemma extts_extensional {o} :
-  forall lib ts (A B C : @CTerm o) eq eq',
+  forall ts (A B C : @CTerm o) eq eq',
     uniquely_valued ts
     -> type_extensionality ts
-    -> extts lib ts A B eq
-    -> extts lib ts B C eq'
-    -> extts lib ts B C eq.
+    -> extts ts A B eq
+    -> extts ts B C eq'
+    -> extts ts B C eq.
 Proof.
   introv u ext e1 e2.
-  dextts e1 ts1 ts2 imp1.
-  dextts e2 ts3 ts4 imp2.
+  dextts e1 ts1 ts2.
+  dextts e2 ts3 ts4.
   constructor; auto.
   eapply ext;[eauto|].
   eapply u; eauto.
 Qed.
 
 Lemma extts_trans_and {o} :
-  forall lib ts (A B C : @CTerm o) eq eq',
+  forall ts (A B C : @CTerm o) eq eq',
     uniquely_valued ts
     -> type_extensionality ts
-    -> extts lib ts A B eq
-    -> extts lib ts B C eq'
-    -> (extts lib ts A C eq # extts lib ts A C eq').
+    -> extts ts A B eq
+    -> extts ts B C eq'
+    -> (extts ts A C eq # extts ts A C eq').
 Proof.
-  introv u ext e1.
-
-  revert C eq'.
-
-  apply (extts_ind'
-           lib ts
-           (fun A B eq =>
-              forall C eq',
-                extts lib ts B C eq'
-                -> (extts lib ts A C eq # extts lib ts A C eq')));
-    auto;[]; clear e1.
-  introv ts1 ts2 imp1 e2.
-  dextts e2 ts3 ts4 imp2.
-  constructor; auto; constructor; auto.
+  introv u ext e1 e2.
+  dextts e1 ts1 ts2.
+  dextts e2 ts3 ts4.
+  dands; split; auto.
 
   - eapply ext;[eauto|].
     eapply u; eauto.
 
-  - introv e.
-    unfold equal_equality_types in *.
-
-    destruct e as [e|e].
-
-    + autodimp imp1 hyp; eauto 3 with slow;[]; exrepnd.
-      autodimp imp2 hyp; eauto 3 with slow;[]; exrepnd.
-      ccomputes_to_eqval.
-      eexists; eexists; eexists; eexists; eexists; eexists; exists eqa;
-        dands; spcast; eauto.
-      pose proof (imp0 B1 eqa0) as q; autodimp q hyp; tcsp.
-
-    + autodimp imp2 hyp; eauto 3 with slow;[]; exrepnd.
-      autodimp imp1 hyp; eauto 3 with slow;[]; exrepnd.
-      ccomputes_to_eqval.
-      eexists; eexists; eexists; eexists; eexists; eexists; exists eqa;
-        dands; spcast; eauto.
-      eapply imp4; eauto.
-
   - eapply ext;[eauto|].
     eapply u; eauto.
-
-  - introv e.
-    unfold equal_equality_types in *.
-
-    destruct e as [e|e].
-
-    + autodimp imp1 hyp; eauto 3 with slow;[]; exrepnd.
-      autodimp imp2 hyp; eauto 3 with slow;[]; exrepnd.
-      ccomputes_to_eqval.
-      eexists; eexists; eexists; eexists; eexists; eexists; exists eqa;
-        dands; spcast; eauto.
-      pose proof (imp0 B1 eqa0) as q; autodimp q hyp; tcsp.
-
-    + autodimp imp2 hyp; eauto 3 with slow;[]; exrepnd.
-      autodimp imp1 hyp; eauto 3 with slow;[]; exrepnd.
-      ccomputes_to_eqval.
-      eexists; eexists; eexists; eexists; eexists; eexists; exists eqa;
-        dands; spcast; eauto.
-      eapply imp4; eauto.
 Qed.
 
 Lemma extts_sym {o} :
-  forall lib ts (T T' : @CTerm o) eq,
-    extts lib ts T T' eq
-    -> extts lib ts T' T eq.
+  forall ts (T T' : @CTerm o) eq,
+    extts ts T T' eq
+    -> extts ts T' T eq.
 Proof.
   introv n.
-
-  (* Why is that not working?
-    induction n using (extts_ind' lib ts). *)
-  apply (extts_ind' lib ts (fun T T' eq => extts lib ts T' T eq)); auto;[]; clear n.
-  introv ts1 ts2 imp.
-  constructor; auto.
-  introv e.
-
-  autodimp imp hyp; eauto 2 with slow.
-  exrepnd.
-  eexists; eexists; eexists; eexists; eexists; eexists; eexists; eauto.
+  destruct n; split; auto.
 Qed.
 
 Lemma extts_trans_left {o} :
-  forall lib ts (A B C : @CTerm o) eq eq',
+  forall ts (A B C : @CTerm o) eq eq',
     uniquely_valued ts
     -> type_extensionality ts
-    -> extts lib ts A B eq
-    -> extts lib ts B C eq'
-    -> extts lib ts A C eq.
+    -> extts ts A B eq
+    -> extts ts B C eq'
+    -> extts ts A C eq.
 Proof.
   introv u e e1 e2.
-  pose proof (extts_trans_and lib ts A B C eq eq') as h; repeat (autodimp h hyp); tcsp.
+  pose proof (extts_trans_and ts A B C eq eq') as h; repeat (autodimp h hyp); tcsp.
 Qed.
 
 Lemma extts_trans_right {o} :
-  forall lib ts (A B C : @CTerm o) eq eq',
+  forall ts (A B C : @CTerm o) eq eq',
     uniquely_valued ts
     -> type_extensionality ts
-    -> extts lib ts A B eq
-    -> extts lib ts B C eq'
-    -> extts lib ts A C eq'.
+    -> extts ts A B eq
+    -> extts ts B C eq'
+    -> extts ts A C eq'.
 Proof.
   introv u e e1 e2.
-  pose proof (extts_trans_and lib ts A B C eq eq') as h; repeat (autodimp h hyp); tcsp.
+  pose proof (extts_trans_and ts A B C eq eq') as h; repeat (autodimp h hyp); tcsp.
 Qed.
 
 Lemma either_computes_to_equality_if_cequivc_left {o} :
@@ -510,49 +311,33 @@ Hint Resolve either_computes_to_equality_if_cequivc_left : slow.
 Lemma extts_respect_cequivc_left {o} :
   forall lib (ts : cts(o)) (T1 T2 T : @CTerm o) eq,
     type_value_respecting lib ts
-    -> extts lib ts T1 T2 eq
+    -> extts ts T1 T2 eq
     -> cequivc lib T1 T
-    -> extts lib ts T1 T eq.
+    -> extts ts T1 T eq.
 Proof.
-  introv resp n.
-  revert T.
-
-  eapply (extts_ind'
-            lib ts
-            (fun T1 T2 eq =>
-               forall T, cequivc lib T1 T -> extts lib ts T1 T eq));
-    eauto; []; clear n.
-  introv ceq ts1 ts2 imp.
-  constructor; auto.
-
-  { eapply resp;[|eauto]; auto. }
-
-  introv e.
-  autodimp ts2 hyp; eauto 2 with slow.
-  exrepnd; spcast.
-  eapply cequivc_mkc_equality in imp;[|eauto].
-  exrepnd.
-  eexists; eexists; eexists; eexists; eexists; eexists; eexists;
-   dands; spcast; eauto.
+  introv resp n ceq.
+  destruct n as [ts1 ts2].
+  split; auto.
+  eapply resp;[|eauto]; auto.
 Qed.
 
 Lemma extts_ext {o} :
-  forall lib ts (T T' : @CTerm o) eq eq',
+  forall ts (T T' : @CTerm o) eq eq',
     type_extensionality ts
-    -> extts lib ts T T' eq
+    -> extts ts T T' eq
     -> (eq <=2=> eq')
-    -> extts lib ts T T' eq'.
+    -> extts ts T T' eq'.
 Proof.
   introv ext n eqiff.
-  dextts n ts1 ts2 imp.
+  dextts n ts1 ts2.
   constructor; auto; try (complete (eapply ext; eauto)).
 Qed.
 
 Lemma extts_uniquely_valued {o} :
-  forall lib ts (T T' : @CTerm o) eq eq',
+  forall ts (T T' : @CTerm o) eq eq',
     uniquely_valued ts
-    -> extts lib ts T T' eq
-    -> extts lib ts T T' eq'
+    -> extts ts T T' eq
+    -> extts ts T T' eq'
     -> (eq <=2=> eq').
 Proof.
   introv uv n m.
@@ -564,7 +349,7 @@ Qed.
 Lemma type_system_implies_etype_system_extts {o} :
   forall lib (ts : cts(o)),
     type_system lib ts
-    -> etype_system lib (extts lib ts).
+    -> etype_system lib (extts ts).
 Proof.
   introv tys.
   dest_ts tys.
@@ -644,7 +429,7 @@ Hint Resolve defines_only_universes_univ : slow.
 Lemma extts_nuprl_refl {o} :
   forall lib (T : @CTerm o) eq,
     nuprl lib T eq
-    -> extts lib (nuprl lib) T T eq.
+    -> extts (nuprl lib) T T eq.
 Proof.
   introv n.
   apply extts_close_refl; eauto 2 with slow.

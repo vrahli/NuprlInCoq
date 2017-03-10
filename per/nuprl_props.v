@@ -225,7 +225,7 @@ Hint Resolve nuprl_implies_Nuprl : slow.
 
 Lemma extts_nuprli_refl {o} :
   forall lib i (T : @CTerm o) (eq : per(o)),
-    nuprli lib i T eq -> extts lib (nuprli lib i) T T eq.
+    nuprli lib i T eq -> extts (nuprli lib i) T T eq.
 Proof.
   introv n.
   apply extts_close_refl; eauto 2 with slow.
@@ -383,17 +383,8 @@ Proof.
   introv n.
   unfold Nuprli in n.
   unfold Nuprl.
-
-  apply (extts_ind'
-           lib (nuprli lib i)
-           (fun A B eq => extts lib (nuprl lib) A B eq));
-    auto;[]; clear n.
-  introv ts1 ts2 imp.
-  constructor; auto; eauto 2 with slow.
-
-  intro e.
-  autodimp imp hyp; exrepnd.
-  exists a1 a2 A0 b1 b2 B0 eqa; dands; auto.
+  dextts n ts1 ts2.
+  split; eauto 2 with slow.
 Qed.
 Hint Resolve Nuprli_implies_Nuprl : slow.
 
@@ -563,8 +554,9 @@ Proof.
   unfold type; introv ceq h; exrepnd.
   apply tequality_sym.
   exists eq; unfold Nuprl.
-  eapply extts_respect_cequivc_left;[|apply nuprl_implies_Nuprl|auto]; auto.
-  eauto 2 with slow.
+  eapply extts_respect_cequivc_left;
+    [|apply nuprl_implies_Nuprl|auto];
+    eauto 2 with slow.
 Qed.
 Hint Resolve type_respects_cequivc_left : nequality.
 
@@ -1001,15 +993,13 @@ Proof.
 Qed.
 Hint Resolve not_either_computes_to_equality_implies_equal_equality_types : slow.
 
-(* NOTE: This is not true anymore when t1 or t2 is an equality type *)
 Lemma nuprl_implies_Nuprl_neq {o} :
   forall lib (t1 t2 : @CTerm o) eq,
-    !either_computes_to_equality lib t1 t2
-    -> nuprl lib t1 eq
+    nuprl lib t1 eq
     -> nuprl lib t2 eq
     -> Nuprl lib t1 t2 eq.
 Proof.
-  introv ne n1 n2; split; eauto 2 with slow.
+  introv n1 n2; split; eauto 2 with slow.
 Qed.
 Hint Resolve nuprl_implies_Nuprl : slow.
 
@@ -1565,6 +1555,7 @@ Proof.
   eapply Nuprl_trans; eauto.
 Qed.
 
+(*
 Lemma nuprl_type_family_members_eq_implies_utequality {o} :
   forall lib (A : @CTerm o) v B eqa eqb a1 a2,
     nuprl lib A eqa
@@ -1589,6 +1580,7 @@ Proof.
   eapply nuprl_ext;eauto.
   apply eq_term_equals_sym; apply tran.
 Qed.
+*)
 
 Ltac ntsi i :=
   match goal with
@@ -1614,6 +1606,7 @@ Ltac entsi i :=
         destruct nts as [ nts_tet nts_tev ]
   end.
 
+(*
 Lemma nuprli_type_family_members_eq_implies_utequalityi {o} :
   forall lib i (A : @CTerm o) v B eqa eqb a1 a2,
     nuprli lib i A eqa
@@ -1638,6 +1631,7 @@ Proof.
   eapply nuprli_ext;eauto.
   apply eq_term_equals_sym; apply tran.
 Qed.
+*)
 
 Lemma mkc_uni_in_uni {o} :
   forall lib j, @univ o lib (mkc_uni j) (univi_eq lib (univi lib j)).
@@ -1994,16 +1988,14 @@ Proof.
     apply q1; auto.
 Qed.
 
-(* This is not true anymore in the case where A or B is an equality type *)
 Lemma ext_eq_implies_tequality {o} :
   forall lib (A B : @CTerm o),
-    !either_computes_to_equality lib A B
-    -> type lib A
+    type lib A
     -> type lib B
     -> ext_eq lib A B
     -> tequality lib A B.
 Proof.
-  introv ne ta tb e.
+  introv ta tb e.
 
   unfold type in *; exrepnd.
   rename eq0 into eqa.
@@ -2016,16 +2008,14 @@ Proof.
   apply eq_term_equals_sym; auto.
 Qed.
 
-(* This is not true anymore in the case where A or B is an equality type *)
 Lemma ext_eq_implies_tequalityi {o} :
   forall lib i (A B : @CTerm o),
-    !either_computes_to_equality lib A B
-    -> typei lib i A
+    typei lib i A
     -> typei lib i B
     -> ext_eq lib A B
     -> tequalityi lib i A B.
 Proof.
-  introv ne ta tb e.
+  introv ta tb e.
 
   unfold typei, tequalityi, equality in *; exrepnd.
   eapply nuprl_uniquely_valued in ta1;[|exact tb1].
@@ -2044,8 +2034,8 @@ Proof.
   exists eqa.
   fold (nuprli lib j0) in *.
 
-  dextts ta1 tsa1 tsa2 exta.
-  dextts tb1 tsb1 tsb2 extb.
+  dextts ta1 tsa1 tsa2.
+  dextts tb1 tsb1 tsb2.
 
   constructor; eauto 2 with slow.
 
@@ -2109,13 +2099,11 @@ Proof.
   eapply nuprl_ext_eq_iff_eq_term_equals; eauto.
 Qed.
 
-(* NOTE: This is not true anymore in the case where A or B is an equality type *)
 Lemma tequality_iff_ext_eq {o} :
   forall lib (A B : @CTerm o),
-    !either_computes_to_equality lib A B
-    -> (tequality lib A B <=> (type lib A # type lib B # ext_eq lib A B)).
+    tequality lib A B <=> (type lib A # type lib B # ext_eq lib A B).
 Proof.
-  introv ne; split; intro h; repnd;[|apply ext_eq_implies_tequality; auto].
+  introv; split; intro h; repnd;[|apply ext_eq_implies_tequality; auto].
   unfold tequality in h; exrepnd.
   destruct h0 as [h1 h2]; dands; eauto 2 with slow.
   eapply nuprl_ext_eq_iff_eq_term_equals; eauto.
@@ -2165,168 +2153,7 @@ Proof.
   - apply teq in h; eauto 3 with slow nequality.
 Qed.
 
-Lemma tequality_iff_ext_eq1 {o} :
-  forall lib (A B : @CTerm o),
-    !either_computes_to_equality lib A B
-    -> (tequality lib A B <=> (type lib A # type lib B # ext_eq lib A B)).
-Proof.
-  introv ne; split; intro h; repnd;[|apply ext_eq_implies_tequality; auto].
-  unfold tequality in h; exrepnd.
-  dextts h0 h1 h2 ext; dands; eauto 2 with slow.
-  eapply nuprl_ext_eq_iff_eq_term_equals; eauto.
-Qed.
-
-Lemma eq_per_eq_eq_iff_eq_equality {o} :
-  forall lib (a1 b1 a2 b2 A1 A2 : @CTerm o) eqa1 eqa2,
-    nuprl lib A1 eqa1
-    -> nuprl lib A2 eqa2
-    ->
-    (
-      ((per_eq_eq lib a1 b1 eqa1) <=2=> (per_eq_eq lib a2 b2 eqa2))
-        <=>
-        (forall x : CTerm,
-            (equality lib x a1 A1 # equality lib x b1 A1)
-              <=>
-              (equality lib x a2 A2 # equality lib x b2 A2))
-    ).
-Proof.
-  introv n1 n2; split; intro w.
-
-  - introv.
-    split; intro h; repnd.
-
-    + pose proof (w (mkc_refl x) (mkc_refl x)) as q.
-      destruct q as [q q']; clear q'.
-      autodimp q hyp.
-
-      { exists x x; dands; spcast; eauto 2 with slow.
-        - eapply equality_implies_eq; eauto.
-          eapply equality_trans;[|eauto]; eauto 2 with nequality.
-        - eapply equality_implies_eq; eauto 2 with nequality.
-        - eapply equality_implies_eq; eauto 2 with nequality. }
-
-      unfold per_eq_eq in q; exrepnd.
-      computes_to_value_isvalue.
-
-      dands; eauto 3 with slow nequality.
-
-    + pose proof (w (mkc_refl x) (mkc_refl x)) as q.
-      destruct q as [q' q]; clear q'.
-      autodimp q hyp.
-
-      { exists x x; dands; spcast; eauto 2 with slow.
-        - eapply equality_implies_eq; eauto.
-          eapply equality_trans;[|eauto]; eauto 2 with nequality.
-        - eapply equality_implies_eq; eauto 2 with nequality.
-        - eapply equality_implies_eq; eauto 2 with nequality. }
-
-      unfold per_eq_eq in q; exrepnd.
-      computes_to_value_isvalue.
-
-      dands; eauto 3 with slow nequality.
-
-  - introv.
-    unfold per_eq_eq; split; intro q; exrepnd; exists x1 x2; dands; auto.
-
-    + pose proof (w a1) as q; destruct q as [q q']; clear q'.
-      autodimp q hyp; dands; eauto 2 with slow nequality.
-      { apply (equality_trans _ _ b1); eauto 3 with slow nequality. }
-      repnd.
-      eapply equality_implies_eq; eauto.
-      eauto 3 with slow nequality.
-
-    + pose proof (w x1) as q; destruct q as [q q']; clear q'.
-      autodimp q hyp; dands; eauto 3 with slow nequality.
-      { apply (equality_trans _ _ a1); eauto 3 with slow nequality. }
-      repnd.
-      eapply equality_implies_eq; eauto.
-      eauto 3 with slow nequality.
-
-    + pose proof (w x2) as q; destruct q as [q q']; clear q'.
-      autodimp q hyp; dands; eauto 3 with slow nequality.
-      { apply (equality_trans _ _ b1); eauto 3 with slow nequality. }
-      repnd.
-      eapply equality_implies_eq; eauto.
-      eauto 3 with slow nequality.
-
-    + pose proof (w a2) as q; destruct q as [q' q]; clear q'.
-      autodimp q hyp; dands; eauto 2 with slow nequality.
-      { apply (equality_trans _ _ b2); eauto 3 with slow nequality. }
-      repnd.
-      eapply equality_implies_eq; try (exact n1).
-      eauto 3 with slow nequality.
-
-    + pose proof (w x1) as q; destruct q as [q' q]; clear q'.
-      autodimp q hyp; dands; eauto 3 with slow nequality.
-      { apply (equality_trans _ _ a2); eauto 3 with slow nequality. }
-      repnd.
-      eapply equality_implies_eq; try (exact n1).
-      eauto 3 with slow nequality.
-
-    + pose proof (w x2) as q; destruct q as [q' q]; clear q'.
-      autodimp q hyp; dands; eauto 3 with slow nequality.
-      { apply (equality_trans _ _ b2); eauto 3 with slow nequality. }
-      repnd.
-      eapply equality_implies_eq; try (exact n1).
-      eauto 3 with slow nequality.
-Qed.
-
-Lemma tequality_iff_ext_eq2 {o} :
-  forall lib (a1 a2 b1 b2 A B : @CTerm o),
-    tequality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
-    <=> (tequality lib A B
-         # (forall x,
-               (equality lib x a1 A # equality lib x a2 A)
-               <=>
-               (equality lib x b1 B # equality lib x b2 B))).
-Proof.
-  introv; unfold tequality; split; intro h; exrepnd.
-
-  - dextts h0 ts1 ts2 ext.
-    inversion ts1; subst; try not_univ; clear ts1.
-    inversion ts2; subst; try not_univ; clear ts2.
-
-    match goal with
-    | [ H1 : per_eq _ _ _ _, H2 : per_eq _ _ _ _ |- _ ] => rename H1 into h1; rename H2 into h2
-    end.
-
-    fold (nuprl lib) in *.
-
-    unfold equal_equality_types in ext.
-    autodimp ext hyp; eauto 2 with slow.
-    exrepnd; computes_to_value_isvalue.
-    dands.
-
-    + exists eqa; auto.
-
-    + unfold per_eq in *; exrepnd; spcast; computes_to_value_isvalue.
-
-      eapply eq_term_equals_trans in h1;[|apply eq_term_equals_sym;exact h2].
-      clear h2.
-
-      eapply eq_per_eq_eq_iff_eq_equality; eauto.
-      apply eq_term_equals_sym; auto.
-
-  - exists (per_eq_eq lib a1 a2 eq).
-
-    split.
-
-    + apply CL_eq.
-      fold (nuprl lib).
-      exists A a1 a2 eq; dands; spcast; eauto 2 with slow.
-
-    + apply CL_eq.
-      fold (nuprl lib).
-      exists B b1 b2 eq; dands; spcast; eauto 2 with slow.
-
-      dextts h1 ts1 ts2 ext.
-      eapply eq_per_eq_eq_iff_eq_equality;[exact ts1|exact ts2|].
-      tcsp.
-
-    + introv e; clear e.
-      exists a1 a2 A b1 b2 B eq; dands; spcast; eauto 3 with slow.
-Qed.
-
+(*
 Lemma uNuprl_type_family_equality_to_eq2 {o} :
   forall lib (A : @CTerm o) v1 v2 B1 B2 eqa f (n : nuprl lib A eqa),
     (forall (a1 a2 : CTerm) (e : equality lib a1 a2 A),
@@ -2636,6 +2463,7 @@ Proof.
   constructor; auto.
 Qed.
 Hint Resolve tequality_implies_utequality : slow.
+*)
 
 Lemma equality_in_uni_as_tequalityi {o} :
   forall lib i (A B : @CTerm o),
@@ -2680,6 +2508,7 @@ Proof.
 Qed.
 Hint Resolve tequalityi_implies_tequality : slow.
 
+(*
 Lemma uNuprli_implies_uNuprl {o} :
   forall lib (A B : @CTerm o) i eq,
     uNuprli lib i A B eq
@@ -3121,3 +2950,4 @@ Proof.
   eauto 3 with slow.
 Qed.
 Hint Resolve utequality_respects_alphaeqc_right : nequality.
+*)

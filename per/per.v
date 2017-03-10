@@ -608,12 +608,13 @@ Definition per_aeq {p} lib (ts : cts(p)) T (eq : per(p)) : [U] :=
 
 (* The PER of this equality type is all the elements equal to a1 *)
 Definition per_eq_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) : [U] :=
-  { x1 , x2 : CTerm
-  , (t ===>(lib) (mkc_refl x1))
-  # (t' ===>(lib) (mkc_refl x2))
+  { x1 , x2 , y1 , y2 : CTerm
+  , (t ===>(lib) (mkc_prefl x1 y1))
+  # (t' ===>(lib) (mkc_prefl x2 y2))
   # eqa a1 a2
   # eqa a1 x1
-  # eqa a2 x2 }.
+  # eqa a2 x2
+  # eqa y1 y2}.
 
 Definition per_eq {p} lib (ts : cts(p)) T (eq : per(p)) : [U] :=
   {A, a, b : CTerm

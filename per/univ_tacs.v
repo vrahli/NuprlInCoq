@@ -144,6 +144,7 @@ Ltac apply_iscvalue :=
             | apply iscvalue_mkc_inl
             | apply iscvalue_mkc_inr
             | apply iscvalue_mkc_refl
+            | apply iscvalue_mkc_prefl
             ]
   end.
 

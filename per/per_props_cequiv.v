@@ -102,8 +102,7 @@ Proof.
     computes_to_value_isvalue; GC.
     rw h0 in e0; clear h0.
     unfold univi_eq in e0; exrepnd.
-    dextts e2 ts1 ts2 ext.
-    clear ext.
+    dextts e2 ts1 ts2.
     inversion ts1; try not_univ; clear ts1.
     inversion ts2; try not_univ; clear ts2.
     match goal with
@@ -141,7 +140,7 @@ Proof.
     computes_to_value_isvalue; GC.
     rw h0 in e0; clear h0.
     unfold univi_eq in e0; exrepnd.
-    dextts e2 ts1 ts2 ext; clear ext.
+    dextts e2 ts1 ts2.
     inversion ts1; try not_univ; clear ts1.
     inversion ts2; try not_univ; clear ts2.
     match goal with

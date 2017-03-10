@@ -183,15 +183,7 @@ Proof.
   fold (nuprli lib i) in *.
   fold (nuprli lib j) in *.
 
-  apply (extts_ind'
-           lib (nuprli lib i)
-           (fun A B eq => extts lib (nuprli lib j) A B eq));
-    auto;[]; clear equ0.
-  introv ts1 ts2 imp.
+  dextts equ0 ts1 ts2.
   constructor; auto; eauto 2 with slow;
     try (apply (typable_in_higher_univ_lt _ i j); auto; omega).
-
-  intro e.
-  autodimp imp hyp; exrepnd.
-  exists a1 a2 A0 b1 b2 B0 eqa1; dands; auto.
 Qed.

@@ -74,6 +74,7 @@ Proof.
                                  e))); simpl; sp.
 Qed.
 
+(*
 Lemma choice_uteq {p} :
   forall lib (A : @CTerm p) v1 B1 v2 B2,
     (forall a1 a2 : CTerm,
@@ -109,6 +110,7 @@ Proof.
                                  a2
                                  e))); simpl; sp.
 Qed.
+ *)
 
 Lemma choice_spteq {p} :
   forall lib F1 F2,
@@ -229,6 +231,7 @@ Proof.
                                  e))); simpl; sp.
 Qed.
 
+(*
 Lemma choice_uteqi {p} :
   forall lib i (A : @CTerm p) v1 B1 v2 B2,
     (forall a1 a2 : CTerm,
@@ -271,6 +274,7 @@ Proof.
                                  a2
                                  e))); simpl; sp.
 Qed.
+ *)
 
 Lemma choice_spteqi {p} :
   forall lib i F1 F2,
@@ -394,6 +398,7 @@ Proof.
                                  (eq_equality1 lib a1 a2 A eqa e na)))); simpl; sp.
 Qed.
 
+(*
 Lemma choice_uteq1 {p} :
   forall lib (A : @CTerm p) eqa v1 B1 v2 B2,
     Nuprl lib A A eqa
@@ -432,7 +437,7 @@ Proof.
                                  a2
                                  (eq_equality1 lib a1 a2 A eqa e na)))); simpl; sp.
 Qed.
-
+*)
 
 Lemma choice_teq2 {p} :
   forall lib (eqp : per(p)) eqa P ap A bp1 ba1 B1 bp2 ba2 B2,

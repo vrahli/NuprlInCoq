@@ -60,7 +60,7 @@ Proof.
     eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
     dts_props props uv tv te tes tet tev.
     eapply uv in h2.
-    unfold per_eq_eq; split; introv q; exrepnd; exists x1 x2; dands; auto;
+    unfold per_eq_eq; split; introv q; exrepnd; exists x1 x2 y1 y2; dands; auto;
       try (apply h2); auto.
 
   - SCase "type_extensionality".
@@ -80,7 +80,7 @@ Proof.
     dands; spcast; auto.
 (*    { eapply eqorceq_cequivc; eauto. }*)
     { eapply eq_term_equals_trans;[eauto|].
-      unfold per_eq_eq; split; intro q; exrepnd; exists x1 x2; dands; auto.
+      unfold per_eq_eq; split; intro q; exrepnd; exists x1 x2 y1 y2; dands; auto.
       - apply (eq_ts_cequivc lib a b a' b' eqa); auto.
       - apply (eq_ts_cequivc lib a x1 a' x1 eqa); auto.
       - apply (eq_ts_cequivc lib b x2 b' x2 eqa); auto.
@@ -93,7 +93,7 @@ Proof.
     apply eqiff in e; apply eqiff.
     unfold per_eq_eq in e; unfold per_eq_eq; exrepnd.
     dts_props props uv tv te tes tet tev.
-    exists x2 x1; dands; auto.
+    exists x2 x1 y2 y1; dands; auto.
     { eapply tet; eauto. }
     { eapply tet; eauto. }
 
@@ -103,15 +103,17 @@ Proof.
     unfold per_eq_eq in e1, e2; unfold per_eq_eq; exrepnd.
     dts_props props uv tv te tes tet tev.
     ccomputes_to_eqval.
-    exists x0 x2; dands; spcast; auto.
+    exists x0 x2 y0 y2; dands; spcast; auto.
+    eapply tet;[eauto|]; eauto.
 
   - SCase "term_value_respecting".
     introv e c; spcast.
     apply eqiff in e; apply eqiff.
     unfold per_eq_eq in e; unfold per_eq_eq; exrepnd.
     ccomputes_to_eqval.
-    eapply cequivc_mkc_refl in c;[|eauto]; exrepnd.
+    eapply cequivc_mkc_prefl in c;[|eauto]; exrepnd.
     dts_props props uv tv te tes tet tev.
-    exists x1 b0; dands; spcast; auto.
-    apply (eq_ts_cequivc lib b x1 b b0 eqa); auto.
+    exists x1 c0 y1 d; dands; spcast; auto.
+    { apply (eq_ts_cequivc lib b x1 b c0 eqa); auto. }
+    { eapply eq_ts_cequivc; try (exact c2); try (apply cequivc_refl); auto. }
 Qed.

@@ -112,6 +112,7 @@ Definition equal_equality_types {o} lib R (T T' : @CTerm o) :=
      /\ T' ===>(lib) (mkc_equality b1 b2 B)
      /\ R A B eqa }}.
 
+(*
 Inductive extts {o} lib (ts : cts(o)) (T T' : CTerm) (eq :per(o)) : Prop :=
 | EXTTS :
     ts T eq
@@ -207,10 +208,14 @@ Definition extts_ind' {o}
                                eqa
                                (conj comp1 (conj comp2 (conj r (rec A B eqa r)))))))))))
     end.
+ *)
+
+Definition extts {o} (ts : cts(o)) (T T' : CTerm) (eq : per(o)) : Prop :=
+  ts T eq # ts T' eq.
 
 Definition univi_eq {o} lib ts (A A' : @CTerm o) :=
   { eqa : per(o)
-  , extts lib (close lib ts) A A' eqa }.
+  , extts (close lib ts) A A' eqa }.
 
 Fixpoint univi {p} lib (i : nat) (T : @CTerm p) (eq : per(p)) : [U] :=
   match i with
@@ -228,11 +233,11 @@ Definition univ {p} lib (T : @CTerm p) (eq : per) :=
 
 Definition nuprli {o} lib (i : nat) := @close o lib (univi lib i).
 
-Definition Nuprli {o} lib i := @extts o lib (nuprli lib i).
+Definition Nuprli {o} lib i := @extts o (nuprli lib i).
 
 Definition nuprl {o} lib := @close o lib (univ lib).
 
-Definition Nuprl {o} lib := @extts o lib (nuprl lib).
+Definition Nuprl {o} lib := @extts o (nuprl lib).
 
 (**
 
@@ -1123,6 +1128,7 @@ Definition ltype {p} lib l (T : @CTerm p) := eqtypes lib l T T.
 
 (* end hide *)
 
+(*
 (* These are unconstrained versions of extts/Nuprl/tequality*)
 Definition uextts {o} (ts : cts(o)) (T T' : CTerm) (eq : per(o)) : Prop :=
   ts T eq # ts T' eq.
@@ -1136,3 +1142,4 @@ Definition utequality {p} lib (T1 T2 : @CTerm p) :=
 
 Definition utequalityi {p} lib i (T1 T2 : @CTerm p) :=
   { eq : per , uNuprli lib i T1 T2 eq }.
+ *)
