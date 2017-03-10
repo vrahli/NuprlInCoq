@@ -119,16 +119,15 @@ Lemma tequality_set {p} :
     (
       type lib A1
       # type lib A2
-      # (forall a a', equality lib a a' A1 -> utequality lib (substc a v1 B1) (substc a' v1 B1))
-      # (forall a a', equality lib a a' A2 -> utequality lib (substc a v2 B2) (substc a' v2 B2))
+      # (forall a a', equality lib a a' A1 -> tequality lib (substc a v1 B1) (substc a' v1 B1))
+      # (forall a a', equality lib a a' A2 -> tequality lib (substc a v2 B2) (substc a' v2 B2))
       # ext_eq lib (mkc_set A1 v1 B1) (mkc_set A2 v2 B2)
     ).
 Proof.
   introv; split; intro h; repnd.
 
   - unfold tequality in h; exrepnd.
-    destruct h0 as [h1 h2 ext].
-    clear ext.
+    destruct h0 as [h1 h2].
 
     inversion h1; subst; try not_univ.
     inversion h2; subst; try not_univ.
@@ -144,11 +143,11 @@ Proof.
 
     + introv ea.
 
-      eapply nuprl_type_family_members_eq_implies_utequality; try (exact t0); eauto.
+      eapply nuprl_type_family_members_eq_implies_tequality; try (exact t0); eauto.
       eapply equality_eq; eauto.
 
     + introv ea.
-      eapply nuprl_type_family_members_eq_implies_utequality; try (exact t); eauto.
+      eapply nuprl_type_family_members_eq_implies_tequality; try (exact t); eauto.
       eapply equality_eq; eauto.
 
     + introv.
@@ -167,12 +166,12 @@ Proof.
 
   - apply ext_eq_implies_tequality; eauto 2 with slow.
 
-    + generalize (choice_uteq lib A1 v1 B1 v1 B1 h2); intro n; exrepnd.
+    + generalize (choice_teq lib A1 v1 B1 v1 B1 h2); intro n; exrepnd.
 
       unfold type in h0; exrepnd.
       rename eq into eqa1.
 
-      pose proof (uNuprl_type_family_equality_to_eq2 lib A1 v1 v1 B1 B1 eqa1 f h4 n0) as imp1.
+      pose proof (Nuprl_type_family_equality_to_eq2 lib A1 v1 v1 B1 B1 eqa1 f h4 n0) as imp1.
       clear n0.
 
       exists (per_set_eq eqa1 (fun a1 a2 e => f a1 a2 (eq_equality0 lib a1 a2 A1 eqa1 e h4))).
@@ -185,14 +184,14 @@ Proof.
       exists A1 v1 B1; sp; eauto 3 with slow;
         try (complete (spcast; apply computes_to_valc_refl; eauto 2 with slow)).
 
-      eapply uNuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
+      eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
 
-    + generalize (choice_uteq lib A2 v2 B2 v2 B2 h3); intro w; exrepnd.
+    + generalize (choice_teq lib A2 v2 B2 v2 B2 h3); intro w; exrepnd.
 
       unfold type in h1; exrepnd.
       rename eq into eqa2.
 
-      pose proof (uNuprl_type_family_equality_to_eq2 lib A2 v2 v2 B2 B2 eqa2 f h4 w0) as imp2.
+      pose proof (Nuprl_type_family_equality_to_eq2 lib A2 v2 v2 B2 B2 eqa2 f h4 w0) as imp2.
       clear w0.
 
       exists (per_set_eq eqa2 (fun a1 a2 e => f a1 a2 (eq_equality0 lib a1 a2 A2 eqa2 e h4))).
@@ -205,7 +204,7 @@ Proof.
       exists A2 v2 B2; sp; eauto 3 with slow;
         try (complete (spcast; apply computes_to_valc_refl; eauto 3 with slow)).
 
-      eapply uNuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
+      eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
 Qed.
 
 (*
@@ -304,7 +303,7 @@ Proof.
   computes_to_value_isvalue; GC.
   apply e in eqa0.
   unfold univi_eq in eqa0; exrepnd.
-  dextts eqa2 ts1 ts2 ext.
+  dextts eqa2 ts1 ts2.
   allfold (@nuprli p lib j0).
 
   exists eq; sp.
@@ -354,7 +353,7 @@ Lemma implies_tequalityi_set {p} :
     equality lib A1 A2 (mkc_uni i)
     -> (forall a a',
            equality lib a a' A1
-           -> utequalityi lib i (substc a v1 B1) (substc a' v2 B2))
+           -> tequalityi lib i (substc a v1 B1) (substc a' v2 B2))
     -> tequalityi lib i (mkc_set A1 v1 B1) (mkc_set A2 v2 B2).
 Proof.
   introv eqa eqb.
@@ -366,13 +365,13 @@ Proof.
   computes_to_value_isvalue; GC.
   apply e in eqa0.
   unfold univi_eq in eqa0; exrepnd.
-  dextts eqa2 ts1 ts2 ext.
+  dextts eqa2 ts1 ts2.
   allfold (@nuprli p lib j0).
 
   exists eq; sp.
   apply e.
 
-  generalize (choice_uteqi lib j0 A1 v1 B1 v2 B2 eqb); intro n; exrepnd.
+  generalize (choice_teqi lib j0 A1 v1 B1 v2 B2 eqb); intro n; exrepnd.
 
   exists (per_set_eq eqa (fun a1 a2 e => f a1 a2 (eq_equality4 lib a1 a2 A1 eqa j0 e ts1))).
 
@@ -384,15 +383,15 @@ Proof.
     exists A1 v1 B1; sp; eauto 3 with slow;
       try (complete (spcast; apply computes_to_valc_refl; eauto 2 with slow)).
 
-    pose proof (uNuprli_type_family_equality_to_eq lib j0 A1 v1 v2 B1 B2 eqa f ts1 n0) as imp.
+    pose proof (Nuprli_type_family_equality_to_eq lib j0 A1 v1 v2 B1 B2 eqa f ts1 n0) as imp.
     clear n0.
 
-    pose proof (uNuprli_type_family_equality_to_uNuprli_left
+    pose proof (Nuprli_type_family_equality_to_Nuprli_left
                   lib j0 A1 v1 v2 B1 B2 eqa
                   (fun a1 a2 e => f a1 a2 (eq_equality4 lib a1 a2 A1 eqa j0 e ts1))) as imp1.
     simpl in imp1; repeat (autodimp imp1 hyp); clear imp; eauto 3 with slow;[].
 
-    eapply uNuprli_implies_type_family_members_eq; auto; eauto 2 with slow.
+    eapply Nuprli_implies_type_family_members_eq; auto; eauto 2 with slow.
 
   - exists eqa.
     exists (fun a1 a2 e => f a1 a2 (eq_equality4 lib a1 a2 A1 eqa j0 e ts1)); sp.
@@ -400,20 +399,20 @@ Proof.
     exists A2 v2 B2; sp; eauto 3 with slow;
       try (complete (spcast; apply computes_to_valc_refl; eauto 3 with slow)).
 
-    pose proof (uNuprli_type_family_equality_to_eq lib j0 A1 v1 v2 B1 B2 eqa f ts1 n0) as imp.
+    pose proof (Nuprli_type_family_equality_to_eq lib j0 A1 v1 v2 B1 B2 eqa f ts1 n0) as imp.
     clear n0.
 
-    pose proof (uNuprli_type_family_equality_to_uNuprli_right
+    pose proof (Nuprli_type_family_equality_to_Nuprli_right
                   lib j0 A1 v1 v2 B1 B2 eqa
                   (fun a1 a2 e => f a1 a2 (eq_equality4 lib a1 a2 A1 eqa j0 e ts1))) as imp1.
     simpl in imp1; repeat (autodimp imp1 hyp); clear imp; eauto 3 with slow;[].
 
-    eapply uNuprli_implies_type_family_members_eq; auto; eauto 2 with slow.
+    eapply Nuprli_implies_type_family_members_eq; auto; eauto 2 with slow.
 Qed.
 
 Lemma implies_member_set_if_utequality {p} :
   forall lib (t u : @CTerm p) A v B,
-    (forall a a', equality lib a a' A -> utequality lib (substc a v B) (substc a' v B))
+    (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
     -> equality lib t u A
     -> inhabited_type lib (substc t v B)
     -> equality lib t u (mkc_set A v B).
@@ -423,7 +422,7 @@ Proof.
   unfold equality in teqa; exrepnd.
   rename eq into eqa.
 
-  pose proof (choice_uteq lib A v B v B teqb) as n; exrepnd.
+  pose proof (choice_teq lib A v B v B teqb) as n; exrepnd.
   clear teqb.
 
   exists (per_set_eq eqa (fun a1 a2 e => f a1 a2 (eq_equality0 lib a1 a2 A eqa e teqa1)));
@@ -439,11 +438,11 @@ Proof.
     exists A v B; sp;
       try (complete (spcast; apply computes_to_valc_refl; eauto 3 with slow)).
 
-    pose proof (uNuprl_type_family_equality_to_eq2 lib A v v B B eqa f teqa1) as imp.
+    pose proof (Nuprl_type_family_equality_to_eq2 lib A v v B B eqa f teqa1) as imp.
     repeat (autodimp imp hyp).
     clear n0.
 
-    eapply uNuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
+    eapply Nuprl_implies_type_family_members_eq; auto; eauto 2 with slow.
   }
 
   {
@@ -464,7 +463,7 @@ Lemma equality_in_set {p} :
   forall lib (t u : @CTerm p) A v B,
     equality lib t u (mkc_set A v B)
     <=>
-    ((forall a a', equality lib a a' A -> utequality lib (substc a v B) (substc a' v B))
+    ((forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
      # equality lib t u A
      # inhabited_type lib (substc t v B)).
 Proof.
@@ -487,7 +486,7 @@ Proof.
     generalize (nuprl_uniquely_valued lib A1 eqa eq); intro k; repeat (dest_imp k hyp).
     apply k in e1.
     clear dependent eq.
-    eapply nuprl_type_family_members_eq_implies_utequality; eauto. }
+    eapply nuprl_type_family_members_eq_implies_tequality; eauto. }
 
   { unfold per_set_eq in e0; exrepnd.
     exists eqa; sp. }
@@ -529,8 +528,8 @@ Proof.
 
   {
     introv ea.
-    apply (utequalityi_implies_utequality lib i).
-    eapply nuprli_type_family_members_eq_implies_utequalityi;[|exact tf2|]; eauto.
+    apply (tequalityi_implies_tequality lib i).
+    eapply nuprli_type_family_members_eq_implies_tequalityi;[|exact tf2|]; eauto.
     eapply equality_eq;[|exact ea]; eauto 2 with slow.
   }
 
@@ -567,7 +566,7 @@ Lemma type_set {p} :
     <=>
     (
       type lib A
-      # (forall a a', equality lib a a' A -> utequality lib (substc a v B) (substc a' v B))
+      # (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
     ).
 Proof.
   introv.
@@ -587,8 +586,8 @@ Lemma tequalityi_set {p} :
     (
       member lib A1 (mkc_uni i)
       # member lib A2 (mkc_uni i)
-      # (forall a a', equality lib a a' A1 -> utequalityi lib i (substc a v1 B1) (substc a' v1 B1))
-      # (forall a a', equality lib a a' A2 -> utequalityi lib i (substc a v2 B2) (substc a' v2 B2))
+      # (forall a a', equality lib a a' A1 -> tequalityi lib i (substc a v1 B1) (substc a' v1 B1))
+      # (forall a a', equality lib a a' A2 -> tequalityi lib i (substc a v2 B2) (substc a' v2 B2))
       # ext_eq lib (mkc_set A1 v1 B1) (mkc_set A2 v2 B2)
     ).
 Proof.
@@ -601,7 +600,7 @@ Proof.
     computes_to_value_isvalue; GC.
     apply e in h0; unfold univi_eq in h0; exrepnd.
 
-    dextts h2 ts1 ts2 ext.
+    dextts h2 ts1 ts2.
 
     cioneclose_eq eqa; subst; try not_univ.
     cioneclose_eq eqa; subst; try not_univ.
@@ -626,11 +625,11 @@ Proof.
       exists eqa2; fold (nuprli lib j0); eauto 2 with slow. }
 
     { introv ea.
-      eapply nuprli_type_family_members_eq_implies_utequalityi; eauto.
+      eapply nuprli_type_family_members_eq_implies_tequalityi; eauto.
       eapply equality_eq;[|eauto]; eauto 2 with slow. }
 
     { introv ea.
-      eapply nuprli_type_family_members_eq_implies_utequalityi; try (exact tsb2); eauto.
+      eapply nuprli_type_family_members_eq_implies_tequalityi; try (exact tsb2); eauto.
       eapply equality_eq;[|eauto]; eauto 2 with slow. }
 
     { eapply nuprli_eq_type_family_members_eq_implies_ext_eq_set; eauto.

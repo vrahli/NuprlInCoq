@@ -747,7 +747,6 @@ Proof.
 Qed.
 *)
 
-(*
 Lemma tequality_mkc_equality_if_equal {p} :
   forall lib (a1 a2 b1 b2 A B : @CTerm p),
     tequality lib A B
@@ -762,13 +761,13 @@ Proof.
     eauto 3 with nequality.
   - eapply tequality_preserving_equality;[|eauto].
     eauto 3 with nequality.
-  -
+  - eauto 3 with slow nequality.
   - eapply tequality_preserving_equality;[|apply tequality_sym;eauto].
     eapply equality_trans;[exact h0|]; eauto 3 with nequality.
   - eapply tequality_preserving_equality;[|apply tequality_sym;eauto].
-    eapply equality_trans;[exact h|]; eauto 3 with nequality.
+    eapply equality_trans;[exact h1|]; eauto 3 with nequality.
+  - eauto 3 with slow nequality.
 Qed.
-*)
 
 (*
 Lemma tequality_mkc_equality2 {p} :

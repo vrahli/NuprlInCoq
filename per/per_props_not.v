@@ -186,6 +186,7 @@ Proof.
 Qed.
 Hint Resolve equal_equality_types_mkc_not : slow.
 
+(*
 Lemma utequality_not_iff_tequality {p} :
   forall lib (A1 A2 : @CTerm p),
     utequality lib (mkc_not A1) (mkc_not A2)
@@ -211,3 +212,4 @@ Proof.
   rw @utequality_not_iff_tequality.
   apply tequality_not.
 Qed.
+*)

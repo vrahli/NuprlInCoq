@@ -267,11 +267,11 @@ Proof.
           apply equality_in_int in ea.
           unfold equality_of_int in ea; exrepnd; spcast.
 
-          eapply utequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
-          eapply utequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
+          eapply tequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
+          eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
           autorewrite with slow.
 
-          eapply utequality_respects_cequivc_left;
+          eapply tequality_respects_cequivc_left;
             [apply cequivc_sym;apply implies_cequivc_mkc_prod;
              [apply implies_cequivc_mkc_le;
               [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ea1]
@@ -280,7 +280,7 @@ Proof.
               |apply computes_to_valc_implies_cequivc;exact comp1]
              ]
             |].
-          eapply utequality_respects_cequivc_right;
+          eapply tequality_respects_cequivc_right;
             [apply cequivc_sym;apply implies_cequivc_mkc_prod;
              [apply implies_cequivc_mkc_le;
               [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ea0]
@@ -294,7 +294,7 @@ Proof.
           clear dependent a'.
           clear dependent t1.
 
-          apply utequality_iff_type.
+          apply fold_type.
           apply type_mkc_prod; dands; eauto 2 with slow.
 
           {
@@ -367,11 +367,11 @@ Proof.
           apply equality_in_int in ea.
           unfold equality_of_int in ea; exrepnd; spcast.
 
-          eapply utequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
-          eapply utequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
+          eapply tequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
+          eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
           autorewrite with slow.
 
-          eapply utequality_respects_cequivc_left;
+          eapply tequality_respects_cequivc_left;
             [apply cequivc_sym;apply implies_cequivc_mkc_prod;
              [apply implies_cequivc_mkc_le;
               [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ea1]
@@ -380,7 +380,7 @@ Proof.
               |apply computes_to_valc_implies_cequivc;exact comp2]
              ]
             |].
-          eapply utequality_respects_cequivc_right;
+          eapply tequality_respects_cequivc_right;
             [apply cequivc_sym;apply implies_cequivc_mkc_prod;
              [apply implies_cequivc_mkc_le;
               [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ea0]
@@ -394,7 +394,7 @@ Proof.
           clear dependent a'.
           clear dependent t2.
 
-          apply utequality_iff_type.
+          apply fold_type.
           apply type_mkc_prod; dands; eauto 2 with slow.
 
           {
@@ -463,11 +463,11 @@ Proof.
         apply equality_in_int in ea.
         unfold equality_of_int in ea; exrepnd; spcast.
 
-        eapply utequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
-        eapply utequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
+        eapply tequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
+        eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
         autorewrite with slow.
 
-        eapply utequality_respects_cequivc_left;
+        eapply tequality_respects_cequivc_left;
           [apply cequivc_sym;apply implies_cequivc_mkc_prod;
            [apply implies_cequivc_mkc_le;
             [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ea1]
@@ -476,7 +476,7 @@ Proof.
             |apply computes_to_valc_implies_cequivc;exact comp2]
            ]
           |].
-        eapply utequality_respects_cequivc_right;
+        eapply tequality_respects_cequivc_right;
           [apply cequivc_sym;apply implies_cequivc_mkc_prod;
            [apply implies_cequivc_mkc_le;
             [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ea0]
@@ -491,7 +491,7 @@ Proof.
         clear dependent t1.
         clear dependent t2.
 
-        apply utequality_iff_type.
+        apply fold_type.
         apply type_mkc_prod; dands; eauto 2 with slow.
 
         {
@@ -549,11 +549,11 @@ Proof.
         apply equality_in_int in ea.
         unfold equality_of_int in ea; exrepnd; spcast.
 
-        eapply utequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
-        eapply utequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
+        eapply tequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
+        eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
         autorewrite with slow.
 
-        eapply utequality_respects_cequivc_left;
+        eapply tequality_respects_cequivc_left;
           [apply cequivc_sym;apply implies_cequivc_mkc_prod;
            [apply implies_cequivc_mkc_le;
             [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ea1]
@@ -562,7 +562,7 @@ Proof.
             |apply computes_to_valc_implies_cequivc;exact comp1]
            ]
           |].
-        eapply utequality_respects_cequivc_right;
+        eapply tequality_respects_cequivc_right;
           [apply cequivc_sym;apply implies_cequivc_mkc_prod;
            [apply implies_cequivc_mkc_le;
             [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ea0]
@@ -577,7 +577,7 @@ Proof.
         clear dependent t1.
         clear dependent t2.
 
-        apply utequality_iff_type.
+        apply fold_type.
         apply type_mkc_prod; dands; eauto 2 with slow.
 
         {
@@ -644,18 +644,18 @@ Proof.
 
   - pose proof (k2 (@mkc_zero o) (@mkc_zero o)) as q.
     autodimp q hyp; eauto 2 with slow.
-    eapply utequality_respects_alphaeqc_left in q;[|apply mkcv_prod_substc].
-    eapply utequality_respects_alphaeqc_right in q;[|apply mkcv_prod_substc].
+    eapply tequality_respects_alphaeqc_left in q;[|apply mkcv_prod_substc].
+    eapply tequality_respects_alphaeqc_right in q;[|apply mkcv_prod_substc].
     autorewrite with slow in q.
 
     pose proof (k3 (@mkc_zero o) (@mkc_zero o)) as h.
     autodimp h hyp; eauto 2 with slow.
-    eapply utequality_respects_alphaeqc_left in h;[|apply mkcv_prod_substc].
-    eapply utequality_respects_alphaeqc_right in h;[|apply mkcv_prod_substc].
+    eapply tequality_respects_alphaeqc_left in h;[|apply mkcv_prod_substc].
+    eapply tequality_respects_alphaeqc_right in h;[|apply mkcv_prod_substc].
     autorewrite with slow in h.
 
-    apply utequality_iff_type in q.
-    apply utequality_iff_type in h.
+    apply fold_type in q.
+    apply fold_type in h.
     apply type_mkc_prod in q.
     apply type_mkc_prod in h.
     repnd; GC.
@@ -689,11 +689,11 @@ Proof.
     apply equality_in_int in ea.
     unfold equality_of_int in ea; exrepnd; spcast.
 
-    eapply utequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
-    eapply utequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
+    eapply tequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
+    eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
     autorewrite with slow.
 
-    eapply utequality_respects_cequivc_left;
+    eapply tequality_respects_cequivc_left;
       [apply cequivc_sym;apply implies_cequivc_mkc_prod;
        [apply implies_cequivc_mkc_le;
         [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ea1]
@@ -702,7 +702,7 @@ Proof.
         |apply computes_to_valc_implies_cequivc;exact k0]
        ]
       |].
-    eapply utequality_respects_cequivc_right;
+    eapply tequality_respects_cequivc_right;
       [apply cequivc_sym;apply implies_cequivc_mkc_prod;
        [apply implies_cequivc_mkc_le;
         [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ea0]
@@ -716,7 +716,7 @@ Proof.
     clear dependent a'.
     clear dependent t1.
 
-    apply utequality_iff_type.
+    apply fold_type.
     apply type_mkc_prod; dands; eauto 2 with slow.
 
     {
@@ -738,11 +738,11 @@ Proof.
     apply equality_in_int in ea.
     unfold equality_of_int in ea; exrepnd; spcast.
 
-    eapply utequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
-    eapply utequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
+    eapply tequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
+    eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
     autorewrite with slow.
 
-    eapply utequality_respects_cequivc_left;
+    eapply tequality_respects_cequivc_left;
       [apply cequivc_sym;apply implies_cequivc_mkc_prod;
        [apply implies_cequivc_mkc_le;
         [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ea1]
@@ -751,7 +751,7 @@ Proof.
         |apply computes_to_valc_implies_cequivc;exact k4]
        ]
       |].
-    eapply utequality_respects_cequivc_right;
+    eapply tequality_respects_cequivc_right;
       [apply cequivc_sym;apply implies_cequivc_mkc_prod;
        [apply implies_cequivc_mkc_le;
         [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ea0]
@@ -765,7 +765,7 @@ Proof.
     clear dependent a'.
     clear dependent t2.
 
-    apply utequality_iff_type.
+    apply fold_type.
     apply type_mkc_prod; dands; eauto 2 with slow.
 
     {
@@ -874,11 +874,11 @@ Proof.
   - introv ei.
     allrw @equality_in_int.
     unfold equality_of_int in ei; exrepnd; spcast.
-    eapply utequality_respects_alphaeqc_left;[apply alphaeqc_sym; apply mkcv_prod_substc|].
-    eapply utequality_respects_alphaeqc_right;[apply alphaeqc_sym; apply mkcv_prod_substc|].
+    eapply tequality_respects_alphaeqc_left;[apply alphaeqc_sym; apply mkcv_prod_substc|].
+    eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym; apply mkcv_prod_substc|].
     autorewrite with slow.
 
-    eapply utequality_respects_cequivc_left;
+    eapply tequality_respects_cequivc_left;
       [apply cequivc_sym;apply implies_cequivc_mkc_prod;
        [apply implies_cequivc_mkc_le;
         [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ei1]
@@ -887,7 +887,7 @@ Proof.
         |apply computes_to_valc_implies_cequivc;exact h3]
        ]
       |].
-    eapply utequality_respects_cequivc_right;
+    eapply tequality_respects_cequivc_right;
       [apply cequivc_sym;apply implies_cequivc_mkc_prod;
        [apply implies_cequivc_mkc_le;
         [apply cequivc_refl|apply computes_to_valc_implies_cequivc;exact ei0]
@@ -897,7 +897,7 @@ Proof.
        ]
       |].
 
-    apply utequality_iff_type.
+    apply fold_type.
     allrw @type_mkc_prod; dands; eauto 2 with slow.
 
     + allrw @type_mkc_le.
@@ -1173,7 +1173,7 @@ Proof.
   apply equality_in_int in e.
   unfold equality_of_int in e; exrepnd; spcast.
 
-  apply utequality_mkc_le.
+  apply tequality_mkc_le.
   exists (0%Z) k (0%Z) k; dands; spcast; tcsp.
 
   - unfold computes_to_valc; simpl.
@@ -1217,7 +1217,7 @@ Proof.
     allrw @mkc_var_substc.
     apply equality_in_int in e.
     unfold equality_of_int in e; exrepnd; spcast.
-    apply utequality_mkc_le.
+    apply tequality_mkc_le.
     exists (0%Z) k (0%Z) k; dands; spcast; auto;
     try (complete (unfold computes_to_valc; simpl;
                    unfold computes_to_value; dands;

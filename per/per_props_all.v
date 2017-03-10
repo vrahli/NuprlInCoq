@@ -29,27 +29,29 @@
 
 *)
 
+
 (* fixed *)
 Require Export per_props_uni0.
 Require Export per_props_cequiv.
 Require Export per_props_equality.
+Require Export per_props_set.
+Require Export per_props_image.
+Require Export per_props_squash.
+Require Export per_props_function.
+Require Export per_props_not.
+Require Export per_props_compute.
+Require Export per_props_true.
+Require Export per_props_false.
+Require Export per_props_union.
+Require Export per_props_product.
+Require Export per_props_nat0.
+Require Export per_props_nat.
 Require Export sequents_useful. (* commented out lots of stuff there *)
 Require Export rules_struct.
 
 
 (* working on *)
-Require Export per_props_set.
-Require Export per_props_function.
-Require Export per_props_not.
-Require Export per_props_nat0.
-Require Export per_props_compute.
-Require Export per_props_true.
-Require Export per_props_false.
-Require Export per_props_image.
-Require Export per_props_squash.
-Require Export per_props_union.
-Require Export per_props_product.
-Require Export per_props_nat.
+Require Export rules_equality3.
 Require Export per_props_isect.
 Require Export per_props_top.
 Require Export per_props_subtype_rel.

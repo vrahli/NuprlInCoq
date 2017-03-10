@@ -79,6 +79,77 @@ Proof.
   apply equs; auto.
 Qed.
 
+Lemma teq_and_eq_if_equality2 {o} :
+  forall lib (A : @NTerm o) a b s1 s2 H wA wa wb ca1 ca2 cb1 cb2 cA1 cA2,
+    hyps_functionality lib s1 H
+    -> similarity lib s1 s2 H
+    -> tequality lib (lsubstc A wA s1 cA1) (lsubstc A wA s2 cA2)
+    -> (forall s1 s2 ca1 cb2 cA1,
+          hyps_functionality lib s1 H
+          -> similarity lib s1 s2 H
+          -> equality lib (lsubstc a wa s1 ca1) (lsubstc b wb s2 cb2) (lsubstc A wA s1 cA1))
+    ->
+    (
+      tequality
+        lib
+        (mkc_equality (lsubstc a wa s1 ca1) (lsubstc b wb s1 cb1) (lsubstc A wA s1 cA1))
+        (mkc_equality (lsubstc a wa s2 ca2) (lsubstc b wb s2 cb2) (lsubstc A wA s2 cA2))
+      #
+      equality
+        lib
+        (mkc_prefl (lsubstc a wa s1 ca1) (lsubstc a wa s1 ca1))
+        (mkc_prefl (lsubstc a wa s2 ca2) (lsubstc a wa s2 ca2))
+        (mkc_equality (lsubstc a wa s1 ca1) (lsubstc b wb s1 cb1) (lsubstc A wA s1 cA1))
+    ).
+Proof.
+  introv hf sim teq equs.
+
+  assert (hyps_functionality lib s2 H)
+    as hf2 by (eapply @similarity_hyps_functionality_trans; eauto).
+
+  assert (similarity lib s2 s1 H) as sim21 by (apply similarity_sym; auto).
+  assert (similarity lib s1 s1 H) as sim11 by (apply similarity_refl in sim; auto).
+  assert (similarity lib s2 s2 H) as sim22 by (apply similarity_refl in sim21; auto).
+
+  dands.
+
+  {
+    apply tequality_mkc_equality_if_equal; auto.
+
+    - pose proof (equs s1 s2 ca1 cb2 cA1 hf sim) as eq1.
+      pose proof (equs s2 s2 ca2 cb2 cA2 hf2 sim22) as eq2.
+      apply equality_trans with (t2 := lsubstc b wb s2 cb2); auto.
+      apply equality_sym.
+      apply @tequality_preserving_equality with (A := lsubstc A wA s2 cA2); auto.
+      apply tequality_sym; auto.
+
+    - pose proof (equs s1 s1 ca1 cb1 cA1 hf sim11) as eq1.
+      pose proof (equs s1 s2 ca1 cb2 cA1 hf sim) as eq2.
+      apply equality_trans with (t2 := lsubstc a wa s1 ca1); auto.
+      apply equality_sym; auto.
+  }
+
+  {
+    apply equality_in_mkc_equality.
+    eexists; eexists; eexists; eexists; dands; spcast;
+      try (complete (apply computes_to_valc_refl; eauto 2 with slow)).
+
+    - pose proof (equs s1 s1 ca1 cb1 cA1) as q1; repeat (autodimp q1 hyp).
+      eauto 3 with nequality slow.
+
+    - pose proof (equs s2 s1 ca2 cb1 cA2) as q1; repeat (autodimp q1 hyp).
+      apply equality_sym.
+      eapply tequality_preserving_equality; eauto 2 with nequality.
+
+    - pose proof (equs s1 s1 ca1 cb1 cA1) as q1; repeat (autodimp q1 hyp).
+
+    - pose proof (equs s1 s2 ca1 cb2 cA1) as q1; repeat (autodimp q1 hyp).
+      pose proof (equs s2 s2 ca2 cb2 cA2) as q2; repeat (autodimp q2 hyp).
+      eapply tequality_preserving_equality in q2;[|apply tequality_sym;exact teq].
+      eauto 3 with nequality slow.
+  }
+Qed.
+
 (* This lemma is useful to prove membeships *)
 Lemma teq_and_member_if_member {o} :
   forall lib (A : @NTerm o) a s1 s2 H wA wa ca1 ca2 cA1 cA2,

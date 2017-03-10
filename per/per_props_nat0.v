@@ -807,6 +807,7 @@ Proof.
     + exists kd kc; dands; spcast; auto.
 Qed.
 
+(*
 Lemma utequality_mkc_le {o} :
   forall lib (a b c d : @CTerm o),
     utequality lib (mkc_le a b) (mkc_le c d)
@@ -831,6 +832,7 @@ Proof.
   allrw <- @mkc_le_eq.
   apply tequality_mkc_le.
 Qed.
+*)
 
 Lemma tnat_type {o} : forall lib, @type o lib mkc_tnat.
 Proof.
@@ -842,7 +844,7 @@ Proof.
   apply equality_in_int in ea.
   unfold equality_of_int in ea; exrepnd; spcast.
   autorewrite with slow in *.
-  apply utequality_mkc_le.
+  apply tequality_mkc_le.
   exists (Z.of_nat 0) k (Z.of_nat 0) k; dands; spcast; auto;
     try (rw @mkc_zero_eq; rw @mkc_nat_eq; apply computes_to_valc_refl; eauto 2 with slow).
 
@@ -1189,7 +1191,7 @@ Proof.
   apply equality_in_int in ea.
   unfold equality_of_int in ea; exrepnd; spcast.
   autorewrite with slow in *.
-  apply utequality_mkc_le.
+  apply tequality_mkc_le.
   exists (Z.of_nat 1) k (Z.of_nat 1) k; dands; spcast; auto;
     try (rw @mkc_one_eq; rw @mkc_nat_eq; apply computes_to_valc_refl; eauto 2 with slow).
 

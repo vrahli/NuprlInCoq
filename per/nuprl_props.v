@@ -1555,6 +1555,31 @@ Proof.
   eapply Nuprl_trans; eauto.
 Qed.
 
+Lemma nuprl_type_family_members_eq_implies_tequality {o} :
+  forall lib (A : @CTerm o) v B eqa eqb a1 a2,
+    nuprl lib A eqa
+    -> type_family_members_eq (nuprl lib) v B eqa eqb
+    -> eqa a1 a2
+    -> tequality lib (B)[[v\\a1]] (B)[[v\\a2]].
+Proof.
+  introv n tf ea.
+  destruct tf as [tb tf].
+
+  pose proof (tb a1 a2 ea) as q.
+  destruct tf as [sym tran].
+
+  exists (eqb a1 a2 ea); split; auto.
+
+  assert (eqa a2 a2) as ea2.
+  { nts; eapply nts_tet; eauto.
+    eapply nts_tes; eauto. }
+
+  pose proof (tb a2 a2 ea2) as h.
+
+  eapply nuprl_ext;eauto.
+  apply eq_term_equals_sym; apply tran.
+Qed.
+
 (*
 Lemma nuprl_type_family_members_eq_implies_utequality {o} :
   forall lib (A : @CTerm o) v B eqa eqb a1 a2,
@@ -1606,33 +1631,6 @@ Ltac entsi i :=
         destruct nts as [ nts_tet nts_tev ]
   end.
 
-(*
-Lemma nuprli_type_family_members_eq_implies_utequalityi {o} :
-  forall lib i (A : @CTerm o) v B eqa eqb a1 a2,
-    nuprli lib i A eqa
-    -> type_family_members_eq (nuprli lib i) v B eqa eqb
-    -> eqa a1 a2
-    -> utequalityi lib i (B)[[v\\a1]] (B)[[v\\a2]].
-Proof.
-  introv n tf ea.
-  destruct tf as [tb tf].
-
-  pose proof (tb a1 a2 ea) as q.
-  destruct tf as [sym tran].
-
-  exists (eqb a1 a2 ea); split; auto.
-
-  assert (eqa a2 a2) as ea2.
-  { ntsi i; eapply nts_tet; eauto.
-    eapply nts_tes; eauto. }
-
-  pose proof (tb a2 a2 ea2) as h.
-
-  eapply nuprli_ext;eauto.
-  apply eq_term_equals_sym; apply tran.
-Qed.
-*)
-
 Lemma mkc_uni_in_uni {o} :
   forall lib j, @univ o lib (mkc_uni j) (univi_eq lib (univi lib j)).
 Proof.
@@ -1667,6 +1665,60 @@ Proof.
     dands; eauto 2 with slow.
     exists eq; auto.
 Qed.
+
+Lemma nuprli_type_family_members_eq_implies_tequalityi {o} :
+  forall lib i (A : @CTerm o) v B eqa eqb a1 a2,
+    nuprli lib i A eqa
+    -> type_family_members_eq (nuprli lib i) v B eqa eqb
+    -> eqa a1 a2
+    -> tequalityi lib i (B)[[v\\a1]] (B)[[v\\a2]].
+Proof.
+  introv n tf ea.
+  destruct tf as [tb tf].
+
+  pose proof (tb a1 a2 ea) as q.
+  destruct tf as [sym tran].
+
+  apply tequalityi_iff_Nuprli.
+
+  exists (eqb a1 a2 ea); split; tcsp.
+
+  assert (eqa a2 a2) as ea2.
+  { ntsi i; eapply nts_tet; eauto.
+    eapply nts_tes; eauto. }
+
+  pose proof (tb a2 a2 ea2) as h.
+
+  eapply nuprli_ext;eauto.
+  apply eq_term_equals_sym; apply tran.
+Qed.
+
+(*
+Lemma nuprli_type_family_members_eq_implies_utequalityi {o} :
+  forall lib i (A : @CTerm o) v B eqa eqb a1 a2,
+    nuprli lib i A eqa
+    -> type_family_members_eq (nuprli lib i) v B eqa eqb
+    -> eqa a1 a2
+    -> utequalityi lib i (B)[[v\\a1]] (B)[[v\\a2]].
+Proof.
+  introv n tf ea.
+  destruct tf as [tb tf].
+
+  pose proof (tb a1 a2 ea) as q.
+  destruct tf as [sym tran].
+
+  exists (eqb a1 a2 ea); split; auto.
+
+  assert (eqa a2 a2) as ea2.
+  { ntsi i; eapply nts_tet; eauto.
+    eapply nts_tes; eauto. }
+
+  pose proof (tb a2 a2 ea2) as h.
+
+  eapply nuprli_ext;eauto.
+  apply eq_term_equals_sym; apply tran.
+Qed.
+*)
 
 Lemma Nuprli_type_family_equality_to_eq {o} :
   forall lib i (A : @CTerm o) v1 v2 B1 B2 eqa f (n : nuprli lib i A eqa),
