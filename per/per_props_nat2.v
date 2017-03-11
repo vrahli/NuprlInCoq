@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -34,6 +35,7 @@ Require Export natk2.
 Require Export cequiv_seq_util.
 Require Export per_respects.
 Require Export per_props_nat.
+Require Export per_props_function.
 
 
 Lemma tequality_natk2nat {o} :
@@ -49,13 +51,15 @@ Lemma tequality_natk2nat {o} :
 Proof.
   introv.
   unfold natk2nat.
-  rw @tequality_mkc_fun.
-  rw @tequality_mkc_natk.
+  rw @tequality_fun.
+  allrw @type_mkc_natk.
   split; intro k; exrepnd; dands; eauto 3 with slow.
 
-  - spcast; exists k1 k0; dands; spcast; auto.
+  - spcast; exists k1 k4; dands; spcast; auto.
 
-  - spcast; exists k1 k2; dands; spcast; auto.
+    (* Can we get that from tequality mkc_natk somehow? *)
+
+    Locate type_mkc_natk.
 
   - introv inh; apply type_tnat.
 Qed.
@@ -149,10 +153,3 @@ Proof.
   introv en.
   apply equality_natk_to_tnat in en; apply e in en; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -32,10 +33,11 @@
 Require Export computation9.
 Require Export continuity_defs_ceq.
 Require Export psquash.
-Require Export per_props3.
+(*Require Export per_props3.*)
 Require Export substc_more.
 Require Export per_props_equality.
 Require Export per_props_nat.
+Require Export per_props_isect.
 
 
 Lemma chaltsc_axiom {o} :
@@ -200,6 +202,7 @@ Proof.
   provefalse; tcsp.
 Qed.
 
+(* Not true anymore *)
 Lemma tequality_mkc_uand {o} :
   forall lib (t1 t2 u1 u2 : @CTerm o),
     tequality lib (mkc_uand t1 t2) (mkc_uand u1 u2)
@@ -210,9 +213,9 @@ Proof.
   split; introv k; repnd.
 
   - eapply tequality_respects_alphaeqc_left in k;
-    [|apply (mkc_uand_aeq nvarx)].
+      [|apply (mkc_uand_aeq nvarx)].
     eapply tequality_respects_alphaeqc_right in k;
-    [|apply (mkc_uand_aeq nvarx)].
+      [|apply (mkc_uand_aeq nvarx)].
 
     apply tequality_isect in k; repnd.
     clear k0.
@@ -837,11 +840,3 @@ Proof.
   apply equality_in_mkc_pertype2 in k; repnd.
   apply member_iff_inhabited_mkc_apply2_mkc_psquash_per in k0; sp.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

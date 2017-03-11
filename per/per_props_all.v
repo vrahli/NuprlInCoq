@@ -46,21 +46,24 @@ Require Export per_props_union.
 Require Export per_props_product.
 Require Export per_props_nat0.
 Require Export per_props_nat.
-Require Export sequents_useful. (* commented out lots of stuff there *)
-Require Export rules_struct.
-Require Export rules_equality3.
 Require Export per_props_isect.
 Require Export per_props_top.
 Require Export per_props_subtype_rel.
+Require Export per_props_halts.
+Require Export sequents_useful. (* commented out lots of stuff there *)
+Require Export rules_struct.
+Require Export rules_equality3.
+Require Export per_respects.
 
 
 (* working on *)
+Require Export per_props_nat2.
+Require Export per_props4.
 Require Export rules_tyfam.
 Require Export per_props_aequality. (* commented out lots of stuff here *)
 
 
 (* not fixed *)
-Require Export per_props4.
 Require Export per_props_admiss.
 Require Export per_props_atom.
 Require Export per_props_cequiv2.
@@ -69,10 +72,8 @@ Require Export per_props_equality2.
 Require Export per_props_equality_more.
 Require Export per_props_erase.
 Require Export per_props_ffatom.
-Require Export per_props_halts.
 Require Export per_props_iff.
 Require Export per_props_more.
-Require Export per_props_nat2.
 Require Export per_props_nat3.
 Require Export per_props_pertype.
 Require Export per_props_per.
