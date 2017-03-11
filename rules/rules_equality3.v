@@ -193,12 +193,14 @@ Proof.
 
 Abort.
 
+
+
 (**
 
 <<
    H |- (a1 = a2 in A) = (b1 = b2 in B) in U(i)
 
-     By equalityEqualityBase
+     By equalityEqualityBase_1
 
      H |- A = B in U(i)
      H |- a1 = b1 in A
@@ -221,7 +223,7 @@ Definition rule_equality_equality_base_1 {o}
     ]
     [sarg_term a1, sarg_term a2, sarg_term A].
 
-Lemma rule_equality_equality_base_or_true {o} :
+Lemma rule_equality_equality_base_1_true {o} :
   forall lib (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
          (i : nat),
@@ -263,6 +265,681 @@ Proof.
 
   vr_seq_true.
   lsubst_tac.
+
+  pose proof (teq_and_eq_if_equality2
+                lib (mk_uni i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
+                s1 s2 H wT w1 w2 c1 c6 c2 c7 cT cT2
+                eqh sim) as eqp.
+  lsubst_tac.
+  apply eqp; eauto 2 with slow;[]; clear eqp.
+
+  clear dependent s1.
+  clear dependent s2.
+
+  introv hf sim.
+  lsubst_tac.
+  apply equality_mkc_equality2_sp_in_uni; dands;[| |].
+
+  - vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    lsubst_tac.
+    apply equality_in_mkc_equality in h1; exrepnd.
+    apply tequality_mkc_equality_in_universe_true in h0; auto;[].
+    eauto 3 with nequality.
+
+  - vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    lsubst_tac.
+    apply equality_in_mkc_equality in h1; exrepnd.
+    apply tequality_mkc_equality_in_universe_true in h0; auto;[].
+    eauto 3 with nequality.
+
+  - assert (tequality lib (lsubstc A wT0 s1 cT) (lsubstc B wT1 s2 cT0)) as teq.
+    {
+      vr_seq_true in hyp1.
+      pose proof (hyp1 s1 s2 hf sim) as q; clear hyp1; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in q0; repnd.
+      apply equality_in_mkc_equality in q1; exrepnd.
+
+      pose proof (q0 (lsubstc A wT0 s1 cT) y1 y2) as w; destruct w as [w w']; clear w'.
+      repeat (autodimp w hyp); dands; eauto 3 with nequality slow;[].
+      repnd.
+      apply equality_in_uni in w7; auto.
+    }
+
+    assert (cover_vars A s2) as covA2.
+    { eapply similarity_cover_vars; eauto. }
+
+    assert (tequality lib (lsubstc A wT0 s1 cT) (lsubstc A wT0 s2 covA2)) as teqA.
+    {
+      vr_seq_true in hyp1.
+      pose proof (hyp1 s1 s2 hf sim) as q; clear hyp1; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in q0; repnd.
+      apply equality_in_mkc_equality in q1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (q0 (lsubstc A wT0 s1 cT) (lsubstc A wT0 s1 cT) (lsubstc A wT0 s1 cT)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality slow.
+    }
+
+    introv.
+    split; introv h; repnd; dands;
+      try (complete (eapply tequality_preserving_equality;[|exact teq]; auto));
+      try (complete (eapply tequality_preserving_equality;[|apply tequality_sym;exact teq]; auto)).
+
+    + eapply tequality_preserving_equality;[|eauto].
+      vr_seq_true in hyp2.
+      pose proof (hyp2 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2 m3.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc a1 w0 s1 c1) (lsubstc a1 w0 s1 c1) (lsubstc a1 w0 s1 c1)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      eapply equality_trans;[exact h0|].
+      eapply tequality_preserving_equality in q1;[exact q1|].
+
+      eauto 3 with nequality.
+
+    + eapply tequality_preserving_equality;[|eauto].
+      vr_seq_true in hyp3.
+      pose proof (hyp3 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc a2 w3 s1 c2) (lsubstc a2 w3 s1 c2) (lsubstc a2 w3 s1 c2)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      eapply equality_trans;[exact h1|].
+      eapply tequality_preserving_equality in q1;[exact q1|].
+
+      eauto 3 with nequality.
+
+    + eapply tequality_preserving_equality in h0;[|apply tequality_sym;eauto].
+      vr_seq_true in hyp2.
+      pose proof (hyp2 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc b1 w4 s1 c5) (lsubstc b1 w4 s1 c5) (lsubstc b1 w4 s1 c5)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      eapply equality_trans;[exact h0|].
+
+      eapply tequality_preserving_equality in q1;[|apply tequality_sym;exact teqA].
+
+      eauto 3 with nequality.
+
+    + eapply tequality_preserving_equality in h1;[|apply tequality_sym;eauto].
+      vr_seq_true in hyp3.
+      pose proof (hyp3 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc b2 w5 s1 c5) (lsubstc b2 w5 s1 c5) (lsubstc b2 w5 s1 c5)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      eapply equality_trans;[exact h1|].
+
+      eapply tequality_preserving_equality in q1;[|apply tequality_sym;exact teqA].
+
+      eauto 3 with nequality.
+Qed.
+
+
+(**
+
+<<
+   H |- (a1 = a2 in A) = (b1 = b2 in B) in U(i)
+
+     By equalityEqualityBase_2
+
+     H |- A = B in U(i)
+     H |- a1 = b1 in A
+     H |- a2 = b2 in Base
+>>
+ *)
+Definition rule_equality_equality_base_2 {o}
+           (H  : @barehypotheses o)
+           (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
+           (i : nat) :=
+  mk_rule
+    (mk_baresequent
+       H
+       (mk_concl_eq (mk_equality a1 a2 A)
+                    (mk_equality b1 b2 B)
+                    (mk_uni i)))
+    [ mk_baresequent H (mk_concl_eq_ext A B (mk_uni i) e1),
+      mk_baresequent H (mk_concl_eq_ext a1 b1 A e2),
+      mk_baresequent H (mk_concl_eq_ext a2 b2 mk_base e3)
+    ]
+    [sarg_term a1, sarg_term a2, sarg_term A].
+
+Lemma rule_equality_equality_base_2_true {o} :
+  forall lib (H : @barehypotheses o)
+         (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
+         (i : nat),
+    rule_true lib (rule_equality_equality_base_2 H A B a1 a2 b1 b2 e1 e2 e3 i).
+Proof.
+  unfold rule_equality_equality_base_2, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+
+  unfold args_constraints in cargs; allsimpl.
+  pose proof (cargs (sarg_term a1)) as arg1; autodimp arg1 hyp.
+  pose proof (cargs (sarg_term a2)) as arg2; autodimp arg2 hyp.
+  pose proof (cargs (sarg_term A)) as arg3; autodimp arg3 hyp.
+  unfold arg_constraints in cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp.
+  destruct Hyp as [wf1 hyp1].
+  destruct Hyp0 as [wf2 hyp2].
+  destruct Hyp1 as [wf3 hyp3].
+  destseq; allsimpl; proof_irr; GC.
+
+  match goal with
+  | [ |- context[closed_extract ?a ?b] ] =>
+    assert (closed_extract a b) as cext
+  end.
+  {
+    clear hyp1 hyp2 hyp3.
+    dwfseq.
+    unfold closed_extract; simpl.
+    apply covered_prefl_same.
+    unfold covered; simpl; autorewrite with list.
+    repeat (apply implies_subvars_app_l); apply subvars_eq; tcsp.
+  }
+  exists cext.
+
+  (* We prove some simple facts on our sequents *)
+  (* done with proving these simple facts *)
+
+  vr_seq_true.
+  lsubst_tac.
+
+  pose proof (teq_and_eq_if_equality2
+                lib (mk_uni i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
+                s1 s2 H wT w1 w2 c1 c6 c2 c7 cT cT2
+                eqh sim) as eqp.
+  lsubst_tac.
+  apply eqp; eauto 2 with slow;[]; clear eqp.
+
+  clear dependent s1.
+  clear dependent s2.
+
+  introv hf sim.
+  lsubst_tac.
+  apply equality_mkc_equality2_sp_in_uni; dands;[| |].
+
+  - vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    lsubst_tac.
+    apply equality_in_mkc_equality in h1; exrepnd.
+    apply tequality_mkc_equality_in_universe_true in h0; auto;[].
+    eauto 3 with nequality.
+
+  - vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    lsubst_tac.
+    apply equality_in_mkc_equality in h1; exrepnd.
+    apply tequality_mkc_equality_in_universe_true in h0; auto;[].
+    eauto 3 with nequality.
+
+  - assert (tequality lib (lsubstc A wT0 s1 cT) (lsubstc B wT1 s2 cT0)) as teq.
+    {
+      vr_seq_true in hyp1.
+      pose proof (hyp1 s1 s2 hf sim) as q; clear hyp1; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in q0; repnd.
+      apply equality_in_mkc_equality in q1; exrepnd.
+
+      pose proof (q0 (lsubstc A wT0 s1 cT) y1 y2) as w; destruct w as [w w']; clear w'.
+      repeat (autodimp w hyp); dands; eauto 3 with nequality slow;[].
+      repnd.
+      apply equality_in_uni in w7; auto.
+    }
+
+    assert (cover_vars A s2) as covA2.
+    { eapply similarity_cover_vars; eauto. }
+
+    assert (tequality lib (lsubstc A wT0 s1 cT) (lsubstc A wT0 s2 covA2)) as teqA.
+    {
+      vr_seq_true in hyp1.
+      pose proof (hyp1 s1 s2 hf sim) as q; clear hyp1; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in q0; repnd.
+      apply equality_in_mkc_equality in q1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (q0 (lsubstc A wT0 s1 cT) (lsubstc A wT0 s1 cT) (lsubstc A wT0 s1 cT)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality slow.
+    }
+
+    introv.
+    split; introv h; repnd; dands;
+      try (complete (eapply tequality_preserving_equality;[|exact teq]; auto));
+      try (complete (eapply tequality_preserving_equality;[|apply tequality_sym;exact teq]; auto)).
+
+    + eapply tequality_preserving_equality;[|eauto].
+      vr_seq_true in hyp2.
+      pose proof (hyp2 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2 m3.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc a1 w0 s1 c1) (lsubstc a1 w0 s1 c1) (lsubstc a1 w0 s1 c1)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      eapply equality_trans;[exact h0|].
+      eapply tequality_preserving_equality in q1;[exact q1|].
+
+      eauto 3 with nequality.
+
+    + eapply tequality_preserving_equality;[|eauto].
+      vr_seq_true in hyp3.
+      pose proof (hyp3 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc a2 w3 s1 c2) (lsubstc a2 w3 s1 c2) (lsubstc a2 w3 s1 c2)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      eapply equality_trans;[exact h1|].
+
+      apply equality_in_base_iff in q1; spcast.
+      eapply equality_respects_cequivc_right;[exact q1|]; auto.
+      eauto 3 with nequality.
+
+    + eapply tequality_preserving_equality in h0;[|apply tequality_sym;eauto].
+      vr_seq_true in hyp2.
+      pose proof (hyp2 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc b1 w4 s1 c5) (lsubstc b1 w4 s1 c5) (lsubstc b1 w4 s1 c5)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      eapply equality_trans;[exact h0|].
+
+      eapply tequality_preserving_equality in q1;[|apply tequality_sym;exact teqA].
+
+      eauto 3 with nequality.
+
+    + eapply tequality_preserving_equality in h1;[|apply tequality_sym;eauto].
+      vr_seq_true in hyp3.
+      pose proof (hyp3 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc b2 w5 s1 c5) (lsubstc b2 w5 s1 c5) (lsubstc b2 w5 s1 c5)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      eapply equality_trans;[exact h1|].
+
+      apply equality_in_base_iff in q1; spcast.
+      apply equality_in_base_iff in m6; spcast.
+
+      eapply equality_respects_cequivc_right;[apply cequivc_sym;exact m6|].
+      eapply equality_respects_cequivc_right;[apply cequivc_sym;exact q1|].
+      eauto 3 with nequality.
+Qed.
+
+
+(**
+
+<<
+   H |- (a1 = a2 in A) = (b1 = b2 in B) in U(i)
+
+     By equalityEqualityBase_3
+
+     H |- A = B in U(i)
+     H |- a1 = b1 in Base
+     H |- a2 = b2 in A
+>>
+ *)
+Definition rule_equality_equality_base_3 {o}
+           (H  : @barehypotheses o)
+           (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
+           (i : nat) :=
+  mk_rule
+    (mk_baresequent
+       H
+       (mk_concl_eq (mk_equality a1 a2 A)
+                    (mk_equality b1 b2 B)
+                    (mk_uni i)))
+    [ mk_baresequent H (mk_concl_eq_ext A B (mk_uni i) e1),
+      mk_baresequent H (mk_concl_eq_ext a1 b1 mk_base e2),
+      mk_baresequent H (mk_concl_eq_ext a2 b2 A e3)
+    ]
+    [sarg_term a1, sarg_term a2, sarg_term A].
+
+Lemma rule_equality_equality_base_3_true {o} :
+  forall lib (H : @barehypotheses o)
+         (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
+         (i : nat),
+    rule_true lib (rule_equality_equality_base_3 H A B a1 a2 b1 b2 e1 e2 e3 i).
+Proof.
+  unfold rule_equality_equality_base_3, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+
+  unfold args_constraints in cargs; allsimpl.
+  pose proof (cargs (sarg_term a1)) as arg1; autodimp arg1 hyp.
+  pose proof (cargs (sarg_term a2)) as arg2; autodimp arg2 hyp.
+  pose proof (cargs (sarg_term A)) as arg3; autodimp arg3 hyp.
+  unfold arg_constraints in cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp.
+  destruct Hyp as [wf1 hyp1].
+  destruct Hyp0 as [wf2 hyp2].
+  destruct Hyp1 as [wf3 hyp3].
+  destseq; allsimpl; proof_irr; GC.
+
+  match goal with
+  | [ |- context[closed_extract ?a ?b] ] =>
+    assert (closed_extract a b) as cext
+  end.
+  {
+    clear hyp1 hyp2 hyp3.
+    dwfseq.
+    unfold closed_extract; simpl.
+    apply covered_prefl_same.
+    unfold covered; simpl; autorewrite with list.
+    repeat (apply implies_subvars_app_l); apply subvars_eq; tcsp.
+  }
+  exists cext.
+
+  (* We prove some simple facts on our sequents *)
+  (* done with proving these simple facts *)
+
+  vr_seq_true.
+  lsubst_tac.
+
+  pose proof (teq_and_eq_if_equality2
+                lib (mk_uni i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
+                s1 s2 H wT w1 w2 c1 c6 c2 c7 cT cT2
+                eqh sim) as eqp.
+  lsubst_tac.
+  apply eqp; eauto 2 with slow;[]; clear eqp.
+
+  clear dependent s1.
+  clear dependent s2.
+
+  introv hf sim.
+  lsubst_tac.
+  apply equality_mkc_equality2_sp_in_uni; dands;[| |].
+
+  - vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    lsubst_tac.
+    apply equality_in_mkc_equality in h1; exrepnd.
+    apply tequality_mkc_equality_in_universe_true in h0; auto;[].
+    eauto 3 with nequality.
+
+  - vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    lsubst_tac.
+    apply equality_in_mkc_equality in h1; exrepnd.
+    apply tequality_mkc_equality_in_universe_true in h0; auto;[].
+    eauto 3 with nequality.
+
+  - assert (tequality lib (lsubstc A wT0 s1 cT) (lsubstc B wT1 s2 cT0)) as teq.
+    {
+      vr_seq_true in hyp1.
+      pose proof (hyp1 s1 s2 hf sim) as q; clear hyp1; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in q0; repnd.
+      apply equality_in_mkc_equality in q1; exrepnd.
+
+      pose proof (q0 (lsubstc A wT0 s1 cT) y1 y2) as w; destruct w as [w w']; clear w'.
+      repeat (autodimp w hyp); dands; eauto 3 with nequality slow;[].
+      repnd.
+      apply equality_in_uni in w7; auto.
+    }
+
+    assert (cover_vars A s2) as covA2.
+    { eapply similarity_cover_vars; eauto. }
+
+    assert (tequality lib (lsubstc A wT0 s1 cT) (lsubstc A wT0 s2 covA2)) as teqA.
+    {
+      vr_seq_true in hyp1.
+      pose proof (hyp1 s1 s2 hf sim) as q; clear hyp1; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in q0; repnd.
+      apply equality_in_mkc_equality in q1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (q0 (lsubstc A wT0 s1 cT) (lsubstc A wT0 s1 cT) (lsubstc A wT0 s1 cT)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality slow.
+    }
+
+    introv.
+    split; introv h; repnd; dands;
+      try (complete (eapply tequality_preserving_equality;[|exact teq]; auto));
+      try (complete (eapply tequality_preserving_equality;[|apply tequality_sym;exact teq]; auto)).
+
+    + eapply tequality_preserving_equality;[|eauto].
+      vr_seq_true in hyp2.
+      pose proof (hyp2 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc a1 w0 s1 c1) (lsubstc a1 w0 s1 c1) (lsubstc a1 w0 s1 c1)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      eapply equality_trans;[exact h0|].
+
+      apply equality_in_base_iff in q1; spcast.
+      eapply equality_respects_cequivc_right;[exact q1|]; auto.
+      eauto 3 with nequality.
+
+    + eapply tequality_preserving_equality;[|eauto].
+      vr_seq_true in hyp3.
+      pose proof (hyp3 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc a2 w3 s1 c2) (lsubstc a2 w3 s1 c2) (lsubstc a2 w3 s1 c2)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      eapply equality_trans;[exact h1|].
+      eapply tequality_preserving_equality in q1;[exact q1|].
+
+      eauto 3 with nequality.
+
+    + eapply tequality_preserving_equality in h0;[|apply tequality_sym;eauto].
+      vr_seq_true in hyp2.
+      pose proof (hyp2 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc b1 w4 s1 c5) (lsubstc b1 w4 s1 c5) (lsubstc b1 w4 s1 c5)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      eapply equality_trans;[exact h0|].
+
+      apply equality_in_base_iff in q1; spcast.
+      apply equality_in_base_iff in m6; spcast.
+
+      eapply equality_respects_cequivc_right;[apply cequivc_sym;exact m6|].
+      eapply equality_respects_cequivc_right;[apply cequivc_sym;exact q1|].
+      eauto 3 with nequality.
+
+    + eapply tequality_preserving_equality in h1;[|apply tequality_sym;eauto].
+      vr_seq_true in hyp3.
+      pose proof (hyp3 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc b2 w5 s1 c5) (lsubstc b2 w5 s1 c5) (lsubstc b2 w5 s1 c5)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      eapply equality_trans;[exact h1|].
+
+      eapply tequality_preserving_equality in q1;[|apply tequality_sym;exact teqA].
+
+      eauto 3 with nequality.
+Qed.
+
+
+(**
+
+<<
+   H |- (a1 = a2 in A) = (b1 = b2 in B) in U(i)
+
+     By equalityEqualityBase_4
+
+     H |- A = B in U(i)
+     H |- a1 = b1 in Base
+     H |- a2 = b2 in Base
+>>
+ *)
+Definition rule_equality_equality_base_4 {o}
+           (H  : @barehypotheses o)
+           (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
+           (i : nat) :=
+  mk_rule
+    (mk_baresequent
+       H
+       (mk_concl_eq (mk_equality a1 a2 A)
+                    (mk_equality b1 b2 B)
+                    (mk_uni i)))
+    [ mk_baresequent H (mk_concl_eq_ext A B (mk_uni i) e1),
+      mk_baresequent H (mk_concl_eq_ext a1 b1 mk_base e2),
+      mk_baresequent H (mk_concl_eq_ext a2 b2 mk_base e3)
+    ]
+    [sarg_term a1, sarg_term a2, sarg_term A].
+
+Lemma rule_equality_equality_base_4_tue {o} :
+  forall lib (H : @barehypotheses o)
+         (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
+         (i : nat),
+    rule_true lib (rule_equality_equality_base_4 H A B a1 a2 b1 b2 e1 e2 e3 i).
+Proof.
+  unfold rule_equality_equality_base_4, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+
+  unfold args_constraints in cargs; allsimpl.
+  pose proof (cargs (sarg_term a1)) as arg1; autodimp arg1 hyp.
+  pose proof (cargs (sarg_term a2)) as arg2; autodimp arg2 hyp.
+  pose proof (cargs (sarg_term A)) as arg3; autodimp arg3 hyp.
+  unfold arg_constraints in cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp.
+  destruct Hyp as [wf1 hyp1].
+  destruct Hyp0 as [wf2 hyp2].
+  destruct Hyp1 as [wf3 hyp3].
+  destseq; allsimpl; proof_irr; GC.
+
+  match goal with
+  | [ |- context[closed_extract ?a ?b] ] =>
+    assert (closed_extract a b) as cext
+  end.
+  {
+    clear hyp1 hyp2 hyp3.
+    dwfseq.
+    unfold closed_extract; simpl.
+    apply covered_prefl_same.
+    unfold covered; simpl; autorewrite with list.
+    repeat (apply implies_subvars_app_l); apply subvars_eq; tcsp.
+  }
+  exists cext.
+
+  (* We prove some simple facts on our sequents *)
+  (* done with proving these simple facts *)
+
+  vr_seq_true.
+  lsubst_tac.
+
   pose proof (teq_and_eq_if_equality2
                 lib (mk_uni i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
                 s1 s2 H wT w1 w2 c1 c6 c2 c7 cT cT2
@@ -316,9 +993,85 @@ Proof.
       pose proof (hyp2 s1 s2 hf sim) as m; clear hyp2; exrepnd.
       lsubst_tac.
 
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc a1 w0 s1 c1) (lsubstc a1 w0 s1 c1) (lsubstc a1 w0 s1 c1)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      apply equality_in_base_iff in q1; spcast.
+
+      eapply equality_respects_cequivc_right;[exact q1|]; auto.
+
+    + eapply tequality_preserving_equality;[|eauto].
+      vr_seq_true in hyp3.
+      pose proof (hyp3 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc a2 w3 s1 c2) (lsubstc a2 w3 s1 c2) (lsubstc a2 w3 s1 c2)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      apply equality_in_base_iff in q1; spcast.
+
+      eapply equality_respects_cequivc_right;[exact q1|]; auto.
+
+    + eapply tequality_preserving_equality in h0;[|apply tequality_sym;eauto].
+      vr_seq_true in hyp2.
+      pose proof (hyp2 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc b1 w4 s1 c5) (lsubstc b1 w4 s1 c5) (lsubstc b1 w4 s1 c5)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      apply equality_in_base_iff in q1; spcast.
+      apply equality_in_base_iff in m6; spcast.
+
+      eapply equality_respects_cequivc_right;[apply cequivc_sym;exact m6|].
+      eapply equality_respects_cequivc_right;[apply cequivc_sym;exact q1|]; auto.
+
+    + eapply tequality_preserving_equality in h1;[|apply tequality_sym;eauto].
+      vr_seq_true in hyp3.
+      pose proof (hyp3 s1 s2 hf sim) as m; clear hyp2; exrepnd.
+      lsubst_tac.
+
+      apply tequality_mkc_equality in m0; repnd; GC.
+      clear m2.
+      apply equality_in_mkc_equality in m1; exrepnd.
+      clear dependent y1.
+      clear dependent y2.
+
+      pose proof (m0 (lsubstc b2 w5 s1 c5) (lsubstc b2 w5 s1 c5) (lsubstc b2 w5 s1 c5)) as q.
+      destruct q as [q q']; clear q'.
+      autodimp q hyp; repnd; dands; eauto 3 with nequality;[].
+
+      apply equality_in_base_iff in q1; spcast.
+      apply equality_in_base_iff in m6; spcast.
+
+      eapply equality_respects_cequivc_right;[apply cequivc_sym;exact m6|].
+      eapply equality_respects_cequivc_right;[apply cequivc_sym;exact q1|]; auto.
 Qed.
 
 
+
+(*
 (**
 
 <<
@@ -579,3 +1332,4 @@ XXXXXXXXXXXXXXXXXX
         { eapply cequivc_trans in d;[|eauto].
           right; spcast; auto. }
 Qed.
+*)

@@ -48,13 +48,13 @@ Require Export per_props_nat0.
 Require Export per_props_nat.
 Require Export sequents_useful. (* commented out lots of stuff there *)
 Require Export rules_struct.
-
-
-(* working on *)
 Require Export rules_equality3.
 Require Export per_props_isect.
 Require Export per_props_top.
 Require Export per_props_subtype_rel.
+
+
+(* working on *)
 Require Export rules_tyfam.
 Require Export per_props_aequality. (* commented out lots of stuff here *)
 

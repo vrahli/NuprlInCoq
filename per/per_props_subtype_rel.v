@@ -45,11 +45,12 @@ Lemma if_member_vsubtype {p} :
 Proof.
   introv; rewrite <- fold_mkc_vsubtype; introv m e.
   apply member_mkc_member_implies in m; exrepnd; spcast.
-  clear m1 m0.
+  clear m0 m2.
+  apply equality_refl in m1.
 
-  apply equality_in_function in m2; repnd.
+  apply equality_in_function in m1; repnd.
 
-  appdup m2 in e.
+  appdup m1 in e.
 
   eapply equality_respects_cequivc_left in e0;[|apply cequivc_beta].
   eapply equality_respects_cequivc_right in e0;[|apply cequivc_beta].
@@ -71,11 +72,12 @@ Lemma equality_in_subtype_rel {p} :
   forall lib (t u A B : @CTerm p),
     equality lib t u (mkc_subtype_rel A B)
     <=>
-    { x , y : CTerm
-    , (t ===>(lib) (mkc_refl x))
-    # (u ===>(lib) (mkc_refl y))
-    # equality lib x mkc_id (mkc_fun A B)
-    # equality lib y mkc_id (mkc_fun A B)
+    { x1 , x2 , y1 , y2 : CTerm
+    , (t ===>(lib) (mkc_prefl x1 y1))
+    # (u ===>(lib) (mkc_prefl x2 y2))
+    # equality lib x1 mkc_id (mkc_fun A B)
+    # equality lib x2 mkc_id (mkc_fun A B)
+    # equality lib y1 y2 (mkc_fun A B)
     # type lib A
     # (inhabited_type lib A -> type lib B)
     # subtype_rel lib A B }.
@@ -86,28 +88,36 @@ Proof.
 
   split; intro k; exrepnd.
 
-  - exists x y; dands; auto.
+  - exists x y z w; dands; auto; eauto 2 with nequality slow;
+      try (complete (rw @equality_in_fun in k1; tcsp)).
 
-    { apply equality_sym; auto. }
+    clear k1 k4.
+    apply equality_refl in k3.
+    rw @equality_in_fun in k3; repnd.
+    introv xx.
+    applydup k3 in xx.
+    eapply equality_respects_cequivc_left in xx0;[|apply cequivc_apply_id].
+    eapply equality_respects_cequivc_right in xx0;[|apply cequivc_apply_id].
+    auto.
 
-    { apply equality_sym; auto. }
+  - exists x1 x2 y1 y2.
+    dands; eauto 2 with nequality.
+Qed.
 
-    { rw @equality_in_fun in k1; tcsp. }
-
-    { rw @equality_in_fun in k1; tcsp. }
-
-    { apply equality_refl in k1.
-      rw @equality_in_fun in k1; repnd.
-      introv xx.
-      applydup k1 in xx.
-      eapply equality_respects_cequivc_left in xx0;[|apply cequivc_apply_id].
-      eapply equality_respects_cequivc_right in xx0;[|apply cequivc_apply_id].
-      auto. }
-
-  - exists x y.
-    dands; auto.
-    { apply equality_sym; auto. }
-    { apply equality_sym; auto. }
+Lemma subtype_rel_implies_mkc_id_in_mkc_fun {o} :
+  forall lib (A B : @CTerm o),
+    type lib A
+    -> (inhabited_type lib A -> type lib B)
+    -> subtype_rel lib A B
+    -> member lib mkc_id (mkc_fun A B).
+Proof.
+  introv tA tB sr.
+  apply equality_in_fun; dands; auto.
+  introv e.
+  applydup sr in e.
+  eapply equality_respects_cequivc_left;[apply cequivc_sym;apply cequivc_apply_id|].
+  eapply equality_respects_cequivc_right;[apply cequivc_sym;apply cequivc_apply_id|].
+  auto.
 Qed.
 
 Lemma inhabited_subtype_rel {o} :
@@ -126,22 +136,9 @@ Proof.
 
   - repnd.
     unfold inhabited_type.
-    exists (@mkc_refl o mkc_id).
+    exists (@mkc_prefl o mkc_id mkc_id).
     apply equality_in_subtype_rel.
-    exists (@mkc_id o) (@mkc_id o).
-    dands; spcast; auto; try (apply computes_to_valc_refl; auto; eauto 2 with slow).
-
-    + apply equality_in_fun; dands; auto.
-      introv e.
-      applydup k in e.
-      eapply equality_respects_cequivc_left;[apply cequivc_sym;apply cequivc_apply_id|].
-      eapply equality_respects_cequivc_right;[apply cequivc_sym;apply cequivc_apply_id|].
-      auto.
-
-    + apply equality_in_fun; dands; auto.
-      introv e.
-      applydup k in e.
-      eapply equality_respects_cequivc_left;[apply cequivc_sym;apply cequivc_apply_id|].
-      eapply equality_respects_cequivc_right;[apply cequivc_sym;apply cequivc_apply_id|].
-      auto.
+    exists (@mkc_id o) (@mkc_id o) (@mkc_id o) (@mkc_id o).
+    dands; spcast; auto; eauto 3 with slow;
+      apply subtype_rel_implies_mkc_id_in_mkc_fun; auto.
 Qed.
