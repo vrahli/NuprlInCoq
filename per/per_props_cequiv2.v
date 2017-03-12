@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -35,8 +36,9 @@ Require Export computation_apply.
 Require Export per_props_cequiv.
 Require Export per_props_union.
 Require Export continuity_defs_ceq.
-Require Export per_props3.
+(*Require Export per_props3.*)
 Require Export per_props_nat.
+Require Export per_props_cequiv.
 Require Export cequiv_bind.
 
 
@@ -45,6 +47,7 @@ Lemma type_mkc_cequiv {o} :
     type lib (mkc_cequiv a b).
 Proof.
   introv.
+  rw <- @fold_type.
   apply tequality_mkc_cequiv; tcsp.
 Qed.
 Hint Resolve type_mkc_cequiv : slow.
@@ -54,6 +57,7 @@ Lemma type_mkc_approx {o} :
     type lib (mkc_approx a b).
 Proof.
   introv.
+  rw <- @fold_type.
   apply tequality_mkc_approx; tcsp.
 Qed.
 Hint Resolve type_mkc_approx : slow.
@@ -474,7 +478,7 @@ Qed.
 
 Lemma type_base {o} : forall lib, @type o lib mkc_base.
 Proof.
-  introv; apply tequality_base.
+  eauto 3 with slow.
 Qed.
 Hint Resolve type_base : slow.
 
@@ -911,15 +915,10 @@ Lemma base_in_uni {p} :
   forall lib i, @member p lib mkc_base (mkc_uni i).
 Proof.
   introv.
-  unfold member, equality.
-  exists (fun A A' => {eqa : per , close lib (univi lib i) A A' eqa}).
-  unfold nuprl.
-  dands.
-
-  { apply mkc_uni_in_nuprl. }
-
-  { exists (fun t t' => t ~=~(lib) t').
-    apply CL_base.
-    unfold per_base; dands; spcast; auto;
-      apply computes_to_valc_refl; eauto 3 with slow. }
+  exists (univi_eq lib (univi lib i)).
+  dands; eauto 3 with slow.
+  exists (ccequivc lib).
+  apply extts_nuprli_refl.
+  apply CL_base.
+  unfold per_base; dands; spcast; eauto 2 with slow.
 Qed.

@@ -1322,6 +1322,16 @@ Proof.
         apply k; auto.
 Qed.
 
+Lemma type_bunion {o} :
+  forall lib (A B : @CTerm o),
+    type lib (mkc_bunion A B)
+    <=> (type lib A # type lib B).
+Proof.
+  introv.
+  rw <- @fold_type.
+  rw @tequality_bunion.
+  split; intro h; repnd; dands; auto.
+Qed.
 
 Lemma equality_in_bunion_left {o} :
   forall lib (a b A B : @CTerm o),

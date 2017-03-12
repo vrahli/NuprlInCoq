@@ -106,12 +106,12 @@ Proof.
   end.
   { clear hyp1 hyp2.
     unfold wf_csequent, wf_sequent, wf_concl; simpl.
-    allrw @wf_refl.
+    allrw @wf_prefl.
     allrw <- @wf_equality_iff; repnd.
     allrw @covered_equality; repnd.
     dands; auto.
     unfold closed_extract; simpl.
-    apply covered_refl; auto.
+    apply covered_prefl_same; auto.
 
     (* it looks like we're going to have to add [sarg_term (C a1 x1 b1)] *)
   }
