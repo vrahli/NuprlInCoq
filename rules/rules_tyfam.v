@@ -59,7 +59,7 @@ Definition rule_tyfam_equality {p}
            (mk_uni i)
            e2)
     ]
-    [ sarg_var y ].
+    [ sarg_var y, sarg_term (C a1 x1 b1) ].
 
 Lemma rule_tyfam_equality_true3 {pp} :
   forall lib C Cc (a1 a2 b1 b2 : NTerm) e1 e2
@@ -78,11 +78,11 @@ Lemma rule_tyfam_equality_true3 {pp} :
                      = Cc (lsubstc a wa s ca) x (lsubstc_vars b wb (csub_filter s [x]) [x] cb)
                }}}}),
   forall eqC : (forall a1 a2 v1 v2 b1 b2 i,
-                  equality lib (Cc a1 v1 b1) (Cc a2 v2 b2) (mkc_uni i)
-                  <=> (equality lib a1 a2 (mkc_uni i)
-                       # (forall a a',
-                            equality lib a a' a1
-                            -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))),
+                   equality lib a1 a2 (mkc_uni i)
+                   -> (forall a a',
+                          equality lib a a' a1
+                          -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i))
+                   -> equality lib (Cc a1 v1 b1) (Cc a2 v2 b2) (mkc_uni i)),
     rule_true3 lib (rule_tyfam_equality
                       C a1 a2 b1 b2
                       e1 e2
@@ -93,6 +93,9 @@ Proof.
   unfold rule_tyfam_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   repnd.
+
+  pose proof (cargs (sarg_term (C a1 x1 b1))) as cargst; autodimp cargst hyp; tcsp.
+  simpl in *.
 
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
@@ -112,8 +115,6 @@ Proof.
     dands; auto.
     unfold closed_extract; simpl.
     apply covered_prefl_same; auto.
-
-    (* it looks like we're going to have to add [sarg_term (C a1 x1 b1)] *)
   }
 
   exists wfc.
@@ -131,12 +132,12 @@ Proof.
     dwfseq.
     allrw fvsC.
     sp;
-      try (complete (generalize (wfc0 y); intro p;
+      try (complete (pose proof (wfc1 y) as p;
                      allrw in_app_iff;
                      allrw in_remove_nvars; allsimpl;
                      autodimp p hyp; tcsp;
                      right; tcsp));
-      try (complete (generalize (wfc1 y); intro p;
+      try (complete (pose proof (wfc2 y) as p;
                      allrw in_app_iff;
                      allrw in_remove_nvars; allsimpl;
                      autodimp p hyp; tcsp;
@@ -152,29 +153,31 @@ Proof.
   vr_seq_true.
 
   lsubst_tac.
-  rewrite @member_eq.
-  rw <- @member_equality_iff.
+
+  (*rewrite @member_eq.
+  rw <- @member_equality_iff.*)
 
   teq_and_eq (@mk_uni pp i) (C a1 x1 b1) (C a2 x2 b2) s1 s2 H;
     [apply tequality_mkc_uni|].
 
-  pose proof (pd a1 x1 b1 w1 s1 ca1) as e; exrepnd; rw e1; clear e1.
-  pose proof (pd a2 x2 b2 w2 s2 cb2) as e; exrepnd; rw e1; clear e1.
+  pose proof (pd a1 x1 b1 w1 s1 ca1) as xx; exrepnd; rw xx1; clear xx1.
+  pose proof (pd a2 x2 b2 w2 s2 cb2) as xx; exrepnd; rw xx1; clear xx1.
   apply eqC.
   dands.
 
-  { (* First, we prove that the a's are types *)
+  {
+    (* First, we prove that the a's are types *)
     vr_seq_true in hyp1.
     pose proof (hyp1 s1 s2) as hyp; clear hyp1.
     repeat (autodimp hyp hh).
     exrepnd.
     lsubst_tac.
-    rw @member_eq in hyp1.
-    rw <- @member_equality_iff in hyp1; auto.
+    apply equality_in_mkc_equality in hyp1; exrepnd.
     apply equality_commutes4 in hyp0; auto.
   }
 
-  { (* Then we prove that the b's are type families *)
+  {
+    (* Then we prove that the b's are type families *)
     intros a a' eqaa'.
     vr_seq_true in hyp2.
     repeat substc_lsubstc_vars3.
@@ -197,8 +200,7 @@ Proof.
       autodimp hyp1 hyp1'.
       autodimp hyp1 hyp1'; exrepnd; clear_irr.
       lift_lsubst in hyp0; lift_lsubst in hyp1.
-      rw @member_eq in hyp1.
-      rw <- @member_equality_iff in hyp1.
+      apply equality_in_mkc_equality in hyp1; exrepnd.
       apply @equality_commutes2 in hyp0; auto.
       allapply @equality_in_uni; auto. }
 
@@ -207,8 +209,7 @@ Proof.
 
     exrepnd; clear_irr.
     lsubst_tac.
-    rw @member_eq in h1.
-    rw <- @member_equality_iff in h1.
+    apply equality_in_mkc_equality in h1; exrepnd.
 
     assert (!LIn y (dom_csub s1)) as nys1.
     { allapply @similarity_dom; exrepd; allrw; sp. }
@@ -246,10 +247,11 @@ Proof.
 Qed.
 
 Lemma rule_tyfam_equality_true {pp} :
-  forall lib C Cc (a1 a2 b1 b2 : NTerm),
-  forall x1 x2 y : NVar,
-  forall i   : nat,
-  forall H   : @barehypotheses pp,
+  forall lib C Cc (a1 a2 b1 b2 : NTerm)
+         (e1 e2 : NTerm)
+         (x1 x2 y : NVar)
+         (i   : nat)
+         (H   : @barehypotheses pp),
 (*  forall bc1 : !LIn y (bound_vars b1),
   forall bc2 : !LIn y (bound_vars b2), *)
   forall fvsC : forall a x b, free_vars (C a x b) = free_vars a ++ remove_nvars [x] (free_vars b),
@@ -262,13 +264,14 @@ Lemma rule_tyfam_equality_true {pp} :
                      = Cc (lsubstc a wa s ca) x (lsubstc_vars b wb (csub_filter s [x]) [x] cb)
                }}}}),
   forall eqC : (forall a1 a2 v1 v2 b1 b2 i,
-                  equality lib (Cc a1 v1 b1) (Cc a2 v2 b2) (mkc_uni i)
-                  <=> (equality lib a1 a2 (mkc_uni i)
-                       # (forall a a',
-                            equality lib a a' a1
-                            -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))),
+                   equality lib a1 a2 (mkc_uni i)
+                   -> (forall a a',
+                          equality lib a a' a1
+                          -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i))
+                   -> equality lib (Cc a1 v1 b1) (Cc a2 v2 b2) (mkc_uni i)),
     rule_true lib (rule_tyfam_equality
                      C a1 a2 b1 b2
+                     e1 e2
                      x1 x2 y
                      i
                      H).

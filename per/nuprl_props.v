@@ -3038,3 +3038,32 @@ Proof.
   pose proof (nuprli_implies_equality_eq lib j0 B a b eqa) as q.
   autodimp q hyp.
 Qed.
+
+Lemma typei_iff_nuprli {o} :
+  forall lib i (A : @CTerm o),
+    typei lib i A <=> { eq : per(o) , nuprli lib i A eq }.
+Proof.
+  introv; split; intro h.
+
+  - unfold typei, tequalityi, equality in h; exrepnd.
+    inversion h1; subst; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepd.
+    computes_to_value_isvalue; GC.
+    apply e in h0.
+    unfold univi_eq in *; exrepnd.
+    destruct h2 as [h h']; GC.
+    fold (nuprli lib j0) in *.
+    exists eqa; dands; auto.
+
+  - exrepnd.
+    exists (univi_eq lib (univi lib i)); dands; eauto 2 with slow.
+    exists eq; split; auto.
+Qed.
+
+Lemma typei_iff_member_mkc_uni {o} :
+  forall lib i (A : @CTerm o),
+    typei lib i A <=> member lib A (mkc_uni i).
+Proof.
+  introv; split; intro h; tcsp.
+Qed.

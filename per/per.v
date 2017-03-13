@@ -388,13 +388,10 @@ Definition per_uatom {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] :=
 *)
 
 Definition per_ffatom_eq {p}
-           lib
            (eqa : per)
            (u : get_patom_set p)
            (x t1 t2 : @CTerm p) :=
-    t1 ===>(lib) mkc_axiom
-  # t2 ===>(lib) mkc_axiom
-  # {y : CTerm , eqa x y # !LIn u (getc_utokens y)}.
+  {y : CTerm , eqa x y # !LIn u (getc_utokens y)}.
 
 Definition per_ffatom {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] :=
    {A , x , a : CTerm
@@ -404,7 +401,7 @@ Definition per_ffatom {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] :
       # ts A eqa
       # eqa x x
       # a ===>(lib) (mkc_utoken u)
-      # eq <=2=> (per_ffatom_eq lib eqa u x)}}}.
+      # eq <=2=> (per_ffatom_eq eqa u x)}}}.
 
 (*
 Definition name_not_in_upto {o} lib (a x : @CTerm o) (eqa : per) :=
@@ -434,12 +431,9 @@ Definition per_effatom {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] 
 Definition noutokensc {o} (t : @CTerm o) := noutokens (get_cterm t).
 
 Definition per_ffatoms_eq {p}
-           lib
            (eqa : per)
            (x t1 t2 : @CTerm p) :=
-    t1 ===>(lib) mkc_axiom
-  # t2 ===>(lib) mkc_axiom
-  # {y : @CTerm p , eqa x y # noutokensc y}.
+  {y : @CTerm p , eqa x y # noutokensc y}.
 
 Definition per_ffatoms {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] :=
    {A , x : CTerm
@@ -447,7 +441,7 @@ Definition per_ffatoms {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] 
       , T ===>(lib) (mkc_free_from_atoms A x)
       # ts A eqa
       # eqa x x
-      # eq <=2=> (per_ffatoms_eq lib eqa x)}}.
+      # eq <=2=> (per_ffatoms_eq eqa x)}}.
 
 
 (*
@@ -2470,7 +2464,7 @@ Definition close_ind' {pp}
                    (reca : P ts A eqa)
                    (ex : eqa x x)
                    (ca : a ===>(lib) (mkc_utoken u))
-                   (eqiff : eq <=2=> (per_ffatom_eq lib eqa u x))
+                   (eqiff : eq <=2=> (per_ffatom_eq eqa u x))
                    (per : per_ffatom lib (close lib ts) T eq),
       P ts T eq)
 (*  (effatom : forall (ts : cts)
@@ -2494,7 +2488,7 @@ Definition close_ind' {pp}
                     (cla : close lib ts A eqa)
                     (reca : P ts A eqa)
                     (ex : eqa x x)
-                    (eqiff : eq <=2=> (per_ffatoms_eq lib eqa x))
+                    (eqiff : eq <=2=> (per_ffatoms_eq eqa x))
                     (per : per_ffatoms lib (close lib ts) T eq),
                P ts T eq)
   (subset : forall (ts     : cts)

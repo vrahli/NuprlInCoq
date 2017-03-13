@@ -1201,37 +1201,6 @@ Proof.
     split; apply CL_eq; exists A a1 a2 eqa; dands; spcast; eauto 2 with slow.
 Qed.
 
-(* !!MOVE *)
-Lemma typei_iff_nuprli {o} :
-  forall lib i (A : @CTerm o),
-    typei lib i A <=> { eq : per(o) , nuprli lib i A eq }.
-Proof.
-  introv; split; intro h.
-
-  - unfold typei, tequalityi, equality in h; exrepnd.
-    inversion h1; subst; try not_univ.
-    duniv j h.
-    allrw @univi_exists_iff; exrepd.
-    computes_to_value_isvalue; GC.
-    apply e in h0.
-    unfold univi_eq in *; exrepnd.
-    destruct h2 as [h h']; GC.
-    fold (nuprli lib j0) in *.
-    exists eqa; dands; auto.
-
-  - exrepnd.
-    exists (univi_eq lib (univi lib i)); dands; eauto 2 with slow.
-    exists eq; split; auto.
-Qed.
-
-(* !!MOVE *)
-Lemma typei_iff_member_mkc_uni {o} :
-  forall lib i (A : @CTerm o),
-    typei lib i A <=> member lib A (mkc_uni i).
-Proof.
-  introv; split; intro h; tcsp.
-Qed.
-
 Lemma equality_mkc_equality2_sp_in_uni {p} :
   forall lib i (a1 a2 b1 b2 A B : @CTerm p),
     equality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) (mkc_uni i)

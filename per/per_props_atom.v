@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,13 +21,18 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
 
-Require Export per_props.
+Require Export nuprl_props.
+Require Export choice.
+Require Export cvterm.
 
 
 
@@ -35,7 +42,7 @@ Proof.
   introv.
   unfold tequality.
   exists (@equality_of_uatom p lib).
-  unfold nuprl.
+  apply nuprl_implies_Nuprl.
   apply CL_uatom.
   unfold per_uatom; sp; spcast;
   try (apply computes_to_valc_refl);
@@ -69,7 +76,7 @@ Proof.
   introv.
   unfold tequality.
   exists (@equality_of_atom p lib).
-  unfold nuprl.
+  apply nuprl_implies_Nuprl.
   apply CL_atom.
   unfold per_atom; sp; spcast;
   try (apply computes_to_valc_refl);
@@ -96,10 +103,3 @@ Proof.
     spcast; apply computes_to_value_isvalue_refl; repeat constructor; simpl; sp.
     exists a; sp.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

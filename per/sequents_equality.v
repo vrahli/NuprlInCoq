@@ -198,7 +198,7 @@ Ltac teq_and_eq T a b s1 s2 H :=
       , cT2 : cover_vars T s2
       , hf  : hyps_functionality _ s1 H
       , sim : similarity _ s1 s2 H |- _ ] =>
-      pose proof (teq_and_eq_if_equality
+      pose proof (teq_and_eq_if_equality2
                     lib T a b s1 s2 H
                     wT wa wb ca1 ca2 cb1 cb2 cT1 cT2
                     hf sim) as hyp;

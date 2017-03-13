@@ -36,9 +36,9 @@ Require Import dest_close.
 
 
 Lemma eq_term_equals_per_ffatom_eq_if {p} :
-  forall lib (eqa1 eqa2 : per(p)) u x,
+  forall (eqa1 eqa2 : per(p)) u x,
     (eqa1 <=2=> eqa2)
-    -> (per_ffatom_eq lib eqa1 u x) <=2=> (per_ffatom_eq lib eqa2 u x).
+    -> (per_ffatom_eq eqa1 u x) <=2=> (per_ffatom_eq eqa2 u x).
 Proof.
   introv eqt.
   unfold per_ffatom_eq; introv; split; intro k; exrepnd;
@@ -46,10 +46,10 @@ Proof.
 Qed.
 
 Lemma per_ffatom_eq_symmetric {p} :
-  forall lib (eq : per(p)) x u t1 t2,
+  forall (eq : per(p)) x u t1 t2,
     term_equality_symmetric eq
-    -> per_ffatom_eq lib eq x u t1 t2
-    -> per_ffatom_eq lib eq x u t2 t1.
+    -> per_ffatom_eq eq x u t1 t2
+    -> per_ffatom_eq eq x u t2 t1.
 Proof.
   introv tes per.
   allunfold @per_ffatom_eq; exrepnd; dands; allrw; try (complete sp).
@@ -57,11 +57,11 @@ Proof.
 Qed.
 
 Lemma per_ffatom_eq_transitive {p} :
-  forall lib (eq : per(p)) x u t1 t2 t3,
+  forall (eq : per(p)) x u t1 t2 t3,
     term_equality_transitive eq
-    -> per_ffatom_eq lib eq x u t1 t2
-    -> per_ffatom_eq lib eq x u t2 t3
-    -> per_ffatom_eq lib eq x u t1 t3.
+    -> per_ffatom_eq eq x u t1 t2
+    -> per_ffatom_eq eq x u t2 t3
+    -> per_ffatom_eq eq x u t1 t3.
 Proof.
   introv tet per1 per2.
   allunfold @per_ffatom_eq; exrepnd.
@@ -73,12 +73,11 @@ Lemma per_ffatom_eq_cequiv {p} :
   forall lib (eq : per(p)) x u t1 t2,
     term_equality_respecting lib eq
     -> cequivc lib t1 t2
-    -> per_ffatom_eq lib eq x u t1 t1
-    -> per_ffatom_eq lib eq x u t1 t2.
+    -> per_ffatom_eq eq x u t1 t1
+    -> per_ffatom_eq eq x u t1 t2.
 Proof.
   introv res ceq per.
   allunfold @per_ffatom_eq; repnd; dands; auto; spcast.
-  apply cequivc_axiom in ceq; auto.
 Qed.
 
 Lemma cequiv_mk_ffatom {p} :
@@ -125,11 +124,11 @@ Proof.
 Qed.
 
 Lemma per_ffatom_eq_elt {o} :
-  forall lib (eqa : per(o)) u x1 x2,
+  forall (eqa : per(o)) u x1 x2,
     term_equality_symmetric eqa
     -> term_equality_transitive eqa
     -> eqa x1 x2
-    -> (per_ffatom_eq lib eqa u x1) <=2=> (per_ffatom_eq lib eqa u x2).
+    -> (per_ffatom_eq eqa u x1) <=2=> (per_ffatom_eq eqa u x2).
 Proof.
   introv sym trans eqxs.
   unfold per_ffatom_eq; introv; split; introv k; exrepnd; dands; auto;
@@ -147,7 +146,7 @@ Lemma close_type_system_ffatom {p} :
     -> type_system_props lib (close lib ts) A eqa
     -> eqa x x
     -> computes_to_valc lib a (mkc_utoken u)
-    -> (eq <=2=> (per_ffatom_eq lib eqa u x))
+    -> (eq <=2=> (per_ffatom_eq eqa u x))
     -> per_ffatom lib (close lib ts) T eq
     -> type_system_props lib (close lib ts) T eq.
 Proof.
