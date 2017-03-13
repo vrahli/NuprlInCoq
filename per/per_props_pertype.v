@@ -37,29 +37,22 @@ Require Export cvterm.
 
 Ltac dest_per :=
   match goal with
-      [ H : per_pertype ?lib ?ts ?T1 ?T2 ?eq |- _ ] =>
+      [ H : per_pertype ?lib ?ts ?T ?eq |- _ ] =>
       let R1     := fresh "R1"     in
-      let R2     := fresh "R2"     in
       let eq1    := fresh "eq1"    in
-      let eq2    := fresh "eq2"    in
       let c1     := fresh "c1"     in
-      let c2     := fresh "c2"     in
       let typ1   := fresh "typ1"   in
-      let typ2   := fresh "typ2"   in
       let inhiff := fresh "inhiff" in
+      let isper  := fresh "isper"  in
       let pereq  := fresh "pereq"  in
       unfold per_pertype in H;
         destruct H as [ R1     H ];
-        destruct H as [ R2     H ];
         destruct H as [ eq1    H ];
-        destruct H as [ eq2    H ];
         destruct H as [ c1     H ];
-        destruct H as [ c2     H ];
         destruct H as [ typ1   H ];
-        destruct H as [ typ2   H ];
         destruct H as [ inhiff H ];
         destruct H as [ isper  pereq ]
-    | [ H : per_ipertype ?lib ?ts ?T1 ?T2 ?eq |- _ ] =>
+(*    | [ H : per_ipertype ?lib ?ts ?T1 ?T2 ?eq |- _ ] =>
       let R1     := fresh "R1"     in
       let R2     := fresh "R2"     in
       let eq1    := fresh "eq1"    in
@@ -94,8 +87,60 @@ Ltac dest_per :=
         destruct H as [ typ1  H ];
         destruct H as [ typ2  H ];
         destruct H as [ typ3  H ];
-        destruct H as [ isper pereq ]
+        destruct H as [ isper pereq ]*)
   end.
+
+Hint Resolve iscvalue_mkc_pertype : slow.
+
+Lemma equality_in_mkc_pertype {p} :
+  forall lib (t1 t2 R : @CTerm p),
+    equality lib t1 t2 (mkc_pertype R)
+    <=> (inhabited_type lib (mkc_apply2 R t1 t2)
+         # is_per_type lib R
+         # (forall x y, type lib (mkc_apply2 R x y))).
+Proof.
+  intros; unfold inhabited_type; split; intro i; exrepnd.
+
+  - unfold equality, nuprl in i; exrepnd.
+    inversion i1; subst; try not_univ.
+    match goal with
+    | [ H : per_pertype _ _ _ _ |- _ ] => rename H into q
+    end.
+    unfold per_pertype in q; exrepnd; computes_to_value_isvalue.
+    allfold (@nuprl p lib).
+    apply q1 in i0.
+    unfold per_pertype_eq, inhabited in i0; exrepnd.
+
+    dands.
+
+    + exists t; unfold member, equality; exists (eqr t1 t2); sp.
+
+    + pose proof (is_per_type_iff_is_per lib R0 eqr) as iff.
+      dest_imp iff hyp.
+      rw <- iff; sp.
+
+    + introv.
+      unfold type, tequality.
+      exists (eqr x y); sp.
+
+  - unfold member, equality in i2; exrepnd.
+    pose proof (choice_spteq lib (mkc_apply2 R) (mkc_apply2 R)) as fn.
+    dest_imp fn hyp; exrepnd; eauto 2 with slow;[].
+    pose proof (fn0 t1 t2) as n.
+    pose proof (nuprl_uniquely_valued lib (mkc_apply2 R t1 t2) eq (f t1 t2)) as eqt.
+    repeat (autodimp eqt hyp); eauto 3 with slow;[].
+
+    exists (fun a b => inhabited (f a b)); sp;
+      try (complete (rw eqt in i0; exists t; sp)).
+
+    apply CL_pertype; unfold per_pertype.
+    allfold (@nuprl p lib).
+    exists R f; dands; spcast; eauto 3 with slow.
+
+    pose proof (is_per_type_iff_is_per lib R f) as iff.
+    autodimp iff hyp; eauto 3 with slow.
+    rw iff; sp.
+Qed.
 
 Lemma tequality_mkc_pertype {p} :
   forall lib (R1 R2 : @CTerm p),
@@ -151,6 +196,7 @@ Proof.
     rw iff; sp.
 Qed.
 
+(*
 Lemma tequality_mkc_ipertype {p} :
   forall lib (R1 R2 : @CTerm p),
     tequality lib (mkc_ipertype R1) (mkc_ipertype R2)
@@ -187,7 +233,9 @@ Proof.
     generalize (is_per_type_iff_is_per1 lib R1 R2 f fn0); introv iff.
     rw iff; sp.
 Qed.
+*)
 
+(*
 Lemma tequality_mkc_spertype {p} :
   forall lib (R1 R2 : @CTerm p),
     tequality lib (mkc_spertype R1) (mkc_spertype R2)
@@ -262,6 +310,7 @@ Proof.
     generalize (is_per_type_iff_is_per1 lib R1 R2 f fn0); introv iff.
     rw iff; sp.
 Qed.
+*)
 
 (*
 Lemma mkc_ipertype_equality_in_uni :
@@ -381,6 +430,7 @@ Proof.
   unfold type; sp.
 Qed.
 
+(*
 Lemma type_mkc_ipertype {p} :
   forall lib (R : @CTerm p),
     type lib (mkc_ipertype R)
@@ -391,7 +441,9 @@ Proof.
   unfold type.
   rw @tequality_mkc_ipertype; split; sp.
 Qed.
+*)
 
+(*
 Lemma type_mkc_spertype {p} :
   forall lib (R : @CTerm p),
     type lib (mkc_spertype R)
@@ -408,6 +460,7 @@ Proof.
   unfold type.
   rw @tequality_mkc_spertype; split; sp.
 Qed.
+*)
 
 Lemma iff_inhabited_type_if_pertype_eq_or_ceq {p} :
   forall lib (R1 R2 : @CTerm p) i,
@@ -478,55 +531,6 @@ Qed.
 *)
 
 
-Lemma equality_in_mkc_pertype {p} :
-  forall lib (t1 t2 R : @CTerm p),
-    equality lib t1 t2 (mkc_pertype R)
-    <=> (inhabited_type lib (mkc_apply2 R t1 t2)
-         # is_per_type lib R
-         # (forall x y, type lib (mkc_apply2 R x y))).
-Proof.
-  intros; unfold inhabited_type; split; intro i; exrepnd.
-
-  - unfold equality, nuprl in i; exrepnd.
-    inversion i1; subst; try not_univ.
-    dest_per.
-    allfold (@nuprl p lib).
-    computes_to_value_isvalue.
-    rw pereq in i0.
-    clear typ2 inhiff eq2.
-    unfold inhabited in i0; exrepnd.
-    dands.
-
-    exists t; unfold member, equality; exists (eq1 t1 t2); sp.
-
-    generalize (is_per_type_iff_is_per lib R1 eq1); introv iff.
-    dest_imp iff hyp.
-    rw <- iff; sp.
-
-    introv.
-    unfold type, tequality.
-    exists (eq1 x y); sp.
-
-  - unfold member, equality in i2; exrepnd.
-    generalize (choice_spteq lib (mkc_apply2 R) (mkc_apply2 R)); intro fn.
-    dest_imp fn hyp; exrepnd.
-    generalize (fn0 t1 t2); intro n.
-    pose proof (nuprl_uniquely_valued lib (mkc_apply2 R t1 t2) eq (f t1 t2)) as eqt.
-    repeat (dest_imp eqt hyp).
-
-    exists (fun a b => inhabited (f a b)); sp;
-    try (complete (rw eqt in i0; exists t; sp)).
-
-    apply CL_pertype; unfold per_pertype.
-    allfold (@nuprl p lib).
-    exists R R f f; sp;
-    try (spcast; complete computes_to_value_refl).
-
-    generalize (is_per_type_iff_is_per lib R f); introv iff.
-    dest_imp iff hyp.
-    rw iff; sp.
-Qed.
-
 Lemma equality_in_mkc_pertype2 {p} :
   forall lib (t1 t2 R : @CTerm p),
     equality lib t1 t2 (mkc_pertype R)
@@ -537,6 +541,7 @@ Proof.
   rw @type_mkc_pertype; split; sp.
 Qed.
 
+(*
 Lemma equality_in_mkc_ipertype {p} :
   forall lib (t1 t2 R : @CTerm p),
     equality lib t1 t2 (mkc_ipertype R)
@@ -580,7 +585,9 @@ Proof.
     generalize (is_per_type_iff_is_per lib R f fn0); introv iff.
     rw iff; sp.
 Qed.
+*)
 
+(*
 Lemma equality_in_mkc_ipertype2 {p} :
   forall lib (t1 t2 R : @CTerm p),
     equality lib t1 t2 (mkc_ipertype R)
@@ -590,7 +597,9 @@ Proof.
   rw @equality_in_mkc_ipertype.
   rw @type_mkc_ipertype; split; sp.
 Qed.
+*)
 
+(*
 Lemma equality_in_mkc_spertype {p} :
   forall lib (t1 t2 R : @CTerm p),
     equality lib t1 t2 (mkc_spertype R)
@@ -662,7 +671,9 @@ Proof.
     generalize (is_per_type_iff_is_per lib R f fn0); introv iff.
     rw iff; sp.
 Qed.
+*)
 
+(*
 Lemma equality_in_mkc_spertype2 {p} :
   forall lib (t1 t2 R : @CTerm p),
     equality lib t1 t2 (mkc_spertype R)
@@ -673,6 +684,7 @@ Proof.
   rw @equality_in_mkc_spertype.
   rw @type_mkc_spertype; sp.
 Qed.
+*)
 
 Lemma iff_inhabited_type_if_pertype_cequorsq {p} :
   forall lib (R1 R2 : @CTerm p) i,
@@ -713,6 +725,7 @@ Proof.
   apply cequivc_sym; sp.
 Qed.
 
+(*
 Lemma iff_inhabited_type_if_ipertype_cequorsq {p} :
   forall lib (R1 R2 : @CTerm p) i,
     (forall x y : CTerm, type lib (mkc_apply2 R1 x y))
@@ -735,7 +748,9 @@ Proof.
   generalize (istype x y); intro t.
   apply cequivc_sym in ceq; rwg ceq; sp.
 Qed.
+*)
 
+(*
 Lemma iff_inhabited_type_if_spertype_cequorsq {p} :
   forall lib (R1 R2 : @CTerm p) i,
     (forall x y : CTerm, type lib (mkc_apply2 R1 x y))
@@ -758,6 +773,7 @@ Proof.
   generalize (istype x y); intro t.
   apply cequivc_sym in ceq; rwg ceq; sp.
 Qed.
+*)
 
 Lemma is_per_type_sqper_rel_change_subst {o} :
   forall lib v1 v2 R s1 s2 w c1 c2,
@@ -960,6 +976,7 @@ Proof.
     rw iff; sp.
 Qed.
 
+(*
 Lemma mkc_ipertype_equality_in_uni {p} :
   forall lib (R1 R2 : @CTerm p) i,
     equality lib (mkc_ipertype R1) (mkc_ipertype R2) (mkc_uni i)
@@ -1037,7 +1054,9 @@ Proof.
     apply nuprl_refl in k1; sp.
     rw iff; sp.
 Qed.
+*)
 
+(*
 Lemma mkc_spertype_equality_in_uni {p} :
   forall lib (R1 R2 : @CTerm p) i,
     equality lib (mkc_spertype R1) (mkc_spertype R2) (mkc_uni i)
@@ -1152,7 +1171,9 @@ Proof.
     apply nuprl_refl in k1; sp.
     rw iff; sp.
 Qed.
+*)
 
+(*
 Lemma tequality_equality_in_mkc_spertype_implies_tequality_apply {p} :
   forall lib (a b c d R1 R2 : @CTerm p),
     tequality lib
@@ -1191,3 +1212,4 @@ Proof.
     apply cequivc_sym; auto.
     apply cequivc_sym; auto.
 Qed.
+*)

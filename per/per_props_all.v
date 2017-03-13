@@ -58,6 +58,7 @@ Require Export per_props_uni.
 Require Export per_props_equality2.
 Require Export per_props_atom.
 Require Export per_props_ffatom.
+Require Export per_props_admiss.
 Require Export per_props4.
 Require Export lsubstc_vars_as_mkcv.
 Require Export sequents_useful. (* commented out lots of stuff there *)
@@ -68,17 +69,17 @@ Require Export rules_tyfam.
 
 
 (* working on *)
+Require Export rules_function.
+Require Export per_props_pertype.
 Require Export per_props_psquash.
 Require Export per_props_aequality. (* commented out lots of stuff here *)
 
 
 (* not fixed *)
-Require Export per_props_admiss.
 Require Export per_props_equality_more.
 Require Export per_props_erase.
 Require Export per_props_iff.
 Require Export per_props_more.
-Require Export per_props_pertype.
 Require Export per_props_per.
 Require Export per_props_tequality.
 Require Export per_props_ufun.
