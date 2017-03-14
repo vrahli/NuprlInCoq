@@ -30,9 +30,9 @@
 *)
 
 
-Require Export nuprl_props.
-Require Export choice.
-Require Export cvterm.
+Require Export per_props_pertype.
+Require Export cequiv_tacs.
+
 
 (*
 Require Export subst_per.
@@ -80,15 +80,14 @@ Lemma forall_apply_erase_rel {o} :
 Proof.
   introv; split; intro k; introv.
 
-  generalize (k mkc_axiom mkc_axiom); clear k; intro k.
-  generalize (apply2_erasec_rel lib A mkc_axiom mkc_axiom); intro j.
-  apply type_respects_cequivc_left in j; auto.
-  apply tequality_refl in j; rw @fold_type in j; auto.
+  - generalize (k mkc_axiom mkc_axiom); clear k; intro k.
+    generalize (apply2_erasec_rel lib A mkc_axiom mkc_axiom); intro j.
+    apply type_respects_cequivc_left in j; auto.
+    apply tequality_refl in j; rw @fold_type in j; auto.
 
-  generalize (apply2_erasec_rel lib A x y); intro j.
-  apply cequivc_sym in j.
-  apply type_respects_cequivc_left in j; auto.
-  apply tequality_refl in j; auto.
+  - generalize (apply2_erasec_rel lib A x y); intro j.
+    apply cequivc_sym in j.
+    apply type_respects_cequivc_left in j; eauto 3 with slow.
 Qed.
 
 Lemma is_per_type_erasec_rel {o} :
@@ -176,6 +175,7 @@ Lemma type_erase {o} :
   forall lib (A : @CTerm o), type lib (erasec A) <=> type lib A.
 Proof.
   introv.
+  rw <- @fold_type.
   rw @tequality_erase; split; sp.
 Qed.
 
@@ -186,14 +186,12 @@ Lemma type_apply2_erasec_rel {o} :
 Proof.
   introv; split; intro k.
 
-  generalize (apply2_erasec_rel lib A x y); intro j.
-  apply type_respects_cequivc_left in j; auto.
-  apply tequality_refl in j; auto.
+  - generalize (apply2_erasec_rel lib A x y); intro j.
+    apply type_respects_cequivc_left in j; eauto 3 with slow.
 
-  generalize (apply2_erasec_rel lib A x y); intro j.
-  apply cequivc_sym in j.
-  apply type_respects_cequivc_left in j; auto.
-  apply tequality_refl in j; auto.
+  - generalize (apply2_erasec_rel lib A x y); intro j.
+    apply cequivc_sym in j.
+    apply type_respects_cequivc_left in j; eauto 3 with slow.
 Qed.
 
 Lemma equality_in_erasec {o} :
@@ -205,10 +203,10 @@ Proof.
   allrw @inhabited_type_apply2_erasec_rel; auto.
 
   dands; auto.
-  exists t0; auto.
-  introv.
-  apply type_apply2_erasec_rel.
-  apply inhabited_implies_tequality in k0; auto.
+  - exists t0; auto.
+  - introv.
+    apply type_apply2_erasec_rel.
+    apply inhabited_implies_tequality in k0; auto.
 Qed.
 
 Lemma inhabited_type_erasec {o} :
@@ -216,10 +214,10 @@ Lemma inhabited_type_erasec {o} :
 Proof.
   introv; split; intro k; allunfold @inhabited_type; exrepnd.
 
-  rw @equality_in_erasec in k0; allunfold @inhabited_type; exrepnd.
-  exists t1; auto.
+  - rw @equality_in_erasec in k0; allunfold @inhabited_type; exrepnd.
+    exists t1; auto.
 
-  exists (@mkc_axiom o).
-  rw @equality_in_erasec.
-  exists t0; auto.
+  - exists (@mkc_axiom o).
+    rw @equality_in_erasec.
+    exists t0; auto.
 Qed.

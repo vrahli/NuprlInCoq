@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017x Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,29 +21,36 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
 
-Require Export per_props_more.
 Require Export per_props_equality.
 
 
+(* This is not true anymore *)
 Lemma tequality_in_uni_iff_tequality {p} :
   forall lib (T1 T2 : @CTerm p) i,
-    tequality lib (mkc_member T1 (mkc_uni i))
-              (mkc_member T2 (mkc_uni i))
+    tequality
+      lib
+      (mkc_member T1 (mkc_uni i))
+      (mkc_member T2 (mkc_uni i))
     <=> equorsq lib T1 T2 (mkc_uni i).
 Proof.
   introv.
   allrw <- @fold_mkc_member.
   rw @tequality_mkc_equality.
-  split; intro k; repnd; try (complete sp).
+  split; intro k; repnd; dands; tcsp; eauto 3 with slow.
 
-  dands; try (complete sp).
-  apply tequality_mkc_uni.
+  -
+
+
+    apply tequality_mkc_uni.
   split; intro e.
   generalize (cequorsq_equality_trans2 lib T1 T1 T2 (mkc_uni i)); intro e1.
   repeat (dest_imp e1 hyp).
