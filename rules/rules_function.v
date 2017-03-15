@@ -275,35 +275,6 @@ Qed.
 
 Hint Rewrite @vars_hyps_substitute_hyps : slow.
 
-(* !!MOVE to per_props_equality.v *)
-Lemma implies_tequality_mkc_member_if_member {o} :
-  forall lib (a b A B : @CTerm o),
-    tequality lib A B
-    -> (forall x, equality lib x a A <=> equality lib x b B)
-    -> tequality lib (mkc_member a A) (mkc_member b B).
-Proof.
-  introv teq equ.
-  apply tequality_mkc_member; dands; eauto 3 with slow.
-  introv; split; intro h; repnd; dands; eauto 3 with nequality; apply equ; auto.
-Qed.
-
-(* !!MOVE to per_props_equality.v *)
-Lemma tequality_mkc_member_implies_equality {o} :
-  forall lib (a1 a2 A1 A2 : @CTerm o),
-    tequality lib (mkc_member a1 A1) (mkc_member a2 A2)
-    -> member lib a1 A1
-    -> equality lib a1 a2 A1.
-Proof.
-  introv teq mem.
-  apply tequality_mkc_member in teq; repnd.
-
-  pose proof (teq a1 a1 a1) as q; destruct q as [q q']; clear q'.
-  autodimp q hyp; repnd; dands; eauto 3 with nequality.
-
-  pose proof (teq a2 a2 a2) as w; destruct w as [w' w]; clear w'.
-  autodimp w hyp; repnd; dands; eauto 3 with nequality.
-Qed.
-
 
 (* [23] ============ LAMBDA FORMATION ============ *)
 
@@ -760,6 +731,708 @@ Qed.
 
 
 
+(* [27] ============ APPLY REDUCE ============ *)
+
+(**
+
+  The following rule called the ``apply reduce'' rule is the
+  computation rule for applications.
+<<
+   H |- (\x.t)s = u in T
+
+     By applyReduce ()
+
+     H |- t[x\s] = u in T
+>>
+ *)
+
+Definition rule_apply_reduce {o}
+           (T t s u e : NTerm)
+           (x : NVar)
+           (H : @barehypotheses o) :=
+  mk_rule
+    (mk_baresequent
+       H
+       (mk_concl_eq_ext (mk_apply (mk_lam x t) s) u T e))
+    [ mk_baresequent
+        H
+        (mk_concl_eq_ext (subst t x s) u T e)
+    ]
+    [].
+
+Lemma rule_apply_reduce_true {o} :
+  forall lib (T t s u e : NTerm)
+         (x   : NVar)
+         (H   : @barehypotheses o)
+         (bc1 : disjoint (free_vars s) (bound_vars t)),
+    rule_true lib (rule_apply_reduce T t s u e x H).
+Proof.
+  intros.
+  unfold rule_apply_reduce, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  destseq; allsimpl; proof_irr; GC.
+
+  allunfold @closed_type; allunfold @closed_extract; allsimpl.
+  duplicate wfct as wfi.
+  rw <- @wf_equality_iff in wfct.
+  destruct wfct as [ wa wfct ].
+  destruct wfct as [ wu wT ].
+  rw <- @wf_apply_iff in wa.
+  destruct wa as [ wt ws ].
+  rw <- @wf_lam_iff in wt.
+
+  match goal with
+  | [ |- context[covered ?a ?b] ] => assert (covered a b) as cov by auto
+  end.
+  exists cov.
+
+  (* We prove some simple facts on our sequents *)
+  (* xxx *)
+  (* done with proving these simple facts *)
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  vr_seq_true in hyp1.
+  generalize (hyp1 s1 s2 eqh sim); clear hyp1; intro hyp1; exrepnd.
+
+  lsubst_tac.
+  dands.
+
+  {
+    eapply tequality_respects_cequivc_left;
+      [apply cequivc_sym;apply cequivc_decomp_equality;dands;
+       [apply cequivc_beta|apply cequivc_refl|apply cequivc_refl]
+      |].
+    eapply tequality_respects_cequivc_right;
+      [apply cequivc_sym;apply cequivc_decomp_equality;dands;
+       [apply cequivc_beta|apply cequivc_refl|apply cequivc_refl]
+      |].
+
+    repeat (substc_lsubstc_vars3;[]).
+    clear_irr; auto.
+  }
+
+  {
+    eapply cequivc_preserving_equality;
+      [|apply cequivc_sym;apply cequivc_decomp_equality;dands;
+        [apply cequivc_beta|apply cequivc_refl|apply cequivc_refl]
+      ].
+
+    repeat (substc_lsubstc_vars3;[]).
+    clear_irr; auto.
+  }
+Qed.
+
+
+Definition singleton_type {o} v (a A : @CTerm o) : CTerm :=
+  mkc_set A v (mkcv_equality [v] (mkc_var v) (mk_cv [v] a) (mk_cv [v] A)).
+
+Lemma ext_eq_function_implies_ext_eq_singleton {o} :
+  forall lib (A : @CTerm o) v1 v2 B1 B2 a v,
+    member lib a A
+    -> ext_eq lib (mkc_function A v1 B1) (mkc_function A v2 B2)
+    -> ext_eq lib (mkc_function (singleton_type v a A) v1 B1) (mkc_function (singleton_type v a A) v2 B2).
+Proof.
+  introv mem ext.
+
+  introv; split; intro h.
+
+  (* This is not true: Take
+       T1 = v:Int->B1[v], where B1[v] = if v=0 then Void else Unit
+       T2 = v:Int->B2[v], where B2[v] = if v=1 then Void else Unit
+     These two types are empty because of the use of Void.
+     We don't have {0}->B1[0] = {0}->B2[0] because this is equivalent to
+     {0}->Void = {0}->Unit, and these two types are not extensionally equal.
+
+     Here, the pi type is empty though, while in our proof, it isn't.
+     Can we find a counter-example where the type is not empty?
+   *)
+Abort.
+
+
+
+(**
+
+Same as functionElimination with one additional well-formedness subgoal for
+the B family.
+
+<<
+   H, f : x:A->B[x], J |- C ext e[z\(f a)]
+
+     By functionElimination s z
+
+     H, f : x:A->B[x], J |- a in A
+     H, f : x:A->B[x], J, z : (f a) in B[a] |- C ext e
+     H, f : x:A->B[x], J |- B[a] in U(i)
+>>
+
+ *)
+
+Definition rule_function_elimination_wf_concl {o}
+           (A : @NTerm o) B C a e f x z H J :=
+  mk_baresequent
+    (snoc H (mk_hyp f (mk_function A x B)) ++ J)
+    (mk_concl C (subst e z (mk_apply (mk_var f) a))).
+
+Definition rule_function_elimination_wf_hyp1 {o}
+           (A : @NTerm o) B a e f x H J :=
+  mk_baresequent
+    (snoc H (mk_hyp f (mk_function A x B)) ++ J)
+    (mk_concl (mk_member a A) e).
+
+Definition rule_function_elimination_wf_hyp2 {o}
+           (A : @NTerm o) B C a e f x z H J :=
+  mk_baresequent
+    (snoc (snoc H (mk_hyp f (mk_function A x B)) ++ J)
+          (mk_hyp z (mk_member (mk_apply (mk_var f) a)
+                               (subst B x a))))
+    (mk_concl C e).
+
+Definition rule_function_elimination_wf_hyp3 {o}
+           (A : @NTerm o) B a e f x H J i :=
+  mk_baresequent
+    (snoc H (mk_hyp f (mk_function A x B)) ++ J)
+    (mk_concl_mem_ext (subst B x a) (mk_uni i) e).
+
+Definition rule_function_elimination_wf {p}
+           (A B C a e1 e2 e3 : NTerm)
+           (f x z : NVar)
+           (H J : @barehypotheses p)
+           (i : nat) :=
+  mk_rule
+    (rule_function_elimination_wf_concl A B C a e2 f x z H J)
+    [
+      rule_function_elimination_wf_hyp1 A B a e1 f x H J,
+      rule_function_elimination_wf_hyp2 A B C a e2 f x z H J,
+      rule_function_elimination_wf_hyp3 A B a e3 f x H J i
+    ]
+    [ sarg_term a (*, sarg_var z*)].
+
+Lemma rule_function_elimination_wf_true3 {p} :
+  forall lib (A B C a e1 e2 e3 : NTerm)
+         (f x z : NVar)
+         (H J : @barehypotheses p)
+         (i : nat),
+    rule_true3 lib (rule_function_elimination_wf
+                      A B C a e1 e2 e3
+                      f x z
+                      H J
+                      i).
+Proof.
+  unfold rule_function_elimination_wf, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros; repnd.
+
+  pose proof (cargs (sarg_term a)) as ca.
+  simpl in ca; autodimp ca hyp.
+  rw @nh_vars_hyps_app in ca; simpl in ca.
+  rw @nh_vars_hyps_snoc in ca; simpl in ca.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp into hyp1.
+  rename Hyp0 into hyp2.
+  rename Hyp1 into hyp3.
+  destruct hyp1 as [ ws1 hyp1 ].
+  destruct hyp2 as [ ws2 hyp2 ].
+  destruct hyp3 as [ ws3 hyp3 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent (rule_function_elimination_wf_concl A B C a e2 f x z H J)) as wfc.
+  {
+    clear hyp1 hyp2 hyp3.
+    unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl; simpl.
+    prove_seq; eauto 3 with slow.
+    { apply wf_term_subst; eauto 3 with slow.
+      apply wf_apply; eauto 2 with slow. }
+    apply covered_subst; eauto 2 with slow.
+    { eapply covered_subvars;[|eauto].
+      autorewrite with slow; simpl.
+      rw subvars_eq; introv j; simpl.
+      repeat (allrw @in_snoc; allrw @in_app_iff).
+      repndors; tcsp. }
+    { apply covered_apply; dands; eauto 3 with slow.
+      apply covered_var; rw in_app_iff; rw in_snoc; tcsp. }
+  }
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* We prove some simple facts on our sequents *)
+  assert (disjoint (free_vars A) (vars_hyps J)
+          # disjoint (remove_nvars [x] (free_vars B)) (vars_hyps J)
+          # subvars (free_vars a) (snoc (vars_hyps H) f ++ vars_hyps J)
+          # wf_term a
+          # !LIn z (free_vars C)
+          # !LIn z (vars_hyps H)
+          # !LIn z (vars_hyps J)
+          # (z <> f)
+          # !LIn f (vars_hyps H)
+          # !LIn f (vars_hyps J)
+          # !LIn f (free_vars A)
+          # (x <> f -> !LIn f (free_vars B))) as vhyps.
+  {
+    clear hyp1 hyp2.
+    dwfseq.
+    sp;
+      try (complete (introv j; discover; allunfold @disjoint; discover; auto));
+      try (complete (assert (LIn f (remove_nvars [x] (free_vars B)))
+                      by (rw in_remove_nvars; rw in_single_iff; sp);
+                     discover; auto));
+      try (complete (apply wf_member_iff in wfct1; sp));
+      try (complete (generalize (wfh10 z); rw in_app_iff; rw in_snoc; sp));
+      try (complete (generalize (wfh10 f); rw in_remove_nvars; simpl; intro j;
+                     dest_imp j hyp));
+      try complete (pose proof (wfc1 z) as xx; autodimp xx hyp;
+                    rw in_app_iff in xx; rw in_snoc in xx; repndors; tcsp).
+  }
+
+  destruct vhyps as [ daj  vhyps ].
+  destruct vhyps as [ dbj  vhyps ].
+  destruct vhyps as [ sva  vhyps ].
+  destruct vhyps as [ wa   vhyps ].
+  destruct vhyps as [ nizc vhyps ].
+  destruct vhyps as [ nizh vhyps ].
+  destruct vhyps as [ nizj vhyps ].
+  destruct vhyps as [ nzf  vhyps ].
+  destruct vhyps as [ nifh vhyps ].
+  destruct vhyps as [ nifj vhyps ].
+  destruct vhyps as [ nifa nifb ].
+  (* done with proving these simple facts *)
+
+  vr_seq_true.
+
+  duplicate sim as simapp.
+
+  rw @similarity_app in sim; simpl in sim; exrepnd; subst; cpx.
+  rw @similarity_snoc in sim5; simpl in sim5; exrepnd; subst; cpx.
+  lsubst_tac.
+  rw @equality_in_function in sim2; repnd.
+
+  vr_seq_true in hyp2.
+
+  assert (cover_vars a (snoc s1a0 (f, t1) ++ s1b)) as cova1.
+  {
+    apply cover_vars_eq.
+    rw @dom_csub_app; rw @dom_csub_snoc; simpl.
+    clear hyp1 hyp2 hyp3; revert ct1.
+    unfold covered; simpl; autorewrite with slow.
+    repeat (rw @subvars_app_l).
+    introv h; repnd; clear h; GC.
+    rw @vars_hyps_app in h0; rw @vars_hyps_snoc in h0; simpl in h0.
+    apply similarity_dom in sim6; repnd; allrw.
+    apply similarity_dom in sim1; repnd; allrw.
+    autorewrite with slow; auto.
+  }
+
+  assert (cover_vars a (snoc s2a0 (f, t2) ++ s2b)) as cova2.
+  {
+    apply cover_vars_eq.
+    rw @dom_csub_app; rw @dom_csub_snoc; simpl.
+    clear hyp1 hyp2 hyp3; revert ct1.
+    unfold covered; simpl; autorewrite with slow.
+    repeat (rw @subvars_app_l).
+    introv h; repnd; clear h; GC.
+    rw @vars_hyps_app in h0; rw @vars_hyps_snoc in h0; simpl in h0.
+    apply similarity_dom in sim6; repnd; allrw.
+    apply similarity_dom in sim1; repnd; allrw.
+    autorewrite with slow; auto.
+  }
+
+  generalize (hyp2 (snoc (snoc s1a0 (f, t1) ++ s1b)
+                         (z, mkc_prefl (mkc_apply t1 (lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) cova1))
+                                       (mkc_apply t1 (lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) cova1))))
+                   (snoc (snoc s2a0 (f, t2) ++ s2b)
+                         (z, mkc_prefl (mkc_apply t2 (lsubstc a wa (snoc s2a0 (f, t2) ++ s2b) cova2))
+                                       (mkc_apply t2 (lsubstc a wa (snoc s2a0 (f, t2) ++ s2b) cova2)))));
+    clear hyp2; intros hyp2.
+  repeat (autodimp hyp2 h); exrepnd.
+
+  {
+    (* hyps_functionality *)
+
+    apply hyps_functionality_snoc2; simpl; auto;[].
+    introv equ sim; GC; lsubst_tac.
+
+    apply equality_in_member in equ.
+    exrepnd; computes_to_value_isvalue.
+
+    assert (equality lib (lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) cova1)
+                     (lsubstc a wa s' c4)
+                     (lsubstc A w1 s1a0 c1)) as eqa.
+    {
+      vr_seq_true in hyp1.
+      generalize (hyp1 (snoc s1a0 (f, t1) ++ s1b) s'); clear hyp1; intros hyp1.
+      repeat (autodimp hyp1 h); exrepnd.
+      lsubst_tac.
+      allapply @member_if_inhabited.
+      apply tequality_mkc_member_implies_equality in hyp0; auto.
+    }
+
+    apply implies_tequality_mkc_member_if_equal; auto.
+
+    {
+      vr_seq_true in hyp3.
+      pose proof (hyp3 (snoc s1a0 (f, t1) ++ s1b) s') as q.
+      repeat (autodimp q hyp).
+      exrepnd.
+      lsubst_tac.
+      apply member_if_inhabited in q1.
+      apply tequality_if_tequality_in_uni in q0; auto.
+    }
+
+    rw @similarity_app in sim; simpl in sim; exrepnd; subst; cpx.
+    apply app_split in sim7; repnd; allrw length_snoc;
+      try (complete (allrw; sp)); subst; cpx.
+    rw @similarity_snoc in sim12; simpl in sim12; exrepnd; subst; cpx.
+    lsubst_tac.
+    rw @equality_in_function in sim9; repnd.
+    applydup sim9 in eqa as eqf.
+
+    assert (disjoint (remove_nvars [x] (free_vars B)) (dom_csub s1b0)) as disj1.
+    {
+      apply similarity_dom in sim1; repnd.
+      allrw; autorewrite with slow; auto.
+    }
+
+    assert (disjoint (remove_nvars [x] (free_vars B)) (dom_csub s2b0)) as disj2.
+    {
+      apply similarity_dom in sim8; repnd.
+      allrw; autorewrite with slow; auto.
+    }
+
+    repeat (lsubstc_subst_aeq2;[]).
+    repeat (substc_lsubstc_vars3;[]).
+    repeat (lsubstc_weak;[]).
+    proof_irr; auto.
+  }
+
+
+  {
+    (* similarity *)
+
+    assert (wf_term (mk_member (mk_apply (mk_var f) a) (subst B x a))) as wm.
+    {
+      apply wf_member; sp; try (apply wf_apply; sp).
+      apply subst_preserves_wf_term; sp.
+    }
+
+    assert (cover_vars (mk_member (mk_apply (mk_var f) a) (subst B x a))
+                       (snoc s1a0 (f, t1) ++ s1b)) as cm.
+    {
+      apply cover_vars_member; sp.
+      apply cover_vars_apply; sp.
+      { apply cover_vars_var.
+        rw @dom_csub_app; rw @dom_csub_snoc; rw in_app_iff; rw in_snoc; simpl; sp. }
+      rw @cover_vars_eq; rw @cover_vars_covered; apply covered_subst; sp.
+      rw @dom_csub_app; rw @dom_csub_snoc; simpl.
+      rw cons_app; apply covered_app_weak_l.
+      clear sim2 sim5; unfold cover_vars_upto in c2; unfold covered.
+      prove_subvars c2; allsimpl; sp.
+      rw @dom_csub_csub_filter in l; rw in_remove_nvars in l; rw in_single_iff in l.
+      rw in_snoc; sp.
+    }
+
+    sim_snoc.
+    dands; auto.
+    lsubst_tac.
+    apply equality_in_member.
+
+    assert (disjoint (remove_nvars [x] (free_vars B)) (dom_csub s1b)) as disj0.
+    {
+      apply similarity_dom in sim1; repnd.
+      allrw; autorewrite with slow; auto.
+    }
+
+    vr_seq_true in hyp1.
+    generalize (hyp1 (snoc s1a0 (f, t1) ++ s1b)
+                     (snoc s2a0 (f, t2) ++ s2b));
+      clear hyp1; intros hyp1.
+    repeat (autodimp hyp1 h); exrepnd.
+    lsubst_tac.
+    apply member_if_inhabited in hyp1.
+    apply tequality_mkc_member_implies_equality in hyp0; eauto 2 with nequality.
+    apply sim2 in hyp0.
+
+    repeat (lsubstc_subst_aeq2;[]).
+    repeat (substc_lsubstc_vars3;[]).
+    repeat (lsubstc_weak;[]).
+    proof_irr; auto.
+
+    eexists; eexists; eexists; eexists; dands;
+      try (complete (spcast; apply computes_to_valc_refl; eauto 3 with slow));
+      repeat (lsubstc_subst_aeq2;[]);
+      repeat (substc_lsubstc_vars3;[]);
+      repeat (lsubstc_weak;[]);
+      proof_irr; auto;
+      eauto 3 with nequality.
+  }
+
+  (* conclusion *)
+
+  lsubst_tac; sp.
+
+XXXXXXXXX
+
+  assert (wf_term (@mk_axiom p)) as wfax by eauto 2 with slow.
+
+  repeat (lsubstc_subst_aeq2;[]).
+  allrw @lsubstc_mk_axiom.
+  repeat (substc_lsubstc_vars3;[]).
+  proof_irr.
+
+  pose proof (lsubstc_snoc_move
+                e
+                (snoc s1a0 (f, t1) ++ s1b)
+                []
+                z
+                mkc_axiom
+                wfce) as xx1.
+  allrw app_nil_r.
+  allrw @dom_csub_app.
+  allrw @dom_csub_snoc.
+  allsimpl.
+  pose proof (xx1 pt0) as xx2; clear xx1.
+  autodimp xx2 hyp.
+  { apply similarity_dom in sim6; repnd.
+    rewrite sim7.
+    apply similarity_dom in sim1; repnd.
+    rewrite sim8.
+    rewrite vars_hyps_substitute_hyps; auto.
+    rw in_app_iff; rw in_snoc; intro i; repndors; tcsp.
+  }
+  exrepnd.
+  proof_irr.
+  rewrite <- xx0; clear xx0.
+
+  pose proof (lsubstc_snoc_move
+                e
+                (snoc s2a0 (f, t2) ++ s2b)
+                []
+                z
+                mkc_axiom
+                wfce) as xx1.
+  allrw app_nil_r.
+  allrw @dom_csub_app.
+  allrw @dom_csub_snoc.
+  allsimpl.
+  pose proof (xx1 pt3) as xx2; clear xx1.
+  autodimp xx2 hyp.
+  { apply similarity_dom in sim6; repnd.
+    rewrite sim6.
+    apply similarity_dom in sim1; repnd.
+    rewrite sim1.
+    rewrite vars_hyps_substitute_hyps; auto.
+    rw in_app_iff; rw in_snoc; intro i; repndors; tcsp.
+  }
+  exrepnd.
+  proof_irr.
+  rewrite <- xx0; clear xx0.
+
+  auto.
+Qed.
+
+(* begin hide *)
+
+Lemma rule_function_elimination_true {p} :
+  forall lib (A B C a e : NTerm) ea,
+  forall f x z : NVar,
+  forall H J : @barehypotheses p,
+    rule_true lib (rule_function_elimination
+                     A B C a e
+                     ea
+                     f x z
+                     H J).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_function_elimination_true3.
+Qed.
+
+Lemma rule_function_elimination_true2 {o} :
+  forall lib A B C a e ea f x z H J,
+    @rule_true2 o lib (rule_function_elimination A B C a e ea f x z H J).
+Proof.
+  intros.
+  apply rule_true_iff_rule_true2.
+  apply rule_function_elimination_true.
+Qed.
+
+Lemma rule_function_elimination_true_ex {p} :
+  forall lib (A B C a e : NTerm) ea,
+  forall f x z : NVar,
+  forall H J : @barehypotheses p,
+    rule_true_if lib (rule_function_elimination
+                        A B C a e
+                        ea
+                        f x z
+                        H J).
+Proof.
+  intros.
+  generalize (rule_function_elimination_true lib A B C a e ea f x z H J); intro rt.
+  rw <- @rule_true_eq_ex in rt.
+  unfold rule_true_ex in rt; sp.
+Qed.
+
+Lemma rule_function_elimination_wf {o} :
+  forall (A B C a e : @NTerm o) ea f x z H J,
+    wf_term a
+    -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
+    -> !LIn z (vars_hyps H)
+    -> !LIn z (vars_hyps J)
+    -> z <> f
+    -> wf_term ea
+    -> wf_rule (rule_function_elimination A B C a e ea f x z H J).
+Proof.
+  introv wa cov nizH nizJ dzf wea.
+
+  introv pwf m; allsimpl; repdors; subst; sp;
+  allunfold @pwf_sequent; wfseq; sp.
+
+  {
+    allrw @vswf_hypotheses_nil_eq.
+    allrw @wf_hypotheses_app; repnd.
+    allrw @wf_hypotheses_snoc; repnd.
+    allsimpl.
+    allapply @isprog_vars_implies_wf.
+    allrw <- @wf_function_iff; tcsp.
+  }
+
+  {
+    allrw @vswf_hypotheses_nil_eq.
+    allrw @wf_hypotheses_app; repnd.
+    allrw @wf_hypotheses_snoc; repnd.
+    allsimpl.
+    allapply @isprog_vars_implies_covered.
+    allrw @covered_function; repnd.
+    apply covered_snoc_app_weak.
+    apply covered_app_weak_l; auto.
+  }
+
+  {
+    allrw @vswf_hypotheses_nil_eq.
+    rw @wf_hypotheses_snoc; simpl; dands; tcsp.
+    - apply isprog_vars_member; dands.
+      + apply isprog_vars_apply; dands.
+        * apply isprog_vars_var_iff.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl.
+          rw in_app_iff.
+          rw in_snoc; tcsp.
+        * rw @isprog_vars_iff_covered; dands; auto.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl; auto.
+      + apply isprog_vars_subst2; auto.
+        * allrw @wf_hypotheses_app; repnd.
+          allrw @wf_hypotheses_snoc; repnd.
+          allsimpl.
+          allapply @isprog_vars_implies_wf.
+          allrw <- @wf_function_iff; tcsp.
+        * rw @isprog_vars_iff_covered; dands; auto.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl; auto.
+        * allrw @wf_hypotheses_app; repnd.
+          allrw @wf_hypotheses_snoc; repnd.
+          allsimpl.
+          allrw <- @isprog_vars_function_iff; repnd.
+          allrw @vars_hyps_app.
+          allrw @vars_hyps_snoc; simpl.
+          eapply isprog_vars_subvars;[|eauto].
+          rw subvars_eq; introv i; allsimpl.
+          allrw in_app_iff; allrw in_snoc; tcsp.
+    - intro i.
+      allrw @vars_hyps_app.
+      allrw @vars_hyps_snoc; allsimpl.
+      allrw in_app_iff; allrw in_snoc.
+      repndors; tcsp.
+  }
+
+  {
+    allrw @wf_term_eq.
+    allrw @nt_wf_lsubst_iff; tcsp.
+  }
+
+  {
+    apply covered_snoc_weak; auto.
+  }
+Qed.
+
+Lemma rule_function_elimination_wf2 {o} :
+  forall (A B C a e : @NTerm o) ea f x z H J,
+    wf_term a
+    -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
+    -> !LIn z (vars_hyps H)
+    -> !LIn z (vars_hyps J)
+    -> z <> f
+    -> wf_rule2 (rule_function_elimination A B C a e ea f x z H J).
+Proof.
+  introv wa cova nizH nizJ dzf wf j.
+  allsimpl; repndors; subst; tcsp;
+  allunfold @wf_bseq; repnd; allsimpl; wfseq.
+
+  - allrw @vswf_hypotheses_nil_eq.
+    allrw @wf_hypotheses_app; repnd.
+    allrw @wf_hypotheses_snoc; repnd.
+    allapply @isprog_vars_implies_wf.
+    allrw <- @wf_function_iff; tcsp.
+
+  - allrw @vswf_hypotheses_nil_eq.
+    allrw @wf_hypotheses_app; repnd.
+    allrw @wf_hypotheses_snoc; repnd.
+    allapply @isprog_vars_implies_covered.
+    allrw @covered_function; repnd.
+    apply covered_snoc_app_weak.
+    apply covered_app_weak_l; auto.
+
+  - allrw @vswf_hypotheses_nil_eq.
+    rw @wf_hypotheses_snoc; simpl; dands; tcsp.
+    { apply isprog_vars_member; dands.
+      + apply isprog_vars_apply; dands.
+        * apply isprog_vars_var_iff.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl.
+          rw in_app_iff.
+          rw in_snoc; tcsp.
+        * rw @isprog_vars_iff_covered; dands; auto.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl; auto.
+      + apply isprog_vars_subst2; auto.
+        * allrw @wf_hypotheses_app; repnd.
+          allrw @wf_hypotheses_snoc; repnd.
+          allsimpl.
+          allapply @isprog_vars_implies_wf.
+          allrw <- @wf_function_iff; tcsp.
+        * rw @isprog_vars_iff_covered; dands; auto.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl; auto.
+        * allrw @wf_hypotheses_app; repnd.
+          allrw @wf_hypotheses_snoc; repnd.
+          allsimpl.
+          allrw <- @isprog_vars_function_iff; repnd.
+          allrw @vars_hyps_app.
+          allrw @vars_hyps_snoc; simpl.
+          eapply isprog_vars_subvars;[|eauto].
+          rw subvars_eq; introv i; allsimpl.
+          allrw in_app_iff; allrw in_snoc; tcsp.
+    }
+    { intro i.
+      allrw @vars_hyps_app.
+      allrw @vars_hyps_snoc; allsimpl.
+      allrw in_app_iff; allrw in_snoc.
+      repndors; tcsp.
+    }
+
+  - apply covered_snoc_weak; auto.
+Qed.
+
+
+XXXXXXXXXXXXXXXXXXXX
+
+
 (* [17] ============ FUNCTION ELIMINATION ============ *)
 
 (**
@@ -1023,65 +1696,17 @@ Proof.
 
       revert sim'0 h1h2; introv teqF teqA.
 
-(* !!MOVE to per_props_function *)
-Lemma tequality_function_change_domain {o} :
-  forall lib (A1 A2 : @CTerm o) v1 v2 B1 B2,
-    tequality lib A1 A2
-    -> tequality lib (mkc_function A1 v1 B1) (mkc_function A2 v2 B2)
-    -> tequality lib (mkc_function A1 v1 B1) (mkc_function A1 v2 B2).
-Proof.
-  introv teqA teqF.
-  allrw @tequality_function; repnd; dands; eauto 3 with slow.
-
-  - introv equa.
-    eapply tequality_preserving_equality in equa;eauto.
-
-  - introv.
-    pose proof (teqF a b) as q.
-    rw q; clear q.
-    allrw @equality_in_function.
-    split; intro h; repnd; dands; auto.
-
-    + introv equa.
-      eapply tequality_preserving_equality in equa;eauto.
-
-    + introv equa.
-      eapply tequality_preserving_equality in equa;eauto.
-
-    + introv equa.
-      apply h.
-      eapply tequality_preserving_equality in equa;eauto.
-      apply tequality_sym; auto.
-Qed.
-
-Definition singleton_type {o} v (a A : @CTerm o) : CTerm :=
-  mkc_set A v (mkcv_equality [v] (mkc_var v) (mk_cv [v] a) (mk_cv [v] A)).
-
-Lemma ext_eq_function_implies_ext_eq_singleton {o} :
-  forall lib (A : @CTerm o) v1 v2 B1 B2 a v,
-    member lib a A
-    -> ext_eq lib (mkc_function A v1 B1) (mkc_function A v2 B2)
-    -> ext_eq lib (mkc_function (singleton_type v a A) v1 B1) (mkc_function (singleton_type v a A) v2 B2).
-Proof.
-  introv mem ext.
-
-  introv; split; intro h.
-
-  (* This is not true: Take
-       T1 = v:Int->B1[v], where B1[v] = if v=0 then Void else Unit
-       T2 = v:Int->B2[v], where B2[v] = if v=1 then Void else Unit
-     These two types are empty because of the use of Void.
-     We don't have {0}->B1[0] = {0}->B2[0] because this is equivalent to
-     {0}->Void = {0}->Unit, and these two types are not extensionally equal. *)
-Abort.
+(*Definition LEM_Type := forall T : Type, T + !T.*)
 
 Lemma tequality_function_implies_tequality_codomain {o} :
-  forall lib (A : @CTerm o) v1 v2 B1 B2 a1 a2,
-    tequality lib (mkc_function A v1 B1) (mkc_function A v2 B2)
+  forall lib (A : @CTerm o) v1 v2 B1 B2 a1 a2 f,
+    (*LEM_Type
+    ->*) member lib f (mkc_function A v1 B1)
+    -> tequality lib (mkc_function A v1 B1) (mkc_function A v2 B2)
     -> equality lib a1 a2 A
     -> tequality lib (substc a1 v1 B1) (substc a2 v2 B2).
 Proof.
-  introv teqF eqa.
+  introv (*lemt*) mem teqF eqa.
 
   apply tequality_function in teqF; repnd.
 
@@ -1089,6 +1714,8 @@ Proof.
   introv; split; intro h.
 
   {
+    pose proof (teqF (mkc_lam x (if equality lib (mkc_var x)
+
   }
 
 Qed.
@@ -1511,6 +2138,11 @@ Qed.
 >>
  *)
 
+(* NOTE: if we could destruct prefl terms, then we could essentially return the
+   extract mk_prefl(\z.pi1(e1), \z.pi2(e1)) here,
+   where pi1/pi2 here gets the first/second component of a prefl term.
+ *)
+
 Definition rule_lambda_equality {o}
            (A B t1 t2 e1 e2 : NTerm)
            (x1 x2 x z : NVar)
@@ -1531,7 +2163,7 @@ Definition rule_lambda_equality {o}
       mk_baresequent
         H
         (mk_concl_eq_ext A A (mk_uni i) e2) ]
-    [sarg_var z].
+    [ sarg_var z , sarg_term (mk_lam x1 t1) ].
 
 Lemma rule_lambda_equality_true {o} :
   forall lib (A B t1 t2 e1 e2 : NTerm)
@@ -1546,6 +2178,9 @@ Proof.
   intros.
   unfold rule_lambda_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
+
+  pose proof (cargs (sarg_term (mk_lam x1 t1))) as carg1; simpl in carg1; autodimp carg1 hyp.
+  clear cargs.
 
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
@@ -1568,7 +2203,9 @@ Proof.
   end.
   {
     clear hyp1 hyp2.
+    apply covered_prefl_same; auto.
   }
+  exists covc.
 
   (* We prove some simple facts on our sequents *)
   assert ((z <> x -> !LIn z (free_vars B))
@@ -1577,22 +2214,24 @@ Proof.
           # !LIn z (free_vars A)
           # !LIn z (vars_hyps H)) as vhyps.
 
-  clear hyp1 hyp2.
-  dwfseq.
-  sp;
-  try (complete (generalize (cg z); sp;
-                 allrw in_remove_nvars; allsimpl;
-                 autodimp X0 h; sp));
-  try (complete (generalize (cg0 z); sp;
-                 allrw in_remove_nvars; allsimpl;
-                 autodimp X0 h; sp));
-  try (complete (generalize (cg1 z); sp;
-                 allrw in_remove_nvars; allsimpl;
-                 autodimp X0 h; sp));
-  try (complete (apply_in_hyp p;
-                 generalize (subvars_hs_vars_hyps H); intro sv;
-                 rw subvars_prop in sv;
-                 apply sv in p; sp)).
+  {
+    clear hyp1 hyp2.
+    dwfseq.
+    sp;
+      try (complete (generalize (cg z); sp;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp X0 h; sp));
+      try (complete (generalize (cg0 z); sp;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp X0 h; sp));
+      try (complete (generalize (cg1 z); sp;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp X0 h; sp));
+      try (complete (apply_in_hyp p;
+                     generalize (subvars_hs_vars_hyps H); intro sv;
+                     rw subvars_prop in sv;
+                     apply sv in p; sp)).
+  }
 
   destruct vhyps as [ nzB vhyps ].
   destruct vhyps as [ nzt1 vhyps ].
@@ -1604,15 +2243,17 @@ Proof.
   vr_seq_true.
 
   lsubst_tac.
-  rw @member_eq.
-  rw <- @member_equality_iff.
 
-  generalize (teq_and_eq_if_equality lib
+  pose proof (teq_and_eq_if_equality2
+                lib
                 (mk_function A x B) (mk_lam x1 t1) (mk_lam x2 t2) s1 s2 H
-                wT wl1 wl2 c1 c0 c2 c3 cT cT0 eqh sim);
-    intro k.
+                wT wl1 wl2 c1 c0 c2 c3 cT cT0 eqh sim) as k.
   lsubst_tac.
   apply k; clear k.
+
+  {
+    
+  }
 
   rw @tequality_function.
 
@@ -1801,6 +2442,7 @@ Proof.
 Qed.
 
 
+
 (* [26] ============ APPLY @EQUALITY ============ *)
 
 (**
@@ -1818,27 +2460,27 @@ Qed.
  *)
 
 Definition rule_apply_equality {o}
-           (A B f1 f2 t1 t2 : NTerm)
+           (A B f1 f2 t1 t2 e1 e2 : NTerm)
            (x : NVar)
            (H : @barehypotheses o) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_equality
-                                    (mk_apply f1 t1)
-                                    (mk_apply f2 t2)
-                                    (subst B x t1))))
-    [ mk_baresequent H (mk_conclax (mk_equality f1 f2 (mk_function A x B))),
-      mk_baresequent H (mk_conclax (mk_equality t1 t2 A))
+    (mk_baresequent H (mk_concl_eq_ext (mk_apply f1 t1)
+                                       (mk_apply f2 t2)
+                                       (subst B x t1)
+                                       (mk_apply e1 e2)))
+    [ mk_baresequent H (mk_concl_eq_ext f1 f2 (mk_function A x B) e1),
+      mk_baresequent H (mk_concl_eq_ext t1 t2 A e2)
     ]
     [].
 
 Lemma rule_apply_equality_true {o} :
-  forall lib (A B f1 f2 t1 t2 : NTerm)
+  forall lib (A B f1 f2 t1 t2 e1 e2 : NTerm)
          (x : NVar)
          (i   : nat)
          (H   : @barehypotheses o)
          (bc1 : disjoint (free_vars t1) (bound_vars B))
          (bc2 : disjoint (free_vars t2) (bound_vars B)),
-    rule_true lib (rule_apply_equality A B f1 f2 t1 t2 x H).
+    rule_true lib (rule_apply_equality A B f1 f2 t1 t2 e1 e2 x H).
 Proof.
   intros.
   unfold rule_apply_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -1846,13 +2488,9 @@ Proof.
 
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
-  generalize (hyps (mk_baresequent H (mk_conclax (mk_equality f1 f2 (mk_function A x B))))
-                   (inl eq_refl))
-             (hyps (mk_baresequent H (mk_conclax (mk_equality t1 t2 A)))
-                   (inr (inl eq_refl)));
-    simpl; intros hyp1 hyp2.
-  destruct hyp1 as [ ws1 hyp1 ].
-  destruct hyp2 as [ ws2 hyp2 ].
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  rename Hyp1 into hyp2.
   destseq; allsimpl; proof_irr; GC.
 
   allunfold @closed_type; allunfold @closed_extract; allsimpl.
@@ -1865,7 +2503,11 @@ Proof.
   rw <- @wf_apply_iff in wa2.
   destruct wa2 as [ wf2 wt2 ].
 
-  exists (@covered_axiom o (nh_vars_hyps H)); GC.
+  match goal with
+  | [ |- context[covered ?a ?b] ] => assert (covered a b) as cov
+  end.
+  { apply covered_apply; dands; auto. }
+  exists cov.
 
   (* We prove some simple facts on our sequents *)
   (* xxx *)
@@ -1879,6 +2521,18 @@ Proof.
   generalize (hyp2 s1 s2 eqh sim); clear hyp2; intro hyp2; exrepnd.
 
   lsubst_tac.
+
+  rw @tequality_mkc_equality in hyp0; repnd.
+  rw @tequality_mkc_equality in hyp3; repnd.
+
+  rw @tequality_mkc_equality.
+
+  dands.
+
+
+
+
+
   allrw @member_eq.
   allrw <- @member_equality_iff.
   rw @tequality_mkc_equality2_sp in hyp3.
@@ -2023,161 +2677,17 @@ Proof.
   rw <- e1 in e'; sp.
 Qed.
 
+
+
+
+
+
 (* begin hide *)
 
 
 
 (* end hide *)
 
-
-(* [27] ============ APPLY REDUCE ============ *)
-
-(**
-
-  The following rule called the ``apply reduce'' rule is the
-  computation rule for applications.
-<<
-   H |- (\x.t)s = u in T
-
-     By applyReduce ()
-
-     H |- t[x\s] = u in T
->>
- *)
-
-Definition rule_apply_reduce {o}
-           (T t s u : NTerm)
-           (x : NVar)
-           (H : @barehypotheses o) :=
-  mk_rule
-    (mk_baresequent
-       H
-       (mk_conclax (mk_equality (mk_apply (mk_lam x t) s) u T)))
-    [ mk_baresequent
-        H
-        (mk_conclax (mk_equality (subst t x s) u T))
-    ]
-    [].
-
-Lemma rule_apply_reduce_true {o} :
-  forall lib (T t s u : NTerm)
-         (x   : NVar)
-         (H   : @barehypotheses o)
-         (bc1 : disjoint (free_vars s) (bound_vars t)),
-    rule_true lib (rule_apply_reduce T t s u x H).
-Proof.
-  intros.
-  unfold rule_apply_reduce, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
-  intros.
-
-  (* We prove the well-formedness of things *)
-  destseq; allsimpl.
-  generalize (hyps (mk_baresequent H (mk_conclax (mk_equality (subst t x s) u T)))
-                   (inl eq_refl));
-    simpl; intros hyp1.
-  destruct hyp1 as [ ws1 hyp1 ].
-  destseq; allsimpl; proof_irr; GC.
-
-  allunfold @closed_type; allunfold @closed_extract; allsimpl.
-  duplicate wfct as wfi.
-  rw <- @wf_equality_iff in wfct.
-  destruct wfct as [ wa wfct ].
-  destruct wfct as [ wu wT ].
-  rw <- @wf_apply_iff in wa.
-  destruct wa as [ wt ws ].
-  rw <- @wf_lam_iff in wt.
-
-  exists (@covered_axiom o (nh_vars_hyps H)); GC.
-
-  (* We prove some simple facts on our sequents *)
-  (* xxx *)
-  (* done with proving these simple facts *)
-
-  (* we now start proving the sequent *)
-  vr_seq_true.
-  vr_seq_true in hyp1.
-  generalize (hyp1 s1 s2 eqh sim); clear hyp1; intro hyp1; exrepnd.
-
-  lsubst_tac.
-  allrw @member_eq.
-  allrw <- @member_equality_iff.
-  rw @tequality_mkc_equality2_sp in hyp0; repnd.
-  rw @tequality_mkc_equality2_sp.
-  repeat (rw prod_assoc).
-  allunfold @equorsq2; repnd.
-
-  assert (cequivc lib
-            (mkc_apply
-               (mkc_lam x (lsubstc_vars t wt (csub_filter s1 [x]) [x] c10))
-               (lsubstc s ws s1 c6))
-            (lsubstc (subst t x s) w1 s1 c1))
-         as ceq1.
-  (* begin proof of assert *)
-  destruct_cterms; unfold cequivc; simpl.
-  generalize (cequiv_beta lib x (csubst t (csub_filter s1 [x])) (csubst s s1)); intro k.
-  autodimp k hyp.
-  rw <- @isprog_vars_csubst_iff.
-  rw @isprog_vars_eq; sp.
-  rw @nt_wf_eq; sp.
-  autodimp k hyp.
-  apply isprogram_csubst; sp.
-  rw @nt_wf_eq; sp.
-  eapply cequiv_trans.
-  exact k.
-  rw <- @simple_csubst_subst; sp.
-  apply cequiv_refl.
-  apply isprogram_csubst; sp.
-  unfold subst; apply lsubst_wf_iff; try (rw @nt_wf_eq; sp).
-  unfold wf_sub, sub_range_sat; simpl; sp; cpx; rw @nt_wf_eq; sp.
-  (* end proof of assert *)
-
-  assert (cequivc lib
-            (mkc_apply
-               (mkc_lam x (lsubstc_vars t wt (csub_filter s2 [x]) [x] c11))
-               (lsubstc s ws s2 c9))
-            (lsubstc (subst t x s) w1 s2 c0))
-         as ceq2.
-  (* begin proof of assert *)
-  destruct_cterms; unfold cequivc; simpl.
-  generalize (cequiv_beta lib x (csubst t (csub_filter s2 [x])) (csubst s s2)); intro k.
-  autodimp k hyp.
-  rw <- @isprog_vars_csubst_iff.
-  rw @isprog_vars_eq; sp.
-  rw @nt_wf_eq; sp.
-  autodimp k hyp.
-  apply isprogram_csubst; sp.
-  rw @nt_wf_eq; sp.
-  eapply cequiv_trans.
-  exact k.
-  rw <- @simple_csubst_subst; sp.
-  apply cequiv_refl.
-  apply isprogram_csubst; sp.
-  unfold subst; apply lsubst_wf_iff; try (rw @nt_wf_eq; sp).
-  unfold wf_sub, sub_range_sat; simpl; sp; cpx; rw @nt_wf_eq; sp.
-  (* end proof of assert *)
-
-
-  (* we start proving our conclusion *)
-  dands; try (complete sp).
-
-  left.
-  eapply @equality_respects_cequivc_left.
-  apply cequivc_sym.
-  exact ceq1.
-  apply @equality_sym.
-  eapply @equality_respects_cequivc_left.
-  apply cequivc_sym.
-  exact ceq2.
-  apply @equality_sym.
-  unfold equorsq in hyp3; repdors; spcast; sp.
-  apply @equality_respects_cequivc; sp.
-  allapply @equality_refl; sp.
-
-  eapply @equality_respects_cequivc_left.
-  apply cequivc_sym.
-  exact ceq1.
-  sp.
-Qed.
 
 (* begin hide *)
 

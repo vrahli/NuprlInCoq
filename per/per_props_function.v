@@ -1253,3 +1253,33 @@ Proof.
   - apply fold_type.
     apply tequality_fun; repnd; dands; tcsp; eauto 2 with slow.
 Qed.
+
+Lemma tequality_function_change_domain {o} :
+  forall lib (A1 A2 : @CTerm o) v1 v2 B1 B2,
+    tequality lib A1 A2
+    -> tequality lib (mkc_function A1 v1 B1) (mkc_function A2 v2 B2)
+    -> tequality lib (mkc_function A1 v1 B1) (mkc_function A1 v2 B2).
+Proof.
+  introv teqA teqF.
+  allrw @tequality_function; repnd; dands; eauto 3 with slow.
+
+  - introv equa.
+    eapply tequality_preserving_equality in equa;eauto.
+
+  - introv.
+    pose proof (teqF a b) as q.
+    rw q; clear q.
+    allrw @equality_in_function.
+    split; intro h; repnd; dands; auto.
+
+    + introv equa.
+      eapply tequality_preserving_equality in equa;eauto.
+
+    + introv equa.
+      eapply tequality_preserving_equality in equa;eauto.
+
+    + introv equa.
+      apply h.
+      eapply tequality_preserving_equality in equa;eauto.
+      apply tequality_sym; auto.
+Qed.

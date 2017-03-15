@@ -1270,3 +1270,56 @@ Proof.
   eapply tequality_implies_if_equality; eauto.
   allrw @fold_mkc_member; auto.
 Qed.
+
+Lemma implies_tequality_mkc_member_if_member {o} :
+  forall lib (a b A B : @CTerm o),
+    tequality lib A B
+    -> (forall x, equality lib x a A <=> equality lib x b B)
+    -> tequality lib (mkc_member a A) (mkc_member b B).
+Proof.
+  introv teq equ.
+  apply tequality_mkc_member; dands; eauto 3 with slow.
+  introv; split; intro h; repnd; dands; eauto 3 with nequality; apply equ; auto.
+Qed.
+
+Lemma implies_tequality_mkc_member_if_equal {o} :
+  forall lib (a b A B : @CTerm o),
+    tequality lib A B
+    -> equality lib a b A
+    -> tequality lib (mkc_member a A) (mkc_member b B).
+Proof.
+  introv teq equ.
+  apply implies_tequality_mkc_member_if_member; auto.
+  introv; split; intro h.
+  - apply (equality_trans _ _ a); eauto 3 with nequality.
+  - apply (equality_trans _ _ b); eauto 3 with nequality.
+Qed.
+
+Lemma tequality_mkc_member_implies_equality {o} :
+  forall lib (a1 a2 A1 A2 : @CTerm o),
+    tequality lib (mkc_member a1 A1) (mkc_member a2 A2)
+    -> member lib a1 A1
+    -> equality lib a1 a2 A1.
+Proof.
+  introv teq mem.
+  apply tequality_mkc_member in teq; repnd.
+
+  pose proof (teq a1 a1 a1) as q; destruct q as [q q']; clear q'.
+  autodimp q hyp; repnd; dands; eauto 3 with nequality.
+
+  pose proof (teq a2 a2 a2) as w; destruct w as [w' w]; clear w'.
+  autodimp w hyp; repnd; dands; eauto 3 with nequality.
+Qed.
+
+Lemma tequality_if_tequality_in_uni {o} :
+  forall lib (T1 T2 : @CTerm o) (i : nat),
+    tequality lib (mkc_member T1 (mkc_uni i)) (mkc_member T2 (mkc_uni i))
+    -> member lib T1 (mkc_uni i)
+    -> tequality lib T1 T2.
+Proof.
+  introv teq ty.
+  pose proof (tequality_in_uni_implies_tequality lib T1 T2 i) as q;
+    repeat (autodimp q hyp); eauto 3 with slow.
+  pose proof (q T1) as z; clear q; destruct z as [z z']; clear z'.
+  autodimp z hyp; eauto 3 with slow.
+Qed.
