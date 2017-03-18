@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -180,6 +186,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
 
   *)
  | NLambda    : CanonicalOp
+ | NUpd       : CanonicalOp
  | NAxiom     : CanonicalOp
  | NRefl      : CanonicalOp
  | NPRefl     : CanonicalOp
@@ -262,6 +269,7 @@ Definition opsign := list nat.
 Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   match c with
   | NLambda        => [1]
+  | NUpd           => [0,0,0]
   | NAxiom         => []
   | NRefl          => [0]
   | NPRefl         => [0,0]

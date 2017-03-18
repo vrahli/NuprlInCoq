@@ -132,6 +132,8 @@ Definition mk_refl {o} (t : @NTerm o) : NTerm := oterm (Can NRefl) [nobnd t].
 
 Definition mk_prefl {o} (t u : @NTerm o) : NTerm := oterm (Can NPRefl) [nobnd t, nobnd u].
 
+Definition mk_upd {o} (a b c : @NTerm o) : NTerm := oterm (Can NUpd) [nobnd a, nobnd b, nobnd c].
+
 Definition mk_inl {p} (x : @NTerm p) := oterm (Can (NInj NInl)) [nobnd x].
 Definition mk_inr {p} (x : @NTerm p) := oterm (Can (NInj NInr)) [nobnd x].
 
@@ -2214,6 +2216,36 @@ Proof.
   introv; allrw @isprog_eq; apply isprogram_prefl.
 Qed.
 
+Lemma isprogram_upd {o} :
+  forall (t u w : @NTerm o),
+    isprogram (mk_upd t u w) <=> (isprogram t # isprogram u # isprogram w).
+Proof.
+  introv; split; intro h.
+  - inversion h as [cl wf].
+    unfold closed in cl; simpl in cl; autorewrite with list in *.
+    allrw @app_eq_nil_iff; repnd.
+    inversion wf as [| |? ? imp xx]; simpl in *; subst; clear xx wf.
+    pose proof (imp (nobnd t)) as q; autodimp q hyp.
+    pose proof (imp (nobnd u)) as z; autodimp z hyp.
+    pose proof (imp (nobnd w)) as r; autodimp r hyp.
+    allrw @bt_wf_iff.
+    repeat (constructor; auto).
+  - repnd.
+    inversion h as [cl1 wf1].
+    inversion h0 as [cl2 wf2].
+    inversion h1 as [cl3 wf3].
+    constructor; unfold closed; simpl; autorewrite with list; auto; allrw; auto.
+    constructor; unfold nobnd; simpl; auto.
+    introv xx; repndors; subst; tcsp.
+Qed.
+
+Theorem isprog_upd {o} :
+  forall (t u w : @NTerm o),
+    isprog (mk_upd t u w) <=> (isprog t # isprog u # isprog w).
+Proof.
+  introv; allrw @isprog_eq; apply isprogram_upd.
+Qed.
+
 
 
 Theorem isprog_bottom {p} : @isprog p mk_bottom.
@@ -2275,6 +2307,32 @@ Proof.
   - inversion wf as [| |? ? imp xx]; simpl in *; subst; clear xx wf.
     pose proof (imp (nobnd t)) as q; autodimp q hyp.
     pose proof (imp (nobnd u)) as z; autodimp z hyp.
+    allrw @bt_wf_iff; auto.
+  - constructor; unfold nobnd; simpl; auto.
+    introv xx; repndors; subst; tcsp.
+Qed.
+
+Theorem isvalue_upd {o} :
+  forall (t u w : @NTerm o),
+    isprogram t -> isprogram u -> isprogram w -> isvalue (mk_upd t u w).
+Proof.
+  introv ispt ispu ispw.
+  inversion ispt as [clt wft].
+  inversion ispu as [clu wfu].
+  inversion ispw as [clw wfw].
+  repeat constructor; unfold closed; simpl; autorewrite with list; allrw; tcsp.
+  introv i; repndors; subst; tcsp; apply bt_wf_iff; auto.
+Qed.
+
+Theorem wf_upd {o} :
+  forall (t u w : @NTerm o),
+    wf_term (mk_upd t u w) <=> (wf_term t # wf_term u # wf_term w).
+Proof.
+  introv; split; intro wf; allrw @wf_term_eq.
+  - inversion wf as [| |? ? imp xx]; simpl in *; subst; clear xx wf.
+    pose proof (imp (nobnd t)) as q; autodimp q hyp.
+    pose proof (imp (nobnd u)) as z; autodimp z hyp.
+    pose proof (imp (nobnd w)) as r; autodimp r hyp.
     allrw @bt_wf_iff; auto.
   - constructor; unfold nobnd; simpl; auto.
     introv xx; repndors; subst; tcsp.
@@ -5994,6 +6052,18 @@ Definition mkc_prefl {p} (t u : CTerm) : @CTerm p :=
   let (b,y) := u in
   exist isprog (mk_prefl a b) (implies_isprog_prefl x y).
 
+Theorem implies_isprog_upd {o} :
+  forall {t u w : @NTerm o}, isprog t -> isprog u -> isprog w -> isprog (mk_upd t u w).
+Proof.
+  introv h q r; apply isprog_upd; auto.
+Qed.
+
+Definition mkc_upd {p} (t u w : CTerm) : @CTerm p :=
+  let (a,x) := t in
+  let (b,y) := u in
+  let (c,z) := w in
+  exist isprog (mk_upd a b c) (implies_isprog_upd x y z).
+
 Definition mkc_bottom {p} : @CTerm p :=
   exist isprog mk_bottom isprog_bottom.
 
@@ -7180,6 +7250,33 @@ Definition mkcv_prefl {o} (v : NVar) (t u : @CVTerm o [v]) : CVTerm [v] :=
   let (a,x) := t in
   let (b,y) := u in
   exist (isprog_vars [v]) (mk_prefl a b) (implies_isprog_vars_prefl x y).
+
+Lemma isprog_vars_upd {o} :
+  forall v (t u w : @NTerm o),
+    isprog_vars [v] (mk_upd t u w)
+    <=> (isprog_vars [v] t # isprog_vars [v] u # isprog_vars [v] w).
+Proof.
+  introv; unfold isprog_vars; simpl; autorewrite with list.
+  allrw @assert_of_andb.
+  rw @wf_upd; tcsp.
+  split; intro h; tcsp.
+Qed.
+
+Lemma implies_isprog_vars_upd {o} :
+  forall {v} {t u w : @NTerm o},
+    isprog_vars [v] t
+    -> isprog_vars [v] u
+    -> isprog_vars [v] w
+    -> isprog_vars [v] (mk_upd t u w).
+Proof.
+  introv ispt ispu ispw; apply isprog_vars_upd; auto.
+Qed.
+
+Definition mkcv_upd {o} (v : NVar) (t u w : @CVTerm o [v]) : CVTerm [v] :=
+  let (a,x) := t in
+  let (b,y) := u in
+  let (c,z) := w in
+  exist (isprog_vars [v]) (mk_upd a b c) (implies_isprog_vars_upd x y z).
 
 Lemma fold_mkc_halts {p} :
   forall t : @CTerm p,

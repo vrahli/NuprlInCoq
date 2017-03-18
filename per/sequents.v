@@ -6122,32 +6122,3 @@ Qed.
 *)
 
 (* end hide *)
-
-(*
-Definition ext_VR_sequent_true {o} lib (S : @csequent o) : Type :=
-  forall s1 s2,
-    match destruct_csequent S with
-    | cseq_comps H T wh wt ct ec =>
-      forall p : similarity lib s1 s2 H,
-        match ec with
-        | Some (existT _ ext (we, ce)) =>
-          equality lib
-                   (lsubstc ext we s1 (s_cover_ex1 lib ext s1 s2 H ce p))
-                   (lsubstc ext we s2 (s_cover_ex2 lib ext s1 s2 H ce p))
-                   (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
-        | None => True
-        end
-    end.
-
-Definition ext_rule_true {o} lib (R : @rule o) : Type :=
-  forall (wg : wf_sequent (goal R))
-         (cg : closed_type_baresequent (goal R))
-         (cargs: args_constraints (sargs R) (hyps (goal R)))
-         (hyps :
-            forall s : baresequent,
-              LIn s (subgoals R)
-              -> {c : wf_csequent s & ext_VR_sequent_true lib (mk_wcseq s c)}),
-    {c : closed_extract_baresequent (goal R)
-     & ext_VR_sequent_true lib (mk_wcseq (goal R) (ext_wf_cseq (goal R) wg cg c))}.
-Hint Unfold ext_rule_true.
-*)
