@@ -210,34 +210,37 @@ Definition extts_ind' {o}
     end.
  *)
 
+(*
 Definition extts {o} (ts : cts(o)) (T T' : CTerm) (eq : per(o)) : Prop :=
   ts T eq # ts T' eq.
+*)
 
 Definition univi_eq {o} lib ts (A A' : @CTerm o) :=
   { eqa : per(o)
-  , extts (close lib ts) A A' eqa }.
+  , close lib ts A A' eqa }.
 
-Fixpoint univi {p} lib (i : nat) (T : @CTerm p) (eq : per(p)) : [U] :=
+Fixpoint univi {p} lib (i : nat) (T T' : @CTerm p) (eq : per(p)) : [U] :=
   match i with
   | 0 => False
   | S n =>
     (
       T ===>(lib) (mkc_uni n)
+      # T' ===>(lib) (mkc_uni n) (* Should we make this more extensional? *)
       # eq <=2=> (univi_eq lib (univi lib n))
     )
-    {+} univi lib n T eq
+    {+} univi lib n T T' eq
   end.
 
-Definition univ {p} lib (T : @CTerm p) (eq : per) :=
-  {i : nat , univi lib i T eq}.
+Definition univ {p} lib (T T' : @CTerm p) (eq : per) :=
+  {i : nat , univi lib i T T' eq}.
 
 Definition nuprli {o} lib (i : nat) := @close o lib (univi lib i).
 
-Definition Nuprli {o} lib i := @extts o (nuprli lib i).
+(*Definition Nuprli {o} lib i := @extts o (nuprli lib i).*)
 
 Definition nuprl {o} lib := @close o lib (univ lib).
 
-Definition Nuprl {o} lib := @extts o (nuprl lib).
+(*Definition Nuprl {o} lib := @extts o (nuprl lib).*)
 
 (**
 
@@ -275,25 +278,28 @@ Print Universes.
 Check (fun T T' => univi 1 T T' (fun A A' => {eqa : per & close (univi 0) A A' eqa})).
 *)
 
+Hint Resolve computes_to_valc_refl : slow.
+Hint Resolve iscvalue_mkc_equality : slow.
 
 Lemma univi_mkc_uni {o} :
   forall lib (i : nat),
     univi lib
           (S i)
           (mkc_uni i)
+          (mkc_uni i)
           (@univi_eq o lib (univi lib i)).
 Proof.
   introv; simpl.
-  left; dands; tcsp.
-  spcast; apply computes_to_valc_refl; sp.
+  left; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma univi_exists {p} :
-  forall lib i (T : @CTerm p) eq,
-    univi lib i T eq
+  forall lib i (T T' : @CTerm p) eq,
+    univi lib i T T' eq
     -> {j : nat
        , j < i
        # T ===>(lib) (mkc_uni j)
+       # T' ===>(lib) (mkc_uni j)
        # eq <=2=> (univi_eq lib (univi lib j))}.
 Proof.
   induction i; simpl; introv u; tcsp.
@@ -306,11 +312,12 @@ Proof.
 Qed.
 
 Lemma univi_exists_iff {p} :
-  forall lib i (T : @CTerm p) eq,
-    univi lib i T eq
+  forall lib i (T T' : @CTerm p) eq,
+    univi lib i T T' eq
     <=> {j : nat
         , j < i
         # T ===>(lib) (mkc_uni j)
+        # T' ===>(lib) (mkc_uni j)
         # eq <=2=> (univi_eq lib (univi lib j)) }.
 Proof.
   introv; split; intro k.
@@ -353,13 +360,13 @@ Qed.
 *)
 
 Definition defines_only_universes {p} lib (ts : cts(p)) :=
-  forall T eq, ts T eq -> {i : nat , T ===>(lib) (mkc_uni i)}.
+  forall T T' eq, ts T T' eq -> {i : nat , T ===>(lib) (mkc_uni i)}.
 
 (* begin hide *)
 
 Lemma univi_iff_univ {p} :
-  forall lib (A : @CTerm p) eq,
-    univ lib A eq <=> {i : nat , univi lib i A eq}.
+  forall lib (A B : @CTerm p) eq,
+    univ lib A B eq <=> {i : nat , univi lib i A B eq}.
 Proof.
   sp; split; sp.
 Qed.
@@ -425,9 +432,9 @@ Definition Nuprl {p} lib (T T' : @CTerm p) (eq : per) :=
 *)
 
 Lemma typable_in_higher_univ {pp} :
-  forall lib i (T : @CTerm pp) eq,
-    nuprli lib i T eq
-    -> forall k, nuprli lib (k + i) T eq.
+  forall lib i (T T' : @CTerm pp) eq,
+    nuprli lib i T T' eq
+    -> forall k, nuprli lib (k + i) T T' eq.
 Proof.
   unfold nuprli; introv cl; induction k; simpl; sp.
 
@@ -435,9 +442,17 @@ Proof.
   clear cl.
   close_cases (induction IHk using @close_ind') Case; sp; subst.
 
+  (*
   - Case "CL_aeq".
     apply CL_aeq; unfold per_aeq; sp.
     exists A a b eqa; sp.
+   *)
+
+  - Case "CL_int".
+    apply CL_int.
+    unfold per_int in *; repnd; dands; auto.
+
+    (* We need to recurse inside per_or_ext too *)
 
   - Case "CL_eq".
     apply CL_eq; unfold per_eq; sp.

@@ -2161,9 +2161,6 @@ Proof.
   eapply nuprl_ext_eq_iff_eq_term_equals; eauto.
 Qed.
 
-Hint Resolve computes_to_valc_refl : slow.
-Hint Resolve iscvalue_mkc_equality : slow.
-
 Lemma either_computes_to_equality_left {o} :
   forall lib (a1 a2 A T : @CTerm o),
     either_computes_to_equality lib (mkc_equality a1 a2 A) T.

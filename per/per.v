@@ -277,7 +277,7 @@ Proof. sp. Qed.
 
 (* begin hide *)
 
-Definition candidate_type_system {p} := @CTerm p -> per(p) -> [U].
+Definition candidate_type_system {p} := @CTerm p -> @CTerm p -> per(p) -> [U].
 
 (* end hide *)
 
@@ -292,10 +292,10 @@ Definition candidate_type_system {p} := @CTerm p -> per(p) -> [U].
  *)
 
 Notation "candidate-type-system" :=
-  (CTerm -> per -> [U]).
+  (CTerm -> CTerm -> per -> [U]).
 
-Notation cts := (CTerm -> per -> [U]).
-Notation "cts( p )" := (@CTerm p -> per(p) -> [U]).
+Notation cts := (CTerm -> CTerm -> per -> [U]).
+Notation "cts( p )" := (@CTerm p -> @CTerm p -> per(p) -> [U]).
 
 (* begin hide *)
 
@@ -347,12 +347,16 @@ Notation "T [[ v \\ a ]]" := (substc a v T) (at level 0).
 
  *)
 
+Definition per_or_ext {o} lib (ts : cts(o)) (T T' : @CTerm o) (per : per(o)) :=
+  ccequivc lib T T' {+} ts T' T' per.
+
 Definition equality_of_int {p} lib (n m : @CTerm p) :=
   {k : Z , n ===>(lib) (mkc_integer k)
          # m ===>(lib) (mkc_integer k)}.
 
-Definition per_int {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_int {p} lib (ts : cts(p)) (T T' : @CTerm p) (eq : per(p)) : [U] :=
   T ===>(lib) mkc_int
+  # per_or_ext lib ts T T' eq
   # eq <=2=> (equality_of_int lib).
 
 (**
@@ -366,8 +370,9 @@ Definition equality_of_atom {p} lib (a b : @CTerm p) :=
   {s : String.string , a ===>(lib) (mkc_token s)
                      # b ===>(lib) (mkc_token s)}.
 
-Definition per_atom {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_atom {p} lib (ts : cts(p)) (T T' : @CTerm p) (eq : per(p)) : [U] :=
   T ===>(lib) mkc_atom
+  # per_or_ext lib ts T T' eq
   # eq <=2=> (equality_of_atom lib).
 
 
@@ -375,8 +380,9 @@ Definition equality_of_uatom {p} lib (a b : @CTerm p) :=
   {u : get_patom_set p , a ===>(lib) (mkc_utoken u)
                        # b ===>(lib) (mkc_utoken u)}.
 
-Definition per_uatom {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_uatom {p} lib (ts : cts(p)) (T T' : @CTerm p) (eq : per(p)) : [U] :=
   T ===>(lib) mkc_uatom
+  # per_or_ext lib ts T T' eq
   # eq <=2=> (equality_of_uatom lib).
 
 
@@ -393,15 +399,16 @@ Definition per_ffatom_eq {p}
            (x t1 t2 : @CTerm p) :=
   {y : CTerm , eqa x y # !LIn u (getc_utokens y)}.
 
-Definition per_ffatom {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_ffatom {p} lib (ts : cts(p)) (T T' : @CTerm p) (eq : per(p)) : [U] :=
    {A , x , a : CTerm
    , {eqa : per
    , {u : get_patom_set p
-      , T ===>(lib) (mkc_free_from_atom A x a)
-      # ts A eqa
-      # eqa x x
-      # a ===>(lib) (mkc_utoken u)
-      # eq <=2=> (per_ffatom_eq eqa u x)}}}.
+   , T ===>(lib) (mkc_free_from_atom A x a)
+   # per_or_ext lib ts T T' eq
+   # ts A A eqa
+   # eqa x x
+   # a ===>(lib) (mkc_utoken u)
+   # eq <=2=> (per_ffatom_eq eqa u x)}}}.
 
 (*
 Definition name_not_in_upto {o} lib (a x : @CTerm o) (eqa : per) :=
@@ -435,13 +442,14 @@ Definition per_ffatoms_eq {p}
            (x t1 t2 : @CTerm p) :=
   {y : @CTerm p , eqa x y # noutokensc y}.
 
-Definition per_ffatoms {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_ffatoms {p} lib (ts : cts(p)) (T T' : @CTerm p) (eq : per(p)) : [U] :=
    {A , x : CTerm
    , {eqa : per
-      , T ===>(lib) (mkc_free_from_atoms A x)
-      # ts A eqa
-      # eqa x x
-      # eq <=2=> (per_ffatoms_eq eqa x)}}.
+   , T ===>(lib) (mkc_free_from_atoms A x)
+   # per_or_ext lib ts T T' eq
+   # ts A A eqa
+   # eqa x x
+   # eq <=2=> (per_ffatoms_eq eqa x)}}.
 
 
 (*
@@ -459,8 +467,9 @@ Print Universes.
 
  *)
 
-Definition per_base {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_base {p} lib (ts : cts(p)) (T T' : @CTerm p) (eq : per(p)) : [U] :=
   T ===>(lib) mkc_base
+  # per_or_ext lib ts T T' eq
   # eq <=2=> (ccequivc lib).
 
 (**
@@ -493,10 +502,11 @@ Definition per_base {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] :=
 Definition per_approx {p}
            lib
            (ts : cts(p))
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per(p)) : [U] :=
   {a, b : CTerm
    , T ===>(lib) (mkc_approx a b)
+   # per_or_ext lib ts T T' eq
    # eq <=2=> (fun t t' => capproxc lib a b) }.
 
 (**
@@ -514,17 +524,19 @@ Definition per_approx {p}
 Definition per_cequiv {p}
            lib
            (ts : cts(p))
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per(p)) : [U] :=
   {a, b : CTerm
    , T ===>(lib) (mkc_cequiv a b)
+   # per_or_ext lib ts T T' eq
    # eq <=2=> (fun t t' => ccequivc lib a b) }.
 
 (* begin hide *)
 
-Definition per_compute {p} lib (ts : cts(p)) (T : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_compute {p} lib (ts : cts(p)) (T T' : @CTerm p) (eq : per(p)) : [U] :=
   {a, b, n : CTerm
    , T ===>(lib) (mkc_compute a b n)
+   # per_or_ext lib ts T T' eq
    # eq <=2=> (fun t t' => compute_1step lib a b) }.
 
 (* end hide *)
@@ -585,6 +597,7 @@ Definition eqorceq {p} lib (eq : per(p)) a b : [U] := eq a b {+} a ~=~(lib) b.
 
  *)
 
+(*
 (* The PER of this equality type is the type as the PER of A *)
 Definition per_aeq_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) : [U] :=
   { x1 , x2 : CTerm
@@ -599,6 +612,7 @@ Definition per_aeq {p} lib (ts : cts(p)) T (eq : per(p)) : [U] :=
   , T ===>(lib) (mkc_aequality a b A)
   # ts A eqa
   # eq <=2=> (per_aeq_eq lib a b eqa) }}.
+*)
 
 (* The PER of this equality type is all the elements equal to a1 *)
 Definition per_eq_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) : [U] :=
@@ -610,11 +624,12 @@ Definition per_eq_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) : 
   # eqa a2 x2
   # eqa y1 y2}.
 
-Definition per_eq {p} lib (ts : cts(p)) T (eq : per(p)) : [U] :=
+Definition per_eq {p} lib (ts : cts(p)) T T' (eq : per(p)) : [U] :=
   {A, a, b : CTerm
   , {eqa : per
   , T ===>(lib) (mkc_equality a b A)
-  # ts A eqa
+  # per_or_ext lib ts T T' eq
+  # ts A A eqa
   # eq <=2=> (per_eq_eq lib a b eqa) }}.
 
 (**
@@ -628,12 +643,13 @@ Definition per_eq {p} lib (ts : cts(p)) T (eq : per(p)) : [U] :=
 
 Definition true_per {p} (t t' : @CTerm p) := True.
 
-Definition per_teq {p} lib (ts : cts(p)) T (eq : per(p)) : [U] :=
+Definition per_teq {p} lib (ts : cts(p)) T T' (eq : per(p)) : [U] :=
   {A , B : CTerm
   , {eqa : per
   , T ===>(lib) (mkc_tequality A B)
-  # ts A eqa
-  # ts B eqa
+  # per_or_ext lib ts T T' eq
+  # ts A A eqa
+  # ts B B eqa
   # eq <=2=> true_per}}.
 
 (**
@@ -667,18 +683,40 @@ Definition type_family_members_eq {o}
            (ts  : cts)
            (v   : NVar)
            (B   : @CVTerm o [v])
-           (eqa : per(o))
+           {eqa : per(o)}
            (eqb : per-fam(o,eqa)) : Prop :=
-  (forall a a' (e : eqa a a'), ts (B[[v\\a]]) (eqb a a' e))
-    # per_fam_equiv eqb.
+  (forall a a' (e : eqa a a'), ts (B[[v\\a]]) (B[[v\\a']]) (eqb a a' e))
+  # per_fam_equiv eqb.
 
-Definition type_family {p} lib TyCon (ts : cts(p)) (T : @CTerm p) eqa eqb : [U]:=
+
+
+Definition per_intensional {o}
+           lib
+           TyCon
+           (ts : cts(o))
+           (T : @CTerm o)
+           (eqa : per(o))
+           (eqb : per-fam(o,eqa)) : [U] :=
+  forall A v B,
+    T ===>(lib) (TyCon A v B)
+    -> ts A A eqa # type_family_members_eq ts v B eqb.
+
+Definition type_family {o}
+           lib
+           TyCon
+           (ts : cts(o))
+           (T T' : @CTerm o)
+           (eq  : per(o))
+           (eqa : per(o))
+           (eqb : per-fam(o,eqa)) : [U] :=
   {A : CTerm
   , {v : NVar
   , {B : CVTerm [v]
   , T ===>(lib) (TyCon A v B)
-  # ts A eqa
-  # type_family_members_eq ts v B eqa eqb }}}.
+  # per_or_ext lib ts T T' eq
+  # per_intensional lib TyCon ts T' eqa eqb
+  # ts A A eqa
+  # type_family_members_eq ts v B eqb }}}.
 
 (**
 
@@ -696,10 +734,10 @@ Definition per_func_eq {o} (eqa : per(o)) (eqb : per-fam(eqa)) (t t' : @CTerm o)
   forall a a' (e : eqa a a'),
     (eqb a a' e) (mkc_apply t a) (mkc_apply t' a').
 
-Definition per_func {p} lib (ts : cts(p)) T (eq : per(p)) : [U] :=
+Definition per_func {p} lib (ts : cts(p)) T T' (eq : per(p)) : [U] :=
   {eqa : per
   , {eqb : per-fam(eqa)
-  , type_family lib mkc_function ts T eqa eqb
+  , type_family lib mkc_function ts T T' eq eqa eqb
   # eq <=2=> (per_func_eq eqa eqb) }}.
 
 (**
@@ -719,11 +757,11 @@ Definition per_isect_eq {o} (eqa : per(o)) (eqb : per-fam(eqa)) (t t' : @CTerm o
 Definition per_isect {p}
            lib
            (ts : cts(p))
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per(p)) : [U] :=
   {eqa : per
   , {eqb : per-fam(eqa)
-  , type_family lib mkc_isect ts T eqa eqb
+  , type_family lib mkc_isect ts T T' eq eqa eqb
   # eq <=2=> (per_isect_eq eqa eqb) }}.
 
 (**
@@ -744,11 +782,11 @@ Definition per_disect_eq {o} (eqa : per(o)) (eqb : per-fam(eqa)) (t t' : @CTerm 
 Definition per_disect {p}
            lib
            (ts : cts(p))
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per(p)) : [U] :=
   {eqa : per
   , {eqb : per-fam(eqa)
-  , type_family lib mkc_disect ts T eqa eqb
+  , type_family lib mkc_disect ts T T' eq eqa eqb
   # eq <=2=> (per_disect_eq eqa eqb) }}.
 
 (**
@@ -772,11 +810,11 @@ Definition per_product_eq {p}
 Definition per_product {p}
            lib
            (ts : cts)
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per) : [U] :=
   {eqa : per
   , {eqb : per-fam(eqa)
-  , type_family lib mkc_product ts T eqa eqb
+  , type_family lib mkc_product ts T T' eq eqa eqb
   # eq <=2=> (per_product_eq lib eqa eqb)}}.
 
 
@@ -799,11 +837,11 @@ Inductive per_tunion_eq {p}
 Definition per_tunion {p}
            lib
            (ts : cts)
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per) : [U] :=
   {eqa : per
   , {eqb : per-fam(eqa)
-  , type_family lib mkc_tunion ts T eqa eqb
+  , type_family lib mkc_tunion ts T T' eq eqa eqb
   # eq <=2=> (per_tunion_eq eqa eqb)}}.
 
 
@@ -825,13 +863,14 @@ Definition per_texc_eq {p} lib (eqn eqe : per(p)) t t' : [U] :=
 Definition per_texc {p}
            lib
            (ts : cts)
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per(p)) : [U] :=
   {eqn, eqe : per
   , {N, E : CTerm
   , T ===>(lib) (mkc_texc N E)
-  # ts N eqn
-  # ts E eqe
+  # per_or_ext lib ts T T' eq
+  # ts N N eqn
+  # ts E E eqe
   # eq <=2=> (per_texc_eq lib eqn eqe) }}.
 
 (* See [with_exc] to add exceptions to types in terms_union. *)
@@ -867,13 +906,14 @@ Definition per_union_eq {p} lib (eqa eqb : per) (t t' : @CTerm p) : [U] :=
 Definition per_union {p}
            lib
            (ts : cts)
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per(p)) : [U] :=
   {eqa, eqb : per
   , {A, B : CTerm
   , T ===>(lib) (mkc_union A B)
-  # ts A eqa
-  # ts B eqb
+  # per_or_ext lib ts T T' eq
+  # ts A A eqa
+  # ts B B eqb
   # eq <=2=> (per_union_eq lib eqa eqb) }}.
 
 
@@ -975,12 +1015,13 @@ Inductive per_image_eq {p} lib (eqa : per(p)) (f t1 t2 : @CTerm p) : [U] :=
 Definition per_image {p}
            lib
            (ts : cts)
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per) : [U] :=
   {eqa : per
   , {A, f : CTerm
   , T ===>(lib) (mkc_image A f)
-  # ts A eqa
+  # per_or_ext lib ts T T' eq
+  # ts A A eqa
   # eq <=2=> (per_image_eq lib eqa f) }}.
 
 
@@ -1221,12 +1262,13 @@ Definition per_pertype_eq {o} (eqr : CTerm -> CTerm -> per(o)) (t t' : @CTerm o)
 Definition per_pertype {p}
            lib
            (ts : cts)
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per) : [U] :=
   {R : CTerm
   , {eqr : CTerm -> CTerm -> per
   , T ===>(lib) (mkc_pertype R)
-  # (forall x y, ts (mkc_apply2 R x y) (eqr x y))
+  # per_or_ext lib ts T T' eq
+  # (forall x y, ts (mkc_apply2 R x y) (mkc_apply2 R x y) (eqr x y))
   # is_per eqr
   # eq <=2=> (per_pertype_eq eqr) }}.
 
@@ -1346,11 +1388,11 @@ Definition per_set_eq {o} (eqa : per(o)) (eqb : per-fam(o,eqa)) (t t' : CTerm) :
 Definition per_set {p}
            lib
            (ts : cts)
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per) : [U] :=
   {eqa : per
   , {eqb : per-fam(eqa)
-  , type_family lib mkc_set ts T eqa eqb
+  , type_family lib mkc_set ts T T' eq eqa eqb
   # eq <=2=> (per_set_eq eqa eqb) }}.
 
 (**
@@ -1367,10 +1409,11 @@ Definition per_partial_eq {p} lib (eqa : per) (t t' : @CTerm p) : [U] :=
   (chaltsc lib t <=> chaltsc lib t')
   # (chaltsc lib t -> eqa t t').
 
-Definition per_partial {p} lib (ts : cts) T (eq : per(p)) : [U] :=
+Definition per_partial {p} lib (ts : cts) T T' (eq : per(p)) : [U] :=
   {A : @CTerm p , {eqa : per
   , T ===>(lib) (mkc_partial A)
-  # ts A eqa
+  # per_or_ext lib ts T T' eq
+  # ts A A eqa
   # (forall a, eqa a a -> chaltsc lib a)
   # eq <=2=> (per_partial_eq lib eqa) }}.
 
@@ -1431,12 +1474,13 @@ Definition per_mono_eq {p} lib (eqa : per(p)) (t t' : @CTerm p) : [U] :=
 Definition per_mono {p}
            lib
            (ts : cts)
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per(p)) : [U] :=
   {A : CTerm
   , {eqa : per
   , T ===>(lib) (mkc_mono A)
-  # ts A eqa
+  # per_or_ext lib ts T T' eq
+  # ts A A eqa
   # eq <=2=> (per_mono_eq lib eqa)}}.
 
 Definition cofinite_subst_fapprox_eqc {p}
@@ -1466,12 +1510,13 @@ Definition per_admiss_eq {p}  (eqa : per(p)) (t t' : @CTerm p) : [U] :=
 Definition per_admiss {p}
            lib
            (ts : cts)
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per(p)) : [U] :=
   {A : CTerm
   , {eqa : per
   , T ===>(lib) (mkc_admiss A)
-  # ts A eqa
+  # per_or_ext lib ts T T' eq
+  # ts A A eqa
   # eq <=2=> (per_admiss_eq eqa)}}.
 
 (*
@@ -1511,10 +1556,11 @@ Inductive weq {p}
             -> weq lib eqa eqb (mkc_apply f b) (mkc_apply f' b'))
       -> weq lib eqa eqb t t'.
 
-Definition per_w {p} lib (ts : cts) T (eq : per(p)) : [U] :=
-  {eqa : per , {eqb : per-fam(eqa) ,
-   type_family lib mkc_w ts T eqa eqb
-   # eq <=2=> (weq lib eqa eqb)}}.
+Definition per_w {p} lib (ts : cts) T T' (eq : per(p)) : [U] :=
+  {eqa : per
+  , {eqb : per-fam(eqa)
+  , type_family lib mkc_w ts T T' eq eqa eqb
+  # eq <=2=> (weq lib eqa eqb)}}.
 
 (**
 
@@ -1540,11 +1586,11 @@ CoInductive meq {p}
 Definition per_m {p}
            lib
            (ts : cts)
-           (T : @CTerm p)
+           (T T' : @CTerm p)
            (eq : per) : [U] :=
   {eqa : per
   , {eqb : per-fam(eqa)
-  , type_family lib mkc_m ts T eqa eqb
+  , type_family lib mkc_m ts T T' eq eqa eqb
   # eq <=2=> (meq lib eqa eqb)}}.
 
 (**
@@ -1837,12 +1883,14 @@ Definition per_rec (ts : cts) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
 
 (* --- now we define the Nuprl type system: nuprl_omega *)
 
+(*
 (** close the different constructors with that and remove ccomputes_to_valc
  * from the per definitions *)
 Definition close_compute {p} lib (ts : cts) (T : @CTerm p) (eq : per(p)) :=
   {T' : CTerm
    $ ccomputes_to_valc lib T T'
    # ts T eq}.
+*)
 
 (* end hide *)
 
@@ -1857,77 +1905,77 @@ Definition close_compute {p} lib (ts : cts) (T : @CTerm p) (eq : per(p)) :=
 
  *)
 
-Inductive close {p} lib (ts : cts) (T : @CTerm p) (eq : per(p)) : [U] :=
-  | CL_init     : ts T eq -> close lib ts T eq
-  | CL_int      : per_int      lib (close lib ts) T eq -> close lib ts T eq
-  | CL_atom     : per_atom     lib (close lib ts) T eq -> close lib ts T eq
-  | CL_uatom    : per_uatom    lib (close lib ts) T eq -> close lib ts T eq
-  | CL_base     : per_base     lib (close lib ts) T eq -> close lib ts T eq
-  | CL_approx   : per_approx   lib (close lib ts) T eq -> close lib ts T eq
-  | CL_cequiv   : per_cequiv   lib (close lib ts) T eq -> close lib ts T eq
-  | CL_aeq      : per_aeq      lib (close lib ts) T eq -> close lib ts T eq
-  | CL_eq       : per_eq       lib (close lib ts) T eq -> close lib ts T eq
-  | CL_teq      : per_teq      lib (close lib ts) T eq -> close lib ts T eq
-  | CL_isect    : per_isect    lib (close lib ts) T eq -> close lib ts T eq
-  | CL_func     : per_func     lib (close lib ts) T eq -> close lib ts T eq
-  | CL_disect   : per_disect   lib (close lib ts) T eq -> close lib ts T eq
-  | CL_pertype  : per_pertype  lib (close lib ts) T eq -> close lib ts T eq
-(*  | CL_ipertype : per_ipertype lib (close lib ts) T eq -> close lib ts T eq*)
-(*  | CL_spertype : per_spertype lib (close lib ts) T eq -> close lib ts T eq*)
-  | CL_w        : per_w        lib (close lib ts) T eq -> close lib ts T eq
-  | CL_m        : per_m        lib (close lib ts) T eq -> close lib ts T eq
+Inductive close {p} lib (ts : cts) (T T' : @CTerm p) (eq : per(p)) : [U] :=
+  | CL_init     : ts T T' eq -> close lib ts T T' eq
+  | CL_int      : per_int      lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_atom     : per_atom     lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_uatom    : per_uatom    lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_base     : per_base     lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_approx   : per_approx   lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_cequiv   : per_cequiv   lib (close lib ts) T T' eq -> close lib ts T T' eq
+(*  | CL_aeq      : per_aeq      lib (close lib ts) T T' eq -> close lib ts T T' eq*)
+  | CL_eq       : per_eq       lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_teq      : per_teq      lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_isect    : per_isect    lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_func     : per_func     lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_disect   : per_disect   lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_pertype  : per_pertype  lib (close lib ts) T T' eq -> close lib ts T T' eq
+(*  | CL_ipertype : per_ipertype lib (close lib ts) T T' eq -> close lib ts T T' eq*)
+(*  | CL_spertype : per_spertype lib (close lib ts) T T' eq -> close lib ts T T' eq*)
+  | CL_w        : per_w        lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_m        : per_m        lib (close lib ts) T T' eq -> close lib ts T T' eq
   (* We leave these out for now because they're more complicated *)
-(*  | CL_pw       : per_pw       lib (close lib ts) T eq -> close lib ts T eq*)
-(*  | CL_pm       : per_pm       lib (close lib ts) T eq -> close lib ts T eq*)
-  | CL_texc     : per_texc     lib (close lib ts) T eq -> close lib ts T eq
-  | CL_union    : per_union    lib (close lib ts) T eq -> close lib ts T eq
-(*  | CL_eunion   : per_eunion   lib (close lib ts) T eq -> close lib ts T eq*)
-(*  | CL_union2   : per_union2   lib (close lib ts) T eq -> close lib ts T eq*)
-  | CL_image    : per_image    lib (close lib ts) T eq -> close lib ts T eq
- (* | CL_eisect   : per_eisect   lib (close lib ts) T eq -> close lib ts T eq*)
-  | CL_partial  : per_partial  lib (close lib ts) T eq -> close lib ts T eq
-  | CL_admiss   : per_admiss   lib (close lib ts) T eq -> close lib ts T eq
-  | CL_mono     : per_mono     lib (close lib ts) T eq -> close lib ts T eq
-  | CL_ffatom   : per_ffatom   lib (close lib ts) T eq -> close lib ts T eq
-(*  | CL_effatom  : per_effatom  lib (close lib ts) T eq -> close lib ts T eq*)
-  | CL_ffatoms  : per_ffatoms  lib (close lib ts) T eq -> close lib ts T eq
-  | CL_set      : per_set      lib (close lib ts) T eq -> close lib ts T eq
-  | CL_tunion   : per_tunion   lib (close lib ts) T eq -> close lib ts T eq
-  | CL_product  : per_product  lib (close lib ts) T eq -> close lib ts T eq.
+(*  | CL_pw       : per_pw       lib (close lib ts) T T' eq -> close lib ts T T' eq*)
+(*  | CL_pm       : per_pm       lib (close lib ts) T T' eq -> close lib ts T T' eq*)
+  | CL_texc     : per_texc     lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_union    : per_union    lib (close lib ts) T T' eq -> close lib ts T T' eq
+(*  | CL_eunion   : per_eunion   lib (close lib ts) T T' eq -> close lib ts T T' eq*)
+(*  | CL_union2   : per_union2   lib (close lib ts) T T' eq -> close lib ts T T' eq*)
+  | CL_image    : per_image    lib (close lib ts) T T' eq -> close lib ts T T' eq
+ (* | CL_eisect   : per_eisect   lib (close lib ts) T T' eq -> close lib ts T T' eq*)
+  | CL_partial  : per_partial  lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_admiss   : per_admiss   lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_mono     : per_mono     lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_ffatom   : per_ffatom   lib (close lib ts) T T' eq -> close lib ts T T' eq
+(*  | CL_effatom  : per_effatom  lib (close lib ts) T T' eq -> close lib ts T T' eq*)
+  | CL_ffatoms  : per_ffatoms  lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_set      : per_set      lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_tunion   : per_tunion   lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_product  : per_product  lib (close lib ts) T T' eq -> close lib ts T T' eq.
 Hint Constructors close.
 
-Arguments CL_init     {p} [lib] [ts] [T] [eq] _.
-Arguments CL_int      {p} [lib] [ts] [T] [eq] _.
-Arguments CL_atom     {p} [lib] [ts] [T] [eq] _.
-Arguments CL_uatom    {p} [lib] [ts] [T] [eq] _.
-Arguments CL_base     {p} [lib] [ts] [T] [eq] _.
-Arguments CL_approx   {p} [lib] [ts] [T] [eq] _.
-Arguments CL_cequiv   {p} [lib] [ts] [T] [eq] _.
-Arguments CL_aeq      {p} [lib] [ts] [T] [eq] _.
-Arguments CL_eq       {p} [lib] [ts] [T] [eq] _.
-Arguments CL_teq      {p} [lib] [ts] [T] [eq] _.
-Arguments CL_isect    {p} [lib] [ts] [T] [eq] _.
-Arguments CL_func     {p} [lib] [ts] [T] [eq] _.
-Arguments CL_disect   {p} [lib] [ts] [T] [eq] _.
-Arguments CL_pertype  {p} [lib] [ts] [T] [eq] _.
-(*Arguments CL_ipertype {p} [lib] [ts] [T] [eq] _.*)
-(*Arguments CL_spertype {p} [lib] [ts] [T] [eq] _.*)
-Arguments CL_w        {p} [lib] [ts] [T] [eq] _.
-Arguments CL_m        {p} [lib] [ts] [T] [eq] _.
-(*Arguments CL_pw       {p} [lib] [ts] [T] [eq] _.*)
-(*Arguments CL_pm       {p} [lib] [ts] [T] [eq] _.*)
-Arguments CL_texc     {p} [lib] [ts] [T] [eq] _.
-Arguments CL_union    {p} [lib] [ts] [T] [eq] _.
-Arguments CL_image    {p} [lib] [ts] [T] [eq] _.
-Arguments CL_partial  {p} [lib] [ts] [T] [eq] _.
-Arguments CL_admiss   {p} [lib] [ts] [T] [eq] _.
-Arguments CL_mono     {p} [lib] [ts] [T] [eq] _.
-Arguments CL_ffatom   {p} [lib] [ts] [T] [eq] _.
-(*Arguments CL_effatom  {p} [lib] [ts] [T] [eq] _.*)
-Arguments CL_ffatoms  {p} [lib] [ts] [T] [eq] _.
-Arguments CL_set      {p} [lib] [ts] [T] [eq] _.
-Arguments CL_tunion   {p} [lib] [ts] [T] [eq] _.
-Arguments CL_product  {p} [lib] [ts] [T] [eq] _.
+Arguments CL_init     {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_int      {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_atom     {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_uatom    {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_base     {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_approx   {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_cequiv   {p} [lib] [ts] [T] [T'] [eq] _.
+(*Arguments CL_aeq      {p} [lib] [ts] [T] [T'] [eq] _.*)
+Arguments CL_eq       {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_teq      {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_isect    {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_func     {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_disect   {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_pertype  {p} [lib] [ts] [T] [T'] [eq] _.
+(*Arguments CL_ipertype {p} [lib] [ts] [T] [T'] [eq] _.*)
+(*Arguments CL_spertype {p} [lib] [ts] [T] [T'] [eq] _.*)
+Arguments CL_w        {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_m        {p} [lib] [ts] [T] [T'] [eq] _.
+(*Arguments CL_pw       {p} [lib] [ts] [T] [T'] [eq] _.*)
+(*Arguments CL_pm       {p} [lib] [ts] [T] [T'] [eq] _.*)
+Arguments CL_texc     {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_union    {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_image    {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_partial  {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_admiss   {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_mono     {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_ffatom   {p} [lib] [ts] [T] [T'] [eq] _.
+(*Arguments CL_effatom  {p} [lib] [ts] [T] [T'] [eq] _.*)
+Arguments CL_ffatoms  {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_set      {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_tunion   {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_product  {p} [lib] [ts] [T] [T'] [eq] _.
 
 (* begin hide *)
 
@@ -1941,7 +1989,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
   | Case_aux c "CL_base"
   | Case_aux c "CL_approx"
   | Case_aux c "CL_cequiv"
-  | Case_aux c "CL_aeq"
+(*  | Case_aux c "CL_aeq"*)
   | Case_aux c "CL_eq"
   | Case_aux c "CL_teq"
   | Case_aux c "CL_isect"
@@ -1975,41 +2023,41 @@ Definition close_ind' {pp}
            lib
   (P : cts -> cts)
   (init : forall (ts : cts)
-                 (T  : @CTerm pp)
+                 (T T'  : @CTerm pp)
                  (eq : per),
-            ts T eq -> P ts T eq)
+            ts T T' eq -> P ts T T' eq)
   (int  : forall (ts  : cts)
-                 (T   : @CTerm pp)
+                 (T T'   : @CTerm pp)
                  (eq  : per)
-                 (per : per_int lib (close lib ts) T eq),
-            P ts T eq)
+                 (per : per_int lib (close lib ts) T T' eq),
+            P ts T T' eq)
   (atom : forall (ts  : cts)
-                 (T   : @CTerm pp)
+                 (T T'   : @CTerm pp)
                  (eq  : per)
-                 (per : per_atom lib (close lib ts) T eq),
-            P ts T eq)
+                 (per : per_atom lib (close lib ts) T T' eq),
+            P ts T T' eq)
   (uatom : forall (ts  : cts)
-                  (T   : @CTerm pp)
+                  (T T'   : @CTerm pp)
                   (eq  : per)
-                  (per : per_uatom lib (close lib ts) T eq),
-            P ts T eq)
+                  (per : per_uatom lib (close lib ts) T T' eq),
+            P ts T T' eq)
   (base : forall (ts  : cts)
-                 (T   : @CTerm pp)
+                 (T T'   : @CTerm pp)
                  (eq  : per)
-                 (per : per_base lib (close lib ts) T eq),
-            P ts T eq)
+                 (per : per_base lib (close lib ts) T T' eq),
+            P ts T T' eq)
   (aprx : forall (ts  : cts)
-                 (T   : @CTerm pp)
+                 (T T'   : @CTerm pp)
                  (eq  : per)
-                 (per : per_approx lib (close lib ts) T eq),
-              P ts T eq)
+                 (per : per_approx lib (close lib ts) T T' eq),
+              P ts T T' eq)
   (ceq : forall (ts  : cts)
-                (T   : @CTerm pp)
+                (T T'   : @CTerm pp)
                 (eq  : per)
-                (per : per_cequiv lib (close lib ts) T eq),
-           P ts T eq)
-  (aequ  : forall (ts    : cts)
-                  (T     : @CTerm pp)
+                (per : per_cequiv lib (close lib ts) T T' eq),
+           P ts T T' eq)
+(*  (aequ  : forall (ts    : cts)
+                  (T T'     : @CTerm pp)
                   (eq    : per)
                   (A a b : @CTerm pp)
                   (eqa   : per)
@@ -2018,35 +2066,37 @@ Definition close_ind' {pp}
                   (reca  : P ts A eqa)
 (*                  (eoc   : eqorceq lib eqa a b)*)
                   (eqiff : eq <=2=> (per_aeq_eq lib a b eqa))
-                  (per   : per_aeq lib (close lib ts) T eq),
-            P ts T eq)
+                  (per   : per_aeq lib (close lib ts) T T' eq),
+            P ts T T' eq)*)
   (equ  : forall (ts     : cts)
-                 (T     : @CTerm pp)
+                 (T T'     : @CTerm pp)
                  (eq    : per)
                  (A a b : @CTerm pp)
                  (eqa   : per)
                  (comp  : T ===>(lib) (mkc_equality a b A))
-                 (cla   : close lib ts A eqa)
-                 (reca  : P ts A eqa)
+                 (ext   : per_or_ext lib (close lib ts) T T' eq)
+                 (cla   : close lib ts A A eqa)
+                 (reca  : P ts A A eqa)
 (*                 (eoc   : eqorceq lib eqa a b)*)
                  (eqiff : eq <=2=> (per_eq_eq lib a b eqa))
-                 (per   : per_eq lib (close lib ts) T eq),
-            P ts T eq)
+                 (per   : per_eq lib (close lib ts) T T' eq),
+            P ts T T' eq)
   (tequ : forall (ts    : cts)
-                 (T     : @CTerm pp)
+                 (T T'     : @CTerm pp)
                  (eq    : per)
                  (A B   : @CTerm pp)
                  (eqa   : per)
                  (comp  : T ===>(lib) (mkc_tequality A B))
-                 (cl1   : close lib ts A eqa)
-                 (rec1  : P ts A eqa)
-                 (cl2   : close lib ts B eqa)
-                 (rec2  : P ts B eqa)
+                 (ext   : per_or_ext lib (close lib ts) T T' eq)
+                 (cl1   : close lib ts A A eqa)
+                 (rec1  : P ts A A eqa)
+                 (cl2   : close lib ts B B eqa)
+                 (rec2  : P ts B B eqa)
                  (eqiff : eq <=2=> true_per)
-                 (per   : per_teq lib (close lib ts) T eq),
-            P ts T eq)
+                 (per   : per_teq lib (close lib ts) T T' eq),
+            P ts T T' eq)
   (isect : forall (ts     : cts)
-                  (T      : @CTerm pp)
+                  (T T'      : @CTerm pp)
                   (eq     : per)
                   (A      : @CTerm pp)
                   (v      : NVar)
@@ -2054,16 +2104,18 @@ Definition close_ind' {pp}
                   (eqa    : per)
                   (eqb    : per-fam(eqa))
                   (comp   : T ===>(lib) (mkc_isect A v B))
-                  (cla    : close lib ts A eqa)
-                  (reca   : P ts A eqa)
-                  (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
-                  (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (eqb a a' e))
+                  (ext    : per_or_ext lib (close lib ts) T T' eq)
+                  (int    : per_intensional lib mkc_isect (close lib ts) T' eqa eqb)
+                  (cla    : close lib ts A A eqa)
+                  (reca   : P ts A A eqa)
+                  (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
+                  (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (substc a' v B) (eqb a a' e))
                   (eqbiff : per_fam_equiv eqb)
                   (eqiff  : eq <=2=> (per_isect_eq eqa eqb))
-                  (per    : per_isect lib (close lib ts) T eq),
-             P ts T eq)
+                  (per    : per_isect lib (close lib ts) T T' eq),
+             P ts T T' eq)
   (func : forall (ts      : cts)
-                  (T      : @CTerm pp)
+                  (T T'      : @CTerm pp)
                   (eq     : per)
                   (A      : @CTerm pp)
                   (v      : NVar)
@@ -2071,16 +2123,18 @@ Definition close_ind' {pp}
                   (eqa    : per)
                   (eqb    : per-fam(eqa))
                   (comp   : T ===>(lib) (mkc_function A v B))
-                  (cla    : close lib ts A eqa)
-                  (reca   : P ts A eqa)
-                  (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
-                  (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (eqb a a' e))
+                  (ext    : per_or_ext lib (close lib ts) T T' eq)
+                  (int    : per_intensional lib mkc_function (close lib ts) T' eqa eqb)
+                  (cla    : close lib ts A A eqa)
+                  (reca   : P ts A A eqa)
+                  (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
+                  (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (substc a' v B) (eqb a a' e))
                   (eqbiff : per_fam_equiv eqb)
                   (eqiff  : eq <=2=> (per_func_eq eqa eqb))
-                  (per    : per_func lib (close lib ts) T eq),
-            P ts T eq)
+                  (per    : per_func lib (close lib ts) T T' eq),
+            P ts T T' eq)
   (disect : forall (ts     : cts)
-                   (T      : @CTerm pp)
+                   (T T'      : @CTerm pp)
                    (eq     : per)
                    (A      : @CTerm pp)
                    (v      : NVar)
@@ -2088,28 +2142,31 @@ Definition close_ind' {pp}
                    (eqa    : per)
                    (eqb    : per-fam(eqa))
                    (comp   : T ===>(lib) (mkc_disect A v B))
-                   (cla    : close lib ts A eqa)
-                   (reca   : P ts A eqa)
-                   (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
-                   (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (eqb a a' e))
+                   (ext    : per_or_ext lib (close lib ts) T T' eq)
+                   (int    : per_intensional lib mkc_disect (close lib ts) T' eqa eqb)
+                   (cla    : close lib ts A A eqa)
+                   (reca   : P ts A A eqa)
+                   (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
+                   (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (substc a' v B) (eqb a a' e))
                    (eqbiff : per_fam_equiv eqb)
                    (eqiff  : eq <=2=> (per_disect_eq eqa eqb))
-                   (per    : per_disect lib (close lib ts) T eq),
-              P ts T eq)
+                   (per    : per_disect lib (close lib ts) T T' eq),
+              P ts T T' eq)
   (pertype : forall (ts    : cts)
-                    (T     : @CTerm pp)
+                    (T T'     : @CTerm pp)
                     (eq    : per)
                     (R     : @CTerm pp)
                     (eqr   : CTerm -> CTerm -> per)
                     (comp  : T ===>(lib) (mkc_pertype R))
-                    (cl1   : forall x y, close lib ts (mkc_apply2 R x y) (eqr x y))
-                    (rec1  : forall x y, P ts (mkc_apply2 R x y) (eqr x y))
+                    (ext   : per_or_ext lib (close lib ts) T T' eq)
+                    (cl1   : forall x y, close lib ts (mkc_apply2 R x y) (mkc_apply2 R x y) (eqr x y))
+                    (rec1  : forall x y, P ts (mkc_apply2 R x y) (mkc_apply2 R x y) (eqr x y))
                     (isper : is_per eqr)
                     (eqiff : eq <=2=> (per_pertype_eq eqr))
-                    (per   : per_pertype lib (close lib ts) T eq),
-               P ts T eq)
+                    (per   : per_pertype lib (close lib ts) T T' eq),
+               P ts T T' eq)
 (*  (ipertype : forall (ts : cts)
-                     (T : @CTerm pp)
+                     (T T' : @CTerm pp)
                      (eq : per)
                      (R1 R2 : @CTerm pp)
                      (eq1 : CTerm -> CTerm -> per)
@@ -2124,10 +2181,10 @@ Definition close_ind' {pp}
                                            (eq1 x y))
                      (isper : is_per eq1)
                      (eqiff : eq <=2=> (pertype_eq eq1))
-                     (per : per_ipertype lib (close lib ts) T eq),
-                P ts T eq)*)
+                     (per : per_ipertype lib (close lib ts) T T' eq),
+                P ts T T' eq)*)
 (*  (spertype : forall (ts : cts)
-                     (T : @CTerm pp)
+                     (T T' : @CTerm pp)
                      (eq : per)
                      (R1 R2 : @CTerm pp)
                      (eq1 : CTerm -> CTerm -> per)
@@ -2151,10 +2208,10 @@ Definition close_ind' {pp}
                                -> P ts (mkc_apply2 R1 x y) (mkc_apply2 R1 x z) (eq1 x y))
                      (isper : is_per eq1)
                      (eqiff : eq <=2=> (pertype_eq eq1))
-                     (per : per_spertype lib (close lib ts) T eq),
-                P ts T eq)*)
+                     (per : per_spertype lib (close lib ts) T T' eq),
+                P ts T T' eq)*)
   (w     : forall (ts     : cts)
-                  (T      : @CTerm pp)
+                  (T T'      : @CTerm pp)
                   (eq     : per)
                   (A      : @CTerm pp)
                   (v      : NVar)
@@ -2162,16 +2219,18 @@ Definition close_ind' {pp}
                   (eqa    : per)
                   (eqb    : per-fam(eqa))
                   (comp   : T ===>(lib) (mkc_w A v B))
-                  (cla    : close lib ts A eqa)
-                  (reca   : P ts A eqa)
-                  (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
-                  (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (eqb a a' e))
+                  (ext    : per_or_ext lib (close lib ts) T T' eq)
+                  (int    : per_intensional lib mkc_w (close lib ts) T' eqa eqb)
+                  (cla    : close lib ts A A eqa)
+                  (reca   : P ts A A eqa)
+                  (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
+                  (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (substc a' v B) (eqb a a' e))
                   (eqbiff : per_fam_equiv eqb)
                   (eqiff  : eq <=2=> (weq lib eqa eqb))
-                  (per    : per_w lib (close lib ts) T eq),
-            P ts T eq)
+                  (per    : per_w lib (close lib ts) T T' eq),
+            P ts T T' eq)
   (m     : forall (ts     : cts)
-                  (T      : @CTerm pp)
+                  (T T'   : @CTerm pp)
                   (eq     : per)
                   (A      : @CTerm pp)
                   (v      : NVar)
@@ -2179,16 +2238,18 @@ Definition close_ind' {pp}
                   (eqa    : per)
                   (eqb    : per-fam(eqa))
                   (comp   : T ===>(lib) (mkc_m A v B))
-                  (cla    : close lib ts A eqa)
-                  (reca   : P ts A eqa)
-                  (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
-                  (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (eqb a a' e))
+                  (ext    : per_or_ext lib (close lib ts) T T' eq)
+                  (int    : per_intensional lib mkc_m (close lib ts) T' eqa eqb)
+                  (cla    : close lib ts A A eqa)
+                  (reca   : P ts A A eqa)
+                  (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
+                  (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (substc a' v B) (eqb a a' e))
                   (eqbiff : per_fam_equiv eqb)
                   (eqiff  : eq <=2=> (meq lib eqa eqb))
-                  (per    : per_m lib (close lib ts) T eq),
-            P ts T eq)
+                  (per    : per_m lib (close lib ts) T T' eq),
+            P ts T T' eq)
 (*  (pw    : forall (ts : cts)
-                  (T : @CTerm pp)
+                  (T T' : @CTerm pp)
                   (eq : per)
                   (Pr Pr' : @CTerm pp)
                   (ap ap' : NVar)
@@ -2244,10 +2305,10 @@ Definition close_ind' {pp}
                                (lsubstc3 cp' p' ca' a' cb' b' C'))
                   (peq : eqp p p')
                   (eqiff : forall t t', eq t t' <=> pweq lib eqp eqa eqb cp ca cb C p t t')
-                  (per : per_pw lib (close lib ts) T eq),
-            P ts T eq)*)
+                  (per : per_pw lib (close lib ts) T T' eq),
+            P ts T T' eq)*)
 (*  (pm    : forall (ts : cts)
-                  (T : @CTerm pp)
+                  (T T' : @CTerm pp)
                   (eq : per)
                   (Pr Pr' : @CTerm pp)
                   (ap ap' : NVar)
@@ -2303,36 +2364,38 @@ Definition close_ind' {pp}
                                (lsubstc3 cp' p' ca' a' cb' b' C'))
                   (peq : eqp p p')
                   (eqiff : forall t t', eq t t' <=> pmeq lib eqp eqa eqb cp ca cb C p t t')
-                  (per : per_pm lib (close lib ts) T eq),
-            P ts T eq)*)
-  (texc : forall (ts : cts)
-                  (T : @CTerm pp)
-                  (eq : per)
-                  (N E : @CTerm pp)
+                  (per : per_pm lib (close lib ts) T T' eq),
+            P ts T T' eq)*)
+  (texc : forall (ts       : cts)
+                  (T T'    : @CTerm pp)
+                  (eq      : per)
+                  (N E     : @CTerm pp)
                   (eqn eqe : per)
-                  (comp : T ===>(lib) (mkc_texc N E))
-                  (cln : close lib ts N eqn)
-                  (recn : P ts N eqn)
-                  (cle : close lib ts E eqe)
-                  (rece : P ts E eqe)
-                  (eqiff : eq <=2=> (per_texc_eq lib eqn eqe))
-                  (per : per_texc lib (close lib ts) T eq),
-            P ts T eq)
-  (union : forall (ts : cts)
-                  (T : @CTerm pp)
-                  (eq : per)
-                  (A B : @CTerm pp)
+                  (comp    : T ===>(lib) (mkc_texc N E))
+                  (ext     : per_or_ext lib (close lib ts) T T' eq)
+                  (cln     : close lib ts N N eqn)
+                  (recn    : P ts N N eqn)
+                  (cle     : close lib ts E E eqe)
+                  (rece    : P ts E E eqe)
+                  (eqiff   : eq <=2=> (per_texc_eq lib eqn eqe))
+                  (per     : per_texc lib (close lib ts) T T' eq),
+            P ts T T' eq)
+  (union : forall (ts      : cts)
+                  (T T'    : @CTerm pp)
+                  (eq      : per)
+                  (A B     : @CTerm pp)
                   (eqa eqb : per)
-                  (comp : T ===>(lib) (mkc_union A B))
-                  (cla : close lib ts A eqa)
-                  (reca : P ts A eqa)
-                  (clb : close lib ts B eqb)
-                  (recb : P ts B eqb)
-                  (eqiff : eq <=2=> (per_union_eq lib eqa eqb))
-                  (per : per_union lib (close lib ts) T eq),
-            P ts T eq)
+                  (comp    : T ===>(lib) (mkc_union A B))
+                  (ext     : per_or_ext lib (close lib ts) T T' eq)
+                  (cla     : close lib ts A A eqa)
+                  (reca    : P ts A A eqa)
+                  (clb     : close lib ts B B eqb)
+                  (recb    : P ts B B eqb)
+                  (eqiff   : eq <=2=> (per_union_eq lib eqa eqb))
+                  (per     : per_union lib (close lib ts) T T' eq),
+            P ts T T' eq)
 (*  (eunion : forall (ts : cts)
-                  (T : @CTerm pp)
+                  (T T' : @CTerm pp)
                   (eq : per)
                   (A A' B B' : @CTerm pp)
                   (eqa1 eqa2 eqb1 eqb2 : per)
@@ -2349,10 +2412,10 @@ Definition close_ind' {pp}
                   (clb2  : close lib ts B' B' eqb2)
                   (recb2 : P ts B' B' eqb2)
                   (eqiff : eq <=2=> (per_union_eq lib eqa1 eqb1))
-                  (per : per_eunion lib (close lib ts) T eq),
-            P ts T eq)*)
+                  (per : per_eunion lib (close lib ts) T T' eq),
+            P ts T T' eq)*)
 (*  (union2 : forall (ts : cts)
-                  (T : @CTerm pp)
+                  (T T' : @CTerm pp)
                   (eq : per)
                   (A A' B B' : @CTerm pp)
                   (eqa : per)
@@ -2363,21 +2426,22 @@ Definition close_ind' {pp}
                   (clb : close lib ts B B' eqb)
                   (recb : P ts B B' eqb)
                   (eqiff : forall t t', eq t t' <=> per_union_eq lib eqa eqb t t')
-                  (per : per_union2 lib (close lib ts) T eq),
-            P ts T eq)*)
-  (image : forall (ts : cts)
-                  (T : @CTerm pp)
-                  (eq : per)
-                  (A f : @CTerm pp)
-                  (eqa : per)
-                  (comp : T ===>(lib) (mkc_image A f))
-                  (cla : close lib ts A eqa)
-                  (reca : P ts A eqa)
+                  (per : per_union2 lib (close lib ts) T T' eq),
+            P ts T T' eq)*)
+  (image : forall (ts    : cts)
+                  (T T'  : @CTerm pp)
+                  (eq    : per)
+                  (A f   : @CTerm pp)
+                  (eqa   : per)
+                  (comp  : T ===>(lib) (mkc_image A f))
+                  (ext   : per_or_ext lib (close lib ts) T T' eq)
+                  (cla   : close lib ts A A eqa)
+                  (reca  : P ts A A eqa)
                   (eqiff : eq <=2=> (per_image_eq lib eqa f))
-                  (per : per_image lib (close lib ts) T eq),
-            P ts T eq)
+                  (per   : per_image lib (close lib ts) T T' eq),
+            P ts T T' eq)
 (*  (eisect : forall (ts : cts)
-                   (T : @CTerm pp)
+                   (T T' : @CTerm pp)
                    (eq : per)
                    (eqa : per)
                    (eqa' : per)
@@ -2417,58 +2481,62 @@ Definition close_ind' {pp}
                                 (substc a' v' B')
                                 (eqb (f' a' e') a' (g' a' e') e'))
                    (eqiff : eq <=2=> (eisect_eq eqa eqa' eqb))
-                   (per : per_eisect lib (close lib ts) T eq),
-              P ts T eq)*)
-  (partial : forall (ts : cts)
-                    (T : @CTerm pp)
-                    (eq : per)
-                    (A : @CTerm pp)
-                    (eqa : per)
-                    (comp : T ===>(lib) (mkc_partial A))
-                    (cla : close lib ts A eqa)
-                    (reca : P ts A eqa)
-                    (hv : forall a, eqa a a -> chaltsc lib a)
+                   (per : per_eisect lib (close lib ts) T T' eq),
+              P ts T T' eq)*)
+  (partial : forall (ts    : cts)
+                    (T T'  : @CTerm pp)
+                    (eq    : per)
+                    (A     : @CTerm pp)
+                    (eqa   : per)
+                    (comp  : T ===>(lib) (mkc_partial A))
+                    (ext   : per_or_ext lib (close lib ts) T T' eq)
+                    (cla   : close lib ts A A eqa)
+                    (reca  : P ts A A eqa)
+                    (hv    : forall a, eqa a a -> chaltsc lib a)
                     (eqiff : eq <=2=> (per_partial_eq lib eqa))
-                    (per : per_partial lib (close lib ts) T eq),
-               P ts T eq)
-  (admiss : forall (ts : cts)
-                    (T : @CTerm pp)
-                    (eq : per)
-                    (A : @CTerm pp)
-                    (eqa : per)
-                    (comp : T ===>(lib) (mkc_admiss A))
-                    (cla : close lib ts A eqa)
-                    (reca : P ts A eqa)
-                    (eqiff : eq <=2=> (per_admiss_eq eqa))
-                    (per : per_admiss lib (close lib ts) T eq),
-               P ts T eq)
-  (mono : forall (ts : cts)
-                    (T : @CTerm pp)
-                    (eq : per)
-                    (A : @CTerm pp)
-                    (eqa : per)
-                    (comp : T ===>(lib) (mkc_mono A))
-                    (cla : close lib ts A eqa)
-                    (reca : P ts A eqa)
-                    (eqiff : eq <=2=> (per_mono_eq lib eqa))
-                    (per : per_mono lib (close lib ts) T eq),
-               P ts T eq)
-  (ffatom : forall (ts : cts)
-                   (T : @CTerm pp)
-                   (eq : per)
+                    (per   : per_partial lib (close lib ts) T T' eq),
+               P ts T T' eq)
+  (admiss : forall (ts    : cts)
+                   (T T'  : @CTerm pp)
+                   (eq    : per)
+                   (A     : @CTerm pp)
+                   (eqa   : per)
+                   (comp  : T ===>(lib) (mkc_admiss A))
+                   (ext   : per_or_ext lib (close lib ts) T T' eq)
+                   (cla   : close lib ts A A eqa)
+                   (reca  : P ts A A eqa)
+                   (eqiff : eq <=2=> (per_admiss_eq eqa))
+                   (per   : per_admiss lib (close lib ts) T T' eq),
+               P ts T T' eq)
+  (mono : forall (ts    : cts)
+                 (T T'  : @CTerm pp)
+                 (eq    : per)
+                 (A     : @CTerm pp)
+                 (eqa   : per)
+                 (comp  : T ===>(lib) (mkc_mono A))
+                 (ext   : per_or_ext lib (close lib ts) T T' eq)
+                 (cla   : close lib ts A A eqa)
+                 (reca  : P ts A A eqa)
+                 (eqiff : eq <=2=> (per_mono_eq lib eqa))
+                 (per   : per_mono lib (close lib ts) T T' eq),
+               P ts T T' eq)
+  (ffatom : forall (ts    : cts)
+                   (T T'  : @CTerm pp)
+                   (eq    : per)
                    (A x a : @CTerm pp)
-                   (eqa : per)
-                   (u : get_patom_set pp)
-                   (comp : T ===>(lib) (mkc_free_from_atom A x a))
-                   (cla : close lib ts A eqa)
-                   (reca : P ts A eqa)
-                   (ex : eqa x x)
-                   (ca : a ===>(lib) (mkc_utoken u))
+                   (eqa   : per)
+                   (u     : get_patom_set pp)
+                   (comp  : T ===>(lib) (mkc_free_from_atom A x a))
+                   (ext   : per_or_ext lib (close lib ts) T T' eq)
+                   (cla   : close lib ts A A eqa)
+                   (reca  : P ts A A eqa)
+                   (ex    : eqa x x)
+                   (ca    : a ===>(lib) (mkc_utoken u))
                    (eqiff : eq <=2=> (per_ffatom_eq eqa u x))
-                   (per : per_ffatom lib (close lib ts) T eq),
-      P ts T eq)
+                   (per   : per_ffatom lib (close lib ts) T T' eq),
+      P ts T T' eq)
 (*  (effatom : forall (ts : cts)
-                    (T : @CTerm pp)
+                    (T T' : @CTerm pp)
                     (eq : per)
                     (A1 A2 x1 x2 a1 a2 : @CTerm pp)
                     (eqa : per)
@@ -2477,22 +2545,23 @@ Definition close_ind' {pp}
                     (reca : P ts A1 A2 eqa)
                     (niff : name_not_in_upto lib a1 x1 eqa <=> name_not_in_upto lib a2 x2 eqa)
                     (eqiff : eq <=2=> (per_effatom_eq lib eqa a1 x1))
-                    (per : per_effatom lib (close lib ts) T eq),
-               P ts T eq)*)
-  (ffatoms : forall (ts : cts)
-                    (T : @CTerm pp)
-                    (eq : per)
-                    (A x : @CTerm pp)
-                    (eqa : per)
-                    (comp : T ===>(lib) (mkc_free_from_atoms A x))
-                    (cla : close lib ts A eqa)
-                    (reca : P ts A eqa)
-                    (ex : eqa x x)
+                    (per : per_effatom lib (close lib ts) T T' eq),
+               P ts T T' eq)*)
+  (ffatoms : forall (ts    : cts)
+                    (T T'  : @CTerm pp)
+                    (eq    : per)
+                    (A x   : @CTerm pp)
+                    (eqa   : per)
+                    (comp  : T ===>(lib) (mkc_free_from_atoms A x))
+                    (ext   : per_or_ext lib (close lib ts) T T' eq)
+                    (cla   : close lib ts A A eqa)
+                    (reca  : P ts A A eqa)
+                    (ex    : eqa x x)
                     (eqiff : eq <=2=> (per_ffatoms_eq eqa x))
-                    (per : per_ffatoms lib (close lib ts) T eq),
-               P ts T eq)
+                    (per   : per_ffatoms lib (close lib ts) T T' eq),
+               P ts T T' eq)
   (subset : forall (ts     : cts)
-                   (T      : @CTerm pp)
+                   (T T'   : @CTerm pp)
                    (eq     : per)
                    (A      : @CTerm pp)
                    (v      : NVar)
@@ -2500,16 +2569,18 @@ Definition close_ind' {pp}
                    (eqa    : per)
                    (eqb    : per-fam(eqa))
                    (comp   : T ===>(lib) (mkc_set A v B))
-                   (cla    : close lib ts A eqa)
-                   (reca   : P ts A eqa)
-                   (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
-                   (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (eqb a a' e))
+                   (ext    : per_or_ext lib (close lib ts) T T' eq)
+                   (int    : per_intensional lib mkc_set (close lib ts) T' eqa eqb)
+                   (cla    : close lib ts A A eqa)
+                   (reca   : P ts A A eqa)
+                   (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
+                   (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (substc a' v B) (eqb a a' e))
                    (eqbiff : per_fam_equiv eqb)
                    (eqiff  : eq <=2=> (per_set_eq eqa eqb))
-                   (per    : per_set lib (close lib ts) T eq),
-              P ts T eq)
+                   (per    : per_set lib (close lib ts) T T' eq),
+              P ts T T' eq)
   (tunion : forall (ts     : cts)
-                   (T      : @CTerm pp)
+                   (T T'   : @CTerm pp)
                    (eq     : per)
                    (A      : @CTerm pp)
                    (v      : NVar)
@@ -2517,16 +2588,18 @@ Definition close_ind' {pp}
                    (eqa    : per)
                    (eqb    : per-fam(eqa))
                    (comp   : T ===>(lib) (mkc_tunion A v B))
-                   (cla    : close lib ts A eqa)
-                   (reca   : P ts A eqa)
-                   (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
-                   (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (eqb a a' e))
+                   (ext    : per_or_ext lib (close lib ts) T T' eq)
+                   (int    : per_intensional lib mkc_tunion (close lib ts) T' eqa eqb)
+                   (cla    : close lib ts A A eqa)
+                   (reca   : P ts A A eqa)
+                   (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
+                   (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (substc a' v B) (eqb a a' e))
                    (eqbiff : per_fam_equiv eqb)
                    (eqiff  : eq <=2=> (per_tunion_eq eqa eqb))
-                   (per    : per_tunion lib (close lib ts) T eq),
-              P ts T eq)
+                   (per    : per_tunion lib (close lib ts) T T' eq),
+              P ts T T' eq)
   (product : forall (ts     : cts)
-                    (T      : @CTerm pp)
+                    (T T'   : @CTerm pp)
                     (eq     : per)
                     (A      : @CTerm pp)
                     (v      : NVar)
@@ -2534,16 +2607,18 @@ Definition close_ind' {pp}
                     (eqa    : per)
                     (eqb    : per-fam(eqa))
                     (comp   : T ===>(lib) (mkc_product A v B))
-                    (cla    : close lib ts A eqa)
-                    (reca   : P ts A eqa)
-                    (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (eqb a a' e))
-                    (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (eqb a a' e))
+                    (ext    : per_or_ext lib (close lib ts) T T' eq)
+                    (int    : per_intensional lib mkc_product (close lib ts) T' eqa eqb)
+                    (cla    : close lib ts A A eqa)
+                    (reca   : P ts A A eqa)
+                    (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
+                    (recb   : forall a a' (e : eqa a a'), P ts (substc a v B) (substc a' v B) (eqb a a' e))
                     (eqbiff : per_fam_equiv eqb)
                     (eqiff  : eq <=2=> (per_product_eq lib eqa eqb))
-                    (per    : per_product lib (close lib ts) T eq),
-            P ts T eq)
+                    (per    : per_product lib (close lib ts) T T' eq),
+            P ts T T' eq)
 (*  (esquash : forall (ts : cts)
-                    (T : @CTerm pp)
+                    (T T' : @CTerm pp)
                     (eq : per)
                     (A1 A2 : @CTerm pp)
                     (eq1 eq2 : per)
@@ -2559,27 +2634,27 @@ Definition close_ind' {pp}
                                              ccomputes_to_valc t mkc_axiom
                                              # ccomputes_to_valc t' mkc_axiom
                                              # inhabited eq1)
-                    (per : per_esquash lib (close lib ts) T eq),
-               P ts T eq)*)
+                    (per : per_esquash lib (close lib ts) T T' eq),
+               P ts T T' eq)*)
    : forall (ts : cts)
-            (T : @CTerm pp)
+            (T T' : @CTerm pp)
             (eq : per)
-            (t : close lib ts T eq),
-            P ts T eq :=
+            (t : close lib ts T T' eq),
+            P ts T T' eq :=
  fix rec (ts : cts)
-         (T : @CTerm pp)
+         (T T' : @CTerm pp)
          (eq : per)
-         (t : close lib ts T eq)
-         : P ts T eq :=
-   match t in close _ _ _ _ return P ts T eq with
-   | CL_init   pts => init  ts T eq pts
-   | CL_int    pts => int   ts T eq pts
-   | CL_atom   pts => atom  ts T eq pts
-   | CL_uatom  pts => uatom ts T eq pts
-   | CL_base   pts => base  ts T eq pts
-   | CL_approx pts => aprx  ts T eq pts
-   | CL_cequiv pts => ceq   ts T eq pts
-   | CL_aeq pts =>
+         (t : close lib ts T T' eq)
+         : P ts T T' eq :=
+   match t in close _ _ _ _ _ return P ts T T' eq with
+   | CL_init   pts => init  ts T T' eq pts
+   | CL_int    pts => int   ts T T' eq pts
+   | CL_atom   pts => atom  ts T T' eq pts
+   | CL_uatom  pts => uatom ts T T' eq pts
+   | CL_base   pts => base  ts T T' eq pts
+   | CL_approx pts => aprx  ts T T' eq pts
+   | CL_cequiv pts => ceq   ts T T' eq pts
+(*   | CL_aeq pts =>
        let (A,    x) := pts in
        let (a,    x) := x in
        let (b,    x) := x in
@@ -2593,19 +2668,21 @@ Definition close_ind' {pp}
               (rec ts A eqa tsa)
 (*              eoc*)
               eiff
-              pts
+              pts*)
    | CL_eq pts =>
        let (A,    x) := pts in
        let (a ,   x) := x in
        let (b,    x) := x in
        let (eqa,  x) := x in
        let (comp, x) := x in
+       let (ext, x) := x in
        let (tsa,  eiff) := x in
 (*       let (eoc,  eiff) := x in*)
-         equ ts T eq A a b eqa
+         equ ts T T' eq A a b eqa
              comp
+             ext
              tsa
-             (rec ts A eqa tsa)
+             (rec ts A A eqa tsa)
 (*             eoc*)
              eiff
              pts
@@ -2614,14 +2691,16 @@ Definition close_ind' {pp}
        let (B,    x) := x in
        let (eqa,  x) := x in
        let (comp, x) := x in
+       let (ext,  x) := x in
        let (tsa,  x) := x in
        let (tsb,  eiff) := x in
-       tequ ts T eq A B eqa
+       tequ ts T T' eq A B eqa
             comp
+            ext
             tsa
-            (rec ts A eqa tsa)
+            (rec ts A A eqa tsa)
             tsb
-            (rec ts B eqa tsb)
+            (rec ts B B eqa tsb)
             eiff
             pts
    | CL_isect pts =>
@@ -2632,13 +2711,17 @@ Definition close_ind' {pp}
        let (v,    x)    := x in
        let (B,    x)    := x in
        let (comp, x)    := x in
+       let (ext,  x)    := x in
+       let (int,  x)    := x in
        let (tsa,  mem)  := x in
-       isect ts T eq A v B eqa eqb
+       isect ts T T' eq A v B eqa eqb
              comp
+             ext
+             int
              tsa
-             (rec ts A eqa tsa)
+             (rec ts A A eqa tsa)
              (fst mem)
-             (fun a a' e => rec ts (substc a v B) (eqb a a' e) (fst mem a a' e))
+             (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fst mem a a' e))
              (snd mem)
              eiff
              pts
@@ -2651,13 +2734,17 @@ Definition close_ind' {pp}
        let (v,    x)    := x in
        let (B,    x)    := x in
        let (comp, x)    := x in
+       let (ext,  x)    := x in
+       let (int,  x)    := x in
        let (tsa,  mem)  := x in
-       func ts T eq A v B eqa eqb
+       func ts T T' eq A v B eqa eqb
             comp
+            ext
+            int
             tsa
-            (rec ts A eqa tsa)
+            (rec ts A A eqa tsa)
             (fst mem)
-            (fun a a' e => rec ts (substc a v B) (eqb a a' e) (fst mem a a' e))
+            (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fst mem a a' e))
             (snd mem)
             eiff
             pts
@@ -2670,13 +2757,17 @@ Definition close_ind' {pp}
        let (v,    x)    := x in
        let (B,    x)    := x in
        let (comp, x)    := x in
+       let (ext,  x)    := x in
+       let (int,  x)    := x in
        let (tsa,  mem)  := x in
-       disect ts T eq A v B eqa eqb
+       disect ts T T' eq A v B eqa eqb
               comp
+              ext
+              int
               tsa
-              (rec ts A eqa tsa)
+              (rec ts A A eqa tsa)
               (fst mem)
-              (fun a a' e => rec ts (substc a v B) (eqb a a' e) (fst mem a a' e))
+              (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fst mem a a' e))
               (snd mem)
               eiff
               pts
@@ -2685,12 +2776,15 @@ Definition close_ind' {pp}
        let (R,    x) := pts in
        let (eqr,  x) := x in
        let (comp, x) := x in
+       let (ext,  x) := x in
        let (fts,  x) := x in
        let (isp,  eiff)  := x in
-         pertype ts T eq R eqr
+         pertype ts T T' eq R eqr
                  comp
+                 ext
                  fts
                  (fun x y => rec ts
+                                 (mkc_apply2 R x y)
                                  (mkc_apply2 R x y)
                                  (eqr x y)
                                  (fts x y))
@@ -2764,13 +2858,17 @@ Definition close_ind' {pp}
        let (v,    x)    := x in
        let (B,    x)    := x in
        let (comp, x)    := x in
+       let (ext,  x)    := x in
+       let (int,  x)    := x in
        let (tsa,  mem)  := x in
-       w ts T eq A v B eqa eqb
+       w ts T T' eq A v B eqa eqb
          comp
+         ext
+         int
          tsa
-         (rec ts A eqa tsa)
+         (rec ts A A eqa tsa)
          (fst mem)
-         (fun a a' e => rec ts (substc a v B) (eqb a a' e) (fst mem a a' e))
+         (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fst mem a a' e))
          (snd mem)
          eiff
          pts
@@ -2783,13 +2881,17 @@ Definition close_ind' {pp}
        let (v,    x)    := x in
        let (B,    x)    := x in
        let (comp, x)    := x in
+       let (ext,  x)    := x in
+       let (int,  x)    := x in
        let (tsa,  mem)  := x in
-       m ts T eq A v B eqa eqb
+       m ts T T' eq A v B eqa eqb
          comp
+         ext
+         int
          tsa
-         (rec ts A eqa tsa)
+         (rec ts A A eqa tsa)
          (fst mem)
-         (fun a a' e => rec ts (substc a v B) (eqb a a' e) (fst mem a a' e))
+         (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fst mem a a' e))
          (snd mem)
          eiff
          pts
@@ -2923,14 +3025,16 @@ Definition close_ind' {pp}
        let (N,    x) := x in
        let (E,    x) := x in
        let (comp, x) := x in
+       let (ext,  x) := x in
        let (tsn,  x) := x in
        let (tse,  eiff) := x in
-         texc ts T eq N E eqn eqe
+         texc ts T T' eq N E eqn eqe
               comp
+              ext
               tsn
-              (rec ts N eqn tsn)
+              (rec ts N N eqn tsn)
               tse
-              (rec ts E eqe tse)
+              (rec ts E E eqe tse)
               eiff
               pts
 
@@ -2940,14 +3044,16 @@ Definition close_ind' {pp}
        let (A,    x) := x in
        let (B,    x) := x in
        let (comp, x) := x in
+       let (ext,  x) := x in
        let (tsa,  x) := x in
        let (tsb,  eiff) := x in
-         union ts T eq A B eqa eqb
+         union ts T T' eq A B eqa eqb
                comp
+               ext
                tsa
-               (rec ts A eqa tsa)
+               (rec ts A A eqa tsa)
                tsb
-               (rec ts B eqb tsb)
+               (rec ts B B eqb tsb)
                eiff
                pts
 
@@ -2989,11 +3095,13 @@ Definition close_ind' {pp}
        let (A,    x) := x in
        let (f,    x) := x in
        let (comp, x) := x in
+       let (ext,  x) := x in
        let (tsa,  eiff) := x in
-         image ts T eq A f eqa
+         image ts T T' eq A f eqa
                comp
+               ext
                tsa
-               (rec ts A eqa tsa)
+               (rec ts A A eqa tsa)
                eiff
                pts
 
@@ -3046,12 +3154,14 @@ Definition close_ind' {pp}
        let (A,    x) := pts in
        let (eqa,  x) := x in
        let (comp, x) := x in
+       let (ext,  x) := x in
        let (tsa,  x) := x in
        let (hv,   eiff) := x in
-         partial ts T eq A eqa
+         partial ts T T' eq A eqa
                  comp
+                 ext
                  tsa
-                 (rec ts A eqa tsa)
+                 (rec ts A A eqa tsa)
                  hv
                  eiff
                  pts
@@ -3060,11 +3170,13 @@ Definition close_ind' {pp}
        let (A,    x) := pts in
        let (eqa,  x) := x in
        let (comp, x) := x in
+       let (ext,  x) := x in
        let (tsa,  eiff) := x in
-         admiss ts T eq A eqa
+         admiss ts T T' eq A eqa
                 comp
+                ext
                 tsa
-                (rec ts A eqa tsa)
+                (rec ts A A eqa tsa)
                 eiff
                 pts
 
@@ -3072,11 +3184,13 @@ Definition close_ind' {pp}
        let (A,    x) := pts in
        let (eqa,  x) := x in
        let (comp, x) := x in
+       let (ext,  x) := x in
        let (tsa,  eiff) := x in
-         mono ts T eq A eqa
+         mono ts T T' eq A eqa
               comp
+              ext
               tsa
-              (rec ts A eqa tsa)
+              (rec ts A A eqa tsa)
               eiff
               pts
 
@@ -3087,13 +3201,15 @@ Definition close_ind' {pp}
        let (eqa,  x) := x in
        let (u,    x) := x in
        let (comp, x) := x in
+       let (ext,  x) := x in
        let (tsa,  x) := x in
        let (ex,   x) := x in
        let (cau,  eiff) := x in
-         ffatom ts T eq A xt a eqa u
+         ffatom ts T T' eq A xt a eqa u
                 comp
+                ext
                 tsa
-                (rec ts A eqa tsa)
+                (rec ts A A eqa tsa)
                 ex
                 cau
                 eiff
@@ -3125,12 +3241,14 @@ Definition close_ind' {pp}
        let (xt,   x) := x in
        let (eqa,  x) := x in
        let (comp, x) := x in
+       let (ext,  x) := x in
        let (tsa,  x) := x in
        let (ex,   eiff) := x in
-         ffatoms ts T eq A xt eqa
+         ffatoms ts T T' eq A xt eqa
                  comp
+                 ext
                  tsa
-                 (rec ts A eqa tsa)
+                 (rec ts A A eqa tsa)
                  ex
                  eiff
                  pts
@@ -3143,13 +3261,17 @@ Definition close_ind' {pp}
        let (v,    x)    := x in
        let (B,    x)    := x in
        let (comp, x)    := x in
+       let (ext,  x)    := x in
+       let (int,  x)    := x in
        let (tsa,  mem)  := x in
-       subset ts T eq A v B eqa eqb
+       subset ts T T' eq A v B eqa eqb
               comp
+              ext
+              int
               tsa
-              (rec ts A eqa tsa)
+              (rec ts A A eqa tsa)
               (fst mem)
-              (fun a a' e => rec ts (substc a v B) (eqb a a' e) (fst mem a a' e))
+              (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fst mem a a' e))
               (snd mem)
               eiff
               pts
@@ -3162,13 +3284,17 @@ Definition close_ind' {pp}
        let (v,    x)    := x in
        let (B,    x)    := x in
        let (comp, x)    := x in
+       let (ext,  x)    := x in
+       let (int,  x)    := x in
        let (tsa,  mem)  := x in
-       tunion ts T eq A v B eqa eqb
+       tunion ts T T' eq A v B eqa eqb
               comp
+              ext
+              int
               tsa
-              (rec ts A eqa tsa)
+              (rec ts A A eqa tsa)
               (fst mem)
-              (fun a a' e => rec ts (substc a v B) (eqb a a' e) (fst mem a a' e))
+              (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fst mem a a' e))
               (snd mem)
               eiff
               pts
@@ -3181,13 +3307,17 @@ Definition close_ind' {pp}
        let (v,    x)    := x in
        let (B,    x)    := x in
        let (comp, x)    := x in
+       let (ext,  x)    := x in
+       let (int,  x)    := x in
        let (tsa,  mem)  := x in
-       product ts T eq A v B eqa eqb
+       product ts T T' eq A v B eqa eqb
                comp
+               ext
+               int
                tsa
-               (rec ts A eqa tsa)
+               (rec ts A A eqa tsa)
                (fst mem)
-               (fun a a' e => rec ts (substc a v B) (eqb a a' e) (fst mem a a' e))
+               (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fst mem a a' e))
                (snd mem)
                eiff
                pts
@@ -3245,43 +3375,43 @@ Ltac one_dest_per_fam eqa feqb A v B c tsa tsb eqt :=
 
 Ltac one_unfold_per :=
   match goal with
-    | [ H : per_int      _ _ _ _ |- _ ] => unfold per_int      in H; exrepd
-    | [ H : per_atom     _ _ _ _ |- _ ] => unfold per_atom     in H; exrepd
-    | [ H : per_uatom    _ _ _ _ |- _ ] => unfold per_uatom    in H; exrepd
-    | [ H : per_base     _ _ _ _ |- _ ] => unfold per_base     in H; exrepd
-    | [ H : per_approx   _ _ _ _ |- _ ] => unfold per_approx   in H; exrepd
-    | [ H : per_cequiv   _ _ _ _ |- _ ] => unfold per_cequiv   in H; exrepd
-    | [ H : per_aeq      _ _ _ _ |- _ ] => unfold per_aeq      in H; exrepd
-    | [ H : per_eq       _ _ _ _ |- _ ] => unfold per_eq       in H; exrepd
-    | [ H : per_teq      _ _ _ _ |- _ ] => unfold per_teq      in H; exrepd
-    | [ H : per_isect    _ _ _ _ |- _ ] => unfold per_isect    in H; exrepd
-    | [ H : per_func     _ _ _ _ |- _ ] => unfold per_func     in H; exrepd
-    | [ H : per_disect   _ _ _ _ |- _ ] => unfold per_disect   in H; exrepd
-    | [ H : per_pertype  _ _ _ _ |- _ ] => unfold per_pertype  in H; exrepd
-(*    | [ H : per_ipertype _ _ _ _ |- _ ] => unfold per_ipertype in H; exrepd*)
-(*    | [ H : per_spertype _ _ _ _ |- _ ] => unfold per_spertype in H; exrepd*)
-    | [ H : per_w        _ _ _ _ |- _ ] => unfold per_w        in H; exrepd
-    | [ H : per_m        _ _ _ _ |- _ ] => unfold per_m        in H; exrepd
-(*    | [ H : per_pw       _ _ _ _ |- _ ] => unfold per_pw       in H; exrepd*)
-(*    | [ H : per_pm       _ _ _ _ |- _ ] => unfold per_pm       in H; exrepd*)
-    | [ H : per_texc     _ _ _ _ |- _ ] => unfold per_texc     in H; exrepd
-    | [ H : per_union    _ _ _ _ |- _ ] => unfold per_union    in H; exrepd
-(*    | [ H : per_eunion   _ _ _ _ |- _ ] => unfold per_eunion   in H; exrepd
-    | [ H : per_union2   _ _ _ _ |- _ ] => unfold per_union2   in H; exrepd*)
-    | [ H : per_image    _ _ _ _ |- _ ] => unfold per_image    in H; exrepd
-(*    | [ H : per_eisect   _ _ _ _ |- _ ] => unfold per_eisect   in H; exrepd*)
-    | [ H : per_partial  _ _ _ _ |- _ ] => unfold per_partial  in H; exrepd
-    | [ H : per_admiss   _ _ _ _ |- _ ] => unfold per_admiss   in H; exrepd
-    | [ H : per_mono     _ _ _ _ |- _ ] => unfold per_mono     in H; exrepd
-    | [ H : per_ffatom   _ _ _ _ |- _ ] => unfold per_ffatom   in H; exrepd
-(*    | [ H : per_effatom  _ _ _ _ |- _ ] => unfold per_effatom  in H; exrepd*)
-    | [ H : per_ffatoms  _ _ _ _ |- _ ] => unfold per_ffatoms  in H; exrepd
-    | [ H : per_set      _ _ _ _ |- _ ] => unfold per_set      in H; exrepd
-    | [ H : per_tunion   _ _ _ _ |- _ ] => unfold per_tunion   in H; exrepd
-    | [ H : per_product  _ _ _ _ |- _ ] => unfold per_product  in H; exrepd
-(*    | [ H : per_esquash  _ _ _ _ |- _ ] => unfold per_esquash  in H; exrepd*)
-    | [ H : type_family  _ _ _ _ _ _ |- _ ] => unfold type_family in H; exrepd
-(*    | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => unfold etype_family in H; exrepd*)
+    | [ H : per_int      _ _ _ _ _ |- _ ] => unfold per_int      in H; exrepd
+    | [ H : per_atom     _ _ _ _ _ |- _ ] => unfold per_atom     in H; exrepd
+    | [ H : per_uatom    _ _ _ _ _ |- _ ] => unfold per_uatom    in H; exrepd
+    | [ H : per_base     _ _ _ _ _ |- _ ] => unfold per_base     in H; exrepd
+    | [ H : per_approx   _ _ _ _ _ |- _ ] => unfold per_approx   in H; exrepd
+    | [ H : per_cequiv   _ _ _ _ _ |- _ ] => unfold per_cequiv   in H; exrepd
+(*    | [ H : per_aeq      _ _ _ _ _ |- _ ] => unfold per_aeq      in H; exrepd*)
+    | [ H : per_eq       _ _ _ _ _ |- _ ] => unfold per_eq       in H; exrepd
+    | [ H : per_teq      _ _ _ _ _ |- _ ] => unfold per_teq      in H; exrepd
+    | [ H : per_isect    _ _ _ _ _ |- _ ] => unfold per_isect    in H; exrepd
+    | [ H : per_func     _ _ _ _ _ |- _ ] => unfold per_func     in H; exrepd
+    | [ H : per_disect   _ _ _ _ _ |- _ ] => unfold per_disect   in H; exrepd
+    | [ H : per_pertype  _ _ _ _ _ |- _ ] => unfold per_pertype  in H; exrepd
+(*    | [ H : per_ipertype _ _ _ _ _ |- _ ] => unfold per_ipertype in H; exrepd*)
+(*    | [ H : per_spertype _ _ _ _ _ |- _ ] => unfold per_spertype in H; exrepd*)
+    | [ H : per_w        _ _ _ _ _ |- _ ] => unfold per_w        in H; exrepd
+    | [ H : per_m        _ _ _ _ _ |- _ ] => unfold per_m        in H; exrepd
+(*    | [ H : per_pw       _ _ _ _ _ |- _ ] => unfold per_pw       in H; exrepd*)
+(*    | [ H : per_pm       _ _ _ _ _ |- _ ] => unfold per_pm       in H; exrepd*)
+    | [ H : per_texc     _ _ _ _ _ |- _ ] => unfold per_texc     in H; exrepd
+    | [ H : per_union    _ _ _ _ _ |- _ ] => unfold per_union    in H; exrepd
+(*    | [ H : per_eunion   _ _ _ _ _ |- _ ] => unfold per_eunion   in H; exrepd
+    | [ H : per_union2   _ _ _ _ _ |- _ ] => unfold per_union2   in H; exrepd*)
+    | [ H : per_image    _ _ _ _ _ |- _ ] => unfold per_image    in H; exrepd
+(*    | [ H : per_eisect   _ _ _ _ _ |- _ ] => unfold per_eisect   in H; exrepd*)
+    | [ H : per_partial  _ _ _ _ _ |- _ ] => unfold per_partial  in H; exrepd
+    | [ H : per_admiss   _ _ _ _ _ |- _ ] => unfold per_admiss   in H; exrepd
+    | [ H : per_mono     _ _ _ _ _ |- _ ] => unfold per_mono     in H; exrepd
+    | [ H : per_ffatom   _ _ _ _ _ |- _ ] => unfold per_ffatom   in H; exrepd
+(*    | [ H : per_effatom  _ _ _ _ _ |- _ ] => unfold per_effatom  in H; exrepd*)
+    | [ H : per_ffatoms  _ _ _ _ _ |- _ ] => unfold per_ffatoms  in H; exrepd
+    | [ H : per_set      _ _ _ _ _ |- _ ] => unfold per_set      in H; exrepd
+    | [ H : per_tunion   _ _ _ _ _ |- _ ] => unfold per_tunion   in H; exrepd
+    | [ H : per_product  _ _ _ _ _ |- _ ] => unfold per_product  in H; exrepd
+(*    | [ H : per_esquash  _ _ _ _ _ |- _ ] => unfold per_esquash  in H; exrepd*)
+    | [ H : type_family  _ _ _ _ _ _ _ _ |- _ ] => unfold type_family in H; exrepd
+(*    | [ H : etype_family _ _ _ _ _ _ _ _ _ |- _ ] => unfold etype_family in H; exrepd*)
 (*    | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => unfold type_pfamily in H; exrepd*)
   end.
 
