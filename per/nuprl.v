@@ -450,22 +450,58 @@ Proof.
 
   - Case "CL_int".
     apply CL_int.
-    unfold per_int in *; repnd; dands; auto.
+    clear per.
+    unfold per_int; dands; auto.
+    unfold per_or_ext in *; repndors; tcsp.
 
-    (* We need to recurse inside per_or_ext too *)
+  - Case "CL_atom".
+    apply CL_atom.
+    clear per.
+    unfold per_atom; dands; auto.
+    unfold per_or_ext in *; repndors; tcsp.
+
+  - Case "CL_uatom".
+    apply CL_uatom.
+    clear per.
+    unfold per_uatom; dands; auto.
+    unfold per_or_ext in *; repndors; tcsp.
+
+  - Case "CL_base".
+    apply CL_base.
+    clear per.
+    unfold per_base; dands; auto.
+    unfold per_or_ext in *; repndors; tcsp.
+
+  - Case "CL_approx".
+    apply CL_approx.
+    clear per.
+    exists a b; dands; auto.
+    unfold per_or_ext in *; repndors; tcsp.
+
+  - Case "CL_cequiv".
+    apply CL_cequiv.
+    clear per.
+    exists a b; dands; auto.
+    unfold per_or_ext in *; repndors; tcsp.
 
   - Case "CL_eq".
     apply CL_eq; unfold per_eq; sp.
     exists A a b eqa; sp.
+    unfold per_or_ext in *; repndors; tcsp.
 
   - Case "CL_teq".
     apply CL_teq; unfold per_teq; sp.
     exists A B eqa; sp.
+    unfold per_or_ext in *; repndors; tcsp.
 
   - Case "CL_isect".
     apply CL_isect; unfold per_isect; sp.
     exists eqa eqb; sp.
-    exists A v B; dands; auto.
+    exists A v B; dands; auto;
+      try (complete (unfold per_or_ext in *; repndors; tcsp)).
+
+    (* we need to recurse inside per_intensional too *)
+
     split; dands; auto.
 
   - Case "CL_func".
