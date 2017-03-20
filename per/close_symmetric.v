@@ -66,6 +66,36 @@ Proof.
 Qed.
 Hint Resolve int_is_not_uni : slow.
 
+Lemma atom_is_not_uni {o} :
+  forall lib (T : @CTerm o),
+    computes_to_valc lib T mkc_atom
+    -> not_uni lib T.
+Proof.
+  introv comp1 comp2; spcast.
+  computes_to_valc_diff.
+Qed.
+Hint Resolve atom_is_not_uni : slow.
+
+Lemma uatom_is_not_uni {o} :
+  forall lib (T : @CTerm o),
+    computes_to_valc lib T mkc_uatom
+    -> not_uni lib T.
+Proof.
+  introv comp1 comp2; spcast.
+  computes_to_valc_diff.
+Qed.
+Hint Resolve uatom_is_not_uni : slow.
+
+Lemma base_is_not_uni {o} :
+  forall lib (T : @CTerm o),
+    computes_to_valc lib T mkc_base
+    -> not_uni lib T.
+Proof.
+  introv comp1 comp2; spcast.
+  computes_to_valc_diff.
+Qed.
+Hint Resolve base_is_not_uni : slow.
+
 Lemma approx_is_not_uni {o} :
   forall lib a b (T : @CTerm o),
     computes_to_valc lib T (mkc_approx a b)
@@ -403,6 +433,987 @@ Proof.
     unfold type_family_members_eq; dands; tcsp.
 Qed.
 
+Lemma equal_to_atom {o} :
+  forall lib ts (T1 T2 T : @CTerm o) eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> not_uni lib T1
+    -> computes_to_valc lib T mkc_atom
+    -> close lib ts T1 T2 eq
+    -> (eq <=2=> (equality_of_atom lib))
+    -> close lib ts T1 T eq.
+Proof.
+  introv tysys dou nuni comp cl eqiff.
+  close_cases (induction cl using @close_ind') Case; tcsp.
+
+  - Case "CL_init".
+    apply CL_init.
+
+    match goal with
+    | [ H : ts _ _ _ |- _ ] => rename H into h
+    end.
+    apply dou in h; exrepnd.
+    spcast.
+    pose proof (nuni i) as q; destruct q; spcast; auto.
+
+  - Case "CL_int".
+    clear per.
+    spcast.
+    apply CL_int.
+    unfold per_int; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_atom".
+    clear per.
+    spcast.
+    apply CL_atom.
+    unfold per_atom; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_uatom".
+    clear per.
+    spcast.
+    apply CL_uatom.
+    unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_base".
+    clear per.
+    spcast.
+    apply CL_base.
+    unfold per_base; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_approx".
+    clear per.
+    spcast.
+    apply CL_approx.
+    unfold per_approx.
+    exists a b; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_cequiv".
+    clear per.
+    spcast.
+    apply CL_cequiv.
+    unfold per_cequiv.
+    exists a b; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_eq".
+    clear per.
+    spcast.
+    apply CL_eq.
+    unfold per_eq.
+    exists A a b eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_teq".
+    clear per.
+    spcast.
+    apply CL_teq.
+    unfold per_teq.
+    exists A B eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_isect".
+    clear per.
+    spcast.
+    apply CL_isect.
+    unfold per_isect.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_atom; unfold per_atom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_func".
+    clear per.
+    spcast.
+    apply CL_func.
+    unfold per_func.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_atom; unfold per_atom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_disect".
+    clear per.
+    spcast.
+    apply CL_disect.
+    unfold per_disect.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_atom; unfold per_atom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_pertype".
+    clear per.
+    spcast.
+    apply CL_pertype.
+    unfold per_pertype.
+    exists R eqr; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_w".
+    clear per.
+    spcast.
+    apply CL_w.
+    unfold per_w.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_atom; unfold per_atom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_m".
+    clear per.
+    spcast.
+    apply CL_m.
+    unfold per_m.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_atom; unfold per_atom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_texc".
+    clear per.
+    spcast.
+    apply CL_texc.
+    unfold per_texc.
+    exists eqn eqe N E; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_union".
+    clear per.
+    spcast.
+    apply CL_union.
+    unfold per_union.
+    exists eqa eqb A B; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_image".
+    clear per.
+    spcast.
+    apply CL_image.
+    unfold per_image.
+    exists eqa A f; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_partial".
+    clear per.
+    spcast.
+    apply CL_partial.
+    unfold per_partial.
+    exists A eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_admiss".
+    clear per.
+    spcast.
+    apply CL_admiss.
+    unfold per_admiss.
+    exists A eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_mono".
+    clear per.
+    spcast.
+    apply CL_mono.
+    unfold per_mono.
+    exists A eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_ffatom".
+    clear per.
+    spcast.
+    apply CL_ffatom.
+    unfold per_ffatom.
+    exists A x a eqa u; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_ffatoms".
+    clear per.
+    spcast.
+    apply CL_ffatoms.
+    unfold per_ffatoms.
+    exists A x eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_atom; unfold per_atom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_set".
+    clear per.
+    spcast.
+    apply CL_set.
+    unfold per_set.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_atom; unfold per_atom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_tunion".
+    clear per.
+    spcast.
+    apply CL_tunion.
+    unfold per_tunion.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_atom; unfold per_atom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_product".
+    clear per.
+    spcast.
+    apply CL_product.
+    unfold per_product.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_atom; unfold per_atom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+Qed.
+
+Lemma equal_to_uatom {o} :
+  forall lib ts (T1 T2 T : @CTerm o) eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> not_uni lib T1
+    -> computes_to_valc lib T mkc_uatom
+    -> close lib ts T1 T2 eq
+    -> (eq <=2=> (equality_of_uatom lib))
+    -> close lib ts T1 T eq.
+Proof.
+  introv tysys dou nuni comp cl eqiff.
+  close_cases (induction cl using @close_ind') Case; tcsp.
+
+  - Case "CL_init".
+    apply CL_init.
+
+    match goal with
+    | [ H : ts _ _ _ |- _ ] => rename H into h
+    end.
+    apply dou in h; exrepnd.
+    spcast.
+    pose proof (nuni i) as q; destruct q; spcast; auto.
+
+  - Case "CL_int".
+    clear per.
+    spcast.
+    apply CL_int.
+    unfold per_int; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_atom".
+    clear per.
+    spcast.
+    apply CL_atom.
+    unfold per_atom; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_uatom".
+    clear per.
+    spcast.
+    apply CL_uatom.
+    unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_base".
+    clear per.
+    spcast.
+    apply CL_base.
+    unfold per_base; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_approx".
+    clear per.
+    spcast.
+    apply CL_approx.
+    unfold per_approx.
+    exists a b; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_cequiv".
+    clear per.
+    spcast.
+    apply CL_cequiv.
+    unfold per_cequiv.
+    exists a b; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_eq".
+    clear per.
+    spcast.
+    apply CL_eq.
+    unfold per_eq.
+    exists A a b eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_teq".
+    clear per.
+    spcast.
+    apply CL_teq.
+    unfold per_teq.
+    exists A B eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_isect".
+    clear per.
+    spcast.
+    apply CL_isect.
+    unfold per_isect.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_func".
+    clear per.
+    spcast.
+    apply CL_func.
+    unfold per_func.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_disect".
+    clear per.
+    spcast.
+    apply CL_disect.
+    unfold per_disect.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_pertype".
+    clear per.
+    spcast.
+    apply CL_pertype.
+    unfold per_pertype.
+    exists R eqr; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_w".
+    clear per.
+    spcast.
+    apply CL_w.
+    unfold per_w.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_m".
+    clear per.
+    spcast.
+    apply CL_m.
+    unfold per_m.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_texc".
+    clear per.
+    spcast.
+    apply CL_texc.
+    unfold per_texc.
+    exists eqn eqe N E; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_union".
+    clear per.
+    spcast.
+    apply CL_union.
+    unfold per_union.
+    exists eqa eqb A B; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_image".
+    clear per.
+    spcast.
+    apply CL_image.
+    unfold per_image.
+    exists eqa A f; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_partial".
+    clear per.
+    spcast.
+    apply CL_partial.
+    unfold per_partial.
+    exists A eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_admiss".
+    clear per.
+    spcast.
+    apply CL_admiss.
+    unfold per_admiss.
+    exists A eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_mono".
+    clear per.
+    spcast.
+    apply CL_mono.
+    unfold per_mono.
+    exists A eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_ffatom".
+    clear per.
+    spcast.
+    apply CL_ffatom.
+    unfold per_ffatom.
+    exists A x a eqa u; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_ffatoms".
+    clear per.
+    spcast.
+    apply CL_ffatoms.
+    unfold per_ffatoms.
+    exists A x eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_set".
+    clear per.
+    spcast.
+    apply CL_set.
+    unfold per_set.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_tunion".
+    clear per.
+    spcast.
+    apply CL_tunion.
+    unfold per_tunion.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_product".
+    clear per.
+    spcast.
+    apply CL_product.
+    unfold per_product.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+Qed.
+
+Lemma equal_to_base {o} :
+  forall lib ts (T1 T2 T : @CTerm o) eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> not_uni lib T1
+    -> computes_to_valc lib T mkc_base
+    -> close lib ts T1 T2 eq
+    -> (eq <=2=> (ccequivc lib))
+    -> close lib ts T1 T eq.
+Proof.
+  introv tysys dou nuni comp cl eqiff.
+  close_cases (induction cl using @close_ind') Case; tcsp.
+
+  - Case "CL_init".
+    apply CL_init.
+
+    match goal with
+    | [ H : ts _ _ _ |- _ ] => rename H into h
+    end.
+    apply dou in h; exrepnd.
+    spcast.
+    pose proof (nuni i) as q; destruct q; spcast; auto.
+
+  - Case "CL_int".
+    clear per.
+    spcast.
+    apply CL_int.
+    unfold per_int; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_atom".
+    clear per.
+    spcast.
+    apply CL_atom.
+    unfold per_atom; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_uatom".
+    clear per.
+    spcast.
+    apply CL_uatom.
+    unfold per_uatom; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_base".
+    clear per.
+    spcast.
+    apply CL_base.
+    unfold per_base; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_approx".
+    clear per.
+    spcast.
+    apply CL_approx.
+    unfold per_approx.
+    exists a b; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_cequiv".
+    clear per.
+    spcast.
+    apply CL_cequiv.
+    unfold per_cequiv.
+    exists a b; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_eq".
+    clear per.
+    spcast.
+    apply CL_eq.
+    unfold per_eq.
+    exists A a b eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_teq".
+    clear per.
+    spcast.
+    apply CL_teq.
+    unfold per_teq.
+    exists A B eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_isect".
+    clear per.
+    spcast.
+    apply CL_isect.
+    unfold per_isect.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_base; unfold per_base; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_func".
+    clear per.
+    spcast.
+    apply CL_func.
+    unfold per_func.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_base; unfold per_base; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_disect".
+    clear per.
+    spcast.
+    apply CL_disect.
+    unfold per_disect.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_base; unfold per_base; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_pertype".
+    clear per.
+    spcast.
+    apply CL_pertype.
+    unfold per_pertype.
+    exists R eqr; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_w".
+    clear per.
+    spcast.
+    apply CL_w.
+    unfold per_w.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_base; unfold per_base; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_m".
+    clear per.
+    spcast.
+    apply CL_m.
+    unfold per_m.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_base; unfold per_base; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_texc".
+    clear per.
+    spcast.
+    apply CL_texc.
+    unfold per_texc.
+    exists eqn eqe N E; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_union".
+    clear per.
+    spcast.
+    apply CL_union.
+    unfold per_union.
+    exists eqa eqb A B; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_image".
+    clear per.
+    spcast.
+    apply CL_image.
+    unfold per_image.
+    exists eqa A f; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_partial".
+    clear per.
+    spcast.
+    apply CL_partial.
+    unfold per_partial.
+    exists A eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_admiss".
+    clear per.
+    spcast.
+    apply CL_admiss.
+    unfold per_admiss.
+    exists A eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_mono".
+    clear per.
+    spcast.
+    apply CL_mono.
+    unfold per_mono.
+    exists A eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_ffatom".
+    clear per.
+    spcast.
+    apply CL_ffatom.
+    unfold per_ffatom.
+    exists A x a eqa u; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_ffatoms".
+    clear per.
+    spcast.
+    apply CL_ffatoms.
+    unfold per_ffatoms.
+    exists A x eqa; dands; spcast; auto.
+    unfold per_extensional.
+    right; dands; eauto 3 with slow.
+    apply CL_base; unfold per_base; dands; spcast; auto.
+    unfold per_extensional; left; spcast; auto.
+
+  - Case "CL_set".
+    clear per.
+    spcast.
+    apply CL_set.
+    unfold per_set.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_base; unfold per_base; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_tunion".
+    clear per.
+    spcast.
+    apply CL_tunion.
+    unfold per_tunion.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_base; unfold per_base; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+
+  - Case "CL_product".
+    clear per.
+    spcast.
+    apply CL_product.
+    unfold per_product.
+    exists eqa eqb; dands; spcast; auto.
+    unfold type_family.
+    exists A v B; dands; spcast; auto.
+    { unfold per_extensional.
+      right; dands; eauto 3 with slow.
+      apply CL_base; unfold per_base; dands; spcast; auto.
+      unfold per_extensional; left; spcast; auto. }
+    { unfold per_intensional; introv c; spcast; computes_to_valc_diff. }
+    unfold type_family_members_eq; dands; tcsp.
+Qed.
+
 Lemma equal_to_approx {o} :
   forall lib ts (T1 T2 T : @CTerm o) a b eq,
     type_system lib ts
@@ -730,6 +1741,29 @@ Proof.
     unfold type_family_members_eq; dands; tcsp.
 Qed.
 
+Lemma cequiv_atom {o} :
+  forall lib (T T' : @NTerm o),
+    computes_to_value lib T mk_atom
+    -> cequiv lib T T'
+    -> computes_to_value lib T' mk_atom.
+Proof.
+  sp.
+  apply cequiv_canonical_form with (t' := T') in X; sp.
+  apply @lblift_cequiv0 in p; subst; auto.
+Qed.
+
+Lemma cequivc_atom {o} :
+  forall lib (T T' : @CTerm o),
+    computes_to_valc lib T mkc_atom
+    -> cequivc lib T T'
+    -> computes_to_valc lib T' mkc_atom.
+Proof.
+  sp.
+  allapply @computes_to_valc_to_valuec; allsimpl.
+  apply cequivc_canonical_form with (t' := T') in X; sp.
+  apply lblift_cequiv0 in p; subst; auto.
+Qed.
+
 Lemma close_symmetric {o} :
   forall lib ts (T T' : @CTerm o) eq,
     type_system lib ts
@@ -766,11 +1800,37 @@ Proof.
     repndors; repnd; spcast.
 
     + applydup @cequivc_atom in ext; auto.
-      apply CL_int; unfold per_int; dands; spcast; auto.
+      apply CL_atom; unfold per_atom; dands; spcast; auto.
       unfold per_extensional; tcsp.
       left; spcast; apply cequivc_sym; auto.
 
-    + eapply equal_to_int; eauto.
+    + eapply equal_to_atom; eauto.
+
+  - Case "CL_uatom".
+    clear per.
+    unfold per_extensional in *.
+    clear extP.
+    repndors; repnd; spcast.
+
+    + applydup @cequivc_uatom in ext; auto.
+      apply CL_uatom; unfold per_uatom; dands; spcast; auto.
+      unfold per_extensional; tcsp.
+      left; spcast; apply cequivc_sym; auto.
+
+    + eapply equal_to_uatom; eauto.
+
+  - Case "CL_base".
+    clear per.
+    unfold per_extensional in *.
+    clear extP.
+    repndors; repnd; spcast.
+
+    + applydup @cequivc_base in ext; auto.
+      apply CL_base; unfold per_base; dands; spcast; auto.
+      unfold per_extensional; tcsp.
+      left; spcast; apply cequivc_sym; auto.
+
+    + eapply equal_to_base; eauto.
 
   - Case "CL_approx".
     clear per.

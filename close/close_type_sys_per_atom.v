@@ -60,31 +60,6 @@ Proof.
   unfold type_transitive, per_atom; sp.
 Qed.
 
-(* !! MOVE to cequiv *)
-Lemma cequiv_atom {pp} :
-  forall lib T T',
-    @computes_to_value pp lib T mk_atom
-    -> cequiv lib T T'
-    -> computes_to_value lib T' mk_atom.
-Proof.
-  sp.
-  apply cequiv_canonical_form with (t' := T') in X; sp.
-  apply @lblift_cequiv0 in p; subst; auto.
-Qed.
-
-(* !! MOVE to cequiv *)
-Lemma cequivc_atom {pp} :
-  forall lib T T',
-    computes_to_valc lib T mkc_atom
-    -> @cequivc pp lib T T'
-    -> computes_to_valc lib T' mkc_atom.
-Proof.
-  sp.
-  allapply @computes_to_valc_to_valuec; allsimpl.
-  apply cequivc_canonical_form with (t' := T') in X; sp.
-  apply lblift_cequiv0 in p; subst; auto.
-Qed.
-
 Lemma per_atom_type_value_respecting {p} :
   forall lib (ts : cts(p)), type_value_respecting lib (per_atom lib ts).
 Proof.
