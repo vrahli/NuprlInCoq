@@ -114,6 +114,7 @@ Proof.
   pose proof (tranb a2 a a1 e2 e0) as w; auto.
 Qed.
 
+(*
 Lemma eqbs_trans {o} :
   forall lib (ts : cts(o)) v B (eqa1 eqa2 : per(o)) eqb1 eqb2,
     (eqa1 <=2=> eqa2)
@@ -129,6 +130,7 @@ Proof.
   dts_props w uv tv te tes tet tev.
   apply uv in q; auto.
 Qed.
+*)
 
 (*
 Lemma eq_term_equals_sym_tsp {p} :
@@ -1182,6 +1184,7 @@ Proof.
   generalize (isper a b c); sp.
 Qed.
 
+(*
 Lemma type_system_props_pertype_eq_term_equals {p} :
   forall lib (ts : cts(p)) R eqr1 eqr2,
     (forall x y, type_system_props lib ts (mkc_apply2 R x y) (eqr1 x y))
@@ -1195,6 +1198,7 @@ Proof.
   dts_props k uv tv te tes tet tev.
   apply uv in j; auto.
 Qed.
+*)
 
 Lemma weq_eq_term_equals {p} :
   forall lib (eqa1 eqa2 : per(p)) eqb1 eqb2,
@@ -1224,6 +1228,7 @@ Proof.
     apply (eqbs _ _ e e'); eauto.
 Qed.
 
+(*
 Lemma weq_sym {p} :
   forall lib eqa eqb t1 t2 v B (ts : cts(p)),
     term_equality_symmetric eqa
@@ -1247,6 +1252,7 @@ Proof.
   dts_props w uv tv te tes tet tev.
   apply tes; eauto.
 Qed.
+*)
 
 (*
 Lemma eq_family_trans1 {p} :
@@ -1272,6 +1278,7 @@ Proof.
 Qed.
 *)
 
+(*
 Lemma weq_trans {o} :
   forall lib eqa eqb (t1 t2 t3 : @CTerm o) ts v B,
     term_equality_symmetric eqa
@@ -1306,6 +1313,7 @@ Proof.
   eapply tet;[apply tes|];
     apply (per_fam_equiv_trans_l _ a'0 a' a e0 e'); try (exact eb); auto.
 Qed.
+*)
 
 (*
 Lemma weq_cequivc2 :
@@ -1351,6 +1359,7 @@ Proof.
 Abort.
 *)
 
+(*
 Lemma weq_cequivc {o} :
   forall lib eqa eqb (t t1 t2 : @CTerm o) ts v B,
     term_equality_respecting lib eqa
@@ -1390,7 +1399,9 @@ Proof.
 
   apply sp_implies_cequivc_apply; sp.
 Qed.
+*)
 
+(*
 Lemma type_system_props_cequivc {p} :
   forall lib (ts : cts(p)) A B eq,
     type_system_props lib ts A eq
@@ -1401,6 +1412,7 @@ Proof.
   dts_props tsp uv tv te tes tet tev.
   apply te; auto.
 Qed.
+*)
 
 Lemma iff_inhabited_if_eq_term_equals {p} :
   forall (eq1 eq2 : per(p)), (eq1 <=2=> eq2) -> (inhabited eq1 <=> inhabited eq2).

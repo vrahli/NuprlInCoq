@@ -452,73 +452,82 @@ Proof.
     apply CL_int.
     clear per.
     unfold per_int; dands; auto.
-    unfold per_or_ext in *; repndors; tcsp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_atom".
     apply CL_atom.
     clear per.
     unfold per_atom; dands; auto.
-    unfold per_or_ext in *; repndors; tcsp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_uatom".
     apply CL_uatom.
     clear per.
     unfold per_uatom; dands; auto.
-    unfold per_or_ext in *; repndors; tcsp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_base".
     apply CL_base.
     clear per.
     unfold per_base; dands; auto.
-    unfold per_or_ext in *; repndors; tcsp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_approx".
     apply CL_approx.
     clear per.
     exists a b; dands; auto.
-    unfold per_or_ext in *; repndors; tcsp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_cequiv".
     apply CL_cequiv.
     clear per.
     exists a b; dands; auto.
-    unfold per_or_ext in *; repndors; tcsp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_eq".
     apply CL_eq; unfold per_eq; sp.
     exists A a b eqa; sp.
-    unfold per_or_ext in *; repndors; tcsp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_teq".
     apply CL_teq; unfold per_teq; sp.
     exists A B eqa; sp.
-    unfold per_or_ext in *; repndors; tcsp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_isect".
     apply CL_isect; unfold per_isect; sp.
     exists eqa eqb; sp.
     exists A v B; dands; auto;
-      try (complete (unfold per_or_ext in *; repndors; tcsp)).
-
-    (* we need to recurse inside per_intensional too *)
-
-    split; dands; auto.
+      try (complete (unfold per_extensional in *; repndors; tcsp));
+      try (complete (unfold type_family_members_eq; dands; auto)); [].
+    unfold per_intensional in *; introv c.
+    apply intP in c; repnd; dands; tcsp.
+    unfold type_family_members_eq in *; repnd; dands; auto.
 
   - Case "CL_func".
     apply CL_func; unfold per_func; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
-    split; dands; auto.
+    exists A v B; dands; auto;
+      try (complete (unfold per_extensional in *; repndors; tcsp));
+      try (complete (unfold type_family_members_eq; dands; auto)); [].
+    unfold per_intensional in *; introv c.
+    apply intP in c; repnd; dands; tcsp.
+    unfold type_family_members_eq in *; repnd; dands; auto.
 
   - Case "CL_disect".
     apply CL_disect; unfold per_disect; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
-    split; dands; auto.
+    exists A v B; dands; auto;
+      try (complete (unfold per_extensional in *; repndors; tcsp));
+      try (complete (unfold type_family_members_eq; dands; auto)); [].
+    unfold per_intensional in *; introv c.
+    apply intP in c; repnd; dands; tcsp.
+    unfold type_family_members_eq in *; repnd; dands; auto.
 
   - Case "CL_pertype".
     apply CL_pertype; unfold per_pertype; sp.
     exists R eqr; sp.
+    unfold per_extensional in *; repndors; tcsp.
 
     (*
   - Case "CL_ipertype".
@@ -535,14 +544,22 @@ Proof.
   - Case "CL_w".
     apply CL_w; unfold per_w; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
-    split; dands; auto.
+    exists A v B; dands; auto;
+      try (complete (unfold per_extensional in *; repndors; tcsp));
+      try (complete (unfold type_family_members_eq; dands; auto)); [].
+    unfold per_intensional in *; introv c.
+    apply intP in c; repnd; dands; tcsp.
+    unfold type_family_members_eq in *; repnd; dands; auto.
 
   - Case "CL_m".
     apply CL_m; unfold per_m; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
-    split; dands; auto.
+    exists A v B; dands; auto;
+      try (complete (unfold per_extensional in *; repndors; tcsp));
+      try (complete (unfold type_family_members_eq; dands; auto)); [].
+    unfold per_intensional in *; introv c.
+    apply intP in c; repnd; dands; tcsp.
+    unfold type_family_members_eq in *; repnd; dands; auto.
 
       (*
   - Case "CL_pw".
@@ -567,10 +584,12 @@ Proof.
   - Case "CL_texc".
     apply CL_texc; unfold per_texc; sp.
     exists eqn eqe N E; sp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_union".
     apply CL_union; unfold per_union; sp.
     exists eqa eqb A B; sp.
+    unfold per_extensional in *; repndors; tcsp.
 
     (*
   - Case "CL_eunion".
@@ -581,6 +600,7 @@ Proof.
   - Case "CL_image".
     apply CL_image; unfold per_image; sp.
     exists eqa A f; sp.
+    unfold per_extensional in *; repndors; tcsp.
 
 (*
   - Case "CL_eisect".
@@ -593,18 +613,22 @@ Proof.
   - Case "CL_partial".
     apply CL_partial; unfold per_partial; sp.
     exists A eqa; sp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_admiss".
     apply CL_admiss; unfold per_partial; sp.
     exists A eqa; sp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_mono".
     apply CL_mono; unfold per_partial; sp.
     exists A eqa; sp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_ffatom".
     apply CL_ffatom; unfold per_ffatom; sp.
     exists A x a eqa u; sp.
+    unfold per_extensional in *; repndors; tcsp.
 
     (*
   - Case "CL_effatom".
@@ -615,33 +639,46 @@ Proof.
   - Case "CL_ffatoms".
     apply CL_ffatoms; unfold per_ffatoms; sp.
     exists A x eqa; sp.
+    unfold per_extensional in *; repndors; tcsp.
 
   - Case "CL_set".
     apply CL_set; unfold per_set; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
-    split; dands; auto.
+    exists A v B; dands; auto;
+      try (complete (unfold per_extensional in *; repndors; tcsp));
+      try (complete (unfold type_family_members_eq; dands; auto)); [].
+    unfold per_intensional in *; introv c.
+    apply intP in c; repnd; dands; tcsp.
+    unfold type_family_members_eq in *; repnd; dands; auto.
 
   - Case "CL_tunion".
     apply CL_tunion; unfold per_tunion; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
-    split; dands; auto.
+    exists A v B; dands; auto;
+      try (complete (unfold per_extensional in *; repndors; tcsp));
+      try (complete (unfold type_family_members_eq; dands; auto)); [].
+    unfold per_intensional in *; introv c.
+    apply intP in c; repnd; dands; tcsp.
+    unfold type_family_members_eq in *; repnd; dands; auto.
 
   - Case "CL_product".
     apply CL_product; unfold per_product; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
-    split; dands; auto.
+    exists A v B; dands; auto;
+      try (complete (unfold per_extensional in *; repndors; tcsp));
+      try (complete (unfold type_family_members_eq; dands; auto)); [].
+    unfold per_intensional in *; introv c.
+    apply intP in c; repnd; dands; tcsp.
+    unfold type_family_members_eq in *; repnd; dands; auto.
 Qed.
 
 Lemma typable_in_higher_univ_r {p} :
-  forall lib i (T : @CTerm p) eq,
-    nuprli lib i T eq
-    -> forall k, nuprli lib (i + k) T eq.
+  forall lib i (T T' : @CTerm p) eq,
+    nuprli lib i T T' eq
+    -> forall k, nuprli lib (i + k) T T' eq.
 Proof.
   unfold nuprli; introv n; sp.
-  generalize (typable_in_higher_univ lib i T eq n k); sp.
+  generalize (typable_in_higher_univ lib i T T' eq n k); sp.
   assert (k + i = i + k) as e by omega.
   rww e; sp.
 Qed.
@@ -659,18 +696,18 @@ Proof.
 Qed.
 
 Lemma typable_in_higher_univ_max {p} :
-  forall lib i1 i2 (A B : @CTerm p) eq1 eq2,
-    nuprli lib i1 A eq1
-    -> nuprli lib i2 B eq2
-    -> nuprli lib (Peano.max i1 i2) A eq1
-       # nuprli lib (Peano.max i1 i2) B eq2.
+  forall lib i1 i2 (A1 B1 A2 B2 : @CTerm p) eq1 eq2,
+    nuprli lib i1 A1 B1 eq1
+    -> nuprli lib i2 A2 B2 eq2
+    -> nuprli lib (Peano.max i1 i2) A1 B1 eq1
+       # nuprli lib (Peano.max i1 i2) A2 B2 eq2.
 Proof.
   introv n1 n2.
   generalize (typable_in_higher_univ
-                lib i1 A eq1 n1 ((Peano.max i1 i2) - i1));
+                lib i1 A1 B1 eq1 n1 ((Peano.max i1 i2) - i1));
     intro k1.
   generalize (typable_in_higher_univ
-                lib i2 B eq2 n2 ((Peano.max i1 i2) - i2));
+                lib i2 A2 B2 eq2 n2 ((Peano.max i1 i2) - i2));
     intro k2.
   assert (((Peano.max i1 i2) - i1) + i1 = Peano.max i1 i2) as max1.
   apply minus_plus_n; sp.
@@ -684,20 +721,20 @@ Proof.
 Qed.
 
 Lemma uni_in_higher_univ {p} :
-  forall lib i (T : @CTerm p) eq,
-    univi lib i T eq
-    -> forall k, univi lib (k + i) T eq.
+  forall lib i (T T' : @CTerm p) eq,
+    univi lib i T T' eq
+    -> forall k, univi lib (k + i) T T' eq.
 Proof.
   induction k; simpl; sp.
 Qed.
 
 Lemma uni_in_higher_univ_r {p} :
-  forall lib i (T : @CTerm p) eq,
-    univi lib i T eq
-    -> forall k, univi lib (i + k) T eq.
+  forall lib i (T T' : @CTerm p) eq,
+    univi lib i T T' eq
+    -> forall k, univi lib (i + k) T T' eq.
 Proof.
   introv u; sp.
-  generalize (uni_in_higher_univ lib i T eq u k); sp.
+  generalize (uni_in_higher_univ lib i T T' eq u k); sp.
   assert (k + i = i + k) as e by omega.
   rww e; sp.
 Qed.
@@ -811,9 +848,9 @@ Qed.
 *)
 
 Lemma nuprli_implies_nuprl {pp} :
-  forall lib (A : @CTerm pp) i eq,
-    nuprli lib i A eq
-    -> nuprl lib A eq.
+  forall lib (A B : @CTerm pp) i eq,
+    nuprli lib i A B eq
+    -> nuprl lib A B eq.
 Proof.
   unfold nuprli, nuprl; introv n.
   remember (univi lib i) as k.
@@ -824,22 +861,56 @@ Proof.
     apply CL_init.
     exists i; sp.
 
+  - Case "CL_int".
+    apply CL_int.
+    unfold per_int in *; repnd; dands; auto.
+    unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto.
+
+  - Case "CL_atom".
+    apply CL_atom.
+    unfold per_atom in *; repnd; dands; auto.
+    unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto.
+
+  - Case "CL_uatom".
+    apply CL_uatom.
+    unfold per_uatom in *; repnd; dands; auto.
+    unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto.
+
+  - Case "CL_base".
+    apply CL_base.
+    unfold per_base in *; repnd; dands; auto.
+    unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto.
+
+  - Case "CL_approx".
+    apply CL_approx.
+    unfold per_approx in *; exrepnd; exists a0 b0; dands; auto.
+    unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto.
+
+  - Case "CL_cequiv".
+    apply CL_cequiv.
+    unfold per_cequiv in *; exrepnd; exists a0 b0; dands; auto.
+    unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto.
+
+    (*
   - Case "CL_aeq".
     apply CL_aeq.
     unfold per_aeq; sp.
     exists A a b eqa; sp.
     apply IHn with (i0 := i); sp.
+*)
 
   - Case "CL_eq".
     apply CL_eq.
     unfold per_eq; sp.
-    exists A a b eqa; sp.
-    apply IHn with (i0 := i); sp.
+    exists A a b eqa; sp;
+      try (complete (eapply IHn; eauto));
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
 
   - Case "CL_teq".
     apply CL_teq.
     unfold per_teq; sp.
-    exists A B eqa; sp.
+    exists A B eqa; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     { apply IHn1 with (i0 := i); sp. }
     { apply IHn2 with (i0 := i); sp. }
 
@@ -847,7 +918,12 @@ Proof.
     apply CL_isect.
     unfold per_isect, type_family; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
+    exists A v B; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
+    { unfold per_intensional in *; introv c.
+      apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
+      unfold type_family_members_eq in *; repnd; dands; auto.
+      introv; eapply c1; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -856,7 +932,12 @@ Proof.
     apply CL_func.
     unfold per_func, type_family; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
+    exists A v B; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
+    { unfold per_intensional in *; introv c.
+      apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
+      unfold type_family_members_eq in *; repnd; dands; auto.
+      introv; eapply c1; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -865,7 +946,12 @@ Proof.
     apply CL_disect.
     unfold per_disect, type_family; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
+    exists A v B; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
+    { unfold per_intensional in *; introv c.
+      apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
+      unfold type_family_members_eq in *; repnd; dands; auto.
+      introv; eapply c1; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -873,7 +959,8 @@ Proof.
   - Case "CL_pertype".
     apply CL_pertype.
     unfold per_pertype; sp.
-    exists R eqr; sp.
+    exists R eqr; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     apply rec1 with (i0 := i); sp.
 
     (*
@@ -898,7 +985,12 @@ Proof.
     apply CL_w.
     unfold per_w, type_family; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
+    exists A v B; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
+    { unfold per_intensional in *; introv c.
+      apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
+      unfold type_family_members_eq in *; repnd; dands; auto.
+      introv; eapply c1; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -907,7 +999,12 @@ Proof.
     apply CL_m.
     unfold per_m, type_family; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
+    exists A v B; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
+    { unfold per_intensional in *; introv c.
+      apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
+      unfold type_family_members_eq in *; repnd; dands; auto.
+      introv; eapply c1; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -943,14 +1040,16 @@ Proof.
   - Case "CL_texc".
     apply CL_texc.
     unfold per_texc; sp.
-    exists eqn eqe N E; sp.
+    exists eqn eqe N E; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     { apply IHn1 with (i0 := i); sp. }
     { apply IHn2 with (i0 := i); sp. }
 
   - Case "CL_union".
     apply CL_union.
     unfold per_union; sp.
-    exists eqa eqb A B; sp.
+    exists eqa eqb A B; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     + apply IHn1 with (i0 := i); sp.
     + apply IHn2 with (i0 := i); sp.
 
@@ -967,7 +1066,8 @@ Proof.
   - Case "CL_image".
     apply CL_image.
     unfold per_image; sp.
-    exists eqa A f; sp.
+    exists eqa A f; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     apply IHn with (i0 := i); sp.
 
 (*
@@ -986,25 +1086,29 @@ Proof.
   - Case "CL_partial".
     apply CL_partial.
     unfold per_partial; sp.
-    exists A eqa; sp.
+    exists A eqa; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     apply IHn with (i0 := i); sp.
 
   - Case "CL_admiss".
     apply CL_admiss.
     unfold per_admiss; sp.
-    exists A eqa; sp.
+    exists A eqa; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     apply IHn with (i0 := i); sp.
 
   - Case "CL_mono".
     apply CL_mono.
     unfold per_mono; sp.
-    exists A eqa; sp.
+    exists A eqa; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     apply IHn with (i0 := i); sp.
 
   - Case "CL_ffatom".
     apply CL_ffatom.
     unfold per_ffatom; sp.
-    exists A x a eqa u; sp.
+    exists A x a eqa u; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     apply IHn with (i0 := i); sp.
 
     (*
@@ -1018,14 +1122,20 @@ Proof.
   - Case "CL_ffatoms".
     apply CL_ffatoms.
     unfold per_ffatoms; sp.
-    exists A x eqa; sp.
+    exists A x eqa; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     apply IHn with (i0 := i); sp.
 
   - Case "CL_set".
     apply CL_set.
     unfold per_set, type_family; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
+    exists A v B; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
+    { unfold per_intensional in *; introv c.
+      apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
+      unfold type_family_members_eq in *; repnd; dands; auto.
+      introv; eapply c1; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -1034,7 +1144,12 @@ Proof.
     apply CL_tunion.
     unfold per_tunion, type_family; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
+    exists A v B; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
+    { unfold per_intensional in *; introv c.
+      apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
+      unfold type_family_members_eq in *; repnd; dands; auto.
+      introv; eapply c1; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -1043,7 +1158,12 @@ Proof.
     apply CL_product.
     unfold per_product, type_family; sp.
     exists eqa eqb; sp.
-    exists A v B; sp.
+    exists A v B; sp;
+      try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
+    { unfold per_intensional in *; introv c.
+      apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
+      unfold type_family_members_eq in *; repnd; dands; auto.
+      introv; eapply c1; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -1062,7 +1182,7 @@ Qed.
  *)
 
 Definition tequality {p} lib (T1 T2 : @CTerm p) :=
-  { eq : per , Nuprl lib T1 T2 eq }.
+  { eq : per , nuprl lib T1 T2 eq }.
 
 (**
 
@@ -1071,7 +1191,7 @@ Definition tequality {p} lib (T1 T2 : @CTerm p) :=
 
  *)
 
-Definition type {p} lib (T : @CTerm p) := { eq : per , nuprl lib T eq }.
+Definition type {p} lib (T : @CTerm p) := tequality lib T T.
 
 (**
 
@@ -1081,7 +1201,7 @@ Definition type {p} lib (T : @CTerm p) := { eq : per , nuprl lib T eq }.
  *)
 
 Definition equality {p} lib (t1 t2 T : @CTerm p) :=
-  { eq : per , nuprl lib T eq # eq t1 t2 }.
+  { eq : per , nuprl lib T T eq # eq t1 t2 }.
 
 (**
 

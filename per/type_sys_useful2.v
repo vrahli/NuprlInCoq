@@ -66,11 +66,12 @@ Proof.
   allrw <- eqt; sp.
 Qed.
 
+(*
 Lemma type_system_props_uv {p} :
-  forall lib (ts : cts(p)) A eq eq',
-    type_system_props lib ts A eq
+  forall lib (ts : cts(p)) A B eq eq',
+    type_system_props lib ts A B eq
     -> (eq <=2=> eq')
-    -> type_system_props lib ts A eq'.
+    -> type_system_props lib ts A B eq'.
 Proof.
   introv tsp eqt.
   dts_props tsp uv tv te tes tet tev.
@@ -94,21 +95,22 @@ Proof.
 
     (* ARG! *)
 Abort.
+*)
 
 Lemma type_system_props_implies_term_eq_sym {p} :
-  forall lib (ts : cts(p)) P eqp,
-    type_system_props lib ts P eqp
+  forall lib (ts : cts(p)) A B eqp,
+    type_system_props lib ts A B eqp
     -> term_equality_symmetric eqp.
 Proof.
   introv tsp.
-  dts_props tsp uv tv te tes tet tev; auto.
+  dts_props tsp uv te tys tyt tv tes tet tev; auto.
 Qed.
 
 Lemma type_system_props_implies_term_eq_trans {p} :
-  forall lib (ts : cts(p)) P eqp,
-    type_system_props lib ts P eqp
+  forall lib (ts : cts(p)) A B eqp,
+    type_system_props lib ts A B eqp
     -> term_equality_transitive eqp.
 Proof.
   introv tsp.
-  dts_props tsp uv tv te tes tet tev; auto.
+  dts_props tsp uv te tys tyt tv tes tet tev; auto.
 Qed.
