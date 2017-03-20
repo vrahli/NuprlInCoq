@@ -103,7 +103,7 @@ Lemma type_system_props_implies_term_eq_sym {p} :
     -> term_equality_symmetric eqp.
 Proof.
   introv tsp.
-  dts_props tsp uv te tys tyt tv tes tet tev; auto.
+  dts_props tsp uv te tys tylt tyt tv tes tet tev; auto.
 Qed.
 
 Lemma type_system_props_implies_term_eq_trans {p} :
@@ -112,5 +112,5 @@ Lemma type_system_props_implies_term_eq_trans {p} :
     -> term_equality_transitive eqp.
 Proof.
   introv tsp.
-  dts_props tsp uv te tys tyt tv tes tet tev; auto.
+  dts_props tsp uv te tys tylt tyt tv tes tet tev; auto.
 Qed.

@@ -114,12 +114,11 @@ Proof.
   pose proof (tranb a2 a a1 e2 e0) as w; auto.
 Qed.
 
-(*
 Lemma eqbs_trans {o} :
   forall lib (ts : cts(o)) v B (eqa1 eqa2 : per(o)) eqb1 eqb2,
     (eqa1 <=2=> eqa2)
-    -> (forall a a' (e : eqa1 a a'), type_system_props lib ts (substc a v B) (eqb1 a a' e))
-    -> type_family_members_eq ts v B eqa2 eqb2
+    -> (forall a a' (e : eqa1 a a'), type_system_props lib ts (substc a v B) (substc a' v B) (eqb1 a a' e))
+    -> type_family_members_eq ts v B eqb2
     -> (forall a a' (e1 : eqa1 a a') (e2 : eqa2 a a'), (eqb1 a a' e1) <=2=> (eqb2 a a' e2)).
 Proof.
   introv eqas tsb tf; introv.
@@ -127,10 +126,9 @@ Proof.
   pose proof (tf0 a a' e2) as q.
   pose proof (tsb a a' e1) as w.
 
-  dts_props w uv tv te tes tet tev.
+  dts_props w uv te tys tylt tyt tv tes tet tev.
   apply uv in q; auto.
 Qed.
-*)
 
 (*
 Lemma eq_term_equals_sym_tsp {p} :
@@ -1458,3 +1456,239 @@ Proof.
                 (eq2 t1 t2) (eq1 t1 t2) k tsp); sp.
 Qed.
  *)
+
+
+Lemma type_system_props_implies_equal {o} :
+  forall lib ts (A B : @CTerm o) eq,
+    type_system_props lib ts A B eq
+    -> ts A B eq.
+Proof.
+  introv tysys.
+  dts_props tysys uv te tys tyrr tyt tv tes tet tev.
+  apply te; auto.
+Qed.
+
+Lemma close_preserves_not_uni {o} :
+  forall lib ts (A B : @CTerm o) eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> not_uni lib A
+    -> close lib ts A B eq
+    -> not_uni lib B.
+Proof.
+  introv tysys dou nu cl.
+  close_cases (induction cl using @close_ind') Case; tcsp;
+    try (introv compu; spcast);
+    try (complete (unfold per_extensional in ext; repndors; spcast;
+                   [apply cequivc_sym in ext; eapply cequivc_uni in ext;[|eauto];
+                    computes_to_eqval
+                   |repnd; auto;
+                    pose proof (ext i) as q; destruct q; spcast; auto])).
+
+  Case "CL_init".
+
+  match goal with
+  | [ H : ts _ _ _ |- _ ] => rename H into h
+  end.
+  apply dou in h; exrepnd.
+  apply nu in h0; auto.
+Qed.
+
+Lemma eq_is_not_uni {o} :
+  forall lib (T : @CTerm o) a b A,
+    computes_to_valc lib T (mkc_equality a b A)
+    -> not_uni lib T.
+Proof.
+  introv comp1 comp2; spcast.
+  computes_to_valc_diff.
+Qed.
+Hint Resolve eq_is_not_uni : slow.
+
+Lemma cequivc_preserves_not_uni {o} :
+  forall lib (A B : @CTerm o),
+    cequivc lib A B
+    -> not_uni lib A
+    -> not_uni lib B.
+Proof.
+  introv ceq nu comp; spcast.
+  apply cequivc_sym in ceq; eapply cequivc_uni in ceq; eauto.
+  pose proof (nu i) as q; destruct q; spcast; auto.
+Qed.
+
+Lemma int_is_not_uni {o} :
+  forall lib (T : @CTerm o),
+    computes_to_valc lib T mkc_int
+    -> not_uni lib T.
+Proof.
+  introv comp1 comp2; spcast.
+  computes_to_valc_diff.
+Qed.
+Hint Resolve int_is_not_uni : slow.
+
+Lemma atom_is_not_uni {o} :
+  forall lib (T : @CTerm o),
+    computes_to_valc lib T mkc_atom
+    -> not_uni lib T.
+Proof.
+  introv comp1 comp2; spcast.
+  computes_to_valc_diff.
+Qed.
+Hint Resolve atom_is_not_uni : slow.
+
+Lemma uatom_is_not_uni {o} :
+  forall lib (T : @CTerm o),
+    computes_to_valc lib T mkc_uatom
+    -> not_uni lib T.
+Proof.
+  introv comp1 comp2; spcast.
+  computes_to_valc_diff.
+Qed.
+Hint Resolve uatom_is_not_uni : slow.
+
+Lemma base_is_not_uni {o} :
+  forall lib (T : @CTerm o),
+    computes_to_valc lib T mkc_base
+    -> not_uni lib T.
+Proof.
+  introv comp1 comp2; spcast.
+  computes_to_valc_diff.
+Qed.
+Hint Resolve base_is_not_uni : slow.
+
+Lemma approx_is_not_uni {o} :
+  forall lib a b (T : @CTerm o),
+    computes_to_valc lib T (mkc_approx a b)
+    -> not_uni lib T.
+Proof.
+  introv comp1 comp2; spcast.
+  computes_to_valc_diff.
+Qed.
+Hint Resolve approx_is_not_uni : slow.
+
+Lemma cequiv_is_not_uni {o} :
+  forall lib a b (T : @CTerm o),
+    computes_to_valc lib T (mkc_cequiv a b)
+    -> not_uni lib T.
+Proof.
+  introv comp1 comp2; spcast.
+  computes_to_valc_diff.
+Qed.
+Hint Resolve cequiv_is_not_uni : slow.
+
+Lemma function_is_not_uni {o} :
+  forall lib A v B (T : @CTerm o),
+    computes_to_valc lib T (mkc_function A v B)
+    -> not_uni lib T.
+Proof.
+  introv comp1 comp2; spcast.
+  computes_to_valc_diff.
+Qed.
+Hint Resolve function_is_not_uni : slow.
+
+Lemma cequiv_atom {o} :
+  forall lib (T T' : @NTerm o),
+    computes_to_value lib T mk_atom
+    -> cequiv lib T T'
+    -> computes_to_value lib T' mk_atom.
+Proof.
+  sp.
+  apply cequiv_canonical_form with (t' := T') in X; sp.
+  apply @lblift_cequiv0 in p; subst; auto.
+Qed.
+
+Lemma cequivc_atom {o} :
+  forall lib (T T' : @CTerm o),
+    computes_to_valc lib T mkc_atom
+    -> cequivc lib T T'
+    -> computes_to_valc lib T' mkc_atom.
+Proof.
+  sp.
+  allapply @computes_to_valc_to_valuec; allsimpl.
+  apply cequivc_canonical_form with (t' := T') in X; sp.
+  apply lblift_cequiv0 in p; subst; auto.
+Qed.
+
+Lemma eq_term_equals_approx_if_cequivc {o} :
+  forall lib (a b a' b' : @CTerm o) (eq : per(o)),
+    cequivc lib a a'
+    -> cequivc lib b b'
+    -> (eq <=2=> (fun _ _ : CTerm => (a) ~<~(lib) (b)))
+    -> (eq <=2=> (fun _ _ : CTerm => (a') ~<~(lib) (b'))).
+Proof.
+  introv ceqa ceqb eqiff.
+  eapply eq_term_equals_trans;[exact eqiff|].
+  introv u v.
+  split; intro h; spcast.
+  - eapply approxc_cequivc_trans;[|eauto].
+    eapply cequivc_approxc_trans;[apply cequivc_sym;eauto|]; auto.
+  - eapply approxc_cequivc_trans;[|apply cequivc_sym;eauto].
+    eapply cequivc_approxc_trans;[exact ceqa|]; auto.
+Qed.
+
+Lemma eq_term_equals_cequiv_if_cequivc {o} :
+  forall lib (a b a' b' : @CTerm o) (eq : per(o)),
+    cequivc lib a a'
+    -> cequivc lib b b'
+    -> (eq <=2=> (fun _ _ : CTerm => (a) ~=~(lib) (b)))
+    -> (eq <=2=> (fun _ _ : CTerm => (a') ~=~(lib) (b'))).
+Proof.
+  introv ceqa ceqb eqiff.
+  eapply eq_term_equals_trans;[exact eqiff|].
+  introv u v.
+  split; intro h; spcast.
+  - eapply cequivc_trans;[|eauto].
+    eapply cequivc_trans;[apply cequivc_sym;eauto|]; auto.
+  - eapply cequivc_trans;[|apply cequivc_sym;eauto].
+    eapply cequivc_trans;[exact ceqa|]; auto.
+Qed.
+
+Lemma approx_decomp_cequiv {p} :
+  forall lib a b c d,
+    approx lib (mk_cequiv a b) (@mk_cequiv p c d)
+    <=> approx lib a c # approx lib b d.
+Proof.
+  split; unfold mk_cequiv; introv Hyp.
+  - applydup @approx_relates_only_progs in Hyp. repnd.
+    apply  approx_canonical_form2 in Hyp.
+    unfold lblift in Hyp. repnd. allsimpl.
+    alpharelbtd. GC.
+    eapply blift_approx_open_nobnd in Hyp1bt; eauto 3 with slow.
+    eapply blift_approx_open_nobnd in Hyp0bt; eauto 3 with slow.
+  - repnd. applydup @approx_relates_only_progs in Hyp. repnd.
+    applydup @approx_relates_only_progs in Hyp0. repnd.
+    apply approx_canonical_form3.
+    + apply isprogram_ot_iff. allsimpl. dands; auto. introv Hin.
+      dorn Hin;[| dorn Hin]; sp;[|];
+      subst; apply implies_isprogram_bt0; eauto with slow.
+    + apply isprogram_ot_iff. allsimpl. dands; auto. introv Hin.
+      dorn Hin;[| dorn Hin]; sp;[|];
+      subst; apply implies_isprogram_bt0; eauto with slow.
+    + unfold lblift. allsimpl. split; auto.
+      introv Hin. unfold selectbt.
+      repeat(destruct n; try (omega;fail); allsimpl);
+      apply blift_approx_open_nobnd2; sp.
+Qed.
+
+Lemma cequiv_decomp_cequiv {p} :
+  forall lib a b c d,
+    cequiv lib (mk_cequiv a b) (@mk_cequiv p c d)
+    <=> cequiv lib a c # cequiv lib b d.
+Proof.
+  intros.
+  unfold cequiv.
+  generalize (approx_decomp_cequiv lib a b c d); intro.
+  trewrite X; clear X.
+  generalize (approx_decomp_cequiv lib c d a b); intro.
+  trewrite X; clear X.
+  split; sp.
+Qed.
+
+Lemma cequivc_decomp_cequiv {p} :
+  forall lib a b c d,
+    cequivc lib (mkc_cequiv a b) (@mkc_cequiv p c d)
+    <=> cequivc lib a c # cequivc lib b d.
+Proof.
+  destruct a, b, c, d.
+  unfold cequivc, mkc_cequiv; simpl.
+  apply cequiv_decomp_cequiv.
+Qed.

@@ -427,57 +427,6 @@ Proof.
   apply isotrue_oband; auto.
 Qed.
 
-Lemma approx_decomp_cequiv {p} :
-  forall lib a b c d,
-    approx lib (mk_cequiv a b) (@mk_cequiv p c d)
-    <=> approx lib a c # approx lib b d.
-Proof.
-  split; unfold mk_cequiv; introv Hyp.
-  - applydup @approx_relates_only_progs in Hyp. repnd.
-    apply  approx_canonical_form2 in Hyp.
-    unfold lblift in Hyp. repnd. allsimpl.
-    alpharelbtd. GC.
-    eapply blift_approx_open_nobnd in Hyp1bt; eauto 3 with slow.
-    eapply blift_approx_open_nobnd in Hyp0bt; eauto 3 with slow.
-  - repnd. applydup @approx_relates_only_progs in Hyp. repnd.
-    applydup @approx_relates_only_progs in Hyp0. repnd.
-    apply approx_canonical_form3.
-    + apply isprogram_ot_iff. allsimpl. dands; auto. introv Hin.
-      dorn Hin;[| dorn Hin]; sp;[|];
-      subst; apply implies_isprogram_bt0; eauto with slow.
-    + apply isprogram_ot_iff. allsimpl. dands; auto. introv Hin.
-      dorn Hin;[| dorn Hin]; sp;[|];
-      subst; apply implies_isprogram_bt0; eauto with slow.
-    + unfold lblift. allsimpl. split; auto.
-      introv Hin. unfold selectbt.
-      repeat(destruct n; try (omega;fail); allsimpl);
-      apply blift_approx_open_nobnd2; sp.
-Qed.
-
-Lemma cequiv_decomp_cequiv {p} :
-  forall lib a b c d,
-    cequiv lib (mk_cequiv a b) (@mk_cequiv p c d)
-    <=> cequiv lib a c # cequiv lib b d.
-Proof.
-  intros.
-  unfold cequiv.
-  generalize (approx_decomp_cequiv lib a b c d); intro.
-  trewrite X; clear X.
-  generalize (approx_decomp_cequiv lib c d a b); intro.
-  trewrite X; clear X.
-  split; sp.
-Qed.
-
-Lemma cequivc_decomp_cequiv {p} :
-  forall lib a b c d,
-    cequivc lib (mkc_cequiv a b) (@mkc_cequiv p c d)
-    <=> cequivc lib a c # cequivc lib b d.
-Proof.
-  destruct a, b, c, d.
-  unfold cequivc, mkc_cequiv; simpl.
-  apply cequiv_decomp_cequiv.
-Qed.
-
 Lemma cequivc_unfold_lib {o} :
   forall lib,
     no_undefined_abs_in_lib lib

@@ -33,15 +33,16 @@
 Require Export type_sys_useful2.
 Require Import dest_close.
 
-Require Import close_type_sys_per_init.
+
+(*Require Import close_type_sys_per_init.
 Require Import close_type_sys_per_int.
 Require Import close_type_sys_per_atom.
 Require Import close_type_sys_per_uatom.
 Require Import close_type_sys_per_base.
 Require Import close_type_sys_per_sqle.
-Require Import close_type_sys_per_sqequal.
+Require Import close_type_sys_per_sqequal.*)
 Require Import close_type_sys_per_eq.
-Require Import close_type_sys_per_aeq.
+(*Require Import close_type_sys_per_aeq.
 Require Import close_type_sys_per_teq.
 Require Import close_type_sys_per_isect.
 (*Require Import close_type_sys_per_eisect.*)
@@ -63,9 +64,10 @@ Require Import close_type_sys_per_ffatoms.
 (*Require Import close_type_sys_per_effatom.*)
 Require Import close_type_sys_per_set.
 Require Import close_type_sys_per_tunion.
-Require Import close_type_sys_per_product.
+Require Import close_type_sys_per_product.*)
 (*Require Import close_type_sys_per_pw.*)
 (*Require Import close_type_sys_per_pm.*)
+
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
@@ -95,6 +97,8 @@ Proof.
   introv cl.
 
   close_cases (induction cl using @close_ind') Case; spcast.
+
+  Focus 11.
 
   - Case "CL_init".
     apply close_type_system_init; auto.
