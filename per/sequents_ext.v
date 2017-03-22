@@ -199,6 +199,7 @@ Proof.
   }
 Qed.
 
+
 (*
 Definition ext_sequent_true {o} lib (S : @csequent o) : Type :=
   forall s1 s2,
