@@ -698,11 +698,13 @@ Definition per_intensional {o}
            TyCon
            (ts : cts(o))
            (T : @CTerm o)
+           A v B
            (eqa : per(o))
            (eqb : per-fam(o,eqa)) : [U] :=
-  forall A v B,
-    T ===>(lib) (TyCon A v B)
-    -> ts A A eqa # type_family_members_eq ts v B eqb.
+  forall A' v' B',
+    T ===>(lib) (TyCon A' v' B')
+    -> ts A A' eqa
+       # forall a a' (e : eqa a a'), ts (B[[v\\a]]) (B'[[v'\\a']]) (eqb a a' e).
 
 Definition type_family {o}
            lib
@@ -717,7 +719,7 @@ Definition type_family {o}
   , {B : CVTerm [v]
   , T ===>(lib) (TyCon A v B)
   # per_extensional lib ts T T' eq
-  # per_intensional lib TyCon ts T' eqa eqb
+  # per_intensional lib TyCon ts T' A v B eqa eqb
   # ts A A eqa
   # type_family_members_eq ts v B eqb }}}.
 
@@ -2137,8 +2139,8 @@ Definition close_ind' {pp}
                   (comp   : T ===>(lib) (mkc_isect A v B))
                   (ext    : per_extensional lib (close lib ts) T T' eq)
                   (extP   : per_extensional lib (P ts) T T' eq)
-                  (int    : per_intensional lib mkc_isect (close lib ts) T' eqa eqb)
-                  (intP   : per_intensional lib mkc_isect (P ts) T' eqa eqb)
+                  (int    : per_intensional lib mkc_isect (close lib ts) T' A v B eqa eqb)
+                  (intP   : per_intensional lib mkc_isect (P ts) T' A v B eqa eqb)
                   (cla    : close lib ts A A eqa)
                   (reca   : P ts A A eqa)
                   (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
@@ -2158,8 +2160,8 @@ Definition close_ind' {pp}
                   (comp   : T ===>(lib) (mkc_function A v B))
                   (ext    : per_extensional lib (close lib ts) T T' eq)
                   (extP   : per_extensional lib (P ts) T T' eq)
-                  (int    : per_intensional lib mkc_function (close lib ts) T' eqa eqb)
-                  (intP   : per_intensional lib mkc_function (P ts) T' eqa eqb)
+                  (int    : per_intensional lib mkc_function (close lib ts) T' A v B eqa eqb)
+                  (intP   : per_intensional lib mkc_function (P ts) T' A v B eqa eqb)
                   (cla    : close lib ts A A eqa)
                   (reca   : P ts A A eqa)
                   (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
@@ -2179,8 +2181,8 @@ Definition close_ind' {pp}
                    (comp   : T ===>(lib) (mkc_disect A v B))
                    (ext    : per_extensional lib (close lib ts) T T' eq)
                    (extP   : per_extensional lib (P ts) T T' eq)
-                   (int    : per_intensional lib mkc_disect (close lib ts) T' eqa eqb)
-                   (intP   : per_intensional lib mkc_disect (P ts) T' eqa eqb)
+                   (int    : per_intensional lib mkc_disect (close lib ts) T' A v B eqa eqb)
+                   (intP   : per_intensional lib mkc_disect (P ts) T' A v B eqa eqb)
                    (cla    : close lib ts A A eqa)
                    (reca   : P ts A A eqa)
                    (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
@@ -2259,8 +2261,8 @@ Definition close_ind' {pp}
                   (comp   : T ===>(lib) (mkc_w A v B))
                   (ext    : per_extensional lib (close lib ts) T T' eq)
                   (extP   : per_extensional lib (P ts) T T' eq)
-                  (int    : per_intensional lib mkc_w (close lib ts) T' eqa eqb)
-                  (intP   : per_intensional lib mkc_w (P ts) T' eqa eqb)
+                  (int    : per_intensional lib mkc_w (close lib ts) T' A v B eqa eqb)
+                  (intP   : per_intensional lib mkc_w (P ts) T' A v B eqa eqb)
                   (cla    : close lib ts A A eqa)
                   (reca   : P ts A A eqa)
                   (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
@@ -2280,8 +2282,8 @@ Definition close_ind' {pp}
                   (comp   : T ===>(lib) (mkc_m A v B))
                   (ext    : per_extensional lib (close lib ts) T T' eq)
                   (extP   : per_extensional lib (P ts) T T' eq)
-                  (int    : per_intensional lib mkc_m (close lib ts) T' eqa eqb)
-                  (intP   : per_intensional lib mkc_m (P ts) T' eqa eqb)
+                  (int    : per_intensional lib mkc_m (close lib ts) T' A v B eqa eqb)
+                  (intP   : per_intensional lib mkc_m (P ts) T' A v B eqa eqb)
                   (cla    : close lib ts A A eqa)
                   (reca   : P ts A A eqa)
                   (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
@@ -2621,8 +2623,8 @@ Definition close_ind' {pp}
                    (comp   : T ===>(lib) (mkc_set A v B))
                    (ext    : per_extensional lib (close lib ts) T T' eq)
                    (extP   : per_extensional lib (P ts) T T' eq)
-                   (int    : per_intensional lib mkc_set (close lib ts) T' eqa eqb)
-                   (intP   : per_intensional lib mkc_set (P ts) T' eqa eqb)
+                   (int    : per_intensional lib mkc_set (close lib ts) T' A v B eqa eqb)
+                   (intP   : per_intensional lib mkc_set (P ts) T' A v B eqa eqb)
                    (cla    : close lib ts A A eqa)
                    (reca   : P ts A A eqa)
                    (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
@@ -2642,8 +2644,8 @@ Definition close_ind' {pp}
                    (comp   : T ===>(lib) (mkc_tunion A v B))
                    (ext    : per_extensional lib (close lib ts) T T' eq)
                    (extP   : per_extensional lib (P ts) T T' eq)
-                   (int    : per_intensional lib mkc_tunion (close lib ts) T' eqa eqb)
-                   (intP   : per_intensional lib mkc_tunion (P ts) T' eqa eqb)
+                   (int    : per_intensional lib mkc_tunion (close lib ts) T' A v B eqa eqb)
+                   (intP   : per_intensional lib mkc_tunion (P ts) T' A v B eqa eqb)
                    (cla    : close lib ts A A eqa)
                    (reca   : P ts A A eqa)
                    (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
@@ -2663,8 +2665,8 @@ Definition close_ind' {pp}
                     (comp   : T ===>(lib) (mkc_product A v B))
                     (ext    : per_extensional lib (close lib ts) T T' eq)
                     (extP   : per_extensional lib (P ts) T T' eq)
-                    (int    : per_intensional lib mkc_product (close lib ts) T' eqa eqb)
-                    (intP   : per_intensional lib mkc_product (P ts) T' eqa eqb)
+                    (int    : per_intensional lib mkc_product (close lib ts) T' A v B eqa eqb)
+                    (intP   : per_intensional lib mkc_product (P ts) T' A v B eqa eqb)
                     (cla    : close lib ts A A eqa)
                     (reca   : P ts A A eqa)
                     (clb    : forall a a' (e : eqa a a'), close lib ts (substc a v B) (substc a' v B) (eqb a a' e))
@@ -2838,10 +2840,9 @@ Definition close_ind' {pp}
               | or_intror (x,y) => or_intror (rec ts T' T' eq x, y)
               end)
              int
-             (fun A v B comp =>
-                let (a,b) := int A v B comp in
-                let (fb,feq) := b in
-                (rec ts A A eqa a, (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fb a a' e), feq)))
+             (fun A' v' B' comp =>
+                let (a,b) := int A' v' B' comp in
+                (rec ts A A' eqa a, fun a a' e => rec ts (substc a v B) (substc a' v' B') (eqb a a' e) (b a a' e)))
              tsa
              (rec ts A A eqa tsa)
              (fst mem)
@@ -2869,10 +2870,9 @@ Definition close_ind' {pp}
              | or_intror (x,y) => or_intror (rec ts T' T' eq x, y)
              end)
             int
-            (fun A v B comp =>
-               let (a,b) := int A v B comp in
-               let (fb,feq) := b in
-               (rec ts A A eqa a, (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fb a a' e), feq)))
+            (fun A' v' B' comp =>
+               let (a,b) := int A' v' B' comp in
+               (rec ts A A' eqa a, fun a a' e => rec ts (substc a v B) (substc a' v' B') (eqb a a' e) (b a a' e)))
             tsa
             (rec ts A A eqa tsa)
             (fst mem)
@@ -2900,10 +2900,9 @@ Definition close_ind' {pp}
                | or_intror (x,y) => or_intror (rec ts T' T' eq x, y)
                end)
               int
-              (fun A v B comp =>
-                 let (a,b) := int A v B comp in
-                 let (fb,feq) := b in
-                 (rec ts A A eqa a, (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fb a a' e), feq)))
+              (fun A' v' B' comp =>
+                 let (a,b) := int A' v' B' comp in
+                 (rec ts A A' eqa a, fun a a' e => rec ts (substc a v B) (substc a' v' B') (eqb a a' e) (b a a' e)))
               tsa
               (rec ts A A eqa tsa)
               (fst mem)
@@ -3013,10 +3012,9 @@ Definition close_ind' {pp}
           | or_intror (x,y) => or_intror (rec ts T' T' eq x, y)
           end)
          int
-         (fun A v B comp =>
-            let (a,b) := int A v B comp in
-            let (fb,feq) := b in
-            (rec ts A A eqa a, (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fb a a' e), feq)))
+         (fun A' v' B' comp =>
+            let (a,b) := int A' v' B' comp in
+            (rec ts A A' eqa a, fun a a' e => rec ts (substc a v B) (substc a' v' B') (eqb a a' e) (b a a' e)))
          tsa
          (rec ts A A eqa tsa)
          (fst mem)
@@ -3044,10 +3042,9 @@ Definition close_ind' {pp}
           | or_intror (x,y) => or_intror (rec ts T' T' eq x, y)
           end)
          int
-         (fun A v B comp =>
-            let (a,b) := int A v B comp in
-            let (fb,feq) := b in
-            (rec ts A A eqa a, (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fb a a' e), feq)))
+         (fun A' v' B' comp =>
+            let (a,b) := int A' v' B' comp in
+            (rec ts A A' eqa a, fun a a' e => rec ts (substc a v B) (substc a' v' B') (eqb a a' e) (b a a' e)))
          tsa
          (rec ts A A eqa tsa)
          (fst mem)
@@ -3464,10 +3461,9 @@ Definition close_ind' {pp}
                | or_intror (x,y) => or_intror (rec ts T' T' eq x, y)
                end)
               int
-              (fun A v B comp =>
-                 let (a,b) := int A v B comp in
-                 let (fb,feq) := b in
-                 (rec ts A A eqa a, (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fb a a' e), feq)))
+              (fun A' v' B' comp =>
+                 let (a,b) := int A' v' B' comp in
+                 (rec ts A A' eqa a, fun a a' e => rec ts (substc a v B) (substc a' v' B') (eqb a a' e) (b a a' e)))
               tsa
               (rec ts A A eqa tsa)
               (fst mem)
@@ -3495,10 +3491,9 @@ Definition close_ind' {pp}
                | or_intror (x,y) => or_intror (rec ts T' T' eq x, y)
                end)
               int
-              (fun A v B comp =>
-                 let (a,b) := int A v B comp in
-                 let (fb,feq) := b in
-                 (rec ts A A eqa a, (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fb a a' e), feq)))
+              (fun A' v' B' comp =>
+                 let (a,b) := int A' v' B' comp in
+                 (rec ts A A' eqa a, fun a a' e => rec ts (substc a v B) (substc a' v' B') (eqb a a' e) (b a a' e)))
               tsa
               (rec ts A A eqa tsa)
               (fst mem)
@@ -3526,10 +3521,9 @@ Definition close_ind' {pp}
                 | or_intror (x,y) => or_intror (rec ts T' T' eq x, y)
                 end)
                int
-               (fun A v B comp =>
-                  let (a,b) := int A v B comp in
-                  let (fb,feq) := b in
-                  (rec ts A A eqa a, (fun a a' e => rec ts (substc a v B) (substc a' v B) (eqb a a' e) (fb a a' e), feq)))
+               (fun A' v' B' comp =>
+                  let (a,b) := int A' v' B' comp in
+                  (rec ts A A' eqa a, fun a a' e => rec ts (substc a v B) (substc a' v' B') (eqb a a' e) (b a a' e)))
                tsa
                (rec ts A A eqa tsa)
                (fst mem)

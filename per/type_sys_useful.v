@@ -126,7 +126,7 @@ Proof.
   pose proof (tf0 a a' e2) as q.
   pose proof (tsb a a' e1) as w.
 
-  dts_props w uv te tys tylt tyt tv tes tet tev.
+  dts_props w uv te tys tyls tylt tyt tv tes tet tev.
   apply uv in q; auto.
 Qed.
 
@@ -1464,7 +1464,7 @@ Lemma type_system_props_implies_equal {o} :
     -> ts A B eq.
 Proof.
   introv tysys.
-  dts_props tysys uv te tys tyrr tyt tv tes tet tev.
+  dts_props tysys uv te tys tyls tylt tyt tv tes tet tev.
   apply te; auto.
 Qed.
 
@@ -1691,4 +1691,87 @@ Proof.
   destruct a, b, c, d.
   unfold cequivc, mkc_cequiv; simpl.
   apply cequiv_decomp_cequiv.
+Qed.
+
+Lemma term_equality_symmetric_eq_term_equals {p} :
+  forall eq eq' : per(p),
+    term_equality_symmetric eq
+    -> eq_term_equals eq eq'
+    -> term_equality_symmetric eq'.
+Proof.
+  introv tes eqt.
+  unfold term_equality_symmetric; introv.
+  allrw <- eqt; sp.
+Qed.
+
+Lemma term_equality_transitive_eq_term_equals {p} :
+  forall eq eq' : per(p),
+    term_equality_transitive eq
+    -> eq_term_equals eq eq'
+    -> term_equality_transitive eq'.
+Proof.
+  introv tet eqt.
+  unfold term_equality_transitive; introv.
+  allrw <- eqt; sp.
+  apply tet with (t2 := t2); sp.
+Qed.
+
+Lemma term_equality_respecting_eq_term_equals {p} :
+  forall lib (eq eq' : per(p)),
+    term_equality_respecting lib eq
+    -> eq_term_equals eq eq'
+    -> term_equality_respecting lib eq'.
+Proof.
+  introv ter eqt.
+  unfold term_equality_respecting; introv.
+  allrw <- eqt; sp.
+Qed.
+
+(*
+Lemma type_system_props_uv {p} :
+  forall lib (ts : cts(p)) A B eq eq',
+    type_system_props lib ts A B eq
+    -> (eq <=2=> eq')
+    -> type_system_props lib ts A B eq'.
+Proof.
+  introv tsp eqt.
+  dts_props tsp uv tv te tes tet tev.
+
+  prove_ts_props Case.
+
+  - Case "uniquely_valued".
+    introv tsa.
+    eapply uv in tsa.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+
+  - Case "type_extensionality".
+    introv e.
+    apply tv.
+    eapply eq_term_equals_trans; eauto.
+
+  - Case "type_value_respecting".
+    introv c.
+    apply te in c.
+
+    (* ARG! *)
+Abort.
+*)
+
+Lemma type_system_props_implies_term_eq_sym {p} :
+  forall lib (ts : cts(p)) A B eqp,
+    type_system_props lib ts A B eqp
+    -> term_equality_symmetric eqp.
+Proof.
+  introv tsp.
+  dts_props tsp uv te tys tyls tylt tyt tv tes tet tev; auto.
+Qed.
+
+Lemma type_system_props_implies_term_eq_trans {p} :
+  forall lib (ts : cts(p)) A B eqp,
+    type_system_props lib ts A B eqp
+    -> term_equality_transitive eqp.
+Proof.
+  introv tsp.
+  dts_props tsp uv te tys tyls tylt tyt tv tes tet tev; auto.
 Qed.

@@ -260,6 +260,12 @@ Definition type_left_reflexive {o}
            (eq : per) :=
   ts T1 T1 eq.
 
+Definition type_left_symmetric {o}
+           (ts : cts(o))
+           (T1 T2 : @CTerm o)
+           (eq : per) :=
+  forall T3 T4 eq', ts T1 T3 eq -> ts T3 T4 eq' -> ts T3 T1 eq'.
+
 Definition type_left_transitive {o}
            (ts : cts(o))
            (T1 T2 : @CTerm o)
@@ -274,7 +280,7 @@ Definition type_system_props {p}
   uniquely_valued_body ts T1 T2 eq
    # type_extensionality_body ts T1 T2 eq
    # type_symmetric_body ts T1 T2 eq
-(*   # type_left_reflexive ts T1 T2 eq*)
+   # type_left_symmetric ts T1 T2 eq
    # type_left_transitive ts T1 T2 eq
    # type_transitive_body ts T1 T2 eq
    # type_value_respecting_body lib ts T1 T2 eq
@@ -286,7 +292,7 @@ Definition is_type_system {p} lib (ts : cts(p)) :=
   forall T1 T2 eq,
     ts T1 T2 eq -> type_system_props lib ts T1 T2 eq.
 
-Ltac dest_is_ts uv tye tys (*tylr*) tyrr tyt tyvr tes tet tevr :=
+Ltac dest_is_ts uv tye tys tyls tylt tyt tyvr tes tet tevr :=
   match goal with
       [ H : type_system_props _ _ _ _ _ |- _ ] =>
       let tmp := fresh "tmp" in
@@ -294,8 +300,8 @@ Ltac dest_is_ts uv tye tys (*tylr*) tyrr tyt tyvr tes tet tevr :=
         destruct H   as [ uv   tmp ];
         destruct tmp as [ tye  tmp ];
         destruct tmp as [ tys  tmp ];
-(*        destruct tmp as [ tylr tmp ];*)
-        destruct tmp as [ tyrr tmp ];
+        destruct tmp as [ tyls tmp ];
+        destruct tmp as [ tylt tmp ];
         destruct tmp as [ tyt  tmp ];
         destruct tmp as [ tyvr tmp ];
         destruct tmp as [ tes  tmp ];
@@ -307,7 +313,7 @@ Tactic Notation "prove_ts_props" ident(c) :=
   [ Case_aux c "uniquely_valued"
   | Case_aux c "type_extensionality"
   | Case_aux c "type_symmetric"
-(*  | Case_aux c "type_left_reflexive"*)
+  | Case_aux c "type_left_symmetric"
   | Case_aux c "type_left_transitive"
   | Case_aux c "type_transitive"
   | Case_aux c "type_value_respecting"
@@ -322,7 +328,7 @@ Tactic Notation "prove_is_ts" ident(c) :=
   [ Case_aux c "uniquely_valued"
   | Case_aux c "type_extensionality"
   | Case_aux c "type_symmetric"
-(*  | Case_aux c "type_left_reflexive"*)
+  | Case_aux c "type_left_symmetric"
   | Case_aux c "type_left_transitive"
   | Case_aux c "type_transitive"
   | Case_aux c "type_value_respecting"
@@ -330,6 +336,32 @@ Tactic Notation "prove_is_ts" ident(c) :=
   | Case_aux c "term_transitive"
   | Case_aux c "term_value_respecting"
   ].
+
+Lemma type_reflexive_left {o} :
+  forall (ts : cts(o)) (T1 T2 : @CTerm o) eq,
+    type_symmetric ts
+    -> type_transitive ts
+    -> ts T1 T2 eq
+    -> ts T1 T1 eq.
+Proof.
+  introv tys tyt h.
+  eapply tyt;[eauto|]; tcsp.
+Qed.
+
+Lemma uniquely_valued_left {o} :
+  forall (ts : cts(o)) (T T1 T2 : @CTerm o) eq1 eq2,
+    uniquely_valued ts
+    -> type_symmetric ts
+    -> type_transitive ts
+    -> ts T T1 eq1
+    -> ts T T2 eq2
+    -> eq1 <=2=> eq2.
+Proof.
+  introv uv tys tyt h1 h2.
+  apply type_reflexive_left in h1; auto.
+  apply type_reflexive_left in h2; auto.
+  eapply uv; eauto.
+Qed.
 
 Lemma type_system_iff_is_type_system {p} :
   forall lib (ts : cts(p)),
@@ -355,13 +387,11 @@ Proof.
       unfold type_symmetric in tys.
       generalize (tys T1 T2 eq); sp.
 
-(*    + Case "type_left_reflexive".
-      unfold type_left_reflexive.
-      eapply tyt;[eauto|]; tcsp.*)
-
-(*    + Case "type_right_reflexive".
-      unfold type_right_reflexive.
-      eapply tyt;[eauto|]; tcsp.*)
+    + Case "type_left_symmetric".
+      introv h1 h2.
+      apply tys in h1.
+      eapply uniquely_valued_left in h2; try (exact h1); auto.
+      eapply tye;[|eauto]; auto.
 
     + Case "type_left_transitive".
       introv e.
@@ -396,7 +426,7 @@ Proof.
       unfold uniquely_valued; introv e1 e2.
       generalize (k T T' eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyrr tyt tyvr tes tet tevr.
+      dest_is_ts uv tye tys tyls tylt tyt tyvr tes tet tevr.
       unfold uniquely_valued_body in uv.
       generalize (uv eq'); sp.
 
@@ -404,7 +434,7 @@ Proof.
       unfold type_extensionality; introv e teq.
       generalize (k T T' eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyrr tyt tyvr tes tet tevr.
+      dest_is_ts uv tye tys tyls tylt tyt tyvr tes tet tevr.
       unfold type_extensionality_body in tye.
       generalize (tye eq'); sp.
 
@@ -412,14 +442,14 @@ Proof.
       unfold type_symmetric; introv e.
       generalize (k T T' eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyrr tyt tyvr tes tet tevr.
+      dest_is_ts uv tye tys tyls tylt tyt tyvr tes tet tevr.
       unfold type_symmetric_body in tys; sp.
 
     + Case "type_transitive".
       unfold type_transitive; introv e1 e2.
       generalize (k T1 T2 eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyrr tyt tyvr tes tet tevr.
+      dest_is_ts uv tye tys tyls tylt tyt tyvr tes tet tevr.
       unfold type_transitive_body in tyt.
       generalize (tyt T3); sp.
 
@@ -427,26 +457,26 @@ Proof.
       unfold type_value_respecting; introv e ceq1 ceq2.
       pose proof (k T1 T2 eq) as k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyrr tyt tyvr tes tet tevr.
+      dest_is_ts uv tye tys tyls tylt tyt tyvr tes tet tevr.
       eapply tyvr; eauto.
 
     + Case "term_symmetric".
       unfold term_symmetric; introv e.
       generalize (k T T' eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyrr tyt tyvr tes tet tevr; auto.
+      dest_is_ts uv tye tys tyls tylt tyt tyvr tes tet tevr; auto.
 
     + Case "term_transitive".
       unfold term_transitive; introv e.
       generalize (k T T' eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyrr tyt tyvr tes tet tevr; auto.
+      dest_is_ts uv tye tys tyls tylt tyt tyvr tes tet tevr; auto.
 
     + Case "term_value_respecting".
       unfold term_value_respecting; introv e.
       generalize (k T T' eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyrr tyt tyvr tes tet tevr; auto.
+      dest_is_ts uv tye tys tyls tylt tyt tyvr tes tet tevr; auto.
 Qed.
 
 
@@ -1832,13 +1862,13 @@ Proof.
 Qed.
 *)
 
-Tactic Notation "dts_props" ident(h) ident(uv) ident(te) ident(ts) (*ident(tlr)*) ident(trr) ident(tt) ident(tv) ident(tes) ident(tet) ident(ter) :=
+Tactic Notation "dts_props" ident(h) ident(uv) ident(te) ident(ts) ident(tls) ident(tlt) ident(tt) ident(tv) ident(tes) ident(tet) ident(ter) :=
   unfold type_system_props in h;
   destruct h as [uv  h];
   destruct h as [te  h];
   destruct h as [ts  h];
-(*  destruct h as [tlr h];*)
-  destruct h as [trr h];
+  destruct h as [tls h];
+  destruct h as [tlt h];
   destruct h as [tt  h];
   destruct h as [tv  h];
   destruct h as [tes h];

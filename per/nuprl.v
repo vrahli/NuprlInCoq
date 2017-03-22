@@ -502,7 +502,6 @@ Proof.
       try (complete (unfold type_family_members_eq; dands; auto)); [].
     unfold per_intensional in *; introv c.
     apply intP in c; repnd; dands; tcsp.
-    unfold type_family_members_eq in *; repnd; dands; auto.
 
   - Case "CL_func".
     apply CL_func; unfold per_func; sp.
@@ -512,7 +511,6 @@ Proof.
       try (complete (unfold type_family_members_eq; dands; auto)); [].
     unfold per_intensional in *; introv c.
     apply intP in c; repnd; dands; tcsp.
-    unfold type_family_members_eq in *; repnd; dands; auto.
 
   - Case "CL_disect".
     apply CL_disect; unfold per_disect; sp.
@@ -522,7 +520,6 @@ Proof.
       try (complete (unfold type_family_members_eq; dands; auto)); [].
     unfold per_intensional in *; introv c.
     apply intP in c; repnd; dands; tcsp.
-    unfold type_family_members_eq in *; repnd; dands; auto.
 
   - Case "CL_pertype".
     apply CL_pertype; unfold per_pertype; sp.
@@ -549,7 +546,6 @@ Proof.
       try (complete (unfold type_family_members_eq; dands; auto)); [].
     unfold per_intensional in *; introv c.
     apply intP in c; repnd; dands; tcsp.
-    unfold type_family_members_eq in *; repnd; dands; auto.
 
   - Case "CL_m".
     apply CL_m; unfold per_m; sp.
@@ -559,7 +555,6 @@ Proof.
       try (complete (unfold type_family_members_eq; dands; auto)); [].
     unfold per_intensional in *; introv c.
     apply intP in c; repnd; dands; tcsp.
-    unfold type_family_members_eq in *; repnd; dands; auto.
 
       (*
   - Case "CL_pw".
@@ -649,7 +644,6 @@ Proof.
       try (complete (unfold type_family_members_eq; dands; auto)); [].
     unfold per_intensional in *; introv c.
     apply intP in c; repnd; dands; tcsp.
-    unfold type_family_members_eq in *; repnd; dands; auto.
 
   - Case "CL_tunion".
     apply CL_tunion; unfold per_tunion; sp.
@@ -659,7 +653,6 @@ Proof.
       try (complete (unfold type_family_members_eq; dands; auto)); [].
     unfold per_intensional in *; introv c.
     apply intP in c; repnd; dands; tcsp.
-    unfold type_family_members_eq in *; repnd; dands; auto.
 
   - Case "CL_product".
     apply CL_product; unfold per_product; sp.
@@ -669,7 +662,6 @@ Proof.
       try (complete (unfold type_family_members_eq; dands; auto)); [].
     unfold per_intensional in *; introv c.
     apply intP in c; repnd; dands; tcsp.
-    unfold type_family_members_eq in *; repnd; dands; auto.
 Qed.
 
 Lemma typable_in_higher_univ_r {p} :
@@ -922,8 +914,7 @@ Proof.
       try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     { unfold per_intensional in *; introv c.
       apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
-      unfold type_family_members_eq in *; repnd; dands; auto.
-      introv; eapply c1; eauto. }
+      introv; eapply c; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -936,8 +927,7 @@ Proof.
       try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     { unfold per_intensional in *; introv c.
       apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
-      unfold type_family_members_eq in *; repnd; dands; auto.
-      introv; eapply c1; eauto. }
+      introv; eapply c; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -950,8 +940,7 @@ Proof.
       try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     { unfold per_intensional in *; introv c.
       apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
-      unfold type_family_members_eq in *; repnd; dands; auto.
-      introv; eapply c1; eauto. }
+      introv; eapply c; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -989,8 +978,7 @@ Proof.
       try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     { unfold per_intensional in *; introv c.
       apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
-      unfold type_family_members_eq in *; repnd; dands; auto.
-      introv; eapply c1; eauto. }
+      introv; eapply c; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -1003,8 +991,7 @@ Proof.
       try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     { unfold per_intensional in *; introv c.
       apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
-      unfold type_family_members_eq in *; repnd; dands; auto.
-      introv; eapply c1; eauto. }
+      introv; eapply c; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -1134,8 +1121,7 @@ Proof.
       try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     { unfold per_intensional in *; introv c.
       apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
-      unfold type_family_members_eq in *; repnd; dands; auto.
-      introv; eapply c1; eauto. }
+      introv; eapply c; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -1148,8 +1134,7 @@ Proof.
       try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     { unfold per_intensional in *; introv c.
       apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
-      unfold type_family_members_eq in *; repnd; dands; auto.
-      introv; eapply c1; eauto. }
+      introv; eapply c; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }
@@ -1162,8 +1147,7 @@ Proof.
       try (complete (unfold per_extensional in *; repndors; repnd; tcsp; right; dands; auto; eapply extP0; eauto)).
     { unfold per_intensional in *; introv c.
       apply intP in c; repnd; dands; tcsp; try (complete (eapply c0; eauto)).
-      unfold type_family_members_eq in *; repnd; dands; auto.
-      introv; eapply c1; eauto. }
+      introv; eapply c; eauto. }
     { apply IHn with (i0 := i); sp. }
     split; dands; auto.
     { introv; eapply recb; eauto. }

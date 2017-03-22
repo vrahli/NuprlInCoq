@@ -476,7 +476,7 @@ Proof.
     ccomputes_to_eqval.
     eapply eq_term_equals_trans;[eauto|].
     eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
-    dts_props props uv te tys tyrr tyt tv tes tet tev.
+    dts_props props uv te tys tyls tylt tyt tv tes tet tev.
     eapply uv in h3.
     apply eq_term_equals_per_eq_eq; auto.
 
@@ -489,7 +489,7 @@ Proof.
     { unfold per_extensional; unfold per_extensional in extP; repndors; tcsp; right.
       repnd; dands; auto.
       repeat (autodimp extP0 hyp).
-      dts_props extP0 uv te tys tyrr tyt tv tes tet tev.
+      dts_props extP0 uv te tys tyls tylt tyt tv tes tet tev.
       apply te; auto. }
 
     eapply eq_term_equals_trans;[|eauto].
@@ -511,11 +511,11 @@ Proof.
 
       - left; spcast; apply cequivc_sym; auto.
 
-      - dts_props props uv te tys tyrr tyt tv tes tet tev.
+      - dts_props props uv te tys tyls tylt tyt tv tes tet tev.
         eapply tv; auto.
 
       - eapply eq_term_equals_trans;[exact eqiff|].
-        dts_props props uv te tys tyrr tyt tv tes tet tev.
+        dts_props props uv te tys tyls tylt tyt tv tes tet tev.
         eapply cequiv_per_eq_eq; try (exact cla); auto.
     }
 
@@ -561,6 +561,12 @@ Proof.
       repeat (autodimp extP0 hyp).
       eapply type_system_props_implies_equal; eauto.
     }*)
+
+  - SCase "type_left_symmetric".
+
+    introv cl1 cl2.
+    pose proof (dest_close_per_equality_l lib ts T a b A T3 eq tysys dou comp cl1) as q.
+    unfold per_eq in q; exrepnd; spcast; computes_to_eqval.
 
   - SCase "type_left_transitive".
 
