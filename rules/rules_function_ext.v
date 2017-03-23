@@ -277,6 +277,7 @@ Qed.
 Hint Rewrite @vars_hyps_substitute_hyps : slow.
 
 
+
 (* [23] ============ LAMBDA FORMATION ============ *)
 
 (**
@@ -292,14 +293,13 @@ Hint Rewrite @vars_hyps_substitute_hyps : slow.
      By lambdaFormation lvl(i) z ()
 
      H , z : A |- B[x\z] ext b
-     H , z : A |- B[x\z] in Type(i)
      H |- A in Type(i)
 >>
 
  *)
 
 Definition rule_lambda_formation {o}
-           (A B b e1 e2 : NTerm)
+           (A B b e : @NTerm o)
            (x z  : NVar)
            (i    : nat)
            (H    : @barehypotheses o) :=
@@ -307,18 +307,16 @@ Definition rule_lambda_formation {o}
     (mk_baresequent H (mk_concl (mk_function A x B) (mk_lam z b)))
     [ mk_baresequent (snoc H (mk_hyp z A))
                      (mk_concl (subst B x (mk_var z)) b),
-      mk_baresequent (snoc H (mk_hyp z A))
-                     (mk_concl_mem_ext (subst B x (mk_var z)) (mk_uni i) e1),
-      mk_baresequent H (mk_concl_mem_ext A (mk_uni i) e2) ]
+      mk_baresequent H (mk_concl_mem_ext A (mk_uni i) e) ]
     [sarg_var z].
 
 Lemma rule_lambda_formation_true {o} :
-  forall lib (A B b e1 e2 : NTerm)
+  forall lib (A B b e : NTerm)
          (x z : NVar)
          (i   : nat)
          (H   : @barehypotheses o)
          (bc1 : !LIn z (bound_vars B)),
-    ext_rule_true lib (rule_lambda_formation A B b e1 e2 x z i H).
+    ext_rule_true lib (rule_lambda_formation A B b e x z i H).
 Proof.
   intros.
   unfold rule_lambda_formation, ext_rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -329,7 +327,6 @@ Proof.
   dLin_hyp; exrepnd.
   rename Hyp0 into hyp1.
   rename Hyp1 into hyp2.
-  rename Hyp2 into hyp3.
   destseq; allsimpl; proof_irr; GC.
 
   allunfold @closed_type; allunfold @closed_extract; allsimpl.
@@ -340,7 +337,7 @@ Proof.
   allrw @nh_vars_hyps_snoc; allsimpl.
 
   assert (covered (mk_lam z b) (nh_vars_hyps H)) as cv.
-  { clear hyp1 hyp2 hyp3.
+  { clear hyp1 hyp2.
     allunfold @covered; allsimpl; allrw app_nil_r.
     autorewrite with core list in *.
     allrw @nh_vars_hyps_snoc.
@@ -354,7 +351,7 @@ Proof.
           # !LIn z (free_vars A)
           # !LIn z (vars_hyps H)) as vhyps.
   {
-    clear hyp1 hyp2 hyp3.
+    clear hyp1 hyp2.
     dwfseq.
     sp;
       try (complete (generalize (cg z); sp;
@@ -375,22 +372,205 @@ Proof.
 
   lsubst_tac.
 
-  dands; apply equality_in_function; dands.
+  dands.
 
   {
-    ext_seq_true in hyp3.
-    pose proof (hyp3 s1 s2 sim) as q; exrepnd.
-    lsubst_tac.
-    apply member_if_inhabited in q0; eauto 3 with slow.
+    apply implies_tequality_function.
+
+    -  ext_seq_true in hyp2.
+       pose proof (hyp2 s1 s2 sim hf) as hyp2; exrepnd.
+       lsubst_tac.
+       apply member_if_inhabited in hyp2.
+       apply tequality_if_tequality_in_uni in hyp0; auto.
+
+    - introv ea.
+      ext_seq_true in hyp1.
+      pose proof (hyp1 (snoc s1 (z,a)) (snoc s2 (z,a'))) as q; exrepnd; clear hyp1.
+      repeat (autodimp q hyp).
+
+      { sim_snoc; dands; auto. }
+
+      {
+        introv sim'.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx.
+        apply ext_eq_hyps_snoc; simpl.
+
+        assert (cover_vars A s2a) as cA2
+            by (apply similarity_cover_vars with (t := A) in sim'3; auto).
+
+        exists s1a s2a t1 t2 w c1 cA2; dands; auto.
+
+        - ext_seq_true in hyp2.
+          pose proof (hyp2 s1a s2a sim'3 hf) as wfa; exrepnd.
+          lsubst_tac.
+          apply member_if_inhabited in wfa1.
+          apply tequality_if_tequality_in_uni in wfa0; auto.
+
+        - ext_seq_true in hyp2.
+          pose proof (hyp2 s1a s2a sim'3 hf) as wfa; exrepnd.
+          lsubst_tac.
+          apply member_if_inhabited in wfa1.
+          apply per_intensional_mkc_member_implies in wfa2; auto.
+      }
+
+      exrepnd.
+      clear q1 q2.
+
+      assert (@wf_term o (mk_var z)) as wfz.
+      { eauto 3 with slow. }
+
+      assert (cover_vars (mk_var z) (snoc s1 (z, a))) as cov1z.
+      { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+      assert (cover_vars (mk_var z) (snoc s1 (z, a'))) as cov1z'.
+      { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+      assert (cover_vars (mk_var z) (snoc s2 (z, a))) as cov2z.
+      { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+      assert (cover_vars (mk_var z) (snoc s2 (z, a'))) as cov2z'.
+      { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+      repeat (lsubstc_subst_aeq2;[]).
+      repeat (substc_lsubstc_vars3;[]).
+      repeat (lsubstc_weak;[]).
+      proof_irr; auto.
+      lsubst_tac.
+      repeat (lsubstc_snoc2;[]).
+      proof_irr; auto.
   }
 
   {
-    introv equa.
-    ext_seq_true in hyp2.
-    pose proof (hyp2 (snoc s1 (z,a)) (snoc s2 (z,a'))) as q; exrepnd.
-    autodimp q hyp.
+    eapply PER_INT_FUN;
+      try (spcast; apply computes_to_valc_refl; eauto 3 with slow).
 
-    { sim_snoc; dands; auto. }
+    -  ext_seq_true in hyp2.
+       pose proof (hyp2 s1 s2 sim hf) as hyp2; exrepnd.
+       lsubst_tac.
+       apply member_if_inhabited in hyp2.
+       apply tequality_if_tequality_in_uni in hyp0; auto.
+
+    - introv ea.
+      ext_seq_true in hyp1.
+      pose proof (hyp1 (snoc s1 (z,a1)) (snoc s2 (z,a2))) as q; exrepnd; clear hyp1.
+      repeat (autodimp q hyp).
+
+      { sim_snoc; dands; auto. }
+
+      {
+        introv sim'.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx.
+        apply ext_eq_hyps_snoc; simpl.
+
+        assert (cover_vars A s2a) as cA2
+            by (apply similarity_cover_vars with (t := A) in sim'3; auto).
+
+        exists s1a s2a t1 t2 w c1 cA2; dands; auto.
+
+        - ext_seq_true in hyp2.
+          pose proof (hyp2 s1a s2a sim'3 hf) as wfa; exrepnd.
+          lsubst_tac.
+          apply member_if_inhabited in wfa1.
+          apply tequality_if_tequality_in_uni in wfa0; auto.
+
+        - ext_seq_true in hyp2.
+          pose proof (hyp2 s1a s2a sim'3 hf) as wfa; exrepnd.
+          lsubst_tac.
+          apply member_if_inhabited in wfa1.
+          apply per_intensional_mkc_member_implies in wfa2; auto.
+      }
+
+      exrepnd.
+      clear q1 q2.
+
+      assert (@wf_term o (mk_var z)) as wfz.
+      { eauto 3 with slow. }
+
+      assert (cover_vars (mk_var z) (snoc s1 (z, a1))) as cov1z.
+      { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+      assert (cover_vars (mk_var z) (snoc s1 (z, a2))) as cov1z'.
+      { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+      assert (cover_vars (mk_var z) (snoc s2 (z, a1))) as cov2z.
+      { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+      assert (cover_vars (mk_var z) (snoc s2 (z, a2))) as cov2z'.
+      { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+      repeat (lsubstc_subst_aeq2;[]).
+      repeat (substc_lsubstc_vars3;[]).
+      repeat (lsubstc_weak;[]).
+      proof_irr; auto.
+      lsubst_tac.
+      repeat (lsubstc_snoc2;[]).
+      proof_irr; auto.
+
+    - introv ea.
+      ext_seq_true in hyp1.
+      pose proof (hyp1 (snoc s1 (z,a1)) (snoc s2 (z,a2))) as q; exrepnd; clear hyp1.
+      repeat (autodimp q hyp).
+
+      { sim_snoc; dands; auto. }
+
+      {
+        introv sim'.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx.
+        apply ext_eq_hyps_snoc; simpl.
+
+        assert (cover_vars A s2a) as cA2
+            by (apply similarity_cover_vars with (t := A) in sim'3; auto).
+
+        exists s1a s2a t1 t2 w c1 cA2; dands; auto.
+
+        - ext_seq_true in hyp2.
+          pose proof (hyp2 s1a s2a sim'3 hf) as wfa; exrepnd.
+          lsubst_tac.
+          apply member_if_inhabited in wfa1.
+          apply tequality_if_tequality_in_uni in wfa0; auto.
+
+        - ext_seq_true in hyp2.
+          pose proof (hyp2 s1a s2a sim'3 hf) as wfa; exrepnd.
+          lsubst_tac.
+          apply member_if_inhabited in wfa1.
+          apply per_intensional_mkc_member_implies in wfa2; auto.
+      }
+
+      exrepnd.
+      clear q0 q1.
+
+      assert (@wf_term o (mk_var z)) as wfz.
+      { eauto 3 with slow. }
+
+      assert (cover_vars (mk_var z) (snoc s1 (z, a1))) as cov1z.
+      { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+      assert (cover_vars (mk_var z) (snoc s1 (z, a2))) as cov1z'.
+      { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+      assert (cover_vars (mk_var z) (snoc s2 (z, a1))) as cov2z.
+      { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+      assert (cover_vars (mk_var z) (snoc s2 (z, a2))) as cov2z'.
+      { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
+
+      SearchAbout tequality cequivc.
+      Locate respects_cequivc_tequality.
+
+      XXXXXXXX
+
+      repeat (lsubstc_subst_aeq2;[]).
+      repeat (substc_lsubstc_vars3;[]).
+      repeat (lsubstc_weak;[]).
+      proof_irr; auto.
+      lsubst_tac.
+      repeat (lsubstc_snoc2;[]).
+      proof_irr; auto.
+
+    -
+
+
+XXXXXXXXXXX
 
     exrepnd.
     lsubst_tac.

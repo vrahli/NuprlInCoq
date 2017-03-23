@@ -211,16 +211,95 @@ Proof.
     introv q; apply imp; auto.
 Qed.
 
+Lemma ext_eq_union_iff {o} :
+  forall lib (A1 B1 A2 B2 : @CTerm o),
+    type lib A1
+    -> type lib A2
+    -> type lib B1
+    -> type lib B2
+    -> (ext_eq lib (mkc_union A1 B1) (mkc_union A2 B2)
+        <=> (tequality lib A1 A2 # tequality lib B1 B2)).
+Proof.
+  introv tA1 tA2 tB1 tB2; split; intro h; repnd; dands.
+
+  - apply tequality_iff_ext_eq; dands; auto.
+    introv; split; intro q.
+
+    + pose proof (h (mkc_inl a) (mkc_inl b)) as w; destruct w as [w w']; clear w'.
+      autodimp w hyp.
+
+      { apply equality_mkc_union; dands; auto.
+        left.
+        exists a b; dands; spcast; eauto 3 with slow. }
+
+      { apply equality_mkc_union in w; repnd.
+        repndors; exrepnd; computes_to_value_isvalue. }
+
+    + pose proof (h (mkc_inl a) (mkc_inl b)) as w; destruct w as [w' w]; clear w'.
+      autodimp w hyp.
+
+      { apply equality_mkc_union; dands; auto.
+        left.
+        exists a b; dands; spcast; eauto 3 with slow. }
+
+      { apply equality_mkc_union in w; repnd.
+        repndors; exrepnd; computes_to_value_isvalue. }
+
+  - apply tequality_iff_ext_eq; dands; auto.
+    introv; split; intro q.
+
+    + pose proof (h (mkc_inr a) (mkc_inr b)) as w; destruct w as [w w']; clear w'.
+      autodimp w hyp.
+
+      { apply equality_mkc_union; dands; auto.
+        right.
+        exists a b; dands; spcast; eauto 3 with slow. }
+
+      { apply equality_mkc_union in w; repnd.
+        repndors; exrepnd; computes_to_value_isvalue. }
+
+    + pose proof (h (mkc_inr a) (mkc_inr b)) as w; destruct w as [w' w]; clear w'.
+      autodimp w hyp.
+
+      { apply equality_mkc_union; dands; auto.
+        right.
+        exists a b; dands; spcast; eauto 3 with slow. }
+
+      { apply equality_mkc_union in w; repnd.
+        repndors; exrepnd; computes_to_value_isvalue. }
+
+  - introv.
+    repeat (rw @equality_mkc_union).
+    split; intro q; repnd; dands; auto; repndors; exrepnd.
+
+    + left.
+      exists a1 a2; dands; auto.
+      rw @tequality_iff_ext_eq in h0; repnd.
+      apply h0; auto.
+
+    + right.
+      exists b1 b2; dands; auto.
+      rw @tequality_iff_ext_eq in h; repnd.
+      apply h; auto.
+
+    + left.
+      exists a1 a2; dands; auto.
+      rw @tequality_iff_ext_eq in h0; repnd.
+      apply h0; auto.
+
+    + right.
+      exists b1 b2; dands; auto.
+      rw @tequality_iff_ext_eq in h; repnd.
+      apply h; auto.
+Qed.
+
 Lemma tequality_mkc_union {p} :
   forall lib (A1 B1 A2 B2 : @CTerm p),
     tequality lib (mkc_union A1 B1) (mkc_union A2 B2)
     <=>
     (
-      type lib A1
-      # type lib A2
-      # type lib B1
-      # type lib B2
-      # ext_eq lib (mkc_union A1 B1) (mkc_union A2 B2)
+      tequality lib A1 A2
+      # tequality lib B1 B2
     ).
 Proof.
   introv; split; intro teq; repnd.
@@ -237,41 +316,27 @@ Proof.
 
     allunfold @per_union; exrepnd.
     computes_to_value_isvalue; try (complete (spcast; sp)).
+    eapply eq_term_equals_trans in h2;[|apply eq_term_equals_sym;exact h1].
+    clear h1.
+    eapply nuprl_implies_ext_eq_union in h2; eauto.
+    apply ext_eq_union_iff in h2; tcsp; eauto 3 with slow.
 
-    dands.
+  - unfold tequality in teq0; exrepnd.
+    rename eq into eqa.
+    unfold tequality in teq; exrepnd.
+    rename eq into eqb.
 
-    + exists eqa0; auto.
-    + exists eqa; auto.
-    + exists eqb0; auto.
-    + exists eqb; auto.
+    apply tequality_iff_ext_eq; dands; auto.
 
-    + eapply eq_term_equals_trans in h2;[|apply eq_term_equals_sym;exact h1].
-      clear h1.
-      eapply nuprl_implies_ext_eq_union; eauto.
+    + exists (per_union_eq lib eqa eqb); apply CL_union.
+      exists eqa eqb A1 B1; dands; fold (nuprl lib); spcast; eauto 3 with slow.
 
-  - unfold type in teq0; exrepnd.
-    rename eq into eqa1.
-    unfold type in teq2; exrepnd.
-    rename eq into eqb1.
-    unfold type in teq1; exrepnd.
-    rename eq into eqa2.
-    unfold type in teq3; exrepnd.
-    rename eq into eqb2.
+    + exists (per_union_eq lib eqa eqb); apply CL_union.
+      exists eqa eqb A2 B2; dands; fold (nuprl lib); spcast; eauto 3 with slow.
 
-    apply (nuprl_ext_eq_implies_eq_term_equals
-             _ _ _
-             (per_union_eq lib eqa1 eqb1)
-             (per_union_eq lib eqa2 eqb2)) in teq;
-      [|apply CL_union;unfold per_union;exists eqa1 eqb1 A1 B1;dands;auto;spcast;apply computes_to_valc_refl;eauto 2 with slow
-       |apply CL_union;unfold per_union;exists eqa2 eqb2 A2 B2;dands;auto;spcast;apply computes_to_valc_refl;eauto 2 with slow].
-
-    exists (per_union_eq lib eqa1 eqb1); split; eauto 2 with slow; apply CL_union; unfold per_union.
-
-    + exists eqa1 eqb1 A1 B1; sp; spcast;
-        try (apply computes_to_valc_refl; apply iscvalue_mkc_union).
-
-    + exists eqa2 eqb2 A2 B2; sp; spcast;
-        try (apply computes_to_valc_refl; apply iscvalue_mkc_union).
+    + apply ext_eq_union_iff; dands; eauto 3 with slow.
+      { exists eqa; auto. }
+      { exists eqb; auto. }
 Qed.
 
 Lemma tequality_mkc_or {p} :
@@ -279,11 +344,8 @@ Lemma tequality_mkc_or {p} :
     tequality lib (mkc_or A1 B1) (mkc_or A2 B2)
     <=>
     (
-      type lib A1
-      # type lib A2
-      # type lib B1
-      # type lib B2
-      # ext_eq lib (mkc_or A1 B1) (mkc_or A2 B2)
+      tequality lib A1 A2
+      # tequality lib B1 B2
     ).
 Proof.
   introv; rw @tequality_mkc_union; sp.
@@ -484,9 +546,7 @@ Lemma tequality_bool {o} :
 Proof.
   introv.
   allrw <- @fold_mkc_bool.
-  rw @tequality_mkc_union; dands; auto.
-  introv; split; intro h; apply equality_mkc_union in h;
-    apply equality_mkc_union; repnd; dands; auto.
+  rw @tequality_mkc_union; dands; eauto 3 with slow.
 Qed.
 Hint Resolve tequality_bool : slow.
 
@@ -542,9 +602,7 @@ Lemma tequality_abool {o} :
 Proof.
   introv.
   allrw <- @fold_mkc_abool.
-  rw @tequality_mkc_union; dands; auto.
-  introv; split; intro h; apply equality_mkc_union in h;
-    apply equality_mkc_union; repnd; dands; auto.
+  rw @tequality_mkc_union; dands; eauto 3 with slow.
 Qed.
 Hint Resolve tequality_abool : slow.
 

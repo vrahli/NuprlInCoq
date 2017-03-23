@@ -34,16 +34,32 @@ Require Export sequents.
 
 
 Inductive per_intensional {o} lib (T1 T2 : @CTerm o) : Prop :=
-| PER_EXT :
+| PER_INT_FUN :
     forall A1 v1 B1 A2 v2 B2,
       T1 ===>(lib) (mkc_function A1 v1 B1)
       -> T2 ===>(lib) (mkc_function A2 v2 B2)
       -> tequality lib A1 A2
       -> (forall a1 a2,
              equality lib a1 a2 A1
-             -> per_intensional lib (substc a1 v1 B1) (substc a2 v2 B2)
-                /\ tequality lib (substc a1 v1 B1) (substc a2 v2 B2))
-      -> per_intensional lib T1 T2.
+             -> tequality lib (substc a1 v1 B1) (substc a2 v2 B2))
+      -> (forall a1 a2,
+             equality lib a1 a2 A1
+             -> per_intensional lib (substc a1 v1 B1) (substc a2 v2 B2))
+      -> per_intensional lib T1 T2
+(* This is required by the lambdaFormation rule for example to prove that
+   the domain is per_intensional --- should we say
+       (per_intensional lib a1 a2 \/ a1 ~ a2)?
+ *)
+| PER_INT_EQ :
+    forall a1 a2 A b1 b2 B i,
+      T1 ===>(lib) (mkc_equality a1 a2 A)
+      -> T2 ===>(lib) (mkc_equality b1 b2 B)
+      -> A ===>(lib) (mkc_uni i)
+      -> B ===>(lib) (mkc_uni i)
+      -> per_intensional lib a1 b1
+      -> per_intensional lib a2 b2
+      -> per_intensional lib T1 T2
+.
 
 (*
    Adapted from [eq_hyps].
@@ -200,87 +216,6 @@ Proof.
 Qed.
 
 
-(*
-Definition ext_sequent_true {o} lib (S : @csequent o) : Type :=
-  forall s1 s2,
-    match destruct_csequent S with
-    | cseq_comps H T wh wt ct ec =>
-      forall p : similarity lib s1 s2 H,
-        match ec with
-        | Some (existT _ ext (we, ce)) =>
-          equality
-            lib
-            (lsubstc ext we s1 (s_cover_ex1 lib ext s1 s2 H ce p))
-            (lsubstc ext we s2 (s_cover_ex2 lib ext s1 s2 H ce p))
-            (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
-          /\
-          equality
-            lib
-            (lsubstc ext we s1 (s_cover_ex1 lib ext s1 s2 H ce p))
-            (lsubstc ext we s2 (s_cover_ex2 lib ext s1 s2 H ce p))
-            (lsubstc T wt s2 (s_cover_typ2 lib T s1 s2 H ct p))
-        | None => True
-        end
-    end.
-
-Definition ext_rule_true {o} lib (R : @rule o) : Type :=
-  forall (wg : wf_sequent (goal R))
-         (cg : closed_type_baresequent (goal R))
-         (cargs: args_constraints (sargs R) (hyps (goal R)))
-         (hyps :
-            forall s : baresequent,
-              LIn s (subgoals R)
-              -> {c : wf_csequent s & ext_sequent_true lib (mk_wcseq s c)}),
-    {c : closed_extract_baresequent (goal R)
-     & ext_sequent_true lib (mk_wcseq (goal R) (ext_wf_cseq (goal R) wg cg c))}.
-Hint Unfold ext_rule_true.
-
-Lemma ext_sequent_true_all {o} :
-  forall lib (S : @csequent o),
-    ext_sequent_true lib S
-    <=>
-    forall s1 s2,
-      match destruct_csequent S with
-        | cseq_comps H T wh wt ct ec =>
-            forall (pC1 : cover_vars T s1) (pC2 : cover_vars T s2),
-              similarity lib s1 s2 H
-              -> match ec with
-                   | Some (existT _ ext (we, ce)) =>
-                       forall (pt1 : cover_vars ext s1) (pt2 : cover_vars ext s2),
-                         equality
-                           lib
-                           (lsubstc ext we s1 pt1)
-                           (lsubstc ext we s2 pt2)
-                           (lsubstc T wt s1 pC1)
-                         /\
-                         equality
-                           lib
-                           (lsubstc ext we s1 pt1)
-                           (lsubstc ext we s2 pt2)
-                           (lsubstc T wt s2 pC2)
-                   | None => True
-                 end
-      end.
-Proof.
-  unfold ext_sequent_true; split; intro h;
-    destruct (destruct_csequent S); destruct ec; exrepnd; tcsp; introv;
-      try (complete (apply h; auto)).
-
-  introv sim; introv.
-  pose proof (h s2 s3 sim) as h; repnd.
-
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in h0; auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in h; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt1) in h0; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt1) in h; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt2) in h0; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt2) in h; auto.
-Qed.
-
-
-XXXXXXXXXXXXXXXX
-
-
 Lemma ext_sequent_true_ex {o} :
   forall lib (S : @csequent o),
     ext_sequent_true lib S
@@ -289,33 +224,45 @@ Lemma ext_sequent_true_ex {o} :
       match destruct_csequent S with
         | cseq_comps H T wh wt ct ec =>
           similarity lib s1 s2 H
+          -> ext_hyps_functionality lib s1 H
           -> {pC1 : cover_vars T s1
               & {pC2 : cover_vars T s2
               & match ec with
                 | Some (existT _ ext (we, ce)) =>
                   {pt1 : cover_vars ext s1
                    & {pt2 : cover_vars ext s2
-                   & equality
+                   & tequality
                        lib
-                       (lsubstc ext we s1 pt1)
-                       (lsubstc ext we s2 pt2)
                        (lsubstc T wt s1 pC1)
+                       (lsubstc T wt s2 pC2)
+                   # per_intensional
+                       lib
+                       (lsubstc T wt s1 pC1)
+                       (lsubstc T wt s2 pC2)
                    # equality
                        lib
                        (lsubstc ext we s1 pt1)
                        (lsubstc ext we s2 pt2)
-                       (lsubstc T wt s2 pC2)
+                       (lsubstc T wt s1 pC1)
                   }}
-                | None => True
+                | None =>
+                  tequality
+                       lib
+                       (lsubstc T wt s1 pC1)
+                       (lsubstc T wt s2 pC2)
+                   # per_intensional
+                       lib
+                       (lsubstc T wt s1 pC1)
+                       (lsubstc T wt s2 pC2)
                 end
              }}
       end.
 Proof.
   unfold ext_sequent_true; split; intro h; introv;
-    destruct (destruct_csequent S); destruct ec; exrepnd; tcsp; intro sim; auto.
+    destruct (destruct_csequent S); destruct ec; exrepnd; tcsp; intros sim hf; auto.
 
   {
-    pose proof (h s1 s2 sim) as q.
+    pose proof (h s1 s2 sim hf) as q.
 
     exists (s_cover_typ1 lib T s1 s2 hs ct sim)
            (s_cover_typ2 lib T s1 s2 hs ct sim)
@@ -324,24 +271,32 @@ Proof.
   }
 
   {
+    pose proof (h s1 s2 sim hf) as q; repnd.
     exists (s_cover_typ1 lib T s1 s2 hs ct sim)
            (s_cover_typ2 lib T s1 s2 hs ct sim); sp.
   }
 
   {
-    pose proof (h s1 s2 sim) as q; exrepnd.
+    pose proof (h s1 s2 sim hf) as q; exrepnd.
 
     rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
     rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
     rewrite lsubstc_replace with (w2 := s3) (p2 := pt1); auto.
     rewrite lsubstc_replace with (w2 := s3) (p2 := pt2); auto.
   }
+
+  {
+    pose proof (h s1 s2 sim hf) as q; exrepnd.
+
+    rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
+    rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
+  }
 Qed.
 
 Tactic Notation "ext_seq_true" :=
   rw @ext_sequent_true_all;
   simpl;
-  introv sim;
+  introv sim hf;
   introv;
   proof_irr;
   GC.
@@ -353,36 +308,111 @@ Tactic Notation "ext_seq_true" :=
 Tactic Notation "ext_seq_true" "in" ident(H) :=
   ext_seq_true_ltac H.
 
-
-Definition sp_ext_sequent_true {o} lib (S : @csequent o) : Type :=
-  forall s1 s2,
-    match destruct_csequent S with
-    | cseq_comps H T wh wt ct ec =>
-      forall p : similarity lib s1 s2 H,
-        match ec with
-        | Some (existT _ ext (we, ce)) =>
-          equality
-            lib
-            (lsubstc ext we s1 (s_cover_ex1 lib ext s1 s2 H ce p))
-            (lsubstc ext we s2 (s_cover_ex2 lib ext s1 s2 H ce p))
-            (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
-        | None => True
-        end
-    end.
-
-Lemma ext_sequent_true_iff_sp {o} :
-  forall lib (s : @csequent o), ext_sequent_true lib s <=> sp_ext_sequent_true lib s.
+Lemma ext_eq_hyps_snoc {o} :
+  forall lib (hs : @bhyps o) h s1 s2,
+    ext_eq_hyps lib s1 s2 (snoc hs h)
+    <=>
+    {s1a, s2a : CSub
+     , {t1, t2 : CTerm
+     , {w : wf_term (htyp h)
+     , {p1 : cover_vars (htyp h) s1a
+     , {p2 : cover_vars (htyp h) s2a
+     , s1 = snoc s1a (hvar h, t1)
+     # s2 = snoc s2a (hvar h, t2)
+     # ext_eq_hyps lib s1a s2a hs
+     # eqtypes lib (lvl h) (lsubstc (htyp h) w s1a p1) (lsubstc (htyp h) w s2a p2)
+     # per_intensional lib (lsubstc (htyp h) w s1a p1) (lsubstc (htyp h) w s2a p2)
+    }}}}}.
 Proof.
-  introv; split; introv h; introv.
+  introv; split; intro k; exrepnd; subst.
 
-  - pose proof (h s1 s2) as q.
-    destruct (destruct_csequent s); introv; destruct ec; auto.
-    pose proof (q p) as w; clear q.
-    destruct s0; destruct p0; tcsp.
+  - inversion k; subst; cpx.
+    exists s0 s3 t1 t2 w.
+    exists p1 p2; sp.
 
-  - pose proof (h s1 s2) as q.
-    destruct (destruct_csequent s); introv; destruct ec; auto.
-    pose proof (q p) as w; clear q.
-    destruct s0; destruct p0; dands; auto.
-Abort.
-*)
+  - apply @ext_eq_hyps_cons with (w := w) (p1 := p1) (p2 := p2); sp.
+Qed.
+
+Lemma per_intensional_mkc_equality_implies {o} :
+  forall lib (a1 a2 b1 b2 : @CTerm o) i,
+    per_intensional
+      lib
+      (mkc_equality a1 a2 (mkc_uni i))
+      (mkc_equality b1 b2 (mkc_uni i))
+    -> (per_intensional lib a1 b1
+        # per_intensional lib a2 b2).
+Proof.
+  introv per.
+  inversion per; computes_to_value_isvalue.
+Qed.
+
+Lemma per_intensional_mkc_member_implies {o} :
+  forall lib (a b : @CTerm o) i,
+    per_intensional
+      lib
+      (mkc_member a (mkc_uni i))
+      (mkc_member b (mkc_uni i))
+    -> per_intensional lib a b.
+Proof.
+  introv per.
+  allrw <- @fold_mkc_member.
+  apply per_intensional_mkc_equality_implies in per; tcsp.
+Qed.
+
+Lemma per_intensional_respects_cequivc {o} :
+  forall lib (A1 A2 B1 B2 : @CTerm o),
+    cequivc lib A1 A2
+    -> cequivc lib B1 B2
+    -> per_intensional lib A1 B1
+    -> per_intensional lib A2 B2.
+Proof.
+  introv ceq1 ceq2 per.
+  revert A2 B2 ceq1 ceq2.
+
+  induction per; introv ceq1 ceq2; spcast.
+
+  - eapply cequivc_mkc_function in ceq1;[|eauto]; exrepnd.
+    eapply cequivc_mkc_function in ceq2;[|eauto]; exrepnd.
+
+    eapply PER_INT_FUN; spcast; eauto;
+      eauto 3 with nequality.
+
+    + introv eqa.
+      match goal with
+      | [ H : context[equality _ _ _ _ -> tequality _ _ _ ] |- _ ] =>
+        rename H into h
+      end.
+      assert (equality lib a1 a2 A1) as q.
+      { eapply cequivc_preserving_equality;[eauto|]; apply cequivc_sym; auto. }
+      applydup h in q.
+
+      eapply tequality_respects_cequivc_left;[apply bcequivc1;eauto|].
+      eapply tequality_respects_cequivc_right;[apply bcequivc1;eauto|].
+      auto.
+
+    + introv eqa.
+      match goal with
+      | [ H : context[cequivc _ _ _ -> per_intensional _ _ _ ] |- _ ] =>
+        rename H into h
+      end.
+      assert (equality lib a1 a2 A1) as q.
+      { eapply cequivc_preserving_equality;[eauto|]; apply cequivc_sym; auto. }
+
+      apply (h a1 a2 q); apply bcequivc1; auto.
+
+  - eapply cequivc_mkc_equality in ceq1;[|eauto]; exrepnd.
+    eapply cequivc_mkc_equality in ceq2;[|eauto]; exrepnd.
+    eapply cequivc_uni in ceq0;[|eauto].
+    eapply cequivc_uni in ceq5;[|eauto].
+
+    eapply PER_INT_EQ; spcast; eauto.
+Qed.
+
+Lemma respects_cequivc_per_intensional {o} :
+  forall (lib : @library o), respects2 (cequivc lib) (per_intensional lib).
+Proof.
+  introv; split; introv ceq per.
+  - eapply per_intensional_respects_cequivc;[| |eauto]; eauto 3 with slow.
+  - eapply per_intensional_respects_cequivc;[| |eauto]; eauto 3 with slow.
+Qed.
+Hint Resolve respects_cequivc_per_intensional : respects.

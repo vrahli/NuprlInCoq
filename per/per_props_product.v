@@ -31,7 +31,6 @@
 
 
 Require Export csubst6.
-
 Require Export per_props_uni0.
 
 
@@ -209,6 +208,20 @@ Proof.
 Qed.
  *)
 
+
+Lemma ext_eq_product_iff {p} :
+  forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2,
+    ext_eq lib (mkc_product A1 v1 B1) (mkc_product A2 v2 B2)
+    <=>
+    (
+      tequality lib A1 A2
+      # (forall a a', equality lib a a' A1 -> tequality lib (substc a v1 B1) (substc a' v2 B2))
+    ).
+Proof.
+  introv; split; intro h; repnd; dands.
+
+  -
+Abort.
 
 Lemma tequality_product {p} :
   forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2,
