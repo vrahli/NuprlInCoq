@@ -31,6 +31,7 @@
 
 
 Require Export sequents.
+Require Export csubst6.
 
 
 Inductive per_intensional {o} lib (T1 T2 : @CTerm o) : Prop :=
@@ -408,6 +409,17 @@ Proof.
     eapply PER_INT_EQ; spcast; eauto.
 Qed.
 
+Lemma per_intensional_respects_alphaeqc {o} :
+  forall lib (A1 A2 B1 B2 : @CTerm o),
+    alphaeqc A1 A2
+    -> alphaeqc B1 B2
+    -> per_intensional lib A1 B1
+    -> per_intensional lib A2 B2.
+Proof.
+  introv aeqa aeqb peri.
+  eapply per_intensional_respects_cequivc;[| |eauto]; eauto 3 with slow.
+Qed.
+
 Lemma respects_cequivc_per_intensional {o} :
   forall (lib : @library o), respects2 (cequivc lib) (per_intensional lib).
 Proof.
@@ -416,3 +428,12 @@ Proof.
   - eapply per_intensional_respects_cequivc;[| |eauto]; eauto 3 with slow.
 Qed.
 Hint Resolve respects_cequivc_per_intensional : respects.
+
+Lemma respects_alphaeqc_per_intensional {o} :
+  forall (lib : @library o), respects2 alphaeqc (per_intensional lib).
+Proof.
+  introv; split; introv ceq per.
+  - eapply per_intensional_respects_alphaeqc;[| |eauto]; eauto 3 with slow.
+  - eapply per_intensional_respects_alphaeqc;[| |eauto]; eauto 3 with slow.
+Qed.
+Hint Resolve respects_alphaeqc_per_intensional : respects.

@@ -554,10 +554,6 @@ Proof.
       assert (cover_vars (mk_var z) (snoc s2 (z, a2))) as cov2z'.
       { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
 
-      SearchAbout tequality cequivc.
-      Locate respects_cequivc_tequality.
-
-      XXXXXXXX
 
       repeat (lsubstc_subst_aeq2;[]).
       repeat (substc_lsubstc_vars3;[]).
@@ -566,8 +562,9 @@ Proof.
       lsubst_tac.
       repeat (lsubstc_snoc2;[]).
       proof_irr; auto.
+  }
 
-    -
+  {
 
 
 XXXXXXXXXXX
