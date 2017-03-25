@@ -437,3 +437,151 @@ Proof.
   - eapply per_intensional_respects_alphaeqc;[| |eauto]; eauto 3 with slow.
 Qed.
 Hint Resolve respects_alphaeqc_per_intensional : respects.
+
+Lemma ext_hyps_functionality_snoc {o} :
+  forall lib (H : @bhyps o) h s t,
+    (forall t' s' w c c',
+       equality lib t t' (lsubstc (htyp h) w s c)
+       -> similarity lib s s' H
+       -> eqtypes lib (lvl h) (lsubstc (htyp h) w s c) (lsubstc (htyp h) w s' c')
+          /\ per_intensional lib (lsubstc (htyp h) w s c) (lsubstc (htyp h) w s' c'))
+    -> ext_hyps_functionality lib s H
+    -> ext_hyps_functionality lib (snoc s (hvar h, t)) (snoc H h).
+Proof.
+  introv imp hf sim.
+  rw @similarity_snoc in sim; exrepnd; subst; cpx.
+  rw @ext_eq_hyps_snoc; simpl.
+
+  assert (cover_vars (htyp h) s2a)
+    as c
+      by (clear sim1;
+          allrw @cover_vars_covered; allapply @similarity_dom; exrepnd; allrw; sp;
+          rw <- sim0; sp).
+
+  exists s1a s2a t1 t2 w p c; sp; apply imp with (t' := t2); sp.
+Qed.
+
+Lemma ext_hyps_functionality_snoc2 {o} :
+  forall lib (H : @bhyps o) h s t v,
+    (forall t' s' w c c',
+       equality lib t t' (lsubstc (htyp h) w s c)
+       -> similarity lib s s' H
+       -> eqtypes lib (lvl h) (lsubstc (htyp h) w s c) (lsubstc (htyp h) w s' c')
+          /\ per_intensional lib (lsubstc (htyp h) w s c) (lsubstc (htyp h) w s' c'))
+    -> ext_hyps_functionality lib s H
+    -> v = hvar h
+    -> ext_hyps_functionality lib (snoc s (v, t)) (snoc H h).
+Proof.
+  intros; subst.
+  apply ext_hyps_functionality_snoc; sp.
+Qed.
+
+(** We now generalize Aleksey's definition to handle extra substitutions.
+ * This is needed to state eq_hyps_app. *)
+Inductive ext_sub_eq_hyps {o} (lib : @library o) :
+  @CSub o -> @CSub o
+  -> @CSub o -> @CSub o
+  -> @bhyps o
+  -> [U] :=
+| ext_sub_eq_hyps_nil : forall s1 s2, ext_sub_eq_hyps lib s1 s2 [] [] []
+| ext_sub_eq_hyps_cons :
+    forall (t1 t2 : CTerm)
+           (s1 s2 s3 s4 : CSub)
+           (h  : hypothesis)
+           (hs : barehypotheses)
+           (w  : wf_term (htyp h))
+           (p1 : cover_vars (htyp h) (s3 ++ s1))
+           (p2 : cover_vars (htyp h) (s4 ++ s2))
+           (eqt : eqtypes
+                    lib
+                    (lvl h)
+                    (lsubstc (htyp h) w (s3 ++ s1) p1)
+                    (lsubstc (htyp h) w (s4 ++ s2) p2))
+           (per : per_intensional
+                    lib
+                    (lsubstc (htyp h) w (s3 ++ s1) p1)
+                    (lsubstc (htyp h) w (s4 ++ s2) p2))
+           (seh : ext_sub_eq_hyps lib s3 s4 s1 s2 hs),
+      ext_sub_eq_hyps lib s3 s4 (snoc s1 (hvar h, t1)) (snoc s2 (hvar h, t2)) (snoc hs h).
+Hint Constructors ext_sub_eq_hyps.
+
+Lemma ext_eq_hyps_length {o} :
+  forall lib (hs : @bhyps o) s1 s2,
+    ext_eq_hyps lib s1 s2 hs
+    -> (length s1 = length hs # length s2 = length hs).
+Proof.
+  induction hs using rev_list_indT; simpl; introv eh;
+  inversion eh; subst; simpl; cpx.
+
+  repeat (rewrite length_snoc).
+  discover; sp.
+Qed.
+
+Lemma ext_eq_hyps_app {o} :
+  forall lib (hs1 hs2 : @bhyps o) s1 s2,
+    ext_eq_hyps lib s1 s2 (hs1 ++ hs2)
+    <=>
+    {s1a, s1b, s2a, s2b : CSub
+      , s1 = s1a ++ s1b
+      # s2 = s2a ++ s2b
+      # length s1a = length hs1
+      # length s2a = length hs1
+      # ext_eq_hyps lib s1a s2a hs1
+      # ext_sub_eq_hyps lib s1a s2a s1b s2b hs2}.
+Proof.
+  induction hs2 using rev_list_indT; simpl; sp.
+
+  - rewrite app_nil_r; split; intro k; exrepnd; subst.
+    applydup @ext_eq_hyps_length in k; sp.
+    exists s1 (nil : (@CSub o)) s2 (nil : (@CSub o)); simpl; sp;
+      allrewrite app_nil_r; auto.
+    inversion k1; subst; allrewrite app_nil_r; auto; cpx.
+
+  - rewrite snoc_append_l; split; intro k; exrepnd; subst.
+
+    + inversion k; cpx.
+
+      rw IHhs2 in eqh; sp; subst.
+      exists s1a (snoc s1b (hvar a, t1)) s2a (snoc s2b (hvar a, t2)).
+      repeat (rewrite snoc_append_l); sp.
+
+      apply @ext_sub_eq_hyps_cons with (w := w) (p1 := p1) (p2 := p2); sp.
+
+    + inversion k1; cpx.
+      repeat (rewrite snoc_append_l).
+      apply @ext_eq_hyps_cons with (w := w) (p1 := p1) (p2 := p2); sp.
+      rw IHhs2.
+      exists s1a s1 s2a s2; sp.
+Qed.
+
+Lemma per_intensional_function {o} :
+  forall lib (A1 A2 : @CTerm o) v1 v2 B1 B2,
+    per_intensional lib (mkc_function A1 v1 B1) (mkc_function A2 v2 B2)
+    <=> (tequality lib A1 A2
+         # (forall a1 a2,
+               equality lib a1 a2 A1
+               -> tequality lib (substc a1 v1 B1) (substc a2 v2 B2))
+         # (forall a1 a2,
+               equality lib a1 a2 A1
+               -> per_intensional lib (substc a1 v1 B1) (substc a2 v2 B2))).
+Proof.
+  introv; split; intro h.
+
+  - inversion h; spcast; computes_to_value_isvalue.
+
+  - repnd.
+    eapply PER_INT_FUN; spcast; eauto 3 with slow.
+Qed.
+
+Lemma ext_sub_eq_hyps_dom {o} :
+  forall lib (hs : @bhyps o) s1 s2 s3 s4,
+    ext_sub_eq_hyps lib s3 s4 s1 s2 hs
+    -> dom_csub s1 = vars_hyps hs
+       # dom_csub s2 = vars_hyps hs.
+Proof.
+  induction hs using rev_list_indT; simpl; introv seh; inversion seh; subst; allsimpl; cpx.
+  repeat (rewrite dom_csub_snoc); simpl.
+  rewrite vars_hyps_snoc.
+  discover; repnd.
+  allrw; sp.
+Qed.
