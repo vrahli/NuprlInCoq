@@ -51,7 +51,7 @@ Inductive per_intensional {o} lib (T1 T2 : @CTerm o) : Prop :=
    the domain is per_intensional --- should we say
        (per_intensional lib a1 a2 \/ a1 ~ a2)?
  *)
-| PER_INT_EQ :
+| PER_INT_EQ_UNI :
     forall a1 a2 A b1 b2 B i,
       T1 ===>(lib) (mkc_equality a1 a2 A)
       -> T2 ===>(lib) (mkc_equality b1 b2 B)
@@ -59,6 +59,18 @@ Inductive per_intensional {o} lib (T1 T2 : @CTerm o) : Prop :=
       -> B ===>(lib) (mkc_uni i)
       -> per_intensional lib a1 b1
       -> per_intensional lib a2 b2
+      -> per_intensional lib T1 T2
+| PER_INT_EQ_NOT_UNI_LEFT :
+    forall a1 a2 A b1 b2 B,
+      T1 ===>(lib) (mkc_equality a1 a2 A)
+      -> T2 ===>(lib) (mkc_equality b1 b2 B)
+      -> (forall i, ~ (A ===>(lib) (mkc_uni i)))
+      -> per_intensional lib T1 T2
+| PER_INT_EQ_NOT_UNI_RIGHT :
+    forall a1 a2 A b1 b2 B,
+      T1 ===>(lib) (mkc_equality a1 a2 A)
+      -> T2 ===>(lib) (mkc_equality b1 b2 B)
+      -> (forall i, ~ (B ===>(lib) (mkc_uni i)))
       -> per_intensional lib T1 T2
 .
 
@@ -344,7 +356,11 @@ Lemma per_intensional_mkc_equality_implies {o} :
         # per_intensional lib a2 b2).
 Proof.
   introv per.
-  inversion per; computes_to_value_isvalue.
+  inversion per; computes_to_value_isvalue;
+    try (complete (match goal with
+                   | [ H : context[~ _] |- _ ] =>
+                     pose proof (H i) as q; destruct q; spcast; eauto 3 with slow
+                   end)).
 Qed.
 
 Lemma per_intensional_mkc_member_implies {o} :
@@ -406,7 +422,31 @@ Proof.
     eapply cequivc_uni in ceq0;[|eauto].
     eapply cequivc_uni in ceq5;[|eauto].
 
-    eapply PER_INT_EQ; spcast; eauto.
+    eapply PER_INT_EQ_UNI; spcast; eauto.
+
+  - eapply cequivc_mkc_equality in ceq1;[|eauto]; exrepnd.
+    eapply cequivc_mkc_equality in ceq2;[|eauto]; exrepnd.
+
+    eapply PER_INT_EQ_NOT_UNI_LEFT; spcast; eauto.
+    introv h; spcast.
+    apply cequivc_sym in ceq0.
+    eapply cequivc_uni in ceq0;[|eauto].
+
+    match goal with
+    | [ H : context[~ _] |- _ ] => pose proof (H i) as q;destruct q;spcast;auto
+    end.
+
+  - eapply cequivc_mkc_equality in ceq1;[|eauto]; exrepnd.
+    eapply cequivc_mkc_equality in ceq2;[|eauto]; exrepnd.
+
+    eapply PER_INT_EQ_NOT_UNI_RIGHT; spcast; eauto.
+    introv h; spcast.
+    apply cequivc_sym in ceq5.
+    eapply cequivc_uni in ceq5;[|eauto].
+
+    match goal with
+    | [ H : context[~ _] |- _ ] => pose proof (H i) as q;destruct q;spcast;auto
+    end.
 Qed.
 
 Lemma per_intensional_respects_alphaeqc {o} :

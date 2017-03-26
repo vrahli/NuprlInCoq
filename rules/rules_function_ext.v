@@ -40,7 +40,9 @@ Require Export sequents_equality.
 Require Export rules_tyfam.
 Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
+
 Require Export sequents_ext.
+Require Export types_converge.
 
 
 (** printing |- $\vdash$ *)
@@ -1041,7 +1043,35 @@ Proof.
         repeat (lsubstc_weak;[]).
         proof_irr; auto.
 
-    - (* Where should that come from? *)
+    - applydup per in eqa as perint.
+      applydup per1 in eqa as teqb.
+
+      (* We should check whether the first type in teqb computes to U(i).
+
+         If it does, could we prove that second one also computes to U(i)?
+         (We won't be able to prove that because the set type {x : U(i) | True}
+          is extensionally equal to U(i) but doesn't compute to U(i).)
+
+         If it would, then we have to update the definition of per_intensional
+         and the definition of the truth of sequents as in my email.
+
+         Otherwise, we're done.
+       *)
+
+XXXXXXXXX
+
+      repeat (lsubstc_subst_aeq2;[]).
+      repeat (substc_lsubstc_vars3;[]).
+      repeat (lsubstc_weak;[]).
+      proof_irr.
+      lsubst_tac.
+
+      SearchAbout (lsubstc (subst _ _ _) _ _ _).
+
+      SearchAbout tequality mkc_function.
+
+
+      (* Where should that come from? *)
   }
 
 
