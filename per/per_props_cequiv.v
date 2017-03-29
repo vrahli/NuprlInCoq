@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -29,9 +30,70 @@
 *)
 
 
-Require Export per_props_more.
+Require Export nuprl_props.
+Require Export choice.
+Require Export cvterm.
 
 
+Lemma mkc_cequiv_equality_in_uni {p} :
+  forall lib (a b c d : @CTerm p) i,
+    equality lib (mkc_cequiv a b) (mkc_cequiv c d) (mkc_uni i)
+    <=>
+    (ccequivc lib a b <=> ccequivc lib c d).
+Proof.
+  sp; sp_iff Case; intro e.
+
+  - Case "->".
+    unfold equality in e; exrepnd.
+    allunfold @nuprl.
+    inversion e1; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepnd.
+    computes_to_value_isvalue; GC.
+    rw h0 in e0; exrepnd.
+    inversion e2; try not_univ.
+
+  - Case "<-".
+    exists (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}); sp.
+    apply CL_init.
+    exists (S i); simpl; left; sp;
+    spcast; try computes_to_value_refl.
+    exists (fun t t' : @CTerm p => t ===>(lib) mkc_axiom
+                      # t' ===>(lib) mkc_axiom
+                      # ccequivc lib a b).
+    apply CL_cequiv; unfold per_cequiv.
+    exists a b c d; sp; spcast; try computes_to_value_refl.
+Qed.
+
+Lemma mkc_approx_equality_in_uni {p} :
+  forall lib (a b c d : @CTerm p) i,
+    equality lib (mkc_approx a b) (mkc_approx c d) (mkc_uni i)
+    <=>
+    (capproxc lib a b <=> capproxc lib c d).
+Proof.
+  sp; sp_iff Case; intro e.
+
+  - Case "->".
+    unfold equality in e; exrepnd.
+    unfold nuprl in e1.
+    inversion e1; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepnd.
+    computes_to_value_isvalue; GC.
+    rw h0 in e0; exrepnd.
+    inversion e2; try not_univ.
+
+  - Case "<-".
+    exists (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}); sp.
+    apply CL_init.
+    exists (S i); simpl; left; sp;
+    spcast; try computes_to_value_refl.
+    exists (fun t t' : @CTerm p => t ===>(lib) mkc_axiom
+                      # t' ===>(lib) mkc_axiom
+                      # capproxc lib a b).
+    apply CL_approx; unfold per_approx.
+    exists a b c d; sp; spcast; try computes_to_value_refl.
+Qed.
 
 Lemma member_approx_refl {p} :
   forall lib t, @member p lib mkc_axiom (mkc_approx t t).
@@ -380,71 +442,6 @@ Proof.
   - rw @equality_in_mkc_cequiv in h0; tcsp.
   - exists (@mkc_axiom o).
     apply member_cequiv_iff; auto.
-Qed.
-
-Lemma tequality_false {p} :
-  forall lib, @tequality p lib mkc_false mkc_false.
-Proof.
-  introv.
-  rw @mkc_false_eq.
-  rw @tequality_mkc_approx; split; intro k; spcast;
-  apply not_axiom_approxc_bot in k; sp.
-Qed.
-Hint Immediate tequality_false.
-
-Lemma tequality_void {p} :
-  forall lib, @tequality p lib mkc_void mkc_void.
-Proof.
-  introv; rw @mkc_void_eq_mkc_false; sp.
-Qed.
-Hint Immediate tequality_void.
-
-Lemma tequality_not {p} :
-  forall lib (A1 A2 : @CTerm p),
-    tequality lib (mkc_not A1) (mkc_not A2)
-    <=>
-    tequality lib A1 A2.
-Proof.
-  intros.
-  rw @tequality_fun; split; sp.
-Qed.
-
-Lemma equality_in_false {p} :
-  forall lib (t1 t2 : @CTerm p), equality lib t1 t2 mkc_false <=> False.
-Proof.
-  introv; split; intro e; sp.
-  rw @mkc_false_eq in e.
-  rw <- @equality_in_approx in e; repnd; spcast.
-  allapply @not_axiom_approxc_bot; sp.
-Qed.
-
-Lemma equality_in_void {p} :
-  forall lib (t1 t2 : @CTerm p), equality lib t1 t2 mkc_void <=> False.
-Proof.
-  introv.
-  rw @mkc_void_eq_mkc_false; sp.
-  apply equality_in_false.
-Qed.
-
-Lemma equality_in_not {p} :
-  forall lib (t1 t2 A : @CTerm p),
-    equality lib t1 t2 (mkc_not A)
-    <=>
-    (type lib A # !inhabited_type lib A).
-Proof.
-  introv.
-  rw @equality_in_fun; split; intro e; repnd; dands; auto; try (complete sp).
-
-  intro inh.
-  destruct inh.
-  discover.
-  allapply @equality_in_void; sp.
-
-  introv ea.
-  apply equality_in_void.
-  apply e.
-  exists a.
-  allapply @equality_refl; auto.
 Qed.
 
 Lemma inhabited_halts {p} :

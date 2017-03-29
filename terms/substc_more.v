@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -477,6 +478,50 @@ Proof.
   repeat unfsubst.
 Qed.
 
+Lemma substc2_requality {o} :
+  forall v x (w : @CTerm o) (a b c : CVTerm [v,x]),
+    substc2 v w x (mkcv_requality [v,x] a b c)
+    = mkcv_requality [v] (substc2 v w x a) (substc2 v w x b) (substc2 v w x c).
+Proof.
+  introv.
+  destruct_cterms.
+  apply cvterm_eq; simpl.
+  repeat unfsubst.
+Qed.
+
+Lemma substc2_rmember {o} :
+  forall v x (w : @CTerm o) (t u : CVTerm [v,x]),
+    substc2 v w x (mkcv_rmember [v,x] t u)
+    = mkcv_rmember [v] (substc2 v w x t) (substc2 v w x u).
+Proof.
+  introv.
+  destruct_cterms.
+  apply cvterm_eq; simpl.
+  repeat unfsubst.
+Qed.
+
+Lemma mkcv_requality_substc {o} :
+  forall v a b c (t : @CTerm o),
+    substc t v (mkcv_requality [v] a b c)
+    = mkc_requality (substc t v a) (substc t v b) (substc t v c).
+Proof.
+  introv.
+  destruct_cterms.
+  apply cterm_eq; simpl.
+  repeat unfsubst.
+Qed.
+
+Lemma mkcv_rmember_substc {o} :
+  forall v a b (t : @CTerm o),
+    substc t v (mkcv_rmember [v] a b)
+    = mkc_rmember (substc t v a) (substc t v b).
+Proof.
+  introv.
+  destruct_cterms.
+  apply cterm_eq; simpl.
+  repeat unfsubst.
+Qed.
+
 Lemma substc2_mk_cv_app_l {o} :
   forall (u : @CTerm o) v x (t : CVTerm [x]),
     substc2 v u x (mk_cv_app_l [v] [x] t)
@@ -773,10 +818,3 @@ Proof.
   introv.
   apply cvterm_eq; simpl; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

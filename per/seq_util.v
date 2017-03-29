@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -31,11 +32,12 @@
 
 Require Export cequiv_seq_util.
 Require Export sequents_tacs2.
-Require Export per_props4.
+(*Require Export per_props4.*)
 Require Export per_can.
 Require Export per_props_atom.
 Require Export per_props_ffatom.
-
+Require Export per_props_squash.
+Require Export per_props_nat2.
 
 
 (* !!MOVE *)
@@ -293,11 +295,3 @@ Definition fun_sim_eq {o} lib s1 H (t : @NTerm o) w (u : CTerm) :=
    & {c2 : cover_vars t s2
    & similarity lib s1 s2 H
    # u = lsubstc t w s2 c2}}.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

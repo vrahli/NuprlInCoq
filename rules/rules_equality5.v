@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -32,7 +33,7 @@
 Require Export sequents2.
 Require Export sequents_tacs.
 Require Export sequents_equality.
-Require Export per_props_equality2.
+Require Export per_props_equality.
 
 
 (*

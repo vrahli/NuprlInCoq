@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -31,7 +32,8 @@
 
 Require Export bar_induction2.
 Require Export subst_tacs.
-
+Require Export per_props_equality.
+Require Export lsubstc_vars.
 
 
 Lemma eq_kseq_of_seq {o} :
@@ -991,10 +993,3 @@ Proof.
     apply inhabited_type_if_equality in hf1.
     dands; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../close/" "../per/" "../cequiv/" "../terms/" "../computation/" "../continuity/" "../util/")
-*** End:
-*)

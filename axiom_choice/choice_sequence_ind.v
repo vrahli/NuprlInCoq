@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -31,9 +32,10 @@
 
 Require Export csubst8.
 Require Export substc_more.
-Require Export per_props4.
+Require Export per_props_equality.
 Require Export per_props_squash.
 Require Export seq_util2.
+Require Export lsubstc_vars.
 
 
 Lemma type_implies_tequality_refl {o} :

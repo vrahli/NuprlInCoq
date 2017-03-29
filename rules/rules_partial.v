@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -26,8 +32,12 @@
 
 Require Export rules_useful.
 Require Export domain_th.
-Require Export per_props_equality2.
+Require Export per_props_equality.
 Require Export per_props_equality_more.
+Require Export per_props_iff.
+Require Export per_props_admiss.
+Require Export per_props_mono.
+Require Export per_props_partial.
 Require Export sequents_equality.
 
 (** printing #  $\times$ #×# *)
@@ -61,111 +71,7 @@ Require Export sequents_equality.
 (* begin hide *)
 
 
-
-
-Lemma member_admiss_is_axiom {o} :
-  forall lib (T a b : @CTerm o),
-    equality lib a b (mkc_admiss T)
-    -> a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom.
-Proof.
-  unfold equality, nuprl; introv e; exrepd.
-  inversion c; subst; try not_univ.
-
-
-  allunfold @per_admiss; allunfold @per_admiss_eq; exrepnd.
-  computes_to_value_isvalue.
-  match goal with
-      [H1 : eq _ _ , H2:eq_term_equals _ _ |- _] => apply H2 in H1
-  end. repnd. auto.
-Qed.
-
-
-
-(*
-Lemma mkc_admiss_inhabited: 
-  forall T, member mkc_axiom (mkc_admiss T)
-  -> admissible_equality (get_per_of T).
-Proof.
-  introv Hmc.
-  repnud Hmc.
-Qed.
-*)
-
-
-Lemma member_mono_is_axiom {o} :
-  forall lib (T a b : @CTerm o),
-    equality lib a b (mkc_mono T)
-    -> a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom.
-Proof.
-  unfold equality, nuprl; introv e; exrepd.
-  inversion c; subst; try not_univ.
-
-  allunfold @per_mono; allunfold @per_mono_eq; exrepnd.
-  computes_to_value_isvalue.
-  match goal with
-      [H1 : eq _ _ , H2:eq_term_equals _ _ |- _] => apply H2 in H1
-  end. repnd. auto.
-Qed.
-
-Lemma equality_in_mkc_mono {o} :
-  forall lib (A t1 t2 : @CTerm o),
-    equality lib t1 t2 (mkc_mono A)
-    <=> {eqa : term_equality , t1 ===>(lib) mkc_axiom # t2 ===>(lib) mkc_axiom 
-      # close lib (univ lib) A A eqa # mono_equality lib eqa}.
-Proof.
-  introv; split; intro i.
-
-  - applydup @member_mono_is_axiom in i; repnd;
-    allunfold @equality; allunfold @nuprl; exrepnd.
-    inversion i3; subst; try not_univ.
-    allunfold @per_eq; exrepnd. dands; spcast;
-    allunfold @per_mono; exrepnd; exists eqa; dands; computes_to_value_isvalue;
-    spcast; auto.
-    match goal with
-      [H1 : eq _ _ , H2:eq_term_equals _ _ |- _] => apply H2 in H1; clear H2
-    end.
-      allunfold @per_mono_eq. repnd; auto.
-
-  -   repnd.
-      allunfold @type.
-      allunfold @tequality. exrepnd.
-      allunfold @equality; allunfold @nuprl; exrepnd.
-      exists (fun t t' : @CTerm o => ccomputes_to_valc lib t mkc_axiom
-              # ccomputes_to_valc lib t' mkc_axiom
-              # mono_equality lib eqa); sp.
-      apply CL_mono.
-      unfold per_mono.
-      exists A A eqa; sp; spcast;
-      try (apply computes_to_valc_refl);
-      try (apply iscvalue_mkc_mono; auto).
-Qed.
-
-(*
-(* !! MOVE  *)
-Lemma equality_in_nodep_fun_implies :
-  forall f g A B,
-    equality f g (mkc_fun A B)
-    ->
-    (type A # forall a a' : CTerm, equality a a' A -> type B)
-     # (forall a a',
-          equality a a' A
-          -> equality (mkc_apply f a) (mkc_apply g a') B).
-Proof.
-  introv. rw <- fold_mkc_fun.
-  rw equality_in_function. introv Hyp.
-  exrepnd; dands; auto; introv Heq.
-  - apply Hyp1 in Heq.
-    rw substc_cnewvar in Heq.
-    rw substc_cnewvar in Heq.
-    auto.
-  - apply Hyp in Heq.
-    rw substc_cnewvar in Heq. auto.
-Qed.
-*)
-
-
 Hint Resolve tequality_trans tequality_sym tequality_refl: tequality_equiv.
-
 (* MOVE to csubst? *)
 Hint Resolve cequivc_mkcfix : cequivc_congr.
 
@@ -204,164 +110,7 @@ match goal with
 end.
 *)
 
-Lemma  tequality_mkc_partial_eq {o} :
-  forall lib eq T,
-  nuprl lib (mkc_partial T) (mkc_partial T) eq
-  <=> {eqt : term-equality,  nuprl lib T T eqt
-        # (forall a : @CTerm o, eqt a a -> chaltsc lib a)
-        # eq_term_equals eq (per_partial_eq lib eqt)}.
-Proof.
-  introv; split; introv X.
-  - invertsn X; subst; try not_univ.
-    allunfold @per_partial; exrepnd; spcast; computes_to_value_isvalue.
-    allunfold @eq_term_equals; discover.
-    allunfold @per_partial_eq. exrepnd.
-    exists eqa.
-    dands; sp.
-  - exrepnd.
-    apply CL_partial.
-    unfold per_partial.
-    exists T T eqt.
-    dands; spcast; auto;
-    try (apply computes_to_valc_refl; apply iscvalue_mkc_partial).
-Qed.
-
-Lemma equality_partial_in_uni {o} :
-  forall lib i (T1 T2 : @CTerm o),
-  equality lib (mkc_partial T1) (mkc_partial T2) (mkc_uni i)
-  <=> (equality lib T1 T2 (mkc_uni i) # (forall t, member lib t T1 -> chaltsc lib t)).
-Proof.
-  introv; split; intro teq; repnd.
-
-  - destruct teq as [eq n]; repnd.
-    inversion n0; subst; try not_univ.
-    duniv j h.
-    allrw @univi_exists_iff; exrepnd.
-    computes_to_value_isvalue; GC.
-    rw h0 in n; exrepnd.
-    inversion n1; try not_univ.
-    allunfold @per_partial; exrepnd; spcast; computes_to_value_isvalue.
-    allfold (@nuprli o lib j0).
-    dands.
-    exists eq.
-    dands; auto.
-    allrw.
-    exists eqa0; auto.
-    introv m.
-    destruct m as [eqa' m]; repnd.
-    allapply @nuprli_implies_nuprl.
-    generalize (nuprl_uniquely_valued lib A1 eqa0 eqa'); intro k; repeat (autodimp k hyp).
-    apply (nuprl_refl lib A1 A2); auto.
-    apply k in m; discover; auto.
-
-  - destruct teq0 as [eq n]; repnd.
-    exists eq; dands; auto.
-    inversion n0; subst; try not_univ.
-    duniv j h.
-    allrw @univi_exists_iff; exrepnd.
-    computes_to_value_isvalue; GC.
-    rw h0 in n; exrepnd.
-    allfold (@nuprli o lib j0).
-    allrw.
-    exists (per_partial_eq lib eqa).
-    apply CL_partial.
-    exists T1 T2 eqa.
-    dands; spcast; auto;
-    try (apply computes_to_valc_refl; apply iscvalue_mkc_partial).
-    introv m.
-    apply teq.
-    exists eqa; sp.
-    allapply @nuprli_implies_nuprl.
-    apply nuprl_refl in n1; auto.
-Qed.
-
 (* end hide *)
-
-(** %\noindent% We first characterize
-    the central content of the formation rule for partial types.
-    The proof is a straightforward consequence of the definition of
-    [per_partial]. Like Crary%\cite{Crary:1998}%, we can form the 
-    partial type 
-    [mkc_partial T]
-    only if the [T] is a total type.
-    A type is a total type if all its members converge to a value.
-    [chaltsc] is a lifted version of [hasvalue], i.e.,
-    [chaltsc t] asserts [t] converges to a cononical form.
-    
-*)
-
-
-Lemma tequality_mkc_partial {o} :
-  forall lib (T1 T2 : @CTerm o),
-  tequality lib (mkc_partial T1) (mkc_partial T2)
-  <=> (tequality lib T1 T2 # (forall t, member lib t T1 -> chaltsc lib t)).
-Proof.
-  introv; split; intro teq; repnd.
-
-  - destruct teq as [eq n].
-    inversion n; subst; try not_univ.
-    allunfold @per_partial; exrepnd; spcast; computes_to_value_isvalue.
-    allfold @nuprl.
-    dands.
-    exists eqa; sp.
-    introv m.
-    destruct m as [eqa' m]; repnd.
-    generalize (nuprl_uniquely_valued lib A1 eqa eqa'); intro k; repeat (autodimp k hyp).
-    apply (nuprl_refl lib A1 A2); auto.
-    apply k in m; discover; auto.
-
-  - destruct teq0 as [eq n].
-    exists (per_partial_eq lib eq).
-    apply CL_partial.
-    exists T1 T2 eq.
-    dands; spcast; auto;
-    try (apply computes_to_valc_refl; apply iscvalue_mkc_partial).
-    introv m.
-    apply teq.
-    exists eq; sp.
-    apply nuprl_refl in n; auto.
-Qed.
-
-
-(** %\noindent% Now, We characterize when two elements are equal in a
-     partial type.
-    The proof is a straightforward consequence of the definition of
-    [per_partial_eq] that is used in [per_partial].
-*)
-
-Lemma equality_in_mkc_partial {o} :
-  forall lib (t t' T : @CTerm o),
-    equality lib t t' (mkc_partial T)
-    <=> (type lib (mkc_partial T)
-        # (chaltsc lib t <=> chaltsc lib t')
-        # (chaltsc lib t -> equality lib t t' T)).
-Proof.
-  intros; split; intro e.
-
-  - unfold equality in e; exrepnd.
-    inversion e1; subst; try not_univ.
-    allunfold @per_partial; exrepnd; spcast; computes_to_value_isvalue.
-    allunfold @eq_term_equals; discover.
-    allunfold @per_partial_eq. exrepnd.
-    dands; auto; [exists eq; sp  |introv Hyp].
-    unfold equality.
-    exists eqa.
-    dands; auto.
-
-  - exrepnd.
-    unfold type, tequality in e0; exrepnd.
-    apply tequality_mkc_partial_eq in e2. exrepnd.
-    exists (per_partial_eq lib eqt); dands; auto.
-    + apply CL_partial; unfold per_partial.
-      exrepnd. exists T T eqt; sp; spcast;
-      try (apply computes_to_valc_refl; apply iscvalue_mkc_partial).
-    + unfold per_partial_eq. dands; auto.
-      introv Hc.
-      apply e in Hc.
-      repnud Hc.
-      exrepnd.
-      apply (nuprl_uniquely_valued lib T _ eqt ) in Hc0;auto.
-Qed.
 
 (* begin hide *)
 
@@ -1227,41 +976,6 @@ Qed.
   is easier to understand.
 *)
 
-Ltac equality_unique:= let H := fresh "Huniq" in
-allunfold nuprl;
-match goal with
-| [ H1: close ?lib (univ ?lib) ?T1 ?T1 _ , H2 : close ?lib (univ ?lib) ?T1 ?T1 _ |- _ ] => 
-    pose proof (nuprl_uniquely_valued lib _ _ _ H1 H2) as H
-end.
-
-(** The following lemma expresses the key property of Mono types.
-    Intuitively a type [T] is mono (i.e. [mkc_mono T] is inhabited) if,  whenever we
-    have some [a] in that type, anything above it in the 
-    [approx] ordering (say [b]) is equal to it.
-
-*)
-    
-Lemma mono_inhabited_implies {o} : forall lib T,
-member lib mkc_axiom (mkc_mono T)
--> (forall (a b : @CTerm o),
-        member lib a T
-        -> approxc lib a b
-        -> equality lib a b T).
-Proof.
-  introv Hm.
-  apply equality_in_mkc_mono in Hm.
-  exrepnd.
-  clear Hm1 Hm2.
-  repnud Hm0.
-  introv Hm Hap.
-  repnud Hm.  repnud Hm.
-  exrepnd.
-  equality_unique.
-  apply Huniq in Hm1.
-  eapply Hm0 in Hap; eauto;[].
-  exists eqa. dands; auto.
-Qed.
-
 (**
   Fixpoint principle for Mono types:
 <<
@@ -1331,28 +1045,6 @@ Proof.
   eauto.
 Qed.
 (* begin hide *)
-
-Lemma not_chavaluec_bot {o} : forall lib, @chaltsc o lib mkc_bot -> False.
-Proof.
-  introv Hsc.
-  spcast.
-  allunfold @hasvaluec.
-  allunfold @mkc_bot.
-  allsimpl.
-  apply (not_hasvalue_bot lib); auto.
-Qed.
-
-Lemma bot_in_partial_type {o} : forall lib (T : @CTerm o),
-  type lib (mkc_partial T)
-  -> equality lib mkc_bot mkc_bot (mkc_partial T).
-Proof.
-  introv Ht.
-  apply equality_in_mkc_partial.
-  dands; auto;[].
-  introv Hc.
-  provefalse.
-  apply (not_chavaluec_bot lib); auto.
-Qed.
 
 (* end hide *)
 
@@ -1688,7 +1380,7 @@ Proof.
   auto.
 Qed.
 
-Definition admissible_equality_no_context {o} (eq : term-equality) :=
+Definition admissible_equality_no_context {o} (eq : per) :=
   forall  (f : @CTerm o),
     {j: nat, forall k : nat, k > j -> eq (fix_approxc k f) (fix_approxc k f) }
     -> eq (mkc_fix f) (mkc_fix f).
@@ -1713,7 +1405,7 @@ Proof.
 Qed.
 
 Definition cofinite_subst_fapprox_eqc_new {o}
-           (eq : term-equality)
+           (eq : per)
            {v: NVar}
            (e e' : CVTerm [v])
            (f f' : @CTerm o) :=
@@ -1722,12 +1414,12 @@ Definition cofinite_subst_fapprox_eqc_new {o}
          k>j -> eq (subst_fapproxc e f k) (subst_fapproxc e' f' k)}.
 
 Definition subst_fix_eqc_new {o}
-           (eq : term-equality)
+           (eq : per)
            {v: NVar}
            (e e' : CVTerm [v])
            (f f' : @CTerm o) :=
   eq (subst_fixc e f)  (subst_fixc e' f').
-  
+
 Definition admissible_equality_new {o} (eq : per(o)) :=
   forall v (e e' : CVTerm [v]) (f f' : CTerm),
     cofinite_subst_fapprox_eqc_new eq e e' f f'
@@ -1843,34 +1535,6 @@ Proof.
   apply Had. exists j.
   introv Hgt.
   allrw @substc_cvterm_nvarx. eauto.
-Qed.
-
-Lemma tequality_mono {o} :
-  forall lib (A1 A2 : @CTerm o),
-    tequality lib (mkc_mono A1) (mkc_mono A2)
-    <=> tequality lib A1 A2.
-Proof.
-  intros.
-  sp_iff Case.
-
-  - Case "->".
-    intros teq.
-    unfold tequality, nuprl in teq; exrepnd.
-    inversion teq0; subst; try not_univ.
-    allunfold @per_mono; exrepnd.
-    computes_to_value_isvalue.
-    allfold @nuprl.
-    dands.
-    exists eqa; auto.
-
-  - Case "<-".
-    intro teq.
-    unfold tequality in teq; destruct teq as [eqa n].
-    exists (per_mono_eq lib eqa).
-    apply CL_mono.
-    unfold per_mono.
-    exists A1 A2 eqa; dands; fold @nuprl; auto;
-    try (complete (spcast; apply computes_to_valc_refl; apply_iscvalue)).
 Qed.
 
 
@@ -3146,39 +2810,6 @@ Qed.
  *)
 
 
-Lemma equality_in_mkc_admiss {o} :
-  forall lib (A t1 t2 : @CTerm o),
-    equality lib t1 t2 (mkc_admiss A)
-    <=> {eqa : term_equality ,  t1 ===>(lib) mkc_axiom # t2 ===>(lib) mkc_axiom
-      # close lib (univ lib) A A eqa # admissible_equality eqa}.
-Proof.
-  introv; split; intro i.
-
-  - applydup @member_admiss_is_axiom in i; repnd;
-    allunfold @equality; allunfold @nuprl; exrepnd.
-    inversion i3; subst; try not_univ.
-    allunfold @per_eq; exrepnd. dands; spcast;
-    allunfold @per_admiss; exrepnd; exists eqa; dands; computes_to_value_isvalue;
-    spcast; auto.
-    match goal with
-      [H1 : eq _ _ , H2:eq_term_equals _ _ |- _] => apply H2 in H1; clear H2
-    end.
-      allunfold @per_admiss_eq. repnd; auto.
-
-  -   repnd.
-      allunfold @type.
-      allunfold @tequality. exrepnd.
-      allunfold @equality; allunfold @nuprl; exrepnd.
-      exists (fun t t' : @CTerm o => ccomputes_to_valc lib t mkc_axiom
-              # ccomputes_to_valc lib t' mkc_axiom
-              # admissible_equality eqa); sp.
-      apply CL_admiss.
-      unfold per_admiss.
-      exists A A eqa; sp; spcast;
-      try (apply computes_to_valc_refl);
-      try (apply iscvalue_mkc_admiss; auto).
-Qed.
-
 (**
 
   Fixpoint principle for Admissible types:
@@ -3345,12 +2976,4 @@ Qed.
   constructor, but is closed under dependent pairs.
   The next two subsubsections deal with the characterization of
   Mono and Admissible types, respectively.
-*)
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
 *)

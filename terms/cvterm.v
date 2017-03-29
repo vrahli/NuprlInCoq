@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -41,6 +42,15 @@ Definition mkcv_equality {p} vs (t1 t2 T : @CVTerm p vs) : CVTerm vs :=
 
 Definition mkcv_member {o} vs (t T : @CVTerm o vs) : CVTerm vs :=
   mkcv_equality vs t t T.
+
+Definition mkcv_requality {p} vs (t1 t2 T : @CVTerm p vs) : CVTerm vs :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  let (c,z) := T in
+    exist (isprog_vars vs) (mk_requality a b c) (isprog_vars_requality vs a b c x y z).
+
+Definition mkcv_rmember {o} vs (t T : @CVTerm o vs) : CVTerm vs :=
+  mkcv_requality vs t t T.
 
 Definition mkcv_lam {o} vs (v : NVar) (t : @CVTerm o (v :: vs)) : CVTerm vs :=
   let (a,x) := t in

@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -452,6 +453,24 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
       let c2 := fresh "c2" in
       let ct := fresh "cT" in
       generalize (lsubstc_mk_equality_ex x y T s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [w2 name];
+        destruct name as [wt name];
+        destruct name as [c1 name];
+        destruct name as [c2 name];
+        destruct name as [ct name];
+        clear_irr; tac
+
+    (* REquality *)
+    | context [lsubstc (mk_requality ?x ?y ?T) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let w2 := fresh "w2" in
+      let wt := fresh "wT" in
+      let c1 := fresh "c1" in
+      let c2 := fresh "c2" in
+      let ct := fresh "cT" in
+      generalize (lsubstc_mk_requality_ex x y T s w c);
         intro name;
         destruct name as [w1 name];
         destruct name as [w2 name];
@@ -1320,6 +1339,16 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c2 name];
         clear_irr; tac
 
+    (* Refl *)
+    | context [lsubstc (mk_refl ?a) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let c1 := fresh "c1" in
+      generalize (lsubstc_mk_refl_ex a s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [c1 name];
+        clear_irr; tac
+
     (* TExc *)
     | context [lsubstc (mk_texc ?a1 ?a2) ?w ?s ?c] =>
       let w1 := fresh "w1" in
@@ -1712,11 +1741,3 @@ Ltac lift_lsubsts_squash :=
             | [ H : context [lsubstc _ _ _ _ ] |- _ ] => one_lift_lsubst_squash_hyp H
             | [ |- context [lsubstc _ _ _ _ ] ] => one_lift_lsubst_squash_concl
           end).
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

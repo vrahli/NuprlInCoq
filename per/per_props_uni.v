@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -31,6 +32,100 @@
 
 Require Export per_props_nat.
 
+
+Lemma equality_in_uni {p} :
+  forall lib a b i,
+    @equality p lib a b (mkc_uni i)
+    -> tequality lib a b.
+Proof.
+  unfold tequality, equality, nuprl; introv e; exrepnd.
+
+  inversion e1; subst; try not_univ.
+  duniv j h.
+  induction j; allsimpl; sp.
+  discover; exrepnd.
+  exists eqa; sp.
+  allapply @nuprli_implies_nuprl; auto.
+Qed.
+
+Lemma member_in_uni {p} :
+  forall lib a i, @member p lib a (mkc_uni i) -> type lib a.
+Proof.
+  unfold member, type; introv e.
+  apply equality_in_uni in e; sp.
+Qed.
+
+(* This is not provable, because in general we can't find the type level
+ * of a type family. *)
+Lemma equality_in_uni_iff {p} :
+  forall lib a b,
+    {i : nat , @equality p lib a b (mkc_uni i)}
+    <=> tequality lib a b.
+Proof.
+  sp; split; introv e; exrepnd.
+  apply equality_in_uni in e0; sp.
+
+  allunfold @tequality; allunfold @equality; exrepnd.
+  unfold nuprl in e0; sp.
+  remember (univ lib) as T.
+  generalize HeqT; clear HeqT.
+  close_cases (induction e0 using @close_ind') Case; intros HeqT; subst.
+
+  - Case "CL_init".
+    duniv i h.
+    exists i (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}); sp.
+    unfold nuprl.
+    apply CL_init; unfold univ.
+    exists (S i); simpl; left; sp; try (spcast; computes_to_value_refl).
+    exists eq; sp.
+
+  - Case "CL_int".
+    exists 1 (fun A A' => {eqa : per(p) , close lib (univi lib 1) A A' eqa}); sp.
+    unfold nuprl, univ.
+    apply CL_init.
+    exists 2; left; sp; try (spcast; computes_to_value_refl).
+    exists eq; apply CL_int.
+    allunfold @per_int; sp.
+
+  - Case "CL_atom".
+    admit.
+
+  - Case "CL_uatom".
+    admit.
+
+  - Case "CL_base".
+    admit.
+
+  - Case "CL_approx".
+    admit.
+
+  - Case "CL_cequiv".
+    admit.
+
+  - Case "CL_eq".
+    dest_imp IHe0 hyp; exrepnd.
+    admit.
+
+  - Case "CL_req".
+    admit.
+
+  - Case "CL_teq".
+    admit.
+
+  - Case "CL_isect".
+    dest_imp IHe0 hyp; exrepnd.
+    admit.
+
+  - Case "CL_func".
+    admit.
+
+  - Case "CL_disect".
+    admit.
+
+  - Case "CL_pertype".
+    admit.
+(*Error: Universe inconsistency.*)
+Abort.
 
 Lemma computes_to_valc_tuni_implies {o} :
   forall lib (t : @CTerm o) v,
@@ -108,6 +203,18 @@ Proof.
     dands; spcast; auto.
 Qed.
 
+Lemma mkc_uni_in_nuprl {p} :
+  forall lib (i : nat),
+    nuprl lib (mkc_uni i)
+          (mkc_uni i)
+          (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}).
+Proof.
+  introv.
+  apply CL_init.
+  exists (S i); simpl.
+  left; sp; spcast; apply computes_to_valc_refl; sp.
+Qed.
+
 Lemma uni_in_uni {o} :
   forall lib i j, i < j -> @member o lib (mkc_uni i) (mkc_uni j).
 Proof.
@@ -151,3 +258,39 @@ Proof.
   }
 Qed.
 
+
+Lemma nuprl_mkc_uni {p} :
+  forall lib (i : nat),
+    {eq : per(p) , nuprl lib (mkc_uni i) (mkc_uni i) eq}.
+Proof.
+  intros.
+  exists (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}).
+  apply mkc_uni_in_nuprl.
+Qed.
+
+Lemma tequality_mkc_uni {p} :
+  forall lib (i : nat), @tequality p lib (mkc_uni i) (mkc_uni i).
+Proof.
+  generalize (@nuprl_mkc_uni p); sp.
+Qed.
+
+Lemma equality_nuprli {p} :
+  forall lib (A B C : @CTerm p) i eq,
+    equality lib A B (mkc_uni i)
+    -> nuprli lib i A C eq
+    -> nuprli lib i A B eq.
+Proof.
+  introv e n.
+  unfold equality, nuprl in e; exrepnd.
+  inversion e1; try not_univ.
+  duniv j h.
+  allrw @univi_exists_iff; exrepnd.
+  computes_to_value_isvalue; GC.
+  discover; exrepnd.
+  allfold (@nuprli p lib j0).
+  generalize (nuprli_uniquely_valued lib j0 j0 A A eqa eq); intro k.
+  repeat (autodimp k hyp).
+  apply nuprli_refl in h2; auto.
+  apply nuprli_refl in n; auto.
+  apply (nuprli_ext lib j0 A B eqa eq); auto.
+Qed.

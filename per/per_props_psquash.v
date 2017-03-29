@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -32,10 +33,11 @@
 Require Export computation9.
 Require Export continuity_defs_ceq.
 Require Export psquash.
-Require Export per_props3.
 Require Export substc_more.
+Require Export per_props_isect.
 Require Export per_props_equality.
 Require Export per_props_nat.
+Require Export per_props_pertype.
 
 
 Lemma chaltsc_axiom {o} :
@@ -837,11 +839,3 @@ Proof.
   apply equality_in_mkc_pertype2 in k; repnd.
   apply member_iff_inhabited_mkc_apply2_mkc_psquash_per in k0; sp.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

@@ -675,6 +675,30 @@ Proof.
   inversion cl; subst; try close_diff; auto.
 Qed.
 
+Lemma dest_close_per_requality_l {p} :
+  forall lib (ts : cts(p)) T a b A T' eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> computes_to_valc lib T (mkc_requality a b A)
+    -> close lib ts T T' eq
+    -> per_req lib (close lib ts) T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff; auto.
+Qed.
+
+Lemma dest_close_per_requality_r {p} :
+  forall lib (ts : cts(p)) T a b A T' eq,
+    type_system lib ts
+    -> defines_only_universes lib ts
+    -> computes_to_valc lib T' (mkc_requality a b A)
+    -> close lib ts T T' eq
+    -> per_req lib (close lib ts) T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff; auto.
+Qed.
+
 Lemma dest_close_per_tequality_l {p} :
   forall lib (ts : cts(p)) T a b T' eq,
     type_system lib ts
@@ -1252,6 +1276,21 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_equality_r lib ts T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h
 
+    (* requality *)
+    | [ H1 : type_system ?lib ?ts,
+        H2 : defines_only_universes ?lib ?ts,
+        H3 : computes_to_valc ?lib ?T (mkc_requality ?a ?b ?A),
+        H4 : close ?lib ?ts ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_requality_l lib ts T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    | [ H1 : type_system ?lib ?ts,
+        H2 : defines_only_universes ?lib ?ts,
+        H3 : computes_to_valc ?lib ?T' (mkc_requality ?a ?b ?A),
+        H4 : close ?lib ?ts ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_requality_r lib ts T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
     (* tequality *)
     | [ H1 : type_system ?lib ?ts,
         H2 : defines_only_universes ?lib ?ts,
@@ -1360,10 +1399,3 @@ Ltac dest_close_lr h :=
   end.
 
 Ltac dclose_lr := repeat (let h := fresh "h" in dest_close_lr h).
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/")
-*** End:
-*)

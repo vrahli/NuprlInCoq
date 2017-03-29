@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -15,17 +18,20 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
 Require Export cvterm.
 Require Export continuity_defs.
-Require Export per_props3.
+(*Require Export per_props3.*)
 Require Export per_props_nat.
 
 
@@ -212,8 +218,7 @@ Proof.
 
   { apply equality_in_int.
     unfold equality_of_int.
-    exists k; dands; spcast; eauto with slow.
-    apply computes_to_valc_refl; eauto with slow. }
+    exists k; dands; spcast; eauto with slow. }
 
   apply equality_in_int in q.
   apply equality_of_int_imp_tt in q.
@@ -272,10 +277,3 @@ Proof.
 
     eexists; eauto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

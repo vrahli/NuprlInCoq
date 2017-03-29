@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -34,11 +35,36 @@ Require Export nat_defs.
 Require Export cequiv_props4.
 Require Export per_props_set.
 Require Export per_props_union.
-Require Export per_props2.
+Require Export per_props_false.
+Require Export per_props_not.
+Require Export per_props_product.
 Require Export types_converge.
-Require Export per_props3.
+(*Require Export list.  (* ??? *)*)
 
-Require Export list.  (* ??? *)
+
+Lemma nuprl_int {p} :
+  forall lib, @nuprl p lib mkc_int mkc_int (equality_of_int lib).
+Proof.
+  sp.
+  apply CL_int.
+  unfold per_int; sp; spcast; try computes_to_value_refl.
+Qed.
+
+Lemma equality_of_int_xxx {p} :
+  forall lib, @close p lib (univ lib) mkc_int mkc_int (equality_of_int lib).
+Proof.
+  apply nuprl_int.
+Qed.
+
+Lemma nat_in_int {p} : forall lib (n : nat), @member p lib (mkc_nat n) mkc_int.
+Proof.
+  unfold member, equality; sp.
+  exists (@equality_of_int p lib).
+  sp;[apply equality_of_int_xxx|].
+  exists (Z_of_nat n); sp;
+  unfold mkc_nat, mkc_integer, isprog_mk_nat, isprog_mk_integer, mk_nat;
+    spcast; computes_to_value_refl.
+Qed.
 
 Lemma equality_in_int {p} :
   forall lib (t1 t2 : @CTerm p),
@@ -708,6 +734,643 @@ Proof.
     repndors; repnd; tcsp.
 Qed.
 
+
+Hint Resolve computes_to_valc_refl : slow.
+
+Lemma tequality_int {p} : forall lib, @tequality p lib mkc_int mkc_int.
+Proof.
+  introv.
+  exists (@equality_of_int p lib).
+  apply CL_int; split; dands; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve tequality_int : slow.
+
+Hint Rewrite @mkcv_le_substc   : slow.
+Hint Rewrite @substc_mkcv_zero : slow.
+
+Lemma tnat_type {o} : forall lib, @type o lib mkc_tnat.
+Proof.
+  introv.
+  rw @mkc_tnat_eq.
+  apply tequality_set; dands; eauto 3 with slow.
+  introv ea.
+  autorewrite with slow.
+  apply tequality_mkc_le.
+  apply equality_in_int in ea.
+  unfold equality_of_int in ea; exrepnd; spcast.
+  exists 0%Z k 0%Z k.
+  rw @mkc_zero_eq; rw @mkc_nat_eq; simpl.
+  dands; spcast; auto; eauto 3 with slow.
+  destruct (Z_lt_le_dec k 0); tcsp.
+Qed.
+
+(*
+
+  We could also have defined this type using 0 < y.
+  I used 1 <= y because the proofs will be similar to the ones for tnat.
+
+ *)
+Definition mk_tnatp {o} := @mk_set o mk_int nvary (mk_le mk_one (mk_var nvary)).
+
+Lemma isprog_tnatp {o} : @isprog o mk_tnatp.
+Proof.
+  rw <- @isprog_set_iff.
+  dands; eauto 3 with slow.
+Qed.
+
+Definition mkc_tnatp {o} : @CTerm o := exist isprog mk_tnatp isprog_tnatp.
+
+Lemma mkc_tnatp_eq {o} :
+  @mkc_tnatp o = mkc_set mkc_int nvary (mkcv_le [nvary] (mkcv_one [nvary]) (mkc_var nvary)).
+Proof.
+  apply cterm_eq; simpl; sp.
+Qed.
+
+Lemma mkcv_one_substc {o} :
+  forall v (t : @CTerm o),
+    substc t v (mkcv_one [v]) = mkc_one.
+Proof.
+  introv.
+  destruct_cterms.
+  apply cterm_eq; simpl; sp.
+Qed.
+
+(*
+Lemma nuprl_tnatp {o} :
+  forall lib,
+  nuprl
+    lib
+    mkc_tnatp
+    mkc_tnatp
+    (fun (t t' : @CTerm o) =>
+       { _ : equality_of_int lib t t'
+                             &
+                             inhabited
+                             (fun _ _ : @CTerm o =>
+                                forall u v : @CTerm o,
+                                  (forall k : Z,
+                                     computes_to_valc lib t (mkc_integer k) ->
+                                     if (k <? 1)%Z
+                                     then u ===>(lib) mkc_axiom # v ===>(lib) mkc_axiom
+                                     else False) -> False)}).
+Proof.
+  introv.
+  rw @mkc_tnatp_eq.
+  apply CL_set; fold (@nuprl o).
+  unfold per_set.
+  exists (@equality_of_int o lib).
+  exists
+    (fun (a a' : @CTerm o)
+         (e : equality_of_int lib a a')
+         (t t' : @CTerm o) =>
+       forall (u v : @CTerm o),
+         (forall k,
+            computes_to_valc lib a (mkc_integer k)
+            -> if (k <? 1)%Z
+               then u ===>(lib) mkc_axiom # v ===>(lib) mkc_axiom
+               else False)
+         -> False);
+    dands; auto.
+
+  - unfold type_family.
+    eexists; eexists; eexists; eexists; eexists; eexists;
+    dands; auto; spcast; try (fold nuprl).
+
+    + apply computes_to_valc_refl; apply iscvalue_mkc_set.
+
+    + apply computes_to_valc_refl; apply iscvalue_mkc_set.
+
+    + apply nuprl_int.
+
+    + introv e.
+      allrw @mkcv_le_substc.
+      allrw @mkcv_one_substc.
+      allrw @mkc_var_substc.
+      allrw @mkc_le_eq.
+      unfold equality_of_int in e; exrepnd; spcast.
+
+      apply CL_func.
+      unfold per_func.
+      exists (fun t t' : @CTerm o =>
+                if (k <? 1)%Z
+                then t ===>(lib) mkc_axiom # t' ===>(lib) mkc_axiom
+                else False).
+      exists (fun (a a' : @CTerm o) (e : if (k <? 1)%Z
+                            then a ===>(lib) mkc_axiom # a' ===>(lib) mkc_axiom
+                            else False) (t t' : @CTerm o) => False).
+      dands; auto.
+
+      * unfold type_family.
+        eexists; eexists; eexists; eexists; eexists; eexists;
+        dands; auto; spcast; try (fold nuprl).
+
+        unfold mkc_not.
+        rw <- @fold_mkc_fun.
+        apply computes_to_valc_refl.
+        apply iscvalue_mkc_function.
+
+        unfold mkc_not.
+        rw <- @fold_mkc_fun.
+        apply computes_to_valc_refl.
+        apply iscvalue_mkc_function.
+
+        remember ((k <? 1)%Z); symmetry in Heqb; destruct b.
+
+        apply Z.ltb_lt in Heqb.
+
+        pose proof (mkc_less_than_comp1 lib a mkc_one k 1) as h1; repeat (autodimp h1 hyp); try omega.
+        unfold computes_to_valc; simpl; unfold mk_one, mk_nat; simpl.
+        apply computes_to_value_isvalue_refl; apply isvalue_mk_integer.
+
+        pose proof (mkc_less_than_comp1 lib a' mkc_one k 1) as h2; repeat (autodimp h2 hyp); try omega.
+        unfold computes_to_valc; simpl; unfold mk_one, mk_nat; simpl.
+        apply computes_to_value_isvalue_refl; apply isvalue_mk_integer.
+
+        apply nuprl_value_respecting_left with (t1 := mkc_true).
+        apply nuprl_value_respecting_right with (t2 := mkc_true).
+        apply nuprl_mkc_true.
+        apply cequivc_sym; apply computes_to_valc_implies_cequivc; sp.
+        apply cequivc_sym; apply computes_to_valc_implies_cequivc; sp.
+
+        apply Z.ltb_ge in Heqb.
+
+        pose proof (mkc_less_than_comp2 lib a mkc_one k 1) as h1; repeat (autodimp h1 hyp); try omega.
+        unfold computes_to_valc; simpl; unfold mk_one, mk_nat; simpl.
+        apply computes_to_value_isvalue_refl; apply isvalue_mk_integer.
+
+        pose proof (mkc_less_than_comp2 lib a' mkc_one k 1) as h2; repeat (autodimp h2 hyp); try omega.
+        unfold computes_to_valc; simpl; unfold mk_zero, mk_nat; simpl.
+        apply computes_to_value_isvalue_refl; apply isvalue_mk_integer.
+
+        apply nuprl_computes_left with (t1 := mkc_false); auto.
+        apply nuprl_computes_right with (t2 := mkc_false); auto.
+        rw @mkc_false_eq.
+        apply CL_approx.
+        unfold per_approx.
+        eexists; eexists; eexists; eexists; dands; auto; spcast.
+        apply computes_to_valc_refl; apply iscvalue_mkc_approx.
+        apply computes_to_valc_refl; apply iscvalue_mkc_approx.
+        introv; split; intro j; repnd; sp; spcast.
+        apply not_axiom_approxc_bot in j; auto.
+
+        introv e; simphyps.
+        allrw @csubst_mk_cv.
+        rw @mkc_void_eq_mkc_false; rw @mkc_false_eq.
+        apply CL_approx.
+        unfold per_approx.
+        eexists; eexists; eexists; eexists; dands; auto; spcast.
+        apply computes_to_valc_refl; apply iscvalue_mkc_approx.
+        apply computes_to_valc_refl; apply iscvalue_mkc_approx.
+        sp; split; intro j; repnd; sp; spcast.
+        apply not_axiom_approxc_bot in j; auto.
+
+      * intros; split; intro j; introv m.
+
+        apply j with (u := a0) (v := a'0); auto.
+        introv c.
+        pose proof (computes_to_valc_eq lib a (mkc_integer k) (mkc_integer k0)) as e;
+          repeat (autodimp e hyp).
+        inversion e; subst; GC; sp.
+
+        pose proof (m k) as l; autodimp l hyp.
+        apply j in l; sp.
+
+  - introv.
+    split; intro k; exrepnd.
+    exists v; sp.
+    exists e; sp.
+Qed.
+*)
+
+Lemma mkc_one_eq {o} :
+  @mkc_one o = mkc_nat 1.
+Proof.
+  apply cterm_eq; simpl; auto.
+Qed.
+
+Lemma tnatp_type {o} : forall lib, @type o lib mkc_tnatp.
+Proof.
+  introv.
+  rw @mkc_tnatp_eq.
+  apply tequality_set; dands; eauto 3 with slow.
+  introv ea.
+  autorewrite with slow.
+  apply tequality_mkc_le.
+  apply equality_in_int in ea.
+  unfold equality_of_int in ea; exrepnd; spcast.
+  exists 1%Z k 1%Z k.
+  rw @mkc_one_eq; rw @mkc_nat_eq; simpl.
+  dands; spcast; auto; eauto 3 with slow.
+  destruct (Z_lt_le_dec k 1); tcsp.
+Qed.
+
+Definition reducek_pair {o} lib (t1 t2 : @NTerm o) (k : Z) (n : nat) :=
+    reduces_in_atmost_k_steps lib t1 (mk_integer k) n
+  # reduces_in_atmost_k_steps lib t2 (mk_integer k) n.
+
+Definition equality_of_int_p_2 {o} lib (n m : @NTerm o) :=
+  {x : Z # nat , reducek_pair lib n m (fst x) (snd x)}.
+
+Definition equality_of_int_p_2_c {o} lib (n m : @CTerm o) :=
+  equality_of_int_p_2 lib (get_cterm n) (get_cterm m).
+
+Lemma equality_of_int_imp1 {o} :
+  forall lib (n m : @CTerm o),
+    equality_of_int lib n m
+    <-> equality_of_int_p_2_c lib n m.
+Proof.
+  introv; split.
+  - introv e.
+    unfold equality_of_int in e; exrepnd; spcast.
+    allunfold @computes_to_valc; allsimpl.
+    allunfold @computes_to_value; repnd.
+    allunfold @reduces_to; exrepnd.
+    allunfold @reduces_in_atmost_k_steps.
+    pose proof (no_change_after_value2 lib
+                  (get_cterm n) k1 (mk_integer k) e2 e1 (Peano.max k1 k0)) as h1.
+    autodimp h1 hyp; try (apply max_prop1).
+    pose proof (no_change_after_value2 lib
+                (get_cterm m) k0 (mk_integer k) e4 e0 (Peano.max k1 k0)) as h2.
+    autodimp h2 hyp; try (apply max_prop2).
+    exists ((k,Peano.max k1 k0)); simpl; sp.
+    unfold reducek_pair; sp.
+  - introv e.
+    unfold equality_of_int.
+    unfold equality_of_int_p_2_c, equality_of_int_p_2, reducek_pair in e.
+    exrepnd; allsimpl.
+    exists x0; dands; spcast;
+    unfold computes_to_valc, computes_to_value; simpl;
+    dands; try (apply isvalue_mk_integer);
+    exists x; auto.
+Qed.
+
+Lemma compute_step_dec {o} :
+  forall lib (t : @NTerm o),
+    {u : NTerm $ compute_step lib t = csuccess u}
+    [+]
+    !{u : NTerm $ compute_step lib t = csuccess u}.
+Proof.
+  introv.
+  remember (compute_step lib t); destruct c.
+  - left.
+    exists n; sp.
+  - right; intro k; exrepnd; inversion k0.
+Qed.
+
+(*
+Lemma reduces_in_atmost_k_steps_dec {o} :
+  forall lib (pc : dec_consts o) k (t1 t2 : @NTerm o),
+    reduces_in_atmost_k_steps lib t1 t2 k [+] !(reduces_in_atmost_k_steps lib t1 t2 k).
+Proof.
+  induction k; introv.
+
+  - rw @reduces_in_atmost_k_steps_0.
+    pose proof (deq_nterm pc t1 t2) as h; sp.
+
+  - rw @reduces_in_atmost_k_steps_S.
+    pose proof (compute_step_dec lib t1) as h.
+    dorn h.
+
+    + exrepnd.
+      pose proof (IHk u t2) as j.
+      dorn j.
+
+      * left.
+        exists u; sp.
+
+      * right.
+        intro c; exrepnd.
+        rw h0 in c1; inversion c1; subst; sp.
+
+    + right; intro j; exrepnd.
+      apply h.
+      exists u; sp.
+Qed.
+*)
+
+Lemma deq_nterm_int {p} :
+  forall (t : @NTerm p) z, {t = mk_integer z} + {t <> mk_integer z}.
+Proof.
+  introv.
+  nterm_ind1 t as [v1|f1 ind|o1 lbt1 Hind] Case; intros.
+
+  - Case "vterm".
+    right; intro k; inversion k.
+
+  - Case "sterm".
+    right; intro k; inversion k.
+
+  - Case "oterm".
+    destruct o1; try (complete (right; intro k; inversion k)).
+    destruct c; try (complete (right; intro k; inversion k)).
+    destruct lbt1; try (complete (right; intro k; inversion k)).
+    assert ({z < z0} + {z > z0} + {z = z0})%Z as h by (apply Z_dec).
+    destruct h as [ h | h ]; subst.
+    destruct h as [ h | h ]; sp; right; sp; inversion H; omega.
+    left; sp.
+Qed.
+
+Lemma reduces_in_atmost_k_steps_int_dec {o} :
+  forall lib k (t : @NTerm o) z,
+    reduces_in_atmost_k_steps lib t (mk_integer z) k
+    [+]
+    !(reduces_in_atmost_k_steps lib t (mk_integer z) k).
+Proof.
+  induction k; introv.
+
+  - rw @reduces_in_atmost_k_steps_0.
+    pose proof (deq_nterm_int t z) as h; sp.
+
+  - rw @reduces_in_atmost_k_steps_S.
+    pose proof (compute_step_dec lib t) as h.
+    dorn h.
+
+    + exrepnd.
+      pose proof (IHk u z) as j.
+      dorn j.
+
+      * left.
+        exists u; sp.
+
+      * right.
+        intro c; exrepnd.
+        rw h0 in c1; inversion c1; subst; sp.
+
+    + right; intro j; exrepnd.
+      apply h.
+      exists u; sp.
+Qed.
+
+Lemma reducek_pair_dec {o} :
+  forall lib (t1 t2 : @NTerm o) z n,
+    reducek_pair lib t1 t2 z n [+] !(reducek_pair lib t1 t2 z n).
+Proof.
+  introv.
+  unfold reducek_pair.
+  pose proof (reduces_in_atmost_k_steps_int_dec lib n t1 z) as h1.
+  pose proof (reduces_in_atmost_k_steps_int_dec lib n t2 z) as h2.
+  dorn h1; dorn h2.
+  - left; sp.
+  - right; sp.
+  - right; sp.
+  - right; sp.
+Qed.
+
+
+(*
+
+  The following is an adaptation of:
+     http://coq.inria.fr/stdlib/Coq.Logic.ConstructiveEpsilon.html
+  This is required to prove equality_of_int_imp_t without using
+  the indefinite_description axiom.
+
+*)
+
+Inductive before_witness (P : Z -> nat -> Prop) (k : nat) : Prop :=
+  | stop_pos : forall (z n : nat), k = z + n -> P (Z.of_nat z) n -> before_witness P k
+  | stop_neg : forall z n, k = z + n -> P (Z.opp (Z.of_nat z)) n -> before_witness P k
+  | next : before_witness P (S k) -> before_witness P k.
+
+Fixpoint O_witness
+         (P : Z -> nat -> Prop)
+         (k : nat) : before_witness P k -> before_witness P 0 :=
+  match k return (before_witness P k -> before_witness P 0) with
+    | 0 => fun b => b
+    | S n => fun b => O_witness P n (next P n b)
+  end.
+
+Definition inv_before_witness :
+  forall (P : Z -> nat -> Prop) (k : nat),
+    before_witness P k
+    -> (forall z n : nat, k = z + n -> ~ P (Z.of_nat z) n # ~ P (Z.opp (Z.of_nat z)) n)
+    -> before_witness P (S k) :=
+  fun P k b =>
+    match b
+          in before_witness _ _
+          return (forall z n, k = z + n -> ~ P (Z.of_nat z) n # ~ P (Z.opp (Z.of_nat z)) n)
+                 -> before_witness P (S k) with
+      | stop_pos _ _ z n e p => fun f => match fst (f z n e) p with end
+      | stop_neg _ _ z n e p => fun f => match snd (f z n e) p with end
+      | next _ _ b => fun _ => b
+    end.
+
+Lemma leS:
+  forall n m : nat, n <= S m -> n <= m [+] n = S m.
+Proof.
+  introv; revert n.
+  induction m; simpl; introv e.
+  - destruct n; sp.
+    destruct n; sp.
+    provefalse.
+    inversion e as [|x h].
+    inversion h.
+  - apply leb_correct in e.
+    destruct n; allsimpl.
+    + left; omega.
+    + apply leb_complete in e.
+      apply IHm in e; dorn e.
+      left; omega.
+      right; omega.
+Qed.
+
+(* This is the crux of linear_search *)
+Lemma P_search :
+  forall (P : Z -> nat -> Prop)
+         (dec : forall z n, P z n [+] !P z n)
+         (k : nat),
+    {x : Z # nat & P (fst x) (snd x)}
+    [+]
+    (forall z n : nat, k = (z + n)%nat -> ~ P (Z.of_nat z) n # ~ P (Z.opp (Z.of_nat z)) n).
+Proof.
+  intros P dec k.
+
+  assert (forall k z,
+            {x : Z # nat & P (fst x) (snd x)}
+              [+]
+              (forall n : nat, n <= k -> ~ P (Z.of_nat z) n # ~ P (Z.opp (Z.of_nat z)) n)) as hyp1.
+  clear k.
+  introv.
+  induction k.
+  pose proof (dec (Z.of_nat z) 0) as h.
+  dorn h.
+  left; exists (Z.of_nat z,0); simpl; sp.
+  pose proof (dec (Z.opp (Z.of_nat z)) 0) as j.
+  dorn j.
+  left; exists (Z.opp (Z.of_nat z),0); simpl; sp.
+  right; introv e.
+  assert (n = 0) by omega; subst; simpl; sp.
+  dorn IHk.
+  left; auto.
+  pose proof (dec (Z.of_nat z) (S k)) as h.
+  dorn h.
+  left; exists (Z.of_nat z,S k); simpl; sp.
+  pose proof (dec (Z.opp (Z.of_nat z)) (S k)) as j.
+  dorn j.
+  left; exists (Z.opp (Z.of_nat z),S k); simpl; sp.
+  right; introv e; simpl.
+  apply leS in e.
+  dorn e.
+  apply IHk in e; sp.
+  subst; sp.
+
+  assert (forall k n,
+            {x : Z # nat & P (fst x) (snd x)}
+              [+]
+              (forall z : nat, z <= k -> ~ P (Z.of_nat z) n # ~ P (Z.opp (Z.of_nat z)) n)) as hyp2.
+  clear k.
+  introv.
+  induction k.
+  pose proof (dec 0%Z n) as h.
+  dorn h.
+  left; exists (0%Z,n); simpl; sp.
+  right; introv e.
+  assert (z = 0) by omega; subst; simpl; sp.
+  dorn IHk.
+  left; auto.
+  pose proof (dec (Z.of_nat (S k)) n) as h.
+  dorn h.
+  left; exists (Z.of_nat (S k),n); simpl; sp.
+  pose proof (dec (Z.opp (Z.of_nat (S k))) n) as j.
+  dorn j.
+  left; exists (Z.opp (Z.of_nat (S k)),n); simpl; sp.
+  right; introv e; simpl.
+  apply leS in e.
+  dorn e.
+  apply IHk in e; sp.
+  subst; sp.
+
+  assert ({x : Z # nat & P (fst x) (snd x)}
+            [+]
+            (forall z n : nat, z <= k -> n <= k -> ~ P (Z.of_nat z) n # ~ P (Z.opp (Z.of_nat z)) n)) as hyp.
+  induction k.
+  pose proof (dec 0%Z 0) as h.
+  dorn h.
+  left; exists (0%Z,0); simpl; sp.
+  right; introv e1 e2.
+  assert (z = 0) by omega; assert (n = 0) by omega; subst; simpl; sp.
+  dorn IHk.
+  left; auto.
+  pose proof (hyp1 (S k) (S k)) as h1.
+  dorn h1.
+  left; auto.
+  pose proof (hyp2 (S k) (S k)) as h2.
+  dorn h2.
+  left; auto.
+  right; introv e1 e2.
+  apply leS in e1.
+  apply leS in e2.
+  dorn e1; dorn e2; subst.
+  apply IHk; auto.
+  apply h2; auto.
+  apply h1; auto.
+  apply h1; sp.
+
+  dorn hyp.
+  left; auto.
+  right.
+  introv e; subst.
+  apply hyp; omega.
+Qed.
+
+Fixpoint linear_search
+      (P : Z -> nat -> Prop)
+      (dec : forall z n, P z n [+] !P z n)
+      (k : nat)
+      (b : before_witness P k) : {x : Z # nat & P (fst x) (snd x)} :=
+  match P_search P dec k with
+    | inl p => p
+    | inr a => linear_search P dec (S k) (inv_before_witness P k b a)
+  end.
+
+Definition constructive_indefinite_ground_description_nat {o}
+           lib (t1 t2 : @CTerm o) :
+  equality_of_int_p_2_c lib t1 t2
+  -> {x : Z # nat & reducek_pair lib (get_cterm t1) (get_cterm t2) (fst x) (snd x)}.
+Proof.
+  introv pex.
+  apply linear_search with (k := 0).
+  apply reducek_pair_dec; auto.
+  unfold equality_of_int_p_2_c, equality_of_int_p_2 in pex; auto.
+  exrepnd; allsimpl.
+  apply O_witness with (k := Z.abs_nat x0 + x).
+  pose proof (Zabs.Zabs_dec x0) as h.
+  dorn h.
+  - apply stop_pos with (z := Z.abs_nat x0) (n := x); auto.
+    rw h in pex0.
+    rw Znat.Zabs2Nat.id_abs; auto.
+  - apply stop_neg with (z := Z.abs_nat x0) (n := x); auto.
+    rw h in pex0.
+    rw Znat.Zabs2Nat.id_abs; auto.
+Qed.
+
+(*
+
+   Thanks to constructive_indefinite_ground_description_nat,
+   the following proof does not need the indefinite_description axiom
+
+ *)
+
+Definition equality_of_int_t {o} lib (n m : @CTerm o) :=
+  {k : Z | n ===>(lib) (mkc_integer k)
+         # m ===>(lib) (mkc_integer k)}.
+
+Lemma equality_of_int_imp_t {o} :
+  forall lib (n m : @CTerm o),
+    equality_of_int lib n m
+    -> equality_of_int_t lib n m.
+Proof.
+  introv e.
+  apply equality_of_int_imp1 in e.
+  apply constructive_indefinite_ground_description_nat in e; auto.
+  exrepnd; allsimpl.
+  unfold equality_of_int_t.
+  unfold reducek_pair in e0; repnd.
+  exists x0; dands; spcast;
+  unfold computes_to_valc, computes_to_value; simpl;
+  dands; try (apply isvalue_mk_integer);
+  exists x; auto.
+Qed.
+
+(*
+Here is the alternative that uses the indefinite_description axiom.
+
+Axiom indefinite_description :
+  forall (A : Type) (P : A -> Prop),
+    ex P -> sig P.
+
+Lemma equality_of_int_imp_t :
+  forall n m,
+    equality_of_int n m
+    -> equality_of_int_t n m.
+Proof.
+  introv e.
+  unfold equality_of_int in e.
+  unfold equality_of_int_t.
+  apply indefinite_description; auto.
+Qed.
+*)
+
+Definition equality_of_int_tt {o} lib (n m : @CTerm o) :=
+  {k : Z & computes_to_valc lib n (mkc_integer k)
+         # computes_to_valc lib m (mkc_integer k)}.
+
+Lemma equality_of_int_imp_tt {o} :
+  forall lib (n m : @CTerm o),
+    equality_of_int lib n m
+    -> equality_of_int_tt lib n m.
+Proof.
+  introv e.
+  apply equality_of_int_imp1 in e.
+  apply constructive_indefinite_ground_description_nat in e; auto.
+  exrepnd; allsimpl.
+  unfold equality_of_int_tt.
+  unfold reducek_pair in e0; repnd.
+  exists x0; dands; spcast;
+  unfold computes_to_valc, computes_to_value; simpl;
+  dands; try (apply isvalue_mk_integer);
+  exists x; auto.
+Qed.
+
 Lemma tequality_mkc_natk {o} :
   forall lib (t1 t2 : @CTerm o),
     tequality lib (mkc_natk t1) (mkc_natk t2)
@@ -845,43 +1508,6 @@ Proof.
   - exists ka kb; dands; spcast; auto.
   - exists ka kb ka kb; dands; spcast; auto.
     destruct (Z_lt_le_dec ka kb); tcsp.
-Qed.
-
-Lemma inhabited_prod {p} :
-  forall lib (A B : @CTerm p),
-    inhabited_type lib (mkc_prod A B)
-    <=>
-    (type lib A
-     # type lib B
-     # inhabited_type lib A
-     # inhabited_type lib B).
-Proof.
-  introv.
-  unfold inhabited_type; split; intro k; exrepnd.
-
-  - apply equality_in_prod in k0; exrepnd; spcast.
-    autodimp k2 hyp.
-    { allapply @inhabited_type_if_equality; auto. }
-    allapply @equality_refl.
-    dands; auto; eexists; eauto.
-
-  - exists (mkc_pair t0 t).
-    apply equality_in_prod; dands; auto.
-    exists t0 t0 t t; dands; spcast; tcsp;
-    apply computes_to_valc_refl; eauto with slow.
-Qed.
-
-Lemma inhabited_prod2 {p} :
-  forall lib (A B : @CTerm p),
-    inhabited_type lib (mkc_prod A B)
-    <=>
-    (type lib A
-     # inhabited_type lib A
-     # type lib B
-     # inhabited_type lib B).
-Proof.
-  introv.
-  rw @inhabited_prod; split; sp.
 Qed.
 
 Lemma equality_in_natk {o} :
@@ -1287,66 +1913,3 @@ Proof.
     apply reduces_to_implies_cequiv; auto.
     apply isprogram_eq; auto.
 Qed.
-
-Lemma member_product2 {o} :
-  forall lib (p : @CTerm o) A v B,
-    member lib p (mkc_product A v B)
-    <=>
-    (type lib (mkc_product A v B)
-     # {a, b : CTerm
-        , p ===>(lib) (mkc_pair a b)
-        # member lib a A
-        # member lib b (substc a v B)}).
-Proof.
-  introv.
-  rw @equality_in_product; split; intro k; exrepnd.
-  - dands; auto.
-    + apply tequality_product; auto.
-    + allapply @equality_refl.
-      exists a1 b1; dands; auto.
-  - apply @tequality_product in k0; repnd.
-    dands; auto.
-    exists a a b b; dands; auto.
-Qed.
-
-Lemma equality_in_ufun {p} :
-  forall lib (f g A B : @CTerm p),
-    equality lib f g (mkc_ufun A B)
-    <=>
-    (type lib A
-     # (inhabited_type lib A -> type lib B)
-     # (inhabited_type lib A -> equality lib f g B)).
-Proof.
-  introv.
-  rw <- @fold_mkc_ufun.
-  rw @equality_in_isect.
-  split; intro k; repnd; dands; auto.
-
-  - introv i.
-    unfold inhabited_type in i; exrepnd.
-    generalize (k1 t t); intro j; autodimp j hyp.
-    repeat (rw @csubst_mk_cv in j); sp.
-
-  - introv e.
-    unfold inhabited_type in e; exrepnd.
-    unfold member in e0.
-    apply k in e0.
-    repeat (rw @csubst_mk_cv in e0); sp.
-
-  - introv e.
-    repeat (rw @csubst_mk_cv); sp.
-    autodimp k1 hyp.
-    exists a; apply equality_refl in e; auto.
-
-  - introv e.
-    repeat (rw @csubst_mk_cv); sp.
-    apply k.
-    exists a; apply equality_refl in e; auto.
-Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

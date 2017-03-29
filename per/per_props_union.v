@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -30,7 +31,6 @@
 
 
 Require Export natk2.
-Require Export per_props.
 Require Export terms_union.
 Require Export cequiv_props.
 Require Export per_props_cequiv.
@@ -881,11 +881,3 @@ Proof.
     + apply eq_in_bunion_eq1; auto.
     + apply eq_in_bunion_eq2; auto.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

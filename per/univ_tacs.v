@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -88,13 +93,25 @@ Proof.
   apply isprogram_free_from_atoms; eauto 3 with slow.
 Qed.
 
+(* !!MOVE *)
+Lemma iscvalue_mkc_requality {p} :
+  forall t1 t2 T : @CTerm p, iscvalue (mkc_requality t1 t2 T).
+Proof.
+  intro; destruct t1; destruct t2; destruct T; unfold iscvalue; simpl.
+  apply isvalue_requality; allrw @isprog_eq; auto.
+  apply isprogram_requality; sp.
+Qed.
+Hint Resolve iscvalue_mkc_requality : slow.
+
 Ltac apply_iscvalue :=
   match goal with
     | [ |- iscvalue _ ] =>
       first [ apply iscvalue_mkc_cequiv
             | apply iscvalue_mkc_approx
             | apply iscvalue_mkc_sup
+            | apply iscvalue_mkc_refl
             | apply iscvalue_mkc_equality
+            | apply iscvalue_mkc_requality
             | apply iscvalue_mkc_tequality
             | apply iscvalue_mkc_base
             | apply iscvalue_mkc_uatom
@@ -156,6 +173,7 @@ Ltac not_univ_p2 :=
     | [ H : ccomputes_to_valc _ _ _ |- _ ] => complete computes_to_value_isvalue
     (* univi cases *)
     | [ H : univi _ _ (mkc_equality _ _ _) _ _           |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_requality _ _ _) _ _          |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_tequality _ _) _ _            |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_approx _ _) _ _               |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_cequiv _ _) _ _               |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
@@ -189,6 +207,7 @@ Ltac not_univ_p2 :=
     | [ H : univi _ _ mkc_int _ _                        |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     (* univ cases *)
     | [ H : univ _ (mkc_equality _ _ _) _ _           |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_requality _ _ _) _ _          |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_tequality _ _) _ _            |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_approx _ _) _ _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_cequiv _ _) _ _               |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
@@ -236,10 +255,3 @@ Ltac duniv i h :=
   match goal with
     | [ H : univ _ _ _ _ |- _ ] => destruct H as [i h]
   end.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/")
-*** End:
-*)

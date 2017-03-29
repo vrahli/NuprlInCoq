@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -860,3 +866,573 @@ Proof.
   right; spcast; sp; apply cequivc_sym; sp.
 Qed.
 
+
+Lemma eqorceq_commutes_nuprl {p} :
+  forall lib (a b c d : @CTerm p) eq A B,
+    nuprl lib A B eq
+    -> eqorceq lib eq a b
+    -> eqorceq lib eq c d
+    -> eq a c
+    -> eq b d.
+Proof.
+  introv n e1 e2 e3.
+  apply (eqorceq_commutes lib) with (a := a) (c := c); sp.
+
+  nts.
+  unfold term_value_respecting in nts_tev.
+  apply nts_tev with (T := A).
+  allapply @nuprl_refl; sp.
+
+  nts.
+  unfold term_symmetric in nts_tes.
+  apply nts_tes with (T := A) (T' := B); sp.
+
+  nts.
+  unfold term_transitive in nts_tet.
+  apply nts_tet with (T := A) (T' := B); sp.
+Qed.
+
+Lemma eqorceq_sym_trans {p} :
+  forall lib eq (a b A B : @CTerm p),
+    nuprl lib A B eq
+    -> eqorceq lib eq a b
+    -> eqorceq lib eq b a.
+Proof.
+  introv n e.
+  apply eqorceq_sym; sp.
+  nts.
+  unfold term_symmetric in nts_tes.
+  apply nts_tes with (T := A) (T' := B); sp.
+Qed.
+
+Lemma nuprl_refl2 {p} :
+  forall lib (t1 t2 : @CTerm p) eq,
+    nuprl lib t1 t2 eq -> nuprl lib t2 t2 eq.
+Proof.
+  introv n.
+  apply nuprl_sym in n.
+  apply nuprl_refl in n; sp.
+Qed.
+
+Lemma nuprl_uniquely_eq_ext {p} :
+  forall lib (t1 t2 : @CTerm p) eq1 eq2,
+    nuprl lib t1 t2 eq1
+    -> eq_term_equals eq1 eq2
+    -> nuprl lib t1 t2 eq2.
+Proof.
+  introv n e; nts.
+  apply nts_ext with (T := t1) (T' := t2) (eq := eq1); sp.
+Qed.
+
+Lemma equality_or_cequivc_eqorceq {p} :
+  forall lib (A a b : @CTerm p) eq,
+    nuprl lib A A eq
+    -> (eqorceq lib eq a b <=> (equality lib a b A {+} ccequivc lib a b)).
+Proof.
+  unfold eqorceq; introv n; split; intro e; repdors; try (complete sp);
+  left;
+  apply @equality_eq with (a := a) (b := b) in n;
+  allrw <-; sp;
+  allrw; sp.
+Qed.
+
+Lemma eqorceq_implies_equality_or_cequivc {p} :
+  forall lib (A a b : @CTerm p) eq,
+    nuprl lib A A eq
+    -> eqorceq lib eq a b
+    -> (equality lib a b A {+} ccequivc lib a b).
+Proof.
+  introv n e.
+  generalize (equality_or_cequivc_eqorceq lib A a b eq); sp.
+  allrw <-; sp.
+Qed.
+
+Lemma false_not_inhabited {p} :
+  forall lib (t : @CTerm p), !member lib t mkc_false.
+Proof.
+  introv m.
+  rewrite mkc_false_eq in m.
+  unfold member, equality, nuprl in m; exrepnd.
+  inversion m1; subst; try not_univ.
+  allunfold @per_approx; exrepnd.
+  computes_to_value_isvalue.
+  discover; sp; GC.
+  spcast; allapply @not_axiom_approxc_bot; sp.
+Qed.
+
+Lemma equality3_implies_equorsq2 {p} :
+  forall lib (a b c d T : @CTerm p),
+    equality lib a c T
+    -> equality lib b d T
+    -> equality lib a b T
+    -> equorsq2 lib a b c d T.
+Proof.
+  sp.
+  unfold equorsq2, equorsq; sp.
+  left.
+  apply equality_trans with (t2 := b); auto.
+  apply equality_trans with (t2 := a); auto.
+  apply equality_sym; auto.
+Qed.
+
+
+Definition inhabited_type {p} lib (T : @CTerm p) := {t : CTerm , member lib t T}.
+
+Definition sym_type {p} lib (R : @CTerm p) :=
+  forall x y,
+    inhabited_type lib (mkc_apply2 R x y)
+    -> inhabited_type lib (mkc_apply2 R y x).
+
+Definition trans_type {p} lib (R : @CTerm p) :=
+  forall x y z,
+    inhabited_type lib (mkc_apply2 R x y)
+    -> inhabited_type lib (mkc_apply2 R y z)
+    -> inhabited_type lib (mkc_apply2 R x z).
+
+Definition is_per_type {p} lib (R : @CTerm p) :=
+  sym_type lib R # trans_type lib R.
+
+Lemma is_per_type_iff {p} :
+  forall lib R1 R2,
+    (forall x y : @CTerm p,
+       inhabited_type lib (mkc_apply2 R1 x y)
+       <=>
+       inhabited_type lib (mkc_apply2 R2 x y))
+    -> is_per_type lib R1
+    -> is_per_type lib R2.
+Proof.
+  unfold is_per_type, sym_type, trans_type; introv iff per; dands; introv.
+
+  intro inh.
+  rw <- iff; rw <- iff in inh; sp.
+
+  intros inh1 inh2.
+  rw <- iff; rw <- iff in inh1; rw <- iff in inh2.
+  apply per with (y := y); sp.
+Qed.
+
+Lemma inhabited_type_if_equality {p} :
+  forall lib (a b R : @CTerm p), equality lib a b R -> inhabited_type lib R.
+Proof.
+  introv eq.
+  unfold inhabited_type; exists a.
+  apply equality_refl in eq; sp.
+Qed.
+
+Lemma inhabited_if_inhabited_type {p} :
+  forall lib (T U : @CTerm p) eq,
+    inhabited_type lib T
+    -> nuprl lib T U eq
+    -> inhabited eq.
+Proof.
+  introv inh neq.
+  unfold inhabited_type in inh; exrepnd.
+  unfold member, equality in inh0; exrepnd.
+  generalize (nuprl_uniquely_valued lib T eq0 eq); intro i.
+  repeat (dest_imp i hyp); try (complete (apply nuprl_refl with (t2 := U); sp)).
+  rw i in inh1.
+  clear inh0 i eq0.
+  unfold nuprl in neq.
+  unfold inhabited; exists t; sp.
+Qed.
+
+Lemma inhabited_type_if_inhabited {p} :
+  forall lib (T U : @CTerm p) eq,
+    nuprl lib T U eq
+    -> inhabited eq
+    -> inhabited_type lib T.
+Proof.
+  introv neq inh.
+  unfold inhabited_type.
+  unfold inhabited in inh; exrepnd.
+  exists t.
+  unfold member, equality.
+  exists eq; sp.
+  apply nuprl_refl with (t2 := U); sp.
+Qed.
+
+Lemma inhabited_type_iff_inhabited {p} :
+  forall lib (T U : @CTerm p) eq,
+    nuprl lib T U eq
+    -> (inhabited eq <=> inhabited_type lib T).
+Proof.
+  introv neq; split; intro i.
+  apply @inhabited_type_if_inhabited with (U := U) (eq := eq); sp.
+  eapply inhabited_if_inhabited_type; eauto.
+Qed.
+
+Lemma inhabited_if_inhabited_type_i {p} :
+  forall lib (T U : @CTerm p) eq i,
+    inhabited_type lib T
+    -> nuprli lib i T U eq
+    -> inhabited eq.
+Proof.
+  introv inh neq.
+  apply nuprli_implies_nuprl in neq.
+  apply inhabited_if_inhabited_type in neq; auto.
+Qed.
+
+Lemma inhabited_type_if_inhabited_i {p} :
+  forall lib (T U : @CTerm p) eq i,
+    nuprli lib i T U eq
+    -> inhabited eq
+    -> inhabited_type lib T.
+Proof.
+  introv neq inh.
+  apply nuprli_implies_nuprl in neq.
+  apply inhabited_type_if_inhabited in neq; auto.
+Qed.
+
+Lemma inhabited_type_iff_inhabited_i {p} :
+  forall lib (T U : @CTerm p) eq i,
+    nuprli lib i T U eq
+    -> (inhabited eq <=> inhabited_type lib T).
+Proof.
+  introv neq.
+  apply nuprli_implies_nuprl in neq.
+  apply inhabited_type_iff_inhabited in neq; auto.
+Qed.
+
+Lemma is_per_type_iff_is_per {p} :
+  forall lib R eq,
+    (forall x y : @CTerm p, nuprl lib (mkc_apply2 R x y) (mkc_apply2 R x y) (eq x y))
+    -> (is_per eq <=> is_per_type lib R).
+Proof.
+  introv n.
+  split; intro isper.
+
+  - destruct isper as [sym trans].
+    unfold is_per_type, sym_type, trans_type; dands; introv.
+
+    + intro inh.
+      generalize (inhabited_type_iff_inhabited lib (mkc_apply2 R x y) (mkc_apply2 R x y) (eq x y)).
+      intro iff1; dest_imp iff1 hyp.
+      generalize (inhabited_type_iff_inhabited lib (mkc_apply2 R y x) (mkc_apply2 R y x) (eq y x)).
+      intro iff2; dest_imp iff2 hyp.
+      rw <- iff2.
+      apply sym.
+      rw iff1; sp.
+
+    + intros inh1 inh2.
+      generalize (inhabited_type_iff_inhabited lib (mkc_apply2 R x y) (mkc_apply2 R x y) (eq x y)).
+      intro iff1; dest_imp iff1 hyp.
+      generalize (inhabited_type_iff_inhabited lib (mkc_apply2 R y z) (mkc_apply2 R y z) (eq y z)).
+      intro iff2; dest_imp iff2 hyp.
+      generalize (inhabited_type_iff_inhabited lib (mkc_apply2 R x z) (mkc_apply2 R x z) (eq x z)).
+      intro iff3; dest_imp iff3 hyp.
+      rw <- iff3.
+      apply trans with (y := y).
+      rw iff1; sp.
+      rw iff2; sp.
+
+  - destruct isper as [sym trans].
+    unfold sym_type in sym.
+    unfold trans_type in trans.
+    unfold is_per; dands; introv.
+
+    + intro inh.
+      generalize (inhabited_type_iff_inhabited lib (mkc_apply2 R x y) (mkc_apply2 R x y) (eq x y)).
+      intro iff1; dest_imp iff1 hyp.
+      generalize (inhabited_type_iff_inhabited lib (mkc_apply2 R y x) (mkc_apply2 R y x) (eq y x)).
+      intro iff2; dest_imp iff2 hyp.
+      rw iff2.
+      apply sym.
+      rw <- iff1; sp.
+
+    + intros inh1 inh2.
+      generalize (inhabited_type_iff_inhabited lib (mkc_apply2 R x y) (mkc_apply2 R x y) (eq x y)).
+      intro iff1; dest_imp iff1 hyp.
+      generalize (inhabited_type_iff_inhabited lib (mkc_apply2 R y z) (mkc_apply2 R y z) (eq y z)).
+      intro iff2; dest_imp iff2 hyp.
+      generalize (inhabited_type_iff_inhabited lib (mkc_apply2 R x z) (mkc_apply2 R x z) (eq x z)).
+      intro iff3; dest_imp iff3 hyp.
+      rw iff3.
+      apply trans with (y := y).
+      rw <- iff1; sp.
+      rw <- iff2; sp.
+Qed.
+
+Lemma is_per_type_iff_is_per1 {p} :
+  forall lib R1 R2 eq,
+    (forall x y : @CTerm p, nuprl lib (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (eq x y))
+    -> (is_per eq <=> is_per_type lib R1).
+Proof.
+  introv n.
+  apply is_per_type_iff_is_per; introv.
+  generalize (n x y); intro k.
+  apply nuprl_refl in k; auto.
+Qed.
+
+Lemma inhabited_type_iff {p} :
+  forall lib (T1 T2 : @CTerm p) eq1 eq2,
+    nuprl lib T1 T1 eq1
+    -> nuprl lib T2 T2 eq2
+    -> ((inhabited eq1 <=> inhabited eq2)
+        <=> (inhabited_type lib T1 <=> inhabited_type lib T2)).
+Proof.
+  introv n1 n2.
+  generalize (inhabited_type_iff_inhabited lib T1 T1 eq1); intro i1.
+  dest_imp i1 hyp.
+  generalize (inhabited_type_iff_inhabited lib T2 T2 eq2); intro i2.
+  dest_imp i2 hyp.
+  allrw; sp.
+Qed.
+
+
+Ltac dest_per :=
+  match goal with
+      [ H : per_pertype ?lib ?ts ?T1 ?T2 ?eq |- _ ] =>
+      let R1     := fresh "R1"     in
+      let R2     := fresh "R2"     in
+      let eq1    := fresh "eq1"    in
+      let eq2    := fresh "eq2"    in
+      let c1     := fresh "c1"     in
+      let c2     := fresh "c2"     in
+      let typ1   := fresh "typ1"   in
+      let typ2   := fresh "typ2"   in
+      let inhiff := fresh "inhiff" in
+      let pereq  := fresh "pereq"  in
+      unfold per_pertype in H;
+        destruct H as [ R1     H ];
+        destruct H as [ R2     H ];
+        destruct H as [ eq1    H ];
+        destruct H as [ eq2    H ];
+        destruct H as [ c1     H ];
+        destruct H as [ c2     H ];
+        destruct H as [ typ1   H ];
+        destruct H as [ typ2   H ];
+        destruct H as [ inhiff H ];
+        destruct H as [ isper  pereq ]
+    | [ H : per_ipertype ?lib ?ts ?T1 ?T2 ?eq |- _ ] =>
+      let R1     := fresh "R1"     in
+      let R2     := fresh "R2"     in
+      let eq1    := fresh "eq1"    in
+      let c1     := fresh "c1"     in
+      let c2     := fresh "c2"     in
+      let typ1   := fresh "eqtyps" in
+      let pereq  := fresh "pereq"  in
+      unfold per_ipertype in H;
+        destruct H as [ R1    H ];
+        destruct H as [ R2    H ];
+        destruct H as [ eq1   H ];
+        destruct H as [ c1    H ];
+        destruct H as [ c2    H ];
+        destruct H as [ typ1  H ];
+        destruct H as [ isper pereq ]
+    | [ H : per_spertype ?lib ?ts ?T1 ?T2 ?eq |- _ ] =>
+      let R1     := fresh "R1"      in
+      let R2     := fresh "R2"      in
+      let eq1    := fresh "eq1"     in
+      let c1     := fresh "c1"      in
+      let c2     := fresh "c2"      in
+      let typ1   := fresh "eqtyps1" in
+      let typ2   := fresh "eqtyps2" in
+      let typ3   := fresh "eqtyps3" in
+      let pereq  := fresh "pereq"   in
+      unfold per_spertype in H;
+        destruct H as [ R1    H ];
+        destruct H as [ R2    H ];
+        destruct H as [ eq1   H ];
+        destruct H as [ c1    H ];
+        destruct H as [ c2    H ];
+        destruct H as [ typ1  H ];
+        destruct H as [ typ2  H ];
+        destruct H as [ typ3  H ];
+        destruct H as [ isper pereq ]
+  end.
+
+Lemma inhabited_type_cequivc {p} :
+  forall lib (a b : @CTerm p),
+    cequivc lib a b
+    -> inhabited_type lib a
+    -> inhabited_type lib b.
+Proof.
+  introv ceq inh.
+  allunfold @inhabited_type; exrepnd.
+  allunfold @member.
+  exists t.
+  apply cequivc_preserving_equality with (A := a); sp.
+Qed.
+
+Lemma inhabited_type_respects_cequivc {p} :
+  forall lib, respects1 (@cequivc p lib) (inhabited_type lib).
+Proof.
+  introv; introv.
+  apply inhabited_type_cequivc.
+Qed.
+Hint Resolve inhabited_type_respects_cequivc : respects.
+
+Lemma inhabited_type_tequality {p} :
+  forall lib (a b : @CTerm p),
+    tequality lib a b
+    -> inhabited_type lib a
+    -> inhabited_type lib b.
+Proof.
+  introv teq inh.
+  allunfold @inhabited_type; exrepnd.
+  allunfold @tequality; exrepnd.
+  allunfold @member.
+  allunfold @equality; exrepnd.
+  exists t.
+  generalize (nuprl_uniquely_valued lib a eq eq0); intro i; repeat (dest_imp i hyp).
+  apply nuprl_refl with (t2 := b); sp.
+  exists eq; sp.
+  apply nuprl_refl with (t2 := a); sp.
+  apply nuprl_sym; sp.
+  rw i; sp.
+Qed.
+
+Lemma inhabited_type_respects_alphaeqc {o} :
+  forall lib, respects1 alphaeqc (@inhabited_type o lib).
+Proof.
+  introv aeq inh.
+  apply (alphaeqc_implies_cequivc lib) in aeq.
+  apply @inhabited_type_cequivc with (a := a); auto.
+Qed.
+Hint Resolve inhabited_type_respects_alphaeqc : respects.
+
+Lemma type_respects_cequivc {o} :
+  forall lib, respects1 (cequivc lib) (@type o lib).
+Proof.
+  introv ceq typ.
+  apply type_respects_cequivc_left in ceq; auto.
+  apply tequality_refl in ceq; auto.
+Qed.
+Hint Resolve type_respects_cequivc : respects.
+
+Lemma type_respects_alphaeqc {o} :
+  forall lib, respects1 alphaeqc (@type o lib).
+Proof.
+  introv aeq inh.
+  apply (alphaeqc_implies_cequivc lib) in aeq.
+  apply type_respects_cequivc_left in aeq; auto.
+  apply tequality_refl in aeq; auto.
+Qed.
+Hint Resolve type_respects_alphaeqc : respects.
+
+Lemma reduces_toc_eapply_nseq {o} :
+  forall lib s (t u : @CTerm o),
+    reduces_toc lib t u
+    -> reduces_toc lib (mkc_eapply (mkc_nseq s) t) (mkc_eapply (mkc_nseq s) u).
+Proof.
+  introv r.
+  destruct_cterms.
+  allunfold @reduces_toc; allsimpl.
+  apply implies_eapply_red_aux; eauto 3 with slow.
+Qed.
+
+Lemma reduces_toc_trans {o} :
+  forall lib (a b c : @CTerm o),
+    reduces_toc lib a b
+    -> reduces_toc lib b c
+    -> reduces_toc lib a c.
+Proof.
+  introv r1 r2.
+  destruct_cterms.
+  allunfold @reduces_toc; allsimpl.
+  eapply reduces_to_trans; eauto.
+Qed.
+
+Lemma member_respects_reduces_toc {o} :
+  forall lib (t1 t2 T : @CTerm o),
+  reduces_toc lib t1 t2
+  -> member lib t2 T
+  -> member lib t1 T.
+Proof.
+  introv r m.
+  apply reduces_toc_implies_cequivc in r.
+  apply cequivc_sym in r.
+  eapply equality_respects_cequivc in r;[|exact m].
+  apply equality_sym in r; apply equality_refl in r; auto.
+Qed.
+
+Lemma member_respects_cequivc {o} :
+  forall lib (t1 t2 T : @CTerm o),
+  cequivc lib t1 t2
+  -> member lib t1 T
+  -> member lib t2 T.
+Proof.
+  introv c m.
+  eapply equality_respects_cequivc in c;[|exact m].
+  apply equality_sym in c; apply equality_refl in c; auto.
+Qed.
+
+Lemma member_respects_cequivc_type {o} :
+  forall lib (t T1 T2 : @CTerm o),
+  cequivc lib T1 T2
+  -> member lib t T1
+  -> member lib t T2.
+Proof.
+  introv c m.
+  eapply cequivc_preserving_equality; eauto.
+Qed.
+
+Lemma substcv_as_substc2 {o} :
+  forall x (t : @CTerm o) v (u : CVTerm [x,v]),
+    substcv [x] t v u = substc2 x t v u.
+Proof.
+  introv.
+  destruct_cterms; simpl.
+  apply cvterm_eq; simpl; auto.
+Qed.
+
+(* !!MOVE *)
+Hint Resolve alphaeqc_trans : slow.
+Hint Resolve alphaeqc_sym : slow.
+
+Lemma respects_alphaeqc_alphaeqc {o} : respects2 alphaeqc (@alphaeqc o).
+Proof.
+  unfold respects2; dands; introv aeq1 aeq2; eauto 3 with slow.
+Qed.
+Hint Resolve respects_alphaeqc_alphaeqc : respects.
+
+Lemma member_respects_alphaeqc_l {o} :
+  forall lib (t1 t2 T : @CTerm o),
+    alphaeqc t1 t2 -> member lib t1 T -> member lib t2 T.
+Proof.
+  introv aeq mem.
+  allunfold @member.
+  eapply equality_respects_alphaeqc_left;[exact aeq|].
+  eapply equality_respects_alphaeqc_right;[exact aeq|].
+  auto.
+Qed.
+
+Lemma member_respects_alphaeqc_r {o} :
+  forall lib (t T1 T2 : @CTerm o),
+    alphaeqc T1 T2 -> member lib t T1 -> member lib t T2.
+Proof.
+  introv aeq mem.
+  allunfold @member.
+  eapply alphaeqc_preserving_equality; eauto.
+Qed.
+
+Lemma respects_alphaeqc_member {o} :
+  forall (lib : @library o), respects2 alphaeqc (member lib).
+Proof.
+  introv; unfold respects2; dands; introv aeq1 aeq2; eauto 3 with slow.
+  - eapply member_respects_alphaeqc_l; eauto.
+  - eapply member_respects_alphaeqc_r; eauto.
+Qed.
+Hint Resolve respects_alphaeqc_member : respects.
+
+Lemma respects_alphaeqc_equorsq3 {o} :
+  forall lib (t1 t2 T1 T2 : @CTerm o),
+    alphaeqc T1 T2
+    -> equorsq lib t1 t2 T1
+    -> equorsq lib t1 t2 T2.
+Proof.
+  introv aeq e.
+  eauto 3 with slow.
+  pose proof (respects_alphaeqc_equorsq lib) as h.
+  destruct h as [h1 h]; repnd.
+  eapply h; eauto.
+Qed.
+
+Lemma respects_alphaeqc_cequivc {p} : forall lib, respects2 alphaeqc (@cequivc p lib).
+Proof.
+  introv; unfolds_base; dands; introv Hr Heq; allsimpl;
+  try (complete (left; eauto 3 with nequality)).
+  - apply (cequivc_trans lib a' a b); auto; apply cequivc_sym; apply alphaeqc_implies_cequivc; auto.
+  - apply (cequivc_trans lib a b b'); auto; apply alphaeqc_implies_cequivc; auto.
+Qed.
+Hint Resolve respects_alphaeqc_cequivc : respects.

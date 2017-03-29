@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -38,6 +39,8 @@ Require Export cequiv_tacs.
 Require Export subst_tacs.
 
 Require Export continuity_per.
+
+Require Export lift_lsubst_tacs.
 
 Require Export list. (* why? *)
 
@@ -299,10 +302,3 @@ Ltac lift_lsubsts_cont :=
             | [ H : context [lsubstc _ _ _ _ ] |- _ ] => one_lift_lsubst_cont_hyp H
             | [ |- context [lsubstc _ _ _ _ ] ] => one_lift_lsubst_cont_concl
           end).
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

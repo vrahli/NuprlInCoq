@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -28,8 +29,15 @@
 
 *)
 
+
 Require Export substc_more.
-Require Export per_props4.
+Require Export sequents_tacs.
+Require Export per_props_product.
+Require Export per_props_function.
+Require Export per_props_squash.
+Require Export per_props_equality.
+Require Export per_props_nat2.
+Require Export lsubstc_vars.
 
 
 (*

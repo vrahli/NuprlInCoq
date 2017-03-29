@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -28,6 +30,7 @@
 
 
 Require Export arith_props.
+Require Export cequiv_arith_props.
 Require Import continuity.
 Require Import continuity2_2.
 Require Import continuity3_2_v2.
@@ -332,10 +335,3 @@ Proof.
 
   exists k0; dands; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

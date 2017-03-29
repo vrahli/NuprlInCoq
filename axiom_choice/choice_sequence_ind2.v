@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -31,6 +32,7 @@
 
 Require Export choice_sequence_ind.
 Require Export per_props_cequiv2.
+Require Export per_props_nat.
 Require Export types_converge.
 Require Export subst_tacs.
 Require Export sequents_equality.
@@ -685,12 +687,6 @@ Proof.
   unfold iscvalue; simpl; eauto 3 with slow.
 Qed.
 Hint Resolve iscvalue_one : slow.
-
-Lemma mkc_one_eq {o} :
-  @mkc_one o = mkc_nat 1.
-Proof.
-  apply cterm_eq; simpl; auto.
-Qed.
 
 Lemma implies_eq_get_cterm {o} :
   forall (t u : @CTerm o), t = u -> get_cterm t = get_cterm u.

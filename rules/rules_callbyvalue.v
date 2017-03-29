@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -36,6 +37,8 @@ Require Export per_props_cequiv3.
 Require Export per_props_halts.
 
 
+Hint Resolve wf_term_implies : slow.
+
 Lemma callbyvalue_reduce_c {o} :
   forall lib (a b t : @NTerm o) x ws s cs wt ct wa ca wb cb,
     cequivc lib (lsubstc (subst b x a) ws s cs) (lsubstc t wt s ct)
@@ -65,7 +68,7 @@ Proof.
      [apply isprogram_cbv_iff2;dands;
       try (apply isprogram_csubst);eauto 3 with slow;
       apply isprog_vars_iff_isprogram_bt;
-      apply isprog_vars_csubst; auto
+      apply csubst.isprog_vars_csubst; auto
      |exact r]
     |];
     clear r;[].
@@ -78,7 +81,7 @@ Proof.
       try (apply isprogram_csubst);eauto 3 with slow;
       apply isvalue_implies in isv;tcsp;
       apply isprog_vars_iff_isprogram_bt;
-      apply isprog_vars_csubst; auto
+      apply csubst.isprog_vars_csubst; auto
      |apply reduces_to_if_step;apply compute_step_cbv_iscan;eauto 3 with slow]
     |];[].
 
@@ -101,7 +104,7 @@ Proof.
   { apply isvalue_implies in isv; repnd.
     apply isprogram_subst_if_bt; eauto 3 with slow.
     apply isprog_vars_iff_isprogram_bt.
-    apply isprog_vars_csubst; eauto 3 with slow.
+    apply csubst.isprog_vars_csubst; eauto 3 with slow.
     allunfold @cover_vars_upto.
     apply alphaeq_preserves_free_vars in q0; rewrite <- q0; auto. }
 
@@ -109,7 +112,7 @@ Proof.
     apply isprogram_subst_if_bt; eauto 3 with slow;
       try (apply isprogram_csubst);eauto 3 with slow.
     apply isprog_vars_iff_isprogram_bt.
-    apply isprog_vars_csubst; eauto 3 with slow.
+    apply csubst.isprog_vars_csubst; eauto 3 with slow.
     allunfold @cover_vars_upto.
     apply alphaeq_preserves_free_vars in q0; rewrite <- q0; auto. }
 

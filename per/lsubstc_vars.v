@@ -1,8 +1,9 @@
- (*
+(*
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -24,270 +25,20 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Abhishek Anand & Vincent Rahli & Mark Bickford
 
 *)
 
 
-Require Export cover.
+Require Export csubst6.
 Require Export cvterm4.
+Require Export cover.
+Require Export subst_tacs2.
+Require Export natk.
 Require Export cequiv_seq_util.
-Require Export per_props_nat2.
-Require Export per_props_nat3.
-Require Export continuity_defs_ceq.
-Require Export per_props_equality.
-Require Export list. (* !!WTF *)
+Require Export per_props_squash.
+Require Export sequents.
 
-
-Lemma inhabited_squash {o} :
-  forall lib (t : @CTerm o),
-    inhabited_type lib (mkc_squash t) <=> inhabited_type lib t.
-Proof.
-  introv.
-  split; intro k; allunfold @inhabited_type; exrepnd.
-  - allrw @equality_in_mkc_squash; repnd.
-    allunfold @inhabited_type; exrepnd.
-    exists t1; auto.
-  - exists (@mkc_axiom o).
-    apply equality_in_mkc_squash; dands; spcast; auto;
-    try (apply computes_to_valc_refl; eauto 3 with slow).
-    exists t0; auto.
-Qed.
-
-Lemma inhabited_product {p} :
-  forall lib (A : @CTerm p) v B,
-    inhabited_type lib (mkc_product A v B)
-    <=>
-    (type lib A
-     # (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
-     # {a : CTerm
-        , member lib a A
-        # inhabited_type lib (substc a v B)}).
-Proof.
-  introv; split; intro k.
-
-  - unfold inhabited_type in k; exrepnd.
-    rw @equality_in_product in k0; exrepnd; dands; tcsp.
-    apply equality_refl in k5.
-    apply equality_refl in k0.
-    exists a1; dands; auto.
-    exists b1; auto.
-
-  - exrepnd.
-    allunfold @inhabited_type; exrepnd.
-    exists (mkc_pair a t).
-    rw @equality_in_product; dands; tcsp.
-    exists a a t t; dands; auto; spcast;
-    apply computes_to_valc_refl; eauto 3 with slow.
-Qed.
-
-Lemma inhabited_exists {p} :
-  forall lib (A : @CTerm p) v B,
-    inhabited_type lib (mkc_exists A v B)
-    <=>
-    (type lib A
-     # (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
-     # {a : CTerm
-        , member lib a A
-        # inhabited_type lib (substc a v B)}).
-Proof.
-  introv.
-  unfold mkc_exists.
-  rw @inhabited_product; auto.
-Qed.
-
-Lemma nat_in_nat {o} :
-  forall (lib : @library o) n,
-    member lib (mkc_nat n) mkc_tnat.
-Proof.
-  introv.
-  apply equality_in_tnat.
-  exists n; dands; spcast; apply computes_to_valc_refl; eauto 3 with slow.
-Qed.
-
-Lemma member_tnat_implies_computes {o} :
-  forall lib (t : @CTerm o),
-    member lib t mkc_tnat
-    -> {k : nat & computes_to_valc lib t (mkc_nat k)}.
-Proof.
-  introv mem.
-  apply equality_in_tnat in mem.
-  apply equality_of_nat_imp_tt in mem.
-  unfold equality_of_nat_tt in mem; exrepnd.
-  exists k; auto.
-Qed.
-
-Lemma member_tnat_iff {o} :
-  forall lib (t : @CTerm o),
-    member lib t mkc_tnat
-    <=> {k : nat & computes_to_valc lib t (mkc_nat k)}.
-Proof.
-  introv; split; introv mem.
-  - apply member_tnat_implies_computes; auto.
-  - apply equality_in_tnat.
-    exrepnd.
-    exists k; dands; spcast; auto.
-Qed.
-
-Lemma reduces_toc_eapply_nseq {o} :
-  forall lib s (t u : @CTerm o),
-    reduces_toc lib t u
-    -> reduces_toc lib (mkc_eapply (mkc_nseq s) t) (mkc_eapply (mkc_nseq s) u).
-Proof.
-  introv r.
-  destruct_cterms.
-  allunfold @reduces_toc; allsimpl.
-  apply implies_eapply_red_aux; eauto 3 with slow.
-Qed.
-
-Lemma reduces_toc_trans {o} :
-  forall lib (a b c : @CTerm o),
-    reduces_toc lib a b
-    -> reduces_toc lib b c
-    -> reduces_toc lib a c.
-Proof.
-  introv r1 r2.
-  destruct_cterms.
-  allunfold @reduces_toc; allsimpl.
-  eapply reduces_to_trans; eauto.
-Qed.
-
-Lemma member_respects_reduces_toc {o} :
-  forall lib (t1 t2 T : @CTerm o),
-  reduces_toc lib t1 t2
-  -> member lib t2 T
-  -> member lib t1 T.
-Proof.
-  introv r m.
-  apply reduces_toc_implies_cequivc in r.
-  apply cequivc_sym in r.
-  eapply equality_respects_cequivc in r;[|exact m].
-  apply equality_sym in r; apply equality_refl in r; auto.
-Qed.
-
-Lemma member_respects_cequivc {o} :
-  forall lib (t1 t2 T : @CTerm o),
-  cequivc lib t1 t2
-  -> member lib t1 T
-  -> member lib t2 T.
-Proof.
-  introv c m.
-  eapply equality_respects_cequivc in c;[|exact m].
-  apply equality_sym in c; apply equality_refl in c; auto.
-Qed.
-
-Lemma member_respects_cequivc_type {o} :
-  forall lib (t T1 T2 : @CTerm o),
-  cequivc lib T1 T2
-  -> member lib t T1
-  -> member lib t T2.
-Proof.
-  introv c m.
-  eapply cequivc_preserving_equality; eauto.
-Qed.
-
-Lemma substcv_as_substc2 {o} :
-  forall x (t : @CTerm o) v (u : CVTerm [x,v]),
-    substcv [x] t v u = substc2 x t v u.
-Proof.
-  introv.
-  destruct_cterms; simpl.
-  apply cvterm_eq; simpl; auto.
-Qed.
-
-Lemma equality_nat2nat_apply {o} :
-  forall lib (f g a b : @CTerm o),
-    equality lib f g nat2nat
-    -> equality lib a b mkc_tnat
-    -> equality lib (mkc_apply f a) (mkc_apply g b) mkc_tnat.
-Proof.
-  introv eqf eqn.
-  unfold nat2nat in eqf.
-  apply equality_in_fun in eqf; repnd.
-  apply eqf in eqn; auto.
-Qed.
-
-Lemma equality_int_nat_implies_cequivc {o} :
-  forall lib (a b : @CTerm o),
-    equality lib a b mkc_tnat
-    -> cequivc lib a b.
-Proof.
-  introv eqn.
-  apply equality_in_tnat in eqn.
-  apply equality_of_nat_imp_tt in eqn.
-  unfold equality_of_nat_tt in eqn; exrepnd.
-  eapply cequivc_trans;[apply computes_to_valc_implies_cequivc;exact eqn1|].
-  apply cequivc_sym.
-  apply computes_to_valc_implies_cequivc; auto.
-Qed.
-
-Lemma member_nseq_nat2nat {o} :
-  forall (lib : @library o) s,
-    member lib (mkc_nseq s) nat2nat.
-Proof.
-  introv.
-  unfold nat2nat.
-  apply equality_in_fun; dands; tcsp; eauto 3 with slow.
-  introv eqn.
-  applydup @equality_int_nat_implies_cequivc in eqn.
-  apply equality_respects_cequivc.
-  { apply implies_cequivc_apply; auto. }
-  clear eqn0.
-  apply equality_refl in eqn.
-  apply member_tnat_iff in eqn; exrepnd.
-
-  eapply member_respects_cequivc.
-  { apply cequivc_sym.
-    apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply computes_to_valc_implies_cequivc;exact eqn0].
-  }
-
-  apply (member_respects_cequivc _ (mkc_nat (s k))).
-  { apply cequivc_sym.
-    apply reduces_toc_implies_cequivc.
-    unfold reduces_toc; simpl.
-    eapply reduces_to_if_split2.
-    { csunf; simpl; auto. }
-    apply reduces_to_if_step.
-    csunf; simpl; dcwf h; simpl.
-    boolvar; try omega.
-    allrw @Znat.Nat2Z.id; auto.
-  }
-  apply nat_in_nat.
-Qed.
-
-Lemma cover_vars_upto_squash {o} :
-  forall (T : @NTerm o) s vs,
-    cover_vars_upto (mk_squash T) s vs
-    <=> cover_vars_upto T s vs.
-Proof.
-  introv.
-  unfold cover_vars_upto.
-  simpl.
-  allrw app_nil_r; allrw remove_nvars_nil_l; sp.
-Qed.
-
-Lemma lsubstc_vars_mk_squash_as_mkcv {o} :
-  forall (T : @NTerm o) w s vs c,
-    {w' : wf_term T
-     & {c' : cover_vars_upto T s vs
-     & lsubstc_vars (mk_squash T) w s vs c
-       = mkcv_squash vs (lsubstc_vars T w' s vs c')}}.
-Proof.
-  introv.
-  dup w as w'.
-  rw @wf_squash in w'.
-  dup c as c'.
-  rw @cover_vars_upto_squash in c'.
-
-  exists w' c'.
-  apply cvterm_eq; simpl.
-  unfold csubst.
-  repeat unflsubst.
-  simpl; fold_terms.
-  allrw @sub_filter_nil_r; auto.
-Qed.
 
 Lemma cover_vars_upto_apply2 {o} :
   forall (vs : list NVar) (a b c : @NTerm o) (sub : CSub),
@@ -997,34 +748,3 @@ Ltac lsubstc_vars_as_mkcv :=
         clear hyp;
         proof_irr
   end.
-
-Lemma alphaeqc_mkc_product1 {o} :
-  forall (a b : @CTerm o) v t,
-    alphaeqc a b
-    -> alphaeqc (mkc_product a v t) (mkc_product b v t).
-Proof.
-  introv aeq.
-  destruct_cterms.
-  allunfold @alphaeqc; allsimpl.
-  unfold mk_product.
-  repeat prove_alpha_eq4.
-Qed.
-
-Lemma tequality_mkc_member_implies_sp {o} :
-  forall lib (a b A B : @CTerm o),
-    tequality lib (mkc_member a A) (mkc_member b B)
-    -> member lib a A
-    -> equality lib a b A.
-Proof.
-  introv teq mem.
-  allrw @tequality_mkc_member_sp; repnd.
-  repndors; tcsp; spcast.
-  eapply equality_respects_cequivc_right;[exact teq|]; auto.
-Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

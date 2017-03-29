@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -32,6 +33,10 @@
 Require Export continuity_type.
 Require Export continuity_type_v2.
 Require Export sequents2.
+Require Export sequents_tacs.
+Require Export per_props_squash.
+Require Export per_props_isect.
+Require Export lift_lsubst_tacs.
 
 
 Definition simple_eq_typec {o} lib (T : @NTerm o) :=
@@ -549,10 +554,6 @@ Proof.
         revert k1; intro k1.
         repeat (one_lift_lsubst_hyp k1).
 
-        pose proof (lsubstc_mk_fun_ex mk_int T s1 wT0 cT0) as xx; exrepnd.
-        eapply alphaeqc_preserving_equality in k1;[clear xx1|exact xx1]; clear_irr.
-        rw @lsubstc_mk_int in k1.
-
         rw @equality_in_fun in k1; repnd.
         pose proof (k1 t1 t2) as ef; autodimp ef hyp.
         {
@@ -573,10 +574,3 @@ Proof.
       exists k; dands; spcast; auto.
     }
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

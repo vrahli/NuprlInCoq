@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -15,10 +18,13 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -27,7 +33,7 @@
 
 Require Export per_props_equality_more.
 Require Export per_props_set.
-Require Export per_props3.
+(*Require Export per_props3.*)
 Require Export per_props_nat.
 
 Require Export continuity_defs2.
@@ -181,10 +187,3 @@ Ltac keepdimp H hyp :=
           ; try (complete auto)
         ]
   end.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -238,10 +239,3 @@ Require Import rules_free_from_atom.
 
 
 (* Require Import rules_per_function. *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "util/" "terms/" "computation/" "cequiv/" "per/" "close/" "rules/" "bar_induction/" "continuity/")
-*** End:
-*)

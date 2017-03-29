@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -1785,29 +1790,31 @@ Ltac appdup l H :=
 
 Ltac eqconstr0 name :=
   match type of name with
-    | mkc_uni _          = mkc_uni _          => apply mkc_uni_eq            in name
-    | mkc_inl _          = mkc_inl _          => apply mkc_inl_eq            in name
-    | mkc_inr _          = mkc_inr _          => apply mkc_inr_eq            in name
-    | mkc_integer _      = mkc_integer _      => apply mkc_integer_eq        in name
-    | mkc_token _        = mkc_token _        => apply mkc_token_eq          in name
-    | mkc_utoken _       = mkc_utoken _       => apply mkc_utoken_eq         in name
-    | mkc_exception _ _  = mkc_exception _ _  => apply mkc_exception_eq      in name
-    | mkc_pertype _      = mkc_pertype _      => apply mkc_pertype_eq        in name
-    | mkc_ipertype _     = mkc_ipertype _     => apply mkc_ipertype_eq       in name
-    | mkc_spertype _     = mkc_spertype _     => apply mkc_spertype_eq       in name
-    | mkc_partial _      = mkc_partial _      => apply mkc_partial_eq        in name
-    | mkc_admiss _       = mkc_admiss _       => apply mkc_admiss_eq         in name
-    | mkc_mono _         = mkc_mono _         => apply mkc_mono_eq           in name
-    | mkc_approx _ _     = mkc_approx _ _     => apply mkc_approx_eq         in name
-    | mkc_cequiv _ _     = mkc_cequiv _ _     => apply mkc_cequiv_eq         in name
-    | mkc_image _ _      = mkc_image _ _      => apply mkc_image_eq          in name
-    | mkc_texc _ _       = mkc_texc _ _       => apply mkc_texc_eq           in name
-    | mkc_union _ _      = mkc_union _ _      => apply mkc_union_eq          in name
-    | mkc_eunion _ _     = mkc_eunion _ _     => apply mkc_eunion_eq         in name
-    | mkc_sup _ _        = mkc_sup _ _        => apply mkc_sup_eq            in name
-    | mkc_pair _ _       = mkc_pair _ _       => apply mkc_pair_eq           in name
-    | mkc_equality _ _ _ = mkc_equality _ _ _ => apply mkc_equality_eq       in name
-    | mkc_tequality _ _  = mkc_tequality _ _  => apply mkc_tequality_eq      in name
+    | mkc_uni _           = mkc_uni _           => apply mkc_uni_eq            in name
+    | mkc_inl _           = mkc_inl _           => apply mkc_inl_eq            in name
+    | mkc_inr _           = mkc_inr _           => apply mkc_inr_eq            in name
+    | mkc_integer _       = mkc_integer _       => apply mkc_integer_eq        in name
+    | mkc_token _         = mkc_token _         => apply mkc_token_eq          in name
+    | mkc_utoken _        = mkc_utoken _        => apply mkc_utoken_eq         in name
+    | mkc_exception _ _   = mkc_exception _ _   => apply mkc_exception_eq      in name
+    | mkc_pertype _       = mkc_pertype _       => apply mkc_pertype_eq        in name
+    | mkc_ipertype _      = mkc_ipertype _      => apply mkc_ipertype_eq       in name
+    | mkc_spertype _      = mkc_spertype _      => apply mkc_spertype_eq       in name
+    | mkc_partial _       = mkc_partial _       => apply mkc_partial_eq        in name
+    | mkc_admiss _        = mkc_admiss _        => apply mkc_admiss_eq         in name
+    | mkc_mono _          = mkc_mono _          => apply mkc_mono_eq           in name
+    | mkc_approx _ _      = mkc_approx _ _      => apply mkc_approx_eq         in name
+    | mkc_cequiv _ _      = mkc_cequiv _ _      => apply mkc_cequiv_eq         in name
+    | mkc_image _ _       = mkc_image _ _       => apply mkc_image_eq          in name
+    | mkc_texc _ _        = mkc_texc _ _        => apply mkc_texc_eq           in name
+    | mkc_union _ _       = mkc_union _ _       => apply mkc_union_eq          in name
+    | mkc_eunion _ _      = mkc_eunion _ _      => apply mkc_eunion_eq         in name
+    | mkc_sup _ _         = mkc_sup _ _         => apply mkc_sup_eq            in name
+    | mkc_refl _          = mkc_refl _          => apply mkc_refl_eq           in name
+    | mkc_pair _ _        = mkc_pair _ _        => apply mkc_pair_eq           in name
+    | mkc_equality _ _ _  = mkc_equality _ _ _  => apply mkc_equality_eq       in name
+    | mkc_requality _ _ _ = mkc_requality _ _ _ => apply mkc_requality_eq      in name
+    | mkc_tequality _ _   = mkc_tequality _ _   => apply mkc_tequality_eq      in name
 
     | mkc_isect _ _ _    = mkc_isect _ _ _    => appdup mkc_isect_eq1    name; repd; subst; apply mkc_isect_eq2    in name
     | mkc_disect _ _ _   = mkc_disect _ _ _   => appdup mkc_disect_eq1   name; repd; subst; apply mkc_disect_eq2   in name
@@ -2077,10 +2084,3 @@ Ltac rev_implies_ts_or_eq T1 T2 T h :=
   end.
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/")
-*** End:
-*)

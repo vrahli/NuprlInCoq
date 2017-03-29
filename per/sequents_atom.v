@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -844,11 +845,13 @@ Definition replace_can {p d} (c : @CanonicalOp p) : @utok_ren_c p d c -> @Canoni
   | NInj x         => fun _ => NInj x
   | NPair          => fun _ => NPair
   | NSup           => fun _ => NSup
+  | NRefl          => fun _ => NRefl
   | Nint i         => fun _ => Nint i
   | Nseq s         => fun _ => Nseq s
   | NUni i         => fun _ => NUni i
   | NTok t         => fun _ => NTok t
   | NEquality      => fun _ => NEquality
+  | NREquality     => fun _ => NREquality
   | NFreeFromAtom  => fun _ => NFreeFromAtom
   | NEFreeFromAtom => fun _ => NEFreeFromAtom
   | NFreeFromAtoms => fun _ => NFreeFromAtoms
@@ -1057,11 +1060,13 @@ Definition set_patom_noutokens_c {p d} (c : @CanonicalOp p) :
   | NInj x         => fun _ => NInj x
   | NPair          => fun _ => NPair
   | NSup           => fun _ => NSup
+  | NRefl          => fun _ => NRefl
   | Nint i         => fun _ => Nint i
   | Nseq s         => fun _ => Nseq s
   | NUni i         => fun _ => NUni i
   | NTok t         => fun _ => NTok t
   | NEquality      => fun _ => NEquality
+  | NREquality     => fun _ => NREquality
   | NFreeFromAtom  => fun _ => NFreeFromAtom
   | NEFreeFromAtom => fun _ => NEFreeFromAtom
   | NFreeFromAtoms => fun _ => NFreeFromAtoms

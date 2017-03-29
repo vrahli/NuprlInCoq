@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -35,9 +36,10 @@ Require Export computation_apply.
 Require Export per_props_cequiv.
 Require Export per_props_union.
 Require Export continuity_defs_ceq.
-Require Export per_props3.
+(*Require Export per_props3.*)
 Require Export per_props_nat.
 Require Export cequiv_bind.
+Require Export per_props_uni.
 
 
 Lemma type_mkc_cequiv {o} :

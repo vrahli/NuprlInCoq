@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -28,7 +29,11 @@
 
 *)
 
+
 Require Export per_props_cequiv.
+Require Export per_props_isect.
+Require Export per_props_false.
+
 
 Lemma type_mkc_top {o} : forall lib, @type o lib mkc_top.
 Proof.

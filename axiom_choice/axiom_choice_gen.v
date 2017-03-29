@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -29,9 +30,10 @@
 
 Require Export cnterm.
 Require Export substc_more.
-Require Export per_props4.
+Require Export per_props_equality.
 Require Export cequiv_cnterm.
 Require Export sequents2.
+Require Export lsubstc_vars.
 
 
 Lemma member_nout_implies {o} :
@@ -630,10 +632,3 @@ Proof.
     allrw <- @mkc_apply2_eq.
     apply equality_in_uni in q; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

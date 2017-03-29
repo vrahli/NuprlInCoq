@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -31,6 +32,7 @@
 Require Export sequents2.
 Require Export sequents_tacs.
 Require Export per_props_cequiv.
+Require Export per_props_false.
 
 
 (*
@@ -96,11 +98,3 @@ Proof.
   apply rule_true_iff_rule_true2.
   apply rule_bottom_diverges_true.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/" "../per/")
-*** End:
-*)
-

@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -30,6 +31,9 @@
 
 
 Require Export continuity_type.
+Require Export sequents_tacs.
+Require Export per_props_squash.
+Require Export per_props_isect.
 
 
 Definition rule_continuity {o}
@@ -530,10 +534,3 @@ Proof.
       exists k; dands; spcast; auto.
     }
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

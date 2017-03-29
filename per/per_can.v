@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -36,6 +37,7 @@ Require Export computation_dec1.
 (*Require Export computation_dec.*)
 Require Export sequents_tacs.
 Require Export per_props_cequiv.
+Require Export per_props_uni.
 
 
 Lemma hasvalue_likec_eq {o} :
@@ -1361,12 +1363,3 @@ Proof.
   - left.
     apply equality_in_uni_mkc_halts_like; auto.
 Qed.
-
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

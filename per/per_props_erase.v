@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -24,30 +25,16 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
 
-*)
-
-
-Require Export per_props.
-Require Export subst_per.
-Require Export sequents_tacs.
-Require Import cequiv_tacs.
-Require Import subst_tacs.
+ *)
 
 
-(*
-Lemma tequality_mkc_erase :
-  forall a b,
-    tequality (mkc_erase a) (mkc_erase b)
-    <=> tequality a b.
-Proof.
-  introv.
-  repeat (rw mkc_erase_eq).
-  rw tequality_mkc_ufun; split; sp.
-  apply type_mkc_unit.
-Qed.
-*)
+Require Export cequiv_tacs.
+Require Export per_props_pertype.
+Require Export lift_lsubst_tacs.
+Require Export subst_tacs.
+
 
 Lemma apply2_erasec_rel {o} :
   forall lib (A x y : @CTerm o),
@@ -174,34 +161,6 @@ Proof.
   rw @tequality_erase; split; sp.
 Qed.
 
-Lemma inhabited_type_respects_alphaeqc {o} :
-  forall lib, respects1 alphaeqc (@inhabited_type o lib).
-Proof.
-  introv aeq inh.
-  apply (alphaeqc_implies_cequivc lib) in aeq.
-  apply @inhabited_type_cequivc with (a := a); auto.
-Qed.
-Hint Resolve inhabited_type_respects_alphaeqc : respects.
-
-Lemma type_respects_cequivc {o} :
-  forall lib, respects1 (cequivc lib) (@type o lib).
-Proof.
-  introv ceq typ.
-  apply type_respects_cequivc_left in ceq; auto.
-  apply tequality_refl in ceq; auto.
-Qed.
-Hint Resolve type_respects_cequivc : respects.
-
-Lemma type_respects_alphaeqc {o} :
-  forall lib, respects1 alphaeqc (@type o lib).
-Proof.
-  introv aeq inh.
-  apply (alphaeqc_implies_cequivc lib) in aeq.
-  apply type_respects_cequivc_left in aeq; auto.
-  apply tequality_refl in aeq; auto.
-Qed.
-Hint Resolve type_respects_alphaeqc : respects.
-
 Lemma type_apply2_erasec_rel {o} :
   forall lib (A x y : @CTerm o),
     type lib (mkc_apply2 (erasec_rel A) x y)
@@ -247,29 +206,18 @@ Proof.
   exists t0; auto.
 Qed.
 
-Lemma equality_in_isect2 {o} :
-  forall lib (t u : @CTerm o) A v B,
-    equality lib t u (mkc_isect A v B)
-    <=>
-    (type lib A
-     # forall a a',
-         equality lib a a' A
-         -> (equality lib t u (substc a v B) # tequality lib (substc a v B) (substc a' v B))).
+(*
+Lemma tequality_mkc_erase :
+  forall a b,
+    tequality (mkc_erase a) (mkc_erase b)
+    <=> tequality a b.
 Proof.
-  sp; rw @equality_in_isect; split; sp; discover; sp.
+  introv.
+  repeat (rw mkc_erase_eq).
+  rw tequality_mkc_ufun; split; sp.
+  apply type_mkc_unit.
 Qed.
-
-Lemma member_in_isect {o} :
-  forall lib (t : @CTerm o) A v B,
-    member lib t (mkc_isect A v B)
-    <=>
-    (type lib A
-     # forall a a',
-         equality lib a a' A
-         -> (member lib t (substc a v B) # tequality lib (substc a v B) (substc a' v B))).
-Proof.
-  sp; rw @equality_in_isect; split; sp; discover; sp.
-Qed.
+*)
 
 Lemma is_per_type_sqper_rel_change_subst {o} :
   forall lib v1 v2 R s1 s2 w c1 c2,
@@ -283,198 +231,69 @@ Proof.
   introv iff isper.
   allunfold @is_per_type.
   destruct isper as [sym trans].
-  allunfold @sqper_rel; lsubst_tac.
-  dands.
+  allunfold @sqper_rel.
+  lift_lsubsts; dands.
 
   - clear trans.
     allunfold @sym_type; introv inh.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec.
     generalize (sym x y); clear sym; intro sym.
     autodimp sym hyp.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec.
     generalize (iff x y); clear iff; intro iff.
     destruct iff as [i1 i2]; clear i1.
     autodimp i2 hyp.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
     generalize (iff y x); clear iff; intro iff.
     destruct iff as [i1 i2]; clear i2.
     autodimp i1 hyp.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
 
   - clear sym.
     allunfold @trans_type; introv inh1 inh2.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
     generalize (trans x y z); clear trans; intro trans.
 
     autodimp trans hyp.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
     generalize (iff x y); clear iff; intro iff.
     destruct iff as [i1 i2]; clear i1.
     autodimp i2 hyp.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
 
     autodimp trans hyp.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
     generalize (iff y z); clear iff; intro iff.
     destruct iff as [i1 i2]; clear i1.
     autodimp i2 hyp.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
 
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
     generalize (iff x z); clear iff; intro iff.
     destruct iff as [i1 i2]; clear i2.
     autodimp i1 hyp.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubst).
     allrw @inhabited_type_erasec; auto.
-    repeat (betared; repeat substc_lsubstc_vars3; lsubst_tac).
+    repeat (betared; repeat substc_lsubstc_vars3; lift_lsubsts).
     allrw @inhabited_type_erasec; auto.
 Qed.
-
-Lemma tequality_iff_mkc_tequality {o} :
-  forall lib (A B : @CTerm o),
-    type lib (mkc_tequality A B) <=> tequality lib A B.
-Proof.
-  introv.
-  split; intro k.
-
-  - unfold type, tequality in k; exrepnd.
-    inversion k0; subst; try not_univ.
-    allunfold_per; computes_to_value_isvalue; allfold (@nuprl o).
-    exists eqa; auto.
-
-  - unfold tequality in k; exrepnd.
-    exists (@true_per o).
-    apply CL_teq; unfold per_teq.
-    fold (@nuprl o).
-    exists A B A B eq; sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_tequality))).
-    apply nuprl_refl in k0; auto.
-    apply nuprl_sym in k0; apply nuprl_refl in k0; auto.
-Qed.
-
-Lemma tequality_mkc_tequality {o} :
-  forall lib (A B C D : @CTerm o),
-    tequality lib (mkc_tequality A B) (mkc_tequality C D)
-    <=> (tequality lib A C # tequality lib B D # tequality lib A B).
-Proof.
-  introv.
-  split; intro k.
-
-  - unfold tequality in k; exrepnd.
-    inversion k0; subst; try not_univ.
-    allunfold_per; computes_to_value_isvalue; allfold (@nuprl o).
-    dands; exists eqa; auto.
-
-  - unfold tequality in k; exrepnd.
-    exists (@true_per o).
-    apply CL_teq; unfold per_teq.
-    fold (@nuprl o).
-
-    assert (eq1 <=2=> eq)
-      as eqs1
-        by (apply nuprl_refl in k1; apply nuprl_refl in k2;
-            generalize (nuprl_uniquely_valued lib A eq1 eq); intro k;
-            repeat (autodimp k hyp)).
-
-    assert (eq0 <=2=> eq)
-      as eqs2
-        by (apply nuprl_sym in k2; apply nuprl_refl in k3; apply nuprl_refl in k2;
-            generalize (nuprl_uniquely_valued lib B eq0 eq); intro k;
-            repeat (autodimp k hyp)).
-
-    exists A B C D eq; sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_tequality))).
-    apply @nuprl_ext with (eq1 := eq1); auto.
-    apply @nuprl_ext with (eq1 := eq0); auto.
-Qed.
-
-Lemma mkc_tequality_equality_in_uni {o} :
-  forall lib (A B C D : @CTerm o) i,
-    tequalityi lib i (mkc_tequality A B) (mkc_tequality C D)
-    <=> (tequalityi lib i A C # tequalityi lib i B D # tequalityi lib i A B).
-Proof.
-  introv.
-  split; intro k.
-
-  - unfold tequalityi, equality in k; exrepnd.
-    inversion k1; subst; try not_univ.
-    duniv j h.
-    allrw @univi_exists_iff; exrepnd.
-    computes_to_value_isvalue; GC.
-    discover; exrepnd.
-    inversion h2; subst; try not_univ.
-    allunfold_per; computes_to_value_isvalue; allfold (@nuprl o).
-    dands; exists eq; sp; allrw; exists eqa0; auto.
-
-  - unfold tequalityi, equality in k; exrepnd.
-    generalize (nuprl_uniquely_valued lib (mkc_uni i) eq0 eq k1 k3); intro eqs1.
-    generalize (nuprl_uniquely_valued lib (mkc_uni i) eq1 eq k0 k3); intro eqs2.
-    clear k0 k1.
-    rw eqs1 in k4; clear eqs1.
-    rw eqs2 in k5; clear eqs2.
-    exists eq; dands; auto.
-    inversion k3; try not_univ.
-    duniv j h.
-    allrw @univi_exists_iff; exrepnd.
-    computes_to_value_isvalue; GC.
-    discover; exrepnd.
-    fold (@nuprli o lib j0) in h2, h3, h4.
-    rw h0; exists (@true_per o).
-    dup h2 as na1; apply nuprli_refl in na1.
-    dup h4 as na2; apply nuprli_refl in na2.
-    generalize (nuprli_uniquely_valued lib j0 j0 A A eqa1 eqa na1 na2); clear na1 na2; intro eqs1.
-    dup h3 as nb1; apply nuprli_refl in nb1.
-    dup h4 as nb2; apply nuprli_sym in nb2; apply nuprli_refl in nb2.
-    generalize (nuprli_uniquely_valued lib j0 j0 B B eqa0 eqa nb1 nb2); clear nb1 nb2; intro eqs2.
-    apply CL_teq; fold (@nuprli o lib j0).
-    exists A B C D eqa; sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_tequality))).
-    apply nuprli_ext with (eq1 := eqa1); auto.
-    apply nuprli_ext with (eq1 := eqa0); auto.
-Qed.
-
-Lemma equality_in_mkc_tequality {o} :
-  forall lib (a b A B : @CTerm o),
-    equality lib a b (mkc_tequality A B) <=> tequality lib A B.
-Proof.
-  introv; split; intro k.
-
-  - apply inhabited_implies_tequality in k.
-    rw @tequality_iff_mkc_tequality in k; auto.
-
-  - exists (@true_per o); dands; auto; try (complete (unfold true_per; auto)).
-    unfold tequality in k; exrepnd.
-    apply CL_teq.
-    exists A B A B eq; fold (@nuprl o); sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_tequality))).
-    apply nuprl_refl in k0; auto.
-    apply nuprl_sym in k0; apply nuprl_refl in k0; auto.
-Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

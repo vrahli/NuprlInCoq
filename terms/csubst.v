@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -521,6 +526,119 @@ Proof.
   rw <- @fold_mkc_member; sp.
 Qed.
 
+Lemma lsubstc_mk_requality {o} :
+  forall t1 t2 T sub,
+  forall w1 : @wf_term o t1,
+  forall w2 : wf_term t2,
+  forall wT : wf_term T,
+  forall w  : wf_term (mk_requality t1 t2 T),
+  forall c1 : cover_vars t1 sub,
+  forall c2 : cover_vars t2 sub,
+  forall cT : cover_vars T sub,
+  forall c  : cover_vars (mk_equality t1 t2 T) sub,
+    lsubstc (mk_requality t1 t2 T) w sub c
+    = mkc_requality (lsubstc t1 w1 sub c1)
+                    (lsubstc t2 w2 sub c2)
+                    (lsubstc T wT sub cT).
+Proof.
+  sp; unfold lsubstc; simpl.
+  assert (csubst (mk_requality t1 t2 T) sub
+          = mk_requality (csubst t1 sub) (csubst t2 sub) (csubst T sub))
+    by (unfold csubst; simpl;
+        change_to_lsubst_aux4; simpl;
+        rw @sub_filter_nil_r;
+        allrw @fold_nobnd;
+        rw @fold_requality; sp).
+  apply cterm_eq; auto.
+Qed.
+
+Lemma lsubstc_mk_requality_ex {o} :
+  forall t1 t2 T sub,
+  forall w  : wf_term (@mk_requality o t1 t2 T),
+  forall c  : cover_vars (mk_requality t1 t2 T) sub,
+  {w1 : wf_term t1
+   & {w2 : wf_term t2
+   & {wT : wf_term T
+   & {c1 : cover_vars t1 sub
+   & {c2 : cover_vars t2 sub
+   & {cT : cover_vars T sub
+      & lsubstc (mk_requality t1 t2 T) w sub c
+        = mkc_requality (lsubstc t1 w1 sub c1)
+                        (lsubstc t2 w2 sub c2)
+                        (lsubstc T wT sub cT)}}}}}}.
+Proof.
+  sp.
+
+  assert (wf_term t1) as w1.
+  { allrw <- @wf_requality_iff; sp. }
+
+  assert (wf_term t2) as w2.
+  { allrw <- @wf_requality_iff; sp. }
+
+  assert (wf_term T) as w3.
+  { allrw <- @wf_requality_iff; sp. }
+
+  assert (cover_vars t1 sub) as c1.
+  { unfold cover_vars in c.
+    simpl in c.
+    repeat (rw remove_nvars_nil_l in c).
+    rw app_nil_r in c.
+    repeat (rw @over_vars_app_l in c); sp. }
+
+  assert (cover_vars t2 sub) as c2.
+  { unfold cover_vars in c.
+    simpl in c.
+    repeat (rw remove_nvars_nil_l in c).
+    rw app_nil_r in c.
+    repeat (rw @over_vars_app_l in c); sp. }
+
+  assert (cover_vars T sub) as c3.
+  { unfold cover_vars in c.
+    simpl in c.
+    repeat (rw remove_nvars_nil_l in c).
+    rw app_nil_r in c.
+    repeat (rw @over_vars_app_l in c); sp. }
+
+  exists w1 w2 w3 c1 c2 c3.
+  apply lsubstc_mk_requality.
+Qed.
+
+Lemma lsubstc_mk_rmember {o} :
+  forall t T sub,
+  forall wt : wf_term t,
+  forall wT : @wf_term o T,
+  forall w  : wf_term (mk_rmember t T),
+  forall ct : cover_vars t sub,
+  forall cT : cover_vars T sub,
+  forall c  : cover_vars (mk_rmember t T) sub,
+    lsubstc (mk_rmember t T) w sub c
+    = mkc_rmember (lsubstc t wt sub ct)
+                  (lsubstc T wT sub cT).
+Proof.
+  unfold mk_rmember; sp.
+  rw <- @fold_mkc_rmember.
+  apply lsubstc_mk_requality.
+Qed.
+
+Lemma lsubstc_mk_rmember_ex {o} :
+  forall t T sub,
+  forall w  : wf_term (@mk_rmember o t T),
+  forall c  : cover_vars (mk_rmember t T) sub,
+    {wt : wf_term t
+     & {wT : wf_term T
+     & {ct : cover_vars t sub
+     & {cT : cover_vars T sub
+        & lsubstc (mk_rmember t T) w sub c
+          = mkc_rmember (lsubstc t wt sub ct)
+                        (lsubstc T wT sub cT)}}}}.
+Proof.
+  unfold mk_rmember; sp.
+  generalize (lsubstc_mk_requality_ex t t T sub w c); sp.
+  rewrite @lsubstc_replace with (w2 := w2) (p2 := c2) in e.
+  exists w2 wT c2 cT; sp.
+  rw <- @fold_mkc_rmember; sp.
+Qed.
+
 Lemma lsubstc_mk_tequality {o} :
   forall t1 t2 sub,
   forall w1 : wf_term t1,
@@ -844,6 +962,49 @@ Proof.
 
   exists w1 w2 c1 c2.
   apply lsubstc_mk_sup.
+Qed.
+
+Lemma lsubstc_mk_refl {p} :
+  forall (t1 : @NTerm p) sub,
+  forall w1 : wf_term t1,
+  forall w  : wf_term (mk_refl t1),
+  forall c1 : cover_vars t1 sub,
+  forall c  : cover_vars (mk_refl t1) sub,
+    lsubstc (mk_refl t1) w sub c
+    = mkc_refl (lsubstc t1 w1 sub c1).
+Proof.
+  sp; unfold lsubstc; simpl.
+  apply cterm_eq; simpl.
+  unfold csubst; simpl.
+  change_to_lsubst_aux4; simpl.
+  rw @sub_filter_nil_r.
+  allrw @fold_nobnd.
+  rw @fold_refl; sp.
+Qed.
+
+Lemma lsubstc_mk_refl_ex {p} :
+  forall t1 sub,
+  forall w  : wf_term (@mk_refl p t1),
+  forall c  : cover_vars (mk_refl t1) sub,
+    {w1 : wf_term t1
+     & {c1 : cover_vars t1 sub
+        & lsubstc (mk_refl t1) w sub c
+          = mkc_refl (lsubstc t1 w1 sub c1)}}.
+Proof.
+  sp.
+
+  assert (wf_term t1) as w1.
+  { allrw @wf_refl_iff; sp. }
+
+  assert (cover_vars t1 sub) as c1.
+  { unfold cover_vars in c.
+    simpl in c.
+    repeat (rw remove_nvars_nil_l in c).
+    rw app_nil_r in c.
+    repeat (rw @over_vars_app_l in c); sp. }
+
+  exists w1 c1.
+  apply lsubstc_mk_refl.
 Qed.
 
 Lemma lsubstc_mk_texc {o} :
@@ -4407,6 +4568,17 @@ Proof.
   rw @sub_filter_nil_r; allrw @fold_nobnd. sp.
 Qed.
 
+Lemma csubst_mk_requality {o} :
+  forall a b A sub,
+    csubst (@mk_requality o a b A) sub
+    = mk_requality (csubst a sub) (csubst b sub) (csubst A sub).
+Proof.
+  introv.
+  unfold csubst; simpl.
+  change_to_lsubst_aux4; simpl.
+  rw @sub_filter_nil_r; allrw @fold_nobnd. sp.
+Qed.
+
 Lemma csubst_mk_tequality {o} :
   forall a b sub,
     csubst (@mk_tequality o a b) sub
@@ -4769,10 +4941,3 @@ Proof.
   apply csubst_trivial; simpl; auto.
 Qed.
 Hint Rewrite @lsubstc_mk_bfalse : slow.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

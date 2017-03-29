@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -15,10 +18,13 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -27,6 +33,8 @@
 Require Export stronger_continuity_defs_typ.
 Require Export terms5.
 Require Export cvterm3.
+
+Require Export list. (* WTF? *)
 
 
 Definition all_vars_utok_sub {o} (sub : @utok_sub o) :=
@@ -915,11 +923,3 @@ Proof.
   apply isprogram_eq.
   apply implies_isprog_test2; auto.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

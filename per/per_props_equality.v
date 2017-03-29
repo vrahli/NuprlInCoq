@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -29,8 +30,10 @@
 *)
 
 
-Require Export per_props.
+(*Require Export per_props.*)
 Require Export per_props_cequiv.
+Require Export per_props_function.
+Require Export per_props_uni.
 
 
 (** printing #  $\times$ #×# *)
@@ -477,45 +480,6 @@ Proof.
   pose proof (nuprl_eq_implies_eqorceq_refl lib T T eq t1 t2); sp.
 Qed.
 
-Lemma tequality_equality_in_mkc_spertype_implies_tequality_apply {p} :
-  forall lib (a b c d R1 R2 : @CTerm p),
-    tequality lib
-      (mkc_equality a b (mkc_spertype R1))
-      (mkc_equality c d (mkc_spertype R2))
-    -> tequality lib
-         (mkc_apply2 R1 a b)
-         (mkc_apply2 R2 c d).
-Proof.
-  introv teq.
-  rw @tequality_mkc_equality_sp in teq; repnd.
-  rw @tequality_mkc_spertype in teq0; repnd.
-  destruct teq1 as [e1 | ceq1]; destruct teq as [e2 | ceq2];
-  try (rw @equality_in_mkc_spertype2 in e1);
-  try (rw @equality_in_mkc_spertype2 in e2); repnd; spcast.
-
-  - generalize (teq3 a b c e3); intro h1.
-    apply tequality_trans with (t2 := mkc_apply2 R1 c b); auto.
-    generalize (teq4 c b d e0); intro h2.
-    apply tequality_trans with (t2 := mkc_apply2 R1 c d); auto.
-
-  - generalize (teq3 a b c e0); intro h1.
-    apply tequality_trans with (t2 := mkc_apply2 R1 c b); auto.
-    apply tequality_respects_cequivc_left with (T1 := mkc_apply2 R1 c d); auto.
-    apply implies_cequivc_apply2; auto.
-    apply cequivc_sym; auto.
-
-  - apply tequality_respects_cequivc_left with (T1 := mkc_apply2 R1 c b); auto.
-    apply implies_cequivc_apply2; auto.
-    apply cequivc_sym; auto.
-    generalize (teq4 c b d e0); intro h1.
-    apply tequality_trans with (t2 := mkc_apply2 R1 c d); auto.
-
-  - apply tequality_respects_cequivc_left with (T1 := mkc_apply2 R1 c d); auto.
-    apply implies_cequivc_apply2; auto.
-    apply cequivc_sym; auto.
-    apply cequivc_sym; auto.
-Qed.
-
 Lemma tequality_mkc_equality_base_iff {p} :
   forall lib (t1 t2 t3 t4 : @CTerm p),
     tequality lib (mkc_equality t1 t2 mkc_base) (mkc_equality t3 t4 mkc_base)
@@ -792,11 +756,36 @@ Proof.
   split; sp.
 Qed.
 
+Lemma tequality_mkc_member_implies_sp {o} :
+  forall lib (a b A B : @CTerm o),
+    tequality lib (mkc_member a A) (mkc_member b B)
+    -> member lib a A
+    -> equality lib a b A.
+Proof.
+  introv teq mem.
+  allrw @tequality_mkc_member_sp; repnd.
+  repndors; tcsp; spcast.
+  eapply equality_respects_cequivc_right;[exact teq|]; auto.
+Qed.
+
+Lemma tequality_mkc_equality_sp_eq {p} :
+  forall lib (a1 a2 b1 b2 A B : @CTerm p),
+    equality lib a1 a2 A
+    -> (tequality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
+        <=> (tequality lib A B # equality lib a1 b1 A # equality lib a2 b2 A)).
+Proof.
+  introv eqa.
+  split; intro h; repnd; dands; auto.
+  - rw @tequality_mkc_equality_sp in h; sp.
+  - rw @tequality_mkc_equality_sp in h; repnd.
+    repndors; spcast; eauto 3 with nequality.
+  - rw @tequality_mkc_equality_sp in h; repnd.
+    repndors; spcast; eauto 3 with nequality.
+    + eapply equality_respects_cequivc_right;[exact h|].
+      apply equality_sym in eqa; apply equality_refl in eqa; auto.
+    + eapply equality_respects_cequivc_right;[exact h|].
+      apply equality_sym in eqa; apply equality_refl in eqa; auto.
+  - apply tequality_mkc_equality_sp; dands; auto.
+Qed.
+
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

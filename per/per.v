@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -615,7 +620,25 @@ Definition per_eq {p} lib (ts : cts(p)) T1 T2 (eq : per(p)) : [U] :=
       # eqorceq lib eqa a1 b1
       # eqorceq lib eqa a2 b2
       # (forall t t',
-           eq t t' <=> (t ===>(lib) mkc_axiom # t' ===>(lib) mkc_axiom # eqa a1 a2)) }}.
+            eq t t' <=> (t ===>(lib) mkc_axiom # t' ===>(lib) mkc_axiom # eqa a1 a2)) }}.
+
+Definition per_req_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) :=
+  { x1 , x2 : CTerm
+  , (t ===>(lib) (mkc_refl x1))
+  # (t' ===>(lib) (mkc_refl x2))
+  # eqa a1 a2
+  # eqa a1 x1
+  # eqa a2 x2}.
+
+Definition per_req {p} lib (ts : cts(p)) T1 T2 (eq : per(p)) : [U] :=
+  {A, B, a1, a2, b1, b2 : CTerm
+   , {eqa : per
+   , T1 ===>(lib) (mkc_requality a1 a2 A)
+   # T2 ===>(lib) (mkc_requality b1 b2 B)
+   # ts A B eqa
+   # eqorceq lib eqa a1 b1
+   # eqorceq lib eqa a2 b2
+   # eq <=2=> (per_req_eq lib a1 a2 eqa) }}.
 
 (**
 
@@ -1852,6 +1875,7 @@ Inductive close {p} lib (ts : cts) (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_approx   : per_approx   lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_cequiv   : per_cequiv   lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_eq       : per_eq       lib (close lib ts) T T' eq -> close lib ts T T' eq
+  | CL_req      : per_req      lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_teq      : per_teq      lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_isect    : per_isect    lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_func     : per_func     lib (close lib ts) T T' eq -> close lib ts T T' eq
@@ -1888,6 +1912,7 @@ Arguments CL_base     {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_approx   {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_cequiv   {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_eq       {p} [lib] [ts] [T] [T'] [eq] _.
+Arguments CL_req      {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_teq      {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_isect    {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_func     {p} [lib] [ts] [T] [T'] [eq] _.
@@ -1925,6 +1950,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
   | Case_aux c "CL_approx"
   | Case_aux c "CL_cequiv"
   | Case_aux c "CL_eq"
+  | Case_aux c "CL_req"
   | Case_aux c "CL_teq"
   | Case_aux c "CL_isect"
   | Case_aux c "CL_func"
@@ -2007,6 +2033,20 @@ Definition close_ind' {pp}
                                # t' ===>(lib) mkc_axiom
                                # eqa a1 a2)
                  (per : per_eq lib (close lib ts) T T' eq),
+            P ts T T' eq)
+  (requ : forall (ts : cts)
+                 (T T' : @CTerm pp)
+                 (eq : per)
+                 (A B a1 a2 b1 b2 : @CTerm pp)
+                 (eqa : per)
+                 (c1 : T ===>(lib) (mkc_requality a1 a2 A))
+                 (c2 : T' ===>(lib) (mkc_requality b1 b2 B))
+                 (cla : close lib ts A B eqa)
+                 (reca : P ts A B eqa)
+                 (eo1 : eqorceq lib eqa a1 b1)
+                 (eo2 : eqorceq lib eqa a2 b2)
+                 (eqiff : eq <=2=> (per_req_eq lib a1 a2 eqa))
+                 (per : per_req lib (close lib ts) T T' eq),
             P ts T T' eq)
   (tequ : forall (ts : cts)
                  (T T' : @CTerm pp)
@@ -2626,6 +2666,27 @@ Definition close_ind' {pp}
              eqa2
              x
              pts
+   | CL_req pts =>
+       let (A,    x) := pts in
+       let (B,    x) := x in
+       let (a1,   x) := x in
+       let (a2,   x) := x in
+       let (b1,   x) := x in
+       let (b2,   x) := x in
+       let (eqa,  x) := x in
+       let (cT1,  x) := x in
+       let (cT2,  x) := x in
+       let (tsa,  x) := x in
+       let (eo1,  x) := x in
+       let (eo2, eqiff) := x in
+         requ ts T T' eq A B a1 a2 b1 b2 eqa
+              cT1
+              cT2
+              tsa
+              (rec ts A B eqa tsa)
+              eo1 eo2
+              eqiff
+              pts
    | CL_teq pts =>
        let (a1,   x) := pts in
        let (a2,   x) := x in
@@ -3360,6 +3421,11 @@ Ltac dest_per_fam h eqa eqb A A' v v' B B' c1 c2 tsa tsb eqt :=
   destruct h as [c2 h];
   destruct h as [tsa tsb].
 
+Ltac one_dest_per_fam eqa feqb A1 A2 v1 v2 B1 B2 c1 c2 tsa tsb eqt :=
+  match goal with
+    | [ H : _ |- _ ] => dest_per_fam H eqa feqb A1 A2 v1 v2 B1 B2 c1 c2 tsa tsb eqt
+  end.
+
 Ltac one_unfold_per :=
   match goal with
     | [ H : per_int      _ _ _ _ _ |- _ ] => unfold per_int      in H; exrepd
@@ -3369,6 +3435,7 @@ Ltac one_unfold_per :=
     | [ H : per_approx   _ _ _ _ _ |- _ ] => unfold per_approx   in H; exrepd
     | [ H : per_cequiv   _ _ _ _ _ |- _ ] => unfold per_cequiv   in H; exrepd
     | [ H : per_eq       _ _ _ _ _ |- _ ] => unfold per_eq       in H; exrepd
+    | [ H : per_req      _ _ _ _ _ |- _ ] => unfold per_req      in H; exrepd
     | [ H : per_teq      _ _ _ _ _ |- _ ] => unfold per_teq      in H; exrepd
     | [ H : per_isect    _ _ _ _ _ |- _ ] => unfold per_isect    in H; exrepd
     | [ H : per_func     _ _ _ _ _ |- _ ] => unfold per_func     in H; exrepd

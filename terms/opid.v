@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -184,6 +190,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NInj       : CanInj -> CanonicalOp
  | NPair      : CanonicalOp
  | NSup       : CanonicalOp
+ | NRefl      : CanonicalOp
  | Nint       : Z -> CanonicalOp
  | Nseq       : nseq -> CanonicalOp
  | NTok       : String.string -> CanonicalOp
@@ -206,6 +213,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NEFreeFromAtom : CanonicalOp
  | NFreeFromAtoms : CanonicalOp
  | NEquality      : CanonicalOp
+ | NREquality     : CanonicalOp
  | NTEquality     : CanonicalOp
  | NInt           : CanonicalOp
  | NAtom          : CanonicalOp
@@ -263,6 +271,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NInj _         => [0]
   | NPair          => [0,0]
   | NSup           => [0,0]
+  | NRefl          => [0]
   | Nint _         => []
   | Nseq _         => []
   | NUni _         => []
@@ -272,6 +281,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NEFreeFromAtom => [0,0,0]
   | NFreeFromAtoms => [0,0]
   | NEquality      => [0,0,0]
+  | NREquality     => [0,0,0]
   | NTEquality     => [0,0]
   | NInt           => []
   | NBase          => []

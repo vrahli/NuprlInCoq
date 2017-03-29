@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -29,6 +34,7 @@ Require Export sequents2.
 Require Export sequents_tacs.
 Require Export sequents_tacs2.
 Require Export per_props_equality.
+Require Export per_props_isect.
 Require Export rules_tyfam.
 Require Export rules_tyfam2.
 Require Export subst_tacs_aeq.

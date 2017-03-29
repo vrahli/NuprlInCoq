@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -32,6 +33,9 @@
 Require Export bar_induction2_con.
 Require Export subst_tacs.
 Require Export sequents_equality.
+Require Export per_props_isect.
+Require Export lsubstc_vars.
+
 
 Ltac decompose_wf_cov :=
     match goal with

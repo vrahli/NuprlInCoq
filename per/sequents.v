@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,16 +21,23 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
 
-Require Export per_props_more.
-Require Export nuprl.
+Require Export nuprl_props.
+Require Export choice.
+Require Export cvterm.
+(*Require Export per_props_equality.*)
+(*Require Export nuprl.*)
+(*Require Export csubst.*)
 Require Export list.  (* Why do I have to do that? *)
-Require Export csubst.
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ #⪯# *)

@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -31,6 +32,8 @@
 
 Require Export bar_induction_cterm.
 Require Export subst_tacs.
+Require Export per_props_equality.
+Require Export lsubstc_vars.
 
 
 (**

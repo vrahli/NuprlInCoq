@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli & Mark Bickford
 
 *)
@@ -29,7 +34,7 @@ Require Export sequents_equality.
 Require Export per_props_psquash.
 Require Export sequents_tacs2.
 Require Export per_can.
-Require Export per_respects.
+Require Export per_props_squash.
 Require Export subst_tacs_aeq.
 Require Export lsubst_hyps.
 Require Export list. (* !!WTF *)
@@ -762,10 +767,3 @@ Proof.
     rw @dom_csub_eq.
     apply similarity_dom in sim6; repnd; rw sim6; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -34,6 +39,7 @@ Require Import close_type_sys_per_base.
 Require Import close_type_sys_per_sqle.
 Require Import close_type_sys_per_sqequal.
 Require Import close_type_sys_per_eq.
+Require Import close_type_sys_per_req.
 Require Import close_type_sys_per_teq.
 Require Import close_type_sys_per_isect.
 (*Require Import close_type_sys_per_eisect.*)
@@ -182,324 +188,105 @@ Proof.
 
   close_cases (induction cl using @close_ind') Case; sp; spcast.
 
-
   - Case "CL_init".
     apply close_type_system_init; auto.
-
 
   - Case "CL_int".
     apply close_type_system_int; auto.
 
-
   - Case "CL_atom".
     apply close_type_system_atom; auto.
-
 
   - Case "CL_uatom".
     apply close_type_system_uatom; auto.
 
-
   - Case "CL_base".
     apply close_type_system_base; auto.
-
 
   - Case "CL_approx".
     apply close_type_system_approx; auto.
 
-
   - Case "CL_cequiv".
     apply close_type_system_cequiv; auto.
 
-
   - Case "CL_eq".
-    apply @close_type_system_eq
-    with (A := A)
-           (B := B)
-           (a1 := a1)
-           (a2 := a2)
-           (b1 := b1)
-           (b2 := b2)
-           (eqa := eqa); auto.
+    eapply close_type_system_eq; eauto.
 
+  - Case "CL_req".
+    eapply close_type_system_req; eauto.
 
   - Case "CL_teq".
-    apply @close_type_system_teq
-    with (a1 := a1)
-           (a2 := a2)
-           (b1 := b1)
-           (b2 := b2)
-           (eqa := eqa); auto.
-
+    eapply close_type_system_teq; eauto.
 
   - Case "CL_isect".
-    apply @close_type_system_isect
-    with (A := A)
-           (A' := A')
-           (v := v)
-           (v' := v')
-           (B := B)
-           (B' := B')
-           (eqa := eqa)
-           (eqb := eqb); auto.
-
+    eapply close_type_system_isect; eauto.
 
   - Case "CL_func".
-    apply @close_type_system_func
-    with (A := A)
-           (A' := A')
-           (v := v)
-           (v' := v')
-           (B := B)
-           (B' := B')
-           (eqa := eqa)
-           (eqb := eqb); auto.
-
+    eapply close_type_system_func; eauto.
 
   - Case "CL_disect".
-    apply @close_type_system_disect
-    with (A := A)
-           (A' := A')
-           (v := v)
-           (v' := v')
-           (B := B)
-           (B' := B')
-           (eqa := eqa)
-           (eqb := eqb); auto.
-
+    eapply close_type_system_disect; eauto.
 
   - Case "CL_pertype".
-    apply @close_type_system_pertype
-    with (R1 := R1)
-           (R2 := R2)
-           (eq1 := eq1)
-           (eq2 := eq2); auto.
-
+    eapply close_type_system_pertype; eauto.
 
   - Case "CL_ipertype".
-    apply @close_type_system_ipertype
-    with (R1 := R1)
-           (R2 := R2)
-           (eq1 := eq1); auto.
-
+    eapply close_type_system_ipertype; eauto.
 
   - Case "CL_spertype".
-    apply @close_type_system_spertype
-    with (R1 := R1)
-           (R2 := R2)
-           (eq1 := eq1); auto.
-
+    eapply close_type_system_spertype; eauto.
 
   - Case "CL_w".
-    apply @close_type_system_w
-    with (A := A)
-           (A' := A')
-           (v := v)
-           (v' := v')
-           (B := B)
-           (B' := B')
-           (eqa := eqa)
-           (eqb := eqb); auto.
-
+    eapply close_type_system_w; eauto.
 
   - Case "CL_m".
-    apply @close_type_system_m
-    with (A := A)
-           (A' := A')
-           (v := v)
-           (v' := v')
-           (B := B)
-           (B' := B')
-           (eqa := eqa)
-           (eqb := eqb); auto.
-
+    eapply close_type_system_m; eauto.
 
   - Case "CL_pw".
-    apply @close_type_system_pw
-          with (P := Pr)
-          (P' := Pr')
-          (ap := ap)
-          (ap' := ap')
-          (A := A)
-          (A' := A')
-          (bp := bp)
-          (bp' := bp')
-          (ba := ba)
-          (ba' := ba')
-          (B := B)
-          (B' := B')
-          (cp := cp)
-          (cp' := cp')
-          (ca := ca)
-          (ca' := ca')
-          (cb := cb)
-          (cb' := cb')
-          (C := C)
-          (C' := C')
-          (p := p)
-          (p' := p')
-          (eqp := eqp)
-          (eqa := eqa)
-          (eqb := eqb);
-      auto; spcast; sp;
+    eapply close_type_system_pw; eauto;
       try (complete (unfold type_sys_props_fam; sp));
       try (complete (unfold type_sys_props_fam_fam; sp)).
-
 
   - Case "CL_pm".
-    apply @close_type_system_pm
-          with (P := Pr)
-          (P' := Pr')
-          (ap := ap)
-          (ap' := ap')
-          (A := A)
-          (A' := A')
-          (bp := bp)
-          (bp' := bp')
-          (ba := ba)
-          (ba' := ba')
-          (B := B)
-          (B' := B')
-          (cp := cp)
-          (cp' := cp')
-          (ca := ca)
-          (ca' := ca')
-          (cb := cb)
-          (cb' := cb')
-          (C := C)
-          (C' := C')
-          (p := p)
-          (p' := p')
-          (eqp := eqp)
-          (eqa := eqa)
-          (eqb := eqb);
-      auto; spcast; sp;
+    eapply close_type_system_pm; eauto;
       try (complete (unfold type_sys_props_fam; sp));
       try (complete (unfold type_sys_props_fam_fam; sp)).
 
-
   - Case "CL_texc".
-    apply @close_type_system_texc
-    with (A1 := N)
-           (A2 := N')
-           (B1 := E)
-           (B2 := E')
-           (eqa := eqn)
-           (eqb := eqe); auto; spcast; sp.
-
+    eapply close_type_system_texc; eauto.
 
   - Case "CL_union".
-    apply @close_type_system_union
-    with (A1 := A)
-           (A2 := A')
-           (B1 := B)
-           (B2 := B')
-           (eqa := eqa)
-           (eqb := eqb); auto; spcast; sp.
-
+    eapply close_type_system_union; eauto.
 
   - Case "CL_image".
-    apply @close_type_system_image
-    with (A := A)
-           (A' := A')
-           (f := f)
-           (f' := f')
-           (eqa := eqa); auto; spcast; sp.
-
-
-(*
-  - Case "CL_eisect".
-    admit.
-*)
-
+    eapply close_type_system_image; eauto; spcast; auto.
 
   - Case "CL_partial".
-    apply @close_type_system_partial
-    with (A1 := A1)
-           (A2 := A2)
-           (eqa := eqa); auto.
-
+    eapply close_type_system_partial; eauto.
 
   - Case "CL_admiss".
-    apply @close_type_system_admiss
-    with (A1 := A1)
-           (A2 := A2)
-           (eqa := eqa); auto.
-
+    eapply close_type_system_admiss; eauto.
 
   - Case "CL_mono".
-    apply @close_type_system_mono
-    with (A1 := A1)
-           (A2 := A2)
-           (eqa := eqa); auto.
-
+    eapply close_type_system_mono; eauto.
 
   - Case "CL_ffatom".
-    apply @close_type_system_ffatom
-    with (A1 := A1)
-           (A2 := A2)
-           (x1 := x1)
-           (x2 := x2)
-           (a1 := a1)
-           (a2 := a2)
-           (eqa := eqa)
-           (u := u); auto.
-
+    eapply close_type_system_ffatom; eauto.
 
   - Case "CL_effatom".
-    apply @close_type_system_effatom
-    with (A1 := A1)
-           (A2 := A2)
-           (x1 := x1)
-           (x2 := x2)
-           (a1 := a1)
-           (a2 := a2)
-           (eqa := eqa); auto.
-
+    eapply close_type_system_effatom; eauto.
 
   - Case "CL_ffatoms".
-    apply @close_type_system_ffatoms
-    with (A1 := A1)
-           (A2 := A2)
-           (x1 := x1)
-           (x2 := x2)
-           (eqa := eqa); auto.
-
+    eapply close_type_system_ffatoms; eauto.
 
   - Case "CL_set".
-    apply @close_type_system_set
-    with (A := A)
-           (A' := A')
-           (v := v)
-           (v' := v')
-           (B := B)
-           (B' := B')
-           (eqa := eqa)
-           (eqb := eqb); auto.
-
+    eapply close_type_system_set; eauto.
 
   - Case "CL_tunion".
-    apply @close_type_system_tunion
-    with (A := A)
-           (A' := A')
-           (v := v)
-           (v' := v')
-           (B := B)
-           (B' := B')
-           (eqa := eqa)
-           (eqb := eqb); auto.
-
+    eapply close_type_system_tunion; eauto.
 
   - Case "CL_product".
-    apply @close_type_system_product
-    with (A := A)
-           (A' := A')
-           (v := v)
-           (v' := v')
-           (B := B)
-           (B' := B')
-           (eqa := eqa)
-           (eqb := eqb); auto.
-
+    eapply close_type_system_product; eauto.
 Qed.
 
 (* begin hide *)
