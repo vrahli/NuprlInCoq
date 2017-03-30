@@ -71,6 +71,7 @@ Require Import bar_induction_cterm4.
 
 (* Kripke's Schema *)
 Require Import kripkes_schema.
+Require Import kripkes_schema2.
 
 
 (* Choice sequences: *)

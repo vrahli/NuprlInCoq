@@ -75,7 +75,7 @@ Definition one_at_zero {o} (v : NVar) : @CTerm o :=
        (mkcv_one [v])
        (mkcv_zero [v])).
 
-Definition all_one {o} (v : NVar) : @CTerm o :=
+Definition all_zero {o} (v : NVar) : @CTerm o :=
   mkc_lam v (mkcv_zero [v]).
 
 Hint Rewrite @mkcv_inteq_substc : core.
@@ -139,8 +139,8 @@ Proof.
 Qed.
 Hint Resolve one_at_zero_is_nat2nat : slow.
 
-Lemma all_one_is_nat2nat {o} :
-  forall lib x, @member o lib (all_one x) nat2nat.
+Lemma all_zero_is_nat2nat {o} :
+  forall lib x, @member o lib (all_zero x) nat2nat.
 Proof.
   introv.
   unfold nat2nat.
@@ -157,7 +157,7 @@ Proof.
   allrw @mkc_zero_eq.
   apply nat_in_nat.
 Qed.
-Hint Resolve all_one_is_nat2nat : slow.
+Hint Resolve all_zero_is_nat2nat : slow.
 
 Lemma implies_inhabited_mkc_iff {o} :
   forall lib (a b : @CTerm o),
@@ -216,9 +216,9 @@ Proof.
   boolvar; ginv; tcsp.
 Qed.
 
-Lemma apply_all_one_to_nat_computes_to_zero {o} :
+Lemma apply_all_zero_to_nat_computes_to_zero {o} :
   forall lib x k,
-    @computes_to_valc o lib (mkc_apply (all_one x) (mkc_nat k)) mkc_zero.
+    @computes_to_valc o lib (mkc_apply (all_zero x) (mkc_nat k)) mkc_zero.
 Proof.
   introv.
   unfold one_at_zero.
@@ -715,7 +715,7 @@ Proof.
 
       {
         (* A is not inhabited *)
-        exists (@all_one o x).
+        exists (@all_zero o x).
 
         dands.
 
@@ -757,14 +757,14 @@ Proof.
                 split; intro h; eapply equality_trans; try (exact h);
                   apply equality_nat2nat_apply; auto;
                     try (complete (apply equality_sym; auto));
-                    rw @member_eq; apply all_one_is_nat2nat.
+                    rw @member_eq; apply all_zero_is_nat2nat.
               }
 
               {
                 unfold equorsq2, equorsq; dands; try left.
 
                 { apply equality_nat2nat_apply; auto.
-                  rw @member_eq; apply all_one_is_nat2nat. }
+                  rw @member_eq; apply all_zero_is_nat2nat. }
 
                 { rw @mkc_one_as_mkc_nat.
                   apply nat_in_nat. }
@@ -803,7 +803,7 @@ Proof.
 
               eapply equality_respects_cequivc_left in equ2;
                 [|apply computes_to_valc_implies_cequivc;
-                  apply apply_all_one_to_nat_computes_to_zero].
+                  apply apply_all_zero_to_nat_computes_to_zero].
 
               apply equality_in_tnat in equ2.
               unfold equality_of_nat in equ2; exrepnd; spcast.
