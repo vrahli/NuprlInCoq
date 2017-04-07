@@ -305,8 +305,10 @@ Definition sq_continuity :=
 Definition sq_continuity_zeros :=
   forall (F : S2), Cast {n : nat & forall g : S1, eq_upto n zeros g -> F zeros = F g}.
 
-Definition sq_continuity_prop :=
-  forall (F : S2) (f : S1), exists n, forall g : S1, eq_upto n f g -> F f = F g.
+Definition sq_continuity_prop_sch (F : S2) :=
+  forall (f : S1), exists n, forall g : S1, eq_upto n f g -> F f = F g.
+
+Definition sq_continuity_prop := forall (F : S2), sq_continuity_prop_sch F.
 
 Definition sq_continuity_prop_zeros :=
   forall (F : S2), exists n, forall g : S1, eq_upto n zeros g -> F zeros = F g.
@@ -319,7 +321,7 @@ Definition sq_continuity_prop_zeros :=
 Lemma sq_continuity_iff_prop :
   sq_continuity <-> sq_continuity_prop.
 Proof.
-  introv; split; intro h; introv.
+  introv; split; intro h; repeat introv.
 
   { pose proof (h F f) as q; clear h.
     inversion q as [h]; clear q; exrepnd.
@@ -332,7 +334,7 @@ Qed.
 (*
 
   We can trivially show that AC20 (false in Nuprl) and the negation of
-  the non-squashed continuity principle (this negation is true
+  the non-squashed continuity principle (this negation is true in
   Martin-Lof-like type theories) for the sequence of zeros imply the
   negation the squashed continuity principle (this negation is false
   in Nuprl because the squashed continuity principle is true in Nuprl)
@@ -655,4 +657,98 @@ Proof.
   introv scont bi.
   pose proof continuity_false as ucont.
   apply monotone_bar_induction_implies_continuity in bi; auto.
+Qed.
+
+
+(*
+
+   This is about \forall\alpha\exists\beta-continuity.
+
+   We show that it contradicts Kripke's Schema.
+   This follows Dummett's proof in "Elements of Intuitionism (2nd edition)" p.246.
+   The original proof is by Myhill in
+   "Notes towards an axiomatization of intuitionistic analysis".
+
+ *)
+
+Definition cons_seq (n : S0) (a : S1) : S1 :=
+  fun k => if zerop k then n else a (pred k).
+
+Definition shift_seq (c : S2) (a : S1) : S1 :=
+  fun n => c (cons_seq n a).
+
+Definition ones : S1 := fun _ => 1.
+
+Definition replace_from (a : S1) (n : nat) (d : nat) : S1 :=
+  fun k => if le_lt_dec n k then d else a k.
+
+Lemma replace_from_cons_seq :
+  forall (a : S1) (x : S0) (n : nat) (d : nat),
+    replace_from (cons_seq x a) (S n) d
+    = cons_seq x (replace_from a n d).
+Proof.
+  introv.
+  apply functional_extensionality; introv.
+  unfold replace_from, cons_seq.
+  destruct (zerop x0); subst; simpl; auto.
+  destruct x0; simpl; try omega.
+  destruct (le_lt_dec n x0); subst; auto.
+Qed.
+
+Definition sq_continuity1_prop :=
+  forall (A : S1 -> S1 -> Prop),
+    (forall (a : S1), exists (b : S1), A a b)
+    ->
+    exists (c : S2),
+      sq_continuity_prop_sch c
+      /\ forall (a : S1), A a (shift_seq c a).
+
+Definition kripke_s_schema :=
+  forall (A : Prop),
+  exists (a : S1),
+    ((exists (x : nat), a(x) = 1) <-> A).
+
+Lemma kripke_s_schema_contradicts_continuity1 :
+  kripke_s_schema -> ~ sq_continuity1_prop.
+Proof.
+  introv KS CONT.
+  remember (fun (a : S1) => forall (x : nat), a(x) = 1) as P.
+
+  assert (forall (a : S1),
+             exists (b : S1),
+               ((exists (x : nat), b(x) = 1) <-> P(a))) as h.
+  { introv; apply (KS (P a)). }
+
+  applydup CONT in h.
+  exrepnd.
+
+  pose proof (h1 ones) as q.
+  destruct q as [q' q]; clear q'; autodimp q hyp.
+  { subst; auto. }
+  exrepnd.
+
+  unfold shift_seq in q0.
+
+  pose proof (h0 (cons_seq x ones)) as w; exrepnd.
+  pose proof (w0 (replace_from (cons_seq x ones) (S n) 0)) as e.
+  autodimp e hyp.
+  {
+    introv ltmn.
+    unfold cons_seq, replace_from.
+    destruct (le_lt_dec (S n) m) as [d|d]; auto; try omega.
+  }
+
+  pose proof (h1 (replace_from ones n 0)) as z.
+  destruct z as [z z']; clear z'; autodimp z hyp.
+  {
+    exists x.
+    unfold shift_seq.
+    rewrite replace_from_cons_seq in e.
+    rewrite <- e; auto.
+  }
+
+  rewrite HeqP in z.
+  pose proof (z n) as r.
+  unfold replace_from in r.
+  destruct (le_lt_dec n n); try omega.
 Qed.
