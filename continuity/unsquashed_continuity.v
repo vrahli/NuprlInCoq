@@ -664,10 +664,13 @@ Qed.
 
    This is about \forall\alpha\exists\beta-continuity.
 
-   We show that it contradicts Kripke's Schema.
+   We show that it contradicts Kripke's Schema (KS).
    This follows Dummett's proof in "Elements of Intuitionism (2nd edition)" p.246.
    The original proof is by Myhill in
    "Notes towards an axiomatization of intuitionistic analysis".
+
+   We use here truncated version of KS and continuity, i.e., we truncate the sum
+   types using the existential that live in Prop, i.e., that are proof irrelevant.
 
  *)
 
@@ -751,4 +754,53 @@ Proof.
   pose proof (z n) as r.
   unfold replace_from in r.
   destruct (le_lt_dec n n); try omega.
+Qed.
+
+
+(*
+
+  We now show that a totally unsquashed version of sq_continuity1 is false.
+  This follows trivially from the fact that the weak continuity principle
+  on numbers is false as proved above in [continuity_false].
+
+ *)
+
+Definition nsq_continuity_sch (F : S2) :=
+  forall (f : S1), {n : S0 & forall g : S1, eq_upto n f g -> F f = F g}.
+
+Definition nsq_continuity1 :=
+  forall (A : S1 -> S1 -> Type),
+    (forall (a : S1), {b : S1 & A a b})
+    ->
+    {c : S2 & (nsq_continuity_sch c * forall (a : S1), A a (shift_seq c a))%type }.
+
+Lemma nsq_continuity1_false : !nsq_continuity1.
+Proof.
+  introv cont.
+  pose proof continuity_false as h.
+  destruct h.
+  introv.
+
+  pose proof (cont (fun a b => F a = b 0)) as q; clear cont.
+  autodimp q hyp.
+  {
+    introv.
+    exists (fun _ => F a); auto.
+  }
+
+  exrepnd.
+  pose proof (q1 (cons_seq 0 f)) as h; exrepnd.
+  exists n.
+  introv w.
+
+  repeat (rewrite q0).
+  unfold shift_seq.
+
+  apply h0.
+
+  introv ltmn.
+  unfold cons_seq.
+  destruct (zerop m); auto.
+  destruct m; simpl; try omega.
+  apply w; omega.
 Qed.
