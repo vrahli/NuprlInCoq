@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -477,67 +482,92 @@ Proof.
   introv; simpl; omega.
 Qed.
 
-Definition compute_step {o}
-           (lib : @library o)
-           (t : @NTerm o) : Comput_Result :=
-  @Fix NTerm
-       (fun a b => lt (size a) (size b))
-       (measure_wf lt_wf size)
-       (fun _ => Comput_Result)
-       (fun t =>
-          match t with
-            | vterm v => fun _ => cfailure compute_step_error_not_closed t
-            | sterm _ => fun _ => csuccess t
-            | oterm (Can _) _ => fun _ => csuccess t
-            | oterm Exc _ => fun _ => csuccess t
-            | oterm (NCan _) [] => fun _ => cfailure "no args supplied" t
-            | oterm (NCan nc) (bterm [] (vterm v) :: bs) => fun _ => cfailure compute_step_error_not_closed t
-            | oterm (NCan ncan) (bterm (v::vs) u :: bs) =>
-              fun F =>
-                let a := get_fresh_atom u in
-                compute_step_fresh
-                  lib ncan t v vs u bs
-                  (F (subst u v (mk_utoken a))
-                     (compute_step'_size1 ncan v vs u bs a))
-                  a
-            | oterm (NCan ncr) (bterm [] (oterm (Can arg1c) arg1bts as arg1) :: btsr) =>
-              fun F => compute_step_can t ncr arg1c arg1bts arg1 btsr
-                                        ((match btsr with
-                                            | bterm l x :: bs => fun F => F x (compute_step'_size2 ncr arg1c arg1bts l x bs)
-                                            | _ => fun _ => cfailure bad_args t
-                                          end) F)
-            | oterm (NCan ncr) (bterm [] (sterm f) :: btsr) =>
-              fun F => compute_step_seq t ncr f btsr
-                                        ((match btsr with
-                                            | bterm l x :: bs => fun F => F x (compute_step'_size4 ncr f l x bs)
-                                            | _ => fun _ => cfailure bad_args t
-                                          end) F)
-            (* assuming qst arg is always principal *)
-            (* if the principal argument is an exception, we raise the exception *)
-            | oterm (NCan ncr) ((bterm [] (oterm Exc arg1bts))::btsr) =>
-              fun _ => compute_step_catch ncr t arg1bts btsr
-            (* if the principal argument is non-canonical or an abstraction then we compute on that term *)
-            | oterm (NCan ncr) ((bterm [] (oterm _ _ as arg1nt))::btsr) =>
-              fun F => on_success (F arg1nt (compute_step'_size3 ncr arg1nt btsr)) (fun f => oterm (NCan ncr) (bterm [] f :: btsr))
-            | oterm (Abs opabs) bs => fun F => compute_step_lib lib opabs bs
-          end)
-       t.
+Definition co_var {o} (bs : list BTerm) (t : @NTerm o) v op :=
+  match bs, op with
+  | [bterm [] (vterm w), bterm [] t1, bterm [] t2], CompOpEq => if deq_nvar v w then csuccess t1 else csuccess t2
+  | _, _ => cfailure bad_args t
+  end.
+
+Definition compute_step_can_test_var {o} top (t : @NTerm o) (v : NVar) (bs : list BTerm) :=
+  match bs with
+  | [bterm [] t1, bterm [] t2] =>
+    match top with
+    | CanIsuatom => csuccess t1
+    | _ => csuccess t2
+    end
+  | _ => cfailure canonical_form_test_not_well_formed t
+  end.
+
+Definition compute_step_var {o}
+           (t    : @NTerm o)
+           (nc   : NonCanonicalOp)
+           (v    : NVar)
+           (bs   : list BTerm) :=
+  match nc with
+    | NApply    => cfailure bad_args t
+    | NEApply   => cfailure bad_args t
+    | NFix      => cfailure bad_args t
+    | NSpread   => cfailure bad_args t
+    | NDsup     => cfailure bad_args t
+    | NDecide   => cfailure bad_args t
+    | NCbv      => compute_step_cbv t (vterm v) bs
+    | NSleep    => cfailure bad_args t
+    | NTUni     => cfailure bad_args t
+    | NMinus    => cfailure bad_args t
+    | NFresh    => cfailure "fresh has a bound variable" t
+    | NTryCatch      => compute_step_try t (vterm v) bs
+    | NParallel      => cfailure bad_args t
+    | NCompOp    op  => co_var bs t v op
+    | NArithOp   op  => cfailure bad_args t
+    | NCanTest   top => compute_step_can_test_var top t v bs
+  end.
+
+Fixpoint compute_step {o}
+         (lib : @library o)
+         (t : @NTerm o) : Comput_Result :=
+  match t with
+  | vterm v => csuccess t (*cfailure compute_step_error_not_closed t*)
+  | sterm _ => csuccess t
+  | oterm (Can _) _ => csuccess t
+  | oterm Exc _ => csuccess t
+  | oterm (NCan _) [] => cfailure "no args supplied" t
+  | oterm (NCan nc) (bterm [] (vterm v) :: bs) => compute_step_var t nc v bs
+  | oterm (NCan ncan) (bterm (v::vs) u :: bs) =>
+    compute_step_fresh lib ncan t v vs u bs (compute_step lib u)
+  | oterm (NCan ncr) (bterm [] (oterm (Can arg1c) arg1bts as arg1) :: btsr) =>
+    compute_step_can t ncr arg1c arg1bts arg1 btsr
+                     (match btsr with
+                      | bterm l x :: bs => compute_step lib x
+                      | _ => cfailure bad_args t
+                      end)
+  | oterm (NCan ncr) (bterm [] (sterm f) :: btsr) =>
+    compute_step_seq t ncr f btsr
+                     (match btsr with
+                      | bterm l x :: bs => compute_step lib x
+                      | _ => cfailure bad_args t
+                      end)
+  (* assuming qst arg is always principal *)
+  (* if the principal argument is an exception, we raise the exception *)
+  | oterm (NCan ncr) ((bterm [] (oterm Exc arg1bts))::btsr) =>
+    compute_step_catch ncr t arg1bts btsr
+  (* if the principal argument is non-canonical or an abstraction then we compute on that term *)
+  | oterm (NCan ncr) ((bterm [] (oterm _ _ as arg1nt))::btsr) =>
+    on_success (compute_step lib arg1nt) (fun f => oterm (NCan ncr) (bterm [] f :: btsr))
+  | oterm (Abs opabs) bs => compute_step_lib lib opabs bs
+  end.
 
 Definition compute_step_unfold {o}
          (lib : @library o)
          (t : @NTerm o) : Comput_Result :=
   match t with
-    | vterm v => cfailure compute_step_error_not_closed t
+    | vterm v => csuccess t
     | sterm _ => csuccess t
     | oterm (Can _) _ => csuccess t
     | oterm Exc _ => csuccess t
     | oterm (NCan _) [] => cfailure "no args supplied" t
-    | oterm (NCan nc) (bterm [] (vterm v) :: bs) => cfailure compute_step_error_not_closed t
+    | oterm (NCan nc) (bterm [] (vterm v) :: bs) => compute_step_var t nc v bs
     | oterm (NCan ncan) (bterm (v::vs) u :: bs) =>
-      let a := get_fresh_atom u in
-      compute_step_fresh lib ncan t v vs u bs
-                         (compute_step lib (subst u v (mk_utoken a)))
-                         a
+      compute_step_fresh lib ncan t v vs u bs (compute_step lib u)
     | oterm (NCan ncr) (bterm [] (oterm (Can arg1c) arg1bts as arg1) :: btsr) =>
       compute_step_can t ncr arg1c arg1bts arg1 btsr
                        (match btsr with
@@ -566,93 +596,6 @@ Lemma compute_step_eq_unfold {o} :
     compute_step lib t = compute_step_unfold lib t.
 Proof.
   destruct t as [v|f|op bs]; simpl; try reflexivity.
-  dopid op as [can|ncan|exc|abs] Case; try reflexivity.
-  destruct bs as [|b bs]; try reflexivity.
-  destruct b as [l t].
-  destruct l as [|v vs]; try reflexivity.
-  - destruct t as [v1|f1|op1 bs1]; try reflexivity.
-    { unfold compute_step at 1.
-      destruct bs; try reflexivity;[].
-      destruct b.
-      destruct ncan; try reflexivity;[].
-      destruct l; try reflexivity;[].
-      destruct n; try reflexivity;[].
-      destruct o0; try reflexivity;[].
-      simpl.
-      rw Fix_eq; simpl; try reflexivity;[].
-      introv F.
-      destruct x as [v'|f'|op bs']; auto;[].
-      destruct op; auto;[].
-      destruct bs'; auto;[].
-      destruct b.
-      destruct l0.
-      - destruct n1; auto.
-        + destruct bs'; auto.
-          destruct b; auto.
-          f_equal; tcsp.
-        + destruct o0; try (complete (f_equal; tcsp));[].
-          destruct bs'; auto.
-          destruct b.
-          f_equal; tcsp.
-      - f_equal; tcsp.
-    }
-    dopid op1 as [can1|ncan1|exc1|abs2] SCase; try reflexivity.
-    + unfold compute_step at 1.
-      destruct bs; try reflexivity.
-      destruct b.
-      rw Fix_eq; simpl.
-      * f_equal.
-      * introv F.
-        destruct x as [v'|f'|op bs']; auto.
-        destruct op; auto.
-        destruct bs'; auto.
-        destruct b;[].
-        destruct l0; auto.
-        { destruct n1; auto.
-          { destruct bs'; auto.
-            destruct b; auto.
-            f_equal; tcsp. }
-          destruct o0; auto; try (complete (f_equal; tcsp)).
-          destruct bs'; auto.
-          destruct b; auto.
-          apply f_equal; tcsp. }
-        { f_equal; tcsp. }
-    + unfold compute_step at 1.
-      rw Fix_eq; simpl.
-      * f_equal.
-      * introv F.
-        destruct x as [v'|f'|op bs']; auto.
-        destruct op; auto.
-        destruct bs'; auto.
-        destruct b;[].
-        destruct l; auto.
-        { destruct n0; auto.
-          { destruct bs'; auto.
-            destruct b.
-            f_equal; tcsp. }
-          destruct o0; auto; try (complete (f_equal; tcsp)).
-          destruct bs'; auto.
-          destruct b; auto.
-          apply f_equal; tcsp. }
-        { f_equal; tcsp. }
-  - unfold compute_step at 1.
-    rw Fix_eq; simpl.
-    + f_equal.
-    + introv F.
-      destruct x as [v'|f'|op bs']; auto.
-      destruct op; auto.
-      destruct bs'; auto.
-      destruct b;[].
-      destruct l; auto.
-      { destruct n0; auto.
-        { destruct bs'; auto.
-          destruct b.
-          f_equal; tcsp. }
-        destruct o0; auto; try (complete (f_equal; tcsp)).
-        destruct bs'; auto.
-        destruct b; auto.
-        apply f_equal; tcsp. }
-      { f_equal; tcsp. }
 Qed.
 
 (*
@@ -796,7 +739,7 @@ Proof.
 Qed.
 *)
 
-Opaque compute_step.
+Global Opaque compute_step.
 
 
 Tactic Notation "csunf" ident(h) := rewrite @compute_step_eq_unfold in h.

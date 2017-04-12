@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
  *)
@@ -103,6 +108,83 @@ Proof.
     introv i; repndors; subst; tcsp; allrw @bt_wf_iff; auto.
 Qed.
 
+Hint Resolve subvars_cons_lr : slow.
+
+Lemma co_var_success {o} :
+  forall bs (t : @NTerm o) v op u,
+    co_var bs t v op = csuccess u
+    -> {w : NVar
+        & {t1 : NTerm
+        & {t2 : NTerm
+        & bs = [nobnd (vterm w), nobnd t1, nobnd t2]
+        # op = CompOpEq
+        # u = if deq_nvar v w then t1 else t2}}}.
+Proof.
+  introv comp.
+  destruct bs; allsimpl; ginv;[].
+  destruct b as [l t0]; try (complete (allsimpl; ginv));[].
+  destruct l; simpl in *; ginv;[].
+  destruct t0 as [v0|f|op0 bs0]; ginv;[].
+  destruct bs; allsimpl; ginv;[].
+  destruct b as [l t1]; try (complete (allsimpl; ginv));[].
+  destruct l; simpl in *; ginv;[].
+  destruct bs; allsimpl; ginv;[].
+  destruct b as [l t2]; try (complete (allsimpl; ginv));[].
+  destruct l; simpl in *; ginv;[].
+  destruct bs; allsimpl; ginv;[].
+  destruct op; ginv.
+  exists v0 t1 t2; dands; auto.
+  boolvar; ginv; auto.
+Qed.
+
+Definition is_uatom_test (c : CanonicalTest) : bool :=
+  match c with
+  | CanIsuatom => true
+  | _ => false
+  end.
+
+Lemma is_uatom_test_dec (c : CanonicalTest) : {c = CanIsuatom} + {c <> CanIsuatom}.
+Proof.
+  destruct c; try (complete (right; intro xx; inversion xx)); tcsp.
+Defined.
+
+Lemma compute_step_can_test_var_success {o} :
+  forall c (t : @NTerm o) v bs u,
+    compute_step_can_test_var c t v bs = csuccess u
+    -> {t1 : NTerm
+        & {t2 : NTerm
+        & bs = [nobnd t1, nobnd t2]
+        # u = if is_uatom_test_dec c then t1 else t2}}.
+Proof.
+  introv comp.
+  destruct bs as [|b bs]; simpl in *; ginv;[].
+  destruct b as [l t1]; simpl in *.
+  destruct l; simpl in *; ginv;[].
+  destruct bs as [|b bs]; simpl in *; ginv;[].
+  destruct b as [l t2]; simpl in *.
+  destruct l; simpl in *; ginv;[].
+  destruct bs as [|b bs]; simpl in *; ginv;[].
+  exists t1 t2; dands; auto.
+  destruct c; simpl; ginv; auto.
+Qed.
+
+Lemma co_aux_var_success {o} :
+  forall (t : @NTerm o) op bs u,
+    co_aux_var t op bs = csuccess u
+    -> {t1 : NTerm & bs = [nobnd t1, nobnd u] # op = CompOpEq }.
+Proof.
+  introv comp.
+  destruct bs; allsimpl; ginv;[].
+  destruct b as [l t1]; try (complete (allsimpl; ginv));[].
+  destruct l; simpl in *; ginv;[].
+  destruct bs; allsimpl; ginv;[].
+  destruct b as [l t2]; try (complete (allsimpl; ginv));[].
+  destruct l; simpl in *; ginv;[].
+  destruct bs; allsimpl; ginv;[].
+  destruct op; ginv.
+  exists t1; dands; auto.
+Qed.
+
 Lemma compute_step_preserves {o} :
   forall lib (t u : @NTerm o),
     nt_wf t
@@ -112,7 +194,7 @@ Proof.
   nterm_ind1s t as [v|f ind|op bs ind] Case; introv wf comp.
 
   - Case "vterm".
-    rw @compute_step_eq_unfold in comp; allsimpl; ginv.
+    rw @compute_step_eq_unfold in comp; allsimpl; ginv; allsimpl; auto.
 
   - Case "sterm".
     csunf comp; allsimpl; ginv.
@@ -130,9 +212,53 @@ Proof.
       destruct b as [l t]; try (complete (allsimpl; ginv)).
       destruct l; try (complete (allsimpl; ginv)).
 
-      { destruct t as [v|f|op bts]; try (complete (allsimpl; ginv)).
+      { destruct t as [v|f|op bts]; try (complete (allsimpl; ginv));
+          [| |].
 
-        { allsimpl.
+        {
+          simpl in *.
+          dopid_noncan ncan SSCase; allsimpl; ginv.
+
+          - SSCase "NCbv".
+            apply compute_step_cbv_success in comp; exrepnd; subst; simpl in *.
+            autorewrite with slow.
+            dands; auto.
+
+            + eapply subvars_eqvars;[|apply eqvars_sym;apply eqvars_free_vars_disjoint].
+              simpl.
+              boolvar; simpl; autorewrite with slow; eauto 2 with slow.
+              apply implies_subvars_app_l; eauto 3 with slow.
+
+            + allrw @nt_wf_eq.
+              apply wf_cbv_iff in wf; repnd.
+              apply wf_term_subst; auto.
+
+          - SSCase "NTryCatch".
+            apply compute_step_try_success in comp; exrepnd; subst; simpl in *.
+            autorewrite with slow.
+            allrw @nt_wf_eq.
+            apply wf_try_iff in wf; repnd.
+            rw @wf_atom_eq.
+            dands; auto.
+            apply implies_subvars_app_l; eauto 3 with slow.
+            apply implies_subvars_app_l; eauto 3 with slow.
+
+          - SSCase "NCompOp".
+            apply co_var_success in comp; exrepnd; subst; simpl in *.
+            allrw @nt_wf_eq.
+            allrw @wf_compop_iff; repnd.
+            boolvar; ginv; simpl in *; autorewrite with slow; dands; auto;
+              repeat (apply subvars_cons_r); eauto 3 with slow.
+
+          - SSCase "NCanTest".
+            apply compute_step_can_test_var_success in comp; exrepnd; subst; simpl in *.
+            allrw @nt_wf_eq.
+            allrw @wf_can_test_iff; repnd.
+            boolvar; subst; simpl in *; autorewrite with slow; dands; eauto 3 with slow.
+        }
+
+        {
+          allsimpl.
           dopid_noncan ncan SSSCase; allsimpl; ginv.
 
           - SSSCase "NApply".
@@ -539,10 +665,21 @@ Proof.
           destruct bs; try (complete (allsimpl; dcwf h));[].
 
           destruct b as [l t]; try (complete (allsimpl; ginv));[].
-          destruct l; destruct t as [v|f|op bs2]; try (complete (allsimpl; dcwf h));[].
+          destruct l; destruct t as [v|f|op bs2]; ginv; try (complete (allsimpl; dcwf h));[|].
+
+          {
+            simpl in *.
+            dcwf h.
+            apply co_aux_var_success in comp; exrepnd; subst; simpl in *; autorewrite with slow.
+            allrw @nt_wf_eq.
+            allrw @wf_compop_iff; repnd.
+            dands; dands; auto.
+            apply subvars_app_weak_r; eauto 3 with slow.
+          }
 
           allrw @nt_wf_NCompOp; exrepnd; allunfold @nobnd; ginv; fold_terms.
-          allsimpl; allrw remove_nvars_nil_l; allrw app_nil_r.
+          allsimpl.
+          allrw remove_nvars_nil_l; allrw app_nil_r.
 
           dopid op as [can3|ncan3|exc3|abs3] SSSSCase.
 
@@ -832,61 +969,24 @@ Proof.
       { allsimpl.
         apply compute_step_fresh_success in comp; repnd; subst.
         repndors; exrepnd; subst; dands;
-        try (complete (allsimpl; tcsp; eauto 4 with slow)).
+          try (complete (allsimpl; tcsp; eauto 4 with slow));
+          allsimpl; autorewrite with slow.
 
-        - allsimpl; allrw app_nil_r.
-          rw @free_vars_pushdown_fresh; auto.
-
-          (*
-        - rw @get_markers_pushdown_fresh; simpl; eauto with slow.
-*)
+        - rw @free_vars_pushdown_fresh; auto.
 
         - apply nt_wf_pushdown_fresh.
           apply nt_wf_fresh in wf; auto.
 
-        - allsimpl; repnd; subst; allsimpl; allrw app_nil_r.
-          pose proof (free_vars_subst_utokens x [(get_fresh_atom t, mk_var n)]) as h.
-          apply (subars_remove_nvars_lr [n]) in h.
-          eapply subvars_trans;[exact h|clear h].
-          rw remove_nvars_app_r; simpl.
-          rw remove_nvars_eq; rw app_nil_r.
-          apply subars_remove_nvars_lr.
-          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom t))) [n]) as k; repeat (autodimp k hyp); clear ind.
-          { rw @simple_osize_subst; eauto 3 with slow. }
+        - pose proof (ind t t [n]) as k; repeat (autodimp k hyp); clear ind; eauto 3 with slow.
           pose proof (k x) as h; clear k.
           allrw @nt_wf_fresh.
-          repeat (autodimp h hyp; repnd).
-          { apply nt_wf_subst; eauto 3 with slow. }
-          rw @cl_subst_subst_aux in h0; eauto with slow; unfold subst_aux in h0.
-          rw @cl_lsubst_aux_trivial2 in h0; eauto with slow.
-          simpl in h0.
-          eapply subvars_trans;[exact h0|].
-          apply subvars_remove_nvars; eauto with slow.
-
-          (*
-        - allsimpl; repnd; subst; allsimpl; allrw app_nil_r.
-          pose proof (get_markers_subst_utokens x [(get_fresh_atom t, mk_var n)]) as h.
-          eapply subset_trans;[exact h|clear h]; simpl.
-          rw app_nil_r.
-          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom t))) [n]) as k; repeat (autodimp k hyp); clear ind.
-          { rw @simple_size_subst; auto. }
-          pose proof (k x) as h; clear k.
-          autodimp h hyp; repnd.
-          eapply subset_trans;[exact h1|].
-          rw subset_app; dands; eauto with slow.
-          unfold subst; eapply subset_trans;[apply get_markers_lsubst|].
-          simpl; allrw app_nil_r; eauto with slow.
-           *)
-
-        - allsimpl; repnd; subst; allsimpl; allrw app_nil_r.
-          allrw @nt_wf_fresh.
-          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom t))) [n]) as k; repeat (autodimp k hyp); clear ind.
-          { rw @simple_osize_subst; eauto 3 with slow. }
-          pose proof (k x) as h; clear k.
           repeat (autodimp h hyp); repnd.
-          { apply nt_wf_subst; eauto 3 with slow. }
-          allrw @nt_wf_eq.
-          apply wf_subst_utokens; auto; eauto with slow.
+          apply subars_remove_nvars_lr; auto.
+
+        - pose proof (ind t t [n]) as k; repeat (autodimp k hyp); clear ind; eauto 3 with slow.
+          pose proof (k x) as h; clear k.
+          allrw @nt_wf_fresh.
+          repeat (autodimp h hyp); repnd; auto.
       }
 
     + SCase "Exc".

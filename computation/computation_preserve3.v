@@ -383,15 +383,6 @@ Proof.
 Qed.
 Hint Rewrite @fold_ncan_nil : slow.
 
-Lemma sub_find_sub_filter_singleton_eq {o} :
-  forall (sub : @Sub o) (v : NVar),
-    sub_find (sub_filter sub [v]) v = None.
-Proof.
-  introv.
-  rw @sub_find_sub_filter_eq; allrw memvar_singleton; boolvar; auto.
-Qed.
-Hint Rewrite @sub_find_sub_filter_singleton_eq : slow.
-
 Definition get_utokens_step_seq_op_seq {o}
            (op : @Opid o)
            (bs : list (@BTerm o)) :=

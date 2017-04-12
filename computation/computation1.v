@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -56,7 +61,7 @@ Definition too_few_args_to_comparison_op := "too few args to comparison op".
 Definition sleep_not_well_formed := "sleep not well-formed".
 Definition tuni_not_well_formed := "tuni not well-formed".
 Definition minus_not_well_formed := "minus not well-formed".
-Definition compute_step_error_not_closed := "not closed".
+(*Definition compute_step_error_not_closed := "not closed".*)
 Definition compute_step_error_abs := "abstraction".
 Definition too_few_args_to_parallel := "too few args to parallel".
 Definition parallel_malformed_2nd_arg := "parallel: malformed 2nd arg".
@@ -186,7 +191,8 @@ Definition compute_step_eapply1 {o}
   match bs with
     | [] => cfailure bad_args t
     | bterm (_ :: _) _ :: _ => cfailure bad_args t
-    | bterm [] (vterm _) :: _ => cfailure bad_args t
+    | bterm [] (vterm _ as arg2) :: bs2 =>
+      compute_step_eapply2 t arg1 arg2 bs2
     | bterm [] (oterm (Can _) _ as arg2) :: bs2 =>
       compute_step_eapply2 t arg1 arg2 bs2
     | bterm [] (oterm Exc _ as arg2) :: _ => csuccess arg2
@@ -689,11 +695,13 @@ Fixpoint find_atom {o} (s : @atom_sub o) (var : NVar) : option (get_patom_set o)
     | (v, t) :: xs => if beq_var v var then Some t else find_atom xs var
   end.
 
+(*
 Definition compute_var {o} (v : NVar) (ce : @compenv o) (f : get_patom_set o -> @Comput_Result o) : Comput_Result :=
   match find_atom (ce_atom_sub ce) v with
     | None => cfailure compute_step_error_not_closed (vterm v)
     | Some a => f a
   end.
+*)
 
 
 (* if we match on arg1c,arg2c instead, we get 22*22 cases when coq
@@ -741,7 +749,7 @@ Definition ca_aux {o} btsr (t : @NTerm o) arg1bts arg1c op cstep arg1 ncr :=
   match btsr with
     | []  => cfailure too_few_args_to_arith_op t
     | bterm (_ :: _) _ :: _ => cfailure cop_malformed_2nd_arg t
-    | bterm [] (vterm v) :: btsr3 => cfailure compute_step_error_not_closed t
+    | bterm [] (vterm v) :: btsr3 => cfailure bad_args t
     | (bterm [] (oterm (Can arg2c) arg2bts)::btsr3) =>
       compute_step_arith op arg1c arg2c arg1bts arg2bts btsr3 t
     | bterm [] (oterm Exc _ as arg2nt) :: _ => csuccess arg2nt
@@ -828,11 +836,19 @@ Definition compute_step_comp {p}
 *)
 
 
+(* the first argument is a Can and the second a var *)
+Definition co_aux_var {o} (t : @NTerm o) op (bs : list BTerm) :=
+  match bs, op with
+  | [bterm [] t1, bterm [] t2], CompOpEq => csuccess t2
+  | _, _ => cfailure bad_args t
+  end.
+
+(* the first argument is: arg1 = oterm (Can arg1c) arg1bts *)
 Definition co_aux {o} btsr (t : @NTerm o) arg1bts arg1c op cstep arg1 ncr :=
   match btsr with
     | [] => cfailure too_few_args_to_comparison_op t
     | bterm (_ :: _) _ :: _ => cfailure cop_malformed_2nd_arg t
-    | bterm [] (vterm v) :: btsr3 => cfailure compute_step_error_not_closed t
+    | bterm [] (vterm v) :: bs => co_aux_var t op bs
     | bterm [] (oterm (Can arg2c) arg2bts) :: btsr3 =>
       compute_step_comp op arg1c arg2c arg1bts arg2bts btsr3 t
     | bterm [] (oterm Exc _ as arg2nt) :: _ => csuccess arg2nt
@@ -843,13 +859,13 @@ Definition co_aux {o} btsr (t : @NTerm o) arg1bts arg1c op cstep arg1 ncr :=
 
 Definition co_wf {o} op (arg1c : @CanonicalOp o) (arg1bts : list (@BTerm o)) :=
   match get_param_from_cop arg1c, arg1bts with
-    | Some pk, [] =>
-      match op, pk with
-        | CompOpEq, _ => true
-        | CompOpLess, PKi _ => true
-        | CompOpLess, _ => false
-      end
-    | _, _ => false
+  | Some pk, [] =>
+    match op, pk with
+    | CompOpEq, _ => true
+    | CompOpLess, PKi _ => true
+    | CompOpLess, _ => false
+    end
+  | _, _ => false
   end.
 
 Definition co_wf_def {o} op (arg1c : @CanonicalOp o) (arg1bts : list (@BTerm o)) :=
@@ -1437,35 +1453,31 @@ Definition mk_fresh_bterms {o} (v : NVar) (bs : list (@BTerm o)) :=
 
 Definition pushdown_fresh {o} (v : NVar) (t : @NTerm o) :=
   match t with
-    | vterm x => mk_fresh v t
+    | vterm x => if deq_nvar v x then mk_axiom else t
     | sterm f => sterm f
     | oterm op bs => oterm op (mk_fresh_bterms v bs)
   end.
 
 Definition compute_step_fresh {o}
-           (lib : @library o)
+           (lib  : @library o)
            (ncan : NonCanonicalOp)
-           (t : @NTerm o)
-           (v : NVar)
-           (vs : list NVar)
-           (u : NTerm)
-           (bs : list (@BTerm o))
-           (comp : Comput_Result)
-           (a : get_patom_set o) :=
+           (t    : @NTerm o)
+           (v    : NVar)
+           (vs   : list NVar)
+           (u    : NTerm)
+           (bs   : list (@BTerm o))
+           (comp : Comput_Result) :=
   match ncan, vs, bs with
     | NFresh,[],[] =>
       match u with
-        | vterm x =>
-          if deq_nvar v x
-          then csuccess t
-          else cfailure compute_step_error_not_closed t
-        | sterm f => csuccess (pushdown_fresh v u)
-        | oterm (Can _) _ => csuccess (pushdown_fresh v u)
-        | oterm Exc _ => csuccess (pushdown_fresh v u)
-        | oterm (Abs  _) _ => on_success comp (fun r => mk_fresh v (subst_utokens r [(a,mk_var v)]))
-        | oterm (NCan _) _ => on_success comp (fun r => mk_fresh v (subst_utokens r [(a,mk_var v)]))
+        | vterm x          => csuccess (pushdown_fresh v u)
+        | sterm f          => csuccess (pushdown_fresh v u)
+        | oterm (Can _) _  => csuccess (pushdown_fresh v u)
+        | oterm Exc _      => csuccess (pushdown_fresh v u)
+        | oterm (Abs  _) _ => on_success comp (mk_fresh v)
+        | oterm (NCan _) _ => on_success comp (mk_fresh v)
       end
-    | _,_,_ => cfailure "check 1st arg" t
+    | _,_,_ => cfailure bad_args t
   end.
 
 (* begin hide *)
@@ -1512,10 +1524,3 @@ Definition compute_step_parallel {o}
    This means, I'll have to change the way computation on non-canonical
    terms and abstractions work :(
  *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

@@ -34,6 +34,7 @@ Require Export Recdef.
 Require Export Eqdep_dec.
 Require Export opid.
 Require Export variables.
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing $  $\times$ #×# *)

@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -96,7 +97,7 @@ Example comp_ex_3 {p} :
      = csuccess (mk_exception a (@mk_zero p)).
 Proof.
   introv.
-  simpl; csunf.
+  simpl; try csunf.
   reflexivity.
 Qed.
 
@@ -696,6 +697,7 @@ Proof.
   - simpl in c; inversion c; subst; auto.
 
   - rw @compute_at_most_k_steps_eq_f in c; simpl in c.
+    csunf c; simpl in c.
     rw <- @compute_at_most_k_steps_eq_f in c; sp.
 Qed.
 
@@ -1365,7 +1367,7 @@ Lemma compute_step_try_catch {p} :
   forall lib a (e : @NTerm p) v b,
     compute_step lib (mk_try e a v b)
     = match e with
-        | vterm x => cfailure compute_step_error_not_closed (mk_try e a v b)
+        | vterm x => csuccess (mk_atom_eq a a e mk_bot)
         | sterm f => csuccess (mk_atom_eq a a e mk_bot)
         | oterm (Can _) _ => csuccess (mk_atom_eq a a e mk_bot)
         | oterm Exc bs =>
@@ -1383,7 +1385,6 @@ Proof.
   introv.
   destruct e as [x|f|op bs]; auto.
   dopid op as [can|ncan|exc|abs] Case; simpl; auto.
-  csunf; simpl; auto.
 Qed.
 
 Lemma compute_step_try_success {p} :
@@ -1762,22 +1763,52 @@ Proof.
 Qed.
 Hint Resolve isvalue_like_sterm : slow.
 
+Definition isvalue_like_or_var {o} (t : @NTerm o) :=
+  isvalue_like t [+] isvar t = true.
+
+Lemma isvalue_like_or_var_var {o} :
+  forall v, @isvalue_like_or_var o (vterm v).
+Proof.
+  introv; right; auto.
+Qed.
+Hint Resolve isvalue_like_or_var_var : slow.
+
+Lemma isvalue_like_or_var_seq {o} :
+  forall s, @isvalue_like_or_var o (sterm s).
+Proof.
+  introv; left; eauto 3 with slow.
+Qed.
+Hint Resolve isvalue_like_or_var_seq : slow.
+
+Lemma isvalue_like_or_var_can {o} :
+  forall c (bs : list (@BTerm o)), isvalue_like_or_var (oterm (Can c) bs).
+Proof.
+  introv; left; eauto 3 with slow.
+Qed.
+Hint Resolve isvalue_like_or_var_can : slow.
+
+Lemma isvalue_like_or_var_exc {o} :
+  forall (bs : list (@BTerm o)), isvalue_like_or_var (oterm Exc bs).
+Proof.
+  introv; left; eauto 3 with slow.
+Qed.
+Hint Resolve isvalue_like_or_var_exc : slow.
+
 Lemma compute_step_fresh_success {o} :
-  forall lib nc x v vs (t : @NTerm o) bs comp a u,
-    compute_step_fresh lib nc x v vs t bs comp a
+  forall lib nc x v vs (t : @NTerm o) bs comp u,
+    compute_step_fresh lib nc x v vs t bs comp
     = csuccess u
     -> nc = NFresh
        # vs = []
        # bs = []
-       # (
-           (t = vterm v # u = x)
-           [+]
-           (isvalue_like t # u = pushdown_fresh v t)
+       #
+       (
+         (isvalue_like_or_var t # u = pushdown_fresh v t)
            [+]
            {x : NTerm
             & isnoncan_like t
             # comp = csuccess x
-            # u = mk_fresh v (subst_utokens x [(a,mk_var v)])}
+            # u = mk_fresh v x}
          ).
 Proof.
   introv c.
@@ -1786,23 +1817,20 @@ Proof.
   destruct vs; allsimpl; ginv.
   destruct bs; allsimpl; ginv.
   dands; auto.
-  destruct t as [v1|f1|op1 bs1]; ginv; allsimpl; auto.
-  - boolvar; ginv; tcsp.
-  - right; left.
-    dands; eauto 3 with slow.
-  - dopid op1 as [can1|ncan1|exc1|abs1] Case; ginv.
-    + Case "Can".
-      right; left; dands; eauto with slow.
-    + Case "NCan".
-      right; right.
-      destruct comp; allsimpl; ginv.
-      exists n; dands; tcsp.
-    + Case "Exc".
-      right; left; dands; eauto with slow.
-    + Case "Abs".
-      right; right.
-      destruct comp; allsimpl; ginv.
-      exists n; dands; tcsp.
+  destruct t as [v1|f1|op1 bs1]; ginv; allsimpl; auto; eauto 3 with slow.
+
+  dopid op1 as [can1|ncan1|exc1|abs1] Case; ginv;
+    try (complete (left; dands; eauto 2 with slow)).
+
+  - Case "NCan".
+    right.
+    destruct comp; allsimpl; ginv.
+    exists n; dands; tcsp.
+
+  - Case "Abs".
+    right.
+    destruct comp; allsimpl; ginv.
+    exists n; dands; tcsp.
 Qed.
 
 Lemma compute_step_ncan_bterm_cons_success {o} :
@@ -1813,22 +1841,17 @@ Lemma compute_step_ncan_bterm_cons_success {o} :
        # vs = []
        # bs = []
        # (
-           (t = vterm v # u = mk_fresh v t)
-           [+]
-           (isvalue_like t # u = pushdown_fresh v t)
+           (isvalue_like_or_var t # u = pushdown_fresh v t)
            [+]
            {x : NTerm
-            & let a := get_fresh_atom t in
-              isnoncan_like t
-              # compute_step lib (subst t v (mk_utoken a)) = csuccess x
-              # u = mk_fresh v (subst_utokens x [(a,mk_var v)])}
+            & isnoncan_like t
+            # compute_step lib t = csuccess x
+            # u = mk_fresh v x}
          ).
 Proof.
   introv comp.
   rw @compute_step_eq_unfold in comp; allsimpl.
   apply compute_step_fresh_success in comp; sp; subst; sp.
-  right; right.
-  eexists; dands; eauto.
 Qed.
 
 (*
@@ -5138,16 +5161,12 @@ Lemma compute_step_fresh_if_isnoncan_like {o} :
   forall lib v (t : @NTerm o),
     isnoncan_like t
     -> compute_step lib (mk_fresh v t)
-       = let a := get_fresh_atom t in
-         on_success (compute_step lib (subst t v (mk_utoken a)))
-                    (fun u => mk_fresh v (subst_utokens u [(a,mk_var v)])).
+       = on_success (compute_step lib t) (mk_fresh v).
 Proof.
   introv isc.
   unfold isnoncan_like in isc; repndors.
   - apply isnoncan_implies in isc; exrepnd; subst; auto.
-    rw @compute_step_eq_unfold; auto.
   - apply isabs_implies in isc; exrepnd; subst; auto.
-    rw @compute_step_eq_unfold; auto.
 Qed.
 
 Lemma implies_isnoncan_like_subst_aux {o} :
@@ -5984,9 +6003,9 @@ Proof.
 Qed.
 
 Lemma compute_step_fresh_if_isvalue_like0 {o} :
-  forall lib v (u t : @NTerm o) comp a,
+  forall lib v (u t : @NTerm o) comp,
     isvalue_like t
-    -> compute_step_fresh lib NFresh u v [] t [] comp a
+    -> compute_step_fresh lib NFresh u v [] t [] comp
        = csuccess (pushdown_fresh v t).
 Proof.
   introv isv.
@@ -5996,10 +6015,10 @@ Proof.
 Qed.
 
 Lemma compute_step_fresh_if_isnoncan_like0 {o} :
-  forall lib v (u t : @NTerm o) comp a,
+  forall lib v (u t : @NTerm o) comp,
     isnoncan_like t
-    -> compute_step_fresh lib NFresh u v [] t [] comp a
-       = on_success comp (fun u => mk_fresh v (subst_utokens u [(a,mk_var v)])).
+    -> compute_step_fresh lib NFresh u v [] t [] comp
+       = on_success comp (mk_fresh v).
 Proof.
   introv isc.
   unfold isnoncan_like in isc; repndors.
@@ -7584,12 +7603,20 @@ Proof.
   destruct d; sp.
 Qed.
 
+Hint Rewrite remove_nvars_eq : slow.
+
 Lemma free_vars_pushdown_fresh {o} :
   forall (t : @NTerm o) v,
     free_vars (pushdown_fresh v t)
     = remove_nvars [v] (free_vars t).
 Proof.
   destruct t as [v|f|op bs]; introv; simpl; allrw app_nil_r; auto.
+
+  {
+    boolvar; simpl; autorewrite with slow; auto.
+    unfold remove_nvars; simpl; boolvar; tcsp.
+  }
+
   rw remove_nvars_flat_map; unfold compose.
   unfold mk_fresh_bterms.
   rw flat_map_map; unfold compose.
@@ -7625,7 +7652,8 @@ Lemma get_utokens_pushdown_fresh {o} :
     get_utokens (pushdown_fresh v t)
     = get_utokens t.
 Proof.
-  destruct t as [v|f|op bs]; introv; simpl; auto.
+  destruct t as [v|f|op bs]; introv; simpl; auto; try (complete boolvar).
+
   f_equal.
   unfold mk_fresh_bterms; rw flat_map_map; unfold compose.
   apply eq_flat_maps; introv i; destruct x as [l t]; simpl.
@@ -7650,7 +7678,7 @@ Lemma get_cutokens_pushdown_fresh {o} :
     get_cutokens (pushdown_fresh v t)
     = get_cutokens t.
 Proof.
-  destruct t as [v|f|op bs]; introv; simpl; auto.
+  destruct t as [v|f|op bs]; introv; simpl; auto; try (complete boolvar).
   f_equal; f_equal.
   unfold mk_fresh_bterms; rw map_map; unfold compose.
   apply eq_maps; introv i; destruct x as [l t]; simpl.
@@ -7675,7 +7703,9 @@ Lemma nt_wf_pushdown_fresh {o} :
     nt_wf (pushdown_fresh v t) <=> nt_wf t.
 Proof.
   destruct t as [x|f|op bs]; simpl; split; intro k; auto.
-  - apply nt_wf_fresh; auto.
+
+  - boolvar; eauto 2 with slow.
+
   - inversion k as [|?|? ? imp e]; subst.
     constructor.
     + intros b i.
@@ -7691,6 +7721,7 @@ Proof.
       apply eq_maps; introv i.
       destruct x as [l t].
       unfold mk_fresh_bterm; simpl; boolvar; auto.
+
   - inversion k as [|?|? ? imp e]; subst.
     constructor.
     + intros b i.
@@ -8297,9 +8328,20 @@ Proof.
                  inversion aeq as [? ? ? ? ? ? ? ? ? a]; subst; allsimpl; cpx;
                  unfold lsubst in a; allsimpl; boolvar; inversion a)).
 
-  - constructor; simpl; auto.
-    introv i.
-    destruct n; cpx.
+  - boolvar.
+
+    + apply free_vars_alpha_bterm with (v := x2) in aeq; simpl in *; autorewrite with slow in *; tcsp.
+      simpl in *; repndors; tcsp.
+
+    + apply alpha_eq_bterm_sym in aeq.
+      apply free_vars_alpha_bterm with (v := x1) in aeq; simpl in *; autorewrite with slow in *; tcsp.
+      simpl in *; repndors; tcsp.
+
+    + apply lsubst_alpha_congr4 with (sub1 := [(v1,mk_axiom)]) (sub2 := [(v2,mk_axiom)]) in aeq;
+        simpl in *; eauto 3 with slow.
+      repeat (unflsubst in aeq).
+      simpl in *.
+      boolvar; tcsp.
 
   - inversion aeq as [? ? ? ? ? ? ? ? ? a]; subst; allsimpl; cpx.
 
@@ -8723,13 +8765,37 @@ Proof.
   eexists; dands; eauto.
 Qed.
 
+Definition iscan_or_var {o} (t : @NTerm o) :=
+  iscan t [+] isvar t = true.
+
+Definition iscan_or_var_var {o} :
+  forall v, @iscan_or_var o (vterm v).
+Proof.
+  introv; right; simpl; auto.
+Qed.
+Hint Resolve iscan_or_var_var : slow.
+
+Definition iscan_or_var_sterm {o} :
+  forall f, @iscan_or_var o (sterm f).
+Proof.
+  introv; left; simpl; auto.
+Qed.
+Hint Resolve iscan_or_var_sterm : slow.
+
+Definition iscan_or_var_can {o} :
+  forall c bs, @iscan_or_var o (oterm (Can c) bs).
+Proof.
+  introv; left; simpl; auto.
+Qed.
+Hint Resolve iscan_or_var_can : slow.
+
 Lemma compute_step_eapply1_success {o} :
   forall bs (t : @NTerm o) cstep arg1 ncr u,
     compute_step_eapply1 bs t cstep arg1 ncr = csuccess u
     -> {arg2 : NTerm
         & {l : list BTerm
         & bs = nobnd arg2 :: l
-        # ((iscan arg2 # compute_step_eapply2 t arg1 arg2 l = csuccess u)
+        # ((iscan_or_var arg2 # compute_step_eapply2 t arg1 arg2 l = csuccess u)
            [+]
            (isexc arg2 # u = arg2)
            [+]
@@ -8744,8 +8810,10 @@ Proof.
   destruct vs; ginv.
   exists arg2 l; dands; auto.
   destruct arg2 as [|f|op bs2]; ginv.
-  - left; dands; simpl; auto.
+  - left; dands; simpl; eauto 3 with slow.
+  - left; dands; simpl; eauto 3 with slow.
   - dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv.
+    + left; dands; simpl; eauto 3 with slow.
     + right; right.
       destruct cstep; allsimpl; ginv.
       eexists; dands; eauto.
@@ -8825,7 +8893,7 @@ Lemma compute_step_eapply_success {o} :
         & {l : list BTerm
         & bs = nobnd arg2 :: l
         # eapply_wf_def arg1
-        # ((iscan arg2 # compute_step_eapply2 t arg1 arg2 l = csuccess u)
+        # ((iscan_or_var arg2 # compute_step_eapply2 t arg1 arg2 l = csuccess u)
            [+]
            (isexc arg2 # u = arg2)
            [+]
@@ -9734,9 +9802,3 @@ Hint Resolve computes_to_name_utoken : slow.
 
 
 (* end hide *)
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)
