@@ -134,3 +134,34 @@ Proof.
     exists A B a1 a2 b1 b2 eqa; dands; spcast; eauto 3 with slow;
       eapply eqorceq_iff_equorsq; eauto.
 Qed.
+
+Lemma equality_in_mkc_rmember {p} :
+  forall lib (t T a b : @CTerm p),
+    equality lib a b (mkc_rmember t T)
+    <=>
+    { x1 , x2  : CTerm
+    , a ===>(lib) (mkc_refl x1)
+    # b ===>(lib) (mkc_refl x2)
+    # equality lib t x1 T
+    # equality lib t x2 T }.
+Proof.
+  introv.
+  allrw <- @fold_mkc_rmember.
+  rw @equality_in_mkc_requality.
+  split; intro h; exrepnd; exists x1 x2; dands; auto.
+  eapply equality_refl; eauto.
+Qed.
+
+Lemma tequality_mkc_rmember {p} :
+  forall lib (a b A B : @CTerm p),
+    tequality lib (mkc_rmember a A) (mkc_rmember b B)
+    <=>
+    (
+      tequality lib A B
+      # equorsq lib a b A
+    ).
+Proof.
+  introv.
+  allrw <- @fold_mkc_rmember.
+  rw @tequality_mkc_requality; split; tcsp.
+Qed.

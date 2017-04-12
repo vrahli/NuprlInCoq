@@ -873,6 +873,20 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [cT name];
         clear_irr; tac
 
+    (* RMember *)
+    | context [lsubstc (mk_rmember ?x ?T) ?w ?s ?c] =>
+      let wt := fresh "wt" in
+      let wT := fresh "wT" in
+      let ct := fresh "ct" in
+      let cT := fresh "cT" in
+      generalize (lsubstc_mk_rmember_ex x T s w c);
+        intro name;
+        destruct name as [wt name];
+        destruct name as [wT name];
+        destruct name as [ct name];
+        destruct name as [cT name];
+        clear_irr; tac
+
     (* Type *)
     | context [lsubstc (mk_type ?x) ?w ?s ?c] =>
       let wt := fresh "wt" in
