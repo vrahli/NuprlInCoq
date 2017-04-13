@@ -39,13 +39,20 @@ Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
 Require Export per_props_requality.
 
+(*
+
+  We'll use == for the equality that's inhabited by refl terms as opposed to =,
+  which we use for the equality that's inhabited by axiom.
+
+ *)
+
 
 (* !!MOVE that somewhere else *)
-Definition mk_concl_eq {o} (a b T : @NTerm o) : conclusion :=
+Definition mk_concl_req {o} (a b T : @NTerm o) : conclusion :=
   mk_concl (mk_requality a b T) (mk_refl a).
 
 (* !!MOVE that somewhere else *)
-Definition mk_concl_mem {o} (a T : @NTerm o) : conclusion :=
+Definition mk_concl_rmem {o} (a T : @NTerm o) : conclusion :=
   mk_concl (mk_rmember a T) (mk_refl a).
 
 
@@ -59,7 +66,7 @@ Definition mk_concl_mem {o} (a T : @NTerm o) : conclusion :=
 
      By introduction t
 
-     H |- t = t in C ext refl(t)
+     H |- t == t in C ext refl(t)
 >>
  *)
 
@@ -67,7 +74,7 @@ Definition rule_introduction_req_concl {o} (H : @bhyps o) C t :=
   mk_baresequent H (mk_concl C t).
 
 Definition rule_introduction_req_hyp {o} (H : @bhyps o) C t :=
-  mk_baresequent H (mk_concl_mem t C).
+  mk_baresequent H (mk_concl_rmem t C).
 
 Definition rule_introduction_req {o}
            (H : @barehypotheses o)
@@ -142,4 +149,153 @@ Proof.
   - allunfold @closed_type_baresequent; allsimpl.
     allunfold @closed_type; allsimpl.
     apply covered_equality; dands; auto.
+Qed.
+
+
+
+(**
+<<
+   H |- a = b in C ext axiom
+
+     By introduction t
+
+     H |- a == b in C ext e
+>>
+ *)
+
+Definition rule_squash_equality_concl {o} (H : @bhyps o) a b C :=
+  mk_baresequent H (mk_conclax (mk_equality a b C)).
+
+Definition rule_squash_equality_hyp {o} (H : @bhyps o) a b C e :=
+  mk_baresequent H (mk_concl (mk_requality a b C) e).
+
+Definition rule_squash_equality {o}
+           (H : @barehypotheses o)
+           (a b C e : NTerm) :=
+  mk_rule
+    (rule_squash_equality_concl H a b C)
+    [ rule_squash_equality_hyp H a b C e ]
+    [ ].
+
+Lemma rule_squash_equality_true3 {o} :
+  forall lib
+         (H : @barehypotheses o)
+         (a b C e : NTerm),
+    rule_true3 lib (rule_squash_equality H a b C e).
+Proof.
+  intros.
+  unfold rule_squash_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+  clear cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  destruct Hyp as [ws1 hyp1].
+  destseq; allsimpl; clear_irr; GC.
+
+  assert (wf_csequent (rule_squash_equality_concl H a b C)) as wfc.
+  { clear hyp1.
+    unfold wf_csequent, wf_sequent, wf_concl; simpl; dands; auto; eauto 3 with slow.
+    unfold closed_extract; simpl.
+    apply covered_axiom. }
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; repnd; allsimpl; proof_irr; GC.
+
+  vr_seq_true.
+
+  vr_seq_true in hyp1.
+
+  pose proof (hyp1 s1 s2) as hyp1.
+  repeat (autodimp hyp1 h).
+  exrepd.
+
+  lsubst_tac.
+  rw @tequality_mkc_requality in t; repnd.
+  rw @equality_in_mkc_requality in e0; exrepnd; computes_to_value_isvalue.
+
+  rw @tequality_mkc_equality_sp.
+  rw <- @member_equality_iff.
+  dands; auto.
+Qed.
+
+
+
+(**
+<<
+   H |- a == b in C ext refl(a)
+
+     By introduction t
+
+     H |- a = b in C ext e
+>>
+ *)
+
+Definition rule_unsquash_equality_concl {o} (H : @bhyps o) a b C :=
+  mk_baresequent H (mk_concl_req a b C).
+
+Definition rule_unsquash_equality_hyp {o} (H : @bhyps o) a b C e :=
+  mk_baresequent H (mk_concl (mk_equality a b C) e).
+
+Definition rule_unsquash_equality {o}
+           (H : @barehypotheses o)
+           (a b C e : NTerm) :=
+  mk_rule
+    (rule_unsquash_equality_concl H a b C)
+    [ rule_unsquash_equality_hyp H a b C e ]
+    [ sarg_term a ].
+
+Lemma rule_unsquash_equality_true3 {o} :
+  forall lib
+         (H : @barehypotheses o)
+         (a b C e : NTerm),
+    rule_true3 lib (rule_unsquash_equality H a b C e).
+Proof.
+  intros.
+  unfold rule_unsquash_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+
+  unfold args_constraints in cargs; allsimpl.
+  generalize (cargs (sarg_term a) (inl eq_refl)); clear cargs; intro arg1.
+  unfold arg_constraints in arg1.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  destruct Hyp as [ws1 hyp1].
+  destseq; allsimpl; clear_irr; GC.
+
+  assert (wf_csequent (rule_unsquash_equality_concl H a b C)) as wfc.
+  { clear hyp1.
+    allrw @wf_equality_iff2; repnd.
+    unfold wf_csequent, wf_sequent, wf_concl; simpl; dands; auto;
+      try (apply wf_requality); try (apply wf_refl); auto.
+    unfold closed_extract; simpl.
+    unfold covered; simpl; autorewrite with slow; auto. }
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; repnd; allsimpl; proof_irr; GC.
+
+  vr_seq_true.
+
+  vr_seq_true in hyp1.
+
+  pose proof (hyp1 s1 s2) as hyp1.
+  repeat (autodimp hyp1 h).
+  exrepd.
+
+  lsubst_tac.
+  rw @equality_in_mkc_equality in e0; exrepnd; computes_to_value_isvalue.
+  clear e0 e2.
+  apply tequality_mkc_equality_sp_eq in t; auto; repnd.
+
+  rw @tequality_mkc_requality.
+  rw @equality_in_mkc_requality.
+  dands; auto; try (complete (left; auto)).
+  eexists; eexists; dands; spcast;
+    try (complete (apply computes_to_valc_refl; eauto 3 with slow));
+    auto; try (complete (eapply equality_refl; eauto)).
+  eapply equality_trans;[|eauto].
+  apply equality_sym; auto.
 Qed.
