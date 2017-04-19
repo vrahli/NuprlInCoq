@@ -804,3 +804,89 @@ Proof.
   destruct m; simpl; try omega.
   apply w; omega.
 Qed.
+
+
+(*
+
+  Formalizing a bit of the strictly increasing sequence theory as used in
+  Kripke's "Semantical Analysis of Intuitionistic Logic I" (p.104).
+
+ *)
+
+(* sequences can either increase by one or not increase at all *)
+Definition increasing (a : S1) : Prop :=
+  forall (n : nat), a (S n) = a n \/ a (S n) = S (a n).
+
+(* Cantor space *)
+Definition cantor : Type := nat -> bool.
+
+(* if a(S n)=a(n) then a*(n)=false otherwise a*(n)=true, meaning it increases *)
+Definition baire2cantor (a : baire) : cantor :=
+  fun n => if eq_nat_dec (a (S n)) (a n) then false else true.
+
+Fixpoint cantor2baire (a : cantor) (n : nat) : nat :=
+  match n with
+  | 0 => 0
+  | S n =>
+    let m := cantor2baire a n in
+    if a n then
+      S m
+    else
+      m
+  end.
+
+Lemma cantor2baire_is_increasing :
+  forall (a : cantor), increasing (cantor2baire a).
+Proof.
+  intros a n; simpl.
+  destruct (a n);[right|left];auto.
+Qed.
+
+Lemma cantor2baire2cantor :
+  forall (a : cantor), baire2cantor (cantor2baire a) = a.
+Proof.
+  introv.
+  apply functional_extensionality; introv.
+
+  unfold baire2cantor; simpl.
+  remember (cantor2baire a x) as m.
+  destruct (a x).
+
+  - destruct (Nat.eq_dec (S m) m); auto; try omega.
+
+  - destruct (Nat.eq_dec m m); auto; try omega.
+Qed.
+
+Lemma baire2cantor2baire :
+  forall (a : baire),
+    a 0 = 0
+    -> increasing a
+    -> cantor2baire (baire2cantor a) = a.
+Proof.
+  introv init inc.
+  apply functional_extensionality; introv.
+
+  induction x; simpl; auto.
+  unfold baire2cantor at 1.
+
+  rewrite IHx; clear IHx.
+  destruct (Nat.eq_dec (a (S x)) (a x)); try omega.
+  pose proof (inc x) as h; destruct h; auto; try omega.
+Qed.
+
+(* A non increasing sequence: *)
+Definition non_inc_seq : baire :=
+  fun n =>
+    if eq_nat_dec n 0 then 0
+    else if eq_nat_dec n 1 then 1
+         else 0.
+
+(* we now prove that we need the [increasing] hypothesis to prove [baire2cantor2baire] *)
+Lemma baire2cantor2baire_needs_increassing :
+  cantor2baire (baire2cantor non_inc_seq) <> non_inc_seq.
+Proof.
+  introv h.
+  apply equal_f with (x := 2) in h.
+  simpl in h.
+  unfold non_inc_seq in h; simpl in h; omega.
+Qed.

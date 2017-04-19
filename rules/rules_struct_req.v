@@ -299,3 +299,92 @@ Proof.
   eapply equality_trans;[|eauto].
   apply equality_sym; auto.
 Qed.
+
+
+
+(**
+
+<<
+   H [x : A] J |- t1 == t2 in C [ext refl(t1)]
+
+     By requalityUnhide
+
+     H x : A J |- t1 == t2 in C [ext e]
+>>
+ *)
+
+Definition rule_unhide_requality {o}
+           (H J  : @barehypotheses o)
+           (A C t1 t2 e : NTerm)
+           (x    : NVar) :=
+  mk_rule
+    (mk_baresequent
+       (snoc H (mk_hhyp x A) ++ J)
+       (mk_concl_req t1 t2 C))
+    [ mk_baresequent
+        (snoc H (mk_hyp x A) ++ J)
+        (mk_concl (mk_requality t1 t2 C) e) ]
+    [ sarg_term t1 ].
+
+Lemma rule_unhide_equality_true3 {o} :
+  forall (lib : library)
+         (H J  : @barehypotheses o)
+         (A C t1 t2 e : NTerm)
+         (x    : NVar),
+    rule_true3 lib (rule_unhide_requality H J A C t1 t2 e x).
+Proof.
+  intros.
+  unfold rule_unhide_requality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+
+  unfold args_constraints in cargs; allsimpl.
+  generalize (cargs (sarg_term t1) (inl eq_refl)); clear cargs; intro arg1.
+  unfold arg_constraints in arg1.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  destruct Hyp as [ws1 hyp1].
+  destseq; allsimpl; clear_irr; GC.
+
+  match goal with
+  | [ |- sequent_true2 _ ?s ] => assert (wf_csequent s) as wfc
+  end.
+  { clear hyp1.
+    allrw @wf_requality_iff2; repnd.
+    unfold wf_csequent, wf_sequent, wf_concl; simpl;
+      allrw @vswf_hypotheses_nil_eq;
+      allrw @wf_hypotheses_app; allrw @wf_hypotheses_snoc; allsimpl; repnd;
+        dands; auto; try (apply wf_requality); try (apply wf_refl); auto.
+    unfold closed_extract; simpl; auto.
+    unfold covered; simpl; autorewrite with slow; auto. }
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; repnd; allsimpl; proof_irr; GC.
+
+  vr_seq_true.
+
+  vr_seq_true in hyp1.
+
+  pose proof (hyp1 s1 s2) as hyp1.
+  repeat (autodimp hyp1 hyp).
+
+  { intros s3 sim3.
+    rw @similarity_hhyp in sim3; rw @eq_hyps_hhyp.
+    apply eqh; sp. }
+
+  { rw @similarity_hhyp; auto. }
+
+  exrepnd.
+  lsubst_tac.
+
+  allrw @tequality_mkc_requality.
+  allrw @equality_in_mkc_requality.
+  exrepnd; dands; auto.
+  eexists; eexists; dands; spcast;
+    try (complete (apply computes_to_valc_refl; eauto 3 with slow));
+    auto; try (complete (eapply equality_refl; eauto)).
+  eapply equality_trans;[apply equality_sym;eauto|].
+  eapply cequorsq_equality_trans2;[|eauto].
+  eauto 3 with nequality.
+Qed.

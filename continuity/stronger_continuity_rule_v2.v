@@ -1739,31 +1739,44 @@ Proof.
     allrw in_app_iff; allrw not_over_or; repnd.
 
     (* let's get rid of fresh in the conclusion *)
-    assert (equality
-              lib
-              (substc (mkc_utoken a) nvare (test_try2_cv F nvarc nvarx nvarz nvare (mkc_nat k) f))
-              (substc (mkc_utoken a) nvare (test_try2_cv F nvarc nvarx nvarz nvare (mkc_nat k) g))
-              (mkc_bunion mkc_tnat mkc_unit)) as equ;
-      [|pose proof (cequivc_fresh_subst2 lib nvare (test_try2_cv F nvarc nvarx nvarz nvare (mkc_nat k) f) a) as h1;
-         repeat (autodimp h1 hyp);
-         [ destruct_cterms; allsimpl;
-           allunfold @getcv_utokens; allunfold @getc_utokens; allsimpl; allrw app_nil_r;
-           allrw in_app_iff; tcsp
-         | apply equality_refl in equ; apply member_bunion_nat_unit_implies_cis_spcan_not_atom; auto
-         |];
-         pose proof (cequivc_fresh_subst2 lib nvare (test_try2_cv F nvarc nvarx nvarz nvare (mkc_nat k) g) a) as h2;
-         repeat (autodimp h2 hyp);
-         [ destruct_cterms; allsimpl;
-           allunfold @getcv_utokens; allunfold @getc_utokens; allsimpl; allrw app_nil_r;
-           allrw in_app_iff; tcsp
-         | apply equality_sym in equ; apply equality_refl in equ; apply member_bunion_nat_unit_implies_cis_spcan_not_atom; auto
-         |];
-         spcast;
-         eapply equality_respects_cequivc_left;[apply cequivc_sym;exact h1|];
-         eapply equality_respects_cequivc_right;[apply cequivc_sym;exact h2|];
-         complete auto
-      ].
+    match goal with
+    | [ |- ?C ] =>
+      assert (equality
+                lib
+                (substc (mkc_utoken a) nvare (test_try2_cv F nvarc nvarx nvarz nvare (mkc_nat k) f))
+                (substc (mkc_utoken a) nvare (test_try2_cv F nvarc nvarx nvarz nvare (mkc_nat k) g))
+                (mkc_bunion mkc_tnat mkc_unit) -> C) as equ
+    end.
 
+    { intro equ.
+
+      pose proof (cequivc_fresh_subst2 lib nvare (test_try2_cv F nvarc nvarx nvarz nvare (mkc_nat k) f) a) as h1.
+      repeat (autodimp h1 hyp).
+
+      { destruct_cterms; allsimpl.
+        allunfold @getcv_utokens; allunfold @getc_utokens; allsimpl; allrw app_nil_r.
+        allrw in_app_iff; tcsp. }
+
+      { apply equality_refl in equ.
+        apply member_bunion_nat_unit_implies_cis_spcan_not_atom; auto. }
+
+      pose proof (cequivc_fresh_subst2 lib nvare (test_try2_cv F nvarc nvarx nvarz nvare (mkc_nat k) g) a) as h2.
+      repeat (autodimp h2 hyp).
+
+      { destruct_cterms; allsimpl.
+        allunfold @getcv_utokens; allunfold @getc_utokens; allsimpl; allrw app_nil_r.
+        allrw in_app_iff; tcsp. }
+
+      { apply equality_sym in equ; apply equality_refl in equ.
+        apply member_bunion_nat_unit_implies_cis_spcan_not_atom; auto. }
+
+      spcast.
+      eapply equality_respects_cequivc_left;[apply cequivc_sym;exact h1|].
+      eapply equality_respects_cequivc_right;[apply cequivc_sym;exact h2|].
+      auto.
+    }
+
+    apply equ; clear equ.
     repeat (rw @substc_test_try2_cv).
 
     pose proof (h a nvarx) as q.
