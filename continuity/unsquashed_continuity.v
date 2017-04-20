@@ -855,6 +855,16 @@ Qed.
 
  *)
 
+Require Export Coq.Logic.ConstructiveEpsilon.
+
+Definition continuity_seq_prop :=
+  forall (A : baire -> Prop) (a : baire),
+    A a -> exists (p : nat), forall (b : baire), eq_upto p a b -> A b.
+
+Definition uniform_continuity :=
+  forall (F : cantor -> nat),
+    {n : nat | forall (f g : cantor), eq_upto n f g -> F f = F g}.
+
 (* sequences can either increase by one or not increase at all *)
 Definition increasing (a : baire) : Prop :=
   forall (n : nat), a (S n) = a n \/ a (S n) = S (a n).
@@ -956,12 +966,6 @@ Proof.
   unfold non_inc_seq in h; simpl in h; omega.
 Qed.
 
-Definition continuity_seq_prop :=
-  forall (A : baire -> Prop) (a : baire),
-    A a -> exists (p : nat), forall (b : baire), eq_upto p a b -> A b.
-
-Require Export Coq.Logic.ConstructiveEpsilon.
-
 Fixpoint least_greater_aux (b : baire) (n : nat) (x : nat) : option nat :=
   match n with
   | 0 => None
@@ -1024,54 +1028,6 @@ Proof.
   pose proof (increasing_le a k x) as q; repeat (autodimp q hyp); try omega.
 Qed.
 
-Definition uniform_continuity :=
-  forall (F : cantor -> nat),
-    {n : nat | forall (f g : cantor), eq_upto n f g -> F f = F g}.
-
-Definition cantor_replace_from (a : cantor) (k : nat) (d : bool) : cantor :=
-  fun n => if le_lt_dec k n then d else a n.
-
-Definition cantor_true_from (a : cantor) (k : nat) : cantor :=
-  cantor_replace_from a k true.
-
-Definition cantor_false_from (a : cantor) (k : nat) : cantor :=
-  cantor_replace_from a k false.
-
-Lemma eq_upto_cantor_replace_from :
-  forall (a : cantor) k d1 d2,
-    eq_upto k (cantor_replace_from a k d1) (cantor_replace_from a k d2).
-Proof.
-  introv h.
-  unfold cantor_replace_from.
-  destruct (le_lt_dec k m) as [d|d]; auto; try omega.
-Qed.
-Hint Resolve eq_upto_cantor_replace_from : cont.
-
-Lemma eq_upto_cantor_true_false_from :
-  forall (a : cantor) k,
-    eq_upto k (cantor_true_from a k) (cantor_false_from a k).
-Proof.
-  introv h.
-  apply eq_upto_cantor_replace_from; auto.
-Qed.
-Hint Resolve eq_upto_cantor_true_false_from : cont.
-
-Definition baire_eq_from (a : baire) (k : nat) : baire :=
-  fun n => if le_lt_dec k n then a (pred k) else a n.
-
-Definition baire_inc_from (a : baire) (k : nat) : baire :=
-  fun n => if le_lt_dec k n then S (a (pred k)) else a n.
-
-Lemma eq_upto_baire_eq_inc_from :
-  forall (a : baire) k,
-    eq_upto k (baire_eq_from a k) (baire_inc_from a k).
-Proof.
-  introv h.
-  unfold baire_eq_from, baire_inc_from.
-  destruct (le_lt_dec k m); auto; try omega.
-Qed.
-Hint Resolve eq_upto_baire_eq_inc_from : cont.
-
 Lemma implies_eq_upto_baire2cantor :
   forall (a b : baire) n,
     eq_upto n a b
@@ -1098,6 +1054,9 @@ Proof.
 Qed.
 Hint Resolve implies_eq_upto_baire2cantor : cont.
 
+Definition baire_eq_from (a : baire) (k : nat) : baire :=
+  fun n => if lt_dec n k then a n else a k.
+
 Lemma increasing_baire_eq_from :
   forall (a : baire) n,
     increasing a
@@ -1105,22 +1064,10 @@ Lemma increasing_baire_eq_from :
 Proof.
   introv inc; introv.
   unfold baire_eq_from.
-  destruct (le_lt_dec n (S n0)); destruct (le_lt_dec n n0); auto; try omega.
+  destruct (lt_dec (S n0) n); destruct (lt_dec n0 n); auto; try omega.
   assert (n = S n0) as xx by omega; subst; simpl in *; auto.
 Qed.
 Hint Resolve increasing_baire_eq_from : cont.
-
-Lemma increasing_baire_inc_from :
-  forall (a : baire) n,
-    increasing a
-    ->  increasing (baire_inc_from a n).
-Proof.
-  introv inc; introv.
-  unfold baire_inc_from.
-  destruct (le_lt_dec n (S n0)); destruct (le_lt_dec n n0); auto; try omega.
-  assert (n = S n0) as xx by omega; subst; simpl in *; auto.
-Qed.
-Hint Resolve increasing_baire_inc_from : cont.
 
 Definition baire_diff_from (a : baire) (k : nat) : baire :=
   fun n =>
@@ -1203,6 +1150,27 @@ Proof.
   destruct (Nat.eq_dec (a n) (a (Init.Nat.pred n))) as [d|d]; auto.
   omega.
 Qed.
+
+Lemma eq_upto_baire_eq_from :
+  forall a p n,
+    p <= n
+    -> eq_upto p a (baire_eq_from a n).
+Proof.
+  introv lepn h.
+  unfold baire_eq_from.
+  destruct (lt_dec m n); auto; try omega.
+Qed.
+Hint Resolve eq_upto_baire_eq_from : cont.
+
+Lemma init0_baire_eq_from :
+  forall a n, init0 a -> init0 (baire_eq_from a n).
+Proof.
+  introv inti.
+  unfold init0, baire_eq_from; simpl.
+  destruct (lt_dec 0 n); auto.
+  assert (n = 0) by omega; subst; auto.
+Qed.
+Hint Resolve init0_baire_eq_from : cont.
 
 Lemma kripke2b :
   continuity_seq_prop
@@ -1331,4 +1299,13 @@ Proof.
       repeat (autodimp zz hyp); omega.
   }
 
-Abort.
+  pose proof (z (baire_eq_from a p)) as xx.
+  repeat (autodimp xx hyp); eauto 3 with cont.
+  exrepnd.
+
+  unfold baire_eq_from in xx0.
+  destruct (lt_dec n0 p) as [d|d]; try omega.
+
+  pose proof (increasing_le a n0 p) as zz.
+  repeat (autodimp zz hyp); try omega.
+Qed.
