@@ -861,9 +861,11 @@ Definition increasing (a : baire) : Prop :=
 
 Definition init0 (a : baire) : Prop := a 0 = 0.
 
-(* if a(S n)=a(n) then a*(n)=false otherwise a*(n)=true, meaning it increases *)
+Definition initF (a : cantor) : Prop := a 0 = false.
+
+(* if a(pred n)=a(n) then b2c(a)(n)=false otherwise b2c(a)(n)=true, meaning it increases *)
 Definition baire2cantor (a : baire) : cantor :=
-  fun n => if eq_nat_dec (a (S n)) (a n) then false else true.
+  fun n => if eq_nat_dec (a (pred n)) (a n) then false else true.
 
 (* We have to pick the initial value at 0.  We chose 0, which is why we
    require the [init0] condition below. *)
@@ -872,7 +874,7 @@ Fixpoint cantor2baire (a : cantor) (n : nat) : nat :=
   | 0 => 0
   | S n =>
     let m := cantor2baire a n in
-    if a n then
+    if a (S n) then
       S m
     else
       m
@@ -882,8 +884,9 @@ Lemma increasing_cantor2baire :
   forall (a : cantor), increasing (cantor2baire a).
 Proof.
   intros a n; simpl.
-  destruct (a n);[right|left];auto.
+  destruct (a (S n));[right|left];auto.
 Qed.
+Hint Resolve increasing_cantor2baire : cont.
 
 Lemma init0_cantor2baire :
   forall (a : cantor), init0 (cantor2baire a).
@@ -891,18 +894,30 @@ Proof.
   intros a; simpl.
   unfold init0; simpl; auto.
 Qed.
+Hint Resolve init0_cantor2baire : cont.
+
+Lemma initF_baire2cantor :
+  forall (a : baire), initF (baire2cantor a).
+Proof.
+  intros a; simpl.
+  unfold initF, baire2cantor; simpl.
+  destruct (Nat.eq_dec (a 0) (a 0)); auto; omega.
+Qed.
+Hint Resolve initF_baire2cantor : cont.
 
 Lemma cantor2baire2cantor :
-  forall (a : cantor), baire2cantor (cantor2baire a) = a.
+  forall (a : cantor), initF a -> baire2cantor (cantor2baire a) = a.
 Proof.
-  introv.
+  introv init.
   apply functional_extensionality; introv.
 
   unfold baire2cantor; simpl.
-  remember (cantor2baire a x) as m.
-  destruct (a x).
 
-  - destruct (Nat.eq_dec (S m) m); auto; try omega.
+  destruct x; simpl; auto.
+  remember (cantor2baire a x) as m.
+  destruct (a (S x)).
+
+  - destruct (Nat.eq_dec m (S m)); auto; try omega.
 
   - destruct (Nat.eq_dec m m); auto; try omega.
 Qed.
@@ -918,9 +933,9 @@ Proof.
 
   induction x; simpl; auto.
   rewrite IHx; clear IHx.
-  unfold baire2cantor.
+  unfold baire2cantor; simpl.
 
-  destruct (Nat.eq_dec (a (S x)) (a x)); try omega.
+  destruct (Nat.eq_dec (a x) (a (S x))); try omega.
   pose proof (inc x) as h; destruct h; auto; try omega.
 Qed.
 
@@ -1059,19 +1074,26 @@ Hint Resolve eq_upto_baire_eq_inc_from : cont.
 
 Lemma implies_eq_upto_baire2cantor :
   forall (a b : baire) n,
-    eq_upto (S n) a b
+    eq_upto n a b
     -> eq_upto n (baire2cantor a) (baire2cantor b).
 Proof.
   introv h q.
   unfold baire2cantor.
-  destruct (Nat.eq_dec (a (S m)) (a m)) as [d1|d1];
-    destruct (Nat.eq_dec (b (S m)) (b m)) as [d2|d2];
+
+  destruct m; simpl.
+
+  { destruct (Nat.eq_dec (a 0) (a 0)); try omega.
+    destruct (Nat.eq_dec (b 0) (b 0)); try omega.
+    auto. }
+
+  destruct (Nat.eq_dec (a m) (a (S m))) as [d1|d1];
+    destruct (Nat.eq_dec (b m) (b (S m))) as [d2|d2];
     auto.
 
-  - pose proof (h m) as h1; autodimp h1 hyp.
+  - pose proof (h m) as h1; autodimp h1 hyp; try omega.
     pose proof (h (S m)) as h2; autodimp h2 hyp; try omega.
 
-  - pose proof (h m) as h1; autodimp h1 hyp.
+  - pose proof (h m) as h1; autodimp h1 hyp; try omega.
     pose proof (h (S m)) as h2; autodimp h2 hyp; try omega.
 Qed.
 Hint Resolve implies_eq_upto_baire2cantor : cont.
@@ -1099,6 +1121,88 @@ Proof.
   assert (n = S n0) as xx by omega; subst; simpl in *; auto.
 Qed.
 Hint Resolve increasing_baire_inc_from : cont.
+
+Definition baire_diff_from (a : baire) (k : nat) : baire :=
+  fun n =>
+    if le_lt_dec k n
+    then (* k <= n *)
+      if eq_nat_dec (a k) (a (pred k))
+      then S (a (pred k))
+      else a (pred k)
+    else (* n < k *) a n.
+
+Lemma eq_upto_baire_diff_from :
+  forall n a, eq_upto n a (baire_diff_from a n).
+Proof.
+  introv h.
+  unfold baire_diff_from.
+  destruct (le_lt_dec n m); auto; try omega.
+Qed.
+Hint Resolve eq_upto_baire_diff_from : cont.
+
+Lemma eq_upto0 :
+  forall {T} (a b : Seq T), eq_upto 0 a b.
+Proof.
+  introv h; omega.
+Qed.
+Hint Resolve eq_upto0 : cont.
+
+Lemma init0_implies_eq_upto1_zeros :
+  forall (a : baire), init0 a -> eq_upto 1 a zeros.
+Proof.
+  introv init h.
+  destruct m; try omega; auto.
+Qed.
+Hint Resolve init0_implies_eq_upto1_zeros : cont.
+
+Lemma init0_zeros : init0 zeros.
+Proof.
+  compute; auto.
+Qed.
+Hint Resolve init0_zeros : cont.
+
+Lemma increasing_zeros : increasing zeros.
+Proof.
+  compute; auto.
+Qed.
+Hint Resolve increasing_zeros : cont.
+
+Definition change_from1 (a : baire) : cantor :=
+  fun n => if eq_nat_dec n 0 then false else
+             if eq_nat_dec (a 1) (a 0) then true
+             else false.
+
+Lemma init0_baire_diff_from :
+  forall a n, 0 < n -> init0 a -> init0 (baire_diff_from a n).
+Proof.
+  introv lt0 init.
+  unfold init0, baire_diff_from.
+  destruct (le_lt_dec n 0); try omega; auto.
+Qed.
+Hint Resolve init0_baire_diff_from : cont.
+
+Lemma increasing_baire_diff_from :
+  forall a n, increasing a -> increasing (baire_diff_from a n).
+Proof.
+  introv cont; introv.
+  unfold baire_diff_from.
+  destruct (le_lt_dec n (S n0)) as [d1|d1];
+    destruct (Nat.eq_dec (a n) (a (Init.Nat.pred n))) as [d2|d2];
+    destruct (le_lt_dec n n0) as [d3|d3]; auto; try omega;
+      assert (n = S n0) by omega; subst; simpl in *; auto.
+Qed.
+Hint Resolve increasing_baire_diff_from : cont.
+
+Lemma baire_diff_from_diff :
+  forall a n, a n <> baire_diff_from a n n.
+Proof.
+  introv h.
+  unfold baire_diff_from in h.
+  destruct (le_lt_dec n n) as [d|d]; try omega.
+  clear d.
+  destruct (Nat.eq_dec (a n) (a (Init.Nat.pred n))) as [d|d]; auto.
+  omega.
+Qed.
 
 Lemma kripke2b :
   continuity_seq_prop
@@ -1146,19 +1250,58 @@ Proof.
   pose proof (ucont c) as q; exrepnd.
   rename q0 into q.
 
-  (*least_greater_aux_prop2*)
-
   assert (p <= n) as lepn.
   {
     (* change a starting at n *)
     destruct (le_lt_dec p n) as [ltnp|ltnp]; auto.
     assert False as xx;[|destruct xx];[].
-(*
-XXXXXXXXXX
+
+    destruct (eq_nat_dec n 0) as [ez|ez].
+
+    {
+      subst n.
+
+      destruct (eq_nat_dec p 1) as [po|po].
+
+      - subst p.
+        pose proof (z zeros) as w.
+        repeat (autodimp w hyp); eauto 3 with cont.
+        exrepnd.
+        compute in w0; omega.
+
+      - pose proof (q (baire2cantor a) (change_from1 a)) as w.
+        autodimp w hyp; eauto 2 with cont.
+        clear q.
+        subst c.
+        destruct (eq_upto_dec p a (cantor2baire (baire2cantor a))) as [d1|d1];
+          [|destruct d1; rewrite baire2cantor2baire; eauto 2 with cont];[].
+        destruct (eq_upto_dec p a (cantor2baire (change_from1 a))) as [d2|d2].
+
+        { pose proof (d2 1) as xx; autodimp xx hyp; try omega.
+          unfold change_from1, cantor2baire in xx; simpl in xx.
+          destruct (Nat.eq_dec (a 1) (a 0)) as [d|d]; auto;
+            rewrite xx in d; rewrite init in d; omega. }
+
+        match type of w with
+        | context[proj1_sig ?a] => remember a as xx; exrepnd; simpl in *
+        end.
+        clear Heqxx.
+
+        rewrite baire2cantor2baire in *; auto;[].
+        unfold least_greater in w.
+        remember (least_greater_aux a n (S (a p))) as lg; destruct lg; symmetry in Heqlg; subst;
+          [|rewrite init in xx0; omega].
+
+        pose proof (least_greater_aux_prop2 a a n p 0) as zz.
+        repeat (autodimp zz hyp); omega.
+    }
+
+    assert (0 < n) as gz by omega; clear ez.
 
     pose proof (q (baire2cantor a)
-                  (baire2cantor (baire_inc_from a (S n)))) as w.
-    autodimp w hyp; eauto with cont; eauto with cont.
+                  (baire2cantor (baire_diff_from a n))) as w.
+    autodimp w hyp; eauto with cont; eauto with cont;[].
+
     clear q; subst c.
 
     repeat match type of w with
@@ -1173,8 +1316,19 @@ XXXXXXXXXX
                  match goal with
                  | [ H : _ = a |- _ ] => clear H
                  end
-             end.
+             end;
+      try (complete (destruct d; rewrite baire2cantor2baire in *; eauto 2 with cont));
+      repeat (rewrite baire2cantor2baire in *; eauto 3 with cont);[|].
 
-    - repeat (rewrite baire2cantor2baire in *; eauto 2 with cont;[]).
-*)
+    - pose proof (d0 n) as xx; autodimp xx hyp.
+      apply baire_diff_from_diff in xx; auto.
+
+    - unfold least_greater in w.
+      remember (least_greater_aux a n0 (S (a p))) as lg; destruct lg; symmetry in Heqlg; subst;
+        [|rewrite init in q0; omega].
+
+      pose proof (least_greater_aux_prop2 a a n0 p 0) as zz.
+      repeat (autodimp zz hyp); omega.
+  }
+
 Abort.
