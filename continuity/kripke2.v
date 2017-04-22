@@ -411,7 +411,8 @@ Lemma kripke2a :
     -> !!{n : nat | a(n) >= m}.
 Proof.
   introv free inc h.
-  pose proof (free (fun a => increasing a -> !{n : nat | a n >= m})) as q; simpl in q.
+
+  pose proof (free (fun a => !{n : nat | a n >= m})) as q; simpl in q.
   autodimp q hyp.
   exrepnd.
 
