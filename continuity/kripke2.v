@@ -35,31 +35,44 @@ Require Export Coq.Logic.ConstructiveEpsilon.
 
 (*
 
-  Some results from Kripke's
-  "Semantical Analysis of Intuitionistic Logic I" (p.104).
-
-  This is a theory of absolutely free choice sequences (afcs)
-  but I've used [baire] here, which is bogus (and several concrete
-  sequences that are not absolutely free).  For example the
-  axiom [continuity_seq_prop] of LC is clearly false if we don't
-  restrict ourselves to afcs's...but at least this gives a rough idea
-  of what's going on...
-
-  Could I use an axiomatization of afcs's instead of [baire]?
+  This tries to fix kripke.v, which contains results from Kripke, especially
+  the negation of Markov's principle.  The problem in kripke.v is that Kripke's
+  theory if about absolutely free choice sequences, while there I used the [baire]
+  type, which also contains non-absolutely free choice sequences.
 
  *)
 
-Definition continuity_seq_prop :=
-  forall (A : baire -> Prop) (a : baire),
-    A a -> exists (p : nat), forall (b : baire), eq_upto p a b -> A b.
 
 Definition uniform_continuity :=
   forall (F : cantor -> nat),
     {n : nat | forall (f g : cantor), eq_upto n f g -> F f = F g}.
 
+Definition kuroda :=
+  forall (A : nat -> Prop),
+    (forall (m : nat), !!(A m)) -> (!!forall (m : nat), A m).
+
+Definition markov :=
+  forall (A : nat -> Prop),
+    (forall m, A m \/ !A m)
+    -> (!!exists (n : nat), A n)
+    -> exists (n : nat), A n.
+
+
+(* This is the definition of absolutely free choice sequences p.283 of
+   Myhill's "Notes towards an axiomatization of intuitionistic analysis".
+   Is it okay to use the [baire] type? *)
+Definition absolutely_free (a : baire) :=
+  forall (A : baire -> Prop),
+    A a -> exists (p : nat), forall (b : baire), eq_upto p a b -> A b.
+
+Definition afcs := {a : baire | absolutely_free a}.
+
 (* sequences can either increase by one or not increase at all *)
 Definition increasing (a : baire) : Prop :=
   forall (n : nat), a (S n) = a n \/ a (S n) = S (a n).
+
+Definition binary (a : baire) : Prop :=
+  forall (n : nat), a n = 0 \/ a n = 1.
 
 Definition init0 (a : baire) : Prop := a 0 = 0.
 
@@ -392,14 +405,13 @@ Hint Resolve increasing_baire_inc_from : cont.
 
 (* This is Kripke's lemma (a) in section 2 p.104 *)
 Lemma kripke2a :
-  continuity_seq_prop
-  ->
   forall (a : baire) (m : nat),
-    increasing a
+    absolutely_free a
+    -> increasing a
     -> !!{n : nat | a(n) >= m}.
 Proof.
-  introv cont inv h.
-  pose proof (cont (fun a => increasing a -> !{n : nat | a n >= m}) a) as q; simpl in q.
+  introv free inc h.
+  pose proof (free (fun a => increasing a -> !{n : nat | a n >= m})) as q; simpl in q.
   autodimp q hyp.
   exrepnd.
 
@@ -425,7 +437,7 @@ Proof.
 Qed.
 
 (* This is meant to be only true for absolutely free choice sequences *)
-Lemma kripke2a_concl_false :
+Lemma kripke2a_concl_false_if_non_absolutely_free :
   !forall (a : baire) (m : nat),
       increasing a
       -> !!{n : nat | a(n) >= m}.
@@ -437,12 +449,13 @@ Proof.
   destruct z; intro z; exrepnd; omega.
 Qed.
 
-(* This is meant to be only true for absolutely free choice sequences *)
-Lemma continuity_seq_prop_false :
-  !continuity_seq_prop.
+(* This shows that the sequence of zeros used in
+   [kripke2a_concl_false_if_non_absolutely_free] above is not absolutely free *)
+Lemma zeros_non_absolutely_free :
+  !absolutely_free zeros.
 Proof.
   introv C.
-  pose proof (C (fun a => forall n, a n = 0) zeros) as q; simpl in q.
+  pose proof (C (fun a => forall n, a n = 0)) as q; simpl in q.
   autodimp q hyp.
   exrepnd.
   pose proof (q0 (fun n => if lt_dec n p then 0 else 1)) as h; simpl in h; clear q0.
@@ -461,33 +474,31 @@ Proof.
 Qed.
 
 Lemma kripke2a_prop :
-  continuity_seq_prop
-  ->
   forall (a : baire) (m : nat),
-    increasing a
+    absolutely_free a
+    -> increasing a
     -> !!exists (n : nat), a(n) >= m.
 Proof.
-  introv cont inc h.
-  pose proof (kripke2a cont a m inc) as q.
+  introv free inc h.
+  pose proof (kripke2a a m free inc) as q.
   destruct q; intro q; exrepnd.
   destruct h; exists n; auto.
 Qed.
 
 (* This is Kripke's lemma (b) in section 2 p.104 *)
 Lemma kripke2b :
-  continuity_seq_prop
-  ->
   uniform_continuity
   ->
   forall (a : baire),
     init0 a
+    -> absolutely_free a
     -> increasing a
     -> !forall (m : nat), {n : nat | a(n) >= m}.
 Proof.
-  introv pcont ucont init inc.
+  introv ucont init free inc.
   introv h.
 
-  pose proof (pcont (fun a => forall m : nat, Cast {n : nat | a n >= m}) a) as q.
+  pose proof (free (fun a => forall m : nat, Cast {n : nat | a n >= m})) as q.
   simpl in q.
   autodimp q hyp.
   exrepnd.
@@ -616,17 +627,16 @@ Proof.
 Qed.
 
 Lemma kripke2b_prop :
-  continuity_seq_prop
-  ->
   uniform_continuity
   ->
   forall (a : baire),
     init0 a
+    -> absolutely_free a
     -> increasing a
     -> !forall (m : nat), exists (n : nat), a(n) >= m.
 Proof.
-  introv cont ucont init inc; intro h.
-  pose proof (kripke2b cont ucont a init inc) as q.
+  introv ucont init free inc; intro h.
+  pose proof (kripke2b ucont a init free inc) as q.
   destruct q; introv.
   pose proof (h m) as w; clear h.
 
@@ -634,43 +644,67 @@ Proof.
   introv; apply ge_dec.
 Qed.
 
-Definition kuroda :=
-  forall (A : nat -> Prop),
-    (forall (m : nat), !!(A m)) -> (!!forall (m : nat), A m).
-
-Definition markov :=
-  forall (A : nat -> Prop),
-    (forall m, A m \/ !A m)
-    -> (!!exists (n : nat), A n)
-    -> exists (n : nat), A n.
-
-(* For this we don't actually need kripke2b
-   and we only need kripke2a on the zero sequence
-   --- This is because we're cheating:
-       zero is not an absolutely free choice sequence
-
-   Which means that we've cheated above in the proofs of kripke2a and kripke2b
-   because I probably used many non-absolutely free choice sequences
+(* It seems that for this we need at least one absolutely free choice sequences.
+   Is that what Kripke meant?
  *)
-Lemma continuity_contradicts_kuroda :
-  continuity_seq_prop
+Lemma afcs_contradicts_kuroda :
+  (exists (a : baire), init0 a /\ increasing a /\ absolutely_free a)
+  -> uniform_continuity
   -> !kuroda.
 Proof.
-  introv cont K.
+  introv eafcs ucont K.
 
-  pose proof (K (fun m => exists (n : nat), zeros n >= m)) as q; simpl in q.
-  autodimp q hyp.
-
+  assert (forall (a : baire),
+             absolutely_free a
+             -> increasing a
+             -> !!forall (m : nat), exists (n : nat), a n >= m) as h.
   {
-    introv.
-    apply kripke2a_prop; eauto 2 with cont.
+    introv free inc.
+    apply K; introv.
+    pose proof (kripke2a a m free inc) as q.
+    intro h; destruct q; intro q; exrepnd.
+    destruct h; exists n; auto.
   }
 
+  pose proof (kripke2b ucont) as q.
+  exrepnd.
+  pose proof (h a) as w; repeat (autodimp w hyp).
+  pose proof (q a) as z; repeat (autodimp z hyp).
+  destruct w; intro w.
+  destruct z; introv.
+  pose proof (w m) as z.
+
+  apply (constructive_indefinite_ground_description nat (fun n => n) (fun n => n)); auto.
+  introv; apply ge_dec.
+Qed.
+
+Lemma afcs_contradicts_markov :
+  (exists (a : baire), init0 a /\ increasing a /\ absolutely_free a)
+  -> uniform_continuity
+  -> !markov.
+Proof.
+  introv eafcs ucont MP.
+
+  assert (forall (a : baire),
+             absolutely_free a
+             -> increasing a
+             -> forall (m : nat), exists (n : nat), a n >= m) as h.
   {
-    destruct q; intro h.
-    pose proof (h 1) as z; clear h.
-    exrepnd.
-    unfold zeros in z0.
-    omega.
+    introv free inc; introv.
+    apply MP; auto.
+    { introv; destruct (ge_dec (a m0) m); auto. }
+    pose proof (kripke2a a m free inc) as q.
+    intro h; destruct q; intro q; exrepnd.
+    destruct h; exists n; auto.
   }
+
+  pose proof (kripke2b ucont) as q.
+  exrepnd.
+  pose proof (h a) as w; repeat (autodimp w hyp).
+  pose proof (q a) as z; repeat (autodimp z hyp).
+  destruct z; introv.
+  pose proof (w m) as z.
+
+  apply (constructive_indefinite_ground_description nat (fun n => n) (fun n => n)); auto.
+  introv; apply ge_dec.
 Qed.
