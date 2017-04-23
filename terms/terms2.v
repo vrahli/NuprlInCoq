@@ -30,8 +30,8 @@
 *)
 
 
-Require Export Eqdep.
-Require Export FunctionalExtensionality.
+Require Export Eqdep_dec.
+(*Require Export FunctionalExtensionality.*)
 Require Export terms.
 
 
@@ -43,7 +43,7 @@ Require Export terms.
 
 (* begin hide *)
 
-Inductive obool : Type :=
+(*Inductive obool : Type :=
 | otrue  : obool
 | ofalse : obool
 | obseq  : (nat -> obool) -> obool.
@@ -72,18 +72,18 @@ Fixpoint oball (l : list obool) : obool :=
 Fixpoint term2otrue {o} (t : @NTerm o) : obool :=
   match t with
     | vterm _ => otrue
-    | sterm f => obseq (fun n => term2otrue (f n))
+(*    | sterm f => obseq (fun n => term2otrue (f n))*)
     | oterm op bts => oball (map bterm2otrue bts)
   end
 with bterm2otrue {o} (bt : BTerm) : obool :=
        match bt with
          | bterm vars t => term2otrue t
-       end.
+       end.*)
 
 Fixpoint no_const {o} (t : @NTerm o) : bool :=
   match t with
     | vterm _ => true
-    | sterm _ => true (* what else can we do? *)
+(*    | sterm _ => true (* what else can we do? *)*)
     | oterm o bs => no_const_o o && ball (map no_const_b bs)
   end
 with no_const_b {o} (bt : @BTerm o) : bool :=
@@ -91,7 +91,7 @@ with no_const_b {o} (bt : @BTerm o) : bool :=
          | bterm _ t => no_const t
        end.
 
-Fixpoint no_oconst {o} (t : @NTerm o) : obool :=
+(*Fixpoint no_oconst {o} (t : @NTerm o) : obool :=
   match t with
     | vterm _ => otrue
     | sterm f => obseq (fun n => no_oconst (f n))
@@ -100,7 +100,7 @@ Fixpoint no_oconst {o} (t : @NTerm o) : obool :=
 with no_oconst_b {o} (bt : @BTerm o) : obool :=
        match bt with
          | bterm _ t => no_oconst t
-       end.
+       end.*)
 
 Lemma fold_nobnd {p} :
   forall t : @NTerm p, bterm [] t = nobnd t.
@@ -108,11 +108,13 @@ Proof.
   unfold nobnd; auto.
 Qed.
 
-Definition mk_ntseq {o} (f : @ntseq o) := sterm f.
+Definition mk_seqlib {o} (name : seqname) : @NTerm o := oterm (Can (Nseqlib name)) [].
+
+(*Definition mk_ntseq {o} (f : @ntseq o) := sterm f.*)
 
 Definition mk_integer {p} n : @NTerm p := oterm (Can (Nint n)) [].
 
-Definition mk_nseq {p} f : @NTerm p := oterm (Can (Nseq f)) [].
+(*Definition mk_nseq {p} f : @NTerm p := oterm (Can (Nseq f)) [].*)
 
 Definition mk_nat {p} (n : nat) : @NTerm p := mk_integer (Z_of_nat n).
 
@@ -449,12 +451,16 @@ Lemma fold_integer {p} :
   forall i, oterm (Can (Nint i)) [] = @mk_integer p i.
 Proof. sp. Qed.
 
-Lemma fold_nseq {p} :
+(*Lemma fold_nseq {p} :
   forall f, oterm (Can (Nseq f)) [] = @mk_nseq p f.
 Proof. sp. Qed.
 
 Lemma fold_ntseq {o} :
   forall (f : @ntseq o), sterm f = mk_ntseq f.
+Proof. sp. Qed.*)
+
+Lemma fold_seqlib {o} :
+  forall (n : seqname), @oterm o (Can (Nseqlib n)) [] = mk_seqlib n.
 Proof. sp. Qed.
 
 Lemma fold_token {p} :
@@ -852,16 +858,16 @@ Fixpoint depth (t : NTerm) : nat :=
   end.
 *)
 
-Fixpoint size {p} (t : @NTerm p) : nat :=
+(*Fixpoint size {p} (t : @NTerm p) : nat :=
   match t with
   | vterm _ => 1
-  | sterm _ => 1
+(*  | sterm _ => 1*)
   | oterm op bterms => S (addl (map size_bterm bterms))
   end
  with size_bterm {p} (bt: BTerm) :=
   match bt with
   | bterm lv nt => size nt
-  end.
+  end.*)
 
 
 
@@ -896,7 +902,7 @@ Defined.
 
  *)
 
-Lemma osize_subterm2 {o} :
+(*Lemma osize_subterm2 {o} :
   forall (op : @Opid o) bs b,
     LIn b bs -> (osize_bterm b) << (osize (oterm op bs)).
 Proof.
@@ -918,37 +924,36 @@ Lemma osize_subterm3 {o} :
 Proof.
   introv i.
   apply (osize_subterm2 op) in i; allsimpl; auto.
-Defined.
+Defined.*)
 
 Lemma NTerm_better_ind2 {p} :
   forall P : (@NTerm p) -> Type,
     (forall n : NVar, P (vterm n))
-    -> (forall f, (forall n, P (f n)) -> P (sterm f))
+(*    -> (forall f, (forall n, P (f n)) -> P (sterm f))*)
     -> (forall (o : Opid) (lbt : list BTerm),
           (forall (nt nt': NTerm) (lv: list NVar),
              (LIn (bterm lv nt) lbt)
-              -> (osize nt') <=< (osize nt)
+              -> (size nt') <= (size nt)
               -> P nt'
           )
           -> P (oterm o lbt)
        )
     -> forall t : NTerm, P t.
 Proof.
- intros P Hvar Hseq Hbt.
+ intros P Hvar (*Hseq*) Hbt.
 
- assert (forall n t, (osize t) =o= n -> P t) as Hass;
+ assert (forall n t, (size t) = n -> P t) as Hass;
    [|introv;
-      apply Hass with (n := osize t);
-      apply ord_eq_refl].
+      apply Hass with (n := size t); reflexivity].
 
- induction n as [n Hind] using comp_ind_ord.
+ induction n as [n Hind] using comp_ind_type.
  intros t Hsz.
- destruct t as [v|f|op bs].
+ destruct t as [v|op bs].
 
- - clear Hseq Hbt.
+ - clear Hbt.
    apply Hvar.
 
- - clear Hvar Hbt.
+(* - clear Hvar Hbt.
    apply Hseq; introv; allsimpl; clear Hseq.
 
    pose proof (Hind (osize (f n0))) as h; clear Hind.
@@ -956,23 +961,20 @@ Proof.
    eapply ord_lt_eq_trans;[|exact Hsz]; clear Hsz.
    apply implies_ord_lt_OS.
    eapply implies_ord_le_limit_right.
-   apply ord_le_refl.
+   apply ord_le_refl.*)
 
  - apply Hbt.
    introv Hin Hs; allsimpl.
-   apply (Hind (osize nt')); auto.
-   { eapply ord_lt_eq_trans;[|exact Hsz]; clear Hsz.
-     apply implies_ord_lt_OS.
-     eapply ord_le_trans;[exact Hs|]; clear Hs.
-     pose proof (osize_subterm3 op bs nt lv Hin) as h; allsimpl.
-     apply ord_lt_OS_implies; auto. }
-   apply ord_eq_refl.
+   apply (Hind (size nt')); auto.
+   eapply le_lt_trans;[exact Hs|]; clear Hs.
+   subst.
+   apply (size_subterm3 op) in Hin; simpl in *; auto.
 Defined.
 
 Lemma NTerm_better_ind {p} :
   forall P : @NTerm p -> Type,
     (forall n : NVar, P (vterm n))
-    -> (forall f, (forall n, P (f n)) -> P (sterm f))
+(*    -> (forall f, (forall n, P (f n)) -> P (sterm f))*)
     -> (forall (o : Opid) (lbt : list BTerm),
           (forall (nt : NTerm) (lv: list NVar),
              (LIn (bterm lv nt) lbt) -> P nt
@@ -981,19 +983,19 @@ Lemma NTerm_better_ind {p} :
        )
     -> forall t : NTerm, P t.
 Proof.
- introv Hv Hs Hind.
+ introv Hv (*Hs*) Hind.
  apply NTerm_better_ind2; auto.
  introv Hx.
  apply Hind.
  introv Hin.
  eapply Hx in Hin; eauto.
- apply ord_le_refl.
+(* apply ord_le_refl.*)
 Defined.
 
 Fixpoint NTerm_BTerm_mutual_ind {p}
     (PN : @NTerm p -> Type) (PB : BTerm -> Type)
     (vcase : forall n : NVar, PN (vterm n))
-    (scase : forall f, (forall n, PN (f n)) -> PN (sterm f))
+(*    (scase : forall f, (forall n, PN (f n)) -> PN (sterm f))*)
     (bcase: forall (lv : list NVar) (nt : NTerm),
              PN nt ->  PB (bterm lv nt))
     (ocase: forall (o : Opid) (lbt : list BTerm),
@@ -1004,7 +1006,7 @@ Fixpoint NTerm_BTerm_mutual_ind {p}
 with
     BTerm_NTerm_mutual_ind {p} (PN : @NTerm p -> Type) (PB : BTerm -> Type)
     (vcase : forall n : NVar, PN (vterm n))
-    (scase : forall f, (forall n, PN (f n)) -> PN (sterm f))
+(*    (scase : forall f, (forall n, PN (f n)) -> PN (sterm f))*)
     (bcase: forall (lv : list NVar) (nt : NTerm),
              PN nt ->  PB (bterm lv nt))
     (ocase: forall (o : Opid) (lbt : list BTerm),
@@ -1013,9 +1015,9 @@ with
             -> PN (oterm o lbt))
     (bt : BTerm) {struct bt}  : PB bt.
 Proof.
-  - destruct t as [?|f|o lbt];[ apply vcase; fail| |].
-    { apply scase; auto; introv.
-      apply NTerm_BTerm_mutual_ind with (PB := PB); auto. }
+  - destruct t as [?|o lbt];[ apply vcase; fail |].
+(*    { apply scase; auto; introv.
+      apply NTerm_BTerm_mutual_ind with (PB := PB); auto. }*)
     apply ocase.
     introv Hin.
     induction lbt as [| btt lbt HBInd];[inverts Hin|].
@@ -1034,7 +1036,7 @@ Defined.
 Lemma  NBTerm_mutual_ind {p}  : forall
     (PN : @NTerm p -> Type) (PB : BTerm -> Type)
     (vcase : forall n : NVar, PN (vterm n))
-    (scase : forall f, (forall n, PN (f n)) -> PN (sterm f))
+(*    (scase : forall f, (forall n, PN (f n)) -> PN (sterm f))*)
     (bcase: forall (lv : list NVar) (nt : NTerm),
              PN nt ->  PB (bterm lv nt))
     (ocase: forall (o : Opid) (lbt : list BTerm),
@@ -1052,7 +1054,7 @@ Defined.
 Lemma NTerm_better_ind_direct {p} :
   forall P : @NTerm p -> Type,
     (forall n : NVar, P (vterm n))
-    -> (forall f, (forall n, P (f n)) -> P (sterm f))
+(*    -> (forall f, (forall n, P (f n)) -> P (sterm f))*)
     -> (forall (o : Opid) (lbt : list BTerm),
           (forall (nt : NTerm) (lv: list NVar),
              (LIn (bterm lv nt) lbt) -> P nt
@@ -1061,10 +1063,10 @@ Lemma NTerm_better_ind_direct {p} :
        )
     -> forall t : NTerm, P t.
 Proof.
-  introv Hv Hs Hind.
+  introv Hv Hind.
   fix 1.
   intro t.
-  destruct t as [|f|o lbt];[apply Hv;fail|apply Hs;auto;fail|].
+  destruct t as [|o lbt];[apply Hv;fail|].
   apply Hind.
   introv Hin.
   induction lbt as [| bt lbt HBInd];[inverts Hin|].
@@ -1078,28 +1080,28 @@ Defined.
 Tactic Notation "nterm_ind" ident(h) ident(c) :=
   induction h using NTerm_better_ind;
   [ Case_aux c "vterm"
-  | Case_aux c "sterm"
+(*  | Case_aux c "sterm"*)
   | Case_aux c "oterm"
   ].
 
 Tactic Notation "nterm_ind" ident(h) "as" simple_intropattern(I)  ident(c) :=
   induction h as I using NTerm_better_ind;
   [ Case_aux c "vterm"
-  | Case_aux c "sterm"
+(*  | Case_aux c "sterm"*)
   | Case_aux c "oterm"
   ].
 
 Tactic Notation "nterm_ind1" ident(h) "as" simple_intropattern(I)  ident(c) :=
   induction h as I using NTerm_better_ind;
   [ Case_aux c "vterm"
-  | Case_aux c "sterm"
+(*  | Case_aux c "sterm"*)
   | Case_aux c "oterm"
   ].
 
 Tactic Notation "nterm_ind1s" ident(h) "as" simple_intropattern(I)  ident(c) :=
   induction h as I using NTerm_better_ind2;
   [ Case_aux c "vterm"
-  | Case_aux c "sterm"
+(*  | Case_aux c "sterm"*)
   | Case_aux c "oterm"
   ].
 
@@ -1140,7 +1142,7 @@ Definition IsTypeOpid {p} (opid : @Opid p) : bool :=
 Definition IsType {p} (t : @NTerm p) : bool :=
   match t with
   | vterm _ => false
-  | sterm _ => false
+(*  | sterm _ => false*)
   | oterm opid _ => IsTypeOpid opid
   end.
 
@@ -1158,25 +1160,25 @@ Definition no_vars_like {o} (t : @NTerm o) :=
 Definition no_vars_like_b {o} (t : @NTerm o) : bool :=
   nullb (free_vars t) && nullb (get_utokens t).
 
-Fixpoint wft {o} (t : @NTerm o) : obool :=
+Fixpoint wft {o} (t : @NTerm o) : bool :=
   match t with
-    | vterm _ => otrue
-    | sterm f => obseq (fun n => oband (bool2obool (no_vars_like_b (f n))) (wft (f n)))
-    | oterm op bts =>
-      oband (bool2obool (beq_list eq_nat_dec (map (num_bvars) bts) (OpBindings op)))
-            (oball (map wftb bts))
+  | vterm _ => true
+(*  | sterm f => obseq (fun n => oband (bool2obool (no_vars_like_b (f n))) (wft (f n)))*)
+  | oterm op bts =>
+    andb (beq_list eq_nat_dec (map (num_bvars) bts) (OpBindings op))
+         (ball (map wftb bts))
   end
-with wftb {p} (bt : BTerm) : obool :=
-  match bt with
-    | bterm vars t => wft t
-  end.
+with wftb {p} (bt : BTerm) : bool :=
+       match bt with
+       | bterm vars t => wft t
+       end.
 
-Definition wf_term {p} (t : @NTerm p) := wft t = term2otrue t.
+Definition wf_term {p} (t : @NTerm p) := wft t = true.
 
-Lemma fold_wf_term {o} : forall t : @NTerm o, wft t = term2otrue t <=> wf_term t.
+Lemma fold_wf_term {o} : forall t : @NTerm o, wft t = true <=> wf_term t.
 Proof. sp. Qed.
 
-Definition wf_bterm {p} (b : @BTerm p) := wftb b = bterm2otrue b.
+Definition wf_bterm {p} (b : @BTerm p) := wftb b = true.
 
 Lemma wf_term_proof_irrelevance {p} :
   forall (t : @NTerm p),
@@ -1184,7 +1186,7 @@ Lemma wf_term_proof_irrelevance {p} :
     x = y.
 Proof.
   intros.
-  apply UIP.
+  apply UIP_dec; apply bool_dec.
 Qed.
 
 Hint Extern 0 =>
@@ -1222,16 +1224,15 @@ Lemma wf_term_extract2 :
 (*Lemma yyy : forall A (x : A) (pf : x = x), pf = eq_refl x.
 Lemma xxx : forall t (x : wft t = true), x = eq_refl (wft t).*)
 
-Lemma oball_ofalse :
-  forall (l : list obool),
-    oball l = ofalse -> LIn ofalse l.
+Lemma ball_false :
+  forall (l : list bool),
+    ball l = false -> LIn false l.
 Proof.
   induction l; introv h; allsimpl; ginv.
   destruct a; allsimpl; ginv.
-  remember (oball l) as obl; destruct obl; ginv.
 Qed.
 
-Lemma term2otrue_not_ofalse {o} :
+(*Lemma term2otrue_not_ofalse {o} :
   forall (t : @NTerm o),
     term2otrue t = ofalse -> False.
 Proof.
@@ -1478,6 +1479,7 @@ Proof.
   destruct b; allsimpl.
   apply isotrue_wft_implies_eq_term2otrue; auto.
 Qed.
+ *)
 
 Lemma no_vars_like_b_true_iff {o} :
   forall (t : @NTerm o), no_vars_like_b t = true <=> (closed t # noutokens t).
@@ -1503,45 +1505,19 @@ Lemma nt_wf_eq {p} :
     nt_wf t <=> wf_term t.
 Proof.
   unfold wf_term.
-  nterm_ind t as [|f ind|o lbt ind] Case; simpl; intros.
+  nterm_ind t as [|o lbt ind] Case; simpl; intros.
 
   - Case "vterm".
     split; sp.
-
-  - Case "sterm".
-    split_iff SCase.
-
-    + SCase "->".
-      introv wf.
-      inversion wf as [|g imp|]; subst.
-      f_equal.
-      apply functional_extensionality.
-      introv.
-      pose proof (imp x) as h; clear imp; repnd.
-      rw @implies_no_vars_like_b_true; simpl; auto.
-      apply ind; auto.
-
-    + SCase "<-".
-      introv wf.
-      constructor; introv.
-      inversion wf as [w]; clear wf.
-      apply equal_f with (x := n) in w.
-      remember (no_vars_like_b (f n)) as nv; symmetry in Heqnv; destruct nv; allsimpl.
-
-      * apply no_vars_like_b_true_iff in Heqnv; repnd; dands; auto.
-        apply ind in w; dands; auto.
-
-      * symmetry in w; apply term2otrue_not_ofalse in w; sp.
 
   - Case "oterm".
     split_iff SCase.
 
     + SCase "->"; intro w.
-      inversion w as [|?|? ? imp e]; subst.
+      inversion w as [|? ? imp e]; subst.
       allrw.
       rewrite beq_list_refl; simpl.
-      f_equal.
-      apply eq_maps; introv i.
+      apply ball_map_true; introv i.
       destruct x as [l t]; simpl.
       applydup ind in i.
       applydup imp in i.
@@ -1552,19 +1528,16 @@ Proof.
       introv q.
       remember (beq_list eq_nat_dec (map num_bvars lbt) (OpBindings o)) as b.
       symmetry in Heqb.
-      destruct b; allsimpl; tcsp;
-      [|symmetry in q; apply oball_ofalse in q; allrw in_map_iff; exrepnd;
-        destruct a; allsimpl;
-        symmetry in q0; apply term2otrue_not_ofalse in q0; sp].
+      destruct b; allsimpl; tcsp.
       constructor; tcsp.
 
       { introv i.
         destruct l as [l t].
         constructor.
         applydup ind in i.
-        apply i0.
-        eapply oball_map_wftb_eq_otrue_implies in q;[|exact i].
-        allsimpl; auto. }
+        apply i0; clear i0.
+        rw ball_map_true in q.
+        apply q in i; simpl in i; auto. }
 
       apply assert_beq_list in Heqb; auto.
 Qed.
@@ -1665,7 +1638,7 @@ Lemma isprog_proof_irrelevance {p} :
 Proof.
   intros.
   destruct x, y.
-  f_equal; apply UIP.
+  f_equal; apply UIP_dec; apply bool_dec.
 Qed.
 
 Hint Extern 0 =>
@@ -1682,7 +1655,7 @@ Lemma isprog_vars_proof_irrelevance {p} :
 Proof.
   intros.
   destruct x, y.
-  f_equal; apply UIP.
+  f_equal; apply UIP_dec; apply bool_dec.
 Qed.
 
 Hint Extern 0 =>
@@ -1702,10 +1675,10 @@ Ltac irr_step :=
 
 Ltac irr := repeat irr_step.
 
-Ltac abs_bool2obool n :=
+(*Ltac abs_bool2obool n :=
   match goal with
     | [ H : context[bool2obool ?b] |- _ ] => remember b as n
-  end.
+  end.*)
 
 Lemma assert_true_iff : assert true <=> True.
 Proof.
@@ -1722,18 +1695,13 @@ Lemma isprogram_eq {p} :
     isprogram t <=> isprog t.
 Proof.
   unfold isprog, isprogram.
-  nterm_ind t as [v|f ind|op bs ind] Case; simpl; intros.
+  nterm_ind t as [v|op bs ind] Case; simpl; intros.
 
   - Case "vterm".
     rw assert_false_iff.
     rw @wf_term_eq.
     unfold closed; simpl.
     split; intro h; repnd; dands; tcsp.
-
-  - Case "sterm".
-    rw @wf_term_eq.
-    rw assert_true_iff.
-    split; intro h; repnd; dands; allsimpl; tcsp.
 
   - Case "oterm".
     rw @wf_term_eq.
@@ -2086,17 +2054,32 @@ Qed.
 Definition wf_mk_nat {p} : forall n : nat, @wf_term p (mk_nat n)
   := fun _ => eq_refl.
 
-Lemma isprogram_mk_nseq {p} : forall f : nseq, @isprogram p (mk_nseq f).
+(*Lemma isprogram_mk_nseq {p} : forall f : nseq, @isprogram p (mk_nseq f).
 Proof.
   repeat constructor. intros; allsimpl; sp.
-Qed.
+Qed.*)
 
-Lemma isprog_mk_nseq {p} : forall f : nseq, @isprog p (mk_nseq f).
+(*Lemma isprog_mk_nseq {p} : forall f : nseq, @isprog p (mk_nseq f).
 Proof.
   repeat constructor.
 Qed.
 
 Lemma isvalue_mk_nseq {p} : forall f : nseq, @isvalue p (mk_nseq f).
+Proof.
+  repeat constructor. intros; allsimpl; sp.
+Qed.*)
+
+Lemma isprogram_mk_seqlib {p} : forall (n : seqname), @isprogram p (mk_seqlib n).
+Proof.
+  repeat constructor. intros; allsimpl; sp.
+Qed.
+
+Lemma isprog_mk_seqlib {p} : forall (n : seqname), @isprog p (mk_seqlib n).
+Proof.
+  repeat constructor.
+Qed.
+
+Lemma isvalue_mk_seqlib {p} : forall (n : seqname), @isvalue p (mk_seqlib n).
 Proof.
   repeat constructor. intros; allsimpl; sp.
 Qed.
@@ -2250,7 +2233,7 @@ Proof.
   allunfold @closed; allsimpl.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
-  inversion w as [|?|o lnt k meq ]; allsimpl; subst.
+  inversion w as [|o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   unfold isprogram; allrw.
@@ -2300,7 +2283,7 @@ Proof.
   allunfold @closed; allsimpl.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [|o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   unfold isprogram; allrw.
@@ -2341,7 +2324,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [|o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   unfold isprogram; allrw.
@@ -2382,7 +2365,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   unfold isprogram; allrw.
@@ -2434,7 +2417,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   unfold isprogram; allrw.
@@ -2455,7 +2438,7 @@ Proof.
   intros; split; intro i.
   apply wf_ipertype; sp.
   allrw @wf_term_eq.
-  inversion i as [|?|o lnt k e]; subst; allsimpl.
+  inversion i as [|o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)); intro j.
   repeat (dest_imp j hyp).
   inversion j; subst; sp.
@@ -2510,7 +2493,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   unfold isprogram; allrw.
@@ -2531,7 +2514,7 @@ Proof.
   intros; split; intro i.
   apply wf_spertype; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)); intro j.
   repeat (dest_imp j hyp).
   inversion j; subst; sp.
@@ -2585,7 +2568,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   unfold isprogram; allrw.
@@ -2606,7 +2589,7 @@ Proof.
   intros; split; intro i.
   apply wf_tuni; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)); intro j.
   repeat (dest_imp j hyp).
   inversion j; subst; sp.
@@ -2675,7 +2658,7 @@ Proof.
   intros; split; intro k.
   apply wf_image; sp.
   allrw <- @nt_wf_eq.
-  inversion k as [|?|i j u w]; subst; allsimpl.
+  inversion k as [|i j u w]; subst; allsimpl.
   generalize (u (nobnd a)) (u (nobnd b)); intros i1 i2.
   dest_imp i1 hyp.
   dest_imp i2 hyp.
@@ -2708,7 +2691,7 @@ Proof.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repd.
   unfold isprogram, closed; allrw.
-  inversion w as [|?|o lnt i meq ]; subst; allsimpl.
+  inversion w as [|o lnt i meq ]; subst; allsimpl.
   generalize (i (nobnd a)) (i (nobnd b)); intros e1 e2.
   dest_imp e1 hyp.
   dest_imp e2 hyp.
@@ -2757,7 +2740,7 @@ Proof.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repd.
   unfold isprogram, closed; allrw.
-  inversion w as [|?| o lnt i meq ]; subst; allsimpl.
+  inversion w as [| o lnt i meq ]; subst; allsimpl.
   generalize (i (nobnd a)) (i (nobnd b)); intros e1 e2.
   dest_imp e1 hyp.
   dest_imp e2 hyp.
@@ -2831,7 +2814,7 @@ Proof.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repd.
   unfold isprogram, closed; allrw.
-  inversion w as [|?| o lnt i meq ]; subst; allsimpl.
+  inversion w as [| o lnt i meq ]; subst; allsimpl.
   generalize (i (nobnd a)) (i (nobnd b)); intros e1 e2.
   dest_imp e1 hyp.
   dest_imp e2 hyp.
@@ -2881,7 +2864,7 @@ Proof.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repd.
   unfold isprogram, closed; allrw.
-  inversion w as [|?| o lnt i meq ]; subst; allsimpl.
+  inversion w as [| o lnt i meq ]; subst; allsimpl.
   generalize (i (nobnd a)); intros e1.
   dest_imp e1 hyp.
   inversion e1; subst; sp.
@@ -2943,7 +2926,7 @@ Proof.
   allrw remove_nvars_nil_l; allrw app_nil_r.
   apply app_eq_nil_iff in c; repnd.
   unfold isprogram; unfold closed; rw c0; rw c.
-  inversion w as [|?| o lnt i meq ]; subst; allsimpl; clear w.
+  inversion w as [| o lnt i meq ]; subst; allsimpl; clear w.
   pose proof (i (nobnd a)) as h1; pose proof (i (nobnd b)) as h2.
   autodimp h1 hyp; autodimp h2 hyp.
   allrw @bt_wf_iff.
@@ -3032,7 +3015,7 @@ Proof.
   sp; split; intros k.
   apply wf_approx; sp.
   allrw @wf_term_eq.
-  inversion k as [|?| o lnt i meq ]; subst; allsimpl.
+  inversion k as [| o lnt i meq ]; subst; allsimpl.
   generalize (i (nobnd a)); generalize (i (nobnd b)); intros i1 i2.
   dest_imp i1 hyp.
   dest_imp i2 hyp.
@@ -3062,7 +3045,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
   dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
   unfold isprogram; allrw.
@@ -3103,7 +3086,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
   dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
   unfold isprogram; allrw.
@@ -3144,7 +3127,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
   dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
   unfold isprogram; allrw.
@@ -3185,7 +3168,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
   dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
   unfold isprogram; allrw.
@@ -3238,7 +3221,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
   dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
   unfold isprogram; allrw.
@@ -3267,7 +3250,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
   dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
   unfold isprogram; allrw.
@@ -3306,7 +3289,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   unfold isprogram; allrw.
@@ -3348,7 +3331,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   unfold isprogram; allrw.
@@ -3587,7 +3570,7 @@ Proof.
   constructor; allsimpl; sp; subst; auto; constructor; auto.
 Qed.
 
-Lemma oball_map_wftb_eq_otrue_implies_wf_term {o} :
+(*Lemma oball_map_wftb_eq_otrue_implies_wf_term {o} :
   forall (bs : list (@BTerm o)) t,
     oball (map wftb bs) = oball (map bterm2otrue bs)
     -> LIn (nobnd t) bs
@@ -3596,7 +3579,7 @@ Proof.
   introv e i.
   eapply oball_map_wftb_eq_otrue_implies in e;[|exact i].
   allsimpl; auto.
-Qed.
+Qed.*)
 
 Lemma wf_free_from_atom_iff {p} :
   forall a b T : @NTerm p,
@@ -3604,7 +3587,8 @@ Lemma wf_free_from_atom_iff {p} :
 Proof.
   sp; split; introv h; repnd.
   - apply wf_free_from_atom; sp.
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term;try (exact h); simpl; sp.
+  - unfold wf_term in h; simpl in h.
+    allrw andb_eq_true; repnd; dands; auto.
 Qed.
 
 Lemma wf_free_from_atom_iff2 {p} :
@@ -3620,7 +3604,7 @@ Lemma wf_efree_from_atom_iff {p} :
 Proof.
   sp; split; introv h; repnd.
   - apply wf_efree_from_atom; sp.
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term;try (exact h); simpl; sp.
+  - unfold wf_term in h; simpl in h; allrw andb_eq_true; repnd; dands; auto.
 Qed.
 
 Lemma wf_efree_from_atom_iff2 {p} :
@@ -3636,7 +3620,7 @@ Lemma wf_free_from_atoms_iff {p} :
 Proof.
   sp; split; introv h; repnd.
   - apply wf_free_from_atoms; sp.
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term;try (exact h); simpl; sp.
+  - unfold wf_term in h; simpl in h; allrw andb_eq_true; repnd; dands; auto.
 Qed.
 
 Lemma wf_free_from_atoms_iff2 {p} :
@@ -3662,7 +3646,7 @@ Lemma wf_equality_iff {p} :
 Proof.
   sp; split; introv h; repnd.
   - apply wf_equality; sp.
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term;try (exact h); simpl; sp.
+  - unfold wf_term in h; simpl in h; allrw andb_eq_true; repnd; dands; auto.
 Qed.
 
 Lemma wf_equality_iff2 {p} :
@@ -3685,7 +3669,7 @@ Proof.
   sp; split; intro i.
   apply wf_member; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e ]; subst; allsimpl.
+  inversion i as [| o lnt k e ]; subst; allsimpl.
   generalize (k (nobnd a)) (k (nobnd T)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   inversion i1; inversion i2; subst; sp.
@@ -3712,7 +3696,7 @@ Lemma wf_requality_iff {p} :
 Proof.
   sp; split; introv h; repnd.
   - apply wf_equality; sp.
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term;try (exact h); simpl; sp.
+  - unfold wf_term in h; simpl in h; allrw andb_eq_true; repnd; dands; auto.
 Qed.
 
 Lemma wf_requality_iff2 {p} :
@@ -3735,7 +3719,7 @@ Proof.
   sp; split; intro i.
   { apply wf_rmember; sp. }
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e ]; subst; allsimpl.
+  inversion i as [| o lnt k e ]; subst; allsimpl.
   generalize (k (nobnd a)) (k (nobnd T)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   inversion i1; inversion i2; subst; sp.
@@ -3760,7 +3744,7 @@ Lemma wf_tequality_iff {p} :
 Proof.
   sp; split; intro h.
   - apply wf_tequality; sp.
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term;try (exact h); simpl; sp.
+  - unfold wf_term in h; simpl in h; allrw andb_eq_true; repnd; dands; auto.
 Qed.
 
 Lemma wf_tequality_iff2 {p} :
@@ -3781,7 +3765,7 @@ Proof.
   sp; split; intro i.
   apply wf_type; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e ]; subst; allsimpl.
+  inversion i as [| o lnt k e ]; subst; allsimpl.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   inversion i1; subst; sp.
@@ -3805,7 +3789,7 @@ Lemma wf_lam_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_lam; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e ]; subst; allsimpl.
+  inversion i as [| o lnt k e ]; subst; allsimpl.
   generalize (k (bterm [v] b)); intros j.
   dest_imp j hyp; sp.
   inversion j; subst; sp.
@@ -3837,7 +3821,7 @@ Theorem wf_function_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_function; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e ]; subst; allsimpl.
+  inversion i as [| o lnt k e ]; subst; allsimpl.
   generalize (k (nobnd a)) (k (bterm [v] b)); intros i1 i2.
   dest_imp i1 hyp; try (complete sp).
   dest_imp i2 hyp; try (complete sp).
@@ -3876,11 +3860,11 @@ Proof.
   sp; split; intro i.
   apply wf_halts; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e ]; subst.
+  inversion i as [| o lnt k e ]; subst.
   generalize (k (nobnd (mk_cbv a nvarx mk_axiom))); allsimpl; intro j.
   dest_imp j hyp.
   inversion j as [ lnv nt u ]; subst.
-  inversion u as [|?| o lnt pp q ]; subst; allsimpl.
+  inversion u as [| o lnt pp q ]; subst; allsimpl.
   generalize (pp (nobnd a)); intro r.
   dest_imp r hyp.
   inversion r; subst; sp.
@@ -3914,7 +3898,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
   dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
   unfold isprogram; allrw.
@@ -3966,7 +3950,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
   dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
   unfold isprogram; allrw.
@@ -4017,7 +4001,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   unfold isprogram; allrw.
@@ -4068,7 +4052,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
   dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
   unfold isprogram; allrw.
@@ -4141,7 +4125,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
   dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
   unfold isprogram; allrw.
@@ -4212,7 +4196,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   unfold isprogram; allrw.
@@ -4276,7 +4260,7 @@ Lemma isprogram_cbv_iff {p} :
 Proof.
   sp; split; intros i.
   inversion i as [ cl w ].
-  inversion w as [|?| o lnt k e ]; subst; allsimpl.
+  inversion w as [| o lnt k e ]; subst; allsimpl.
   generalize (k (nobnd a)) (k (bterm [v] b)); simpl; intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   inversion i1; inversion i2; subst.
@@ -4340,7 +4324,7 @@ Proof.
   sp; split; intros i.
   apply wf_cbv; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst.
+  inversion i as [| o lnt k e]; subst.
   generalize (k (nobnd a)) (k (bterm [v] b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   inversion i1; inversion i2; subst; sp.
@@ -4359,7 +4343,7 @@ Theorem wf_isect_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_isect; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (bterm [v] b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   inversion i1; inversion i2; subst; sp.
@@ -4408,7 +4392,7 @@ Proof.
   introv; split; intro k; try (apply isprog_isect; sp).
   allrw @isprog_eq; allrw @isprog_vars_eq.
   inversion k as [c w].
-  inversion w as [|?| o lnt j e ]; subst.
+  inversion w as [| o lnt j e ]; subst.
   generalize (j (nobnd a)) (j (bterm [v] b)); intros i1 i2; allsimpl.
   repeat (dest_imp i1 hyp).
   repeat (dest_imp i2 hyp).
@@ -4435,7 +4419,7 @@ Lemma wf_disect_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_disect; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (bterm [v] b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   inversion i1; inversion i2; subst; sp.
@@ -4484,7 +4468,7 @@ Proof.
   introv; split; intro k; try (apply isprog_disect; sp).
   allrw @isprog_eq; allrw @isprog_vars_eq.
   inversion k as [c w].
-  inversion w as [|?| o lnt j e ]; subst.
+  inversion w as [| o lnt j e ]; subst.
   generalize (j (nobnd a)) (j (bterm [v] b)); intros i1 i2; allsimpl.
   repeat (dest_imp i1 hyp).
   repeat (dest_imp i2 hyp).
@@ -4511,7 +4495,7 @@ Theorem wf_eisect_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_eisect; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (bterm [v] b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   inversion i1; inversion i2; subst; sp.
@@ -4560,7 +4544,7 @@ Proof.
   introv; split; intro k; try (apply isprog_eisect; sp).
   allrw @isprog_eq; allrw @isprog_vars_eq.
   inversion k as [c w].
-  inversion w as [|?| o lnt j e ]; subst.
+  inversion w as [| o lnt j e ]; subst.
   generalize (j (nobnd a)) (j (bterm [v] b)); intros i1 i2; allsimpl.
   repeat (dest_imp i1 hyp).
   repeat (dest_imp i2 hyp).
@@ -4587,7 +4571,7 @@ Theorem wf_set_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_set; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (bterm [v] b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   inversion i1; inversion i2; subst; sp.
@@ -4636,7 +4620,7 @@ Proof.
   introv; split; intro k; try (apply isprog_set; sp).
   allrw @isprog_eq; allrw @isprog_vars_eq.
   inversion k as [c w].
-  inversion w as [|?| o lnt j e ]; subst.
+  inversion w as [| o lnt j e ]; subst.
   generalize (j (nobnd a)) (j (bterm [v] b)); intros i1 i2; allsimpl.
   repeat (dest_imp i1 hyp).
   repeat (dest_imp i2 hyp).
@@ -4663,7 +4647,7 @@ Theorem wf_tunion_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_tunion; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (bterm [v] b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   inversion i1; inversion i2; subst; sp.
@@ -4712,7 +4696,7 @@ Proof.
   introv; split; intro k; try (apply isprog_tunion; sp).
   allrw @isprog_eq; allrw @isprog_vars_eq.
   inversion k as [c w].
-  inversion w as [|?| o lnt j e ]; subst.
+  inversion w as [| o lnt j e ]; subst.
   generalize (j (nobnd a)) (j (bterm [v] b)); intros i1 i2; allsimpl.
   repeat (dest_imp i1 hyp).
   repeat (dest_imp i2 hyp).
@@ -4741,7 +4725,7 @@ Theorem wf_quotient_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_quotient; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (bterm [v1,v2] b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   inversion i1; inversion i2; subst; sp.
@@ -4789,7 +4773,7 @@ Proof.
   introv; split; intro k; try (apply isprog_quotient; sp).
   allrw @isprog_eq; allrw @isprog_vars_eq.
   inversion k as [c w].
-  inversion w as [|?| o lnt j e ]; subst.
+  inversion w as [| o lnt j e ]; subst.
   generalize (j (nobnd a)) (j (bterm [v1,v2] b)); intros i1 i2; allsimpl.
   repeat (dest_imp i1 hyp).
   repeat (dest_imp i2 hyp).
@@ -4816,7 +4800,7 @@ Lemma wf_w_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_w; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e ]; subst; allsimpl.
+  inversion i as [| o lnt k e ]; subst; allsimpl.
   generalize (k (nobnd a)) (k (bterm [v] b)); intros i1 i2.
   dest_imp i1 hyp; try (complete sp).
   dest_imp i2 hyp; try (complete sp).
@@ -4866,7 +4850,7 @@ Proof.
   introv; split; intro k; try (apply isprog_w; sp).
   allrw @isprog_eq; allrw @isprog_vars_eq.
   inversion k as [c w].
-  inversion w as [|?| o lnt j e ]; subst.
+  inversion w as [| o lnt j e ]; subst.
   generalize (j (nobnd a)) (j (bterm [v] b)); intros i1 i2; allsimpl.
   repeat (dest_imp i1 hyp).
   repeat (dest_imp i2 hyp).
@@ -4894,7 +4878,7 @@ Lemma wf_m_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_m; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e ]; subst; allsimpl.
+  inversion i as [| o lnt k e ]; subst; allsimpl.
   generalize (k (nobnd a)) (k (bterm [v] b)); intros i1 i2.
   dest_imp i1 hyp; try (complete sp).
   dest_imp i2 hyp; try (complete sp).
@@ -4963,7 +4947,7 @@ Lemma wf_pw_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_pw; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e ]; subst; allsimpl.
+  inversion i as [| o lnt k e ]; subst; allsimpl.
   generalize (k (nobnd P))
              (k (bterm [ap] A))
              (k (bterm [bp,ba] B))
@@ -5048,7 +5032,7 @@ Lemma wf_pm_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_pm; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e ]; subst; allsimpl.
+  inversion i as [| o lnt k e ]; subst; allsimpl.
   generalize (k (nobnd P))
              (k (bterm [ap] A))
              (k (bterm [bp,ba] B))
@@ -5150,7 +5134,7 @@ Proof.
   introv; split; intro k; try (apply isprog_function; sp).
   allrw @isprog_eq; allrw @isprog_vars_eq.
   inversion k as [c w].
-  inversion w as [|?| o lnt j e ]; subst.
+  inversion w as [| o lnt j e ]; subst.
   generalize (j (nobnd a)) (j (bterm [v] b)); intros i1 i2; allsimpl.
   repeat (dest_imp i1 hyp).
   repeat (dest_imp i2 hyp).
@@ -5207,7 +5191,7 @@ Proof.
   introv; split; intro k; try (apply isprog_product; sp).
   allrw @isprog_eq; allrw @isprog_vars_eq.
   inversion k as [c w].
-  inversion w as [|?| o lnt j e ]; subst.
+  inversion w as [| o lnt j e ]; subst.
   generalize (j (nobnd a)) (j (bterm [v] b)); intros i1 i2; allsimpl.
   repeat (autodimp i1 hyp).
   repeat (autodimp i2 hyp).
@@ -5444,7 +5428,7 @@ Lemma isprogram_int_implies {p} :
     -> bterms = [].
 Proof.
   introv isp; inversion isp as [ cl w ].
-  inversion w as [|?| o lnt k e]; subst; allsimpl.
+  inversion w as [| o lnt k e]; subst; allsimpl.
   allrw <- null_iff_nil; allsimpl.
   allrw null_map.
   allrw null_iff_nil; auto.
@@ -5456,19 +5440,31 @@ Lemma isprogram_nat_implies {p} :
     -> bterms = [].
 Proof.
   introv isp; inversion isp as [cl w].
-  inversion w as [|?| o lnt k e]; subst; allsimpl.
+  inversion w as [| o lnt k e]; subst; allsimpl.
   allrw <- null_iff_nil.
   allrw null_map.
   allrw null_iff_nil; auto.
 Qed.
 
-Lemma isprogram_nseq_implies {p} :
+(*Lemma isprogram_nseq_implies {p} :
   forall (bterms : list (@BTerm p)) f,
     isprogram (oterm (Can (Nseq f)) bterms)
     -> bterms = [].
 Proof.
   introv isp; inversion isp as [cl w].
-  inversion w as [|?| o lnt k e]; subst; allsimpl.
+  inversion w as [| o lnt k e]; subst; allsimpl.
+  allrw <- null_iff_nil.
+  allrw null_map.
+  allrw null_iff_nil; auto.
+Qed.*)
+
+Lemma isprogram_seqlib_implies {p} :
+  forall (bterms : list (@BTerm p)) n,
+    isprogram (oterm (Can (Nseqlib n)) bterms)
+    -> bterms = [].
+Proof.
+  introv isp; inversion isp as [cl w].
+  inversion w as [| o lnt k e]; subst; allsimpl.
   allrw <- null_iff_nil.
   allrw null_map.
   allrw null_iff_nil; auto.
@@ -5488,7 +5484,7 @@ Lemma isprogram_base_implies {p} :
     -> bterms = [].
 Proof.
   introv isp; inversion isp as [cl w].
-  inversion w as [|?| o lnt k e]; subst; allsimpl.
+  inversion w as [| o lnt k e]; subst; allsimpl.
   allrw <- null_iff_nil.
   allrw null_map.
   allrw null_iff_nil; auto.
@@ -5501,7 +5497,7 @@ Lemma isprogram_approx_implies {p} :
          bterms = [nobnd a, nobnd b]}.
 Proof.
   introv isp; inversion isp as [cl w].
-  inversion w as [|?|o lnt k e]; subst; allsimpl.
+  inversion w as [|o lnt k e]; subst; allsimpl.
   destruct bterms; allsimpl; sp.
   destruct bterms; allsimpl; sp.
   destruct bterms; allsimpl; sp.
@@ -5709,7 +5705,7 @@ Proof.
   inversion H; sp.
 Qed.
 
-Definition mkc_nseq {p} (f : nseq) : @CTerm p :=
+(*Definition mkc_nseq {p} (f : nseq) : @CTerm p :=
   exist isprog (mk_nseq f) (isprog_mk_nseq f).
 
 Lemma mkc_nseq_eq {p} :
@@ -5719,7 +5715,7 @@ Lemma mkc_nseq_eq {p} :
 Proof.
   unfold mkc_nseq; sp.
   inversion H; sp.
-Qed.
+Qed.*)
 
 Lemma isvalue_implies {p} :
   forall t, @isvalue p t -> (iscan t # isprogram t).
@@ -5736,13 +5732,13 @@ Proof.
   - repnd; destruct t; allsimpl; tcsp.
 Qed.
 
-Definition isprog_nout {p} (t : @NTerm p) :=
-  assert (no_vars_like_b t) # wf_term t.
+(*Definition isprog_nout {p} (t : @NTerm p) :=
+  assert (no_vars_like_b t) # wf_term t.*)
 
-Definition isprog_ntseq {o} (f : @ntseq o) :=
-  forall n, isprog_nout (f n).
+(*Definition isprog_ntseq {o} (f : @ntseq o) :=
+  forall n, isprog_nout (f n).*)
 
-Lemma isprogram_mk_ntseq {o} :
+(*Lemma isprogram_mk_ntseq {o} :
   forall f : @ntseq o,
     isprog_ntseq f
     -> isprogram (mk_ntseq f).
@@ -5786,16 +5782,29 @@ Lemma mkc_ntseq_eq {o} :
 Proof.
   unfold mkc_ntseq; introv h.
   inversion h; sp.
+Qed.*)
+
+Definition mkc_seqlib {o} (n : seqname) : CTerm :=
+  exist (@isprog o) (mk_seqlib n) (isprog_mk_seqlib n).
+
+Lemma mkc_seqlib_eq {o} :
+  forall (f g : seqname),
+    @mkc_seqlib o f = mkc_seqlib g
+    -> f = g.
+Proof.
+  unfold mkc_seqlib; introv h.
+  inversion h; sp.
 Qed.
 
-Lemma isprog_nout_proof_irrelevance {p} :
+
+(*Lemma isprog_nout_proof_irrelevance {p} :
   forall (t : @NTerm p),
   forall x y : isprog_nout t,
     x = y.
 Proof.
   intros.
   destruct x, y.
-  f_equal; apply UIP.
+  f_equal; apply UIP_dec; apply bool_dec.
 Qed.
 
 Hint Extern 0 =>
@@ -5816,7 +5825,7 @@ Proof.
   remember (p1 x) as i1.
   remember (p2 x) as i2.
   eauto with pi.
-Qed.
+Qed.*)
 
 Definition isprog_atom {p} : @isprog p mk_atom := (eq_refl,eq_refl).
 Definition isprog_uatom {p} : @isprog p mk_uatom := (eq_refl,eq_refl).
@@ -5953,7 +5962,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   unfold isprogram; allrw.
@@ -6030,7 +6039,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   unfold isprogram; allrw.
@@ -6316,7 +6325,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   unfold isprogram; allrw.
@@ -6386,7 +6395,7 @@ Proof.
     allrw remove_nvars_nil_l.
     allrw app_nil_r.
     allrw app_eq_nil_iff; repnd; allrw.
-    inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+    inversion w as [| o lnt k meq ]; allsimpl; subst.
     generalize (k (nobnd a)) (k (nobnd e)); intros i1 i2.
     dest_imp i1 hyp.
     dest_imp i2 hyp.
@@ -6442,7 +6451,7 @@ Proof.
   sp; split; intros i.
   apply wf_try; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst.
+  inversion i as [| o lnt k e]; subst.
   generalize (k (nobnd a)) (k (nobnd x)) (k (bterm [v] b)); intros i1 i2 i3.
   dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
   inversion i1; inversion i2; inversion i3; subst; sp.
@@ -6483,7 +6492,7 @@ Lemma isprogram_try_iff {p} :
 Proof.
   sp; split; intros i.
   - inversion i as [ cl w ].
-    inversion w as [|?| o lnt k e ]; subst; allsimpl.
+    inversion w as [| o lnt k e ]; subst; allsimpl.
     generalize (k (nobnd a)) (k (nobnd x)) (k (bterm [v] b)); simpl; intros i1 i2 i3.
     dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
     inversion i1; inversion i2; inversion i3; subst.
@@ -7892,7 +7901,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   unfold isprogram; allrw.
@@ -8598,8 +8607,8 @@ Definition selectbt {p} (bts: list BTerm) (n:nat) : @BTerm p :=
  This a superset of T_0(L)
 *)
 Inductive not_vbterm {p} : @NTerm p -> Type :=
-  | nvbo : forall op bs, not_vbterm (oterm op bs)
-  | nvbs : forall f, not_vbterm (sterm f).
+  | nvbo : forall op bs, not_vbterm (oterm op bs).
+(*  | nvbs : forall f, not_vbterm (sterm f).*)
 Hint Constructors not_vbterm.
 
 (** this should not be required anymore. a closed NTerm is automatically not_vbterm. Proof below*)
@@ -8942,16 +8951,16 @@ Proof.
   exact vterm_inj.
 Qed.
 
-Fixpoint no_seq {o} (t : @NTerm o) : bool :=
+(*Fixpoint no_seq {o} (t : @NTerm o) : bool :=
   match t with
     | vterm _ => true
-    | sterm f => false
+(*    | sterm f => false*)
     | oterm op bs => no_seq_o op && ball (map no_seq_b bs)
   end
 with no_seq_b {o} (b : @BTerm o) : bool :=
        match b with
          | bterm _ t => no_seq t
-       end.
+       end.*)
 
 Lemma lin_lift_vterm {p} :
   forall v lv,
@@ -9054,9 +9063,9 @@ Definition selectnt {p} (n:nat) (lnt : list NTerm): @NTerm p :=
 
 Inductive nt_wf2 {p} : @NTerm p -> [univ] :=
   | wfvt2 : forall nv : NVar, nt_wf2 (vterm nv)
-  | wfst2: forall f,
+(*  | wfst2: forall f,
              (forall n, nt_wf2 (f n) # closed (f n) # noutokens (f n))
-             -> nt_wf2 (sterm f)
+             -> nt_wf2 (sterm f)*)
   | wfot2 : forall (o : Opid) (lnt : list BTerm),
             length lnt = length (OpBindings o)
            -> (forall n, n < (length lnt) ->
@@ -9080,19 +9089,7 @@ Defined.
 Lemma nt_wf_nt_wf2 {p} : forall t : @NTerm p, (nt_wf t) <=> (nt_wf2 t).
 Proof.
   assert (0= num_bvars (bterm [] (@mk_axiom p))) as XX by auto.
-  nterm_ind1 t as [|f ind| o lbt Hind] Case; split; introv Hyp; auto.
-
-  - Case "sterm".
-    inversion Hyp as [|? imp|]; subst.
-    constructor; introv.
-    pose proof (imp n) as h; repnd; dands; auto.
-    apply ind; auto.
-
-  - Case "sterm".
-    inversion Hyp as [|? imp|]; subst.
-    constructor; introv.
-    pose proof (imp n) as h; repnd; dands; auto.
-    apply ind; auto.
+  nterm_ind1 t as [|o lbt Hind] Case; split; introv Hyp; auto.
 
   - Case "oterm".
     inverts Hyp as Hl Hyp. constructor. apply_length Hyp;sp.
@@ -9270,7 +9267,6 @@ Hint Resolve iscvalue_mkc_refl : slow.
 Definition is_inl {p} (t : @CTerm p) :=
   match get_cterm t with
     | vterm _ => false
-    | sterm _ => false
     | oterm (Can (NInj NInl)) _ => true
     | oterm _ _ => false
   end.
@@ -9278,7 +9274,6 @@ Definition is_inl {p} (t : @CTerm p) :=
 Definition is_inr {p} (t : @CTerm p) :=
   match get_cterm t with
     | vterm _ => false
-    | sterm _ => false
     | oterm (Can (NInj NInr)) _ => true
     | oterm _ _ => false
   end.
@@ -9308,7 +9303,7 @@ Proof.
   introv; split; intro i.
   apply wf_apply; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (nobnd b)); intros k1 k2.
   repeat (dest_imp k1 hyp).
   repeat (dest_imp k2 hyp).
@@ -9360,7 +9355,7 @@ Proof.
   introv; split; intro i.
   apply wf_eapply; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (nobnd b)); intros k1 k2.
   repeat (dest_imp k1 hyp).
   repeat (dest_imp k2 hyp).
@@ -9389,7 +9384,7 @@ Proof.
   introv; split; intro i.
   apply wf_apseq; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)); intros k1.
   repeat (dest_imp k1 hyp).
   inversion k1; subst; sp.
@@ -9414,7 +9409,7 @@ Lemma wf_parallel_iff {p} :
 Proof.
   introv; split; intro i; repnd; try (apply wf_parallel; complete sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl; clear i.
+  inversion i as [| o lnt k e]; subst; allsimpl; clear i.
   pose proof (k (nobnd a)) as h1; autodimp h1 hyp.
   pose proof (k (nobnd b)) as h2; autodimp h2 hyp.
   allrw @bt_wf_iff; dands; auto.
@@ -9454,7 +9449,7 @@ Proof.
   intros; split; intro i.
   apply wf_pertype; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)); intro j.
   repeat (dest_imp j hyp).
   inversion j; subst; sp.
@@ -9478,7 +9473,7 @@ Proof.
   intros; split; intro i.
   apply wf_partial; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)); intro j.
   repeat (dest_imp j hyp).
   inversion j; subst; sp.
@@ -9851,21 +9846,19 @@ Qed.
 Lemma isprogramd {p} :
   forall v,
     @isprogram p v
-    -> {f : ntseq & v = sterm f}
-       [+] {o : Opid $ {lbt : list BTerm $ v = oterm o lbt}}.
+    -> {o : Opid $ {lbt : list BTerm $ v = oterm o lbt}}.
 Proof.
   introv Hpr.
   invertsn Hpr.
   destruct v; inverts Hpr.
-  - left; eexists; eauto.
-  - right; eexists; eexists; eauto.
+  eexists; eexists; eauto.
 Qed.
 
 
 Lemma isprogram_noncan {p} :
   forall v,
     @isprogram p v
-    -> (isvalue v [+] isnoncan v [+] isexc v [+] isabs v [+] isseq v).
+    -> (isvalue v [+] isnoncan v [+] isexc v [+] isabs v).
 Proof.
   introv Hp.
   applydup @isprogramd in Hp.
@@ -9910,7 +9903,7 @@ Lemma noncan_not_value {p} :
   -> False.
 Proof.
   introv Hisnc Hisv.
-  destruct e as [|?|o lbt]; allsimpl; cpx.
+  destruct e as [|o lbt]; allsimpl; cpx.
   destruct o; cpx.
   inverts Hisv; allsimpl; tcsp.
 Qed.
@@ -10173,7 +10166,7 @@ Proof.
   allrw @isprog_eq.
   rw @isprog_vars_eq.
   unfold isprogram in k; repnd.
-  inversion k as [|?| o lnt j meq ]; allsimpl; subst.
+  inversion k as [| o lnt j meq ]; allsimpl; subst.
   generalize (j (bterm [v] b)); intro u; dest_imp u hyp.
   inversion u; subst; sp.
   generalize (closed_implies (mk_lam v b) k0); intro i.
@@ -10437,7 +10430,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   unfold isprogram; allrw.
@@ -10454,7 +10447,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)); intros i1.
   dest_imp i1 hyp.
   unfold isprogram; allrw.
@@ -10472,7 +10465,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   unfold isprogram; allrw.
@@ -10489,7 +10482,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   unfold isprogram; allrw.
@@ -10506,7 +10499,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   unfold isprogram; allrw.
@@ -10523,7 +10516,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   unfold isprogram; allrw.
@@ -10538,7 +10531,7 @@ Proof.
   introv; split; intro k; try (apply isprog_m; sp).
   allrw @isprog_eq; allrw @isprog_vars_eq.
   inversion k as [c w].
-  inversion w as [|?| o lnt j e ]; subst.
+  inversion w as [| o lnt j e ]; subst.
   generalize (j (nobnd a)) (j (bterm [v] b)); intros i1 i2; allsimpl.
   repeat (dest_imp i1 hyp).
   repeat (dest_imp i2 hyp).
@@ -10562,7 +10555,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [|?| o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)); intros i1 i2.
   dest_imp i1 hyp; dest_imp i2 hyp.
   unfold isprogram; allrw.
@@ -10609,7 +10602,7 @@ Proof.
   sp; split; intros k.
   apply wf_cequiv; sp.
   allrw @wf_term_eq.
-  inversion k as [|?| o lnt i meq ]; subst; allsimpl.
+  inversion k as [| o lnt i meq ]; subst; allsimpl.
   generalize (i (nobnd a)); generalize (i (nobnd b)); intros i1 i2.
   dest_imp i1 hyp.
   dest_imp i2 hyp.
@@ -10630,7 +10623,7 @@ Proof.
   split; intro w.
 
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e ]; subst.
+  inversion w as [| o l bw e ]; subst.
   generalize (bw (nobnd A)) (bw (bterm [newvar B] B)); intros bw1 bw2; clear bw.
   dest_imp bw1 hyp.
   dest_imp bw2 hyp.
@@ -10649,7 +10642,7 @@ Proof.
   split; intro w.
 
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e ]; subst.
+  inversion w as [| o l bw e ]; subst.
   generalize (bw (nobnd A)) (bw (bterm [newvar B] B)); intros bw1 bw2; clear bw.
   dest_imp bw1 hyp.
   dest_imp bw2 hyp.
@@ -10668,7 +10661,7 @@ Proof.
   split; intro w.
 
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e ]; subst.
+  inversion w as [| o l bw e ]; subst.
   generalize (bw (nobnd A)) (bw (bterm [newvar B] B)); intros bw1 bw2; clear bw.
   dest_imp bw1 hyp.
   dest_imp bw2 hyp.
@@ -10687,7 +10680,7 @@ Proof.
   split; intro w.
 
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e ]; subst.
+  inversion w as [| o l bw e ]; subst.
   generalize (bw (nobnd A)) (bw (bterm [newvar B] B)); intros bw1 bw2; clear bw.
   dest_imp bw1 hyp.
   dest_imp bw2 hyp.
@@ -10801,7 +10794,7 @@ Proof.
   introv; split; intro i.
   apply wf_less; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)) (k (nobnd d)); intros k1 k2 k3 k4.
   repeat (dest_imp k1 hyp).
   repeat (dest_imp k2 hyp).
@@ -10925,7 +10918,7 @@ Theorem wf_product_iff {p} :
 Proof.
   sp; split; intro i; try (apply wf_product; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e ]; subst; allsimpl.
+  inversion i as [| o lnt k e ]; subst; allsimpl.
   generalize (k (nobnd a)) (k (bterm [v] b)); intros i1 i2.
   dest_imp i1 hyp; try (complete sp).
   dest_imp i2 hyp; try (complete sp).
@@ -11190,9 +11183,7 @@ Lemma wf_isaxiom {p} :
     wf_term (mk_isaxiom a b c) <=> (wf_term a # wf_term b # wf_term c).
 Proof.
   sp; split; intro k.
-
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term; try (exact k); simpl; sp.
-
+  - unfold wf_term in *; simpl in *; allrw andb_eq_true; repnd; dands; auto.
   - repnd.
     unfold wf_term; simpl.
     rw k0; rw k1; rw k; auto.
@@ -11271,7 +11262,7 @@ Lemma wf_pair {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)) (bw (nobnd b)); simpl; intros bw1 bw2.
   autodimp bw1 hyp.
   autodimp bw2 hyp.
@@ -11288,7 +11279,7 @@ Lemma wf_spread {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bwf e ]; subst.
+  inversion w as [| o l bwf e ]; subst.
   generalize (bwf (nobnd a)) (bwf (bterm [v1,v2] b)); clear bwf; intros bwf1 bwf2.
   autodimp bwf1 hyp; autodimp bwf2 hyp; try (complete (simpl; sp)).
   inversion bwf1; subst.
@@ -11314,7 +11305,7 @@ Lemma wf_ispair_iff {p} :
 Proof.
   sp; split; introv k.
   - apply wf_ispair; sp.
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term; try (exact k); simpl; sp.
+  - unfold wf_term in *; simpl in *; allrw andb_eq_true; repnd; dands; auto.
 Qed.
 
 Lemma wf_isinl {p} :
@@ -11332,7 +11323,7 @@ Lemma wf_isinl_iff {p} :
 Proof.
   introv; split; intro k.
   - apply wf_isinl; sp.
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term; try (exact k); simpl; sp.
+  - unfold wf_term in *; simpl in *; allrw andb_eq_true; repnd; dands; auto.
 Qed.
 
 Lemma wf_isinr {p} :
@@ -11350,7 +11341,7 @@ Lemma wf_isinr_iff {p} :
 Proof.
   introv; split; intro k.
   - apply wf_isinl; sp.
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term; try (exact k); simpl; sp.
+  - unfold wf_term in *; simpl in *; allrw andb_eq_true; repnd; dands; auto.
 Qed.
 
 Lemma wf_islambda {p} :
@@ -11368,7 +11359,7 @@ Lemma wf_islambda_iff {p} :
 Proof.
   introv; split; intro k.
   - apply wf_islambda; sp.
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term; try (exact k); simpl; sp.
+  - unfold wf_term in *; simpl in *; allrw andb_eq_true; repnd; dands; auto.
 Qed.
 
 Lemma wf_isaxiom_iff {p} :
@@ -11377,7 +11368,7 @@ Lemma wf_isaxiom_iff {p} :
 Proof.
   introv; split; intro k.
   - apply wf_isaxiom; sp.
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term; try (exact k); simpl; sp.
+  - unfold wf_term in *; simpl in *; allrw andb_eq_true; repnd; dands; auto.
 Qed.
 
 Lemma wf_isint{p} :
@@ -11395,7 +11386,7 @@ Lemma wf_isint_iff {p} :
 Proof.
   introv; split; intro k.
   - apply wf_isint; sp.
-  - dands; eapply oball_map_wftb_eq_otrue_implies_wf_term; try (exact k); simpl; sp.
+  - unfold wf_term in *; simpl in *; allrw andb_eq_true; repnd; dands; auto.
 Qed.
 
 Lemma isprog_pi1 {p} :
@@ -11516,7 +11507,7 @@ Proof.
   introv; split; intro isp; repnd.
   apply isprogram_spread; auto.
   inversion isp as [cl wf].
-  inversion wf as [|?| o l bwf e ]; subst.
+  inversion wf as [| o l bwf e ]; subst.
   generalize (bwf (nobnd a)) (bwf (bterm [v1,v2] b)); clear bwf; intros bwf1 bwf2.
   autodimp bwf1 hyp; autodimp bwf2 hyp; try (complete (simpl; sp)).
   inversion bwf1; subst.
@@ -11557,7 +11548,7 @@ Proof.
   introv; split; intro isp; repnd.
   apply isprogram_dsup; auto.
   inversion isp as [cl wf].
-  inversion wf as [|?| o l bwf e ]; subst.
+  inversion wf as [| o l bwf e ]; subst.
   generalize (bwf (nobnd a)) (bwf (bterm [v1,v2] b)); clear bwf; intros bwf1 bwf2.
   autodimp bwf1 hyp; autodimp bwf2 hyp; try (complete (simpl; sp)).
   inversion bwf1; subst.
@@ -11600,7 +11591,7 @@ Proof.
   introv; split; intro isp; repnd.
   apply isprogram_decide; auto.
   inversion isp as [cl wf].
-  inversion wf as [|?| o l bwf e ]; subst.
+  inversion wf as [| o l bwf e ]; subst.
   generalize (bwf (nobnd a)) (bwf (bterm [v1] b1)) (bwf (bterm [v2] b2)); clear bwf; intros bwf1 bwf2 bwf3.
   autodimp bwf1 hyp; autodimp bwf2 hyp; autodimp bwf3 hyp; try (complete (simpl; sp)).
   inversion bwf1; subst.
@@ -11705,7 +11696,7 @@ Proof.
 
   rw @isprog_eq in isp.
   inversion isp as [ cl wf ].
-  inversion wf as [|?| o lnt j e ]; subst.
+  inversion wf as [| o lnt j e ]; subst.
   generalize (j (nobnd P))
              (j (bterm [ap] A))
              (j (bterm [bp,ba] B))
@@ -11746,7 +11737,7 @@ Proof.
 
   rw @isprog_eq in isp.
   inversion isp as [ cl wf ].
-  inversion wf as [|?| o lnt j e ]; subst.
+  inversion wf as [| o lnt j e ]; subst.
   generalize (j (nobnd P))
              (j (bterm [ap] A))
              (j (bterm [bp,ba] B))
@@ -11785,7 +11776,7 @@ Lemma isprogram_exception_implies {p} :
 Proof.
   introv isp.
   inversion isp as [c w].
-  inversion w as [|?|o lnt bw m]; subst; allsimpl.
+  inversion w as [|o lnt bw m]; subst; allsimpl.
   repeat (destruct bterms; ginv).
   allsimpl; ginv.
   destruct b as [l1 t1]; destruct b0 as [l2 t2].
@@ -11806,15 +11797,12 @@ Lemma iscan_implies {p} :
     iscan t
     -> {c : CanonicalOp
         & {bterms : list BTerm
-        & t = oterm (Can c) bterms}}
-       [+] {f : ntseq & t = sterm f}.
+        & t = oterm (Can c) bterms}}.
 Proof.
   introv isc.
-  destruct t as [v|f|op bs]; try (complete (inversion isc)).
-  - right.
-    eexists; eauto.
-  - destruct op; try (complete (inversion isc)).
-    left; exists c bs; sp.
+  destruct t as [v|op bs]; try (complete (inversion isc)).
+  destruct op; try (complete (inversion isc)).
+  exists c bs; sp.
 Qed.
 
 Lemma isexc_implies {p} :
@@ -12676,7 +12664,7 @@ Lemma wf_compop_iff {p} :
 Proof.
   introv; split; intro k.
   - allrw @wf_term_eq.
-    inversion k as [|?|? ? i e]; subst; allsimpl.
+    inversion k as [|? ? i e]; subst; allsimpl.
     pose proof (i (nobnd a)) as ha.
     pose proof (i (nobnd b)) as hb.
     pose proof (i (nobnd c)) as hc.
@@ -12711,7 +12699,7 @@ Lemma wf_arithop_iff {p} :
 Proof.
   introv; split; intro k.
   - allrw @wf_term_eq.
-    inversion k as [|?|? ? i e]; subst; allsimpl.
+    inversion k as [|? ? i e]; subst; allsimpl.
     pose proof (i (nobnd a)) as ha.
     pose proof (i (nobnd b)) as hb.
     repeat (autodimp ha hyp).
@@ -12749,7 +12737,7 @@ Lemma wf_can_test_iff {p} :
 Proof.
   introv; split; intro k.
   - allrw @wf_term_eq.
-    inversion k as [|?|? ? i e]; subst; allsimpl.
+    inversion k as [|? ? i e]; subst; allsimpl.
     pose proof (i (nobnd a)) as ha.
     pose proof (i (nobnd b)) as hb.
     pose proof (i (nobnd c)) as hc.
@@ -12768,7 +12756,7 @@ Lemma wf_dsup {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bwf e ]; subst.
+  inversion w as [| o l bwf e ]; subst.
   generalize (bwf (nobnd a)) (bwf (bterm [v1,v2] b)); clear bwf; intros bwf1 bwf2.
   autodimp bwf1 hyp; autodimp bwf2 hyp; try (complete (simpl; sp)).
   inversion bwf1; subst.
@@ -12784,7 +12772,7 @@ Lemma wf_sup_iff {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)) (bw (nobnd b)); simpl; intros bw1 bw2.
   autodimp bw1 hyp.
   autodimp bw2 hyp.
@@ -12800,7 +12788,7 @@ Lemma wf_refl_iff {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)); simpl; intros bw1.
   autodimp bw1 hyp.
   inversion bw1; subst.
@@ -12814,7 +12802,7 @@ Lemma wf_inl {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)); simpl; intros bw1.
   autodimp bw1 hyp.
   inversion bw1; subst.
@@ -12828,7 +12816,7 @@ Lemma wf_inr {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)); simpl; intros bw1.
   autodimp bw1 hyp.
   inversion bw1; subst.
@@ -12843,7 +12831,7 @@ Lemma wf_decide {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bwf e ]; subst.
+  inversion w as [| o l bwf e ]; subst.
   generalize (bwf (nobnd a)) (bwf (bterm [v1] b1)) (bwf (bterm [v2] b2));
     clear bwf; intros bwf1 bwf2 bwf3.
   autodimp bwf1 hyp; autodimp bwf2 hyp; autodimp bwf3 hyp; try (complete (simpl; sp)).
@@ -12862,7 +12850,7 @@ Lemma wf_fix_iff {p} :
 Proof.
   introv; split; intro k.
   - allrw @wf_term_eq.
-    inversion k as [|?|? ? i]; allsimpl; subst; ginv.
+    inversion k as [|? ? i]; allsimpl; subst; ginv.
     pose proof (i (bterm [] t)) as h; autodimp h hyp.
     inversion h; subst; auto.
   - apply wf_fix; auto.
@@ -12891,7 +12879,7 @@ Lemma wf_fresh_iff {p} :
 Proof.
   introv; split; intro i; try (apply wf_fresh; sp).
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e ]; subst; allsimpl.
+  inversion i as [| o lnt k e ]; subst; allsimpl.
   generalize (k (bterm [v] b)); intros j.
   dest_imp j hyp; sp.
   inversion j; subst; sp.
@@ -12919,7 +12907,7 @@ Lemma nt_wf_eapply_iff {p} :
         # nt_wf b}}.
 Proof.
   introv; split; intro k.
-  - inversion k as [|?|? ? imp e]; clear k; subst.
+  - inversion k as [|? ? imp e]; clear k; subst.
     allsimpl.
     repeat (destruct bs; allsimpl; ginv).
     destruct b as [l1 t1].

@@ -87,7 +87,7 @@ Require Export variables.
  *)
 Inductive NTerm {p} : tuniv :=
 | vterm: NVar -> NTerm
-| sterm : (nat -> NTerm) -> NTerm (* closed free choice sequence *)
+(*| sterm : (nat -> NTerm) -> NTerm (* closed free choice sequence *)*)
 | oterm: @Opid p -> list BTerm -> NTerm
 with BTerm {p} : tuniv :=
 | bterm: (list NVar) -> NTerm -> BTerm.
@@ -118,6 +118,7 @@ with BTerm {p} : tuniv :=
   We will use it soon to define the subcollection of well-formed terms.
 *)
 
+(*
 (* begin hide *)
 Inductive ord :=
 | OZ : ord
@@ -137,20 +138,31 @@ Fixpoint oaddl (ts : list ord) : ord :=
   match ts with
   | nil => OZ
   | n :: ns => oadd n (oaddl ns)
-  end.
+  end.*)
 
-Fixpoint osize {o} (t : @NTerm o) : ord :=
+(*Fixpoint osize {o} (t : @NTerm o) : ord :=
   match t with
     | vterm _ => O1
-    | sterm f => OS (OL (fun x => osize (f x)))
+(*    | sterm f => OS (OL (fun x => osize (f x)))*)
     | oterm op bterms => OS (oaddl (map osize_bterm bterms))
   end
 with osize_bterm {o} (bt : BTerm) : ord :=
   match bt with
     | bterm lv nt => osize nt
+  end.*)
+
+Fixpoint size {o} (t : @NTerm o) : nat :=
+  match t with
+    | vterm _ => 1
+(*    | sterm f => OS (OL (fun x => osize (f x)))*)
+    | oterm op bterms => S (addl (map size_bterm bterms))
+  end
+with size_bterm {o} (bt : BTerm) : nat :=
+  match bt with
+    | bterm lv nt => size nt
   end.
 
-Fixpoint opred_type (o : ord) : Set :=
+(*Fixpoint opred_type (o : ord) : Set :=
   match o with
     | OZ    => False
     | OS o' => option (opred_type o')
@@ -437,7 +449,7 @@ Proof.
      apply ind in h0; auto. }
 
  apply IH; apply h.
-Defined.
+Defined.*)
 
 Definition ntseq {o} : Type := nat -> @NTerm o.
 
@@ -467,70 +479,70 @@ Definition isvariable {p} (t : @NTerm p) :=
     | _ => False
   end.
 
-Definition iscanonical {p} (t : @NTerm p) :=
+Definition iscanonical {p} (t : @NTerm p) : bool :=
   match t with
-    | oterm (Can _) _ => true
-    | sterm _ => true
-    | _ => false
+  | oterm (Can _) _ => true
+  (*    | sterm _ => true*)
+  | _ => false
   end.
 
-Definition iscan {p} (t : @NTerm p) :=
+Definition iscan {p} (t : @NTerm p) : Prop :=
   match t with
-    | oterm (Can _) _ => True
-    | sterm _ => True
-    | _ => False
+  | oterm (Can _) _ => True
+  (*| sterm _ => True*)
+  | _ => False
   end.
 
 Definition isnoncan {p} (t : @NTerm p) :=
   match t with
-    | vterm _ => False
-    | sterm _ => False
-    | oterm o _ =>
-      match o with
-        | NCan _ => True
-        | _ => False
-      end
+  | vterm _ => False
+  (*| sterm _ => False*)
+  | oterm o _ =>
+    match o with
+    | NCan _ => True
+    | _ => False
+    end
   end.
 
 Definition isexception {p} (t: @NTerm p) :=
   match t with
-    | vterm _ => false
-    | sterm _ => false
-    | oterm o _ =>
-      match o with
-        | Exc => true
-        | _ => false
-      end
+  | vterm _ => false
+  (*| sterm _ => false*)
+  | oterm o _ =>
+    match o with
+    | Exc => true
+    | _ => false
+    end
   end.
 
 Definition isexc {p} (t: @NTerm p) :=
   match t with
-    | vterm _ => False
-    | sterm _ => False
-    | oterm o _ =>
-      match o with
-        | Exc => True
-        | _ => False
-      end
+  | vterm _ => False
+  (*    | sterm _ => False*)
+  | oterm o _ =>
+    match o with
+    | Exc => True
+    | _ => False
+    end
   end.
 
 Definition isabs {p} (t: @NTerm p) :=
   match t with
-    | vterm _ => False
-    | sterm _ => False
-    | oterm o _ =>
-      match o with
-        | Abs _ => True
-        | _ => False
-      end
+  | vterm _ => False
+  (*| sterm _ => False*)
+  | oterm o _ =>
+    match o with
+    | Abs _ => True
+    | _ => False
+    end
   end.
 
-Definition isseq {p} (t : @NTerm p) :=
+(*Definition isseq {p} (t : @NTerm p) :=
   match t with
-    | vterm _ => False
-    | sterm _ => True
-    | oterm _ _ => False
-  end.
+  | vterm _ => False
+  (*    | sterm _ => True*)
+  | oterm _ _ => False
+  end.*)
 
 Ltac d_isnoncan H :=
   match type of H with
@@ -538,8 +550,8 @@ Ltac d_isnoncan H :=
       let tlbt := fresh t "lbt" in
       let tnc := fresh t "nc" in
       let tt := fresh "temp" in
-      destruct t as [tt|tt|tt tlbt];
-        [complete (inverts H as H)|complete (inverts H as H)|];
+      destruct t as [tt|tt tlbt];
+        [complete (inverts H as H)|];
         destruct tt as [tt|tnc|tex|tabs];
         [ complete(inverts H as H)
         | idtac
@@ -554,8 +566,8 @@ Ltac d_isexc H :=
       let tlbt := fresh t "lbt" in
       let tnc := fresh t "nc" in
       let tt := fresh "temp" in
-      destruct t as [tt|tt|tt tlbt];
-        [complete (inverts H as H)|complete (inverts H as H)|];
+      destruct t as [tt|tt tlbt];
+        [complete (inverts H as H)|];
         destruct tt as [tt|tnc|tex|tabs];
         [ complete(inverts H as H)
         | complete(inverts H as H)
@@ -570,8 +582,8 @@ Ltac d_isabs H :=
       let x  := fresh t "x" in
       let bs := fresh t "bs" in
       let tt := fresh "temp" in
-      destruct t as [tt|tt|tt tlbt];
-        [complete (inverts H as H)|complete (inverts H as H)|];
+      destruct t as [tt|tt tlbt];
+        [complete (inverts H as H)|];
         destruct tt as [tt|tnc|tex|tabs];
         [ complete(inverts H as H)
         | complete(inverts H as H)
@@ -672,7 +684,7 @@ Definition num_bvars {p} (bt : @BTerm p) := length (get_vars bt).
 Fixpoint free_vars {p} (t:@NTerm p) : list NVar :=
   match t with
   | vterm v => [v]
-  | sterm _ => []
+(*  | sterm _ => []*)
   | oterm op bts => flat_map free_vars_bterm bts
   end
  with free_vars_bterm {p} (bt : BTerm) :=
@@ -683,7 +695,7 @@ Fixpoint free_vars {p} (t:@NTerm p) : list NVar :=
 Fixpoint bound_vars {p} (t : @NTerm p) : list NVar :=
   match t with
   | vterm _ => []
-  | sterm _ => []
+(*  | sterm _ => []*)
   | oterm _ bts => flat_map bound_vars_bterm bts
   end
  with bound_vars_bterm {p} (bt : BTerm) :=
@@ -710,7 +722,7 @@ Definition get_utokens_o {p} (o : @Opid p) : list (get_patom_set p) :=
 Fixpoint get_utokens {p} (t : @NTerm p) : list (get_patom_set p) :=
   match t with
     | vterm _ => []
-    | sterm _ => []
+(*    | sterm _ => []*)
     | oterm o bterms => (get_utokens_o o) ++ (flat_map get_utokens_b bterms)
   end
 with get_utokens_b {p} (bt : @BTerm p) : list (get_patom_set p) :=
@@ -731,7 +743,7 @@ Definition noutokens {o} (t : @NTerm o) := get_utokens t = [].
 Fixpoint allvars {p} (t : @NTerm p) : list NVar :=
   match t with
     | vterm v => [v]
-    | sterm _ => []
+(*    | sterm _ => []*)
     | oterm o bts => flat_map allvarsbt bts
   end
 with allvarsbt {p} (bt : BTerm) :=
@@ -741,12 +753,12 @@ with allvarsbt {p} (bt : BTerm) :=
 
 Set Implicit Arguments.
 
-Inductive OList T :=
+(*Inductive OList T :=
 | OLO : T -> OList T
 | OLL : list (OList T) -> OList T
-| OLS : (nat -> OList T) -> OList T.
+| OLS : (nat -> OList T) -> OList T.*)
 
-Fixpoint olist_size {T} (l : OList T) : ord :=
+(*Fixpoint olist_size {T} (l : OList T) : ord :=
   match l with
     | OLO _ => O1
     | OLL l => OS (oaddl (map olist_size l))
@@ -1658,26 +1670,26 @@ Qed.
 Definition OVar := OList NVar.
 Definition ovar_v v : OVar := OLO v.
 Definition ovar_l l : OVar := OLL l.
-Definition ovar_s f : OVar := OLS f.
+Definition ovar_s f : OVar := OLS f.*)
 
-Fixpoint allovars {p} (t : @NTerm p) : OVar :=
+(*Fixpoint allovars {p} (t : @NTerm p) : OVar :=
   match t with
     | vterm v => ovar_v v
-    | sterm f => ovar_s (fun n => allovars (f n))
+(*    | sterm f => ovar_s (fun n => allovars (f n))*)
     | oterm o bts => oappl (map allovarsbt bts)
   end
 with allovarsbt {p} (bt : BTerm) : OVar :=
        match bt with
          | bterm vs t => oappl (map ovar_v vs ++ [allovars t])
-       end.
+       end.*)
 
-Definition disj_ovar (v : NVar) l := !(in_olist v l).
+(*Definition disj_ovar (v : NVar) l := !(in_olist v l).
 
 Definition disj_ovars (vs : list NVar) (os : OVar) : Prop :=
   forall v o, LIn v vs -> disj_ovar v o.
 
 Definition sat_ntseq {o} (f : ntseq) (P : @NTerm o -> Prop) : Prop :=
-  forall n, P (f n).
+  forall n, P (f n).*)
 
 (** % \noindent \\* % We define
     a predicate [nt_wf] on [NTerm] such that
@@ -1685,17 +1697,17 @@ Definition sat_ntseq {o} (f : ntseq) (P : @NTerm o -> Prop) : Prop :=
 *)
 Inductive nt_wf {p} : @NTerm p -> [univ] :=
 | wfvt: forall nv, nt_wf (vterm nv)
-| wfst: forall f,
+(*| wfst: forall f,
           (forall n, nt_wf (f n) # closed (f n) # noutokens (f n))
-          -> nt_wf (sterm f)
-| wfot: forall (o: Opid) (lnt: list BTerm),
-          (forall l, LIn l lnt -> bt_wf l)
-          -> map (num_bvars) lnt
-             = OpBindings o
-          -> nt_wf (oterm o lnt)
+          -> nt_wf (sterm f)*)
+| wfot:
+    forall (o: Opid) (lnt: list BTerm),
+      (forall l, LIn l lnt -> bt_wf l)
+      -> map (num_bvars) lnt = OpBindings o
+      -> nt_wf (oterm o lnt)
 with bt_wf {p} : @BTerm p -> [univ] :=
-| wfbt : forall (lnv : list NVar) (nt: NTerm),
-           nt_wf nt -> bt_wf (bterm lnv nt).
+     | wfbt : forall (lnv : list NVar) (nt: NTerm),
+         nt_wf nt -> bt_wf (bterm lnv nt).
 Hint Constructors nt_wf bt_wf.
 
 (*  For example, the Opid [(Can NLambda)] takes only one [BTerm] an that [BTerm]
@@ -1807,7 +1819,7 @@ Lemma noncan_not_is_can_or_exc {p} :
     -> False.
 Proof.
   introv Hisnc Hisv.
-  destruct e as [|?| o lbt]; allsimpl; cpx.
+  destruct e as [|o lbt]; allsimpl; cpx.
   destruct o; cpx.
   destruct Hisv as [Hisv|Hisv]; auto.
 Qed.
@@ -1820,7 +1832,7 @@ Lemma isabs_not_is_can_or_exc {p} :
     -> False.
 Proof.
   introv Hisnc Hisv.
-  destruct e as [|?|o lbt]; allsimpl; cpx.
+  destruct e as [|o lbt]; allsimpl; cpx.
   destruct o; cpx.
   destruct Hisv as [Hisv|Hisv]; auto.
 Qed.
@@ -1857,4 +1869,3 @@ Proof. sp. Qed.
 Hint Resolve isvalue_like_exc : slow.
 
 (* end hide *)
-

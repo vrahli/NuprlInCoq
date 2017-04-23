@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -118,7 +119,9 @@ Lemma no_utokens_proof_irrelevance {p} :
     x = y.
 Proof.
   intros.
-  apply UIP.
+  apply UIP_dec.
+  apply list_eq_dec.
+  apply get_patom_deq.
 Qed.
 
 Hint Extern 0 =>
@@ -144,7 +147,7 @@ Definition correct_abs {o}
   wf_soterm rhs
   # socovered rhs vars
   # correct_abs_params (opabs_params opabs)
-  # no_utokens rhs.
+  (*# no_utokens rhs*).
 
 Lemma correct_abs_proof_irrelevance {p} :
   forall opabs vars (rhs : @SOTerm p),
@@ -164,12 +167,11 @@ match goal with
 end : pi.
 
 Inductive library_entry {o} :=
-| lib_abs :
-    forall opabs : opabs,
-    forall vars  : list sovar_sig,
-    forall rhs   : @SOTerm o,
-    forall correct : correct_abs opabs vars rhs,
-      library_entry.
+| lib_abs
+    (opabs   : opabs)
+    (vars    : list sovar_sig)
+    (rhs     : @SOTerm o)
+    (correct : correct_abs opabs vars rhs).
 
 Definition matching_bterms {o} (vars : list sovar_sig) (bs : list (@BTerm o)) :=
   map (fun v => snd v) vars = map num_bvars bs.
@@ -655,9 +657,3 @@ Proof.
     destruct bt1, bt2; simpl.
     apply alphaeq_sk_iff_alphaeq_bterm; auto.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

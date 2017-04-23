@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -201,7 +206,7 @@ Ltac fold_terms_step :=
     | [ |- context[@oterm ?p (Can (Nint ?z)) []] ] => fold (@mk_integer p z)
     | [ |- context[@mk_integer ?p (Z.of_nat ?n)] ] => fold (@mk_nat p n)
     | [ |- context[@mk_nat ?p 0] ] => fold (@mk_zero p)
-    | [ |- context[@oterm ?p (Can (Nseq ?f)) []] ] => fold (@mk_nseq p f)
+    | [ |- context[@oterm ?p (Can (Nseqlib ?f)) []] ] => fold (@mk_seqlib p f)
     | [ |- context[oterm (Can NLambda) [bterm [?v] ?t]] ] => fold (mk_lam v t)
     | [ |- context[oterm (Can NApprox) [nobnd ?a, nobnd ?b]] ] => fold (mk_approx a b)
     | [ |- context[oterm (Can NEquality) [nobnd ?a, nobnd ?b, nobnd ?c]] ] => fold (mk_equality a b c)
@@ -254,7 +259,7 @@ Ltac fold_terms_step :=
     | [ H : context[@oterm ?p (Can (Nint ?z)) []] |- _ ] => fold (@mk_integer p z) in H
     | [ H : context[@mk_integer ?p (Z.of_nat ?n)] |- _ ] => fold (@mk_nat p n) in H
     | [ H : context[@mk_nat ?p 0] |- _ ] => fold (@mk_zero p) in H
-    | [ H : context[@oterm ?p (Can (Nseq ?f)) []] |- _ ] => fold (@mk_nseq p f) in H
+    | [ H : context[@oterm ?p (Can (Nseqlib ?f)) []] |- _ ] => fold (@mk_seqlib p f) in H
     | [ H : context[oterm (Can NLambda) [bterm [?v] ?t]] |- _ ] => fold (mk_lam v t) in H
     | [ H : context[oterm (Can NApprox) [nobnd ?a, nobnd ?b]] |- _ ] => fold (mk_approx a b) in H
     | [ H : context[oterm (Can NEquality) [nobnd ?a, nobnd ?b, nobnd ?c]] |- _ ] => fold (mk_equality a b c) in H

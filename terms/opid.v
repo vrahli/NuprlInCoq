@@ -161,6 +161,8 @@ Definition get_dt {p} (d : dec_consts p) : dec_pconstT p := snd d.
 
 Definition nseq := nat -> nat.
 
+Definition seqname := String.string.
+
 Inductive CanInj :=
 | NInl : CanInj
 | NInr : CanInj.
@@ -192,7 +194,8 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NSup       : CanonicalOp
  | NRefl      : CanonicalOp
  | Nint       : Z -> CanonicalOp
- | Nseq       : nseq -> CanonicalOp
+ | Nseqlib    : seqname -> CanonicalOp
+(* | Nseq       : nseq -> CanonicalOp*)
  | NTok       : String.string -> CanonicalOp
  | NUTok      : get_patom_set p -> CanonicalOp (* Unguessable tokens *)
  (** %\noindent \\*% Like Martin Lof's theories, types are also
@@ -273,7 +276,8 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NSup           => [0,0]
   | NRefl          => [0]
   | Nint _         => []
-  | Nseq _         => []
+  | Nseqlib _      => []
+(*  | Nseq _         => []*)
   | NUni _         => []
   | NTok _         => []
   | NUTok _        => []
@@ -560,8 +564,9 @@ Tactic Notation "dopid_noncan" ident(onc) ident(c) :=
 
 Definition no_seq_can {o} (c : @CanonicalOp o) :=
   match c with
-    | Nseq _ => false
-    | _ => true
+  (*| Nseq _ => false*)
+  | Nseqlib _ => false
+  | _ => true
   end.
 
 (*
