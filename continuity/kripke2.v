@@ -40,6 +40,15 @@ Require Export Coq.Logic.ConstructiveEpsilon.
   theory if about absolutely free choice sequences, while there I used the [baire]
   type, which also contains non-absolutely free choice sequences.
 
+  The problem here is that A in [absolutely_free] is not supposed to contain
+  variables for free choice sequences as mentioned for example by Kreisel
+  in "A remark on free choice sequences" or by Myhill on "Notes towards an
+  axiomatization of intuitionistic analysis".  Because we don't have the right
+  definition of [absolutely_free], we can trivially prove that in [no_afcs]
+  that there are no absolutely free choice sequences (proved by Mark).
+
+  How can we make sure that A doesn't mention any other choice sequence?
+
  *)
 
 
@@ -58,12 +67,47 @@ Definition markov :=
     -> exists (n : nat), A n.
 
 
-(* This is the definition of absolutely free choice sequences p.283 of
-   Myhill's "Notes towards an axiomatization of intuitionistic analysis".
-   Is it okay to use the [baire] type? *)
+(* This is almost the definition of absolutely free choice sequences p.283
+   of Myhill's "Notes towards an axiomatization of intuitionistic analysis".
+   Is it okay to use the [baire] type?  *)
 Definition absolutely_free (a : baire) :=
   forall (A : baire -> Prop),
     A a -> exists (p : nat), forall (b : baire), eq_upto p a b -> A b.
+
+Definition baire_diff_at (a : baire) (k : nat) : baire :=
+  fun n =>
+    if eq_nat_dec k n then S (a n)
+    else a n.
+
+Lemma eq_upto_baire_diff_at :
+  forall a p, eq_upto p a (baire_diff_at a p).
+Proof.
+  introv h.
+  unfold baire_diff_at.
+  destruct (Nat.eq_dec p m); auto; omega.
+Qed.
+Hint Resolve eq_upto_baire_diff_at : cont.
+
+Lemma baire_diff_at_diff :
+  forall a p, a <> baire_diff_at a p.
+Proof.
+  introv h.
+  assert (a p = baire_diff_at a p p) as q.
+  { rewrite <- h; auto. }
+  unfold baire_diff_at in q.
+  destruct (Nat.eq_dec p p); auto; omega.
+Qed.
+
+Lemma no_afcs :
+  !exists (a : baire), absolutely_free a.
+Proof.
+  introv h; exrepnd.
+  unfold absolutely_free in h0.
+  pose proof (h0 (fun b => a = b)) as q; clear h0; simpl in q.
+  autodimp q hyp; exrepnd.
+  pose proof (q0 (baire_diff_at a p)) as h; autodimp h hyp; eauto 3 with cont.
+  apply baire_diff_at_diff in h; auto.
+Qed.
 
 Definition afcs := {a : baire | absolutely_free a}.
 
