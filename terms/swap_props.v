@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -36,19 +37,7 @@ Lemma get_utokens_swap {o} :
   forall s (t : @NTerm o),
     get_utokens (swap s t) = get_utokens t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
-  apply app_if; auto.
-  rw flat_map_map; unfold compose.
-  apply eq_flat_maps; introv i.
-  destruct x; simpl.
-  eapply ind; eauto.
-Qed.
-
-Lemma get_utokens_cswap {o} :
-  forall s (t : @NTerm o),
-    get_utokens (cswap s t) = get_utokens t.
-Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
+  nterm_ind t as [v|op bs ind] Case; simpl; auto.
   apply app_if; auto.
   rw flat_map_map; unfold compose.
   apply eq_flat_maps; introv i.
@@ -83,25 +72,7 @@ Lemma free_vars_swap {o} :
     -> free_vars (swap (mk_swapping vs1 vs2) t)
        = swapbvars (mk_swapping vs1 vs2) (free_vars t).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv norep disj; allsimpl; auto.
-
-  Case "oterm".
-  rw flat_map_map; unfold compose.
-  rw @swapbvars_flat_map.
-  apply eq_flat_maps; introv i.
-  destruct x as [l t]; simpl.
-  rw swapbvars_remove_nvars; auto.
-  erewrite ind; eauto.
-Qed.
-
-Lemma free_vars_cswap {o} :
-  forall (t : @NTerm o) vs1 vs2,
-    no_repeats vs2
-    -> disjoint vs1 vs2
-    -> free_vars (cswap (mk_swapping vs1 vs2) t)
-       = swapbvars (mk_swapping vs1 vs2) (free_vars t).
-Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv norep disj; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv norep disj; allsimpl; auto.
 
   Case "oterm".
   rw flat_map_map; unfold compose.
@@ -124,7 +95,6 @@ Defined.
 Fixpoint bound_vars_ncl {p} (t : @NTerm p) : list NVar :=
   match t with
     | vterm v => []
-    | sterm f => []
     | oterm op bts => flat_map bound_vars_bterm_ncl bts
   end
  with bound_vars_bterm_ncl {p} (bt : BTerm) :=
@@ -142,7 +112,7 @@ Lemma bound_vars_ncl_swap {o} :
     -> bound_vars_ncl (swap (mk_swapping vs1 vs2) t)
        = swapbvars (mk_swapping vs1 vs2) (bound_vars_ncl t).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv norep disj; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv norep disj; allsimpl; auto.
 
   Case "oterm".
   rw @swapbvars_flat_map.
@@ -150,42 +120,6 @@ Proof.
   apply eq_flat_maps; introv i.
   destruct x as [l t]; allsimpl.
   rw @free_vars_swap; auto.
-  boolvar; allsimpl; tcsp.
-
-  - destruct n.
-    allrw subvars_prop; introv j.
-    pose proof (s (swapvar (mk_swapping vs1 vs2) x)) as h.
-    autodimp h hyp.
-    { allrw in_swapbvars.
-      exists x; dands; auto. }
-    allrw in_swapbvars; exrepnd.
-    apply swapvars_eq in h0; subst; auto.
-
-  - destruct n.
-    allrw subvars_prop; introv j.
-    allrw in_swapbvars; exrepnd; subst.
-    applydup s in j1.
-    eexists; dands; eauto.
-
-  - rw swapbvars_app; f_equal.
-    apply (ind t l); auto.
-Qed.
-
-Lemma bound_vars_ncl_cswap {o} :
-  forall (t : @NTerm o) (vs1 vs2 : list NVar),
-    no_repeats vs2
-    -> disjoint vs1 vs2
-    -> bound_vars_ncl (cswap (mk_swapping vs1 vs2) t)
-       = swapbvars (mk_swapping vs1 vs2) (bound_vars_ncl t).
-Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv norep disj; allsimpl; auto.
-
-  Case "oterm".
-  rw @swapbvars_flat_map.
-  rw flat_map_map; unfold compose.
-  apply eq_flat_maps; introv i.
-  destruct x as [l t]; allsimpl.
-  rw @free_vars_cswap; auto.
   boolvar; allsimpl; tcsp.
 
   - destruct n.
@@ -218,19 +152,6 @@ Proof.
   destruct a.
   rw swapbvars_app; f_equal; tcsp.
   rw @free_vars_swap; auto.
-Qed.
-
-Lemma sub_free_vars_cswap_sub {o} :
-  forall vs1 vs2 (sub : @Sub o),
-    no_repeats vs2
-    -> disjoint vs1 vs2
-    -> sub_free_vars (cswap_sub (mk_swapping vs1 vs2) sub)
-       = swapbvars (mk_swapping vs1 vs2) (sub_free_vars sub).
-Proof.
-  induction sub; introv norep disj; allsimpl; auto.
-  destruct a.
-  rw swapbvars_app; f_equal; tcsp.
-  rw @free_vars_cswap; auto.
 Qed.
 
 Lemma alphaeq_oterm_implies_combine {o} :
@@ -303,16 +224,16 @@ Proof.
   rw IHl1; auto.
 Qed.
 
-Lemma alphaeq_cswap_disj_free_vars {o} :
+Lemma alphaeq_swap_disj_free_vars {o} :
   forall (t : @NTerm o) vs1 vs2,
     length vs1 = length vs2
     -> no_repeats vs2
     -> disjoint (free_vars t) vs1
     -> disjoint (allvars t) vs2
     -> disjoint vs1 vs2
-    -> alphaeq (cswap (mk_swapping vs1 vs2) t) t.
+    -> alphaeq (swap (mk_swapping vs1 vs2) t) t.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case;
+  nterm_ind1s t as [v|op bs ind] Case;
   introv len norep d1 d2 d3; allsimpl; eauto 3 with slow.
 
   - Case "vterm".
@@ -331,7 +252,7 @@ Proof.
                               ++ vs1
                               ++ vs2
                               ++ (free_vars t)
-                              ++ (allvars (cswap (mk_swapping vs1 vs2) t))
+                              ++ (allvars (swap (mk_swapping vs1 vs2) t))
                               ++ (allvars t))) as fv; exrepnd.
     allrw disjoint_app_r; repnd.
 
@@ -339,24 +260,17 @@ Proof.
     allrw disjoint_app_r; tcsp.
     disj_flat_map; allsimpl; allrw disjoint_app_l; repnd.
 
-    rw @cswap_cswap.
+    rw @swap_swap.
     rw mk_swapping_app; auto.
-    rw <- @cswap_app_cswap; eauto with slow.
+    rw <- @swap_app_swap; eauto with slow.
     rw <- mk_swapping_app; auto.
-    rw <- @cswap_cswap.
-    apply (ind t _ l); allrw @osize_cswap; eauto 3 with slow.
+    rw <- @swap_swap.
+    apply (ind t _ l); allrw @size_swap; eauto 3 with slow.
 
-    + rw @free_vars_cswap; eauto with slow.
+    + rw @free_vars_swap; eauto with slow.
       apply disjoint_sym.
       apply disjoint_swapbvars3; eauto with slow.
 
     + apply disjoint_sym.
-      apply disjoint_allvars_cswap; eauto with slow.
+      apply disjoint_allvars_swap; eauto with slow.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -17,7 +18,7 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
   Websites: http://nuprl.org/html/verification/
@@ -53,7 +54,7 @@ Proof.
     constructor; simpl; unfold num_bvars; simpl; auto.
     sp; subst; constructor; auto.
   - allrw @wf_term_eq.
-    inversion wf as [| | o l bwf e ]; subst.
+    inversion wf as [| o l bwf e ]; subst.
     generalize (bwf (nobnd a)) (bwf (bterm [v1] b1)) (bwf (bterm [v2] b2)); clear bwf; intros bwf1 bwf2 bwf3.
     autodimp bwf1 hyp; autodimp bwf2 hyp; autodimp bwf3 hyp; try (complete (simpl; sp)).
     inversion bwf1; subst.
@@ -490,7 +491,7 @@ Lemma wf_fix_iff {p} :
 Proof.
   introv; split; intro i.
   - allrw @wf_term_eq.
-    inversion i as [| | o lnt k e]; subst; allsimpl.
+    inversion i as [| o lnt k e]; subst; allsimpl.
     generalize (k (nobnd a)); intros k1.
     repeat (dest_imp k1 hyp).
     inversion k1; subst; sp.
@@ -530,11 +531,3 @@ Proof.
   introv; destruct_cterms; auto.
 Qed.
 Hint Resolve isprog_get_cterm : slow.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

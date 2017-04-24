@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -16,10 +18,13 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -109,7 +114,7 @@ Lemma allvars_swap {o} :
     -> allvars (swap (mk_swapping vs1 vs2) t)
        = swapbvars (mk_swapping vs1 vs2) (allvars t).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv norep disj; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv norep disj; allsimpl; auto.
 
   Case "oterm".
   rw flat_map_map; unfold compose.
@@ -120,34 +125,16 @@ Proof.
   erewrite ind; eauto.
 Qed.
 
-Lemma allvars_cswap {o} :
-  forall (t : @NTerm o) vs1 vs2,
-    no_repeats vs2
-    -> disjoint vs1 vs2
-    -> allvars (cswap (mk_swapping vs1 vs2) t)
-       = swapbvars (mk_swapping vs1 vs2) (allvars t).
-Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv norep disj; allsimpl; auto.
-
-  Case "oterm".
-  rw flat_map_map; unfold compose.
-  rw @swapbvars_flat_map.
-  apply eq_flat_maps; introv i.
-  destruct x as [l t]; simpl.
-  allrw swapbvars_app; f_equal.
-  erewrite ind; eauto.
-Qed.
-
-Lemma alphaeq_cswap_cl {o} :
+Lemma alphaeq_swap_cl {o} :
   forall (t : @NTerm o) vs1 vs2,
     disjoint vs1 (free_vars t)
     -> disjoint vs1 vs2
     -> disjoint vs2 (allvars t)
     -> length vs1 = length vs2
     -> no_repeats vs2
-    -> alphaeq (cswap (mk_swapping vs1 vs2) t) t.
+    -> alphaeq (swap (mk_swapping vs1 vs2) t) t.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case;
+  nterm_ind1s t as [v|op bs ind] Case;
   introv d1 d2 d3 len norep; allsimpl; eauto 3 with slow.
 
   - Case "vterm".
@@ -171,7 +158,7 @@ Proof.
                               ++ vs1
                               ++ vs2
                               ++ swapbvars (mk_swapping vs1 vs2) l
-                              ++ allvars (cswap (mk_swapping vs1 vs2) t)
+                              ++ allvars (swap (mk_swapping vs1 vs2) t)
                               ++ allvars t
                               ++ free_vars t
                            )
@@ -184,19 +171,19 @@ Proof.
 
     { allrw disjoint_app_r; dands; auto. }
 
-    { rw @cswap_cswap.
+    { rw @swap_swap.
       rw mk_swapping_app; auto.
-      rw <- @cswap_app_cswap; eauto with slow.
+      rw <- @swap_app_swap; eauto with slow.
       rw <- mk_swapping_app; auto.
-      rw <- @cswap_cswap.
+      rw <- @swap_swap.
       apply (ind t _ l); auto.
 
-      - rw @osize_cswap; eauto 3 with slow.
+      - rw @size_swap; eauto 3 with slow.
 
-      - rw @free_vars_cswap; eauto 3 with slow.
+      - rw @free_vars_swap; eauto 3 with slow.
         apply disjoint_swapbvars_if_remove_nvars; auto.
 
-      - rw @allvars_cswap; eauto 3 with slow.
+      - rw @allvars_swap; eauto 3 with slow.
         apply disjoint_swapbvars_if_remove_nvars; auto.
         eapply subvars_disjoint_r;[|exact i0].
         apply subvars_remove_nvars.
@@ -230,15 +217,15 @@ Proof.
   destruct a; simpl; f_equal; tcsp.
 Qed.
 
-Lemma alphaeq_add_cswap2 {o} :
+Lemma alphaeq_add_swap2 {o} :
   forall (sw : swapping) (t1 t2 : @NTerm o),
     no_repeats (range_sw sw)
     -> disjoint (range_sw sw) (dom_sw sw ++ allvars t1 ++ allvars t2)
     -> alphaeq t1 t2
-    -> alphaeq (cswap sw t1) (cswap sw t2).
+    -> alphaeq (swap sw t1) (swap sw t2).
 Proof.
   introv norep disj aeq.
-  pose proof (alphaeq_add_cswap [] (dom_sw sw) (range_sw sw) t1 t2) as h.
+  pose proof (alphaeq_add_swap [] (dom_sw sw) (range_sw sw) t1 t2) as h.
   repeat (autodimp h hyp); allrw disjoint_app_r; repnd; dands; tcsp.
   - allrw length_dom_sw; allrw length_range_sw; auto.
   - apply alphaeq_implies_alphaeq_vs; auto.
@@ -247,16 +234,16 @@ Proof.
     eexists; eauto.
 Qed.
 
-Lemma alphaeq_cswap_cl2 {o} :
+Lemma alphaeq_swap_cl2 {o} :
   forall (t : @NTerm o) sw,
     disjoint (dom_sw sw) (free_vars t)
     -> disjoint (dom_sw sw) (range_sw sw)
     -> disjoint (range_sw sw) (allvars t)
     -> no_repeats (range_sw sw)
-    -> alphaeq (cswap sw t) t.
+    -> alphaeq (swap sw t) t.
 Proof.
   introv d1 d2 d3 norep.
-  pose proof (alphaeq_cswap_cl t (dom_sw sw) (range_sw sw)) as h.
+  pose proof (alphaeq_swap_cl t (dom_sw sw) (range_sw sw)) as h.
   rw swapping_eta in h.
   rw length_dom_sw in h.
   rw length_range_sw in h.
@@ -317,14 +304,14 @@ Proof.
 
       * apply (alphaeq_trans _ (lsubst_aux x0 [(v,x)])).
 
-        { apply alphaeq_cswap_cl2; simpl; tcsp; apply disjoint_singleton_l; simpl; tcsp.
+        { apply alphaeq_swap_cl2; simpl; tcsp; apply disjoint_singleton_l; simpl; tcsp.
           rw @free_vars_lsubst_aux_cl; simpl.
           - rw in_remove_nvars; simpl; rw not_over_or; intro j; repnd.
             apply newvar_prop in j0; sp.
           - apply cl_sub_cons; dands; eauto with slow. }
 
         { apply alphaeq_sym.
-          apply alphaeq_cswap_cl2; simpl; tcsp; apply disjoint_singleton_l; simpl; tcsp.
+          apply alphaeq_swap_cl2; simpl; tcsp; apply disjoint_singleton_l; simpl; tcsp.
           rw @free_vars_lsubst_aux_cl; simpl.
           - rw in_remove_nvars; simpl; rw not_over_or; intro j; repnd.
             rw @isprog_vars_eq in i0; repnd.
@@ -403,14 +390,14 @@ Proof.
 
       * apply (alphaeq_trans _ (lsubst_aux x0 [(v,x)])).
 
-        { apply alphaeq_cswap_cl2; simpl; tcsp; apply disjoint_singleton_l; simpl; tcsp.
+        { apply alphaeq_swap_cl2; simpl; tcsp; apply disjoint_singleton_l; simpl; tcsp.
           rw @free_vars_lsubst_aux_cl; simpl.
           - rw in_remove_nvars; simpl; rw not_over_or; intro j; repnd.
             apply newvar_prop in j0; sp.
           - apply cl_sub_cons; dands; eauto with slow. }
 
         { apply alphaeq_sym.
-          apply alphaeq_cswap_cl2; simpl; tcsp; apply disjoint_singleton_l; simpl; tcsp.
+          apply alphaeq_swap_cl2; simpl; tcsp; apply disjoint_singleton_l; simpl; tcsp.
           rw @free_vars_lsubst_aux_cl; simpl.
           - rw in_remove_nvars; simpl; rw not_over_or; intro j; repnd.
             rw @isprog_vars_eq in i0; repnd.
@@ -874,11 +861,3 @@ Proof.
   allrw @isprog_eq; allunfold @isprogram; repnd.
   allrw isp0; sp.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

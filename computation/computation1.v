@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -122,11 +127,11 @@ Definition compute_step_apply {p}
           csuccess (apply_bterm (bterm [v] b) [arg])
         | _,_ => cfailure compute_step_apply_not_well_formed t
       end
-    | Nseq f =>
+(*    | Nseq f =>
       match arg1bts, btsr with
         | [], [bterm [] arg] => csuccess (mk_eapply (mk_nseq f) arg)
         | _,_ => cfailure compute_step_apply_not_well_formed t
-      end
+      end*)
     | _ => cfailure bad_first_arg t
   end.
 
@@ -156,7 +161,7 @@ Definition compute_step_eapply2 {o}
     | [] =>
       match arg1 with
         | oterm (Can NLambda) [bterm [v] b] => csuccess (apply_bterm (bterm [v] b) [arg2])
-        | oterm (Can (Nseq f)) [] =>
+(*        | oterm (Can (Nseq f)) [] =>
           match arg2 with
             | oterm (Can (Nint z)) [] =>
               if Z_le_gt_dec 0 z
@@ -171,7 +176,7 @@ Definition compute_step_eapply2 {o}
                 then csuccess (f (Z.to_nat z))
                 else cfailure bad_args t
               | _ => cfailure bad_args t
-          end
+          end*)
         | _ => cfailure bad_args t
       end
     | _ => cfailure bad_args t
@@ -192,47 +197,43 @@ Definition compute_step_eapply1 {o}
     | bterm [] (oterm Exc _ as arg2) :: _ => csuccess arg2
     | bterm [] (oterm _ _) :: bs2 => (* ncan/abs *)
       on_success cstep (fun f => oterm (NCan ncr) (nobnd arg1 :: nobnd f :: bs2))
-    | bterm [] (sterm _ as arg2) :: btsr3 =>
-      compute_step_eapply2 t arg1 arg2 btsr3
+(*    | bterm [] (sterm _ as arg2) :: btsr3 =>
+      compute_step_eapply2 t arg1 arg2 btsr3*)
   end.
 
 Definition eapply_wf {o} (t : @NTerm o) :=
   match t with
-    | sterm _ => true
-    | oterm (Can (Nseq _)) [] => true
+(*    | sterm _ => true*)
+(*    | oterm (Can (Nseq _)) [] => true*)
     | oterm (Can NLambda) [bterm [_] _] => true
     | _ => false
   end.
 
 Definition eapply_wf_def {o} (t : @NTerm o) :=
-  {f : ntseq & t = sterm f}
+(*  {f : ntseq & t = sterm f}
   [+] {f : nseq & t = mk_nseq f}
-  [+] {v : NVar & {b : NTerm & t = mk_lam v b}}.
+  [+]*) {v : NVar & {b : NTerm & t = mk_lam v b}}.
 
 Lemma eapply_wf_dec {o} :
   forall (t : @NTerm o), decidable (eapply_wf_def t).
 Proof.
   introv.
-  destruct t as [v|f|op bs]; allsimpl; tcsp;
+  destruct t as [v|op bs]; allsimpl; tcsp;
   try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-  - left; left; eexists; eauto.
-  - destruct op; allsimpl; tcsp;
+  destruct op; allsimpl; tcsp;
     try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-    destruct c; allsimpl; tcsp;
+  destruct c; allsimpl; tcsp;
     try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-    { destruct bs as [|b bs]; allsimpl; tcsp;
+  { destruct bs as [|b bs]; allsimpl; tcsp;
       try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-      destruct bs as [|? bs]; allsimpl; tcsp;
+    destruct bs as [|? bs]; allsimpl; tcsp;
       try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-      destruct b as [l t].
-      destruct l as [|v l]; allsimpl; tcsp;
+    destruct b as [l t].
+    destruct l as [|v l]; allsimpl; tcsp;
       try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-      destruct l as [|? l]; allsimpl; tcsp;
+    destruct l as [|? l]; allsimpl; tcsp;
       try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-      left; right; right; eexists; eexists; unfold mk_lam; dands; eauto. }
-    { destruct bs as [|b bs]; allsimpl; tcsp;
-      try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-      left; right; left; eexists; unfold mk_nseq; eauto. }
+    left; eexists; eexists; unfold mk_lam; dands; eauto. }
 Qed.
 
 Definition compute_step_eapply {o}
@@ -747,7 +748,7 @@ Definition ca_aux {o} btsr (t : @NTerm o) arg1bts arg1c op cstep arg1 ncr :=
     | bterm [] (oterm Exc _ as arg2nt) :: _ => csuccess arg2nt
     | bterm [] (oterm _ _) :: btsr3 => (* ncan/abs *)
       on_success cstep (fun f => oterm (NCan ncr) (bterm [] arg1::bterm [] f::btsr3))
-    | bterm [] (sterm _) :: btsr3 => cfailure cop_malformed_2nd_arg t
+(*    | bterm [] (sterm _) :: btsr3 => cfailure cop_malformed_2nd_arg t*)
   end.
 
 Definition ca_wf {o} (arg1c : @CanonicalOp o) (arg1bts : list (@BTerm o)) :=
@@ -838,7 +839,7 @@ Definition co_aux {o} btsr (t : @NTerm o) arg1bts arg1c op cstep arg1 ncr :=
     | bterm [] (oterm Exc _ as arg2nt) :: _ => csuccess arg2nt
     | bterm [] (oterm _ _) :: btsr3 => (* ncan/abs *)
       on_success cstep (fun f => oterm (NCan ncr) (bterm [] arg1::bterm [] f::btsr3))
-    | bterm [] (sterm _) :: btsr3 => cfailure cop_malformed_2nd_arg t
+(*    | bterm [] (sterm _) :: btsr3 => cfailure cop_malformed_2nd_arg t*)
   end.
 
 Definition co_wf {o} op (arg1c : @CanonicalOp o) (arg1bts : list (@BTerm o)) :=
@@ -979,7 +980,7 @@ Definition subst_utok {o} (a : @get_patom_set o) (bs : list BTerm) (sub : utok_s
 Fixpoint subst_utokens_aux {o} (t : @NTerm o) (sub : utok_sub) : NTerm :=
   match t with
     | vterm v => t
-    | sterm f => sterm f
+(*    | sterm f => sterm f*)
     | oterm op bs =>
       match op with
         | Can (NUTok a) => subst_utok a (map (fun b => subst_utokens_aux_b b sub) bs) sub
@@ -1205,20 +1206,20 @@ Qed.
    [get_utokens] doesn't collect them.
 *)
 
-Fixpoint get_utokens_step_seq {o} (t : @NTerm o) : list (get_patom_set o) :=
+(*Fixpoint get_utokens_step_seq {o} (t : @NTerm o) : list (get_patom_set o) :=
   match t with
     | vterm _ => []
-    | sterm _ => []
+(*    | sterm _ => []*)
     | oterm op bs =>
       (get_utokens_o op)
         ++ (flat_map get_utokens_step_seq_b bs)
         ++ (match op with
               | NCan NApply =>
                 match bs with
-                  | bterm [] (sterm f) :: bterm [] (oterm (Can (Nint z)) _) :: _ =>
+(*                  | bterm [] (sterm f) :: bterm [] (oterm (Can (Nint z)) _) :: _ =>
                     if Z_le_gt_dec 0 z
                     then get_utokens_step_seq (f (Z.to_nat z))
-                    else []
+                    else []*)
                   | _ => []
                 end
               | NCan NEApply =>
@@ -1366,7 +1367,7 @@ Proof.
       simpl.
       eapply ord_le_trans;[|apply ord_le_OS].
       eapply implies_ord_le_limit_right; apply ord_le_refl.
-Qed.
+Qed.*)
 
 Definition get_fresh_atom {o} (t : @NTerm o) : get_patom_set o :=
   projT1 (fresh_atom o (get_utokens t)).
@@ -1438,7 +1439,7 @@ Definition mk_fresh_bterms {o} (v : NVar) (bs : list (@BTerm o)) :=
 Definition pushdown_fresh {o} (v : NVar) (t : @NTerm o) :=
   match t with
     | vterm x => mk_fresh v t
-    | sterm f => sterm f
+(*    | sterm f => sterm f*)
     | oterm op bs => oterm op (mk_fresh_bterms v bs)
   end.
 
@@ -1459,7 +1460,7 @@ Definition compute_step_fresh {o}
           if deq_nvar v x
           then csuccess t
           else cfailure compute_step_error_not_closed t
-        | sterm f => csuccess (pushdown_fresh v u)
+(*        | sterm f => csuccess (pushdown_fresh v u)*)
         | oterm (Can _) _ => csuccess (pushdown_fresh v u)
         | oterm Exc _ => csuccess (pushdown_fresh v u)
         | oterm (Abs  _) _ => on_success comp (fun r => mk_fresh v (subst_utokens r [(a,mk_var v)]))
@@ -1512,10 +1513,3 @@ Definition compute_step_parallel {o}
    This means, I'll have to change the way computation on non-canonical
    terms and abstractions work :(
  *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

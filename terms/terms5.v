@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -162,7 +163,7 @@ Proof.
   introv; allrw <- @nt_wf_eq.
   split; intro k.
 
-  - inversion k as [|?|? ? imp e]; subst; allsimpl.
+  - inversion k as [|? ? imp e]; subst; allsimpl.
     allunfold @num_bvars; allsimpl; GC.
     pose proof (imp (nobnd a)) as i1.
     pose proof (imp (nobnd b)) as i2.
@@ -186,7 +187,7 @@ Proof.
   introv; split; intro i.
   apply wf_int_eq; sp.
   allrw @wf_term_eq.
-  inversion i as [| | o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)) (k (nobnd d)); intros k1 k2 k3 k4.
   repeat (dest_imp k1 hyp).
   repeat (dest_imp k2 hyp).
@@ -312,7 +313,7 @@ Proof.
   unfold wf_bterm, wf_term; simpl; sp.
 Qed.
 
-Lemma isprog_nout_iff {o} :
+(*Lemma isprog_nout_iff {o} :
   forall (t : @NTerm o),
     isprog_nout t <=> (nt_wf t # closed t # noutokens t).
 Proof.
@@ -338,7 +339,7 @@ Proof.
     constructor; introv.
     pose proof (h n) as q; clear h.
     apply isprog_nout_iff in q; sp.
-Qed.
+Qed.*)
 
 Lemma wf_isint {p} :
   forall (a b c : @NTerm p),
@@ -817,10 +818,3 @@ Proof.
   introv; destruct_cterms; simpl.
   rw @isprog_vars_cont1_dup1; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

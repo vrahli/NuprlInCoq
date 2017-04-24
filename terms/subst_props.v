@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -254,7 +260,7 @@ Lemma lsubst_aux_swap_context {o} :
     -> !LIn v (dom_sub s)
     -> lsubst_aux t ((s1 ++ (v, u) :: s) ++ s2) = lsubst_aux t ((s1 ++ snoc s (v, u)) ++ s2).
 Proof.
-  nterm_ind t as [v|f|op lbt ind] Case; simpl; intros; auto.
+  nterm_ind t as [v|op lbt ind] Case; simpl; intros; auto.
 
   - Case "vterm".
     repeat (rw @sub_find_app).
@@ -426,7 +432,7 @@ Lemma lsubst_aux_snoc_cover_vars {p} :
     (LIn v (free_vars t) -> LIn v (dom_sub sub))
     -> lsubst_aux t (snoc sub (v, u)) = lsubst_aux t sub.
 Proof.
-  nterm_ind t as [v|f|o lbt ind] Case; simpl; introv ni; auto.
+  nterm_ind t as [v|o lbt ind] Case; simpl; introv ni; auto.
 
   - Case "vterm".
     allunfold @covered; allsimpl; allrw subvars_singleton_l.

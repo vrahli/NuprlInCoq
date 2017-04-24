@@ -751,7 +751,7 @@ Proof.
   introv; split; intro i.
   apply wf_apply; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (nobnd b)); intros k1 k2.
   repeat (dest_imp k1 hyp).
   repeat (dest_imp k2 hyp).

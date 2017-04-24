@@ -1032,7 +1032,7 @@ Lemma wf_texc {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)) (bw (nobnd b)); simpl; intros bw1 bw2.
   autodimp bw1 hyp.
   autodimp bw2 hyp.
@@ -1106,7 +1106,7 @@ Lemma wf_union {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)) (bw (nobnd b)); simpl; intros bw1 bw2.
   autodimp bw1 hyp.
   autodimp bw2 hyp.
@@ -1180,7 +1180,7 @@ Lemma wf_eunion {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)) (bw (nobnd b)); simpl; intros bw1 bw2.
   autodimp bw1 hyp.
   autodimp bw2 hyp.
@@ -1296,7 +1296,7 @@ Lemma wf_exception_iff {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)) (bw (nobnd b)); simpl; intros bw1 bw2.
   autodimp bw1 hyp.
   autodimp bw2 hyp.
@@ -1366,7 +1366,7 @@ Lemma wf_sleep_iff {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)); simpl; intros bw1.
   autodimp bw1 hyp.
   inversion bw1; subst.
@@ -4231,7 +4231,7 @@ Lemma wf_admiss_iff {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)); simpl; intros bw1.
   autodimp bw1 hyp.
   inversion bw1; subst.
@@ -4270,7 +4270,7 @@ Lemma wf_mono_iff {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [|?| o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)); simpl; intros bw1.
   autodimp bw1 hyp.
   inversion bw1; subst.

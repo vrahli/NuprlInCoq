@@ -322,7 +322,7 @@ Proof.
   introv; split; intro i.
   apply wf_minus; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)); intros k1.
   repeat (dest_imp k1 hyp).
   inversion k1; subst; sp.

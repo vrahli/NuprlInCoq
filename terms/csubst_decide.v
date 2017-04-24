@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli & Mark Bickford
 
 *)
@@ -223,7 +229,7 @@ Lemma wf_outl {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [| | o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)); simpl; intros bw1.
   autodimp bw1 hyp.
   inversion bw1; subst.
@@ -252,7 +258,7 @@ Lemma wf_outr {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [| | o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)); simpl; intros bw1.
   autodimp bw1 hyp.
   inversion bw1; subst.
@@ -322,7 +328,7 @@ Proof.
   f_equal.
   apply csubst_var_not_in.
   rw @dom_csub_csub_filter; rw in_remove_nvars; simpl; tcsp.
-Qed. 
+Qed.
 
 Lemma lsubstc_mk_outr_ex {p} :
   forall t1 sub,
