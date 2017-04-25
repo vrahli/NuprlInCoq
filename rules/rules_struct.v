@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -30,12 +31,14 @@
 
 
 Require Export sequents2.
+Require Export sequents_lib.
 Require Export rules_useful.
 Require Export sequents_useful.
 Require Export sequents_tacs.
 Require Export sequents_tacs2.
 Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
+
 
 (** printing |- $\vdash$ *)
 (** printing ->  $\rightarrow$ *)
@@ -516,6 +519,46 @@ Proof.
   rw <- @member_member_iff in e.
 
   spcast; apply @equality_respects_cequivc_right with (t2 := lsubstc t wfc0 s1 pt1); sp.
+Qed.
+
+Lemma rule_introduction_true_ext_lib {o} :
+  forall lib
+         (H : @barehypotheses o)
+         (C t : NTerm),
+    rule_true_ext_lib lib (rule_introduction H C t).
+Proof.
+  introv wf args hyps.
+
+  pose proof (args (sarg_term t) (inl eq_refl)) as arg1.
+  unfold arg_constraints in arg1.
+
+  dup wf as wfbseq.
+  unfold wf_bseq in wf.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  destruct Hyp as [ws1 hyp1].
+  destseq; allsimpl; clear_irr; GC.
+
+  assert (wf_csequent (rule_introduction_concl H C t)) as wfc.
+  { clear hyp1.
+    unfold wf_csequent, wf_sequent, wf_concl; simpl; dands; auto.
+    allrw <- @wf_equality_iff; sp. }
+  exists wfc.
+
+  seq_true_ext_lib.
+
+  pose proof (rule_introduction_true3 lib0 H C t wfbseq args) as q.
+  autodimp q hyp.
+
+  { introv q; simpl in q; repndors; subst; tcsp.
+    eexists; apply sequent_true_eq_VR; introv; apply hyp1; auto. }
+
+  simpl in q; unfold sequent_true2 in q; exrepnd.
+  apply sequent_true_eq_VR in q0; rw @VR_sequent_true_ex in q0; simpl in q0.
+  pose proof (q0 s1 s2 eqh sim) as h; exrepnd.
+  unfold wf_csequent, wf_sequent in *; repnd; simpl in *; proof_irr; auto.
 Qed.
 
 Lemma rule_introduction_true {o} :
@@ -1454,10 +1497,3 @@ Qed.
 
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/" "../per/")
-*** End:
-*)
