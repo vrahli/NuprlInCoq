@@ -31,6 +31,7 @@
 
 
 Require Export sequents2.
+Require Export sequents_lib.
 Require Export sequents_tacs.
 Require Export sequents_tacs2.
 Require Export per_props_equality.
@@ -289,6 +290,20 @@ Proof.
   }
 Qed.
 
+Lemma rule_isect_member_formation_true_ext_lib {o} :
+  forall lib (A B b : NTerm)
+         (x z : NVar)
+         (i   : nat)
+         (H   : @barehypotheses o),
+    rule_true_ext_lib lib (rule_isect_member_formation A B b x z i H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_isect_member_formation_true3.
+Qed.
+
+
 (* begin hide *)
 
 Lemma rule_isect_member_formation_true {o} :
@@ -437,6 +452,23 @@ Proof.
   - introv; apply lsubstc_mk_isect_ex.
 
   - introv; apply equality_isect.
+Qed.
+
+Lemma rule_isect_equality_true_ext_lib {o} :
+  forall lib (a1 a2 b1 b2 : NTerm),
+  forall x1 x2 y : NVar,
+  forall i   : nat,
+  forall H   : @barehypotheses o,
+    rule_true_ext_lib lib (rule_isect_equality
+                             a1 a2 b1 b2
+                             x1 x2 y
+                             i
+                             H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_isect_equality_true3.
 Qed.
 
 Lemma rule_isect_equality_true {o} :
@@ -590,6 +622,24 @@ Proof.
   - introv; apply lsubstc_mk_isect_ex.
 
   - introv; apply equality_isect.
+Qed.
+
+Lemma rule_isect_equality2_true_ext_lib {o} :
+  forall lib (a1 a2 b1 b2 : NTerm) e1 e2,
+  forall x1 x2 y : NVar,
+  forall i   : nat,
+  forall H   : @barehypotheses o,
+    rule_true_ext_lib lib (rule_isect_equality2
+                             a1 a2 b1 b2
+                             e1 e2
+                             x1 x2 y
+                             i
+                             H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_isect_equality2_true3.
 Qed.
 
 Lemma rule_isect_equality2_true {o} :

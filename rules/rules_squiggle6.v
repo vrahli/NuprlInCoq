@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,8 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Websites: http://nuprl.org/html/Nuprl2Coq
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
   Authors: Vincent Rahli
@@ -29,6 +32,7 @@
 
 
 Require Export sequents2.
+Require Export sequents_lib.
 Require Export sequents_tacs.
 Require Export per_props_equality.
 Require Export sequents_equality.
@@ -125,6 +129,16 @@ Proof.
     auto. }
 Qed.
 
+Lemma rule_approx_eq_true_ext_lib {o} :
+  forall lib (a1 a2 b1 b2 : NTerm) (i : nat) (H : @barehypotheses o),
+    rule_true_ext_lib lib (rule_approx_eq a1 a2 b1 b2 i H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_approx_eq_true3.
+Qed.
+
 Lemma rule_approx_eq_wf2 {o} :
   forall (a1 a2 b1 b2 : NTerm) (i : nat) (H : @barehypotheses o),
     wf_rule2 (rule_approx_eq a1 a2 b1 b2 i H).
@@ -205,6 +219,16 @@ Proof.
     eapply approxc_cequivc_trans;[|apply cequivc_sym; eauto].
     eapply cequivc_approxc_trans;[eauto|].
     auto. }
+Qed.
+
+Lemma rule_approx_eq2_true_ext_lib {o} :
+  forall lib (a1 a2 b1 b2 : NTerm) e1 e2 (i : nat) (H : @barehypotheses o),
+    rule_true_ext_lib lib (rule_approx_eq2 a1 a2 b1 b2 e1 e2 i H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_approx_eq2_true3.
 Qed.
 
 Lemma rule_approx_eq2_wf2 {o} :
@@ -306,6 +330,16 @@ Proof.
     auto. }
 Qed.
 
+Lemma rule_cequiv_eq_true_ext_lib {o} :
+  forall lib (a1 a2 b1 b2 : NTerm) (i : nat) (H : @barehypotheses o),
+    rule_true_ext_lib lib (rule_cequiv_eq a1 a2 b1 b2 i H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_cequiv_eq_true3.
+Qed.
+
 Lemma rule_cequiv_eq_wf2 {o} :
   forall (a1 a2 b1 b2 : NTerm) (i : nat) (H : @barehypotheses o),
     wf_rule2 (rule_cequiv_eq a1 a2 b1 b2 i H).
@@ -385,6 +419,16 @@ Proof.
     auto. }
 Qed.
 
+Lemma rule_cequiv_eq2_true_ext_lib {o} :
+  forall lib (a1 a2 b1 b2 : NTerm) e1 e2 (i : nat) (H : @barehypotheses o),
+    rule_true_ext_lib lib (rule_cequiv_eq2 a1 a2 b1 b2 e1 e2 i H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_cequiv_eq2_true3.
+Qed.
+
 Lemma rule_cequiv_eq2_wf2 {o} :
   forall (a1 a2 b1 b2 : NTerm) e1 e2 (i : nat) (H : @barehypotheses o),
     wf_rule2 (rule_cequiv_eq2 a1 a2 b1 b2 e1 e2 i H).
@@ -459,6 +503,16 @@ Proof.
     lsubst_tac; auto. }
 Qed.
 
+Lemma rule_approx_member_eq_true_ext_lib {o} :
+  forall lib (a b : NTerm) (H : @barehypotheses o),
+    rule_true_ext_lib lib (rule_approx_member_eq a b H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_approx_member_eq_true3.
+Qed.
+
 Lemma rule_approx_member_eq_wf2 {o} :
   forall (a b : NTerm) (H : @barehypotheses o),
     wf_rule2 (rule_approx_member_eq a b H).
@@ -522,6 +576,16 @@ Proof.
     allrw <- @equality_in_approx; repnd.
     dands; spcast; eauto 2 with slow;
     apply computes_to_valc_refl; eauto 2 with slow. }
+Qed.
+
+Lemma rule_approx_member_eq2_true_ext_lib {o} :
+  forall lib (a b : NTerm) e (H : @barehypotheses o),
+    rule_true_ext_lib lib (rule_approx_member_eq2 a b e H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_approx_member_eq2_true3.
 Qed.
 
 Lemma rule_approx_member_eq2_wf2 {o} :
@@ -596,6 +660,16 @@ Proof.
   { vr_seq_true in hyp1.
     pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
     lsubst_tac; auto. }
+Qed.
+
+Lemma rule_cequiv_member_eq_true_ext_lib {o} :
+  forall lib (a b : NTerm) (H : @barehypotheses o),
+    rule_true_ext_lib lib (rule_cequiv_member_eq a b H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_cequiv_member_eq_true3.
 Qed.
 
 Lemma rule_cequiv_member_eq_wf2 {o} :
@@ -679,6 +753,16 @@ Proof.
   { eapply cequivc_trans;[exact q1|]; auto. }
 Qed.
 
+Lemma rule_apply_in_base_true_ext_lib {o} :
+  forall lib (f1 f2 a1 a2 : NTerm) (H : @barehypotheses o),
+    rule_true_ext_lib lib (rule_apply_in_base f1 f2 a1 a2 H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_apply_in_base_true3.
+Qed.
+
 Lemma rule_apply_in_base_wf2 {o} :
   forall (f1 f2 a1 a2 : NTerm) (H : @barehypotheses o),
     wf_rule2 (rule_apply_in_base f1 f2 a1 a2 H).
@@ -749,6 +833,16 @@ Proof.
   { eapply cequivc_trans;[exact q2|]; auto. }
 Qed.
 
+Lemma rule_apply_in_base2_true_ext_lib {o} :
+  forall lib (f1 f2 a1 a2 : NTerm) e1 e2 (H : @barehypotheses o),
+    rule_true_ext_lib lib (rule_apply_in_base2 f1 f2 a1 a2 e1 e2 H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_apply_in_base2_true3.
+Qed.
+
 Lemma rule_apply_in_base2_wf2 {o} :
   forall (f1 f2 a1 a2 : NTerm) e1 e2 (H : @barehypotheses o),
     wf_rule2 (rule_apply_in_base2 f1 f2 a1 a2 e1 e2 H).
@@ -759,11 +853,3 @@ Proof.
   allrw <- @wf_cequiv_iff; repnd; auto;
   allrw @covered_cequiv; repnd; auto.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

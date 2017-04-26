@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -31,6 +32,7 @@
 
 Require Export cequiv_bind.
 Require Export sequents2.
+Require Export sequents_lib.
 Require Export sequents_tacs.
 Require Export sequents_tacs2.
 Require Export per_props_equality.
@@ -156,6 +158,16 @@ Proof.
   rw <- @member_approx_iff; sp;
   try (spcast; apply approx_refl; apply isprogram_get_cterm).
   apply equal_approx.
+Qed.
+
+Lemma rule_approx_refl_true_ext_lib {o} :
+  forall lib (H : @bhyps o) (a  : NTerm),
+    rule_true_ext_lib lib (rule_approx_refl H a).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_approx_refl_true3.
 Qed.
 
 Lemma rule_approx_refl_true {o} :
@@ -510,6 +522,16 @@ Proof.
   rw @cequivc_iff_approxc; dands; auto.
 Qed.
 
+Lemma rule_cequiv_approx_true_ext_lib {o} :
+  forall lib (H : @barehypotheses o) (a b : NTerm),
+    rule_true_ext_lib lib (rule_cequiv_approx H a b).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_cequiv_approx_true3.
+Qed.
+
 Lemma rule_cequiv_approx_true {o} :
   forall lib (H : @barehypotheses o) (a b : NTerm),
     rule_true lib (rule_cequiv_approx H a b).
@@ -611,6 +633,16 @@ Proof.
 
   spcast.
   rw @cequivc_iff_approxc; dands; auto.
+Qed.
+
+Lemma rule_cequiv_approx2_true_ext_lib {o} :
+  forall lib (H : @barehypotheses o) (a b : NTerm) e1 e2,
+    rule_true_ext_lib lib (rule_cequiv_approx2 H a b e1 e2).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_cequiv_approx2_true3.
 Qed.
 
 Lemma rule_cequiv_approx2_true {o} :
@@ -836,10 +868,3 @@ Qed.
 
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)
