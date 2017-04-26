@@ -31,52 +31,35 @@
 
 
 Require Export sequents2.
+Require Export computation_preserves_lib.
 
 
-Definition matching_sovar_sigs (vars1 vars2 : list sovar_sig) : Prop :=
-  map snd vars1 = map snd vars2.
-
-Definition matching_entries {o} (entry1 entry2 : @library_entry o) : Prop :=
-  match entry1, entry2 with
-  | lib_abs oa1 vars1 rhs1 correct1, lib_abs oa2 vars2 rhs2 correct2 =>
-    matching_entry_sign oa1 oa2
-    /\ matching_sovar_sigs vars1 vars2
+Definition opabs_of_lib_entry {o} (e : @library_entry o) : opabs :=
+  match e with
+  | lib_abs oa _ _ _ => oa
   end.
 
-Inductive entry_in_library {o} : @library_entry o -> library -> Prop :=
-| entry_in_library_hd :
-    forall entry lib,
-      entry_in_library entry (entry :: lib)
-| entry_in_library_tl :
-    forall entry1 entry2 lib,
-      ~ matching_entries entry1 entry2
-      -> entry_in_library entry1 lib
-      -> entry_in_library entry1 (entry2 :: lib).
+Definition matching_entries {o} (entry1 entry2 : @library_entry o) : Prop :=
+  matching_entry_sign (opabs_of_lib_entry entry1) (opabs_of_lib_entry entry2).
+
+Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : library) : Type :=
+  match lib with
+  | [] => False
+  | entry' :: entries =>
+    entry = entry'
+    [+]
+    (~ matching_entries entry entry'
+       # entry_in_library entry entries)
+  end.
 
 (* [lib1] extends [lib0] *)
-Definition lib_extends {o} (lib1 lib0 : @library o) : Prop :=
+Definition lib_extends {o} (lib1 lib0 : @library o) : Type :=
   forall entry, entry_in_library entry lib0 -> entry_in_library entry lib1.
 
-Definition sequent_true_ext_lib {o} lib0 (S : @csequent o) : Type :=
-  forall lib s1 s2,
+Definition sequent_true_ext_lib {o} lib0 (s : @csequent o) : Type :=
+  forall lib,
     lib_extends lib lib0
-    ->
-    match destruct_csequent S with
-      | cseq_comps H T wh wt ct ec =>
-          forall (p : similarity lib s1 s2 H),
-            hyps_functionality lib s1 H
-            -> tequality lib
-                 (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
-                 (lsubstc T wt s2 (s_cover_typ2 lib T s1 s2 H ct p))
-               # match ec with
-                   | Some (existT _ ext (we, ce)) =>
-                       equality lib
-                         (lsubstc ext we s1 (s_cover_ex1 lib ext s1 s2 H ce p))
-                         (lsubstc ext we s2 (s_cover_ex2 lib ext s1 s2 H ce p))
-                         (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
-                   | None => True
-                 end
-    end.
+    -> VR_sequent_true lib s.
 
 Definition sequent_true_ext_lib_wf {o} lib (s : @baresequent o) :=
   {c : wf_csequent s & sequent_true_ext_lib lib (mk_wcseq s c)}.
@@ -86,6 +69,199 @@ Definition rule_true_ext_lib {o} lib (R : @rule o) : Type :=
          (cargs : args_constraints (sargs R) (hyps (goal R)))
          (hyps  : forall s, LIn s (subgoals R) -> sequent_true_ext_lib_wf lib s),
     sequent_true_ext_lib_wf lib (goal R).
+
+Definition in_lib {o}
+           (opabs : opabs)
+           (lib   : @library o) :=
+  {e : library_entry
+   & LIn e lib
+   # matching_entry_sign opabs (opabs_of_lib_entry e)}.
+
+Definition entry_not_in_lib {o} (e : @library_entry o) (l : @library o) :=
+  !in_lib (opabs_of_lib_entry e) l.
+
+Hint Resolve matching_entry_sign_sym : slow.
+
+Lemma entry_in_library_implies_in {o} :
+  forall (entry : @library_entry o) lib,
+    entry_in_library entry lib -> LIn entry lib.
+Proof.
+  induction lib; auto; introv h; simpl in *.
+  repndors; subst; tcsp.
+Qed.
+Hint Resolve entry_in_library_implies_in : slow.
+
+Lemma lib_extends_cons_implies {o} :
+  forall (e : @library_entry o) (lib lib0 : library),
+    entry_not_in_lib e lib0
+    -> lib_extends lib (e :: lib0)
+    -> lib_extends lib lib0.
+Proof.
+  introv ni ext i.
+  apply ext; simpl; clear ext.
+  right; dands; auto; intro m.
+  destruct ni.
+
+  exists entry.
+  dands; eauto 3 with slow.
+Qed.
+
+Lemma sequent_true_mono_lib {o} :
+  forall (e : @library_entry o) (l : library) (s : baresequent),
+    entry_not_in_lib e l
+    -> sequent_true_ext_lib_wf l s
+    -> sequent_true_ext_lib_wf (e :: l) s.
+Proof.
+  introv ni st.
+  unfold sequent_true_ext_lib_wf in *; exrepnd.
+  exists c.
+  introv libext.
+  apply st0.
+  apply lib_extends_cons_implies in libext; auto.
+Qed.
+
+Lemma lib_extends_refl {o} :
+  forall (lib : @library o), lib_extends lib lib.
+Proof.
+  introv i; auto.
+Qed.
+Hint Resolve lib_extends_refl : slow.
+
+Lemma sequent_true_ext_lib_wf_implies_sequent_true2_if_lib_extends {o} :
+  forall lib lib0 (s : @baresequent o),
+    lib_extends lib0 lib
+    -> sequent_true_ext_lib_wf lib s
+    -> sequent_true2 lib0 s.
+Proof.
+  introv libext st.
+  unfold sequent_true_ext_lib_wf in st; exrepnd.
+  exists c.
+  unfold sequent_true_ext_lib in st0.
+  apply sequent_true_eq_VR.
+  apply st0; clear st0; eauto 2 with slow.
+Qed.
+Hint Resolve sequent_true_ext_lib_wf_implies_sequent_true2_if_lib_extends : slow.
+
+Lemma sequent_true_ext_lib_wf_implies_sequent_true2 {o} :
+  forall lib (s : @baresequent o),
+    sequent_true_ext_lib_wf lib s
+    -> sequent_true2 lib s.
+Proof.
+  introv st.
+  eapply sequent_true_ext_lib_wf_implies_sequent_true2_if_lib_extends; eauto 2 with slow.
+Qed.
+Hint Resolve sequent_true_ext_lib_wf_implies_sequent_true2 : slow.
+
+Definition wf_extract_seq {o} (s : @baresequent o) :=
+  wf_term_op (extract (concl s)).
+
+Definition wf_extract_goal {o} (R : @rule o) :=
+  wf_extract_seq (goal R).
+
+Definition wf_extract_sub {o} (R : @rule o) :=
+  forall s : baresequent, LIn s (subgoals R) -> wf_extract_seq s.
+
+Definition wf_extract {o} (R : @rule o) :=
+  wf_extract_sub R -> wf_extract_goal R.
+
+Lemma wf_sequent_implies_wf_extract_seq {o} :
+  forall (s : @baresequent o),
+    wf_sequent s
+    -> wf_extract_seq s.
+Proof.
+  introv wf.
+  unfold wf_sequent in wf; repnd.
+  unfold wf_extract_seq.
+  destruct s; simpl in *.
+  unfold wf_concl in wf; tcsp.
+Qed.
+Hint Resolve wf_sequent_implies_wf_extract_seq : slow.
+
+Lemma wf_csequent_implies_wf_extract_seq {o} :
+  forall (s : @baresequent o),
+    wf_csequent s
+    -> wf_extract_seq s.
+Proof.
+  introv wf.
+  unfold wf_csequent in wf; repnd; eauto 2 with slow.
+Qed.
+Hint Resolve wf_csequent_implies_wf_extract_seq : slow.
+
+(* MOVE to sequents2.v *)
+Lemma rule_true2_implies_rule_true3 {o} :
+  forall lib (R : @rule o),
+    wf_extract R
+    -> rule_true2 lib R
+    -> rule_true3 lib R.
+Proof.
+  introv wfe rt wf args imp.
+  unfold rule_true2 in rt; repeat (autodimp rt hyp).
+  unfold pwf_sequent.
+  unfold wf_bseq in wf; repnd; dands; auto.
+  unfold wf_sequent; dands; auto.
+  unfold wf_concl; dands; auto.
+  apply wfe; introv i; apply imp in i.
+  unfold sequent_true2 in i; exrepnd; eauto 2 with slow.
+Qed.
+
+(* MOVE to sequents2.v *)
+Lemma rule_true_implies_rule_true3 {o} :
+  forall lib (R : @rule o),
+    wf_extract R
+    -> rule_true lib R
+    -> rule_true3 lib R.
+Proof.
+  introv wfe rt.
+  apply rule_true_iff_rule_true2 in rt.
+  apply rule_true2_implies_rule_true3; auto.
+Qed.
+
+Lemma rule_true3_implies_rule_true_ext_lib {o} :
+  forall (R : @rule o),
+    (forall lib, rule_true3 lib R)
+    -> forall lib, rule_true_ext_lib lib R.
+Proof.
+  introv rt wf args imp.
+  pose proof (rt lib wf args) as q.
+  autodimp q hyp.
+
+  { introv i; apply imp in i; eauto 2 with slow. }
+
+  unfold sequent_true2 in q; exrepnd.
+  exists c.
+  introv i.
+
+  pose proof (rt lib0 wf args) as h.
+  repeat (autodimp h hyp).
+
+  { introv j; apply imp in j; eauto 2 with slow. }
+
+  unfold sequent_true2 in h; exrepnd.
+  apply sequent_true_eq_VR.
+  pose proof (wf_csequent_proof_irrelevance _ c c0) as xx; subst; auto.
+Qed.
+
+Lemma rule_true2_implies_rule_true_ext_lib {o} :
+  forall (R : @rule o),
+    wf_extract R
+    -> (forall lib, rule_true2 lib R)
+    -> forall lib, rule_true_ext_lib lib R.
+Proof.
+  introv wfe rt; introv.
+  apply rule_true3_implies_rule_true_ext_lib; introv.
+  apply rule_true2_implies_rule_true3; auto.
+Qed.
+
+Lemma rule_true_implies_rule_true_ext_lib {o} :
+  forall (R : @rule o),
+    wf_extract R
+    -> (forall lib, rule_true lib R)
+    -> forall lib, rule_true_ext_lib lib R.
+Proof.
+  introv wfe rt; introv.
+  apply rule_true3_implies_rule_true_ext_lib; introv.
+  apply rule_true_implies_rule_true3; auto.
+Qed.
 
 Lemma sequent_true_ext_lib_all {o} :
   forall lib0 (S : @csequent o),
@@ -118,19 +294,19 @@ Lemma sequent_true_ext_lib_all {o} :
              end
       end.
 Proof.
-  unfold sequent_true_ext_lib; split; intro h;
+  unfold sequent_true_ext_lib, VR_sequent_true; split; intro h;
     destruct (destruct_csequent S); destruct ec; exrepnd;
       introv libext sim; auto; introv hf.
 
   { introv.
-    pose proof (h lib s2 s3 libext sim hf) as h.
+    pose proof (h lib libext s2 s3 sim hf) as h.
 
     rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in h; auto.
     rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in h; auto.
     rewrite lsubstc_replace with (w2 := s1) (p2 := pt1) in h; auto.
     rewrite lsubstc_replace with (w2 := s1) (p2 := pt2) in h; auto. }
 
-  { pose proof (h lib s1 s2 libext sim hf) as h.
+  { pose proof (h lib libext s1 s2 sim hf) as h.
 
     rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in h; auto.
     rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in h; tcsp. }
@@ -166,18 +342,18 @@ Lemma sequent_true_ext_lib_ex {o} :
               end}}
       end.
 Proof.
-  unfold sequent_true_ext_lib; split; intro h;
+  unfold sequent_true_ext_lib, VR_sequent_true; split; intro h;
     destruct (destruct_csequent S); introv extlib hf;
       destruct ec; exrepnd; auto; try intro sim.
 
-  { pose proof (h lib s1 s2 extlib sim hf) as h.
+  { pose proof (h lib extlib s1 s2 sim hf) as h.
 
     exists (s_cover_typ1 lib T s1 s2 hs ct sim)
            (s_cover_typ2 lib T s1 s2 hs ct sim); sp.
     exists (s_cover_ex1 lib t s1 s2 hs s0 sim)
            (s_cover_ex2 lib t s1 s2 hs s0 sim); sp. }
 
-  { pose proof (h lib s1 s2 extlib sim hf) as h.
+  { pose proof (h lib extlib s1 s2 sim hf) as h.
 
     exists (s_cover_typ1 lib T s1 s2 hs ct sim)
            (s_cover_typ2 lib T s1 s2 hs ct sim); sp. }

@@ -527,39 +527,12 @@ Lemma rule_introduction_true_ext_lib {o} :
          (C t : NTerm),
     rule_true_ext_lib lib (rule_introduction H C t).
 Proof.
-  introv wf args hyps.
-
-  pose proof (args (sarg_term t) (inl eq_refl)) as arg1.
-  unfold arg_constraints in arg1.
-
-  dup wf as wfbseq.
-  unfold wf_bseq in wf.
-
-  (* We prove the well-formedness of things *)
-  destseq; allsimpl.
-  dLin_hyp; exrepnd.
-  destruct Hyp as [ws1 hyp1].
-  destseq; allsimpl; clear_irr; GC.
-
-  assert (wf_csequent (rule_introduction_concl H C t)) as wfc.
-  { clear hyp1.
-    unfold wf_csequent, wf_sequent, wf_concl; simpl; dands; auto.
-    allrw <- @wf_equality_iff; sp. }
-  exists wfc.
-
-  seq_true_ext_lib.
-
-  pose proof (rule_introduction_true3 lib0 H C t wfbseq args) as q.
-  autodimp q hyp.
-
-  { introv q; simpl in q; repndors; subst; tcsp.
-    eexists; apply sequent_true_eq_VR; introv; apply hyp1; auto. }
-
-  simpl in q; unfold sequent_true2 in q; exrepnd.
-  apply sequent_true_eq_VR in q0; rw @VR_sequent_true_ex in q0; simpl in q0.
-  pose proof (q0 s1 s2 eqh sim) as h; exrepnd.
-  unfold wf_csequent, wf_sequent in *; repnd; simpl in *; proof_irr; auto.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_introduction_true3.
 Qed.
+
 
 Lemma rule_introduction_true {o} :
   forall lib
