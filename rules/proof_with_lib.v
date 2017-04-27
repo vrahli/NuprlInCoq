@@ -248,11 +248,34 @@ Qed.
 
   ============================================================ *)
 
+Definition extract_ax {o} (c : @conclusion o) : NTerm :=
+  match extract c with
+  | Some e => e
+  | None => mk_axiom
+  end.
+
+Definition valid_extract {o} (t : @NTerm o) : Prop :=
+  wf_term t # closed t # noutokens t.
+
+Record wf_conclusion {o} :=
+  MkWfConcl
+    {
+      wf_conclusion_concl : @conclusion o;
+      wf_conclusion_wf    : valid_extract (extract_ax wf_conclusion_concl);
+    }.
+
+Arguments MkWfConcl [o] _ _.
+
+Definition wf_conclusions {o} := list (@wf_conclusion o).
+
+Definition in_wf_conclusions {o} (c : @conclusion o) (l : wf_conclusions) :=
+  LIn c (map wf_conclusion_concl l).
+
 Record ProofContext {o} :=
   MkProofContext
     {
       PC_lib :> @library o;
-      PC_conclusions : list (@conclusion o);
+      PC_conclusions : list (@wf_conclusion o);
     }.
 
 Definition EMPC {o} : @ProofContext o := MkProofContext o [] [].
@@ -263,7 +286,7 @@ Definition updLibProofContext {o} (pc : @ProofContext o) (e : library_entry) :=
     (e :: PC_lib pc)
     (PC_conclusions pc).
 
-Definition updConclProofContext {o} (pc : @ProofContext o) (c : conclusion) :=
+Definition updConclProofContext {o} (pc : @ProofContext o) (c : wf_conclusion) :=
   MkProofContext
     o
     (PC_lib pc)
@@ -282,7 +305,7 @@ Definition updConclProofContext {o} (pc : @ProofContext o) (c : conclusion) :=
 Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
 | pre_proof_from_ctxt :
     forall c,
-      LIn c (@PC_conclusions o ctxt)
+      in_wf_conclusions c (@PC_conclusions o ctxt)
       -> pre_proof ctxt (concl2pre_baresequent c)
 | pre_proof_hole : forall s, pre_proof ctxt s
 | pre_proof_isect_eq :
@@ -359,7 +382,7 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
 Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
 | proof_from_ctxt :
     forall c,
-      LIn c (@PC_conclusions o ctxt)
+      in_wf_conclusions c (@PC_conclusions o ctxt)
       -> proof ctxt (mk_baresequent [] c)
 | proof_isect_eq :
     forall a1 a2 b1 b2 e1 e2 x1 x2 y i H,
@@ -440,14 +463,20 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
 
 (* ===========================================================
 
-  State, i.e.:
-    (1) the list of defined abstractions,
-    (2) the list of proved lemmas,
-    (3) the list of lemmas currently being proved
+  The library consists of a list of abstractions and proved lemmas.
+  The difference with ProofContext is that we include the proofs of
+  lemmas.  [Library2ProofContext] shows how to extract a proof context
+  from a Library.
 
   ============================================================ *)
 
 Definition LemmaName := opname.
+
+Lemma LemmaNameDeq : Deq LemmaName.
+Proof.
+  introv.
+  destruct (String.string_dec x y); auto.
+Defined.
 
 Definition opname2opabs (op : opname) : opabs :=
   mk_opabs op [] [].
@@ -512,9 +541,6 @@ Proof.
 Qed.
 Hint Rewrite @get_utokens_so_nterm2soterm : slow.
 
-Definition valid_extract {o} (t : @NTerm o) : Prop :=
-  wf_term t # closed t # noutokens t.
-
 Lemma extract2correct {o} :
   forall (name : opname)
          (t    : @NTerm o)
@@ -565,7 +591,7 @@ Inductive DepLibrary {o} : @ProofContext o -> Type :=
            (p     : proof ctxt (Statement stmt ext))
            (n     : name_not_in_lib name ctxt),
       DepLibrary (updLibProofContext
-                    (updConclProofContext ctxt (mk_concl stmt ext))
+                    (updConclProofContext ctxt (MkWfConcl (mk_concl stmt ext) valid))
                     (extract2def name ext valid)).
 
 Inductive LibraryEntry {o} :=
@@ -589,7 +615,7 @@ Definition extend_proof_context {o} (ctxt : @ProofContext o) (e : LibraryEntry) 
   | LibraryEntry_abs e => updLibProofContext ctxt e
   | LibraryEntry_proof c name stmt ext isp valid prf =>
     updLibProofContext
-      (updConclProofContext ctxt (mk_concl stmt ext))
+      (updConclProofContext ctxt (MkWfConcl (mk_concl stmt ext) valid))
       (extract2def name ext valid)
   end.
 
@@ -607,6 +633,8 @@ Fixpoint Library2ProofContext {o} (L : @Library o) : ProofContext :=
     let ctxt := Library2ProofContext entries in
     extend_proof_context ctxt entry
   end.
+
+Definition Library2lib {o} (L : @Library o) : library := Library2ProofContext L.
 
 Fixpoint ValidLibrary {o} (L : @Library o) : Type :=
   match L with
@@ -636,41 +664,21 @@ Fixpoint lemma_in_Library {o}
     lemma_in_Library s entries
   end.
 
-Definition seq_in_context {o}
-           (s  : @baresequent o)
-           (pc : ProofContext) : Type :=
-  {c : conclusion & s = mk_bseq [] c # LIn c (PC_conclusions pc)}.
 
-(*Lemma correct_library {o} :
-  forall {c : ProofContext} (l : Library c) (s : @baresequent o),
-    lemma_in_Library s l
-    -> sequent_true_ext_lib_wf c s.
-Proof.
-  induction l; simpl; introv i; tcsp.
 
-  - apply IHl in i; clear IHl.
-    apply sequent_true_mono_lib; auto.
+(* ===========================================================
 
-  - repndors.
+  We'll now prove that proofs are valid and that the sequents
+  in the library are true.
 
-    + apply IHl in i; clear IHl.
-      apply sequent_true_mono_lib; auto.
-
-    + subst.
-
-      assert (forall c,
-                 LIn c (PC_conclusions ctxt)
-                 -> sequent_true_ext_lib_wf ctxt (mk_bseq [] c)) as imp.
-      {
-        introv i.
-        apply IHl.
-      }
-Qed.*)
+  ============================================================ *)
 
 Lemma lemma_in_Library_iff {o} :
   forall (s : @baresequent o) L,
     lemma_in_Library s L
-    <=> {c : conclusion & s = mk_bseq [] c # LIn c (PC_conclusions (Library2ProofContext L))}.
+    <=> {c : conclusion
+         & s = mk_bseq [] c
+         # in_wf_conclusions c (PC_conclusions (Library2ProofContext L))}.
 Proof.
   induction L; simpl; split; introv h; tcsp.
 
@@ -690,7 +698,8 @@ Proof.
     + right; apply IHL; clear IHL.
       eexists; dands;[reflexivity|]; tcsp.
 
-    + repndors; subst; tcsp.
+    + unfold in_wf_conclusions in *; simpl in *; tcsp.
+      repndors; subst; tcsp.
       right; apply IHL; clear IHL.
       eexists; dands;[reflexivity|]; tcsp.
 Qed.
@@ -701,7 +710,7 @@ Qed.
 Lemma valid_proof {o} :
   forall (ctxt : @ProofContext o) s (wf : wf_bseq s),
     (forall c,
-        LIn c (PC_conclusions ctxt)
+        in_wf_conclusions c (PC_conclusions ctxt)
         -> sequent_true_ext_lib_wf ctxt (mk_bseq [] c))
     -> proof ctxt s
     -> sequent_true_ext_lib_wf ctxt s.
@@ -836,7 +845,7 @@ Lemma wf_proof {o} :
   forall (ctxt : @ProofContext o) s,
     wf_hypotheses (hyps s)
     -> (forall c,
-           LIn c (PC_conclusions ctxt)
+           in_wf_conclusions c (PC_conclusions ctxt)
            -> wf_ext [] c)
     -> proof ctxt s
     -> wf_ext (hyps s) (concl s).
@@ -898,7 +907,7 @@ Proof.
     clear IHL.
 
     assert (forall c,
-               LIn c (PC_conclusions (Library2ProofContext L))
+               in_wf_conclusions c (PC_conclusions (Library2ProofContext L))
                -> sequent_true_ext_lib_wf (Library2ProofContext L) (mk_bseq [] c)) as w.
     { introv i; apply imp; auto.
       apply lemma_in_Library_iff.
@@ -917,15 +926,44 @@ Proof.
       apply sequent_true_mono_lib; auto.
 Qed.
 
+
+
+(* ===========================================================
+
+  Nuprl state, i.e., a Library and a list of lemmas currently being proved.
+
+  ============================================================ *)
+
+Definition term2pre_baresequent {o} (t : @NTerm o) : pre_baresequent :=
+  MkPreBaresequent _ [] (pre_concl_ext t).
+
+Record pre_proof_seq {o} (ctxt : @ProofContext o) :=
+  MkPreProofSeq
+    {
+      pre_proof_seq_name  : LemmaName;
+      pre_proof_seq_term  : NTerm;
+      pre_proof_seq_prog  : isprogram pre_proof_seq_term;
+      pre_proof_seq_proof : pre_proof ctxt (term2pre_baresequent pre_proof_seq_term)
+    }.
+
+Arguments MkPreProofSeq [o] [ctxt] _ _ _ _.
+
+Arguments pre_proof_seq_name  [o] [ctxt] _.
+Arguments pre_proof_seq_term  [o] [ctxt] _.
+Arguments pre_proof_seq_proof [o] [ctxt] _.
+
+
 Definition pre_proofs {o} (ctxt : @ProofContext o) :=
-  list {s : pre_baresequent & pre_proof ctxt s}.
+  list (pre_proof_seq ctxt).
 
 Record NuprlState {o} :=
   MkNuprlState
     {
-      NuprlState_lib        : @Library o;
+      NuprlState_lib        :> @Library o;
       NuprlState_unfinished : pre_proofs (Library2ProofContext NuprlState_lib);
     }.
+
+Arguments MkNuprlState [o] _ _.
 
 
 
@@ -949,16 +987,436 @@ Inductive command {o} :=
 (* focuses to a node in a proof *)
 | COM_focus_proof (name : LemmaName) (adr : address).
 
+Lemma in_conclusions_extend_proof_context {o} :
+  forall (ctxt  : @ProofContext o)
+         (entry : LibraryEntry)
+         (c     : conclusion)
+         (i     : in_wf_conclusions c (PC_conclusions ctxt)),
+    in_wf_conclusions c (PC_conclusions (extend_proof_context ctxt entry)).
+Proof.
+  introv i.
+  destruct entry; simpl in *; auto.
+  unfold in_wf_conclusions; simpl in *; tcsp.
+Qed.
+
+Fixpoint pre_proof_cons {o}
+         {ctxt  : @ProofContext o}
+         (entry : LibraryEntry)
+         {s     : pre_baresequent}
+         (p     : pre_proof ctxt s)
+  : pre_proof (extend_proof_context ctxt entry) s :=
+  match p with
+  | pre_proof_from_ctxt _ c i =>
+    pre_proof_from_ctxt _ c (in_conclusions_extend_proof_context ctxt entry c i)
+
+  | pre_proof_hole _ s => pre_proof_hole _ s
+
+  | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    let prf1' := pre_proof_cons entry prf1 in
+    let prf2' := pre_proof_cons entry prf2 in
+    pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2'
+
+  | pre_proof_approx_refl _ a H => pre_proof_approx_refl _ a H
+
+  | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
+    let prf1' := pre_proof_cons entry prf1 in
+    let prf2' := pre_proof_cons entry prf2 in
+    pre_proof_cequiv_approx _ a b H prf1' prf2'
+
+  | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+    let prf1' := pre_proof_cons entry prf1 in
+    let prf2' := pre_proof_cons entry prf2 in
+    pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1' prf2'
+
+  | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+    let prf1' := pre_proof_cons entry prf1 in
+    let prf2' := pre_proof_cons entry prf2 in
+    pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1' prf2'
+  end.
+
+Definition pre_proof_seq_cons {o}
+           {ctxt  : @ProofContext o}
+           (entry : LibraryEntry)
+           (pps   : pre_proof_seq ctxt)
+  : pre_proof_seq (extend_proof_context ctxt entry) :=
+  match pps with
+  | MkPreProofSeq name C isp prf => MkPreProofSeq name C isp (pre_proof_cons entry prf)
+  end.
+
+Definition pre_proofs_cons {o}
+           {ctxt  : @ProofContext o}
+           (entry : LibraryEntry)
+           (l     : pre_proofs ctxt)
+  : pre_proofs (extend_proof_context ctxt entry) :=
+  map (pre_proof_seq_cons entry) l.
+
+Lemma in_lib_dec {o} :
+  forall (opabs : opabs)
+         (lib   : @library o),
+    decidable (in_lib opabs lib).
+Proof.
+  unfold in_lib; induction lib; simpl.
+  - right; intro xx; exrepnd; auto.
+  - destruct a.
+    destruct (same_opabs_dec opabs opabs0) as [d|d]; ginv.
+    + left; eexists; eexists; eauto.
+    + destruct IHlib as [k|k]; exrepnd.
+      * left; eexists; eexists; eauto.
+      * right; intro xx; exrepnd; repndors; subst; allsimpl; tcsp.
+        destruct k; eexists; eexists; eauto.
+Qed.
+
+Definition NuprlState_add_def {o}
+           (state   : @NuprlState o)
+           (opabs   : opabs)
+           (vars    : list sovar_sig)
+           (rhs     : SOTerm)
+           (correct : correct_abs opabs vars rhs) : NuprlState :=
+  match state with
+  | MkNuprlState L unfinished =>
+    if in_lib_dec opabs (Library2lib L) then state
+    else
+      let entry := LibraryEntry_abs (lib_abs opabs vars rhs correct) in
+      MkNuprlState
+        (entry :: L)
+        (pre_proofs_cons entry unfinished)
+  end.
+
+Fixpoint find_unfinished_in_pre_proofs {o} {ctxt}
+         (l : @pre_proofs o ctxt)
+         (n : LemmaName)
+  : option (pre_proof_seq ctxt) * pre_proofs ctxt :=
+  match l with
+  | [] => (None, [])
+  | pp :: pps =>
+    if LemmaNameDeq n (pre_proof_seq_name pp) then
+      (Some pp, pps)
+    else
+      let (ppop, pps') := find_unfinished_in_pre_proofs pps n in
+      (ppop, pp :: pps')
+  end.
+
+Lemma name_of_find_unfinished_in_pre_proofs {o} :
+  forall {ctxt}
+         (l  : @pre_proofs o ctxt)
+         (n  : LemmaName)
+         (p  : pre_proof_seq ctxt)
+         (ps : pre_proofs ctxt),
+    find_unfinished_in_pre_proofs l n = (Some p, ps)
+    -> pre_proof_seq_name p = n.
+Proof.
+  induction l; introv h; simpl in *; ginv.
+  boolvar; ginv; cpx.
+  remember (find_unfinished_in_pre_proofs l n) as f; symmetry in Heqf; destruct f; cpx.
+  apply IHl in Heqf; auto.
+Qed.
+
+Definition pre2conclusion {o} (c : @pre_conclusion o) (e : @NTerm o) :=
+  match c with
+  | pre_concl_ext T => concl_ext T e
+  | pre_concl_typ T => concl_typ T
+  end.
+
+Definition pre2baresequent {o} (s : @pre_baresequent o) (e : @NTerm o) :=
+  mk_baresequent
+    (pre_hyps s)
+    (pre2conclusion (pre_concl s) e).
+
+Record ExtractProof {o} ctxt (seq : @pre_baresequent o) :=
+  MkExtractProof
+    {
+      extract_proof_extract : NTerm;
+      extract_proof_valid   : valid_extract extract_proof_extract;
+      extract_proof_proof   : proof ctxt (pre2baresequent seq extract_proof_extract);
+    }.
+
+Arguments MkExtractProof [o] [ctxt] [seq] _ _ _.
+
+Lemma valid_extract_axiom {o} : @valid_extract o mk_axiom.
+Proof.
+  unfold valid_extract; dands; eauto 2 with slow.
+  compute; auto.
+Qed.
+
+(* Why can't I define these? *)
+Definition finish_proof_from_context {o}
+           (ctxt : ProofContext)
+           (c    : @conclusion o)
+           (i    : in_wf_conclusions c (PC_conclusions ctxt))
+  : ExtractProof ctxt (concl2pre_baresequent c).
+Proof.
+  unfold concl2pre_baresequent; simpl.
+  destruct c; simpl in *.
+  - exists extract; simpl.
+
+    { unfold in_wf_conclusions in i; simpl in i.
+      rw in_map_iff in i; exrepnd.
+      destruct a; simpl in *; ginv. }
+
+    unfold pre2baresequent; simpl.
+    exact (proof_from_ctxt _ (concl_ext ctype extract) i).
+
+  - exists (@mk_axiom o); simpl.
+
+    { apply valid_extract_axiom. }
+
+    unfold pre2baresequent; simpl.
+    exact (proof_from_ctxt _ (concl_typ ctype) i).
+Defined.
+
+Definition finish_proof_isect_eq {o}
+           (ctxt : @ProofContext o)
+           (a1 a2 b1 b2 : NTerm)
+           (x1 x2 y : NVar)
+           (i : nat)
+           (H : bhyps)
+           (ni : NVin y (vars_hyps H))
+           (p1 : ExtractProof ctxt (pre_rule_isect_equality_hyp1 a1 a2 i H))
+           (p2 : ExtractProof ctxt (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H))
+  : ExtractProof ctxt (pre_rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H).
+Proof.
+  introv.
+  destruct p1 as [e1 v1 q1].
+  destruct p2 as [e2 v2 q2].
+  unfold pre2baresequent in *; simpl in *.
+  exists (@mk_axiom o).
+  { exact valid_extract_axiom. }
+  unfold pre2baresequent; simpl.
+  exact (proof_isect_eq _ a1 a2 b1 b2 e1 e2 x1 x2 y i H ni q1 q2).
+Defined.
+
+Definition finish_proof_approx_refl {o}
+           (ctxt : @ProofContext o)
+           (a : NTerm)
+           (H : bhyps)
+  : ExtractProof ctxt (pre_rule_approx_refl_concl a H).
+Proof.
+  introv.
+  exists (@mk_axiom o).
+  { exact valid_extract_axiom. }
+  unfold pre2baresequent; simpl.
+  exact (proof_approx_refl _ a H).
+Defined.
+
+Definition finish_proof_cequiv_approx {o}
+           (ctxt : @ProofContext o)
+           (a b : NTerm)
+           (H : bhyps)
+           (p1 : ExtractProof ctxt (pre_rule_cequiv_approx_hyp a b H))
+           (p2 : ExtractProof ctxt (pre_rule_cequiv_approx_hyp b a H))
+  : ExtractProof ctxt (pre_rule_cequiv_approx_concl a b H).
+Proof.
+  introv.
+  destruct p1 as [e1 v1 q1].
+  destruct p2 as [e2 v2 q2].
+  unfold pre2baresequent in *; simpl in *.
+  exists (@mk_axiom o).
+  { exact valid_extract_axiom. }
+  unfold pre2baresequent; simpl.
+  exact (proof_cequiv_approx _ a b e1 e2 H q1 q2).
+Defined.
+
+Definition finish_proof_approx_eq {o}
+           (ctxt : @ProofContext o)
+           (a1 a2 b1 b2 : NTerm)
+           (i : nat)
+           (H : bhyps)
+           (p1 : ExtractProof ctxt (pre_rule_eq_base_hyp a1 a2 H))
+           (p2 : ExtractProof ctxt (pre_rule_eq_base_hyp b1 b2 H))
+  : ExtractProof ctxt (pre_rule_approx_eq_concl a1 a2 b1 b2 i H).
+Proof.
+  introv.
+  destruct p1 as [e1 v1 q1].
+  destruct p2 as [e2 v2 q2].
+  unfold pre2baresequent in *; simpl in *.
+  exists (@mk_axiom o).
+  { exact valid_extract_axiom. }
+  unfold pre2baresequent; simpl.
+  exact (proof_approx_eq _ a1 a2 b1 b2 e1 e2 i H q1 q2).
+Defined.
+
+Definition finish_proof_cequiv_eq {o}
+           (ctxt : @ProofContext o)
+           (a1 a2 b1 b2 : NTerm)
+           (i : nat)
+           (H : bhyps)
+           (p1 : ExtractProof ctxt (pre_rule_eq_base_hyp a1 a2 H))
+           (p2 : ExtractProof ctxt (pre_rule_eq_base_hyp b1 b2 H))
+  : ExtractProof ctxt (pre_rule_cequiv_eq_concl a1 a2 b1 b2 i H).
+Proof.
+  introv.
+  destruct p1 as [e1 v1 q1].
+  destruct p2 as [e2 v2 q2].
+  unfold pre2baresequent in *; simpl in *.
+  exists (@mk_axiom o).
+  { exact valid_extract_axiom. }
+  unfold pre2baresequent; simpl.
+  exact (proof_cequiv_eq _ a1 a2 b1 b2 e1 e2 i H q1 q2).
+Defined.
+
+(* We need not only the ProofContext but the Library to get the extracts *)
+Fixpoint finish_pre_proof {o}
+         {ctxt  : @ProofContext o}
+         {s     : pre_baresequent}
+         (p     : pre_proof ctxt s)
+  : option (ExtractProof ctxt s) :=
+  match p with
+  | pre_proof_from_ctxt _ c i => Some (finish_proof_from_context ctxt c i)
+
+  | pre_proof_hole _ s => None
+
+  | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    match finish_pre_proof prf1, finish_pre_proof prf2 with
+    | Some p1, Some p2 =>
+      Some (finish_proof_isect_eq ctxt a1 a2 b1 b2 x1 x2 y i H niyH p1 p2)
+    | _, _ => None
+    end
+
+  | pre_proof_approx_refl _ a H => Some (finish_proof_approx_refl ctxt a H)
+
+  | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
+    match finish_pre_proof prf1, finish_pre_proof prf2 with
+    | Some p1, Some p2 => Some (finish_proof_cequiv_approx ctxt a b H p1 p2)
+    | _, _ => None
+    end
+
+  | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+    match finish_pre_proof prf1, finish_pre_proof prf2 with
+    | Some p1, Some p2 => Some (finish_proof_approx_eq ctxt a1 a2 b1 b2 i H p1 p2)
+    | _, _ => None
+    end
+
+  | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+    match finish_pre_proof prf1, finish_pre_proof prf2 with
+    | Some p1, Some p2 => Some (finish_proof_cequiv_eq ctxt a1 a2 b1 b2 i H p1 p2)
+    | _, _ => None
+    end
+  end.
+
+Definition finish_pre_proof_seq {o}
+           {ctxt : @ProofContext o}
+           (pps  : pre_proof_seq ctxt)
+  : option LibraryEntry :=
+  match pps with
+  | MkPreProofSeq name C isp pre_prf =>
+    match finish_pre_proof pre_prf with
+    | Some (MkExtractProof ext valid prf) =>
+
+      Some (LibraryEntry_proof ctxt name C ext isp valid prf)
+
+    | None => None
+    end
+  end.
+
+Lemma name_of_finish_pre_proof_seq {o} :
+  forall {ctxt}
+         (p     : @pre_proof_seq o ctxt)
+         (name  : LemmaName)
+         (stmt  : NTerm)
+         (ext   : NTerm)
+         (isp   : isprogram stmt)
+         (valid : valid_extract ext)
+         (prf   : proof ctxt (Statement stmt ext)),
+    finish_pre_proof_seq p = Some (LibraryEntry_proof ctxt name stmt ext isp valid prf)
+    -> pre_proof_seq_name p = name.
+Proof.
+  introv h.
+  unfold finish_pre_proof_seq in h.
+  destruct p; simpl in *.
+  remember (finish_pre_proof pre_proof_seq_proof0) as fin; symmetry in Heqfin;
+    destruct fin; ginv.
+  destruct e; ginv; cpx.
+  inversion h; auto.
+Qed.
+
+Definition NuprlState_add_entry {o}
+           (state : @NuprlState o)
+           (entry : LibraryEntry)
+  : pre_proofs (Library2ProofContext state) -> NuprlState :=
+  match state with
+  | MkNuprlState L _ => fun pps => MkNuprlState (entry :: L) (pre_proofs_cons entry pps)
+  end.
+
+Definition NuprlState_finish_proof {o}
+           (state : @NuprlState o)
+           (name  : LemmaName) : NuprlState :=
+  if in_lib_dec (opname2opabs name) (Library2lib state) then state
+  else
+    match find_unfinished_in_pre_proofs (NuprlState_unfinished state) name with
+    | (Some pp, pps) =>
+
+      match finish_pre_proof_seq pp with
+      | Some entry => NuprlState_add_entry state entry pps
+      | None => state
+      end
+
+    | (None, pps) => state
+    end.
+
 Definition update {o}
            (state : @NuprlState o)
-           (com   : command) : NuprlState :=
-  match com with
+           (cmd   : command) : NuprlState :=
+  match cmd with
   | COM_add_def opabs vars rhs correct =>
-    NuprlState_add_def_lib state opabs vars rhs correct
+    NuprlState_add_def state opabs vars rhs correct
+
   | COM_finish_proof name =>
-    let lib := NuprlState_proof_library state in
-    NuprlState_upd_proof_lib state (finish_proof_in_library lib name)
-  | COM_focus_proof name addr =>
-    let lib := NuprlState_proof_library state in
-    NuprlState_upd_focus state (focus_proof_in_library lib name addr)
+    NuprlState_finish_proof state name
+
+  | COM_focus_proof name addr => state
+(*    let lib := NuprlState_proof_library state in
+    NuprlState_upd_focus state (focus_proof_in_library lib name addr)*)
   end.
+
+(* Should we add this to NuprlState *)
+Definition ValidNuprlState {o} (state : @NuprlState o) := ValidLibrary state.
+
+Lemma update_preserves_validity {o} :
+  forall (state : @NuprlState o) (cmd : command),
+    ValidNuprlState state -> ValidNuprlState (update state cmd).
+Proof.
+  introv valid.
+  destruct cmd; simpl; auto.
+
+  - destruct state as [L pre_prfs]; simpl in *.
+    unfold ValidNuprlState in *; simpl in *.
+
+    destruct (in_lib_dec opabs (Library2lib L)) as [d|d]; simpl; auto.
+
+  - destruct state as [L pre_prfs]; simpl in *.
+    unfold ValidNuprlState in *; simpl in *.
+    unfold NuprlState_finish_proof; simpl.
+
+    destruct (in_lib_dec (opname2opabs name) (Library2lib L)) as [d|d]; simpl; auto;[].
+
+    remember (find_unfinished_in_pre_proofs pre_prfs name) as f; symmetry in Heqf; repnd.
+    destruct f0; simpl in *; auto;[].
+
+    remember (finish_pre_proof_seq p) as eop; symmetry in Heqeop.
+    destruct eop; simpl in *; dands; auto;[].
+
+    destruct l; simpl in *.
+
+    + unfold finish_pre_proof_seq in Heqeop.
+      destruct p; simpl in *.
+      remember (finish_pre_proof pre_proof_seq_proof0) as fin; symmetry in Heqfin;
+        destruct fin; ginv.
+      destruct e0; ginv.
+
+    + assert (ctxt = Library2ProofContext L) as xx.
+
+      { unfold finish_pre_proof_seq in Heqeop.
+        destruct p; simpl in *.
+        remember (finish_pre_proof pre_proof_seq_proof0) as fin; symmetry in Heqfin;
+          destruct fin; ginv;[].
+        destruct e; ginv; cpx.
+        inversion Heqeop; auto. }
+
+      dands; auto.
+      subst.
+
+      unfold name_not_in_lib; auto.
+      apply name_of_find_unfinished_in_pre_proofs in Heqf.
+      apply name_of_finish_pre_proof_seq in Heqeop.
+      subst; auto.
+Qed.
