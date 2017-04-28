@@ -648,6 +648,18 @@ Proof.
   ginv; proof_irr; auto.
 Qed.
 
+Lemma rule_hypothesis_true_ext_lib {o} :
+  forall lib (G J : @barehypotheses o)
+         (A : NTerm)
+         (x : NVar),
+    rule_true_ext_lib lib (rule_hypothesis G J A x).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_hypothesis_true3.
+Qed.
+
 Lemma rule_hypothesis_true {o} :
   forall lib (G J : @barehypotheses o)
          (A : NTerm)
@@ -1242,6 +1254,18 @@ Proof.
   exrepnd.
   proof_irr.
   rw <- k2; rw <- k0; auto.
+Qed.
+
+Lemma rule_cut_true_ext_lib {o} :
+  forall lib (H : @barehypotheses o)
+         (B C t u : NTerm)
+         (x : NVar),
+    rule_true_ext_lib lib (rule_cut H B C t u x).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_cut_true3.
 Qed.
 
 (* begin hide *)
