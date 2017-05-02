@@ -124,12 +124,8 @@ Definition mk_minus {p} n : @NTerm p := oterm (NCan NMinus) [nobnd n].
 
 Definition mk_base  {p} : @NTerm p := oterm (Can NBase)  [].
 Definition mk_int   {p} : @NTerm p := oterm (Can NInt)   [].
-Definition mk_axiom {p} : @NTerm p := oterm (Can NAxiom) [].
 Definition mk_atom  {p} : @NTerm p := oterm (Can NAtom)  [].
 Definition mk_uatom {p} : @NTerm p := oterm (Can NUAtom) [].
-
-Definition mk_inl {p} (x : @NTerm p) := oterm (Can (NInj NInl)) [nobnd x].
-Definition mk_inr {p} (x : @NTerm p) := oterm (Can (NInj NInr)) [nobnd x].
 
 Definition mk_pair {p} (a b : @NTerm p) := oterm (Can NPair) [nobnd a , nobnd b].
 
@@ -157,9 +153,6 @@ Definition mk_efree_from_atom {p} (a b c : @NTerm p) :=
 
 Definition mk_free_from_atoms {p} (T t : @NTerm p) :=
   oterm (Can NFreeFromAtoms) [nobnd T, nobnd t].
-
-Definition mk_equality {p} (t1 t2 T : @NTerm p) :=
-  oterm (Can NEquality) [nobnd t1,nobnd t2,nobnd T].
 
 Definition mk_requality {p} (t1 t2 T : @NTerm p) :=
   oterm (Can NREquality) [nobnd t1,nobnd t2,nobnd T].
@@ -852,256 +845,16 @@ Fixpoint depth (t : NTerm) : nat :=
   end.
 *)
 
-Fixpoint size {p} (t : @NTerm p) : nat :=
-  match t with
-  | vterm _ => 1
-  | sterm _ => 1
-  | oterm op bterms => S (addl (map size_bterm bterms))
-  end
- with size_bterm {p} (bt: BTerm) :=
-  match bt with
-  | bterm lv nt => size nt
-  end.
-
 
 
 (* ------ INDUCTION ON TERMS ------ *)
 
-
-Lemma size_subterm2 {p} :
-  forall (o : @Opid p) (lb : list BTerm) (b : BTerm) ,
-    LIn b lb
-    -> size_bterm b <  size (oterm o lb).
-Proof.
-  simpl. induction lb; intros ? Hin; inverts Hin as; simpl.
-  - unfold lt. apply le_n_S.
-    apply le_plus_l.
-  - intros Hin. apply IHlb in Hin. clear IHlb.
-    eapply lt_le_trans; eauto.
-    apply le_n_S. apply le_plus_r.
-Defined.
-
-Lemma size_subterm3 {p} :
-  forall (o : @Opid p) (lb : list BTerm) (nt : NTerm) (lv : list NVar) ,
-    LIn (bterm lv nt) lb
-    -> size nt <  size (oterm o lb).
-Proof.
- introv X.
- apply (@size_subterm2 p) with (o:=o) in X. auto.
-Defined.
 
 (* Some of the ordinal stuff comes from
 
      https://github.com/martijnvermaat/infinitary-rewriting-coq/blob/master/Ordinal.v
 
  *)
-
-Lemma osize_subterm2 {o} :
-  forall (op : @Opid o) bs b,
-    LIn b bs -> (osize_bterm b) << (osize (oterm op bs)).
-Proof.
-  simpl.
-  induction bs; intros ? Hin; inverts Hin as; simpl.
-  - exists (None : option (opred_type (oadd (osize_bterm b) (oaddl (map osize_bterm bs))))); simpl.
-    apply ord_le_oadd_l.
-  - intro Hin.
-    apply IHbs in Hin; clear IHbs.
-    exists (None : option (opred_type (oadd (osize_bterm a) (oaddl (map osize_bterm bs))))); simpl.
-    eapply ord_le_trans;[|apply ord_le_oadd_r].
-    apply ord_lt_OS_implies in Hin; auto.
-Defined.
-
-Lemma osize_subterm3 {o} :
-  forall (op : @Opid o) bs t vs,
-    LIn (bterm vs t) bs
-    -> (osize t) << (osize (oterm op bs)).
-Proof.
-  introv i.
-  apply (osize_subterm2 op) in i; allsimpl; auto.
-Defined.
-
-Lemma NTerm_better_ind2 {p} :
-  forall P : (@NTerm p) -> Type,
-    (forall n : NVar, P (vterm n))
-    -> (forall f, (forall n, P (f n)) -> P (sterm f))
-    -> (forall (o : Opid) (lbt : list BTerm),
-          (forall (nt nt': NTerm) (lv: list NVar),
-             (LIn (bterm lv nt) lbt)
-              -> (osize nt') <=< (osize nt)
-              -> P nt'
-          )
-          -> P (oterm o lbt)
-       )
-    -> forall t : NTerm, P t.
-Proof.
- intros P Hvar Hseq Hbt.
-
- assert (forall n t, (osize t) =o= n -> P t) as Hass;
-   [|introv;
-      apply Hass with (n := osize t);
-      apply ord_eq_refl].
-
- induction n as [n Hind] using comp_ind_ord.
- intros t Hsz.
- destruct t as [v|f|op bs].
-
- - clear Hseq Hbt.
-   apply Hvar.
-
- - clear Hvar Hbt.
-   apply Hseq; introv; allsimpl; clear Hseq.
-
-   pose proof (Hind (osize (f n0))) as h; clear Hind.
-   autodimp h hyp; [|apply h; apply ord_eq_refl].
-   eapply ord_lt_eq_trans;[|exact Hsz]; clear Hsz.
-   apply implies_ord_lt_OS.
-   eapply implies_ord_le_limit_right.
-   apply ord_le_refl.
-
- - apply Hbt.
-   introv Hin Hs; allsimpl.
-   apply (Hind (osize nt')); auto.
-   { eapply ord_lt_eq_trans;[|exact Hsz]; clear Hsz.
-     apply implies_ord_lt_OS.
-     eapply ord_le_trans;[exact Hs|]; clear Hs.
-     pose proof (osize_subterm3 op bs nt lv Hin) as h; allsimpl.
-     apply ord_lt_OS_implies; auto. }
-   apply ord_eq_refl.
-Defined.
-
-Lemma NTerm_better_ind {p} :
-  forall P : @NTerm p -> Type,
-    (forall n : NVar, P (vterm n))
-    -> (forall f, (forall n, P (f n)) -> P (sterm f))
-    -> (forall (o : Opid) (lbt : list BTerm),
-          (forall (nt : NTerm) (lv: list NVar),
-             (LIn (bterm lv nt) lbt) -> P nt
-          )
-          -> P (oterm o lbt)
-       )
-    -> forall t : NTerm, P t.
-Proof.
- introv Hv Hs Hind.
- apply NTerm_better_ind2; auto.
- introv Hx.
- apply Hind.
- introv Hin.
- eapply Hx in Hin; eauto.
- apply ord_le_refl.
-Defined.
-
-Fixpoint NTerm_BTerm_mutual_ind {p}
-    (PN : @NTerm p -> Type) (PB : BTerm -> Type)
-    (vcase : forall n : NVar, PN (vterm n))
-    (scase : forall f, (forall n, PN (f n)) -> PN (sterm f))
-    (bcase: forall (lv : list NVar) (nt : NTerm),
-             PN nt ->  PB (bterm lv nt))
-    (ocase: forall (o : Opid) (lbt : list BTerm),
-            (forall (bt : BTerm),
-               (LIn bt lbt) -> PB bt)
-            -> PN (oterm o lbt))
-    (t : NTerm) {struct t}  : PN t
-with
-    BTerm_NTerm_mutual_ind {p} (PN : @NTerm p -> Type) (PB : BTerm -> Type)
-    (vcase : forall n : NVar, PN (vterm n))
-    (scase : forall f, (forall n, PN (f n)) -> PN (sterm f))
-    (bcase: forall (lv : list NVar) (nt : NTerm),
-             PN nt ->  PB (bterm lv nt))
-    (ocase: forall (o : Opid) (lbt : list BTerm),
-            (forall (bt : BTerm),
-               (LIn bt lbt) -> PB bt)
-            -> PN (oterm o lbt))
-    (bt : BTerm) {struct bt}  : PB bt.
-Proof.
-  - destruct t as [?|f|o lbt];[ apply vcase; fail| |].
-    { apply scase; auto; introv.
-      apply NTerm_BTerm_mutual_ind with (PB := PB); auto. }
-    apply ocase.
-    introv Hin.
-    induction lbt as [| btt lbt HBInd];[inverts Hin|].
-    dorn Hin.
-    + rw <- Hin.
-      apply BTerm_NTerm_mutual_ind with (PN:=PN);
-        clear BTerm_NTerm_mutual_ind;trivial.
-    + clear BTerm_NTerm_mutual_ind;
-      apply HBInd in Hin. auto.
-  - clear BTerm_NTerm_mutual_ind.
-    destruct bt as [lv nt]. apply bcase.
-    apply NTerm_BTerm_mutual_ind with (PB:=PB);
-      clear NTerm_BTerm_mutual_ind; trivial.
-Defined.
-
-Lemma  NBTerm_mutual_ind {p}  : forall
-    (PN : @NTerm p -> Type) (PB : BTerm -> Type)
-    (vcase : forall n : NVar, PN (vterm n))
-    (scase : forall f, (forall n, PN (f n)) -> PN (sterm f))
-    (bcase: forall (lv : list NVar) (nt : NTerm),
-             PN nt ->  PB (bterm lv nt))
-    (ocase: forall (o : Opid) (lbt : list BTerm),
-            (forall (bt : BTerm),
-               (LIn bt lbt) -> PB bt)
-            -> PN (oterm o lbt)),
-    ((forall nt, PN nt) # (forall bt, PB bt)).
-Proof.
-  intros.
-  split.
-  - eapply NTerm_BTerm_mutual_ind; eauto.
-  - eapply BTerm_NTerm_mutual_ind; eauto.
-Defined.
-
-Lemma NTerm_better_ind_direct {p} :
-  forall P : @NTerm p -> Type,
-    (forall n : NVar, P (vterm n))
-    -> (forall f, (forall n, P (f n)) -> P (sterm f))
-    -> (forall (o : Opid) (lbt : list BTerm),
-          (forall (nt : NTerm) (lv: list NVar),
-             (LIn (bterm lv nt) lbt) -> P nt
-          )
-          -> P (oterm o lbt)
-       )
-    -> forall t : NTerm, P t.
-Proof.
-  introv Hv Hs Hind.
-  fix 1.
-  intro t.
-  destruct t as [|f|o lbt];[apply Hv;fail|apply Hs;auto;fail|].
-  apply Hind.
-  introv Hin.
-  induction lbt as [| bt lbt HBInd];[inverts Hin|].
-  destruct bt as [blv bnt].
-  dorn Hin.
-  - symmetry in Hin. inverts Hin. apply NTerm_better_ind_direct.
-  - clear NTerm_better_ind_direct.
-    apply HBInd in Hin. auto.
-Defined.
-
-Tactic Notation "nterm_ind" ident(h) ident(c) :=
-  induction h using NTerm_better_ind;
-  [ Case_aux c "vterm"
-  | Case_aux c "sterm"
-  | Case_aux c "oterm"
-  ].
-
-Tactic Notation "nterm_ind" ident(h) "as" simple_intropattern(I)  ident(c) :=
-  induction h as I using NTerm_better_ind;
-  [ Case_aux c "vterm"
-  | Case_aux c "sterm"
-  | Case_aux c "oterm"
-  ].
-
-Tactic Notation "nterm_ind1" ident(h) "as" simple_intropattern(I)  ident(c) :=
-  induction h as I using NTerm_better_ind;
-  [ Case_aux c "vterm"
-  | Case_aux c "sterm"
-  | Case_aux c "oterm"
-  ].
-
-Tactic Notation "nterm_ind1s" ident(h) "as" simple_intropattern(I)  ident(c) :=
-  induction h as I using NTerm_better_ind2;
-  [ Case_aux c "vterm"
-  | Case_aux c "sterm"
-  | Case_aux c "oterm"
-  ].
 
 Definition IsTypeOpid {p} (opid : @Opid p) : bool :=
   match opid with

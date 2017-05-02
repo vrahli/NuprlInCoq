@@ -583,7 +583,7 @@ Definition can_inj_deq : Deq CanInj.
 Proof.
   introv.
   destruct x, y; tcsp; right; intro h; ginv.
-Qed.
+Defined.
 
 Lemma canonical_dec {o} :
   dec_consts o

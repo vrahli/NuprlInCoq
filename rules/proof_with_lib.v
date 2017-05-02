@@ -30,6 +30,8 @@
 *)
 
 
+Require Export terms_deq_op.
+
 Require Export rules_isect.
 Require Export rules_squiggle.
 Require Export rules_squiggle2.
@@ -993,7 +995,8 @@ Arguments MkNuprlState [o] _ _.
 Definition address := list nat.
 
 Inductive proof_step :=
-| proof_set_isect_eq (y : NVar).
+| proof_step_isect_eq (y : NVar)
+| proof_step_hypothesis (x : NVar).
 
 Inductive command {o} :=
 (* add a definition at the head *)
@@ -1531,13 +1534,13 @@ Definition apply_proof_step {o} {ctxt}
     | None => pre_proof_hole _ s
     end
   end.
-*)
+ *)
 
-Definition apply_proof_step {o} {ctxt}
-           (s    : @pre_baresequent o)
-           (step : proof_step) : pre_proof ctxt s :=
-  match step, s with
-  | proof_set_isect_eq y, MkPreBaresequent _ H C =>
+Definition apply_proof_step_isect_eq {o} {ctxt}
+           (s : @pre_baresequent o)
+           (y : NVar) : pre_proof ctxt s :=
+  match s with
+  | MkPreBaresequent _ H C =>
 
     match NVin_dec y (vars_hyps H) with
     | inl p =>
@@ -1572,6 +1575,128 @@ Definition apply_proof_step {o} {ctxt}
 
     | _ => pre_proof_hole _ (MkPreBaresequent _ H C)
     end
+  end.
+
+Fixpoint find_hypothesis {o} (H : @bhyps o) (x : NVar)
+  : option (bhyps * NTerm * bhyps) :=
+  match H with
+  | [] => None
+  | h :: hs =>
+    if deq_nvar (hvar h) x then Some ([], htyp h, hs)
+    else match find_hypothesis hs x with
+         | Some (G, T, J) => Some (h :: G, T, J)
+         | None => None
+         end
+  end.
+
+Inductive decomp_hyps {o} (H : @bhyps o) (v : NVar) :=
+| dhyps (G : bhyps)
+        (A : NTerm)
+        (J : bhyps)
+        (p : H = snoc G (mk_hyp v A) ++ J).
+
+Arguments dhyps [o] [H] [v] _ _ _ _.
+
+Lemma extend_decomp_hyps {o} :
+  forall {H : @bhyps o} {G x J h},
+    H = snoc G x ++ J
+    -> h :: H = snoc (h :: G) x ++ J.
+Proof.
+  introv z; subst; reflexivity.
+Defined.
+
+Definition add_hyp2decomp_hyps {o}
+           (h : @hypothesis o)
+           {H : barehypotheses}
+           {v : NVar}
+           (d : decomp_hyps H v) : decomp_hyps (h :: H) v :=
+  match d with
+  | dhyps G A J p => dhyps (h :: G) A J (extend_decomp_hyps p)
+  end.
+
+Lemma init_decomp_hyps {o} :
+  forall (v : NVar) (A : @NTerm o) x H (p : v = x),
+    mk_hyp v A :: H = snoc [] (mk_hyp x A) ++ H.
+Proof.
+  introv z; subst; reflexivity.
+Defined.
+
+Definition mk_init_decomp_hyps {o}
+           (v : NVar)
+           (A : @NTerm o)
+           (x : NVar)
+           (H : barehypotheses)
+           (p : v = x) : decomp_hyps (mk_hyp v A :: H) x :=
+  dhyps [] A H (init_decomp_hyps v A x H p).
+
+Fixpoint find_hypothesis_eq {o} (H : @bhyps o) (x : NVar)
+  : option (decomp_hyps H x) :=
+  match H with
+  | [] => None
+  | Build_hypothesis _ v hid A lvl as h :: hs =>
+    match deq_nvar v x with
+    | left p =>
+      match lvl, hid with
+      | nolvl, false => Some (mk_init_decomp_hyps v A x hs p)
+      | _, _ => None
+      end
+    | _ =>
+      match find_hypothesis_eq hs x with
+      | Some x => Some (add_hyp2decomp_hyps h x)
+      | None => None
+      end
+    end
+  end.
+
+Lemma pre_rule_hypothesis_concl_as_pre_baresequent {o} :
+  forall (H : @bhyps o) G x A J T
+         (q : H = snoc G (mk_hyp x A) ++ J)
+         (p : A = T),
+    pre_rule_hypothesis_concl G J A x
+    =  MkPreBaresequent _ H (pre_concl_ext T).
+Proof.
+  introv e1 e2; subst; reflexivity.
+Defined.
+
+Definition apply_proof_step_hypothesis {o} {ctxt}
+           (s : @pre_baresequent o)
+           (x : NVar) : pre_proof ctxt s :=
+  match s with
+  | MkPreBaresequent _ H C =>
+
+    match C return pre_proof ctxt (MkPreBaresequent _ H C) with
+    | pre_concl_ext T =>
+
+      match find_hypothesis_eq H x with
+      | Some (dhyps G A J q) =>
+
+        match term_dec_op A T with
+        | Some p =>
+
+          (* NOTE: This coercion is not so great.  Is that going to compute well? *)
+          eq_rect
+            _
+            _
+            (pre_proof_hypothesis ctxt x A G J)
+            _
+            (pre_rule_hypothesis_concl_as_pre_baresequent H G x A J T q p)
+
+        | None => pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext T))
+        end
+
+      | None => pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext T))
+      end
+
+    | c => pre_proof_hole _ (MkPreBaresequent _ H c)
+    end
+  end.
+
+Definition apply_proof_step {o} {ctxt}
+           (s    : @pre_baresequent o)
+           (step : proof_step) : pre_proof ctxt s :=
+  match step with
+  | proof_step_isect_eq y => apply_proof_step_isect_eq s y
+  | proof_step_hypothesis x => apply_proof_step_hypothesis s x
   end.
 
 Fixpoint update_pre_proof {o}
@@ -1734,4 +1859,17 @@ Proof.
 
     remember (find_unfinished_in_pre_proofs NuprlState_unfinished0 name) as f; symmetry in Heqf; repnd.
     destruct f0; simpl in *; auto.
+Qed.
+
+Definition initLibrary {o} : @Library o := [].
+
+Definition initUnfinished {o} : @pre_proofs o (Library2ProofContext initLibrary) := [].
+
+Definition initNuprlState {o} : @NuprlState o :=
+  MkNuprlState initLibrary initUnfinished.
+
+Lemma ValidInitNuprlState {o} : @ValidNuprlState o initNuprlState.
+Proof.
+  introv.
+  compute; auto.
 Qed.
