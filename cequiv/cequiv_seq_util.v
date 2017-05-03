@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -118,6 +119,7 @@ Proof.
 
   { apply disjoint_singleton_l; fold_terms; auto. }
 
+  Opaque beq_var.
   simpl.
   allrw @sub_filter_nil_r.
   allrw memvar_singleton.
@@ -2528,10 +2530,3 @@ Proof.
   introv; unfold covered; simpl; autorewrite with slow.
   allrw subvars_app_l; split; sp.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

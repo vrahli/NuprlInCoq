@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -4242,9 +4243,10 @@ Lemma sosub_find_sub2sosub {o} :
            end
       else None.
 Proof.
+  Opaque sovar_sig_dec.
   induction sub; introv; simpl; auto; try (destruct a);
-  simpl; boolvar; auto; cpx; subst; cpx;
-  rw IHsub; boolvar; tcsp.
+    simpl; boolvar; auto; cpx; subst; cpx;
+      rw IHsub; boolvar; tcsp.
 Qed.
 
 Lemma sosub_filter_app {o} :
@@ -9734,9 +9736,3 @@ Hint Resolve computes_to_name_utoken : slow.
 
 
 (* end hide *)
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

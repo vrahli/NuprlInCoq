@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -150,7 +155,7 @@ Proof.
   eexists.
   eexists.
 
-  generalize (@rule_isect_member_formation_true_ex o emlib 0 nvary); intro rule_imf.
+  generalize (@rule_isect_member_formation_true_ex o emlib 0 nvary mk_axiom); intro rule_imf.
 
   unfold rule_true_if in rule_imf; simpl in rule_imf.
   apply rule_imf; simpl; sp; subst; clear rule_imf;
@@ -159,6 +164,7 @@ Proof.
   Focus 3.
 
   revert c.
+  unfold rule_isect_member_formation_hyp1.
   unfold subst, lsubst; simpl.
   rw @fold_nobnd; rw @fold_cequiv; sp.
 
@@ -170,6 +176,7 @@ Proof.
   Focus 3.
 
   revert c.
+  unfold rule_isect_member_formation_hyp2.
   rewrite fold_member; sp.
 
   remember (@top_in_type o); allsimpl.
@@ -190,10 +197,3 @@ Proof.
   Grab Existential Variables.
   wfseq.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/" "../per/")
-*** End:
-*)

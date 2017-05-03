@@ -148,6 +148,7 @@ Proof.
   allrw in_app_iff; sp.
 
   change_to_lsubst_aux4; auto.
+  Opaque newvarlst.
   subst; simpl.
 
   rw (newvar_prog (lsubst_aux A (csub2sub sub))); auto;
@@ -157,8 +158,8 @@ Proof.
   try (complete (rw @isprog_eq; auto)).
 
   allrw memvar_singleton.
-  allrw <- beq_var_refl; simpl.
-  prove_alpha_eq3.
+  allrw <- beq_var_refl; autorewrite with var; simpl.
+  prove_alpha_eq3;[|].
 
   - remember (newvarlst [A, B]) as v1.
     remember (newvar A) as v2.

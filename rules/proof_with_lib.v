@@ -119,7 +119,7 @@ Definition pre_rule_isect_equality_hyp2 {o} a1 b1 b2 x1 x2 y i (H : @bhyps o) :=
        (subst b2 x2 (mk_var y))
        (mk_uni i)).
 
-Definition pre_rule_cequiv_concl {o} a b (H : @bhyps o) :=
+Definition pre_rule_cequiv_computation_concl {o} a b (H : @bhyps o) :=
   mk_pre_bseq H (mk_pre_concl (mk_cequiv a b)).
 
 Definition pre_rule_function_elimination_concl {o}
@@ -211,6 +211,17 @@ Definition pre_rule_approx_member_eq_concl {o} a b (H : @bhyps o) :=
 
 Definition pre_rule_approx_member_eq_hyp {o} a b (H : @bhyps o) :=
   mk_pre_bseq H (mk_pre_concl (mk_approx a b)).
+
+Definition pre_rule_isect_member_formation_concl {o} A x B (H : @bhyps o) :=
+  mk_pre_bseq H (mk_pre_concl (mk_isect A x B)).
+
+Definition pre_rule_isect_member_formation_hyp1 {o} z A x B (H : @bhyps o) :=
+  mk_pre_bseq
+    (snoc H (mk_hhyp z A))
+    (mk_pre_concl (subst B x (mk_var z))).
+
+Definition pre_rule_isect_member_formation_hyp2 {o} A i (H : @bhyps o) :=
+  mk_pre_bseq H (mk_pre_concl (mk_equality A A (mk_uni i))).
 
 
 
@@ -324,6 +335,12 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       -> pre_proof ctxt (pre_rule_isect_equality_hyp1 a1 a2 i H)
       -> pre_proof ctxt (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H)
       -> pre_proof ctxt (pre_rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
+| pre_proof_isect_member_formation :
+    forall A x B z i H,
+      NVin z (vars_hyps H)
+      -> pre_proof ctxt (pre_rule_isect_member_formation_hyp1 z A x B H)
+      -> pre_proof ctxt (pre_rule_isect_member_formation_hyp2 A i H)
+      -> pre_proof ctxt (pre_rule_isect_member_formation_concl A x B H)
 | pre_proof_approx_refl :
     forall a H,
       pre_proof ctxt (pre_rule_approx_refl_concl a H)
@@ -377,7 +394,7 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
 | pre_proof_cequiv_computation :
     forall a b H,
       reduces_to ctxt a b
-      -> pre_proof hole ctxt (pre_rule_cequiv_concl a b H)
+      -> pre_proof hole ctxt (pre_rule_cequiv_computation_concl a b H)
 | pre_proof_function_elimination :
     forall A B C a f x z H J,
       wf_term a
@@ -400,6 +417,12 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
       -> proof ctxt (rule_isect_equality2_hyp1 a1 a2 e1 i H)
       -> proof ctxt (rule_isect_equality2_hyp2 a1 b1 b2 e2 x1 x2 y i H)
       -> proof ctxt (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
+| proof_isect_member_formation :
+    forall A x B z i b e H,
+      NVin z (vars_hyps H)
+      -> proof ctxt (rule_isect_member_formation_hyp1 z A x B b H)
+      -> proof ctxt (rule_isect_member_formation_hyp2 A e i H)
+      -> proof ctxt (rule_isect_member_formation_concl A x B b H)
 | proof_approx_refl :
     forall a H,
       proof ctxt (rule_approx_refl_concl a H)
@@ -454,7 +477,7 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
 | proof_cequiv_computation :
     forall a b H,
       reduces_to ctxt a b
-      -> proof ctxt (rule_cequiv_concl a b H)
+      -> proof ctxt (rule_cequiv_computation_concl a b H)
 | proof_function_elimination :
     (* When deriving a sequent, e is not supposed to be given but inferred
      * from the second sequent.  That's the case in a pre_proof
@@ -611,7 +634,7 @@ Inductive LibraryEntry {o} :=
     (name  : LemmaName)
     (stmt  : NTerm)
     (ext   : NTerm)
-    (isp   : isprogram stmt)
+    (isp   : isprog stmt)
     (valid : valid_extract ext)
     (prf   : proof ctxt (Statement stmt ext)).
 
@@ -728,20 +751,21 @@ Proof.
   introv wf imp prf.
 
   induction prf
-    as [ (* proved sequent       *) seq p
-       | (* isect_eq             *) a1 a2 b1 b2 e1 e2 x1 x2 y i hs niy p1 ih1 p2 ih2
-       | (* approx_refl          *) a hs
-       | (* cequiv_approx        *) a b e1 e2 hs p1 ih1 p2 ih2
-       | (* approx_eq            *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
-       | (* cequiv_eq            *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
+    as [ (* proved sequent         *) seq p
+       | (* isect_eq               *) a1 a2 b1 b2 e1 e2 x1 x2 y i hs niy p1 ih1 p2 ih2
+       | (* isect_member_formation *) A x B z i b e H nizH p1 ih1 p2 ih2
+       | (* approx_refl            *) a hs
+       | (* cequiv_approx          *) a b e1 e2 hs p1 ih1 p2 ih2
+       | (* approx_eq              *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
+       | (* cequiv_eq              *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
        (*| (* bottom_diverges      *) x hs js
-       | (* cut                  *) B C t u x hs wB covB nixH p1 ih1 p2 ih2
-       | (* equal_in_base        *) a b e F H p1 ih1 ps ihs*)
-       | (* hypothesis           *) x A G J
+       | (* cut                    *) B C t u x hs wB covB nixH p1 ih1 p2 ih2
+       | (* equal_in_base          *) a b e F H p1 ih1 ps ihs*)
+       | (* hypothesis             *) x A G J
        (*| (* cequiv_subst_concl   *) C x a b t e H wfa wfb cova covb p1 ih1 p2 ih2
-       | (* approx_member_eq     *) a b e H p ih
-       | (* cequiv_computation   *) a b H p ih
-       | (* function elimination *) A B C a e ea f x z H J wa cova nizH nizJ dzf p1 ih1 p2 ih2*)
+       | (* approx_member_eq       *) a b e H p ih
+       | (* cequiv_computation     *) a b H p ih
+       | (* function elimination   *) A B C a e ea f x z H J wa cova nizH nizJ dzf p1 ih1 p2 ih2*)
        ];
     allsimpl;
     allrw NVin_iff; tcsp.
@@ -757,6 +781,18 @@ Proof.
 
       * apply ih2; auto.
         apply (rule_isect_equality2_wf2 y i a1 a2 b1 b2 e1 e2 x1 x2 hs); simpl; tcsp.
+
+  - apply (rule_isect_member_formation_true_ext_lib ctxt A B b e x z i H); simpl; tcsp.
+
+    + unfold args_constraints; simpl; introv h; repndors; subst; tcsp.
+
+    + introv xx; repndors; subst; tcsp.
+
+      * apply ih1; auto.
+        apply (rule_isect_member_formation_wf2 i z A B b e x H); simpl; tcsp.
+
+      * apply ih2; auto.
+        apply (rule_isect_member_formation_wf2 i z A B b e x H); simpl; tcsp.
 
   - apply (rule_approx_refl_true_ext_lib ctxt hs a); simpl; tcsp.
 
@@ -857,7 +893,7 @@ Proof.
 Qed.
 Hint Resolve noutokens_var : slow.
 
-Lemma wf_proof {o} :
+(*Lemma wf_proof {o} :
   forall (ctxt : @ProofContext o) s,
     wf_hypotheses (hyps s)
     -> (forall c,
@@ -869,27 +905,30 @@ Proof.
   introv wf imp prf.
 
   induction prf
-    as [ (* proved sequent       *) seq p
-       | (* isect_eq             *) a1 a2 b1 b2 e1 e2 x1 x2 y i hs niy p1 ih1 p2 ih2
-       | (* approx_refl          *) a hs
-       | (* cequiv_approx        *) a b e1 e2 hs p1 ih1 p2 ih2
-       | (* approx_eq            *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
-       | (* cequiv_eq            *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
+    as [ (* proved sequent         *) seq p
+       | (* isect_eq               *) a1 a2 b1 b2 e1 e2 x1 x2 y i hs niy p1 ih1 p2 ih2
+       | (* isect_member_formation *) A x B z i b H nizH p1 ih1 p2 ih2
+       | (* approx_refl            *) a hs
+       | (* cequiv_approx          *) a b e1 e2 hs p1 ih1 p2 ih2
+       | (* approx_eq              *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
+       | (* cequiv_eq              *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
        (*| (* bottom_diverges      *) x hs js
-       | (* cut                  *) B C t u x hs wB covB nixH p1 ih1 p2 ih2
-       | (* equal_in_base        *) a b e F H p1 ih1 ps ihs*)
-       | (* hypothesis           *) x A G J
+       | (* cut                    *) B C t u x hs wB covB nixH p1 ih1 p2 ih2
+       | (* equal_in_base          *) a b e F H p1 ih1 ps ihs*)
+       | (* hypothesis             *) x A G J
        (*| (* cequiv_subst_concl   *) C x a b t e H wfa wfb cova covb p1 ih1 p2 ih2
-       | (* approx_member_eq     *) a b e H p ih
-       | (* cequiv_computation   *) a b H p ih
-       | (* function elimination *) A B C a e ea f x z H J wa cova nizH nizJ dzf p1 ih1 p2 ih2*)
+       | (* approx_member_eq       *) a b e H p ih
+       | (* cequiv_computation     *) a b H p ih
+       | (* function elimination   *) A B C a e ea f x z H J wa cova nizH nizJ dzf p1 ih1 p2 ih2*)
        ];
     allsimpl;
     allrw NVin_iff; tcsp;
       try (complete (dands; eauto 2 with slow; apply covered_var;
                      rw @vars_hyps_app; rw @vars_hyps_snoc; simpl;
                      rw in_app_iff; rw in_snoc; tcsp)).
-Qed.
+  autodimp ih1 hyp.
+  apply wf_hypotheses_snoc; simpl; dands; auto.
+Qed.*)
 
 Hint Resolve isprogram_implies_wf : slow.
 
@@ -938,7 +977,7 @@ Proof.
     apply sequent_true_mono_lib; auto.
 
     apply valid_proof; auto.
-    apply implies_wf_bseq_no_hyps; auto.
+    apply implies_wf_bseq_no_hyps; eauto 3 with slow.
 
   - apply IHL in i; auto.
     destruct a; simpl in *; repnd; tcsp;
@@ -961,7 +1000,7 @@ Record pre_proof_seq {o} (ctxt : @ProofContext o) :=
     {
       pre_proof_seq_name  : LemmaName;
       pre_proof_seq_term  : NTerm;
-      pre_proof_seq_prog  : isprogram pre_proof_seq_term;
+      pre_proof_seq_prog  : isprog pre_proof_seq_term;
       pre_proof_seq_proof : pre_proof ctxt (term2pre_baresequent pre_proof_seq_term)
     }.
 
@@ -996,6 +1035,7 @@ Definition address := list nat.
 
 Inductive proof_step :=
 | proof_step_isect_eq (y : NVar)
+| proof_step_isect_member_formation (z : NVar) (i : nat)
 | proof_step_hypothesis (x : NVar).
 
 Inductive command {o} :=
@@ -1009,8 +1049,11 @@ Inductive command {o} :=
 | COM_finish_proof (name : LemmaName)
 (* do a proof step *)
 | COM_update_proof (name : LemmaName) (addr : address) (step : proof_step)
+(* start a new proof *)
+| COM_start_proof (name : LemmaName) (C : @NTerm o) (isp : isprog C).
+
 (*(* focuses to a node in a proof *)
-| COM_focus_proof (name : LemmaName) (addr : address)*).
+| COM_focus_proof (name : LemmaName) (addr : address)*)
 
 Lemma in_conclusions_extend_proof_context {o} :
   forall (ctxt  : @ProofContext o)
@@ -1040,6 +1083,11 @@ Fixpoint pre_proof_cons {o}
     let prf1' := pre_proof_cons entry prf1 in
     let prf2' := pre_proof_cons entry prf2 in
     pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2'
+
+  | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+    let prf1' := pre_proof_cons entry prf1 in
+    let prf2' := pre_proof_cons entry prf2 in
+    pre_proof_isect_member_formation _ A x B z i H nizH prf1' prf2'
 
   | pre_proof_approx_refl _ a H => pre_proof_approx_refl _ a H
 
@@ -1091,7 +1139,7 @@ Proof.
       * left; eexists; eexists; eauto.
       * right; intro xx; exrepnd; repndors; subst; allsimpl; tcsp.
         destruct k; eexists; eexists; eauto.
-Qed.
+Defined.
 
 Definition NuprlState_add_def {o}
            (state   : @NuprlState o)
@@ -1235,6 +1283,39 @@ Proof.
   exact (proof_isect_eq _ a1 a2 b1 b2 e1 e2 x1 x2 y i H ni q1 q2).
 Defined.
 
+Lemma valid_pre_extract_snoc_mk_hhyp_implies {o} :
+  forall (H : @bhyps o) (z : NVar) (A e : NTerm),
+    valid_pre_extract (snoc H (mk_hhyp z A)) e
+    -> valid_pre_extract H e.
+Proof.
+  introv val.
+  unfold valid_pre_extract in *; simpl in *.
+  allrw @nh_vars_hyps_snoc; simpl in *; auto.
+Qed.
+
+Definition finish_proof_isect_member_formation {o}
+           (ctxt : @ProofContext o)
+           (A : NTerm)
+           (x : NVar)
+           (B : NTerm)
+           (z : NVar)
+           (i : nat)
+           (H : bhyps)
+           (ni : NVin z (vars_hyps H))
+           (p1 : ExtractProof ctxt (pre_rule_isect_member_formation_hyp1 z A x B H))
+           (p2 : ExtractProof ctxt (pre_rule_isect_member_formation_hyp2 A i H))
+  : ExtractProof ctxt (pre_rule_isect_member_formation_concl A x B H).
+Proof.
+  introv.
+  destruct p1 as [e1 v1 q1].
+  destruct p2 as [e2 v2 q2].
+  unfold pre2baresequent in *; simpl in *.
+  exists e1.
+  { simpl; eapply valid_pre_extract_snoc_mk_hhyp_implies; eauto. }
+  unfold pre2baresequent; simpl.
+  exact (proof_isect_member_formation _ A x B z i e1 e2 H ni q1 q2).
+Defined.
+
 Definition finish_proof_approx_refl {o}
            (ctxt : @ProofContext o)
            (a : NTerm)
@@ -1337,6 +1418,13 @@ Fixpoint finish_pre_proof {o}
     | _, _ => None
     end
 
+  | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+    match finish_pre_proof prf1, finish_pre_proof prf2 with
+    | Some p1, Some p2 =>
+      Some (finish_proof_isect_member_formation ctxt A x B z i H nizH p1 p2)
+    | _, _ => None
+    end
+
   | pre_proof_approx_refl _ a H => Some (finish_proof_approx_refl ctxt a H)
 
   | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
@@ -1400,7 +1488,7 @@ Lemma name_of_finish_pre_proof_seq {o} :
          (name  : LemmaName)
          (stmt  : NTerm)
          (ext   : NTerm)
-         (isp   : isprogram stmt)
+         (isp   : isprog stmt)
          (valid : valid_extract ext)
          (prf   : proof ctxt (Statement stmt ext)),
     finish_pre_proof_seq p = Some (LibraryEntry_proof ctxt name stmt ext isp valid prf)
@@ -1536,16 +1624,36 @@ Definition apply_proof_step {o} {ctxt}
   end.
  *)
 
+Inductive DEBUG_MSG :=
+| no_message
+
+| could_not_apply_isect_eq_rule_not_isects
+| could_not_apply_isect_eq_rule_type_not_universe
+| could_not_apply_isect_eq_rule_not_equality
+| could_not_apply_isect_eq_rule
+| applied_isect_eq_rule
+
+| could_not_apply_isect_member_formation_rule_not_isect
+| could_not_apply_isect_member_formation_rule
+| applied_isect_member_formation_rule
+
+| could_not_apply_hypothesis_rule
+| applied_hypothesis_rule
+
+| could_not_apply_update_because_wrong_address
+| could_not_apply_update_because_no_hole_at_address
+| could_not_apply_update_because_could_not_find_lemma.
+
 Definition apply_proof_step_isect_eq {o} {ctxt}
            (s : @pre_baresequent o)
-           (y : NVar) : pre_proof ctxt s :=
+           (y : NVar) : pre_proof ctxt s * DEBUG_MSG :=
   match s with
   | MkPreBaresequent _ H C =>
 
     match NVin_dec y (vars_hyps H) with
     | inl p =>
 
-      match C return pre_proof ctxt (MkPreBaresequent _ H C) with
+      match C return pre_proof ctxt (MkPreBaresequent _ H C) * DEBUG_MSG with
       | pre_concl_ext T =>
 
         match T with
@@ -1559,21 +1667,61 @@ Definition apply_proof_step_isect_eq {o} {ctxt}
 
               let prf1 := pre_proof_hole ctxt (pre_rule_isect_equality_hyp1 a1 a2 i H) in
               let prf2 := pre_proof_hole ctxt (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H) in
-              pre_proof_isect_eq ctxt a1 a2 b1 b2 x1 x2 y i H p prf1 prf2
+              (pre_proof_isect_eq ctxt a1 a2 b1 b2 x1 x2 y i H p prf1 prf2,
+               applied_isect_eq_rule)
 
-            | a, b => pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext (mk_equality a b (mk_uni i))))
+            | a, b => (pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext (mk_equality a b (mk_uni i)))),
+                       could_not_apply_isect_eq_rule_not_isects)
             end
 
-          | u => pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext (mk_equality T1 T2 u)))
+          | u => (pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext (mk_equality T1 T2 u))),
+                  could_not_apply_isect_eq_rule_type_not_universe)
           end
 
-        | t => pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext t))
+        | t => (pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext t)),
+                could_not_apply_isect_eq_rule_not_equality)
         end
 
-      | c => pre_proof_hole _ (MkPreBaresequent _ H c)
+      | c => (pre_proof_hole _ (MkPreBaresequent _ H c),
+              could_not_apply_isect_eq_rule)
       end
 
-    | _ => pre_proof_hole _ (MkPreBaresequent _ H C)
+    | _ => (pre_proof_hole _ (MkPreBaresequent _ H C),
+            could_not_apply_isect_eq_rule)
+    end
+  end.
+
+Definition apply_proof_step_isect_member_formation {o} {ctxt}
+           (s : @pre_baresequent o)
+           (z : NVar)
+           (i : nat) : pre_proof ctxt s * DEBUG_MSG :=
+  match s with
+  | MkPreBaresequent _ H C =>
+
+    match NVin_dec z (vars_hyps H) with
+    | inl p =>
+
+      match C return pre_proof ctxt (MkPreBaresequent _ H C) * DEBUG_MSG with
+      | pre_concl_ext T =>
+
+        match T with
+        | oterm (Can NIsect) [bterm [] A, bterm [x] B] =>
+
+          let prf1 := pre_proof_hole ctxt (pre_rule_isect_member_formation_hyp1 z A x B H) in
+          let prf2 := pre_proof_hole ctxt (pre_rule_isect_member_formation_hyp2 A i H) in
+          (pre_proof_isect_member_formation ctxt A x B z i H p prf1 prf2,
+           applied_isect_member_formation_rule)
+
+        | t => (pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext t)),
+                could_not_apply_isect_member_formation_rule_not_isect)
+        end
+
+      | c => (pre_proof_hole _ (MkPreBaresequent _ H c),
+              could_not_apply_isect_member_formation_rule)
+      end
+
+    | _ => (pre_proof_hole _ (MkPreBaresequent _ H C),
+            could_not_apply_isect_member_formation_rule)
     end
   end.
 
@@ -1660,11 +1808,11 @@ Defined.
 
 Definition apply_proof_step_hypothesis {o} {ctxt}
            (s : @pre_baresequent o)
-           (x : NVar) : pre_proof ctxt s :=
+           (x : NVar) : pre_proof ctxt s * DEBUG_MSG :=
   match s with
   | MkPreBaresequent _ H C =>
 
-    match C return pre_proof ctxt (MkPreBaresequent _ H C) with
+    match C return pre_proof ctxt (MkPreBaresequent _ H C) * DEBUG_MSG with
     | pre_concl_ext T =>
 
       match find_hypothesis_eq H x with
@@ -1674,28 +1822,33 @@ Definition apply_proof_step_hypothesis {o} {ctxt}
         | Some p =>
 
           (* NOTE: This coercion is not so great.  Is that going to compute well? *)
-          eq_rect
-            _
-            _
-            (pre_proof_hypothesis ctxt x A G J)
-            _
-            (pre_rule_hypothesis_concl_as_pre_baresequent H G x A J T q p)
+          (eq_rect
+             _
+             _
+             (pre_proof_hypothesis ctxt x A G J)
+             _
+             (pre_rule_hypothesis_concl_as_pre_baresequent H G x A J T q p),
+           applied_hypothesis_rule)
 
-        | None => pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext T))
+        | None => (pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext T)),
+                   could_not_apply_hypothesis_rule)
         end
 
-      | None => pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext T))
+      | None => (pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext T)),
+                 could_not_apply_hypothesis_rule)
       end
 
-    | c => pre_proof_hole _ (MkPreBaresequent _ H c)
+    | c => (pre_proof_hole _ (MkPreBaresequent _ H c),
+            could_not_apply_hypothesis_rule)
     end
   end.
 
 Definition apply_proof_step {o} {ctxt}
            (s    : @pre_baresequent o)
-           (step : proof_step) : pre_proof ctxt s :=
+           (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
   match step with
   | proof_step_isect_eq y => apply_proof_step_isect_eq s y
+  | proof_step_isect_member_formation z i => apply_proof_step_isect_member_formation s z i
   | proof_step_hypothesis x => apply_proof_step_hypothesis s x
   end.
 
@@ -1704,106 +1857,150 @@ Fixpoint update_pre_proof {o}
          {s    : pre_baresequent}
          (p    : pre_proof ctxt s)
          (addr : address)
-         (step : proof_step) : pre_proof ctxt s :=
+         (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
   match p with
-  | pre_proof_from_ctxt _ c i => pre_proof_from_ctxt _ c i
+  | pre_proof_from_ctxt _ c i =>
+    (pre_proof_from_ctxt _ c i,
+     could_not_apply_update_because_no_hole_at_address)
 
   | pre_proof_hole _ s => apply_proof_step s step
 
   | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
     match addr with
     | 1 :: addr =>
-      let prf1' := update_pre_proof prf1 addr step in
-      pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2
+      let (prf1', msg) := update_pre_proof prf1 addr step in
+      (pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2, msg)
     | 2 :: addr =>
-      let prf2' := update_pre_proof prf2 addr step in
-      pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2'
-    | _ => pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2
+      let (prf2', msg) := update_pre_proof prf2 addr step in
+      (pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2', msg)
+    | _ => (pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2,
+            could_not_apply_update_because_wrong_address)
     end
 
-  | pre_proof_approx_refl _ a H => pre_proof_approx_refl _ a H
+  | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+    match addr with
+    | 1 :: addr =>
+      let (prf1', msg) := update_pre_proof prf1 addr step in
+      (pre_proof_isect_member_formation _ A x B z i H nizH prf1' prf2, msg)
+    | 2 :: addr =>
+      let (prf2', msg) := update_pre_proof prf2 addr step in
+      (pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2', msg)
+    | _ => (pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2,
+            could_not_apply_update_because_wrong_address)
+    end
+
+  | pre_proof_approx_refl _ a H =>
+    (pre_proof_approx_refl _ a H,
+     could_not_apply_update_because_no_hole_at_address)
 
   | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
     match addr with
     | 1 :: addr =>
-      let prf1' := update_pre_proof prf1 addr step in
-      pre_proof_cequiv_approx _ a b H prf1' prf2
+      let (prf1', msg) := update_pre_proof prf1 addr step in
+      (pre_proof_cequiv_approx _ a b H prf1' prf2, msg)
     | 2 :: addr =>
-      let prf2' := update_pre_proof prf2 addr step in
-      pre_proof_cequiv_approx _ a b H prf1 prf2'
-    | _ => pre_proof_cequiv_approx _ a b H prf1 prf2
+      let (prf2', msg) := update_pre_proof prf2 addr step in
+      (pre_proof_cequiv_approx _ a b H prf1 prf2', msg)
+    | _ => (pre_proof_cequiv_approx _ a b H prf1 prf2,
+            could_not_apply_update_because_wrong_address)
     end
 
   | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
     match addr with
     | 1 :: addr =>
-      let prf1' := update_pre_proof prf1 addr step in
-      pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1' prf2
+      let (prf1', msg) := update_pre_proof prf1 addr step in
+      (pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1' prf2, msg)
     | 2 :: addr =>
-      let prf2' := update_pre_proof prf2 addr step in
-      pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2'
-    | _ => pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2
+      let (prf2', msg) := update_pre_proof prf2 addr step in
+      (pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2', msg)
+    | _ => (pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2,
+            could_not_apply_update_because_wrong_address)
     end
 
   | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
     match addr with
     | 1 :: addr =>
-      let prf1' := update_pre_proof prf1 addr step in
-      pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1' prf2
+      let (prf1', msg) := update_pre_proof prf1 addr step in
+      (pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1' prf2, msg)
     | 2 :: addr =>
-      let prf2' := update_pre_proof prf2 addr step in
-      pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2'
-    | _ => pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2
+      let (prf2', msg) := update_pre_proof prf2 addr step in
+      (pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2', msg)
+    | _ => (pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2,
+            could_not_apply_update_because_wrong_address)
     end
 
-  | pre_proof_hypothesis _ x A G J => pre_proof_hypothesis _ x A G J
+  | pre_proof_hypothesis _ x A G J =>
+    (pre_proof_hypothesis _ x A G J,
+     could_not_apply_update_because_no_hole_at_address)
   end.
 
 Definition update_pre_proof_seq {o} {ctxt}
            (pps  : @pre_proof_seq o ctxt)
            (addr : address)
-           (step : proof_step) : pre_proof_seq ctxt :=
+           (step : proof_step) : pre_proof_seq ctxt * DEBUG_MSG :=
   match pps with
   | MkPreProofSeq name C isp pre_prf =>
-    MkPreProofSeq name C isp (update_pre_proof pre_prf addr step)
+    let (pre_prf', msg) := update_pre_proof pre_prf addr step in
+    (MkPreProofSeq name C isp pre_prf', msg)
   end.
 
 Definition NuprlState_update_proof {o}
            (state : @NuprlState o)
            (name  : LemmaName)
            (addr  : address)
-           (step  : proof_step) : NuprlState :=
+           (step  : proof_step) : NuprlState * DEBUG_MSG :=
   match find_unfinished_in_pre_proofs (NuprlState_unfinished state) name with
   | (Some pp, pps) =>
 
-    let pp' := update_pre_proof_seq pp addr step in
-    NuprlState_change_unfinished state (pp' :: pps)
+    let (pp', msg) := update_pre_proof_seq pp addr step in
+    (NuprlState_change_unfinished state (pp' :: pps), msg)
 
-  | (None, pps) => state
+  | (None, pps) => (state, could_not_apply_update_because_could_not_find_lemma)
   end.
+
+Definition NuprlState_start_proof {o}
+           (state : @NuprlState o)
+           (name  : LemmaName)
+           (C     : NTerm)
+           (isp   : isprog C) : NuprlState :=
+  let pps : pre_proof_seq (Library2ProofContext (NuprlState_lib state)) :=
+      MkPreProofSeq name C isp (pre_proof_hole _ (term2pre_baresequent C))
+  in
+  MkNuprlState
+    (NuprlState_lib state)
+    (pps :: NuprlState_unfinished state).
 
 Definition update {o}
            (state : @NuprlState o)
-           (cmd   : command) : NuprlState :=
+           (cmd   : command) : NuprlState * DEBUG_MSG :=
   match cmd with
   | COM_add_def opabs vars rhs correct =>
-    NuprlState_add_def state opabs vars rhs correct
+    (NuprlState_add_def state opabs vars rhs correct, no_message)
 
   | COM_finish_proof name =>
-    NuprlState_finish_proof state name
+    (NuprlState_finish_proof state name, no_message)
 
   | COM_update_proof name addr step =>
     NuprlState_update_proof state name addr step
-(*    let lib := NuprlState_proof_library state in
+
+  | COM_start_proof name C isp =>
+    (NuprlState_start_proof state name C isp, no_message)
+
+  (*    let lib := NuprlState_proof_library state in
     NuprlState_upd_focus state (focus_proof_in_library lib name addr)*)
   end.
+
+(*Definition update {o}
+           (state : @NuprlState o)
+           (cmd   : command) : NuprlState :=
+  fst (update_msg state cmd).*)
 
 (* Should we add this to NuprlState *)
 Definition ValidNuprlState {o} (state : @NuprlState o) := ValidLibrary state.
 
 Lemma update_preserves_validity {o} :
   forall (state : @NuprlState o) (cmd : command),
-    ValidNuprlState state -> ValidNuprlState (update state cmd).
+    ValidNuprlState state -> ValidNuprlState (fst (update state cmd)).
 Proof.
   introv valid.
   destruct cmd; simpl; auto.
@@ -1859,6 +2056,7 @@ Proof.
 
     remember (find_unfinished_in_pre_proofs NuprlState_unfinished0 name) as f; symmetry in Heqf; repnd.
     destruct f0; simpl in *; auto.
+    remember (update_pre_proof_seq p addr step) as upd; destruct upd; simpl; auto.
 Qed.
 
 Definition initLibrary {o} : @Library o := [].
@@ -1873,3 +2071,70 @@ Proof.
   introv.
   compute; auto.
 Qed.
+
+Definition sonobnd {o} (t : @SOTerm o) : SOBTerm := sobterm [] t.
+
+Definition mk_so_equality {o} (t1 t2 T : @SOTerm o) :=
+  soterm (Can NEquality) [sonobnd t1, sonobnd t2, sonobnd T].
+
+Definition opabs_member : opabs := Build_opabs "member" [] [0,0].
+
+(* It would be better if the proof was just eq_refl *)
+Lemma opabs_member_correct {o} :
+  @correct_abs
+    o
+    opabs_member
+    [(nvart, 0), (nvarT, 0)]
+    (mk_so_equality (sovar nvart []) (sovar nvart []) (sovar nvarT [])).
+Proof.
+  exact (eq_refl, (eq_refl, (eq_refl, eq_refl))).
+Qed.
+
+Definition lib1 {o} :=
+  update
+    (@initNuprlState o)
+    (COM_add_def
+       opabs_member
+       [(nvart, 0), (nvarT, 0)]
+       (mk_so_equality (sovar nvart []) (sovar nvart []) (sovar nvarT []))
+       opabs_member_correct).
+
+Definition mk_abs {o} abs (l : list (@BTerm o)) : NTerm := oterm (Abs abs) l.
+
+Definition lib2 {o} :=
+  update
+    (fst (@lib1 o))
+    (COM_start_proof
+       "member_wf"
+       (mk_uall
+          (mk_uni 0)
+          nvarT
+          (mk_uall
+             (mk_var nvarT)
+             nvart
+             (mk_member
+                (mk_abs opabs_member [nobnd (mk_var nvart), nobnd (mk_var nvarT)])
+                (mk_uni 0))))
+       (eq_refl, eq_refl)).
+
+Eval compute in lib2.
+
+Definition lib3 {o} :=
+  update
+    (fst (@lib2 o))
+    (COM_update_proof
+       "member_wf"
+       []
+       (proof_step_isect_member_formation (nvar "y") 1)).
+
+Eval compute in lib3.
+
+Definition lib4 {o} :=
+  update
+    (fst (@lib3 o))
+    (COM_update_proof
+       "member_wf"
+       [1]
+       (proof_step_isect_member_formation (nvar "z") 1)).
+
+Eval compute in lib4.

@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -322,11 +327,13 @@ Proof.
   allsimpl.
   allrw memvar_singleton.
   boolvar; tcsp.
+  Opaque memvar beq_var.
   allsimpl.
   allrw memvar_singleton.
   boolvar; tcsp.
+  allrw not_over_or; repnd; GC.
   allsimpl.
-  boolvar; tcsp.
+  boolvar; tcsp; ginv.
   fold_terms.
 
   repeat (prove_alpha_eq4).
@@ -542,6 +549,7 @@ Proof.
     rw in_app_iff.
     sp. }
 
+  Transparent memvar.
   simpl.
   boolvar; tcsp.
 
@@ -573,10 +581,3 @@ Proof.
   introv.
   apply lsubstc_mk_psquash_ex.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

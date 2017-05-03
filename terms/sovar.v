@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -111,9 +112,9 @@ Proof.
   intros.
   dsovar_sigs.
   destruct (deq_nvar n n1); subst; tcsp;
-  destruct (deq_nat n0 n2); subst; tcsp;
-  right; sp; cpx.
-Qed.
+    destruct (eq_nat_dec n0 n2); subst; tcsp;
+      right; sp; cpx.
+Defined.
 
 Definition memsovar (v : sovar_sig) vs : LIn v vs + !LIn v vs.
 Proof.
@@ -1136,7 +1137,7 @@ Lemma sosub_find_some {p} :
 Proof.
   induction sub; introv h; allsimpl; tcsp.
   destruct a; destruct s.
-  boolvar; ginv; tcsp; apply IHsub in h; tcsp.
+  boolvar; subst; simpl in *; ginv; tcsp; apply IHsub in h; tcsp.
 Qed.
 
 Lemma sosub_find_none {p} :
@@ -1146,7 +1147,8 @@ Lemma sosub_find_none {p} :
 Proof.
   induction sub; introv h; allsimpl; tcsp.
   destruct a; destruct s.
-  boolvar; ginv; tcsp; apply IHsub in h; tcsp.
+  boolvar; subst; ginv; tcsp; apply IHsub in h; tcsp.
+  intro xx; repndors; ginv; tcsp.
 Qed.
 
 (*
@@ -1985,8 +1987,10 @@ Lemma soren_find_some :
     -> {z : NVar & LIn ((v,n),z) ren # w = (z,n)}.
 Proof.
   induction ren; simpl; sp.
-  destruct a0; boolvar; cpx.
+  destruct a0; boolvar; subst; simpl in *; cpx.
   - exists a; sp.
+  - discover; exrepnd; subst.
+    eexists; sp.
   - discover; exrepnd; subst.
     eexists; sp.
 Qed.
@@ -2125,23 +2129,23 @@ Proof.
         remember (soren_find (mk_soren (vars2sovars l) f) a) as o;
           symmetry in Heqo; destruct o; subst.
 
-        unfold var2sovar in Heqo.
-        destruct a.
-        apply soren_find_some in Heqo; exrepnd; cpx.
-        apply in_mk_soren in Heqo1; repnd; GC.
-        rw in_map_iff in Heqo0; exrepnd; destruct a; allunfold var2sovar; cpx.
-        apply n; exists (nvar n1); sp.
+        { unfold var2sovar in Heqo.
+          destruct a.
+          apply soren_find_some in Heqo; exrepnd; cpx.
+          apply in_mk_soren in Heqo1; repnd; GC.
+          rw in_map_iff in Heqo0; exrepnd; destruct a; allunfold var2sovar; cpx.
+          apply n; exists (nvar v); sp. }
 
-        remember (soren_find ren a) as p;
-          symmetry in Heqp; destruct p; subst.
+        { remember (soren_find ren a) as p;
+            symmetry in Heqp; destruct p; subst.
 
-        unfold var2sovar in Heqp.
-        destruct a.
-        apply soren_find_some in Heqp; exrepnd; cpx.
-        apply in_soren_implies_in_vars in Heqp1; sp.
-        apply d2 in l0; sp.
+          unfold var2sovar in Heqp.
+          destruct a.
+          apply soren_find_some in Heqp; exrepnd; cpx.
+          apply in_soren_implies_in_vars in Heqp1; sp.
+          apply d2 in l0; sp.
 
-        unfold sovar2var, var2sovar in d1; simpl in d1; sp.
+          unfold sovar2var, var2sovar in d1; simpl in d1; sp. }
 
       * provefalse; clear IHvars.
         allrw in_map_iff; exrepnd; subst.

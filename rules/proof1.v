@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -574,7 +575,7 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
 | proof_cequiv_computation :
     forall a b H,
       reduces_to ctxt a b
-      -> proof ctxt (rule_cequiv_concl a b H)
+      -> proof ctxt (rule_cequiv_computation_concl a b H)
 | proof_function_elimination :
     (* When deriving a sequent, e is not supposed to be given but inferred
      * from the second sequent.  That's the case in a pre_proof

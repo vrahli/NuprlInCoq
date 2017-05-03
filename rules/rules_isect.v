@@ -72,25 +72,34 @@ Require Export cequiv_tacs.
 
  *)
 
+Definition rule_isect_member_formation_concl {o} A x B b (H : @bhyps o) :=
+  mk_baresequent H (mk_concl (mk_isect A x B) b).
+
+Definition rule_isect_member_formation_hyp1 {o} z A x B b (H : @bhyps o) :=
+  mk_baresequent
+    (snoc H (mk_hhyp z A))
+    (mk_concl (subst B x (mk_var z)) b).
+
+Definition rule_isect_member_formation_hyp2 {o} A e i (H : @bhyps o) :=
+  mk_baresequent H (mk_concl (mk_equality A A (mk_uni i)) e).
+
 Definition rule_isect_member_formation {o}
-           (A B b : NTerm)
+           (A B b e : NTerm)
            (x z  : NVar)
            (i    : nat)
            (H    : @barehypotheses o) :=
   mk_rule
-    (mk_baresequent H (mk_concl (mk_isect A x B) b))
-    [ mk_baresequent
-        (snoc H (mk_hhyp z A))
-        (mk_concl (subst B x (mk_var z)) b),
-      mk_baresequent H (mk_conclax (mk_equality A A (mk_uni i))) ]
+    (rule_isect_member_formation_concl A x B b H)
+    [ rule_isect_member_formation_hyp1 z A x B b H,
+      rule_isect_member_formation_hyp2 A e i H ]
     [sarg_var z].
 
 Lemma rule_isect_member_formation_true3 {o} :
-  forall lib (A B b : NTerm)
+  forall lib (A B b e : NTerm)
          (x z : NVar)
          (i   : nat)
          (H   : @barehypotheses o),
-    rule_true3 lib (rule_isect_member_formation A B b x z i H).
+    rule_true3 lib (rule_isect_member_formation A B b e x z i H).
 Proof.
   intros.
   unfold rule_isect_member_formation, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -123,7 +132,8 @@ Proof.
           # (z <> x -> !LIn z (free_vars B))
           # !LIn z (free_vars b)
           # !LIn z (free_vars A)
-          # !LIn z (vars_hyps H)) as vhyps.
+          # !LIn z (vars_hyps H)
+          # @wf_term o (mk_var z)) as vhyps.
 
   { clear hyp1 hyp2.
     dwfseq.
@@ -140,7 +150,8 @@ Proof.
   destruct vhyps as [ bcH vhyps ].
   destruct vhyps as [ nzB vhyps ].
   destruct vhyps as [ nzb vhyps ].
-  destruct vhyps as [ nzA nzH ].
+  destruct vhyps as [ nzA vhyps ].
+  destruct vhyps as [ nzH wfz ].
   (* done with proving these simple facts *)
 
   (* we now start proving the sequent *)
@@ -166,8 +177,8 @@ Proof.
       autodimp hyp2 h.
       autodimp hyp2 h; exrepd.
       lsubst_tac.
-      allrewrite @member_eq.
-      rw <- @member_equality_iff in e.
+      apply equality_in_mkc_equality in e0; repnd.
+      clear e0 e2.
       apply equality_commutes in t; auto.
       apply equality_in_uni in t; auto.
 
@@ -192,8 +203,8 @@ Proof.
         autodimp hyp2 hyp.
         autodimp hyp2 hyp; exrepd.
         lsubst_tac.
-        allrewrite @member_eq.
-        rw <- @member_equality_iff in e0.
+        apply equality_in_mkc_equality in e1; repnd.
+        clear e1 e3.
         apply equality_commutes in t; auto.
         apply equality_in_uni in t; auto.
         (* and we're done proving that the hypotheses are functional *)
@@ -282,20 +293,20 @@ Proof.
 
         lsubstc_subst_aeq2.
         repeat (substc_lsubstc_vars3;[]).
-        revert c0 e.
+        revert c0 e0.
         lsubst_tac.
-        introv e.
+        introv e0.
         lsubstc_snoc2.
         proof_irr; auto.
   }
 Qed.
 
 Lemma rule_isect_member_formation_true_ext_lib {o} :
-  forall lib (A B b : NTerm)
+  forall lib (A B b e : NTerm)
          (x z : NVar)
          (i   : nat)
          (H   : @barehypotheses o),
-    rule_true_ext_lib lib (rule_isect_member_formation A B b x z i H).
+    rule_true_ext_lib lib (rule_isect_member_formation A B b e x z i H).
 Proof.
   introv.
   apply rule_true3_implies_rule_true_ext_lib.
@@ -307,11 +318,11 @@ Qed.
 (* begin hide *)
 
 Lemma rule_isect_member_formation_true {o} :
-  forall lib (A B b : NTerm)
+  forall lib (A B b e : NTerm)
          (x z : NVar)
          (i   : nat)
          (H   : @barehypotheses o),
-    rule_true lib (rule_isect_member_formation A B b x z i H).
+    rule_true lib (rule_isect_member_formation A B b e x z i H).
 Proof.
   introv.
   apply rule_true3_implies_rule_true.
@@ -319,56 +330,58 @@ Proof.
 Qed.
 
 Lemma rule_isect_member_formation_true_ex {o} :
-  forall lib i z A B b x H,
-    @rule_true_if o lib (rule_isect_member_formation A B b x z i H).
+  forall lib i z e A B b x H,
+    @rule_true_if o lib (rule_isect_member_formation A B b e x z i H).
 Proof.
   intros.
-  generalize (rule_isect_member_formation_true lib A B b x z i H); intro rt.
+  generalize (rule_isect_member_formation_true lib A B b e x z i H); intro rt.
   rw <- @rule_true_eq_ex in rt.
   unfold rule_true_ex in rt; sp.
 Qed.
 
 Lemma rule_isect_member_formation_true2 {o} :
-  forall lib i z A B b x H,
-    @rule_true2 o lib (rule_isect_member_formation A B b x z i H).
+  forall lib i z e A B b x H,
+    @rule_true2 o lib (rule_isect_member_formation A B b e x z i H).
 Proof.
   intros.
-  generalize (rule_isect_member_formation_true lib A B b x z i H); intro rt.
+  generalize (rule_isect_member_formation_true lib A B b e x z i H); intro rt.
   apply rule_true_iff_rule_true2; sp.
 Qed.
 
 Lemma rule_isect_member_formation_wf {o} :
-  forall i z A B b x H,
+  forall i z e A B b x H,
     !LIn z (vars_hyps H)
-    -> @wf_rule o (rule_isect_member_formation A B b x z i H).
+    -> wf_term e
+    -> @wf_rule o (rule_isect_member_formation A B b e x z i H).
 Proof.
-  intros.
+  introv niz wfe.
 
   introv pwf m; allsimpl; repdors; subst; sp;
-  allunfold @pwf_sequent; wfseq; sp;
-  allrw @covered_isect; repnd; auto;
-  allrw <- @wf_isect_iff; repnd; auto.
+    allunfold @pwf_sequent; wfseq; sp;
+      allrw @covered_isect; repnd; auto;
+        allrw <- @wf_isect_iff; repnd; auto.
 
-  allrw @vswf_hypotheses_nil_eq.
-  apply wf_hypotheses_snoc; simpl; sp.
-  apply isprog_vars_eq; sp.
-  apply nt_wf_eq; sp.
+  { allrw @vswf_hypotheses_nil_eq.
+    apply wf_hypotheses_snoc; simpl; sp.
+    apply isprog_vars_eq; sp.
+    apply nt_wf_eq; sp. }
 
-  apply subst_preserves_wf_term; sp.
-  apply @covered_subst; sp;
-  try (apply @covered_var; rw in_snoc; sp);
-  try (complete (rw cons_snoc; apply @covered_snoc_weak; auto)).
+  { apply subst_preserves_wf_term; sp. }
+
+  { apply @covered_subst; sp;
+      try (apply @covered_var; rw in_snoc; sp);
+      try (complete (rw cons_snoc; apply @covered_snoc_weak; auto)). }
 Qed.
 
 Lemma rule_isect_member_formation_wf2 {o} :
-  forall i z A B b x H,
+  forall i z A B b e x H,
     !LIn z (vars_hyps H)
-    -> @wf_rule2 o (rule_isect_member_formation A B b x z i H).
+    -> @wf_rule2 o (rule_isect_member_formation A B b e x z i H).
 Proof.
   introv niz wf j; allsimpl; repndors; subst; tcsp;
-  allunfold @wf_bseq; repnd; allsimpl; wfseq;
-  allrw @covered_isect; repnd; auto;
-  allrw <- @wf_isect_iff; repnd; auto.
+    allunfold @wf_bseq; repnd; allsimpl; wfseq;
+      allrw @covered_isect; repnd; auto;
+        allrw <- @wf_isect_iff; repnd; auto.
 
   - allrw @vswf_hypotheses_nil_eq.
     apply wf_hypotheses_snoc; simpl; sp.

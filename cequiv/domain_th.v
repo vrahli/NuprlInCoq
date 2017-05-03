@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -4867,6 +4868,7 @@ Proof.
       [|apply cl_sub_cons; dands; eauto 3 with slow;
         unfold closed; simpl; simpl; autorewrite with slow;
         inversion Hv as [? w c]; subst; inversion w as [cl wf]; auto].
+    Opaque beq_var.
     destruct e1 as [v|f1|op bs]; allsimpl; ginv.
     - boolvar; ginv.
     - exists (sterm f1); autorewrite with slow; dands; auto.
@@ -8859,11 +8861,13 @@ Proof.
   rw @cl_lsubst_lsubst_aux in q; allsimpl; eauto 4 with slow;[].
   fold_terms.
   rw (lsubst_aux_trivial_cl2 G) in q; eauto 4 with slow;[].
+  autorewrite with var in *.
   repeat (autodimp q hyp).
   { apply isprogram_apply; eauto 4 with slow. }
   exrepnd.
   unfold apply_bterm in q0; allsimpl.
   rw @cl_lsubst_lsubst_aux in q0; allsimpl; eauto 4 with slow;[].
+  autorewrite with var in *.
   fold_terms.
   rw (lsubst_aux_trivial_cl2 G) in q0; eauto 4 with slow.
 Qed.

@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -20,7 +21,8 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Websites: http://nuprl.org/html/Nuprl2Coq
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
   Authors: Vincent Rahli
@@ -29,6 +31,7 @@
 
 
 Require Export sequents2.
+Require Export sequents_lib.
 Require Export sequents_tacs.
 Require Export per_props_equality.
 Require Export sequents_equality.
@@ -158,28 +161,28 @@ Qed.
 >>
  *)
 
-Definition rule_cequiv_concl {o} a b (H : @bhyps o) :=
+Definition rule_cequiv_computation_concl {o} a b (H : @bhyps o) :=
   mk_baresequent H (mk_conclax (mk_cequiv a b)).
 
-Definition rule_cequiv {o}
+Definition rule_cequiv_computation {o}
            (a b : NTerm)
            (H : @barehypotheses o) :=
   mk_rule
-    (rule_cequiv_concl a b H)
+    (rule_cequiv_computation_concl a b H)
     []
     [].
 
 Lemma rule_cequiv_computation_true3 {o} :
   forall lib (a b : NTerm) (H : @barehypotheses o)
          (red : reduces_to lib a b),
-    rule_true3 lib (rule_cequiv a b H).
+    rule_true3 lib (rule_cequiv_computation a b H).
 Proof.
-  unfold rule_cequiv, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_cequiv_computation, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   repnd.
   clear cargs.
 
-  assert (wf_csequent (rule_cequiv_concl a b H)) as wfc by prove_seq.
+  assert (wf_csequent (rule_cequiv_computation_concl a b H)) as wfc by prove_seq.
   exists wfc.
   unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
 
@@ -203,7 +206,7 @@ Qed.
 
 Lemma rule_cequiv_computation_wf2 {o} :
   forall (a b : NTerm) (H : @barehypotheses o),
-    wf_rule2 (rule_cequiv a b H).
+    wf_rule2 (rule_cequiv_computation a b H).
 Proof.
   introv wf j.
 
@@ -212,9 +215,40 @@ Proof.
   allrw @covered_approx; repnd; auto.
 Qed.
 
+Lemma rule_introduction_true_ext_lib {o} :
+  forall lib
+         (a b : NTerm)
+         (H : @barehypotheses o)
+         (r : reduces_to lib a b),
+    rule_true_ext_lib lib (rule_cequiv_computation a b H).
+Proof.
+  unfold rule_cequiv_computation, rule_true_ext_lib, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  introv r wf cargs hyps.
+  repnd.
+  clear cargs hyps.
 
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)
+  assert (wf_csequent (rule_cequiv_computation_concl a b H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  seq_true_ext_lib.
+  lsubst_tac.
+  allrw @member_eq.
+  rw @tequality_mkc_cequiv.
+  rw <- @member_cequiv_iff.
+
+  (*
+  (* First, prove that [reduces_to lib0 a b] *)
+  pose proof (reduces_to_implies_cequiv_lsubst lib a b s1) as h.
+  repeat (autodimp h hyp).
+
+  pose proof (reduces_to_implies_cequiv_lsubst lib a b s2) as q.
+  repeat (autodimp q hyp).
+
+  dands; spcast; auto;[|].
+
+  { split; intro z; spcast; eauto 3 with slow.
+
+    -*)
+Abort.

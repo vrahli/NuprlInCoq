@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -131,6 +132,7 @@ Proof.
   }
 
   { allrw memvar_singleton; simpl.
+    Opaque beq_var.
     repeat (boolvar; tcsp; simpl; allrw memvar_singleton; allrw @lsubst_aux_nil; fold_terms;GC).
 
     { apply isprog_vars_disjoint_implies_isprog in i0; allrw disjoint_singleton_l; auto;[].

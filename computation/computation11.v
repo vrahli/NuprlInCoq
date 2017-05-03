@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -105,26 +106,6 @@ Lemma implies_eqvars_flat_map_diff :
 Proof.
   induction l; destruct k; introv len imp; allsimpl; cpx.
   apply eqvars_app; auto.
-Qed.
-
-Lemma fresh_var_lt :
-  forall vs v,
-    (forall x, LIn (nvar x) vs -> v < x)
-    -> fresh_var_aux v vs = v.
-Proof.
-  induction vs; introv i; allsimpl; tcsp.
-  destruct a.
-  boolvar; auto; subst.
-  pose proof (i n) as h; autodimp h hyp; sp.
-Qed.
-
-Lemma le_var_implies_eq :
-  forall a b, le_var a b -> le_var b a -> a = b.
-Proof.
-  introv k1 k2.
-  destruct a, b.
-  allunfold le_var.
-  f_equal; omega.
 Qed.
 
 Inductive sublist {T} : list T -> list T -> Type :=
@@ -245,29 +226,6 @@ Abort.
 Definition remove_repeated_vars := remove_repeats deq_nvar.
 Hint Unfold remove_repeated_vars.
 
-Lemma fresh_var_aux_eq_S :
-  forall vs n,
-    issorted vs
-    -> LIn (nvar n) vs
-    -> fresh_var_aux (S n) vs = fresh_var_aux n vs.
-Proof.
-  induction vs; introv iss i; allsimpl; tcsp.
-  destruct a.
-  inversion iss as [|? ? imp iss1]; subst; clear iss.
-  boolvar; tcsp; try omega.
-  - provefalse.
-    dorn i; ginv; try omega.
-    discover.
-    allunfold le_var; allsimpl; omega.
-  - subst.
-    provefalse.
-    dorn i; ginv.
-    + inversion i; omega.
-    + discover.
-      allunfold le_var; omega.
-  - dorn i; ginv; auto; omega.
-Qed.
-
 Lemma eq_fresh_var_aux_remove_repeated :
   forall vs n,
     issorted vs
@@ -282,8 +240,7 @@ Proof.
   - rw fresh_var_lt; auto.
     introv i.
     allrw in_remove_repeats.
-    discover.
-    allunfold le_var; omega.
+    discover; simpl in *; eauto 2 with var.
 
   - rw <- IHvs; auto.
     apply fresh_var_aux_eq_S; auto.
@@ -375,7 +332,7 @@ Proof.
 
       * discover.
         assert (a = n) as e.
-        { destruct a, n; allunfold le_var; allsimpl; f_equal; omega. }
+        { apply le_var_implies_eq; auto. }
 
         subst.
         apply if_eqvars_cons in eqv; auto.

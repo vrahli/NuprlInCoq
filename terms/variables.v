@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -41,59 +47,312 @@ Require Export Eqdep_dec.
   type with decidable equality.
  *)
 
+Definition Var : Set := String.string.
+
+Definition var0 : Var := "0".
+Definition varx : Var := "x".
+
+Definition extend_var (v : Var) : Var := String.append v "a".
+
+Lemma VarDeq : Deq Var.
+Proof.
+  introv.
+  destruct (String.string_dec x y); subst; auto.
+Defined.
+
+Definition VarBeq (a b : Var) : bool := if VarDeq a b then true else false.
+
+Lemma VarBeq_refl : forall v, VarBeq v v = true.
+Proof.
+  introv.
+  unfold VarBeq.
+  destruct (VarDeq v v) as [d|d]; auto.
+Defined.
+Hint Rewrite VarBeq_refl : var.
+
+Lemma VarBeq_true_implies : forall v1 v2, VarBeq v1 v2 = true -> v1 = v2.
+Proof.
+  introv h.
+  unfold VarBeq in h.
+  destruct (VarDeq v1 v2) as [d|d]; auto; ginv.
+Defined.
+
+Lemma VarBeq_false_implies : forall v1 v2, VarBeq v1 v2 = false -> v1 <> v2.
+Proof.
+  introv h.
+  unfold VarBeq in h.
+  destruct (VarDeq v1 v2) as [d|d]; auto; ginv.
+Defined.
+
+Lemma VarBeq_sym : forall v1 v2, VarBeq v1 v2 = VarBeq v2 v1.
+Proof.
+  introv.
+  unfold VarBeq.
+  destruct (VarDeq v1 v2) as [d1|d1]; destruct (VarDeq v2 v1) as [d2|d2]; tcsp.
+Defined.
+
+Fixpoint string_lt (a b : String.string) :=
+  match a, b with
+  | String.EmptyString, String.String _ _  => True
+  | String.String x xs, String.String y ys =>
+    Ascii.nat_of_ascii x < Ascii.nat_of_ascii y
+    \/
+    (Ascii.nat_of_ascii x = Ascii.nat_of_ascii y
+     /\
+     string_lt xs ys)
+  | _, _ => False
+  end.
+
+Fixpoint string_le (a b : String.string) :=
+  match a, b with
+  | String.EmptyString, _  => True
+  | String.String x xs, String.String y ys =>
+    Ascii.nat_of_ascii x < Ascii.nat_of_ascii y
+    \/
+    (Ascii.nat_of_ascii x = Ascii.nat_of_ascii y
+     /\
+     string_le xs ys)
+  | _, _ => False
+  end.
+
+Definition VarLe (a b : Var) : Prop := string_le a b.
+Definition VarLt (a b : Var) : Prop := string_lt a b.
+
+Lemma VarLt_implies_VarLe :
+  forall v1 v2, VarLt v1 v2 -> VarLe v1 v2.
+Proof.
+  induction v1; introv h; simpl in *; destruct v2; tcsp.
+Qed.
+Hint Resolve VarLt_implies_VarLe : var.
+
+Lemma VarLe_refl : forall v, VarLe v v.
+Proof.
+  induction v; simpl in *; introv; tcsp.
+Qed.
+Hint Resolve VarLe_refl : var.
+
+Lemma eq_nat_of_ascii_implies :
+  forall a1 a2, Ascii.nat_of_ascii a1 = Ascii.nat_of_ascii a2 -> a1 = a2.
+Proof.
+  introv h.
+  pose proof (Ascii.ascii_nat_embedding a1) as h1.
+  pose proof (Ascii.ascii_nat_embedding a2) as h2.
+  rewrite h in h1.
+  rewrite h1 in h2; auto.
+Qed.
+
+Lemma VarLe_implies_VarLt :
+  forall v1 v2, v1 <> v2 -> VarLe v1 v2 -> VarLt v1 v2.
+Proof.
+  induction v1; introv h1 h2; simpl in *; destruct v2; tcsp.
+  repndors; repnd; tcsp.
+  right; dands; tcsp.
+  apply IHv1; auto.
+  introv xx; subst.
+  apply eq_nat_of_ascii_implies in h0; subst; tcsp.
+Qed.
+
+Lemma VarLe_iff_VarLt :
+  forall v1 v2, VarLe v1 v2 <-> (VarLt v1 v2 \/ v1 = v2).
+Proof.
+  induction v1; split; intro h; repnd; simpl in *; destruct v2; tcsp.
+  - repndors; repnd; tcsp.
+    apply eq_nat_of_ascii_implies in h0; subst.
+    apply IHv1 in h; repndors; subst; tcsp.
+  - repndors; tcsp.
+    inversion h.
+  - repndors; repnd; tcsp.
+    + apply eq_nat_of_ascii_implies in h0; subst.
+      right; dands; tcsp; eauto 2 with var.
+    + inversion h; subst; clear h; tcsp.
+      right; dands; eauto 2 with var.
+Qed.
+
+Lemma not_VarLt_refl :
+  forall v, ~ VarLt v v.
+Proof.
+  induction v; introv h; simpl in *; tcsp.
+  repndors; repnd; tcsp; try omega.
+Qed.
+
+Lemma VarLt_dec :
+  forall (a b : Var), {VarLt a b} + {~ VarLt a b}.
+Proof.
+  induction a; introv; destruct b; simpl in *; tcsp.
+  destruct (lt_dec (Ascii.nat_of_ascii a) (Ascii.nat_of_ascii a1)); tcsp.
+  destruct (eq_nat_dec (Ascii.nat_of_ascii a) (Ascii.nat_of_ascii a1)); tcsp.
+  - destruct (IHa b) as [q|q]; tcsp.
+    right; intro xx; repndors; tcsp.
+  - right; intro xx; repndors; tcsp.
+Defined.
+
+Lemma VarLe_dec :
+  forall (a b : Var), {VarLe a b} + {~ VarLe a b}.
+Proof.
+  induction a; introv; destruct b; simpl in *; tcsp.
+  destruct (lt_dec (Ascii.nat_of_ascii a) (Ascii.nat_of_ascii a1)); tcsp.
+  destruct (eq_nat_dec (Ascii.nat_of_ascii a) (Ascii.nat_of_ascii a1)); tcsp.
+  - destruct (IHa b) as [q|q]; tcsp.
+    right; intro xx; repndors; tcsp.
+  - right; intro xx; repndors; tcsp.
+Defined.
+
+Lemma not_VarLt_implies_VarLe :
+  forall v1 v2, ~ VarLt v1 v2 -> VarLe v2 v1.
+Proof.
+  induction v1; simpl in *; introv; destruct v2; intro h; tcsp.
+  apply not_or in h; repnd; simpl.
+  apply Decidable.not_and in h; auto;
+    [|destruct (eq_nat_dec (Ascii.nat_of_ascii a) (Ascii.nat_of_ascii a0)); tcsp].
+  repndors; tcsp.
+  - left; omega.
+  - destruct (eq_nat_dec (Ascii.nat_of_ascii a) (Ascii.nat_of_ascii a0)); tcsp.
+    left; omega.
+Qed.
+
+Lemma VarLe_trans :
+  forall v1 v2 v3, VarLe v1 v2 -> VarLe v2 v3 -> VarLe v1 v3.
+Proof.
+  induction v1; simpl in *; introv h1 h2; tcsp.
+  destruct v2; simpl in *; tcsp.
+  destruct v3; simpl in *; tcsp.
+  repndors; repnd; tcsp; try (complete (left; omega)).
+  right; dands; auto; try omega.
+  eapply IHv1; eauto.
+Qed.
+Hint Resolve VarLe_trans : var.
+
+Lemma VarLt_trans :
+  forall v1 v2 v3, VarLt v1 v2 -> VarLt v2 v3 -> VarLt v1 v3.
+Proof.
+  induction v1; simpl in *; introv h1 h2; tcsp.
+  { destruct v2; simpl in *; tcsp.
+    destruct v3; simpl in *; tcsp. }
+  destruct v2; simpl in *; tcsp.
+  destruct v3; simpl in *; tcsp.
+  repndors; repnd; tcsp; try (complete (left; omega)).
+  right; dands; auto; try omega.
+  eapply IHv1; eauto.
+Qed.
+Hint Resolve VarLt_trans : var.
+
+Lemma VarLe_VarLt_trans :
+  forall v1 v2 v3, VarLe v1 v2 -> VarLt v2 v3 -> VarLt v1 v3.
+Proof.
+  induction v1; simpl in *; introv h1 h2; tcsp.
+  { destruct v2; simpl in *; tcsp.
+    destruct v3; simpl in *; tcsp. }
+  destruct v2; simpl in *; tcsp.
+  destruct v3; simpl in *; tcsp.
+  repndors; repnd; tcsp; try (complete (left; omega)).
+  right; dands; auto; try omega.
+  eapply IHv1; eauto.
+Qed.
+Hint Resolve VarLe_VarLt_trans : var.
+
+Lemma VarLe_extend_var : forall v, VarLe v (extend_var v).
+Proof.
+  induction v; simpl; tcsp.
+Qed.
+Hint Resolve VarLe_extend_var : var.
+
+Lemma VarLt_extend_var : forall v, VarLt v (extend_var v).
+Proof.
+  induction v; simpl; tcsp.
+Qed.
+Hint Resolve VarLt_extend_var : var.
+
 Inductive NVar : Set :=
-| nvar : nat -> NVar.
+| nvar : Var -> NVar.
+
+Theorem eq_var_dec: forall (x y : NVar), {x = y} + {x <> y}.
+Proof.
+  introv.
+  destruct x, y.
+  destruct (VarDeq v v0); subst; tcsp.
+  right; intro xx; ginv; tcsp.
+Defined.
+
+Theorem deq_nvar: Deq NVar.
+Proof.
+  exact eq_var_dec.
+Defined.
+Hint Immediate deq_nvar.
+Hint Resolve deq_nvar : Deq.
 
 (** %\noindent% Here are some examples of variables.
 
  *)
 
-Definition nvarx := nvar 0.
-Definition nvary := nvar 1.
-Definition nvarz := nvar 2.
-
 (* begin hide *)
 
-Definition nvarf := nvar 3.
-Definition nvarg := nvar 4.
-Definition nvarh := nvar 5.
+Definition nvara := nvar "a".
+Definition nvarb := nvar "b".
+Definition nvarc := nvar "c".
+Definition nvard := nvar "d".
+Definition nvare := nvar "e".
+Definition nvarf := nvar "f".
+Definition nvarg := nvar "g".
+Definition nvarh := nvar "h".
+Definition nvari := nvar "i".
+Definition nvarj := nvar "j".
+Definition nvark := nvar "k".
+Definition nvarl := nvar "l".
+Definition nvarm := nvar "m".
+Definition nvarn := nvar "n".
+Definition nvaro := nvar "o".
+Definition nvarp := nvar "p".
+Definition nvarq := nvar "q".
+Definition nvarr := nvar "r".
+Definition nvars := nvar "s".
+Definition nvart := nvar "t".
+Definition nvaru := nvar "u".
+Definition nvarv := nvar "v".
+Definition nvarw := nvar "w".
+Definition nvarx := nvar "x".
+Definition nvary := nvar "y".
+Definition nvarz := nvar "z".
 
-Definition nvari := nvar 6.
-Definition nvarj := nvar 7.
-Definition nvark := nvar 8.
-Definition nvarl := nvar 9.
+Definition nvarA := nvar "A".
+Definition nvarB := nvar "B".
+Definition nvarC := nvar "C".
+Definition nvarD := nvar "D".
+Definition nvarE := nvar "E".
+Definition nvarF := nvar "F".
+Definition nvarG := nvar "G".
+Definition nvarH := nvar "H".
+Definition nvarI := nvar "I".
+Definition nvarJ := nvar "J".
+Definition nvarK := nvar "K".
+Definition nvarL := nvar "L".
+Definition nvarM := nvar "M".
+Definition nvarN := nvar "N".
+Definition nvarO := nvar "O".
+Definition nvarP := nvar "P".
+Definition nvarQ := nvar "Q".
+Definition nvarR := nvar "R".
+Definition nvarS := nvar "S".
+Definition nvarT := nvar "T".
+Definition nvarU := nvar "U".
+Definition nvarV := nvar "V".
+Definition nvarW := nvar "W".
+Definition nvarX := nvar "X".
+Definition nvarY := nvar "Y".
+Definition nvarZ := nvar "Z".
 
-Definition nvara := nvar 10.
-Definition nvarb := nvar 11.
-Definition nvarc := nvar 12.
-Definition nvard := nvar 13.
-Definition nvare := nvar 14.
-Definition nvarm := nvar 15.
-Definition nvarn := nvar 16.
-Definition nvaro := nvar 17.
-Definition nvarp := nvar 18.
-Definition nvarq := nvar 19.
-Definition nvarr := nvar 20.
-Definition nvars := nvar 21.
-Definition nvart := nvar 22.
-Definition nvaru := nvar 23.
-Definition nvarv := nvar 24.
-Definition nvarw := nvar 25.
-
-
-Definition beq_var v1 v2 :=
-  match (v1, v2) with
-    (nvar n1, nvar n2) => beq_nat n1 n2
+Definition beq_var (v1 v2 : NVar) : bool :=
+  match v1, v2 with
+  | nvar n1, nvar n2 => VarBeq n1 n2
   end.
 
 Definition le_var v1 v2 :=
-  match (v1, v2) with
-      (nvar n1, nvar n2) => n1 <= n2
+  match v1, v2 with
+  | nvar n1, nvar n2 => VarLe n1 n2
   end.
 
 Definition lt_var v1 v2 :=
-  match (v1, v2) with
-      (nvar n1, nvar n2) => n1 < n2
+  match v1, v2 with
+  | nvar n1, nvar n2 => VarLt n1 n2
   end.
 
 (* After we "wrap" numbers as identifiers in this way, it is
@@ -107,17 +366,22 @@ Definition lt_var v1 v2 :=
 Theorem beq_var_refl : forall X,
   true = beq_var X X.
 Proof.
-  intros. destruct X.
-  apply beq_nat_refl.
+  introv.
+  destruct X; simpl; autorewrite with var; auto.
 Qed.
+
+Theorem beq_var_refl2 : forall X, beq_var X X = true.
+Proof.
+  introv; symmetry; apply beq_var_refl.
+Qed.
+Hint Rewrite beq_var_refl2 : var.
 
 Theorem beq_var_eq : forall i1 i2,
   true = beq_var i1 i2 -> i1 = i2.
 Proof.
- intros.
- destruct i1; destruct i2.
- unfold beq_var in H.
- apply beq_nat_eq in H; auto.
+ introv h.
+ destruct i1, i2; simpl in *.
+ symmetry in h; apply VarBeq_true_implies in h; subst; auto.
 Defined.
 
 (* same as beq_var_eq *)
@@ -131,11 +395,9 @@ Qed.
 Theorem beq_var_false_not_eq : forall i1 i2,
   beq_var i1 i2 = false -> i1 <> i2.
 Proof.
- intros.
- destruct i1; destruct i2.
- unfold beq_var in H.
- apply beq_nat_false_iff in H.
- intro; apply H; inversion H0; auto.
+ introv h q; subst.
+ destruct i2; simpl in *.
+ apply VarBeq_false_implies in h; tcsp.
 Defined.
 
 (* same as beq_var_false_not_eq *)
@@ -150,15 +412,16 @@ Qed.
 Theorem not_eq_beq_var_false : forall i1 i2,
   i1 <> i2 -> beq_var i1 i2 = false.
 Proof.
- intros; destruct i1; destruct i2; unfold beq_var.
- rewrite beq_nat_false_iff; intro. apply H; auto.
+  introv h; destruct i1, i2; simpl in *.
+  remember (VarBeq v v0) as b; symmetry in Heqb; destruct b; auto.
+  apply VarBeq_true_implies in Heqb; subst; tcsp.
 Qed.
 
 Theorem beq_var_sym: forall i1 i2,
   beq_var i1 i2 = beq_var i2 i1.
 Proof.
- intros; destruct i1; destruct i2; unfold beq_var.
- rewrite beq_nat_sym; auto.
+  introv; destruct i1, i2; simpl in *.
+  rewrite VarBeq_sym; auto.
 Qed.
 
 Lemma true_eq_nvar : forall t : NVar, t = t <=> True.
@@ -176,16 +439,6 @@ Proof. sp; split; sp. Qed.
 
 *)
 
-Theorem eq_var_dec: forall x y : NVar, {x = y} + {x <> y}.
-(* begin hide *)
-Proof.
-  intros.
-  remember (beq_var x y) as b.
-  destruct b.
-  left. apply beq_var_eq. auto.
-  right. apply beq_var_false_not_eq. auto.
-Defined.
-
 Lemma in_nvar_list_dec: forall (x : NVar) l, LIn x l [+] ! LIn x l.
 Proof.
   induction l; simpl; sp. try (complete (right; sp)).
@@ -193,13 +446,6 @@ Proof.
   right; sp.
 Defined.
 
-
-Theorem deq_nvar: Deq NVar.
-Proof.
-  unfold Deq. apply eq_var_dec.
-Defined.
-Hint Immediate deq_nvar.
-Hint Resolve deq_nvar : Deq.
 
 
 (** boolean membership of variable in a list of variables *)
@@ -266,6 +512,7 @@ Lemma remove_nvar_nil : forall v, remove_nvar [] v = [].
 Proof.
   sp.
 Qed.
+Hint Rewrite remove_nvar_nil : var.
 
 Lemma remove_nvars_unchanged :
   forall l1 l2,
@@ -389,6 +636,15 @@ Proof.
   rewrite beq_var_sym; sp.
 Qed.
 
+Lemma remove_nvar_cons2 :
+  forall v x xs,
+    remove_nvar (x :: xs) v
+    = if deq_nvar v x then remove_nvar xs v
+      else x :: remove_nvar xs v.
+Proof.
+  unfold remove_nvar; sp.
+Qed.
+
 Lemma disjoint_remove_nvars_l :
   forall l1 l2 l3,
     disjoint (remove_nvars l1 l2) l3 <=> disjoint l2 (remove_nvars l1 l3).
@@ -503,23 +759,21 @@ Proof.
 Qed.
 
 (** insertion of a nat in a list of variables in an ordered way *)
-Fixpoint insert (v : nat) (vars : list NVar) : list NVar :=
+Fixpoint insert (v : Var) (vars : list NVar) : list NVar :=
   match vars with
-    | [] => [nvar v]
-    | (nvar x) :: xs =>
-        if lt_dec x v then nvar x :: insert v xs
-        else if eq_nat_dec x v then vars
-             else (nvar v) :: vars
+  | [] => [nvar v]
+  | nvar x :: xs =>
+    if VarLt_dec x v then nvar x :: insert v xs
+    else if VarDeq x v then vars
+         else nvar v :: vars
   end.
 
-Lemma insert_in :
-  forall v vars,
-    LIn (nvar v) (insert v vars).
+Lemma insert_in : forall v vars, LIn (nvar v) (insert v vars).
 Proof.
   induction vars; simpl; sp.
   destruct a.
-  destruct (lt_dec n v); simpl; sp.
-  destruct (eq_nat_dec n v); subst; simpl; sp.
+  destruct (VarLt_dec v0 v); simpl; sp.
+  destruct (VarDeq v0 v); subst; simpl; sp.
 Qed.
 
 Ltac invs2 :=
@@ -533,16 +787,34 @@ Lemma in_insert :
     LIn (nvar v) (insert x vars)
     <=> (v = x [+] LIn (nvar v) vars).
 Proof.
-  induction vars; simpl; sp.
-  split; sp; invs2; sp.
-  destruct a.
-  destruct (eq_nat_dec n x); subst; allsimpl.
-  destruct (lt_dec x x); sp; try omega; allsimpl.
-  split; sp.
-  destruct (lt_dec n x); sp; try omega; allsimpl.
-  trewrite IHvars; split; sp.
-  split; sp; invs2; sp.
+  induction vars; simpl; split; intro h; repndors; subst; ginv; tcsp.
+  - destruct a; simpl in *.
+    destruct (VarLt_dec v0 x); simpl in *; tcsp.
+    + repndors; tcsp.
+      apply IHvars in h; tcsp.
+    + destruct (VarDeq v0 x); subst; simpl in *; tcsp.
+      repndors; tcsp; ginv; tcsp.
+  - destruct a.
+    destruct (VarLt_dec v x); simpl in *; tcsp.
+    + right; apply IHvars; tcsp.
+    + destruct (VarDeq v x); subst; simpl in *; tcsp.
+  - destruct (VarLt_dec v x); simpl in *; tcsp.
+    destruct (VarDeq v x); simpl in *; tcsp.
+  - destruct a; simpl in *.
+    destruct (VarLt_dec v0 x); simpl in *; tcsp.
+    + right; apply IHvars; tcsp.
+    + destruct (VarDeq v0 x); subst; simpl in *; tcsp.
 Qed.
+
+Lemma VarDeq_refl : forall v, VarDeq v v = left eq_refl.
+Proof.
+  introv.
+  destruct (VarDeq v v); tcsp.
+  f_equal.
+  apply UIP_dec.
+  apply VarDeq.
+Qed.
+Hint Rewrite VarDeq_refl : var.
 
 Lemma remove_nvar_insert :
   forall vars n,
@@ -550,23 +822,16 @@ Lemma remove_nvar_insert :
     = remove_nvar vars (nvar n).
 Proof.
   induction vars; simpl; sp.
-  rewrite remove_nvar_nil.
-  rewrite remove_nvar_cons.
-  rewrite remove_nvar_nil.
-  rewrite <- beq_var_refl; sp.
-  destruct a.
-  destruct (lt_dec n0 n).
-  rewrite remove_nvar_cons.
-  destruct (eq_nat_dec n n0); subst; try omega.
-  rewrite not_eq_beq_var_false; sp.
-  rewrite remove_nvar_cons.
-  rewrite not_eq_beq_var_false; sp.
-  rewrite IHvars; sp.
-  inversion H; subst; sp.
-  inversion H; subst; sp.
-  destruct (eq_nat_dec n0 n); subst; sp.
-  repeat (rewrite remove_nvar_cons).
-  rewrite <- beq_var_refl; sp.
+  - autorewrite with var.
+    rewrite remove_nvar_cons; autorewrite with var; auto.
+  - destruct a.
+    destruct (VarLt_dec v n); simpl in *; tcsp.
+    + repeat (rewrite remove_nvar_cons2; simpl).
+      destruct (VarDeq n v); subst; simpl in *; tcsp.
+      f_equal; tcsp.
+    + destruct (VarDeq v n); subst; simpl in *; tcsp.
+      repeat (rewrite remove_nvar_cons2; simpl; autorewrite with var).
+      destruct (VarDeq n v); tcsp.
 Qed.
 
 Fixpoint sort (vars : list NVar) : list NVar :=
@@ -604,39 +869,45 @@ Proof.
   induction vars; simpl; sp.
   destruct a.
   induction IHvars; simpl; sp.
-  constructor; simpl; sp.
-  destruct v.
-  destruct (lt_dec n0 n).
-  constructor; simpl; sp.
-  destruct x; unfold le_var.
-  allrw in_insert; sp; subst; try omega.
-  apply_in_hyp p.
-  unfold le_var in p; sp.
-  destruct (eq_nat_dec n0 n); subst; sp.
-  constructor; simpl; sp; subst.
-  unfold le_var; omega.
-  apply_in_hyp p; destruct x; allunfold le_var; omega.
+  { constructor; simpl; sp. }
+  destruct v0.
+  destruct (VarLt_dec v0 v).
+  { constructor; simpl; tcsp; introv i.
+    destruct x.
+    allrw in_insert; repndors; subst; tcsp.
+    - apply VarLt_implies_VarLe; auto.
+    - apply l in i; simpl in *; clear l; auto. }
+  destruct (VarDeq v0 v); subst; simpl in *; tcsp.
+  constructor; auto.
+  introv i; simpl in *; repndors; subst; tcsp.
+  { apply not_VarLt_implies_VarLe in n; auto. }
+  { apply l in i; clear l; tcsp.
+    destruct x.
+    apply not_VarLt_implies_VarLe in n; auto.
+    eapply VarLe_trans; eauto. }
 Qed.
+Hint Resolve sort_issorted : var.
 
-Fixpoint fresh_var_aux (v : nat) (vars : list NVar) : nat :=
+Fixpoint fresh_var_aux (v : Var) (vars : list NVar) : Var :=
   match vars with
     | [] => v
     | (nvar x) :: xs =>
-      if lt_dec v x then v
-      else if eq_nat_dec v x
-           then fresh_var_aux (S v) xs
+      if VarLt_dec v x then v
+      else if VarDeq v x
+           then fresh_var_aux (extend_var v) xs
            else fresh_var_aux v xs
   end.
 
 Lemma fresh_var_aux_le :
   forall vars v,
-    v <= fresh_var_aux v vars.
+    VarLe v (fresh_var_aux v vars).
 Proof.
-  induction vars; simpl; sp.
+  induction vars; simpl; sp; eauto 2 with var.
   destruct a.
-  destruct (lt_dec v n); sp.
-  destruct (eq_nat_dec v n); subst; auto.
-  generalize (IHvars (S n)); sp; omega.
+  destruct (VarLt_dec v v0); eauto 2 with var.
+  destruct (VarDeq v v0); subst; auto.
+  pose proof (IHvars (extend_var v0)) as q.
+  eapply VarLe_trans;[|exact q]; eauto 2 with var.
 Qed.
 
 Lemma fresh_var_aux_sorted_not_in :
@@ -646,26 +917,40 @@ Lemma fresh_var_aux_sorted_not_in :
 Proof.
   intros vars H.
   induction H; simpl; sp.
-  destruct v.
-  destruct (lt_dec n n0).
-  invs2; omega.
-  destruct (eq_nat_dec n n0); subst.
-  generalize (fresh_var_aux_le vs (S n0)); sp.
-  invs2; omega.
-  assert (n0 < n) by omega; clear n1 n2.
-  generalize (fresh_var_aux_le vs n); sp.
-  invs2; sp; omega.
-  destruct v.
-  destruct (lt_dec n n0).
-  apply_in_hyp p.
-  unfold le_var in p; omega.
-  destruct (eq_nat_dec n n0); subst.
-  allapply IHissorted; sp.
-  allapply IHissorted; sp.
+
+  - destruct v.
+    destruct (VarLt_dec n v); ginv.
+
+    + apply not_VarLt_refl in v0; tcsp.
+
+    + destruct (VarDeq n v); subst; tcsp.
+
+      * clear n0.
+        inversion e as [xx]; clear e.
+        pose proof (fresh_var_aux_le vs (extend_var v)) as q.
+        rewrite <- xx in q.
+        pose proof (VarLt_extend_var v) as h.
+        eapply VarLe_VarLt_trans in h;[|exact q].
+        apply not_VarLt_refl in h; tcsp.
+
+      * inversion e as [xx]; clear e.
+        pose proof (fresh_var_aux_le vs n) as q.
+        rewrite <- xx in q; clear xx.
+        destruct n0.
+        apply VarLe_implies_VarLt; auto.
+
+  - destruct v; simpl in *.
+    destruct (VarLt_dec n v); tcsp.
+
+    + apply l in l0.
+      eapply VarLe_VarLt_trans in v0;[|exact l0].
+      apply not_VarLt_refl in v0; tcsp.
+
+    + destruct (VarDeq n v); subst; tcsp.
 Qed.
 
 Definition fresh_var (vars : list NVar) : NVar :=
-  nvar (fresh_var_aux 0 (sort vars)).
+  nvar (fresh_var_aux varx (sort vars)).
 
 Lemma fresh_var_not_in :
   forall vars,
@@ -686,19 +971,28 @@ Proof.
   exists (fresh_var vars); apply fresh_var_not_in.
 Qed.
 
+Lemma fresh_var_aux_v :
+  forall v vars,
+    ! LIn (nvar v) vars
+    -> issorted vars
+    -> fresh_var_aux v vars = v.
+Proof.
+  introv nin iss.
+  induction iss; simpl in *; tcsp.
+  destruct v0.
+  apply not_over_or in nin; repnd.
+  destruct (VarLt_dec v v0); auto.
+  destruct (VarDeq v v0); subst; tcsp.
+Qed.
+
 Lemma fresh_var_aux_0 :
   forall vars,
-    ! LIn (nvar 0) vars
+    ! LIn (nvar var0) vars
     -> issorted vars
-    -> fresh_var_aux 0 vars = 0.
+    -> fresh_var_aux var0 vars = var0.
 Proof.
-  intros nin H iss; induction iss; simpl; sp.
-  destruct v; allsimpl.
-  allapply not_or; sp.
-  destruct (lt_dec 0 n); sp.
-  destruct n; allsimpl; sp;
-  try omega;
-  try (provefalse; apply H; auto).
+  introv nin iss.
+  apply fresh_var_aux_v; auto.
 Qed.
 
 Lemma fresh_var_nvarx :
@@ -706,12 +1000,13 @@ Lemma fresh_var_nvarx :
     ! LIn nvarx vars
     -> fresh_var vars = nvarx.
 Proof.
-  unfold fresh_var; sp.
-  rewrite fresh_var_aux_0; sp.
-  generalize (sort_eqvars vars); sp.
+  introv ni.
+  unfold fresh_var.
+  rewrite fresh_var_aux_v; auto; eauto 2 with var.
+  intro xx.
+  pose proof (sort_eqvars vars) as eqv.
   alltrewrite eqvars_prop.
-  apply_in_hyp p; sp.
-  apply sort_issorted.
+  apply eqv in xx; tcsp.
 Qed.
 
 Lemma fresh_var_nil :
@@ -1410,5 +1705,111 @@ Ltac dest_intersect_vars :=
     | [ |- context[intersect_vars ?l1 ?l2] ] =>
       destruct (intersect_vars l1 l2)
   end.
+
+Lemma fresh_var_lt :
+  forall vs v,
+    (forall x, LIn (nvar x) vs -> VarLt v x)
+    -> fresh_var_aux v vs = v.
+Proof.
+  induction vs; introv i; allsimpl; tcsp.
+  destruct a.
+  destruct (VarLt_dec v v0); auto.
+  destruct (VarDeq v v0); subst; tcsp.
+  pose proof (i v0) as h; autodimp h hyp; sp.
+Qed.
+
+Lemma le_var_implies_eq :
+  forall a b, le_var a b -> le_var b a -> a = b.
+Proof.
+  introv k1 k2.
+  destruct a, b.
+  allunfold le_var.
+  apply VarLe_iff_VarLt in k1; repndors; subst; tcsp.
+  eapply VarLe_VarLt_trans in k2;[|exact k1].
+  apply not_VarLt_refl in k2; tcsp.
+Qed.
+
+Lemma extend_var_not_VarLt :
+  forall v, ~ VarLt (extend_var v) v.
+Proof.
+  introv h.
+  pose proof (VarLt_extend_var v) as q.
+  eapply VarLt_trans in q;[|exact h].
+  apply not_VarLt_refl in q; auto.
+Qed.
+
+Lemma implies_VarLe_extend_var :
+  forall v1 v2, VarLe v1 v2 -> VarLe v1 (extend_var v2).
+Proof.
+  introv h.
+  pose proof (VarLe_extend_var v2) as q.
+  eapply VarLe_trans; eauto.
+Qed.
+
+Lemma extend_var_diff :
+  forall v, extend_var v <> v.
+Proof.
+  unfold extend_var; induction v; simpl in *; intro h; tcsp; ginv.
+  inversion h; tcsp.
+Qed.
+
+Lemma extend_var_not_VarLe :
+  forall v, ~ VarLe (extend_var v) v.
+Proof.
+  introv h.
+  pose proof (VarLt_extend_var v) as q.
+  eapply VarLe_VarLt_trans in q;[|exact h].
+  apply not_VarLt_refl in q; auto.
+Qed.
+
+Lemma VarLt_VarLe_trans :
+  forall v1 v2 v3, VarLt v1 v2 -> VarLe v2 v3 -> VarLt v1 v3.
+Proof.
+  induction v1; simpl in *; introv h1 h2; tcsp.
+  { destruct v2; simpl in *; tcsp.
+    destruct v3; simpl in *; tcsp. }
+  destruct v2; simpl in *; tcsp.
+  destruct v3; simpl in *; tcsp.
+  repndors; repnd; tcsp; try (complete (left; omega)).
+  right; dands; auto; try omega.
+  eapply IHv1; eauto.
+Qed.
+Hint Resolve VarLt_VarLe_trans : var.
+
+Lemma fresh_var_aux_eq_S :
+  forall vs n,
+    issorted vs
+    -> LIn (nvar n) vs
+    -> fresh_var_aux (extend_var n) vs = fresh_var_aux n vs.
+Proof.
+  induction vs; introv iss i; allsimpl; tcsp.
+  destruct a.
+  inversion iss as [|? ? imp iss1]; subst; clear iss.
+  repndors; ginv.
+  - destruct (VarLt_dec (extend_var n) n) as [d|d];
+      [apply extend_var_not_VarLt in d; tcsp|];[].
+    clear d.
+    destruct (VarDeq (extend_var n) n) as [d|d];
+      [apply extend_var_diff in d; tcsp|];[].
+    clear d.
+    destruct (VarLt_dec n n) as [d|d];
+      [apply not_VarLt_refl in d; tcsp|];[].
+    clear d.
+    destruct (VarDeq n n); tcsp.
+  - applydup imp in i as j; simpl in j.
+    destruct (VarLt_dec (extend_var n) v) as [d|d].
+    + apply implies_VarLe_extend_var in j.
+      eapply VarLe_VarLt_trans in j;[|exact d].
+      apply not_VarLt_refl in j; tcsp.
+    + clear d.
+      destruct (VarDeq (extend_var n) v) as [d|d]; subst; tcsp;
+        [apply extend_var_not_VarLe in j; tcsp|];[].
+      clear d.
+      destruct (VarLt_dec n v) as [d|d];
+        [eapply VarLe_VarLt_trans in j;[|exact d];
+         apply not_VarLt_refl in j; tcsp|];[].
+      clear d.
+      destruct (VarDeq n v) as [d|d]; subst; tcsp.
+Qed.
 
 (* end hide *)

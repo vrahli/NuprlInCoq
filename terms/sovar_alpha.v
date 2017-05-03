@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -975,6 +976,7 @@ Definition cswap_range_sosub {o} (sw : swapping) (sub : @SOSub o) : SOSub :=
          end)
       sub.
 
+
 Lemma sosub_find_some_implies_swap_0 {o} :
   forall (sub : @SOSub o) v t vs1 vs2,
     no_repeats vs2
@@ -985,10 +987,12 @@ Lemma sosub_find_some_implies_swap_0 {o} :
          (swapvar (mk_swapping vs1 vs2) v, 0)
        = Some (sosk [] (swap (mk_swapping vs1 vs2) t)).
 Proof.
+  Opaque sovar_sig_dec.
   induction sub; introv norep disj f; allsimpl; cpx.
-  destruct a; destruct s; simpl; boolvar; cpx; ginv; tcsp;
-  allrw length_swapbvars; allsimpl; tcsp; GC;
-  try (complete (destruct l; allsimpl; cpx)).
+  destruct a; destruct s; simpl; boolvar; try subst; simpl in *; cpx;
+    ginv; tcsp;
+      allrw length_swapbvars; allsimpl; tcsp; GC;
+        try (complete (destruct l; allsimpl; cpx)).
   provefalse; destruct n1.
   f_equal.
   eapply swapvars_eq; [|idtac|complete eauto]; auto.

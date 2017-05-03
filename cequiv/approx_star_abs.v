@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -806,7 +807,7 @@ Proof.
       allrw disjoint_singleton_r.
 
       remember (sosub_find (sosub_filter sub (vars2sovars (swapbvars (mk_swapping vs1 vs2) vs)))
-                           (swapvar (mk_swapping vs1 vs2) (nvar n), 0)) as f1.
+                           (swapvar (mk_swapping vs1 vs2) (nvar v0), 0)) as f1.
       symmetry in Heqf1; destruct f1.
 
       * destruct s; apply sosub_find_some in Heqf1; repnd.
@@ -814,11 +815,11 @@ Proof.
         apply in_sosub_filter in Heqf0; repnd; allsimpl.
         destruct Heqf0.
         rw in_map_iff; unfold var2sovar.
-        exists (swapvar (mk_swapping vs1 vs2) (nvar n)); dands; auto.
+        exists (swapvar (mk_swapping vs1 vs2) (nvar v0)); dands; auto.
         apply in_swapbvars; eexists; eauto.
 
       * remember (sosub_find (sosub_filter sub (vars2sovars vs))
-                             (nvar n, 0)) as f2.
+                             (nvar v0, 0)) as f2.
         symmetry in Heqf2; destruct f2; simpl; auto.
 
         destruct s; apply sosub_find_some in Heqf2; repnd.
@@ -826,7 +827,7 @@ Proof.
         apply in_sosub_filter in Heqf0; allsimpl; repnd.
         destruct Heqf0.
         rw in_map_iff; unfold var2sovar.
-        exists (nvar n); sp.
+        exists (nvar v0); sp.
 
     + rw @sosub_find_sosub_filter; auto.
       allrw @cover_so_vars_sovar; repnd.
@@ -1551,9 +1552,3 @@ Proof.
 
   - apply approx_starbts_implies_approx_star_sosub; auto.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -215,14 +220,14 @@ Ltac nuprl_refine_o o R :=
           ]
 
       | isect_member_formation ?l ?v =>
-          pose proof (@rule_isect_member_formation_true2 o emlib l v) as r;
+          pose proof (@rule_isect_member_formation_true2 o emlib l v mk_axiom) as r;
           apply r;
           clear r;
           [ tc_prove_side_condition
           | tc_prove_side_condition
           | let w := fresh "w" in
             let i := fresh "i" in
-              pose proof (@rule_isect_member_formation_wf o l v) as w;
+              pose proof (@rule_isect_member_formation_wf o l v mk_axiom) as w;
               unfold wf_rule in w;
               simpl in w;
               match goal with
@@ -235,6 +240,7 @@ Ltac nuprl_refine_o o R :=
                     | apply in_lst_2_out_of_2 in H
                     | complete sp
                     ]
+                  | tc_prove_side_condition
                   | tc_prove_side_condition
                   ]
               end
@@ -375,23 +381,16 @@ Proof.
 
   nuprl_tree;
     [ nuprl_refine (isect_member_formation 0 nvary);
-        [ unfold subst, lsubst; simpl; rw @fold_nobnd; rw @fold_cequiv;
-          unfold subst, lsubst in pwf; simpl in pwf; rw @fold_nobnd in pwf; rw @fold_cequiv in pwf;
-            nuprl_refine cequiv_refl
-        |   use_lemma (@top_in_type o)
-        ]
+      [ unfold rule_isect_member_formation_hyp1 in *;
+        unfold subst, lsubst; simpl; rw @fold_nobnd; rw @fold_cequiv;
+        unfold subst, lsubst in pwf; simpl in pwf; rw @fold_nobnd in pwf; rw @fold_cequiv in pwf;
+        nuprl_refine cequiv_refl
+      |   use_lemma (@top_in_type o)
+      ]
     ].
-
   end_proof.
 Defined.
 
 (* end show *)
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/" "../per/")
-*** End:
-*)
