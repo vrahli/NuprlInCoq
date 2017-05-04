@@ -2680,14 +2680,14 @@ Definition replace_utokens_correct_abs {p d}
            (r : @utok_ren_so p d rhs) :
   correct_abs opabs vars (replace_utokens_so rhs (fst correct) r) :=
   match correct with
-    | (w,(sv,(cap,nu))) =>
+    | (w,(sv,(cap,(ms,nu)))) =>
       (wf_term_replace_utokens_so rhs w r,
        (subsovars_eq_l (so_free_vars rhs)
                        (so_free_vars (replace_utokens_so rhs w r))
                        vars
                        (so_free_vars_replace_utokens_so rhs w r)
                        sv,
-        (cap, no_utokens_replace_utokens_so rhs w r nu)))
+        (cap, (ms, no_utokens_replace_utokens_so rhs w r nu))))
   end.
 
 Definition replace_utokens_library_entry {p d}

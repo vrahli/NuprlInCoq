@@ -31,30 +31,8 @@
 
 
 Require Export sequents2.
-Require Export computation_preserves_lib.
+Require Export computation_lib_extends.
 
-
-Definition opabs_of_lib_entry {o} (e : @library_entry o) : opabs :=
-  match e with
-  | lib_abs oa _ _ _ => oa
-  end.
-
-Definition matching_entries {o} (entry1 entry2 : @library_entry o) : Prop :=
-  matching_entry_sign (opabs_of_lib_entry entry1) (opabs_of_lib_entry entry2).
-
-Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : library) : Type :=
-  match lib with
-  | [] => False
-  | entry' :: entries =>
-    entry = entry'
-    [+]
-    (~ matching_entries entry entry'
-       # entry_in_library entry entries)
-  end.
-
-(* [lib1] extends [lib0] *)
-Definition lib_extends {o} (lib1 lib0 : @library o) : Type :=
-  forall entry, entry_in_library entry lib0 -> entry_in_library entry lib1.
 
 Definition sequent_true_ext_lib {o} lib0 (s : @csequent o) : Type :=
   forall lib,
@@ -70,42 +48,6 @@ Definition rule_true_ext_lib {o} lib (R : @rule o) : Type :=
          (hyps  : forall s, LIn s (subgoals R) -> sequent_true_ext_lib_wf lib s),
     sequent_true_ext_lib_wf lib (goal R).
 
-Definition in_lib {o}
-           (opabs : opabs)
-           (lib   : @library o) :=
-  {e : library_entry
-   & LIn e lib
-   # matching_entry_sign opabs (opabs_of_lib_entry e)}.
-
-Definition entry_not_in_lib {o} (e : @library_entry o) (l : @library o) :=
-  !in_lib (opabs_of_lib_entry e) l.
-
-Hint Resolve matching_entry_sign_sym : slow.
-
-Lemma entry_in_library_implies_in {o} :
-  forall (entry : @library_entry o) lib,
-    entry_in_library entry lib -> LIn entry lib.
-Proof.
-  induction lib; auto; introv h; simpl in *.
-  repndors; subst; tcsp.
-Qed.
-Hint Resolve entry_in_library_implies_in : slow.
-
-Lemma lib_extends_cons_implies {o} :
-  forall (e : @library_entry o) (lib lib0 : library),
-    entry_not_in_lib e lib0
-    -> lib_extends lib (e :: lib0)
-    -> lib_extends lib lib0.
-Proof.
-  introv ni ext i.
-  apply ext; simpl; clear ext.
-  right; dands; auto; intro m.
-  destruct ni.
-
-  exists entry.
-  dands; eauto 3 with slow.
-Qed.
-
 Lemma sequent_true_mono_lib {o} :
   forall (e : @library_entry o) (l : library) (s : baresequent),
     entry_not_in_lib e l
@@ -119,13 +61,6 @@ Proof.
   apply st0.
   apply lib_extends_cons_implies in libext; auto.
 Qed.
-
-Lemma lib_extends_refl {o} :
-  forall (lib : @library o), lib_extends lib lib.
-Proof.
-  introv i; auto.
-Qed.
-Hint Resolve lib_extends_refl : slow.
 
 Lemma sequent_true_ext_lib_wf_implies_sequent_true2_if_lib_extends {o} :
   forall lib lib0 (s : @baresequent o),

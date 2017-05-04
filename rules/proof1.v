@@ -263,6 +263,7 @@ Proof.
     rewrite so_free_vars_nterm2soterm.
     rewrite c; simpl; auto.
   - constructor.
+  - constructor.
   - unfold no_utokens.
     rewrite get_utokens_so_nterm2soterm.
     rewrite n; auto.
@@ -684,6 +685,7 @@ Proof.
     autorewrite with slow; auto.
     rw cl; simpl; auto.
   - unfold correct_abs_params, correct_abs_params_b; simpl; auto.
+  - constructor.
   - unfold no_utokens; simpl; auto.
     autorewrite with slow; auto.
 Qed.

@@ -215,7 +215,7 @@ Proof.
   allrw @covered_approx; repnd; auto.
 Qed.
 
-Lemma rule_introduction_true_ext_lib {o} :
+Lemma rule_cequiv_computation_true_ext_lib {o} :
   forall lib
          (a b : NTerm)
          (H : @barehypotheses o)
@@ -238,17 +238,16 @@ Proof.
   rw @tequality_mkc_cequiv.
   rw <- @member_cequiv_iff.
 
-  (*
+  pose proof (reduces_to_preserves_lib_extends lib lib0 extlib a b r) as q1.
+
   (* First, prove that [reduces_to lib0 a b] *)
-  pose proof (reduces_to_implies_cequiv_lsubst lib a b s1) as h.
+  pose proof (reduces_to_implies_cequiv_lsubst lib0 a b s1) as h.
   repeat (autodimp h hyp).
 
-  pose proof (reduces_to_implies_cequiv_lsubst lib a b s2) as q.
+  pose proof (reduces_to_implies_cequiv_lsubst lib0 a b s2) as q.
   repeat (autodimp q hyp).
 
-  dands; spcast; auto;[|].
+  dands; spcast; auto;[].
 
-  { split; intro z; spcast; eauto 3 with slow.
-
-    -*)
-Abort.
+  split; intro z; spcast; eauto 3 with slow.
+Qed.

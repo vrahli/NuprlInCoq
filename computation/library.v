@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -131,6 +132,21 @@ end : pi.
 Definition matching_sign (vars : list sovar_sig) (sign : opsign) : Prop :=
   map (fun v => snd v) vars = sign.
 
+Lemma matching_sign_proof_irrelevance :
+  forall vars sign (x y : matching_sign vars sign),
+    x = y.
+Proof.
+  intros.
+  apply UIP.
+Qed.
+
+Hint Extern 0 =>
+let h := fresh "h" in
+match goal with
+  | [ H1 : matching_sign ?vars ?sign , H2 : matching_sign ?vars ?sign |- _ ] =>
+    pose proof (matching_sign_proof_irrelevance vars sign H2 H1) as h; subst
+end : pi.
+
 Definition matching_entry_sign oa1 oa2 :=
   opabs_name oa1 = opabs_name oa2
   # opabs_sign oa1 = opabs_sign oa2
@@ -144,6 +160,7 @@ Definition correct_abs {o}
   wf_soterm rhs
   # socovered rhs vars
   # correct_abs_params (opabs_params opabs)
+  # matching_sign vars (opabs_sign opabs)
   # no_utokens rhs.
 
 Lemma correct_abs_proof_irrelevance {p} :
@@ -153,7 +170,7 @@ Lemma correct_abs_proof_irrelevance {p} :
 Proof.
   intros.
   destruct x, y; repnd.
-  eauto with pi.
+  eauto 6 with pi.
 Qed.
 
 Hint Extern 0 =>
@@ -164,12 +181,11 @@ match goal with
 end : pi.
 
 Inductive library_entry {o} :=
-| lib_abs :
-    forall opabs : opabs,
-    forall vars  : list sovar_sig,
-    forall rhs   : @SOTerm o,
-    forall correct : correct_abs opabs vars rhs,
-      library_entry.
+| lib_abs
+    (opabs : opabs)
+    (vars  : list sovar_sig)
+    (rhs   : @SOTerm o)
+    (correct : correct_abs opabs vars rhs).
 
 Definition matching_bterms {o} (vars : list sovar_sig) (bs : list (@BTerm o)) :=
   map (fun v => snd v) vars = map num_bvars bs.
@@ -655,9 +671,3 @@ Proof.
     destruct bt1, bt2; simpl.
     apply alphaeq_sk_iff_alphaeq_bterm; auto.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

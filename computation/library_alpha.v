@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -2276,6 +2277,42 @@ Proof.
     eapply ind; eauto.
 Qed.
 
+Lemma select_combine_some_implies :
+  forall {A B} n (l1 : list A) (l2 : list B) a b,
+    select n (combine l1 l2) = Some (a,b)
+    -> select n l1 = Some a /\ select n l2 = Some b.
+Proof.
+  induction n; introv h; simpl in *.
+
+  - destruct l1; simpl in *; ginv.
+    destruct l2; simpl in *; ginv; tcsp.
+
+  - destruct l1; simpl in *; ginv.
+    destruct l2; simpl in *; ginv.
+    apply IHn in h; auto.
+Qed.
+
+Lemma matching_sign_change_bvars_sobvars :
+  forall vars fv sign,
+    length vars = length fv
+    -> matching_sign vars sign
+    -> matching_sign (change_bvars_sobvars vars fv) sign.
+Proof.
+  introv len m.
+  unfold matching_sign in *.
+  unfold change_bvars_sobvars.
+  rewrite map_map; unfold compose.
+  subst.
+  apply eq_maps3.
+  { rewrite length_combine_eq; auto. }
+  introv i; repnd; simpl in *.
+
+  apply in_combine_sel_iff in i; exrepnd.
+  symmetry in i3.
+  apply select_combine_some_implies in i3; repnd.
+  rewrite i4 in i0; ginv.
+Qed.
+
 Lemma correct_change_bvars_entry {o} :
   forall (disj    : list NVar)
          (opabs   : opabs)
@@ -2324,6 +2361,8 @@ Proof.
       apply h3 in k; destruct k.
       rw in_sovars2vars.
       eexists; eauto.
+
+  - apply matching_sign_change_bvars_sobvars; auto.
 
   - pose proof (fo_change_bvars_alpha_spec
                   disj (soswap (mk_soswapping vars fv) rhs)) as k.
@@ -2770,10 +2809,3 @@ Proof.
   exists (change_bvars_alpha_lib lv lib).
   apply change_bvars_alpha_lib_spec.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)
