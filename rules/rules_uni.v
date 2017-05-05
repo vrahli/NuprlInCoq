@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -30,11 +31,15 @@
 
 
 Require Export sequents2.
+Require Export sequents_lib.
 Require Export sequents_tacs.
 Require Export sequents_equality.
 Require Export per_props_uni.
 Require Export per_props_halts.
 
+
+Definition rule_universe_equality_concl {o} (H : @bhyps o) i j : baresequent :=
+  mk_baresequent H (mk_conclax (mk_member (mk_uni i) (mk_uni j))).
 
 (*
    H |- Type(i) = Type(i) in Type(j)
@@ -45,7 +50,7 @@ Definition rule_universe_equality {o}
            (H : @bhyps o)
            (i j : nat) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_member (mk_uni i) (mk_uni j))))
+    (rule_universe_equality_concl H i j)
     []
     [].
 
@@ -85,6 +90,16 @@ Proof.
   introv hf sim.
   lsubst_tac.
   apply uni_in_uni; auto.
+Qed.
+
+Lemma rule_universe_equality_true_ext_lib {o} :
+  forall lib (H : @bhyps o) (i j : nat),
+    i < j -> rule_true_ext_lib lib (rule_universe_equality H i j).
+Proof.
+  introv ltij.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_universe_equality_true3; auto.
 Qed.
 
 

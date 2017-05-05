@@ -218,56 +218,72 @@ Qed.
 >>
  *)
 
+
+Definition rule_unhide_equality_concl {o} (H J : @bhyps o) x A t1 t2 C :=
+  mk_baresequent
+    (snoc H (mk_hhyp x A) ++ J)
+    (mk_conclax (mk_equality t1 t2 C)).
+
+Definition rule_unhide_equality_hyp {o} (H J : @bhyps o) x A t1 t2 C e :=
+  mk_baresequent
+    (snoc H (mk_hyp x A) ++ J)
+    (mk_concl (mk_equality t1 t2 C) e).
+
 Definition rule_unhide_equality {o}
-           (H J  : @barehypotheses o)
-           (A C t1 t2 : NTerm)
-           (x    : NVar) :=
+           (H J : @barehypotheses o)
+           (A C t1 t2 e : NTerm)
+           (x : NVar) :=
   mk_rule
-    (mk_baresequent
-       (snoc H (mk_hhyp x A) ++ J)
-       (mk_conclax (mk_equality t1 t2 C)))
-    [ mk_baresequent
-        (snoc H (mk_hyp x A) ++ J)
-        (mk_conclax (mk_equality t1 t2 C)) ]
+    (rule_unhide_equality_concl H J x A t1 t2 C)
+    [ rule_unhide_equality_hyp H J x A t1 t2 C e ]
     [].
 
-Lemma rule_unhide_equality_true {o} :
+Lemma rule_unhide_equality_true3 {o} :
   forall (lib : library)
-         (H J  : @barehypotheses o)
-         (A C t1 t2 : NTerm)
-         (x    : NVar),
-    rule_true lib (rule_unhide_equality H J A C t1 t2 x).
+         (H J : @barehypotheses o)
+         (A C t1 t2 e : NTerm)
+         (x : NVar),
+    rule_true3 lib (rule_unhide_equality H J A C t1 t2 e x).
 Proof.
   intros.
-  unfold rule_unhide_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_unhide_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
+  repnd.
+
+  clear cargs.
 
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
-  duplicate wfh as wfh'.
-  allapply @vswf_hypotheses_nil_implies.
-  allrw @wf_hypotheses_app; allrw @wf_hypotheses_snoc; allsimpl.
-  destruct wfh as [ wfh wfj ].
-  destruct wfh as [ ipa wfh ].
-  destruct wfh as [ nixh wfh ].
-  allrw @vars_hyps_snoc; allsimpl.
-  generalize (hyps (mk_baresequent (snoc H (mk_hyp x A) ++ J)
-                                  (mk_conclax (mk_equality t1 t2 C)))
-                   (inl eq_refl));
-    clear hyps; allsimpl; intro hyp1.
-  destruct hyp1 as [ ws1 hyp1 ].
-  destseq; allsimpl; proof_irr.
+  dLin_hyp; exrepnd.
+  destruct Hyp as [ws1 hyp1].
+  destseq; allsimpl; clear_irr; GC.
 
-  exists (@covered_axiom o (nh_vars_hyps (snoc H (mk_hhyp x A) ++ J))).
+  match goal with
+  | [ |- sequent_true2 _ ?s ] => assert (wf_csequent s) as wfc
+  end.
+  {
+    clear hyp1.
+    unfold wf_csequent, wf_sequent, wf_concl; simpl.
+    dands; auto.
+    - allrw @vswf_hypotheses_nil_eq.
+      allrw @wf_hypotheses_app.
+      allrw @vars_hyps_snoc; simpl in *.
+      repnd; dands; auto.
+    - apply wf_axiom.
+    - unfold closed_extract; simpl; auto.
+  }
+  exists wfc.
+  destseq; simpl in *.
 
   (* We prove some simple facts on our sequents *)
   assert (covered (mk_equality t1 t2 C) (snoc (vars_hyps H) x ++ vars_hyps J))
     as vhyps.
-
-  clear hyp1.
-  dwfseq; sp.
-  allrw in_app_iff; allrw in_snoc; sp;
-  apply_in_hyp p; allrw in_app_iff; allrw in_snoc; sp.
+  {
+    clear hyp1.
+    dwfseq; sp.
+    allrw in_app_iff; allrw in_snoc; sp;
+      apply_in_hyp p; allrw in_app_iff; allrw in_snoc; sp.
+  }
   (* done with proving these simple facts *)
 
   (* we can now start proving that the rule is true *)
@@ -276,14 +292,66 @@ Proof.
   vr_seq_true in hyp1.
 
   generalize (hyp1 s1 s2); clear hyp1; intro hyp1.
-  autodimp hyp1 hyp.
+  repeat (autodimp hyp1 hyp).
 
-  intros s3 sim3.
-  rw @similarity_hhyp in sim3; rw @eq_hyps_hhyp.
-  apply eqh; sp.
+  {
+    intros s3 sim3.
+    rw @similarity_hhyp in sim3; rw @eq_hyps_hhyp.
+    apply eqh; sp.
+  }
 
-  autodimp hyp1 hyp; exrepd; clear_irr; auto.
-  rw @similarity_hhyp; auto.
+  { rw @similarity_hhyp; auto. }
+
+  exrepd; clear_irr; dands; auto.
+
+  lsubst_tac.
+  apply member_equality.
+  apply equality_in_mkc_equality in e0; tcsp.
+Qed.
+
+Lemma rule_unhide_equality_true {o} :
+  forall (lib : library)
+         (H J : @barehypotheses o)
+         (A C t1 t2 e : NTerm)
+         (x : NVar),
+    rule_true lib (rule_unhide_equality H J A C t1 t2 e x).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_unhide_equality_true3.
+Qed.
+
+Lemma rule_unhide_equality_true_ext_lib {o} :
+  forall (lib : library)
+         (H J : @barehypotheses o)
+         (A C t1 t2 e : NTerm)
+         (x : NVar),
+    rule_true_ext_lib lib (rule_unhide_equality H J A C t1 t2 e x).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_unhide_equality_true3.
+Qed.
+
+Lemma rule_unhide_equality_wf2 {o} :
+  forall (H J : @barehypotheses o) A C t1 t2 e x,
+    wf_rule2 (rule_unhide_equality H J A C t1 t2 e x).
+Proof.
+  introv wf m; allsimpl.
+  repndors; subst; tcsp.
+  allunfold @wf_bseq; allsimpl; repnd; dands; auto.
+  - allrw @vswf_hypotheses_nil_eq.
+    allrw @wf_hypotheses_app.
+    allrw @vars_hyps_snoc; simpl in *.
+    repnd; dands; auto.
+    allrw @wf_hypotheses_snoc; simpl in *.
+    repnd; dands; auto.
+  - unfold closed_type_baresequent in *; simpl in *.
+    unfold closed_type in *; simpl in *.
+    allrw @vars_hyps_app; simpl in *.
+    allrw @vars_hyps_snoc; simpl in *.
+    auto.
 Qed.
 
 (* begin hide *)
@@ -306,14 +374,17 @@ Qed.
 >>
  *)
 
+Definition rule_hypothesis_equality_concl {o} (G J : @bhyps o) A x :=
+  mk_baresequent
+    (snoc G (mk_hyp x A) ++ J)
+    (mk_conclax (mk_equality (mk_var x) (mk_var x) A)).
+
 Definition rule_hypothesis_equality {o}
              (G J : @barehypotheses o)
              (A   : NTerm)
              (x   : NVar) :=
   mk_rule
-    (mk_baresequent
-       (snoc G (mk_hyp x A) ++ J)
-       (mk_conclax (mk_equality (mk_var x) (mk_var x) A)))
+    (rule_hypothesis_equality_concl G J A x)
     []
     [].
 
@@ -434,6 +505,19 @@ Proof.
   rewrite member_eq.
   apply equality_sym in e3.
   apply equality_refl in e3; sp.
+Qed.
+
+Lemma rule_hypothesis_equality_true_ext_lib {o} :
+  forall lib (G J : @barehypotheses o)
+         (A : NTerm)
+         (x : NVar),
+    rule_true_ext_lib lib (rule_hypothesis_equality G J A x).
+Proof.
+  introv.
+  apply rule_true_implies_rule_true_ext_lib.
+  { unfold wf_extract, wf_extract_goal, wf_extract_seq; simpl; introv wf; apply wf_axiom. }
+  introv.
+  apply rule_hypothesis_equality_true.
 Qed.
 
 (* begin hide *)

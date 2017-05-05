@@ -2395,12 +2395,14 @@ Qed.
 
 Lemma deq_list {A} (deq : Deq A): Deq (list A).
 Proof.
-  intro lx.
-  induction lx as [| x lx Hind]; intro ly;
-  destruct ly as [| y ly];sp;[right|right |];sp;[].
-  destruct (Hind ly); destruct (deq x y); subst; sp; right; introv Heq;
-  inverts Heq; sp.
-Qed.
+  intro l.
+  induction l as [|x l ind]; intro k;
+    destruct k as [|y k]; tcsp;
+      try (complete (right; intro xx; tcsp)).
+  destruct (deq x y); subst;[|right; intro xx; inversion xx; tcsp];[].
+  destruct (ind k) as [d|d]; subst;[left|right]; auto.
+  intro xx; inversion xx; tcsp.
+Defined.
 Hint Resolve deq_list.
 
 Ltac get_element_type listtype :=

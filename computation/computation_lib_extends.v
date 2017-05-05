@@ -644,6 +644,25 @@ Proof.
       eapply lib_extends_preserves_find_entry; eauto.
 Qed.
 
+Lemma reduces_in_atmost_k_steps_preserves_lib_extends {o} :
+  forall (lib1 lib2 : library)
+         (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
+         (a b  : @NTerm o)
+         (n : nat)
+         (comp : reduces_in_atmost_k_steps lib1 a b n),
+    reduces_in_atmost_k_steps lib2 a b n.
+Proof.
+  introv ext r.
+  revert dependent a.
+  induction n; introv r.
+
+  - allrw @reduces_in_atmost_k_steps_0; auto.
+
+  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
+    exists u; dands; auto.
+    eapply compute_step_preserves_lib_extends; eauto.
+Qed.
+
 Lemma reduces_to_preserves_lib_extends {o} :
   forall (lib1 lib2 : library)
          (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
@@ -654,12 +673,5 @@ Proof.
   introv ext r.
   unfold reduces_to in *; exrepnd.
   exists k.
-  revert dependent a.
-  induction k; introv r.
-
-  - allrw @reduces_in_atmost_k_steps_0; auto.
-
-  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
-    exists u; dands; auto.
-    eapply compute_step_preserves_lib_extends; eauto.
+  eapply reduces_in_atmost_k_steps_preserves_lib_extends; eauto.
 Qed.

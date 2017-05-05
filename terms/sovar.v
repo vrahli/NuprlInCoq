@@ -119,7 +119,7 @@ Defined.
 Definition memsovar (v : sovar_sig) vs : LIn v vs + !LIn v vs.
 Proof.
   exact (in_deq sovar_sig sovar_sig_dec v vs).
-Qed.
+Defined.
 
 Definition subsovars (vs1 vs2 : list sovar_sig) :=
   assert (subsetb sovar_sig_dec vs1 vs2).

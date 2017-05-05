@@ -636,19 +636,19 @@ Proof.
   try (complete (pose proof (deq_nat n n0) as h;
                  dorn h; subst; tcsp;
                  right; intro k; inversion k; subst; omega)).
-Qed.
+Defined.
 
 Lemma parameters_dec : Deq (list parameter).
 Proof.
   apply deq_list.
   apply parameter_dec.
-Qed.
+Defined.
 
 Lemma opsign_dec : Deq opsign.
 Proof.
   apply deq_list.
   introv; apply deq_nat.
-Qed.
+Defined.
 
 Lemma opid_dec {o} :
   dec_consts o

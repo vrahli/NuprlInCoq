@@ -251,3 +251,16 @@ Proof.
 
   split; intro z; spcast; eauto 3 with slow.
 Qed.
+
+Lemma rule_cequiv_computation_atmost_true_ext_lib {o} :
+  forall lib
+         (a b : NTerm)
+         (n : nat)
+         (H : @barehypotheses o)
+         (r : reduces_in_atmost_k_steps lib a b n),
+    rule_true_ext_lib lib (rule_cequiv_computation a b H).
+Proof.
+  introv r.
+  apply rule_cequiv_computation_true_ext_lib.
+  apply reduces_in_atmost_k_steps_implies_reduces_to in r; auto.
+Qed.

@@ -29,6 +29,7 @@
 
 
 Require Export sequents2.
+Require Export sequents_lib.
 Require Export rules_useful.
 Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
@@ -240,6 +241,18 @@ Proof.
   - apply wf_cequiv; auto.
 Qed.
 
+Lemma rule_cequiv_subst_concl_true_ext_lib {o} :
+  forall lib (H  : @barehypotheses o)
+         (x : NVar)
+         (C a b t  : NTerm),
+    rule_true_ext_lib lib (rule_cequiv_subst_concl H x C a b t).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_cequiv_subst_concl_true3.
+Qed.
+
 
 (* same as above but we don't force the subgoals to have given extracts *)
 
@@ -396,6 +409,18 @@ Proof.
     apply covered_subst_implies in wf; auto.
 
   - apply wf_cequiv; auto.
+Qed.
+
+Lemma rule_cequiv_subst_concl2_true_ext_lib {o} :
+  forall lib (H  : @barehypotheses o)
+         (x : NVar)
+         (C a b t e : NTerm),
+    rule_true_ext_lib lib (rule_cequiv_subst_concl2 H x C a b t e).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_cequiv_subst_concl2_true3.
 Qed.
 
 
@@ -931,10 +956,3 @@ Qed.
 (* begin hide *)
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

@@ -220,7 +220,7 @@ Proof.
   left; dands; auto.
   unfold matching_parameters.
   rewrite <- Heqm; sp.
-Qed.
+Defined.
 
 Fixpoint mk_abs_subst {o} (vs : list sovar_sig) (bs : list (@BTerm o)) : @SOSub o :=
   match vs, bs with
