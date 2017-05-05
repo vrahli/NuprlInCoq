@@ -1035,10 +1035,11 @@ Arguments MkNuprlState [o] _ _.
 
 Definition address := list nat.
 
-Inductive proof_step :=
-| proof_step_isect_eq (y : NVar)
+Inductive proof_step {o} :=
+| proof_step_isect_eq               (y : NVar)
 | proof_step_isect_member_formation (z : NVar) (i : nat)
-| proof_step_hypothesis (x : NVar).
+| proof_step_hypothesis             (x : NVar)
+| proof_step_cut                    (x : NVar) (B : @NTerm o).
 
 Inductive command {o} :=
 (* add a definition at the head *)
@@ -1050,7 +1051,7 @@ Inductive command {o} :=
 (* tries to complete a proof if it has no holes *)
 | COM_finish_proof (name : LemmaName)
 (* do a proof step *)
-| COM_update_proof (name : LemmaName) (addr : address) (step : proof_step)
+| COM_update_proof (name : LemmaName) (addr : address) (step : @proof_step o)
 (* start a new proof *)
 | COM_start_proof (name : LemmaName) (C : @NTerm o) (isp : isprog C).
 
@@ -1804,6 +1805,9 @@ Inductive DEBUG_MSG :=
 | could_not_apply_hypothesis_rule
 | applied_hypothesis_rule
 
+| could_not_apply_cut_rule
+| applied_cut_rule
+
 | could_not_apply_update_because_wrong_address
 | could_not_apply_update_because_no_hole_at_address
 | could_not_apply_update_because_could_not_find_lemma.
@@ -2007,6 +2011,104 @@ Definition apply_proof_step_hypothesis {o} {ctxt}
     end
   end.
 
+(* MOVE to terms_deq_op *)
+Lemma wf_term_dec_op {o} :
+  forall (t : @NTerm o), option (wf_term t).
+Proof.
+  sp_nterm_ind1 t as [v|f|op bs ind] Case; introv.
+
+  - Case "vterm".
+    left; constructor.
+
+  - Case "sterm".
+    right.
+
+  - Case "oterm".
+
+    remember (beq_list deq_nat (map num_bvars bs) (OpBindings op)) as b.
+    symmetry in Heqb; destruct b;[|right].
+    unfold wf_term; simpl.
+    rewrite Heqb; simpl.
+    clear Heqb op.
+
+    induction bs; simpl in *.
+
+    { left; auto. }
+
+    destruct a as [l t]; simpl in *.
+
+    autodimp IHbs hyp.
+
+    { introv i; eapply ind; eauto. }
+
+    destruct IHbs as [IHbs|];[|right].
+    rewrite IHbs.
+
+    pose proof (ind t l) as q; clear ind; autodimp q hyp.
+    destruct q as [q|];[|right].
+    rewrite q.
+
+    left; auto.
+Defined.
+
+Lemma dec_bool :
+  forall (a b : bool),
+    decidable (a = b).
+Proof.
+  introv.
+  destruct a, b; tcsp; right; intro xx; ginv.
+Defined.
+
+Lemma covered_decidable {o} :
+  forall (t : @NTerm o) vs, decidable (covered t vs).
+Proof.
+  introv.
+  apply dec_bool.
+Defined.
+
+(* we need semi-deciders for wf_term B, covered B (var_hyps H), and NVin x (vars_hyps H) *)
+
+Definition apply_proof_step_cut {o} {ctxt}
+           (s : @pre_baresequent o)
+           (x : NVar)
+           (B : NTerm) : pre_proof ctxt s * DEBUG_MSG :=
+  match s with
+  | MkPreBaresequent _ H C =>
+
+    match C return pre_proof ctxt (MkPreBaresequent _ H C) * DEBUG_MSG with
+    | pre_concl_ext T =>
+
+      match wf_term_dec_op B with
+      | Some wfB =>
+
+        match covered_decidable B (vars_hyps H) with
+        | inl covB =>
+
+          match NVin_dec x (vars_hyps H) with
+          | inl nixH =>
+
+            let prf1 := pre_proof_hole ctxt (pre_rule_cut_hyp1 H B) in
+            let prf2 := pre_proof_hole ctxt (pre_rule_cut_hyp2 H x B T) in
+            (pre_proof_cut ctxt B T x H wfB covB nixH prf1 prf2,
+             applied_cut_rule)
+
+          | inr _ => (pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext T)),
+                      could_not_apply_cut_rule)
+          end
+
+        | inr _ => (pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext T)),
+                    could_not_apply_cut_rule)
+        end
+
+      | None => (pre_proof_hole _ (MkPreBaresequent _ H (pre_concl_ext T)),
+                 could_not_apply_cut_rule)
+      end
+
+    | c => (pre_proof_hole _ (MkPreBaresequent _ H c),
+            could_not_apply_cut_rule)
+    end
+  end.
+
 Definition apply_proof_step {o} {ctxt}
            (s    : @pre_baresequent o)
            (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
@@ -2014,6 +2116,7 @@ Definition apply_proof_step {o} {ctxt}
   | proof_step_isect_eq y => apply_proof_step_isect_eq s y
   | proof_step_isect_member_formation z i => apply_proof_step_isect_member_formation s z i
   | proof_step_hypothesis x => apply_proof_step_hypothesis s x
+  | proof_step_cut x B => apply_proof_step_cut s x B
   end.
 
 Fixpoint update_pre_proof {o}
@@ -2287,6 +2390,19 @@ Qed.
 
 Definition mk_abs {o} abs (l : list (@BTerm o)) : NTerm := oterm (Abs abs) l.
 
+Notation "𝕌( i )" := (oterm (Can (NUni i)) []).
+Notation "𝕍( v )" := (vterm (nvar v)) (at level 0).
+Notation "𝕎( v )" := (sovar (nvar v) []) (at level 0).
+Notation "𝔸( name , t1 , t2 )" := (oterm (Abs {| opabs_name := name; opabs_params := []; opabs_sign := [0, 0] |}) [ bterm [] t1, bterm [] t2]).
+Notation " ( a ≡ b ∈ T ) " := (oterm  (Can NEquality) [ bterm [] a, bterm [] b, bterm [] T]) (at level 0).
+Notation "⋂ v : T . U" := (oterm (Can NIsect) [ bterm [] T, bterm [nvar v] U ]) (at level 0).
+Notation " ( a ≣ b ∈ T ) " := (soterm (Can NEquality) [ sobterm [] a, sobterm [] b, sobterm [] T ]).
+
+Notation "𝔸( name , v1 , v2 , correct ) ≜ t" := (lib_abs {| opabs_name := name; opabs_params := []; opabs_sign := [0, 0] |} [ (nvar v1, 0), (nvar v2, 0) ] t correct) (at level 0).
+
+Arguments pre_proof_isect_member_formation [o] [ctxt] _ _ _ _ _ _ _ _ _.
+Arguments pre_proof_hole [o] [ctxt] _.
+
 Definition lib1 {o} :=
   update_list
     (@initNuprlState o)
@@ -2311,17 +2427,19 @@ Definition lib1 {o} :=
       COM_update_proof
         "member_wf"
         []
-        (proof_step_isect_member_formation (nvar "y") 1)
+        (proof_step_isect_member_formation (nvar "T") 1),
+      COM_update_proof
+        "member_wf"
+        [1]
+        (proof_step_isect_member_formation (nvar "t") 1),
+      COM_update_proof
+        "member_wf"
+        [1,1]
+        (proof_step_cut
+           (nvar "w")
+           (mk_cequiv
+              (mk_abs opabs_member [nobnd (mk_var (nvar "t")), nobnd (mk_var (nvar "T"))])
+              (mk_equality (mk_var (nvar "t")) (mk_var (nvar "t")) (mk_var (nvar "T")))))
     ].
 
 Eval compute in lib1.
-
-Definition lib2 {o} :=
-  update
-    (fst (@lib1 o))
-    (COM_update_proof
-       "member_wf"
-       [1]
-       (proof_step_isect_member_formation (nvar "z") 1)).
-
-Eval compute in lib2.
