@@ -44,6 +44,7 @@ Require Export rules_false.
 Require Export rules_struct.
 Require Export rules_function.
 Require Export rules_uni.
+Require Export rules_equality3.
 
 
 
@@ -245,6 +246,20 @@ Definition pre_rule_unhide_equality_hyp {o} (H J : @bhyps o) x A t1 t2 C :=
     (snoc H (mk_hyp x A) ++ J)
     (mk_pre_concl (mk_equality t1 t2 C)).
 
+Definition pre_rule_equality_equality_concl {o} (H : @bhyps o) a1 a2 b1 b2 A B i :=
+  mk_pre_bseq
+    H
+    (mk_pre_concl (mk_equality
+                     (mk_equality a1 a2 A)
+                     (mk_equality b1 b2 B)
+                     (mk_uni i))).
+
+Definition pre_rule_equality_equality_hyp1 {o} (H : @bhyps o) A B i :=
+  mk_pre_bseq H (mk_pre_concl (mk_equality A B (mk_uni i))).
+
+Definition pre_rule_equality_equality_hyp2 {o} (H : @bhyps o) a b A :=
+  mk_pre_bseq H (mk_pre_concl (mk_equality a b A)).
+
 
 
 (* ===========================================================
@@ -441,7 +456,13 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
 | pre_proof_unhide_equality :
     forall x A t1 t2 C G J,
       pre_proof ctxt (pre_rule_unhide_equality_hyp G J x A t1 t2 C)
-      -> pre_proof ctxt (pre_rule_unhide_equality_concl G J x A t1 t2 C).
+      -> pre_proof ctxt (pre_rule_unhide_equality_concl G J x A t1 t2 C)
+| pre_proof_equality_equality :
+    forall A B a1 a2 b1 b2 i H,
+      pre_proof ctxt (pre_rule_equality_equality_hyp1 H A B i)
+      -> pre_proof ctxt (pre_rule_equality_equality_hyp2 H a1 b1 A)
+      -> pre_proof ctxt (pre_rule_equality_equality_hyp2 H a2 b2 A)
+      -> pre_proof ctxt (pre_rule_equality_equality_concl H a1 a2 b1 b2 A B i).
 
 
 Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
@@ -543,7 +564,14 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
 | proof_unhide_equality :
     forall x A t1 t2 C e G J,
       proof ctxt (rule_unhide_equality_hyp G J x A t1 t2 C e)
-      -> proof ctxt (rule_unhide_equality_concl G J x A t1 t2 C).
+      -> proof ctxt (rule_unhide_equality_concl G J x A t1 t2 C)
+| proof_equality_equality :
+    forall A B a1 a2 b1 b2 e1 e2 e3 i H,
+      proof ctxt (rule_equality_equality_hyp1 H A B i e1)
+      -> proof ctxt (rule_equality_equality_hyp2 H a1 b1 A e2)
+      -> proof ctxt (rule_equality_equality_hyp2 H a2 b2 A e3)
+      -> proof ctxt (rule_equality_equality_concl H a1 a2 b1 b2 A B i).
+
 
 
 (* ===========================================================
@@ -823,6 +851,7 @@ Proof.
        | (* universe_equality         *) i j H
        | (* hypothesis_equality       *) x A G J
        | (* unhide_equality           *) x A t1 t2 C e G J ih1 p1
+       | (* equality_equality         *) A B a1 a2 b1 b2 e1 e2 e3 i H p1 ih1 p2 ih2 p3 ih3
        ];
     allsimpl;
     allrw NVin_iff; tcsp.
@@ -949,6 +978,19 @@ Proof.
 
     apply p1; auto.
     apply (rule_unhide_equality_wf2 G J A C t1 t2 e x); simpl; tcsp.
+
+  - apply (rule_equality_equality_true_ext_lib ctxt H A B a1 a2 b1 b2 e1 e2 e3 i); simpl; tcsp.
+
+    introv e; repndors; subst; tcsp.
+
+    + apply ih1; auto.
+      apply (rule_equality_equality_wf2 H A B a1 a2 b1 b2 e1 e2 e3 i); simpl; tcsp.
+
+    + apply ih2; auto.
+      apply (rule_equality_equality_wf2 H A B a1 a2 b1 b2 e1 e2 e3 i); simpl; tcsp.
+
+    + apply ih3; auto.
+      apply (rule_equality_equality_wf2 H A B a1 a2 b1 b2 e1 e2 e3 i); simpl; tcsp.
 Qed.
 
 Definition wf_ext {o} (H : @bhyps o) (c : @conclusion o) :=
@@ -1112,7 +1154,8 @@ Inductive proof_step {o} :=
 | proof_step_cequiv_subst_concl     (x : NVar) (C a b : @NTerm o)
 | proof_step_universe_eq
 | proof_step_hypothesis_eq
-| proof_step_unhide_equality        (x : NVar).
+| proof_step_unhide_equality        (x : NVar)
+| proof_step_equality_equality.
 
 Inductive command {o} :=
 (* add a definition at the head *)
@@ -1288,6 +1331,12 @@ Fixpoint pre_proof_cons {o}
   | pre_proof_unhide_equality _ x A t1 t2 C G J prf =>
     let prf' := pre_proof_cons entry ni prf in
     pre_proof_unhide_equality _ x A t1 t2 C G J prf'
+
+  | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+    let prf1' := pre_proof_cons entry ni prf1 in
+    let prf2' := pre_proof_cons entry ni prf2 in
+    let prf3' := pre_proof_cons entry ni prf3 in
+    pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1' prf2' prf3'
   end.
 
 Definition pre_proof_seq_cons {o}
@@ -1742,6 +1791,27 @@ Proof.
   exact (proof_unhide_equality _ x A t1 t2 C e G J q).
 Defined.
 
+Definition finish_proof_equality_equality {o}
+           (ctxt : @ProofContext o)
+           (A B a1 a2 b1 b2 : NTerm)
+           (i : nat)
+           (H : bhyps)
+           (p1 : ExtractProof ctxt (pre_rule_equality_equality_hyp1 H A B i))
+           (p2 : ExtractProof ctxt (pre_rule_equality_equality_hyp2 H a1 b1 A))
+           (p3 : ExtractProof ctxt (pre_rule_equality_equality_hyp2 H a2 b2 A))
+  : ExtractProof ctxt (pre_rule_equality_equality_concl H a1 a2 b1 b2 A B i).
+Proof.
+  introv.
+  destruct p1 as [e1 v1 q1].
+  destruct p2 as [e2 v2 q2].
+  destruct p3 as [e3 v3 q3].
+  unfold pre2baresequent in *; simpl in *.
+  exists (@mk_axiom o).
+  { apply valid_pre_extract_axiom. }
+  unfold pre2baresequent; simpl.
+  exact (proof_equality_equality _ A B a1 a2 b1 b2 e1 e2 e3 i H q1 q2 q3).
+Defined.
+
 Fixpoint finish_pre_proof {o}
          {ctxt  : @ProofContext o}
          {s     : pre_baresequent}
@@ -1816,6 +1886,15 @@ Fixpoint finish_pre_proof {o}
     match finish_pre_proof prf with
     | Some p => Some (finish_proof_unhide_equality ctxt x A t1 t2 C G J p)
     | _ => None
+    end
+
+  | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+    match finish_pre_proof prf1,
+          finish_pre_proof prf2,
+          finish_pre_proof prf3 with
+    | Some p1, Some p2, Some p3 =>
+      Some (finish_proof_equality_equality ctxt A B a1 a2 b1 b2 i H p1 p2 p3)
+    | _, _, _ => None
     end
   end.
 
@@ -2055,6 +2134,9 @@ Inductive DEBUG_MSG {o} :=
 
 | could_not_apply_unhide_equality_rule
 | applied_unhide_equality_rule
+
+| could_not_apply_equality_equality_rule
+| applied_equality_equality_rule
 
 | could_not_apply_cut_rule
 | applied_cut_rule
@@ -2645,6 +2727,28 @@ Definition apply_proof_step_unhide_equality {o} {ctxt}
     end
   end.
 
+Definition apply_proof_step_equality_equality {o} {ctxt}
+           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext
+        (oterm (Can NEquality) [bterm [] (oterm (Can NEquality) [bterm [] a1, bterm [] a2, bterm [] A]),
+                                bterm [] (oterm (Can NEquality) [bterm [] b1, bterm [] b2, bterm [] B]),
+                                bterm [] (oterm (Can (NUni i)) [])]) =>
+
+        let prf1 := pre_proof_hole ctxt (pre_rule_equality_equality_hyp1 H A B i) in
+        let prf2 := pre_proof_hole ctxt (pre_rule_equality_equality_hyp2 H a1 b1 A) in
+        let prf3 := pre_proof_hole ctxt (pre_rule_equality_equality_hyp2 H a2 b2 A) in
+        (pre_proof_equality_equality ctxt A B a1 a2 b1 b2 i H prf1 prf2 prf3,
+         applied_equality_equality_rule)
+
+    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+            could_not_apply_equality_equality_rule)
+    end
+  end.
+
 Definition apply_proof_step {o} {ctxt}
            (s    : @pre_baresequent o)
            (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
@@ -2658,6 +2762,7 @@ Definition apply_proof_step {o} {ctxt}
   | proof_step_universe_eq => apply_proof_step_universe_eq s
   | proof_step_hypothesis_eq => apply_proof_step_hypothesis_eq s
   | proof_step_unhide_equality x => apply_proof_step_unhide_equality s x
+  | proof_step_equality_equality => apply_proof_step_equality_equality s
   end.
 
 Fixpoint update_pre_proof {o}
@@ -2789,6 +2894,21 @@ Fixpoint update_pre_proof {o}
     | _ => (pre_proof_unhide_equality _ x A t1 t2 C G J prf,
             could_not_apply_update_because_wrong_address)
     end
+
+  | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+    match addr with
+    | 1 :: addr =>
+      let (prf1', msg) := update_pre_proof prf1 addr step in
+      (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1' prf2 prf3, msg)
+    | 2 :: addr =>
+      let (prf2', msg) := update_pre_proof prf2 addr step in
+      (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2' prf3, msg)
+    | 3 :: addr =>
+      let (prf3', msg) := update_pre_proof prf3 addr step in
+      (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3', msg)
+    | _ => (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3,
+            could_not_apply_update_because_wrong_address)
+    end
   end.
 
 Definition update_pre_proof_seq {o} {ctxt}
@@ -2886,6 +3006,12 @@ Fixpoint find_holes_in_pre_proof {o}
 
   | pre_proof_unhide_equality _ x A t1 t2 C G J prf =>
     find_holes_in_pre_proof prf (snoc addr 1)
+
+  | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+    let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
+    let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
+    let holes3 := find_holes_in_pre_proof prf3 (snoc addr 3) in
+    holes1 ++ holes2 ++ holes3
   end.
 
 Definition find_holes_in_pre_proof_seq {o} {ctxt}
@@ -3104,7 +3230,36 @@ Definition lib1 {o} :=
       COM_update_proof
         "member_wf"
         [1,2,1]
-        (proof_step_hypothesis_eq)
+        (proof_step_hypothesis_eq),
+      COM_update_proof
+        "member_wf"
+        [1,1,2,1]
+        (proof_step_equality_equality),
+      COM_update_proof
+        "member_wf"
+        [1,1,2,1,1]
+        (proof_step_unhide_equality (nvar "T")),
+      COM_update_proof
+        "member_wf"
+        [1,1,2,1,1,1]
+        (proof_step_hypothesis_eq),
+      COM_update_proof
+        "member_wf"
+        [1,1,2,1,2]
+        (proof_step_unhide_equality (nvar "t")),
+      COM_update_proof
+        "member_wf"
+        [1,1,2,1,2,1]
+        (proof_step_hypothesis_eq),
+      COM_update_proof
+        "member_wf"
+        [1,1,2,1,3]
+        (proof_step_unhide_equality (nvar "t")),
+      COM_update_proof
+        "member_wf"
+        [1,1,2,1,3,1]
+        (proof_step_hypothesis_eq),
+      COM_find_holes "member_wf"
     ].
 
 Eval compute in lib1.
@@ -3113,8 +3268,11 @@ Definition lib2 {o} :=
   update_list
     (fst (@lib1 o))
     [
-      COM_find_holes "member_wf"
+      COM_finish_proof "member_wf"
     ].
 
-(* didn't work because we have to unhide the hypothesis *)
 Eval compute in lib2.
+
+Locate same_opabs_dec.
+
+(* need to make same_opabs_dec translucent *)
