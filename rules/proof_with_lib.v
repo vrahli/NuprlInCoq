@@ -1176,6 +1176,8 @@ Inductive command {o} :=
 (*(* focuses to a node in a proof *)
 | COM_focus_proof (name : LemmaName) (addr : address)*)
 
+Definition commands {o} := list (@command o).
+
 Lemma in_conclusions_extend_proof_context {o} :
   forall (ctxt  : @ProofContext o)
          (entry : LibraryEntry)
@@ -1382,22 +1384,97 @@ Proof.
   apply in_lib_dec.
 Defined.
 
+Record Hole {o} :=
+  MkHole
+    {
+      hole_seq  : @pre_baresequent o;
+      hole_addr : address;
+    }.
+
+Arguments MkHole [o] _ _.
+Arguments hole_seq [o] _.
+Arguments hole_addr [o] _.
+
+Definition Holes {o} := list (@Hole o).
+
+Inductive DEBUG_MSG {o} :=
+| could_not_add_definition_because_definition_already_in_library
+| added_definition
+
+| started_proof
+
+| could_not_apply_isect_eq_rule_not_isects
+| could_not_apply_isect_eq_rule_type_not_universe
+| could_not_apply_isect_eq_rule_not_equality
+| could_not_apply_isect_eq_rule
+| applied_isect_eq_rule
+
+| could_not_apply_universe_eq_rule_not_universes
+| could_not_apply_universe_eq_rule_type_not_universe
+| could_not_apply_universe_eq_rule_not_equality
+| could_not_apply_universe_eq_rule
+| applied_universe_eq_rule
+
+| could_not_apply_isect_member_formation_rule_not_isect
+| could_not_apply_isect_member_formation_rule
+| applied_isect_member_formation_rule
+
+| could_not_apply_cequiv_computation_atmost_rule_not_cequiv
+| could_not_apply_cequiv_computation_atmost_rule
+| applied_cequiv_computation_atmost_rule
+
+| could_not_apply_cequiv_computation_rule_not_cequiv
+| could_not_apply_cequiv_computation_rule
+| applied_cequiv_computation_rule
+
+| could_not_apply_cequiv_subst_concl_rule_not_subst
+| could_not_apply_cequiv_subst_concl_rule
+| applied_cequiv_subst_concl_rule
+
+| could_not_apply_hypothesis_rule
+| applied_hypothesis_rule
+
+| could_not_apply_hypothesis_equality_rule
+| applied_hypothesis_equality_rule
+
+| could_not_apply_unhide_equality_rule
+| applied_unhide_equality_rule
+
+| could_not_apply_equality_equality_rule
+| applied_equality_equality_rule
+
+| could_not_apply_cut_rule
+| applied_cut_rule
+
+| could_not_apply_update_because_wrong_address
+| could_not_apply_update_because_no_hole_at_address
+| could_not_apply_update_because_could_not_find_lemma
+
+| found_holes (holes : @Holes o)
+| could_not_find_holes_because_could_not_find_lemma
+
+| finished_proof
+| could_not_finish_proof
+| could_not_finish_proof_because_entry_exists_in_lib
+| could_not_finish_proof_because_could_not_find_lemma.
+
 Definition NuprlState_add_def {o}
            (state   : @NuprlState o)
            (opabs   : opabs)
            (vars    : list sovar_sig)
            (rhs     : SOTerm)
-           (correct : correct_abs opabs vars rhs) : NuprlState :=
+           (correct : correct_abs opabs vars rhs) : NuprlState * @DEBUG_MSG o :=
   match state with
   | MkNuprlState L unfinished =>
     let entry := LibraryEntry_abs (lib_abs opabs vars rhs correct) in
 
     match entry_in_lib_dec entry (Library2lib L) with
-    | inl p => state
+    | inl p => (state, could_not_add_definition_because_definition_already_in_library)
     | inr p =>
-      MkNuprlState
-        (entry :: L)
-        (pre_proofs_cons entry p unfinished)
+      (MkNuprlState
+         (entry :: L)
+         (pre_proofs_cons entry p unfinished),
+       added_definition)
     end
   end.
 
@@ -1965,77 +2042,6 @@ Definition NuprlState_add_entry {o}
                                (pre_proofs_cons entry ni pps)
   end.
 
-Record Hole {o} :=
-  MkHole
-    {
-      hole_seq  : @pre_baresequent o;
-      hole_addr : address;
-    }.
-
-Arguments MkHole [o] _ _.
-Arguments hole_seq [o] _.
-Arguments hole_addr [o] _.
-
-Definition Holes {o} := list (@Hole o).
-
-Inductive DEBUG_MSG {o} :=
-| no_message
-
-| could_not_apply_isect_eq_rule_not_isects
-| could_not_apply_isect_eq_rule_type_not_universe
-| could_not_apply_isect_eq_rule_not_equality
-| could_not_apply_isect_eq_rule
-| applied_isect_eq_rule
-
-| could_not_apply_universe_eq_rule_not_universes
-| could_not_apply_universe_eq_rule_type_not_universe
-| could_not_apply_universe_eq_rule_not_equality
-| could_not_apply_universe_eq_rule
-| applied_universe_eq_rule
-
-| could_not_apply_isect_member_formation_rule_not_isect
-| could_not_apply_isect_member_formation_rule
-| applied_isect_member_formation_rule
-
-| could_not_apply_cequiv_computation_atmost_rule_not_cequiv
-| could_not_apply_cequiv_computation_atmost_rule
-| applied_cequiv_computation_atmost_rule
-
-| could_not_apply_cequiv_computation_rule_not_cequiv
-| could_not_apply_cequiv_computation_rule
-| applied_cequiv_computation_rule
-
-| could_not_apply_cequiv_subst_concl_rule_not_subst
-| could_not_apply_cequiv_subst_concl_rule
-| applied_cequiv_subst_concl_rule
-
-| could_not_apply_hypothesis_rule
-| applied_hypothesis_rule
-
-| could_not_apply_hypothesis_equality_rule
-| applied_hypothesis_equality_rule
-
-| could_not_apply_unhide_equality_rule
-| applied_unhide_equality_rule
-
-| could_not_apply_equality_equality_rule
-| applied_equality_equality_rule
-
-| could_not_apply_cut_rule
-| applied_cut_rule
-
-| could_not_apply_update_because_wrong_address
-| could_not_apply_update_because_no_hole_at_address
-| could_not_apply_update_because_could_not_find_lemma
-
-| found_holes (holes : @Holes o)
-| could_not_find_holes_because_could_not_find_lemma
-
-| finished_proof
-| could_not_finish_proof
-| could_not_finish_proof_because_entry_exists_in_lib
-| could_not_finish_proof_because_could_not_find_lemma.
-
 Definition NuprlState_finish_proof {o}
            (state : @NuprlState o)
            (name  : LemmaName) : NuprlState * @DEBUG_MSG o :=
@@ -2489,7 +2495,8 @@ Definition apply_proof_step_cequiv_computation {o} {ctxt}
       match T with
       | oterm (Can NCequiv) [bterm [] a, bterm [] b] =>
 
-        match term_dec_op (compute_atmost_k_steps ctxt n a) b with
+        let x := compute_atmost_k_steps ctxt n a in
+        match term_dec_op x b with
         | Some p =>
 
           (pre_proof_cequiv_computation
@@ -2944,13 +2951,14 @@ Definition NuprlState_start_proof {o}
            (state : @NuprlState o)
            (name  : LemmaName)
            (C     : NTerm)
-           (isp   : isprog C) : NuprlState :=
+           (isp   : isprog C) : NuprlState * @DEBUG_MSG o :=
   let pps : pre_proof_seq (Library2ProofContext (NuprlState_lib state)) :=
       MkPreProofSeq name C isp (pre_proof_hole _ (term2pre_baresequent C))
   in
-  MkNuprlState
-    (NuprlState_lib state)
-    (pps :: NuprlState_unfinished state).
+  (MkNuprlState
+     (NuprlState_lib state)
+     (pps :: NuprlState_unfinished state),
+   started_proof).
 
 Fixpoint find_holes_in_pre_proof {o}
          {ctxt : @ProofContext o}
@@ -3042,7 +3050,7 @@ Definition update {o}
            (cmd   : command) : NuprlState * DEBUG_MSG :=
   match cmd with
   | COM_add_def opabs vars rhs correct =>
-    (NuprlState_add_def state opabs vars rhs correct, no_message)
+    NuprlState_add_def state opabs vars rhs correct
 
   | COM_finish_proof name =>
     NuprlState_finish_proof state name
@@ -3051,7 +3059,7 @@ Definition update {o}
     NuprlState_update_proof state name addr step
 
   | COM_start_proof name C isp =>
-    (NuprlState_start_proof state name C isp, no_message)
+    NuprlState_start_proof state name C isp
 
   | COM_find_holes name =>
     NuprlState_find_holes state name
@@ -3062,7 +3070,7 @@ Definition DEBUG_MSGS {o} := list (@DEBUG_MSG o).
 Record UpdRes {o} :=
   MkUpdRes
     {
-      upd_res_state :> @NuprlState o;
+      upd_res_state : @NuprlState o;
       upd_res_trace : @DEBUG_MSGS o;
     }.
 
@@ -3070,7 +3078,7 @@ Arguments MkUpdRes [o] _ _.
 
 Fixpoint update_list {o}
          (state : @NuprlState o)
-         (cmds  : list command) : UpdRes :=
+         (cmds  : commands) : UpdRes :=
   match cmds with
   | [] => MkUpdRes state []
   | cmd :: cmds =>
@@ -3087,7 +3095,7 @@ Definition initUnfinished {o} : @pre_proofs o (Library2ProofContext initLibrary)
 Definition initNuprlState {o} : @NuprlState o :=
   MkNuprlState initLibrary initUnfinished.
 
-Definition update_list_from_init {o} (cmds : list command) : @UpdRes o :=
+Definition update_list_from_init {o} (cmds : commands) : @UpdRes o :=
   update_list initNuprlState cmds.
 
 (* Should we add this to NuprlState *)
@@ -3154,8 +3162,8 @@ Proof.
 Qed.
 
 Lemma update_list_preserves_validity {o} :
-  forall (cmds : list command) (state : @NuprlState o),
-    ValidNuprlState state -> ValidNuprlState (update_list state cmds).
+  forall (cmds : commands) (state : @NuprlState o),
+    ValidNuprlState state -> ValidNuprlState (upd_res_state (update_list state cmds)).
 Proof.
   induction cmds; introv v; simpl in *; auto.
 
@@ -3175,8 +3183,8 @@ Proof.
 Qed.
 
 Lemma valid_update_list_from_init {o} :
-  forall (cmds : list command),
-    @ValidNuprlState o (update_list_from_init cmds).
+  forall (cmds : commands),
+    @ValidNuprlState o (upd_res_state (update_list_from_init cmds)).
 Proof.
   introv.
   apply update_list_preserves_validity.
@@ -3190,18 +3198,25 @@ Record ValidUpdRes {o} :=
       valid_upd_res_trace : list (@DEBUG_MSG o);
       valid_upd_res_valid : ValidNuprlState valid_upd_res_state;
     }.
-
 Arguments MkValidUpdRes [o] _ _ _.
 
+Lemma eq_upd_res_state {o} :
+  forall {a b}, a = b -> @upd_res_state o a = upd_res_state b.
+Proof.
+  introv h; subst; auto.
+Defined.
+
 Definition update_list_from_init_with_validity {o}
-           (cmds : list command) : @ValidUpdRes o :=
-  match update_list_from_init cmds with
-  | MkUpdRes state trace =>
-    MkValidUpdRes
-      state
-      trace
-      (valid_update_list_from_init cmds)
-  end.
+           (cmds : @commands o) : @ValidUpdRes o :=
+  MkValidUpdRes
+    (upd_res_state (update_list_from_init cmds))
+    (upd_res_trace (update_list_from_init cmds))
+    (eq_rect
+       _
+       _
+       (valid_update_list_from_init cmds)
+       _
+       (eq_upd_res_state eq_refl)).
 
 Notation "𝕌( i )" := (oterm (Can (NUni i)) []).
 Notation "𝕍( v )" := (vterm (nvar v)) (at level 0).
@@ -3210,107 +3225,112 @@ Notation "𝔸( name , t1 , t2 )" := (oterm (Abs {| opabs_name := name; opabs_pa
 Notation " ( a ≡ b ∈ T ) " := (oterm  (Can NEquality) [ bterm [] a, bterm [] b, bterm [] T]) (at level 0).
 Notation "⋂ v : T . U" := (oterm (Can NIsect) [ bterm [] T, bterm [nvar v] U ]) (at level 0).
 Notation " ( a ≣ b ∈ T ) " := (soterm (Can NEquality) [ sobterm [] a, sobterm [] b, sobterm [] T ]).
-
+Notation "★" := (oterm (Can NAxiom) []).
 Notation "𝔸( name , v1 , v2 , correct ) ≜ t" := (lib_abs {| opabs_name := name; opabs_params := []; opabs_sign := [0, 0] |} [ (nvar v1, 0), (nvar v2, 0) ] t correct) (at level 0).
+Notation "⎧ v ∷ t ⎫" := {| hvar := nvar v; hidden := false; htyp := t; lvl := nolvl |}.
+Notation "⎡ v ∷ t ⎤" := {| hvar := nvar v; hidden := true; htyp := t; lvl := nolvl |}.
+Notation "( a ≈ b )" := (oterm (Can NCequiv) [ bterm [] a, bterm [] b]).
 
 Arguments pre_proof_isect_member_formation [o] [ctxt] _ _ _ _ _ _ _ _ _.
 Arguments pre_proof_hole [o] [ctxt] _.
 
-Definition lib1 {o} :=
-  update_list
-    (@initNuprlState o)
-    [
-      COM_add_def
-        opabs_member
-        [(nvart, 0), (nvarT, 0)]
-        (mk_so_equality (sovar nvart []) (sovar nvart []) (sovar nvarT []))
-        opabs_member_correct,
-      COM_start_proof
-        "member_wf"
-        (mk_uall
-           (mk_uni 0)
-           nvarT
-           (mk_uall
-              (mk_var nvarT)
-              nvart
-              (mk_member
-                 (mk_abs opabs_member [nobnd (mk_var nvart), nobnd (mk_var nvarT)])
-                 (mk_uni 0))))
-        (eq_refl, eq_refl),
-      COM_update_proof
-        "member_wf"
-        []
-        (proof_step_isect_member_formation (nvar "T") 1),
-      COM_update_proof
-        "member_wf"
-        [1]
-        (proof_step_isect_member_formation (nvar "t") 0),
-      COM_update_proof
-        "member_wf"
-        [1,1]
-        (proof_step_cut
-           (nvar "w")
-           (mk_cequiv
-              (mk_abs opabs_member [nobnd (mk_var (nvar "t")), nobnd (mk_var (nvar "T"))])
-              (mk_equality (mk_var (nvar "t")) (mk_var (nvar "t")) (mk_var (nvar "T"))))),
-      COM_update_proof
-        "member_wf"
-        [1,1,1]
-        (proof_step_cequiv_computation 1),
-      COM_update_proof
-        "member_wf"
-        [1,1,2]
-        (proof_step_cequiv_subst_concl
-           (nvar "x")
-           (mk_equality (vterm (nvar "x")) (vterm (nvar "x")) (mk_uni 0))
-           (mk_abs opabs_member [nobnd (mk_var (nvar "t")), nobnd (mk_var (nvar "T"))])
-           (mk_equality (mk_var (nvar "t")) (mk_var (nvar "t")) (mk_var (nvar "T")))),
-      COM_update_proof
-        "member_wf"
-        [1,1,2,2]
-        (proof_step_hypothesis (nvar "w")),
-      COM_update_proof
-        "member_wf"
-        [2]
-        (proof_step_universe_eq),
-      COM_update_proof
-        "member_wf"
-        [1,2]
-        (proof_step_unhide_equality (nvar "T")),
-      COM_update_proof
-        "member_wf"
-        [1,2,1]
-        (proof_step_hypothesis_eq),
-      COM_update_proof
-        "member_wf"
-        [1,1,2,1]
-        (proof_step_equality_equality),
-      COM_update_proof
-        "member_wf"
-        [1,1,2,1,1]
-        (proof_step_unhide_equality (nvar "T")),
-      COM_update_proof
-        "member_wf"
-        [1,1,2,1,1,1]
-        (proof_step_hypothesis_eq),
-      COM_update_proof
-        "member_wf"
-        [1,1,2,1,2]
-        (proof_step_unhide_equality (nvar "t")),
-      COM_update_proof
-        "member_wf"
-        [1,1,2,1,2,1]
-        (proof_step_hypothesis_eq),
-      COM_update_proof
-        "member_wf"
-        [1,1,2,1,3]
-        (proof_step_unhide_equality (nvar "t")),
-      COM_update_proof
-        "member_wf"
-        [1,1,2,1,3,1]
-        (proof_step_hypothesis_eq),
-      COM_find_holes "member_wf",
-      COM_finish_proof "member_wf"
-    ].
+Definition cmds1 {o} : @commands o :=
+  [
+    COM_add_def
+      opabs_member
+      [(nvart, 0), (nvarT, 0)]
+      (mk_so_equality (sovar nvart []) (sovar nvart []) (sovar nvarT []))
+      opabs_member_correct,
+    COM_start_proof
+      "member_wf"
+      (mk_uall
+         (mk_uni 0)
+         nvarT
+         (mk_uall
+            (mk_var nvarT)
+            nvart
+            (mk_member
+               (mk_abs opabs_member [nobnd (mk_var nvart), nobnd (mk_var nvarT)])
+               (mk_uni 0))))
+      (eq_refl, eq_refl),
+    COM_update_proof
+      "member_wf"
+      []
+      (proof_step_isect_member_formation (nvar "T") 1),
+    COM_update_proof
+      "member_wf"
+      [1]
+      (proof_step_isect_member_formation (nvar "t") 0),
+    COM_update_proof
+      "member_wf"
+      [1,1]
+      (proof_step_cut
+         (nvar "w")
+         (mk_cequiv
+            (mk_abs opabs_member [nobnd (mk_var (nvar "t")), nobnd (mk_var (nvar "T"))])
+            (mk_equality (mk_var (nvar "t")) (mk_var (nvar "t")) (mk_var (nvar "T"))))),
+    COM_update_proof
+      "member_wf"
+      [1,1,1]
+      (proof_step_cequiv_computation 1),
+    COM_update_proof
+      "member_wf"
+      [1,1,2]
+      (proof_step_cequiv_subst_concl
+         (nvar "x")
+         (mk_equality (vterm (nvar "x")) (vterm (nvar "x")) (mk_uni 0))
+         (mk_abs opabs_member [nobnd (mk_var (nvar "t")), nobnd (mk_var (nvar "T"))])
+         (mk_equality (mk_var (nvar "t")) (mk_var (nvar "t")) (mk_var (nvar "T")))),
+    COM_update_proof
+      "member_wf"
+      [1,1,2,2]
+      (proof_step_hypothesis (nvar "w")),
+    COM_update_proof
+      "member_wf"
+      [2]
+      (proof_step_universe_eq),
+    COM_update_proof
+      "member_wf"
+      [1,2]
+      (proof_step_unhide_equality (nvar "T")),
+    COM_update_proof
+      "member_wf"
+      [1,2,1]
+      (proof_step_hypothesis_eq),
+    COM_update_proof
+      "member_wf"
+      [1,1,2,1]
+      (proof_step_equality_equality),
+    COM_update_proof
+      "member_wf"
+      [1,1,2,1,1]
+      (proof_step_unhide_equality (nvar "T")),
+    COM_update_proof
+      "member_wf"
+      [1,1,2,1,1,1]
+      (proof_step_hypothesis_eq),
+    COM_update_proof
+      "member_wf"
+      [1,1,2,1,2]
+      (proof_step_unhide_equality (nvar "t")),
+    COM_update_proof
+      "member_wf"
+      [1,1,2,1,2,1]
+      (proof_step_hypothesis_eq),
+    COM_update_proof
+      "member_wf"
+      [1,1,2,1,3]
+      (proof_step_unhide_equality (nvar "t")),
+    COM_update_proof
+      "member_wf"
+      [1,1,2,1,3,1]
+      (proof_step_hypothesis_eq),
+    COM_find_holes "member_wf",
+    COM_finish_proof "member_wf"
+  ].
 
-Eval compute in lib1.
+Definition lib1 {o} : @UpdRes o := update_list_from_init cmds1.
+
+Time Eval compute in lib1.
+
+Time Eval compute in (update_list_from_init_with_validity cmds1).
