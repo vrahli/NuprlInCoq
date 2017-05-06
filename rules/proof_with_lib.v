@@ -1965,9 +1965,80 @@ Definition NuprlState_add_entry {o}
                                (pre_proofs_cons entry ni pps)
   end.
 
+Record Hole {o} :=
+  MkHole
+    {
+      hole_seq  : @pre_baresequent o;
+      hole_addr : address;
+    }.
+
+Arguments MkHole [o] _ _.
+Arguments hole_seq [o] _.
+Arguments hole_addr [o] _.
+
+Definition Holes {o} := list (@Hole o).
+
+Inductive DEBUG_MSG {o} :=
+| no_message
+
+| could_not_apply_isect_eq_rule_not_isects
+| could_not_apply_isect_eq_rule_type_not_universe
+| could_not_apply_isect_eq_rule_not_equality
+| could_not_apply_isect_eq_rule
+| applied_isect_eq_rule
+
+| could_not_apply_universe_eq_rule_not_universes
+| could_not_apply_universe_eq_rule_type_not_universe
+| could_not_apply_universe_eq_rule_not_equality
+| could_not_apply_universe_eq_rule
+| applied_universe_eq_rule
+
+| could_not_apply_isect_member_formation_rule_not_isect
+| could_not_apply_isect_member_formation_rule
+| applied_isect_member_formation_rule
+
+| could_not_apply_cequiv_computation_atmost_rule_not_cequiv
+| could_not_apply_cequiv_computation_atmost_rule
+| applied_cequiv_computation_atmost_rule
+
+| could_not_apply_cequiv_computation_rule_not_cequiv
+| could_not_apply_cequiv_computation_rule
+| applied_cequiv_computation_rule
+
+| could_not_apply_cequiv_subst_concl_rule_not_subst
+| could_not_apply_cequiv_subst_concl_rule
+| applied_cequiv_subst_concl_rule
+
+| could_not_apply_hypothesis_rule
+| applied_hypothesis_rule
+
+| could_not_apply_hypothesis_equality_rule
+| applied_hypothesis_equality_rule
+
+| could_not_apply_unhide_equality_rule
+| applied_unhide_equality_rule
+
+| could_not_apply_equality_equality_rule
+| applied_equality_equality_rule
+
+| could_not_apply_cut_rule
+| applied_cut_rule
+
+| could_not_apply_update_because_wrong_address
+| could_not_apply_update_because_no_hole_at_address
+| could_not_apply_update_because_could_not_find_lemma
+
+| found_holes (holes : @Holes o)
+| could_not_find_holes_because_could_not_find_lemma
+
+| finished_proof
+| could_not_finish_proof
+| could_not_finish_proof_because_entry_exists_in_lib
+| could_not_finish_proof_because_could_not_find_lemma.
+
 Definition NuprlState_finish_proof {o}
            (state : @NuprlState o)
-           (name  : LemmaName) : NuprlState :=
+           (name  : LemmaName) : NuprlState * @DEBUG_MSG o :=
   match find_unfinished_in_pre_proofs (NuprlState_unfinished state) name with
   | (Some pp, pps) =>
 
@@ -1975,14 +2046,14 @@ Definition NuprlState_finish_proof {o}
     | Some entry =>
 
       match entry_in_lib_dec entry (Library2lib state) with
-      | inl p => state
-      | inr p => NuprlState_add_entry state entry p pps
+      | inl p => (state, could_not_finish_proof_because_entry_exists_in_lib)
+      | inr p => (NuprlState_add_entry state entry p pps, finished_proof)
       end
 
-    | None => state
+    | None => (state, could_not_finish_proof)
     end
 
-  | (None, pps) => state
+  | (None, pps) => (state, could_not_finish_proof_because_could_not_find_lemma)
   end.
 
 Definition NuprlState_change_unfinished {o}
@@ -2081,72 +2152,6 @@ Definition apply_proof_step {o} {ctxt}
     end
   end.
  *)
-
-Record Hole {o} :=
-  MkHole
-    {
-      hole_seq  : @pre_baresequent o;
-      hole_addr : address;
-    }.
-
-Arguments MkHole [o] _ _.
-Arguments hole_seq [o] _.
-Arguments hole_addr [o] _.
-
-Definition Holes {o} := list (@Hole o).
-
-Inductive DEBUG_MSG {o} :=
-| no_message
-
-| could_not_apply_isect_eq_rule_not_isects
-| could_not_apply_isect_eq_rule_type_not_universe
-| could_not_apply_isect_eq_rule_not_equality
-| could_not_apply_isect_eq_rule
-| applied_isect_eq_rule
-
-| could_not_apply_universe_eq_rule_not_universes
-| could_not_apply_universe_eq_rule_type_not_universe
-| could_not_apply_universe_eq_rule_not_equality
-| could_not_apply_universe_eq_rule
-| applied_universe_eq_rule
-
-| could_not_apply_isect_member_formation_rule_not_isect
-| could_not_apply_isect_member_formation_rule
-| applied_isect_member_formation_rule
-
-| could_not_apply_cequiv_computation_atmost_rule_not_cequiv
-| could_not_apply_cequiv_computation_atmost_rule
-| applied_cequiv_computation_atmost_rule
-
-| could_not_apply_cequiv_computation_rule_not_cequiv
-| could_not_apply_cequiv_computation_rule
-| applied_cequiv_computation_rule
-
-| could_not_apply_cequiv_subst_concl_rule_not_subst
-| could_not_apply_cequiv_subst_concl_rule
-| applied_cequiv_subst_concl_rule
-
-| could_not_apply_hypothesis_rule
-| applied_hypothesis_rule
-
-| could_not_apply_hypothesis_equality_rule
-| applied_hypothesis_equality_rule
-
-| could_not_apply_unhide_equality_rule
-| applied_unhide_equality_rule
-
-| could_not_apply_equality_equality_rule
-| applied_equality_equality_rule
-
-| could_not_apply_cut_rule
-| applied_cut_rule
-
-| could_not_apply_update_because_wrong_address
-| could_not_apply_update_because_no_hole_at_address
-| could_not_apply_update_because_could_not_find_lemma
-
-| found_holes (holes : @Holes o)
-| could_not_find_holes_because_could_not_find_lemma.
 
 Definition apply_proof_step_isect_eq {o} {ctxt}
            (s : @pre_baresequent o)
@@ -3040,7 +3045,7 @@ Definition update {o}
     (NuprlState_add_def state opabs vars rhs correct, no_message)
 
   | COM_finish_proof name =>
-    (NuprlState_finish_proof state name, no_message)
+    NuprlState_finish_proof state name
 
   | COM_update_proof name addr step =>
     NuprlState_update_proof state name addr step
@@ -3052,16 +3057,38 @@ Definition update {o}
     NuprlState_find_holes state name
   end.
 
+Definition DEBUG_MSGS {o} := list (@DEBUG_MSG o).
+
+Record UpdRes {o} :=
+  MkUpdRes
+    {
+      upd_res_state :> @NuprlState o;
+      upd_res_trace : @DEBUG_MSGS o;
+    }.
+
+Arguments MkUpdRes [o] _ _.
+
 Fixpoint update_list {o}
          (state : @NuprlState o)
-         (cmds  : list command) : NuprlState * list DEBUG_MSG :=
+         (cmds  : list command) : UpdRes :=
   match cmds with
-  | [] => (state, [])
+  | [] => MkUpdRes state []
   | cmd :: cmds =>
     let (s1,m) := update state cmd in
-    let (s2,ms) := update_list s1 cmds in
-    (s2, snoc ms m)
+    match update_list s1 cmds with
+    | MkUpdRes s2 ms => MkUpdRes s2 (snoc ms m)
+    end
   end.
+
+Definition initLibrary {o} : @Library o := [].
+
+Definition initUnfinished {o} : @pre_proofs o (Library2ProofContext initLibrary) := [].
+
+Definition initNuprlState {o} : @NuprlState o :=
+  MkNuprlState initLibrary initUnfinished.
+
+Definition update_list_from_init {o} (cmds : list command) : @UpdRes o :=
+  update_list initNuprlState cmds.
 
 (* Should we add this to NuprlState *)
 Definition ValidNuprlState {o} (state : @NuprlState o) := ValidLibrary state.
@@ -3128,7 +3155,7 @@ Qed.
 
 Lemma update_list_preserves_validity {o} :
   forall (cmds : list command) (state : @NuprlState o),
-    ValidNuprlState state -> ValidNuprlState (fst (update_list state cmds)).
+    ValidNuprlState state -> ValidNuprlState (update_list state cmds).
 Proof.
   induction cmds; introv v; simpl in *; auto.
 
@@ -3138,20 +3165,43 @@ Proof.
 
   apply IHcmds in q.
   remember (update_list p0 cmds) as w; symmetry in Heqw; repnd; simpl in *; auto.
+  destruct w; auto.
 Qed.
-
-Definition initLibrary {o} : @Library o := [].
-
-Definition initUnfinished {o} : @pre_proofs o (Library2ProofContext initLibrary) := [].
-
-Definition initNuprlState {o} : @NuprlState o :=
-  MkNuprlState initLibrary initUnfinished.
 
 Lemma ValidInitNuprlState {o} : @ValidNuprlState o initNuprlState.
 Proof.
   introv.
   compute; auto.
 Qed.
+
+Lemma valid_update_list_from_init {o} :
+  forall (cmds : list command),
+    @ValidNuprlState o (update_list_from_init cmds).
+Proof.
+  introv.
+  apply update_list_preserves_validity.
+  apply ValidInitNuprlState.
+Qed.
+
+Record ValidUpdRes {o} :=
+  MkValidUpdRes
+    {
+      valid_upd_res_state : @NuprlState o;
+      valid_upd_res_trace : list (@DEBUG_MSG o);
+      valid_upd_res_valid : ValidNuprlState valid_upd_res_state;
+    }.
+
+Arguments MkValidUpdRes [o] _ _ _.
+
+Definition update_list_from_init_with_validity {o}
+           (cmds : list command) : @ValidUpdRes o :=
+  match update_list_from_init cmds with
+  | MkUpdRes state trace =>
+    MkValidUpdRes
+      state
+      trace
+      (valid_update_list_from_init cmds)
+  end.
 
 Notation "𝕌( i )" := (oterm (Can (NUni i)) []).
 Notation "𝕍( v )" := (vterm (nvar v)) (at level 0).
@@ -3259,20 +3309,8 @@ Definition lib1 {o} :=
         "member_wf"
         [1,1,2,1,3,1]
         (proof_step_hypothesis_eq),
-      COM_find_holes "member_wf"
-    ].
-
-Eval compute in lib1.
-
-Definition lib2 {o} :=
-  update_list
-    (fst (@lib1 o))
-    [
+      COM_find_holes "member_wf",
       COM_finish_proof "member_wf"
     ].
 
-Eval compute in lib2.
-
-Locate same_opabs_dec.
-
-(* need to make same_opabs_dec translucent *)
+Eval compute in lib1.

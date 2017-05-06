@@ -778,7 +778,7 @@ Proof.
   introv.
   destruct oa1, oa2; simpl.
   pose proof (String.string_dec opabs_name0 opabs_name1); sp.
-Qed.
+Defined.
 Hint Immediate decidable_eq_opabs_name.
 
 Lemma decidable_eq_opabs_sign :
@@ -787,7 +787,7 @@ Proof.
   introv.
   destruct oa1, oa2; simpl.
   pose proof (opsign_dec opabs_sign0 opabs_sign1); sp.
-Qed.
+Defined.
 Hint Immediate decidable_eq_opabs_sign.
 
 Lemma dec_op_eq_axiom {o} :
@@ -797,6 +797,6 @@ Proof.
   introv; unfold decidable.
   destruct op; try (complete (right; sp; ginv)).
   destruct c; tcsp; try (complete (right; sp; ginv)).
-Qed.
+Defined.
 
 (* end hide *)

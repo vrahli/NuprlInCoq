@@ -50,7 +50,7 @@ Proof.
     destruct (parameters_dec (opabs_params x) (opabs_params y));
     destruct x, y; simpl in *; subst; tcsp;
     try (complete (right; intro xx; apply eq_opabs_implies in xx; tcsp)).
-Qed.
+Defined.
 
 Lemma sovar_sig_deq : Deq sovar_sig.
 Proof.
@@ -60,7 +60,7 @@ Proof.
   try (complete (right; intro xx; inversion xx; subst; tcsp)).
   destruct (deq_nvar n n1); subst; tcsp;
   try (complete (right; intro xx; inversion xx; subst; tcsp)).
-Qed.
+Defined.
 
 Definition same_opabs (oa1 oa2 : opabs) :=
   opabs_name oa1 = opabs_name oa2
@@ -81,7 +81,7 @@ Proof.
   destruct (matching_parametersb (opabs_params oa1) (opabs_params oa2)); simpl;
   try (complete (right; intro xx; inversion xx; tcsp)).
   left; dands; auto.
-Qed.
+Defined.
 
 Definition opabs_of_lib_entry {o} (e : @library_entry o) :=
   match e with
@@ -107,7 +107,7 @@ Proof.
       * left; eexists; eexists; eauto.
       * right; intro xx; exrepnd; repndors; subst; allsimpl; tcsp.
         destruct k; eexists; eexists; eauto.
-Qed.
+Defined.
 
 Lemma found_entry_in {o} :
   forall lib oa0 (bs : list (@BTerm o)) oa vars rhs correct,
@@ -553,7 +553,7 @@ Proof.
   left; dands; auto.
   unfold matching_parameters.
   rewrite <- Heqm; sp.
-Qed.
+Defined.
 
 Fixpoint found_entry_b {o} (lib : @library o) opabs (bs : list (@BTerm o)) : bool :=
   match lib with
@@ -2212,7 +2212,7 @@ Proof.
   introv.
   unfold matching_sign, decidable.
   destruct (opsign_dec (map (fun v : NVar # nat => snd v) vars) sign); tcsp.
-Qed.
+Defined.
 
 Definition wf_entry {o} (e : @library_entry o) : bool :=
   match e with
