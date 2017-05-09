@@ -130,6 +130,7 @@ Require Import rules_isint.
 
 (* Arithmetic Rules *)
 Require Import rules_arith.
+Require Import rules_integer.
 Require Import rules_integer_ring.
 Require Import rules_minus.
 Require Import rules_number.
@@ -176,6 +177,7 @@ Require Import rules_false.
 Require Import nuprl_lemmas1.
 Require Import nuprl_lemmas2.
 Require Import proof1.
+Require Import proof_with_lib.
 Require Import sterm.
 
 

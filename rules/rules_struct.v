@@ -545,22 +545,22 @@ Qed.
 Definition rule_introduction_concl {o} (H : @bhyps o) C t :=
   mk_baresequent H (mk_concl C t).
 
-Definition rule_introduction_hyp {o} (H : @bhyps o) C t :=
-  mk_baresequent H (mk_conclax (mk_equality t t C)).
+Definition rule_introduction_hyp {o} (H : @bhyps o) C t e :=
+  mk_baresequent H (mk_concl (mk_member t C) e).
 
 Definition rule_introduction {o}
              (H : @barehypotheses o)
-             (C t : NTerm) :=
+             (C t e : NTerm) :=
   mk_rule
     (rule_introduction_concl H C t)
-    [ rule_introduction_hyp H C t ]
+    [ rule_introduction_hyp H C t e ]
     [ sarg_term t ].
 
 Lemma rule_introduction_true3 {o} :
   forall lib
          (H : @barehypotheses o)
-         (C t : NTerm),
-    rule_true3 lib (rule_introduction H C t).
+         (C t e : NTerm),
+    rule_true3 lib (rule_introduction H C t e).
 Proof.
   intros.
   unfold rule_introduction, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -592,24 +592,19 @@ Proof.
   autodimp hyp1 h.
   autodimp hyp1 h.
   exrepd.
+  lsubst_tac.
 
-  lift_lsubst in t0; lift_lsubst in e; clear_irr.
-
-  rw @tequality_mkc_equality in t0; sp.
-
-  allrewrite @lsubstc_mk_axiom.
-  allrewrite @member_eq.
-  allrewrite @fold_mkc_member.
-  rw <- @member_member_iff in e.
-
-  spcast; apply @equality_respects_cequivc_right with (t2 := lsubstc t wfc0 s1 pt1); sp.
+  apply member_if_inhabited in e0.
+  applydup @tequality_mkc_member_implies_sp in t0; auto.
+  dands; auto.
+  rw @tequality_mkc_member in t0; tcsp.
 Qed.
 
 Lemma rule_introduction_true_ext_lib {o} :
   forall lib
          (H : @barehypotheses o)
-         (C t : NTerm),
-    rule_true_ext_lib lib (rule_introduction H C t).
+         (C t e : NTerm),
+    rule_true_ext_lib lib (rule_introduction H C t e).
 Proof.
   introv.
   apply rule_true3_implies_rule_true_ext_lib.
@@ -617,12 +612,11 @@ Proof.
   apply rule_introduction_true3.
 Qed.
 
-
 Lemma rule_introduction_true {o} :
   forall lib
          (H : @barehypotheses o)
-         (C t : NTerm),
-    rule_true lib (rule_introduction H C t).
+         (C t e : NTerm),
+    rule_true lib (rule_introduction H C t e).
 Proof.
   introv.
   apply rule_true3_implies_rule_true.
@@ -630,10 +624,10 @@ Proof.
 Qed.
 
 Lemma rule_introduction_wf2 {o} :
-  forall (H : @barehypotheses o) (C t : NTerm),
+  forall (H : @barehypotheses o) (C t e : NTerm),
     wf_term t
     -> covered t (vars_hyps H)
-    -> wf_rule2 (rule_introduction H C t).
+    -> wf_rule2 (rule_introduction H C t e).
 Proof.
   introv wt cov wf m; allsimpl.
   repndors; subst; tcsp.

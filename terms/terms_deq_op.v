@@ -45,7 +45,7 @@ Proof.
 
   - destruct (can_inj_deq c c0) as [d|d]; subst;[left|right];auto.
 
-  - destruct (Z_noteq_dec z z0) as [d|d]; subst;[right|left];auto.
+  - destruct (Z.eq_dec z z0) as [d|d]; subst;[left|right];auto.
 
   - right; auto.
 

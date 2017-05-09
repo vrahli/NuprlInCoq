@@ -45,6 +45,7 @@ Require Export rules_struct.
 Require Export rules_function.
 Require Export rules_uni.
 Require Export rules_equality3.
+Require Export rules_integer.
 
 
 
@@ -236,6 +237,9 @@ Definition pre_rule_hypothesis_equality_concl {o} (G J : @bhyps o) A x :=
     (snoc G (mk_hyp x A) ++ J)
     (mk_pre_concl (mk_equality (mk_var x) (mk_var x) A)).
 
+Definition pre_rule_integer_equality_concl {o} (H : @bhyps o) n :=
+  mk_pre_bseq H (mk_pre_concl (mk_member (mk_integer n) mk_int)).
+
 Definition pre_rule_unhide_equality_concl {o} (H J : @bhyps o) x A t1 t2 C :=
   mk_pre_bseq
     (snoc H (mk_hhyp x A) ++ J)
@@ -259,6 +263,12 @@ Definition pre_rule_equality_equality_hyp1 {o} (H : @bhyps o) A B i :=
 
 Definition pre_rule_equality_equality_hyp2 {o} (H : @bhyps o) a b A :=
   mk_pre_bseq H (mk_pre_concl (mk_equality a b A)).
+
+Definition pre_rule_introduction_concl {o} (H : @bhyps o) C :=
+  mk_pre_bseq H (mk_pre_concl C).
+
+Definition pre_rule_introduction_hyp {o} (H : @bhyps o) C t :=
+  mk_pre_bseq H (mk_pre_concl (mk_member t C)).
 
 
 
@@ -315,25 +325,55 @@ Definition extract_ax {o} (c : @conclusion o) : NTerm :=
 Definition valid_extract {o} (t : @NTerm o) : Prop :=
   wf_term t # closed t # noutokens t.
 
-Record wf_conclusion {o} :=
+Definition LemmaName := opname.
+
+Lemma LemmaNameDeq : Deq LemmaName.
+Proof.
+  introv.
+  destruct (String.string_dec x y); auto.
+Defined.
+
+Record named_concl {o} :=
+  MkNamedConcl
+    {
+      nm_conclusion_name : LemmaName;
+      nm_conclusion_type : @NTerm o;
+    }.
+Arguments MkNamedConcl [o] _ _.
+
+Definition opname2opabs (op : opname) : opabs :=
+  mk_opabs op [] [].
+
+Definition named_concl2concl {o} (n : @named_concl o) : conclusion :=
+  mk_concl (nm_conclusion_type n) (mk_abs (opname2opabs (nm_conclusion_name n)) []).
+
+Definition named_concl2bseq {o} H (n : @named_concl o) : baresequent :=
+  mk_bseq H (named_concl2concl n).
+
+Definition named_concl2pre_concl {o} (n : @named_concl o) : pre_conclusion :=
+  mk_pre_concl (nm_conclusion_type n).
+
+Definition named_concl2pre_bseq {o} H (n : @named_concl o) : pre_baresequent :=
+  mk_pre_bseq H (named_concl2pre_concl n).
+
+(*Record wf_conclusion {o} :=
   MkWfConcl
     {
-      wf_conclusion_concl : @conclusion o;
+      wf_conclusion_concl :> @named_concl o;
       wf_conclusion_wf    : valid_extract (extract_ax wf_conclusion_concl);
     }.
-
 Arguments MkWfConcl [o] _ _.
 
 Definition wf_conclusions {o} := list (@wf_conclusion o).
 
-Definition in_wf_conclusions {o} (c : @conclusion o) (l : wf_conclusions) :=
-  LIn c (map wf_conclusion_concl l).
+Definition in_wf_conclusions {o} (c : @named_concl o) (l : wf_conclusions) :=
+  LIn c (map wf_conclusion_concl l).*)
 
 Record ProofContext {o} :=
   MkProofContext
     {
       PC_lib :> @library o;
-      PC_conclusions : list (@wf_conclusion o);
+      PC_conclusions : list (@named_concl o);
     }.
 
 Definition EMPC {o} : @ProofContext o := MkProofContext o [] [].
@@ -344,7 +384,7 @@ Definition updLibProofContext {o} (pc : @ProofContext o) (e : library_entry) :=
     (e :: PC_lib pc)
     (PC_conclusions pc).
 
-Definition updConclProofContext {o} (pc : @ProofContext o) (c : wf_conclusion) :=
+Definition updConclProofContext {o} (pc : @ProofContext o) (c : named_concl) :=
   MkProofContext
     o
     (PC_lib pc)
@@ -362,9 +402,9 @@ Definition updConclProofContext {o} (pc : @ProofContext o) (c : wf_conclusion) :
 (* We have the library here so that we can unfold abstractions *)
 Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
 | pre_proof_from_ctxt :
-    forall c,
-      in_wf_conclusions c (@PC_conclusions o ctxt)
-      -> pre_proof ctxt (concl2pre_baresequent c)
+    forall (c : named_concl) H,
+      LIn c (@PC_conclusions o ctxt)
+      -> pre_proof ctxt (named_concl2pre_bseq H c)
 | pre_proof_hole : forall (s : pre_baresequent), pre_proof ctxt s
 | pre_proof_isect_eq :
     forall a1 a2 b1 b2 x1 x2 y i H,
@@ -462,14 +502,23 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       pre_proof ctxt (pre_rule_equality_equality_hyp1 H A B i)
       -> pre_proof ctxt (pre_rule_equality_equality_hyp2 H a1 b1 A)
       -> pre_proof ctxt (pre_rule_equality_equality_hyp2 H a2 b2 A)
-      -> pre_proof ctxt (pre_rule_equality_equality_concl H a1 a2 b1 b2 A B i).
-
+      -> pre_proof ctxt (pre_rule_equality_equality_concl H a1 a2 b1 b2 A B i)
+| pre_proof_integer_equality :
+    forall n H,
+      pre_proof ctxt (pre_rule_integer_equality_concl H n)
+| pre_proof_introduction :
+    forall t C H,
+      wf_term t
+      -> covered t (nh_vars_hyps H)
+      -> noutokens t
+      -> pre_proof ctxt (pre_rule_introduction_hyp H C t)
+      -> pre_proof ctxt (pre_rule_introduction_concl H C).
 
 Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
 | proof_from_ctxt :
-    forall c,
-      in_wf_conclusions c (@PC_conclusions o ctxt)
-      -> proof ctxt (mk_baresequent [] c)
+    forall (c : named_concl) H,
+      LIn c (@PC_conclusions o ctxt)
+      -> proof ctxt (named_concl2bseq H c)
 | proof_isect_eq :
     forall a1 a2 b1 b2 e1 e2 x1 x2 y i H,
       NVin y (vars_hyps H)
@@ -570,7 +619,17 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
       proof ctxt (rule_equality_equality_hyp1 H A B i e1)
       -> proof ctxt (rule_equality_equality_hyp2 H a1 b1 A e2)
       -> proof ctxt (rule_equality_equality_hyp2 H a2 b2 A e3)
-      -> proof ctxt (rule_equality_equality_concl H a1 a2 b1 b2 A B i).
+      -> proof ctxt (rule_equality_equality_concl H a1 a2 b1 b2 A B i)
+| proof_integer_equality :
+    forall n H,
+      proof ctxt (rule_integer_equality_concl H n)
+| proof_introduction :
+    forall t e C H,
+      wf_term t
+      -> covered t (nh_vars_hyps H)
+      -> noutokens t
+      -> proof ctxt (rule_introduction_hyp H C t e)
+      -> proof ctxt (rule_introduction_concl H C t).
 
 
 
@@ -582,17 +641,6 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
   from a Library.
 
   ============================================================ *)
-
-Definition LemmaName := opname.
-
-Lemma LemmaNameDeq : Deq LemmaName.
-Proof.
-  introv.
-  destruct (String.string_dec x y); auto.
-Defined.
-
-Definition opname2opabs (op : opname) : opabs :=
-  mk_opabs op [] [].
 
 Definition name_not_in_lib {o} (name : LemmaName) (l : @library o) :=
   !in_lib (opname2opabs name) l.
@@ -686,7 +734,7 @@ Definition extract2def {o}
     (nterm2soterm ext)
     (extract2correct name ext valid).
 
-Inductive DepLibrary {o} : @ProofContext o -> Type :=
+(*Inductive DepLibrary {o} : @ProofContext o -> Type :=
 | DepLibrary_Empty :
     DepLibrary (MkProofContext o [] [])
 | DepLibrary_Abs :
@@ -706,7 +754,7 @@ Inductive DepLibrary {o} : @ProofContext o -> Type :=
            (n     : name_not_in_lib name ctxt),
       DepLibrary (updLibProofContext
                     (updConclProofContext ctxt (MkWfConcl (mk_concl stmt ext) valid))
-                    (extract2def name ext valid)).
+                    (extract2def name ext valid)).*)
 
 Inductive LibraryEntry {o} :=
 | LibraryEntry_abs (e : @library_entry o)
@@ -729,7 +777,7 @@ Definition extend_proof_context {o} (ctxt : @ProofContext o) (e : LibraryEntry) 
   | LibraryEntry_abs e => updLibProofContext ctxt e
   | LibraryEntry_proof c name stmt ext isp valid prf =>
     updLibProofContext
-      (updConclProofContext ctxt (MkWfConcl (mk_concl stmt ext) valid))
+      (updConclProofContext ctxt (MkNamedConcl name stmt))
       (extract2def name ext valid)
   end.
 
@@ -787,45 +835,14 @@ Fixpoint lemma_in_Library {o}
 
   ============================================================ *)
 
-Lemma lemma_in_Library_iff {o} :
-  forall (s : @baresequent o) L,
-    lemma_in_Library s L
-    <=> {c : conclusion
-         & s = mk_bseq [] c
-         # in_wf_conclusions c (PC_conclusions (Library2ProofContext L))}.
-Proof.
-  induction L; simpl; split; introv h; tcsp.
-
-  - repndors.
-
-    + destruct a; simpl in *; tcsp.
-      subst; simpl in *.
-      eexists; dands;[reflexivity|]; tcsp.
-
-    + apply IHL in h; exrepnd; subst; clear IHL.
-      eexists; dands;[reflexivity|]; tcsp.
-      destruct a; simpl; tcsp.
-
-  - exrepnd; subst.
-    destruct a; simpl in *; tcsp.
-
-    + right; apply IHL; clear IHL.
-      eexists; dands;[reflexivity|]; tcsp.
-
-    + unfold in_wf_conclusions in *; simpl in *; tcsp.
-      repndors; subst; tcsp.
-      right; apply IHL; clear IHL.
-      eexists; dands;[reflexivity|]; tcsp.
-Qed.
-
 (* By assuming [wf_bseq seq], when we start with a sequent with no hypotheses,
    it means that we have to prove that the conclusion is well-formed and closed.
  *)
 Lemma valid_proof {o} :
   forall (ctxt : @ProofContext o) s (wf : wf_bseq s),
-    (forall c,
-        in_wf_conclusions c (PC_conclusions ctxt)
-        -> sequent_true_ext_lib_wf ctxt (mk_bseq [] c))
+    (forall c H,
+        LIn c (PC_conclusions ctxt)
+        -> sequent_true_ext_lib_wf ctxt (named_concl2bseq H c))
     -> proof ctxt s
     -> sequent_true_ext_lib_wf ctxt s.
 Proof.
@@ -852,6 +869,8 @@ Proof.
        | (* hypothesis_equality       *) x A G J
        | (* unhide_equality           *) x A t1 t2 C e G J ih1 p1
        | (* equality_equality         *) A B a1 a2 b1 b2 e1 e2 e3 i H p1 ih1 p2 ih2 p3 ih3
+       | (* integer_equality          *) n H
+       | (* introduction              *) t e C H wft covt nout p ih
        ];
     allsimpl;
     allrw NVin_iff; tcsp.
@@ -991,6 +1010,19 @@ Proof.
 
     + apply ih3; auto.
       apply (rule_equality_equality_wf2 H A B a1 a2 b1 b2 e1 e2 e3 i); simpl; tcsp.
+
+  - apply (rule_integer_equality_true_ext_lib ctxt); simpl; tcsp.
+
+  - apply (rule_introduction_true_ext_lib ctxt H C t e); simpl; tcsp.
+
+    { unfold args_constraints; simpl; introv i; repndors; tcsp; subst; simpl; auto. }
+
+    introv xx; repndors; subst; tcsp.
+
+    apply ih; auto.
+    apply (rule_introduction_wf2 H C t e); simpl; tcsp; auto.
+    eapply subvars_trans;[eauto|].
+    apply subvars_hs_vars_hyps.
 Qed.
 
 Definition wf_ext {o} (H : @bhyps o) (c : @conclusion o) :=
@@ -1058,7 +1090,42 @@ Proof.
   apply closed_if_program in isp; rewrite isp; auto.
 Qed.
 
-Lemma correct_library {o} :
+(*Lemma lemma_in_Library_named_concl2bseq_iff {o} :
+  forall (c : @named_concl o) L,
+    lemma_in_Library (named_concl2bseq c) L
+    <=> LIn c (PC_conclusions (Library2ProofContext L)).
+Proof.
+  induction L; simpl; split; introv h; tcsp.
+
+  - repndors.
+
+    + destruct a; simpl in *; tcsp.
+      unfold named_concl2bseq, named_concl2concl in *; simpl in *.
+      inversion h; subst; clear h.
+      left.
+      destruct c; simpl in *; ginv.
+      ginv.
+      subst; simpl in *.
+      exists (MkNamedConcl name stmt); simpl.
+      dands;[reflexivity|]; tcsp.
+
+    + apply IHL in h; exrepnd; subst; clear IHL.
+      eexists; dands;[reflexivity|]; tcsp.
+      destruct a; simpl; tcsp.
+
+  - exrepnd; subst.
+    destruct a; simpl in *; tcsp.
+
+    + right; apply IHL; clear IHL.
+      eexists; dands;[reflexivity|]; tcsp.
+
+    + unfold in_wf_conclusions in *; simpl in *; tcsp.
+      repndors; subst; tcsp.
+      right; apply IHL; clear IHL.
+      eexists; dands;[reflexivity|]; tcsp.
+Qed.*)
+
+(*Lemma correct_library {o} :
   forall (L : Library) (s : @baresequent o),
     ValidLibrary L
     -> lemma_in_Library s L
@@ -1077,9 +1144,9 @@ Proof.
     clear IHL.
 
     assert (forall c,
-               in_wf_conclusions c (PC_conclusions (Library2ProofContext L))
-               -> sequent_true_ext_lib_wf (Library2ProofContext L) (mk_bseq [] c)) as w.
-    { introv i; apply imp; auto.
+               LIn c (PC_conclusions (Library2ProofContext L))
+               -> sequent_true_ext_lib_wf (Library2ProofContext L) (named_concl2bseq c)) as w.
+    { introv i; apply imp; auto; clear imp.
       apply lemma_in_Library_iff.
       exists c; dands; auto. }
     clear imp.
@@ -1094,7 +1161,7 @@ Proof.
   - apply IHL in i; auto.
     destruct a; simpl in *; repnd; tcsp;
       apply sequent_true_mono_lib; auto.
-Qed.
+Qed.*)
 
 
 
@@ -1146,16 +1213,19 @@ Arguments MkNuprlState [o] _ _.
 Definition address := list nat.
 
 Inductive proof_step {o} :=
-| proof_step_isect_eq               (y : NVar)
+| proof_step_isect_equality         (y : NVar)
 | proof_step_isect_member_formation (z : NVar) (i : nat)
 | proof_step_hypothesis             (x : NVar)
 | proof_step_cut                    (x : NVar) (B : @NTerm o)
 | proof_step_cequiv_computation     (n : nat)
 | proof_step_cequiv_subst_concl     (x : NVar) (C a b : @NTerm o)
-| proof_step_universe_eq
-| proof_step_hypothesis_eq
+| proof_step_universe_equality
+| proof_step_hypothesis_equality
 | proof_step_unhide_equality        (x : NVar)
-| proof_step_equality_equality.
+| proof_step_equality_equality
+| proof_step_integer_equality
+| proof_step_introduction           (t : @NTerm o)
+| proof_step_lemma                  (name : LemmaName).
 
 Inductive command {o} :=
 (* add a definition at the head *)
@@ -1181,13 +1251,12 @@ Definition commands {o} := list (@command o).
 Lemma in_conclusions_extend_proof_context {o} :
   forall (ctxt  : @ProofContext o)
          (entry : LibraryEntry)
-         (c     : conclusion)
-         (i     : in_wf_conclusions c (PC_conclusions ctxt)),
-    in_wf_conclusions c (PC_conclusions (extend_proof_context ctxt entry)).
+         (c     : named_concl)
+         (i     : LIn c (PC_conclusions ctxt)),
+    LIn c (PC_conclusions (extend_proof_context ctxt entry)).
 Proof.
   introv i.
   destruct entry; simpl in *; auto.
-  unfold in_wf_conclusions; simpl in *; tcsp.
 Qed.
 
 Definition LibraryEntry2opabs {o} (e : @LibraryEntry o) : opabs :=
@@ -1272,8 +1341,8 @@ Fixpoint pre_proof_cons {o}
          (p     : pre_proof ctxt s)
   : pre_proof (extend_proof_context ctxt entry) s :=
   match p with
-  | pre_proof_from_ctxt _ c i =>
-    pre_proof_from_ctxt _ c (in_conclusions_extend_proof_context ctxt entry c i)
+  | pre_proof_from_ctxt _ c H i =>
+    pre_proof_from_ctxt _ c H (in_conclusions_extend_proof_context ctxt entry c i)
 
   | pre_proof_hole _ s => pre_proof_hole _ s
 
@@ -1339,6 +1408,12 @@ Fixpoint pre_proof_cons {o}
     let prf2' := pre_proof_cons entry ni prf2 in
     let prf3' := pre_proof_cons entry ni prf3 in
     pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1' prf2' prf3'
+
+  | pre_proof_integer_equality _ n H => pre_proof_integer_equality _ n H
+
+  | pre_proof_introduction _ t C H wft covt nout prf =>
+    let prf' := pre_proof_cons entry ni prf in
+    pre_proof_introduction _ t C H wft covt nout prf'
   end.
 
 Definition pre_proof_seq_cons {o}
@@ -1431,17 +1506,28 @@ Inductive DEBUG_MSG {o} :=
 | could_not_apply_cequiv_subst_concl_rule
 | applied_cequiv_subst_concl_rule
 
+| could_not_apply_hypothesis_rule_because_different_types (A B : @NTerm o)
+| could_not_apply_hypothesis_rule_because_couldnt_find_hypothesis
 | could_not_apply_hypothesis_rule
 | applied_hypothesis_rule
 
 | could_not_apply_hypothesis_equality_rule
 | applied_hypothesis_equality_rule
 
+| could_not_apply_lemma_rule
+| applied_lemma_rule
+
 | could_not_apply_unhide_equality_rule
 | applied_unhide_equality_rule
 
 | could_not_apply_equality_equality_rule
 | applied_equality_equality_rule
+
+| could_not_apply_introduction_rule
+| applied_introduction_rule
+
+| could_not_apply_integer_equality_rule
+| applied_integer_equality_rule
 
 | could_not_apply_cut_rule
 | applied_cut_rule
@@ -1555,32 +1641,30 @@ Proof.
   compute; auto.
 Qed.
 
+Lemma valid_pre_extract_mk_abs_opname2opabs {o} :
+  forall name (H : @bhyps o), valid_pre_extract H (mk_abs (opname2opabs name) []).
+Proof.
+  introv; unfold valid_pre_extract; dands; eauto 2 with slow;
+    try (complete (compute;auto));
+    try (complete (unfold covered; simpl; auto)).
+Qed.
+
 (* Why can't I define these? *)
 Definition finish_proof_from_context {o}
            (ctxt : ProofContext)
-           (c    : @conclusion o)
-           (i    : in_wf_conclusions c (PC_conclusions ctxt))
-  : ExtractProof ctxt (concl2pre_baresequent c).
+           (c    : @named_concl o)
+           (H    : bhyps)
+           (i    : LIn c (PC_conclusions ctxt))
+  : ExtractProof ctxt (named_concl2pre_bseq H c).
 Proof.
-  unfold concl2pre_baresequent; simpl.
-  destruct c; simpl in *.
+  destruct c as [name T]; simpl in *.
 
-  - exists extract; simpl.
+  exists (@mk_abs o (opname2opabs name) []).
 
-    { unfold in_wf_conclusions in i; simpl in i.
-      rw in_map_iff in i; exrepnd.
-      destruct a; simpl in *; ginv; subst.
-      unfold extract_ax in *; simpl in *; eauto 2 with slow. }
+  { simpl in *; apply valid_pre_extract_mk_abs_opname2opabs. }
 
-    unfold pre2baresequent; simpl.
-    exact (proof_from_ctxt _ (concl_ext ctype extract) i).
-
-  - exists (@mk_axiom o); simpl.
-
-    { apply valid_pre_extract_axiom. }
-
-    unfold pre2baresequent; simpl.
-    exact (proof_from_ctxt _ (concl_typ ctype) i).
+  unfold pre2baresequent; simpl.
+  exact (proof_from_ctxt _ (MkNamedConcl name T) H i).
 Defined.
 
 Definition finish_proof_isect_eq {o}
@@ -1889,13 +1973,44 @@ Proof.
   exact (proof_equality_equality _ A B a1 a2 b1 b2 e1 e2 e3 i H q1 q2 q3).
 Defined.
 
+Definition finish_proof_integer_equality {o}
+           (ctxt : @ProofContext o)
+           (n : Z)
+           (H : bhyps)
+  : ExtractProof ctxt (pre_rule_integer_equality_concl H n).
+Proof.
+  introv.
+  exists (@mk_axiom o).
+  { apply valid_pre_extract_axiom. }
+  unfold pre2baresequent; simpl.
+  exact (proof_integer_equality _ n H).
+Defined.
+
+Definition finish_proof_introduction {o}
+           (ctxt : @ProofContext o)
+           (t C : NTerm)
+           (H : bhyps)
+           (wft : wf_term t)
+           (covt : covered t (nh_vars_hyps H))
+           (nout : noutokens t)
+           (p : ExtractProof ctxt (pre_rule_introduction_hyp H C t))
+  : ExtractProof ctxt (pre_rule_introduction_concl H C).
+Proof.
+  introv.
+  destruct p as [e v q].
+  exists t.
+  { simpl; unfold valid_pre_extract; dands; auto. }
+  unfold pre2baresequent; simpl.
+  exact (proof_introduction _ t e C H wft covt nout q).
+Defined.
+
 Fixpoint finish_pre_proof {o}
          {ctxt  : @ProofContext o}
          {s     : pre_baresequent}
          (p     : pre_proof ctxt s)
   : option (ExtractProof ctxt s) :=
   match p with
-  | pre_proof_from_ctxt _ c i => Some (finish_proof_from_context ctxt c i)
+  | pre_proof_from_ctxt _ c H i => Some (finish_proof_from_context ctxt c H i)
 
   | pre_proof_hole _ s => None
 
@@ -1972,6 +2087,15 @@ Fixpoint finish_pre_proof {o}
     | Some p1, Some p2, Some p3 =>
       Some (finish_proof_equality_equality ctxt A B a1 a2 b1 b2 i H p1 p2 p3)
     | _, _, _ => None
+    end
+
+  | pre_proof_integer_equality _ n H =>
+    Some (finish_proof_integer_equality ctxt n H)
+
+  | pre_proof_introduction _ t C H wft covt nout prf =>
+    match finish_pre_proof prf with
+    | Some p => Some (finish_proof_introduction ctxt t C H wft covt nout p)
+    | _ => None
     end
   end.
 
@@ -2373,11 +2497,11 @@ Definition apply_proof_step_hypothesis {o} {ctxt}
            applied_hypothesis_rule)
 
         | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
-                   could_not_apply_hypothesis_rule)
+                   could_not_apply_hypothesis_rule_because_different_types A T)
         end
 
       | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
-                 could_not_apply_hypothesis_rule)
+                 could_not_apply_hypothesis_rule_because_couldnt_find_hypothesis)
       end
 
     | c => (pre_proof_hole _ (MkPreBaresequent H c),
@@ -2761,20 +2885,152 @@ Definition apply_proof_step_equality_equality {o} {ctxt}
     end
   end.
 
+Lemma pre_rule_integer_equality_concl_as_pre_baresequent {o} :
+  forall (H : @bhyps o) n1 n2
+         (p : n2 = n1),
+    pre_rule_integer_equality_concl H n1
+    = mk_pre_bseq H (pre_concl_ext (mk_equality (mk_integer n1) (mk_integer n2) mk_int)).
+Proof.
+  introv e; subst; reflexivity.
+Defined.
+
+Definition apply_proof_step_integer_equality {o} {ctxt}
+           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext
+        (oterm (Can NEquality) [bterm [] (oterm (Can (Nint n1)) []),
+                                bterm [] (oterm (Can (Nint n2)) []),
+                                bterm [] (oterm (Can NInt) [])]) =>
+
+      match Z.eq_dec n2 n1 with
+      | left p =>
+
+        (eq_rect
+           _
+           _
+           (pre_proof_integer_equality ctxt n1 H)
+           _
+           (pre_rule_integer_equality_concl_as_pre_baresequent H n1 n2 p),
+         applied_integer_equality_rule)
+
+      | right _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_integer n1) (mk_integer n2) mk_int))),
+                    could_not_apply_integer_equality_rule)
+      end
+
+    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+            could_not_apply_integer_equality_rule)
+    end
+  end.
+
+Lemma noutokens_decidable {o} :
+  forall (t : @NTerm o), decidable (noutokens t).
+Proof.
+  introv.
+  unfold noutokens.
+  remember (get_utokens t) as l.
+  destruct l;[left|right]; auto.
+  intro xx; inversion xx.
+Defined.
+
+Definition apply_proof_step_introduction {o} {ctxt}
+           (s : @pre_baresequent o)
+           (t : @NTerm o) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext T =>
+
+      match wf_term_dec_op t with
+      | Some wft =>
+
+        match covered_decidable t (nh_vars_hyps H) with
+        | inl covt =>
+
+          match noutokens_decidable t with
+          | inl nout =>
+
+            let prf1 := pre_proof_hole ctxt (pre_rule_introduction_hyp H T t) in
+            (pre_proof_introduction ctxt t T H wft covt nout prf1,
+             applied_introduction_rule)
+
+          | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                      could_not_apply_introduction_rule)
+          end
+
+        | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                    could_not_apply_introduction_rule)
+        end
+
+      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                  could_not_apply_introduction_rule)
+      end
+
+    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+            could_not_apply_introduction_rule)
+    end
+  end.
+
+Lemma find_named_concl {o}
+      (c : @named_concl o)
+      (l : list named_concl) : option (LIn c l).
+Proof.
+  induction l; simpl;[right;auto|].
+  destruct c as [n1 t1], a as [n2 t2]; simpl in *.
+  destruct (LemmaNameDeq n1 n2) as [d|d]; subst.
+  { destruct (term_dec_op t1 t2) as [d|d]; subst;[left;auto|].
+    destruct IHl as [IHl|];[|right].
+    left; right; auto. }
+  { destruct IHl as [IHl|];[|right].
+    left; right; auto. }
+Defined.
+
+Definition apply_proof_step_lemma {o} {ctxt}
+           (s : @pre_baresequent o)
+           (name : LemmaName) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext T =>
+
+      let nc := MkNamedConcl name T in
+
+      match find_named_concl nc (PC_conclusions ctxt) with
+      | Some i =>
+
+        (pre_proof_from_ctxt ctxt nc H i,
+         applied_lemma_rule)
+
+      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                 could_not_apply_lemma_rule)
+      end
+
+    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+            could_not_apply_lemma_rule)
+    end
+  end.
+
 Definition apply_proof_step {o} {ctxt}
            (s    : @pre_baresequent o)
            (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
   match step with
-  | proof_step_isect_eq y => apply_proof_step_isect_eq s y
+  | proof_step_isect_equality y           => apply_proof_step_isect_eq s y
   | proof_step_isect_member_formation z i => apply_proof_step_isect_member_formation s z i
-  | proof_step_hypothesis x => apply_proof_step_hypothesis s x
-  | proof_step_cut x B => apply_proof_step_cut s x B
-  | proof_step_cequiv_computation n => apply_proof_step_cequiv_computation s n
+  | proof_step_hypothesis x               => apply_proof_step_hypothesis s x
+  | proof_step_cut x B                    => apply_proof_step_cut s x B
+  | proof_step_cequiv_computation n       => apply_proof_step_cequiv_computation s n
   | proof_step_cequiv_subst_concl x C a b => apply_proof_step_cequiv_subst_concl s x C a b
-  | proof_step_universe_eq => apply_proof_step_universe_eq s
-  | proof_step_hypothesis_eq => apply_proof_step_hypothesis_eq s
-  | proof_step_unhide_equality x => apply_proof_step_unhide_equality s x
-  | proof_step_equality_equality => apply_proof_step_equality_equality s
+  | proof_step_universe_equality          => apply_proof_step_universe_eq s
+  | proof_step_hypothesis_equality        => apply_proof_step_hypothesis_eq s
+  | proof_step_unhide_equality x          => apply_proof_step_unhide_equality s x
+  | proof_step_equality_equality          => apply_proof_step_equality_equality s
+  | proof_step_integer_equality           => apply_proof_step_integer_equality s
+  | proof_step_introduction t             => apply_proof_step_introduction s t
+  | proof_step_lemma name                 => apply_proof_step_lemma s name
   end.
 
 Fixpoint update_pre_proof {o}
@@ -2784,8 +3040,8 @@ Fixpoint update_pre_proof {o}
          (addr : address)
          (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
   match p with
-  | pre_proof_from_ctxt _ c i =>
-    (pre_proof_from_ctxt _ c i,
+  | pre_proof_from_ctxt _ c H i =>
+    (pre_proof_from_ctxt _ c H i,
      could_not_apply_update_because_no_hole_at_address)
 
   | pre_proof_hole _ s => apply_proof_step s step
@@ -2921,6 +3177,19 @@ Fixpoint update_pre_proof {o}
     | _ => (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3,
             could_not_apply_update_because_wrong_address)
     end
+
+  | pre_proof_integer_equality _ n H =>
+    (pre_proof_integer_equality _ n H,
+     could_not_apply_update_because_no_hole_at_address)
+
+  | pre_proof_introduction _ t C H wft covt nout prf =>
+    match addr with
+    | 1 :: addr =>
+      let (prf', msg) := update_pre_proof prf addr step in
+      (pre_proof_introduction _ t C H wft covt nout prf', msg)
+    | _ => (pre_proof_introduction _ t C H wft covt nout prf,
+            could_not_apply_update_because_wrong_address)
+    end
   end.
 
 Definition update_pre_proof_seq {o} {ctxt}
@@ -2966,7 +3235,7 @@ Fixpoint find_holes_in_pre_proof {o}
          (p    : pre_proof ctxt s)
          (addr : address) : Holes :=
   match p with
-  | pre_proof_from_ctxt _ c i => []
+  | pre_proof_from_ctxt _ c H i => []
 
   | pre_proof_hole _ s => [MkHole s addr]
 
@@ -3025,6 +3294,11 @@ Fixpoint find_holes_in_pre_proof {o}
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     let holes3 := find_holes_in_pre_proof prf3 (snoc addr 3) in
     holes1 ++ holes2 ++ holes3
+
+  | pre_proof_integer_equality _ n H => []
+
+  | pre_proof_introduction _ t C H wft covt nout prf =>
+    find_holes_in_pre_proof prf (snoc addr 1)
   end.
 
 Definition find_holes_in_pre_proof_seq {o} {ctxt}
@@ -3226,21 +3500,31 @@ Notation " ( a ≡ b ∈ T ) " := (oterm  (Can NEquality) [ bterm [] a, bterm []
 Notation "⋂ v : T . U" := (oterm (Can NIsect) [ bterm [] T, bterm [nvar v] U ]) (at level 0).
 Notation " ( a ≣ b ∈ T ) " := (soterm (Can NEquality) [ sobterm [] a, sobterm [] b, sobterm [] T ]).
 Notation "★" := (oterm (Can NAxiom) []).
-Notation "𝔸( name , v1 , v2 , correct ) ≜ t" := (lib_abs {| opabs_name := name; opabs_params := []; opabs_sign := [0, 0] |} [ (nvar v1, 0), (nvar v2, 0) ] t correct) (at level 0).
+Notation "𝔸( name , v1 , v2 ) ≜ t" := (lib_abs {| opabs_name := name; opabs_params := []; opabs_sign := [0, 0] |} [ (nvar v1, 0), (nvar v2, 0) ] t _) (at level 0).
 Notation "⎧ v ∷ t ⎫" := {| hvar := nvar v; hidden := false; htyp := t; lvl := nolvl |}.
 Notation "⎡ v ∷ t ⎤" := {| hvar := nvar v; hidden := true; htyp := t; lvl := nolvl |}.
 Notation "( a ≈ b )" := (oterm (Can NCequiv) [ bterm [] a, bterm [] b]).
+Notation "LibraryEntry_proof( name , stmt , exp )" := (LibraryEntry_proof _ name stmt exp _ _ _).
+Notation "CUT( B , C , t , u , x , H , prf1 , prf2 )" := (proof_cut _ B C t u x H _ _ _ prf1 prf2).
+Notation "'ℤ'" := (oterm (Can NInt) []).
 
 Arguments pre_proof_isect_member_formation [o] [ctxt] _ _ _ _ _ _ _ _ _.
 Arguments pre_proof_hole [o] [ctxt] _.
 
+Definition opabs_myint : opabs := Build_opabs "myint" [] [].
+
+Definition mk_simple_so_abs {o} (abs : opabs) := @soterm o (Abs abs) [].
+
 Definition cmds1 {o} : @commands o :=
   [
+    (* We add the 'member' abstraction *)
     COM_add_def
       opabs_member
       [(nvart, 0), (nvarT, 0)]
       (mk_so_equality (sovar nvart []) (sovar nvart []) (sovar nvarT []))
       opabs_member_correct,
+
+    (* We prove that 'member' is well-formed *)
     COM_start_proof
       "member_wf"
       (mk_uall
@@ -3288,7 +3572,7 @@ Definition cmds1 {o} : @commands o :=
     COM_update_proof
       "member_wf"
       [2]
-      (proof_step_universe_eq),
+      (proof_step_universe_equality),
     COM_update_proof
       "member_wf"
       [1,2]
@@ -3296,7 +3580,7 @@ Definition cmds1 {o} : @commands o :=
     COM_update_proof
       "member_wf"
       [1,2,1]
-      (proof_step_hypothesis_eq),
+      (proof_step_hypothesis_equality),
     COM_update_proof
       "member_wf"
       [1,1,2,1]
@@ -3308,7 +3592,7 @@ Definition cmds1 {o} : @commands o :=
     COM_update_proof
       "member_wf"
       [1,1,2,1,1,1]
-      (proof_step_hypothesis_eq),
+      (proof_step_hypothesis_equality),
     COM_update_proof
       "member_wf"
       [1,1,2,1,2]
@@ -3316,7 +3600,7 @@ Definition cmds1 {o} : @commands o :=
     COM_update_proof
       "member_wf"
       [1,1,2,1,2,1]
-      (proof_step_hypothesis_eq),
+      (proof_step_hypothesis_equality),
     COM_update_proof
       "member_wf"
       [1,1,2,1,3]
@@ -3324,13 +3608,163 @@ Definition cmds1 {o} : @commands o :=
     COM_update_proof
       "member_wf"
       [1,1,2,1,3,1]
-      (proof_step_hypothesis_eq),
+      (proof_step_hypothesis_equality),
     COM_find_holes "member_wf",
-    COM_finish_proof "member_wf"
+    COM_finish_proof "member_wf",
+
+    (* We prove that Z is inhabited (by 17 here) *)
+    COM_start_proof
+      "int_member"
+      mk_int
+      (eq_refl, eq_refl),
+    COM_update_proof
+      "int_member"
+      []
+      (proof_step_introduction (mk_integer 17)),
+    COM_update_proof
+      "int_member"
+      [1]
+      (proof_step_integer_equality),
+    COM_finish_proof "int_member",
+    COM_find_holes "int_member",
+
+    (* We prove that 'int_member' computes to 17 in 1 computation step *)
+    COM_start_proof
+      "int_member_cequiv"
+      (mk_cequiv (mk_abs (opname2opabs "int_member") []) (mk_integer 17))
+      (eq_refl, eq_refl),
+    COM_update_proof
+      "int_member_cequiv"
+      []
+      (proof_step_cequiv_computation 1),
+    COM_find_holes "int_member_cequiv",
+    COM_finish_proof "int_member_cequiv",
+
+    (* We define a new abstraction on top of the one we got from "int_member"'s proof *)
+    COM_add_def
+      opabs_myint
+      []
+      (mk_simple_so_abs (opname2opabs "int_member"))
+      (eq_refl, (eq_refl, (eq_refl, (eq_refl, eq_refl)))),
+
+    (* We prove that 'myint' computes to 17 in 2 computation steps *)
+    COM_start_proof
+      "myint_cequiv"
+      (mk_cequiv (mk_abs opabs_myint []) (mk_integer 17))
+      (eq_refl, eq_refl),
+    COM_update_proof
+      "myint_cequiv"
+      []
+      (proof_step_cequiv_computation 2),
+    COM_find_holes "myint_cequiv",
+    COM_finish_proof "myint_cequiv",
+
+    (* We prove once more that Z is inhabited.  We'll use our previous proof *)
+    COM_start_proof
+      "int_member_v2"
+      mk_int
+      (eq_refl, eq_refl),
+    COM_update_proof
+      "int_member_v2"
+      []
+      (proof_step_lemma "int_member"),
+    COM_find_holes "int_member_v2",
+    COM_finish_proof "int_member_v2"
   ].
 
 Definition lib1 {o} : @UpdRes o := update_list_from_init cmds1.
 
-Time Eval compute in lib1.
+Eval compute in lib1.
 
 Time Eval compute in (update_list_from_init_with_validity cmds1).
+
+
+(*
+(*
+
+***********************************************
+                  TESTING
+(compute wrapped in a Some below takes forever)
+***********************************************
+
+*)
+
+Definition cmds2 {o} : @commands o :=
+  [
+    (* We prove that Z is inhabited (by 17 here) *)
+    COM_start_proof
+      "int_member"
+      mk_int
+      (eq_refl, eq_refl),
+    COM_update_proof
+      "int_member"
+      []
+      (proof_step_introduction (mk_integer 17)),
+    COM_update_proof
+      "int_member"
+      [1]
+      (proof_step_integer_equality),
+    COM_finish_proof "int_member",
+    COM_find_holes "int_member"
+  ].
+
+Definition lib2 {o} : @UpdRes o := update_list_from_init cmds2.
+
+Eval compute in lib2.
+Eval compute in (Library2ProofContext (upd_res_state lib2)).
+
+Eval compute in (compute_atmost_k_steps
+                   (Library2ProofContext (upd_res_state lib2))
+                   1
+                   (mk_abs (opname2opabs "int_member") [])).
+
+Lemma reduces_to_of_compute_atmost_k_steps_if_eq {o} :
+  forall lib k (t : @NTerm o) u,
+    compute_atmost_k_steps lib k t = u
+    -> reduces_to lib t u.
+Proof.
+  introv h; subst.
+  apply reduces_to_of_compute_atmost_k_steps.
+Qed.
+
+Opaque reduces_to_of_compute_atmost_k_steps.
+
+Eval compute in
+    (@apply_proof_step_cequiv_computation
+       _
+       (Library2ProofContext (upd_res_state lib2))
+       (mk_pre_bseq [] (pre_concl_ext
+                          (mk_cequiv
+                             (mk_abs (opname2opabs "int_member") [])
+                             (mk_integer 17))))
+       1).
+
+Eval compute in
+    (* the [Some] triggers the long computation!  WTF is going on? *)
+    (Some (reduces_to_of_compute_atmost_k_steps [] 0 (mk_integer 1))).
+
+Eval compute in
+    (let ctxt := Library2ProofContext (upd_res_state lib2) in
+     let a := mk_abs (opname2opabs "int_member") [] in
+     let b := mk_integer 17 in
+     let x := compute_atmost_k_steps ctxt 1 a in
+(*     match term_dec_op x b with
+     | Some p =>
+*)
+       Some (reduces_to_of_compute_atmost_k_steps ctxt 1 a)
+
+(*       Some (reduces_to_of_compute_atmost_k_steps_if_eq ctxt 1 a b p)*)
+
+     (*
+                   Some ((*pre_proof_cequiv_computation
+                           ctxt a b []*)
+                           (eq_rect
+                              _
+                              _
+                              (reduces_to_of_compute_atmost_k_steps ctxt 1 a)
+                              _
+                              p))*)
+
+(*     | None => None
+     end*)).
+*)
