@@ -41,26 +41,26 @@ Definition opabs_of_lib_entry {o} (e : @library_entry o) : opabs :=
 Definition matching_entries {o} (entry1 entry2 : @library_entry o) : Prop :=
   matching_entry_sign (opabs_of_lib_entry entry1) (opabs_of_lib_entry entry2).
 
-Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : library) : Type :=
+Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : library) : Prop :=
   match lib with
   | [] => False
   | entry' :: entries =>
     entry = entry'
-    [+]
+    \/
     (~ matching_entries entry entry'
        # entry_in_library entry entries)
   end.
 
 (* [lib1] extends [lib0] *)
-Definition lib_extends {o} (lib1 lib0 : @library o) : Type :=
+Definition lib_extends {o} (lib1 lib0 : @library o) : Prop :=
   forall entry, entry_in_library entry lib0 -> entry_in_library entry lib1.
 
 Definition in_lib {o}
            (opabs : opabs)
            (lib   : @library o) :=
-  {e : library_entry
-   & LIn e lib
-   # matching_entry_sign opabs (opabs_of_lib_entry e)}.
+  exists (e : library_entry),
+    List.In e lib
+    /\ matching_entry_sign opabs (opabs_of_lib_entry e).
 
 Definition entry_not_in_lib {o} (e : @library_entry o) (l : @library o) :=
   !in_lib (opabs_of_lib_entry e) l.
@@ -69,7 +69,7 @@ Hint Resolve matching_entry_sign_sym : slow.
 
 Lemma entry_in_library_implies_in {o} :
   forall (entry : @library_entry o) lib,
-    entry_in_library entry lib -> LIn entry lib.
+    entry_in_library entry lib -> List.In entry lib.
 Proof.
   induction lib; auto; introv h; simpl in *.
   repndors; subst; tcsp.

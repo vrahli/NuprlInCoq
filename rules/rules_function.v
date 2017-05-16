@@ -1993,7 +1993,7 @@ Qed.
 <<
    H |- f1 = f2 in x:A->B
 
-     By funcionExtensionality lvl(i) z ()
+     By functionExtensionality lvl(i) z ()
 
      H z : A |- f1 z = f2 z in B[x\z]
      H |- A = A in Type(i)

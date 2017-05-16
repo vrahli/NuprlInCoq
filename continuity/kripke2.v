@@ -67,6 +67,14 @@ Definition markov :=
     -> exists (n : nat), A n.
 
 
+(*Definition lawless :=
+  MkLawless
+    {
+      lawless_type : Type;
+      lawless_app  : forall (a : lawless_type) (n : nat), nat;
+      lawless_ls1 :
+    }*)
+
 (* This is almost the definition of absolutely free choice sequences p.283
    of Myhill's "Notes towards an axiomatization of intuitionistic analysis".
    Is it okay to use the [baire] type?  *)
