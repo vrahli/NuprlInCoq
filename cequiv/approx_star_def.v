@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -38,6 +39,7 @@ Require Export approx_props1.
 (* begin hide *)
 
 Definition blift_sub {o}
+           lib
            (op : @Opid o)
            (R : NTrel)
            (b1 b2: @BTerm o) : [univ] :=
@@ -49,18 +51,19 @@ Definition blift_sub {o}
       {sub : Sub
        & op = NCan NFresh
        # R (lsubst nt1 sub) (lsubst nt2 sub)
-       # nrut_sub (get_utokens nt1 ++ get_utokens nt2) sub
+       # nrut_sub (get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2) sub
        # lv = dom_sub sub}
      )
    # alpha_eq_bterm b1 (bterm lv nt1)
    # alpha_eq_bterm b2 (bterm lv nt2) }}.
 
 Definition lblift_sub {o}
+           lib
            (op : Opid)
            (R : NTrel)
            (tls trs: list (@BTerm o)) : [univ] :=
   length tls = length trs
-  # forall n : nat, n < length tls -> blift_sub op R (tls{[n]}) (trs{[n]}).
+  # forall n : nat, n < length tls -> blift_sub lib op R (tls{[n]}) (trs{[n]}).
 
 (* end hide *)
 
@@ -103,19 +106,12 @@ Inductive approx_star {p} :
                (t2: NTerm)
                (lbt1 lbt1' : list BTerm),
           length lbt1 = length lbt1'
-          -> lblift_sub op (approx_star lib) lbt1 lbt1'
+          -> lblift_sub lib op (approx_star lib) lbt1 lbt1'
           -> approx_open lib (oterm op lbt1') t2
           -> approx_star lib (oterm op lbt1) t2.
 Hint Constructors approx_star : slow.
 
 Definition approx_star_bterm {o} (lib : @library o) op :=
-  blift_sub op (approx_star lib).
+  blift_sub lib op (approx_star lib).
 Definition approx_starbts {o} (lib : @library o) op :=
-  lblift_sub op (approx_star lib).
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)
+  lblift_sub lib op (approx_star lib).

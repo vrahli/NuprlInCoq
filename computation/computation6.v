@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -16,10 +18,13 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -708,11 +713,12 @@ Lemma has_value_like_k_ren_utokens {o} :
   forall lib k (t : @NTerm o) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
-    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens t))
+    -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t))
     -> has_value_like_k lib k t
     -> has_value_like_k lib k (ren_utokens ren t).
 Proof.
-  introv wf norep disj hvl.
+  introv wf norep disjlib disj hvl.
   allunfold @has_value_like_k; exrepnd.
   allunfold @computes_to_val_like_in_max_k_steps; repnd.
   apply (reduces_in_atmost_k_steps_ren_utokens _ _ _ _ ren) in hvl1; auto.
@@ -743,7 +749,7 @@ Qed.
 Lemma has_value_like_k_fresh_implies {o} :
   forall lib k a v (t : @NTerm o),
     wf_term t
-    -> !LIn a (get_utokens t)
+    -> !LIn a (get_utokens_lib lib t)
     -> has_value_like_k lib k (mk_fresh v t)
     -> has_value_like_k lib k (subst t v (mk_utoken a)).
 Proof.
@@ -767,17 +773,20 @@ Proof.
       exists (subst t v (mk_utoken a)); dands; eauto 4 with slow.
       apply reduces_in_atmost_k_steps_refl; eauto with slow.
     + repnd; subst.
-      pose proof (compute_step_subst_utoken lib t x [(v,mk_utoken (get_fresh_atom t))]) as h.
+      pose proof (compute_step_subst_utoken lib t x [(v,mk_utoken (get_fresh_atom lib t))]) as h.
       allrw @get_utokens_sub_cons; allrw @get_utokens_sub_nil; allsimpl.
       allrw disjoint_singleton_l.
-      repeat (autodimp h hyp); try (apply get_fresh_atom_prop); eauto 3 with slow.
+      repeat (autodimp h hyp); try (apply get_fresh_atom_prop_and_lib); eauto 3 with slow.
+
       { apply nr_ut_sub_cons; eauto 3 with slow.
-        intro i; apply get_fresh_atom_prop. }
+        intro i; apply get_fresh_atom_prop_and_lib. }
+
       exrepnd.
       pose proof (h0 [(v,mk_utoken a)]) as q; clear h0; allsimpl.
       allrw @get_utokens_sub_cons; allrw @get_utokens_sub_nil; allsimpl.
       allrw disjoint_singleton_l.
       repeat (autodimp q hyp); exrepnd.
+
       allrw @fold_subst.
 
       assert (wf_term x) as wfx.
@@ -790,26 +799,37 @@ Proof.
         apply eqset_free_vars_disjoint in j; allsimpl.
         allrw in_app_iff; allrw in_remove_nvars; allsimpl; boolvar; allsimpl; tcsp. }
 
-      pose proof (IHk a (subst_utokens x [(get_fresh_atom t, mk_var v)])) as q; clear IHk.
+      pose proof (IHk a (subst_utokens x [(get_fresh_atom lib t, mk_var v)])) as q; clear IHk.
       repeat (autodimp q hyp).
+
       { apply wf_subst_utokens; eauto 3 with slow. }
-      { intro j; apply get_utokens_subst_utokens_subset in j; allsimpl.
+
+      { intro j; apply get_utokens_lib_subst_utokens_subset in j; allsimpl.
+        unfold get_utokens_lib in *; simpl in *.
         unfold get_utokens_utok_ren in j; allsimpl; allrw app_nil_r.
+        allrw in_app_iff; allrw not_over_or; repnd.
+        repndors; tcsp.
         rw in_remove in j; repnd.
         apply alphaeq_preserves_utokens in h1; rw h1 in j.
-        apply get_utokens_subst in j; boolvar; allsimpl; allrw in_app_iff; tcsp; allsimpl.
-        repndors; tcsp. }
+        apply get_utokens_lib_subst in j; boolvar; allsimpl; allrw in_app_iff;
+          tcsp; allsimpl; allrw not_over_or; repnd; repndors; tcsp.
+
+        - apply (get_utokens_subset_get_utokens_lib lib) in j; unfold get_utokens_lib in j; apply h4 in j.
+          allrw in_app_iff; tcsp.
+
+        - apply (get_utokens_subset_get_utokens_lib lib) in j; unfold get_utokens_lib in j; apply h4 in j.
+          allrw in_app_iff; tcsp. }
 
       pose proof (q u) as ih; clear q.
       repeat (autodimp ih hyp); exrepnd.
 
-      pose proof (simple_subst_subst_utokens_aeq x (get_fresh_atom t) v) as aeq1.
+      pose proof (simple_subst_subst_utokens_aeq x (get_fresh_atom lib t) v) as aeq1.
       repeat (autodimp aeq1 hyp).
 
       pose proof (alpha_eq_ren_utokens
-                    (subst (subst_utokens x [(get_fresh_atom t, mk_var v)]) v
-                           (mk_utoken (get_fresh_atom t)))
-                    x [(get_fresh_atom t, a)] aeq1) as aeq2.
+                    (subst (subst_utokens x [(get_fresh_atom lib t, mk_var v)]) v
+                           (mk_utoken (get_fresh_atom lib t)))
+                    x [(get_fresh_atom lib t, a)] aeq1) as aeq2.
       rw @subst_ren_utokens in aeq2; allsimpl; fold_terms.
       unfold ren_atom in aeq2; allsimpl; boolvar; tcsp.
       rw @ren_utokens_trivial in aeq2;
@@ -824,13 +844,14 @@ Proof.
       clear aeq1.
 
       pose proof (alpha_eq_ren_utokens
-                    x (subst w v (mk_utoken (get_fresh_atom t)))
-                    [(get_fresh_atom t, a)] h1) as aeq3.
+                    x (subst w v (mk_utoken (get_fresh_atom lib t)))
+                    [(get_fresh_atom lib t, a)] h1) as aeq3.
       rw @subst_ren_utokens in aeq3; allsimpl; fold_terms.
       unfold ren_atom in aeq3; allsimpl; boolvar; tcsp.
-      rw (ren_utokens_trivial [(get_fresh_atom t, a)] w) in aeq3;
-        [|simpl; apply disjoint_singleton_l; intro i; apply h4 in i;
-          apply get_fresh_atom_prop in i; sp]; GC.
+      rw (ren_utokens_trivial [(get_fresh_atom lib t, a)] w) in aeq3;
+        [|simpl; apply disjoint_singleton_l; intro i;
+          apply (get_utokens_subset_get_utokens_lib lib) in i;
+          apply h4 in i; apply get_fresh_atom_prop_and_lib in i; sp]; GC.
 
       eapply alpha_eq_trans in aeq3;[|exact aeq2]; clear aeq2.
       apply alpha_eq_sym in aeq3.
@@ -1010,10 +1031,3 @@ Proof.
     repndors; exrepnd; ginv; allsimpl.
     exists k1 k2 i en e; dands; eauto 3 with slow.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

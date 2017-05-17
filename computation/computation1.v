@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -111,6 +116,8 @@ Definition on_success {p} (c : @Comput_Result p) (f : NTerm -> NTerm) :=
 
  *)
 
+Definition mk_choice_seq {o} name : @NTerm o := oterm (Can (Ncseq name)) [].
+
 Definition compute_step_apply {p}
            (arg1c:@CanonicalOp p)
            (t:@NTerm p)
@@ -125,6 +132,11 @@ Definition compute_step_apply {p}
     | Nseq f =>
       match arg1bts, btsr with
         | [], [bterm [] arg] => csuccess (mk_eapply (mk_nseq f) arg)
+        | _,_ => cfailure compute_step_apply_not_well_formed t
+      end
+    | Ncseq name =>
+      match arg1bts, btsr with
+        | [], [bterm [] arg] => csuccess (mk_eapply (mk_choice_seq name) arg)
         | _,_ => cfailure compute_step_apply_not_well_formed t
       end
     | _ => cfailure bad_first_arg t
@@ -150,56 +162,71 @@ Definition compute_step_apseq {o}
 *)
 
 Definition compute_step_eapply2 {o}
+           lib
            (t arg1 arg2 : @NTerm o)
            (bs : list (@BTerm o)) :=
   match bs with
-    | [] =>
-      match arg1 with
-        | oterm (Can NLambda) [bterm [v] b] => csuccess (apply_bterm (bterm [v] b) [arg2])
-        | oterm (Can (Nseq f)) [] =>
-          match arg2 with
-            | oterm (Can (Nint z)) [] =>
-              if Z_le_gt_dec 0 z
-              then csuccess (mk_nat (f (Z.to_nat z)))
-              else cfailure bad_args t
-            | _ => cfailure bad_args t
+  | [] =>
+    match arg1 with
+    | oterm (Can NLambda) [bterm [v] b] => csuccess (apply_bterm (bterm [v] b) [arg2])
+    | oterm (Can (Nseq f)) [] =>
+      match arg2 with
+      | oterm (Can (Nint z)) [] =>
+        if Z_le_gt_dec 0 z
+        then csuccess (mk_nat (f (Z.to_nat z)))
+        else cfailure bad_args t
+      | _ => cfailure bad_args t
+      end
+    | oterm (Can (Ncseq name)) [] =>
+      match arg2 with
+      | oterm (Can (Nint z)) [] =>
+        if Z_le_gt_dec 0 z
+        then
+          match find_cs_value_at lib name (Z.to_nat z) with
+          | Some u => csuccess (CSVal2term u)
+          | None => cfailure bad_args t
           end
-        | sterm f =>
-          match arg2 with
-              | oterm (Can (Nint z)) [] =>
-                if Z_le_gt_dec 0 z
-                then csuccess (f (Z.to_nat z))
-                else cfailure bad_args t
-              | _ => cfailure bad_args t
-          end
-        | _ => cfailure bad_args t
+        else cfailure bad_args t
+      | _ => cfailure bad_args t
+      end
+    | sterm f =>
+      match arg2 with
+      | oterm (Can (Nint z)) [] =>
+        if Z_le_gt_dec 0 z
+        then csuccess (f (Z.to_nat z))
+        else cfailure bad_args t
+      | _ => cfailure bad_args t
       end
     | _ => cfailure bad_args t
+    end
+  | _ => cfailure bad_args t
   end.
 
 Definition compute_step_eapply1 {o}
+           lib
            (bs    : list BTerm)
            (t     : @NTerm o)
            (cstep : Comput_Result)
            (arg1  : NTerm)
            (ncr   : NonCanonicalOp) :=
   match bs with
-    | [] => cfailure bad_args t
-    | bterm (_ :: _) _ :: _ => cfailure bad_args t
-    | bterm [] (vterm _) :: _ => cfailure bad_args t
-    | bterm [] (oterm (Can _) _ as arg2) :: bs2 =>
-      compute_step_eapply2 t arg1 arg2 bs2
-    | bterm [] (oterm Exc _ as arg2) :: _ => csuccess arg2
-    | bterm [] (oterm _ _) :: bs2 => (* ncan/abs *)
-      on_success cstep (fun f => oterm (NCan ncr) (nobnd arg1 :: nobnd f :: bs2))
-    | bterm [] (sterm _ as arg2) :: btsr3 =>
-      compute_step_eapply2 t arg1 arg2 btsr3
+  | [] => cfailure bad_args t
+  | bterm (_ :: _) _ :: _ => cfailure bad_args t
+  | bterm [] (vterm _) :: _ => cfailure bad_args t
+  | bterm [] (oterm (Can _) _ as arg2) :: bs2 =>
+    compute_step_eapply2 lib t arg1 arg2 bs2
+  | bterm [] (oterm Exc _ as arg2) :: _ => csuccess arg2
+  | bterm [] (oterm _ _) :: bs2 => (* ncan/abs *)
+    on_success cstep (fun f => oterm (NCan ncr) (nobnd arg1 :: nobnd f :: bs2))
+  | bterm [] (sterm _ as arg2) :: btsr3 =>
+    compute_step_eapply2 lib t arg1 arg2 btsr3
   end.
 
 Definition eapply_wf {o} (t : @NTerm o) :=
   match t with
     | sterm _ => true
     | oterm (Can (Nseq _)) [] => true
+    | oterm (Can (Ncseq _)) [] => true
     | oterm (Can NLambda) [bterm [_] _] => true
     | _ => false
   end.
@@ -207,6 +234,7 @@ Definition eapply_wf {o} (t : @NTerm o) :=
 Definition eapply_wf_def {o} (t : @NTerm o) :=
   {f : ntseq & t = sterm f}
   [+] {f : nseq & t = mk_nseq f}
+  [+] {name : choice_sequence_name & t = mk_choice_seq name}
   [+] {v : NVar & {b : NTerm & t = mk_lam v b}}.
 
 Lemma eapply_wf_dec {o} :
@@ -229,20 +257,24 @@ Proof.
       try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
       destruct l as [|? l]; allsimpl; tcsp;
       try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-      left; right; right; eexists; eexists; unfold mk_lam; dands; eauto. }
+      left; right; right; right; eexists; eexists; unfold mk_lam; dands; eauto. }
     { destruct bs as [|b bs]; allsimpl; tcsp;
       try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
       left; right; left; eexists; unfold mk_nseq; eauto. }
+    { destruct bs as [|b bs]; allsimpl; tcsp;
+      try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
+      left; right; right; left; eexists; unfold mk_choice_seq; eauto. }
 Qed.
 
 Definition compute_step_eapply {o}
+           lib
            (bs    : list BTerm)
            (t     : @NTerm o)
            (cstep : Comput_Result)
            (arg1  : NTerm)
            (ncr   : NonCanonicalOp) :=
   if eapply_wf arg1
-  then compute_step_eapply1 bs t cstep arg1 ncr
+  then compute_step_eapply1 lib bs t cstep arg1 ncr
   else cfailure bad_args t.
 
 
@@ -1004,9 +1036,11 @@ Definition subst_utokens {p} (t : @NTerm p) (sub : utok_sub) : NTerm :=
   then subst_utokens_aux t sub
   else subst_utokens_aux (change_bvars_alpha sfr t) sub.
 
+
 Definition get_utokens_library_entry {p} (entry : @library_entry p) : list (get_patom_set p) :=
   match entry with
-    | lib_abs opabs vars rhs correct => get_utokens_so rhs
+  | lib_cs _ L => flat_map getc_utokens L
+  | lib_abs opabs vars rhs correct => get_utokens_so rhs
   end.
 
 Definition get_utokens_library {p} (lib : @library p) : list (get_patom_set p) :=
@@ -1368,21 +1402,41 @@ Proof.
       eapply implies_ord_le_limit_right; apply ord_le_refl.
 Qed.
 
-Definition get_fresh_atom {o} (t : @NTerm o) : get_patom_set o :=
-  projT1 (fresh_atom o (get_utokens t)).
+Definition get_utokens_lib {o} lib (t : @NTerm o) :=
+  get_utokens t ++ get_utokens_library lib.
+
+Definition get_fresh_atom {o} lib (t : @NTerm o) : get_patom_set o :=
+  projT1 (fresh_atom o (get_utokens_lib lib t)).
 
 Lemma get_fresh_atom_prop {o} :
-  forall (t : @NTerm o),
-    !LIn (get_fresh_atom t) (get_utokens t).
+  forall lib (t : @NTerm o),
+    !LIn (get_fresh_atom lib t) (get_utokens t).
 Proof.
   introv i.
   unfold get_fresh_atom in i.
-  destruct (fresh_atom o (get_utokens t)); allsimpl; sp.
+  match goal with
+  | [ H : context[fresh_atom ?a ?b] |- _ ] =>
+    destruct (fresh_atom a b); allsimpl; tcsp
+  end.
+  allrw in_app_iff; allrw not_over_or; tcsp.
+Qed.
+
+Lemma get_fresh_atom_prop_lib {o} :
+  forall lib (t : @NTerm o),
+    !LIn (get_fresh_atom lib t) (get_utokens_library lib).
+Proof.
+  introv i.
+  unfold get_fresh_atom in i.
+  match goal with
+  | [ H : context[fresh_atom ?a ?b] |- _ ] =>
+    destruct (fresh_atom a b); allsimpl; tcsp
+  end.
+  allrw in_app_iff; allrw not_over_or; tcsp.
 Qed.
 
 Lemma get_fresh_atom_prop2 {o} :
-  forall (t : @NTerm o),
-    !LIn (get_fresh_atom t) (get_utokens t).
+  forall lib (t : @NTerm o),
+    !LIn (get_fresh_atom lib t) (get_utokens t).
 Proof.
   introv i.
 (*  apply subset_get_utokens_get_utokens_step_seq in i.*)
@@ -1390,12 +1444,12 @@ Proof.
 Qed.
 
 Lemma eq_fresh_atom {o} :
-  forall (t1 t2 : @NTerm o),
+  forall lib (t1 t2 : @NTerm o),
     get_utokens t1 = get_utokens t2
-    -> get_fresh_atom t1 = get_fresh_atom t2.
+    -> get_fresh_atom lib t1 = get_fresh_atom lib t2.
 Proof.
   introv e.
-  unfold get_fresh_atom.
+  unfold get_fresh_atom, get_utokens_lib.
   rw e; auto.
 Qed.
 
@@ -1512,10 +1566,3 @@ Definition compute_step_parallel {o}
    This means, I'll have to change the way computation on non-canonical
    terms and abstractions work :(
  *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

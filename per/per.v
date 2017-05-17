@@ -34,6 +34,8 @@
 Require Export cequiv.
 Require Export universe2.
 Require Export atoms.
+Require Export computation_lib_extends.
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ #⪯# *)
@@ -314,6 +316,84 @@ Notation "T [[ v \\ a ]]" := (substc a v T) (at level 0).
 (* begin hide *)
 
 
+Definition inf_library {o} := nat -> @library_entry o.
+
+(* [m] is the next index we want to get, and [n] the size we still need to extract *)
+Fixpoint inf2library {o} (l : @inf_library o) (m : nat) (n : nat) : library :=
+  match n with
+  | 0 => []
+  | S n => (l m) :: inf2library l (S m) n
+  end.
+
+Definition shift_inf_lib {o} (l : @inf_library o) : inf_library :=
+  fun n => l (S n).
+
+Fixpoint inf_lib_extends {o} (infl : @inf_library o) (l : @library o) :=
+  match l with
+  | [] => True
+  | entry :: entries =>
+    entry = infl 0
+    /\ inf_lib_extends (shift_inf_lib infl) entries
+  end.
+
+Definition inf_lib_extends2 {o} (infl : @inf_library o) (l : @library o) :=
+  l = inf2library infl 0 (length l).
+
+Lemma inf2library_S {o} :
+  forall len n (infl : @inf_library o),
+    inf2library infl (S n) len
+    = inf2library (shift_inf_lib infl) n len.
+Proof.
+  induction len; introv; simpl; auto.
+  rewrite IHlen; clear IHlen; auto.
+Qed.
+
+Lemma inf_lib_extends_iff2 {o} :
+  forall (l : @library o) (infl : @inf_library o),
+    inf_lib_extends infl l <-> inf_lib_extends2 infl l.
+Proof.
+  induction l; simpl; split; intro h; auto.
+
+  - unfold inf_lib_extends2; simpl; auto.
+
+  - repnd; subst.
+    apply IHl in h; clear IHl.
+    unfold inf_lib_extends2 in *; simpl; f_equal.
+    rewrite inf2library_S; auto.
+
+  - rewrite IHl; clear IHl.
+    unfold inf_lib_extends2 in *; simpl in *.
+    apply cons_inj in h; repnd.
+    dands; auto.
+    rewrite inf2library_S in h; auto.
+Qed.
+
+Definition bar_lib {o} := list (@library o).
+
+(* This states that [bar] is a bar of [lib] *)
+Definition BarLibCond {o} (bar : @bar_lib o) (lib : @library o) :=
+  forall (infLib : inf_library),
+    inf_lib_extends infLib lib
+    ->
+    exists (lib' : library),
+      List.In lib' bar
+      /\ lib_extends lib' lib.
+
+Record BarLib {o} (lib : @library o) :=
+  MkBarLib
+    {
+      bar_lib_bar  : @bar_lib o;
+      bar_lib_cond : BarLibCond bar_lib_bar lib;
+    }.
+Arguments bar_lib_bar [o] [lib] _.
+Arguments bar_lib_cond [o] [lib] _ _ _.
+
+Definition in_bar {o} (lib : @library o) (F : @library o -> Prop) :=
+  exists (bar : BarLib lib),
+  forall (lib' : library),
+    List.In lib' (bar_lib_bar bar)
+    -> F lib'.
+
 (* ------ types definitions ------ *)
 
 (* end hide *)
@@ -355,6 +435,9 @@ Definition per_int {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U] 
   T1 ===>(lib) mkc_int
   # T2 ===>(lib) mkc_int
   # forall t t', eq t t' <=> equality_of_int lib t t'.
+
+Definition per_int_bar {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  in_bar lib (fun lib' => per_int lib' ts T1 T2 eq).
 
 (**
 

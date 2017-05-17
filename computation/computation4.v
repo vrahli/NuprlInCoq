@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -16,10 +18,13 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -1076,6 +1081,7 @@ Lemma if_computes_to_exception_apply {p} :
     -> computes_to_exception lib en (mk_apply f a) e
     -> {v : NVar & {b : @NTerm p & reduces_to lib f (mk_lam v b)}}
        [+] {s : nseq & reduces_to lib f (mk_nseq s) }
+       [+] {n : choice_sequence_name & reduces_to lib f (mk_choice_seq n) }
        [+] {s : ntseq & reduces_to lib f (mk_ntseq s) }
        [+] computes_to_exception lib en f e.
 Proof.
@@ -1092,7 +1098,7 @@ Proof.
     destruct f; try (complete (inversion comp1)).
 
     { csunf comp1; allsimpl; ginv; allsimpl.
-      right; right; left.
+      right; right; right; left.
       exists n 0; eauto 3 with slow.
       apply reduces_in_atmost_k_steps_0; auto. }
 
@@ -1102,10 +1108,15 @@ Proof.
       csunf comp1; allsimpl.
       apply compute_step_apply_success in comp1;
         repndors; exrepnd; subst; fold_terms; cpx; GC.
+
       { left.
         exists v b 0; sp. }
+
       { right; left.
         exists f 0; sp. }
+
+      { right; right; left.
+        exists n 0; sp. }
 
     + Case "NCan".
       unfold mk_apply, nobnd in comp1.
@@ -1127,11 +1138,16 @@ Proof.
         exists n; sp.
 
       * right; right; left.
+        exists n0 (S k0).
+        rw @reduces_in_atmost_k_steps_S.
+        exists n; sp.
+
+      * right; right; right; left.
         exists s (S k0).
         rw @reduces_in_atmost_k_steps_S.
         exists n; sp.
 
-      * right; right; right.
+      * right; right; right; right.
         exists (S k0).
         rw @reduces_in_atmost_k_steps_S.
         exists n; sp.
@@ -1140,7 +1156,7 @@ Proof.
       csunf comp1; allsimpl; ginv.
       apply reduces_atmost_exc in comp0.
       inversion comp0; subst.
-      right; right; right; exists 0; sp.
+      right; right; right; right; exists 0; sp.
 
     + Case "Abs".
       unfold mk_apply, nobnd in comp1.
@@ -1162,11 +1178,16 @@ Proof.
         exists n; sp.
 
       * right; right; left.
+        exists n0 (S k0).
+        rw @reduces_in_atmost_k_steps_S.
+        exists n; sp.
+
+      * right; right; right; left.
         exists s (S k0).
         rw @reduces_in_atmost_k_steps_S.
         exists n; sp.
 
-      * right; right; right.
+      * right; right; right; right.
         exists (S k0).
         rw @reduces_in_atmost_k_steps_S.
         exists n; sp.
@@ -2579,10 +2600,3 @@ Proof.
   apply isprogram_implies_wf; apply isprogram_eq; auto.
 Qed.
 Hint Resolve isprog_implies_wf : slow.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

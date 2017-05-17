@@ -1222,7 +1222,13 @@ Lemma compute_step_apply_success {p} :
            & arg1c = Nseq f
            # arg1bts = []
            # bstr = [bterm [] arg]
-           # u = mk_eapply (mk_nseq f) arg}}.
+           # u = mk_eapply (mk_nseq f) arg}}
+      [+] {n : choice_sequence_name
+           & {arg : NTerm
+           & arg1c = Ncseq n
+           # arg1bts = []
+           # bstr = [bterm [] arg]
+           # u = mk_eapply (mk_choice_seq n) arg}}.
 Proof.
   introv e; allsimpl; destruct arg1c; destruct arg1bts; allsimpl; inversion e;
   thin_trivials.
@@ -1239,8 +1245,14 @@ Proof.
     destruct b.
     destruct l; ginv.
     destruct bstr; ginv.
-    right.
+    right; left.
     exists n n0; sp.
+  - destruct bstr; ginv.
+    destruct b.
+    destruct l; ginv.
+    destruct bstr; ginv.
+    right; right.
+    eexists; eexists; eauto.
 Qed.
 
 (*
@@ -1681,13 +1693,13 @@ Proof.
   remember (unfold_abs_entry a oa1 bs) as h; destruct h.
   - inversion Heqk; subst; GC.
     clear IHlib.
-    destruct a; allsimpl.
+    destruct a; allsimpl; ginv;[].
     exists opabs vars rhs correct.
     unfold found_entry; simpl.
     destruct (matching_entry_deq oa1 opabs vars bs); repnd; inversion Heqh; dands; auto.
   - apply IHlib in Heqk; clear IHlib; exrepnd.
     exists oa2 vars rhs correct; dands; auto; subst.
-    allunfold @found_entry; allsimpl; destruct a.
+    allunfold @found_entry; allsimpl; destruct a; ginv.
     allunfold @unfold_abs_entry.
     destruct (matching_entry_deq oa1 opabs vars0 bs); repnd; inversion Heqh; dands; auto.
 Qed.
@@ -1819,7 +1831,7 @@ Lemma compute_step_ncan_bterm_cons_success {o} :
            (isvalue_like t # u = pushdown_fresh v t)
            [+]
            {x : NTerm
-            & let a := get_fresh_atom t in
+            & let a := get_fresh_atom lib t in
               isnoncan_like t
               # compute_step lib (subst t v (mk_utoken a)) = csuccess x
               # u = mk_fresh v (subst_utokens x [(a,mk_var v)])}
@@ -3915,7 +3927,8 @@ Lemma find_entry_implies_unfold_abs {o} :
     -> unfold_abs lib oa1 bs = Some (mk_instance vars bs rhs).
 Proof.
   induction lib; introv fe; allsimpl; tcsp.
-  destruct a; allsimpl.
+  destruct a; allsimpl; [|].
+  { eapply IHlib; eauto. }
   destruct (matching_entry_deq oa1 opabs vars0 bs).
   - inversion fe; subst; GC; auto.
   - apply IHlib in fe; auto.
@@ -5140,7 +5153,7 @@ Lemma compute_step_fresh_if_isnoncan_like {o} :
   forall lib v (t : @NTerm o),
     isnoncan_like t
     -> compute_step lib (mk_fresh v t)
-       = let a := get_fresh_atom t in
+       = let a := get_fresh_atom lib t in
          on_success (compute_step lib (subst t v (mk_utoken a)))
                     (fun u => mk_fresh v (subst_utokens u [(a,mk_var v)])).
 Proof.
@@ -8591,15 +8604,17 @@ Proof.
   destruct t as [v|f|op bs]; allsimpl; tcsp; ginv.
   - left; eexists; eauto.
   - destruct op; allsimpl; tcsp; ginv;[].
-    destruct c; allsimpl; tcsp; ginv;[|].
+    destruct c; allsimpl; tcsp; ginv;[| |].
     { destruct bs as [|b bs]; allsimpl; tcsp.
       destruct b as [l t]; allsimpl.
       destruct l as [|v l]; allsimpl; tcsp.
       destruct l as [|? l]; allsimpl; tcsp.
       destruct bs as [|? bs]; allsimpl; tcsp; ginv.
-      right; right; eexists; eexists; unfold mk_lam; dands; eauto. }
+      right; right; right; eexists; eexists; unfold mk_lam; dands; eauto. }
     { destruct bs; allsimpl; ginv; fold_terms.
       right; left; eexists; eauto. }
+    { destruct bs; allsimpl; ginv; fold_terms.
+      right; right; left; unfold mk_choice_seq; eexists; eauto. }
 Qed.
 
 Lemma co_wf_false_implies_not {o} :
@@ -8690,10 +8705,14 @@ Lemma eapply_wf_def_len_implies {o} :
 Proof.
   introv len w.
   allunfold @eapply_wf_def.
-  exrepnd; repndors; exrepnd; subst; allsimpl; cpx; ginv;[|].
+  exrepnd; repndors; exrepnd; subst; allsimpl; cpx; ginv;[| |].
   { allunfold @mk_nseq; ginv; allsimpl.
     destruct bs2; allsimpl; ginv; fold_terms.
     right; left; exists f; auto. }
+  { allunfold @mk_choice_seq; ginv.
+    destruct bs2; simpl in *; ginv.
+    right; right; left.
+    eexists; eauto. }
   { allunfold @mk_lam; ginv.
     allsimpl; cpx.
     destruct bs2 as [|b1 bs2]; allsimpl; ginv;[].
@@ -8702,7 +8721,7 @@ Proof.
     destruct l as [|x l]; allsimpl; ginv.
     destruct l as [|? l]; allsimpl; ginv.
     allunfold @num_bvars; allsimpl; GC.
-    right; right; eexists; eexists; dands; eauto. }
+    right; right; right; eexists; eexists; dands; eauto. }
 Qed.
 Hint Resolve eapply_wf_def_len_implies : slow.
 
@@ -8726,12 +8745,12 @@ Proof.
 Qed.
 
 Lemma compute_step_eapply1_success {o} :
-  forall bs (t : @NTerm o) cstep arg1 ncr u,
-    compute_step_eapply1 bs t cstep arg1 ncr = csuccess u
+  forall lib bs (t : @NTerm o) cstep arg1 ncr u,
+    compute_step_eapply1 lib bs t cstep arg1 ncr = csuccess u
     -> {arg2 : NTerm
         & {l : list BTerm
         & bs = nobnd arg2 :: l
-        # ((iscan arg2 # compute_step_eapply2 t arg1 arg2 l = csuccess u)
+        # ((iscan arg2 # compute_step_eapply2 lib t arg1 arg2 l = csuccess u)
            [+]
            (isexc arg2 # u = arg2)
            [+]
@@ -8821,13 +8840,13 @@ Ltac dcwf h :=
   try (complete ginv).
 
 Lemma compute_step_eapply_success {o} :
-  forall bs (t : @NTerm o) cstep arg1 ncr u,
-    compute_step_eapply bs t cstep arg1 ncr = csuccess u
+  forall lib bs (t : @NTerm o) cstep arg1 ncr u,
+    compute_step_eapply lib bs t cstep arg1 ncr = csuccess u
     -> {arg2 : NTerm
         & {l : list BTerm
         & bs = nobnd arg2 :: l
         # eapply_wf_def arg1
-        # ((iscan arg2 # compute_step_eapply2 t arg1 arg2 l = csuccess u)
+        # ((iscan arg2 # compute_step_eapply2 lib t arg1 arg2 l = csuccess u)
            [+]
            (isexc arg2 # u = arg2)
            [+]
@@ -8844,8 +8863,8 @@ Proof.
 Qed.
 
 Lemma compute_step_eapply2_success {o} :
-  forall (t : @NTerm o) arg1 arg2 bs u,
-    compute_step_eapply2 t arg1 arg2 bs = csuccess u
+  forall lib (t : @NTerm o) arg1 arg2 bs u,
+    compute_step_eapply2 lib t arg1 arg2 bs = csuccess u
     -> (bs = []
         # ({v : NVar
             & {b : NTerm
@@ -8858,6 +8877,14 @@ Lemma compute_step_eapply2_success {o} :
             # arg2 = mk_nat n
             # u = mk_nat (f n) }}
            [+]
+           {name : choice_sequence_name
+            & {n : nat
+            & {v : ChoiceSeqVal
+            & arg1 = mk_choice_seq name
+            # arg2 = mk_nat n
+            # find_cs_value_at lib name n = Some v
+            # u = CSVal2term v }}}
+           [+]
            {f : ntseq
             & {n : nat
             & arg1 = mk_ntseq f
@@ -8868,17 +8895,20 @@ Proof.
   destruct bs; allsimpl; ginv;[].
   dands; auto;[].
   destruct arg1 as [|f1|op1 bs1]; allsimpl; ginv;[|].
+
   - destruct arg2 as [|f2|op2 bs2]; allsimpl; ginv.
     destruct op2 as [can2|ncan2|exc2|abs2]; allsimpl; ginv;[].
     destruct can2; allsimpl; ginv.
     destruct bs2; allsimpl; ginv.
     boolvar; ginv.
-    right; right.
+    right; right; right.
     eexists; eexists; dands; eauto.
     unfold mk_nat.
     rw Znat.Z2Nat.id; auto.
+
   - destruct op1 as [can1|ncan1|exc1|abs1]; allsimpl; ginv;[].
-    destruct can1; allsimpl; ginv;[|].
+    destruct can1; allsimpl; ginv;[| |].
+
     { destruct bs1 as [|b bs1]; allsimpl; ginv;[].
       destruct b as [vs b].
       destruct vs as [|v vs]; ginv.
@@ -8886,6 +8916,7 @@ Proof.
       destruct bs1; ginv.
       left; fold_terms.
       eexists; eexists; dands; eauto. }
+
     { destruct bs1 as [|b bs1]; allsimpl; ginv;[].
       destruct arg2 as [v|f|op bs]; allsimpl; ginv;[].
       dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv;[].
@@ -8895,6 +8926,20 @@ Proof.
       right; left.
       fold_terms.
       exists n (Z.to_nat z); dands; auto.
+      unfold mk_nat.
+      rw Znat.Z2Nat.id; auto. }
+
+    { destruct bs1 as [|b bs1]; allsimpl; ginv;[].
+      destruct arg2 as [v|f|op bs]; allsimpl; ginv;[].
+      dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv;[].
+      destruct can; allsimpl; ginv;[].
+      destruct bs; allsimpl; ginv.
+      boolvar; ginv.
+      right; right; left.
+      remember (find_cs_value_at lib c (Z.to_nat z)) as fcs;
+        symmetry in Heqfcs; destruct fcs; ginv.
+      fold_terms.
+      exists c (Z.to_nat z) c0; dands; auto.
       unfold mk_nat.
       rw Znat.Z2Nat.id; auto. }
 Qed.

@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -16,10 +18,13 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -182,7 +187,7 @@ Hint Resolve isprogram_sterm_implies_isprogram_apply : slow.
 Lemma eapply_wf_def_lam {o} :
   forall v (b : @NTerm o), eapply_wf_def (mk_lam v b).
 Proof.
-  introv; right; right; eexists; eexists; eauto.
+  introv; right; right; right; eexists; eexists; eauto.
 Qed.
 Hint Resolve eapply_wf_def_lam : slow.
 
@@ -442,12 +447,15 @@ Lemma eapply_wf_def_oterm_implies {o} :
   forall (op : @Opid o) bs,
     eapply_wf_def (oterm op bs)
     -> ({v : NVar & {t : NTerm & op = Can NLambda # bs = [bterm [v] t] }}
-        [+] {s : nseq & op = Can (Nseq s) # bs = [] }).
+        [+] {s : nseq & op = Can (Nseq s) # bs = [] }
+        [+] {n : choice_sequence_name & op = Can (Ncseq n) # bs = [] }).
 Proof.
   introv w.
   unfold eapply_wf_def in w; repndors; exrepnd; ginv.
   - allunfold @mk_nseq; ginv.
-    right; eexists; dands; auto.
+    right; left; eexists; dands; auto.
+  - allunfold @mk_choice_seq; ginv.
+    right; right; eexists; dands; auto.
   - allunfold @mk_lam; ginv.
     left; eexists; eexists; dands; eauto.
 Qed.
@@ -752,10 +760,3 @@ Qed.
 
 Definition mkc_ntseq {o} (f : @ntseqc o) : CTerm :=
   exist isprog (sterm (ntseqc2seq f)) (isprog_ntseqc f).
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

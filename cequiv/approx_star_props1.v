@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -35,14 +36,14 @@ Require Export approx_star_def.
 (* begin hide *)
 
 Lemma exists_nr_ut_sub {o} :
-  forall lv (t : @NTerm o),
+  forall lib lv (t : @NTerm o),
     {sub : Sub
-     & nr_ut_sub t sub
+     & nr_ut_sub lib t sub
      # lv = dom_sub sub }.
 Proof.
   induction lv as [|v lv]; introv.
   - exists ([] : @Sub o); simpl; auto.
-  - destruct (fresh_atom o (get_utokens t)) as [a h].
+  - destruct (fresh_atom o (get_utokens_lib lib t)) as [a h].
     pose proof (IHlv (subst t v (mk_utoken a))) as k; exrepnd; subst; clear IHlv.
     exists ((v,mk_utoken a) :: sub); simpl; dands; auto.
 Qed.
@@ -274,7 +275,7 @@ Hint Resolve implies_prog_sub_app : slow.
 
 Lemma nr_ut_sub_approx_star_aux {o} :
   forall lib (t1 t2 : @NTerm o) sub,
-    nr_ut_sub (mk_pair t1 t2) sub
+    nr_ut_sub lib (mk_pair t1 t2) sub
     -> approx_star lib t1 t2
     -> approx_star lib (lsubst_aux t1 sub) (lsubst_aux t2 sub).
 Proof.
@@ -450,7 +451,7 @@ Proof.
     destruct (dec_op_eq_fresh o) as [e|e]; subst.
 
     + right.
-      pose proof (exists_nrut_sub lv (get_utokens nt)) as h; exrepnd; subst.
+      pose proof (exists_nrut_sub lv (get_utokens_lib lib nt)) as h; exrepnd; subst.
       exists sub; dands; auto.
 
       * pose proof (Hind nt (lsubst nt sub) (dom_sub sub)) as h.
@@ -475,7 +476,7 @@ Proof.
   destruct bt as [lv nt]. simpl. invertsn hbt.
   exrepnd. exists (lv) (nt) (nt); spc.
   destruct (dec_op_eq_fresh op) as [e|e]; subst; eauto with slow.
-  pose proof (exists_nrut_sub lv (get_utokens nt)) as h; exrepnd; subst.
+  pose proof (exists_nrut_sub lv (get_utokens_lib lib nt)) as h; exrepnd; subst.
   right; exists sub; dands; eauto 4 with slow.
   eapply nrut_sub_subset;[|exact h1].
   introv i; allrw in_app_iff; sp.
@@ -515,7 +516,8 @@ Hint Resolve approx_open_implies_approx_star : slow.
 
 Definition get_defs_entry {o} (entry : @library_entry o) : list marker :=
   match entry with
-    | lib_abs opabs vars rhs correct => [opabs_name opabs]
+  | lib_cs name vals => []
+  | lib_abs opabs vars rhs correct => [opabs_name opabs]
   end.
 
 Definition get_defs_lib {o} (lib : @library o) : list marker :=
@@ -1315,10 +1317,10 @@ match goal with
 end.
 
 Lemma blift_sub_alpha_fun_r {p} :
-  forall op R (nt1 nt2 nt2' : @BTerm p),
-    blift_sub op R nt1 nt2
+  forall lib op R (nt1 nt2 nt2' : @BTerm p),
+    blift_sub lib op R nt1 nt2
     -> alpha_eq_bterm nt2 nt2'
-    -> blift_sub op R nt1 nt2'.
+    -> blift_sub lib op R nt1 nt2'.
 Proof.
   introv Has Hal.
   repnud Has .
@@ -1329,10 +1331,10 @@ Proof.
 Qed.
 
 Lemma blift_sub_alpha_fun_l {p} :
-  forall op R (nt1 nt1' nt2 : @BTerm p),
-    blift_sub op R nt1 nt2
+  forall lib op R (nt1 nt1' nt2 : @BTerm p),
+    blift_sub lib op R nt1 nt2
     -> alpha_eq_bterm nt1 nt1'
-    -> blift_sub op R nt1' nt2.
+    -> blift_sub lib op R nt1' nt2.
 Proof.
   introv Has Hal.
   repnud Has .
@@ -1486,11 +1488,11 @@ Proof.
 Qed.
 
 Lemma lblift_sub_eq {o} :
-  forall (op : Opid) (R : NTrel) (bs1 bs2: list (@BTerm o)),
-    lblift_sub op R bs1 bs2
+  forall lib (op : Opid) (R : NTrel) (bs1 bs2: list (@BTerm o)),
+    lblift_sub lib op R bs1 bs2
     <=>
     (length bs1 = length bs2
-     # forall b1 b2, LIn (b1,b2) (combine bs1 bs2) -> blift_sub op R b1 b2).
+     # forall b1 b2, LIn (b1,b2) (combine bs1 bs2) -> blift_sub lib op R b1 b2).
 Proof.
   introv.
   unfold lblift_sub; split; introv k; repnd; dands; auto; introv i.
@@ -1692,6 +1694,26 @@ Proof.
 Qed.
 *)
 
+Lemma get_utokens_lib_lsubst_aux_allvars {o} :
+  forall lib (t : @NTerm o) (sub : Substitution),
+    allvars_sub sub
+    -> get_utokens_lib lib (lsubst_aux t sub) = get_utokens_lib lib t.
+Proof.
+  introv h.
+  unfold get_utokens_lib; f_equal.
+  apply get_utokens_lsubst_aux_allvars; auto.
+Qed.
+
+Lemma get_utokens_lib_lsubst_allvars {o} :
+  forall lib (t : @NTerm o) (sub : Substitution),
+    allvars_sub sub
+    -> get_utokens_lib lib (lsubst t sub) = get_utokens_lib lib t.
+Proof.
+  introv avs.
+  unfold get_utokens_lib; f_equal.
+  apply get_utokens_lsubst_allvars; auto.
+Qed.
+
 (* lemma 0.6 in annotated paper/
   This proof is rather long.
   But this lemma will simplify some of the reasoning required in this proof
@@ -1700,6 +1722,7 @@ Qed.
   so that the bound variables are picked nicely.
  Even now, approx_ot_change can be used to simplify the proof.
  *)
+
 Theorem approx_star_lsubst_vars {p} :
   forall lib a b lvi lvo,
     length lvi = length lvo ->
@@ -1872,10 +1895,10 @@ Proof.
       remember (combine lvn (range sub)) as sub'.
       exists sub'; dands; auto;
       [| subst;
-         apply alphaeq_preserves_utokens in aeq0;
-         apply alphaeq_preserves_utokens in aeq2;
-         repeat (rw @get_utokens_lsubst_aux_allvars; eauto with slow);
-         repeat (rw @get_utokens_lsubst_allvars; eauto with slow);
+         apply (alphaeq_preserves_get_utokens_lib lib) in aeq0;
+         apply (alphaeq_preserves_get_utokens_lib lib) in aeq2;
+         repeat (rw @get_utokens_lib_lsubst_aux_allvars; eauto with slow);
+         repeat (rw @get_utokens_lib_lsubst_allvars; eauto with slow);
          rw <- aeq0; rw <- aeq2;
          eapply nrut_sub_change_sub_same_range;[|exact bl5];
          rw @range_combine; auto; allrw @length_range; allrw @length_dom;
@@ -2038,8 +2061,8 @@ Proof.
 Qed.
 
 Lemma blift_sub_numbvars {o} :
-  forall op R (bt1 bt2 : @BTerm o),
-    blift_sub op R bt1 bt2
+  forall lib op R (bt1 bt2 : @BTerm o),
+    blift_sub lib op R bt1 bt2
     -> num_bvars bt1 = num_bvars bt2.
 Proof.
   introv Hr.
@@ -2089,10 +2112,3 @@ Proof.
 Qed.
 
 (* end hide *)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

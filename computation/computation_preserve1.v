@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -16,10 +18,13 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
  *)
@@ -256,6 +261,12 @@ Proof.
             allrw <- @wf_apply_iff; repnd.
             dands; auto.
           }
+
+          { allsimpl; autorewrite with slow in *.
+            allrw @nt_wf_eq.
+            allrw <- @wf_apply_iff; repnd.
+            dands; eauto 3 with slow.
+          }
         }
 
         { SSSCase "NEApply".
@@ -267,10 +278,11 @@ Proof.
 
           { clear ind.
             apply compute_step_eapply2_success in comp1; repnd; GC.
-            repndors; exrepnd; subst; allunfold @mk_lam; ginv; fold_terms; allsimpl;
-            autorewrite with slow;
-            unfold apply_bterm; simpl; allrw @fold_subst;
-            dands; eauto 3 with slow.
+            repndors; exrepnd; subst; allunfold @mk_lam; allunfold @mk_choice_seq;
+              ginv; fold_terms; allsimpl;
+                autorewrite with slow;
+                unfold apply_bterm; simpl; allrw @fold_subst;
+                  dands; eauto 3 with slow; GC.
 
             - pose proof (eqvars_free_vars_disjoint b0 [(v,b)]) as h.
               allrw @fold_subst.
@@ -281,7 +293,6 @@ Proof.
               apply subvars_app_weak_l; auto.
 
             - allrw @nt_wf_eq.
-              allrw <- @wf_apply_iff; repnd.
               allrw <- @wf_lam_iff.
               apply wf_term_subst; auto.
           }
@@ -845,13 +856,13 @@ Proof.
           apply nt_wf_fresh in wf; auto.
 
         - allsimpl; repnd; subst; allsimpl; allrw app_nil_r.
-          pose proof (free_vars_subst_utokens x [(get_fresh_atom t, mk_var n)]) as h.
+          pose proof (free_vars_subst_utokens x [(get_fresh_atom lib t, mk_var n)]) as h.
           apply (subars_remove_nvars_lr [n]) in h.
           eapply subvars_trans;[exact h|clear h].
           rw remove_nvars_app_r; simpl.
           rw remove_nvars_eq; rw app_nil_r.
           apply subars_remove_nvars_lr.
-          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom t))) [n]) as k; repeat (autodimp k hyp); clear ind.
+          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom lib t))) [n]) as k; repeat (autodimp k hyp); clear ind.
           { rw @simple_osize_subst; eauto 3 with slow. }
           pose proof (k x) as h; clear k.
           allrw @nt_wf_fresh.
@@ -880,7 +891,7 @@ Proof.
 
         - allsimpl; repnd; subst; allsimpl; allrw app_nil_r.
           allrw @nt_wf_fresh.
-          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom t))) [n]) as k; repeat (autodimp k hyp); clear ind.
+          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom lib t))) [n]) as k; repeat (autodimp k hyp); clear ind.
           { rw @simple_osize_subst; eauto 3 with slow. }
           pose proof (k x) as h; clear k.
           repeat (autodimp h hyp); repnd.

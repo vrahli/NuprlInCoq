@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -804,6 +805,12 @@ Proof.
       exists k0; auto.
 Qed.
 
+Lemma isvalue_mk_choice_seq {o} : forall n, @isvalue o (mk_choice_seq n).
+Proof.
+  introv; repeat constructor; simpl; tcsp.
+Qed.
+Hint Resolve isvalue_mk_choice_seq : slow.
+
 (* !! MOVE *)
 Hint Resolve isvalue_mk_nseq : slow.
 
@@ -819,6 +826,9 @@ Lemma if_hasvalue_apply {pp} :
        [+] {s : nseq
             & computes_to_value lib f (mk_nseq s)
             # hasvalue lib (mk_eapply (mk_nseq s) a)}
+       [+] {n : choice_sequence_name
+            & computes_to_value lib f (mk_choice_seq n)
+            # hasvalue lib (mk_eapply (mk_choice_seq n) a)}
        [+] {s : ntseq
             & computes_to_value lib f (mk_ntseq s)
             # hasvalue lib (mk_eapply (mk_ntseq s) a)}.
@@ -835,7 +845,7 @@ Proof.
     rw @compute_step_eq_unfold in comp1; allsimpl.
     destruct f as [v|f|op bs]; ginv.
 
-    { right; right.
+    { right; right; right.
       exists f; dands; eauto 3 with slow.
       - exists 0.
         apply reduces_in_atmost_k_steps_0; auto.
@@ -846,12 +856,17 @@ Proof.
 
     + Case "Can".
       apply compute_step_apply_success in comp1.
-      repndors; [left|right]; exrepnd; subst; fold_terms; ginv.
+      repndors; exrepnd; subst; fold_terms; ginv;[| |].
 
-      * exists v b; dands; try (complete (constructor; sp; allrw @fold_lam; sp; rw @isprogram_eq; sp)); eauto with slow.
+      * left.
+        exists v b; dands; try (complete (constructor; sp; allrw @fold_lam; sp; rw @isprogram_eq; sp)); eauto with slow.
         exists 0; sp; try (complete (constructor; sp; allrw @fold_lam; sp; rw @isprogram_eq; sp)).
 
-      * left; exists f; dands; eauto 3 with slow.
+      * right; left; exists f; dands; eauto 3 with slow;[|].
+        { exists 0; allrw @reduces_in_atmost_k_steps_0; auto. }
+        { eexists; dands;[eexists;exact comp0|]; auto. }
+
+      * right; right; left; exists n; dands; eauto 3 with slow;[|].
         { exists 0; allrw @reduces_in_atmost_k_steps_0; auto. }
         { eexists; dands;[eexists;exact comp0|]; auto. }
 
@@ -859,7 +874,9 @@ Proof.
       remember (compute_step lib (oterm (NCan nc) bs)); symmetry in Heqc; destruct c; allsimpl; ginv.
       fold_terms.
       assert (isprog n) as in0 by (apply preserve_compute_step in Heqc; sp; allrw @isprogram_eq; sp).
-      applydup IHk in comp0; auto; repndors; [left|right;left|right;right]; exrepd; auto.
+      applydup IHk in comp0; auto; repndors;
+        [left|right;left|right;right;left|right;right;right];
+        exrepd; auto.
 
       * exists v b; sp.
 
@@ -871,6 +888,12 @@ Proof.
           exists k0; sp. }
 
       * exists s; dands; eauto 3 with slow.
+        { exists (S k1).
+          allrw @reduces_in_atmost_k_steps_S.
+          eexists; dands; eauto. }
+        { eexists; dands;[eexists;exact r|]; auto. }
+
+      * exists n0; dands; eauto 3 with slow.
         { exists (S k1).
           allrw @reduces_in_atmost_k_steps_S.
           eexists; dands; eauto. }
@@ -906,7 +929,8 @@ Proof.
         apply @isprogram_eq in isp.
         apply isprogram_ot_iff in isp; repnd; auto. }
 
-      apply IHk in comp0; auto; repndors; [left|right;left|right;right]; exrepnd.
+      apply IHk in comp0; auto; repndors;
+        [left|right;left|right;right;left|right;right;right]; exrepnd.
 
       * exists v b; dands; auto.
         { exists (S k1).
@@ -918,6 +942,12 @@ Proof.
           exists k0; auto. }
 
       * exists s; dands; eauto 3 with slow.
+        { exists (S k1).
+          allrw @reduces_in_atmost_k_steps_S.
+          eexists; dands; eauto. }
+        { eexists; dands;[eexists;exact comp4|]; auto. }
+
+      * exists n; dands; eauto 3 with slow.
         { exists (S k1).
           allrw @reduces_in_atmost_k_steps_S.
           eexists; dands; eauto. }
@@ -942,6 +972,9 @@ Lemma if_computes_to_value_apply {o} :
        [+] {s : nseq
             & computes_to_value lib f (mk_nseq s)
             # computes_to_value lib (mk_eapply (mk_nseq s) a) x}
+       [+] {n : choice_sequence_name
+            & computes_to_value lib f (mk_choice_seq n)
+            # computes_to_value lib (mk_eapply (mk_choice_seq n) a) x}
        [+] {s : ntseq
             & computes_to_value lib f (mk_ntseq s)
             # computes_to_value lib (mk_eapply (mk_ntseq s) a) x}.
@@ -958,7 +991,7 @@ Proof.
 
     { allapply @isprog_vterm; sp. }
 
-    { right; right.
+    { right; right; right.
       exists f; dands; eauto 3 with slow.
       - exists 0; apply reduces_in_atmost_k_steps_0; auto.
       - allrw @reduces_in_atmost_k_steps_S; exrepnd.
@@ -971,13 +1004,18 @@ Proof.
     + Case "Can".
       csunf comp1; allsimpl.
       apply compute_step_apply_success in comp1;
-        repndors; [left|right]; exrepnd; subst; fold_terms; ginv.
+        repndors; exrepnd; subst; fold_terms; ginv.
 
-      * exists v b; sp; try (complete (constructor; sp; allrw @fold_lam; sp; rw @isprogram_eq; sp)).
+      * left.
+        exists v b; sp; try (complete (constructor; sp; allrw @fold_lam; sp; rw @isprogram_eq; sp)).
         { exists 0; sp; try (complete (constructor; sp; allrw @fold_lam; sp; rw @isprogram_eq; sp)). }
         { exists k; allrewrite @compute_at_most_k_steps_eq_f; sp. }
 
-      * left; exists f; dands; eauto 3 with slow.
+      * right; left; exists f; dands; eauto 3 with slow.
+        { exists 0; allrw @reduces_in_atmost_k_steps_0; auto. }
+
+      * right; right; left.
+        exists n; dands; eauto 3 with slow.
         { exists 0; allrw @reduces_in_atmost_k_steps_0; auto. }
 
     + Case "NCan".
@@ -986,7 +1024,8 @@ Proof.
       remember (compute_step lib (oterm (NCan nc) bs)); symmetry in Heqc; destruct c; allsimpl; ginv.
       fold_terms.
       assert (isprog n) as in0 by (apply preserve_compute_step in Heqc; sp; allrw @isprogram_eq; sp).
-      applydup IHk in in0; auto; repndors; [left|right;left|right;right]; exrepd; auto.
+      applydup IHk in in0; auto; repndors;
+        [left|right;left|right;right;left|right;right;right]; exrepd; auto.
 
       * exists v b; sp.
 
@@ -997,6 +1036,11 @@ Proof.
         exists k0; sp.
 
       * exists s; dands; eauto 3 with slow.
+        { exists (S k1).
+          allrw @reduces_in_atmost_k_steps_S.
+          eexists; dands; eauto. }
+
+      * exists n0; dands; eauto 3 with slow.
         { exists (S k1).
           allrw @reduces_in_atmost_k_steps_S.
           eexists; dands; eauto. }
@@ -1031,7 +1075,8 @@ Proof.
         apply @isprogram_eq in isp.
         apply isprogram_ot_iff in isp; repnd; auto. }
 
-      apply IHk in comp0; auto; repndors; [left|right;left|right;right]; exrepnd.
+      apply IHk in comp0; auto; repndors;
+        [left|right;left|right;right;left|right;right;right]; exrepnd.
 
       * exists v b; dands; auto.
         { exists (S k1).
@@ -1040,6 +1085,11 @@ Proof.
         exists k0; auto.
 
       * exists s; dands; eauto 3 with slow.
+        { exists (S k1).
+          allrw @reduces_in_atmost_k_steps_S.
+          eexists; dands; eauto. }
+
+      * exists n; dands; eauto 3 with slow.
         { exists (S k1).
           allrw @reduces_in_atmost_k_steps_S.
           eexists; dands; eauto. }
@@ -1712,13 +1762,20 @@ Lemma apply_compute_step_prinargcan {p} :
               & arg1c = Nseq s
               # arg1lbt = []
               # lbt = [bterm [] arg]
-              # tc = mk_eapply (mk_nseq s) arg }}.
+              # tc = mk_eapply (mk_nseq s) arg }}
+         [+] {n : choice_sequence_name
+              & {arg : NTerm
+              & arg1c = Ncseq n
+              # arg1lbt = []
+              # lbt = [bterm [] arg]
+              # tc = mk_eapply (mk_choice_seq n) arg }}.
 Proof.
   introv Hcomp.
   simpl in Hcomp.
   csunf Hcomp; allsimpl.
   apply compute_step_apply_success in Hcomp.
   repndors; auto.
+
   exrepnd; subst.
   left; dands; auto.
   eexists; eexists; eexists; eauto.
@@ -2523,31 +2580,16 @@ Lemma compute_step_eapply_iscan_isnoncan_like {o} :
 Proof.
   introv ew isn.
   unfold isnoncan_like in isn.
-  unfold eapply_wf_def in ew; repndors; exrepnd; subst.
-  - apply isnoncan_implies in isn; exrepnd; subst.
-    csunf; simpl.
-    remember (compute_step lib (oterm (NCan c) bterms)) as comp;
-      destruct comp; simpl; auto;
-      try (complete (unfold compute_step_eapply; dcwf h)).
-  - apply isnoncan_implies in isn; exrepnd; subst.
-    csunf; simpl.
-    remember (compute_step lib (oterm (NCan c) bterms)) as comp;
-      destruct comp; simpl; auto.
-  - apply isnoncan_implies in isn; exrepnd; subst.
-    csunf; simpl.
-    remember (compute_step lib (oterm (NCan c) bterms)) as comp;
-      destruct comp; simpl; auto.
-  - apply isabs_implies in isn; exrepnd; subst.
-    csunf; simpl.
-    remember (compute_step lib (oterm (Abs abs) bterms)) as comp;
-      destruct comp; simpl; auto;
-      try (complete (unfold compute_step_eapply; dcwf h)).
-  - apply isabs_implies in isn; exrepnd; subst.
-    csunf; simpl.
-    remember (compute_step lib (oterm (Abs abs) bterms)) as comp; destruct comp; simpl; auto.
-  - apply isabs_implies in isn; exrepnd; subst.
-    csunf; simpl.
-    remember (compute_step lib (oterm (Abs abs) bterms)) as comp; destruct comp; simpl; auto.
+  unfold eapply_wf_def in ew; repndors; exrepnd; subst;
+    try (complete (apply isnoncan_implies in isn; exrepnd; subst;
+                   csunf; simpl;
+                   remember (compute_step lib (oterm (NCan c) bterms)) as comp;
+                   destruct comp; simpl; auto));
+    try (complete (apply isabs_implies in isn; exrepnd; subst;
+                   csunf; simpl;
+                   remember (compute_step lib (oterm (Abs abs) bterms)) as comp;
+                   destruct comp; simpl; auto;
+                   try (complete (unfold compute_step_eapply; dcwf h)))).
 Qed.
 
 Lemma compute_step_eapply_lam_iscan {o} :
@@ -3236,7 +3278,7 @@ Proof.
 
               allsimpl; cpx.
               apply @apply_compute_step_prinargcan in Hcomp.
-              repndors; exrepnd; subst; allsimpl; cpx; allsimpl.
+              repndors; exrepnd; subst; allsimpl; cpx; allsimpl;[| |].
 
               + (* some work required to get lbt2 to be of the right shape*)
                 allunfold @selectbt. repeat(alphahypsd).
@@ -3245,6 +3287,12 @@ Proof.
                 apply al_bterm in H1alarg00bt0;sp.
                 eapply lsubst_alpha_congr4; simpl; eauto.
                 constructor; auto; apply alphaeq_eq; auto.
+
+              + allunfold @selectbt.
+                repeat alphahypsd.
+                csunf; simpl.
+                eexists; dands; eauto.
+                repeat prove_alpha_eq4.
 
               + allunfold @selectbt.
                 repeat alphahypsd.
@@ -3263,14 +3311,15 @@ Proof.
 
               + apply compute_step_eapply2_success in Hcomp1; exrepnd; subst; allsimpl; cpx.
                 repndors; exrepnd; subst; allsimpl; ginv;
-                [|allunfold @mk_nseq; ginv; allsimpl; cpx; GC; fold_terms;
-                  pose proof (Hal 1) as q; autodimp q hyp;
-                  unfold selectbt in q; allsimpl;
-                  allapply @alpha_eq_bterm_nobnd; exrepnd; subst;
-                  allapply @alpha_eq_mk_nat; subst;
-                  csunf; allsimpl; dcwf h; allsimpl; boolvar; try omega;
-                  allrw Znat.Nat2Z.id;
-                  eexists; dands; eauto].
+                  try (complete (allunfold @mk_nseq; allunfold @mk_choice_seq; ginv;
+                                 allsimpl; cpx; GC; fold_terms;
+                                 pose proof (Hal 1) as q; autodimp q hyp;
+                                 unfold selectbt in q; allsimpl;
+                                 allapply @alpha_eq_bterm_nobnd; exrepnd; subst;
+                                 allapply @alpha_eq_mk_nat; subst;
+                                 csunf; allsimpl; dcwf h; allsimpl; boolvar; try omega;
+                                 allrw Znat.Nat2Z.id; allrw;
+                                 eexists; dands; eauto));[].
 
                 allunfold @mk_lam; ginv; allsimpl; cpx; fold_terms.
                 pose proof (H1alarg0 0) as aeq; autodimp aeq hyp.
@@ -3805,7 +3854,7 @@ Proof.
                 csunf; simpl; auto.
             + apply implies_alpha_eq_pushdown_fresh; auto.
 
-          - remember (get_fresh_atom arg1nt) as a.
+          - remember (get_fresh_atom lib arg1nt) as a.
             pose proof (IHind arg1nt (subst arg1nt arg1v1 (mk_utoken a)) [arg1v1]) as h.
             repeat (autodimp h hyp).
             { rw @simple_osize_subst; eauto 3 with slow. }
@@ -3836,7 +3885,7 @@ Proof.
 
             applydup @alphaeq_preserves_utokens in aeq'.
             repeat (rw @get_utokens_subst_aux_trivial1 in aeq'0; simpl; auto).
-            pose proof (eq_fresh_atom arg1nt a' aeq'0) as e; rw <- e; rw <- Heqa.
+            pose proof (eq_fresh_atom lib arg1nt a' aeq'0) as e; rw <- e; rw <- Heqa.
 
             rw k1; eexists; dands; eauto.
             unfold mk_fresh.
@@ -5507,8 +5556,8 @@ Lemma compute_step_fresh_if_isnoncan_like {o} :
              match bs with
                | [] =>
                  on_success
-                   (compute_step lib (subst t v (mk_utoken (get_fresh_atom t))))
-                   (fun r : NTerm => mk_fresh v (subst_utokens r [(get_fresh_atom t, mk_var v)]))
+                   (compute_step lib (subst t v (mk_utoken (get_fresh_atom lib t))))
+                   (fun r : NTerm => mk_fresh v (subst_utokens r [(get_fresh_atom lib t, mk_var v)]))
                | _ :: _ =>
                  cfailure "check 1st arg"
                           (oterm (NCan NFresh) (bterm (v :: vs) t :: bs))
@@ -5902,30 +5951,30 @@ Inductive nr_ut_sub {o} : @Sub o -> Type :=
       -> nr_ut_sub ((v,mk_utoken a) :: s).
 *)
 
-Inductive nr_ut_sub {o} : @NTerm o -> @Sub o -> Type :=
-| nr_ut_sub_nil : forall t, nr_ut_sub t []
+Inductive nr_ut_sub {o} lib : @NTerm o -> @Sub o -> Type :=
+| nr_ut_sub_nil : forall t, nr_ut_sub lib t []
 | nr_ut_sub_cons :
     forall v a s t,
-      (LIn v (free_vars t) -> !LIn a (get_utokens t))
-      -> nr_ut_sub (subst t v (mk_utoken a)) s
-      -> nr_ut_sub t ((v,mk_utoken a) :: s).
+      (LIn v (free_vars t) -> !LIn a (get_utokens_lib lib t))
+      -> nr_ut_sub lib (subst t v (mk_utoken a)) s
+      -> nr_ut_sub lib t ((v,mk_utoken a) :: s).
 Hint Constructors nr_ut_sub.
 
 Lemma nr_ut_sub_cons_iff {o} :
-  forall v t (s : @Sub o) u,
-    nr_ut_sub u ((v,t) :: s)
+  forall lib v t (s : @Sub o) u,
+    nr_ut_sub lib u ((v,t) :: s)
     <=> {a : get_patom_set o
          & t = mk_utoken a
-         # (LIn v (free_vars u) -> !LIn a (get_utokens u))
-         # nr_ut_sub (subst u v (mk_utoken a)) s}.
+         # (LIn v (free_vars u) -> !LIn a (get_utokens_lib lib u))
+         # nr_ut_sub lib (subst u v (mk_utoken a)) s}.
 Proof.
   introv; split; intro k; exrepnd; subst; auto.
   inversion k; subst; eexists; dands; eauto.
 Qed.
 
 Lemma cl_nr_ut_sub {o} :
-  forall (sub : @Sub o) u,
-    nr_ut_sub u sub
+  forall lib (sub : @Sub o) u,
+    nr_ut_sub lib u sub
     -> cl_sub sub.
 Proof.
   induction sub; introv nrut; eauto with slow.
@@ -5936,9 +5985,9 @@ Qed.
 Hint Resolve cl_nr_ut_sub : slow.
 
 Lemma in_nr_ut_sub {o} :
-  forall (s : @Sub o) v t u,
+  forall lib (s : @Sub o) v t u,
     LIn (v,t) s
-    -> nr_ut_sub u s
+    -> nr_ut_sub lib u s
     -> {a : get_patom_set o & t = mk_utoken a}.
 Proof.
   induction s; introv i nr; allsimpl; tcsp.
@@ -5949,8 +5998,8 @@ Proof.
 Qed.
 
 Lemma sub_find_some_eq_doms_nr_ut_sub {o} :
-  forall (sub1 sub2 : @Sub o) v u,
-    nr_ut_sub u sub2
+  forall lib (sub1 sub2 : @Sub o) v u,
+    nr_ut_sub lib u sub2
     -> dom_sub sub1 = dom_sub sub2
     -> match sub_find sub1 v with
          | Some _ => {a : get_patom_set o & sub_find sub2 v = Some (mk_utoken a)}
@@ -5991,11 +6040,37 @@ Proof.
     destruct bs; allsimpl; cpx; GC.
 Qed.
 
+Lemma get_utokens_lib_subst {o} :
+  forall lib (t : @NTerm o) v u,
+    eqset (get_utokens_lib lib (subst t v u))
+          (get_utokens_lib lib t ++ (if memvar v (free_vars t) then get_utokens u else [])).
+Proof.
+  introv; unfold get_utokens_lib; introv; split; introv h; allrw in_app_iff; repndors; tcsp.
+  - apply get_utokens_subst in h; allrw in_app_iff; repndors; tcsp.
+  - left; apply get_utokens_subst; allrw in_app_iff; repndors; tcsp.
+  - left; apply get_utokens_subst; allrw in_app_iff; repndors; tcsp.
+Qed.
+
+Lemma get_utokens_subset_get_utokens_lib {o} :
+  forall lib (t : @NTerm o),
+    subset (get_utokens t) (get_utokens_lib lib t).
+Proof.
+  introv i; unfold get_utokens_lib; apply in_app_iff; tcsp.
+Qed.
+
+Lemma in_get_utokens_implies_in_get_utokens_lib {o} :
+  forall lib (t : @NTerm o) v,
+    LIn v (get_utokens t) -> LIn v (get_utokens_lib lib t).
+Proof.
+  introv i; apply get_utokens_subset_get_utokens_lib; auto.
+Qed.
+Hint Resolve in_get_utokens_implies_in_get_utokens_lib : slow.
+
 Lemma nr_ut_sub_in_false {o} :
-  forall (sub : @Sub o) v a u,
-    nr_ut_sub u sub
+  forall lib (sub : @Sub o) v a u,
+    nr_ut_sub lib u sub
     -> sub_find sub v = Some (mk_utoken a)
-    -> LIn a (get_utokens u)
+    -> LIn a (get_utokens_lib lib u)
     -> LIn v (free_vars u)
     -> False.
 Proof.
@@ -6006,7 +6081,7 @@ Proof.
   - autodimp nr2 hyp; ginv; tcsp.
   - pose proof (IHsub v a0 (subst u n (mk_utoken a))) as h.
     repeat (autodimp h hyp).
-    + apply get_utokens_subst; rw in_app_iff; sp.
+    + apply get_utokens_lib_subst; rw in_app_iff; sp.
     + pose proof (eqvars_free_vars_disjoint u [(n,mk_utoken a)]) as h.
       rw eqvars_prop in h; apply h; clear h; simpl.
       rw in_app_iff; left.
@@ -6014,8 +6089,8 @@ Proof.
 Qed.
 
 Lemma nr_ut_sub_some_eq {o} :
-  forall (sub : @Sub o) v1 v2 a u,
-    nr_ut_sub u sub
+  forall lib (sub : @Sub o) v1 v2 a u,
+    nr_ut_sub lib u sub
     -> sub_find sub v1 = Some (mk_utoken a)
     -> sub_find sub v2 = Some (mk_utoken a)
     -> LIn v1 (free_vars u)
@@ -6030,7 +6105,7 @@ Proof.
   - provefalse.
     autodimp nrut2 hyp.
     eapply nr_ut_sub_in_false in nrut0; eauto.
-    + apply get_utokens_subst; rw in_app_iff; boolvar; tcsp.
+    + apply get_utokens_lib_subst; rw in_app_iff; boolvar; tcsp.
     + pose proof (eqvars_free_vars_disjoint u [(v2,mk_utoken a0)]) as h.
       rw eqvars_prop in h; apply h; clear h; simpl.
       rw in_app_iff; left.
@@ -6039,7 +6114,7 @@ Proof.
   - provefalse.
     autodimp nrut2 hyp.
     eapply nr_ut_sub_in_false in nrut0; eauto.
-    + apply get_utokens_subst; rw in_app_iff; boolvar; tcsp.
+    + apply get_utokens_lib_subst; rw in_app_iff; boolvar; tcsp.
     + pose proof (eqvars_free_vars_disjoint u [(v1,mk_utoken a0)]) as h.
       rw eqvars_prop in h; apply h; clear h; simpl.
       rw in_app_iff; left.
@@ -6058,8 +6133,8 @@ Qed.
 
 
 Lemma nr_ut_sub_some_diff2 {o} :
-  forall (sub : @Sub o) v1 v2 a1 a2 u,
-    nr_ut_sub u sub
+  forall lib (sub : @Sub o) v1 v2 a1 a2 u,
+    nr_ut_sub lib u sub
     -> sub_find sub v1 = Some (mk_utoken a1)
     -> sub_find sub v2 = Some (mk_utoken a2)
     -> LIn v1 (free_vars u)
@@ -6068,12 +6143,12 @@ Lemma nr_ut_sub_some_diff2 {o} :
     -> a1 <> a2.
 Proof.
   introv nrut e1 e2 i1 i2 d e; subst.
-  pose proof (nr_ut_sub_some_eq sub v1 v2 a2 u); sp.
+  pose proof (nr_ut_sub_some_eq lib sub v1 v2 a2 u); sp.
 Qed.
 
 Lemma nr_ut_sub_some_diff {o} :
-  forall (sub : @Sub o) v1 v2 a1 a2 u,
-    nr_ut_sub u sub
+  forall lib (sub : @Sub o) v1 v2 a1 a2 u,
+    nr_ut_sub lib u sub
     -> sub_find sub v1 = Some (mk_utoken a1)
     -> sub_find sub v2 = Some (mk_utoken a2)
     -> a1 <> a2
@@ -6087,8 +6162,8 @@ Proof.
 Qed.
 
 Lemma isnoncan_like_lsubst_aux_nr_ut_implies {o} :
-  forall (t : @NTerm o) sub u,
-    nr_ut_sub u sub
+  forall lib (t : @NTerm o) sub u,
+    nr_ut_sub lib u sub
     -> isnoncan_like (lsubst_aux t sub)
     -> isnoncan_like t.
 Proof.
@@ -6101,8 +6176,8 @@ Proof.
 Qed.
 
 Lemma lsubst_sub_nr_ut_sub {o} :
-  forall (sub1 sub2 : @Sub o) u,
-    nr_ut_sub u sub1
+  forall lib (sub1 sub2 : @Sub o) u,
+    nr_ut_sub lib u sub1
     -> lsubst_sub sub1 sub2 = sub1.
 Proof.
   induction sub1; introv nrut; allsimpl; auto.
@@ -6129,8 +6204,8 @@ Hint Resolve nr_ut_sub_sub_filter : slow.
 *)
 
 Lemma isexc_lsubst_aux_nr_ut_sub {o} :
-  forall (t : @NTerm o) sub u,
-    nr_ut_sub u sub
+  forall lib (t : @NTerm o) sub u,
+    nr_ut_sub lib u sub
     -> isexc (lsubst_aux t sub)
     -> isexc t.
 Proof.
@@ -6213,8 +6288,8 @@ Qed.
 Hint Resolve implies_shallow_sub_cons : slow.
 
 Lemma nr_ut_sub_is_shallow {o} :
-  forall (sub : @Sub o) u,
-    nr_ut_sub u sub
+  forall lib (sub : @Sub o) u,
+    nr_ut_sub lib u sub
     -> shallow_sub sub.
 Proof.
   induction sub; introv nrut; eauto with slow.
@@ -6295,18 +6370,27 @@ Proof.
   introv eqs ss i; apply eqset_sym in eqs; apply eqs in i; apply ss in i; auto.
 Qed.
 
+Lemma subset_get_utokens_implies_subset_get_utokens_lib {o} :
+  forall lib (t u : @NTerm o),
+    subset (get_utokens t) (get_utokens u)
+    -> subset (get_utokens_lib lib t) (get_utokens_lib lib u).
+Proof.
+  introv ss i; allunfold @get_utokens_lib; allrw in_app_iff; repndors; tcsp.
+Qed.
+
 Lemma nr_ut_sub_change_term {o} :
-  forall sub (t u : @NTerm o),
+  forall lib sub (t u : @NTerm o),
     subvars (free_vars t) (free_vars u)
     -> subset (get_utokens t) (get_utokens u)
-    -> nr_ut_sub u sub
-    -> nr_ut_sub t sub.
+    -> nr_ut_sub lib u sub
+    -> nr_ut_sub lib t sub.
 Proof.
   induction sub; introv sv ss nrut; tcsp.
   destruct a; allrw @nr_ut_sub_cons_iff; exrepnd; subst.
   exists a; dands; auto.
   - intro i.
     rw subvars_prop in sv; apply sv in i; apply nrut2 in i.
+    apply (subset_get_utokens_implies_subset_get_utokens_lib lib) in ss.
     intro k; apply ss in k; sp.
   - apply (IHsub _ (subst u n (mk_utoken a))); auto.
     + repeat unfsubst; repeat (rw @free_vars_lsubst_aux_cl; eauto with slow); simpl.
@@ -6341,10 +6425,10 @@ Proof.
 Qed.
 
 Lemma nr_ut_sub_sub_filter_disj {o} :
-  forall (sub : @Sub o) vs u,
+  forall lib (sub : @Sub o) vs u,
     disjoint vs (free_vars u)
-    -> nr_ut_sub u sub
-    -> nr_ut_sub u (sub_filter sub vs).
+    -> nr_ut_sub lib u sub
+    -> nr_ut_sub lib u (sub_filter sub vs).
 Proof.
   induction sub; introv d nrut; allsimpl; auto.
   destruct a.
@@ -6360,10 +6444,10 @@ Qed.
 Hint Resolve nr_ut_sub_sub_filter_disj : slow.
 
 Lemma implies_nr_ut_sub_app {o} :
-  forall (sub1 sub2 : @Sub o) t,
-    nr_ut_sub t sub1
-    -> nr_ut_sub (lsubst t sub1) sub2
-    -> nr_ut_sub t (sub1 ++ sub2).
+  forall lib (sub1 sub2 : @Sub o) t,
+    nr_ut_sub lib t sub1
+    -> nr_ut_sub lib (lsubst t sub1) sub2
+    -> nr_ut_sub lib t (sub1 ++ sub2).
 Proof.
   induction sub1; introv n1 n2; allsimpl; eauto with slow.
   - allrw @lsubst_nil; auto.
@@ -6377,12 +6461,12 @@ Qed.
 Hint Resolve implies_nr_ut_sub_app : slow.
 
 Lemma nr_ut_sub_sub_filter_change_term_disj {o} :
-  forall sub (t u : @NTerm o) vs,
+  forall lib sub (t u : @NTerm o) vs,
     disjoint vs (free_vars u)
     -> subvars (free_vars t) (free_vars u ++ vs)
     -> subset (get_utokens t) (get_utokens u)
-    -> nr_ut_sub u sub
-    -> nr_ut_sub t (sub_filter sub vs).
+    -> nr_ut_sub lib u sub
+    -> nr_ut_sub lib t (sub_filter sub vs).
 Proof.
   induction sub; introv d sv ss nrut; tcsp.
   destruct a; allsimpl.
@@ -6586,8 +6670,8 @@ Proof.
 Qed.
 
 Lemma nr_ut_some_implies {o} :
-  forall (sub : @Sub o) v t u,
-    nr_ut_sub u sub
+  forall lib (sub : @Sub o) v t u,
+    nr_ut_sub lib u sub
     -> sub_find sub v = Some t
     -> {a : get_patom_set o & t = mk_utoken a}.
 Proof.
@@ -6617,10 +6701,3 @@ Proof.
   pose proof (w (bterm vs t)) as w1; autodimp w1 hyp.
   allrw @bt_wf_iff; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

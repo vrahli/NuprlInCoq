@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -162,16 +163,16 @@ Qed.
 Hint Resolve ut_sub_implies_prog_sub : slow.
 
 Lemma nr_ut_sub_implies_wf_sub {o} :
-  forall (sub : @Sub o) t,
-    nr_ut_sub t sub -> wf_sub sub.
+  forall lib (sub : @Sub o) t,
+    nr_ut_sub lib t sub -> wf_sub sub.
 Proof.
   induction sub; introv nrut; eauto with slow.
 Qed.
 Hint Resolve nr_ut_sub_implies_wf_sub : slow.
 
 Lemma nr_ut_sub_implies_prog_sub {o} :
-  forall (sub : @Sub o) t,
-    nr_ut_sub t sub -> prog_sub sub.
+  forall lib (sub : @Sub o) t,
+    nr_ut_sub lib t sub -> prog_sub sub.
 Proof.
   induction sub; introv nrut; eauto with slow.
   destruct a.
@@ -476,7 +477,7 @@ Qed.
 
 Hint Resolve no_utokens_implies_get_utokens_so_nil : slow.
 
-Lemma no_utokens_lib {o} :
+(*Lemma no_utokens_lib {o} :
   forall (lib : @library o),
     get_utokens_library lib =  [].
 Proof.
@@ -484,7 +485,7 @@ Proof.
   rw IHlib; rw app_nil_r.
   destruct a; simpl.
   unfold correct_abs in correct; repnd; eauto 3 with slow.
-Qed.
+Qed.*)
 
 Lemma nrut_sub_cons_l {o} :
   forall a l (sub : @Sub o),
@@ -506,10 +507,10 @@ Proof.
 Qed.
 
 Lemma nrut_sub_implies_nr_ut_sub {o} :
-  forall (sub : @Sub o) l t,
-    subset (get_utokens t) l
+  forall lib (sub : @Sub o) l t,
+    subset (get_utokens_lib lib t) l
     -> nrut_sub l sub
-    -> nr_ut_sub t sub.
+    -> nr_ut_sub lib t sub.
 Proof.
   induction sub; introv ss nrut; auto.
   destruct a as [v u].
@@ -518,8 +519,8 @@ Proof.
   eexists; dands; eauto; tcsp.
   apply (IHsub (a :: l)).
   - introv i.
-    apply get_utokens_subst in i.
-    boolvar; allsimpl; allrw in_app_iff; allsimpl; repndors; subst; tcsp.
+    apply get_utokens_lib_subst in i.
+    boolvar; allsimpl; rw in_app_iff in i; allsimpl; repndors; subst; tcsp.
   - apply nrut_sub_cons_l; auto.
 Qed.
 Hint Resolve nrut_sub_implies_nr_ut_sub : slow.
@@ -1730,15 +1731,125 @@ Proof.
   allrw @bt_wf_iff; auto.
 Qed.
 
+Lemma subset_diff_same_l :
+  forall {A} (dec : Deq A) (a b c : list A),
+    subset b c
+    -> subset (diff dec a b) (diff dec a c).
+Proof.
+  introv ss i.
+  allrw in_diff; repnd; dands; auto.
+Qed.
+Hint Resolve subset_diff_same_l : slow.
+
+Definition library_has_no_utokens {o} (lib : @library o) :=
+  get_utokens_library lib = [].
+
+Lemma library_has_no_utokens_cons_lib_cs_implies_left {o} :
+  forall name vals (lib : @library o),
+    library_has_no_utokens (lib_cs name vals :: lib)
+    -> (forall v, LIn v vals -> get_utokens (CSVal2term v) = []).
+Proof.
+  introv h i; unfold library_has_no_utokens in h.
+  simpl in *.
+  allrw app_eq_nil_iff; repnd.
+  allrw flat_map_empty.
+  apply h0 in i; auto.
+Qed.
+
+Lemma library_has_no_utokens_cons_implies_right {o} :
+  forall entry (lib : @library o),
+    library_has_no_utokens (entry :: lib)
+    -> library_has_no_utokens lib.
+Proof.
+  introv h; unfold library_has_no_utokens in *.
+  simpl in *.
+  allrw app_eq_nil_iff; repnd; tcsp.
+Qed.
+
+Lemma find_value_of_cs_at_implies_in {o} :
+  forall vals n (v : @ChoiceSeqVal o),
+    find_value_of_cs_at vals n = Some v
+    -> LIn v vals.
+Proof.
+  induction vals; introv h; simpl in *; ginv.
+  destruct n; ginv; tcsp.
+  apply IHvals in h; tcsp.
+Qed.
+
+Lemma library_has_no_utokens_implies_find_cs_value_at_has_no_utokens {o} :
+  forall (lib : @library o) name n v,
+    library_has_no_utokens lib
+    -> find_cs_value_at lib name n = Some v
+    -> get_utokens (CSVal2term v) = [].
+Proof.
+  induction lib; introv h q; simpl in *.
+
+  - unfold find_cs_value_at in q; simpl in *; ginv.
+
+  - unfold find_cs_value_at in q; simpl in *.
+    destruct a; simpl in *.
+
+    + boolvar; subst; simpl in *.
+
+      * pose proof (library_has_no_utokens_cons_lib_cs_implies_left name0 vals lib h) as w.
+        apply find_value_of_cs_at_implies_in in q.
+        apply w in q; auto.
+
+      * remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
+        apply library_has_no_utokens_cons_implies_right in h.
+        eapply IHlib in h;[|unfold find_cs_value_at;allrw;eauto]; auto.
+
+    + remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
+      apply library_has_no_utokens_cons_implies_right in h.
+      eapply IHlib in h;[|unfold find_cs_value_at;allrw;eauto]; auto.
+Qed.
+
+Lemma utokens_find_value_of_cs_at_subset_vals {o} :
+  forall vals n (v : @ChoiceSeqVal o),
+    find_value_of_cs_at vals n = Some v
+    -> subset (get_utokens (CSVal2term v)) (flat_map getc_utokens vals).
+Proof.
+  induction vals; introv h; simpl in *; tcsp.
+  destruct n; ginv; eauto 3 with slow.
+Qed.
+
+Lemma utokens_find_cs_value_at_subset_library {o} :
+  forall (lib : @library o) name n v,
+    find_cs_value_at lib name n = Some v
+    -> subset (get_utokens (CSVal2term v)) (get_utokens_library lib).
+Proof.
+  induction lib; introv h q; simpl in *.
+
+  - unfold find_cs_value_at in q; simpl in *; ginv.
+
+  - unfold find_cs_value_at in q; simpl in *.
+    destruct a; simpl in *.
+
+    + unfold find_cs_value_at in h; simpl in *.
+      boolvar; subst; simpl in *.
+
+      * apply in_app_iff; left; eapply utokens_find_value_of_cs_at_subset_vals; eauto.
+
+      * remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
+        apply in_app_iff; right.
+        eapply IHlib;[unfold find_cs_value_at;allrw;eauto|]; auto.
+
+    + unfold find_cs_value_at in h; simpl in *.
+      remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
+      apply in_app_iff; right.
+      eapply IHlib;[unfold find_cs_value_at;allrw;eauto|]; auto.
+Qed.
+
 Lemma compute_step_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
-    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens t))
+    -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t))
     -> compute_step lib t = csuccess u
     -> compute_step lib (ren_utokens ren t) = csuccess (ren_utokens ren u).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv wf norep disj comp; auto.
+  nterm_ind1s t as [v|f ind|op bs ind] Case; introv wf norep disjlib disj comp; auto.
 
   - Case "vterm".
     allsimpl; ginv.
@@ -1792,7 +1903,15 @@ Proof.
               pose proof (ind b b []) as h; clear ind.
               repeat (autodimp h hyp); eauto 3 with slow.
               pose proof (h x ren) as ih; clear h.
-              repeat (autodimp ih hyp).
+              repeat (autodimp ih hyp);[|].
+
+              {
+                eapply subset_disjoint_r;[eauto|].
+                apply subset_diff_same_l.
+                apply subset_get_utokens_implies_subset_get_utokens_lib; simpl.
+                autorewrite with slow; auto.
+              }
+
               fold_terms; unfold mk_eapply.
               rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow.
               rw ih; auto.
@@ -1840,7 +1959,7 @@ Proof.
 
             - apply compute_step_eapply2_success in comp1.
               repnd; subst; allsimpl; autorewrite with slow in *.
-              repndors; exrepnd; subst; ginv;[|].
+              repndors; exrepnd; subst; ginv;[| |].
 
               { allunfold @mk_lam; ginv; simpl; fold_terms; unfold mk_eapply.
                 rw @compute_step_eapply_lam_iscan; eauto 3 with slow.
@@ -1851,11 +1970,26 @@ Proof.
                 csunf; simpl; dcwf h; simpl; boolvar; try omega.
                 rw Znat.Nat2Z.id; auto. }
 
+              { allunfold @mk_choice_seq; ginv; allsimpl; fold_terms; GC.
+                csunf; simpl; dcwf h; simpl; boolvar; try omega.
+                rw Znat.Nat2Z.id; auto.
+                allrw; autorewrite with slow.
+
+                pose proof (utokens_find_cs_value_at_subset_library lib name n v) as q.
+                repeat (autodimp q hyp).
+
+                rewrite ren_utokens_trivial; eauto 3 with slow. }
+
             - apply isexc_implies2 in comp0; exrepnd; subst; allsimpl.
               csunf; simpl.
-              unfold eapply_wf_def in comp2; repndors; exrepnd; ginv; subst.
+              unfold eapply_wf_def in comp2; repndors; exrepnd; ginv; subst;[| |].
+
               { allunfold @mk_nseq; ginv; allsimpl.
                 autorewrite with slow in *; dcwf h; auto. }
+
+              { allunfold @mk_choice_seq; ginv; allsimpl.
+                autorewrite with slow in *; dcwf h; auto. }
+
               { allunfold @mk_lam; ginv; allsimpl; autorewrite with slow in *;
                 dcwf h; auto. }
 
@@ -1868,17 +2002,38 @@ Proof.
               allrw disjoint_app_r; repnd.
 
               pose proof (h x ren) as ih; clear h.
-              repeat (autodimp ih hyp).
+              repeat (autodimp ih hyp);[|].
+
+              {
+                eapply subset_disjoint_r;[eauto|].
+                apply subset_diff_same_l.
+                apply subset_get_utokens_implies_subset_get_utokens_lib; simpl.
+                autorewrite with slow; eauto 3 with slow.
+              }
+
               fold_terms; unfold mk_eapply;[].
               unfold eapply_wf_def in comp2; repndors; exrepnd; subst; ginv.
-              { allunfold @mk_nseq; ginv; allsimpl; autorewrite with slow in *.
+
+              {
+                allunfold @mk_nseq; ginv; allsimpl; autorewrite with slow in *.
                 rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow.
                 { rw ih; auto. }
-                { apply eapply_wf_true; simpl; auto. } }
-              { allunfold @mk_lam; ginv; allsimpl; autorewrite with slow in *.
+                { apply eapply_wf_true; simpl; auto. }
+              }
+
+              {
+                allunfold @mk_choice_seq; ginv; allsimpl; autorewrite with slow in *.
                 rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow.
                 { rw ih; auto. }
-                { apply eapply_wf_true; simpl; auto. } }
+                { apply eapply_wf_true; simpl; auto. }
+              }
+
+              {
+                allunfold @mk_lam; ginv; allsimpl; autorewrite with slow in *.
+                rw @compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow;[|].
+                { rw ih; auto. }
+                { apply eapply_wf_true; simpl; auto. }
+              }
           }
 
 (*          { SSSCase "NApseq".
@@ -2004,19 +2159,23 @@ Proof.
               destruct pk1, pk2; allsimpl; ginv; tcsp;[].
               inversion e as [e']; clear e.
               assert (g <> g0) as d by (intros xx; subst; tcsp).
-              allrw diff_cons_r; allrw diff_nil; boolvar; allrw disjoint_singleton_r.
+
+              unfold get_utokens_lib in disj; simpl in *; autorewrite with slow in *.
+              allrw diff_cons_r; allrw diff_nil;
+                boolvar; allrw disjoint_singleton_r;
+                  allrw disjoint_cons_r; repnd.
 
               + apply ren_atom_eq1 in e'; tcsp.
-
-              + apply ren_atom_not_in in n0; rw n0 in e'.
-                pose proof (ren_atom_or ren g0) as h; repndors.
-                * rw h in e'; sp.
-                * rw <- e' in h; sp.
 
               + apply ren_atom_not_in in n0; rw n0 in e'.
                 pose proof (ren_atom_or ren g) as h; repndors.
                 * rw h in e'; sp.
                 * rw e' in h; sp.
+
+              + apply ren_atom_not_in in n0; rw n0 in e'.
+                pose proof (ren_atom_or ren g0) as h; repndors.
+                * rw h in e'; sp.
+                * rw <- e' in h; sp.
 
               + apply ren_atom_not_in in n0; rw n0 in e'.
                 apply ren_atom_not_in in n1; rw n1 in e'.
@@ -2030,7 +2189,12 @@ Proof.
               simphyps.
               allrw diff_app_r; allrw disjoint_app_r; repnd.
               applydup @nt_wf_oterm_snd in wf as w2.
-              eapply ind in Heqcomp1; eauto; simphyps; eauto 3 with slow;[].
+              eapply ind in Heqcomp1; eauto; simphyps; eauto 3 with slow;
+                [|eapply subset_disjoint_r;[eauto|];
+                  apply subset_diff_same_l;
+                  apply subset_get_utokens_implies_subset_get_utokens_lib; simpl;
+                  autorewrite with slow; eauto 3 with slow];[].
+
               repeat rw_ren_utok.
               csunf; simpl; dcwf h;
               remember (get_utok_c can2) as gu; symmetry in Heqgu; destruct gu; simpl; auto;
@@ -2101,7 +2265,12 @@ Proof.
               simphyps.
               allrw diff_app_r; allrw disjoint_app_r; repnd.
               applydup @nt_wf_oterm_snd in wf as w2.
-              eapply ind in Heqcomp1; eauto; simphyps; eauto 3 with slow.
+              eapply ind in Heqcomp1; eauto; simphyps; eauto 3 with slow;[|];
+                [|eapply subset_disjoint_r;[eauto|];
+                  apply subset_diff_same_l;
+                  apply subset_get_utokens_implies_subset_get_utokens_lib; simpl;
+                  autorewrite with slow; eauto 3 with slow];[].
+
               csunf.
               repeat rw_ren_utok; allsimpl; dcwf h;
               remember (get_utok_c can2) as gu; symmetry in Heqgu; destruct gu; simpl; auto;
@@ -2167,7 +2336,11 @@ Proof.
             repeat (autodimp h hyp); eauto 3 with slow.
           allrw diff_app_r; allrw disjoint_app_r; repnd.
           applydup @nt_wf_oterm_fst in wf as w1.
-          eapply h in Heqcs; eauto; exrepnd; clear h; allsimpl;[].
+          eapply h in Heqcs; eauto; exrepnd; clear h; allsimpl;[|];
+                [|eapply subset_disjoint_r;[eauto|];
+                  apply subset_diff_same_l;
+                  apply subset_get_utokens_implies_subset_get_utokens_lib; simpl;
+                  autorewrite with slow; eauto 3 with slow];[].
           rw Heqcs; auto.
 
         * SSCase "Exc".
@@ -2218,18 +2391,19 @@ Proof.
         - rw @compute_step_fresh_if_isnoncan_like0; eauto with slow.
           allsimpl; fold_terms.
 
-          remember (get_fresh_atom t) as a.
-          pose proof (get_fresh_atom_prop t) as fa; rw <- Heqa in fa.
+          remember (get_fresh_atom lib t) as a.
+          pose proof (get_fresh_atom_prop_and_lib lib t) as fa; rw <- Heqa in fa.
 
           destruct (fresh_atom o (get_utokens t
                                               ++ dom_utok_ren ren
                                               ++ range_utok_ren ren
                                               ++ get_utokens (ren_utokens ren t)
-                                              ++ get_utokens x)) as [a' nia'].
+                                              ++ get_utokens x
+                                              ++ get_utokens_library lib)) as [a' nia'].
           allrw in_app_iff; allrw not_over_or; repnd.
 
-          remember (get_fresh_atom (ren_utokens ren t)) as a''.
-          pose proof (get_fresh_atom_prop (ren_utokens ren t)) as fa''; rw <- Heqa'' in fa''.
+          remember (get_fresh_atom lib (ren_utokens ren t)) as a''.
+          pose proof (get_fresh_atom_prop_and_lib lib (ren_utokens ren t)) as fa''; rw <- Heqa'' in fa''.
 
           pose proof (ind t (subst t n (mk_utoken a)) [n]) as ih.
           repeat (autodimp ih hyp); eauto 3 with slow.
@@ -2237,9 +2411,12 @@ Proof.
           pose proof (ih x [(a,a')]) as h; clear ih.
           allrw @nt_wf_fresh.
           repeat (autodimp h hyp); allsimpl; eauto 3 with slow.
+
+          { allrw disjoint_singleton_r; auto. }
+
           { apply disjoint_singleton_l; intro k.
             rw in_remove in k; repnd.
-            apply get_utokens_subst in k; boolvar; allsimpl; allrw app_nil_r;
+            apply get_utokens_lib_subst in k; boolvar; allsimpl; allrw app_nil_r;
             allrw in_app_iff; allsimpl; repndors; tcsp. }
 
           rw @subst_ren_utokens in h.
@@ -2253,7 +2430,8 @@ Proof.
           pose proof (ih (ren_utokens [(a,a')] x) ren) as ch; clear ih.
           repeat (autodimp ch hyp); allsimpl; eauto 3 with slow.
           { allrw <- disjoint_diff_l.
-            eapply disjoint_eqset_r;[apply eqset_sym;apply get_utokens_subst|].
+            eapply disjoint_eqset_r;[apply eqset_sym;apply get_utokens_lib_subst|].
+            autorewrite with slow in *.
             boolvar; simpl; allrw app_nil_r; auto.
             apply disjoint_app_r; dands; auto.
             apply disjoint_singleton_r.
@@ -2268,10 +2446,13 @@ Proof.
             rw @osize_ren_utokens; eauto 3 with slow. }
           pose proof (ih (ren_utokens ren (ren_utokens [(a,a')] x)) [(a',a'')]) as ch'; clear ih.
           repeat (autodimp ch' hyp); allsimpl; eauto 3 with slow.
+
+          { allrw disjoint_singleton_r; auto. }
+
           { apply disjoint_singleton_l; intro k.
             rw in_remove in k; repnd.
-            apply get_utokens_subst in k; boolvar; allsimpl; allrw app_nil_r; tcsp.
-            allrw in_app_iff; allsimpl; repndors; tcsp. }
+            apply get_utokens_lib_subst in k; boolvar; allsimpl; allrw app_nil_r; tcsp;
+              allrw in_app_iff; allsimpl; repndors; tcsp. }
 
           rw @subst_ren_utokens in ch'.
           allsimpl; unfold ren_atom in ch'; allsimpl; boolvar; tcsp; GC; fold_terms.
@@ -2287,13 +2468,22 @@ Proof.
           rw @ren_utokens_app_weak_l; simpl; allrw disjoint_singleton_l; auto.
 
           applydup @compute_step_preserves_utokens in comp2; eauto 3 with slow;[].
-          eapply subset_eqset_r in comp0;[|apply get_utokens_subst].
+          eapply subset_eqset_r in comp0;[|apply get_utokens_lib_subst].
 
-          apply (simple_ren_utokens_subst_utokens_eq1 _ _ _ _ _ (get_utokens t)); auto.
-          { eapply subset_trans;[exact comp0|]; boolvar; simpl; allrw app_nil_r;
-            allrw subset_app; dands; eauto with slow. }
+          apply (simple_ren_utokens_subst_utokens_eq1 _ _ _ _ _ (get_utokens_lib lib t)); auto.
+
+          { introv i; simpl.
+            pose proof (comp0 x0) as w; unfold get_utokens_lib in *; allrw in_app_iff.
+            autodimp w hyp.
+            boolvar; simpl in *; repndors; tcsp. }
+
           { introv i j; destruct fa''.
-            rw @get_utokens_ren_utokens; rw in_map_iff; eexists; dands; eauto. }
+            unfold get_utokens_lib in *; allrw in_app_iff.
+            rw @get_utokens_ren_utokens; rw in_map_iff; repndors;
+              [left; eexists; dands; eauto;repndors; tcsp|].
+            applydup disjlib in i.
+            rewrite ren_atom_not_in in j; auto.
+            rewrite j; tcsp. }
       }
 
     + SCase "Exc".
@@ -2325,11 +2515,12 @@ Lemma reduces_in_atmost_k_steps_ren_utokens {o} :
   forall lib k (t u : @NTerm o) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
-    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens t))
+    -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t))
     -> reduces_in_atmost_k_steps lib t u k
     -> reduces_in_atmost_k_steps lib (ren_utokens ren t) (ren_utokens ren u) k.
 Proof.
-  induction k; introv wf norep disj r.
+  induction k; introv wf norep disjlib disj r.
   - allrw @reduces_in_atmost_k_steps_0; subst; auto.
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
     applydup (compute_step_ren_utokens lib t u0 ren) in r1; auto.
@@ -2347,11 +2538,12 @@ Lemma reduces_to_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
-    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens t))
+    -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t))
     -> reduces_to lib t u
     -> reduces_to lib (ren_utokens ren t) (ren_utokens ren u).
 Proof.
-  introv wf norep disj r.
+  introv wf norep disjlib disj r.
   allunfold @reduces_to; exrepnd.
   exists k.
   eapply reduces_in_atmost_k_steps_ren_utokens; eauto.
@@ -2382,11 +2574,12 @@ Lemma computes_to_value_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
-    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens t))
+    -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t))
     -> computes_to_value lib t u
     -> computes_to_value lib (ren_utokens ren t) (ren_utokens ren u).
 Proof.
-  introv wf norep disj r.
+  introv wf norep disjlib disj r.
   allunfold @computes_to_value; repnd; dands; eauto 2 with slow.
   eapply reduces_to_ren_utokens; auto.
 Qed.
@@ -2574,7 +2767,7 @@ Lemma reduces_in_atmost_k_steps_preserves_utokens {o} :
   forall lib k (t u : @NTerm o),
     nt_wf t
     -> reduces_in_atmost_k_steps lib t u k
-    -> subset (get_utokens u) (get_utokens t).
+    -> subset (get_utokens_lib lib u) (get_utokens_lib lib t).
 Proof.
   induction k; introv wf r.
   - allrw @reduces_in_atmost_k_steps_0; subst; auto.
@@ -2588,7 +2781,7 @@ Lemma reduces_to_preserves_utokens {o} :
   forall lib (t u : @NTerm o),
     nt_wf t
     -> reduces_to lib t u
-    -> subset (get_utokens u) (get_utokens t).
+    -> subset (get_utokens_lib lib u) (get_utokens_lib lib t).
 Proof.
   introv wf r.
   allunfold @reduces_to; exrepnd.
@@ -2599,7 +2792,7 @@ Lemma computes_to_value_preserves_utokens {o} :
   forall lib (t u : @NTerm o),
     nt_wf t
     -> computes_to_value lib t u
-    -> subset (get_utokens u) (get_utokens t).
+    -> subset (get_utokens_lib lib u) (get_utokens_lib lib t).
 Proof.
   introv wf r.
   allunfold @computes_to_value; repnd; dands; eauto 2 with slow.
@@ -3097,16 +3290,16 @@ Lemma computes_to_value_change_utok_sub {o} :
   forall lib (t u : @NTerm o) (sub sub' : Sub),
     nt_wf t
     -> computes_to_value lib (lsubst t sub) u
-    -> nr_ut_sub t sub
-    -> nr_ut_sub t sub'
+    -> nr_ut_sub lib t sub
+    -> nr_ut_sub lib t sub'
     -> dom_sub sub = dom_sub sub'
-    -> disjoint (get_utokens_sub sub) (get_utokens t)
-    -> disjoint (get_utokens_sub sub') (get_utokens t)
+    -> disjoint (get_utokens_sub sub) (get_utokens_lib lib t)
+    -> disjoint (get_utokens_sub sub') (get_utokens_lib lib t)
     -> {w, s : NTerm
         $ alpha_eq u (lsubst w sub)
-        # disjoint (get_utokens_sub sub) (get_utokens w)
+        # disjoint (get_utokens_sub sub) (get_utokens_lib lib w)
         # subvars (free_vars w) (free_vars t)
-        # subset (get_utokens w) (get_utokens t)
+        # subset (get_utokens_lib lib w) (get_utokens_lib lib t)
         # computes_to_value lib (lsubst t sub') s
         # alpha_eq s (lsubst w sub')}.
 Proof.
@@ -3121,11 +3314,11 @@ Proof.
   repndors; exrepnd; subst.
   - left; dands; auto.
     introv i; apply comp1 in i; exrepnd.
-    pose proof (sub_find_some_eq_doms_nr_ut_sub sub sub' v t nr2 e) as h.
+    pose proof (sub_find_some_eq_doms_nr_ut_sub lib sub sub' v t nr2 e) as h.
     rw i1 in h; exrepnd.
     eexists; dands; eauto with slow.
   - right.
-    pose proof (sub_find_some_eq_doms_nr_ut_sub sub sub' v t nr2 e) as h.
+    pose proof (sub_find_some_eq_doms_nr_ut_sub lib sub sub' v t nr2 e) as h.
     rw comp7 in h; exrepnd.
     exists v (mk_utoken a); dands; eauto with slow.
 Qed.
@@ -4956,11 +5149,12 @@ Lemma computes_to_exception_ren_utokens {o} :
   forall lib (t a e : NTerm) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
-    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens t))
+    -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t))
     -> computes_to_exception lib a t e
     -> computes_to_exception lib (ren_utokens ren a) (ren_utokens ren t) (ren_utokens ren e).
 Proof.
-  introv wf norep disj r.
+  introv wf norep disjlib disj r.
   allunfold @computes_to_exception; repnd; dands; eauto 2 with slow.
   apply (reduces_to_ren_utokens _ _ _ ren) in r; auto.
 Qed.
@@ -4969,8 +5163,8 @@ Lemma computes_to_exception_preserves_utokens {o} :
   forall lib (t a e : @NTerm o),
     nt_wf t
     -> computes_to_exception lib a t e
-    -> (subset (get_utokens a) (get_utokens t)
-        # subset (get_utokens e) (get_utokens t)).
+    -> (subset (get_utokens_lib lib a) (get_utokens_lib lib t)
+        # subset (get_utokens_lib lib e) (get_utokens_lib lib t)).
 Proof.
   introv wf r.
   allunfold @computes_to_exception; repnd; dands; eauto 2 with slow.
@@ -4982,11 +5176,12 @@ Lemma computes_to_marker_ren_utokens {o} :
   forall lib (t : @NTerm o) m ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
-    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens t))
+    -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t))
     -> computes_to_marker lib t m
     -> computes_to_marker lib (ren_utokens ren t) m.
 Proof.
-  introv wf norep disj r.
+  introv wf norep disjlib disj r.
   allunfold @computes_to_marker; repnd; dands; eauto 2 with slow.
   apply (reduces_to_ren_utokens _ _ _ ren) in r0; auto.
 Qed.

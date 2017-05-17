@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -74,6 +75,8 @@ Lemma approx_star_change_nrut_sub {o} :
     nrut_sub l sub
     -> nrut_sub l' sub'
     -> dom_sub sub = dom_sub sub'
+    -> subset (get_utokens_library lib) l
+    -> subset (get_utokens_library lib) l'
     -> subset (get_utokens t1) l
     -> subset (get_utokens t2) l
     -> subset (get_utokens t1) l'
@@ -81,7 +84,7 @@ Lemma approx_star_change_nrut_sub {o} :
     -> approx_star lib (lsubst t1 sub) (lsubst t2 sub)
     -> approx_star lib (lsubst t1 sub') (lsubst t2 sub').
 Proof.
-  introv nrut1 nrut2 eqdoms ss1 ss2 ss3 ss4 apr.
+  introv nrut1 nrut2 eqdoms ssl1 ssl2 ss1 ss2 ss3 ss4 apr.
 
   pose proof (length_dom sub) as len.
   rw eqdoms in len; rw @length_dom in len.
@@ -93,13 +96,23 @@ Proof.
   erewrite @dom_utok_ren_nrut_subs_to_utok_ren in h; eauto.
   repeat (autodimp h hyp); eauto 3 with slow.
 
+  - unfold nrut_sub in nrut1; repnd.
+    eapply subset_disjoint;[|eauto]; auto.
+
+  - unfold nrut_sub in nrut2; repnd.
+    eapply subset_disjoint;[|eauto]; auto.
+
   - introv i j.
     allrw in_diff; repnd.
-    apply get_utokens_lsubst in j0; allrw in_app_iff; repndors.
+    apply get_utokens_lib_lsubst in j0; allrw in_app_iff; repndors.
 
     + apply ss3 in j0.
       unfold nrut_sub in nrut2; repnd.
       apply nrut2 in j0; sp.
+
+    + unfold nrut_sub in nrut2; repnd.
+      apply ssl2 in j0.
+      apply nrut2 in j0; tcsp.
 
     + apply in_get_utokens_sub in j0; exrepnd.
       apply in_sub_keep_first in j1; repnd.
@@ -111,11 +124,15 @@ Proof.
 
   - introv i j.
     allrw in_diff; repnd.
-    apply get_utokens_lsubst in j0; allrw in_app_iff; repndors.
+    apply get_utokens_lib_lsubst in j0; allrw in_app_iff; repndors.
 
     + apply ss4 in j0.
       unfold nrut_sub in nrut2; repnd.
       apply nrut2 in j0; sp.
+
+    + unfold nrut_sub in nrut1; repnd.
+      apply ssl2 in j0.
+      apply nrut2 in j0; tcsp.
 
     + apply in_get_utokens_sub in j0; exrepnd.
       apply in_sub_keep_first in j1; repnd.
@@ -226,6 +243,7 @@ Proof.
                     (flat_map free_vars lnta ++ flat_map free_vars lnta')
                     e
                     Hlt) as Hfb.
+
       exrepnd.
       exists lvn
              (lsubst_aux nt1' (sub_filter (combine lvi lnta) lvn))
@@ -247,21 +265,21 @@ Proof.
 
       pose proof (exists_nrut_sub
                     lvn
-                    (get_utokens nt1'
-                                 ++ get_utokens nt2'
-                                 ++ flat_map get_utokens lnta
-                                 ++ flat_map get_utokens lnta'))
+                    (get_utokens_lib lib nt1'
+                                 ++ get_utokens_lib lib nt2'
+                                 ++ flat_map (get_utokens_lib lib) lnta
+                                 ++ flat_map (get_utokens_lib lib) lnta'))
         as exnrut; exrepnd.
 
       pose proof (approx_star_change_nrut_sub
-                    lib nt1' nt2' sub (get_utokens nt1' ++ get_utokens nt2')
+                    lib nt1' nt2' sub (get_utokens_lib lib nt1' ++ get_utokens_lib lib nt2')
                     sub0
-                    (get_utokens nt1'
-                                 ++ get_utokens nt2'
-                                 ++ flat_map get_utokens lnta
-                                 ++ flat_map get_utokens lnta'))
+                    (get_utokens_lib lib nt1'
+                                 ++ get_utokens_lib lib nt2'
+                                 ++ flat_map (get_utokens_lib lib) lnta
+                                 ++ flat_map (get_utokens_lib lib) lnta'))
            as ch.
-      repeat (autodimp ch hh); tcsp; eauto 3 with slow.
+      repeat (autodimp ch hh); tcsp; eauto 5 with slow;[].
 
       destruct (selectbt lbt n) as [l1 t1].
       destruct (selectbt lbt' n) as [l2 t2].
@@ -2289,10 +2307,3 @@ Proof.
       rw @computes_to_val_like_in_max_k_steps_S.
       exists u; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

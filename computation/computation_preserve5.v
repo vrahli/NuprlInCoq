@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -30,6 +31,58 @@
 
 Require Export computation_preserve4.
 
+
+Lemma get_utokens_lib_subst_utokens_aux_subset {o} :
+  forall lib (t : @NTerm o) sub,
+    subset (get_utokens_lib lib (subst_utokens_aux t sub))
+           (diff (get_patom_deq o) (utok_sub_dom sub) (get_utokens_lib lib t)
+                 ++ get_utokens_utok_ren sub
+                 ++ get_utokens_library lib).
+Proof.
+  introv i; unfold get_utokens_lib in *; allrw in_app_iff; repndors; tcsp.
+  allrw diff_app_r; allrw in_app_iff.
+  apply get_utokens_subst_utokens_aux_subset in i; allrw in_app_iff; repndors; tcsp.
+Qed.
+
+Lemma get_utokens_lib_subst_utokens_subset {o} :
+  forall lib (t : @NTerm o) sub,
+    subset (get_utokens_lib lib (subst_utokens t sub))
+           (diff (get_patom_deq o) (utok_sub_dom sub) (get_utokens_lib lib t)
+                 ++ get_utokens_utok_ren sub
+                 ++ get_utokens_library lib).
+Proof.
+  introv i.
+  pose proof (unfold_subst_utokens sub t) as h; exrepnd; rw h0 in i.
+  apply (alphaeq_preserves_get_utokens_lib lib) in h1; rw h1.
+  apply get_utokens_lib_subst_utokens_aux_subset; auto.
+Qed.
+
+Lemma get_utokens_lib_subst_utokens_aux_subset2 {o} :
+  forall lib (t : @NTerm o) sub,
+    wf_term t
+    -> subset (diff (get_patom_deq o) (utok_sub_dom sub) (get_utokens_lib lib t))
+              (get_utokens_lib lib (subst_utokens_aux t sub)).
+Proof.
+  introv wf i.
+  unfold get_utokens_lib in *; allrw diff_app_r; allrw in_app_iff; repndors; eauto 3 with slow.
+
+  { apply get_utokens_subst_utokens_aux_subset2 in i; auto. }
+
+  { apply in_diff in i; tcsp. }
+Qed.
+
+Lemma get_utokens_lib_subst_utokens_subset2 {o} :
+  forall lib (t : @NTerm o) sub,
+    wf_term t
+    -> subset
+         (diff (get_patom_deq o) (utok_sub_dom sub) (get_utokens_lib lib t))
+         (get_utokens_lib lib (subst_utokens t sub)).
+Proof.
+  introv w i.
+  pose proof (unfold_subst_utokens sub t) as h; exrepnd; rw h0.
+  applydup (alphaeq_preserves_get_utokens_lib lib) in h1 as k; rw k in i.
+  apply get_utokens_lib_subst_utokens_aux_subset2; eauto with slow.
+Qed.
 
 (** %\noindent% The following lemma expresses a consequence of the fact the
     first argument of a [NonCanonicalOp] is always principal. Hence,
@@ -69,10 +122,10 @@ forall lib (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm),
       & m <= k
       # op = NFresh
       # lbt = [bterm [v] t]
-      # let a := get_fresh_atom t in
+      # let a := get_fresh_atom lib t in
         reduces_in_atmost_k_steps lib (subst t v (mk_utoken a)) x m
         # alpha_eq x (subst u v (mk_utoken a))
-        # subset (get_utokens u) (get_utokens t)
+        # subset (get_utokens_lib lib u) (get_utokens_lib lib t)
         # reduces_in_atmost_k_steps lib (oterm (NCan op) lbt) (mk_fresh v w) m
         # alpha_eq u w
         # isvalue_like u
@@ -151,7 +204,7 @@ Proof.
       - unfold isvalue_like in Hcv; allsimpl; sp.
 
       - exists arg1v1 arg1nt arg1nt
-               (subst arg1nt arg1v1 (mk_utoken (get_fresh_atom arg1nt)))
+               (subst arg1nt arg1v1 (mk_utoken (get_fresh_atom lib arg1nt)))
                arg1nt
                0; dands; eauto with slow;
         rw @reduces_in_atmost_k_steps_0; auto.
@@ -246,7 +299,7 @@ Proof.
 
       - apply reduces_in_atmost_k_steps_if_isvalue_like in Hcv1; subst; eauto with slow.
         exists arg1nt
-               (subst arg1nt arg1v1 (mk_utoken (get_fresh_atom arg1nt)))
+               (subst arg1nt arg1v1 (mk_utoken (get_fresh_atom lib arg1nt)))
                arg1nt
                0;
           dands; eauto with slow; try omega;
@@ -257,11 +310,11 @@ Proof.
         apply Hind in Hcv1Hcv; fold_terms; clear Hind.
 
         + repndors; exrepnd; ginv.
-          remember (get_fresh_atom arg1nt) as ua.
-          remember (get_fresh_atom (subst_utokens x [(ua, mk_var v)])) as ua'.
+          remember (get_fresh_atom lib arg1nt) as ua.
+          remember (get_fresh_atom lib (subst_utokens x [(ua, mk_var v)])) as ua'.
 
-          pose proof (get_fresh_atom_prop arg1nt) as fa; rw <- Hequa in fa.
-          pose proof (get_fresh_atom_prop (subst_utokens x [(ua,mk_var v)])) as fa'; rw <- Hequa' in fa'.
+          pose proof (get_fresh_atom_prop_and_lib lib arg1nt) as fa; rw <- Hequa in fa.
+          pose proof (get_fresh_atom_prop_and_lib lib (subst_utokens x [(ua,mk_var v)])) as fa'; rw <- Hequa' in fa'.
 
           applydup @isprog_ntwf_eauto in Hpr as wf.
           allrw @nt_wf_fresh.
@@ -287,16 +340,18 @@ Proof.
           { apply nt_wf_eq; apply wf_subst_utokens; eauto 3 with slow. }
 
           { constructor; auto; intros i j.
-            apply get_utokens_subst_utokens_subset in j.
-            rw in_app_iff in j; allsimpl; repndors; tcsp.
+            apply get_utokens_lib_subst_utokens_subset in j.
+            repeat (rw in_app_iff in j); allsimpl; repndors; tcsp;
+              [|unfold get_utokens_lib in *; allrw in_app_iff; allrw not_over_or; tcsp].
             apply in_remove in j; repnd; tcsp. }
 
           { unfold get_utokens_sub; simpl; apply disjoint_singleton_l; tcsp. }
 
           { unfold get_utokens_sub; simpl; apply disjoint_singleton_l.
             intro j.
-            apply get_utokens_subst_utokens_subset in j.
-            rw in_app_iff in j; allsimpl; repndors; tcsp.
+            apply get_utokens_lib_subst_utokens_subset in j.
+            rw in_app_iff in j; allsimpl; repndors; tcsp;
+              [|unfold get_utokens_lib in *; allrw in_app_iff; allrw not_over_or; tcsp].
             apply in_remove in j; repnd; tcsp. }
 
           exrepnd; allrw @fold_subst.
@@ -304,28 +359,35 @@ Proof.
           assert (alpha_eq
                     (subst (subst_utokens x [(ua, mk_var v)]) v (mk_utoken ua))
                     (subst w0 v (mk_utoken ua))) as aeq.
+
           { apply lsubst_alpha_congr3; eauto 3 with slow.
             apply (alpha_eq_trans _ (subst_utokens (subst w0 v (mk_utoken ua)) [(ua, mk_var v)])).
             - apply alpha_eq_subst_utokens; eauto with slow.
             - apply simple_alphaeq_subst_utokens_subst; auto.
+              allunfold @get_utokens_lib; allrw in_app_iff; allrw not_over_or; tcsp.
           }
 
           assert (alpha_eq (subst (subst_utokens x [(ua, mk_var v)]) v (mk_utoken ua))
                            x) as aeq2 by eauto with slow.
 
           dup q5 as c.
-          eapply reduces_in_atmost_k_steps_alpha in c; eauto; exrepnd.
+          eapply reduces_in_atmost_k_steps_alpha in c; eauto; exrepnd; eauto 4 with slow.
 
           unfold get_utokens_sub in q2; allsimpl; allrw disjoint_singleton_l.
 
-          assert (!LIn ua' (get_utokens u)) as ni.
+          assert (!LIn ua' (get_utokens_lib lib u)) as ni.
           { intro j; apply Hcv1Hcv6 in j.
-            apply get_utokens_subst_utokens_subset in j.
+            apply get_utokens_lib_subst_utokens_subset in j.
             rw in_app_iff in j; allsimpl; repndors; tcsp.
-            apply in_remove in j; repnd; tcsp.
-            destruct fa'.
-            apply get_utokens_subst_utokens_subset2; simpl; auto.
-            rw in_remove; sp. }
+
+            { apply in_remove in j; repnd; tcsp.
+              destruct fa'.
+
+              apply get_utokens_lib_subst_utokens_subset2; simpl; auto.
+              rw in_remove; sp; eauto 2 with slow. }
+
+            { unfold get_utokens_lib in *; allrw in_app_iff; allrw not_over_or; tcsp. }
+          }
 
           assert (alpha_eq u w1) as aeq0.
           { assert (alpha_eq (subst u v (mk_utoken ua')) (subst w1 v (mk_utoken ua'))) as h by eauto with slow.
@@ -338,9 +400,9 @@ Proof.
             autodimp p1 hyp; autodimp p2 hyp; eauto 3 with slow.
             allrw @fold_subst.
             assert (alpha_eq (subst ntcv0 v (mk_utoken ua')) (subst ntcv v (mk_utoken ua'))) as h' by eauto with slow.
-            apply alpha_eq_subst_utoken_not_in_implies in h'; eauto with slow.
-            { intro j; destruct ni; apply alphaeq_preserves_utokens in k3; rw k3; auto. }
-            { intro j; destruct q2; apply alphaeq_preserves_utokens in k0; rw k0; auto. }
+            apply alpha_eq_subst_utoken_not_in_implies in h'; eauto 4 with slow.
+            { intro j; destruct ni; apply (alphaeq_preserves_get_utokens_lib lib) in k3; rw k3; eauto 2 with slow. }
+            { intro j; destruct q2; apply (alphaeq_preserves_get_utokens_lib lib) in k0; rw k0; eauto 2 with slow. }
           }
 
           exists w1 t2' w (S m); dands; eauto 3 with slow; try omega.
@@ -349,13 +411,17 @@ Proof.
             exists x; dands; auto. }
 
           { introv j.
+
             apply q4 in j.
-            apply get_utokens_subst_utokens_subset in j.
+            apply get_utokens_lib_subst_utokens_subset in j.
             rw in_app_iff in j; allsimpl; repndors; tcsp.
-            apply in_remove in j; repnd; tcsp.
-            apply alphaeq_preserves_utokens in h1; rw h1 in j.
-            apply get_utokens_subst in j; boolvar; tcsp; allsimpl; allrw in_app_iff;
-            allsimpl; repndors; tcsp.
+
+            { apply in_remove in j; repnd; tcsp.
+              apply (alphaeq_preserves_get_utokens_lib lib) in h1; rw h1 in j.
+              apply get_utokens_lib_subst in j; boolvar; allsimpl;
+                apply in_app_iff in j; simpl in j; repndors; tcsp. }
+
+            { apply in_app_iff; tcsp. }
           }
 
           { rw @reduces_in_atmost_k_steps_S.
@@ -363,9 +429,6 @@ Proof.
             rw @compute_step_fresh_if_isnoncan_like; auto.
             rw <- Hequa; rw Hcomp2; simpl.
             eexists; dands; eauto; fold_terms. }
-
-          { apply nt_wf_subst; eauto 3 with slow.
-            apply nt_wf_eq; apply wf_subst_utokens; eauto 3 with slow. }
 
         + allrw @isprogram_fresh.
           apply implies_isprog_vars_subst_utokens; eauto 3 with slow.
@@ -404,10 +467,10 @@ forall lib (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm),
       & m <= k
       # op = NFresh
       # lbt = [bterm [v] t]
-      # let a := get_fresh_atom t in
+      # let a := get_fresh_atom lib t in
         reduces_in_atmost_k_steps lib (subst t v (mk_utoken a)) x m
         # alpha_eq x (subst u v (mk_utoken a))
-        # subset (get_utokens u) (get_utokens t)
+        # subset (get_utokens_lib lib u) (get_utokens_lib lib t)
         # reduces_in_atmost_k_steps lib (oterm (NCan op) lbt) (mk_fresh v w) m
         # alpha_eq u w
         # isvalue_like u
@@ -543,7 +606,7 @@ Qed.
 
 Lemma reduces_to_fresh {o} :
   forall lib (t : @NTerm o) u v,
-    let a := get_fresh_atom t in
+    let a := get_fresh_atom lib t in
     wf_term t
     -> reduces_to lib (subst t v (mk_utoken a)) u
     -> {z : NTerm
@@ -560,12 +623,13 @@ Proof.
     exists t; dands; eauto 1 with slow.
     apply alpha_eq_sym.
     apply simple_alphaeq_subst_utokens_subst.
-    pose proof (get_fresh_atom_prop t) as h; eauto 3 with slow.
+    pose proof (get_fresh_atom_prop lib t) as h; eauto 3 with slow.
 
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
 
-    remember (get_fresh_atom t) as a.
-    pose proof (get_fresh_atom_prop t) as gfa.
+    remember (get_fresh_atom lib t) as a.
+
+    pose proof (get_fresh_atom_prop_and_lib lib t) as gfa.
     rw <- Heqa in gfa.
     allrw in_app_iff; allrw not_over_or; repnd.
 
@@ -596,7 +660,7 @@ Proof.
     { unfold mk_fresh; rw @compute_step_fresh_if_isnoncan_like; auto.
       rw <- Heqa; rw comp1; simpl; auto. }
 
-    remember (get_fresh_atom (subst_utokens u0 [(a, mk_var v)])) as a'.
+    remember (get_fresh_atom lib (subst_utokens u0 [(a, mk_var v)])) as a'.
 
     applydup @compute_step_preserves in comp1; eauto 3 with slow; repnd;
     [|apply nt_wf_subst; eauto 3 with slow].
@@ -616,25 +680,34 @@ Proof.
                   lib u0 (subst (subst_utokens u0 [(a, mk_var v)]) v (mk_utoken a))
                   comp2 aeq k u comp0) as r; exrepnd.
 
-    pose proof (get_fresh_atom_prop (subst_utokens u0 [(a,mk_var v)])) as gfa'.
+    pose proof (get_fresh_atom_prop_and_lib lib (subst_utokens u0 [(a,mk_var v)])) as gfa'.
     rw <- Heqa' in gfa'.
 
     pose proof (reduces_in_atmost_k_steps_change_utok_sub
                   lib k (subst_utokens u0 [(a, mk_var v)])
                   t2' [(v,mk_utoken a)] [(v,mk_utoken a')]) as chu.
     repeat (autodimp chu hyp).
+
     { apply nt_wf_eq; apply wf_subst_utokens; eauto 3 with slow. }
+
     { apply nr_ut_sub_cons; auto.
       introv j i.
-      apply get_utokens_subst_utokens_subset in i; allsimpl.
+      apply get_utokens_lib_subst_utokens_subset in i; allsimpl.
+      allrw in_app_iff; allrw not_over_or; repnd; repndors; tcsp.
+
       unfold get_utokens_utok_ren in i; allsimpl; allrw app_nil_r.
       apply in_remove in i; repnd; tcsp. }
+
     { unfold get_utokens_sub; simpl; apply disjoint_singleton_l.
       introv i.
-      apply get_utokens_subst_utokens_subset in i; allsimpl.
+      apply get_utokens_lib_subst_utokens_subset in i; allsimpl.
+      allrw in_app_iff; allrw not_over_or; repnd; repndors; tcsp.
+
       unfold get_utokens_utok_ren in i; allsimpl; allrw app_nil_r.
       apply in_remove in i; repnd; tcsp. }
+
     { unfold get_utokens_sub; simpl; apply disjoint_singleton_l; tcsp. }
+
     exrepnd.
     allrw @fold_subst.
 
@@ -659,9 +732,18 @@ Proof.
 
       allunfold @get_utokens_sub; allsimpl; allrw disjoint_singleton_l.
       pose proof (simple_alphaeq_subst_utokens_subst w v a') as h1.
+
       autodimp h1 hyp; tcsp.
+
+      { intro i.
+        apply (get_utokens_subset_get_utokens_lib lib) in i.
+        apply chu4 in i; tcsp. }
+
       pose proof (simple_alphaeq_subst_utokens_subst w v a) as h2.
       autodimp h2 hyp; tcsp.
+
+      { unfold get_utokens_lib in *; allrw in_app_iff; allrw not_over_or; tcsp. }
+
       eapply alpha_eq_trans;[exact h1|]; eauto with slow.
     }
 Qed.
@@ -670,16 +752,16 @@ Lemma reduces_to_change_utok_sub {o} :
   forall lib (t u : @NTerm o) sub sub',
     nt_wf t
     -> reduces_to lib (lsubst t sub) u
-    -> nr_ut_sub t sub
-    -> nr_ut_sub t sub'
+    -> nr_ut_sub lib t sub
+    -> nr_ut_sub lib t sub'
     -> dom_sub sub = dom_sub sub'
-    -> disjoint (get_utokens_sub sub) (get_utokens t)
-    -> disjoint (get_utokens_sub sub') (get_utokens t)
+    -> disjoint (get_utokens_sub sub) (get_utokens_lib lib t)
+    -> disjoint (get_utokens_sub sub') (get_utokens_lib lib t)
     -> {w, s : NTerm
         $ alpha_eq u (lsubst w sub)
-        # disjoint (get_utokens_sub sub) (get_utokens w)
+        # disjoint (get_utokens_sub sub) (get_utokens_lib lib w)
         # subvars (free_vars w) (free_vars t)
-        # subset (get_utokens w) (get_utokens t)
+        # subset (get_utokens_lib lib w) (get_utokens_lib lib t)
         # reduces_to lib (lsubst t sub') s
         # alpha_eq s (lsubst w sub')}.
 Proof.
@@ -689,10 +771,3 @@ Proof.
   repeat (autodimp h hyp); exrepnd.
   eexists; eexists; dands; eauto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

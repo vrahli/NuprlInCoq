@@ -165,6 +165,14 @@ Inductive CanInj :=
 | NInl : CanInj
 | NInr : CanInj.
 
+Definition choice_sequence_name := String.string.
+
+Definition choice_sequence_name_deq : Deq choice_sequence_name.
+Proof.
+  introv.
+  destruct (String.string_dec x y) as [d|d]; subst; tcsp.
+Defined.
+
 (* ------ operators ------ *)
 (** Here are the Canonical [Opid]s of Nuprl:
 
@@ -193,6 +201,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NRefl      : CanonicalOp
  | Nint       : Z -> CanonicalOp
  | Nseq       : nseq -> CanonicalOp
+ | Ncseq      : choice_sequence_name -> CanonicalOp
  | NTok       : String.string -> CanonicalOp
  | NUTok      : get_patom_set p -> CanonicalOp (* Unguessable tokens *)
  (** %\noindent \\*% Like Martin Lof's theories, types are also
@@ -274,6 +283,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NRefl          => [0]
   | Nint _         => []
   | Nseq _         => []
+  | Ncseq _        => []
   | NUni _         => []
   | NTok _         => []
   | NUTok _        => []
@@ -602,6 +612,9 @@ Proof.
   - destruct (Z_noteq_dec z z0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
 
+  - destruct (choice_sequence_name_deq c c0) as [d|d]; subst; tcsp.
+    right; intro k; ginv; tcsp.
+
   - destruct (String.string_dec s s0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
 
@@ -721,6 +734,9 @@ Proof.
     right; intro k; ginv; tcsp.
 
   - destruct (Z_noteq_dec z z0) as [d|d]; subst; tcsp.
+    right; intro k; ginv; tcsp.
+
+  - destruct (choice_sequence_name_deq c c0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
 
   - destruct (String.string_dec s s0) as [d|d]; subst; tcsp.

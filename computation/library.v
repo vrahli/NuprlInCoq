@@ -180,7 +180,19 @@ match goal with
     pose proof (correct_abs_proof_irrelevance o v r H2 H1) as h; subst
 end : pi.
 
+(*Coercion getCterm {o} : @CTerm o -> @NTerm o := get_cterm.*)
+
+Definition ChoiceSeqVal {o} := @CTerm o.
+Definition ChoiceSeqVals {o} := list (@ChoiceSeqVal o).
+
+Definition CSVal2term {o} (v : @ChoiceSeqVal o) : NTerm := get_cterm v.
+
 Inductive library_entry {o} :=
+(* a choice sequence *)
+| lib_cs
+    (name : choice_sequence_name)
+    (vals : @ChoiceSeqVals o)
+(* a regular abstraction *)
 | lib_abs
     (opabs : opabs)
     (vars  : list sovar_sig)
@@ -249,24 +261,49 @@ Definition unfold_abs_entry {o}
            (opabs : opabs)
            (bs : list (@BTerm o)): option (@NTerm o) :=
   match entry with
-    | lib_abs oa vars rhs correct =>
-      if matching_entry_deq opabs oa vars bs
-      then Some (mk_instance vars bs rhs)
-      (* we have to substitute the param vars too *)
-      else None
+  | lib_cs _ _ => None
+  | lib_abs oa vars rhs correct =>
+    if matching_entry_deq opabs oa vars bs
+    then
+      Some (mk_instance vars bs rhs)
+           (* we have to substitute the param vars too *)
+    else None
   end.
 
 Definition library {o} := list (@library_entry o).
 
 Definition emlib {o} : @library o := [].
 
+Fixpoint find_cs {o} lib name : option (@ChoiceSeqVals o) :=
+  match lib with
+  | [] => None
+  | lib_cs name' L :: l =>
+    if choice_sequence_name_deq name name' then Some L
+    else find_cs l name
+  | _ :: l => find_cs l name
+  end.
+
+Fixpoint find_value_of_cs_at {o} (L : @ChoiceSeqVals o) n : option ChoiceSeqVal :=
+  match L, n with
+  | [], _ => None
+  | t :: _, 0 => Some t
+  | _ :: l, S m => find_value_of_cs_at l m
+  end.
+
+Definition find_cs_value_at {o} lib name n : option (@ChoiceSeqVal o) :=
+  match find_cs lib name with
+  | Some L => find_value_of_cs_at L n
+  | None => None
+  end.
+
 Fixpoint find_entry {o} lib oa0 (bs : list (@BTerm o)) : option (@library_entry o) :=
   match lib with
-    | [] => None
-    | (lib_abs oa vars rhs correct as entry) :: l =>
-      if matching_entry_deq oa0 oa vars bs
-      then Some entry
-      else find_entry l oa0 bs
+  | [] => None
+  | lib_cs _ _ :: l => find_entry l oa0 bs
+  | (lib_abs oa vars rhs correct as entry) :: l =>
+    if matching_entry_deq oa0 oa vars bs
+    then Some entry
+    else find_entry l oa0 bs
   end.
 
 Definition found_entry {o}
@@ -282,9 +319,8 @@ Lemma found_entry_implies_matching_entry {o} :
 Proof.
   introv f.
   unfold found_entry in f.
-  induction lib; allsimpl.
-  inversion f.
-  destruct a.
+  induction lib; allsimpl; ginv.
+  destruct a; tcsp;[].
   destruct (matching_entry_deq oa0 opabs vars0 bs); auto.
   inversion f; subst; auto.
 Qed.
@@ -457,7 +493,10 @@ Proof.
   induction lib; introv f e.
   - allunfold @found_entry; allsimpl; inversion f.
   - allunfold @found_entry; allsimpl.
-    destruct a.
+    destruct a;[|].
+
+    { eapply IHlib; eauto. }
+
     destruct (matching_entry_deq oa0 opabs vars0 bs).
     + pose proof (matching_entry_change_bs oa0 opabs vars0 bs bs2) as h; repeat (autodimp h hyp).
       destruct (matching_entry_deq oa0 opabs vars0 bs2); auto.
@@ -476,7 +515,11 @@ Lemma unfold_abs_success_change_bs {o} :
 Proof.
   induction lib; introv e f; allsimpl.
   - unfold found_entry in f; simpl in f; inversion f.
-  - unfold found_entry in f; simpl in f; destruct a.
+  - unfold found_entry in f; simpl in f.
+    destruct a;[|].
+
+    { simpl; eapply IHlib; eauto. }
+
     unfold unfold_abs_entry.
     destruct (matching_entry_deq oa1 opabs vars0 bs1).
     + inversion f; subst; GC.
@@ -549,7 +592,8 @@ Qed.
 
 Definition bound_vars_entry {o} (entry : @library_entry o) : list sovar_sig :=
   match entry with
-    | lib_abs opabs vars rhs correct => vars ++ so_bound_vars rhs
+  | lib_cs _ L => vars2sovars (flat_map (fun t => bound_vars (CSVal2term t)) L)
+  | lib_abs opabs vars rhs correct => vars ++ so_bound_vars rhs
   end.
 
 Fixpoint bound_vars_lib {o} (lib : @library o) : list sovar_sig :=
@@ -565,8 +609,15 @@ Lemma ni_bound_vars_if_found_entry {o} :
     -> !LIn v (so_bound_vars rhs).
 Proof.
   unfold found_entry; induction lib; introv ni fe; simpl in fe.
+
   - inversion fe.
-  - destruct a.
+
+  - destruct a;[|].
+
+    { simpl in *.
+      allrw in_app_iff; allrw not_over_or; repnd.
+      eapply IHlib; eauto. }
+
     destruct (matching_entry_deq oa1 opabs vars0 bs).
     + inversion fe; subst.
       allsimpl; allrw in_app_iff; allrw not_over_or; repnd; auto.

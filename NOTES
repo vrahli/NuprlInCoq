@@ -1,0 +1,4 @@
+In this branch we're trying to switch to a Beth model as described in
+van Dalen's "An Interpretation of Intuitionistic Analysis", where we
+use libraries as forcing conditions.  The goal is also to eventually
+extend the library with lawless and lawlike sequences.

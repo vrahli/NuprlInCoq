@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -1638,15 +1644,16 @@ Qed.
 Lemma find_entry_eq_unfold_abs {o} :
   forall lib abs (bs : list (@BTerm o)),
     match find_entry lib abs bs with
-      | Some (lib_abs oa vars rhs correct) =>
-        unfold_abs lib abs bs = Some (mk_instance vars bs rhs)
-      | None => unfold_abs lib abs bs = None
+    | Some (lib_cs _ _) => unfold_abs lib abs bs = None
+    | Some (lib_abs oa vars rhs correct) =>
+      unfold_abs lib abs bs = Some (mk_instance vars bs rhs)
+    | None => unfold_abs lib abs bs = None
     end.
 Proof.
   induction lib; introv; allsimpl; auto.
   destruct a; boolvar; allsimpl; boolvar; allsimpl; tcsp;
-  allrw @not_matching_entry_iff; tcsp.
-  apply IHlib.
+    allrw @not_matching_entry_iff; tcsp;
+      try (complete (apply IHlib)).
 Qed.
 
 Lemma reduces_to_abs_if_doesnt_find_entry {o} :
@@ -4445,7 +4452,7 @@ Lemma reduces_to_preserves {o} :
     wf_term t
     -> reduces_to lib t u
     -> (subvars (free_vars u) (free_vars t)
-        # subset (get_utokens u) (get_utokens t)
+        # subset (get_utokens_lib lib u) (get_utokens_lib lib t)
         # wf_term u).
 Proof.
   introv wf r.
@@ -4788,11 +4795,4 @@ Proof.
   allrw string_length_append.
   omega.
 Qed.
-*)
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
 *)

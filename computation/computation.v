@@ -176,6 +176,7 @@ Definition size_bs {o} (bs : list (@BTerm o)) :=
     must be first evaluated down to a normal form. *)
 
 Definition compute_step_can {o}
+           lib
            (t : @NTerm o)
            (ncr : NonCanonicalOp)
            (arg1c : CanonicalOp)
@@ -185,7 +186,7 @@ Definition compute_step_can {o}
            (comp : Comput_Result) :=
   match ncr with
     | NApply    => compute_step_apply   arg1c t arg1bts btsr
-    | NEApply   => compute_step_eapply btsr t comp arg1 ncr
+    | NEApply   => compute_step_eapply lib btsr t comp arg1 ncr
 (*    | NApseq f  => compute_step_apseq f arg1c t arg1bts btsr*)
     | NFix      => compute_step_fix     t arg1 btsr
     | NSpread   => compute_step_spread  arg1c t arg1bts btsr
@@ -255,6 +256,7 @@ Definition compute_step_seq_can_test {o}
   end.
 
 Definition compute_step_seq {o}
+           (lib   : @library o)
            (t     : @NTerm o)
            (ncr   : NonCanonicalOp)
            (f     : ntseq)
@@ -262,7 +264,7 @@ Definition compute_step_seq {o}
            (cstep : Comput_Result) :=
   match ncr with
     | NApply    => compute_step_seq_apply t f bs
-    | NEApply   => compute_step_eapply bs t cstep (mk_ntseq f) ncr
+    | NEApply   => compute_step_eapply lib bs t cstep (mk_ntseq f) ncr
 (*    | NApseq _  => cfailure bad_args t*)
     | NFix      => compute_step_fix t (mk_ntseq f) bs
     | NSpread   => cfailure bad_args t
@@ -494,20 +496,20 @@ Definition compute_step {o}
             | oterm (NCan nc) (bterm [] (vterm v) :: bs) => fun _ => cfailure compute_step_error_not_closed t
             | oterm (NCan ncan) (bterm (v::vs) u :: bs) =>
               fun F =>
-                let a := get_fresh_atom u in
+                let a := get_fresh_atom lib u in
                 compute_step_fresh
                   lib ncan t v vs u bs
                   (F (subst u v (mk_utoken a))
                      (compute_step'_size1 ncan v vs u bs a))
                   a
             | oterm (NCan ncr) (bterm [] (oterm (Can arg1c) arg1bts as arg1) :: btsr) =>
-              fun F => compute_step_can t ncr arg1c arg1bts arg1 btsr
+              fun F => compute_step_can lib t ncr arg1c arg1bts arg1 btsr
                                         ((match btsr with
                                             | bterm l x :: bs => fun F => F x (compute_step'_size2 ncr arg1c arg1bts l x bs)
                                             | _ => fun _ => cfailure bad_args t
                                           end) F)
             | oterm (NCan ncr) (bterm [] (sterm f) :: btsr) =>
-              fun F => compute_step_seq t ncr f btsr
+              fun F => compute_step_seq lib t ncr f btsr
                                         ((match btsr with
                                             | bterm l x :: bs => fun F => F x (compute_step'_size4 ncr f l x bs)
                                             | _ => fun _ => cfailure bad_args t
@@ -534,18 +536,18 @@ Definition compute_step_unfold {o}
     | oterm (NCan _) [] => cfailure "no args supplied" t
     | oterm (NCan nc) (bterm [] (vterm v) :: bs) => cfailure compute_step_error_not_closed t
     | oterm (NCan ncan) (bterm (v::vs) u :: bs) =>
-      let a := get_fresh_atom u in
+      let a := get_fresh_atom lib u in
       compute_step_fresh lib ncan t v vs u bs
                          (compute_step lib (subst u v (mk_utoken a)))
                          a
     | oterm (NCan ncr) (bterm [] (oterm (Can arg1c) arg1bts as arg1) :: btsr) =>
-      compute_step_can t ncr arg1c arg1bts arg1 btsr
+      compute_step_can lib t ncr arg1c arg1bts arg1 btsr
                        (match btsr with
                           | bterm _ x :: _ => compute_step lib x
                           | _ => cfailure bad_args t
                         end)
     | oterm (NCan ncr) (bterm [] (sterm f) :: btsr) =>
-      compute_step_seq t ncr f btsr
+      compute_step_seq lib t ncr f btsr
                        (match btsr with
                           | bterm _ x :: _ => compute_step lib x
                           | _ => cfailure bad_args t
