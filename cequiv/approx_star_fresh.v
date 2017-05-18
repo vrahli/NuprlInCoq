@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -369,7 +370,7 @@ Qed.
 
 Lemma blift_sub_diff {o} :
   forall vs lib op (b1 b2 : @BTerm o),
-    blift_sub op (approx_star lib) b1 b2
+    blift_sub lib op (approx_star lib) b1 b2
     -> {lv : list NVar
         $ {nt1,nt2 : NTerm
         $ (
@@ -378,7 +379,7 @@ Lemma blift_sub_diff {o} :
             {sub : Sub
              & op = NCan NFresh
              # approx_star lib (lsubst nt1 sub) (lsubst nt2 sub)
-             # nrut_sub (get_utokens nt1 ++ get_utokens nt2) sub
+             # nrut_sub (get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2) sub
              # lv = dom_sub sub}
           )
         # alpha_eq_bterm b1 (bterm lv nt1)
@@ -459,9 +460,9 @@ Proof.
       apply (lsubst_alpha_congr2 _ _ sub) in h3.
       eauto with slow.
 
-    + repeat (rw @get_utokens_lsubst_allvars; eauto with slow).
-      apply alphaeq_preserves_utokens in h2.
-      apply alphaeq_preserves_utokens in h3.
+    + repeat (rw @get_utokens_lib_lsubst_allvars; eauto with slow).
+      apply (alphaeq_preserves_get_utokens_lib lib) in h2.
+      apply (alphaeq_preserves_get_utokens_lib lib) in h3.
       rw <- h2; rw <- h3.
       eapply nrut_sub_change_sub_same_range;[|exact bl5].
       rw @range_combine; auto.
@@ -1224,12 +1225,30 @@ Proof.
   apply approx_open_refl; auto.
 Qed.
 Hint Resolve same_value_like_sterm_implies_approx_star : slow.
-*)
+ *)
+
+Lemma eq_get_utokens_implies_eq_get_utokens_lib {o} :
+  forall lib (t1 t2 : @NTerm o),
+    get_utokens t1 = get_utokens t2
+    -> get_utokens_lib lib t1 = get_utokens_lib lib t2.
+Proof.
+  introv h; unfold get_utokens_lib; f_equal; auto.
+Qed.
+
+Lemma get_utokens_lib_lsubst_aux_subset {o} :
+  forall lib (t : @NTerm o) sub,
+    subset
+      (get_utokens_lib lib (lsubst_aux t sub))
+      (get_utokens_lib lib t ++ get_utokens_sub sub).
+Proof.
+  introv; unfold get_utokens_lib; introv i; allrw in_app_iff; repndors; tcsp.
+  apply get_utokens_lsubst_aux_subset in i; allrw in_app_iff; repndors; tcsp.
+Qed.
 
 Lemma approx_star_pushdown_fresh_if_subst {o} :
   forall lib (t1 t2 : @NTerm o) v1 v2 a,
-    !LIn a (get_utokens t1)
-    -> !LIn a (get_utokens t2)
+    !LIn a (get_utokens_lib lib t1)
+    -> !LIn a (get_utokens_lib lib t2)
     -> isprog_vars [v1] t1
     -> isprog_vars [v2] t2
     -> same_value_like lib (subst t1 v1 (mk_utoken a)) (subst t2 v2 (mk_utoken a))
@@ -1261,9 +1280,9 @@ Proof.
   remember (lsubst t2 (var_ren [v2] [v])) as nt2.
 
   applydup @alpha_eq_bterm_preserves_utokens in aeqbt1 as ut1; allsimpl.
-  rw ut1 in ni1.
+  rw ut1 in ni3.
   applydup @alpha_eq_bterm_preserves_utokens in aeqbt2 as ut2; allsimpl.
-  rw ut2 in ni2.
+  rw ut2 in ni0.
 
   pose proof (lsubst_alpha_congr4 [v1] [v] t1 nt1 [(v1,mk_utoken a)] [(v,mk_utoken a)]) as c1.
   allsimpl.
@@ -1368,9 +1387,9 @@ Proof.
       allrw in_app_iff; allrw not_over_or; repnd.
       applydup in_combine in h; repnd.
       assert (!LIn a (get_utokens_b b1)) as niab1.
-      { introv q; destruct ni1; rw lin_flat_map; eexists; dands; eauto. }
+      { introv q; destruct ni3; rw lin_flat_map; eexists; dands; eauto. }
       assert (!LIn a (get_utokens_b b2)) as niab2.
-      { introv q; destruct ni2; rw lin_flat_map; eexists; dands; eauto. }
+      { introv q; destruct ni0; rw lin_flat_map; eexists; dands; eauto. }
 
 (* new stuff *)
 
@@ -1440,14 +1459,14 @@ Proof.
         right.
         exists [(v,mk_utoken a)]; simpl; dands; auto.
         apply nrut_sub_cons; simpl; eexists; dands; eauto with slow; tcsp.
-        rw in_app_iff; sp.
+        repeat (rw in_app_iff); sp.
 
       * exrepnd.
 
         pose proof (exists_nrut_sub
                       (dom_sub sub)
-                      (a :: get_utokens (subst nt1 v (mk_utoken a))
-                         ++ get_utokens (subst nt2 v (mk_utoken a))))
+                      (a :: get_utokens_lib lib (subst nt1 v (mk_utoken a))
+                         ++ get_utokens_lib lib (subst nt2 v (mk_utoken a))))
           as ens; exrepnd.
 
         pose proof (approx_star_change_nrut_sub
@@ -1455,17 +1474,20 @@ Proof.
                       (subst nt1 v (mk_utoken a))
                       (subst nt2 v (mk_utoken a))
                       sub
-                      (get_utokens (subst nt1 v (mk_utoken a)) ++ get_utokens (subst nt2 v (mk_utoken a)))
+                      (get_utokens_lib lib (subst nt1 v (mk_utoken a)) ++ get_utokens_lib lib (subst nt2 v (mk_utoken a)))
                       sub0
-                      (a :: get_utokens (subst nt1 v (mk_utoken a)) ++ get_utokens (subst nt2 v (mk_utoken a))))
-          as aps; repeat (autodimp aps hyp); eauto 3 with slow.
+                      (a :: get_utokens_lib lib (subst nt1 v (mk_utoken a)) ++ get_utokens_lib lib (subst nt2 v (mk_utoken a))))
+          as aps; repeat (autodimp aps hyp); eauto 5 with slow;[].
 
         exists sub0; dands; auto; simpl; allrw app_nil_r;
         try (complete (subst; auto));
         [|eapply nrut_sub_subset;[|exact ens1]; apply subset_cons1;
           apply subset_app_lr; introv z;
-          apply get_utokens_subst; boolvar; simpl;
-          repeat (rw app_nil_r); repeat (rw in_app_iff); complete sp].
+          apply get_utokens_lib_subst; boolvar; simpl;
+          autorewrite with slow in *;
+          repeat (rw app_nil_r); repeat (rw in_app_iff); tcsp;
+          try (complete (unfold get_utokens_lib in *; allrw in_app_iff; tcsp))];[].
+
         repeat (rw @cl_lsubst_lsubst_aux; eauto 2 with slow); simpl; fold_terms.
         apply (apso _ _ _ _ [bterm [v] (lsubst_aux nt2 (sub_filter sub0 [v]))]); allsimpl; auto; fold_terms;
         [|apply approx_open_refl; allrw <- @nt_wf_eq;
@@ -1488,9 +1510,11 @@ Proof.
         exists [(v,mk_utoken a)]; simpl; dands; auto.
         { repeat (rw <- @cl_lsubst_lsubst_aux; eauto 3 with slow). }
         apply nrut_sub_cons; simpl; eexists; dands; eauto with slow; tcsp.
+
         rw in_app_iff; rw not_over_or; dands; intro z;
-        apply get_utokens_lsubst_aux_subset in z; rw in_app_iff in z; repndors; tcsp;
-        apply get_utokens_sub_filter_subset in z; tcsp.
+          apply get_utokens_lib_lsubst_aux_subset in z; rw in_app_iff in z; repndors; tcsp;
+            try (apply get_utokens_sub_filter_subset in z; tcsp);
+            try (complete (apply in_app_iff in z; repndors; tcsp)).
 Qed.
 
 Lemma alpha_eq_lsubst_nrut_sub_implies {o} :
@@ -1557,9 +1581,3 @@ Proof.
   rw @isprog_vars_eq in isp; sp.
 Qed.
 Hint Resolve isprog_vars_implies_nt_wf : slow.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -339,8 +340,8 @@ Proof.
 Qed.
 
 Lemma le_blift_sub {p} :
-  forall op (R1 R2 : bin_rel (@NTerm p)),
-    le_bin_rel R1 R2 -> le_bin_rel (blift_sub op R1) (blift_sub op R2).
+  forall lib op (R1 R2 : bin_rel (@NTerm p)),
+    le_bin_rel R1 R2 -> le_bin_rel (blift_sub lib op R1) (blift_sub lib op R2).
 Proof.
   unfold le_bin_rel.
   intros R1 R2 Hle a b Hrel.
@@ -353,21 +354,21 @@ Defined.
 Hint Resolve le_blift_sub : slow.
 
 Lemma le_blift_sub2 {p} :
-  forall op (R1 R2 : bin_rel (@NTerm p)),
+  forall lib op (R1 R2 : bin_rel (@NTerm p)),
     (le_bin_rel R1 R2)
-    -> forall a b, (blift_sub op R1 a b) -> (blift_sub op R2 a b).
+    -> forall a b, (blift_sub lib op R1 a b) -> (blift_sub lib op R2 a b).
 Proof.
-  intros op R1 R2 n H.
-  fold (@le_bin_rel (BTerm ) (blift_sub op R1) (blift_sub op R2)).
+  introv H.
+  fold (@le_bin_rel (BTerm ) (blift_sub lib op R1) (blift_sub lib op R2)).
   apply le_blift_sub.
   auto.
 Defined.
 Hint Resolve le_blift_sub2 : slow.
 
 Lemma le_lblift_sub {p} :
-  forall op (R1 R2 : bin_rel (@NTerm p)),
+  forall lib op (R1 R2 : bin_rel (@NTerm p)),
     (le_bin_rel R1 R2)
-    -> le_bin_rel (lblift_sub op R1) (lblift_sub op R2).
+    -> le_bin_rel (lblift_sub lib op R1) (lblift_sub lib op R2).
 Proof.
   unfold lblift_sub; sp.
   unfold le_bin_rel; sp.
@@ -376,23 +377,23 @@ Proof.
 Defined.
 
 Lemma le_lblift_sub2 {p} :
-  forall op (R1 R2 : bin_rel (@NTerm p)),
+  forall lib op (R1 R2 : bin_rel (@NTerm p)),
     (le_bin_rel R1 R2)
-    -> forall a b, (lblift_sub op R1 a b) -> (lblift_sub op R2 a b).
+    -> forall a b, (lblift_sub lib op R1 a b) -> (lblift_sub lib op R2 a b).
 Proof.
-  intros op R1 R2 H.
-  fold (@le_bin_rel (list BTerm) (lblift_sub op R1) (lblift_sub op R2)).
+  introv H.
+  fold (@le_bin_rel (list BTerm) (lblift_sub lib op R1) (lblift_sub lib op R2)).
   apply le_lblift_sub. auto.
 Defined.
 
 Corollary approx_open_congruence_sub {p} :
   forall lib (o : Opid) (lbt1 lbt2 : list (@BTerm p)),
-    lblift_sub o (approx_open lib) lbt1 lbt2
+    lblift_sub lib o (approx_open lib) lbt1 lbt2
     -> nt_wf (oterm o lbt2)
     -> approx_open lib (oterm o lbt1) (oterm o lbt2).
 Proof.
   introv Haps Hnt.
-  apply (le_lblift_sub2 _ _ _ (approx_open_implies_approx_star lib)) in Haps.
+  apply (le_lblift_sub2 _ _ _ _ (approx_open_implies_approx_star lib)) in Haps.
   apply approx_star_implies_approx_open.
   apply approx_star_congruence2; sp.
 Qed.
@@ -418,17 +419,18 @@ Proof.
 
   pose proof (exists_nrut_sub
                 lv
-                (get_utokens nt1 ++ get_utokens nt2))
+                (get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2))
     as exnrut; exrepnd.
   exists sub; dands; auto.
   apply lsubst_approx_star_congr3; eauto with slow.
 Qed.
 
-Corollary approx_congruence_sub {p} : forall lib o lbt1 lbt2,
-  lblift_sub o (approx_open lib) lbt1 lbt2
-  -> @isprogram p (oterm o lbt1)
-  -> isprogram (oterm o lbt2)
-  -> approx lib (oterm o lbt1) (oterm o lbt2).
+Corollary approx_congruence_sub {p} :
+  forall lib o lbt1 lbt2,
+    lblift_sub lib o (approx_open lib) lbt1 lbt2
+    -> @isprogram p (oterm o lbt1)
+    -> isprogram (oterm o lbt2)
+    -> approx lib (oterm o lbt1) (oterm o lbt2).
 Proof.
    introv Haps H1p H2p.
    apply approx_open_approx;sp.
@@ -734,6 +736,25 @@ Proof.
         destruct Hv1; auto.
     }
 
+    { apply @approx_trans with (b := mk_fix (mk_choice_seq n)).
+
+      + apply @approx_trans with (b := mk_apply (mk_choice_seq n) (mk_fix (mk_choice_seq n))); auto.
+
+        * apply implies_approx_apply.
+          { apply reduces_to_implies_approx2; auto.
+            destruct Hv1; auto. }
+          { apply implies_approx_fix.
+            apply reduces_to_implies_approx2; auto.
+            destruct Hv1; auto. }
+
+        * apply reduces_to_implies_approx1; auto; prove_isprogram.
+          apply reduces_to_if_step; reflexivity.
+
+      + apply implies_approx_fix; auto.
+        apply reduces_to_implies_approx_eauto; prove_isprogram.
+        destruct Hv1; auto.
+    }
+
     { apply @approx_trans with (b := mk_fix (mk_ntseq s)).
 
       + apply @approx_trans with (b := mk_apply (mk_ntseq s) (mk_fix (mk_ntseq s))); auto.
@@ -778,6 +799,24 @@ Proof.
     + apply @approx_trans with (b := mk_fix (mk_nseq s)).
 
       * apply @approx_trans with (b := mk_apply (mk_nseq s) (mk_fix (mk_nseq s))); auto.
+
+        { apply implies_approx_apply.
+          { apply reduces_to_implies_approx2; auto. }
+          { apply implies_approx_fix.
+            apply reduces_to_implies_approx2; auto. }
+        }
+
+        { apply reduces_to_implies_approx1; auto.
+          { apply isprogram_fix; eauto 3 with slow. }
+          { apply reduces_to_if_step; reflexivity. }
+        }
+
+      * apply implies_approx_fix; auto.
+        apply reduces_to_implies_approx_eauto; prove_isprogram; auto.
+
+    + apply @approx_trans with (b := mk_fix (mk_choice_seq n)).
+
+      * apply @approx_trans with (b := mk_apply (mk_choice_seq n) (mk_fix (mk_choice_seq n))); auto.
 
         { apply implies_approx_apply.
           { apply reduces_to_implies_approx2; auto. }

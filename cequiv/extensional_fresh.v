@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -64,24 +65,29 @@ Proof.
   unfold mk_fresh in XX1.
   rw @compute_step_fresh_if_isvalue_like2 in XX1; auto; ginv.
 
-  assert (isvalue_like (subst u v (mk_utoken (get_fresh_atom t)))) as isv.
+  assert (isvalue_like (subst u v (mk_utoken (get_fresh_atom lib t)))) as isv.
   { apply isvalue_like_subst; auto. }
   assert (isvalue_like x) as isvx.
   { apply alpha_eq_sym in Hcv5; apply alpha_eq_preserves_isvalue_like in Hcv5; auto. }
 
-  remember (get_fresh_atom t) as ua.
+  remember (get_fresh_atom lib t) as ua.
   apply isprogram_fresh in Hprt'.
-  pose proof (fresh_atom p (get_utokens (mk_pair t tr))) as fa.
+  pose proof (fresh_atom p (get_utokens_lib lib (mk_pair t tr))) as fa.
   destruct fa as [ua' fa]; allsimpl; allrw app_nil_r.
   allrw in_app_iff; allrw not_over_or; repnd.
-  pose proof (get_fresh_atom_prop t) as gfu; rw <- Hequa in gfu.
+  pose proof (get_fresh_atom_prop_and_lib lib t) as gfu; rw <- Hequa in gfu.
 
   apply no_change_after_val_like with (k2 := k) in Hcv4; auto.
   pose proof (reduces_in_atmost_k_steps_change_utok_sub
                 lib k t x [(v,mk_utoken ua)] [(v,mk_utoken ua')]) as comp.
   repeat (autodimp comp hyp); eauto 3 with slow.
+
+  { constructor; auto; introv i; rw in_app_iff; tcsp. }
+
   { unfold get_utokens_sub; simpl; rw disjoint_singleton_l; auto. }
-  { unfold get_utokens_sub; simpl; rw disjoint_singleton_l; auto. }
+  { unfold get_utokens_sub; simpl; rw disjoint_singleton_l; auto.
+    rw in_app_iff; tcsp. }
+
   exrepnd; allrw @fold_subst.
   unfold get_utokens_sub in comp2; simpl in comp2; allrw disjoint_singleton_l.
 
@@ -92,7 +98,7 @@ Proof.
     apply isprogram_subst_if_bt; eauto 2 with slow.
     apply isprogram_subst_implies in ispsw0; auto. }
 
-  assert (!LIn ua (get_utokens u)) as niu.
+  assert (!LIn ua (get_utokens_lib lib u)) as niu.
   { intro i; apply Hcv6 in i; sp. }
 
   assert (alpha_eq u w0) as aeq0.
@@ -107,8 +113,14 @@ Proof.
     allrw @fold_subst.
     assert (alpha_eq (subst ntcv0 v (mk_utoken ua)) (subst ntcv v (mk_utoken ua))) as h' by eauto with slow.
     apply alpha_eq_subst_utoken_not_in_implies in h'; eauto with slow.
-    { intro j; destruct niu; apply alphaeq_preserves_utokens in k3; rw k3; auto. }
-    { intro j; destruct comp2; apply alphaeq_preserves_utokens in k0; rw k0; auto. }
+    { intro j.
+      apply (get_utokens_subset_get_utokens_lib lib) in j.
+      destruct niu; apply (alphaeq_preserves_get_utokens_lib lib) in k3.
+      rw k3 ; auto. }
+    { intro j.
+      apply (get_utokens_subset_get_utokens_lib lib) in j.
+      destruct comp2; apply (alphaeq_preserves_get_utokens_lib lib) in k0.
+      rw k0; auto. }
   }
 
   assert (isvalue_like w0) as isvw0.
@@ -135,14 +147,18 @@ Proof.
     eapply approx_star_alpha_fun_r;[|apply alpha_eq_sym; exact aeq2].
     pose proof (approx_star_change_nrut_sub
                   lib nt1 nt2 sub
-                  (get_utokens nt1 ++ get_utokens nt2)
+                  (get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2)
                   [(v',mk_utoken ua')]
-                  (get_utokens nt1 ++ get_utokens nt2)) as q.
-    allsimpl; repeat (autodimp q hyp); eauto 3 with slow.
+                  (get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2)) as q.
+    allsimpl; repeat (autodimp q hyp); eauto 5 with slow;[].
     apply nrut_sub_cons; eexists; dands; simpl; eauto with slow; tcsp.
     apply alpha_eq_bterm_preserves_utokens in Has0bt2.
     apply alpha_eq_bterm_preserves_utokens in Has0bt0.
-    allsimpl; rw <- Has0bt2; rw <- Has0bt0; rw in_app_iff; sp.
+    allsimpl.
+    apply (eq_get_utokens_implies_eq_get_utokens_lib lib) in Has0bt2.
+    apply (eq_get_utokens_implies_eq_get_utokens_lib lib) in Has0bt0.
+    rw <- Has0bt2; rw <- Has0bt0.
+    repeat (rw in_app_iff); repeat (rw in_app_iff); sp.
   }
 
   pose proof (approx_star_alpha_fun_l lib s (subst tr vr (mk_utoken ua')) (subst u v (mk_utoken ua'))) as ap1.
@@ -175,8 +191,11 @@ Proof.
   pose proof (reduces_in_atmost_k_steps_change_utok_sub
                 lib k0 tr v0 [(vr,mk_utoken ua')] [(vr,mk_utoken ua')]) as comp'.
   allrw @fold_subst.
+  simpl in *; GC.
   repeat (autodimp comp' hyp); eauto 2 with slow;
-    try (unfold get_utokens_sub; simpl; apply disjoint_singleton_l; complete sp).
+    try (complete (unfold get_utokens_sub; simpl; apply disjoint_singleton_l; rw in_app_iff; tcsp));
+    try (complete (constructor; auto; introv i; rw in_app_iff; tcsp));[].
+
   exrepnd.
   clear dependent s0.
   allunfold @get_utokens_sub; allsimpl; allrw disjoint_singleton_l.
@@ -191,8 +210,8 @@ Proof.
       apply isprog_vars_iff_isprogram_bt; auto.
     - apply isprogram_subst_if_bt; eauto with slow. }
 
-  assert (!LIn ua' (get_utokens u)) as niua'u.
-  { intro i; apply Hcv6 in i; sp. }
+  assert (!LIn ua' (get_utokens_lib lib u)) as niua'u.
+  { intro i; apply Hcv6 in i; sp; rw in_app_iff in i; tcsp. }
 
   assert (get_op (subst u v (mk_utoken ua')) = get_op u) as gopu.
   { unfsubst; unfold isvalue_like in Hcv0; repndors.
@@ -208,23 +227,31 @@ Proof.
 
   apply approx_implies_approx_open.
 
-  remember (get_fresh_atom tr) as a.
+  remember (get_fresh_atom lib tr) as a.
 
   pose proof (reduces_in_atmost_k_steps_change_utok_sub
                 lib k0 tr v0 [(vr,mk_utoken ua')] [(vr,mk_utoken a)]) as r.
   allsimpl; allrw @get_utokens_sub_cons; allrw @get_utokens_sub_nil; allrw app_nil_r.
   allsimpl; allrw disjoint_singleton_l.
-  repeat (autodimp r hyp); eauto 3 with slow.
-  { apply nr_ut_sub_cons; eauto with slow; intro xx; subst; apply get_fresh_atom_prop. }
-  { subst; apply get_fresh_atom_prop. }
+  repeat (autodimp r hyp); eauto 3 with slow;
+    try (complete (constructor; auto; introv i; rw in_app_iff; tcsp));
+    try (complete (rw in_app_iff; tcsp));[| |].
+
+  { apply nr_ut_sub_cons; eauto with slow; intro xx; subst; apply get_fresh_atom_prop_and_lib. }
+  { subst; apply get_fresh_atom_prop_and_lib. }
   exrepnd.
+
+  allrw disjoint_singleton_l.
 
   allrw @fold_subst.
   pose proof (alpha_eq_lsubst_nrut_sub_implies
                 w1 w2 [(vr,mk_utoken ua')]
-                (get_utokens w1 ++ get_utokens w2)) as aeqws.
-  repeat (autodimp aeqws hyp); eauto 3 with slow.
-  { apply nrut_sub_cons; simpl; eexists; dands; eauto with slow; tcsp; rw in_app_iff; sp. }
+                (get_utokens_lib lib w1 ++ get_utokens_lib lib w2)) as aeqws.
+
+  repeat (autodimp aeqws hyp); eauto 4 with slow.
+
+  { apply nrut_sub_cons; simpl; eexists; dands; eauto with slow;
+      tcsp; rw in_app_iff; sp; allrw in_app_iff; tcsp. }
 
   applydup @approx_starbt_relates_only_wf in Has0bt as wf; repnd.
   allrw @bt_wf_iff.
@@ -244,12 +271,15 @@ Proof.
   { eapply alpha_eq_trans;[exact rf0|].
     apply alpha_eq_subst_utokens; eauto with slow. }
 
-  assert (!LIn a (get_utokens w1)) as niaw1.
+  assert (!LIn a (get_utokens_lib lib w1)) as niaw1.
   { intro xx.
-    apply alphaeq_preserves_utokens in aeqws; rw aeqws in xx; apply r4 in xx.
-    subst; apply get_fresh_atom_prop in xx; tcsp. }
+    apply (alphaeq_preserves_get_utokens_lib lib) in aeqws;
+      rw aeqws in xx; apply r4 in xx.
+    subst; apply get_fresh_atom_prop_and_lib in xx; tcsp. }
 
-  pose proof (simple_alphaeq_subst_utokens_subst w1 vr a niaw1) as aeq3.
+  rw in_app_iff in niaw1; apply not_over_or in niaw1; repnd.
+
+  pose proof (simple_alphaeq_subst_utokens_subst w1 vr a niaw0) as aeq3.
 
   assert (alpha_eq z w1) as aeq4 by eauto 3 with slow.
 
@@ -264,16 +294,22 @@ Proof.
   { repeat (rw @cl_subst_subst_aux in ap2; eauto 2 with slow).
     unfold subst_aux in ap2.
     inversion ap2 as [? ? ? e1 e2| ? ? e1 e2|].
+
     - destruct u as [z11|f11|op11 bs11]; allsimpl; boolvar; tcsp; ginv.
+
       + repeat (rw @cl_subst_subst_aux in gopu; eauto 2 with slow); allunfold @subst_aux; allsimpl; boolvar; allsimpl;
         try (complete (inversion gopu)).
+
       + repeat (rw @cl_subst_subst_aux in gopu; eauto 2 with slow); allunfold @subst_aux; allsimpl; boolvar; allsimpl;
         try (complete (inversion gopu)); ginv.
         destruct w1 as [z22|f22|op22 bs22]; allsimpl; boolvar; GC; tcsp; ginv; eauto 3 with slow.
         inversion e2; subst; allsimpl; fold_terms; GC.
         allrw subset_cons_l; repnd; tcsp.
+        allrw not_over_or; tcsp.
+
     - destruct u as [z11|f11|op11 bs11]; allsimpl; boolvar; tcsp; ginv.
       destruct w1 as [z22|f22|op22 bs22]; allsimpl; boolvar; GC; tcsp; ginv; eauto 3 with slow.
+
     - destruct u as [z11|f11|op11 bs11]; allsimpl; boolvar; tcsp; ginv.
       destruct w1 as [z22|f22|op22 bs22]; allsimpl; boolvar; GC; tcsp; ginv; eauto 3 with slow.
   }
@@ -283,10 +319,3 @@ Proof.
     [apply isprogram_fresh; complete auto|].
   apply reduces_to_if_step; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

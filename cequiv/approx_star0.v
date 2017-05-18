@@ -322,11 +322,12 @@ Proof.
 
       { eapply nrut_sub_subset;[|exact exnrut1].
         rw subset_app; dands; introv i; repeat (rw in_app_iff);
-        apply get_utokens_lsubst_aux in i; rw in_app_iff in i; repndors; tcsp;
-        apply in_get_utokens_sub in i; exrepnd; apply in_sub_keep_first in i0; repnd;
-        apply sub_find_some in i2; apply in_sub_filter in i2; repnd; apply in_combine in i3; repnd.
-        - right; right; left; rw lin_flat_map; eexists; dands; eauto.
-        - right; right; right; rw lin_flat_map; eexists; dands; eauto.
+          apply get_utokens_lib_lsubst_aux in i; rw in_app_iff in i; repndors; tcsp;
+            try (complete (apply in_app_iff in i; tcsp));
+            apply in_get_utokens_sub in i; exrepnd; apply in_sub_keep_first in i0; repnd;
+              apply sub_find_some in i2; apply in_sub_filter in i2; repnd; apply in_combine in i3; repnd.
+        - right; right; left; rw lin_flat_map; eexists; dands; eauto 2 with slow.
+        - right; right; right; rw lin_flat_map; eexists; dands; eauto 2 with slow.
       }
 
     + pose proof (approx_star_btermd
@@ -462,19 +463,19 @@ Proof.
 
     pose proof (exists_nrut_sub
                   lvn
-                  (get_utokens nt1'
-                               ++ get_utokens nt2'
+                  (get_utokens_lib lib nt1'
+                               ++ get_utokens_lib lib nt2'
                                ++ get_utokens_sub sub))
       as exnrut; exrepnd.
 
     pose proof (approx_star_change_nrut_sub
-                  lib nt1' nt2' sub0 (get_utokens nt1' ++ get_utokens nt2')
+                  lib nt1' nt2' sub0 (get_utokens_lib lib nt1' ++ get_utokens_lib lib nt2')
                   sub1
-                  (get_utokens nt1'
-                               ++ get_utokens nt2'
+                  (get_utokens_lib lib nt1'
+                               ++ get_utokens_lib lib nt2'
                                ++ get_utokens_sub sub))
       as ch.
-    repeat (autodimp ch hh); tcsp; eauto 3 with slow.
+    repeat (autodimp ch hh); tcsp; eauto 5 with slow;[].
 
     destruct bt1 as [l1 t1].
     destruct bt2 as [l2 t2].
@@ -504,11 +505,12 @@ Proof.
 
     { eapply nrut_sub_subset;[|exact exnrut1].
       rw subset_app; dands; introv i; repeat (rw in_app_iff);
-      apply get_utokens_lsubst in i; rw in_app_iff in i; repndors; tcsp;
-      apply in_get_utokens_sub in i; exrepnd; apply in_sub_keep_first in i0; repnd;
-      apply sub_find_some in i2; apply in_sub_filter in i2; repnd;
-      apply in_sub_eta in i3; repnd;
-      right; right; rw lin_flat_map; eexists; dands; eauto.
+        apply get_utokens_lib_lsubst in i; rw in_app_iff in i; repndors; tcsp;
+          try (complete (apply in_app_iff in i; tcsp));
+          apply in_get_utokens_sub in i; exrepnd; apply in_sub_keep_first in i0; repnd;
+            apply sub_find_some in i2; apply in_sub_filter in i2; repnd;
+              apply in_sub_eta in i3; repnd;
+                right; right; rw lin_flat_map; eexists; dands; eauto.
     }
   }
 
@@ -828,7 +830,7 @@ Lemma approx_starbt_change_fr {p} :
     -> {sub : Sub
         $ {nt1',nt2' : @NTerm p
         $ approx_star lib (lsubst nt1' sub) (lsubst nt2' sub)
-        # nrut_sub (get_utokens nt1' ++ get_utokens nt2') sub
+        # nrut_sub (get_utokens_lib lib nt1' ++ get_utokens_lib lib nt2') sub
         # lvn = dom_sub sub
         # alpha_eq_bterm bt1 (bterm lvn nt1')
         # alpha_eq_bterm bt2 (bterm lvn nt2')
@@ -878,9 +880,9 @@ Proof.
     eapply approx_star_alpha_fun_r;[|apply alpha_eq_sym; exact nest2].
     eauto 3 with slow.
 
-  - apply alphaeq_preserves_utokens in hyp0.
-    apply alphaeq_preserves_utokens in hyp2.
-    repeat (rw @get_utokens_lsubst_allvars; eauto with slow).
+  - apply (alphaeq_preserves_get_utokens_lib lib) in hyp0.
+    apply (alphaeq_preserves_get_utokens_lib lib) in hyp2.
+    repeat (rw @get_utokens_lib_lsubst_allvars; eauto with slow).
     rw <- hyp0; rw <- hyp2.
     eapply nrut_sub_change_sub_same_range;[|exact Hab5].
     rw @range_combine; auto; allrw @length_range; allrw @length_dom; auto; try omega.
@@ -912,21 +914,21 @@ Proof.
 
     pose proof (exists_nrut_sub
                   lvn
-                  (get_utokens nt1'
-                               ++ get_utokens nt2'
-                               ++ get_utokens nt1'0
-                               ++ get_utokens nt2'0))
+                  (get_utokens_lib lib nt1'
+                               ++ get_utokens_lib lib nt2'
+                               ++ get_utokens_lib lib nt1'0
+                               ++ get_utokens_lib lib nt2'0))
       as exnrut; exrepnd.
 
     pose proof (approx_star_change_nrut_sub
-                  lib nt1' nt2' sub (get_utokens nt1' ++ get_utokens nt2')
+                  lib nt1' nt2' sub (get_utokens_lib lib nt1' ++ get_utokens_lib lib nt2')
                   sub0
-                  (get_utokens nt1'
-                               ++ get_utokens nt2'
-                               ++ get_utokens nt1'0
-                               ++ get_utokens nt2'0))
+                  (get_utokens_lib lib nt1'
+                               ++ get_utokens_lib lib nt2'
+                               ++ get_utokens_lib lib nt1'0
+                               ++ get_utokens_lib lib nt2'0))
       as ch.
-    repeat (autodimp ch hh); tcsp; eauto 3 with slow.
+    repeat (autodimp ch hh); tcsp; eauto 5 with slow;[].
 
     apply (approx_open_lsubst_congr _ _ _ sub0) in p0; eauto 2 with slow.
     eapply approx_star_open_trans in ch; eauto.
@@ -1265,7 +1267,7 @@ Definition extensional_op {p} (o : @Opid p) :=
     (Hpt : isprogram (oterm o lbt))
     (Hpt' : isprogram (oterm o lbt'))
     (Hcv : computes_to_val_like_in_max_k_steps lib (oterm o lbt) a (S k))
-    (Has : lblift_sub o (approx_star lib) lbt lbt')
+    (Has : lblift_sub lib o (approx_star lib) lbt lbt')
     (Hind : @extensional_op_ind p lib k),
     approx_star lib a (oterm o lbt').
 
@@ -1306,7 +1308,7 @@ Definition extensional_opc {p} (o : @Opid p) :=
          (k:nat),
     programs [a,(oterm o lbt),(oterm o lbt')]
     -> computes_to_value_in_max_k_steps lib (S k) (oterm o lbt) a
-    -> lblift_sub o (approx_star lib) lbt lbt'
+    -> lblift_sub lib o (approx_star lib) lbt lbt'
     -> (forall (u u' v : @NTerm p),
           programs [u,u',v]
           -> computes_to_value_in_max_k_steps lib k u u'
@@ -1514,15 +1516,15 @@ Proof.
   dands; eauto with slow.
 Qed.
 
-Lemma blift_sub_nobnd_congr {p} :
-  forall R op t1 t2,
+Lemma blift_sub_nobnd_congr {o} :
+  forall lib R op (t1 t2 : @NTerm o),
   R t1 t2
-  -> @blift_sub p op R (bterm [] t1) (bterm [] t2).
+  -> blift_sub lib op R (bterm [] t1) (bterm [] t2).
 Proof.
   introv Ht.
   exists (@nil NVar) t1 t2; dands; eauto with slow.
   destruct (dec_op_eq_fresh op) as [d|d]; tcsp.
-  right; exists ([] : @Sub p); simpl; allrw @lsubst_nil; dands; eauto with slow.
+  right; exists ([] : @Sub o); simpl; allrw @lsubst_nil; dands; eauto with slow.
 Qed.
 
 Hint Unfold lblift lblift_sub : slow.
@@ -1556,7 +1558,7 @@ match goal with
   ))
 | [  |- approx_star_bterm _ _ (bterm [] ?t1) (bterm [] ?t2)] =>
   apply blift_sub_nobnd_congr
-| [  |- blift_sub _ (approx_star _) (bterm [] ?t1) (bterm [] ?t2)] =>
+| [  |- blift_sub _ _ (approx_star _) (bterm [] ?t1) (bterm [] ?t2)] =>
   apply blift_sub_nobnd_congr
 end.
 
@@ -1578,7 +1580,7 @@ Ltac approxrelbtd :=
   | [H: 3 = length _ |- _ ] => symmetry in H; apply length3 in H; exrepnd; subst
   | [H: 4 = length _ |- _ ] => symmetry in H; apply length4 in H; exrepnd; subst
   | [H: _ = S (length _) |- _ ] =>  inverts H as H
-  | [H: (forall _:nat, (_< ?m) -> blift_sub _ _ _ _)  |- _ ] => 
+  | [H: (forall _:nat, (_< ?m) -> blift_sub _ _ _ _ _)  |- _ ] => 
     fail_if_not_number m;
     (let XXX:= fresh H "0bt" in
       assert (0<m) as XXX by omega; apply H in XXX; 
@@ -1593,17 +1595,17 @@ Ltac approxrelbtd :=
       assert (3<m) as XXX by omega; apply H in XXX; 
       unfold selectbt in XXX; simpl in XXX); clear H
   | [H: approx_star_bterm _ _ (bterm [] _) (bterm [] _) |- _] => hide_hyp H
-  | [H: blift_sub _ (approx_star _) (bterm [] _) (bterm [] _) |- _] => hide_hyp H
+  | [H: blift_sub _ _ (approx_star _) (bterm [] _) (bterm [] _) |- _] => hide_hyp H
   | [H: approx_star_bterm _ _ (bterm [_] _) (bterm [_] _) |- _] => hide_hyp H
-  | [H: blift_sub _ (approx_star _) (bterm [_] _) (bterm [_] _) |- _] => hide_hyp H
+  | [H: blift_sub _ _ (approx_star _) (bterm [_] _) (bterm [_] _) |- _] => hide_hyp H
   | [H: approx_star_bterm _ _ (bterm [_,_] _) (bterm [_,_] _) |- _] => hide_hyp H
-  | [H: blift_sub _ (approx_star _) (bterm [_,_] _) (bterm [_,_] _) |- _] => hide_hyp H
+  | [H: blift_sub _ _ (approx_star _) (bterm [_,_] _) (bterm [_,_] _) |- _] => hide_hyp H
   | [H: approx_star_bterm _ _ (bterm [] ?nt) _ |- _] =>
     apply approx_star_bterm_nobnd in H;
       let ntr := fresh nt "r" in
       (destruct H as [ntr H]);
         repnd; subst
-  | [H: blift_sub _ (approx_star _) (bterm [] ?nt) _ |- _] =>
+  | [H: blift_sub _ _ (approx_star _) (bterm [] ?nt) _ |- _] =>
     apply approx_star_bterm_nobnd in H;
       let ntr := fresh nt "r" in
       (destruct H as [ntr H]);
@@ -1614,7 +1616,7 @@ Ltac approxrelbtd :=
       let ntr := fresh nt "r" in
       (destruct H as [vr H]; destruct H as [ntr H]);
         repnd; subst
-  | [H: blift_sub _ (approx_star _) (bterm [?v] ?nt) _ |- _] =>
+  | [H: blift_sub _ _ (approx_star _) (bterm [?v] ?nt) _ |- _] =>
     apply approx_star_btermd_1var in H;
       let vr := fresh v "r" in
       let ntr := fresh nt "r" in
@@ -1627,7 +1629,7 @@ Ltac approxrelbtd :=
       let ntr := fresh nt "r" in
       (destruct H as [v1r H]; destruct H as [v2r H]; destruct H as [ntr H]);
         repnd; subst
-  | [H: blift_sub _ (approx_star _) (bterm [?v1, ?v2] ?nt) _ |- _] =>
+  | [H: blift_sub _ _ (approx_star _) (bterm [?v1, ?v2] ?nt) _ |- _] =>
     apply approx_star_btermd_2var in H;
       let v1r := fresh v1 "r" in
       let v2r := fresh v2 "r" in
@@ -1923,6 +1925,25 @@ Lemma approx_star_nseq {p} :
 Proof.
   introv isp apr.
   apply howe_lemma2 in apr; fold_terms; eauto 3 with slow.
+  exrepnd.
+  unfold approx_starbts, lblift_sub in apr1; allsimpl; repnd; cpx.
+Qed.
+
+Lemma isprogram_mk_choice_seq {o} :
+  forall n, @isprogram o (mk_choice_seq n).
+Proof.
+  introv; repeat constructor; simpl; tcsp.
+Qed.
+Hint Resolve isprogram_mk_choice_seq : slow.
+
+Lemma approx_star_choice_seq {o} :
+  forall lib (t : @NTerm o) n,
+    isprogram t
+    -> approx_star lib (mk_choice_seq n) t
+    -> computes_to_value lib t (mk_choice_seq n).
+Proof.
+  introv isp apr.
+  apply howe_lemma2 in apr; fold_terms; fold (@mk_choice_seq o n) in *; eauto 3 with slow.
   exrepnd.
   unfold approx_starbts, lblift_sub in apr1; allsimpl; repnd; cpx.
 Qed.

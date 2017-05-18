@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -91,7 +92,9 @@ Definition opabs_of_lib_entry {o} (e : @library_entry o) :=
 Definition in_lib {o}
            (opabs : opabs)
            (lib   : @library o) :=
-  {e : library_entry & LIn e lib # same_opabs opabs (opabs_of_lib_entry e)}.
+  {e : library_entry
+   & LIn e lib
+   # same_opabs opabs (opabs_of_lib_entry e)}.
 
 Lemma in_lib_dec {o} :
   forall (opabs : opabs)
@@ -2942,10 +2945,3 @@ Proof.
   allunfold @computes_to_valc; allsimpl.
   apply (computes_to_value_preserves_agreeing_libraries lib1 lib2); eauto 2 with slow.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)
