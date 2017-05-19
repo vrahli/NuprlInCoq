@@ -33,13 +33,16 @@
 Require Export computation_preserves_lib.
 
 
-Definition opabs_of_lib_entry {o} (e : @library_entry o) : opabs :=
+(* This is entry2name *)
+
+(*Definition opabs_of_lib_entry {o} (e : @library_entry o) : opabs :=
   match e with
   | lib_abs oa _ _ _ => oa
-  end.
+  end.*)
 
 Definition matching_entries {o} (entry1 entry2 : @library_entry o) : Prop :=
-  matching_entry_sign (opabs_of_lib_entry entry1) (opabs_of_lib_entry entry2).
+  same_entry_name (entry2name entry1) (entry2name entry2).
+(*  matching_entry_sign (opabs_of_lib_entry entry1) (opabs_of_lib_entry entry2).*)
 
 Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : library) : Prop :=
   match lib with
@@ -51,19 +54,56 @@ Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : library) : Prop 
        # entry_in_library entry entries)
   end.
 
-(* [lib1] extends [lib0] *)
-Definition lib_extends {o} (lib1 lib0 : @library o) : Prop :=
-  forall entry, entry_in_library entry lib0 -> entry_in_library entry lib1.
+(* [vals1] extends [vals2] is [vals2] is an initial segment of [vals1] *)
+Definition choice_sequence_vals_extend {o} (vals1 vals2 : @ChoiceSeqVals o) : Prop :=
+  exists vals, vals1 = vals2 ++ vals.
 
-Definition in_lib {o}
+(* [entry1] extends [entry2] *)
+Definition entry_extends {o} (entry1 entry2 : @library_entry o) : Prop :=
+  match entry1, entry2 with
+  | lib_cs name1 vals1, lib_cs name2 vals2 =>
+    name1 = name2
+    /\
+    choice_sequence_vals_extend vals1 vals2
+  | _, _ => entry1 = entry2
+  end.
+
+(* true if there is an extended version of [entry] in [lib] *)
+Fixpoint entry_in_library_extends {o} (entry : @library_entry o) (lib : library) : Prop :=
+  match lib with
+  | [] => False
+  | entry' :: entries =>
+    entry_extends entry entry'
+    \/
+    (~ matching_entries entry entry'
+       # entry_in_library_extends entry entries)
+  end.
+
+(* I used to have only the lib_extends_ext part but then it
+   complicated some stuff such as, there might some names in lib0
+   that are not in lib1... *)
+
+(* [lib1] extends [lib0] *)
+Record lib_extends {o} (lib1 lib0 : @library o) :=
+  MkLibExtends
+    {
+      lib_extends_ext :
+        forall entry,
+          entry_in_library entry lib0
+          -> entry_in_library_extends entry lib1;
+
+      lib_extends_sub : subset lib0 lib1;
+    }.
+
+(*Definition in_lib {o}
            (opabs : opabs)
            (lib   : @library o) :=
   exists (e : library_entry),
     List.In e lib
-    /\ matching_entry_sign opabs (opabs_of_lib_entry e).
+    /\ matching_entry_sign opabs (opabs_of_lib_entry e).*)
 
 Definition entry_not_in_lib {o} (e : @library_entry o) (l : @library o) :=
-  !in_lib (opabs_of_lib_entry e) l.
+  !in_lib (entry2name e) l.
 
 Hint Resolve matching_entry_sign_sym : slow.
 
@@ -76,13 +116,27 @@ Proof.
 Qed.
 Hint Resolve entry_in_library_implies_in : slow.
 
+Lemma matching_entries_implies_same_entry_name {o} :
+  forall (entry1 entry2 : @library_entry o),
+    matching_entries entry1 entry2
+    -> same_entry_name (entry2name entry1) (entry2name entry2).
+Proof.
+  introv m; destruct entry1, entry2; simpl in *; tcsp.
+Qed.
+Hint Resolve matching_entries_implies_same_entry_name : slow.
+
+Hint Resolve same_entry_name_sym : slow.
+
 Lemma lib_extends_cons_implies {o} :
   forall (e : @library_entry o) (lib lib0 : library),
     entry_not_in_lib e lib0
     -> lib_extends lib (e :: lib0)
     -> lib_extends lib lib0.
 Proof.
-  introv ni ext i.
+  introv ni ext.
+  destruct ext as [ext ss].
+  split; eauto with slow.
+  introv i.
   apply ext; simpl; clear ext.
   right; dands; auto; intro m.
   destruct ni.
@@ -91,10 +145,37 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma choice_sequence_vals_extend_refl {o} :
+  forall (vals : @ChoiceSeqVals o), choice_sequence_vals_extend vals vals.
+Proof.
+  introv; exists ([] : @ChoiceSeqVals o); autorewrite with slow; auto.
+Qed.
+Hint Resolve choice_sequence_vals_extend_refl : slow.
+
+Lemma entry_extends_refl {o} :
+  forall (entry : @library_entry o), entry_extends entry entry.
+Proof.
+  destruct entry; simpl in *; tcsp.
+  dands; eauto 2 with slow.
+Qed.
+Hint Resolve entry_extends_refl : slow.
+
+Lemma entry_in_library_implies_entry_in_library_extends {o} :
+  forall entry (lib : @library o),
+    entry_in_library entry lib
+    -> entry_in_library_extends entry lib.
+Proof.
+  induction lib; introv e; simpl in *; tcsp.
+  repndors; repnd; subst; tcsp.
+  left; eauto 2 with slow.
+Qed.
+Hint Resolve entry_in_library_implies_entry_in_library_extends : slow.
+
 Lemma lib_extends_refl {o} :
   forall (lib : @library o), lib_extends lib lib.
 Proof.
-  introv i; auto.
+  introv; split; auto.
+  introv i; eauto 2 with slow.
 Qed.
 Hint Resolve lib_extends_refl : slow.
 
@@ -106,6 +187,9 @@ Lemma entry_in_library_implies_find_entry {o} :
 Proof.
   induction lib; introv m e; simpl in *; tcsp.
   destruct a.
+
+  { repndors; repnd; tcsp; ginv. }
+
   repndors; repnd.
 
   - inversion e; subst; clear e.
@@ -145,6 +229,13 @@ Proof.
     destruct lib1; ginv.
 
   - destruct a.
+
+    {
+      apply IHlib in h; exrepnd; subst; clear IHlib.
+      exists (lib_cs name vals :: lib1) lib2 oa vars rhs correct.
+      dands; auto.
+    }
+
     boolvar; ginv.
 
     + exists ([] : @library o) lib opabs vars rhs correct; simpl.
@@ -158,6 +249,14 @@ Proof.
 
   - exrepnd; subst.
     destruct a.
+
+    {
+      destruct lib1; simpl in *; ginv.
+      apply IHlib.
+      exists lib1 lib2 oa vars rhs correct.
+      dands; auto.
+    }
+
     destruct lib1; simpl in *; ginv.
 
     + inversion h0; subst; clear h0.
@@ -207,7 +306,8 @@ Lemma matching_entry_preserves_find_entry {o} :
     -> find_entry lib abs1 bs = find_entry lib abs2 bs.
 Proof.
   induction lib; introv m; simpl in *; auto.
-  destruct a.
+  destruct a; eauto;[].
+
   boolvar; auto.
   - apply not_matching_entry_iff in n.
     apply matching_entry_sym in m.
@@ -261,22 +361,20 @@ Lemma find_entry_none_implies {o} :
     -> ~ matching_entries (lib_abs abs vars rhs correct) e.
 Proof.
   induction lib; introv ms1 ms2 fe i; simpl in *; tcsp.
-  destruct a; repndors; subst; boolvar; tcsp.
+  destruct a; repndors; subst; boolvar; tcsp; eauto;[].
 
-  - unfold matching_entries; simpl; intro h.
-    apply not_matching_entry_iff in n.
-    destruct n.
-    apply matching_entry_sign_implies_matching_entry; auto.
-    apply matching_bterms_as_matching_sign.
-    apply correct_abs_implies_matching_sign in correct0.
-    unfold matching_sign in *.
+  unfold matching_entries; simpl; intro h.
+  apply not_matching_entry_iff in n.
+  destruct n.
+  apply matching_entry_sign_implies_matching_entry; auto.
+  apply matching_bterms_as_matching_sign.
+  apply correct_abs_implies_matching_sign in correct0.
+  unfold matching_sign in *.
 
-    apply matching_entry_sign_implies_eq_opabs_signs in h.
-    rewrite correct0.
-    rewrite <- h.
-    rewrite <- ms1; rewrite <- ms2; auto.
-
-  - eapply IHlib; eauto.
+  apply matching_entry_sign_implies_eq_opabs_signs in h.
+  rewrite correct0.
+  rewrite <- h.
+  rewrite <- ms1; rewrite <- ms2; auto.
 Qed.
 
 Lemma entry_in_libray_implies_find_entry_some {o} :
@@ -287,6 +385,9 @@ Lemma entry_in_libray_implies_find_entry_some {o} :
 Proof.
   induction lib; introv m i; simpl in *; tcsp.
   destruct a; simpl in *.
+
+  { repndors; tcsp; ginv. }
+
   repndors; repnd.
 
   - inversion i; subst; clear i.
@@ -304,6 +405,16 @@ Proof.
 
     + apply IHlib; auto.
 Qed.
+Hint Resolve entry_in_libray_implies_find_entry_some : slow.
+
+Lemma entry_abs_in_library_extends_implies_entry_in_library {o} :
+  forall oa vars rhs correct (lib : @library o),
+    entry_in_library_extends (lib_abs oa vars rhs correct) lib
+    -> entry_in_library (lib_abs oa vars rhs correct) lib.
+Proof.
+  induction lib; introv e; simpl in *; tcsp.
+Qed.
+Hint Resolve entry_abs_in_library_extends_implies_entry_in_library : slow.
 
 Lemma lib_extends_preserves_find_entry {o} :
   forall (lib1 lib2 : @library o) abs bs (e : library_entry),
@@ -314,20 +425,38 @@ Proof.
   introv ext fe.
   apply find_entry_some_decomp in fe; exrepnd; subst.
 
-  pose proof (ext (lib_abs oa vars rhs correct)) as h.
-  simpl in h; autodimp h hyp.
+  pose proof (lib_extends_ext _ _ ext (lib_abs oa vars rhs correct)) as h.
+  simpl in h; autodimp h hyp; eauto 3 with slow;[].
 
-  { apply implies_entry_in_library_app_right;[simpl; tcsp|].
-    pose proof (matching_entry_preserves_find_entry lib0 abs oa vars bs) as q.
-    autodimp q hyp.
-    rewrite q in fe1; clear q.
-    applydup @matching_entry_implies_matching_bterms in fe3.
-    dup correct as ms.
-    apply correct_abs_implies_matching_sign in ms.
-    rw @matching_bterms_as_matching_sign in fe0.
-    introv i; eapply find_entry_none_implies; eauto. }
+  apply implies_entry_in_library_app_right;[simpl; tcsp|].
+  pose proof (matching_entry_preserves_find_entry lib0 abs oa vars bs) as q.
+  autodimp q hyp.
+  rewrite q in fe1; clear q.
+  applydup @matching_entry_implies_matching_bterms in fe3.
+  dup correct as ms.
+  apply correct_abs_implies_matching_sign in ms.
+  rw @matching_bterms_as_matching_sign in fe0.
+  introv i; eapply find_entry_none_implies; eauto.
+Qed.
 
-  apply entry_in_libray_implies_find_entry_some; auto.
+Lemma in_get_utokens_library_iff {o} :
+  forall (lib : @library o) a,
+    LIn a (get_utokens_library lib)
+    <=> {entry : library_entry & LIn entry lib # LIn a (get_utokens_library_entry entry) }.
+Proof.
+  introv; unfold get_utokens_library.
+  rw lin_flat_map; tcsp.
+Qed.
+
+Lemma lib_extends_implies_subset_get_utokens_library {o} :
+  forall (lib1 lib2 : @library o),
+    lib_extends lib2 lib1
+    -> subset (get_utokens_library lib1) (get_utokens_library lib2).
+Proof.
+  introv ext i.
+  allrw @in_get_utokens_library_iff; exrepnd.
+  apply (lib_extends_sub _ _ ext) in i1.
+  exists entry; dands; auto.
 Qed.
 
 Lemma compute_step_preserves_lib_extends {o} :
