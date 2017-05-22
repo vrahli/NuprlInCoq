@@ -73,7 +73,7 @@ Fixpoint entry_in_library_extends {o} (entry : @library_entry o) (lib : library)
   match lib with
   | [] => False
   | entry' :: entries =>
-    entry_extends entry entry'
+    entry_extends entry' entry
     \/
     (~ matching_entries entry entry'
        # entry_in_library_extends entry entries)
@@ -135,7 +135,7 @@ Lemma lib_extends_cons_implies {o} :
 Proof.
   introv ni ext.
   destruct ext as [ext ss].
-  split; eauto with slow.
+  split; eauto 4 with slow.
   introv i.
   apply ext; simpl; clear ext.
   right; dands; auto; intro m.
@@ -413,6 +413,8 @@ Lemma entry_abs_in_library_extends_implies_entry_in_library {o} :
     -> entry_in_library (lib_abs oa vars rhs correct) lib.
 Proof.
   induction lib; introv e; simpl in *; tcsp.
+  repndors; repnd; tcsp.
+  destruct a; simpl in *; tcsp.
 Qed.
 Hint Resolve entry_abs_in_library_extends_implies_entry_in_library : slow.
 
@@ -459,6 +461,12 @@ Proof.
   exists entry; dands; auto.
 Qed.
 
+(*
+(*
+
+  We should be able to prove equality!
+
+ *)
 Lemma compute_step_preserves_lib_extends {o} :
   forall (lib1 lib2 : library)
          (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
@@ -745,6 +753,478 @@ Proof.
         - csunf; simpl; boolvar; auto.
 
         - rewrite compute_step_fresh_if_isvalue_like2; auto.
+
+        - fold (mk_fresh n t).
+          rewrite compute_step_fresh_if_isnoncan_like; auto.
+
+          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom t))) [n]) as q; clear ind.
+          repeat (autodimp q hyp); eauto 2 with slow.
+          { rewrite simple_osize_subst; eauto 2 with slow. }
+          apply q in comp2; clear q.
+          remember (get_fresh_atom t) as a; simpl.
+          rewrite comp2; simpl; auto.
+      }
+
+    + SCase "Exc".
+
+      csunf comp; allsimpl; ginv.
+
+    + SCase "Abs".
+
+      csunf comp; allsimpl.
+      apply compute_step_lib_success in comp.
+      exrepnd; subst.
+
+      csunf; simpl.
+
+      apply (found_entry_implies_compute_step_lib_success _ _ _ _ _ _ correct).
+      eapply lib_extends_preserves_find_entry; eauto.
+Qed.
+
+Lemma reduces_in_atmost_k_steps_preserves_lib_extends {o} :
+  forall (lib1 lib2 : library)
+         (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
+         (a b  : @NTerm o)
+         (n : nat)
+         (comp : reduces_in_atmost_k_steps lib1 a b n),
+    reduces_in_atmost_k_steps lib2 a b n.
+Proof.
+  introv ext r.
+  revert dependent a.
+  induction n; introv r.
+
+  - allrw @reduces_in_atmost_k_steps_0; auto.
+
+  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
+    exists u; dands; auto.
+    eapply compute_step_preserves_lib_extends; eauto.
+Qed.
+
+Lemma reduces_to_preserves_lib_extends {o} :
+  forall (lib1 lib2 : library)
+         (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
+         (a b  : @NTerm o)
+         (comp : reduces_to lib1 a b),
+    reduces_to lib2 a b.
+Proof.
+  introv ext r.
+  unfold reduces_to in *; exrepnd.
+  exists k.
+  eapply reduces_in_atmost_k_steps_preserves_lib_extends; eauto.
+Qed.
+ *)
+
+Lemma lib_cs_in_library_extends_implies {o} :
+  forall (lib : @library o) name vals,
+    entry_in_library_extends (lib_cs name vals) lib
+    ->
+    exists (vals' : ChoiceSeqVals),
+      find_cs lib name = Some vals'
+      /\ choice_sequence_vals_extend vals' vals.
+Proof.
+  induction lib; introv h; simpl in *; tcsp.
+  destruct a; simpl in *; tcsp; repndors; repnd; subst; tcsp; boolvar; tcsp; GC; ginv.
+  exists vals0; dands; auto.
+Qed.
+Hint Resolve lib_cs_in_library_extends_implies : slow.
+
+Lemma find_cs_some_implies_entry_in_library {o} :
+  forall (lib : @library o) name vals,
+    find_cs lib name = Some vals
+    -> entry_in_library (lib_cs name vals) lib.
+Proof.
+  induction lib; simpl; introv fcs; tcsp.
+  destruct a; simpl in *; boolvar; ginv; GC; tcsp.
+Qed.
+Hint Resolve find_cs_some_implies_entry_in_library : slow.
+
+Lemma lib_extends_preserves_find_cs {o} :
+  forall (lib1 lib2 : @library o) name vals1,
+    lib_extends lib2 lib1
+    -> find_cs lib1 name = Some vals1
+    ->
+    exists (vals2 : ChoiceSeqVals),
+      find_cs lib2 name = Some vals2
+      /\ choice_sequence_vals_extend vals2 vals1.
+Proof.
+  introv ext fcs.
+  apply find_cs_some_implies_entry_in_library in fcs.
+  apply ext in fcs; eauto 2 with slow.
+Qed.
+
+Hint Rewrite minus0 : num.
+
+Lemma find_value_of_cs_at_app {o} :
+  forall (vals1 vals2 : @ChoiceSeqVals o) n,
+    find_value_of_cs_at (vals1 ++ vals2) n
+    = match find_value_of_cs_at vals1 n with
+      | Some v => Some v
+      | None => find_value_of_cs_at vals2 (n - length vals1)
+      end.
+Proof.
+  induction vals1; introv; simpl; autorewrite with num in *; tcsp.
+  destruct n; simpl in *; auto.
+Qed.
+
+Lemma choice_sequence_vals_extend_preserves_find_value_of_cs_at {o} :
+  forall (vals1 vals2 : @ChoiceSeqVals o) n v,
+    choice_sequence_vals_extend vals2 vals1
+    -> find_value_of_cs_at vals1 n = Some v
+    -> find_value_of_cs_at vals2 n = Some v.
+Proof.
+  introv h fcs.
+  unfold choice_sequence_vals_extend in h; exrepnd; subst.
+  rewrite find_value_of_cs_at_app.
+  allrw; auto.
+Qed.
+Hint Resolve choice_sequence_vals_extend_preserves_find_value_of_cs_at : slow.
+
+Lemma lib_extends_preserves_find_cs_value_at {o} :
+  forall (lib1 lib2 : @library o) name n v,
+    lib_extends lib2 lib1
+    -> find_cs_value_at lib1 name n = Some v
+    -> find_cs_value_at lib2 name n = Some v.
+Proof.
+  introv ext find.
+  unfold find_cs_value_at in *.
+  remember (find_cs lib1 name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
+  eapply lib_extends_preserves_find_cs in Heqfcs;[|eauto].
+  exrepnd; allrw; eauto 2 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_find_cs_value_at : slow.
+
+(*
+
+  We should be able to prove equality!
+  I left the lemma above.
+  See computation_preserves_utok.v
+
+ *)
+Lemma compute_step_preserves_lib_extends {o} :
+  forall (lib1 lib2 : library)
+         (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
+         (a b  : @NTerm o)
+         (wf   : wf_term a)
+         (comp : compute_step lib1 a = csuccess b),
+    {b' : NTerm & compute_step lib2 a = csuccess b' # alpha_eq b' b}.
+Proof.
+  nterm_ind1s a as [v|f ind|op bs ind] Case; introv wfa comp.
+
+  - Case "vterm".
+    csunf comp; allsimpl; ginv.
+
+  - Case "sterm".
+    csunf comp; allsimpl; ginv.
+    csunf; simpl; eexists; dands; eauto.
+
+  - Case "oterm".
+    dopid op as [can|ncan|exc|abs] SCase.
+
+    + SCase "Can".
+      csunf comp; allsimpl; ginv.
+      csunf; simpl; eexists; dands; eauto.
+
+    + SCase "NCan".
+      destruct bs as [|b1 bs]; try (complete (allsimpl; ginv)).
+      destruct b1 as [l t]; try (complete (allsimpl; ginv)).
+      destruct l; try (complete (allsimpl; ginv)).
+
+      { destruct t as [x|f|op bts]; try (complete (allsimpl; ginv));[|].
+
+        - csunf comp; allsimpl.
+          dopid_noncan ncan SSCase; allsimpl; ginv;
+            try (complete (csunf; simpl; eexists; dands; eauto));[].
+
+          SSCase "NEApply".
+
+          apply compute_step_eapply_success in comp; exrepnd; subst.
+          repndors; exrepnd; allsimpl; subst.
+
+          + apply compute_step_eapply2_success in comp1; repnd; subst.
+            repndors; exrepnd; subst; ginv.
+            csunf; simpl.
+            dcwf h; simpl.
+            boolvar; try omega.
+            rewrite Znat.Nat2Z.id; auto.
+            eexists; dands; eauto.
+
+          + csunf; simpl.
+            apply isexc_implies2 in comp0; exrepnd; subst.
+            dcwf h; simpl; auto.
+            eexists; dands; eauto.
+
+          + fold_terms.
+            rewrite compute_step_eapply_iscan_isnoncan_like; auto.
+            pose proof (ind arg2 arg2 []) as h; clear ind.
+            repeat (autodimp h hyp); eauto 3 with slow.
+            apply h in comp1; clear h; eauto 2 with slow wf.
+            exrepnd; allrw; simpl.
+            eexists; dands; eauto.
+            repeat prove_alpha_eq4.
+
+        - dopid op as [can2|ncan2|exc2|abs2] SSCase.
+
+          + SSCase "Can".
+            dopid_noncan ncan SSSCase.
+
+            {
+              SSSCase "NApply".
+
+              csunf comp; allsimpl.
+              apply compute_step_apply_success in comp.
+              repndors; exrepnd; subst; auto;
+                csunf; simpl; eexists; dands; eauto.
+            }
+
+            {
+              SSSCase "NEApply".
+
+              csunf comp; allsimpl.
+              apply compute_step_eapply_success in comp.
+              repndors; exrepnd; subst; auto.
+              repndors; exrepnd; subst; allsimpl; auto.
+
+              - apply compute_step_eapply2_success in comp1; repnd; subst.
+                repndors; exrepnd; subst; auto; ginv.
+
+                + unfold mk_lam in *; ginv.
+                  csunf; simpl.
+                  dcwf h; simpl.
+                  apply iscan_implies in comp0; repndors; exrepnd; subst; simpl; auto;
+                    eexists; dands; eauto.
+
+                + unfold mk_nseq in *; allsimpl; ginv.
+                  csunf; simpl.
+                  dcwf h; simpl.
+                  boolvar; simpl; auto; try omega.
+                  rewrite Znat.Nat2Z.id; auto.
+                  eexists; dands; eauto.
+
+                + unfold mk_choice_seq in *; allsimpl; ginv.
+                  csunf; simpl.
+                  dcwf h; simpl.
+                  boolvar; simpl; auto; try omega.
+                  rewrite Znat.Nat2Z.id; auto.
+                  erewrite lib_extends_preserves_find_cs_value_at;eauto.
+
+              - fold_terms; rewrite compute_step_eapply_iscan_isexc; auto.
+                eexists; dands; eauto.
+
+              - fold_terms; rewrite compute_step_eapply_iscan_isnoncan_like; auto.
+
+                pose proof (ind arg2 arg2 []) as q; clear ind.
+                repeat (autodimp q hyp); eauto 2 with slow.
+                apply q in comp1; clear q; eauto 2 with slow wf.
+                exrepnd; allrw; simpl.
+                eexists; dands; eauto; repeat prove_alpha_eq4.
+            }
+
+            {
+              SSSCase "NFix".
+
+              csunf comp; allsimpl.
+              apply compute_step_fix_success in comp.
+              repndors; exrepnd; subst; auto.
+              csunf; simpl; eexists; dands; eauto.
+            }
+
+            {
+              SSSCase "NSpread".
+
+              csunf comp; allsimpl.
+              apply compute_step_spread_success in comp.
+              repndors; exrepnd; subst; auto.
+              csunf; simpl; eexists; dands; eauto.
+            }
+
+            {
+              SSSCase "NDsup".
+
+              csunf comp; allsimpl.
+              apply compute_step_dsup_success in comp.
+              repndors; exrepnd; subst; auto.
+              csunf; simpl; eexists; dands; eauto.
+            }
+
+            {
+              SSSCase "NDecide".
+
+              csunf comp; allsimpl.
+              apply compute_step_decide_success in comp.
+              repndors; exrepnd; subst; auto.
+              repndors; exrepnd; subst; auto;
+                csunf; simpl; eexists; dands; eauto.
+            }
+
+            {
+              SSSCase "NCbv".
+
+              csunf comp; allsimpl.
+              apply compute_step_cbv_success in comp.
+              repndors; exrepnd; subst; auto.
+              csunf; simpl; eexists; dands; eauto.
+            }
+
+            {
+              SSSCase "NSleep".
+
+              csunf comp; allsimpl.
+              apply compute_step_sleep_success in comp.
+              repndors; exrepnd; subst; auto.
+              csunf; simpl; eexists; dands; eauto; tcsp.
+            }
+
+            {
+              SSSCase "NTUni".
+
+              csunf comp; allsimpl.
+              apply compute_step_tuni_success in comp.
+              repndors; exrepnd; subst; auto.
+              csunf; simpl.
+              unfold compute_step_tuni; simpl.
+              boolvar; try omega.
+              rewrite Znat.Nat2Z.id; auto.
+              eexists; dands; eauto.
+            }
+
+            {
+              SSSCase "NMinus".
+
+              csunf comp; allsimpl.
+              apply compute_step_minus_success in comp.
+              repndors; exrepnd; subst; auto.
+              csunf; simpl; eexists; dands; eauto; tcsp.
+            }
+
+            {
+              SSSCase "NFresh".
+
+              csunf comp; allsimpl; ginv.
+            }
+
+            {
+              SSSCase "NTryCatch".
+
+              csunf comp; allsimpl.
+              apply compute_step_try_success in comp.
+              repndors; exrepnd; subst; auto.
+              csunf; simpl; eexists; dands; eauto; tcsp.
+            }
+
+            {
+              SSSCase "NParallel".
+
+              csunf comp; allsimpl.
+              apply compute_step_parallel_success in comp.
+              repndors; exrepnd; subst; auto.
+              csunf; simpl; eexists; dands; eauto; tcsp.
+            }
+
+            {
+              SSSCase "NCompOp".
+
+              apply compute_step_ncompop_can1_success in comp; repnd.
+              repndors; exrepnd; allsimpl; subst; tcsp.
+
+              - csunf; simpl.
+                dcwf h.
+                simpl; allrw; eexists; dands; eauto.
+
+              - rewrite compute_step_ncompop_ncanlike2; auto.
+                dcwf h.
+                pose proof (ind t t []) as q; clear ind.
+                repeat (autodimp q hyp); eauto 2 with slow.
+                apply q in comp4; clear q; eauto 2 with slow wf.
+                exrepnd; allrw; eexists; dands; eauto; repeat prove_alpha_eq4.
+
+              - csunf; simpl.
+                apply isexc_implies2 in comp1; exrepnd; subst.
+                dcwf h; simpl; auto.
+                eexists; dands; eauto.
+            }
+
+            {
+              SSSCase "NArithOp".
+
+              apply compute_step_narithop_can1_success in comp; repnd.
+              repndors; exrepnd; allsimpl; subst; tcsp.
+
+              - csunf; simpl.
+                dcwf h.
+                simpl; allrw; eexists; dands; eauto.
+
+              - rewrite compute_step_narithop_ncanlike2; auto.
+                dcwf h.
+                pose proof (ind t t []) as q; clear ind.
+                repeat (autodimp q hyp); eauto 2 with slow.
+                apply q in comp4; clear q; eauto 3 with wf slow.
+                exrepnd; allrw; eexists; dands; eauto; repeat prove_alpha_eq4.
+
+              - csunf; simpl.
+                apply isexc_implies2 in comp1; exrepnd; subst.
+                dcwf h; simpl; auto.
+                eexists; dands; eauto.
+            }
+
+            {
+              SSSCase "NCanTest".
+
+              csunf comp; allsimpl.
+              apply compute_step_can_test_success in comp.
+              repndors; exrepnd; subst; auto.
+              csunf; simpl; eexists; dands; eauto; tcsp.
+            }
+
+          + SSCase "NCan".
+
+            csunf comp; allsimpl.
+            remember (compute_step lib1 (oterm (NCan ncan2) bts)) as c.
+            destruct c; allsimpl; ginv.
+            symmetry in Heqc.
+
+            pose proof (ind (oterm (NCan ncan2) bts) (oterm (NCan ncan2) bts) []) as q; clear ind.
+            repeat (autodimp q hyp); eauto 2 with slow.
+            apply q in Heqc; clear q; eauto 3 with slow wf.
+            csunf; simpl.
+            exrepnd; allrw; simpl; eexists; dands; eauto; tcsp; repeat prove_alpha_eq4.
+
+          + SSCase "Exc".
+
+            csunf comp; allsimpl.
+            apply compute_step_catch_success in comp.
+            repndors; exrepnd; subst; allsimpl; ginv.
+
+            * csunf; simpl; auto.
+              eexists; dands; eauto.
+
+            * csunf; simpl; auto.
+              rewrite compute_step_catch_if_diff; auto.
+              eexists; dands; eauto.
+
+          + SSCase "Abs".
+
+            csunf comp; allsimpl.
+            remember (compute_step lib1 (oterm (Abs abs2) bts)) as c.
+            destruct c; allsimpl; ginv.
+            symmetry in Heqc.
+
+            pose proof (ind (oterm (Abs abs2) bts) (oterm (Abs abs2) bts) []) as q; clear ind.
+            repeat (autodimp q hyp); eauto 2 with slow.
+            apply q in Heqc; clear q; eauto 3 with wf slow.
+            csunf; simpl.
+            exrepnd; allrw; simpl; eexists; dands; eauto; repeat prove_alpha_eq4.
+      }
+
+      {
+        csunf comp; allsimpl.
+        apply compute_step_fresh_success in comp; exrepnd; subst.
+        repndors; exrepnd; subst; ginv.
+
+        - csunf; simpl; boolvar; auto.
+          eexists; dands; eauto.
+
+        - rewrite compute_step_fresh_if_isvalue_like2; auto.
+          eexists; dands; eauto.
 
         - fold (mk_fresh n t).
           rewrite compute_step_fresh_if_isnoncan_like; auto.
