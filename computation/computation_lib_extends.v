@@ -84,7 +84,7 @@ Fixpoint entry_in_library_extends {o} (entry : @library_entry o) (lib : library)
    that are not in lib1... *)
 
 (* [lib1] extends [lib0] *)
-Record lib_extends {o} (lib1 lib0 : @library o) :=
+Record lib_extends {o} (lib1 lib0 : @library o) : Type :=
   MkLibExtends
     {
       lib_extends_ext :
@@ -92,7 +92,8 @@ Record lib_extends {o} (lib1 lib0 : @library o) :=
           entry_in_library entry lib0
           -> entry_in_library_extends entry lib1;
 
-      lib_extends_sub : subset lib0 lib1;
+      lib_extends_sub :
+        subset lib0 lib1;
     }.
 
 (*Definition in_lib {o}
@@ -460,6 +461,7 @@ Proof.
   apply (lib_extends_sub _ _ ext) in i1.
   exists entry; dands; auto.
 Qed.
+Hint Resolve lib_extends_implies_subset_get_utokens_library : slow.
 
 (*
 (*
@@ -893,6 +895,77 @@ Proof.
 Qed.
 Hint Resolve lib_extends_preserves_find_cs_value_at : slow.
 
+Lemma subset_get_utokens_library_implies_subset_get_utokens_lib {o} :
+  forall (lib1 lib2 : @library o) t,
+    subset (get_utokens_library lib1) (get_utokens_library lib2)
+    -> subset (get_utokens_lib lib1 t) (get_utokens_lib lib2 t).
+Proof.
+  introv ss i; allrw in_app_iff; repndors; tcsp.
+Qed.
+Hint Resolve subset_get_utokens_library_implies_subset_get_utokens_lib : slow.
+
+Lemma unfold_abs_iff_find_entry {o} :
+  forall (lib : @library o) oa bs t,
+    unfold_abs lib oa bs = Some t
+    <=> {oa' : opabs
+         & {vars : list sovar_sig
+         & {rhs : SOTerm
+         & {correct : correct_abs oa' vars rhs
+         & find_entry lib oa bs = Some (lib_abs oa' vars rhs correct)
+         # matching_entry oa oa' vars bs
+         # t = mk_instance vars bs rhs}}}}.
+Proof.
+  induction lib; simpl in *; introv; split; intro h; exrepnd; ginv.
+
+  - remember (unfold_abs_entry a oa bs) as ua; symmetry in Hequa; destruct ua; ginv.
+
+    + destruct a; simpl in *; ginv.
+      boolvar; ginv.
+      eexists; eexists; eexists; eexists; dands; eauto.
+
+    + apply IHlib in h; exrepnd; subst.
+      destruct a; simpl in *; boolvar; tcsp; GC;
+        eexists; eexists; eexists; eexists; dands; eauto.
+
+  - destruct a; subst; simpl in *; tcsp.
+
+    + apply IHlib.
+      eexists; eexists; eexists; eexists; dands; eauto.
+
+    + boolvar; tcsp; auto.
+
+      * inversion h0; subst; clear h0; auto.
+
+      * apply IHlib.
+        eexists; eexists; eexists; eexists; dands; eauto.
+Qed.
+
+Lemma lib_extends_preserves_unfold_abs {o} :
+  forall (lib1 lib2 : @library o) abs bs t,
+    lib_extends lib2 lib1
+    -> unfold_abs lib1 abs bs = Some t
+    -> unfold_abs lib2 abs bs = Some t.
+Proof.
+  introv ext ua.
+  allrw @unfold_abs_iff_find_entry.
+  exrepnd; subst.
+
+  eapply lib_extends_preserves_find_entry in ua0;[|eauto].
+  eexists; eexists; eexists; eexists; dands; eauto.
+Qed.
+
+Lemma lib_extends_preserves_compute_step_lib {o} :
+  forall (lib1 lib2 : @library o) abs bs t,
+    lib_extends lib2 lib1
+    -> compute_step_lib lib1 abs bs = csuccess t
+    -> compute_step_lib lib2 abs bs = csuccess t.
+Proof.
+  introv ext comp.
+  unfold compute_step_lib in *.
+  remember (unfold_abs lib1 abs bs) as ua; symmetry in Hequa; destruct ua; ginv.
+  erewrite lib_extends_preserves_unfold_abs;[|eauto|eauto]; auto.
+Qed.
+
 (*
 
   We should be able to prove equality!
@@ -1229,58 +1302,113 @@ Proof.
         - fold (mk_fresh n t).
           rewrite compute_step_fresh_if_isnoncan_like; auto.
 
-          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom t))) [n]) as q; clear ind.
-          repeat (autodimp q hyp); eauto 2 with slow.
+          remember (get_fresh_atom lib1 t) as a.
+          pose proof (get_fresh_atom_prop_and_lib lib1 t) as prop; rewrite <- Heqa in prop.
+          clear Heqa.
+
+          remember (get_fresh_atom lib2 t) as a'.
+          pose proof (get_fresh_atom_prop_and_lib lib2 t) as prop'; rewrite <- Heqa' in prop'.
+          clear Heqa'.
+
+          simpl.
+
+          pose proof (compute_step_subst_utoken lib1 t x [(n,mk_utoken a)]) as q.
+          repeat (autodimp q hyp); eauto 3 with wf;
+            [autorewrite with slow; simpl; apply disjoint_singleton_l; auto|];[].
+          exrepnd.
+          autorewrite with slow in *; simpl in *; allrw disjoint_singleton_l.
+
+          pose proof (q0 [(n,mk_utoken a')]) as z.
+          autorewrite with slow in z; simpl in z; allrw disjoint_singleton_l.
+          repeat (autodimp z hyp); eauto 5 with slow;[].
+          exrepnd.
+
+          pose proof (ind t (subst t n (mk_utoken a')) [n]) as q; clear ind.
+          repeat (autodimp q hyp); eauto 2 with slow;[|].
           { rewrite simple_osize_subst; eauto 2 with slow. }
-          apply q in comp2; clear q.
-          remember (get_fresh_atom t) as a; simpl.
-          rewrite comp2; simpl; auto.
+          fold_terms.
+          apply q in z1; clear q; eauto 2 with wf;[].
+
+          exrepnd.
+          allrw; simpl.
+          eexists; dands; eauto.
+          unfold mk_fresh.
+          repeat prove_alpha_eq4.
+          apply alpha_eq_bterm_congr.
+
+          eapply alpha_eq_trans in z0;[|exact z2].
+          eapply alpha_eq_trans;
+            [apply alpha_eq_subst_utokens;
+             [eauto|apply alphaeq_utok_sub_refl] |].
+          eapply alpha_eq_trans;
+            [|apply alpha_eq_sym;apply alpha_eq_subst_utokens;
+              [eauto|apply alphaeq_utok_sub_refl] ].
+
+          eapply alpha_eq_trans;[apply simple_alphaeq_subst_utokens_subst;eauto 6 with slow|];[].
+
+          eapply alpha_eq_trans;[|apply alpha_eq_sym;apply simple_alphaeq_subst_utokens_subst;eauto 4 with slow].
+          auto.
       }
 
     + SCase "Exc".
 
       csunf comp; allsimpl; ginv.
+      csunf; simpl; eexists; dands; eauto.
 
     + SCase "Abs".
 
       csunf comp; allsimpl.
       apply compute_step_lib_success in comp.
       exrepnd; subst.
-
       csunf; simpl.
 
-      apply (found_entry_implies_compute_step_lib_success _ _ _ _ _ _ correct).
-      eapply lib_extends_preserves_find_entry; eauto.
+      apply found_entry_implies_compute_step_lib_success in comp0.
+      eapply lib_extends_preserves_compute_step_lib in comp0;[|eauto].
+      rewrite comp0.
+      eexists; dands; eauto.
 Qed.
 
 Lemma reduces_in_atmost_k_steps_preserves_lib_extends {o} :
   forall (lib1 lib2 : library)
          (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
          (a b  : @NTerm o)
-         (n : nat)
+         (wfa  : wf_term a)
+         (n    : nat)
          (comp : reduces_in_atmost_k_steps lib1 a b n),
-    reduces_in_atmost_k_steps lib2 a b n.
+    {b' : NTerm & reduces_in_atmost_k_steps lib2 a b' n # alpha_eq b b'}.
 Proof.
-  introv ext r.
-  revert dependent a.
-  induction n; introv r.
+  introv ext wf comp.
 
-  - allrw @reduces_in_atmost_k_steps_0; auto.
+  revert dependent a.
+  induction n; introv wf comp.
+
+  - allrw @reduces_in_atmost_k_steps_0; subst.
+    exists b; allrw @reduces_in_atmost_k_steps_0; auto.
 
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
-    exists u; dands; auto.
-    eapply compute_step_preserves_lib_extends; eauto.
+    applydup @compute_step_preserves_wf in comp1; auto.
+    apply IHn in comp0; exrepnd; auto; clear IHn.
+    apply (compute_step_preserves_lib_extends lib1 lib2) in comp1; auto; exrepnd.
+
+    pose proof (reduces_in_atmost_k_steps_alpha lib2 u b'0) as w.
+    repeat (autodimp w hyp); eauto 3 with slow wf.
+    applydup w in comp0; clear w; exrepnd.
+
+    eexists; dands;[rw @reduces_in_atmost_k_steps_S;eexists; dands; eauto|].
+    eauto 2 with slow.
 Qed.
 
 Lemma reduces_to_preserves_lib_extends {o} :
   forall (lib1 lib2 : library)
          (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
          (a b  : @NTerm o)
+         (wf   : wf_term a)
          (comp : reduces_to lib1 a b),
-    reduces_to lib2 a b.
+    {b' : NTerm & reduces_to lib2 a b' # alpha_eq b b'}.
 Proof.
-  introv ext r.
+  introv ext wf r.
   unfold reduces_to in *; exrepnd.
-  exists k.
-  eapply reduces_in_atmost_k_steps_preserves_lib_extends; eauto.
+  eapply reduces_in_atmost_k_steps_preserves_lib_extends in r0; eauto.
+  exrepnd.
+  eexists; eexists; dands; eauto.
 Qed.
