@@ -325,7 +325,7 @@ Fixpoint utok_ren_find {o} (ren : @utok_ren o) (a : get_patom_set o) : option (g
     else utok_ren_find l a
   end.
 
-Definition ren_utoks_op {o} (op : @Opid o) (ren : utok_ren) : Opid :=
+Definition ren_utoks_op {o} (ren : utok_ren) (op : @Opid o) : Opid :=
   match get_utok op with
   | Some a =>
 
@@ -337,15 +337,15 @@ Definition ren_utoks_op {o} (op : @Opid o) (ren : utok_ren) : Opid :=
   | _ => op
   end.
 
-Fixpoint ren_utoks {o} (t : @NTerm o) (ren : @utok_ren o) : NTerm :=
+Fixpoint ren_utoks {o} (ren : @utok_ren o) (t : @NTerm o) : NTerm :=
   match t with
   | vterm v => t
   | sterm f => t
-  | oterm op bs => oterm (ren_utoks_op op ren) (map (fun bt => ren_utoks_b bt ren) bs)
+  | oterm op bs => oterm (ren_utoks_op ren op) (map (fun bt => ren_utoks_b ren bt) bs)
   end
-with ren_utoks_b {o} (bt : @BTerm o) ren : BTerm :=
+with ren_utoks_b {o} ren (bt : @BTerm o) : BTerm :=
        match bt with
-       | bterm vs t => bterm vs (ren_utoks t ren)
+       | bterm vs t => bterm vs (ren_utoks ren t)
        end.
 
 Lemma sub_find_some_is_utok_sub_implies {o} :
@@ -528,7 +528,7 @@ Qed.
 Lemma not_in_get_utokens_o_implies_ren_utoks_op_same {o} :
   forall (op : @Opid o) ren,
     disjoint (get_utokens_o op) (dom_utok_ren ren)
-    -> ren_utoks_op op ren = op.
+    -> ren_utoks_op ren op = op.
 Proof.
   introv disj.
   unfold ren_utoks_op.
@@ -596,7 +596,7 @@ Hint Resolve disjoin_flat_map_get_utokens_b_left_implies_disjoint_get_utokens_le
 Lemma not_in_get_utokens_implies_ren_utoks_same {o} :
   forall ren (t : @NTerm o),
     disjoint (get_utokens t) (dom_utok_ren ren)
-    -> ren_utoks t ren = t.
+    -> ren_utoks ren t = t.
 Proof.
   nterm_ind1s t as [v|f ind|op bs ind] Case; introv d; tcsp.
   Case "oterm".
@@ -634,7 +634,7 @@ Lemma ren_utoks_lsubst_aux_sub_filter {o} :
     -> no_repeats_utok_sub sub2
     -> disjoint (get_utokens_lib lib t) (get_utokens_sub sub1)
     -> disjoint (get_utokens_lib lib t) (get_utokens_sub sub2)
-    -> ren_utoks (lsubst_aux t (sub_filter sub1 l)) (subs2utok_ren sub1 sub2)
+    -> ren_utoks (subs2utok_ren sub1 sub2) (lsubst_aux t (sub_filter sub1 l))
        = lsubst_aux t (sub_filter sub2 l).
 Proof.
   nterm_ind1s t as [v|f ind|op bs ind] Case;
@@ -898,7 +898,7 @@ Hint Resolve not_in_get_utokens_lib_lsubst_aux_implies : slow.
 
 Lemma bound_vars_ren_utoks {o} :
   forall (t : @NTerm o) ren,
-    bound_vars (ren_utoks t ren) = bound_vars t.
+    bound_vars (ren_utoks ren t) = bound_vars t.
 Proof.
   nterm_ind1s t as [v|f ind|op bs ind] Case; introv; simpl in *; tcsp.
   rw flat_map_map; unfold compose.
@@ -910,7 +910,7 @@ Hint Rewrite @bound_vars_ren_utoks : slow.
 
 Lemma free_vars_ren_utoks {o} :
   forall (t : @NTerm o) ren,
-    free_vars (ren_utoks t ren) = free_vars t.
+    free_vars (ren_utoks ren t) = free_vars t.
 Proof.
   nterm_ind1s t as [v|f ind|op bs ind] Case; introv; simpl in *; tcsp.
   rw flat_map_map; unfold compose.
@@ -922,7 +922,7 @@ Hint Rewrite @free_vars_ren_utoks : slow.
 
 Lemma all_vars_ren_utoks {o} :
   forall (t : @NTerm o) ren,
-    all_vars (ren_utoks t ren) = all_vars t.
+    all_vars (ren_utoks ren t) = all_vars t.
 Proof.
   introv.
   unfold all_vars; autorewrite with slow; auto.
@@ -931,8 +931,8 @@ Hint Rewrite @all_vars_ren_utoks : slow.
 
 Lemma lsubst_aux_var_ren_ren_utoks {o} :
   forall (t : @NTerm o) ren l1 l2,
-    lsubst_aux (ren_utoks t ren) (var_ren l1 l2)
-    = ren_utoks (lsubst_aux t (var_ren l1 l2)) ren.
+    lsubst_aux (ren_utoks ren t) (var_ren l1 l2)
+    = ren_utoks ren (lsubst_aux t (var_ren l1 l2)).
 Proof.
   nterm_ind1s t as [v|f ind|op bs ind] Case; introv; simpl in *; tcsp.
 
@@ -950,7 +950,7 @@ Qed.
 
 Lemma change_bvars_alpha_ren_utoks {o} :
   forall (t : @NTerm o) l ren,
-    change_bvars_alpha l (ren_utoks t ren) = ren_utoks (change_bvars_alpha l t) ren.
+    change_bvars_alpha l (ren_utoks ren t) = ren_utoks ren (change_bvars_alpha l t).
 Proof.
   nterm_ind1s t as [v|f ind|op bs ind] Case; introv; simpl in *; tcsp.
   f_equal.
@@ -963,6 +963,118 @@ Proof.
   rewrite lsubst_aux_var_ren_ren_utoks; auto.
 Qed.
 
+Lemma get_utok_ren_utoks_op {o} :
+  forall op (ren : @utok_ren o),
+    get_utok (ren_utoks_op ren op)
+    = match get_utok op with
+      | Some a =>
+        match utok_ren_find ren a with
+        | Some b => Some b
+        | None => Some a
+        end
+      | None => None
+      end.
+Proof.
+  introv; destruct op; simpl; auto.
+  destruct c; simpl; auto.
+  unfold ren_utoks_op; simpl.
+  remember (utok_ren_find ren g) as x; symmetry in Heqx; destruct x; simpl; auto.
+Qed.
+
+Lemma no_repeats_snoc :
+  forall {T} (x : T) (l : list T),
+    no_repeats (snoc l x) <=> no_repeats l # ! LIn x l.
+Proof.
+  induction l; simpl; split; intro h; repnd; tcsp.
+
+  - inversion h as [|? ? ni norep]; clear h; subst.
+    allrw in_snoc; allrw not_over_or; repnd.
+    apply IHl in norep; repnd; dands; tcsp.
+
+  - allrw not_over_or; repnd.
+    inversion h0 as [|? ? ni norep]; clear h0; subst.
+    constructor; auto.
+
+    + rw in_snoc; tcsp.
+
+    + apply IHl; tcsp.
+Qed.
+
+Lemma implies_no_repeats_snoc :
+  forall {T} (x : T) (l : list T),
+    no_repeats l
+    -> ! LIn x l
+    -> no_repeats (snoc l x).
+Proof.
+  introv norep ni; apply no_repeats_snoc; tcsp.
+Qed.
+Hint Resolve implies_no_repeats_snoc : slow.
+
+Lemma is_utok_sub_snoc {o} :
+  forall  (v : NVar) (t : NTerm) (sub : @Sub o),
+    is_utok_sub (snoc sub (v, t)) <=> is_utok t # is_utok_sub sub.
+Proof.
+  introv; split; intro h; tcsp; repnd; dands.
+
+  - pose proof (h v) as q.
+    apply q; rw in_snoc; tcsp.
+
+  - introv i; eapply h; apply in_snoc; left; eauto.
+
+  - introv i; apply in_snoc in i; repndors; ginv; tcsp.
+    eapply h; eauto.
+Qed.
+
+Lemma implies_is_utok_sub_snoc {o} :
+  forall  (v : NVar) (t : NTerm) (sub : @Sub o),
+    is_utok t
+    -> is_utok_sub sub
+    -> is_utok_sub (snoc sub (v, t)).
+Proof.
+  introv i j; apply is_utok_sub_snoc; auto.
+Qed.
+Hint Resolve implies_is_utok_sub_snoc : slow.
+
+Lemma is_utok_mk_utoken {o} :
+  forall (a : get_patom_set o), is_utok (mk_utoken a).
+Proof.
+  introv.
+  simpl; auto.
+Qed.
+Hint Resolve is_utok_mk_utoken : slow.
+
+Lemma no_repeats_utok_sub_snoc_if_not_in_get_utokens_sub {o} :
+  forall (sub : @Sub o) v a,
+    !LIn v (dom_sub sub)
+    -> no_repeats_utok_sub sub
+    -> !LIn a (get_utokens_sub sub)
+    -> is_utok_sub sub
+    -> no_repeats_utok_sub (snoc sub (v, mk_utoken a)).
+Proof.
+  introv niv norep nia isu.
+  apply no_repeats_utok_sub_snoc; dands; auto.
+  introv d sf.
+  applydup @sub_find_some_is_utok_sub_implies in sf; auto.
+  apply is_utok_implies in sf0; exrepnd; subst; simpl in *.
+  eexists; eexists; dands; eauto.
+  intro xx; subst.
+  apply sub_find_some in sf.
+  destruct nia; apply in_get_utokens_sub.
+  eexists; eexists; dands; eauto.
+  simpl; auto.
+Qed.
+Hint Resolve no_repeats_utok_sub_snoc_if_not_in_get_utokens_sub : slow.
+
+Lemma eq_preserves_not_in :
+  forall {T} (v : T) l1 l2,
+    l1 = l2
+    -> !LIn v l1
+    -> !LIn v l2.
+Proof.
+  introv h q; subst; tcsp.
+Qed.
+Hint Resolve eq_preserves_not_in : slow.
+
 Lemma compute_step_subst_utoken2 {o} :
   forall lib (t u : @NTerm o) sub1 sub2,
     no_repeats (dom_sub sub1)
@@ -974,7 +1086,7 @@ Lemma compute_step_subst_utoken2 {o} :
     -> disjoint (get_utokens_lib lib t) (get_utokens_sub sub1)
     -> disjoint (get_utokens_lib lib t) (get_utokens_sub sub2)
     -> compute_step lib (lsubst_aux t sub1) = csuccess u
-    -> compute_step lib (lsubst_aux t sub2) = csuccess (ren_utoks u (subs2utok_ren sub1 sub2)).
+    -> compute_step lib (lsubst_aux t sub2) = csuccess (ren_utoks (subs2utok_ren sub1 sub2) u).
 Proof.
   nterm_ind1s t as [v|f ind|op bs ind] Case;
     introv norep eqdoms iu1 iu2 norep1 norep2 disj1 disj2 comp; tcsp.
@@ -1230,7 +1342,58 @@ Proof.
 
         boolvar; allrw disjoint_singleton_r.
 
-        -
+        - SearchAbout compute_step get_utokens_lib.
+
+
+Lemma xxx {o} :
+  forall (t : @NTerm o) a b v sub1 sub2,
+    dom_sub sub1 = dom_sub sub2
+    -> !LIn v (dom_sub sub1)
+    -> !LIn v (bound_vars t)
+    -> !LIn a (get_utokens_sub sub1)
+    -> !LIn b (get_utokens_sub sub2)
+    -> no_repeats (dom_sub sub1)
+    -> is_utok_sub sub1
+    -> is_utok_sub sub2
+    -> no_repeats_utok_sub sub1
+    -> no_repeats_utok_sub sub2
+    -> subst_utokens_aux
+         (ren_utoks
+            (subs2utok_ren (snoc sub1 (v,mk_utoken a)) (snoc sub2 (v,mk_utoken b)))
+            t)
+         [(b, mk_var v)] =
+       ren_utoks
+         (subs2utok_ren sub1 sub2)
+         (subst_utokens_aux t [(a,mk_var v)]).
+Proof.
+  nterm_ind1s t as [v|f ind|op bs ind] Case;
+    introv eqdoms nidom nibv niasub1 nibsub2 norep isu1 isu2 norep1 norep2;
+    try (complete (simpl in *; auto)).
+
+  Case "oterm".
+
+  allrw @subst_utokens_aux_oterm.
+  remember subst_utokens_aux as sua.
+  simpl.
+  subst.
+  allrw @subst_utokens_aux_oterm.
+  rewrite get_utok_ren_utoks_op.
+  allrw map_map; unfold compose.
+  remember (get_utok op) as guo; destruct guo; symmetry in Heqguo.
+
+  - unfold subst_utok; simpl.
+    boolvar; subst; simpl.
+
+    + rewrite (implies_utok_ren_find_subst2utok_ren_some _ _ v g b); simpl;
+        eauto 3 with slow;
+        try (complete (allrw @dom_sub_snoc; eauto 2 with slow));
+        try (complete (boolvar; tcsp));
+        try (complete (allrw @dom_sub_snoc; f_equal; auto));
+        try (complete (rw @sub_find_snoc; rw @sub_find_none_if; auto; boolvar; auto; allrw <-; auto)).
+
+    +
+
+Qed.
 
       }
 
