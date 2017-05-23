@@ -83,8 +83,11 @@ Fixpoint entry_in_library_extends {o} (entry : @library_entry o) (lib : library)
    complicated some stuff such as, there might some names in lib0
    that are not in lib1... *)
 
+Definition lsubset {A} (l1 l2 : list A) : Prop :=
+  forall a, List.In a l1 -> List.In a l2.
+
 (* [lib1] extends [lib0] *)
-Record lib_extends {o} (lib1 lib0 : @library o) : Type :=
+Record lib_extends {o} (lib1 lib0 : @library o) : Prop :=
   MkLibExtends
     {
       lib_extends_ext :
@@ -92,8 +95,7 @@ Record lib_extends {o} (lib1 lib0 : @library o) : Type :=
           entry_in_library entry lib0
           -> entry_in_library_extends entry lib1;
 
-      lib_extends_sub :
-        subset lib0 lib1;
+      lib_extends_sub : lsubset lib0 lib1;
     }.
 
 (*Definition in_lib {o}
@@ -127,6 +129,22 @@ Qed.
 Hint Resolve matching_entries_implies_same_entry_name : slow.
 
 Hint Resolve same_entry_name_sym : slow.
+
+Lemma lsubset_cons_left_implies_lsubset :
+  forall {A} (a : A) l1 l2,
+    lsubset (a :: l1) l2
+    -> lsubset l1 l2.
+Proof.
+  introv ss i; apply ss; simpl; tcsp.
+Qed.
+Hint Resolve lsubset_cons_left_implies_lsubset : slow.
+
+Lemma lsubset_refl :
+  forall {A} (l : list A), lsubset l l.
+Proof.
+  introv i; auto.
+Qed.
+Hint Resolve lsubset_refl : slow.
 
 Lemma lib_extends_cons_implies {o} :
   forall (e : @library_entry o) (lib lib0 : library),
@@ -175,8 +193,7 @@ Hint Resolve entry_in_library_implies_entry_in_library_extends : slow.
 Lemma lib_extends_refl {o} :
   forall (lib : @library o), lib_extends lib lib.
 Proof.
-  introv; split; auto.
-  introv i; eauto 2 with slow.
+  introv; split; eauto 2 with slow.
 Qed.
 Hint Resolve lib_extends_refl : slow.
 
@@ -451,13 +468,44 @@ Proof.
   rw lin_flat_map; tcsp.
 Qed.
 
+Lemma list_in_get_utokens_library_iff {o} :
+  forall (lib : @library o) a,
+    List.In a (get_utokens_library lib)
+    <-> exists (entry : library_entry), List.In entry lib /\ List.In a (get_utokens_library_entry entry).
+Proof.
+  introv; unfold get_utokens_library.
+  rewrite in_flat_map; tcsp.
+Qed.
+
+Definition LIn_iff_In :
+  forall {A} (deq : Deq A) (a : A) (l : list A),
+    LIn a l <=> List.In a l.
+Proof.
+  induction l; simpl in *; split; intro h; tcsp; repndors; tcsp.
+
+  - apply IHl in h; tcsp.
+
+  - destruct (deq a0 a) as [d|d]; subst; tcsp.
+    right; apply IHl.
+    repndors; tcsp.
+Qed.
+
+Definition LIn_iff_In_name {o} :
+  forall (a : get_patom_set o) l,
+    LIn a l <=> List.In a l.
+Proof.
+  introv; apply LIn_iff_In.
+  apply get_patom_deq.
+Qed.
+
 Lemma lib_extends_implies_subset_get_utokens_library {o} :
   forall (lib1 lib2 : @library o),
     lib_extends lib2 lib1
     -> subset (get_utokens_library lib1) (get_utokens_library lib2).
 Proof.
   introv ext i.
-  allrw @in_get_utokens_library_iff; exrepnd.
+  allrw @LIn_iff_In_name.
+  allrw @list_in_get_utokens_library_iff; exrepnd.
   apply (lib_extends_sub _ _ ext) in i1.
   exists entry; dands; auto.
 Qed.
