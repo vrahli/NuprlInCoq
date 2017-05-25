@@ -2010,10 +2010,10 @@ Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_approx   : per_approx_bar   (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_cequiv   : per_cequiv_bar   (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_eq       : per_eq_bar       (close ts) lib T T' eq -> close ts lib T T' eq
-  | CL_req      : per_req_bar      (close ts) lib T T' eq -> close ts lib T T' eq
-  | CL_teq      : per_teq_bar      (close ts) lib T T' eq -> close ts lib T T' eq
+  | CL_req      : per_req(*_bar*)      (close ts) lib T T' eq -> close ts lib T T' eq
+  | CL_teq      : per_teq(*_bar*)      (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_isect    : per_isect    (close ts) lib T T' eq -> close ts lib T T' eq
-  | CL_func     : per_func_bar     (close ts) lib T T' eq -> close ts lib T T' eq
+  | CL_func     : per_func(*_bar*)     (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_disect   : per_disect   (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_pertype  : per_pertype  (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_ipertype : per_ipertype (close ts) lib T T' eq -> close ts lib T T' eq
@@ -2023,7 +2023,7 @@ Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_pw       : per_pw       (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_pm       : per_pm       (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_texc     : per_texc     (close ts) lib T T' eq -> close ts lib T T' eq
-  | CL_union    : per_union_bar    (close ts) lib T T' eq -> close ts lib T T' eq
+  | CL_union    : per_union(*_bar*)    (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_image    : per_image    (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_partial  : per_partial  (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_admiss   : per_admiss   (close ts) lib T T' eq -> close ts lib T T' eq
@@ -2033,7 +2033,7 @@ Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_ffatoms  : per_ffatoms  (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_set      : per_set      (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_tunion   : per_tunion   (close ts) lib T T' eq -> close ts lib T T' eq
-  | CL_product  : per_product_bar  (close ts) lib T T' eq -> close ts lib T T' eq.
+  | CL_product  : per_product(*_bar*)  (close ts) lib T T' eq -> close ts lib T T' eq.
 Hint Constructors close.
 
 (*  | CL_eunion   : per_eunion   lib (close lib ts) T T' eq -> close ts lib T T' eq*)
@@ -2157,8 +2157,31 @@ Definition close_ind' {pp}
                 (T T' : @CTerm pp)
                 (eq   : per)
                 (per   : per_cequiv_bar (close ts) lib T T' eq),
-           P ts lib T T' eq)
-  (equ  : forall (ts   : cts)
+      P ts lib T T' eq)
+
+  (equ : forall (ts   : cts)
+                 (lib  : library)
+                 (T T' : @CTerm pp)
+                 (eq   : per)
+                 (bar  : BarLib lib)
+                 (F    : forall (lib' : library) (i : List.In lib' (bar_lib_bar bar)),
+                     {A , B , a1 , a2 , b1 , b2 : @CTerm pp
+                      , {eqa  : per
+                      , T ===>(lib') (mkc_equality a1 a2 A)
+                      # T' ===>(lib') (mkc_equality b1 b2 B)
+                      # close ts lib' A B eqa
+                      # P ts lib' A B eqa
+                      # eqorceq lib' eqa a1 b1
+                      # eqorceq lib' eqa a2 b2
+                      # forall t t',
+                          eq t t'
+                             <=> t ===>(lib') mkc_axiom
+                             # t' ===>(lib') mkc_axiom
+                             # eqa a1 a2}})
+                 (per : per_eq_bar (close ts) lib T T' eq),
+            P ts lib T T' eq)
+
+(*  (equ  : forall (ts   : cts)
                  (lib  : library)
                  (T T' : @CTerm pp)
                  (eq   : per)
@@ -2176,7 +2199,8 @@ Definition close_ind' {pp}
                                # t' ===>(lib) mkc_axiom
                                # eqa a1 a2)
                  (per : per_eq_bar (close ts) lib T T' eq),
-            P ts lib T T' eq)
+            P ts lib T T' eq)*)
+
   (requ : forall (ts   : cts)
                  (lib  : library)
                  (T T' : @CTerm pp)
@@ -2818,7 +2842,125 @@ Definition close_ind' {pp}
    | CL_base   pts => base  ts lib T T' eq pts
    | CL_approx pts => aprx  ts lib T T' eq pts
    | CL_cequiv pts => ceq   ts lib T T' eq pts
+
    | CL_eq pts =>
+     let (bar,F) := pts in
+     equ ts lib T T' eq
+         bar
+         (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
+            let (A,    x) := F lib' i in
+            let (B,    x) := x in
+            let (a1,   x) := x in
+            let (a2,   x) := x in
+            let (b1,   x) := x in
+            let (b2,   x) := x in
+            let (eqa,  x) := x in
+            let (c1,   x) := x in
+            let (c2 ,  x) := x in
+            let (tsa,  x) := x in
+            let (eqa1, x) := x in
+            let (eqa2, x) := x in
+            ex_intro
+              (fun A => {B , a1 , a2 , b1 , b2 : @CTerm pp
+                      , {eqa  : per
+                      , T ===>(lib') (mkc_equality a1 a2 A)
+                      # T' ===>(lib') (mkc_equality b1 b2 B)
+                      # close ts lib' A B eqa
+                      # P ts lib' A B eqa
+                      # eqorceq lib' eqa a1 b1
+                      # eqorceq lib' eqa a2 b2
+                      # forall t t',
+                             eq t t'
+                                <=> t ===>(lib') mkc_axiom
+                                # t' ===>(lib') mkc_axiom
+                                # eqa a1 a2}}) A
+              (ex_intro
+                 (fun B => {a1 , a2 , b1 , b2 : @CTerm pp
+                      , {eqa  : per
+                      , T ===>(lib') (mkc_equality a1 a2 A)
+                      # T' ===>(lib') (mkc_equality b1 b2 B)
+                      # close ts lib' A B eqa
+                      # P ts lib' A B eqa
+                      # eqorceq lib' eqa a1 b1
+                      # eqorceq lib' eqa a2 b2
+                      # forall t t',
+                             eq t t'
+                                <=> t ===>(lib') mkc_axiom
+                                # t' ===>(lib') mkc_axiom
+                                # eqa a1 a2}}) B
+                 (ex_intro
+                    (fun a1 => {a2 , b1 , b2 : @CTerm pp
+                      , {eqa  : per
+                      , T ===>(lib') (mkc_equality a1 a2 A)
+                      # T' ===>(lib') (mkc_equality b1 b2 B)
+                      # close ts lib' A B eqa
+                      # P ts lib' A B eqa
+                      # eqorceq lib' eqa a1 b1
+                      # eqorceq lib' eqa a2 b2
+                      # forall t t',
+                             eq t t'
+                                <=> t ===>(lib') mkc_axiom
+                                # t' ===>(lib') mkc_axiom
+                                # eqa a1 a2}}) a1
+                    (ex_intro
+                       (fun a2 => {b1 , b2 : @CTerm pp
+                      , {eqa  : per
+                      , T ===>(lib') (mkc_equality a1 a2 A)
+                      # T' ===>(lib') (mkc_equality b1 b2 B)
+                      # close ts lib' A B eqa
+                      # P ts lib' A B eqa
+                      # eqorceq lib' eqa a1 b1
+                      # eqorceq lib' eqa a2 b2
+                      # forall t t',
+                             eq t t'
+                                <=> t ===>(lib') mkc_axiom
+                                # t' ===>(lib') mkc_axiom
+                                # eqa a1 a2}}) a2
+                       (ex_intro
+                          (fun b1 => {b2 : @CTerm pp
+                      , {eqa  : per
+                      , T ===>(lib') (mkc_equality a1 a2 A)
+                      # T' ===>(lib') (mkc_equality b1 b2 B)
+                      # close ts lib' A B eqa
+                      # P ts lib' A B eqa
+                      # eqorceq lib' eqa a1 b1
+                      # eqorceq lib' eqa a2 b2
+                      # forall t t',
+                             eq t t'
+                                <=> t ===>(lib') mkc_axiom
+                                # t' ===>(lib') mkc_axiom
+                                # eqa a1 a2}}) b1
+                          (ex_intro
+                             (fun b2 => {eqa  : per
+                      , T ===>(lib') (mkc_equality a1 a2 A)
+                      # T' ===>(lib') (mkc_equality b1 b2 B)
+                      # close ts lib' A B eqa
+                      # P ts lib' A B eqa
+                      # eqorceq lib' eqa a1 b1
+                      # eqorceq lib' eqa a2 b2
+                      # forall t t',
+                             eq t t'
+                                <=> t ===>(lib') mkc_axiom
+                                # t' ===>(lib') mkc_axiom
+                                # eqa a1 a2}) b2
+                             (ex_intro
+                                (fun eqa =>
+                      T ===>(lib') (mkc_equality a1 a2 A)
+                      # T' ===>(lib') (mkc_equality b1 b2 B)
+                      # close ts lib' A B eqa
+                      # P ts lib' A B eqa
+                      # eqorceq lib' eqa a1 b1
+                      # eqorceq lib' eqa a2 b2
+                      # forall t t',
+                             eq t t'
+                                <=> t ===>(lib') mkc_axiom
+                                # t' ===>(lib') mkc_axiom
+                                # eqa a1 a2) eqa
+                                (c1, (c2, (tsa, (rec ts lib' A B eqa tsa, (eqa1, (eqa2, x))))))))))))
+         )
+         pts
+
+(*   | CL_eq pts =>
        let (A,    x) := pts in
        let (B,    x) := x in
        let (a1,   x) := x in
@@ -2839,7 +2981,8 @@ Definition close_ind' {pp}
              eqa1
              eqa2
              x
-             pts
+             pts*)
+
    | CL_req pts =>
        let (A,    x) := pts in
        let (B,    x) := x in
@@ -2853,11 +2996,11 @@ Definition close_ind' {pp}
        let (tsa,  x) := x in
        let (eo1,  x) := x in
        let (eo2, eqiff) := x in
-         requ ts T T' eq A B a1 a2 b1 b2 eqa
+         requ ts lib T T' eq A B a1 a2 b1 b2 eqa
               cT1
               cT2
               tsa
-              (rec ts A B eqa tsa)
+              (rec ts lib A B eqa tsa)
               eo1 eo2
               eqiff
               pts
@@ -2872,15 +3015,15 @@ Definition close_ind' {pp}
        let (ts1,  x) := x in
        let (ts2,  x) := x in
        let (ts3, eqiff) := x in
-       tequ ts T T' eq a1 a2 b1 b2 eqa
+       tequ ts lib T T' eq a1 a2 b1 b2 eqa
             cT1
             cT2
             ts1
-            (rec ts a1 b1 eqa ts1)
+            (rec ts lib a1 b1 eqa ts1)
             ts2
-            (rec ts a2 b2 eqa ts2)
+            (rec ts lib a2 b2 eqa ts2)
             ts3
-            (rec ts a1 a2 eqa ts3)
+            (rec ts lib a1 a2 eqa ts3)
             eqiff
             pts
    | CL_isect pts =>
@@ -2896,13 +3039,13 @@ Definition close_ind' {pp}
        let (ctv1, x)  := x in
        let (ctv2, x)  := x in
        let (tsa, ftsb) := x in
-         isect ts T T' eq A A' v v' B B' eqa eqb
+         isect ts lib T T' eq A A' v v' B B' eqa eqb
                ctv1
                ctv2
                tsa
-               (rec ts A A' eqa tsa)
+               (rec ts lib A A' eqa tsa)
                ftsb
-               (fun a a' eqa => rec ts
+               (fun a a' eqa => rec ts lib
                                     (substc a v B)
                                     (substc a' v' B')
                                     (eqb a a' eqa)
@@ -2922,14 +3065,14 @@ Definition close_ind' {pp}
        let (c1,  x) := x in
        let (c2,  x) := x in
        let (tsa, tsb) := x in
-         func ts T T' eq A A' v v' B B' eqa eqb
+         func ts lib T T' eq A A' v v' B B' eqa eqb
                c1
                c2
                tsa
-               (rec ts A A' eqa tsa)
+               (rec ts lib A A' eqa tsa)
                tsb
                (fun a a' eqa =>
-                  rec ts
+                  rec ts lib
                       (substc a v B)
                       (substc a' v' B')
                       (eqb a a' eqa)
@@ -2949,13 +3092,13 @@ Definition close_ind' {pp}
        let (ctv1, x)  := x in
        let (ctv2, x)  := x in
        let (tsa, ftsb) := x in
-         disect ts T T' eq A A' v v' B B' eqa eqb
+         disect ts lib T T' eq A A' v v' B B' eqa eqb
                 ctv1
                 ctv2
                 tsa
-                (rec ts A A' eqa tsa)
+                (rec ts lib A A' eqa tsa)
                 ftsb
-                (fun a a' eqa => rec ts
+                (fun a a' eqa => rec ts lib
                                      (substc a v B)
                                      (substc a' v' B')
                                      (eqb a a' eqa)
@@ -2973,17 +3116,17 @@ Definition close_ind' {pp}
        let (F2,  x) := x in
        let (inh, x) := x in
        let (isp, eqt)  := x in
-         pertype ts T T' eq R1 R2 eq1 eq2
+         pertype ts lib T T' eq R1 R2 eq1 eq2
                c1
                c2
                F1
-               (fun x y => rec ts
+               (fun x y => rec ts lib
                                (mkc_apply2 R1 x y)
                                (mkc_apply2 R1 x y)
                                (eq1 x y)
                                (F1 x y))
                F2
-               (fun x y => rec ts
+               (fun x y => rec ts lib
                                (mkc_apply2 R2 x y)
                                (mkc_apply2 R2 x y)
                                (eq2 x y)
@@ -3000,11 +3143,11 @@ Definition close_ind' {pp}
        let (c2,  x) := x in
        let (F1,  x) := x in
        let (isp, eqt)  := x in
-         ipertype ts T T' eq R1 R2 eq1
+         ipertype ts lib T T' eq R1 R2 eq1
                c1
                c2
                F1
-               (fun x y => rec ts
+               (fun x y => rec ts lib
                                (mkc_apply2 R1 x y)
                                (mkc_apply2 R2 x y)
                                (eq1 x y)
@@ -3022,26 +3165,26 @@ Definition close_ind' {pp}
        let (F2,  x) := x in
        let (F3,  x) := x in
        let (isp, eqt)  := x in
-       spertype ts T T' eq R1 R2 eq1
+       spertype ts lib T T' eq R1 R2 eq1
                 c1
                 c2
                 F1
                 (fun x y =>
-                   rec ts
+                   rec ts lib
                        (mkc_apply2 R1 x y)
                        (mkc_apply2 R2 x y)
                        (eq1 x y)
                        (F1 x y))
                 F2
                 (fun x y z inh =>
-                   rec ts
+                   rec ts lib
                        (mkc_apply2 R1 x y)
                        (mkc_apply2 R1 z y)
                        (eq1 x y)
                        (F2 x y z inh))
                 F3
                 (fun x y z inh =>
-                   rec ts
+                   rec ts lib
                        (mkc_apply2 R1 x y)
                        (mkc_apply2 R1 x z)
                        (eq1 x y)
@@ -3062,14 +3205,14 @@ Definition close_ind' {pp}
        let (c1,  x) := x in
        let (c2,  x) := x in
        let (tsa, tsb) := x in
-         w ts T T' eq A A' v v' B B' eqa eqb
+         w ts lib T T' eq A A' v v' B B' eqa eqb
                c1
                c2
                tsa
-               (rec ts A A' eqa tsa)
+               (rec ts lib A A' eqa tsa)
                tsb
                (fun a a' eqa =>
-                  rec ts
+                  rec ts lib
                       (substc a v B)
                       (substc a' v' B')
                       (eqb a a' eqa)
@@ -3089,14 +3232,14 @@ Definition close_ind' {pp}
        let (c1,  x) := x in
        let (c2,  x) := x in
        let (tsa, tsb) := x in
-         m ts T T' eq A A' v v' B B' eqa eqb
+         m ts lib T T' eq A A' v v' B B' eqa eqb
                c1
                c2
                tsa
-               (rec ts A A' eqa tsa)
+               (rec ts lib A A' eqa tsa)
                tsb
                (fun a a' eqa =>
-                  rec ts
+                  rec ts lib
                       (substc a v B)
                       (substc a' v' B')
                       (eqb a a' eqa)
@@ -3136,7 +3279,7 @@ Definition close_ind' {pp}
        let (tsa, x) := x in
        let (tsb, x) := x in
        let (tsc, peq) := x in
-         pw ts T T' eq
+         pw ts lib T T' eq
             Pr Pr'
             ap ap' A A'
             bp bp' ba ba' B B'
@@ -3145,17 +3288,17 @@ Definition close_ind' {pp}
             eqp eqa eqb
             c1 c2
             tsp
-            (rec ts Pr Pr' eqp tsp)
+            (rec ts lib Pr Pr' eqp tsp)
             tsa
             (fun p p' eqp =>
-               rec ts
+               rec ts lib
                    (substc p ap A)
                    (substc p' ap' A')
                    (eqa p p' eqp)
                    (tsa p p' eqp))
             tsb
             (fun p p' eqp a a' eqa =>
-               rec ts
+               rec ts lib
                    (lsubstc2 bp p ba a B)
                    (lsubstc2 bp' p' ba' a' B')
                    (eqb p p' eqp a a' eqa)
@@ -3197,7 +3340,7 @@ Definition close_ind' {pp}
        let (tsa, x) := x in
        let (tsb, x) := x in
        let (tsc, peq) := x in
-         pm ts T T' eq
+         pm ts lib T T' eq
             Pr Pr'
             ap ap' A A'
             bp bp' ba ba' B B'
@@ -3206,17 +3349,17 @@ Definition close_ind' {pp}
             eqp eqa eqb
             c1 c2
             tsp
-            (rec ts Pr Pr' eqp tsp)
+            (rec ts lib Pr Pr' eqp tsp)
             tsa
             (fun p p' eqp =>
-               rec ts
+               rec ts lib
                    (substc p ap A)
                    (substc p' ap' A')
                    (eqa p p' eqp)
                    (tsa p p' eqp))
             tsb
             (fun p p' eqp a a' eqa =>
-               rec ts
+               rec ts lib
                    (lsubstc2 bp p ba a B)
                    (lsubstc2 bp' p' ba' a' B')
                    (eqb p p' eqp a a' eqa)
@@ -3236,13 +3379,13 @@ Definition close_ind' {pp}
        let (c2,  x) := x in
        let (tsn, x) := x in
        let (tse, eqiff) := x in
-         texc ts T T' eq N N' E E' eqn eqe
+         texc ts lib T T' eq N N' E E' eqn eqe
               c1
               c2
               tsn
-              (rec ts N N' eqn tsn)
+              (rec ts lib N N' eqn tsn)
               tse
-              (rec ts E E' eqe tse)
+              (rec ts lib E E' eqe tse)
               eqiff
               pts
    | CL_union pts =>
@@ -3256,13 +3399,13 @@ Definition close_ind' {pp}
        let (c2,  x) := x in
        let (tsa, x) := x in
        let (tsb, eqiff) := x in
-         union ts T T' eq A A' B B' eqa eqb
+         union ts lib T T' eq A A' B B' eqa eqb
                c1
                c2
                tsa
-               (rec ts A A' eqa tsa)
+               (rec ts lib A A' eqa tsa)
                tsb
-               (rec ts B B' eqb tsb)
+               (rec ts lib B B' eqb tsb)
                eqiff
                pts
 (*   | CL_eunion pts =>
@@ -3307,11 +3450,11 @@ Definition close_ind' {pp}
        let (c2,  x) := x in
        let (tsa, x) := x in
        let (ceq, eqiff) := x in
-         image ts T T' eq A A' f f' eqa
+         image ts lib T T' eq A A' f f' eqa
                c1
                c2
                tsa
-               (rec ts A A' eqa tsa)
+               (rec ts lib A A' eqa tsa)
                ceq
                eqiff
                pts
@@ -3367,11 +3510,11 @@ Definition close_ind' {pp}
        let (c2,  x) := x in
        let (cla, x) := x in
        let (hv,  eqt) := x in
-         partial ts T T' eq A1 A2 eqa
+         partial ts lib T T' eq A1 A2 eqa
                c1
                c2
                cla
-               (rec ts A1 A2 eqa cla)
+               (rec ts lib A1 A2 eqa cla)
                hv
                eqt
                pts
@@ -3382,11 +3525,11 @@ Definition close_ind' {pp}
        let (c1,  x) := x in
        let (c2,  x) := x in
        let (cla, eqt) := x in
-         admiss ts T T' eq A1 A2 eqa
+         admiss ts lib T T' eq A1 A2 eqa
                c1
                c2
                cla
-               (rec ts A1 A2 eqa cla)
+               (rec ts lib A1 A2 eqa cla)
                eqt
                pts
    | CL_mono pts =>
@@ -3396,11 +3539,11 @@ Definition close_ind' {pp}
        let (c1,  x) := x in
        let (c2,  x) := x in
        let (cla, eqt) := x in
-         mono ts T T' eq A1 A2 eqa
+         mono ts lib T T' eq A1 A2 eqa
                c1
                c2
                cla
-               (rec ts A1 A2 eqa cla)
+               (rec ts lib A1 A2 eqa cla)
                eqt
                pts
    | CL_ffatom pts =>
@@ -3418,11 +3561,11 @@ Definition close_ind' {pp}
        let (ex,  x) := x in
        let (ca1, x) := x in
        let (ca2, eqt) := x in
-         ffatom ts T T' eq A1 A2 x1 x2 a1 a2 eqa u
+         ffatom ts lib T T' eq A1 A2 x1 x2 a1 a2 eqa u
                 c1
                 c2
                 cla
-                (rec ts A1 A2 eqa cla)
+                (rec ts lib A1 A2 eqa cla)
                 ex ca1 ca2
                 eqt
                 pts
@@ -3438,11 +3581,11 @@ Definition close_ind' {pp}
        let (c2,  x) := x in
        let (cla, x) := x in
        let (ni,  eqt) := x in
-         effatom ts T T' eq A1 A2 x1 x2 a1 a2 eqa
+         effatom ts lib T T' eq A1 A2 x1 x2 a1 a2 eqa
                  c1
                  c2
                  cla
-                 (rec ts A1 A2 eqa cla)
+                 (rec ts lib A1 A2 eqa cla)
                  ni
                  eqt
                  pts
@@ -3456,11 +3599,11 @@ Definition close_ind' {pp}
        let (c2,  x) := x in
        let (cla, x) := x in
        let (ex,  eqt) := x in
-         ffatoms ts T T' eq A1 A2 x1 x2 eqa
+         ffatoms ts lib T T' eq A1 A2 x1 x2 eqa
                 c1
                 c2
                 cla
-                (rec ts A1 A2 eqa cla)
+                (rec ts lib A1 A2 eqa cla)
                 ex
                 eqt
                 pts
@@ -3477,14 +3620,14 @@ Definition close_ind' {pp}
        let (c1,  x) := x in
        let (c2,  x) := x in
        let (tsa, tsb) := x in
-         subset ts T T' eq A A' v v' B B' eqa eqb
+         subset ts lib T T' eq A A' v v' B B' eqa eqb
                 c1
                 c2
                 tsa
-                (rec ts A A' eqa tsa)
+                (rec ts lib A A' eqa tsa)
                 tsb
                 (fun a a' eqa =>
-                   rec ts
+                   rec ts lib
                        (substc a v B)
                        (substc a' v' B')
                        (eqb a a' eqa)
@@ -3504,14 +3647,14 @@ Definition close_ind' {pp}
        let (c1,  x) := x in
        let (c2,  x) := x in
        let (tsa, tsb) := x in
-         tunion ts T T' eq A A' v v' B B' eqa eqb
+         tunion ts lib T T' eq A A' v v' B B' eqa eqb
                 c1
                 c2
                 tsa
-                (rec ts A A' eqa tsa)
+                (rec ts lib A A' eqa tsa)
                 tsb
                 (fun a a' eqa =>
-                   rec ts
+                   rec ts lib
                        (substc a v B)
                        (substc a' v' B')
                        (eqb a a' eqa)
@@ -3531,14 +3674,14 @@ Definition close_ind' {pp}
        let (c1,  x) := x in
        let (c2,  x) := x in
        let (tsa, tsb) := x in
-         product ts T T' eq A A' v v' B B' eqa eqb
+         product ts lib T T' eq A A' v v' B B' eqa eqb
                c1
                c2
                tsa
-               (rec ts A A' eqa tsa)
+               (rec ts lib A A' eqa tsa)
                tsb
                (fun a a' eqa =>
-                  rec ts
+                  rec ts lib
                       (substc a v B)
                       (substc a' v' B')
                       (eqb a a' eqa)
