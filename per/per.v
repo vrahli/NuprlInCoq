@@ -388,11 +388,13 @@ Record BarLib {o} (lib : @library o) :=
 Arguments bar_lib_bar [o] [lib] _.
 Arguments bar_lib_cond [o] [lib] _ _ _.
 
-Definition in_bar {o} (lib : @library o) (F : @library o -> Prop) :=
-  exists (bar : BarLib lib),
+Definition all_in_bar {o} {lib} (bar : BarLib lib) (F : @library o -> Prop) :=
   forall (lib' : library),
     List.In lib' (bar_lib_bar bar)
     -> F lib'.
+
+Definition in_bar {o} (lib : @library o) (F : @library o -> Prop) :=
+  exists (bar : BarLib lib), all_in_bar bar F.
 
 Definition in_ext {o} (lib : @library o) (F : @library o -> Prop) :=
   forall (lib' : library),
@@ -441,8 +443,22 @@ Definition per_int {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] 
   # T2 ===>(lib) mkc_int
   # forall t t', eq t t' <=> equality_of_int lib t t'.
 
-Definition per_int_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_int_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   in_bar lib (fun lib' => per_int ts lib' T1 T2 eq).
+
+Definition equality_of_int_bar {p} {lib} (bar : BarLib lib) (n m : @CTerm p) :=
+  all_in_bar
+    bar
+    (fun lib =>
+       {k : Z
+       , n ===>(lib) (mkc_integer k)
+       # m ===>(lib) (mkc_integer k)}).
+
+Definition per_int_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  {bar : BarLib lib
+  , all_in_bar bar (fun lib => T1 ===>(lib) mkc_int)
+  # all_in_bar bar (fun lib => T2 ===>(lib) mkc_int)
+  # eq <=2=> (equality_of_int_bar bar) }.
 
 (**
 
@@ -460,8 +476,22 @@ Definition per_atom {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U]
   # T2 ===>(lib) mkc_atom
   # eq <=2=> (equality_of_atom lib).
 
-Definition per_atom_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_atom_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   in_bar lib (fun lib' => per_atom ts lib' T1 T2 eq).
+
+Definition equality_of_atom_bar {p} {lib} (bar : BarLib lib) (a b : @CTerm p) :=
+  all_in_bar
+    bar
+    (fun lib =>
+       {s : String.string
+       , a ===>(lib) (mkc_token s)
+       # b ===>(lib) (mkc_token s)}).
+
+Definition per_atom_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  {bar : BarLib lib
+  , all_in_bar bar (fun lib => T1 ===>(lib) mkc_atom)
+  # all_in_bar bar (fun lib => T2 ===>(lib) mkc_atom)
+  # eq <=2=> (equality_of_atom_bar bar) }.
 
 
 Definition equality_of_uatom {p} lib (a b : @CTerm p) :=
@@ -473,8 +503,22 @@ Definition per_uatom {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U
   # T2 ===>(lib) mkc_uatom
   # eq <=2=> (equality_of_uatom lib).
 
-Definition per_uatom_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_uatom_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   in_bar lib (fun lib' => per_uatom ts lib' T1 T2 eq).
+
+Definition equality_of_uatom_bar {p} {lib} (bar : BarLib lib) (a b : @CTerm p) :=
+  all_in_bar
+    bar
+    (fun lib =>
+       {u : get_patom_set p
+       , a ===>(lib) (mkc_utoken u)
+       # b ===>(lib) (mkc_utoken u)} ).
+
+Definition per_uatom_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  {bar : BarLib lib
+  , all_in_bar bar (fun lib => T1 ===>(lib) mkc_uatom)
+  # all_in_bar bar (fun lib => T2 ===>(lib) mkc_uatom)
+  # eq <=2=> (equality_of_uatom_bar bar) }.
 
 
 (**
@@ -569,8 +613,19 @@ Definition per_base {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U]
   # T2 ===>(lib) mkc_base
   # forall t t', eq t t' <=> t ~=~(lib) t'.
 
-Definition per_base_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_base_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   in_bar lib (fun lib' => per_base ts lib' T1 T2 eq).
+
+Definition per_base_eq {o} {lib} (bar : BarLib lib) (t t' : @CTerm o) : [U] :=
+  all_in_bar
+    bar
+    (fun lib => t ~=~(lib) t').
+
+Definition per_base_bar {o} (ts : cts(o)) lib (T1 T2 : @CTerm o) (eq : per(o)) : [U] :=
+  {bar : BarLib lib
+  , all_in_bar bar (fun lib => T1 ===>(lib) mkc_base)
+  # all_in_bar bar (fun lib => T2 ===>(lib) mkc_base)
+  # eq <=2=> (per_base_eq bar)}.
 
 (**
 
@@ -597,7 +652,12 @@ Definition per_base_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) :
   equalities.  The same is true about the computational equivalence
   type presented below.
 
-*)
+ *)
+
+Definition per_approx_eq {o} lib a b (t t' : @CTerm o) :=
+  t ===>(lib) mkc_axiom
+  # t' ===>(lib) mkc_axiom
+  # a ~<~(lib) b.
 
 Definition per_approx {p}
            (ts : cts(p))
@@ -608,13 +668,30 @@ Definition per_approx {p}
    , T1 ===>(lib) (mkc_approx a b)
    # T2 ===>(lib) (mkc_approx c d)
    # (a ~<~(lib) b <=> c ~<~(lib) d)
-   # (forall t t',
-        eq t t' <=> (t ===>(lib) mkc_axiom
-                       # t' ===>(lib) mkc_axiom
-                       # a ~<~(lib) b)) }.
+   # eq <=2=> (per_approx_eq lib a b) }.
 
-Definition per_approx_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_approx_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   in_bar lib (fun lib' => per_approx ts lib' T1 T2 eq).
+
+Definition per_approx_eq_bar {o} {lib} (bar : BarLib lib) a b (t t' : @CTerm o) :=
+  all_in_bar
+    bar
+    (fun lib =>
+       t ===>(lib) mkc_axiom
+       # t' ===>(lib) mkc_axiom
+       # a ~<~(lib) b).
+
+Definition per_approx_bar {p}
+           (ts    : cts(p))
+           (lib   : library)
+           (T1 T2 : @CTerm p)
+           (eq    : per(p)) : [U] :=
+  {bar : BarLib lib
+  , {a, b, c, d : CTerm
+  , all_in_bar bar (fun lib => T1 ===>(lib) (mkc_approx a b))
+  # all_in_bar bar (fun lib => T2 ===>(lib) (mkc_approx c d))
+  # all_in_bar bar (fun lib => (a ~<~(lib) b <=> c ~<~(lib) d))
+  # eq <=2=> (per_approx_eq_bar bar a b) }}.
 
 (**
 
@@ -628,6 +705,11 @@ Definition per_approx_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p))
 
 *)
 
+Definition per_cequiv_eq {o} lib a b (t t' : @CTerm o) :=
+  t ===>(lib) mkc_axiom
+  # t' ===>(lib) mkc_axiom
+  # a ~=~(lib) b.
+
 Definition per_cequiv {p}
            (ts : cts(p))
            lib
@@ -637,13 +719,30 @@ Definition per_cequiv {p}
    , T1 ===>(lib) (mkc_cequiv a b)
    # T2 ===>(lib) (mkc_cequiv c d)
    # (a ~=~(lib) b <=> c ~=~(lib) d)
-   # (forall t t',
-        eq t t' <=> (t ===>(lib) mkc_axiom
-                       # t' ===>(lib) mkc_axiom
-                       # a ~=~(lib) b)) }.
+   # eq <=2=> (per_cequiv_eq lib a b) }.
 
-Definition per_cequiv_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_cequiv_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   in_bar lib (fun lib' => per_cequiv ts lib' T1 T2 eq).
+
+Definition per_cequiv_eq_bar {o} {lib} (bar : BarLib lib) a b (t t' : @CTerm o) :=
+  all_in_bar
+    bar
+    (fun lib =>
+       t ===>(lib) mkc_axiom
+       # t' ===>(lib) mkc_axiom
+       # a ~=~(lib) b).
+
+Definition per_cequiv_bar {p}
+           (ts    : cts(p))
+           (lib   : library)
+           (T1 T2 : @CTerm p)
+           (eq    : per(p)) : [U] :=
+  {bar : BarLib lib
+  , {a, b, c, d : CTerm
+  , all_in_bar bar (fun lib => T1 ===>(lib) (mkc_cequiv a b))
+  # all_in_bar bar (fun lib => T2 ===>(lib) (mkc_cequiv c d))
+  # all_in_bar bar (fun lib => (a ~=~(lib) b <=> c ~=~(lib) d))
+  # eq <=2=> (per_cequiv_eq_bar bar a b) }}.
 
 (* begin hide *)
 
@@ -725,8 +824,31 @@ Definition per_eq {p} (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
       # (forall t t',
             eq t t' <=> (t ===>(lib) mkc_axiom # t' ===>(lib) mkc_axiom # eqa a1 a2)) }}.
 
-Definition per_eq_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_eq_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   in_bar lib (fun lib' => per_eq ts lib' T1 T2 eq).
+
+Definition per_eq_eq {o} {lib}
+           (bar   : BarLib lib)
+           (a1 a2 : @CTerm o)
+           (eqa   : per)
+           (t t'  : @CTerm o) : [U] :=
+  all_in_bar
+    bar
+    (fun lib =>
+       t ===>(lib) mkc_axiom
+       /\ t' ===>(lib) mkc_axiom
+       /\ eqa a1 a2).
+
+Definition per_eq_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  {bar : BarLib lib
+  , {A, B, a1, a2, b1, b2 : CTerm
+  , {eqa : per
+  , all_in_bar bar (fun lib => T1 ===>(lib) (mkc_equality a1 a2 A))
+  # all_in_bar bar (fun lib => T2 ===>(lib) (mkc_equality b1 b2 B))
+  # all_in_bar bar (fun lib => ts lib A B eqa)
+  # all_in_bar bar (fun lib => eqorceq lib eqa a1 b1)
+  # all_in_bar bar (fun lib => eqorceq lib eqa a2 b2)
+  # eq <=2=> (per_eq_eq bar a1 a2 eqa) }}}.
 
 Definition per_req_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) :=
   { x1 , x2 : CTerm
@@ -2159,27 +2281,22 @@ Definition close_ind' {pp}
                 (per   : per_cequiv_bar (close ts) lib T T' eq),
       P ts lib T T' eq)
 
-  (equ : forall (ts   : cts)
-                 (lib  : library)
-                 (T T' : @CTerm pp)
-                 (eq   : per)
-                 (bar  : BarLib lib)
-                 (F    : forall (lib' : library) (i : List.In lib' (bar_lib_bar bar)),
-                     {A , B , a1 , a2 , b1 , b2 : @CTerm pp
-                      , {eqa  : per
-                      , T ===>(lib') (mkc_equality a1 a2 A)
-                      # T' ===>(lib') (mkc_equality b1 b2 B)
-                      # close ts lib' A B eqa
-                      # P ts lib' A B eqa
-                      # eqorceq lib' eqa a1 b1
-                      # eqorceq lib' eqa a2 b2
-                      # forall t t',
-                          eq t t'
-                             <=> t ===>(lib') mkc_axiom
-                             # t' ===>(lib') mkc_axiom
-                             # eqa a1 a2}})
-                 (per : per_eq_bar (close ts) lib T T' eq),
-            P ts lib T T' eq)
+  (equ : forall (ts    : cts)
+                (lib   : library)
+                (T T'  : @CTerm pp)
+                (eq    : per)
+                (bar   : BarLib lib)
+                (A B a1 a2 b1 b2 : @CTerm pp)
+                (eqa   : per)
+                (c1    : all_in_bar bar (fun lib => T ===>(lib) (mkc_equality a1 a2 A)))
+                (c2    : all_in_bar bar (fun lib => T' ===>(lib) (mkc_equality b1 b2 B)))
+                (cla   : all_in_bar bar (fun lib => close ts lib A B eqa))
+                (reca  : all_in_bar bar (fun lib => P ts lib A B eqa))
+                (eos1  : all_in_bar bar (fun lib => eqorceq lib eqa a1 b1))
+                (eos2  : all_in_bar bar (fun lib => eqorceq lib eqa a2 b2))
+                (eqiff : eq <=2=> (per_eq_eq bar a1 a2 eqa))
+                (per   : per_eq_bar (close ts) lib T T' eq),
+      P ts lib T T' eq)
 
 (*  (equ  : forall (ts   : cts)
                  (lib  : library)
@@ -2844,121 +2961,31 @@ Definition close_ind' {pp}
    | CL_cequiv pts => ceq   ts lib T T' eq pts
 
    | CL_eq pts =>
-     let (bar,F) := pts in
+     let (bar,  x) := pts in
+     let (A,    x) := x in
+     let (B,    x) := x in
+     let (a1,   x) := x in
+     let (a2,   x) := x in
+     let (b1,   x) := x in
+     let (b2,   x) := x in
+     let (eqa,  x) := x in
+     let (c1,   x) := x in
+     let (c2 ,  x) := x in
+     let (Ftsa, x) := x in
+     let (eqa1, x) := x in
+     let (eqa2, eqiff) := x in
      equ ts lib T T' eq
          bar
-         (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
-            let (A,    x) := F lib' i in
-            let (B,    x) := x in
-            let (a1,   x) := x in
-            let (a2,   x) := x in
-            let (b1,   x) := x in
-            let (b2,   x) := x in
-            let (eqa,  x) := x in
-            let (c1,   x) := x in
-            let (c2 ,  x) := x in
-            let (tsa,  x) := x in
-            let (eqa1, x) := x in
-            let (eqa2, x) := x in
-            ex_intro
-              (fun A => {B , a1 , a2 , b1 , b2 : @CTerm pp
-                      , {eqa  : per
-                      , T ===>(lib') (mkc_equality a1 a2 A)
-                      # T' ===>(lib') (mkc_equality b1 b2 B)
-                      # close ts lib' A B eqa
-                      # P ts lib' A B eqa
-                      # eqorceq lib' eqa a1 b1
-                      # eqorceq lib' eqa a2 b2
-                      # forall t t',
-                             eq t t'
-                                <=> t ===>(lib') mkc_axiom
-                                # t' ===>(lib') mkc_axiom
-                                # eqa a1 a2}}) A
-              (ex_intro
-                 (fun B => {a1 , a2 , b1 , b2 : @CTerm pp
-                      , {eqa  : per
-                      , T ===>(lib') (mkc_equality a1 a2 A)
-                      # T' ===>(lib') (mkc_equality b1 b2 B)
-                      # close ts lib' A B eqa
-                      # P ts lib' A B eqa
-                      # eqorceq lib' eqa a1 b1
-                      # eqorceq lib' eqa a2 b2
-                      # forall t t',
-                             eq t t'
-                                <=> t ===>(lib') mkc_axiom
-                                # t' ===>(lib') mkc_axiom
-                                # eqa a1 a2}}) B
-                 (ex_intro
-                    (fun a1 => {a2 , b1 , b2 : @CTerm pp
-                      , {eqa  : per
-                      , T ===>(lib') (mkc_equality a1 a2 A)
-                      # T' ===>(lib') (mkc_equality b1 b2 B)
-                      # close ts lib' A B eqa
-                      # P ts lib' A B eqa
-                      # eqorceq lib' eqa a1 b1
-                      # eqorceq lib' eqa a2 b2
-                      # forall t t',
-                             eq t t'
-                                <=> t ===>(lib') mkc_axiom
-                                # t' ===>(lib') mkc_axiom
-                                # eqa a1 a2}}) a1
-                    (ex_intro
-                       (fun a2 => {b1 , b2 : @CTerm pp
-                      , {eqa  : per
-                      , T ===>(lib') (mkc_equality a1 a2 A)
-                      # T' ===>(lib') (mkc_equality b1 b2 B)
-                      # close ts lib' A B eqa
-                      # P ts lib' A B eqa
-                      # eqorceq lib' eqa a1 b1
-                      # eqorceq lib' eqa a2 b2
-                      # forall t t',
-                             eq t t'
-                                <=> t ===>(lib') mkc_axiom
-                                # t' ===>(lib') mkc_axiom
-                                # eqa a1 a2}}) a2
-                       (ex_intro
-                          (fun b1 => {b2 : @CTerm pp
-                      , {eqa  : per
-                      , T ===>(lib') (mkc_equality a1 a2 A)
-                      # T' ===>(lib') (mkc_equality b1 b2 B)
-                      # close ts lib' A B eqa
-                      # P ts lib' A B eqa
-                      # eqorceq lib' eqa a1 b1
-                      # eqorceq lib' eqa a2 b2
-                      # forall t t',
-                             eq t t'
-                                <=> t ===>(lib') mkc_axiom
-                                # t' ===>(lib') mkc_axiom
-                                # eqa a1 a2}}) b1
-                          (ex_intro
-                             (fun b2 => {eqa  : per
-                      , T ===>(lib') (mkc_equality a1 a2 A)
-                      # T' ===>(lib') (mkc_equality b1 b2 B)
-                      # close ts lib' A B eqa
-                      # P ts lib' A B eqa
-                      # eqorceq lib' eqa a1 b1
-                      # eqorceq lib' eqa a2 b2
-                      # forall t t',
-                             eq t t'
-                                <=> t ===>(lib') mkc_axiom
-                                # t' ===>(lib') mkc_axiom
-                                # eqa a1 a2}) b2
-                             (ex_intro
-                                (fun eqa =>
-                      T ===>(lib') (mkc_equality a1 a2 A)
-                      # T' ===>(lib') (mkc_equality b1 b2 B)
-                      # close ts lib' A B eqa
-                      # P ts lib' A B eqa
-                      # eqorceq lib' eqa a1 b1
-                      # eqorceq lib' eqa a2 b2
-                      # forall t t',
-                             eq t t'
-                                <=> t ===>(lib') mkc_axiom
-                                # t' ===>(lib') mkc_axiom
-                                # eqa a1 a2) eqa
-                                (c1, (c2, (tsa, (rec ts lib' A B eqa tsa, (eqa1, (eqa2, x))))))))))))
-         )
-         pts
+          A B a1 a2 b1 b2 eqa
+          c1
+          c2
+          Ftsa
+          (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
+             rec ts lib' A B eqa (Ftsa lib' i))
+          eqa1
+          eqa2
+          eqiff
+          pts
 
 (*   | CL_eq pts =>
        let (A,    x) := pts in
