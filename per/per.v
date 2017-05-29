@@ -993,8 +993,42 @@ Definition per_func {p} (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
            (forall a a' (e : eqa a a'),
               (eqb a a' e) (mkc_apply t a) (mkc_apply t' a')))}}.
 
-Definition per_func_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_func_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   in_ext lib (fun lib' => per_func ts lib' T1 T2 eq).
+
+Definition per_func_eq {o}
+           (eqa  : per)
+           (eqb  : per-fam(eqa))
+           (t t' : @CTerm o):=
+  forall a a' (e : eqa a a'),
+    (eqb a a' e) (mkc_apply t a) (mkc_apply t' a').
+
+Definition type_family_bar {p}
+           TyCon
+           (ts : cts(p))
+           {lib}
+           (bar : BarLib lib)
+           (T1 T2 : @CTerm p)
+           eqa eqb : [U]:=
+  {A, A' : CTerm
+  , {v, v' : NVar
+  , {B : CVTerm [v]
+  , {B' : CVTerm [v']
+  , all_in_bar bar (fun lib => T1 ===>(lib) (TyCon A v B))
+  # all_in_bar bar (fun lib => T2 ===>(lib) (TyCon A' v' B'))
+  # all_in_bar bar (fun lib => ts lib A A' eqa)
+  # all_in_bar
+      bar
+      (fun lib => (forall a a' (e : eqa a a'),
+                      ts lib (B[[v\\a]]) (B'[[v'\\a']]) (eqb a a' e)))
+  }}}}.
+
+Definition per_func_bar {p} (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
+  {bar : BarLib lib
+  , {eqa : per
+  , {eqb : per-fam(eqa)
+  , type_family_bar mkc_function ts bar T1 T2 eqa eqb
+  # eq <=2=> (per_func_eq eqa eqb) }}}.
 
 (**
 
@@ -2135,7 +2169,7 @@ Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_req      : per_req(*_bar*)      (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_teq      : per_teq(*_bar*)      (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_isect    : per_isect    (close ts) lib T T' eq -> close ts lib T T' eq
-  | CL_func     : per_func(*_bar*)     (close ts) lib T T' eq -> close ts lib T T' eq
+  | CL_func     : per_func_bar     (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_disect   : per_disect   (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_pertype  : per_pertype  (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_ipertype : per_ipertype (close ts) lib T T' eq -> close ts lib T T' eq
@@ -2369,30 +2403,26 @@ Definition close_ind' {pp}
                   (eqiff : forall t t', eq t t' <=> (forall a a', forall e : eqa a a', eqb a a' e t t'))
                   (per  : per_isect (close ts) lib T T' eq),
              P ts lib T T' eq)
-  (func : forall (ts   : cts)
-                 (lib  : library)
-                 (T T' : @CTerm pp)
-                 (eq   : per)
-                 (A A' : @CTerm pp)
-                 (v v' : NVar)
-                 (B    : CVTerm [v])
-                 (B'   : CVTerm [v'])
-                 (eqa  : per)
-                 (eqb  : forall a a' : CTerm, forall e : eqa a a', per)
-                 (c1   : T ===>(lib) (mkc_function A v B))
-                 (c2   : T' ===>(lib) (mkc_function A' v' B'))
-                 (cla  : close ts lib A A' eqa)
-                 (reca : P ts lib A A' eqa)
-                 (clb  : forall a a', forall e : eqa a a', close ts lib (substc a v B) (substc a' v' B') (eqb a a' e))
-                 (recb : forall a a', forall e : eqa a a', P ts lib (substc a v B) (substc a' v' B') (eqb a a' e))
-                 (eqiff : forall t t', eq t t'
-                                          <=>
-                                          (forall a a',
-                                              forall e : eqa a a',
-                                                (eqb a a' e)
-                                                  (mkc_apply t a)
-                                                  (mkc_apply t' a')))
-                 (per : per_func (close ts) lib T T' eq),
+
+  (func : forall (ts    : cts)
+                 (lib   : library)
+                 (T T'  : @CTerm pp)
+                 (eq    : per)
+                 (bar   : BarLib lib)
+                 (A A'  : @CTerm pp)
+                 (v v'  : NVar)
+                 (B     : CVTerm [v])
+                 (B'    : CVTerm [v'])
+                 (eqa   : per)
+                 (eqb   : per-fam(eqa))
+                 (c1    : all_in_bar bar (fun lib => T ===>(lib) (mkc_function A v B)))
+                 (c2    : all_in_bar bar (fun lib => T' ===>(lib) (mkc_function A' v' B')))
+                 (cla   : all_in_bar bar (fun lib => close ts lib A A' eqa))
+                 (reca  : all_in_bar bar (fun lib => P ts lib A A' eqa))
+                 (clb   : all_in_bar bar (fun lib => forall a a' (e : eqa a a'), close ts lib (substc a v B) (substc a' v' B') (eqb a a' e)))
+                 (recb  : all_in_bar bar (fun lib => forall a a' (e : eqa a a'), P ts lib (substc a v B) (substc a' v' B') (eqb a a' e)))
+                 (eqiff : eq <=2=> (per_func_eq eqa eqb))
+                 (per   : per_func_bar (close ts) lib T T' eq),
             P ts lib T T' eq)
   (disect : forall (ts   : cts)
                    (lib  : library)
@@ -3079,10 +3109,12 @@ Definition close_ind' {pp}
                                     (ftsb a a' eqa))
                teq
                pts
+
    | CL_func pts =>
-       let (eqa, x) := pts in
+       let (bar, x) := pts in
+       let (eqa, x) := x in
        let (eqb, x) := x in
-       let (tf, teq) := x in
+       let (tf, eqiff) := x in
        let (A,   x) := tf in
        let (A',  x) := x in
        let (v,   x) := x in
@@ -3092,20 +3124,22 @@ Definition close_ind' {pp}
        let (c1,  x) := x in
        let (c2,  x) := x in
        let (tsa, tsb) := x in
-         func ts lib T T' eq A A' v v' B B' eqa eqb
-               c1
-               c2
-               tsa
-               (rec ts lib A A' eqa tsa)
-               tsb
-               (fun a a' eqa =>
-                  rec ts lib
-                      (substc a v B)
-                      (substc a' v' B')
-                      (eqb a a' eqa)
-                      (tsb a a' eqa))
-               teq
-               pts
+         func ts lib T T' eq bar A A' v v' B B' eqa eqb
+              c1
+              c2
+              tsa
+              (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
+                 rec ts lib' A A' eqa (tsa lib' i))
+              tsb
+              (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar))
+                   a a' (e : eqa a a') =>
+                 rec ts lib'
+                     (substc a v B)
+                     (substc a' v' B')
+                     (eqb a a' e)
+                     (tsb lib' i a a' e))
+              eqiff
+              pts
    | CL_disect pts =>
        let (eqa, x)   := pts in
        let (eqb, x)   := x in
@@ -3772,44 +3806,52 @@ Ltac one_dest_per_fam eqa feqb A1 A2 v1 v2 B1 B2 c1 c2 tsa tsb eqt :=
 
 Ltac one_unfold_per :=
   match goal with
-    | [ H : per_int      _ _ _ _ _ |- _ ] => unfold per_int      in H; exrepd
-    | [ H : per_atom     _ _ _ _ _ |- _ ] => unfold per_atom     in H; exrepd
-    | [ H : per_uatom    _ _ _ _ _ |- _ ] => unfold per_uatom    in H; exrepd
-    | [ H : per_base     _ _ _ _ _ |- _ ] => unfold per_base     in H; exrepd
-    | [ H : per_approx   _ _ _ _ _ |- _ ] => unfold per_approx   in H; exrepd
-    | [ H : per_cequiv   _ _ _ _ _ |- _ ] => unfold per_cequiv   in H; exrepd
-    | [ H : per_eq       _ _ _ _ _ |- _ ] => unfold per_eq       in H; exrepd
-    | [ H : per_req      _ _ _ _ _ |- _ ] => unfold per_req      in H; exrepd
-    | [ H : per_teq      _ _ _ _ _ |- _ ] => unfold per_teq      in H; exrepd
-    | [ H : per_isect    _ _ _ _ _ |- _ ] => unfold per_isect    in H; exrepd
-    | [ H : per_func     _ _ _ _ _ |- _ ] => unfold per_func     in H; exrepd
-    | [ H : per_disect   _ _ _ _ _ |- _ ] => unfold per_disect   in H; exrepd
-    | [ H : per_pertype  _ _ _ _ _ |- _ ] => unfold per_pertype  in H; exrepd
-    | [ H : per_ipertype _ _ _ _ _ |- _ ] => unfold per_ipertype in H; exrepd
-    | [ H : per_spertype _ _ _ _ _ |- _ ] => unfold per_spertype in H; exrepd
-    | [ H : per_w        _ _ _ _ _ |- _ ] => unfold per_w        in H; exrepd
-    | [ H : per_m        _ _ _ _ _ |- _ ] => unfold per_m        in H; exrepd
-    | [ H : per_pw       _ _ _ _ _ |- _ ] => unfold per_pw       in H; exrepd
-    | [ H : per_pm       _ _ _ _ _ |- _ ] => unfold per_pm       in H; exrepd
-    | [ H : per_texc     _ _ _ _ _ |- _ ] => unfold per_texc     in H; exrepd
-    | [ H : per_union    _ _ _ _ _ |- _ ] => unfold per_union    in H; exrepd
-(*    | [ H : per_eunion   _ _ _ _ _ |- _ ] => unfold per_eunion   in H; exrepd
-    | [ H : per_union2   _ _ _ _ _ |- _ ] => unfold per_union2   in H; exrepd*)
-    | [ H : per_image    _ _ _ _ _ |- _ ] => unfold per_image    in H; exrepd
-    | [ H : per_eisect   _ _ _ _ _ |- _ ] => unfold per_eisect   in H; exrepd
-    | [ H : per_partial  _ _ _ _ _ |- _ ] => unfold per_partial  in H; exrepd
-    | [ H : per_admiss   _ _ _ _ _ |- _ ] => unfold per_admiss   in H; exrepd
-    | [ H : per_mono     _ _ _ _ _ |- _ ] => unfold per_mono     in H; exrepd
-    | [ H : per_ffatom   _ _ _ _ _ |- _ ] => unfold per_ffatom   in H; exrepd
-    | [ H : per_effatom  _ _ _ _ _ |- _ ] => unfold per_effatom  in H; exrepd
-    | [ H : per_ffatoms  _ _ _ _ _ |- _ ] => unfold per_ffatoms  in H; exrepd
-    | [ H : per_set      _ _ _ _ _ |- _ ] => unfold per_set      in H; exrepd
-    | [ H : per_tunion   _ _ _ _ _ |- _ ] => unfold per_tunion   in H; exrepd
-    | [ H : per_product  _ _ _ _ _ |- _ ] => unfold per_product  in H; exrepd
-(*    | [ H : per_esquash  _ _ _ _ _ |- _ ] => unfold per_esquash  in H; exrepd*)
-    | [ H : type_family  _ _ _ _ _ _ _ |- _ ] => unfold type_family in H; exrepd
-    | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => unfold etype_family in H; exrepd
-    | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => unfold type_pfamily in H; exrepd
+    | [ H : per_int        _ _ _ _ _ |- _ ] => unfold per_int        in H; exrepd
+    | [ H : per_int_bar    _ _ _ _ _ |- _ ] => unfold per_int_bar    in H; exrepd
+    | [ H : per_atom       _ _ _ _ _ |- _ ] => unfold per_atom       in H; exrepd
+    | [ H : per_atom_bar   _ _ _ _ _ |- _ ] => unfold per_atom_bar   in H; exrepd
+    | [ H : per_uatom      _ _ _ _ _ |- _ ] => unfold per_uatom      in H; exrepd
+    | [ H : per_uatom_bar  _ _ _ _ _ |- _ ] => unfold per_uatom_bar  in H; exrepd
+    | [ H : per_base       _ _ _ _ _ |- _ ] => unfold per_base       in H; exrepd
+    | [ H : per_base_bar   _ _ _ _ _ |- _ ] => unfold per_base_bar   in H; exrepd
+    | [ H : per_approx     _ _ _ _ _ |- _ ] => unfold per_approx     in H; exrepd
+    | [ H : per_approx_bar _ _ _ _ _ |- _ ] => unfold per_approx_bar in H; exrepd
+    | [ H : per_cequiv     _ _ _ _ _ |- _ ] => unfold per_cequiv     in H; exrepd
+    | [ H : per_cequiv_bar _ _ _ _ _ |- _ ] => unfold per_cequiv_bar in H; exrepd
+    | [ H : per_eq         _ _ _ _ _ |- _ ] => unfold per_eq         in H; exrepd
+    | [ H : per_eq_bar     _ _ _ _ _ |- _ ] => unfold per_eq_bar     in H; exrepd
+    | [ H : per_req        _ _ _ _ _ |- _ ] => unfold per_req        in H; exrepd
+    | [ H : per_teq        _ _ _ _ _ |- _ ] => unfold per_teq        in H; exrepd
+    | [ H : per_isect      _ _ _ _ _ |- _ ] => unfold per_isect      in H; exrepd
+    | [ H : per_func       _ _ _ _ _ |- _ ] => unfold per_func       in H; exrepd
+    | [ H : per_func_bar   _ _ _ _ _ |- _ ] => unfold per_func_bar   in H; exrepd
+    | [ H : per_disect     _ _ _ _ _ |- _ ] => unfold per_disect     in H; exrepd
+    | [ H : per_pertype    _ _ _ _ _ |- _ ] => unfold per_pertype    in H; exrepd
+    | [ H : per_ipertype   _ _ _ _ _ |- _ ] => unfold per_ipertype   in H; exrepd
+    | [ H : per_spertype   _ _ _ _ _ |- _ ] => unfold per_spertype   in H; exrepd
+    | [ H : per_w          _ _ _ _ _ |- _ ] => unfold per_w          in H; exrepd
+    | [ H : per_m          _ _ _ _ _ |- _ ] => unfold per_m          in H; exrepd
+    | [ H : per_pw         _ _ _ _ _ |- _ ] => unfold per_pw         in H; exrepd
+    | [ H : per_pm         _ _ _ _ _ |- _ ] => unfold per_pm         in H; exrepd
+    | [ H : per_texc       _ _ _ _ _ |- _ ] => unfold per_texc       in H; exrepd
+    | [ H : per_union      _ _ _ _ _ |- _ ] => unfold per_union      in H; exrepd
+(*    | [ H : per_eunion   _ _ _ _ _ |- _ ] => unfold per_eunion     in H; exrepd
+    | [ H : per_union2   _ _ _ _ _ |- _ ] => unfold per_union2     in H; exrepd*)
+    | [ H : per_image      _ _ _ _ _ |- _ ] => unfold per_image      in H; exrepd
+    | [ H : per_eisect     _ _ _ _ _ |- _ ] => unfold per_eisect     in H; exrepd
+    | [ H : per_partial    _ _ _ _ _ |- _ ] => unfold per_partial    in H; exrepd
+    | [ H : per_admiss     _ _ _ _ _ |- _ ] => unfold per_admiss     in H; exrepd
+    | [ H : per_mono       _ _ _ _ _ |- _ ] => unfold per_mono       in H; exrepd
+    | [ H : per_ffatom     _ _ _ _ _ |- _ ] => unfold per_ffatom     in H; exrepd
+    | [ H : per_effatom    _ _ _ _ _ |- _ ] => unfold per_effatom    in H; exrepd
+    | [ H : per_ffatoms    _ _ _ _ _ |- _ ] => unfold per_ffatoms    in H; exrepd
+    | [ H : per_set        _ _ _ _ _ |- _ ] => unfold per_set        in H; exrepd
+    | [ H : per_tunion     _ _ _ _ _ |- _ ] => unfold per_tunion     in H; exrepd
+    | [ H : per_product    _ _ _ _ _ |- _ ] => unfold per_product    in H; exrepd
+(*    | [ H : per_esquash  _ _ _ _ _ |- _ ] => unfold per_esquash    in H; exrepd*)
+    | [ H : type_family    _ _ _ _ _ _ _ |- _ ] => unfold type_family in H; exrepd
+    | [ H : etype_family   _ _ _ _ _ _ _ _ |- _ ] => unfold etype_family in H; exrepd
+    | [ H : type_pfamily   _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => unfold type_pfamily in H; exrepd
   end.
 
 Ltac allunfold_per := repeat one_unfold_per.
