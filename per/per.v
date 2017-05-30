@@ -1100,8 +1100,26 @@ Definition per_product {p}
       , type_family mkc_product ts lib T1 T2 eqa eqb
       # eq <=2=> (per_product_eq lib eqa eqb)}}.
 
-Definition per_product_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_product_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   in_bar lib (fun lib' => per_product ts lib' T1 T2 eq).
+
+Definition per_product_eq_bar {o} {lib}
+           (bar  : BarLib lib)
+           (eqa  : lib-per(o))
+           (eqb  : lib-per-fam(eqa))
+           (t t' : CTerm) : [U] :=
+  all_in_bar bar (fun lib => per_product_eq lib (eqa lib) (eqb lib) t t').
+
+Definition per_product_bar {p}
+           (ts : cts)
+           (lib   : library)
+           (T1 T2 : @CTerm p)
+           (eq    : per) : [U] :=
+  {bar : BarLib lib
+  , {eqa : lib-per
+  , {eqb : lib-per-fam(eqa)
+  , type_family_bar mkc_product ts bar T1 T2 eqa eqb
+  # eq <=2=> (per_product_eq_bar bar eqa eqb) }}}.
 
 
 (** Union type *)
@@ -1196,14 +1214,52 @@ Definition per_union {p}
            (eq : per(p)) : [U] :=
   {eqa, eqb : per
    , {A1, A2, B1, B2 : CTerm
-      , T1 ===>(lib) (mkc_union A1 B1)
-      # T2 ===>(lib) (mkc_union A2 B2)
-      # ts lib A1 A2 eqa
-      # ts lib B1 B2 eqb
-      # eq <=2=> (per_union_eq lib eqa eqb)}}.
+   , T1 ===>(lib) (mkc_union A1 B1)
+   # T2 ===>(lib) (mkc_union A2 B2)
+   # ts lib A1 A2 eqa
+   # ts lib B1 B2 eqb
+   # eq <=2=> (per_union_eq lib eqa eqb)}}.
 
-Definition per_union_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_union_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   in_bar lib (fun lib' => per_union ts lib' T1 T2 eq).
+
+Definition per_union_eq_L_bar0 {p} {lib} (bar : BarLib lib) (eq : per(p)) t t' : [U] :=
+  {x, y : CTerm
+  , all_in_bar bar (fun lib => t ===>(lib) (mkc_inl x))
+  # all_in_bar bar (fun lib => t' ===>(lib) (mkc_inl y))
+  # eq x y}.
+
+Definition per_union_eq_R_bar0 {p} {lib} (bar : BarLib lib) (eq : per(p)) t t' : [U] :=
+  {x, y : CTerm
+  , all_in_bar bar (fun lib => t ===>(lib) (mkc_inr x))
+  # all_in_bar bar (fun lib => t' ===>(lib) (mkc_inr y))
+  # eq x y}.
+
+Definition per_union_eq_bar0 {p} {lib}
+           (bar     : BarLib lib)
+           (eqa eqb : per)
+           (t t'    : @CTerm p) : [U] :=
+  per_union_eq_L_bar0 bar eqa t t' {+} per_union_eq_R_bar0 bar eqb t t'.
+
+Definition per_union_eq_bar {p} {lib}
+           (bar     : BarLib lib)
+           (eqa eqb : per)
+           (t t'    : @CTerm p) : [U] :=
+  all_in_bar bar (fun lib => per_union_eq lib eqa eqb t t').
+
+Definition per_union_bar {p}
+           (ts    : cts)
+           (lib   : library)
+           (T1 T2 : @CTerm p)
+           (eq    : per(p)) : [U] :=
+  {bar : BarLib lib
+  , {eqa, eqb : per
+  , {A1, A2, B1, B2 : CTerm
+  , all_in_bar bar (fun lib => T1 ===>(lib) (mkc_union A1 B1))
+  # all_in_bar bar (fun lib => T2 ===>(lib) (mkc_union A2 B2))
+  # all_in_bar bar (fun lib => ts lib A1 A2 eqa)
+  # all_in_bar bar (fun lib => ts lib B1 B2 eqb)
+  # eq <=2=> (per_union_eq_bar bar eqa eqb) }}}.
 
 
 (* extensional union type *)
@@ -2207,10 +2263,10 @@ Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_approx   : per_approx_bar   (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_cequiv   : per_cequiv_bar   (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_eq       : per_eq_bar       (close ts) lib T T' eq -> close ts lib T T' eq
-  | CL_req      : per_req(*_bar*)      (close ts) lib T T' eq -> close ts lib T T' eq
-  | CL_teq      : per_teq(*_bar*)      (close ts) lib T T' eq -> close ts lib T T' eq
+  | CL_req      : per_req      (close ts) lib T T' eq -> close ts lib T T' eq
+  | CL_teq      : per_teq      (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_isect    : per_isect    (close ts) lib T T' eq -> close ts lib T T' eq
-  | CL_func     : per_func_bar     (close ts) lib T T' eq -> close ts lib T T' eq
+  | CL_func     : per_func_ext     (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_disect   : per_disect   (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_pertype  : per_pertype  (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_ipertype : per_ipertype (close ts) lib T T' eq -> close ts lib T T' eq
@@ -2220,7 +2276,7 @@ Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_pw       : per_pw       (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_pm       : per_pm       (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_texc     : per_texc     (close ts) lib T T' eq -> close ts lib T T' eq
-  | CL_union    : per_union(*_bar*)    (close ts) lib T T' eq -> close ts lib T T' eq
+  | CL_union    : per_union_bar    (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_image    : per_image    (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_partial  : per_partial  (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_admiss   : per_admiss   (close ts) lib T T' eq -> close ts lib T T' eq
@@ -2230,7 +2286,7 @@ Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_ffatoms  : per_ffatoms  (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_set      : per_set      (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_tunion   : per_tunion   (close ts) lib T T' eq -> close ts lib T T' eq
-  | CL_product  : per_product(*_bar*)  (close ts) lib T T' eq -> close ts lib T T' eq.
+  | CL_product  : per_product_bar  (close ts) lib T T' eq -> close ts lib T T' eq.
 Hint Constructors close.
 
 (*  | CL_eunion   : per_eunion   lib (close lib ts) T T' eq -> close ts lib T T' eq*)
@@ -2449,22 +2505,22 @@ Definition close_ind' {pp}
                  (lib   : library)
                  (T T'  : @CTerm pp)
                  (eq    : per)
-                 (bar   : BarLib lib)
                  (A A'  : @CTerm pp)
                  (v v'  : NVar)
                  (B     : CVTerm [v])
                  (B'    : CVTerm [v'])
                  (eqa   : lib-per)
                  (eqb   : lib-per-fam(eqa))
-                 (c1    : all_in_bar bar (fun lib => T ===>(lib) (mkc_function A v B)))
-                 (c2    : all_in_bar bar (fun lib => T' ===>(lib) (mkc_function A' v' B')))
-                 (cla   : all_in_bar bar (fun lib => close ts lib A A' (eqa lib)))
-                 (reca  : all_in_bar bar (fun lib => P ts lib A A' (eqa lib)))
-                 (clb   : all_in_bar bar (fun lib => forall a a' (e : eqa lib a a'), close ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
-                 (recb  : all_in_bar bar (fun lib => forall a a' (e : eqa lib a a'), P ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
+                 (c1    : in_ext lib (fun lib => T ===>(lib) (mkc_function A v B)))
+                 (c2    : in_ext lib (fun lib => T' ===>(lib) (mkc_function A' v' B')))
+                 (cla   : in_ext lib (fun lib => close ts lib A A' (eqa lib)))
+                 (reca  : in_ext lib (fun lib => P ts lib A A' (eqa lib)))
+                 (clb   : in_ext lib (fun lib => forall a a' (e : eqa lib a a'), close ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
+                 (recb  : in_ext lib (fun lib => forall a a' (e : eqa lib a a'), P ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
                  (eqiff : eq <=2=> (per_func_eq eqa eqb lib))
-                 (per   : per_func_bar (close ts) lib T T' eq),
+                 (per   : per_func_ext (close ts) lib T T' eq),
             P ts lib T T' eq)
+
   (disect : forall (ts   : cts)
                    (lib  : library)
                    (T T' : @CTerm pp)
@@ -2739,20 +2795,23 @@ Definition close_ind' {pp}
                  (eqiff : forall t t', eq t t' <=> per_texc_eq lib eqn eqe t t')
                  (per : per_texc (close ts) lib T T' eq),
             P ts lib T T' eq)
-  (union : forall (ts   : cts)
-                  (lib  : library)
-                  (T T' : @CTerm pp)
-                  (eq   : per)
-                  (A A' B B' : @CTerm pp)
-                  (eqa eqb : per)
-                  (c1 : T ===>(lib) (mkc_union A B))
-                  (c2 : T' ===>(lib) (mkc_union A' B'))
-                  (cla : close ts lib A A' eqa)
-                  (reca : P ts lib A A' eqa)
-                  (clb : close ts lib B B' eqb)
-                  (recb : P ts lib B B' eqb)
-                  (eqiff : forall t t', eq t t' <=> per_union_eq lib eqa eqb t t')
-                  (per : per_union (close ts) lib T T' eq),
+  (union : forall (ts    : cts)
+                  (lib   : library)
+                  (T T'  : @CTerm pp)
+                  (eq    : per)
+                  (bar   : BarLib lib)
+                  (A A'  : CTerm)
+                  (B B'  : @CTerm pp)
+                  (eqa   : per)
+                  (eqb   : per)
+                  (c1    : all_in_bar bar (fun lib => T ===>(lib) (mkc_union A B)))
+                  (c2    : all_in_bar bar (fun lib => T' ===>(lib) (mkc_union A' B')))
+                  (cla   : all_in_bar bar (fun lib => close ts lib A A' eqa))
+                  (reca  : all_in_bar bar (fun lib => P ts lib A A' eqa))
+                  (clb   : all_in_bar bar (fun lib => close ts lib B B' eqb))
+                  (recb  : all_in_bar bar (fun lib => P ts lib B B' eqb))
+                  (eqiff : eq <=2=> (per_union_eq_bar bar eqa eqb))
+                  (per   : per_union_bar (close ts) lib T T' eq),
             P ts lib T T' eq)
 (*  (eunion : forall (ts : cts)
                   (T T' : @CTerm pp)
@@ -2972,26 +3031,29 @@ Definition close_ind' {pp}
                    (eqiff : forall t t', eq t t' <=> per_tunion_eq eqa eqb t t')
                    (per : per_tunion (close ts) lib T T' eq),
               P ts lib T T' eq)
-  (product : forall (ts   : cts)
-                    (lib  : library)
-                    (T T' : @CTerm pp)
-                    (eq   : per)
-                    (A A' : @CTerm pp)
-                    (v v' : NVar)
-                    (B    : CVTerm [v])
-                    (B'   : CVTerm [v'])
-                    (eqa  : per)
-                    (eqb  : forall a a' : CTerm, forall e : eqa a a', per)
-                    (c1   : T ===>(lib) (mkc_product A v B))
-                    (c2   : T' ===>(lib) (mkc_product A' v' B'))
-                    (cla  : close ts lib A A' eqa)
-                    (reca : P ts lib A A' eqa)
-                    (clb  : forall a a', forall e : eqa a a', close ts lib (substc a v B) (substc a' v' B') (eqb a a' e))
-                    (recb : forall a a', forall e : eqa a a', P ts lib (substc a v B) (substc a' v' B') (eqb a a' e))
-                    (eqiff : forall t t', eq t t' <=> per_product_eq lib eqa eqb t t')
-                    (per  : per_product (close ts) lib T T' eq),
+
+  (product : forall (ts    : cts)
+                    (lib   : library)
+                    (T T'  : @CTerm pp)
+                    (eq    : per)
+                    (bar   : BarLib lib)
+                    (A A'  : @CTerm pp)
+                    (v v'  : NVar)
+                    (B     : CVTerm [v])
+                    (B'    : CVTerm [v'])
+                    (eqa   : lib-per)
+                    (eqb   : lib-per-fam(eqa))
+                    (c1    : all_in_bar bar (fun lib => T ===>(lib) (mkc_product A v B)))
+                    (c2    : all_in_bar bar (fun lib => T' ===>(lib) (mkc_product A' v' B')))
+                    (cla   : all_in_bar bar (fun lib => close ts lib A A' (eqa lib)))
+                    (reca  : all_in_bar bar (fun lib => P ts lib A A' (eqa lib)))
+                    (clb   : all_in_bar bar (fun lib => forall a a' (e : eqa lib a a'), close ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
+                    (recb  : all_in_bar bar (fun lib => forall a a' (e : eqa lib a a'), P ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
+                    (eqiff : eq <=2=> (per_product_eq_bar bar eqa eqb))
+                    (per   : per_product_bar (close ts) lib T T' eq),
       P ts lib T T' eq)
-(*  (esquash : forall (ts : cts)
+
+  (*  (esquash : forall (ts : cts)
                     (T T' : @CTerm pp)
                     (eq : per)
                     (A1 A2 : @CTerm pp)
@@ -3152,8 +3214,7 @@ Definition close_ind' {pp}
                pts
 
    | CL_func pts =>
-       let (bar, x) := pts in
-       let (eqa, x) := x in
+       let (eqa, x) := pts in
        let (eqb, x) := x in
        let (tf, eqiff) := x in
        let (A,   x) := tf in
@@ -3165,14 +3226,14 @@ Definition close_ind' {pp}
        let (c1,  x) := x in
        let (c2,  x) := x in
        let (tsa, tsb) := x in
-         func ts lib T T' eq bar A A' v v' B B' eqa eqb
+         func ts lib T T' eq A A' v v' B B' eqa eqb
               c1
               c2
               tsa
-              (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
+              (fun (lib' : library) (i : lib_extends lib' lib) =>
                  rec ts lib' A A' (eqa lib') (tsa lib' i))
               tsb
-              (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar))
+              (fun (lib' : library) (i : lib_extends lib' lib)
                    a a' (e : eqa lib' a a') =>
                  rec ts lib'
                      (substc a v B)
@@ -3491,7 +3552,8 @@ Definition close_ind' {pp}
               eqiff
               pts
    | CL_union pts =>
-       let (eqa, x) := pts in
+       let (bar, x) := pts in
+       let (eqa, x) := x in
        let (eqb, x) := x in
        let (A,   x) := x in
        let (A',  x) := x in
@@ -3501,16 +3563,20 @@ Definition close_ind' {pp}
        let (c2,  x) := x in
        let (tsa, x) := x in
        let (tsb, eqiff) := x in
-         union ts lib T T' eq A A' B B' eqa eqb
-               c1
-               c2
-               tsa
-               (rec ts lib A A' eqa tsa)
-               tsb
-               (rec ts lib B B' eqb tsb)
-               eqiff
-               pts
-(*   | CL_eunion pts =>
+       union ts lib T T' eq bar
+             A A' B B' eqa eqb
+             c1
+             c2
+             tsa
+             (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
+                rec ts lib' A A' eqa (tsa lib' i))
+             tsb
+             (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
+                rec ts lib' B B' eqb (tsb lib' i))
+             eqiff
+             pts
+
+   (*   | CL_eunion pts =>
        let (eqa1, x) := pts in
        let (eqa2, x) := x in
        let (eqb1, x) := x in
@@ -3764,7 +3830,8 @@ Definition close_ind' {pp}
                 teq
                 pts
    | CL_product pts =>
-       let (eqa, x) := pts in
+       let (bar, x) := pts in
+       let (eqa, x) := x in
        let (eqb, x) := x in
        let (tf, teq) := x in
        let (A,   x) := tf in
@@ -3776,18 +3843,20 @@ Definition close_ind' {pp}
        let (c1,  x) := x in
        let (c2,  x) := x in
        let (tsa, tsb) := x in
-         product ts lib T T' eq A A' v v' B B' eqa eqb
+       product ts lib T T' eq bar A A' v v' B B' eqa eqb
                c1
                c2
                tsa
-               (rec ts lib A A' eqa tsa)
+               (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
+                  rec ts lib' A A' (eqa lib') (tsa lib' i))
                tsb
-               (fun a a' eqa =>
-                  rec ts lib
+               (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar))
+                    a a' (e : eqa lib' a a') =>
+                  rec ts lib'
                       (substc a v B)
                       (substc a' v' B')
-                      (eqb a a' eqa)
-                      (tsb a a' eqa))
+                      (eqb lib' a a' e)
+                      (tsb lib' i a a' e))
                teq
                pts
 (*   | CL_esquash pts =>
