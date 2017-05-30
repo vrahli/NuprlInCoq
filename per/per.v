@@ -996,39 +996,80 @@ Definition per_func {p} (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
 Definition per_func_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   in_ext lib (fun lib' => per_func ts lib' T1 T2 eq).
 
-Definition per_func_eq {o}
-           (eqa  : per)
-           (eqb  : per-fam(eqa))
-           (t t' : @CTerm o):=
-  forall a a' (e : eqa a a'),
-    (eqb a a' e) (mkc_apply t a) (mkc_apply t' a').
+Notation "lib-per" := (library -> CTerm -> CTerm -> [U]).
 
-Definition type_family_bar {p}
-           TyCon
-           (ts : cts(p))
+Notation "lib-per( o )" := (@library o -> @CTerm o -> @CTerm o -> [U]).
+
+Notation "lib-per-fam ( eqa )" :=
+  (forall lib a a' (p : eqa lib a a'), per) (at level 0).
+
+Definition TyConType {o} :=
+  @CTerm o -> forall v : NVar, @CVTerm o [v] -> @CTerm o.
+
+Definition type_family_bar {o}
+           (tycon : TyConType)
+           (ts : cts(o))
            {lib}
-           (bar : BarLib lib)
-           (T1 T2 : @CTerm p)
-           eqa eqb : [U]:=
+           (bar   : BarLib lib)
+           (T1 T2 : @CTerm o)
+           (eqa   : lib-per(o))
+           (eqb   : lib-per-fam(eqa)) : [U]:=
   {A, A' : CTerm
   , {v, v' : NVar
   , {B : CVTerm [v]
   , {B' : CVTerm [v']
-  , all_in_bar bar (fun lib => T1 ===>(lib) (TyCon A v B))
-  # all_in_bar bar (fun lib => T2 ===>(lib) (TyCon A' v' B'))
-  # all_in_bar bar (fun lib => ts lib A A' eqa)
+  , all_in_bar bar (fun lib => T1 ===>(lib) (tycon A v B))
+  # all_in_bar bar (fun lib => T2 ===>(lib) (tycon A' v' B'))
+  # all_in_bar bar (fun lib => ts lib A A' (eqa lib))
   # all_in_bar
       bar
-      (fun lib => (forall a a' (e : eqa a a'),
-                      ts lib (B[[v\\a]]) (B'[[v'\\a']]) (eqb a a' e)))
+      (fun lib => (forall a a' (e : eqa lib a a'),
+                      ts lib (B[[v\\a]]) (B'[[v'\\a']]) (eqb lib a a' e)))
   }}}}.
+
+Definition type_family_ext {o}
+           (tycon : TyConType)
+           (ts    : cts(o))
+           (lib   : library)
+           (T1 T2 : @CTerm o)
+           (eqa   : lib-per(o))
+           (eqb   : lib-per-fam(eqa)) : [U]:=
+  {A, A' : CTerm
+  , {v, v' : NVar
+  , {B : CVTerm [v]
+  , {B' : CVTerm [v']
+  , in_ext lib (fun lib => T1 ===>(lib) (tycon A v B))
+  # in_ext lib (fun lib => T2 ===>(lib) (tycon A' v' B'))
+  # in_ext lib (fun lib => ts lib A A' (eqa lib))
+  # in_ext
+      lib
+      (fun lib => (forall a a' (e : eqa lib a a'),
+                      ts lib (B[[v\\a]]) (B'[[v'\\a']]) (eqb lib a a' e)))
+  }}}}.
+
+Definition per_func_eq {o}
+           (eqa  : lib-per(o))
+           (eqb  : lib-per-fam(eqa))
+           (lib  : library)
+           (t t' : @CTerm o) :=
+  in_ext
+    lib
+    (fun lib =>
+       forall a a' (e : eqa lib a a'),
+         (eqb lib a a' e) (mkc_apply t a) (mkc_apply t' a')).
 
 Definition per_func_bar {p} (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
   {bar : BarLib lib
-  , {eqa : per
-  , {eqb : per-fam(eqa)
+  , {eqa : lib-per
+  , {eqb : lib-per-fam(eqa)
   , type_family_bar mkc_function ts bar T1 T2 eqa eqb
-  # eq <=2=> (per_func_eq eqa eqb) }}}.
+  # eq <=2=> (per_func_eq eqa eqb lib) }}}.
+
+Definition per_func_ext {p} (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
+  {eqa : lib-per
+  , {eqb : lib-per-fam(eqa)
+  , type_family_ext mkc_function ts lib T1 T2 eqa eqb
+  # eq <=2=> (per_func_eq eqa eqb lib) }}.
 
 (**
 
@@ -2413,15 +2454,15 @@ Definition close_ind' {pp}
                  (v v'  : NVar)
                  (B     : CVTerm [v])
                  (B'    : CVTerm [v'])
-                 (eqa   : per)
-                 (eqb   : per-fam(eqa))
+                 (eqa   : lib-per)
+                 (eqb   : lib-per-fam(eqa))
                  (c1    : all_in_bar bar (fun lib => T ===>(lib) (mkc_function A v B)))
                  (c2    : all_in_bar bar (fun lib => T' ===>(lib) (mkc_function A' v' B')))
-                 (cla   : all_in_bar bar (fun lib => close ts lib A A' eqa))
-                 (reca  : all_in_bar bar (fun lib => P ts lib A A' eqa))
-                 (clb   : all_in_bar bar (fun lib => forall a a' (e : eqa a a'), close ts lib (substc a v B) (substc a' v' B') (eqb a a' e)))
-                 (recb  : all_in_bar bar (fun lib => forall a a' (e : eqa a a'), P ts lib (substc a v B) (substc a' v' B') (eqb a a' e)))
-                 (eqiff : eq <=2=> (per_func_eq eqa eqb))
+                 (cla   : all_in_bar bar (fun lib => close ts lib A A' (eqa lib)))
+                 (reca  : all_in_bar bar (fun lib => P ts lib A A' (eqa lib)))
+                 (clb   : all_in_bar bar (fun lib => forall a a' (e : eqa lib a a'), close ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
+                 (recb  : all_in_bar bar (fun lib => forall a a' (e : eqa lib a a'), P ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
+                 (eqiff : eq <=2=> (per_func_eq eqa eqb lib))
                  (per   : per_func_bar (close ts) lib T T' eq),
             P ts lib T T' eq)
   (disect : forall (ts   : cts)
@@ -3129,14 +3170,14 @@ Definition close_ind' {pp}
               c2
               tsa
               (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
-                 rec ts lib' A A' eqa (tsa lib' i))
+                 rec ts lib' A A' (eqa lib') (tsa lib' i))
               tsb
               (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar))
-                   a a' (e : eqa a a') =>
+                   a a' (e : eqa lib' a a') =>
                  rec ts lib'
                      (substc a v B)
                      (substc a' v' B')
-                     (eqb a a' e)
+                     (eqb lib' a a' e)
                      (tsb lib' i a a' e))
               eqiff
               pts
