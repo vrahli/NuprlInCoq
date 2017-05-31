@@ -377,7 +377,8 @@ Definition BarLibCond {o} (bar : @bar_lib o) (lib : @library o) :=
     ->
     exists (lib' : library),
       List.In lib' bar
-      /\ lib_extends lib' lib.
+      /\ lib_extends lib' lib
+      /\ inf_lib_extends infLib lib'.
 
 Record BarLib {o} (lib : @library o) :=
   MkBarLib
