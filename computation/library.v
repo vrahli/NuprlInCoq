@@ -187,19 +187,19 @@ Definition ChoiceSeqVals {o} := list (@ChoiceSeqVal o).
 
 Definition CSVal2term {o} (v : @ChoiceSeqVal o) : NTerm := get_cterm v.
 
-Inductive ChoiceSeqConstraint {o} :=
+Inductive ChoiceSeqRestriction {o} :=
 (* no constraints *)
 | csc_no
 (* constrains the values of the sequence to have that type *)
 | csc_type (typ : @CTerm o)
 (* constrains the values of the sequence to follow the law given by the function *)
-| csc_coq_law (f : nat -> @NTerm o).
+| csc_coq_law (f : nat -> @CTerm o).
 
 Record ChoiceSeqEntry {o} :=
   MkChoiceSeqEntry
     {
       cse_vals :> @ChoiceSeqVals o;
-      cse_constraint : @ChoiceSeqConstraint o;
+      cse_restriction : @ChoiceSeqRestriction o;
     }.
 
 Inductive library_entry {o} :=

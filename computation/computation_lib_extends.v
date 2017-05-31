@@ -55,6 +55,10 @@ Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : library) : Prop 
   end.
 
 
+(* [vals1] extends [vals2] is [vals2] is an initial segment of [vals1] *)
+Definition choice_sequence_vals_extend {o} (vals1 vals2 : @ChoiceSeqVals o) : Prop :=
+  exists vals, vals1 = vals2 ++ vals.
+
 (*
 
    TODO: We have to make sure that extensions satisfy the choice sequence
@@ -63,9 +67,26 @@ Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : library) : Prop 
  *)
 
 
-(* [vals1] extends [vals2] is [vals2] is an initial segment of [vals1] *)
-Definition choice_sequence_vals_extend {o} (vals1 vals2 : @ChoiceSeqVals o) : Prop :=
-  exists vals, vals1 = vals2 ++ vals.
+Definition extension_satisfies_restriction {o}
+           (vals : @ChoiceSeqVals o)
+           (constraint : ChoiceSeqRestriction) : Prop :=
+  match constraint with
+  | csc_no => True
+  | csc_type typ => True (* TODO: This is not correct *)
+  | csc_coq_law f =>
+    forall (i : nat),
+      i < length vals
+      -> select i vals = Some (f i)
+  end.
+
+(* [entry1] extends [entry2] *)
+Definition choice_sequence_entry_extend {o} (entry1 entry2 : @ChoiceSeqEntry o) : Prop :=
+  (* the extension has the same restriction has the current sequence *)
+  cse_restriction entry1 = cse_restriction entry2
+  (* the extension is an extension *)
+  /\ choice_sequence_vals_extend entry1 entry2
+  (* the extension satisfies the restriction *)
+  /\ extension_satisfies_restriction entry1 (cse_restriction entry1).
 
 (* [entry1] extends [entry2] *)
 Definition entry_extends {o} (entry1 entry2 : @library_entry o) : Prop :=
