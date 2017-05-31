@@ -132,7 +132,7 @@ Proof.
 
     { destruct name.
       - destruct (choice_sequence_name_deq name name0); subst.
-        + left; exists (lib_cs name0 vals); simpl; dands; auto.
+        + left; exists (lib_cs name0 entry); simpl; dands; auto.
         + destruct IHlib as [k|k].
           * left; exrepnd; exists e; dands; auto.
           * right; intro zz; exrepnd; destruct k.
@@ -289,7 +289,7 @@ Proof.
     + boolvar; subst.
 
       * unfold in_lib; simpl.
-        exists (lib_cs name0 vals); simpl; tcsp.
+        exists (lib_cs name0 entry); simpl; tcsp.
 
       * remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
         autodimp IHlib hyp; eauto 2 with slow.
@@ -2669,8 +2669,8 @@ Definition libraries_agree_on_intersection {o} (lib1 lib2 : @library o) : Type :
       Some (lib_abs opabs2 vars2 rhs2 correct2) =>
       opabs1 = opabs2 # vars1 = vars2 # rhs1 = rhs2 (* could use alpha_eq_entry instead *)
 
-    | Some (lib_cs name1 vals1), Some (lib_cs name2 vals2) =>
-      name1 = name2 # vals1 = vals2
+    | Some (lib_cs name1 entry1), Some (lib_cs name2 entry2) =>
+      name1 = name2 # entry1 = entry2
 
     | Some _, Some _ => False
 

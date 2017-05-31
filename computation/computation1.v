@@ -1039,7 +1039,7 @@ Definition subst_utokens {p} (t : @NTerm p) (sub : utok_sub) : NTerm :=
 
 Definition get_utokens_library_entry {p} (entry : @library_entry p) : list (get_patom_set p) :=
   match entry with
-  | lib_cs _ L => flat_map getc_utokens L
+  | lib_cs _ e => flat_map getc_utokens (cse_vals e)
   | lib_abs opabs vars rhs correct => get_utokens_so rhs
   end.
 

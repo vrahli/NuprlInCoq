@@ -54,6 +54,15 @@ Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : library) : Prop 
        # entry_in_library entry entries)
   end.
 
+
+(*
+
+   TODO: We have to make sure that extensions satisfy the choice sequence
+   restrictions!
+
+ *)
+
+
 (* [vals1] extends [vals2] is [vals2] is an initial segment of [vals1] *)
 Definition choice_sequence_vals_extend {o} (vals1 vals2 : @ChoiceSeqVals o) : Prop :=
   exists vals, vals1 = vals2 ++ vals.
@@ -61,10 +70,10 @@ Definition choice_sequence_vals_extend {o} (vals1 vals2 : @ChoiceSeqVals o) : Pr
 (* [entry1] extends [entry2] *)
 Definition entry_extends {o} (entry1 entry2 : @library_entry o) : Prop :=
   match entry1, entry2 with
-  | lib_cs name1 vals1, lib_cs name2 vals2 =>
+  | lib_cs name1 entry1, lib_cs name2 entry2 =>
     name1 = name2
     /\
-    choice_sequence_vals_extend vals1 vals2
+    choice_sequence_vals_extend entry1 entry2
   | _, _ => entry1 = entry2
   end.
 
@@ -250,7 +259,7 @@ Proof.
 
     {
       apply IHlib in h; exrepnd; subst; clear IHlib.
-      exists (lib_cs name vals :: lib1) lib2 oa vars rhs correct.
+      exists (lib_cs name entry :: lib1) lib2 oa vars rhs correct.
       dands; auto.
     }
 
@@ -865,16 +874,17 @@ Qed.
  *)
 
 Lemma lib_cs_in_library_extends_implies {o} :
-  forall (lib : @library o) name vals,
-    entry_in_library_extends (lib_cs name vals) lib
+  forall (lib : @library o) name entry,
+    entry_in_library_extends (lib_cs name entry) lib
     ->
-    exists (vals' : ChoiceSeqVals),
-      find_cs lib name = Some vals'
-      /\ choice_sequence_vals_extend vals' vals.
+    exists (entry' : ChoiceSeqEntry),
+      find_cs lib name = Some entry'
+      /\ choice_sequence_vals_extend entry' entry.
 Proof.
   induction lib; introv h; simpl in *; tcsp.
-  destruct a; simpl in *; tcsp; repndors; repnd; subst; tcsp; boolvar; tcsp; GC; ginv.
-  exists vals0; dands; auto.
+  destruct a; simpl in *; tcsp; repndors; repnd; subst; tcsp; boolvar; tcsp; GC; ginv;
+    try (complete (eapply IHlib; eauto)).
+  exists entry0; dands; auto.
 Qed.
 Hint Resolve lib_cs_in_library_extends_implies : slow.
 
@@ -889,13 +899,13 @@ Qed.
 Hint Resolve find_cs_some_implies_entry_in_library : slow.
 
 Lemma lib_extends_preserves_find_cs {o} :
-  forall (lib1 lib2 : @library o) name vals1,
+  forall (lib1 lib2 : @library o) name entry1,
     lib_extends lib2 lib1
-    -> find_cs lib1 name = Some vals1
+    -> find_cs lib1 name = Some entry1
     ->
-    exists (vals2 : ChoiceSeqVals),
-      find_cs lib2 name = Some vals2
-      /\ choice_sequence_vals_extend vals2 vals1.
+    exists (entry2 : ChoiceSeqEntry),
+      find_cs lib2 name = Some entry2
+      /\ choice_sequence_vals_extend entry2 entry1.
 Proof.
   introv ext fcs.
   apply find_cs_some_implies_entry_in_library in fcs.

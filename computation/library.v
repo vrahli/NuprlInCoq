@@ -187,11 +187,26 @@ Definition ChoiceSeqVals {o} := list (@ChoiceSeqVal o).
 
 Definition CSVal2term {o} (v : @ChoiceSeqVal o) : NTerm := get_cterm v.
 
+Inductive ChoiceSeqConstraint {o} :=
+(* no constraints *)
+| csc_no
+(* constrains the values of the sequence to have that type *)
+| csc_type (typ : @CTerm o)
+(* constrains the values of the sequence to follow the law given by the function *)
+| csc_coq_law (f : nat -> @NTerm o).
+
+Record ChoiceSeqEntry {o} :=
+  MkChoiceSeqEntry
+    {
+      cse_vals :> @ChoiceSeqVals o;
+      cse_constraint : @ChoiceSeqConstraint o;
+    }.
+
 Inductive library_entry {o} :=
 (* a choice sequence *)
 | lib_cs
     (name : choice_sequence_name)
-    (vals : @ChoiceSeqVals o)
+    (entry : @ChoiceSeqEntry o)
 (* a regular abstraction *)
 | lib_abs
     (opabs : opabs)
@@ -274,11 +289,11 @@ Definition library {o} := list (@library_entry o).
 
 Definition emlib {o} : @library o := [].
 
-Fixpoint find_cs {o} lib name : option (@ChoiceSeqVals o) :=
+Fixpoint find_cs {o} lib name : option (@ChoiceSeqEntry o) :=
   match lib with
   | [] => None
-  | lib_cs name' L :: l =>
-    if choice_sequence_name_deq name name' then Some L
+  | lib_cs name' e :: l =>
+    if choice_sequence_name_deq name name' then Some e
     else find_cs l name
   | _ :: l => find_cs l name
   end.
@@ -592,7 +607,7 @@ Qed.
 
 Definition bound_vars_entry {o} (entry : @library_entry o) : list sovar_sig :=
   match entry with
-  | lib_cs _ L => vars2sovars (flat_map (fun t => bound_vars (CSVal2term t)) L)
+  | lib_cs _ e => vars2sovars (flat_map (fun t => bound_vars (CSVal2term t)) (cse_vals e))
   | lib_abs opabs vars rhs correct => vars ++ so_bound_vars rhs
   end.
 
