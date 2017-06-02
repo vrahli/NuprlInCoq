@@ -66,47 +66,64 @@ Definition choice_sequence_vals_extend {o} (vals1 vals2 : @ChoiceSeqVals o) : Pr
 
  *)
 
-
-Definition extension_satisfies_restriction {o}
+Definition choice_sequence_satisfies_restriction {o}
+           (M : ChoiceSeqVal -> CTerm -> Prop)
            (vals : @ChoiceSeqVals o)
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
   | csc_no => True
-  | csc_type typ => True (* TODO: This is not correct *)
+  | csc_type typ =>
+    forall v, List.In v vals -> M v typ (* TODO: Is that going to be enough? *)
   | csc_coq_law f =>
-    forall (i : nat),
-      i < length vals
-      -> select i vals = Some (f i)
+    forall (i : nat), i < length vals -> select i vals = Some (f i)
   end.
 
+(*
+  (M v T) is meant to be (v is a member of T)
+
+  [entry1] extends [entry2]
+ *)
+Definition extension_satisfies_restriction {o}
+           (M : ChoiceSeqVal -> CTerm -> Prop)
+           (entry1 entry2 : @ChoiceSeqEntry o) : Prop :=
+  choice_sequence_satisfies_restriction M entry2 (cse_restriction entry2)
+  -> choice_sequence_satisfies_restriction M entry1 (cse_restriction entry1).
+
 (* [entry1] extends [entry2] *)
-Definition choice_sequence_entry_extend {o} (entry1 entry2 : @ChoiceSeqEntry o) : Prop :=
+Definition choice_sequence_entry_extend {o}
+           (M : ChoiceSeqVal -> CTerm -> Prop)
+           (entry1 entry2 : @ChoiceSeqEntry o) : Prop :=
   (* the extension has the same restriction has the current sequence *)
   cse_restriction entry1 = cse_restriction entry2
   (* the extension is an extension *)
   /\ choice_sequence_vals_extend entry1 entry2
   (* the extension satisfies the restriction *)
-  /\ extension_satisfies_restriction entry1 (cse_restriction entry1).
+  /\ extension_satisfies_restriction M entry1 entry2.
 
 (* [entry1] extends [entry2] *)
-Definition entry_extends {o} (entry1 entry2 : @library_entry o) : Prop :=
+Definition entry_extends {o}
+           (M : ChoiceSeqVal -> CTerm -> Prop)
+           (entry1 entry2 : @library_entry o) : Prop :=
   match entry1, entry2 with
   | lib_cs name1 entry1, lib_cs name2 entry2 =>
     name1 = name2
     /\
-    choice_sequence_vals_extend entry1 entry2
+    choice_sequence_entry_extend M entry1 entry2
   | _, _ => entry1 = entry2
   end.
 
 (* true if there is an extended version of [entry] in [lib] *)
-Fixpoint entry_in_library_extends {o} (entry : @library_entry o) (lib : library) : Prop :=
+Fixpoint entry_in_library_extends {o}
+         (M     : ChoiceSeqVal -> CTerm -> Prop)
+         (entry : @library_entry o)
+         (lib   : library) : Prop :=
   match lib with
   | [] => False
   | entry' :: entries =>
-    entry_extends entry' entry
+    entry_extends M entry' entry
     \/
     (~ matching_entries entry entry'
-       # entry_in_library_extends entry entries)
+       # entry_in_library_extends M entry entries)
   end.
 
 (* I used to have only the lib_extends_ext part but then it
@@ -117,13 +134,13 @@ Definition lsubset {A} (l1 l2 : list A) : Prop :=
   forall a, List.In a l1 -> List.In a l2.
 
 (* [lib1] extends [lib0] *)
-Record lib_extends {o} (lib1 lib0 : @library o) : Prop :=
+Record lib_extends {o} M (lib1 lib0 : @library o) : Prop :=
   MkLibExtends
     {
       lib_extends_ext :
         forall entry,
           entry_in_library entry lib0
-          -> entry_in_library_extends entry lib1;
+          -> entry_in_library_extends M entry lib1;
 
       lib_extends_sub : lsubset lib0 lib1;
     }.
@@ -177,10 +194,10 @@ Qed.
 Hint Resolve lsubset_refl : slow.
 
 Lemma lib_extends_cons_implies {o} :
-  forall (e : @library_entry o) (lib lib0 : library),
+  forall M (e : @library_entry o) (lib lib0 : library),
     entry_not_in_lib e lib0
-    -> lib_extends lib (e :: lib0)
-    -> lib_extends lib lib0.
+    -> lib_extends M lib (e :: lib0)
+    -> lib_extends M lib lib0.
 Proof.
   introv ni ext.
   destruct ext as [ext ss].
@@ -201,8 +218,24 @@ Proof.
 Qed.
 Hint Resolve choice_sequence_vals_extend_refl : slow.
 
+Lemma extension_satisfies_restriction_refl {o} :
+  forall M (entry : @ChoiceSeqEntry o), extension_satisfies_restriction M entry entry.
+Proof.
+  introv.
+  unfold extension_satisfies_restriction; tcsp.
+Qed.
+Hint Resolve extension_satisfies_restriction_refl : slow.
+
+Lemma choice_sequence_entry_extend_refl {o} :
+  forall M (entry : @ChoiceSeqEntry o), choice_sequence_entry_extend M entry entry.
+Proof.
+  introv.
+  unfold choice_sequence_entry_extend; dands; eauto 2 with slow.
+Qed.
+Hint Resolve choice_sequence_entry_extend_refl : slow.
+
 Lemma entry_extends_refl {o} :
-  forall (entry : @library_entry o), entry_extends entry entry.
+  forall M (entry : @library_entry o), entry_extends M entry entry.
 Proof.
   destruct entry; simpl in *; tcsp.
   dands; eauto 2 with slow.
@@ -210,9 +243,9 @@ Qed.
 Hint Resolve entry_extends_refl : slow.
 
 Lemma entry_in_library_implies_entry_in_library_extends {o} :
-  forall entry (lib : @library o),
+  forall M entry (lib : @library o),
     entry_in_library entry lib
-    -> entry_in_library_extends entry lib.
+    -> entry_in_library_extends M entry lib.
 Proof.
   induction lib; introv e; simpl in *; tcsp.
   repndors; repnd; subst; tcsp.
@@ -221,7 +254,7 @@ Qed.
 Hint Resolve entry_in_library_implies_entry_in_library_extends : slow.
 
 Lemma lib_extends_refl {o} :
-  forall (lib : @library o), lib_extends lib lib.
+  forall M (lib : @library o), lib_extends M lib lib.
 Proof.
   introv; split; eauto 2 with slow.
 Qed.
@@ -456,8 +489,8 @@ Qed.
 Hint Resolve entry_in_libray_implies_find_entry_some : slow.
 
 Lemma entry_abs_in_library_extends_implies_entry_in_library {o} :
-  forall oa vars rhs correct (lib : @library o),
-    entry_in_library_extends (lib_abs oa vars rhs correct) lib
+  forall M oa vars rhs correct (lib : @library o),
+    entry_in_library_extends M (lib_abs oa vars rhs correct) lib
     -> entry_in_library (lib_abs oa vars rhs correct) lib.
 Proof.
   induction lib; introv e; simpl in *; tcsp.
@@ -467,15 +500,15 @@ Qed.
 Hint Resolve entry_abs_in_library_extends_implies_entry_in_library : slow.
 
 Lemma lib_extends_preserves_find_entry {o} :
-  forall (lib1 lib2 : @library o) abs bs (e : library_entry),
-    lib_extends lib2 lib1
+  forall M (lib1 lib2 : @library o) abs bs (e : library_entry),
+    lib_extends M lib2 lib1
     -> find_entry lib1 abs bs = Some e
     -> find_entry lib2 abs bs = Some e.
 Proof.
   introv ext fe.
   apply find_entry_some_decomp in fe; exrepnd; subst.
 
-  pose proof (lib_extends_ext _ _ ext (lib_abs oa vars rhs correct)) as h.
+  pose proof (lib_extends_ext _ _ _ ext (lib_abs oa vars rhs correct)) as h.
   simpl in h; autodimp h hyp; eauto 3 with slow;[].
 
   apply implies_entry_in_library_app_right;[simpl; tcsp|].
@@ -529,14 +562,14 @@ Proof.
 Qed.
 
 Lemma lib_extends_implies_subset_get_utokens_library {o} :
-  forall (lib1 lib2 : @library o),
-    lib_extends lib2 lib1
+  forall M (lib1 lib2 : @library o),
+    lib_extends M lib2 lib1
     -> subset (get_utokens_library lib1) (get_utokens_library lib2).
 Proof.
   introv ext i.
   allrw @LIn_iff_In_name.
   allrw @list_in_get_utokens_library_iff; exrepnd.
-  apply (lib_extends_sub _ _ ext) in i1.
+  apply (lib_extends_sub _ _ _ ext) in i1.
   exists entry; dands; auto.
 Qed.
 Hint Resolve lib_extends_implies_subset_get_utokens_library : slow.
@@ -894,9 +927,18 @@ Proof.
 Qed.
  *)
 
+Lemma choice_sequence_entry_extend_implies_choice_sequence_vals_extend {o} :
+  forall M (entry1 entry2 : @ChoiceSeqEntry o),
+    choice_sequence_entry_extend M entry1 entry2
+    -> choice_sequence_vals_extend entry1 entry2.
+Proof.
+  introv h; unfold choice_sequence_entry_extend in h; tcsp.
+Qed.
+Hint Resolve choice_sequence_entry_extend_implies_choice_sequence_vals_extend : slow.
+
 Lemma lib_cs_in_library_extends_implies {o} :
-  forall (lib : @library o) name entry,
-    entry_in_library_extends (lib_cs name entry) lib
+  forall M (lib : @library o) name entry,
+    entry_in_library_extends M (lib_cs name entry) lib
     ->
     exists (entry' : ChoiceSeqEntry),
       find_cs lib name = Some entry'
@@ -905,7 +947,7 @@ Proof.
   induction lib; introv h; simpl in *; tcsp.
   destruct a; simpl in *; tcsp; repndors; repnd; subst; tcsp; boolvar; tcsp; GC; ginv;
     try (complete (eapply IHlib; eauto)).
-  exists entry0; dands; auto.
+  exists entry0; dands; auto; eauto 2 with slow.
 Qed.
 Hint Resolve lib_cs_in_library_extends_implies : slow.
 
@@ -920,8 +962,8 @@ Qed.
 Hint Resolve find_cs_some_implies_entry_in_library : slow.
 
 Lemma lib_extends_preserves_find_cs {o} :
-  forall (lib1 lib2 : @library o) name entry1,
-    lib_extends lib2 lib1
+  forall M (lib1 lib2 : @library o) name entry1,
+    lib_extends M lib2 lib1
     -> find_cs lib1 name = Some entry1
     ->
     exists (entry2 : ChoiceSeqEntry),
@@ -961,8 +1003,8 @@ Qed.
 Hint Resolve choice_sequence_vals_extend_preserves_find_value_of_cs_at : slow.
 
 Lemma lib_extends_preserves_find_cs_value_at {o} :
-  forall (lib1 lib2 : @library o) name n v,
-    lib_extends lib2 lib1
+  forall M (lib1 lib2 : @library o) name n v,
+    lib_extends M lib2 lib1
     -> find_cs_value_at lib1 name n = Some v
     -> find_cs_value_at lib2 name n = Some v.
 Proof.
@@ -1020,8 +1062,8 @@ Proof.
 Qed.
 
 Lemma lib_extends_preserves_unfold_abs {o} :
-  forall (lib1 lib2 : @library o) abs bs t,
-    lib_extends lib2 lib1
+  forall M (lib1 lib2 : @library o) abs bs t,
+    lib_extends M lib2 lib1
     -> unfold_abs lib1 abs bs = Some t
     -> unfold_abs lib2 abs bs = Some t.
 Proof.
@@ -1034,8 +1076,8 @@ Proof.
 Qed.
 
 Lemma lib_extends_preserves_compute_step_lib {o} :
-  forall (lib1 lib2 : @library o) abs bs t,
-    lib_extends lib2 lib1
+  forall M (lib1 lib2 : @library o) abs bs t,
+    lib_extends M lib2 lib1
     -> compute_step_lib lib1 abs bs = csuccess t
     -> compute_step_lib lib2 abs bs = csuccess t.
 Proof.
@@ -1053,8 +1095,9 @@ Qed.
 
  *)
 Lemma compute_step_preserves_lib_extends {o} :
-  forall (lib1 lib2 : library)
-         (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
+  forall M
+         (lib1 lib2 : library)
+         (ext  : lib_extends M lib2 lib1) (* lib2 extends lib1 *)
          (a b  : @NTerm o)
          (wf   : wf_term a)
          (comp : compute_step lib1 a = csuccess b),
@@ -1448,8 +1491,9 @@ Proof.
 Qed.
 
 Lemma reduces_in_atmost_k_steps_preserves_lib_extends {o} :
-  forall (lib1 lib2 : library)
-         (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
+  forall M
+         (lib1 lib2 : library)
+         (ext  : lib_extends M lib2 lib1) (* lib2 extends lib1 *)
          (a b  : @NTerm o)
          (wfa  : wf_term a)
          (n    : nat)
@@ -1467,7 +1511,7 @@ Proof.
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
     applydup @compute_step_preserves_wf in comp1; auto.
     apply IHn in comp0; exrepnd; auto; clear IHn.
-    apply (compute_step_preserves_lib_extends lib1 lib2) in comp1; auto; exrepnd.
+    apply (compute_step_preserves_lib_extends M lib1 lib2) in comp1; auto; exrepnd.
 
     pose proof (reduces_in_atmost_k_steps_alpha lib2 u b'0) as w.
     repeat (autodimp w hyp); eauto 3 with slow wf.
@@ -1478,8 +1522,9 @@ Proof.
 Qed.
 
 Lemma reduces_to_preserves_lib_extends {o} :
-  forall (lib1 lib2 : library)
-         (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
+  forall M
+         (lib1 lib2 : library)
+         (ext  : lib_extends M lib2 lib1) (* lib2 extends lib1 *)
          (a b  : @NTerm o)
          (wf   : wf_term a)
          (comp : reduces_to lib1 a b),
