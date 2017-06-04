@@ -225,6 +225,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NREquality     : CanonicalOp
  | NTEquality     : CanonicalOp
  | NInt           : CanonicalOp
+ | NNatNum        : CanonicalOp
  | NAtom          : CanonicalOp
  | NUAtom         : CanonicalOp (* Unguessable atoms *)
  | NBase          : CanonicalOp
@@ -294,6 +295,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NREquality     => [0,0,0]
   | NTEquality     => [0,0]
   | NInt           => []
+  | NNatNum        => []
   | NBase          => []
   | NAtom          => []
   | NUAtom         => []

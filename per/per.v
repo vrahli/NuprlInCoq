@@ -375,8 +375,6 @@ Definition bar_lib {o} := list (@library o).
   fun v T => exists per, ts lib T T per /\ per v v.*)
 
 
-Definition Mem {o} := @ChoiceSeqVal o -> @CTerm o -> Prop.
-
 (* This states that [bar] is a bar of [lib] *)
 Definition BarLibCond {o}
            (M   : @Mem o)
@@ -486,6 +484,35 @@ Definition per_int_bar {p} M (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) 
   , all_in_bar bar (fun lib => T1 ===>(lib) mkc_int)
   # all_in_bar bar (fun lib => T2 ===>(lib) mkc_int) }
   # eq <=2=> (equality_of_int_bar M lib).
+
+
+
+(* This is just for testing, we've also defined nat using int and the set type *)
+Definition equality_of_nat_bar {o} M lib (t t' : @CTerm o) :=
+  {bar : BarLib M lib
+  , all_in_bar
+      bar
+      (fun lib =>
+         {n : nat
+         , t ===>(lib) (mkc_nat n)
+         # t' ===>(lib) (mkc_nat n)})}.
+
+Definition mk_Nat {o} : @NTerm o := oterm (Can NNatNum) [].
+
+Theorem isprog_Nat {o} : @isprog o mk_Nat.
+Proof.
+  repeat constructor.
+Qed.
+
+Definition mkc_Nat {o} : @CTerm o := exist isprog mk_Nat isprog_Nat.
+
+Definition per_nat_bar {p} M (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  {bar : BarLib M lib
+  , all_in_bar bar (fun lib => T1 ===>(lib) mkc_Nat)
+  # all_in_bar bar (fun lib => T2 ===>(lib) mkc_Nat) }
+  # eq <=2=> (equality_of_nat_bar M lib).
+
+
 
 (**
 
@@ -2385,6 +2412,7 @@ Definition close_compute {p} (ts : cts) lib (T1 T2 : @CTerm p) (eq : per(p)) :=
 Inductive close {p} (M : Mem) (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_init     : ts lib T T' eq -> close M ts lib T T' eq
   | CL_int      : per_int_bar      M (close M ts) lib T T' eq -> close M ts lib T T' eq
+  | CL_nat      : per_nat_bar      M (close M ts) lib T T' eq -> close M ts lib T T' eq
   | CL_atom     : per_atom_bar     M (close M ts) lib T T' eq -> close M ts lib T T' eq
   | CL_uatom    : per_uatom_bar    M (close M ts) lib T T' eq -> close M ts lib T T' eq
   | CL_base     : per_base_bar     M (close M ts) lib T T' eq -> close M ts lib T T' eq
@@ -2423,6 +2451,7 @@ Hint Constructors close.
 
 Arguments CL_init     {p} [M] [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_int      {p} [M] [ts] [lib] [T] [T'] [eq] _.
+Arguments CL_nat      {p} [M] [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_atom     {p} [M] [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_uatom    {p} [M] [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_base     {p} [M] [ts] [lib] [T] [T'] [eq] _.
@@ -2461,6 +2490,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "CL_init"
   | Case_aux c "CL_int"
+  | Case_aux c "CL_nat"
   | Case_aux c "CL_atom"
   | Case_aux c "CL_uatom"
   | Case_aux c "CL_base"
@@ -2510,6 +2540,13 @@ Definition close_ind' {pp}
                  (T T' : @CTerm pp)
                  (eq   : per)
                  (per  : per_int_bar M (close M ts) lib T T' eq),
+            P M ts lib T T' eq)
+  (nat  : forall (M    : @Mem pp)
+                 (ts   : cts)
+                 (lib  : library)
+                 (T T' : @CTerm pp)
+                 (eq   : per)
+                 (per  : per_nat_bar M (close M ts) lib T T' eq),
             P M ts lib T T' eq)
   (atom : forall (M    : @Mem pp)
                  (ts   : cts)
@@ -3266,6 +3303,7 @@ Definition close_ind' {pp}
    match t in close _ _ _ _ _ _ return P M ts lib T T' eq with
    | CL_init   pts => init  M ts lib T T' eq pts
    | CL_int    pts => int   M ts lib T T' eq pts
+   | CL_nat    pts => nat   M ts lib T T' eq pts
    | CL_atom   pts => atom  M ts lib T T' eq pts
    | CL_uatom  pts => uatom M ts lib T T' eq pts
    | CL_base   pts => base  M ts lib T T' eq pts
@@ -4097,6 +4135,7 @@ Ltac one_unfold_per :=
   match goal with
     | [ H : per_int        _ _ _ _ _ |- _ ] => unfold per_int        in H; exrepd
     | [ H : per_int_bar    _ _ _ _ _ |- _ ] => unfold per_int_bar    in H; exrepd
+    | [ H : per_nat_bar    _ _ _ _ _ |- _ ] => unfold per_nat_bar    in H; exrepd
     | [ H : per_atom       _ _ _ _ _ |- _ ] => unfold per_atom       in H; exrepd
     | [ H : per_atom_bar   _ _ _ _ _ |- _ ] => unfold per_atom_bar   in H; exrepd
     | [ H : per_uatom      _ _ _ _ _ |- _ ] => unfold per_uatom      in H; exrepd
