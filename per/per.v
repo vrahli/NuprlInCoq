@@ -315,58 +315,127 @@ Notation "T [[ v \\ a ]]" := (substc a v T) (at level 0).
 
 (* begin hide *)
 
+Definition InfChoiceSeqVals {o} := nat -> @ChoiceSeqVal o.
 
-Definition inf_library {o} := nat -> @library_entry o.
-
-(* [m] is the next index we want to get, and [n] the size we still need to extract *)
-Fixpoint inf2library {o} (l : @inf_library o) (m : nat) (n : nat) : library :=
-  match n with
-  | 0 => []
-  | S n => (l m) :: inf2library l (S m) n
+Definition inf_choice_sequence_satisfies_restriction {o}
+           (M          : Mem)
+           (vals       : @InfChoiceSeqVals o)
+           (constraint : ChoiceSeqRestriction) : Prop :=
+  match constraint with
+  | csc_no => True
+  | csc_type typ => forall n, M (vals n) typ
+  | csc_coq_law f => forall n, vals n = f n
   end.
 
-Definition shift_inf_lib {o} (l : @inf_library o) : inf_library :=
+Definition ex_choice {o}
+           (M     : @Mem o)
+           (restr : @ChoiceSeqRestriction o) : Type :=
+  match restr with
+  | csc_no => True
+  | csc_type typ => {v : @ChoiceSeqVal o & M v typ}
+  | csc_coq_law f => True
+  end.
+
+Record InfChoiceSeqEntry {o} (M : Mem) :=
+  MkInfChoiceSeqEntry
+    {
+      icse_restriction : ChoiceSeqRestriction;
+      icse_vals :> @ex_choice o M icse_restriction -> @InfChoiceSeqVals o;
+    }.
+
+Inductive inf_library_entry {o} M :=
+(* a choice sequence *)
+| inf_lib_cs
+    (name : choice_sequence_name)
+    (entry : @InfChoiceSeqEntry o M)
+(* a regular abstraction *)
+| inf_lib_abs
+    (opabs : opabs)
+    (vars  : list sovar_sig)
+    (rhs   : @SOTerm o)
+    (correct : correct_abs opabs vars rhs).
+
+Definition inf_library {o} M := nat -> @inf_library_entry o M.
+
+Definition safe_inf_choice_sequence_entry {o} {M} (e : @InfChoiceSeqEntry o M) :=
+  match e with
+  | MkInfChoiceSeqEntry _ _ restriction vals =>
+    forall (c : ex_choice M restriction),
+      inf_choice_sequence_satisfies_restriction M (vals c) restriction
+  end.
+
+Definition safe_inf_library_entry {o} {M} (e : @inf_library_entry o M) :=
+  match e with
+  | inf_lib_cs _ name cse => safe_inf_choice_sequence_entry cse
+  | _ => True
+  end.
+
+Definition safe_inf_library {o} {M} (inflib : @inf_library o M) :=
+  forall n, safe_inf_library_entry (inflib n).
+
+Definition shift_inf_lib {o} {M} (l : @inf_library o M) : inf_library M :=
   fun n => l (S n).
 
-Fixpoint inf_lib_extends {o} (infl : @inf_library o) (l : @library o) :=
-  match l with
-  | [] => True
-  | entry :: entries =>
-    entry = infl 0
-    /\ inf_lib_extends (shift_inf_lib infl) entries
+Definition inf_entry2name {o} {M} (e : @inf_library_entry o M) : EntryName :=
+  match e with
+  | inf_lib_cs _ name _ => entry_name_cs name
+  | inf_lib_abs _ opabs _ _ _ => entry_name_abs opabs
   end.
 
-Definition inf_lib_extends2 {o} (infl : @inf_library o) (l : @library o) :=
-  l = inf2library infl 0 (length l).
+Definition inf_matching_entries {o} {M}
+           (entry1 : @inf_library_entry o M)
+           (entry2 : @library_entry o) : Prop :=
+  same_entry_name (inf_entry2name entry1) (entry2name entry2).
 
-Lemma inf2library_S {o} :
-  forall len n (infl : @inf_library o),
-    inf2library infl (S n) len
-    = inf2library (shift_inf_lib infl) n len.
-Proof.
-  induction len; introv; simpl; auto.
-  rewrite IHlen; clear IHlen; auto.
-Qed.
+Definition inf_choice_sequence_vals_extend {o}
+           (vals1 : @InfChoiceSeqVals o)
+           (vals2 : @ChoiceSeqVals o) : Prop :=
+  forall n v,
+    select n vals2 = Some v
+    -> vals1 n = v.
 
-Lemma inf_lib_extends_iff2 {o} :
-  forall (l : @library o) (infl : @inf_library o),
-    inf_lib_extends infl l <-> inf_lib_extends2 infl l.
-Proof.
-  induction l; simpl; split; intro h; auto.
+(* [entry1] extends [entry2] *)
+Definition inf_choice_sequence_entry_extend {o} {M}
+           (entry1 : @InfChoiceSeqEntry o M)
+           (entry2 : @ChoiceSeqEntry o) : Prop :=
+  (* the extension has the same restriction has the current sequence *)
+  icse_restriction _ entry1 = cse_restriction entry2
+  (* the extension is an extension *)
+  /\
+  forall (c : ex_choice M (icse_restriction _ entry1)),
+    inf_choice_sequence_vals_extend (entry1 c) entry2.
 
-  - unfold inf_lib_extends2; simpl; auto.
+(* [entry1] extends [entry2] *)
+Definition inf_entry_extends {o} {M}
+           (entry1 : @inf_library_entry o M)
+           (entry2 : @library_entry o) : Prop :=
+  match entry1, entry2 with
+  | inf_lib_cs _ name1 entry1, lib_cs name2 entry2 =>
+    name1 = name2 /\ inf_choice_sequence_entry_extend entry1 entry2
 
-  - repnd; subst.
-    apply IHl in h; clear IHl.
-    unfold inf_lib_extends2 in *; simpl; f_equal.
-    rewrite inf2library_S; auto.
+  | inf_lib_abs _ abs1 vars1 rhs1 cor1, lib_abs abs2 vars2 rhs2 cor2 =>
+    abs1 = abs2 /\ vars1 = vars2 /\ rhs1 = rhs2
 
-  - rewrite IHl; clear IHl.
-    unfold inf_lib_extends2 in *; simpl in *.
-    apply cons_inj in h; repnd.
-    dands; auto.
-    rewrite inf2library_S in h; auto.
-Qed.
+  | _, _ => False
+  end.
+
+Fixpoint entry_in_inf_library_extends {o} {M}
+         (entry  : @library_entry o)
+         (n      : nat)
+         (inflib : inf_library M) : Prop :=
+  match n with
+  | 0 => False
+  | S n =>
+    inf_entry_extends (inflib 0) entry
+    \/
+    (~ inf_matching_entries (inflib 0) entry
+       # entry_in_inf_library_extends entry n (shift_inf_lib inflib))
+  end.
+
+Definition inf_lib_extends {o} {M} (infl : @inf_library o M) (l : @library o) :=
+  forall entry,
+    entry_in_library entry l
+    -> exists n, entry_in_inf_library_extends entry n infl.
 
 Definition bar_lib {o} := list (@library o).
 
@@ -380,8 +449,9 @@ Definition BarLibCond {o}
            (M   : @Mem o)
            (bar : @bar_lib o)
            (lib : @library o) :=
-  forall (infLib : inf_library),
+  forall (infLib : inf_library M),
     inf_lib_extends infLib lib
+    -> (safe_library M lib -> safe_inf_library infLib)
     ->
     exists (lib' : library),
       List.In lib' bar
@@ -395,7 +465,7 @@ Record BarLib {o} M (lib : @library o) :=
       bar_lib_cond : BarLibCond M bar_lib_bar lib;
     }.
 Arguments bar_lib_bar  [o] [M] [lib] _.
-Arguments bar_lib_cond [o] [M] [lib] _ _ _.
+Arguments bar_lib_cond [o] [M] [lib] _ _ _ _.
 
 Definition all_in_bar {o} {M} {lib} (bar : BarLib M lib) (F : @library o -> Prop) :=
   forall (lib' : library),

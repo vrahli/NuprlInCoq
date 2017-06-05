@@ -167,6 +167,7 @@ Record lib_extends {o} M (lib1 lib0 : @library o) : Prop :=
 
       lib_extends_sub : subset_library lib0 lib1;
     }.
+Arguments MkLibExtends [o] [M] [lib1] [lib0] _ _ _.
 
 Lemma lib_extends_preserves_safe {o} :
   forall M (lib1 lib2 : @library o),
