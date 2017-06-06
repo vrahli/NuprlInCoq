@@ -1012,12 +1012,28 @@ Proof.
 Qed.
 Hint Resolve choice_sequence_entry_extend_implies_choice_sequence_vals_extend : slow.
 
+Definition entry2restriction {o} (e : @ChoiceSeqEntry o) : ChoiceSeqRestriction :=
+  match e with
+  | MkChoiceSeqEntry _ vals restriction => restriction
+  end.
+
+Lemma choice_sequence_entry_extend_preserves_entry2restriction {o} :
+  forall (entry1 entry2 : @ChoiceSeqEntry o),
+    choice_sequence_entry_extend entry1 entry2
+    -> entry2restriction entry1 = entry2restriction entry2.
+Proof.
+  introv h; destruct entry1, entry2; simpl in *.
+  unfold choice_sequence_entry_extend in h; simpl in *; tcsp.
+Qed.
+Hint Resolve choice_sequence_entry_extend_preserves_entry2restriction : slow.
+
 Lemma lib_cs_in_library_extends_implies {o} :
   forall (lib : @library o) name entry,
     entry_in_library_extends (lib_cs name entry) lib
     ->
     exists (entry' : ChoiceSeqEntry),
       find_cs lib name = Some entry'
+      /\ entry2restriction entry' = entry2restriction entry
       /\ choice_sequence_vals_extend entry' entry.
 Proof.
   induction lib; introv h; simpl in *; tcsp.
@@ -1044,6 +1060,7 @@ Lemma lib_extends_preserves_find_cs {o} :
     ->
     exists (entry2 : ChoiceSeqEntry),
       find_cs lib2 name = Some entry2
+      /\ entry2restriction entry2 = entry2restriction entry1
       /\ choice_sequence_vals_extend entry2 entry1.
 Proof.
   introv ext fcs.
