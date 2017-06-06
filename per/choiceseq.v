@@ -850,6 +850,15 @@ Proof.
     { remember (length vals) as lv; destruct lv; simpl in *; try omega. }
 Qed.
 
+Lemma implies_compute_to_valc_apply_choice_seq {o} :
+  forall lib (a : @CTerm o) name n v,
+    computes_to_valc lib a (mkc_nat n)
+    -> find_cs_value_at lib name n = Some v
+    -> computes_to_valc lib (mkc_apply (mkc_choice_seq name) a) v.
+Proof.
+
+Qed.
+
 Lemma seq0_in_nat2nat {o} :
   @nmember o lib0 (mkc_choice_seq seq0) Nat2Nat.
 Proof.
@@ -971,12 +980,14 @@ Proof.
     exrepnd.
 
     pose proof (exists_bar_coq_law memNat lib' seq0 entry2 n const0) as q.
-    repeat (autodimp q hyp).
-
-
-    {
-      SearchAbout lib_extends find_cs.
-    }
+    repeat (autodimp q hyp);[].
+    exrepnd.
+    exists bar0.
+    introv j.
+    applydup q3 in j.
+    unfold const0 in j0.
+    exists 0.
+    dands; spcast.
 
   }
 
