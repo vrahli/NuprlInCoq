@@ -854,9 +854,70 @@ Lemma implies_compute_to_valc_apply_choice_seq {o} :
   forall lib (a : @CTerm o) name n v,
     computes_to_valc lib a (mkc_nat n)
     -> find_cs_value_at lib name n = Some v
+    -> iscvalue v
     -> computes_to_valc lib (mkc_apply (mkc_choice_seq name) a) v.
 Proof.
+  introv comp find iscv.
+  destruct_cterms.
+  unfold computes_to_valc in *; simpl in *.
+  eapply computes_to_value_step;[|csunf; simpl; reflexivity].
+  split; eauto 2 with slow.
+  eapply extensional_eapply.implies_reduces_to_eapply_choice_seq;[eauto| |eauto].
+  apply computes_to_value_isvalue_refl; eauto 2 with slow.
+Qed.
 
+Lemma computes_to_valc_preserves_lib_extends {o} :
+  forall M
+         (lib1 lib2 : library)
+         (ext  : lib_extends M lib2 lib1) (* lib2 extends lib1 *)
+         (a b  : @CTerm o)
+         (comp : computes_to_valc lib1 a b),
+    {b' : CTerm & computes_to_valc lib2 a b' # alphaeqc b b'}.
+Proof.
+  introv ext r.
+  destruct_cterms; unfold computes_to_valc in *; simpl in *.
+  unfold computes_to_value in *; repnd.
+  unfold alphaeqc.
+  dup r0 as comp.
+  eapply reduces_to_preserves_lib_extends in r0;[|eauto|]; eauto 2 with slow.
+  exrepnd.
+  applydup @reduces_to_preserves_program in comp; eauto 2 with slow.
+  applydup @alphaeq_preserves_program in r1.
+  apply r2 in comp0; clear r2.
+  allrw @isprogram_eq.
+  exists (mk_ct b' comp0); simpl; dands; eauto 2 with slow.
+Qed.
+
+Lemma alphaeqc_mkc_nat_implies {o} :
+  forall n (t : @CTerm o),
+    alphaeqc (mkc_nat n) t -> t = mkc_nat n.
+Proof.
+  introv aeq; destruct_cterms; unfold alphaeqc in aeq; simpl in *.
+  apply cterm_eq; simpl.
+  apply alpha_eq_mk_nat in aeq; auto.
+Qed.
+
+Lemma computes_to_valc_nat_if_lib_extends {o} :
+  forall M (lib1 lib2 : @library o) t n,
+    lib_extends M lib1 lib2
+    -> computes_to_valc lib2 t (mkc_nat n)
+    -> computes_to_valc lib1 t (mkc_nat n).
+Proof.
+  introv ext comp.
+  pose proof (computes_to_valc_preserves_lib_extends
+                M lib2 lib1 ext t (mkc_nat n) comp) as h.
+  exrepnd.
+  apply alphaeqc_mkc_nat_implies in h0; subst; auto.
+Qed.
+
+Lemma in_bar_implies_extends {o} :
+  forall M (lib lib' : @library o) (bar : BarLib M lib),
+    List.In lib' (bar_lib_bar bar)
+    -> lib_extends M lib' lib.
+Proof.
+  introv i.
+  destruct bar as [bar cond]; simpl in *.
+  unfold BarLibCond in cond.
 Qed.
 
 Lemma seq0_in_nat2nat {o} :
@@ -987,7 +1048,8 @@ Proof.
     applydup q3 in j.
     unfold const0 in j0.
     exists 0.
-    dands; spcast.
+    dands; spcast; eapply implies_compute_to_valc_apply_choice_seq; eauto;
+      eapply (computes_to_valc_nat_if_lib_extends memNat); eauto.
 
   }
 
