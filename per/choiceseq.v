@@ -356,6 +356,13 @@ Proof.
 Qed.
 Hint Resolve BarLibCond_refl : slow.
 
+Lemma BarLibExt_refl {o} :
+  forall M (lib : @library o), BarLibExt M [lib] lib.
+Proof.
+  introv i; simpl in *; repndors; subst; tcsp; eauto 2 with slow.
+Qed.
+Hint Resolve BarLibExt_refl : slow.
+
 Lemma find_cs_some_implies_list_in {o} :
   forall (lib : @library o) name e,
     find_cs lib name = Some e
@@ -787,7 +794,16 @@ Proof.
   eexists; dands;[left;reflexivity| |]; simpl in *; eauto 2 with slow.
   autodimp h hyp; eauto 2 with slow.
 Qed.
-Hint Resolve BarLibCond_refl : slow.
+Hint Resolve BarLibCond_extend_library_upto : slow.
+
+Lemma BarLibExt_extend_library_upto {o} :
+  forall M (lib : @library o) name n,
+    BarLibExt M [extend_library_upto lib name n] lib.
+Proof.
+  introv i.
+  simpl in *; repndors; subst; tcsp; eauto 2 with slow.
+Qed.
+Hint Resolve BarLibExt_extend_library_upto : slow.
 
 Lemma find_cs_same_extend_library_upto {o} :
   forall (lib : @library o) name n,
@@ -826,7 +842,7 @@ Proof.
 
   destruct (lt_dec n (length vals)) as [d|d].
 
-  - exists (MkBarLib _ M lib [lib] (BarLibCond_refl _ lib)); simpl.
+  - exists (MkBarLib _ M lib [lib] (BarLibCond_refl _ lib) (BarLibExt_refl _ lib)); simpl.
     introv i; repndors; subst; tcsp.
     unfold find_cs_value_at.
     allrw; simpl in *.
@@ -836,7 +852,8 @@ Proof.
   - exists (MkBarLib
               _ M lib
               [extend_library_upto lib name (S n)]
-              (BarLibCond_extend_library_upto M lib name (S n) safe)).
+              (BarLibCond_extend_library_upto M lib name (S n) safe)
+              (BarLibExt_extend_library_upto M lib name (S n))).
     simpl; introv i; repndors; subst; simpl in *; tcsp.
     unfold find_cs_value_at.
     rewrite find_cs_same_extend_library_upto; allrw.
@@ -916,8 +933,546 @@ Lemma in_bar_implies_extends {o} :
     -> lib_extends M lib' lib.
 Proof.
   introv i.
-  destruct bar as [bar cond]; simpl in *.
-  unfold BarLibCond in cond.
+  destruct bar as [bar cond ext]; simpl in *; tcsp.
+Qed.
+Hint Resolve in_bar_implies_extends : slow.
+
+Lemma entry_extends_preserves_matching_entries_left {o}:
+  forall (entry1 entry2 entry : @library_entry o),
+    entry_extends entry1 entry2
+    -> matching_entries entry1 entry
+    -> matching_entries entry2 entry.
+Proof.
+  introv h m; unfold entry_extends in h.
+  unfold matching_entries in *.
+  destruct entry1; simpl in *.
+  - destruct entry2; simpl in *; repnd; subst; tcsp; ginv.
+  - subst; simpl in *; auto.
+Qed.
+Hint Resolve entry_extends_preserves_matching_entries_left : slow.
+
+Lemma entry_extends_preserves_matching_entries_left_rev {o}:
+  forall (entry1 entry2 entry : @library_entry o),
+    entry_extends entry2 entry1
+    -> matching_entries entry1 entry
+    -> matching_entries entry2 entry.
+Proof.
+  introv h m; unfold entry_extends in h.
+  unfold matching_entries in *.
+  destruct entry2; simpl in *.
+  - destruct entry1; simpl in *; repnd; subst; tcsp; ginv.
+  - subst; simpl in *; auto.
+Qed.
+Hint Resolve entry_extends_preserves_matching_entries_left_rev : slow.
+
+Lemma entry_in_library_extends_implies_entry_in_library {o} :
+  forall (entry : @library_entry o) lib,
+    entry_in_library_extends entry lib
+    ->
+    exists entry',
+      entry_in_library entry' lib
+      /\ entry_extends entry' entry.
+Proof.
+  induction lib; introv h; simpl in *; tcsp.
+  repndors; repnd; tcsp.
+
+  - exists a; dands; tcsp.
+
+  - autodimp IHlib hyp.
+    exrepnd.
+    exists entry'; dands; tcsp.
+    right; dands; auto.
+    intro q; destruct h0; eauto 2 with slow.
+Qed.
+
+Lemma choice_sequence_entry_extend_trans {o} :
+  forall (entry1 entry2 entry3 : @ChoiceSeqEntry o),
+    choice_sequence_entry_extend entry1 entry2
+    -> choice_sequence_entry_extend entry2 entry3
+    -> choice_sequence_entry_extend entry1 entry3.
+Proof.
+  introv h1 h2; unfold choice_sequence_entry_extend in *.
+  repnd; allrw; dands; auto.
+  destruct entry1, entry2, entry3; simpl in *.
+  unfold choice_sequence_vals_extend in *; exrepnd; subst.
+  eexists.
+  rewrite <- app_assoc; eauto.
+Qed.
+Hint Resolve choice_sequence_entry_extend_trans : slow.
+
+Lemma entry_extends_trans {o} :
+  forall (entry1 entry2 entry3 : @library_entry o),
+    entry_extends entry1 entry2
+    -> entry_extends entry2 entry3
+    -> entry_extends entry1 entry3.
+Proof.
+  introv h1 h2; unfold entry_extends in *.
+  destruct entry1; simpl in *; tcsp.
+  - destruct entry2; simpl in *; repnd; subst; tcsp.
+    destruct entry3; simpl in *; repnd; subst; tcsp; ginv.
+    dands; auto; eauto 2 with slow.
+  - destruct entry2; simpl in *; repnd; subst; tcsp.
+    destruct entry3; simpl in *; repnd; subst; tcsp; ginv.
+Qed.
+Hint Resolve entry_extends_trans : slow.
+
+Lemma entry_extends_preserves_entry_in_library_extends {o} :
+  forall (entry1 entry2 : @library_entry o) lib,
+    entry_extends entry1 entry2
+    -> entry_in_library_extends entry1 lib
+    -> entry_in_library_extends entry2 lib.
+Proof.
+  induction lib; introv ext i; simpl in *; tcsp.
+  repndors; repnd; tcsp.
+
+  - left; eauto 2 with slow.
+
+  - right; dands; auto.
+    intro q; destruct i0; eauto 2 with slow.
+Qed.
+Hint Resolve entry_extends_preserves_entry_in_library_extends : slow.
+
+Lemma subset_library_trans {o} :
+  forall (lib1 lib2 lib3 : @library o),
+    subset_library lib1 lib2
+    -> subset_library lib2 lib3
+    -> subset_library lib1 lib3.
+Proof.
+  introv h1 h2 i; unfold subset_library in *.
+  applydup h1 in i; exrepnd.
+  applydup h2 in i0; exrepnd.
+  eexists; dands; eauto 2 with slow.
+Qed.
+Hint Resolve subset_library_trans : slow.
+
+Lemma lib_extends_trans {o} :
+  forall M (lib1 lib2 lib3 : @library o),
+    lib_extends M lib1 lib2
+    -> lib_extends M lib2 lib3
+    -> lib_extends M lib1 lib3.
+Proof.
+  introv ext1 ext2.
+  destruct ext1 as [ext1 safe1 ss1].
+  destruct ext2 as [ext2 safe2 ss2].
+
+  split; dands; eauto 2 with slow.
+
+  - introv i.
+    apply ext2 in i.
+
+    apply entry_in_library_extends_implies_entry_in_library in i.
+    exrepnd.
+    apply ext1 in i1; eauto 2 with slow.
+
+  - introv safe3.
+    applydup safe2 in safe3; tcsp.
+Qed.
+Hint Resolve lib_extends_trans : slow.
+
+Fixpoint map_in {A B} (l : list A) : (forall a : A, List.In a l -> B) -> list B :=
+  match l with
+    | [] => fun _ => []
+    | x :: xs =>
+      fun f =>
+        f x (@or_introl (x = x) (List.In x xs) eq_refl)
+          :: map_in xs (fun a i => f a (or_intror i))
+  end.
+
+Definition equality_of_nat_tt {o} lib (n m : @CTerm o) :=
+  {k : nat
+  & computes_to_valc lib n (mkc_nat k)
+  # computes_to_valc lib m (mkc_nat k)}.
+
+Definition reducek_pair {o} lib (t1 t2 : @NTerm o) (k : nat) (n : nat) :=
+    reduces_in_atmost_k_steps lib t1 (mk_nat k) n
+  # reduces_in_atmost_k_steps lib t2 (mk_nat k) n.
+
+Definition equality_of_nat_p_2 {o} lib (n m : @NTerm o) :=
+  {x : nat # nat , reducek_pair lib n m (fst x) (snd x)}.
+
+Definition equality_of_nat_p_2_c {o} lib (n m : @CTerm o) :=
+  equality_of_nat_p_2 lib (get_cterm n) (get_cterm m).
+
+Lemma equality_of_nat_imp1 {o} :
+  forall lib (n m : @CTerm o),
+    equality_of_nat lib n m
+    <-> equality_of_nat_p_2_c lib n m.
+Proof.
+  introv; split.
+
+  - introv e.
+    unfold equality_of_nat in e; exrepnd; spcast.
+    allunfold @computes_to_valc; allsimpl.
+    allunfold @computes_to_value; repnd.
+    allunfold @reduces_to; exrepnd.
+    allunfold @reduces_in_atmost_k_steps.
+    Check no_change_after_value2.
+    pose proof (no_change_after_value2 lib
+                  (get_cterm n) k0 (mk_nat n0) e2 e1 (Peano.max k0 k)) as h1.
+    autodimp h1 hyp; try (apply max_prop1).
+    pose proof (no_change_after_value2 lib
+                (get_cterm m) k (mk_nat n0) e4 e0 (Peano.max k0 k)) as h2.
+    autodimp h2 hyp; try (apply max_prop2).
+    exists ((n0,Peano.max k0 k)); simpl; sp.
+    unfold reducek_pair; sp.
+
+  - introv e.
+    unfold equality_of_nat.
+    unfold equality_of_nat_p_2_c, equality_of_nat_p_2, reducek_pair in e.
+    exrepnd; allsimpl.
+    exists x0; dands; spcast;
+    unfold computes_to_valc, computes_to_value; simpl;
+    dands; try (apply isvalue_mk_nat);
+    exists x; auto.
+Qed.
+
+Inductive before_witness (P : nat -> nat -> Prop) (k : nat) : Prop :=
+  | stop : forall (z n : nat), k = z + n -> P z n -> before_witness P k
+  | next : before_witness P (S k) -> before_witness P k.
+
+Lemma leS:
+  forall n m : nat, n <= S m -> n <= m [+] n = S m.
+Proof.
+  introv; revert n.
+  induction m; simpl; introv e.
+  - destruct n; sp.
+    destruct n; sp.
+    provefalse.
+    inversion e as [|x h].
+    inversion h.
+  - apply leb_correct in e.
+    destruct n; allsimpl.
+    + left; omega.
+    + apply leb_complete in e.
+      apply IHm in e; dorn e.
+      left; omega.
+      right; omega.
+Qed.
+
+Lemma P_search :
+  forall (P : nat -> nat -> Prop)
+         (dec : forall z n, P z n [+] !P z n)
+         (k : nat),
+    {x : nat # nat & P (fst x) (snd x)}
+    [+]
+    (forall z n : nat, k = (z + n)%nat -> ~ P z n).
+Proof.
+  intros P dec k.
+
+  assert (forall k z,
+            {x : nat # nat & P (fst x) (snd x)}
+              [+]
+              (forall n : nat, n <= k -> ~ P z n)) as hyp1.
+  {
+    clear k.
+    introv.
+    induction k.
+
+    - pose proof (dec z 0) as h.
+      dorn h.
+
+      + left; exists (z,0); simpl; sp.
+
+      + right; introv e.
+        assert (n = 0) by omega; subst; simpl; sp.
+
+    - dorn IHk.
+
+      + left; auto.
+
+      + pose proof (dec z (S k)) as h.
+        dorn h.
+
+        * left; exists (z,S k); simpl; sp.
+
+        * right; introv e; simpl.
+          apply leS in e.
+          dorn e.
+          { apply IHk in e; sp. }
+          subst; sp.
+  }
+
+  assert (forall k n,
+            {x : nat # nat & P (fst x) (snd x)}
+              [+]
+              (forall z : nat, z <= k -> ~ P z n)) as hyp2.
+  {
+    clear k.
+    introv.
+    induction k.
+
+    - pose proof (dec 0 n) as h.
+      dorn h.
+
+      + left; exists (0,n); simpl; sp.
+
+      + right; introv e.
+        assert (z = 0) by omega; subst; simpl; sp.
+
+    - dorn IHk.
+
+      + left; auto.
+
+      + pose proof (dec (S k) n) as h.
+        dorn h.
+
+        * left; exists (S k,n); simpl; sp.
+
+        * right; introv e; simpl.
+          apply leS in e.
+          dorn e.
+          { apply IHk in e; sp. }
+          subst; sp.
+  }
+
+  assert ({x : nat # nat & P (fst x) (snd x)}
+            [+]
+            (forall z n : nat, z <= k -> n <= k -> ~ P z n)) as hyp.
+  {
+    induction k.
+
+    - pose proof (dec 0 0) as h.
+      dorn h.
+      + left; exists (0,0); simpl; sp.
+      + right; introv e1 e2.
+        assert (z = 0) by omega; assert (n = 0) by omega; subst; simpl; sp.
+    - dorn IHk.
+      + left; auto.
+      + pose proof (hyp1 (S k) (S k)) as h1.
+        dorn h1.
+        * left; auto.
+        * pose proof (hyp2 (S k) (S k)) as h2.
+          dorn h2.
+          { left; auto. }
+          right; introv e1 e2.
+          apply leS in e1.
+          apply leS in e2.
+          dorn e1; dorn e2; subst.
+          { apply IHk; auto. }
+          { apply h2; auto. }
+          { apply h1; auto. }
+          { apply h1; sp. }
+  }
+
+  dorn hyp.
+  { left; auto. }
+  right.
+  introv e; subst.
+  apply hyp; omega.
+Qed.
+
+Definition inv_before_witness :
+  forall (P : nat -> nat -> Prop) (k : nat),
+    before_witness P k
+    -> (forall z n : nat, k = z + n -> ~ P z n)
+    -> before_witness P (S k) :=
+  fun P k b =>
+    match b
+          in before_witness _ _
+          return (forall z n, k = z + n -> ~ P z n)
+                 -> before_witness P (S k) with
+      | stop _ _ z n e p => fun f => match f z n e p with end
+      | next _ _ b => fun _ => b
+    end.
+
+Fixpoint linear_search
+      (P : nat -> nat -> Prop)
+      (dec : forall z n, P z n [+] !P z n)
+      (k : nat)
+      (b : before_witness P k) : {x : nat # nat & P (fst x) (snd x)} :=
+  match P_search P dec k with
+    | inl p => p
+    | inr a => linear_search P dec (S k) (inv_before_witness P k b a)
+  end.
+
+Lemma deq_nterm_nat {p} :
+  forall (t : @NTerm p) z, {t = mk_nat z} + {t <> mk_nat z}.
+Proof.
+  introv.
+  nterm_ind1 t as [v1|f1 ind|o1 lbt1 Hind] Case; intros.
+
+  - Case "vterm".
+    right; intro k; inversion k.
+
+  - Case "sterm".
+    right; intro k; inversion k.
+
+  - Case "oterm".
+    destruct o1; try (complete (right; intro k; inversion k)).
+    destruct c; try (complete (right; intro k; inversion k)).
+    destruct lbt1; try (complete (right; intro k; inversion k)).
+    assert ({Z.of_nat z < z0} + {Z.of_nat z > z0} + {Z.of_nat z = z0})%Z as h by (apply Z_dec).
+    destruct h as [ h | h ]; subst.
+    + destruct h as [ h | h ]; sp; right; sp; inversion H; omega.
+    + left; sp.
+Qed.
+
+Lemma compute_step_dec {o} :
+  forall lib (t : @NTerm o),
+    {u : NTerm $ compute_step lib t = csuccess u}
+    [+]
+    !{u : NTerm $ compute_step lib t = csuccess u}.
+Proof.
+  introv.
+  remember (compute_step lib t); destruct c.
+  - left.
+    exists n; sp.
+  - right; intro k; exrepnd; inversion k0.
+Qed.
+
+Lemma reduces_in_atmost_k_steps_nat_dec {o} :
+  forall lib k (t : @NTerm o) z,
+    reduces_in_atmost_k_steps lib t (mk_nat z) k
+    [+]
+    !(reduces_in_atmost_k_steps lib t (mk_nat z) k).
+Proof.
+  induction k; introv.
+
+  - rw @reduces_in_atmost_k_steps_0.
+    pose proof (deq_nterm_nat t z) as h; sp.
+
+  - rw @reduces_in_atmost_k_steps_S.
+    pose proof (compute_step_dec lib t) as h.
+    dorn h.
+
+    + exrepnd.
+      pose proof (IHk u z) as j.
+      dorn j.
+
+      * left.
+        exists u; sp.
+
+      * right.
+        intro c; exrepnd.
+        rw h0 in c1; inversion c1; subst; sp.
+
+    + right; intro j; exrepnd.
+      apply h.
+      exists u; sp.
+Qed.
+
+Lemma reducek_pair_dec {o} :
+  forall lib (t1 t2 : @NTerm o) z n,
+    reducek_pair lib t1 t2 z n [+] !(reducek_pair lib t1 t2 z n).
+Proof.
+  introv.
+  unfold reducek_pair.
+  pose proof (reduces_in_atmost_k_steps_nat_dec lib n t1 z) as h1.
+  pose proof (reduces_in_atmost_k_steps_nat_dec lib n t2 z) as h2.
+  dorn h1; dorn h2.
+  - left; sp.
+  - right; sp.
+  - right; sp.
+  - right; sp.
+Qed.
+
+Fixpoint O_witness
+         (P : nat -> nat -> Prop)
+         (k : nat) : before_witness P k -> before_witness P 0 :=
+  match k return (before_witness P k -> before_witness P 0) with
+    | 0 => fun b => b
+    | S n => fun b => O_witness P n (next P n b)
+  end.
+
+Definition constructive_indefinite_ground_description_nat {o}
+           lib (t1 t2 : @CTerm o) :
+  equality_of_nat_p_2_c lib t1 t2
+  -> {x : nat # nat & reducek_pair lib (get_cterm t1) (get_cterm t2) (fst x) (snd x)}.
+Proof.
+  introv pex.
+  apply linear_search with (k := 0).
+  apply reducek_pair_dec; auto.
+  unfold equality_of_nat_p_2_c, equality_of_nat_p_2 in pex; auto.
+  exrepnd; allsimpl.
+  apply O_witness with (k := x0 + x).
+  apply stop with (z := x0) (n := x); auto.
+Qed.
+
+Lemma equality_of_nat_imp_tt {o} :
+  forall {lib} {n m : @CTerm o},
+    equality_of_nat lib n m
+    -> equality_of_nat_tt lib n m.
+Proof.
+  introv e.
+  apply equality_of_nat_imp1 in e.
+  apply constructive_indefinite_ground_description_nat in e; auto.
+  exrepnd; allsimpl.
+  unfold equality_of_nat_tt.
+  unfold reducek_pair in e0; repnd.
+  exists x0; dands; spcast;
+  unfold computes_to_valc, computes_to_value; simpl;
+  dands; try (apply isvalue_mk_integer);
+  exists x; auto.
+Qed.
+
+Lemma in_map_in :
+  forall {A B}
+         (l : list A)
+         (f : forall a : A, List.In a l -> B)
+         (b : B),
+    List.In b (map_in l f) <-> {a : A , {i : List.In a l , b = f a i}}.
+Proof.
+  induction l; introv; simpl; auto.
+  - split; sp.
+  - split; intro k; exrepnd; subst; repndors; subst; allsimpl; tcsp.
+    + eexists; eexists; eauto.
+    + apply IHl in k; exrepnd; subst.
+      eexists; eexists; eauto.
+    + right; apply IHl.
+      eexists; eexists; eauto.
+Defined.
+
+Definition extend_bar_nat {o} {M} {lib} {a} {a'}
+           (bar  : @BarLib o M lib)
+           (safe : safe_library M lib)
+           (F    : all_in_bar bar (fun lib => equality_of_nat lib a a'))
+  : BarLib M lib.
+Proof.
+  exists (map_in
+            (bar_lib_bar bar)
+            (fun lib i => extend_library_upto
+                            lib
+                            seq0
+                            (S (projT1 (equality_of_nat_imp_tt (F lib i)))))).
+
+  - introv ext' safe'; simpl.
+    destruct bar as [bar cond ext]; simpl in *.
+    pose proof (cond infLib ext' safe') as q.
+
+    autodimp safe' hyp.
+
+    exrepnd.
+
+    rename lib' into lib1.
+
+    exists (let (n,x) := equality_of_nat_imp_tt (F lib1 q1)
+            in extend_library_upto lib1 seq0 (S n)).
+    simpl.
+    remember (equality_of_nat_imp_tt (F lib1 q1)) as z; symmetry in Heqz.
+    unfold equality_of_nat_tt in z.
+    exrepnd.
+    dands; eauto 2 with slow.
+
+    apply in_map_in.
+    exists lib1 q1; allrw; auto.
+
+  - introv j.
+    apply in_map_in in j; exrepnd; subst.
+    remember (equality_of_nat_imp_tt (F a0 i)) as z; symmetry in Heqz.
+    unfold equality_of_nat_tt in z.
+    exrepnd.
+    eauto 3 with slow.
+Defined.
+
+Lemma bar_preserves_safe {o} :
+  forall {M} {lib'} (lib : @library o) (bar : BarLib M lib),
+    List.In lib' (bar_lib_bar bar)
+    -> safe_library M lib
+    -> safe_library M lib'.
+Proof.
+  introv i safe.
+  apply in_bar_implies_extends in i.
+  destruct i as [ext1 safe1 sub1]; tcsp.
 Qed.
 
 Lemma seq0_in_nat2nat {o} :
@@ -959,10 +1514,13 @@ Proof.
         assert (BarLib memNat lib') as bar.
         {
           exists [lib'].
-          unfold BarLibCond.
-          introv j.
-          exists lib'; simpl; dands; tcsp.
-          eauto 2 with slow.
+
+          - unfold BarLibCond.
+            introv j.
+            exists lib'; simpl; dands; tcsp.
+            eauto 2 with slow.
+
+          - introv j; simpl in *; repndors; subst; tcsp; eauto 2 with slow.
         }
         exists bar.
         dands; auto.
@@ -996,10 +1554,13 @@ Proof.
         assert (BarLib memNat lib') as bar.
         {
           exists [lib'].
-          unfold BarLibCond.
-          introv j.
-          exists lib'; simpl; dands; tcsp.
-          eauto 2 with slow.
+
+          - unfold BarLibCond.
+            introv j.
+            exists lib'; simpl; dands; tcsp.
+            eauto 2 with slow.
+
+          - introv j; simpl in *; repndors; subst; tcsp; eauto 2 with slow.
         }
         exists bar.
         dands; auto.
@@ -1026,31 +1587,80 @@ Proof.
   {
     unfold per_func_eq.
     introv i e.
-    unfold equality_of_nat_bar in *; exrepnd.
 
-    pose proof (bar_non_empty bar) as q; exrepnd.
-    applydup e0 in q0; exrepnd; clear e0; spcast.
+    unfold equality_of_nat_bar in *; exrepnd.
 
     match goal with
     | [ H : lib_extends _ _ _ |- _ ] =>
       dup H as safe; apply lib_extends_preserves_safe in safe;[|apply safe_library_lib0]
     end.
 
-    pose proof (lib_extends_preserves_find_cs memNat lib0 lib' seq0 cs_entry0) as h.
-    repeat (autodimp h hyp).
-    exrepnd.
+    exists (extend_bar_nat bar safe e0).
+    introv j; simpl in j.
+    apply in_map_in in j.
+    exrepnd; subst.
 
-    pose proof (exists_bar_coq_law memNat lib' seq0 entry2 n const0) as q.
-    repeat (autodimp q hyp);[].
-    exrepnd.
-    exists bar0.
-    introv j.
-    applydup q3 in j.
-    unfold const0 in j0.
+    remember (equality_of_nat_imp_tt (e0 a0 i0)) as w; symmetry in Heqw.
+    unfold equality_of_nat_tt in w; exrepnd.
+
     exists 0.
-    dands; spcast; eapply implies_compute_to_valc_apply_choice_seq; eauto;
-      eapply (computes_to_valc_nat_if_lib_extends memNat); eauto.
+    dands; spcast; eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl;
+      try (complete (eapply (computes_to_valc_nat_if_lib_extends memNat); eauto 2 with slow)).
 
+    { pose proof (lib_extends_preserves_find_cs memNat lib0 a0 seq0 cs_entry0) as h.
+      repeat (autodimp h hyp); eauto 3 with slow;[].
+      exrepnd; simpl in *.
+      unfold law0 in *.
+      unfold find_cs_value_at.
+      rewrite find_cs_same_extend_library_upto.
+      allrw.
+      rewrite find_value_of_cs_at_vals_as_select.
+      remember (S k) as m.
+      destruct entry2 as [vals restr]; simpl in *.
+      destruct restr; simpl in *; ginv.
+
+      destruct (lt_dec k (length vals)) as [d|d].
+
+      + rewrite select_app_l; auto.
+        clear Heqw.
+        applydup @bar_preserves_safe in i0; auto;[].
+        apply find_cs_some_implies_list_in in h1.
+        apply i1 in h1; simpl in h1.
+        apply h1 in d; simpl in d; auto.
+
+      + rewrite select_app_r; try omega.
+        pose proof (Nat.le_exists_sub (length vals) k) as q.
+        autodimp q hyp; try omega.
+        exrepnd; subst.
+        rewrite Nat.add_sub.
+        rewrite select_follow_coq_low; auto; try omega. }
+
+    { pose proof (lib_extends_preserves_find_cs memNat lib0 a0 seq0 cs_entry0) as h.
+      repeat (autodimp h hyp); eauto 3 with slow;[].
+      exrepnd; simpl in *.
+      unfold law0 in *.
+      unfold find_cs_value_at.
+      rewrite find_cs_same_extend_library_upto.
+      allrw.
+      rewrite find_value_of_cs_at_vals_as_select.
+      remember (S k) as m.
+      destruct entry2 as [vals restr]; simpl in *.
+      destruct restr; simpl in *; ginv.
+
+      destruct (lt_dec k (length vals)) as [d|d].
+
+      + rewrite select_app_l; auto.
+        clear Heqw.
+        applydup @bar_preserves_safe in i0; auto;[].
+        apply find_cs_some_implies_list_in in h1.
+        apply i1 in h1; simpl in h1.
+        apply h1 in d; simpl in d; auto.
+
+      + rewrite select_app_r; try omega.
+        pose proof (Nat.le_exists_sub (length vals) k) as q.
+        autodimp q hyp; try omega.
+        exrepnd; subst.
+        rewrite Nat.add_sub.
+        rewrite select_follow_coq_low; auto; try omega. }
   }
-
 Qed.

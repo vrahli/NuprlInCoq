@@ -458,11 +458,18 @@ Definition BarLibCond {o}
       /\ lib_extends M lib' lib
       /\ inf_lib_extends infLib lib'.
 
+Definition BarLibExt {o}
+           (M   : @Mem o)
+           (bar : @bar_lib o)
+           (lib : @library o) :=
+  forall lib', List.In lib' bar -> lib_extends M lib' lib.
+
 Record BarLib {o} M (lib : @library o) :=
   MkBarLib
     {
       bar_lib_bar  : @bar_lib o;
       bar_lib_cond : BarLibCond M bar_lib_bar lib;
+      bar_lib_ext  : BarLibExt M bar_lib_bar lib;
     }.
 Arguments bar_lib_bar  [o] [M] [lib] _.
 Arguments bar_lib_cond [o] [M] [lib] _ _ _ _.
@@ -557,15 +564,17 @@ Definition per_int_bar {p} M (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) 
 
 
 
+Definition equality_of_nat {o} lib (t t' : @CTerm o) :=
+  {n : nat
+  , t ===>(lib) (mkc_nat n)
+  # t' ===>(lib) (mkc_nat n)}.
+
 (* This is just for testing, we've also defined nat using int and the set type *)
 Definition equality_of_nat_bar {o} M lib (t t' : @CTerm o) :=
   {bar : BarLib M lib
   , all_in_bar
       bar
-      (fun lib =>
-         {n : nat
-         , t ===>(lib) (mkc_nat n)
-         # t' ===>(lib) (mkc_nat n)})}.
+      (fun lib => equality_of_nat lib t t')}.
 
 Definition mk_Nat {o} : @NTerm o := oterm (Can NNatNum) [].
 
