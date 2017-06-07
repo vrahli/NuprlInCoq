@@ -437,7 +437,7 @@ Definition inf_lib_extends {o} {M} (infl : @inf_library o M) (l : @library o) :=
     entry_in_library entry l
     -> exists n, entry_in_inf_library_extends entry n infl.
 
-Definition bar_lib {o} := list (@library o).
+Definition bar_lib {o} := nat -> @library o.
 
 
 (*Definition MR {o} (ts : cts(o)) (lib : @library o) :=
@@ -445,7 +445,7 @@ Definition bar_lib {o} := list (@library o).
 
 
 (* This states that [bar] is a bar of [lib] *)
-Definition BarLibCond {o}
+Definition BarLibBars {o}
            (M   : @Mem o)
            (bar : @bar_lib o)
            (lib : @library o) :=
@@ -453,31 +453,30 @@ Definition BarLibCond {o}
     inf_lib_extends infLib lib
     -> (safe_library M lib -> safe_inf_library infLib)
     ->
-    exists (lib' : library),
-      List.In lib' bar
-      /\ lib_extends M lib' lib
-      /\ inf_lib_extends infLib lib'.
+    exists (n : nat),
+      lib_extends M (bar n) lib
+      /\ inf_lib_extends infLib (bar n).
 
 Definition BarLibExt {o}
            (M   : @Mem o)
            (bar : @bar_lib o)
            (lib : @library o) :=
-  forall lib', List.In lib' bar -> lib_extends M lib' lib.
+  forall (n : nat), lib_extends M (bar n) lib.
 
 Record BarLib {o} M (lib : @library o) :=
   MkBarLib
     {
       bar_lib_bar  : @bar_lib o;
-      bar_lib_cond : BarLibCond M bar_lib_bar lib;
+      bar_lib_bars : BarLibBars M bar_lib_bar lib;
       bar_lib_ext  : BarLibExt M bar_lib_bar lib;
     }.
-Arguments bar_lib_bar  [o] [M] [lib] _.
-Arguments bar_lib_cond [o] [M] [lib] _ _ _ _.
+Arguments bar_lib_bar  [o] [M] [lib] _ _.
+Arguments bar_lib_bars [o] [M] [lib] _ _ _ _.
+Arguments bar_lib_ext  [o] [M] [lib] _ _.
 
 Definition all_in_bar {o} {M} {lib} (bar : BarLib M lib) (F : @library o -> Prop) :=
-  forall (lib' : library),
-    List.In lib' (bar_lib_bar bar)
-    -> F lib'.
+  forall (n : nat),
+    F (bar_lib_bar bar n).
 
 Definition in_bar {o} M (lib : @library o) (F : @library o -> Prop) :=
   exists (bar : BarLib M lib), all_in_bar bar F.
@@ -3409,8 +3408,8 @@ Definition close_ind' {pp}
          c1
          c2
          Ftsa
-         (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
-            rec M ts lib' A B eqa (Ftsa lib' i))
+         (fun n =>
+            rec M ts (bar_lib_bar bar n) A B eqa (Ftsa n))
          eqa1
          eqa2
          eqiff
@@ -3864,11 +3863,9 @@ Definition close_ind' {pp}
              c1
              c2
              tsa
-             (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
-                rec M ts lib' A A' eqa (tsa lib' i))
+             (fun n => rec M ts (bar_lib_bar bar n) A A' eqa (tsa n))
              tsb
-             (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
-                rec M ts lib' B B' eqb (tsb lib' i))
+             (fun n => rec M ts (bar_lib_bar bar n) B B' eqb (tsb n))
              eqiff
              pts
 
@@ -4143,16 +4140,15 @@ Definition close_ind' {pp}
                c1
                c2
                tsa
-               (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar)) =>
-                  rec M ts lib' A A' (eqa lib') (tsa lib' i))
+               (fun n =>
+                  rec M ts (bar_lib_bar bar n) A A' (eqa (bar_lib_bar bar n)) (tsa n))
                tsb
-               (fun (lib' : library) (i : List.In lib' (bar_lib_bar bar))
-                    a a' (e : eqa lib' a a') =>
-                  rec M ts lib'
+               (fun n a a' (e : eqa (bar_lib_bar bar n) a a') =>
+                  rec M ts (bar_lib_bar bar n)
                       (substc a v B)
                       (substc a' v' B')
-                      (eqb lib' a a' e)
-                      (tsb lib' i a a' e))
+                      (eqb (bar_lib_bar bar n) a a' e)
+                      (tsb n a a' e))
                teq
                pts
 (*   | CL_esquash pts =>
