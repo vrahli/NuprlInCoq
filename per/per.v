@@ -432,12 +432,28 @@ Fixpoint entry_in_inf_library_extends {o} {M}
        # entry_in_inf_library_extends entry n (shift_inf_lib inflib))
   end.
 
-Definition inf_lib_extends {o} {M} (infl : @inf_library o M) (l : @library o) :=
+Definition subset_inf_library {o} {M} (lib : @library o) (infl : @inf_library o M) :=
   forall entry,
-    entry_in_library entry l
-    -> exists n, entry_in_inf_library_extends entry n infl.
+    List.In entry lib
+    -> exists n, inf_entry_extends (infl n) entry.
 
-Definition bar_lib {o} := nat -> @library o.
+Record inf_lib_extends {o} {M} (infl : @inf_library o M) (lib : @library o) :=
+  MkInfLibExtends
+    {
+      inf_lib_extends_ext :
+        forall entry,
+          entry_in_library entry lib
+          -> exists n, entry_in_inf_library_extends entry n infl;
+
+      inf_lib_extends_safe : safe_library M lib -> safe_inf_library infl;
+
+(*      inf_lib_extends_sub : subset_inf_library lib infl;*)
+    }.
+
+(* Do bars have to be decidable (i.e., bool instead of Prop)?
+   If they do, then we're in trouble because we can't decide whether 2 terms are
+   equal.  We would have to get rid of all our undecidable stuff *)
+Definition bar_lib {o} := @library o -> Prop.
 
 
 (*Definition MR {o} (ts : cts(o)) (lib : @library o) :=
@@ -451,17 +467,17 @@ Definition BarLibBars {o}
            (lib : @library o) :=
   forall (infLib : inf_library M),
     inf_lib_extends infLib lib
-    -> (safe_library M lib -> safe_inf_library infLib)
     ->
-    exists (n : nat),
-      lib_extends M (bar n) lib
-      /\ inf_lib_extends infLib (bar n).
+    exists (lib' : library),
+      bar lib'
+      /\ lib_extends M lib' lib
+      /\ inf_lib_extends infLib lib'.
 
 Definition BarLibExt {o}
            (M   : @Mem o)
            (bar : @bar_lib o)
            (lib : @library o) :=
-  forall (n : nat), lib_extends M (bar n) lib.
+  forall (lib' : library),  bar lib' -> lib_extends M lib' lib.
 
 Record BarLib {o} M (lib : @library o) :=
   MkBarLib
@@ -471,12 +487,11 @@ Record BarLib {o} M (lib : @library o) :=
       bar_lib_ext  : BarLibExt M bar_lib_bar lib;
     }.
 Arguments bar_lib_bar  [o] [M] [lib] _ _.
-Arguments bar_lib_bars [o] [M] [lib] _ _ _ _.
-Arguments bar_lib_ext  [o] [M] [lib] _ _.
+Arguments bar_lib_bars [o] [M] [lib] _ _ _.
+Arguments bar_lib_ext  [o] [M] [lib] _ _ _.
 
 Definition all_in_bar {o} {M} {lib} (bar : BarLib M lib) (F : @library o -> Prop) :=
-  forall (n : nat),
-    F (bar_lib_bar bar n).
+  forall (lib' : library), bar_lib_bar bar lib' -> F lib'.
 
 Definition in_bar {o} M (lib : @library o) (F : @library o -> Prop) :=
   exists (bar : BarLib M lib), all_in_bar bar F.
@@ -3408,8 +3423,8 @@ Definition close_ind' {pp}
          c1
          c2
          Ftsa
-         (fun n =>
-            rec M ts (bar_lib_bar bar n) A B eqa (Ftsa n))
+         (fun (lib' : library) (p : bar_lib_bar bar lib') =>
+            rec M ts lib' A B eqa (Ftsa lib' p))
          eqa1
          eqa2
          eqiff
@@ -3863,9 +3878,11 @@ Definition close_ind' {pp}
              c1
              c2
              tsa
-             (fun n => rec M ts (bar_lib_bar bar n) A A' eqa (tsa n))
+             (fun (lib' : library) (p : bar_lib_bar bar lib') =>
+                rec M ts lib' A A' eqa (tsa lib' p))
              tsb
-             (fun n => rec M ts (bar_lib_bar bar n) B B' eqb (tsb n))
+             (fun (lib' : library) (p : bar_lib_bar bar lib') =>
+                rec M ts lib' B B' eqb (tsb lib' p))
              eqiff
              pts
 
@@ -4140,15 +4157,16 @@ Definition close_ind' {pp}
                c1
                c2
                tsa
-               (fun n =>
-                  rec M ts (bar_lib_bar bar n) A A' (eqa (bar_lib_bar bar n)) (tsa n))
+               (fun (lib' : library) (p : bar_lib_bar bar lib') =>
+                  rec M ts lib' A A' (eqa lib') (tsa lib' p))
                tsb
-               (fun n a a' (e : eqa (bar_lib_bar bar n) a a') =>
-                  rec M ts (bar_lib_bar bar n)
+               (fun (lib' : library) (p : bar_lib_bar bar lib')
+                    a a' (e : eqa lib' a a') =>
+                  rec M ts lib'
                       (substc a v B)
                       (substc a' v' B')
-                      (eqb (bar_lib_bar bar n) a a' e)
-                      (tsb n a a' e))
+                      (eqb lib' a a' e)
+                      (tsb lib' p a a' e))
                teq
                pts
 (*   | CL_esquash pts =>

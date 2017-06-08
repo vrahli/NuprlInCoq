@@ -323,7 +323,7 @@ Proof.
     apply CL_eq; unfold per_eq; sp.
     exists A B a1 a2 b1 b2 eqa; sp.
     exists bar; sp.
-    introv; apply reca; auto.
+    introv j; apply reca; auto.
 
   - Case "CL_req".
     apply CL_req; unfold per_req; sp.
@@ -394,7 +394,7 @@ Proof.
   - Case "CL_union".
     apply CL_union; unfold per_union; sp.
     exists eqa eqb A A' B B'; sp.
-    exists bar; sp; introv; try (apply reca; auto); try (apply recb; auto).
+    exists bar; sp; introv j; try (apply reca; auto); try (apply recb; auto).
 
     (*
   - Case "CL_eunion".
@@ -452,7 +452,7 @@ Proof.
     apply CL_product; unfold per_product; sp.
     exists eqa eqb; sp.
     exists A A' v v' B B'; sp.
-    exists bar; sp; introv; try (apply reca; auto).
+    exists bar; sp; introv j; try (apply reca; auto).
     introv; try (apply recb; auto).
 Qed.
 
@@ -650,7 +650,7 @@ Proof.
     unfold per_eq; sp.
     exists A B a1 a2 b1 b2 eqa; sp.
     exists bar; sp.
-    introv.
+    introv j.
     eapply reca; eauto.
 
   - Case "CL_req".
@@ -760,8 +760,8 @@ Proof.
     unfold per_union; sp.
     exists eqa eqb A A' B B'; sp.
     exists bar; sp.
-    + introv; eapply reca; eauto.
-    + introv; eapply recb; eauto.
+    + introv j; eapply reca; eauto.
+    + introv j; eapply recb; eauto.
 
       (*
   - Case "CL_eunion".
@@ -846,7 +846,7 @@ Proof.
     apply CL_product.
     unfold per_product, type_family; sp.
     exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
-    exists bar; sp; introv; try (eapply reca; eauto).
+    exists bar; sp; introv j; try (eapply reca; eauto).
     introv; eapply recb; eauto.
 Qed.
 
