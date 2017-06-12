@@ -28,15 +28,28 @@
 Require Import type_sys.
 
 Lemma dest_close_per_func_l {p} :
-  forall lib (ts : cts(p)) T A v B T' eq,
-    type_system lib ts
-    -> defines_only_universes lib ts
+  forall M (ts : cts(p)) lib T A v B T' eq,
+    type_system ts
+    -> defines_only_universes ts
     -> computes_to_valc lib T (mkc_function A v B)
-    -> close lib ts T T' eq
-    -> per_func lib (close lib ts) T T' eq.
+    -> close M ts lib T T' eq
+    -> per_func (close M ts) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
-  inversion cl; subst; try close_diff; auto.
+  inversion cl; clear cl; subst; try close_diff; auto.
+
+  { allunfold_per.
+
+    Print all_in_bar.
+    Print BarLib.
+
+    generalize (type_system_ts_refl (close M ts) lib T T' eq); intro h.
+    repeat (autodimp h h').
+
+  try (apply_defines_only_universes).
+  uncast.
+  computes_to_valc_diff.
+
 Qed.
 
 Lemma dest_close_per_func_r {p} :

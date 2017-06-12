@@ -100,14 +100,16 @@ Definition univ' {p} M lib (T T' : @CTerm p) eq :=
 
  *)
 
+Definition univi_eq {o} M (ts : cts(o)) lib (A A' : @CTerm o) :=
+  {eqa : per , close M ts lib A A' eqa}.
+
 Fixpoint univi {p} M (i : nat) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   match i with
   | 0 => False
   | S n =>
     (T ===>(lib) (mkc_uni n)
      # T' ===>(lib) (mkc_uni n)
-     # forall A A',
-         eq A A' <=> {eqa : per , close M (univi M n) lib A A' eqa})
+     # eq <=2=> (univi_eq M (univi M n) lib))
     {+} univi M n lib T T' eq
   end.
 
@@ -238,8 +240,8 @@ Definition univ {p} M lib (T T' : @CTerm p) (eq : per) :=
 
 *)
 
-Definition defines_only_universes {o} (lib : @library o) (ts : cts(o)) :=
-  forall (T : @CTerm o) eq, ts lib T T eq -> {i : nat , T ===>(lib) (mkc_uni i)}.
+Definition defines_only_universes {o} (ts : cts(o)) :=
+  forall lib (T : @CTerm o) eq, ts lib T T eq -> {i : nat , T ===>(lib) (mkc_uni i)}.
 
 (* begin hide *)
 
@@ -260,6 +262,18 @@ Qed.
  *)
 
 Definition nuprl {o} (M : @Mem o) := @close o M (univ M).
+
+Definition MC {o} (ts : cts(o)) (lib : @library o) :=
+  fun t T => {peq : per(o) , ts lib T T peq # peq t T}.
+
+Fixpoint nuprli2 {o} (i : nat) (lib : @library o) (T T' : @CTerm o) (peq : per(o)) :=
+  match i with
+  | 0 => False
+  | S n => close (MC (nuprli2 n) lib) (univ (MC (nuprli2 n) lib)) lib T T' peq
+  end.
+
+Definition nuprl2 {o} (lib : @library o) (T T' : @CTerm o) (peq : per(o)) :=
+  {i : nat , nuprli2 i lib T T' peq}.
 
 (* begin hide *)
 
