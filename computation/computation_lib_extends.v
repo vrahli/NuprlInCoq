@@ -74,8 +74,9 @@ Definition choice_sequence_satisfies_restriction {o}
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
   | csc_no => True
-  | csc_type typ =>
-    forall v, List.In v vals -> M v typ (* TODO: Is that going to be enough? *)
+  | csc_type d typ =>
+    M d typ
+    /\ forall v, List.In v vals -> M v typ (* TODO: Is that going to be enough? *)
   | csc_coq_law f =>
     forall (i : nat), i < length vals -> select i vals = Some (f i)
   end.

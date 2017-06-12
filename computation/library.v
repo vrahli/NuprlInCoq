@@ -191,14 +191,15 @@ Inductive ChoiceSeqRestriction {o} :=
 (* no constraints *)
 | csc_no
 (* constrains the values of the sequence to have that type *)
-| csc_type (typ : @CTerm o)
+(* [d] is a default value e*)
+| csc_type (d : @ChoiceSeqVal o) (typ : @CTerm o)
 (* constrains the values of the sequence to follow the law given by the function *)
 | csc_coq_law (f : nat -> @CTerm o).
 
 Record ChoiceSeqEntry {o} :=
   MkChoiceSeqEntry
     {
-      cse_vals :> @ChoiceSeqVals o;
+      cse_vals        :> @ChoiceSeqVals o;
       cse_restriction : @ChoiceSeqRestriction o;
     }.
 

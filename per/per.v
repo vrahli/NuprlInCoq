@@ -323,7 +323,7 @@ Definition inf_choice_sequence_satisfies_restriction {o}
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
   | csc_no => True
-  | csc_type typ => forall n, M (vals n) typ
+  | csc_type d typ => M d typ /\ forall n, M (vals n) typ
   | csc_coq_law f => forall n, vals n = f n
   end.
 
@@ -332,7 +332,7 @@ Definition ex_choice {o}
            (restr : @ChoiceSeqRestriction o) : Type :=
   match restr with
   | csc_no => True
-  | csc_type typ => {v : @ChoiceSeqVal o & M v typ}
+  | csc_type d typ => {v : @ChoiceSeqVal o & M v typ}
   | csc_coq_law f => True
   end.
 
@@ -477,16 +477,25 @@ Definition BarLibExt {o}
            (lib : @library o) :=
   forall (lib' : library),  bar lib' -> lib_extends M lib' lib.
 
+(* The bar is non-empty.  This is useful for example when
+   We know that a type [T] computes to [Nat] at a bar, then we can
+   at least get one such library at the bar at which [T] computes to [Nat] *)
+Definition BarLibMem {o}
+           (bar : @bar_lib o) :=
+  exists (lib' : library), bar lib'.
+
 Record BarLib {o} M (lib : @library o) :=
   MkBarLib
     {
       bar_lib_bar  : @bar_lib o;
       bar_lib_bars : BarLibBars M bar_lib_bar lib;
       bar_lib_ext  : BarLibExt M bar_lib_bar lib;
+(*      bar_lib_mem  : BarLibMem bar_lib_bar;*)
     }.
 Arguments bar_lib_bar  [o] [M] [lib] _ _.
 Arguments bar_lib_bars [o] [M] [lib] _ _ _.
 Arguments bar_lib_ext  [o] [M] [lib] _ _ _.
+(*Arguments bar_lib_mem  [o] [M] [lib] _.*)
 
 Definition all_in_bar {o} {M} {lib} (bar : BarLib M lib) (F : @library o -> Prop) :=
   forall (lib' : library), bar_lib_bar bar lib' -> F lib'.
