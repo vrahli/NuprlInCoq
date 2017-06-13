@@ -55,29 +55,68 @@ Proof.
   exists bar; dands; auto.
 Qed.
 
+Lemma per_int_bar_term_symmetric {p} :
+  forall M (ts : cts(p)), term_symmetric (per_int_bar M ts).
+Proof.
+  introv h e.
+  unfold per_int_bar in h; exrepnd.
+  apply h in e; apply h.
+  unfold equality_of_int_bar in *; exrepnd; exists bar0.
+  introv i; apply e0 in i.
+  exrepnd; exists k; tcsp.
+Qed.
+
+Lemma per_int_bar_type_value_respecting {p} :
+  forall M (ts : cts(p)), type_value_respecting (per_int_bar M ts).
+Proof.
+  introv per ceq.
+  unfold type_value_respecting, per_int_bar in *; exrepnd; GC.
+  dands; auto;[].
+  exists bar; dands; auto.
+  introv i.
+  applydup per0 in i; spcast.
+
+  (*
+      Do we need to change this property into:
+
+Definition type_value_respecting {p} M (ts : cts(p)) :=
+  forall lib T T' eq,
+     ts lib T T eq
+     -> in_ext lib (fun lib => cequivc lib T T')
+     -> ts lib T T' eq.
+
+      i.e., we require T and T' to be computationally equivalent in all possible
+      extensions of lib.
+
+      How is that going to affect equality types?  This was required to
+      prove that equality types preserves the type system properties.
+      Will we have to change the definition of [per_eq_bar] so that we have
+      to either prove [eqa a1 b1] or that [a1 ~ b1] in all extensions of the
+      current library?
+
+   *)
+
+Qed.
+
+Lemma per_int_bar_term_value_respecting {p} :
+  forall M (ts : cts(p)), term_value_respecting (per_int_bar M ts).
+Proof.
+  introv h e ceq.
+  unfold per_int_bar in *; exrepnd; spcast.
+  apply h in e; apply h; clear h.
+  unfold equality_of_int_bar in *; exrepnd; exists bar0.
+  introv i; apply e0 in i.
+  exrepnd; exists k; repnd; dands; auto; spcast.
+
+  (*apply @cequivc_integer with (t := t); auto.*)
+Qed.
+
 Lemma per_int_bar_type_transitive {p} :
   forall M (ts : cts(p)), type_transitive (per_int_bar M ts).
 Proof.
   unfold type_transitive, per_int_bar; sp.
 
   (* we need to get combine the two bars! *)
-Qed.
-
-Lemma per_int_type_value_respecting {p} :
-  forall lib (ts : cts(p)), type_value_respecting lib (per_int lib ts).
-Proof.
- sp; unfold type_value_respecting, per_int; sp; auto.
- spcast; apply @cequivc_int with (T := T); auto.
-Qed.
-
-Lemma per_int_term_symmetric {p} :
-  forall lib (ts : cts(p)), term_symmetric (per_int lib ts).
-Proof.
- unfold term_symmetric, term_equality_symmetric, per_int; sp.
- allrw.
- apply_in_hyp pp; sp.
- allunfold @equality_of_int; exrepnd.
- exists k; sp.
 Qed.
 
 Lemma per_int_term_transitive {p} :
@@ -91,19 +130,6 @@ Proof.
   allunfold @equality_of_int; exrepnd.
   exists k; sp.
   ccomputes_to_eqval; spcast; sp.
-Qed.
-
-Lemma per_int_term_value_respecting {p} :
-  forall lib (ts : cts(p)), term_value_respecting lib (per_int lib ts).
-Proof.
-  sp; unfold term_value_respecting, term_equality_respecting, per_int.
-  introv i e c.
-  destruct i as [ ct i ].
-  destruct i as [ ct' i ].
-  rw i in e; rw i; sp.
-  allunfold @equality_of_int; exrepnd.
-  exists k; sp.
-  spcast; apply @cequivc_integer with (t := t); auto.
 Qed.
 
 Lemma per_int_type_system {p} :
