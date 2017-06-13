@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -30,11 +36,11 @@ Require Import dest_close.
 
 
 Lemma close_type_system_init {p} :
-  forall lib (ts : cts(p)) T T' eq,
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> ts T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+  forall M (ts : cts(p)) lib T T' eq,
+    type_system ts
+    -> defines_only_universes ts
+    -> ts lib T T' eq
+    -> type_sys_props (close M ts) lib T T' eq.
 Proof.
   introv tysys dou e.
   use_dou.
@@ -54,11 +60,11 @@ Proof.
 
   + SCase "term_symmetric".
     onedts uv tye tys tyt tyvr tes tet tevr.
-    apply tes with (T := T) (T' := T'); auto.
+    apply tes with (lib := lib) (T := T) (T' := T'); auto.
 
   + SCase "term_transitive".
     onedts uv tye tys tyt tyvr tes tet tevr.
-    apply tet with (T := T) (T' := T'); auto.
+    apply tet with (lib := lib) (T := T) (T' := T'); auto.
 
   + SCase "term_value_respecting".
     onedts uv tye tys tyt tyvr tes tet tevr.

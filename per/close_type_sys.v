@@ -31,8 +31,8 @@
 
 
 Require Export type_sys_useful2.
-(*Require Import close_type_sys_per_init.
-Require Import close_type_sys_per_int.
+Require Import close_type_sys_per_init.
+(*Require Import close_type_sys_per_int.
 Require Import close_type_sys_per_atom.
 Require Import close_type_sys_per_uatom.
 Require Import close_type_sys_per_base.

@@ -1895,43 +1895,43 @@ Ltac use_dou :=
 
 Ltac dclose h1 h2 :=
   match goal with
-    | [ H : close _ _ _ _ _ [+] close _ _ _ _ _ |- _ ] => destruct H as [h1 | h2]
-    | [ H : close _ _ _ _ _ {+} close _ _ _ _ _ |- _ ] => destruct H as [h1 | h2]
+    | [ H : close _ _ _ _ _ _ [+] close _ _ _ _ _ _ |- _ ] => destruct H as [h1 | h2]
+    | [ H : close _ _ _ _ _ _ {+} close _ _ _ _ _ _ |- _ ] => destruct H as [h1 | h2]
   end.
 
 Ltac doneclose :=
   match goal with
-    | [ H : close _ _ _ _ _ |- _ ] => destruct H
+    | [ H : close _ _ _ _ _ _ |- _ ] => destruct H
   end.
 
 Ltac ioneclose :=
   match goal with
-    | [ H : close _ _ _ _ _ |- _ ] => inversion H
+    | [ H : close _ _ _ _ _ _ |- _ ] => inversion H
   end.
 
 Ltac cioneclose :=
   match goal with
-    | [ H : close _ _ _ _ _ |- _ ] => inversion H; clear H
+    | [ H : close _ _ _ _ _ _ |- _ ] => inversion H; clear H
   end.
 
 Ltac cioneclose_eq eq :=
   match goal with
-    | [ H : close _ _ _ _ eq |- _ ] => inversion H; clear H
+    | [ H : close _ _ _ _ _ eq |- _ ] => inversion H; clear H
   end.
 
 Ltac find_term_equalities_step :=
   match goal with
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T ?T1 ?eq1, H2 : ?ts ?T ?T2 ?eq2 |- _ ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T ?T1 ?eq1, H2 : ?ts ?lib ?T ?T2 ?eq2 |- _ ] =>
       let h := fresh "h" in
       assert (eq_term_equals eq1 eq2)
         as h
-          by (generalize (uniquely_valued_eq_ts lib ts T T1 T2 eq1 eq2); sp);
+          by (generalize (uniquely_valued_eq_ts ts lib T T1 T2 eq1 eq2); sp);
         no_duplicate h
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T ?eq1, H2 : ?ts ?T ?T2 ?eq2 |- _ ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T ?eq1, H2 : ?ts ?lib ?T ?T2 ?eq2 |- _ ] =>
       let h := fresh "h" in
       assert (eq_term_equals eq1 eq2)
         as h
-          by (generalize (uniquely_valued_eq2_ts lib ts T T1 T2 eq1 eq2); sp);
+          by (generalize (uniquely_valued_eq2_ts ts lib T T1 T2 eq1 eq2); sp);
         no_duplicate h
   end.
 
@@ -1940,112 +1940,112 @@ Ltac find_term_equalities := repeat find_term_equalities_step.
 (* simple reasoning on type systems *)
 Ltac spts :=
   match goal with
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T ?T1 ?eq1, H2 : ?ts ?T ?T2 ?eq2
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T ?T1 ?eq1, H2 : ?ts ?lib ?T ?T2 ?eq2
         |- eq_term_equals ?eq1 ?eq2 ] =>
-      generalize (uniquely_valued_eq_ts lib ts T T1 T2 eq1 eq2);
+      generalize (uniquely_valued_eq_ts ts lib T T1 T2 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T ?eq1, H2 : ?ts ?T ?T2 ?eq2
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T ?eq1, H2 : ?ts ?lib ?T ?T2 ?eq2
         |- eq_term_equals ?eq1 ?eq2 ] =>
-      generalize (uniquely_valued_eq2_ts lib ts T T1 T2 eq1 eq2);
+      generalize (uniquely_valued_eq2_ts ts lib T T1 T2 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T ?T' ?eq1, H2 : eq_term_equals ?eq1 ?eq2
-        |- ?ts ?T ?T' ?eq2 ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T ?T' ?eq1, H2 : eq_term_equals ?eq1 ?eq2
+        |- ?ts ?lib ?T ?T' ?eq2 ] =>
       unfold type_system in H;
         repnd;
         match goal with
             [ H3 : type_extensionality ts |- _ ] =>
             unfold type_extensionality in H3;
-              generalize (H3 T T' eq1 eq2);
+              generalize (H3 lib T T' eq1 eq2);
               complete sp
         end
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T2 ?T3 ?eq2
-        |- ?ts ?T1 ?T3 ?eq1 ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T2 ?T3 ?eq2
+        |- ?ts ?lib ?T1 ?T3 ?eq1 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans2 ts T1 T2 T3 eq1 eq2);
+        generalize (uniquely_valued_trans2 ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T2 ?T3 ?eq2
-        |- ?ts ?T3 ?T3 ?eq1 ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T2 ?T3 ?eq2
+        |- ?ts ?lib ?T3 ?T3 ?eq1 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans2_r ts T1 T2 T3 eq1 eq2);
+        generalize (uniquely_valued_trans2_r ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T2 ?T3 ?eq2
-        |- ?ts ?T1 ?T3 ?eq2 ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T2 ?T3 ?eq2
+        |- ?ts ?lib ?T1 ?T3 ?eq2 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans4 ts T1 T2 T3 eq1 eq2);
+        generalize (uniquely_valued_trans4 ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T2 ?T3 ?eq2
-        |- ?ts ?T3 ?T3 ?eq2 ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T2 ?T3 ?eq2
+        |- ?ts ?lib ?T3 ?T3 ?eq2 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans4_r ts T1 T2 T3 eq1 eq2);
+        generalize (uniquely_valued_trans4_r ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T1 ?T3 ?eq2
-        |- ?ts ?T2 ?T3 ?eq1 ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T1 ?T3 ?eq2
+        |- ?ts ?lib ?T2 ?T3 ?eq1 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans7 ts T1 T2 T3 eq1 eq2);
+        generalize (uniquely_valued_trans7 ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T1 ?T3 ?eq2
-        |- ?ts ?T3 ?T3 ?eq1 ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T1 ?T3 ?eq2
+        |- ?ts ?lib ?T3 ?T3 ?eq1 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans7_r ts T1 T2 T3 eq1 eq2);
+        generalize (uniquely_valued_trans7_r ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T1 ?T3 ?eq2
-        |- ?ts ?T2 ?T3 ?eq2 ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T1 ?T3 ?eq2
+        |- ?ts ?lib ?T2 ?T3 ?eq2 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans8 ts T1 T2 T3 eq1 eq2);
+        generalize (uniquely_valued_trans8 ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq1, H2 : ?ts ?T1 ?T3 ?eq2
-        |- ?ts ?T3 ?T3 ?eq2 ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T1 ?T3 ?eq2
+        |- ?ts ?lib ?T3 ?T3 ?eq2 ] =>
       unfold type_system in H;
         repnd;
-        generalize (uniquely_valued_trans8_r ts T1 T2 T3 eq1 eq2);
+        generalize (uniquely_valued_trans8_r ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq, H2 : cequivc ?lib ?T1 ?T3
-        |- ?ts ?T1 ?T3 ?eq ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq, H2 : cequivc ?lib ?T1 ?T3
+        |- ?ts ?lib ?T1 ?T3 ?eq ] =>
       unfold type_system in H;
         repnd;
-        generalize (type_reduces_to_symm lib ts T1 T2 T3 eq);
+        generalize (type_reduces_to_symm ts lib T1 T2 T3 eq);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T2 ?T1 ?eq, H2 : cequivc ?lib ?T1 ?T3
-        |- ?ts ?T1 ?T3 ?eq ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T2 ?T1 ?eq, H2 : cequivc ?lib ?T1 ?T3
+        |- ?ts ?lib ?T1 ?T3 ?eq ] =>
       unfold type_system in H;
         repnd;
-        generalize (type_reduces_to_symm2 lib ts T1 T2 T3 eq);
+        generalize (type_reduces_to_symm2 ts lib T1 T2 T3 eq);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq
-        |- ?ts ?T2 ?T1 ?eq ] =>
+    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq
+        |- ?ts ?lib ?T2 ?T1 ?eq ] =>
       unfold type_system in H;
         complete sp
   end.
 
 Ltac implies_ts_or_eq T1 T2 T h :=
   match goal with
-      | [ H : ?ts T1 T2 ?eq |- _ ] =>
+      | [ H : ?ts ?lib T1 T2 ?eq |- _ ] =>
           rename H into h; implies_ts_or T h
   end.
 
 Ltac rev_implies_ts_or_eq T1 T2 T h :=
   match goal with
-      | [ H : ?ts T1 T2 ?eq |- _ ] =>
+      | [ H : ?ts ?lib T1 T2 ?eq |- _ ] =>
           rename H into h; rev_implies_ts_or T h
   end.
 

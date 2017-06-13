@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +21,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -28,30 +34,33 @@ Require Export type_sys.
 Require Import dest_close.
 
 
-Lemma per_int_uniquely_valued {p} :
-  forall lib (ts : cts(p)), uniquely_valued (per_int lib ts).
+Lemma per_int_bar_uniquely_valued {p} :
+  forall M (ts : cts(p)), uniquely_valued (per_int_bar M ts).
 Proof.
- unfold uniquely_valued, per_int, eq_term_equals; sp.
+ unfold uniquely_valued, per_int_bar, eq_term_equals; sp.
  allrw; sp.
 Qed.
 
-Lemma per_int_type_extensionality {p} :
-  forall lib (ts : cts(p)), type_extensionality (per_int lib ts).
+Lemma per_int_bar_type_extensionality {p} :
+  forall M (ts : cts(p)), type_extensionality (per_int_bar M ts).
 Proof.
-  unfold type_extensionality, per_int, eq_term_equals; sp.
+  unfold type_extensionality, per_int_bar, eq_term_equals; sp.
   allrw <-; sp.
 Qed.
 
-Lemma per_int_type_symmetric {p} :
-  forall lib (ts : cts(p)), type_symmetric (per_int lib ts).
+Lemma per_int_bar_type_symmetric {p} :
+  forall M (ts : cts(p)), type_symmetric (per_int_bar M ts).
 Proof.
-  unfold type_symmetric, per_int; sp.
+  unfold type_symmetric, per_int_bar; sp.
+  exists bar; dands; auto.
 Qed.
 
-Lemma per_int_type_transitive {p} :
-  forall lib (ts : cts(p)), type_transitive (per_int lib ts).
+Lemma per_int_bar_type_transitive {p} :
+  forall M (ts : cts(p)), type_transitive (per_int_bar M ts).
 Proof.
-  unfold type_transitive, per_int; sp.
+  unfold type_transitive, per_int_bar; sp.
+
+  (* we need to get combine the two bars! *)
 Qed.
 
 Lemma per_int_type_value_respecting {p} :
@@ -113,11 +122,11 @@ Qed.
 
 
 Lemma close_type_system_int {p} :
-  forall lib (ts : cts(p)) T T' eq,
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> per_int lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+  forall M (ts : cts(p)) lib T T' eq,
+    type_system ts
+    -> defines_only_universes ts
+    -> per_int_bar M (close M ts) lib T T' eq
+    -> type_sys_props (close M ts) lib T T' eq.
 Proof.
   introv X X0 per.
 
