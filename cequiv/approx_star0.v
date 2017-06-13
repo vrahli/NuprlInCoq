@@ -32,6 +32,8 @@
 
 Require Export approx_star_props2.
 Require Export computation6.
+
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing $  $\times$ #×# *)
@@ -1928,13 +1930,6 @@ Proof.
   exrepnd.
   unfold approx_starbts, lblift_sub in apr1; allsimpl; repnd; cpx.
 Qed.
-
-Lemma isprogram_mk_choice_seq {o} :
-  forall n, @isprogram o (mk_choice_seq n).
-Proof.
-  introv; repeat constructor; simpl; tcsp.
-Qed.
-Hint Resolve isprogram_mk_choice_seq : slow.
 
 Lemma approx_star_choice_seq {o} :
   forall lib (t : @NTerm o) n,

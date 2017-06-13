@@ -31,7 +31,7 @@
 
 
 Require Export type_sys_useful2.
-Require Import close_type_sys_per_init.
+(*Require Import close_type_sys_per_init.
 Require Import close_type_sys_per_int.
 Require Import close_type_sys_per_atom.
 Require Import close_type_sys_per_uatom.
@@ -63,7 +63,7 @@ Require Import close_type_sys_per_set.
 Require Import close_type_sys_per_tunion.
 Require Import close_type_sys_per_product.
 Require Import close_type_sys_per_pw.
-Require Import close_type_sys_per_pm.
+Require Import close_type_sys_per_pm.*)
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
@@ -82,7 +82,7 @@ Require Import close_type_sys_per_pm.
 
 
 (* This is Crary's lemma 4.12 *)
-Lemma close_ts {o} :
+(*Lemma close_ts {o} :
   forall lib (ts : cts(o)),
     type_system lib ts
     -> defines_only_universes lib ts
@@ -154,7 +154,7 @@ Proof.
   introv eqiff peq tsp.
   unfold is_type_system in istysys.
 Abort.
-
+*)
 
 
 (* ------ proofs that the type definitions define type systems ------ *)
@@ -177,10 +177,10 @@ Abort.
 *)
 
 Lemma close_type_system {o} :
-  forall lib (ts : cts(o)),
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> type_system lib (close lib ts).
+  forall M (ts : cts(o)),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_system (close M ts).
 Proof.
   intros.
   apply type_system_prop.

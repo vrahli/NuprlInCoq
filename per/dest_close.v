@@ -2,6 +2,8 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,13 +21,18 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
 
 Require Import type_sys.
+Require Import bar.
+
 
 Lemma dest_close_per_func_l {p} :
   forall M (ts : cts(p)) lib T A v B T' eq,
@@ -38,10 +45,17 @@ Proof.
   introv tysys dou comp cl.
   inversion cl; clear cl; subst; try close_diff; auto.
 
-  { allunfold_per.
+  {
+    allunfold_per.
+    pose proof (bar_non_empty bar) as q; exrepnd.
+    pose proof (a lib' q0) as z; simpl in z; spcast.
 
-    Print all_in_bar.
-    Print BarLib.
+    pose proof (computes_to_valc_preserves_lib_extends M lib lib') as q.
+    autodimp q hyp; eauto 2 with slow;[].
+    apply q in comp; clear q.
+    exrepnd.
+
+  }
 
     generalize (type_system_ts_refl (close M ts) lib T T' eq); intro h.
     repeat (autodimp h h').

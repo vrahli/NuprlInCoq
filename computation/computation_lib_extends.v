@@ -31,6 +31,7 @@
 
 
 Require Export computation_preserves_lib.
+Require Import computation_choice_seq.
 
 
 (* This is entry2name *)
@@ -1629,4 +1630,48 @@ Proof.
   eapply reduces_in_atmost_k_steps_preserves_lib_extends in r0; eauto.
   exrepnd.
   eexists; eexists; dands; eauto.
+Qed.
+
+Lemma computes_to_valc_preserves_lib_extends {o} :
+  forall M
+         (lib1 lib2 : library)
+         (ext  : lib_extends M lib2 lib1) (* lib2 extends lib1 *)
+         (a b  : @CTerm o)
+         (comp : computes_to_valc lib1 a b),
+    {b' : CTerm & computes_to_valc lib2 a b' # alphaeqc b b'}.
+Proof.
+  introv ext r.
+  destruct_cterms; unfold computes_to_valc in *; simpl in *.
+  unfold computes_to_value in *; repnd.
+  unfold alphaeqc.
+  dup r0 as comp.
+  eapply reduces_to_preserves_lib_extends in r0;[|eauto|]; eauto 2 with slow.
+  exrepnd.
+  applydup @reduces_to_preserves_program in comp; eauto 2 with slow.
+  applydup @alphaeq_preserves_program in r1.
+  apply r2 in comp0; clear r2.
+  allrw @isprogram_eq.
+  exists (mk_ct b' comp0); simpl; dands; eauto 2 with slow.
+Qed.
+
+Lemma alphaeqc_mkc_nat_implies {o} :
+  forall n (t : @CTerm o),
+    alphaeqc (mkc_nat n) t -> t = mkc_nat n.
+Proof.
+  introv aeq; destruct_cterms; unfold alphaeqc in aeq; simpl in *.
+  apply cterm_eq; simpl.
+  apply alpha_eq_mk_nat in aeq; auto.
+Qed.
+
+Lemma computes_to_valc_nat_if_lib_extends {o} :
+  forall M (lib1 lib2 : @library o) t n,
+    lib_extends M lib1 lib2
+    -> computes_to_valc lib2 t (mkc_nat n)
+    -> computes_to_valc lib1 t (mkc_nat n).
+Proof.
+  introv ext comp.
+  pose proof (computes_to_valc_preserves_lib_extends
+                M lib2 lib1 ext t (mkc_nat n) comp) as h.
+  exrepnd.
+  apply alphaeqc_mkc_nat_implies in h0; subst; auto.
 Qed.

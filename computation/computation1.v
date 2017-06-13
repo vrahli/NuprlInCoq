@@ -33,6 +33,7 @@
 Require Export substitution.
 Require Export library.
 Require Export terms_pk.
+Require Export terms_choice.
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 
@@ -115,8 +116,6 @@ Definition on_success {p} (c : @Comput_Result p) (f : NTerm -> NTerm) :=
     %\noindent% [t = oterm (NCan NApply) ((bterm  [] (oterm (Can arg1c) arg1bts))::btsr)]
 
  *)
-
-Definition mk_choice_seq {o} name : @NTerm o := oterm (Can (Ncseq name)) [].
 
 Definition compute_step_apply {p}
            (arg1c:@CanonicalOp p)
