@@ -985,7 +985,22 @@ Definition per_compute {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : 
 
  *)
 
-Definition eqorceq {p} lib (eq : per(p)) a b : [U] := eq a b {+} a ~=~(lib) b.
+(*Definition eqorceq {p} lib (eq : per(p)) a b : [U] := eq a b {+} a ~=~(lib) b.*)
+
+Definition ccequivc_ext {o} M (lib : @library o) (t t' : @CTerm o) :=
+  in_ext M lib (fun lib => t ~=~(lib) t').
+
+Definition computes_to_valc_bar {o} {M} {lib} (bar : @BarLib o M lib) (a b : @CTerm o) :=
+  all_in_bar bar (fun lib => a ===>(lib) b).
+
+Definition computes_to_valc_ext {o} M (lib : @library o) (a b : @CTerm o) :=
+  in_ext M lib (fun lib => a ===>(lib) b).
+
+Notation "a ==b==>( bar ) b" := (computes_to_valc_bar bar a b) (at level 0).
+Notation "a ==e==>( M , lib ) b" := (computes_to_valc_ext M lib a b) (at level 0).
+
+Definition eqorceq {p} M lib (eq : per(p)) a b : [U] :=
+  eq a b {+} ccequivc_ext M lib a b.
 
 (**
 
@@ -1033,19 +1048,19 @@ Definition eqorceq {p} lib (eq : per(p)) a b : [U] := eq a b {+} a ~=~(lib) b.
 
  *)
 
-Definition per_eq {p} (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
+Definition per_eq {p} M (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
   {A, B, a1, a2, b1, b2 : CTerm
    , {eqa : per
       , T1 ===>(lib) (mkc_equality a1 a2 A)
       # T2 ===>(lib) (mkc_equality b1 b2 B)
       # ts lib A B eqa
-      # eqorceq lib eqa a1 b1
-      # eqorceq lib eqa a2 b2
+      # eqorceq M lib eqa a1 b1
+      # eqorceq M lib eqa a2 b2
       # (forall t t',
             eq t t' <=> (t ===>(lib) mkc_axiom # t' ===>(lib) mkc_axiom # eqa a1 a2)) }}.
 
 Definition per_eq_bar0 {p} M (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-  in_bar M lib (fun lib' => per_eq ts lib' T1 T2 eq).
+  in_bar M lib (fun lib' => per_eq M ts lib' T1 T2 eq).
 
 Definition per_eq_eq1 {o} {M} {lib}
            (bar   : BarLib M lib)
@@ -1066,8 +1081,8 @@ Definition per_eq_bar1 {p} M (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) 
   , all_in_bar bar (fun lib => T1 ===>(lib) (mkc_equality a1 a2 A))
   # all_in_bar bar (fun lib => T2 ===>(lib) (mkc_equality b1 b2 B))
   # all_in_bar bar (fun lib => ts lib A B eqa)
-  # all_in_bar bar (fun lib => eqorceq lib eqa a1 b1)
-  # all_in_bar bar (fun lib => eqorceq lib eqa a2 b2)
+  # all_in_bar bar (fun lib => eqorceq M lib eqa a1 b1)
+  # all_in_bar bar (fun lib => eqorceq M lib eqa a2 b2)
   # eq <=2=> (per_eq_eq1 bar a1 a2 eqa) }}}.
 
 Definition per_eq_eq {o} M lib a b eqa (t t' : @CTerm o) :=
@@ -1080,8 +1095,8 @@ Definition per_eq_bar {p} M (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) :
       , all_in_bar bar (fun lib => T1 ===>(lib) (mkc_equality a1 a2 A))
       # all_in_bar bar (fun lib => T2 ===>(lib) (mkc_equality b1 b2 B))
       # all_in_bar bar (fun lib => ts lib A B eqa)
-      # all_in_bar bar (fun lib => eqorceq lib eqa a1 b1)
-      # all_in_bar bar (fun lib => eqorceq lib eqa a2 b2)}
+      # all_in_bar bar (fun lib => eqorceq M lib eqa a1 b1)
+      # all_in_bar bar (fun lib => eqorceq M lib eqa a2 b2)}
     # eq <=2=> (per_eq_eq M lib a1 a2 eqa) }}.
 
 
@@ -1100,8 +1115,8 @@ Definition per_req {p} (M : @Mem p) (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] 
    , T1 ===>(lib) (mkc_requality a1 a2 A)
    # T2 ===>(lib) (mkc_requality b1 b2 B)
    # ts lib A B eqa
-   # eqorceq lib eqa a1 b1
-   # eqorceq lib eqa a2 b2
+   # eqorceq M lib eqa a1 b1
+   # eqorceq M lib eqa a2 b2
    # eq <=2=> (per_req_eq lib a1 a2 eqa) }}.
 
 Definition per_req_bar {p} M (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
@@ -2696,8 +2711,8 @@ Definition close_ind' {pp}
                 (c2    : all_in_bar bar (fun lib => T' ===>(lib) (mkc_equality b1 b2 B)))
                 (cla   : all_in_bar bar (fun lib => close M ts lib A B eqa))
                 (reca  : all_in_bar bar (fun lib => P M ts lib A B eqa))
-                (eos1  : all_in_bar bar (fun lib => eqorceq lib eqa a1 b1))
-                (eos2  : all_in_bar bar (fun lib => eqorceq lib eqa a2 b2))
+                (eos1  : all_in_bar bar (fun lib => eqorceq M lib eqa a1 b1))
+                (eos2  : all_in_bar bar (fun lib => eqorceq M lib eqa a2 b2))
                 (eqiff : eq <=2=> (per_eq_eq M lib a1 a2 eqa))
                 (per   : per_eq_bar M (close M ts) lib T T' eq),
       P M ts lib T T' eq)
@@ -2733,8 +2748,8 @@ Definition close_ind' {pp}
                  (c2   : T' ===>(lib) (mkc_requality b1 b2 B))
                  (cla  : close M ts lib A B eqa)
                  (reca : P M ts lib A B eqa)
-                 (eo1  : eqorceq lib eqa a1 b1)
-                 (eo2  : eqorceq lib eqa a2 b2)
+                 (eo1  : eqorceq M lib eqa a1 b1)
+                 (eo2  : eqorceq M lib eqa a2 b2)
                  (eqiff : eq <=2=> (per_req_eq lib a1 a2 eqa))
                  (per  : per_req M (close M ts) lib T T' eq),
             P M ts lib T T' eq)

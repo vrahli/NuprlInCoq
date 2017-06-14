@@ -178,9 +178,9 @@ Abort.
 
 Lemma close_type_system {o} :
   forall M (ts : cts(o)),
-    type_system ts
+    type_system M ts
     -> defines_only_universes ts
-    -> type_system (close M ts).
+    -> type_system M (close M ts).
 Proof.
   intros.
   apply type_system_prop.

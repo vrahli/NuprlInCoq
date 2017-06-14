@@ -37,10 +37,10 @@ Require Import dest_close.
 
 Lemma close_type_system_init {p} :
   forall M (ts : cts(p)) lib T T' eq,
-    type_system ts
+    type_system M ts
     -> defines_only_universes ts
     -> ts lib T T' eq
-    -> type_sys_props (close M ts) lib T T' eq.
+    -> type_sys_props M (close M ts) lib T T' eq.
 Proof.
   introv tysys dou e.
   use_dou.

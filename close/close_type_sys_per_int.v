@@ -67,48 +67,31 @@ Proof.
 Qed.
 
 Lemma per_int_bar_type_value_respecting {p} :
-  forall M (ts : cts(p)), type_value_respecting (per_int_bar M ts).
+  forall M (ts : cts(p)), type_value_respecting M (per_int_bar M ts).
 Proof.
   introv per ceq.
   unfold type_value_respecting, per_int_bar in *; exrepnd; GC.
   dands; auto;[].
   exists bar; dands; auto.
   introv i.
-  applydup per0 in i; spcast.
-
-  (*
-      Do we need to change this property into:
-
-Definition type_value_respecting {p} M (ts : cts(p)) :=
-  forall lib T T' eq,
-     ts lib T T eq
-     -> in_ext lib (fun lib => cequivc lib T T')
-     -> ts lib T T' eq.
-
-      i.e., we require T and T' to be computationally equivalent in all possible
-      extensions of lib.
-
-      How is that going to affect equality types?  This was required to
-      prove that equality types preserves the type system properties.
-      Will we have to change the definition of [per_eq_bar] so that we have
-      to either prove [eqa a1 b1] or that [a1 ~ b1] in all extensions of the
-      current library?
-
-   *)
-
+  applydup per0 in i.
+  pose proof (ceq lib') as q; autodimp q hyp; eauto 2 with slow; simpl in q.
+  spcast.
+  eapply cequivc_int; eauto.
 Qed.
 
 Lemma per_int_bar_term_value_respecting {p} :
-  forall M (ts : cts(p)), term_value_respecting (per_int_bar M ts).
+  forall M (ts : cts(p)), term_value_respecting M (per_int_bar M ts).
 Proof.
   introv h e ceq.
   unfold per_int_bar in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
   unfold equality_of_int_bar in *; exrepnd; exists bar0.
-  introv i; apply e0 in i.
-  exrepnd; exists k; repnd; dands; auto; spcast.
-
-  (*apply @cequivc_integer with (t := t); auto.*)
+  introv i; applydup e0 in i.
+  exrepnd; exists k; repnd; dands; auto.
+  pose proof (ceq lib') as q; autodimp q hyp; eauto 2 with slow; simpl in q.
+  spcast.
+  apply @cequivc_integer with (t := t); auto.
 Qed.
 
 Lemma per_int_bar_type_transitive {p} :
@@ -149,10 +132,10 @@ Qed.
 
 Lemma close_type_system_int {p} :
   forall M (ts : cts(p)) lib T T' eq,
-    type_system ts
+    type_system M ts
     -> defines_only_universes ts
     -> per_int_bar M (close M ts) lib T T' eq
-    -> type_sys_props (close M ts) lib T T' eq.
+    -> type_sys_props M (close M ts) lib T T' eq.
 Proof.
   introv X X0 per.
 
