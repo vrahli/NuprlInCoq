@@ -337,7 +337,7 @@ Proof.
     apply CL_eq; unfold per_eq; sp.
     exists A B a1 a2 b1 b2 eqa; sp.
     exists bar; sp.
-    introv j; apply reca; auto.
+    introv j w; eapply reca; eauto.
 
   - Case "CL_req".
     apply CL_req; unfold per_req; sp.
@@ -408,7 +408,7 @@ Proof.
   - Case "CL_union".
     apply CL_union; unfold per_union; sp.
     exists eqa eqb A A' B B'; sp.
-    exists bar; sp; introv j; try (apply reca; auto); try (apply recb; auto).
+    exists bar; sp; introv j w; try (eapply reca; eauto); try (eapply recb; eauto).
 
     (*
   - Case "CL_eunion".
@@ -466,8 +466,8 @@ Proof.
     apply CL_product; unfold per_product; sp.
     exists eqa eqb; sp.
     exists A A' v v' B B'; sp.
-    exists bar; sp; introv j; try (apply reca; auto).
-    introv; try (apply recb; auto).
+    exists bar; sp; introv j w; try (eapply reca; eauto).
+    introv; try (eapply recb; eauto).
 Qed.
 
 Lemma typable_in_higher_univ_r {p} :
@@ -664,7 +664,7 @@ Proof.
     unfold per_eq; sp.
     exists A B a1 a2 b1 b2 eqa; sp.
     exists bar; sp.
-    introv j.
+    introv j w.
     eapply reca; eauto.
 
   - Case "CL_req".
@@ -774,8 +774,8 @@ Proof.
     unfold per_union; sp.
     exists eqa eqb A A' B B'; sp.
     exists bar; sp.
-    + introv j; eapply reca; eauto.
-    + introv j; eapply recb; eauto.
+    + introv j w; eapply reca; eauto.
+    + introv j w; eapply recb; eauto.
 
       (*
   - Case "CL_eunion".
@@ -860,7 +860,7 @@ Proof.
     apply CL_product.
     unfold per_product, type_family; sp.
     exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
-    exists bar; sp; introv j; try (eapply reca; eauto).
+    exists bar; sp; introv j w; try (eapply reca; eauto).
     introv; eapply recb; eauto.
 Qed.
 

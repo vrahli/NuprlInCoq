@@ -62,7 +62,7 @@ Proof.
   unfold per_int_bar in h; exrepnd.
   apply h in e; apply h.
   unfold equality_of_int_bar in *; exrepnd; exists bar0.
-  introv i; apply e0 in i.
+  introv ie i; apply e0 in i; auto.
   exrepnd; exists k; tcsp.
 Qed.
 
@@ -73,9 +73,9 @@ Proof.
   unfold type_value_respecting, per_int_bar in *; exrepnd; GC.
   dands; auto;[].
   exists bar; dands; auto.
-  introv i.
-  applydup per0 in i.
-  pose proof (ceq lib') as q; autodimp q hyp; eauto 2 with slow; simpl in q.
+  introv ie i.
+  applydup per0 in i; auto.
+  pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
   spcast.
   eapply cequivc_int; eauto.
 Qed.
@@ -87,9 +87,9 @@ Proof.
   unfold per_int_bar in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
   unfold equality_of_int_bar in *; exrepnd; exists bar0.
-  introv i; applydup e0 in i.
+  introv ie i; applydup e0 in i; auto.
   exrepnd; exists k; repnd; dands; auto.
-  pose proof (ceq lib') as q; autodimp q hyp; eauto 2 with slow; simpl in q.
+  pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
   spcast.
   apply @cequivc_integer with (t := t); auto.
 Qed.

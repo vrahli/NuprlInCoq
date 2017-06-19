@@ -31,6 +31,9 @@
 
 
 Require Export type_sys.
+Require Export decompose_alphaeq.
+
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ #⪯# *)
@@ -1277,56 +1280,6 @@ Proof.
 
 Abort.
 *)
-
-Lemma alpha_eq_mk_sup {o} :
-  forall (t : @NTerm o) a u,
-    alpha_eq (mk_sup t a) u
-    -> {t' : NTerm
-        & {a' : NTerm
-        & u = mk_sup t' a'
-        # alpha_eq t t'
-        # alpha_eq a a' }}.
-Proof.
-  introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
-  destruct lbt2; allsimpl; repeat cpx.
-  pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
-  pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
-  clear i.
-  unfold selectbt in h1, h2; allsimpl.
-  inversion h1 as [? ? ? ? ? disj1 ? ? norep1 aeq1]; subst; allsimpl; cpx; clear h1.
-  inversion h2 as [? ? ? ? ? disj2 ? ? norep2 aeq2]; subst; allsimpl; cpx; clear h2.
-  allrw @var_ren_nil_l; allrw @lsubst_nil.
-  eexists; eexists; dands; try reflexivity; auto.
-Qed.
-
-Lemma isprog_sup_iff {o} :
-  forall (a b : @NTerm o), isprog (mk_sup a b) <=> (isprog a # isprog b).
-Proof.
-  introv.
-  allrw @isprog_eq.
-  allrw <- @isprogram_sup_iff; tcsp.
-Qed.
-
-Lemma alphaeqc_mkc_sup {o} :
-  forall (t : @CTerm o) a u,
-    alphaeqc (mkc_sup t a) u
-    -> {t' : CTerm
-        & {a' : CTerm
-        & u = mkc_sup t' a'
-        # alphaeqc t t'
-        # alphaeqc a a' }}.
-Proof.
-  introv aeq.
-  destruct_cterms; simpl in *.
-  unfold alphaeqc in *; simpl in *.
-  apply alpha_eq_mk_sup in aeq; exrepnd; subst.
-  dup i as j.
-  apply isprog_sup_iff in j; repnd.
-
-  exists (mk_ct t' j0) (mk_ct a' j); simpl; dands; auto.
-  apply cterm_eq; simpl; auto.
-Qed.
 
 Lemma ccequivc_ext_mkc_sup {p} :
   forall M lib t t' a b,

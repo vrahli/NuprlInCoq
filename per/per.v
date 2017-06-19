@@ -35,6 +35,9 @@ Require Export cequiv.
 Require Export universe2.
 Require Export atoms.
 Require Export computation_lib_extends.
+Require Export nat_type.
+Require Export csname_type.
+
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
@@ -497,16 +500,22 @@ Arguments bar_lib_bars [o] [M] [lib] _ _ _.
 Arguments bar_lib_ext  [o] [M] [lib] _ _ _.
 (*Arguments bar_lib_mem  [o] [M] [lib] _.*)
 
-Definition all_in_bar {o} {M} {lib} (bar : BarLib M lib) (F : @library o -> Prop) :=
-  forall (lib' : library), bar_lib_bar bar lib' -> F lib'.
-
-Definition in_bar {o} M (lib : @library o) (F : @library o -> Prop) :=
-  exists (bar : BarLib M lib), all_in_bar bar F.
-
 Definition in_ext {o} M (lib : @library o) (F : @library o -> Prop) :=
   forall (lib' : library),
     lib_extends M lib' lib
     -> F lib'.
+
+Definition all_in_bar0 {o} {M} {lib} (bar : BarLib M lib) (F : @library o -> Prop) :=
+  forall (lib' : library), bar_lib_bar bar lib' -> F lib'.
+
+(* As opposed to [all_in_bar0], here we require that the property be true in all
+   extensions of the bar *)
+
+Definition all_in_bar {o} {M} {lib} (bar : BarLib M lib) (F : @library o -> Prop) :=
+  forall (lib' : library), bar_lib_bar bar lib' -> in_ext M lib' F.
+
+Definition in_bar {o} M (lib : @library o) (F : @library o -> Prop) :=
+  exists (bar : BarLib M lib), all_in_bar bar F.
 
 Notation "lib-per" := (library -> CTerm -> CTerm -> [U]).
 
@@ -597,20 +606,31 @@ Definition equality_of_nat_bar {o} M lib (t t' : @CTerm o) :=
       bar
       (fun lib => equality_of_nat lib t t')}.
 
-Definition mk_Nat {o} : @NTerm o := oterm (Can NNatNum) [].
-
-Theorem isprog_Nat {o} : @isprog o mk_Nat.
-Proof.
-  repeat constructor.
-Qed.
-
-Definition mkc_Nat {o} : @CTerm o := exist isprog mk_Nat isprog_Nat.
-
 Definition per_nat_bar {p} M (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   {bar : BarLib M lib
   , all_in_bar bar (fun lib => T1 ===>(lib) mkc_Nat)
   # all_in_bar bar (fun lib => T2 ===>(lib) mkc_Nat) }
   # eq <=2=> (equality_of_nat_bar M lib).
+
+
+
+
+Definition equality_of_csname {o} lib (t t' : @CTerm o) :=
+  {name : choice_sequence_name
+  , t ===>(lib) (mkc_choice_seq name)
+  # t' ===>(lib) (mkc_choice_seq name)}.
+
+Definition equality_of_csname_bar {o} M lib (t t' : @CTerm o) :=
+  {bar : BarLib M lib
+  , all_in_bar
+      bar
+      (fun lib => equality_of_csname lib t t')}.
+
+Definition per_csname_bar {p} M (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  {bar : BarLib M lib
+  , all_in_bar bar (fun lib => T1 ===>(lib) mkc_csname)
+  # all_in_bar bar (fun lib => T2 ===>(lib) mkc_csname) }
+  # eq <=2=> (equality_of_csname_bar M lib).
 
 
 
@@ -2528,6 +2548,7 @@ Inductive close {p} (M : Mem) (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [
   | CL_init     : ts lib T T' eq -> close M ts lib T T' eq
   | CL_int      : per_int_bar      M (close M ts) lib T T' eq -> close M ts lib T T' eq
   | CL_nat      : per_nat_bar      M (close M ts) lib T T' eq -> close M ts lib T T' eq
+  | CL_csname   : per_csname_bar   M (close M ts) lib T T' eq -> close M ts lib T T' eq
   | CL_atom     : per_atom_bar     M (close M ts) lib T T' eq -> close M ts lib T T' eq
   | CL_uatom    : per_uatom_bar    M (close M ts) lib T T' eq -> close M ts lib T T' eq
   | CL_base     : per_base_bar     M (close M ts) lib T T' eq -> close M ts lib T T' eq
@@ -2567,6 +2588,7 @@ Hint Constructors close.
 Arguments CL_init     {p} [M] [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_int      {p} [M] [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_nat      {p} [M] [ts] [lib] [T] [T'] [eq] _.
+Arguments CL_csname   {p} [M] [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_atom     {p} [M] [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_uatom    {p} [M] [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_base     {p} [M] [ts] [lib] [T] [T'] [eq] _.
@@ -2606,6 +2628,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
   [ Case_aux c "CL_init"
   | Case_aux c "CL_int"
   | Case_aux c "CL_nat"
+  | Case_aux c "CL_csname"
   | Case_aux c "CL_atom"
   | Case_aux c "CL_uatom"
   | Case_aux c "CL_base"
@@ -2663,6 +2686,13 @@ Definition close_ind' {pp}
                  (eq   : per)
                  (per  : per_nat_bar M (close M ts) lib T T' eq),
             P M ts lib T T' eq)
+  (csname : forall (M    : @Mem pp)
+                   (ts   : cts)
+                   (lib  : library)
+                   (T T' : @CTerm pp)
+                   (eq   : per)
+                   (per  : per_csname_bar M (close M ts) lib T T' eq),
+      P M ts lib T T' eq)
   (atom : forall (M    : @Mem pp)
                  (ts   : cts)
                  (lib  : library)
@@ -3416,14 +3446,15 @@ Definition close_ind' {pp}
           (t    : close M ts lib T T' eq)
          : P M ts lib T T' eq :=
    match t in close _ _ _ _ _ _ return P M ts lib T T' eq with
-   | CL_init   pts => init  M ts lib T T' eq pts
-   | CL_int    pts => int   M ts lib T T' eq pts
-   | CL_nat    pts => nat   M ts lib T T' eq pts
-   | CL_atom   pts => atom  M ts lib T T' eq pts
-   | CL_uatom  pts => uatom M ts lib T T' eq pts
-   | CL_base   pts => base  M ts lib T T' eq pts
-   | CL_approx pts => aprx  M ts lib T T' eq pts
-   | CL_cequiv pts => ceq   M ts lib T T' eq pts
+   | CL_init   pts => init   M ts lib T T' eq pts
+   | CL_int    pts => int    M ts lib T T' eq pts
+   | CL_nat    pts => nat    M ts lib T T' eq pts
+   | CL_csname pts => csname M ts lib T T' eq pts
+   | CL_atom   pts => atom   M ts lib T T' eq pts
+   | CL_uatom  pts => uatom  M ts lib T T' eq pts
+   | CL_base   pts => base   M ts lib T T' eq pts
+   | CL_approx pts => aprx   M ts lib T T' eq pts
+   | CL_cequiv pts => ceq    M ts lib T T' eq pts
 
    | CL_eq pts =>
      let (A,    x) := pts in
@@ -3445,8 +3476,8 @@ Definition close_ind' {pp}
          c1
          c2
          Ftsa
-         (fun (lib' : library) (p : bar_lib_bar bar lib') =>
-            rec M ts lib' A B eqa (Ftsa lib' p))
+         (fun (lib' : library) (p : bar_lib_bar bar lib') (lib'' : library) (i : lib_extends M lib'' lib') =>
+            rec M ts lib'' A B eqa (Ftsa lib' p lib'' i))
          eqa1
          eqa2
          eqiff
@@ -3900,11 +3931,11 @@ Definition close_ind' {pp}
              c1
              c2
              tsa
-             (fun (lib' : library) (p : bar_lib_bar bar lib') =>
-                rec M ts lib' A A' eqa (tsa lib' p))
+             (fun (lib' : library) (p : bar_lib_bar bar lib') (lib'' : library) (i : lib_extends M lib'' lib') =>
+                rec M ts lib'' A A' eqa (tsa lib' p lib'' i))
              tsb
-             (fun (lib' : library) (p : bar_lib_bar bar lib') =>
-                rec M ts lib' B B' eqb (tsb lib' p))
+             (fun (lib' : library) (p : bar_lib_bar bar lib') (lib'' : library) (i : lib_extends M lib'' lib') =>
+                rec M ts lib'' B B' eqb (tsb lib' p lib'' i))
              eqiff
              pts
 
@@ -4179,16 +4210,16 @@ Definition close_ind' {pp}
                c1
                c2
                tsa
-               (fun (lib' : library) (p : bar_lib_bar bar lib') =>
-                  rec M ts lib' A A' (eqa lib') (tsa lib' p))
+               (fun (lib' : library) (p : bar_lib_bar bar lib') (lib'' : library) (i : lib_extends M lib'' lib') =>
+                  rec M ts lib'' A A' (eqa lib'') (tsa lib' p lib'' i))
                tsb
-               (fun (lib' : library) (p : bar_lib_bar bar lib')
-                    a a' (e : eqa lib' a a') =>
-                  rec M ts lib'
+               (fun (lib' : library) (p : bar_lib_bar bar lib') (lib'' : library) (i : lib_extends M lib'' lib')
+                    a a' (e : eqa lib'' a a') =>
+                  rec M ts lib''
                       (substc a v B)
                       (substc a' v' B')
-                      (eqb lib' a a' e)
-                      (tsb lib' p a a' e))
+                      (eqb lib'' a a' e)
+                      (tsb lib' p lib'' i a a' e))
                teq
                pts
 (*   | CL_esquash pts =>
@@ -4251,6 +4282,7 @@ Ltac one_unfold_per :=
     | [ H : per_int         _ _ _ _ _   |- _ ] => unfold per_int         in H; exrepd
     | [ H : per_int_bar     _ _ _ _ _ _ |- _ ] => unfold per_int_bar     in H; exrepd
     | [ H : per_nat_bar     _ _ _ _ _ _ |- _ ] => unfold per_nat_bar     in H; exrepd
+    | [ H : per_csname_bar  _ _ _ _ _ _ |- _ ] => unfold per_csname_bar  in H; exrepd
     | [ H : per_atom        _ _ _ _ _   |- _ ] => unfold per_atom        in H; exrepd
     | [ H : per_atom_bar    _ _ _ _ _ _ |- _ ] => unfold per_atom_bar    in H; exrepd
     | [ H : per_uatom       _ _ _ _ _   |- _ ] => unfold per_uatom       in H; exrepd
