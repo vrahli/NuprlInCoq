@@ -99,7 +99,17 @@ Lemma per_int_bar_type_transitive {p} :
 Proof.
   unfold type_transitive, per_int_bar; sp.
 
-  (* we need to get combine the two bars! *)
+  Print inf_lib_extends.
+  Print BarLibBars.
+  Print safe_library.
+
+  (*
+     we need to get combine the two bars!
+     Use [intersect_bars].
+
+     It assumes that [lib] is safe.  Should we add that to the definitions
+     of the type_system properties?
+   *)
 Qed.
 
 Lemma per_int_term_transitive {p} :
