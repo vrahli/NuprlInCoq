@@ -67,17 +67,17 @@ Definition choice_sequence_vals_extend {o} (vals1 vals2 : @ChoiceSeqVals o) : Pr
 
  *)
 
-Definition Mem {o} := @ChoiceSeqVal o -> @CTerm o -> Prop.
+(* MOVE: Move to library.v and use it in [csc_type]'s definition! *)
+Definition Mem {o} := @ChoiceSeqVal o -> Prop.
 
 Definition choice_sequence_satisfies_restriction {o}
-           (M          : Mem)
            (vals       : @ChoiceSeqVals o)
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
   | csc_no => True
-  | csc_type d typ =>
-    M d typ
-    /\ forall v, List.In v vals -> M v typ (* TODO: Is that going to be enough? *)
+  | csc_type d M =>
+    M d
+    /\ forall v, List.In v vals -> M v (* TODO: Is that going to be enough? *)
   | csc_coq_law f =>
     forall (i : nat), i < length vals -> select i vals = Some (f i)
   end.
@@ -88,10 +88,9 @@ Definition choice_sequence_satisfies_restriction {o}
   [entry1] extends [entry2]
  *)
 Definition extension_satisfies_restriction {o}
-           (M : Mem)
            (entry1 entry2 : @ChoiceSeqEntry o) : Prop :=
-  choice_sequence_satisfies_restriction M entry2 (cse_restriction entry2)
-  -> choice_sequence_satisfies_restriction M entry1 (cse_restriction entry1).
+  choice_sequence_satisfies_restriction entry2 (cse_restriction entry2)
+  -> choice_sequence_satisfies_restriction entry1 (cse_restriction entry1).
 
 (* [entry1] extends [entry2] *)
 Definition choice_sequence_entry_extend {o} (entry1 entry2 : @ChoiceSeqEntry o) : Prop :=
@@ -133,20 +132,20 @@ Fixpoint entry_in_library_extends {o}
 Definition lsubset {A} (l1 l2 : list A) : Prop :=
   forall a, List.In a l1 -> List.In a l2.
 
-Definition safe_choice_sequence_entry {o} M (e : @ChoiceSeqEntry o) :=
+Definition safe_choice_sequence_entry {o} (e : @ChoiceSeqEntry o) :=
   match e with
   | MkChoiceSeqEntry _ vals restriction =>
-    choice_sequence_satisfies_restriction M vals restriction
+    choice_sequence_satisfies_restriction vals restriction
   end.
 
-Definition safe_library_entry {o} M (e : @library_entry o) :=
+Definition safe_library_entry {o} (e : @library_entry o) :=
   match e with
-  | lib_cs name cse => safe_choice_sequence_entry M cse
+  | lib_cs name cse => safe_choice_sequence_entry cse
   | _ => True
   end.
 
-Definition safe_library {o} M (lib : @library o) :=
-  forall entry, List.In entry lib -> safe_library_entry M entry.
+Definition safe_library {o} (lib : @library o) :=
+  forall entry, List.In entry lib -> safe_library_entry entry.
 
 Definition subset_library {o} (lib1 lib2 : @library o) :=
   forall entry1,
@@ -157,7 +156,7 @@ Definition subset_library {o} (lib1 lib2 : @library o) :=
       /\ entry_extends entry2 entry1.
 
 (* [lib1] extends [lib0] *)
-Record lib_extends {o} M (lib1 lib0 : @library o) : Prop :=
+Record lib_extends {o} (lib1 lib0 : @library o) : Prop :=
   MkLibExtends
     {
       lib_extends_ext :
@@ -165,17 +164,17 @@ Record lib_extends {o} M (lib1 lib0 : @library o) : Prop :=
           entry_in_library entry lib0
           -> entry_in_library_extends entry lib1;
 
-      lib_extends_safe : safe_library M lib0 -> safe_library M lib1;
+      lib_extends_safe : safe_library lib0 -> safe_library lib1;
 
       lib_extends_sub : subset_library lib0 lib1;
     }.
-Arguments MkLibExtends [o] [M] [lib1] [lib0] _ _ _.
+Arguments MkLibExtends [o] [lib1] [lib0] _ _ _.
 
 Lemma lib_extends_preserves_safe {o} :
-  forall M (lib1 lib2 : @library o),
-    lib_extends M lib1 lib2
-    -> safe_library M lib2
-    -> safe_library M lib1.
+  forall (lib1 lib2 : @library o),
+    lib_extends lib1 lib2
+    -> safe_library lib2
+    -> safe_library lib1.
 Proof.
   introv ext safel.
   destruct ext as [ext safe sub]; tcsp.
@@ -260,7 +259,7 @@ Qed.
 Hint Resolve choice_sequence_vals_extend_refl : slow.
 
 Lemma extension_satisfies_restriction_refl {o} :
-  forall M (entry : @ChoiceSeqEntry o), extension_satisfies_restriction M entry entry.
+  forall (entry : @ChoiceSeqEntry o), extension_satisfies_restriction entry entry.
 Proof.
   introv.
   unfold extension_satisfies_restriction; tcsp.
@@ -303,7 +302,7 @@ Qed.
 Hint Resolve subset_library_refl : slow.
 
 Lemma lib_extends_refl {o} :
-  forall M (lib : @library o), lib_extends M lib lib.
+  forall (lib : @library o), lib_extends lib lib.
 Proof.
   introv; split; eauto 2 with slow.
 Qed.
@@ -549,15 +548,15 @@ Qed.
 Hint Resolve entry_abs_in_library_extends_implies_entry_in_library : slow.
 
 Lemma lib_extends_preserves_find_entry {o} :
-  forall M (lib1 lib2 : @library o) abs bs (e : library_entry),
-    lib_extends M lib2 lib1
+  forall (lib1 lib2 : @library o) abs bs (e : library_entry),
+    lib_extends lib2 lib1
     -> find_entry lib1 abs bs = Some e
     -> find_entry lib2 abs bs = Some e.
 Proof.
   introv ext fe.
   apply find_entry_some_decomp in fe; exrepnd; subst.
 
-  pose proof (lib_extends_ext _ _ _ ext (lib_abs oa vars rhs correct)) as h.
+  pose proof (lib_extends_ext _ _ ext (lib_abs oa vars rhs correct)) as h.
   simpl in h; autodimp h hyp; eauto 3 with slow;[].
 
   apply implies_entry_in_library_app_right;[simpl; tcsp|].
@@ -639,14 +638,14 @@ Qed.
 Hint Resolve entry_extends_preserves_get_utokens_library_entry : slow.
 
 Lemma lib_extends_implies_subset_get_utokens_library {o} :
-  forall M (lib1 lib2 : @library o),
-    lib_extends M lib2 lib1
+  forall (lib1 lib2 : @library o),
+    lib_extends lib2 lib1
     -> subset (get_utokens_library lib1) (get_utokens_library lib2).
 Proof.
   introv ext i.
   allrw @LIn_iff_In_name.
   allrw @list_in_get_utokens_library_iff; exrepnd.
-  apply (lib_extends_sub _ _ _ ext) in i1.
+  apply (lib_extends_sub _ _ ext) in i1.
   exrepnd.
   exists entry2; dands; auto; eauto 3 with slow.
 Qed.
@@ -1056,8 +1055,8 @@ Qed.
 Hint Resolve find_cs_some_implies_entry_in_library : slow.
 
 Lemma lib_extends_preserves_find_cs {o} :
-  forall M (lib1 lib2 : @library o) name entry1,
-    lib_extends M lib2 lib1
+  forall (lib1 lib2 : @library o) name entry1,
+    lib_extends lib2 lib1
     -> find_cs lib1 name = Some entry1
     ->
     exists (entry2 : ChoiceSeqEntry),
@@ -1098,8 +1097,8 @@ Qed.
 Hint Resolve choice_sequence_vals_extend_preserves_find_value_of_cs_at : slow.
 
 Lemma lib_extends_preserves_find_cs_value_at {o} :
-  forall M (lib1 lib2 : @library o) name n v,
-    lib_extends M lib2 lib1
+  forall (lib1 lib2 : @library o) name n v,
+    lib_extends lib2 lib1
     -> find_cs_value_at lib1 name n = Some v
     -> find_cs_value_at lib2 name n = Some v.
 Proof.
@@ -1157,8 +1156,8 @@ Proof.
 Qed.
 
 Lemma lib_extends_preserves_unfold_abs {o} :
-  forall M (lib1 lib2 : @library o) abs bs t,
-    lib_extends M lib2 lib1
+  forall (lib1 lib2 : @library o) abs bs t,
+    lib_extends lib2 lib1
     -> unfold_abs lib1 abs bs = Some t
     -> unfold_abs lib2 abs bs = Some t.
 Proof.
@@ -1171,8 +1170,8 @@ Proof.
 Qed.
 
 Lemma lib_extends_preserves_compute_step_lib {o} :
-  forall M (lib1 lib2 : @library o) abs bs t,
-    lib_extends M lib2 lib1
+  forall (lib1 lib2 : @library o) abs bs t,
+    lib_extends lib2 lib1
     -> compute_step_lib lib1 abs bs = csuccess t
     -> compute_step_lib lib2 abs bs = csuccess t.
 Proof.
@@ -1190,9 +1189,8 @@ Qed.
 
  *)
 Lemma compute_step_preserves_lib_extends {o} :
-  forall M
-         (lib1 lib2 : library)
-         (ext  : lib_extends M lib2 lib1) (* lib2 extends lib1 *)
+  forall (lib1 lib2 : library)
+         (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
          (a b  : @NTerm o)
          (wf   : wf_term a)
          (comp : compute_step lib1 a = csuccess b),
@@ -1586,9 +1584,8 @@ Proof.
 Qed.
 
 Lemma reduces_in_atmost_k_steps_preserves_lib_extends {o} :
-  forall M
-         (lib1 lib2 : library)
-         (ext  : lib_extends M lib2 lib1) (* lib2 extends lib1 *)
+  forall (lib1 lib2 : library)
+         (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
          (a b  : @NTerm o)
          (wfa  : wf_term a)
          (n    : nat)
@@ -1606,7 +1603,7 @@ Proof.
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
     applydup @compute_step_preserves_wf in comp1; auto.
     apply IHn in comp0; exrepnd; auto; clear IHn.
-    apply (compute_step_preserves_lib_extends M lib1 lib2) in comp1; auto; exrepnd.
+    apply (compute_step_preserves_lib_extends lib1 lib2) in comp1; auto; exrepnd.
 
     pose proof (reduces_in_atmost_k_steps_alpha lib2 u b'0) as w.
     repeat (autodimp w hyp); eauto 3 with slow wf.
@@ -1617,9 +1614,8 @@ Proof.
 Qed.
 
 Lemma reduces_to_preserves_lib_extends {o} :
-  forall M
-         (lib1 lib2 : library)
-         (ext  : lib_extends M lib2 lib1) (* lib2 extends lib1 *)
+  forall (lib1 lib2 : library)
+         (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
          (a b  : @NTerm o)
          (wf   : wf_term a)
          (comp : reduces_to lib1 a b),
@@ -1633,9 +1629,8 @@ Proof.
 Qed.
 
 Lemma computes_to_valc_preserves_lib_extends {o} :
-  forall M
-         (lib1 lib2 : library)
-         (ext  : lib_extends M lib2 lib1) (* lib2 extends lib1 *)
+  forall (lib1 lib2 : library)
+         (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
          (a b  : @CTerm o)
          (comp : computes_to_valc lib1 a b),
     {b' : CTerm & computes_to_valc lib2 a b' # alphaeqc b b'}.
@@ -1664,14 +1659,14 @@ Proof.
 Qed.
 
 Lemma computes_to_valc_nat_if_lib_extends {o} :
-  forall M (lib1 lib2 : @library o) t n,
-    lib_extends M lib1 lib2
+  forall (lib1 lib2 : @library o) t n,
+    lib_extends lib1 lib2
     -> computes_to_valc lib2 t (mkc_nat n)
     -> computes_to_valc lib1 t (mkc_nat n).
 Proof.
   introv ext comp.
   pose proof (computes_to_valc_preserves_lib_extends
-                M lib2 lib1 ext t (mkc_nat n) comp) as h.
+                lib2 lib1 ext t (mkc_nat n) comp) as h.
   exrepnd.
   apply alphaeqc_mkc_nat_implies in h0; subst; auto.
 Qed.

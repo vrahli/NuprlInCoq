@@ -36,11 +36,11 @@ Require Import dest_close.
 
 
 Lemma close_type_system_init {p} :
-  forall M (ts : cts(p)) lib T T' eq,
-    type_system M ts
+  forall (ts : cts(p)) lib T T' eq,
+    type_system ts
     -> defines_only_universes ts
     -> ts lib T T' eq
-    -> type_sys_props M (close M ts) lib T T' eq.
+    -> type_sys_props (close ts) lib T T' eq.
 Proof.
   introv tysys dou e.
   use_dou.
@@ -79,4 +79,3 @@ Proof.
   + SCase "type_mtransitive".
     repdors; subst; spcast; dclose_lr; dands; apply CL_init; sp; spts.
 Qed.
-
