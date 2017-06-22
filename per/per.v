@@ -457,14 +457,15 @@ Definition subset_inf_library {o} (*{M}*) (lib : @library o) (infl : @inf_librar
     List.In entry lib
     -> exists n, inf_entry_extends (infl n) entry.
 
-Record inf_lib_extends {o} (infl : @inf_library o (*M*)) (lib : @library o) :=
+Definition inf_lib_extends_ext_entries {o} (infl : @inf_library o) (lib : @library o) :=
+  forall entry,
+    entry_in_library entry lib
+    -> exists n, entry_in_inf_library_extends entry n infl.
+
+Record inf_lib_extends {o} (infl : @inf_library o) (lib : @library o) :=
   MkInfLibExtends
     {
-      inf_lib_extends_ext :
-        forall entry,
-          entry_in_library entry lib
-          -> exists n, entry_in_inf_library_extends entry n infl;
-
+      inf_lib_extends_ext  : inf_lib_extends_ext_entries infl lib;
       inf_lib_extends_safe : safe_library lib -> safe_inf_library infl;
 
 (*      inf_lib_extends_sub : subset_inf_library lib infl;*)

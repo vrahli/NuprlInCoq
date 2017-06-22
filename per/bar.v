@@ -1359,7 +1359,7 @@ Proof.
   - introv i; apply select_combine_choice_seq_vals_implies_or in i; repndors; tcsp.
 Qed.
 
-Lemma lib_extend_cons_snoc_diff {o} :
+Lemma lib_extends_cons_snoc_diff {o} :
   forall e a (lib lib1 : @library o),
     entry_extends e a
     -> (safe_library_entry a -> safe_library_entry e)
@@ -1398,7 +1398,7 @@ Proof.
 
     + exists e; dands; eauto 2 with slow.
 Qed.
-Hint Resolve lib_extend_cons_snoc_diff : slow.
+Hint Resolve lib_extends_cons_snoc_diff : slow.
 
 Lemma list_in_implies_select_some :
   forall {A} (l : list A) a,
@@ -1980,23 +1980,480 @@ Proof.
 Qed.
 Hint Resolve implies_inf_lib_extends_cons : slow.
 
+Lemma inf_entry_extends_implies_inf_matching_entries2 {o} :
+  forall (ie ie' : @inf_library_entry o) (e : library_entry),
+    matching_inf_entries ie ie'
+    -> inf_entry_extends ie e
+    -> inf_matching_entries ie e.
+Proof.
+  introv m h; unfold inf_entry_extends in h.
+  unfold inf_matching_entries.
+  unfold matching_inf_entries in m.
+  destruct ie, ie', e; simpl in *; repnd; subst; tcsp.
+  rewrite <- matching_entry_sign_is_same_opabs in *.
+  eapply implies_matching_entry_sign_refl; eauto.
+Qed.
+Hint Resolve inf_entry_extends_implies_inf_matching_entries2 : slow.
+
+Lemma matching_inf_entries_sym {o} :
+  forall (e1 e2 : @inf_library_entry o),
+    matching_inf_entries e1 e2
+    -> matching_inf_entries e2 e1.
+Proof.
+  introv h; unfold matching_inf_entries in *.
+  eapply same_entry_name_sym; eauto.
+Qed.
+Hint Resolve matching_inf_entries_sym : slow.
+
+Lemma inf_lib_extends_implies_safe_library {o} :
+  forall infLib (lib : @library o),
+    inf_lib_extends infLib lib
+    -> safe_inf_library infLib
+    -> safe_library lib.
+Proof.
+  introv ext safe i.
+  apply ext in i.
+  exrepnd.
+  apply inf_library_extends_implies in i0.
+  exrepnd.
+  eapply inf_entry_extends_preserves_safe_library_entry; eauto.
+
+  apply (safe (infLib k)).
+  apply implies_entry_in_inf_library.
+  introv ltmn.
+  pose proof (i1 m ltmn) as q; clear i1.
+  introv minf; destruct q.
+
+  eapply matching_inf_entries_preserves_inf_matching_entries;[|eauto].
+  eauto 3 with slow.
+Qed.
+Hint Resolve inf_lib_extends_implies_safe_library : slow.
+
+Lemma inf_lib_extends_ext_entries_preserves_safe_library {o} :
+  forall infLib (lib : @library o),
+    inf_lib_extends_ext_entries infLib lib
+    -> safe_inf_library infLib
+    -> safe_library lib.
+Proof.
+  introv ext safe i.
+  applydup ext in i; exrepnd.
+  applydup @inf_library_extends_implies in i1; exrepnd.
+  eapply inf_entry_extends_preserves_safe_library_entry;[eauto|].
+  apply safe.
+  apply implies_entry_in_inf_library.
+  introv ltmk.
+  pose proof (i2 m) as q; autodimp q hyp.
+  introv ma; destruct q; eauto 4 with slow.
+Qed.
+Hint Resolve inf_lib_extends_ext_entries_preserves_safe_library : slow.
+
+Lemma select_app_left :
+  forall {A} (l1 l2 : list A) n,
+    n < length l1 -> select n (l1 ++ l2) = select n l1.
+Proof.
+  induction l1; introv h; simpl in *; try omega.
+  destruct n; simpl in *; auto.
+  pose proof (IHl1 l2 n) as q; autodimp q hyp; try omega.
+Qed.
+
+Lemma entry_extends_preserves_safe_library_entry {o} :
+  forall (entry entry' : @library_entry o),
+    entry_extends entry' entry
+    -> safe_library_entry entry'
+    -> safe_library_entry entry.
+Proof.
+  introv ext safe.
+  destruct entry, entry'; simpl in *; repnd; subst; tcsp; ginv.
+
+  unfold choice_sequence_entry_extend in *; repnd.
+  destruct entry as [vals1 restr1], entry0 as [vals2 restr2]; simpl in *; subst; auto.
+  unfold choice_sequence_vals_extend in *; exrepnd; subst.
+  unfold choice_sequence_satisfies_restriction in *.
+  destruct restr1; repnd; dands; tcsp.
+
+  - introv i; apply safe; rw List.in_app_iff; tcsp.
+
+  - introv h.
+    pose proof (safe i) as q.
+    allrw length_app.
+    autodimp q hyp; try omega.
+    rewrite select_app_left in q; auto.
+Qed.
+Hint Resolve entry_extends_preserves_safe_library_entry : slow.
+
+Record pre_lib_extends {o} (lib1 lib0 : @library o) : Prop :=
+  MkPreLibExtends
+    {
+      pre_lib_extends_ext : lib_extends_entries lib1 lib0;
+      pre_lib_extends_sub : subset_library lib0 lib1;
+    }.
+Arguments MkPreLibExtends [o] [lib1] [lib0] _ _.
+
+Lemma pre_lib_extends_refl {o} :
+  forall (lib : @library o), pre_lib_extends lib lib.
+Proof.
+  introv; split; eauto 2 with slow.
+Qed.
+Hint Resolve pre_lib_extends_refl : slow.
+
+Lemma pre_lib_extends_nil {o} :
+  forall (lib : @library o), pre_lib_extends lib [].
+Proof.
+  introv; split; simpl; tcsp; eauto 2 with slow.
+Qed.
+Hint Resolve pre_lib_extends_nil : slow.
+
+Lemma inf_lib_extends_implies_inf_lib_extends_ext_entries {o} :
+  forall infLib (lib : @library o),
+    inf_lib_extends infLib lib
+    -> inf_lib_extends_ext_entries infLib lib.
+Proof.
+  introv ext; destruct ext; auto.
+Qed.
+Hint Resolve inf_lib_extends_implies_inf_lib_extends_ext_entries : slow.
+
+Lemma inf_lib_extends_ext_entries_snoc_implies_head {o} :
+  forall infLib (lib : @library o) e,
+    inf_lib_extends_ext_entries infLib (snoc lib e)
+    -> inf_lib_extends_ext_entries infLib lib.
+Proof.
+  introv ext; introv i; apply ext; eauto 2 with slow.
+Qed.
+Hint Resolve inf_lib_extends_ext_entries_snoc_implies_head : slow.
+
+Lemma inf_lib_extends_ext_entries_snoc_implies_entry_ext {o} :
+  forall infLib (lib : @library o) e,
+    non_shadowed_entry e lib
+    -> inf_lib_extends_ext_entries infLib (snoc lib e)
+    -> exists k, entry_in_inf_library_extends e k infLib.
+Proof.
+  introv allt ext.
+  pose proof (ext e) as q; autodimp q hyp; eauto 2 with slow.
+Qed.
+
+Lemma implies_pre_lib_extends_snoc_lr_if_all_diff {o} :
+  forall (lib lib1 : @library o) (e : library_entry),
+    pre_lib_extends lib lib1
+    -> non_shadowed_entry e lib
+    -> pre_lib_extends (snoc lib e) (snoc lib1 e).
+Proof.
+  introv ext allt.
+  destruct ext as [ext sub].
+  split; simpl.
+
+  - introv i.
+    apply entry_in_library_snoc_implies in i; repndors; repnd; subst; eauto 2 with slow.
+    apply ext in i; eauto 2 with slow.
+
+  - introv i; allrw @list_in_snoc; repndors; subst; tcsp.
+
+    + apply sub in i; exrepnd.
+      exists entry2; allrw @list_in_snoc; tcsp.
+
+    + exists e; allrw @list_in_snoc; dands; tcsp; eauto 2 with slow.
+Qed.
+Hint Resolve implies_pre_lib_extends_snoc_lr_if_all_diff : slow.
+
+Lemma implies_pre_lib_extends_snoc_left {o} :
+  forall e (lib lib2 : @library o),
+    pre_lib_extends lib lib2
+    -> pre_lib_extends (snoc lib e) lib2.
+Proof.
+  introv ext.
+  destruct ext as [ext sub].
+  split; simpl.
+
+  - introv i.
+    apply ext in i; eauto 2 with slow.
+
+  - introv i.
+    apply sub in i; exrepnd.
+    exists entry2; allrw @list_in_snoc; tcsp.
+Qed.
+Hint Resolve implies_pre_lib_extends_snoc_left : slow.
+
+Lemma implies_inf_lib_extends_ext_entries_snoc {o} :
+  forall (infLib : @inf_library o) lib e k,
+    inf_lib_extends_ext_entries infLib lib
+    -> entry_in_inf_library_extends e k infLib
+    -> inf_lib_extends_ext_entries infLib (snoc lib e).
+Proof.
+  introv ext i.
+  introv j; apply entry_in_library_snoc_implies in j; repndors; repnd; subst; tcsp.
+  exists k; auto.
+Qed.
+Hint Resolve implies_inf_lib_extends_ext_entries_snoc : slow.
+
+Lemma inf_lib_extends_ext_entries_snoc_implies_entry_ext2 {o} :
+  forall infLib (lib : @library o) e,
+    shadowed_entry e lib
+    -> inf_lib_extends_ext_entries infLib (snoc lib e)
+    -> exists a k,
+        matching_entries a e
+        /\ entry_in_library a lib
+        /\ entry_in_inf_library_extends a k infLib.
+Proof.
+  introv allt ext.
+  applydup @forallb_diff_entry_names_false_implies_exists_entry in allt; exrepnd.
+  pose proof (ext a) as q; autodimp q hyp; eauto 2 with slow.
+  exrepnd.
+  exists a n; dands; auto.
+Qed.
+
+Lemma implies_pre_lib_extends_snoc_snoc_snoc {o} :
+  forall e a (lib lib1 : @library o),
+    pre_lib_extends lib lib1
+    -> matching_entries e a
+    -> entry_in_library e lib1
+    -> non_shadowed_entry a lib
+    -> pre_lib_extends (snoc (snoc lib e) a) (snoc lib1 a).
+Proof.
+  introv ext m ei alltc.
+  destruct ext as [ext sub].
+  split; simpl in *.
+
+  - introv i.
+    apply entry_in_library_snoc_shadowed_implies in i;
+      [|eapply exists_entry_implies_forallb_diff_entry_names_false;eauto].
+    applydup ext in i; eauto 3 with slow.
+
+  - introv i; simpl.
+    allrw @list_in_snoc; repndors; subst; tcsp.
+
+    { apply sub in i; exrepnd.
+      exists entry2; dands; auto.
+      allrw @list_in_snoc; tcsp. }
+
+    { exists a.
+      rewrite list_in_snoc; dands; tcsp; eauto 2 with slow. }
+Qed.
+Hint Resolve implies_pre_lib_extends_snoc_snoc_snoc : slow.
+
+Lemma implies_inf_lib_extends_ext_entries_snoc_snoc {o} :
+  forall infLib e a k (lib : @library o),
+    inf_lib_extends_ext_entries infLib lib
+    -> matching_entries e a
+    -> entry_in_inf_library_extends e k infLib
+    -> inf_lib_extends_ext_entries infLib (snoc (snoc lib e) a).
+Proof.
+  introv ext m ei.
+  introv i.
+  apply entry_in_library_snoc_shadowed_implies in i; eauto 2 with slow.
+  apply entry_in_library_snoc_implies in i; repndors; repnd; subst; tcsp; eauto.
+Qed.
+Hint Resolve implies_inf_lib_extends_ext_entries_snoc_snoc : slow.
+
+Lemma implies_pre_lib_extends_cons_left_snoc_right {o} :
+  forall e (lib : @library o) lib1,
+    non_shadowed_entry e lib1
+    -> pre_lib_extends lib lib1
+    -> pre_lib_extends (e :: lib) (snoc lib1 e).
+Proof.
+  introv allt ext.
+  destruct ext as [ext sub].
+  split; simpl in *.
+
+  - introv i.
+    apply entry_in_library_snoc_implies in i; repndors; repnd; subst; simpl; eauto 2 with slow.
+    applydup ext in i.
+    right; dands; eauto 2 with slow.
+
+  - introv i; simpl.
+    allrw @list_in_snoc; repndors; subst; tcsp.
+
+    + apply sub in i; exrepnd.
+      exists entry2; dands; tcsp.
+
+    + exists e; dands; tcsp; eauto 2 with slow.
+Qed.
+Hint Resolve implies_pre_lib_extends_cons_left_snoc_right : slow.
+
+Lemma implies_pre_lib_extends_cons_left {o} :
+  forall e (lib lib2 : @library o),
+    pre_lib_extends lib lib2
+    -> non_shadowed_entry e lib2
+    -> pre_lib_extends (e :: lib) lib2.
+Proof.
+  introv ext allt.
+  destruct ext as [ext sub].
+  split; simpl in *.
+
+  - introv i.
+    applydup ext in i; right; dands; auto.
+    introv m.
+    unfold non_shadowed_entry in allt; rewrite forallb_forall in allt.
+    pose proof (allt entry) as q.
+    apply matching_entries_sym in m.
+    apply matching_entries_iff_diff_entry_names_false in m.
+    rewrite m in q.
+    autodimp q hyp; eauto 2 with slow.
+
+  - introv i; simpl.
+    apply sub in i; exrepnd.
+    exists entry2; tcsp.
+Qed.
+Hint Resolve implies_pre_lib_extends_cons_left : slow.
+
+Lemma implies_inf_lib_extends_ext_entries_cons {o} :
+  forall (infLib : @inf_library o) lib e k,
+    inf_lib_extends_ext_entries infLib lib
+    -> entry_in_inf_library_extends e k infLib
+    -> inf_lib_extends_ext_entries infLib (e :: lib).
+Proof.
+  introv ext i.
+  introv j; simpl in *; repndors; repnd; subst; tcsp.
+  exists k; auto.
+Qed.
+Hint Resolve implies_inf_lib_extends_ext_entries_cons : slow.
+
+Lemma pre_lib_extends_snoc_lr_if_all_diff_false {o} :
+  forall e (lib lib1 : @library o),
+    pre_lib_extends lib lib1
+    -> shadowed_entry e lib1
+    -> pre_lib_extends (snoc lib e) (snoc lib1 e).
+Proof.
+  introv ext allt.
+  destruct ext as [ext sub].
+  split; simpl in *.
+
+  - introv i.
+    apply entry_in_library_snoc_shadowed_implies in i; auto.
+    apply ext in i.
+    apply implies_entry_in_library_extends_snoc; auto.
+
+  - introv i; simpl.
+    allrw @list_in_snoc; repndors; subst; tcsp.
+
+    + apply sub in i; exrepnd.
+      exists entry2; dands; auto.
+      allrw @list_in_snoc; tcsp.
+
+    + exists e; dands; eauto 2 with slow.
+      allrw @list_in_snoc; tcsp.
+Qed.
+Hint Resolve pre_lib_extends_snoc_lr_if_all_diff_false : slow.
+
+Lemma implies_inf_lib_extends_ext_entries_snoc_shadowed {o} :
+  forall (infLib : @inf_library o) lib e,
+    inf_lib_extends_ext_entries infLib lib
+    -> shadowed_entry e lib
+    -> inf_lib_extends_ext_entries infLib (snoc lib e).
+Proof.
+  introv ext i.
+  introv j.
+  apply entry_in_library_snoc_shadowed_implies in j; auto.
+Qed.
+Hint Resolve implies_inf_lib_extends_ext_entries_snoc_shadowed : slow.
+
+Lemma pre_lib_extends_cons_snoc_diff {o} :
+  forall e a (lib lib1 : @library o),
+    entry_extends e a
+    -> non_shadowed_entry a lib1
+    -> pre_lib_extends lib lib1
+    -> pre_lib_extends (e :: lib) (snoc lib1 a).
+Proof.
+  introv exte allt ext.
+  destruct ext as [ext sub].
+  split; simpl in *.
+
+  - introv i.
+    apply entry_in_library_snoc_implies in i; repndors; repnd; subst; tcsp.
+    applydup ext in i.
+    right; dands; auto.
+    introv m.
+    eapply entry_extends_implies_matching_entries in exte;
+      [|apply matching_entries_sym;eauto].
+    eapply matching_entries_trans in exte;[|eauto].
+    unfold non_shadowed_entry in allt; rewrite forallb_forall in allt.
+    apply entry_in_library_implies_in in i.
+    apply allt in i.
+    apply matching_entries_sym in exte.
+    apply matching_entries_iff_diff_entry_names_false in exte.
+    rewrite exte in i; ginv.
+
+  - introv i; simpl.
+    allrw @list_in_snoc; repndors; subst; tcsp.
+
+    + apply sub in i; exrepnd.
+      exists entry2; dands; auto.
+
+    + exists e; dands; eauto 2 with slow.
+Qed.
+Hint Resolve pre_lib_extends_cons_snoc_diff : slow.
+
+Lemma implies_pre_lib_extends_cons_left_if_extends {o} :
+  forall (e e' : @library_entry o) (lib lib2 : @library o),
+    pre_lib_extends lib lib2
+    -> entry_extends e e'
+    -> entry_in_library e' lib2
+    -> pre_lib_extends (e :: lib) lib2.
+Proof.
+  introv ext exte ei.
+  destruct ext as [ext sub].
+  split; simpl in *.
+
+  - introv i.
+    pose proof (two_entry_in_library_implies_or e' entry lib2) as q.
+    repeat (autodimp q hyp).
+    repndors; subst; tcsp.
+
+    apply ext in i.
+    right; dands; auto; eauto 2 with slow.
+
+    introv m.
+    eapply entry_extends_implies_matching_entries in exte;
+      [|apply matching_entries_sym;eauto].
+    eapply matching_entries_trans in exte;[|eauto].
+    apply matching_entries_sym in exte; tcsp.
+
+  - introv i; simpl.
+    apply sub in i; exrepnd.
+    exists entry2; dands; auto.
+Qed.
+Hint Resolve implies_pre_lib_extends_cons_left_if_extends : slow.
+
 Lemma intersect_inf_lib_extends2 {o} :
   forall infLib (lib1 lib2 : @library o),
-    safe_library lib1
-    -> safe_library lib2
-    -> inf_lib_extends infLib lib1
+    inf_lib_extends infLib lib1
     -> inf_lib_extends infLib lib2
     -> exists lib,
         lib_extends lib lib1
         /\ lib_extends lib lib2
         /\ inf_lib_extends infLib lib.
 Proof.
-  induction lib1 using rev_list_ind; introv safe1 safe2 ext1 ext2; simpl in *.
+  introv ext1 ext2.
+
+  assert (exists lib,
+             pre_lib_extends lib lib1
+             /\ pre_lib_extends lib lib2
+             /\ inf_lib_extends_ext_entries infLib lib) as h;
+    [|exrepnd;
+      destruct h1 as [ext_1 sub_1];
+      destruct h2 as [ext_2 sub_2];
+      exists lib;
+      dands; split; auto;
+      [introv safe; destruct ext1 as [ext1 safe1 sub1];
+       autodimp safe1 hyp; eauto 2 with slow
+      |introv safe; destruct ext2 as [ext2 safe2 sub2];
+       autodimp safe2 hyp; eauto 2 with slow
+      |introv safe; destruct ext1 as [ext1 safe1 sub1]; apply safe1;
+       eauto 2 with slow; introv i; apply ext_1 in i;
+       apply entry_in_library_extends_implies_entry_in_library in i; exrepnd;
+       apply safe in i1; eauto 2 with slow
+      ]
+    ].
+
+  destruct ext1 as [ext1 safe1].
+  destruct ext2 as [ext2 safe2].
+  clear safe1 safe2.
+
+  revert lib1 lib2 ext1 ext2.
+
+  induction lib1 using rev_list_ind; introv ext1 ext2; simpl in *.
 
   - exists lib2; dands; eauto 2 with slow.
 
-  - apply safe_library_snoc_implies in safe1; repnd.
-    pose proof (IHlib1 lib2) as q; repeat (autodimp q hyp); eauto 2 with slow;[].
+  - pose proof (IHlib1 lib2) as q; repeat (autodimp q hyp); eauto 2 with slow; clear IHlib1.
     exrepnd.
 
     remember (forallb (diff_entry_names a) lib) as b; symmetry in Heqb; destruct b.
@@ -2007,14 +2464,14 @@ Proof.
 
       * (* [a] is not in [lib1] *)
 
-        pose proof (inf_lib_extends_snoc_implies_entry_ext infLib lib1 a) as q.
+        pose proof (inf_lib_extends_ext_entries_snoc_implies_entry_ext infLib lib1 a) as q.
         repeat (autodimp q hyp).
         exrepnd.
         exists (snoc lib a); dands; eauto 3 with slow.
 
       * (* [a] is in [lib1] *)
 
-        pose proof (inf_lib_extends_snoc_implies_entry_ext2 infLib lib1 a) as q.
+        pose proof (inf_lib_extends_ext_entries_snoc_implies_entry_ext2 infLib lib1 a) as q.
         repeat (autodimp q hyp); exrepnd.
         exists (snoc (snoc lib a0) a); dands; eauto 6 with slow.
 
@@ -2028,7 +2485,7 @@ Proof.
 
         { (* [a] is not in [lib1] *)
 
-          pose proof (inf_lib_extends_snoc_implies_entry_ext infLib lib1 a) as q.
+          pose proof (inf_lib_extends_ext_entries_snoc_implies_entry_ext infLib lib1 a) as q.
           repeat (autodimp q hyp); exrepnd.
           exists (a :: lib); dands; eauto 3 with slow.
         }
@@ -2059,9 +2516,9 @@ Proof.
           exrepnd.
           applydup q2 in Heqw1.
 
-          pose proof (inf_lib_extends_ext _ _ ext1 a) as q.
+          pose proof (ext1 a) as q.
           autodimp q hyp; exrepnd; eauto 2 with slow;[].
-          pose proof (inf_lib_extends_ext _ _ ext2 e') as w.
+          pose proof (ext2 e') as w.
           autodimp w hyp; exrepnd.
           pose proof (inf_library_extends_two_matching_entries a e' n n0 infLib) as h.
 
@@ -2072,21 +2529,9 @@ Proof.
           pose proof (inf_entry_extends_two_entries_implies_entry_extends (infLib n1) a e') as q.
           repeat (autodimp q hyp); exrepnd.
 
-          assert (safe_library_entry e) as safee.
-          {
-            applydup @inf_lib_extends_implies_safe_inf_library in ext2; auto.
-            pose proof (ext0 (infLib n1)) as q.
-            autodimp q hyp; eauto 2 with slow.
-            apply implies_entry_in_inf_library; introv ltmn.
-            pose proof (h0 m ltmn) as q; clear h0.
-            introv minf; destruct q.
-            eapply inf_entry_extends_implies_inf_matching_entries in h3;[|eauto].
-            eauto 2 with slow.
-          }
-
           exists (e :: lib); dands; eauto 2 with slow.
 
-          eapply implies_inf_lib_extends_cons; auto; eauto 2 with slow.
+          eapply implies_inf_lib_extends_ext_entries_cons; auto; eauto 2 with slow.
           eapply inf_entry_extends_implies_entry_in_inf_library_extends;
             eauto 2 with slow.
           introv lemn m'; apply h0 in lemn; destruct lemn; eauto 3 with slow.
@@ -2118,9 +2563,9 @@ Proof.
           clear dependent x.
           applydup q1 in in1lib1.
 
-          pose proof (inf_lib_extends_ext _ _ ext1 e1) as q.
+          pose proof (ext1 e1) as q.
           autodimp q hyp; exrepnd; eauto 2 with slow;[].
-          pose proof (inf_lib_extends_ext _ _ ext2 e2) as w.
+          pose proof (ext2 e2) as w.
           autodimp w hyp; exrepnd.
           pose proof (inf_library_extends_two_matching_entries e1 e2 n n0 infLib) as h.
           repeat (autodimp h hyp).
@@ -2131,23 +2576,11 @@ Proof.
           pose proof (inf_entry_extends_two_entries_implies_entry_extends (infLib n1) e1 e2) as q.
           repeat (autodimp q hyp); exrepnd.
 
-          assert (safe_library_entry e) as safee.
-          {
-            applydup @inf_lib_extends_implies_safe_inf_library in ext2; auto.
-            pose proof (ext0 (infLib n1)) as q.
-            autodimp q hyp; eauto 2 with slow.
-            apply implies_entry_in_inf_library; introv ltmn.
-            pose proof (h0 m ltmn) as q; clear h0.
-            introv minf; destruct q.
-            eapply inf_entry_extends_implies_inf_matching_entries in h3;[|apply matching_entries_sym;eauto].
-            eauto 2 with slow.
-          }
-
           exists (e :: snoc lib a); dands; eauto 5 with slow;[].
 
-          apply (implies_inf_lib_extends_snoc_shadowed _ (e :: lib)).
+          apply (implies_inf_lib_extends_ext_entries_snoc_shadowed _ (e :: lib)).
 
-          { eapply implies_inf_lib_extends_cons; eauto 2 with slow;[].
+          { eapply implies_inf_lib_extends_ext_entries_cons; eauto 2 with slow;[].
             eapply inf_entry_extends_implies_entry_in_inf_library_extends;
               eauto 3 with slow.
             introv lemn m'; apply h0 in lemn; destruct lemn; eauto 3 with slow. }
@@ -2161,9 +2594,7 @@ Proof.
         }
 Qed.
 
-Definition intersect_bars {o} {lib}
-           (safe : @safe_library o lib)
-           (bar1 bar2 : @BarLib o lib) : BarLib lib.
+Definition intersect_bars {o} {lib} (bar1 bar2 : @BarLib o lib) : BarLib lib.
 Proof.
   exists (fun (lib' : library) =>
             exists lib1 lib2,
