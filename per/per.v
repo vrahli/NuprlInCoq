@@ -370,22 +370,43 @@ Definition safe_inf_library_entry {o} (e : @inf_library_entry o (*M*)) :=
   | _ => True
   end.
 
-Definition safe_inf_library {o} (inflib : @inf_library o (*M*)) :=
-  forall n, safe_inf_library_entry (inflib n).
-
-Definition shift_inf_lib {o} (*{M}*) (l : @inf_library o (*M*)) : inf_library (*M*) :=
-  fun n => l (S n).
-
 Definition inf_entry2name {o} (*{M}*) (e : @inf_library_entry o (*M*)) : EntryName :=
   match e with
   | inf_lib_cs name _ => entry_name_cs name
   | inf_lib_abs opabs _ _ _ => entry_name_abs opabs
   end.
 
-Definition inf_matching_entries {o} (*{M}*)
-           (entry1 : @inf_library_entry o (*M*))
+Definition inf_matching_entries {o}
+           (entry1 : @inf_library_entry o)
            (entry2 : @library_entry o) : Prop :=
   same_entry_name (inf_entry2name entry1) (entry2name entry2).
+
+Definition matching_inf_entries {o} (entry1 entry2 : @inf_library_entry o) : Prop :=
+  same_entry_name (inf_entry2name entry1) (inf_entry2name entry2).
+
+Definition shift_inf_lib {o} (*{M}*) (l : @inf_library o (*M*)) : inf_library (*M*) :=
+  fun n => l (S n).
+
+Fixpoint entry_in_inf_library_n {o}
+         (n      : nat)
+         (entry  : @inf_library_entry o)
+         (inflib : inf_library) : Prop :=
+  match n with
+  | 0 => False
+  | S n =>
+    entry = inflib 0
+    \/
+    (~ matching_inf_entries (inflib 0) entry
+       # entry_in_inf_library_n n entry (shift_inf_lib inflib))
+  end.
+
+Definition entry_in_inf_library {o}
+         (entry  : @inf_library_entry o)
+         (inflib : inf_library) : Prop :=
+  exists n, entry_in_inf_library_n n entry inflib.
+
+Definition safe_inf_library {o} (inflib : @inf_library o (*M*)) :=
+  forall entry, entry_in_inf_library entry inflib -> safe_inf_library_entry entry.
 
 Definition inf_choice_sequence_vals_extend {o}
            (vals1 : @InfChoiceSeqVals o)

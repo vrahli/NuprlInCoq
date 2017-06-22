@@ -145,7 +145,7 @@ Definition safe_library_entry {o} (e : @library_entry o) :=
   end.
 
 Definition safe_library {o} (lib : @library o) :=
-  forall entry, List.In entry lib -> safe_library_entry entry.
+  forall entry, entry_in_library entry lib -> safe_library_entry entry.
 
 Definition subset_library {o} (lib1 lib2 : @library o) :=
   forall entry1,
@@ -155,18 +155,18 @@ Definition subset_library {o} (lib1 lib2 : @library o) :=
       List.In entry2 lib2
       /\ entry_extends entry2 entry1.
 
+Definition lib_extends_entries {o} (lib1 lib0 : @library o) :=
+  forall entry,
+    entry_in_library entry lib0
+    -> entry_in_library_extends entry lib1.
+
 (* [lib1] extends [lib0] *)
 Record lib_extends {o} (lib1 lib0 : @library o) : Prop :=
   MkLibExtends
     {
-      lib_extends_ext :
-        forall entry,
-          entry_in_library entry lib0
-          -> entry_in_library_extends entry lib1;
-
+      lib_extends_ext  : lib_extends_entries lib1 lib0;
       lib_extends_safe : safe_library lib0 -> safe_library lib1;
-
-      lib_extends_sub : subset_library lib0 lib1;
+      lib_extends_sub  : subset_library lib0 lib1;
     }.
 Arguments MkLibExtends [o] [lib1] [lib0] _ _ _.
 
@@ -300,6 +300,13 @@ Proof.
   exists entry1; dands; auto; eauto 2 with slow.
 Qed.
 Hint Resolve subset_library_refl : slow.
+
+Lemma lib_extends_entries_refl {o} :
+  forall (lib : @library o), lib_extends_entries lib lib.
+Proof.
+  introv i; eauto 2 with slow.
+Qed.
+Hint Resolve lib_extends_entries_refl : slow.
 
 Lemma lib_extends_refl {o} :
   forall (lib : @library o), lib_extends lib lib.
