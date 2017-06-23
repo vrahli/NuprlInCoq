@@ -35,28 +35,28 @@ Require Import dest_close.
 
 
 Lemma per_int_bar_uniquely_valued {p} :
-  forall M (ts : cts(p)), uniquely_valued (per_int_bar M ts).
+  forall (ts : cts(p)), uniquely_valued (per_int_bar ts).
 Proof.
  unfold uniquely_valued, per_int_bar, eq_term_equals; sp.
  allrw; sp.
 Qed.
 
 Lemma per_int_bar_type_extensionality {p} :
-  forall M (ts : cts(p)), type_extensionality (per_int_bar M ts).
+  forall (ts : cts(p)), type_extensionality (per_int_bar ts).
 Proof.
   unfold type_extensionality, per_int_bar, eq_term_equals; sp.
   allrw <-; sp.
 Qed.
 
 Lemma per_int_bar_type_symmetric {p} :
-  forall M (ts : cts(p)), type_symmetric (per_int_bar M ts).
+  forall (ts : cts(p)), type_symmetric (per_int_bar ts).
 Proof.
   unfold type_symmetric, per_int_bar; sp.
   exists bar; dands; auto.
 Qed.
 
 Lemma per_int_bar_term_symmetric {p} :
-  forall M (ts : cts(p)), term_symmetric (per_int_bar M ts).
+  forall (ts : cts(p)), term_symmetric (per_int_bar ts).
 Proof.
   introv h e.
   unfold per_int_bar in h; exrepnd.
@@ -67,7 +67,7 @@ Proof.
 Qed.
 
 Lemma per_int_bar_type_value_respecting {p} :
-  forall M (ts : cts(p)), type_value_respecting M (per_int_bar M ts).
+  forall (ts : cts(p)), type_value_respecting (per_int_bar ts).
 Proof.
   introv per ceq.
   unfold type_value_respecting, per_int_bar in *; exrepnd; GC.
@@ -81,7 +81,7 @@ Proof.
 Qed.
 
 Lemma per_int_bar_term_value_respecting {p} :
-  forall M (ts : cts(p)), term_value_respecting M (per_int_bar M ts).
+  forall (ts : cts(p)), term_value_respecting (per_int_bar ts).
 Proof.
   introv h e ceq.
   unfold per_int_bar in *; exrepnd; spcast.
@@ -95,57 +95,70 @@ Proof.
 Qed.
 
 Lemma per_int_bar_type_transitive {p} :
-  forall M (ts : cts(p)), type_transitive (per_int_bar M ts).
+  forall (ts : cts(p)), type_transitive (per_int_bar ts).
 Proof.
-  unfold type_transitive, per_int_bar; sp.
+  introv per1 per2.
+  unfold type_transitive, per_int_bar in *; exrepnd.
+  dands; auto.
 
-  Print inf_lib_extends.
-  Print BarLibBars.
-  Print safe_library.
+  exists (intersect_bars bar bar0).
+  dands.
 
-  (*
-     we need to get combine the two bars!
-     Use [intersect_bars].
+  - introv i j; simpl in *; exrepnd.
+    pose proof (per3 lib2) as q; autodimp q hyp.
+    pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
 
-     It assumes that [lib] is safe.  Should we add that to the definitions
-     of the type_system properties?
-   *)
+  - introv i j; simpl in *; exrepnd.
+    pose proof (per4 lib1) as q; autodimp q hyp.
+    pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
 Qed.
 
-Lemma per_int_term_transitive {p} :
-  forall lib (ts : cts(p)), term_transitive (per_int lib ts).
+Lemma per_int_bar_term_transitive {p} :
+  forall (ts : cts(p)), term_transitive (per_int_bar ts).
 Proof.
-  unfold term_transitive, term_equality_transitive, per_int.
-  introv cts i e1 e2.
-  destruct i as [ ct i ].
-  destruct i as [ ct' i ].
-  rw i in e1; rw i in e2; rw i; sp.
-  allunfold @equality_of_int; exrepnd.
-  exists k; sp.
-  ccomputes_to_eqval; spcast; sp.
+  introv per i j.
+  unfold per_int_bar in per; exrepnd.
+  apply per in i; apply per in j; apply per.
+  unfold equality_of_int_bar in *.
+  exrepnd.
+
+  clear per per0 per1.
+
+  exists (intersect_bars bar1 bar0).
+  unfold equality_of_int_bar1 in *.
+  introv i j; simpl in *; exrepnd.
+
+  pose proof (i0 lib1) as q; autodimp q hyp; clear i0.
+  pose proof (q lib'0) as w; clear q; autodimp w hyp; eauto 2 with slow; simpl in w.
+
+  pose proof (j0 lib2) as q; autodimp q hyp; clear j0.
+  pose proof (q lib'0) as z; clear q; autodimp z hyp; eauto 2 with slow; simpl in z.
+  exrepnd; spcast.
+  computes_to_eqval.
+  exists k0; dands; spcast; auto.
 Qed.
 
 Lemma per_int_type_system {p} :
-  forall lib (ts : cts(p)), type_system lib (per_int lib ts).
+  forall (ts : cts(p)), type_system (per_int_bar ts).
 Proof.
   intros; unfold type_system; sp.
-  try apply per_int_uniquely_valued; auto.
-  try apply per_int_type_extensionality; auto.
-  try apply per_int_type_symmetric; auto.
-  try apply per_int_type_transitive; auto.
-  try apply per_int_type_value_respecting; auto.
-  try apply per_int_term_symmetric; auto.
-  try apply per_int_term_transitive; auto.
-  try apply per_int_term_value_respecting; auto.
+  - apply per_int_bar_uniquely_valued.
+  - apply per_int_bar_type_extensionality.
+  - apply per_int_bar_type_symmetric.
+  - apply per_int_bar_type_transitive.
+  - apply per_int_bar_type_value_respecting.
+  - apply per_int_bar_term_symmetric.
+  - apply per_int_bar_term_transitive.
+  - apply per_int_bar_term_value_respecting.
 Qed.
 
 
 Lemma close_type_system_int {p} :
-  forall M (ts : cts(p)) lib T T' eq,
-    type_system M ts
+  forall (ts : cts(p)) lib T T' eq,
+    type_system ts
     -> defines_only_universes ts
-    -> per_int_bar M (close M ts) lib T T' eq
-    -> type_sys_props M (close M ts) lib T T' eq.
+    -> per_int_bar (close ts) lib T T' eq
+    -> type_sys_props (close ts) lib T T' eq.
 Proof.
   introv X X0 per.
 
@@ -159,8 +172,8 @@ Proof.
     dclose_lr.
 
     * SSCase "CL_int".
-      assert (uniquely_valued (per_int lib (close lib ts))) as uv
-        by (apply per_int_uniquely_valued).
+      assert (uniquely_valued (per_int (close ts))) as uv
+        by (apply per_int_bar_uniquely_valued).
       apply uv with (T := T) (T' := T'); auto.
       apply uniquely_valued_trans5 with (T2 := T3) (eq2 := eq); auto.
       apply per_int_type_extensionality.
