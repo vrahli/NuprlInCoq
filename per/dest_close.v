@@ -37,7 +37,7 @@ Require Export decompose_alphaeq.
 
 
 Ltac close_diff_bar :=
-  allunfold_per;
+  allunfold_per; spcast;
   match goal with
   | [ comp1 : computes_to_valc ?lib ?T _,
       bar   : BarLib ?lib,
@@ -60,7 +60,7 @@ Ltac close_diff_bar :=
   end.
 
 Ltac close_diff_ext :=
-  allunfold_per;
+  allunfold_per; spcast;
   match goal with
   | [ comp1 : computes_to_valc ?lib ?T _,
       comp2 : in_ext ?lib (fun v => ccomputes_to_valc v ?T _)
@@ -73,12 +73,167 @@ Ltac close_diff_ext :=
     try computes_to_valc_diff
   end.
 
+Ltac close_diff_bar_bar :=
+  allunfold_per;
+  match goal with
+  | [ H1 : all_in_bar ?bar1 (fun lib => ?T ===>(lib) _),
+      H2 : all_in_bar ?bar2 (fun lib => ?T ===>(lib) _) |- _ ] =>
+    let h    := fresh "h" in
+    let a1   := fresh "a1" in
+    let b1   := fresh "b1" in
+    let a2   := fresh "a2" in
+    let b2   := fresh "b2" in
+    let lib1 := fresh "lib1" in
+    let lib2 := fresh "lib2" in
+    let lib' := fresh "lib'" in
+    let xxx  := fresh "xxx" in
+    pose proof (ex_extends_two_bars bar1 bar2) as h;
+      destruct h as [lib1 h];
+      destruct h as [lib2 h];
+      destruct h as [lib' h];
+      exrepnd;
+      pose proof (H1 lib1) as a1; autodimp a1 xxx;
+        pose proof (H2 lib2) as b1; autodimp b1 xxx;
+          pose proof (a1 lib') as a2; autodimp a2 xxx;
+            pose proof (b1 lib') as b2; autodimp b2 xxx;
+              simpl in a2,b2;
+              try (spcast; computes_to_valc_diff)
+  end.
+
+Ltac close_diff_ext_bar :=
+  allunfold_per;
+  match goal with
+  | [ H1 : in_ext ?lib (fun lib => ?T ===>(lib) _),
+      H2 : all_in_bar ?bar (fun lib => ?T ===>(lib) _) |- _ ] =>
+    let h    := fresh "h" in
+    let a1   := fresh "a1" in
+    let b1   := fresh "b1" in
+    let b2   := fresh "b2" in
+    let lib' := fresh "lib'" in
+    let xxx  := fresh "xxx" in
+    pose proof (bar_non_empty bar) as h;
+    destruct h as [lib' h];
+    pose proof (H1 lib') as a1; autodimp a1 xxx; eauto 2 with slow; simpl in a1;
+    pose proof (H2 lib') as b1; autodimp b1 xxx;
+    pose proof (b1 lib') as b2; autodimp b2 xxx; eauto 2 with slow; simpl in b2;
+    spcast;
+    try computes_to_valc_diff
+  end.
+
+Ltac close_diff_init_bar_left :=
+  allunfold_per;
+  match goal with
+  | [ M  : type_monotone ?ts,
+      H1 : ?ts ?lib ?T ?T' ?per,
+      H2 : all_in_bar ?bar (fun lib => ?T ===>(lib) _) |- _ ] =>
+    let h    := fresh "h"    in
+    let a1   := fresh "a1"   in
+    let b1   := fresh "b1"   in
+    let b2   := fresh "b2"   in
+    let lib' := fresh "lib'" in
+    let xxx  := fresh "xxx"  in
+    let eq'  := fresh "eq'"  in
+    pose proof (bar_non_empty bar) as h;
+    destruct h as [lib' h];
+    pose proof (M lib lib' T T' per) as a1;
+    repeat (autodimp a1 xxx); eauto 2 with slow;
+    clear H1;
+    destruct a1 as [eq' a1];
+    try (apply_defines_only_universes);
+    uncast;
+    pose proof (H2 lib') as b1; autodimp b1 xxx; eauto 2 with slow; simpl in b1;
+    pose proof (b1 lib') as b2; autodimp b2 xxx; eauto 2 with slow; simpl in b2;
+    spcast;
+    try computes_to_valc_diff
+  end.
+
+Ltac close_diff_init_bar_right :=
+  allunfold_per;
+  match goal with
+  | [ M  : type_monotone ?ts,
+      H1 : ?ts ?lib ?T' ?T ?per,
+      H2 : all_in_bar ?bar (fun lib => ?T ===>(lib) _) |- _ ] =>
+    let h    := fresh "h"    in
+    let a1   := fresh "a1"   in
+    let b1   := fresh "b1"   in
+    let b2   := fresh "b2"   in
+    let lib' := fresh "lib'" in
+    let xxx  := fresh "xxx"  in
+    let eq'  := fresh "eq'"  in
+    pose proof (bar_non_empty bar) as h;
+    destruct h as [lib' h];
+    pose proof (M lib lib' T' T per) as a1;
+    repeat (autodimp a1 xxx); eauto 2 with slow;
+    clear H1;
+    destruct a1 as [eq' a1];
+    try (apply_defines_only_universes);
+    uncast;
+    pose proof (H2 lib') as b1; autodimp b1 xxx; eauto 2 with slow; simpl in b1;
+    pose proof (b1 lib') as b2; autodimp b2 xxx; eauto 2 with slow; simpl in b2;
+    spcast;
+    try computes_to_valc_diff
+  end.
+
 Ltac close_diff_all :=
   first [ complete auto
         | close_diff
         | close_diff_bar
         | close_diff_ext
+        | close_diff_bar_bar
+        | close_diff_ext_bar
+        | close_diff_init_bar_left
+        | close_diff_init_bar_right
         ].
+
+Lemma dest_close_per_int_l {p} :
+  forall (ts : cts(p)) lib T T' eq,
+    type_system ts
+    -> defines_only_universes ts
+    -> computes_to_valc lib T mkc_int
+    -> close ts lib T T' eq
+    -> per_int_bar (close ts) lib T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_int_r {p} :
+  forall (ts : cts(p)) lib T T' eq,
+    type_system ts
+    -> defines_only_universes ts
+    -> computes_to_valc lib T' mkc_int
+    -> close ts lib T T' eq
+    -> per_int_bar (close ts) lib T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_int_bar_l {p} :
+  forall (ts : cts(p)) lib T T' eq (bar : BarLib lib),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar bar (fun lib => T ===>(lib) mkc_int)
+    -> close ts lib T T' eq
+    -> per_int_bar (close ts) lib T T' eq.
+Proof.
+  introv tysys dou mon comp cl.
+  inversion cl; clear cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_int_bar_r {p} :
+  forall (ts : cts(p)) lib T T' eq (bar : BarLib lib),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar bar (fun lib => T' ===>(lib) mkc_int)
+    -> close ts lib T T' eq
+    -> per_int_bar (close ts) lib T T' eq.
+Proof.
+  introv tysys dou mon comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.
 
 Lemma dest_close_per_func_l {p} :
   forall (ts : cts(p)) lib T A v B T' eq,
@@ -101,6 +256,32 @@ Lemma dest_close_per_func_r {p} :
     -> per_func_ext (close ts) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_func_bar_l {p} :
+  forall (ts : cts(p)) lib T A v B T' eq (bar : BarLib lib),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar bar (fun lib => T ===>(lib) (mkc_function A v B))
+    -> close ts lib T T' eq
+    -> per_func_ext (close ts) lib T T' eq.
+Proof.
+  introv tysys dou mon comp cl.
+  inversion cl; clear cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_func_bar_r {p} :
+  forall (ts : cts(p)) lib T A v B T' eq (bar : BarLib lib),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar bar (fun lib => T' ===>(lib) (mkc_function A v B))
+    -> close ts lib T T' eq
+    -> per_func_ext (close ts) lib T T' eq.
+Proof.
+  introv tysys dou mon comp cl.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -800,30 +981,6 @@ Proof.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
-Lemma dest_close_per_int_l {p} :
-  forall (ts : cts(p)) lib T T' eq,
-    type_system ts
-    -> defines_only_universes ts
-    -> computes_to_valc lib T mkc_int
-    -> close ts lib T T' eq
-    -> per_int_bar (close ts) lib T T' eq.
-Proof.
-  introv tysys dou comp cl.
-  inversion cl; subst; try close_diff_all; auto.
-Qed.
-
-Lemma dest_close_per_int_r {p} :
-  forall (ts : cts(p)) lib T T' eq,
-    type_system ts
-    -> defines_only_universes ts
-    -> computes_to_valc lib T' mkc_int
-    -> close ts lib T T' eq
-    -> per_int_bar (close ts) lib T T' eq.
-Proof.
-  introv tysys dou comp cl.
-  inversion cl; subst; try close_diff_all; auto.
-Qed.
-
 Lemma dest_close_per_atom_l {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
@@ -938,6 +1095,23 @@ Ltac dest_close_lr h :=
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
       generalize (dest_close_per_func_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    (* function bar *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : all_in_bar ?bar (fun lib => ?T ===>(lib) (mkc_function ?A ?v ?B)),
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_func_bar_l ts lib T A v B T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : all_in_bar ?bar (fun lib => ?T' ===>(lib) (mkc_function ?A ?v ?B)),
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_func_bar_r ts lib T A v B T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 
     (* isect *)
     | [ H1 : type_system ?ts,
@@ -1390,6 +1564,23 @@ Ltac dest_close_lr h :=
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
       generalize (dest_close_per_int_r ts lib T T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    (* int bar *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : all_in_bar ?bar (fun lib => ?T ===>(lib) mkc_int),
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_int_bar_l ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : all_in_bar ?bar (fun lib => ?T' ===>(lib) mkc_int),
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_int_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 
     (* atom *)
     | [ H1 : type_system ?ts,

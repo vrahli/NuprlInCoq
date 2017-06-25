@@ -152,83 +152,91 @@ Proof.
   - apply per_int_bar_term_value_respecting.
 Qed.
 
-
 Lemma close_type_system_int {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
     -> defines_only_universes ts
+    -> type_monotone ts
     -> per_int_bar (close ts) lib T T' eq
     -> type_sys_props (close ts) lib T T' eq.
 Proof.
-  introv X X0 per.
+  introv X X0 mon per.
 
   duplicate per as pi.
-  unfold per_int in pi; repnd; spcast.
+  unfold per_int_bar in pi; exrepnd; spcast.
 
   rw @type_sys_props_iff_type_sys_props3.
   prove_type_sys_props3 SCase; intros.
 
   + SCase "uniquely_valued".
+
+    (* We need to extend the dclose_lr tactic to handle all_in_bar bar (fun lib => T ===>(lib) T') *)
     dclose_lr.
 
     * SSCase "CL_int".
-      assert (uniquely_valued (per_int (close ts))) as uv
+      assert (uniquely_valued (per_int_bar (close ts))) as uv
         by (apply per_int_bar_uniquely_valued).
-      apply uv with (T := T) (T' := T'); auto.
-      apply uniquely_valued_trans5 with (T2 := T3) (eq2 := eq); auto.
-      apply per_int_type_extensionality.
-      apply per_int_type_symmetric.
-      apply per_int_type_transitive.
+      eapply uv;eauto.
+      eapply uniquely_valued_trans5;eauto.
+      { apply per_int_bar_type_extensionality. }
+      { apply per_int_bar_type_symmetric. }
+      { apply per_int_bar_type_transitive. }
 
   + SCase "type_symmetric"; repdors; subst; dclose_lr;
-    apply CL_int; auto;
-    assert (type_symmetric (per_int lib (close lib ts))) as tys
-      by (apply per_int_type_symmetric);
-    assert (type_extensionality (per_int lib (close lib ts))) as tye
-      by (apply per_int_type_extensionality);
-    apply tye with (eq := eq); auto.
+      apply CL_int; auto;
+        assert (type_symmetric (per_int_bar (close ts))) as tys
+          by (apply per_int_bar_type_symmetric);
+        assert (type_extensionality (per_int_bar (close ts))) as tye
+            by (apply per_int_bar_type_extensionality);
+        apply tye with (eq := eq); auto.
 
   + SCase "type_value_respecting"; sp; subst; apply CL_int;
-    assert (type_value_respecting lib (per_int lib (close lib ts)))
+    assert (type_value_respecting (per_int_bar (close ts)))
            as tvr
-           by (apply per_int_type_value_respecting).
+           by (apply per_int_bar_type_value_respecting).
 
-    apply tvr; auto;
-    apply @type_system_type_mem with (T' := T'); auto;
-    try (apply per_int_type_symmetric);
-    try (apply per_int_type_transitive).
+    * apply tvr; auto;
+        apply @type_system_type_mem with (T' := T'); auto;
+          try (apply per_int_bar_type_symmetric);
+          try (apply per_int_bar_type_transitive).
 
-    apply tvr; auto.
-    apply @type_system_type_mem1 with (T := T); auto;
-    try (apply per_int_type_transitive);
-    try (apply per_int_type_symmetric).
+    * apply tvr; auto.
+      apply @type_system_type_mem1 with (T := T); auto;
+        try (apply per_int_bar_type_transitive);
+        try (apply per_int_bar_type_symmetric).
 
   + SCase "term_symmetric".
-    assert (term_symmetric (per_int lib (close lib ts))) as tes
-      by (apply per_int_term_symmetric).
-    apply tes with (T := T) (T' := T'); auto.
+    assert (term_symmetric (per_int_bar (close ts))) as tes
+        by (apply per_int_bar_term_symmetric).
+    eapply tes; eauto.
 
   + SCase "term_transitive".
-    assert (term_transitive (per_int lib (close lib ts))) as tet
-      by (apply per_int_term_transitive).
-    apply tet with (T := T) (T' := T'); auto.
+    assert (term_transitive (per_int_bar (close ts))) as tet
+        by (apply per_int_bar_term_transitive).
+    eapply tet; eauto.
 
   + SCase "term_value_respecting".
-    assert (term_value_respecting lib (per_int lib (close lib ts))) as tvr
-      by (apply per_int_term_value_respecting).
+    assert (term_value_respecting (per_int_bar (close ts))) as tvr
+        by (apply per_int_bar_term_value_respecting).
     apply tvr with (T := T); auto.
     apply @type_system_type_mem with (T' := T'); auto.
-    apply per_int_type_symmetric.
-    apply per_int_type_transitive.
+
+    * apply per_int_bar_type_symmetric.
+
+    * apply per_int_bar_type_transitive.
 
   + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.
 
-    apply CL_int; allunfold @per_int; sp.
-    apply CL_int; allunfold @per_int; sp.
+    * apply CL_int; allunfold @per_int_bar; sp.
+      exists bar0; dands; auto.
+
+    * apply CL_int; allunfold @per_int_bar; sp.
+      exists bar0; dands; auto.
 
   + SCase "type_gtransitive"; sp.
 
   + SCase "type_mtransitive"; repdors; subst; dclose_lr;
-    dands; apply CL_int; allunfold @per_int; sp.
+      dands; apply CL_int; allunfold @per_int_bar; sp;
+        exists (intersect_bars bar1 bar0); dands; eauto 2 with slow.
 Qed.
 

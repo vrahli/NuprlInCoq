@@ -325,7 +325,7 @@ Definition inf_choice_sequence_satisfies_restriction {o}
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
   | csc_no => True
-  | csc_type d M => M d /\ forall n, M (vals n)
+  | csc_type d M Md => forall n, M (vals n)
   | csc_coq_law f => forall n, vals n = f n
   end.
 
@@ -333,7 +333,7 @@ Definition ex_choice {o}
            (restr : @ChoiceSeqRestriction o) : Type :=
   match restr with
   | csc_no => True
-  | csc_type d M => {v : @ChoiceSeqVal o & M v}
+  | csc_type d M Md => {v : @ChoiceSeqVal o & M v}
   | csc_coq_law f => True
   end.
 

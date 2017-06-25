@@ -31,6 +31,9 @@
 
 
 Require Export nuprl.
+Require Export bar.
+
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ #⪯# *)
@@ -129,6 +132,13 @@ Definition type_symmetric {p} (ts : cts(p)) :=
 Definition type_transitive {p} (ts : cts(p)) :=
   forall lib T1 T2 T3 eq, ts lib T1 T2 eq -> ts lib T2 T3 eq -> ts lib T1 T3 eq.
 
+Definition type_monotone {p} (ts : cts(p)) :=
+  forall lib lib' T1 T2 eq,
+    ts lib T1 T2 eq
+    -> lib_extends lib' lib
+    -> exists eq', ts lib' T1 T2 eq'.
+(* it should be that [subset eq eq'] *)
+
 (*
 (* This is not part of a type system, but is sometimes easier to prove
  because stronger than type_transitive. *)
@@ -152,13 +162,13 @@ Definition term_value_respecting {p} (ts : cts(p)) :=
 
 (* begin hide *)
 
-Definition pre_type_system {p} (ts : cts(p)) : Type :=
+(*Definition pre_type_system {p} (ts : cts(p)) : Type :=
   uniquely_valued ts
    # type_extensionality ts
    # type_symmetric ts
    # type_transitive ts
    # term_symmetric ts
-   # term_transitive ts.
+   # term_transitive ts.*)
 
 (* end hide *)
 
@@ -167,6 +177,7 @@ Definition type_system {p} (ts : cts(p)) : Type :=
    # type_extensionality ts
    # type_symmetric ts
    # type_transitive ts
+(*   # type_monotone ts*)
    # type_value_respecting ts
    # term_symmetric ts
    # term_transitive ts
@@ -179,12 +190,13 @@ Ltac dest_ts ts :=
   destruct ts as [ ts_ext ts ];
   destruct ts as [ ts_tys ts ];
   destruct ts as [ ts_tyt ts ];
+(*  destruct ts as [ ts_tmn ts ];*)
   destruct ts as [ ts_tyv ts ];
   destruct ts as [ ts_tes ts ];
   destruct ts as [ ts_tet ts_tev ].
 
 (** Destruct type_system *)
-Ltac onedts uv tye tys tyt tyvr tes tet tevr :=
+Ltac onedts uv tye tys tyt (*tmn*) tyvr tes tet tevr :=
   match goal with
       [ H : type_system _ |- _ ] =>
       let tmp := fresh "tmp" in
@@ -193,6 +205,7 @@ Ltac onedts uv tye tys tyt tyvr tes tet tevr :=
         destruct tmp as [ tye  tmp ];
         destruct tmp as [ tys  tmp ];
         destruct tmp as [ tyt  tmp ];
+(*        destruct tmp as [ tmn  tmp ];*)
         destruct tmp as [ tyvr tmp ];
         destruct tmp as [ tes  tmp ];
         destruct tmp as [ tet  tevr ]
@@ -205,6 +218,7 @@ Tactic Notation "prove_type_system" ident(c) :=
   | Case_aux c "type_extensionality"
   | Case_aux c "type_symmetric"
   | Case_aux c "type_transitive"
+(*  | Case_aux c "type_monotone"*)
   | Case_aux c "type_value_respecting"
   | Case_aux c "term_symmetric"
   | Case_aux c "term_transitive"
@@ -239,6 +253,13 @@ Definition type_transitive_body {p}
            (eq    : per) :=
   forall T3, ts lib T2 T3 eq -> ts lib T1 T3 eq.
 
+Definition type_monotone_body {p}
+           (ts    : cts(p))
+           (lib   : library)
+           (T1 T2 : CTerm)
+           (eq    : per) :=
+  forall lib', lib_extends lib' lib -> ts lib' T1 T2 eq.
+
 Definition type_value_respecting_body {p}
            (ts    : cts(p))
            (lib   : library)
@@ -251,20 +272,21 @@ Definition type_system_props {p}
            (lib   : library)
            (T1 T2 : CTerm)
            (eq    : per) :=
-  uniquely_valued_body ts lib T1 T2 eq
-   # type_extensionality_body ts lib T1 T2 eq
-   # type_symmetric_body ts lib T1 T2 eq
-   # type_transitive_body ts lib T1 T2 eq
+  uniquely_valued_body          ts lib T1 T2 eq
+   # type_extensionality_body   ts lib T1 T2 eq
+   # type_symmetric_body        ts lib T1 T2 eq
+   # type_transitive_body       ts lib T1 T2 eq
+(*   # type_monotone_body         ts lib T1 T2 eq*)
    # type_value_respecting_body ts lib T1 T2 eq
-   # term_equality_symmetric eq
-   # term_equality_transitive eq
+   # term_equality_symmetric      eq
+   # term_equality_transitive     eq
    # term_equality_respecting lib eq.
 
 Definition is_type_system {p} (ts : cts(p)) :=
   forall lib T1 T2 eq,
     ts lib T1 T2 eq -> type_system_props ts lib T1 T2 eq.
 
-Ltac dest_is_ts uv tye tys tyt tyvr tes tet tevr :=
+Ltac dest_is_ts uv tye tys tyt (*tmn*) tyvr tes tet tevr :=
   match goal with
       [ H : type_system_props _ _ _ _ _ |- _ ] =>
       let tmp := fresh "tmp" in
@@ -273,6 +295,7 @@ Ltac dest_is_ts uv tye tys tyt tyvr tes tet tevr :=
         destruct tmp as [ tye  tmp ];
         destruct tmp as [ tys  tmp ];
         destruct tmp as [ tyt  tmp ];
+(*        destruct tmp as [ tmn  tmp ];*)
         destruct tmp as [ tyvr tmp ];
         destruct tmp as [ tes  tmp ];
         destruct tmp as [ tet  tevr ]
@@ -285,6 +308,7 @@ Tactic Notation "prove_is_ts" ident(c) :=
   | Case_aux c "type_extensionality"
   | Case_aux c "type_symmetric"
   | Case_aux c "type_transitive"
+(*  | Case_aux c "type_monotone"*)
   | Case_aux c "type_value_respecting"
   | Case_aux c "term_symmetric"
   | Case_aux c "term_transitive"
@@ -297,7 +321,7 @@ Lemma type_system_iff_is_type_system {p} :
 Proof.
   introv; split; intro k.
 
-  - onedts uv tye tys tyt tyvr tes tet tevr.
+  - onedts uv tye tys tyt (*tmn*) tyvr tes tet tevr.
     prove_is_ts Case.
 
     + Case "uniquely_valued".
@@ -319,6 +343,10 @@ Proof.
       unfold type_transitive_body; introv e.
       unfold type_transitive in tyt.
       generalize (tyt lib T1 T2 T3 eq); sp.
+
+(*    + Case "type_monotone".
+      introv ext.
+      eapply tmn; eauto.*)
 
     + Case "type_value_respecting".
       unfold type_value_respecting_body; introv c.
@@ -352,7 +380,7 @@ Proof.
       unfold uniquely_valued; introv e1 e2.
       generalize (k lib T T' eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr.
+      dest_is_ts uv tye tys tyt (*tmn*) tyvr tes tet tevr.
       unfold uniquely_valued_body in uv.
       generalize (uv eq'); sp.
 
@@ -360,7 +388,7 @@ Proof.
       unfold type_extensionality; introv e teq.
       generalize (k lib T T' eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr.
+      dest_is_ts uv tye tys tyt (*tmn*) tyvr tes tet tevr.
       unfold type_extensionality_body in tye.
       generalize (tye eq'); sp.
 
@@ -368,22 +396,29 @@ Proof.
       unfold type_symmetric; introv e.
       generalize (k lib T T' eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr.
+      dest_is_ts uv tye tys tyt (*tmn*) tyvr tes tet tevr.
       unfold type_symmetric_body in tys; sp.
 
     + Case "type_transitive".
       unfold type_transitive; introv e1 e2.
       generalize (k lib T1 T2 eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr.
+      dest_is_ts uv tye tys tyt (*tmn*) tyvr tes tet tevr.
       unfold type_transitive_body in tyt.
       generalize (tyt T3); sp.
+
+(*    + Case "type_monotone".
+      introv h ext.
+      pose proof (k lib T1 T2 eq) as w; clear k.
+      autodimp w hyp.
+      dest_is_ts uv tye tys tyt tmn tyvr tes tet tevr.
+      apply tmn; auto.*)
 
     + Case "type_value_respecting".
       unfold type_value_respecting; introv e c.
       generalize (k lib T T eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr.
+      dest_is_ts uv tye tys tyt (*tmn*) tyvr tes tet tevr.
       unfold type_value_respecting_body in tyvr.
       generalize (tyt T'); sp.
 
@@ -391,21 +426,66 @@ Proof.
       unfold term_symmetric; introv e.
       generalize (k lib T T' eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr; auto.
+      dest_is_ts uv tye tys tyt (*tmn*) tyvr tes tet tevr; auto.
 
     + Case "term_transitive".
       unfold term_transitive; introv e.
       generalize (k lib T T' eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr; auto.
+      dest_is_ts uv tye tys tyt (*tmn*) tyvr tes tet tevr; auto.
 
     + Case "term_value_respecting".
       unfold term_value_respecting; introv e.
       generalize (k lib T T eq); clear k; intro k.
       dest_imp k hyp.
-      dest_is_ts uv tye tys tyt tyvr tes tet tevr; auto.
+      dest_is_ts uv tye tys tyt (*tmn*) tyvr tes tet tevr; auto.
 Qed.
 
+Lemma monotone_univi {o} :
+  forall i, @type_monotone o (univi i).
+Proof.
+  introv h ext.
+  allrw @univi_exists_iff; exrepnd.
+  exists (fun A A' => (exists eqa, close (univi j) lib' A A' eqa)).
+  allrw @univi_exists_iff.
+  exists j; dands; tcsp.
+
+  - introv k; apply h2; eauto 2 with slow.
+
+  - introv k; apply h3; eauto 2 with slow.
+Qed.
+
+Lemma monotone_univ {o} : @type_monotone o univ.
+Proof.
+  introv u e.
+  unfold univ in *; exrepnd.
+  eapply monotone_univi in u0; autodimp u0 hyp; eauto.
+  exrepnd.
+  exists eq' i; auto.
+Qed.
+
+
+(*
+Lemma close_type_system {o} :
+  forall (ts : cts(o)),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_system (close ts).
+Proof.
+  introv sys dou.
+  apply type_system_iff_is_type_system.
+  introv cl.
+
+  close_cases (induction cl using @close_ind') Case; sp; spcast.
+
+  Focus 10.
+
+  split; dands.
+
+  - introv cl.
+
+Qed.
+*)
 
 Definition type_sys_props {p}
            (ts    : cts(p))
@@ -430,6 +510,8 @@ Definition type_sys_props {p}
     (forall T3 eq',
        ts lib T1 T3 eq'
        -> ts lib T2 T3 eq # ts lib T2 T3 eq' # ts lib T3 T3 eq')
+(*    # (* type monotone *)
+    (forall lib', lib_extends lib' lib -> ts lib' T1 T2 eq)*)
     # (* type value respecting *)
     (forall T T3, (T = T1 [+] T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
     # (* term symmetric *)
@@ -459,13 +541,14 @@ Definition type_sys {p} (ts : cts(p)) :=
     ts lib T1 T2 eq -> type_sys_props ts lib T1 T2 eq.
 
 (** Destruct type_sys_props *)
-Ltac dest_tsp c uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt :=
+Ltac dest_tsp c uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt :=
   let tmp := fresh "tmp" in
     unfold type_sys_props in c;
   destruct c   as [ uv   tmp ];
   destruct tmp as [ tys  tmp ];
   destruct tmp as [ tyt  tmp ];
   destruct tmp as [ tyst tmp ];
+(*  destruct tmp as [ tymn tmp ];*)
   destruct tmp as [ tyvr tmp ];
   destruct tmp as [ tes  tmp ];
   destruct tmp as [ tet  tmp ];
@@ -473,10 +556,10 @@ Ltac dest_tsp c uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt :=
   destruct tmp as [ tygs tmp ];
   destruct tmp as [ tygt tymt ].
 
-Ltac onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt :=
+Ltac onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt :=
   match goal with
       [ H : type_sys_props _ _ _ _ _ |- _ ] =>
-      dest_tsp H uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt
+      dest_tsp H uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt
   end.
 
 (** This is like dest_tsp, but it picks the names of the clauses *)
@@ -485,6 +568,7 @@ Ltac dtsp c :=
   let tys  := fresh "tsp_tys"  in
   let tyt  := fresh "tsp_tyt"  in
   let tyst := fresh "tsp_tyst" in
+(*  let tymn := fresh "tsp_tymn" in*)
   let tyvr := fresh "tsp_tyvr" in
   let tes  := fresh "tsp_tes"  in
   let tet  := fresh "tsp_tet"  in
@@ -492,7 +576,7 @@ Ltac dtsp c :=
   let tygs := fresh "tsp_tygs" in
   let tygt := fresh "tsp_tygt" in
   let tymt := fresh "tsp_tymt" in
-  dest_tsp c uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  dest_tsp c uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
 
 Ltac d_tsp :=
   match goal with
@@ -506,6 +590,7 @@ Tactic Notation "prove_type_sys_props" ident(c) :=
   | Case_aux c "type_symmetric"
   | Case_aux c "type_transitive"
   | Case_aux c "type_stransitive"
+(*  | Case_aux c "type_monotone"*)
   | Case_aux c "type_value_respecting"
   | Case_aux c "term_symmetric"
   | Case_aux c "term_transitive"
@@ -530,6 +615,8 @@ Definition type_sys_props2 {p}
        -> ts lib T T3 eq
        -> eq_term_equals eq eq'
        -> ts lib T T3 eq')
+(*    # (* type monotone *)
+    (forall lib', lib_extends lib' lib -> ts lib' T1 T2 eq)*)
     # (* type value respecting *)
     (forall T T3, (T = T1 [+] T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
     # (* term symmetric *)
@@ -559,11 +646,12 @@ Definition type_sys2 {p} (ts : cts(p)) :=
     ts lib T1 T2 eq -> type_sys_props2 ts lib T1 T2 eq.
 
 (** Destruct type_sys_props2 *)
-Ltac dest_tsp2 c uv tys tyvr tes tet tevr tygs tygt tymt :=
+Ltac dest_tsp2 c uv tys (*tymn*) tyvr tes tet tevr tygs tygt tymt :=
   let tmp := fresh "tmp" in
     unfold type_sys_props2 in c;
   destruct c   as [ uv   tmp ];
   destruct tmp as [ tys  tmp ];
+(*  destruct tmp as [ tymn tmp ];*)
   destruct tmp as [ tyvr tmp ];
   destruct tmp as [ tes  tmp ];
   destruct tmp as [ tet  tmp ];
@@ -571,10 +659,10 @@ Ltac dest_tsp2 c uv tys tyvr tes tet tevr tygs tygt tymt :=
   destruct tmp as [ tygs tmp ];
   destruct tmp as [ tygt tymt ].
 
-Ltac onedtsp2 uv tys tyvr tes tet tevr tygs tygt tymt :=
+Ltac onedtsp2 uv tys (*tymn*) tyvr tes tet tevr tygs tygt tymt :=
   match goal with
       [ H : type_sys_props2 _ _ _ _ _ |- _ ] =>
-      dest_tsp2 H uv tys tyvr tes tet tevr tygs tygt tymt
+      dest_tsp2 H uv tys (*tymn*) tyvr tes tet tevr tygs tygt tymt
   end.
 
 Tactic Notation "prove_type_sys_props2" ident(c) :=
@@ -582,6 +670,7 @@ Tactic Notation "prove_type_sys_props2" ident(c) :=
   dands;
   [ Case_aux c "uniquely_valued"
   | Case_aux c "type_symmetric"
+(*  | Case_aux c "type_monotone"*)
   | Case_aux c "type_value_respecting"
   | Case_aux c "term_symmetric"
   | Case_aux c "term_transitive"
@@ -597,10 +686,10 @@ Lemma type_sys_props_iff_type_sys_props2 {p} :
 Proof.
   introv; split; intro tsp.
 
-  - onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  - onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
     prove_type_sys_props2 Case; sp.
 
-  - onedtsp2 uv tys tyvr tes tet tevr tygs tygt tymt.
+  - onedtsp2 uv tys (*tymn*) tyvr tes tet tevr tygs tygt tymt.
     prove_type_sys_props Case; try (complete sp).
 
     + Case "type_transitive".
@@ -640,6 +729,8 @@ Definition type_sys_props3 {p}
   (forall T3 eq', ts lib T1 T3 eq' -> eq_term_equals eq eq')
     # (* type_extensionality *)
     (forall T3 eq', ts lib T1 T3 eq -> eq_term_equals eq eq' -> ts lib T1 T3 eq')
+(*    # (* type monotone *)
+    (forall lib', lib_extends lib' lib -> ts lib' T1 T2 eq)*)
     # (* type value respecting *)
     (forall T T3, (T = T1 [+] T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
     # (* term symmetric *)
@@ -664,11 +755,12 @@ Definition type_sys3 {p} (ts : cts(p)) :=
     ts lib T1 T2 eq -> type_sys_props3 ts lib T1 T2 eq.
 
 (** Destruct type_sys_props3 *)
-Ltac dest_tsp3 c uv tys tyvr tes tet tevr tygs tygt tymt :=
+Ltac dest_tsp3 c uv tys (*tymn*) tyvr tes tet tevr tygs tygt tymt :=
   let tmp := fresh "tmp" in
     unfold type_sys_props3 in c;
   destruct c   as [ uv   tmp ];
   destruct tmp as [ tys  tmp ];
+(*  destruct tmp as [ tymn tmp ];*)
   destruct tmp as [ tyvr tmp ];
   destruct tmp as [ tes  tmp ];
   destruct tmp as [ tet  tmp ];
@@ -676,10 +768,10 @@ Ltac dest_tsp3 c uv tys tyvr tes tet tevr tygs tygt tymt :=
   destruct tmp as [ tygs tmp ];
   destruct tmp as [ tygt tymt ].
 
-Ltac onedtsp3 uv tys tyvr tes tet tevr tygs tygt tymt :=
+Ltac onedtsp3 uv tys (*tymn*) tyvr tes tet tevr tygs tygt tymt :=
   match goal with
       [ H : type_sys_props3 _ _ _ _ _ |- _ ] =>
-      dest_tsp3 H uv tys tyvr tes tet tevr tygs tygt tymt
+      dest_tsp3 H uv tys (*tymn*) tyvr tes tet tevr tygs tygt tymt
   end.
 
 Tactic Notation "prove_type_sys_props3" ident(c) :=
@@ -687,6 +779,7 @@ Tactic Notation "prove_type_sys_props3" ident(c) :=
   dands;
   [ Case_aux c "uniquely_valued"
   | Case_aux c "type_symmetric"
+(*  | Case_aux c "type_monotone"*)
   | Case_aux c "type_value_respecting"
   | Case_aux c "term_symmetric"
   | Case_aux c "term_transitive"
@@ -704,7 +797,7 @@ Proof.
   rw @type_sys_props_iff_type_sys_props2.
   split; intro tsp.
 
-  - onedtsp2 uv tys tyvr tes tet tevr tygs tygt tymt.
+  - onedtsp2 uv tys (*tymn*) tyvr tes tet tevr tygs tygt tymt.
     prove_type_sys_props3 Case; sp.
 
     + Case "uniquely_valued".
@@ -722,7 +815,7 @@ Proof.
     + Case "type_mtransitive".
       subst; generalize (tymt T2 T3 T4 eq1 eq2); sp.
 
-  - onedtsp3 uv tys tyvr tes tet tevr tygs tygt tymt.
+  - onedtsp3 uv tys (*tymn*) tyvr tes tet tevr tygs tygt tymt.
     prove_type_sys_props2 Case; try (complete sp).
 
     + Case "uniquely_valued".
@@ -799,7 +892,7 @@ Lemma type_sys_props_ts_refl {p} :
     -> ts lib A A eq # ts lib B B eq.
 Proof.
   introv tsp.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs A B eq); intro k; repeat (dest_imp k h).
 
   applydup tyst in tygt; repnd; dands; auto; GC.
@@ -813,7 +906,7 @@ Lemma type_sys_props_ts_refl2 {p} :
     -> ts lib A A eq2 # ts lib B B eq2.
 Proof.
   introv tsp eqt.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs A B eq2); intro k; repeat (dest_imp k h).
 
   applydup tyst in tygt; repnd; dands; auto; GC.
@@ -829,7 +922,7 @@ Lemma type_sys_props_ts_uv {p} :
 Proof.
   introv tsab tsp.
   applydup @type_sys_props_ts_refl in tsp; repnd.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs B A eq1); intro i; dest_imp i h.
   duplicate tsab as j.
   rw <- i in j.
@@ -848,7 +941,7 @@ Lemma type_sys_props_ts_uv2 {p} :
 Proof.
   introv tsab tsp.
   applydup @type_sys_props_ts_refl in tsp; repnd.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (uv A eq1); intro k; dest_imp k h.
   generalize (tyst A eq1); intro l; dest_imp l h; repnd.
   generalize (tyt A eq1); intro u; dest_imp u h; repnd.
@@ -863,7 +956,7 @@ Lemma type_sys_props_ts_uv3 {p} :
 Proof.
   introv tsab tsp eqt.
   applydup @type_sys_props_ts_refl in tsp; repnd.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tyst B eq1); intro l; dest_imp l h; repnd.
   generalize (tyt B eq1); intro u; dest_imp u h; repnd.
 Qed.
@@ -877,7 +970,7 @@ Lemma type_sys_props_ts_uv4 {p} :
 Proof.
   introv tsab tsp eqt.
   applydup @type_sys_props_ts_refl in tsp; repnd.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs B A eq1); intro i; dest_imp i h.
   rw <- i in tsab.
   generalize (tyst A eq1); intro j; dest_imp j h; repnd.
@@ -895,7 +988,7 @@ Lemma type_sys_props_ts_sym {p} :
 Proof.
   introv tsp tsa.
   assert (ts lib B A eq1) by (apply (type_sys_props_ts_uv ts lib) with (C := C) (eq1 := eq2); sp).
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs A B eq1); intro i; dest_imp i h.
   rw i; sp.
 Qed.
@@ -908,7 +1001,7 @@ Lemma type_sys_props_ts_sym2 {p} :
 Proof.
   introv tsp tsa.
   assert (ts lib B A eq1) by (apply (type_sys_props_ts_uv ts lib) with (C := C) (eq1 := eq2); sp).
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs A B eq2); intro j; dest_imp j h.
   rw <- j in tsa; sp.
 Qed.
@@ -920,7 +1013,7 @@ Lemma type_sys_props_ts_sym3 {p} :
     -> ts lib B A eq2.
 Proof.
   introv tsp tsa.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs A B eq2); intro j; dest_imp j h.
   rw <- j; sp.
 Qed.
@@ -932,7 +1025,7 @@ Lemma type_sys_props_ts_sym4 {p} :
     -> ts lib B A eq1.
 Proof.
   introv tsp tsa.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs A B eq1); intro j; dest_imp j h.
   apply j.
   generalize (tyst B eq2 tsa); intro k; repnd.
@@ -946,7 +1039,7 @@ Lemma type_sys_props_ts_sym5 {p} :
     -> ts lib B A eq1.
 Proof.
   introv tsp tsa.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs A B eq1); intro j; dest_imp j h.
   apply j.
   generalize (tyt B eq2 tsa); intro k; repnd.
@@ -961,7 +1054,7 @@ Lemma type_sys_props_ts_sym6 {p} :
     -> ts lib B A eq2.
 Proof.
   introv tsp tsa.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs A B eq2); intro j; dest_imp j h.
   apply j; auto.
 Qed.
@@ -974,7 +1067,7 @@ Lemma type_sys_props_ts_trans {p} :
     -> ts lib A C eq.
 Proof.
   introv ts1 ts2 tsp.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt dum.
   generalize (tyt C eq2); sp.
 Qed.
 
@@ -985,7 +1078,7 @@ Lemma type_sys_props_eq_term_equals {p} :
     -> eq_term_equals eq2 eq1.
 Proof.
   introv tsa tsp.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs B A eq1); intro i; dest_imp i h.
   rw <- i in tsa.
   generalize (uv A eq1); sp.
@@ -998,7 +1091,7 @@ Lemma type_sys_props_eq_term_equals2 {p} :
     -> eq_term_equals eq2 eq1.
 Proof.
   introv tsa tsp.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs B A eq1); intro i; dest_imp i h.
   rw <- i in tsa.
   generalize (uv A eq1); sp.
@@ -1011,7 +1104,7 @@ Lemma type_sys_props_eq_term_equals3 {p} :
     -> eq_term_equals eq2 eq1.
 Proof.
   introv tsa tsp.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (uv A eq1); sp.
 Qed.
 
@@ -1022,7 +1115,7 @@ Lemma type_sys_props_eq_term_equals4 {p} :
     -> eq_term_equals eq2 eq1.
 Proof.
   introv tsa tsp.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   generalize (uv B eq1); sp.
 Qed.
 
@@ -1035,7 +1128,7 @@ Lemma type_sys_props_sym {p} :
     -> type_sys_props ts lib B A eq.
 Proof.
   introv tsp.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
+  onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   prove_type_sys_props Case.
 
   - Case "uniquely_valued"; sp.
@@ -1049,6 +1142,8 @@ Proof.
   - Case "type_transitive"; sp.
 
   - Case "type_stransitive"; sp.
+
+(*  - Case "type_monotone"; sp.*)
 
   - Case "type_value_respecting"; sp.
 

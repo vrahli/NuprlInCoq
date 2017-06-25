@@ -102,13 +102,21 @@ Definition univ' {p} lib (T T' : @CTerm p) eq :=
 Definition univi_eq {o} (ts : cts(o)) lib (A A' : @CTerm o) :=
   {eqa : per , close ts lib A A' eqa}.
 
+Definition univi_eq_bar {o} (ts : cts(o)) lib (A A' : @CTerm o) :=
+  {eqa : per , {bar : BarLib lib , all_in_bar bar (fun lib => close ts lib A A' eqa)}}.
+
+Definition univi_eq_ext {o} (ts : cts(o)) lib (A A' : @CTerm o) :=
+  {eqa : per , in_ext lib (fun lib => close ts lib A A' eqa)}.
+
 Fixpoint univi {p} (i : nat) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   match i with
   | 0 => False
   | S n =>
-    (T ===>(lib) (mkc_uni n)
-     # T' ===>(lib) (mkc_uni n)
-     # eq <=2=> (univi_eq (univi n) lib))
+    (
+      in_ext lib (fun lib => T ===>(lib) (mkc_uni n))
+      # in_ext lib (fun lib => T' ===>(lib) (mkc_uni n))
+      # eq <=2=> (univi_eq (univi n) lib)
+    )
     {+} univi n lib T T' eq
   end.
 
@@ -160,7 +168,7 @@ Proof.
   intros.
   simpl.
   left.
-  dands; try (spcast; apply computes_to_valc_refl; sp).
+  dands; try (introv j; spcast; apply computes_to_valc_refl; sp).
   sp.
 Qed.
 
@@ -169,15 +177,14 @@ Lemma univi_exists {p} :
     univi i lib T T' eq
     -> {j : nat
         , j < i
-         # T ===>(lib) (mkc_uni j)
-         # T' ===>(lib) (mkc_uni j)
+         # in_ext lib (fun lib => T ===>(lib) (mkc_uni j))
+         # in_ext lib (fun lib => T' ===>(lib) (mkc_uni j))
          # forall A A',
               eq A A' <=> {eqa : per , close (univi j) lib A A' eqa}}.
 Proof.
-  induction i; simpl; sp.
-  exists i; sp; omega.
-  discover; sp.
-  exists j; sp; omega.
+  induction i; introv u; simpl in *; tcsp.
+  repndors; repnd; try (complete (apply IHi in u; exrepnd; exists j; sp)).
+  exists i; dands; tcsp; try omega.
 Qed.
 
 Lemma univi_exists_iff {p} :
@@ -185,13 +192,13 @@ Lemma univi_exists_iff {p} :
     univi i lib T T' eq
     <=> {j : nat
           , j < i
-          # T ===>(lib) (mkc_uni j)
-          # T' ===>(lib) (mkc_uni j)
+          # in_ext lib (fun lib => T ===>(lib) (mkc_uni j))
+          # in_ext lib (fun lib => T' ===>(lib) (mkc_uni j))
           # forall A A',
                eq A A' <=> {eqa : per , close (univi j) lib A A' eqa}}.
 Proof.
-  sp; split; intro k.
-  apply univi_exists; auto.
+  introv; split; intro k.
+  { apply univi_exists; auto. }
   revert T T' eq k.
   induction i; simpl; sp.
   destruct (eq_nat_dec j i); subst; sp.

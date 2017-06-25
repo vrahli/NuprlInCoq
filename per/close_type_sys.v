@@ -32,8 +32,8 @@
 
 Require Export type_sys_useful2.
 Require Import close_type_sys_per_init.
-(*Require Import close_type_sys_per_int.
-Require Import close_type_sys_per_atom.
+Require Import close_type_sys_per_int.
+(*Require Import close_type_sys_per_atom.
 Require Import close_type_sys_per_uatom.
 Require Import close_type_sys_per_base.
 Require Import close_type_sys_per_sqle.
@@ -180,6 +180,7 @@ Lemma close_type_system {o} :
   forall (ts : cts(o)),
     type_system ts
     -> defines_only_universes ts
+    -> type_monotone ts
     -> type_system (close ts).
 Proof.
   intros.

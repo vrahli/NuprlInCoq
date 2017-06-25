@@ -96,7 +96,7 @@ Definition restriction2default {o}
            (r : @ChoiceSeqRestriction o) : nat -> ChoiceSeqVal :=
   match r with
   | csc_no => fun n => mkc_zero
-  | csc_type d _ => fun n => d
+  | csc_type d _ _ => fun n => d
   | csc_coq_law f => fun n => f n
   end.
 
@@ -1155,7 +1155,7 @@ Lemma inf_library_extends_implies {o} :
   forall (e : @library_entry o) n inflib,
     entry_in_inf_library_extends e n inflib
     -> exists k,
-        k <= n
+        k < n
         /\ inf_entry_extends (inflib k) e
         /\ forall j, j < k -> ~ inf_matching_entries (inflib j) e.
 Proof.
@@ -1206,8 +1206,8 @@ Lemma inf_library_extends_two_matching_entries {o} :
     -> entry_in_inf_library_extends e1 n1 inflib
     -> entry_in_inf_library_extends e2 n2 inflib
     -> exists n,
-        n <= n1
-        /\ n <= n2
+        n < n1
+        /\ n < n2
         /\ inf_entry_extends (inflib n) e1
         /\ inf_entry_extends (inflib n) e2
         /\ forall m, m < n -> ~ inf_matching_entries (inflib m) e1.
@@ -1226,7 +1226,7 @@ Proof.
     eapply matching_entries_preserves_inf_matching_entries;[|eauto].
     apply matching_entries_sym; auto.
 
-  - exists k0; dands; auto.
+  - exists k0; dands; auto; try omega.
 
   - pose proof (ext0 k0) as q; autodimp q hyp.
     destruct q.
@@ -1964,6 +1964,37 @@ Proof.
 Qed.
 Hint Resolve inf_entry_extends_implies_entry_in_inf_library_extends : slow.
 
+Lemma le_preserves_entry_in_inf_library_extends {o} :
+  forall k n e (infLib : @inf_library o),
+    n <= k
+    -> entry_in_inf_library_extends e n infLib
+    -> entry_in_inf_library_extends e k infLib.
+Proof.
+  induction k; introv lenk i; simpl in *.
+
+  - assert (n = 0) as xx by omega; subst; simpl in *; tcsp.
+
+  - destruct n; simpl in *; tcsp.
+    repndors; repnd; tcsp.
+    pose proof (IHk n e (shift_inf_lib infLib)) as q.
+    repeat (autodimp q hyp); try omega.
+Qed.
+
+Lemma inf_entry_extends_implies_entry_in_inf_library_extends_lt {o} :
+  forall n k e a (infLib : @inf_library o),
+    n < k
+    -> inf_entry_extends (infLib n) e
+    -> matching_entries e a
+    -> (forall m : nat, m < n -> ~ inf_matching_entries (infLib m) a)
+    -> entry_in_inf_library_extends e k infLib.
+Proof.
+  introv ltnk i m imp.
+  eapply le_preserves_entry_in_inf_library_extends;
+    [|eapply inf_entry_extends_implies_entry_in_inf_library_extends; eauto];
+    try omega.
+Qed.
+Hint Resolve inf_entry_extends_implies_entry_in_inf_library_extends_lt : slow.
+
 Lemma implies_inf_lib_extends_cons {o} :
   forall (infLib : @inf_library o) lib e k,
     inf_lib_extends infLib lib
@@ -2629,3 +2660,40 @@ Proof.
     simpl in *.
     eauto 3 with slow.
 Defined.
+
+Lemma ex_extends_two_bars {o} :
+  forall {lib : @library o} (bar1 bar2 : BarLib lib),
+  exists (lib1 lib2 lib' : @library o),
+    bar_lib_bar bar1 lib1
+    /\ bar_lib_bar bar2 lib2
+    /\ lib_extends lib' lib1
+    /\ lib_extends lib' lib2.
+Proof.
+  introv.
+  pose proof (bar_non_empty (intersect_bars bar1 bar2)) as ne.
+  exrepnd.
+  simpl in *; exrepnd.
+  exists lib1 lib2 lib'; tcsp.
+Qed.
+
+Lemma implies_all_in_bar_intersect_bars_left {o} :
+  forall {lib} (bar bar' : @BarLib o lib) F,
+    all_in_bar bar F
+    -> all_in_bar (intersect_bars bar bar') F.
+Proof.
+  introv a i j.
+  simpl in *; exrepnd.
+  eapply a; eauto 2 with slow.
+Qed.
+Hint Resolve implies_all_in_bar_intersect_bars_left : slow.
+
+Lemma implies_all_in_bar_intersect_bars_right {o} :
+  forall {lib} (bar bar' : @BarLib o lib) F,
+    all_in_bar bar F
+    -> all_in_bar (intersect_bars bar' bar) F.
+Proof.
+  introv a i j.
+  simpl in *; exrepnd.
+  eapply a; eauto 2 with slow.
+Qed.
+Hint Resolve implies_all_in_bar_intersect_bars_right : slow.
