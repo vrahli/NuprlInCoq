@@ -33,9 +33,12 @@
 Require Export type_sys_useful2.
 Require Import close_type_sys_per_init.
 Require Import close_type_sys_per_int.
-(*Require Import close_type_sys_per_atom.
+Require Import close_type_sys_per_nat.
+Require Import close_type_sys_per_atom.
 Require Import close_type_sys_per_uatom.
-Require Import close_type_sys_per_base.
+Require Import close_type_sys_per_csname.
+
+(*Require Import close_type_sys_per_base.
 Require Import close_type_sys_per_sqle.
 Require Import close_type_sys_per_sqequal.
 Require Import close_type_sys_per_eq.
@@ -195,11 +198,17 @@ Proof.
   - Case "CL_int".
     apply close_type_system_int; auto.
 
+  - Case "CL_nat".
+    apply close_type_system_nat; auto.
+
   - Case "CL_atom".
     apply close_type_system_atom; auto.
 
   - Case "CL_uatom".
     apply close_type_system_uatom; auto.
+
+  - Case "CL_csname".
+    apply close_type_system_csname; auto.
 
   - Case "CL_base".
     apply close_type_system_base; auto.

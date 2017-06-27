@@ -32,6 +32,7 @@
 
 Require Export alphaeq.
 Require Export nat_type.
+Require Export csname_type.
 
 
 Definition alphaeqc_bterm {o} vs1 (a1 : @CVTerm o vs1) vs2 (a2 : @CVTerm o vs2) :=
@@ -1499,6 +1500,28 @@ Proof.
   apply cterm_eq; simpl; auto.
 Qed.
 
+Lemma alpha_eq_mk_csname {o} :
+  forall (u : @NTerm o),
+    alpha_eq mk_csname u
+    -> u = mk_csname.
+Proof.
+  introv aeq.
+  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  destruct lbt2; allsimpl; repeat cpx.
+Qed.
+
+Lemma alphaeqc_mkc_csname {o} :
+  forall (u : @CTerm o),
+    alphaeqc mkc_csname u
+    -> u = mkc_csname.
+Proof.
+  introv aeq.
+  destruct_cterms; simpl in *.
+  unfold alphaeqc in *; simpl in *.
+  apply alpha_eq_mk_csname in aeq; exrepnd; subst.
+  apply cterm_eq; simpl; auto.
+Qed.
+
 Lemma alpha_eq_mk_Nat {o} :
   forall (u : @NTerm o),
     alpha_eq mk_Nat u
@@ -1670,12 +1693,13 @@ Ltac alphaeqc_decompose :=
   | [ H : alphaeqc (mkc_spertype _) _ |- _ ] => apply alphaeqc_mkc_spertype in H; exrepnd; try subst
   | [ H : alphaeqc (mkc_tuni     _) _ |- _ ] => apply alphaeqc_mkc_tuni     in H; exrepnd; try subst
 
-  | [ H : alphaeqc mkc_base    _ |- _ ] => apply alphaeqc_mkc_base  in H; exrepnd; try subst
-  | [ H : alphaeqc mkc_int     _ |- _ ] => apply alphaeqc_mkc_int   in H; exrepnd; try subst
-  | [ H : alphaeqc mkc_Nat     _ |- _ ] => apply alphaeqc_mkc_Nat   in H; exrepnd; try subst
-  | [ H : alphaeqc mkc_atom    _ |- _ ] => apply alphaeqc_mkc_atom  in H; exrepnd; try subst
-  | [ H : alphaeqc mkc_uatom   _ |- _ ] => apply alphaeqc_mkc_uatom in H; exrepnd; try subst
-  | [ H : alphaeqc (mkc_uni _) _ |- _ ] => apply alphaeqc_mkc_uni   in H; exrepnd; try subst
+  | [ H : alphaeqc mkc_base    _ |- _ ] => apply alphaeqc_mkc_base   in H; exrepnd; try subst
+  | [ H : alphaeqc mkc_int     _ |- _ ] => apply alphaeqc_mkc_int    in H; exrepnd; try subst
+  | [ H : alphaeqc mkc_csname  _ |- _ ] => apply alphaeqc_mkc_csname in H; exrepnd; try subst
+  | [ H : alphaeqc mkc_Nat     _ |- _ ] => apply alphaeqc_mkc_Nat    in H; exrepnd; try subst
+  | [ H : alphaeqc mkc_atom    _ |- _ ] => apply alphaeqc_mkc_atom   in H; exrepnd; try subst
+  | [ H : alphaeqc mkc_uatom   _ |- _ ] => apply alphaeqc_mkc_uatom  in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_uni _) _ |- _ ] => apply alphaeqc_mkc_uni    in H; exrepnd; try subst
 
   | [ H : alphaeqc (mkc_pw _ _ _ _ _ _ _ _ _ _ _) _ |- _ ] => apply alphaeqc_mkc_pw in H; exrepnd; try subst
   | [ H : alphaeqc (mkc_pm _ _ _ _ _ _ _ _ _ _ _) _ |- _ ] => apply alphaeqc_mkc_pm in H; exrepnd; try subst
