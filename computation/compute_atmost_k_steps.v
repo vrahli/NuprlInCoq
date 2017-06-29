@@ -31,6 +31,7 @@
 
 
 Require Export computation2.
+Require Export soterms.
 
 
 Fixpoint compute_atmost_k_steps {o}
@@ -77,11 +78,6 @@ Proof.
   pose proof (reduces_atmost_k_steps_of_compute_atmost_k_steps lib k t) as q; exrepnd.
   exists n; auto.
 Qed.
-
-Definition sonobnd {o} (t : @SOTerm o) : SOBTerm := sobterm [] t.
-
-Definition mk_so_equality {o} (t1 t2 T : @SOTerm o) :=
-  soterm (Can NEquality) [sonobnd t1, sonobnd t2, sonobnd T].
 
 Definition opabs_member : opabs := Build_opabs "member" [] [0,0].
 

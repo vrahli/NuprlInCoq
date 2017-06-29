@@ -1218,6 +1218,7 @@ Inductive proof_step {o} :=
 | proof_step_hypothesis             (x : NVar)
 | proof_step_cut                    (x : NVar) (B : @NTerm o)
 | proof_step_cequiv_computation     (n : nat)
+| proof_step_unfold_abstractions    (names : list opname)
 | proof_step_cequiv_subst_concl     (x : NVar) (C a b : @NTerm o)
 | proof_step_universe_equality
 | proof_step_hypothesis_equality
@@ -1476,7 +1477,7 @@ Definition Holes {o} := list (@Hole o).
 
 Inductive DEBUG_MSG {o} :=
 | could_not_add_definition_because_definition_already_in_library
-| added_definition
+| added_definition (op : opabs)
 
 | started_proof
 
@@ -1500,9 +1501,13 @@ Inductive DEBUG_MSG {o} :=
 | could_not_apply_cequiv_computation_atmost_rule
 | applied_cequiv_computation_atmost_rule
 
+| could_not_apply_cequiv_computation_rule_terms_not_equal
 | could_not_apply_cequiv_computation_rule_not_cequiv
 | could_not_apply_cequiv_computation_rule
 | applied_cequiv_computation_rule
+
+| could_not_apply_unfold_abstractions_rule
+| applied_unfold_abstractions_rule
 
 | could_not_apply_cequiv_subst_concl_rule_not_subst
 | could_not_apply_cequiv_subst_concl_rule
@@ -1562,7 +1567,7 @@ Definition NuprlState_add_def {o}
       (MkNuprlState
          (entry :: L)
          (pre_proofs_cons entry p unfinished),
-       added_definition)
+       added_definition opabs)
     end
   end.
 
@@ -2636,7 +2641,7 @@ Definition apply_proof_step_cequiv_computation {o} {ctxt}
            applied_cequiv_computation_rule)
 
         | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
-                   could_not_apply_cequiv_computation_rule_not_cequiv)
+                   could_not_apply_cequiv_computation_rule_terms_not_equal)
         end
 
       | t => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext t)),
@@ -3016,6 +3021,51 @@ Definition apply_proof_step_lemma {o} {ctxt}
     end
   end.
 
+(* TODO: What should be the rule? *)
+Definition apply_proof_step_unfold_abstractions {o} {ctxt}
+           (s : @pre_baresequent o)
+           (names : list opname) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext T =>
+
+      (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+       could_not_apply_unfold_abstractions_rule)
+
+    (*
+      match T with
+      | oterm (Can NCequiv) [bterm [] a, bterm [] b] =>
+
+        let x := compute_atmost_k_steps ctxt n a in
+        match term_dec_op x b with
+        | Some p =>
+
+          (pre_proof_cequiv_computation
+             ctxt a b H
+             (eq_rect
+                _
+                _
+                (reduces_to_of_compute_atmost_k_steps ctxt n a)
+                _
+                p),
+           applied_cequiv_computation_rule)
+
+        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
+                   could_not_apply_cequiv_computation_rule_terms_not_equal)
+        end
+
+      | t => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext t)),
+              could_not_apply_cequiv_computation_rule_not_cequiv)
+      end
+*)
+
+    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+            could_not_apply_cequiv_computation_rule)
+    end
+  end.
+
 Definition apply_proof_step {o} {ctxt}
            (s    : @pre_baresequent o)
            (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
@@ -3025,6 +3075,7 @@ Definition apply_proof_step {o} {ctxt}
   | proof_step_hypothesis x               => apply_proof_step_hypothesis s x
   | proof_step_cut x B                    => apply_proof_step_cut s x B
   | proof_step_cequiv_computation n       => apply_proof_step_cequiv_computation s n
+  | proof_step_unfold_abstractions names  => apply_proof_step_unfold_abstractions s names
   | proof_step_cequiv_subst_concl x C a b => apply_proof_step_cequiv_subst_concl s x C a b
   | proof_step_universe_equality          => apply_proof_step_universe_eq s
   | proof_step_hypothesis_equality        => apply_proof_step_hypothesis_eq s

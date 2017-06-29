@@ -74,6 +74,7 @@ Definition cmds1 {o} : @commands o :=
          (mk_cequiv
             (mk_abs opabs_member [nobnd (mk_var (nvar "t")), nobnd (mk_var (nvar "T"))])
             (mk_equality (mk_var (nvar "t")) (mk_var (nvar "t")) (mk_var (nvar "T"))))),
+    COM_find_holes "member_wf",
     COM_update_proof
       "member_wf"
       [1,1,1]
