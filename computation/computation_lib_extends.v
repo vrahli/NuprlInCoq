@@ -169,6 +169,16 @@ Record lib_extends {o} (lib1 lib0 : @library o) : Prop :=
     }.
 Arguments MkLibExtends [o] [lib1] [lib0] _ _ _.
 
+Definition in_ext {o} (lib : @library o) (F : @library o -> Prop) :=
+  forall (lib' : library),
+    lib_extends lib' lib
+    -> F lib'.
+
+Definition inExt {o} (lib : @library o) (F : @library o -> Type) :=
+  forall (lib' : library),
+    lib_extends lib' lib
+    -> F lib'.
+
 Lemma lib_extends_preserves_safe {o} :
   forall (lib1 lib2 : @library o),
     lib_extends lib1 lib2

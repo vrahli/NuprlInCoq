@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -29,93 +32,133 @@ Require Import dest_close.
 
 
 
-Lemma per_base_uniquely_valued {p} :
-  forall lib (ts : cts(p)), uniquely_valued (per_base lib ts).
+Lemma per_base_bar_uniquely_valued {p} :
+  forall (ts : cts(p)), uniquely_valued (per_base_bar ts).
 Proof.
-  unfold uniquely_valued, per_base, eq_term_equals; sp.
+  unfold uniquely_valued, per_base_bar, eq_term_equals; sp.
   allrw; sp.
 Qed.
 
-Lemma per_base_type_extensionality {p} :
-  forall lib (ts : cts(p)), type_extensionality (per_base lib ts).
+Lemma per_base_bar_type_extensionality {p} :
+  forall (ts : cts(p)), type_extensionality (per_base_bar ts).
 Proof.
-  unfold type_extensionality, per_base, eq_term_equals; sp.
+  unfold type_extensionality, per_base_bar, eq_term_equals; sp.
   allrw <-; sp.
 Qed.
 
-Lemma per_base_type_symmetric {p} :
-  forall lib (ts : cts(p)), type_symmetric (per_base lib ts).
+Lemma per_base_bar_type_symmetric {p} :
+  forall (ts : cts(p)), type_symmetric (per_base_bar ts).
 Proof.
-  unfold type_symmetric, per_base; sp.
+  introv h; unfold per_base_bar in *; exrepnd; dands; auto.
+  exists bar; dands; auto.
 Qed.
 
-Lemma per_base_type_transitive {p} :
-  forall lib (ts : cts(p)), type_transitive (per_base lib ts).
+Lemma per_base_bar_type_transitive {p} :
+  forall (ts : cts(p)), type_transitive (per_base_bar ts).
 Proof.
-  unfold type_transitive, per_base; sp.
+  introv per1 per2.
+  unfold per_base_bar in *; exrepnd; dands; auto.
+
+  exists (intersect_bars bar bar0).
+  dands.
+
+  - introv i j; simpl in *; exrepnd.
+    pose proof (per3 lib2) as q; autodimp q hyp.
+    pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
+
+  - introv i j; simpl in *; exrepnd.
+    pose proof (per4 lib1) as q; autodimp q hyp.
+    pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
 Qed.
 
-Lemma per_base_type_value_respecting {p} :
-  forall lib (ts : cts(p)), type_value_respecting lib (per_base lib ts).
+Lemma per_base_bar_type_value_respecting {p} :
+  forall (ts : cts(p)), type_value_respecting (per_base_bar ts).
 Proof.
-  sp; unfold type_value_respecting, per_base; sp.
-  spcast; apply cequivc_base with (t := T); auto.
+  introv per ceq.
+  unfold type_value_respecting, per_base_bar in *; exrepnd.
+  dands; auto;[].
+  exists bar; dands; auto.
+  introv ie i.
+  applydup per0 in i; auto.
+  pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
+  spcast.
+  eapply cequivc_base; eauto.
 Qed.
 
-Lemma per_base_term_symmetric {p} :
-  forall lib (ts : cts(p)), term_symmetric (per_base lib ts).
+Lemma per_base_bar_term_symmetric {p} :
+  forall (ts : cts(p)), term_symmetric (per_base_bar ts).
 Proof.
-  unfold term_symmetric, term_equality_symmetric, per_base.
-  introv cts i e.
-  destruct i as [ ct i ].
-  destruct i as [ ct' i ].
-  rw i in e; rw i.
+  introv; unfold term_symmetric, term_equality_symmetric, per_base_bar.
+  introv k e; repnd.
+  allrw.
+  apply k in e.
+  unfold per_base_eq in *; exrepnd.
+  exists bar.
+  introv ie i.
+  apply e0 in i; eauto 3 with slow.
   spcast; apply cequivc_sym; auto.
 Qed.
 
-Lemma per_base_term_transitive {p} :
-  forall lib (ts : cts(p)), term_transitive (per_base lib ts).
+Lemma per_base_bar_term_transitive {p} :
+  forall (ts : cts(p)), term_transitive (per_base_bar ts).
 Proof.
-  unfold term_transitive, term_equality_transitive, per_base.
-  introv cts i e1 e2.
-  destruct i as [ ct i ].
-  destruct i as [ ct' i ].
-  rw i in e1; rw i in e2; rw i.
-  spcast; apply cequivc_trans with (b := t2); auto.
+  unfold term_transitive, term_equality_transitive, per_base_bar.
+  introv cts per i j.
+  exrepnd.
+  rw per in i; rw per in j; rw per; clear per.
+  allunfold @per_base_eq; exrepnd.
+
+  exists (intersect_bars bar1 bar0).
+  unfold equality_of_atom_bar1 in *.
+  introv i j; simpl in *; exrepnd.
+
+  pose proof (i0 lib1) as q; autodimp q hyp; clear i0.
+  pose proof (q lib'0) as w; clear q; autodimp w hyp; eauto 2 with slow; simpl in w.
+
+  pose proof (j0 lib2) as q; autodimp q hyp; clear j0.
+  pose proof (q lib'0) as z; clear q; autodimp z hyp; eauto 2 with slow; simpl in z.
+  exrepnd; spcast.
+  eapply cequivc_trans; eauto.
 Qed.
 
-Lemma per_base_term_value_respecting {p} :
-  forall lib (ts : cts(p)), term_value_respecting lib (per_base lib ts).
+Lemma per_base_bar_term_value_respecting {p} :
+  forall (ts : cts(p)), term_value_respecting (per_base_bar ts).
 Proof.
-  sp; unfold term_value_respecting, term_equality_respecting, per_base; sp.
-  allrw; sp.
+  introv h e ceq.
+  unfold per_nat_bar in *; exrepnd; spcast.
+  apply h in e; apply h; clear h.
+  unfold per_base_eq in *.
+  exrepnd; exists bar.
+  introv ie i; applydup e0 in i; auto.
+  apply (ceq lib'0); eauto 3 with slow.
 Qed.
 
-Lemma per_base_type_system {p} :
-  forall lib (ts : cts(p)), type_system lib (per_base lib ts).
+Lemma per_base_bar_type_system {p} :
+  forall (ts : cts(p)), type_system (per_base_bar ts).
 Proof.
   intros; unfold type_system; sp.
-  try apply per_base_uniquely_valued; auto.
-  try apply per_base_type_extensionality; auto.
-  try apply per_base_type_symmetric; auto.
-  try apply per_base_type_transitive; auto.
-  try apply per_base_type_value_respecting; auto.
-  try apply per_base_term_symmetric; auto.
-  try apply per_base_term_transitive; auto.
-  try apply per_base_term_value_respecting; auto.
+  - apply per_base_bar_uniquely_valued; auto.
+  - apply per_base_bar_type_extensionality; auto.
+  - apply per_base_bar_type_symmetric; auto.
+  - apply per_base_bar_type_transitive; auto.
+  - apply per_base_bar_type_value_respecting; auto.
+  - apply per_base_bar_term_symmetric; auto.
+  - apply per_base_bar_term_transitive; auto.
+  - apply per_base_bar_term_value_respecting; auto.
 Qed.
 
 
 Lemma close_type_system_base {p} :
   forall lib (ts : cts(p)) T T' eq,
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> per_base lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> per_base_bar (close ts) lib T T' eq
+    -> type_sys_props (close ts) lib T T' eq.
 Proof.
-  introv X X0 per.
+  introv X X0 mon per.
 
-  dup per as pb; unfold per_base in pb; repnd; spcast.
+  dup per as pb; unfold per_base_bar in pb; exrepnd; spcast.
 
   rw @type_sys_props_iff_type_sys_props3.
   prove_type_sys_props3 SCase; intros.
@@ -124,67 +167,68 @@ Proof.
     dclose_lr.
 
     * SSCase "CL_base".
-      assert (uniquely_valued (per_base lib (close lib ts))) as uv
-        by (apply per_base_uniquely_valued).
-      apply uv with (T := T) (T' := T'); auto.
-      apply uniquely_valued_trans5 with (T2 := T3) (eq2 := eq); auto.
-      apply per_base_type_extensionality.
-      apply per_base_type_symmetric.
-      apply per_base_type_transitive.
+      assert (uniquely_valued (per_base_bar (close ts))) as uv
+        by (apply per_base_bar_uniquely_valued).
+      eapply uv; eauto.
+      eapply uniquely_valued_trans5; eauto.
+      { apply per_base_bar_type_extensionality. }
+      { apply per_base_bar_type_symmetric. }
+      { apply per_base_bar_type_transitive. }
 
   + SCase "type_symmetric"; repdors; subst; dclose_lr;
     apply CL_base; auto;
-    assert (type_symmetric (per_base lib (close lib ts))) as tys
-      by (apply per_base_type_symmetric);
-    assert (type_extensionality (per_base lib (close lib ts))) as tye
-      by (apply per_base_type_extensionality);
+    assert (type_symmetric (per_base_bar (close ts))) as tys
+      by (apply per_base_bar_type_symmetric);
+    assert (type_extensionality (per_base_bar (close ts))) as tye
+      by (apply per_base_bar_type_extensionality);
     apply tye with (eq := eq); auto.
 
   + SCase "type_value_respecting"; repdors; subst;
     apply CL_base;
-    assert (type_value_respecting lib (per_base lib (close lib ts)))
+    assert (type_value_respecting (per_base_bar (close ts)))
            as tvr
-           by (apply per_base_type_value_respecting).
+           by (apply per_base_bar_type_value_respecting).
 
     apply tvr; auto.
     apply @type_system_type_mem with (T' := T'); auto.
-    apply per_base_type_symmetric.
-    apply per_base_type_transitive.
+    apply per_base_bar_type_symmetric.
+    apply per_base_bar_type_transitive.
 
     apply tvr; auto.
     apply @type_system_type_mem1 with (T := T); auto.
-    apply per_base_type_symmetric.
-    apply per_base_type_transitive.
+    apply per_base_bar_type_symmetric.
+    apply per_base_bar_type_transitive.
 
   + SCase "term_symmetric".
-    assert (term_symmetric (per_base lib (close lib ts)))
+    assert (term_symmetric (per_base_bar (close ts)))
       as tes
-        by (apply per_base_term_symmetric).
-    apply tes with (T := T) (T' := T'); auto.
+        by (apply per_base_bar_term_symmetric).
+    eapply tes; eauto.
 
   + SCase "term_transitive".
-    assert (term_transitive (per_base lib (close lib ts)))
+    assert (term_transitive (per_base_bar (close ts)))
       as tet
-        by (apply per_base_term_transitive).
-    apply tet with (T := T) (T' := T'); auto.
+        by (apply per_base_bar_term_transitive).
+    eapply tet; eauto.
 
   + SCase "term_value_respecting".
-    assert (term_value_respecting lib (per_base lib (close lib ts)))
+    assert (term_value_respecting (per_base_bar (close ts)))
       as tvr
-        by (apply per_base_term_value_respecting).
+        by (apply per_base_bar_term_value_respecting).
     apply tvr with (T := T); auto.
     apply @type_system_type_mem with (T' := T'); auto.
-    apply per_base_type_symmetric.
-    apply per_base_type_transitive.
+    apply per_base_bar_type_symmetric.
+    apply per_base_bar_type_transitive.
 
   + SCase "type_gsymmetric"; repdors; subst; split; sp;
     dclose_lr.
 
-    apply CL_base; apply per_base_type_symmetric; auto.
-    apply CL_base; apply per_base_type_symmetric; auto.
+    apply CL_base; apply per_base_bar_type_symmetric; auto.
+    apply CL_base; apply per_base_bar_type_symmetric; auto.
 
   + SCase "type_gtransitive"; sp.
 
   + SCase "type_mtransitive"; repdors; subst; dclose_lr;
-    dands; apply CL_base; allunfold @per_base; sp.
+      dands; apply CL_base; allunfold @per_base_bar; sp;
+        exists (intersect_bars bar1 bar0); dands; eauto 2 with slow.
 Qed.

@@ -176,6 +176,16 @@ Ltac close_diff_init_bar_right :=
     try computes_to_valc_diff
   end.
 
+Ltac close_diff_init_ext :=
+  match goal with
+  | [ H : in_ext ?lib (fun lib => ?T ===>(lib) _) |- _ ] =>
+    let h   := fresh "h"   in
+    let xxx := fresh "xxx" in
+    pose proof (H lib) as h; autodimp h xxx; eauto 2 with slow; simpl in h; spcast;
+    apply_defines_only_universes; spcast;
+    computes_to_valc_diff
+  end.
+
 Ltac close_diff_all :=
   first [ complete auto
         | close_diff
@@ -185,4 +195,71 @@ Ltac close_diff_all :=
         | close_diff_ext_bar
         | close_diff_init_bar_left
         | close_diff_init_bar_right
+        | close_diff_init_ext
         ].
+
+Ltac computes_to_eqbars_step :=
+  match goal with
+  | [ B  : BarLib ?lib,
+      H1 : all_in_bar ?bar (fun lib => ?T ===>(lib) ?T1),
+      H2 : all_in_bar ?bar (fun lib => ?T ===>(lib) ?T2) |- _ ] =>
+    let h    := fresh "h"    in
+    let q    := fresh "q"    in
+    let w    := fresh "w"    in
+    let u    := fresh "u"    in
+    let v    := fresh "v"    in
+    let lib' := fresh "lib'" in
+    let xxx  := fresh "xxx"  in
+    pose proof (bar_non_empty bar) as h;
+    destruct h as [lib' h]; simpl in h;
+    pose proof (H1 lib') as q;
+    pose proof (H2 lib') as w;
+    autodimp q xxx;
+    autodimp w xxx;
+    pose proof (q lib') as u;
+    pose proof (w lib') as v;
+    autodimp u xxx;
+    autodimp v xxx;
+    eauto 2 with slow;
+    simpl in u, v;
+    spcast;
+    clear q w;
+    computes_to_eqval;
+    try (hide_hyp H1)
+
+  | [ H1 : all_in_bar ?bar1 (fun lib => ?T ===>(lib) ?T1),
+      H2 : all_in_bar ?bar2 (fun lib => ?T ===>(lib) ?T2) |- _ ] =>
+    let h    := fresh "h"    in
+    let q    := fresh "q"    in
+    let w    := fresh "w"    in
+    let u    := fresh "u"    in
+    let v    := fresh "v"    in
+    let lib  := fresh "lib"  in
+    let lib1 := fresh "lib1" in
+    let lib2 := fresh "lib2" in
+    let xxx  := fresh "xxx"  in
+    pose proof (bar_non_empty (intersect_bars bar1 bar2)) as h;
+    destruct h as [lib h]; simpl in h;
+    destruct h as [lib1 h];
+    destruct h as [lib2 h];
+    repnd;
+    pose proof (H1 lib1) as q;
+    pose proof (H2 lib2) as w;
+    autodimp q xxx;
+    autodimp w xxx;
+    pose proof (q lib) as u;
+    pose proof (w lib) as v;
+    autodimp u xxx;
+    autodimp v xxx;
+    simpl in u, v;
+    spcast;
+    clear q w;
+    computes_to_eqval;
+    try (hide_hyp H1)
+  end.
+
+Ltac computes_to_eqbars :=
+  repeat computes_to_eqbars_step;
+  repeat match goal with
+         | [ H : Something |- _ ] => show_hyp H
+         end.

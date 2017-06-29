@@ -100,6 +100,21 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_func_bar_r ts lib T A v B T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 
+    (* function ext *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : in_ext ?lib (fun lib => ?T ===>(lib) (mkc_function ?A ?v ?B)),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_func_ext_l ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : in_ext ?lib (fun lib => ?T' ===>(lib) (mkc_function ?A ?v ?B)),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_func_ext_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
     (* isect *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
@@ -536,6 +551,23 @@ Ltac dest_close_lr h :=
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
       generalize (dest_close_per_base_r ts lib T T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    (* base bar *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : all_in_bar ?bar (fun lib => ?T ===>(lib) mkc_base),
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_base_bar_l ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : all_in_bar ?bar (fun lib => ?T' ===>(lib) mkc_base),
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_base_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 
     (* int *)
     | [ H1 : type_system ?ts,

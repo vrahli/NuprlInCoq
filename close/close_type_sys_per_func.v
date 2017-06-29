@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,6 +22,7 @@
 
 
   Website: http://nuprl.org/html/verification/
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -33,25 +37,29 @@ Lemma close_type_system_func {p} :
          T T'
          (eq : per)
          A A' v v' B B' eqa eqb,
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_function A v B)
-    -> computes_to_valc lib T' (mkc_function A' v' B')
-    -> close lib ts A A' eqa
-    -> (forall (a a' : CTerm) (e : eqa a a'),
-          close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-    -> (forall (a a' : CTerm) (e : eqa a a'),
-          type_system lib ts ->
-          defines_only_universes lib ts ->
-          type_sys_props lib (close lib ts) (substc a v B) (substc a' v' B')
-                         (eqb a a' e))
-    -> (forall t t' : CTerm,
-          eq t t' <=> (forall (a a' : CTerm) (e : eqa a a'), eqb a a' e (mkc_apply t a) (mkc_apply t' a')))
-    -> per_func lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) A A' eqa
-    -> type_sys_props lib (close lib ts) T T' eq.
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> in_ext lib (fun lib => T ===>(lib) (mkc_function A v B))
+    -> in_ext lib (fun lib => T' ===>(lib) (mkc_function A' v' B'))
+    -> in_ext lib (fun lib => close ts lib A A' (eqa lib))
+    -> in_ext lib (fun lib => type_sys_props (close ts) lib A A' (eqa lib))
+    -> in_ext
+         lib
+         (fun lib =>
+            forall (a a' : CTerm) (e : eqa lib a a'),
+              close ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e))
+    -> in_ext
+         lib
+         (fun lib =>
+            forall (a a' : CTerm) (e : eqa lib a a'),
+              type_sys_props (close ts) lib (substc a v B) (substc a' v' B')
+                             (eqb lib a a' e))
+    -> (eq <=2=> (per_func_eq eqa eqb lib))
+    -> per_func_ext (close ts) lib T T' eq
+    -> type_sys_props (close ts) lib T T' eq.
 Proof.
-  introv X X0 c1 c2 X1 clb recb eqiff per IHX1.
+  introv tysys dou mon comp1 comp2 cla tysysa clb tysysb eqiff; introv perfunc.
 
   rw @type_sys_props_iff_type_sys_props3.
   prove_type_sys_props3 SCase; intros.
@@ -60,7 +68,7 @@ Proof.
     dclose_lr.
 
     SSCase "CL_func".
-    allunfold @per_func; exrepd.
+    allunfold @per_func_ext; exrepd.
     generalize (eq_term_equals_type_family lib T T3 eqa0 eqa eqb0 eqb (close lib ts) A v B A' v' B' mkc_function); intro i.
     repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp))); repnd.
 

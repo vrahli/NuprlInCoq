@@ -518,11 +518,6 @@ Arguments bar_lib_bars [o] [lib] _ _ _.
 Arguments bar_lib_ext  [o] [lib] _ _ _.
 (*Arguments bar_lib_mem  [o] [M] [lib] _.*)
 
-Definition in_ext {o} (lib : @library o) (F : @library o -> Prop) :=
-  forall (lib' : library),
-    lib_extends lib' lib
-    -> F lib'.
-
 Definition all_in_bar0 {o} {lib} (bar : BarLib lib) (F : @library o -> Prop) :=
   forall (lib' : library), bar_lib_bar bar lib' -> F lib'.
 

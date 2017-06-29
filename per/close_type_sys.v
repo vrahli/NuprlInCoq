@@ -37,9 +37,9 @@ Require Import close_type_sys_per_nat.
 Require Import close_type_sys_per_atom.
 Require Import close_type_sys_per_uatom.
 Require Import close_type_sys_per_csname.
+Require Import close_type_sys_per_base.
 
-(*Require Import close_type_sys_per_base.
-Require Import close_type_sys_per_sqle.
+(*Require Import close_type_sys_per_sqle.
 Require Import close_type_sys_per_sqequal.
 Require Import close_type_sys_per_eq.
 Require Import close_type_sys_per_req.
@@ -192,6 +192,8 @@ Proof.
 
   close_cases (induction cl using @close_ind') Case; sp; spcast.
 
+  Focus 14.
+
   - Case "CL_init".
     apply close_type_system_init; auto.
 
@@ -201,14 +203,14 @@ Proof.
   - Case "CL_nat".
     apply close_type_system_nat; auto.
 
+  - Case "CL_csname".
+    apply close_type_system_csname; auto.
+
   - Case "CL_atom".
     apply close_type_system_atom; auto.
 
   - Case "CL_uatom".
     apply close_type_system_uatom; auto.
-
-  - Case "CL_csname".
-    apply close_type_system_csname; auto.
 
   - Case "CL_base".
     apply close_type_system_base; auto.
