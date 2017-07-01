@@ -46,6 +46,7 @@ Require Export rules_function.
 Require Export rules_uni.
 Require Export rules_equality3.
 Require Export rules_integer.
+Require Export rules_unfold.
 
 
 
@@ -270,6 +271,12 @@ Definition pre_rule_introduction_concl {o} (H : @bhyps o) C :=
 Definition pre_rule_introduction_hyp {o} (H : @bhyps o) C t :=
   mk_pre_bseq H (mk_pre_concl (mk_member t C)).
 
+Definition pre_rule_unfold_abstractions_concl {o} a (H : @bhyps o) :=
+  mk_pre_bseq H (mk_pre_concl a).
+
+Definition pre_rule_unfold_abstractions_hyp {o} lib abs a (H : @bhyps o) :=
+  mk_pre_bseq H (mk_pre_concl (unfold_abstractions lib abs a)).
+
 
 
 (* ===========================================================
@@ -392,6 +399,35 @@ Definition updConclProofContext {o} (pc : @ProofContext o) (c : named_concl) :=
 
 
 
+(* =========================================================== *)
+
+Definition unfoldable {o} lib abstractions (t : @NTerm o) : bool :=
+  match get_abstraction_name t with
+  | Some name =>
+    if in_deq _ String.string_dec name abstractions then
+      match unfold lib t with
+      | Some u => true
+      | None => false
+      end
+    else true
+  | None => true
+  end.
+
+Fixpoint abstractions_can_be_unfolded {o} lib abstractions (t : @NTerm o) : bool :=
+  match t with
+  | vterm v => true
+  | sterm f => true
+  | oterm op bs =>
+    (forallb (abstractions_can_be_unfolded_b lib abstractions) bs)
+      &&
+    unfoldable lib abstractions t
+  end
+with abstractions_can_be_unfolded_b {o} lib abstractions (b : @BTerm o) : bool :=
+       match b with
+       | bterm vs t => abstractions_can_be_unfolded lib abstractions t
+       end.
+
+
 (* ===========================================================
 
   A pre-proof is a tree of proof-steps without the extracts,
@@ -476,6 +512,11 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
     forall a b n H,
       reduces_in_atmost_k_steps ctxt a b n
       -> pre_proof ctxt (pre_rule_cequiv_computation_concl a b H)
+| pre_proof_unfold_abstractions :
+    forall abs a H,
+      abstractions_can_be_unfolded ctxt abs a = true
+      -> pre_proof ctxt (pre_rule_unfold_abstractions_hyp ctxt abs a H)
+      -> pre_proof ctxt (pre_rule_unfold_abstractions_concl a H)
 (*| pre_proof_function_elimination :
     forall A B C a f x z H J,
       wf_term a
@@ -590,6 +631,11 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
     forall a b n H,
       reduces_in_atmost_k_steps ctxt a b n
       -> proof ctxt (rule_cequiv_computation_concl a b H)
+| proof_unfold_abstractions :
+    forall abs a e H,
+      abstractions_can_be_unfolded ctxt abs a = true
+      -> proof ctxt (rule_unfold_abstractions_hyp ctxt abs a e H)
+      -> proof ctxt (rule_unfold_abstractions_concl a e H)
 (*| proof_function_elimination :
     (* When deriving a sequent, e is not supposed to be given but inferred
      * from the second sequent.  That's the case in a pre_proof
@@ -864,6 +910,7 @@ Proof.
        (*| (* approx_member_eq        *) a b e H p ih*)
        | (* cequiv_computation        *) a b H p ih
        | (* cequiv_computation_atmost *) a b n H p ih
+       | (* unfold abstractions       *) abs a e H unf p ih
        (*| (* function elimination    *) A B C a e ea f x z H J wa cova nizH nizJ dzf p1 ih1 p2 ih2*)
        | (* universe_equality         *) i j H
        | (* hypothesis_equality       *) x A G J
@@ -986,7 +1033,13 @@ Proof.
       pose proof (rule_function_elimination_wf2 A B C a e ea f x z H J) as h.
       unfold wf_rule2, wf_subgoals2 in h; simpl in h.
       repeat (autodimp h hyp).
-*)
+ *)
+
+  - apply (rule_unfold_abstractions_true_ext_lib ctxt abs a e H); simpl; tcsp.
+    introv xx; repndors; subst; tcsp.
+
+    apply ih; auto.
+    apply (rule_unfold_abstractions_wf2 ctxt abs a e H); simpl; tcsp.
 
   - apply (rule_universe_equality_true_ext_lib ctxt); simpl; tcsp.
 
@@ -1334,6 +1387,151 @@ Proof.
     apply lib_extends_if_not_in_lib; simpl; auto.
 Qed.
 
+Lemma forallb_forall_lin :
+  forall {A}(f : A -> bool) (l : list A),
+    forallb f l = true <-> (forall x, LIn x l -> f x = true).
+Proof.
+  induction l; introv; simpl in *; split; intro h; tcsp.
+
+  - allrw andb_true; repnd.
+    rewrite IHl in h.
+    introv i; repndors; subst; tcsp.
+
+  - rewrite andb_true; rewrite IHl.
+    dands; tcsp.
+Qed.
+
+Lemma unfold_abs_implies_in_lib {o} :
+  forall lib a bs (u : @NTerm o),
+    unfold_abs lib a bs = Some u
+    -> in_lib a lib.
+Proof.
+  induction lib; introv h; simpl in *; ginv.
+  remember (unfold_abs_entry a a0 bs) as ua; symmetry in Hequa; destruct ua; ginv.
+
+  - unfold unfold_abs_entry in Hequa.
+    destruct a; boolvar; ginv.
+
+    unfold in_lib; simpl.
+    eexists; dands; eauto; simpl; eauto 3 with slow.
+
+  - apply IHlib in h.
+    unfold in_lib in *; exrepnd; simpl.
+    exists e; dands; tcsp.
+Qed.
+
+Lemma implies_abstraction_can_be_unfold_extend_proof_context_true {o} :
+  forall (ctxt : @ProofContext o) entry abs (t : @NTerm o),
+    abstractions_can_be_unfolded ctxt abs t = true
+    -> abstractions_can_be_unfolded (extend_proof_context ctxt entry) abs t = true.
+Proof.
+  nterm_ind t as [v|f|op bs ind] Case; introv h; simpl in *; auto.
+
+  Case "oterm".
+
+  allrw andb_true_iff; repnd.
+  allrw @forallb_forall_lin.
+  dands.
+
+  - introv i.
+    destruct x as [l t]; simpl in *.
+    applydup h0 in i; simpl in *.
+    eapply ind;eauto.
+
+  - unfold unfoldable in *; simpl in *.
+    dopid op as [can|ncan|exc|a] SCase; simpl in *; auto.
+    boolvar; auto.
+
+    remember (unfold_abs ctxt a bs) as ua; symmetry in Hequa; destruct ua; ginv.
+
+    destruct entry; simpl in *.
+
+    + remember (unfold_abs_entry e a bs) as q; symmetry in Heqq; destruct q; auto.
+      allrw; auto.
+
+    + boolvar; auto; allrw; auto.
+Qed.
+
+Lemma implies_lib_extends_extend_proof_context {o} :
+  forall (ctxt : @ProofContext o) e,
+    !entry_in_lib e ctxt
+    -> lib_extends (extend_proof_context ctxt e) ctxt.
+Proof.
+  introv ni i.
+  unfold entry_in_lib in ni; simpl in ni.
+  destruct e; simpl in *.
+
+  - right; dands; auto.
+    intro m; destruct ni; eapply entry_in_library_implies_in_lib; eauto.
+
+  - right; dands; auto.
+    intro m; destruct ni.
+    eapply entry_in_library_implies_in_lib in m;[|eauto]; tcsp.
+Qed.
+Hint Resolve implies_lib_extends_extend_proof_context : slow.
+
+Lemma eq_unfold_abstractions_extend_proof_context {o} :
+  forall (ctxt : @ProofContext o) entry abs a,
+    !entry_in_lib entry ctxt
+    -> abstractions_can_be_unfolded ctxt abs a = true
+    -> unfold_abstractions ctxt abs a
+       = unfold_abstractions (extend_proof_context ctxt entry) abs a.
+Proof.
+  nterm_ind a as [v|f|op bs ind] Case; introv ni unf; simpl in *; tcsp.
+
+  Case "oterm".
+
+  allrw andb_true; repnd.
+  allrw @forallb_forall_lin.
+
+  match goal with
+  | [ |- maybe_unfold _ _ ?x = maybe_unfold _ _ ?y ] => assert (x = y) as q
+  end.
+
+  {
+    f_equal.
+    apply eq_maps.
+    introv i.
+    applydup unf0 in i.
+    destruct x as [l t]; simpl in *.
+    f_equal.
+    eapply ind; eauto.
+  }
+
+  rewrite <- q; clear q.
+
+  unfold unfoldable in unf; simpl in unf.
+  unfold maybe_unfold; simpl.
+  dopid op as [can|ncan|exc|a] SCase; simpl in *; auto.
+  boolvar; auto.
+
+  remember (unfold_abs ctxt a bs) as ua; symmetry in Hequa; destruct ua; ginv.
+  apply unfold_abs_implies_find_entry in Hequa; exrepnd; subst.
+
+  erewrite find_entry_implies_unfold_abs;
+    [|rewrite find_entry_map_unfold_abstractions_b_eq; eauto].
+
+  erewrite find_entry_implies_unfold_abs;
+    [|rewrite find_entry_map_unfold_abstractions_b_eq];
+    [reflexivity|].
+
+  eapply lib_extends_preserves_find_entry;[|eauto].
+  apply implies_lib_extends_extend_proof_context; auto.
+Defined.
+
+Lemma eq_pre_rule_unfold_abstractions_hyp_extend_proof_context {o} :
+  forall (ctxt : @ProofContext o) entry abs a H,
+    !entry_in_lib entry ctxt
+    -> abstractions_can_be_unfolded ctxt abs a = true
+    -> pre_rule_unfold_abstractions_hyp ctxt abs a H
+       = pre_rule_unfold_abstractions_hyp (extend_proof_context ctxt entry) abs a H.
+Proof.
+  introv bi unf.
+  unfold pre_rule_unfold_abstractions_hyp.
+  f_equal; f_equal.
+  apply eq_unfold_abstractions_extend_proof_context; auto.
+Defined.
+
 Fixpoint pre_proof_cons {o}
          {ctxt  : @ProofContext o}
          (entry : LibraryEntry)
@@ -1395,6 +1593,19 @@ Fixpoint pre_proof_cons {o}
     pre_proof_cequiv_computation_atmost
       _ a b n H
       (extend_proof_context_preserves_reduces_in_atmost_k_steps ctxt entry a b n ni r)
+
+  | pre_proof_unfold_abstractions _ abs a H unf prf =>
+    let prf' := pre_proof_cons entry ni prf in
+    pre_proof_unfold_abstractions
+      _ abs a H
+      (implies_abstraction_can_be_unfold_extend_proof_context_true ctxt entry abs a unf)
+      (eq_rect (* -- QUESTION: IS THIS [eq_rect] GOING TO BE A PROBLEM?? -- *)
+         _
+         _
+         prf'
+         _
+         (eq_pre_rule_unfold_abstractions_hyp_extend_proof_context
+            ctxt entry abs a H ni unf))
 
   | pre_proof_universe_equality _ i j H ltij => pre_proof_universe_equality _ i j H ltij
 
@@ -2011,6 +2222,23 @@ Proof.
   exact (proof_introduction _ t e C H wft covt nout q).
 Defined.
 
+Definition finish_proof_unfold_abstractions {o}
+           (ctxt : @ProofContext o)
+           (abs  : list opname)
+           (a : NTerm)
+           (H : bhyps)
+           (unf : abstractions_can_be_unfolded ctxt abs a = true)
+           (p : ExtractProof ctxt (pre_rule_unfold_abstractions_hyp ctxt abs a H))
+  : ExtractProof ctxt (pre_rule_unfold_abstractions_concl a H).
+Proof.
+  introv.
+  destruct p as [e v q].
+  exists e.
+  { simpl in *; auto. }
+  unfold pre2baresequent; simpl.
+  exact (proof_unfold_abstractions _ abs a e H unf q).
+Defined.
+
 Fixpoint finish_pre_proof {o}
          {ctxt  : @ProofContext o}
          {s     : pre_baresequent}
@@ -2074,6 +2302,12 @@ Fixpoint finish_pre_proof {o}
 
   | pre_proof_cequiv_computation_atmost _ a b n H r =>
     Some (finish_proof_cequiv_computation_atmost ctxt a b n H r)
+
+  | pre_proof_unfold_abstractions _ abs a H unf prf =>
+    match finish_pre_proof prf with
+    | Some p => Some (finish_proof_unfold_abstractions ctxt abs a H unf p)
+    | _ => None
+    end
 
   | pre_proof_universe_equality _ i j H ltij =>
     Some (finish_proof_universe_equality ctxt i j H ltij)
@@ -3020,6 +3254,10 @@ Definition apply_proof_step_lemma {o} {ctxt}
             could_not_apply_lemma_rule)
     end
   end.
+
+
+XXXXXX
+Locate rule_cequiv_computation_true_ext_lib.
 
 (* TODO: What should be the rule? *)
 Definition apply_proof_step_unfold_abstractions {o} {ctxt}

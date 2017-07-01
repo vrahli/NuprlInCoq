@@ -507,3 +507,6 @@ let main =
   (*let _ = print_terms terms in*)
   let _ = destruct_terms terms lemma_name output in
   ()
+
+
+(* ./parse --i uall_wf_primitive.term --o output.v *)
