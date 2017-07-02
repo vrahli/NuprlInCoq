@@ -33,16 +33,35 @@
 Require Export sovar.
 
 
-Definition sonobnd {o} (t : @SOTerm o) : SOBTerm := sobterm [] t.
+Definition sonobnd {o} (t : @SOTerm o) : SOBTerm :=
+  sobterm [] t.
 
-Definition mk_so_equality {o} (t1 t2 T : @SOTerm o) :=
+Definition mk_so_equality {o} (t1 t2 T : @SOTerm o) : SOTerm :=
   soterm (Can NEquality) [sonobnd t1, sonobnd t2, sonobnd T].
 
-Definition mk_so_apply {o} (t1 t2 : @SOTerm o) :=
+Definition mk_so_apply {o} (t1 t2 : @SOTerm o) : SOTerm :=
   soterm (NCan NApply) [sonobnd t1, sonobnd t2].
 
-Definition mk_so_isect {o} (t1 : @SOTerm o) v t2 :=
+Definition mk_so_isect {o} (t1 : @SOTerm o) v t2 : SOTerm :=
   soterm (Can NIsect) [sonobnd t1, sobterm [v] t2].
 
-Definition mk_so_uni {o} (i : nat) :=
-  @soterm o (Can (NUni i)) [].
+Definition mk_so_function {o} (t1 : @SOTerm o) v t2 : SOTerm :=
+  soterm (Can NFunction) [sonobnd t1, sobterm [v] t2].
+
+Definition mk_so_uni {o} (i : nat) : @SOTerm o :=
+  soterm (Can (NUni i)) [].
+
+Definition mk_so_abs {o} abs (l : list (@SOBTerm o)) : SOTerm :=
+  soterm (Abs abs) l.
+
+Definition mk_so_integer {o} n : @SOTerm o :=
+  soterm (Can (Nint n)) [].
+
+Definition mk_so_nat {o} (n : nat) : @SOTerm o :=
+  mk_so_integer (Z_of_nat n).
+
+Definition mk_so_int {o} : @SOTerm o :=
+  soterm (Can NInt) [].
+
+Definition mk_so_lam {o} (v : NVar) (b : @SOTerm o) : SOTerm :=
+  soterm (Can NLambda) [sobterm [v] b].

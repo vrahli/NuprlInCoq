@@ -294,6 +294,8 @@ let get = TR.get
 let mk  = TR.mk
 let set = TR.set
 
+let nuprl_nat_to_string = II.to_string
+
 
 (* ------ REF TERMS ------ *)
 

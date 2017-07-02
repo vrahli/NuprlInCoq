@@ -61,6 +61,8 @@ type lib      = {abs : abs_lib; tof : tof_lib}
 val get : 'a toref -> 'a
 val mk  : 'a -> 'a toref
 
+val nuprl_nat_to_string : nuprl_nat -> string
+
 val emlib      : unit -> lib
 val terms2map  : nuprl_term list -> lib
 val terms2map' : nuprl_term list -> lib

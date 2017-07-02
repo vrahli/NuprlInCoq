@@ -30,8 +30,16 @@
 
 
 Require Export sequents2.
+Require Export sequents_lib.
 Require Export sequents_tacs.
 Require Export sequents_equality.
+
+
+Definition rule_axiom_equality_concl {o} (a b T : @NTerm o) H :=
+  mk_baresequent H (mk_conclax (mk_member mk_axiom (mk_equality a b T))).
+
+Definition rule_axiom_equality_hyp {o} (e a b T : @NTerm o) H :=
+  mk_baresequent H (mk_concl (mk_equality a b T) e).
 
 
 (*
@@ -42,17 +50,17 @@ Require Export sequents_equality.
      H |- a = b in T
  *)
 Definition rule_axiom_equality {o}
-           (H : @bhyps o) (a b T : NTerm) :=
+           (H : @bhyps o) (e a b T : NTerm) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_member mk_axiom (mk_equality a b T))))
+    (rule_axiom_equality_concl a b T H)
     [
-      mk_baresequent H (mk_conclax (mk_equality a b T))
+      rule_axiom_equality_hyp e a b T H
     ]
     [].
 
 Lemma rule_axiom_equality_true3 {o} :
-  forall lib (H : @bhyps o) a b T,
-    rule_true3 lib (rule_axiom_equality H a b T).
+  forall lib (H : @bhyps o) e a b T,
+    rule_true3 lib (rule_axiom_equality H e a b T).
 Proof.
   intros.
   unfold rule_axiom_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -91,7 +99,29 @@ Proof.
   pose proof (hyp1 s1 s2) as q; clear hyp1.
   repeat (autodimp q hyp); exrepnd.
   lsubst_tac; auto.
+  apply equality_in_mkc_equality in q1; repnd.
 
   dands; auto.
-  rw <- @member_equality_iff in q1; auto.
+  right; spcast; auto.
+Qed.
+
+Lemma rule_axiom_equality_true_ext_lib {o} :
+  forall lib (H : @bhyps o) e a b T,
+    rule_true_ext_lib lib (rule_axiom_equality H e a b T).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_axiom_equality_true3.
+Qed.
+
+Lemma rule_axiom_equality_wf2 {o} :
+  forall (H : @barehypotheses o) e a b T,
+    wf_rule2 (rule_axiom_equality H e a b T).
+Proof.
+  introv wf j.
+
+  allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq;
+    allrw <- @wf_approx_iff; repnd; auto;
+      allrw @covered_approx; repnd; auto; eauto 4 with slow.
 Qed.

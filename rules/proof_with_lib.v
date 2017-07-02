@@ -45,6 +45,7 @@ Require Export rules_struct.
 Require Export rules_function.
 Require Export rules_uni.
 Require Export rules_equality3.
+Require Export rules_equality4.
 Require Export rules_integer.
 Require Export rules_unfold.
 
@@ -277,6 +278,12 @@ Definition pre_rule_unfold_abstractions_concl {o} a (H : @bhyps o) :=
 Definition pre_rule_unfold_abstractions_hyp {o} lib abs a (H : @bhyps o) :=
   mk_pre_bseq H (mk_pre_concl (unfold_abstractions lib abs a)).
 
+Definition pre_rule_axiom_equality_concl {o} (a b T : @NTerm o) H :=
+  mk_pre_bseq H (mk_pre_concl (mk_member mk_axiom (mk_equality a b T))).
+
+Definition pre_rule_axiom_equality_hyp {o} (a b T : @NTerm o) H :=
+  mk_pre_bseq H (mk_pre_concl (mk_equality a b T)).
+
 
 
 (* ===========================================================
@@ -427,6 +434,9 @@ with abstractions_can_be_unfolded_b {o} lib abstractions (b : @BTerm o) : bool :
        | bterm vs t => abstractions_can_be_unfolded lib abstractions t
        end.
 
+Definition all_abstractions_can_be_unfolded {o} lib abstractions (t : @NTerm o) :=
+  abstractions_can_be_unfolded lib abstractions t = true.
+
 
 (* ===========================================================
 
@@ -514,7 +524,7 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       -> pre_proof ctxt (pre_rule_cequiv_computation_concl a b H)
 | pre_proof_unfold_abstractions :
     forall abs a H,
-      abstractions_can_be_unfolded ctxt abs a = true
+      all_abstractions_can_be_unfolded ctxt abs a
       -> pre_proof ctxt (pre_rule_unfold_abstractions_hyp ctxt abs a H)
       -> pre_proof ctxt (pre_rule_unfold_abstractions_concl a H)
 (*| pre_proof_function_elimination :
@@ -553,7 +563,11 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       -> covered t (nh_vars_hyps H)
       -> noutokens t
       -> pre_proof ctxt (pre_rule_introduction_hyp H C t)
-      -> pre_proof ctxt (pre_rule_introduction_concl H C).
+      -> pre_proof ctxt (pre_rule_introduction_concl H C)
+| pre_proof_axiom_equality :
+    forall a b T H,
+      pre_proof ctxt (pre_rule_axiom_equality_hyp a b T H)
+      -> pre_proof ctxt (pre_rule_axiom_equality_concl a b T H).
 
 Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
 | proof_from_ctxt :
@@ -633,7 +647,7 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
       -> proof ctxt (rule_cequiv_computation_concl a b H)
 | proof_unfold_abstractions :
     forall abs a e H,
-      abstractions_can_be_unfolded ctxt abs a = true
+      all_abstractions_can_be_unfolded ctxt abs a
       -> proof ctxt (rule_unfold_abstractions_hyp ctxt abs a e H)
       -> proof ctxt (rule_unfold_abstractions_concl a e H)
 (*| proof_function_elimination :
@@ -675,7 +689,11 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
       -> covered t (nh_vars_hyps H)
       -> noutokens t
       -> proof ctxt (rule_introduction_hyp H C t e)
-      -> proof ctxt (rule_introduction_concl H C t).
+      -> proof ctxt (rule_introduction_concl H C t)
+| proof_axiom_equality :
+    forall e a b T H,
+      proof ctxt (rule_axiom_equality_hyp e a b T H)
+      -> proof ctxt (rule_axiom_equality_concl a b T H).
 
 
 
@@ -918,6 +936,7 @@ Proof.
        | (* equality_equality         *) A B a1 a2 b1 b2 e1 e2 e3 i H p1 ih1 p2 ih2 p3 ih3
        | (* integer_equality          *) n H
        | (* introduction              *) t e C H wft covt nout p ih
+       | (* axiom equality            *) e a b T H p ih
        ];
     allsimpl;
     allrw NVin_iff; tcsp.
@@ -1076,6 +1095,13 @@ Proof.
     apply (rule_introduction_wf2 H C t e); simpl; tcsp; auto.
     eapply subvars_trans;[eauto|].
     apply subvars_hs_vars_hyps.
+
+  - apply (rule_axiom_equality_true_ext_lib ctxt H e a b T); simpl; tcsp.
+
+    introv xx; repndors; subst; tcsp.
+    apply ih; auto.
+
+    apply (rule_axiom_equality_wf2 H e a b T); simpl; tcsp; auto.
 Qed.
 
 Definition wf_ext {o} (H : @bhyps o) (c : @conclusion o) :=
@@ -1279,7 +1305,8 @@ Inductive proof_step {o} :=
 | proof_step_equality_equality
 | proof_step_integer_equality
 | proof_step_introduction           (t : @NTerm o)
-| proof_step_lemma                  (name : LemmaName).
+| proof_step_lemma                  (name : LemmaName)
+| proof_step_axiom_equality.
 
 Inductive command {o} :=
 (* add a definition at the head *)
@@ -1522,7 +1549,7 @@ Defined.
 Lemma eq_pre_rule_unfold_abstractions_hyp_extend_proof_context {o} :
   forall (ctxt : @ProofContext o) entry abs a H,
     !entry_in_lib entry ctxt
-    -> abstractions_can_be_unfolded ctxt abs a = true
+    -> all_abstractions_can_be_unfolded ctxt abs a
     -> pre_rule_unfold_abstractions_hyp ctxt abs a H
        = pre_rule_unfold_abstractions_hyp (extend_proof_context ctxt entry) abs a H.
 Proof.
@@ -1626,6 +1653,10 @@ Fixpoint pre_proof_cons {o}
   | pre_proof_introduction _ t C H wft covt nout prf =>
     let prf' := pre_proof_cons entry ni prf in
     pre_proof_introduction _ t C H wft covt nout prf'
+
+  | pre_proof_axiom_equality _ a b T H prf =>
+    let prf' := pre_proof_cons entry ni prf in
+    pre_proof_axiom_equality _ a b T H prf'
   end.
 
 Definition pre_proof_seq_cons {o}
@@ -1717,6 +1748,7 @@ Inductive DEBUG_MSG {o} :=
 | could_not_apply_cequiv_computation_rule
 | applied_cequiv_computation_rule
 
+| could_not_apply_unfold_abstractions_rule_not_all_unfoldable
 | could_not_apply_unfold_abstractions_rule
 | applied_unfold_abstractions_rule
 
@@ -1749,6 +1781,9 @@ Inductive DEBUG_MSG {o} :=
 
 | could_not_apply_cut_rule
 | applied_cut_rule
+
+| could_not_apply_axiom_equality_rule
+| applied_axiom_equality_rule
 
 | could_not_apply_update_because_wrong_address
 | could_not_apply_update_because_no_hole_at_address
@@ -2227,7 +2262,7 @@ Definition finish_proof_unfold_abstractions {o}
            (abs  : list opname)
            (a : NTerm)
            (H : bhyps)
-           (unf : abstractions_can_be_unfolded ctxt abs a = true)
+           (unf : all_abstractions_can_be_unfolded ctxt abs a)
            (p : ExtractProof ctxt (pre_rule_unfold_abstractions_hyp ctxt abs a H))
   : ExtractProof ctxt (pre_rule_unfold_abstractions_concl a H).
 Proof.
@@ -2237,6 +2272,21 @@ Proof.
   { simpl in *; auto. }
   unfold pre2baresequent; simpl.
   exact (proof_unfold_abstractions _ abs a e H unf q).
+Defined.
+
+Definition finish_proof_axiom_equality {o}
+           (ctxt : @ProofContext o)
+           (a b T : NTerm)
+           (H : bhyps)
+           (p : ExtractProof ctxt (pre_rule_axiom_equality_hyp a b T H))
+  : ExtractProof ctxt (pre_rule_axiom_equality_concl a b T H).
+Proof.
+  introv.
+  destruct p as [e v q].
+  exists (@mk_axiom o).
+  { apply valid_pre_extract_axiom. }
+  unfold pre2baresequent; simpl.
+  exact (proof_axiom_equality _ e a b T H q).
 Defined.
 
 Fixpoint finish_pre_proof {o}
@@ -2336,6 +2386,12 @@ Fixpoint finish_pre_proof {o}
   | pre_proof_introduction _ t C H wft covt nout prf =>
     match finish_pre_proof prf with
     | Some p => Some (finish_proof_introduction ctxt t C H wft covt nout p)
+    | _ => None
+    end
+
+  | pre_proof_axiom_equality _ a b T H prf =>
+    match finish_pre_proof prf with
+    | Some p => Some (finish_proof_axiom_equality ctxt a b T H p)
     | _ => None
     end
   end.
@@ -3255,9 +3311,14 @@ Definition apply_proof_step_lemma {o} {ctxt}
     end
   end.
 
-
-XXXXXX
-Locate rule_cequiv_computation_true_ext_lib.
+Definition all_abstractions_can_be_unfolded_dec {o} :
+  forall lib abs (t : @NTerm o),
+    decidable (all_abstractions_can_be_unfolded lib abs t).
+Proof.
+  introv; unfold all_abstractions_can_be_unfolded.
+  destruct (abstractions_can_be_unfolded lib abs t);[left|right]; auto.
+  intro xx; inversion xx.
+Defined.
 
 (* TODO: What should be the rule? *)
 Definition apply_proof_step_unfold_abstractions {o} {ctxt}
@@ -3269,38 +3330,41 @@ Definition apply_proof_step_unfold_abstractions {o} {ctxt}
     match C with
     | pre_concl_ext T =>
 
-      (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
-       could_not_apply_unfold_abstractions_rule)
+      match all_abstractions_can_be_unfolded_dec ctxt names T with
+      | inl unf =>
 
-    (*
-      match T with
-      | oterm (Can NCequiv) [bterm [] a, bterm [] b] =>
+        let prf := pre_proof_hole ctxt (pre_rule_unfold_abstractions_hyp ctxt names T H) in
+        (pre_proof_unfold_abstractions ctxt names T H unf prf,
+         applied_unfold_abstractions_rule)
 
-        let x := compute_atmost_k_steps ctxt n a in
-        match term_dec_op x b with
-        | Some p =>
-
-          (pre_proof_cequiv_computation
-             ctxt a b H
-             (eq_rect
-                _
-                _
-                (reduces_to_of_compute_atmost_k_steps ctxt n a)
-                _
-                p),
-           applied_cequiv_computation_rule)
-
-        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
-                   could_not_apply_cequiv_computation_rule_terms_not_equal)
-        end
-
-      | t => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext t)),
-              could_not_apply_cequiv_computation_rule_not_cequiv)
+      | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                  could_not_apply_unfold_abstractions_rule_not_all_unfoldable)
       end
-*)
 
     | c => (pre_proof_hole _ (MkPreBaresequent H c),
-            could_not_apply_cequiv_computation_rule)
+            could_not_apply_unfold_abstractions_rule)
+    end
+  end.
+
+Definition apply_proof_step_axiom_equality {o} {ctxt}
+           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext
+        (oterm (Can NEquality) [bterm [] (oterm (Can NAxiom) []),
+                                bterm [] (oterm (Can NAxiom) []),
+                                bterm [] (oterm (Can NEquality) [bterm [] a,
+                                                                 bterm [] b,
+                                                                 bterm [] T])]) =>
+
+      let prf := pre_proof_hole ctxt (pre_rule_axiom_equality_hyp a b T H) in
+      (pre_proof_axiom_equality ctxt a b T H prf,
+       applied_axiom_equality_rule)
+
+    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+            could_not_apply_axiom_equality_rule)
     end
   end.
 
@@ -3322,6 +3386,7 @@ Definition apply_proof_step {o} {ctxt}
   | proof_step_integer_equality           => apply_proof_step_integer_equality s
   | proof_step_introduction t             => apply_proof_step_introduction s t
   | proof_step_lemma name                 => apply_proof_step_lemma s name
+  | proof_step_axiom_equality             => apply_proof_step_axiom_equality s
   end.
 
 Fixpoint update_pre_proof {o}
@@ -3437,6 +3502,15 @@ Fixpoint update_pre_proof {o}
     (pre_proof_cequiv_computation_atmost _ a b n H r,
      could_not_apply_update_because_no_hole_at_address)
 
+  | pre_proof_unfold_abstractions _ abs a H unf prf =>
+    match addr with
+    | 1 :: addr =>
+      let (prf', msg) := update_pre_proof prf addr step in
+      (pre_proof_unfold_abstractions _ abs a H unf prf', msg)
+    | _ => (pre_proof_unfold_abstractions _ abs a H unf prf,
+            could_not_apply_update_because_wrong_address)
+    end
+
   | pre_proof_universe_equality _ i j H ltij =>
     (pre_proof_universe_equality _ i j H ltij,
      could_not_apply_update_because_no_hole_at_address)
@@ -3479,6 +3553,15 @@ Fixpoint update_pre_proof {o}
       let (prf', msg) := update_pre_proof prf addr step in
       (pre_proof_introduction _ t C H wft covt nout prf', msg)
     | _ => (pre_proof_introduction _ t C H wft covt nout prf,
+            could_not_apply_update_because_wrong_address)
+    end
+
+  | pre_proof_axiom_equality _ a b T H prf =>
+    match addr with
+    | 1 :: addr =>
+      let (prf', msg) := update_pre_proof prf addr step in
+      (pre_proof_axiom_equality _ a b T H prf', msg)
+    | _ => (pre_proof_axiom_equality _ a b T H prf,
             could_not_apply_update_because_wrong_address)
     end
   end.
@@ -3573,6 +3656,9 @@ Fixpoint find_holes_in_pre_proof {o}
 
   | pre_proof_cequiv_computation_atmost _ a b n H r => []
 
+  | pre_proof_unfold_abstractions _ abs a H unf prf =>
+    find_holes_in_pre_proof prf (snoc addr 1)
+
   | pre_proof_universe_equality _ i j H ltij => []
 
   | pre_proof_hypothesis_equality _ x A G J => []
@@ -3589,6 +3675,9 @@ Fixpoint find_holes_in_pre_proof {o}
   | pre_proof_integer_equality _ n H => []
 
   | pre_proof_introduction _ t C H wft covt nout prf =>
+    find_holes_in_pre_proof prf (snoc addr 1)
+
+  | pre_proof_axiom_equality _ a b T H prf =>
     find_holes_in_pre_proof prf (snoc addr 1)
   end.
 
