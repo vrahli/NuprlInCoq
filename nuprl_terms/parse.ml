@@ -462,6 +462,11 @@ let find_tagged_names_in_terms (l : NT.nuprl_term list) : NT.opid list =
   | [t] -> find_tagged_names_in_term t
   | _ -> failwith ("find_tagged_names_in_terms:more than 1 term or none")
 
+let rec get_assumption_index (t : NT.nuprl_term) : string =
+  match t with
+  | NT.TERM ((("assumption-index",tag),[(n,"n")]),[]) -> n
+  | _ -> failwith ("get_assumption_index:wrong kind of term")
+
 let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
   match inf_tree with
   | INF_NODE ({sequent;stamp;parameters}, subgoals) ->
@@ -585,10 +590,37 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
+     | {stamp = _; goal = _; name = "thin"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [n] ->
+
+	     let strpos = pos2string pos in
+             let sn = get_assumption_index n in
+
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_thin_num " ^ sn ^ "),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+        )
+
 
 
      (* *********************************************************** *)
      (* These are all the rules we're missing to handle uall_wf_primitive *)
+
+     (* TODO: do something sensible for this one: *)
+     | {stamp = _; goal = _; name = "functionEquality"; subgoals = _} ->
+
+	print_string "****************\n";
+	print_terms parameters;
+	print_string "****************\n";
+
+        print_string "----missing *functionEquality*\n";
+        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      (* TODO: do something sensible for this one: *)
      | {stamp = _; goal = _; name = "reverse_direct_computation"; subgoals = _} ->
@@ -618,11 +650,6 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      (* TODO: do something sensible for this one: *)
-     | {stamp = _; goal = _; name = "functionEquality"; subgoals = _} ->
-        print_string "----missing *functionEquality*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
-
-     (* TODO: do something sensible for this one: *)
      (* This is [rule_universe_equality] in rules_uni.v *)
      | {stamp = _; goal = _; name = "universeEquality"; subgoals = _} ->
         print_string "----missing *universeEquality*\n";
@@ -636,16 +663,6 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
      (* TODO: do something sensible for this one: *)
      | {stamp = _; goal = _; name = "isectElimination"; subgoals = _} ->
         print_string "----missing *isectElimination*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
-
-     (* TODO: do something sensible for this one: *)
-     | {stamp = _; goal = _; name = "thin"; subgoals = _} ->
-
-	print_string "****************\n";
-	print_terms parameters;
-	print_string "****************\n";
-
-        print_string "----missing *thin*\n";
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      (* *********************************************************** *)

@@ -767,6 +767,12 @@ Qed.
 
 (* [7] ============ THIN ============ *)
 
+Definition rule_thin_concl {o} G  x (A : @NTerm o) J C t :=
+  mk_baresequent (snoc G (mk_hyp x A) ++ J) (mk_concl C t).
+
+Definition rule_thin_hyp {o} G J (C t : @NTerm o) :=
+  mk_baresequent (G ++ J) (mk_concl C t).
+
 (**
 
   The following rule says that one can always delete (or thin) an
@@ -788,41 +794,41 @@ Definition rule_thin {o}
            (A C t : NTerm)
            (x   : NVar) :=
   mk_rule
-    (mk_baresequent (snoc G (mk_hyp x A) ++ J) (mk_concl C t))
-    [ mk_baresequent (G ++ J) (mk_concl C t) ]
+    (rule_thin_concl G x A J C t)
+    [ rule_thin_hyp G J C t ]
     [].
 
-Lemma rule_thin_true {o} :
+Lemma rule_thin_true3 {o} :
   forall lib (G J : @barehypotheses o)
          (A C t : NTerm)
          (x   : NVar),
-    rule_true lib (rule_thin G J A C t x).
+    rule_true3 lib (rule_thin G J A C t x).
 Proof.
   intros.
-  unfold rule_thin, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_thin, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   clear cargs.
 
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
-  duplicate wfh as wfh'.
-  allapply @vswf_hypotheses_nil_implies.
-  allrw @wf_hypotheses_app.
-  destruct wfh as [ wfh wfj ].
-  allrw @wf_hypotheses_snoc.
-  destruct wfh as [ ispvg wfh ].
-  destruct wfh as [ nixg wfg ].
-  allrw @vars_hyps_app; allsimpl.
-  allrw @vars_hyps_snoc; allsimpl; GC.
-
-  generalize (hyps (mk_baresequent (G ++ J) (mk_concl C t)) (inl (eq_refl)));
-    clear hyps; intro hyp1.
+  dLin_hyp; exrepnd.
+  rename Hyp into hyp1.
   destruct hyp1 as [ ws1 hyp1 ].
   destseq; allsimpl; proof_irr; GC.
 
-  assert (covered t (nh_vars_hyps (snoc G (mk_hyp x A) ++ J))) as ws
-         by (clear hyp1; prove_seq; apply covered_snoc_app_weak; auto).
-  exists ws; GC.
+  assert (wf_csequent (rule_thin_concl G x A J C t)) as wfc.
+  {
+    clear hyp1.
+    unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl; simpl.
+    prove_seq; eauto 3 with slow.
+    - allrw @vswf_hypotheses_nil_eq; auto.
+    - eapply covered_subvars;[|eauto].
+      rw subvars_eq.
+      introv i; allrw in_app_iff; allrw in_snoc; tcsp.
+  }
+
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
 
   (* We prove some simple facts on our sequents *)
   assert (! LIn x (free_vars C)
@@ -891,15 +897,15 @@ Proof.
   rewrite substitute_hyps_snoc_sub_weak in s0; sp.
   exrepd; clear_irr.
 
-  assert (lsubstc C wfct (snoc s1a0 (x, t1) ++ s1b) pC1
-          = lsubstc C wfct (s1a0 ++ s1b) pC0) as eq1;
+  assert (lsubstc C wf1 (snoc s1a0 (x, t1) ++ s1b) pC1
+          = lsubstc C wf1 (s1a0 ++ s1b) pC0) as eq1;
     try (rewrite eq1).
 
   apply lsubstc_eq_if_csubst; sp.
   apply subset_free_vars_csub_snoc_app; sp.
 
-  assert (lsubstc C wfct (snoc s2a0 (x, t2) ++ s2b) pC2
-          = lsubstc C wfct (s2a0 ++ s2b) pC3) as eq2;
+  assert (lsubstc C wf1 (snoc s2a0 (x, t2) ++ s2b) pC2
+          = lsubstc C wf1 (s2a0 ++ s2b) pC3) as eq2;
     try (rewrite eq2).
 
   apply lsubstc_eq_if_csubst; sp.
@@ -921,6 +927,92 @@ Proof.
 
   sp.
 Qed.
+
+Lemma rule_thin_true {o} :
+  forall lib (G J : @barehypotheses o)
+         (A C t : NTerm)
+         (x   : NVar),
+    rule_true lib (rule_thin G J A C t x).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_thin_true3.
+Qed.
+
+Lemma rule_thin_true_ext_lib {o} :
+  forall lib (G J : @barehypotheses o)
+         (A C t : NTerm)
+         (x   : NVar),
+    rule_true_ext_lib lib (rule_thin G J A C t x).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_thin_true3.
+Qed.
+
+Lemma vs_wf_hypotheses_snoc_vs_implies {o} :
+  forall (H : @bhyps o) vs x,
+    ! LIn x (free_vars_hyps H)
+    -> vs_wf_hypotheses (snoc vs x) H
+    -> vs_wf_hypotheses vs H.
+Proof.
+  induction H using rev_list_indT; introv nixH vswf; auto.
+  inversion vswf as [|? ? ? isp ni vwf]; subst; ginv.
+  match goal with
+  | [ H : snoc _ _ = snoc _ _ |- _ ] => apply snoc_inj in H; repnd; subst
+  end.
+  allrw @free_vars_hyps_snoc.
+  allrw in_app_iff.
+  allrw in_snoc.
+  allrw not_over_or; repnd.
+  allrw in_remove_nvars.
+
+  constructor; tcsp.
+
+  - allrw @isprog_vars_eq; repnd; dands; auto.
+    allrw subvars_eq.
+    introv i.
+    applydup isp0 in i.
+    allrw in_app_iff; allrw in_snoc.
+    repndors; subst; tcsp.
+
+    destruct (in_deq _ deq_nvar x (vars_hyps H)) as [d|d]; tcsp.
+
+    destruct nixH; dands; auto.
+
+  - allrw in_app_iff; allrw not_over_or.
+    dands; auto.
+
+  - eapply IHlist; eauto.
+Qed.
+
+Lemma rule_thin_wf2 {o} :
+  forall (G J : @barehypotheses o) A C t x,
+    !LIn x (free_vars_hyps J)
+    -> !LIn x (free_vars C)
+    -> wf_rule2 (rule_thin G J A C t x).
+Proof.
+  introv nixJ nixC wf j.
+
+  allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq;
+    allrw <- @wf_approx_iff; repnd; auto;
+      allrw @covered_approx; repnd; auto; eauto 4 with slow.
+
+  - allrw @vswf_hypotheses_nil_eq.
+    allrw @wf_hypotheses_app; repnd.
+    allrw @wf_hypotheses_snoc; repnd.
+    dands; auto; simpl in *.
+    allrw @vars_hyps_snoc; simpl in *.
+    eapply vs_wf_hypotheses_snoc_vs_implies; eauto.
+
+  - unfold covered in *.
+    allrw subvars_eq.
+    introv i; applydup wf in i.
+    allrw in_app_iff; allrw in_snoc; repndors; subst; tcsp.
+Qed.
+
+
 
 (* begin hide *)
 

@@ -284,6 +284,12 @@ Definition pre_rule_axiom_equality_concl {o} (a b T : @NTerm o) H :=
 Definition pre_rule_axiom_equality_hyp {o} (a b T : @NTerm o) H :=
   mk_pre_bseq H (mk_pre_concl (mk_equality a b T)).
 
+Definition pre_rule_thin_concl {o} G  x (A : @NTerm o) J C :=
+  mk_pre_bseq (snoc G (mk_hyp x A) ++ J) (mk_pre_concl C).
+
+Definition pre_rule_thin_hyp {o} G J (C : @NTerm o) :=
+  mk_pre_bseq (G ++ J) (mk_pre_concl C).
+
 
 
 (* ===========================================================
@@ -567,7 +573,14 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
 | pre_proof_axiom_equality :
     forall a b T H,
       pre_proof ctxt (pre_rule_axiom_equality_hyp a b T H)
-      -> pre_proof ctxt (pre_rule_axiom_equality_concl a b T H).
+      -> pre_proof ctxt (pre_rule_axiom_equality_concl a b T H)
+| pre_proof_thin :
+    forall G J A C x,
+      NVin x (free_vars_hyps J)
+      -> NVin x (free_vars C)
+      -> pre_proof ctxt (pre_rule_thin_hyp G J C)
+      -> pre_proof ctxt (pre_rule_thin_concl G x A J C).
+
 
 Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
 | proof_from_ctxt :
@@ -693,7 +706,13 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
 | proof_axiom_equality :
     forall e a b T H,
       proof ctxt (rule_axiom_equality_hyp e a b T H)
-      -> proof ctxt (rule_axiom_equality_concl a b T H).
+      -> proof ctxt (rule_axiom_equality_concl a b T H)
+| proof_thin :
+    forall G J A C t x,
+      NVin x (free_vars_hyps J)
+      -> NVin x (free_vars C)
+      -> proof ctxt (rule_thin_hyp G J C t)
+      -> proof ctxt (rule_thin_concl G x A J C t).
 
 
 
@@ -937,6 +956,7 @@ Proof.
        | (* integer_equality          *) n H
        | (* introduction              *) t e C H wft covt nout p ih
        | (* axiom equality            *) e a b T H p ih
+       | (* thin                      *) G J A C t x nixJ nixC p ih
        ];
     allsimpl;
     allrw NVin_iff; tcsp.
@@ -1102,6 +1122,13 @@ Proof.
     apply ih; auto.
 
     apply (rule_axiom_equality_wf2 H e a b T); simpl; tcsp; auto.
+
+  - apply (rule_thin_true_ext_lib ctxt G J A C t x); simpl; tcsp.
+
+    introv xx; repndors; subst; tcsp.
+    apply ih; auto.
+
+    apply (rule_thin_wf2 G J A C t x); simpl; tcsp; auto.
 Qed.
 
 Definition wf_ext {o} (H : @bhyps o) (c : @conclusion o) :=
@@ -1306,7 +1333,9 @@ Inductive proof_step {o} :=
 | proof_step_integer_equality
 | proof_step_introduction           (t : @NTerm o)
 | proof_step_lemma                  (name : LemmaName)
-| proof_step_axiom_equality.
+| proof_step_axiom_equality
+| proof_step_thin                   (x : NVar)
+| proof_step_thin_num               (n : nat).
 
 Inductive command {o} :=
 (* add a definition at the head *)
@@ -1657,6 +1686,10 @@ Fixpoint pre_proof_cons {o}
   | pre_proof_axiom_equality _ a b T H prf =>
     let prf' := pre_proof_cons entry ni prf in
     pre_proof_axiom_equality _ a b T H prf'
+
+  | pre_proof_thin _ G J A C x nixJ nixC prf =>
+    let prf' := pre_proof_cons entry ni prf in
+    pre_proof_thin _ G J A C x nixJ nixC prf'
   end.
 
 Definition pre_proof_seq_cons {o}
@@ -1784,6 +1817,9 @@ Inductive DEBUG_MSG {o} :=
 
 | could_not_apply_axiom_equality_rule
 | applied_axiom_equality_rule
+
+| could_not_apply_thin_rule
+| applied_thin_rule
 
 | could_not_apply_update_because_wrong_address
 | could_not_apply_update_because_no_hole_at_address
@@ -2289,6 +2325,34 @@ Proof.
   exact (proof_axiom_equality _ e a b T H q).
 Defined.
 
+Definition finish_proof_thin {o}
+           (ctxt : @ProofContext o)
+           (G J : bhyps)
+           (A C : NTerm)
+           (x : NVar)
+           (nixJ : NVin x (free_vars_hyps J))
+           (nixC : NVin x (free_vars C))
+           (p : ExtractProof ctxt (pre_rule_thin_hyp G J C))
+  : ExtractProof ctxt (pre_rule_thin_concl G x A J C).
+Proof.
+  introv.
+  destruct p as [e v q].
+
+  exists e.
+  {
+    simpl in *; auto.
+    unfold valid_pre_extract in *; repnd; dands; auto.
+    allrw @nh_vars_hyps_app.
+    allrw @nh_vars_hyps_snoc; simpl in *.
+    eapply covered_subvars;[|eauto].
+    rw subvars_eq; introv i.
+    allrw in_app_iff; allrw in_snoc; tcsp.
+  }
+
+  unfold pre2baresequent; simpl.
+  exact (proof_thin _ G J A C e x nixJ nixC q).
+Defined.
+
 Fixpoint finish_pre_proof {o}
          {ctxt  : @ProofContext o}
          {s     : pre_baresequent}
@@ -2392,6 +2456,12 @@ Fixpoint finish_pre_proof {o}
   | pre_proof_axiom_equality _ a b T H prf =>
     match finish_pre_proof prf with
     | Some p => Some (finish_proof_axiom_equality ctxt a b T H p)
+    | _ => None
+    end
+
+  | pre_proof_thin _ G J A C x nixJ nixC prf =>
+    match finish_pre_proof prf with
+    | Some p => Some (finish_proof_thin ctxt G J A C x nixJ nixC p)
     | _ => None
     end
   end.
@@ -3368,6 +3438,78 @@ Definition apply_proof_step_axiom_equality {o} {ctxt}
     end
   end.
 
+Lemma pre_rule_thin_concl_as_pre_baresequent {o} :
+  forall (H : @bhyps o) G x A J C
+         (q : H = snoc G (mk_hyp x A) ++ J),
+    pre_rule_thin_concl G x A J C
+    = mk_pre_bseq H (pre_concl_ext C).
+Proof.
+  introv e1; subst; reflexivity.
+Defined.
+
+Definition apply_proof_step_thin {o} {ctxt}
+           (s : @pre_baresequent o)
+           (x : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext T =>
+
+      match find_hypothesis_eq H x with
+      | Some (dhyps G A J q) =>
+
+        match NVin_dec x (free_vars_hyps J) with
+        | inl nixJ =>
+
+          match NVin_dec x (free_vars T) with
+          | inl nixC =>
+
+            let prf := pre_proof_hole ctxt (pre_rule_thin_hyp G J T) in
+            (eq_rect
+               _
+               _
+               (pre_proof_thin ctxt G J A T x nixJ nixC prf)
+               _
+               (pre_rule_thin_concl_as_pre_baresequent H G x A J T q),
+             applied_thin_rule)
+
+          | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                      could_not_apply_thin_rule)
+          end
+
+        | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                    could_not_apply_thin_rule)
+        end
+
+      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                 could_not_apply_thin_rule)
+      end
+
+    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+            could_not_apply_thin_rule)
+    end
+  end.
+
+Fixpoint find_hypothesis_name_from_nat {o} (H : @bhyps o) (n : nat) : option NVar :=
+  match H with
+  | [] => None
+  | h :: hs =>
+    match n with
+    | 0 => None
+    | 1 =>  Some (hvar h)
+    | S m => find_hypothesis_name_from_nat hs m
+    end
+  end.
+
+Definition apply_proof_step_thin_num {o} {ctxt}
+           (s : @pre_baresequent o)
+           (n : nat) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match find_hypothesis_name_from_nat (pre_hyps s) n with
+  | Some name => apply_proof_step_thin s name
+  | None => (pre_proof_hole _ s, could_not_apply_thin_rule)
+  end.
+
 Definition apply_proof_step {o} {ctxt}
            (s    : @pre_baresequent o)
            (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
@@ -3387,6 +3529,8 @@ Definition apply_proof_step {o} {ctxt}
   | proof_step_introduction t             => apply_proof_step_introduction s t
   | proof_step_lemma name                 => apply_proof_step_lemma s name
   | proof_step_axiom_equality             => apply_proof_step_axiom_equality s
+  | proof_step_thin x                     => apply_proof_step_thin s x
+  | proof_step_thin_num n                 => apply_proof_step_thin_num s n
   end.
 
 Fixpoint update_pre_proof {o}
@@ -3564,6 +3708,15 @@ Fixpoint update_pre_proof {o}
     | _ => (pre_proof_axiom_equality _ a b T H prf,
             could_not_apply_update_because_wrong_address)
     end
+
+  | pre_proof_thin _ G J A C x nixJ nixC prf =>
+    match addr with
+    | 1 :: addr =>
+      let (prf', msg) := update_pre_proof prf addr step in
+      (pre_proof_thin _ G J A C x nixJ nixC prf', msg)
+    | _ => (pre_proof_thin _ G J A C x nixJ nixC prf,
+            could_not_apply_update_because_wrong_address)
+    end
   end.
 
 Definition update_pre_proof_seq {o} {ctxt}
@@ -3678,6 +3831,9 @@ Fixpoint find_holes_in_pre_proof {o}
     find_holes_in_pre_proof prf (snoc addr 1)
 
   | pre_proof_axiom_equality _ a b T H prf =>
+    find_holes_in_pre_proof prf (snoc addr 1)
+
+  | pre_proof_thin _ G J A C x nixJ nixC prf =>
     find_holes_in_pre_proof prf (snoc addr 1)
   end.
 
