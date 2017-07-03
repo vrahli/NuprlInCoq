@@ -467,6 +467,13 @@ let rec get_assumption_index (t : NT.nuprl_term) : string =
   | NT.TERM ((("assumption-index",tag),[(n,"n")]),[]) -> n
   | _ -> failwith ("get_assumption_index:wrong kind of term")
 
+let dest_function_term (t : NT.nuprl_term) : NT.nuprl_term * NT.variable * NT.nuprl_term =
+  match t with
+    TERM ((("function", tag), params),
+	  [B_TERM ([],  term1);
+	   B_TERM ([v], term2)]) -> (NT.rterm2term term1, v, NT.rterm2term term2)
+  | _ -> failwith "dest_function_term"
+
 let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
   match inf_tree with
   | INF_NODE ({sequent;stamp;parameters}, subgoals) ->
@@ -605,22 +612,54 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ "(proof_step_thin_num " ^ sn ^ "),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:thin:wrong number of parameters")
+        )
+
+     | {stamp = _; goal = _; name = "functionEquality"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [v] ->
+
+	     let strpos = pos2string pos in
+             let vn = NT.dest_variable 0 v in
+
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_function_equality " ^ "\"" ^ vn ^ "\"),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:functionEquality:wrong number of parameters")
+        )
+
+     | {stamp = _; goal = _; name = "applyEquality"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [arg] ->
+
+	     let strpos = pos2string pos in
+             let (a,v,b) = dest_function_term arg in
+             let tA = nuprl_term2fo abs_names a in
+             let tB = nuprl_term2fo abs_names b in
+
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_apply_equality " ^ "\"" ^ v ^ "\" " ^ tA ^ " " ^ tB ^ "),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:applyEquality:wrong number of parameters")
         )
 
 
 
      (* *********************************************************** *)
      (* These are all the rules we're missing to handle uall_wf_primitive *)
-
-     (* TODO: do something sensible for this one: *)
-     | {stamp = _; goal = _; name = "functionEquality"; subgoals = _} ->
-
-	print_string "****************\n";
-	print_terms parameters;
-	print_string "****************\n";
-
-        print_string "----missing *functionEquality*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      (* TODO: do something sensible for this one: *)
      | {stamp = _; goal = _; name = "reverse_direct_computation"; subgoals = _} ->
@@ -636,12 +675,6 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
      (* This is [rule_cumulativity] in rules_uni.v *)
      | {stamp = _; goal = _; name = "cumulativity"; subgoals = _} ->
         print_string "----missing *cumulativity*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
-
-     (* TODO: do something sensible for this one: *)
-     (* This is [rule_apply_equality] in rules_function.v *)
-     | {stamp = _; goal = _; name = "applyEquality"; subgoals = _} ->
-        print_string "----missing *applyEquality*\n";
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      (* TODO: do something sensible for this one: *)

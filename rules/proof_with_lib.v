@@ -290,6 +290,39 @@ Definition pre_rule_thin_concl {o} G  x (A : @NTerm o) J C :=
 Definition pre_rule_thin_hyp {o} G J (C : @NTerm o) :=
   mk_pre_bseq (G ++ J) (mk_pre_concl C).
 
+Definition pre_rule_function_equality_concl {o} (H : @bhyps o) a1 x1 b1 a2 x2 b2 i :=
+  mk_pre_bseq
+    H
+    (mk_pre_concl (mk_equality
+                     (mk_function a1 x1 b1)
+                     (mk_function a2 x2 b2)
+                     (mk_uni i))).
+
+Definition pre_rule_function_equality_hyp1 {o} (H : @bhyps o) a1 a2 i :=
+  mk_pre_bseq
+    H
+    (mk_pre_concl (mk_equality a1 a2 (mk_uni i))).
+
+Definition pre_rule_function_equality_hyp2 {o} (H : @bhyps o) y a1 b1 x1 b2 x2 i :=
+  mk_pre_bseq
+    (snoc H (mk_hyp y a1))
+    (mk_pre_concl (mk_equality
+                     (subst b1 x1 (mk_var y))
+                     (subst b2 x2 (mk_var y))
+                     (mk_uni i))).
+
+Definition pre_rule_apply_equality_concl {o} (H : @bhyps o) f1 t1 f2 t2 B x :=
+  mk_pre_bseq H (mk_pre_concl (mk_equality
+                                 (mk_apply f1 t1)
+                                 (mk_apply f2 t2)
+                                 (subst B x t1))).
+
+Definition pre_rule_apply_equality_hyp1 {o} (H : @bhyps o) f1 f2 A x B :=
+  mk_pre_bseq H (mk_pre_concl (mk_equality f1 f2 (mk_function A x B))).
+
+Definition pre_rule_apply_equality_hyp2 {o} (H : @bhyps o) t1 t2 A :=
+  mk_pre_bseq H (mk_pre_concl (mk_equality t1 t2 A)).
+
 
 
 (* ===========================================================
@@ -579,7 +612,20 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       NVin x (free_vars_hyps J)
       -> NVin x (free_vars C)
       -> pre_proof ctxt (pre_rule_thin_hyp G J C)
-      -> pre_proof ctxt (pre_rule_thin_concl G x A J C).
+      -> pre_proof ctxt (pre_rule_thin_concl G x A J C)
+| pre_proof_function_equality :
+    forall a1 a2 b1 b2 x1 x2 y i H,
+      NVin y (vars_hyps H)
+      -> pre_proof ctxt (pre_rule_function_equality_hyp1 H a1 a2 i)
+      -> pre_proof ctxt (pre_rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i)
+      -> pre_proof ctxt (pre_rule_function_equality_concl H a1 x1 b1 a2 x2 b2 i)
+| pre_proof_apply_equality :
+    forall A B f1 f2 t1 t2 x H,
+      wf_term A
+      -> covered A (vars_hyps H)
+      -> pre_proof ctxt (pre_rule_apply_equality_hyp1 H f1 f2 A x B)
+      -> pre_proof ctxt (pre_rule_apply_equality_hyp2 H t1 t2 A)
+      -> pre_proof ctxt (pre_rule_apply_equality_concl H f1 t1 f2 t2 B x).
 
 
 Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
@@ -712,7 +758,20 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
       NVin x (free_vars_hyps J)
       -> NVin x (free_vars C)
       -> proof ctxt (rule_thin_hyp G J C t)
-      -> proof ctxt (rule_thin_concl G x A J C t).
+      -> proof ctxt (rule_thin_concl G x A J C t)
+| proof_function_equality :
+    forall a1 a2 b1 b2 e1 e2 x1 x2 y i H,
+      NVin y (vars_hyps H)
+      -> proof ctxt (rule_function_equality_hyp1 H a1 a2 i e1)
+      -> proof ctxt (rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i e2)
+      -> proof ctxt (rule_function_equality_concl H a1 x1 b1 a2 x2 b2 i)
+| proof_apply_equality :
+    forall A B f1 f2 t1 t2 e1 e2 x H,
+      wf_term A
+      -> covered A (vars_hyps H)
+      -> proof ctxt (rule_apply_equality_hyp1 H f1 f2 A x B e1)
+      -> proof ctxt (rule_apply_equality_hyp2 H t1 t2 A e2)
+      -> proof ctxt (rule_apply_equality_concl H f1 t1 f2 t2 B x).
 
 
 
@@ -957,6 +1016,8 @@ Proof.
        | (* introduction              *) t e C H wft covt nout p ih
        | (* axiom equality            *) e a b T H p ih
        | (* thin                      *) G J A C t x nixJ nixC p ih
+       | (* function equality         *) a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH p1 ih1 p2 ih2
+       | (* apply equality            *) A B f1 f2 t1 t2 e1 e2 x H wfA covA p1 ih1 p2 ih2
        ];
     allsimpl;
     allrw NVin_iff; tcsp.
@@ -1129,6 +1190,28 @@ Proof.
     apply ih; auto.
 
     apply (rule_thin_wf2 G J A C t x); simpl; tcsp; auto.
+
+  - apply (rule_function_equality_true_ext_lib ctxt a1 a2 b1 b2 e1 e2 x1 x2 y i H); simpl; tcsp.
+
+    + unfold args_constraints; simpl; introv h; repndors; subst; tcsp.
+
+    + introv e; repndors; subst; tcsp.
+
+      * apply ih1; auto.
+        apply (rule_function_equality_wf2 a1 a2 b1 b2 e1 e2 x1 x2 y i H); simpl; tcsp.
+
+      * apply ih2; auto.
+        apply (rule_function_equality_wf2 a1 a2 b1 b2 e1 e2 x1 x2 y i H); simpl; tcsp.
+
+  - apply (rule_apply_equality_true_ext_lib ctxt A B f1 f2 t1 t2 e1 e2 x H); simpl; tcsp.
+
+    introv e; repndors; subst; tcsp.
+
+      * apply ih1; auto.
+        apply (rule_apply_equality_wf2 A B f1 f2 t1 t2 e1 e2 x H); simpl; tcsp.
+
+      * apply ih2; auto.
+        apply (rule_apply_equality_wf2 A B f1 f2 t1 t2 e1 e2 x H); simpl; tcsp.
 Qed.
 
 Definition wf_ext {o} (H : @bhyps o) (c : @conclusion o) :=
@@ -1320,6 +1403,7 @@ Definition address := list nat.
 
 Inductive proof_step {o} :=
 | proof_step_isect_equality         (y : NVar)
+| proof_step_function_equality      (y : NVar)
 | proof_step_isect_member_formation (z : NVar) (i : nat)
 | proof_step_hypothesis             (x : NVar)
 | proof_step_cut                    (x : NVar) (B : @NTerm o)
@@ -1335,7 +1419,8 @@ Inductive proof_step {o} :=
 | proof_step_lemma                  (name : LemmaName)
 | proof_step_axiom_equality
 | proof_step_thin                   (x : NVar)
-| proof_step_thin_num               (n : nat).
+| proof_step_thin_num               (n : nat)
+| proof_step_apply_equality         (x : NVar) (A B : @NTerm o).
 
 Inductive command {o} :=
 (* add a definition at the head *)
@@ -1690,6 +1775,16 @@ Fixpoint pre_proof_cons {o}
   | pre_proof_thin _ G J A C x nixJ nixC prf =>
     let prf' := pre_proof_cons entry ni prf in
     pre_proof_thin _ G J A C x nixJ nixC prf'
+
+  | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    let prf1' := pre_proof_cons entry ni prf1 in
+    let prf2' := pre_proof_cons entry ni prf2 in
+    pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2'
+
+  | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+    let prf1' := pre_proof_cons entry ni prf1 in
+    let prf2' := pre_proof_cons entry ni prf2 in
+    pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1' prf2'
   end.
 
 Definition pre_proof_seq_cons {o}
@@ -1762,6 +1857,12 @@ Inductive DEBUG_MSG {o} :=
 | could_not_apply_isect_eq_rule
 | applied_isect_eq_rule
 
+| could_not_apply_function_equality_rule_not_functions
+| could_not_apply_function_equality_rule_type_not_universe
+| could_not_apply_function_equality_rule_not_equality
+| could_not_apply_function_equality_rule
+| applied_function_equality_rule
+
 | could_not_apply_universe_eq_rule_not_universes
 | could_not_apply_universe_eq_rule_type_not_universe
 | could_not_apply_universe_eq_rule_not_equality
@@ -1799,6 +1900,9 @@ Inductive DEBUG_MSG {o} :=
 
 | could_not_apply_lemma_rule
 | applied_lemma_rule
+
+| could_not_apply_apply_equality_rule
+| applied_apply_equality_rule
 
 | could_not_apply_unhide_equality_rule
 | applied_unhide_equality_rule
@@ -2353,6 +2457,48 @@ Proof.
   exact (proof_thin _ G J A C e x nixJ nixC q).
 Defined.
 
+Definition finish_proof_function_equality {o}
+           (ctxt : @ProofContext o)
+           (a1 a2 b1 b2 : NTerm)
+           (x1 x2 y : NVar)
+           (i : nat)
+           (H : bhyps)
+           (ni : NVin y (vars_hyps H))
+           (p1 : ExtractProof ctxt (pre_rule_function_equality_hyp1 H a1 a2 i))
+           (p2 : ExtractProof ctxt (pre_rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i))
+  : ExtractProof ctxt (pre_rule_function_equality_concl H a1 x1 b1 a2 x2 b2 i).
+Proof.
+  introv.
+  destruct p1 as [e1 v1 q1].
+  destruct p2 as [e2 v2 q2].
+  unfold pre2baresequent in *; simpl in *.
+  exists (@mk_axiom o).
+  { apply valid_pre_extract_axiom. }
+  unfold pre2baresequent; simpl.
+  exact (proof_function_equality _ a1 a2 b1 b2 e1 e2 x1 x2 y i H ni q1 q2).
+Defined.
+
+Definition finish_proof_apply_equality {o}
+           (ctxt : @ProofContext o)
+           (A B f1 f2 t1 t2 : NTerm)
+           (x : NVar)
+           (H : bhyps)
+           (wfA : wf_term A)
+           (covA : covered A (vars_hyps H))
+           (p1 : ExtractProof ctxt (pre_rule_apply_equality_hyp1 H f1 f2 A x B))
+           (p2 : ExtractProof ctxt (pre_rule_apply_equality_hyp2 H t1 t2 A))
+  : ExtractProof ctxt (pre_rule_apply_equality_concl H f1 t1 f2 t2 B x).
+Proof.
+  introv.
+  destruct p1 as [e1 v1 q1].
+  destruct p2 as [e2 v2 q2].
+  unfold pre2baresequent in *; simpl in *.
+  exists (@mk_axiom o).
+  { apply valid_pre_extract_axiom. }
+  unfold pre2baresequent; simpl.
+  exact (proof_apply_equality _ A B f1 f2 t1 t2 e1 e2 x H wfA covA q1 q2).
+Defined.
+
 Fixpoint finish_pre_proof {o}
          {ctxt  : @ProofContext o}
          {s     : pre_baresequent}
@@ -2463,6 +2609,20 @@ Fixpoint finish_pre_proof {o}
     match finish_pre_proof prf with
     | Some p => Some (finish_proof_thin ctxt G J A C x nixJ nixC p)
     | _ => None
+    end
+
+  | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    match finish_pre_proof prf1, finish_pre_proof prf2 with
+    | Some p1, Some p2 =>
+      Some (finish_proof_function_equality ctxt a1 a2 b1 b2 x1 x2 y i H niyH p1 p2)
+    | _, _ => None
+    end
+
+  | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+    match finish_pre_proof prf1, finish_pre_proof prf2 with
+    | Some p1, Some p2 =>
+      Some (finish_proof_apply_equality ctxt A B f1 f2 t1 t2 x H wfA covA p1 p2)
+    | _, _ => None
     end
   end.
 
@@ -3510,6 +3670,95 @@ Definition apply_proof_step_thin_num {o} {ctxt}
   | None => (pre_proof_hole _ s, could_not_apply_thin_rule)
   end.
 
+Definition apply_proof_step_function_equality {o} {ctxt}
+           (s : @pre_baresequent o)
+           (y : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match NVin_dec y (vars_hyps H) with
+    | inl p =>
+
+      match C return pre_proof ctxt (MkPreBaresequent H C) * DEBUG_MSG with
+      | pre_concl_ext
+          (oterm (Can NEquality)
+                 [bterm [] (oterm (Can NFunction) [bterm [] a1, bterm [x1] b1]),
+                  bterm [] (oterm (Can NFunction) [bterm [] a2, bterm [x2] b2]),
+                  bterm [] (oterm (Can (NUni i)) [])]) =>
+
+        let prf1 := pre_proof_hole ctxt (pre_rule_function_equality_hyp1 H a1 a2 i) in
+        let prf2 := pre_proof_hole ctxt (pre_rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i) in
+        (pre_proof_function_equality ctxt a1 a2 b1 b2 x1 x2 y i H p prf1 prf2,
+         applied_function_equality_rule)
+
+      | c => (pre_proof_hole _ (MkPreBaresequent H c),
+              could_not_apply_function_equality_rule)
+      end
+
+    | _ => (pre_proof_hole _ (MkPreBaresequent H C),
+            could_not_apply_function_equality_rule)
+    end
+  end.
+
+Lemma pre_rule_apply_equality_as_pre_baresequent {o} :
+  forall (H : @bhyps o) B f1 f2 t1 t2 x U
+         (p : subst B x t1 = U),
+    pre_rule_apply_equality_concl H f1 t1 f2 t2 B x
+    = mk_pre_bseq H (pre_concl_ext (mk_equality (mk_apply f1 t1) (mk_apply f2 t2) U)).
+Proof.
+  introv p; subst; reflexivity.
+Defined.
+
+Definition apply_proof_step_apply_equality {o} {ctxt}
+           (s : @pre_baresequent o)
+           (x : NVar)
+           (A B : NTerm) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext
+          (oterm (Can NEquality)
+                 [bterm [] (oterm (NCan NApply) [bterm [] f1, bterm [] t1]),
+                  bterm [] (oterm (NCan NApply) [bterm [] f2, bterm [] t2]),
+                  bterm [] U]) =>
+
+      match term_dec_op (subst B x t1) U with
+      | Some p =>
+
+        match wf_term_dec_op A with
+        | Some wfA =>
+
+          match covered_decidable A (vars_hyps H) with
+          | inl covA =>
+
+            let prf1 := pre_proof_hole ctxt (pre_rule_apply_equality_hyp1 H f1 f2 A x B) in
+            let prf2 := pre_proof_hole ctxt (pre_rule_apply_equality_hyp2 H t1 t2 A) in
+            (eq_rect
+               _
+               _
+               (pre_proof_apply_equality ctxt A B f1 f2 t1 t2 x H wfA covA prf1 prf2)
+               _
+               (pre_rule_apply_equality_as_pre_baresequent H B f1 f2 t1 t2 x U p),
+             applied_apply_equality_rule)
+
+          | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_apply f1 t1) (mk_apply f2 t2) U))),
+                      could_not_apply_apply_equality_rule)
+          end
+
+        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_apply f1 t1) (mk_apply f2 t2) U))),
+                   could_not_apply_apply_equality_rule)
+        end
+
+      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_apply f1 t1) (mk_apply f2 t2) U))),
+                 could_not_apply_apply_equality_rule)
+      end
+
+    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+            could_not_apply_apply_equality_rule)
+    end
+  end.
+
 Definition apply_proof_step {o} {ctxt}
            (s    : @pre_baresequent o)
            (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
@@ -3531,6 +3780,8 @@ Definition apply_proof_step {o} {ctxt}
   | proof_step_axiom_equality             => apply_proof_step_axiom_equality s
   | proof_step_thin x                     => apply_proof_step_thin s x
   | proof_step_thin_num n                 => apply_proof_step_thin_num s n
+  | proof_step_function_equality y        => apply_proof_step_function_equality s y
+  | proof_step_apply_equality x A B       => apply_proof_step_apply_equality s x A B
   end.
 
 Fixpoint update_pre_proof {o}
@@ -3717,6 +3968,30 @@ Fixpoint update_pre_proof {o}
     | _ => (pre_proof_thin _ G J A C x nixJ nixC prf,
             could_not_apply_update_because_wrong_address)
     end
+
+  | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    match addr with
+    | 1 :: addr =>
+      let (prf1', msg) := update_pre_proof prf1 addr step in
+      (pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2, msg)
+    | 2 :: addr =>
+      let (prf2', msg) := update_pre_proof prf2 addr step in
+      (pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2', msg)
+    | _ => (pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2,
+            could_not_apply_update_because_wrong_address)
+    end
+
+  | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+    match addr with
+    | 1 :: addr =>
+      let (prf1', msg) := update_pre_proof prf1 addr step in
+      (pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1' prf2, msg)
+    | 2 :: addr =>
+      let (prf2', msg) := update_pre_proof prf2 addr step in
+      (pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2', msg)
+    | _ => (pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2,
+            could_not_apply_update_because_wrong_address)
+    end
   end.
 
 Definition update_pre_proof_seq {o} {ctxt}
@@ -3835,6 +4110,16 @@ Fixpoint find_holes_in_pre_proof {o}
 
   | pre_proof_thin _ G J A C x nixJ nixC prf =>
     find_holes_in_pre_proof prf (snoc addr 1)
+
+  | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
+    let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
+    holes1 ++ holes2
+
+  | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+    let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
+    let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
+    holes1 ++ holes2
   end.
 
 Definition find_holes_in_pre_proof_seq {o} {ctxt}
