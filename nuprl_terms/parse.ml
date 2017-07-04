@@ -656,10 +656,41 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
           | _ -> failwith ("print_proof_tree:applyEquality:wrong number of parameters")
         )
 
+     | {stamp = _; goal = _; name = "isectElimination"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [n;a;v;w] ->
+
+	     let strpos = pos2string pos in
+             let sn = get_assumption_index n in
+             let tA = nuprl_term2fo abs_names a in
+             let vn = NT.dest_variable 0 v in
+             let wn = NT.dest_variable 0 w in
+
+             (* NOTE: the rule we've proved doesn't generate exactly the same hypotheses:
+                 instead of introducing a new variable that stands for the eliminated term [t],
+                 we postulate [t in T] (instead of introducing [v : T, w : v = t in T]) *)
+
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_isect_elimination " ^ sn ^ " " ^ tA ^ "\"" ^ wn ^ "\"),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:isectElimination:wrong number of parameters")
+        )
+
 
 
      (* *********************************************************** *)
      (* These are all the rules we're missing to handle uall_wf_primitive *)
+
+     (* TODO: do something sensible for this one: *)
+     | {stamp = _; goal = _; name = "isect_memberEquality"; subgoals = _} ->
+        print_string "----missing *isect_memberEquality*\n";
+        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      (* TODO: do something sensible for this one: *)
      | {stamp = _; goal = _; name = "reverse_direct_computation"; subgoals = _} ->
@@ -686,16 +717,6 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
      (* This is [rule_universe_equality] in rules_uni.v *)
      | {stamp = _; goal = _; name = "universeEquality"; subgoals = _} ->
         print_string "----missing *universeEquality*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
-
-     (* TODO: do something sensible for this one: *)
-     | {stamp = _; goal = _; name = "isect_memberEquality"; subgoals = _} ->
-        print_string "----missing *isect_memberEquality*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
-
-     (* TODO: do something sensible for this one: *)
-     | {stamp = _; goal = _; name = "isectElimination"; subgoals = _} ->
-        print_string "----missing *isectElimination*\n";
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      (* *********************************************************** *)
