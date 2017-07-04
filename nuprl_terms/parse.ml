@@ -668,14 +668,10 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
              let vn = NT.dest_variable 0 v in
              let wn = NT.dest_variable 0 w in
 
-             (* NOTE: the rule we've proved doesn't generate exactly the same hypotheses:
-                 instead of introducing a new variable that stands for the eliminated term [t],
-                 we postulate [t in T] (instead of introducing [v : T, w : v = t in T]) *)
-
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_isect_elimination " ^ sn ^ " " ^ tA ^ "\"" ^ wn ^ "\"),\n");
+	     output_string out ("      " ^ "(proof_step_isect_elimination2 " ^ sn ^ " " ^ tA ^ "\"" ^ vn ^ "\" \"" ^ wn ^ "\"),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -689,6 +685,11 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 
      (* TODO: do something sensible for this one: *)
      | {stamp = _; goal = _; name = "isect_memberEquality"; subgoals = _} ->
+
+	print_string "****************\n";
+	print_terms parameters;
+	print_string "****************\n";
+
         print_string "----missing *isect_memberEquality*\n";
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 

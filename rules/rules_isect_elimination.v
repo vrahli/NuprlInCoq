@@ -43,6 +43,8 @@ Require Export rules_tyfam2.
 Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
 Require Export lsubstc_weak.
+Require Export rules_elimination.
+
 
 Hint Rewrite @nh_vars_hyps_app : slow.
 Hint Rewrite @nh_vars_hyps_snoc : slow.
@@ -496,4 +498,270 @@ Proof.
     }
 
   - apply covered_snoc_weak; auto.
+Qed.
+
+
+
+(*
+
+<<
+   H, f : isect(A;x.B[x]), J |- C ext e[z\axiom][y\f]
+
+     By isectElimination s z
+
+     H, f : isect(A;x.B[x]), J |- a in A
+     H, f : isect(A;x.B[x]), J, y : B[a], z : y = f in B[a] |- C ext e
+>>
+
+ *)
+
+
+Definition rule_isect_elimination2_hyp2 {o}
+           (A : @NTerm o) B C a e f x y z H J :=
+  mk_baresequent
+    (snoc (snoc (snoc H (mk_hyp f (mk_isect A x B)) ++ J)
+                (mk_hyp y (subst B x a)))
+          (mk_hyp z (mk_equality (mk_var y) (mk_var f) (subst B x a))))
+    (mk_concl C e).
+
+Definition rule_isect_elimination2_concl {o}
+           (A : @NTerm o) B C e f x y z H J :=
+  mk_baresequent
+    (snoc H (mk_hyp f (mk_isect A x B)) ++ J)
+    (mk_concl C (subst (subst e y (mk_var f)) z mk_axiom)).
+
+Definition rule_isect_elimination2 {p}
+           (A B C a e : NTerm) ea
+           (f x y z : NVar)
+           (H J : @barehypotheses p) :=
+  mk_rule
+    (rule_isect_elimination2_concl A B C e f x y z H J)
+    [
+      rule_isect_elimination_hyp1 A B a ea f x H J,
+      rule_isect_elimination2_hyp2 A B C a e f x y z H J
+    ]
+    [(*sarg_term a, sarg_var z*)].
+
+Lemma rule_isect_elimination2_true_ext_lib {o} :
+  forall lib (A B C a e ea : @NTerm o) f x y z H J,
+    rule_true_ext_lib lib (rule_isect_elimination2 A B C a e ea f x y z H J).
+Proof.
+  introv wf args imp.
+  apply (rule_isect_elimination_true_ext_lib lib A B C a (subst e y (mk_var f)) ea); auto.
+
+  introv xx; simpl in xx; repndors; subst; tcsp.
+
+  - apply imp; simpl; tcsp.
+
+  - apply rule_elimination_true_ext_lib; simpl in *; auto.
+
+    + allrw @nh_vars_hyps_app.
+      allrw @nh_vars_hyps_snoc; simpl.
+      apply covered_var.
+      rw in_app_iff; rw in_snoc; tcsp.
+
+    + simpl in *.
+      revert wf.
+      unfold rule_isect_elimination2_concl.
+      unfold rule_elimination_concl.
+
+      clear args.
+
+      dLin_hyp; exrepnd.
+      rename Hyp into hyp1.
+      rename Hyp0 into hyp2.
+      destruct hyp1 as [ ws1 hyp1 ].
+      destruct hyp2 as [ ws2 hyp2 ].
+      destseq; allsimpl; proof_irr; GC.
+
+      clear hyp1 hyp2.
+
+      introv wf.
+      unfold wf_bseq, closed_type_baresequent, closed_extract_baresequent in *; simpl in *; repnd.
+      destseq; allsimpl.
+      dands; auto.
+
+      * apply vswf_hypotheses_nil_eq.
+        allrw @wf_hypotheses_snoc.
+        allrw @wf_hypotheses_app.
+        allrw @wf_hypotheses_snoc.
+        repnd; simpl in *.
+        dands; auto.
+
+        {
+          allrw @vars_hyps_app.
+          allrw @vars_hyps_snoc.
+          simpl in *.
+          allrw <- @isprog_vars_isect_iff; repnd.
+          allrw @isprog_vars_member; dands.
+
+          - apply isprog_vars_var_if.
+            apply in_app_iff; rw in_snoc; tcsp.
+
+          - apply isprog_vars_subst2; eauto 3 with slow.
+
+            + allrw @covered_member; repnd; tcsp.
+              allrw @wf_member_iff2; repnd.
+              apply isprog_vars_iff_covered; dands; auto.
+
+            + eapply isprog_vars_subvars;[|eauto].
+              rw subvars_eq; introv i; simpl in *.
+              allrw in_app_iff; allrw in_snoc; tcsp.
+        }
+
+        {
+          introv i.
+          allrw @vars_hyps_app.
+          allrw @vars_hyps_snoc.
+          allrw @vars_hyps_app.
+          allrw @vars_hyps_snoc.
+          simpl in *.
+          destruct wfh2.
+          allrw in_app_iff.
+          allrw in_snoc.
+          allrw in_app_iff.
+          allrw in_snoc.
+          repndors; subst; tcsp.
+        }
+
+      * unfold closed_type; simpl.
+        eapply covered_subvars;[|exact wf].
+        rw subvars_eq.
+        allrw @vars_hyps_app.
+        allrw @vars_hyps_snoc.
+        allrw @vars_hyps_app.
+        allrw @vars_hyps_snoc.
+        simpl.
+        introv i.
+        allrw in_app_iff.
+        allrw in_snoc.
+        allrw in_app_iff.
+        allrw in_snoc.
+        repndors; subst; tcsp.
+Qed.
+
+Lemma rule_isect_elimination2_wf2 {o} :
+  forall (A B C a e : @NTerm o) ea f x y z H J,
+    wf_term a
+    -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
+    -> !LIn z (vars_hyps H)
+    -> !LIn z (vars_hyps J)
+    -> !LIn y (vars_hyps H)
+    -> !LIn y (vars_hyps J)
+    -> z <> f
+    -> z <> y
+    -> y <> f
+    -> wf_rule2 (rule_isect_elimination2 A B C a e ea f x y z H J).
+Proof.
+  introv wa cova nizH nizJ niyH niyJ dzf dzy dyf; introv wf j.
+  allsimpl; repndors; subst; tcsp;
+  allunfold @wf_bseq; repnd; allsimpl; wfseq.
+
+  - allrw @vswf_hypotheses_nil_eq.
+    allrw @wf_hypotheses_app; repnd.
+    allrw @wf_hypotheses_snoc; repnd.
+    allapply @isprog_vars_implies_wf.
+    allrw <- @wf_function_iff; tcsp.
+
+  - allrw @vswf_hypotheses_nil_eq.
+    allrw @wf_hypotheses_app; repnd.
+    allrw @wf_hypotheses_snoc; repnd.
+    allapply @isprog_vars_implies_covered.
+    allrw @covered_function; repnd.
+    apply covered_snoc_app_weak.
+    apply covered_app_weak_l; auto.
+
+  - allrw @vswf_hypotheses_nil_eq.
+    rw @wf_hypotheses_snoc; simpl; dands; tcsp.
+
+    {
+      apply isprog_vars_equality; dands.
+
+      - apply isprog_vars_var_iff.
+        rw @vars_hyps_snoc; simpl.
+        rw @vars_hyps_app.
+        rw @vars_hyps_snoc; simpl.
+        rw in_snoc.
+        rw in_app_iff.
+        rw in_snoc; tcsp.
+
+      - apply isprog_vars_var_iff.
+        rw @vars_hyps_snoc; simpl.
+        rw @vars_hyps_app.
+        rw @vars_hyps_snoc; simpl.
+        rw in_snoc.
+        rw in_app_iff.
+        rw in_snoc; tcsp.
+
+      - apply isprog_vars_subst2; auto.
+
+        + allrw @wf_hypotheses_app; repnd.
+          allrw @wf_hypotheses_snoc; repnd.
+          allsimpl.
+          allapply @isprog_vars_implies_wf.
+          allrw <- @wf_function_iff; tcsp.
+
+        + rw @isprog_vars_iff_covered; dands; auto.
+          rw @vars_hyps_snoc; simpl; auto.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl; auto.
+          apply covered_snoc_weak; auto.
+
+        + allrw @wf_hypotheses_app; repnd.
+          allrw @wf_hypotheses_snoc; repnd.
+          allsimpl.
+          allrw <- @isprog_vars_function_iff; repnd.
+          allrw @vars_hyps_app.
+          allrw @vars_hyps_snoc; simpl.
+          allrw @vars_hyps_app.
+          allrw @vars_hyps_snoc; simpl.
+          eapply isprog_vars_subvars;[|eauto].
+          rw subvars_eq; introv i; allsimpl.
+          allrw in_app_iff; allrw in_snoc; allrw in_app_iff; allrw in_snoc; tcsp.
+    }
+
+    {
+      intro i.
+      allrw @vars_hyps_app.
+      allrw @vars_hyps_snoc; allsimpl.
+      allrw @vars_hyps_app.
+      allrw @vars_hyps_snoc; allsimpl.
+      allrw in_app_iff; allrw in_snoc.
+      allrw in_app_iff; allrw in_snoc.
+      repndors; tcsp.
+    }
+
+    {
+      apply wf_hypotheses_snoc; simpl; dands; auto.
+
+      - apply isprog_vars_subst2; auto.
+
+        + allrw @wf_hypotheses_app; repnd.
+          allrw @wf_hypotheses_snoc; repnd.
+          allsimpl.
+          allapply @isprog_vars_implies_wf.
+          allrw <- @wf_function_iff; tcsp.
+
+        + rw @isprog_vars_iff_covered; dands; auto.
+          rw @vars_hyps_app.
+          rw @vars_hyps_snoc; simpl; auto.
+
+        + allrw @wf_hypotheses_app; repnd.
+          allrw @wf_hypotheses_snoc; repnd.
+          allsimpl.
+          allrw <- @isprog_vars_function_iff; repnd.
+          allrw @vars_hyps_app.
+          allrw @vars_hyps_snoc; simpl.
+          allrw @vars_hyps_app.
+          allrw @vars_hyps_snoc; simpl.
+          eapply isprog_vars_subvars;[|eauto].
+          rw subvars_eq; introv i; allsimpl.
+          allrw in_app_iff; allrw in_snoc; allrw in_app_iff; allrw in_snoc; tcsp.
+
+      - allrw @vars_hyps_app; allrw @vars_hyps_snoc; simpl.
+        rw in_app_iff; rw in_snoc; tcsp.
+    }
+
+  - apply covered_snoc_weak; auto.
+    apply covered_snoc_weak; auto.
 Qed.

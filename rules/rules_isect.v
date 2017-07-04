@@ -32,4 +32,5 @@
 
 Require Export rules_isect_equality.
 Require Export rules_isect_member_formation.
+Require Export rules_isect_member_equality.
 Require Export rules_isect_elimination.

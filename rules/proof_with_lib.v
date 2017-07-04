@@ -342,6 +342,20 @@ Definition pre_rule_isect_elimination_hyp2 {o}
           (mk_hyp z (mk_member (mk_var f) (subst B x a))))
     (mk_pre_concl C).
 
+Definition pre_rule_isect_elimination2_hyp2 {o}
+           (A : @NTerm o) B C a f x y z H J :=
+  mk_pre_bseq
+    (snoc (snoc (snoc H (mk_hyp f (mk_isect A x B)) ++ J)
+                (mk_hyp y (subst B x a)))
+          (mk_hyp z (mk_equality (mk_var y) (mk_var f) (subst B x a))))
+    (mk_pre_concl C).
+
+Definition pre_rule_isect_elimination2_concl {o}
+           (A : @NTerm o) B C f x H J :=
+  mk_pre_bseq
+    (snoc H (mk_hyp f (mk_isect A x B)) ++ J)
+    (mk_pre_concl C).
+
 
 
 
@@ -655,7 +669,21 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       -> z <> f
       -> pre_proof ctxt (pre_rule_isect_elimination_hyp1 A B a f x H J)
       -> pre_proof ctxt (pre_rule_isect_elimination_hyp2 A B C a f x z H J)
-      -> pre_proof ctxt (pre_rule_isect_elimination_concl A B C f x H J).
+      -> pre_proof ctxt (pre_rule_isect_elimination_concl A B C f x H J)
+| pre_proof_isect_elimination2 :
+    forall A B C a f x y z H J,
+      wf_term a
+      -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
+      -> NVin z (vars_hyps H)
+      -> NVin z (vars_hyps J)
+      -> NVin y (vars_hyps H)
+      -> NVin y (vars_hyps J)
+      -> z <> f
+      -> z <> y
+      -> y <> f
+      -> pre_proof ctxt (pre_rule_isect_elimination_hyp1 A B a f x H J)
+      -> pre_proof ctxt (pre_rule_isect_elimination2_hyp2 A B C a f x y z H J)
+      -> pre_proof ctxt (pre_rule_isect_elimination2_concl A B C f x H J).
 
 
 Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
@@ -811,7 +839,21 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
       -> z <> f
       -> proof ctxt (rule_isect_elimination_hyp1 A B a ea f x H J)
       -> proof ctxt (rule_isect_elimination_hyp2 A B C a e f x z H J)
-      -> proof ctxt (rule_isect_elimination_concl A B C e f x z H J).
+      -> proof ctxt (rule_isect_elimination_concl A B C e f x z H J)
+| proof_isect_elimination2 :
+    forall A B C a e ea f x y z H J,
+      wf_term a
+      -> covered a (snoc (vars_hyps H) f ++ vars_hyps J)
+      -> NVin z (vars_hyps H)
+      -> NVin z (vars_hyps J)
+      -> NVin y (vars_hyps H)
+      -> NVin y (vars_hyps J)
+      -> z <> f
+      -> z <> y
+      -> y <> f
+      -> proof ctxt (rule_isect_elimination_hyp1 A B a ea f x H J)
+      -> proof ctxt (rule_isect_elimination2_hyp2 A B C a e f x y z H J)
+      -> proof ctxt (rule_isect_elimination2_concl A B C e f x y z H J).
 
 
 
@@ -1059,6 +1101,7 @@ Proof.
        | (* function equality         *) a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH p1 ih1 p2 ih2
        | (* apply equality            *) A B f1 f2 t1 t2 e1 e2 x H wfA covA p1 ih1 p2 ih2
        | (* isect elimination         *) A B C a e ea f x z H J wfa cova nizH nizJ dzf p1 ih1 p2 ih2
+       | (* isect elimination2        *) A B C a e ea f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf p1 ih1 p2 ih2
        ];
     allsimpl;
     allrw NVin_iff; tcsp.
@@ -1263,6 +1306,16 @@ Proof.
 
       * apply ih2; auto.
         apply (rule_isect_elimination_wf2 A B C a e ea f x z H J); simpl; tcsp.
+
+  - apply (rule_isect_elimination2_true_ext_lib ctxt A B C a e ea f x y z H J); simpl; tcsp.
+
+    introv xx; repndors; subst; tcsp.
+
+      * apply ih1; auto.
+        apply (rule_isect_elimination2_wf2 A B C a e ea f x y z H J); simpl; tcsp.
+
+      * apply ih2; auto.
+        apply (rule_isect_elimination2_wf2 A B C a e ea f x y z H J); simpl; tcsp.
 Qed.
 
 Definition wf_ext {o} (H : @bhyps o) (c : @conclusion o) :=
@@ -1472,7 +1525,8 @@ Inductive proof_step {o} :=
 | proof_step_thin                   (x : NVar)
 | proof_step_thin_num               (n : nat)
 | proof_step_apply_equality         (x : NVar) (A B : @NTerm o)
-| proof_step_isect_elimination      (n : nat) (a : @NTerm o) (x : NVar).
+| proof_step_isect_elimination      (n : nat) (a : @NTerm o) (x : NVar)
+| proof_step_isect_elimination2     (n : nat) (a : @NTerm o) (x y : NVar).
 
 Inductive command {o} :=
 (* add a definition at the head *)
@@ -1842,6 +1896,11 @@ Fixpoint pre_proof_cons {o}
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
     pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1' prf2'
+
+  | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+    let prf1' := pre_proof_cons entry ni prf1 in
+    let prf2' := pre_proof_cons entry ni prf2 in
+    pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1' prf2'
   end.
 
 Definition pre_proof_seq_cons {o}
@@ -1963,6 +2022,9 @@ Inductive DEBUG_MSG {o} :=
 
 | could_not_apply_isect_elimination_rule
 | applied_isect_elimination_rule
+
+| could_not_apply_isect_elimination2_rule
+| applied_isect_elimination2_rule
 
 | could_not_apply_unhide_equality_rule
 | applied_unhide_equality_rule
@@ -2607,6 +2669,67 @@ Proof.
   exact (proof_isect_elimination _ A B C a e2 e1 f x z H J wfa cova nizH nizJ dzf q1 q2).
 Defined.
 
+Definition finish_proof_isect_elimination2 {o}
+           (ctxt : @ProofContext o)
+           (A B C a : NTerm)
+           (f x y z : NVar)
+           (H J : bhyps)
+           (wfa : wf_term a)
+           (cova : covered a (snoc (vars_hyps H) f ++ vars_hyps J))
+           (nizH : NVin z (vars_hyps H))
+           (nizJ : NVin z (vars_hyps J))
+           (niyH : NVin y (vars_hyps H))
+           (niyJ : NVin y (vars_hyps J))
+           (dzf : z <> f)
+           (dzy : z <> y)
+           (dyf : y <> f)
+           (p1 : ExtractProof ctxt (pre_rule_isect_elimination_hyp1 A B a f x H J))
+           (p2 : ExtractProof ctxt (pre_rule_isect_elimination2_hyp2 A B C a f x y z H J))
+  : ExtractProof ctxt (pre_rule_isect_elimination2_concl A B C f x H J).
+Proof.
+  introv.
+  destruct p1 as [e1 v1 q1].
+  destruct p2 as [e2 v2 q2].
+  unfold pre2baresequent in *; simpl in *.
+
+  exists (subst (subst e2 y (mk_var f)) z mk_axiom).
+  {
+    unfold valid_pre_extract in *; simpl in *; repnd.
+    dands; eauto 3 with slow.
+
+    - apply wf_term_subst; eauto 2 with slow.
+      apply wf_term_subst; eauto 2 with slow.
+
+    - apply covered_subst; simpl; auto.
+      allrw @nh_vars_hyps_snoc; simpl in *.
+      allrw @nh_vars_hyps_app; simpl in *.
+      allrw @nh_vars_hyps_snoc; simpl in *.
+      apply covered_subst; simpl; auto;
+        [|apply covered_var; simpl; rw in_app_iff; rw in_snoc; tcsp].
+
+      eapply covered_subvars;[|eauto].
+      rw subvars_eq.
+      introv i; simpl in *.
+      allrw in_app_iff.
+      allrw in_snoc.
+      allrw in_app_iff.
+      allrw in_snoc.
+      tcsp.
+
+    - unfold noutokens in *.
+      allrw <- null_iff_nil.
+      introv i.
+      apply get_utokens_subst in i; simpl in i.
+      apply in_app_iff in i; boolvar; simpl in *; repndors; tcsp;
+        apply get_utokens_subst in i; simpl in i;
+          apply in_app_iff in i; boolvar; simpl in *; repndors; tcsp;
+            try (apply v2 in i; tcsp).
+  }
+
+  unfold pre2baresequent; simpl.
+  exact (proof_isect_elimination2 _ A B C a e2 e1 f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf q1 q2).
+Defined.
+
 Fixpoint finish_pre_proof {o}
          {ctxt  : @ProofContext o}
          {s     : pre_baresequent}
@@ -2737,6 +2860,13 @@ Fixpoint finish_pre_proof {o}
     match finish_pre_proof prf1, finish_pre_proof prf2 with
     | Some p1, Some p2 =>
       Some (finish_proof_isect_elimination ctxt A B C a f x z H J wfa cova nizH nizJ dzf p1 p2)
+    | _, _ => None
+    end
+
+  | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+    match finish_pre_proof prf1, finish_pre_proof prf2 with
+    | Some p1, Some p2 =>
+      Some (finish_proof_isect_elimination2 ctxt A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf p1 p2)
     | _, _ => None
     end
   end.
@@ -3960,6 +4090,120 @@ Definition apply_proof_step_isect_elimination_num {o} {ctxt}
   | None => (pre_proof_hole _ s, could_not_apply_isect_elimination_rule)
   end.
 
+Lemma pre_rule_isect_elimination2_as_pre_baresequent {o} :
+  forall (H : @bhyps o) A B C f x G J
+         (q : H = snoc G (mk_hyp f (mk_isect A x B)) ++ J),
+    pre_rule_isect_elimination2_concl A B C f x G J
+    = mk_pre_bseq H (pre_concl_ext C).
+Proof.
+  introv p; subst; reflexivity.
+Defined.
+
+Definition apply_proof_step_isect_elimination2 {o} {ctxt}
+           (s : @pre_baresequent o)
+           (a : NTerm)
+           (f y z : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext T =>
+
+      match find_hypothesis_eq H f with
+      | Some (dhyps G (oterm (Can NIsect) [bterm [] A, bterm [x] B]) J q) =>
+
+        match wf_term_dec_op a with
+        | Some wfa =>
+
+          match covered_decidable a (snoc (vars_hyps G) f ++ vars_hyps J) with
+          | inl cova =>
+
+            match NVin_dec z (vars_hyps G) with
+            | inl nizG =>
+
+              match NVin_dec z (vars_hyps J) with
+              | inl nizJ =>
+
+                match NVin_dec y (vars_hyps G) with
+                | inl niyG =>
+
+                  match NVin_dec y (vars_hyps J) with
+                  | inl niyJ =>
+
+                    match deq_nvar z f with
+                    | right dzf =>
+
+                      match deq_nvar z y with
+                      | right dzy =>
+
+                        match deq_nvar y f with
+                        | right dyf =>
+
+                          let prf1 := pre_proof_hole ctxt (pre_rule_isect_elimination_hyp1 A B a f x G J) in
+                          let prf2 := pre_proof_hole ctxt (pre_rule_isect_elimination2_hyp2 A B T a f x y z G J) in
+                          (eq_rect
+                             _
+                             _
+                             (pre_proof_isect_elimination2 ctxt A B T a f x y z G J wfa cova nizG nizJ niyG niyJ dzf dzy dyf prf1 prf2)
+                             _
+                             (pre_rule_isect_elimination2_as_pre_baresequent H A B T f x G J q),
+                           applied_isect_elimination2_rule)
+
+                        | left _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                                     could_not_apply_isect_elimination2_rule)
+                        end
+
+                      | left _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                                   could_not_apply_isect_elimination2_rule)
+                      end
+
+                    | left _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                                 could_not_apply_isect_elimination2_rule)
+                    end
+
+                  | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                              could_not_apply_isect_elimination2_rule)
+                  end
+
+                | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                            could_not_apply_isect_elimination2_rule)
+                end
+
+              | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                          could_not_apply_isect_elimination2_rule)
+              end
+
+            | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                        could_not_apply_isect_elimination2_rule)
+            end
+
+          | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                      could_not_apply_isect_elimination2_rule)
+          end
+
+        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                   could_not_apply_isect_elimination2_rule)
+        end
+
+      | _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+              could_not_apply_isect_elimination2_rule)
+      end
+
+    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+            could_not_apply_isect_elimination2_rule)
+    end
+  end.
+
+Definition apply_proof_step_isect_elimination2_num {o} {ctxt}
+           (s : @pre_baresequent o)
+           (n : nat)
+           (a : NTerm)
+           (y z : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match find_hypothesis_name_from_nat (pre_hyps s) n with
+  | Some f => apply_proof_step_isect_elimination2 s a f y z
+  | None => (pre_proof_hole _ s, could_not_apply_isect_elimination2_rule)
+  end.
+
 Definition apply_proof_step {o} {ctxt}
            (s    : @pre_baresequent o)
            (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
@@ -3984,6 +4228,7 @@ Definition apply_proof_step {o} {ctxt}
   | proof_step_function_equality y        => apply_proof_step_function_equality s y
   | proof_step_apply_equality x A B       => apply_proof_step_apply_equality s x A B
   | proof_step_isect_elimination n a x    => apply_proof_step_isect_elimination_num s n a x
+  | proof_step_isect_elimination2 n a x y => apply_proof_step_isect_elimination2_num s n a x y
   end.
 
 Fixpoint update_pre_proof {o}
@@ -4206,6 +4451,18 @@ Fixpoint update_pre_proof {o}
     | _ => (pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2,
             could_not_apply_update_because_wrong_address)
     end
+
+  | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+    match addr with
+    | 1 :: addr =>
+      let (prf1', msg) := update_pre_proof prf1 addr step in
+      (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1' prf2, msg)
+    | 2 :: addr =>
+      let (prf2', msg) := update_pre_proof prf2 addr step in
+      (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2', msg)
+    | _ => (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2,
+            could_not_apply_update_because_wrong_address)
+    end
   end.
 
 Definition update_pre_proof_seq {o} {ctxt}
@@ -4336,6 +4593,11 @@ Fixpoint find_holes_in_pre_proof {o}
     holes1 ++ holes2
 
   | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
+    let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
+    let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
+    holes1 ++ holes2
+
+  | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
