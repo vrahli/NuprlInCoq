@@ -83,7 +83,7 @@ Definition rule_isect_member_equality {o}
     (rule_isect_member_equality_concl H t1 t2 A x B)
     [ rule_isect_member_equality_hyp1 H z A t1 t2 B x e1,
       rule_isect_member_equality_hyp2 H A i e2 ]
-    [sarg_var z].
+    [].
 
 Lemma rule_isect_member_equality_true3 {o} :
   forall lib (A B t1 t2 e1 e2 : NTerm)
@@ -95,6 +95,7 @@ Proof.
   intros.
   unfold rule_isect_member_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
+  clear cargs.
 
   (* We prove the well-formedness of things *)
   destseq; allsimpl.

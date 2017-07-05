@@ -356,6 +356,23 @@ Definition pre_rule_isect_elimination2_concl {o}
     (snoc H (mk_hyp f (mk_isect A x B)) ++ J)
     (mk_pre_concl C).
 
+Definition pre_rule_isect_member_equality_concl {o} (H : @bhyps o) t1 t2 A x B :=
+  mk_pre_bseq H (mk_pre_concl (mk_equality t1 t2 (mk_isect A x B))).
+
+Definition pre_rule_isect_member_equality_hyp1 {o} (H : @bhyps o) z A t1 t2 B x :=
+  mk_pre_bseq
+    (snoc H (mk_hyp z A))
+    (mk_pre_concl (mk_equality t1 t2 (subst B x (mk_var z)))).
+
+Definition pre_rule_isect_member_equality_hyp2 {o} (H : @bhyps o) A i :=
+  mk_pre_bseq H (mk_pre_concl (mk_equality A A (mk_uni i))).
+
+Definition pre_rule_cumulativity_concl {o} (H : @bhyps o) T j :=
+  mk_pre_bseq H (mk_pre_concl (mk_member T (mk_uni j))).
+
+Definition pre_rule_cumulativity_hyp {o} (H : @bhyps o) T i :=
+  mk_pre_bseq H (mk_pre_concl (mk_member T (mk_uni i))).
+
 
 
 
@@ -683,7 +700,18 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       -> y <> f
       -> pre_proof ctxt (pre_rule_isect_elimination_hyp1 A B a f x H J)
       -> pre_proof ctxt (pre_rule_isect_elimination2_hyp2 A B C a f x y z H J)
-      -> pre_proof ctxt (pre_rule_isect_elimination2_concl A B C f x H J).
+      -> pre_proof ctxt (pre_rule_isect_elimination2_concl A B C f x H J)
+| pre_proof_isect_member_equality :
+    forall H t1 t2 A x B z i,
+      NVin z (vars_hyps H)
+      -> pre_proof ctxt (pre_rule_isect_member_equality_hyp1 H z A t1 t2 B x)
+      -> pre_proof ctxt (pre_rule_isect_member_equality_hyp2 H A i)
+      -> pre_proof ctxt (pre_rule_isect_member_equality_concl H t1 t2 A x B)
+| pre_proof_cumulativity :
+    forall H T i j,
+      i <=? j = true
+      -> pre_proof ctxt (pre_rule_cumulativity_hyp H T i)
+      -> pre_proof ctxt (pre_rule_cumulativity_concl H T j).
 
 
 Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
@@ -853,7 +881,18 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
       -> y <> f
       -> proof ctxt (rule_isect_elimination_hyp1 A B a ea f x H J)
       -> proof ctxt (rule_isect_elimination2_hyp2 A B C a e f x y z H J)
-      -> proof ctxt (rule_isect_elimination2_concl A B C e f x y z H J).
+      -> proof ctxt (rule_isect_elimination2_concl A B C e f x y z H J)
+| proof_isect_member_equality :
+    forall H t1 t2 A x B e1 e2 z i,
+      NVin z (vars_hyps H)
+      -> proof ctxt (rule_isect_member_equality_hyp1 H z A t1 t2 B x e1)
+      -> proof ctxt (rule_isect_member_equality_hyp2 H A i e2)
+      -> proof ctxt (rule_isect_member_equality_concl H t1 t2 A x B)
+| proof_cumulativity :
+    forall H T e i j,
+      i <=? j = true
+      -> proof ctxt (rule_cumulativity_hyp H T i e)
+      -> proof ctxt (rule_cumulativity_concl H T j).
 
 
 
@@ -1102,6 +1141,8 @@ Proof.
        | (* apply equality            *) A B f1 f2 t1 t2 e1 e2 x H wfA covA p1 ih1 p2 ih2
        | (* isect elimination         *) A B C a e ea f x z H J wfa cova nizH nizJ dzf p1 ih1 p2 ih2
        | (* isect elimination2        *) A B C a e ea f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf p1 ih1 p2 ih2
+       | (* isect member equality     *) H t1 t2 A x B e1 e2 z i nizH p1 ih1 p2 ih2
+       | (* cumulativity              *) H T e i j lij  p1 ih1
        ];
     allsimpl;
     allrw NVin_iff; tcsp.
@@ -1316,6 +1357,22 @@ Proof.
 
       * apply ih2; auto.
         apply (rule_isect_elimination2_wf2 A B C a e ea f x y z H J); simpl; tcsp.
+
+  - apply (rule_isect_member_equality_true_ext_lib ctxt A B t1 t2 e1 e2 x z i H); simpl; tcsp.
+
+    introv xx; repndors; subst; tcsp.
+
+      * apply ih1; auto.
+        apply (rule_isect_member_equality_wf2 A B t1 t2 e1 e2 x z i H); simpl; tcsp.
+
+      * apply ih2; auto.
+        apply (rule_isect_member_equality_wf2 A B t1 t2 e1 e2 x z i H); simpl; tcsp.
+
+  - apply (rule_cumulativity_true_ext_lib ctxt H T e i j); simpl; tcsp.
+
+    { allrw Nat.leb_le; auto. }
+
+    introv xx; repndors; subst; tcsp.
 Qed.
 
 Definition wf_ext {o} (H : @bhyps o) (c : @conclusion o) :=
@@ -1526,7 +1583,9 @@ Inductive proof_step {o} :=
 | proof_step_thin_num               (n : nat)
 | proof_step_apply_equality         (x : NVar) (A B : @NTerm o)
 | proof_step_isect_elimination      (n : nat) (a : @NTerm o) (x : NVar)
-| proof_step_isect_elimination2     (n : nat) (a : @NTerm o) (x y : NVar).
+| proof_step_isect_elimination2     (n : nat) (a : @NTerm o) (x y : NVar)
+| proof_step_isect_member_equality  (x : NVar) (i : nat)
+| proof_step_cumulativity           (i : nat).
 
 Inductive command {o} :=
 (* add a definition at the head *)
@@ -1901,6 +1960,15 @@ Fixpoint pre_proof_cons {o}
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
     pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1' prf2'
+
+  | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+    let prf1' := pre_proof_cons entry ni prf1 in
+    let prf2' := pre_proof_cons entry ni prf2 in
+    pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1' prf2'
+
+  | pre_proof_cumulativity _ H T i j lij prf1 =>
+    let prf1' := pre_proof_cons entry ni prf1 in
+    pre_proof_cumulativity _ H T i j lij prf1'
   end.
 
 Definition pre_proof_seq_cons {o}
@@ -2025,6 +2093,12 @@ Inductive DEBUG_MSG {o} :=
 
 | could_not_apply_isect_elimination2_rule
 | applied_isect_elimination2_rule
+
+| could_not_apply_isect_member_equality_rule
+| applied_isect_member_equality_rule
+
+| could_not_apply_cumulativity_rule
+| applied_cumulativity_rule
 
 | could_not_apply_unhide_equality_rule
 | applied_unhide_equality_rule
@@ -2730,6 +2804,47 @@ Proof.
   exact (proof_isect_elimination2 _ A B C a e2 e1 f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf q1 q2).
 Defined.
 
+Definition finish_proof_isect_member_equality {o}
+           (ctxt : @ProofContext o)
+           (H : bhyps)
+           (t1 t2 A : NTerm)
+           (x : NVar)
+           (B : NTerm)
+           (z : NVar)
+           (i : nat)
+           (nizH : NVin z (vars_hyps H))
+           (p1 : ExtractProof ctxt (pre_rule_isect_member_equality_hyp1 H z A t1 t2 B x))
+           (p2 : ExtractProof ctxt (pre_rule_isect_member_equality_hyp2 H A i))
+  : ExtractProof ctxt (pre_rule_isect_member_equality_concl H t1 t2 A x B).
+Proof.
+  introv.
+  destruct p1 as [e1 v1 q1].
+  destruct p2 as [e2 v2 q2].
+  unfold pre2baresequent in *; simpl in *.
+  exists (@mk_axiom o).
+  { apply valid_pre_extract_axiom. }
+  unfold pre2baresequent; simpl.
+  exact (proof_isect_member_equality _ H t1 t2 A x B e1 e2 z i nizH q1 q2).
+Defined.
+
+Definition finish_proof_cumulativity {o}
+           (ctxt : @ProofContext o)
+           (H : bhyps)
+           (T : NTerm)
+           (i j : nat)
+           (lij : i <=? j = true)
+           (p1 : ExtractProof ctxt (pre_rule_cumulativity_hyp H T i))
+  : ExtractProof ctxt (pre_rule_cumulativity_concl H T j).
+Proof.
+  introv.
+  destruct p1 as [e1 v1 q1].
+  unfold pre2baresequent in *; simpl in *.
+  exists (@mk_axiom o).
+  { apply valid_pre_extract_axiom. }
+  unfold pre2baresequent; simpl.
+  exact (proof_cumulativity _ H T e1 i j lij q1).
+Defined.
+
 Fixpoint finish_pre_proof {o}
          {ctxt  : @ProofContext o}
          {s     : pre_baresequent}
@@ -2868,6 +2983,20 @@ Fixpoint finish_pre_proof {o}
     | Some p1, Some p2 =>
       Some (finish_proof_isect_elimination2 ctxt A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf p1 p2)
     | _, _ => None
+    end
+
+  | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+    match finish_pre_proof prf1, finish_pre_proof prf2 with
+    | Some p1, Some p2 =>
+      Some (finish_proof_isect_member_equality ctxt H t1 t2 A x B z i nizH p1 p2)
+    | _, _ => None
+    end
+
+  | pre_proof_cumulativity _ H T i j lij prf1 =>
+    match finish_pre_proof prf1 with
+    | Some p1 =>
+      Some (finish_proof_cumulativity ctxt H T i j lij p1)
+    | _ => None
     end
   end.
 
@@ -3786,13 +3915,18 @@ Definition apply_proof_step_lemma {o} {ctxt}
     end
   end.
 
+Definition decidable_bool_true :
+  forall (b : bool), decidable (b = true).
+Proof.
+  introv; destruct b;[left|right]; auto.
+  intro xx; inversion xx.
+Defined.
+
 Definition all_abstractions_can_be_unfolded_dec {o} :
   forall lib abs (t : @NTerm o),
     decidable (all_abstractions_can_be_unfolded lib abs t).
 Proof.
-  introv; unfold all_abstractions_can_be_unfolded.
-  destruct (abstractions_can_be_unfolded lib abs t);[left|right]; auto.
-  intro xx; inversion xx.
+  introv; apply decidable_bool_true.
 Defined.
 
 (* TODO: What should be the rule? *)
@@ -4204,6 +4338,92 @@ Definition apply_proof_step_isect_elimination2_num {o} {ctxt}
   | None => (pre_proof_hole _ s, could_not_apply_isect_elimination2_rule)
   end.
 
+Definition apply_proof_step_isect_member_equality {o} {ctxt}
+           (s : @pre_baresequent o)
+           (z : NVar)
+           (i : nat) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext
+        (oterm (Can NEquality) [bterm [] t1,
+                                bterm [] t2,
+                                bterm [] (oterm (Can NIsect) [bterm [] A,
+                                                              bterm [x] B])]) =>
+
+      match NVin_dec z (vars_hyps H) with
+      | inl nizH =>
+
+        let prf1 := pre_proof_hole ctxt (pre_rule_isect_member_equality_hyp1 H z A t1 t2 B x) in
+        let prf2 := pre_proof_hole ctxt (pre_rule_isect_member_equality_hyp2 H A i) in
+        (pre_proof_isect_member_equality ctxt H t1 t2 A x B z i nizH prf1 prf2,
+         applied_isect_member_equality_rule)
+
+      | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality t1 t2 (mk_isect A x B)))),
+                  could_not_apply_isect_member_equality_rule)
+      end
+
+    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+            could_not_apply_isect_member_equality_rule)
+    end
+  end.
+
+Definition decidable_le_true :
+  forall (i j : nat), decidable (i <=? j = true).
+Proof.
+  introv; apply decidable_bool_true.
+Defined.
+
+Lemma pre_rule_cumulativity_as_pre_baresequent {o} :
+  forall (H : @bhyps o) T T' j
+         (eqts : T' = T),
+    pre_rule_cumulativity_concl H T j
+    = mk_pre_bseq H (pre_concl_ext (mk_equality T T' (mk_uni j))).
+Proof.
+  introv p; subst; reflexivity.
+Defined.
+
+Definition apply_proof_step_cumulativity {o} {ctxt}
+           (s : @pre_baresequent o)
+           (i : nat) : pre_proof ctxt s * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext
+        (oterm (Can NEquality) [bterm [] T,
+                                bterm [] T',
+                                bterm [] (oterm (Can (NUni j)) [])]) =>
+
+      match term_dec_op T' T with
+      | Some eqts =>
+
+        match decidable_le_true i j with
+        | inl leij =>
+
+          let prf1 := pre_proof_hole ctxt (pre_rule_cumulativity_hyp H T i) in
+          (eq_rect
+             _
+             _
+             (pre_proof_cumulativity ctxt H T i j leij prf1)
+             _
+             (pre_rule_cumulativity_as_pre_baresequent H T T' j eqts),
+           applied_cumulativity_rule)
+
+        | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality T T' (mk_uni j)))),
+                    could_not_apply_cumulativity_rule)
+        end
+
+      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality T T' (mk_uni j)))),
+                    could_not_apply_cumulativity_rule)
+      end
+
+    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+            could_not_apply_isect_member_equality_rule)
+    end
+  end.
+
 Definition apply_proof_step {o} {ctxt}
            (s    : @pre_baresequent o)
            (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
@@ -4229,6 +4449,8 @@ Definition apply_proof_step {o} {ctxt}
   | proof_step_apply_equality x A B       => apply_proof_step_apply_equality s x A B
   | proof_step_isect_elimination n a x    => apply_proof_step_isect_elimination_num s n a x
   | proof_step_isect_elimination2 n a x y => apply_proof_step_isect_elimination2_num s n a x y
+  | proof_step_isect_member_equality x i  => apply_proof_step_isect_member_equality s x i
+  | proof_step_cumulativity j             => apply_proof_step_cumulativity s j
   end.
 
 Fixpoint update_pre_proof {o}
@@ -4463,6 +4685,27 @@ Fixpoint update_pre_proof {o}
     | _ => (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2,
             could_not_apply_update_because_wrong_address)
     end
+
+  | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+    match addr with
+    | 1 :: addr =>
+      let (prf1', msg) := update_pre_proof prf1 addr step in
+      (pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1' prf2, msg)
+    | 2 :: addr =>
+      let (prf2', msg) := update_pre_proof prf2 addr step in
+      (pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2', msg)
+    | _ => (pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2,
+            could_not_apply_update_because_wrong_address)
+    end
+
+  | pre_proof_cumulativity _ H T i j leij prf1 =>
+    match addr with
+    | 1 :: addr =>
+      let (prf1', msg) := update_pre_proof prf1 addr step in
+      (pre_proof_cumulativity _ H T i j leij prf1', msg)
+    | _ => (pre_proof_cumulativity _ H T i j leij prf1,
+            could_not_apply_update_because_wrong_address)
+    end
   end.
 
 Definition update_pre_proof_seq {o} {ctxt}
@@ -4601,6 +4844,14 @@ Fixpoint find_holes_in_pre_proof {o}
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
+
+  | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+    let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
+    let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
+    holes1 ++ holes2
+
+  | pre_proof_cumulativity _ H T i j leij prf1 =>
+    find_holes_in_pre_proof prf1 (snoc addr 1)
   end.
 
 Definition find_holes_in_pre_proof_seq {o} {ctxt}

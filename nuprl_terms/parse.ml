@@ -240,7 +240,7 @@ let operator2string (op : NT.operator) (bs : NT.nuprl_bound_term list) : string 
      let strparams = "[]" in
      let sign = List.map (fun b -> match b with | NT.B_TERM (vs,t) -> List.length vs) bs in
      let strsign = list2string "[" "]" "," string_of_int sign in
-     "(Build_opabs \"" ^ opid ^ "\"" ^ strparams ^ " " ^ strsign ^ ")"
+     "(Build_opabs \"" ^ opid ^ "\" " ^ strparams ^ " " ^ strsign ^ ")"
 
 let rec nuprl_term2so (abs_names : string list) (t : NT.nuprl_term) : string =
   match t with
@@ -671,11 +671,70 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_isect_elimination2 " ^ sn ^ " " ^ tA ^ "\"" ^ vn ^ "\" \"" ^ wn ^ "\"),\n");
+	     output_string out ("      " ^ "(proof_step_isect_elimination2 " ^ sn ^ " " ^ tA ^ " \"" ^ vn ^ "\" \"" ^ wn ^ "\"),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:isectElimination:wrong number of parameters")
+        )
+
+     (* TODO: do something sensible for universe levels: *)
+     | {stamp = _; goal = _; name = "isect_memberEquality"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [i;v] ->
+
+	     let strpos = pos2string pos in
+             let lvl = 0 in
+             let vn = NT.dest_variable 0 v in
+
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_isect_member_equality " ^ "\"" ^ vn ^ "\" " ^ string_of_int lvl ^ "),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:isect_memberEquality:wrong number of parameters")
+        )
+
+     (* TODO: do something sensible for universe levels: *)
+     | {stamp = _; goal = _; name = "cumulativity"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [i] ->
+
+	     let strpos = pos2string pos in
+             let lvl = 0 in
+
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_cumulativity " ^ string_of_int lvl ^ "),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:cumulativity:wrong number of parameters")
+        )
+
+     | {stamp = _; goal = _; name = "universeEquality"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [] ->
+
+	     let strpos = pos2string pos in
+
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_universe_equality),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:universeEquality:wrong number of parameters")
         )
 
 
@@ -684,13 +743,8 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
      (* These are all the rules we're missing to handle uall_wf_primitive *)
 
      (* TODO: do something sensible for this one: *)
-     | {stamp = _; goal = _; name = "isect_memberEquality"; subgoals = _} ->
-
-	print_string "****************\n";
-	print_terms parameters;
-	print_string "****************\n";
-
-        print_string "----missing *isect_memberEquality*\n";
+     | {stamp = _; goal = _; name = "equality"; subgoals = _} ->
+        print_string "----missing *equality*\n";
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      (* TODO: do something sensible for this one: *)
@@ -701,23 +755,6 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
      (* TODO: do something sensible for this one: *)
      | {stamp = _; goal = _; name = "direct_computation_hypothesis"; subgoals = _} ->
         print_string "----missing *direct_computation_hypothesis*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
-
-     (* TODO: do something sensible for this one: *)
-     (* This is [rule_cumulativity] in rules_uni.v *)
-     | {stamp = _; goal = _; name = "cumulativity"; subgoals = _} ->
-        print_string "----missing *cumulativity*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
-
-     (* TODO: do something sensible for this one: *)
-     | {stamp = _; goal = _; name = "equality"; subgoals = _} ->
-        print_string "----missing *equality*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
-
-     (* TODO: do something sensible for this one: *)
-     (* This is [rule_universe_equality] in rules_uni.v *)
-     | {stamp = _; goal = _; name = "universeEquality"; subgoals = _} ->
-        print_string "----missing *universeEquality*\n";
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      (* *********************************************************** *)

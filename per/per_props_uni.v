@@ -235,7 +235,7 @@ Qed.
 
 Lemma cumulativity {o} :
   forall lib i j (A B : @CTerm o),
-    i < j
+    i <= j
     -> equality lib A B (mkc_uni i)
     -> equality lib A B (mkc_uni j).
 Proof.

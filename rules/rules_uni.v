@@ -103,6 +103,12 @@ Proof.
 Qed.
 
 
+Definition rule_cumulativity_concl {o} (H : @bhyps o) T j :=
+  mk_baresequent H (mk_conclax (mk_member T (mk_uni j))).
+
+Definition rule_cumulativity_hyp {o} (H : @bhyps o) T i e :=
+  mk_baresequent H (mk_concl (mk_member T (mk_uni i)) e).
+
 (*
    H |- T in Type(j)
 
@@ -112,18 +118,16 @@ Qed.
  *)
 Definition rule_cumulativity {o}
            (H : @bhyps o)
-           (T : NTerm)
+           (T e : NTerm)
            (i j : nat) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_member T (mk_uni j))))
-    [
-      mk_baresequent H (mk_conclax (mk_member T (mk_uni i)))
-    ]
+    (rule_cumulativity_concl H T j)
+    [ rule_cumulativity_hyp H T i e ]
     [].
 
 Lemma rule_cumulativity_true3 {o} :
-  forall lib (H : @bhyps o) T (i j : nat),
-    i < j -> rule_true3 lib (rule_cumulativity H T i j).
+  forall lib (H : @bhyps o) T e (i j : nat),
+    i <= j -> rule_true3 lib (rule_cumulativity H T e i j).
 Proof.
   intros.
   unfold rule_cumulativity, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -164,13 +168,33 @@ Proof.
   vr_seq_true in hyp1.
   pose proof (hyp1 s1 s2 hf sim) as q; clear hyp1; exrepnd.
   lsubst_tac.
-  rw <- @member_member_iff in q1.
+  apply member_if_inhabited in q1.
 
   apply tequality_mkc_member_sp in q0; repnd; clear q2.
   repndors; spcast;
     [|eapply equality_respects_cequivc_right;[exact q0|] ];
     eapply cumulativity;eauto.
 Qed.
+
+Lemma rule_cumulativity_true_ext_lib {o} :
+  forall lib (H : @bhyps o) T e (i j : nat),
+    i <= j -> rule_true_ext_lib lib (rule_cumulativity H T e i j).
+Proof.
+  introv ltij.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_cumulativity_true3; auto.
+Qed.
+
+Lemma rule_cumulativity_wf2 {o} :
+  forall (H : @bhyps o) T e (i j : nat),
+    wf_rule2 (rule_cumulativity H T e i j).
+Proof.
+  introv wf k.
+  allsimpl; repndors; subst; tcsp;
+    allunfold @wf_bseq; repnd; allsimpl; wfseq.
+Qed.
+
 
 
 (*
