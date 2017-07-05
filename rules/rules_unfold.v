@@ -1654,3 +1654,113 @@ Fixpoint select_library {o} (lib : @library o) (abs : list opname) : library :=
     | None => select_library lib xs
     end
   end.*)
+
+
+
+(**
+
+<<
+   H |- (unfold_abstractions lib abs b) ext e
+
+     By unfoldAbstractionsConcl abs
+
+     H |- b ext e
+>>
+ *)
+
+Definition rule_rev_unfold_abstractions {o}
+           lib abs
+           (a e : NTerm)
+           (H : @barehypotheses o) :=
+  mk_rule
+    (rule_unfold_abstractions_hyp lib abs a e H)
+    [rule_unfold_abstractions_concl a e H]
+    [].
+
+Lemma rule_rev_unfold_abstractions_true3 {o} :
+  forall lib abs (a e : NTerm) (H : @barehypotheses o),
+    rule_true3 lib (rule_rev_unfold_abstractions lib abs a e H).
+Proof.
+  unfold rule_rev_unfold_abstractions, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp into hyp1.
+  destruct hyp1 as [ ws1 hyp1 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent (rule_unfold_abstractions_hyp lib abs a e H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  vr_seq_true in hyp1.
+
+  pose proof (hyp1 s1 s2 eqh sim) as q; clear hyp1.
+  exrepnd.
+  proof_irr.
+
+  dands.
+
+  - eapply tequality_respects_cequivc_left;
+      [|eapply tequality_respects_cequivc_right;[|exact q0] ];
+      apply cequivc_sym; eauto 3 with slow.
+
+  - eapply cequivc_preserving_equality; try (exact q1);
+      apply cequivc_sym; eauto 2 with slow.
+Qed.
+
+Lemma rule_rev_unfold_abstractions_wf2 {o} :
+  forall lib abs (a e : NTerm) (H : @barehypotheses o),
+    wf_term a
+    -> covered a (vars_hyps H)
+    -> wf_rule2 (rule_rev_unfold_abstractions lib abs a e H).
+Proof.
+  introv wfa cova wf j.
+
+  allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq.
+Qed.
+
+Lemma rule_rev_unfold_abstractions_true_ext_lib {o} :
+  forall lib abs
+         (a e : NTerm)
+         (H : @barehypotheses o),
+    rule_true_ext_lib lib (rule_rev_unfold_abstractions lib abs a e H).
+Proof.
+  unfold rule_rev_unfold_abstractions, rule_true_ext_lib, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  introv wf cargs hyps.
+  repnd.
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp into hyp1.
+  destruct hyp1 as [ ws1 hyp1 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent (rule_unfold_abstractions_hyp lib abs a e H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  seq_true_ext_lib.
+  seq_true_ext_lib in hyp1.
+
+  pose proof (hyp1 lib0 s1 s2 extlib eqh sim) as q; clear hyp1.
+  exrepnd.
+  proof_irr.
+
+  dands.
+
+  - eapply tequality_respects_cequivc_left;
+      [|eapply tequality_respects_cequivc_right;[|exact q0] ];
+      apply cequivc_sym;
+      eauto 2 with slow.
+
+  - eapply cequivc_preserving_equality; try (exact q1);
+      apply cequivc_sym; eauto 2 with slow.
+Qed.

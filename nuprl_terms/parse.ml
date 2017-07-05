@@ -474,6 +474,47 @@ let dest_function_term (t : NT.nuprl_term) : NT.nuprl_term * NT.variable * NT.nu
 	   B_TERM ([v], term2)]) -> (NT.rterm2term term1, v, NT.rterm2term term2)
   | _ -> failwith "dest_function_term"
 
+let rec remove_tags (t : NT.nuprl_term) : NT.nuprl_term =
+  match t with
+  | NT.TERM ((("tag", tag), params), [NT.B_TERM ([], rt)]) -> remove_tags (NT.rterm2term rt)
+
+  | NT.TERM ((("isect", tag), params), [NT.B_TERM ([], rt1); NT.B_TERM ([v], rt2)]) ->
+     let t1 = NT.mk_rterm (remove_tags (NT.rterm2term rt1)) in
+     let t2 = NT.mk_rterm (remove_tags (NT.rterm2term rt2)) in
+     NT.TERM ((("isect", tag), params), [NT.B_TERM ([], t1); NT.B_TERM ([v], t2)])
+
+  | NT.TERM ((("function", tag), params), [NT.B_TERM ([], rt1); NT.B_TERM ([v], rt2)]) ->
+     let t1 = NT.mk_rterm (remove_tags (NT.rterm2term rt1)) in
+     let t2 = NT.mk_rterm (remove_tags (NT.rterm2term rt2)) in
+     NT.TERM ((("function", tag), params), [NT.B_TERM ([], t1); NT.B_TERM ([v], t2)])
+
+  | NT.TERM ((("variable", tag), [(var,"v")]), []) -> t
+
+  | NT.TERM ((("universe", tag), params), bs) -> t
+    
+  | NT.TERM ((("equal", tag), params), [NT.B_TERM ([], rt1); NT.B_TERM ([], rt2); NT.B_TERM ([], rt3)]) ->
+     let t1 = NT.mk_rterm (remove_tags (NT.rterm2term rt1)) in
+     let t2 = NT.mk_rterm (remove_tags (NT.rterm2term rt2)) in
+     let t3 = NT.mk_rterm (remove_tags (NT.rterm2term rt3)) in
+     NT.TERM ((("equal", tag), params), [NT.B_TERM ([], t1); NT.B_TERM ([], t2); NT.B_TERM ([], t3)])
+
+  | NT.APP_TERM (rt1, rt2) ->
+     let t1 = NT.mk_rterm (remove_tags (NT.rterm2term rt1)) in
+     let t2 = NT.mk_rterm (remove_tags (NT.rterm2term rt2)) in
+     NT.APP_TERM (t1, t2)
+
+  | NT.VAR_TERM var -> t
+
+  | NT.AXM_TERM -> t
+
+  | NT.TERM (op, bs) -> NT.TERM (op, List.map remove_tags_b bs)
+
+  | _ -> failwith ("remove_tags:non_supported_term(" ^ NT.toStringTerm t ^ ")")
+
+and remove_tags_b (b : NT.nuprl_bound_term) : NT.nuprl_bound_term =
+  match b with
+  | NT.B_TERM (vs, rt) -> NT.B_TERM (vs, NT.mk_rterm (remove_tags (NT.rterm2term rt)))
+
 let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
   match inf_tree with
   | INF_NODE ({sequent;stamp;parameters}, subgoals) ->
@@ -494,6 +535,27 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	output_string out ("      " ^ "(proof_step_unfold_abstractions " ^ str_names ^ "),\n");
 
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+     | {stamp = _; goal = _; name = "reverse_direct_computation"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [t] ->
+
+	     let strpos = pos2string pos in
+             let names = find_tagged_names_in_terms parameters in
+             let str_names  = list2string "[" "]" ","  (fun s -> "\"" ^ s ^ "\"") names in 
+             let stt = nuprl_term2fo abs_names (remove_tags t) in
+
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_rev_unfold_abstractions " ^ str_names ^ " " ^ stt ^ "),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:reverse_direct_computation:wrong number of parameters")
+        )
 
      | {stamp = _; goal = _; name = "isect_memberFormation"; subgoals = _} ->
 
@@ -745,11 +807,6 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
      (* TODO: do something sensible for this one: *)
      | {stamp = _; goal = _; name = "equality"; subgoals = _} ->
         print_string "----missing *equality*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
-
-     (* TODO: do something sensible for this one: *)
-     | {stamp = _; goal = _; name = "reverse_direct_computation"; subgoals = _} ->
-        print_string "----missing *revert_direct_computation*\n";
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      (* TODO: do something sensible for this one: *)
