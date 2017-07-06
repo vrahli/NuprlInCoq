@@ -384,6 +384,15 @@ Definition pre_rule_equality_seq {o} (H : @bhyps o) a b T :=
 Definition pre_rule_cequiv_seq {o} (H : @bhyps o) a b :=
   mk_pre_bseq H (mk_pre_concl (mk_cequiv a b)).
 
+Definition pre_rule_cequiv_subst_hyp_concl {o} (H : @bhyps o) z T x a J C :=
+  mk_pre_bseq (snoc H (mk_hyp z (subst T x a)) ++ J) (mk_pre_concl C).
+
+Definition pre_rule_cequiv_subst_hyp_hyp1 {o} (H : @bhyps o) z T x b J C :=
+  mk_pre_bseq (snoc H (mk_hyp z (subst T x b)) ++ J) (mk_pre_concl C).
+
+Definition pre_rule_cequiv_subst_hyp_hyp2 {o} (H : @bhyps o) z T x a J b :=
+  mk_pre_bseq (snoc H (mk_hyp z (subst T x a)) ++ J) (mk_pre_concl (mk_cequiv a b)).
+
 
 
 
