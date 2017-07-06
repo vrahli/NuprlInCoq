@@ -12,7 +12,8 @@ type parameter_kind  = string
 type parameter_value = string
 
 type tag       = string toref
-type opid_tag  = opid * tag
+type pos       = int
+type opid_tag  = opid * tag * pos
 type parameter = parameter_value * parameter_kind
 type operator  = opid_tag * parameter list
 
@@ -104,13 +105,15 @@ val spToStringTerm      : nuprl_term -> string
 val toStringTermStream  : nuprl_term -> string -> unit
 val ppTerm              : nuprl_term -> string
 val toStringEnv         : env -> string
+val toStringOperatorPos : operator -> string
 
-val opid_of_term  : nuprl_term -> opid
-val size          : nuprl_term -> int
-val env_size      : nuprl_term -> int
-val env_depth     : nuprl_term -> int
-val opr_of_term   : nuprl_term -> (opid * parameter list)
-val large_size    : nuprl_term -> Big_int.big_int
+val opid_of_term     : nuprl_term -> opid
+val operator_of_term : nuprl_term -> operator
+val size             : nuprl_term -> int
+val env_size         : nuprl_term -> int
+val env_depth        : nuprl_term -> int
+val opr_of_term      : nuprl_term -> (opid * parameter list)
+val large_size       : nuprl_term -> Big_int.big_int
 
 val size_env      : env -> int
 
@@ -153,7 +156,7 @@ val mk_nuprl_itext_term : string -> nuprl_term
 
 val mk_nuprl_iport_term : int -> nuprl_term
 
-val mk_term           : opid -> tag -> parameter list -> nuprl_bound_term list -> nuprl_term
+val mk_term           : opid -> tag -> pos -> parameter list -> nuprl_bound_term list -> nuprl_term
 val mk_nuprl_term     : (opid * parameter list) -> (variable list * nuprl_term)     list -> nuprl_term
 val mk_nuprl_ref_term : (opid * parameter list) -> (variable list * nuprl_ref_term) list -> nuprl_term
 

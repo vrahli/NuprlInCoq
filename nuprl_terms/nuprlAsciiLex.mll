@@ -13,7 +13,7 @@ let alphadigit = letter | digitDec | '_' | prime | symbol
 let ident      = alphadigit*
 
 rule token = parse
-  | "\n"       {line := !line + 1; token lexbuf}
+  | "\n"       {line := !line + 1; Lexing.new_line lexbuf; token lexbuf}
   | escape     {token lexbuf}
   | "\000"     {token lexbuf}
   | "\004"     {SEP}

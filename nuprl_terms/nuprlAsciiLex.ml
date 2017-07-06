@@ -153,7 +153,7 @@ and __ocaml_lex_token_rec lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
 # 16 "nuprlAsciiLex.mll"
-               (line := !line + 1; token lexbuf)
+               (line := !line + 1; Lexing.new_line lexbuf; token lexbuf)
 # 158 "nuprlAsciiLex.ml"
 
   | 1 ->

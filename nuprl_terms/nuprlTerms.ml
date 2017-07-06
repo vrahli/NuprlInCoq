@@ -222,8 +222,9 @@ type parameter_kind       = string (* such as: "token", "nat", "level-expression
 type parameter_value      = string
 
 type tag                  = string toref
+type pos                  = int
 
-type opid_tag             = opid * tag
+type opid_tag             = opid * tag * pos
 type parameter            = parameter_value * parameter_kind
 
 type operator             = opid_tag * parameter list
@@ -316,6 +317,8 @@ let default_dtag = "OPID"
 let dummy_dtag   = ""
 let dtag         = mk_tag default_dtag
 
+let dpos : pos = 0
+
 let get_dtag () = dtag
 let set_dtag v  = set_tag dtag v
 
@@ -336,7 +339,7 @@ let mk_nuprl_bool_parameter      bool   = ((if bool then "T" else "F"), "b")
 
 let mk_nuprl_parameter (param : parameter) = param
 
-let mk_term opid tag params brterms =
+let mk_term opid tag pos params brterms =
   match opid, params, brterms with
     "axiom",  _, [] -> AXM_TERM
   | "bottom", _, [] -> BOT_TERM
@@ -347,7 +350,7 @@ let mk_term opid tag params brterms =
   | "atom", [(i,kind)], [] ->
       (
        try ATM_TERM (Some (int_of_string i))
-       with _ -> TERM ((("atom", tag), [(i,kind)]), [])
+       with _ -> TERM ((("atom", tag, pos), [(i,kind)]), [])
       )
   | "token", [(i,kind)], [] -> TOK_TERM (i,kind)
   | "variable", ((var,kind) :: params), [] -> VAR_TERM var
@@ -364,153 +367,181 @@ let mk_term opid tag params brterms =
   | "spread", _, [B_TERM ([], pair); B_TERM ([v1; v2], term)] -> SPR_TERM (pair, v1, v2, term)
   | "int_eq", _, [B_TERM ([], a); B_TERM ([], b); B_TERM ([], t1); B_TERM ([], t2)] -> IEQ_TERM (a, b, t1, t2)
   | "atom_eq", [], [B_TERM ([], a); B_TERM ([], b); B_TERM ([], t1); B_TERM ([], t2)] -> AEQ_TERM (a, b, t1, t2)
-  | _, _, _ -> TERM (((opid, tag), params), brterms)
+  | _, _, _ -> TERM (((opid, tag, pos), params), brterms)
 
 let mk_nuprl_ref_term (opid, params) b_rterms =
   let subs = List.map (fun (vars, rterm) -> B_TERM (vars, rterm)) b_rterms
-  in mk_term opid dtag params subs
+  in mk_term opid dtag dpos params subs
 
 let mk_nuprl_term (opid, params) b_terms =
   let subs = List.map (fun (vars, term) -> B_TERM (vars, mk_rterm term)) b_terms
-  in mk_term opid dtag params subs
+  in mk_term opid dtag dpos params subs
 
 let mk_nuprl_ref_simple_term opid ref_term_list =
   let subs = List.map (fun term -> B_TERM ([], term)) ref_term_list
-  in mk_term opid dtag [] subs
+  in mk_term opid dtag dpos [] subs
 
 let mk_nuprl_simple_term opid term_list =
   let subs = List.map (fun term -> B_TERM ([], mk_rterm term)) term_list
-  in mk_term opid dtag [] subs
+  in mk_term opid dtag dpos [] subs
 
-let make_term opid tag params brterms = TERM (((opid, tag), params), brterms)
+let make_term opid tag pos params brterms = TERM (((opid, tag, pos), params), brterms)
 
 let make_nuprl_ref_term (opid, params) b_rterms =
   let subs = List.map (fun (vars, rterm) -> B_TERM (vars, rterm)) b_rterms
-  in make_term opid dtag params subs
+  in make_term opid dtag dpos params subs
 
 let make_nuprl_term (opid, params) b_terms =
   let subs = List.map (fun (vars, term) -> B_TERM (vars, mk_rterm term)) b_terms
-  in make_term opid dtag params subs
+  in make_term opid dtag dpos params subs
 
 let make_nuprl_ref_simple_term opid ref_term_list =
   let subs = List.map (fun term -> B_TERM ([], term)) ref_term_list
-  in make_term opid dtag [] subs
+  in make_term opid dtag dpos [] subs
 
 let make_nuprl_simple_term opid term_list =
   let subs = List.map (fun term -> B_TERM ([], mk_rterm term)) term_list
-  in make_term opid dtag [] subs
+  in make_term opid dtag dpos [] subs
 
 
 (* ------ A FEW USEFUL FUNCTIONS ------ *)
 
 let opid_of_term term =
   match term with
-    TERM (((opid, _), _), _) -> opid
-  | AXM_TERM                 -> "axiom"
-  | BOT_TERM                 -> "bottom"
-  | INT_TERM                 -> "int"
-  | ATM_TERM _               -> "atom"
-  | TOK_TERM _               -> "token"
-  | NAT_TERM _               -> "natural_number"
-  | VAR_TERM _               -> "variable"
-  | LAM_TERM _               -> "lambda"
-  | WAI_TERM _               -> "!wait"
-  | APP_TERM _               -> "apply"
-  | PAI_TERM _               -> "pair"
-  | INL_TERM _               -> "inl"
-  | INR_TERM _               -> "inr"
-  | FIX_TERM _               -> "fix"
-  | IAX_TERM _               -> "isaxiom"
-  | IPA_TERM _               -> "ispair"
-  | DEC_TERM _               -> "decide"
-  | SPR_TERM _               -> "spread"
-  | IEQ_TERM _               -> "int_eq"
-  | AEQ_TERM _               -> "atom_eq"
-  | CLO_TERM _               -> "!!closure"
+  | TERM (((opid, _, _), _), _) -> opid
+  | AXM_TERM    -> "axiom"
+  | BOT_TERM    -> "bottom"
+  | INT_TERM    -> "int"
+  | ATM_TERM _  -> "atom"
+  | TOK_TERM _  -> "token"
+  | NAT_TERM _  -> "natural_number"
+  | VAR_TERM _  -> "variable"
+  | LAM_TERM _  -> "lambda"
+  | WAI_TERM _  -> "!wait"
+  | APP_TERM _  -> "apply"
+  | PAI_TERM _  -> "pair"
+  | INL_TERM _  -> "inl"
+  | INR_TERM _  -> "inr"
+  | FIX_TERM _  -> "fix"
+  | IAX_TERM _  -> "isaxiom"
+  | IPA_TERM _  -> "ispair"
+  | DEC_TERM _  -> "decide"
+  | SPR_TERM _  -> "spread"
+  | IEQ_TERM _  -> "int_eq"
+  | AEQ_TERM _  -> "atom_eq"
+  | CLO_TERM _  -> "!!closure"
+
+let opid2operator (op : opid) : operator =
+  ((op,dtag,dpos),[])
+
+let operator_of_term (term : nuprl_term) : operator =
+  match term with
+  | TERM (opr,_) -> opr
+  | AXM_TERM     -> opid2operator "axiom"
+  | BOT_TERM     -> opid2operator "bottom"
+  | INT_TERM     -> opid2operator "int"
+  | ATM_TERM _   -> opid2operator "atom"
+  | TOK_TERM _   -> opid2operator "token"
+  | NAT_TERM _   -> opid2operator "natural_number"
+  | VAR_TERM _   -> opid2operator "variable"
+  | LAM_TERM _   -> opid2operator "lambda"
+  | WAI_TERM _   -> opid2operator "!wait"
+  | APP_TERM _   -> opid2operator "apply"
+  | PAI_TERM _   -> opid2operator "pair"
+  | INL_TERM _   -> opid2operator "inl"
+  | INR_TERM _   -> opid2operator "inr"
+  | FIX_TERM _   -> opid2operator "fix"
+  | IAX_TERM _   -> opid2operator "isaxiom"
+  | IPA_TERM _   -> opid2operator "ispair"
+  | DEC_TERM _   -> opid2operator "decide"
+  | SPR_TERM _   -> opid2operator "spread"
+  | IEQ_TERM _   -> opid2operator "int_eq"
+  | AEQ_TERM _   -> opid2operator "atom_eq"
+  | CLO_TERM _   -> opid2operator "!!closure"
 
 let is_nuprl_variable_term term =
   match term with
-    TERM ((("variable", _), _), _) -> true
-  | VAR_TERM _                     -> true
-  | _                              -> false
+    TERM ((("variable",_,_), _), _) -> true
+  | VAR_TERM _                      -> true
+  | _                               -> false
 
 let is_nuprl_token_term term =
   match term with
-    TERM ((("token", _), _), _) -> true
-  | TOK_TERM _                  -> true
-  | _                           -> false
+    TERM ((("token",_,_), _), _) -> true
+  | TOK_TERM _                   -> true
+  | _                            -> false
 
 let is_nuprl_lambda_term term =
   match term with
-    TERM ((("lambda", _), _), _) -> true
-  | LAM_TERM _                   -> true
-  | _                            -> false
+    TERM ((("lambda",_,_), _), _) -> true
+  | LAM_TERM _                    -> true
+  | _                             -> false
 
 let is_nuprl_wait_term term =
   match term with
-    TERM ((("!wait", _), _), _) -> true
-  | WAI_TERM _                  -> true
-  | _                           -> false
+    TERM ((("!wait",_,_), _), _) -> true
+  | WAI_TERM _                   -> true
+  | _                            -> false
 
 let is_nuprl_apply_term term =
   match term with
-    TERM ((("apply", _), _), _) -> true
-  | APP_TERM _                  -> true
-  | _                           -> false
+    TERM ((("apply",_,_), _), _) -> true
+  | APP_TERM _                   -> true
+  | _                            -> false
 
 let is_nuprl_natural_number_term term =
   match term with
-    TERM ((("natural_number", _), _), _) -> true
-  | NAT_TERM _                           -> true
-  | _                                    -> false
+    TERM ((("natural_number",_,_), _), _) -> true
+  | NAT_TERM _                            -> true
+  | _                                     -> false
 
 let is_nuprl_pair_term term =
   match term with
-    TERM ((("pair", _), _), _) -> true
-  | PAI_TERM _                 -> true
-  | _                          -> false
+    TERM ((("pair",_,_), _), _) -> true
+  | PAI_TERM _                  -> true
+  | _                           -> false
 
 let is_nuprl_inl_term term =
   match term with
-    TERM ((("inl", _), _), _) -> true
-  | INL_TERM _                -> true
-  | _                         -> false
+    TERM ((("inl",_,_), _), _) -> true
+  | INL_TERM _                 -> true
+  | _                          -> false
 
 let is_nuprl_inr_term term =
   match term with
-    TERM ((("inr", _), _), _) -> true
-  | INR_TERM _                -> true
-  | _                         -> false
+    TERM ((("inr",_,_), _), _) -> true
+  | INR_TERM _                 -> true
+  | _                          -> false
 
 let is_nuprl_bottom_term term =
   match term with
-    TERM ((("bottom", _), _), _) -> true
-  | BOT_TERM                     -> true
-  | _                            -> false
+    TERM ((("bottom",_,_), _), _) -> true
+  | BOT_TERM                      -> true
+  | _                             -> false
 
 let is_nuprl_axiom_term term =
   match term with
-    TERM ((("axiom", _), _), _) -> true
-  | AXM_TERM                    -> true
-  | _                           -> false
+    TERM ((("axiom",_,_), _), _) -> true
+  | AXM_TERM                     -> true
+  | _                            -> false
 
 let is_nuprl_int_term term =
   match term with
-    TERM ((("int", _), _), _) -> true
-  | INT_TERM                  -> true
-  | _                         -> false
+    TERM ((("int",_,_), _), _) -> true
+  | INT_TERM                   -> true
+  | _                          -> false
 
 let is_nuprl_atom_term term =
   match term with
-    TERM ((("atom", _), _), _) -> true
-  | ATM_TERM _                 -> true
-  | _                          -> false
+    TERM ((("atom",_,_), _), _) -> true
+  | ATM_TERM _                  -> true
+  | _                           -> false
 
 let is_nuprl_fix_term term =
   match term with
-    TERM ((("fix", _), _), _) -> true
-  | FIX_TERM _                -> true
-  | _                         -> false
+    TERM ((("fix",_,_), _), _) -> true
+  | FIX_TERM _                 -> true
+  | _                          -> false
 
 let is_canonical_term term =
   is_nuprl_lambda_term              term
@@ -524,16 +555,16 @@ let is_canonical_term term =
 
 let dest_variable n term =
   match term with
-    TERM ((("variable", _), [(var, "v")]), _) -> var
-  | VAR_TERM var                              -> var
-  | _                                         ->
+    TERM ((("variable",_,_), [(var, "v")]), _) -> var
+  | VAR_TERM var                               -> var
+  | _                                          ->
       failwith ("dest_variable(" ^ string_of_int n ^ "," ^ opid_of_term term ^ ")")
 
 let dest_ref_lambda n term =
   match term with
-    TERM ((("lambda", _), _), [B_TERM ([var], body)]) -> (var, body)
-  | LAM_TERM (var, body)                              -> (var, body)
-  | _                                                 ->
+    TERM ((("lambda",_,_), _), [B_TERM ([var], body)]) -> (var, body)
+  | LAM_TERM (var, body)                               -> (var, body)
+  | _                                                  ->
       failwith ("dest_lambda(" ^ string_of_int n ^ "):" ^ opid_of_term term)
 
 let dest_lambda n term =
@@ -542,31 +573,31 @@ let dest_lambda n term =
 
 let dest_wait term =
   match term with
-    TERM ((("!wait", _), _), [B_TERM ([], time); B_TERM ([], exp)]) -> (rterm2term time, rterm2term exp)
-  | WAI_TERM (time, exp)                                            -> (rterm2term time, rterm2term exp)
-  | _                                                               -> failwith ("dest_wait:" ^ opid_of_term term)
+    TERM ((("!wait",_,_), _), [B_TERM ([], time); B_TERM ([], exp)]) -> (rterm2term time, rterm2term exp)
+  | WAI_TERM (time, exp)                                             -> (rterm2term time, rterm2term exp)
+  | _                                                                -> failwith ("dest_wait:" ^ opid_of_term term)
 
 let dest_apply term =
   match term with
-    TERM ((("apply", _), _), [B_TERM ([], rterm1); B_TERM ([], rterm2)]) -> (rterm2term rterm1, rterm2term rterm2)
-  | APP_TERM (rterm1, rterm2)                                            -> (rterm2term rterm1, rterm2term rterm2)
-  | _                                                                    -> failwith ("dest_apply:" ^ opid_of_term term)
+    TERM ((("apply",_,_), _), [B_TERM ([], rterm1); B_TERM ([], rterm2)]) -> (rterm2term rterm1, rterm2term rterm2)
+  | APP_TERM (rterm1, rterm2)                                             -> (rterm2term rterm1, rterm2term rterm2)
+  | _                                                                     -> failwith ("dest_apply:" ^ opid_of_term term)
 
 let dest_pair n term =
   match term with
-    TERM ((("pair", _), _), [B_TERM ([], rt1); B_TERM ([], rt2)]) -> (rterm2term rt1, rterm2term rt2)
-  | PAI_TERM (rterm1, rterm2)                                     -> (rterm2term rterm1, rterm2term rterm2)
-  | _                                                             -> failwith ("dest_pair(" ^ Int.string_of_int n ^ ")")
+    TERM ((("pair",_,_), _), [B_TERM ([], rt1); B_TERM ([], rt2)]) -> (rterm2term rt1, rterm2term rt2)
+  | PAI_TERM (rterm1, rterm2)                                      -> (rterm2term rterm1, rterm2term rterm2)
+  | _                                                              -> failwith ("dest_pair(" ^ Int.string_of_int n ^ ")")
 
 let dest_natural_number term =
   match term with
-    TERM ((("natural_number", tag), ((n, kind) :: params)), []) -> (try II.of_string n with Failure "int_of_string" -> II.zero)
-  | NAT_TERM n                                                  -> n
-  | _                                                           -> failwith "dest_natural_number"
+    TERM ((("natural_number",_,tag), ((n, kind) :: params)), []) -> (try II.of_string n with Failure "int_of_string" -> II.zero)
+  | NAT_TERM n                                                   -> n
+  | _                                                            -> failwith "dest_natural_number"
 
 let dest_token term =
   match term with
-    TERM ((("token",_), [(t,k)]), []) -> (t,k)
+    TERM ((("token",_,_), [(t,k)]), []) -> (t,k)
   | TOK_TERM (t,k) -> (t,k)
   | _ -> failwith "dest_natural_number"
 
@@ -577,21 +608,21 @@ let dest_id term =
 
 let dest_inl term =
   match term with
-    TERM ((("inl", _), _), [B_TERM ([], rterm)]) -> rterm2term rterm
-  | INL_TERM rterm                               -> rterm2term rterm
-  | _                                            -> failwith ("dest_inl")
+    TERM ((("inl",_,_), _), [B_TERM ([], rterm)]) -> rterm2term rterm
+  | INL_TERM rterm                                -> rterm2term rterm
+  | _                                             -> failwith ("dest_inl")
 
 let dest_inr term =
   match term with
-    TERM ((("inr", _), _), [B_TERM ([], rterm)]) -> rterm2term rterm
-  | INR_TERM rterm                               -> rterm2term rterm
-  | _                                            -> failwith ("dest_inr")
+    TERM ((("inr",_,_), _), [B_TERM ([], rterm)]) -> rterm2term rterm
+  | INR_TERM rterm                                -> rterm2term rterm
+  | _                                             -> failwith ("dest_inr")
 
 let dest_fix term =
   match term with
-    TERM ((("fix", _), _), [B_TERM ([], rterm)]) -> rterm2term rterm
-  | FIX_TERM rterm                               -> rterm2term rterm
-  | _                                            -> failwith ("dest_fix")
+    TERM ((("fix",_,_), _), [B_TERM ([], rterm)]) -> rterm2term rterm
+  | FIX_TERM rterm                                -> rterm2term rterm
+  | _                                             -> failwith ("dest_fix")
 
 
 (* variable *)
@@ -637,7 +668,7 @@ let mk_atom_term nop = ATM_TERM nop
 
 (* token *)
 let make_nuprl_token_term (t,k) =
-  TERM ((("token", dtag), [(t,k)]), [])
+  TERM ((("token", dtag, dpos), [(t,k)]), [])
 let mk_token_term (t,k) = TOK_TERM (t,k)
 let mk_regular_token_term tok = mk_token_term (mk_nuprl_token_parameter tok)
 let mk_mkid_term id = mk_token_term (mk_nuprl_ut2_parameter id)
@@ -1000,7 +1031,7 @@ let close term env =
 	 (match lookup env var with
 	   Some (t,e) -> aux t bounds e
 	 | None -> term)
-   | TERM (((opid, tag), params) as opr, bterms) ->
+   | TERM (((opid,tag,pos), params) as opr, bterms) ->
        if opid = "variable"
        then
 	 let v = dest_variable 5 term in
@@ -1039,13 +1070,19 @@ let toStringParameters params =
 	fmt   = toStringParameter}
    params
 
-let toStringOpidTag (opid, tag) = toStringOpid opid ^ ":" ^ toStringTag tag
+let toStringOpidTag (opid, tag, pos) = toStringOpid opid ^ ":" ^ toStringTag tag
 
 let toStringOperator operator =
  match operator with
    (opid_tag, []) -> toStringOpidTag opid_tag
- | (opid_tag, parameters) ->
-     toStringOpidTag opid_tag ^ "," ^ toStringParameters parameters
+ | (opid_tag, parameters) -> toStringOpidTag opid_tag ^ "," ^ toStringParameters parameters
+
+let toStringOpidTagPos (opid,tag,pos) = toStringOpid opid ^ ":" ^ toStringTag tag ^ ":" ^ string_of_int pos
+
+let toStringOperatorPos operator =
+ match operator with
+   (opid_tag, []) -> toStringOpidTagPos opid_tag
+ | (opid_tag, parameters) -> toStringOpidTagPos opid_tag ^ "," ^ toStringParameters parameters
 
 let toStringVars vars =
  T.fmt {init  = "";
@@ -1232,35 +1269,35 @@ let toStringTermStream term file =
 
 let rec ppTerm term =
  match term with
-   TERM ((("apply",          _), []),          [B_TERM ([], f);
-						B_TERM ([], a)])      -> "(" ^ ppRTerm f ^ ")(" ^ ppRTerm a ^ ")"
- | TERM ((("int_eq",         _), []),          [B_TERM ([], x);
-						B_TERM ([], y);
-						B_TERM ([], w);
-						B_TERM ([], z)])      -> "if " ^ ppRTerm x ^ " = " ^ ppRTerm y ^ " then " ^ ppRTerm w ^ " else " ^ ppRTerm z
- | TERM ((("subtract",       _), []),          [B_TERM ([], x);
-						B_TERM ([], y)])      -> ppRTerm x ^ "-" ^ ppRTerm y
- | TERM ((("add",            _), []),          [B_TERM ([], x);
-						B_TERM ([], y)])      -> ppRTerm x ^ "+" ^ ppRTerm y
- | TERM ((("pair",           _), []),          [B_TERM ([], x);
-						B_TERM ([], y)])      -> "(" ^ ppRTerm x ^ "," ^ ppRTerm y ^ ")"
- | TERM ((("variable",       _), [(v,vkind)]), [])                    -> v
- | TERM ((("natural_number", _), [(n,nkind)]), [])                    -> n
- | TERM ((("ycomb",          _), []),          [])                    -> "Y"
- | TERM ((("fix",            _), []),          [B_TERM ([], x)])      -> "fix(" ^ ppRTerm x ^ ")"
- | TERM ((("lambda",         _), []),          [B_TERM ([x], f)])     -> "\\" ^ x ^ ". " ^ ppRTerm f
- | TERM ((("inr",            _), []),          [B_TERM ([], t)])      -> "inr(" ^ ppRTerm t ^ ")"
- | TERM ((("inl",            _), []),          [B_TERM ([], t)])      -> "inl(" ^ ppRTerm t ^ ")"
- | TERM ((("decide",         _), []),          [B_TERM ([], dec);
-						B_TERM ([v1], t1);
-						B_TERM ([v2], t2)])   -> "case " ^ ppRTerm dec ^ " of inl("^ v1 ^ ") => " ^ ppRTerm t1 ^ " | inr(" ^ v2 ^ ") => " ^ ppRTerm t2
- | TERM ((("spread",         _), []),          [B_TERM ([], pair);
-						B_TERM ([x1;x2], t)]) -> "let " ^ x1 ^ "," ^ x2 ^ " = " ^ ppRTerm pair ^ " in " ^ ppRTerm t
- | TERM ((("list_ind",       _), []),          [B_TERM ([], lst);
-						B_TERM ([], base);
-						B_TERM ([x;xs], r)])  -> "rec-case " ^ ppRTerm lst ^ " of [] => " ^ ppRTerm base ^ " | " ^ x ^ "." ^ xs ^ " => " ^ ppRTerm r
- | TERM ((("callbyvalueall", _), []),          [B_TERM ([], arg);
-						B_TERM ([x], b)])     -> "let " ^ x ^ " := " ^ ppRTerm arg ^ " in " ^ ppRTerm b
+   TERM ((("apply",          _,_), []),          [B_TERM ([], f);
+						  B_TERM ([], a)])      -> "(" ^ ppRTerm f ^ ")(" ^ ppRTerm a ^ ")"
+ | TERM ((("int_eq",         _,_), []),          [B_TERM ([], x);
+						  B_TERM ([], y);
+						  B_TERM ([], w);
+						  B_TERM ([], z)])      -> "if " ^ ppRTerm x ^ " = " ^ ppRTerm y ^ " then " ^ ppRTerm w ^ " else " ^ ppRTerm z
+ | TERM ((("subtract",       _,_), []),          [B_TERM ([], x);
+						  B_TERM ([], y)])      -> ppRTerm x ^ "-" ^ ppRTerm y
+ | TERM ((("add",            _,_), []),          [B_TERM ([], x);
+						  B_TERM ([], y)])      -> ppRTerm x ^ "+" ^ ppRTerm y
+ | TERM ((("pair",           _,_), []),          [B_TERM ([], x);
+						  B_TERM ([], y)])      -> "(" ^ ppRTerm x ^ "," ^ ppRTerm y ^ ")"
+ | TERM ((("variable",       _,_), [(v,vkind)]), [])                    -> v
+ | TERM ((("natural_number", _,_), [(n,nkind)]), [])                    -> n
+ | TERM ((("ycomb",          _,_), []),          [])                    -> "Y"
+ | TERM ((("fix",            _,_), []),          [B_TERM ([], x)])      -> "fix(" ^ ppRTerm x ^ ")"
+ | TERM ((("lambda",         _,_), []),          [B_TERM ([x], f)])     -> "\\" ^ x ^ ". " ^ ppRTerm f
+ | TERM ((("inr",            _,_), []),          [B_TERM ([], t)])      -> "inr(" ^ ppRTerm t ^ ")"
+ | TERM ((("inl",            _,_), []),          [B_TERM ([], t)])      -> "inl(" ^ ppRTerm t ^ ")"
+ | TERM ((("decide",         _,_), []),          [B_TERM ([], dec);
+						  B_TERM ([v1], t1);
+						  B_TERM ([v2], t2)])   -> "case " ^ ppRTerm dec ^ " of inl("^ v1 ^ ") => " ^ ppRTerm t1 ^ " | inr(" ^ v2 ^ ") => " ^ ppRTerm t2
+ | TERM ((("spread",         _,_), []),          [B_TERM ([], pair);
+						  B_TERM ([x1;x2], t)]) -> "let " ^ x1 ^ "," ^ x2 ^ " = " ^ ppRTerm pair ^ " in " ^ ppRTerm t
+ | TERM ((("list_ind",       _,_), []),          [B_TERM ([], lst);
+						  B_TERM ([], base);
+						  B_TERM ([x;xs], r)])  -> "rec-case " ^ ppRTerm lst ^ " of [] => " ^ ppRTerm base ^ " | " ^ x ^ "." ^ xs ^ " => " ^ ppRTerm r
+ | TERM ((("callbyvalueall", _,_), []),          [B_TERM ([], arg);
+						  B_TERM ([x], b)])     -> "let " ^ x ^ " := " ^ ppRTerm arg ^ " in " ^ ppRTerm b
  | term -> toStringTerm term
 
 and ppRTerm ref_term = ppTerm (rterm2term ref_term)
@@ -1270,53 +1307,53 @@ and ppRTerm ref_term = ppTerm (rterm2term ref_term)
 
  let opr_of_term term =
    match term with
-     TERM (((opid, _), params), _) -> (opid,             params)
-   | BOT_TERM                      -> ("bottom",         [])
-   | AXM_TERM                      -> ("axiom",          [])
-   | INT_TERM                      -> ("int",            [])
-   | NAT_TERM n                    -> ("natural_number", [(II.to_string n, "n")])
-   | ATM_TERM x                    -> ("atom",           match x with Some n -> [(string_of_int n,"n")] | None -> [])
-   | TOK_TERM x                    -> ("token",          [x])
-   | VAR_TERM v                    -> ("variable",       [(v, "v")])
-   | LAM_TERM _                    -> ("lambda",         [])
-   | WAI_TERM _                    -> ("!wait",          [])
-   | APP_TERM _                    -> ("apply",          [])
-   | PAI_TERM _                    -> ("pair",           [])
-   | INL_TERM _                    -> ("inl",            [])
-   | INR_TERM _                    -> ("inr",            [])
-   | FIX_TERM _                    -> ("fix",            [])
-   | DEC_TERM _                    -> ("decide",         [])
-   | SPR_TERM _                    -> ("spread",         [])
-   | IAX_TERM _                    -> ("isaxiom",        [])
-   | IPA_TERM _                    -> ("ispair",         [])
-   | IEQ_TERM _                    -> ("int_eq",         [])
-   | AEQ_TERM _                    -> ("atom_eq",        [])
-   | CLO_TERM _                    -> failwith "opr_of_term"
+     TERM (((opid,_,_), params), _) -> (opid,             params)
+   | BOT_TERM                       -> ("bottom",         [])
+   | AXM_TERM                       -> ("axiom",          [])
+   | INT_TERM                       -> ("int",            [])
+   | NAT_TERM n                     -> ("natural_number", [(II.to_string n, "n")])
+   | ATM_TERM x                     -> ("atom",           match x with Some n -> [(string_of_int n,"n")] | None -> [])
+   | TOK_TERM x                     -> ("token",          [x])
+   | VAR_TERM v                     -> ("variable",       [(v, "v")])
+   | LAM_TERM _                     -> ("lambda",         [])
+   | WAI_TERM _                     -> ("!wait",          [])
+   | APP_TERM _                     -> ("apply",          [])
+   | PAI_TERM _                     -> ("pair",           [])
+   | INL_TERM _                     -> ("inl",            [])
+   | INR_TERM _                     -> ("inr",            [])
+   | FIX_TERM _                     -> ("fix",            [])
+   | DEC_TERM _                     -> ("decide",         [])
+   | SPR_TERM _                     -> ("spread",         [])
+   | IAX_TERM _                     -> ("isaxiom",        [])
+   | IPA_TERM _                     -> ("ispair",         [])
+   | IEQ_TERM _                     -> ("int_eq",         [])
+   | AEQ_TERM _                     -> ("atom_eq",        [])
+   | CLO_TERM _                     -> failwith "opr_of_term"
 
 let parameters_of_term term =
  match term with
-   TERM (((_, _), params), _) -> params
- | BOT_TERM                   -> []
- | AXM_TERM                   -> []
- | INT_TERM                   -> []
- | ATM_TERM x                 -> (match x with Some n -> [(string_of_int n,"n")] | None -> [])
- | TOK_TERM x                 -> [x]
- | NAT_TERM n                 -> [(II.to_string n,"n")]
- | VAR_TERM v                 -> [(v,"v")]
- | LAM_TERM _                 -> []
- | WAI_TERM _                 -> []
- | APP_TERM _                 -> []
- | PAI_TERM _                 -> []
- | INL_TERM _                 -> []
- | INR_TERM _                 -> []
- | FIX_TERM _                 -> []
- | DEC_TERM _                 -> []
- | SPR_TERM _                 -> []
- | IAX_TERM _                 -> []
- | IPA_TERM _                 -> []
- | IEQ_TERM _                 -> []
- | AEQ_TERM _                 -> []
- | CLO_TERM _                 -> failwith "parameters_of_term"
+   TERM (((_,_,_), params), _) -> params
+ | BOT_TERM                    -> []
+ | AXM_TERM                    -> []
+ | INT_TERM                    -> []
+ | ATM_TERM x                  -> (match x with Some n -> [(string_of_int n,"n")] | None -> [])
+ | TOK_TERM x                  -> [x]
+ | NAT_TERM n                  -> [(II.to_string n,"n")]
+ | VAR_TERM v                  -> [(v,"v")]
+ | LAM_TERM _                  -> []
+ | WAI_TERM _                  -> []
+ | APP_TERM _                  -> []
+ | PAI_TERM _                  -> []
+ | INL_TERM _                  -> []
+ | INR_TERM _                  -> []
+ | FIX_TERM _                  -> []
+ | DEC_TERM _                  -> []
+ | SPR_TERM _                  -> []
+ | IAX_TERM _                  -> []
+ | IPA_TERM _                  -> []
+ | IEQ_TERM _                  -> []
+ | AEQ_TERM _                  -> []
+ | CLO_TERM _                  -> failwith "parameters_of_term"
 
 let bterms_of_term term =
  match term with
@@ -1797,7 +1834,7 @@ let is_nuprl_it_term             = is_nuprl_term "it"
 
 let is_nuprl_iwftheorem_term term =
  match term with
-   TERM ((("!theorem", _), [(name, "t")]), [B_TERM ([], theorem)]) ->
+   TERM ((("!theorem",_,_), [(name, "t")]), [B_TERM ([], theorem)]) ->
      Str.string_match (Str.regexp ".*_wf") name 0
  | _ -> false
 
@@ -1877,7 +1914,7 @@ let isin_str str lst = List.exists (fun s -> s = str) lst
 let rec filter_library lst terms =
   match terms with
     [] -> []
-  | (TERM (((opid, tag), []), b_terms) as term) :: terms ->
+  | (TERM (((opid,tag,pos), []), b_terms) as term) :: terms ->
       if get_tag tag = "t"
       then if isin_str opid lst
       then filter_library lst terms
@@ -1941,7 +1978,7 @@ let insert_tof ({abs; tof} as lib) obid rhs =
 
 let rec term2map term =
   match term with
-    TERM (((id, tag), [(obid, "o")]),
+    TERM (((id,tag,pos), [(obid, "o")]),
 	  [B_TERM ([], lhs);
 	   B_TERM ([], rhs);
 	   B_TERM ([], wfs)]) ->
@@ -1959,7 +1996,7 @@ let rec term2map term =
 		 let item = mk_item id sign obid lhs rhs subs in
 		 Some (ABS (opid, item))
 	     else failwith "wrong format:term2map:abs"
-  | TERM (((id, tag), [(obid, "o")]),
+  | TERM (((id,tag,pos), [(obid, "o")]),
 	  [B_TERM ([], termof);
 	   B_TERM ([], extract)]) ->
 	     if get_tag tag = "t"
@@ -1992,7 +2029,7 @@ and b_terms2map bterms =
 and terms2map terms =
  match terms with
    [] -> emlib ()
- |  (TERM (((opid, tag), []), b_terms)) :: terms ->
+ |  (TERM (((opid,tag,pos), []), b_terms)) :: terms ->
      if get_tag tag = "t"
      then
        (*let _    = print_string ("[loading " ^ opid ^ " theory]\n") in*)
@@ -2005,7 +2042,7 @@ and terms2map terms =
 and terms2map' terms =
  match terms with
    [] -> emlib ()
- | (TERM (((opid, tag), []), b_terms)) :: terms ->
+ | (TERM (((opid,tag,pos), []), b_terms)) :: terms ->
      if get_tag tag = "t"
      then if isin_str opid to_filter_out
      then ((*print_string ("[not loading " ^ opid ^ " theory]\n");*) terms2map' terms)
@@ -2061,7 +2098,7 @@ let dest_term term =
 
 let full_dest_term term =
  match term with
-   TERM (((opid, _), params), bterms) ->
+   TERM (((opid,_,_), params), bterms) ->
      ((opid, params), List.map (fun (B_TERM (vars, rterm)) -> (vars, rterm2term rterm)) bterms)
  | AXM_TERM                  -> failwith "full_dest_term:AXM_TERM"
  | BOT_TERM                  -> failwith "full_dest_term:BOT_TERM"
@@ -2108,7 +2145,7 @@ let rec dest_alls_ualls term =
 
 let dest_so_variable term =
  match term with
-   TERM ((("variable", _), [(var, "v")]), bterms) ->
+   TERM ((("variable",_,_), [(var, "v")]), bterms) ->
      (var,
       List.map
 	(fun (B_TERM (vars, rt)) ->
@@ -2120,21 +2157,21 @@ let dest_so_variable term =
 
 let dest_eclass term =
  match term with
-   TERM ((("eclass", tag), params),
+   TERM ((("eclass",tag,pos), params),
 	 [B_TERM ([],      info);
 	  B_TERM ([es; e], x)]) -> (rterm2term info, es, e, rterm2term x)
  | _ -> failwith "dest_eclass"
 
 let dest_let term =
  match term with
-   TERM ((("let", tag), params),
+   TERM ((("let",tag,pos), params),
 	 [B_TERM ([],  exp1);
 	  B_TERM ([v], exp2)]) -> (rterm2term exp1, v, rterm2term exp2)
  | _ -> failwith "dest_let"
 
 let dest_function term =
  match term with
-   TERM ((("function", tag), params),
+   TERM ((("function",tag,pos), params),
 	 [B_TERM ([],   term1);
 	  B_TERM ([""], term2)]) -> (rterm2term term1, rterm2term term2)
  | _ -> failwith "dest_function"
@@ -2149,14 +2186,14 @@ let rec dest_functions term =
 
 let dest_product term =
  match term with
-   TERM ((("product", tag), params),
+   TERM ((("product",tag,pos), params),
 	 [B_TERM ([],   term1);
 	  B_TERM ([""], term2)]) -> (rterm2term term1, rterm2term term2)
  | _ -> failwith "dest_product"
 
 let dest_iabstraction term =
  match term with
-   TERM ((("!abstraction", tag), []),
+   TERM ((("!abstraction",tag,pos), []),
 	 [B_TERM ([], t1);
 	  B_TERM ([], t2);
 	  B_TERM ([], t3)]) -> (t1, t2, t3)
@@ -2164,13 +2201,13 @@ let dest_iabstraction term =
 
 let dest_iwftheorem term =
  match term with
-   TERM ((("!theorem", _), [(name, "t")]),
+   TERM ((("!theorem",_,_), [(name, "t")]),
 	 [B_TERM ([], theorem)]) -> rterm2term theorem
  | _ -> failwith "dest_iwftheorem"
 
 let gen_dest_single term str msg =
  match term with
-   TERM (((opid, tag), parms), [B_TERM ([], term)]) ->
+   TERM (((opid,tag,pos), parms), [B_TERM ([], term)]) ->
      if opid = str
      then rterm2term term
      else failwith msg
@@ -2202,19 +2239,19 @@ let dest_small_integer term = II.to_int (dest_integer 1 term)
 
 let dest_iport term =
  match term with
-   TERM ((("!port", tag), [(str, "n")]), []) ->
+   TERM ((("!port",tag,pos), [(str, "n")]), []) ->
      (try II.to_int (II.of_string str)
      with _ -> failwith ("dest_integer:not-int-in-string(" ^ str ^ ")"))
  | _ -> failwith "dest_iport"
 
 let dest_ihost term =
  match term with
-   TERM ((("!host", tag), [(x, "s")]), []) -> x
+   TERM ((("!host",tag,pos), [(x, "s")]), []) -> x
  | _ -> failwith "dest_ihost"
 
 let dest_rec_comb term =
  match term with
-   TERM ((("rec-comb", tag), []),
+   TERM ((("rec-comb",tag,pos), []),
 	 [B_TERM ([], xs);
 	  B_TERM ([], f);
 	  B_TERM ([], init)]) -> (rterm2term xs, rterm2term f, rterm2term init)
@@ -2222,7 +2259,7 @@ let dest_rec_comb term =
 
 let gen_dest_pair term str msg =
  match term with
-   TERM (((opid, tag), params),
+   TERM (((opid,tag,pos), params),
 	 [B_TERM ([], term1);
 	  B_TERM ([], term2)]) ->
 	    if opid = str
@@ -2259,7 +2296,7 @@ let rec dest_list term =
 
 let rec dest_applies term =
  match term with
-   TERM ((("apply", tag), []),
+   TERM ((("apply",tag,pos), []),
 	 [B_TERM ([], f);
 	  B_TERM ([], arg)]) ->
 	    let (x, xs) = dest_applies (rterm2term f)
@@ -2277,12 +2314,12 @@ let is_nuprl_integer_term term =
 
 let is_nuprl_event_orderingp_term lvl term =
  match term with
-   TERM ((("event-ordering+", tag), [(l,_)]), [B_TERM ([], info)]) -> (l = lvl)
+   TERM ((("event-ordering+",tag,pos), [(l,_)]), [B_TERM ([], info)]) -> (l = lvl)
  | _ -> false
 
 let is_nuprl_prop_term lvl term =
  match term with
-   TERM ((("prop", tag), [(l,_)]), []) -> (l = lvl)
+   TERM ((("prop",tag,pos), [(l,_)]), []) -> (l = lvl)
  | _ -> false
 
 
@@ -2298,10 +2335,10 @@ let mk_nuprl_df_program_meaning_term term =
 let mk_nuprl_axiom_term = mk_nuprl_simple_term "axiom" []
 
 let mk_nuprl_ihost_term host =
- TERM ((("!host", dtag), [mk_nuprl_string_parameter host]), [])
+ TERM ((("!host", dtag, dpos), [mk_nuprl_string_parameter host]), [])
 
 let mk_nuprl_iport_term port =
- TERM ((("!port", dtag), [mk_nuprl_natural_parameter (II.of_int port)]), [])
+ TERM ((("!port", dtag, dpos), [mk_nuprl_natural_parameter (II.of_int port)]), [])
 
 let mk_nuprl_integer_term i =
  if II.to_int i < 0
@@ -2873,7 +2910,7 @@ let union_stats_term map1 map2 =
 
 let rec get_stats_term term =
   match term with
-    TERM (((opid, _), _), bterms) ->
+    TERM (((opid,_,_), _), bterms) ->
       union_stats_term
 	(MAP.singleton opid 1)
 	(get_stats_bterms bterms)
@@ -3598,9 +3635,9 @@ let rec streamId lst pref () =
 
 let rec is_list term =
  match term with
-   TERM ((("cons", _), []), [B_TERM ([], x); B_TERM ([], xs)]) ->
+   TERM ((("cons",_,_), []), [B_TERM ([], x); B_TERM ([], xs)]) ->
      SML_Option.map (fun lst -> x :: lst) (is_ref_list xs)
- | TERM ((("nil", _), []), []) -> Some []
+ | TERM ((("nil",_,_), []), []) -> Some []
  | _ -> None
 
 and is_ref_list rterm = is_list (rterm2term rterm)
@@ -3615,54 +3652,54 @@ let printUkn t n = "-"
 
 let rec nuprl2eml_term sub term =
  match term with
-   TERM ((("apply", _), []), [B_TERM ([], f); B_TERM ([], a)]) ->
+   TERM ((("apply",_,_), []), [B_TERM ([], f); B_TERM ([], a)]) ->
      nuprl2eml_ref_atm sub f ^ " " ^ nuprl2eml_ref_atm sub a
- | TERM ((("cons", _), []), [B_TERM ([], x); B_TERM ([], xs)]) ->
+ | TERM ((("cons",_,_), []), [B_TERM ([], x); B_TERM ([], xs)]) ->
      (match is_ref_list xs with
        Some lst -> T.fmt {init = "["; sep = "; "; final = "]"; fmt = nuprl2eml_ref_term sub} (x :: lst)
      | None -> nuprl2eml_ref_term sub x ^ " . " ^ nuprl2eml_ref_term sub xs)
- | TERM ((("subtract", _), []), [B_TERM ([], x); B_TERM ([], y)]) ->
+ | TERM ((("subtract",_,_), []), [B_TERM ([], x); B_TERM ([], y)]) ->
      nuprl2eml_ref_term sub x ^ " - " ^ nuprl2eml_ref_term sub y
- | TERM ((("add", _), []), [B_TERM ([], x); B_TERM ([], y)]) ->
+ | TERM ((("add",_,_), []), [B_TERM ([], x); B_TERM ([], y)]) ->
      nuprl2eml_ref_term sub x ^ " + " ^ nuprl2eml_ref_term sub y
- | TERM ((("pair", _), []), [B_TERM ([], x); B_TERM ([], y)]) ->
+ | TERM ((("pair",_,_), []), [B_TERM ([], x); B_TERM ([], y)]) ->
      "(" ^ nuprl2eml_ref_term sub x ^ "," ^ nuprl2eml_ref_term sub y ^ ")"
- | TERM ((("variable", _), [(v,vkind)]), []) ->
+ | TERM ((("variable",_,_), [(v,vkind)]), []) ->
      (try SUB.find v sub with _ -> v)
- | TERM ((("natural_number", _), [(n,nkind)]), []) -> n
- | TERM ((("token", _), [(t,tkind)]), []) -> "`" ^ t ^ "`"
- | TERM ((("lambda", _), []), [B_TERM ([x], f)]) -> printUkn term 0
- | TERM ((("inr", _), []), [B_TERM ([], t)]) ->
+ | TERM ((("natural_number",_,_), [(n,nkind)]), []) -> n
+ | TERM ((("token",_,_), [(t,tkind)]), []) -> "`" ^ t ^ "`"
+ | TERM ((("lambda",_,_), []), [B_TERM ([x], f)]) -> printUkn term 0
+ | TERM ((("inr",_,_), []), [B_TERM ([], t)]) ->
      if is_nuprl_ref_term "axiom" t
      then "false" (* NOTE: Arghh, this can be bad because inr(axiom) is not actually equal to false in EML. *)
      else "inr(" ^ nuprl2eml_ref_term sub t ^ ")"
- | TERM ((("inl", _), []), [B_TERM ([], t)]) ->
+ | TERM ((("inl",_,_), []), [B_TERM ([], t)]) ->
      if is_nuprl_ref_term "axiom" t
      then "true"
      else "inl(" ^ nuprl2eml_ref_term sub t ^ ")"
- | TERM ((("minus", _), []), [B_TERM ([], t)]) ->
+ | TERM ((("minus",_,_), []), [B_TERM ([], t)]) ->
      "~" ^ nuprl2eml_ref_term sub t
- | TERM ((("it", _),   []), []) -> "it"
- | TERM ((("int", _),  []), []) -> "Int"
- | TERM ((("bool", _), []), []) -> "Bool"
- | TERM ((("real", _), []), []) -> "Real"
- | TERM ((("atom", _), []), []) -> "Atom"
- | TERM ((("universe", _), params), []) -> "Type"
- | TERM ((("prop", _), params), []) -> "Prop"
- | TERM ((("list", _), []), [B_TERM ([], t)]) ->
+ | TERM ((("it",_,_),   []), []) -> "it"
+ | TERM ((("int",_,_),  []), []) -> "Int"
+ | TERM ((("bool",_,_), []), []) -> "Bool"
+ | TERM ((("real",_,_), []), []) -> "Real"
+ | TERM ((("atom",_,_), []), []) -> "Atom"
+ | TERM ((("universe",_,_), params), []) -> "Type"
+ | TERM ((("prop",_,_), params), []) -> "Prop"
+ | TERM ((("list",_,_), []), [B_TERM ([], t)]) ->
      nuprl2eml_ref_term sub t ^ " List"
 				  (* NOTE: This is just a crude hack. For class we should check that the level expression
 				   * is 'correct', that the Info is a Msg and that es and e don't occur in t. *)
- | TERM ((("eclass", _), [lvl_exp]), [B_TERM ([], info); B_TERM ([es; e], t)]) ->
+ | TERM ((("eclass",_,_), [lvl_exp]), [B_TERM ([], info); B_TERM ([es; e], t)]) ->
      nuprl2eml_ref_term sub t ^ " Class"
- | TERM ((("product", _), []), [B_TERM ([], t1); B_TERM ([""], t2)]) ->
+ | TERM ((("product",_,_), []), [B_TERM ([], t1); B_TERM ([""], t2)]) ->
      nuprl2eml_ref_atm sub t1 ^ " * " ^ nuprl2eml_ref_atm sub t2
- | TERM ((("union", _), []), [B_TERM ([], t1); B_TERM ([], t2)]) ->
+ | TERM ((("union",_,_), []), [B_TERM ([], t1); B_TERM ([], t2)]) ->
      nuprl2eml_ref_atm sub t1 ^ " + " ^ nuprl2eml_ref_atm sub t2
- | TERM ((("function", _), []), [B_TERM ([], t1); B_TERM ([""], t2)]) ->
+ | TERM ((("function",_,_), []), [B_TERM ([], t1); B_TERM ([""], t2)]) ->
      nuprl2eml_ref_atm sub t1 ^ " -> " ^ nuprl2eml_ref_term sub t2
- | TERM ((("nil", _), []), []) -> "[]"
- | TERM ((("make-Msg", _), []), [B_TERM ([], header); B_TERM ([], typ); B_TERM ([], body)]) ->
+ | TERM ((("nil",_,_), []), []) -> "[]"
+ | TERM ((("make-Msg",_,_), []), [B_TERM ([], header); B_TERM ([], typ); B_TERM ([], body)]) ->
      "(" ^ nuprl2eml_ref_term sub header ^ "," ^ nuprl2eml_ref_term sub typ ^ "," ^ nuprl2eml_ref_term sub body ^ ")"
  | VAR_TERM v -> (match SUB.find v sub with _ -> v)
  | LAM_TERM _ -> printUkn term 0
@@ -3703,7 +3740,7 @@ and nuprl2eml_ref_atm sub rterm = nuprl2eml_atm sub (rterm2term rterm)
 
 let rec nuprl2eml_isect sub stream term =
  match term with
-   TERM ((("isect", _), []), [B_TERM ([],  t1); B_TERM ([v], t2)]) ->
+   TERM ((("isect",_,_), []), [B_TERM ([],  t1); B_TERM ([v], t2)]) ->
      if is_nuprl_ref_term "universe" t1
      then if SUB.exists (fun i _ -> i = v) sub
      then nuprl2eml_ref_isect sub stream t2
@@ -3719,7 +3756,7 @@ and nuprl2eml_ref_isect sub stream rterm =
 
 let rec nuprl2eml_all id sub stream term =
  match term with
-   TERM ((("all", _), []), [B_TERM ([], t1); B_TERM ([v], t2)]) ->
+   TERM ((("all",_,_), []), [B_TERM ([], t1); B_TERM ([v], t2)]) ->
      if is_nuprl_ref_term "universe" t1
      then if SUB.exists (fun i _ -> i = v) sub
      then nuprl2eml_ref_all id sub stream t2
@@ -3728,7 +3765,7 @@ let rec nuprl2eml_all id sub stream term =
        let sub' = SUB.add v tv sub in
        nuprl2eml_ref_all id sub' str t2
      else printUkn term 2
- | TERM ((("uall", _), []), [B_TERM ([], t1); B_TERM ([v], t2)]) ->
+ | TERM ((("uall",_,_), []), [B_TERM ([], t1); B_TERM ([v], t2)]) ->
      if is_nuprl_ref_term "universe" t1
      then if SUB.exists (fun i _ -> i = v) sub
      then nuprl2eml_ref_all id sub stream t2
@@ -3737,7 +3774,7 @@ let rec nuprl2eml_all id sub stream term =
        let sub' = SUB.add v tv sub in
        nuprl2eml_ref_all id sub' str t2
      else printUkn term 3
- | TERM ((("member", _), []), [B_TERM ([], t1); B_TERM ([], t2)]) ->
+ | TERM ((("member",_,_), []), [B_TERM ([], t1); B_TERM ([], t2)]) ->
      if is_nuprl_ref_term id t2
      then nuprl2eml_ref_isect sub stream t1
      else printUkn term 4
@@ -3748,7 +3785,7 @@ and nuprl2eml_ref_all id sub stream rterm =
 
 let nuprl2eml_wf id term =
  match term with
-   TERM ((("!theorem", _), [name]), [B_TERM ([], t)]) ->
+   TERM ((("!theorem",_,_), [name]), [B_TERM ([], t)]) ->
      nuprl2eml_ref_all id
        (SUB.empty : string SUB.t)
        (streamId lstAlpha "'")
@@ -3757,7 +3794,7 @@ let nuprl2eml_wf id term =
 
 let nuprl2eml_abs id term =
  match term with
-   TERM ((("!abstraction", _), []), [B_TERM ([], cond); B_TERM ([], t1); B_TERM ([], t2)]) ->
+   TERM ((("!abstraction",_,_), []), [B_TERM ([], cond); B_TERM ([], t1); B_TERM ([], t2)]) ->
      if is_nuprl_ref_term id t1
      then nuprl2eml_ref_term SUB.empty t2
      else printUkn term 7
