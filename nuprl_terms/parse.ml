@@ -981,7 +981,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_cequiv_subst_concl ^ \"" ^ nv ^ "\" " ^ stt ^ " " ^ sta ^ " " ^ stb ^ "),\n");
+	     output_string out ("      " ^ "(proof_step_cequiv_subst_concl \"" ^ nv ^ "\" " ^ stt ^ " " ^ sta ^ " " ^ stb ^ "),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -1025,6 +1025,30 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
           | _ -> failwith ("print_proof_tree:computationStep:wrong number of parameters")
         )
 
+     | {stamp = _; goal = _; name = "sqequalHypSubstitution"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [n;ceq;xt] ->
+
+	     let strpos = pos2string pos in
+             let (a,b) = dest_cequiv ceq in
+             let (nv,t) = dest_bound_id xt in
+             let stt = nuprl_term2fo abs_names t in
+             let sta = nuprl_term2fo abs_names a in
+             let stb = nuprl_term2fo abs_names b in
+             let sn = get_assumption_index n in
+ 
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_cequiv_subst_hyp_num " ^ sn ^ " \"" ^ nv ^ "\" " ^ stt ^ " " ^ sta ^ " " ^ stb ^ "),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:sqequalHypSubstitution:wrong number of parameters")
+        )
+
 
 
      (* *********************************************************** *)
@@ -1036,11 +1060,6 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
         print_string ("--------\n");
         List.iter (fun t -> print_string (NT.toStringTerm ((inf_tree2goal t).sequent) ^ "\n--------\n")) subgoals;
         print_string "----missing *sqequal*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
-
-     (* TODO: do something sensible for this one: *)
-     | {stamp = _; goal = _; name = "sqequalHypSubstitution"; subgoals = _} ->
-        print_string "----missing *sqequalHypSubstitution*\n";
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      (* *********************************************************** *)
