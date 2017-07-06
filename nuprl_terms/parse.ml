@@ -25,18 +25,25 @@ let rec get_abstraction_names labs : string list =
   | [] -> []
   | abs :: labs -> get_abstraction_name abs :: get_abstraction_names labs
 
-let destruct_abstraction_abs stamp (t : NT.nuprl_term) : abstraction =
+let is_primitive_abstraction (t : NT.nuprl_term) : bool =
+  match t with
+  | NT.TERM ((("!primitive",_,_),_),_) -> true
+  | _ -> false
+
+let destruct_abstraction_abs stamp (t : NT.nuprl_term) : abstraction option =
   match t with
   | NT.TERM ((("!abstraction",_,_),[]),[_;NT.B_TERM([],rtl);NT.B_TERM([],rtr)]) ->
-     (
-       { stamp = stamp
-       ; lhs = NT.rterm2term rtl
-       ; rhs = NT.rterm2term rtr
-       }
-     )
+     let t1 = NT.rterm2term rtl in
+     let t2 = NT.rterm2term rtr in
+     if is_primitive_abstraction t2 then None
+     else
+       Some { stamp = stamp
+            ; lhs = t1
+            ; rhs = t2
+            }
   | _ -> failwith "destruct_abstraction_abs:wrong format"
 
-let destruct_abstraction (term : NT.nuprl_term) : abstraction =
+let destruct_abstraction (term : NT.nuprl_term) : abstraction option =
   match term with
   | NT.TERM ((("ABS",_,_),[(stamp,"o");(name,"t")]),[NT.B_TERM([],rt)]) -> (* the stamp *)
     (
@@ -58,12 +65,20 @@ let rec destruct_abstractions_bs (bterms : NT.nuprl_bound_term list) : abstracti
   match bterms with
   | [] -> []
   | (NT.B_TERM([],rt)) :: bterms ->
-    destruct_abstraction (NT.rterm2term rt)
-    :: destruct_abstractions_bs bterms
+     (
+       match destruct_abstraction (NT.rterm2term rt) with
+       | Some abs -> abs :: destruct_abstractions_bs bterms
+       | None -> destruct_abstractions_bs bterms
+     )
   | _ -> failwith "cannot destruct abstraction: wrong format"
 
-let destruct_abstractions (terms : NT.nuprl_term list) : abstraction list =
-  List.map destruct_abstraction terms
+let rec destruct_abstractions (terms : NT.nuprl_term list) : abstraction list =
+  match terms with
+  | [] -> []
+  | t :: ts ->
+     match destruct_abstraction t with
+     | Some abs -> abs :: destruct_abstractions ts
+     | None -> destruct_abstractions ts
 
 type statement =
     {
@@ -176,6 +191,10 @@ type goal =
   }
 
 type inf_tree = INF_NODE of goal * inf_tree list
+
+let inf_tree2goal (tree : inf_tree) : goal =
+  match tree with
+  | INF_NODE (goal,_) -> goal
 
 let rec rule_arg_cons_to_list (term : NT.nuprl_term) : NT.nuprl_term list =
   match term with
@@ -390,6 +409,11 @@ let rec nuprl_term2fo (abs_names : string list) (t : NT.nuprl_term) : string =
      let t2 = NT.rterm2term rt2 in
      let t3 = NT.rterm2term rt3 in
      "(mk_equality " ^ nuprl_term2fo abs_names t2 ^ " " ^ nuprl_term2fo abs_names t3 ^ " " ^ nuprl_term2fo abs_names t1 ^ ")"
+    
+  | NT.TERM ((("sqequal",tag,pos), params), [NT.B_TERM ([], rt1); NT.B_TERM ([], rt2)]) ->
+     let t1 = NT.rterm2term rt1 in
+     let t2 = NT.rterm2term rt2 in
+     "(mk_cequiv " ^ nuprl_term2fo abs_names t1 ^ " " ^ nuprl_term2fo abs_names t2 ^ ")"
 
   | NT.APP_TERM (rt1, rt2) ->
      let t1 = NT.rterm2term rt1 in
@@ -572,6 +596,16 @@ let rec remove_tags (t : NT.nuprl_term) : NT.nuprl_term =
 and remove_tags_b (b : NT.nuprl_bound_term) : NT.nuprl_bound_term =
   match b with
   | NT.B_TERM (vs, rt) -> NT.B_TERM (vs, NT.mk_rterm (remove_tags (NT.rterm2term rt)))
+
+let dest_cequiv (t : NT.nuprl_term) : NT.nuprl_term * NT.nuprl_term =
+  match t with
+  | NT.TERM ((("sqequal",_,_), _), [NT.B_TERM ([],rt1); NT.B_TERM ([], rt2)]) -> (NT.rterm2term rt1, NT.rterm2term rt2)
+  | _ -> failwith ("dest_cequiv:" ^ NT.opid_of_term t)
+
+let dest_bound_id (t : NT.nuprl_term) : NT.variable * NT.nuprl_term =
+  match t with
+  | NT.TERM ((("!bound_id",_,_), _), [NT.B_TERM ([v],rt1)]) -> (v, NT.rterm2term rt1)
+  | _ -> failwith ("dest_bound_id:" ^ NT.opid_of_term t)
 
 let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
   match inf_tree with
@@ -857,12 +891,163 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
           | _ -> failwith ("print_proof_tree:universeEquality:wrong number of parameters")
         )
 
+     | {stamp = _; goal = _; name = "equalitySymmetry"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [] ->
+
+	     let strpos = pos2string pos in
+
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_equality_symmetry),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:equalitySymmetry:wrong number of parameters")
+        )
+
+     | {stamp = _; goal = _; name = "equalityTransitivity"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [t] ->
+
+	     let strpos = pos2string pos in
+             let stt = nuprl_term2fo abs_names t in
+
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_equality_transitivity ^ " ^ stt ^ "),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:equalityTransitivity:wrong number of parameters")
+        )
+
+     | {stamp = _; goal = _; name = "sqequalReflexivity"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [] ->
+
+	     let strpos = pos2string pos in
+
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_cequiv_refl),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:sqequalReflexivity:wrong number of parameters")
+        )
+
+     | {stamp = _; goal = _; name = "sqequalTransitivity"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [t] ->
+
+	     let strpos = pos2string pos in
+             let stt = nuprl_term2fo abs_names t in
+
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_cequiv_transitivity ^ " ^ stt ^ "),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:sqequalTransitivity:wrong number of parameters")
+        )
+
+     | {stamp = _; goal = _; name = "sqequalSubstitution"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [ceq;xt] ->
+
+	     let strpos = pos2string pos in
+             let (a,b) = dest_cequiv ceq in
+             let (nv,t) = dest_bound_id xt in
+             let stt = nuprl_term2fo abs_names t in
+             let sta = nuprl_term2fo abs_names a in
+             let stb = nuprl_term2fo abs_names b in
+ 
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_cequiv_subst_concl ^ \"" ^ nv ^ "\" " ^ stt ^ " " ^ sta ^ " " ^ stb ^ "),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:sqequalSubstitution:wrong number of parameters")
+        )
+
+     | {stamp = _; goal = _; name = "hypothesis"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [n] ->
+
+	     let strpos = pos2string pos in
+             let sn = get_assumption_index n in
+ 
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_hypothesis_num ^ " ^ sn ^ "),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:hypothesis:wrong number of parameters")
+        )
+
+     | {stamp = _; goal = _; name = "computationStep"; subgoals = _} ->
+
+        (
+          match parameters with
+          | [] ->
+
+	     let strpos = pos2string pos in
+ 
+	     output_string out ("    COM_update_proof\n");
+	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	     output_string out ("      " ^ strpos ^ "\n");
+	     output_string out ("      " ^ "(proof_step_cequiv_computation ^ " ^ string_of_int 1 ^ "),\n");
+
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+          | _ -> failwith ("print_proof_tree:computationStep:wrong number of parameters")
+        )
+
 
 
      (* *********************************************************** *)
      (* These are all the rules we're missing to handle uall_wf_primitive *)
 
      (* TODO: do something sensible for this one: *)
+     | {stamp = _; goal = _; name = "sqequal"; subgoals = _} ->
+        print_string (NT.toStringTerm sequent ^ "\n");
+        print_string ("--------\n");
+        List.iter (fun t -> print_string (NT.toStringTerm ((inf_tree2goal t).sequent) ^ "\n--------\n")) subgoals;
+        print_string "----missing *sqequal*\n";
+        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+     (* TODO: do something sensible for this one: *)
+     | {stamp = _; goal = _; name = "sqequalHypSubstitution"; subgoals = _} ->
+        print_string "----missing *sqequalHypSubstitution*\n";
+        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+     (* *********************************************************** *)
+
+
+
+(*     (* TODO: do something sensible for this one: *)
      | {stamp = _; goal = _; name = "direct_computation_hypothesis"; subgoals = _} ->
         print_string "----missing *direct_computation_hypothesis*\n";
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
@@ -872,25 +1057,15 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
         print_string "----missing *equality*\n";
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
-     (* *********************************************************** *)
-
-
-
      (* TODO: do something sensible for this one: *)
      | {stamp = _; goal = _; name = "equalityEquality"; subgoals = _} ->
         print_string "----missing *equalityEquality*\n";
         List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      (* TODO: do something sensible for this one: *)
-     (* it doesn't give us the variable, we have to find it ourself... *)
-     | {stamp = _; goal = _; name = "hypothesis"; subgoals = _} ->
-        print_string "----missing *hypothesis*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
-
-     (* TODO: do something sensible for this one: *)
      (* sucks! *)
      | {stamp = _; goal = _; name = "because_Cache"; subgoals = _} ->
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals*)
 
      | {stamp = stmp; goal = g; name = n; subgoals = subs} ->
 

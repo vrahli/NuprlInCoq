@@ -3,6 +3,7 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -30,6 +31,7 @@
 
 
 Require Export sequents2.
+Require Export sequents_lib.
 Require Export sequents_tacs.
 Require Export sequents_equality.
 Require Export per_props_uni.
@@ -119,20 +121,27 @@ Qed.
      H |- a ~ c
      H |- c ~ b
  *)
+
+Definition rule_cequiv_trans_concl {o} (H : @bhyps o) a b :=
+  mk_baresequent H (mk_conclax (mk_cequiv a b)).
+
+Definition rule_cequiv_trans_hyp {o} (H : @bhyps o) a b e :=
+  mk_baresequent H (mk_concl (mk_cequiv a b) e).
+
 Definition rule_cequiv_trans {o}
            (H : @bhyps o)
-           (a b c : NTerm) :=
+           (a b c e1 e2 : NTerm) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_cequiv a b)))
+    (rule_cequiv_trans_concl H a b)
     [
-      mk_baresequent H (mk_conclax (mk_cequiv a c)),
-      mk_baresequent H (mk_conclax (mk_cequiv c b))
+      rule_cequiv_trans_hyp H a c e1,
+      rule_cequiv_trans_hyp H c b e2
     ]
     [].
 
 Lemma rule_cequiv_trans_true3 {o} :
-  forall lib (H : @bhyps o) a b c,
-    rule_true3 lib (rule_cequiv_trans H a b c).
+  forall lib (H : @bhyps o) a b c e1 e2,
+    rule_true3 lib (rule_cequiv_trans H a b c e1 e2).
 Proof.
   intros.
   unfold rule_cequiv_trans, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -183,4 +192,25 @@ Proof.
   { split; intro q; spcast; eapply cequivc_trans; eauto. }
 
   { eapply cequivc_trans; eauto. }
+Qed.
+
+Lemma rule_cequiv_trans_true_ext_lib {o} :
+  forall lib (H : @bhyps o) a b c e1 e2,
+    rule_true_ext_lib lib (rule_cequiv_trans H a b c e1 e2).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_cequiv_trans_true3.
+Qed.
+
+Lemma rule_cequiv_trans_wf2 {o} :
+  forall (H : @bhyps o) a b c e1 e2,
+    wf_term c
+    -> covered c (vars_hyps H)
+    -> wf_rule2 (rule_cequiv_trans H a b c e1 e2).
+Proof.
+  introv wfc covc pwf m.
+  allsimpl; repndors; tcsp; subst; allunfold @wf_bseq; wfseq;
+    allrw <- @wf_cequiv_iff; allrw @covered_cequiv; repnd; dands; tcsp.
 Qed.
