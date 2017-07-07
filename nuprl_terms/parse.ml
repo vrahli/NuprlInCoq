@@ -607,7 +607,115 @@ let dest_bound_id (t : NT.nuprl_term) : NT.variable * NT.nuprl_term =
   | NT.TERM ((("!bound_id",_,_), _), [NT.B_TERM ([v],rt1)]) -> (v, NT.rterm2term rt1)
   | _ -> failwith ("dest_bound_id:" ^ NT.opid_of_term t)
 
-let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
+let rec abstractions_append (l1 : abstraction list) (l2 : abstraction list) : abstraction list =
+  match l1 with
+  | [] -> l2
+  | x :: xs ->
+     let l = abstractions_append xs l2 in
+     if List.exists (fun n -> get_abstraction_name n = get_abstraction_name x) l then l
+     else x :: l
+
+let rec find_abstraction (abs : abstraction list) (op : NT.opid) : abstraction option =
+  match abs with
+  | [] -> None
+  | x :: xs ->
+     if op = get_abstraction_name x then Some x
+     else find_abstraction xs op
+
+let rec check_whether_unfoldable
+      (abs : abstraction list)
+      (a   : NT.nuprl_term)
+      (b   : NT.nuprl_term) : (NT.opid list) option =
+  match a, b with
+  | NT.TERM (((op1,_,_),ps1),bs1), NT.TERM (((op2,_,_),ps2),bs2) ->
+     (
+       if op1 = op2 && ps1 = ps2 then
+         (
+           if List.length bs1 = List.length bs2 then
+             check_whether_unfoldable_bs abs bs1 bs2
+           else
+             (
+               print_endline ("WARNING: lists of subterms have different lengths");
+               None
+             )
+         )
+       else
+         let op = NT.opid_of_term a in
+         match find_abstraction abs op with
+         | Some abs ->
+            (
+              try
+                (
+                  let u = NT.unfold_ab None a abs.lhs abs.rhs in
+                  if NT.alpha_equal_terms u b then Some [op]
+                  else
+                    (
+                      print_terms [a;u;b];
+                      print_endline ("WARNING: left-hand-side does not unfold to right-hand-side");
+                      None
+                    )
+                )
+              with
+                _ ->
+                print_endline ("WARNING: unfolding failed");
+                None
+            )
+         | None ->
+            print_endline ("WARNING: opids don't match and couldn't find an abstraction to unfold left-hand-side");
+            None
+     )
+
+  | NT.VAR_TERM v1, NT.VAR_TERM v2 ->
+     if v1 = v2 then Some []
+     else
+       (
+         print_terms [a;b];
+         print_endline ("WARNING: variables don't match");
+         None
+       )
+
+  | NT.AXM_TERM, NT.AXM_TERM -> Some []
+
+  | _, _ ->
+     print_terms [a;b];
+     print_endline ("WARNING: wrong kinds of terms");
+     None
+
+and check_whether_unfoldable_bs
+      (abs : abstraction list)
+      (bs1 : NT.nuprl_bound_term list)
+      (bs2 : NT.nuprl_bound_term list) : (NT.opid list) option =
+  match bs1, bs2 with
+  | [], [] -> Some []
+  | NT.B_TERM(l1,rt1) :: bs1, NT.B_TERM(l2,rt2) :: bs2 ->
+     (
+       if l1 = l2 then
+
+         (
+           let t1 = NT.rterm2term rt1 in
+           let t2 = NT.rterm2term rt2 in
+           match check_whether_unfoldable abs t1 t2, check_whether_unfoldable_bs abs bs1 bs2 with
+           | Some a, Some b -> Some (opid_append a b)
+           | _, _ -> None
+         )
+
+       else None
+     )
+  | _, _ -> None
+
+let rec dest_cequiv_in_concl_seq (t : NT.nuprl_term) : NT.nuprl_term * NT.nuprl_term =
+  match t with
+  | NT.TERM ((("!inf_sequent",_,_), _), [NT.B_TERM ([],rt1); NT.B_TERM ([v], rt2)]) ->
+
+     dest_cequiv_in_concl_seq (NT.rterm2term rt2)
+
+  | NT.TERM ((("sqequal",_,_), _), [NT.B_TERM ([],rt1); NT.B_TERM ([], rt2)]) ->
+
+     (NT.rterm2term rt1, NT.rterm2term rt2)
+
+  | _ -> failwith ("dest_cequiv:" ^ NT.opid_of_term t)
+
+let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
   match inf_tree with
   | INF_NODE ({sequent;stamp;parameters}, subgoals) ->
 
@@ -626,7 +734,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	output_string out ("      " ^ strpos ^ "\n");
 	output_string out ("      " ^ "(proof_step_unfold_abstractions " ^ str_names ^ "),\n");
 
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+        List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      | {stamp = _; goal = _; name = "reverse_direct_computation"; subgoals = _} ->
 
@@ -644,7 +752,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_rev_unfold_abstractions " ^ str_names ^ " " ^ stt ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:reverse_direct_computation:wrong number of parameters")
         )
@@ -666,7 +774,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_isect_member_formation \"" ^ vn ^ "\" " ^ string_of_int lvl ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:isect_memberFormation:wrong number of parameters")
         )
@@ -685,7 +793,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_introduction " ^ stt ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:introduction:wrong number of parameters")
         )
@@ -705,7 +813,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_cut " ^ "\"" ^ vn ^ "\"" ^ " " ^ stt ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:cut:wrong number of parameters")
         )
@@ -724,7 +832,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_isect_equality " ^ "\"" ^ vn ^ "\"),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:isectEquality:wrong number of parameters")
         )
@@ -738,7 +846,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	output_string out ("      " ^ strpos ^ "\n");
 	output_string out ("      " ^ "hypothesis_equality,\n");
 
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+        List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      | {stamp = _; goal = _; name = "axiomEquality"; subgoals = _} ->
 
@@ -749,7 +857,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	output_string out ("      " ^ strpos ^ "\n");
 	output_string out ("      " ^ "axiom_equality,\n");
 
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+        List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
      | {stamp = _; goal = _; name = "thin"; subgoals = _} ->
 
@@ -765,7 +873,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_thin_num " ^ sn ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:thin:wrong number of parameters")
         )
@@ -784,7 +892,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_function_equality " ^ "\"" ^ vn ^ "\"),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:functionEquality:wrong number of parameters")
         )
@@ -805,7 +913,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_apply_equality " ^ "\"" ^ v ^ "\" " ^ tA ^ " " ^ tB ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:applyEquality:wrong number of parameters")
         )
@@ -827,7 +935,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_isect_elimination2 " ^ sn ^ " " ^ tA ^ " \"" ^ vn ^ "\" \"" ^ wn ^ "\"),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:isectElimination:wrong number of parameters")
         )
@@ -848,7 +956,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_isect_member_equality " ^ "\"" ^ vn ^ "\" " ^ string_of_int lvl ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:isect_memberEquality:wrong number of parameters")
         )
@@ -868,7 +976,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_cumulativity " ^ string_of_int lvl ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:cumulativity:wrong number of parameters")
         )
@@ -886,7 +994,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_universe_equality),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:universeEquality:wrong number of parameters")
         )
@@ -904,7 +1012,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_equality_symmetry),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:equalitySymmetry:wrong number of parameters")
         )
@@ -923,7 +1031,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_equality_transitivity ^ " ^ stt ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:equalityTransitivity:wrong number of parameters")
         )
@@ -941,7 +1049,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_cequiv_refl),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:sqequalReflexivity:wrong number of parameters")
         )
@@ -960,7 +1068,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_cequiv_transitivity ^ " ^ stt ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:sqequalTransitivity:wrong number of parameters")
         )
@@ -983,7 +1091,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_cequiv_subst_concl \"" ^ nv ^ "\" " ^ stt ^ " " ^ sta ^ " " ^ stb ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:sqequalSubstitution:wrong number of parameters")
         )
@@ -1002,7 +1110,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_hypothesis_num ^ " ^ sn ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:hypothesis:wrong number of parameters")
         )
@@ -1020,7 +1128,7 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_cequiv_computation ^ " ^ string_of_int 1 ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:computationStep:wrong number of parameters")
         )
@@ -1044,25 +1152,47 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 	     output_string out ("      " ^ strpos ^ "\n");
 	     output_string out ("      " ^ "(proof_step_cequiv_subst_hyp_num " ^ sn ^ " \"" ^ nv ^ "\" " ^ stt ^ " " ^ sta ^ " " ^ stb ^ "),\n");
 
-             List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
+             List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
           | _ -> failwith ("print_proof_tree:sqequalHypSubstitution:wrong number of parameters")
         )
 
-
-
-     (* *********************************************************** *)
-     (* These are all the rules we're missing to handle uall_wf_primitive *)
-
-     (* TODO: do something sensible for this one: *)
+     (* TODO: This is just a temporary hack.
+          We check whether the lhs unfolds to the rhs.
+          We eventually have to prove the sqequal rule.
+      *)
      | {stamp = _; goal = _; name = "sqequal"; subgoals = _} ->
-        print_string (NT.toStringTerm sequent ^ "\n");
-        print_string ("--------\n");
-        List.iter (fun t -> print_string (NT.toStringTerm ((inf_tree2goal t).sequent) ^ "\n--------\n")) subgoals;
-        print_string "----missing *sqequal*\n";
-        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals
 
-     (* *********************************************************** *)
+        (*print_string (NT.toStringTerm sequent ^ "\n");
+        print_string ("--------\n");
+        (*List.iter (fun t -> print_string (NT.toStringTerm ((inf_tree2goal t).sequent) ^ "\n--------\n")) subgoals;*)
+        print_string "----missing *sqequal*\n"(*;
+        List.iteri (fun i sg -> print_proof_tree lemma_name abs_names sg rules out (List.append pos [i + 1])) subgoals*)*)
+
+        (
+          match parameters with
+          | [] ->
+
+	     let strpos = pos2string pos in
+             let (a,b) = dest_cequiv_in_concl_seq sequent in
+
+             (
+               match check_whether_unfoldable abs a b with
+               | Some names ->
+                  let str_names  = list2string "[" "]" ","  (fun s -> "\"" ^ s ^ "\"") names in 
+
+	          output_string out ("    COM_update_proof\n");
+	          output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	          output_string out ("      " ^ strpos ^ "\n");
+	          output_string out ("      " ^ "(proof_step_unfold_abstractions " ^ str_names ^ "),\n");
+
+                  List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
+
+               | _ -> failwith ("print_proof_tree:sqequal:could not unfold left-hand-side to right-hand-side of squiggle term")
+             )
+
+          | _ -> failwith ("print_proof_tree:sqequal:wrong number of parameters")
+        )
 
 
 
@@ -1097,11 +1227,11 @@ let rec print_proof_tree lemma_name abs_names inf_tree rules out pos =
 let finish_proof lemma_name out =
   output_string out ("    COM_finish_proof \"" ^ lemma_name ^ "\"\n")
 
-let print_proof cmdprf lemma_name abs_names inf_tree rules out =
+let print_proof cmdprf lemma_name abs abs_names inf_tree rules out =
   output_string out ("Definition " ^ cmdprf ^ " {o} : @commands o :=\n");
   output_string out ("  [\n");
   start_proof lemma_name abs_names inf_tree out;
-  print_proof_tree lemma_name abs_names inf_tree rules out [];
+  print_proof_tree lemma_name abs abs_names inf_tree rules out [];
   finish_proof lemma_name out;
   (* TODO : finish printing the proof *)
   output_string out ("  ].\n")
@@ -1135,7 +1265,7 @@ let export_primitive_proof_to_coq
   let _ = print_string "]\n" in
 
   let _ = output_string out ("\n\n") in
-  let _ = print_proof cmdprf lemma_name abs_names inf_tree rules out in
+  let _ = print_proof cmdprf lemma_name abs abs_names inf_tree rules out in
 
   (* TODO: print proof to coq output file *)
 

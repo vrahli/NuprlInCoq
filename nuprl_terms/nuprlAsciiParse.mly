@@ -80,7 +80,11 @@ term :
   | LBRACE ident COLON tag parameters1 RBRACE LPAREN bound_terms1 RPAREN sep_op
            {
              fun lst ->
-             let pos = ($startpos).pos_lnum in
+             (* This is just for debugging to get the position of the term in the file.
+                Note that when it's turned on, two alpha-equal terms won't match anymore if
+                they have different positions.
+             *)
+             (*let pos = ($startpos).pos_lnum in*)
              let opid = $2 () in
 	     if isin_str opid lst
 	     then None
@@ -89,7 +93,7 @@ term :
 	       let params   = $5  () in
 	       let b_terms  = $8  () in
 	       let _        = $10 () in
-	       Some (E.mk_term opid tag pos params b_terms)
+	       Some (E.mk_term opid tag 0 params b_terms)
            }
   | LBRACE RBRACE LPAREN terms1 RPAREN sep_op
            {
