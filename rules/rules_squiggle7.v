@@ -264,3 +264,157 @@ Proof.
   apply rule_cequiv_computation_true_ext_lib.
   apply reduces_in_atmost_k_steps_implies_reduces_to in r; auto.
 Qed.
+
+
+Hint Resolve alpha_eq_sym : slow.
+
+Lemma alpha_eq_preserves_cover_vars {o} :
+  forall (a b : @NTerm o) s,
+    alpha_eq a b
+    -> cover_vars a s
+    -> cover_vars b s.
+Proof.
+  introv aeq cov.
+  unfold cover_vars, over_vars in *.
+  apply alphaeq_preserves_free_vars in aeq; allrw <-; auto.
+Qed.
+Hint Resolve alpha_eq_preserves_cover_vars : slow.
+
+
+(**
+
+<<
+   H |- a ~ b
+
+     By Computation ()
+
+     if a reduces to a term alpha-eq to b
+>>
+ *)
+
+Lemma rule_cequiv_computation_aeq_true3 {o} :
+  forall lib (a b c : NTerm) (H : @barehypotheses o)
+         (red : reduces_to lib a b)
+         (aeq : alpha_eq b c),
+    rule_true3 lib (rule_cequiv_computation a c H).
+Proof.
+  unfold rule_cequiv_computation, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+  clear cargs.
+
+  match goal with
+  | [ |- sequent_true2 _ ?s ] => assert (wf_csequent s) as wfc by prove_seq
+  end.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  lsubst_tac.
+  allrw @member_eq.
+  rw @tequality_mkc_cequiv.
+  rw <- @member_cequiv_iff.
+
+  applydup @reduces_to_preserves_wf in red; auto.
+
+  pose proof (reduces_to_implies_cequiv_lsubst lib a b s1) as h.
+  repeat (autodimp h hyp).
+
+  pose proof (reduces_to_implies_cequiv_lsubst lib a b s2) as q.
+  repeat (autodimp q hyp).
+
+  dands; spcast; auto;[|].
+
+  - split; intro z; spcast.
+
+    + unfold cequivc; simpl.
+      eapply cequiv_trans;[eauto|].
+      apply alpha_implies_cequiv; auto.
+      * apply isprogram_csubst; eauto 3 with slow.
+      * apply isprogram_csubst; eauto 3 with slow.
+      * apply lsubst_alpha_congr2; auto.
+
+    + unfold cequivc; simpl.
+      eapply cequiv_trans;[eauto|].
+      apply alpha_implies_cequiv; auto.
+      * apply isprogram_csubst; eauto 3 with slow.
+      * apply isprogram_csubst; eauto 3 with slow.
+      * apply lsubst_alpha_congr2; auto.
+
+  - unfold cequivc; simpl.
+    eapply cequiv_trans;[eauto|].
+    apply alpha_implies_cequiv; auto.
+    * apply isprogram_csubst; eauto 3 with slow.
+    * apply isprogram_csubst; eauto 3 with slow.
+    * apply lsubst_alpha_congr2; auto.
+Qed.
+
+Lemma rule_cequiv_computation_aeq_wf2 {o} :
+  forall (a b : NTerm) (H : @barehypotheses o),
+    wf_rule2 (rule_cequiv_computation a b H).
+Proof.
+  introv wf j.
+  allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq.
+Qed.
+
+Lemma rule_cequiv_computation_aeq_true_ext_lib {o} :
+  forall lib
+         (a b c : NTerm)
+         (H : @barehypotheses o)
+         (r : reduces_to lib a b)
+         (aeq : alpha_eq b c),
+    rule_true_ext_lib lib (rule_cequiv_computation a c H).
+Proof.
+  unfold rule_cequiv_computation, rule_true_ext_lib, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  introv r aeq wf cargs hyps.
+  repnd.
+  clear cargs hyps.
+
+  assert (wf_csequent (rule_cequiv_computation_concl a c H)) as wfc by prove_seq.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+
+  (* we now start proving the sequent *)
+  seq_true_ext_lib.
+  lsubst_tac.
+  allrw @member_eq.
+  rw @tequality_mkc_cequiv.
+  rw <- @member_cequiv_iff.
+
+  applydup @reduces_to_preserves_wf in r; auto.
+
+  pose proof (reduces_to_preserves_lib_extends lib lib0 extlib a b r) as q1.
+
+  (* First, prove that [reduces_to lib0 a b] *)
+  pose proof (reduces_to_implies_cequiv_lsubst lib0 a b s1) as h.
+  repeat (autodimp h hyp).
+
+  pose proof (reduces_to_implies_cequiv_lsubst lib0 a b s2) as q.
+  repeat (autodimp q hyp).
+
+  dands; spcast; auto;[|].
+
+  - split; intro z; spcast.
+
+    + unfold cequivc; simpl.
+      eapply cequiv_trans;[eauto|].
+      apply alpha_implies_cequiv; auto.
+      * apply isprogram_csubst; eauto 3 with slow.
+      * apply isprogram_csubst; eauto 3 with slow.
+      * apply lsubst_alpha_congr2; auto.
+
+    + unfold cequivc; simpl.
+      eapply cequiv_trans;[eauto|].
+      apply alpha_implies_cequiv; auto.
+      * apply isprogram_csubst; eauto 3 with slow.
+      * apply isprogram_csubst; eauto 3 with slow.
+      * apply lsubst_alpha_congr2; auto.
+
+  - unfold cequivc; simpl.
+    eapply cequiv_trans;[eauto|].
+    apply alpha_implies_cequiv; auto.
+    * apply isprogram_csubst; eauto 3 with slow.
+    * apply isprogram_csubst; eauto 3 with slow.
+    * apply lsubst_alpha_congr2; auto.
+Qed.

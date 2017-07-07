@@ -772,7 +772,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_isect_member_formation \"" ^ vn ^ "\" " ^ string_of_int lvl ^ "),\n");
+	     output_string out ("      " ^ "(proof_step_isect_member_formation (nvar \"" ^ vn ^ "\") " ^ string_of_int lvl ^ "),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -811,7 +811,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_cut " ^ "\"" ^ vn ^ "\"" ^ " " ^ stt ^ "),\n");
+	     output_string out ("      " ^ "(proof_step_cut (nvar \"" ^ vn ^ "\")" ^ " " ^ stt ^ "),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -830,7 +830,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_isect_equality " ^ "\"" ^ vn ^ "\"),\n");
+	     output_string out ("      " ^ "(proof_step_isect_equality (nvar \"" ^ vn ^ "\")),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -844,7 +844,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	output_string out ("    COM_update_proof\n");
 	output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	output_string out ("      " ^ strpos ^ "\n");
-	output_string out ("      " ^ "hypothesis_equality,\n");
+	output_string out ("      " ^ "proof_step_maybe_hidden_hypothesis_equality,\n");
 
         List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -855,7 +855,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	output_string out ("    COM_update_proof\n");
 	output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	output_string out ("      " ^ strpos ^ "\n");
-	output_string out ("      " ^ "axiom_equality,\n");
+	output_string out ("      " ^ "proof_step_axiom_equality,\n");
 
         List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -890,7 +890,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_function_equality " ^ "\"" ^ vn ^ "\"),\n");
+	     output_string out ("      " ^ "(proof_step_function_equality (nvar \"" ^ vn ^ "\")),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -911,7 +911,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_apply_equality " ^ "\"" ^ v ^ "\" " ^ tA ^ " " ^ tB ^ "),\n");
+	     output_string out ("      " ^ "(proof_step_apply_equality (nvar \"" ^ v ^ "\") " ^ tA ^ " " ^ tB ^ "),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -933,7 +933,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_isect_elimination2 " ^ sn ^ " " ^ tA ^ " \"" ^ vn ^ "\" \"" ^ wn ^ "\"),\n");
+	     output_string out ("      " ^ "(proof_step_isect_elimination2 " ^ sn ^ " " ^ tA ^ " (nvar \"" ^ vn ^ "\") (nvar \"" ^ wn ^ "\")),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -954,7 +954,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_isect_member_equality " ^ "\"" ^ vn ^ "\" " ^ string_of_int lvl ^ "),\n");
+	     output_string out ("      " ^ "(proof_step_isect_member_equality (nvar \"" ^ vn ^ "\") " ^ string_of_int lvl ^ "),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -1029,7 +1029,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_equality_transitivity ^ " ^ stt ^ "),\n");
+	     output_string out ("      " ^ "(proof_step_equality_transitivity " ^ stt ^ "),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -1066,7 +1066,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_cequiv_transitivity ^ " ^ stt ^ "),\n");
+	     output_string out ("      " ^ "(proof_step_cequiv_transitivity " ^ stt ^ "),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -1089,7 +1089,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_cequiv_subst_concl \"" ^ nv ^ "\" " ^ stt ^ " " ^ sta ^ " " ^ stb ^ "),\n");
+	     output_string out ("      " ^ "(proof_step_cequiv_subst_concl (nvar \"" ^ nv ^ "\") " ^ stt ^ " " ^ sta ^ " " ^ stb ^ "),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -1108,7 +1108,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_hypothesis_num ^ " ^ sn ^ "),\n");
+	     output_string out ("      " ^ "(proof_step_hypothesis_num " ^ sn ^ "),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -1126,7 +1126,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_cequiv_computation ^ " ^ string_of_int 1 ^ "),\n");
+	     output_string out ("      " ^ "(proof_step_cequiv_computation_aeq " ^ string_of_int 1 ^ "),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -1150,7 +1150,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_cequiv_subst_hyp_num " ^ sn ^ " \"" ^ nv ^ "\" " ^ stt ^ " " ^ sta ^ " " ^ stb ^ "),\n");
+	     output_string out ("      " ^ "(proof_step_cequiv_subst_hyp_num " ^ sn ^ " (nvar \"" ^ nv ^ "\") " ^ stt ^ " " ^ sta ^ " " ^ stb ^ "),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
 
@@ -1174,6 +1174,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
           | [] ->
 
 	     let strpos = pos2string pos in
+	     let next_strpos = pos2string (List.append pos [1]) in
              let (a,b) = dest_cequiv_in_concl_seq sequent in
 
              (
@@ -1186,7 +1187,12 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
 	          output_string out ("      " ^ strpos ^ "\n");
 	          output_string out ("      " ^ "(proof_step_unfold_abstractions " ^ str_names ^ "),\n");
 
-                  List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals
+	          output_string out ("    COM_update_proof\n");
+	          output_string out ("      \"" ^ lemma_name ^ "\"\n");
+	          output_string out ("      " ^ next_strpos ^ "\n");
+	          output_string out ("      " ^ "(proof_step_cequiv_alpha_eq),\n")
+
+               (*;List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules out (List.append pos [i + 1])) subgoals*)
 
                | _ -> failwith ("print_proof_tree:sqequal:could not unfold left-hand-side to right-hand-side of squiggle term")
              )

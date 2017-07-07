@@ -520,6 +520,175 @@ Proof.
   apply rule_hypothesis_equality_true.
 Qed.
 
+
+
+(* [4] ============ HYPOTHESIS EQUALITY ============ *)
+
+(**
+
+  The following rule is the standard ``hypothesis'' rule:
+<<
+   G, [x : A], J |- x = x in A
+
+     By hypothesisEquality hyp(i) ()
+
+     no subgoals
+>>
+ *)
+
+Definition rule_maybe_hidden_hypothesis_equality_concl {o} (G J : @bhyps o) A x b :=
+  mk_baresequent
+    (snoc G (mk_nlhyp b x A) ++ J)
+    (mk_conclax (mk_equality (mk_var x) (mk_var x) A)).
+
+Definition rule_maybe_hidden_hypothesis_equality {o}
+             (G J : @barehypotheses o)
+             (A   : NTerm)
+             (x   : NVar)
+             (b   : bool):=
+  mk_rule
+    (rule_maybe_hidden_hypothesis_equality_concl G J A x b)
+    []
+    [].
+
+Lemma rule_maybe_hidden_hypothesis_equality_true {o} :
+  forall lib (G J : @barehypotheses o)
+         (A : NTerm)
+         (x : NVar)
+         (b : bool),
+    rule_true lib (rule_maybe_hidden_hypothesis_equality G J A x b).
+Proof.
+  intros.
+  unfold rule_maybe_hidden_hypothesis_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  clear cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  duplicate wfh as wfh'.
+  allunfold @closed_type; allunfold @closed_extract; allsimpl.
+  allapply @vswf_hypotheses_nil_implies.
+  allrw @wf_hypotheses_app.
+  destruct wfh as [ wfh wfj ].
+  allrw @wf_hypotheses_snoc.
+  destruct wfh as [ ispvg wfh ].
+  destruct wfh as [ nixg wfg ].
+  allrw @nh_vars_hyps_snoc; allsimpl.
+  allrw @vars_hyps_snoc; allsimpl.
+  duplicate cg as ceq.
+  allrw @covered_equality.
+  destruct cg as [ cx ct ].
+  destruct ct as [ cx2 ca ]; GC.
+  allrw @vars_hyps_app; allsimpl.
+  allrw @vars_hyps_snoc; allsimpl.
+  duplicate wfct as wfct'.
+  rw <- @wf_equality_iff in wfct.
+  destruct wfct as [ wa wtt ].
+  destruct wtt as [ wb wtA ].
+
+  exists (@covered_axiom o (nh_vars_hyps (snoc G (mk_nlhyp b x A) ++ J))).
+
+  (* We prove some simple facts on our sequents *)
+  assert (!LIn x (free_vars A)
+          # !LIn x (vars_hyps J)
+          # subset (free_vars A) (vars_hyps G)
+          # disjoint (free_vars A) (vars_hyps J)) as vhyps.
+  {
+    dwfseq.
+    sp;
+      try (complete (apply subset_disjoint with (l1 := free_vars A) in wfj2; auto;
+                     apply subset_snoc_r; sp)).
+  }
+
+  destruct vhyps as [ nixa vhyps ].
+  destruct vhyps as [ nixj vhyps ].
+  destruct vhyps as [ sag daj ].
+  (* done with proving these simple facts *)
+
+  vr_seq_true.
+
+  lift_lsubst.
+
+  repeat (rewrite fold_mkc_member).
+  rewrite member_eq.
+  rw <- @member_member_iff.
+  rw @tequality_mkc_member.
+
+  applydup eqh in sim; clear eqh.
+  allrw @similarity_app; exrepd; subst; cpx.
+  allrw @similarity_snoc; exrepd; subst; cpx.
+  revert c1 cT c0 cT0.
+  simpl; intros.
+  allrw @eq_hyps_app; exrepd; simphyps; cpx.
+  apply app_split in e; repd; subst; allrewrite length_snoc; try omega; cpx; GC.
+  apply app_split in e0; repd; subst; allrewrite length_snoc; try omega; cpx; GC.
+  allrw @eq_hyps_snoc; exrepd; cpx; simphyps; cpx; GC; clear_irr.
+
+  assert (disjoint (free_vars (@mk_var o x)) (dom_csub s1b0)) as dxs1
+         by (simpl; rw disjoint_singleton_l;
+             allapply @similarity_dom; repd; rterm (dom_csub s1b0);
+             rewrite vars_hyps_substitute_hyps; auto).
+
+  assert (disjoint (free_vars (@mk_var o x)) (dom_csub s2b0)) as dxs2
+         by (simpl; rw disjoint_singleton_l;
+             allapply @similarity_dom; repd; rterm (dom_csub s2b0);
+             rewrite vars_hyps_substitute_hyps; auto).
+
+  assert (disjoint (free_vars A) (dom_csub s1b0)) as das1
+         by (allapply @similarity_dom; repd; rterm (dom_csub s1b0);
+             rewrite vars_hyps_substitute_hyps; auto).
+
+  assert (disjoint (free_vars A) (dom_csub s2b0)) as das2
+         by (allapply @similarity_dom; repd; rterm (dom_csub s2b0);
+             rewrite vars_hyps_substitute_hyps; auto).
+
+  generalize (subset_free_vars_lsubstc_app_ex
+                (mk_var x)
+                (snoc s1a (x, t0)) s1b0
+                w1 c1 dxs1); intro; exrepd; rewrite e; clear e.
+
+  generalize (subset_free_vars_lsubstc_app_ex
+                (mk_var x)
+                (snoc s2a (x, t3)) s2b0
+                w1 c0 dxs2); intro; exrepd; rewrite e; clear e.
+
+  generalize (subset_free_vars_lsubstc_app_ex
+                A
+                (snoc s1a (x, t0)) s1b0
+                wtA cT das1); intro; exrepd; rewrite e; clear e.
+
+  generalize (subset_free_vars_lsubstc_app_ex
+                A
+                (snoc s2a (x, t3)) s2b0
+                wtA cT0 das2); intro; exrepd; rewrite e; clear e.
+
+  lsubst_tac.
+
+  applydup @equality_refl in e3; sp.
+
+  split; sp; GC.
+  apply @tequality_preserving_equality with (A := lsubstc A wtA s1a p1); auto.
+  rewrite member_eq.
+  apply equality_sym in e3.
+  apply equality_refl in e3; sp.
+Qed.
+
+Lemma rule_maybe_hidden_hypothesis_equality_true_ext_lib {o} :
+  forall lib (G J : @barehypotheses o)
+         (A : NTerm)
+         (x : NVar)
+         (b : bool),
+    rule_true_ext_lib lib (rule_maybe_hidden_hypothesis_equality G J A x b).
+Proof.
+  introv.
+  apply rule_true_implies_rule_true_ext_lib.
+  { unfold wf_extract, wf_extract_goal, wf_extract_seq; simpl; introv wf; apply wf_axiom. }
+  introv.
+  apply rule_maybe_hidden_hypothesis_equality_true.
+Qed.
+
+
+
 (* begin hide *)
 
 
