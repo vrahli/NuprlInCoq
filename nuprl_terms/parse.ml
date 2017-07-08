@@ -319,6 +319,22 @@ let operator2opid (opr : NT.operator) : NT.opid =
   match opr with
   | ((opid,tag,pos),params) -> opid
 
+let level_parameter2nat (i : NT.parameter) : int =
+  match i with
+  | ("i","l") -> 0
+  | ("i'","l") -> 1
+  | _ -> failwith ("level_parameter2nat:level has wrong format")
+
+let level_parameters2nat (l : NT.parameter list) : int =
+  match l with
+  | [param] -> level_parameter2nat param
+  | _ -> failwith ("level_parameters2nat:level has wrong format")
+
+let level2nat (i : NT.nuprl_term) : int =
+  match i with
+  | NT.TERM ((("!parameter",_,_), params), []) -> level_parameters2nat params
+  | _ -> failwith ("level2nat:level has wrong format " ^ NT.toStringTerm i)
+
 let rec nuprl_term2so (abs_names : string list) (t : NT.nuprl_term) : string =
   match t with
   | NT.TERM ((("isect",tag,pos), params), [NT.B_TERM ([], rt1); NT.B_TERM ([v], rt2)]) ->
@@ -342,7 +358,7 @@ let rec nuprl_term2so (abs_names : string list) (t : NT.nuprl_term) : string =
 
   (* TODO: do something sensible for universe levels *)
   | NT.TERM ((("universe",tag,pos), params), bs) ->
-     "(mk_so_uni " ^ string_of_int 0 ^ ")"
+     "(mk_so_uni " ^ string_of_int (level_parameters2nat params) ^ ")"
     
   | NT.TERM ((("equal",tag,pos), params), [NT.B_TERM ([], rt1); NT.B_TERM ([], rt2); NT.B_TERM ([], rt3)]) ->
      let t1 = NT.rterm2term rt1 in
@@ -402,7 +418,7 @@ let rec nuprl_term2fo (abs_names : string list) (t : NT.nuprl_term) : string =
 
   (* TODO: Do something sensible for universe levels! *)
   | NT.TERM ((("universe",tag,pos), params), bs) ->
-     "(mk_uni " ^ string_of_int 0 ^ ")"
+     "(mk_uni " ^ string_of_int (level_parameters2nat params) ^ ")"
     
   | NT.TERM ((("equal",tag,pos), params), [NT.B_TERM ([], rt1); NT.B_TERM ([], rt2); NT.B_TERM ([], rt3)]) ->
      let t1 = NT.rterm2term rt1 in
@@ -719,6 +735,10 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
   match inf_tree with
   | INF_NODE ({sequent;stamp;parameters}, subgoals) ->
 
+     (*if pos = [2;1;1;2;1;1;1;2;2;2] then
+       print_terms [sequent]
+     else ();*)
+
      match find_rule stamp rules with
 
      (* TODO: We get the tagged abstractions and we unfold those.  This is not always going to be enough though
@@ -766,7 +786,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
              (* TODO: Do something sensible with levels (i) *)
 
 	     let strpos = pos2string pos in
-             let lvl = 0 in
+             let lvl = level2nat i in
              let vn = NT.dest_variable 0 v in
 
 	     output_string out ("    COM_update_proof\n");
@@ -948,7 +968,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
           | [i;v] ->
 
 	     let strpos = pos2string pos in
-             let lvl = 0 in
+             let lvl = level2nat i in
              let vn = NT.dest_variable 0 v in
 
 	     output_string out ("    COM_update_proof\n");
@@ -969,7 +989,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
           | [i] ->
 
 	     let strpos = pos2string pos in
-             let lvl = 0 in
+             let lvl = level2nat i in
 
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");

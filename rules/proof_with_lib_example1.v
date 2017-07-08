@@ -31,6 +31,7 @@
 
 
 Require Export proof_with_lib.
+Require Export proof_with_lib_notation.
 
 
 

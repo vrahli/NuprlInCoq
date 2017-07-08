@@ -841,8 +841,8 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       -> wf_term b
       -> covered a (vars_hyps H)
       -> covered b (vars_hyps H)
-      -> pre_proof ctxt (pre_rule_cequiv_subst_hyp_hyp1 H z T x b J C)
       -> pre_proof ctxt (pre_rule_cequiv_subst_hyp_hyp2 H z T x a J b)
+      -> pre_proof ctxt (pre_rule_cequiv_subst_hyp_hyp1 H z T x b J C)
       -> pre_proof ctxt (pre_rule_cequiv_subst_hyp_concl H z T x a J C)
 (*| pre_proof_approx_member_eq :
     forall a b H,
@@ -1068,8 +1068,8 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
       -> wf_term b
       -> covered a (vars_hyps H)
       -> covered b (vars_hyps H)
-      -> proof ctxt (rule_cequiv_subst_hyp_hyp1 H z T x b J C t)
       -> proof ctxt (rule_cequiv_subst_hyp_hyp2 H z T x a J b e)
+      -> proof ctxt (rule_cequiv_subst_hyp_hyp1 H z T x b J C t)
       -> proof ctxt (rule_cequiv_subst_hyp_concl H z T x a J C t)
 (*| proof_approx_member_eq :
     forall a b e H,
@@ -1579,10 +1579,10 @@ Proof.
 
     introv i; repndors; subst; allsimpl; tcsp.
 
-    + apply ih1.
+    + apply ih2.
       apply (rule_cequiv_subst_hyp_wf2 H J x z C T a b t e); simpl; tcsp.
 
-    + apply ih2.
+    + apply ih1.
       apply (rule_cequiv_subst_hyp_wf2 H J x z C T a b t e); simpl; tcsp.
 
 (*  - apply (rule_approx_member_eq2_true3 lib a b e); simpl; tcsp.
@@ -2000,7 +2000,9 @@ Inductive command {o} :=
 (* start a new proof *)
 | COM_start_proof (name : LemmaName) (C : @NTerm o) (isp : isprog C)
 (* print holes *)
-| COM_find_holes (name : LemmaName).
+| COM_find_holes (name : LemmaName)
+(* print a specific hole *)
+| COM_find_sequent_at_address (name : LemmaName) (addr : address).
 
 (*(* focuses to a node in a proof *)
 | COM_focus_proof (name : LemmaName) (addr : address)*)
@@ -2504,9 +2506,8 @@ Inductive DEBUG_MSG {o} :=
 | could_not_apply_function_equality_rule
 | applied_function_equality_rule
 
-| could_not_apply_universe_eq_rule_not_universes
-| could_not_apply_universe_eq_rule_type_not_universe
-| could_not_apply_universe_eq_rule_not_equality
+| could_not_apply_universe_eq_rule_not_equal_universes (i j : nat)
+| could_not_apply_universe_eq_rule_not_less_than_universe (i j : nat)
 | could_not_apply_universe_eq_rule
 | applied_universe_eq_rule
 
@@ -2536,7 +2537,7 @@ Inductive DEBUG_MSG {o} :=
 | could_not_apply_rev_unfold_abstractions_rule
 | applied_rev_unfold_abstractions_rule
 
-| could_not_apply_cequiv_subst_concl_rule_not_subst (A B : @NTerm o)
+| could_not_apply_cequiv_subst_concl_rule_not_subst (x : NVar) (a b c d e : @NTerm o)
 | could_not_apply_cequiv_subst_concl_rule
 | applied_cequiv_subst_concl_rule
 
@@ -2629,6 +2630,10 @@ Inductive DEBUG_MSG {o} :=
 
 | found_holes (holes : @Holes o)
 | could_not_find_holes_because_could_not_find_lemma
+
+| found_sequent_at_address (addr : address) (s : @pre_baresequent o)
+| could_not_find_sequent_at_address (addr : address)
+| could_not_find_sequent_because_could_not_find_lemma
 
 | finished_proof
 | could_not_finish_proof
@@ -3010,21 +3015,21 @@ Definition finish_proof_cequiv_subst_hyp {o}
            (wfb : wf_term b)
            (cova : covered a (vars_hyps H))
            (covb : covered b (vars_hyps H))
-           (p1 : ExtractProof ctxt (pre_rule_cequiv_subst_hyp_hyp1 H z T x b J C))
-           (p2 : ExtractProof ctxt (pre_rule_cequiv_subst_hyp_hyp2 H z T x a J b))
+           (p1 : ExtractProof ctxt (pre_rule_cequiv_subst_hyp_hyp2 H z T x a J b))
+           (p2 : ExtractProof ctxt (pre_rule_cequiv_subst_hyp_hyp1 H z T x b J C))
   : ExtractProof ctxt (pre_rule_cequiv_subst_hyp_concl H z T x a J C).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
   destruct p2 as [e2 v2 q2].
   unfold pre2baresequent in *; simpl in *.
-  exists e1; auto.
+  exists e2; auto.
   { unfold valid_pre_extract in *; simpl in *.
     allrw @nh_vars_hyps_app.
     allrw @nh_vars_hyps_snoc.
     simpl in *; tcsp. }
   unfold pre2baresequent; simpl.
-  exact (proof_cequiv_subst_hyp _ H z T x a b J C e1 e2 wfa wfb cova covb q1 q2).
+  exact (proof_cequiv_subst_hyp _ H z T x a b J C e2 e1 wfa wfb cova covb q1 q2).
 Defined.
 
 Definition finish_proof_cequiv_computation {o}
@@ -4371,7 +4376,7 @@ Definition apply_proof_step_cequiv_subst_concl {o} {ctxt}
         end
 
       | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
-                 could_not_apply_cequiv_subst_concl_rule_not_subst (subst X x a) T)
+                 could_not_apply_cequiv_subst_concl_rule_not_subst x X a b (subst X x a) T)
       end
 
     | c => (pre_proof_hole _ (MkPreBaresequent H c),
@@ -4417,8 +4422,8 @@ Definition apply_proof_step_cequiv_subst_hyp {o} {ctxt}
                 match covered_decidable b (vars_hyps G) with
                 | inl covb =>
 
-                  let prf1 := pre_proof_hole ctxt (pre_rule_cequiv_subst_hyp_hyp1 G z X x b J T) in
-                  let prf2 := pre_proof_hole ctxt (pre_rule_cequiv_subst_hyp_hyp2 G z X x a J b) in
+                  let prf1 := pre_proof_hole ctxt (pre_rule_cequiv_subst_hyp_hyp2 G z X x a J b) in
+                  let prf2 := pre_proof_hole ctxt (pre_rule_cequiv_subst_hyp_hyp1 G z X x b J T) in
                   (eq_rect
                      _
                      _
@@ -4502,11 +4507,11 @@ Definition apply_proof_step_universe_eq {o} {ctxt}
            applied_universe_eq_rule)
 
         | right _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_uni j1) (mk_uni j2) (mk_uni i)))),
-                      could_not_apply_universe_eq_rule_not_universes)
+                      could_not_apply_universe_eq_rule_not_less_than_universe j1 i)
         end
 
       | right _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_uni j1) (mk_uni j2) (mk_uni i)))),
-                    could_not_apply_universe_eq_rule_not_universes)
+                    could_not_apply_universe_eq_rule_not_equal_universes j2 j1)
       end
 
     | c => (pre_proof_hole _ (MkPreBaresequent H c),
@@ -6177,6 +6182,226 @@ Definition NuprlState_find_holes {o}
   | (None, pps) => (state, could_not_find_holes_because_could_not_find_lemma)
   end.
 
+Fixpoint find_sequent_in_pre_proof {o}
+         {ctxt : @ProofContext o}
+         {s    : pre_baresequent}
+         (p    : pre_proof ctxt s)
+         (addr : address) : option pre_baresequent :=
+  match addr with
+  | [] => Some s
+  | n :: addr =>
+    match p with
+    | pre_proof_from_ctxt _ c H i => None
+
+    | pre_proof_hole _ s => None
+
+    | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_approx_refl _ a H => None
+
+    | pre_proof_cequiv_refl _ a H => None
+
+    | pre_proof_cequiv_alpha_eq _ a b H aeq => None
+
+    | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_cut _ B C x H wfB covB nixH prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_hypothesis _ x A G J => None
+
+    | pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_cequiv_computation _ a b H r => None
+
+    | pre_proof_cequiv_computation_aeq _ a b c H r aeq => None
+
+    | pre_proof_cequiv_computation_atmost _ a b n H r => None
+
+    | pre_proof_unfold_abstractions _ abs a H unf prf =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf addr
+      | _ => None
+      end
+
+    | pre_proof_rev_unfold_abstractions _ abs a H wfa cova unf prf =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf addr
+      | _ => None
+      end
+
+    | pre_proof_universe_equality _ i j H ltij => None
+
+    | pre_proof_hypothesis_equality _ x A G J => None
+
+    | pre_proof_maybe_hidden_hypothesis_equality _ x A G J b => None
+
+    | pre_proof_unhide_equality _ x A t1 t2 C G J prf =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf addr
+      | _ => None
+      end
+
+    | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | 3 => find_sequent_in_pre_proof prf3 addr
+      | _ => None
+      end
+
+    | pre_proof_integer_equality _ n H => None
+
+    | pre_proof_introduction _ t C H wft covt nout prf =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf addr
+      | _ => None
+      end
+
+    | pre_proof_axiom_equality _ a b T H prf =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf addr
+      | _ => None
+      end
+
+    | pre_proof_thin _ G J A C x nixJ nixC prf =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf addr
+      | _ => None
+      end
+
+    | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_cumulativity _ H T i j leij prf1 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | _ => None
+      end
+
+    | pre_proof_equality_symmetry _ H a b T prf1 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | _ => None
+      end
+
+    | pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+
+    | pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2 =>
+      match n with
+      | 1 => find_sequent_in_pre_proof prf1 addr
+      | 2 => find_sequent_in_pre_proof prf2 addr
+      | _ => None
+      end
+    end
+  end.
+
+Definition find_sequent_in_pre_proof_seq {o} {ctxt}
+           (pps  : @pre_proof_seq o ctxt)
+           (addr : address) : option pre_baresequent :=
+  match pps with
+  | MkPreProofSeq name C isp pre_prf => find_sequent_in_pre_proof pre_prf addr
+  end.
+
+Definition NuprlState_find_hole {o}
+           (state : @NuprlState o)
+           (name  : LemmaName)
+           (addr  : address) : NuprlState * DEBUG_MSG :=
+  match find_unfinished_in_pre_proofs (NuprlState_unfinished state) name with
+  | (Some pp, _) =>
+
+    match find_sequent_in_pre_proof_seq pp addr with
+    | Some s => (state, found_sequent_at_address addr s)
+    | None => (state, could_not_find_sequent_at_address addr)
+    end
+
+  | (None, pps) => (state, could_not_find_sequent_because_could_not_find_lemma)
+  end.
+
 Definition update {o}
            (state : @NuprlState o)
            (cmd   : command) : NuprlState * DEBUG_MSG :=
@@ -6195,6 +6420,9 @@ Definition update {o}
 
   | COM_find_holes name =>
     NuprlState_find_holes state name
+
+  | COM_find_sequent_at_address name addr =>
+    NuprlState_find_hole state name addr
   end.
 
 Definition DEBUG_MSGS {o} := list (@DEBUG_MSG o).
@@ -6291,6 +6519,12 @@ Proof.
   - unfold NuprlState_find_holes.
     remember (find_unfinished_in_pre_proofs (NuprlState_unfinished state) name) as f; symmetry in Heqf; repnd.
     destruct f0; simpl in *; auto.
+
+  - unfold NuprlState_find_hole.
+    remember (find_unfinished_in_pre_proofs (NuprlState_unfinished state) name) as f; symmetry in Heqf; repnd.
+    destruct f0; simpl in *; auto.
+    remember (find_sequent_in_pre_proof_seq p addr) as fh; symmetry in Heqfh.
+    destruct fh; simpl; auto.
 Qed.
 
 Lemma update_list_preserves_validity {o} :
@@ -6349,22 +6583,6 @@ Definition update_list_from_init_with_validity {o}
        (valid_update_list_from_init cmds)
        _
        (eq_upd_res_state eq_refl)).
-
-Notation "𝕌( i )" := (oterm (Can (NUni i)) []).
-Notation "𝕍( v )" := (vterm (nvar v)) (at level 0).
-Notation "𝕎( v )" := (sovar (nvar v) []) (at level 0).
-Notation "𝔸( name , t1 , t2 )" := (oterm (Abs {| opabs_name := name; opabs_params := []; opabs_sign := [0, 0] |}) [ bterm [] t1, bterm [] t2]).
-Notation " ( a ≡ b ∈ T ) " := (oterm  (Can NEquality) [ bterm [] a, bterm [] b, bterm [] T]) (at level 0).
-Notation "⋂ v : T . U" := (oterm (Can NIsect) [ bterm [] T, bterm [nvar v] U ]) (at level 0).
-Notation " ( a ≣ b ∈ T ) " := (soterm (Can NEquality) [ sobterm [] a, sobterm [] b, sobterm [] T ]).
-Notation "★" := (oterm (Can NAxiom) []).
-Notation "𝔸( name , v1 , v2 ) ≜ t" := (lib_abs {| opabs_name := name; opabs_params := []; opabs_sign := [0, 0] |} [ (nvar v1, 0), (nvar v2, 0) ] t _) (at level 0).
-Notation "⎧ v ∷ t ⎫" := {| hvar := nvar v; hidden := false; htyp := t; lvl := nolvl |}.
-Notation "⎡ v ∷ t ⎤" := {| hvar := nvar v; hidden := true; htyp := t; lvl := nolvl |}.
-Notation "( a ≈ b )" := (oterm (Can NCequiv) [ bterm [] a, bterm [] b]).
-Notation "LibraryEntry_proof( name , stmt , exp )" := (LibraryEntry_proof _ name stmt exp _ _ _).
-Notation "CUT( B , C , t , u , x , H , prf1 , prf2 )" := (proof_cut _ B C t u x H _ _ _ prf1 prf2).
-Notation "'ℤ'" := (oterm (Can NInt) []).
 
 Arguments pre_proof_isect_member_formation [o] [ctxt] _ _ _ _ _ _ _ _ _.
 Arguments pre_proof_hole [o] [ctxt] _.
