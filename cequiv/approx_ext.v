@@ -34,6 +34,7 @@ Require Export bin_rels.
 Require Export computation_seq.
 Require Export rel_nterm.
 Require Export computation_lib_extends.
+Require Export computation_lib_extends2.
 
 
 (** printing #  $\times$ #×# *)
@@ -367,7 +368,7 @@ Proof.
 Qed.
 Hint Resolve computes_to_value_ext_isvalue_eq : slow.
 
-Lemma lib_extends_preserves_computes_to_value {o} :
+(*Lemma lib_extends_preserves_computes_to_value {o} :
   forall (lib1 lib2 : library)
          (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
          (a b  : @NTerm o)
@@ -381,7 +382,7 @@ Proof.
   eapply reduces_to_preserves_lib_extends in r0;[|eauto|]; eauto 2 with slow.
   exrepnd.
   exists b'; dands; eauto 2 with slow.
-Qed.
+Qed.*)
 
 Lemma lib_extends_preserves_hasvalue {o} :
   forall lib lib' (t : @NTerm o),
@@ -393,8 +394,7 @@ Proof.
   introv wf ext hv.
   unfold hasvalue in *; exrepnd.
   eapply lib_extends_preserves_computes_to_value in hv0;[|eauto|]; auto.
-  exrepnd.
-  exists b'; auto.
+  exists t'; auto.
 Qed.
 Hint Resolve lib_extends_preserves_hasvalue : slow.
 
