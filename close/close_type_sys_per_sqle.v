@@ -289,6 +289,10 @@ Proof.
   exists bar.
   dands; tcsp.
 
+  - introv ib ic.
+    applydup per0 in ic; auto; spcast.
+
+
   (* We should at least weaken it to something like:
 
 

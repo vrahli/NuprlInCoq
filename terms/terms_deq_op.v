@@ -49,6 +49,8 @@ Proof.
 
   - right; auto.
 
+  - destruct (choice_sequence_name_deq c c0) as [d|d]; subst; tcsp.
+
   - destruct (String.string_dec s s0) as [d|d]; subst;[left|right]; auto.
 
   - assert (Deq (get_patom_set o)) as d by (destruct o; destruct patom; auto).
