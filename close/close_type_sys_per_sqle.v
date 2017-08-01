@@ -292,6 +292,8 @@ Proof.
   - introv ib ic.
     applydup per0 in ic; auto; spcast.
 
+    Locate cequivc_mkc_approx.
+
 
   (* We should at least weaken it to something like:
 

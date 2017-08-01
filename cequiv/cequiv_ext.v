@@ -1223,6 +1223,189 @@ Proof.
   exists (mk_cterm a' isp0) (mk_cterm b' isp); simpl; sp.
 Qed.
 
+(*
+Lemma lib_extends_preserves_approx_ext {o} :
+  forall lib lib' (t1 t2 : @NTerm o),
+    lib_extends lib' lib
+    -> approx_ext lib t1 t2
+    -> approx_ext lib' t1 t2.
+Proof.
+  cofix; introv ext ap.
+  inversion ap as [cl].
+  constructor.
+  unfold close_compute_ext in *; repnd.
+  dands; auto.
+
+  - introv comp.
+
+Qed.
+
+Lemma lib_extends_preserves_approx_ext_open {o} :
+  forall lib lib' (t1 t2 : @NTerm o),
+    lib_extends lib' lib
+    -> approx_ext_open lib t1 t2
+    -> approx_ext_open lib' t1 t2.
+Proof.
+  introv ext ap.
+  unfold approx_ext_open in *.
+  unfold olift in *.
+  repnd; dands; auto.
+  introv wf isp1 isp2.
+  applydup ap in wf; auto.
+  SearchAbout olift.
+Qed.
+
+Lemma lib_extends_preserves_lblift_approx_ext_open {o} :
+  forall lib lib' (l1 l2 : list (@BTerm o)),
+    lib_extends lib' lib
+    -> lblift (approx_ext_open lib) l1 l2
+    -> lblift (approx_ext_open lib') l1 l2.
+Proof.
+  introv ext h.
+  unfold lblift in *; repnd.
+  dands; auto.
+  introv q.
+  applydup h in q.
+  unfold blift in *; exrepnd.
+  eexists; eexists; eexists; dands;[|eauto|eauto].
+
+Qed.
+*)
+
+Lemma approx_ext_canonical_form2 {p} :
+  forall lib t t' op bterms,
+    computes_to_value lib t (oterm (Can op) bterms)
+    -> approx_ext lib t t'
+    -> {bterms' : list (@BTerm p)
+        & computes_to_value_ext lib t' (oterm (Can op) bterms')
+        # lblift (approx_ext_open lib) bterms bterms'}.
+Proof.
+  introv comp ap.
+  invertsn ap.
+  repnud ap.
+
+  apply computes_to_value_implies_computes_to_val_exc in comp; eauto 3 with slow.
+
+  apply ap2 in comp.
+  exrepnd.
+
+  apply clearbot_relbt in comp0.
+
+  eexists; dands; eauto.
+Qed.
+
+Lemma computes_to_value_ext_eq {o} :
+  forall lib (t v1 v2 : @NTerm o),
+    t =e=v>(lib) v1
+    -> t =e=v>(lib) v2
+    -> v1 = v2.
+Proof.
+  introv comp1 comp2.
+  eapply computes_to_value_eq;[apply comp1|apply comp2]; apply lib_extends_refl.
+Qed.
+
+Lemma cequiv_ext_canonical_form2 {pp} :
+  forall lib t t' op bterms,
+    computes_to_value lib t (oterm (Can op) bterms)
+    -> cequiv_ext lib t t'
+    -> {bterms' : list (@BTerm pp)
+        & computes_to_value_ext lib t' (oterm (Can op) bterms')
+        # cequiv_ext_bts lib bterms bterms'}.
+Proof.
+  introv comp ceq.
+  allunfold @cequiv_ext; repnd.
+
+  applydup @approx_ext_relates_only_progs in ceq; repnd.
+
+  apply @approx_ext_canonical_form2 with (op := op) (bterms := bterms) in ceq0; auto; exrepnd.
+  apply @approx_ext_canonical_form2 with (op := op) (bterms := bterms') in ceq; eauto 3 with slow; exrepnd.
+
+  apply computes_to_value_implies_computes_to_val_exc in comp;[|eauto 3 with slow].
+
+  eapply computes_to_value_ext_eq in ceq5;[|exact comp]; ginv.
+  exists bterms'; sp.
+  apply lblift_approx_ext_cequiv_ext; auto.
+Qed.
+
+Ltac prove_cequiv_ext_mk2 :=
+  let Hcomp   := fresh "Hcomp" in
+  let Hcomp1  := fresh "Hcomp1" in
+  let Hcomp2  := fresh "Hcomp2" in
+  let Hcomp3  := fresh "Hcomp3" in
+  let Hcomp4  := fresh "Hcomp4" in
+  let Hceq    := fresh "Hceq" in
+  let bt      := fresh "bt" in
+  let Hbt     := fresh "Hbt" in
+  let bterms' := fresh "bterms'" in
+  introv Hcomp Hceq;
+    applydup @cequiv_ext_isprogram in Hceq; repnd;
+    applydup @preserve_program in Hcomp as Hcomp1; auto;
+    eapply @cequiv_ext_canonical_form2 in Hcomp; eauto;
+    destruct Hcomp as [bterms' Hcomp];
+    destruct Hcomp as [Hcomp2 Hcomp3];
+    applydup @computes_to_value_ext_preserves_isprogram in Hcomp2 as Hcomp4; auto;
+    unfold_all_mk;
+    unfold_all_mk2;
+    match goal with
+      | [H : lblift _ _ ?bterms'  |- _ ] =>
+        unfold lblift in H; simpl in H;
+        let Hlen := fresh H "len" in
+        destruct H as [Hlen H];   dlist_len_name bterms' bt
+      | [H : cequiv_ext_bts _ _ ?bterms' |- _ ] =>
+        unfold cequiv_ext_bts, lblift in H; simpl in H;
+        let Hlen := fresh H "len" in
+        destruct H as [Hlen H];   dlist_len_name bterms' bt
+    end;
+  dforall_lt_hyp Hbt;
+  allunfold @selectbt; allsimpl;
+  destruct_bterms;
+  blift_nums;
+  allunfold @num_bvars; allsimpl;
+  dlists_len;
+  unfold_all_mk;
+  unfold_all_mk2;
+  repeat(decomp_progh3);
+  remove_relbt_samevar;
+  foldlifts;
+  rep_eexists; dands; eauto; apply @cequiv_ext_open_cequiv_ext;
+     eauto 2 with slow.
+
+Lemma cequiv_ext_mk_approx2 {p} :
+  forall lib t t' a b,
+    computes_to_value lib t (mk_approx a b)
+    -> cequiv_ext lib t t'
+    -> {a', b' : @NTerm p
+        $ computes_to_value_ext lib t' (mk_approx a' b')
+        # cequiv_ext lib a a'
+        # cequiv_ext lib b b'}.
+Proof.
+  prove_cequiv_ext_mk2.
+Qed.
+
+Definition computes_to_valc_ext {o} (lib : @library o) (a b : @CTerm o) :=
+  inExt lib (fun lib => computes_to_valc lib a b).
+
+Lemma cequivc_ext_mkc_approx2 {p} :
+  forall lib t t' a b,
+    computes_to_valc lib t (mkc_approx a b)
+    -> cequivc_ext lib t t'
+    -> {a', b' : @CTerm p
+        $ computes_to_valc_ext lib t' (mkc_approx a' b')
+        # cequivc_ext lib a a'
+        # cequivc_ext lib b b'}.
+Proof.
+  unfold computes_to_valc, cequivc_ext.
+  introv comp ceq; destruct_cterms; allsimpl.
+  generalize (cequiv_ext_mk_approx2 lib x2 x1 x0 x); intro k.
+  repeat (autodimp k hyp); exrepnd.
+
+  applydup @computes_to_value_ext_implies_computes_to_value in k0.
+  applydup @computes_to_value_isvalue in k3 as j.
+  inversion j as [u isp isc]; subst.
+  allrw <- @isprogram_approx_iff; repnd.
+  exists (mk_cterm a' isp0) (mk_cterm b' isp); simpl; sp.
+Qed.
+
 Lemma cequiv_ext_mk_cequiv {p} :
   forall lib t t' a b,
     computes_to_value lib t (mk_cequiv a b)
