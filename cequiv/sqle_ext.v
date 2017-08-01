@@ -30,7 +30,7 @@
 *)
 
 
-Require Export approx.
+Require Export approx_ext.
 Require Export computation4.
 
 (** printing #  $\times$ #×# *)
@@ -47,27 +47,34 @@ Require Export computation4.
 
  *)
 
-Inductive sqle_n {o} (lib : @library o) :  nat -> @NTerm o -> @NTerm o -> [univ] :=
- | sql0 : forall tl tr, isprogram tl -> isprogram tr -> sqle_n lib 0 tl tr
- | sql_add1 : forall n tl tr, (close_comput lib (sqle_n lib n)) tl tr
-                               -> sqle_n lib (S n) tl tr.
+Inductive sqle_ext_n {o} (lib : @library o) :  nat -> @NTerm o -> @NTerm o -> [univ] :=
+| sql_ext0 :
+    forall tl tr,
+      isprogram tl
+      -> isprogram tr
+      -> sqle_ext_n lib 0 tl tr
+ | sql_ext_add1 :
+     forall n tl tr,
+       close_compute_ext lib (sqle_ext_n lib n) tl tr
+       -> sqle_ext_n lib (S n) tl tr.
+Hint Constructors sqle_ext_n.
 
 (* begin hide *)
 
 
 (* does not even need induction *)
-Lemma respects_alpha_sqlen {o} :
+Lemma respects_alpha_sqle_ext_n {o} :
   forall lib n,
-    respects_alpha (@sqle_n o lib n).
+    respects_alpha (@sqle_ext_n o lib n).
 Proof.
   induction n; split; introv Hal Hap;
-  invertsn Hap;
-  alpha_hyps Hal;
-  constructor; auto;
-  revert Hal Hap; apply respects_alpha_closed_comput; auto.
+    invertsn Hap;
+    alpha_hyps Hal;
+    constructor; auto;
+      revert Hal Hap; apply respects_alpha_close_compute_ext; auto.
 Qed.
 
-Hint Resolve respects_alpha_sqlen : respects.
+Hint Resolve respects_alpha_sqle_ext_n : respects.
 Hint Resolve alpha_eq_bterm_trans alpha_eq_bterm_sym: alphaeqbt.
 
 Lemma trans_blift {o} : forall (R : @NTerm o -> @NTerm o -> [univ]),
@@ -140,14 +147,14 @@ Qed.
 
 
 
-Lemma trans_rel_close_comput {o} :
+Lemma trans_rel_close_compute_ext {o} :
   forall lib (R : @NTerm o -> @NTerm o -> [univ]),
   trans_rel R
   -> respects_alpha R
-  -> trans_rel (close_comput lib R).
+  -> trans_rel (close_compute_ext lib R).
 Proof.
   intros lib R Ht Hra a b c Hab Hbc.
-  allunfold @close_comput.
+  allunfold @close_compute_ext.
   repnd; dands; auto.
 
   - introv Hcv.
@@ -182,55 +189,55 @@ Proof.
     eexists; dands; eauto.
 Qed.
 
-Lemma sqlen_n_trans {o} : forall lib n, trans_rel (@sqle_n o lib n).
+Lemma sqle_ext_n_trans {o} : forall lib n, trans_rel (@sqle_ext_n o lib n).
 Proof.
   induction n; intros a b c Hab Hbc;
   invertsn Hab; invertsn Hbc; constructor; auto;[].
   revert Hab Hbc.
-  apply trans_rel_close_comput; eauto with respects.
+  apply trans_rel_close_compute_ext; eauto with respects.
 Qed.
 
-Lemma trans_rel_olift_sqlen {o} : forall lib n,
-  trans_rel (lblift (olift (@sqle_n o lib n))).
+Lemma trans_rel_olift_sqle_ext_n {o} : forall lib n,
+  trans_rel (lblift (olift (@sqle_ext_n o lib n))).
 Proof.
   intros. apply trans_lblift; eauto with respects;[].
-  apply sqlen_n_trans.
+  apply sqle_ext_n_trans.
 Qed.
 
 
 
-Theorem sqlen_closed {o} : forall lib n, is_rel_on_progs (@sqle_n o lib n).
+Theorem sqle_ext_n_closed {o} : forall lib n, is_rel_on_progs (@sqle_ext_n o lib n).
 Proof. induction n as [| n Hind]; intros t1 t2 Hsq;
  invertsn Hsq; auto.
  rename Hsq into Hclose.
- unfold close_comput in Hclose.
+ unfold close_compute_ext in Hclose.
  sp; auto.
 Qed.
 
 (* end hide *)
 (* This is Howe's specialized definition that works
  only for a deterministic computaion system*)
-Definition sqle {o} lib (tl tr : @NTerm o) :=
-  forall n, sqle_n lib n tl tr.
+Definition sqle_ext {o} lib (tl tr : @NTerm o) :=
+  forall n, sqle_ext_n lib n tl tr.
 (* begin hide *)
 
-Definition sq_closure {o} lib :=
+Definition sq_ext_closure {o} lib :=
   fun (R : @NTerm o -> @NTerm o -> [univ]) =>
     is_rel_on_progs R
-    # le_bin_rel R (close_comput lib R).
+    # le_bin_rel R (close_compute_ext lib R).
 
-Theorem sqle_ge_postfixpoint {o} :
+Theorem sqle_ext_ge_postfixpoint {o} :
   forall lib,
   is_ge_any_rel_sat
-    (sqle lib)
-    (@sq_closure o lib).
+    (sqle_ext lib)
+    (@sq_ext_closure o lib).
 Proof.
-  unfold is_ge_any_rel_sat, le_bin_rel, sq_closure. auto. intros lib Rp Hsat a b Hrp n.
+  unfold is_ge_any_rel_sat, le_bin_rel, sq_ext_closure. auto. intros lib Rp Hsat a b Hrp n.
   gen a b. repnd.
   induction n; intros a b Hrp; constructor;
   try (apply Hsat0 in Hrp; sp; auto; fail).
   apply Hsat in Hrp. clear Hsat.
-  allunfold @close_comput; repnd.
+  allunfold @close_compute_ext; repnd.
   repeat(split;auto).
 
   - intros c tl_subterms Hcv.
@@ -238,8 +245,8 @@ Proof.
     exists tr_subterms. sp; auto.
     clear Hcv1.
     gen tl_subterms tr_subterms.
-    fold (@le_bin_rel  NTerm Rp (sqle_n lib n)) in IHn.
-    fold (@le_bin_rel (list BTerm ) (lblift Rp) (lblift (sqle_n lib n)) ) .
+    fold (@le_bin_rel  NTerm Rp (sqle_ext_n lib n)) in IHn.
+    fold (@le_bin_rel (list BTerm ) (lblift Rp) (lblift (sqle_ext_n lib n)) ) .
     apply le_lblift. apply le_olift in IHn.
     auto.
 
@@ -257,10 +264,10 @@ Theorem sqle_closed : is_rel_on_progs sqle.
 Proof.
   unfold is_rel_on_progs.  intros.
   allunfold sqle.
-  apply sqlen_closed with 0; auto.
+  apply sqle_ext_n_closed with 0; auto.
 Qed.
 
-Theorem sqle_closure :  sq_closure sqle.
+Theorem sqle_closure :  sq_ext_closure sqle.
 Proof.
  split; try apply sqle_closed.
  unfold le_bin_rel. intros a b Hsqle.
@@ -270,8 +277,8 @@ Proof.
  repeat(split; trivial).
  clear Hproga Hprogb.
  intros ? ? Hcv.
- unfold sqle in Hsqle.
- assert (sqle_n 1 a b ) as Hsqle1 by auto.
+ unfold sqle_ext in Hsqle.
+ assert (sqle_ext_n 1 a b ) as Hsqle1 by auto.
  inverts Hsqle1 as Hclose.
  duplicate Hcv.
  apply Hclose in Hcv0.
@@ -291,7 +298,7 @@ Proof.
   apply computes_to_value_wf3 with (n:=n) in Hcv; auto.
   apply computes_to_value_wf3 with (n:=n) in Hcvb; omega.
   intros lnt ? Hin m.
-  assert (sqle_n (S m) a b) as HsqleSm by auto.
+  assert (sqle_ext_n (S m) a b) as HsqleSm by auto.
   inverts HsqleSm as Hclose.
   duplicate Hcv.
   apply Hclose in Hcv0. exrepnd.
@@ -303,7 +310,7 @@ Qed.
 
 Theorem sqle_greatest_postfixpoint: is_greatest_rel_sat 
                                    sqle
-                                   sq_closure.
+                                   sq_ext_closure.
 Proof. unfold is_greatest_rel_sat. 
  split. 
   apply sqle_closure.
@@ -312,11 +319,11 @@ Qed.
 *)
 
 
-Theorem close_comput_mono {o}: forall lib R1 R2, (le_bin_rel R1 R2)
-  -> le_bin_rel (@close_comput o lib R1) (close_comput lib R2).
+Theorem close_compute_ext_mono {o}: forall lib R1 R2, (le_bin_rel R1 R2)
+  -> le_bin_rel (@close_compute_ext o lib R1) (close_compute_ext lib R2).
 Proof.
   intros ? ? ? Hle. intros ? ? Hcr1.
-  allunfold @close_comput. repnd.
+  allunfold @close_compute_ext. repnd.
   repeat(split;auto).
 
   - intros ? ? Hcomp.
@@ -346,7 +353,7 @@ Proof.
    unfold is_rel_on_progs. intros ? ? Hcomp. inverts Hcomp; sp; auto.
    unfold le_bin_rel.
    intros ? ? Hcomp.
-   assert(le_bin_rel sqle (close_comput sqle)) by apply sqle_closure.
+   assert(le_bin_rel sqle_ext (close_comput sqle)) by apply sqle_closure.
    apply close_comput_mono in H.
    apply H; auto.
 Qed.
@@ -359,9 +366,9 @@ Proof.
 Qed.
 
 
-Theorem id_sq_closure: sq_closure nt_id_prog.
+Theorem id_sq_ext_closure: sq_ext_closure nt_id_prog.
 Proof.
- unfold nt_id_prog, sq_closure, is_rel_on_progs, le_bin_rel.
+ unfold nt_id_prog, sq_ext_closure, is_rel_on_progs, le_bin_rel.
  split; try(sp; intros; auto; fail).
  intros a b Hprogs. repnd.
  unfold close_comput.
@@ -391,10 +398,10 @@ Qed.
 Theorem id_le_sqle: le_bin_rel nt_id_prog sqle.
 Proof.
  apply sqle_ge_postfixpoint.
- apply id_sq_closure.
+ apply id_sq_ext_closure.
 Qed.
 
-Theorem sqle_id : forall (t1: NTerm) , (isprogram t1) -> (sqle t1 t1).
+Theorem sqle_id : forall (t1: NTerm) , (isprogram t1) -> (sqle_ext t1 t1).
 Proof.
 intros. apply id_le_sqle. unfold nt_id_prog.
 sp;auto.
@@ -403,17 +410,51 @@ Qed.
 
 (* end hide *)
 
-Lemma approx_sqle {o} :
+Lemma computes_to_value_ext_eq {o} :
+  forall lib (t v1 v2 : @NTerm o),
+    t =e=v>(lib) v1
+    -> t =e=v>(lib) v2
+    -> v1 = v2.
+Proof.
+  introv comp1 comp2.
+  eapply computes_to_value_eq;[apply comp1|apply comp2]; apply lib_extends_refl.
+Qed.
+
+Lemma computes_to_exception_ext_eq {o} :
+  forall lib (a b t e1 e2 : @NTerm o),
+    t =e=e>(a,lib) e1
+    -> t =e=e>(b,lib) e2
+    -> e1 = e2 # a = b.
+Proof.
+  introv comp1 comp2.
+  eapply computes_to_exception_eq;[apply comp1|apply comp2]; apply lib_extends_refl.
+Qed.
+
+Lemma reduces_to_ext_eq_val_like {o} :
+  forall lib (t v1 v2 : @NTerm o),
+    reduces_to_ext lib t v1
+    -> reduces_to_ext lib t v2
+    -> isvalue_like v1
+    -> isvalue_like v2
+    -> v1 = v2.
+Proof.
+  introv r1 r2 isv1 isv2.
+  eapply reduces_to_eq_val_like;
+    [apply r1|apply r2|exact isv1|exact isv2];
+    apply lib_extends_refl.
+Qed.
+
+Lemma approx_ext_sqle_ext {o} :
   forall lib a b,
-    @approx o lib a b <=> sqle lib a b.
+    @approx_ext o lib a b <=> sqle_ext lib a b.
 Proof.
   intros; sp_iff Case.
 
   - Case "->"; intro Hap.
-    unfold sqle; intro.
+    unfold sqle_ext; intro.
     revert a b Hap.
-    induction n; constructor; invertsn Hap; unfold close_comput in Hap; sp.
-    unfold close_comput. dands; auto.
+    induction n; constructor; invertsn Hap; unfold close_compute_ext in Hap; sp.
+    unfold close_compute_ext. dands; auto.
 
     + introv Hcv.
       applydup Hap2 in Hcv. exrepnd.
@@ -438,10 +479,10 @@ Proof.
 
   - Case "<-"; introv Hsq.
     revert a b Hsq.
-    apply (approx_acc).
+    apply (approx_ext_acc).
     introv  Hb Hs. intros a b Hsq.
     constructor. repnud Hsq. pose proof (Hsq 1) as H1s.
-    applydup @sqlen_closed in H1s. repnd.
+    applydup @sqle_ext_n_closed in H1s. repnd.
     split; auto.
     dands; auto.
 
@@ -452,7 +493,7 @@ Proof.
       exrepnd.
       exists tr_subterms.
       dands;auto.
-      apply (le_lblift (olift (sqle lib))).
+      apply (le_lblift (olift (sqle_ext lib))).
       * apply le_olift. introv Hss. right. eauto.
       * repnud Hcv0.  clear H1s. unfolds_base. dands; auto.
         introv Hpt. unfolds_base. duplicate Hpt as Hptb. apply Hcv0 in Hpt.
@@ -467,7 +508,8 @@ Proof.
         repnud Hnn.
         apply Hnn2 in Hcvb.
         exrepnd.
-        eapply computes_to_value_eq in Hcv1; eauto.
+
+        eapply computes_to_value_ext_eq in Hcv1; eauto.
         invertsn Hcv1.
         clear Hnn Hcv0.
         repnud Hcvb0.
@@ -485,25 +527,25 @@ Proof.
       exists a' e'; sp.
 
       {
-        assert (sqle lib a0 a'); [|complete auto].
+        assert (sqle_ext lib a0 a'); [|complete auto].
         intro n.
         generalize (Hsq (S n)); intro k.
 
         invertsn k; auto.
         repnud k.
         apply k3 in ce; exrepnd.
-        eapply computes_to_exception_eq in ce3; eauto; repnd; subst; auto.
+        eapply computes_to_exception_ext_eq in ce3; eauto; repnd; subst; auto.
       }
 
       {
-        assert (sqle lib e e'); [|complete auto].
+        assert (sqle_ext lib e e'); [|complete auto].
         intro n.
         generalize (Hsq (S n)); intro k.
 
         invertsn k; auto.
         repnud k.
         apply k3 in ce; exrepnd.
-        eapply computes_to_exception_eq in ce3; eauto; repnd; subst; auto.
+        eapply computes_to_exception_ext_eq in ce3; eauto; repnd; subst; auto.
       }
 
 (*
@@ -526,7 +568,7 @@ Proof.
       invertsn h.
       repnud h.
       apply h4 in comp; exrepnd.
-      eapply reduces_to_eq_val_like in comp3;
+      eapply reduces_to_ext_eq_val_like in comp3;
         try (exact comp0); eauto 3 with slow; ginv; auto.
 Qed.
 (* begin hide *)

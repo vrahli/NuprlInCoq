@@ -802,6 +802,7 @@ Proof.
   - apply alphaeq_preserves_program in aeq; apply aeq; auto.
 
   - clear ce; allunfold @close_compute_val_ext; introv ca.
+    applydup @alpha_prog_eauto in aeq as ispb'; eauto 3 with slow.
     apply cv in ca; exrepnd; clear cv.
     eapply compute_to_value_alpha with (t1' := oterm (Can c) tr_subterms) in aeq;
       eauto 3 with slow; exrepnd.
@@ -810,9 +811,7 @@ Proof.
 
     {
       introv ext.
-      eapply lib_extends_preserves_computes_to_value in ext;[| |eauto]; auto.
-
-      SearchAbout computes_to_value lib_extends.
+      eapply lib_extends_preserves_computes_to_value in ext;[| |eauto]; eauto 3 with slow.
     }
 
     allunfold @lblift; dands; repnd; auto; try omega.
@@ -822,15 +821,22 @@ Proof.
     applydup aeqbt in k.
     apply blift_alpha_fun_r with (nt2 := (tr_subterms {[n]})); auto.
 
-  - clear cv; allunfold @close_compute_exc;
-    introv ca.
+  - clear cv; allunfold @close_compute_exc_ext; introv ca.
+    applydup @alpha_prog_eauto in aeq as ispb'; eauto 3 with slow.
     apply ce in ca; exrepnd; clear ce.
     repdors; try (complete (allunfold @bot2; sp)).
     eapply compute_to_exception_alpha with (t1' := e') in aeq;
       eauto 3 with slow; exrepnd.
     exists a'0 t2'; dands; auto.
+
+    {
+      introv ext.
+      eapply lib_extends_preserves_reduces_to in ext;[| |eauto]; eauto 3 with slow.
+    }
+
     + left.
       apply (IND _ _ _ a'0) in ca1; auto.
+
     + left.
       apply (IND _ _ _ t2') in ca3; auto.
 
@@ -843,10 +849,17 @@ Proof.
  *)
 
   - introv comp.
+    applydup @alpha_prog_eauto in aeq as ispb'; eauto 3 with slow.
     apply cs in comp; exrepnd.
     eapply computes_to_seq_alpha in comp1; eauto 3 with slow.
     exrepnd.
-    eexists; dands; eauto.
+    exists f'0; dands; eauto.
+
+    {
+      introv ext.
+      eapply lib_extends_preserves_reduces_to in ext;[| |eauto]; eauto 3 with slow.
+    }
+
     introv.
     pose proof (comp0 n) as h; clear comp0.
     pose proof (comp2 n) as q; clear comp2.
@@ -864,6 +877,39 @@ Proof.
   apply (respects_alpha_r_approx_ext_aux_bot2 _ _ _ b') in ap; auto.
 Qed.
 
+Lemma computes_to_value_implies_computes_to_val_exc {o} :
+  forall lib (a b : @NTerm o),
+    wf_term a
+    -> a =v>(lib) b
+    -> a =e=v>(lib) b.
+Proof.
+  introv wf comp ext.
+  eapply lib_extends_preserves_computes_to_value; eauto.
+Qed.
+Hint Resolve computes_to_value_implies_computes_to_val_exc : slow.
+
+Lemma computes_to_exception_implies_computes_to_exception_exc {o} :
+  forall lib (a b c : @NTerm o),
+    wf_term a
+    -> a =e>(b,lib) c
+    -> a =e=e>(b,lib) c.
+Proof.
+  introv wf comp ext.
+  eapply lib_extends_preserves_reduces_to; eauto.
+Qed.
+Hint Resolve computes_to_exception_implies_computes_to_exception_exc : slow.
+
+Lemma computes_to_seq_implies_computes_to_seq_exc {o} :
+  forall lib (a : @NTerm o) f,
+    wf_term a
+    -> a =s>(lib) f
+    -> a =e=s>(lib) f.
+Proof.
+  introv wf comp ext.
+  eapply lib_extends_preserves_reduces_to; eauto.
+Qed.
+Hint Resolve computes_to_seq_implies_computes_to_seq_exc : slow.
+
 Lemma respects_alpha_l_approx_ext_aux_bot2 {p} :
   forall lib, respects_alpha_l (@approx_ext_aux p lib bot2).
 Proof.
@@ -876,17 +922,19 @@ Proof.
   destruct cc as [ce cc].
   destruct cc as [cs cc].
   constructor.
-  unfold close_comput; dands; auto.
+  unfold close_compute_ext; dands; auto.
 
   - apply alphaeq_preserves_program in aeq; apply aeq; auto.
 
-  - clear ce; allunfold @close_compute_val;
-    introv ca'.
+  - clear ce cs; introv ca'.
     applydup @alpha_prog_eauto in aeq as ispa'; auto.
     apply alpha_eq_sym in aeq.
     eapply compute_to_value_alpha with (t1' := oterm (Can c) tl_subterms) in aeq;
       eauto 3 with slow; exrepnd.
     inversion aeq0 as [|?| ? ? ? leq aeqbt]; subst.
+
+    apply computes_to_value_implies_computes_to_val_exc in aeq1; eauto 3 with slow.
+
     apply cv in aeq1; exrepnd; clear cv.
     exists tr_subterms; dands; auto.
     allunfold @lblift; dands; repnd; auto; try omega.
@@ -897,12 +945,14 @@ Proof.
     apply blift_alpha_fun_l with (nt1 := (lbt2 {[n]})); auto.
     apply alpha_eq_bterm_sym; auto.
 
-  - clear cv; allunfold @close_compute_exc;
-    introv ca.
+  - clear cv cs; introv ca.
     applydup @alpha_prog_eauto in aeq as ispa'; auto.
     apply alpha_eq_sym in aeq.
     eapply compute_to_exception_alpha with (t1' := e) in aeq;
       eauto 3 with slow; exrepnd.
+
+    apply computes_to_exception_implies_computes_to_exception_exc in aeq0; eauto 3 with slow.
+
     apply ce in aeq0; exrepnd; clear ce.
     repdors; try (complete (allunfold @bot2; sp)).
     exists a'1 e'; dands; auto.
@@ -924,8 +974,11 @@ Proof.
   - introv comp.
     applydup @alpha_prog_eauto in aeq as wfa'; auto.
     apply alpha_eq_sym in aeq.
-    eapply computes_to_seq_alpha in comp;[| |eauto]; eauto 3 with slow.
+    eapply computes_to_seq_alpha in comp; eauto 3 with slow.
     exrepnd.
+
+    apply computes_to_seq_implies_computes_to_seq_exc in comp1; eauto 3 with slow.
+
     apply cs in comp1; exrepnd.
     eexists; dands; eauto.
     introv.
@@ -946,7 +999,7 @@ Proof.
   apply (respects_alpha_l_approx_ext_aux_bot2 _ _ _ a') in ap; auto.
 Qed.
 
-Lemma respects_alphal_closed_comput {p} :
+Lemma respects_alphal_close_compute_ext {p} :
   forall lib R,
     respects_alpha_l R
     -> respects_alpha_l (@close_compute_ext p lib R).
@@ -965,6 +1018,9 @@ Proof.
 
     + rename bts into clbt2.
       subst. duplicate Hcv0 as H1cv. inverts Hcv0 as Hclen Hcal. rename c0 into c.
+
+      apply computes_to_value_implies_computes_to_val_exc in Hcv1; eauto 3 with slow.
+
       apply Hap2 in Hcv1. eauto.
       exrepnd.
       exists tr_subterms.
@@ -987,6 +1043,9 @@ Proof.
   - introv comp.
     eapply compute_to_exception_alpha with (t2:=a) in comp; eauto with slow.
     exrepnd.
+
+    apply computes_to_exception_implies_computes_to_exception_exc in comp0; eauto 3 with slow.
+
     apply Hap3 in comp0; exrepnd.
     exists a'1 e'; dands; auto.
     + apply (rR _ _ a0) in comp4; auto.
@@ -1003,7 +1062,10 @@ Proof.
   - introv comp.
     applydup @alpha_prog_eauto in Hal as wfa'; auto.
     apply alpha_eq_sym in Hal.
-    eapply computes_to_seq_alpha in comp;[| |eauto]; eauto 3 with slow; exrepnd.
+    eapply computes_to_seq_alpha in comp;eauto 3 with slow; exrepnd.
+
+    apply computes_to_seq_implies_computes_to_seq_exc in comp1; eauto 3 with slow.
+
     apply Hap4 in comp1; exrepnd.
     eexists; dands; eauto.
     introv.
@@ -1014,7 +1076,7 @@ Proof.
     eapply rR; eauto.*)
 Qed.
 
-Lemma approxr_alpha_rw_l_aux {p} :
+Lemma approxr_ext_alpha_rw_l_aux {p} :
   forall lib r a b a',
     respects_alpha_l (approx_ext_aux lib r \2/ r)
     -> @alpha_eq p a a'
@@ -1026,23 +1088,23 @@ Proof.
   invertsn  Hap.
   constructor.
   revert Hal Hap.
-  apply respects_alphal_closed_comput; auto.
+  apply respects_alphal_close_compute_ext; auto.
 Qed.
 
-Lemma approx_alpha_rw_l_aux {p} :
+Lemma approx_ext_alpha_rw_l_aux {p} :
   forall lib a b a',
     @alpha_eq p a a'
     -> approx_ext lib a b
     -> approx_ext lib a' b.
 Proof.
- unfold approx.
+ unfold approx_ext.
  introv.
  generalize (@respects_alpha_l_approx_ext_aux_bot2_or_bot2 p lib).
  revert a b a'.
- exact (approxr_alpha_rw_l_aux lib bot2).
+ exact (approxr_ext_alpha_rw_l_aux lib bot2).
 Qed.
 
-Lemma respects_alphar_closed_comput {p} :
+Lemma respects_alphar_close_compute_ext {p} :
   forall lib R,
     respects_alpha_r R
     -> respects_alpha_r (@close_compute_ext p lib R).
@@ -1079,9 +1141,7 @@ Proof.
     apply Hap3 in comp; exrepnd.
     eapply compute_to_exception_alpha with (t2:=b') in comp0; eauto with slow.
     exrepnd.
-    exists a'0 t2'; dands; auto.
-    + apply (rR _ _ a'0) in comp2; auto.
-    + apply (rR _ _ t2') in comp1; auto.
+    exists a'0 t2'; dands; auto; eauto 4 with slow.
 
 (*
   - introv comp.
@@ -1091,11 +1151,11 @@ Proof.
 
   - introv comp.
     apply Hap4 in comp; exrepnd.
-    eapply computes_to_seq_alpha in comp1;[| |eauto]; eauto 3 with slow; exrepnd.
-    eexists; dands; eauto.
+    eapply computes_to_seq_alpha in comp1;eauto 3 with slow; exrepnd.
+    eexists; dands; eauto 4 with slow.
 Qed.
 
-Lemma approxr_alpha_rw_r_aux {p} :
+Lemma approxr_ext_alpha_rw_r_aux {p} :
   forall lib r a b b',
     respects_alpha_r (approx_ext_aux lib r \2/ r)
     -> @alpha_eq p b b'
@@ -1107,34 +1167,34 @@ Proof.
   invertsn  Hap.
   constructor.
   revert Hal Hap.
-  apply respects_alphar_closed_comput; auto.
+  apply respects_alphar_close_compute_ext; auto.
 Qed.
 
-Lemma approx_alpha_rw_r_aux {p} :
+Lemma approx_ext_alpha_rw_r_aux {p} :
   forall lib a b b',
     @alpha_eq p b b'
     -> approx_ext lib a b
     -> approx_ext lib a b'.
 Proof.
- unfold approx.
+ unfold approx_ext.
  introv.
  generalize (@respects_alpha_r_approx_ext_aux_bot2_or_bot2 p lib).
  revert a b b'.
- exact (approxr_alpha_rw_r_aux lib bot2).
+ exact (approxr_ext_alpha_rw_r_aux lib bot2).
 Qed.
 
-Hint Resolve approx_alpha_rw_r_aux : slowbad.
-Hint Resolve approx_alpha_rw_l_aux : slowbad.
+Hint Resolve approx_ext_alpha_rw_r_aux : slowbad.
+Hint Resolve approx_ext_alpha_rw_l_aux : slowbad.
 
 (* end hide *)
-Lemma respects_alpha_closed_comput {p} :
+Lemma respects_alpha_close_compute_ext {p} :
   forall lib R, respects_alpha R -> respects_alpha (@close_compute_ext p lib R).
 Proof.
   introv ra.
   destruct ra.
   split.
-  - apply respects_alphal_closed_comput; auto.
-  - apply respects_alphar_closed_comput; auto.
+  - apply respects_alphal_close_compute_ext; auto.
+  - apply respects_alphar_close_compute_ext; auto.
 Qed.
 
 Corollary respects_alpha_approx_ext {p} :
@@ -1142,17 +1202,17 @@ Corollary respects_alpha_approx_ext {p} :
 Proof.
   split; introv; intros; eauto with slowbad.
 Qed.
-Hint Immediate respects_alpha_approx.
+Hint Immediate respects_alpha_approx_ext.
 
 
 (* begin hide *)
 
 
-Hint Resolve respects_alpha_closed_comput : respects.
+Hint Resolve respects_alpha_close_compute_ext : respects.
 
-Theorem approx_open_relates_only_wf {p} :
+Theorem approx_ext_open_relates_only_wf {p} :
   forall lib (t1 t2 : @NTerm p),
-    approx_open lib t1 t2
+    approx_ext_open lib t1 t2
     -> nt_wf t1 # nt_wf t2.
 Proof.
   introv.
@@ -1166,39 +1226,39 @@ Qed.
 Hint Resolve respects_alpha_approx_ext : respects.
 
 (** key helper for lemma 0.6 in annotated paper *)
-Theorem approx_open_lsubst {p} :
+Theorem approx_ext_open_lsubst {p} :
   forall lib a b lvi lvo,
-    let sub := @var_ren p lvi lvo in 
-    approx_open lib a b
-    -> approx_open lib (lsubst a sub) (lsubst b sub).
+    let sub := @var_ren p lvi lvo in
+    approx_ext_open lib a b
+    -> approx_ext_open lib (lsubst a sub) (lsubst b sub).
 Proof.
   simpl. intros. apply olift_vars_lsubst; eauto with respects.
 Qed.
 
-Lemma approx_open_alpha_rw_l_aux {p} :
+Lemma approx_ext_open_alpha_rw_l_aux {p} :
   forall lib a b a',
   @alpha_eq p a a'
-  -> approx_open lib a b
-  -> approx_open lib a' b.
+  -> approx_ext_open lib a b
+  -> approx_ext_open lib a' b.
 Proof.
   introv Hal HH. apply alpha_eq_sym in Hal.
-  unfold approx_open.
+  unfold approx_ext_open.
   rwg Hal. trivial.
 Qed.
 
-Lemma approx_open_alpha_rw_r_aux {p} :
+Lemma approx_ext_open_alpha_rw_r_aux {p} :
   forall lib a b b',
   @alpha_eq p b b'
-  -> approx_open lib a b
-  -> approx_open lib a b'.
+  -> approx_ext_open lib a b
+  -> approx_ext_open lib a b'.
 Proof.
   introv Hal HH. apply alpha_eq_sym in Hal.
-  unfold approx_open.
+  unfold approx_ext_open.
   rwg Hal. trivial.
 Qed.
 
-Hint Resolve approx_open_alpha_rw_l_aux : slowbad.
-Hint Resolve approx_open_alpha_rw_r_aux : slowbad.
+Hint Resolve approx_ext_open_alpha_rw_l_aux : slowbad.
+Hint Resolve approx_ext_open_alpha_rw_r_aux : slowbad.
 
 
 Hint Resolve alphaeqbt_numbvars : slow.
@@ -1213,11 +1273,11 @@ Hint Resolve alphaeqbt_numbvars : slow.
 
 
 Lemma approxbtd_change2 {p} : forall lib bt1 bt2 (lvn lva: list NVar),
-  approx_open_bterm lib bt1 bt2
+  approx_ext_open_bterm lib bt1 bt2
   -> no_repeats lvn
   -> length lvn = num_bvars bt1
   -> disjoint lvn (free_vars_bterm bt1  ++ free_vars_bterm bt2) 
-  ->  {nt1',nt2' : @NTerm p $ approx_open lib nt1' nt2'
+  ->  {nt1',nt2' : @NTerm p $ approx_ext_open lib nt1' nt2'
           # alpha_eq_bterm bt1 (bterm lvn nt1')
           # alpha_eq_bterm bt2 (bterm lvn nt2')
           # disjoint ((bound_vars nt1') ++ (bound_vars nt2')) (lva ++ lvn)
@@ -1231,22 +1291,22 @@ Proof.
 
   dimp (alpha_bterm_pair_change4 _ _ _ _ _ lvn lva Hab2 Hab1); spcf;[].
   exrepnd.
-  unfold approx_open in Hab0.
+  unfold approx_ext_open in Hab0.
   rwhg hyp0 Hab0.
   rwhg hyp2 Hab0.
   exists (lsubst nt1n (var_ren x lvn)).
   exists (lsubst nt2n (var_ren x lvn)).
   split; spc;[|].
-  - apply approx_open_lsubst;sp.
+  - apply approx_ext_open_lsubst;sp.
   - disjoint_reasoningv; rw @boundvars_lsubst_vars; spc; disjoint_reasoningv.
 Qed.
 
 Lemma approxbtd_change {p} : forall lib bt1 bt2 (lvn : list NVar),
-  approx_open_bterm lib bt1 bt2
+  approx_ext_open_bterm lib bt1 bt2
   -> no_repeats lvn
   -> length lvn = num_bvars bt1
   -> disjoint lvn (free_vars_bterm bt1  ++ free_vars_bterm bt2) 
-  ->  {nt1',nt2' : @NTerm p $ approx_open lib nt1' nt2'
+  ->  {nt1',nt2' : @NTerm p $ approx_ext_open lib nt1' nt2'
           # alpha_eq_bterm bt1 (bterm lvn nt1')
           # alpha_eq_bterm bt2 (bterm lvn nt2')
           # disjoint ((bound_vars nt1') ++ (bound_vars nt2')) lvn
@@ -1256,8 +1316,8 @@ Proof. intros.  apply approxbtd_change2 with (lva:= []); spc.
 Qed.
 
 Lemma approxbtd {p} : forall lib bt1 bt2 lva,
-  approx_open_bterm lib bt1 bt2
-  -> {lvn : (list NVar) & {nt1',nt2' : @NTerm p $ approx_open lib nt1' nt2'
+  approx_ext_open_bterm lib bt1 bt2
+  -> {lvn : (list NVar) & {nt1',nt2' : @NTerm p $ approx_ext_open lib nt1' nt2'
           # alpha_eq_bterm bt1 (bterm lvn nt1')
           # alpha_eq_bterm bt2 (bterm lvn nt2')
           # no_repeats lvn
@@ -1280,7 +1340,7 @@ Hint Resolve alpha_eq_trans: slow.
 Hint Rewrite @alphaeq_preserves_free_vars : slow.
 
 
-Lemma approx_alpha_rw_l {p} : forall lib a b a',
+Lemma approx_ext_alpha_rw_l {p} : forall lib a b a',
   @alpha_eq p a a'
   -> (approx_ext lib a b <=> approx_ext lib a' b).
 Proof.
@@ -1288,7 +1348,7 @@ Proof.
   split; introv Hyp; eauto with slowbad.
 Qed.
 
-Lemma approx_alpha_rw_r {p} : forall lib a b a',
+Lemma approx_ext_alpha_rw_r {p} : forall lib a b a',
   @alpha_eq p a a'
   -> (approx_ext lib b a <=> approx_ext lib b a').
 Proof.
@@ -1304,16 +1364,16 @@ Proof. unfold eq_bin_rel, le_bin_rel. split; eauto;[].
   allsimpl. contradiction.
 Qed.
 
-Hint Resolve remove_bot_approx.
+Hint Resolve remove_bot_approx_ext.
 
 Lemma clearbots_olift {p} : forall lib nt1 nt2,
   (@olift p (approx_ext_aux lib bot2 \2/ bot2)) nt1 nt2
- <=> approx_open lib nt1 nt2.
+ <=> approx_ext_open lib nt1 nt2.
 Proof.
   introv.
   destruct (@eq_blift_olift p _ _ (remove_bot_approx_ext lib)).
   unfold le_bin_rel in l. unfold le_bin_rel in l0.
-  unfold approx_open.
+  unfold approx_ext_open.
   split; auto.
 Qed.
 
@@ -1324,7 +1384,7 @@ Proof.
   introv.
   apply le_lblift.
   apply le_olift.
-  apply remove_bot_approx.
+  apply remove_bot_approx_ext.
 Qed.
 Hint Resolve alpha_eq_bterm_trans alpha_eq_bterm_sym: alphaeqbt.
 
@@ -1339,7 +1399,7 @@ Hint Resolve alpha_eq_bterm_trans alpha_eq_bterm_sym: alphaeqbt.
     baked into the definition of [blift].
 *)
 
-Lemma approx_trans_aux {p} :
+Lemma approx_ext_trans_aux {p} :
   forall lib a b c a' c',
     alpha_eq a a'
     -> @alpha_eq p c c'
@@ -1349,7 +1409,7 @@ Lemma approx_trans_aux {p} :
 Proof.
   intro lib.
   pose proof
-  (approx_acc lib (fun a c => { b,a',c' : NTerm $
+  (approx_ext_acc lib (fun a c => { b,a',c' : NTerm $
        alpha_eq a a' # alpha_eq c c' # approx_ext lib a' b # approx_ext lib b c'   })
      (@bot2 p)) as HH.
   allsimpl.
@@ -1367,8 +1427,8 @@ Proof.
   rename HCCCC2 into Halc.
   rename HCCCC3 into Hab.
   rename HCCCC0 into Hbc.
-  apply (approx_alpha_rw_l _ _ _ _ Hala) in Hab; eauto.
-  apply (approx_alpha_rw_r _ _ _ _ Halc) in Hbc; eauto.
+  apply (approx_ext_alpha_rw_l _ _ _ _ Hala) in Hab; eauto.
+  apply (approx_ext_alpha_rw_r _ _ _ _ Halc) in Hbc; eauto.
   clear Hala Halc.
   invertsn Hab.
   invertsn Hbc.
@@ -1422,11 +1482,11 @@ Proof.
     apply clearbots_olift in H1rb1.
     apply clearbots_olift in H2rb1.
 
-    unfold approx_open in H2rb1.
+    unfold approx_ext_open in H2rb1.
     rwhg H2c0 H2rb1.
     rwhg H2c2 H2rb1.
 
-    unfold approx_open in H1rb1.
+    unfold approx_ext_open in H1rb1.
     rwhg H1c0 H1rb1.
     rwhg H1c2 H1rb1.
 
@@ -1435,14 +1495,16 @@ Proof.
 
     clear H1c0 H1c2 H2c0 H2c2.
 
-    apply approx_open_lsubst with (lvi:=lv) (lvo:=lvn) in H1ap.
-    apply approx_open_lsubst with (lvi:=lv0) (lvo:=lvn) in H2ap.
-    unfold approx_open in H2ap.
+    apply approx_ext_open_lsubst with (lvi:=lv) (lvo:=lvn) in H1ap.
+    apply approx_ext_open_lsubst with (lvi:=lv0) (lvo:=lvn) in H2ap.
+    unfold approx_ext_open in H2ap.
     rwhg Hlink H2ap.
-    assert(approx_open lib (lsubst nt2n0 (var_ren lv0 lvn))
-                 (lsubst nt2n (var_ren lv lvn))) as Hapl by (eauto with slow).
+    assert(approx_ext_open
+             lib
+             (lsubst nt2n0 (var_ren lv0 lvn))
+             (lsubst nt2n (var_ren lv lvn))) as Hapl by (eauto with slow).
     clear H2ap.
-    (* setting the stage for approx_open_trans proof .. identical var/hym names *)
+    (* setting the stage for approx_ext_open_trans proof .. identical var/hym names *)
     rename a into a999temp.
     rename b into b999temp.
     rename c into c999temp.
@@ -1503,7 +1565,7 @@ Proof.
   - repnd.
     clear Hab2 Hbc2 Hab Hbc.
     introv ce.
-    allunfold @close_compute_exc.
+    allunfold @close_compute_exc_ext.
     applydup Hab3 in ce; exrepnd; repdors; try (complete (allunfold @bot2; sp)).
     applydup Hbc3 in ce1; exrepnd; repdors; try (complete (allunfold @bot2; sp)).
     exists a'1 e'0; dands; auto.
@@ -1537,20 +1599,20 @@ Proof.
 Qed.
 
 
-Corollary approx_trans {p} :
+Corollary approx_ext_trans {p} :
   forall lib (a b c : @NTerm p),
     approx_ext lib a b
     -> approx_ext lib b c
     -> approx_ext lib a c.
 Proof.
- intros. eapply approx_trans_aux; eauto with slow.
+ intros. eapply approx_ext_trans_aux; eauto with slow.
 Qed.
 
 (* begin hide *)
 
 
 
-Lemma approx_wf_term {p} :
+Lemma approx_ext_wf_term {p} :
   forall lib (a b : @NTerm p),
     approx_ext lib a b -> wf_term a # wf_term b.
 Proof.
@@ -1558,7 +1620,7 @@ Proof.
   unfold close_compute_ext in X0; sp; subst; allunfold @isprogram; sp; allrw @nt_wf_eq; sp.
 Qed.
 
-Lemma approx_isprog {p} :
+Lemma approx_ext_isprog {p} :
   forall lib (a b : @NTerm p),
     approx_ext lib a b -> isprog a # isprog b.
 Proof.
@@ -1566,32 +1628,36 @@ Proof.
   unfold close_compute_ext in X0; sp; allrw @isprog_eq; sp.
 Qed.
 
-Lemma approxc_refl {p} :
-  forall lib (t : @CTerm p), approxc lib t t.
+Lemma approxc_ext_refl {p} :
+  forall lib (t : @CTerm p), approxc_ext lib t t.
 Proof.
-  intro; destruct t; unfold approxc; simpl.
-  apply approx_refl; allrw @isprogram_eq; sp.
+  intro; destruct t; unfold approxc_ext; simpl.
+  apply approx_ext_refl; allrw @isprogram_eq; sp.
 Qed.
 
-Lemma approxc_trans {p} :
+Lemma approxc_ext_trans {p} :
   forall lib (t1 t2 t3 : @CTerm p),
-    approxc lib t1 t2 -> approxc lib t2 t3 -> approxc lib t1 t3.
+    approxc_ext lib t1 t2 -> approxc_ext lib t2 t3 -> approxc_ext lib t1 t3.
 Proof.
-  intro; destruct t1, t2, t3; unfold approxc; simpl.
-  apply approx_trans.
+  intro; destruct t1, t2, t3; unfold approxc_ext; simpl.
+  apply approx_ext_trans.
 Qed.
 
 
-Lemma approx_canonical_form {p} :
+Lemma approx_ext_canonical_form {p} :
   forall lib t t' op bterms,
     computes_to_value lib t (oterm (Can op) bterms)
     -> approx_ext lib t t'
     -> {bterms' : list (@BTerm p) &
          computes_to_value lib t' (oterm (Can op) bterms')
-         # lblift (approx_open lib) bterms bterms' }.
+         # lblift (approx_ext_open lib) bterms bterms' }.
 Proof.
   intros ? ? ? ? ? Hcomp Hap.
-  invertsn Hap. repnud Hap.
+  invertsn Hap.
+  repnud Hap.
+
+  apply computes_to_value_implies_computes_to_val_exc in Hcomp; eauto 3 with slow.
+
   apply Hap2 in Hcomp. exrepnd.
 
   apply clearbot_relbt in Hcomp0.
@@ -1612,27 +1678,33 @@ Proof.
   introv Hcomp Hap.
   invertsn Hap. repnud Hap.
 
+  apply computes_to_exception_implies_computes_to_exception_exc in Hcomp; eauto 3 with slow.
+
   apply Hap3 in Hcomp. exrepnd.
-  exists a' e'. split. auto. split; auto.
+  exists a' e'. split; eauto 2 with slow.
 Qed.
 
-Lemma approx_comput_functionality_left {p} :
+Hint Resolve lib_extends_preserves_reduces_to : slow.
+
+Lemma approx_ext_comput_functionality_left {p} :
   forall lib a a' b,
     @reduces_to p lib a a'
     -> approx_ext lib a b
     -> approx_ext lib a' b.
 Proof.
   intros ? ? ? ? Hred Hap. invertsn Hap. constructor. repnud Hap.
-  unfold close_comput. applydup @reduces_to_preserves_program in Hred; auto.
+  unfold close_compute_ext. applydup @reduces_to_preserves_program in Hred; auto.
   dands; tcsp; introv comp.
 
   - apply Hap2.
-    allunfold @computes_to_value.
-    repnd; dands; auto.
-    apply @reduces_to_trans with (b:=a'); auto.
+    allunfold @computes_to_value_ext.
+    introv ext; applydup comp in ext.
+    unfold computes_to_value in *; repnd; dands; auto.
+    apply @reduces_to_trans with (b:=a'); eauto 4 with slow.
 
   - apply Hap3.
-    apply @reduces_to_computes_to_exception with (b := a'); auto.
+    introv ext; applydup comp in ext.
+    apply @reduces_to_computes_to_exception with (b := a'); eauto 4 with slow.
 
 (*
   - apply Hap.
@@ -1641,7 +1713,8 @@ Proof.
  *)
 
   - apply Hap4.
-    eapply reduces_to_trans; eauto.
+    introv ext; applydup comp in ext.
+    eapply reduces_to_trans; eauto; eauto 4 with slow.
 Qed.
 
 Lemma reduces_to_isvalue_like_eq {o} :
@@ -1657,23 +1730,77 @@ Proof.
   apply reduces_to_if_isvalue_like in r1; auto; subst; eauto 3 with slow.
 Qed.
 
-Lemma approx_comput_functionality_right {p} :
+Lemma reduces_to_value_ext_eq {o} :
+  forall lib (t u v : @NTerm o),
+    wf_term t
+    -> t =e=v>(lib) v
+    -> reduces_to lib t u
+    -> u =e=v>(lib) v.
+Proof.
+  introv wf comp r ext; applydup comp in ext.
+  eapply reduces_to_value_eq; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_to_value_ext_eq : slow.
+
+Lemma reduces_to_exception_ext_eq {o} :
+  forall lib (a t u e : @NTerm o),
+    wf_term t
+    -> t =e=e>(a,lib) e
+    -> reduces_to lib t u
+    -> u =e=e>(a,lib) e.
+Proof.
+  introv wf comp r ext; applydup comp in ext.
+  eapply reduces_to_exception_eq; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_to_exception_ext_eq : slow.
+
+Definition reduces_to_ext {o} (lib : library) (t u : @NTerm o) :=
+  inExt lib (fun lib => reduces_to lib t u).
+
+Lemma reduces_to_isvalue_like_ext_eq {o} :
+  forall lib (t u v : @NTerm o),
+    wf_term t
+    -> isvalue_like v
+    -> reduces_to_ext lib t u
+    -> reduces_to lib t v
+    -> reduces_to_ext lib u v.
+Proof.
+  introv wf isv comp r ext; applydup comp in ext.
+  eapply reduces_to_isvalue_like_eq; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_to_isvalue_like_ext_eq : slow.
+
+Lemma reduces_to_seq_ext_eq {o} :
+  forall lib (t u : @NTerm o) f,
+    wf_term t
+    -> t =e=s>(lib) f
+    -> reduces_to lib t u
+    -> u =e=s>(lib) f.
+Proof.
+  introv wf comp r ext; applydup comp in ext.
+  unfold computes_to_seq in *.
+  eapply reduces_to_isvalue_like_eq;[| |eauto]; auto; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_to_seq_ext_eq : slow.
+
+Lemma approx_ext_comput_functionality_right {p} :
   forall lib a b b',
     @reduces_to p lib b b'
     -> approx_ext lib a b
     -> approx_ext lib a b'.
 Proof.
   intros ? ? ? ? Hred Hap. invertsn Hap. constructor. repnud Hap.
-  unfold close_comput. applydup @reduces_to_preserves_program in Hred; auto.
+  unfold close_compute_ext.
+  applydup @reduces_to_preserves_program in Hred; auto.
   dands; tcsp; introv comp.
 
   - apply Hap2 in comp. exrepnd. exists tr_subterms.
     split; auto.
-    apply reduces_to_value_eq with (t:=b); auto.
+    apply reduces_to_value_ext_eq with (t:=b); eauto 3 with slow.
 
   - apply Hap3 in comp; exrepnd; repdors; try (complete (allunfold @bot2; sp)).
     exists a' e'; dands; auto.
-    apply reduces_to_exception_eq with (t := b); auto.
+    apply reduces_to_exception_ext_eq with (t := b); eauto 3 with slow.
 
 (*
   - apply Hap in comp.
@@ -1682,7 +1809,7 @@ Proof.
 
   - apply Hap4 in comp; exrepnd.
     exists f'; dands; auto.
-    eapply reduces_to_isvalue_like_eq; eauto 3 with slow.
+    eapply reduces_to_seq_ext_eq;[|eauto|]; eauto 3 with slow.
 Qed.
 
 Lemma reduces_to_implies_approx_ext {p} :
@@ -1693,13 +1820,13 @@ Lemma reduces_to_implies_approx_ext {p} :
 Proof.
   intros.
   duplicate H.
-  apply approx_comput_functionality_left with (b := t) in H; sp.
-  apply approx_comput_functionality_right with (a := t) in H0; sp.
-  apply approx_refl; sp.
-  apply approx_refl; sp.
+  apply approx_ext_comput_functionality_left with (b := t) in H; sp.
+  apply approx_ext_comput_functionality_right with (a := t) in H0; sp.
+  apply approx_ext_refl; sp.
+  apply approx_ext_refl; sp.
 Qed.
 
-Lemma reduces_to_implies_approx1 {p} :
+Lemma reduces_to_implies_approx_ext1 {p} :
   forall lib t x,
     @isprogram p t
     -> reduces_to lib t x
@@ -1709,7 +1836,7 @@ Proof.
   apply reduces_to_implies_approx_ext in r; sp.
 Qed.
 
-Lemma reduces_to_implies_approx2 {p} :
+Lemma reduces_to_implies_approx_ext2 {p} :
   forall lib t x,
     @isprogram p t
     -> reduces_to lib t x
@@ -1719,7 +1846,7 @@ Proof.
   apply reduces_to_implies_approx_ext in r; sp.
 Qed.
 
-Lemma approx_if_reduce_to_same {p} :
+Lemma approx_ext_if_reduce_to_same {p} :
   forall lib a b c,
     @isprogram p a
     -> isprogram b
@@ -1728,11 +1855,11 @@ Lemma approx_if_reduce_to_same {p} :
     -> approx_ext lib a b.
 Proof.
   introv ispa ispb reda redb.
-  apply @approx_trans with (b := c).
-  apply @approx_comput_functionality_right with (b := a); auto.
-  apply approx_refl; auto.
-  apply @approx_comput_functionality_left with (a := b); auto.
-  apply approx_refl; auto.
+  apply @approx_ext_trans with (b := c).
+  apply @approx_ext_comput_functionality_right with (b := a); auto.
+  apply approx_ext_refl; auto.
+  apply @approx_ext_comput_functionality_left with (a := b); auto.
+  apply approx_ext_refl; auto.
 Qed.
 
 (* end hide *)
@@ -1761,7 +1888,7 @@ Qed.
 
 (* begin hide *)
 
-Lemma computes_to_value_implies_approx1 {pp} :
+Lemma computes_to_value_implies_approx_ext1 {pp} :
   forall lib t x,
     @isprogram pp t
     -> computes_to_value lib t x
@@ -1771,7 +1898,7 @@ Proof.
   apply computes_to_value_implies_approx_ext in c; sp.
 Qed.
 
-Lemma computes_to_value_implies_approx2 {pp} :
+Lemma computes_to_value_implies_approx_ext2 {pp} :
   forall lib t x,
     @isprogram pp t
     -> computes_to_value lib t x
@@ -1781,23 +1908,23 @@ Proof.
   apply computes_to_value_implies_approx_ext in c; sp.
 Qed.
 
-Lemma reduces_toc_implies_approxc {p} :
+Lemma reduces_toc_implies_approxc_ext {p} :
   forall lib t x,
     @reduces_toc p lib t x
-    -> approxc lib x t # approxc lib t x.
+    -> approxc_ext lib x t # approxc_ext lib t x.
 Proof.
-  destruct t; destruct x0; unfold reduces_toc, approxc; simpl.
-  apply reduces_to_implies_approx.
+  destruct t; destruct x0; unfold reduces_toc, approxc_ext; simpl.
+  apply reduces_to_implies_approx_ext.
   rw @isprogram_eq; sp.
 Qed.
 
-Lemma computes_to_valc_implies_approxc {p} :
+Lemma computes_to_valc_implies_approxc_ext {p} :
   forall lib t x,
     @computes_to_valc p lib t x
-    -> approxc lib x t # approxc lib t x.
+    -> approxc_ext lib x t # approxc_ext lib t x.
 Proof.
-  destruct t; destruct x0; unfold computes_to_valc, approxc; simpl.
-  apply computes_to_value_implies_approx.
+  destruct t; destruct x0; unfold computes_to_valc, approxc_ext; simpl.
+  apply computes_to_value_implies_approx_ext.
   rw @isprogram_eq; sp.
 Qed.
 
@@ -1819,12 +1946,15 @@ Proof.
   inversion ap as [cc]; subst.
   unfold close_compute_ext in cc; repnd.
   applydup @computes_to_value_can in c; repndors; exrepd; subst.
-  - apply cc2 in c; sp.
-    exists (oterm (Can c1) tr_subterms); sp.
+  - apply computes_to_value_implies_computes_to_val_exc in c; eauto 3 with slow.
+    apply cc2 in c; sp.
+    exists (oterm (Can c1) tr_subterms); eauto 3 with slow.
   - unfold computes_to_value in c; repnd.
+    apply computes_to_seq_implies_computes_to_seq_exc in c0; eauto 3 with slow.
     apply cc4 in c0; exrepnd.
     unfold computes_to_value.
-    eexists; dands; eauto 3 with slow.
+    exists (sterm f'); dands; eauto 3 with slow.
+    apply c0; eauto 3 with slow.
 Qed.
 (* begin hide *)
 
@@ -1865,7 +1995,7 @@ Lemma hasvalue_subst_preserves_approx_ext {o} :
     -> hasvalue lib (subst t v x).
 Proof.
   introv pt hv ap.
-  applydup @approx_relates_only_progs in ap as p.
+  applydup @approx_ext_relates_only_progs in ap as p.
   destruct p as [pu px].
 
   nterm_ind t as [z|f ind|op bs ind] Case; auto.
@@ -1897,25 +2027,25 @@ Abort.
 
 (* end hide *)
 
-Theorem alpha_implies_approx2 {p} : forall lib nt1 nt2,
+Theorem alpha_implies_approx_ext2 {p} : forall lib nt1 nt2,
   @isprogram p nt2
   -> alpha_eq nt1 nt2
   -> approx_ext lib nt1 nt2.
 Proof.
   introv H2isp Hal.
-  apply (approx_alpha_rw_l _ _ _ _ Hal).
-  apply approx_refl; auto.
+  apply (approx_ext_alpha_rw_l _ _ _ _ Hal).
+  apply approx_ext_refl; auto.
 Qed.
 
 (* begin hide *)
-Theorem alpha_implies_approx3 {p} : forall lib nt1 nt2,
+Theorem alpha_implies_approx_ext3 {p} : forall lib nt1 nt2,
   @isprogram p nt1
   -> alpha_eq nt1 nt2
   -> approx_ext lib nt1 nt2.
 Proof.
   introv H2isp Hal. apply alpha_eq_sym in Hal.
-  apply (approx_alpha_rw_r _ _ _ _ Hal).
-  apply approx_refl; auto.
+  apply (approx_ext_alpha_rw_r _ _ _ _ Hal).
+  apply approx_ext_refl; auto.
 Qed.
 
 Theorem alpha_implies_approx_ext {p} : forall lib nt1 nt2,
@@ -1924,14 +2054,14 @@ Theorem alpha_implies_approx_ext {p} : forall lib nt1 nt2,
   -> alpha_eq nt1 nt2
   -> approx_ext lib nt1 nt2.
 Proof.
-  intros. apply alpha_implies_approx2; auto.
+  intros. apply alpha_implies_approx_ext2; auto.
 Qed.
 
-Hint Resolve approx_trans alpha_eq_sym alpha_implies_approx: slow.
+Hint Resolve approx_ext_trans alpha_eq_sym alpha_implies_approx_ext: slow.
 
 
 
-Lemma not_axiom_approx_bot {pp} :
+Lemma not_axiom_approx_ext_bot {pp} :
   forall lib, !@approx_ext pp lib mk_axiom mk_bot.
 Proof.
   introv ap.
@@ -1939,24 +2069,28 @@ Proof.
   unfold close_compute_ext in cc; repnd.
   generalize (cc2 NAxiom []); intro h.
   dest_imp h hyp; sp.
-  apply computes_to_value_isvalue_refl; sp.
+  { apply computes_to_value_ext_isvalue_refl; sp. }
   inversion p; allsimpl; cpx.
-  inversion p0.
+  pose proof (p0 lib) as q; autodimp q hyp; eauto 3 with slow; allsimpl.
+  inversion q.
   allfold @mk_axiom.
   apply not_bot_reduces_to_value in H; sp.
 Qed.
 
-Lemma not_axiom_approxc_bot {p} :
-  forall lib, !@approxc p lib mkc_axiom mkc_bot.
+Lemma not_axiom_approxc_ext_bot {p} :
+  forall lib, !@approxc_ext p lib mkc_axiom mkc_bot.
 Proof.
-  unfold approxc, mkc_axiom, mkc_bot; simpl.
-  apply not_axiom_approx_bot.
+  unfold approxc_ext, mkc_axiom, mkc_bot; simpl.
+  apply not_axiom_approx_ext_bot.
 Qed.
 
-Hint Resolve approx_open_relates_only_wf : slow.
+Hint Resolve approx_ext_open_relates_only_wf : slow.
 
 Lemma approxbt_btwf {p} :
-  forall lib, le_bin_rel (approx_open_bterm lib) (fun b1 b2 => @bt_wf p b1 # bt_wf b2).
+  forall lib,
+    le_bin_rel
+      (approx_ext_open_bterm lib)
+      (fun b1 b2 => @bt_wf p b1 # bt_wf b2).
 Proof.
   introv Hapb.
   repnud Hapb.
@@ -1967,27 +2101,27 @@ Proof.
   rw @bt_wf_iff.
   rw @bt_wf_iff.
 
-  eapply approx_open_relates_only_wf; eauto.
+  eapply approx_ext_open_relates_only_wf; eauto.
 Qed.
 
 
 
 Lemma approxbt_fvars {p} :
   forall lib vsa vsb a b,
-    approx_open_bterm lib (bterm vsa a) (@bterm p vsb b)
+    approx_ext_open_bterm lib (bterm vsa a) (@bterm p vsb b)
     -> subset (free_vars a) vsa # subset (free_vars b) vsb.
 Proof.
 Abort. (** not true anymore? *)
 
 
 
-Theorem approx_implies_approx_open {p} :
+Theorem approx_ext_implies_approx_ext_open {p} :
   forall lib t1 t2,
     @approx_ext p lib t1 t2
-    -> approx_open lib t1 t2.
+    -> approx_ext_open lib t1 t2.
 Proof.
-  introv Hap. applydup @approx_relates_only_progs in Hap.
-  repnd. unfold approx_open, olift. dands; eauto 2 with slow.
+  introv Hap. applydup @approx_ext_relates_only_progs in Hap.
+  repnd. unfold approx_ext_open, olift. dands; eauto 2 with slow.
   introv Hwf H1p H2p.
   apply @lsubst_on_closed_term with (sub:=sub) in Hap1.
   apply @lsubst_on_closed_term with (sub:=sub) in Hap0.
@@ -1997,11 +2131,11 @@ Proof.
 Qed.
 
 
-Theorem approx_open_approx_ext {p} :
+Theorem approx_ext_open_approx_ext {p} :
   forall lib t1 t2,
     isprogram t1
     -> @isprogram p t2
-    -> approx_open lib t1 t2
+    -> approx_ext_open lib t1 t2
     -> approx_ext lib t1 t2.
 Proof.
   introv H1pr H2pr Hol.
@@ -2014,13 +2148,13 @@ Qed.
 Hint Resolve computes_to_value_isvalue_refl computes_to_value_isvalue_eq : slow.
 Hint Constructors isvalue : slow.
 
-Lemma approx_canonical_form2 {p} :
+Lemma approx_ext_canonical_form2 {p} :
   forall lib op bterms1 bterms2,
     approx_ext lib (oterm (@Can p op) bterms1) (oterm (Can op) bterms2)
-    -> lblift (approx_open lib) bterms1 bterms2.
+    -> lblift (approx_ext_open lib) bterms1 bterms2.
 Proof.
-  introv Hap. applydup @approx_relates_only_progs in Hap. repnd.
-  eapply approx_canonical_form in Hap; exrepnd; eauto with slow.
+  introv Hap. applydup @approx_ext_relates_only_progs in Hap. repnd.
+  eapply approx_ext_canonical_form in Hap; exrepnd; eauto with slow.
   apply computes_to_value_isvalue_eq in Hap3;
   inverts Hap3; eauto with slow.
 Qed.
@@ -2032,7 +2166,7 @@ Proof.
   introv.
   apply le_lblift.
   apply le_olift.
-  apply remove_bot_approx.
+  apply remove_bot_approx_ext.
 Qed.
 
 
@@ -2075,9 +2209,9 @@ Ltac dest_bterms :=
   [ b : BTerm |- _] => destruct b
   end.
 
-Lemma blift_approx_open_nobnd {p} :
+Lemma blift_approx_ext_open_nobnd {p} :
   forall lib nt1 nt2,
-    blift (approx_open lib) (nobnd nt1) (@nobnd p nt2)
+    blift (approx_ext_open lib) (nobnd nt1) (@nobnd p nt2)
     -> isprogram nt1
     -> isprogram nt2
     -> approx_ext lib nt1 nt2.
@@ -2086,25 +2220,25 @@ Proof.
   unfold blift in Hrel. exrepnd.
   apply alphaeqbt_nilv3 in Hrel0; exrepnd; subst.
   apply alphaeqbt_nilv3 in Hrel2; exrepnd; subst. GC.
-  apply approx_open_approx;  eauto 2 with slow.
-  unfold approx_open.
+  apply approx_ext_open_approx_ext;  eauto 2 with slow.
+  unfold approx_ext_open.
   rwg Hrel2.
   rwg Hrel0.
   trivial.
 Qed.
 
 
-Lemma blift_approx_open_nobnd2 {p} :
+Lemma blift_approx_ext_open_nobnd2 {p} :
   forall lib nt1 nt2,
     isprogram nt1
     -> @isprogram p nt2
     -> approx_ext lib nt1 nt2
-    -> blift (approx_open lib) (nobnd nt1) (nobnd nt2).
+    -> blift (approx_ext_open lib) (nobnd nt1) (nobnd nt2).
 Proof.
   introv Hap H1pr H2pr.
   unfold blift. exists ([]: list NVar) nt1 nt2.
   dands; try (apply alphaeqbt_refl);[].
-  apply approx_implies_approx_open; sp.
+  apply approx_ext_implies_approx_ext_open; sp.
 Qed.
 
 Hint Resolve nt_wf_implies : slow.
@@ -2120,8 +2254,8 @@ Ltac prove_program :=
   match goal with
   | [ |- isprogram ?t] =>
     match goal with
-    | [ H: approx_ext t ?t2 |- _] => apply approx_relates_only_progs in H; repnd;sp
-    | [ H: approx_ext ?t2 t |- _ ] => apply approx_relates_only_progs in H; repnd;sp
+    | [ H: approx_ext t ?t2 |- _] => apply approx_ext_relates_only_progs in H; repnd;sp
+    | [ H: approx_ext ?t2 t |- _ ] => apply approx_ext_relates_only_progs in H; repnd;sp
     end
   end
   ).
@@ -2251,18 +2385,18 @@ R (lsubst a sub) (lsubst c sub)
 Qed.
 
 (* begin show *)
-Corollary approx_open_trans {p} :
+Corollary approx_ext_open_trans {p} :
   forall lib (a b c : @NTerm p),
-    approx_open lib a b
-    -> approx_open lib b c
-    -> approx_open lib a c.
+    approx_ext_open lib a b
+    -> approx_ext_open lib b c
+    -> approx_ext_open lib a c.
 Proof.
   intro lib.
   apply olift_trans; revert lib.
-  - exact approx_trans.
-  - exact respects_alpha_approx.
+  - exact approx_ext_trans.
+  - exact respects_alpha_approx_ext.
 Qed.
-Hint Resolve approx_open_trans: slow.
+Hint Resolve approx_ext_open_trans: slow.
 (* end show *)
 
 (* begin hide *)
@@ -2288,20 +2422,20 @@ Definition simpl_close_compute_ext {p} lib (R : NTerm -> NTerm -> Type) (tl tr :
 
 
 CoInductive simpl_approx_ext_aux {p} lib (R : bin_rel NTerm) (tl tr : @NTerm p) : [univ] :=
-| simpl_approx_fold :
+| simpl_approx_ext_fold :
     simpl_close_compute_ext lib (approx_ext_aux lib R \2/ R) tl tr
     -> simpl_approx_ext_aux lib R tl tr.
 
 
-Lemma approx_open_simpler_equiv {p} :
+Lemma approx_ext_open_simpler_equiv {p} :
   forall lib a c,
-    simpl_olift (@approx_ext p lib) a c <=> approx_open lib a c.
+    simpl_olift (@approx_ext p lib) a c <=> approx_ext_open lib a c.
 Proof.
   introv.
   split.
 
   - intro Hos. repnud Hos.
-    unfold approx_open, olift.
+    unfold approx_ext_open, olift.
     dands;auto.
     introv Hwfs Hispa Hispc.
     pose proof (lsubst_trim2_alpha1 _ _ _ Hispc Hispa) as Xtrim.
@@ -2310,8 +2444,8 @@ Proof.
     rename Xtrim0 into Xtrimc.
     revert Hispa Hispc. alpharw Xtrima. alpharw Xtrimc.
     introv Hispa Hispc.
-    apply (approx_alpha_rw_l _ _ _ _ Xtrima).
-    apply (approx_alpha_rw_r _ _ _ _ Xtrimc).
+    apply (approx_ext_alpha_rw_l _ _ _ _ Xtrima).
+    apply (approx_ext_alpha_rw_r _ _ _ _ Xtrimc).
     apply Hos; auto.
 
   - intro Hos.
@@ -2360,59 +2494,59 @@ Tactic Notation "wfpc" :=
 
 
 
-Theorem alpha_implies_approx_open {p} : forall lib nt1 nt2,
+Theorem alpha_implies_approx_ext_open {p} : forall lib nt1 nt2,
   @nt_wf p nt1
   -> alpha_eq nt1 nt2
-  -> approx_open lib nt1 nt2.
+  -> approx_ext_open lib nt1 nt2.
 Proof.
   introv H1wf  Hal. repeat(split;[sp|]).
   alpha_hyps Hal;sp.
   introv Hpr H1pr H2pr.
-  apply alpha_implies_approx; sp.
+  apply alpha_implies_approx_ext; sp.
   apply lsubst_alpha_congr2;sp.
 Qed.
 
-Hint Resolve alpha_implies_approx_open : slowbad.
+Hint Resolve alpha_implies_approx_ext_open : slowbad.
 
-Hint Resolve approx_open_relates_only_wf
-  approx_open_trans approx_open_refl: slow.
+Hint Resolve approx_ext_open_relates_only_wf
+  approx_ext_open_trans approx_ext_open_refl: slow.
 
 
-Lemma approx_open_alpha_rw_l {p} : forall lib a b a',
+Lemma approx_ext_open_alpha_rw_l {p} : forall lib a b a',
   @alpha_eq p a a'
-  -> (approx_open lib a b <=> approx_open lib a' b).
+  -> (approx_ext_open lib a b <=> approx_ext_open lib a' b).
 Proof.
   introv Hal. applydup @alpha_eq_sym in Hal.
-  unfold approx_open.
+  unfold approx_ext_open.
   split; introv Hyp;
-  applydup @approx_open_relates_only_wf in Hyp; repnd;
+  applydup @approx_ext_open_relates_only_wf in Hyp; repnd;
   alpha_hyps Hal; alpha_hyps Hal0;
   try(rwg Hal); auto;
   try(rwg Hal0); auto.
 Qed.
 
-Lemma approx_open_alpha_rw_r {p} : forall lib a b a',
+Lemma approx_ext_open_alpha_rw_r {p} : forall lib a b a',
   @alpha_eq p a a'
-  -> (approx_open lib b a <=> approx_open lib b a').
+  -> (approx_ext_open lib b a <=> approx_ext_open lib b a').
 Proof.
   introv Hal. applydup @alpha_eq_sym in Hal.
-  unfold approx_open.
+  unfold approx_ext_open.
   split; introv Hyp; 
-  applydup @approx_open_relates_only_wf in Hyp; repnd;
+  applydup @approx_ext_open_relates_only_wf in Hyp; repnd;
   alpha_hyps Hal; alpha_hyps Hal0; 
   alpha_hyps Hal; alpha_hyps Hal0;
   try(rwg Hal); auto;
   try(rwg Hal0); auto.
 Qed.
 
-Lemma approx_open_alpha_rw_lr {p} : forall lib a b a' b',
+Lemma approx_ext_open_alpha_rw_lr {p} : forall lib a b a' b',
   alpha_eq a a'
   -> @alpha_eq p b b'
-  -> (approx_open lib a b <=> approx_open lib a' b').
+  -> (approx_ext_open lib a b <=> approx_ext_open lib a' b').
 Proof.
   introv Hala Halb.
-  eapply @approx_open_alpha_rw_l with (b:=b) in Hala.
-  eapply @approx_open_alpha_rw_r with (b:=a') in Halb.
+  eapply @approx_ext_open_alpha_rw_l with (b:=b) in Hala.
+  eapply @approx_ext_open_alpha_rw_r with (b:=a') in Halb.
   dtiffs.
   split; eauto.
 Qed.
@@ -2423,13 +2557,13 @@ Ltac prove_wf1 :=
   match goal with
   | [ |- nt_wf ?t] =>
     match goal with
-    | [ H: approx_open t ?t2 |- _] => apply approx_open_relates_only_wf in H; repnd;sp
-    | [ H: approx_open ?t2 t |- _ ] => apply approx_open_relates_only_wf in H; repnd;sp
+    | [ H: approx_ext_open t ?t2 |- _] => apply approx_ext_open_relates_only_wf in H; repnd;sp
+    | [ H: approx_ext_open ?t2 t |- _ ] => apply approx_ext_open_relates_only_wf in H; repnd;sp
     end
   end
   ).
 
-Hint Resolve approx_open_trans : approx_open_trans.
+Hint Resolve approx_ext_open_trans : approx_ext_open_trans.
 
 
 (* end hide *)
@@ -2438,16 +2572,16 @@ Hint Resolve isprogram_fix  isprogram_apply : slow.
 
 
 
-Lemma approx_open_lsubst_congr {p} : forall lib ta tb sub,
+Lemma approx_ext_open_lsubst_congr {p} : forall lib ta tb sub,
   @wf_sub p sub
-  -> approx_open lib ta tb
-  -> approx_open lib (lsubst ta sub) (lsubst tb sub).
+  -> approx_ext_open lib ta tb
+  -> approx_ext_open lib (lsubst ta sub) (lsubst tb sub).
 Proof.
   introv Hwf Hap.
-  applydup @approx_open_relates_only_wf in Hap.
+  applydup @approx_ext_open_relates_only_wf in Hap.
   repeat(split; [apply lsubst_wf_iff;sp;fail|]).
   intros subo Hwfs H1ps H2pr.
-  unfold approx_open in Hap.
+  unfold approx_ext_open in Hap.
   repnud Hap.
   pose proof (combine_sub_nest_wspec sub subo) as Hsub.
   repeat(dest_imp Hsub HH).
@@ -2468,74 +2602,74 @@ Qed.
     The general proof of congruence is discussed in the next subsection.
     *)
 
-Lemma approx_canonical_form3 {p} :
+Lemma approx_ext_canonical_form3 {p} :
   forall lib op bterms1 bterms2,
     isprogram (oterm (@Can p op) bterms1)
     -> isprogram (oterm (Can op) bterms2)
-    -> lblift (approx_open lib) bterms1 bterms2
+    -> lblift (approx_ext_open lib) bterms1 bterms2
     -> approx_ext lib (oterm (Can op) bterms1) (oterm (Can op) bterms2).
 Proof.
-  introv H1p H2p Hap. constructor. unfold close_comput.
+  introv H1p H2p Hap. constructor. unfold close_compute_ext.
   dands; eauto; introv comp.
 
-  - apply computes_to_value_isvalue_eq in comp; eauto with slow;[].
+  - eapply computes_to_value_isvalue_eq in comp; eauto 3 with slow;[].
     inverts comp.
     eexists; dands; eauto with slow.
     apply clearbot_relbt2. auto.
 
-  - apply can_doesnt_raise_an_exception in comp; sp.
+  - eapply can_doesnt_raise_an_exception in comp; eauto 3 with slow; sp.
 
 (*
   - apply can_doesnt_mark in comp; sp.
 *)
 
-  - apply reduces_to_if_isvalue_like in comp; eauto 3 with slow; ginv.
+  - eapply reduces_to_if_isvalue_like in comp; eauto 3 with slow; ginv.
 Qed.
 
-Lemma approx_canonical_form_exc {o} :
+Lemma approx_ext_canonical_form_exc {o} :
   forall lib a1 a2 (e1 e2 : @NTerm o),
     approx_ext lib a1 a2
     -> approx_ext lib e1 e2
     -> approx_ext lib (mk_exception a1 e1) (mk_exception a2 e2).
 Proof.
   introv ap1 ap2.
-  applydup @approx_relates_only_progs in ap1; repnd.
-  applydup @approx_relates_only_progs in ap2; repnd.
+  applydup @approx_ext_relates_only_progs in ap1; repnd.
+  applydup @approx_ext_relates_only_progs in ap2; repnd.
   constructor.
-  unfold close_comput.
+  unfold close_compute_ext.
   dands; eauto; try (rw @isprogram_exception_iff; tcsp); introv comp.
 
-  - apply computes_to_value_exception in comp; sp.
+  - eapply computes_to_value_exception in comp; eauto 3 with slow; sp.
 
-  - apply computes_to_exception_exception in comp; repnd; subst.
+  - eapply computes_to_exception_exception in comp; eauto 3 with slow; repnd; subst.
     exists a2 e2; dands; auto.
-    apply computes_to_exception_refl.
+    introv ext; apply computes_to_exception_refl.
 
 (*
   - apply exception_doesnt_mark in comp; sp.
 *)
 
-  - apply reduces_to_exception in comp; eauto 3 with slow; ginv.
+  - eapply reduces_to_exception in comp; eauto 3 with slow; ginv.
 Qed.
 
 
 (* begin hide *)
 
-Lemma approx_decomp_approx_ext {p} :
+Lemma approx_ext_decomp_approx_ext {p} :
   forall lib a b c d,
-    approx_ext lib (mk_approx_ext a b) (@mk_approx_ext p c d)
+    approx_ext lib (mk_approx a b) (@mk_approx p c d)
     <=> approx_ext lib a c # approx_ext lib b d.
 Proof.
   split; unfold mk_approx; introv Hyp.
-  - applydup @approx_relates_only_progs in Hyp. repnd.
-    apply  approx_canonical_form2 in Hyp.
+  - applydup @approx_ext_relates_only_progs in Hyp. repnd.
+    apply  approx_ext_canonical_form2 in Hyp.
     unfold lblift in Hyp. repnd. allsimpl.
     alpharelbtd. GC.
-    eapply blift_approx_open_nobnd in Hyp1bt; eauto 3 with slow.
-    eapply blift_approx_open_nobnd in Hyp0bt; eauto 3 with slow.
-  - repnd. applydup @approx_relates_only_progs in Hyp. repnd.
-    applydup @approx_relates_only_progs in Hyp0. repnd.
-    apply approx_canonical_form3.
+    eapply blift_approx_ext_open_nobnd in Hyp1bt; eauto 3 with slow.
+    eapply blift_approx_ext_open_nobnd in Hyp0bt; eauto 3 with slow.
+  - repnd. applydup @approx_ext_relates_only_progs in Hyp. repnd.
+    applydup @approx_ext_relates_only_progs in Hyp0. repnd.
+    apply approx_ext_canonical_form3.
     + apply isprogram_ot_iff. allsimpl. dands; auto. introv Hin.
       dorn Hin;[| dorn Hin]; sp;[|];
       subst; apply implies_isprogram_bt0; eauto with slow.
@@ -2545,14 +2679,14 @@ Proof.
     + unfold lblift. allsimpl. split; auto.
       introv Hin. unfold selectbt.
       repeat(destruct n; try (omega;fail); allsimpl);
-      apply blift_approx_open_nobnd2; sp.
+      apply blift_approx_ext_open_nobnd2; sp.
 Qed.
 
 Lemma approxbt_lsubst_prog {p} :
   forall lib lv1 lv2 t1 t2,
     isprogram_bt (bterm lv1 t1)
     -> isprogram_bt (bterm lv2 t2)
-    -> approx_open_bterm lib (bterm lv1 t1) (bterm lv2 t2)
+    -> approx_ext_open_bterm lib (bterm lv1 t1) (bterm lv2 t2)
     -> forall lnt,
        length lnt= length lv1
        -> (forall t, LIn t lnt -> @isprogram p t)
@@ -2561,7 +2695,7 @@ Proof.
   introv H1p H2p Ha0 Hlen Hlp.
   applydup @blift_numbvars in Ha0.
   unfold num_bvars in Ha1; simpl in Ha1.
-  unfold approx_open_bterm in Ha0.
+  unfold approx_ext_open_bterm in Ha0.
   repnud Ha0. exrepnd.
   dimp (isprogram_bt_implies2 _ H1p _ Hlp); allunfold @num_bvars;
      allsimpl; [omega|].
@@ -2573,17 +2707,17 @@ Proof.
   exrepnd.
   apply @alphabt_change_var with (lv:=lvn) in Ha2; spc;[| disjoint_reasoningv];[].
   apply @alphabt_change_var with (lv:=lvn) in Ha3; spc;[| disjoint_reasoningv];[].
-  apply approx_open_lsubst with (lvi:=lv) (lvo:=lvn) in Ha0.
+  apply approx_ext_open_lsubst with (lvi:=lv) (lvo:=lvn) in Ha0.
   apply alpha_eq_sym in Ha5.
   apply alpha_eq_sym in Ha4.
-  unfold approx_open in Ha0.
+  unfold approx_ext_open in Ha0.
   rwhg Ha5 Ha0.
   rwhg Ha4 Ha0.
 
-  assert (approx_open lib
+  assert (approx_ext_open lib
     (lsubst t1 (var_ren lv1 lvn)) (lsubst t2 (var_ren lv2 lvn)))
    as XX by auto. (** alpha replacement *)
-  unfold approx_open in XX.
+  unfold approx_ext_open in XX.
   repnud XX.
   pose proof (XX (combine lvn lnt)) as XXX.
   clear XX.
@@ -2633,9 +2767,9 @@ Ltac prove_approx_mk :=
   let bt      := fresh "bt" in
   let Hbt     := fresh "Hbt" in
   introv Hcomp Hceq;
-    applydup @approx_relates_only_progs in Hceq; repnd;
+    applydup @approx_ext_relates_only_progs in Hceq; repnd;
     applydup @preserve_program in Hcomp as Hcomp0; auto;
-    eapply @approx_canonical_form in Hcomp; eauto;
+    eapply @approx_ext_canonical_form in Hcomp; eauto;
     destruct Hcomp as [bterms' Hcomp];
     destruct Hcomp as [Hcomp1 Hcomp2];
     applydup @preserve_program in Hcomp1 as Hcomp3; auto;
@@ -2656,11 +2790,11 @@ Ltac prove_approx_mk :=
     unfold_all_mk;
     repeat(decomp_progh3);
     remove_relbt_samevar;
-    rep_eexists; dands; eauto; apply @approx_open_approx;
+    rep_eexists; dands; eauto; apply @approx_ext_open_approx_ext;
     eauto 2 with slow.
 
 (* end hide *)
-Lemma approx_mk_pair {p} :
+Lemma approx_ext_mk_pair {p} :
   forall lib (t t' a b : NTerm),
     computes_to_value lib t (mk_pair a b)
     -> approx_ext lib t t'
@@ -2713,7 +2847,7 @@ Definition approxow (a b : WTerm) :=
 *)
 
 
-Lemma approx_exception {p} :
+Lemma approx_ext_exception {p} :
   forall lib en (a b : @NTerm p),
     approx_ext lib (mk_exception en a) b
     -> {x : NTerm
@@ -2726,9 +2860,10 @@ Proof.
   invertsn ap.
   unfold close_compute_ext in ap; repnd.
   generalize (ap3 en a); intro k; autodimp k hyp.
-  { apply computes_to_exception_refl. }
+  { introv ext; apply computes_to_exception_refl. }
   exrepnd.
-  exists a' e'; sp; inversion b0.
+  exists a' e'; dands; eauto 3 with slow;
+    repndors; tcsp; unfold bot2 in *; tcsp.
 Qed.
 
 (*
