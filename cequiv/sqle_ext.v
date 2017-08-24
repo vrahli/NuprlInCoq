@@ -410,40 +410,6 @@ Qed.
 
 (* end hide *)
 
-Lemma computes_to_value_ext_eq {o} :
-  forall lib (t v1 v2 : @NTerm o),
-    t =e=v>(lib) v1
-    -> t =e=v>(lib) v2
-    -> v1 = v2.
-Proof.
-  introv comp1 comp2.
-  eapply computes_to_value_eq;[apply comp1|apply comp2]; apply lib_extends_refl.
-Qed.
-
-Lemma computes_to_exception_ext_eq {o} :
-  forall lib (a b t e1 e2 : @NTerm o),
-    t =e=e>(a,lib) e1
-    -> t =e=e>(b,lib) e2
-    -> e1 = e2 # a = b.
-Proof.
-  introv comp1 comp2.
-  eapply computes_to_exception_eq;[apply comp1|apply comp2]; apply lib_extends_refl.
-Qed.
-
-Lemma reduces_to_ext_eq_val_like {o} :
-  forall lib (t v1 v2 : @NTerm o),
-    reduces_to_ext lib t v1
-    -> reduces_to_ext lib t v2
-    -> isvalue_like v1
-    -> isvalue_like v2
-    -> v1 = v2.
-Proof.
-  introv r1 r2 isv1 isv2.
-  eapply reduces_to_eq_val_like;
-    [apply r1|apply r2|exact isv1|exact isv2];
-    apply lib_extends_refl.
-Qed.
-
 Lemma approx_ext_sqle_ext {o} :
   forall lib a b,
     @approx_ext o lib a b <=> sqle_ext lib a b.

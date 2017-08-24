@@ -290,9 +290,58 @@ Proof.
   dands; tcsp.
 
   - introv ib ic.
+
+    pose proof (eceq lib'1) as ceq1; autodimp ceq1 hyp; eauto 3 with slow; simpl in ceq1.
+
     applydup per0 in ic; auto; spcast.
 
-    Locate cequivc_mkc_approx.
+    dup ic0 as ic'.
+    apply cequivc_mkc_approx with (t' := T') in ic'; auto.
+    exrepnd.
+
+    (* Can we prove this? *)
+    Lemma  ccequivc_ext_preserves_computes_in_bar {o} :
+      forall {lib} (bar : BarLib lib) (t t' : @CTerm o) v,
+        ccequivc_ext lib t t'
+        -> all_in_bar bar (fun lib : library => t ===>(lib) v)
+        -> exists v',
+            all_in_bar bar (fun lib : library => t' ===>(lib) v' # ccequivc lib v v').
+    Proof.
+      introv ceq allinbar.
+
+      pose proof (bar_non_empty bar) as q.
+      destruct q as [lib0 blib0].
+
+      pose proof (allinbar lib0 blib0 lib0) as q; simpl in q; autodimp q hyp; eauto 1 with slow;spcast;[].
+      pose proof (ceq lib0) as h; simpl in h; autodimp h hyp; eauto 2 with slow; spcast;[].
+
+      dup h as w.
+      eapply cequivc_preserves_computes_to_valc in w;[|eauto].
+      destruct w as [v' w]; repnd.
+      rename w0 into C0.
+      rename w into ceq0.
+      exists v'.
+
+      intros lib' blib' lib'' blib''.
+
+      pose proof (allinbar lib' blib' lib'' blib'') as w; simpl in w; spcast;[].
+      pose proof (ceq lib'') as z; autodimp z hyp; eauto 3 with slow;simpl in z; spcast;[].
+
+      dup w as x.
+      eapply cequivc_preserves_computes_to_valc in x;[|eauto].
+      destruct x as [v'' x]; repnd.
+      rename x0 into C1.
+      rename x into ceq1.
+
+      (*
+
+         If we didn't have lawless sequences (with restrictions), this would mean
+         that [t] would compute to [v] in the library (lib_bottom) where everything
+         above lib is replaced by bottom.
+
+       *)
+
+    Qed.
 
 
   (* We should at least weaken it to something like:

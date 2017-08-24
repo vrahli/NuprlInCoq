@@ -32,6 +32,7 @@
 
 Require Export nuprl.
 Require Export bar.
+Require Export computation_lib_extends2.
 
 
 (** printing #  $\times$ #×# *)
@@ -448,11 +449,7 @@ Proof.
   allrw @univi_exists_iff; exrepnd.
   exists (fun A A' => (exists eqa, close (univi j) lib' A A' eqa)).
   allrw @univi_exists_iff.
-  exists j; dands; tcsp.
-
-  - introv k; apply h2; eauto 2 with slow.
-
-  - introv k; apply h3; eauto 2 with slow.
+  exists j; dands; tcsp; spcast; eauto 3 with slow.
 Qed.
 
 Lemma monotone_univ {o} : @type_monotone o univ.

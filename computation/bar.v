@@ -30,7 +30,221 @@
 *)
 
 
-Require Export per.
+Require Export computation_lib_extends.
+
+
+
+Definition InfChoiceSeqVals {o} := nat -> @ChoiceSeqVal o.
+
+Definition inf_choice_sequence_satisfies_restriction {o}
+           (vals       : @InfChoiceSeqVals o)
+           (constraint : ChoiceSeqRestriction) : Prop :=
+  match constraint with
+  | csc_no => True
+  | csc_type d M Md => forall n, M (vals n)
+  | csc_coq_law f => forall n, vals n = f n
+  end.
+
+Definition ex_choice {o}
+           (restr : @ChoiceSeqRestriction o) : Type :=
+  match restr with
+  | csc_no => True
+  | csc_type d M Md => {v : @ChoiceSeqVal o & M v}
+  | csc_coq_law f => True
+  end.
+
+Record InfChoiceSeqEntry {o} (*(M : Mem)*) :=
+  MkInfChoiceSeqEntry
+    {
+      icse_vals :> (*@ex_choice o M icse_restriction ->*) @InfChoiceSeqVals o;
+      icse_restriction : @ChoiceSeqRestriction o;
+    }.
+
+Inductive inf_library_entry {o} (*M*) :=
+(* a choice sequence *)
+| inf_lib_cs
+    (name : choice_sequence_name)
+    (entry : @InfChoiceSeqEntry o (*M*))
+(* a regular abstraction *)
+| inf_lib_abs
+    (opabs : opabs)
+    (vars  : list sovar_sig)
+    (rhs   : @SOTerm o)
+    (correct : correct_abs opabs vars rhs).
+
+Definition inf_library {o} (*M*) := nat -> @inf_library_entry o (*M*).
+
+Definition safe_inf_choice_sequence_entry {o} (e : @InfChoiceSeqEntry o (*M*)) :=
+  match e with
+  | MkInfChoiceSeqEntry _ vals restriction =>
+    inf_choice_sequence_satisfies_restriction vals restriction
+  end.
+
+Definition safe_inf_library_entry {o} (e : @inf_library_entry o (*M*)) :=
+  match e with
+  | inf_lib_cs name cse => safe_inf_choice_sequence_entry cse
+  | _ => True
+  end.
+
+Definition inf_entry2name {o} (*{M}*) (e : @inf_library_entry o (*M*)) : EntryName :=
+  match e with
+  | inf_lib_cs name _ => entry_name_cs name
+  | inf_lib_abs opabs _ _ _ => entry_name_abs opabs
+  end.
+
+Definition inf_matching_entries {o}
+           (entry1 : @inf_library_entry o)
+           (entry2 : @library_entry o) : Prop :=
+  same_entry_name (inf_entry2name entry1) (entry2name entry2).
+
+Definition matching_inf_entries {o} (entry1 entry2 : @inf_library_entry o) : Prop :=
+  same_entry_name (inf_entry2name entry1) (inf_entry2name entry2).
+
+Definition shift_inf_lib {o} (*{M}*) (l : @inf_library o (*M*)) : inf_library (*M*) :=
+  fun n => l (S n).
+
+Fixpoint entry_in_inf_library_n {o}
+         (n      : nat)
+         (entry  : @inf_library_entry o)
+         (inflib : inf_library) : Prop :=
+  match n with
+  | 0 => False
+  | S n =>
+    entry = inflib 0
+    \/
+    (~ matching_inf_entries (inflib 0) entry
+       # entry_in_inf_library_n n entry (shift_inf_lib inflib))
+  end.
+
+Definition entry_in_inf_library {o}
+         (entry  : @inf_library_entry o)
+         (inflib : inf_library) : Prop :=
+  exists n, entry_in_inf_library_n n entry inflib.
+
+Definition safe_inf_library {o} (inflib : @inf_library o (*M*)) :=
+  forall entry, entry_in_inf_library entry inflib -> safe_inf_library_entry entry.
+
+Definition inf_choice_sequence_vals_extend {o}
+           (vals1 : @InfChoiceSeqVals o)
+           (vals2 : @ChoiceSeqVals o) : Prop :=
+  forall n v,
+    select n vals2 = Some v
+    -> vals1 n = v.
+
+(* [entry1] extends [entry2] *)
+Definition inf_choice_sequence_entry_extend {o} (*{M}*)
+           (entry1 : @InfChoiceSeqEntry o (*M*))
+           (entry2 : @ChoiceSeqEntry o) : Prop :=
+  (* the extension has the same restriction has the current sequence *)
+  icse_restriction entry1 = cse_restriction entry2
+  (* the extension is an extension *)
+  /\
+  inf_choice_sequence_vals_extend entry1 entry2.
+
+(* [entry1] extends [entry2] *)
+Definition inf_entry_extends {o} (*{M}*)
+           (entry1 : @inf_library_entry o (*M*))
+           (entry2 : @library_entry o) : Prop :=
+  match entry1, entry2 with
+  | inf_lib_cs name1 entry1, lib_cs name2 entry2 =>
+    name1 = name2 /\ inf_choice_sequence_entry_extend entry1 entry2
+
+  | inf_lib_abs abs1 vars1 rhs1 cor1, lib_abs abs2 vars2 rhs2 cor2 =>
+    abs1 = abs2 /\ vars1 = vars2 /\ rhs1 = rhs2
+
+  | _, _ => False
+  end.
+
+Fixpoint entry_in_inf_library_extends {o} (*{M}*)
+         (entry  : @library_entry o)
+         (n      : nat)
+         (inflib : inf_library (*M*)) : Prop :=
+  match n with
+  | 0 => False
+  | S n =>
+    inf_entry_extends (inflib 0) entry
+    \/
+    (~ inf_matching_entries (inflib 0) entry
+       # entry_in_inf_library_extends entry n (shift_inf_lib inflib))
+  end.
+
+Definition subset_inf_library {o} (*{M}*) (lib : @library o) (infl : @inf_library o (*M*)) :=
+  forall entry,
+    List.In entry lib
+    -> exists n, inf_entry_extends (infl n) entry.
+
+Definition inf_lib_extends_ext_entries {o} (infl : @inf_library o) (lib : @library o) :=
+  forall entry,
+    entry_in_library entry lib
+    -> exists n, entry_in_inf_library_extends entry n infl.
+
+Record inf_lib_extends {o} (infl : @inf_library o) (lib : @library o) :=
+  MkInfLibExtends
+    {
+      inf_lib_extends_ext  : inf_lib_extends_ext_entries infl lib;
+      inf_lib_extends_safe : safe_library lib -> safe_inf_library infl;
+
+(*      inf_lib_extends_sub : subset_inf_library lib infl;*)
+    }.
+
+(* Do bars have to be decidable (i.e., bool instead of Prop)?
+   If they do, then we're in trouble because we can't decide whether 2 terms are
+   equal.  We would have to get rid of all our undecidable stuff *)
+Definition bar_lib {o} := @library o -> Prop.
+
+
+(*Definition MR {o} (ts : cts(o)) (lib : @library o) :=
+  fun v T => exists per, ts lib T T per /\ per v v.*)
+
+
+(* This states that [bar] is a bar of [lib] *)
+Definition BarLibBars {o}
+           (bar : @bar_lib o)
+           (lib : @library o) :=
+  forall (infLib : inf_library (*M*)),
+    inf_lib_extends infLib lib
+    ->
+    exists (lib' : library),
+      bar lib'
+      /\ lib_extends lib' lib
+      /\ inf_lib_extends infLib lib'.
+
+Definition BarLibExt {o}
+           (bar : @bar_lib o)
+           (lib : @library o) :=
+  forall (lib' : library),  bar lib' -> lib_extends lib' lib.
+
+(* The bar is non-empty.  This is useful for example when
+   We know that a type [T] computes to [Nat] at a bar, then we can
+   at least get one such library at the bar at which [T] computes to [Nat] *)
+Definition BarLibMem {o}
+           (bar : @bar_lib o) :=
+  exists (lib' : library), bar lib'.
+
+Record BarLib {o} (lib : @library o) :=
+  MkBarLib
+    {
+      bar_lib_bar  :> @bar_lib o;
+      bar_lib_bars : BarLibBars bar_lib_bar lib;
+      bar_lib_ext  : BarLibExt bar_lib_bar lib;
+(*      bar_lib_mem  : BarLibMem bar_lib_bar;*)
+    }.
+Arguments bar_lib_bar  [o] [lib] _ _.
+Arguments bar_lib_bars [o] [lib] _ _ _.
+Arguments bar_lib_ext  [o] [lib] _ _ _.
+(*Arguments bar_lib_mem  [o] [M] [lib] _.*)
+
+Definition all_in_bar0 {o} {lib} (bar : BarLib lib) (F : @library o -> Prop) :=
+  forall (lib' : library), bar_lib_bar bar lib' -> F lib'.
+
+(* As opposed to [all_in_bar0], here we require that the property be true in all
+   extensions of the bar *)
+
+Definition all_in_bar {o} {lib} (bar : BarLib lib) (F : @library o -> Prop) :=
+  forall (lib' : library), bar_lib_bar bar lib' -> in_ext lib' F.
+
+Definition in_bar {o} (lib : @library o) (F : @library o -> Prop) :=
+  exists (bar : BarLib lib), all_in_bar bar F.
 
 
 
@@ -2697,3 +2911,33 @@ Proof.
   eapply a; eauto 2 with slow.
 Qed.
 Hint Resolve implies_all_in_bar_intersect_bars_right : slow.
+
+
+(* the bar that contains everything *)
+Definition trivial_bar {o} (lib : @library o) : BarLib lib.
+Proof.
+  exists (fun (lib' : library) => lib_extends lib' lib).
+
+  - introv ext.
+    exists lib; dands; eauto 2 with slow.
+
+  - introv ext; auto.
+Defined.
+
+Definition const_bar {o} (lib : @library o) : bar_lib :=
+  fun lib' => lib = lib'.
+
+Lemma BarLibBars_refl {o} :
+  forall (lib : @library o), BarLibBars (const_bar lib) lib.
+Proof.
+  introv i.
+  exists lib; dands; tcsp; eauto 2 with slow.
+Qed.
+Hint Resolve BarLibBars_refl : slow.
+
+Lemma BarLibExt_refl {o} :
+  forall (lib : @library o), BarLibExt (const_bar lib) lib.
+Proof.
+  introv b; unfold const_bar in *; simpl in *; repndors; subst; tcsp; eauto 2 with slow.
+Qed.
+Hint Resolve BarLibExt_refl : slow.

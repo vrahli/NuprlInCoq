@@ -25,14 +25,13 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
 
 *)
 
 
 Require Export nuprl.
 Require Export nat_defs.
-Require Export bar.
 Require Export computation_choice_seq.
 
 
@@ -112,24 +111,6 @@ Proof.
   unfold lib_0 in i; simpl in i; repndors; tcsp; subst.
   simpl; introv k; omega.
 Qed.
-
-Definition const_bar {o} (lib : @library o) : bar_lib :=
-  fun lib' => lib = lib'.
-
-Lemma BarLibBars_refl {o} :
-  forall (lib : @library o), BarLibBars (const_bar lib) lib.
-Proof.
-  introv i.
-  exists lib; dands; tcsp; eauto 2 with slow.
-Qed.
-Hint Resolve BarLibBars_refl : slow.
-
-Lemma BarLibExt_refl {o} :
-  forall (lib : @library o), BarLibExt (const_bar lib) lib.
-Proof.
-  introv b; unfold const_bar in *; simpl in *; repndors; subst; tcsp; eauto 2 with slow.
-Qed.
-Hint Resolve BarLibExt_refl : slow.
 
 Lemma find_cs_some_implies_list_in {o} :
   forall (lib : @library o) name e,
@@ -1235,27 +1216,29 @@ Proof.
     dands.
 
     {
-      introv i.
+      try (introv i).
       spcast.
       apply computes_to_valc_refl; eauto 2 with slow.
     }
 
     {
-      introv i.
+      try (introv i).
       spcast.
       apply computes_to_valc_refl; eauto 2 with slow.
     }
 
     {
-      introv i.
+      try (introv i).
       apply CL_nat.
       unfold per_nat_bar.
       dands.
 
       {
-        assert (BarLib lib') as bar.
+        first[assert (BarLib lib') as bar
+             |assert (BarLib (@lib_0 o)) as bar].
         {
-          exists (const_bar lib').
+          first[exists (const_bar lib')
+               |exists (const_bar (@lib_0 o))].
 
           - introv ext.
             unfold const_bar; eexists; dands; tcsp.
@@ -1284,16 +1267,18 @@ Proof.
     }
 
     {
-      introv i; introv.
+      try (introv i); introv.
       autorewrite with slow.
       apply CL_nat.
       unfold per_nat_bar.
       dands.
 
       {
-        assert (BarLib lib') as bar.
+        first[assert (BarLib lib') as bar
+             |assert (BarLib (@lib_0 o)) as bar].
         {
-          exists (const_bar lib').
+          first[exists (const_bar lib')
+               |exists (const_bar (@lib_0 o))].
 
           - introv j.
             unfold const_bar; eexists; dands; tcsp.
@@ -1324,14 +1309,15 @@ Proof.
 
   {
     unfold per_func_eq.
-    introv i e.
+    first [introv i e|introv e].
 
     unfold equality_of_nat_bar in *; exrepnd.
 
-    match goal with
-    | [ H : lib_extends _ _ |- _ ] =>
-      dup H as safe; apply lib_extends_preserves_safe in safe;[|apply safe_library_lib0]
-    end.
+    first[match goal with
+          | [ H : lib_extends _ _ |- _ ] =>
+            dup H as safe; apply lib_extends_preserves_safe in safe;[|apply safe_library_lib0]
+          end
+         |pose proof (@safe_library_lib0 o) as safe].
 
     exists (extend_bar_nat_following_coq_law_upto bar safe e0).
     introv b e; simpl in *.
@@ -1341,14 +1327,18 @@ Proof.
     unfold equality_of_nat_tt in w; exrepnd.
     simpl in *.
 
-    assert (lib_extends lib'1 lib0) as ext1 by eauto 2 with slow.
-    assert (lib_extends lib'1 lib_0) as ext2 by eauto 4 with slow.
+    first[assert (lib_extends lib'1 lib0) as ext1 by eauto 2 with slow
+         |assert (lib_extends lib'0 lib0) as ext1 by eauto 2 with slow].
+    first[assert (lib_extends lib'1 lib_0) as ext2 by eauto 4 with slow
+         |assert (lib_extends lib'0 lib_0) as ext2 by eauto 4 with slow].
     assert (lib_extends lib0 lib_0) as ext3 by eauto 4 with slow.
 
     clear Heqw.
 
-    eapply (computes_to_valc_nat_if_lib_extends lib'1 lib0) in w1; eauto 2 with slow.
-    eapply (computes_to_valc_nat_if_lib_extends lib'1 lib0) in w0; eauto 2 with slow.
+    first[eapply (computes_to_valc_nat_if_lib_extends lib'1 lib0) in w1; eauto 2 with slow
+         |eapply (computes_to_valc_nat_if_lib_extends lib'0 lib0) in w1; eauto 2 with slow].
+    first[eapply (computes_to_valc_nat_if_lib_extends lib'1 lib0) in w0; eauto 2 with slow
+         |eapply (computes_to_valc_nat_if_lib_extends lib'0 lib0) in w0; eauto 2 with slow].
 
     pose proof (bar_preserves_safe bar lib0) as safe1.
     repeat (autodimp safe1 hyp);[].
@@ -3699,13 +3689,13 @@ Proof.
     dands.
 
     {
-      introv i.
+      try introv i.
       spcast.
       apply computes_to_valc_refl; eauto 2 with slow.
     }
 
     {
-      introv i.
+      try introv i.
       spcast.
       apply computes_to_valc_refl; eauto 2 with slow.
     }

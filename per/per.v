@@ -34,7 +34,7 @@
 Require Export cequiv.
 Require Export universe2.
 Require Export atoms.
-Require Export computation_lib_extends.
+Require Export bar.
 Require Export nat_type.
 Require Export csname_type.
 
@@ -317,218 +317,6 @@ Notation "T [[ v \\ a ]]" := (substc a v T) (at level 0).
 
 
 (* begin hide *)
-
-Definition InfChoiceSeqVals {o} := nat -> @ChoiceSeqVal o.
-
-Definition inf_choice_sequence_satisfies_restriction {o}
-           (vals       : @InfChoiceSeqVals o)
-           (constraint : ChoiceSeqRestriction) : Prop :=
-  match constraint with
-  | csc_no => True
-  | csc_type d M Md => forall n, M (vals n)
-  | csc_coq_law f => forall n, vals n = f n
-  end.
-
-Definition ex_choice {o}
-           (restr : @ChoiceSeqRestriction o) : Type :=
-  match restr with
-  | csc_no => True
-  | csc_type d M Md => {v : @ChoiceSeqVal o & M v}
-  | csc_coq_law f => True
-  end.
-
-Record InfChoiceSeqEntry {o} (*(M : Mem)*) :=
-  MkInfChoiceSeqEntry
-    {
-      icse_vals :> (*@ex_choice o M icse_restriction ->*) @InfChoiceSeqVals o;
-      icse_restriction : @ChoiceSeqRestriction o;
-    }.
-
-Inductive inf_library_entry {o} (*M*) :=
-(* a choice sequence *)
-| inf_lib_cs
-    (name : choice_sequence_name)
-    (entry : @InfChoiceSeqEntry o (*M*))
-(* a regular abstraction *)
-| inf_lib_abs
-    (opabs : opabs)
-    (vars  : list sovar_sig)
-    (rhs   : @SOTerm o)
-    (correct : correct_abs opabs vars rhs).
-
-Definition inf_library {o} (*M*) := nat -> @inf_library_entry o (*M*).
-
-Definition safe_inf_choice_sequence_entry {o} (e : @InfChoiceSeqEntry o (*M*)) :=
-  match e with
-  | MkInfChoiceSeqEntry _ vals restriction =>
-    inf_choice_sequence_satisfies_restriction vals restriction
-  end.
-
-Definition safe_inf_library_entry {o} (e : @inf_library_entry o (*M*)) :=
-  match e with
-  | inf_lib_cs name cse => safe_inf_choice_sequence_entry cse
-  | _ => True
-  end.
-
-Definition inf_entry2name {o} (*{M}*) (e : @inf_library_entry o (*M*)) : EntryName :=
-  match e with
-  | inf_lib_cs name _ => entry_name_cs name
-  | inf_lib_abs opabs _ _ _ => entry_name_abs opabs
-  end.
-
-Definition inf_matching_entries {o}
-           (entry1 : @inf_library_entry o)
-           (entry2 : @library_entry o) : Prop :=
-  same_entry_name (inf_entry2name entry1) (entry2name entry2).
-
-Definition matching_inf_entries {o} (entry1 entry2 : @inf_library_entry o) : Prop :=
-  same_entry_name (inf_entry2name entry1) (inf_entry2name entry2).
-
-Definition shift_inf_lib {o} (*{M}*) (l : @inf_library o (*M*)) : inf_library (*M*) :=
-  fun n => l (S n).
-
-Fixpoint entry_in_inf_library_n {o}
-         (n      : nat)
-         (entry  : @inf_library_entry o)
-         (inflib : inf_library) : Prop :=
-  match n with
-  | 0 => False
-  | S n =>
-    entry = inflib 0
-    \/
-    (~ matching_inf_entries (inflib 0) entry
-       # entry_in_inf_library_n n entry (shift_inf_lib inflib))
-  end.
-
-Definition entry_in_inf_library {o}
-         (entry  : @inf_library_entry o)
-         (inflib : inf_library) : Prop :=
-  exists n, entry_in_inf_library_n n entry inflib.
-
-Definition safe_inf_library {o} (inflib : @inf_library o (*M*)) :=
-  forall entry, entry_in_inf_library entry inflib -> safe_inf_library_entry entry.
-
-Definition inf_choice_sequence_vals_extend {o}
-           (vals1 : @InfChoiceSeqVals o)
-           (vals2 : @ChoiceSeqVals o) : Prop :=
-  forall n v,
-    select n vals2 = Some v
-    -> vals1 n = v.
-
-(* [entry1] extends [entry2] *)
-Definition inf_choice_sequence_entry_extend {o} (*{M}*)
-           (entry1 : @InfChoiceSeqEntry o (*M*))
-           (entry2 : @ChoiceSeqEntry o) : Prop :=
-  (* the extension has the same restriction has the current sequence *)
-  icse_restriction entry1 = cse_restriction entry2
-  (* the extension is an extension *)
-  /\
-  inf_choice_sequence_vals_extend entry1 entry2.
-
-(* [entry1] extends [entry2] *)
-Definition inf_entry_extends {o} (*{M}*)
-           (entry1 : @inf_library_entry o (*M*))
-           (entry2 : @library_entry o) : Prop :=
-  match entry1, entry2 with
-  | inf_lib_cs name1 entry1, lib_cs name2 entry2 =>
-    name1 = name2 /\ inf_choice_sequence_entry_extend entry1 entry2
-
-  | inf_lib_abs abs1 vars1 rhs1 cor1, lib_abs abs2 vars2 rhs2 cor2 =>
-    abs1 = abs2 /\ vars1 = vars2 /\ rhs1 = rhs2
-
-  | _, _ => False
-  end.
-
-Fixpoint entry_in_inf_library_extends {o} (*{M}*)
-         (entry  : @library_entry o)
-         (n      : nat)
-         (inflib : inf_library (*M*)) : Prop :=
-  match n with
-  | 0 => False
-  | S n =>
-    inf_entry_extends (inflib 0) entry
-    \/
-    (~ inf_matching_entries (inflib 0) entry
-       # entry_in_inf_library_extends entry n (shift_inf_lib inflib))
-  end.
-
-Definition subset_inf_library {o} (*{M}*) (lib : @library o) (infl : @inf_library o (*M*)) :=
-  forall entry,
-    List.In entry lib
-    -> exists n, inf_entry_extends (infl n) entry.
-
-Definition inf_lib_extends_ext_entries {o} (infl : @inf_library o) (lib : @library o) :=
-  forall entry,
-    entry_in_library entry lib
-    -> exists n, entry_in_inf_library_extends entry n infl.
-
-Record inf_lib_extends {o} (infl : @inf_library o) (lib : @library o) :=
-  MkInfLibExtends
-    {
-      inf_lib_extends_ext  : inf_lib_extends_ext_entries infl lib;
-      inf_lib_extends_safe : safe_library lib -> safe_inf_library infl;
-
-(*      inf_lib_extends_sub : subset_inf_library lib infl;*)
-    }.
-
-(* Do bars have to be decidable (i.e., bool instead of Prop)?
-   If they do, then we're in trouble because we can't decide whether 2 terms are
-   equal.  We would have to get rid of all our undecidable stuff *)
-Definition bar_lib {o} := @library o -> Prop.
-
-
-(*Definition MR {o} (ts : cts(o)) (lib : @library o) :=
-  fun v T => exists per, ts lib T T per /\ per v v.*)
-
-
-(* This states that [bar] is a bar of [lib] *)
-Definition BarLibBars {o}
-           (bar : @bar_lib o)
-           (lib : @library o) :=
-  forall (infLib : inf_library (*M*)),
-    inf_lib_extends infLib lib
-    ->
-    exists (lib' : library),
-      bar lib'
-      /\ lib_extends lib' lib
-      /\ inf_lib_extends infLib lib'.
-
-Definition BarLibExt {o}
-           (bar : @bar_lib o)
-           (lib : @library o) :=
-  forall (lib' : library),  bar lib' -> lib_extends lib' lib.
-
-(* The bar is non-empty.  This is useful for example when
-   We know that a type [T] computes to [Nat] at a bar, then we can
-   at least get one such library at the bar at which [T] computes to [Nat] *)
-Definition BarLibMem {o}
-           (bar : @bar_lib o) :=
-  exists (lib' : library), bar lib'.
-
-Record BarLib {o} (lib : @library o) :=
-  MkBarLib
-    {
-      bar_lib_bar  : @bar_lib o;
-      bar_lib_bars : BarLibBars bar_lib_bar lib;
-      bar_lib_ext  : BarLibExt bar_lib_bar lib;
-(*      bar_lib_mem  : BarLibMem bar_lib_bar;*)
-    }.
-Arguments bar_lib_bar  [o] [lib] _ _.
-Arguments bar_lib_bars [o] [lib] _ _ _.
-Arguments bar_lib_ext  [o] [lib] _ _ _.
-(*Arguments bar_lib_mem  [o] [M] [lib] _.*)
-
-Definition all_in_bar0 {o} {lib} (bar : BarLib lib) (F : @library o -> Prop) :=
-  forall (lib' : library), bar_lib_bar bar lib' -> F lib'.
-
-(* As opposed to [all_in_bar0], here we require that the property be true in all
-   extensions of the bar *)
-
-Definition all_in_bar {o} {lib} (bar : BarLib lib) (F : @library o -> Prop) :=
-  forall (lib' : library), bar_lib_bar bar lib' -> in_ext lib' F.
-
-Definition in_bar {o} (lib : @library o) (F : @library o -> Prop) :=
-  exists (bar : BarLib lib), all_in_bar bar F.
 
 Notation "lib-per" := (library -> CTerm -> CTerm -> [U]).
 
@@ -1022,11 +810,11 @@ Definition ccequivc_ext {o} (lib : @library o) (t t' : @CTerm o) :=
 Definition computes_to_valc_bar {o} {lib} (bar : @BarLib o lib) (a b : @CTerm o) :=
   all_in_bar bar (fun lib => a ===>(lib) b).
 
-Definition computes_to_valc_ext {o} (lib : @library o) (a b : @CTerm o) :=
-  in_ext lib (fun lib => a ===>(lib) b).
+(*Definition computes_to_valc_ext {o} (lib : @library o) (a b : @CTerm o) :=
+  in_ext lib (fun lib => a ===>(lib) b).*)
 
 Notation "a ==b==>( bar ) b" := (computes_to_valc_bar bar a b) (at level 0).
-Notation "a ==e==>( , lib ) b" := (computes_to_valc_ext lib a b) (at level 0).
+(*Notation "a ==e==>( , lib ) b" := (computes_to_valc_ext lib a b) (at level 0).*)
 
 Definition eqorceq {p} lib (eq : per(p)) a b : [U] :=
   eq a b {+} ccequivc_ext lib a b.
@@ -1263,15 +1051,19 @@ Definition per_disect_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p))
 
  *)
 
+
+Definition per_func_eq {o}
+           (eqa  : per(o))
+           (eqb  : per-fam(eqa))
+           (t t' : @CTerm o) :=
+  forall a a' (e : eqa a a'),
+    (eqb a a' e) (mkc_apply t a) (mkc_apply t' a').
+
 Definition per_func {p} (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
   {eqa : per
    , {eqb : per-fam(eqa)
       , type_family mkc_function ts lib T1 T2 eqa eqb
-      # (forall t t',
-           eq t t'
-           <=>
-           (forall a a' (e : eqa a a'),
-              (eqb a a' e) (mkc_apply t a) (mkc_apply t' a')))}}.
+      # eq <=2=> (per_func_eq eqa eqb)}}.
 
 Definition per_func_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   in_ext lib (fun lib' => per_func ts lib' T1 T2 eq).
@@ -1311,8 +1103,8 @@ Definition type_family_ext {o}
   , {v, v' : NVar
   , {B : CVTerm [v]
   , {B' : CVTerm [v']
-  , in_ext lib (fun lib => T1 ===>(lib) (tycon A v B))
-  # in_ext lib (fun lib => T2 ===>(lib) (tycon A' v' B'))
+  , T1 ===>(lib) (tycon A v B)
+  # T2 ===>(lib) (tycon A' v' B')
   # in_ext lib (fun lib => ts lib A A' (eqa lib))
   # in_ext
       lib
@@ -1320,7 +1112,7 @@ Definition type_family_ext {o}
                       ts lib (B[[v\\a]]) (B'[[v'\\a']]) (eqb lib a a' e)))
   }}}}.
 
-Definition per_func_eq {o}
+Definition per_func_ext_eq {o}
            (eqa  : lib-per(o))
            (eqb  : lib-per-fam(eqa))
            (lib  : library)
@@ -1335,7 +1127,7 @@ Definition per_func_ext {p} (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
   {eqa : lib-per
   , {eqb : lib-per-fam(eqa)
   , type_family_ext mkc_function ts lib T1 T2 eqa eqb
-  # eq <=2=> (per_func_eq eqa eqb lib) }}.
+  # eq <=2=> (per_func_ext_eq eqa eqb lib) }}.
 
 
 
@@ -1379,6 +1171,13 @@ Definition per_product_eq_bar {o}
   {bar : BarLib lib
   , all_in_bar bar (fun lib => per_product_eq lib (eqa lib) (eqb lib) t t')}.
 
+(* I was using [type_family_bar] here before but then it doesn't make
+   sense because the elements of the sum type could use a lower bar than
+   then bar of the family in which case we don't know if the PERs that are
+   supposed to be the ones of A and B are actually the ones of A and B...
+
+   One thing we could do though is enforce that the bar of the equality is
+   at least higher than the one of the family *)
 Definition per_product_bar {p}
            (ts    : cts)
            (lib   : library)
@@ -1386,7 +1185,7 @@ Definition per_product_bar {p}
            (eq    : per) : [U] :=
   {eqa : lib-per
   , {eqb : lib-per-fam(eqa)
-  , type_family_bar mkc_product ts lib T1 T2 eqa eqb
+  , type_family_ext mkc_product ts lib T1 T2 eqa eqb
   # eq <=2=> (per_product_eq_bar lib eqa eqb) }}.
 
 
@@ -2811,15 +2610,35 @@ Definition close_ind' {pp}
                  (B'    : CVTerm [v'])
                  (eqa   : lib-per)
                  (eqb   : lib-per-fam(eqa))
-                 (c1    : in_ext lib (fun lib => T ===>(lib) (mkc_function A v B)))
-                 (c2    : in_ext lib (fun lib => T' ===>(lib) (mkc_function A' v' B')))
+                 (c1    : T ===>(lib) (mkc_function A v B))
+                 (c2    : T' ===>(lib) (mkc_function A' v' B'))
                  (cla   : in_ext lib (fun lib => close ts lib A A' (eqa lib)))
                  (reca  : in_ext lib (fun lib => P ts lib A A' (eqa lib)))
                  (clb   : in_ext lib (fun lib => forall a a' (e : eqa lib a a'), close ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
                  (recb  : in_ext lib (fun lib => forall a a' (e : eqa lib a a'), P ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
-                 (eqiff : eq <=2=> (per_func_eq eqa eqb lib))
+                 (eqiff : eq <=2=> (per_func_ext_eq eqa eqb lib))
                  (per   : per_func_ext (close ts) lib T T' eq),
             P ts lib T T' eq)
+
+(*  (func : forall (ts    : cts)
+                 (lib   : library)
+                 (T T'  : @CTerm pp)
+                 (eq    : per)
+                 (A A'  : @CTerm pp)
+                 (v v'  : NVar)
+                 (B     : CVTerm [v])
+                 (B'    : CVTerm [v'])
+                 (eqa   : per)
+                 (eqb   : per-fam(eqa))
+                 (c1    : T ===>(lib) (mkc_function A v B))
+                 (c2    : T' ===>(lib) (mkc_function A' v' B'))
+                 (cla   : close ts lib A A' eqa)
+                 (reca  : P ts lib A A' eqa)
+                 (clb   : forall a a' (e : eqa a a'), close ts lib (substc a v B) (substc a' v' B') (eqb a a' e))
+                 (recb  : forall a a' (e : eqa a a'), P ts lib (substc a v B) (substc a' v' B') (eqb a a' e))
+                 (eqiff : eq <=2=> (per_func_eq eqa eqb))
+                 (per   : per_func (close ts) lib T T' eq),
+            P ts lib T T' eq)*)
 
   (disect : forall (ts   : cts)
                    (lib  : library)
@@ -3351,19 +3170,18 @@ Definition close_ind' {pp}
                     (lib   : library)
                     (T T'  : @CTerm pp)
                     (eq    : per)
-                    (bar   : BarLib lib)
                     (A A'  : @CTerm pp)
                     (v v'  : NVar)
                     (B     : CVTerm [v])
                     (B'    : CVTerm [v'])
                     (eqa   : lib-per)
                     (eqb   : lib-per-fam(eqa))
-                    (c1    : all_in_bar bar (fun lib => T ===>(lib) (mkc_product A v B)))
-                    (c2    : all_in_bar bar (fun lib => T' ===>(lib) (mkc_product A' v' B')))
-                    (cla   : all_in_bar bar (fun lib => close ts lib A A' (eqa lib)))
-                    (reca  : all_in_bar bar (fun lib => P ts lib A A' (eqa lib)))
-                    (clb   : all_in_bar bar (fun lib => forall a a' (e : eqa lib a a'), close ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
-                    (recb  : all_in_bar bar (fun lib => forall a a' (e : eqa lib a a'), P ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
+                    (c1    : T ===>(lib) (mkc_product A v B))
+                    (c2    : T' ===>(lib) (mkc_product A' v' B'))
+                    (cla   : in_ext lib (fun lib => close ts lib A A' (eqa lib)))
+                    (reca  : in_ext lib (fun lib => P ts lib A A' (eqa lib)))
+                    (clb   : in_ext lib (fun lib => forall a a' (e : eqa lib a a'), close ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
+                    (recb  : in_ext lib (fun lib => forall a a' (e : eqa lib a a'), P ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
                     (eqiff : eq <=2=> (per_product_eq_bar lib eqa eqb))
                     (per   : per_product_bar (close ts) lib T T' eq),
       P ts lib T T' eq)
@@ -3559,6 +3377,35 @@ Definition close_ind' {pp}
                      (tsb lib' i a a' e))
               eqiff
               pts
+
+(*   | CL_func pts =>
+       let (eqa, x) := pts in
+       let (eqb, x) := x in
+       let (tf, eqiff) := x in
+       let (A,   x) := tf in
+       let (A',  x) := x in
+       let (v,   x) := x in
+       let (v',  x) := x in
+       let (B,   x) := x in
+       let (B',  x) := x in
+       let (c1,  x) := x in
+       let (c2,  x) := x in
+       let (tsa, tsb) := x in
+         func ts lib T T' eq A A' v v' B B' eqa eqb
+              c1
+              c2
+              tsa
+              (rec ts lib A A' eqa tsa)
+              tsb
+              (fun a a' (e : eqa a a') =>
+                 rec ts lib
+                     (substc a v B)
+                     (substc a' v' B')
+                     (eqb a a' e)
+                     (tsb a a' e))
+              eqiff
+              pts*)
+
    | CL_disect pts =>
        let (eqa, x)   := pts in
        let (eqb, x)   := x in
@@ -4146,6 +3993,7 @@ Definition close_ind' {pp}
                      (tsb a a' eqa))
               teq
               pts
+
    | CL_product pts =>
        let (eqa, x) := pts in
        let (eqb, x) := x in
@@ -4156,26 +4004,26 @@ Definition close_ind' {pp}
        let (v',  x) := x in
        let (B,   x) := x in
        let (B',  x) := x in
-       let (bar, x) := x in
        let (c1,  x) := x in
        let (c2,  x) := x in
        let (tsa, tsb) := x in
-       product ts lib T T' eq bar A A' v v' B B' eqa eqb
+       product ts lib T T' eq A A' v v' B B' eqa eqb
                c1
                c2
                tsa
-               (fun (lib' : library) (p : bar_lib_bar bar lib') (lib'' : library) (i : lib_extends lib'' lib') =>
-                  rec ts lib'' A A' (eqa lib'') (tsa lib' p lib'' i))
+               (fun (lib' : library) (i : lib_extends lib' lib) =>
+                  rec ts lib' A A' (eqa lib') (tsa lib' i))
                tsb
-               (fun (lib' : library) (p : bar_lib_bar bar lib') (lib'' : library) (i : lib_extends lib'' lib')
-                    a a' (e : eqa lib'' a a') =>
-                  rec ts lib''
+               (fun (lib' : library) (i : lib_extends lib' lib)
+                    a a' (e : eqa lib' a a') =>
+                  rec ts lib'
                       (substc a v B)
                       (substc a' v' B')
-                      (eqb lib'' a a' e)
-                      (tsb lib' p lib'' i a a' e))
+                      (eqb lib' a a' e)
+                      (tsb lib' i a a' e))
                teq
                pts
+
 (*   | CL_esquash pts =>
        let (A1,  x) := pts in
        let (A2,  x) := x in

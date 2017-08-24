@@ -35,6 +35,7 @@ Require Export computation_seq.
 Require Export rel_nterm.
 Require Export computation_lib_extends.
 Require Export computation_lib_extends2.
+Require Export bar.
 
 
 (** printing #  $\times$ #×# *)
@@ -66,29 +67,88 @@ Qed.
 
 (** printing =v>  $\Downarrow$ #=v># *)
 
+
+
+Definition eInExt {o} (lib : @library o) (F : @library o -> Type) :=
+  {lib' : library
+   & lib_extends lib' lib
+   # F lib'}.
+
+Definition all_in_bar_t {o} {lib} (bar : BarLib lib) (F : @library o -> Type) :=
+  forall (lib' : library), bar_lib_bar bar lib' -> inExt lib' F.
+
+
+
 Definition computes_to_value_ext {o} (lib : @library o) (a b : @NTerm o) :=
   inExt lib (fun lib => a =v>(lib) b).
-
 Notation "a =e=v>( lib ) b" := (computes_to_value_ext lib a b) (at level 0).
 
-Print computes_to_exception.
+Definition computes_to_value_eext {o} (lib : @library o) (a b : @NTerm o) :=
+  eInExt lib (fun lib => a =v>(lib) b).
+Notation "a =ee=v>( lib ) b" := (computes_to_value_eext lib a b) (at level 0).
+
+Definition computes_to_value_alpha {o} (lib : @library o) (a b : @NTerm o) :=
+  {c : NTerm & (a =v>(lib) c) # alpha_eq b c}.
+Notation "a =a=v>( lib ) b" := (computes_to_value_alpha lib a b) (at level 0).
+
+Definition computes_to_value_bar {o} {lib} (bar : @BarLib o lib) (a b : @NTerm o) :=
+  all_in_bar_t bar (fun lib => a =a=v>(lib) b).
+Notation "a =b=v>( lib ) b" := (computes_to_value_bar lib a b) (at level 0).
+
+
 
 Definition computes_to_exception_ext {o} (lib : @library o) (a t1 t2 : @NTerm o) :=
   inExt lib (fun lib => t1 =e>(a,lib) t2).
-
 Notation "t1 =e=e>( a , lib ) t2" := (computes_to_exception_ext lib a t1 t2) (at level 0).
+
+Definition computes_to_exception_eext {o} (lib : @library o) (a t1 t2 : @NTerm o) :=
+  eInExt lib (fun lib => t1 =e>(a,lib) t2).
+Notation "t1 =ee=e>( a , lib ) t2" := (computes_to_exception_eext lib a t1 t2) (at level 0).
+
+Definition computes_to_exception_alpha {o} (lib : @library o) (a t1 t2 : @NTerm o) :=
+  {c : NTerm & {d : NTerm & (t1 =e>(c,lib) d) # alpha_eq a c # alpha_eq t2 d}}.
+Notation "t1 =a=e>( a , lib ) t2" := (computes_to_exception_alpha lib a t1 t2) (at level 0).
+
+Definition computes_to_exception_bar {o} {lib} (bar : @BarLib o lib) (a t1 t2 : @NTerm o) :=
+  all_in_bar_t bar (fun lib => t1 =a=e>(a,lib) t2).
+Notation "t1 =b=e>( a , lib ) t2" := (computes_to_exception_bar lib a t1 t2) (at level 0).
+
+
 
 Definition computes_to_seq_ext {o} (lib : library) (t : NTerm) (f : @ntseq o) :=
   inExt lib (fun lib => t =s>(lib) f).
-
 Notation "t =e=s>( lib ) f" := (computes_to_seq_ext lib t f) (at level 0).
 
+Definition computes_to_seq_eext {o} (lib : library) (t : NTerm) (f : @ntseq o) :=
+  eInExt lib (fun lib => t =s>(lib) f).
+Notation "t =ee=s>( lib ) f" := (computes_to_seq_eext lib t f) (at level 0).
 
-Definition close_compute_val_ext {p} lib (R: NTrel) (tl tr : NTerm) : [univ]:=
-  forall (c : CanonicalOp) (tl_subterms : list BTerm),
-    (tl =e=v>(lib) (oterm (Can c) tl_subterms))
+Definition computes_to_seq_alpha {o} (lib : library) (t : NTerm) (f : @ntseq o) :=
+  {g : ntseq & (t =s>(lib) g) # forall n, alpha_eq (f n) (g n)}.
+Notation "t =a=s>( lib ) f" := (computes_to_seq_alpha lib t f) (at level 0).
+
+Definition computes_to_seq_bar {o} {lib} (bar : BarLib lib) (t : NTerm) (f : @ntseq o) :=
+  all_in_bar_t bar (fun lib => t =a=s>(lib) f).
+Notation "t =b=s>( lib ) f" := (computes_to_seq_bar lib t f) (at level 0).
+
+
+(* We proved that bars are non-empty but in Prop, and since everything is
+   unfortunately in Type here, we assume work on non-empty bars by definition *)
+Record NeBarLib {o} (lib : @library o) :=
+  MkNeBarLib
+    {
+      ne_bar_lib_bar :> BarLib lib;
+      ne_bar_lib_lib : library;
+      ne_bar_lib_ne  : bar_lib_bar ne_bar_lib_bar ne_bar_lib_lib;
+    }.
+
+
+Definition close_compute_val_ext {p} lib (R: NTrel) (tl tr : NTerm) : [univ] :=
+  forall (c : CanonicalOp) (tl_subterms : list BTerm) (bar : NeBarLib lib),
+    (* We assume that the bar is non-empty.  We proved that but in Prop... *)
+    tl =b=v>(bar) (oterm (Can c) tl_subterms)
     -> {tr_subterms : list (@BTerm p)
-        & (tr =e=v>(lib) (oterm (Can c) tr_subterms))
+        & (tr =b=v>(bar) (oterm (Can c) tr_subterms))
         # lblift (olift R) tl_subterms tr_subterms }.
 
 (*
@@ -97,9 +157,9 @@ Definition close_compute_exc (R: NTerm -> NTerm -> [univ]) (tl tr : NTerm): [uni
 *)
 
 Definition close_compute_exc_ext {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
-  forall a e,
-    (tl =e=e>(a,lib) e)
-    -> {a' : NTerm & {e' : NTerm & (tr =e=e>(a',lib) e') # R a a' # R e e' }}.
+  forall a e (bar : NeBarLib lib),
+    tl =b=e>(a,bar) e
+    -> {a' : NTerm & {e' : NTerm & (tr =b=e>(a',bar) e') # R a a' # R e e' }}.
 
 (*
 Definition close_compute_seq {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
@@ -109,9 +169,9 @@ Definition close_compute_seq {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
 *)
 
 Definition close_compute_seq_ext {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
-  forall f,
-    (tl =e=s>(lib) f)
-    -> {f' : ntseq & (tr =e=s>(lib) f') # (forall n, R (f n) (f' n)) }.
+  forall f (bar : NeBarLib lib),
+    tl =b=s>(bar) f
+    -> {f' : ntseq & (tr =b=s>(bar) f') # (forall n, R (f n) (f' n)) }.
 
 
 (*Definition close_compute_mrk {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
@@ -191,7 +251,7 @@ Proof.
   dands; eauto.
 
   - introv Hcomp.
-    apply Hcl2 in Hcomp.
+    apply Hcl2 in Hcomp; auto.
     exrepnd. exists tr_subterms. split; eauto.
     eapply le_lblift2; eauto.
     apply le_olift.
@@ -201,11 +261,11 @@ Proof.
     dorn Hap; spc.
 
   - introv Hcomp.
-    apply Hcl3 in Hcomp; exrepnd.
+    apply Hcl3 in Hcomp; exrepnd; auto.
     exists a' e'; dands; auto; repdors; auto.
 
   - introv comp; allsimpl.
-    apply Hcl4 in comp; exrepnd.
+    apply Hcl4 in comp; exrepnd; auto;[].
     eexists; dands; eauto.
     introv.
     pose proof (comp0 n) as h; clear comp0.
@@ -248,6 +308,43 @@ Proof.
 Qed.
 Hint Resolve close_comput_mon : paco.
 *)
+
+Lemma computes_to_value_ext_eq {o} :
+  forall lib (t v1 v2 : @NTerm o),
+    t =e=v>(lib) v1
+    -> t =e=v>(lib) v2
+    -> v1 = v2.
+Proof.
+  introv comp1 comp2.
+  eapply computes_to_value_eq;[apply comp1|apply comp2]; apply lib_extends_refl.
+Qed.
+
+Lemma computes_to_exception_ext_eq {o} :
+  forall lib (a b t e1 e2 : @NTerm o),
+    t =e=e>(a,lib) e1
+    -> t =e=e>(b,lib) e2
+    -> e1 = e2 # a = b.
+Proof.
+  introv comp1 comp2.
+  eapply computes_to_exception_eq;[apply comp1|apply comp2]; apply lib_extends_refl.
+Qed.
+
+Definition reduces_to_ext {o} (lib : library) (t u : @NTerm o) :=
+  inExt lib (fun lib => reduces_to lib t u).
+
+Lemma reduces_to_ext_eq_val_like {o} :
+  forall lib (t v1 v2 : @NTerm o),
+    reduces_to_ext lib t v1
+    -> reduces_to_ext lib t v2
+    -> isvalue_like v1
+    -> isvalue_like v2
+    -> v1 = v2.
+Proof.
+  introv r1 r2 isv1 isv2.
+  eapply reduces_to_eq_val_like;
+    [apply r1|apply r2|exact isv1|exact isv2];
+    apply lib_extends_refl.
+Qed.
 
 (** inspited by dom2.pdf, Nuprl's type-continuous
   lub in dom2.pdf == intersect in Nuprl == and here *)
@@ -299,11 +396,231 @@ Proof.
 Qed.
 Hint Resolve computes_to_exception_ext_implies_computes_to_exception : slow.
 
+Definition reduces_to_alpha {o} lib (a b : @NTerm o) :=
+  {c : NTerm & reduces_to lib a c # alpha_eq b c}.
+
+Definition reduces_to_bar {o} {lib} (bar : @BarLib o lib) (a b : @NTerm o) :=
+  all_in_bar_t bar (fun lib => reduces_to_alpha lib a b).
+
+Definition hasvalue_like_bar {o} lib (a : @NTerm o) :=
+  {bar : BarLib lib
+   & {v : NTerm
+   & reduces_to_bar bar a v
+   # isvalue_like v}}.
+
+Hint Resolve lib_extends_preserves_reduces_to : slow.
+
+Lemma lib_extends_preserves_hasvalue_like {o} :
+  forall lib' lib (t : @NTerm o),
+    wf_term t
+    -> lib_extends lib' lib
+    -> hasvalue_like lib t
+    -> hasvalue_like lib' t.
+Proof.
+  introv wf ext hv.
+  unfold hasvalue_like in *; exrepnd.
+  exists v; dands; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_hasvalue_like : slow.
+
+Lemma reduces_to_implies_reduces_to_alpha {o} :
+  forall lib (a b : @NTerm o),
+    reduces_to lib a b -> reduces_to_alpha lib a b.
+Proof.
+  introv r; exists b; dands; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_to_implies_reduces_to_alpha : slow.
+
+Lemma reduces_to_implies_reduces_to_bar {o} :
+  forall lib (bar : BarLib lib) (a b : @NTerm o),
+    wf_term a
+    -> reduces_to lib a b
+    -> reduces_to_bar bar a b.
+Proof.
+  introv wf r ext ext'.
+  eauto 5 with slow.
+Qed.
+Hint Resolve reduces_to_implies_reduces_to_bar : slow.
+
+Lemma hasvalue_like_implies_hasvalue_like_bar {o} :
+  forall lib (a : @NTerm o),
+    wf_term a
+    -> hasvalue_like lib a
+    -> hasvalue_like_bar lib a.
+Proof.
+  introv wf hv.
+  unfold hasvalue_like, hasvalue_like_bar in *; exrepnd.
+
+  exists (trivial_bar lib) v; dands; eauto 3 with slow.
+Qed.
+Hint Resolve hasvalue_like_implies_hasvalue_like_bar : slow.
+
+Lemma computes_to_value_alpha_implies_reduces_to_alpha {o} :
+  forall lib (a b : @NTerm o),
+    computes_to_value_alpha lib a b
+    -> reduces_to_alpha lib a b.
+Proof.
+  introv comp.
+  unfold computes_to_value_alpha in comp; exrepnd.
+  exists c; dands; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_value_alpha_implies_reduces_to_alpha : slow.
+
+Lemma computes_to_value_bar_implies_reduces_to_bar {o} :
+  forall lib (bar : BarLib lib) (a b : @NTerm o),
+    computes_to_value_bar bar a b
+    -> reduces_to_bar bar a b.
+Proof.
+  introv comp ext ext'.
+  pose proof (comp lib' ext lib'0 ext') as q; simpl in q.
+  eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_value_bar_implies_reduces_to_bar : slow.
+
+Lemma or_implies_isvalue_like {o} :
+  forall (a : @NTerm o),
+    iscan a \/ isexc a
+    -> isvalue_like a.
+Proof.
+  introv h.
+  destruct a as [v|f|op bs]; simpl in *; tcsp;
+    try (complete (assert False; tcsp));
+    try (complete (unfold isvalue_like; simpl; tcsp)).
+
+  dopid op as [can|ncan|exc|abs] Case;
+    try (complete (assert False; tcsp));
+    try (complete (unfold isvalue_like; simpl; tcsp)).
+Qed.
+
+Lemma isvalue_like_implies_or {o} :
+  forall (a : @NTerm o),
+    isvalue_like a
+    -> iscan a \/ isexc a.
+Proof.
+  introv h.
+  unfold isvalue_like in h; repndors; tcsp.
+Qed.
+
+Lemma computes_to_value_implies_isvalue_like {o} :
+  forall lib (a b : @NTerm o),
+    computes_to_value lib a b
+    -> isvalue_like b.
+Proof.
+  introv comp.
+  unfold computes_to_value in comp; repnd.
+  eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_value_implies_isvalue_like : slow.
+
+Lemma alpha_eq_preserves_isvalue_like_left {o} :
+  forall (b c : @NTerm o),
+    isvalue_like c
+    -> alpha_eq b c
+    -> isvalue_like b.
+Proof.
+  introv isv aeq.
+  unfold isvalue_like in *; repndors;[left|right].
+
+  - apply iscan_implies in isv; repndors; exrepnd; subst;
+      inversion aeq; subst; simpl; auto.
+
+  - apply isexc_implies2 in isv; exrepnd; subst;
+      inversion aeq; subst; simpl; auto.
+Qed.
+Hint Resolve alpha_eq_preserves_isvalue_like_left : slow.
+
+Lemma computes_to_value_alpha_implies_isvalue_like {o} :
+  forall lib (a b : @NTerm o),
+    computes_to_value_alpha lib a b
+    -> isvalue_like b.
+Proof.
+  introv comp.
+  unfold computes_to_value_alpha in comp; exrepnd.
+  eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_value_alpha_implies_isvalue_like : slow.
+
+Lemma computes_to_value_bar_implies_isvalue_like {o} :
+  forall lib (bar : BarLib lib) (a b : @NTerm o),
+    computes_to_value_bar bar a b
+    -> isvalue_like b.
+Proof.
+  introv comp.
+  pose proof (bar_non_empty bar) as ne.
+  apply or_implies_isvalue_like.
+  exrepnd.
+  pose proof (comp lib' ne0 lib') as q.
+  autodimp q hyp; eauto 3 with slow; simpl in q.
+  apply isvalue_like_implies_or; eauto 4 with slow.
+Qed.
+Hint Resolve computes_to_value_bar_implies_isvalue_like : slow.
+
+Lemma computes_to_value_bar_implies_hasvalue_like_bar {o} :
+  forall lib (bar : BarLib lib) (a b : @NTerm o),
+    wf_term a
+    -> computes_to_value_bar bar a b
+    -> hasvalue_like_bar lib a.
+Proof.
+  introv wf hv.
+  unfold hasvalue_like_bar in *; exrepnd.
+  exists bar b; dands; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_value_bar_implies_hasvalue_like_bar : slow.
+
+Lemma computes_to_exception_bar_implies_reduces_to_bar {o} :
+  forall {lib} (bar : BarLib lib) (a n b : @NTerm o),
+    a =b=e>(n, bar) b
+    -> reduces_to_bar bar a (mk_exception n b).
+Proof.
+  introv comp ext ext'.
+  pose proof (comp _ ext _ ext') as q; simpl in q; clear comp.
+  unfold computes_to_exception_alpha in q; exrepnd.
+  exists (mk_exception c d); dands; auto.
+  apply implies_alphaeq_exception; auto.
+Qed.
+Hint Resolve computes_to_exception_bar_implies_reduces_to_bar : slow.
+
+Lemma computes_to_exception_bar_implies_hasvalue_like_bar {o} :
+  forall lib (bar : BarLib lib) (n a b : @NTerm o),
+    wf_term a
+    -> computes_to_exception_bar bar n a b
+    -> hasvalue_like_bar lib a.
+Proof.
+  introv wf hv.
+  unfold hasvalue_like_bar in *; exrepnd.
+  exists bar (mk_exception n b); dands; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_exception_bar_implies_hasvalue_like_bar : slow.
+
+Lemma computes_to_seq_bar_implies_reduces_to_bar {o} :
+  forall {lib} (bar : BarLib lib) (a : @NTerm o) f,
+    a =b=s>(bar) f
+    -> reduces_to_bar bar a (sterm f).
+Proof.
+  introv comp ext ext'.
+  pose proof (comp _ ext _ ext') as q; clear comp; simpl in q.
+  unfold computes_to_seq_alpha in q; exrepnd.
+  exists (sterm g); dands; auto.
+Qed.
+Hint Resolve computes_to_seq_bar_implies_reduces_to_bar : slow.
+
+Lemma computes_to_seq_bar_implies_hasvalue_like_bar {o} :
+  forall lib (bar : BarLib lib) (a : @NTerm o) f,
+    wf_term a
+    -> computes_to_seq_bar bar a f
+    -> hasvalue_like_bar lib a.
+Proof.
+  introv wf hv.
+  unfold hasvalue_like_bar in *; exrepnd.
+  exists bar (sterm f); dands; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_seq_bar_implies_hasvalue_like_bar : slow.
+
 Lemma approx_ext_assume_hasvalue {p} :
   forall lib a b,
     isprogram a
     -> @isprogram p b
-    -> (hasvalue_like lib a -> approx_ext lib a b)
+    -> (hasvalue_like_bar lib a -> approx_ext lib a b)
     -> approx_ext lib a b.
 Proof.
   introv Hpa Hpb Hha.
@@ -311,13 +628,11 @@ Proof.
   unfold close_compute_ext.
   dands; auto; introv Hcomp.
 
-  - assert (hasvalue lib a) as Xh by (eexists; eauto 2 with slow).
-    autodimp Hha hyp; eauto with slow.
+  - autodimp Hha hyp;[eauto 4 with slow|];[].
     invertsn Hha.
     unfold close_compute_ext in Hha; repnd; eauto.
 
-  - assert (raises_exception lib a) as Xh by (eexists; eexists; eauto 2 with slow).
-    autodimp Hha hyp; eauto with slow.
+  - autodimp Hha hyp;[eauto 4 with slow|];[].
     invertsn Hha.
     unfold close_compute_ext in Hha; repnd; eauto.
 
@@ -328,9 +643,43 @@ Proof.
     invertsn Hha.
     unfold close_compute_ext in Hha; repnd; eauto.*)
 
-  - autodimp Hha hyp; eauto 3 with slow.
+  - autodimp Hha hyp;[eauto 4 with slow|];[].
     invertsn Hha.
     unfold close_compute_ext in Hha; repnd; eauto.
+Qed.
+
+Lemma not_hasvalue_like_bottom {o} :
+  forall (lib : @library o), !hasvalue_like lib mk_bottom.
+Proof.
+  introv hv.
+  unfold hasvalue_like in hv; exrepnd.
+  apply not_bot_reduces_to_is_value_like in hv1; tcsp.
+Qed.
+
+Lemma reduces_to_alpha_isvalue_like_implies_hasvalue_like {o} :
+  forall lib (a b : @NTerm o),
+    isvalue_like b
+    -> reduces_to_alpha lib a b
+    -> hasvalue_like lib a.
+Proof.
+  introv isv r.
+  unfold reduces_to_alpha in r; exrepnd.
+  exists c; dands; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_to_alpha_isvalue_like_implies_hasvalue_like : slow.
+
+Lemma not_hasvalue_like_bar_bottom {o} :
+  forall (lib : @library o), !hasvalue_like_bar lib mk_bottom.
+Proof.
+  introv hv.
+  unfold hasvalue_like_bar in hv; exrepnd.
+
+  pose proof (bar_non_empty bar) as q; exrepnd.
+  apply hv0 in q0.
+  pose proof (q0 lib') as w; autodimp w hyp; eauto 3 with slow; simpl in w.
+
+  pose proof (not_hasvalue_like_bottom lib') as q; destruct q.
+  eauto 3 with slow.
 Qed.
 
 (** %\noindent \\*% The following is an easy corollary of the above.
@@ -341,10 +690,7 @@ Corollary bottom_approx_ext_any {p} :
 Proof.
   introv Hpr.
   apply approx_ext_assume_hasvalue; auto.
-
-  introv Hv.
-  unfold hasvalue_like in Hv; exrepnd.
-  apply not_bot_reduces_to_is_value_like in Hv1; tcsp.
+  introv Hv; apply not_hasvalue_like_bar_bottom in Hv; tcsp.
 Qed.
 
 (* begin hide *)
@@ -367,6 +713,37 @@ Proof.
   apply lib_extends_refl.
 Qed.
 Hint Resolve computes_to_value_ext_isvalue_eq : slow.
+
+Lemma computes_to_value_alpha_isvalue_alpha_eq {o} :
+  forall lib (t v : @NTerm o),
+    (t =a=v>(lib) v) -> isvalue t -> alpha_eq t v.
+Proof.
+  introv comp isv.
+  unfold computes_to_value_alpha in comp; exrepnd.
+  apply computes_to_value_isvalue_eq in comp1; auto.
+  subst.
+  apply alpha_eq_sym; auto.
+Qed.
+Hint Resolve computes_to_value_alpha_isvalue_alpha_eq : slow.
+
+Lemma inExt_refl {o} :
+  forall (lib : @library o) F,
+    inExt lib F -> F lib.
+Proof.
+  introv i; apply i; eauto 2 with slow.
+Qed.
+
+Lemma computes_to_value_bar_isvalue_alpha_eq {o} :
+  forall {lib} (bar : NeBarLib lib) (t v : @NTerm o),
+    (t =b=v>(bar) v) -> isvalue t -> alpha_eq t v.
+Proof.
+  introv comp isv.
+
+  pose proof (comp (ne_bar_lib_lib _ bar) (ne_bar_lib_ne _ bar)) as q.
+  apply inExt_refl in q.
+  eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_value_bar_isvalue_alpha_eq : slow.
 
 (*Lemma lib_extends_preserves_computes_to_value {o} :
   forall (lib1 lib2 : library)
@@ -400,17 +777,125 @@ Hint Resolve lib_extends_preserves_hasvalue : slow.
 
 Lemma computes_to_value_ext_isvalue_refl {o} :
   forall lib (t : @NTerm o),
-    isvalue t -> t =e=v>( lib) t.
+    isvalue t -> t =e=v>(lib) t.
 Proof.
   introv isv ext.
   apply computes_to_value_isvalue_refl; auto.
 Qed.
 Hint Resolve computes_to_value_ext_isvalue_refl : slow.
 
-Lemma hasvalue_as_approx_ext {pp} :
-  forall lib a,
-    @isprogram pp a
-    -> (hasvalue lib a
+Lemma computes_to_value_alpha_isvalue_refl {o} :
+  forall lib (t : @NTerm o),
+    isvalue t -> t =a=v>(lib) t.
+Proof.
+  introv isv.
+  exists t; dands; auto.
+  apply computes_to_value_isvalue_refl; auto.
+Qed.
+Hint Resolve computes_to_value_alpha_isvalue_refl : slow.
+
+Lemma computes_to_value_bar_isvalue_refl {o} :
+  forall {lib} (bar : BarLib lib) (t : @NTerm o),
+    isvalue t -> t =b=v>(bar) t.
+Proof.
+  introv isv ext ext'.
+  apply computes_to_value_alpha_isvalue_refl; auto.
+Qed.
+Hint Resolve computes_to_value_bar_isvalue_refl : slow.
+
+Lemma computes_to_value_bar_implies_computes_to_value_alpha {o} :
+  forall {lib} (bar : NeBarLib lib) (t u : @NTerm o),
+    t =b=v>(bar) u
+    -> {lib : library & t =a=v>(lib) u}.
+Proof.
+  introv h.
+  unfold computes_to_value_bar in h.
+  pose proof (h (ne_bar_lib_lib _ bar) (ne_bar_lib_ne _ bar)) as q.
+  apply inExt_refl in q.
+  eexists; eauto.
+Qed.
+Hint Resolve computes_to_value_bar_implies_computes_to_value_alpha : slow.
+
+Lemma computes_to_exception_bar_implies_computes_to_exception_alpha {o} :
+  forall {lib} (bar : NeBarLib lib) (a t u : @NTerm o),
+    t =b=e>(a,bar) u
+    -> {lib : library & t =a=e>(a,lib) u}.
+Proof.
+  introv h.
+  unfold computes_to_value_bar in h.
+  pose proof (h (ne_bar_lib_lib _ bar) (ne_bar_lib_ne _ bar)) as q.
+  apply inExt_refl in q.
+  eexists; eauto.
+Qed.
+Hint Resolve computes_to_exception_bar_implies_computes_to_exception_alpha : slow.
+
+Lemma computes_to_seq_bar_implies_computes_to_seq_alpha {o} :
+  forall {lib} (bar : NeBarLib lib) (t : @NTerm o) f,
+    t =b=s>(bar) f
+    -> {lib : library & t =a=s>(lib) f}.
+Proof.
+  introv h.
+  unfold computes_to_value_bar in h.
+  pose proof (h (ne_bar_lib_lib _ bar) (ne_bar_lib_ne _ bar)) as q.
+  apply inExt_refl in q.
+  eexists; eauto.
+Qed.
+Hint Resolve computes_to_seq_bar_implies_computes_to_seq_alpha : slow.
+
+
+Definition trivial_ne_bar {o} (lib : @library o) : NeBarLib lib.
+Proof.
+  eexists.
+  assert (bar_lib_bar (trivial_bar lib) lib) as w.
+  { simpl; eauto 2 with slow. }
+  exact w.
+Defined.
+
+Definition hasvalue_all_bars {o} (lib : @library o) a :=
+  forall (bar : NeBarLib lib), all_in_bar_t bar (fun lib => hasvalue lib a).
+
+Lemma hasvalue_all_bars_implies_hasvalue {o} :
+  forall lib (a : @NTerm o),
+    hasvalue_all_bars lib a
+    -> hasvalue lib a.
+Proof.
+  introv hv.
+  pose proof (hv (trivial_ne_bar lib) lib) as h; autodimp h hyp; simpl; eauto 3 with slow.
+Qed.
+Hint Resolve hasvalue_all_bars_implies_hasvalue : slow.
+
+Lemma axiom_doesnt_raise_an_exception_alpha {p} :
+  forall lib a (e : @NTerm p),
+    computes_to_exception_alpha lib a mk_axiom e -> False.
+Proof.
+  introv c.
+  unfold computes_to_exception_alpha in c; exrepnd.
+  apply can_doesnt_raise_an_exception in c1; sp.
+Qed.
+
+Lemma axiom_doesnt_compute_to_seq_alpha {o} :
+  forall lib (f : @ntseq o), !(mk_axiom =a=s>(lib) f).
+Proof.
+  introv comp.
+  unfold computes_to_seq_alpha in comp; exrepnd.
+  apply axiom_doesnt_compute_to_seq in comp1; auto.
+Qed.
+
+Lemma computes_to_value_alpha_axiom_implies {o} :
+  forall lib (t : @NTerm o),
+    t =a=v>(lib) mk_axiom
+    -> t =v>(lib) mk_axiom.
+Proof.
+  introv comp.
+  unfold computes_to_value_alpha in comp; exrepnd.
+  inversion comp0; simpl in *; cpx.
+Qed.
+Hint Resolve computes_to_value_alpha_axiom_implies : slow.
+
+Lemma hasvalue_as_approx_ext {o} :
+  forall lib (a : @NTerm o),
+    isprogram a
+    -> (hasvalue_all_bars lib a
         <=>
         approx_ext lib mk_axiom (mk_cbv a nvarx mk_axiom)).
 Proof.
@@ -423,24 +908,31 @@ Proof.
       rw @nt_wf_eq; sp.
 
     + introv comp.
-      exists ([] : list (@BTerm pp)).
-      apply computes_to_value_ext_isvalue_eq in comp; dands; auto;
-        inversion comp; subst; fold_terms;
-          fold (@mk_axiom pp); GC; tcsp.
+      exists ([] : list (@BTerm o)).
 
-      * introv ext.
+      apply computes_to_value_bar_isvalue_alpha_eq in comp; auto.
+      inversion comp; subst; simpl in *; clear comp; cpx.
+      dands; auto; fold_terms; tcsp.
+
+      {
+        introv ext ext'.
+        exists (@mk_axiom o).
         unfold computes_to_value; sp.
         apply cbv_reduce0; eauto 4 with slow.
+        eapply (lib_extends_preserves_hasvalue lib); eauto 3 with slow.
+      }
 
-      * constructor; simpl; sp.
-
-    + introv ce.
-      pose proof (ce lib) as q; autodimp q hyp; eauto 2 with slow.
-      apply axiom_doesnt_raise_an_exception in q; sp.
+      {
+        constructor; simpl; sp.
+      }
 
     + introv comp.
-      pose proof (comp lib) as q; autodimp q hyp; eauto 2 with slow.
-      apply axiom_doesnt_compute_to_seq in q; sp.
+      apply computes_to_exception_bar_implies_computes_to_exception_alpha in comp; exrepnd.
+      apply axiom_doesnt_raise_an_exception_alpha in comp0; sp.
+
+    + introv comp.
+      apply computes_to_seq_bar_implies_computes_to_seq_alpha in comp; exrepnd.
+      apply axiom_doesnt_compute_to_seq_alpha in comp0; sp.
 
 (*
     + introv cm.
@@ -449,19 +941,23 @@ Proof.
 
   - inversion k as [c].
     unfold close_compute_ext in c; repnd.
-    pose proof (c2 NAxiom []) as h.
-    allfold (@mk_axiom pp).
-    autodimp h hyp; eauto 2 with slow.
+
+    introv ext ext'.
+    pose proof (c2 NAxiom [] bar) as h.
+    allfold (@mk_axiom o).
+    repeat (autodimp h hyp); eauto 2 with slow.
 
     exrepnd.
     inversion h0 as [? imp]; allsimpl; cpx.
-    allfold (@mk_axiom pp).
-    assert (hasvalue lib (mk_cbv a nvarx mk_axiom)) as hv.
+    allfold (@mk_axiom o).
+    assert (hasvalue lib'0 (mk_cbv a nvarx mk_axiom)) as hv.
 
-    + unfold hasvalue.
-      exists (@mk_axiom pp); eauto 2 with slow.
+    + exists (@mk_axiom o); eauto 2 with slow.
+
+      pose proof (h1 lib' ext lib'0 ext') as q; simpl in q; eauto 2 with slow.
 
     + apply if_hasvalue_cbv0 in hv; sp.
+
       rw @isprog_eq; sp.
 Qed.
 
@@ -490,21 +986,27 @@ Definition approxc_ext {p} lib (a b : @CTerm p) :=
 Definition hasvalue_likec {p} lib (t : @CTerm p) :=
   hasvalue_like lib (get_cterm t).
 
+Definition hasvalue_likec_bar {p} lib (t : @CTerm p) :=
+  hasvalue_like_bar lib (get_cterm t).
+
 Definition has_value_likec {p} lib (t : @CTerm p) :=
   has_value_like lib (get_cterm t).
 
+Definition hasvaluec_all_bars {o} lib (a : @CTerm o) :=
+  hasvalue_all_bars lib (get_cterm a).
+
 Lemma approxc_ext_assume_hasvalue {p} :
   forall (lib : @library p) a b,
-    (hasvalue_likec lib a -> approxc_ext lib a b)
+    (hasvalue_likec_bar lib a -> approxc_ext lib a b)
     -> approxc_ext lib a b.
 Proof.
-  destruct a; destruct b; unfold hasvaluec, approxc_ext; allsimpl; sp.
+  destruct a; destruct b; unfold hasvalue_likec_bar, approxc_ext; allsimpl; sp.
   apply approx_ext_assume_hasvalue; sp; allrw @isprogram_eq; sp.
 Qed.
 
 Lemma hasvaluec_as_approxc_ext {p} :
   forall lib a,
-    hasvaluec lib a
+    hasvaluec_all_bars lib a
     <=>
     approxc_ext lib mkc_axiom (mkc_cbv a nvarx (@mkcv_axiom p nvarx)).
 Proof.
@@ -588,6 +1090,98 @@ Proof.
 Qed.
 Hint Resolve computes_to_seq_ext_preserves_isprogram : slow.
 
+Lemma computes_to_value_alpha_preserves_isprogram {o} :
+  forall lib (t1 t2 : @NTerm o),
+    t1 =a=v>(lib) t2
+    -> isprogram t1
+    -> isprogram t2.
+Proof.
+  introv comp isp.
+  unfold computes_to_value_alpha in comp; exrepnd.
+  apply preserve_program in comp1; auto.
+  apply alphaeq_preserves_program in comp0.
+  apply comp0; auto.
+Qed.
+Hint Resolve computes_to_value_alpha_preserves_isprogram : slow.
+
+Lemma computes_to_value_bar_preserves_isprogram {o} :
+  forall {lib} (bar : NeBarLib lib) (t1 t2 : @NTerm o),
+    t1 =b=v>(bar) t2
+    -> isprogram t1
+    -> isprogram t2.
+Proof.
+  introv comp isp.
+  apply computes_to_value_bar_implies_computes_to_value_alpha in comp; exrepnd.
+  eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_value_bar_preserves_isprogram : slow.
+
+Lemma computes_to_exception_alpha_preserves_isprogram {o} :
+  forall lib (a t1 t2 : @NTerm o),
+    t1 =a=e>(a,lib) t2
+    -> isprogram t1
+    -> isprogram a # isprogram t2.
+Proof.
+  introv comp isp.
+  unfold computes_to_exception_alpha in comp; exrepnd.
+  apply preserve_program_exc2 in comp0; auto; repnd.
+  apply alphaeq_preserves_program in comp2.
+  apply alphaeq_preserves_program in comp1.
+  rw comp2; rw comp1; auto.
+Qed.
+Hint Resolve computes_to_exception_alpha_preserves_isprogram : slow.
+
+Lemma computes_to_exception_bar_preserves_isprogram {o} :
+  forall {lib} (bar : NeBarLib lib) (a t1 t2 : @NTerm o),
+    t1 =b=e>(a,bar) t2
+    -> isprogram t1
+    -> isprogram a # isprogram t2.
+Proof.
+  introv comp isp.
+  apply computes_to_exception_bar_implies_computes_to_exception_alpha in comp; exrepnd.
+  eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_exception_bar_preserves_isprogram : slow.
+
+Lemma alphaeq_preserves_noutokens {o} :
+  forall (t1 t2 : @NTerm o),
+    alpha_eq t1 t2 -> (noutokens t1 <=> noutokens t2).
+Proof.
+  introv aeq.
+  apply alphaeq_preserves_utokens in aeq.
+  unfold noutokens; allrw; tcsp.
+Qed.
+
+Lemma computes_to_seq_alpha_preserves_isprogram {o} :
+  forall lib (t : @NTerm o) f,
+    t =a=s>(lib) f
+    -> isprogram t
+    -> isprogram (mk_ntseq f).
+Proof.
+  introv comp isp.
+  unfold computes_to_seq_alpha in comp; exrepnd.
+  apply reduces_to_preserves_program in comp1; auto.
+  allrw @isprogram_mk_ntseq.
+  introv.
+  pose proof (comp0 n) as z.
+  pose proof (comp1 n) as w; repnd.
+  applydup @alphaeq_preserves_program in z; rw z0.
+  applydup @alphaeq_preserves_noutokens in z; rw z1; tcsp.
+Qed.
+Hint Resolve computes_to_seq_alpha_preserves_isprogram : slow.
+
+Lemma computes_to_seq_bar_preserves_isprogram {o} :
+  forall {lib} (bar : NeBarLib lib) (t : @NTerm o) f,
+    t =b=s>(bar) f
+    -> isprogram t
+    -> isprogram (mk_ntseq f).
+Proof.
+  introv comp isp.
+  apply computes_to_seq_bar_implies_computes_to_seq_alpha in comp; exrepnd.
+  eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_seq_bar_preserves_isprogram : slow.
+
 Lemma approx_ext_refl {p} :
   forall lib (t : @NTerm p), isprogram t -> approx_ext lib t t.
 Proof.
@@ -603,13 +1197,13 @@ Proof.
   constructor.
   unfold close_compute_ext; dands; tcsp; introv comp; auto.
 
-  - exists tl_subterms. split; auto.
+  - exists tl_subterms; split; auto.
     unfold lblift.
     split; auto.
     intros ? Hlt.
     unfold blift.
 
-    apply computes_to_value_ext_preserves_isprogram in comp; auto.
+    apply computes_to_value_bar_preserves_isprogram in comp; auto.
     pose proof (selectbt_in2 _ tl_subterms Hlt) as Hbt.
     exrepnd.
     destruct bt as [lv nt].
@@ -621,17 +1215,18 @@ Proof.
     inverts Hbt1.
     unfold olift. spc;  eauto.
 
-  - applydup @computes_to_exception_ext_preserves_isprogram in comp; auto; repnd.
+  - applydup @computes_to_exception_bar_preserves_isprogram in comp; auto; repnd.
     exists a e; dands; auto.
 
   - eexists; dands; eauto.
     introv.
     right.
-    applydup @computes_to_seq_ext_preserves_isprogram in comp as wf; auto.
+    applydup @computes_to_seq_bar_preserves_isprogram in comp as wf; auto.
     apply CIH; dands; auto.
     rw @isprogram_mk_ntseq in wf.
     pose proof (wf n) as q; tcsp.
 Qed.
+Hint Resolve approx_ext_refl : slow.
 
 Definition approx_ext_open {p} lib := olift (@approx_ext p lib).
 Definition approx_ext_open_bterm {p} lib := blift (@approx_ext_open p lib).
@@ -679,6 +1274,60 @@ Proof.
   apply vbot_doesnt_compute_to_seq in q; auto.
 Qed.
 
+Lemma vbot_diverges_alpha {o} :
+  forall lib (v : NVar) (t : @NTerm o),
+    !((mk_vbot v) =a=v>(lib) t).
+Proof.
+  introv h.
+  unfold computes_to_value_alpha in h; exrepnd.
+  apply vbot_diverges in h1; auto.
+Qed.
+
+Lemma vbot_diverges_bar {o} :
+  forall {lib} (bar : NeBarLib lib) (v : NVar) (t : @NTerm o),
+    !((mk_vbot v) =b=v>(bar) t).
+Proof.
+  introv h.
+  apply computes_to_value_bar_implies_computes_to_value_alpha in h; exrepnd.
+  apply vbot_diverges_alpha in h0; auto.
+Qed.
+
+Lemma vbot_doesnt_raise_an_exception_alpha {o} :
+  forall lib (a : @NTerm o) (v : NVar) (e : NTerm),
+    !((mk_vbot v) =a=e>(a,lib) e).
+Proof.
+  introv h.
+  unfold computes_to_exception_alpha in h; exrepnd.
+  apply vbot_doesnt_raise_an_exception in h0; auto.
+Qed.
+
+Lemma vbot_doesnt_raise_an_exception_bar {o} :
+  forall {lib} (bar : NeBarLib lib) (a : @NTerm o) (v : NVar) (e : NTerm),
+    !((mk_vbot v) =b=e>(a,bar) e).
+Proof.
+  introv h.
+  apply computes_to_exception_bar_implies_computes_to_exception_alpha in h; exrepnd.
+  apply vbot_doesnt_raise_an_exception_alpha in h0; auto.
+Qed.
+
+Lemma vbot_doesnt_compute_to_seq_alpha {o} :
+  forall lib (v : NVar) (f : @ntseq o),
+    !((mk_vbot v) =a=s>(lib) f).
+Proof.
+  introv h.
+  unfold computes_to_seq_alpha in h; exrepnd.
+  apply vbot_doesnt_compute_to_seq in h1; auto.
+Qed.
+
+Lemma vbot_doesnt_compute_to_seq_bar {o} :
+  forall {lib} (bar : NeBarLib lib) (v : NVar) (f : @ntseq o),
+    !((mk_vbot v) =b=s>(bar) f).
+Proof.
+  introv h.
+  apply computes_to_seq_bar_implies_computes_to_seq_alpha in h; exrepnd.
+  apply vbot_doesnt_compute_to_seq_alpha in h0; auto.
+Qed.
+
 
 (**
 
@@ -698,15 +1347,15 @@ Proof.
   constructor.
   unfold close_compute_ext; dands; auto; introv comp; tcsp.
 
-  - apply vbot_diverges_ext in comp; sp.
+  - apply vbot_diverges_bar in comp; sp.
 
-  - apply vbot_doesnt_raise_an_exception_ext in comp; sp.
+  - apply vbot_doesnt_raise_an_exception_bar in comp; sp.
 
 (*
   - apply vbot_doesnt_mark in comp; sp.
  *)
 
-  - apply vbot_doesnt_compute_to_seq_ext in comp; tcsp.
+  - apply vbot_doesnt_compute_to_seq_bar in comp; tcsp.
 Qed.
 
 (* begin hide *)
@@ -759,19 +1408,19 @@ Qed.
 
 
 (*
-Lemma approx_alpha_rw_l_aux: forall a b a' lva lvb lva', 
+Lemma approx_alpha_rw_l_aux: forall a b a' lva lvb lva',
   (alpha_eq a a'
-  -> approx_ext a b 
-  -> approx_ext a' b) # 
+  -> approx_ext a b
+  -> approx_ext a' b) #
   (alpha_eq_bterm  (bterm lva a) (bterm lva' a')
-  -> blift approx_open (bterm lva a) (bterm lvb b) 
+  -> blift approx_open (bterm lva a) (bterm lvb b)
   -> blift approx_open (bterm lva' a') (bterm lvb b)).
 Proof.
   unfold blift. unfold olift.
   cofix.
  *)
 
-Lemma computes_to_seq_alpha {o} :
+Lemma computes_to_seq_alpha_implies {o} :
   forall lib (t1 t2 : @NTerm o) f,
     nt_wf t1
     -> alpha_eq t1 t2
@@ -779,11 +1428,94 @@ Lemma computes_to_seq_alpha {o} :
     -> {f' : ntseq & (t2 =s>(lib) f') # (forall n, alpha_eq (f n) (f' n))}.
 Proof.
   introv wf aeq comp.
-  eapply reduces_to_alpha in comp; eauto 3 with slow.
+  eapply computation3.reduces_to_alpha in comp; eauto 3 with slow.
   exrepnd.
   inversion comp0 as [|? ? imp|]; subst; clear comp0.
   eexists; dands; eauto.
 Qed.
+
+Lemma computes_to_seq_alpha_alpha_implies {o} :
+  forall lib (t1 t2 : @NTerm o) f,
+    nt_wf t1
+    -> alpha_eq t1 t2
+    -> (t1 =a=s>(lib) f)
+    -> (t2 =a=s>(lib) f).
+Proof.
+  introv wf aeq comp.
+  unfold computes_to_seq_alpha in *; exrepnd.
+  eapply computes_to_seq_alpha_implies in comp1;[| |eauto];auto.
+  exrepnd.
+  exists f'; dands; auto.
+  introv; eapply alpha_eq_trans; eauto.
+Qed.
+Hint Resolve computes_to_seq_alpha_alpha_implies : slow.
+
+Lemma computes_to_value_alpha_alpha {o} :
+  forall lib (t1 t2 : @NTerm o) v,
+    nt_wf t1
+    -> alpha_eq t1 t2
+    -> (t1 =a=v>(lib) v)
+    -> (t2 =a=v>(lib) v).
+Proof.
+  introv wf aeq comp.
+  unfold computes_to_value_alpha in *; exrepnd.
+  eapply compute_to_value_alpha in comp1;[| |eauto];auto.
+  exrepnd.
+  eexists; dands; eauto.
+  eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_value_alpha_alpha : slow.
+
+Lemma computes_to_exception_alpha_alpha_implies {o} :
+  forall lib (t1 t2 : @NTerm o) a b,
+    nt_wf t1
+    -> alpha_eq t1 t2
+    -> (t1 =a=e>(a,lib) b)
+    -> (t2 =a=e>(a,lib) b).
+Proof.
+  introv wf aeq comp.
+  unfold computes_to_exception_alpha in *; exrepnd.
+  eapply compute_to_exception_alpha in comp0;[| |eauto];auto.
+  exrepnd.
+  eexists; eexists; dands; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_exception_alpha_alpha_implies : slow.
+
+Lemma computes_to_value_bar_alpha_implies {o} :
+  forall {lib} (bar : BarLib lib) (t t' : @NTerm o) v,
+    nt_wf t
+    -> alpha_eq t t'
+    -> t =b=v>(bar) v
+    -> t' =b=v>(bar) v.
+Proof.
+  introv wf aeq comp ext ext'.
+  pose proof (comp lib' ext lib'0 ext') as q; simpl in q; eauto 2 with slow.
+Qed.
+Hint Resolve computes_to_value_bar_alpha_implies : slow.
+
+Lemma computes_to_exception_bar_alpha_implies {o} :
+  forall {lib} (bar : BarLib lib) (t t' : @NTerm o) a b,
+    nt_wf t
+    -> alpha_eq t t'
+    -> t =b=e>(a,bar) b
+    -> t' =b=e>(a,bar) b.
+Proof.
+  introv wf aeq comp ext ext'.
+  pose proof (comp lib' ext lib'0 ext') as q; simpl in q; eauto 2 with slow.
+Qed.
+Hint Resolve computes_to_exception_bar_alpha_implies : slow.
+
+Lemma computes_to_seq_bar_alpha_implies {o} :
+  forall {lib} (bar : BarLib lib) (t t' : @NTerm o) b,
+    nt_wf t
+    -> alpha_eq t t'
+    -> t =b=s>(bar) b
+    -> t' =b=s>(bar) b.
+Proof.
+  introv wf aeq comp ext ext'.
+  pose proof (comp lib' ext lib'0 ext') as q; simpl in q; eauto 2 with slow.
+Qed.
+Hint Resolve computes_to_seq_bar_alpha_implies : slow.
 
 Lemma respects_alpha_r_approx_ext_aux_bot2 {p} :
   forall lib, respects_alpha_r (@approx_ext_aux p lib bot2).
@@ -801,71 +1533,27 @@ Proof.
 
   - apply alphaeq_preserves_program in aeq; apply aeq; auto.
 
-  - clear ce; allunfold @close_compute_val_ext; introv ca.
+  - clear ce cs; introv ca; GC.
     applydup @alpha_prog_eauto in aeq as ispb'; eauto 3 with slow.
     apply cv in ca; exrepnd; clear cv.
-    eapply compute_to_value_alpha with (t1' := oterm (Can c) tr_subterms) in aeq;
-      eauto 3 with slow; exrepnd.
-    inversion aeq0 as [|f| ? ? ? leq aeqbt]; subst; eauto 3 with slow.
-    exists lbt2; dands; auto.
 
-    {
-      introv ext.
-      eapply lib_extends_preserves_computes_to_value in ext;[| |eauto]; eauto 3 with slow.
-    }
-
-    allunfold @lblift; dands; repnd; auto; try omega.
-    introv k.
-    applydup ca0 in k.
-    rw ca2 in k.
-    applydup aeqbt in k.
-    apply blift_alpha_fun_r with (nt2 := (tr_subterms {[n]})); auto.
+    eapply computes_to_value_bar_alpha_implies in ca1;[| |eauto];eauto 2 with slow;[].
+    eexists; dands; eauto.
 
   - clear cv; allunfold @close_compute_exc_ext; introv ca.
     applydup @alpha_prog_eauto in aeq as ispb'; eauto 3 with slow.
     apply ce in ca; exrepnd; clear ce.
     repdors; try (complete (allunfold @bot2; sp)).
-    eapply compute_to_exception_alpha with (t1' := e') in aeq;
-      eauto 3 with slow; exrepnd.
-    exists a'0 t2'; dands; auto.
 
-    {
-      introv ext.
-      eapply lib_extends_preserves_reduces_to in ext;[| |eauto]; eauto 3 with slow.
-    }
-
-    + left.
-      apply (IND _ _ _ a'0) in ca1; auto.
-
-    + left.
-      apply (IND _ _ _ t2') in ca3; auto.
-
-(*
-  - clear cv ce.
-    allunfold @close_compute_mrk.
-    introv ca.
-    apply cm in ca.
-    eapply compute_to_marker_alpha in ca; eauto.
- *)
+    eapply computes_to_exception_bar_alpha_implies in ca0;[| |eauto];eauto 2 with slow;[].
+    eexists; eexists; dands; eauto.
 
   - introv comp.
     applydup @alpha_prog_eauto in aeq as ispb'; eauto 3 with slow.
     apply cs in comp; exrepnd.
-    eapply computes_to_seq_alpha in comp1; eauto 3 with slow.
-    exrepnd.
-    exists f'0; dands; eauto.
 
-    {
-      introv ext.
-      eapply lib_extends_preserves_reduces_to in ext;[| |eauto]; eauto 3 with slow.
-    }
-
-    introv.
-    pose proof (comp0 n) as h; clear comp0.
-    pose proof (comp2 n) as q; clear comp2.
-    repndors; eauto 3 with slow.
-    left.
-    eapply IND; eauto.
+    eapply computes_to_seq_bar_alpha_implies in comp1;[| |eauto];eauto 2 with slow;[].
+    eexists; eexists; dands; eauto.
 Qed.
 
 Lemma respects_alpha_r_approx_ext_aux_bot2_or_bot2 {p} :
@@ -877,7 +1565,7 @@ Proof.
   apply (respects_alpha_r_approx_ext_aux_bot2 _ _ _ b') in ap; auto.
 Qed.
 
-Lemma computes_to_value_implies_computes_to_val_exc {o} :
+Lemma computes_to_value_implies_computes_to_value_ext {o} :
   forall lib (a b : @NTerm o),
     wf_term a
     -> a =v>(lib) b
@@ -886,9 +1574,45 @@ Proof.
   introv wf comp ext.
   eapply lib_extends_preserves_computes_to_value; eauto.
 Qed.
-Hint Resolve computes_to_value_implies_computes_to_val_exc : slow.
+Hint Resolve computes_to_value_implies_computes_to_value_ext : slow.
 
-Lemma computes_to_exception_implies_computes_to_exception_exc {o} :
+Lemma computes_to_value_implies_computes_to_value_bar {o} :
+  forall {lib} (bar : BarLib lib) (a b : @NTerm o),
+    wf_term a
+    -> a =v>(lib) b
+    -> a =b=v>(bar) b.
+Proof.
+  introv wf comp ext ext'.
+  exists b; dands; eauto 2 with slow.
+  eapply lib_extends_preserves_computes_to_value;[| |eauto]; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_value_implies_computes_to_value_bar : slow.
+
+Lemma computes_to_exception_implies_computes_to_exception_bar {o} :
+  forall {lib} (bar : BarLib lib) (a b c : @NTerm o),
+    wf_term a
+    -> a =e>(c,lib) b
+    -> a =b=e>(c,bar) b.
+Proof.
+  introv wf comp ext ext'.
+  eexists; eexists; dands; eauto 2 with slow.
+  eapply (lib_extends_preserves_reduces_to _ lib'0) in comp; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_exception_implies_computes_to_exception_bar : slow.
+
+Lemma computes_to_seq_implies_computes_to_seq_bar {o} :
+  forall {lib} (bar : BarLib lib) (a : @NTerm o) f,
+    wf_term a
+    -> a =s>(lib) f
+    -> a =b=s>(bar) f.
+Proof.
+  introv wf comp ext ext'.
+  exists f; dands; eauto 2 with slow.
+  eapply lib_extends_preserves_reduces_to;[| |eauto]; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_seq_implies_computes_to_seq_bar : slow.
+
+Lemma computes_to_exception_implies_computes_to_exception_ext {o} :
   forall lib (a b c : @NTerm o),
     wf_term a
     -> a =e>(b,lib) c
@@ -897,9 +1621,9 @@ Proof.
   introv wf comp ext.
   eapply lib_extends_preserves_reduces_to; eauto.
 Qed.
-Hint Resolve computes_to_exception_implies_computes_to_exception_exc : slow.
+Hint Resolve computes_to_exception_implies_computes_to_exception_ext : slow.
 
-Lemma computes_to_seq_implies_computes_to_seq_exc {o} :
+Lemma computes_to_seq_implies_computes_to_seq_ext {o} :
   forall lib (a : @NTerm o) f,
     wf_term a
     -> a =s>(lib) f
@@ -908,7 +1632,7 @@ Proof.
   introv wf comp ext.
   eapply lib_extends_preserves_reduces_to; eauto.
 Qed.
-Hint Resolve computes_to_seq_implies_computes_to_seq_exc : slow.
+Hint Resolve computes_to_seq_implies_computes_to_seq_ext : slow.
 
 Lemma respects_alpha_l_approx_ext_aux_bot2 {p} :
   forall lib, respects_alpha_l (@approx_ext_aux p lib bot2).
@@ -929,65 +1653,17 @@ Proof.
   - clear ce cs; introv ca'.
     applydup @alpha_prog_eauto in aeq as ispa'; auto.
     apply alpha_eq_sym in aeq.
-    eapply compute_to_value_alpha with (t1' := oterm (Can c) tl_subterms) in aeq;
-      eauto 3 with slow; exrepnd.
-    inversion aeq0 as [|?| ? ? ? leq aeqbt]; subst.
-
-    apply computes_to_value_implies_computes_to_val_exc in aeq1; eauto 3 with slow.
-
-    apply cv in aeq1; exrepnd; clear cv.
-    exists tr_subterms; dands; auto.
-    allunfold @lblift; dands; repnd; auto; try omega.
-    introv k.
-    applydup aeqbt in k.
-    rw leq in k.
-    applydup aeq2 in k.
-    apply blift_alpha_fun_l with (nt1 := (lbt2 {[n]})); auto.
-    apply alpha_eq_bterm_sym; auto.
+    eapply computes_to_value_bar_alpha_implies in ca';[| |eauto];eauto 2 with slow.
 
   - clear cv cs; introv ca.
     applydup @alpha_prog_eauto in aeq as ispa'; auto.
     apply alpha_eq_sym in aeq.
-    eapply compute_to_exception_alpha with (t1' := e) in aeq;
-      eauto 3 with slow; exrepnd.
-
-    apply computes_to_exception_implies_computes_to_exception_exc in aeq0; eauto 3 with slow.
-
-    apply ce in aeq0; exrepnd; clear ce.
-    repdors; try (complete (allunfold @bot2; sp)).
-    exists a'1 e'; dands; auto.
-    + left.
-      apply (IND _ _ _ a0) in aeq0; auto.
-      apply alpha_eq_sym; auto.
-    + left.
-      apply (IND _ _ _ e) in aeq5; auto.
-      apply alpha_eq_sym; auto.
-
-(*
-  - clear cv ce.
-    introv ca.
-    apply alpha_eq_sym in aeq.
-    eapply compute_to_marker_alpha in ca;[|eauto].
-    apply cm in ca; auto.
- *)
+    eapply computes_to_exception_bar_alpha_implies in ca;[| |eauto];eauto 2 with slow.
 
   - introv comp.
     applydup @alpha_prog_eauto in aeq as wfa'; auto.
     apply alpha_eq_sym in aeq.
-    eapply computes_to_seq_alpha in comp; eauto 3 with slow.
-    exrepnd.
-
-    apply computes_to_seq_implies_computes_to_seq_exc in comp1; eauto 3 with slow.
-
-    apply cs in comp1; exrepnd.
-    eexists; dands; eauto.
-    introv.
-    pose proof (comp0 n) as h; clear comp0.
-    pose proof (comp2 n) as q; clear comp2.
-    repndors; eauto 3 with slow.
-    left.
-    apply alpha_eq_sym in h.
-    eapply IND; eauto.
+    eapply computes_to_seq_bar_alpha_implies in comp;[| |eauto];eauto 2 with slow.
 Qed.
 
 Lemma respects_alpha_l_approx_ext_aux_bot2_or_bot2 {p} :
@@ -1011,69 +1687,16 @@ Proof.
   dands; eauto 2 with slow.
 
   - introv Hcv.
-    eapply compute_to_value_alpha with (t2:=a) in Hcv; eauto with slow.
-    exrepnd.
-    applydup @computes_to_value_can in Hcv1.
-    repndors; exrepnd.
-
-    + rename bts into clbt2.
-      subst. duplicate Hcv0 as H1cv. inverts Hcv0 as Hclen Hcal. rename c0 into c.
-
-      apply computes_to_value_implies_computes_to_val_exc in Hcv1; eauto 3 with slow.
-
-      apply Hap2 in Hcv1. eauto.
-      exrepnd.
-      exists tr_subterms.
-      split; auto;[].
-      repnud Hcv0.
-      split;spcf;[].
-      introv Hlt. duplicate Hlt.
-      apply_clear Hcal in Hlt.
-      dimp (Hcv0 n); [omega|].
-      repnud hyp.
-      exrepnd.
-      unfold blift.
-      exists lv nt1 nt2.
-      spc; eauto.
-      eauto with slow.
-
-    + subst; allsimpl.
-      inversion Hcv0.
-
-  - introv comp.
-    eapply compute_to_exception_alpha with (t2:=a) in comp; eauto with slow.
-    exrepnd.
-
-    apply computes_to_exception_implies_computes_to_exception_exc in comp0; eauto 3 with slow.
-
-    apply Hap3 in comp0; exrepnd.
-    exists a'1 e'; dands; auto.
-    + apply (rR _ _ a0) in comp4; auto.
-      apply alpha_eq_sym; auto.
-    + apply (rR _ _ e) in comp0; auto.
-      apply alpha_eq_sym; auto.
-
-(*
-  - introv comp.
-    eapply compute_to_marker_alpha in comp;[|apply alpha_eq_sym; eauto].
-    apply Hap in comp; auto.
- *)
-
-  - introv comp.
-    applydup @alpha_prog_eauto in Hal as wfa'; auto.
     apply alpha_eq_sym in Hal.
-    eapply computes_to_seq_alpha in comp;eauto 3 with slow; exrepnd.
+    eapply computes_to_value_bar_alpha_implies in Hcv;[| |eauto];eauto 2 with slow.
 
-    apply computes_to_seq_implies_computes_to_seq_exc in comp1; eauto 3 with slow.
+  - introv comp.
+    apply alpha_eq_sym in Hal.
+    eapply computes_to_exception_bar_alpha_implies in comp;[| |eauto];eauto 2 with slow.
 
-    apply Hap4 in comp1; exrepnd.
-    eexists; dands; eauto.
-    introv.
-    pose proof (comp2 n) as q; clear comp2.
-    pose proof (comp0 n) as h; clear comp0.
-    eauto 3 with slow.
-(*    apply alpha_eq_sym in h.
-    eapply rR; eauto.*)
+  - introv comp.
+    apply alpha_eq_sym in Hal.
+    eapply computes_to_seq_bar_alpha_implies in comp;[| |eauto];eauto 2 with slow.
 Qed.
 
 Lemma approxr_ext_alpha_rw_l_aux {p} :
@@ -1118,41 +1741,18 @@ Proof.
   - introv Hcv.
     apply Hap2 in Hcv.
     exrepnd.
-    eapply compute_to_value_alpha with (t2:=b') in Hcv1; eauto with slow.
-    exrepnd.
-    invertsna Hcv2 Hbal.
-    exists lbt2.
-    split; eauto with slow;[].
-
-    repnud Hcv0.
-    split;spcf;[].
-
-    introv Hlt. duplicate Hlt.
-    apply_clear Hcv0 in Hlt.
-    dimp (Hbal0 n); [omega|].
-    repnud Hlt.
-    exrepnd.
-    unfold blift.
-    exists lv nt1 nt2.
-    spc; eauto.
-    eauto with slow.
+    eapply computes_to_value_bar_alpha_implies in Hcv1;[| |eauto];eauto 2 with slow;[].
+    eexists; dands; eauto.
 
   - introv comp.
     apply Hap3 in comp; exrepnd.
-    eapply compute_to_exception_alpha with (t2:=b') in comp0; eauto with slow.
-    exrepnd.
-    exists a'0 t2'; dands; auto; eauto 4 with slow.
-
-(*
-  - introv comp.
-    apply Hap in comp.
-    eapply compute_to_marker_alpha in comp; eauto.
- *)
+    eapply computes_to_exception_bar_alpha_implies in comp0;[| |eauto];eauto 2 with slow;[].
+    eexists; dands; eauto.
 
   - introv comp.
     apply Hap4 in comp; exrepnd.
-    eapply computes_to_seq_alpha in comp1;eauto 3 with slow; exrepnd.
-    eexists; dands; eauto 4 with slow.
+    eapply computes_to_seq_bar_alpha_implies in comp1;[| |eauto];eauto 2 with slow;[].
+    eexists; dands; eauto.
 Qed.
 
 Lemma approxr_ext_alpha_rw_r_aux {p} :
@@ -1643,25 +2243,24 @@ Proof.
   apply approx_ext_trans.
 Qed.
 
-
 Lemma approx_ext_canonical_form {p} :
   forall lib t t' op bterms,
     computes_to_value lib t (oterm (Can op) bterms)
     -> approx_ext lib t t'
     -> {bterms' : list (@BTerm p) &
-         computes_to_value lib t' (oterm (Can op) bterms')
+         computes_to_value_alpha lib t' (oterm (Can op) bterms')
          # lblift (approx_ext_open lib) bterms bterms' }.
 Proof.
   intros ? ? ? ? ? Hcomp Hap.
   invertsn Hap.
   repnud Hap.
 
-  apply computes_to_value_implies_computes_to_val_exc in Hcomp; eauto 3 with slow.
-
+  apply (computes_to_value_implies_computes_to_value_bar (trivial_ne_bar lib)) in Hcomp; eauto 3 with slow.
   apply Hap2 in Hcomp. exrepnd.
 
   apply clearbot_relbt in Hcomp0.
-  eexists; eauto with slow.
+  eexists; dands; eauto 3 with slow.
+  eapply Hcomp1;[|eapply lib_extends_refl]; simpl; eauto 3 with slow.
 Qed.
 
 
@@ -1671,20 +2270,64 @@ Lemma exception_approx_ext {p} :
     -> approx_ext lib t t'
     -> { a' : @NTerm p &
        { e' : @NTerm p &
-         ( t' =e>( a', lib)e')
+         ( t' =a=e>( a', lib)e')
          # (approx_ext_aux lib bot2 a a'[+]bot2 a a')
          # (approx_ext_aux lib bot2 e e'[+]bot2 e e') }}.
 Proof.
   introv Hcomp Hap.
   invertsn Hap. repnud Hap.
 
-  apply computes_to_exception_implies_computes_to_exception_exc in Hcomp; eauto 3 with slow.
-
+  apply (computes_to_exception_implies_computes_to_exception_bar (trivial_ne_bar lib)) in Hcomp; eauto 3 with slow.
   apply Hap3 in Hcomp. exrepnd.
-  exists a' e'. split; eauto 2 with slow.
+
+  repndors; tcsp; try (complete (inversion Hcomp2)); try (complete (inversion Hcomp1)).
+  eexists; eexists; dands; eauto 3 with slow.
+  eapply Hcomp0;[|eapply lib_extends_refl]; simpl; eauto 3 with slow.
 Qed.
 
 Hint Resolve lib_extends_preserves_reduces_to : slow.
+
+Lemma reduces_to_computes_to_value_alpha_trans {o} :
+  forall lib (a b v : @NTerm o),
+    reduces_to lib a b
+    -> b =a=v>(lib) v
+    -> a =a=v>(lib) v.
+Proof.
+  introv comp1 comp2.
+  unfold computes_to_value_alpha in *; exrepnd.
+  unfold computes_to_value in *; repnd.
+  exists c; dands; auto.
+  eapply reduces_to_trans; eauto.
+Qed.
+Hint Resolve reduces_to_computes_to_value_alpha_trans : slow.
+
+Lemma reduces_to_computes_to_exception_alpha_trans {o} :
+  forall lib (a b u v : @NTerm o),
+    reduces_to lib a b
+    -> b =a=e>(u,lib) v
+    -> a =a=e>(u,lib) v.
+Proof.
+  introv comp1 comp2.
+  unfold computes_to_exception_alpha in *; exrepnd.
+  unfold computes_to_exception in *; repnd.
+  exists c d; dands; auto.
+  eapply reduces_to_trans; eauto.
+Qed.
+Hint Resolve reduces_to_computes_to_exception_alpha_trans : slow.
+
+Lemma reduces_to_computes_to_seq_alpha_trans {o} :
+  forall lib (a b : @NTerm o) f,
+    reduces_to lib a b
+    -> b =a=s>(lib) f
+    -> a =a=s>(lib) f.
+Proof.
+  introv comp1 comp2.
+  unfold computes_to_seq_alpha in *; exrepnd.
+  unfold computes_to_seq in *; repnd.
+  exists g; dands; auto.
+  eapply reduces_to_trans; eauto.
+Qed.
+Hint Resolve reduces_to_computes_to_seq_alpha_trans : slow.
 
 Lemma approx_ext_comput_functionality_left {p} :
   forall lib a a' b,
@@ -1698,23 +2341,16 @@ Proof.
 
   - apply Hap2.
     allunfold @computes_to_value_ext.
-    introv ext; applydup comp in ext.
-    unfold computes_to_value in *; repnd; dands; auto.
-    apply @reduces_to_trans with (b:=a'); eauto 4 with slow.
+    introv ext ext'; applydup comp in ext';auto.
+    apply (lib_extends_preserves_reduces_to _ lib'0) in Hred; eauto 3 with slow.
 
   - apply Hap3.
-    introv ext; applydup comp in ext.
-    apply @reduces_to_computes_to_exception with (b := a'); eauto 4 with slow.
-
-(*
-  - apply Hap.
-    allunfold @computes_to_marker; repnd; dands; auto.
-    eapply reduces_to_trans; eauto.
- *)
+    introv ext ext'; applydup comp in ext';auto.
+    apply (lib_extends_preserves_reduces_to _ lib'0) in Hred; eauto 3 with slow.
 
   - apply Hap4.
-    introv ext; applydup comp in ext.
-    eapply reduces_to_trans; eauto; eauto 4 with slow.
+    introv ext ext'; applydup comp in ext';auto.
+    apply (lib_extends_preserves_reduces_to _ lib'0) in Hred; eauto 3 with slow.
 Qed.
 
 Lemma reduces_to_isvalue_like_eq {o} :
@@ -1754,9 +2390,6 @@ Proof.
 Qed.
 Hint Resolve reduces_to_exception_ext_eq : slow.
 
-Definition reduces_to_ext {o} (lib : library) (t u : @NTerm o) :=
-  inExt lib (fun lib => reduces_to lib t u).
-
 Lemma reduces_to_isvalue_like_ext_eq {o} :
   forall lib (t u v : @NTerm o),
     wf_term t
@@ -1783,6 +2416,87 @@ Proof.
 Qed.
 Hint Resolve reduces_to_seq_ext_eq : slow.
 
+Lemma reduces_to_value_alpha_eq {o} :
+  forall lib (t u v : @NTerm o),
+    wf_term t
+    -> t =a=v>(lib) v
+    -> reduces_to lib t u
+    -> u =a=v>(lib) v.
+Proof.
+  introv wf comp r.
+  unfold computes_to_value_alpha in *; exrepnd.
+  exists c; dands; auto.
+  eapply reduces_to_value_eq; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_to_value_alpha_eq : slow.
+
+Lemma reduces_to_value_bar_eq {o} :
+  forall {lib} (bar : BarLib lib) (t u v : @NTerm o),
+    wf_term t
+    -> t =b=v>(bar) v
+    -> reduces_to lib t u
+    -> u =b=v>(bar) v.
+Proof.
+  introv wf comp r ext ext'.
+  applydup comp in ext'; auto.
+  apply (lib_extends_preserves_reduces_to _ lib'0) in r; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_to_value_bar_eq : slow.
+
+Lemma reduces_to_exception_alpha_eq {o} :
+  forall lib (t u v w : @NTerm o),
+    wf_term t
+    -> t =a=e>(w,lib) v
+    -> reduces_to lib t u
+    -> u =a=e>(w,lib) v.
+Proof.
+  introv wf comp r.
+  unfold computes_to_exception_alpha in *; exrepnd.
+  exists c d; dands; auto.
+  eapply reduces_to_exception_eq; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_to_exception_alpha_eq : slow.
+
+Lemma reduces_to_exception_bar_eq {o} :
+  forall {lib} (bar : BarLib lib) (t u v w : @NTerm o),
+    wf_term t
+    -> t =b=e>(w,bar) v
+    -> reduces_to lib t u
+    -> u =b=e>(w,bar) v.
+Proof.
+  introv wf comp r ext ext'.
+  applydup comp in ext'; auto.
+  apply (lib_extends_preserves_reduces_to _ lib'0) in r; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_to_exception_bar_eq : slow.
+
+Lemma reduces_to_seq_alpha_eq {o} :
+  forall lib (t u : @NTerm o) f,
+    wf_term t
+    -> t =a=s>(lib) f
+    -> reduces_to lib t u
+    -> u =a=s>(lib) f.
+Proof.
+  introv wf comp r.
+  unfold computes_to_seq_alpha in *; exrepnd.
+  exists g; dands; auto.
+  eapply reduces_to_isvalue_like_eq;[| |eauto]; auto; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_to_seq_alpha_eq : slow.
+
+Lemma reduces_to_seq_bar_eq {o} :
+  forall {lib} (bar : BarLib lib) (t u : @NTerm o) f,
+    wf_term t
+    -> t =b=s>(bar) f
+    -> reduces_to lib t u
+    -> u =b=s>(bar) f.
+Proof.
+  introv wf comp r ext ext'.
+  applydup comp in ext'; auto.
+  apply (lib_extends_preserves_reduces_to _ lib'0) in r; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_to_seq_bar_eq : slow.
+
 Lemma approx_ext_comput_functionality_right {p} :
   forall lib a b b',
     @reduces_to p lib b b'
@@ -1795,21 +2509,13 @@ Proof.
   dands; tcsp; introv comp.
 
   - apply Hap2 in comp. exrepnd. exists tr_subterms.
-    split; auto.
-    apply reduces_to_value_ext_eq with (t:=b); eauto 3 with slow.
+    split; auto; eauto 4 with slow.
 
   - apply Hap3 in comp; exrepnd; repdors; try (complete (allunfold @bot2; sp)).
-    exists a' e'; dands; auto.
-    apply reduces_to_exception_ext_eq with (t := b); eauto 3 with slow.
-
-(*
-  - apply Hap in comp.
-    eapply reduces_to_marker_eq in comp; eauto.
- *)
+    exists a' e'; dands; auto; eauto 4 with slow.
 
   - apply Hap4 in comp; exrepnd.
-    exists f'; dands; auto.
-    eapply reduces_to_seq_ext_eq;[|eauto|]; eauto 3 with slow.
+    exists f'; dands; auto; eauto 4 with slow.
 Qed.
 
 Lemma reduces_to_implies_approx_ext {p} :
@@ -1935,6 +2641,15 @@ Proof.
   unfold hasvalue; sp.
 Abort.
 
+Lemma computes_to_value_implies_computes_to_value_alpha {o} :
+  forall lib (t v : @NTerm o),
+    t =v>(lib) v
+    -> t =a=v>(lib) v.
+Proof.
+  introv comp; exists v; dands; auto.
+Qed.
+Hint Resolve computes_to_value_implies_computes_to_value_alpha : slow.
+
 (* end hide *)
 Lemma hasvalue_approx_ext {p} :
   forall lib t u,
@@ -1946,15 +2661,25 @@ Proof.
   inversion ap as [cc]; subst.
   unfold close_compute_ext in cc; repnd.
   applydup @computes_to_value_can in c; repndors; exrepd; subst.
-  - apply computes_to_value_implies_computes_to_val_exc in c; eauto 3 with slow.
+
+  - apply (computes_to_value_implies_computes_to_value_bar (trivial_ne_bar lib)) in c; eauto 3 with slow.
     apply cc2 in c; sp.
-    exists (oterm (Can c1) tr_subterms); eauto 3 with slow.
+
+    pose proof (p1 lib) as q; simpl in q; autodimp q hyp; eauto 2 with slow.
+    pose proof (q lib) as q; autodimp q hyp; eauto 2 with slow; simpl in q.
+    unfold computes_to_value_alpha in *; exrepnd.
+    eexists; eauto.
+
   - unfold computes_to_value in c; repnd.
-    apply computes_to_seq_implies_computes_to_seq_exc in c0; eauto 3 with slow.
-    apply cc4 in c0; exrepnd.
+    apply (computes_to_seq_implies_computes_to_seq_bar (trivial_ne_bar lib)) in c0; eauto 3 with slow.
+    apply cc4 in c0; sp.
+
+    pose proof (p1 lib) as q; simpl in q; autodimp q hyp; eauto 2 with slow.
+    pose proof (q lib) as q; autodimp q hyp; eauto 2 with slow; simpl in q.
+    unfold computes_to_seq_alpha in *; exrepnd.
     unfold computes_to_value.
-    exists (sterm f'); dands; eauto 3 with slow.
-    apply c0; eauto 3 with slow.
+    unfold computes_to_seq in q1.
+    eexists; dands; eauto; eauto 3 with slow.
 Qed.
 (* begin hide *)
 
@@ -2067,14 +2792,15 @@ Proof.
   introv ap.
   inversion ap as [cc]; subst.
   unfold close_compute_ext in cc; repnd.
-  generalize (cc2 NAxiom []); intro h.
+  generalize (cc2 NAxiom [] (trivial_ne_bar lib)); intro h.
   dest_imp h hyp; sp.
-  { apply computes_to_value_ext_isvalue_refl; sp. }
+  { apply computes_to_value_bar_isvalue_refl; sp. }
   inversion p; allsimpl; cpx.
-  pose proof (p0 lib) as q; autodimp q hyp; eauto 3 with slow; allsimpl.
-  inversion q.
+  pose proof (p0 lib) as q; autodimp q hyp; allsimpl; eauto 3 with slow.
+  pose proof (q lib) as q; allsimpl; autodimp q hyp; eauto 3 with slow.
+  unfold computes_to_value_alpha, computes_to_value in q; exrepnd.
   allfold @mk_axiom.
-  apply not_bot_reduces_to_value in H; sp.
+  apply not_bot_reduces_to_value in q2; sp.
 Qed.
 
 Lemma not_axiom_approxc_ext_bot {p} :
@@ -2148,6 +2874,88 @@ Qed.
 Hint Resolve computes_to_value_isvalue_refl computes_to_value_isvalue_eq : slow.
 Hint Constructors isvalue : slow.
 
+Lemma lblift_as_combine {o} :
+  forall R (bs1 bs2 : list (@BTerm o)),
+    lblift R bs1 bs2
+    <=> (length bs1 = length bs2
+         # forall b1 b2 : BTerm,
+             LIn (b1,b2) (combine bs1 bs2) -> blift R b1 b2).
+Proof.
+  introv.
+  unfold lblift; split; intro k; repnd; dands; auto; introv i.
+
+  - allunfold @selectbt.
+    apply (in_nth_combine_iff _ _ default_bt default_bt) in i.
+    exrepnd; subst.
+    apply k; auto.
+
+  - allunfold @selectbt.
+    pose proof (in_nth_combine _ _ bs1 bs2 n default_bt default_bt) as q.
+    repeat (autodimp q hyp).
+Qed.
+
+Lemma combine_three :
+  forall {A} (a b : A) l l1 l2,
+    length l1 = length l
+    -> length l2 = length l
+    -> LIn (a, b) (combine l1 l2)
+    -> {c : A & LIn (a,c) (combine l1 l) # LIn (b,c) (combine l2 l)}.
+Proof.
+  induction l; introv eqlen1 eqlen2 i; simpl in *; cpx;[].
+  destruct l1; simpl in *; ginv; cpx.
+  destruct l2; simpl in *; ginv; cpx.
+  repndors; tcsp; ginv.
+
+  - exists a0; dands; auto.
+
+  - applydup IHl in i; auto.
+    exrepnd.
+    exists c; dands; auto.
+Qed.
+
+Lemma alpha_eq_bterms_preserves_lblift_approx_ext_right {o} :
+  forall lib (bs : list (@BTerm o)) bs1 bs2,
+    alpha_eq_bterms bs1 bs2
+    -> lblift (approx_ext_open lib) bs bs2
+    -> lblift (approx_ext_open lib) bs bs1.
+Proof.
+  introv aeq lbl.
+  allrw @lblift_as_combine.
+  unfold alpha_eq_bterms in *.
+  repnd.
+  dands; auto; try congruence.
+  introv i.
+  applydup (combine_three b1 b2 bs2) in i; auto.
+  exrepnd.
+  applydup aeq in i1.
+  applydup lbl in i0.
+  eapply respects_blift_alphabt;[|eauto].
+  apply alpha_eq_bterm_sym; auto.
+Qed.
+Hint Resolve alpha_eq_bterms_preserves_lblift_approx_ext_right : slow.
+
+Lemma alpha_eq_bterms_preserves_lblift_approx_ext_left {o} :
+  forall lib (bs : list (@BTerm o)) bs1 bs2,
+    alpha_eq_bterms bs1 bs2
+    -> lblift (approx_ext_open lib) bs2 bs
+    -> lblift (approx_ext_open lib) bs1 bs.
+Proof.
+  introv aeq lbl.
+  allrw @lblift_as_combine.
+  unfold alpha_eq_bterms in *.
+  repnd.
+  dands; auto; try congruence.
+  introv i.
+  applydup (combine_three b1 b2 bs2) in i; auto.
+  exrepnd.
+  applydup aeq in i0.
+  apply in_combine_swap in i1; auto;[].
+  applydup lbl in i1.
+  eapply blift_alpha_fun_l;[eauto|].
+  apply alpha_eq_bterm_sym; auto.
+Qed.
+Hint Resolve alpha_eq_bterms_preserves_lblift_approx_ext_left : slow.
+
 Lemma approx_ext_canonical_form2 {p} :
   forall lib op bterms1 bterms2,
     approx_ext lib (oterm (@Can p op) bterms1) (oterm (Can op) bterms2)
@@ -2155,8 +2963,9 @@ Lemma approx_ext_canonical_form2 {p} :
 Proof.
   introv Hap. applydup @approx_ext_relates_only_progs in Hap. repnd.
   eapply approx_ext_canonical_form in Hap; exrepnd; eauto with slow.
-  apply computes_to_value_isvalue_eq in Hap3;
-  inverts Hap3; eauto with slow.
+  apply computes_to_value_alpha_isvalue_alpha_eq in Hap3; eauto 3 with slow;[].
+  apply alpha_eq_oterm_combine in Hap3.
+  fold (alpha_eq_bterms bterms2 bterms') in Hap3; eauto 3 with slow.
 Qed.
 
 Lemma clearbot_relbt2 {p} : forall lib (l1bt l2bt : list (@BTerm p)),
@@ -2602,6 +3411,28 @@ Qed.
     The general proof of congruence is discussed in the next subsection.
     *)
 
+Lemma can_doesnt_raise_an_exception_bar {p} :
+  forall {lib} (bar : NeBarLib lib) a c bterms (e : @NTerm p),
+    computes_to_exception_bar bar a (oterm (Can c) bterms) e -> False.
+Proof.
+  introv ce.
+  apply computes_to_exception_bar_implies_computes_to_exception_alpha in ce.
+  exrepnd.
+  unfold computes_to_exception_alpha in ce0; exrepnd.
+  apply can_doesnt_raise_an_exception in ce1; auto.
+Qed.
+
+Lemma can_doesnt_compute_to_seq_bar {o} :
+  forall {lib} (bar : NeBarLib lib) c (bterms : list (@BTerm o)) f,
+    computes_to_seq_bar bar (oterm (Can c) bterms) f -> False.
+Proof.
+  introv comp.
+  apply computes_to_seq_bar_implies_computes_to_seq_alpha in comp.
+  exrepnd.
+  unfold computes_to_seq_alpha in comp0; exrepnd.
+  apply reduces_to_if_isvalue_like in comp0; eauto 3 with slow; ginv.
+Qed.
+
 Lemma approx_ext_canonical_form3 {p} :
   forall lib op bterms1 bterms2,
     isprogram (oterm (@Can p op) bterms1)
@@ -2612,18 +3443,61 @@ Proof.
   introv H1p H2p Hap. constructor. unfold close_compute_ext.
   dands; eauto; introv comp.
 
-  - eapply computes_to_value_isvalue_eq in comp; eauto 3 with slow;[].
-    inverts comp.
-    eexists; dands; eauto with slow.
-    apply clearbot_relbt2. auto.
+  - apply computes_to_value_bar_isvalue_alpha_eq in comp; eauto 3 with slow;[].
+    apply alpha_eq_oterm_combine2 in comp.
+    fold (alpha_eq_bterms bterms1 tl_subterms) in comp.
+    repnd; ginv.
+    exists bterms2; dands; eauto 3 with slow;[].
+    apply clearbot_relbt2; eauto 3 with slow.
+    eapply alpha_eq_bterms_preserves_lblift_approx_ext_left;[|eauto].
+    apply alpha_eq_bterms_sym; auto.
 
-  - eapply can_doesnt_raise_an_exception in comp; eauto 3 with slow; sp.
+  - apply can_doesnt_raise_an_exception_bar in comp; tcsp.
 
-(*
-  - apply can_doesnt_mark in comp; sp.
-*)
+  - apply can_doesnt_compute_to_seq_bar in comp; tcsp.
+Qed.
 
-  - eapply reduces_to_if_isvalue_like in comp; eauto 3 with slow; ginv.
+Lemma computes_to_value_bar_exception {p} :
+  forall {lib} (bar : NeBarLib lib) a (e v : @NTerm p),
+    computes_to_value_bar bar (mk_exception a e) v
+    -> False.
+Proof.
+  introv comp.
+  apply computes_to_value_bar_implies_computes_to_value_alpha in comp; exrepnd.
+  unfold computes_to_value_alpha in comp0; exrepnd.
+  apply computes_to_value_exception in comp0; auto.
+Qed.
+
+Lemma computes_to_exception_bar_refl {p} :
+  forall {lib} (bar : BarLib lib) a (e : @NTerm p),
+    computes_to_exception_bar bar a (mk_exception a e) e.
+Proof.
+  introv ext ext'.
+  exists a e; dands; auto.
+  apply computes_to_exception_refl.
+Qed.
+Hint Resolve computes_to_exception_bar_refl : slow.
+
+Lemma computes_to_exception_bar_exception {p} :
+  forall {lib} (bar : NeBarLib lib) a b (e v : @NTerm p),
+    computes_to_exception_bar bar a (mk_exception b e) v
+    -> alpha_eq v e # alpha_eq a b.
+Proof.
+  introv comp.
+  apply computes_to_exception_bar_implies_computes_to_exception_alpha in comp; exrepnd.
+  unfold computes_to_exception_alpha in comp0; exrepnd.
+  apply computes_to_exception_exception in comp1; repnd; subst; tcsp.
+Qed.
+
+Lemma computes_to_seq_bar_exception {p} :
+  forall {lib} (bar : NeBarLib lib) (a b : @NTerm p) f,
+    computes_to_seq_bar bar (mk_exception a b) f
+    -> False.
+Proof.
+  introv comp.
+  apply computes_to_seq_bar_implies_computes_to_seq_alpha in comp; exrepnd.
+  unfold computes_to_seq_alpha in comp0; exrepnd.
+  apply reduces_to_exception in comp0; ginv; eauto 3 with slow.
 Qed.
 
 Lemma approx_ext_canonical_form_exc {o} :
@@ -2639,17 +3513,14 @@ Proof.
   unfold close_compute_ext.
   dands; eauto; try (rw @isprogram_exception_iff; tcsp); introv comp.
 
-  - eapply computes_to_value_exception in comp; eauto 3 with slow; sp.
+  - apply computes_to_value_bar_exception in comp; tcsp.
 
-  - eapply computes_to_exception_exception in comp; eauto 3 with slow; repnd; subst.
-    exists a2 e2; dands; auto.
-    introv ext; apply computes_to_exception_refl.
+  - apply computes_to_exception_bar_exception in comp; repnd.
+    exists a2 e2; dands; eauto 3 with slow;
+      left; eauto 3 with slow; eapply approx_ext_alpha_rw_l_aux;
+        try (exact ap1); try (exact ap2); apply alpha_eq_sym; auto.
 
-(*
-  - apply exception_doesnt_mark in comp; sp.
-*)
-
-  - eapply reduces_to_exception in comp; eauto 3 with slow; ginv.
+  - apply computes_to_seq_bar_exception in comp; tcsp.
 Qed.
 
 
@@ -2727,7 +3598,8 @@ Proof.
   rw @lsubst_nest_same in XXX;spc; disjoint_reasoningv;
     [ | rw Hfl; disjoint_reasoning; fail].
   apply XXX;sp.
-  introv Hin. eauto with slow.
+  introv Hin.
+  eauto 4 with slow.
 Qed.
 
 Ltac decomp_progh3 :=
@@ -2755,6 +3627,53 @@ Ltac decomp_progh3 :=
       apply isprogram_bt_nobnd in H
 end.
 
+Ltac unfold_computes_to_alpha :=
+  match goal with
+  | [ H : computes_to_value_alpha _ _ _ |- _ ] =>
+    unfold computes_to_value_alpha in H; exrepnd
+  end.
+
+Lemma decomp_forall_or :
+  forall {A} (a b : A) F G,
+    (forall x y, (a, b) = (x, y) [+] F x y -> G x y)
+    -> G a b # (forall x y, F x y -> G x y).
+Proof.
+  introv h; tcsp.
+Qed.
+
+Ltac decomp_alpha_eq :=
+  match goal with
+  | [ H : alpha_eq (oterm ?op1 ?bs1) (oterm ?op2 ?bs2) |- _ ] =>
+    let h := fresh H in
+    apply alpha_eq_oterm_combine2 in H;
+    destruct H as [H h]
+  | [ H : alpha_eq (oterm ?op ?bs) _ |- _ ] =>
+    apply alpha_eq_oterm_implies_combine in H; exrepnd; subst; simpl in *
+  | [ H : 3 = length ?x |- _ ] =>
+    destruct x; simpl in *;
+    try (complete (inversion H));
+    try (apply eq_add_S in H)
+  | [ H : 2 = length ?x |- _ ] =>
+    destruct x; simpl in *;
+    try (complete (inversion H));
+    try (apply eq_add_S in H)
+  | [ H : 1 = length ?x |- _ ] =>
+    destruct x; simpl in *;
+    try (complete (inversion H));
+    try (apply eq_add_S in H)
+  | [ H : 0 = length ?x |- _ ] =>
+    destruct x; simpl in *;
+    try (complete (inversion H));
+    try (apply eq_add_S in H)
+  | [ H : ?x = ?x |- _ ] => clear H
+  | [ H : forall _ _, _ |- _ ] => apply decomp_forall_or in H; repnd
+  | [ H : forall _ _, False -> _ |- _ ] => clear H
+  | [ H : alpha_eq_bterm (bterm [] _) _ |- _ ] => apply alphaeqbt_nilv in H; exrepnd; subst
+  end.
+
+Hint Resolve approx_ext_open_alpha_rw_l_aux : approx_alpha.
+Hint Resolve approx_ext_open_alpha_rw_r_aux : approx_alpha.
+
 (* based on prove_cequiv_mk from cequiv.v *)
 Ltac prove_approx_mk :=
   let Hcomp   := fresh "Hcomp" in
@@ -2772,7 +3691,7 @@ Ltac prove_approx_mk :=
     eapply @approx_ext_canonical_form in Hcomp; eauto;
     destruct Hcomp as [bterms' Hcomp];
     destruct Hcomp as [Hcomp1 Hcomp2];
-    applydup @preserve_program in Hcomp1 as Hcomp3; auto;
+    applydup @computes_to_value_alpha_preserves_isprogram in Hcomp1 as Hcomp3; auto;
     unfold_all_mk;
     match goal with
         [H : lblift _ _ ?bterms'  |- _ ] =>
@@ -2790,8 +3709,12 @@ Ltac prove_approx_mk :=
     unfold_all_mk;
     repeat(decomp_progh3);
     remove_relbt_samevar;
-    rep_eexists; dands; eauto; apply @approx_ext_open_approx_ext;
-    eauto 2 with slow.
+    repeat unfold_computes_to_alpha;
+    repeat decomp_alpha_eq;
+    rep_eexists; dands; eauto;
+    apply @approx_ext_open_approx_ext;
+    eauto 2 with slow;
+    eauto 4 with approx_alpha.
 
 (* end hide *)
 Lemma approx_ext_mk_pair {p} :
@@ -2805,6 +3728,7 @@ Lemma approx_ext_mk_pair {p} :
 Proof.
   prove_approx_mk.
 Qed.
+
 (* begin hide *)
 
 
@@ -2847,6 +3771,19 @@ Definition approxow (a b : WTerm) :=
 *)
 
 
+Lemma computes_to_exception_trivial_ne_bar_implies_computes_to_exception_alpha {o} :
+  forall lib (a : @NTerm o) b c,
+    a =b=e>(b,trivial_ne_bar lib) c
+    -> a =a=e>(b,lib) c.
+Proof.
+  introv comp.
+  pose proof (comp lib) as comp; simpl in comp; autodimp comp hyp; eauto 2 with slow.
+Qed.
+Hint Resolve computes_to_exception_trivial_ne_bar_implies_computes_to_exception_alpha : slow.
+
+Hint Resolve approx_ext_alpha_rw_r_aux : approx_alpha.
+Hint Resolve approx_ext_alpha_rw_l_aux : approx_alpha.
+
 Lemma approx_ext_exception {p} :
   forall lib en (a b : @NTerm p),
     approx_ext lib (mk_exception en a) b
@@ -2859,11 +3796,12 @@ Proof.
   introv ap.
   invertsn ap.
   unfold close_compute_ext in ap; repnd.
-  generalize (ap3 en a); intro k; autodimp k hyp.
-  { introv ext; apply computes_to_exception_refl. }
+  pose proof (ap3 en a (trivial_ne_bar lib)) as k; autodimp k hyp; eauto 3 with slow;[].
   exrepnd.
-  exists a' e'; dands; eauto 3 with slow;
-    repndors; tcsp; unfold bot2 in *; tcsp.
+  apply computes_to_exception_trivial_ne_bar_implies_computes_to_exception_alpha in k0.
+  unfold computes_to_exception_alpha in k0; exrepnd.
+  repndors; tcsp; try (complete (unfold bot2 in *; tcsp)).
+  eexists; eexists; dands; eauto; eauto 2 with slow; eauto 3 with approx_alpha.
 Qed.
 
 (*

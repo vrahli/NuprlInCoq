@@ -517,6 +517,7 @@ Proof.
   unfold reduces_to in *; exrepnd.
   eapply lib_extends_preserves_reduces_in_atmost_k_steps in r0; eauto.
 Qed.
+Hint Resolve lib_extends_preserves_reduces_to : slow.
 
 Lemma lib_extends_preserves_computes_to_value {o} :
   forall (lib1 lib2 : library)
@@ -528,6 +529,20 @@ Lemma lib_extends_preserves_computes_to_value {o} :
 Proof.
   introv ext wf r.
   unfold computes_to_value in *; repnd.
-  dup r0 as comp.
-  eapply lib_extends_preserves_reduces_to in r0;[|eauto|]; eauto 2 with slow.
+  dup r0 as comp; eauto 3 with slow.
 Qed.
+Hint Resolve lib_extends_preserves_computes_to_value : slow.
+
+Lemma lib_extends_preserves_computes_to_valc {o} :
+  forall (lib1 lib2 : library)
+         (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
+         (a b  : @CTerm o)
+         (comp : computes_to_valc lib1 a b),
+    computes_to_valc lib2 a b.
+Proof.
+  introv ext r.
+  destruct_cterms.
+  unfold computes_to_valc in *; simpl in *.
+  eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_computes_to_valc : slow.

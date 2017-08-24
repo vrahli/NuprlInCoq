@@ -113,8 +113,8 @@ Fixpoint univi {p} (i : nat) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | 0 => False
   | S n =>
     (
-      in_ext lib (fun lib => T ===>(lib) (mkc_uni n))
-      # in_ext lib (fun lib => T' ===>(lib) (mkc_uni n))
+      T ===>(lib) (mkc_uni n)
+      # T' ===>(lib) (mkc_uni n)
       # eq <=2=> (univi_eq (univi n) lib)
     )
     {+} univi n lib T T' eq
@@ -168,7 +168,7 @@ Proof.
   intros.
   simpl.
   left.
-  dands; try (introv j; spcast; apply computes_to_valc_refl; sp).
+  dands; try (spcast; apply computes_to_valc_refl; sp).
   sp.
 Qed.
 
@@ -177,8 +177,8 @@ Lemma univi_exists {p} :
     univi i lib T T' eq
     -> {j : nat
         , j < i
-         # in_ext lib (fun lib => T ===>(lib) (mkc_uni j))
-         # in_ext lib (fun lib => T' ===>(lib) (mkc_uni j))
+         # T ===>(lib) (mkc_uni j)
+         # T' ===>(lib) (mkc_uni j)
          # forall A A',
               eq A A' <=> {eqa : per , close (univi j) lib A A' eqa}}.
 Proof.
@@ -192,8 +192,8 @@ Lemma univi_exists_iff {p} :
     univi i lib T T' eq
     <=> {j : nat
           , j < i
-          # in_ext lib (fun lib => T ===>(lib) (mkc_uni j))
-          # in_ext lib (fun lib => T' ===>(lib) (mkc_uni j))
+          # T ===>(lib) (mkc_uni j)
+          # T' ===>(lib) (mkc_uni j)
           # forall A A',
                eq A A' <=> {eqa : per , close (univi j) lib A A' eqa}}.
 Proof.
@@ -363,8 +363,9 @@ Proof.
   - Case "CL_func".
     apply CL_func; unfold per_func; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp; introv j; try (apply reca; auto).
-    introv; apply recb; auto.
+    exists A A' v v' B B'; sp; introv j;
+      try (apply reca; auto);
+      try (introv; apply recb; auto).
 
   - Case "CL_disect".
     apply CL_disect; unfold per_disect; sp.
@@ -473,9 +474,9 @@ Proof.
   - Case "CL_product".
     apply CL_product; unfold per_product; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
-    exists bar; sp; introv j w; try (eapply reca; eauto).
-    introv; try (eapply recb; eauto).
+    exists A A' v v' B B'; sp;
+      introv j; try (eapply reca; eauto);
+        introv; try (eapply recb; eauto).
 Qed.
 
 Lemma typable_in_higher_univ_r {p} :
@@ -700,9 +701,11 @@ Proof.
   - Case "CL_func".
     apply CL_func.
     unfold per_func, type_family; sp.
-    exists eqa eqb; sp; try (exists A A' v v' B B'); sp; introv j;
-      try (eapply reca; eauto).
-    introv; try (eapply recb; eauto).
+    exists eqa eqb; sp; try (exists A A' v v' B B'); sp;
+      try (introv j);
+      try (eapply reca; eauto);
+      try (introv; try (eapply recb; eauto));
+      try (complete (eapply IHn; eauto)).
 
   - Case "CL_disect".
     apply CL_disect.
@@ -867,9 +870,9 @@ Proof.
   - Case "CL_product".
     apply CL_product.
     unfold per_product, type_family; sp.
-    exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
-    exists bar; sp; introv j w; try (eapply reca; eauto).
-    introv; eapply recb; eauto.
+    exists eqa eqb; sp; try (exists A A' v v' B B'); sp;
+      introv j; try (eapply reca; eauto);
+        introv; eapply recb; eauto.
 Qed.
 
 
