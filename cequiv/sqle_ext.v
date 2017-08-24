@@ -240,9 +240,9 @@ Proof.
   allunfold @close_compute_ext; repnd.
   repeat(split;auto).
 
-  - intros c tl_subterms Hcv.
-    apply Hrp2 in Hcv. exrepnd.
-    exists tr_subterms. sp; auto.
+  - intros c tl_subterms bar Hcv.
+    apply Hrp2 in Hcv; exrepnd.
+    exists tr_subterms; dands; tcsp.
     clear Hcv1.
     gen tl_subterms tr_subterms.
     fold (@le_bin_rel  NTerm Rp (sqle_ext_n lib n)) in IHn.
@@ -326,7 +326,7 @@ Proof.
   allunfold @close_compute_ext. repnd.
   repeat(split;auto).
 
-  - intros ? ? Hcomp.
+  - intros ? ? ? Hcomp.
     apply Hcr3 in Hcomp. parallel tr_subterms Hrelbt.
     repnd. split;auto. allunfold @lblift.
     exrepnd.
@@ -406,9 +406,57 @@ Proof.
 intros. apply id_le_sqle. unfold nt_id_prog.
 sp;auto.
 Qed.
-*) 
+*)
 
 (* end hide *)
+
+
+Lemma computes_to_value_bar_alpha {o} :
+  forall {lib} (bar : NeBarLib lib) (t v1 v2 : @NTerm o),
+    t =b=v>(bar) v1
+    -> t =b=v>(bar) v2
+    -> alpha_eq v1 v2.
+Proof.
+  introv comp1 comp2.
+  apply computes_to_value_bar_implies_computes_to_value_alpha in comp1.
+  exrepnd.
+  pose proof (comp2 lib') as comp2; autodimp comp2 hyp.
+  pose proof (comp2 lib') as comp2; autodimp comp2 hyp; eauto 2 with slow; simpl in comp2.
+  unfold computes_to_value_alpha in *; exrepnd.
+  eapply computes_to_value_eq in comp1;[|exact comp2]; subst.
+  eauto 3 with slow.
+Qed.
+
+Lemma computes_to_exception_bar_alpha {o} :
+  forall {lib} (bar : NeBarLib lib) (t a b c d : @NTerm o),
+    t =b=e>(a,bar) b
+    -> t =b=e>(c,bar) d
+    -> alpha_eq a c # alpha_eq b d.
+Proof.
+  introv comp1 comp2.
+  apply computes_to_exception_bar_implies_computes_to_exception_alpha in comp1.
+  exrepnd.
+  pose proof (comp2 lib') as comp2; autodimp comp2 hyp.
+  pose proof (comp2 lib') as comp2; autodimp comp2 hyp; eauto 2 with slow; simpl in comp2.
+  unfold computes_to_exception_alpha in *; exrepnd.
+  eapply computes_to_exception_eq in comp3;[|exact comp5]; repnd; subst; dands; eauto 3 with slow.
+Qed.
+
+Lemma computes_to_seq_bar_alpha {o} :
+  forall {lib} (bar : NeBarLib lib) (t : @NTerm o) f g,
+    t =b=s>(bar) f
+    -> t =b=s>(bar) g
+    -> (forall n, alpha_eq (f n) (g n)).
+Proof.
+  introv comp1 comp2.
+  apply computes_to_seq_bar_implies_computes_to_seq_alpha in comp1.
+  exrepnd.
+  pose proof (comp2 lib') as comp2; autodimp comp2 hyp.
+  pose proof (comp2 lib') as comp2; autodimp comp2 hyp; eauto 2 with slow; simpl in comp2.
+  unfold computes_to_seq_alpha in *; exrepnd.
+  eapply reduces_to_eq_val_like in comp1;[|exact comp2| |]; eauto 2 with slow; ginv.
+  introv; eauto 3 with slow.
+Qed.
 
 Lemma approx_ext_sqle_ext {o} :
   forall lib a b,
@@ -454,14 +502,18 @@ Proof.
 
     + introv Hcv.
       invertsn H1s.
-      repnud H1s. duplicate Hcv as Hcvb.
+      repnud H1s.
+      duplicate Hcv as Hcvb.
       apply H1s4 in Hcv.
       exrepnd.
       exists tr_subterms.
       dands;auto.
       apply (le_lblift (olift (sqle_ext lib))).
+
       * apply le_olift. introv Hss. right. eauto.
-      * repnud Hcv0.  clear H1s. unfolds_base. dands; auto.
+
+      * repnud Hcv0.
+        clear H1s. unfolds_base. dands; auto.
         introv Hpt. unfolds_base. duplicate Hpt as Hptb. apply Hcv0 in Hpt.
         repnud Hpt. parallel lv Hpt. parallel  nt1 Hpt .
         parallel  nt2 Hpt. exrepnd.
@@ -475,16 +527,21 @@ Proof.
         apply Hnn2 in Hcvb.
         exrepnd.
 
-        eapply computes_to_value_ext_eq in Hcv1; eauto.
-        invertsn Hcv1.
-        clear Hnn Hcv0.
+        eapply computes_to_value_bar_alpha in Hcv1; try (exact Hcvb1).
+        apply alpha_eq_oterm_combine in Hcv1; repnd.
+
         repnud Hcvb0.
-        apply Hcvb0 in Hptb.
-        apply (blift_alpha_fun_r _ _ _ _ Hptb) in Hpt.
-        apply (blift_alpha_fun_l _ _ _ _ Hpt) in Hpt1.
-        clear Hpt Hptb Hcvb0 Hcvb1.
-        apply blift_selen_triv in Hpt1; eauto 1 with respects.
-        apply Hpt1; auto.
+        applydup Hcvb0 in Hptb.
+
+        pose proof (Hcv1 (tr_subterms0 {[n]}) (tr_subterms {[n]})) as w.
+        autodimp w hyp;[apply in_nth_combine; auto; try omega|];[].
+
+        eapply blift_alpha_fun_r in w;[|eauto];[].
+        eapply blift_alpha_fun_r in w;[|eauto];[].
+        eapply blift_alpha_fun_l in w;[|eauto];[].
+
+        apply blift_selen_triv in w; eauto 1 with respects.
+        apply w; auto.
 
     + introv ce.
       invertsn H1s.
@@ -500,7 +557,8 @@ Proof.
         invertsn k; auto.
         repnud k.
         apply k3 in ce; exrepnd.
-        eapply computes_to_exception_ext_eq in ce3; eauto; repnd; subst; auto.
+        eapply computes_to_exception_bar_alpha in ce3; eauto; repnd; subst; auto.
+        eapply respects_alpha_sqle_ext_n;[apply alpha_eq_sym;eauto|];auto.
       }
 
       {
@@ -511,7 +569,8 @@ Proof.
         invertsn k; auto.
         repnud k.
         apply k3 in ce; exrepnd.
-        eapply computes_to_exception_ext_eq in ce3; eauto; repnd; subst; auto.
+        eapply computes_to_exception_bar_alpha in ce3; eauto; repnd; subst; auto.
+        eapply respects_alpha_sqle_ext_n;[apply alpha_eq_sym;eauto|];auto.
       }
 
 (*
@@ -534,7 +593,7 @@ Proof.
       invertsn h.
       repnud h.
       apply h4 in comp; exrepnd.
-      eapply reduces_to_ext_eq_val_like in comp3;
-        try (exact comp0); eauto 3 with slow; ginv; auto.
+      eapply computes_to_seq_bar_alpha in comp3;[|exact comp0].
+      eapply respects_alpha_sqle_ext_n;[apply alpha_eq_sym;eauto|];auto.
 Qed.
 (* begin hide *)

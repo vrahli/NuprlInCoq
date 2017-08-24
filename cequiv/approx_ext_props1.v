@@ -32,6 +32,8 @@
 
 Require Export approx_ext.
 Require Export atom_ren.
+Require Import sqle_ext.
+
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
@@ -1590,8 +1592,6 @@ SearchAbout (lsubst (lsubst _ _) _).
 
 Qed.
 *)
-
-Require Import sqle_ext.
 
 
 Lemma map_ren_atom_get_utokens_library_if_disjoint_dom {o} :

@@ -806,39 +806,44 @@ Hint Resolve computes_to_value_bar_isvalue_refl : slow.
 Lemma computes_to_value_bar_implies_computes_to_value_alpha {o} :
   forall {lib} (bar : NeBarLib lib) (t u : @NTerm o),
     t =b=v>(bar) u
-    -> {lib : library & t =a=v>(lib) u}.
+    -> {lib' : library
+        & t =a=v>(lib') u
+        # bar_lib_bar bar lib'}.
 Proof.
   introv h.
   unfold computes_to_value_bar in h.
   pose proof (h (ne_bar_lib_lib _ bar) (ne_bar_lib_ne _ bar)) as q.
   apply inExt_refl in q.
-  eexists; eauto.
+  eexists; dands; eauto.
+  pose proof (ne_bar_lib_ne _ bar) as w; eauto 3 with slow.
 Qed.
 Hint Resolve computes_to_value_bar_implies_computes_to_value_alpha : slow.
 
 Lemma computes_to_exception_bar_implies_computes_to_exception_alpha {o} :
   forall {lib} (bar : NeBarLib lib) (a t u : @NTerm o),
     t =b=e>(a,bar) u
-    -> {lib : library & t =a=e>(a,lib) u}.
+    -> {lib' : library & t =a=e>(a,lib') u # bar_lib_bar bar lib'}.
 Proof.
   introv h.
   unfold computes_to_value_bar in h.
   pose proof (h (ne_bar_lib_lib _ bar) (ne_bar_lib_ne _ bar)) as q.
   apply inExt_refl in q.
-  eexists; eauto.
+  eexists; dands; eauto.
+  pose proof (ne_bar_lib_ne _ bar) as w; eauto 3 with slow.
 Qed.
 Hint Resolve computes_to_exception_bar_implies_computes_to_exception_alpha : slow.
 
 Lemma computes_to_seq_bar_implies_computes_to_seq_alpha {o} :
   forall {lib} (bar : NeBarLib lib) (t : @NTerm o) f,
     t =b=s>(bar) f
-    -> {lib : library & t =a=s>(lib) f}.
+    -> {lib' : library & t =a=s>(lib') f # bar_lib_bar bar lib'}.
 Proof.
   introv h.
   unfold computes_to_value_bar in h.
   pose proof (h (ne_bar_lib_lib _ bar) (ne_bar_lib_ne _ bar)) as q.
   apply inExt_refl in q.
-  eexists; eauto.
+  eexists; dands; eauto.
+  pose proof (ne_bar_lib_ne _ bar) as w; eauto 3 with slow.
 Qed.
 Hint Resolve computes_to_seq_bar_implies_computes_to_seq_alpha : slow.
 
@@ -928,11 +933,11 @@ Proof.
 
     + introv comp.
       apply computes_to_exception_bar_implies_computes_to_exception_alpha in comp; exrepnd.
-      apply axiom_doesnt_raise_an_exception_alpha in comp0; sp.
+      apply axiom_doesnt_raise_an_exception_alpha in comp1; sp.
 
     + introv comp.
       apply computes_to_seq_bar_implies_computes_to_seq_alpha in comp; exrepnd.
-      apply axiom_doesnt_compute_to_seq_alpha in comp0; sp.
+      apply axiom_doesnt_compute_to_seq_alpha in comp1; sp.
 
 (*
     + introv cm.
@@ -1289,7 +1294,7 @@ Lemma vbot_diverges_bar {o} :
 Proof.
   introv h.
   apply computes_to_value_bar_implies_computes_to_value_alpha in h; exrepnd.
-  apply vbot_diverges_alpha in h0; auto.
+  apply vbot_diverges_alpha in h1; auto.
 Qed.
 
 Lemma vbot_doesnt_raise_an_exception_alpha {o} :
@@ -1307,7 +1312,7 @@ Lemma vbot_doesnt_raise_an_exception_bar {o} :
 Proof.
   introv h.
   apply computes_to_exception_bar_implies_computes_to_exception_alpha in h; exrepnd.
-  apply vbot_doesnt_raise_an_exception_alpha in h0; auto.
+  apply vbot_doesnt_raise_an_exception_alpha in h1; auto.
 Qed.
 
 Lemma vbot_doesnt_compute_to_seq_alpha {o} :
@@ -1325,7 +1330,7 @@ Lemma vbot_doesnt_compute_to_seq_bar {o} :
 Proof.
   introv h.
   apply computes_to_seq_bar_implies_computes_to_seq_alpha in h; exrepnd.
-  apply vbot_doesnt_compute_to_seq_alpha in h0; auto.
+  apply vbot_doesnt_compute_to_seq_alpha in h1; auto.
 Qed.
 
 
@@ -3418,8 +3423,8 @@ Proof.
   introv ce.
   apply computes_to_exception_bar_implies_computes_to_exception_alpha in ce.
   exrepnd.
-  unfold computes_to_exception_alpha in ce0; exrepnd.
-  apply can_doesnt_raise_an_exception in ce1; auto.
+  unfold computes_to_exception_alpha in ce1; exrepnd.
+  apply can_doesnt_raise_an_exception in ce2; auto.
 Qed.
 
 Lemma can_doesnt_compute_to_seq_bar {o} :
@@ -3429,8 +3434,8 @@ Proof.
   introv comp.
   apply computes_to_seq_bar_implies_computes_to_seq_alpha in comp.
   exrepnd.
-  unfold computes_to_seq_alpha in comp0; exrepnd.
-  apply reduces_to_if_isvalue_like in comp0; eauto 3 with slow; ginv.
+  unfold computes_to_seq_alpha in comp1; exrepnd.
+  apply reduces_to_if_isvalue_like in comp1; eauto 3 with slow; ginv.
 Qed.
 
 Lemma approx_ext_canonical_form3 {p} :
@@ -3464,8 +3469,8 @@ Lemma computes_to_value_bar_exception {p} :
 Proof.
   introv comp.
   apply computes_to_value_bar_implies_computes_to_value_alpha in comp; exrepnd.
-  unfold computes_to_value_alpha in comp0; exrepnd.
-  apply computes_to_value_exception in comp0; auto.
+  unfold computes_to_value_alpha in comp1; exrepnd.
+  apply computes_to_value_exception in comp1; auto.
 Qed.
 
 Lemma computes_to_exception_bar_refl {p} :
@@ -3485,8 +3490,8 @@ Lemma computes_to_exception_bar_exception {p} :
 Proof.
   introv comp.
   apply computes_to_exception_bar_implies_computes_to_exception_alpha in comp; exrepnd.
-  unfold computes_to_exception_alpha in comp0; exrepnd.
-  apply computes_to_exception_exception in comp1; repnd; subst; tcsp.
+  unfold computes_to_exception_alpha in comp1; exrepnd.
+  apply computes_to_exception_exception in comp2; repnd; subst; tcsp.
 Qed.
 
 Lemma computes_to_seq_bar_exception {p} :
@@ -3496,8 +3501,8 @@ Lemma computes_to_seq_bar_exception {p} :
 Proof.
   introv comp.
   apply computes_to_seq_bar_implies_computes_to_seq_alpha in comp; exrepnd.
-  unfold computes_to_seq_alpha in comp0; exrepnd.
-  apply reduces_to_exception in comp0; ginv; eauto 3 with slow.
+  unfold computes_to_seq_alpha in comp1; exrepnd.
+  apply reduces_to_exception in comp1; ginv; eauto 3 with slow.
 Qed.
 
 Lemma approx_ext_canonical_form_exc {o} :
