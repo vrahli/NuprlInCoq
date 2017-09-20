@@ -29,7 +29,9 @@
 
 *)
 
+
 Require Export sequents_lib.
+Require Export sequents_tacs2.
 
 
 Definition renaming : Type := opname * opname.
@@ -615,6 +617,118 @@ Proof.
   apply (implies_entry_in_library_rename r) in i; autorewrite with slow in *; auto.
 Qed.
 Hint Resolve implies_lib_extends_rename_lib : slow.
+
+Lemma implies_isprog_rename_term {o} :
+  forall r (t : @NTerm o),
+    isprog t
+    -> isprog (rename_term r t).
+Proof.
+  introv isp.
+  allrw @isprog_eq.
+  destruct isp.
+  split; dands; allrw @nt_wf_eq; eauto 3 with slow.
+Qed.
+Hint Resolve implies_isprog_rename_term : slow.
+
+Definition rename_cterm {o} r (ct : @CTerm o) : CTerm :=
+  let (t,isp) := ct in
+  mk_ct (rename_term r t) (implies_isprog_rename_term r t isp).
+
+Definition rename_var_cterm {o} r (p : NVar * @CTerm o) : NVar * CTerm :=
+  let (v,t) := p in (v,rename_cterm r t).
+
+Definition rename_sub {o} r (s : @CSub o) : @CSub o :=
+  map (rename_var_cterm r) s.
+
+Lemma rename_sub_snoc {o} :
+  forall r (s : @CSub o) v t,
+    rename_sub r (snoc s (v,t))
+    = snoc (rename_sub r s) (v, rename_cterm r t).
+Proof.
+  induction s; introv; simpl; tcsp.
+  f_equal; tcsp.
+Qed.
+
+Ltac sim_snoc3 :=
+  match goal with
+  | [ |- similarity _ (snoc ?s1 (?x,?t1)) (snoc ?s2 (?x,?t2)) (snoc _ ?h) ] =>
+    let w := fresh "w" in
+    let c := fresh "c" in
+    assert (wf_term (htyp h)) as w;
+    [ auto
+    | assert (cover_vars (htyp h) s1) as c;
+      [ auto
+      | apply similarity_snoc; simpl;
+        exists s1 s2 t1 t2 w c
+      ]
+    ]
+  end.
+
+Lemma dom_csub_rename_sub {o} :
+  forall r (s : @CSub o),
+    dom_csub (rename_sub r s) = dom_csub s.
+Proof.
+  unfold dom_csub, rename_sub; introv.
+  allrw map_map; unfold compose.
+  apply eq_maps; introv i.
+  destruct x; simpl; auto.
+Qed.
+Hint Rewrite @dom_csub_rename_sub : slow.
+
+Lemma implies_covered_rename {o} :
+  forall r (t : @NTerm o) vars,
+    covered t vars
+    -> covered (rename_term r t) vars.
+Proof.
+  introv cov.
+  unfold covered in *; autorewrite with slow in *; auto.
+Qed.
+Hint Resolve implies_covered_rename : slow.
+
+Lemma implies_cover_vars_rename {o} :
+  forall r (t : @NTerm o) s,
+    cover_vars t s
+    -> cover_vars (rename_term r t) (rename_sub r s).
+Proof.
+  introv cov.
+  allrw @cover_vars_covered; autorewrite with slow.
+  eauto 3 with slow.
+Qed.
+Hint Resolve implies_cover_vars_rename : slow.
+
+Lemma implies_similarity_rename {o} :
+  forall r lib (H : @bhyps o) s1 s2,
+    similarity lib s1 s2 H
+    -> similarity
+         (rename_lib r lib)
+         (rename_sub r s1)
+         (rename_sub r s2)
+         (rename_barehypotheses r H).
+Proof.
+  induction H using rev_list_indT; simpl; introv sim; auto.
+
+  - inversion sim; subst; simpl in *; ginv;
+      try constructor; try (complete (destruct hs; ginv)).
+
+  - apply similarity_snoc in sim; exrepnd; subst; simpl in *.
+    repeat (rewrite rename_sub_snoc in * ).
+    rewrite rename_barehypotheses_snoc in *.
+
+    sim_snoc3; dands; autorewrite with slow in *; auto; eauto 3 with slow.
+    destruct a; simpl in *.
+
+Qed.
+
+Lemma implies_hyps_functionality_rename {o} :
+  forall r lib s (H : @bhyps o),
+    hyps_functionality lib s H
+    -> hyps_functionality
+         (rename_lib r lib)
+         (rename_sub r s)
+         (rename_barehypotheses r H).
+Proof.
+  introv hf sim.
+Qed.
 
 Lemma renaming_preserves_sequent_true_ext_lib {o} :
   forall r lib (s : @csequent o),
