@@ -705,12 +705,6 @@ Proof.
 Qed.
 Hint Rewrite @rename_cterm_idem : slow.
 
-Definition rename_per {o} (r : renaming) (e : per(o)) : per :=
-  fun a b => e (rename_cterm r a) (rename_cterm r b).
-
-Definition rename_cts {o} (r : renaming) (ts : cts(o)) : cts :=
-  fun t1 t2 e => ts (rename_cterm r t1) (rename_cterm r t2) (rename_per r e).
-
 Lemma implies_isnoncan_like_rename_term {o} :
   forall r (t : @NTerm o),
     isnoncan_like t
@@ -1026,6 +1020,327 @@ Proof.
 
   - rewrite rename_term_subst_utokens_aux; autorewrite with slow.
     rewrite rename_term_change_bvars_alpha; auto.
+Qed.
+
+Definition rename_sosub_kind {o} r (s : @sosub_kind o) : sosub_kind :=
+  match s with
+  | sosk l t => sosk l (rename_term r t)
+  end.
+
+Definition rename_var_sk {o} r (p : NVar * @sosub_kind o) : NVar * sosub_kind :=
+  let (v,t) := p in (v,rename_sosub_kind r t).
+
+Definition rename_sosub {o} r (s : @SOSub o) : @SOSub o :=
+  map (rename_var_sk r) s.
+
+Lemma sosub_find_rename_sosub {o} :
+  forall r (s : @SOSub o) v,
+    sosub_find (rename_sosub r s) v
+    = match sosub_find s v with
+      | Some t => Some (rename_sosub_kind r t)
+      | None => None
+      end.
+Proof.
+  induction s; introv; simpl; tcsp; repnd; simpl; boolvar; auto;
+    destruct a; simpl; boolvar; auto.
+Qed.
+
+Lemma rename_sub_combine {o} :
+  forall r l (ts : list (@NTerm o)),
+    length l = length ts
+    -> rename_sub r (combine l ts)
+       = combine l (map (rename_term r) ts).
+Proof.
+  induction l; introv len; simpl in *; tcsp.
+  destruct ts; simpl in *; ginv.
+  rewrite IHl; auto.
+Qed.
+
+Lemma rename_sosub_ossub_filter {o} :
+  forall r (s : @SOSub o) l,
+    rename_sosub r (sosub_filter s l)
+    = sosub_filter (rename_sosub r s) l.
+Proof.
+  induction s; introv; simpl; tcsp.
+  repnd; simpl; boolvar; tcsp.
+  destruct a; simpl; boolvar; tcsp.
+  simpl; rewrite IHs; auto.
+Qed.
+
+Lemma rename_term_sosub_aux {o} :
+  forall r (t : @SOTerm o) s,
+    rename_term r (sosub_aux s t)
+    = sosub_aux (rename_sosub r s) (rename_soterm r t).
+Proof.
+  soterm_ind t as [v ts ind|f ind|op bs ind] Case ; introv; simpl in *; tcsp.
+
+  - Case "sovar".
+
+    rewrite sosub_find_rename_sosub.
+    autorewrite with list.
+    remember (sosub_find s (v,length ts)) as sf; symmetry in Heqsf; destruct sf; simpl; auto.
+
+    + destruct s0; simpl.
+      rewrite rename_term_lsubst_aux; simpl.
+      apply sosub_find_some in Heqsf; repnd.
+      rewrite rename_sub_combine; autorewrite with list; auto.
+      allrw map_map; unfold compose.
+      f_equal; f_equal.
+      apply eq_maps; introv i; tcsp.
+
+    + rewrite rename_term_apply_list; simpl; f_equal.
+      allrw map_map; unfold compose.
+      apply eq_maps; introv i; tcsp.
+
+  - Case "soterm".
+    f_equal; allrw map_map; unfold compose.
+    apply eq_maps; introv i.
+    destruct x; simpl; f_equal.
+    erewrite ind;eauto.
+    rewrite rename_sosub_ossub_filter; auto.
+Qed.
+
+Lemma fo_bound_vars_rename_soterm {o} :
+  forall r (t : @SOTerm o),
+    fo_bound_vars (rename_soterm r t)
+    = fo_bound_vars t.
+Proof.
+  soterm_ind t as [v ts ind|f ind|op bs ind] Case; introv; simpl; tcsp.
+
+  - Case "sovar".
+    allrw flat_map_map; unfold compose.
+    apply eq_flat_maps; auto.
+
+  - Case "soterm".
+    allrw flat_map_map; unfold compose.
+    apply eq_flat_maps; auto.
+    introv i; destruct x; simpl; f_equal.
+    eapply ind; eauto.
+Qed.
+Hint Rewrite @fo_bound_vars_rename_soterm : slow.
+
+Lemma free_vars_sosub_rename_sosub {o} :
+  forall r (s : @SOSub o),
+    free_vars_sosub (rename_sosub r s)
+    = free_vars_sosub s.
+Proof.
+  unfold free_vars_sosub, rename_sosub; introv.
+  allrw flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i; repnd; simpl.
+  destruct x; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @free_vars_sosub_rename_sosub : slow.
+
+Lemma all_fo_vars_rename_soterm {o} :
+  forall r (t : @SOTerm o),
+    all_fo_vars (rename_soterm r t)
+    = all_fo_vars t.
+Proof.
+  soterm_ind t as [v ts ind|f ind|op bs ind] Case; introv; simpl; tcsp;
+    allrw flat_map_map; unfold compose.
+
+  - f_equal; apply eq_flat_maps; auto.
+
+  - apply eq_flat_maps; introv i; destruct x; simpl; f_equal.
+    eapply ind; eauto.
+Qed.
+Hint Rewrite @all_fo_vars_rename_soterm : slow.
+
+Lemma bound_vars_sosub_rename_sosub {o} :
+  forall r (s : @SOSub o),
+    bound_vars_sosub (rename_sosub r s)
+    = bound_vars_sosub s.
+Proof.
+  introv.
+  unfold bound_vars_sosub, rename_sosub.
+  allrw flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i; repnd; simpl.
+  destruct x; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @bound_vars_sosub_rename_sosub : slow.
+
+Lemma rename_soterm_so_change_bvars_alpha {o} :
+  forall r (t : @SOTerm o) vs k,
+    rename_soterm r (so_change_bvars_alpha vs k t)
+    = so_change_bvars_alpha vs k (rename_soterm r t).
+Proof.
+  soterm_ind t as [v ts ind|f|op bs ind] Case; introv; simpl in *; tcsp.
+
+  - Case "sovar".
+    autorewrite with list; f_equal.
+    allrw map_map; unfold compose.
+    apply eq_maps; tcsp.
+
+  - Case "soterm".
+    f_equal.
+    allrw map_map; unfold compose.
+    apply eq_maps; introv i.
+    destruct x; simpl.
+    erewrite <- ind; eauto 3 with slow;[].
+    autorewrite with slow; f_equal.
+Qed.
+
+Lemma rename_soterm_fo_change_bvars_alpha {o} :
+  forall r (t : @SOTerm o) vs k,
+    rename_soterm r (fo_change_bvars_alpha vs k t)
+    = fo_change_bvars_alpha vs k (rename_soterm r t).
+Proof.
+  soterm_ind t as [v ts ind|f|op bs ind] Case; introv; simpl in *; tcsp.
+
+  - Case "sovar".
+    autorewrite with list; f_equal.
+    boolvar; subst; simpl in *; ginv; tcsp;
+      try (complete (destruct ts; simpl in *; tcsp)).
+    f_equal; allrw map_map; unfold compose.
+    apply eq_maps; tcsp.
+
+  - Case "soterm".
+    f_equal.
+    allrw map_map; unfold compose.
+    apply eq_maps; introv i.
+    destruct x; simpl.
+    erewrite <- ind; eauto 3 with slow;[].
+    autorewrite with slow; f_equal.
+Qed.
+
+Lemma all_fo_vars_fo_change_bvars_alpha_rename_soterm {o} :
+  forall r (t : @SOTerm o) l k,
+    all_fo_vars (fo_change_bvars_alpha l k (rename_soterm r t))
+    = all_fo_vars (fo_change_bvars_alpha l k t).
+Proof.
+  introv; rewrite <- rename_soterm_fo_change_bvars_alpha; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @all_fo_vars_fo_change_bvars_alpha_rename_soterm : slow.
+
+Lemma allvars_rename_term {o} :
+  forall r (t : @NTerm o),
+    allvars (rename_term r t) = allvars t.
+Proof.
+  nterm_ind t as [v|f|op bs ind] Case; introv; simpl; tcsp.
+  allrw flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i.
+  destruct x; simpl; f_equal; eapply ind; eauto.
+Qed.
+Hint Rewrite @allvars_rename_term : slow.
+
+Lemma allvars_range_sosub_rename_sosub {o} :
+  forall r (s : @SOSub o),
+    allvars_range_sosub (rename_sosub r s)
+    = allvars_range_sosub s.
+Proof.
+  introv; unfold allvars_range_sosub, rename_sosub.
+  allrw flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i; repnd; simpl.
+  destruct x; simpl; f_equal; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @allvars_range_sosub_rename_sosub : slow.
+
+Lemma all_vars_change_bvars_alpha_rename_term {o} :
+  forall l r (t : @NTerm o),
+    all_vars (change_bvars_alpha l (rename_term r t))
+    = all_vars (change_bvars_alpha l t).
+Proof.
+  introv.
+  rewrite <- rename_term_change_bvars_alpha.
+  introv; unfold all_vars; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @all_vars_change_bvars_alpha_rename_term : slow.
+
+Lemma rename_sosub_sosub_change_bvars_alpha {o} :
+  forall r l (s : @SOSub o),
+    rename_sosub r (sosub_change_bvars_alpha l s)
+    = sosub_change_bvars_alpha l (rename_sosub r s).
+Proof.
+  introv; unfold sosub_change_bvars_alpha, rename_sosub.
+  allrw map_map; unfold compose.
+  apply eq_maps; introv i; repnd; simpl.
+  destruct x; simpl.
+  unfold sk_change_bvars_alpha; simpl; autorewrite with slow.
+  f_equal; f_equal.
+  rewrite rename_term_lsubst_aux; simpl.
+  rewrite <- rename_term_change_bvars_alpha; autorewrite with slow; auto.
+Qed.
+
+Lemma rename_term_sosub {o} :
+  forall r s (t : @SOTerm o),
+    rename_term r (sosub s t)
+    = sosub (rename_sosub r s) (rename_soterm r t).
+Proof.
+  introv; unfold sosub; autorewrite with slow.
+  boolvar; tcsp.
+
+  - rewrite rename_term_sosub_aux; auto.
+
+  - rewrite rename_term_sosub_aux; auto.
+    rewrite rename_sosub_sosub_change_bvars_alpha; auto.
+
+  - rewrite rename_term_sosub_aux; auto.
+    rewrite rename_soterm_fo_change_bvars_alpha; auto.
+
+  - rewrite rename_term_sosub_aux; simpl.
+    rewrite rename_soterm_fo_change_bvars_alpha; auto.
+    rewrite rename_sosub_sosub_change_bvars_alpha; auto.
+Qed.
+
+Lemma rename_sosub_mk_abs_subst {o} :
+  forall r vars (bs : list (@BTerm o)),
+    rename_sosub r (mk_abs_subst vars bs)
+    = mk_abs_subst vars (map (rename_bterm r) bs).
+Proof.
+  induction vars; introv; simpl; auto.
+  destruct a; simpl.
+  destruct bs; simpl; auto.
+  destruct b; simpl.
+  boolvar; simpl; auto.
+  rewrite IHvars; auto.
+Qed.
+
+Lemma implies_matching_entry_rename {o} :
+  forall r abs1 abs2 vars (bs : list (@BTerm o)),
+    matching_entry abs1 abs2 vars bs
+    -> matching_entry (rename_opabs r abs1) (rename_opabs r abs2) vars (map (rename_bterm r) bs).
+Proof.
+  unfold  matching_entry in *; introv h; repnd.
+  destruct abs1, abs2; simpl in *; subst; dands; auto.
+  unfold matching_bterms in *.
+  allrw map_map; unfold compose.
+  rewrite h.
+  apply eq_maps; introv i.
+  destruct x; simpl; unfold num_bvars; simpl; auto.
+Qed.
+Hint Resolve implies_matching_entry_rename : slow.
+
+Lemma implies_found_entry_rename {o} :
+  forall r lib abs bs oa vars (rhs : @SOTerm o) correct,
+    found_entry lib abs bs oa vars rhs correct
+    -> found_entry
+         (rename_lib r lib)
+         (rename_opabs r abs)
+         (map (rename_bterm r) bs)
+         (rename_opabs r oa)
+         vars
+         (rename_soterm r rhs)
+         (rename_correct r correct).
+Proof.
+  introv fe; unfold found_entry in *.
+  revert abs bs oa vars rhs correct fe.
+  induction lib; introv fe; simpl in *; ginv.
+  destruct a; simpl in *.
+  boolvar; ginv; tcsp.
+
+  - inversion fe; subst; GC.
+    assert (correct0 = correct) as xx by (eauto 3 with pi).
+    subst; GC; auto.
+
+  - apply (implies_matching_entry_rename r) in m.
+    autorewrite with slow in *.
+    apply not_matching_entry_iff in n; destruct n.
+    allrw map_map; unfold compose in *.
+    assert (map (fun x => rename_bterm r (rename_bterm r x)) bs = bs) as xx; try congruence.
+    apply eq_map_l; introv i; destruct x; simpl; autorewrite with slow; auto.
+
+  - apply (implies_matching_entry_rename r) in m.
+    apply not_matching_entry_iff in n; destruct n; auto.
 Qed.
 
 Lemma compute_step_rename {o} :
@@ -1365,54 +1680,6 @@ Proof.
       csunf comp; simpl in comp; ginv.
       csunf; simpl; auto.
 
-      Lemma implies_matching_entry_rename {o} :
-        forall r abs1 abs2 vars (bs : list (@BTerm o)),
-          matching_entry abs1 abs2 vars bs
-          -> matching_entry (rename_opabs r abs1) (rename_opabs r abs2) vars (map (rename_bterm r) bs).
-      Proof.
-        unfold  matching_entry in *; introv h; repnd.
-        destruct abs1, abs2; simpl in *; subst; dands; auto.
-        unfold matching_bterms in *.
-        allrw map_map; unfold compose.
-        rewrite h.
-        apply eq_maps; introv i.
-        destruct x; simpl; unfold num_bvars; simpl; auto.
-      Qed.
-      Hint Resolve implies_matching_entry_rename : slow.
-
-      Lemma implies_found_entry_rename {o} :
-        forall r lib abs bs oa vars (rhs : @SOTerm o) correct,
-          found_entry lib abs bs oa vars rhs correct
-          -> found_entry
-               (rename_lib r lib)
-               (rename_opabs r abs)
-               (map (rename_bterm r) bs)
-               (rename_opabs r oa)
-               vars
-               (rename_soterm r rhs)
-               (rename_correct r correct).
-      Proof.
-        introv fe; unfold found_entry in *.
-        revert abs bs oa vars rhs correct fe.
-        induction lib; introv fe; simpl in *; ginv.
-        destruct a; simpl in *.
-        boolvar; ginv; tcsp.
-
-        - inversion fe; subst; GC.
-          assert (correct0 = correct) as xx by (eauto 3 with pi).
-          subst; GC; auto.
-
-        - apply (implies_matching_entry_rename r) in m.
-          autorewrite with slow in *.
-          apply not_matching_entry_iff in n; destruct n.
-          allrw map_map; unfold compose in *.
-          assert (map (fun x => rename_bterm r (rename_bterm r x)) bs = bs) as xx; try congruence.
-          apply eq_map_l; introv i; destruct x; simpl; autorewrite with slow; auto.
-
-        - apply (implies_matching_entry_rename r) in m.
-          apply not_matching_entry_iff in n; destruct n; auto.
-      Qed.
-
     + SCase "Abs".
 
       csunf comp; simpl in comp.
@@ -1421,31 +1688,455 @@ Proof.
 
       apply (implies_found_entry_rename r) in comp0.
       apply found_entry_implies_compute_step_lib_success in comp0.
-      rewrite comp0.
+      rewrite comp0; clear comp0.
       unfold mk_instance; simpl.
 
+      rewrite rename_term_sosub.
+      rewrite rename_sosub_mk_abs_subst; auto.
 Qed.
+
+Lemma reduces_to_rename {o} :
+  forall r lib (a b : @NTerm o),
+    reduces_to lib a b
+    -> reduces_to (rename_lib r lib) (rename_term r a) (rename_term r b).
+Proof.
+  introv h; unfold reduces_to in *; exrepnd; exists k.
+  revert a b h0.
+  induction k; introv h.
+
+  - allrw @reduces_in_atmost_k_steps_0; subst; auto.
+
+  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
+    apply (compute_step_rename r) in h1.
+    apply IHk in h0.
+    allrw.
+    eexists; dands; eauto.
+Qed.
+Hint Resolve reduces_to_rename : slow.
+
+Lemma nt_wf_rename_term {o} :
+  forall r (t : @NTerm o),
+    nt_wf t
+    -> nt_wf (rename_term r t).
+Proof.
+  nterm_ind t as [v|f ind|op bs ind] Case; introv wf; simpl in *; auto.
+
+  - Case "sterm".
+    inversion wf as [|? imp|]; subst; clear wf.
+    constructor; introv.
+    pose proof (ind n) as q; clear ind.
+    pose proof (imp n) as h; clear imp.
+    repnd.
+    dands; eauto 3 with slow.
+
+  - Case "oterm".
+    allrw @nt_wf_oterm_iff; repnd.
+    allrw map_map; unfold compose; simpl in *.
+    autorewrite with slow.
+    rewrite <- wf0.
+    dands.
+
+    + apply eq_maps; introv i; destruct x; simpl; tcsp.
+
+    + introv i.
+      allrw in_map_iff; exrepnd; subst; simpl in *.
+      destruct a; simpl in *.
+      applydup wf in i1.
+      apply ind in i1; auto.
+      allrw @bt_wf_iff; auto.
+Qed.
+Hint Resolve nt_wf_rename_term : slow.
+
+Lemma isprogram_rename_term {o} :
+  forall r (t : @NTerm o),
+    isprogram t
+    -> isprogram (rename_term r t).
+Proof.
+  introv isp.
+  unfold isprogram in *; repnd; dands; eauto 3 with slow.
+Qed.
+Hint Resolve isprogram_rename_term : slow.
+
+Lemma isvalue_rename_term {o} :
+  forall r (t : @NTerm o),
+    isvalue t
+    -> isvalue (rename_term r t).
+Proof.
+  introv isv.
+  allrw @isvalue_iff; repnd; dands; eauto 3 with slow.
+Qed.
+Hint Resolve isvalue_rename_term : slow.
+
+Lemma computes_to_value_rename {o} :
+  forall r lib (a b : @NTerm o),
+    computes_to_value lib a b
+    -> computes_to_value (rename_lib r lib) (rename_term r a) (rename_term r b).
+Proof.
+  introv comp.
+  unfold computes_to_value in *; repnd; dands; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_value_rename : slow.
 
 Lemma computes_to_valc_rename {o} :
   forall r lib (a b : @CTerm o),
     computes_to_valc lib a b
     -> computes_to_valc (rename_lib r lib) (rename_cterm r a) (rename_cterm r b).
 Proof.
+  introv; destruct_cterms; unfold computes_to_valc; simpl; eauto 3 with slow.
 Qed.
+Hint Resolve computes_to_valc_rename : slow.
+
+Lemma rename_cterm_mkc_uni {o} :
+  forall r j, @rename_cterm o r (mkc_uni j) = mkc_uni j.
+Proof.
+  introv; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_mkc_uni : slow.
+
+Lemma rename_cterm_mkc_integer {o} :
+  forall r j, @rename_cterm o r (mkc_integer j) = mkc_integer j.
+Proof.
+  introv; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_mkc_integer : slow.
+
+Lemma rename_cterm_mkc_token {o} :
+  forall r j, @rename_cterm o r (mkc_token j) = mkc_token j.
+Proof.
+  introv; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_mkc_token : slow.
+
+Lemma rename_cterm_mkc_utoken {o} :
+  forall r j, @rename_cterm o r (mkc_utoken j) = mkc_utoken j.
+Proof.
+  introv; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_mkc_utoken : slow.
+
+Lemma rename_cterm_mkc_equality {o} :
+  forall r (a b c : @CTerm o),
+    rename_cterm r (mkc_equality a b c)
+    = mkc_equality (rename_cterm r a) (rename_cterm r b) (rename_cterm r c).
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_mkc_equality : slow.
+
+Lemma rename_cterm_mkc_int {o} :
+  forall r, @rename_cterm o r mkc_int = mkc_int.
+Proof.
+  introv; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_mkc_int : slow.
+
+Lemma rename_cterm_mkc_base {o} :
+  forall r, @rename_cterm o r mkc_base = mkc_base.
+Proof.
+  introv; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_mkc_base : slow.
+
+Lemma rename_cterm_mkc_atom {o} :
+  forall r, @rename_cterm o r mkc_atom = mkc_atom.
+Proof.
+  introv; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_mkc_atom : slow.
+
+Lemma rename_cterm_mkc_uatom {o} :
+  forall r, @rename_cterm o r mkc_uatom = mkc_uatom.
+Proof.
+  introv; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_mkc_uatom : slow.
+
+Lemma rename_cterm_mkc_axiom {o} :
+  forall r, @rename_cterm o r mkc_axiom = mkc_axiom.
+Proof.
+  introv; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_mkc_axiom : slow.
+
+Lemma implies_alpha_eq_term_rename {o} :
+  forall r (a b : @NTerm o),
+    alpha_eq a b
+    -> alpha_eq (rename_term r a) (rename_term r b).
+Proof.
+  nterm_ind1s a as [v|f|op bs ind] Case; introv aeq.
+
+  - Case "vterm".
+    inversion aeq; subst; clear aeq; simpl; auto.
+
+  - Case "sterm".
+    inversion aeq as [|? ? imp|]; subst; clear aeq; simpl; auto.
+
+  - Case "oterm".
+    apply alpha_eq_oterm_implies_combine in aeq; exrepnd; subst; simpl.
+    apply alpha_eq_oterm_combine; repeat (rewrite map_length in * ); dands; auto.
+    introv i.
+    rewrite <- map_combine in i.
+    allrw in_map_iff; exrepnd; ginv.
+    applydup aeq0 in i1; clear aeq0.
+    destruct a0, a; simpl in *.
+    inversion i0 as [? ? ? ? ? disj len1 len2 norep aeq]; subst.
+    applydup in_combine in i1; repnd.
+
+    pose proof (ind n (lsubst n (var_ren l lv)) l) as q; clear ind.
+    rewrite lsubst_allvars_preserves_osize2 in q.
+    repeat (autodimp q hyp); eauto 2 with slow.
+    apply q in aeq; clear q.
+    repeat (rewrite @rename_term_lsubst in * ).
+    autorewrite with slow in *.
+    exists lv; autorewrite with slow in *; auto.
+Qed.
+Hint Resolve implies_alpha_eq_term_rename : slow.
+
+Lemma implies_alpha_eq_bterm_rename {o} :
+  forall r (a b : @BTerm o),
+    alpha_eq_bterm a b
+    -> alpha_eq_bterm (rename_bterm r a) (rename_bterm r b).
+Proof.
+  introv aeq.
+    destruct a as [l1 t1], b as [l2 t2]; simpl in *.
+    inversion aeq as [? ? ? ? ? disj len1 len2 norep aeq']; subst; clear aeq.
+    exists lv; autorewrite with slow in *; auto.
+    apply (implies_alpha_eq_term_rename r) in aeq'.
+    repeat (rewrite @rename_term_lsubst in * ); autorewrite with slow in *; auto.
+Qed.
+Hint Resolve implies_alpha_eq_bterm_rename : slow.
+
+Lemma rename_bterm_idem {o} :
+  forall r (b : @BTerm o),
+    rename_bterm r (rename_bterm r b) = b.
+Proof.
+  introv; destruct b as [l t]; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @rename_bterm_idem : slow.
+
+Lemma rename_sub_idem {o} :
+  forall r (s : @Sub o),
+    rename_sub r (rename_sub r s) = s.
+Proof.
+  induction s; introv; repnd; simpl; autorewrite with slow; allrw; auto.
+Qed.
+Hint Rewrite @rename_sub_idem : slow.
+
+Lemma implies_wf_sub_rename {o} :
+  forall r (sub : @Sub o),
+    wf_sub sub
+    -> wf_sub (rename_sub r sub).
+Proof.
+  induction sub; introv wf; simpl in *; auto; repnd.
+  allrw @wf_sub_cons_iff; repnd; dands; auto; eauto 2 with slow.
+Qed.
+Hint Resolve implies_wf_sub_rename : slow.
+
+Lemma computes_to_exception_rename {o} :
+  forall r lib (a b c : @NTerm o),
+    computes_to_exception lib a b c
+    -> computes_to_exception (rename_lib r lib) (rename_term r a) (rename_term r b) (rename_term r c).
+Proof.
+  introv comp.
+  unfold computes_to_exception in *.
+  apply (reduces_to_rename r) in comp; simpl in *; auto.
+Qed.
+Hint Resolve computes_to_exception_rename : slow.
+
+Definition rename_seq {o} r (f : @ntseq o) : ntseq :=
+  fun n => rename_term r (f n).
+
+Lemma computes_to_seq_rename {o} :
+  forall r lib (a : @NTerm o) f,
+    computes_to_seq lib a f
+    -> computes_to_seq (rename_lib r lib) (rename_term r a) (rename_seq r f).
+Proof.
+  introv comp.
+  unfold computes_to_exception in *.
+  apply (reduces_to_rename r) in comp; simpl in *; auto.
+Qed.
+Hint Resolve computes_to_seq_rename : slow.
+
+Lemma implies_approx_rename {o} :
+  forall r lib (a b : @NTerm o),
+    approx lib a b
+    -> approx (rename_lib r lib) (rename_term r a) (rename_term r b).
+Proof.
+  cofix IND; introv apr.
+  inversion apr as [cl]; clear apr.
+  constructor.
+  unfold close_comput in *.
+  repnd; dands; eauto 2 with slow.
+
+  - clear cl3 cl4 cl.
+    unfold close_compute_val in *.
+    introv comp.
+    apply (computes_to_value_rename r) in comp; simpl in *.
+    autorewrite with slow in *.
+
+    apply cl2 in comp; clear cl2.
+    exrepnd.
+    apply (computes_to_value_rename r) in comp1; simpl in *.
+    eexists; dands; eauto.
+
+    unfold lblift in *.
+    rewrite map_length in *.
+    repnd; dands; auto.
+    introv h.
+    applydup comp0 in h; clear comp0.
+
+    rewrite selectbt_map; try omega.
+    rewrite selectbt_map in h0; auto.
+
+    remember (tl_subterms {[n]}) as u.
+    remember (tr_subterms {[n]}) as v.
+    clear Hequ Heqv.
+
+    unfold blift in *; exrepnd.
+    exists lv (rename_term r nt1) (rename_term r nt2).
+
+    dands;
+      try (complete (apply (implies_alpha_eq_bterm_rename r) in h2; simpl in *; autorewrite with slow in *; auto));
+      try (complete (apply (implies_alpha_eq_bterm_rename r) in h1; simpl in *; autorewrite with slow in *; auto));[].
+
+    unfold olift in *; repnd; dands; eauto 2 with slow;[].
+
+    introv wf isp1 isp2.
+    pose proof (h0 (rename_sub r sub)) as q.
+    repeat (autodimp q hyp); eauto 2 with slow;
+      try (complete (apply (isprogram_rename_term r) in isp1;rewrite rename_term_lsubst in isp1;autorewrite with slow in isp1;auto));
+      try (complete (apply (isprogram_rename_term r) in isp2;rewrite rename_term_lsubst in isp2;autorewrite with slow in isp2;auto));[].
+
+    repndors; tcsp;[].
+    left.
+    apply (IND r) in q.
+    repeat (rewrite @rename_term_lsubst in * ).
+    autorewrite with slow in *; auto.
+
+  - clear cl2 cl4 cl.
+    unfold close_compute_exc in *.
+    introv comp.
+    apply (computes_to_exception_rename r) in comp; simpl in *.
+    autorewrite with slow in *.
+
+    apply cl3 in comp; clear cl3.
+    exrepnd.
+    apply (computes_to_exception_rename r) in comp0; simpl in *.
+    eexists; eexists; dands; eauto.
+
+    + clear comp1.
+      repndors; tcsp; left.
+      apply (IND r) in comp2.
+      repeat (rewrite @rename_term_lsubst in * ).
+      autorewrite with slow in *; auto.
+
+    + clear comp2.
+      repndors; tcsp; left.
+      apply (IND r) in comp1.
+      repeat (rewrite @rename_term_lsubst in * ).
+      autorewrite with slow in *; auto.
+
+  - clear cl2 cl3 cl.
+    unfold close_compute_exc in *.
+    introv comp.
+    apply (computes_to_seq_rename r) in comp; simpl in *.
+    autorewrite with slow in *.
+
+    apply cl4 in comp; clear cl4.
+    exrepnd.
+    apply (computes_to_seq_rename r) in comp1; simpl in *.
+    eexists; dands; eauto.
+
+    introv.
+    pose proof (comp0 n) as q; clear comp0; repndors; tcsp.
+    left.
+    apply (IND r) in q.
+    unfold rename_seq in *.
+    autorewrite with slow in *.
+    auto.
+Qed.
+Hint Resolve implies_approx_rename : slow.
+
+Lemma implies_cequivc_rename {o} :
+  forall r lib (a b : @CTerm o),
+    cequivc lib a b
+    -> cequivc (rename_lib r lib) (rename_cterm r a) (rename_cterm r b).
+Proof.
+  introv ceq; destruct_cterms; unfold cequivc in *; simpl in *.
+  destruct ceq as [ap1 ap2].
+  split; eauto 2 with slow.
+Qed.
+Hint Resolve implies_cequivc_rename : slow.
+
+Definition rename_cvterm {o} {vs} r (t : @CVTerm o vs) : CVTerm vs :=
+  let (u,isp) := t in
+  mk_cvterm vs (rename_term r u) (implies_isprog_vars_rename_term vs r u isp).
+
+Lemma rename_cterm_isect {o} :
+  forall r (A : @CTerm o) v B,
+    rename_cterm r (mkc_isect A v B)
+    = mkc_isect (rename_cterm r A) v (rename_cvterm r B).
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_isect : rename.
+
+Lemma rename_cterm_substc {o} :
+  forall r (a : @CTerm o) v b,
+    rename_cterm r (substc a v b)
+    = substc (rename_cterm r a) v (rename_cvterm r b).
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl.
+  rewrite rename_term_subst; auto.
+Qed.
+Hint Rewrite @rename_cterm_substc : rename.
+
+Definition rename_per1 {o} (r : renaming) (e : per(o)) : per :=
+  fun a b =>
+    exists a' b',
+      a = rename_cterm r a'
+      /\ b = rename_cterm r b'
+      /\ e a' b'.
+
+Definition rename_per {o} (r : renaming) (e : per(o)) : per :=
+  fun a b => e (rename_cterm r a) (rename_cterm r b).
+
+Lemma rename_per_iff {o} :
+  forall r (e : per(o)), (rename_per r e) <=2=> (rename_per1 r e).
+Proof.
+  repeat introv; unfold rename_per, rename_per1; simpl; split; intro h.
+
+  - exists (rename_cterm r t1) (rename_cterm r t2); autorewrite with slow; auto.
+
+  - exrepnd; subst; autorewrite with slow; auto.
+Qed.
+
+Definition rename_cts {o} (r : renaming) (ts : cts(o)) : cts :=
+  fun t1 t2 e => ts (rename_cterm r t1) (rename_cterm r t2) (rename_per r e).
 
 Lemma implies_univi_rename {o} :
   forall i lib r (t1 t2 : @CTerm o) eq,
     univi lib i t1 t2 eq
     -> univi (rename_lib r lib) i (rename_cterm r t1) (rename_cterm r t2) (rename_per r eq).
 Proof.
-  induction i using comp_ind_type; introv u; simpl in *.
+  induction i as [? ind] using comp_ind_type.
+  introv u; simpl in *.
   allrw @univi_exists_iff.
   exrepnd; spcast.
+
   exists j.
   dands; auto; spcast.
 
-  -
-Qed.
+  - apply (computes_to_valc_rename r) in u2; autorewrite with slow in *; auto.
+
+  - apply (computes_to_valc_rename r) in u3; autorewrite with slow in *; auto.
+
+  - introv; simpl.
+    clear u2 u3.
+    unfold rename_per.
+    rw u0; clear u0.
+    split; introv h; exrepnd.
+Abort.
 
 Lemma implies_univ_rename {o} :
   forall lib r (t1 t2 : @CTerm o) eq,
@@ -1454,27 +2145,158 @@ Lemma implies_univ_rename {o} :
 Proof.
   introv u; unfold univ in *; exrepnd.
   exists i.
-Qed.
+Abort.
+
+Definition rename_per_fam {o} {ea : per(o)} r (eb : forall (a b : @CTerm o) (e : ea a b), per(o)) : per-fam(rename_per r ea) :=
+  fun (a b : @CTerm o) (e : rename_per r ea a b) =>
+    rename_per r (eb (rename_cterm r a) (rename_cterm r b) e).
 
 Lemma implies_close_rename {o} :
-  forall r lib (t1 t2 : @CTerm o) e,
-    close lib (univ lib) t1 t2 e
+  forall r (u : library -> cts(o)) lib (t1 t2 : @CTerm o) e,
+    (forall lib t1 t2 e,
+        u lib t1 t2 e
+        -> u (rename_lib r lib) (rename_cterm r t1) (rename_cterm r t2) (rename_per r e))
+    -> close lib (u lib) t1 t2 e
     -> close
          (rename_lib r lib)
-         (univ (rename_lib r lib))
+         (u (rename_lib r lib))
          (rename_cterm r t1)
          (rename_cterm r t2)
          (rename_per r e).
 Proof.
-  introv cl.
-  remember (univ lib) as ts.
+  introv imp cl.
+  remember (u lib) as ts.
   revert Heqts.
   close_cases (induction cl using @close_ind') Case; introv eqts; subst.
 
   - Case "CL_init".
     apply CL_init.
+    apply imp; auto.
 
-Abort.
+  - Case "CL_int".
+    apply CL_int.
+    unfold per_int in *; repnd; spcast.
+    apply (computes_to_valc_rename r) in per0.
+    apply (computes_to_valc_rename r) in per1.
+    autorewrite with slow in *.
+    dands; spcast; auto.
+    unfold rename_per; introv; rw per.
+    unfold equality_of_int; split; introv h; exrepnd; spcast.
+
+    + apply (computes_to_valc_rename r) in h1.
+      apply (computes_to_valc_rename r) in h0.
+      autorewrite with slow in *.
+      exists k; dands; spcast; auto.
+
+    + apply (computes_to_valc_rename r) in h1.
+      apply (computes_to_valc_rename r) in h0.
+      autorewrite with slow in *.
+      exists k; dands; spcast; auto.
+
+  - Case "CL_atom".
+    apply CL_atom.
+    unfold per_atom in *; repnd; spcast.
+    apply (computes_to_valc_rename r) in per0.
+    apply (computes_to_valc_rename r) in per1.
+    autorewrite with slow in *.
+    dands; spcast; auto.
+    unfold rename_per; introv; rw per.
+    unfold equality_of_atom; split; introv h; exrepnd; spcast.
+
+    + apply (computes_to_valc_rename r) in h1.
+      apply (computes_to_valc_rename r) in h0.
+      autorewrite with slow in *.
+      exists s; dands; spcast; auto.
+
+    + apply (computes_to_valc_rename r) in h1.
+      apply (computes_to_valc_rename r) in h0.
+      autorewrite with slow in *.
+      exists s; dands; spcast; auto.
+
+  - Case "CL_uatom".
+    admit.
+
+  - Case "CL_base".
+    admit.
+
+  - Case "CL_approx".
+    admit.
+
+  - Case "CL_cequiv".
+    admit.
+
+  - Case "CL_eq".
+    repeat (autodimp IHcl hyp).
+    apply CL_eq.
+    spcast.
+    unfold per_eq.
+    apply (computes_to_valc_rename r) in c1.
+    apply (computes_to_valc_rename r) in c2.
+    autorewrite with slow in *.
+    eexists; eexists; eexists; eexists; eexists; eexists.
+    exists (rename_per r eqa).
+    dands; spcast; eauto;[| |].
+
+    + destruct eos1 as [eos1|eos1];[left|right]; spcast; eauto 3 with slow.
+      unfold rename_per; autorewrite with slow; auto.
+
+    + destruct eos2 as [eos2|eos2];[left|right]; spcast; eauto 3 with slow.
+      unfold rename_per; autorewrite with slow; auto.
+
+    + introv; unfold rename_per.
+      rw eqiff; autorewrite with slow; tcsp.
+      split; introv h; repnd; dands; tcsp; spcast;
+        try (complete (apply (computes_to_valc_rename r) in h0; autorewrite with slow in *; auto));
+        try (complete (apply (computes_to_valc_rename r) in h1; autorewrite with slow in *; auto)).
+
+  - Case "CL_req".
+    admit.
+
+  - Case "CL_teq".
+    admit.
+
+  - Case "CL_isect".
+    apply CL_isect.
+    spcast.
+    apply (computes_to_valc_rename r) in c1.
+    apply (computes_to_valc_rename r) in c2.
+    autorewrite with slow rename in *.
+    repeat (autodimp IHcl hyp).
+
+    exists (rename_per r eqa) (rename_per_fam r eqb).
+    dands.
+
+    + unfold type_family.
+      eexists; eexists; eexists; eexists; eexists; eexists; dands; spcast; eauto.
+      introv.
+
+      dup e as q.
+      apply rename_per_iff in q.
+      unfold rename_per1 in q; exrepnd; subst.
+      revert e; unfold rename_per_fam, rename_per; autorewrite with slow; introv.
+      pose proof (recb a'0 b' e) as q; repeat (autodimp q hyp).
+      unfold rename_per in q; auto.
+      autorewrite with rename in *; auto.
+
+    + introv.
+      split; introv h.
+
+      * introv.
+        dup e as q.
+        apply rename_per_iff in q.
+        unfold rename_per1 in q; exrepnd; subst.
+        revert e; unfold rename_per_fam, rename_per in *; autorewrite with slow; introv.
+        rw eqiff in h; apply h.
+
+      * unfold rename_per.
+        apply eqiff.
+        introv.
+        pose proof (h (rename_cterm r a) (rename_cterm r a')) as q.
+        revert q; unfold rename_per_fam, rename_per; autorewrite with slow.
+        introv; tcsp.
+
+
+Qed.
 
 Lemma implies_equality_rename {o} :
   forall lib r (t1 t2 T : @CTerm o),
