@@ -2366,39 +2366,6 @@ Qed.
 Definition rename_cts {o} (r : renaming) (ts : cts(o)) : cts :=
   fun t1 t2 e => ts (rename_cterm r t1) (rename_cterm r t2) (rename_per r e).
 
-Lemma implies_univi_rename {o} :
-  forall i lib r (t1 t2 : @CTerm o) eq,
-    univi lib i t1 t2 eq
-    -> univi (rename_lib r lib) i (rename_cterm r t1) (rename_cterm r t2) (rename_per r eq).
-Proof.
-  induction i as [? ind] using comp_ind_type.
-  introv u; simpl in *.
-  allrw @univi_exists_iff.
-  exrepnd; spcast.
-
-  exists j.
-  dands; auto; spcast.
-
-  - apply (computes_to_valc_rename r) in u2; autorewrite with slow in *; auto.
-
-  - apply (computes_to_valc_rename r) in u3; autorewrite with slow in *; auto.
-
-  - introv; simpl.
-    clear u2 u3.
-    unfold rename_per.
-    rw u0; clear u0.
-    split; introv h; exrepnd.
-Abort.
-
-Lemma implies_univ_rename {o} :
-  forall lib r (t1 t2 : @CTerm o) eq,
-    univ lib t1 t2 eq
-    -> univ (rename_lib r lib) (rename_cterm r t1) (rename_cterm r t2) (rename_per r eq).
-Proof.
-  introv u; unfold univ in *; exrepnd.
-  exists i.
-Abort.
-
 Lemma rename_cterm_approx {o} :
   forall r (a b : @CTerm o),
     rename_cterm r (mkc_approx a b)
@@ -3232,10 +3199,69 @@ Hint Resolve implies_weq_rename : slow.*)
 
   - Case "CL_product".
     admit.
+Admitted.
+
+Lemma implies_univi_rename {o} :
+  forall i lib r (t1 t2 : @CTerm o) eq,
+    univi lib i t1 t2 eq
+    -> univi (rename_lib r lib) i (rename_cterm r t1) (rename_cterm r t2) (rename_per r eq).
+Proof.
+  induction i as [? ind] using comp_ind_type.
+  introv u; simpl in *.
+  allrw @univi_exists_iff.
+  exrepnd; spcast.
+
+  exists j.
+  dands; auto; spcast.
+
+  - apply (computes_to_valc_rename r) in u2; autorewrite with slow in *; auto.
+
+  - apply (computes_to_valc_rename r) in u3; autorewrite with slow in *; auto.
+
+  - introv; simpl.
+    clear u2 u3.
+    unfold rename_per.
+    rw u0; clear u0.
+    split; introv h; exrepnd.
+
+    + pose proof (implies_close_rename r (fun lib => univi lib j) lib (rename_cterm r A) (rename_cterm r A') eqa) as q.
+      simpl in q; autorewrite with slow in q.
+      repeat (autodimp q hyp).
+      eexists; eauto.
+
+    + pose proof (implies_close_rename r (fun lib => univi lib j) (rename_lib r lib) A A' eqa) as q.
+      simpl in q; autorewrite with slow in q.
+      repeat (autodimp q hyp).
+      eexists; eauto.
+Qed.
+
+Lemma implies_univ_rename {o} :
+  forall lib r (t1 t2 : @CTerm o) eq,
+    univ lib t1 t2 eq
+    -> univ (rename_lib r lib) (rename_cterm r t1) (rename_cterm r t2) (rename_per r eq).
+Proof.
+  introv u; unfold univ in *; exrepnd.
+  exists i.
+  apply implies_univi_rename; auto.
+Qed.
+
+Lemma implies_close_univ_rename {o} :
+  forall r lib (t1 t2 : @CTerm o) e,
+    close lib (univ lib) t1 t2 e
+    -> close
+         (rename_lib r lib)
+         (univ (rename_lib r lib))
+         (rename_cterm r t1)
+         (rename_cterm r t2)
+         (rename_per r e).
+Proof.
+  introv cl.
+  apply implies_close_rename; auto.
+  introv u; apply implies_univ_rename; auto.
 Qed.
 
 Lemma implies_equality_rename {o} :
-  forall lib r (t1 t2 T : @CTerm o),
+  forall r lib (t1 t2 T : @CTerm o),
     equality lib t1 t2 T
     -> equality
          (rename_lib r lib)
@@ -3249,7 +3275,36 @@ Proof.
   unfold rename_per; autorewrite with slow in *.
   dands; auto;[].
   fold (rename_per r eq).
+  apply implies_close_univ_rename; auto.
+Qed.
 
+Lemma rename_sub_csub2sub {o} :
+  forall r (s : @CSub o),
+    rename_sub r (csub2sub s) = csub2sub (rename_csub r s).
+Proof.
+  introv; unfold rename_sub, rename_csub, csub2sub.
+  allrw map_map; unfold compose; auto.
+  apply eq_maps; introv i; repnd; simpl; auto.
+  destruct_cterms; simpl; auto.
+Qed.
+
+Lemma rename_csubst {o} :
+  forall r (t : @NTerm o) s,
+    rename_term r (csubst t s) = csubst (rename_term r t) (rename_csub r s).
+Proof.
+  introv.
+  unfold csubst.
+  rewrite rename_term_lsubst.
+  rewrite rename_sub_csub2sub; auto.
+Qed.
+
+Lemma rename_cterm_lsubstc {o} :
+  forall r (t : @NTerm o) w s c w' c',
+    rename_cterm r (lsubstc t w s c)
+    = lsubstc (rename_term r t) w' (rename_csub r s) c'.
+Proof.
+  introv; apply cterm_eq; simpl.
+  apply rename_csubst.
 Qed.
 
 Lemma implies_similarity_rename {o} :
@@ -3257,8 +3312,8 @@ Lemma implies_similarity_rename {o} :
     similarity lib s1 s2 H
     -> similarity
          (rename_lib r lib)
-         (rename_sub r s1)
-         (rename_sub r s2)
+         (rename_csub r s1)
+         (rename_csub r s2)
          (rename_barehypotheses r H).
 Proof.
   induction H using rev_list_indT; simpl; introv sim; auto.
@@ -3267,12 +3322,125 @@ Proof.
       try constructor; try (complete (destruct hs; ginv)).
 
   - apply similarity_snoc in sim; exrepnd; subst; simpl in *.
-    repeat (rewrite rename_sub_snoc in * ).
+    repeat (rewrite rename_csub_snoc in * ).
     rewrite rename_barehypotheses_snoc in *.
 
     sim_snoc3; dands; autorewrite with slow in *; auto; eauto 3 with slow.
     destruct a; simpl in *.
+    apply (implies_equality_rename r) in sim1.
+    erewrite rename_cterm_lsubstc in sim1; eauto.
+Qed.
 
+Lemma rename_csub_idem {o} :
+  forall r (s : @CSub o),
+    rename_csub r (rename_csub r s) = s.
+Proof.
+  introv; unfold rename_csub; allrw map_map; unfold compose.
+  apply eq_map_l; introv i; repnd; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @rename_csub_idem : slow.
+
+Lemma rename_hypothesis_idem {o} :
+  forall r (h : @hypothesis o),
+    rename_hypothesis r (rename_hypothesis r h) = h.
+Proof.
+  introv; destruct h; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @rename_hypothesis_idem : slow.
+
+Lemma rename_barehypotheses_idem {o} :
+  forall r (H : @bhyps o),
+    rename_barehypotheses r (rename_barehypotheses r H) = H.
+Proof.
+  introv; unfold rename_barehypotheses; allrw map_map; unfold compose.
+  apply eq_map_l; introv i; repnd; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @rename_barehypotheses_idem : slow.
+
+Ltac eqh_snoc3 :=
+  match goal with
+  | [ |- eq_hyps _ (snoc ?s1 (?x,?t1)) (snoc ?s2 (?x,?t2)) (snoc _ ?h) ] =>
+    let w  := fresh "w" in
+    let c1 := fresh "c1" in
+    let c2 := fresh "c2" in
+    assert (wf_term (htyp h)) as w;
+    [ auto
+    | assert (cover_vars (htyp h) s1) as c1;
+      [ auto
+      | assert (cover_vars (htyp h) s2) as c2;
+        [ auto
+        | apply eq_hyps_snoc; simpl;
+          exists s1 s2 t1 t2 w c1 c2
+        ]
+      ]
+    ]
+  end.
+
+Lemma implies_tequality_rename {o} :
+  forall r lib (t1 t2 : @CTerm o),
+    tequality lib t1 t2
+    -> tequality
+         (rename_lib r lib)
+         (rename_cterm r t1)
+         (rename_cterm r t2).
+Proof.
+  introv equ.
+  unfold tequality, nuprl in *; exrepnd.
+  exists (rename_per r eq).
+  apply implies_close_univ_rename; auto.
+Qed.
+
+Lemma implies_tequalityi_rename {o} :
+  forall r lib i (t1 t2 : @CTerm o),
+    tequalityi lib i t1 t2
+    -> tequalityi
+         (rename_lib r lib)
+         i
+         (rename_cterm r t1)
+         (rename_cterm r t2).
+Proof.
+  introv equ.
+  unfold tequalityi, nuprl in *; exrepnd.
+  apply (implies_equality_rename r) in equ; autorewrite with slow in *; auto.
+Qed.
+
+Lemma implies_eqtypes_rename {o} :
+  forall r lib lvl (t1 t2 : @CTerm o),
+    eqtypes lib lvl t1 t2
+    -> eqtypes
+         (rename_lib r lib)
+         lvl
+         (rename_cterm r t1)
+         (rename_cterm r t2).
+Proof.
+  introv equ.
+  destruct lvl; simpl in *.
+  - apply implies_tequality_rename; auto.
+  - apply implies_tequalityi_rename; auto.
+Qed.
+
+Lemma implies_eq_hyps_rename {o} :
+  forall r lib (H : @bhyps o) s1 s2,
+    eq_hyps lib s1 s2 H
+    -> eq_hyps
+         (rename_lib r lib)
+         (rename_csub r s1)
+         (rename_csub r s2)
+         (rename_barehypotheses r H).
+Proof.
+  induction H using rev_list_indT; simpl; introv eqh; auto.
+
+  - inversion eqh; subst; simpl in *; ginv;
+      try constructor; try (complete (destruct hs; ginv)).
+
+  - apply eq_hyps_snoc in eqh; exrepnd; subst; simpl in *.
+    repeat (rewrite rename_csub_snoc in * ).
+    rewrite rename_barehypotheses_snoc in *.
+    eqh_snoc3; dands; autorewrite with slow in *; auto; eauto 3 with slow.
+
+    destruct a; simpl in *.
+    apply (implies_eqtypes_rename r) in eqh0.
+    repeat (erewrite rename_cterm_lsubstc in eqh0); eauto.
 Qed.
 
 Lemma implies_hyps_functionality_rename {o} :
@@ -3280,10 +3448,13 @@ Lemma implies_hyps_functionality_rename {o} :
     hyps_functionality lib s H
     -> hyps_functionality
          (rename_lib r lib)
-         (rename_sub r s)
+         (rename_csub r s)
          (rename_barehypotheses r H).
 Proof.
   introv hf sim.
+  apply (implies_similarity_rename r) in sim; autorewrite with slow in *.
+  apply hf in sim.
+  apply (implies_eq_hyps_rename r) in sim; autorewrite with slow in *; auto.
 Qed.
 
 Lemma renaming_preserves_sequent_true_ext_lib {o} :
@@ -3306,5 +3477,11 @@ Proof.
   destruct x; simpl in *.
   destruct x; simpl in *.
   autorewrite with slow in *.
+
+  apply (implies_similarity_rename r) in sim; autorewrite with slow in *.
+  apply (implies_hyps_functionality_rename r) in hf; autorewrite with slow in *.
+  apply (q _ (rename_csub r s2)) in hf; auto;[]; clear q.
+  exrepnd.
+
 
 Qed.
