@@ -1985,6 +1985,15 @@ Proof.
 Qed.
 Hint Rewrite @rename_cterm_mkc_tequality : slow.
 
+Lemma rename_cterm_mkc_pair {o} :
+  forall r (a b : @CTerm o),
+    rename_cterm r (mkc_pair a b)
+    = mkc_pair (rename_cterm r a) (rename_cterm r b).
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_mkc_pair : slow.
+
 Lemma rename_cterm_mkc_int {o} :
   forall r, @rename_cterm o r mkc_int = mkc_int.
 Proof.
@@ -2557,6 +2566,179 @@ Proof.
   - apply (implies_rename_hasvaluec r) in h; autorewrite with slow in *; auto.
 Qed.
 
+Lemma implies_inhabited_rename_per_fam {o} :
+  forall r (ea : per(o)) (eb : per-fam(ea)) a b (e : ea (rename_cterm r a) (rename_cterm r b)),
+    inhabited (eb (rename_cterm r a) (rename_cterm r b) e)
+    -> inhabited (rename_per_fam r eb a b e).
+Proof.
+  introv; unfold inhabited, rename_per_fam, rename_per.
+  introv h; exrepnd.
+  exists (rename_cterm r t); autorewrite with slow; auto.
+Qed.
+
+Lemma inhabited_rename_per_fam_implies {o} :
+  forall r (ea : per(o)) (eb : per-fam(ea)) a b (e : ea (rename_cterm r a) (rename_cterm r b)),
+    inhabited (rename_per_fam r eb a b e)
+    -> inhabited (eb (rename_cterm r a) (rename_cterm r b) e).
+Proof.
+  introv; unfold inhabited, rename_per_fam, rename_per.
+  introv h; exrepnd.
+  exists (rename_cterm r t); autorewrite with slow; auto.
+Qed.
+
+Lemma rename_per_eq {o} :
+  forall r (e : per(o)) a b,
+    e a b = rename_per r e (rename_cterm r a) (rename_cterm r b).
+Proof.
+  introv; unfold rename_per.
+  f_equal; rewrite @rename_cterm_idem; auto.
+Defined.
+
+Lemma implies_rename_per_fam {o} :
+  forall r (eqa : per(o)) (eqb : per-fam(eqa)) a a' b b' (e : eqa a a'),
+    eqb a a' e b b'
+    -> rename_per_fam
+         r
+         eqb
+         (rename_cterm r a) (rename_cterm r a')
+         (implies_rename_per r eqa a a' e)
+         (rename_cterm r b) (rename_cterm r b').
+Proof.
+  introv h.
+  unfold rename_per_fam, rename_per.
+  unfold implies_rename_per, eq_ind_r, eq_ind, eq_rect, eq_sym; simpl.
+  autorewrite with slow.
+
+  remember (rename_cterm_idem r a) as w; clear Heqw.
+  revert w; autorewrite with slow; introv.
+  rewrite (UIP_refl _ _ w); auto; clear w.
+
+  remember (rename_cterm_idem r a') as w; clear Heqw.
+  revert w; autorewrite with slow; introv.
+  rewrite (UIP_refl _ _ w); auto; clear w.
+Qed.
+
+Lemma implies_rename_per_tunion_eq {o} :
+  forall r (ea : per(o)) (eb : per-fam(ea)) t1 t2,
+    per_tunion_eq ea eb t1 t2
+    -> per_tunion_eq (rename_per r ea) (rename_per_fam r eb) (rename_cterm r t1) (rename_cterm r t2).
+Proof.
+  introv h.
+  induction h as [|? ? ? ? h1 h2].
+
+  - econstructor; eauto.
+
+  - apply (tunion_eq_eq _ _ _ _ (rename_cterm r a1) (rename_cterm r a2) (implies_rename_per r ea a1 a2 h1)).
+    apply implies_rename_per_fam; auto.
+Qed.
+
+Lemma eq_rename_per_idem {o} :
+  forall r (e : per(o)),
+    (rename_per r (rename_per r e)) <=2=> e.
+Proof.
+  repeat introv; unfold rename_per; autorewrite with slow; auto.
+Qed.
+
+Lemma eq_rename_per_idem2 {o} :
+  forall r (e : per(o)) a b,
+    rename_per r (rename_per r e) a b = e a b.
+Proof.
+  repeat introv; unfold rename_per; autorewrite with slow; auto.
+Defined.
+
+Lemma eq_term_equals_per_tunion_eq_if2 {o} :
+  forall (eqa1 eqa2 : per(o)) (eqb1 : per-fam(eqa1)) (eqb2 : per-fam(eqa2))
+         (w : forall a b, eqa1 a b = eqa2 a b),
+    (forall (a1 a2 : CTerm) (e1 : eqa1 a1 a2),
+        (eqb1 a1 a2 e1) <=2=> (eqb2 a1 a2 (@eq_ind _ _ (fun x => x) e1 (eqa2 a1 a2) (w a1 a2))))
+    -> (forall (a1 a2 : CTerm) (e1 : eqa2 a1 a2),
+           (eqb2 a1 a2 e1) <=2=> (eqb1 a1 a2 (@eq_ind _ _ (fun x => x) e1 (eqa1 a1 a2) (eq_sym (w a1 a2)))))
+    -> (per_tunion_eq eqa1 eqb1) <=2=> (per_tunion_eq eqa2 eqb2).
+Proof.
+  introv imp1 imp2.
+  introv; split; intro k; induction k.
+
+  - apply @tunion_eq_cl with (t := t); sp.
+
+  - apply @tunion_eq_eq with (a1 := a1) (a2 := a2) (e := (eq_ind (eqa1 a1 a2) (fun x : [U] => x) e (eqa2 a1 a2) (w a1 a2))); sp; spcast.
+    apply (imp1 a1 a2 e); auto.
+
+  - apply @tunion_eq_cl with (t := t); sp.
+
+  - apply @tunion_eq_eq with (a1 := a1) (a2 := a2) (e := (eq_ind (eqa2 a1 a2) (fun x : [U] => x) e (eqa1 a1 a2) (eq_sym (w a1 a2)))); sp; spcast.
+    apply (imp2 a1 a2 e); auto.
+Qed.
+
+Lemma rename_per_tunion_eq_implies {o} :
+  forall r (ea : per(o)) (eb : per-fam(ea)) t1 t2,
+    per_tunion_eq (rename_per r ea) (rename_per_fam r eb) (rename_cterm r t1) (rename_cterm r t2)
+    -> per_tunion_eq ea eb t1 t2.
+Proof.
+  introv h.
+  apply (implies_rename_per_tunion_eq r) in h; autorewrite with slow in h.
+
+  eapply (eq_term_equals_per_tunion_eq_if2 _ _ _ _ (eq_rename_per_idem2 r ea));
+    [| |eauto]; repeat introv.
+
+  - unfold rename_per_fam, rename_per.
+    unfold eq_ind, eq_rect; simpl.
+    remember (eq_rename_per_idem2 r ea a1 a2) as w; clear Heqw.
+    revert e1 w.
+    unfold rename_per.
+    autorewrite with slow; introv.
+    rewrite (UIP_refl _ _ w); auto.
+
+  - unfold rename_per_fam, rename_per.
+    unfold eq_ind, eq_rect; simpl.
+    remember (eq_rename_per_idem2 r ea a1 a2) as w; clear Heqw.
+    revert e1 w.
+    unfold rename_per.
+    autorewrite with slow; introv.
+    rewrite (UIP_refl _ _ w); auto.
+Qed.
+
+Lemma implies_rename_per2 {o} :
+  forall r (e : per(o)) a b,
+    e (rename_cterm r a) (rename_cterm r b) -> rename_per r e a b.
+Proof.
+  introv h; unfold rename_per; autorewrite with slow; auto.
+Defined.
+
+Lemma weq_eq_term_equals2 {p} :
+  forall lib (eqa1 eqa2 : per(p)) eqb1 eqb2 t1 t2
+         (w : forall a b, eqa1 a b = eqa2 a b),
+    (forall (a1 a2 : CTerm) (e1 : eqa1 a1 a2),
+        (eqb1 a1 a2 e1) <=2=> (eqb2 a1 a2 (@eq_ind _ _ (fun x => x) e1 (eqa2 a1 a2) (w a1 a2))))
+    -> weq lib eqa1 eqb1 t1 t2
+    -> weq lib eqa2 eqb2 t1 t2.
+Proof.
+  introv imp1 weqt.
+  induction weqt as [t t' a f a' f' e c c' h h'].
+  apply @weq_cons with (a := a) (a' := a') (f := f) (f' := f') (e := (eq_ind (eqa1 a a') (fun x => x) e (eqa2 a a') (w a a'))); sp.
+  apply h'.
+  apply imp1; auto.
+Qed.
+
+Lemma weq_rename_implies {o} :
+  forall r lib eqa eqb (t1 t2 : @CTerm o),
+    weq (rename_lib r lib) (rename_per r eqa) (rename_per_fam r eqb) (rename_cterm r t1) (rename_cterm r t2)
+    -> weq lib eqa eqb t1 t2.
+Proof.
+  introv w.
+  apply (implies_weq_rename r) in w; autorewrite with slow in *.
+  eapply (weq_eq_term_equals2 _ _ _ _ _ _ _ (eq_rename_per_idem2 r eqa));[|eauto]; clear w.
+
+  repeat introv.
+  unfold rename_per_fam, rename_per.
+  unfold eq_ind, eq_rect; simpl.
+  remember (eq_rename_per_idem2 r eqa a1 a2) as w; clear Heqw.
+  revert e1 w.
+  unfold rename_per.
+  autorewrite with slow; introv.
+  rewrite (UIP_refl _ _ w); auto.
+Qed.
+Hint Resolve weq_rename_implies : slow.
+
 Lemma implies_close_rename {o} :
   forall r (u : library -> cts(o)) lib (t1 t2 : @CTerm o) e,
     (forall lib t1 t2 e,
@@ -2998,27 +3180,7 @@ Proof.
 
       * unfold rename_per.
         apply eqiff.
-        apply (implies_weq_rename r) in h; autorewrite with slow in *; auto.
-
-(*Lemma weq_rename_implies {o} :
-  forall r lib eqa eqb (t1 t2 : @CTerm o),
-    weq (rename_lib r lib) (rename_per r eqa) (rename_per_fam r eqb) (rename_cterm r t1) (rename_cterm r t2)
-    -> weq lib eqa eqb t1 t2.
-Proof.
-  introv w.
-  apply (implies_weq_rename r) in w; autorewrite with slow in *.
-  eapply weq_eq_term_equals;[| |eauto]; clear w;
-    [|repeat introv; unfold rename_per; autorewrite with slow; tcsp];[].
-
-  SearchAbout weq.
-  introv.
-  revert e1.
-  unfold rename_per_fam, rename_per; autorewrite with slow.
-  repeat introv; autorewrite with slow; tcsp.
-Qed.
-Hint Resolve implies_weq_rename : slow.*)
-
-        admit.
+        apply (weq_rename_implies r); autorewrite with slow; auto.
 
   - Case "CL_m".
     apply CL_m.
@@ -3183,6 +3345,7 @@ Hint Resolve implies_weq_rename : slow.*)
     admit.
 
   - Case "CL_ffatom".
+
     admit.
 
   - Case "CL_effatom".
@@ -3192,13 +3355,129 @@ Hint Resolve implies_weq_rename : slow.*)
     admit.
 
   - Case "CL_set".
-    admit.
+    apply CL_set.
+    spcast.
+    apply (computes_to_valc_rename r) in c1.
+    apply (computes_to_valc_rename r) in c2.
+    autorewrite with slow rename in *.
+    repeat (autodimp IHcl hyp).
+
+    exists (rename_per r eqa) (rename_per_fam r eqb).
+    dands.
+
+    + unfold type_family.
+      eexists; eexists; eexists; eexists; eexists; eexists; dands; spcast; eauto.
+      introv.
+
+      dup e as q.
+      apply rename_per_iff in q.
+      unfold rename_per1 in q; exrepnd; subst.
+      revert e; unfold rename_per_fam, rename_per; autorewrite with slow; introv.
+      pose proof (recb a'0 b' e) as q; repeat (autodimp q hyp).
+      unfold rename_per in q; auto.
+      autorewrite with rename in *; auto.
+
+    + introv.
+      split; introv h.
+
+      * dup h as q.
+        apply rename_per_iff in q.
+        unfold rename_per1 in q; exrepnd; subst.
+        apply eqiff in h; exrepnd.
+        apply implies_inhabited_rename_per_fam in h0.
+        eexists; eauto.
+
+      * exrepnd.
+        unfold rename_per.
+        apply eqiff.
+        apply inhabited_rename_per_fam_implies in h0.
+        eexists; eauto.
 
   - Case "CL_tunion".
-    admit.
+    apply CL_tunion.
+    spcast.
+    apply (computes_to_valc_rename r) in c1.
+    apply (computes_to_valc_rename r) in c2.
+    autorewrite with slow rename in *.
+    repeat (autodimp IHcl hyp).
+
+    exists (rename_per r eqa) (rename_per_fam r eqb).
+    dands.
+
+    + unfold type_family.
+      eexists; eexists; eexists; eexists; eexists; eexists; dands; spcast; eauto.
+      introv.
+
+      dup e as q.
+      apply rename_per_iff in q.
+      unfold rename_per1 in q; exrepnd; subst.
+      revert e; unfold rename_per_fam, rename_per; autorewrite with slow; introv.
+      pose proof (recb a'0 b' e) as q; repeat (autodimp q hyp).
+      unfold rename_per in q; auto.
+      autorewrite with rename in *; auto.
+
+    + introv.
+      unfold rename_per at 1.
+      rw eqiff.
+
+      split; intro h.
+
+      * apply (implies_rename_per_tunion_eq r) in h.
+        autorewrite with slow in *; auto.
+
+      * apply (rename_per_tunion_eq_implies r).
+        autorewrite with slow in *; auto.
 
   - Case "CL_product".
-    admit.
+    apply CL_product.
+    spcast.
+    apply (computes_to_valc_rename r) in c1.
+    apply (computes_to_valc_rename r) in c2.
+    autorewrite with slow rename in *.
+    repeat (autodimp IHcl hyp).
+
+    exists (rename_per r eqa) (rename_per_fam r eqb).
+    dands.
+
+    + unfold type_family.
+      eexists; eexists; eexists; eexists; eexists; eexists; dands; spcast; eauto.
+      introv.
+
+      dup e as q.
+      apply rename_per_iff in q.
+      unfold rename_per1 in q; exrepnd; subst.
+      revert e; unfold rename_per_fam, rename_per; autorewrite with slow; introv.
+      pose proof (recb a'0 b' e) as q; repeat (autodimp q hyp).
+      unfold rename_per in q; auto.
+      autorewrite with rename in *; auto.
+
+    + introv.
+      unfold rename_per at 1.
+      rw eqiff.
+      split; intro h.
+
+      * unfold per_product_eq in *; exrepnd; spcast.
+        apply (computes_to_valc_rename r) in h1.
+        apply (computes_to_valc_rename r) in h2.
+        autorewrite with slow in *.
+        eexists; eexists; eexists; eexists.
+        exists (implies_rename_per r eqa a a' e).
+        dands; spcast; eauto.
+
+        { unfold rename_per; autorewrite with slow; auto. }
+
+        apply implies_rename_per_fam; auto.
+
+      * unfold per_product_eq in *; exrepnd; spcast.
+        apply (computes_to_valc_rename r) in h1.
+        apply (computes_to_valc_rename r) in h2.
+        autorewrite with slow in *.
+        clear h3.
+        unfold rename_per_fam, rename_per in *.
+
+        eexists; eexists; eexists; eexists.
+        exists (implies_rename_per2 r eqa a a' e).
+        dands; spcast; eauto.
 Admitted.
 
 Lemma implies_univi_rename {o} :
@@ -3457,6 +3736,11 @@ Proof.
   apply (implies_eq_hyps_rename r) in sim; autorewrite with slow in *; auto.
 Qed.
 
+Ltac clear_eq_left x :=
+  match goal with
+  | [ H : x = _ |- _ ] => clear H
+  end.
+
 Lemma renaming_preserves_sequent_true_ext_lib {o} :
   forall r lib (s : @csequent o),
     sequent_true_ext_lib lib s
@@ -3483,5 +3767,38 @@ Proof.
   apply (q _ (rename_csub r s2)) in hf; auto;[]; clear q.
   exrepnd.
 
+  destruct concl; simpl in *.
 
+  - exrepnd.
+    introv.
+
+    apply (implies_tequality_rename r) in hf0.
+    apply (implies_equality_rename r) in hf1.
+    autorewrite with slow in *.
+
+    dands.
+
+    + match goal with
+      | [ H : tequality ?a ?b ?c |- tequality ?d ?e ?f] =>
+        assert (tequality a b c = tequality d e f) as xx;[|rewrite <- xx; auto]
+      end.
+      f_equal; apply cterm_eq; simpl;
+        rewrite rename_csubst; autorewrite with slow; auto.
+
+    + match goal with
+      | [ H : equality ?a ?b ?c ?d |- equality ?e ?f ?g ?h] =>
+        assert (equality a b c d = equality e f g h) as xx;[|rewrite <- xx; auto]
+      end.
+      f_equal; apply cterm_eq; simpl;
+        rewrite rename_csubst; autorewrite with slow; auto.
+
+  - apply (implies_tequality_rename r) in hf0.
+    autorewrite with slow in *.
+
+    match goal with
+    | [ H : tequality ?a ?b ?c |- tequality ?d ?e ?f] =>
+      assert (tequality a b c = tequality d e f) as xx;[|rewrite <- xx; auto]
+    end.
+    f_equal; apply cterm_eq; simpl;
+      rewrite rename_csubst; autorewrite with slow; auto.
 Qed.
