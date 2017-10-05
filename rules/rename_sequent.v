@@ -2937,6 +2937,22 @@ Proof.
     repeat (rewrite rename_cterm_substc); autorewrite with slow; auto.
 Qed.
 
+Lemma mono_equality_rename {o} :
+  forall r lib (ea : per(o)),
+    mono_equality (rename_lib r lib) (rename_per r ea)
+    <=> mono_equality lib ea.
+Proof.
+  introv; split; introv mono e apr; unfold mono_equality in *.
+
+  - apply (implies_approxc_rename r) in apr.
+    apply mono in apr; auto; eauto 3 with slow.
+    unfold rename_per in *; autorewrite with slow in *; auto.
+
+  - apply (implies_approxc_rename r) in apr.
+    autorewrite with slow in *.
+    apply mono in apr; auto; eauto 3 with slow.
+Qed.
+
 Lemma implies_close_rename {o} :
   forall r (u : library -> cts(o)) lib (t1 t2 : @CTerm o) e,
     (forall lib t1 t2 e,
@@ -3561,7 +3577,33 @@ Proof.
       dands; spcast; auto.
 
   - Case "CL_mono".
-    admit.
+    repeat (autodimp IHcl hyp).
+    apply CL_mono.
+    spcast.
+    unfold per_mono.
+    apply (computes_to_valc_rename r) in c1.
+    apply (computes_to_valc_rename r) in c2.
+    autorewrite with slow in *.
+
+    eexists; eexists.
+    exists (rename_per r eqa).
+    dands; spcast; eauto; eauto 3 with slow.
+
+    introv; unfold rename_per at 1; simpl.
+    rw eqiff.
+    unfold per_mono_eq.
+    rw @mono_equality_rename.
+    split; introv h; repnd; spcast; auto.
+
+    + apply (computes_to_valc_rename r) in h0.
+      apply (computes_to_valc_rename r) in h1.
+      autorewrite with slow in *.
+      dands; spcast; auto.
+
+    + apply (computes_to_valc_rename r) in h0.
+      apply (computes_to_valc_rename r) in h1.
+      autorewrite with slow in *.
+      dands; spcast; auto.
 
   - Case "CL_ffatom".
     repeat (autodimp IHcl hyp).
