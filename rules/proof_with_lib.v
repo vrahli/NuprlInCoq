@@ -785,10 +785,10 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       -> pre_proof ctxt (pre_rule_isect_member_formation_hyp2 A i H)
       -> pre_proof ctxt (pre_rule_isect_member_formation_concl A x B H)
 | pre_proof_approx_refl :
-    forall a H,
+    forall a (H : bhyps),
       pre_proof ctxt (pre_rule_approx_refl_concl a H)
 | pre_proof_cequiv_refl :
-    forall a H,
+    forall a (H : bhyps),
       pre_proof ctxt (pre_rule_cequiv_refl_concl a H)
 | pre_proof_cequiv_alpha_eq :
     forall a b H,
@@ -1011,11 +1011,11 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
       -> proof ctxt (rule_isect_member_formation_hyp2 A e i H)
       -> proof ctxt (rule_isect_member_formation_concl A x B b H)
 | proof_approx_refl :
-    forall a H,
+    forall a (H : bhyps),
       proof ctxt (rule_approx_refl_concl a H)
 | proof_cequiv_refl :
-    forall a H,
-      proof ctxt (rule_cequiv_refl_concl a H)
+    forall a (H : bhyps),
+      proof ctxt (rule_cequiv_refl_concl H a)
 | proof_cequiv_alpha_eq :
     forall a b H,
       alpha_eq a b
@@ -1444,7 +1444,7 @@ Proof.
        | (* isect_eq                  *) a1 a2 b1 b2 e1 e2 x1 x2 y i hs niy p1 ih1 p2 ih2
        | (* isect_member_formation    *) A x B z i b e H nizH p1 ih1 p2 ih2
        | (* approx_refl               *) a hs
-       | (* cequiv_refl               *) H a
+       | (* cequiv_refl               *) a H
        | (* cequiv_alpha_eq           *) a b H aeq
        | (* cequiv_approx             *) a b e1 e2 hs p1 ih1 p2 ih2
        | (* approx_eq                 *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
@@ -2846,7 +2846,7 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_cequiv_refl _ H a).
+  exact (proof_cequiv_refl _ a H).
 Defined.
 
 Definition finish_proof_cequiv_alpha_eq {o}
@@ -6573,7 +6573,701 @@ Proof.
   - rw <- (@rename_unfoldable o r) in alla; simpl in *; tcsp.
 Qed.
 
-(* we need coercions *)
+Definition rename_pre_conclusion {o} r (c : @pre_conclusion o) : pre_conclusion :=
+  match c with
+  | pre_concl_ext t => pre_concl_ext (rename_term r t)
+  | pre_concl_typ t => pre_concl_typ (rename_term r t)
+  end.
+
+Definition rename_pre_baresequent {o} (r : renaming) (s : @pre_baresequent o) : pre_baresequent :=
+  match s with
+  | MkPreBaresequent hyps concl =>
+    MkPreBaresequent (rename_barehypotheses r hyps) (rename_pre_conclusion r concl)
+  end.
+
+Lemma named_concl2bseq_rename_eq {o} :
+  forall {r} {H : @bhyps o} {c},
+    named_concl2bseq (rename_barehypotheses r H) (rename_named_concl r c)
+    = rename_baresequent r (named_concl2bseq H c).
+Proof.
+  introv; simpl; auto.
+Defined.
+
+Lemma proof_named_concl2bseq_rename_implies {o} :
+  forall {r} {ctxt} {H : @bhyps o} {c},
+    proof (rename_ProofContext r ctxt) (named_concl2bseq (rename_barehypotheses r H) (rename_named_concl r c))
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (named_concl2bseq H c)).
+Proof.
+  introv prf; simpl in *; auto.
+Defined.
+
+Lemma pre_proof_named_concl2pre_bseq_rename_implies {o} :
+  forall {r} {ctxt} {H : @bhyps o} {c},
+    pre_proof (rename_ProofContext r ctxt) (named_concl2pre_bseq (rename_barehypotheses r H) (rename_named_concl r c))
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (named_concl2pre_bseq H c)).
+Proof.
+  introv prf; simpl in *; auto.
+Defined.
+
+Lemma proof_mk_bseq_rename_implies {o} :
+  forall {r} {ctxt} {H : @bhyps o} {c},
+    proof (rename_ProofContext r ctxt) (mk_bseq (rename_barehypotheses r H) (rename_conclusion r c))
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (mk_bseq H c)).
+Proof.
+  introv prf; simpl in *; auto.
+Defined.
+
+Lemma implies_proof_rename_named_concl2bseq {o} :
+  forall {r} {ctxt} {H : @bhyps o} {c},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (named_concl2bseq H c))
+    -> proof (rename_ProofContext r ctxt) (named_concl2bseq (rename_barehypotheses r H) (rename_named_concl r c)).
+Proof.
+  introv prf; simpl in *; auto.
+Defined.
+
+Lemma implies_proof_rename_mk_bseq {o} :
+  forall {r} {ctxt} {H : @bhyps o} {c},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (mk_bseq H c))
+    -> proof (rename_ProofContext r ctxt) (mk_bseq (rename_barehypotheses r H) (rename_conclusion r c)).
+Proof.
+  introv prf; simpl in *; auto.
+Defined.
+
+Lemma proof_rename_rule_isect_equality2_hyp2_implies {o} :
+  forall {r} {ctxt} {a1 b1 b2 e2 : @NTerm o} {x1} {x2} {y} {i} {H},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_equality2_hyp2 a1 b1 b2 e2 x1 x2 y i H))
+    -> proof (rename_ProofContext r ctxt) (rule_isect_equality2_hyp2 (rename_term r a1) (rename_term r b1) (rename_term r b2) (rename_term r e2) x1 x2 y i  (rename_barehypotheses r H)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_isect_equality_hyp2_implies {o} :
+  forall {r} {ctxt} {a1 b1 b2 : @NTerm o} {x1} {x2} {y} {i} {H},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_equality_hyp2 (rename_term r a1) (rename_term r b1) (rename_term r b2) x1 x2 y i (rename_barehypotheses r H)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma proof_rename_rule_isect_member_formation_hyp1 {o} :
+  forall {r} {ctxt} {z} {A : @NTerm o} {x} {B} {b} {H},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_member_formation_hyp1 z A x B b H))
+    -> proof (rename_ProofContext r ctxt) (rule_isect_member_formation_hyp1 z (rename_term r A) x (rename_term r B) (rename_term r b) (rename_barehypotheses r H)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_isect_member_formation_hyp1 {o} :
+  forall {r} {ctxt} {z} {A : @NTerm o} {x} {B} {H},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_member_formation_hyp1 z A x B H))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_member_formation_hyp1 z (rename_term r A) x (rename_term r B) (rename_barehypotheses r H)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma proof_rename_rule_cut_hyp2 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {x} {B} {C} {t},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cut_hyp2 H x B C t))
+    -> proof (rename_ProofContext r ctxt) (rule_cut_hyp2 (rename_barehypotheses r H) x (rename_term r B) (rename_term r C) (rename_term r t)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_cut_hyp2 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {x} {B} {C},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cut_hyp2 H x B C))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_cut_hyp2 (rename_barehypotheses r H) x (rename_term r B) (rename_term r C)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+Defined.
+
+Lemma proof_rename_rule_cut_concl {o} :
+  forall {r} {ctxt} {H : @bhyps o} {C} {t} {x} {u},
+    proof (rename_ProofContext r ctxt) (rule_cut_concl (rename_barehypotheses r H) (rename_term r C) (rename_term r t) x (rename_term r u))
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cut_concl H C t x u)).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_cut_concl {o} :
+  forall {r} {ctxt} {H : @bhyps o} {C},
+    pre_proof (rename_ProofContext r ctxt) (pre_rule_cut_concl (rename_barehypotheses r H) (rename_term r C))
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cut_concl H C)).
+Proof.
+  introv prf; simpl in *; auto.
+Defined.
+
+Lemma rename_barehypotheses_app {o} :
+  forall r (H G : @bhyps o),
+    rename_barehypotheses r (H ++ G)
+    = rename_barehypotheses r H ++ rename_barehypotheses r G.
+Proof.
+  induction H; introv; simpl; auto.
+  rewrite IHlist; auto.
+Defined.
+
+Lemma proof_rename_rule_hypothesis_concl {o} :
+  forall {r} {ctxt} {G : @bhyps o} {J} {A} {x},
+    proof (rename_ProofContext r ctxt) (rule_hypothesis_concl (rename_barehypotheses r G)  (rename_barehypotheses r J) (rename_term r A) x)
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_hypothesis_concl G J A x)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_hypothesis_concl {o} :
+  forall {r} {ctxt} {G : @bhyps o} {J} {A} {x},
+    pre_proof (rename_ProofContext r ctxt) (pre_rule_hypothesis_concl (rename_barehypotheses r G)  (rename_barehypotheses r J) (rename_term r A) x)
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_hypothesis_concl G J A x)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+Defined.
+
+Lemma proof_rename_rule_cequiv_subst_hyp1 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {x} {C} {b} {t},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cequiv_subst_hyp1 H x C b t))
+    -> proof (rename_ProofContext r ctxt) (rule_cequiv_subst_hyp1 (rename_barehypotheses r H) x (rename_term r C) (rename_term r b) (rename_term r t)).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_cequiv_subst_hyp1 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {x} {C} {b},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp1 H x C b))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_cequiv_subst_hyp1 (rename_barehypotheses r H) x (rename_term r C) (rename_term r b)).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma implies_proof_rename_rule_cequiv_subst_hyp1 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {x} {C} {a} {t},
+    proof (rename_ProofContext r ctxt) (rule_cequiv_subst_hyp1 (rename_barehypotheses r H) x (rename_term r C) (rename_term r a) (rename_term r t))
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cequiv_subst_hyp1 H x C a t)).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst); auto.
+Defined.
+
+Lemma implies_pre_proof_rename_pre_rule_cequiv_subst_hyp1 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {x} {C} {a},
+    pre_proof (rename_ProofContext r ctxt) (pre_rule_cequiv_subst_hyp1 (rename_barehypotheses r H) x (rename_term r C) (rename_term r a))
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp1 H x C a)).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst); auto.
+Defined.
+
+Lemma proof_rename_rule_cequiv_subst_hyp_hyp2 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {z} {T} {x} {a} {J} {b} {e},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cequiv_subst_hyp_hyp2 H z T x a J b e))
+    -> proof (rename_ProofContext r ctxt) (rule_cequiv_subst_hyp_hyp2 (rename_barehypotheses r H) z (rename_term r T) x (rename_term r a) (rename_barehypotheses r J) (rename_term r b) (rename_term r e)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_cequiv_subst_hyp_hyp2 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {z} {T} {x} {a} {J} {b},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp_hyp2 H z T x a J b))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_cequiv_subst_hyp_hyp2 (rename_barehypotheses r H) z (rename_term r T) x (rename_term r a) (rename_barehypotheses r J) (rename_term r b)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma proof_rename_rule_cequiv_subst_hyp_hyp1 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {z} {T} {x} {b} {J} {C} {t},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cequiv_subst_hyp_hyp1 H z T x b J C t))
+    -> proof (rename_ProofContext r ctxt) (rule_cequiv_subst_hyp_hyp1 (rename_barehypotheses r H) z (rename_term r T) x (rename_term r b) (rename_barehypotheses r J) (rename_term r C) (rename_term r t)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_cequiv_subst_hyp_hyp1 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {z} {T} {x} {b} {J} {C},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp_hyp1 H z T x b J C))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_cequiv_subst_hyp_hyp1 (rename_barehypotheses r H) z (rename_term r T) x (rename_term r b) (rename_barehypotheses r J) (rename_term r C)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma proof_rename_rule_cequiv_subst_hyp_concl {o} :
+  forall {r} {ctxt} {H : @bhyps o} {z} {T} {x} {a} {J} {C} {t},
+    proof (rename_ProofContext r ctxt) (rule_cequiv_subst_hyp_concl (rename_barehypotheses r H) z (rename_term r T) x (rename_term r a) (rename_barehypotheses r J) (rename_term r C) (rename_term r t))
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cequiv_subst_hyp_concl H z T x a J C t)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+  repeat (rewrite rename_term_subst); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_cequiv_subst_hyp_concl {o} :
+  forall {r} {ctxt} {H : @bhyps o} {z} {T} {x} {a} {J} {C},
+    pre_proof (rename_ProofContext r ctxt) (pre_rule_cequiv_subst_hyp_concl (rename_barehypotheses r H) z (rename_term r T) x (rename_term r a) (rename_barehypotheses r J) (rename_term r C))
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp_concl H z T x a J C)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+  repeat (rewrite rename_term_subst); auto.
+Defined.
+
+Lemma get_abstraction_name_op_rename_op {o} :
+  forall r (op : @Opid o),
+    get_abstraction_name_op (rename_op r op)
+    = match get_abstraction_name_op op with
+      | Some x => Some (rename_opname r x)
+      | None => None
+      end.
+Proof.
+  introv; destruct op as [| | |abs]; simpl; auto.
+  destruct abs; simpl; auto.
+Defined.
+
+Definition rename_bterms {o} r (bs : list (@BTerm o)) := map (rename_bterm r) bs.
+
+Lemma unfold_abs_rename {o} :
+  forall r lib abs (bs : list (@BTerm o)),
+    unfold_abs (rename_lib r lib) (rename_opabs r abs) (rename_bterms r bs)
+    = option_map (rename_term r) (unfold_abs lib abs bs).
+Proof.
+  induction lib; introv; simpl; tcsp.
+  destruct a; simpl in *.
+
+  boolvar; ginv; simpl; tcsp.
+
+  - unfold mk_instance; simpl.
+    rewrite rename_term_sosub.
+    rewrite rename_sosub_mk_abs_subst; auto.
+
+  - apply (implies_matching_entry_rename r) in m.
+    autorewrite with slow in *.
+    apply not_matching_entry_iff in n; destruct n.
+    unfold rename_bterms in *.
+    allrw map_map; unfold compose in *.
+    assert (map (fun x => rename_bterm r (rename_bterm r x)) bs = bs) as xx; try congruence.
+    apply eq_map_l; introv i; destruct x; simpl; autorewrite with slow; auto.
+
+  - apply (implies_matching_entry_rename r) in m.
+    apply not_matching_entry_iff in n; destruct n; auto.
+Defined.
+
+Lemma rename_maybe_unfold {o} :
+  forall r lib abs (t : @NTerm o),
+    rename_term r (maybe_unfold lib abs t)
+    = maybe_unfold (rename_lib r lib) (rename_abs r abs) (rename_term r t).
+Proof.
+  introv.
+  unfold maybe_unfold; simpl.
+  rewrite get_abstraction_name_rename.
+  remember (get_abstraction_name t) as gan; symmetry in Heqgan; destruct gan; simpl; auto.
+  boolvar; auto.
+
+  - rewrite unfold_rename.
+    remember (unfold lib t) as u; symmetry in Hequ; destruct u; simpl; auto.
+
+  - destruct n.
+    unfold rename_abs; apply in_map_iff; eexists; dands; eauto.
+
+  - unfold rename_abs in *; allrw in_map_iff; exrepnd.
+    apply eq_rename_opname_implies in l0; subst; tcsp.
+Defined.
+
+Lemma rename_term_unfold_abstractions {o} :
+  forall r lib abs (t : @NTerm o),
+    rename_term r (unfold_abstractions lib abs t)
+    = unfold_abstractions (rename_lib r lib) (rename_abs r abs) (rename_term r t).
+Proof.
+  nterm_ind t as [v|f|op bs ind] Case; introv; simpl in *; tcsp.
+  Case "oterm".
+  rewrite rename_maybe_unfold.
+  f_equal; simpl; f_equal.
+  allrw map_map; unfold compose.
+  apply eq_maps; introv i; destruct x; simpl; f_equal.
+  eapply ind; eauto.
+Defined.
+
+Lemma proof_rename_rule_unfold_abstraction_hyp {o} :
+  forall {r} {ctxt} {abs} {a} {e} {H : @bhyps o},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_unfold_abstractions_hyp ctxt abs a e H))
+    -> proof (rename_ProofContext r ctxt) (rule_unfold_abstractions_hyp (rename_ProofContext r ctxt) (rename_abs r abs) (rename_term r a) (rename_term r e) (rename_barehypotheses r H)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_term_unfold_abstractions in prf; auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_unfold_abstraction_hyp {o} :
+  forall {r} {ctxt} {abs} {a} {H : @bhyps o},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_unfold_abstractions_hyp ctxt abs a H))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_unfold_abstractions_hyp (rename_ProofContext r ctxt) (rename_abs r abs) (rename_term r a) (rename_barehypotheses r H)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_term_unfold_abstractions in prf; auto.
+Defined.
+
+Lemma proof_rename_rule_unfold_abstractions_hyp {o} :
+  forall {r} {ctxt} {abs} {a} {e} {H : @bhyps o},
+    proof (rename_ProofContext r ctxt) (rule_unfold_abstractions_hyp (rename_ProofContext r ctxt) (rename_abs r abs) (rename_term r a) (rename_term r e) (rename_barehypotheses r H))
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_unfold_abstractions_hyp ctxt abs a e H)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_term_unfold_abstractions; auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_unfold_abstractions_hyp {o} :
+  forall {r} {ctxt} {abs} {a} {H : @bhyps o},
+    pre_proof (rename_ProofContext r ctxt) (pre_rule_unfold_abstractions_hyp (rename_ProofContext r ctxt) (rename_abs r abs) (rename_term r a) (rename_barehypotheses r H))
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_unfold_abstractions_hyp ctxt abs a H)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_term_unfold_abstractions; auto.
+Defined.
+
+Lemma proof_rename_rule_hypothesis_equality_concl {o} :
+  forall {r} {ctxt} {G : @bhyps o} {J} {A} {x},
+    proof (rename_ProofContext r ctxt) (rule_hypothesis_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r A) x)
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_hypothesis_equality_concl G J A x)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_hypothesis_equality_concl {o} :
+  forall {r} {ctxt} {G : @bhyps o} {J} {A} {x},
+    pre_proof (rename_ProofContext r ctxt) (pre_rule_hypothesis_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r A) x)
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_hypothesis_equality_concl G J A x)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+Defined.
+
+Lemma proof_rename_rule_maybe_hidden_hypothesis_equality_concl {o} :
+  forall {r} {ctxt} {G : @bhyps o} {J} {A} {x} {b},
+    proof (rename_ProofContext r ctxt) (rule_maybe_hidden_hypothesis_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r A) x b)
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_maybe_hidden_hypothesis_equality_concl G J A x b)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_maybe_hidden_hypothesis_equality_concl {o} :
+  forall {r} {ctxt} {G : @bhyps o} {J} {A} {x} {b},
+    pre_proof (rename_ProofContext r ctxt) (pre_rule_maybe_hidden_hypothesis_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r A) x b)
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_maybe_hidden_hypothesis_equality_concl G J A x b)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+Defined.
+
+Lemma proof_rename_rule_unhide_equality_hyp {o} :
+  forall {r} {ctxt} {G : @bhyps o} {J} {x} {A} {t1} {t2} {C} {e},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_unhide_equality_hyp G J x A t1 t2 C e))
+    -> proof (rename_ProofContext r ctxt) (rule_unhide_equality_hyp (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C) (rename_term r e)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_unhide_equality_hyp {o} :
+  forall {r} {ctxt} {G : @bhyps o} {J} {x} {A} {t1} {t2} {C},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_unhide_equality_hyp G J x A t1 t2 C))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_unhide_equality_hyp (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+Defined.
+
+Lemma proof_rename_rule_unhide_equality_concl {o} :
+  forall {r} {ctxt} {G : @bhyps o} {J} {x} {A} {t1} {t2} {C},
+    proof (rename_ProofContext r ctxt) (rule_unhide_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C))
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_unhide_equality_concl G J x A t1 t2 C)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_unhide_equality_concl {o} :
+  forall {r} {ctxt} {G : @bhyps o} {J} {x} {A} {t1} {t2} {C},
+    pre_proof (rename_ProofContext r ctxt) (pre_rule_unhide_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C))
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_unhide_equality_concl G J x A t1 t2 C)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+Defined.
+
+Lemma proof_rename_rule_thin_hyp {o} :
+  forall {r} {ctxt} {G : @bhyps o} {J} {C} {t},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_thin_hyp G J C t))
+    -> proof (rename_ProofContext r ctxt) (rule_thin_hyp (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r C) (rename_term r t)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_thin_hyp {o} :
+  forall {r} {ctxt} {G : @bhyps o} {J} {C},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_thin_hyp G J C))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_thin_hyp (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r C)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+Defined.
+
+Lemma rule_rename_rule_thin_concl {o} :
+  forall {r} {ctxt} {G : @bhyps o} {x} {A} {J} {C} {t},
+    proof (rename_ProofContext r ctxt) (rule_thin_concl (rename_barehypotheses r G) x (rename_term r A) (rename_barehypotheses r J) (rename_term r C) (rename_term r t))
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_thin_concl G x A J C t)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+Defined.
+
+Lemma pre_rule_rename_pre_rule_thin_concl {o} :
+  forall {r} {ctxt} {G : @bhyps o} {x} {A} {J} {C},
+    pre_proof (rename_ProofContext r ctxt) (pre_rule_thin_concl (rename_barehypotheses r G) x (rename_term r A) (rename_barehypotheses r J) (rename_term r C))
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_thin_concl G x A J C)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+Defined.
+
+Lemma proof_rename_rule_function_equality_hyp2 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {y} {a1} {b1} {x1} {b2} {x2} {i} {e2},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i e2))
+    -> proof (rename_ProofContext r ctxt) (rule_function_equality_hyp2 (rename_barehypotheses r H) y (rename_term r a1) (rename_term r b1) x1 (rename_term r b2) x2 i (rename_term r e2)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_function_equality_hyp2 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {y} {a1} {b1} {x1} {b2} {x2} {i},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_function_equality_hyp2 (rename_barehypotheses r H) y (rename_term r a1) (rename_term r b1) x1 (rename_term r b2) x2 i).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma proof_rename_rule_apply_equality_concl {o} :
+  forall {r} {ctxt} {H : @bhyps o} {f1} {t1} {f2} {t2} {B} {x},
+    proof (rename_ProofContext r ctxt) (rule_apply_equality_concl (rename_barehypotheses r H) (rename_term r f1) (rename_term r t1) (rename_term r f2) (rename_term r t2) (rename_term r B) x)
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_apply_equality_concl H f1 t1 f2 t2 B x)).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_apply_equality_concl {o} :
+  forall {r} {ctxt} {H : @bhyps o} {f1} {t1} {f2} {t2} {B} {x},
+    pre_proof (rename_ProofContext r ctxt) (pre_rule_apply_equality_concl (rename_barehypotheses r H) (rename_term r f1) (rename_term r t1) (rename_term r f2) (rename_term r t2) (rename_term r B) x)
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_apply_equality_concl H f1 t1 f2 t2 B x)).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst); auto.
+Defined.
+
+Lemma proof_rename_rule_isect_elimination_hyp1 {o} :
+  forall {r} {ctxt} {A} {B} {a} {ea} {f} {x} {H : @bhyps o} {J},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_elimination_hyp1 A B a ea f x H J))
+    -> proof (rename_ProofContext r ctxt) (rule_isect_elimination_hyp1 (rename_term r A) (rename_term r B) (rename_term r a) (rename_term r ea) f x (rename_barehypotheses r H) (rename_barehypotheses r J)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_isect_elimination_hyp1 {o} :
+  forall {r} {ctxt} {A} {B} {a} {f} {x} {H : @bhyps o} {J},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_elimination_hyp1 A B a f x H J))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_elimination_hyp1 (rename_term r A) (rename_term r B) (rename_term r a) f x (rename_barehypotheses r H) (rename_barehypotheses r J)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+Defined.
+
+Lemma proof_rename_rule_isect_elimination_hyp2 {o} :
+  forall {r} {ctxt} {A} {B} {C} {a} {e} {f} {x} {z} {H : @bhyps o} {J},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_elimination_hyp2 A B C a e f x z H J))
+    -> proof (rename_ProofContext r ctxt) (rule_isect_elimination_hyp2 (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r a) (rename_term r e) f x z (rename_barehypotheses r H) (rename_barehypotheses r J)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_isect_elimination_hyp2 {o} :
+  forall {r} {ctxt} {A} {B} {C} {a} {f} {x} {z} {H : @bhyps o} {J},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_elimination_hyp2 A B C a f x z H J))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_elimination_hyp2 (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r a) f x z (rename_barehypotheses r H) (rename_barehypotheses r J)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma proof_rename_rule_isect_elimination_concl {o} :
+  forall {r} {ctxt} {A} {B} {C} {e} {f} {x} {z} {H : @bhyps o} {J},
+    proof (rename_ProofContext r ctxt) (rule_isect_elimination_concl (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r e) f x z (rename_barehypotheses r H) (rename_barehypotheses r J))
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_elimination_concl A B C e f x z H J)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+  repeat (rewrite rename_term_subst); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_isect_elimination_concl {o} :
+  forall {r} {ctxt} {A} {B} {C} {f} {x} {H : @bhyps o} {J},
+    pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_elimination_concl (rename_term r A) (rename_term r B) (rename_term r C) f x (rename_barehypotheses r H) (rename_barehypotheses r J))
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_elimination_concl A B C f x H J)).
+Proof.
+  introv prf; simpl in *; auto.
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+Defined.
+
+Lemma proof_rename_rule_isect_elimination2_hyp2 {o} :
+  forall {r} {ctxt} {A} {B} {C} {a} {e} {f} {x} {y} {z} {H : @bhyps o} {J},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_elimination2_hyp2 A B C a e f x y z H J))
+    -> proof (rename_ProofContext r ctxt) (rule_isect_elimination2_hyp2 (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r a) (rename_term r e) f x y z (rename_barehypotheses r H) (rename_barehypotheses r J)).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_barehypotheses_snoc in prf; simpl in *; auto).
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_isect_elimination2_hyp2 {o} :
+  forall {r} {ctxt} {A} {B} {C} {a} {f} {x} {y} {z} {H : @bhyps o} {J},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_elimination2_hyp2 A B C a f x y z H J))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_elimination2_hyp2 (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r a) f x y z (rename_barehypotheses r H) (rename_barehypotheses r J)).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_barehypotheses_snoc in prf; simpl in *; auto).
+  rewrite rename_barehypotheses_app in prf; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma proof_rename_rule_isect_elimination2_concl {o} :
+  forall {r} {ctxt} {A} {B} {C} {e} {f} {x} {y} {z} {H : @bhyps o} {J},
+    proof (rename_ProofContext r ctxt) (rule_isect_elimination2_concl (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r e) f x y z (rename_barehypotheses r H) (rename_barehypotheses r J))
+    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_elimination2_concl A B C e f x y z H J)).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_barehypotheses_snoc; simpl in *; auto).
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+  repeat (rewrite rename_term_subst); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_isect_elimination2_concl {o} :
+  forall {r} {ctxt} {A} {B} {C} {f} {x} {H : @bhyps o} {J},
+    pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_elimination2_concl (rename_term r A) (rename_term r B) (rename_term r C) f x (rename_barehypotheses r H) (rename_barehypotheses r J))
+    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_elimination2_concl A B C f x H J)).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_barehypotheses_snoc; simpl in *; auto).
+  rewrite rename_barehypotheses_app; simpl in *; auto.
+  rewrite rename_barehypotheses_snoc; simpl in *; auto.
+Defined.
+
+Lemma proof_rename_rule_isect_member_equality_hyp1 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {z} {A} {t1} {t2} {B} {x} {e1},
+    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_member_equality_hyp1 H z A t1 t2 B x e1))
+    -> proof (rename_ProofContext r ctxt) (rule_isect_member_equality_hyp1 (rename_barehypotheses r H) z (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r B) x (rename_term r e1)).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_barehypotheses_snoc in prf; simpl in *; auto).
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma pre_proof_rename_pre_rule_isect_member_equality_hyp1 {o} :
+  forall {r} {ctxt} {H : @bhyps o} {z} {A} {t1} {t2} {B} {x},
+    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_member_equality_hyp1 H z A t1 t2 B x))
+    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_member_equality_hyp1 (rename_barehypotheses r H) z (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r B) x).
+Proof.
+  introv prf; simpl in *; auto.
+  repeat (rewrite rename_barehypotheses_snoc in prf; simpl in *; auto).
+  repeat (rewrite rename_term_subst in prf); auto.
+Defined.
+
+Lemma implies_covered_rename_vars_hyps {o} :
+  forall r {t : @NTerm o} {H : @bhyps o},
+    covered t (vars_hyps H)
+    -> covered (rename_term r t) (vars_hyps (rename_barehypotheses r H)).
+Proof.
+  introv cov.
+  unfold covered in *; autorewrite with slow in *; auto.
+Qed.
+Hint Resolve implies_covered_rename_vars_hyps : slow.
+
+Lemma implies_covered_rename_snoc_app_vars_hyps {o} :
+  forall r {t : @NTerm o} {H : @bhyps o} {x} {J : @bhyps o},
+    covered t (snoc (vars_hyps H) x ++ vars_hyps J)
+    -> covered (rename_term r t) (snoc (vars_hyps (rename_barehypotheses r H)) x ++ vars_hyps (rename_barehypotheses r J)).
+Proof.
+  introv cov.
+  unfold covered in *; autorewrite with slow in *; auto.
+Qed.
+Hint Resolve implies_covered_rename_snoc_app_vars_hyps : slow.
+
+Lemma implies_covered_rename_nh_vars_hyps {o} :
+  forall r {t : @NTerm o} {H : @bhyps o},
+    covered t (nh_vars_hyps H)
+    -> covered (rename_term r t) (nh_vars_hyps (rename_barehypotheses r H)).
+Proof.
+  introv cov.
+  unfold covered in *; autorewrite with slow in *; auto.
+Qed.
+Hint Resolve implies_covered_rename_nh_vars_hyps : slow.
+
 Fixpoint rename_proof {o}
          (r    : renaming)
          {ctxt : @ProofContext o}
@@ -6581,13 +7275,15 @@ Fixpoint rename_proof {o}
          (prf  : proof ctxt s) : proof (rename_ProofContext r ctxt) (rename_baresequent r s) :=
   match prf with
   | proof_from_ctxt _ c H i =>
-    proof_from_ctxt
-      (rename_ProofContext r ctxt)
-      (rename_named_concl r c)
-      (rename_barehypotheses r H)
-      (rename_in_PC_conclusions r i)
+    proof_named_concl2bseq_rename_implies
+      (proof_from_ctxt
+         (rename_ProofContext r ctxt)
+         (rename_named_concl r c)
+         (rename_barehypotheses r H)
+         (rename_in_PC_conclusions r i))
   | proof_isect_eq _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH prf1 prf2 =>
     proof_isect_eq
+      (rename_ProofContext r ctxt)
       (rename_term r a1)
       (rename_term r a2)
       (rename_term r b1)
@@ -6598,9 +7294,10 @@ Fixpoint rename_proof {o}
       (rename_barehypotheses r H)
       (rename_NVin_vars_hyps r niyH)
       (rename_proof r prf1)
-      (rename_proof r prf2)
+      (proof_rename_rule_isect_equality2_hyp2_implies (rename_proof r prf2))
   | proof_isect_member_formation _ A x B z i b e H nizH prf1 prf2 =>
     proof_isect_member_formation
+      (rename_ProofContext r ctxt)
       (rename_term r A)
       x
       (rename_term r B)
@@ -6609,18 +7306,28 @@ Fixpoint rename_proof {o}
       (rename_term r e)
       (rename_barehypotheses r H)
       (rename_NVin_vars_hyps r nizH)
-      (rename_proof r prf1)
+      (proof_rename_rule_isect_member_formation_hyp1 (rename_proof r prf1))
       (rename_proof r prf2)
-  | proof_approx_refl _ a H => proof_approx_refl (rename_term r a) (rename_barehypotheses r H)
-  | proof_cequiv_refl _ a H => proof_cequiv_refl (rename_term r a) (rename_barehypotheses r H)
+  | proof_approx_refl _ a H =>
+    proof_approx_refl
+      (rename_ProofContext r ctxt)
+      (rename_term r a)
+      (rename_barehypotheses r H)
+  | proof_cequiv_refl _ a H =>
+    proof_cequiv_refl
+      (rename_ProofContext r ctxt)
+      (rename_term r a)
+      (rename_barehypotheses r H)
   | proof_cequiv_alpha_eq _ a b H aeq =>
     proof_cequiv_alpha_eq
+      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_term r b)
       (rename_barehypotheses r H)
       (implies_alpha_eq_term_rename r a b aeq)
   | proof_cequiv_approx _ a b e1 e2 H prf1 prf2 =>
     proof_cequiv_approx
+      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_term r b)
       (rename_term r e1)
@@ -6630,6 +7337,7 @@ Fixpoint rename_proof {o}
       (rename_proof r prf2)
   | proof_approx_eq _ a1 a2 b1 b2 e1 e2 i H prf1 prf2 =>
     proof_approx_eq
+      (rename_ProofContext r ctxt)
       (rename_term r a1)
       (rename_term r a2)
       (rename_term r b1)
@@ -6642,6 +7350,7 @@ Fixpoint rename_proof {o}
       (rename_proof r prf2)
   | proof_cequiv_eq _ a1 a2 b1 b2 e1 e2 i H prf1 prf2 =>
     proof_cequiv_eq
+      (rename_ProofContext r ctxt)
       (rename_term r a1)
       (rename_term r a2)
       (rename_term r b1)
@@ -6653,65 +7362,75 @@ Fixpoint rename_proof {o}
       (rename_proof r prf1)
       (rename_proof r prf2)
   | proof_cut _ B C t u x H wfB covB nixH prf1 prf2 =>
-    proof_cut
-      (rename_term r B)
-      (rename_term r C)
-      (rename_term r t)
-      (rename_term r u)
-      x
-      (rename_barehypotheses r H)
-      (implies_wf_term_rename_term r B wfB)
-      (implies_covered_rename r B (vars_hyps H) covB)
-      (rename_NVin_vars_hyps r nixH)
-      (rename_proof r prf1)
-      (rename_proof r prf2)
+    proof_rename_rule_cut_concl
+      (proof_cut
+         (rename_ProofContext r ctxt)
+         (rename_term r B)
+         (rename_term r C)
+         (rename_term r t)
+         (rename_term r u)
+         x
+         (rename_barehypotheses r H)
+         (implies_wf_term_rename_term r B wfB)
+         (implies_covered_rename_vars_hyps r covB)
+         (rename_NVin_vars_hyps r nixH)
+         (rename_proof r prf1)
+         (proof_rename_rule_cut_hyp2 (rename_proof r prf2)))
   | proof_hypothesis _ x A G J =>
-    proof_hypothesis
-      x
-      (rename_term r A)
-      (rename_barehypotheses r G)
-      (rename_barehypotheses r J)
+    proof_rename_rule_hypothesis_concl
+      (proof_hypothesis
+         (rename_ProofContext r ctxt)
+         x
+         (rename_term r A)
+         (rename_barehypotheses r G)
+         (rename_barehypotheses r J))
   | proof_cequiv_subst_concl _ C x a b t e H wfa wfb cova covb prf1 prf2 =>
-    proof_cequiv_subst_concl
-      (rename_term r C)
-      x
-      (rename_term r a)
-      (rename_term r b)
-      (rename_term r t)
-      (rename_term r e)
-      (rename_barehypotheses r H)
-      (implies_wf_term_rename_term r a wfa)
-      (implies_wf_term_rename_term r b wfb)
-      (implies_covered_rename r a (vars_hyps H) cova)
-      (implies_covered_rename r b (vars_hyps H) covb)
-      (rename_proof r prf1)
-      (rename_proof r prf2)
+    implies_proof_rename_rule_cequiv_subst_hyp1
+      (proof_cequiv_subst_concl
+         (rename_ProofContext r ctxt)
+         (rename_term r C)
+         x
+         (rename_term r a)
+         (rename_term r b)
+         (rename_term r t)
+         (rename_term r e)
+         (rename_barehypotheses r H)
+         (implies_wf_term_rename_term r a wfa)
+         (implies_wf_term_rename_term r b wfb)
+         (implies_covered_rename_vars_hyps r cova)
+         (implies_covered_rename_vars_hyps r covb)
+         (rename_proof r prf1)
+         (proof_rename_rule_cequiv_subst_hyp1 (rename_proof r prf2)))
   | proof_cequiv_subst_hyp _ H z T x a b J C t e wfa wfb cova covb prf1 prf2 =>
-    proof_cequiv_subst_hyp
-      (rename_barehypotheses r H)
-      z
-      (rename_term r T)
-      x
-      (rename_term r a)
-      (rename_term r b)
-      (rename_barehypotheses r J)
-      (rename_term r C)
-      (rename_term r t)
-      (rename_term r e)
-      (implies_wf_term_rename_term r a wfa)
-      (implies_wf_term_rename_term r b wfb)
-      (implies_covered_rename r a (vars_hyps H) cova)
-      (implies_covered_rename r b (vars_hyps H) covb)
-      (rename_proof r prf1)
-      (rename_proof r prf2)
-  | proof_cequiv_computation _ a b H r =>
+    proof_rename_rule_cequiv_subst_hyp_concl
+      (proof_cequiv_subst_hyp
+         (rename_ProofContext r ctxt)
+         (rename_barehypotheses r H)
+         z
+         (rename_term r T)
+         x
+         (rename_term r a)
+         (rename_term r b)
+         (rename_barehypotheses r J)
+         (rename_term r C)
+         (rename_term r t)
+         (rename_term r e)
+         (implies_wf_term_rename_term r a wfa)
+         (implies_wf_term_rename_term r b wfb)
+         (implies_covered_rename_vars_hyps r cova)
+         (implies_covered_rename_vars_hyps r covb)
+         (proof_rename_rule_cequiv_subst_hyp_hyp2 (rename_proof r prf1))
+         (proof_rename_rule_cequiv_subst_hyp_hyp1 (rename_proof r prf2)))
+  | proof_cequiv_computation _ a b H rd =>
     proof_cequiv_computation
+      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_term r b)
       (rename_barehypotheses r H)
-      (reduces_to_rename r ctxt a b r)
+      (reduces_to_rename r ctxt a b rd)
   | proof_cequiv_computation_aeq _ a b c H rd aeq =>
     proof_cequiv_computation_aeq
+      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_term r b)
       (rename_term r c)
@@ -6720,56 +7439,68 @@ Fixpoint rename_proof {o}
       (implies_alpha_eq_term_rename r b c aeq)
   | proof_cequiv_computation_atmost _ a b n H rd =>
     proof_cequiv_computation_atmost
+      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_term r b)
+      n
       (rename_barehypotheses r H)
       (reduces_in_atmost_k_steps_rename r rd)
   | proof_unfold_abstractions _ abs a e H alla prf1 =>
     proof_unfold_abstractions
+      (rename_ProofContext r ctxt)
       (rename_abs r abs)
       (rename_term r a)
       (rename_term r e)
       (rename_barehypotheses r H)
-      (rename_all_abstractions_can_be_unfolded r ctxt abs a alla)
-      (rename_proof r prf1)
+      (rename_all_abstractions_can_be_unfolded r alla)
+      (proof_rename_rule_unfold_abstraction_hyp (rename_proof r prf1))
   | proof_rev_unfold_abstractions _ abs a e H wfa cova alla prf1 =>
-    proof_rev_unfold_abstractions
-      (rename_abs r abs)
-      (rename_term r a)
-      (rename_term r e)
-      (rename_barehypotheses r H)
-      (implies_wf_term_rename_term r a wfa)
-      (implies_covered_rename r a (vars_hyps H) cova)
-      (rename_all_abstractions_can_be_unfolded r ctxt abs a alla)
-      (rename_proof r prf1)
+    proof_rename_rule_unfold_abstractions_hyp
+      (proof_rev_unfold_abstractions
+         (rename_ProofContext r ctxt)
+         (rename_abs r abs)
+         (rename_term r a)
+         (rename_term r e)
+         (rename_barehypotheses r H)
+         (implies_wf_term_rename_term r a wfa)
+         (implies_covered_rename_vars_hyps r cova)
+         (rename_all_abstractions_can_be_unfolded r alla)
+         (rename_proof r prf1))
   | proof_universe_equality _ i j H ltij =>
-    proof_universe_equality i j (rename_barehypotheses r H) ltij
+    proof_universe_equality _ i j (rename_barehypotheses r H) ltij
   | proof_hypothesis_equality _ x A G J =>
-    proof_hypothesis_equality
-      x
-      (rename_term r A)
-      (rename_barehypotheses r G)
-      (rename_barehypotheses r J)
+    proof_rename_rule_hypothesis_equality_concl
+      (proof_hypothesis_equality
+         (rename_ProofContext r ctxt)
+         x
+         (rename_term r A)
+         (rename_barehypotheses r G)
+         (rename_barehypotheses r J))
   | proof_maybe_hidden_hypothesis_equality _ x A G J b =>
-    proof_maybe_hidden_hypothesis_equality
-      x
-      (rename_term r A)
-      (rename_barehypotheses r G)
-      (rename_barehypotheses r J)
-      (rename_term r b)
+    proof_rename_rule_maybe_hidden_hypothesis_equality_concl
+      (proof_maybe_hidden_hypothesis_equality
+         (rename_ProofContext r ctxt)
+         x
+         (rename_term r A)
+         (rename_barehypotheses r G)
+         (rename_barehypotheses r J)
+         b)
   | proof_unhide_equality _ x A t1 t2 C e G J prf1 =>
-    proof_unhide_equality
-      x
-      (rename_term r A)
-      (rename_term r t1)
-      (rename_term r t2)
-      (rename_term r C)
-      (rename_term r e)
-      (rename_barehypotheses r G)
-      (rename_barehypotheses r J)
-      (rename_proof r prf1)
+    proof_rename_rule_unhide_equality_concl
+      (proof_unhide_equality
+         (rename_ProofContext r ctxt)
+         x
+         (rename_term r A)
+         (rename_term r t1)
+         (rename_term r t2)
+         (rename_term r C)
+         (rename_term r e)
+         (rename_barehypotheses r G)
+         (rename_barehypotheses r J)
+         (proof_rename_rule_unhide_equality_hyp (rename_proof r prf1)))
   | proof_equality_equality _ A B a1 a2 b1 b2 e1 e2 e3 i H prf1 prf2 prf3 =>
     proof_equality_equality
+      (rename_ProofContext r ctxt)
       (rename_term r A)
       (rename_term r B)
       (rename_term r a1)
@@ -6784,19 +7515,25 @@ Fixpoint rename_proof {o}
       (rename_proof r prf1)
       (rename_proof r prf2)
       (rename_proof r prf3)
-  | proof_integer_equality _ n H => proof_integer_equality n (rename_barehypotheses r H)
+  | proof_integer_equality _ n H =>
+    proof_integer_equality
+      (rename_ProofContext r ctxt)
+      n
+      (rename_barehypotheses r H)
   | proof_introduction _ t e C H wft covt noutt prf1 =>
     proof_introduction
+      (rename_ProofContext r ctxt)
       (rename_term r t)
       (rename_term r e)
       (rename_term r C)
       (rename_barehypotheses r H)
       (implies_wf_term_rename_term r t wft)
-      (implies_covered_rename r t (vars_hyps H) covt)
+      (implies_covered_rename_nh_vars_hyps r covt)
       (implies_noutokens_rename_term r t noutt)
       (rename_proof r prf1)
   | proof_axiom_equality _ e a b T H prf1 =>
     proof_axiom_equality
+      (rename_ProofContext r ctxt)
       (rename_term r e)
       (rename_term r a)
       (rename_term r b)
@@ -6804,18 +7541,21 @@ Fixpoint rename_proof {o}
       (rename_barehypotheses r H)
       (rename_proof r prf1)
   | proof_thin _ G J A C t x nixJ nixC prf1 =>
-    proof_thin
-      (rename_barehypotheses r G)
-      (rename_barehypotheses r J)
-      (rename_term r A)
-      (rename_term r C)
-      (rename_term r t)
-      x
-      (rename_NVin_free_vars_hyps x J nixJ)
-      (rename_NVin_free_vars x C nixC)
-      (rename_proof r prf1)
+    rule_rename_rule_thin_concl
+      (proof_thin
+         (rename_ProofContext r ctxt)
+         (rename_barehypotheses r G)
+         (rename_barehypotheses r J)
+         (rename_term r A)
+         (rename_term r C)
+         (rename_term r t)
+         x
+         (rename_NVin_free_vars_hyps r nixJ)
+         (rename_NVin_free_vars r nixC)
+         (proof_rename_rule_thin_hyp (rename_proof r prf1)))
   | proof_function_equality _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH prf1 prf2 =>
     proof_function_equality
+      (rename_ProofContext r ctxt)
       (rename_term r a1)
       (rename_term r a2)
       (rename_term r b1)
@@ -6824,65 +7564,72 @@ Fixpoint rename_proof {o}
       (rename_term r e2)
       x1 x2 y i
       (rename_barehypotheses r H)
-      (rename_NVin_vars_hyps r y H niyH)
+      (rename_NVin_vars_hyps r niyH)
       (rename_proof r prf1)
-      (rename_proof r prf2)
+      (proof_rename_rule_function_equality_hyp2 (rename_proof r prf2))
   | proof_apply_equality _ A B f1 f2 t1 t2 e1 e2 x H wfA covA prf1 prf2 =>
-    proof_apply_equality
-      (rename_term r A)
-      (rename_term r B)
-      (rename_term r f1)
-      (rename_term r f2)
-      (rename_term r t1)
-      (rename_term r t2)
-      (rename_term r e1)
-      (rename_term r e2)
-      x
-      (rename_barehypotheses r H)
-      (implies_wf_term_rename_term r A wfA)
-      (implies_covered_rename r A (vars_hyps H) covA)
-      (rename_proof r prf1)
-      (rename_proof r prf2)
+    proof_rename_rule_apply_equality_concl
+      (proof_apply_equality
+         (rename_ProofContext r ctxt)
+         (rename_term r A)
+         (rename_term r B)
+         (rename_term r f1)
+         (rename_term r f2)
+         (rename_term r t1)
+         (rename_term r t2)
+         (rename_term r e1)
+         (rename_term r e2)
+         x
+         (rename_barehypotheses r H)
+         (implies_wf_term_rename_term r A wfA)
+         (implies_covered_rename_vars_hyps r covA)
+         (rename_proof r prf1)
+         (rename_proof r prf2))
   | proof_isect_elimination _ A B C a e ea f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
-    proof_isect_elimination
-      (rename_term r A)
-      (rename_term r B)
-      (rename_term r C)
-      (rename_term r a)
-      (rename_term r e)
-      (rename_term r ea)
-      f x z
-      (rename_barehypotheses r H)
-      (rename_barehypotheses r J)
-      (implies_wf_term_rename_term r a wfa)
-      (implies_covered_rename r a (vars_hyps H) cova)
-      (rename_NVin_vars_hyps r z H nizH)
-      (rename_NVin_vars_hyps r z J nizJ)
-      dzf
-      (rename_proof r prf1)
-      (rename_proof r prf2)
+    proof_rename_rule_isect_elimination_concl
+      (proof_isect_elimination
+         (rename_ProofContext r ctxt)
+         (rename_term r A)
+         (rename_term r B)
+         (rename_term r C)
+         (rename_term r a)
+         (rename_term r e)
+         (rename_term r ea)
+         f x z
+         (rename_barehypotheses r H)
+         (rename_barehypotheses r J)
+         (implies_wf_term_rename_term r a wfa)
+         (implies_covered_rename_snoc_app_vars_hyps r cova)
+         (rename_NVin_vars_hyps r nizH)
+         (rename_NVin_vars_hyps r nizJ)
+         dzf
+         (proof_rename_rule_isect_elimination_hyp1 (rename_proof r prf1))
+         (proof_rename_rule_isect_elimination_hyp2 (rename_proof r prf2)))
   | proof_isect_elimination2 _ A B C a e ea f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
-    proof_isect_elimination2
-      (rename_term r A)
-      (rename_term r B)
-      (rename_term r C)
-      (rename_term r a)
-      (rename_term r e)
-      (rename_term r ea)
-      f z y z
-      (rename_barehypotheses r H)
-      (rename_barehypotheses r J)
-      (implies_wf_term_rename_term r a wfa)
-      (implies_covered_rename r a (snoc (vars_hyps H) f ++ vars_hyps J) cova)
-      (rename_NVin_vars_hyps r z H nizH)
-      (rename_NVin_vars_hyps r z J nizJ)
-      (rename_NVin_vars_hyps r y H niyH)
-      (rename_NVin_vars_hyps r y J niyJ)
-      dzf dzy dyf
-      (rename_proof r prf1)
-      (rename_proof r prf2)
+    proof_rename_rule_isect_elimination2_concl
+      (proof_isect_elimination2
+         (rename_ProofContext r ctxt)
+         (rename_term r A)
+         (rename_term r B)
+         (rename_term r C)
+         (rename_term r a)
+         (rename_term r e)
+         (rename_term r ea)
+         f x y z
+         (rename_barehypotheses r H)
+         (rename_barehypotheses r J)
+         (implies_wf_term_rename_term r a wfa)
+         (implies_covered_rename_snoc_app_vars_hyps r cova)
+         (rename_NVin_vars_hyps r nizH)
+         (rename_NVin_vars_hyps r nizJ)
+         (rename_NVin_vars_hyps r niyH)
+         (rename_NVin_vars_hyps r niyJ)
+         dzf dzy dyf
+         (proof_rename_rule_isect_elimination_hyp1 (rename_proof r prf1))
+         (proof_rename_rule_isect_elimination2_hyp2 (rename_proof r prf2)))
   | proof_isect_member_equality _ H t1 t2 A x B e1 e2 z i nizH prf1 prf2 =>
     proof_isect_member_equality
+      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r t1)
       (rename_term r t2)
@@ -6892,11 +7639,12 @@ Fixpoint rename_proof {o}
       (rename_term r e1)
       (rename_term r e2)
       z i
-      (rename_NVin_vars_hyps r z H nizH)
-      (rename_proof r prf1)
+      (rename_NVin_vars_hyps r nizH)
+      (proof_rename_rule_isect_member_equality_hyp1 (rename_proof r prf1))
       (rename_proof r prf2)
   | proof_cumulativity _ H T e i j leij prf1 =>
     proof_cumulativity
+      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r T)
       (rename_term r e)
@@ -6904,6 +7652,7 @@ Fixpoint rename_proof {o}
       (rename_proof r prf1)
   | proof_equality_symmetry _ H a b T e prf1 =>
     proof_equality_symmetry
+      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r a)
       (rename_term r b)
@@ -6912,6 +7661,7 @@ Fixpoint rename_proof {o}
       (rename_proof r prf1)
   | proof_equality_transitivity _ H a b c T e1 e2 wfc covc prf1 prf2 =>
     proof_equality_transitivity
+      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r a)
       (rename_term r b)
@@ -6920,11 +7670,12 @@ Fixpoint rename_proof {o}
       (rename_term r e1)
       (rename_term r e2)
       (implies_wf_term_rename_term r c wfc)
-      (implies_covered_rename r c (vars_hyps H) covc)
+      (implies_covered_rename_vars_hyps r covc)
       (rename_proof r prf1)
       (rename_proof r prf2)
   | proof_cequiv_transitivity _ H a b c e1 e2 wfc covc prf1 prf2 =>
     proof_cequiv_transitivity
+      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r a)
       (rename_term r b)
@@ -6932,10 +7683,401 @@ Fixpoint rename_proof {o}
       (rename_term r e1)
       (rename_term r e2)
       (implies_wf_term_rename_term r c wfc)
-      (implies_covered_rename r c (vars_hyps H) covc)
+      (implies_covered_rename_vars_hyps r covc)
       (rename_proof r prf1)
       (rename_proof r prf2)
   end.
+
+Fixpoint rename_pre_proof {o}
+         (r    : renaming)
+         {ctxt : @ProofContext o}
+         {s    : pre_baresequent}
+         (prf  : pre_proof ctxt s) : pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r s) :=
+  match prf with
+  | pre_proof_from_ctxt _ c H i =>
+    pre_proof_named_concl2pre_bseq_rename_implies
+      (pre_proof_from_ctxt
+         (rename_ProofContext r ctxt)
+         (rename_named_concl r c)
+         (rename_barehypotheses r H)
+         (rename_in_PC_conclusions r i))
+  | pre_proof_hole _ s =>
+    pre_proof_hole
+      (rename_ProofContext r ctxt)
+      (rename_pre_baresequent r s)
+  | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    pre_proof_isect_eq
+      (rename_ProofContext r ctxt)
+      (rename_term r a1)
+      (rename_term r a2)
+      (rename_term r b1)
+      (rename_term r b2)
+      x1 x2 y i
+      (rename_barehypotheses r H)
+      (rename_NVin_vars_hyps r niyH)
+      (rename_pre_proof r prf1)
+      (pre_proof_rename_pre_rule_isect_equality_hyp2_implies (rename_pre_proof r prf2))
+  | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+    pre_proof_isect_member_formation
+      (rename_ProofContext r ctxt)
+      (rename_term r A)
+      x
+      (rename_term r B)
+      z i
+      (rename_barehypotheses r H)
+      (rename_NVin_vars_hyps r nizH)
+      (pre_proof_rename_pre_rule_isect_member_formation_hyp1 (rename_pre_proof r prf1))
+      (rename_pre_proof r prf2)
+  | pre_proof_approx_refl _ a H =>
+    pre_proof_approx_refl
+      (rename_ProofContext r ctxt)
+      (rename_term r a)
+      (rename_barehypotheses r H)
+  | pre_proof_cequiv_refl _ a H =>
+    pre_proof_cequiv_refl
+      (rename_ProofContext r ctxt)
+      (rename_term r a)
+      (rename_barehypotheses r H)
+  | pre_proof_cequiv_alpha_eq _ a b H aeq =>
+    pre_proof_cequiv_alpha_eq
+      (rename_ProofContext r ctxt)
+      (rename_term r a)
+      (rename_term r b)
+      (rename_barehypotheses r H)
+      (implies_alpha_eq_term_rename r a b aeq)
+  | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
+    pre_proof_cequiv_approx
+      (rename_ProofContext r ctxt)
+      (rename_term r a)
+      (rename_term r b)
+      (rename_barehypotheses r H)
+      (rename_pre_proof r prf1)
+      (rename_pre_proof r prf2)
+  | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+    pre_proof_approx_eq
+      (rename_ProofContext r ctxt)
+      (rename_term r a1)
+      (rename_term r a2)
+      (rename_term r b1)
+      (rename_term r b2)
+      i
+      (rename_barehypotheses r H)
+      (rename_pre_proof r prf1)
+      (rename_pre_proof r prf2)
+  | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+    pre_proof_cequiv_eq
+      (rename_ProofContext r ctxt)
+      (rename_term r a1)
+      (rename_term r a2)
+      (rename_term r b1)
+      (rename_term r b2)
+      i
+      (rename_barehypotheses r H)
+      (rename_pre_proof r prf1)
+      (rename_pre_proof r prf2)
+  | pre_proof_cut _ B C x H wfB covB nixH prf1 prf2 =>
+    pre_proof_rename_pre_rule_cut_concl
+      (pre_proof_cut
+         (rename_ProofContext r ctxt)
+         (rename_term r B)
+         (rename_term r C)
+         x
+         (rename_barehypotheses r H)
+         (implies_wf_term_rename_term r B wfB)
+         (implies_covered_rename_vars_hyps r covB)
+         (rename_NVin_vars_hyps r nixH)
+         (rename_pre_proof r prf1)
+         (pre_proof_rename_pre_rule_cut_hyp2 (rename_pre_proof r prf2)))
+  | pre_proof_hypothesis _ x A G J =>
+    pre_proof_rename_pre_rule_hypothesis_concl
+      (pre_proof_hypothesis
+         (rename_ProofContext r ctxt)
+         x
+         (rename_term r A)
+         (rename_barehypotheses r G)
+         (rename_barehypotheses r J))
+  | pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2 =>
+    implies_pre_proof_rename_pre_rule_cequiv_subst_hyp1
+      (pre_proof_cequiv_subst_concl
+         (rename_ProofContext r ctxt)
+         (rename_term r C)
+         x
+         (rename_term r a)
+         (rename_term r b)
+         (rename_barehypotheses r H)
+         (implies_wf_term_rename_term r a wfa)
+         (implies_wf_term_rename_term r b wfb)
+         (implies_covered_rename_vars_hyps r cova)
+         (implies_covered_rename_vars_hyps r covb)
+         (rename_pre_proof r prf1)
+         (pre_proof_rename_pre_rule_cequiv_subst_hyp1 (rename_pre_proof r prf2)))
+  | pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2 =>
+    pre_proof_rename_pre_rule_cequiv_subst_hyp_concl
+      (pre_proof_cequiv_subst_hyp
+         (rename_ProofContext r ctxt)
+         (rename_barehypotheses r H)
+         z
+         (rename_term r T)
+         x
+         (rename_term r a)
+         (rename_term r b)
+         (rename_barehypotheses r J)
+         (rename_term r C)
+         (implies_wf_term_rename_term r a wfa)
+         (implies_wf_term_rename_term r b wfb)
+         (implies_covered_rename_vars_hyps r cova)
+         (implies_covered_rename_vars_hyps r covb)
+         (pre_proof_rename_pre_rule_cequiv_subst_hyp_hyp2 (rename_pre_proof r prf1))
+         (pre_proof_rename_pre_rule_cequiv_subst_hyp_hyp1 (rename_pre_proof r prf2)))
+  | pre_proof_cequiv_computation _ a b H rd =>
+    pre_proof_cequiv_computation
+      (rename_ProofContext r ctxt)
+      (rename_term r a)
+      (rename_term r b)
+      (rename_barehypotheses r H)
+      (reduces_to_rename r ctxt a b rd)
+  | pre_proof_cequiv_computation_aeq _ a b c H rd aeq =>
+    pre_proof_cequiv_computation_aeq
+      (rename_ProofContext r ctxt)
+      (rename_term r a)
+      (rename_term r b)
+      (rename_term r c)
+      (rename_barehypotheses r H)
+      (reduces_to_rename r ctxt a b rd)
+      (implies_alpha_eq_term_rename r b c aeq)
+  | pre_proof_cequiv_computation_atmost _ a b n H rd =>
+    pre_proof_cequiv_computation_atmost
+      (rename_ProofContext r ctxt)
+      (rename_term r a)
+      (rename_term r b)
+      n
+      (rename_barehypotheses r H)
+      (reduces_in_atmost_k_steps_rename r rd)
+  | pre_proof_unfold_abstractions _ abs a H alla prf1 =>
+    pre_proof_unfold_abstractions
+      (rename_ProofContext r ctxt)
+      (rename_abs r abs)
+      (rename_term r a)
+      (rename_barehypotheses r H)
+      (rename_all_abstractions_can_be_unfolded r alla)
+      (pre_proof_rename_pre_rule_unfold_abstraction_hyp (rename_pre_proof r prf1))
+  | pre_proof_rev_unfold_abstractions _ abs a H wfa cova alla prf1 =>
+    pre_proof_rename_pre_rule_unfold_abstractions_hyp
+      (pre_proof_rev_unfold_abstractions
+         (rename_ProofContext r ctxt)
+         (rename_abs r abs)
+         (rename_term r a)
+         (rename_barehypotheses r H)
+         (implies_wf_term_rename_term r a wfa)
+         (implies_covered_rename_vars_hyps r cova)
+         (rename_all_abstractions_can_be_unfolded r alla)
+         (rename_pre_proof r prf1))
+  | pre_proof_universe_equality _ i j H ltij =>
+    pre_proof_universe_equality _ i j (rename_barehypotheses r H) ltij
+  | pre_proof_hypothesis_equality _ x A G J =>
+    pre_proof_rename_pre_rule_hypothesis_equality_concl
+      (pre_proof_hypothesis_equality
+         (rename_ProofContext r ctxt)
+         x
+         (rename_term r A)
+         (rename_barehypotheses r G)
+         (rename_barehypotheses r J))
+  | pre_proof_maybe_hidden_hypothesis_equality _ x A G J b =>
+    pre_proof_rename_pre_rule_maybe_hidden_hypothesis_equality_concl
+      (pre_proof_maybe_hidden_hypothesis_equality
+         (rename_ProofContext r ctxt)
+         x
+         (rename_term r A)
+         (rename_barehypotheses r G)
+         (rename_barehypotheses r J)
+         b)
+  | pre_proof_unhide_equality _ x A t1 t2 C G J prf1 =>
+    pre_proof_rename_pre_rule_unhide_equality_concl
+      (pre_proof_unhide_equality
+         (rename_ProofContext r ctxt)
+         x
+         (rename_term r A)
+         (rename_term r t1)
+         (rename_term r t2)
+         (rename_term r C)
+         (rename_barehypotheses r G)
+         (rename_barehypotheses r J)
+         (pre_proof_rename_pre_rule_unhide_equality_hyp (rename_pre_proof r prf1)))
+  | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+    pre_proof_equality_equality
+      (rename_ProofContext r ctxt)
+      (rename_term r A)
+      (rename_term r B)
+      (rename_term r a1)
+      (rename_term r a2)
+      (rename_term r b1)
+      (rename_term r b2)
+      i
+      (rename_barehypotheses r H)
+      (rename_pre_proof r prf1)
+      (rename_pre_proof r prf2)
+      (rename_pre_proof r prf3)
+  | pre_proof_integer_equality _ n H =>
+    pre_proof_integer_equality
+      (rename_ProofContext r ctxt)
+      n
+      (rename_barehypotheses r H)
+  | pre_proof_introduction _ t C H wft covt noutt prf1 =>
+    pre_proof_introduction
+      (rename_ProofContext r ctxt)
+      (rename_term r t)
+      (rename_term r C)
+      (rename_barehypotheses r H)
+      (implies_wf_term_rename_term r t wft)
+      (implies_covered_rename_nh_vars_hyps r covt)
+      (implies_noutokens_rename_term r t noutt)
+      (rename_pre_proof r prf1)
+  | pre_proof_axiom_equality _ a b T H prf1 =>
+    pre_proof_axiom_equality
+      (rename_ProofContext r ctxt)
+      (rename_term r a)
+      (rename_term r b)
+      (rename_term r T)
+      (rename_barehypotheses r H)
+      (rename_pre_proof r prf1)
+  | pre_proof_thin _ G J A C x nixJ nixC prf1 =>
+    pre_rule_rename_pre_rule_thin_concl
+      (pre_proof_thin
+         (rename_ProofContext r ctxt)
+         (rename_barehypotheses r G)
+         (rename_barehypotheses r J)
+         (rename_term r A)
+         (rename_term r C)
+         x
+         (rename_NVin_free_vars_hyps r nixJ)
+         (rename_NVin_free_vars r nixC)
+         (pre_proof_rename_pre_rule_thin_hyp (rename_pre_proof r prf1)))
+  | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    pre_proof_function_equality
+      (rename_ProofContext r ctxt)
+      (rename_term r a1)
+      (rename_term r a2)
+      (rename_term r b1)
+      (rename_term r b2)
+      x1 x2 y i
+      (rename_barehypotheses r H)
+      (rename_NVin_vars_hyps r niyH)
+      (rename_pre_proof r prf1)
+      (pre_proof_rename_pre_rule_function_equality_hyp2 (rename_pre_proof r prf2))
+  | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+    pre_proof_rename_pre_rule_apply_equality_concl
+      (pre_proof_apply_equality
+         (rename_ProofContext r ctxt)
+         (rename_term r A)
+         (rename_term r B)
+         (rename_term r f1)
+         (rename_term r f2)
+         (rename_term r t1)
+         (rename_term r t2)
+         x
+         (rename_barehypotheses r H)
+         (implies_wf_term_rename_term r A wfA)
+         (implies_covered_rename_vars_hyps r covA)
+         (rename_pre_proof r prf1)
+         (rename_pre_proof r prf2))
+  | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
+    pre_proof_rename_pre_rule_isect_elimination_concl
+      (pre_proof_isect_elimination
+         (rename_ProofContext r ctxt)
+         (rename_term r A)
+         (rename_term r B)
+         (rename_term r C)
+         (rename_term r a)
+         f x z
+         (rename_barehypotheses r H)
+         (rename_barehypotheses r J)
+         (implies_wf_term_rename_term r a wfa)
+         (implies_covered_rename_snoc_app_vars_hyps r cova)
+         (rename_NVin_vars_hyps r nizH)
+         (rename_NVin_vars_hyps r nizJ)
+         dzf
+         (pre_proof_rename_pre_rule_isect_elimination_hyp1 (rename_pre_proof r prf1))
+         (pre_proof_rename_pre_rule_isect_elimination_hyp2 (rename_pre_proof r prf2)))
+  | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+    pre_proof_rename_pre_rule_isect_elimination2_concl
+      (pre_proof_isect_elimination2
+         (rename_ProofContext r ctxt)
+         (rename_term r A)
+         (rename_term r B)
+         (rename_term r C)
+         (rename_term r a)
+         f x y z
+         (rename_barehypotheses r H)
+         (rename_barehypotheses r J)
+         (implies_wf_term_rename_term r a wfa)
+         (implies_covered_rename_snoc_app_vars_hyps r cova)
+         (rename_NVin_vars_hyps r nizH)
+         (rename_NVin_vars_hyps r nizJ)
+         (rename_NVin_vars_hyps r niyH)
+         (rename_NVin_vars_hyps r niyJ)
+         dzf dzy dyf
+         (pre_proof_rename_pre_rule_isect_elimination_hyp1 (rename_pre_proof r prf1))
+         (pre_proof_rename_pre_rule_isect_elimination2_hyp2 (rename_pre_proof r prf2)))
+  | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+    pre_proof_isect_member_equality
+      (rename_ProofContext r ctxt)
+      (rename_barehypotheses r H)
+      (rename_term r t1)
+      (rename_term r t2)
+      (rename_term r A)
+      x
+      (rename_term r B)
+      z i
+      (rename_NVin_vars_hyps r nizH)
+      (pre_proof_rename_pre_rule_isect_member_equality_hyp1 (rename_pre_proof r prf1))
+      (rename_pre_proof r prf2)
+  | pre_proof_cumulativity _ H T i j leij prf1 =>
+    pre_proof_cumulativity
+      (rename_ProofContext r ctxt)
+      (rename_barehypotheses r H)
+      (rename_term r T)
+      i j leij
+      (rename_pre_proof r prf1)
+  | pre_proof_equality_symmetry _ H a b T prf1 =>
+    pre_proof_equality_symmetry
+      (rename_ProofContext r ctxt)
+      (rename_barehypotheses r H)
+      (rename_term r a)
+      (rename_term r b)
+      (rename_term r T)
+      (rename_pre_proof r prf1)
+  | pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2 =>
+    pre_proof_equality_transitivity
+      (rename_ProofContext r ctxt)
+      (rename_barehypotheses r H)
+      (rename_term r a)
+      (rename_term r b)
+      (rename_term r c)
+      (rename_term r T)
+      (implies_wf_term_rename_term r c wfc)
+      (implies_covered_rename_vars_hyps r covc)
+      (rename_pre_proof r prf1)
+      (rename_pre_proof r prf2)
+  | pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2 =>
+    pre_proof_cequiv_transitivity
+      (rename_ProofContext r ctxt)
+      (rename_barehypotheses r H)
+      (rename_term r a)
+      (rename_term r b)
+      (rename_term r c)
+      (implies_wf_term_rename_term r c wfc)
+      (implies_covered_rename_vars_hyps r covc)
+      (rename_pre_proof r prf1)
+      (rename_pre_proof r prf2)
+  end.
+
+Lemma rename_valid_extract {o} :
+  forall r {e : @NTerm o},
+    valid_extract e -> valid_extract (rename_term r e).
+Proof.
+  introv valid.
+  unfold valid_extract in *; repnd; dands; eauto 3 with slow.
+Qed.
 
 Definition rename_LibraryEntry {o} r (e : @LibraryEntry o) : LibraryEntry :=
   match e with
@@ -6947,19 +8089,81 @@ Definition rename_LibraryEntry {o} r (e : @LibraryEntry o) : LibraryEntry :=
       (rename_term r stmt)
       (rename_term r ext)
       (implies_isprog_rename_term r stmt isp)
-      (rename_valid_extract r ext valid)
+      (rename_valid_extract r valid)
       (rename_proof r prf)
   end.
 
 Definition rename_Library {o} r (lib : @Library o) : Library :=
   map (rename_LibraryEntry r) lib.
 
+Definition rename_pre_proof_seq {o} r {ctxt} (p : @pre_proof_seq o ctxt) : pre_proof_seq (rename_ProofContext r ctxt) :=
+  match p with
+  | MkPreProofSeq name term prog prf =>
+    MkPreProofSeq
+      (rename_LemmaName r name)
+      (rename_term r term)
+      (implies_isprog_rename_term r term prog)
+      (rename_pre_proof r prf)
+  end.
+
+Definition rename_pre_proofs {o} r {ctxt} (l : @pre_proofs o ctxt) : pre_proofs (rename_ProofContext r ctxt) :=
+  map (rename_pre_proof_seq r) l.
+
+Lemma equal_lib_abs {o} :
+  forall o1 o2 vs1 vs2 (t1 t2 : @SOTerm o) c1 c2,
+    o1 = o2
+    -> vs1 = vs2
+    -> t1 = t2
+    -> lib_abs o1 vs1 t1 c1 = lib_abs o2 vs2 t2 c2.
+Proof.
+  introv h1 h2 h3; subst; f_equal; eauto 3 with pi.
+Qed.
+
+Lemma rename_soterm_nterm2soterm {o} :
+  forall r (t : @NTerm o),
+    rename_soterm r (nterm2soterm t) = nterm2soterm (rename_term r t).
+Proof.
+  nterm_ind t as [v|f|op bs ind] Case; introv; auto.
+  simpl; f_equal.
+  allrw map_map; unfold compose; apply eq_maps; introv i.
+  destruct x; simpl; f_equal; eapply ind; eauto.
+Defined.
+
+Lemma rename_ProofContext_Library2ProofContext {o} :
+  forall r (l : @Library o),
+    rename_ProofContext r (Library2ProofContext l)
+    = Library2ProofContext (rename_Library r l).
+Proof.
+  induction l; introv; simpl; auto.
+  rewrite <- IHl; clear IHl.
+  unfold rename_ProofContext; simpl.
+  unfold extend_proof_context; simpl.
+  destruct a; simpl; tcsp.
+
+  unfold updLibProofContext; simpl; auto.
+  unfold rename_named_concl; simpl.
+  f_equal; f_equal.
+  unfold extract2def; simpl.
+  apply equal_lib_abs; auto.
+  apply rename_soterm_nterm2soterm.
+Defined.
+
+Lemma pre_proofs_rename_ProofContext_implies {o} :
+  forall {r} {state : @NuprlState o},
+    pre_proofs (rename_ProofContext r (Library2ProofContext state))
+    -> pre_proofs (Library2ProofContext (rename_Library r (NuprlState_lib state))).
+Proof.
+  introv pp.
+  destruct state; simpl in *.
+  rewrite <- rename_ProofContext_Library2ProofContext; auto.
+Defined.
+
 Definition NuprlState_rename {o}
            (state : @NuprlState o)
-           (r     : renaming) : NuprlState * DEBUG_MSG :=
+           (r     : renaming) : NuprlState * (@DEBUG_MSG o) :=
   let lib := rename_Library r (NuprlState_lib state) in
   let unf := rename_pre_proofs r (NuprlState_unfinished state) in
-  MkNuprlState lib unf.
+  (MkNuprlState lib (pre_proofs_rename_ProofContext_implies unf), renamed).
 
 
 Definition update {o}
@@ -7023,6 +8227,63 @@ Definition update_list_from_init {o} (cmds : commands) : @UpdRes o :=
 
 (* Should we add this to NuprlState *)
 Definition ValidNuprlState {o} (state : @NuprlState o) := ValidLibrary state.
+
+Lemma matching_entry_sign_rename_opabs :
+  forall r o1 o2,
+    matching_entry_sign (rename_opabs r o1) (rename_opabs r o2)
+    <=> matching_entry_sign o1 o2.
+Proof.
+  introv.
+  unfold matching_entry_sign.
+  destruct o1, o2; simpl.
+  split; intro h; repnd; dands; subst; auto.
+  apply eq_rename_opname_implies in h0; auto.
+Qed.
+
+Lemma opname2opabs_rename_opname :
+  forall r name,
+    opname2opabs (rename_opname r name)
+    = rename_opabs r (opname2opabs name).
+Proof.
+  introv.
+  unfold opname2opabs; simpl; auto.
+Qed.
+
+Lemma implies_ValidLibrary_rename {o} :
+  forall r (l : @Library o),
+    ValidLibrary l
+    -> ValidLibrary (rename_Library r l).
+Proof.
+  induction l; introv val; simpl in *; auto.
+  repnd; dands; tcsp.
+  destruct a; simpl in *.
+
+  - unfold entry_not_in_lib in *.
+    introv xx; destruct val0.
+    unfold in_lib in *; simpl in *; exrepnd.
+
+    rewrite <- rename_ProofContext_Library2ProofContext in xx1.
+    unfold rename_ProofContext in xx1; simpl in *.
+    unfold rename_lib in *.
+    allrw List.in_map_iff; exrepnd; subst.
+    eexists; dands; eauto.
+    destruct e, x; simpl in *.
+    allrw matching_entry_sign_rename_opabs; auto.
+
+  - repnd; subst; simpl in *.
+    rewrite <- rename_ProofContext_Library2ProofContext; dands; auto.
+    unfold name_not_in_lib in *.
+    introv xx; destruct val0.
+    unfold in_lib in *; simpl in *; exrepnd.
+
+    unfold rename_lib in *.
+    allrw List.in_map_iff; exrepnd; subst.
+    eexists; dands; eauto.
+    destruct x; simpl in *.
+    unfold rename_LemmaName in *; simpl in *.
+    rewrite opname2opabs_rename_opname in xx0.
+    allrw matching_entry_sign_rename_opabs; auto.
+Qed.
 
 Lemma update_preserves_validity {o} :
   forall (state : @NuprlState o) (cmd : command),
@@ -7088,6 +8349,10 @@ Proof.
     destruct f0; simpl in *; auto.
     remember (find_sequent_in_pre_proof_seq p addr) as fh; symmetry in Heqfh.
     destruct fh; simpl; auto.
+
+  - destruct state; simpl in *.
+    unfold ValidNuprlState in *; simpl in *.
+    apply implies_ValidLibrary_rename; auto.
 Qed.
 
 Lemma update_list_preserves_validity {o} :

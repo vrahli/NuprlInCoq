@@ -338,9 +338,9 @@ Lemma rename_barehypotheses_snoc {o} :
     rename_barehypotheses r (snoc H h)
     = snoc (rename_barehypotheses r H) (rename_hypothesis r h).
 Proof.
-  induction H; introv; simpl; tcsp.
-  f_equal; tcsp.
-Qed.
+  induction H; introv; simpl; auto.
+  rewrite IHlist; auto.
+Defined.
 
 Lemma vars_hyps_rename_barehypotheses {o} :
   forall r (H : @bhyps o),
@@ -772,7 +772,7 @@ Lemma sub_find_rename_sub {o} :
       end.
 Proof.
   induction s; introv; simpl; tcsp; repnd; simpl; boolvar; auto.
-Qed.
+Defined.
 
 Lemma rename_sub_sub_filter {o} :
   forall r (s : @Sub o) l,
@@ -782,7 +782,7 @@ Proof.
   induction s; introv; simpl; tcsp.
   repnd; simpl; boolvar; tcsp.
   simpl; rewrite IHs; auto.
-Qed.
+Defined.
 
 Lemma rename_term_lsubst_aux {o} :
   forall r (t : @NTerm o) s,
@@ -802,7 +802,7 @@ Proof.
     destruct x; simpl; f_equal.
     erewrite ind;[|eauto].
     rewrite rename_sub_sub_filter; auto.
-Qed.
+Defined.
 
 Lemma bound_vars_rename_term {o} :
   forall (r : renaming) (t : @NTerm o),
@@ -861,7 +861,7 @@ Proof.
   erewrite <- ind; eauto 3 with slow;[].
   autorewrite with slow; f_equal.
   rewrite rename_term_lsubst_aux; autorewrite with slow; auto.
-Qed.
+Defined.
 
 Lemma rename_term_lsubst {o} :
   forall r (t : @NTerm o) s,
@@ -876,7 +876,7 @@ Proof.
   - rewrite rename_term_lsubst_aux; auto.
     f_equal.
     apply rename_term_change_bvars_alpha.
-Qed.
+Defined.
 
 Lemma rename_term_subst {o} :
   forall r (t : @NTerm o) v u,
@@ -884,7 +884,7 @@ Lemma rename_term_subst {o} :
 Proof.
   introv; unfold subst.
   rewrite rename_term_lsubst; auto.
-Qed.
+Defined.
 
 Lemma eapply_wf_def_rename_term {o} :
   forall r (t : @NTerm o),
