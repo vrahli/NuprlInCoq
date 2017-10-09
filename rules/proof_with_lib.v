@@ -1240,14 +1240,13 @@ Definition name_not_in_lib {o} (name : LemmaName) (l : @library o) :=
 Lemma soterm2nterm_nterm2soterm {o} :
   forall (t : @NTerm o), soterm2nterm (nterm2soterm t) = t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
+  sp_nterm_ind1 t as [v|f ind|op bs ind] Case; simpl; auto.
   Case "oterm".
   f_equal.
-  rewrite map_map; unfold compose.
-  apply eq_map_l; introv i.
-  destruct x as [vs t]; simpl.
-  f_equal.
-  eapply ind; eauto.
+  induction bs; simpl in *; auto.
+  rewrite IHbs;[|introv i; eapply ind; eauto].
+  destruct a; simpl.
+  erewrite ind; eauto.
 Qed.
 Hint Rewrite @soterm2nterm_nterm2soterm : slow.
 
@@ -1314,6 +1313,48 @@ Proof.
     rewrite get_utokens_so_nterm2soterm.
     rewrite n; auto.
 Qed.
+
+Lemma rename_valid_extract {o} :
+  forall r {e : @NTerm o},
+    valid_extract e -> valid_extract (rename_term r e).
+Proof.
+  introv valid.
+  unfold valid_extract in *; repnd; dands; eauto 3 with slow.
+Qed.
+
+
+(*Lemma rename_correct {o} :
+  forall {opabs vars rhs} (r : renaming) (correct : @correct_abs o opabs vars rhs),
+    correct_abs (rename_opabs r opabs) vars (rename_soterm r rhs).
+Proof.
+  introv cor.
+  unfold correct_abs in *; simpl in *; repnd; dands; eauto 3 with slow;
+    autorewrite with slow in *; auto.
+Defined.
+Hint Resolve rename_correct : slow.
+
+Lemma foo {o} :
+  forall r name (ext : @NTerm o) valid,
+    lib_abs
+      (opname2opabs (rename_opname r name))
+      []
+      (rename_soterm r (nterm2soterm ext))
+      (rename_correct r (extract2correct name ext valid))
+    = lib_abs
+        (opname2opabs (rename_opname r name))
+        []
+        (nterm2soterm (rename_term r ext))
+        (extract2correct
+           (rename_opname r name)
+           (rename_term r ext)
+           (rename_valid_extract r valid)).
+Proof.
+  introv.
+  unfold valid_extract in *; repnd; simpl.
+  unfold extract2correct.
+
+Qed.*)
+
 
 Definition extract2def {o}
            (name  : LemmaName)
@@ -8071,14 +8112,6 @@ Fixpoint rename_pre_proof {o}
       (rename_pre_proof r prf2)
   end.
 
-Lemma rename_valid_extract {o} :
-  forall r {e : @NTerm o},
-    valid_extract e -> valid_extract (rename_term r e).
-Proof.
-  introv valid.
-  unfold valid_extract in *; repnd; dands; eauto 3 with slow.
-Qed.
-
 Definition rename_LibraryEntry {o} r (e : @LibraryEntry o) : LibraryEntry :=
   match e with
   | LibraryEntry_abs e => LibraryEntry_abs (rename_library_entry r e)
@@ -8109,6 +8142,18 @@ Definition rename_pre_proof_seq {o} r {ctxt} (p : @pre_proof_seq o ctxt) : pre_p
 Definition rename_pre_proofs {o} r {ctxt} (l : @pre_proofs o ctxt) : pre_proofs (rename_ProofContext r ctxt) :=
   map (rename_pre_proof_seq r) l.
 
+Lemma rename_soterm_nterm2soterm {o} :
+  forall r (t : @NTerm o),
+    rename_soterm r (nterm2soterm t) = nterm2soterm (rename_term r t).
+Proof.
+  sp_nterm_ind1 t as [v|f|op bs ind] Case; introv; auto.
+  simpl; f_equal.
+  induction bs; simpl in *; auto.
+  rewrite IHbs;[|introv i; eapply ind; eauto].
+  destruct a; simpl.
+  erewrite ind; eauto.
+Qed.
+
 Lemma equal_lib_abs {o} :
   forall o1 o2 vs1 vs2 (t1 t2 : @SOTerm o) c1 c2,
     o1 = o2
@@ -8118,16 +8163,6 @@ Lemma equal_lib_abs {o} :
 Proof.
   introv h1 h2 h3; subst; f_equal; eauto 3 with pi.
 Qed.
-
-Lemma rename_soterm_nterm2soterm {o} :
-  forall r (t : @NTerm o),
-    rename_soterm r (nterm2soterm t) = nterm2soterm (rename_term r t).
-Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv; auto.
-  simpl; f_equal.
-  allrw map_map; unfold compose; apply eq_maps; introv i.
-  destruct x; simpl; f_equal; eapply ind; eauto.
-Defined.
 
 Lemma rename_ProofContext_Library2ProofContext {o} :
   forall r (l : @Library o),
@@ -8144,9 +8179,266 @@ Proof.
   unfold rename_named_concl; simpl.
   f_equal; f_equal.
   unfold extract2def; simpl.
+
   apply equal_lib_abs; auto.
   apply rename_soterm_nterm2soterm.
-Defined.
+Qed.
+
+Lemma in_PC_conclusion_rename_ProofContext_Library2ProofContext_implies {o} :
+  forall {c} {r} {l : @Library o},
+    LIn c (PC_conclusions (rename_ProofContext r (Library2ProofContext l)))
+    -> LIn c (PC_conclusions (Library2ProofContext (rename_Library r l))).
+Proof.
+  introv i.
+  rewrite <- rename_ProofContext_Library2ProofContext; auto.
+Qed.
+
+Lemma reduces_to_rename_ProofContext_Library2ProofContext {o} :
+  forall {r} {l} {a b : @NTerm o},
+    reduces_to (rename_ProofContext r (Library2ProofContext l)) a b
+    -> reduces_to (Library2ProofContext (rename_Library r l)) a b.
+Proof.
+  introv rd.
+  rewrite <- rename_ProofContext_Library2ProofContext; auto.
+Qed.
+
+Lemma reduces_in_atmost_k_steps_rename_ProofContext_Library2ProofContext {o} :
+  forall {r} {l} {a b : @NTerm o} {k},
+    reduces_in_atmost_k_steps (rename_ProofContext r (Library2ProofContext l)) a b k
+    -> reduces_in_atmost_k_steps (Library2ProofContext (rename_Library r l)) a b k.
+Proof.
+  introv rd.
+  rewrite <- rename_ProofContext_Library2ProofContext; auto.
+Qed.
+
+Lemma all_abstraction_can_be_unfolded_rename_ProofContext_Library2ProofContext {o} :
+  forall {r} {l} {abs} {a : @NTerm o},
+    all_abstractions_can_be_unfolded (rename_ProofContext r (Library2ProofContext l)) abs a
+    -> all_abstractions_can_be_unfolded (Library2ProofContext (rename_Library r l)) abs a.
+Proof.
+  introv h.
+  rewrite <- rename_ProofContext_Library2ProofContext; auto.
+Qed.
+
+Lemma pre_proof_Library2ProofContext_rename_Library_pre_rule_unfold_abstractions_hyp_implies {o} :
+  forall {r} {l} {abs} {a} {H : @bhyps o},
+    pre_proof (Library2ProofContext (rename_Library r l)) (pre_rule_unfold_abstractions_hyp (rename_ProofContext r (Library2ProofContext l)) abs a H) ->
+    pre_proof (Library2ProofContext (rename_Library r l)) (pre_rule_unfold_abstractions_hyp (Library2ProofContext (rename_Library r l)) abs a H).
+Proof.
+  introv h.
+  rewrite rename_ProofContext_Library2ProofContext in h; auto.
+Qed.
+
+Lemma implies_pre_proof_Library2ProofContext_rename_Library_pre_rule_unfold_abstractions_hyp {o} :
+  forall {r} {l} {abs} {a} {H : @bhyps o},
+    pre_proof (Library2ProofContext (rename_Library r l)) (pre_rule_unfold_abstractions_hyp (Library2ProofContext (rename_Library r l)) abs a H) ->
+    pre_proof (Library2ProofContext (rename_Library r l)) (pre_rule_unfold_abstractions_hyp (rename_ProofContext r (Library2ProofContext l)) abs a H).
+Proof.
+  introv h.
+  rewrite rename_ProofContext_Library2ProofContext; auto.
+Qed.
+
+Fixpoint rename_ctxt_pre_proof {o}
+         (r    : renaming)
+         {l    : @Library o}
+         {s    : pre_baresequent}
+         (prf  : pre_proof (rename_ProofContext r (Library2ProofContext l)) s)
+  : pre_proof (Library2ProofContext (rename_Library r l)) s :=
+  match prf with
+  | pre_proof_from_ctxt _ c H i =>
+    pre_proof_from_ctxt
+      (Library2ProofContext (rename_Library r l))
+      c H
+      (in_PC_conclusion_rename_ProofContext_Library2ProofContext_implies i)
+  | pre_proof_hole _ s =>
+    pre_proof_hole
+      (Library2ProofContext (rename_Library r l))
+      s
+  | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    pre_proof_isect_eq
+      (Library2ProofContext (rename_Library r l))
+      a1 a2 b1 b2 x1 x2 y i H niyH
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+    pre_proof_isect_member_formation
+      (Library2ProofContext (rename_Library r l))
+      A x B z i H nizH
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_approx_refl _ a H =>
+    pre_proof_approx_refl
+      (Library2ProofContext (rename_Library r l))
+      a H
+  | pre_proof_cequiv_refl _ a H =>
+    pre_proof_cequiv_refl
+      (Library2ProofContext (rename_Library r l))
+      a H
+  | pre_proof_cequiv_alpha_eq _ a b H aeq =>
+    pre_proof_cequiv_alpha_eq
+      (Library2ProofContext (rename_Library r l))
+      a b H aeq
+  | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
+    pre_proof_cequiv_approx
+      (Library2ProofContext (rename_Library r l))
+      a b H
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+    pre_proof_approx_eq
+      (Library2ProofContext (rename_Library r l))
+      a1 a2 b1 b2 i H
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+    pre_proof_cequiv_eq
+      (Library2ProofContext (rename_Library r l))
+      a1 a2 b1 b2 i H
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_cut _ B C x H wfB covB nixH prf1 prf2 =>
+    pre_proof_cut
+      (Library2ProofContext (rename_Library r l))
+      B C x H wfB covB nixH
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_hypothesis _ x A G J =>
+    pre_proof_hypothesis
+      (Library2ProofContext (rename_Library r l))
+      x A G J
+  | pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2 =>
+    pre_proof_cequiv_subst_concl
+      (Library2ProofContext (rename_Library r l))
+      C x a b H wfa wfb cova covb
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2 =>
+    pre_proof_cequiv_subst_hyp
+      (Library2ProofContext (rename_Library r l))
+      H z T x a b J C wfa wfb cova covb
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_cequiv_computation _ a b H rd =>
+    pre_proof_cequiv_computation
+      (Library2ProofContext (rename_Library r l))
+      a b H (reduces_to_rename_ProofContext_Library2ProofContext rd)
+  | pre_proof_cequiv_computation_aeq _ a b c H rd aeq =>
+    pre_proof_cequiv_computation_aeq
+      (Library2ProofContext (rename_Library r l))
+      a b c H (reduces_to_rename_ProofContext_Library2ProofContext rd) aeq
+  | pre_proof_cequiv_computation_atmost _ a b n H rd =>
+    pre_proof_cequiv_computation_atmost
+      (Library2ProofContext (rename_Library r l))
+      a b n H (reduces_in_atmost_k_steps_rename_ProofContext_Library2ProofContext rd)
+  | pre_proof_unfold_abstractions _ abs a H alla prf1 =>
+    pre_proof_unfold_abstractions
+      (Library2ProofContext (rename_Library r l))
+      abs a H
+      (all_abstraction_can_be_unfolded_rename_ProofContext_Library2ProofContext alla)
+      (pre_proof_Library2ProofContext_rename_Library_pre_rule_unfold_abstractions_hyp_implies (rename_ctxt_pre_proof r prf1))
+  | pre_proof_rev_unfold_abstractions _ abs a H wfa cova alla prf1 =>
+    implies_pre_proof_Library2ProofContext_rename_Library_pre_rule_unfold_abstractions_hyp
+      (pre_proof_rev_unfold_abstractions
+         (Library2ProofContext (rename_Library r l))
+         abs a H wfa cova
+         (all_abstraction_can_be_unfolded_rename_ProofContext_Library2ProofContext alla)
+         (rename_ctxt_pre_proof r prf1))
+  | pre_proof_universe_equality _ i j H ltij =>
+    pre_proof_universe_equality
+      (Library2ProofContext (rename_Library r l))
+      i j H ltij
+  | pre_proof_hypothesis_equality _ x A G J =>
+    pre_proof_hypothesis_equality
+      (Library2ProofContext (rename_Library r l))
+      x A G J
+  | pre_proof_maybe_hidden_hypothesis_equality _ x A G J b =>
+    pre_proof_maybe_hidden_hypothesis_equality
+      (Library2ProofContext (rename_Library r l))
+      x A G J b
+  | pre_proof_unhide_equality _ x A t1 t2 C G J prf1 =>
+    pre_proof_unhide_equality
+      (Library2ProofContext (rename_Library r l))
+      x A t1 t2 C G J
+      (rename_ctxt_pre_proof r prf1)
+  | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+    pre_proof_equality_equality
+      (Library2ProofContext (rename_Library r l))
+      A B a1 a2 b1 b2 i H
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+      (rename_ctxt_pre_proof r prf3)
+  | pre_proof_integer_equality _ n H =>
+    pre_proof_integer_equality
+      (Library2ProofContext (rename_Library r l))
+      n H
+  | pre_proof_introduction _ t C H wft covt noutt prf1 =>
+    pre_proof_introduction
+      (Library2ProofContext (rename_Library r l))
+      t C H wft covt noutt
+      (rename_ctxt_pre_proof r prf1)
+  | pre_proof_axiom_equality _ a b T H prf1 =>
+    pre_proof_axiom_equality
+      (Library2ProofContext (rename_Library r l))
+      a b T H
+      (rename_ctxt_pre_proof r prf1)
+  | pre_proof_thin _ G J A C x nixJ nixC prf1 =>
+    pre_proof_thin
+      (Library2ProofContext (rename_Library r l))
+      G J A C x nixJ nixC
+      (rename_ctxt_pre_proof r prf1)
+  | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    pre_proof_function_equality
+      (Library2ProofContext (rename_Library r l))
+      a1 a2 b1 b2 x1 x2 y i H niyH
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+    pre_proof_apply_equality
+      (Library2ProofContext (rename_Library r l))
+      A B f1 f2 t1 t2 x H wfA covA
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
+    pre_proof_isect_elimination
+      (Library2ProofContext (rename_Library r l))
+      A B C a f x z H J wfa cova nizH nizJ dzf
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+    pre_proof_isect_elimination2
+      (Library2ProofContext (rename_Library r l))
+      A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+    pre_proof_isect_member_equality
+      (Library2ProofContext (rename_Library r l))
+      H t1 t2 A x B z i nizH
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_cumulativity _ H T i j leij prf1 =>
+    pre_proof_cumulativity
+      (Library2ProofContext (rename_Library r l))
+      H T i j leij
+      (rename_ctxt_pre_proof r prf1)
+  | pre_proof_equality_symmetry _ H a b T prf1 =>
+    pre_proof_equality_symmetry
+      (Library2ProofContext (rename_Library r l))
+      H a b T
+      (rename_ctxt_pre_proof r prf1)
+  | pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2 =>
+    pre_proof_equality_transitivity
+      (Library2ProofContext (rename_Library r l))
+      H a b c T wfc covc
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  | pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2 =>
+    pre_proof_cequiv_transitivity
+      (Library2ProofContext (rename_Library r l))
+      H a b c wfc covc
+      (rename_ctxt_pre_proof r prf1)
+      (rename_ctxt_pre_proof r prf2)
+  end.
 
 Lemma pre_proofs_rename_ProofContext_implies {o} :
   forall {r} {state : @NuprlState o},
@@ -8154,8 +8446,18 @@ Lemma pre_proofs_rename_ProofContext_implies {o} :
     -> pre_proofs (Library2ProofContext (rename_Library r (NuprlState_lib state))).
 Proof.
   introv pp.
-  destruct state; simpl in *.
-  rewrite <- rename_ProofContext_Library2ProofContext; auto.
+  destruct state as [l unf]; simpl in *.
+  clear unf.
+  unfold pre_proofs in *.
+  induction pp.
+
+  - exact [].
+
+  - assert (pre_proof_seq (Library2ProofContext (rename_Library r l))) as p;[|exact (p :: IHpp)].
+    clear pp IHpp.
+    destruct a as [n t isp pp].
+    apply rename_ctxt_pre_proof in pp.
+    exact (MkPreProofSeq n t isp pp).
 Defined.
 
 Definition NuprlState_rename {o}

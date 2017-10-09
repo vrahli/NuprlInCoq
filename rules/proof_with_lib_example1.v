@@ -75,7 +75,6 @@ Definition cmds1 {o} : @commands o :=
          (mk_cequiv
             (mk_abs opabs_member [nobnd (mk_var (nvar "t")), nobnd (mk_var (nvar "T"))])
             (mk_equality (mk_var (nvar "t")) (mk_var (nvar "t")) (mk_var (nvar "T"))))),
-    COM_find_holes "member_wf",
     COM_update_proof
       "member_wf"
       [1,1,1]
@@ -90,7 +89,7 @@ Definition cmds1 {o} : @commands o :=
          (mk_equality (mk_var (nvar "t")) (mk_var (nvar "t")) (mk_var (nvar "T")))),
     COM_update_proof
       "member_wf"
-      [1,1,2,2]
+      [1,1,2,1]
       (proof_step_hypothesis (nvar "w")),
     COM_update_proof
       "member_wf"
@@ -106,31 +105,31 @@ Definition cmds1 {o} : @commands o :=
       (proof_step_hypothesis_equality),
     COM_update_proof
       "member_wf"
-      [1,1,2,1]
+      [1,1,2,2]
       (proof_step_equality_equality),
     COM_update_proof
       "member_wf"
-      [1,1,2,1,1]
+      [1,1,2,2,1]
       (proof_step_unhide_equality (nvar "T")),
     COM_update_proof
       "member_wf"
-      [1,1,2,1,1,1]
+      [1,1,2,2,1,1]
       (proof_step_hypothesis_equality),
     COM_update_proof
       "member_wf"
-      [1,1,2,1,2]
+      [1,1,2,2,2]
       (proof_step_unhide_equality (nvar "t")),
     COM_update_proof
       "member_wf"
-      [1,1,2,1,2,1]
+      [1,1,2,2,2,1]
       (proof_step_hypothesis_equality),
     COM_update_proof
       "member_wf"
-      [1,1,2,1,3]
+      [1,1,2,2,3]
       (proof_step_unhide_equality (nvar "t")),
     COM_update_proof
       "member_wf"
-      [1,1,2,1,3,1]
+      [1,1,2,2,3,1]
       (proof_step_hypothesis_equality),
     COM_find_holes "member_wf",
     COM_finish_proof "member_wf",
@@ -192,11 +191,13 @@ Definition cmds1 {o} : @commands o :=
       []
       (proof_step_lemma "int_member"),
     COM_find_holes "int_member_v2",
-    COM_finish_proof "int_member_v2"
+    COM_finish_proof "int_member_v2",
+
+    (* rename 'member' into 'MEMBER' *)
+    COM_rename "member" "MEMBER"
   ].
 
 Definition lib1 {o} : @UpdRes o := update_list_from_init cmds1.
-
 Eval compute in lib1.
 
 Time Eval compute in (update_list_from_init_with_validity cmds1).

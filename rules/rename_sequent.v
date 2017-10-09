@@ -109,13 +109,12 @@ Lemma free_vars_rename_term {o} :
   forall (r : renaming) (t : @NTerm o),
     free_vars (rename_term r t) = free_vars t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; simpl; tcsp;[].
-  allrw flat_map_map; unfold compose.
-  apply eq_flat_maps; introv i.
-  destruct x; simpl.
-  apply ind in i.
-  rewrite i; auto.
-Qed.
+  sp_nterm_ind1 t as [v|f ind|op bs ind] Case; introv; simpl; tcsp;[].
+  induction bs; simpl; auto.
+  rewrite IHbs; clear IHbs; simpl in *; tcsp;[|introv i; eapply ind; eauto].
+  destruct a; simpl.
+  erewrite ind; eauto.
+Defined.
 Hint Rewrite @free_vars_rename_term : slow.
 
 Lemma closed_rename_term {o} :
@@ -140,13 +139,12 @@ Lemma get_utokens_rename_term {o} :
   forall (r : renaming) (t : @NTerm o),
     get_utokens (rename_term r t) = get_utokens t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; simpl; tcsp;[].
-  allrw flat_map_map; unfold compose; autorewrite with slow in *.
-  f_equal.
-  apply eq_flat_maps; introv i.
-  destruct x; simpl.
-  apply ind in i.
-  rewrite i; auto.
+  sp_nterm_ind1 t as [v|f ind|op bs ind] Case; introv; simpl; tcsp;[].
+  autorewrite with slow; f_equal.
+  induction bs; simpl in *; auto.
+  rewrite IHbs; auto;[|introv xx; eapply ind;eauto].
+  destruct a; simpl; f_equal.
+  eapply ind; eauto.
 Qed.
 Hint Rewrite @get_utokens_rename_term : slow.
 
@@ -517,6 +515,10 @@ Proof.
 Qed.
 Hint Rewrite @rename_term_idem : slow.
 
+(*Eval compute in (rename_term_idem
+                   ("member", "MEMBER")
+                   (mk_uall (vterm nvarT) nvart mk_axiom)).*)
+
 Lemma rename_soterm_idem {o} :
   forall r (t : @SOTerm o),
     rename_soterm r (rename_soterm r t) = t.
@@ -788,7 +790,7 @@ Lemma rename_term_lsubst_aux {o} :
   forall r (t : @NTerm o) s,
     rename_term r (lsubst_aux t s) = lsubst_aux (rename_term r t) (rename_sub r s).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; simpl; tcsp.
+  sp_nterm_ind1 t as [v|f ind|op bs ind] Case; introv; simpl; tcsp.
 
   - Case "vterm".
 
@@ -797,10 +799,10 @@ Proof.
 
   - Case "oterm".
     f_equal.
-    allrw map_map; unfold compose.
-    apply eq_maps; introv i.
-    destruct x; simpl; f_equal.
-    erewrite ind;[|eauto].
+    induction bs; simpl; auto.
+    rewrite IHbs; simpl in *; tcsp;[|introv xx; eapply ind; eauto].
+    destruct a; simpl.
+    erewrite ind; eauto.
     rewrite rename_sub_sub_filter; auto.
 Defined.
 
@@ -808,27 +810,13 @@ Lemma bound_vars_rename_term {o} :
   forall (r : renaming) (t : @NTerm o),
     bound_vars (rename_term r t) = bound_vars t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; simpl; tcsp;[].
-  allrw flat_map_map; unfold compose.
-  apply eq_flat_maps; introv i.
-  destruct x; simpl.
-  apply ind in i.
-  rewrite i; auto.
-Qed.
+  sp_nterm_ind1 t as [v|f ind|op bs ind] Case; introv; simpl; tcsp;[].
+  induction bs; simpl; auto.
+  rewrite IHbs; clear IHbs; simpl in *; tcsp;[|introv i; eapply ind; eauto].
+  destruct a; simpl.
+  erewrite ind; eauto.
+Defined.
 Hint Rewrite @bound_vars_rename_term : slow.
-
-Lemma flat_map_free_vars_range_rename_sub {o} :
-  forall r (s : @Sub o),
-    flat_map free_vars (range (rename_sub r s))
-    = flat_map free_vars (range s).
-Proof.
-  unfold rename_sub; introv.
-  unfold range.
-  allrw map_map.
-  allrw flat_map_map; unfold compose.
-  apply eq_flat_maps; introv i; repnd; simpl; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @flat_map_free_vars_range_rename_sub : slow.
 
 Lemma all_vars_rename_term {o} :
   forall r (t : @NTerm o),
@@ -853,7 +841,7 @@ Lemma rename_term_change_bvars_alpha {o} :
     rename_term r (change_bvars_alpha vs t)
     = change_bvars_alpha vs (rename_term r t).
 Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv; simpl in *; tcsp.
+  sp_nterm_ind1 t as [v|f|op bs ind] Case; introv; simpl in *; tcsp.
   f_equal.
   allrw map_map; unfold compose.
   apply eq_maps; introv i.
@@ -863,19 +851,26 @@ Proof.
   rewrite rename_term_lsubst_aux; autorewrite with slow; auto.
 Defined.
 
+Lemma flat_map_free_vars_range_rename_sub {o} :
+  forall r (s : @Sub o),
+    flat_map free_vars (range (rename_sub r s))
+    = flat_map free_vars (range s).
+Proof.
+  induction s; simpl; auto.
+  rewrite IHs; repnd; simpl; clear IHs.
+  autorewrite with slow; auto.
+Defined.
+Hint Rewrite @flat_map_free_vars_range_rename_sub : slow.
+
 Lemma rename_term_lsubst {o} :
   forall r (t : @NTerm o) s,
     rename_term r (lsubst t s) = lsubst (rename_term r t) (rename_sub r s).
 Proof.
   introv.
-  unfold lsubst; autorewrite with slow.
-  boolvar; auto.
-
-  - rewrite rename_term_lsubst_aux; auto.
-
-  - rewrite rename_term_lsubst_aux; auto.
-    f_equal.
-    apply rename_term_change_bvars_alpha.
+  unfold lsubst.
+  autorewrite with slow.
+  boolvar; auto; rewrite rename_term_lsubst_aux; auto.
+  rewrite rename_term_change_bvars_alpha; auto.
 Defined.
 
 Lemma rename_term_subst {o} :
@@ -979,7 +974,7 @@ Lemma rename_term_subst_utokens_aux {o} :
     rename_term r (subst_utokens_aux t s)
     = subst_utokens_aux (rename_term r t) (rename_utok_sub r s).
 Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv; tcsp;[].
+  sp_nterm_ind1 t as [v|f|op bs ind] Case; introv; tcsp;[].
   rewrite rename_term_oterm.
   repeat (rewrite subst_utokens_aux_oterm).
   autorewrite with slow in *.
@@ -1216,7 +1211,7 @@ Lemma allvars_rename_term {o} :
   forall r (t : @NTerm o),
     allvars (rename_term r t) = allvars t.
 Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv; simpl; tcsp.
+  sp_nterm_ind1 t as [v|f|op bs ind] Case; introv; simpl; tcsp.
   allrw flat_map_map; unfold compose.
   apply eq_flat_maps; introv i.
   destruct x; simpl; f_equal; eapply ind; eauto.
