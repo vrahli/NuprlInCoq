@@ -101,7 +101,7 @@ Definition baresequent2pre {o} (s : @baresequent o) : pre_baresequent :=
 Definition PreStatement {o} (T : @NTerm o) : pre_baresequent :=
   mk_pre_bseq [] (mk_pre_concl T).
 
-Definition Statement {o} (T : @NTerm o) (e : NTerm) : baresequent :=
+Definition NLemma {o} (T : @NTerm o) (e : NTerm) : baresequent :=
   mk_baresequent [] (mk_concl T e).
 
 
@@ -1397,7 +1397,7 @@ Inductive LibraryEntry {o} :=
     (ext   : NTerm)
     (isp   : isprog stmt)
     (valid : valid_extract ext)
-    (prf   : proof ctxt (Statement stmt ext)).
+    (prf   : proof ctxt (NLemma stmt ext)).
 
 (* A library is just a list of entries such that we store the most recent
    entry at the front of the list
@@ -3801,7 +3801,7 @@ Lemma name_of_finish_pre_proof_seq {o} :
          (ext   : NTerm)
          (isp   : isprog stmt)
          (valid : valid_extract ext)
-         (prf   : proof ctxt (Statement stmt ext)),
+         (prf   : proof ctxt (NLemma stmt ext)),
     finish_pre_proof_seq p = Some (LibraryEntry_proof ctxt name stmt ext isp valid prf)
     -> pre_proof_seq_name p = name.
 Proof.
