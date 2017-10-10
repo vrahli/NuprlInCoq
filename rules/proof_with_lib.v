@@ -1413,13 +1413,6 @@ Definition extend_proof_context {o} (ctxt : @ProofContext o) (e : LibraryEntry) 
       (extract2def name ext valid)
   end.
 
-Definition ValidLibraryEntry {o} (ctxt : @ProofContext o) (e : LibraryEntry) : Type :=
-  match e with
-  | LibraryEntry_abs e => entry_not_in_lib e ctxt
-  | LibraryEntry_proof c name stmt ext isp valid prf =>
-    c = ctxt # name_not_in_lib name ctxt
-  end.
-
 Fixpoint Library2ProofContext {o} (L : @Library o) : ProofContext :=
   match L with
   | [] => EMPC
@@ -1430,6 +1423,15 @@ Fixpoint Library2ProofContext {o} (L : @Library o) : ProofContext :=
 
 Definition Library2lib {o} (L : @Library o) : library := Library2ProofContext L.
 
+Definition ValidLibraryEntry {o} (ctxt : @ProofContext o) (e : LibraryEntry) : Type :=
+  match e with
+  | LibraryEntry_abs e => entry_not_in_lib e ctxt
+  | LibraryEntry_proof c name stmt ext isp valid prf =>
+    (c = ctxt)
+      # name_not_in_lib name ctxt
+      # sequent_true_ext_lib_wf ctxt (NLemma stmt ext)
+  end.
+
 Fixpoint ValidLibrary {o} (L : @Library o) : Type :=
   match L with
   | [] => True
@@ -1438,26 +1440,14 @@ Fixpoint ValidLibrary {o} (L : @Library o) : Type :=
     # ValidLibrary entries
   end.
 
-Definition lemma_in_LibraryEntry {o}
-           (s : @baresequent o)
-           (e : LibraryEntry) : Type :=
-  match e with
-  | LibraryEntry_abs e => False
-  | LibraryEntry_proof c name stmt ext isp valid prf =>
-    s = mk_baresequent [] (mk_concl stmt ext)
-  end.
-
-Fixpoint lemma_in_Library {o}
-         (s : @baresequent o)
-         (l : Library) : Type :=
-  match l with
-  | [] => False
-  | entry :: entries =>
-    lemma_in_LibraryEntry s entry
-    [+]
-    lemma_in_Library s entries
-  end.
-
+Lemma wf_bseq_implies_wf_hypotheses {o} :
+  forall (H : @bhyps o) s,
+    wf_bseq (named_concl2bseq H s)
+    -> wf_hypotheses H.
+Proof.
+  introv wf; unfold wf_bseq in *; repnd; auto.
+Qed.
+Hint Resolve wf_bseq_implies_wf_hypotheses : slow.
 
 
 (* ===========================================================
@@ -1473,7 +1463,8 @@ Fixpoint lemma_in_Library {o}
 Lemma valid_proof {o} :
   forall (ctxt : @ProofContext o) s (wf : wf_bseq s),
     (forall c H,
-        LIn c (PC_conclusions ctxt)
+        wf_hypotheses H
+        -> LIn c (PC_conclusions ctxt)
         -> sequent_true_ext_lib_wf ctxt (named_concl2bseq H c))
     -> proof ctxt s
     -> sequent_true_ext_lib_wf ctxt s.
@@ -1524,6 +1515,8 @@ Proof.
        ];
     allsimpl;
     allrw NVin_iff; tcsp.
+
+  - apply imp; eauto 3 with slow.
 
   - apply (rule_isect_equality2_true_ext_lib ctxt a1 a2 b1 b2 e1 e2 x1 x2 y i hs); simpl; tcsp.
 
@@ -8551,6 +8544,42 @@ Proof.
   unfold opname2opabs; simpl; auto.
 Qed.
 
+Lemma wf_csequent_rename {o} :
+  forall r {s : @baresequent o},
+    wf_csequent s -> wf_csequent (rename_baresequent r s).
+Proof.
+  introv wf.
+  unfold wf_csequent in *; simpl in *; repnd.
+  dands; eauto 3 with slow.
+
+  - unfold closed_type in *; destruct s, concl; simpl in *; eauto 3 with slow.
+
+  - unfold closed_extract in *; destruct s, concl; simpl in *; eauto 3 with slow.
+Qed.
+Hint Resolve wf_csequent_rename : slow.
+
+Lemma implies_sequent_true_ext_lib_wf {o} :
+  forall r l (stmt ext : @NTerm o),
+    sequent_true_ext_lib_wf (Library2ProofContext l) (NLemma stmt ext)
+    -> sequent_true_ext_lib_wf
+         (rename_ProofContext r (Library2ProofContext l))
+         (NLemma (rename_term r stmt) (rename_term r ext)).
+Proof.
+  introv strue.
+  unfold sequent_true_ext_lib_wf in *; exrepnd.
+  exists (wf_csequent_rename r c).
+  apply (renaming_preserves_sequent_true_ext_lib r) in strue0.
+  unfold rename_ProofContext; simpl.
+
+  match goal with
+  | [ H : sequent_true_ext_lib _ ?s1 |- sequent_true_ext_lib _ ?s2] =>
+    assert (s2 = s1) as xx;[|rewrite xx; auto];[]
+  end.
+  apply eq_csequent; simpl.
+  apply eq_ctsequent; simpl.
+  apply eq_sequent; simpl; auto.
+Qed.
+
 Lemma implies_ValidLibrary_rename {o} :
   forall r (l : @Library o),
     ValidLibrary l
@@ -8574,17 +8603,385 @@ Proof.
 
   - repnd; subst; simpl in *.
     rewrite <- rename_ProofContext_Library2ProofContext; dands; auto.
-    unfold name_not_in_lib in *.
-    introv xx; destruct val0.
-    unfold in_lib in *; simpl in *; exrepnd.
 
-    unfold rename_lib in *.
-    allrw List.in_map_iff; exrepnd; subst.
-    eexists; dands; eauto.
-    destruct x; simpl in *.
-    unfold rename_LemmaName in *; simpl in *.
-    rewrite opname2opabs_rename_opname in xx0.
-    allrw matching_entry_sign_rename_opabs; auto.
+    + unfold name_not_in_lib in *.
+      introv xx; destruct val2.
+      unfold in_lib in *; simpl in *; exrepnd.
+
+      unfold rename_lib in *.
+      allrw List.in_map_iff; exrepnd; subst.
+      eexists; dands; eauto.
+      destruct x; simpl in *.
+      unfold rename_LemmaName in *; simpl in *.
+      rewrite opname2opabs_rename_opname in xx0.
+      allrw matching_entry_sign_rename_opabs; auto.
+
+    + apply implies_sequent_true_ext_lib_wf; auto.
+Qed.
+
+Definition lemma_in_LibraryEntry {o}
+           (s : @baresequent o)
+           (e : LibraryEntry) : Type :=
+  match e with
+  | LibraryEntry_abs e => False
+  | LibraryEntry_proof c name stmt ext isp valid prf =>
+    s = named_concl2bseq [] (MkNamedConcl name stmt) (*mk_baresequent [] (mk_concl stmt ext)*)
+  end.
+
+Fixpoint lemma_in_Library {o}
+         (s : @baresequent o)
+         (l : Library) : Type :=
+  match l with
+  | [] => False
+  | entry :: entries =>
+    lemma_in_LibraryEntry s entry
+    [+]
+    lemma_in_Library s entries
+  end.
+
+Lemma lemma_in_Library_named_concl2bseq_iff {o} :
+  forall (c : @named_concl o) L,
+    lemma_in_Library (named_concl2bseq [] c) L
+    <=> LIn c (PC_conclusions (Library2ProofContext L)).
+Proof.
+  induction L; simpl; split; introv h; tcsp.
+
+  - repndors.
+
+    + destruct a; simpl in *; tcsp.
+      unfold named_concl2bseq, named_concl2concl in *; simpl in *; ginv.
+      left.
+      destruct c; simpl in *; tcsp.
+
+    + apply IHL in h; exrepnd; subst; clear IHL.
+      destruct a; simpl; tcsp.
+
+  - destruct a; simpl in *; tcsp.
+
+    + right; apply IHL; clear IHL; auto.
+
+    + repndors; subst; tcsp.
+      right; apply IHL; clear IHL; auto.
+Qed.
+
+Lemma implies_lemma_in_Library_named_concl2bseq {o} :
+  forall (c : @named_concl o) L,
+    LIn c (PC_conclusions (Library2ProofContext L))
+    -> lemma_in_Library (named_concl2bseq [] c) L.
+Proof.
+  introv i.
+  apply lemma_in_Library_named_concl2bseq_iff; auto.
+Qed.
+Hint Resolve implies_lemma_in_Library_named_concl2bseq : slow.
+
+Lemma wf_term_simple_mk_abs {o} :
+  forall n, @wf_term o (mk_abs (opname2opabs n) []).
+Proof.
+  introv; apply wf_term_eq.
+  constructor; simpl; tcsp.
+Qed.
+Hint Resolve wf_term_simple_mk_abs : slow.
+
+Lemma closed_simple_mk_abs {o} :
+  forall n, @closed o (mk_abs (opname2opabs n) []).
+Proof.
+  introv; unfold closed, mk_abs; simpl; auto.
+Qed.
+Hint Resolve closed_simple_mk_abs : slow.
+
+Lemma noutokens_simple_mk_abs {o} :
+  forall n, @noutokens o (mk_abs (opname2opabs n) []).
+Proof.
+  introv; unfold noutokens, mk_abs; simpl; auto.
+Qed.
+Hint Resolve noutokens_simple_mk_abs : slow.
+
+Lemma valid_extract_simple_mk_abs {o} :
+  forall n, @valid_extract o (mk_abs (opname2opabs n) []).
+Proof.
+  introv; unfold valid_extract; simpl; dands; eauto 3 with slow.
+Qed.
+Hint Resolve valid_extract_simple_mk_abs : slow.
+
+Lemma wf_sequent_named_concl_no_hyps_implies {o} :
+  forall (H : @bhyps o) c,
+    wf_hypotheses H
+    -> wf_sequent (named_concl2bseq [] c)
+    -> wf_sequent (named_concl2bseq H c).
+Proof.
+  introv wfh wfs.
+  unfold wf_sequent in *; simpl in *; repnd; dands; eauto 3 with slow.
+  apply vswf_hypotheses_nil_eq; auto.
+Qed.
+Hint Resolve wf_sequent_named_concl_no_hyps_implies : slow.
+
+Lemma closed_type_named_concl_no_hyps_implies {o} :
+  forall (H : @bhyps o) c,
+    closed_type [] (named_concl2concl c)
+    -> closed_type H (named_concl2concl c).
+Proof.
+  introv cl; unfold closed_type, covered in *; simpl in *; eauto 3 with slow.
+Qed.
+Hint Resolve closed_type_named_concl_no_hyps_implies : slow.
+
+Lemma closed_extract_named_concl_no_hyps_implies {o} :
+  forall (H : @bhyps o) c,
+    closed_extract [] (named_concl2concl c)
+    -> closed_extract H (named_concl2concl c).
+Proof.
+  introv cl; unfold closed_extract, covered in *; simpl in *; eauto 3 with slow.
+Qed.
+Hint Resolve closed_extract_named_concl_no_hyps_implies : slow.
+
+Lemma wf_csequent_named_concl2bseq_no_hyps_implies {o} :
+  forall {H : @bhyps o} {c},
+    wf_hypotheses H
+    -> wf_csequent (named_concl2bseq [] c)
+    -> wf_csequent (named_concl2bseq H c).
+Proof.
+  introv wfh wfc.
+  unfold wf_csequent in *; repnd; simpl in *.
+  dands; auto; eauto 3 with slow.
+Qed.
+Hint Resolve wf_csequent_named_concl2bseq_no_hyps_implies : slow.
+
+Hint Resolve sim_nil : slow.
+
+Lemma equal_lsubstc_nil {o} :
+  forall (t : @NTerm o) w s c (c' : cover_vars t []),
+    lsubstc t w s c = lsubstc t w [] c'.
+Proof.
+  introv.
+  apply cterm_eq; simpl.
+  rewrite csubst_nil.
+  rewrite csubst_trivial; auto.
+  unfold cover_vars, over_vars in *; simpl in *.
+  introv i j.
+  allrw subvars_eq.
+  apply c' in j; simpl in *; tcsp.
+Qed.
+
+Lemma sequent_true_ext_lib_no_hyps_implies {o} :
+  forall l H (c : @conclusion o) wf1 wf2 wc ct1 ct2 ce1 ce2,
+    sequent_true_ext_lib l (mk_csequent [] c wf1 wc ct1 ce1)
+    -> sequent_true_ext_lib l (mk_csequent H c wf2 wc ct2 ce2).
+Proof.
+  introv strue ext.
+  apply strue in ext; clear strue.
+
+  rw @VR_sequent_true_ex in ext; simpl in ext.
+  rw @VR_sequent_true_all; simpl.
+
+  introv sim eqh.
+  pose proof (ext [] []) as h; clear ext.
+  repeat (autodimp h hyp); eauto 3 with slow.
+  exrepnd; simpl in *.
+
+  destruct c; simpl in *; exrepnd.
+
+  - introv.
+    rewrite (equal_lsubstc_nil _ _ s1 _ pt1).
+    rewrite (equal_lsubstc_nil _ _ s2 _ pt2).
+    rewrite (equal_lsubstc_nil _ _ s1 _ pC0).
+    rewrite (equal_lsubstc_nil _ _ s2 _ pC3).
+    auto.
+
+  - rewrite (equal_lsubstc_nil _ _ s1 _ pC0).
+    rewrite (equal_lsubstc_nil _ _ s2 _ pC3).
+    auto.
+Qed.
+Hint Resolve sequent_true_ext_lib_no_hyps_implies : slow.
+
+Lemma sequent_true_ext_lib_wf_no_hyps_implies {o} :
+  forall l H (c : @named_concl o),
+    wf_hypotheses H
+    -> sequent_true_ext_lib_wf l (named_concl2bseq [] c)
+    -> sequent_true_ext_lib_wf l (named_concl2bseq H c).
+Proof.
+  introv wf strue.
+  unfold sequent_true_ext_lib_wf in *; exrepnd.
+  assert (wf_csequent (named_concl2bseq H c)) as w by eauto 2 with slow.
+  exists w.
+
+  unfold mk_wcseq in *; simpl in *.
+  destruct c; simpl in *.
+  unfold named_concl2concl in *; simpl in *.
+  destruct c0, w, w, w0; repnd; simpl in *.
+  proof_irr; eauto 3 with slow.
+Qed.
+Hint Resolve sequent_true_ext_lib_wf_no_hyps_implies : slow.
+
+Lemma implies_wf_sequent_simple_mk_abs {o} :
+  forall (H : @bhyps o) t e name,
+    wf_sequent (mk_baresequent H (mk_concl t e))
+    -> wf_sequent (mk_baresequent H (mk_concl t (mk_abs (opname2opabs name) []))).
+Proof.
+  introv wf; unfold wf_sequent in *; simpl in *; repnd; dands; auto.
+  unfold wf_concl in *; simpl in *; repnd; dands; auto; eauto 3 with slow.
+Qed.
+Hint Resolve implies_wf_sequent_simple_mk_abs : slow.
+
+Lemma implies_closed_type_simple_mk_abs {o} :
+  forall (H : @bhyps o) t e name,
+    closed_type H (mk_concl t e)
+    -> closed_type H (mk_concl t (mk_abs (opname2opabs name) [])).
+Proof.
+  introv cl.
+  unfold closed_type in *; simpl in *; auto.
+Qed.
+Hint Resolve implies_closed_type_simple_mk_abs : slow.
+
+Lemma implies_closed_extract_simple_mk_abs {o} :
+  forall (H : @bhyps o) t e name,
+    closed_extract H (mk_concl t e)
+    -> closed_extract H (mk_concl t (mk_abs (opname2opabs name) [])).
+Proof.
+  introv cl.
+  unfold closed_extract in *; simpl in *.
+  unfold covered in *; simpl in *; auto.
+Qed.
+Hint Resolve implies_closed_extract_simple_mk_abs : slow.
+
+Lemma matching_entry_opname2opname_same_nil {o} :
+  forall n, @matching_entry o (opname2opabs n) (opname2opabs n) [] [].
+Proof.
+  introv.
+  unfold matching_entry; simpl; dands; auto; tcsp.
+Qed.
+Hint Resolve matching_entry_opname2opname_same_nil : slow.
+
+Lemma sosub_aux_nil_nterm2soterm {o} :
+  forall (t : @NTerm o), sosub_aux [] (nterm2soterm t) = t.
+Proof.
+  nterm_ind t as [v|f|op bs ind] Case; introv; simpl; tcsp.
+  f_equal.
+  allrw map_map; unfold compose.
+  apply eq_map_l; introv i; destruct x; simpl; f_equal; eapply ind; eauto.
+Qed.
+Hint Rewrite @sosub_aux_nil_nterm2soterm : slow.
+
+Lemma sosub_nil_nterm2soterm {o} :
+  forall (t : @NTerm o), sosub [] (nterm2soterm t) = t.
+Proof.
+  introv; unfold sosub; simpl; boolvar; tcsp; autorewrite with slow; auto;
+    try (complete (destruct n; tcsp)).
+Qed.
+Hint Rewrite @sosub_nil_nterm2soterm : slow.
+
+Lemma reduces_to_extract2def_cons_simple_mk_abs {o} :
+  forall name (e : @NTerm o) valid l,
+    reduces_to (extract2def name e valid :: l) (mk_abs (opname2opabs name) []) e.
+Proof.
+  introv.
+  apply reduces_to_if_step.
+  csunf.
+  unfold compute_step_unfold; simpl.
+  unfold compute_step_lib; simpl; boolvar; auto;
+    [|apply not_matching_entry_iff in n; destruct n; eauto 3 with slow];[].
+  unfold mk_instance; simpl; autorewrite with slow; auto.
+Qed.
+
+Lemma implies_sequent_true_ext_lib_simple_mk_abs {o} :
+  forall lib (H : @bhyps o) t a b c1 c2,
+    reduces_to lib a b
+    -> sequent_true_ext_lib lib (mk_wcseq (mk_baresequent H (mk_concl t b)) c1)
+    -> sequent_true_ext_lib lib (mk_wcseq (mk_baresequent H (mk_concl t a)) c2).
+Proof.
+  introv rd strue ext.
+  applydup strue in ext; clear strue.
+  eapply reduces_to_preserves_lib_extends in rd;[|eauto].
+
+  clear lib ext.
+  rename lib0 into lib.
+
+  rw @VR_sequent_true_ex in ext0; simpl in ext0.
+  rw @VR_sequent_true_all; simpl.
+
+  introv sim eqh.
+  pose proof (ext0 s1 s2) as h; clear ext0.
+  repeat (autodimp h hyp); eauto 3 with slow.
+  exrepnd; simpl in *.
+
+  introv.
+  destruct c1, c2, w0, w, w0, w; repnd; simpl in *.
+  proof_irr.
+
+  dands; auto.
+  clear h0.
+
+  match goal with
+  | [ H : equality _ ?a ?b _ |- equality _ ?c ?d _ ] =>
+    assert (cequivc lib a c) as ceq1;
+      [|assert (cequivc lib b d) as ceq2;
+        [
+        |eapply equality_respects_cequivc_left;eauto;
+         eapply equality_respects_cequivc_right;eauto]
+      ]
+  end.
+
+  {
+    apply cequivc_sym.
+    apply reduces_to_implies_cequiv_lsubst; auto.
+  }
+
+  {
+    apply cequivc_sym.
+    apply reduces_to_implies_cequiv_lsubst; auto.
+  }
+Qed.
+
+Lemma implies_sequent_true_ext_lib_wf_named {o} :
+  forall name (ext : @NTerm o) valid ctxt stmt,
+    sequent_true_ext_lib_wf
+      (extract2def name ext valid :: ctxt)
+      (NLemma stmt ext)
+    -> sequent_true_ext_lib_wf
+         (extract2def name ext valid :: ctxt)
+         (mk_bseq [] (mk_concl stmt (mk_abs (opname2opabs name) []))).
+Proof.
+  introv strue.
+  unfold NLemma, mk_bseq, sequent_true_ext_lib_wf in *; exrepnd.
+
+  assert (wf_csequent ([]) ||- (mk_concl stmt (mk_abs (opname2opabs name) []))) as w.
+  { clear strue0; unfold wf_csequent in *; simpl in *; repnd; dands; eauto 3 with slow. }
+  exists w.
+
+  eapply implies_sequent_true_ext_lib_simple_mk_abs;[|eauto].
+  apply reduces_to_extract2def_cons_simple_mk_abs.
+Qed.
+
+Lemma correct_library {o} :
+  forall (L : Library) (s : @baresequent o),
+    ValidLibrary L
+    -> lemma_in_Library s L
+    -> sequent_true_ext_lib_wf (Library2ProofContext L) s.
+Proof.
+  induction L; introv valid i; simpl in *; tcsp.
+  repnd; repndors;
+    [|apply IHL in i; auto; destruct a; simpl in *; repnd; tcsp;
+      apply sequent_true_mono_lib; auto];[].
+
+  destruct a; simpl in *; tcsp;[].
+  repnd; subst; simpl in *.
+  unfold named_concl2bseq, named_concl2concl; simpl.
+
+  assert (forall s,
+             lemma_in_Library s L
+             -> sequent_true_ext_lib_wf (Library2ProofContext L) s) as imp.
+  { introv i; apply IHL; auto. }
+  clear IHL.
+
+  assert (forall c,
+             LIn c (PC_conclusions (Library2ProofContext L))
+             -> sequent_true_ext_lib_wf (Library2ProofContext L) (named_concl2bseq [] c)) as w.
+  { introv i; apply imp; auto; clear imp.
+    apply lemma_in_Library_named_concl2bseq_iff; auto. }
+  clear imp.
+
+  remember (Library2ProofContext L) as ctxt.
+  apply implies_sequent_true_ext_lib_wf_named.
+
+  apply sequent_true_mono_lib; auto.
 Qed.
 
 Lemma update_preserves_validity {o} :
@@ -8632,6 +9029,13 @@ Proof.
         inversion Heqeop; auto. }
 
       dands; auto.
+
+      apply valid_proof;
+        try (complete (subst; auto));
+        try (complete (apply implies_wf_bseq_no_hyps; eauto 3 with slow)).
+
+      introv wf i; apply implies_lemma_in_Library_named_concl2bseq in i.
+      apply correct_library in i; auto; eauto 3 with slow.
 
   - (* update an unfinished proof *)
     destruct state; simpl in *.
