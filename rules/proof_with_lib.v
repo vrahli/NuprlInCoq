@@ -1228,8 +1228,8 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
 
   The library consists of a list of abstractions and proved lemmas.
   The difference with ProofContext is that we include the proofs of
-  lemmas.  [Library2ProofContext] shows how to extract a proof context
-  from a Library.
+  lemmas.  [RigidLibrary2ProofContext] shows how to extract a proof context
+  from a RigidLibrary.
 
   ============================================================ *)
 
@@ -1366,31 +1366,9 @@ Definition extract2def {o}
     (nterm2soterm ext)
     (extract2correct name ext valid).
 
-(*Inductive DepLibrary {o} : @ProofContext o -> Type :=
-| DepLibrary_Empty :
-    DepLibrary (MkProofContext o [] [])
-| DepLibrary_Abs :
-    forall {ctxt}
-           (c : DepLibrary ctxt)
-           (e : @library_entry o)
-           (n : entry_not_in_lib e ctxt),
-      DepLibrary (updLibProofContext ctxt e)
-| DepLibrary_Proof :
-    forall {ctxt}
-           (c     : DepLibrary ctxt)
-           (name  : LemmaName)
-           (stmt  : @NTerm o)
-           (ext   : NTerm)
-           (valid : valid_extract ext)
-           (p     : proof ctxt (Statement stmt ext))
-           (n     : name_not_in_lib name ctxt),
-      DepLibrary (updLibProofContext
-                    (updConclProofContext ctxt (MkWfConcl (mk_concl stmt ext) valid))
-                    (extract2def name ext valid)).*)
-
-Inductive LibraryEntry {o} :=
-| LibraryEntry_abs (e : @library_entry o)
-| LibraryEntry_proof
+Inductive RigidLibraryEntry {o} :=
+| RigidLibraryEntry_abs (e : @library_entry o)
+| RigidLibraryEntry_proof
     (ctxt  : @ProofContext o)
     (name  : LemmaName)
     (stmt  : NTerm)
@@ -1402,42 +1380,45 @@ Inductive LibraryEntry {o} :=
 (* A library is just a list of entries such that we store the most recent
    entry at the front of the list
  *)
-Definition Library {o} := list (@LibraryEntry o).
+Definition RigidLibrary {o} := list (@RigidLibraryEntry o).
 
-Definition extend_proof_context {o} (ctxt : @ProofContext o) (e : LibraryEntry) : ProofContext :=
+Definition extend_proof_context {o} (ctxt : @ProofContext o) (e : RigidLibraryEntry) : ProofContext :=
   match e with
-  | LibraryEntry_abs e => updLibProofContext ctxt e
-  | LibraryEntry_proof c name stmt ext isp valid prf =>
+  | RigidLibraryEntry_abs e => updLibProofContext ctxt e
+  | RigidLibraryEntry_proof c name stmt ext isp valid prf =>
     updLibProofContext
       (updConclProofContext ctxt (MkNamedConcl name stmt))
       (extract2def name ext valid)
   end.
 
-Fixpoint Library2ProofContext {o} (L : @Library o) : ProofContext :=
+Fixpoint RigidLibrary2ProofContext {o} (L : @RigidLibrary o) : ProofContext :=
   match L with
   | [] => EMPC
   | entry :: entries =>
-    let ctxt := Library2ProofContext entries in
+    let ctxt := RigidLibrary2ProofContext entries in
     extend_proof_context ctxt entry
   end.
 
-Definition Library2lib {o} (L : @Library o) : library := Library2ProofContext L.
+Definition RigidLibrary2lib {o} (L : @RigidLibrary o) : library := RigidLibrary2ProofContext L.
 
-Definition ValidLibraryEntry {o} (ctxt : @ProofContext o) (e : LibraryEntry) : Type :=
+Definition mon_true_sequent_wf {o} l (s : @baresequent o) :=
+  sequent_true_ext_lib_wf l s.
+
+Definition ValidRigidLibraryEntry {o} (ctxt : @ProofContext o) (e : RigidLibraryEntry) : Type :=
   match e with
-  | LibraryEntry_abs e => entry_not_in_lib e ctxt
-  | LibraryEntry_proof c name stmt ext isp valid prf =>
+  | RigidLibraryEntry_abs e => entry_not_in_lib e ctxt
+  | RigidLibraryEntry_proof c name stmt ext isp valid prf =>
     (c = ctxt)
       # name_not_in_lib name ctxt
-      # sequent_true_ext_lib_wf ctxt (NLemma stmt ext)
+      # mon_true_sequent_wf ctxt (NLemma stmt ext)
   end.
 
-Fixpoint ValidLibrary {o} (L : @Library o) : Type :=
+Fixpoint ValidRigidLibrary {o} (L : @RigidLibrary o) : Type :=
   match L with
   | [] => True
   | entry :: entries =>
-    ValidLibraryEntry (Library2ProofContext entries) entry
-    # ValidLibrary entries
+    ValidRigidLibraryEntry (RigidLibrary2ProofContext entries) entry
+    # ValidRigidLibrary entries
   end.
 
 Lemma wf_bseq_implies_wf_hypotheses {o} :
@@ -1465,9 +1446,9 @@ Lemma valid_proof {o} :
     (forall c H,
         wf_hypotheses H
         -> LIn c (PC_conclusions ctxt)
-        -> sequent_true_ext_lib_wf ctxt (named_concl2bseq H c))
+        -> mon_true_sequent_wf ctxt (named_concl2bseq H c))
     -> proof ctxt s
-    -> sequent_true_ext_lib_wf ctxt s.
+    -> mon_true_sequent_wf ctxt s.
 Proof.
   introv wf imp prf.
 
@@ -1810,43 +1791,6 @@ Proof.
 Qed.
 Hint Resolve noutokens_var : slow.
 
-(*Lemma wf_proof {o} :
-  forall (ctxt : @ProofContext o) s,
-    wf_hypotheses (hyps s)
-    -> (forall c,
-           in_wf_conclusions c (PC_conclusions ctxt)
-           -> wf_ext [] c)
-    -> proof ctxt s
-    -> wf_ext (hyps s) (concl s).
-Proof.
-  introv wf imp prf.
-
-  induction prf
-    as [ (* proved sequent         *) seq p
-       | (* isect_eq               *) a1 a2 b1 b2 e1 e2 x1 x2 y i hs niy p1 ih1 p2 ih2
-       | (* isect_member_formation *) A x B z i b H nizH p1 ih1 p2 ih2
-       | (* approx_refl            *) a hs
-       | (* cequiv_approx          *) a b e1 e2 hs p1 ih1 p2 ih2
-       | (* approx_eq              *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
-       | (* cequiv_eq              *) a1 a2 b1 b2 e1 e2 i hs p1 ih1 p2 ih2
-       (*| (* bottom_diverges      *) x hs js
-       | (* cut                    *) B C t u x hs wB covB nixH p1 ih1 p2 ih2
-       | (* equal_in_base          *) a b e F H p1 ih1 ps ihs*)
-       | (* hypothesis             *) x A G J
-       (*| (* cequiv_subst_concl   *) C x a b t e H wfa wfb cova covb p1 ih1 p2 ih2
-       | (* approx_member_eq       *) a b e H p ih
-       | (* cequiv_computation     *) a b H p ih
-       | (* function elimination   *) A B C a e ea f x z H J wa cova nizH nizJ dzf p1 ih1 p2 ih2*)
-       ];
-    allsimpl;
-    allrw NVin_iff; tcsp;
-      try (complete (dands; eauto 2 with slow; apply covered_var;
-                     rw @vars_hyps_app; rw @vars_hyps_snoc; simpl;
-                     rw in_app_iff; rw in_snoc; tcsp)).
-  autodimp ih1 hyp.
-  apply wf_hypotheses_snoc; simpl; dands; auto.
-Qed.*)
-
 Hint Resolve isprogram_implies_wf : slow.
 
 Lemma implies_wf_bseq_no_hyps {o} :
@@ -1863,84 +1807,11 @@ Proof.
   apply closed_if_program in isp; rewrite isp; auto.
 Qed.
 
-(*Lemma lemma_in_Library_named_concl2bseq_iff {o} :
-  forall (c : @named_concl o) L,
-    lemma_in_Library (named_concl2bseq c) L
-    <=> LIn c (PC_conclusions (Library2ProofContext L)).
-Proof.
-  induction L; simpl; split; introv h; tcsp.
-
-  - repndors.
-
-    + destruct a; simpl in *; tcsp.
-      unfold named_concl2bseq, named_concl2concl in *; simpl in *.
-      inversion h; subst; clear h.
-      left.
-      destruct c; simpl in *; ginv.
-      ginv.
-      subst; simpl in *.
-      exists (MkNamedConcl name stmt); simpl.
-      dands;[reflexivity|]; tcsp.
-
-    + apply IHL in h; exrepnd; subst; clear IHL.
-      eexists; dands;[reflexivity|]; tcsp.
-      destruct a; simpl; tcsp.
-
-  - exrepnd; subst.
-    destruct a; simpl in *; tcsp.
-
-    + right; apply IHL; clear IHL.
-      eexists; dands;[reflexivity|]; tcsp.
-
-    + unfold in_wf_conclusions in *; simpl in *; tcsp.
-      repndors; subst; tcsp.
-      right; apply IHL; clear IHL.
-      eexists; dands;[reflexivity|]; tcsp.
-Qed.*)
-
-(*Lemma correct_library {o} :
-  forall (L : Library) (s : @baresequent o),
-    ValidLibrary L
-    -> lemma_in_Library s L
-    -> sequent_true_ext_lib_wf (Library2ProofContext L) s.
-Proof.
-  induction L; introv valid i; simpl in *; tcsp.
-  repnd; repndors.
-
-  - destruct a; simpl in *; tcsp.
-    repnd; subst; simpl in *.
-
-    assert (forall s,
-               lemma_in_Library s L
-               -> sequent_true_ext_lib_wf (Library2ProofContext L) s) as imp.
-    { introv i; apply IHL; auto. }
-    clear IHL.
-
-    assert (forall c,
-               LIn c (PC_conclusions (Library2ProofContext L))
-               -> sequent_true_ext_lib_wf (Library2ProofContext L) (named_concl2bseq c)) as w.
-    { introv i; apply imp; auto; clear imp.
-      apply lemma_in_Library_iff.
-      exists c; dands; auto. }
-    clear imp.
-
-    remember (Library2ProofContext L) as ctxt.
-
-    apply sequent_true_mono_lib; auto.
-
-    apply valid_proof; auto.
-    apply implies_wf_bseq_no_hyps; eauto 3 with slow.
-
-  - apply IHL in i; auto.
-    destruct a; simpl in *; repnd; tcsp;
-      apply sequent_true_mono_lib; auto.
-Qed.*)
-
 
 
 (* ===========================================================
 
-  Nuprl state, i.e., a Library and a list of lemmas currently being proved.
+  Nuprl state, i.e., a RigidLibrary and a list of lemmas currently being proved.
 
   ============================================================ *)
 
@@ -1966,14 +1837,14 @@ Arguments pre_proof_seq_proof [o] [ctxt] _.
 Definition pre_proofs {o} (ctxt : @ProofContext o) :=
   list (pre_proof_seq ctxt).
 
-Record NuprlState {o} :=
-  MkNuprlState
+Record SoftLibrary {o} :=
+  MkSoftLibrary
     {
-      NuprlState_lib        :> @Library o;
-      NuprlState_unfinished : pre_proofs (Library2ProofContext NuprlState_lib);
+      SoftLibrary_lib        :> @RigidLibrary o;
+      SoftLibrary_unfinished : pre_proofs (RigidLibrary2ProofContext SoftLibrary_lib);
     }.
 
-Arguments MkNuprlState [o] _ _.
+Arguments MkSoftLibrary [o] _ _.
 
 
 
@@ -2049,7 +1920,7 @@ Definition commands {o} := list (@command o).
 
 Lemma in_conclusions_extend_proof_context {o} :
   forall (ctxt  : @ProofContext o)
-         (entry : LibraryEntry)
+         (entry : RigidLibraryEntry)
          (c     : named_concl)
          (i     : LIn c (PC_conclusions ctxt)),
     LIn c (PC_conclusions (extend_proof_context ctxt entry)).
@@ -2058,14 +1929,14 @@ Proof.
   destruct entry; simpl in *; auto.
 Qed.
 
-Definition LibraryEntry2opabs {o} (e : @LibraryEntry o) : opabs :=
+Definition RigidLibraryEntry2opabs {o} (e : @RigidLibraryEntry o) : opabs :=
   match e with
-  | LibraryEntry_abs e => opabs_of_lib_entry e
-  | LibraryEntry_proof c name stmt ext isp valid prf => opname2opabs name
+  | RigidLibraryEntry_abs e => opabs_of_lib_entry e
+  | RigidLibraryEntry_proof c name stmt ext isp valid prf => opname2opabs name
   end.
 
-Definition entry_in_lib {o} (e : @LibraryEntry o) (l : @library o) :=
-  in_lib (LibraryEntry2opabs e) l.
+Definition entry_in_lib {o} (e : @RigidLibraryEntry o) (l : @library o) :=
+  in_lib (RigidLibraryEntry2opabs e) l.
 
 Lemma entry_in_library_implies_in_lib {o} :
   forall (entry e : @library_entry o) l,
@@ -2097,7 +1968,7 @@ Proof.
 Qed.
 
 Lemma extend_proof_context_preserves_reduces_to {o} :
-  forall (ctxt : @ProofContext o) (e : LibraryEntry) a b,
+  forall (ctxt : @ProofContext o) (e : RigidLibraryEntry) a b,
     !entry_in_lib e ctxt
     -> reduces_to ctxt a b
     -> reduces_to (extend_proof_context ctxt e) a b.
@@ -2115,7 +1986,7 @@ Proof.
 Qed.
 
 Lemma extend_proof_context_preserves_reduces_in_atmost_k_steps {o} :
-  forall (ctxt : @ProofContext o) (e : LibraryEntry) a b n,
+  forall (ctxt : @ProofContext o) (e : RigidLibraryEntry) a b n,
     !entry_in_lib e ctxt
     -> reduces_in_atmost_k_steps ctxt a b n
     -> reduces_in_atmost_k_steps (extend_proof_context ctxt e) a b n.
@@ -2293,7 +2164,7 @@ Defined.
 
 Fixpoint pre_proof_cons {o}
          {ctxt  : @ProofContext o}
-         (entry : LibraryEntry)
+         (entry : RigidLibraryEntry)
          (ni    : !entry_in_lib entry ctxt)
          {s     : pre_baresequent}
          (p     : pre_proof ctxt s)
@@ -2470,7 +2341,7 @@ Fixpoint pre_proof_cons {o}
 
 Definition pre_proof_seq_cons {o}
            {ctxt  : @ProofContext o}
-           (entry : LibraryEntry)
+           (entry : RigidLibraryEntry)
            (ni    : !entry_in_lib entry ctxt)
            (pps   : pre_proof_seq ctxt)
   : pre_proof_seq (extend_proof_context ctxt entry) :=
@@ -2480,7 +2351,7 @@ Definition pre_proof_seq_cons {o}
 
 Definition pre_proofs_cons {o}
            {ctxt  : @ProofContext o}
-           (entry : LibraryEntry)
+           (entry : RigidLibraryEntry)
            (ni    : !entry_in_lib entry ctxt)
            (l     : pre_proofs ctxt)
   : pre_proofs (extend_proof_context ctxt entry) :=
@@ -2505,7 +2376,7 @@ Proof.
 Defined.
 
 Lemma entry_in_lib_dec {o} :
-  forall (entry : @LibraryEntry o)
+  forall (entry : @RigidLibraryEntry o)
          (lib   : @library o),
     decidable (entry_in_lib entry lib).
 Proof.
@@ -2680,20 +2551,20 @@ Inductive DEBUG_MSG {o} :=
 | could_not_finish_proof_because_entry_exists_in_lib
 | could_not_finish_proof_because_could_not_find_lemma.
 
-Definition NuprlState_add_def {o}
-           (state   : @NuprlState o)
+Definition SoftLibrary_add_def {o}
+           (state   : @SoftLibrary o)
            (opabs   : opabs)
            (vars    : list sovar_sig)
            (rhs     : SOTerm)
-           (correct : correct_abs opabs vars rhs) : NuprlState * @DEBUG_MSG o :=
+           (correct : correct_abs opabs vars rhs) : SoftLibrary * @DEBUG_MSG o :=
   match state with
-  | MkNuprlState L unfinished =>
-    let entry := LibraryEntry_abs (lib_abs opabs vars rhs correct) in
+  | MkSoftLibrary L unfinished =>
+    let entry := RigidLibraryEntry_abs (lib_abs opabs vars rhs correct) in
 
-    match entry_in_lib_dec entry (Library2lib L) with
+    match entry_in_lib_dec entry (RigidLibrary2lib L) with
     | inl p => (state, could_not_add_definition_because_definition_already_in_library)
     | inr p =>
-      (MkNuprlState
+      (MkSoftLibrary
          (entry :: L)
          (pre_proofs_cons entry p unfinished),
        added_definition opabs)
@@ -3767,13 +3638,13 @@ Hint Resolve valid_pre_extract_nil_implies_valid_extract : slow.
 Definition finish_pre_proof_seq {o}
            {ctxt : @ProofContext o}
            (pps  : pre_proof_seq ctxt)
-  : option LibraryEntry :=
+  : option RigidLibraryEntry :=
   match pps with
   | MkPreProofSeq name C isp pre_prf =>
     match finish_pre_proof pre_prf with
     | Some (MkExtractProof ext valid prf) =>
 
-      Some (LibraryEntry_proof
+      Some (RigidLibraryEntry_proof
               ctxt
               name
               C
@@ -3795,7 +3666,7 @@ Lemma name_of_finish_pre_proof_seq {o} :
          (isp   : isprog stmt)
          (valid : valid_extract ext)
          (prf   : proof ctxt (NLemma stmt ext)),
-    finish_pre_proof_seq p = Some (LibraryEntry_proof ctxt name stmt ext isp valid prf)
+    finish_pre_proof_seq p = Some (RigidLibraryEntry_proof ctxt name stmt ext isp valid prf)
     -> pre_proof_seq_name p = name.
 Proof.
   introv h.
@@ -3807,30 +3678,30 @@ Proof.
   inversion h; auto.
 Qed.
 
-Definition NuprlState_add_entry {o}
-           (state : @NuprlState o)
-           (entry : LibraryEntry)
-  : !entry_in_lib entry (Library2ProofContext state)
-    -> pre_proofs (Library2ProofContext state)
-    -> NuprlState :=
+Definition SoftLibrary_add_entry {o}
+           (state : @SoftLibrary o)
+           (entry : RigidLibraryEntry)
+  : !entry_in_lib entry (RigidLibrary2ProofContext state)
+    -> pre_proofs (RigidLibrary2ProofContext state)
+    -> SoftLibrary :=
   match state with
-  | MkNuprlState L _ =>
-    fun ni pps => MkNuprlState (entry :: L)
+  | MkSoftLibrary L _ =>
+    fun ni pps => MkSoftLibrary (entry :: L)
                                (pre_proofs_cons entry ni pps)
   end.
 
-Definition NuprlState_finish_proof {o}
-           (state : @NuprlState o)
-           (name  : LemmaName) : NuprlState * @DEBUG_MSG o :=
-  match find_unfinished_in_pre_proofs (NuprlState_unfinished state) name with
+Definition SoftLibrary_finish_proof {o}
+           (state : @SoftLibrary o)
+           (name  : LemmaName) : SoftLibrary * @DEBUG_MSG o :=
+  match find_unfinished_in_pre_proofs (SoftLibrary_unfinished state) name with
   | (Some pp, pps) =>
 
     match finish_pre_proof_seq pp with
     | Some entry =>
 
-      match entry_in_lib_dec entry (Library2lib state) with
+      match entry_in_lib_dec entry (RigidLibrary2lib state) with
       | inl p => (state, could_not_finish_proof_because_entry_exists_in_lib)
-      | inr p => (NuprlState_add_entry state entry p pps, finished_proof)
+      | inr p => (SoftLibrary_add_entry state entry p pps, finished_proof)
       end
 
     | None => (state, could_not_finish_proof)
@@ -3839,11 +3710,11 @@ Definition NuprlState_finish_proof {o}
   | (None, pps) => (state, could_not_finish_proof_because_could_not_find_lemma)
   end.
 
-Definition NuprlState_change_unfinished {o}
-           (state : @NuprlState o)
-  : pre_proofs (Library2ProofContext state) -> NuprlState :=
+Definition SoftLibrary_change_unfinished {o}
+           (state : @SoftLibrary o)
+  : pre_proofs (RigidLibrary2ProofContext state) -> SoftLibrary :=
   match state with
-  | MkNuprlState L _ => fun l => MkNuprlState L l
+  | MkSoftLibrary L _ => fun l => MkSoftLibrary L l
   end.
 
 Definition pre_concl2type {o} (c : @pre_conclusion o) : option NTerm :=
@@ -5705,322 +5576,323 @@ Fixpoint update_pre_proof {o}
          (p    : pre_proof ctxt s)
          (addr : address)
          (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
-  match p with
-  | pre_proof_from_ctxt _ c H i =>
-    (pre_proof_from_ctxt _ c H i,
-     could_not_apply_update_because_no_hole_at_address)
+  match addr with
+  | [] => apply_proof_step s step
+  | _ =>
+    match p with
+    | pre_proof_from_ctxt _ c H i =>
+      (pre_proof_from_ctxt _ c H i,
+       could_not_apply_update_because_no_hole_at_address)
 
-  | pre_proof_hole _ s => apply_proof_step s step
+    | pre_proof_hole _ s => apply_proof_step s step
 
-  | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2', msg)
-    | _ => (pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2', msg)
+      | _ => (pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_isect_member_formation _ A x B z i H nizH prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2', msg)
-    | _ => (pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_isect_member_formation _ A x B z i H nizH prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2', msg)
+      | _ => (pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_approx_refl _ a H =>
-    (pre_proof_approx_refl _ a H,
-     could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_approx_refl _ a H =>
+      (pre_proof_approx_refl _ a H, could_not_apply_update_because_no_hole_at_address)
 
-  | pre_proof_cequiv_refl _ a H =>
-    (pre_proof_cequiv_refl _ a H,
-     could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_cequiv_refl _ a H =>
+      (pre_proof_cequiv_refl _ a H, could_not_apply_update_because_no_hole_at_address)
 
-  | pre_proof_cequiv_alpha_eq _ a b H aeq =>
-    (pre_proof_cequiv_alpha_eq _ a b H aeq,
-     could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_cequiv_alpha_eq _ a b H aeq =>
+      (pre_proof_cequiv_alpha_eq _ a b H aeq, could_not_apply_update_because_no_hole_at_address)
 
-  | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_cequiv_approx _ a b H prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_cequiv_approx _ a b H prf1 prf2', msg)
-    | _ => (pre_proof_cequiv_approx _ a b H prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_cequiv_approx _ a b H prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_cequiv_approx _ a b H prf1 prf2', msg)
+      | _ => (pre_proof_cequiv_approx _ a b H prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2', msg)
-    | _ => (pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2', msg)
+      | _ => (pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2', msg)
-    | _ => (pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2', msg)
+      | _ => (pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_cut _ B C x H wfB covB nixH prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_cut _ B C x H wfB covB nixH prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_cut _ B C x H wfB covB nixH prf1 prf2', msg)
-    | _ => (pre_proof_cut _ B C x H wfB covB nixH prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_cut _ B C x H wfB covB nixH prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_cut _ B C x H wfB covB nixH prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_cut _ B C x H wfB covB nixH prf1 prf2', msg)
+      | _ => (pre_proof_cut _ B C x H wfB covB nixH prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_hypothesis _ x A G J =>
-    (pre_proof_hypothesis _ x A G J,
-     could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_hypothesis _ x A G J =>
+      (pre_proof_hypothesis _ x A G J,
+       could_not_apply_update_because_no_hole_at_address)
 
-  | pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2', msg)
-    | _ => (pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2', msg)
+      | _ => (pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2', msg)
-    | _ => (pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2', msg)
+      | _ => (pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_cequiv_computation _ a b H r =>
-    (pre_proof_cequiv_computation _ a b H r,
-     could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_cequiv_computation _ a b H r =>
+      (pre_proof_cequiv_computation _ a b H r,
+       could_not_apply_update_because_no_hole_at_address)
 
-  | pre_proof_cequiv_computation_aeq _ a b c H r aeq =>
-    (pre_proof_cequiv_computation_aeq _ a b c H r aeq,
-     could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_cequiv_computation_aeq _ a b c H r aeq =>
+      (pre_proof_cequiv_computation_aeq _ a b c H r aeq,
+       could_not_apply_update_because_no_hole_at_address)
 
-  | pre_proof_cequiv_computation_atmost _ a b n H r =>
-    (pre_proof_cequiv_computation_atmost _ a b n H r,
-     could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_cequiv_computation_atmost _ a b n H r =>
+      (pre_proof_cequiv_computation_atmost _ a b n H r,
+       could_not_apply_update_because_no_hole_at_address)
 
-  | pre_proof_unfold_abstractions _ abs a H unf prf =>
-    match addr with
-    | 1 :: addr =>
-      let (prf', msg) := update_pre_proof prf addr step in
-      (pre_proof_unfold_abstractions _ abs a H unf prf', msg)
-    | _ => (pre_proof_unfold_abstractions _ abs a H unf prf,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_unfold_abstractions _ abs a H unf prf =>
+      match addr with
+      | 1 :: addr =>
+        let (prf', msg) := update_pre_proof prf addr step in
+        (pre_proof_unfold_abstractions _ abs a H unf prf', msg)
+      | _ => (pre_proof_unfold_abstractions _ abs a H unf prf,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_rev_unfold_abstractions _ abs a H wfa cova unf prf =>
-    match addr with
-    | 1 :: addr =>
-      let (prf', msg) := update_pre_proof prf addr step in
-      (pre_proof_rev_unfold_abstractions _ abs a H wfa cova unf prf', msg)
-    | _ => (pre_proof_rev_unfold_abstractions _ abs a H wfa cova unf prf,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_rev_unfold_abstractions _ abs a H wfa cova unf prf =>
+      match addr with
+      | 1 :: addr =>
+        let (prf', msg) := update_pre_proof prf addr step in
+        (pre_proof_rev_unfold_abstractions _ abs a H wfa cova unf prf', msg)
+      | _ => (pre_proof_rev_unfold_abstractions _ abs a H wfa cova unf prf,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_universe_equality _ i j H ltij =>
-    (pre_proof_universe_equality _ i j H ltij,
-     could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_universe_equality _ i j H ltij =>
+      (pre_proof_universe_equality _ i j H ltij,
+       could_not_apply_update_because_no_hole_at_address)
 
-  | pre_proof_hypothesis_equality _ x A G J =>
-    (pre_proof_hypothesis_equality _ x A G J,
-     could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_hypothesis_equality _ x A G J =>
+      (pre_proof_hypothesis_equality _ x A G J,
+       could_not_apply_update_because_no_hole_at_address)
 
-  | pre_proof_maybe_hidden_hypothesis_equality _ x A G J b =>
-    (pre_proof_maybe_hidden_hypothesis_equality _ x A G J b,
-     could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_maybe_hidden_hypothesis_equality _ x A G J b =>
+      (pre_proof_maybe_hidden_hypothesis_equality _ x A G J b,
+       could_not_apply_update_because_no_hole_at_address)
 
-  | pre_proof_unhide_equality _ x A t1 t2 C G J prf =>
-    match addr with
-    | 1 :: addr =>
-      let (prf', msg) := update_pre_proof prf addr step in
-      (pre_proof_unhide_equality _ x A t1 t2 C G J prf', msg)
-    | _ => (pre_proof_unhide_equality _ x A t1 t2 C G J prf,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_unhide_equality _ x A t1 t2 C G J prf =>
+      match addr with
+      | 1 :: addr =>
+        let (prf', msg) := update_pre_proof prf addr step in
+        (pre_proof_unhide_equality _ x A t1 t2 C G J prf', msg)
+      | _ => (pre_proof_unhide_equality _ x A t1 t2 C G J prf,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1' prf2 prf3, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2' prf3, msg)
-    | 3 :: addr =>
-      let (prf3', msg) := update_pre_proof prf3 addr step in
-      (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3', msg)
-    | _ => (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1' prf2 prf3, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2' prf3, msg)
+      | 3 :: addr =>
+        let (prf3', msg) := update_pre_proof prf3 addr step in
+        (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3', msg)
+      | _ => (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_integer_equality _ n H =>
-    (pre_proof_integer_equality _ n H,
-     could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_integer_equality _ n H =>
+      (pre_proof_integer_equality _ n H,
+       could_not_apply_update_because_no_hole_at_address)
 
-  | pre_proof_introduction _ t C H wft covt nout prf =>
-    match addr with
-    | 1 :: addr =>
-      let (prf', msg) := update_pre_proof prf addr step in
-      (pre_proof_introduction _ t C H wft covt nout prf', msg)
-    | _ => (pre_proof_introduction _ t C H wft covt nout prf,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_introduction _ t C H wft covt nout prf =>
+      match addr with
+      | 1 :: addr =>
+        let (prf', msg) := update_pre_proof prf addr step in
+        (pre_proof_introduction _ t C H wft covt nout prf', msg)
+      | _ => (pre_proof_introduction _ t C H wft covt nout prf,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_axiom_equality _ a b T H prf =>
-    match addr with
-    | 1 :: addr =>
-      let (prf', msg) := update_pre_proof prf addr step in
-      (pre_proof_axiom_equality _ a b T H prf', msg)
-    | _ => (pre_proof_axiom_equality _ a b T H prf,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_axiom_equality _ a b T H prf =>
+      match addr with
+      | 1 :: addr =>
+        let (prf', msg) := update_pre_proof prf addr step in
+        (pre_proof_axiom_equality _ a b T H prf', msg)
+      | _ => (pre_proof_axiom_equality _ a b T H prf,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_thin _ G J A C x nixJ nixC prf =>
-    match addr with
-    | 1 :: addr =>
-      let (prf', msg) := update_pre_proof prf addr step in
-      (pre_proof_thin _ G J A C x nixJ nixC prf', msg)
-    | _ => (pre_proof_thin _ G J A C x nixJ nixC prf,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_thin _ G J A C x nixJ nixC prf =>
+      match addr with
+      | 1 :: addr =>
+        let (prf', msg) := update_pre_proof prf addr step in
+        (pre_proof_thin _ G J A C x nixJ nixC prf', msg)
+      | _ => (pre_proof_thin _ G J A C x nixJ nixC prf,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2', msg)
-    | _ => (pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2', msg)
+      | _ => (pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2', msg)
-    | _ => (pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2', msg)
+      | _ => (pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2', msg)
-    | _ => (pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2', msg)
+      | _ => (pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2', msg)
-    | _ => (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2', msg)
+      | _ => (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2', msg)
-    | _ => (pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2', msg)
+      | _ => (pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_cumulativity _ H T i j leij prf1 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_cumulativity _ H T i j leij prf1', msg)
-    | _ => (pre_proof_cumulativity _ H T i j leij prf1,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_cumulativity _ H T i j leij prf1 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_cumulativity _ H T i j leij prf1', msg)
+      | _ => (pre_proof_cumulativity _ H T i j leij prf1,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_equality_symmetry _ H a b T prf1 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_equality_symmetry _ H a b T prf1', msg)
-    | _ => (pre_proof_equality_symmetry _ H a b T prf1,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_equality_symmetry _ H a b T prf1 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_equality_symmetry _ H a b T prf1', msg)
+      | _ => (pre_proof_equality_symmetry _ H a b T prf1,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_equality_transitivity _ H a b c T wfc covc prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2', msg)
-    | _ => (pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2,
-            could_not_apply_update_because_wrong_address)
-    end
+    | pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_equality_transitivity _ H a b c T wfc covc prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2', msg)
+      | _ => (pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
 
-  | pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2 =>
-    match addr with
-    | 1 :: addr =>
-      let (prf1', msg) := update_pre_proof prf1 addr step in
-      (pre_proof_cequiv_transitivity _ H a b c wfc covc prf1' prf2, msg)
-    | 2 :: addr =>
-      let (prf2', msg) := update_pre_proof prf2 addr step in
-      (pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2', msg)
-    | _ => (pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2,
-            could_not_apply_update_because_wrong_address)
+    | pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2 =>
+      match addr with
+      | 1 :: addr =>
+        let (prf1', msg) := update_pre_proof prf1 addr step in
+        (pre_proof_cequiv_transitivity _ H a b c wfc covc prf1' prf2, msg)
+      | 2 :: addr =>
+        let (prf2', msg) := update_pre_proof prf2 addr step in
+        (pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2', msg)
+      | _ => (pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2,
+              could_not_apply_update_because_wrong_address)
+      end
     end
   end.
 
@@ -6039,31 +5911,31 @@ Definition update_pre_proof_seq {o} {ctxt}
     end
   end.
 
-Definition NuprlState_update_proof {o}
-           (state : @NuprlState o)
+Definition SoftLibrary_update_proof {o}
+           (state : @SoftLibrary o)
            (name  : LemmaName)
            (addr  : address)
-           (step  : proof_step) : NuprlState * DEBUG_MSG :=
-  match find_unfinished_in_pre_proofs (NuprlState_unfinished state) name with
+           (step  : proof_step) : SoftLibrary * DEBUG_MSG :=
+  match find_unfinished_in_pre_proofs (SoftLibrary_unfinished state) name with
   | (Some pp, pps) =>
 
     let (pp', msg) := update_pre_proof_seq pp addr step in
-    (NuprlState_change_unfinished state (pp' :: pps), msg)
+    (SoftLibrary_change_unfinished state (pp' :: pps), msg)
 
   | (None, pps) => (state, could_not_apply_update_because_could_not_find_lemma)
   end.
 
-Definition NuprlState_start_proof {o}
-           (state : @NuprlState o)
+Definition SoftLibrary_start_proof {o}
+           (state : @SoftLibrary o)
            (name  : LemmaName)
            (C     : NTerm)
-           (isp   : isprog C) : NuprlState * @DEBUG_MSG o :=
-  let pps : pre_proof_seq (Library2ProofContext (NuprlState_lib state)) :=
+           (isp   : isprog C) : SoftLibrary * @DEBUG_MSG o :=
+  let pps : pre_proof_seq (RigidLibrary2ProofContext (SoftLibrary_lib state)) :=
       MkPreProofSeq name C isp (pre_proof_hole _ (term2pre_baresequent C))
   in
-  (MkNuprlState
-     (NuprlState_lib state)
-     (pps :: NuprlState_unfinished state),
+  (MkSoftLibrary
+     (SoftLibrary_lib state)
+     (pps :: SoftLibrary_unfinished state),
    started_proof).
 
 Fixpoint find_holes_in_pre_proof {o}
@@ -6210,10 +6082,10 @@ Definition find_holes_in_pre_proof_seq {o} {ctxt}
   | MkPreProofSeq name C isp pre_prf => find_holes_in_pre_proof pre_prf []
   end.
 
-Definition NuprlState_find_holes {o}
-           (state : @NuprlState o)
-           (name  : LemmaName) : NuprlState * DEBUG_MSG :=
-  match find_unfinished_in_pre_proofs (NuprlState_unfinished state) name with
+Definition SoftLibrary_find_holes {o}
+           (state : @SoftLibrary o)
+           (name  : LemmaName) : SoftLibrary * DEBUG_MSG :=
+  match find_unfinished_in_pre_proofs (SoftLibrary_unfinished state) name with
   | (Some pp, _) =>
 
     let holes := find_holes_in_pre_proof_seq pp in
@@ -6427,11 +6299,11 @@ Definition find_sequent_in_pre_proof_seq {o} {ctxt}
   | MkPreProofSeq name C isp pre_prf => find_sequent_in_pre_proof pre_prf addr
   end.
 
-Definition NuprlState_find_hole {o}
-           (state : @NuprlState o)
+Definition SoftLibrary_find_hole {o}
+           (state : @SoftLibrary o)
            (name  : LemmaName)
-           (addr  : address) : NuprlState * DEBUG_MSG :=
-  match find_unfinished_in_pre_proofs (NuprlState_unfinished state) name with
+           (addr  : address) : SoftLibrary * DEBUG_MSG :=
+  match find_unfinished_in_pre_proofs (SoftLibrary_unfinished state) name with
   | (Some pp, _) =>
 
     match find_sequent_in_pre_proof_seq pp addr with
@@ -8105,11 +7977,11 @@ Fixpoint rename_pre_proof {o}
       (rename_pre_proof r prf2)
   end.
 
-Definition rename_LibraryEntry {o} r (e : @LibraryEntry o) : LibraryEntry :=
+Definition rename_RigidLibraryEntry {o} r (e : @RigidLibraryEntry o) : RigidLibraryEntry :=
   match e with
-  | LibraryEntry_abs e => LibraryEntry_abs (rename_library_entry r e)
-  | LibraryEntry_proof ctxt name stmt ext isp valid prf =>
-    LibraryEntry_proof
+  | RigidLibraryEntry_abs e => RigidLibraryEntry_abs (rename_library_entry r e)
+  | RigidLibraryEntry_proof ctxt name stmt ext isp valid prf =>
+    RigidLibraryEntry_proof
       (rename_ProofContext r ctxt)
       (rename_LemmaName r name)
       (rename_term r stmt)
@@ -8119,8 +7991,8 @@ Definition rename_LibraryEntry {o} r (e : @LibraryEntry o) : LibraryEntry :=
       (rename_proof r prf)
   end.
 
-Definition rename_Library {o} r (lib : @Library o) : Library :=
-  map (rename_LibraryEntry r) lib.
+Definition rename_RigidLibrary {o} r (lib : @RigidLibrary o) : RigidLibrary :=
+  map (rename_RigidLibraryEntry r) lib.
 
 Definition rename_pre_proof_seq {o} r {ctxt} (p : @pre_proof_seq o ctxt) : pre_proof_seq (rename_ProofContext r ctxt) :=
   match p with
@@ -8157,10 +8029,10 @@ Proof.
   introv h1 h2 h3; subst; f_equal; eauto 3 with pi.
 Qed.
 
-Lemma rename_ProofContext_Library2ProofContext {o} :
-  forall r (l : @Library o),
-    rename_ProofContext r (Library2ProofContext l)
-    = Library2ProofContext (rename_Library r l).
+Lemma rename_ProofContext_RigidLibrary2ProofContext {o} :
+  forall r (l : @RigidLibrary o),
+    rename_ProofContext r (RigidLibrary2ProofContext l)
+    = RigidLibrary2ProofContext (rename_RigidLibrary r l).
 Proof.
   induction l; introv; simpl; auto.
   rewrite <- IHl; clear IHl.
@@ -8177,266 +8049,266 @@ Proof.
   apply rename_soterm_nterm2soterm.
 Qed.
 
-Lemma in_PC_conclusion_rename_ProofContext_Library2ProofContext_implies {o} :
-  forall {c} {r} {l : @Library o},
-    LIn c (PC_conclusions (rename_ProofContext r (Library2ProofContext l)))
-    -> LIn c (PC_conclusions (Library2ProofContext (rename_Library r l))).
+Lemma in_PC_conclusion_rename_ProofContext_RigidLibrary2ProofContext_implies {o} :
+  forall {c} {r} {l : @RigidLibrary o},
+    LIn c (PC_conclusions (rename_ProofContext r (RigidLibrary2ProofContext l)))
+    -> LIn c (PC_conclusions (RigidLibrary2ProofContext (rename_RigidLibrary r l))).
 Proof.
   introv i.
-  rewrite <- rename_ProofContext_Library2ProofContext; auto.
+  rewrite <- rename_ProofContext_RigidLibrary2ProofContext; auto.
 Qed.
 
-Lemma reduces_to_rename_ProofContext_Library2ProofContext {o} :
+Lemma reduces_to_rename_ProofContext_RigidLibrary2ProofContext {o} :
   forall {r} {l} {a b : @NTerm o},
-    reduces_to (rename_ProofContext r (Library2ProofContext l)) a b
-    -> reduces_to (Library2ProofContext (rename_Library r l)) a b.
+    reduces_to (rename_ProofContext r (RigidLibrary2ProofContext l)) a b
+    -> reduces_to (RigidLibrary2ProofContext (rename_RigidLibrary r l)) a b.
 Proof.
   introv rd.
-  rewrite <- rename_ProofContext_Library2ProofContext; auto.
+  rewrite <- rename_ProofContext_RigidLibrary2ProofContext; auto.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_rename_ProofContext_Library2ProofContext {o} :
+Lemma reduces_in_atmost_k_steps_rename_ProofContext_RigidLibrary2ProofContext {o} :
   forall {r} {l} {a b : @NTerm o} {k},
-    reduces_in_atmost_k_steps (rename_ProofContext r (Library2ProofContext l)) a b k
-    -> reduces_in_atmost_k_steps (Library2ProofContext (rename_Library r l)) a b k.
+    reduces_in_atmost_k_steps (rename_ProofContext r (RigidLibrary2ProofContext l)) a b k
+    -> reduces_in_atmost_k_steps (RigidLibrary2ProofContext (rename_RigidLibrary r l)) a b k.
 Proof.
   introv rd.
-  rewrite <- rename_ProofContext_Library2ProofContext; auto.
+  rewrite <- rename_ProofContext_RigidLibrary2ProofContext; auto.
 Qed.
 
-Lemma all_abstraction_can_be_unfolded_rename_ProofContext_Library2ProofContext {o} :
+Lemma all_abstraction_can_be_unfolded_rename_ProofContext_RigidLibrary2ProofContext {o} :
   forall {r} {l} {abs} {a : @NTerm o},
-    all_abstractions_can_be_unfolded (rename_ProofContext r (Library2ProofContext l)) abs a
-    -> all_abstractions_can_be_unfolded (Library2ProofContext (rename_Library r l)) abs a.
+    all_abstractions_can_be_unfolded (rename_ProofContext r (RigidLibrary2ProofContext l)) abs a
+    -> all_abstractions_can_be_unfolded (RigidLibrary2ProofContext (rename_RigidLibrary r l)) abs a.
 Proof.
   introv h.
-  rewrite <- rename_ProofContext_Library2ProofContext; auto.
+  rewrite <- rename_ProofContext_RigidLibrary2ProofContext; auto.
 Qed.
 
-Lemma pre_proof_Library2ProofContext_rename_Library_pre_rule_unfold_abstractions_hyp_implies {o} :
+Lemma pre_proof_RigidLibrary2ProofContext_rename_RigidLibrary_pre_rule_unfold_abstractions_hyp_implies {o} :
   forall {r} {l} {abs} {a} {H : @bhyps o},
-    pre_proof (Library2ProofContext (rename_Library r l)) (pre_rule_unfold_abstractions_hyp (rename_ProofContext r (Library2ProofContext l)) abs a H) ->
-    pre_proof (Library2ProofContext (rename_Library r l)) (pre_rule_unfold_abstractions_hyp (Library2ProofContext (rename_Library r l)) abs a H).
+    pre_proof (RigidLibrary2ProofContext (rename_RigidLibrary r l)) (pre_rule_unfold_abstractions_hyp (rename_ProofContext r (RigidLibrary2ProofContext l)) abs a H) ->
+    pre_proof (RigidLibrary2ProofContext (rename_RigidLibrary r l)) (pre_rule_unfold_abstractions_hyp (RigidLibrary2ProofContext (rename_RigidLibrary r l)) abs a H).
 Proof.
   introv h.
-  rewrite rename_ProofContext_Library2ProofContext in h; auto.
+  rewrite rename_ProofContext_RigidLibrary2ProofContext in h; auto.
 Qed.
 
-Lemma implies_pre_proof_Library2ProofContext_rename_Library_pre_rule_unfold_abstractions_hyp {o} :
+Lemma implies_pre_proof_RigidLibrary2ProofContext_rename_RigidLibrary_pre_rule_unfold_abstractions_hyp {o} :
   forall {r} {l} {abs} {a} {H : @bhyps o},
-    pre_proof (Library2ProofContext (rename_Library r l)) (pre_rule_unfold_abstractions_hyp (Library2ProofContext (rename_Library r l)) abs a H) ->
-    pre_proof (Library2ProofContext (rename_Library r l)) (pre_rule_unfold_abstractions_hyp (rename_ProofContext r (Library2ProofContext l)) abs a H).
+    pre_proof (RigidLibrary2ProofContext (rename_RigidLibrary r l)) (pre_rule_unfold_abstractions_hyp (RigidLibrary2ProofContext (rename_RigidLibrary r l)) abs a H) ->
+    pre_proof (RigidLibrary2ProofContext (rename_RigidLibrary r l)) (pre_rule_unfold_abstractions_hyp (rename_ProofContext r (RigidLibrary2ProofContext l)) abs a H).
 Proof.
   introv h.
-  rewrite rename_ProofContext_Library2ProofContext; auto.
+  rewrite rename_ProofContext_RigidLibrary2ProofContext; auto.
 Qed.
 
 Fixpoint rename_ctxt_pre_proof {o}
          (r    : renaming)
-         {l    : @Library o}
+         {l    : @RigidLibrary o}
          {s    : pre_baresequent}
-         (prf  : pre_proof (rename_ProofContext r (Library2ProofContext l)) s)
-  : pre_proof (Library2ProofContext (rename_Library r l)) s :=
+         (prf  : pre_proof (rename_ProofContext r (RigidLibrary2ProofContext l)) s)
+  : pre_proof (RigidLibrary2ProofContext (rename_RigidLibrary r l)) s :=
   match prf with
   | pre_proof_from_ctxt _ c H i =>
     pre_proof_from_ctxt
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       c H
-      (in_PC_conclusion_rename_ProofContext_Library2ProofContext_implies i)
+      (in_PC_conclusion_rename_ProofContext_RigidLibrary2ProofContext_implies i)
   | pre_proof_hole _ s =>
     pre_proof_hole
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       s
   | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
     pre_proof_isect_eq
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       a1 a2 b1 b2 x1 x2 y i H niyH
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
     pre_proof_isect_member_formation
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       A x B z i H nizH
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_approx_refl _ a H =>
     pre_proof_approx_refl
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       a H
   | pre_proof_cequiv_refl _ a H =>
     pre_proof_cequiv_refl
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       a H
   | pre_proof_cequiv_alpha_eq _ a b H aeq =>
     pre_proof_cequiv_alpha_eq
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       a b H aeq
   | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
     pre_proof_cequiv_approx
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       a b H
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
     pre_proof_approx_eq
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       a1 a2 b1 b2 i H
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
     pre_proof_cequiv_eq
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       a1 a2 b1 b2 i H
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_cut _ B C x H wfB covB nixH prf1 prf2 =>
     pre_proof_cut
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       B C x H wfB covB nixH
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_hypothesis _ x A G J =>
     pre_proof_hypothesis
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       x A G J
   | pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2 =>
     pre_proof_cequiv_subst_concl
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       C x a b H wfa wfb cova covb
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2 =>
     pre_proof_cequiv_subst_hyp
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       H z T x a b J C wfa wfb cova covb
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_cequiv_computation _ a b H rd =>
     pre_proof_cequiv_computation
-      (Library2ProofContext (rename_Library r l))
-      a b H (reduces_to_rename_ProofContext_Library2ProofContext rd)
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
+      a b H (reduces_to_rename_ProofContext_RigidLibrary2ProofContext rd)
   | pre_proof_cequiv_computation_aeq _ a b c H rd aeq =>
     pre_proof_cequiv_computation_aeq
-      (Library2ProofContext (rename_Library r l))
-      a b c H (reduces_to_rename_ProofContext_Library2ProofContext rd) aeq
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
+      a b c H (reduces_to_rename_ProofContext_RigidLibrary2ProofContext rd) aeq
   | pre_proof_cequiv_computation_atmost _ a b n H rd =>
     pre_proof_cequiv_computation_atmost
-      (Library2ProofContext (rename_Library r l))
-      a b n H (reduces_in_atmost_k_steps_rename_ProofContext_Library2ProofContext rd)
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
+      a b n H (reduces_in_atmost_k_steps_rename_ProofContext_RigidLibrary2ProofContext rd)
   | pre_proof_unfold_abstractions _ abs a H alla prf1 =>
     pre_proof_unfold_abstractions
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       abs a H
-      (all_abstraction_can_be_unfolded_rename_ProofContext_Library2ProofContext alla)
-      (pre_proof_Library2ProofContext_rename_Library_pre_rule_unfold_abstractions_hyp_implies (rename_ctxt_pre_proof r prf1))
+      (all_abstraction_can_be_unfolded_rename_ProofContext_RigidLibrary2ProofContext alla)
+      (pre_proof_RigidLibrary2ProofContext_rename_RigidLibrary_pre_rule_unfold_abstractions_hyp_implies (rename_ctxt_pre_proof r prf1))
   | pre_proof_rev_unfold_abstractions _ abs a H wfa cova alla prf1 =>
-    implies_pre_proof_Library2ProofContext_rename_Library_pre_rule_unfold_abstractions_hyp
+    implies_pre_proof_RigidLibrary2ProofContext_rename_RigidLibrary_pre_rule_unfold_abstractions_hyp
       (pre_proof_rev_unfold_abstractions
-         (Library2ProofContext (rename_Library r l))
+         (RigidLibrary2ProofContext (rename_RigidLibrary r l))
          abs a H wfa cova
-         (all_abstraction_can_be_unfolded_rename_ProofContext_Library2ProofContext alla)
+         (all_abstraction_can_be_unfolded_rename_ProofContext_RigidLibrary2ProofContext alla)
          (rename_ctxt_pre_proof r prf1))
   | pre_proof_universe_equality _ i j H ltij =>
     pre_proof_universe_equality
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       i j H ltij
   | pre_proof_hypothesis_equality _ x A G J =>
     pre_proof_hypothesis_equality
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       x A G J
   | pre_proof_maybe_hidden_hypothesis_equality _ x A G J b =>
     pre_proof_maybe_hidden_hypothesis_equality
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       x A G J b
   | pre_proof_unhide_equality _ x A t1 t2 C G J prf1 =>
     pre_proof_unhide_equality
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       x A t1 t2 C G J
       (rename_ctxt_pre_proof r prf1)
   | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
     pre_proof_equality_equality
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       A B a1 a2 b1 b2 i H
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
       (rename_ctxt_pre_proof r prf3)
   | pre_proof_integer_equality _ n H =>
     pre_proof_integer_equality
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       n H
   | pre_proof_introduction _ t C H wft covt noutt prf1 =>
     pre_proof_introduction
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       t C H wft covt noutt
       (rename_ctxt_pre_proof r prf1)
   | pre_proof_axiom_equality _ a b T H prf1 =>
     pre_proof_axiom_equality
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       a b T H
       (rename_ctxt_pre_proof r prf1)
   | pre_proof_thin _ G J A C x nixJ nixC prf1 =>
     pre_proof_thin
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       G J A C x nixJ nixC
       (rename_ctxt_pre_proof r prf1)
   | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
     pre_proof_function_equality
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       a1 a2 b1 b2 x1 x2 y i H niyH
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
     pre_proof_apply_equality
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       A B f1 f2 t1 t2 x H wfA covA
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
     pre_proof_isect_elimination
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       A B C a f x z H J wfa cova nizH nizJ dzf
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
     pre_proof_isect_elimination2
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
     pre_proof_isect_member_equality
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       H t1 t2 A x B z i nizH
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_cumulativity _ H T i j leij prf1 =>
     pre_proof_cumulativity
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       H T i j leij
       (rename_ctxt_pre_proof r prf1)
   | pre_proof_equality_symmetry _ H a b T prf1 =>
     pre_proof_equality_symmetry
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       H a b T
       (rename_ctxt_pre_proof r prf1)
   | pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2 =>
     pre_proof_equality_transitivity
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       H a b c T wfc covc
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   | pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2 =>
     pre_proof_cequiv_transitivity
-      (Library2ProofContext (rename_Library r l))
+      (RigidLibrary2ProofContext (rename_RigidLibrary r l))
       H a b c wfc covc
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
   end.
 
 Lemma pre_proofs_rename_ProofContext_implies {o} :
-  forall {r} {state : @NuprlState o},
-    pre_proofs (rename_ProofContext r (Library2ProofContext state))
-    -> pre_proofs (Library2ProofContext (rename_Library r (NuprlState_lib state))).
+  forall {r} {state : @SoftLibrary o},
+    pre_proofs (rename_ProofContext r (RigidLibrary2ProofContext state))
+    -> pre_proofs (RigidLibrary2ProofContext (rename_RigidLibrary r (SoftLibrary_lib state))).
 Proof.
   introv pp.
   destruct state as [l unf]; simpl in *.
@@ -8446,45 +8318,45 @@ Proof.
 
   - exact [].
 
-  - assert (pre_proof_seq (Library2ProofContext (rename_Library r l))) as p;[|exact (p :: IHpp)].
+  - assert (pre_proof_seq (RigidLibrary2ProofContext (rename_RigidLibrary r l))) as p;[|exact (p :: IHpp)].
     clear pp IHpp.
     destruct a as [n t isp pp].
     apply rename_ctxt_pre_proof in pp.
     exact (MkPreProofSeq n t isp pp).
 Defined.
 
-Definition NuprlState_rename {o}
-           (state : @NuprlState o)
-           (r     : renaming) : NuprlState * (@DEBUG_MSG o) :=
-  let lib := rename_Library r (NuprlState_lib state) in
-  let unf := rename_pre_proofs r (NuprlState_unfinished state) in
-  (MkNuprlState lib (pre_proofs_rename_ProofContext_implies unf), renamed).
+Definition SoftLibrary_rename {o}
+           (state : @SoftLibrary o)
+           (r     : renaming) : SoftLibrary * (@DEBUG_MSG o) :=
+  let lib := rename_RigidLibrary r (SoftLibrary_lib state) in
+  let unf := rename_pre_proofs r (SoftLibrary_unfinished state) in
+  (MkSoftLibrary lib (pre_proofs_rename_ProofContext_implies unf), renamed).
 
 
 Definition update {o}
-           (state : @NuprlState o)
-           (cmd   : command) : NuprlState * DEBUG_MSG :=
+           (state : @SoftLibrary o)
+           (cmd   : command) : SoftLibrary * DEBUG_MSG :=
   match cmd with
   | COM_add_def opabs vars rhs correct =>
-    NuprlState_add_def state opabs vars rhs correct
+    SoftLibrary_add_def state opabs vars rhs correct
 
   | COM_finish_proof name =>
-    NuprlState_finish_proof state name
+    SoftLibrary_finish_proof state name
 
   | COM_update_proof name addr step =>
-    NuprlState_update_proof state name addr step
+    SoftLibrary_update_proof state name addr step
 
   | COM_start_proof name C isp =>
-    NuprlState_start_proof state name C isp
+    SoftLibrary_start_proof state name C isp
 
   | COM_find_holes name =>
-    NuprlState_find_holes state name
+    SoftLibrary_find_holes state name
 
   | COM_find_sequent_at_address name addr =>
-    NuprlState_find_hole state name addr
+    SoftLibrary_find_hole state name addr
 
   | COM_rename o1 o2 =>
-    NuprlState_rename state (o1, o2)
+    SoftLibrary_rename state (o1, o2)
   end.
 
 Definition DEBUG_MSGS {o} := list (@DEBUG_MSG o).
@@ -8492,14 +8364,14 @@ Definition DEBUG_MSGS {o} := list (@DEBUG_MSG o).
 Record UpdRes {o} :=
   MkUpdRes
     {
-      upd_res_state : @NuprlState o;
+      upd_res_state : @SoftLibrary o;
       upd_res_trace : @DEBUG_MSGS o;
     }.
 
 Arguments MkUpdRes [o] _ _.
 
 Fixpoint update_list {o}
-         (state : @NuprlState o)
+         (state : @SoftLibrary o)
          (cmds  : commands) : UpdRes :=
   match cmds with
   | [] => MkUpdRes state []
@@ -8510,18 +8382,18 @@ Fixpoint update_list {o}
     end
   end.
 
-Definition initLibrary {o} : @Library o := [].
+Definition initRigidLibrary {o} : @RigidLibrary o := [].
 
-Definition initUnfinished {o} : @pre_proofs o (Library2ProofContext initLibrary) := [].
+Definition initUnfinished {o} : @pre_proofs o (RigidLibrary2ProofContext initRigidLibrary) := [].
 
-Definition initNuprlState {o} : @NuprlState o :=
-  MkNuprlState initLibrary initUnfinished.
+Definition initSoftLibrary {o} : @SoftLibrary o :=
+  MkSoftLibrary initRigidLibrary initUnfinished.
 
 Definition update_list_from_init {o} (cmds : commands) : @UpdRes o :=
-  update_list initNuprlState cmds.
+  update_list initSoftLibrary cmds.
 
-(* Should we add this to NuprlState *)
-Definition ValidNuprlState {o} (state : @NuprlState o) := ValidLibrary state.
+(* Should we add this to SoftLibrary *)
+Definition ValidSoftLibrary {o} (state : @SoftLibrary o) := ValidRigidLibrary state.
 
 Lemma matching_entry_sign_rename_opabs :
   forall r o1 o2,
@@ -8558,15 +8430,15 @@ Proof.
 Qed.
 Hint Resolve wf_csequent_rename : slow.
 
-Lemma implies_sequent_true_ext_lib_wf {o} :
+Lemma implies_mon_true_sequent_wf {o} :
   forall r l (stmt ext : @NTerm o),
-    sequent_true_ext_lib_wf (Library2ProofContext l) (NLemma stmt ext)
-    -> sequent_true_ext_lib_wf
-         (rename_ProofContext r (Library2ProofContext l))
+    mon_true_sequent_wf (RigidLibrary2ProofContext l) (NLemma stmt ext)
+    -> mon_true_sequent_wf
+         (rename_ProofContext r (RigidLibrary2ProofContext l))
          (NLemma (rename_term r stmt) (rename_term r ext)).
 Proof.
   introv strue.
-  unfold sequent_true_ext_lib_wf in *; exrepnd.
+  unfold mon_true_sequent_wf, sequent_true_ext_lib_wf in *; exrepnd.
   exists (wf_csequent_rename r c).
   apply (renaming_preserves_sequent_true_ext_lib r) in strue0.
   unfold rename_ProofContext; simpl.
@@ -8580,10 +8452,10 @@ Proof.
   apply eq_sequent; simpl; auto.
 Qed.
 
-Lemma implies_ValidLibrary_rename {o} :
-  forall r (l : @Library o),
-    ValidLibrary l
-    -> ValidLibrary (rename_Library r l).
+Lemma implies_ValidRigidLibrary_rename {o} :
+  forall r (l : @RigidLibrary o),
+    ValidRigidLibrary l
+    -> ValidRigidLibrary (rename_RigidLibrary r l).
 Proof.
   induction l; introv val; simpl in *; auto.
   repnd; dands; tcsp.
@@ -8593,7 +8465,7 @@ Proof.
     introv xx; destruct val0.
     unfold in_lib in *; simpl in *; exrepnd.
 
-    rewrite <- rename_ProofContext_Library2ProofContext in xx1.
+    rewrite <- rename_ProofContext_RigidLibrary2ProofContext in xx1.
     unfold rename_ProofContext in xx1; simpl in *.
     unfold rename_lib in *.
     allrw List.in_map_iff; exrepnd; subst.
@@ -8602,7 +8474,7 @@ Proof.
     allrw matching_entry_sign_rename_opabs; auto.
 
   - repnd; subst; simpl in *.
-    rewrite <- rename_ProofContext_Library2ProofContext; dands; auto.
+    rewrite <- rename_ProofContext_RigidLibrary2ProofContext; dands; auto.
 
     + unfold name_not_in_lib in *.
       introv xx; destruct val2.
@@ -8616,33 +8488,33 @@ Proof.
       rewrite opname2opabs_rename_opname in xx0.
       allrw matching_entry_sign_rename_opabs; auto.
 
-    + apply implies_sequent_true_ext_lib_wf; auto.
+    + apply implies_mon_true_sequent_wf; auto.
 Qed.
 
-Definition lemma_in_LibraryEntry {o}
+Definition lemma_in_RigidLibraryEntry {o}
            (s : @baresequent o)
-           (e : LibraryEntry) : Type :=
+           (e : RigidLibraryEntry) : Type :=
   match e with
-  | LibraryEntry_abs e => False
-  | LibraryEntry_proof c name stmt ext isp valid prf =>
+  | RigidLibraryEntry_abs e => False
+  | RigidLibraryEntry_proof c name stmt ext isp valid prf =>
     s = named_concl2bseq [] (MkNamedConcl name stmt) (*mk_baresequent [] (mk_concl stmt ext)*)
   end.
 
-Fixpoint lemma_in_Library {o}
+Fixpoint lemma_in_RigidLibrary {o}
          (s : @baresequent o)
-         (l : Library) : Type :=
+         (l : RigidLibrary) : Type :=
   match l with
   | [] => False
   | entry :: entries =>
-    lemma_in_LibraryEntry s entry
+    lemma_in_RigidLibraryEntry s entry
     [+]
-    lemma_in_Library s entries
+    lemma_in_RigidLibrary s entries
   end.
 
-Lemma lemma_in_Library_named_concl2bseq_iff {o} :
+Lemma lemma_in_RigidLibrary_named_concl2bseq_iff {o} :
   forall (c : @named_concl o) L,
-    lemma_in_Library (named_concl2bseq [] c) L
-    <=> LIn c (PC_conclusions (Library2ProofContext L)).
+    lemma_in_RigidLibrary (named_concl2bseq [] c) L
+    <=> LIn c (PC_conclusions (RigidLibrary2ProofContext L)).
 Proof.
   induction L; simpl; split; introv h; tcsp.
 
@@ -8664,15 +8536,15 @@ Proof.
       right; apply IHL; clear IHL; auto.
 Qed.
 
-Lemma implies_lemma_in_Library_named_concl2bseq {o} :
+Lemma implies_lemma_in_RigidLibrary_named_concl2bseq {o} :
   forall (c : @named_concl o) L,
-    LIn c (PC_conclusions (Library2ProofContext L))
-    -> lemma_in_Library (named_concl2bseq [] c) L.
+    LIn c (PC_conclusions (RigidLibrary2ProofContext L))
+    -> lemma_in_RigidLibrary (named_concl2bseq [] c) L.
 Proof.
   introv i.
-  apply lemma_in_Library_named_concl2bseq_iff; auto.
+  apply lemma_in_RigidLibrary_named_concl2bseq_iff; auto.
 Qed.
-Hint Resolve implies_lemma_in_Library_named_concl2bseq : slow.
+Hint Resolve implies_lemma_in_RigidLibrary_named_concl2bseq : slow.
 
 Lemma wf_term_simple_mk_abs {o} :
   forall n, @wf_term o (mk_abs (opname2opabs n) []).
@@ -8792,14 +8664,14 @@ Proof.
 Qed.
 Hint Resolve sequent_true_ext_lib_no_hyps_implies : slow.
 
-Lemma sequent_true_ext_lib_wf_no_hyps_implies {o} :
+Lemma mon_true_sequent_wf_no_hyps_implies {o} :
   forall l H (c : @named_concl o),
     wf_hypotheses H
-    -> sequent_true_ext_lib_wf l (named_concl2bseq [] c)
-    -> sequent_true_ext_lib_wf l (named_concl2bseq H c).
+    -> mon_true_sequent_wf l (named_concl2bseq [] c)
+    -> mon_true_sequent_wf l (named_concl2bseq H c).
 Proof.
   introv wf strue.
-  unfold sequent_true_ext_lib_wf in *; exrepnd.
+  unfold mon_true_sequent_wf, sequent_true_ext_lib_wf in *; exrepnd.
   assert (wf_csequent (named_concl2bseq H c)) as w by eauto 2 with slow.
   exists w.
 
@@ -8809,7 +8681,7 @@ Proof.
   destruct c0, w, w, w0; repnd; simpl in *.
   proof_irr; eauto 3 with slow.
 Qed.
-Hint Resolve sequent_true_ext_lib_wf_no_hyps_implies : slow.
+Hint Resolve mon_true_sequent_wf_no_hyps_implies : slow.
 
 Lemma implies_wf_sequent_simple_mk_abs {o} :
   forall (H : @bhyps o) t e name,
@@ -8930,17 +8802,17 @@ Proof.
   }
 Qed.
 
-Lemma implies_sequent_true_ext_lib_wf_named {o} :
+Lemma implies_mon_true_sequent_wf_named {o} :
   forall name (ext : @NTerm o) valid ctxt stmt,
-    sequent_true_ext_lib_wf
+    mon_true_sequent_wf
       (extract2def name ext valid :: ctxt)
       (NLemma stmt ext)
-    -> sequent_true_ext_lib_wf
+    -> mon_true_sequent_wf
          (extract2def name ext valid :: ctxt)
          (mk_bseq [] (mk_concl stmt (mk_abs (opname2opabs name) []))).
 Proof.
   introv strue.
-  unfold NLemma, mk_bseq, sequent_true_ext_lib_wf in *; exrepnd.
+  unfold NLemma, mk_bseq, mon_true_sequent_wf, sequent_true_ext_lib_wf in *; exrepnd.
 
   assert (wf_csequent ([]) ||- (mk_concl stmt (mk_abs (opname2opabs name) []))) as w.
   { clear strue0; unfold wf_csequent in *; simpl in *; repnd; dands; eauto 3 with slow. }
@@ -8951,10 +8823,10 @@ Proof.
 Qed.
 
 Lemma correct_library {o} :
-  forall (L : Library) (s : @baresequent o),
-    ValidLibrary L
-    -> lemma_in_Library s L
-    -> sequent_true_ext_lib_wf (Library2ProofContext L) s.
+  forall (L : RigidLibrary) (s : @baresequent o),
+    ValidRigidLibrary L
+    -> lemma_in_RigidLibrary s L
+    -> mon_true_sequent_wf (RigidLibrary2ProofContext L) s.
 Proof.
   induction L; introv valid i; simpl in *; tcsp.
   repnd; repndors;
@@ -8966,43 +8838,43 @@ Proof.
   unfold named_concl2bseq, named_concl2concl; simpl.
 
   assert (forall s,
-             lemma_in_Library s L
-             -> sequent_true_ext_lib_wf (Library2ProofContext L) s) as imp.
+             lemma_in_RigidLibrary s L
+             -> mon_true_sequent_wf (RigidLibrary2ProofContext L) s) as imp.
   { introv i; apply IHL; auto. }
   clear IHL.
 
   assert (forall c,
-             LIn c (PC_conclusions (Library2ProofContext L))
-             -> sequent_true_ext_lib_wf (Library2ProofContext L) (named_concl2bseq [] c)) as w.
+             LIn c (PC_conclusions (RigidLibrary2ProofContext L))
+             -> mon_true_sequent_wf (RigidLibrary2ProofContext L) (named_concl2bseq [] c)) as w.
   { introv i; apply imp; auto; clear imp.
-    apply lemma_in_Library_named_concl2bseq_iff; auto. }
+    apply lemma_in_RigidLibrary_named_concl2bseq_iff; auto. }
   clear imp.
 
-  remember (Library2ProofContext L) as ctxt.
-  apply implies_sequent_true_ext_lib_wf_named.
+  remember (RigidLibrary2ProofContext L) as ctxt.
+  apply implies_mon_true_sequent_wf_named.
 
   apply sequent_true_mono_lib; auto.
 Qed.
 
 Lemma update_preserves_validity {o} :
-  forall (state : @NuprlState o) (cmd : command),
-    ValidNuprlState state -> ValidNuprlState (fst (update state cmd)).
+  forall (state : @SoftLibrary o) (cmd : command),
+    ValidSoftLibrary state -> ValidSoftLibrary (fst (update state cmd)).
 Proof.
   introv valid.
   destruct cmd; simpl; auto.
 
   - (* addition of a definition *)
     destruct state as [L pre_prfs]; simpl in *.
-    unfold ValidNuprlState in *; simpl in *.
+    unfold ValidSoftLibrary in *; simpl in *.
 
     destruct (entry_in_lib_dec
-                (LibraryEntry_abs (lib_abs opabs vars rhs correct))
-                (Library2lib L)) as [d|d]; simpl; auto.
+                (RigidLibraryEntry_abs (lib_abs opabs vars rhs correct))
+                (RigidLibrary2lib L)) as [d|d]; simpl; auto.
 
   - (* finalizing a proof *)
     destruct state as [L pre_prfs]; simpl in *.
-    unfold ValidNuprlState in *; simpl in *.
-    unfold NuprlState_finish_proof; simpl.
+    unfold ValidSoftLibrary in *; simpl in *.
+    unfold SoftLibrary_finish_proof; simpl.
 
     remember (find_unfinished_in_pre_proofs pre_prfs name) as f; symmetry in Heqf; repnd.
     destruct f0; simpl in *; auto;[].
@@ -9010,16 +8882,16 @@ Proof.
     remember (finish_pre_proof_seq p) as eop; symmetry in Heqeop.
     destruct eop; simpl in *; dands; auto;[].
 
-    destruct (entry_in_lib_dec l (Library2lib L)) as [d|d]; simpl; auto;[].
+    destruct (entry_in_lib_dec r (RigidLibrary2lib L)) as [d|d]; simpl; auto;[].
 
-    destruct l; simpl in *.
+    destruct r; simpl in *.
 
     + unfold finish_pre_proof_seq in Heqeop.
       destruct p; simpl in *.
       remember (finish_pre_proof pre_proof_seq_proof0) as fin; symmetry in Heqfin;
         destruct fin; ginv.
 
-    + assert (ctxt = Library2ProofContext L) as xx.
+    + assert (ctxt = RigidLibrary2ProofContext L) as xx.
 
       { unfold finish_pre_proof_seq in Heqeop.
         destruct p; simpl in *.
@@ -9034,36 +8906,36 @@ Proof.
         try (complete (subst; auto));
         try (complete (apply implies_wf_bseq_no_hyps; eauto 3 with slow)).
 
-      introv wf i; apply implies_lemma_in_Library_named_concl2bseq in i.
+      introv wf i; apply implies_lemma_in_RigidLibrary_named_concl2bseq in i.
       apply correct_library in i; auto; eauto 3 with slow.
 
   - (* update an unfinished proof *)
     destruct state; simpl in *.
-    unfold ValidNuprlState in *; simpl in *.
-    unfold NuprlState_update_proof; simpl.
+    unfold ValidSoftLibrary in *; simpl in *.
+    unfold SoftLibrary_update_proof; simpl.
 
-    remember (find_unfinished_in_pre_proofs NuprlState_unfinished0 name) as f; symmetry in Heqf; repnd.
+    remember (find_unfinished_in_pre_proofs SoftLibrary_unfinished0 name) as f; symmetry in Heqf; repnd.
     destruct f0; simpl in *; auto.
     remember (update_pre_proof_seq p addr step) as upd; destruct upd; simpl; auto.
 
-  - unfold NuprlState_find_holes.
-    remember (find_unfinished_in_pre_proofs (NuprlState_unfinished state) name) as f; symmetry in Heqf; repnd.
+  - unfold SoftLibrary_find_holes.
+    remember (find_unfinished_in_pre_proofs (SoftLibrary_unfinished state) name) as f; symmetry in Heqf; repnd.
     destruct f0; simpl in *; auto.
 
-  - unfold NuprlState_find_hole.
-    remember (find_unfinished_in_pre_proofs (NuprlState_unfinished state) name) as f; symmetry in Heqf; repnd.
+  - unfold SoftLibrary_find_hole.
+    remember (find_unfinished_in_pre_proofs (SoftLibrary_unfinished state) name) as f; symmetry in Heqf; repnd.
     destruct f0; simpl in *; auto.
     remember (find_sequent_in_pre_proof_seq p addr) as fh; symmetry in Heqfh.
     destruct fh; simpl; auto.
 
   - destruct state; simpl in *.
-    unfold ValidNuprlState in *; simpl in *.
-    apply implies_ValidLibrary_rename; auto.
+    unfold ValidSoftLibrary in *; simpl in *.
+    apply implies_ValidRigidLibrary_rename; auto.
 Qed.
 
 Lemma update_list_preserves_validity {o} :
-  forall (cmds : commands) (state : @NuprlState o),
-    ValidNuprlState state -> ValidNuprlState (upd_res_state (update_list state cmds)).
+  forall (cmds : commands) (state : @SoftLibrary o),
+    ValidSoftLibrary state -> ValidSoftLibrary (upd_res_state (update_list state cmds)).
 Proof.
   induction cmds; introv v; simpl in *; auto.
 
@@ -9076,7 +8948,7 @@ Proof.
   destruct w; auto.
 Qed.
 
-Lemma ValidInitNuprlState {o} : @ValidNuprlState o initNuprlState.
+Lemma ValidInitSoftLibrary {o} : @ValidSoftLibrary o initSoftLibrary.
 Proof.
   introv.
   compute; auto.
@@ -9084,19 +8956,19 @@ Qed.
 
 Lemma valid_update_list_from_init {o} :
   forall (cmds : commands),
-    @ValidNuprlState o (upd_res_state (update_list_from_init cmds)).
+    @ValidSoftLibrary o (upd_res_state (update_list_from_init cmds)).
 Proof.
   introv.
   apply update_list_preserves_validity.
-  apply ValidInitNuprlState.
+  apply ValidInitSoftLibrary.
 Qed.
 
 Record ValidUpdRes {o} :=
   MkValidUpdRes
     {
-      valid_upd_res_state : @NuprlState o;
+      valid_upd_res_state : @SoftLibrary o;
       valid_upd_res_trace : list (@DEBUG_MSG o);
-      valid_upd_res_valid : ValidNuprlState valid_upd_res_state;
+      valid_upd_res_valid : ValidSoftLibrary valid_upd_res_state;
     }.
 Arguments MkValidUpdRes [o] _ _ _.
 
