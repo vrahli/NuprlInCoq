@@ -30,7 +30,7 @@
 *)
 
 
-Require Export sovar_alpha.
+Require Export substitution3.
 
 
 Fixpoint sosub2_aux {o} (sub : @SOSub o) (t : SOTerm) : NTerm :=
@@ -113,14 +113,156 @@ Proof.
 Qed.
 Hint Resolve subvars_flat_map_all_fo_vars_bterm : slow.
 
+Hint Resolve eqvars_disjoint : slow.
+Hint Resolve eqvars_disjoint_r : slow.
+
+Lemma alphaeq_sk_implies_eqvars_free_vars_sk {o} :
+  forall (sk1 sk2 : @sosub_kind o),
+    alphaeq_sk sk1 sk2
+    -> eqvars (free_vars_sk sk1) (free_vars_sk sk2).
+Proof.
+  introv aeq; destruct sk1, sk2; simpl in *.
+  unfold alphaeq_sk in aeq; simpl in *.
+  apply alphaeqbt_eq in aeq.
+  apply alphaeqbt_preserves_fvars in aeq; simpl in aeq; auto.
+Qed.
+Hint Resolve  alphaeq_sk_implies_eqvars_free_vars_sk : slow.
+
+Lemma alphaeq_sosub_implies_eqvars_free_vars_sosub {o} :
+  forall (s1 s2 : @SOSub o),
+    alphaeq_sosub s1 s2
+    -> eqvars (free_vars_sosub s1) (free_vars_sosub s2).
+Proof.
+  introv aeq.
+  induction aeq; simpl; auto.
+  apply eqvars_app; eauto 3 with slow.
+Qed.
+Hint Resolve alphaeq_sosub_implies_eqvars_free_vars_sosub : slow.
+
+Lemma eqvars_implies_subvars :
+  forall s1 s2, eqvars s1 s2 -> subvars s1 s2.
+Proof.
+  introv eqv.
+  apply eqvars_is_eqset in eqv.
+  apply subvars_eq.
+  introv i; apply eqv in i; auto.
+Qed.
+Hint Resolve eqvars_implies_subvars : slow.
+
+Lemma free_vars_sosub_subvars_allvars_range_sosub {o} :
+  forall (s : @SOSub o),
+    subvars (free_vars_sosub s) (allvars_range_sosub s).
+Proof.
+  introv.
+  eapply subvars_eqvars_r;[|apply eqvars_sym;apply eqvars_allvars_range_sosub].
+  eauto 3 with slow.
+Qed.
+Hint Resolve free_vars_sosub_subvars_allvars_range_sosub : slow.
+
+Lemma implies_alphaeq_sub_range_combine {o} :
+  forall l1 l2 (ts1 ts2 : list (@NTerm o)),
+    length l1 = length l2
+    -> length l1 = length ts1
+    -> length l2 = length ts2
+    -> (forall a b, LIn (a,b) (combine ts1 ts2) -> alpha_eq a b)
+    -> alphaeq_sub_range (combine l1 ts1) (combine l2 ts2).
+Proof.
+  induction l1; introv len1 len2 len3 imp; simpl in *; ginv;
+    destruct l2, ts1, ts2; simpl in *; ginv; cpx.
+  constructor; tcsp.
+  apply alphaeq_eq; apply imp; tcsp.
+Qed.
+
+Lemma sosub_find_none_if_alphaeq_sosub {o} :
+  forall (sub1 sub2 : @SOSub o) (v : sovar_sig),
+    alphaeq_sosub sub1 sub2
+    -> sosub_find sub1 v = None
+    -> sosub_find sub2 v = None.
+Proof.
+  introv aeq.
+  induction aeq; introv f; simpl in *; auto.
+  destruct sk1, sk2, v, v0, n1; simpl in *; boolvar; ginv.
+  autodimp IHaeq hyp; auto.
+  apply alphaeq_sk_eq_length in a; simpl in *; rewrite a in *; tcsp.
+Qed.
+
+Lemma implies_alphaeq_sosub_sosub_filter {o} :
+  forall (s1 s2 : @SOSub o) l,
+    alphaeq_sosub s1 s2
+    -> alphaeq_sosub (sosub_filter s1 l) (sosub_filter s2 l).
+Proof.
+  introv aeq.
+  induction aeq; simpl; auto.
+  destruct sk1, sk2; simpl.
+  applydup @alphaeq_sk_eq_length in a as eqlen; simpl in eqlen; rewrite eqlen.
+  boolvar; auto.
+Qed.
+Hint Resolve implies_alphaeq_sosub_sosub_filter : slow.
+
+Lemma alpha_eq_sosub2_aub_1 {o} :
+  forall (t : @SOTerm o) s1 s2,
+    alphaeq_sosub s1 s2
+    -> alpha_eq (sosub2_aux s1 t) (sosub2_aux s2 t).
+Proof.
+  soterm_ind t as [v ts ind|f|op bs ind] Case; introv aeq; simpl in *; auto.
+
+  - Case "sovar".
+
+    allrw disjoint_cons_l; repnd.
+    remember (sosub_find s1 (v, length ts)) as sf; symmetry in Heqsf; destruct sf.
+
+    + destruct s; simpl.
+      pose proof (sosub_find_some_if_alphaeq_sosub s1 s2 (v,length ts) (sosk l n)) as q.
+      repeat (autodimp q hyp); exrepnd.
+      allrw.
+      destruct sk'.
+
+      applydup @sosub_find_some in Heqsf; repnd.
+      applydup @sosub_find_some in q0; repnd.
+
+      apply alphaeq_sk_iff_alphaeq_bterm2 in q1.
+      apply (lsubst_alpha_congr4 l l0); auto;
+        try (complete (rewrite dom_sub_combine; autorewrite with list; auto)).
+
+      apply implies_alphaeq_sub_range_combine; autorewrite with list; auto; try congruence.
+
+      introv i.
+      rw <- @map_combine in i.
+      apply in_map_iff in i; exrepnd; ginv.
+      apply in_combine_same in i1; repnd; subst.
+      apply ind; auto; eauto 3 with slow.
+
+    + pose proof (sosub_find_none_if_alphaeq_sosub s1 s2 (v,length ts)) as q.
+      repeat (autodimp q hyp); rewrite q.
+
+      apply alphaeq_eq; apply alphaeq_apply_list; eauto 2 with slow.
+      apply bin_rel_nterm_if_combine; autorewrite with list; auto.
+      introv i.
+      allrw <- @map_combine.
+      apply in_map_iff in i; exrepnd; ginv.
+      apply in_combine_same in i1; repnd; subst.
+      apply ind; eauto 3 with slow.
+
+  - Case "soterm".
+
+    apply alpha_eq_oterm_combine; autorewrite with list; dands; auto.
+    introv i.
+    allrw <- @map_combine.
+    apply in_map_iff in i; exrepnd; ginv.
+    apply in_combine_same in i1; repnd; subst.
+    destruct a; simpl.
+    apply alpha_eq_bterm_congr.
+    eapply ind; eauto; eauto 4 with slow.
+Qed.
+Hint Resolve alpha_eq_sosub2_aub_1 : slow.
+
 Lemma alpha_eq_sosub_aux_sosub2_aub_1 {o} :
   forall (t : @SOTerm o) s,
-    disjoint (fo_bound_vars t) (free_vars_sosub s)
-    -> disjoint (free_vars_sosub s) (bound_vars_sosub s)
+    disjoint (free_vars_sosub s) (bound_vars_sosub s)
     -> disjoint (all_fo_vars t) (bound_vars_sosub s)
     -> alpha_eq (sosub_aux s t) (sosub2_aux s t).
 Proof.
-  soterm_ind t as [v ts ind|f|op bs ind] Case; introv disj1 disj2 disj3; simpl in *; auto.
+  soterm_ind t as [v ts ind|f|op bs ind] Case; introv disj2 disj3; simpl in *; auto.
 
   - Case "sovar".
 
@@ -184,5 +326,48 @@ Proof.
   - allrw disjoint_app_l; repnd.
     apply alpha_eq_sosub_aux_sosub2_aub_1; auto.
 
-  -
+  - pose proof (sosub_change_bvars_alpha_spec (allvars_range_sosub s ++ all_fo_vars t) s) as q.
+    simpl in q; repnd.
+    remember (sosub_change_bvars_alpha (allvars_range_sosub s ++ all_fo_vars t) s) as s'.
+    clear Heqs'.
+    allrw disjoint_app_l; repnd.
+
+    eapply alpha_eq_trans;
+      [apply alpha_eq_sosub_aux_sosub2_aub_1; auto|];
+      eauto 3 with slow.
+
+    { eapply subvars_disjoint_l;[|exact q1].
+      apply alphaeq_sosub_implies_eqvars_free_vars_sosub in q.
+      apply eqvars_sym in q.
+      apply eqvars_implies_subvars in q.
+      eapply subvars_trans;[exact q|]; eauto 3 with slow. }
+
+  - pose proof (fo_change_bvars_alpha_spec (free_vars_sosub s ++ all_fo_vars t) t) as q.
+    simpl in q; repnd.
+    remember (fo_change_bvars_alpha (free_vars_sosub s ++ all_fo_vars t) [] t) as u.
+    clear Hequ.
+    allrw disjoint_app_l; repnd.
+    apply alpha_eq_sosub_aux_sosub2_aub_1; auto.
+
+  - pose proof (fo_change_bvars_alpha_spec (free_vars_sosub s ++ all_fo_vars t) t) as q.
+    simpl in q; repnd.
+    remember (fo_change_bvars_alpha (free_vars_sosub s ++ all_fo_vars t) [] t) as u.
+    clear Hequ.
+    allrw disjoint_app_l; repnd.
+
+    pose proof (sosub_change_bvars_alpha_spec (allvars_range_sosub s ++ all_fo_vars u) s) as h.
+    simpl in h; repnd.
+    remember (sosub_change_bvars_alpha (allvars_range_sosub s ++ all_fo_vars u) s) as s'.
+    clear Heqs'.
+    allrw disjoint_app_l; repnd.
+
+    eapply alpha_eq_trans;
+      [apply alpha_eq_sosub_aux_sosub2_aub_1; auto|];
+      eauto 3 with slow.
+
+    { eapply subvars_disjoint_l;[|exact h1].
+      apply alphaeq_sosub_implies_eqvars_free_vars_sosub in h.
+      apply eqvars_sym in h.
+      apply eqvars_implies_subvars in h.
+      eapply subvars_trans;[exact h|]; eauto 3 with slow. }
 Qed.
