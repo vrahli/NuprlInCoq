@@ -51,12 +51,9 @@ with sosub2_b_aux {o} (sub : @SOSub o) (bt : SOBTerm) : BTerm :=
 
 Definition sosub2 {o} (sub : @SOSub o) (t : SOTerm) : NTerm :=
   let fvars_s := free_vars_sosub sub in
-  let bvars_s := bound_vars_sosub sub in
-  let bvars_t := fo_bound_vars t in
-  if dec_disjointv bvars_t fvars_s
+  if dec_disjointv (fo_bound_vars t) fvars_s
   then sosub2_aux sub t
-  else let t' := fo_change_bvars_alpha (fvars_s ++ all_fo_vars t) [] t
-       in sosub2_aux sub t'.
+  else sosub2_aux sub (fo_change_bvars_alpha (fvars_s ++ all_fo_vars t) [] t).
 
 Lemma disjoint_flat_map_left_implies {o} :
   forall {A} (ts : list (@SOTerm o)) f t (l : list A),
