@@ -32,6 +32,10 @@
 *)
 
 
+(* contains an alternate definition of sosub: *)
+Require Import sosub_variant.
+
+
 (* contains an alternate definition of alphaeq in terms of variable swapping: *)
 Require Import swap.
 

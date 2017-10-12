@@ -37,5 +37,5 @@ Notation "𝕌( i )" := (oterm (Can (NUni i)) []).
 Notation "𝕍( v )" := (vterm (nvar v)) (at level 0).
 Notation "𝕎( v )" := (sovar (nvar v) []) (at level 0).
 Notation "★" := (oterm (Can NAxiom) []).
-Notation "LibraryEntry_proof( name , stmt , exp )" := (LibraryEntry_proof _ name stmt exp _ _ _).
+Notation "LibraryEntry_proof( name , stmt , exp )" := (RigidLibraryEntry_proof _ name stmt exp _ _ _).
 Notation "'ℤ'" := (oterm (Can NInt) []).
