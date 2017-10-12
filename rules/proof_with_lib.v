@@ -33,7 +33,7 @@
 Require Export terms_deq_op.
 Require Export compute_atmost_k_steps.
 
-Require Export rename_sequent.
+Require Export name_invariance.
 
 Require Export rules_isect.
 Require Export rules_squiggle.
