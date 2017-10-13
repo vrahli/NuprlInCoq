@@ -128,8 +128,8 @@ of a principle to recursively define choice sequences.
 * We started implemented a theorem prover backend that relies on a
 verified library of definitions and proofs.  This
 `rules/proof_with_lib_example1.v` for an example.  We can use this
-backend as a proof checker for Nuprl.  See `nuprl_terms/README.md` for
-more details.
+backend as a proof checker for Nuprl.  See `nuprl_checker/README.md`
+for more details.
 
 
 CONTRIBUTORS

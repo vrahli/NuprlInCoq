@@ -1,5 +1,5 @@
 * I'm currently working on exporting Nuprl proofs to our Coq
-  implementation.  See nuprl_terms/README.md for more details.
+  implementation.  See nuprl_checker/README.md for more details.
 
 * [DONE] Divide cequiv/approx_star.v into several files, one for each
   non canonical operator so that they can be compiled in parallel.
