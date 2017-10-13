@@ -345,7 +345,7 @@ let mk_term opid tag pos params brterms =
   | "bottom", _, [] -> BOT_TERM
   | "int",    _, [] -> INT_TERM
   | "natural_number", ((n,kind) :: params), [] ->
-      NAT_TERM (try II.of_string n with Failure "int_of_string" -> II.zero)
+      NAT_TERM (try II.of_string n with Failure _ -> II.zero)
   | "atom", [], [] -> ATM_TERM None
   | "atom", [(i,kind)], [] ->
       (
@@ -591,7 +591,7 @@ let dest_pair n term =
 
 let dest_natural_number term =
   match term with
-    TERM ((("natural_number",_,tag), ((n, kind) :: params)), []) -> (try II.of_string n with Failure "int_of_string" -> II.zero)
+    TERM ((("natural_number",_,tag), ((n, kind) :: params)), []) -> (try II.of_string n with Failure _ -> II.zero)
   | NAT_TERM n                                                   -> n
   | _                                                            -> failwith "dest_natural_number"
 

@@ -1,6 +1,5 @@
-* I'm currently on exporting Nuprl proofs to our Coq implementation.
-  The example I'm working on can be generated like that:
-  cd nuprl_terms; ./parse --i uall_wf.term-list --o uall_output.v
+* I'm currently working on exporting Nuprl proofs to our Coq
+  implementation.  See nuprl_terms/README.md for more details.
 
 * [DONE] Divide cequiv/approx_star.v into several files, one for each
   non canonical operator so that they can be compiled in parallel.

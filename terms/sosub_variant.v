@@ -253,6 +253,92 @@ Proof.
 Qed.
 Hint Resolve alpha_eq_sosub2_aub_1 : slow.
 
+Hint Rewrite @sosize_so_swap : slow.
+
+Lemma alpha_eq_sosub2_aub_2 {o} :
+  forall (t1 t2 : @SOTerm o) s,
+    disjoint (free_vars_sosub s) (fo_bound_vars t1)
+    -> disjoint (free_vars_sosub s) (fo_bound_vars t2)
+    -> so_alphaeq t1 t2
+    -> alpha_eq (sosub2_aux s t1) (sosub2_aux s t2).
+Proof.
+  soterm_ind1s t1 as [v ts ind|f|op bs ind] Case; introv disj1 disj2 aeq; simpl in *; auto.
+
+  - Case "sovar".
+
+    inversion aeq as [? ? ? len imp| |]; subst; clear aeq; simpl in *.
+
+    remember (sosub_find s (v, length ts)) as sf; symmetry in Heqsf; destruct sf.
+
+    + destruct s0; simpl.
+      dup Heqsf as Heqsf'.
+      rewrite len in Heqsf'; rewrite Heqsf'.
+
+      applydup @sosub_find_some in Heqsf; repnd.
+      applydup @sosub_find_some in Heqsf'; repnd.
+
+      apply (lsubst_alpha_congr4 l l); auto;
+        try (complete (rewrite dom_sub_combine; autorewrite with list; auto)).
+
+      apply implies_alphaeq_sub_range_combine; autorewrite with list; auto; try congruence.
+
+      introv i.
+      rw <- @map_combine in i.
+      apply in_map_iff in i; exrepnd; ginv.
+      applydup imp in i1.
+      applydup in_combine in i1; repnd.
+      apply ind; auto; eauto 4 with slow.
+
+    + dup Heqsf as Heqsf'.
+      rewrite len in Heqsf'; rewrite Heqsf'.
+
+      apply alphaeq_eq; apply alphaeq_apply_list; eauto 2 with slow.
+      apply bin_rel_nterm_if_combine; autorewrite with list; auto.
+      introv i.
+      allrw <- @map_combine.
+      apply in_map_iff in i; exrepnd; ginv.
+      applydup imp in i1.
+      applydup in_combine in i1; repnd.
+      apply ind; auto; eauto 4 with slow.
+
+  - Case "soseq".
+
+    inversion aeq as [|? ? imp|]; subst; simpl in *; auto.
+    constructor; introv.
+    apply alphaeq_eq; apply imp.
+
+  - Case "soterm".
+
+    inversion aeq as [| |? ? ? len imp]; subst; simpl in *; clear aeq.
+    apply alpha_eq_oterm_combine; autorewrite with list in *; dands; auto.
+    introv i.
+    allrw <- @map_combine.
+    apply in_map_iff in i; exrepnd; ginv.
+    applydup imp in i1; clear imp.
+    applydup in_combine in i1; repnd.
+
+    destruct a, a0; simpl in *.
+
+    apply (so_alphaeqbt_vs_implies_more
+             _ _ _
+             ((allvars (sosub2_aux (sosub_filter s (vars2sovars l0)) s1))
+                ++ allvars (sosub2_aux (sosub_filter s (vars2sovars l)) s0))) in i0; auto;[].
+
+    inversion i0 as [? ? ? ? ? len1 len2 disj nrep aeq]; simpl in *; subst; clear i0.
+    allrw disjoint_app_r; repnd.
+
+    apply alphaeqbt_eq; unfold alphaeqbt.
+
+    apply (aeqbt _ vs); simpl; auto; allrw disjoint_app_r; dands; auto.
+    apply so_alphaeq_vs_iff in aeq.
+    apply alphaeq_eq.
+
+    pose proof (ind s1 (so_swap (mk_swapping l0 vs) s1) l0) as q; clear ind.
+    autorewrite with slow in *.
+    repeat (autodimp q hyp);[].
+Abort.
+(*Hint Resolve alpha_eq_sosub2_aub_2 : slow.*)
+
 Lemma alpha_eq_sosub_aux_sosub2_aub_1 {o} :
   forall (t : @SOTerm o) s,
     disjoint (free_vars_sosub s) (bound_vars_sosub s)
