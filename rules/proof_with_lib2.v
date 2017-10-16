@@ -766,49 +766,48 @@ Defined.
   ============================================================ *)
 
 (* We have the library here so that we can unfold abstractions *)
-Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
+Inductive pre_proof {o} : @pre_baresequent o -> Type :=
 | pre_proof_from_ctxt :
     forall (c : named_concl) H,
-      LIn c (@PC_conclusions o ctxt)
-      -> pre_proof ctxt (named_concl2pre_bseq H c)
-| pre_proof_hole : forall (s : pre_baresequent), pre_proof ctxt s
+      pre_proof (named_concl2pre_bseq H c)
+| pre_proof_hole : forall (s : pre_baresequent), pre_proof s
 | pre_proof_isect_eq :
     forall a1 a2 b1 b2 x1 x2 y i H,
       NVin y (vars_hyps H)
-      -> pre_proof ctxt (pre_rule_isect_equality_hyp1 a1 a2 i H)
-      -> pre_proof ctxt (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H)
-      -> pre_proof ctxt (pre_rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
+      -> pre_proof (pre_rule_isect_equality_hyp1 a1 a2 i H)
+      -> pre_proof (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H)
+      -> pre_proof (pre_rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
 | pre_proof_isect_member_formation :
     forall A x B z i H,
       NVin z (vars_hyps H)
-      -> pre_proof ctxt (pre_rule_isect_member_formation_hyp1 z A x B H)
-      -> pre_proof ctxt (pre_rule_isect_member_formation_hyp2 A i H)
-      -> pre_proof ctxt (pre_rule_isect_member_formation_concl A x B H)
+      -> pre_proof (pre_rule_isect_member_formation_hyp1 z A x B H)
+      -> pre_proof (pre_rule_isect_member_formation_hyp2 A i H)
+      -> pre_proof (pre_rule_isect_member_formation_concl A x B H)
 | pre_proof_approx_refl :
     forall a (H : bhyps),
-      pre_proof ctxt (pre_rule_approx_refl_concl a H)
+      pre_proof (pre_rule_approx_refl_concl a H)
 | pre_proof_cequiv_refl :
     forall a (H : bhyps),
-      pre_proof ctxt (pre_rule_cequiv_refl_concl a H)
+      pre_proof (pre_rule_cequiv_refl_concl a H)
 | pre_proof_cequiv_alpha_eq :
     forall a b H,
       alpha_eq a b
-      -> pre_proof ctxt (pre_rule_cequiv_alpha_eq_concl a b H)
+      -> pre_proof (pre_rule_cequiv_alpha_eq_concl a b H)
 | pre_proof_cequiv_approx :
     forall a b H,
-      pre_proof ctxt (pre_rule_cequiv_approx_hyp a b H)
-      -> pre_proof ctxt (pre_rule_cequiv_approx_hyp b a H)
-      -> pre_proof ctxt (pre_rule_cequiv_approx_concl a b H)
+      pre_proof (pre_rule_cequiv_approx_hyp a b H)
+      -> pre_proof (pre_rule_cequiv_approx_hyp b a H)
+      -> pre_proof (pre_rule_cequiv_approx_concl a b H)
 | pre_proof_approx_eq :
     forall a1 a2 b1 b2 i H,
-      pre_proof ctxt (pre_rule_eq_base_hyp a1 a2 H)
-      -> pre_proof ctxt (pre_rule_eq_base_hyp b1 b2 H)
-      -> pre_proof ctxt (pre_rule_approx_eq_concl a1 a2 b1 b2 i H)
+      pre_proof (pre_rule_eq_base_hyp a1 a2 H)
+      -> pre_proof (pre_rule_eq_base_hyp b1 b2 H)
+      -> pre_proof (pre_rule_approx_eq_concl a1 a2 b1 b2 i H)
 | pre_proof_cequiv_eq :
     forall a1 a2 b1 b2 i H,
-      pre_proof ctxt (pre_rule_eq_base_hyp a1 a2 H)
-      -> pre_proof ctxt (pre_rule_eq_base_hyp b1 b2 H)
-      -> pre_proof ctxt (pre_rule_cequiv_eq_concl a1 a2 b1 b2 i H)
+      pre_proof (pre_rule_eq_base_hyp a1 a2 H)
+      -> pre_proof (pre_rule_eq_base_hyp b1 b2 H)
+      -> pre_proof (pre_rule_cequiv_eq_concl a1 a2 b1 b2 i H)
 (*| pre_proof_bottom_diverges :
     forall x H J,
       pre_proof hole ctxt (pre_rule_bottom_diverges_concl x H J)*)
@@ -817,9 +816,9 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       wf_term B
       -> covered B (vars_hyps H)
       -> NVin x (vars_hyps H)
-      -> pre_proof ctxt (pre_rule_cut_hyp1 H B)
-      -> pre_proof ctxt (pre_rule_cut_hyp2 H x B C)
-      -> pre_proof ctxt (pre_rule_cut_concl H C)
+      -> pre_proof (pre_rule_cut_hyp1 H B)
+      -> pre_proof (pre_rule_cut_hyp2 H x B C)
+      -> pre_proof (pre_rule_cut_concl H C)
 (*| pre_proof_equal_in_base :
     forall a b H,
       pre_proof hole ctxt (pre_rule_equal_in_base_hyp1 a b H)
@@ -827,54 +826,54 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       -> pre_proof hole ctxt (pre_rule_equal_in_base_concl a b H)*)
 | pre_proof_hypothesis :
     forall x A G J,
-      pre_proof ctxt (pre_rule_hypothesis_concl G J A x)
+      pre_proof (pre_rule_hypothesis_concl G J A x)
 | pre_proof_cequiv_subst_concl :
     forall C x a b H,
       wf_term a
       -> wf_term b
       -> covered a (vars_hyps H)
       -> covered b (vars_hyps H)
-      -> pre_proof ctxt (pre_rule_cequiv_subst_hyp2 H a b)
-      -> pre_proof ctxt (pre_rule_cequiv_subst_hyp1 H x C b)
-      -> pre_proof ctxt (pre_rule_cequiv_subst_hyp1 H x C a)
+      -> pre_proof (pre_rule_cequiv_subst_hyp2 H a b)
+      -> pre_proof (pre_rule_cequiv_subst_hyp1 H x C b)
+      -> pre_proof (pre_rule_cequiv_subst_hyp1 H x C a)
 | pre_proof_cequiv_subst_hyp :
     forall H z T x a b J C,
       wf_term a
       -> wf_term b
       -> covered a (vars_hyps H)
       -> covered b (vars_hyps H)
-      -> pre_proof ctxt (pre_rule_cequiv_subst_hyp_hyp2 H z T x a J b)
-      -> pre_proof ctxt (pre_rule_cequiv_subst_hyp_hyp1 H z T x b J C)
-      -> pre_proof ctxt (pre_rule_cequiv_subst_hyp_concl H z T x a J C)
+      -> pre_proof (pre_rule_cequiv_subst_hyp_hyp2 H z T x a J b)
+      -> pre_proof (pre_rule_cequiv_subst_hyp_hyp1 H z T x b J C)
+      -> pre_proof (pre_rule_cequiv_subst_hyp_concl H z T x a J C)
 (*| pre_proof_approx_member_eq :
     forall a b H,
       pre_proof hole ctxt (pre_rule_approx_member_eq_hyp a b H)
       -> pre_proof hole ctxt (pre_rule_approx_member_eq_concl a b H)*)
 | pre_proof_cequiv_computation :
-    forall a b H,
-      reduces_to ctxt a b
-      -> pre_proof ctxt (pre_rule_cequiv_computation_concl a b H)
+    forall lib a b H,
+      reduces_to lib a b
+      -> pre_proof (pre_rule_cequiv_computation_concl a b H)
 | pre_proof_cequiv_computation_aeq :
-    forall a b c H,
-      reduces_to ctxt a b
+    forall lib a b c H,
+      reduces_to lib a b
       -> alpha_eq b c
-      -> pre_proof ctxt (pre_rule_cequiv_computation_concl a c H)
+      -> pre_proof (pre_rule_cequiv_computation_concl a c H)
 | pre_proof_cequiv_computation_atmost :
-    forall a b n H,
-      reduces_in_atmost_k_steps ctxt a b n
-      -> pre_proof ctxt (pre_rule_cequiv_computation_concl a b H)
+    forall lib a b n H,
+      reduces_in_atmost_k_steps lib a b n
+      -> pre_proof (pre_rule_cequiv_computation_concl a b H)
 | pre_proof_unfold_abstractions :
-    forall abs a H,
-      all_abstractions_can_be_unfolded ctxt abs a
-      -> pre_proof ctxt (pre_rule_unfold_abstractions_hyp ctxt abs a H)
-      -> pre_proof ctxt (pre_rule_unfold_abstractions_concl a H)
+    forall lib abs a H,
+      all_abstractions_can_be_unfolded lib abs a
+      -> pre_proof (pre_rule_unfold_abstractions_hyp lib abs a H)
+      -> pre_proof (pre_rule_unfold_abstractions_concl a H)
 | pre_proof_rev_unfold_abstractions :
-    forall abs a H,
+    forall lib abs a H,
       wf_term a
       -> covered a (vars_hyps H)
-      -> all_abstractions_can_be_unfolded ctxt abs a
-      -> pre_proof ctxt (pre_rule_unfold_abstractions_concl a H)
-      -> pre_proof ctxt (pre_rule_unfold_abstractions_hyp ctxt abs a H)
+      -> all_abstractions_can_be_unfolded lib abs a
+      -> pre_proof (pre_rule_unfold_abstractions_concl a H)
+      -> pre_proof (pre_rule_unfold_abstractions_hyp lib abs a H)
 (*| pre_proof_function_elimination :
     forall A B C a f x z H J,
       wf_term a
@@ -888,56 +887,56 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
 | pre_proof_universe_equality :
     forall i j H,
       i < j
-      -> pre_proof ctxt (pre_rule_universe_equality_concl H i j)
+      -> pre_proof (pre_rule_universe_equality_concl H i j)
 | pre_proof_hypothesis_equality :
     forall x A G J,
-      pre_proof ctxt (pre_rule_hypothesis_equality_concl G J A x)
+      pre_proof (pre_rule_hypothesis_equality_concl G J A x)
 | pre_proof_maybe_hidden_hypothesis_equality :
     forall x A G J b,
-      pre_proof ctxt (pre_rule_maybe_hidden_hypothesis_equality_concl G J A x b)
+      pre_proof (pre_rule_maybe_hidden_hypothesis_equality_concl G J A x b)
 | pre_proof_unhide_equality :
     forall x A t1 t2 C G J,
-      pre_proof ctxt (pre_rule_unhide_equality_hyp G J x A t1 t2 C)
-      -> pre_proof ctxt (pre_rule_unhide_equality_concl G J x A t1 t2 C)
+      pre_proof (pre_rule_unhide_equality_hyp G J x A t1 t2 C)
+      -> pre_proof (pre_rule_unhide_equality_concl G J x A t1 t2 C)
 | pre_proof_equality_equality :
     forall A B a1 a2 b1 b2 i H,
-      pre_proof ctxt (pre_rule_equality_equality_hyp1 H A B i)
-      -> pre_proof ctxt (pre_rule_equality_equality_hyp2 H a1 b1 A)
-      -> pre_proof ctxt (pre_rule_equality_equality_hyp2 H a2 b2 A)
-      -> pre_proof ctxt (pre_rule_equality_equality_concl H a1 a2 b1 b2 A B i)
+      pre_proof (pre_rule_equality_equality_hyp1 H A B i)
+      -> pre_proof (pre_rule_equality_equality_hyp2 H a1 b1 A)
+      -> pre_proof (pre_rule_equality_equality_hyp2 H a2 b2 A)
+      -> pre_proof (pre_rule_equality_equality_concl H a1 a2 b1 b2 A B i)
 | pre_proof_integer_equality :
     forall n H,
-      pre_proof ctxt (pre_rule_integer_equality_concl H n)
+      pre_proof (pre_rule_integer_equality_concl H n)
 | pre_proof_introduction :
     forall t C H,
       wf_term t
       -> covered t (nh_vars_hyps H)
       -> noutokens t
-      -> pre_proof ctxt (pre_rule_introduction_hyp H C t)
-      -> pre_proof ctxt (pre_rule_introduction_concl H C)
+      -> pre_proof (pre_rule_introduction_hyp H C t)
+      -> pre_proof (pre_rule_introduction_concl H C)
 | pre_proof_axiom_equality :
     forall a b T H,
-      pre_proof ctxt (pre_rule_axiom_equality_hyp a b T H)
-      -> pre_proof ctxt (pre_rule_axiom_equality_concl a b T H)
+      pre_proof (pre_rule_axiom_equality_hyp a b T H)
+      -> pre_proof (pre_rule_axiom_equality_concl a b T H)
 | pre_proof_thin :
     forall G J A C x,
       NVin x (free_vars_hyps J)
       -> NVin x (free_vars C)
-      -> pre_proof ctxt (pre_rule_thin_hyp G J C)
-      -> pre_proof ctxt (pre_rule_thin_concl G x A J C)
+      -> pre_proof (pre_rule_thin_hyp G J C)
+      -> pre_proof (pre_rule_thin_concl G x A J C)
 | pre_proof_function_equality :
     forall a1 a2 b1 b2 x1 x2 y i H,
       NVin y (vars_hyps H)
-      -> pre_proof ctxt (pre_rule_function_equality_hyp1 H a1 a2 i)
-      -> pre_proof ctxt (pre_rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i)
-      -> pre_proof ctxt (pre_rule_function_equality_concl H a1 x1 b1 a2 x2 b2 i)
+      -> pre_proof (pre_rule_function_equality_hyp1 H a1 a2 i)
+      -> pre_proof (pre_rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i)
+      -> pre_proof (pre_rule_function_equality_concl H a1 x1 b1 a2 x2 b2 i)
 | pre_proof_apply_equality :
     forall A B f1 f2 t1 t2 x H,
       wf_term A
       -> covered A (vars_hyps H)
-      -> pre_proof ctxt (pre_rule_apply_equality_hyp1 H f1 f2 A x B)
-      -> pre_proof ctxt (pre_rule_apply_equality_hyp2 H t1 t2 A)
-      -> pre_proof ctxt (pre_rule_apply_equality_concl H f1 t1 f2 t2 B x)
+      -> pre_proof (pre_rule_apply_equality_hyp1 H f1 f2 A x B)
+      -> pre_proof (pre_rule_apply_equality_hyp2 H t1 t2 A)
+      -> pre_proof (pre_rule_apply_equality_concl H f1 t1 f2 t2 B x)
 | pre_proof_isect_elimination :
     forall A B C a f x z H J,
       wf_term a
@@ -945,9 +944,9 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       -> NVin z (vars_hyps H)
       -> NVin z (vars_hyps J)
       -> z <> f
-      -> pre_proof ctxt (pre_rule_isect_elimination_hyp1 A B a f x H J)
-      -> pre_proof ctxt (pre_rule_isect_elimination_hyp2 A B C a f x z H J)
-      -> pre_proof ctxt (pre_rule_isect_elimination_concl A B C f x H J)
+      -> pre_proof (pre_rule_isect_elimination_hyp1 A B a f x H J)
+      -> pre_proof (pre_rule_isect_elimination_hyp2 A B C a f x z H J)
+      -> pre_proof (pre_rule_isect_elimination_concl A B C f x H J)
 | pre_proof_isect_elimination2 :
     forall A B C a f x y z H J,
       wf_term a
@@ -959,149 +958,148 @@ Inductive pre_proof {o} (ctxt : @ProofContext o) : @pre_baresequent o -> Type :=
       -> z <> f
       -> z <> y
       -> y <> f
-      -> pre_proof ctxt (pre_rule_isect_elimination_hyp1 A B a f x H J)
-      -> pre_proof ctxt (pre_rule_isect_elimination2_hyp2 A B C a f x y z H J)
-      -> pre_proof ctxt (pre_rule_isect_elimination2_concl A B C f x H J)
+      -> pre_proof (pre_rule_isect_elimination_hyp1 A B a f x H J)
+      -> pre_proof (pre_rule_isect_elimination2_hyp2 A B C a f x y z H J)
+      -> pre_proof (pre_rule_isect_elimination2_concl A B C f x H J)
 | pre_proof_isect_member_equality :
     forall H t1 t2 A x B z i,
       NVin z (vars_hyps H)
-      -> pre_proof ctxt (pre_rule_isect_member_equality_hyp1 H z A t1 t2 B x)
-      -> pre_proof ctxt (pre_rule_isect_member_equality_hyp2 H A i)
-      -> pre_proof ctxt (pre_rule_isect_member_equality_concl H t1 t2 A x B)
+      -> pre_proof (pre_rule_isect_member_equality_hyp1 H z A t1 t2 B x)
+      -> pre_proof (pre_rule_isect_member_equality_hyp2 H A i)
+      -> pre_proof (pre_rule_isect_member_equality_concl H t1 t2 A x B)
 | pre_proof_cumulativity :
     forall H T i j,
       i <=? j = true
-      -> pre_proof ctxt (pre_rule_cumulativity_hyp H T i)
-      -> pre_proof ctxt (pre_rule_cumulativity_concl H T j)
+      -> pre_proof (pre_rule_cumulativity_hyp H T i)
+      -> pre_proof (pre_rule_cumulativity_concl H T j)
 | pre_proof_equality_symmetry :
     forall H a b T,
-      pre_proof ctxt (pre_rule_equality_seq H b a T)
-      -> pre_proof ctxt (pre_rule_equality_seq H a b T)
+      pre_proof (pre_rule_equality_seq H b a T)
+      -> pre_proof (pre_rule_equality_seq H a b T)
 | pre_proof_equality_transitivity :
     forall H a b c T,
       wf_term c
       -> covered c (vars_hyps H)
-      -> pre_proof ctxt (pre_rule_equality_seq H a c T)
-      -> pre_proof ctxt (pre_rule_equality_seq H c b T)
-      -> pre_proof ctxt (pre_rule_equality_seq H a b T)
+      -> pre_proof (pre_rule_equality_seq H a c T)
+      -> pre_proof (pre_rule_equality_seq H c b T)
+      -> pre_proof (pre_rule_equality_seq H a b T)
 | pre_proof_cequiv_transitivity :
     forall H a b c,
       wf_term c
       -> covered c (vars_hyps H)
-      -> pre_proof ctxt (pre_rule_cequiv_seq H a c)
-      -> pre_proof ctxt (pre_rule_cequiv_seq H c b)
-      -> pre_proof ctxt (pre_rule_cequiv_seq H a b).
+      -> pre_proof (pre_rule_cequiv_seq H a c)
+      -> pre_proof (pre_rule_cequiv_seq H c b)
+      -> pre_proof (pre_rule_cequiv_seq H a b).
 
 
-Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
+Inductive proof {o} : @baresequent o -> Type :=
 | proof_from_ctxt :
     forall (c : named_concl) H,
-      LIn c (@PC_conclusions o ctxt)
-      -> proof ctxt (named_concl2bseq H c)
+      proof (named_concl2bseq H c)
 | proof_isect_eq :
     forall a1 a2 b1 b2 e1 e2 x1 x2 y i H,
       NVin y (vars_hyps H)
-      -> proof ctxt (rule_isect_equality2_hyp1 a1 a2 e1 i H)
-      -> proof ctxt (rule_isect_equality2_hyp2 a1 b1 b2 e2 x1 x2 y i H)
-      -> proof ctxt (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
+      -> proof (rule_isect_equality2_hyp1 a1 a2 e1 i H)
+      -> proof (rule_isect_equality2_hyp2 a1 b1 b2 e2 x1 x2 y i H)
+      -> proof (rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H)
 | proof_isect_member_formation :
     forall A x B z i b e H,
       NVin z (vars_hyps H)
-      -> proof ctxt (rule_isect_member_formation_hyp1 z A x B b H)
-      -> proof ctxt (rule_isect_member_formation_hyp2 A e i H)
-      -> proof ctxt (rule_isect_member_formation_concl A x B b H)
+      -> proof (rule_isect_member_formation_hyp1 z A x B b H)
+      -> proof (rule_isect_member_formation_hyp2 A e i H)
+      -> proof (rule_isect_member_formation_concl A x B b H)
 | proof_approx_refl :
     forall a (H : bhyps),
-      proof ctxt (rule_approx_refl_concl a H)
+      proof (rule_approx_refl_concl a H)
 | proof_cequiv_refl :
     forall a (H : bhyps),
-      proof ctxt (rule_cequiv_refl_concl H a)
+      proof (rule_cequiv_refl_concl H a)
 | proof_cequiv_alpha_eq :
     forall a b H,
       alpha_eq a b
-      -> proof ctxt (rule_cequiv_alpha_eq_concl H a b)
+      -> proof (rule_cequiv_alpha_eq_concl H a b)
 | proof_cequiv_approx :
     forall a b e1 e2 H,
-      proof ctxt (rule_cequiv_approx2_hyp a b e1 H)
-      -> proof ctxt (rule_cequiv_approx2_hyp b a e2 H)
-      -> proof ctxt (rule_cequiv_approx_concl a b H)
+      proof (rule_cequiv_approx2_hyp a b e1 H)
+      -> proof (rule_cequiv_approx2_hyp b a e2 H)
+      -> proof (rule_cequiv_approx_concl a b H)
 | proof_approx_eq :
     forall a1 a2 b1 b2 e1 e2 i H,
-      proof ctxt (rule_eq_base2_hyp a1 a2 e1 H)
-      -> proof ctxt (rule_eq_base2_hyp b1 b2 e2 H)
-      -> proof ctxt (rule_approx_eq_concl a1 a2 b1 b2 i H)
+      proof (rule_eq_base2_hyp a1 a2 e1 H)
+      -> proof (rule_eq_base2_hyp b1 b2 e2 H)
+      -> proof (rule_approx_eq_concl a1 a2 b1 b2 i H)
 | proof_cequiv_eq :
     forall a1 a2 b1 b2 e1 e2 i H,
-      proof ctxt (rule_eq_base2_hyp a1 a2 e1 H)
-      -> proof ctxt (rule_eq_base2_hyp b1 b2 e2 H)
-      -> proof ctxt (rule_cequiv_eq_concl a1 a2 b1 b2 i H)
+      proof (rule_eq_base2_hyp a1 a2 e1 H)
+      -> proof (rule_eq_base2_hyp b1 b2 e2 H)
+      -> proof (rule_cequiv_eq_concl a1 a2 b1 b2 i H)
 (*| proof_bottom_diverges :
     forall x H J,
-      proof ctxt (rule_bottom_diverges_concl x H J)*)
+      proof (rule_bottom_diverges_concl x H J)*)
 | proof_cut :
     forall B C t u x H,
       wf_term B
       -> covered B (vars_hyps H)
       -> NVin x (vars_hyps H)
-      -> proof ctxt (rule_cut_hyp1 H B u)
-      -> proof ctxt (rule_cut_hyp2 H x B C t)
-      -> proof ctxt (rule_cut_concl H C t x u)
+      -> proof (rule_cut_hyp1 H B u)
+      -> proof (rule_cut_hyp2 H x B C t)
+      -> proof (rule_cut_concl H C t x u)
 (*| proof_equal_in_base :
     forall a b e F H,
-      proof ctxt (rule_equal_in_base2_hyp1 a b e H)
+      proof (rule_equal_in_base2_hyp1 a b e H)
       -> (forall v (i : LIn v (free_vars a)),
-             proof ctxt (rule_equal_in_base2_hyp2 v (F v i) H))
-      -> proof ctxt (rule_equal_in_base_concl a b H)*)
+             proof (rule_equal_in_base2_hyp2 v (F v i) H))
+      -> proof (rule_equal_in_base_concl a b H)*)
 | proof_hypothesis :
     forall x A G J,
-      proof ctxt (rule_hypothesis_concl G J A x)
+      proof (rule_hypothesis_concl G J A x)
 | proof_cequiv_subst_concl :
     forall C x a b t e H,
       wf_term a
       -> wf_term b
       -> covered a (vars_hyps H)
       -> covered b (vars_hyps H)
-      -> proof ctxt (rule_cequiv_subst2_hyp2 H a b e)
-      -> proof ctxt (rule_cequiv_subst_hyp1 H x C b t)
-      -> proof ctxt (rule_cequiv_subst_hyp1 H x C a t)
+      -> proof (rule_cequiv_subst2_hyp2 H a b e)
+      -> proof (rule_cequiv_subst_hyp1 H x C b t)
+      -> proof (rule_cequiv_subst_hyp1 H x C a t)
 | proof_cequiv_subst_hyp :
     forall H z T x a b J C t e,
       wf_term a
       -> wf_term b
       -> covered a (vars_hyps H)
       -> covered b (vars_hyps H)
-      -> proof ctxt (rule_cequiv_subst_hyp_hyp2 H z T x a J b e)
-      -> proof ctxt (rule_cequiv_subst_hyp_hyp1 H z T x b J C t)
-      -> proof ctxt (rule_cequiv_subst_hyp_concl H z T x a J C t)
+      -> proof (rule_cequiv_subst_hyp_hyp2 H z T x a J b e)
+      -> proof (rule_cequiv_subst_hyp_hyp1 H z T x b J C t)
+      -> proof (rule_cequiv_subst_hyp_concl H z T x a J C t)
 (*| proof_approx_member_eq :
     forall a b e H,
-      proof ctxt (rule_approx_member_eq2_hyp a b e H)
-      -> proof ctxt (rule_approx_member_eq_concl a b H)*)
+      proof (rule_approx_member_eq2_hyp a b e H)
+      -> proof (rule_approx_member_eq_concl a b H)*)
 | proof_cequiv_computation :
-    forall a b H,
-      reduces_to ctxt a b
-      -> proof ctxt (rule_cequiv_computation_concl a b H)
+    forall lib a b H,
+      reduces_to lib a b
+      -> proof (rule_cequiv_computation_concl a b H)
 | proof_cequiv_computation_aeq :
-    forall a b c H,
-      reduces_to ctxt a b
+    forall lib a b c H,
+      reduces_to lib a b
       -> alpha_eq b c
-      -> proof ctxt (rule_cequiv_computation_concl a c H)
+      -> proof (rule_cequiv_computation_concl a c H)
 | proof_cequiv_computation_atmost :
-    forall a b n H,
-      reduces_in_atmost_k_steps ctxt a b n
-      -> proof ctxt (rule_cequiv_computation_concl a b H)
+    forall lib a b n H,
+      reduces_in_atmost_k_steps lib a b n
+      -> proof (rule_cequiv_computation_concl a b H)
 | proof_unfold_abstractions :
-    forall abs a e H,
-      all_abstractions_can_be_unfolded ctxt abs a
-      -> proof ctxt (rule_unfold_abstractions_hyp ctxt abs a e H)
-      -> proof ctxt (rule_unfold_abstractions_concl a e H)
+    forall lib abs a e H,
+      all_abstractions_can_be_unfolded lib abs a
+      -> proof (rule_unfold_abstractions_hyp lib abs a e H)
+      -> proof (rule_unfold_abstractions_concl a e H)
 | proof_rev_unfold_abstractions :
-    forall abs a e H,
+    forall lib abs a e H,
       wf_term a
       -> covered a (vars_hyps H)
-      -> all_abstractions_can_be_unfolded ctxt abs a
-      -> proof ctxt (rule_unfold_abstractions_concl a e H)
-      -> proof ctxt (rule_unfold_abstractions_hyp ctxt abs a e H)
+      -> all_abstractions_can_be_unfolded lib abs a
+      -> proof (rule_unfold_abstractions_concl a e H)
+      -> proof (rule_unfold_abstractions_hyp lib abs a e H)
 (*| proof_function_elimination :
     (* When deriving a sequent, e is not supposed to be given but inferred
      * from the second sequent.  That's the case in a pre_proof
@@ -1112,62 +1110,62 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
       -> !LIn z (vars_hyps H)
       -> !LIn z (vars_hyps J)
       -> z <> f
-      -> proof ctxt (rule_function_elimination_hyp1 A B a ea f x H J)
-      -> proof ctxt (rule_function_elimination_hyp2 A B C a e f x z H J)
-      -> proof ctxt (rule_function_elimination_concl A B C e f x z H J)*)
+      -> proof (rule_function_elimination_hyp1 A B a ea f x H J)
+      -> proof (rule_function_elimination_hyp2 A B C a e f x z H J)
+      -> proof (rule_function_elimination_concl A B C e f x z H J)*)
 | proof_universe_equality :
     forall i j H,
       i < j
-      -> proof ctxt (rule_universe_equality_concl H i j)
+      -> proof (rule_universe_equality_concl H i j)
 | proof_hypothesis_equality :
     forall x A G J,
-      proof ctxt (rule_hypothesis_equality_concl G J A x)
+      proof (rule_hypothesis_equality_concl G J A x)
 | proof_maybe_hidden_hypothesis_equality :
     forall x A G J b,
-      proof ctxt (rule_maybe_hidden_hypothesis_equality_concl G J A x b)
+      proof (rule_maybe_hidden_hypothesis_equality_concl G J A x b)
 | proof_unhide_equality :
     forall x A t1 t2 C e G J,
-      proof ctxt (rule_unhide_equality_hyp G J x A t1 t2 C e)
-      -> proof ctxt (rule_unhide_equality_concl G J x A t1 t2 C)
+      proof (rule_unhide_equality_hyp G J x A t1 t2 C e)
+      -> proof (rule_unhide_equality_concl G J x A t1 t2 C)
 | proof_equality_equality :
     forall A B a1 a2 b1 b2 e1 e2 e3 i H,
-      proof ctxt (rule_equality_equality_hyp1 H A B i e1)
-      -> proof ctxt (rule_equality_equality_hyp2 H a1 b1 A e2)
-      -> proof ctxt (rule_equality_equality_hyp2 H a2 b2 A e3)
-      -> proof ctxt (rule_equality_equality_concl H a1 a2 b1 b2 A B i)
+      proof (rule_equality_equality_hyp1 H A B i e1)
+      -> proof (rule_equality_equality_hyp2 H a1 b1 A e2)
+      -> proof (rule_equality_equality_hyp2 H a2 b2 A e3)
+      -> proof (rule_equality_equality_concl H a1 a2 b1 b2 A B i)
 | proof_integer_equality :
     forall n H,
-      proof ctxt (rule_integer_equality_concl H n)
+      proof (rule_integer_equality_concl H n)
 | proof_introduction :
     forall t e C H,
       wf_term t
       -> covered t (nh_vars_hyps H)
       -> noutokens t
-      -> proof ctxt (rule_introduction_hyp H C t e)
-      -> proof ctxt (rule_introduction_concl H C t)
+      -> proof (rule_introduction_hyp H C t e)
+      -> proof (rule_introduction_concl H C t)
 | proof_axiom_equality :
     forall e a b T H,
-      proof ctxt (rule_axiom_equality_hyp e a b T H)
-      -> proof ctxt (rule_axiom_equality_concl a b T H)
+      proof (rule_axiom_equality_hyp e a b T H)
+      -> proof (rule_axiom_equality_concl a b T H)
 | proof_thin :
     forall G J A C t x,
       NVin x (free_vars_hyps J)
       -> NVin x (free_vars C)
-      -> proof ctxt (rule_thin_hyp G J C t)
-      -> proof ctxt (rule_thin_concl G x A J C t)
+      -> proof (rule_thin_hyp G J C t)
+      -> proof (rule_thin_concl G x A J C t)
 | proof_function_equality :
     forall a1 a2 b1 b2 e1 e2 x1 x2 y i H,
       NVin y (vars_hyps H)
-      -> proof ctxt (rule_function_equality_hyp1 H a1 a2 i e1)
-      -> proof ctxt (rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i e2)
-      -> proof ctxt (rule_function_equality_concl H a1 x1 b1 a2 x2 b2 i)
+      -> proof (rule_function_equality_hyp1 H a1 a2 i e1)
+      -> proof (rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i e2)
+      -> proof (rule_function_equality_concl H a1 x1 b1 a2 x2 b2 i)
 | proof_apply_equality :
     forall A B f1 f2 t1 t2 e1 e2 x H,
       wf_term A
       -> covered A (vars_hyps H)
-      -> proof ctxt (rule_apply_equality_hyp1 H f1 f2 A x B e1)
-      -> proof ctxt (rule_apply_equality_hyp2 H t1 t2 A e2)
-      -> proof ctxt (rule_apply_equality_concl H f1 t1 f2 t2 B x)
+      -> proof (rule_apply_equality_hyp1 H f1 f2 A x B e1)
+      -> proof (rule_apply_equality_hyp2 H t1 t2 A e2)
+      -> proof (rule_apply_equality_concl H f1 t1 f2 t2 B x)
 | proof_isect_elimination :
     forall A B C a e ea f x z H J,
       wf_term a
@@ -1175,9 +1173,9 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
       -> NVin z (vars_hyps H)
       -> NVin z (vars_hyps J)
       -> z <> f
-      -> proof ctxt (rule_isect_elimination_hyp1 A B a ea f x H J)
-      -> proof ctxt (rule_isect_elimination_hyp2 A B C a e f x z H J)
-      -> proof ctxt (rule_isect_elimination_concl A B C e f x z H J)
+      -> proof (rule_isect_elimination_hyp1 A B a ea f x H J)
+      -> proof (rule_isect_elimination_hyp2 A B C a e f x z H J)
+      -> proof (rule_isect_elimination_concl A B C e f x z H J)
 | proof_isect_elimination2 :
     forall A B C a e ea f x y z H J,
       wf_term a
@@ -1189,38 +1187,38 @@ Inductive proof {o} (ctxt : @ProofContext o) : @baresequent o -> Type :=
       -> z <> f
       -> z <> y
       -> y <> f
-      -> proof ctxt (rule_isect_elimination_hyp1 A B a ea f x H J)
-      -> proof ctxt (rule_isect_elimination2_hyp2 A B C a e f x y z H J)
-      -> proof ctxt (rule_isect_elimination2_concl A B C e f x y z H J)
+      -> proof (rule_isect_elimination_hyp1 A B a ea f x H J)
+      -> proof (rule_isect_elimination2_hyp2 A B C a e f x y z H J)
+      -> proof (rule_isect_elimination2_concl A B C e f x y z H J)
 | proof_isect_member_equality :
     forall H t1 t2 A x B e1 e2 z i,
       NVin z (vars_hyps H)
-      -> proof ctxt (rule_isect_member_equality_hyp1 H z A t1 t2 B x e1)
-      -> proof ctxt (rule_isect_member_equality_hyp2 H A i e2)
-      -> proof ctxt (rule_isect_member_equality_concl H t1 t2 A x B)
+      -> proof (rule_isect_member_equality_hyp1 H z A t1 t2 B x e1)
+      -> proof (rule_isect_member_equality_hyp2 H A i e2)
+      -> proof (rule_isect_member_equality_concl H t1 t2 A x B)
 | proof_cumulativity :
     forall H T e i j,
       i <=? j = true
-      -> proof ctxt (rule_cumulativity_hyp H T i e)
-      -> proof ctxt (rule_cumulativity_concl H T j)
+      -> proof (rule_cumulativity_hyp H T i e)
+      -> proof (rule_cumulativity_concl H T j)
 | proof_equality_symmetry :
     forall H a b T e,
-      proof ctxt (rule_equality_hyp H b a T e)
-      -> proof ctxt (rule_equality_concl H a b T)
+      proof (rule_equality_hyp H b a T e)
+      -> proof (rule_equality_concl H a b T)
 | proof_equality_transitivity :
     forall H a b c T e1 e2,
       wf_term c
       -> covered c (vars_hyps H)
-      -> proof ctxt (rule_equality_hyp H a c T e1)
-      -> proof ctxt (rule_equality_hyp H c b T e2)
-      -> proof ctxt (rule_equality_concl H a b T)
+      -> proof (rule_equality_hyp H a c T e1)
+      -> proof (rule_equality_hyp H c b T e2)
+      -> proof (rule_equality_concl H a b T)
 | proof_cequiv_transitivity :
     forall H a b c e1 e2,
       wf_term c
       -> covered c (vars_hyps H)
-      -> proof ctxt (rule_cequiv_trans_hyp H a c e1)
-      -> proof ctxt (rule_cequiv_trans_hyp H c b e2)
-      -> proof ctxt (rule_cequiv_trans_concl H a b).
+      -> proof (rule_cequiv_trans_hyp H a c e1)
+      -> proof (rule_cequiv_trans_hyp H c b e2)
+      -> proof (rule_cequiv_trans_concl H a b).
 
 
 
@@ -1369,23 +1367,24 @@ Definition extract2def {o}
 Inductive RigidLibraryEntry {o} :=
 | RigidLibraryEntry_abs (e : @library_entry o)
 | RigidLibraryEntry_proof
-    (ctxt  : @ProofContext o)
     (name  : LemmaName)
-    (stmt  : NTerm)
+    (stmt  : @NTerm o)
     (ext   : NTerm)
     (isp   : isprog stmt)
     (valid : valid_extract ext)
-    (prf   : proof ctxt (NLemma stmt ext)).
+    (prf   : proof (NLemma stmt ext)).
 
 (* A library is just a list of entries such that we store the most recent
    entry at the front of the list
  *)
 Definition RigidLibrary {o} := list (@RigidLibraryEntry o).
 
-Definition extend_proof_context {o} (ctxt : @ProofContext o) (e : RigidLibraryEntry) : ProofContext :=
+Definition extend_proof_context {o}
+           (ctxt : @ProofContext o)
+           (e    : RigidLibraryEntry) : ProofContext :=
   match e with
   | RigidLibraryEntry_abs e => updLibProofContext ctxt e
-  | RigidLibraryEntry_proof c name stmt ext isp valid prf =>
+  | RigidLibraryEntry_proof name stmt ext isp valid prf =>
     updLibProofContext
       (updConclProofContext ctxt (MkNamedConcl name stmt))
       (extract2def name ext valid)
@@ -1404,11 +1403,56 @@ Definition RigidLibrary2lib {o} (L : @RigidLibrary o) : library := RigidLibrary2
 Definition mon_true_sequent_wf {o} l (s : @baresequent o) :=
   sequent_true_ext_lib_wf l s.
 
-Definition ValidRigidLibraryEntry {o} (ctxt : @ProofContext o) (e : RigidLibraryEntry) : Type :=
+Fixpoint valid_proof_context {o}
+         (ctxt : @ProofContext o)
+         {s    : baresequent}
+         (prf  : proof s) : Type :=
+  match prf with
+  | proof_from_ctxt c H => LIn c (PC_conclusions ctxt)
+  | proof_isect_eq a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_isect_member_formation A x B z i b e H nizH prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_approx_refl a H => True
+  | proof_cequiv_refl a H => True
+  | proof_cequiv_alpha_eq a b H aeq => True
+  | proof_cequiv_approx a b e1 e2 H prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_approx_eq a1 a2 b1 b2 e1 e2 i H prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_cequiv_eq a1 a2 b1 b2 e1 e2 i H prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_cut B C t u x H wfB covB nixH prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_hypothesis x A G J => True
+  | proof_cequiv_subst_concl C x a b t e H wfa wfb cova covb prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_cequiv_subst_hyp H z T x a b J C t e wfa wfb cova covb prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_cequiv_computation lib a b H rd => lib_extends (PC_lib ctxt) lib
+  | proof_cequiv_computation_aeq lib a b c H rd aeq => lib_extends (PC_lib ctxt) lib
+  | proof_cequiv_computation_atmost lib a b n H rd => lib_extends (PC_lib ctxt) lib
+  | proof_unfold_abstractions lib abs a e H alla prf1 => lib_extends (PC_lib ctxt) lib # valid_proof_context ctxt prf1
+  | proof_rev_unfold_abstractions lib abs a e H wfa cova alla prf1 => lib_extends (PC_lib ctxt) lib # valid_proof_context ctxt prf1
+  | proof_universe_equality i j H ltij => True
+  | proof_hypothesis_equality x A G J => True
+  | proof_maybe_hidden_hypothesis_equality x A G J b => True
+  | proof_unhide_equality x A t1 t2 C e G J prf1 => valid_proof_context ctxt prf1
+  | proof_equality_equality A B a1 a2 b1 b2 e1 e2 e3 i H prf1 prf2 prf3 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2 # valid_proof_context ctxt prf3
+  | proof_integer_equality n H => True
+  | proof_introduction t e C H wft covt noutt prf1 => valid_proof_context ctxt prf1
+  | proof_axiom_equality e a b T H prf1 => valid_proof_context ctxt prf1
+  | proof_thin G J A C t x nixJ nixC prf1 => valid_proof_context ctxt prf1
+  | proof_function_equality a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_apply_equality A B f1 f2 t1 t2 e1 e2 x H wfA covA prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_isect_elimination A B C a e ea f x z H J wfa cova nizH nizJ dzf prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_isect_elimination2 A B C a e ea f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_isect_member_equality H t1 t2 A x B e1 e2 z i nizH prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_cumulativity H T e i j leij prf1 => valid_proof_context ctxt prf1
+  | proof_equality_symmetry H a b T e prf1 => valid_proof_context ctxt prf1
+  | proof_equality_transitivity H a b c T e1 e2 wfc covc prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  | proof_cequiv_transitivity H a b c e1 e2 wfc covc prf1 prf2 => valid_proof_context ctxt prf1 # valid_proof_context ctxt prf2
+  end.
+
+Definition ValidRigidLibraryEntry {o}
+           (ctxt : @ProofContext o)
+           (e    : RigidLibraryEntry) : Type :=
   match e with
   | RigidLibraryEntry_abs e => entry_not_in_lib e ctxt
-  | RigidLibraryEntry_proof c name stmt ext isp valid prf =>
-    (c = ctxt)
+  | RigidLibraryEntry_proof name stmt ext isp valid prf =>
+    (valid_proof_context ctxt prf)
       # name_not_in_lib name ctxt
       # mon_true_sequent_wf ctxt (NLemma stmt ext)
   end.
@@ -1438,6 +1482,284 @@ Hint Resolve wf_bseq_implies_wf_hypotheses : slow.
 
   ============================================================ *)
 
+Lemma wf_term_unfold_abstractions {o} :
+  forall lib abs (t : @NTerm o),
+    wf_term t
+    -> wf_term (unfold_abstractions lib abs t).
+Proof.
+  nterm_ind t as [v|f|op bs ind] Case; introv wf; simpl in *; auto.
+  Case "oterm".
+
+  unfold maybe_unfold; simpl.
+  remember (get_abstraction_name_op op) as gop; destruct gop; symmetry in Heqgop.
+
+  - boolvar.
+
+    + destruct op; simpl.
+
+      * allrw @wf_oterm_iff; repnd.
+        allrw map_map; unfold compose.
+        dands.
+
+        { rw <- wf0; apply eq_maps; introv i; destruct x; unfold num_bvars; simpl; auto. }
+
+        introv i; allrw in_map_iff; exrepnd; subst.
+        destruct a; simpl in *.
+        applydup wf in i1.
+        allrw @wf_bterm_iff.
+        eapply ind; eauto.
+
+      * allrw @wf_oterm_iff; repnd.
+        allrw map_map; unfold compose.
+        dands.
+
+        { rw <- wf0; apply eq_maps; introv i; destruct x; unfold num_bvars; simpl; auto. }
+
+        introv i; allrw in_map_iff; exrepnd; subst.
+        destruct a; simpl in *.
+        applydup wf in i1.
+        allrw @wf_bterm_iff.
+        eapply ind; eauto.
+
+      * allrw @wf_oterm_iff; repnd.
+        allrw map_map; unfold compose.
+        dands.
+
+        { rw <- wf0; apply eq_maps; introv i; destruct x; unfold num_bvars; simpl; auto. }
+
+        introv i; allrw in_map_iff; exrepnd; subst.
+        destruct a; simpl in *.
+        applydup wf in i1.
+        allrw @wf_bterm_iff.
+        eapply ind; eauto.
+
+      * remember (unfold_abs lib o1 (map (unfold_abstractions_b lib abs) bs)) as unf.
+        destruct unf; symmetry in Hequnf.
+
+        {
+          apply unfold_abs_implies_find_entry in Hequnf; exrepnd; subst.
+          eapply wf_mk_instance;[unfold found_entry;eauto|].
+          introv i; allrw in_map_iff; exrepnd; subst.
+          destruct a; simpl in *.
+          allrw @wf_oterm_iff; repnd.
+          applydup wf in i1.
+          allrw @wf_bterm_iff.
+          eapply ind; eauto.
+        }
+
+        {
+          allrw @wf_oterm_iff; repnd.
+          allrw map_map; unfold compose.
+          dands.
+
+          { rw <- wf0; apply eq_maps; introv i; destruct x; unfold num_bvars; simpl; auto. }
+
+          introv i; allrw in_map_iff; exrepnd; subst.
+          destruct a; simpl in *.
+          applydup wf in i1.
+          allrw @wf_bterm_iff.
+          eapply ind; eauto.
+        }
+
+    + allrw @wf_oterm_iff; repnd.
+      allrw map_map; unfold compose.
+      dands.
+
+      { rw <- wf0; apply eq_maps; introv i; destruct x; unfold num_bvars; simpl; auto. }
+
+      introv i; allrw in_map_iff; exrepnd; subst.
+      destruct a; simpl in *.
+      applydup wf in i1.
+      allrw @wf_bterm_iff.
+      eapply ind; eauto.
+
+  - allrw @wf_oterm_iff; repnd.
+    allrw map_map; unfold compose.
+    dands.
+
+    { rw <- wf0; apply eq_maps; introv i; destruct x; unfold num_bvars; simpl; auto. }
+
+    introv i; allrw in_map_iff; exrepnd; subst.
+    destruct a; simpl in *.
+    applydup wf in i1.
+    allrw @wf_bterm_iff.
+    eapply ind; eauto.
+Qed.
+Hint Resolve wf_term_unfold_abstractions : slow.
+
+Lemma cequivc_lsubstc_unfold_abstractions_ext {o} :
+  forall lib2 lib1 abs (t : @NTerm o) s w' c' w c,
+    lib_extends lib2 lib1
+    -> cequivc lib2 (lsubstc (unfold_abstractions lib1 abs t) w' s c') (lsubstc t w s c).
+Proof.
+  introv ext.
+  unfold cequivc; simpl.
+  apply lsubst_cequiv_congr; eauto 2 with slow.
+
+  - apply olift_approx_cequiv; apply approx_star_implies_approx_open.
+
+    + eapply approx_star_unfold_abstractions_left_ext; eauto 2 with slow.
+
+    + eapply approx_star_unfold_abstractions_right_ext; eauto 2 with slow.
+
+  - apply isprogram_csubst; eauto 2 with slow.
+
+  - apply isprogram_csubst; eauto 2 with slow.
+Qed.
+Hint Resolve cequivc_lsubstc_unfold_abstractions_ext : slow.
+
+Lemma mon_true_sequent_wf_preserves_lib_extends {o} :
+  forall lib1 lib2 (a e : @NTerm o) H abs,
+    wf_term a
+    -> covered a (vars_hyps H)
+    -> lib_extends lib2 lib1
+    -> mon_true_sequent_wf lib2 (rule_unfold_abstractions_hyp lib1 abs a e H)
+    -> mon_true_sequent_wf lib2 (rule_unfold_abstractions_hyp lib2 abs a e H).
+Proof.
+  introv wfa cova ext mon.
+  unfold mon_true_sequent_wf, sequent_true_ext_lib_wf in *; exrepnd.
+  unfold rule_unfold_abstractions_hyp in *; simpl in *.
+
+  assert (wf_csequent (rule_unfold_abstractions_hyp lib2 abs a e H)) as wfc.
+  {
+    clear mon0.
+    unfold rule_unfold_abstractions_hyp in *; simpl in *.
+    unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl in *; simpl in *.
+    repnd; dands; auto; eauto 3 with slow.
+  }
+
+  exists wfc.
+  introv ext'.
+  applydup mon0 in ext'.
+
+  rw @VR_sequent_true_ex in ext'0; simpl in *.
+  apply VR_sequent_true_all; simpl.
+  introv sim hf.
+  pose proof (ext'0 s1 s2) as h; clear ext'0; repeat (autodimp h hyp).
+  exrepnd.
+  introv.
+
+  assert (cover_vars a s1) as cov1.
+  { eapply s_cover_typ1; eauto. }
+
+  assert (cover_vars a s2) as cov2.
+  { eapply s_cover_typ2; eauto. }
+
+  dands.
+
+  - eapply tequality_respects_cequivc_left;
+      [apply cequivc_sym;apply (cequivc_lsubstc_unfold_abstractions_ext _ _ _ _ _ _ _ wfa cov1);eauto 3 with slow|].
+    eapply tequality_respects_cequivc_right;
+      [apply cequivc_sym;apply (cequivc_lsubstc_unfold_abstractions_ext _ _ _ _ _ _ _ wfa cov2);eauto 3 with slow|].
+    eapply tequality_respects_cequivc_left in h0;
+      [|eapply (cequivc_lsubstc_unfold_abstractions_ext _ _ _ _ _ _ _ wfa cov1); eauto 3 with slow].
+    eapply tequality_respects_cequivc_right in h0;
+      [|eapply (cequivc_lsubstc_unfold_abstractions_ext _ _ _ _ _ _ _ wfa cov2); eauto 3 with slow].
+    auto.
+
+  - eapply cequivc_preserving_equality;
+      [|apply cequivc_sym;apply (cequivc_lsubstc_unfold_abstractions_ext _ _ _ _ _ _ _ wfa cov1);eauto 3 with slow].
+    eapply cequivc_preserving_equality in h1;
+      [|apply (cequivc_lsubstc_unfold_abstractions_ext _ _ _ _ _ _ _ wfa cov1);eauto 3 with slow].
+    destruct c, wfc, w, w0, w, w0; simpl in *; proof_irr; auto.
+Qed.
+
+Lemma mon_true_sequent_wf_preserves_lib_extends2 {o} :
+  forall lib1 lib2 (a e : @NTerm o) H abs,
+    wf_term a
+    -> covered a (vars_hyps H)
+    -> lib_extends lib2 lib1
+    -> mon_true_sequent_wf lib2 (rule_unfold_abstractions_hyp lib2 abs a e H)
+    -> mon_true_sequent_wf lib2 (rule_unfold_abstractions_hyp lib1 abs a e H).
+Proof.
+  introv wfa cova ext mon.
+  unfold mon_true_sequent_wf, sequent_true_ext_lib_wf in *; exrepnd.
+  unfold rule_unfold_abstractions_hyp in *; simpl in *.
+
+  assert (wf_csequent (rule_unfold_abstractions_hyp lib1 abs a e H)) as wfc.
+  {
+    clear mon0.
+    unfold rule_unfold_abstractions_hyp in *; simpl in *.
+    unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl in *; simpl in *.
+    repnd; dands; auto; eauto 3 with slow.
+  }
+
+  exists wfc.
+  introv ext'.
+  applydup mon0 in ext'.
+
+  rw @VR_sequent_true_ex in ext'0; simpl in *.
+  apply VR_sequent_true_all; simpl.
+  introv sim hf.
+  pose proof (ext'0 s1 s2) as h; clear ext'0; repeat (autodimp h hyp).
+  exrepnd.
+  introv.
+
+  assert (cover_vars a s1) as cov1.
+  { eapply s_cover_typ1; eauto. }
+
+  assert (cover_vars a s2) as cov2.
+  { eapply s_cover_typ2; eauto. }
+
+  dands.
+
+  - eapply tequality_respects_cequivc_left;
+      [apply cequivc_sym;apply (cequivc_lsubstc_unfold_abstractions_ext _ _ _ _ _ _ _ wfa cov1);eauto 3 with slow|].
+    eapply tequality_respects_cequivc_right;
+      [apply cequivc_sym;apply (cequivc_lsubstc_unfold_abstractions_ext _ _ _ _ _ _ _ wfa cov2);eauto 3 with slow|].
+    eapply tequality_respects_cequivc_left in h0;
+      [|eapply (cequivc_lsubstc_unfold_abstractions_ext _ _ _ _ _ _ _ wfa cov1); eauto 3 with slow].
+    eapply tequality_respects_cequivc_right in h0;
+      [|eapply (cequivc_lsubstc_unfold_abstractions_ext _ _ _ _ _ _ _ wfa cov2); eauto 3 with slow].
+    auto.
+
+  - eapply cequivc_preserving_equality;
+      [|apply cequivc_sym;apply (cequivc_lsubstc_unfold_abstractions_ext _ _ _ _ _ _ _ wfa cov1);eauto 3 with slow].
+    eapply cequivc_preserving_equality in h1;
+      [|apply (cequivc_lsubstc_unfold_abstractions_ext _ _ _ _ _ _ _ wfa cov1);eauto 3 with slow].
+    destruct c, wfc, w, w0, w, w0; simpl in *; proof_irr; auto.
+Qed.
+
+Lemma wf_bseq_rule_unfold_abstractions_concl_implies_wf_term {o} :
+  forall (a e : @NTerm o) H,
+    wf_bseq (rule_unfold_abstractions_concl a e H)
+    -> wf_term a.
+Proof.
+  introv wf.
+  unfold rule_unfold_abstractions_concl in wf.
+  unfold wf_bseq in wf; simpl in *; tcsp.
+Qed.
+Hint Resolve wf_bseq_rule_unfold_abstractions_concl_implies_wf_term : slow.
+
+Lemma wf_bseq_rule_unfold_abstractions_concl_implies_covered {o} :
+  forall (a e : @NTerm o) H,
+    wf_bseq (rule_unfold_abstractions_concl a e H)
+    -> covered a (vars_hyps H).
+Proof.
+  introv wf.
+  unfold rule_unfold_abstractions_concl in wf.
+  unfold wf_bseq in wf; simpl in *; tcsp.
+Qed.
+Hint Resolve wf_bseq_rule_unfold_abstractions_concl_implies_covered : slow.
+
+Lemma lib_extends_preserves_wf_bseq_rule_unfold_abstractions_hyp {o} :
+  forall lib2 lib1 (a e : @NTerm o) H abs,
+    wf_term a
+    -> covered a (vars_hyps H)
+    -> lib_extends lib2 lib1
+    -> wf_bseq (rule_unfold_abstractions_hyp lib1 abs a e H)
+    -> wf_bseq (rule_unfold_abstractions_hyp lib2 abs a e H).
+Proof.
+  introv wfa cova ext wf.
+  unfold wf_bseq, rule_unfold_abstractions_hyp in *; simpl in *; repnd.
+  dands; eauto 3 with slow.
+  unfold closed_type_baresequent, closed_type in *; simpl in *; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_wf_bseq_rule_unfold_abstractions_hyp : slow.
+
+Hint Resolve reduces_to_preserves_lib_extends : slow.
+Hint Resolve reduces_in_atmost_k_steps_preserves_lib_extends : slow.
+
 Definition wf_proof_context {o} (ctxt : @ProofContext o) :=
   forall c H,
     wf_hypotheses H
@@ -1448,12 +1770,11 @@ Definition wf_proof_context {o} (ctxt : @ProofContext o) :=
    it means that we have to prove that the conclusion is well-formed and closed.
  *)
 Lemma valid_proof {o} :
-  forall (ctxt : @ProofContext o) s (wf : wf_bseq s),
-    wf_proof_context ctxt
-    -> proof ctxt s
+  forall (ctxt : @ProofContext o) s (wf : wf_bseq s) (wfc : wf_proof_context ctxt) (prf : proof s),
+    valid_proof_context ctxt prf
     -> mon_true_sequent_wf ctxt s.
 Proof.
-  introv wf imp prf.
+  introv wf imp valid.
 
   induction prf
     as [ (* proved sequent            *) seq p
@@ -1472,11 +1793,11 @@ Proof.
        | (* cequiv_subst_concl        *) C x a b t e H wfa wfb cova covb p1 ih1 p2 ih2
        | (* cequiv_subst_hyp          *) H z T x a b J C t e wfa wfb cova covb p1 ih1 p2 ih2
        (*| (* approx_member_eq        *) a b e H p ih*)
-       | (* cequiv_computation        *) a b H r
-       | (* cequiv_computation_aeq    *) a b c H r aeq
-       | (* cequiv_computation_atmost *) a b n H p ih
-       | (* unfold abstractions       *) abs a e H unf p ih
-       | (* rev unfold abstractions   *) abs a e H wfa cova unf p ih
+       | (* cequiv_computation        *) lib a b H r
+       | (* cequiv_computation_aeq    *) lib a b c H r aeq
+       | (* cequiv_computation_atmost *) lib a b n H p ih
+       | (* unfold abstractions       *) lib abs a e H unf p ih
+       | (* rev unfold abstractions   *) lib abs a e H wfa cova unf p ih
        (*| (* function elimination    *) A B C a e ea f x z H J wa cova nizH nizJ dzf p1 ih1 p2 ih2*)
        | (* universe_equality         *) i j H
        | (* hypothesis_equality       *) x A G J
@@ -1497,7 +1818,7 @@ Proof.
        | (* equality transitivity     *) H a b c T e1 e2 wfc covc p1 ih1 p2 ih2
        | (* cequiv transitivity       *) H a b c e1 e2 wfc covc p1 ih1 p2 ih2
        ];
-    allsimpl;
+    allsimpl; repnd;
     allrw NVin_iff; tcsp.
 
   - apply imp; eauto 3 with slow.
@@ -1566,10 +1887,10 @@ Proof.
 
     + introv xx; repndors; subst; tcsp.
 
-      * apply ih1.
+      * apply ih1; auto.
         apply (rule_cut_wf2 hs B C t u x); simpl; tcsp.
 
-      * apply ih2.
+      * apply ih2; auto.
         apply (rule_cut_wf2 hs B C t u x); simpl; tcsp.
 
 (*  - apply (rule_equal_in_base2_true3 lib H a b e F); simpl; tcsp.
@@ -1589,20 +1910,20 @@ Proof.
 
     introv i; repndors; subst; allsimpl; tcsp.
 
-    + apply ih2.
+    + apply ih2; auto.
       apply (rule_cequiv_subst_concl2_wf2 H x C a b t e); simpl; tcsp.
 
-    + apply ih1.
+    + apply ih1; auto.
       apply (rule_cequiv_subst_concl2_wf2 H x C a b t e); simpl; tcsp.
 
   - apply (rule_cequiv_subst_hyp_true_ext_lib ctxt H J x z C T a b t e); allsimpl; tcsp.
 
     introv i; repndors; subst; allsimpl; tcsp.
 
-    + apply ih2.
+    + apply ih2; auto.
       apply (rule_cequiv_subst_hyp_wf2 H J x z C T a b t e); simpl; tcsp.
 
-    + apply ih1.
+    + apply ih1; auto.
       apply (rule_cequiv_subst_hyp_wf2 H J x z C T a b t e); simpl; tcsp.
 
 (*  - apply (rule_approx_member_eq2_true3 lib a b e); simpl; tcsp.
@@ -1610,11 +1931,11 @@ Proof.
     apply ih.
     apply (rule_approx_member_eq2_wf2 a b e H); simpl; tcsp.*)
 
-  - apply (rule_cequiv_computation_true_ext_lib ctxt); simpl; tcsp.
+  - apply (rule_cequiv_computation_true_ext_lib ctxt); simpl; tcsp; eauto 3 with slow.
 
-  - apply (rule_cequiv_computation_aeq_true_ext_lib ctxt a b c); simpl; tcsp.
+  - apply (rule_cequiv_computation_aeq_true_ext_lib ctxt a b); simpl; tcsp; eauto 3 with slow.
 
-  - apply (rule_cequiv_computation_atmost_true_ext_lib ctxt a b n); simpl; tcsp.
+  - apply (rule_cequiv_computation_atmost_true_ext_lib ctxt a b n); simpl; tcsp; eauto 3 with slow.
 
 (*  - apply (rule_function_elimination_true3 lib A B C a e ea f x z); simpl; tcsp.
 
@@ -1633,15 +1954,15 @@ Proof.
 
   - apply (rule_unfold_abstractions_true_ext_lib ctxt abs a e H); simpl; tcsp.
     introv xx; repndors; subst; tcsp.
+    repeat (autodimp ih hyp);
+      try (apply (rule_unfold_abstractions_wf2 lib abs a e H); simpl; tcsp).
+    eapply mon_true_sequent_wf_preserves_lib_extends;[| | |eauto]; eauto 3 with slow.
 
-    apply ih; auto.
-    apply (rule_unfold_abstractions_wf2 ctxt abs a e H); simpl; tcsp.
-
-  - apply (rule_rev_unfold_abstractions_true_ext_lib ctxt abs a e H); simpl; tcsp.
-    introv xx; repndors; subst; tcsp.
-
-    apply ih; auto.
-    apply (rule_rev_unfold_abstractions_wf2 ctxt abs a e H); simpl; tcsp.
+  - repeat (autodimp ih hyp);
+      try (apply (rule_rev_unfold_abstractions_wf2 lib abs a e H); simpl; tcsp).
+    eapply mon_true_sequent_wf_preserves_lib_extends2; eauto 3 with slow.
+    apply (rule_rev_unfold_abstractions_true_ext_lib ctxt abs a e H); simpl; tcsp;
+      try (complete (introv xx; repndors; subst; tcsp)); eauto 3 with slow.
 
   - apply (rule_universe_equality_true_ext_lib ctxt); simpl; tcsp.
 
@@ -1821,30 +2142,29 @@ Qed.
 Definition term2pre_baresequent {o} (t : @NTerm o) : pre_baresequent :=
   mk_pre_bseq [] (pre_concl_ext t).
 
-Record pre_proof_seq {o} (ctxt : @ProofContext o) :=
+Record pre_proof_seq {o} :=
   MkPreProofSeq
     {
       pre_proof_seq_name  : LemmaName;
-      pre_proof_seq_term  : NTerm;
+      pre_proof_seq_term  : @NTerm o;
       pre_proof_seq_prog  : isprog pre_proof_seq_term;
-      pre_proof_seq_proof : pre_proof ctxt (term2pre_baresequent pre_proof_seq_term)
+      pre_proof_seq_proof : pre_proof (term2pre_baresequent pre_proof_seq_term)
     }.
 
-Arguments MkPreProofSeq [o] [ctxt] _ _ _ _.
+Arguments MkPreProofSeq [o] _ _ _ _.
 
-Arguments pre_proof_seq_name  [o] [ctxt] _.
-Arguments pre_proof_seq_term  [o] [ctxt] _.
-Arguments pre_proof_seq_proof [o] [ctxt] _.
+Arguments pre_proof_seq_name  [o] _.
+Arguments pre_proof_seq_term  [o] _.
+Arguments pre_proof_seq_proof [o] _.
 
 
-Definition pre_proofs {o} (ctxt : @ProofContext o) :=
-  list (pre_proof_seq ctxt).
+Definition pre_proofs {o} := list (@pre_proof_seq o).
 
 Record SoftLibrary {o} :=
   MkSoftLibrary
     {
       SoftLibrary_lib        :> @RigidLibrary o;
-      SoftLibrary_unfinished : pre_proofs (RigidLibrary2ProofContext SoftLibrary_lib);
+      SoftLibrary_unfinished : @pre_proofs o;
     }.
 
 Arguments MkSoftLibrary [o] _ _.
@@ -1935,7 +2255,7 @@ Qed.
 Definition RigidLibraryEntry2opabs {o} (e : @RigidLibraryEntry o) : opabs :=
   match e with
   | RigidLibraryEntry_abs e => opabs_of_lib_entry e
-  | RigidLibraryEntry_proof c name stmt ext isp valid prf => opname2opabs name
+  | RigidLibraryEntry_proof name stmt ext isp valid prf => opname2opabs name
   end.
 
 Definition entry_in_lib {o} (e : @RigidLibraryEntry o) (l : @library o) :=
@@ -2165,71 +2485,70 @@ Proof.
   apply eq_unfold_abstractions_extend_proof_context; auto.
 Defined.
 
-Fixpoint pre_proof_cons {o}
+(*Fixpoint pre_proof_cons {o}
          {ctxt  : @ProofContext o}
          (entry : RigidLibraryEntry)
          (ni    : !entry_in_lib entry ctxt)
          {s     : pre_baresequent}
-         (p     : pre_proof ctxt s)
-  : pre_proof (extend_proof_context ctxt entry) s :=
+         (p     : pre_proof s)
+  : pre_proof s :=
   match p with
-  | pre_proof_from_ctxt _ c H i =>
-    pre_proof_from_ctxt _ c H (in_conclusions_extend_proof_context ctxt entry c i)
+  | pre_proof_from_ctxt c H => pre_proof_from_ctxt c H
 
-  | pre_proof_hole _ s => pre_proof_hole _ s
+  | pre_proof_hole s => pre_proof_hole s
 
-  | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+  | pre_proof_isect_eq a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2'
+    pre_proof_isect_eq a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2'
 
-  | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+  | pre_proof_isect_member_formation A x B z i H nizH prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_isect_member_formation _ A x B z i H nizH prf1' prf2'
+    pre_proof_isect_member_formation A x B z i H nizH prf1' prf2'
 
-  | pre_proof_approx_refl _ a H => pre_proof_approx_refl _ a H
+  | pre_proof_approx_refl a H => pre_proof_approx_refl a H
 
-  | pre_proof_cequiv_refl _ a H => pre_proof_cequiv_refl _ a H
+  | pre_proof_cequiv_refl a H => pre_proof_cequiv_refl a H
 
-  | pre_proof_cequiv_alpha_eq _ a b aeq H => pre_proof_cequiv_alpha_eq _ a b aeq H
+  | pre_proof_cequiv_alpha_eq a b aeq H => pre_proof_cequiv_alpha_eq a b aeq H
 
-  | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
+  | pre_proof_cequiv_approx a b H prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_cequiv_approx _ a b H prf1' prf2'
+    pre_proof_cequiv_approx a b H prf1' prf2'
 
-  | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+  | pre_proof_approx_eq a1 a2 b1 b2 i H prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1' prf2'
+    pre_proof_approx_eq a1 a2 b1 b2 i H prf1' prf2'
 
-  | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+  | pre_proof_cequiv_eq a1 a2 b1 b2 i H prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1' prf2'
+    pre_proof_cequiv_eq a1 a2 b1 b2 i H prf1' prf2'
 
-  | pre_proof_cut _ B C x H wfB covB nixH prf1 prf2 =>
+  | pre_proof_cut B C x H wfB covB nixH prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_cut _ B C x H wfB covB nixH prf1' prf2'
+    pre_proof_cut B C x H wfB covB nixH prf1' prf2'
 
-  | pre_proof_hypothesis _ x A G J => pre_proof_hypothesis _ x A G J
+  | pre_proof_hypothesis x A G J => pre_proof_hypothesis x A G J
 
-  | pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2 =>
+  | pre_proof_cequiv_subst_concl C x a b H wfa wfb cova covb prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1' prf2'
+    pre_proof_cequiv_subst_concl C x a b H wfa wfb cova covb prf1' prf2'
 
-  | pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2 =>
+  | pre_proof_cequiv_subst_hyp H z T x a b J C wfa wfb cova covb prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1' prf2'
+    pre_proof_cequiv_subst_hyp H z T x a b J C wfa wfb cova covb prf1' prf2'
 
-  | pre_proof_cequiv_computation _ a b H r =>
+  | pre_proof_cequiv_computation lib a b H r =>
     pre_proof_cequiv_computation
-      _ a b H
-      (extend_proof_context_preserves_reduces_to ctxt entry a b ni r)
+      lib a b H
+      (extend_proof_context_preserves_reduces_to lib entry a b ni r)
 
   | pre_proof_cequiv_computation_aeq _ a b c H r aeq =>
     pre_proof_cequiv_computation_aeq
@@ -2268,81 +2587,81 @@ Fixpoint pre_proof_cons {o}
          (eq_pre_rule_rev_unfold_abstractions_hyp_extend_proof_context
             ctxt entry abs a H ni unf))
 
-  | pre_proof_universe_equality _ i j H ltij => pre_proof_universe_equality _ i j H ltij
+  | pre_proof_universe_equality i j H ltij => pre_proof_universe_equality i j H ltij
 
-  | pre_proof_hypothesis_equality _ x A G J => pre_proof_hypothesis_equality _ x A G J
+  | pre_proof_hypothesis_equality x A G J => pre_proof_hypothesis_equality x A G J
 
-  | pre_proof_maybe_hidden_hypothesis_equality _ x A G J b => pre_proof_maybe_hidden_hypothesis_equality _ x A G J b
+  | pre_proof_maybe_hidden_hypothesis_equality x A G J b => pre_proof_maybe_hidden_hypothesis_equality x A G J b
 
-  | pre_proof_unhide_equality _ x A t1 t2 C G J prf =>
+  | pre_proof_unhide_equality x A t1 t2 C G J prf =>
     let prf' := pre_proof_cons entry ni prf in
-    pre_proof_unhide_equality _ x A t1 t2 C G J prf'
+    pre_proof_unhide_equality x A t1 t2 C G J prf'
 
-  | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+  | pre_proof_equality_equality A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
     let prf3' := pre_proof_cons entry ni prf3 in
-    pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1' prf2' prf3'
+    pre_proof_equality_equality A B a1 a2 b1 b2 i H prf1' prf2' prf3'
 
-  | pre_proof_integer_equality _ n H => pre_proof_integer_equality _ n H
+  | pre_proof_integer_equality n H => pre_proof_integer_equality n H
 
-  | pre_proof_introduction _ t C H wft covt nout prf =>
+  | pre_proof_introduction t C H wft covt nout prf =>
     let prf' := pre_proof_cons entry ni prf in
-    pre_proof_introduction _ t C H wft covt nout prf'
+    pre_proof_introduction t C H wft covt nout prf'
 
-  | pre_proof_axiom_equality _ a b T H prf =>
+  | pre_proof_axiom_equality a b T H prf =>
     let prf' := pre_proof_cons entry ni prf in
-    pre_proof_axiom_equality _ a b T H prf'
+    pre_proof_axiom_equality a b T H prf'
 
-  | pre_proof_thin _ G J A C x nixJ nixC prf =>
+  | pre_proof_thin G J A C x nixJ nixC prf =>
     let prf' := pre_proof_cons entry ni prf in
-    pre_proof_thin _ G J A C x nixJ nixC prf'
+    pre_proof_thin G J A C x nixJ nixC prf'
 
-  | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+  | pre_proof_function_equality a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2'
+    pre_proof_function_equality a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2'
 
-  | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+  | pre_proof_apply_equality A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1' prf2'
+    pre_proof_apply_equality A B f1 f2 t1 t2 x H wfA covA prf1' prf2'
 
-  | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
+  | pre_proof_isect_elimination A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1' prf2'
+    pre_proof_isect_elimination A B C a f x z H J wfa cova nizH nizJ dzf prf1' prf2'
 
-  | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+  | pre_proof_isect_elimination2 A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1' prf2'
+    pre_proof_isect_elimination2 A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1' prf2'
 
-  | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+  | pre_proof_isect_member_equality H t1 t2 A x B z i nizH prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1' prf2'
+    pre_proof_isect_member_equality H t1 t2 A x B z i nizH prf1' prf2'
 
-  | pre_proof_cumulativity _ H T i j lij prf1 =>
+  | pre_proof_cumulativity H T i j lij prf1 =>
     let prf1' := pre_proof_cons entry ni prf1 in
-    pre_proof_cumulativity _ H T i j lij prf1'
+    pre_proof_cumulativity H T i j lij prf1'
 
-  | pre_proof_equality_symmetry _ H a b T prf1 =>
+  | pre_proof_equality_symmetry H a b T prf1 =>
     let prf1' := pre_proof_cons entry ni prf1 in
-    pre_proof_equality_symmetry _ H a b T prf1'
+    pre_proof_equality_symmetry H a b T prf1'
 
-  | pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2 =>
-    let prf1' := pre_proof_cons entry ni prf1 in
-    let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_equality_transitivity _ H a b c T wfc covc prf1' prf2'
-
-  | pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2 =>
+  | pre_proof_equality_transitivity H a b c T wfc covc prf1 prf2 =>
     let prf1' := pre_proof_cons entry ni prf1 in
     let prf2' := pre_proof_cons entry ni prf2 in
-    pre_proof_cequiv_transitivity _ H a b c wfc covc prf1' prf2'
-  end.
+    pre_proof_equality_transitivity H a b c T wfc covc prf1' prf2'
 
-Definition pre_proof_seq_cons {o}
+  | pre_proof_cequiv_transitivity H a b c wfc covc prf1 prf2 =>
+    let prf1' := pre_proof_cons entry ni prf1 in
+    let prf2' := pre_proof_cons entry ni prf2 in
+    pre_proof_cequiv_transitivity H a b c wfc covc prf1' prf2'
+  end.*)
+
+(*Definition pre_proof_seq_cons {o}
            {ctxt  : @ProofContext o}
            (entry : RigidLibraryEntry)
            (ni    : !entry_in_lib entry ctxt)
@@ -2350,15 +2669,15 @@ Definition pre_proof_seq_cons {o}
   : pre_proof_seq (extend_proof_context ctxt entry) :=
   match pps with
   | MkPreProofSeq name C isp prf => MkPreProofSeq name C isp (pre_proof_cons entry ni prf)
-  end.
+  end.*)
 
-Definition pre_proofs_cons {o}
+(*Definition pre_proofs_cons {o}
            {ctxt  : @ProofContext o}
            (entry : RigidLibraryEntry)
            (ni    : !entry_in_lib entry ctxt)
            (l     : pre_proofs ctxt)
   : pre_proofs (extend_proof_context ctxt entry) :=
-  map (pre_proof_seq_cons entry ni) l.
+  map (pre_proof_seq_cons entry ni) l.*)
 
 Lemma in_lib_dec {o} :
   forall (opabs : opabs)
@@ -2581,15 +2900,15 @@ Definition SoftLibrary_add_def {o}
       MkUpdRes
         (MkSoftLibrary
            (entry :: L)
-           (pre_proofs_cons entry p unfinished))
+           ((*pre_proofs_cons entry p*) unfinished))
         [added_definition opabs]
     end
   end.
 
-Fixpoint find_unfinished_in_pre_proofs {o} {ctxt}
-         (l : @pre_proofs o ctxt)
+Fixpoint find_unfinished_in_pre_proofs {o}
+         (l : @pre_proofs o)
          (n : LemmaName)
-  : option (pre_proof_seq ctxt) * pre_proofs ctxt :=
+  : option (pre_proof_seq) * pre_proofs :=
   match l with
   | [] => (None, [])
   | pp :: pps =>
@@ -2601,11 +2920,10 @@ Fixpoint find_unfinished_in_pre_proofs {o} {ctxt}
   end.
 
 Lemma name_of_find_unfinished_in_pre_proofs {o} :
-  forall {ctxt}
-         (l  : @pre_proofs o ctxt)
+  forall (l  : @pre_proofs o)
          (n  : LemmaName)
-         (p  : pre_proof_seq ctxt)
-         (ps : pre_proofs ctxt),
+         (p  : pre_proof_seq)
+         (ps : pre_proofs),
     find_unfinished_in_pre_proofs l n = (Some p, ps)
     -> pre_proof_seq_name p = n.
 Proof.
@@ -2629,15 +2947,15 @@ Definition pre2baresequent {o} (s : @pre_baresequent o) (e : @NTerm o) :=
 Definition valid_pre_extract {o} (H : @bhyps o) (t : @NTerm o) : Prop :=
   wf_term t # covered t (nh_vars_hyps H) # noutokens t.
 
-Record ExtractProof {o} ctxt (seq : @pre_baresequent o) :=
+Record ExtractProof {o} (seq : @pre_baresequent o) :=
   MkExtractProof
     {
       extract_proof_extract : NTerm;
       extract_proof_valid   : valid_pre_extract (pre_hyps seq) extract_proof_extract;
-      extract_proof_proof   : proof ctxt (pre2baresequent seq extract_proof_extract);
+      extract_proof_proof   : proof (pre2baresequent seq extract_proof_extract);
     }.
 
-Arguments MkExtractProof [o] [ctxt] [seq] _ _ _.
+Arguments MkExtractProof [o] [seq] _ _ _.
 
 Lemma valid_extract_axiom {o} : @valid_extract o mk_axiom.
 Proof.
@@ -2673,11 +2991,9 @@ Qed.
 
 (* Why can't I define these? *)
 Definition finish_proof_from_context {o}
-           (ctxt : ProofContext)
-           (c    : @named_concl o)
-           (H    : bhyps)
-           (i    : LIn c (PC_conclusions ctxt))
-  : ExtractProof ctxt (named_concl2pre_bseq H c).
+           (c : @named_concl o)
+           (H : bhyps)
+  : ExtractProof (named_concl2pre_bseq H c).
 Proof.
   destruct c as [name T]; simpl in *.
 
@@ -2686,19 +3002,18 @@ Proof.
   { simpl in *; apply valid_pre_extract_mk_abs_opname2opabs. }
 
   unfold pre2baresequent; simpl.
-  exact (proof_from_ctxt _ (MkNamedConcl name T) H i).
+  exact (proof_from_ctxt (MkNamedConcl name T) H).
 Defined.
 
 Definition finish_proof_isect_eq {o}
-           (ctxt : @ProofContext o)
-           (a1 a2 b1 b2 : NTerm)
+           (a1 a2 b1 b2 : @NTerm o)
            (x1 x2 y : NVar)
            (i : nat)
            (H : bhyps)
            (ni : NVin y (vars_hyps H))
-           (p1 : ExtractProof ctxt (pre_rule_isect_equality_hyp1 a1 a2 i H))
-           (p2 : ExtractProof ctxt (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H))
-  : ExtractProof ctxt (pre_rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H).
+           (p1 : ExtractProof (pre_rule_isect_equality_hyp1 a1 a2 i H))
+           (p2 : ExtractProof (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H))
+  : ExtractProof (pre_rule_isect_equality_concl a1 a2 x1 x2 b1 b2 i H).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -2707,7 +3022,7 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_isect_eq _ a1 a2 b1 b2 e1 e2 x1 x2 y i H ni q1 q2).
+  exact (proof_isect_eq a1 a2 b1 b2 e1 e2 x1 x2 y i H ni q1 q2).
 Defined.
 
 Lemma valid_pre_extract_snoc_mk_hhyp_implies {o} :
@@ -2721,17 +3036,16 @@ Proof.
 Qed.
 
 Definition finish_proof_isect_member_formation {o}
-           (ctxt : @ProofContext o)
            (A : NTerm)
            (x : NVar)
-           (B : NTerm)
+           (B : @NTerm o)
            (z : NVar)
            (i : nat)
            (H : bhyps)
            (ni : NVin z (vars_hyps H))
-           (p1 : ExtractProof ctxt (pre_rule_isect_member_formation_hyp1 z A x B H))
-           (p2 : ExtractProof ctxt (pre_rule_isect_member_formation_hyp2 A i H))
-  : ExtractProof ctxt (pre_rule_isect_member_formation_concl A x B H).
+           (p1 : ExtractProof (pre_rule_isect_member_formation_hyp1 z A x B H))
+           (p2 : ExtractProof (pre_rule_isect_member_formation_hyp2 A i H))
+  : ExtractProof (pre_rule_isect_member_formation_concl A x B H).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -2740,56 +3054,52 @@ Proof.
   exists e1.
   { simpl; eapply valid_pre_extract_snoc_mk_hhyp_implies; eauto. }
   unfold pre2baresequent; simpl.
-  exact (proof_isect_member_formation _ A x B z i e1 e2 H ni q1 q2).
+  exact (proof_isect_member_formation A x B z i e1 e2 H ni q1 q2).
 Defined.
 
 Definition finish_proof_approx_refl {o}
-           (ctxt : @ProofContext o)
-           (a : NTerm)
+           (a : @NTerm o)
            (H : bhyps)
-  : ExtractProof ctxt (pre_rule_approx_refl_concl a H).
+  : ExtractProof (pre_rule_approx_refl_concl a H).
 Proof.
   introv.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_approx_refl _ a H).
+  exact (proof_approx_refl a H).
 Defined.
 
 Definition finish_proof_cequiv_refl {o}
-           (ctxt : @ProofContext o)
-           (a : NTerm)
+           (a : @NTerm o)
            (H : bhyps)
-  : ExtractProof ctxt (pre_rule_cequiv_refl_concl a H).
+  : ExtractProof (pre_rule_cequiv_refl_concl a H).
 Proof.
   introv.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_cequiv_refl _ a H).
+  exact (proof_cequiv_refl a H).
 Defined.
 
 Definition finish_proof_cequiv_alpha_eq {o}
-           (ctxt : @ProofContext o)
-           (a b : NTerm)
+           (a b : @NTerm o)
            (H : bhyps)
            (aeq : alpha_eq a b)
-  : ExtractProof ctxt (pre_rule_cequiv_alpha_eq_concl a b H).
+  : ExtractProof (pre_rule_cequiv_alpha_eq_concl a b H).
 Proof.
   introv.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_cequiv_alpha_eq _ a b H aeq).
+  exact (proof_cequiv_alpha_eq a b H aeq).
 Defined.
 
 Definition finish_proof_cequiv_approx {o}
-           (ctxt : @ProofContext o)
-           (a b : NTerm)
+           (a b : @NTerm o)
            (H : bhyps)
-           (p1 : ExtractProof ctxt (pre_rule_cequiv_approx_hyp a b H))
-           (p2 : ExtractProof ctxt (pre_rule_cequiv_approx_hyp b a H))
-  : ExtractProof ctxt (pre_rule_cequiv_approx_concl a b H).
+           (p1 : ExtractProof (pre_rule_cequiv_approx_hyp a b H))
+           (p2 : ExtractProof (pre_rule_cequiv_approx_hyp b a H))
+  : ExtractProof (pre_rule_cequiv_approx_concl a b H).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -2798,17 +3108,16 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_cequiv_approx _ a b e1 e2 H q1 q2).
+  exact (proof_cequiv_approx a b e1 e2 H q1 q2).
 Defined.
 
 Definition finish_proof_approx_eq {o}
-           (ctxt : @ProofContext o)
-           (a1 a2 b1 b2 : NTerm)
+           (a1 a2 b1 b2 : @NTerm o)
            (i : nat)
            (H : bhyps)
-           (p1 : ExtractProof ctxt (pre_rule_eq_base_hyp a1 a2 H))
-           (p2 : ExtractProof ctxt (pre_rule_eq_base_hyp b1 b2 H))
-  : ExtractProof ctxt (pre_rule_approx_eq_concl a1 a2 b1 b2 i H).
+           (p1 : ExtractProof (pre_rule_eq_base_hyp a1 a2 H))
+           (p2 : ExtractProof (pre_rule_eq_base_hyp b1 b2 H))
+  : ExtractProof (pre_rule_approx_eq_concl a1 a2 b1 b2 i H).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -2817,17 +3126,16 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_approx_eq _ a1 a2 b1 b2 e1 e2 i H q1 q2).
+  exact (proof_approx_eq a1 a2 b1 b2 e1 e2 i H q1 q2).
 Defined.
 
 Definition finish_proof_cequiv_eq {o}
-           (ctxt : @ProofContext o)
-           (a1 a2 b1 b2 : NTerm)
+           (a1 a2 b1 b2 : @NTerm o)
            (i : nat)
            (H : bhyps)
-           (p1 : ExtractProof ctxt (pre_rule_eq_base_hyp a1 a2 H))
-           (p2 : ExtractProof ctxt (pre_rule_eq_base_hyp b1 b2 H))
-  : ExtractProof ctxt (pre_rule_cequiv_eq_concl a1 a2 b1 b2 i H).
+           (p1 : ExtractProof (pre_rule_eq_base_hyp a1 a2 H))
+           (p2 : ExtractProof (pre_rule_eq_base_hyp b1 b2 H))
+  : ExtractProof (pre_rule_cequiv_eq_concl a1 a2 b1 b2 i H).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -2836,7 +3144,7 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_cequiv_eq _ a1 a2 b1 b2 e1 e2 i H q1 q2).
+  exact (proof_cequiv_eq a1 a2 b1 b2 e1 e2 i H q1 q2).
 Defined.
 
 Lemma implies_valid_pre_extract_subst {o} :
@@ -2868,16 +3176,15 @@ Proof.
 Qed.
 
 Definition finish_proof_cut {o}
-           (ctxt : @ProofContext o)
-           (B C : NTerm)
+           (B C : @NTerm o)
            (x : NVar)
            (H : bhyps)
            (wfB : wf_term B)
            (covB : covered B (vars_hyps H))
            (nixH : NVin x (vars_hyps H))
-           (p1 : ExtractProof ctxt (pre_rule_cut_hyp1 H B))
-           (p2 : ExtractProof ctxt (pre_rule_cut_hyp2 H x B C))
-  : ExtractProof ctxt (pre_rule_cut_concl H C).
+           (p1 : ExtractProof (pre_rule_cut_hyp1 H B))
+           (p2 : ExtractProof (pre_rule_cut_hyp2 H x B C))
+  : ExtractProof (pre_rule_cut_concl H C).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -2886,15 +3193,14 @@ Proof.
   exists (subst e2 x e1).
   { simpl; eapply implies_valid_pre_extract_subst; eauto. }
   unfold pre2baresequent; simpl.
-  exact (proof_cut _ B C e2 e1 x H wfB covB nixH q1 q2).
+  exact (proof_cut B C e2 e1 x H wfB covB nixH q1 q2).
 Defined.
 
 Definition finish_proof_hypothesis {o}
-           (ctxt : @ProofContext o)
            (x : NVar)
-           (A : NTerm)
+           (A : @NTerm o)
            (G J : bhyps)
-  : ExtractProof ctxt (pre_rule_hypothesis_concl G J A x).
+  : ExtractProof (pre_rule_hypothesis_concl G J A x).
 Proof.
   introv.
   exists (@mk_var o x).
@@ -2902,22 +3208,21 @@ Proof.
     apply covered_var; rw @nh_vars_hyps_app; rw @nh_vars_hyps_snoc; simpl.
     rw in_app_iff; rw in_snoc; tcsp. }
   unfold pre2baresequent; simpl.
-  exact (proof_hypothesis _ x A G J).
+  exact (proof_hypothesis x A G J).
 Defined.
 
 Definition finish_proof_cequiv_subst_concl {o}
-           (ctxt : @ProofContext o)
            (C : NTerm)
            (x : NVar)
-           (a b : NTerm)
+           (a b : @NTerm o)
            (H : bhyps)
            (wfa : wf_term a)
            (wfb : wf_term b)
            (cova : covered a (vars_hyps H))
            (covb : covered b (vars_hyps H))
-           (p1 : ExtractProof ctxt (pre_rule_cequiv_subst_hyp2 H a b))
-           (p2 : ExtractProof ctxt (pre_rule_cequiv_subst_hyp1 H x C b))
-  : ExtractProof ctxt (pre_rule_cequiv_subst_hyp1 H x C a).
+           (p1 : ExtractProof (pre_rule_cequiv_subst_hyp2 H a b))
+           (p2 : ExtractProof (pre_rule_cequiv_subst_hyp1 H x C b))
+  : ExtractProof (pre_rule_cequiv_subst_hyp1 H x C a).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -2925,14 +3230,13 @@ Proof.
   unfold pre2baresequent in *; simpl in *.
   exists e2; auto;[].
   unfold pre2baresequent; simpl.
-  exact (proof_cequiv_subst_concl _ C x a b e2 e1 H wfa wfb cova covb q1 q2).
+  exact (proof_cequiv_subst_concl C x a b e2 e1 H wfa wfb cova covb q1 q2).
 Defined.
 
 Definition finish_proof_cequiv_subst_hyp {o}
-           (ctxt : @ProofContext o)
            (H : bhyps)
            (z : NVar)
-           (T : NTerm)
+           (T : @NTerm o)
            (x : NVar)
            (a b : NTerm)
            (J : bhyps)
@@ -2941,9 +3245,9 @@ Definition finish_proof_cequiv_subst_hyp {o}
            (wfb : wf_term b)
            (cova : covered a (vars_hyps H))
            (covb : covered b (vars_hyps H))
-           (p1 : ExtractProof ctxt (pre_rule_cequiv_subst_hyp_hyp2 H z T x a J b))
-           (p2 : ExtractProof ctxt (pre_rule_cequiv_subst_hyp_hyp1 H z T x b J C))
-  : ExtractProof ctxt (pre_rule_cequiv_subst_hyp_concl H z T x a J C).
+           (p1 : ExtractProof (pre_rule_cequiv_subst_hyp_hyp2 H z T x a J b))
+           (p2 : ExtractProof (pre_rule_cequiv_subst_hyp_hyp1 H z T x b J C))
+  : ExtractProof (pre_rule_cequiv_subst_hyp_concl H z T x a J C).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -2955,15 +3259,15 @@ Proof.
     allrw @nh_vars_hyps_snoc.
     simpl in *; tcsp. }
   unfold pre2baresequent; simpl.
-  exact (proof_cequiv_subst_hyp _ H z T x a b J C e2 e1 wfa wfb cova covb q1 q2).
+  exact (proof_cequiv_subst_hyp H z T x a b J C e2 e1 wfa wfb cova covb q1 q2).
 Defined.
 
 Definition finish_proof_cequiv_computation {o}
-           (ctxt : @ProofContext o)
-           (a b : NTerm)
+           (lib : library)
+           (a b : @NTerm o)
            (H : bhyps)
-           (r : reduces_to ctxt a b)
-  : ExtractProof ctxt (pre_rule_cequiv_computation_concl a b H).
+           (r : reduces_to lib a b)
+  : ExtractProof (pre_rule_cequiv_computation_concl a b H).
 Proof.
   introv.
   exists (@mk_axiom o).
@@ -2973,12 +3277,12 @@ Proof.
 Defined.
 
 Definition finish_proof_cequiv_computation_aeq {o}
-           (ctxt : @ProofContext o)
-           (a b c : NTerm)
+           (lib : library)
+           (a b c : @NTerm o)
            (H : bhyps)
-           (r : reduces_to ctxt a b)
+           (r : reduces_to lib a b)
            (aeq : alpha_eq b c)
-  : ExtractProof ctxt (pre_rule_cequiv_computation_concl a c H).
+  : ExtractProof (pre_rule_cequiv_computation_concl a c H).
 Proof.
   introv.
   exists (@mk_axiom o).
@@ -2988,12 +3292,12 @@ Proof.
 Defined.
 
 Definition finish_proof_cequiv_computation_atmost {o}
-           (ctxt : @ProofContext o)
-           (a b : NTerm)
+           (lib : library)
+           (a b : @NTerm o)
            (n : nat)
            (H : bhyps)
-           (r : reduces_in_atmost_k_steps ctxt a b n)
-  : ExtractProof ctxt (pre_rule_cequiv_computation_concl a b H).
+           (r : reduces_in_atmost_k_steps lib a b n)
+  : ExtractProof (pre_rule_cequiv_computation_concl a b H).
 Proof.
   introv.
   exists (@mk_axiom o).
@@ -3003,73 +3307,68 @@ Proof.
 Defined.
 
 Definition finish_proof_universe_equality {o}
-           (ctxt : @ProofContext o)
            (i j : nat)
-           (H : bhyps)
+           (H : @bhyps o)
            (ltij : i < j)
-  : ExtractProof ctxt (pre_rule_universe_equality_concl H i j).
+  : ExtractProof (pre_rule_universe_equality_concl H i j).
 Proof.
   introv.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_universe_equality _ i j H ltij).
+  exact (proof_universe_equality i j H ltij).
 Defined.
 
 Definition finish_proof_hypothesis_equality {o}
-           (ctxt : @ProofContext o)
            (x : NVar)
-           (A : NTerm)
+           (A : @NTerm o)
            (G J : bhyps)
-  : ExtractProof ctxt (pre_rule_hypothesis_equality_concl G J A x).
+  : ExtractProof (pre_rule_hypothesis_equality_concl G J A x).
 Proof.
   introv.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_hypothesis_equality _ x A G J).
+  exact (proof_hypothesis_equality x A G J).
 Defined.
 
 Definition finish_proof_maybe_hidden_hypothesis_equality {o}
-           (ctxt : @ProofContext o)
            (x : NVar)
            (A : NTerm)
-           (G J : bhyps)
+           (G J : @bhyps o)
            (b : bool)
-  : ExtractProof ctxt (pre_rule_maybe_hidden_hypothesis_equality_concl G J A x b).
+  : ExtractProof (pre_rule_maybe_hidden_hypothesis_equality_concl G J A x b).
 Proof.
   introv.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_maybe_hidden_hypothesis_equality _ x A G J b).
+  exact (proof_maybe_hidden_hypothesis_equality x A G J b).
 Defined.
 
 Definition finish_proof_unhide_equality {o}
-           (ctxt : @ProofContext o)
            (x : NVar)
            (A t1 t2 C : NTerm)
-           (G J : bhyps)
-           (p : ExtractProof ctxt (pre_rule_unhide_equality_hyp G J x A t1 t2 C))
-  : ExtractProof ctxt (pre_rule_unhide_equality_concl G J x A t1 t2 C).
+           (G J : @bhyps o)
+           (p : ExtractProof (pre_rule_unhide_equality_hyp G J x A t1 t2 C))
+  : ExtractProof (pre_rule_unhide_equality_concl G J x A t1 t2 C).
 Proof.
   introv.
   destruct p as [e v q].
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_unhide_equality _ x A t1 t2 C e G J q).
+  exact (proof_unhide_equality x A t1 t2 C e G J q).
 Defined.
 
 Definition finish_proof_equality_equality {o}
-           (ctxt : @ProofContext o)
-           (A B a1 a2 b1 b2 : NTerm)
+           (A B a1 a2 b1 b2 : @NTerm o)
            (i : nat)
            (H : bhyps)
-           (p1 : ExtractProof ctxt (pre_rule_equality_equality_hyp1 H A B i))
-           (p2 : ExtractProof ctxt (pre_rule_equality_equality_hyp2 H a1 b1 A))
-           (p3 : ExtractProof ctxt (pre_rule_equality_equality_hyp2 H a2 b2 A))
-  : ExtractProof ctxt (pre_rule_equality_equality_concl H a1 a2 b1 b2 A B i).
+           (p1 : ExtractProof (pre_rule_equality_equality_hyp1 H A B i))
+           (p2 : ExtractProof (pre_rule_equality_equality_hyp2 H a1 b1 A))
+           (p3 : ExtractProof (pre_rule_equality_equality_hyp2 H a2 b2 A))
+  : ExtractProof (pre_rule_equality_equality_concl H a1 a2 b1 b2 A B i).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -3079,48 +3378,46 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_equality_equality _ A B a1 a2 b1 b2 e1 e2 e3 i H q1 q2 q3).
+  exact (proof_equality_equality A B a1 a2 b1 b2 e1 e2 e3 i H q1 q2 q3).
 Defined.
 
 Definition finish_proof_integer_equality {o}
-           (ctxt : @ProofContext o)
            (n : Z)
-           (H : bhyps)
-  : ExtractProof ctxt (pre_rule_integer_equality_concl H n).
+           (H : @bhyps o)
+  : ExtractProof (pre_rule_integer_equality_concl H n).
 Proof.
   introv.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_integer_equality _ n H).
+  exact (proof_integer_equality n H).
 Defined.
 
 Definition finish_proof_introduction {o}
-           (ctxt : @ProofContext o)
-           (t C : NTerm)
+           (t C : @NTerm o)
            (H : bhyps)
            (wft : wf_term t)
            (covt : covered t (nh_vars_hyps H))
            (nout : noutokens t)
-           (p : ExtractProof ctxt (pre_rule_introduction_hyp H C t))
-  : ExtractProof ctxt (pre_rule_introduction_concl H C).
+           (p : ExtractProof (pre_rule_introduction_hyp H C t))
+  : ExtractProof (pre_rule_introduction_concl H C).
 Proof.
   introv.
   destruct p as [e v q].
   exists t.
   { simpl; unfold valid_pre_extract; dands; auto. }
   unfold pre2baresequent; simpl.
-  exact (proof_introduction _ t e C H wft covt nout q).
+  exact (proof_introduction t e C H wft covt nout q).
 Defined.
 
 Definition finish_proof_unfold_abstractions {o}
-           (ctxt : @ProofContext o)
+           (lib : library)
            (abs  : list opname)
-           (a : NTerm)
+           (a : @NTerm o)
            (H : bhyps)
-           (unf : all_abstractions_can_be_unfolded ctxt abs a)
-           (p : ExtractProof ctxt (pre_rule_unfold_abstractions_hyp ctxt abs a H))
-  : ExtractProof ctxt (pre_rule_unfold_abstractions_concl a H).
+           (unf : all_abstractions_can_be_unfolded lib abs a)
+           (p : ExtractProof (pre_rule_unfold_abstractions_hyp lib abs a H))
+  : ExtractProof (pre_rule_unfold_abstractions_concl a H).
 Proof.
   introv.
   destruct p as [e v q].
@@ -3131,15 +3428,15 @@ Proof.
 Defined.
 
 Definition finish_proof_rev_unfold_abstractions {o}
-           (ctxt : @ProofContext o)
+           (lib : library)
            (abs  : list opname)
-           (a : NTerm)
+           (a : @NTerm o)
            (H : bhyps)
            (wfa : wf_term a)
            (cova : covered a (vars_hyps H))
-           (unf : all_abstractions_can_be_unfolded ctxt abs a)
-           (p : ExtractProof ctxt (pre_rule_unfold_abstractions_concl a H))
-  : ExtractProof ctxt (pre_rule_unfold_abstractions_hyp ctxt abs a H).
+           (unf : all_abstractions_can_be_unfolded lib abs a)
+           (p : ExtractProof (pre_rule_unfold_abstractions_concl a H))
+  : ExtractProof (pre_rule_unfold_abstractions_hyp lib abs a H).
 Proof.
   introv.
   destruct p as [e v q].
@@ -3150,29 +3447,27 @@ Proof.
 Defined.
 
 Definition finish_proof_axiom_equality {o}
-           (ctxt : @ProofContext o)
-           (a b T : NTerm)
+           (a b T : @NTerm o)
            (H : bhyps)
-           (p : ExtractProof ctxt (pre_rule_axiom_equality_hyp a b T H))
-  : ExtractProof ctxt (pre_rule_axiom_equality_concl a b T H).
+           (p : ExtractProof (pre_rule_axiom_equality_hyp a b T H))
+  : ExtractProof (pre_rule_axiom_equality_concl a b T H).
 Proof.
   introv.
   destruct p as [e v q].
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_axiom_equality _ e a b T H q).
+  exact (proof_axiom_equality e a b T H q).
 Defined.
 
 Definition finish_proof_thin {o}
-           (ctxt : @ProofContext o)
-           (G J : bhyps)
+           (G J : @bhyps o)
            (A C : NTerm)
            (x : NVar)
            (nixJ : NVin x (free_vars_hyps J))
            (nixC : NVin x (free_vars C))
-           (p : ExtractProof ctxt (pre_rule_thin_hyp G J C))
-  : ExtractProof ctxt (pre_rule_thin_concl G x A J C).
+           (p : ExtractProof (pre_rule_thin_hyp G J C))
+  : ExtractProof (pre_rule_thin_concl G x A J C).
 Proof.
   introv.
   destruct p as [e v q].
@@ -3189,19 +3484,18 @@ Proof.
   }
 
   unfold pre2baresequent; simpl.
-  exact (proof_thin _ G J A C e x nixJ nixC q).
+  exact (proof_thin G J A C e x nixJ nixC q).
 Defined.
 
 Definition finish_proof_function_equality {o}
-           (ctxt : @ProofContext o)
-           (a1 a2 b1 b2 : NTerm)
+           (a1 a2 b1 b2 : @NTerm o)
            (x1 x2 y : NVar)
            (i : nat)
            (H : bhyps)
            (ni : NVin y (vars_hyps H))
-           (p1 : ExtractProof ctxt (pre_rule_function_equality_hyp1 H a1 a2 i))
-           (p2 : ExtractProof ctxt (pre_rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i))
-  : ExtractProof ctxt (pre_rule_function_equality_concl H a1 x1 b1 a2 x2 b2 i).
+           (p1 : ExtractProof (pre_rule_function_equality_hyp1 H a1 a2 i))
+           (p2 : ExtractProof (pre_rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i))
+  : ExtractProof (pre_rule_function_equality_concl H a1 x1 b1 a2 x2 b2 i).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -3210,19 +3504,18 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_function_equality _ a1 a2 b1 b2 e1 e2 x1 x2 y i H ni q1 q2).
+  exact (proof_function_equality a1 a2 b1 b2 e1 e2 x1 x2 y i H ni q1 q2).
 Defined.
 
 Definition finish_proof_apply_equality {o}
-           (ctxt : @ProofContext o)
-           (A B f1 f2 t1 t2 : NTerm)
+           (A B f1 f2 t1 t2 : @NTerm o)
            (x : NVar)
            (H : bhyps)
            (wfA : wf_term A)
            (covA : covered A (vars_hyps H))
-           (p1 : ExtractProof ctxt (pre_rule_apply_equality_hyp1 H f1 f2 A x B))
-           (p2 : ExtractProof ctxt (pre_rule_apply_equality_hyp2 H t1 t2 A))
-  : ExtractProof ctxt (pre_rule_apply_equality_concl H f1 t1 f2 t2 B x).
+           (p1 : ExtractProof (pre_rule_apply_equality_hyp1 H f1 f2 A x B))
+           (p2 : ExtractProof (pre_rule_apply_equality_hyp2 H t1 t2 A))
+  : ExtractProof (pre_rule_apply_equality_concl H f1 t1 f2 t2 B x).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -3231,12 +3524,11 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_apply_equality _ A B f1 f2 t1 t2 e1 e2 x H wfA covA q1 q2).
+  exact (proof_apply_equality A B f1 f2 t1 t2 e1 e2 x H wfA covA q1 q2).
 Defined.
 
 Definition finish_proof_isect_elimination {o}
-           (ctxt : @ProofContext o)
-           (A B C a : NTerm)
+           (A B C a : @NTerm o)
            (f x z : NVar)
            (H J : bhyps)
            (wfa : wf_term a)
@@ -3244,9 +3536,9 @@ Definition finish_proof_isect_elimination {o}
            (nizH : NVin z (vars_hyps H))
            (nizJ : NVin z (vars_hyps J))
            (dzf : z <> f)
-           (p1 : ExtractProof ctxt (pre_rule_isect_elimination_hyp1 A B a f x H J))
-           (p2 : ExtractProof ctxt (pre_rule_isect_elimination_hyp2 A B C a f x z H J))
-  : ExtractProof ctxt (pre_rule_isect_elimination_concl A B C f x H J).
+           (p1 : ExtractProof (pre_rule_isect_elimination_hyp1 A B a f x H J))
+           (p2 : ExtractProof (pre_rule_isect_elimination_hyp2 A B C a f x z H J))
+  : ExtractProof (pre_rule_isect_elimination_concl A B C f x H J).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -3279,12 +3571,11 @@ Proof.
   }
 
   unfold pre2baresequent; simpl.
-  exact (proof_isect_elimination _ A B C a e2 e1 f x z H J wfa cova nizH nizJ dzf q1 q2).
+  exact (proof_isect_elimination A B C a e2 e1 f x z H J wfa cova nizH nizJ dzf q1 q2).
 Defined.
 
 Definition finish_proof_isect_elimination2 {o}
-           (ctxt : @ProofContext o)
-           (A B C a : NTerm)
+           (A B C a : @NTerm o)
            (f x y z : NVar)
            (H J : bhyps)
            (wfa : wf_term a)
@@ -3296,9 +3587,9 @@ Definition finish_proof_isect_elimination2 {o}
            (dzf : z <> f)
            (dzy : z <> y)
            (dyf : y <> f)
-           (p1 : ExtractProof ctxt (pre_rule_isect_elimination_hyp1 A B a f x H J))
-           (p2 : ExtractProof ctxt (pre_rule_isect_elimination2_hyp2 A B C a f x y z H J))
-  : ExtractProof ctxt (pre_rule_isect_elimination2_concl A B C f x H J).
+           (p1 : ExtractProof (pre_rule_isect_elimination_hyp1 A B a f x H J))
+           (p2 : ExtractProof (pre_rule_isect_elimination2_hyp2 A B C a f x y z H J))
+  : ExtractProof (pre_rule_isect_elimination2_concl A B C f x H J).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -3340,21 +3631,20 @@ Proof.
   }
 
   unfold pre2baresequent; simpl.
-  exact (proof_isect_elimination2 _ A B C a e2 e1 f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf q1 q2).
+  exact (proof_isect_elimination2 A B C a e2 e1 f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf q1 q2).
 Defined.
 
 Definition finish_proof_isect_member_equality {o}
-           (ctxt : @ProofContext o)
-           (H : bhyps)
+           (H : @bhyps o)
            (t1 t2 A : NTerm)
            (x : NVar)
            (B : NTerm)
            (z : NVar)
            (i : nat)
            (nizH : NVin z (vars_hyps H))
-           (p1 : ExtractProof ctxt (pre_rule_isect_member_equality_hyp1 H z A t1 t2 B x))
-           (p2 : ExtractProof ctxt (pre_rule_isect_member_equality_hyp2 H A i))
-  : ExtractProof ctxt (pre_rule_isect_member_equality_concl H t1 t2 A x B).
+           (p1 : ExtractProof (pre_rule_isect_member_equality_hyp1 H z A t1 t2 B x))
+           (p2 : ExtractProof (pre_rule_isect_member_equality_hyp2 H A i))
+  : ExtractProof (pre_rule_isect_member_equality_concl H t1 t2 A x B).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -3363,17 +3653,16 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_isect_member_equality _ H t1 t2 A x B e1 e2 z i nizH q1 q2).
+  exact (proof_isect_member_equality H t1 t2 A x B e1 e2 z i nizH q1 q2).
 Defined.
 
 Definition finish_proof_cumulativity {o}
-           (ctxt : @ProofContext o)
-           (H : bhyps)
+           (H : @bhyps o)
            (T : NTerm)
            (i j : nat)
            (lij : i <=? j = true)
-           (p1 : ExtractProof ctxt (pre_rule_cumulativity_hyp H T i))
-  : ExtractProof ctxt (pre_rule_cumulativity_concl H T j).
+           (p1 : ExtractProof (pre_rule_cumulativity_hyp H T i))
+  : ExtractProof (pre_rule_cumulativity_concl H T j).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -3381,15 +3670,14 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_cumulativity _ H T e1 i j lij q1).
+  exact (proof_cumulativity H T e1 i j lij q1).
 Defined.
 
 Definition finish_proof_equality_symmetry {o}
-           (ctxt : @ProofContext o)
-           (H : bhyps)
+           (H : @bhyps o)
            (a b T : NTerm)
-           (p1 : ExtractProof ctxt (pre_rule_equality_seq H b a T))
-  : ExtractProof ctxt (pre_rule_equality_seq H a b T).
+           (p1 : ExtractProof (pre_rule_equality_seq H b a T))
+  : ExtractProof (pre_rule_equality_seq H a b T).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -3397,18 +3685,17 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_equality_symmetry _ H a b T e1 q1).
+  exact (proof_equality_symmetry H a b T e1 q1).
 Defined.
 
 Definition finish_proof_equality_transitivity {o}
-           (ctxt : @ProofContext o)
-           (H : bhyps)
+           (H : @bhyps o)
            (a b c T : NTerm)
            (wfc : wf_term c)
            (covc : covered c (vars_hyps H))
-           (p1 : ExtractProof ctxt (pre_rule_equality_seq H a c T))
-           (p2 : ExtractProof ctxt (pre_rule_equality_seq H c b T))
-  : ExtractProof ctxt (pre_rule_equality_seq H a b T).
+           (p1 : ExtractProof (pre_rule_equality_seq H a c T))
+           (p2 : ExtractProof (pre_rule_equality_seq H c b T))
+  : ExtractProof (pre_rule_equality_seq H a b T).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -3417,18 +3704,17 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_equality_transitivity _ H a b c T e1 e2 wfc covc q1 q2).
+  exact (proof_equality_transitivity H a b c T e1 e2 wfc covc q1 q2).
 Defined.
 
 Definition finish_proof_cequiv_transitivity {o}
-           (ctxt : @ProofContext o)
-           (H : bhyps)
+           (H : @bhyps o)
            (a b c : NTerm)
            (wfc : wf_term c)
            (covc : covered c (vars_hyps H))
-           (p1 : ExtractProof ctxt (pre_rule_cequiv_seq H a c))
-           (p2 : ExtractProof ctxt (pre_rule_cequiv_seq H c b))
-  : ExtractProof ctxt (pre_rule_cequiv_seq H a b).
+           (p1 : ExtractProof (pre_rule_cequiv_seq H a c))
+           (p2 : ExtractProof (pre_rule_cequiv_seq H c b))
+  : ExtractProof (pre_rule_cequiv_seq H a b).
 Proof.
   introv.
   destruct p1 as [e1 v1 q1].
@@ -3437,203 +3723,202 @@ Proof.
   exists (@mk_axiom o).
   { apply valid_pre_extract_axiom. }
   unfold pre2baresequent; simpl.
-  exact (proof_cequiv_transitivity _ H a b c e1 e2 wfc covc q1 q2).
+  exact (proof_cequiv_transitivity H a b c e1 e2 wfc covc q1 q2).
 Defined.
 
 Fixpoint finish_pre_proof {o}
-         {ctxt  : @ProofContext o}
-         {s     : pre_baresequent}
-         (p     : pre_proof ctxt s)
-  : option (ExtractProof ctxt s) :=
+         {s : @pre_baresequent o}
+         (p : pre_proof s)
+  : option (ExtractProof s) :=
   match p with
-  | pre_proof_from_ctxt _ c H i => Some (finish_proof_from_context ctxt c H i)
+  | pre_proof_from_ctxt c H => Some (finish_proof_from_context c H)
 
-  | pre_proof_hole _ s => None
+  | pre_proof_hole s => None
 
-  | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+  | pre_proof_isect_eq a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
     | Some p1, Some p2 =>
-      Some (finish_proof_isect_eq ctxt a1 a2 b1 b2 x1 x2 y i H niyH p1 p2)
+      Some (finish_proof_isect_eq a1 a2 b1 b2 x1 x2 y i H niyH p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+  | pre_proof_isect_member_formation A x B z i H nizH prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
     | Some p1, Some p2 =>
-      Some (finish_proof_isect_member_formation ctxt A x B z i H nizH p1 p2)
+      Some (finish_proof_isect_member_formation A x B z i H nizH p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_approx_refl _ a H => Some (finish_proof_approx_refl ctxt a H)
+  | pre_proof_approx_refl a H => Some (finish_proof_approx_refl a H)
 
-  | pre_proof_cequiv_refl _ a H => Some (finish_proof_cequiv_refl ctxt a H)
+  | pre_proof_cequiv_refl a H => Some (finish_proof_cequiv_refl a H)
 
-  | pre_proof_cequiv_alpha_eq _ a b H aeq => Some (finish_proof_cequiv_alpha_eq ctxt a b H aeq)
+  | pre_proof_cequiv_alpha_eq a b H aeq => Some (finish_proof_cequiv_alpha_eq a b H aeq)
 
-  | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
+  | pre_proof_cequiv_approx a b H prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
-    | Some p1, Some p2 => Some (finish_proof_cequiv_approx ctxt a b H p1 p2)
+    | Some p1, Some p2 => Some (finish_proof_cequiv_approx a b H p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+  | pre_proof_approx_eq a1 a2 b1 b2 i H prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
-    | Some p1, Some p2 => Some (finish_proof_approx_eq ctxt a1 a2 b1 b2 i H p1 p2)
+    | Some p1, Some p2 => Some (finish_proof_approx_eq a1 a2 b1 b2 i H p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+  | pre_proof_cequiv_eq a1 a2 b1 b2 i H prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
-    | Some p1, Some p2 => Some (finish_proof_cequiv_eq ctxt a1 a2 b1 b2 i H p1 p2)
+    | Some p1, Some p2 => Some (finish_proof_cequiv_eq a1 a2 b1 b2 i H p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_cut _ B C x H wfB covB nixH prf1 prf2 =>
+  | pre_proof_cut B C x H wfB covB nixH prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
-    | Some p1, Some p2 => Some (finish_proof_cut ctxt B C x H wfB covB nixH p1 p2)
+    | Some p1, Some p2 => Some (finish_proof_cut B C x H wfB covB nixH p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_hypothesis _ x A G J => Some (finish_proof_hypothesis ctxt x A G J)
+  | pre_proof_hypothesis x A G J => Some (finish_proof_hypothesis x A G J)
 
-  | pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2 =>
+  | pre_proof_cequiv_subst_concl C x a b H wfa wfb cova covb prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
-    | Some p1, Some p2 => Some (finish_proof_cequiv_subst_concl ctxt C x a b H wfa wfb cova covb p1 p2)
+    | Some p1, Some p2 => Some (finish_proof_cequiv_subst_concl C x a b H wfa wfb cova covb p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2 =>
+  | pre_proof_cequiv_subst_hyp H z T x a b J C wfa wfb cova covb prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
-    | Some p1, Some p2 => Some (finish_proof_cequiv_subst_hyp ctxt H z T x a b J C wfa wfb cova covb p1 p2)
+    | Some p1, Some p2 => Some (finish_proof_cequiv_subst_hyp H z T x a b J C wfa wfb cova covb p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_cequiv_computation _ a b H r =>
-    Some (finish_proof_cequiv_computation ctxt a b H r)
+  | pre_proof_cequiv_computation lib a b H r =>
+    Some (finish_proof_cequiv_computation lib a b H r)
 
-  | pre_proof_cequiv_computation_aeq _ a b c H r aeq =>
-    Some (finish_proof_cequiv_computation_aeq ctxt a b c H r aeq)
+  | pre_proof_cequiv_computation_aeq lib a b c H r aeq =>
+    Some (finish_proof_cequiv_computation_aeq lib a b c H r aeq)
 
-  | pre_proof_cequiv_computation_atmost _ a b n H r =>
-    Some (finish_proof_cequiv_computation_atmost ctxt a b n H r)
+  | pre_proof_cequiv_computation_atmost lib a b n H r =>
+    Some (finish_proof_cequiv_computation_atmost lib a b n H r)
 
-  | pre_proof_unfold_abstractions _ abs a H unf prf =>
+  | pre_proof_unfold_abstractions lib abs a H unf prf =>
     match finish_pre_proof prf with
-    | Some p => Some (finish_proof_unfold_abstractions ctxt abs a H unf p)
+    | Some p => Some (finish_proof_unfold_abstractions lib abs a H unf p)
     | _ => None
     end
 
-  | pre_proof_rev_unfold_abstractions _ abs a H wfa cova unf prf =>
+  | pre_proof_rev_unfold_abstractions lib abs a H wfa cova unf prf =>
     match finish_pre_proof prf with
-    | Some p => Some (finish_proof_rev_unfold_abstractions ctxt abs a H wfa cova unf p)
+    | Some p => Some (finish_proof_rev_unfold_abstractions lib abs a H wfa cova unf p)
     | _ => None
     end
 
-  | pre_proof_universe_equality _ i j H ltij =>
-    Some (finish_proof_universe_equality ctxt i j H ltij)
+  | pre_proof_universe_equality i j H ltij =>
+    Some (finish_proof_universe_equality i j H ltij)
 
-  | pre_proof_hypothesis_equality _ x A G J =>
-    Some (finish_proof_hypothesis_equality ctxt x A G J)
+  | pre_proof_hypothesis_equality x A G J =>
+    Some (finish_proof_hypothesis_equality x A G J)
 
-  | pre_proof_maybe_hidden_hypothesis_equality _ x A G J b =>
-    Some (finish_proof_maybe_hidden_hypothesis_equality ctxt x A G J b)
+  | pre_proof_maybe_hidden_hypothesis_equality x A G J b =>
+    Some (finish_proof_maybe_hidden_hypothesis_equality x A G J b)
 
-  | pre_proof_unhide_equality _ x A t1 t2 C G J prf =>
+  | pre_proof_unhide_equality x A t1 t2 C G J prf =>
     match finish_pre_proof prf with
-    | Some p => Some (finish_proof_unhide_equality ctxt x A t1 t2 C G J p)
+    | Some p => Some (finish_proof_unhide_equality x A t1 t2 C G J p)
     | _ => None
     end
 
-  | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+  | pre_proof_equality_equality A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
     match finish_pre_proof prf1,
           finish_pre_proof prf2,
           finish_pre_proof prf3 with
     | Some p1, Some p2, Some p3 =>
-      Some (finish_proof_equality_equality ctxt A B a1 a2 b1 b2 i H p1 p2 p3)
+      Some (finish_proof_equality_equality A B a1 a2 b1 b2 i H p1 p2 p3)
     | _, _, _ => None
     end
 
-  | pre_proof_integer_equality _ n H =>
-    Some (finish_proof_integer_equality ctxt n H)
+  | pre_proof_integer_equality n H =>
+    Some (finish_proof_integer_equality n H)
 
-  | pre_proof_introduction _ t C H wft covt nout prf =>
+  | pre_proof_introduction t C H wft covt nout prf =>
     match finish_pre_proof prf with
-    | Some p => Some (finish_proof_introduction ctxt t C H wft covt nout p)
+    | Some p => Some (finish_proof_introduction t C H wft covt nout p)
     | _ => None
     end
 
-  | pre_proof_axiom_equality _ a b T H prf =>
+  | pre_proof_axiom_equality a b T H prf =>
     match finish_pre_proof prf with
-    | Some p => Some (finish_proof_axiom_equality ctxt a b T H p)
+    | Some p => Some (finish_proof_axiom_equality a b T H p)
     | _ => None
     end
 
-  | pre_proof_thin _ G J A C x nixJ nixC prf =>
+  | pre_proof_thin G J A C x nixJ nixC prf =>
     match finish_pre_proof prf with
-    | Some p => Some (finish_proof_thin ctxt G J A C x nixJ nixC p)
+    | Some p => Some (finish_proof_thin G J A C x nixJ nixC p)
     | _ => None
     end
 
-  | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+  | pre_proof_function_equality a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
     | Some p1, Some p2 =>
-      Some (finish_proof_function_equality ctxt a1 a2 b1 b2 x1 x2 y i H niyH p1 p2)
+      Some (finish_proof_function_equality a1 a2 b1 b2 x1 x2 y i H niyH p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+  | pre_proof_apply_equality A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
     | Some p1, Some p2 =>
-      Some (finish_proof_apply_equality ctxt A B f1 f2 t1 t2 x H wfA covA p1 p2)
+      Some (finish_proof_apply_equality A B f1 f2 t1 t2 x H wfA covA p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
+  | pre_proof_isect_elimination A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
     | Some p1, Some p2 =>
-      Some (finish_proof_isect_elimination ctxt A B C a f x z H J wfa cova nizH nizJ dzf p1 p2)
+      Some (finish_proof_isect_elimination A B C a f x z H J wfa cova nizH nizJ dzf p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+  | pre_proof_isect_elimination2 A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
     | Some p1, Some p2 =>
-      Some (finish_proof_isect_elimination2 ctxt A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf p1 p2)
+      Some (finish_proof_isect_elimination2 A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+  | pre_proof_isect_member_equality H t1 t2 A x B z i nizH prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
     | Some p1, Some p2 =>
-      Some (finish_proof_isect_member_equality ctxt H t1 t2 A x B z i nizH p1 p2)
+      Some (finish_proof_isect_member_equality H t1 t2 A x B z i nizH p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_cumulativity _ H T i j lij prf1 =>
+  | pre_proof_cumulativity H T i j lij prf1 =>
     match finish_pre_proof prf1 with
     | Some p1 =>
-      Some (finish_proof_cumulativity ctxt H T i j lij p1)
+      Some (finish_proof_cumulativity H T i j lij p1)
     | _ => None
     end
 
-  | pre_proof_equality_symmetry _ H a b T prf1 =>
+  | pre_proof_equality_symmetry H a b T prf1 =>
     match finish_pre_proof prf1 with
     | Some p1 =>
-      Some (finish_proof_equality_symmetry ctxt H a b T p1)
+      Some (finish_proof_equality_symmetry H a b T p1)
     | _ => None
     end
 
-  | pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2 =>
+  | pre_proof_equality_transitivity H a b c T wfc covc prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
     | Some p1, Some p2 =>
-      Some (finish_proof_equality_transitivity ctxt H a b c T wfc covc p1 p2)
+      Some (finish_proof_equality_transitivity H a b c T wfc covc p1 p2)
     | _, _ => None
     end
 
-  | pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2 =>
+  | pre_proof_cequiv_transitivity H a b c wfc covc prf1 prf2 =>
     match finish_pre_proof prf1, finish_pre_proof prf2 with
     | Some p1, Some p2 =>
-      Some (finish_proof_cequiv_transitivity ctxt H a b c wfc covc p1 p2)
+      Some (finish_proof_cequiv_transitivity H a b c wfc covc p1 p2)
     | _, _ => None
     end
   end.
@@ -3651,8 +3936,7 @@ Qed.
 Hint Resolve valid_pre_extract_nil_implies_valid_extract : slow.
 
 Definition finish_pre_proof_seq {o}
-           {ctxt : @ProofContext o}
-           (pps  : pre_proof_seq ctxt)
+           (pps : @pre_proof_seq o)
   : option RigidLibraryEntry :=
   match pps with
   | MkPreProofSeq name C isp pre_prf =>
@@ -3660,7 +3944,6 @@ Definition finish_pre_proof_seq {o}
     | Some (MkExtractProof ext valid prf) =>
 
       Some (RigidLibraryEntry_proof
-              ctxt
               name
               C
               ext
@@ -3673,15 +3956,14 @@ Definition finish_pre_proof_seq {o}
   end.
 
 Lemma name_of_finish_pre_proof_seq {o} :
-  forall {ctxt}
-         (p     : @pre_proof_seq o ctxt)
+  forall (p     : @pre_proof_seq o)
          (name  : LemmaName)
          (stmt  : NTerm)
          (ext   : NTerm)
          (isp   : isprog stmt)
          (valid : valid_extract ext)
-         (prf   : proof ctxt (NLemma stmt ext)),
-    finish_pre_proof_seq p = Some (RigidLibraryEntry_proof ctxt name stmt ext isp valid prf)
+         (prf   : proof (NLemma stmt ext)),
+    finish_pre_proof_seq p = Some (RigidLibraryEntry_proof name stmt ext isp valid prf)
     -> pre_proof_seq_name p = name.
 Proof.
   introv h.
@@ -3696,13 +3978,9 @@ Qed.
 Definition SoftLibrary_add_entry {o}
            (state : @SoftLibrary o)
            (entry : RigidLibraryEntry)
-  : !entry_in_lib entry (RigidLibrary2ProofContext state)
-    -> pre_proofs (RigidLibrary2ProofContext state)
-    -> SoftLibrary :=
+           (pps   : pre_proofs) : SoftLibrary :=
   match state with
-  | MkSoftLibrary L _ =>
-    fun ni pps => MkSoftLibrary (entry :: L)
-                               (pre_proofs_cons entry ni pps)
+  | MkSoftLibrary L _ => MkSoftLibrary (entry :: L) pps
   end.
 
 Definition SoftLibrary_finish_proof {o}
@@ -3712,13 +3990,7 @@ Definition SoftLibrary_finish_proof {o}
   | (Some pp, pps) =>
 
     match finish_pre_proof_seq pp with
-    | Some entry =>
-
-      match entry_in_lib_dec entry (RigidLibrary2lib state) with
-      | inl p => MkUpdRes state [could_not_finish_proof_because_entry_exists_in_lib]
-      | inr p => MkUpdRes (SoftLibrary_add_entry state entry p pps) [finished_proof]
-      end
-
+    | Some entry => MkUpdRes (SoftLibrary_add_entry state entry pps) [finished_proof]
     | None => MkUpdRes state [could_not_finish_proof]
     end
 
@@ -3727,7 +3999,7 @@ Definition SoftLibrary_finish_proof {o}
 
 Definition SoftLibrary_change_unfinished {o}
            (state : @SoftLibrary o)
-  : pre_proofs (RigidLibrary2ProofContext state) -> SoftLibrary :=
+  : pre_proofs -> SoftLibrary :=
   match state with
   | MkSoftLibrary L _ => fun l => MkSoftLibrary L l
   end.
@@ -3822,40 +4094,40 @@ Definition apply_proof_step {o} {ctxt}
   end.
  *)
 
-Definition apply_proof_step_isect_eq {o} {ctxt}
+Definition apply_proof_step_isect_eq {o}
            (s : @pre_baresequent o)
-           (y : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (y : NVar) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
     match NVin_dec y (vars_hyps H) with
     | inl p =>
 
-      match C return pre_proof ctxt (MkPreBaresequent H C) * DEBUG_MSG with
+      match C return pre_proof (MkPreBaresequent H C) * DEBUG_MSG with
       | pre_concl_ext
           (oterm (Can NEquality)
                  [bterm [] (oterm (Can NIsect) [bterm [] a1, bterm [x1] b1]),
                   bterm [] (oterm (Can NIsect) [bterm [] a2, bterm [x2] b2]),
                   bterm [] (oterm (Can (NUni i)) [])]) =>
 
-        let prf1 := pre_proof_hole ctxt (pre_rule_isect_equality_hyp1 a1 a2 i H) in
-        let prf2 := pre_proof_hole ctxt (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H) in
-        (pre_proof_isect_eq ctxt a1 a2 b1 b2 x1 x2 y i H p prf1 prf2,
+        let prf1 := pre_proof_hole (pre_rule_isect_equality_hyp1 a1 a2 i H) in
+        let prf2 := pre_proof_hole (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H) in
+        (pre_proof_isect_eq a1 a2 b1 b2 x1 x2 y i H p prf1 prf2,
          applied_isect_eq_rule)
 
-      | c => (pre_proof_hole _ (MkPreBaresequent H c),
+      | c => (pre_proof_hole (MkPreBaresequent H c),
               could_not_apply_isect_eq_rule)
       end
 
-    | _ => (pre_proof_hole _ (MkPreBaresequent H C),
+    | _ => (pre_proof_hole (MkPreBaresequent H C),
             could_not_apply_isect_eq_rule)
     end
   end.
 
-Definition apply_proof_step_isect_member_formation {o} {ctxt}
+Definition apply_proof_step_isect_member_formation {o}
            (s : @pre_baresequent o)
            (z : NVar)
-           (i : nat) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (i : nat) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -3865,16 +4137,16 @@ Definition apply_proof_step_isect_member_formation {o} {ctxt}
       match C with
       | pre_concl_ext (oterm (Can NIsect) [bterm [] A, bterm [x] B]) =>
 
-        let prf1 := pre_proof_hole ctxt (pre_rule_isect_member_formation_hyp1 z A x B H) in
-        let prf2 := pre_proof_hole ctxt (pre_rule_isect_member_formation_hyp2 A i H) in
-        (pre_proof_isect_member_formation ctxt A x B z i H p prf1 prf2,
+        let prf1 := pre_proof_hole (pre_rule_isect_member_formation_hyp1 z A x B H) in
+        let prf2 := pre_proof_hole (pre_rule_isect_member_formation_hyp2 A i H) in
+        (pre_proof_isect_member_formation A x B z i H p prf1 prf2,
          applied_isect_member_formation_rule)
 
-      | c => (pre_proof_hole _ (MkPreBaresequent H c),
+      | c => (pre_proof_hole (MkPreBaresequent H c),
               could_not_apply_isect_member_formation_rule)
       end
 
-    | _ => (pre_proof_hole _ (MkPreBaresequent H C),
+    | _ => (pre_proof_hole (MkPreBaresequent H C),
             could_not_apply_isect_member_formation_rule)
     end
   end.
@@ -4022,9 +4294,9 @@ Fixpoint find_hypothesis_name_from_nat {o} (H : @bhyps o) (n : nat) : option NVa
     end
   end.
 
-Definition apply_proof_step_hypothesis {o} {ctxt}
+Definition apply_proof_step_hypothesis {o}
            (s : @pre_baresequent o)
-           (x : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (x : NVar) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4041,30 +4313,30 @@ Definition apply_proof_step_hypothesis {o} {ctxt}
           (eq_rect
              _
              _
-             (pre_proof_hypothesis ctxt x A G J)
+             (pre_proof_hypothesis x A G J)
              _
              (pre_rule_hypothesis_concl_as_pre_baresequent H G x A J T q p),
            applied_hypothesis_rule)
 
-        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+        | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                    could_not_apply_hypothesis_rule_because_different_types A T)
         end
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                  could_not_apply_hypothesis_rule_because_couldnt_find_hypothesis)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_hypothesis_rule)
     end
   end.
 
-Definition apply_proof_step_hypothesis_num {o} {ctxt}
+Definition apply_proof_step_hypothesis_num {o}
            (s : @pre_baresequent o)
-           (n : nat) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (n : nat) : pre_proof s * @DEBUG_MSG o :=
   match find_hypothesis_name_from_nat (pre_hyps s) n with
   | Some name => apply_proof_step_hypothesis s name
-  | None => (pre_proof_hole _ s, could_not_apply_hypothesis_rule)
+  | None => (pre_proof_hole s, could_not_apply_hypothesis_rule)
   end.
 
 (* MOVE to terms_deq_op *)
@@ -4124,10 +4396,10 @@ Defined.
 
 (* we need semi-deciders for wf_term B, covered B (var_hyps H), and NVin x (vars_hyps H) *)
 
-Definition apply_proof_step_cut {o} {ctxt}
+Definition apply_proof_step_cut {o}
            (s : @pre_baresequent o)
            (x : NVar)
-           (B : NTerm) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (B : NTerm) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4143,31 +4415,32 @@ Definition apply_proof_step_cut {o} {ctxt}
           match NVin_dec x (vars_hyps H) with
           | inl nixH =>
 
-            let prf1 := pre_proof_hole ctxt (pre_rule_cut_hyp1 H B) in
-            let prf2 := pre_proof_hole ctxt (pre_rule_cut_hyp2 H x B T) in
-            (pre_proof_cut ctxt B T x H wfB covB nixH prf1 prf2,
+            let prf1 := pre_proof_hole (pre_rule_cut_hyp1 H B) in
+            let prf2 := pre_proof_hole (pre_rule_cut_hyp2 H x B T) in
+            (pre_proof_cut B T x H wfB covB nixH prf1 prf2,
              applied_cut_rule)
 
-          | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+          | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                       could_not_apply_cut_rule)
           end
 
-        | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+        | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                     could_not_apply_cut_rule)
         end
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                  could_not_apply_cut_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_cut_rule)
     end
   end.
 
-Definition apply_proof_step_cequiv_computation {o} {ctxt}
+Definition apply_proof_step_cequiv_computation {o}
+           (lib : library)
            (s : @pre_baresequent o)
-           (n : nat) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (n : nat) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4177,37 +4450,38 @@ Definition apply_proof_step_cequiv_computation {o} {ctxt}
       match T with
       | oterm (Can NCequiv) [bterm [] a, bterm [] b] =>
 
-        let x := compute_atmost_k_steps ctxt n a in
+        let x := compute_atmost_k_steps lib n a in
         match term_dec_op x b with
         | Some p =>
 
           (pre_proof_cequiv_computation
-             ctxt a b H
+             lib a b H
              (eq_rect
                 _
                 _
-                (reduces_to_of_compute_atmost_k_steps ctxt n a)
+                (reduces_to_of_compute_atmost_k_steps lib n a)
                 _
                 p),
            applied_cequiv_computation_rule)
 
-        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
+        | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
                    could_not_apply_cequiv_computation_rule_terms_not_equal a x b)
         end
 
-      | t => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext t)),
+      | t => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext t)),
               could_not_apply_cequiv_computation_rule_not_cequiv)
       end
 
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_cequiv_computation_rule)
     end
   end.
 
-Definition apply_proof_step_cequiv_computation_aeq {o} {ctxt}
+Definition apply_proof_step_cequiv_computation_aeq {o}
+           (lib : library)
            (s : @pre_baresequent o)
-           (n : nat) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (n : nat) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4217,26 +4491,26 @@ Definition apply_proof_step_cequiv_computation_aeq {o} {ctxt}
       match T with
       | oterm (Can NCequiv) [bterm [] a, bterm [] b] =>
 
-        let x := compute_atmost_k_steps ctxt n a in
+        let x := compute_atmost_k_steps lib n a in
         match alpha_eq_dec_op x b with
         | Some p =>
 
           (pre_proof_cequiv_computation_aeq
-             ctxt a x b H
-             (reduces_to_of_compute_atmost_k_steps ctxt n a)
+             lib a x b H
+             (reduces_to_of_compute_atmost_k_steps lib n a)
              p,
            applied_cequiv_computation_aeq_rule)
 
-        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
+        | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
                    could_not_apply_cequiv_computation_aeq_rule_terms_not_equal a x b)
         end
 
-      | t => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext t)),
+      | t => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext t)),
               could_not_apply_cequiv_computation_aeq_rule_not_cequiv)
       end
 
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_cequiv_computation_aeq_rule)
     end
   end.
@@ -4250,10 +4524,10 @@ Proof.
   introv e; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_cequiv_subst_concl {o} {ctxt}
+Definition apply_proof_step_cequiv_subst_concl {o}
            (s : @pre_baresequent o)
            (x : NVar)
-           (X a b : NTerm) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (X a b : NTerm) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4275,37 +4549,37 @@ Definition apply_proof_step_cequiv_subst_concl {o} {ctxt}
               match covered_decidable b (vars_hyps H) with
               | inl covb =>
 
-                let prf1 := pre_proof_hole ctxt (pre_rule_cequiv_subst_hyp2 H a b) in
-                let prf2 := pre_proof_hole ctxt (pre_rule_cequiv_subst_hyp1 H x X b) in
+                let prf1 := pre_proof_hole (pre_rule_cequiv_subst_hyp2 H a b) in
+                let prf2 := pre_proof_hole (pre_rule_cequiv_subst_hyp1 H x X b) in
                 (eq_rect
                    _
                    _
-                   (pre_proof_cequiv_subst_concl ctxt X x a b H wfa wfb cova covb prf1 prf2)
+                   (pre_proof_cequiv_subst_concl X x a b H wfa wfb cova covb prf1 prf2)
                    _
                    (pre_rule_cequiv_subst_hyp1_as_pre_baresequent H T x X a p),
                  applied_cequiv_subst_concl_rule)
 
-              | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+              | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                           could_not_apply_cequiv_subst_concl_rule)
               end
 
-            | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+            | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                         could_not_apply_cequiv_subst_concl_rule)
             end
 
-          | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+          | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                      could_not_apply_cequiv_subst_concl_rule)
           end
 
-        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+        | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                    could_not_apply_cequiv_subst_concl_rule)
         end
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                  could_not_apply_cequiv_subst_concl_rule_not_subst x X a b (subst X x a) T)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_cequiv_subst_concl_rule)
     end
   end.
@@ -4320,10 +4594,10 @@ Proof.
   introv i j; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_cequiv_subst_hyp {o} {ctxt}
+Definition apply_proof_step_cequiv_subst_hyp {o}
            (s : @pre_baresequent o)
            (z x : NVar)
-           (X a b : NTerm) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (X a b : NTerm) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4348,53 +4622,53 @@ Definition apply_proof_step_cequiv_subst_hyp {o} {ctxt}
                 match covered_decidable b (vars_hyps G) with
                 | inl covb =>
 
-                  let prf1 := pre_proof_hole ctxt (pre_rule_cequiv_subst_hyp_hyp2 G z X x a J b) in
-                  let prf2 := pre_proof_hole ctxt (pre_rule_cequiv_subst_hyp_hyp1 G z X x b J T) in
+                  let prf1 := pre_proof_hole (pre_rule_cequiv_subst_hyp_hyp2 G z X x a J b) in
+                  let prf2 := pre_proof_hole (pre_rule_cequiv_subst_hyp_hyp1 G z X x b J T) in
                   (eq_rect
                      _
                      _
-                     (pre_proof_cequiv_subst_hyp ctxt G z X x a b J T wfa wfb cova covb prf1 prf2)
+                     (pre_proof_cequiv_subst_hyp G z X x a b J T wfa wfb cova covb prf1 prf2)
                      _
                      (pre_rule_cequiv_subst_hyp_concl_as_pre_baresequent H G z X x a J T U q p),
                    applied_cequiv_subst_hyp_rule)
 
-                | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                             could_not_apply_cequiv_subst_hyp_rule)
                 end
 
-              | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+              | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                           could_not_apply_cequiv_subst_hyp_rule)
               end
 
-            | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+            | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                        could_not_apply_cequiv_subst_hyp_rule)
             end
 
-          | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+          | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                      could_not_apply_cequiv_subst_hyp_rule)
           end
 
-        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+        | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                    could_not_apply_cequiv_subst_hyp_rule)
         end
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                  could_not_apply_cequiv_subst_hyp_rule_not_subst)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_cequiv_subst_hyp_rule)
     end
   end.
 
-Definition apply_proof_step_cequiv_subst_hyp_num {o} {ctxt}
+Definition apply_proof_step_cequiv_subst_hyp_num {o}
            (s : @pre_baresequent o)
            (n : nat)
            (x : NVar)
-           (X a b : NTerm) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (X a b : NTerm) : pre_proof s * @DEBUG_MSG o :=
   match find_hypothesis_name_from_nat (pre_hyps s) n with
   | Some name => apply_proof_step_cequiv_subst_hyp s name x X a b
-  | None => (pre_proof_hole _ s, could_not_apply_hypothesis_rule)
+  | None => (pre_proof_hole s, could_not_apply_hypothesis_rule)
   end.
 
 Lemma pre_rule_universe_equality_concl_as_pre_baresequent {o} :
@@ -4406,8 +4680,8 @@ Proof.
   introv e; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_universe_eq {o} {ctxt}
-           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+Definition apply_proof_step_universe_eq {o}
+           (s : @pre_baresequent o) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4427,20 +4701,20 @@ Definition apply_proof_step_universe_eq {o} {ctxt}
           (eq_rect
              _
              _
-             (pre_proof_universe_equality ctxt j1 i H p)
+             (pre_proof_universe_equality j1 i H p)
              _
              (pre_rule_universe_equality_concl_as_pre_baresequent H i j1 j2 e),
            applied_universe_eq_rule)
 
-        | right _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_uni j1) (mk_uni j2) (mk_uni i)))),
+        | right _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_uni j1) (mk_uni j2) (mk_uni i)))),
                       could_not_apply_universe_eq_rule_not_less_than_universe j1 i)
         end
 
-      | right _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_uni j1) (mk_uni j2) (mk_uni i)))),
+      | right _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_uni j1) (mk_uni j2) (mk_uni i)))),
                     could_not_apply_universe_eq_rule_not_equal_universes j2 j1)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_universe_eq_rule)
     end
   end.
@@ -4456,8 +4730,8 @@ Proof.
   introv e1 e2 e3; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_hypothesis_eq {o} {ctxt}
-           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+Definition apply_proof_step_hypothesis_eq {o}
+           (s : @pre_baresequent o) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4480,24 +4754,24 @@ Definition apply_proof_step_hypothesis_eq {o} {ctxt}
             (eq_rect
                _
                _
-               (pre_proof_hypothesis_equality ctxt v1 A G J)
+               (pre_proof_hypothesis_equality v1 A G J)
                _
                (pre_rule_hypothesis_equality_concl_as_pre_baresequent H G J v1 v2 A B q e p),
              applied_hypothesis_equality_rule)
 
-          | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_var v1) (mk_var v2) A))),
+          | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_var v1) (mk_var v2) A))),
                      could_not_apply_hypothesis_equality_rule_terms_dont_match B A)
           end
 
-        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_var v1) (mk_var v2) A))),
+        | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_var v1) (mk_var v2) A))),
                    could_not_apply_hypothesis_equality_rule_couldnt_find_hypothesis s)
         end
 
-      | right _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_var v1) (mk_var v2) A))),
+      | right _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_var v1) (mk_var v2) A))),
                     could_not_apply_hypothesis_equality_rule_variables_dont_match v2 v1)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_hypothesis_equality_rule_not_an_equality c)
     end
   end.
@@ -4566,8 +4840,8 @@ Proof.
   introv e1 e2 e3; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_maybe_hidden_hypothesis_eq {o} {ctxt}
-           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+Definition apply_proof_step_maybe_hidden_hypothesis_eq {o}
+           (s : @pre_baresequent o) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4590,24 +4864,24 @@ Definition apply_proof_step_maybe_hidden_hypothesis_eq {o} {ctxt}
             (eq_rect
                _
                _
-               (pre_proof_maybe_hidden_hypothesis_equality ctxt v1 A G J b)
+               (pre_proof_maybe_hidden_hypothesis_equality v1 A G J b)
                _
                (pre_rule_maybe_hidden_hypothesis_equality_concl_as_pre_baresequent H G J v1 v2 A B b q e p),
              applied_maybe_hidden_hypothesis_equality_rule)
 
-          | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_var v1) (mk_var v2) A))),
+          | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_var v1) (mk_var v2) A))),
                      could_not_apply_maybe_hidden_hypothesis_equality_rule_terms_dont_match B A)
           end
 
-        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_var v1) (mk_var v2) A))),
+        | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_var v1) (mk_var v2) A))),
                    could_not_apply_maybe_hidden_hypothesis_equality_rule_couldnt_find_hypothesis s)
         end
 
-      | right _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_var v1) (mk_var v2) A))),
+      | right _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_var v1) (mk_var v2) A))),
                     could_not_apply_maybe_hidden_hypothesis_equality_rule_variables_dont_match v2 v1)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_maybe_hidden_hypothesis_equality_rule_not_an_equality c)
     end
   end.
@@ -4621,9 +4895,9 @@ Proof.
   introv e; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_unhide_equality {o} {ctxt}
+Definition apply_proof_step_unhide_equality {o}
            (s : @pre_baresequent o)
-           (x : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (x : NVar) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4636,26 +4910,26 @@ Definition apply_proof_step_unhide_equality {o} {ctxt}
       match find_hhypothesis_eq H x with
       | Some (dhhyps G A J q) =>
 
-        let prf := pre_proof_hole ctxt (pre_rule_unhide_equality_hyp G J x A t1 t2 T) in
+        let prf := pre_proof_hole (pre_rule_unhide_equality_hyp G J x A t1 t2 T) in
         (eq_rect
            _
            _
-           (pre_proof_unhide_equality ctxt x A t1 t2 T G J prf)
+           (pre_proof_unhide_equality x A t1 t2 T G J prf)
            _
            (pre_rule_unhide_equality_concl_as_pre_baresequent H G J x A t1 t2 T q),
          applied_unhide_equality_rule)
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality t1 t2 T))),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality t1 t2 T))),
                  could_not_apply_unhide_equality_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_unhide_equality_rule)
     end
   end.
 
-Definition apply_proof_step_equality_equality {o} {ctxt}
-           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+Definition apply_proof_step_equality_equality {o}
+           (s : @pre_baresequent o) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4665,13 +4939,13 @@ Definition apply_proof_step_equality_equality {o} {ctxt}
                                 bterm [] (oterm (Can NEquality) [bterm [] b1, bterm [] b2, bterm [] B]),
                                 bterm [] (oterm (Can (NUni i)) [])]) =>
 
-        let prf1 := pre_proof_hole ctxt (pre_rule_equality_equality_hyp1 H A B i) in
-        let prf2 := pre_proof_hole ctxt (pre_rule_equality_equality_hyp2 H a1 b1 A) in
-        let prf3 := pre_proof_hole ctxt (pre_rule_equality_equality_hyp2 H a2 b2 A) in
-        (pre_proof_equality_equality ctxt A B a1 a2 b1 b2 i H prf1 prf2 prf3,
+        let prf1 := pre_proof_hole (pre_rule_equality_equality_hyp1 H A B i) in
+        let prf2 := pre_proof_hole (pre_rule_equality_equality_hyp2 H a1 b1 A) in
+        let prf3 := pre_proof_hole (pre_rule_equality_equality_hyp2 H a2 b2 A) in
+        (pre_proof_equality_equality A B a1 a2 b1 b2 i H prf1 prf2 prf3,
          applied_equality_equality_rule)
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_equality_equality_rule)
     end
   end.
@@ -4685,8 +4959,8 @@ Proof.
   introv e; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_integer_equality {o} {ctxt}
-           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+Definition apply_proof_step_integer_equality {o}
+           (s : @pre_baresequent o) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4702,16 +4976,16 @@ Definition apply_proof_step_integer_equality {o} {ctxt}
         (eq_rect
            _
            _
-           (pre_proof_integer_equality ctxt n1 H)
+           (pre_proof_integer_equality n1 H)
            _
            (pre_rule_integer_equality_concl_as_pre_baresequent H n1 n2 p),
          applied_integer_equality_rule)
 
-      | right _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_integer n1) (mk_integer n2) mk_int))),
+      | right _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_integer n1) (mk_integer n2) mk_int))),
                     could_not_apply_integer_equality_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_integer_equality_rule)
     end
   end.
@@ -4726,9 +5000,9 @@ Proof.
   intro xx; inversion xx.
 Defined.
 
-Definition apply_proof_step_introduction {o} {ctxt}
+Definition apply_proof_step_introduction {o}
            (s : @pre_baresequent o)
-           (t : @NTerm o) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (t : @NTerm o) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4744,23 +5018,23 @@ Definition apply_proof_step_introduction {o} {ctxt}
           match noutokens_decidable t with
           | inl nout =>
 
-            let prf1 := pre_proof_hole ctxt (pre_rule_introduction_hyp H T t) in
-            (pre_proof_introduction ctxt t T H wft covt nout prf1,
+            let prf1 := pre_proof_hole (pre_rule_introduction_hyp H T t) in
+            (pre_proof_introduction t T H wft covt nout prf1,
              applied_introduction_rule)
 
-          | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+          | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                       could_not_apply_introduction_rule)
           end
 
-        | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+        | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                     could_not_apply_introduction_rule)
         end
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                   could_not_apply_introduction_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_introduction_rule)
     end
   end.
@@ -4779,9 +5053,9 @@ Proof.
     left; right; auto. }
 Defined.
 
-Definition apply_proof_step_lemma {o} {ctxt}
+Definition apply_proof_step_lemma {o}
            (s : @pre_baresequent o)
-           (name : LemmaName) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (name : LemmaName) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4790,17 +5064,10 @@ Definition apply_proof_step_lemma {o} {ctxt}
 
       let nc := MkNamedConcl name T in
 
-      match find_named_concl nc (PC_conclusions ctxt) with
-      | Some i =>
+      (pre_proof_from_ctxt nc H,
+       applied_lemma_rule)
 
-        (pre_proof_from_ctxt ctxt nc H i,
-         applied_lemma_rule)
-
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
-                 could_not_apply_lemma_rule)
-      end
-
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_lemma_rule)
     end
   end.
@@ -4819,27 +5086,28 @@ Proof.
   introv; apply decidable_bool_true.
 Defined.
 
-Definition apply_proof_step_unfold_abstractions {o} {ctxt}
+Definition apply_proof_step_unfold_abstractions {o}
+           (lib : library)
            (s : @pre_baresequent o)
-           (names : list opname) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (names : list opname) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
     match C with
     | pre_concl_ext T =>
 
-      match all_abstractions_can_be_unfolded_dec ctxt names T with
+      match all_abstractions_can_be_unfolded_dec lib names T with
       | inl unf =>
 
-        let prf := pre_proof_hole ctxt (pre_rule_unfold_abstractions_hyp ctxt names T H) in
-        (pre_proof_unfold_abstractions ctxt names T H unf prf,
+        let prf := pre_proof_hole (pre_rule_unfold_abstractions_hyp lib names T H) in
+        (pre_proof_unfold_abstractions lib names T H unf prf,
          applied_unfold_abstractions_rule)
 
-      | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+      | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                   could_not_apply_unfold_abstractions_rule_not_all_unfoldable)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_unfold_abstractions_rule)
     end
   end.
@@ -4854,17 +5122,18 @@ Proof.
   introv p; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_rev_unfold_abstractions {o} {ctxt}
+Definition apply_proof_step_rev_unfold_abstractions {o}
+           (lib : library)
            (s : @pre_baresequent o)
            (names : list opname)
-           (b : NTerm) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (b : NTerm) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
     match C with
     | pre_concl_ext a =>
 
-      match term_dec_op a (unfold_abstractions ctxt names b) with
+      match term_dec_op a (unfold_abstractions lib names b) with
       | Some p =>
 
         match wf_term_dec_op b with
@@ -4873,41 +5142,41 @@ Definition apply_proof_step_rev_unfold_abstractions {o} {ctxt}
           match covered_decidable b (vars_hyps H) with
           | inl covb =>
 
-            match all_abstractions_can_be_unfolded_dec ctxt names b with
+            match all_abstractions_can_be_unfolded_dec lib names b with
             | inl unf =>
 
-              let prf := pre_proof_hole ctxt (pre_rule_unfold_abstractions_concl b H) in
+              let prf := pre_proof_hole (pre_rule_unfold_abstractions_concl b H) in
               (eq_rect
                  _
                  _
-                 (pre_proof_rev_unfold_abstractions ctxt names b H wfb covb unf prf)
+                 (pre_proof_rev_unfold_abstractions lib names b H wfb covb unf prf)
                  _
                  (pre_rule_rev_unfold_abstractions_as_pre_baresequent H a b p),
                applied_rev_unfold_abstractions_rule)
 
-            | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext a)),
+            | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext a)),
                         could_not_apply_rev_unfold_abstractions_rule_not_all_unfoldable)
             end
 
-          | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext a)),
+          | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext a)),
                       could_not_apply_rev_unfold_abstractions_rule_not_all_unfoldable)
           end
 
-        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext a)),
+        | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext a)),
                    could_not_apply_rev_unfold_abstractions_rule_not_all_unfoldable)
         end
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext a)),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext a)),
                  could_not_apply_rev_unfold_abstractions_rule_not_all_unfoldable)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_rev_unfold_abstractions_rule)
     end
   end.
 
-Definition apply_proof_step_axiom_equality {o} {ctxt}
-           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+Definition apply_proof_step_axiom_equality {o}
+           (s : @pre_baresequent o) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4919,11 +5188,11 @@ Definition apply_proof_step_axiom_equality {o} {ctxt}
                                                                  bterm [] b,
                                                                  bterm [] T])]) =>
 
-      let prf := pre_proof_hole ctxt (pre_rule_axiom_equality_hyp a b T H) in
-      (pre_proof_axiom_equality ctxt a b T H prf,
+      let prf := pre_proof_hole (pre_rule_axiom_equality_hyp a b T H) in
+      (pre_proof_axiom_equality a b T H prf,
        applied_axiom_equality_rule)
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_axiom_equality_rule)
     end
   end.
@@ -4937,9 +5206,9 @@ Proof.
   introv e1; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_thin {o} {ctxt}
+Definition apply_proof_step_thin {o}
            (s : @pre_baresequent o)
-           (x : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (x : NVar) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -4955,66 +5224,66 @@ Definition apply_proof_step_thin {o} {ctxt}
           match NVin_dec x (free_vars T) with
           | inl nixC =>
 
-            let prf := pre_proof_hole ctxt (pre_rule_thin_hyp G J T) in
+            let prf := pre_proof_hole (pre_rule_thin_hyp G J T) in
             (eq_rect
                _
                _
-               (pre_proof_thin ctxt G J A T x nixJ nixC prf)
+               (pre_proof_thin G J A T x nixJ nixC prf)
                _
                (pre_rule_thin_concl_as_pre_baresequent H G x A J T q),
              applied_thin_rule)
 
-          | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+          | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                       could_not_apply_thin_rule)
           end
 
-        | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+        | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                     could_not_apply_thin_rule)
         end
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                  could_not_apply_thin_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_thin_rule)
     end
   end.
 
-Definition apply_proof_step_thin_num {o} {ctxt}
+Definition apply_proof_step_thin_num {o}
            (s : @pre_baresequent o)
-           (n : nat) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (n : nat) : pre_proof s * @DEBUG_MSG o :=
   match find_hypothesis_name_from_nat (pre_hyps s) n with
   | Some name => apply_proof_step_thin s name
-  | None => (pre_proof_hole _ s, could_not_apply_thin_rule)
+  | None => (pre_proof_hole s, could_not_apply_thin_rule)
   end.
 
-Definition apply_proof_step_function_equality {o} {ctxt}
+Definition apply_proof_step_function_equality {o}
            (s : @pre_baresequent o)
-           (y : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (y : NVar) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
     match NVin_dec y (vars_hyps H) with
     | inl p =>
 
-      match C return pre_proof ctxt (MkPreBaresequent H C) * DEBUG_MSG with
+      match C return pre_proof (MkPreBaresequent H C) * DEBUG_MSG with
       | pre_concl_ext
           (oterm (Can NEquality)
                  [bterm [] (oterm (Can NFunction) [bterm [] a1, bterm [x1] b1]),
                   bterm [] (oterm (Can NFunction) [bterm [] a2, bterm [x2] b2]),
                   bterm [] (oterm (Can (NUni i)) [])]) =>
 
-        let prf1 := pre_proof_hole ctxt (pre_rule_function_equality_hyp1 H a1 a2 i) in
-        let prf2 := pre_proof_hole ctxt (pre_rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i) in
-        (pre_proof_function_equality ctxt a1 a2 b1 b2 x1 x2 y i H p prf1 prf2,
+        let prf1 := pre_proof_hole (pre_rule_function_equality_hyp1 H a1 a2 i) in
+        let prf2 := pre_proof_hole (pre_rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i) in
+        (pre_proof_function_equality a1 a2 b1 b2 x1 x2 y i H p prf1 prf2,
          applied_function_equality_rule)
 
-      | c => (pre_proof_hole _ (MkPreBaresequent H c),
+      | c => (pre_proof_hole (MkPreBaresequent H c),
               could_not_apply_function_equality_rule)
       end
 
-    | _ => (pre_proof_hole _ (MkPreBaresequent H C),
+    | _ => (pre_proof_hole (MkPreBaresequent H C),
             could_not_apply_function_equality_rule)
     end
   end.
@@ -5028,10 +5297,10 @@ Proof.
   introv p; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_apply_equality {o} {ctxt}
+Definition apply_proof_step_apply_equality {o}
            (s : @pre_baresequent o)
            (x : NVar)
-           (A B : NTerm) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (A B : NTerm) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -5051,29 +5320,29 @@ Definition apply_proof_step_apply_equality {o} {ctxt}
           match covered_decidable A (vars_hyps H) with
           | inl covA =>
 
-            let prf1 := pre_proof_hole ctxt (pre_rule_apply_equality_hyp1 H f1 f2 A x B) in
-            let prf2 := pre_proof_hole ctxt (pre_rule_apply_equality_hyp2 H t1 t2 A) in
+            let prf1 := pre_proof_hole (pre_rule_apply_equality_hyp1 H f1 f2 A x B) in
+            let prf2 := pre_proof_hole (pre_rule_apply_equality_hyp2 H t1 t2 A) in
             (eq_rect
                _
                _
-               (pre_proof_apply_equality ctxt A B f1 f2 t1 t2 x H wfA covA prf1 prf2)
+               (pre_proof_apply_equality A B f1 f2 t1 t2 x H wfA covA prf1 prf2)
                _
                (pre_rule_apply_equality_as_pre_baresequent H B f1 f2 t1 t2 x U p),
              applied_apply_equality_rule)
 
-          | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_apply f1 t1) (mk_apply f2 t2) U))),
+          | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_apply f1 t1) (mk_apply f2 t2) U))),
                       could_not_apply_apply_equality_rule)
           end
 
-        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_apply f1 t1) (mk_apply f2 t2) U))),
+        | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_apply f1 t1) (mk_apply f2 t2) U))),
                    could_not_apply_apply_equality_rule)
         end
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_apply f1 t1) (mk_apply f2 t2) U))),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality (mk_apply f1 t1) (mk_apply f2 t2) U))),
                  could_not_apply_apply_equality_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_apply_equality_rule)
     end
   end.
@@ -5087,10 +5356,10 @@ Proof.
   introv p; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_isect_elimination {o} {ctxt}
+Definition apply_proof_step_isect_elimination {o}
            (s : @pre_baresequent o)
            (a : NTerm)
-           (f z : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (f z : NVar) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -5115,53 +5384,53 @@ Definition apply_proof_step_isect_elimination {o} {ctxt}
                 match deq_nvar z f with
                 | right dzf =>
 
-                  let prf1 := pre_proof_hole ctxt (pre_rule_isect_elimination_hyp1 A B a f x G J) in
-                  let prf2 := pre_proof_hole ctxt (pre_rule_isect_elimination_hyp2 A B T a f x z G J) in
+                  let prf1 := pre_proof_hole (pre_rule_isect_elimination_hyp1 A B a f x G J) in
+                  let prf2 := pre_proof_hole (pre_rule_isect_elimination_hyp2 A B T a f x z G J) in
                   (eq_rect
                      _
                      _
-                     (pre_proof_isect_elimination ctxt A B T a f x z G J wfa cova nizG nizJ dzf prf1 prf2)
+                     (pre_proof_isect_elimination A B T a f x z G J wfa cova nizG nizJ dzf prf1 prf2)
                      _
                      (pre_rule_isect_elimination_as_pre_baresequent H A B T f x G J q),
                    applied_isect_elimination_rule)
 
-                | left _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                | left _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                               could_not_apply_isect_elimination_rule)
                 end
 
-              | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+              | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                           could_not_apply_isect_elimination_rule)
               end
 
-            | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+            | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                         could_not_apply_isect_elimination_rule)
             end
 
-          | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+          | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                       could_not_apply_isect_elimination_rule)
           end
 
-        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+        | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                    could_not_apply_isect_elimination_rule)
         end
 
-      | _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+      | _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
               could_not_apply_isect_elimination_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_isect_elimination_rule)
     end
   end.
 
-Definition apply_proof_step_isect_elimination_num {o} {ctxt}
+Definition apply_proof_step_isect_elimination_num {o}
            (s : @pre_baresequent o)
            (n : nat)
            (a : NTerm)
-           (z : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (z : NVar) : pre_proof s * @DEBUG_MSG o :=
   match find_hypothesis_name_from_nat (pre_hyps s) n with
   | Some f => apply_proof_step_isect_elimination s a f z
-  | None => (pre_proof_hole _ s, could_not_apply_isect_elimination_rule)
+  | None => (pre_proof_hole s, could_not_apply_isect_elimination_rule)
   end.
 
 Lemma pre_rule_isect_elimination2_as_pre_baresequent {o} :
@@ -5173,10 +5442,10 @@ Proof.
   introv p; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_isect_elimination2 {o} {ctxt}
+Definition apply_proof_step_isect_elimination2 {o}
            (s : @pre_baresequent o)
            (a : NTerm)
-           (f y z : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (f y z : NVar) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -5213,75 +5482,75 @@ Definition apply_proof_step_isect_elimination2 {o} {ctxt}
                         match deq_nvar y f with
                         | right dyf =>
 
-                          let prf1 := pre_proof_hole ctxt (pre_rule_isect_elimination_hyp1 A B a f x G J) in
-                          let prf2 := pre_proof_hole ctxt (pre_rule_isect_elimination2_hyp2 A B T a f x y z G J) in
+                          let prf1 := pre_proof_hole (pre_rule_isect_elimination_hyp1 A B a f x G J) in
+                          let prf2 := pre_proof_hole (pre_rule_isect_elimination2_hyp2 A B T a f x y z G J) in
                           (eq_rect
                              _
                              _
-                             (pre_proof_isect_elimination2 ctxt A B T a f x y z G J wfa cova nizG nizJ niyG niyJ dzf dzy dyf prf1 prf2)
+                             (pre_proof_isect_elimination2 A B T a f x y z G J wfa cova nizG nizJ niyG niyJ dzf dzy dyf prf1 prf2)
                              _
                              (pre_rule_isect_elimination2_as_pre_baresequent H A B T f x G J q),
                            applied_isect_elimination2_rule)
 
-                        | left _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                        | left _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                                      could_not_apply_isect_elimination2_rule)
                         end
 
-                      | left _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                      | left _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                                    could_not_apply_isect_elimination2_rule)
                       end
 
-                    | left _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                    | left _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                                  could_not_apply_isect_elimination2_rule)
                     end
 
-                  | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                  | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                               could_not_apply_isect_elimination2_rule)
                   end
 
-                | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+                | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                             could_not_apply_isect_elimination2_rule)
                 end
 
-              | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+              | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                           could_not_apply_isect_elimination2_rule)
               end
 
-            | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+            | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                         could_not_apply_isect_elimination2_rule)
             end
 
-          | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+          | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                       could_not_apply_isect_elimination2_rule)
           end
 
-        | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+        | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
                    could_not_apply_isect_elimination2_rule)
         end
 
-      | _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext T)),
+      | _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext T)),
               could_not_apply_isect_elimination2_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_isect_elimination2_rule)
     end
   end.
 
-Definition apply_proof_step_isect_elimination2_num {o} {ctxt}
+Definition apply_proof_step_isect_elimination2_num {o}
            (s : @pre_baresequent o)
            (n : nat)
            (a : NTerm)
-           (y z : NVar) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (y z : NVar) : pre_proof s * @DEBUG_MSG o :=
   match find_hypothesis_name_from_nat (pre_hyps s) n with
   | Some f => apply_proof_step_isect_elimination2 s a f y z
-  | None => (pre_proof_hole _ s, could_not_apply_isect_elimination2_rule)
+  | None => (pre_proof_hole s, could_not_apply_isect_elimination2_rule)
   end.
 
-Definition apply_proof_step_isect_member_equality {o} {ctxt}
+Definition apply_proof_step_isect_member_equality {o}
            (s : @pre_baresequent o)
            (z : NVar)
-           (i : nat) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (i : nat) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -5295,16 +5564,16 @@ Definition apply_proof_step_isect_member_equality {o} {ctxt}
       match NVin_dec z (vars_hyps H) with
       | inl nizH =>
 
-        let prf1 := pre_proof_hole ctxt (pre_rule_isect_member_equality_hyp1 H z A t1 t2 B x) in
-        let prf2 := pre_proof_hole ctxt (pre_rule_isect_member_equality_hyp2 H A i) in
-        (pre_proof_isect_member_equality ctxt H t1 t2 A x B z i nizH prf1 prf2,
+        let prf1 := pre_proof_hole (pre_rule_isect_member_equality_hyp1 H z A t1 t2 B x) in
+        let prf2 := pre_proof_hole (pre_rule_isect_member_equality_hyp2 H A i) in
+        (pre_proof_isect_member_equality H t1 t2 A x B z i nizH prf1 prf2,
          applied_isect_member_equality_rule)
 
-      | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality t1 t2 (mk_isect A x B)))),
+      | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality t1 t2 (mk_isect A x B)))),
                   could_not_apply_isect_member_equality_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_isect_member_equality_rule)
     end
   end.
@@ -5324,9 +5593,9 @@ Proof.
   introv p; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_cumulativity {o} {ctxt}
+Definition apply_proof_step_cumulativity {o}
            (s : @pre_baresequent o)
-           (i : nat) : pre_proof ctxt s * @DEBUG_MSG o :=
+           (i : nat) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -5342,48 +5611,48 @@ Definition apply_proof_step_cumulativity {o} {ctxt}
         match decidable_le_true i j with
         | inl leij =>
 
-          let prf1 := pre_proof_hole ctxt (pre_rule_cumulativity_hyp H T i) in
+          let prf1 := pre_proof_hole (pre_rule_cumulativity_hyp H T i) in
           (eq_rect
              _
              _
-             (pre_proof_cumulativity ctxt H T i j leij prf1)
+             (pre_proof_cumulativity H T i j leij prf1)
              _
              (pre_rule_cumulativity_as_pre_baresequent H T T' j eqts),
            applied_cumulativity_rule)
 
-        | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality T T' (mk_uni j)))),
+        | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality T T' (mk_uni j)))),
                     could_not_apply_cumulativity_rule)
         end
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality T T' (mk_uni j)))),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality T T' (mk_uni j)))),
                     could_not_apply_cumulativity_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_cumulativity_rule)
     end
   end.
 
-Definition apply_proof_step_equality_symmetry {o} {ctxt}
-           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+Definition apply_proof_step_equality_symmetry {o}
+           (s : @pre_baresequent o) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
     match C with
     | pre_concl_ext (oterm (Can NEquality) [bterm [] a, bterm [] b, bterm [] T]) =>
 
-      let prf1 := pre_proof_hole ctxt (pre_rule_equality_seq H b a T) in
-        (pre_proof_equality_symmetry ctxt H a b T prf1,
+      let prf1 := pre_proof_hole (pre_rule_equality_seq H b a T) in
+        (pre_proof_equality_symmetry H a b T prf1,
          applied_isect_member_equality_rule)
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_equality_symmetry_rule)
     end
   end.
 
-Definition apply_proof_step_equality_transitivity {o} {ctxt}
+Definition apply_proof_step_equality_transitivity {o}
            (s : @pre_baresequent o)
-           (c : NTerm): pre_proof ctxt s * @DEBUG_MSG o :=
+           (c : NTerm): pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -5396,27 +5665,27 @@ Definition apply_proof_step_equality_transitivity {o} {ctxt}
         match covered_decidable c (vars_hyps H) with
         | inl covc =>
 
-          let prf1 := pre_proof_hole ctxt (pre_rule_equality_seq H a c T) in
-          let prf2 := pre_proof_hole ctxt (pre_rule_equality_seq H c b T) in
-          (pre_proof_equality_transitivity ctxt H a b c T wfc covc prf1 prf2,
+          let prf1 := pre_proof_hole (pre_rule_equality_seq H a c T) in
+          let prf2 := pre_proof_hole (pre_rule_equality_seq H c b T) in
+          (pre_proof_equality_transitivity H a b c T wfc covc prf1 prf2,
            applied_equality_transitivity_rule)
 
-        | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality a b T))),
+        | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality a b T))),
                     could_not_apply_equality_transitivity_rule)
         end
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_equality a b T))),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_equality a b T))),
                  could_not_apply_equality_transitivity_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_equality_transitivity_rule)
     end
   end.
 
-Definition apply_proof_step_cequiv_transitivity {o} {ctxt}
+Definition apply_proof_step_cequiv_transitivity {o}
            (s : @pre_baresequent o)
-           (c : NTerm): pre_proof ctxt s * @DEBUG_MSG o :=
+           (c : NTerm): pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -5429,20 +5698,20 @@ Definition apply_proof_step_cequiv_transitivity {o} {ctxt}
         match covered_decidable c (vars_hyps H) with
         | inl covc =>
 
-          let prf1 := pre_proof_hole ctxt (pre_rule_cequiv_seq H a c) in
-          let prf2 := pre_proof_hole ctxt (pre_rule_cequiv_seq H c b) in
-          (pre_proof_cequiv_transitivity ctxt H a b c wfc covc prf1 prf2,
+          let prf1 := pre_proof_hole (pre_rule_cequiv_seq H a c) in
+          let prf2 := pre_proof_hole (pre_rule_cequiv_seq H c b) in
+          (pre_proof_cequiv_transitivity H a b c wfc covc prf1 prf2,
            applied_cequiv_transitivity_rule)
 
-        | inr _ => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
+        | inr _ => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
                     could_not_apply_cequiv_transitivity_rule)
         end
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
                  could_not_apply_cequiv_transitivity_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_cequiv_transitivity_rule)
     end
   end.
@@ -5456,8 +5725,8 @@ Proof.
   introv p; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_approx_refl {o} {ctxt}
-           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+Definition apply_proof_step_approx_refl {o}
+           (s : @pre_baresequent o) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -5470,16 +5739,16 @@ Definition apply_proof_step_approx_refl {o} {ctxt}
         (eq_rect
            _
            _
-           (pre_proof_approx_refl ctxt a H)
+           (pre_proof_approx_refl a H)
            _
            (pre_rule_approx_refl_as_pre_baresequent H a a' eqas),
          applied_approx_refl_rule)
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_approx a a'))),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_approx a a'))),
                  could_not_apply_approx_refl_rule)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_approx_refl_rule)
     end
   end.
@@ -5493,8 +5762,8 @@ Proof.
   introv p; subst; reflexivity.
 Defined.
 
-Definition apply_proof_step_cequiv_refl {o} {ctxt}
-           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+Definition apply_proof_step_cequiv_refl {o}
+           (s : @pre_baresequent o) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -5507,22 +5776,22 @@ Definition apply_proof_step_cequiv_refl {o} {ctxt}
         (eq_rect
            _
            _
-           (pre_proof_cequiv_refl ctxt a H)
+           (pre_proof_cequiv_refl a H)
            _
            (pre_rule_cequiv_refl_as_pre_baresequent H a a' eqas),
          applied_cequiv_refl_rule)
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_cequiv a a'))),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_cequiv a a'))),
                  could_not_apply_cequiv_refl_rule_terms_dont_match a a')
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_cequiv_refl_rule_not_a_cequiv C)
     end
   end.
 
-Definition apply_proof_step_cequiv_alpha_eq {o} {ctxt}
-           (s : @pre_baresequent o) : pre_proof ctxt s * @DEBUG_MSG o :=
+Definition apply_proof_step_cequiv_alpha_eq {o}
+           (s : @pre_baresequent o) : pre_proof s * @DEBUG_MSG o :=
   match s with
   | MkPreBaresequent H C =>
 
@@ -5532,31 +5801,32 @@ Definition apply_proof_step_cequiv_alpha_eq {o} {ctxt}
       match alpha_eq_dec_op a b with
       | Some aeq =>
 
-        (pre_proof_cequiv_alpha_eq ctxt a b H aeq,
+        (pre_proof_cequiv_alpha_eq a b H aeq,
          applied_cequiv_alpha_eq_rule)
 
-      | None => (pre_proof_hole _ (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
+      | None => (pre_proof_hole (MkPreBaresequent H (pre_concl_ext (mk_cequiv a b))),
                  could_not_apply_cequiv_alpha_eq_rule_terms_dont_match a b)
       end
 
-    | c => (pre_proof_hole _ (MkPreBaresequent H c),
+    | c => (pre_proof_hole (MkPreBaresequent H c),
             could_not_apply_cequiv_alpha_eq_rule_not_a_cequiv C)
     end
   end.
 
-Definition apply_proof_step {o} {ctxt}
+Definition apply_proof_step {o}
+           (lib  : library)
            (s    : @pre_baresequent o)
-           (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
+           (step : proof_step) : pre_proof s * DEBUG_MSG :=
   match step with
   | proof_step_isect_equality y                 => apply_proof_step_isect_eq s y
   | proof_step_isect_member_formation z i       => apply_proof_step_isect_member_formation s z i
   | proof_step_hypothesis x                     => apply_proof_step_hypothesis s x
   | proof_step_hypothesis_num x                 => apply_proof_step_hypothesis_num s x
   | proof_step_cut x B                          => apply_proof_step_cut s x B
-  | proof_step_cequiv_computation n             => apply_proof_step_cequiv_computation s n
-  | proof_step_cequiv_computation_aeq n         => apply_proof_step_cequiv_computation_aeq s n
-  | proof_step_unfold_abstractions names        => apply_proof_step_unfold_abstractions s names
-  | proof_step_rev_unfold_abstractions names a  => apply_proof_step_rev_unfold_abstractions s names a
+  | proof_step_cequiv_computation n             => apply_proof_step_cequiv_computation lib s n
+  | proof_step_cequiv_computation_aeq n         => apply_proof_step_cequiv_computation_aeq lib s n
+  | proof_step_unfold_abstractions names        => apply_proof_step_unfold_abstractions lib s names
+  | proof_step_rev_unfold_abstractions names a  => apply_proof_step_rev_unfold_abstractions lib s names a
   | proof_step_cequiv_subst_concl x C a b       => apply_proof_step_cequiv_subst_concl s x C a b
   | proof_step_cequiv_subst_hyp z x C a b       => apply_proof_step_cequiv_subst_hyp s z x C a b
   | proof_step_cequiv_subst_hyp_num n x C a b   => apply_proof_step_cequiv_subst_hyp_num s n x C a b
@@ -5586,127 +5856,127 @@ Definition apply_proof_step {o} {ctxt}
   end.
 
 Fixpoint update_pre_proof {o}
-         {ctxt : @ProofContext o}
-         {s    : pre_baresequent}
-         (p    : pre_proof ctxt s)
+         (lib  : library)
+         {s    : @pre_baresequent o}
+         (p    : pre_proof s)
          (addr : address)
-         (step : proof_step) : pre_proof ctxt s * DEBUG_MSG :=
+         (step : proof_step) : pre_proof s * DEBUG_MSG :=
   match addr with
-  | [] => apply_proof_step s step
+  | [] => apply_proof_step lib s step
   | _ =>
     match p with
-    | pre_proof_from_ctxt _ c H i =>
-      (pre_proof_from_ctxt _ c H i,
+    | pre_proof_from_ctxt c H =>
+      (pre_proof_from_ctxt c H,
        could_not_apply_update_because_no_hole_at_address)
 
-    | pre_proof_hole _ s => apply_proof_step s step
+    | pre_proof_hole s => apply_proof_step lib s step
 
-    | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    | pre_proof_isect_eq a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_isect_eq a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2', msg)
-      | _ => (pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_isect_eq a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2', msg)
+      | _ => (pre_proof_isect_eq a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+    | pre_proof_isect_member_formation A x B z i H nizH prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_isect_member_formation _ A x B z i H nizH prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_isect_member_formation A x B z i H nizH prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2', msg)
-      | _ => (pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_isect_member_formation A x B z i H nizH prf1 prf2', msg)
+      | _ => (pre_proof_isect_member_formation A x B z i H nizH prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_approx_refl _ a H =>
-      (pre_proof_approx_refl _ a H, could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_approx_refl a H =>
+      (pre_proof_approx_refl a H, could_not_apply_update_because_no_hole_at_address)
 
-    | pre_proof_cequiv_refl _ a H =>
-      (pre_proof_cequiv_refl _ a H, could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_cequiv_refl a H =>
+      (pre_proof_cequiv_refl a H, could_not_apply_update_because_no_hole_at_address)
 
-    | pre_proof_cequiv_alpha_eq _ a b H aeq =>
-      (pre_proof_cequiv_alpha_eq _ a b H aeq, could_not_apply_update_because_no_hole_at_address)
+    | pre_proof_cequiv_alpha_eq a b H aeq =>
+      (pre_proof_cequiv_alpha_eq a b H aeq, could_not_apply_update_because_no_hole_at_address)
 
-    | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
+    | pre_proof_cequiv_approx a b H prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_cequiv_approx _ a b H prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_cequiv_approx a b H prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_cequiv_approx _ a b H prf1 prf2', msg)
-      | _ => (pre_proof_cequiv_approx _ a b H prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_cequiv_approx a b H prf1 prf2', msg)
+      | _ => (pre_proof_cequiv_approx a b H prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+    | pre_proof_approx_eq a1 a2 b1 b2 i H prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_approx_eq a1 a2 b1 b2 i H prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2', msg)
-      | _ => (pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_approx_eq a1 a2 b1 b2 i H prf1 prf2', msg)
+      | _ => (pre_proof_approx_eq a1 a2 b1 b2 i H prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+    | pre_proof_cequiv_eq a1 a2 b1 b2 i H prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_cequiv_eq a1 a2 b1 b2 i H prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2', msg)
-      | _ => (pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_cequiv_eq a1 a2 b1 b2 i H prf1 prf2', msg)
+      | _ => (pre_proof_cequiv_eq a1 a2 b1 b2 i H prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_cut _ B C x H wfB covB nixH prf1 prf2 =>
+    | pre_proof_cut B C x H wfB covB nixH prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_cut _ B C x H wfB covB nixH prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_cut B C x H wfB covB nixH prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_cut _ B C x H wfB covB nixH prf1 prf2', msg)
-      | _ => (pre_proof_cut _ B C x H wfB covB nixH prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_cut B C x H wfB covB nixH prf1 prf2', msg)
+      | _ => (pre_proof_cut B C x H wfB covB nixH prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_hypothesis _ x A G J =>
-      (pre_proof_hypothesis _ x A G J,
+    | pre_proof_hypothesis x A G J =>
+      (pre_proof_hypothesis x A G J,
        could_not_apply_update_because_no_hole_at_address)
 
-    | pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2 =>
+    | pre_proof_cequiv_subst_concl C x a b H wfa wfb cova covb prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_cequiv_subst_concl C x a b H wfa wfb cova covb prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2', msg)
-      | _ => (pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_cequiv_subst_concl C x a b H wfa wfb cova covb prf1 prf2', msg)
+      | _ => (pre_proof_cequiv_subst_concl C x a b H wfa wfb cova covb prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2 =>
+    | pre_proof_cequiv_subst_hyp H z T x a b J C wfa wfb cova covb prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_cequiv_subst_hyp H z T x a b J C wfa wfb cova covb prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2', msg)
-      | _ => (pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_cequiv_subst_hyp H z T x a b J C wfa wfb cova covb prf1 prf2', msg)
+      | _ => (pre_proof_cequiv_subst_hyp H z T x a b J C wfa wfb cova covb prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
@@ -5725,7 +5995,7 @@ Fixpoint update_pre_proof {o}
     | pre_proof_unfold_abstractions _ abs a H unf prf =>
       match addr with
       | 1 :: addr =>
-        let (prf', msg) := update_pre_proof prf addr step in
+        let (prf', msg) := update_pre_proof lib prf addr step in
         (pre_proof_unfold_abstractions _ abs a H unf prf', msg)
       | _ => (pre_proof_unfold_abstractions _ abs a H unf prf,
               could_not_apply_update_because_wrong_address)
@@ -5734,190 +6004,191 @@ Fixpoint update_pre_proof {o}
     | pre_proof_rev_unfold_abstractions _ abs a H wfa cova unf prf =>
       match addr with
       | 1 :: addr =>
-        let (prf', msg) := update_pre_proof prf addr step in
+        let (prf', msg) := update_pre_proof lib prf addr step in
         (pre_proof_rev_unfold_abstractions _ abs a H wfa cova unf prf', msg)
       | _ => (pre_proof_rev_unfold_abstractions _ abs a H wfa cova unf prf,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_universe_equality _ i j H ltij =>
-      (pre_proof_universe_equality _ i j H ltij,
+    | pre_proof_universe_equality i j H ltij =>
+      (pre_proof_universe_equality i j H ltij,
        could_not_apply_update_because_no_hole_at_address)
 
-    | pre_proof_hypothesis_equality _ x A G J =>
-      (pre_proof_hypothesis_equality _ x A G J,
+    | pre_proof_hypothesis_equality x A G J =>
+      (pre_proof_hypothesis_equality x A G J,
        could_not_apply_update_because_no_hole_at_address)
 
-    | pre_proof_maybe_hidden_hypothesis_equality _ x A G J b =>
-      (pre_proof_maybe_hidden_hypothesis_equality _ x A G J b,
+    | pre_proof_maybe_hidden_hypothesis_equality x A G J b =>
+      (pre_proof_maybe_hidden_hypothesis_equality x A G J b,
        could_not_apply_update_because_no_hole_at_address)
 
-    | pre_proof_unhide_equality _ x A t1 t2 C G J prf =>
+    | pre_proof_unhide_equality x A t1 t2 C G J prf =>
       match addr with
       | 1 :: addr =>
-        let (prf', msg) := update_pre_proof prf addr step in
-        (pre_proof_unhide_equality _ x A t1 t2 C G J prf', msg)
-      | _ => (pre_proof_unhide_equality _ x A t1 t2 C G J prf,
+        let (prf', msg) := update_pre_proof lib prf addr step in
+        (pre_proof_unhide_equality x A t1 t2 C G J prf', msg)
+      | _ => (pre_proof_unhide_equality x A t1 t2 C G J prf,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+    | pre_proof_equality_equality A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1' prf2 prf3, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_equality_equality A B a1 a2 b1 b2 i H prf1' prf2 prf3, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2' prf3, msg)
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_equality_equality A B a1 a2 b1 b2 i H prf1 prf2' prf3, msg)
       | 3 :: addr =>
-        let (prf3', msg) := update_pre_proof prf3 addr step in
-        (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3', msg)
-      | _ => (pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3,
+        let (prf3', msg) := update_pre_proof lib prf3 addr step in
+        (pre_proof_equality_equality A B a1 a2 b1 b2 i H prf1 prf2 prf3', msg)
+      | _ => (pre_proof_equality_equality A B a1 a2 b1 b2 i H prf1 prf2 prf3,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_integer_equality _ n H =>
-      (pre_proof_integer_equality _ n H,
+    | pre_proof_integer_equality n H =>
+      (pre_proof_integer_equality n H,
        could_not_apply_update_because_no_hole_at_address)
 
-    | pre_proof_introduction _ t C H wft covt nout prf =>
+    | pre_proof_introduction t C H wft covt nout prf =>
       match addr with
       | 1 :: addr =>
-        let (prf', msg) := update_pre_proof prf addr step in
-        (pre_proof_introduction _ t C H wft covt nout prf', msg)
-      | _ => (pre_proof_introduction _ t C H wft covt nout prf,
+        let (prf', msg) := update_pre_proof lib prf addr step in
+        (pre_proof_introduction t C H wft covt nout prf', msg)
+      | _ => (pre_proof_introduction t C H wft covt nout prf,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_axiom_equality _ a b T H prf =>
+    | pre_proof_axiom_equality a b T H prf =>
       match addr with
       | 1 :: addr =>
-        let (prf', msg) := update_pre_proof prf addr step in
-        (pre_proof_axiom_equality _ a b T H prf', msg)
-      | _ => (pre_proof_axiom_equality _ a b T H prf,
+        let (prf', msg) := update_pre_proof lib prf addr step in
+        (pre_proof_axiom_equality a b T H prf', msg)
+      | _ => (pre_proof_axiom_equality a b T H prf,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_thin _ G J A C x nixJ nixC prf =>
+    | pre_proof_thin G J A C x nixJ nixC prf =>
       match addr with
       | 1 :: addr =>
-        let (prf', msg) := update_pre_proof prf addr step in
-        (pre_proof_thin _ G J A C x nixJ nixC prf', msg)
-      | _ => (pre_proof_thin _ G J A C x nixJ nixC prf,
+        let (prf', msg) := update_pre_proof lib prf addr step in
+        (pre_proof_thin G J A C x nixJ nixC prf', msg)
+      | _ => (pre_proof_thin G J A C x nixJ nixC prf,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    | pre_proof_function_equality a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_function_equality a1 a2 b1 b2 x1 x2 y i H niyH prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2', msg)
-      | _ => (pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_function_equality a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2', msg)
+      | _ => (pre_proof_function_equality a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+    | pre_proof_apply_equality A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_apply_equality A B f1 f2 t1 t2 x H wfA covA prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2', msg)
-      | _ => (pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_apply_equality A B f1 f2 t1 t2 x H wfA covA prf1 prf2', msg)
+      | _ => (pre_proof_apply_equality A B f1 f2 t1 t2 x H wfA covA prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
+    | pre_proof_isect_elimination A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_isect_elimination A B C a f x z H J wfa cova nizH nizJ dzf prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2', msg)
-      | _ => (pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_isect_elimination A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2', msg)
+      | _ => (pre_proof_isect_elimination A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+    | pre_proof_isect_elimination2 A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_isect_elimination2 A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2', msg)
-      | _ => (pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_isect_elimination2 A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2', msg)
+      | _ => (pre_proof_isect_elimination2 A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+    | pre_proof_isect_member_equality H t1 t2 A x B z i nizH prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_isect_member_equality H t1 t2 A x B z i nizH prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2', msg)
-      | _ => (pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_isect_member_equality H t1 t2 A x B z i nizH prf1 prf2', msg)
+      | _ => (pre_proof_isect_member_equality H t1 t2 A x B z i nizH prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_cumulativity _ H T i j leij prf1 =>
+    | pre_proof_cumulativity H T i j leij prf1 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_cumulativity _ H T i j leij prf1', msg)
-      | _ => (pre_proof_cumulativity _ H T i j leij prf1,
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_cumulativity H T i j leij prf1', msg)
+      | _ => (pre_proof_cumulativity H T i j leij prf1,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_equality_symmetry _ H a b T prf1 =>
+    | pre_proof_equality_symmetry H a b T prf1 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_equality_symmetry _ H a b T prf1', msg)
-      | _ => (pre_proof_equality_symmetry _ H a b T prf1,
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_equality_symmetry H a b T prf1', msg)
+      | _ => (pre_proof_equality_symmetry H a b T prf1,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2 =>
+    | pre_proof_equality_transitivity H a b c T wfc covc prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_equality_transitivity _ H a b c T wfc covc prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_equality_transitivity H a b c T wfc covc prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2', msg)
-      | _ => (pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_equality_transitivity H a b c T wfc covc prf1 prf2', msg)
+      | _ => (pre_proof_equality_transitivity H a b c T wfc covc prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
 
-    | pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2 =>
+    | pre_proof_cequiv_transitivity H a b c wfc covc prf1 prf2 =>
       match addr with
       | 1 :: addr =>
-        let (prf1', msg) := update_pre_proof prf1 addr step in
-        (pre_proof_cequiv_transitivity _ H a b c wfc covc prf1' prf2, msg)
+        let (prf1', msg) := update_pre_proof lib prf1 addr step in
+        (pre_proof_cequiv_transitivity H a b c wfc covc prf1' prf2, msg)
       | 2 :: addr =>
-        let (prf2', msg) := update_pre_proof prf2 addr step in
-        (pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2', msg)
-      | _ => (pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2,
+        let (prf2', msg) := update_pre_proof lib prf2 addr step in
+        (pre_proof_cequiv_transitivity H a b c wfc covc prf1 prf2', msg)
+      | _ => (pre_proof_cequiv_transitivity H a b c wfc covc prf1 prf2,
               could_not_apply_update_because_wrong_address)
       end
     end
   end.
 
-Definition update_pre_proof_seq {o} {ctxt}
-           (pps  : @pre_proof_seq o ctxt)
+Definition update_pre_proof_seq {o}
+           (lib  : library)
+           (pps  : @pre_proof_seq o)
            (addr : address)
-           (step : proof_step) : pre_proof_seq ctxt * DEBUG_MSG :=
+           (step : proof_step) : pre_proof_seq * DEBUG_MSG :=
   match pps with
   | MkPreProofSeq name C isp pre_prf =>
-    let (pre_prf', msg) := update_pre_proof pre_prf addr step in
+    let (pre_prf', msg) := update_pre_proof lib pre_prf addr step in
     match msg with
     | could_not_apply_update_because_wrong_address =>
       (MkPreProofSeq name C isp pre_prf',
@@ -5934,7 +6205,7 @@ Definition SoftLibrary_update_proof {o}
   match find_unfinished_in_pre_proofs (SoftLibrary_unfinished state) name with
   | (Some pp, pps) =>
 
-    let (pp', msg) := update_pre_proof_seq pp addr step in
+    let (pp', msg) := update_pre_proof_seq (RigidLibrary2lib state) pp addr step in
     MkUpdRes (SoftLibrary_change_unfinished state (pp' :: pps)) [msg]
 
   | (None, pps) => MkUpdRes state [could_not_apply_update_because_could_not_find_lemma]
@@ -5945,8 +6216,8 @@ Definition SoftLibrary_start_proof {o}
            (name  : LemmaName)
            (C     : NTerm)
            (isp   : isprog C) : UpdRes :=
-  let pps : pre_proof_seq (RigidLibrary2ProofContext (SoftLibrary_lib state)) :=
-      MkPreProofSeq name C isp (pre_proof_hole _ (term2pre_baresequent C))
+  let pps : pre_proof_seq :=
+      MkPreProofSeq name C isp (pre_proof_hole (term2pre_baresequent C))
   in
   MkUpdRes
     (MkSoftLibrary
@@ -5955,59 +6226,58 @@ Definition SoftLibrary_start_proof {o}
     [started_proof].
 
 Fixpoint find_holes_in_pre_proof {o}
-         {ctxt : @ProofContext o}
-         {s    : pre_baresequent}
-         (p    : pre_proof ctxt s)
+         {s    : @pre_baresequent o}
+         (p    : pre_proof s)
          (addr : address) : Holes :=
   match p with
-  | pre_proof_from_ctxt _ c H i => []
+  | pre_proof_from_ctxt c H => []
 
-  | pre_proof_hole _ s => [MkHole s addr]
+  | pre_proof_hole s => [MkHole s addr]
 
-  | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+  | pre_proof_isect_eq a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+  | pre_proof_isect_member_formation A x B z i H nizH prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_approx_refl _ a H => []
+  | pre_proof_approx_refl a H => []
 
-  | pre_proof_cequiv_refl _ a H => []
+  | pre_proof_cequiv_refl a H => []
 
-  | pre_proof_cequiv_alpha_eq _ a b H aeq => []
+  | pre_proof_cequiv_alpha_eq a b H aeq => []
 
-  | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
+  | pre_proof_cequiv_approx a b H prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+  | pre_proof_approx_eq a1 a2 b1 b2 i H prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+  | pre_proof_cequiv_eq a1 a2 b1 b2 i H prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_cut _ B C x H wfB covB nixH prf1 prf2 =>
+  | pre_proof_cut B C x H wfB covB nixH prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_hypothesis _ x A G J => []
+  | pre_proof_hypothesis x A G J => []
 
-  | pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2 =>
+  | pre_proof_cequiv_subst_concl C x a b H wfa wfb cova covb prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2 =>
+  | pre_proof_cequiv_subst_hyp H z T x a b J C wfa wfb cova covb prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
@@ -6024,76 +6294,76 @@ Fixpoint find_holes_in_pre_proof {o}
   | pre_proof_rev_unfold_abstractions _ abs a H wfa cova unf prf =>
     find_holes_in_pre_proof prf (snoc addr 1)
 
-  | pre_proof_universe_equality _ i j H ltij => []
+  | pre_proof_universe_equality i j H ltij => []
 
-  | pre_proof_hypothesis_equality _ x A G J => []
+  | pre_proof_hypothesis_equality x A G J => []
 
-  | pre_proof_maybe_hidden_hypothesis_equality _ x A G J b => []
+  | pre_proof_maybe_hidden_hypothesis_equality x A G J b => []
 
-  | pre_proof_unhide_equality _ x A t1 t2 C G J prf =>
+  | pre_proof_unhide_equality x A t1 t2 C G J prf =>
     find_holes_in_pre_proof prf (snoc addr 1)
 
-  | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+  | pre_proof_equality_equality A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     let holes3 := find_holes_in_pre_proof prf3 (snoc addr 3) in
     holes1 ++ holes2 ++ holes3
 
-  | pre_proof_integer_equality _ n H => []
+  | pre_proof_integer_equality n H => []
 
-  | pre_proof_introduction _ t C H wft covt nout prf =>
+  | pre_proof_introduction t C H wft covt nout prf =>
     find_holes_in_pre_proof prf (snoc addr 1)
 
-  | pre_proof_axiom_equality _ a b T H prf =>
+  | pre_proof_axiom_equality a b T H prf =>
     find_holes_in_pre_proof prf (snoc addr 1)
 
-  | pre_proof_thin _ G J A C x nixJ nixC prf =>
+  | pre_proof_thin G J A C x nixJ nixC prf =>
     find_holes_in_pre_proof prf (snoc addr 1)
 
-  | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+  | pre_proof_function_equality a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+  | pre_proof_apply_equality A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
+  | pre_proof_isect_elimination A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+  | pre_proof_isect_elimination2 A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+  | pre_proof_isect_member_equality H t1 t2 A x B z i nizH prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_cumulativity _ H T i j leij prf1 =>
+  | pre_proof_cumulativity H T i j leij prf1 =>
     find_holes_in_pre_proof prf1 (snoc addr 1)
 
-  | pre_proof_equality_symmetry _ H a b T prf1 =>
+  | pre_proof_equality_symmetry H a b T prf1 =>
     find_holes_in_pre_proof prf1 (snoc addr 1)
 
-  | pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2 =>
+  | pre_proof_equality_transitivity H a b c T wfc covc prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
 
-  | pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2 =>
+  | pre_proof_cequiv_transitivity H a b c wfc covc prf1 prf2 =>
     let holes1 := find_holes_in_pre_proof prf1 (snoc addr 1) in
     let holes2 := find_holes_in_pre_proof prf2 (snoc addr 2) in
     holes1 ++ holes2
   end.
 
-Definition find_holes_in_pre_proof_seq {o} {ctxt}
-           (pps : @pre_proof_seq o ctxt) : Holes :=
+Definition find_holes_in_pre_proof_seq {o}
+           (pps : @pre_proof_seq o) : Holes :=
   match pps with
   | MkPreProofSeq name C isp pre_prf => find_holes_in_pre_proof pre_prf []
   end.
@@ -6111,76 +6381,75 @@ Definition SoftLibrary_find_holes {o}
   end.
 
 Fixpoint find_sequent_in_pre_proof {o}
-         {ctxt : @ProofContext o}
-         {s    : pre_baresequent}
-         (p    : pre_proof ctxt s)
+         {s    : @pre_baresequent o}
+         (p    : pre_proof s)
          (addr : address) : option pre_baresequent :=
   match addr with
   | [] => Some s
   | n :: addr =>
     match p with
-    | pre_proof_from_ctxt _ c H i => None
+    | pre_proof_from_ctxt c H => None
 
-    | pre_proof_hole _ s => None
+    | pre_proof_hole s => None
 
-    | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    | pre_proof_isect_eq a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+    | pre_proof_isect_member_formation A x B z i H nizH prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_approx_refl _ a H => None
+    | pre_proof_approx_refl a H => None
 
-    | pre_proof_cequiv_refl _ a H => None
+    | pre_proof_cequiv_refl a H => None
 
-    | pre_proof_cequiv_alpha_eq _ a b H aeq => None
+    | pre_proof_cequiv_alpha_eq a b H aeq => None
 
-    | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
+    | pre_proof_cequiv_approx a b H prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+    | pre_proof_approx_eq a1 a2 b1 b2 i H prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+    | pre_proof_cequiv_eq a1 a2 b1 b2 i H prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_cut _ B C x H wfB covB nixH prf1 prf2 =>
+    | pre_proof_cut B C x H wfB covB nixH prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_hypothesis _ x A G J => None
+    | pre_proof_hypothesis x A G J => None
 
-    | pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2 =>
+    | pre_proof_cequiv_subst_concl C x a b H wfa wfb cova covb prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2 =>
+    | pre_proof_cequiv_subst_hyp H z T x a b J C wfa wfb cova covb prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
@@ -6205,19 +6474,19 @@ Fixpoint find_sequent_in_pre_proof {o}
       | _ => None
       end
 
-    | pre_proof_universe_equality _ i j H ltij => None
+    | pre_proof_universe_equality i j H ltij => None
 
-    | pre_proof_hypothesis_equality _ x A G J => None
+    | pre_proof_hypothesis_equality x A G J => None
 
-    | pre_proof_maybe_hidden_hypothesis_equality _ x A G J b => None
+    | pre_proof_maybe_hidden_hypothesis_equality x A G J b => None
 
-    | pre_proof_unhide_equality _ x A t1 t2 C G J prf =>
+    | pre_proof_unhide_equality x A t1 t2 C G J prf =>
       match n with
       | 1 => find_sequent_in_pre_proof prf addr
       | _ => None
       end
 
-    | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+    | pre_proof_equality_equality A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
@@ -6225,81 +6494,81 @@ Fixpoint find_sequent_in_pre_proof {o}
       | _ => None
       end
 
-    | pre_proof_integer_equality _ n H => None
+    | pre_proof_integer_equality n H => None
 
-    | pre_proof_introduction _ t C H wft covt nout prf =>
+    | pre_proof_introduction t C H wft covt nout prf =>
       match n with
       | 1 => find_sequent_in_pre_proof prf addr
       | _ => None
       end
 
-    | pre_proof_axiom_equality _ a b T H prf =>
+    | pre_proof_axiom_equality a b T H prf =>
       match n with
       | 1 => find_sequent_in_pre_proof prf addr
       | _ => None
       end
 
-    | pre_proof_thin _ G J A C x nixJ nixC prf =>
+    | pre_proof_thin G J A C x nixJ nixC prf =>
       match n with
       | 1 => find_sequent_in_pre_proof prf addr
       | _ => None
       end
 
-    | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+    | pre_proof_function_equality a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+    | pre_proof_apply_equality A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
+    | pre_proof_isect_elimination A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+    | pre_proof_isect_elimination2 A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+    | pre_proof_isect_member_equality H t1 t2 A x B z i nizH prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_cumulativity _ H T i j leij prf1 =>
+    | pre_proof_cumulativity H T i j leij prf1 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | _ => None
       end
 
-    | pre_proof_equality_symmetry _ H a b T prf1 =>
+    | pre_proof_equality_symmetry H a b T prf1 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | _ => None
       end
 
-    | pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2 =>
+    | pre_proof_equality_transitivity H a b c T wfc covc prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
       | _ => None
       end
 
-    | pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2 =>
+    | pre_proof_cequiv_transitivity H a b c wfc covc prf1 prf2 =>
       match n with
       | 1 => find_sequent_in_pre_proof prf1 addr
       | 2 => find_sequent_in_pre_proof prf2 addr
@@ -6308,8 +6577,8 @@ Fixpoint find_sequent_in_pre_proof {o}
     end
   end.
 
-Definition find_sequent_in_pre_proof_seq {o} {ctxt}
-           (pps  : @pre_proof_seq o ctxt)
+Definition find_sequent_in_pre_proof_seq {o}
+           (pps  : @pre_proof_seq o)
            (addr : address) : option pre_baresequent :=
   match pps with
   | MkPreProofSeq name C isp pre_prf => find_sequent_in_pre_proof pre_prf addr
@@ -6516,49 +6785,49 @@ Proof.
 Defined.
 
 Lemma proof_named_concl2bseq_rename_implies {o} :
-  forall {r} {ctxt} {H : @bhyps o} {c},
-    proof (rename_ProofContext r ctxt) (named_concl2bseq (rename_barehypotheses r H) (rename_named_concl r c))
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (named_concl2bseq H c)).
+  forall {r} {H : @bhyps o} {c},
+    proof (named_concl2bseq (rename_barehypotheses r H) (rename_named_concl r c))
+    -> proof (rename_baresequent r (named_concl2bseq H c)).
 Proof.
   introv prf; simpl in *; auto.
 Defined.
 
 Lemma pre_proof_named_concl2pre_bseq_rename_implies {o} :
-  forall {r} {ctxt} {H : @bhyps o} {c},
-    pre_proof (rename_ProofContext r ctxt) (named_concl2pre_bseq (rename_barehypotheses r H) (rename_named_concl r c))
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (named_concl2pre_bseq H c)).
+  forall {r} {H : @bhyps o} {c},
+    pre_proof (named_concl2pre_bseq (rename_barehypotheses r H) (rename_named_concl r c))
+    -> pre_proof (rename_pre_baresequent r (named_concl2pre_bseq H c)).
 Proof.
   introv prf; simpl in *; auto.
 Defined.
 
 Lemma proof_mk_bseq_rename_implies {o} :
-  forall {r} {ctxt} {H : @bhyps o} {c},
-    proof (rename_ProofContext r ctxt) (mk_bseq (rename_barehypotheses r H) (rename_conclusion r c))
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (mk_bseq H c)).
+  forall {r} {H : @bhyps o} {c},
+    proof (mk_bseq (rename_barehypotheses r H) (rename_conclusion r c))
+    -> proof (rename_baresequent r (mk_bseq H c)).
 Proof.
   introv prf; simpl in *; auto.
 Defined.
 
 Lemma implies_proof_rename_named_concl2bseq {o} :
-  forall {r} {ctxt} {H : @bhyps o} {c},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (named_concl2bseq H c))
-    -> proof (rename_ProofContext r ctxt) (named_concl2bseq (rename_barehypotheses r H) (rename_named_concl r c)).
+  forall {r} {H : @bhyps o} {c},
+    proof (rename_baresequent r (named_concl2bseq H c))
+    -> proof (named_concl2bseq (rename_barehypotheses r H) (rename_named_concl r c)).
 Proof.
   introv prf; simpl in *; auto.
 Defined.
 
 Lemma implies_proof_rename_mk_bseq {o} :
-  forall {r} {ctxt} {H : @bhyps o} {c},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (mk_bseq H c))
-    -> proof (rename_ProofContext r ctxt) (mk_bseq (rename_barehypotheses r H) (rename_conclusion r c)).
+  forall {r} {H : @bhyps o} {c},
+    proof (rename_baresequent r (mk_bseq H c))
+    -> proof (mk_bseq (rename_barehypotheses r H) (rename_conclusion r c)).
 Proof.
   introv prf; simpl in *; auto.
 Defined.
 
 Lemma proof_rename_rule_isect_equality2_hyp2_implies {o} :
-  forall {r} {ctxt} {a1 b1 b2 e2 : @NTerm o} {x1} {x2} {y} {i} {H},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_equality2_hyp2 a1 b1 b2 e2 x1 x2 y i H))
-    -> proof (rename_ProofContext r ctxt) (rule_isect_equality2_hyp2 (rename_term r a1) (rename_term r b1) (rename_term r b2) (rename_term r e2) x1 x2 y i  (rename_barehypotheses r H)).
+  forall {r} {a1 b1 b2 e2 : @NTerm o} {x1} {x2} {y} {i} {H},
+    proof (rename_baresequent r (rule_isect_equality2_hyp2 a1 b1 b2 e2 x1 x2 y i H))
+    -> proof (rule_isect_equality2_hyp2 (rename_term r a1) (rename_term r b1) (rename_term r b2) (rename_term r e2) x1 x2 y i  (rename_barehypotheses r H)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
@@ -6566,9 +6835,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_isect_equality_hyp2_implies {o} :
-  forall {r} {ctxt} {a1 b1 b2 : @NTerm o} {x1} {x2} {y} {i} {H},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_equality_hyp2 (rename_term r a1) (rename_term r b1) (rename_term r b2) x1 x2 y i (rename_barehypotheses r H)).
+  forall {r} {a1 b1 b2 : @NTerm o} {x1} {x2} {y} {i} {H},
+    pre_proof (rename_pre_baresequent r (pre_rule_isect_equality_hyp2 a1 b1 b2 x1 x2 y i H))
+    -> pre_proof (pre_rule_isect_equality_hyp2 (rename_term r a1) (rename_term r b1) (rename_term r b2) x1 x2 y i (rename_barehypotheses r H)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
@@ -6576,9 +6845,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_isect_member_formation_hyp1 {o} :
-  forall {r} {ctxt} {z} {A : @NTerm o} {x} {B} {b} {H},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_member_formation_hyp1 z A x B b H))
-    -> proof (rename_ProofContext r ctxt) (rule_isect_member_formation_hyp1 z (rename_term r A) x (rename_term r B) (rename_term r b) (rename_barehypotheses r H)).
+  forall {r} {z} {A : @NTerm o} {x} {B} {b} {H},
+    proof (rename_baresequent r (rule_isect_member_formation_hyp1 z A x B b H))
+    -> proof (rule_isect_member_formation_hyp1 z (rename_term r A) x (rename_term r B) (rename_term r b) (rename_barehypotheses r H)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
@@ -6586,9 +6855,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_isect_member_formation_hyp1 {o} :
-  forall {r} {ctxt} {z} {A : @NTerm o} {x} {B} {H},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_member_formation_hyp1 z A x B H))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_member_formation_hyp1 z (rename_term r A) x (rename_term r B) (rename_barehypotheses r H)).
+  forall {r} {z} {A : @NTerm o} {x} {B} {H},
+    pre_proof (rename_pre_baresequent r (pre_rule_isect_member_formation_hyp1 z A x B H))
+    -> pre_proof (pre_rule_isect_member_formation_hyp1 z (rename_term r A) x (rename_term r B) (rename_barehypotheses r H)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
@@ -6596,36 +6865,36 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_cut_hyp2 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {x} {B} {C} {t},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cut_hyp2 H x B C t))
-    -> proof (rename_ProofContext r ctxt) (rule_cut_hyp2 (rename_barehypotheses r H) x (rename_term r B) (rename_term r C) (rename_term r t)).
+  forall {r} {H : @bhyps o} {x} {B} {C} {t},
+    proof (rename_baresequent r (rule_cut_hyp2 H x B C t))
+    -> proof (rule_cut_hyp2 (rename_barehypotheses r H) x (rename_term r B) (rename_term r C) (rename_term r t)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_cut_hyp2 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {x} {B} {C},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cut_hyp2 H x B C))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_cut_hyp2 (rename_barehypotheses r H) x (rename_term r B) (rename_term r C)).
+  forall {r} {H : @bhyps o} {x} {B} {C},
+    pre_proof (rename_pre_baresequent r (pre_rule_cut_hyp2 H x B C))
+    -> pre_proof (pre_rule_cut_hyp2 (rename_barehypotheses r H) x (rename_term r B) (rename_term r C)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
 Defined.
 
 Lemma proof_rename_rule_cut_concl {o} :
-  forall {r} {ctxt} {H : @bhyps o} {C} {t} {x} {u},
-    proof (rename_ProofContext r ctxt) (rule_cut_concl (rename_barehypotheses r H) (rename_term r C) (rename_term r t) x (rename_term r u))
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cut_concl H C t x u)).
+  forall {r} {H : @bhyps o} {C} {t} {x} {u},
+    proof (rule_cut_concl (rename_barehypotheses r H) (rename_term r C) (rename_term r t) x (rename_term r u))
+    -> proof (rename_baresequent r (rule_cut_concl H C t x u)).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_term_subst); auto.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_cut_concl {o} :
-  forall {r} {ctxt} {H : @bhyps o} {C},
-    pre_proof (rename_ProofContext r ctxt) (pre_rule_cut_concl (rename_barehypotheses r H) (rename_term r C))
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cut_concl H C)).
+  forall {r} {H : @bhyps o} {C},
+    pre_proof (pre_rule_cut_concl (rename_barehypotheses r H) (rename_term r C))
+    -> pre_proof (rename_pre_baresequent r (pre_rule_cut_concl H C)).
 Proof.
   introv prf; simpl in *; auto.
 Defined.
@@ -6640,9 +6909,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_hypothesis_concl {o} :
-  forall {r} {ctxt} {G : @bhyps o} {J} {A} {x},
-    proof (rename_ProofContext r ctxt) (rule_hypothesis_concl (rename_barehypotheses r G)  (rename_barehypotheses r J) (rename_term r A) x)
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_hypothesis_concl G J A x)).
+  forall {r} {G : @bhyps o} {J} {A} {x},
+    proof (rule_hypothesis_concl (rename_barehypotheses r G)  (rename_barehypotheses r J) (rename_term r A) x)
+    -> proof (rename_baresequent r (rule_hypothesis_concl G J A x)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -6650,9 +6919,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_hypothesis_concl {o} :
-  forall {r} {ctxt} {G : @bhyps o} {J} {A} {x},
-    pre_proof (rename_ProofContext r ctxt) (pre_rule_hypothesis_concl (rename_barehypotheses r G)  (rename_barehypotheses r J) (rename_term r A) x)
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_hypothesis_concl G J A x)).
+  forall {r} {G : @bhyps o} {J} {A} {x},
+    pre_proof (pre_rule_hypothesis_concl (rename_barehypotheses r G)  (rename_barehypotheses r J) (rename_term r A) x)
+    -> pre_proof (rename_pre_baresequent r (pre_rule_hypothesis_concl G J A x)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -6660,45 +6929,45 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_cequiv_subst_hyp1 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {x} {C} {b} {t},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cequiv_subst_hyp1 H x C b t))
-    -> proof (rename_ProofContext r ctxt) (rule_cequiv_subst_hyp1 (rename_barehypotheses r H) x (rename_term r C) (rename_term r b) (rename_term r t)).
+  forall {r} {H : @bhyps o} {x} {C} {b} {t},
+    proof (rename_baresequent r (rule_cequiv_subst_hyp1 H x C b t))
+    -> proof (rule_cequiv_subst_hyp1 (rename_barehypotheses r H) x (rename_term r C) (rename_term r b) (rename_term r t)).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_term_subst in prf); auto.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_cequiv_subst_hyp1 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {x} {C} {b},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp1 H x C b))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_cequiv_subst_hyp1 (rename_barehypotheses r H) x (rename_term r C) (rename_term r b)).
+  forall {r} {H : @bhyps o} {x} {C} {b},
+    pre_proof (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp1 H x C b))
+    -> pre_proof (pre_rule_cequiv_subst_hyp1 (rename_barehypotheses r H) x (rename_term r C) (rename_term r b)).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_term_subst in prf); auto.
 Defined.
 
 Lemma implies_proof_rename_rule_cequiv_subst_hyp1 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {x} {C} {a} {t},
-    proof (rename_ProofContext r ctxt) (rule_cequiv_subst_hyp1 (rename_barehypotheses r H) x (rename_term r C) (rename_term r a) (rename_term r t))
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cequiv_subst_hyp1 H x C a t)).
+  forall {r} {H : @bhyps o} {x} {C} {a} {t},
+    proof (rule_cequiv_subst_hyp1 (rename_barehypotheses r H) x (rename_term r C) (rename_term r a) (rename_term r t))
+    -> proof (rename_baresequent r (rule_cequiv_subst_hyp1 H x C a t)).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_term_subst); auto.
 Defined.
 
 Lemma implies_pre_proof_rename_pre_rule_cequiv_subst_hyp1 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {x} {C} {a},
-    pre_proof (rename_ProofContext r ctxt) (pre_rule_cequiv_subst_hyp1 (rename_barehypotheses r H) x (rename_term r C) (rename_term r a))
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp1 H x C a)).
+  forall {r} {H : @bhyps o} {x} {C} {a},
+    pre_proof (pre_rule_cequiv_subst_hyp1 (rename_barehypotheses r H) x (rename_term r C) (rename_term r a))
+    -> pre_proof (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp1 H x C a)).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_term_subst); auto.
 Defined.
 
 Lemma proof_rename_rule_cequiv_subst_hyp_hyp2 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {z} {T} {x} {a} {J} {b} {e},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cequiv_subst_hyp_hyp2 H z T x a J b e))
-    -> proof (rename_ProofContext r ctxt) (rule_cequiv_subst_hyp_hyp2 (rename_barehypotheses r H) z (rename_term r T) x (rename_term r a) (rename_barehypotheses r J) (rename_term r b) (rename_term r e)).
+  forall {r} {H : @bhyps o} {z} {T} {x} {a} {J} {b} {e},
+    proof (rename_baresequent r (rule_cequiv_subst_hyp_hyp2 H z T x a J b e))
+    -> proof (rule_cequiv_subst_hyp_hyp2 (rename_barehypotheses r H) z (rename_term r T) x (rename_term r a) (rename_barehypotheses r J) (rename_term r b) (rename_term r e)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app in prf; simpl in *; auto.
@@ -6707,9 +6976,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_cequiv_subst_hyp_hyp2 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {z} {T} {x} {a} {J} {b},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp_hyp2 H z T x a J b))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_cequiv_subst_hyp_hyp2 (rename_barehypotheses r H) z (rename_term r T) x (rename_term r a) (rename_barehypotheses r J) (rename_term r b)).
+  forall {r} {H : @bhyps o} {z} {T} {x} {a} {J} {b},
+    pre_proof (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp_hyp2 H z T x a J b))
+    -> pre_proof (pre_rule_cequiv_subst_hyp_hyp2 (rename_barehypotheses r H) z (rename_term r T) x (rename_term r a) (rename_barehypotheses r J) (rename_term r b)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app in prf; simpl in *; auto.
@@ -6718,9 +6987,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_cequiv_subst_hyp_hyp1 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {z} {T} {x} {b} {J} {C} {t},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cequiv_subst_hyp_hyp1 H z T x b J C t))
-    -> proof (rename_ProofContext r ctxt) (rule_cequiv_subst_hyp_hyp1 (rename_barehypotheses r H) z (rename_term r T) x (rename_term r b) (rename_barehypotheses r J) (rename_term r C) (rename_term r t)).
+  forall {r} {H : @bhyps o} {z} {T} {x} {b} {J} {C} {t},
+    proof (rename_baresequent r (rule_cequiv_subst_hyp_hyp1 H z T x b J C t))
+    -> proof (rule_cequiv_subst_hyp_hyp1 (rename_barehypotheses r H) z (rename_term r T) x (rename_term r b) (rename_barehypotheses r J) (rename_term r C) (rename_term r t)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app in prf; simpl in *; auto.
@@ -6729,9 +6998,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_cequiv_subst_hyp_hyp1 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {z} {T} {x} {b} {J} {C},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp_hyp1 H z T x b J C))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_cequiv_subst_hyp_hyp1 (rename_barehypotheses r H) z (rename_term r T) x (rename_term r b) (rename_barehypotheses r J) (rename_term r C)).
+  forall {r} {H : @bhyps o} {z} {T} {x} {b} {J} {C},
+    pre_proof (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp_hyp1 H z T x b J C))
+    -> pre_proof (pre_rule_cequiv_subst_hyp_hyp1 (rename_barehypotheses r H) z (rename_term r T) x (rename_term r b) (rename_barehypotheses r J) (rename_term r C)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app in prf; simpl in *; auto.
@@ -6740,9 +7009,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_cequiv_subst_hyp_concl {o} :
-  forall {r} {ctxt} {H : @bhyps o} {z} {T} {x} {a} {J} {C} {t},
-    proof (rename_ProofContext r ctxt) (rule_cequiv_subst_hyp_concl (rename_barehypotheses r H) z (rename_term r T) x (rename_term r a) (rename_barehypotheses r J) (rename_term r C) (rename_term r t))
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_cequiv_subst_hyp_concl H z T x a J C t)).
+  forall {r} {H : @bhyps o} {z} {T} {x} {a} {J} {C} {t},
+    proof (rule_cequiv_subst_hyp_concl (rename_barehypotheses r H) z (rename_term r T) x (rename_term r a) (rename_barehypotheses r J) (rename_term r C) (rename_term r t))
+    -> proof (rename_baresequent r (rule_cequiv_subst_hyp_concl H z T x a J C t)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -6751,9 +7020,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_cequiv_subst_hyp_concl {o} :
-  forall {r} {ctxt} {H : @bhyps o} {z} {T} {x} {a} {J} {C},
-    pre_proof (rename_ProofContext r ctxt) (pre_rule_cequiv_subst_hyp_concl (rename_barehypotheses r H) z (rename_term r T) x (rename_term r a) (rename_barehypotheses r J) (rename_term r C))
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp_concl H z T x a J C)).
+  forall {r} {H : @bhyps o} {z} {T} {x} {a} {J} {C},
+    pre_proof (pre_rule_cequiv_subst_hyp_concl (rename_barehypotheses r H) z (rename_term r T) x (rename_term r a) (rename_barehypotheses r J) (rename_term r C))
+    -> pre_proof (rename_pre_baresequent r (pre_rule_cequiv_subst_hyp_concl H z T x a J C)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -6837,45 +7106,45 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_unfold_abstraction_hyp {o} :
-  forall {r} {ctxt} {abs} {a} {e} {H : @bhyps o},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_unfold_abstractions_hyp ctxt abs a e H))
-    -> proof (rename_ProofContext r ctxt) (rule_unfold_abstractions_hyp (rename_ProofContext r ctxt) (rename_abs r abs) (rename_term r a) (rename_term r e) (rename_barehypotheses r H)).
+  forall {r} {lib} {abs} {a} {e} {H : @bhyps o},
+    proof (rename_baresequent r (rule_unfold_abstractions_hyp lib abs a e H))
+    -> proof (rule_unfold_abstractions_hyp (rename_lib r lib) (rename_abs r abs) (rename_term r a) (rename_term r e) (rename_barehypotheses r H)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_term_unfold_abstractions in prf; auto.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_unfold_abstraction_hyp {o} :
-  forall {r} {ctxt} {abs} {a} {H : @bhyps o},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_unfold_abstractions_hyp ctxt abs a H))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_unfold_abstractions_hyp (rename_ProofContext r ctxt) (rename_abs r abs) (rename_term r a) (rename_barehypotheses r H)).
+  forall {r} {lib} {abs} {a} {H : @bhyps o},
+    pre_proof (rename_pre_baresequent r (pre_rule_unfold_abstractions_hyp lib abs a H))
+    -> pre_proof (pre_rule_unfold_abstractions_hyp (rename_lib r lib) (rename_abs r abs) (rename_term r a) (rename_barehypotheses r H)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_term_unfold_abstractions in prf; auto.
 Defined.
 
 Lemma proof_rename_rule_unfold_abstractions_hyp {o} :
-  forall {r} {ctxt} {abs} {a} {e} {H : @bhyps o},
-    proof (rename_ProofContext r ctxt) (rule_unfold_abstractions_hyp (rename_ProofContext r ctxt) (rename_abs r abs) (rename_term r a) (rename_term r e) (rename_barehypotheses r H))
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_unfold_abstractions_hyp ctxt abs a e H)).
+  forall {r} {lib} {abs} {a} {e} {H : @bhyps o},
+    proof (rule_unfold_abstractions_hyp (rename_lib r lib) (rename_abs r abs) (rename_term r a) (rename_term r e) (rename_barehypotheses r H))
+    -> proof (rename_baresequent r (rule_unfold_abstractions_hyp lib abs a e H)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_term_unfold_abstractions; auto.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_unfold_abstractions_hyp {o} :
-  forall {r} {ctxt} {abs} {a} {H : @bhyps o},
-    pre_proof (rename_ProofContext r ctxt) (pre_rule_unfold_abstractions_hyp (rename_ProofContext r ctxt) (rename_abs r abs) (rename_term r a) (rename_barehypotheses r H))
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_unfold_abstractions_hyp ctxt abs a H)).
+  forall {r} {lib} {abs} {a} {H : @bhyps o},
+    pre_proof (pre_rule_unfold_abstractions_hyp (rename_lib r lib) (rename_abs r abs) (rename_term r a) (rename_barehypotheses r H))
+    -> pre_proof (rename_pre_baresequent r (pre_rule_unfold_abstractions_hyp lib abs a H)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_term_unfold_abstractions; auto.
 Defined.
 
 Lemma proof_rename_rule_hypothesis_equality_concl {o} :
-  forall {r} {ctxt} {G : @bhyps o} {J} {A} {x},
-    proof (rename_ProofContext r ctxt) (rule_hypothesis_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r A) x)
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_hypothesis_equality_concl G J A x)).
+  forall {r} {G : @bhyps o} {J} {A} {x},
+    proof (rule_hypothesis_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r A) x)
+    -> proof (rename_baresequent r (rule_hypothesis_equality_concl G J A x)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -6883,9 +7152,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_hypothesis_equality_concl {o} :
-  forall {r} {ctxt} {G : @bhyps o} {J} {A} {x},
-    pre_proof (rename_ProofContext r ctxt) (pre_rule_hypothesis_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r A) x)
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_hypothesis_equality_concl G J A x)).
+  forall {r} {G : @bhyps o} {J} {A} {x},
+    pre_proof (pre_rule_hypothesis_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r A) x)
+    -> pre_proof (rename_pre_baresequent r (pre_rule_hypothesis_equality_concl G J A x)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -6893,9 +7162,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_maybe_hidden_hypothesis_equality_concl {o} :
-  forall {r} {ctxt} {G : @bhyps o} {J} {A} {x} {b},
-    proof (rename_ProofContext r ctxt) (rule_maybe_hidden_hypothesis_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r A) x b)
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_maybe_hidden_hypothesis_equality_concl G J A x b)).
+  forall {r} {G : @bhyps o} {J} {A} {x} {b},
+    proof (rule_maybe_hidden_hypothesis_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r A) x b)
+    -> proof (rename_baresequent r (rule_maybe_hidden_hypothesis_equality_concl G J A x b)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -6903,9 +7172,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_maybe_hidden_hypothesis_equality_concl {o} :
-  forall {r} {ctxt} {G : @bhyps o} {J} {A} {x} {b},
-    pre_proof (rename_ProofContext r ctxt) (pre_rule_maybe_hidden_hypothesis_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r A) x b)
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_maybe_hidden_hypothesis_equality_concl G J A x b)).
+  forall {r} {G : @bhyps o} {J} {A} {x} {b},
+    pre_proof (pre_rule_maybe_hidden_hypothesis_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r A) x b)
+    -> pre_proof (rename_pre_baresequent r (pre_rule_maybe_hidden_hypothesis_equality_concl G J A x b)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -6913,9 +7182,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_unhide_equality_hyp {o} :
-  forall {r} {ctxt} {G : @bhyps o} {J} {x} {A} {t1} {t2} {C} {e},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_unhide_equality_hyp G J x A t1 t2 C e))
-    -> proof (rename_ProofContext r ctxt) (rule_unhide_equality_hyp (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C) (rename_term r e)).
+  forall {r} {G : @bhyps o} {J} {x} {A} {t1} {t2} {C} {e},
+    proof (rename_baresequent r (rule_unhide_equality_hyp G J x A t1 t2 C e))
+    -> proof (rule_unhide_equality_hyp (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C) (rename_term r e)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app in prf; simpl in *; auto.
@@ -6923,9 +7192,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_unhide_equality_hyp {o} :
-  forall {r} {ctxt} {G : @bhyps o} {J} {x} {A} {t1} {t2} {C},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_unhide_equality_hyp G J x A t1 t2 C))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_unhide_equality_hyp (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C)).
+  forall {r} {G : @bhyps o} {J} {x} {A} {t1} {t2} {C},
+    pre_proof (rename_pre_baresequent r (pre_rule_unhide_equality_hyp G J x A t1 t2 C))
+    -> pre_proof (pre_rule_unhide_equality_hyp (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app in prf; simpl in *; auto.
@@ -6933,9 +7202,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_unhide_equality_concl {o} :
-  forall {r} {ctxt} {G : @bhyps o} {J} {x} {A} {t1} {t2} {C},
-    proof (rename_ProofContext r ctxt) (rule_unhide_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C))
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_unhide_equality_concl G J x A t1 t2 C)).
+  forall {r} {G : @bhyps o} {J} {x} {A} {t1} {t2} {C},
+    proof (rule_unhide_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C))
+    -> proof (rename_baresequent r (rule_unhide_equality_concl G J x A t1 t2 C)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -6943,9 +7212,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_unhide_equality_concl {o} :
-  forall {r} {ctxt} {G : @bhyps o} {J} {x} {A} {t1} {t2} {C},
-    pre_proof (rename_ProofContext r ctxt) (pre_rule_unhide_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C))
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_unhide_equality_concl G J x A t1 t2 C)).
+  forall {r} {G : @bhyps o} {J} {x} {A} {t1} {t2} {C},
+    pre_proof (pre_rule_unhide_equality_concl (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C))
+    -> pre_proof (rename_pre_baresequent r (pre_rule_unhide_equality_concl G J x A t1 t2 C)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -6953,27 +7222,27 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_thin_hyp {o} :
-  forall {r} {ctxt} {G : @bhyps o} {J} {C} {t},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_thin_hyp G J C t))
-    -> proof (rename_ProofContext r ctxt) (rule_thin_hyp (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r C) (rename_term r t)).
+  forall {r} {G : @bhyps o} {J} {C} {t},
+    proof (rename_baresequent r (rule_thin_hyp G J C t))
+    -> proof (rule_thin_hyp (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r C) (rename_term r t)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app in prf; simpl in *; auto.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_thin_hyp {o} :
-  forall {r} {ctxt} {G : @bhyps o} {J} {C},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_thin_hyp G J C))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_thin_hyp (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r C)).
+  forall {r} {G : @bhyps o} {J} {C},
+    pre_proof (rename_pre_baresequent r (pre_rule_thin_hyp G J C))
+    -> pre_proof (pre_rule_thin_hyp (rename_barehypotheses r G) (rename_barehypotheses r J) (rename_term r C)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app in prf; simpl in *; auto.
 Defined.
 
 Lemma rule_rename_rule_thin_concl {o} :
-  forall {r} {ctxt} {G : @bhyps o} {x} {A} {J} {C} {t},
-    proof (rename_ProofContext r ctxt) (rule_thin_concl (rename_barehypotheses r G) x (rename_term r A) (rename_barehypotheses r J) (rename_term r C) (rename_term r t))
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_thin_concl G x A J C t)).
+  forall {r} {G : @bhyps o} {x} {A} {J} {C} {t},
+    proof (rule_thin_concl (rename_barehypotheses r G) x (rename_term r A) (rename_barehypotheses r J) (rename_term r C) (rename_term r t))
+    -> proof (rename_baresequent r (rule_thin_concl G x A J C t)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -6981,9 +7250,9 @@ Proof.
 Defined.
 
 Lemma pre_rule_rename_pre_rule_thin_concl {o} :
-  forall {r} {ctxt} {G : @bhyps o} {x} {A} {J} {C},
-    pre_proof (rename_ProofContext r ctxt) (pre_rule_thin_concl (rename_barehypotheses r G) x (rename_term r A) (rename_barehypotheses r J) (rename_term r C))
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_thin_concl G x A J C)).
+  forall {r} {G : @bhyps o} {x} {A} {J} {C},
+    pre_proof (pre_rule_thin_concl (rename_barehypotheses r G) x (rename_term r A) (rename_barehypotheses r J) (rename_term r C))
+    -> pre_proof (rename_pre_baresequent r (pre_rule_thin_concl G x A J C)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -6991,9 +7260,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_function_equality_hyp2 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {y} {a1} {b1} {x1} {b2} {x2} {i} {e2},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i e2))
-    -> proof (rename_ProofContext r ctxt) (rule_function_equality_hyp2 (rename_barehypotheses r H) y (rename_term r a1) (rename_term r b1) x1 (rename_term r b2) x2 i (rename_term r e2)).
+  forall {r} {H : @bhyps o} {y} {a1} {b1} {x1} {b2} {x2} {i} {e2},
+    proof (rename_baresequent r (rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i e2))
+    -> proof (rule_function_equality_hyp2 (rename_barehypotheses r H) y (rename_term r a1) (rename_term r b1) x1 (rename_term r b2) x2 i (rename_term r e2)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
@@ -7001,9 +7270,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_function_equality_hyp2 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {y} {a1} {b1} {x1} {b2} {x2} {i},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_function_equality_hyp2 (rename_barehypotheses r H) y (rename_term r a1) (rename_term r b1) x1 (rename_term r b2) x2 i).
+  forall {r} {H : @bhyps o} {y} {a1} {b1} {x1} {b2} {x2} {i},
+    pre_proof (rename_pre_baresequent r (pre_rule_function_equality_hyp2 H y a1 b1 x1 b2 x2 i))
+    -> pre_proof (pre_rule_function_equality_hyp2 (rename_barehypotheses r H) y (rename_term r a1) (rename_term r b1) x1 (rename_term r b2) x2 i).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
@@ -7011,27 +7280,27 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_apply_equality_concl {o} :
-  forall {r} {ctxt} {H : @bhyps o} {f1} {t1} {f2} {t2} {B} {x},
-    proof (rename_ProofContext r ctxt) (rule_apply_equality_concl (rename_barehypotheses r H) (rename_term r f1) (rename_term r t1) (rename_term r f2) (rename_term r t2) (rename_term r B) x)
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_apply_equality_concl H f1 t1 f2 t2 B x)).
+  forall {r} {H : @bhyps o} {f1} {t1} {f2} {t2} {B} {x},
+    proof (rule_apply_equality_concl (rename_barehypotheses r H) (rename_term r f1) (rename_term r t1) (rename_term r f2) (rename_term r t2) (rename_term r B) x)
+    -> proof (rename_baresequent r (rule_apply_equality_concl H f1 t1 f2 t2 B x)).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_term_subst); auto.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_apply_equality_concl {o} :
-  forall {r} {ctxt} {H : @bhyps o} {f1} {t1} {f2} {t2} {B} {x},
-    pre_proof (rename_ProofContext r ctxt) (pre_rule_apply_equality_concl (rename_barehypotheses r H) (rename_term r f1) (rename_term r t1) (rename_term r f2) (rename_term r t2) (rename_term r B) x)
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_apply_equality_concl H f1 t1 f2 t2 B x)).
+  forall {r} {H : @bhyps o} {f1} {t1} {f2} {t2} {B} {x},
+    pre_proof (pre_rule_apply_equality_concl (rename_barehypotheses r H) (rename_term r f1) (rename_term r t1) (rename_term r f2) (rename_term r t2) (rename_term r B) x)
+    -> pre_proof (rename_pre_baresequent r (pre_rule_apply_equality_concl H f1 t1 f2 t2 B x)).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_term_subst); auto.
 Defined.
 
 Lemma proof_rename_rule_isect_elimination_hyp1 {o} :
-  forall {r} {ctxt} {A} {B} {a} {ea} {f} {x} {H : @bhyps o} {J},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_elimination_hyp1 A B a ea f x H J))
-    -> proof (rename_ProofContext r ctxt) (rule_isect_elimination_hyp1 (rename_term r A) (rename_term r B) (rename_term r a) (rename_term r ea) f x (rename_barehypotheses r H) (rename_barehypotheses r J)).
+  forall {r} {A} {B} {a} {ea} {f} {x} {H : @bhyps o} {J},
+    proof (rename_baresequent r (rule_isect_elimination_hyp1 A B a ea f x H J))
+    -> proof (rule_isect_elimination_hyp1 (rename_term r A) (rename_term r B) (rename_term r a) (rename_term r ea) f x (rename_barehypotheses r H) (rename_barehypotheses r J)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app in prf; simpl in *; auto.
@@ -7039,9 +7308,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_isect_elimination_hyp1 {o} :
-  forall {r} {ctxt} {A} {B} {a} {f} {x} {H : @bhyps o} {J},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_elimination_hyp1 A B a f x H J))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_elimination_hyp1 (rename_term r A) (rename_term r B) (rename_term r a) f x (rename_barehypotheses r H) (rename_barehypotheses r J)).
+  forall {r} {A} {B} {a} {f} {x} {H : @bhyps o} {J},
+    pre_proof (rename_pre_baresequent r (pre_rule_isect_elimination_hyp1 A B a f x H J))
+    -> pre_proof (pre_rule_isect_elimination_hyp1 (rename_term r A) (rename_term r B) (rename_term r a) f x (rename_barehypotheses r H) (rename_barehypotheses r J)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app in prf; simpl in *; auto.
@@ -7049,9 +7318,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_isect_elimination_hyp2 {o} :
-  forall {r} {ctxt} {A} {B} {C} {a} {e} {f} {x} {z} {H : @bhyps o} {J},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_elimination_hyp2 A B C a e f x z H J))
-    -> proof (rename_ProofContext r ctxt) (rule_isect_elimination_hyp2 (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r a) (rename_term r e) f x z (rename_barehypotheses r H) (rename_barehypotheses r J)).
+  forall {r} {A} {B} {C} {a} {e} {f} {x} {z} {H : @bhyps o} {J},
+    proof (rename_baresequent r (rule_isect_elimination_hyp2 A B C a e f x z H J))
+    -> proof (rule_isect_elimination_hyp2 (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r a) (rename_term r e) f x z (rename_barehypotheses r H) (rename_barehypotheses r J)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
@@ -7061,9 +7330,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_isect_elimination_hyp2 {o} :
-  forall {r} {ctxt} {A} {B} {C} {a} {f} {x} {z} {H : @bhyps o} {J},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_elimination_hyp2 A B C a f x z H J))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_elimination_hyp2 (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r a) f x z (rename_barehypotheses r H) (rename_barehypotheses r J)).
+  forall {r} {A} {B} {C} {a} {f} {x} {z} {H : @bhyps o} {J},
+    pre_proof (rename_pre_baresequent r (pre_rule_isect_elimination_hyp2 A B C a f x z H J))
+    -> pre_proof (pre_rule_isect_elimination_hyp2 (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r a) f x z (rename_barehypotheses r H) (rename_barehypotheses r J)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_snoc in prf; simpl in *; auto.
@@ -7073,9 +7342,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_isect_elimination_concl {o} :
-  forall {r} {ctxt} {A} {B} {C} {e} {f} {x} {z} {H : @bhyps o} {J},
-    proof (rename_ProofContext r ctxt) (rule_isect_elimination_concl (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r e) f x z (rename_barehypotheses r H) (rename_barehypotheses r J))
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_elimination_concl A B C e f x z H J)).
+  forall {r} {A} {B} {C} {e} {f} {x} {z} {H : @bhyps o} {J},
+    proof (rule_isect_elimination_concl (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r e) f x z (rename_barehypotheses r H) (rename_barehypotheses r J))
+    -> proof (rename_baresequent r (rule_isect_elimination_concl A B C e f x z H J)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -7084,9 +7353,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_isect_elimination_concl {o} :
-  forall {r} {ctxt} {A} {B} {C} {f} {x} {H : @bhyps o} {J},
-    pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_elimination_concl (rename_term r A) (rename_term r B) (rename_term r C) f x (rename_barehypotheses r H) (rename_barehypotheses r J))
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_elimination_concl A B C f x H J)).
+  forall {r} {A} {B} {C} {f} {x} {H : @bhyps o} {J},
+    pre_proof (pre_rule_isect_elimination_concl (rename_term r A) (rename_term r B) (rename_term r C) f x (rename_barehypotheses r H) (rename_barehypotheses r J))
+    -> pre_proof (rename_pre_baresequent r (pre_rule_isect_elimination_concl A B C f x H J)).
 Proof.
   introv prf; simpl in *; auto.
   rewrite rename_barehypotheses_app; simpl in *; auto.
@@ -7094,9 +7363,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_isect_elimination2_hyp2 {o} :
-  forall {r} {ctxt} {A} {B} {C} {a} {e} {f} {x} {y} {z} {H : @bhyps o} {J},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_elimination2_hyp2 A B C a e f x y z H J))
-    -> proof (rename_ProofContext r ctxt) (rule_isect_elimination2_hyp2 (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r a) (rename_term r e) f x y z (rename_barehypotheses r H) (rename_barehypotheses r J)).
+  forall {r} {A} {B} {C} {a} {e} {f} {x} {y} {z} {H : @bhyps o} {J},
+    proof (rename_baresequent r (rule_isect_elimination2_hyp2 A B C a e f x y z H J))
+    -> proof (rule_isect_elimination2_hyp2 (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r a) (rename_term r e) f x y z (rename_barehypotheses r H) (rename_barehypotheses r J)).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_barehypotheses_snoc in prf; simpl in *; auto).
@@ -7106,9 +7375,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_isect_elimination2_hyp2 {o} :
-  forall {r} {ctxt} {A} {B} {C} {a} {f} {x} {y} {z} {H : @bhyps o} {J},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_elimination2_hyp2 A B C a f x y z H J))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_elimination2_hyp2 (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r a) f x y z (rename_barehypotheses r H) (rename_barehypotheses r J)).
+  forall {r} {A} {B} {C} {a} {f} {x} {y} {z} {H : @bhyps o} {J},
+    pre_proof (rename_pre_baresequent r (pre_rule_isect_elimination2_hyp2 A B C a f x y z H J))
+    -> pre_proof (pre_rule_isect_elimination2_hyp2 (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r a) f x y z (rename_barehypotheses r H) (rename_barehypotheses r J)).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_barehypotheses_snoc in prf; simpl in *; auto).
@@ -7118,9 +7387,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_isect_elimination2_concl {o} :
-  forall {r} {ctxt} {A} {B} {C} {e} {f} {x} {y} {z} {H : @bhyps o} {J},
-    proof (rename_ProofContext r ctxt) (rule_isect_elimination2_concl (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r e) f x y z (rename_barehypotheses r H) (rename_barehypotheses r J))
-    -> proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_elimination2_concl A B C e f x y z H J)).
+  forall {r} {A} {B} {C} {e} {f} {x} {y} {z} {H : @bhyps o} {J},
+    proof (rule_isect_elimination2_concl (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r e) f x y z (rename_barehypotheses r H) (rename_barehypotheses r J))
+    -> proof (rename_baresequent r (rule_isect_elimination2_concl A B C e f x y z H J)).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_barehypotheses_snoc; simpl in *; auto).
@@ -7130,9 +7399,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_isect_elimination2_concl {o} :
-  forall {r} {ctxt} {A} {B} {C} {f} {x} {H : @bhyps o} {J},
-    pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_elimination2_concl (rename_term r A) (rename_term r B) (rename_term r C) f x (rename_barehypotheses r H) (rename_barehypotheses r J))
-    -> pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_elimination2_concl A B C f x H J)).
+  forall {r} {A} {B} {C} {f} {x} {H : @bhyps o} {J},
+    pre_proof (pre_rule_isect_elimination2_concl (rename_term r A) (rename_term r B) (rename_term r C) f x (rename_barehypotheses r H) (rename_barehypotheses r J))
+    -> pre_proof (rename_pre_baresequent r (pre_rule_isect_elimination2_concl A B C f x H J)).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_barehypotheses_snoc; simpl in *; auto).
@@ -7141,9 +7410,9 @@ Proof.
 Defined.
 
 Lemma proof_rename_rule_isect_member_equality_hyp1 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {z} {A} {t1} {t2} {B} {x} {e1},
-    proof (rename_ProofContext r ctxt) (rename_baresequent r (rule_isect_member_equality_hyp1 H z A t1 t2 B x e1))
-    -> proof (rename_ProofContext r ctxt) (rule_isect_member_equality_hyp1 (rename_barehypotheses r H) z (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r B) x (rename_term r e1)).
+  forall {r} {H : @bhyps o} {z} {A} {t1} {t2} {B} {x} {e1},
+    proof (rename_baresequent r (rule_isect_member_equality_hyp1 H z A t1 t2 B x e1))
+    -> proof (rule_isect_member_equality_hyp1 (rename_barehypotheses r H) z (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r B) x (rename_term r e1)).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_barehypotheses_snoc in prf; simpl in *; auto).
@@ -7151,9 +7420,9 @@ Proof.
 Defined.
 
 Lemma pre_proof_rename_pre_rule_isect_member_equality_hyp1 {o} :
-  forall {r} {ctxt} {H : @bhyps o} {z} {A} {t1} {t2} {B} {x},
-    pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r (pre_rule_isect_member_equality_hyp1 H z A t1 t2 B x))
-    -> pre_proof (rename_ProofContext r ctxt) (pre_rule_isect_member_equality_hyp1 (rename_barehypotheses r H) z (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r B) x).
+  forall {r} {H : @bhyps o} {z} {A} {t1} {t2} {B} {x},
+    pre_proof (rename_pre_baresequent r (pre_rule_isect_member_equality_hyp1 H z A t1 t2 B x))
+    -> pre_proof (pre_rule_isect_member_equality_hyp1 (rename_barehypotheses r H) z (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r B) x).
 Proof.
   introv prf; simpl in *; auto.
   repeat (rewrite rename_barehypotheses_snoc in prf; simpl in *; auto).
@@ -7192,20 +7461,16 @@ Hint Resolve implies_covered_rename_nh_vars_hyps : slow.
 
 Fixpoint rename_proof {o}
          (r    : renaming)
-         {ctxt : @ProofContext o}
-         {s    : baresequent}
-         (prf  : proof ctxt s) : proof (rename_ProofContext r ctxt) (rename_baresequent r s) :=
+         {s    : @baresequent o}
+         (prf  : proof s) : proof (rename_baresequent r s) :=
   match prf with
-  | proof_from_ctxt _ c H i =>
+  | proof_from_ctxt c H =>
     proof_named_concl2bseq_rename_implies
       (proof_from_ctxt
-         (rename_ProofContext r ctxt)
          (rename_named_concl r c)
-         (rename_barehypotheses r H)
-         (rename_in_PC_conclusions r i))
-  | proof_isect_eq _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH prf1 prf2 =>
+         (rename_barehypotheses r H))
+  | proof_isect_eq a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH prf1 prf2 =>
     proof_isect_eq
-      (rename_ProofContext r ctxt)
       (rename_term r a1)
       (rename_term r a2)
       (rename_term r b1)
@@ -7217,9 +7482,8 @@ Fixpoint rename_proof {o}
       (rename_NVin_vars_hyps r niyH)
       (rename_proof r prf1)
       (proof_rename_rule_isect_equality2_hyp2_implies (rename_proof r prf2))
-  | proof_isect_member_formation _ A x B z i b e H nizH prf1 prf2 =>
+  | proof_isect_member_formation A x B z i b e H nizH prf1 prf2 =>
     proof_isect_member_formation
-      (rename_ProofContext r ctxt)
       (rename_term r A)
       x
       (rename_term r B)
@@ -7230,26 +7494,22 @@ Fixpoint rename_proof {o}
       (rename_NVin_vars_hyps r nizH)
       (proof_rename_rule_isect_member_formation_hyp1 (rename_proof r prf1))
       (rename_proof r prf2)
-  | proof_approx_refl _ a H =>
+  | proof_approx_refl a H =>
     proof_approx_refl
-      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_barehypotheses r H)
-  | proof_cequiv_refl _ a H =>
+  | proof_cequiv_refl a H =>
     proof_cequiv_refl
-      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_barehypotheses r H)
-  | proof_cequiv_alpha_eq _ a b H aeq =>
+  | proof_cequiv_alpha_eq a b H aeq =>
     proof_cequiv_alpha_eq
-      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_term r b)
       (rename_barehypotheses r H)
       (implies_alpha_eq_term_rename r a b aeq)
-  | proof_cequiv_approx _ a b e1 e2 H prf1 prf2 =>
+  | proof_cequiv_approx a b e1 e2 H prf1 prf2 =>
     proof_cequiv_approx
-      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_term r b)
       (rename_term r e1)
@@ -7257,9 +7517,8 @@ Fixpoint rename_proof {o}
       (rename_barehypotheses r H)
       (rename_proof r prf1)
       (rename_proof r prf2)
-  | proof_approx_eq _ a1 a2 b1 b2 e1 e2 i H prf1 prf2 =>
+  | proof_approx_eq a1 a2 b1 b2 e1 e2 i H prf1 prf2 =>
     proof_approx_eq
-      (rename_ProofContext r ctxt)
       (rename_term r a1)
       (rename_term r a2)
       (rename_term r b1)
@@ -7270,9 +7529,8 @@ Fixpoint rename_proof {o}
       (rename_barehypotheses r H)
       (rename_proof r prf1)
       (rename_proof r prf2)
-  | proof_cequiv_eq _ a1 a2 b1 b2 e1 e2 i H prf1 prf2 =>
+  | proof_cequiv_eq a1 a2 b1 b2 e1 e2 i H prf1 prf2 =>
     proof_cequiv_eq
-      (rename_ProofContext r ctxt)
       (rename_term r a1)
       (rename_term r a2)
       (rename_term r b1)
@@ -7283,10 +7541,9 @@ Fixpoint rename_proof {o}
       (rename_barehypotheses r H)
       (rename_proof r prf1)
       (rename_proof r prf2)
-  | proof_cut _ B C t u x H wfB covB nixH prf1 prf2 =>
+  | proof_cut B C t u x H wfB covB nixH prf1 prf2 =>
     proof_rename_rule_cut_concl
       (proof_cut
-         (rename_ProofContext r ctxt)
          (rename_term r B)
          (rename_term r C)
          (rename_term r t)
@@ -7298,18 +7555,16 @@ Fixpoint rename_proof {o}
          (rename_NVin_vars_hyps r nixH)
          (rename_proof r prf1)
          (proof_rename_rule_cut_hyp2 (rename_proof r prf2)))
-  | proof_hypothesis _ x A G J =>
+  | proof_hypothesis x A G J =>
     proof_rename_rule_hypothesis_concl
       (proof_hypothesis
-         (rename_ProofContext r ctxt)
          x
          (rename_term r A)
          (rename_barehypotheses r G)
          (rename_barehypotheses r J))
-  | proof_cequiv_subst_concl _ C x a b t e H wfa wfb cova covb prf1 prf2 =>
+  | proof_cequiv_subst_concl C x a b t e H wfa wfb cova covb prf1 prf2 =>
     implies_proof_rename_rule_cequiv_subst_hyp1
       (proof_cequiv_subst_concl
-         (rename_ProofContext r ctxt)
          (rename_term r C)
          x
          (rename_term r a)
@@ -7323,10 +7578,9 @@ Fixpoint rename_proof {o}
          (implies_covered_rename_vars_hyps r covb)
          (rename_proof r prf1)
          (proof_rename_rule_cequiv_subst_hyp1 (rename_proof r prf2)))
-  | proof_cequiv_subst_hyp _ H z T x a b J C t e wfa wfb cova covb prf1 prf2 =>
+  | proof_cequiv_subst_hyp H z T x a b J C t e wfa wfb cova covb prf1 prf2 =>
     proof_rename_rule_cequiv_subst_hyp_concl
       (proof_cequiv_subst_hyp
-         (rename_ProofContext r ctxt)
          (rename_barehypotheses r H)
          z
          (rename_term r T)
@@ -7343,43 +7597,43 @@ Fixpoint rename_proof {o}
          (implies_covered_rename_vars_hyps r covb)
          (proof_rename_rule_cequiv_subst_hyp_hyp2 (rename_proof r prf1))
          (proof_rename_rule_cequiv_subst_hyp_hyp1 (rename_proof r prf2)))
-  | proof_cequiv_computation _ a b H rd =>
+  | proof_cequiv_computation lib a b H rd =>
     proof_cequiv_computation
-      (rename_ProofContext r ctxt)
+      (rename_lib r lib)
       (rename_term r a)
       (rename_term r b)
       (rename_barehypotheses r H)
-      (reduces_to_rename r ctxt a b rd)
-  | proof_cequiv_computation_aeq _ a b c H rd aeq =>
+      (reduces_to_rename r lib a b rd)
+  | proof_cequiv_computation_aeq lib a b c H rd aeq =>
     proof_cequiv_computation_aeq
-      (rename_ProofContext r ctxt)
+      (rename_lib r lib)
       (rename_term r a)
       (rename_term r b)
       (rename_term r c)
       (rename_barehypotheses r H)
-      (reduces_to_rename r ctxt a b rd)
+      (reduces_to_rename r lib a b rd)
       (implies_alpha_eq_term_rename r b c aeq)
-  | proof_cequiv_computation_atmost _ a b n H rd =>
+  | proof_cequiv_computation_atmost lib a b n H rd =>
     proof_cequiv_computation_atmost
-      (rename_ProofContext r ctxt)
+      (rename_lib r lib)
       (rename_term r a)
       (rename_term r b)
       n
       (rename_barehypotheses r H)
       (reduces_in_atmost_k_steps_rename r rd)
-  | proof_unfold_abstractions _ abs a e H alla prf1 =>
+  | proof_unfold_abstractions lib abs a e H alla prf1 =>
     proof_unfold_abstractions
-      (rename_ProofContext r ctxt)
+      (rename_lib r lib)
       (rename_abs r abs)
       (rename_term r a)
       (rename_term r e)
       (rename_barehypotheses r H)
       (rename_all_abstractions_can_be_unfolded r alla)
       (proof_rename_rule_unfold_abstraction_hyp (rename_proof r prf1))
-  | proof_rev_unfold_abstractions _ abs a e H wfa cova alla prf1 =>
+  | proof_rev_unfold_abstractions lib abs a e H wfa cova alla prf1 =>
     proof_rename_rule_unfold_abstractions_hyp
       (proof_rev_unfold_abstractions
-         (rename_ProofContext r ctxt)
+         (rename_lib r lib)
          (rename_abs r abs)
          (rename_term r a)
          (rename_term r e)
@@ -7388,29 +7642,26 @@ Fixpoint rename_proof {o}
          (implies_covered_rename_vars_hyps r cova)
          (rename_all_abstractions_can_be_unfolded r alla)
          (rename_proof r prf1))
-  | proof_universe_equality _ i j H ltij =>
-    proof_universe_equality _ i j (rename_barehypotheses r H) ltij
-  | proof_hypothesis_equality _ x A G J =>
+  | proof_universe_equality i j H ltij =>
+    proof_universe_equality i j (rename_barehypotheses r H) ltij
+  | proof_hypothesis_equality x A G J =>
     proof_rename_rule_hypothesis_equality_concl
       (proof_hypothesis_equality
-         (rename_ProofContext r ctxt)
          x
          (rename_term r A)
          (rename_barehypotheses r G)
          (rename_barehypotheses r J))
-  | proof_maybe_hidden_hypothesis_equality _ x A G J b =>
+  | proof_maybe_hidden_hypothesis_equality x A G J b =>
     proof_rename_rule_maybe_hidden_hypothesis_equality_concl
       (proof_maybe_hidden_hypothesis_equality
-         (rename_ProofContext r ctxt)
          x
          (rename_term r A)
          (rename_barehypotheses r G)
          (rename_barehypotheses r J)
          b)
-  | proof_unhide_equality _ x A t1 t2 C e G J prf1 =>
+  | proof_unhide_equality x A t1 t2 C e G J prf1 =>
     proof_rename_rule_unhide_equality_concl
       (proof_unhide_equality
-         (rename_ProofContext r ctxt)
          x
          (rename_term r A)
          (rename_term r t1)
@@ -7420,9 +7671,8 @@ Fixpoint rename_proof {o}
          (rename_barehypotheses r G)
          (rename_barehypotheses r J)
          (proof_rename_rule_unhide_equality_hyp (rename_proof r prf1)))
-  | proof_equality_equality _ A B a1 a2 b1 b2 e1 e2 e3 i H prf1 prf2 prf3 =>
+  | proof_equality_equality A B a1 a2 b1 b2 e1 e2 e3 i H prf1 prf2 prf3 =>
     proof_equality_equality
-      (rename_ProofContext r ctxt)
       (rename_term r A)
       (rename_term r B)
       (rename_term r a1)
@@ -7437,14 +7687,12 @@ Fixpoint rename_proof {o}
       (rename_proof r prf1)
       (rename_proof r prf2)
       (rename_proof r prf3)
-  | proof_integer_equality _ n H =>
+  | proof_integer_equality n H =>
     proof_integer_equality
-      (rename_ProofContext r ctxt)
       n
       (rename_barehypotheses r H)
-  | proof_introduction _ t e C H wft covt noutt prf1 =>
+  | proof_introduction t e C H wft covt noutt prf1 =>
     proof_introduction
-      (rename_ProofContext r ctxt)
       (rename_term r t)
       (rename_term r e)
       (rename_term r C)
@@ -7453,19 +7701,17 @@ Fixpoint rename_proof {o}
       (implies_covered_rename_nh_vars_hyps r covt)
       (implies_noutokens_rename_term r t noutt)
       (rename_proof r prf1)
-  | proof_axiom_equality _ e a b T H prf1 =>
+  | proof_axiom_equality e a b T H prf1 =>
     proof_axiom_equality
-      (rename_ProofContext r ctxt)
       (rename_term r e)
       (rename_term r a)
       (rename_term r b)
       (rename_term r T)
       (rename_barehypotheses r H)
       (rename_proof r prf1)
-  | proof_thin _ G J A C t x nixJ nixC prf1 =>
+  | proof_thin G J A C t x nixJ nixC prf1 =>
     rule_rename_rule_thin_concl
       (proof_thin
-         (rename_ProofContext r ctxt)
          (rename_barehypotheses r G)
          (rename_barehypotheses r J)
          (rename_term r A)
@@ -7475,9 +7721,8 @@ Fixpoint rename_proof {o}
          (rename_NVin_free_vars_hyps r nixJ)
          (rename_NVin_free_vars r nixC)
          (proof_rename_rule_thin_hyp (rename_proof r prf1)))
-  | proof_function_equality _ a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH prf1 prf2 =>
+  | proof_function_equality a1 a2 b1 b2 e1 e2 x1 x2 y i H niyH prf1 prf2 =>
     proof_function_equality
-      (rename_ProofContext r ctxt)
       (rename_term r a1)
       (rename_term r a2)
       (rename_term r b1)
@@ -7489,10 +7734,9 @@ Fixpoint rename_proof {o}
       (rename_NVin_vars_hyps r niyH)
       (rename_proof r prf1)
       (proof_rename_rule_function_equality_hyp2 (rename_proof r prf2))
-  | proof_apply_equality _ A B f1 f2 t1 t2 e1 e2 x H wfA covA prf1 prf2 =>
+  | proof_apply_equality A B f1 f2 t1 t2 e1 e2 x H wfA covA prf1 prf2 =>
     proof_rename_rule_apply_equality_concl
       (proof_apply_equality
-         (rename_ProofContext r ctxt)
          (rename_term r A)
          (rename_term r B)
          (rename_term r f1)
@@ -7507,10 +7751,9 @@ Fixpoint rename_proof {o}
          (implies_covered_rename_vars_hyps r covA)
          (rename_proof r prf1)
          (rename_proof r prf2))
-  | proof_isect_elimination _ A B C a e ea f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
+  | proof_isect_elimination A B C a e ea f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
     proof_rename_rule_isect_elimination_concl
       (proof_isect_elimination
-         (rename_ProofContext r ctxt)
          (rename_term r A)
          (rename_term r B)
          (rename_term r C)
@@ -7527,10 +7770,9 @@ Fixpoint rename_proof {o}
          dzf
          (proof_rename_rule_isect_elimination_hyp1 (rename_proof r prf1))
          (proof_rename_rule_isect_elimination_hyp2 (rename_proof r prf2)))
-  | proof_isect_elimination2 _ A B C a e ea f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+  | proof_isect_elimination2 A B C a e ea f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
     proof_rename_rule_isect_elimination2_concl
       (proof_isect_elimination2
-         (rename_ProofContext r ctxt)
          (rename_term r A)
          (rename_term r B)
          (rename_term r C)
@@ -7549,9 +7791,8 @@ Fixpoint rename_proof {o}
          dzf dzy dyf
          (proof_rename_rule_isect_elimination_hyp1 (rename_proof r prf1))
          (proof_rename_rule_isect_elimination2_hyp2 (rename_proof r prf2)))
-  | proof_isect_member_equality _ H t1 t2 A x B e1 e2 z i nizH prf1 prf2 =>
+  | proof_isect_member_equality H t1 t2 A x B e1 e2 z i nizH prf1 prf2 =>
     proof_isect_member_equality
-      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r t1)
       (rename_term r t2)
@@ -7564,26 +7805,23 @@ Fixpoint rename_proof {o}
       (rename_NVin_vars_hyps r nizH)
       (proof_rename_rule_isect_member_equality_hyp1 (rename_proof r prf1))
       (rename_proof r prf2)
-  | proof_cumulativity _ H T e i j leij prf1 =>
+  | proof_cumulativity H T e i j leij prf1 =>
     proof_cumulativity
-      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r T)
       (rename_term r e)
       i j leij
       (rename_proof r prf1)
-  | proof_equality_symmetry _ H a b T e prf1 =>
+  | proof_equality_symmetry H a b T e prf1 =>
     proof_equality_symmetry
-      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r a)
       (rename_term r b)
       (rename_term r T)
       (rename_term r e)
       (rename_proof r prf1)
-  | proof_equality_transitivity _ H a b c T e1 e2 wfc covc prf1 prf2 =>
+  | proof_equality_transitivity H a b c T e1 e2 wfc covc prf1 prf2 =>
     proof_equality_transitivity
-      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r a)
       (rename_term r b)
@@ -7595,9 +7833,8 @@ Fixpoint rename_proof {o}
       (implies_covered_rename_vars_hyps r covc)
       (rename_proof r prf1)
       (rename_proof r prf2)
-  | proof_cequiv_transitivity _ H a b c e1 e2 wfc covc prf1 prf2 =>
+  | proof_cequiv_transitivity H a b c e1 e2 wfc covc prf1 prf2 =>
     proof_cequiv_transitivity
-      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r a)
       (rename_term r b)
@@ -7612,24 +7849,19 @@ Fixpoint rename_proof {o}
 
 Fixpoint rename_pre_proof {o}
          (r    : renaming)
-         {ctxt : @ProofContext o}
-         {s    : pre_baresequent}
-         (prf  : pre_proof ctxt s) : pre_proof (rename_ProofContext r ctxt) (rename_pre_baresequent r s) :=
+         {s    : @pre_baresequent o}
+         (prf  : pre_proof s) : pre_proof (rename_pre_baresequent r s) :=
   match prf with
-  | pre_proof_from_ctxt _ c H i =>
+  | pre_proof_from_ctxt c H =>
     pre_proof_named_concl2pre_bseq_rename_implies
       (pre_proof_from_ctxt
-         (rename_ProofContext r ctxt)
          (rename_named_concl r c)
-         (rename_barehypotheses r H)
-         (rename_in_PC_conclusions r i))
-  | pre_proof_hole _ s =>
+         (rename_barehypotheses r H))
+  | pre_proof_hole s =>
     pre_proof_hole
-      (rename_ProofContext r ctxt)
       (rename_pre_baresequent r s)
-  | pre_proof_isect_eq _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+  | pre_proof_isect_eq a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
     pre_proof_isect_eq
-      (rename_ProofContext r ctxt)
       (rename_term r a1)
       (rename_term r a2)
       (rename_term r b1)
@@ -7639,9 +7871,8 @@ Fixpoint rename_pre_proof {o}
       (rename_NVin_vars_hyps r niyH)
       (rename_pre_proof r prf1)
       (pre_proof_rename_pre_rule_isect_equality_hyp2_implies (rename_pre_proof r prf2))
-  | pre_proof_isect_member_formation _ A x B z i H nizH prf1 prf2 =>
+  | pre_proof_isect_member_formation A x B z i H nizH prf1 prf2 =>
     pre_proof_isect_member_formation
-      (rename_ProofContext r ctxt)
       (rename_term r A)
       x
       (rename_term r B)
@@ -7650,34 +7881,29 @@ Fixpoint rename_pre_proof {o}
       (rename_NVin_vars_hyps r nizH)
       (pre_proof_rename_pre_rule_isect_member_formation_hyp1 (rename_pre_proof r prf1))
       (rename_pre_proof r prf2)
-  | pre_proof_approx_refl _ a H =>
+  | pre_proof_approx_refl a H =>
     pre_proof_approx_refl
-      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_barehypotheses r H)
-  | pre_proof_cequiv_refl _ a H =>
+  | pre_proof_cequiv_refl a H =>
     pre_proof_cequiv_refl
-      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_barehypotheses r H)
-  | pre_proof_cequiv_alpha_eq _ a b H aeq =>
+  | pre_proof_cequiv_alpha_eq a b H aeq =>
     pre_proof_cequiv_alpha_eq
-      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_term r b)
       (rename_barehypotheses r H)
       (implies_alpha_eq_term_rename r a b aeq)
-  | pre_proof_cequiv_approx _ a b H prf1 prf2 =>
+  | pre_proof_cequiv_approx a b H prf1 prf2 =>
     pre_proof_cequiv_approx
-      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_term r b)
       (rename_barehypotheses r H)
       (rename_pre_proof r prf1)
       (rename_pre_proof r prf2)
-  | pre_proof_approx_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+  | pre_proof_approx_eq a1 a2 b1 b2 i H prf1 prf2 =>
     pre_proof_approx_eq
-      (rename_ProofContext r ctxt)
       (rename_term r a1)
       (rename_term r a2)
       (rename_term r b1)
@@ -7686,9 +7912,8 @@ Fixpoint rename_pre_proof {o}
       (rename_barehypotheses r H)
       (rename_pre_proof r prf1)
       (rename_pre_proof r prf2)
-  | pre_proof_cequiv_eq _ a1 a2 b1 b2 i H prf1 prf2 =>
+  | pre_proof_cequiv_eq a1 a2 b1 b2 i H prf1 prf2 =>
     pre_proof_cequiv_eq
-      (rename_ProofContext r ctxt)
       (rename_term r a1)
       (rename_term r a2)
       (rename_term r b1)
@@ -7697,10 +7922,9 @@ Fixpoint rename_pre_proof {o}
       (rename_barehypotheses r H)
       (rename_pre_proof r prf1)
       (rename_pre_proof r prf2)
-  | pre_proof_cut _ B C x H wfB covB nixH prf1 prf2 =>
+  | pre_proof_cut B C x H wfB covB nixH prf1 prf2 =>
     pre_proof_rename_pre_rule_cut_concl
       (pre_proof_cut
-         (rename_ProofContext r ctxt)
          (rename_term r B)
          (rename_term r C)
          x
@@ -7710,18 +7934,16 @@ Fixpoint rename_pre_proof {o}
          (rename_NVin_vars_hyps r nixH)
          (rename_pre_proof r prf1)
          (pre_proof_rename_pre_rule_cut_hyp2 (rename_pre_proof r prf2)))
-  | pre_proof_hypothesis _ x A G J =>
+  | pre_proof_hypothesis x A G J =>
     pre_proof_rename_pre_rule_hypothesis_concl
       (pre_proof_hypothesis
-         (rename_ProofContext r ctxt)
          x
          (rename_term r A)
          (rename_barehypotheses r G)
          (rename_barehypotheses r J))
-  | pre_proof_cequiv_subst_concl _ C x a b H wfa wfb cova covb prf1 prf2 =>
+  | pre_proof_cequiv_subst_concl C x a b H wfa wfb cova covb prf1 prf2 =>
     implies_pre_proof_rename_pre_rule_cequiv_subst_hyp1
       (pre_proof_cequiv_subst_concl
-         (rename_ProofContext r ctxt)
          (rename_term r C)
          x
          (rename_term r a)
@@ -7733,10 +7955,9 @@ Fixpoint rename_pre_proof {o}
          (implies_covered_rename_vars_hyps r covb)
          (rename_pre_proof r prf1)
          (pre_proof_rename_pre_rule_cequiv_subst_hyp1 (rename_pre_proof r prf2)))
-  | pre_proof_cequiv_subst_hyp _ H z T x a b J C wfa wfb cova covb prf1 prf2 =>
+  | pre_proof_cequiv_subst_hyp H z T x a b J C wfa wfb cova covb prf1 prf2 =>
     pre_proof_rename_pre_rule_cequiv_subst_hyp_concl
       (pre_proof_cequiv_subst_hyp
-         (rename_ProofContext r ctxt)
          (rename_barehypotheses r H)
          z
          (rename_term r T)
@@ -7751,42 +7972,42 @@ Fixpoint rename_pre_proof {o}
          (implies_covered_rename_vars_hyps r covb)
          (pre_proof_rename_pre_rule_cequiv_subst_hyp_hyp2 (rename_pre_proof r prf1))
          (pre_proof_rename_pre_rule_cequiv_subst_hyp_hyp1 (rename_pre_proof r prf2)))
-  | pre_proof_cequiv_computation _ a b H rd =>
+  | pre_proof_cequiv_computation lib a b H rd =>
     pre_proof_cequiv_computation
-      (rename_ProofContext r ctxt)
+      (rename_lib r lib)
       (rename_term r a)
       (rename_term r b)
       (rename_barehypotheses r H)
-      (reduces_to_rename r ctxt a b rd)
-  | pre_proof_cequiv_computation_aeq _ a b c H rd aeq =>
+      (reduces_to_rename r lib a b rd)
+  | pre_proof_cequiv_computation_aeq lib a b c H rd aeq =>
     pre_proof_cequiv_computation_aeq
-      (rename_ProofContext r ctxt)
+      (rename_lib r lib)
       (rename_term r a)
       (rename_term r b)
       (rename_term r c)
       (rename_barehypotheses r H)
-      (reduces_to_rename r ctxt a b rd)
+      (reduces_to_rename r lib a b rd)
       (implies_alpha_eq_term_rename r b c aeq)
-  | pre_proof_cequiv_computation_atmost _ a b n H rd =>
+  | pre_proof_cequiv_computation_atmost lib a b n H rd =>
     pre_proof_cequiv_computation_atmost
-      (rename_ProofContext r ctxt)
+      (rename_lib r lib)
       (rename_term r a)
       (rename_term r b)
       n
       (rename_barehypotheses r H)
       (reduces_in_atmost_k_steps_rename r rd)
-  | pre_proof_unfold_abstractions _ abs a H alla prf1 =>
+  | pre_proof_unfold_abstractions lib abs a H alla prf1 =>
     pre_proof_unfold_abstractions
-      (rename_ProofContext r ctxt)
+      (rename_lib r lib)
       (rename_abs r abs)
       (rename_term r a)
       (rename_barehypotheses r H)
       (rename_all_abstractions_can_be_unfolded r alla)
       (pre_proof_rename_pre_rule_unfold_abstraction_hyp (rename_pre_proof r prf1))
-  | pre_proof_rev_unfold_abstractions _ abs a H wfa cova alla prf1 =>
+  | pre_proof_rev_unfold_abstractions lib abs a H wfa cova alla prf1 =>
     pre_proof_rename_pre_rule_unfold_abstractions_hyp
       (pre_proof_rev_unfold_abstractions
-         (rename_ProofContext r ctxt)
+         (rename_lib r lib)
          (rename_abs r abs)
          (rename_term r a)
          (rename_barehypotheses r H)
@@ -7794,29 +8015,26 @@ Fixpoint rename_pre_proof {o}
          (implies_covered_rename_vars_hyps r cova)
          (rename_all_abstractions_can_be_unfolded r alla)
          (rename_pre_proof r prf1))
-  | pre_proof_universe_equality _ i j H ltij =>
-    pre_proof_universe_equality _ i j (rename_barehypotheses r H) ltij
-  | pre_proof_hypothesis_equality _ x A G J =>
+  | pre_proof_universe_equality i j H ltij =>
+    pre_proof_universe_equality i j (rename_barehypotheses r H) ltij
+  | pre_proof_hypothesis_equality x A G J =>
     pre_proof_rename_pre_rule_hypothesis_equality_concl
       (pre_proof_hypothesis_equality
-         (rename_ProofContext r ctxt)
          x
          (rename_term r A)
          (rename_barehypotheses r G)
          (rename_barehypotheses r J))
-  | pre_proof_maybe_hidden_hypothesis_equality _ x A G J b =>
+  | pre_proof_maybe_hidden_hypothesis_equality x A G J b =>
     pre_proof_rename_pre_rule_maybe_hidden_hypothesis_equality_concl
       (pre_proof_maybe_hidden_hypothesis_equality
-         (rename_ProofContext r ctxt)
          x
          (rename_term r A)
          (rename_barehypotheses r G)
          (rename_barehypotheses r J)
          b)
-  | pre_proof_unhide_equality _ x A t1 t2 C G J prf1 =>
+  | pre_proof_unhide_equality x A t1 t2 C G J prf1 =>
     pre_proof_rename_pre_rule_unhide_equality_concl
       (pre_proof_unhide_equality
-         (rename_ProofContext r ctxt)
          x
          (rename_term r A)
          (rename_term r t1)
@@ -7825,9 +8043,8 @@ Fixpoint rename_pre_proof {o}
          (rename_barehypotheses r G)
          (rename_barehypotheses r J)
          (pre_proof_rename_pre_rule_unhide_equality_hyp (rename_pre_proof r prf1)))
-  | pre_proof_equality_equality _ A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
+  | pre_proof_equality_equality A B a1 a2 b1 b2 i H prf1 prf2 prf3 =>
     pre_proof_equality_equality
-      (rename_ProofContext r ctxt)
       (rename_term r A)
       (rename_term r B)
       (rename_term r a1)
@@ -7839,14 +8056,12 @@ Fixpoint rename_pre_proof {o}
       (rename_pre_proof r prf1)
       (rename_pre_proof r prf2)
       (rename_pre_proof r prf3)
-  | pre_proof_integer_equality _ n H =>
+  | pre_proof_integer_equality n H =>
     pre_proof_integer_equality
-      (rename_ProofContext r ctxt)
       n
       (rename_barehypotheses r H)
-  | pre_proof_introduction _ t C H wft covt noutt prf1 =>
+  | pre_proof_introduction t C H wft covt noutt prf1 =>
     pre_proof_introduction
-      (rename_ProofContext r ctxt)
       (rename_term r t)
       (rename_term r C)
       (rename_barehypotheses r H)
@@ -7854,18 +8069,16 @@ Fixpoint rename_pre_proof {o}
       (implies_covered_rename_nh_vars_hyps r covt)
       (implies_noutokens_rename_term r t noutt)
       (rename_pre_proof r prf1)
-  | pre_proof_axiom_equality _ a b T H prf1 =>
+  | pre_proof_axiom_equality a b T H prf1 =>
     pre_proof_axiom_equality
-      (rename_ProofContext r ctxt)
       (rename_term r a)
       (rename_term r b)
       (rename_term r T)
       (rename_barehypotheses r H)
       (rename_pre_proof r prf1)
-  | pre_proof_thin _ G J A C x nixJ nixC prf1 =>
+  | pre_proof_thin G J A C x nixJ nixC prf1 =>
     pre_rule_rename_pre_rule_thin_concl
       (pre_proof_thin
-         (rename_ProofContext r ctxt)
          (rename_barehypotheses r G)
          (rename_barehypotheses r J)
          (rename_term r A)
@@ -7874,9 +8087,8 @@ Fixpoint rename_pre_proof {o}
          (rename_NVin_free_vars_hyps r nixJ)
          (rename_NVin_free_vars r nixC)
          (pre_proof_rename_pre_rule_thin_hyp (rename_pre_proof r prf1)))
-  | pre_proof_function_equality _ a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
+  | pre_proof_function_equality a1 a2 b1 b2 x1 x2 y i H niyH prf1 prf2 =>
     pre_proof_function_equality
-      (rename_ProofContext r ctxt)
       (rename_term r a1)
       (rename_term r a2)
       (rename_term r b1)
@@ -7886,10 +8098,9 @@ Fixpoint rename_pre_proof {o}
       (rename_NVin_vars_hyps r niyH)
       (rename_pre_proof r prf1)
       (pre_proof_rename_pre_rule_function_equality_hyp2 (rename_pre_proof r prf2))
-  | pre_proof_apply_equality _ A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
+  | pre_proof_apply_equality A B f1 f2 t1 t2 x H wfA covA prf1 prf2 =>
     pre_proof_rename_pre_rule_apply_equality_concl
       (pre_proof_apply_equality
-         (rename_ProofContext r ctxt)
          (rename_term r A)
          (rename_term r B)
          (rename_term r f1)
@@ -7902,10 +8113,9 @@ Fixpoint rename_pre_proof {o}
          (implies_covered_rename_vars_hyps r covA)
          (rename_pre_proof r prf1)
          (rename_pre_proof r prf2))
-  | pre_proof_isect_elimination _ A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
+  | pre_proof_isect_elimination A B C a f x z H J wfa cova nizH nizJ dzf prf1 prf2 =>
     pre_proof_rename_pre_rule_isect_elimination_concl
       (pre_proof_isect_elimination
-         (rename_ProofContext r ctxt)
          (rename_term r A)
          (rename_term r B)
          (rename_term r C)
@@ -7920,10 +8130,9 @@ Fixpoint rename_pre_proof {o}
          dzf
          (pre_proof_rename_pre_rule_isect_elimination_hyp1 (rename_pre_proof r prf1))
          (pre_proof_rename_pre_rule_isect_elimination_hyp2 (rename_pre_proof r prf2)))
-  | pre_proof_isect_elimination2 _ A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
+  | pre_proof_isect_elimination2 A B C a f x y z H J wfa cova nizH nizJ niyH niyJ dzf dzy dyf prf1 prf2 =>
     pre_proof_rename_pre_rule_isect_elimination2_concl
       (pre_proof_isect_elimination2
-         (rename_ProofContext r ctxt)
          (rename_term r A)
          (rename_term r B)
          (rename_term r C)
@@ -7940,9 +8149,8 @@ Fixpoint rename_pre_proof {o}
          dzf dzy dyf
          (pre_proof_rename_pre_rule_isect_elimination_hyp1 (rename_pre_proof r prf1))
          (pre_proof_rename_pre_rule_isect_elimination2_hyp2 (rename_pre_proof r prf2)))
-  | pre_proof_isect_member_equality _ H t1 t2 A x B z i nizH prf1 prf2 =>
+  | pre_proof_isect_member_equality H t1 t2 A x B z i nizH prf1 prf2 =>
     pre_proof_isect_member_equality
-      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r t1)
       (rename_term r t2)
@@ -7953,24 +8161,21 @@ Fixpoint rename_pre_proof {o}
       (rename_NVin_vars_hyps r nizH)
       (pre_proof_rename_pre_rule_isect_member_equality_hyp1 (rename_pre_proof r prf1))
       (rename_pre_proof r prf2)
-  | pre_proof_cumulativity _ H T i j leij prf1 =>
+  | pre_proof_cumulativity H T i j leij prf1 =>
     pre_proof_cumulativity
-      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r T)
       i j leij
       (rename_pre_proof r prf1)
-  | pre_proof_equality_symmetry _ H a b T prf1 =>
+  | pre_proof_equality_symmetry H a b T prf1 =>
     pre_proof_equality_symmetry
-      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r a)
       (rename_term r b)
       (rename_term r T)
       (rename_pre_proof r prf1)
-  | pre_proof_equality_transitivity _ H a b c T wfc covc prf1 prf2 =>
+  | pre_proof_equality_transitivity H a b c T wfc covc prf1 prf2 =>
     pre_proof_equality_transitivity
-      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r a)
       (rename_term r b)
@@ -7980,9 +8185,8 @@ Fixpoint rename_pre_proof {o}
       (implies_covered_rename_vars_hyps r covc)
       (rename_pre_proof r prf1)
       (rename_pre_proof r prf2)
-  | pre_proof_cequiv_transitivity _ H a b c wfc covc prf1 prf2 =>
+  | pre_proof_cequiv_transitivity H a b c wfc covc prf1 prf2 =>
     pre_proof_cequiv_transitivity
-      (rename_ProofContext r ctxt)
       (rename_barehypotheses r H)
       (rename_term r a)
       (rename_term r b)
@@ -7996,9 +8200,8 @@ Fixpoint rename_pre_proof {o}
 Definition rename_RigidLibraryEntry {o} r (e : @RigidLibraryEntry o) : RigidLibraryEntry :=
   match e with
   | RigidLibraryEntry_abs e => RigidLibraryEntry_abs (rename_library_entry r e)
-  | RigidLibraryEntry_proof ctxt name stmt ext isp valid prf =>
+  | RigidLibraryEntry_proof name stmt ext isp valid prf =>
     RigidLibraryEntry_proof
-      (rename_ProofContext r ctxt)
       (rename_LemmaName r name)
       (rename_term r stmt)
       (rename_term r ext)
@@ -8010,7 +8213,7 @@ Definition rename_RigidLibraryEntry {o} r (e : @RigidLibraryEntry o) : RigidLibr
 Definition rename_RigidLibrary {o} r (lib : @RigidLibrary o) : RigidLibrary :=
   map (rename_RigidLibraryEntry r) lib.
 
-Definition rename_pre_proof_seq {o} r {ctxt} (p : @pre_proof_seq o ctxt) : pre_proof_seq (rename_ProofContext r ctxt) :=
+Definition rename_pre_proof_seq {o} r (p : @pre_proof_seq o) : pre_proof_seq :=
   match p with
   | MkPreProofSeq name term prog prf =>
     MkPreProofSeq
@@ -8020,7 +8223,7 @@ Definition rename_pre_proof_seq {o} r {ctxt} (p : @pre_proof_seq o ctxt) : pre_p
       (rename_pre_proof r prf)
   end.
 
-Definition rename_pre_proofs {o} r {ctxt} (l : @pre_proofs o ctxt) : pre_proofs (rename_ProofContext r ctxt) :=
+Definition rename_pre_proofs {o} r (l : @pre_proofs o) : pre_proofs :=
   map (rename_pre_proof_seq r) l.
 
 Lemma rename_soterm_nterm2soterm {o} :
@@ -8103,8 +8306,8 @@ Qed.
 
 Lemma pre_proof_RigidLibrary2ProofContext_rename_RigidLibrary_pre_rule_unfold_abstractions_hyp_implies {o} :
   forall {r} {l} {abs} {a} {H : @bhyps o},
-    pre_proof (RigidLibrary2ProofContext (rename_RigidLibrary r l)) (pre_rule_unfold_abstractions_hyp (rename_ProofContext r (RigidLibrary2ProofContext l)) abs a H) ->
-    pre_proof (RigidLibrary2ProofContext (rename_RigidLibrary r l)) (pre_rule_unfold_abstractions_hyp (RigidLibrary2ProofContext (rename_RigidLibrary r l)) abs a H).
+    pre_proof (pre_rule_unfold_abstractions_hyp (rename_ProofContext r (RigidLibrary2ProofContext l)) abs a H) ->
+    pre_proof (pre_rule_unfold_abstractions_hyp (RigidLibrary2ProofContext (rename_RigidLibrary r l)) abs a H).
 Proof.
   introv h.
   rewrite rename_ProofContext_RigidLibrary2ProofContext in h; auto.
@@ -8112,19 +8315,19 @@ Qed.
 
 Lemma implies_pre_proof_RigidLibrary2ProofContext_rename_RigidLibrary_pre_rule_unfold_abstractions_hyp {o} :
   forall {r} {l} {abs} {a} {H : @bhyps o},
-    pre_proof (RigidLibrary2ProofContext (rename_RigidLibrary r l)) (pre_rule_unfold_abstractions_hyp (RigidLibrary2ProofContext (rename_RigidLibrary r l)) abs a H) ->
-    pre_proof (RigidLibrary2ProofContext (rename_RigidLibrary r l)) (pre_rule_unfold_abstractions_hyp (rename_ProofContext r (RigidLibrary2ProofContext l)) abs a H).
+    pre_proof (pre_rule_unfold_abstractions_hyp (RigidLibrary2ProofContext (rename_RigidLibrary r l)) abs a H) ->
+    pre_proof (pre_rule_unfold_abstractions_hyp (rename_ProofContext r (RigidLibrary2ProofContext l)) abs a H).
 Proof.
   introv h.
   rewrite rename_ProofContext_RigidLibrary2ProofContext; auto.
 Qed.
 
-Fixpoint rename_ctxt_pre_proof {o}
+(*Fixpoint rename_ctxt_pre_proof {o}
          (r    : renaming)
          {l    : @RigidLibrary o}
          {s    : pre_baresequent}
-         (prf  : pre_proof (rename_ProofContext r (RigidLibrary2ProofContext l)) s)
-  : pre_proof (RigidLibrary2ProofContext (rename_RigidLibrary r l)) s :=
+         (prf  : pre_proof s)
+  : pre_proof s :=
   match prf with
   | pre_proof_from_ctxt _ c H i =>
     pre_proof_from_ctxt
@@ -8319,9 +8522,9 @@ Fixpoint rename_ctxt_pre_proof {o}
       H a b c wfc covc
       (rename_ctxt_pre_proof r prf1)
       (rename_ctxt_pre_proof r prf2)
-  end.
+  end.*)
 
-Lemma pre_proofs_rename_ProofContext_implies {o} :
+(*Lemma pre_proofs_rename_ProofContext_implies {o} :
   forall {r} {state : @SoftLibrary o},
     pre_proofs (rename_ProofContext r (RigidLibrary2ProofContext state))
     -> pre_proofs (RigidLibrary2ProofContext (rename_RigidLibrary r (SoftLibrary_lib state))).
@@ -8339,7 +8542,7 @@ Proof.
     destruct a as [n t isp pp].
     apply rename_ctxt_pre_proof in pp.
     exact (MkPreProofSeq n t isp pp).
-Defined.
+Defined.*)
 
 Definition SoftLibrary_rename {o}
            (state : @SoftLibrary o)
@@ -8347,7 +8550,7 @@ Definition SoftLibrary_rename {o}
   let lib := rename_RigidLibrary r (SoftLibrary_lib state) in
   let unf := rename_pre_proofs r (SoftLibrary_unfinished state) in
   MkUpdRes
-    (MkSoftLibrary lib (pre_proofs_rename_ProofContext_implies unf))
+    (MkSoftLibrary lib unf)
     [renamed].
 
 Definition update {o}
@@ -8390,7 +8593,7 @@ Fixpoint update_list {o}
 
 Definition initRigidLibrary {o} : @RigidLibrary o := [].
 
-Definition initUnfinished {o} : @pre_proofs o (RigidLibrary2ProofContext initRigidLibrary) := [].
+Definition initUnfinished {o} : @pre_proofs o := [].
 
 Definition initSoftLibrary {o} : @SoftLibrary o :=
   MkSoftLibrary initRigidLibrary initUnfinished.
