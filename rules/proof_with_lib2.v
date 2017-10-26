@@ -11672,64 +11672,135 @@ Proof.
     (* ?? *)
     admit.
 
-  -
+  - unfold apply_proof_step_unfold_abstractions in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+  - unfold apply_proof_step_rev_unfold_abstractions in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+  - unfold apply_proof_step_cequiv_subst_concl in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+  - unfold apply_proof_step_cequiv_subst_hyp in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+  - unfold apply_proof_step_cequiv_subst_hyp_num, apply_proof_step_cequiv_subst_hyp in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+    (* ? *)
+    admit.
 
-  - admit.
+  - unfold apply_proof_step_universe_eq in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+  - unfold apply_proof_step_hypothesis_eq in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+  - unfold apply_proof_step_maybe_hidden_hypothesis_eq in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+  - unfold apply_proof_step_unhide_equality in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+  - unfold apply_proof_step_equality_equality in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+  - unfold apply_proof_step_integer_equality in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+  - unfold apply_proof_step_introduction in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+  - unfold apply_proof_step_axiom_equality in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
-  - admit.
+  - unfold apply_proof_step_thin in appstep.
+    repeat dest_match.
+    repeat eexists; auto; allrw NVin_iff; auto.
 
-  - admit.
+  - unfold apply_proof_step_thin_num, apply_proof_step_thin in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
 
-  - admit.
+    (* ? *)
+    admit.
 
-  - admit.
+  - unfold apply_proof_step_apply_equality in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
 
-  - admit.
+  - unfold apply_proof_step_isect_elimination_num, apply_proof_step_isect_elimination in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
 
-  - admit.
+    (* ? *)
+    admit.
 
-  - admit.
+  - unfold apply_proof_step_isect_elimination2_num, apply_proof_step_isect_elimination2 in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
 
-  - admit.
+    (* ? *)
+    admit.
 
-  - admit.
+  - unfold apply_proof_step_isect_member_equality in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
 
-  - admit.
+  - unfold apply_proof_step_cumulativity in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
+    allrw Nat.leb_le; auto.
 
-  - admit.
+  - unfold apply_proof_step_equality_symmetry in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
 
-  - admit.
+  - unfold apply_proof_step_equality_transitivity in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
 
-  - admit.
+  - unfold apply_proof_step_cequiv_transitivity in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
 
-  - admit.
+  - unfold apply_proof_step_approx_refl in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
 
-  - admit.
-Admitted.
+  - unfold apply_proof_step_cequiv_refl in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
+
+  - unfold apply_proof_step_cequiv_alpha_eq in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
+
+  - unfold apply_proof_step_cequiv_approx in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
+
+  - unfold apply_proof_step_approx_eq in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
+
+  - unfold apply_proof_step_cequiv_eq in appstep.
+    repeat dest_match.
+    repeat eexists; auto; try (apply NVin_iff; auto).
+Qed.
 
 Lemma apply_proof_step_implies_valid {o} :
   forall ctxt (c : @pre_baresequent o) step l d,
