@@ -48,7 +48,7 @@ Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : library) : Prop 
     entry = entry'
     \/
     (~ matching_entries entry entry'
-       # entry_in_library entry entries)
+       /\ entry_in_library entry entries)
   end.
 
 (* [lib1] extends [lib0] *)

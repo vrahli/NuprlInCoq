@@ -64,8 +64,8 @@ Defined.
 
 Definition same_opabs (oa1 oa2 : opabs) :=
   opabs_name oa1 = opabs_name oa2
-  # opabs_sign oa1 = opabs_sign oa2
-  # matching_parameters (opabs_params oa1) (opabs_params oa2).
+  /\ opabs_sign oa1 = opabs_sign oa2
+  /\ matching_parameters (opabs_params oa1) (opabs_params oa2).
 
 Definition same_opabs_dec :
   forall oa1 oa2, decidable (same_opabs oa1 oa2).
@@ -2390,8 +2390,9 @@ Proof.
   destruct a; allsimpl.
   boolvar; ginv; allsimpl.
   - unfold in_lib; simpl.
+    unfold matching_entry_sign in m; repnd.
     eexists; dands;[left;eauto|].
-    simpl; auto.
+    unfold same_opabs; simpl; dands; auto.
   - apply IHlib in fe.
     unfold in_lib in *; exrepnd.
     exists e0; simpl; tcsp.
@@ -2402,7 +2403,7 @@ Lemma matching_entry_sign_is_same_opabs :
     matching_entry_sign opabs1 opabs2
     <=> same_opabs opabs1 opabs2.
 Proof.
-  sp.
+  introv; unfold matching_entry_sign, same_opabs; split; introv h; dands; repnd; auto.
 Qed.
 
 Lemma same_opabs_trans :
@@ -2455,7 +2456,8 @@ Proof.
     destruct e2.
     symmetry in Heqfe2.
     apply find_entry_sign_implies_in_lib in Heqfe2.
-    eapply same_opabs_preserves_in_lib in Heqfe2; [|exact m]; tcsp.
+    unfold matching_entry_sign in *; repnd.
+    eapply same_opabs_preserves_in_lib in Heqfe2; [|unfold same_opabs]; tcsp.
   - remember (find_entry_sign lib2 opabs) as fe2; destruct fe2 as [e2|]; allsimpl; auto.
 Qed.
 
@@ -2942,10 +2944,3 @@ Proof.
   allunfold @computes_to_valc; allsimpl.
   apply (computes_to_value_preserves_agreeing_libraries lib1 lib2); eauto 2 with slow.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)
