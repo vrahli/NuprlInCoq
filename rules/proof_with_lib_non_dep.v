@@ -12163,7 +12163,7 @@ Qed.
 
 Lemma valid_update_list_from_init {o} :
   forall (cmds : commands),
-    @ValidSoftLibrary o (upd_res_state (update_list_from_init cmds)).
+    @ValidSoftLibrary o (update_list_from_init cmds).
 Proof.
   introv.
   apply update_list_preserves_validity.
@@ -12173,29 +12173,16 @@ Qed.
 Record ValidUpdRes {o} :=
   MkValidUpdRes
     {
-      valid_upd_res_state : @SoftLibrary o;
-      valid_upd_res_trace : list (@DEBUG_MSG o);
+      valid_upd_res_state : @UpdRes o;
       valid_upd_res_valid : ValidSoftLibrary valid_upd_res_state;
     }.
-Arguments MkValidUpdRes [o] _ _ _.
-
-Lemma eq_upd_res_state {o} :
-  forall {a b}, a = b -> @upd_res_state o a = upd_res_state b.
-Proof.
-  introv h; subst; auto.
-Defined.
+Arguments MkValidUpdRes [o] _ _.
 
 Definition update_list_from_init_with_validity {o}
            (cmds : @commands o) : @ValidUpdRes o :=
   MkValidUpdRes
-    (upd_res_state (update_list_from_init cmds))
-    (upd_res_trace (update_list_from_init cmds))
-    (eq_rect
-       _
-       _
-       (valid_update_list_from_init cmds)
-       _
-       (eq_upd_res_state eq_refl)).
+    (update_list_from_init cmds)
+    (valid_update_list_from_init cmds).
 
 (*Arguments pre_proof_isect_member_formation [o] [ctxt] _ _ _ _ _ _ _ _ _.*)
 (*Arguments pre_proof_hole [o] [ctxt] _.*)

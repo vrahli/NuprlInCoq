@@ -182,8 +182,9 @@ Require Import nuprl_lemmas1.
 Require Import nuprl_lemmas2.
 Require Import proof1.
 Require Import proof_with_lib.
-Require Import proof_with_lib_non_dep.
 Require Import proof_with_lib_example1.
+Require Import proof_with_lib_non_dep.
+Require Import proof_with_lib_non_dep_example1.
 Require Import sterm.
 
 
