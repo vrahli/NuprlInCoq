@@ -461,6 +461,7 @@ Definition valid_extract {o} (t : @NTerm o) : Prop :=
   wf_term t # closed t # noutokens t.
 
 Definition LemmaName := opname.
+Definition LemmaNames := list LemmaName.
 
 Lemma LemmaNameDeq : Deq LemmaName.
 Proof.
@@ -3126,7 +3127,7 @@ Inductive DEBUG_MSG {o} :=
 | could_not_add_definition_because_definition_already_in_library
 | added_definition (op : opabs)
 
-| started_proof
+| started_proof (name : LemmaName)
 
 | renamed
 
@@ -3274,13 +3275,13 @@ Inductive DEBUG_MSG {o} :=
 | could_not_apply_update_because_could_not_find_lemma
 
 | found_holes (holes : @Holes o)
-| could_not_find_holes_because_could_not_find_lemma
+| could_not_find_holes_because_could_not_find_lemma (name : LemmaName) (names : LemmaNames)
 
 | found_sequent_at_address (addr : address) (s : @pre_baresequent o)
 | could_not_find_sequent_at_address (addr : address)
 | could_not_find_sequent_because_could_not_find_lemma
 
-| finished_proof
+| finished_proof (name : LemmaName)
 | could_not_finish_proof
 | could_not_finish_proof_because_entry_exists_in_lib
 | could_not_finish_proof_because_could_not_find_lemma.
@@ -5457,7 +5458,7 @@ Definition SoftLibrary_finish_proof {o}
 
       match entry_in_lib_dec entry (RigidLibrary2lib state) with
       | inl p => MkUpdRes state [could_not_finish_proof_because_entry_exists_in_lib]
-      | inr p => MkUpdRes (SoftLibrary_add_entry state entry pps) [finished_proof]
+      | inr p => MkUpdRes (SoftLibrary_add_entry state entry pps) [finished_proof name]
       end
 
     | None => MkUpdRes state [could_not_finish_proof]
@@ -7732,7 +7733,7 @@ Definition SoftLibrary_start_proof {o}
     (MkSoftLibrary
        (SoftLibrary_lib state)
        (pps :: SoftLibrary_unfinished state))
-    [started_proof].
+    [started_proof name].
 
 (* FIX *)
 Fixpoint find_holes_in_pre_proof {o}
@@ -7889,6 +7890,12 @@ Definition find_holes_in_pre_proof_seq {o}
   | MkPreProofSeq name pre_prf (*isp*) => find_holes_in_pre_proof [] pre_prf
   end.
 
+Definition pre_proofs2names {o} (ps : @pre_proofs o) : LemmaNames :=
+  map (@pre_proof_seq_name o) ps.
+
+Definition SoftLibrary_unfinished_names {o} (state : @SoftLibrary o) : LemmaNames :=
+  pre_proofs2names (SoftLibrary_unfinished state).
+
 Definition SoftLibrary_find_holes {o}
            (state : @SoftLibrary o)
            (name  : LemmaName) : UpdRes :=
@@ -7898,7 +7905,9 @@ Definition SoftLibrary_find_holes {o}
     let holes := find_holes_in_pre_proof_seq pp in
     MkUpdRes state [found_holes holes]
 
-  | (None, pps) => MkUpdRes state [could_not_find_holes_because_could_not_find_lemma]
+  | (None, pps) =>
+    let names := SoftLibrary_unfinished_names state in
+    MkUpdRes state [could_not_find_holes_because_could_not_find_lemma name names]
   end.
 
 (* FIX *)
@@ -12194,3 +12203,6 @@ Definition update_list_from_init_with_validity {o}
 (*Arguments pre_proof_hole [o] [ctxt] _.*)
 
 Definition mk_simple_so_abs {o} (abs : opabs) := @soterm o (Abs abs) [].
+
+(* simple POpid *)
+Definition spo : POpid := Build_POpid dset_string True unit.

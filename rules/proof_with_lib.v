@@ -2370,14 +2370,12 @@ Proof.
   - destruct a.
     destruct (same_opabs_dec opabs opabs0) as [d|d]; ginv.
     + left; eexists; eexists; eauto.
-      unfold same_opabs, matching_entry_sign in *; repnd; simpl; dands; auto.
     + destruct IHlib as [k|k]; exrepnd.
       * left.
         exrepnd.
         eexists; eexists; eauto.
       * right; intro xx; exrepnd; repndors; subst; allsimpl; tcsp.
-        { unfold same_opabs, matching_entry_sign in *; destruct d; repnd; dands; auto. }
-        { destruct k; eexists; eexists; eauto. }
+        destruct k; eexists; eexists; eauto.
 Defined.
 
 Lemma entry_in_lib_dec {o} :
