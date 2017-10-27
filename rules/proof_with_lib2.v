@@ -1533,6 +1533,17 @@ Fixpoint RigidLibrary2ProofContext {o} (L : @RigidLibrary o) : ProofContext :=
 
 Definition RigidLibrary2lib {o} (L : @RigidLibrary o) : library := RigidLibrary2ProofContext L.
 
+Fixpoint find_hypothesis_name_from_nat {o} (H : @bhyps o) (n : nat) : option NVar :=
+  match H with
+  | [] => None
+  | h :: hs =>
+    match n with
+    | 0 => None
+    | 1 =>  Some (hvar h)
+    | S m => find_hypothesis_name_from_nat hs m
+    end
+  end.
+
 Definition valid_proof_node_context {o}
            (ctxt : @ProofContext o)
            (n    : @proof_step o)
@@ -1609,7 +1620,7 @@ Definition valid_proof_node_context {o}
 
   | proof_step_hypothesis_num n =>
     {A : NTerm $ {x : NVar $ {G , J : bhyps $
-    n = S (length G)
+    find_hypothesis_name_from_nat (snoc G (mk_hyp x A) ++ J) n = Some x
     # c = rule_hypothesis_concl G J A x
     # hs = [] }}}
 
@@ -1635,7 +1646,7 @@ Definition valid_proof_node_context {o}
 
   | proof_step_cequiv_subst_hyp_num n x T a b =>
     {H , J : bhyps $ {z : NVar $ {C , t , e : NTerm $
-    n = S (length H)
+    find_hypothesis_name_from_nat (snoc H (mk_hyp z (subst T x a)) ++ J) n = Some z
     # wf_term a
     # wf_term b
     # covered a (vars_hyps H)
@@ -1658,10 +1669,11 @@ Definition valid_proof_node_context {o}
     # hs = [] }}
 
   | proof_step_cequiv_computation_atmost n =>
-    {a , b : NTerm $ {H : bhyps $
-    reduces_in_atmost_k_steps ctxt a b n
+    {a , b : NTerm $ {H : bhyps $ {k : nat $
+    k <= n
+    # reduces_in_atmost_k_steps ctxt a b k
     # c = rule_cequiv_computation_concl a b H
-    # hs = [] }}
+    # hs = [] }}}
 
   | proof_step_unfold_abstractions abs =>
     {a , e : NTerm $ {H : bhyps $
@@ -1732,7 +1744,7 @@ Definition valid_proof_node_context {o}
 
   | proof_step_thin_num n =>
     {G , J : bhyps $ {x : NVar $ {A , C , t : NTerm $
-      n = S (length G)
+      find_hypothesis_name_from_nat (snoc G (mk_hyp x A) ++ J) n = Some x
       # ! LIn x (free_vars_hyps J)
       # ! LIn x (free_vars C)
       # c = rule_thin_concl G x A J C t
@@ -1755,7 +1767,7 @@ Definition valid_proof_node_context {o}
 
   | proof_step_isect_elimination n a z =>
     {A , B , C , e , ea : NTerm $ {f , x : NVar $ {H , J : bhyps $
-    n = S (length H)
+    find_hypothesis_name_from_nat (snoc H (mk_hyp f (mk_isect A x B)) ++ J) n = Some f
     # wf_term a
     # covered a (snoc (vars_hyps H) f ++ vars_hyps J)
     # ! LIn z (vars_hyps H)
@@ -1767,7 +1779,7 @@ Definition valid_proof_node_context {o}
 
   | proof_step_isect_elimination2 n a z y =>
     {A , B , C , e , ea : NTerm $ {f , x : NVar $ {H , J : bhyps $
-    n = S (length H)
+    find_hypothesis_name_from_nat (snoc H (mk_hyp f (mk_isect A x B)) ++ J) n = Some f
     # wf_term a
     # covered a (snoc (vars_hyps H) f ++ vars_hyps J)
     # ! LIn z (vars_hyps H)
@@ -2273,7 +2285,7 @@ Proof.
 
   - apply (rule_cequiv_computation_aeq_true_ext_lib ctxt a b); simpl; tcsp; eauto 3 with slow.
 
-  - apply (rule_cequiv_computation_atmost_true_ext_lib ctxt a b n); simpl; tcsp; eauto 3 with slow.
+  - apply (rule_cequiv_computation_atmost_true_ext_lib ctxt a b k); simpl; tcsp; eauto 3 with slow.
 
   - apply (rule_unfold_abstractions_true_ext_lib ctxt names a e H); simpl; tcsp.
     introv xx; repndors; subst; tcsp.
@@ -4229,17 +4241,6 @@ Definition pre_concl2type {o} (c : @pre_conclusion o) : option NTerm :=
 Definition named_concl2extract {o} (n : @named_concl o) : @NTerm o :=
   mk_abs (opname2opabs (nm_conclusion_name n)) [].
 
-Fixpoint find_hypothesis_name_from_nat {o} (H : @bhyps o) (n : nat) : option NVar :=
-  match H with
-  | [] => None
-  | h :: hs =>
-    match n with
-    | 0 => None
-    | 1 =>  Some (hvar h)
-    | S m => find_hypothesis_name_from_nat hs m
-    end
-  end.
-
 Definition finish_pre_proof_node {o} (n : @proof_step o) (c : @pre_baresequent o) (l : list (@proof o)) : option NTerm :=
   match n with
   | proof_step_lemma name =>
@@ -4714,7 +4715,7 @@ Definition valid_pre_proof_node_context {o}
 
   | proof_step_hypothesis_num n =>
     {A : NTerm $ {x : NVar $ {G , J : bhyps $
-    n = S (length G)
+    find_hypothesis_name_from_nat (snoc G (mk_hyp x A) ++ J) n = Some x
     # c = pre_rule_hypothesis_concl G J A x
     # hs = [] }}}
 
@@ -4740,7 +4741,7 @@ Definition valid_pre_proof_node_context {o}
 
   | proof_step_cequiv_subst_hyp_num n x T a b =>
     {H , J : bhyps $ {z : NVar $ {C : NTerm $
-    n = S (length H)
+    find_hypothesis_name_from_nat (snoc H (mk_hyp z (subst T x a)) ++ J) n = Some z
     # wf_term a
     # wf_term b
     # covered a (vars_hyps H)
@@ -4763,10 +4764,11 @@ Definition valid_pre_proof_node_context {o}
     # hs = [] }}
 
   | proof_step_cequiv_computation_atmost n =>
-    {a , b : NTerm $ {H : bhyps $
-    reduces_in_atmost_k_steps ctxt a b n
+    {a , b : NTerm $ {H : bhyps $ {k : nat $
+    k <= n
+    # reduces_in_atmost_k_steps ctxt a b k
     # c = pre_rule_cequiv_computation_concl a b H
-    # hs = [] }}
+    # hs = [] }}}
 
   | proof_step_unfold_abstractions abs =>
     {a : NTerm $ {H : bhyps $
@@ -4837,7 +4839,7 @@ Definition valid_pre_proof_node_context {o}
 
   | proof_step_thin_num n =>
     {G , J : bhyps $ {x : NVar $ {A , C : NTerm $
-      n = S (length G)
+      find_hypothesis_name_from_nat (snoc G (mk_hyp x A) ++ J) n = Some x
       # ! LIn x (free_vars_hyps J)
       # ! LIn x (free_vars C)
       # c = pre_rule_thin_concl G x A J C
@@ -4860,7 +4862,7 @@ Definition valid_pre_proof_node_context {o}
 
   | proof_step_isect_elimination n a z =>
     {A , B , C : NTerm $ {f , x : NVar $ {H , J : bhyps $
-    n = S (length H)
+    find_hypothesis_name_from_nat (snoc H (mk_hyp f (mk_isect A x B)) ++ J) n = Some f
     # wf_term a
     # covered a (snoc (vars_hyps H) f ++ vars_hyps J)
     # ! LIn z (vars_hyps H)
@@ -4872,7 +4874,7 @@ Definition valid_pre_proof_node_context {o}
 
   | proof_step_isect_elimination2 n a z y =>
     {A , B , C : NTerm $ {f , x : NVar $ {H , J : bhyps $
-    n = S (length H)
+    find_hypothesis_name_from_nat (snoc H (mk_hyp f (mk_isect A x B)) ++ J) n = Some f
     # wf_term a
     # covered a (snoc (vars_hyps H) f ++ vars_hyps J)
     # ! LIn z (vars_hyps H)
@@ -5016,6 +5018,17 @@ Proof.
   induction H; introv; simpl; auto.
 Qed.
 
+Lemma find_hypothesis_name_from_nat_in {o} :
+  forall (H : @bhyps o) n x,
+    find_hypothesis_name_from_nat H n = Some x
+    -> LIn x (vars_hyps H).
+Proof.
+  induction H; introv h; simpl in *; tcsp.
+  destruct n; ginv; tcsp.
+  destruct n; ginv; tcsp.
+  apply IHlist in h; tcsp.
+Qed.
+
 Lemma finish_pre_proof_node_valid_pre_extract {o} :
   forall ctxt n (c : @pre_baresequent o) l e,
     valid_pre_proof_node_context ctxt n c (map proof2pre_bseq l)
@@ -5051,8 +5064,10 @@ Proof.
 
   - exrepnd; subst.
     repeat (destruct l; simpl in *; ginv).
-    rewrite find_hypothesis_name_from_nat_middle in fin; ginv.
+
     clear imp.
+
+    rewrite val0 in fin; ginv.
 
     unfold valid_pre_extract; dands; simpl; eauto 2 with slow.
     apply covered_var; rw @nh_vars_hyps_app; rw @nh_vars_hyps_snoc; simpl.
@@ -5118,7 +5133,7 @@ Proof.
     pose proof (imp p0) as h; autodimp h hyp.
     clear imp.
     rewrite proof2hyps_as_pre_hyps_proof2pre_bseq in h.
-    rewrite val6 in h; simpl in *; auto.
+    rewrite val7 in h; simpl in *; auto.
 
     unfold valid_pre_extract in *; simpl in *.
     allrw @nh_vars_hyps_app.
@@ -5156,7 +5171,7 @@ Proof.
     pose proof (imp p) as h; autodimp h hyp.
     clear imp.
     rewrite proof2hyps_as_pre_hyps_proof2pre_bseq in h.
-    rewrite val1 in h; simpl in *; auto.
+    rewrite val4 in h; simpl in *; auto.
 
     simpl in *; auto.
     unfold valid_pre_extract in *; repnd; dands; auto.
@@ -5174,7 +5189,7 @@ Proof.
     pose proof (imp p0) as q; autodimp q hyp.
     clear imp.
     rewrite proof2hyps_as_pre_hyps_proof2pre_bseq in h, q.
-    rewrite val1 in h; rewrite val7 in q; simpl in *; auto.
+    rewrite val7 in h; rewrite val8 in q; simpl in *; auto.
 
     unfold valid_pre_extract in *; simpl in *; repnd.
     dands; eauto 3 with slow;[|].
@@ -5207,9 +5222,9 @@ Proof.
     pose proof (imp p0) as q; autodimp q hyp.
     clear imp.
     rewrite proof2hyps_as_pre_hyps_proof2pre_bseq in h, q, fin.
-    rewrite val1 in h; rewrite val1 in fin; rewrite val11 in q; simpl in *; auto.
-
-    rewrite find_hypothesis_name_from_nat_middle in fin; ginv.
+    rewrite val11 in fin; simpl in fin.
+    rewrite val1 in fin; ginv.
+    rewrite val11 in h; rewrite val12 in q; simpl in *; auto.
 
     unfold valid_pre_extract in *; simpl in *; repnd.
     dands; eauto 3 with slow;[| |].
@@ -5615,9 +5630,10 @@ Inductive decomp_hyps {o} (H : @bhyps o) (v : NVar) :=
 | dhyps (G : bhyps)
         (A : NTerm)
         (J : bhyps)
-        (p : H = snoc G (mk_hyp v A) ++ J).
+        (p : H = snoc G (mk_hyp v A) ++ J)
+        (q : NVin v (vars_hyps G)).
 
-Arguments dhyps [o] [H] [v] _ _ _ _.
+Arguments dhyps [o] [H] [v] _ _ _ _ _.
 
 Lemma extend_decomp_hyps {o} :
   forall {H : @bhyps o} {G x J h},
@@ -5627,13 +5643,26 @@ Proof.
   introv z; subst; reflexivity.
 Defined.
 
+Lemma extend_nvin_vars_hyps {o} :
+  forall {v} {h} {H : @bhyps o},
+    hvar h <> v
+    -> NVin v (vars_hyps H)
+    -> NVin v (vars_hyps (h :: H)).
+Proof.
+  introv d ni; simpl in *.
+  unfold NVin, memvar in *; simpl in *.
+  boolvar; auto.
+  apply d in e; destruct e.
+Defined.
+
 Definition add_hyp2decomp_hyps {o}
            (h : @hypothesis o)
            {H : barehypotheses}
            {v : NVar}
+           (w : hvar h <> v)
            (d : decomp_hyps H v) : decomp_hyps (h :: H) v :=
   match d with
-  | dhyps G A J p => dhyps (h :: G) A J (extend_decomp_hyps p)
+  | dhyps G A J p q => dhyps (h :: G) A J (extend_decomp_hyps p) (extend_nvin_vars_hyps w q)
   end.
 
 Lemma init_decomp_hyps {o} :
@@ -5643,13 +5672,19 @@ Proof.
   introv z; subst; reflexivity.
 Defined.
 
+Lemma init_nvin_vars_hyps {o} :
+  forall (v : NVar), NVin v (@vars_hyps o []).
+Proof.
+  introv; simpl; reflexivity.
+Defined.
+
 Definition mk_init_decomp_hyps {o}
            (v : NVar)
            (A : @NTerm o)
            (x : NVar)
            (H : barehypotheses)
            (p : v = x) : decomp_hyps (mk_hyp v A :: H) x :=
-  dhyps [] A H (init_decomp_hyps v A x H p).
+  dhyps [] A H (init_decomp_hyps v A x H p) (@init_nvin_vars_hyps o v).
 
 Fixpoint find_hypothesis_eq {o} (H : @bhyps o) (x : NVar)
   : option (decomp_hyps H x) :=
@@ -5662,9 +5697,9 @@ Fixpoint find_hypothesis_eq {o} (H : @bhyps o) (x : NVar)
       | nolvl, false => Some (mk_init_decomp_hyps v A x hs p)
       | _, _ => None
       end
-    | _ =>
+    | right p =>
       match find_hypothesis_eq hs x with
-      | Some x => Some (add_hyp2decomp_hyps h x)
+      | Some x => Some (add_hyp2decomp_hyps h p x)
       | None => None
       end
     end
@@ -5741,7 +5776,7 @@ Definition apply_proof_step_hypothesis {o}
     | pre_concl_ext T =>
 
       match find_hypothesis_eq H x with
-      | Some (dhyps G A J q) =>
+      | Some (dhyps G A J q w) =>
 
         match term_dec_op A T with
         | Some p =>
@@ -5998,7 +6033,7 @@ Definition apply_proof_step_cequiv_subst_hyp {o}
     | pre_concl_ext T =>
 
       match find_hypothesis_eq H z with
-      | Some (dhyps G U J q) =>
+      | Some (dhyps G U J q w) =>
 
         match term_dec_op (subst X x a) U with
         | Some p =>
@@ -6128,7 +6163,7 @@ Definition apply_proof_step_hypothesis_eq {o}
       | left e =>
 
         match find_hypothesis_eq H v1 with
-        | Some (dhyps G B J q) =>
+        | Some (dhyps G B J q w) =>
 
           match term_dec_op B A with
           | Some p =>
@@ -6570,7 +6605,7 @@ Definition apply_proof_step_thin {o}
     | pre_concl_ext T =>
 
       match find_hypothesis_eq H x with
-      | Some (dhyps G A J q) =>
+      | Some (dhyps G A J q w) =>
 
         match NVin_dec x (free_vars_hyps J) with
         | inl nixJ =>
@@ -6712,7 +6747,7 @@ Definition apply_proof_step_isect_elimination {o}
     | pre_concl_ext T =>
 
       match find_hypothesis_eq H f with
-      | Some (dhyps G (oterm (Can NIsect) [bterm [] A, bterm [x] B]) J q) =>
+      | Some (dhyps G (oterm (Can NIsect) [bterm [] A, bterm [x] B]) J q w) =>
 
         match wf_term_dec_op a with
         | Some wfa =>
@@ -6794,7 +6829,7 @@ Definition apply_proof_step_isect_elimination2 {o}
     | pre_concl_ext T =>
 
       match find_hypothesis_eq H f with
-      | Some (dhyps G (oterm (Can NIsect) [bterm [] A, bterm [x] B]) J q) =>
+      | Some (dhyps G (oterm (Can NIsect) [bterm [] A, bterm [x] B]) J q w) =>
 
         match wf_term_dec_op a with
         | Some wfa =>
@@ -7163,8 +7198,8 @@ Definition apply_proof_step_approx_eq {o}
                                 bterm [] (oterm (Can NApprox) [bterm [] b1, bterm [] b2]),
                                 bterm [] (oterm (Can (NUni i)) [])]) =>
 
-        let prf1 := pre_rule_eq_base_hyp a1 a2 H in
-        let prf2 := pre_rule_eq_base_hyp b1 b2 H in
+        let prf1 := pre_rule_eq_base_hyp a1 b1 H in
+        let prf2 := pre_rule_eq_base_hyp a2 b2 H in
         (Some [prf1, prf2],
          applied_approx_eq_rule)
 
@@ -7184,8 +7219,8 @@ Definition apply_proof_step_cequiv_eq {o}
                                 bterm [] (oterm (Can NCequiv) [bterm [] b1, bterm [] b2]),
                                 bterm [] (oterm (Can (NUni i)) [])]) =>
 
-        let prf1 := pre_rule_eq_base_hyp a1 a2 H in
-        let prf2 := pre_rule_eq_base_hyp b1 b2 H in
+        let prf1 := pre_rule_eq_base_hyp a1 b1 H in
+        let prf2 := pre_rule_eq_base_hyp a2 b2 H in
         (Some [prf1, prf2],
          applied_cequiv_eq_rule)
 
@@ -10365,6 +10400,17 @@ Hint Rewrite @rename_term_unfold_abstractions : ren.
 
 Hint Resolve rename_all_abstractions_can_be_unfolded : slow.
 
+Lemma rename_find_hypotheses_name_from_nat {o} :
+  forall r (H : @bhyps o) n,
+    find_hypothesis_name_from_nat (rename_barehypotheses r H) n
+    = find_hypothesis_name_from_nat H n.
+Proof.
+  induction H; introv; simpl; tcsp.
+  destruct n; tcsp.
+  destruct n; tcsp.
+  destruct a; simpl; tcsp.
+Qed.
+
 Lemma implies_rename_valid_proof_node_context {o} :
   forall r ctxt n (c : @baresequent o) l,
     valid_proof_node_context ctxt n c l
@@ -10395,6 +10441,9 @@ Proof.
   - exists (rename_term r A) x (rename_barehypotheses r G) (rename_barehypotheses r J).
     repeat (autorewrite with slow ren; simpl; dands; auto).
 
+    rewrite <- (rename_find_hypotheses_name_from_nat r) in valid0.
+    autorewrite with slow ren in *; auto.
+
   - exists (rename_term r C) (rename_term r t) (rename_term r u) (rename_barehypotheses r H).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
@@ -10404,7 +10453,7 @@ Proof.
   - exists (rename_term r a) (rename_term r b) (rename_term r d) (rename_barehypotheses r H).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
-  - exists (rename_term r a) (rename_term r b) (rename_barehypotheses r H).
+  - exists (rename_term r a) (rename_term r b) (rename_barehypotheses r H) k.
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
   - exists (rename_term r a) (rename_term r e) (rename_barehypotheses r H).
@@ -10421,6 +10470,9 @@ Proof.
 
   - exists (rename_barehypotheses r H) (rename_barehypotheses r J) z (rename_term r C) (rename_term r t) (rename_term r e).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
+
+    rewrite <- (rename_find_hypotheses_name_from_nat r) in valid0.
+    repeat (autorewrite with slow ren in *; simpl in *; auto).
 
   - exists i j (rename_barehypotheses r H).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
@@ -10452,14 +10504,23 @@ Proof.
   - exists (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r C) (rename_term r t).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
+    rewrite <- (rename_find_hypotheses_name_from_nat r) in valid0.
+    repeat (autorewrite with slow ren in *; simpl in *; auto).
+
   - exists (rename_term r f1) (rename_term r f2) (rename_term r t1) (rename_term r t2) (rename_term r e1) (rename_term r e2) (rename_barehypotheses r H).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
   - exists (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r e) (rename_term r ea) f x0 (rename_barehypotheses r H) (rename_barehypotheses r J).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
+    rewrite <- (rename_find_hypotheses_name_from_nat r) in valid1.
+    repeat (autorewrite with slow ren in *; simpl in *; auto).
+
   - exists (rename_term r A) (rename_term r B) (rename_term r C) (rename_term r e) (rename_term r ea) f x0 (rename_barehypotheses r H) (rename_barehypotheses r J).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
+
+    rewrite <- (rename_find_hypotheses_name_from_nat r) in valid1.
+    repeat (autorewrite with slow ren in *; simpl in *; auto).
 
   - exists (rename_barehypotheses r H) (rename_term r t1) (rename_term r t2) (rename_term r A) x0 (rename_term r B) (rename_term r e1) (rename_term r e2).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
@@ -10525,6 +10586,9 @@ Proof.
   - exists (rename_term r A) x (rename_barehypotheses r G) (rename_barehypotheses r J).
     repeat (autorewrite with slow ren; simpl; dands; auto).
 
+    rewrite <- (rename_find_hypotheses_name_from_nat r) in valid0.
+    repeat (autorewrite with slow ren in *; simpl in *; auto).
+
   - exists (rename_term r C) (rename_barehypotheses r H).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
@@ -10534,7 +10598,7 @@ Proof.
   - exists (rename_term r a) (rename_term r b) (rename_term r d) (rename_barehypotheses r H).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
-  - exists (rename_term r a) (rename_term r b) (rename_barehypotheses r H).
+  - exists (rename_term r a) (rename_term r b) (rename_barehypotheses r H) k.
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
   - exists (rename_term r a) (rename_barehypotheses r H).
@@ -10551,6 +10615,9 @@ Proof.
 
   - exists (rename_barehypotheses r H) (rename_barehypotheses r J) z (rename_term r C).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
+
+    rewrite <- (rename_find_hypotheses_name_from_nat r) in valid0.
+    repeat (autorewrite with slow ren in *; simpl in *; auto).
 
   - exists i j (rename_barehypotheses r H).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
@@ -10582,14 +10649,23 @@ Proof.
   - exists (rename_barehypotheses r G) (rename_barehypotheses r J) x (rename_term r A) (rename_term r C).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
+    rewrite <- (rename_find_hypotheses_name_from_nat r) in valid1.
+    repeat (autorewrite with slow ren in *; simpl in *; auto).
+
   - exists (rename_term r f1) (rename_term r f2) (rename_term r t1) (rename_term r t2) (rename_barehypotheses r H).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
   - exists (rename_term r A) (rename_term r B) (rename_term r C) f x0 (rename_barehypotheses r H) (rename_barehypotheses r J).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
+    rewrite <- (rename_find_hypotheses_name_from_nat r) in valid1.
+    repeat (autorewrite with slow ren in *; simpl in *; auto).
+
   - exists (rename_term r A) (rename_term r B) (rename_term r C) f x0 (rename_barehypotheses r H) (rename_barehypotheses r J).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
+
+    rewrite <- (rename_find_hypotheses_name_from_nat r) in valid1.
+    repeat (autorewrite with slow ren in *; simpl in *; auto).
 
   - exists (rename_barehypotheses r H) (rename_term r t1) (rename_term r t2) (rename_term r A) x0 (rename_term r B).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
@@ -11141,7 +11217,7 @@ Proof.
     dands; auto.
     apply extend_proof_context_preserves_reduces_to; auto.
 
-  - exists a b H.
+  - exists a b H k.
     dands; auto.
     apply extend_proof_context_preserves_reduces_in_atmost_k_steps; auto.
 
@@ -11268,7 +11344,7 @@ Proof.
     dands; auto.
 
   - repeat (destruct l; simpl in *; ginv).
-    rewrite find_hypothesis_name_from_nat_middle in fin; ginv.
+    rewrite valnode0 in fin; ginv.
     exists A x G J.
     dands; auto.
 
@@ -11286,7 +11362,7 @@ Proof.
     exists a b d H; dands; auto.
 
   - repeat (destruct l; simpl in *; ginv).
-    exists a b H; dands; auto.
+    exists a b H k; dands; auto.
 
   - repeat (destruct l; simpl in *; ginv).
     repeat (apply cons_inj in valnode1; repnd; GC).
@@ -11393,17 +11469,17 @@ Proof.
     exists A B C (proof2extract p0) (proof2extract p) f x0 H J.
     dands; auto.
     repeat (rewrite proof2bseq_as_proof2pre_bseq).
-    rewrite valnode1, valnode7; simpl; auto.
+    rewrite valnode7, valnode8; simpl; auto.
 
   - repeat (destruct l; simpl in *; ginv).
     repeat (apply cons_inj in valnode0; repnd; GC).
     rewrite proof2hyps_as_pre_hyps_proof2pre_bseq in fin.
-    rewrite valnode1 in fin; simpl in fin.
-    rewrite find_hypothesis_name_from_nat_middle in fin; ginv.
+    rewrite valnode11 in fin; simpl in fin.
+    rewrite valnode1 in fin; ginv.
     exists A B C (proof2extract p0) (proof2extract p) f x0 H J.
     dands; auto.
     repeat (rewrite proof2bseq_as_proof2pre_bseq).
-    rewrite valnode1, valnode11; simpl; auto.
+    rewrite valnode11, valnode12; simpl; auto.
 
   - repeat (destruct l; simpl in *; ginv).
     repeat (apply cons_inj in valnode1; repnd; GC).
@@ -11603,6 +11679,30 @@ Proof.
 Qed.
 Hint Resolve find_unfinished_preserves_valid_pre_proofs_context : slow.
 
+Lemma reduces_atmost_k_steps_of_compute_atmost_k_steps2 {o} :
+  forall lib k (t : @NTerm o),
+    {n : nat
+     & n <= k
+     # reduces_in_atmost_k_steps lib t (compute_atmost_k_steps lib n t) n}.
+Proof.
+  induction k; introv; simpl.
+
+  - exists 0; dands; auto.
+    rw @reduces_in_atmost_k_steps_0; auto.
+
+  - remember (compute_step lib t) as comp; symmetry in Heqcomp.
+    destruct comp as [u|].
+
+    + pose proof (IHk u) as h; clear IHk; exrepnd.
+      exists (S n); dands; auto; try omega.
+      simpl.
+      rw @reduces_in_atmost_k_steps_S; allrw.
+      exists u; dands; auto.
+
+    + exists 0; dands; try omega.
+      rw @reduces_in_atmost_k_steps_0; auto.
+Qed.
+
 Ltac dest_match :=
   match goal with
   | [ H : context[match ?x with _ => _ end] |- _ ] =>
@@ -11640,14 +11740,13 @@ Proof.
     repeat dest_match.
     repeat eexists; auto.
 
-  - unfold apply_proof_step_hypothesis_num, apply_proof_step_hypothesis in appstep.
+  - unfold apply_proof_step_hypothesis_num in appstep.
     remember (find_hypothesis_name_from_nat (pre_hyps c) n) as f; symmetry in Heqf.
-    destruct f; ginv.
+    destruct f; ginv;[].
+
+    unfold apply_proof_step_hypothesis in appstep.
     repeat dest_match.
     repeat eexists; auto.
-
-    (* change decomp_hyps or do that by hand? *)
-    admit.
 
   - unfold apply_proof_step_cut in appstep.
     repeat dest_match.
@@ -11669,9 +11768,6 @@ Proof.
     pose proof (reduces_atmost_k_steps_of_compute_atmost_k_steps ctxt n n0) as h; exrepnd.
     repeat eexists; eauto.
 
-    (* ?? *)
-    admit.
-
   - unfold apply_proof_step_unfold_abstractions in appstep.
     repeat dest_match.
     repeat eexists; auto.
@@ -11688,12 +11784,13 @@ Proof.
     repeat dest_match.
     repeat eexists; auto.
 
-  - unfold apply_proof_step_cequiv_subst_hyp_num, apply_proof_step_cequiv_subst_hyp in appstep.
+  - unfold apply_proof_step_cequiv_subst_hyp_num in appstep.
+    remember (find_hypothesis_name_from_nat (pre_hyps c) n) as f; symmetry in Heqf.
+    destruct f; ginv;[].
+
+    unfold apply_proof_step_cequiv_subst_hyp in appstep.
     repeat dest_match.
     repeat eexists; auto.
-
-    (* ? *)
-    admit.
 
   - unfold apply_proof_step_universe_eq in appstep.
     repeat dest_match.
@@ -11731,30 +11828,33 @@ Proof.
     repeat dest_match.
     repeat eexists; auto; allrw NVin_iff; auto.
 
-  - unfold apply_proof_step_thin_num, apply_proof_step_thin in appstep.
+  - unfold apply_proof_step_thin_num in appstep.
+    remember (find_hypothesis_name_from_nat (pre_hyps c) n) as f; symmetry in Heqf.
+    destruct f; ginv;[].
+
+    unfold apply_proof_step_thin in appstep.
     repeat dest_match.
     repeat eexists; auto; try (apply NVin_iff; auto).
-
-    (* ? *)
-    admit.
 
   - unfold apply_proof_step_apply_equality in appstep.
     repeat dest_match.
     repeat eexists; auto; try (apply NVin_iff; auto).
 
-  - unfold apply_proof_step_isect_elimination_num, apply_proof_step_isect_elimination in appstep.
+  - unfold apply_proof_step_isect_elimination_num in appstep.
+    remember (find_hypothesis_name_from_nat (pre_hyps c) n) as f; symmetry in Heqf.
+    destruct f; ginv;[].
+
+    unfold apply_proof_step_isect_elimination in appstep.
     repeat dest_match.
     repeat eexists; auto; try (apply NVin_iff; auto).
 
-    (* ? *)
-    admit.
+  - unfold apply_proof_step_isect_elimination2_num in appstep.
+    remember (find_hypothesis_name_from_nat (pre_hyps c) n) as f; symmetry in Heqf.
+    destruct f; ginv;[].
 
-  - unfold apply_proof_step_isect_elimination2_num, apply_proof_step_isect_elimination2 in appstep.
+    unfold apply_proof_step_isect_elimination2 in appstep.
     repeat dest_match.
     repeat eexists; auto; try (apply NVin_iff; auto).
-
-    (* ? *)
-    admit.
 
   - unfold apply_proof_step_isect_member_equality in appstep.
     repeat dest_match.
@@ -11795,7 +11895,7 @@ Proof.
 
   - unfold apply_proof_step_approx_eq in appstep.
     repeat dest_match.
-    repeat eexists; auto; try (apply NVin_iff; auto).
+    repeat eexists.
 
   - unfold apply_proof_step_cequiv_eq in appstep.
     repeat dest_match.
