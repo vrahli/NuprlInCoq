@@ -32,7 +32,6 @@
 
 Require Export dest_close_tacs.
 
-
 Lemma dest_close_per_int_l {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
@@ -43,6 +42,7 @@ Lemma dest_close_per_int_l {p} :
 Proof.
   introv tysys dou comp cl.
   inversion cl; subst; try close_diff_all; auto.
+
 Qed.
 
 Lemma dest_close_per_int_r {p} :

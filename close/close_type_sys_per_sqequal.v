@@ -26,113 +26,191 @@
 
 Require Export type_sys.
 Require Import dest_close.
+Require Export per_ceq_bar.
 
 
 
-Lemma per_cequiv_uniquely_valued {p} :
-  forall lib (ts : cts(p)), uniquely_valued (per_cequiv lib ts).
+Lemma per_cequiv_bar_uniquely_valued {p} :
+  forall (ts : cts(p)), uniquely_valued (per_cequiv_bar ts).
 Proof.
-  unfold uniquely_valued, per_cequiv, eq_term_equals; sp.
-  ccomputes_to_eqval; allrw; sp.
+  unfold uniquely_valued, per_cequiv_bar, eq_term_equals; sp.
+  pose proof (two_computes_to_valc_ceq_bar_mkc_cequiv bar0 bar T a0 b0 a b) as q; repeat (autodimp q hyp).
+  allrw; sp.
+  eapply eq_per_cequiv_eq_bar; eauto.
 Qed.
 
-Lemma per_cequiv_type_extensionality {p} :
-  forall lib (ts : cts(p)), type_extensionality (per_cequiv lib ts).
+Lemma per_cequiv_bar_type_extensionality {p} :
+  forall (ts : cts(p)), type_extensionality (per_cequiv_bar ts).
 Proof.
-  unfold type_extensionality, per_cequiv, eq_term_equals; sp.
-  exists a b c d; sp.
-  allrw <-; sp.
+  unfold type_extensionality, per_cequiv_bar, eq_term_equals; sp.
+  exists a b c d; sp; allrw <-; sp.
+  exists bar; dands; tcsp.
 Qed.
 
-Lemma per_cequiv_type_symmetric {p} :
-  forall lib (ts : cts(p)), type_symmetric (per_cequiv lib ts).
+Lemma per_cequiv_bar_type_symmetric {p} :
+  forall (ts : cts(p)), type_symmetric (per_cequiv_bar ts).
 Proof.
-  unfold type_symmetric, per_cequiv; sp.
+  introv per.
+  unfold per_cequiv_bar in *; exrepnd.
   exists c d a b; sp.
-  symm; auto.
-  allrw; sp.
+  { exists bar; dands; tcsp.
+    introv i j; symm; eapply per2; eauto. }
+  introv; rw per1; clear per1.
+
+  split; intro h; unfold per_cequiv_eq_bar, per_cequiv_eq_bar1 in *; exrepnd.
+
+  { exists (intersect_bars bar bar0).
+    introv i j; simpl in *; exrepnd.
+    pose proof (h0 lib2) as q; clear h0; autodimp q hyp.
+    pose proof (q lib'0) as z; autodimp z hyp; eauto 2 with slow; simpl in z; repnd.
+    dands; auto.
+    pose proof (per2 lib1) as w; clear per2; autodimp w hyp.
+    pose proof (w lib'0) as u; autodimp u hyp; eauto 2 with slow; simpl in u; repnd.
+    apply u; auto. }
+
+  { exists (intersect_bars bar bar0).
+    introv i j; simpl in *; exrepnd.
+    pose proof (h0 lib2) as q; clear h0; autodimp q hyp.
+    pose proof (q lib'0) as z; autodimp z hyp; eauto 2 with slow; simpl in z; repnd.
+    dands; auto.
+    pose proof (per2 lib1) as w; clear per2; autodimp w hyp.
+    pose proof (w lib'0) as u; autodimp u hyp; eauto 2 with slow; simpl in u; repnd.
+    apply u; auto. }
 Qed.
 
-Lemma per_cequiv_type_transitive {p} :
-  forall lib (ts : cts(p)), type_transitive (per_cequiv lib ts).
+Lemma per_cequiv_bar_type_transitive {p} :
+  forall (ts : cts(p)), type_transitive (per_cequiv_bar ts).
 Proof.
-  unfold type_transitive, per_cequiv; sp.
-  ccomputes_to_eqval.
+  introv per1 per2.
+  unfold per_cequiv_bar in *; exrepnd.
+
   exists a0 b0 c d; sp; spcast; sp.
-  allrw; sp.
+  exists (intersect_bars bar0 bar).
+  dands.
+
+  - introv i j; simpl in *; exrepnd.
+    pose proof (per5 lib1) as q; autodimp q hyp.
+    pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
+
+  - introv i j; simpl in *; exrepnd.
+    pose proof (per4 lib2) as q; autodimp q hyp.
+    pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
+
+  - introv i j; simpl in *; exrepnd.
+    pose proof (per6 lib1) as q; autodimp q hyp.
+    pose proof (per3 lib2) as w; autodimp w hyp.
+    pose proof (q lib'0) as z; autodimp z hyp; eauto 2 with slow; clear q.
+    pose proof (w lib'0) as u; autodimp u hyp; eauto 2 with slow; clear w.
+    simpl in *.
+    rw z.
+    rw <- u.
+
+    pose proof (two_computes_to_valc_ceq_bar_mkc_cequiv bar0 bar T2 c0 d0 a b) as h; repeat (autodimp h hyp).
+    pose proof (h lib') as w; simpl in w; autodimp w hyp; clear h;
+      [exists lib1 lib2; dands; auto|].
+    pose proof (w lib'0 j) as w; simpl in w; repnd; spcast.
+
+    split; introv h; spcast.
+
+    { eapply cequivc_trans;[|eauto].
+      eapply cequivc_trans;[apply cequivc_sym;eauto|].
+      auto. }
+
+    { eapply cequivc_trans;[|apply cequivc_sym;eauto].
+      eapply cequivc_trans;[eauto|].
+      auto. }
 Qed.
 
-Lemma per_cequiv_type_value_respecting {p} :
-  forall lib (ts : cts(p)), type_value_respecting lib (per_cequiv lib ts).
+Lemma per_cequiv_bar_type_value_respecting {p} :
+  forall (ts : cts(p)), type_value_respecting (per_cequiv_bar ts).
 Proof.
-  sp; unfold type_value_respecting, per_cequiv; sp.
-  ccomputes_to_eqval.
-  dupcomp T Hcompt.
-  apply cequivc_mkc_cequiv with (t' := T') in Hcompt; sp.
-  exists a b a' b'; sp; spcast; sp.
-  split; sp; spcast.
-  apply @cequivc_trans with (b := b); auto.
-  apply @cequivc_trans with (b := a); auto.
-  apply cequivc_sym; auto.
-  apply @cequivc_trans with (b := b'); auto.
-  apply @cequivc_trans with (b := a'); auto.
-  apply cequivc_sym; auto.
+  introv per eceq.
+  unfold per_cequiv_bar in *; exrepnd.
+
+  pose proof (two_computes_to_valc_ceq_bar_mkc_cequiv_same_bar bar T a b c d) as q.
+  repeat (autodimp q hyp).
+
+  exists a b a b.
+  dands; auto.
+
+  exists bar; dands; auto;[|introv w z; tcsp];[].
+
+  eapply cequivc_ext_preserves_computes_to_valc_ceq_bar; eauto.
 Qed.
 
-Lemma per_cequiv_term_symmetric {p} :
-  forall lib (ts : cts(p)), term_symmetric (per_cequiv lib ts).
+Lemma per_cequiv_bar_term_symmetric {p} :
+  forall (ts : cts(p)), term_symmetric (per_cequiv_bar ts).
 Proof.
-  unfold term_symmetric, term_equality_symmetric, per_cequiv.
+  unfold term_symmetric, term_equality_symmetric, per_cequiv_bar.
   introv cts i e.
   exrepnd.
-  allrw; discover; sp.
+
+  apply i1 in e; apply i1; clear i1.
+  unfold per_cequiv_eq_bar, per_cequiv_eq_bar1 in *; exrepnd.
+  exists bar0.
+  introv w z.
+  pose proof (e0 lib' w lib'0 z) as q; simpl in q; tcsp.
 Qed.
 
-Lemma per_cequiv_term_transitive {p} :
-  forall lib (ts : cts(p)), term_transitive (per_cequiv lib ts).
+Lemma per_cequiv_bar_term_transitive {p} :
+  forall (ts : cts(p)), term_transitive (per_cequiv_bar ts).
 Proof.
-  unfold term_transitive, term_equality_transitive, per_cequiv.
+  unfold term_transitive, term_equality_transitive, per_cequiv_bar.
   introv cts i e1 e2.
   exrepnd.
-  allrw; discover; sp.
+
+  apply i1 in e1; apply i1 in e2; apply i1; clear i1.
+  unfold per_cequiv_eq_bar, per_cequiv_eq_bar1 in *; exrepnd.
+  exists (intersect_bars bar1 bar0).
+  introv w z.
+  simpl in *; exrepnd.
+  pose proof (e2 lib1 w0 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q; tcsp.
+  pose proof (e0 lib2 w2 lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h; tcsp.
 Qed.
 
-Lemma per_cequiv_term_value_respecting {p} :
-  forall lib (ts : cts(p)), term_value_respecting lib (per_cequiv lib ts).
+Lemma per_cequiv_bar_term_value_respecting {p} :
+  forall (ts : cts(p)), term_value_respecting (per_cequiv_bar ts).
 Proof.
-  sp; unfold term_value_respecting, term_equality_respecting, per_cequiv.
+  sp; unfold term_value_respecting, term_equality_respecting, per_cequiv_bar.
   introv i e c; exrepnd.
-  ccomputes_to_eqval.
-  allrw; discover; sp.
-  spcast; apply @cequivc_axiom with (t' := t') in c; sp.
+
+  apply i1 in e; apply i1; clear i1.
+  unfold per_cequiv_eq_bar, per_cequiv_eq_bar1 in *; exrepnd.
+  exists bar0; introv w z.
+  pose proof (e0 lib' w lib'0 z) as q; clear e0; simpl in q.
+  repnd; dands; auto.
+
+  pose proof (c lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  spcast.
+  eapply cequivc_axiom; eauto.
 Qed.
 
-Lemma per_cequiv_type_system {p} :
-  forall lib (ts : cts(p)), type_system lib (per_cequiv lib ts).
+Lemma per_cequiv_bar_type_system {p} :
+  forall (ts : cts(p)), type_system (per_cequiv_bar ts).
 Proof.
   intros; unfold type_system; sp.
-  try apply per_cequiv_uniquely_valued; auto.
-  try apply per_cequiv_type_extensionality; auto.
-  try apply per_cequiv_type_symmetric; auto.
-  try apply per_cequiv_type_transitive; auto.
-  try apply per_cequiv_type_value_respecting; auto.
-  try apply per_cequiv_term_symmetric; auto.
-  try apply per_cequiv_term_transitive; auto.
-  try apply per_cequiv_term_value_respecting; auto.
+  - apply per_cequiv_bar_uniquely_valued; auto.
+  - apply per_cequiv_bar_type_extensionality; auto.
+  - apply per_cequiv_bar_type_symmetric; auto.
+  - apply per_cequiv_bar_type_transitive; auto.
+  - apply per_cequiv_bar_type_value_respecting; auto.
+  - apply per_cequiv_bar_term_symmetric; auto.
+  - apply per_cequiv_bar_term_transitive; auto.
+  - apply per_cequiv_bar_term_value_respecting; auto.
 Qed.
 
 
 Lemma close_type_system_cequiv {p} :
   forall lib (ts : cts(p)),
   forall T T' eq,
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> per_cequiv lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+    type_system ts
+    -> defines_only_universes ts
+    -> per_cequiv_bar (close ts) lib T T' eq
+    -> type_sys_props (close ts) lib T T' eq.
 Proof.
   introv X X0 per.
 
-  dup per as ps; unfold per_cequiv in ps; exrepnd; spcast.
+  dup per as ps; unfold per_cequiv_bar in ps; exrepnd; spcast.
 
   rw @type_sys_props_iff_type_sys_props3.
   prove_type_sys_props3 SCase; intros.
@@ -141,98 +219,114 @@ Proof.
     dclose_lr.
 
     * SSCase "CL_cequiv".
-      assert (uniquely_valued (per_cequiv lib (close lib ts)))
+      assert (uniquely_valued (per_cequiv_bar (close ts)))
         as uv
-          by (apply per_cequiv_uniquely_valued).
-      apply uv with (T := T) (T' := T'); auto.
+          by (apply per_cequiv_bar_uniquely_valued).
+      apply (uv lib T T'); auto.
       apply uniquely_valued_trans5 with (T2 := T3) (eq2 := eq); auto.
-      apply per_cequiv_type_extensionality.
-      apply per_cequiv_type_symmetric.
-      apply per_cequiv_type_transitive.
+      { apply per_cequiv_bar_type_extensionality. }
+      { apply per_cequiv_bar_type_symmetric. }
+      { apply per_cequiv_bar_type_transitive. }
 
   + SCase "type_symmetric"; repdors; subst; dclose_lr;
     apply CL_cequiv; auto;
-    assert (type_symmetric (per_cequiv lib (close lib ts)))
+    assert (type_symmetric (per_cequiv_bar (close ts)))
       as tys
-        by (apply per_cequiv_type_symmetric);
-    assert (type_extensionality (per_cequiv lib (close lib ts)))
+        by (apply per_cequiv_bar_type_symmetric);
+    assert (type_extensionality (per_cequiv_bar (close ts)))
       as tye
-        by (apply per_cequiv_type_extensionality);
+        by (apply per_cequiv_bar_type_extensionality);
     apply tye with (eq := eq); auto.
 
   + SCase "type_value_respecting"; repdors; subst;
     apply CL_cequiv;
-    assert (type_value_respecting lib (per_cequiv lib (close lib ts)))
+    assert (type_value_respecting (per_cequiv_bar (close ts)))
            as tvr
-           by (apply per_cequiv_type_value_respecting).
+           by (apply per_cequiv_bar_type_value_respecting).
 
-    apply tvr; auto.
-    apply @type_system_type_mem with (T' := T'); auto.
-    apply per_cequiv_type_symmetric.
-    apply per_cequiv_type_transitive.
+    { apply tvr; auto.
+      apply @type_system_type_mem with (T' := T'); auto.
+      apply per_cequiv_bar_type_symmetric.
+      apply per_cequiv_bar_type_transitive. }
 
-    apply tvr; auto.
-    apply @type_system_type_mem1 with (T := T); auto.
-    apply per_cequiv_type_symmetric.
-    apply per_cequiv_type_transitive.
+    { apply tvr; auto.
+      apply @type_system_type_mem1 with (T := T); auto.
+      apply per_cequiv_bar_type_symmetric.
+      apply per_cequiv_bar_type_transitive. }
 
   + SCase "term_symmetric".
-    assert (term_symmetric (per_cequiv lib (close lib ts)))
+    assert (term_symmetric (per_cequiv_bar (close ts)))
       as tes
-        by (apply per_cequiv_term_symmetric).
-    apply tes with (T := T) (T' := T'); auto.
+        by (apply per_cequiv_bar_term_symmetric).
+    apply (tes lib T T'); auto.
 
   + SCase "term_transitive".
-    assert (term_transitive (per_cequiv lib (close lib ts)))
+    assert (term_transitive (per_cequiv_bar (close ts)))
       as tet
-        by (apply per_cequiv_term_transitive).
-    apply tet with (T := T) (T' := T'); auto.
+        by (apply per_cequiv_bar_term_transitive).
+    apply (tet lib T T'); auto.
 
   + SCase "term_value_respecting".
-    assert (term_value_respecting lib (per_cequiv lib (close lib ts)))
+    assert (term_value_respecting (per_cequiv_bar (close ts)))
       as tvr
-        by (apply per_cequiv_term_value_respecting).
+        by (apply per_cequiv_bar_term_value_respecting).
     apply tvr with (T := T); auto.
     apply @type_system_type_mem with (T' := T'); auto.
-    apply per_cequiv_type_symmetric.
-    apply per_cequiv_type_transitive.
+    { apply per_cequiv_bar_type_symmetric. }
+    { apply per_cequiv_bar_type_transitive. }
 
   + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.
 
-    apply CL_cequiv; apply per_cequiv_type_symmetric; auto.
-    apply CL_cequiv; apply per_cequiv_type_symmetric; auto.
+    { apply CL_cequiv; apply per_cequiv_bar_type_symmetric; auto. }
+
+    { apply CL_cequiv; apply per_cequiv_bar_type_symmetric; auto. }
 
   + SCase "type_gtransitive"; sp.
 
   + SCase "type_mtransitive".
     repdors; subst; dclose_lr.
 
+    dands; apply CL_cequiv; try (complete sp).
+
+    { apply per_cequiv_bar_type_transitive with (T2 := T); auto.
+      allunfold @per_cequiv_bar; sp.
+      exists a1 b1 c1 d1; dands; auto;[exists bar1; dands; auto|];[].
+      eapply eq_term_equals_trans;[eauto|].
+      pose proof (two_computes_to_valc_ceq_bar_mkc_cequiv bar1 bar0 T a1 b1 c0 d0) as q; repeat (autodimp q hyp).
+      apply eq_per_cequiv_eq_bar in q.
+      apply eq_term_equals_sym in q.
+      eapply eq_term_equals_trans;[|exact q]; clear q.
+      eapply cequiv_iff_implies_eq_per_cequiv_eq_bar; eauto. }
+
+    { apply per_cequiv_bar_type_transitive with (T2 := T); auto.
+      allunfold @per_cequiv_bar; sp.
+      exists a0 b0 c0 d0; dands; auto;[exists bar0; dands; auto|];[].
+      eapply eq_term_equals_trans;[eauto|].
+      pose proof (two_computes_to_valc_ceq_bar_mkc_cequiv bar1 bar0 T a1 b1 c0 d0) as q; repeat (autodimp q hyp).
+      apply eq_per_cequiv_eq_bar in q.
+      eapply eq_term_equals_trans;[exact q|]; clear q.
+      apply eq_term_equals_sym.
+      eapply cequiv_iff_implies_eq_per_cequiv_eq_bar; eauto. }
+
     dands; apply CL_cequiv.
 
-    apply per_cequiv_type_transitive with (T2 := T); auto.
-    allunfold @per_cequiv; sp.
-    ccomputes_to_eqval.
-    exists a2 b2 c1 d1; sp; spcast; sp.
-    allrw; sp.
+    { apply per_cequiv_bar_type_transitive with (T2 := T'); auto.
+      allunfold @per_cequiv_bar; sp.
+      exists a1 b1 c1 d1; dands; auto;[exists bar1; dands; auto|];[].
+      eapply eq_term_equals_trans;[eauto|].
+      pose proof (two_computes_to_valc_ceq_bar_mkc_cequiv bar1 bar0 T' a1 b1 c0 d0) as q; repeat (autodimp q hyp).
+      apply eq_per_cequiv_eq_bar in q.
+      apply eq_term_equals_sym in q.
+      eapply eq_term_equals_trans;[|exact q]; clear q.
+      eapply cequiv_iff_implies_eq_per_cequiv_eq_bar; eauto. }
 
-    apply per_cequiv_type_transitive with (T2 := T); auto.
-    allunfold @per_cequiv; sp.
-    ccomputes_to_eqval.
-    exists a0 b0 a2 b2; sp; spcast; sp.
-    allrw; sp.
-
-    dands; apply CL_cequiv.
-
-    apply per_cequiv_type_transitive with (T2 := T'); auto.
-    allunfold @per_cequiv; sp.
-    ccomputes_to_eqval.
-    exists c2 d2 c1 d1; sp; spcast; sp.
-    allrw; sp.
-
-    apply per_cequiv_type_transitive with (T2 := T'); auto.
-    allunfold @per_cequiv; sp.
-    ccomputes_to_eqval.
-    exists a0 b0 c2 d2; sp; spcast; sp.
-    allrw; sp.
+    { apply per_cequiv_bar_type_transitive with (T2 := T'); auto.
+      allunfold @per_cequiv_bar; sp.
+      exists a0 b0 c0 d0; dands; auto;[exists bar0; dands; auto|];[].
+      eapply eq_term_equals_trans;[eauto|].
+      pose proof (two_computes_to_valc_ceq_bar_mkc_cequiv bar1 bar0 T' a1 b1 c0 d0) as q; repeat (autodimp q hyp).
+      apply eq_per_cequiv_eq_bar in q.
+      eapply eq_term_equals_trans;[exact q|]; clear q.
+      apply eq_term_equals_sym.
+      eapply cequiv_iff_implies_eq_per_cequiv_eq_bar; eauto. }
 Qed.
-

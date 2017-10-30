@@ -586,17 +586,13 @@ Proof.
     introv comp.
     apply cl2 in comp.
     exrepnd.
-    eapply compute_to_value_alpha in comp1; eauto 3 with slow; exrepnd.
-    applydup @alpha_eq_oterm_implies_combine in comp2; exrepnd; subst.
-    exists bs'; dands; eauto 4 with slow.
+    eapply computes_to_value_bar_alpha_implies in comp1;[| |eauto]; eauto 2 with slow;[].
+    eexists; dands; eauto;[].
 
     allunfold @lblift; repnd; dands; auto; try omega.
     introv i.
     applydup comp0 in i.
     allunfold @blift; exrepnd.
-    pose proof (comp4 (selectbt tr_subterms n) (selectbt bs' n)) as h.
-    autodimp h hyp.
-    { unfold selectbt; apply in_nth_combine; auto; try omega. }
 
     exists lv nt1 nt2; dands; eauto 3 with slow.
 
@@ -614,56 +610,37 @@ Proof.
     introv comp.
     apply cl3 in comp.
     exrepnd.
-    eapply compute_to_exception_alpha in comp0; eauto 4 with slow; exrepnd.
-    exists a'0 t2'; dands; eauto 4 with slow.
+    eapply computes_to_exception_bar_alpha_implies in comp0; eauto 4 with slow; exrepnd.
+    eexists; eexists; dands; eauto.
 
     + clear comp1.
       repndors; tcsp.
 
-      * right.
-        apply hr.
-        exists a'; dands; auto.
-
-      * right.
-        apply hb; auto.
-        eapply resp; eauto.
+      right.
+      apply hr.
+      exists a'; dands; auto.
 
     + clear comp2.
       repndors; tcsp.
 
-      * right.
-        apply hr.
-        exists e'; dands; auto.
-
-      * right.
-        apply hb; auto.
-        eapply resp; eauto.
-
-(*
-  - clear cl2 cl3.
-    introv comp.
-    apply cl in comp.
-    eapply compute_to_marker_alpha in comp; eauto.
-*)
+      right.
+      apply hr.
+      exists e'; dands; auto.
 
   - introv comp.
 
     applydup @alpha_prog_eauto in aeq; auto.
 
     apply cl4 in comp; exrepnd.
-    eapply computes_to_seq_alpha in comp1; eauto 3 with slow; exrepnd.
+    eapply computes_to_seq_bar_alpha_implies in comp1; eauto 3 with slow; exrepnd.
     eexists; dands; eauto 4 with slow.
     introv.
     pose proof (comp0 n) as h; clear comp0.
-    pose proof (comp2 n) as q; clear comp2.
 
     repndors; tcsp; right.
 
-    + apply hr.
-      eexists; dands; eauto.
-
-    + apply hb.
-      eapply resp; eauto.
+    apply hr.
+    eexists; dands; eauto.
 Qed.
 Hint Resolve respects_alpha_r_approx_ext_aux : slow.
 
@@ -733,23 +710,15 @@ Proof.
     apply alpha_eq_sym in aeq; applydup @alpha_prog_eauto in aeq; auto; apply alpha_eq_sym in aeq.
 
     introv comp.
-    eapply compute_to_value_alpha in comp;try (exact aeq); eauto 4 with slow.
-    exrepnd.
-    apply @alpha_eq_oterm_implies_combine in comp0; exrepnd; subst.
+    eapply computes_to_value_bar_alpha_implies in comp;try (exact aeq); eauto 4 with slow.
 
-    apply computes_to_value_implies_computes_to_val_exc in comp1; eauto 3 with slow.
-
-    apply cl2 in comp1; clear cl2.
+    apply cl2 in comp; clear cl2.
     exrepnd.
-    exists tr_subterms; dands; auto.
+    eexists; dands; eauto;[].
     allunfold @lblift; repnd; dands; auto; try omega.
     introv i.
-    rw comp3 in i.
     applydup comp0 in i; clear comp0.
     allunfold @blift; exrepnd.
-    pose proof (comp2 (selectbt tl_subterms n) (selectbt bs' n)) as h.
-    autodimp h hyp.
-    { unfold selectbt; apply in_nth_combine; auto; try omega. }
 
     exists lv nt1 nt2; dands; eauto 3 with slow.
 
@@ -765,64 +734,48 @@ Proof.
     apply alpha_eq_sym in aeq; applydup @alpha_prog_eauto in aeq; auto; apply alpha_eq_sym in aeq.
 
     introv comp.
-    eapply compute_to_exception_alpha in comp; eauto 3 with slow; exrepnd.
+    eapply computes_to_exception_bar_alpha_implies in comp; eauto 3 with slow; exrepnd.
 
-    apply computes_to_exception_implies_computes_to_exception_exc in comp0; eauto 3 with slow.
-
-    apply cl3 in comp0.
+    apply cl3 in comp.
     exrepnd.
-    exists a'0 e'; dands; auto.
+    eexists; eexists; dands; eauto.
 
     + clear comp0.
       repndors; tcsp.
 
       * right.
         apply hr.
-        exists a'; dands; auto.
-
-      * right.
-        apply hb; auto.
-        eapply resp;[apply alpha_eq_sym; eauto|]; auto.
-
-    + clear comp4.
-      repndors; tcsp.
+        exists a0; dands; auto.
 
       * right.
         apply hr.
-        exists t2'; dands; auto.
+        exists a0; dands; auto.
+
+    + repndors; tcsp.
 
       * right.
-        apply hb; auto.
-        eapply resp;[apply alpha_eq_sym; eauto|]; auto.
+        apply hr.
+        exists e; dands; auto.
 
-(*
-  - clear cl2 cl3.
-    introv comp.
-    apply (compute_to_marker_alpha _ _ b) in comp; auto.
-*)
+      * right.
+        apply hr; auto.
+        exists e; dands; auto.
 
   - introv comp.
 
     apply alpha_eq_sym in aeq; applydup @alpha_prog_eauto in aeq; auto; apply alpha_eq_sym in aeq.
 
-    eapply computes_to_seq_alpha in comp;[| | eauto|]; eauto 3 with slow; exrepnd.
+    eapply computes_to_seq_bar_alpha_implies in comp;[| |eauto];eauto 3 with slow; exrepnd.
 
-    apply computes_to_seq_implies_computes_to_seq_exc in comp1; eauto 3 with slow.
-
-    apply cl4 in comp1; exrepnd.
+    apply cl4 in comp; exrepnd.
     eexists; dands; eauto.
     introv.
     pose proof (comp0 n) as h; clear comp0.
-    pose proof (comp2 n) as q; clear comp2.
 
     repndors; tcsp; right.
 
-    + apply hr.
-      eexists; dands; eauto.
-
-    + apply hb.
-      apply alpha_eq_sym in h.
-      eapply resp; eauto.
+    apply hr.
+    eexists; dands; eauto.
 Qed.
 Hint Resolve respects_alpha_l_approx_ext_aux : slow.
 
@@ -1747,6 +1700,23 @@ Proof.
   f_equal; apply (inv_ren_utokens2_lib lib); auto.
 Qed.
 
+Hint Resolve alpha_eq_ren_utokens : slow.
+
+Lemma computes_to_value_alpha_ren_utokens {o} :
+  forall lib (t u : @NTerm o) ren,
+    nt_wf t
+    -> no_repeats (range_utok_ren ren)
+    -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t))
+    -> computes_to_value_alpha lib t u
+    -> computes_to_value_alpha lib (ren_utokens ren t) (ren_utokens ren u).
+Proof.
+  introv wf norep disjlib disj comp.
+  unfold computes_to_value_alpha in *; exrepnd.
+  eapply computes_to_value_ren_utokens in comp1;[| | | |eauto];auto;[].
+  eexists; dands; eauto; eauto 2 with slow.
+Qed.
+
 Lemma approx_ext_change_utoks {o} :
   forall lib (t1 t2 : @NTerm o) ren,
     no_repeats (range_utok_ren ren)
@@ -1779,6 +1749,26 @@ Proof.
 
   - clear cl3 cl.
     dup comp as comp1.
+
+    Check computes_to_value_ren_utokens.
+
+Lemma computes_to_value_bar_ren_utokens {o} :
+  forall {lib} (bar : BarLib lib) (t u : @NTerm o) ren,
+    nt_wf t
+    -> no_repeats (range_utok_ren ren)
+    -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t))
+    -> computes_to_value_bar bar t u
+    -> computes_to_value_bar bar (ren_utokens ren t) (ren_utokens ren u).
+Proof.
+  introv wf norep disjlib disj comp ext ext'.
+  pose proof (comp _ ext _ ext') as q; simpl in q.
+
+  eapply computes_to_value_alpha_ren_utokens in q;[| | | |].
+
+Qed.
+
+    Locate computes_to_value_ren_utokens.
     eapply (computes_to_value_ren_utokens _ _ _ (inv_utok_ren ren)) in comp1;
       allrw @range_utok_ren_inv_utok_ren;
       allrw @dom_utok_ren_inv_utok_ren;

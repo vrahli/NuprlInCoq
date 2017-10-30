@@ -56,3 +56,27 @@ Proof.
   introv tysys dou comp cl.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
+
+Lemma dest_close_per_cequiv_l_ceq {p} :
+  forall (ts : cts(p)) lib (bar : BarLib lib) T A B T' eq,
+    type_system ts
+    -> defines_only_universes ts
+    -> computes_to_valc_ceq_bar bar T (mkc_cequiv A B)
+    -> close ts lib T T' eq
+    -> per_cequiv_bar (close ts) lib T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_cequiv_r_ceq {p} :
+  forall (ts : cts(p)) lib (bar : BarLib lib) T A B T' eq,
+    type_system ts
+    -> defines_only_universes ts
+    -> computes_to_valc_ceq_bar bar T' (mkc_cequiv A B)
+    -> close ts lib T T' eq
+    -> per_cequiv_bar (close ts) lib T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.

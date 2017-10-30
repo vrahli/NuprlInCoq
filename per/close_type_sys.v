@@ -38,10 +38,9 @@ Require Import close_type_sys_per_atom.
 Require Import close_type_sys_per_uatom.
 Require Import close_type_sys_per_csname.
 Require Import close_type_sys_per_base.
-
-(*Require Import close_type_sys_per_sqle.
+Require Import close_type_sys_per_sqle.
 Require Import close_type_sys_per_sqequal.
-Require Import close_type_sys_per_eq.
+(*Require Import close_type_sys_per_eq.
 Require Import close_type_sys_per_req.
 Require Import close_type_sys_per_teq.
 Require Import close_type_sys_per_isect.
@@ -192,8 +191,6 @@ Proof.
 
   close_cases (induction cl using @close_ind') Case; sp; spcast.
 
-  Focus 14.
-
   - Case "CL_init".
     apply close_type_system_init; auto.
 
@@ -224,78 +221,78 @@ Proof.
   - Case "CL_eq".
     eapply close_type_system_eq; eauto.
 
-  - Case "CL_req".
-    eapply close_type_system_req; eauto.
+(*  - Case "CL_req".
+    eapply close_type_system_req; eauto.*)
 
-  - Case "CL_teq".
-    eapply close_type_system_teq; eauto.
+(*  - Case "CL_teq".
+    eapply close_type_system_teq; eauto.*)
 
-  - Case "CL_isect".
-    eapply close_type_system_isect; eauto.
+(*  - Case "CL_isect".
+    eapply close_type_system_isect; eauto.*)
 
   - Case "CL_func".
     eapply close_type_system_func; eauto.
 
-  - Case "CL_disect".
-    eapply close_type_system_disect; eauto.
+(*  - Case "CL_disect".
+    eapply close_type_system_disect; eauto.*)
 
-  - Case "CL_pertype".
-    eapply close_type_system_pertype; eauto.
+(*  - Case "CL_pertype".
+    eapply close_type_system_pertype; eauto.*)
 
-  - Case "CL_ipertype".
-    eapply close_type_system_ipertype; eauto.
+(*  - Case "CL_ipertype".
+    eapply close_type_system_ipertype; eauto.*)
 
-  - Case "CL_spertype".
-    eapply close_type_system_spertype; eauto.
+(*  - Case "CL_spertype".
+    eapply close_type_system_spertype; eauto.*)
 
-  - Case "CL_w".
-    eapply close_type_system_w; eauto.
+(*  - Case "CL_w".
+    eapply close_type_system_w; eauto.*)
 
-  - Case "CL_m".
-    eapply close_type_system_m; eauto.
+(*  - Case "CL_m".
+    eapply close_type_system_m; eauto.*)
 
-  - Case "CL_pw".
+(*  - Case "CL_pw".
     eapply close_type_system_pw; eauto;
       try (complete (unfold type_sys_props_fam; sp));
-      try (complete (unfold type_sys_props_fam_fam; sp)).
+      try (complete (unfold type_sys_props_fam_fam; sp)).*)
 
-  - Case "CL_pm".
+(*  - Case "CL_pm".
     eapply close_type_system_pm; eauto;
       try (complete (unfold type_sys_props_fam; sp));
-      try (complete (unfold type_sys_props_fam_fam; sp)).
+      try (complete (unfold type_sys_props_fam_fam; sp)).*)
 
-  - Case "CL_texc".
-    eapply close_type_system_texc; eauto.
+(*  - Case "CL_texc".
+    eapply close_type_system_texc; eauto.*)
 
   - Case "CL_union".
     eapply close_type_system_union; eauto.
 
-  - Case "CL_image".
-    eapply close_type_system_image; eauto; spcast; auto.
+(*  - Case "CL_image".
+    eapply close_type_system_image; eauto; spcast; auto.*)
 
-  - Case "CL_partial".
-    eapply close_type_system_partial; eauto.
+(*  - Case "CL_partial".
+    eapply close_type_system_partial; eauto.*)
 
-  - Case "CL_admiss".
-    eapply close_type_system_admiss; eauto.
+(*  - Case "CL_admiss".
+    eapply close_type_system_admiss; eauto.*)
 
-  - Case "CL_mono".
-    eapply close_type_system_mono; eauto.
+(*  - Case "CL_mono".
+    eapply close_type_system_mono; eauto.*)
 
-  - Case "CL_ffatom".
-    eapply close_type_system_ffatom; eauto.
+(*  - Case "CL_ffatom".
+    eapply close_type_system_ffatom; eauto.*)
 
-  - Case "CL_effatom".
-    eapply close_type_system_effatom; eauto.
+(*  - Case "CL_effatom".
+    eapply close_type_system_effatom; eauto.*)
 
-  - Case "CL_ffatoms".
-    eapply close_type_system_ffatoms; eauto.
+(*  - Case "CL_ffatoms".
+    eapply close_type_system_ffatoms; eauto.*)
 
-  - Case "CL_set".
-    eapply close_type_system_set; eauto.
+(*  - Case "CL_set".
+    eapply close_type_system_set; eauto.*)
 
-  - Case "CL_tunion".
-    eapply close_type_system_tunion; eauto.
+(*  - Case "CL_tunion".
+    eapply close_type_system_tunion; eauto.*)
 
   - Case "CL_product".
     eapply close_type_system_product; eauto.

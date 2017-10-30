@@ -31,6 +31,7 @@
 
 
 Require Export per.
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ #⪯# *)
@@ -347,18 +348,18 @@ Proof.
     exists bar; sp.
     introv j w; eapply reca; eauto.
 
-  - Case "CL_req".
+(*  - Case "CL_req".
     apply CL_req; unfold per_req; sp.
-    exists A B a1 a2 b1 b2 eqa; sp.
+    exists A B a1 a2 b1 b2 eqa; sp.*)
 
-  - Case "CL_teq".
+(*  - Case "CL_teq".
     apply CL_teq; unfold per_teq; sp.
-    exists a1 a2 b1 b2 eqa; sp.
+    exists a1 a2 b1 b2 eqa; sp.*)
 
-  - Case "CL_isect".
+(*  - Case "CL_isect".
     apply CL_isect; unfold per_isect; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A A' v v' B B'; sp.*)
 
   - Case "CL_func".
     apply CL_func; unfold per_func; sp.
@@ -367,52 +368,52 @@ Proof.
       try (apply reca; auto);
       try (introv; apply recb; auto).
 
-  - Case "CL_disect".
+(*  - Case "CL_disect".
     apply CL_disect; unfold per_disect; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A A' v v' B B'; sp.*)
 
-  - Case "CL_pertype".
+(*  - Case "CL_pertype".
     apply CL_pertype; unfold per_pertype; sp.
-    exists R1 R2 eq1 eq2; sp.
+    exists R1 R2 eq1 eq2; sp.*)
 
-  - Case "CL_ipertype".
+(*  - Case "CL_ipertype".
     apply CL_ipertype; unfold per_ipertype; sp.
-    exists R1 R2 eq1; sp.
+    exists R1 R2 eq1; sp.*)
 
-  - Case "CL_spertype".
+(*  - Case "CL_spertype".
     apply CL_spertype; unfold per_spertype; sp.
-    exists R1 R2 eq1; sp.
+    exists R1 R2 eq1; sp.*)
 
-  - Case "CL_w".
+(*  - Case "CL_w".
     apply CL_w; unfold per_w; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A A' v v' B B'; sp.*)
 
-  - Case "CL_m".
+(*  - Case "CL_m".
     apply CL_m; unfold per_m; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A A' v v' B B'; sp.*)
 
-  - Case "CL_pw".
+(*  - Case "CL_pw".
     apply CL_pw; unfold per_pw; sp.
     exists eqp eqa eqb p p' cp cp' ca ca'.
     exists cb cb' C C'; sp.
     unfold type_pfamily.
     exists Pr Pr' ap ap' A A' bp bp'.
-    exists ba ba' B B'; sp.
+    exists ba ba' B B'; sp.*)
 
-  - Case "CL_pm".
+(*  - Case "CL_pm".
     apply CL_pm; unfold per_pm; sp.
     exists eqp eqa eqb p p' cp cp' ca ca'.
     exists cb cb' C C'; sp.
     unfold type_pfamily.
     exists Pr Pr' ap ap' A A' bp bp'.
-    exists ba ba' B B'; sp.
+    exists ba ba' B B'; sp.*)
 
-  - Case "CL_texc".
+(*  - Case "CL_texc".
     apply CL_texc; unfold per_texc; sp.
-    exists eqn eqe N N' E E'; sp.
+    exists eqn eqe N N' E E'; sp.*)
 
   - Case "CL_union".
     apply CL_union; unfold per_union; sp.
@@ -425,9 +426,9 @@ Proof.
     exists eqa1 eqa2 eqb1 eqb2 A A' B B'; sp.
      *)
 
-  - Case "CL_image".
+(*  - Case "CL_image".
     apply CL_image; unfold per_image; sp.
-    exists eqa A A' f f'; sp.
+    exists eqa A A' f f'; sp.*)
 
 (*
   - Case "CL_eisect".
@@ -437,39 +438,39 @@ Proof.
     exists f g f' g'; sp.
 *)
 
-  - Case "CL_partial".
+(*  - Case "CL_partial".
     apply CL_partial; unfold per_partial; sp.
-    exists A1 A2 eqa; sp.
+    exists A1 A2 eqa; sp.*)
 
-  - Case "CL_admiss".
+(*  - Case "CL_admiss".
     apply CL_admiss; unfold per_partial; sp.
-    exists A1 A2 eqa; sp.
+    exists A1 A2 eqa; sp.*)
 
-  - Case "CL_mono".
+(*  - Case "CL_mono".
     apply CL_mono; unfold per_partial; sp.
-    exists A1 A2 eqa; sp.
+    exists A1 A2 eqa; sp.*)
 
-  - Case "CL_ffatom".
+(*  - Case "CL_ffatom".
     apply CL_ffatom; unfold per_ffatom; sp.
-    exists A1 A2 x1 x2 a1 a2 eqa u; sp.
+    exists A1 A2 x1 x2 a1 a2 eqa u; sp.*)
 
-  - Case "CL_effatom".
+(*  - Case "CL_effatom".
     apply CL_effatom; unfold per_effatom; sp.
-    exists A1 A2 x1 x2 a1 a2 eqa; sp.
+    exists A1 A2 x1 x2 a1 a2 eqa; sp.*)
 
-  - Case "CL_ffatoms".
+(*  - Case "CL_ffatoms".
     apply CL_ffatoms; unfold per_ffatoms; sp.
-    exists A1 A2 x1 x2 eqa; sp.
+    exists A1 A2 x1 x2 eqa; sp.*)
 
-  - Case "CL_set".
+(*  - Case "CL_set".
     apply CL_set; unfold per_set; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A A' v v' B B'; sp.*)
 
-  - Case "CL_tunion".
+(*  - Case "CL_tunion".
     apply CL_tunion; unfold per_tunion; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.
+    exists A A' v v' B B'; sp.*)
 
   - Case "CL_product".
     apply CL_product; unfold per_product; sp.
@@ -676,27 +677,27 @@ Proof.
     introv j w.
     eapply reca; eauto.
 
-  - Case "CL_req".
+(*  - Case "CL_req".
     apply CL_req.
     unfold per_req; sp.
     exists A B a1 a2 b1 b2 eqa; sp.
-    apply IHn with (i0 := i); sp.
+    apply IHn with (i0 := i); sp.*)
 
-  - Case "CL_teq".
+(*  - Case "CL_teq".
     apply CL_teq.
     unfold per_teq; sp.
     exists a1 a2 b1 b2 eqa; sp.
     apply IHn1 with (i0 := i); sp.
     apply IHn2 with (i0 := i); sp.
-    apply IHn3 with (i0 := i); sp.
+    apply IHn3 with (i0 := i); sp.*)
 
-  - Case "CL_isect".
+(*  - Case "CL_isect".
     apply CL_isect.
     unfold per_isect, type_family; sp.
     exists eqa eqb; sp.
     exists A A' v v' B B'; sp.
     apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    apply recb with (i0 := i); sp.*)
 
   - Case "CL_func".
     apply CL_func.
@@ -707,49 +708,49 @@ Proof.
       try (introv; try (eapply recb; eauto));
       try (complete (eapply IHn; eauto)).
 
-  - Case "CL_disect".
+(*  - Case "CL_disect".
     apply CL_disect.
     unfold per_disect, type_family; sp.
     exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
     apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    apply recb with (i0 := i); sp.*)
 
-  - Case "CL_pertype".
+(*  - Case "CL_pertype".
     apply CL_pertype.
     unfold per_pertype; sp.
     exists R1 R2 eq1 eq2; sp.
     apply rec1 with (i0 := i); sp.
-    apply rec2 with (i0 := i); sp.
+    apply rec2 with (i0 := i); sp.*)
 
-  - Case "CL_ipertype".
+(*  - Case "CL_ipertype".
     apply CL_ipertype.
     unfold per_ipertype; sp.
     exists R1 R2 eq1; sp.
-    apply rec1 with (i0 := i); sp.
+    apply rec1 with (i0 := i); sp.*)
 
-  - Case "CL_spertype".
+(*  - Case "CL_spertype".
     apply CL_spertype.
     unfold per_spertype; sp.
     exists R1 R2 eq1; sp.
     apply rec1 with (i0 := i); sp.
     apply rec2 with (i0 := i); sp.
-    apply rec3 with (i0 := i); sp.
+    apply rec3 with (i0 := i); sp.*)
 
-  - Case "CL_w".
+(*  - Case "CL_w".
     apply CL_w.
     unfold per_w, type_family; sp.
     exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
     apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    apply recb with (i0 := i); sp.*)
 
-  - Case "CL_m".
+(*  - Case "CL_m".
     apply CL_m.
     unfold per_m, type_family; sp.
     exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
     apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    apply recb with (i0 := i); sp.*)
 
-  - Case "CL_pw".
+(*  - Case "CL_pw".
     apply CL_pw.
     unfold per_pw, type_pfamily; sp.
     exists eqp eqa eqb.
@@ -759,9 +760,9 @@ Proof.
     exists ba ba' B B'; sp.
     apply IHn with (i0 := i); sp.
     apply reca with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    apply recb with (i0 := i); sp.*)
 
-  - Case "CL_pm".
+(*  - Case "CL_pm".
     apply CL_pm.
     unfold per_pm, type_pfamily; sp.
     exists eqp eqa eqb.
@@ -771,14 +772,14 @@ Proof.
     exists ba ba' B B'; sp.
     apply IHn with (i0 := i); sp.
     apply reca with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    apply recb with (i0 := i); sp.*)
 
-  - Case "CL_texc".
+(*  - Case "CL_texc".
     apply CL_texc.
     unfold per_texc; sp.
     exists eqn eqe N N' E E'; sp.
     { apply IHn1 with (i0 := i); sp. }
-    { apply IHn2 with (i0 := i); sp. }
+    { apply IHn2 with (i0 := i); sp. }*)
 
   - Case "CL_union".
     apply CL_union.
@@ -798,11 +799,11 @@ Proof.
     + apply IHn3 with (i0 := i); sp.
     + apply IHn4 with (i0 := i); sp.*)
 
-  - Case "CL_image".
+(*  - Case "CL_image".
     apply CL_image.
     unfold per_image; sp.
     exists eqa A A' f f'; sp.
-    apply IHn with (i0 := i); sp.
+    apply IHn with (i0 := i); sp.*)
 
 (*
   - Case "CL_eisect".
@@ -817,55 +818,55 @@ Proof.
     apply recb' with (i0 := i); sp.
 *)
 
-  - Case "CL_partial".
+(*  - Case "CL_partial".
     apply CL_partial.
     unfold per_partial; sp.
     exists A1 A2 eqa; sp.
-    apply IHn with (i0 := i); sp.
+    apply IHn with (i0 := i); sp.*)
 
-  - Case "CL_admiss".
+(*  - Case "CL_admiss".
     apply CL_admiss.
     unfold per_admiss; sp.
     exists A1 A2 eqa; sp.
-    apply IHn with (i0 := i); sp.
+    apply IHn with (i0 := i); sp.*)
 
-  - Case "CL_mono".
+(*  - Case "CL_mono".
     apply CL_mono.
     unfold per_mono; sp.
     exists A1 A2 eqa; sp.
-    apply IHn with (i0 := i); sp.
+    apply IHn with (i0 := i); sp.*)
 
-  - Case "CL_ffatom".
+(*  - Case "CL_ffatom".
     apply CL_ffatom.
     unfold per_ffatom; sp.
     exists A1 A2 x1 x2 a1 a2 eqa u; sp.
-    apply IHn with (i0 := i); sp.
+    apply IHn with (i0 := i); sp.*)
 
-  - Case "CL_effatom".
+(*  - Case "CL_effatom".
     apply CL_effatom.
     unfold per_effatom; sp.
     exists A1 A2 x1 x2 a1 a2 eqa; sp.
-    apply IHn with (i0 := i); sp.
+    apply IHn with (i0 := i); sp.*)
 
-  - Case "CL_ffatoms".
+(*  - Case "CL_ffatoms".
     apply CL_ffatoms.
     unfold per_ffatoms; sp.
     exists A1 A2 x1 x2 eqa; sp.
-    apply IHn with (i0 := i); sp.
+    apply IHn with (i0 := i); sp.*)
 
-  - Case "CL_set".
+(*  - Case "CL_set".
     apply CL_set.
     unfold per_set, type_family; sp.
     exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
     apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    apply recb with (i0 := i); sp.*)
 
-  - Case "CL_tunion".
+(*  - Case "CL_tunion".
     apply CL_tunion.
     unfold per_tunion, type_family; sp.
     exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
     apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.
+    apply recb with (i0 := i); sp.*)
 
   - Case "CL_product".
     apply CL_product.

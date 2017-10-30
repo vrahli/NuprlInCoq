@@ -281,6 +281,21 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_approx_r ts lib T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
 
+    (* approx ceq *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : computes_to_valc_ceq_bar ?bar ?T (mkc_approx ?A ?B),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_approx_l_ceq ts lib bar T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : computes_to_valc_ceq_bar ?bar ?T' (mkc_approx ?A ?B),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_approx_r_ceq ts lib bar T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
     (* cequiv *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
@@ -295,6 +310,21 @@ Ltac dest_close_lr h :=
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
       generalize (dest_close_per_cequiv_r ts lib T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    (* cequiv ceq *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : computes_to_valc_ceq_bar ?bar ?T (mkc_cequiv ?A ?B),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_cequiv_l_ceq ts lib bar T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : computes_to_valc_ceq_bar ?bar ?T' (mkc_cequiv ?A ?B),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_cequiv_r_ceq ts lib bar T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
 
     (* texc *)
     | [ H1 : type_system ?ts,

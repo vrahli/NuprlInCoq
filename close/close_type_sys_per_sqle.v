@@ -29,14 +29,16 @@
 
 Require Export type_sys.
 Require Import dest_close.
+Require Export per_ceq_bar.
 
 
 Lemma per_approx_bar_uniquely_valued {p} :
   forall (ts : cts(p)), uniquely_valued (per_approx_bar ts).
 Proof.
   unfold uniquely_valued, per_approx_bar, eq_term_equals; sp.
-  computes_to_eqbars.
+  pose proof (two_computes_to_valc_ceq_bar_mkc_approx bar0 bar T a0 b0 a b) as q; repeat (autodimp q hyp).
   allrw; sp.
+  eapply eq_per_approx_eq_bar; eauto.
 Qed.
 
 Lemma per_approx_bar_type_extensionality {p} :
@@ -104,146 +106,21 @@ Proof.
     simpl in *.
     rw z.
     rw <- u.
-    computes_to_eqbars; tcsp.
-Qed.
 
-(* !!MOVE *)
-Lemma computes_to_value_implies_isprogram {o} :
-  forall lib (t1 t2 : @NTerm o), (t1 =v>( lib) t2) -> isprogram t2.
-Proof.
-  introv comp.
-  unfold computes_to_value in comp; repnd.
-  apply isvalue_implies in comp; tcsp.
-Qed.
-Hint Resolve computes_to_value_implies_isprogram : slow.
+    pose proof (two_computes_to_valc_ceq_bar_mkc_approx bar0 bar T2 c0 d0 a b) as h; repeat (autodimp h hyp).
+    pose proof (h lib') as w; simpl in w; autodimp w hyp; clear h;
+      [exists lib1 lib2; dands; auto|].
+    pose proof (w lib'0 j) as w; simpl in w; repnd; spcast.
 
-(* !!MOVE *)
-Lemma approx_sterm {o} :
-  forall lib (t t' : @NTerm o) f,
-    computes_to_value lib t (sterm f)
-    -> approx lib t t'
-    -> {f' : nat -> NTerm
-        & computes_to_value lib t' (sterm f')
-        # forall n, approx lib (f n) (f' n) }.
-Proof.
-  introv comp apr.
-  invertsn apr.
-  repnud apr.
-  destruct comp as [comp isv].
-  apply apr4 in comp; exrepnd.
-  applydup @reduces_to_preserves_program in comp1; auto.
+    split; introv h; spcast.
 
-  exists f'; dands; auto.
+    { eapply approxc_cequivc_trans;[|eauto].
+      eapply cequivc_approxc_trans;[apply cequivc_sym;eauto|].
+      auto. }
 
-  { split; auto. }
-
-  { introv.
-    pose proof (comp0 n) as q.
-    repndors; tcsp; inversion q. }
-Qed.
-
-(* !!MOVE *)
-Lemma cequiv_seq {o} :
-  forall lib (t t' : @NTerm o) f,
-    computes_to_value lib t (sterm f)
-    -> cequiv lib t t'
-    -> {f' : nat -> NTerm
-        & computes_to_value lib t' (sterm f')
-        # forall n, cequiv lib (f n) (f' n)}.
-Proof.
-  introv comp ceq.
-  allunfold @cequiv; repnd.
-  eapply approx_sterm in ceq0;[|eauto].
-  exrepnd.
-  exists f'; dands; auto.
-  introv; dands; auto.
-  eapply approx_sterm in ceq;[|eauto].
-  exrepnd.
-  eapply computes_to_value_eq in comp;[|eauto]; ginv; tcsp.
-Qed.
-
-(* !!MOVE *)
-Lemma approx_open_sterm_congruence {o} :
-  forall lib (f1 f2 : nat -> @NTerm o),
-    (forall n, approx_open lib (f1 n) (f2 n))
-    -> nt_wf (sterm f1)
-    -> nt_wf (sterm f2)
-    -> approx_open lib (sterm f1) (sterm f2).
-Proof.
-  introv apr wf1 wf2.
-  apply approx_star_implies_approx_open.
-  econstructor;[| |introv;apply approx_star_iff_approx_open;apply apr|]; eauto 2 with slow.
-Qed.
-
-(* !!MOVE *)
-Lemma approx_sterm_congruence {o} :
-  forall lib (f1 f2 : nat -> @NTerm o),
-    (forall n, approx lib (f1 n) (f2 n))
-    -> isprogram (sterm f1)
-    -> isprogram (sterm f2)
-    -> approx lib (sterm f1) (sterm f2).
-Proof.
-   introv apr isp1 isp2.
-   apply approx_open_approx; auto.
-   apply approx_open_sterm_congruence; eauto 2 with slow.
-   introv; apply approx_implies_approx_open; auto.
-Qed.
-
-(* !!MOVE *)
-Lemma cequiv_sterm_congruence {o} :
-  forall lib (f1 f2 : nat -> @NTerm o),
-    (forall n, cequiv lib (f1 n) (f2 n))
-    -> isprogram (sterm f1)
-    -> isprogram (sterm f2)
-    -> cequiv lib (sterm f1) (sterm f2).
-Proof.
-  introv ceq isp1 isp2.
-  split; apply approx_sterm_congruence; auto; introv;
-    pose proof (ceq n) as q; destruct q; auto.
-Qed.
-
-(* !!MOVE *)
-Lemma cequiv_value {o} :
-  forall lib (t t' v : @NTerm o),
-    t =v>(lib) v
-    -> cequiv lib t t'
-    -> {v' : NTerm & (t' =v>(lib) v') # cequiv lib v v'}.
-Proof.
-  introv comp ceq.
-  unfold computes_to_value in comp; repnd.
-  inversion comp as [? isp isv]; subst; clear comp.
-  apply iscan_implies in isv; repndors; exrepnd; subst.
-
-  - eapply cequiv_canonical_form in ceq;[|];
-      [|split;[eauto|]; eauto 2 with slow].
-    exrepnd.
-    eexists; dands; eauto.
-    apply cequiv_congruence; eauto 2 with slow.
-
-  - eapply cequiv_seq in ceq;[|split;[eauto|];eauto 2 with slow].
-    exrepnd.
-    eexists; dands; eauto.
-    apply cequiv_sterm_congruence; eauto 2 with slow.
-Qed.
-
-(* !!MOVE *)
-Lemma cequivc_preserves_computes_to_valc {o} :
-  forall lib (T T' U : @CTerm o),
-    computes_to_valc lib T U
-    -> cequivc lib T T'
-    -> {U' : CTerm
-        & computes_to_valc lib T' U'
-        # cequivc lib U U'}.
-Proof.
-  introv comp ceq.
-  unfold computes_to_valc in *.
-  unfold cequivc in *.
-  destruct_cterms; simpl in *.
-  eapply cequiv_value in ceq;[|eauto].
-  exrepnd.
-  applydup @computes_to_value_implies_isprogram in ceq1.
-  apply isprogram_eq in ceq2.
-  exists (mk_ct v' ceq2); simpl; dands; auto.
+    { eapply approxc_cequivc_trans;[|apply cequivc_sym;eauto].
+      eapply cequivc_approxc_trans;[eauto|].
+      auto. }
 Qed.
 
 (*Lemma cequivc_exc_all_in_bar {o} :
@@ -278,160 +155,86 @@ Proof.
   introv per eceq.
   unfold per_approx_bar in *; exrepnd.
 
-  computes_to_eqbars.
-  clear per2.
+  pose proof (two_computes_to_valc_ceq_bar_mkc_approx_same_bar bar T a b c d) as q.
+  repeat (autodimp q hyp).
 
-  pose proof (eceq lib') as ceq; autodimp ceq hyp; eauto 3 with slow; simpl in ceq; spcast.
-  dup u as comp.
-  apply cequivc_mkc_approx with (t' := T') in comp; auto; exrepnd.
-  exists a b a' b'; dands; auto.
+  exists a b a b.
+  dands; auto.
 
-  exists bar.
-  dands; tcsp.
+  exists bar; dands; auto;[|introv w z; tcsp];[].
 
-  - introv ib ic.
-
-    pose proof (eceq lib'1) as ceq1; autodimp ceq1 hyp; eauto 3 with slow; simpl in ceq1.
-
-    applydup per0 in ic; auto; spcast.
-
-    dup ic0 as ic'.
-    apply cequivc_mkc_approx with (t' := T') in ic'; auto.
-    exrepnd.
-
-    (* Can we prove this? *)
-    Lemma  ccequivc_ext_preserves_computes_in_bar {o} :
-      forall {lib} (bar : BarLib lib) (t t' : @CTerm o) v,
-        ccequivc_ext lib t t'
-        -> all_in_bar bar (fun lib : library => t ===>(lib) v)
-        -> exists v',
-            all_in_bar bar (fun lib : library => t' ===>(lib) v' # ccequivc lib v v').
-    Proof.
-      introv ceq allinbar.
-
-      pose proof (bar_non_empty bar) as q.
-      destruct q as [lib0 blib0].
-
-      pose proof (allinbar lib0 blib0 lib0) as q; simpl in q; autodimp q hyp; eauto 1 with slow;spcast;[].
-      pose proof (ceq lib0) as h; simpl in h; autodimp h hyp; eauto 2 with slow; spcast;[].
-
-      dup h as w.
-      eapply cequivc_preserves_computes_to_valc in w;[|eauto].
-      destruct w as [v' w]; repnd.
-      rename w0 into C0.
-      rename w into ceq0.
-      exists v'.
-
-      intros lib' blib' lib'' blib''.
-
-      pose proof (allinbar lib' blib' lib'' blib'') as w; simpl in w; spcast;[].
-      pose proof (ceq lib'') as z; autodimp z hyp; eauto 3 with slow;simpl in z; spcast;[].
-
-      dup w as x.
-      eapply cequivc_preserves_computes_to_valc in x;[|eauto].
-      destruct x as [v'' x]; repnd.
-      rename x0 into C1.
-      rename x into ceq1.
-
-      (*
-
-         If we didn't have lawless sequences (with restrictions), this would mean
-         that [t] would compute to [v] in the library (lib_bottom) where everything
-         above lib is replaced by bottom.
-
-       *)
-
-    Qed.
-
-
-  (* We should at least weaken it to something like:
-
-
-Definition type_value_respecting {p} (ts : cts(p)) :=
-  forall lib T T' eq bar,
-     ts lib T T eq
-     -> all_in_bar bar (fun lib => ccequivc lib T T')
-     -> ts lib T T' eq.
-
-But if we weaken it like that, what about the types that are defined in terms
-of all extensions of the current library, such as function types?  We wouldn't
-be able to prove this property...
-
-
-Will we also have to change the definition of [approx] so that it says
-that the right-hand-side has to compute to the same term in all extensions
-of the library?
-
-
-Can't we simply use [computes_to_valc_preserves_lib_extends]?
-
-
-In the definition of [per_eq_bar], shouldn't we say that either [a1] and [b1]
-are equal in the bar or that squiggle equal in the bar?
-
-*)
-
-
-XXXXX
-
-  apply @approxc_cequivc_trans with (b := b); auto.
-  apply @cequivc_approxc_trans with (b := a); auto.
-  apply cequivc_sym; auto.
-  apply @approxc_cequivc_trans with (b := b'); auto.
-  apply @cequivc_approxc_trans with (b := a'); auto.
-  apply cequivc_sym; auto.
+  eapply cequivc_ext_preserves_computes_to_valc_ceq_bar; eauto.
 Qed.
 
 Lemma per_approx_bar_term_symmetric {p} :
-  forall lib (ts : cts(p)), term_symmetric (per_approx_bar lib ts).
+  forall (ts : cts(p)), term_symmetric (per_approx_bar ts).
 Proof.
   unfold term_symmetric, term_equality_symmetric, per_approx_bar.
   introv cts i e.
   exrepnd.
-  allrw; discover; sp.
+
+  apply i1 in e; apply i1; clear i1.
+  unfold per_approx_eq_bar, per_approx_eq_bar1 in *; exrepnd.
+  exists bar0.
+  introv w z.
+  pose proof (e0 lib' w lib'0 z) as q; simpl in q; tcsp.
 Qed.
 
 Lemma per_approx_bar_term_transitive {p} :
-  forall lib (ts : cts(p)), term_transitive (per_approx_bar lib ts).
+  forall (ts : cts(p)), term_transitive (per_approx_bar ts).
 Proof.
   unfold term_transitive, term_equality_transitive, per_approx_bar.
   introv cts i e1 e2.
   exrepnd.
-  allrw; discover; sp.
+
+  apply i1 in e1; apply i1 in e2; apply i1; clear i1.
+  unfold per_approx_eq_bar, per_approx_eq_bar1 in *; exrepnd.
+  exists (intersect_bars bar1 bar0).
+  introv w z.
+  simpl in *; exrepnd.
+  pose proof (e2 lib1 w0 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q; tcsp.
+  pose proof (e0 lib2 w2 lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h; tcsp.
 Qed.
 
 Lemma per_approx_bar_term_value_respecting {p} :
-  forall lib (ts : cts(p)), term_value_respecting lib (per_approx_bar lib ts).
+  forall (ts : cts(p)), term_value_respecting (per_approx_bar ts).
 Proof.
   sp; unfold term_value_respecting, term_equality_respecting, per_approx_bar.
   introv i e c; exrepnd.
-  ccomputes_to_eqval.
-  allrw; discover; sp.
-  spcast; apply @cequivc_axiom with (t' := t') in c; sp.
+
+  apply i1 in e; apply i1; clear i1.
+  unfold per_approx_eq_bar, per_approx_eq_bar1 in *; exrepnd.
+  exists bar0; introv w z.
+  pose proof (e0 lib' w lib'0 z) as q; clear e0; simpl in q.
+  repnd; dands; auto.
+
+  pose proof (c lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  spcast.
+  eapply cequivc_axiom; eauto.
 Qed.
 
 Lemma per_approx_bar_type_system {p} :
-  forall lib (ts : cts(p)), type_system lib (per_approx_bar lib ts).
+  forall (ts : cts(p)), type_system (per_approx_bar ts).
 Proof.
   intros; unfold type_system; sp.
-  try apply per_approx_bar_uniquely_valued; auto.
-  try apply per_approx_bar_type_extensionality; auto.
-  try apply per_approx_bar_type_symmetric; auto.
-  try apply per_approx_bar_type_transitive; auto.
-  try apply per_approx_bar_type_value_respecting; auto.
-  try apply per_approx_bar_term_symmetric; auto.
-  try apply per_approx_bar_term_transitive; auto.
-  try apply per_approx_bar_term_value_respecting; auto.
+  - apply per_approx_bar_uniquely_valued; auto.
+  - apply per_approx_bar_type_extensionality; auto.
+  - apply per_approx_bar_type_symmetric; auto.
+  - apply per_approx_bar_type_transitive; auto.
+  - apply per_approx_bar_type_value_respecting; auto.
+  - apply per_approx_bar_term_symmetric; auto.
+  - apply per_approx_bar_term_transitive; auto.
+  - apply per_approx_bar_term_value_respecting; auto.
 Qed.
 
 
 Lemma close_type_system_approx {p} :
   forall lib (ts : cts(p)),
   forall T T' eq,
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> per_approx_bar lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+    type_system ts
+    -> defines_only_universes ts
+    -> per_approx_bar (close ts) lib T T' eq
+    -> type_sys_props (close ts) lib T T' eq.
 Proof.
   introv X X0 per.
 
@@ -444,66 +247,67 @@ Proof.
     dclose_lr.
 
     * SSCase "CL_approx".
-      assert (uniquely_valued (per_approx_bar lib (close lib ts)))
+      assert (uniquely_valued (per_approx_bar (close ts)))
         as uv
           by (apply per_approx_bar_uniquely_valued).
-      apply uv with (T := T) (T' := T'); auto.
+      apply (uv lib T T'); auto.
       apply uniquely_valued_trans5 with (T2 := T3) (eq2 := eq); auto.
-      apply per_approx_bar_type_extensionality.
-      apply per_approx_bar_type_symmetric.
-      apply per_approx_bar_type_transitive.
+      { apply per_approx_bar_type_extensionality. }
+      { apply per_approx_bar_type_symmetric. }
+      { apply per_approx_bar_type_transitive. }
 
   + SCase "type_symmetric"; repdors; subst; dclose_lr;
     apply CL_approx; auto;
-    assert (type_symmetric (per_approx_bar lib (close lib ts)))
+    assert (type_symmetric (per_approx_bar (close ts)))
       as tys
         by (apply per_approx_bar_type_symmetric);
-    assert (type_extensionality (per_approx_bar lib (close lib ts)))
+    assert (type_extensionality (per_approx_bar (close ts)))
       as tye
         by (apply per_approx_bar_type_extensionality);
     apply tye with (eq := eq); auto.
 
   + SCase "type_value_respecting"; repdors; subst;
     apply CL_approx;
-    assert (type_value_respecting lib (per_approx_bar lib (close lib ts)))
+    assert (type_value_respecting (per_approx_bar (close ts)))
            as tvr
            by (apply per_approx_bar_type_value_respecting).
 
-    apply tvr; auto.
-    apply @type_system_type_mem with (T' := T'); auto.
-    apply per_approx_bar_type_symmetric.
-    apply per_approx_bar_type_transitive.
+    { apply tvr; auto.
+      apply @type_system_type_mem with (T' := T'); auto.
+      apply per_approx_bar_type_symmetric.
+      apply per_approx_bar_type_transitive. }
 
-    apply tvr; auto.
-    apply @type_system_type_mem1 with (T := T); auto.
-    apply per_approx_bar_type_symmetric.
-    apply per_approx_bar_type_transitive.
+    { apply tvr; auto.
+      apply @type_system_type_mem1 with (T := T); auto.
+      apply per_approx_bar_type_symmetric.
+      apply per_approx_bar_type_transitive. }
 
   + SCase "term_symmetric".
-    assert (term_symmetric (per_approx_bar lib (close lib ts)))
+    assert (term_symmetric (per_approx_bar (close ts)))
       as tes
         by (apply per_approx_bar_term_symmetric).
-    apply tes with (T := T) (T' := T'); auto.
+    apply (tes lib T T'); auto.
 
   + SCase "term_transitive".
-    assert (term_transitive (per_approx_bar lib (close lib ts)))
+    assert (term_transitive (per_approx_bar (close ts)))
       as tet
         by (apply per_approx_bar_term_transitive).
-    apply tet with (T := T) (T' := T'); auto.
+    apply (tet lib T T'); auto.
 
   + SCase "term_value_respecting".
-    assert (term_value_respecting lib (per_approx_bar lib (close lib ts)))
+    assert (term_value_respecting (per_approx_bar (close ts)))
       as tvr
         by (apply per_approx_bar_term_value_respecting).
     apply tvr with (T := T); auto.
     apply @type_system_type_mem with (T' := T'); auto.
-    apply per_approx_bar_type_symmetric.
-    apply per_approx_bar_type_transitive.
+    { apply per_approx_bar_type_symmetric. }
+    { apply per_approx_bar_type_transitive. }
 
   + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.
 
-    apply CL_approx; apply per_approx_bar_type_symmetric; auto.
-    apply CL_approx; apply per_approx_bar_type_symmetric; auto.
+    { apply CL_approx; apply per_approx_bar_type_symmetric; auto. }
+
+    { apply CL_approx; apply per_approx_bar_type_symmetric; auto. }
 
   + SCase "type_gtransitive"; sp.
 
@@ -512,30 +316,45 @@ Proof.
 
     dands; apply CL_approx; try (complete sp).
 
-    apply per_approx_bar_type_transitive with (T2 := T); auto.
-    allunfold @per_approx_bar; sp.
-    ccomputes_to_eqval.
-    exists a2 b2 c1 d1; sp; spcast; sp.
-    allrw; sp.
+    { apply per_approx_bar_type_transitive with (T2 := T); auto.
+      allunfold @per_approx_bar; sp.
+      exists a1 b1 c1 d1; dands; auto;[exists bar1; dands; auto|];[].
+      eapply eq_term_equals_trans;[eauto|].
+      pose proof (two_computes_to_valc_ceq_bar_mkc_approx bar1 bar0 T a1 b1 c0 d0) as q; repeat (autodimp q hyp).
+      apply eq_per_approx_eq_bar in q.
+      apply eq_term_equals_sym in q.
+      eapply eq_term_equals_trans;[|exact q]; clear q.
+      eapply approx_iff_implies_eq_per_approx_eq_bar; eauto. }
 
-    apply per_approx_bar_type_transitive with (T2 := T); auto.
-    allunfold @per_approx_bar; sp.
-    ccomputes_to_eqval.
-    exists a0 b0 a2 b2; sp; spcast; sp.
-    allrw; sp.
+    { apply per_approx_bar_type_transitive with (T2 := T); auto.
+      allunfold @per_approx_bar; sp.
+      exists a0 b0 c0 d0; dands; auto;[exists bar0; dands; auto|];[].
+      eapply eq_term_equals_trans;[eauto|].
+      pose proof (two_computes_to_valc_ceq_bar_mkc_approx bar1 bar0 T a1 b1 c0 d0) as q; repeat (autodimp q hyp).
+      apply eq_per_approx_eq_bar in q.
+      eapply eq_term_equals_trans;[exact q|]; clear q.
+      apply eq_term_equals_sym.
+      eapply approx_iff_implies_eq_per_approx_eq_bar; eauto. }
 
     dands; apply CL_approx.
 
-    apply per_approx_bar_type_transitive with (T2 := T'); auto.
-    allunfold @per_approx_bar; sp.
-    ccomputes_to_eqval.
-    exists c2 d2 c1 d1; sp; spcast; sp.
-    allrw; sp.
+    { apply per_approx_bar_type_transitive with (T2 := T'); auto.
+      allunfold @per_approx_bar; sp.
+      exists a1 b1 c1 d1; dands; auto;[exists bar1; dands; auto|];[].
+      eapply eq_term_equals_trans;[eauto|].
+      pose proof (two_computes_to_valc_ceq_bar_mkc_approx bar1 bar0 T' a1 b1 c0 d0) as q; repeat (autodimp q hyp).
+      apply eq_per_approx_eq_bar in q.
+      apply eq_term_equals_sym in q.
+      eapply eq_term_equals_trans;[|exact q]; clear q.
+      eapply approx_iff_implies_eq_per_approx_eq_bar; eauto. }
 
-    apply per_approx_bar_type_transitive with (T2 := T'); auto.
-    allunfold @per_approx_bar; sp.
-    ccomputes_to_eqval.
-    exists a0 b0 c2 d2; sp; spcast; sp.
-    allrw; sp.
+    { apply per_approx_bar_type_transitive with (T2 := T'); auto.
+      allunfold @per_approx_bar; sp.
+      exists a0 b0 c0 d0; dands; auto;[exists bar0; dands; auto|];[].
+      eapply eq_term_equals_trans;[eauto|].
+      pose proof (two_computes_to_valc_ceq_bar_mkc_approx bar1 bar0 T' a1 b1 c0 d0) as q; repeat (autodimp q hyp).
+      apply eq_per_approx_eq_bar in q.
+      eapply eq_term_equals_trans;[exact q|]; clear q.
+      apply eq_term_equals_sym.
+      eapply approx_iff_implies_eq_per_approx_eq_bar; eauto. }
 Qed.
-
