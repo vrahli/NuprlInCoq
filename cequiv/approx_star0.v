@@ -2289,10 +2289,3 @@ Proof.
       rw @computes_to_val_like_in_max_k_steps_S.
       exists u; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

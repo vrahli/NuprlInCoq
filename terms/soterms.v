@@ -65,3 +65,6 @@ Definition mk_so_int {o} : @SOTerm o :=
 
 Definition mk_so_lam {o} (v : NVar) (b : @SOTerm o) : SOTerm :=
   soterm (Can NLambda) [sobterm [v] b].
+
+Definition mk_so_spread {o} (t : @SOTerm o) (v1 v2 : NVar) (b : @SOTerm o) : SOTerm :=
+  soterm (NCan NSpread) [sonobnd t, sobterm [v1,v2] b].

@@ -12173,10 +12173,20 @@ Qed.
 Record ValidUpdRes {o} :=
   MkValidUpdRes
     {
-      valid_upd_res_state : @UpdRes o;
+      valid_upd_res_state :> @UpdRes o;
       valid_upd_res_valid : ValidSoftLibrary valid_upd_res_state;
     }.
 Arguments MkValidUpdRes [o] _ _.
+
+Definition initValidUpdRes {o} : @ValidUpdRes o :=
+  MkValidUpdRes
+    (MkUpdRes initSoftLibrary [])
+    (@ValidInitSoftLibrary o).
+
+Definition update_list_with_validity {o} (s : @ValidUpdRes o) (cmds : commands) : ValidUpdRes :=
+  MkValidUpdRes
+    (update_list s cmds)
+    (update_list_preserves_validity cmds s (valid_upd_res_valid s)).
 
 Definition update_list_from_init_with_validity {o}
            (cmds : @commands o) : @ValidUpdRes o :=

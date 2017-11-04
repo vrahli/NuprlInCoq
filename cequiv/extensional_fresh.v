@@ -283,10 +283,3 @@ Proof.
     [apply isprogram_fresh; complete auto|].
   apply reduces_to_if_step; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

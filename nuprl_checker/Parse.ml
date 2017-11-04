@@ -4,6 +4,8 @@ module NT = NuprlTerms
 let ref_default_input  = ref ""
 let ref_default_output = ref "output.v"
 
+type kind = ABS of NT.nuprl_term | STM of NT.nuprl_term
+
 let print_terms terms =
   List.iter
     (fun term -> print_string (NT.toStringTerm term ^ "\n"))
@@ -52,6 +54,14 @@ let destruct_abstraction (term : NT.nuprl_term) : abstraction option =
       | t -> destruct_abstraction_abs stamp t
     )
 
+  | NT.TERM ((("ABS",_,_),[(stamp,"o");(name,"t")]),[NT.B_TERM([],rt);NT.B_TERM([],dep)]) -> (* the stamp *)
+     (* TODO: Do something with dependencies? *)
+    (
+      match NT.rterm2term rt with
+      | NT.TERM ((("source",_,_),_),[NT.B_TERM([],rt)]) -> destruct_abstraction_abs stamp (NT.rterm2term rt)
+      | t -> destruct_abstraction_abs stamp t
+    )
+
   | NT.TERM (((stamp,_,_),[]),[NT.B_TERM([],rt)]) -> (* the stamp *)
     (
       match NT.rterm2term rt with
@@ -59,7 +69,9 @@ let destruct_abstraction (term : NT.nuprl_term) : abstraction option =
       | t -> destruct_abstraction_abs stamp t
     )
 
-  | _ -> failwith "cannot destruct abstraction: wrong format"
+  | _ ->
+     let _ = print_string (NT.toStringTerm term ^ "\n") in
+     failwith "cannot destruct abstraction: wrong format"
 
 let rec destruct_abstractions_bs (bterms : NT.nuprl_bound_term list) : abstraction list =
   match bterms with
@@ -152,12 +164,22 @@ let destruct_rule_rule (stamp : string) (t : NT.nuprl_term) : rule =
        ; subgoals = get_subgoals (NT.rterm2term rtsg)
        }
      )
-  | _ -> failwith "cannot destruct rule: wrong format"
+  | _ ->
+     let _ = print_string (NT.toStringTerm t ^ "\n") in
+     failwith "cannot destruct rule: wrong format"
 
 
 let destruct_rule (term : NT.nuprl_term) : rule =
   match term with
   | NT.TERM ((("RULE",_,_),[(stamp,"o");(name,"t")]),[NT.B_TERM([],rt)]) -> (* the stamp *)
+    (
+      match NT.rterm2term rt with
+      | NT.TERM ((("source",_,_),_),[NT.B_TERM([],rt)]) -> destruct_rule_rule stamp (NT.rterm2term rt)
+      | t -> destruct_rule_rule stamp t
+    )
+
+  | NT.TERM ((("RULE",_,_),[(stamp,"o");(name,"t")]),[NT.B_TERM([],rt); NT.B_TERM([],dep)]) -> (* the stamp *)
+     (* TODO: Do something with dependencies? *)
     (
       match NT.rterm2term rt with
       | NT.TERM ((("source",_,_),_),[NT.B_TERM([],rt)]) -> destruct_rule_rule stamp (NT.rterm2term rt)
@@ -171,7 +193,9 @@ let destruct_rule (term : NT.nuprl_term) : rule =
       | t -> destruct_rule_rule stamp t
     )
 
-  | _ -> failwith "cannot destruct rule: wrong format"
+  | _ ->
+     let _ = print_string (NT.toStringTerm term ^ "\n") in
+     failwith "cannot destruct rule: wrong format"
 
 let rec destruct_rules_bs (bterms : NT.nuprl_bound_term list) : rule list =
   match bterms with
@@ -179,7 +203,8 @@ let rec destruct_rules_bs (bterms : NT.nuprl_bound_term list) : rule list =
   | (NT.B_TERM([],rt)) :: bterms ->
     destruct_rule (NT.rterm2term rt)
     :: destruct_rules_bs bterms
-  | _ -> failwith "cannot destruct rule: wrong format"
+  | _ ->
+     failwith "cannot destruct rule: wrong format"
 
 let destruct_rules (terms : NT.nuprl_term list) : rule list =
   List.map destruct_rule terms
@@ -351,6 +376,11 @@ let rec nuprl_term2so (abs_names : string list) (t : NT.nuprl_term) : string =
      let t1 = NT.rterm2term rt1 in
      "(mk_so_lambda " ^ " (nvar \"" ^ v1 ^ "\") " ^ nuprl_term2so abs_names t1 ^ ")"
 
+  | NT.TERM ((("spread",tag,pos), params), [NT.B_TERM ([], rt1); NT.B_TERM ([v1;v2], rt2)]) ->
+     let t1 = NT.rterm2term rt1 in
+     let t2 = NT.rterm2term rt2 in
+     "(mk_so_spread " ^ nuprl_term2so abs_names t1 ^ " (nvar \"" ^ v1 ^ "\") " ^ " (nvar \"" ^ v2 ^ "\") " ^ nuprl_term2so abs_names t2 ^ ")"
+
   | NT.TERM ((("variable",tag,pos), params), bs) ->
      let (var,ts) = NT.dest_so_variable t in
      let str_ts   = list2string "[" "]" "," (nuprl_term2so abs_names) ts in
@@ -369,6 +399,11 @@ let rec nuprl_term2so (abs_names : string list) (t : NT.nuprl_term) : string =
   | NT.LAM_TERM (v1, rt1) ->
      let t1 = NT.rterm2term rt1 in
      "(mk_so_lambda " ^ " (nvar \"" ^ v1 ^ "\") " ^ nuprl_term2so abs_names t1 ^ ")"
+
+  | NT.SPR_TERM (rt1, v1, v2, rt2) ->
+     let t1 = NT.rterm2term rt1 in
+     let t2 = NT.rterm2term rt2 in
+     "(mk_so_spread " ^ nuprl_term2so abs_names t1 ^ " (nvar \"" ^ v1 ^ "\") " ^ " (nvar \"" ^ v2 ^ "\") " ^ nuprl_term2so abs_names t2 ^ ")"
 
   | NT.APP_TERM (rt1, rt2) ->
      let t1 = NT.rterm2term rt1 in
@@ -508,8 +543,8 @@ let start_proof lemma_name abs_names inf_tree out =
      let str_seq = nuprl_term2fo abs_names sequent in
      output_string out ("    COM_start_proof\n");
      output_string out ("      \"" ^ lemma_name ^ "\"\n");
-     output_string out ("      " ^ str_seq ^ "\n");
-     output_string out ("      " ^ "(eq_refl, eq_refl),\n")
+     output_string out ("      " ^ str_seq ^ ",\n")(*;
+     output_string out ("      " ^ "(eq_refl, eq_refl),\n")*)
 
 let rec find_rule (stmp : string) (rules : rule list) : rule =
   match rules with
@@ -731,7 +766,7 @@ let rec dest_cequiv_in_concl_seq (t : NT.nuprl_term) : NT.nuprl_term * NT.nuprl_
 
   | _ -> failwith ("dest_cequiv:" ^ NT.opid_of_term t)
 
-let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos =
+let rec print_proof_tree lemma_name abs abs_names inf_tree rules out pos : unit =
   match inf_tree with
   | INF_NODE ({sequent;stamp;parameters}, subgoals) ->
 
@@ -1349,16 +1384,124 @@ let rec list_opids (terms : NT.nuprl_term list) =
      print_endline ("----" ^ NT.opid_of_term t);
      list_opids ts
 
-let rec split_terms (ts : NT.nuprl_term list) : NT.nuprl_term list * NT.nuprl_term list * NT.nuprl_term list =
+let rec split_terms (ts : NT.nuprl_term list) : NT.nuprl_term list * kind list =
   match ts with
-  | [] -> ([], [], [])
+  | [] -> ([], [])
   | t :: ts ->
-     let (abs,rules,stmts) = split_terms ts in
+     let (rules,l) = split_terms ts in
      let op = NT.opid_of_term t in
-     if op = "ABS" then (t :: abs, rules, stmts)
-     else if op = "RULE" then (abs, t :: rules, stmts)
-     else if op = "STM" then (abs, rules, t :: stmts)
+     if op = "ABS" then (rules, (ABS t) :: l)
+     else if op = "RULE" then (t :: rules, l)
+     else if op = "STM" then (rules, (STM t) :: l)
      else failwith ("split_terms:unexpected opid " ^ op)
+
+let rec get_all_abs (l : kind list) : (NT.nuprl_term list) * NT.nuprl_term * (kind list) =
+  match l with
+  | [] -> failwith "get_all_abs:no statement"
+  | (ABS t) :: l ->
+     let (abs, stm, rest) = get_all_abs l in
+     (t :: abs, stm, rest)
+  | (STM t) :: l -> ([], t, l)
+
+let rec split_kinds (l : kind list) : ((NT.nuprl_term list) * NT.nuprl_term) list =
+  match l with
+  | [] -> []
+  | ABS t :: l ->
+     let (abs,stm,rest) = get_all_abs l in
+     (t :: abs, stm) :: split_kinds rest
+  | STM t :: l -> ([],t) :: split_kinds l
+
+let export_one_primitive_proof_to_coq
+      (n          : int)
+      (name       : string)
+      (out        : out_channel)
+      (abs        : abstraction list)
+      (allabs     : abstraction list)
+      (rules      : rule list)
+      (inf_tree   : inf_tree) =
+  let cmds     = "cmds"         ^ string_of_int n in
+  let cmdlib0  = "lib"          ^ string_of_int (n - 1) in
+  let cmdlib   = "lib"          ^ string_of_int n in
+  let cmdupd   = "upd"          ^ string_of_int n in
+  let cmdvupd0 = "vupd"         ^ string_of_int (n - 1) in
+  let cmdvupd  = "vupd"         ^ string_of_int n in
+  let cmdabs   = "abstractions" ^ string_of_int n in
+  let cmdprf   = "proof"        ^ string_of_int n in
+
+  (* we create the commands to add abstractions *)
+  let _ = print_abstractions cmdabs abs out in
+
+  let abs_names = get_abstraction_names abs in
+
+  let _ = print_string "[" in
+  let _ = List.iter (fun s -> print_string ("-" ^ s)) abs_names in
+  let _ = print_string "]\n" in
+  let _ = print_endline ("[getting statements]") in
+
+  let allabs_names = get_abstraction_names allabs in
+
+  output_string out ("\n\n");
+  print_proof cmdprf name allabs allabs_names inf_tree rules out;
+
+  output_string out ("\n\n");
+  output_string out ("Definition " ^ cmds    ^ " {o} : @commands o := " ^ cmdabs ^ " ++ " ^ cmdprf ^ ".\n");
+  output_string out ("Definition " ^ cmdvupd ^ " {o} : @ValidUpdRes o := update_list_with_validity " ^ cmdvupd0 ^ " " ^ cmds ^ ".\n");
+  output_string out ("Definition " ^ cmdupd  ^ " {o} : @UpdRes o := update_list " ^ cmdlib0 ^ " " ^ cmds ^ ".\n");
+  output_string out ("Definition " ^ cmdlib  ^ " {o} : @SoftLibrary o := upd_res_state " ^ cmdupd ^ ".\n");
+  output_string out ("\n\n");
+  output_string out ("Time Eval compute in (" ^ cmdupd ^ ").\n");
+  output_string out ("Time Eval compute in (" ^ cmdvupd ^ ").\n");
+  ()
+
+let rec destruct_kinds
+          (n          : int)
+          (out        : out_channel)
+          (rules      : rule list)
+          (allabs     : abstraction list)
+          (l          : (NT.nuprl_term list * NT.nuprl_term) list) =
+  match l with
+  | [] -> ()
+  | (abs_ts,stm) :: l ->
+     (
+       match stm with
+       | NT.TERM (((("STM",tag1,pos1)),[(stamp,"o");(name,"t")]),[NT.B_TERM([],source);NT.B_TERM([],proof)]) ->
+
+          (
+            match NT.rterm2term proof with
+            | NT.TERM (((("proof",tag1,pos1)),params1),[NT.B_TERM([],rt_inf_tree)]) ->
+
+               let abs      = destruct_abstractions abs_ts in
+               let inf_tree = destruct_inf_tree (NT.rterm2term rt_inf_tree) in
+               let allabs   = allabs @ abs in
+
+               export_one_primitive_proof_to_coq n name out abs allabs rules inf_tree;
+               destruct_kinds (n + 1) out rules allabs l
+
+            | _ -> failwith ("destruct_kinds:not a proof term")
+          )
+
+       | NT.TERM (((("STM",tag1,pos1)),[(stamp,"o");(name,"t")]),[NT.B_TERM([],source);NT.B_TERM([],dep);NT.B_TERM([],proof)]) ->
+          (* TODO: Do something with dependencies? *)
+
+          (
+            match NT.rterm2term proof with
+            | NT.TERM (((("proof",tag1,pos1)),params1),[NT.B_TERM([],rt_inf_tree)]) ->
+
+               let abs      = destruct_abstractions abs_ts in
+               let inf_tree = destruct_inf_tree (NT.rterm2term rt_inf_tree) in
+               let allabs   = allabs @ abs in
+
+               export_one_primitive_proof_to_coq n name out abs allabs rules inf_tree;
+               destruct_kinds (n + 1) out rules allabs l
+
+            | _ -> failwith ("destruct_kinds:not a proof term")
+          )
+
+       | NT.TERM (((("STM",_,_)),_),_) -> failwith ("destruct_kinds:wrong kind of STM term")
+
+       | _ -> failwith ("destruct_kinds:not a STM term")
+     )
+
 
 let destruct_terms terms lemma_name output =
   match terms with
@@ -1366,26 +1509,28 @@ let destruct_terms terms lemma_name output =
   | _ ->
 
      (
-       let (abs_ts,rules_ts,stmts_ts) = split_terms terms in
-       match stmts_ts with
-       | [NT.TERM (((("STM",tag1,pos1)),params1),[NT.B_TERM([],source);NT.B_TERM([],proof)])] ->
+       let (rules_ts,kinds) = split_terms terms in (*abs_ts,stmts_ts*)
+       let l = split_kinds kinds in
+       let rules = destruct_rules rules_ts in
 
-          (
-            match NT.rterm2term proof with
-            | NT.TERM (((("proof",tag1,pos1)),params1),[NT.B_TERM([],rt_inf_tree)]) ->
+       let _ = print_endline ("[getting rules]") in
+       let rule_names = get_rule_names rules in
+       let _ = print_string "[" in
+       let _ = List.iter (fun s -> print_string ("-" ^ s)) rule_names in
+       let _ = print_string "]\n" in
 
-               let abs      = destruct_abstractions abs_ts in
-               let rules    = destruct_rules rules_ts in
-               let inf_tree = destruct_inf_tree (NT.rterm2term rt_inf_tree) in
+       let out = open_out output in
 
-               export_primitive_proof_to_coq lemma_name output abs rules inf_tree
+       (* we print the necessary exports *)
+       output_string out ("Require Export proof_with_lib_non_dep.\n");
+       output_string out ("\n\n");
 
-            | _ -> failwith ("destruct_terms:not a proof term")
-          )
+       output_string out ("Definition vupd0 {o} : @ValidUpdRes o := initValidUpdRes.\n");
+       output_string out ("Definition lib0 {o} : @SoftLibrary o := initSoftLibrary.\n");
+       output_string out ("\n\n");
 
-       | [NT.TERM (((("STM",_,_)),_),_)] -> failwith ("destruct_terms:wrong kind of STM term")
-
-       | _ -> failwith ("destruct_terms:not a STM term")
+       let allabs = [] in
+       destruct_kinds 1 out rules allabs l
      )
 
 (*  |  _ -> 
