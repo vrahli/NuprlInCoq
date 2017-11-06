@@ -2193,3 +2193,192 @@ Ltac rev_implies_ts_or_eq T1 T2 T h :=
   end.
 
 (* end hide *)
+
+
+(*Definition is_type_system2 {p} (ts : cts(p)) :=
+  forall lib T1 T2 eq T1' T2' eq1 eq2 eq',
+    ts lib T1 T2 eq
+    -> ts lib T1 T1' eq1
+    -> ts lib T2 T2' eq2
+    -> (eq <=2=> eq')
+    -> type_system_props ts lib T1' T2' eq'.
+
+Lemma is_type_system_iff_is_type_system2 {o} :
+  forall (ts : cts(o)),
+    is_type_system ts <=> is_type_system2 ts.
+Proof.
+  introv; split; unfold is_type_system, is_type_system2; introv h.
+
+  Focus 2.
+  introv q.
+  apply type_system_props_sym.
+  apply (h lib T1 T2 eq T2 T1 eq eq eq); auto.
+
+  - introv ets ets1 ets2 equ.
+    apply h.
+
+    pose proof (h lib T1 T2 eq ets) as q.
+    dest_is_ts uv tye tys tyt tyvr tes tet tevr.
+    dup tys as h1.
+    unfold type_symmetric_body in *.
+    clear uv tye tys tyt tyvr tes tet tevr.
+
+    pose proof (h lib T1 T1' eq1 ets1) as q.
+    dest_is_ts uv tye tys tyt tyvr tes tet tevr.
+    unfold type_symmetric_body in *.
+
+
+    apply tys in ets1.
+    unfold type_Value_extensionality
+    eapply tye.
+
+Qed.*)
+
+Definition type_equality_respecting_trans {o} (ts : cts(o)) lib (T1 T2 : @CTerm o) :=
+  forall T T3 T4 eq',
+    (T = T1 [+] T = T2)
+    -> ccequivc_ext lib T T3
+    -> ts lib T3 T4 eq'
+    -> ts lib T T4 eq'.
+
+Definition type_sys_props4 {p}
+           (ts    : cts(p))
+           (lib   : library)
+           (T1 T2 : CTerm)
+           (eq    : per) :=
+  (* uniquely valued *)
+  (forall T3 eq', ts lib T1 T3 eq' -> eq <=2=> eq')
+    # (* type_extensionality *)
+    (forall T3 eq', ts lib T1 T3 eq -> eq <=2=> eq' -> ts lib T1 T3 eq')
+    # (* type value respecting *)
+    (forall T T3, (T = T1 [+] T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
+    # (* type value respecting trans *)
+    type_equality_respecting_trans ts lib T1 T2
+    # (* term symmetric *)
+    term_equality_symmetric eq
+    # (* term transitivive (1) *)
+    term_equality_transitive eq
+    # (* term value respecting *)
+    term_equality_respecting lib eq
+    # (* type symmetric *)
+    (forall T3 eq', ts lib T1 T3 eq' <=> ts lib T3 T1 eq')
+    # (* type transitive (3) *)
+    ts lib T1 T2 eq
+    # (* type transitive (4) *)
+    (forall T T3 T4 eq1 eq2,
+       (T = T1 [+] T = T2)
+       -> ts lib T3 T eq1
+       -> ts lib T T4 eq2
+       -> (ts lib T3 T4 eq1 # ts lib T3 T4 eq2)).
+
+Definition type_sys4 {p} (ts : cts(p)) :=
+  forall lib T1 T2 eq,
+    ts lib T1 T2 eq -> type_sys_props4 ts lib T1 T2 eq.
+
+(** Destruct type_sys_props3 *)
+Ltac dest_tsp4 c uv tys tyvr tyvrt tes tet tevr tygs tygt tymt :=
+  let tmp := fresh "tmp" in
+  unfold type_sys_props3 in c;
+  destruct c   as [ uv   tmp ];
+  destruct tmp as [ tys  tmp ];
+  destruct tmp as [ tyvr tmp ];
+  destruct tmp as [ tyvrt tmp ];
+  destruct tmp as [ tes  tmp ];
+  destruct tmp as [ tet  tmp ];
+  destruct tmp as [ tevr tmp ];
+  destruct tmp as [ tygs tmp ];
+  destruct tmp as [ tygt tymt ].
+
+Ltac onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt tymt :=
+  match goal with
+  | [ H : type_sys_props4 _ _ _ _ _ |- _ ] =>
+    dest_tsp4 H uv tys tyvr tyvrt tes tet tevr tygs tygt tymt
+  end.
+
+Tactic Notation "prove_type_sys_props4" ident(c) :=
+  unfold type_sys_props4;
+  dands;
+  [ Case_aux c "uniquely_valued"
+  | Case_aux c "type_symmetric"
+  | Case_aux c "type_value_respecting"
+  | Case_aux c "type_value_respecting_trans"
+  | Case_aux c "term_symmetric"
+  | Case_aux c "term_transitive"
+  | Case_aux c "term_value_respecting"
+  | Case_aux c "type_gsymmetric"
+  | Case_aux c "type_gtransitive"
+  | Case_aux c "type_mtransitive"
+  ].
+
+Lemma type_sys_prop4_implies_type_sys_props3 {p} :
+  forall (ts : cts(p)) lib T1 T2 e,
+    type_sys_props4 ts lib T1 T2 e
+    -> type_sys_props3 ts lib T1 T2 e.
+Proof.
+  introv tsp.
+  unfold type_sys_props4 in tsp.
+  unfold type_sys_props3.
+  repnd; dands; auto.
+Qed.
+
+Lemma type_sys4_implies_type_sys3 {p} :
+  forall (ts : cts(p)), type_sys4 ts -> type_sys3 ts.
+Proof.
+  introv tsp h.
+  apply tsp in h.
+  apply type_sys_prop4_implies_type_sys_props3; auto.
+Qed.
+
+Lemma type_system_implies_type_equality_respecting_trans {o} :
+  forall (ts : cts(o)) lib (T1 T2 : @CTerm o),
+    type_system ts -> type_equality_respecting_trans ts lib T1 T2.
+Proof.
+  introv tsts.
+  onedts uv tye tys tyt tyvr tes tet tevr.
+
+  introv h ceq q; repndors; subst.
+
+  - pose proof (tyvr lib T3 T1 eq') as w.
+    apply ccequivc_ext_sym in ceq.
+    repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
+    apply tys in w.
+    eapply tyt; eauto.
+
+  - pose proof (tyvr lib T3 T2 eq') as w.
+    apply ccequivc_ext_sym in ceq.
+    repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
+    apply tys in w.
+    eapply tyt; eauto.
+Qed.
+
+Lemma type_system_prop4 {p} :
+  forall (ts : cts(p)),
+    type_system ts <=> type_sys4 ts.
+Proof.
+  introv; split_iff Case;
+    [|introv h; apply type_sys4_implies_type_sys3 in h;
+      apply type_sys_iff_type_sys3 in h;
+      apply type_system_prop; auto];[].
+
+  Case "->".
+  unfold type_sys4; sp; try (onedts uv tye tys tyt tyvr tes tet tevr);
+    prove_type_sys_props4 SCase; tcsp.
+  + SCase "uniquely_valued"; sp.
+    apply @uniquely_valued_eq with (ts := ts) (lib := lib) (T := T1) (T1 := T2) (T2 := T3); auto.
+  + SCase "type_symmetric"; sp.
+    use_ext eq; auto.
+  + SCase "type_value_respecting"; sp; subst; sp.
+    * apply (type_reduces_to_symm ts lib) with (T2 := T2); auto.
+    * apply (type_reduces_to_symm ts lib) with (T2 := T1); auto.
+  + SCase "type_value_respecting_trans".
+    apply type_system_implies_type_equality_respecting_trans; unfold type_system; tcsp.
+  + SCase "term_symmetric"; sp.
+    apply tes with (lib := lib) (T := T1) (T' := T2); auto.
+  + SCase "term_transitive"; sp.
+    apply tet with (lib := lib) (T := T1) (T' := T2); auto.
+  + SCase "term_value_respecting"; sp.
+    apply @term_reduces_to_symm with (ts := ts) (T1 := T1) (T2 := T2); auto.
+  + SCase "type_mtransitive"; sp; subst; sp;
+      try (complete (eapply uniquely_valued_trans2; eauto));
+      try (complete (eapply uniquely_valued_trans4; eauto)).
+Qed.

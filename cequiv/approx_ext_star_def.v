@@ -32,6 +32,7 @@
 
 Require Export approx_ext_props1.
 
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing $  $\times$ #×# *)
@@ -49,11 +50,12 @@ Definition blift_sub {o}
    $ (
       (op <> NCan NFresh # R nt1 nt2)
       [+]
-      {sub : Sub
-       & op = NCan NFresh
-       # R (lsubst nt1 sub) (lsubst nt2 sub)
-       # nrut_sub (get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2) sub
-       # lv = dom_sub sub}
+      forall l,
+        {sub : Sub
+         & op = NCan NFresh
+         # R (lsubst nt1 sub) (lsubst nt2 sub)
+         # nrut_sub (l ++ get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2) sub
+         # lv = dom_sub sub}
      )
    # alpha_eq_bterm b1 (bterm lv nt1)
    # alpha_eq_bterm b2 (bterm lv nt2) }}.

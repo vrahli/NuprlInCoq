@@ -1410,10 +1410,10 @@ Proof.
       destruct (dec_op_eq_fresh op) as [df|df]; tcsp.
 
       {
-        right.
+        right; introv.
         pose proof (exists_nrut_sub
                       vs
-                      ((get_utokens_lib lib (sosub_aux sub1 (so_swap (mk_swapping l1 vs) t1)))
+                      (l ++ (get_utokens_lib lib (sosub_aux sub1 (so_swap (mk_swapping l1 vs) t1)))
                          ++
                          get_utokens_lib lib (sosub_aux sub2 (so_swap (mk_swapping l2 vs) t2))))
           as exnrut; exrepnd.

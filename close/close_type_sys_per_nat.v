@@ -32,6 +32,7 @@
 
 Require Export type_sys.
 Require Import dest_close.
+Require Import per_ceq_bar.
 
 
 Lemma per_nat_bar_uniquely_valued {p} :
@@ -175,21 +176,42 @@ Proof.
   - apply per_nat_bar_term_value_respecting.
 Qed.
 
+Lemma type_equality_respecting_trans_per_nat_bar_implies {o} :
+  forall (ts : cts(o)) lib (bar : BarLib lib) T T',
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar bar (fun lib => T ===>(lib) mkc_Nat)
+    -> all_in_bar bar (fun lib => T' ===>(lib) mkc_Nat)
+    -> type_equality_respecting_trans (per_nat_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans (close ts) lib T T'.
+Proof.
+  introv tsts dou mon inbar1 inbar2 trans h ceq cl.
+  apply CL_nat.
+  eapply trans; eauto.
+  repndors; subst.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+Qed.
+
 Lemma close_type_system_nat {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> per_nat_bar (close ts) lib T T' eq
-    -> type_sys_props (close ts) lib T T' eq.
+    -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
   introv X X0 mon per.
 
   duplicate per as pi.
   unfold per_nat_bar in pi; exrepnd; spcast.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_type_sys_props4 SCase; intros.
 
   + SCase "uniquely_valued".
 
@@ -227,6 +249,11 @@ Proof.
       apply @type_system_type_mem1 with (T := T); auto;
         try (apply per_nat_bar_type_transitive);
         try (apply per_nat_bar_type_symmetric).
+
+  + SCase "type_value_respecting_trans".
+    eapply type_equality_respecting_trans_per_nat_bar_implies; eauto.
+    apply type_system_implies_type_equality_respecting_trans.
+    apply per_nat_type_system.
 
   + SCase "term_symmetric".
     assert (term_symmetric (per_nat_bar (close ts))) as tes

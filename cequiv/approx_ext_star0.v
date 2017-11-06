@@ -72,7 +72,7 @@ Proof.
   erewrite IHsub1; eauto.
 Qed.
 
-Lemma approx_ext_star_change_nrut_sub {o} :
+(*Lemma approx_ext_star_change_nrut_sub {o} :
   forall lib (t1 t2 : @NTerm o) sub l sub' l',
     nrut_sub l sub
     -> nrut_sub l' sub'
@@ -157,7 +157,498 @@ Proof.
     repeat (rw @lsubst_ren_utokens in h).
     repeat (rw @ren_utokens_trivial in h;[|erewrite @dom_utok_ren_nrut_subs_to_utok_ren; eauto]).
     erewrite @ren_utokens_sub_nrut_subs_to_utok_ren in h; eauto.
+Qed.*)
+
+
+(*Lemma change_nr_ut_sub_in_lsubst_aux_approx_ext_star {o} :
+  forall lib (t1 t2 : @NTerm o) ren,
+    no_repeats (range_utok_ren ren)
+    -> no_repeats (dom_utok_ren ren)
+    -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> disjoint (get_utokens_library lib) (range_utok_ren ren)
+    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t1))
+    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t2))
+    -> approx_ext_star lib t1 t2
+    -> approx_ext_star lib (ren_utokens ren t1) (ren_utokens ren t2).
+Proof.
+  nterm_ind1s t1 as [v1|f1 ind1|op1 bs1 ind1] Case;
+    introv norep1 norep2 dl1 dl2 disj1 disj2 apr.
+
+  - Case "vterm".
+    allsimpl.
+    constructor.
+    inversion apr as [? ? ? apo|?|]; subst; clear apr.
+
+    pose proof (approx_ext_open_change_utoks lib (vterm v1) t2 ren) as h.
+    repeat (autodimp h hyp).
+
+  - Case "sterm".
+    allsimpl.
+    inversion apr as [|? ? ? ? wf1 wf2 imp aop|]; subst; clear apr.
+    econstructor; eauto.
+    apply (approx_ext_open_change_utoks _ _ _ ren) in aop; auto.
+
+  - Case "oterm".
+    inversion apr as [|?|? ? ? ? ? len lift apo]; subst.
+
+    pose proof (ex_ren_utokens2
+                  (oterm op1 lbt1')
+                  ren
+                  (get_utokens_lib lib (oterm op1 bs1) ++ get_utokens_lib lib t2))
+      as extra_ren; exrepnd.
+    allsimpl; allrw disjoint_app_r; repnd.
+
+    pose proof (approx_ext_open_change_utoks lib (oterm op1 lbt1') t2 (ren ++ ren')) as h.
+    allrw @range_utok_ren_app.
+    allrw @dom_utok_ren_app.
+    allrw no_repeats_app.
+    allrw disjoint_app_l; allrw disjoint_app_r.
+    repeat (autodimp h hyp); dands; eauto 3 with slow.
+
+    { introv i j; allrw in_diff; allsimpl; allrw in_app_iff; allrw not_over_or; repnd.
+      pose proof (extra_ren0 t) as h; allrw in_app_iff; repeat (autodimp h hyp).
+      repndors; tcsp.
+      apply dl2 in j0; tcsp. }
+
+    { introv i j; allrw in_diff; allsimpl; allrw in_app_iff; allrw not_over_or; repnd.
+      applydup extra_ren13 in i.
+      applydup extra_ren12 in i.
+      applydup extra_ren10 in i.
+      applydup extra_ren7 in i.
+      repndors; tcsp. }
+
+    { introv i j; apply disj2 in i; allrw in_diff; allrw in_app_iff; allrw not_over_or; tcsp. }
+
+    { introv i j; allrw in_diff; allrw in_app_iff; allrw not_over_or; repnd.
+      applydup extra_ren8 in i.
+      repndors; tcsp.
+      applydup extra_ren11 in i; sp. }
+
+    allsimpl.
+
+    rw (ren_utokens_app_weak_l t2) in h;
+      [|introv i j; applydup extra_ren3 in i;
+        applydup disj2 in i0; allrw in_diff; tcsp;
+        destruct i1; dands; auto;
+        apply get_utokens_subset_get_utokens_lib; auto].
+
+    rw (ren_utokens_o_app_weak_l op1) in h;
+      [|introv i j; applydup extra_ren3 in i;
+        applydup disj1 in i0; allrw in_diff;
+        allrw in_app_iff; tcsp].
+
+    apply (apso _ _ _ _ (ren_utokens_bs (ren ++ ren') lbt1'));
+      allrw map_length; allrw @length_ren_utokens_bs; auto.
+
+    allunfold @lblift_sub;
+      allrw map_length; allrw @length_ren_utokens_bs;
+        repnd; dands; auto.
+
+    introv i.
+    applydup lift in i; clear lift.
+    allunfold @blift_sub; exrepnd.
+    exists lv (ren_utokens ren nt1) (ren_utokens (ren ++ ren') nt2).
+    dands; auto;
+    [|rw @selectbt_map; auto;
+      apply (alpha_eq_bterm_ren_utokens_b _ _ ren) in i2;
+      allsimpl; auto
+     |unfold ren_utokens_bs; rw @selectbt_map; auto; try omega;
+      apply (alpha_eq_bterm_ren_utokens_b _ _ (ren ++ ren')) in i1;
+      allsimpl; auto].
+
+    pose proof (selectbt_in n bs1) as in1; autodimp in1 hyp.
+    pose proof (selectbt_in n lbt1') as in2; autodimp in2 hyp; try omega.
+    remember (selectbt bs1 n) as b1.
+    remember (selectbt lbt1' n) as b2.
+    destruct b1 as [l1 u1]; destruct b2 as [l2 u2].
+    applydup @alpha_eq_bterm_preserves_osize in i2 as sz1.
+    applydup @alpha_eq_bterm_preserves_osize in i1 as sz2.
+
+    assert (subset (get_utokens nt1) (get_utokens_bs bs1)) as ss1.
+    { introv a; unfold get_utokens_bs.
+      rw lin_flat_map; eexists; dands; eauto; simpl.
+      apply alpha_eq_bterm_preserves_utokens in i2; allsimpl; rw i2; auto. }
+
+    assert (subset (get_utokens nt2) (get_utokens_bs lbt1')) as ss2.
+    { introv a; unfold get_utokens_bs.
+      rw lin_flat_map; eexists; dands; eauto; simpl.
+      apply alpha_eq_bterm_preserves_utokens in i1; allsimpl; rw i1; auto. }
+
+    repndors;exrepnd;[left|right].
+
+    + dands; auto;[intro e; apply ren_utok_op_diff_fresh in e; auto|].
+      pose proof (ind1 u1 nt1 l1) as q; clear ind1.
+      rw sz1 in q.
+      repeat (autodimp q hyp); eauto 3 with slow.
+      pose proof (q nt2 (ren ++ ren')) as aprs; clear q.
+      allrw @range_utok_ren_app.
+      allrw @dom_utok_ren_app.
+      allrw no_repeats_app.
+      allrw disjoint_app_l; allrw disjoint_app_r.
+      repeat (autodimp aprs hyp); dands; eauto 3 with slow.
+
+      { introv a b; apply disj1 in a; allrw in_diff;
+          allrw in_app_iff; allrw not_over_or; repnd; tcsp.
+        destruct a; dands; tcsp. }
+
+      { introv a b; allrw in_diff; allrw in_app_iff; allrw not_over_or; repnd.
+        applydup extra_ren10 in a; repndors; tcsp.
+        applydup extra_ren12 in a; repndors; tcsp.  }
+
+      { introv a b; allrw in_diff; allsimpl; allrw in_app_iff; allrw not_over_or; repnd.
+        repndors;[|apply dl2 in b0; tcsp].
+        pose proof (extra_ren0 t) as q; allrw in_app_iff; repeat (autodimp q hyp). }
+
+      { introv a b; allrw in_diff; allsimpl; allrw in_app_iff; allrw not_over_or; repnd.
+        applydup extra_ren7 in a; tcsp.
+        applydup extra_ren8 in a; tcsp. }
+
+      rw (ren_utokens_app_weak_l nt1) in aprs; auto.
+
+      introv a b.
+      applydup extra_ren3 in a.
+      applydup extra_ren2 in a.
+      applydup disj1 in a0; allrw in_diff; destruct a2; dands; tcsp.
+      rw in_app_iff; left.
+      rw in_app_iff; right; rw lin_flat_map; eexists; dands; eauto; simpl.
+      apply alpha_eq_bterm_preserves_utokens in i2; allsimpl; rw i2; auto.
+
+    + pose proof (ex_ren_utokens_sub2
+                    sub
+                    (ren ++ ren')
+                    (get_utokens_lib lib nt1
+                                 ++ get_utokens_lib lib nt2
+                                 ++ get_utokens_lib lib (lsubst nt1 sub)
+                                 ++ get_utokens_lib lib (lsubst nt2 sub)))
+        as extra_ren'; exrepnd.
+      allsimpl; allrw disjoint_app_r; repnd.
+
+      pose proof (ind1 u1 (lsubst nt1 sub) l1) as ih; clear ind1.
+      rw sz1 in ih; repeat (autodimp ih hyp).
+      { rw @simple_osize_lsubst; eauto with slow. }
+      pose proof (ih (lsubst nt2 sub) ((ren ++ ren') ++ ren'0)) as q; clear ih.
+
+      allrw @range_utok_ren_app.
+      allrw @dom_utok_ren_app.
+      allrw no_repeats_app.
+      allrw disjoint_app_l; allrw disjoint_app_r.
+      repnd; repeat (autodimp q hyp); dands; eauto 3 with slow.
+
+      { introv j k; allrw in_diff; allsimpl; allrw in_app_iff; allrw not_over_or; repnd.
+        applydup extra_ren'3 in k; rw in_app_iff in k0.
+        applydup dl2 in j; repndors; tcsp.
+        apply extra_ren8 in k0; tcsp. }
+
+      { introv a b; allrw in_diff; allsimpl; allrw in_app_iff; allrw not_over_or; repnd.
+        repndors;[|apply dl2 in b0; tcsp];[].
+        apply get_utokens_lsubst in b0; allrw in_app_iff; repndors; tcsp.
+        - applydup ss1 in b0.
+          applydup disj1 in a.
+          allrw in_diff; allrw in_app_iff; allrw not_over_or; sp.
+        - apply in_get_utokens_sub in b0; exrepnd.
+          apply in_sub_keep_first in b3; repnd.
+          apply sub_find_some in b4.
+          pose proof (extra_ren'0 t) as r.
+          allrw @range_utok_ren_app; allrw @dom_utok_ren_app.
+          allrw in_app_iff.
+          repeat (autodimp r hyp); tcsp.
+          apply in_get_utokens_sub.
+          eexists; eexists; dands; eauto.
+      }
+
+      { introv a b; allrw in_diff; allrw in_app_iff; allrw not_over_or; repnd.
+        applydup extra_ren8 in a.
+        repndors; tcsp;[].
+        apply get_utokens_lsubst in b0; allrw in_app_iff; repndors; tcsp.
+        - applydup ss1 in b0; tcsp.
+          apply extra_ren12 in a; tcsp.
+        - apply in_get_utokens_sub in b0; exrepnd.
+          apply in_sub_keep_first in b3; repnd.
+          apply sub_find_some in b4.
+          pose proof (extra_ren'0 t) as r.
+          allrw @range_utok_ren_app; allrw @dom_utok_ren_app.
+          allrw in_app_iff.
+          repeat (autodimp r hyp); tcsp.
+          apply in_get_utokens_sub.
+          eexists; eexists; dands; eauto.
+      }
+
+      { introv a b; allrw in_diff; allrw in_app_iff; allrw not_over_or; repnd.
+        applydup extra_ren'12 in a; repndors; tcsp;[].
+        applydup extra_ren'14 in a; sp. }
+
+      { introv a b; allrw in_diff; allsimpl; allrw in_app_iff; allrw not_over_or; repnd.
+        repndors;[|apply dl2 in b0; tcsp];[].
+        apply get_utokens_lsubst in b0; allrw in_app_iff; repndors; tcsp.
+        - applydup ss2 in b0.
+          pose proof (extra_ren0 t) as q; allrw in_app_iff.
+          repeat (autodimp q hyp); tcsp.
+        - apply in_get_utokens_sub in b0; exrepnd.
+          apply in_sub_keep_first in b3; repnd.
+          apply sub_find_some in b4.
+          pose proof (extra_ren'0 t) as r.
+          allrw @range_utok_ren_app; allrw @dom_utok_ren_app.
+          allrw in_app_iff.
+          repeat (autodimp r hyp); tcsp.
+          apply in_get_utokens_sub.
+          eexists; eexists; dands; eauto.
+      }
+
+      { introv a b; allrw in_diff; allrw in_app_iff; allrw not_over_or; repnd.
+        applydup extra_ren8 in a.
+        repndors; tcsp;[].
+        apply get_utokens_lsubst in b0; allrw in_app_iff; repndors; tcsp.
+        - applydup ss2 in b0.
+          apply extra_ren7 in a; tcsp.
+        - apply in_get_utokens_sub in b0; exrepnd.
+          apply in_sub_keep_first in b3; repnd.
+          apply sub_find_some in b4.
+          pose proof (extra_ren'0 t) as r.
+          allrw @range_utok_ren_app; allrw @dom_utok_ren_app.
+          allrw in_app_iff.
+          repeat (autodimp r hyp); tcsp.
+          apply in_get_utokens_sub.
+          eexists; eexists; dands; eauto.
+      }
+
+      { introv a b; allrw in_diff; allrw in_app_iff; allrw not_over_or; repnd.
+        applydup extra_ren'13 in a; sp.
+        applydup extra_ren'8 in a; sp. }
+
+      repeat (rw @lsubst_ren_utokens in q).
+
+      assert (disjoint (dom_utok_ren ren'0) (get_utokens nt1)) as disj'0nt1.
+      { introv a b.
+        applydup extra_ren'3 in a.
+        applydup extra_ren'17 in a.
+        applydup extra_ren'2 in a.
+        allrw in_app_iff.
+        repndors; tcsp.
+        - applydup disj1 in a0; allrw in_diff; allrw in_app_iff; allrw not_over_or.
+          destruct a3; dands; tcsp.
+        - apply extra_ren12 in a0; tcsp.
+      }
+
+      pose proof (ren_utokens_app_weak_l nt1 (ren ++ ren') ren'0 disj'0nt1) as e1.
+      rw e1 in q.
+
+      assert (disjoint (dom_utok_ren ren') (get_utokens nt1)) as disj'nt1.
+      { introv a b.
+        applydup extra_ren3 in a.
+        applydup extra_ren2 in a.
+        applydup disj1 in a0; allrw in_diff; destruct a2; dands; tcsp.
+        apply in_app_iff; left.
+        rw in_app_iff; right; rw lin_flat_map; eexists; dands; eauto; simpl.
+        apply alpha_eq_bterm_preserves_utokens in i2; allsimpl; rw i2; auto.
+      }
+
+      pose proof (ren_utokens_app_weak_l nt1 ren ren' disj'nt1) as e2.
+      rw e2 in q.
+
+      assert (disjoint (dom_utok_ren ren'0) (get_utokens nt2)) as disj'0nt2.
+      { introv a b.
+        applydup extra_ren'3 in a.
+        applydup extra_ren'17 in a.
+        applydup extra_ren'2 in a.
+        allrw in_app_iff.
+        repndors; tcsp.
+        - pose proof (extra_ren0 t) as r; allrw in_app_iff.
+          repeat (autodimp r hyp); tcsp.
+        - apply extra_ren7 in a0; tcsp.
+      }
+
+      pose proof (ren_utokens_app_weak_l nt2 (ren ++ ren') ren'0 disj'0nt2) as e3.
+      rw e3 in q.
+
+      exists (ren_utokens_sub ((ren ++ ren') ++ ren'0) sub).
+      rw @ren_utok_op_diff_fresh.
+      rw @dom_sub_ren_utokens_sub.
+      dands; auto.
+
+      assert (no_repeats (range_utok_ren ((ren ++ ren') ++ ren'0))) as norep_ren.
+      { repeat (rw @range_utok_ren_app).
+        repeat (rw no_repeats_app).
+        rw disjoint_app_l; dands; eauto with slow. }
+
+      assert (utok_ren_cond (get_utokens_sub sub) ((ren ++ ren') ++ ren'0)) as cond1.
+      { introv x y.
+        pose proof (extra_ren'0 a) as r.
+        allrw @dom_utok_ren_app; allrw @range_utok_ren_app.
+        allrw in_app_iff; allrw not_over_or.
+        repndors.
+        - destruct (in_deq _ (get_patom_deq o) a (dom_utok_ren ren)); tcsp.
+          destruct (in_deq _ (get_patom_deq o) a (dom_utok_ren ren')); tcsp.
+        - destruct (in_deq _ (get_patom_deq o) a (dom_utok_ren ren)); tcsp.
+          destruct (in_deq _ (get_patom_deq o) a (dom_utok_ren ren')); tcsp.
+        - apply extra_ren'7 in y; sp. }
+
+      assert (utok_ren_cond (get_utokens_lib lib nt1) ren) as cond2.
+      { introv x y.
+        apply in_app_iff in x; repndors;[|].
+        - applydup ss1 in x.
+          applydup disj1 in y.
+          rw in_diff in y0; rw in_app_iff in y0.
+          simpl in y0; rw in_app_iff in y0.
+          destruct (in_deq _ (get_patom_deq o) a (dom_utok_ren ren)); tcsp.
+          destruct y0; dands; tcsp.
+        - apply dl2 in x; tcsp.
+      }
+
+      assert (utok_ren_cond (get_utokens_lib lib nt2) (ren ++ ren')) as cond3.
+      { introv x y.
+        apply in_app_iff in x; repndors;[|].
+        - applydup ss2 in x.
+          allrw @range_utok_ren_app.
+          allrw @dom_utok_ren_app.
+          pose proof (extra_ren0 a) as r.
+          allrw in_app_iff.
+          destruct (in_deq _ (get_patom_deq o) a (dom_utok_ren ren)); tcsp.
+          repndors; tcsp.
+          clear r.
+          apply extra_ren7 in y; sp.
+        - rw @range_utok_ren_app in y; apply in_app_iff in y; repndors;[|].
+          + apply dl2 in x; tcsp.
+          + apply extra_ren8 in x; tcsp.
+      }
+
+      unfold nrut_sub; dands; eauto 3 with slow.
+
+      assert (disjoint (get_utokens_library lib) (dom_utok_ren ((ren ++ ren') ++ ren'0))) as disjl1.
+      {
+        introv a b.
+        allrw @dom_utok_ren_app.
+        allrw in_app_iff; repndors.
+        - apply dl1 in a; tcsp.
+        - apply extra_ren3 in b; apply dl2 in a; tcsp.
+        - apply extra_ren'3 in b; apply in_app_iff in b; repndors.
+          + apply dl2 in a; tcsp.
+          + apply extra_ren8 in b; tcsp.
+      }
+
+      rw <- e3; rw <- e2; rw <- e1.
+      repeat (rw @get_utokens_lib_ren_utokens;auto);[].
+      rw @get_utokens_sub_ren_utokens_sub.
+      rw <- map_app.
+      apply disjoint_map_l; introv u v.
+      rw in_map_iff in v; exrepnd.
+
+      pose proof (false_if_utok_ren_cond_on_eq_ren_atoms
+                    ((ren ++ ren') ++ ren'0)
+                    x a
+                    (get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2)
+                    (get_utokens_sub sub)) as hh.
+      allunfold @nrut_sub; repnd.
+      repeat (autodimp hh hyp); tcsp.
+
+      clear u.
+      apply utok_ren_cond_app.
+
+      { introv z w.
+        applydup cond2 in z.
+        allrw @range_utok_ren_app.
+        allrw @dom_utok_ren_app.
+        allrw in_app_iff.
+        repndors; tcsp.
+        - apply extra_ren12 in w.
+          apply ss1 in z; sp.
+        - apply extra_ren'16 in w; sp.
+        - apply extra_ren8 in w; tcsp.
+        - apply extra_ren'8 in w; tcsp.
+      }
+
+      { introv z w.
+        applydup cond3 in z.
+        allrw @range_utok_ren_app.
+        allrw @dom_utok_ren_app.
+        allrw in_app_iff.
+        repndors; tcsp;[|].
+        - apply extra_ren'15 in w; sp.
+        - apply extra_ren'8 in w; sp.
+      }
 Qed.
+
+Lemma approx_ext_star_change_nrut_sub {o} :
+  forall lib (t1 t2 : @NTerm o) v a l b l',
+    !LIn a l
+    -> !LIn b l'
+    -> subset (get_utokens_library lib) l
+    -> subset (get_utokens_library lib) l'
+    -> subset (get_utokens t1) l
+    -> subset (get_utokens t2) l
+    -> subset (get_utokens t1) l'
+    -> subset (get_utokens t2) l'
+    -> approx_ext_star lib (subst t1 v (mk_utoken a)) (subst t2 v (mk_utoken a))
+    -> approx_ext_star lib (subst t1 v (mk_utoken b)) (subst t2 v (mk_utoken b)).
+Proof.
+  introv nrut1 nrut2 ssl1 ssl2 ss1 ss2 ss3 ss4 apr.
+
+  pose proof (change_nr_ut_sub_in_lsubst_aux_approx_ext_star
+                lib (lsubst t1 sub) (lsubst t2 sub)
+                (nrut_subs_to_utok_ren sub sub')) as h.
+  erewrite @range_utok_ren_nrut_subs_to_utok_ren in h; eauto.
+  erewrite @dom_utok_ren_nrut_subs_to_utok_ren in h; eauto.
+  repeat (autodimp h hyp); eauto 3 with slow.
+
+  - unfold nrut_sub in nrut1; repnd.
+    eapply subset_disjoint;[|eauto]; auto.
+
+  - unfold nrut_sub in nrut2; repnd.
+    eapply subset_disjoint;[|eauto]; auto.
+
+  - introv i j.
+    allrw in_diff; repnd.
+    apply get_utokens_lib_lsubst in j0; allrw in_app_iff; repndors.
+
+    + apply ss3 in j0.
+      unfold nrut_sub in nrut2; repnd.
+      apply nrut2 in j0; sp.
+
+    + unfold nrut_sub in nrut2; repnd.
+      apply ssl2 in j0.
+      apply nrut2 in j0; tcsp.
+
+    + apply in_get_utokens_sub in j0; exrepnd.
+      apply in_sub_keep_first in j1; repnd.
+      apply sub_find_some in j2.
+      destruct j.
+      apply in_sub_eta in j2; repnd.
+      unfold get_utokens_sub; rw lin_flat_map.
+      eexists; dands; eauto.
+
+  - introv i j.
+    allrw in_diff; repnd.
+    apply get_utokens_lib_lsubst in j0; allrw in_app_iff; repndors.
+
+    + apply ss4 in j0.
+      unfold nrut_sub in nrut2; repnd.
+      apply nrut2 in j0; sp.
+
+    + unfold nrut_sub in nrut1; repnd.
+      apply ssl2 in j0.
+      apply nrut2 in j0; tcsp.
+
+    + apply in_get_utokens_sub in j0; exrepnd.
+      apply in_sub_keep_first in j1; repnd.
+      apply sub_find_some in j2.
+      destruct j.
+      apply in_sub_eta in j2; repnd.
+      unfold get_utokens_sub; rw lin_flat_map.
+      eexists; dands; eauto.
+
+  - assert (disjoint (get_utokens_sub sub) (get_utokens t1)) as disj1.
+    { introv i j.
+      apply ss1 in j; unfold nrut_sub in nrut1; repnd.
+      apply nrut1 in j; sp. }
+
+    assert (disjoint (get_utokens_sub sub) (get_utokens t2)) as disj2.
+    { introv i j.
+      apply ss2 in j; unfold nrut_sub in nrut1; repnd.
+      apply nrut1 in j; sp. }
+
+    repeat (rw @lsubst_ren_utokens in h).
+    repeat (rw @ren_utokens_trivial in h;[|erewrite @dom_utok_ren_nrut_subs_to_utok_ren; eauto]).
+    erewrite @ren_utokens_sub_nrut_subs_to_utok_ren in h; eauto.
+Qed.*)
 
 Lemma alpha_eq_bterm_preserves_osize2 {p} :
   forall bt1 bt2,
@@ -168,6 +659,93 @@ Proof.
   destruct bt1 as [lv1 nt1].
   destruct bt2 as [lv2 nt2].
   simpl; eapply alpha_eq_bterm_preserves_osize; eauto.
+Qed.
+
+Lemma bound_vars_subst_utoken {o} :
+  forall (t : @NTerm o) v a,
+    bound_vars (subst t v (mk_utoken a)) = bound_vars t.
+Proof.
+  nterm_ind t as [x|f|op bs ind] Case; introv; simpl; auto.
+
+  - Case "vterm".
+    unfsubst; simpl; boolvar; simpl; auto.
+
+  - Case "oterm".
+    unfsubst; simpl.
+    allrw flat_map_map; unfold compose.
+    apply eq_flat_maps; introv i.
+    destruct x; simpl.
+    f_equal; boolvar; autorewrite with slow; auto.
+    pose proof (ind n l i v a) as q.
+    unfsubst in q.
+Qed.
+Hint Rewrite @bound_vars_subst_utoken : slow.
+
+Lemma approx_ext_star_btermd_fr2 {p} :
+  forall lib op bt1 bt2 lva,
+    op = NCan NFresh
+    -> approx_ext_star_bterm lib op bt1 bt2
+    -> {lvn : list NVar
+        & {nt1',nt2' : @NTerm p
+        $ forall l, {sub : Sub
+        $ approx_ext_star lib (lsubst nt1' sub) (lsubst nt2' sub)
+        # nrut_sub (l ++ get_utokens_lib lib nt1' ++ get_utokens_lib lib nt2') sub
+        # lvn = dom_sub sub
+        # alpha_eq_bterm bt1 (bterm lvn nt1')
+        # alpha_eq_bterm bt2 (bterm lvn nt2')
+        # no_repeats lvn
+        (* # disjoint lvn (all_vars (get_nt bt1) ++ all_vars (get_nt bt2)) *)
+        # disjoint (lvn ++ bound_vars nt1' ++ bound_vars nt2') lva }}}.
+Proof.
+  introv d Hab.
+  unfold approx_ext_star_bterm in Hab.
+  repnud Hab. exrepnd.
+  pose proof (alpha_bterm_pair_change _ _ _ _ _ lva Hab2 Hab0) as Hp.
+  exrepnd.
+  exists lvn.
+
+  repndors; exrepnd; subst; tcsp; GC.
+  exists (lsubst nt1n (var_ren lv lvn))
+         (lsubst nt2n (var_ren lv lvn)).
+  introv.
+  pose proof (Hab1 l) as Hab1; exrepnd; subst; tcsp; GC.
+  allrw disjoint_app_r; allrw disjoint_app_l; repnd.
+
+  exists (combine lvn (range sub)).
+  rw @boundvars_lsubst_vars; auto.
+  rw @boundvars_lsubst_vars; auto.
+  rw @get_utokens_lib_lsubst_allvars; eauto 3 with slow.
+  rw @get_utokens_lib_lsubst_allvars; eauto 3 with slow.
+  rw @dom_sub_combine; allrw @length_range; allrw @length_dom; auto.
+
+  dands; eauto 3 with slow.
+
+  - pose proof (lsubst_nest_same_alpha nt1n (dom_sub sub) lvn (range sub)) as nest1.
+    allrw @length_dom; allrw @length_range.
+    repeat (autodimp nest1 hyp).
+    { apply alphaeq_preserves_free_vars in Hp2; rw <- Hp2; auto. }
+    rw <- @sub_eta in nest1.
+
+    pose proof (lsubst_nest_same_alpha nt2n (dom_sub sub) lvn (range sub)) as nest2.
+    allrw @length_dom; allrw @length_range.
+    repeat (autodimp nest2 hyp).
+    { apply alphaeq_preserves_free_vars in Hp3; rw <- Hp3; auto. }
+    rw <- @sub_eta in nest2.
+
+    pose proof (lsubst_alpha_congr2 nt1 nt1n sub Hp2) as as1.
+    pose proof (lsubst_alpha_congr2 nt2 nt2n sub Hp3) as as2.
+
+    eapply approx_ext_star_alpha_fun_l;[|apply alpha_eq_sym; exact nest1].
+    eapply approx_ext_star_alpha_fun_r;[|apply alpha_eq_sym; exact nest2].
+    eauto 3 with slow.
+
+  - apply (alphaeq_preserves_get_utokens_lib lib) in Hp2.
+    apply (alphaeq_preserves_get_utokens_lib lib) in Hp3.
+    rw <- Hp2; rw <- Hp3.
+    eapply nrut_sub_change_sub_same_range;[|exact Hab5].
+    rw @range_combine; auto; allrw @length_range; allrw @length_dom; auto.
+
+  - allrw disjoint_app_l; dands; auto.
 Qed.
 
 Lemma lsubst_approx_ext_star_congr_aux {p} :
@@ -191,7 +769,7 @@ Proof.
       lsubst_lsubst_aux_eq_hyp X99 Hap; simpl; simpl_vlist; clear X99;
       allsimpl; revert Hap.
 
-    + dsub_find xa'; [|provefalse; eauto with slow].
+    + dsub_find xa'; [|provefalse; eauto 3 with slow].
       introv Hap. symmetry in Heqxa. symmetry in Heqxa'.
       eapply sub_find_some2_first
         in Heqxa; eauto. exrepnd. repnud Hbin. repnud Hbin.
@@ -202,7 +780,7 @@ Proof.
       rw Heqxa4 in hyp.
       eapply approx_ext_star_open_trans; eauto.
 
-    + dsub_find xa'; [provefalse; eauto with slow | ].
+    + dsub_find xa'; [provefalse; eauto 3 with slow | ].
       introv. apply approx_ext_open_implies_approx_ext_star.
 
   - Case "sterm".
@@ -234,62 +812,53 @@ Proof.
     clear Hao0 Hao4.
     unfold approx_ext_starbts, lblift_sub; allunfold @blift_sub;repeat(simpl_list).
     dands; spcf.
-    exrepnd. GC.
+    exrepnd.
+    GC.
     introv Hlt. rw @selectbt_map;spc;[].  rw @selectbt_map;spc;[].
     duplicate Hlt as Hlt99. apply Hao2 in Hlt.
 
     destruct (dec_op_eq_fresh o) as [e|e].
 
-    + pose proof (approx_ext_star_btermd_fr
+    + pose proof (approx_ext_star_btermd_fr2
                     _ _ _ _
                     (flat_map free_vars lnta ++ flat_map free_vars lnta')
                     e
                     Hlt) as Hfb.
-
+      clear Hlt.
       exrepnd.
+
       exists lvn
              (lsubst_aux nt1' (sub_filter (combine lvi lnta) lvn))
              (lsubst_aux nt2' (sub_filter (combine lvi lnta') lvn)).
       dimp (selectbt_in n lbt');spcf.
       dimp (selectbt_in n lbt);spcf.
-      applydup @alpha_eq_bterm_preserves_osize2 in Hfb4.
+
+      pose proof (Hfb0 []) as aeq; exrepnd; clear dependent sub.
+
+      applydup @alpha_eq_bterm_preserves_osize2 in aeq4.
       (* needed to apply induction hyp later *)
       apply (lsubst_alphabt_congr _ _ (combine lvi lnta'))
-        in Hfb5; [|allsimpl; spcls; disjoint_reasoningv;
+        in aeq5; [|allsimpl; spcls; disjoint_reasoningv;
                    apply disjoint_sym; eapply disjoint_flat_map_r in Hao1; eauto; fail].
       apply (lsubst_alphabt_congr _ _ (combine lvi lnta))
-        in Hfb4; [|allsimpl; spcls; disjoint_reasoningv;
+        in aeq4; [|allsimpl; spcls; disjoint_reasoningv;
                    apply disjoint_sym in Hdis2;
                    eapply disjoint_flat_map_r in Hdis2; eauto with slow; fail].
 
       dands; auto;[].
-      right.
+      right; introv;[].
 
-      pose proof (exists_nrut_sub
-                    lvn
-                    (get_utokens_lib lib nt1'
-                                 ++ get_utokens_lib lib nt2'
-                                 ++ flat_map (get_utokens_lib lib) lnta
-                                 ++ flat_map (get_utokens_lib lib) lnta'))
-        as exnrut; exrepnd.
-
-      pose proof (approx_ext_star_change_nrut_sub
-                    lib nt1' nt2' sub (get_utokens_lib lib nt1' ++ get_utokens_lib lib nt2')
-                    sub0
-                    (get_utokens_lib lib nt1'
-                                 ++ get_utokens_lib lib nt2'
-                                 ++ flat_map (get_utokens_lib lib) lnta
-                                 ++ flat_map (get_utokens_lib lib) lnta'))
-           as ch.
-      repeat (autodimp ch hh); tcsp; eauto 5 with slow;[].
+      pose proof (Hfb0 (l ++ flat_map (get_utokens_lib lib) lnta
+                          ++ flat_map (get_utokens_lib lib) lnta')) as Hfb0.
+      exrepnd; GC.
 
       destruct (selectbt lbt n) as [l1 t1].
       destruct (selectbt lbt' n) as [l2 t2].
       allsimpl.
 
-      pose proof (Hind t1 (lsubst nt1' sub0) l1) as h; repeat (autodimp h hh).
+      pose proof (Hind t1 (lsubst nt1' sub) l1) as h; repeat (autodimp h hh).
       { allrw; auto; rw @simple_osize_lsubst; eauto 3 with slow. }
-      pose proof (h (lsubst nt2' sub0) lvi lnta lnta') as q; clear h.
+      pose proof (h (lsubst nt2' sub) lvi lnta lnta') as q; clear h.
       repeat (autodimp q hh).
 
       { repeat (rw @cl_lsubst_lsubst_aux; eauto 2 with slow).
@@ -298,38 +867,42 @@ Proof.
 
       repeat (rw @cl_lsubst_lsubst_aux in q; eauto 2 with slow).
 
-      pose proof (simple_lsubst_aux_lsubst_aux_sub_disj nt1' sub0 (combine lvi lnta)) as e1.
+      pose proof (simple_lsubst_aux_lsubst_aux_sub_disj nt1' sub (combine lvi lnta)) as e1.
       rw @sub_free_vars_combine in e1; auto.
-      rw <- exnrut0 in e1.
       erewrite sub_bound_vars_nrut_sub in e1; eauto.
       erewrite sub_free_vars_nrut_sub in e1; eauto.
       allrw disjoint_app_r; allrw disjoint_app_l; repnd.
-      repeat (autodimp e1 hh).
+      repeat (autodimp e1 hh); try (complete (subst; auto));[].
 
-      pose proof (simple_lsubst_aux_lsubst_aux_sub_disj nt2' sub0 (combine lvi lnta')) as e2.
+      pose proof (simple_lsubst_aux_lsubst_aux_sub_disj nt2' sub (combine lvi lnta')) as e2.
       rw @sub_free_vars_combine in e2; auto.
-      rw <- exnrut0 in e2.
       erewrite sub_bound_vars_nrut_sub in e2; eauto.
       erewrite sub_free_vars_nrut_sub in e2; eauto.
       allrw disjoint_app_r; allrw disjoint_app_l; repnd.
-      repeat (autodimp e2 hh).
+      repeat (autodimp e2 hh); try (complete (subst; auto));[].
 
       rw @cl_lsubst_aux_sub_trivial in e1; eauto 2 with slow.
       rw @cl_lsubst_aux_sub_trivial in e2; eauto 2 with slow.
       rw <- e1 in q; rw <- e2 in q.
 
-      exists sub0; dands; auto.
+      exists sub; dands; auto.
 
-      { repeat (rw @cl_lsubst_lsubst_aux; eauto 2 with slow). }
+      {
+        subst.
+        repeat (rw @cl_lsubst_lsubst_aux; eauto 2 with slow).
+      }
 
-      { eapply nrut_sub_subset;[|exact exnrut1].
-        rw subset_app; dands; introv i; repeat (rw in_app_iff);
-          apply get_utokens_lib_lsubst_aux in i; rw in_app_iff in i; repndors; tcsp;
+      {
+        eapply nrut_sub_subset;[|exact Hfb2].
+        rw subset_app; dands; introv i; repeat (rw in_app_iff); tcsp.
+        rw in_app_iff in i; repndors; tcsp;
+          apply get_utokens_lib_lsubst_aux in i;
+          rw in_app_iff in i; repndors; tcsp;
             try (complete (apply in_app_iff in i; tcsp));
             apply in_get_utokens_sub in i; exrepnd; apply in_sub_keep_first in i0; repnd;
               apply sub_find_some in i2; apply in_sub_filter in i2; repnd; apply in_combine in i3; repnd.
-        - right; right; left; rw lin_flat_map; eexists; dands; eauto 2 with slow.
-        - right; right; right; rw lin_flat_map; eexists; dands; eauto 2 with slow.
+        - left; right; left;  rw lin_flat_map; eexists; dands; eauto 2 with slow.
+        - left; right; right; rw lin_flat_map; eexists; dands; eauto 2 with slow.
       }
 
     + pose proof (approx_ext_star_btermd
@@ -426,132 +999,6 @@ Proof.
     rw @cl_lsubst_lsubst_aux; eauto 2 with slow.
 Qed.
 
-(* we need it at least for subs with range as axiom for howe_lemma2 *)
-Lemma approx_ext_star_bterm_lsubst_congr {p} :
-  forall lib (bt1 bt2 : BTerm) sub op,
-    @prog_sub p sub
-    -> approx_ext_star_bterm lib op bt1 bt2
-    -> approx_ext_star_bterm
-         lib op
-         (lsubst_bterm_aux bt1 sub)
-         (lsubst_bterm_aux bt2 sub).
-Proof.
-  introv Hpr Hs.
-
-  destruct (dec_op_eq_fresh op) as [d|d].
-
-  {
-    pose proof (approx_ext_star_btermd_fr
-                  _ _ _ _
-                  (flat_map free_vars (range sub)) d Hs) as Hfb.
-    exrepnd.
-    allrw <- @sub_free_vars_is_flat_map_free_vars_range.
-
-    unfold approx_ext_star_bterm, blift_sub.
-    exists lvn (lsubst nt1' (sub_filter sub lvn)) (lsubst nt2' (sub_filter sub lvn)).
-    dands; auto;
-    [|apply (lsubst_alphabt_congr _ _ sub) in Hfb4;
-       allsimpl; auto;
-       try (rw <- @cl_lsubst_lsubst_aux in Hfb4; eauto 3 with slow);
-       allrw <- @sub_free_vars_is_flat_map_free_vars_range;
-       rw @sub_free_vars_if_cl_sub; eauto with slow
-     |apply (lsubst_alphabt_congr _ _ sub) in Hfb5;
-       allsimpl; auto;
-       try (rw <- @cl_lsubst_lsubst_aux in Hfb5; eauto 3 with slow);
-       allrw <- @sub_free_vars_is_flat_map_free_vars_range;
-       rw @sub_free_vars_if_cl_sub; eauto with slow].
-
-    right.
-
-    pose proof (exists_nrut_sub
-                  lvn
-                  (get_utokens_lib lib nt1'
-                               ++ get_utokens_lib lib nt2'
-                               ++ get_utokens_sub sub))
-      as exnrut; exrepnd.
-
-    pose proof (approx_ext_star_change_nrut_sub
-                  lib nt1' nt2' sub0 (get_utokens_lib lib nt1' ++ get_utokens_lib lib nt2')
-                  sub1
-                  (get_utokens_lib lib nt1'
-                               ++ get_utokens_lib lib nt2'
-                               ++ get_utokens_sub sub))
-      as ch.
-    repeat (autodimp ch hh); tcsp; eauto 5 with slow;[].
-
-    destruct bt1 as [l1 t1].
-    destruct bt2 as [l2 t2].
-    allsimpl.
-
-    pose proof (cl_lsubst_approx_ext_star_congr
-                  lib (lsubst nt1' sub1) (lsubst nt2' sub1) sub) as q.
-    repeat (autodimp q hyp).
-
-    pose proof (simple_lsubst_aux_lsubst_aux_sub_disj nt1' sub1 sub) as e1.
-    repeat (rw @sub_free_vars_if_cl_sub in e1; eauto with slow).
-    repeat (autodimp e1 hh).
-
-    pose proof (simple_lsubst_aux_lsubst_aux_sub_disj nt2' sub1 sub) as e2.
-    repeat (rw @sub_free_vars_if_cl_sub in e2; eauto with slow).
-    repeat (autodimp e2 hh).
-
-    rw @cl_lsubst_aux_sub_trivial in e1; eauto 2 with slow.
-    rw @cl_lsubst_aux_sub_trivial in e2; eauto 2 with slow.
-    repeat (rw <- @cl_lsubst_lsubst_aux in e1; eauto with slow).
-    repeat (rw <- @cl_lsubst_lsubst_aux in e2; eauto with slow).
-    repeat (rw <- @cl_lsubst_lsubst_aux in q; eauto with slow).
-    rw <- e1 in q; rw <- e2 in q; clear e1 e2.
-    rw <- exnrut0 in q.
-
-    exists sub1; dands; auto.
-
-    { eapply nrut_sub_subset;[|exact exnrut1].
-      rw subset_app; dands; introv i; repeat (rw in_app_iff);
-        apply get_utokens_lib_lsubst in i; rw in_app_iff in i; repndors; tcsp;
-          try (complete (apply in_app_iff in i; tcsp));
-          apply in_get_utokens_sub in i; exrepnd; apply in_sub_keep_first in i0; repnd;
-            apply sub_find_some in i2; apply in_sub_filter in i2; repnd;
-              apply in_sub_eta in i3; repnd;
-                right; right; rw lin_flat_map; eexists; dands; eauto.
-    }
-  }
-
-  pose proof (approx_ext_star_btermd
-                _ _ _ _
-                (flat_map free_vars (range sub)) d Hs) as Hfb.
-  exrepnd.
-  apply @lsubst_alphabt_congr with (sub := sub) in Hfb2;
-    [| change_to_lsubst_aux4; eauto; fail].
-  apply @lsubst_alphabt_congr with (sub := sub) in Hfb3;
-    [| change_to_lsubst_aux4; eauto; fail].
-  allsimpl.
-  exists lvn (lsubst_aux nt1' (sub_filter sub lvn))
-    (lsubst_aux nt2' (sub_filter sub lvn)).
-  dands; sp;[].
-  pose proof (sub_eta (sub_filter sub lvn)) as Xsfeta.
-  pose proof (sub_eta_length (sub_filter sub lvn)) as X1len.
-  remember (dom_sub (sub_filter sub lvn)) as lsvi.
-  remember (range (sub_filter sub lvn)) as lsnt.
-  rw Xsfeta.
-  left; dands; auto.
-  apply lsubst_approx_ext_star_congr_aux;spc.
-  - rw flat_map_app.
-    (* the disjoint_sub_filter tactic needs the substitutions in eta form*)
-    pose proof (sub_eta sub ) as Xseta.
-    pose proof (sub_eta_length sub) as Xslen.
-    remember (dom_sub sub) as lvi.
-      remember (range sub) as lnt.
-    rw Xseta in Xsfeta.
-     disjoint_reasoningv; try disjoint_sub_filter.
-  - unfold bin_rel_nterm, binrel_list; dands; [sp | introv Hlt].
-    apply approx_ext_star_refl. pose proof (nth_in _  _ _ default_nterm Hlt) as XX.
-    rw Heqlsnt in XX.
-    apply in_range in XX. exrepnd.
-    apply in_sub_filter in XX0. exrepnd.
-    apply Hpr in XX1.
-    rw Heqlsnt. inverts XX1. sp.
-Qed.
-
 (* end hide *)
 
 (** %\noindent \\*% The following is a generalization of Howe's lemma 1 %\cite{Howe:1989}%.
@@ -634,16 +1081,19 @@ Proof.
   introv d Hab Hnr Hlen Hdis.
   invertsna Hab Hab.
   exrepnd; repndors; exrepnd; tcsp; GC.
-  applydup @alphaeqbt_numbvars in Hab2.
-  allunfold @num_bvars. allsimpl.
 
-  dimp (alpha_bterm_pair_change3 _ _ _ _ _ lvn Hab2 Hab1); spcf;[].
-  exrepnd.
-  assert (approx_ext_star lib nt1n nt2n) as XX by eauto with slow.
-  exists (lsubst nt1n (var_ren x lvn)).
-  exists (lsubst nt2n (var_ren x lvn)).
-  split; spc;[].
-  apply approx_ext_star_lsubst_vars;spc.
+  { applydup @alphaeqbt_numbvars in Hab2.
+    allunfold @num_bvars. allsimpl.
+
+    dimp (alpha_bterm_pair_change3 _ _ _ _ _ lvn Hab2 Hab1); spcf;[].
+    exrepnd.
+    assert (approx_ext_star lib nt1n nt2n) as XX by eauto 3 with slow.
+    exists (lsubst nt1n (var_ren x lvn)).
+    exists (lsubst nt2n (var_ren x lvn)).
+    split; spc;[].
+    apply approx_ext_star_lsubst_vars;spc. }
+
+  { pose proof (Hab0 []) as Hab0; exrepnd; tcsp. }
 Qed.
 
 Lemma lsubst_aux_nest_same_str2 {p} :
@@ -822,6 +1272,123 @@ Proof.
   alpharws (alpha_eq_sym _ _ Hf0). sp.
 Qed.
 
+(* we need it at least for subs with range as axiom for howe_lemma2 *)
+Lemma approx_ext_star_bterm_lsubst_congr {p} :
+  forall lib (bt1 bt2 : BTerm) sub op,
+    @prog_sub p sub
+    -> approx_ext_star_bterm lib op bt1 bt2
+    -> approx_ext_star_bterm
+         lib op
+         (lsubst_bterm_aux bt1 sub)
+         (lsubst_bterm_aux bt2 sub).
+Proof.
+  introv Hpr Hs.
+
+  destruct (dec_op_eq_fresh op) as [d|d].
+
+  {
+    pose proof (approx_ext_star_btermd_fr2
+                    _ _ _ _
+                    (flat_map free_vars (range sub))
+                    d
+                    Hs) as Hfb.
+    exrepnd.
+    allrw <- @sub_free_vars_is_flat_map_free_vars_range.
+
+    pose proof (Hfb0 []) as aeq; exrepnd; clear dependent sub0.
+
+    unfold approx_ext_star_bterm, blift_sub.
+    exists lvn (lsubst nt1' (sub_filter sub lvn)) (lsubst nt2' (sub_filter sub lvn)).
+    dands; auto;
+      [|apply (lsubst_alphabt_congr _ _ sub) in aeq4;
+        allsimpl; auto;
+        try (rw <- @cl_lsubst_lsubst_aux in aeq4; eauto 3 with slow);
+        allrw <- @sub_free_vars_is_flat_map_free_vars_range;
+        rw @sub_free_vars_if_cl_sub; eauto with slow
+       |apply (lsubst_alphabt_congr _ _ sub) in aeq5;
+        allsimpl; auto;
+        try (rw <- @cl_lsubst_lsubst_aux in aeq5; eauto 3 with slow);
+        allrw <- @sub_free_vars_is_flat_map_free_vars_range;
+        rw @sub_free_vars_if_cl_sub; eauto with slow].
+
+    right; introv.
+
+    pose proof (Hfb0 (l ++ get_utokens_sub sub)) as Hfb0; exrepnd; GC.
+
+    destruct bt1 as [l1 t1].
+    destruct bt2 as [l2 t2].
+    allsimpl.
+
+    pose proof (cl_lsubst_approx_ext_star_congr
+                  lib (lsubst nt1' sub0) (lsubst nt2' sub0) sub) as q.
+    repeat (autodimp q hyp).
+
+    pose proof (simple_lsubst_aux_lsubst_aux_sub_disj nt1' sub0 sub) as e1.
+    repeat (rw @sub_free_vars_if_cl_sub in e1; eauto with slow).
+    repeat (autodimp e1 hh).
+
+    pose proof (simple_lsubst_aux_lsubst_aux_sub_disj nt2' sub0 sub) as e2.
+    repeat (rw @sub_free_vars_if_cl_sub in e2; eauto with slow).
+    repeat (autodimp e2 hh).
+
+    rw @cl_lsubst_aux_sub_trivial in e1; eauto 2 with slow.
+    rw @cl_lsubst_aux_sub_trivial in e2; eauto 2 with slow.
+    repeat (rw <- @cl_lsubst_lsubst_aux in e1; eauto with slow).
+    repeat (rw <- @cl_lsubst_lsubst_aux in e2; eauto with slow).
+    repeat (rw <- @cl_lsubst_lsubst_aux in q; eauto with slow).
+    rw <- e1 in q; rw <- e2 in q; clear e1 e2.
+
+    exists sub0; dands; auto; try (complete (subst; auto));[].
+
+    {
+      eapply nrut_sub_subset;[|exact Hfb2].
+      rw subset_app; dands; introv i; repeat (rw in_app_iff); tcsp;
+        rw in_app_iff in i; repndors; tcsp;
+          apply get_utokens_lib_lsubst in i; rw in_app_iff in i; repndors; tcsp;
+            try (complete (apply in_app_iff in i; tcsp));
+            apply in_get_utokens_sub in i; exrepnd; apply in_sub_keep_first in i0; repnd;
+              apply sub_find_some in i2; apply in_sub_filter in i2; repnd;
+                apply in_sub_eta in i3; repnd;
+                  try (complete (left; right; rw lin_flat_map; eexists; dands; eauto)).
+    }
+  }
+
+  pose proof (approx_ext_star_btermd
+                _ _ _ _
+                (flat_map free_vars (range sub)) d Hs) as Hfb.
+  exrepnd.
+  apply @lsubst_alphabt_congr with (sub := sub) in Hfb2;
+    [| change_to_lsubst_aux4; eauto; fail].
+  apply @lsubst_alphabt_congr with (sub := sub) in Hfb3;
+    [| change_to_lsubst_aux4; eauto; fail].
+  allsimpl.
+  exists lvn (lsubst_aux nt1' (sub_filter sub lvn))
+    (lsubst_aux nt2' (sub_filter sub lvn)).
+  dands; sp;[].
+  pose proof (sub_eta (sub_filter sub lvn)) as Xsfeta.
+  pose proof (sub_eta_length (sub_filter sub lvn)) as X1len.
+  remember (dom_sub (sub_filter sub lvn)) as lsvi.
+  remember (range (sub_filter sub lvn)) as lsnt.
+  rw Xsfeta.
+  left; dands; auto.
+  apply lsubst_approx_ext_star_congr_aux;spc.
+  - rw flat_map_app.
+    (* the disjoint_sub_filter tactic needs the substitutions in eta form*)
+    pose proof (sub_eta sub ) as Xseta.
+    pose proof (sub_eta_length sub) as Xslen.
+    remember (dom_sub sub) as lvi.
+      remember (range sub) as lnt.
+    rw Xseta in Xsfeta.
+     disjoint_reasoningv; try disjoint_sub_filter.
+  - unfold bin_rel_nterm, binrel_list; dands; [sp | introv Hlt].
+    apply approx_ext_star_refl. pose proof (nth_in _  _ _ default_nterm Hlt) as XX.
+    rw Heqlsnt in XX.
+    apply in_range in XX. exrepnd.
+    apply in_sub_filter in XX0. exrepnd.
+    apply Hpr in XX1.
+    rw Heqlsnt. inverts XX1. sp.
+Qed.
+
 Lemma approx_ext_starbt_change_fr {p} :
   forall lib op bt1 bt2 (lvn : list NVar),
     op = NCan NFresh
@@ -829,10 +1396,10 @@ Lemma approx_ext_starbt_change_fr {p} :
     -> no_repeats lvn
     -> length lvn = num_bvars bt1
     -> disjoint lvn (free_vars_bterm bt1  ++ free_vars_bterm bt2)
-    -> {sub : Sub
-        $ {nt1',nt2' : @NTerm p
+    -> {nt1',nt2' : @NTerm p
+        $ forall l, {sub : Sub
         $ approx_ext_star lib (lsubst nt1' sub) (lsubst nt2' sub)
-        # nrut_sub (get_utokens_lib lib nt1' ++ get_utokens_lib lib nt2') sub
+        # nrut_sub (l ++ get_utokens_lib lib nt1' ++ get_utokens_lib lib nt2') sub
         # lvn = dom_sub sub
         # alpha_eq_bterm bt1 (bterm lvn nt1')
         # alpha_eq_bterm bt2 (bterm lvn nt2')
@@ -845,15 +1412,22 @@ Proof.
   applydup @alphaeqbt_numbvars in Hab2.
   allunfold @num_bvars; allsimpl.
 
+  dimp (alpha_bterm_pair_change3 _ _ _ _ _ lvn Hab2 Hab1); spcf;[].
+  exrepnd.
+
+  exists (lsubst nt1n (var_ren x lvn)).
+  exists (lsubst nt2n (var_ren x lvn)).
+
+  introv.
+
+  pose proof (Hab0 l) as Hab0; exrepnd.
+
   assert (length x = length sub) as len.
   { subst; allrw @length_dom; auto. }
 
-  dimp (alpha_bterm_pair_change3 _ _ _ _ _ lvn Hab2 Hab1); spcf;[].
-  exrepnd.
   assert (approx_ext_star lib (lsubst nt1n sub) (lsubst nt2n sub)) as XX by eauto with slow.
   exists (combine lvn (range sub)).
-  exists (lsubst nt1n (var_ren x lvn)).
-  exists (lsubst nt2n (var_ren x lvn)).
+
   rw @dom_sub_combine; allrw @length_range; auto; try omega.
   subst; dands; tcsp.
 
@@ -886,7 +1460,7 @@ Proof.
     apply (alphaeq_preserves_get_utokens_lib lib) in hyp2.
     repeat (rw @get_utokens_lib_lsubst_allvars; eauto with slow).
     rw <- hyp0; rw <- hyp2.
-    eapply nrut_sub_change_sub_same_range;[|exact Hab5].
+    eapply nrut_sub_change_sub_same_range;[|exact Hab6].
     rw @range_combine; auto; allrw @length_range; allrw @length_dom; auto; try omega.
 Qed.
 
@@ -907,6 +1481,9 @@ Proof.
 
   - apply @approx_ext_starbt_change_fr with (lvn:=lvn) in Has;exrepnd; spc;[| disjoint_reasoningv].
     apply @approxbtd_change with (lvn:=lvn) in Hao;spc;[| disjoint_reasoningv].
+
+    pose proof (Has2 []) as aeq; exrepnd; clear dependent sub.
+
     assert (alpha_eq_bterm (bterm lvn nt1'0) (bterm lvn nt2')) as XX by eauto with slow.
     apply alpha_eq_bterm_triv in XX.
     unfold approx_ext_open in p0.
@@ -914,32 +1491,19 @@ Proof.
     fold (approx_ext_open lib nt2' nt2'0) in p0.
     dup p0 as ao.
 
-    pose proof (exists_nrut_sub
-                  lvn
-                  (get_utokens_lib lib nt1'
-                               ++ get_utokens_lib lib nt2'
-                               ++ get_utokens_lib lib nt1'0
-                               ++ get_utokens_lib lib nt2'0))
-      as exnrut; exrepnd.
+    exists lvn nt1' nt2'0; dands; tcsp;[].
+    right; introv.
 
-    pose proof (approx_ext_star_change_nrut_sub
-                  lib nt1' nt2' sub (get_utokens_lib lib nt1' ++ get_utokens_lib lib nt2')
-                  sub0
-                  (get_utokens_lib lib nt1'
-                               ++ get_utokens_lib lib nt2'
-                               ++ get_utokens_lib lib nt1'0
-                               ++ get_utokens_lib lib nt2'0))
-      as ch.
-    repeat (autodimp ch hh); tcsp; eauto 5 with slow;[].
+    pose proof (Has2 (l ++ get_utokens_lib lib nt1'0
+                        ++ get_utokens_lib lib nt2'0)) as Has2.
+    exrepnd; GC.
 
-    apply (approx_ext_open_lsubst_congr _ _ _ sub0) in p0; eauto 2 with slow.
-    eapply approx_ext_star_open_trans in ch; eauto.
-    exists lvn nt1' nt2'0.
-    dands; tcsp.
-    right.
+    apply (approx_ext_open_lsubst_congr _ _ _ sub) in p0; eauto 2 with slow.
+    eapply approx_ext_star_open_trans in Has2; eauto.
 
-    exists sub0; dands; tcsp.
-    eapply nrut_sub_subset;[|exact exnrut1]; eauto with slow.
+    exists sub; dands; tcsp; try (complete (subst; tcsp)).
+    eapply nrut_sub_subset;[|exact Has3]; eauto 3 with slow.
+    introv i; allrw in_app_iff; repndors; tcsp.
 
   - apply @approx_ext_starbt_change with (lvn:=lvn) in Has;exrepnd; spc;[| disjoint_reasoningv].
     apply @approxbtd_change with (lvn:=lvn) in Hao;spc;[| disjoint_reasoningv].
@@ -1051,6 +1615,49 @@ Qed.
 
 *)
 
+Lemma computes_to_value_bar_trivial_ne_bar_implies {o} :
+  forall lib (a b : @NTerm o),
+    a =b=v>(trivial_ne_bar lib) b
+    -> a =a=v>(lib) b.
+Proof.
+  introv comp.
+  pose proof (comp lib) as comp; simpl in comp; autodimp comp hyp; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_value_bar_trivial_ne_bar_implies : slow.
+
+Lemma in_combine_two_middle :
+  forall {A} (a b : A) l1 l2 l3 l4,
+    length l1 = length l2
+    -> length l2 = length l3
+    -> length l3 = length l4
+    -> LIn (a,b) (combine l1 l4)
+    -> {c : A & {d : A & LIn (a,c) (combine l1 l2) # LIn (c,d) (combine l2 l3) # LIn (d,b) (combine l3 l4)}}.
+Proof.
+  induction l1; introv len1 len2 len3 i; simpl in *; cpx.
+  destruct l2; simpl in *; ginv; cpx.
+  destruct l3; simpl in *; ginv; cpx.
+  destruct l4; simpl in *; ginv; cpx.
+  repndors; ginv.
+
+  - eexists; eexists; dands; eauto.
+
+  - eapply IHl1 in i; eauto.
+    exrepnd.
+    eexists; eexists; dands; eauto.
+Qed.
+
+Lemma approx_ext_open_bterm_trans_alpha_right {o} :
+  forall lib (b1 b2 b3 : @BTerm o),
+    approx_ext_open_bterm lib b1 b2
+    -> alpha_eq_bterm b2 b3
+    -> approx_ext_open_bterm lib b1 b3.
+Proof.
+  introv apr aeq.
+  unfold approx_ext_open_bterm, blift in *; exrepnd.
+  exists lv nt1 nt2; dands; auto.
+  eapply alpha_eq_bterm_trans;[|eauto]; eauto 2 with slow.
+Qed.
+
 Lemma howe_lemma2 {p} :
   forall lib (c : CanonicalOp) (lbt : list BTerm) (b : @NTerm p),
     let t:= oterm (Can c) lbt in
@@ -1066,24 +1673,58 @@ Proof.
   rename lbt' into lbt''. (* t'' in paper *)
 
   apply approx_ext_open_approx_ext in Hap2; spc.
-  invertsna Hap2 Hclose. repnud Hclose.
-  dimp (Hclose2 c lbt'');
-    eauto;[apply computes_to_value_ext_isvalue_refl; constructor; eauto; fail|].
+  invertsna Hap2 Hclose.
+  repnud Hclose.
+  pose proof (Hclose2 c lbt'' (trivial_ne_bar lib)) as q.
+  autodimp q hyp;
+    [apply computes_to_value_bar_isvalue_refl; eauto 3 with slow|];[].
   exrepnd.
-  apply clearbot_relbt in hyp0.
+  apply clearbot_relbt in q0.
 
   rename tr_subterms into lbt'. (*( t' in the paper proof *)
-  exists lbt'.
+
+  apply computes_to_value_bar_trivial_ne_bar_implies in q1.
+  unfold computes_to_value_alpha in *; exrepnd.
+  apply alpha_eq_oterm_implies_combine2 in q2; exrepnd; subst.
+
+  exists bs'.
   GC. (*clear Hclose*)
   split; eauto 3 with slow;[].
-  allunfold @lblift.
 
-  repeat (simpl_list). repnd. split; spcf;[].
+  apply lblift_as_combine in q0; repnd.
+  unfold alpha_eq_bterms in *; repnd.
+
+  apply lblift_sub_eq; dands; auto; try congruence;[].
   introv Hlt.
-  applydup_clear Hap0 in Hlt.
-  dimp (hyp0 n); try omega;[].
-  clear hyp0.
+  apply lblift_sub_eq in Hap0; repnd.
+
+  pose proof (in_combine_two_middle b1 b2 lbt lbt'' lbt' bs') as q.
+  repeat (autodimp q hyp); exrepnd.
+  apply Hap0 in q5; clear Hap0.
+  apply q3 in q6; clear q3.
+  apply q0 in q7; clear q0.
+
   eapply approx_ext_star_open_bt_trans; eauto.
+  eapply approx_ext_open_bterm_trans_alpha_right; eauto.
+Qed.
+
+Lemma computes_to_seq_bar_refl {o} :
+  forall lib (bar : @BarLib o lib) f,
+    (sterm f) =b=s>(bar) f.
+Proof.
+  introv b ext.
+  exists f; dands; eauto 3 with slow.
+  apply reduces_to_symm.
+Qed.
+Hint Resolve computes_to_seq_bar_refl : slow.
+
+Lemma computes_to_seq_bar_trivial_ne_bar_implies {o} :
+  forall lib (t : @NTerm o) f,
+    t =b=s>(trivial_ne_bar lib) f
+    -> t =a=s>(lib) f.
+Proof.
+  introv comp.
+  pose proof (comp lib) as comp; simpl in comp; autodimp comp hyp; eauto 3 with slow.
 Qed.
 
 Lemma howe_lemma2_seq {o} :
@@ -1101,15 +1742,24 @@ Proof.
   apply approx_ext_open_approx_ext in aop; eauto 3 with slow.
   invertsna aop Hclose.
   repnud Hclose.
-  dimp (Hclose4 f2); [introv ext; apply reduces_to_symm|].
+
+  pose proof (Hclose4 f2 (trivial_ne_bar lib)) as q.
+  autodimp q hyp; eauto 3 with slow.
   exrepnd.
-  eexists; dands;[|apply hyp1; eauto 2 with slow].
-  introv; eauto 3 with slow.
-  pose proof (hyp0 n) as h; clear hyp0.
-  pose proof(imp n) as q; clear imp.
+
+  apply computes_to_seq_bar_trivial_ne_bar_implies in q1.
+  unfold computes_to_seq_alpha in q1; exrepnd.
+
+  eexists; dands;[|eauto].
+  introv.
+  pose proof (imp n) as h1; clear imp.
+  pose proof (q2 n) as h2; clear q2.
+  pose proof (q0 n) as h3; clear q0.
+  repndors; tcsp; try (complete inversion h3);[].
+
   eapply approx_ext_star_open_trans;[eauto|].
+  eapply approx_ext_open_alpha_rw_r_aux; eauto.
   apply approx_ext_implies_approx_ext_open; auto.
-  apply remove_bot_approx_ext; auto.
 Qed.
 
 Lemma howe_lemma2_implies_iscan {p} :
@@ -1139,6 +1789,15 @@ Proof.
     eapply apss;[| |eauto|]; eauto 3 with slow.
 Qed.
 
+Lemma computes_to_exception_bar_trivial_ne_bar_implies {o} :
+  forall lib (t : @NTerm o) a e,
+    t =b=e>(a, trivial_ne_bar lib) e
+    -> t =a=e>(a, lib) e.
+Proof.
+  introv comp.
+  pose proof (comp lib) as comp; simpl in comp; autodimp comp hyp; eauto 3 with slow.
+Qed.
+
 Lemma howe_lemma2_exc {p} :
   forall lib a (e b : @NTerm p),
     isprogram (mk_exception a e)
@@ -1157,25 +1816,35 @@ Proof.
   invertsna Hap2 Hclose. repnud Hclose.
   allsimpl; cpx.
   applydup @isprogram_exception_implies in Hap1; exrepnd; cpx.
-  dimp (Hclose3 a0 t);
-    try (complete (introv ext; apply computes_to_exception_refl; sp));
-    exrepnd.
-  apply remove_bot_approx_ext in hyp2.
-  apply remove_bot_approx_ext in hyp1.
 
-  exists a' e'; sp; eauto 3 with slow;[|].
+  pose proof (Hclose3 a0 t (trivial_ne_bar lib)) as q.
+  fold_terms.
+  autodimp q hyp; eauto 3 with slow;[].
+  exrepnd.
+  apply remove_bot_approx_ext in q2.
+  apply remove_bot_approx_ext in q1.
+
+  apply computes_to_exception_bar_trivial_ne_bar_implies in q0.
+  unfold computes_to_exception_alpha in q0; exrepnd.
+  eapply approx_ext_alpha_rw_r_aux in q2;[|eauto].
+  eapply approx_ext_alpha_rw_r_aux in q1;[|eauto].
+  clear a' e' q0 q4.
+
+  exists c d; sp; eauto 3 with slow;[|].
 
   - inversion Hap0 as [? f]; allsimpl; GC.
     generalize (f 0); clear f; intro k; autodimp k hyp.
     unfold selectbt in k; simpl in k.
-    destruct k as [vs k]; exrepnd; repndors; exrepnd; ginv.
+    destruct k as [vs k]; exrepnd; repndors; exrepnd; ginv;
+      try (complete (pose proof (k0 []) as k0; exrepnd; ginv)).
+
     inversion k1; subst; allsimpl; cpx.
     inversion k2; subst; allsimpl; cpx.
     allunfold @var_ren; allsimpl.
     allrw @lsubst_nil; GC.
 
     apply @approx_ext_star_alpha_fun_l with (nt1 := nt1); auto;
-    try (complete (apply alpha_eq_sym; auto)).
+      try (complete (apply alpha_eq_sym; auto)).
     apply @approx_ext_star_open_trans with (b := nt2); auto.
     eapply approx_ext_open_alpha_rw_l_aux; eauto.
     apply approx_ext_implies_approx_ext_open; auto.
@@ -1183,7 +1852,9 @@ Proof.
   - inversion Hap0 as [? f]; allsimpl; GC.
     generalize (f 1); clear f; intro k; autodimp k hyp.
     unfold selectbt in k; simpl in k.
-    destruct k as [vs k]; exrepnd; repndors; exrepnd; ginv.
+    destruct k as [vs k]; exrepnd; repndors; exrepnd; ginv;
+      try (complete (pose proof (k0 []) as k0; exrepnd; ginv)).
+
     inversion k1; subst; allsimpl; cpx.
     inversion k2; subst; allsimpl; cpx.
     allunfold @var_ren; allsimpl.

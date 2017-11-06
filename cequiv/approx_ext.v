@@ -403,7 +403,7 @@ Definition reduces_to_bar {o} {lib} (bar : @BarLib o lib) (a b : @NTerm o) :=
   all_in_bar_t bar (fun lib => reduces_to_alpha lib a b).
 
 Definition hasvalue_like_bar {o} lib (a : @NTerm o) :=
-  {bar : BarLib lib
+  {bar : NeBarLib lib
    & {v : NTerm
    & reduces_to_bar bar a v
    # isvalue_like v}}.
@@ -442,6 +442,14 @@ Proof.
 Qed.
 Hint Resolve reduces_to_implies_reduces_to_bar : slow.
 
+Definition trivial_ne_bar {o} (lib : @library o) : NeBarLib lib.
+Proof.
+  eexists.
+  assert (bar_lib_bar (trivial_bar lib) lib) as w.
+  { simpl; eauto 2 with slow. }
+  exact w.
+Defined.
+
 Lemma hasvalue_like_implies_hasvalue_like_bar {o} :
   forall lib (a : @NTerm o),
     wf_term a
@@ -451,7 +459,7 @@ Proof.
   introv wf hv.
   unfold hasvalue_like, hasvalue_like_bar in *; exrepnd.
 
-  exists (trivial_bar lib) v; dands; eauto 3 with slow.
+  exists (trivial_ne_bar lib) v; dands; eauto 3 with slow.
 Qed.
 Hint Resolve hasvalue_like_implies_hasvalue_like_bar : slow.
 
@@ -556,7 +564,7 @@ Qed.
 Hint Resolve computes_to_value_bar_implies_isvalue_like : slow.
 
 Lemma computes_to_value_bar_implies_hasvalue_like_bar {o} :
-  forall lib (bar : BarLib lib) (a b : @NTerm o),
+  forall lib (bar : NeBarLib lib) (a b : @NTerm o),
     wf_term a
     -> computes_to_value_bar bar a b
     -> hasvalue_like_bar lib a.
@@ -581,7 +589,7 @@ Qed.
 Hint Resolve computes_to_exception_bar_implies_reduces_to_bar : slow.
 
 Lemma computes_to_exception_bar_implies_hasvalue_like_bar {o} :
-  forall lib (bar : BarLib lib) (n a b : @NTerm o),
+  forall lib (bar : NeBarLib lib) (n a b : @NTerm o),
     wf_term a
     -> computes_to_exception_bar bar n a b
     -> hasvalue_like_bar lib a.
@@ -605,7 +613,7 @@ Qed.
 Hint Resolve computes_to_seq_bar_implies_reduces_to_bar : slow.
 
 Lemma computes_to_seq_bar_implies_hasvalue_like_bar {o} :
-  forall lib (bar : BarLib lib) (a : @NTerm o) f,
+  forall lib (bar : NeBarLib lib) (a : @NTerm o) f,
     wf_term a
     -> computes_to_seq_bar bar a f
     -> hasvalue_like_bar lib a.
@@ -847,14 +855,6 @@ Proof.
 Qed.
 Hint Resolve computes_to_seq_bar_implies_computes_to_seq_alpha : slow.
 
-
-Definition trivial_ne_bar {o} (lib : @library o) : NeBarLib lib.
-Proof.
-  eexists.
-  assert (bar_lib_bar (trivial_bar lib) lib) as w.
-  { simpl; eauto 2 with slow. }
-  exact w.
-Defined.
 
 Definition hasvalue_all_bars {o} (lib : @library o) a :=
   forall (bar : NeBarLib lib), all_in_bar_t bar (fun lib => hasvalue lib a).

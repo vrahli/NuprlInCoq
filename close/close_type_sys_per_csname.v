@@ -29,6 +29,7 @@
 
 Require Export type_sys.
 Require Import dest_close.
+Require Export per_ceq_bar.
 
 
 Lemma per_csname_bar_uniquely_valued {p} :
@@ -188,6 +189,28 @@ Proof.
   - apply per_csname_bar_term_value_respecting; auto.
 Qed.
 
+Lemma type_equality_respecting_trans_per_csname_bar_implies {o} :
+  forall (ts : cts(o)) lib (bar : BarLib lib) T T',
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar bar (fun lib => T ===>(lib) mkc_csname)
+    -> all_in_bar bar (fun lib => T' ===>(lib) mkc_csname)
+    -> type_equality_respecting_trans (per_csname_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans (close ts) lib T T'.
+Proof.
+  introv tsts dou mon inbar1 inbar2 trans h ceq cl.
+  apply CL_csname.
+  eapply trans; eauto.
+  repndors; subst.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+Qed.
+
 
 Lemma close_type_system_csname {p} :
   forall lib (ts : cts(p)) T T' eq,
@@ -195,15 +218,14 @@ Lemma close_type_system_csname {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> per_csname_bar (close ts) lib T T' eq
-    -> type_sys_props (close ts) lib T T' eq.
+    -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
   introv X X0 mon per.
 
   duplicate per as pi.
   unfold per_csname_bar in pi; exrepnd; spcast.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_type_sys_props4 SCase; intros.
 
   + SCase "uniquely_valued".
     dclose_lr.
@@ -240,6 +262,11 @@ Proof.
     try (apply per_csname_bar_type_transitive);
     try (apply per_csname_bar_type_symmetric).
 
+  + SCase "type_value_respecting_trans".
+    eapply type_equality_respecting_trans_per_csname_bar_implies; eauto.
+    apply type_system_implies_type_equality_respecting_trans.
+    apply per_csname_bar_type_system.
+
   + SCase "term_symmetric".
     assert (term_symmetric (per_csname_bar (close ts))) as tes
       by (apply per_csname_bar_term_symmetric).
@@ -272,4 +299,3 @@ Proof.
       dands; apply CL_csname; allunfold @per_csname_bar; sp;
         exists (intersect_bars bar1 bar0); dands; eauto 2 with slow.
 Qed.
-

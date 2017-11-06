@@ -29,6 +29,7 @@
 
 Require Export type_sys.
 Require Import dest_close.
+Require Export per_ceq_bar.
 
 
 Lemma per_atom_bar_uniquely_valued {p} :
@@ -68,31 +69,6 @@ Proof.
   - introv i j; simpl in *; exrepnd.
     pose proof (per4 lib1) as q; autodimp q hyp.
     pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
-Qed.
-
-(* !! MOVE to cequiv *)
-Lemma cequiv_atom {pp} :
-  forall lib T T',
-    @computes_to_value pp lib T mk_atom
-    -> cequiv lib T T'
-    -> computes_to_value lib T' mk_atom.
-Proof.
-  sp.
-  apply cequiv_canonical_form with (t' := T') in X; sp.
-  apply @lblift_cequiv0 in p; subst; auto.
-Qed.
-
-(* !! MOVE to cequiv *)
-Lemma cequivc_atom {pp} :
-  forall lib T T',
-    computes_to_valc lib T mkc_atom
-    -> @cequivc pp lib T T'
-    -> computes_to_valc lib T' mkc_atom.
-Proof.
-  sp.
-  allapply @computes_to_valc_to_valuec; allsimpl.
-  apply cequivc_canonical_form with (t' := T') in X; sp.
-  apply lblift_cequiv0 in p; subst; auto.
 Qed.
 
 Lemma per_atom_bar_type_value_respecting {p} :
@@ -201,6 +177,27 @@ Proof.
   - apply per_atom_bar_term_value_respecting; auto.
 Qed.
 
+Lemma type_equality_respecting_trans_per_atom_bar_implies {o} :
+  forall (ts : cts(o)) lib (bar : BarLib lib) T T',
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar bar (fun lib => T ===>(lib) mkc_atom)
+    -> all_in_bar bar (fun lib => T' ===>(lib) mkc_atom)
+    -> type_equality_respecting_trans (per_atom_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans (close ts) lib T T'.
+Proof.
+  introv tsts dou mon inbar1 inbar2 trans h ceq cl.
+  apply CL_atom.
+  eapply trans; eauto.
+  repndors; subst.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+Qed.
 
 Lemma close_type_system_atom {p} :
   forall lib (ts : cts(p)) T T' eq,
@@ -208,15 +205,14 @@ Lemma close_type_system_atom {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> per_atom_bar (close ts) lib T T' eq
-    -> type_sys_props (close ts) lib T T' eq.
+    -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
   introv X X0 mon per.
 
   duplicate per as pi.
   unfold per_atom_bar in pi; exrepnd; spcast.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_type_sys_props4 SCase; intros.
 
   + SCase "uniquely_valued".
     dclose_lr.
@@ -253,6 +249,11 @@ Proof.
     try (apply per_atom_bar_type_transitive);
     try (apply per_atom_bar_type_symmetric).
 
+  + SCase "type_value_respecting_trans".
+    eapply type_equality_respecting_trans_per_atom_bar_implies; eauto.
+    apply type_system_implies_type_equality_respecting_trans.
+    apply per_atom_bar_type_system.
+
   + SCase "term_symmetric".
     assert (term_symmetric (per_atom_bar (close ts))) as tes
       by (apply per_atom_bar_term_symmetric).
@@ -285,4 +286,3 @@ Proof.
       dands; apply CL_atom; allunfold @per_atom_bar; sp;
         exists (intersect_bars bar1 bar0); dands; eauto 2 with slow.
 Qed.
-

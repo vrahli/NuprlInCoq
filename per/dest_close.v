@@ -537,6 +537,36 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_equality_r ts lib T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h
 
+    (* equality bar *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : all_in_bar ?bar (fun lib => ?T ===>(lib) (mkc_equality ?a ?b ?A)),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_equality_bar_l ts lib bar T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : all_in_bar ?bar (fun lib => ?T' ===>(lib) (mkc_equality ?a ?b ?A)),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_equality_bar_r ts lib bar T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    (* equality ceq bar *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : computes_to_valc_ceq_bar ?bar ?T (mkc_equality ?a ?b ?A),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_equality_ceq_bar_l ts lib bar T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : computes_to_valc_ceq_bar ?bar ?T' (mkc_equality ?a ?b ?A),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_equality_ceq_bar_r ts lib bar T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
     (* requality *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
@@ -599,6 +629,23 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_base_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 
+    (* base ceq bar *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : ?T ==b==>(?bar) mkc_base,
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_base_ceq_bar_l ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : ?T' ==b==>(?bar) mkc_base,
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_base_ceq_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
     (* int *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
@@ -630,6 +677,23 @@ Ltac dest_close_lr h :=
         H5 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
       generalize (dest_close_per_int_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    (* int ceq bar *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : ?T ==b==>(?bar) mkc_int,
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_int_ceq_bar_l ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : ?T' ==b==>(?bar) mkc_int,
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_int_ceq_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 
     (* csname *)
     | [ H1 : type_system ?ts,
@@ -663,6 +727,23 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_csname_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 
+    (* csname ceq bar *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : ?T ==b==>(?bar) mkc_csname,
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_csname_ceq_bar_l ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : ?T' ==b==>(?bar) mkc_csname,
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_csname_ceq_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
     (* Nat *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
@@ -694,6 +775,23 @@ Ltac dest_close_lr h :=
         H5 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
       generalize (dest_close_per_nat_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    (* Nat ceq bar *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : ?T ==b==>(?bar) mkc_Nat,
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_nat_ceq_bar_l ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : ?T' ==b==>(?bar) mkc_Nat,
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_nat_ceq_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 
     (* atom *)
     | [ H1 : type_system ?ts,
@@ -727,6 +825,23 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_atom_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 
+    (* atom ceq bar *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : ?T ==b==>(?bar) mkc_atom,
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_atom_ceq_bar_l ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : ?T' ==b==>(?bar) mkc_atom,
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_atom_ceq_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
     (* uatom *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
@@ -758,6 +873,23 @@ Ltac dest_close_lr h :=
         H5 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
       generalize (dest_close_per_uatom_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    (* uatom ceq bar *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : ?T ==b==>(?bar) mkc_uatom,
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_uatom_ceq_bar_l ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : type_monotone ?ts,
+        H4 : ?T' ==b==>(?bar) mkc_uatom,
+        H5 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_uatom_ceq_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 
     (* uni *)
     | [ H1 : type_system ?ts,

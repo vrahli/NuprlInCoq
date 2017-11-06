@@ -213,29 +213,28 @@ Proof.
     auto.
 Qed.*)
 
-Lemma two_computes_to_valc_ceq_bar_mkc_approx {o} :
-  forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) a1 b1 a2 b2,
-    T ==b==>(bar1) (mkc_approx a1 b1)
-    -> T ==b==>(bar2) (mkc_approx a2 b2)
-    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2).
+Lemma two_computes_to_valc_ceq_bar_implies {o} :
+  forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) v1 v2,
+    T ==b==>(bar1) v1
+    -> T ==b==>(bar2) v2
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib v1 v2).
 Proof.
   introv comp1 comp2 b ext.
   simpl in *; exrepnd.
   pose proof (comp1 lib1 b0 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q.
-  pose proof (comp2 lib2 b4 lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  pose proof (comp2 lib2 b2 lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h.
   exrepnd.
   spcast.
   computes_to_eqval.
   apply cequivc_sym in q0.
-  eapply cequivc_trans in h0;[|eauto].
-  apply cequivc_decomp_approx in h0; repnd; dands; spcast; auto.
+  eapply cequivc_trans in h0;[|eauto]; auto.
 Qed.
 
-Lemma two_computes_to_valc_ceq_bar_mkc_approx_same_bar {o} :
-  forall {lib} (bar : BarLib lib) (T : @CTerm o) a1 b1 a2 b2,
-    T ==b==>(bar) (mkc_approx a1 b1)
-    -> T ==b==>(bar) (mkc_approx a2 b2)
-    -> all_in_bar bar (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2).
+Lemma two_computes_to_valc_ceq_bar_same_bar_implies {o} :
+  forall {lib} (bar : BarLib lib) (T : @CTerm o) v1 v2,
+    T ==b==>(bar) v1
+    -> T ==b==>(bar) v2
+    -> all_in_bar bar (fun lib => ccequivc lib v1 v2).
 Proof.
   introv comp1 comp2 b ext.
   simpl in *; exrepnd.
@@ -245,8 +244,35 @@ Proof.
   spcast.
   computes_to_eqval.
   apply cequivc_sym in q0.
-  eapply cequivc_trans in h0;[|eauto].
-  apply cequivc_decomp_approx in h0; repnd; dands; spcast; auto.
+  eapply cequivc_trans in h0;[|eauto]; auto.
+Qed.
+
+Lemma two_computes_to_valc_ceq_bar_mkc_approx {o} :
+  forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) a1 b1 a2 b2,
+    T ==b==>(bar1) (mkc_approx a1 b1)
+    -> T ==b==>(bar2) (mkc_approx a2 b2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2).
+Proof.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_implies in comp2; try exact comp1.
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q.
+  spcast.
+  apply cequivc_decomp_approx in q; repnd; dands; spcast; auto.
+Qed.
+
+Lemma two_computes_to_valc_ceq_bar_mkc_approx_same_bar {o} :
+  forall {lib} (bar : BarLib lib) (T : @CTerm o) a1 b1 a2 b2,
+    T ==b==>(bar) (mkc_approx a1 b1)
+    -> T ==b==>(bar) (mkc_approx a2 b2)
+    -> all_in_bar bar (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2).
+Proof.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_same_bar_implies in comp2; try exact comp1.
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q.
+  spcast.
+  apply cequivc_decomp_approx in q; repnd; dands; spcast; auto.
 Qed.
 
 Lemma eq_per_approx_eq_bar {o} :
@@ -315,16 +341,12 @@ Lemma two_computes_to_valc_ceq_bar_mkc_cequiv {o} :
     -> T ==b==>(bar2) (mkc_cequiv a2 b2)
     -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2).
 Proof.
-  introv comp1 comp2 b ext.
-  simpl in *; exrepnd.
-  pose proof (comp1 lib1 b0 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q.
-  pose proof (comp2 lib2 b4 lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h.
-  exrepnd.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_implies in comp2; try exact comp1.
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q.
   spcast.
-  computes_to_eqval.
-  apply cequivc_sym in q0.
-  eapply cequivc_trans in h0;[|eauto].
-  apply cequivc_decomp_cequiv in h0; repnd; dands; spcast; auto.
+  apply cequivc_decomp_cequiv in q; repnd; dands; spcast; auto.
 Qed.
 
 Lemma two_computes_to_valc_ceq_bar_mkc_cequiv_same_bar {o} :
@@ -333,16 +355,12 @@ Lemma two_computes_to_valc_ceq_bar_mkc_cequiv_same_bar {o} :
     -> T ==b==>(bar) (mkc_cequiv a2 b2)
     -> all_in_bar bar (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2).
 Proof.
-  introv comp1 comp2 b ext.
-  simpl in *; exrepnd.
-  pose proof (comp1 lib' b lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q.
-  pose proof (comp2 lib' b lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h.
-  exrepnd.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_same_bar_implies in comp2; try exact comp1.
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q.
   spcast.
-  computes_to_eqval.
-  apply cequivc_sym in q0.
-  eapply cequivc_trans in h0;[|eauto].
-  apply cequivc_decomp_cequiv in h0; repnd; dands; spcast; auto.
+  apply cequivc_decomp_cequiv in q; repnd; dands; spcast; auto.
 Qed.
 
 Lemma eq_per_cequiv_eq_bar {o} :
@@ -403,4 +421,168 @@ Proof.
     pose proof (ceq lib1 w0 lib'0) as c1; simpl in c1; autodimp c1 hyp; eauto 3 with slow.
     repnd.
     apply c1; tcsp.
+Qed.
+
+Lemma approx_decomp_equality {o} :
+  forall lib (a b c d A B : @NTerm o),
+    approx lib (mk_equality a b A) (mk_equality c d B)
+    <=> approx lib a c # approx lib b d # approx lib A B.
+Proof.
+  split; unfold mk_equality; introv Hyp.
+  - applydup @approx_relates_only_progs in Hyp. repnd.
+    apply  approx_canonical_form2 in Hyp.
+    unfold lblift in Hyp.
+    repnd; allsimpl.
+    alpharelbtd; GC.
+    applydup @isprogram_equality_iff in Hyp1.
+    applydup @isprogram_equality_iff in Hyp0.
+    repnd.
+    eapply blift_approx_open_nobnd in Hyp2bt; eauto 3 with slow.
+    eapply blift_approx_open_nobnd in Hyp1bt; eauto 3 with slow.
+    eapply blift_approx_open_nobnd in Hyp0bt; eauto 3 with slow.
+  - repnd.
+    applydup @approx_relates_only_progs in Hyp; repnd.
+    applydup @approx_relates_only_progs in Hyp0; repnd.
+    applydup @approx_relates_only_progs in Hyp1; repnd.
+    apply approx_canonical_form3.
+    + apply isprogram_ot_iff. allsimpl. dands; auto. introv Hin.
+      repndors; subst; tcsp; apply implies_isprogram_bt0; eauto 3 with slow.
+    + apply isprogram_ot_iff. allsimpl. dands; auto. introv Hin.
+      repndors; subst; tcsp; apply implies_isprogram_bt0; eauto 3 with slow.
+    + unfold lblift. allsimpl. split; auto.
+      introv Hin. unfold selectbt.
+      repeat(destruct n; try (omega;fail); allsimpl);
+      apply blift_approx_open_nobnd2; sp.
+Qed.
+
+Lemma cequiv_decomp_equality {o} :
+  forall lib (a b c d A B : @NTerm o),
+    cequiv lib (mk_equality a b A) (mk_equality c d B)
+    <=> cequiv lib a c # cequiv lib b d # cequiv lib A B.
+Proof.
+  intros.
+  unfold cequiv.
+  generalize (approx_decomp_equality lib a b c d A B); intro X.
+  trewrite X; clear X.
+  generalize (approx_decomp_equality lib c d a b B A); intro X.
+  trewrite X; clear X.
+  split; sp.
+Qed.
+
+Lemma cequivc_decomp_equality {o} :
+  forall lib (a b c d A B : @CTerm o),
+    cequivc lib (mkc_equality a b A) (mkc_equality c d B)
+    <=> cequivc lib a c # cequivc lib b d # cequivc lib A B.
+Proof.
+  introv; destruct_cterms; unfold cequivc, mkc_cequiv; simpl.
+  apply cequiv_decomp_equality.
+Qed.
+
+Lemma two_computes_to_valc_ceq_bar_mkc_equality_same_bar {o} :
+  forall {lib} (bar : BarLib lib) (T : @CTerm o) a1 b1 a2 b2 A B,
+    T ==b==>(bar) (mkc_equality a1 b1 A)
+    -> T ==b==>(bar) (mkc_equality a2 b2 B)
+    -> all_in_bar bar (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2 # ccequivc lib A B).
+Proof.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_same_bar_implies in comp2; try exact comp1.
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q.
+  spcast.
+  apply cequivc_decomp_equality in q; repnd; dands; spcast; auto.
+Qed.
+
+Lemma approx_preserves_computes_to_value {o} :
+  forall lib (t t' v : @NTerm o),
+    computes_to_value lib t v
+    -> approx lib t t'
+    -> {v' : NTerm $
+                   computes_to_value lib t' v'
+                   # approx lib v v'}.
+Proof.
+  introv comp ceq.
+  inversion ceq as [cl].
+  unfold close_comput in *; repnd.
+  applydup @computes_to_value_isvalue in comp.
+  apply isvalue_implies_iscan in comp0.
+  apply iscan_implies in comp0; repndors; exrepnd; subst.
+
+  - applydup cl2 in comp; exrepnd.
+    eexists; dands; eauto.
+    apply approx_congruence; auto; eauto 3 with slow;[].
+    apply clearbot_relbt; auto.
+
+  - unfold computes_to_value in comp; repnd.
+    applydup cl4 in comp0; exrepnd.
+    exists (sterm f'); dands; auto.
+
+    { unfold computes_to_value; dands; eauto 3 with slow. }
+
+    constructor.
+    split; dands; auto; eauto 2 with slow.
+
+    { introv comp'.
+      apply computes_to_value_isvalue_eq in comp'; eauto 3 with slow; ginv. }
+
+    { introv comp'.
+      apply reduces_to_if_value in comp'; eauto 3 with slow; ginv. }
+
+    introv comp'.
+    apply reduces_to_if_value in comp'; eauto 3 with slow; unfold mk_ntseq in *; ginv.
+    exists f'; dands; auto.
+    apply reduces_to_symm.
+Qed.
+
+Lemma cequiv_preserves_computes_to_value {o} :
+  forall lib (t t' v : @NTerm o),
+    computes_to_value lib t v
+    -> cequiv lib t t'
+    -> {v' : NTerm $
+                   computes_to_value lib t' v'
+                   # cequiv lib v v'}.
+Proof.
+  introv comp ceq.
+  unfold cequiv in ceq; repnd.
+  dup comp as comp'.
+  eapply approx_preserves_computes_to_value in comp;[|eauto].
+  exrepnd.
+  applydup @approx_relates_only_progs in ceq; repnd.
+  eexists; dands; eauto.
+
+  eapply cequiv_trans;
+    [apply cequiv_sym; apply computes_to_value_implies_cequiv;[|eauto];auto|].
+  eapply cequiv_trans;[|apply computes_to_value_implies_cequiv;[|eauto];auto].
+  split; auto.
+Qed.
+
+(*Lemma cequivc_preserves_computes_to_valc {o} :
+  forall lib (t t' v : @CTerm o),
+    computes_to_valc lib t v
+    -> cequivc lib t t'
+    -> {v' : CTerm $
+                   computes_to_valc lib t' v'
+                   # cequivc lib v v'}.
+Proof.
+  unfold computes_to_valc, cequivc; introv comp ceq; destruct_cterms; allsimpl.
+  eapply cequiv_preserves_computes_to_value in ceq;[|eauto].
+  exrepnd.
+  applydup @cequiv_isprogram in ceq0; repnd.
+  exists (mk_cterm v' ceq2); simpl; dands; auto.
+Qed.*)
+
+Lemma ccequivc_ext_preserves_all_in_bar {o} :
+  forall lib (bar : BarLib lib) (T T' : @CTerm o) v,
+    ccequivc_ext lib T T'
+    -> all_in_bar bar (fun lib => T ===>(lib) v)
+    -> T' ==b==>(bar) v.
+Proof.
+  introv ceq inbar b ext.
+  pose proof (inbar lib' b lib'0 ext) as inbar; simpl in inbar.
+  pose proof (ceq lib'0) as ceq; autodimp ceq hyp; eauto 3 with slow; simpl in *.
+  spcast.
+
+  eapply cequivc_preserves_computes_to_valc in ceq;[|eauto].
+  exrepnd.
+  eexists; dands; spcast; eauto.
+  apply cequivc_sym; auto.
 Qed.

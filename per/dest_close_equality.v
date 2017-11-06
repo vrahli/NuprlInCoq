@@ -56,3 +56,51 @@ Proof.
   introv tysys dou comp cl.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
+
+Lemma dest_close_per_equality_bar_l {p} :
+  forall (ts : cts(p)) lib (bar : BarLib lib) T a b A T' eq,
+    type_system ts
+    -> defines_only_universes ts
+    -> all_in_bar bar (fun lib => T ===>(lib) (mkc_equality a b A))
+    -> close ts lib T T' eq
+    -> per_eq_bar (close ts) lib T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_equality_bar_r {p} :
+  forall (ts : cts(p)) lib (bar : BarLib lib) T a b A T' eq,
+    type_system ts
+    -> defines_only_universes ts
+    -> all_in_bar bar (fun lib => T' ===>(lib) (mkc_equality a b A))
+    -> close ts lib T T' eq
+    -> per_eq_bar (close ts) lib T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_equality_ceq_bar_l {p} :
+  forall (ts : cts(p)) lib (bar : BarLib lib) T a b A T' eq,
+    type_system ts
+    -> defines_only_universes ts
+    -> T ==b==>(bar) (mkc_equality a b A)
+    -> close ts lib T T' eq
+    -> per_eq_bar (close ts) lib T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_equality_ceq_bar_r {p} :
+  forall (ts : cts(p)) lib (bar : BarLib lib) T a b A T' eq,
+    type_system ts
+    -> defines_only_universes ts
+    -> T' ==b==>(bar) (mkc_equality a b A)
+    -> close ts lib T T' eq
+    -> per_eq_bar (close ts) lib T T' eq.
+Proof.
+  introv tysys dou comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.

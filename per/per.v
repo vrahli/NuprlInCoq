@@ -924,8 +924,8 @@ Definition per_eq_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [
   {A, B, a1, a2, b1, b2 : CTerm
   , {eqa : per
     , {bar : BarLib lib
-      , all_in_bar bar (fun lib => T1 ===>(lib) (mkc_equality a1 a2 A))
-      # all_in_bar bar (fun lib => T2 ===>(lib) (mkc_equality b1 b2 B))
+      , T1 ==b==>(bar) (mkc_equality a1 a2 A)
+      # T2 ==b==>(bar) (mkc_equality b1 b2 B)
       # all_in_bar bar (fun lib => ts lib A B eqa)
       # all_in_bar bar (fun lib => eqorceq lib eqa a1 b1)
       # all_in_bar bar (fun lib => eqorceq lib eqa a2 b2)}
@@ -2531,8 +2531,8 @@ Definition close_ind' {pp}
                 (bar   : BarLib lib)
                 (A B a1 a2 b1 b2 : @CTerm pp)
                 (eqa   : per)
-                (c1    : all_in_bar bar (fun lib => T ===>(lib) (mkc_equality a1 a2 A)))
-                (c2    : all_in_bar bar (fun lib => T' ===>(lib) (mkc_equality b1 b2 B)))
+                (c1    : T ==b==>(bar) (mkc_equality a1 a2 A))
+                (c2    : T' ==b==>(bar) (mkc_equality b1 b2 B))
                 (cla   : all_in_bar bar (fun lib => close ts lib A B eqa))
                 (reca  : all_in_bar bar (fun lib => P ts lib A B eqa))
                 (eos1  : all_in_bar bar (fun lib => eqorceq lib eqa a1 b1))

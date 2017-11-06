@@ -31,6 +31,7 @@
 
 
 Require Export type_sys_useful2.
+Require Import dest_close.
 Require Import close_type_sys_per_init.
 Require Import close_type_sys_per_int.
 Require Import close_type_sys_per_nat.
@@ -83,12 +84,12 @@ Require Import close_type_sys_per_pm.*)
 (* begin hide *)
 
 
-(* This is Crary's lemma 4.12 *)
-(*Lemma close_ts {o} :
-  forall lib (ts : cts(o)),
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> type_system lib (close lib ts).
+(*(* This is Crary's lemma 4.12 *)
+Lemma close_ts {o} :
+  forall (ts : cts(o)),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_system (close ts).
 Proof.
   introv tysys dou.
   rw @type_system_iff_is_type_system.
@@ -100,6 +101,12 @@ Proof.
     admit.
 
   - Case "CL_int".
+    admit.
+
+  - Case "CL_nat".
+    admit.
+
+  - Case "CL_csname".
     admit.
 
   - Case "CL_atom".
@@ -119,6 +126,15 @@ Proof.
 
   - Case "CL_eq".
 
+    clear per.
+    unfold type_system_props; dands.
+
+    { introv cl.
+      dclose_lr.
+      clear cl.
+      unfold per_eq_bar in *; exrepnd.
+
+(*
     assert (forall ts : cts(o),
               type_system lib ts
               -> type_system lib (per_eq lib ts)) as eqts by admit.
@@ -130,9 +146,10 @@ Proof.
     generalize (k T T' eq); intro j.
     autodimp j hyp.
     exists A B a1 a2 b1 b2 eqa; sp.
-Abort.
+*)
+Abort.*)
 
-Lemma close_type_system_eq_implies {o} :
+(*Lemma close_type_system_eq_implies {o} :
   forall lib (ts : cts(o)),
     type_system lib ts
     -> is_type_system lib (per_eq lib ts)
@@ -185,9 +202,9 @@ Lemma close_type_system {o} :
     -> type_monotone ts
     -> type_system (close ts).
 Proof.
-  intros.
-  apply type_system_prop.
-  unfold type_sys; introv cl.
+  introv tsts dou mon.
+  apply type_system_prop4.
+  introv cl.
 
   close_cases (induction cl using @close_ind') Case; sp; spcast.
 

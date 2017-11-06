@@ -199,21 +199,43 @@ Proof.
   - apply per_cequiv_bar_term_value_respecting; auto.
 Qed.
 
+Lemma type_equality_respecting_trans_per_cequiv_bar_implies {o} :
+  forall (ts : cts(o)) lib (bar : BarLib lib) T T' a b a' b',
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> T ==b==>(bar) (mkc_cequiv a b)
+    -> T' ==b==>(bar) (mkc_cequiv a' b')
+    -> type_equality_respecting_trans (per_cequiv_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans (close ts) lib T T'.
+Proof.
+  introv tsts dou mon inbar1 inbar2 trans h ceq cl.
+  apply CL_cequiv.
+  eapply trans; eauto.
+  repndors; subst.
+
+  - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+Qed.
+
 
 Lemma close_type_system_cequiv {p} :
   forall lib (ts : cts(p)),
   forall T T' eq,
     type_system ts
     -> defines_only_universes ts
+    -> type_monotone ts
     -> per_cequiv_bar (close ts) lib T T' eq
-    -> type_sys_props (close ts) lib T T' eq.
+    -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
-  introv X X0 per.
+  introv tsts dou mon per.
 
   dup per as ps; unfold per_cequiv_bar in ps; exrepnd; spcast.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_type_sys_props4 SCase; intros.
 
   + SCase "uniquely_valued".
     dclose_lr.
@@ -253,6 +275,11 @@ Proof.
       apply @type_system_type_mem1 with (T := T); auto.
       apply per_cequiv_bar_type_symmetric.
       apply per_cequiv_bar_type_transitive. }
+
+  + SCase "type_value_respecting_trans".
+    eapply type_equality_respecting_trans_per_cequiv_bar_implies; eauto.
+    apply type_system_implies_type_equality_respecting_trans.
+    apply per_cequiv_bar_type_system.
 
   + SCase "term_symmetric".
     assert (term_symmetric (per_cequiv_bar (close ts)))

@@ -1717,7 +1717,7 @@ Proof.
   eexists; dands; eauto; eauto 2 with slow.
 Qed.
 
-Lemma approx_ext_change_utoks {o} :
+(*Lemma approx_ext_change_utoks {o} :
   forall lib (t1 t2 : @NTerm o) ren,
     no_repeats (range_utok_ren ren)
     -> no_repeats (dom_utok_ren ren)
@@ -2103,7 +2103,434 @@ Qed.
     apply computes_to_seq_implies_computes_to_seq_exc in comp2;[|eauto 4 with slow];[].
 
     eexists; dands; eauto.
+Qed.*)
+
+Lemma implies_wf_term_ren_utok {o} :
+  forall a b (t : @NTerm o),
+    wf_term t
+    -> wf_term (ren_utok t a b).
+Proof.
+  nterm_ind t as [v|f|op bs ind] Case; introv wf; simpl in *; eauto 2 with slow.
+
+  Case "oterm".
+  allrw @wf_oterm_iff; simpl in *; repnd.
+  allrw map_map; unfold compose.
+
+  dands.
+
+  { dopid op as [can|ncan|exc|abs] SCase; simpl in *;
+      try (complete (rewrite <- wf0; apply eq_maps; introv i; destruct x; unfold num_bvars; simpl; auto)).
+
+    unfold computation_preserves_utok.ren_utok_op; simpl; destruct can; simpl in *;
+      try (complete (rewrite <- wf0; apply eq_maps; introv i; destruct x; unfold num_bvars; simpl; auto)).
+    destruct bs; simpl; ginv; boolvar; simpl; auto. }
+
+  { introv i; allrw in_map_iff; exrepnd; subst; simpl in *.
+    destruct a0; simpl in *.
+    applydup wf in i1.
+    allrw @wf_bterm_iff.
+    eapply ind; eauto. }
 Qed.
+Hint Resolve implies_wf_term_ren_utok : slow.
+
+Lemma implies_isprogram_ren_utok {o} :
+  forall a b (t : @NTerm o),
+    isprogram t
+    -> isprogram (ren_utok t a b).
+Proof.
+  introv isp.
+  destruct isp.
+  split; allrw @nt_wf_eq; eauto 3 with slow.
+  unfold closed in *.
+  rewrite free_vars_ren_utok; auto.
+Qed.
+Hint Resolve implies_isprogram_ren_utok : slow.
+
+(*Lemma approx_ext_change_utoks {o} :
+  forall lib (t1 t2 : @NTerm o) a b,
+    !LIn b (get_utokens_library lib)
+    -> !LIn a (get_utokens_library lib)
+    -> !LIn b (diff (get_patom_deq o) [a] (get_utokens_lib lib t1))
+    -> !LIn b (diff (get_patom_deq o) [a] (get_utokens_lib lib t2))
+    -> approx_ext lib t1 t2
+    -> approx_ext lib (ren_utok t1 a b) (ren_utok t2 a b).
+Proof.
+  introv dl1 dl2 d1 d2 apr.
+  allrw @approx_ext_sqle_ext.
+  allunfold @sqle_ext.
+  intro m.
+  pose proof (apr m) as h; clear apr.
+  revert t1 t2 a b dl1 dl2 d1 d2 h.
+
+  induction m; introv dl1 dl2 disj1 disj2 apr.
+
+  {
+    inversion apr; subst.
+    constructor; eauto 3 with slow.
+  }
+
+  constructor.
+  (*inversion apr as [? ? ? cl]; subst; clear apr.*)
+  inversion apr as [|? ? ? cl]; clear apr; subst.
+  allunfold @close_compute_ext; repnd; dands; tcsp; eauto 3 with slow; introv comp.
+
+  - clear cl3 cl.
+    dup comp as comp1.
+
+    Check computes_to_value_ren_utokens.
+
+Lemma computes_to_value_bar_ren_utokens {o} :
+  forall {lib} (bar : BarLib lib) (t u : @NTerm o) ren,
+    nt_wf t
+    -> no_repeats (range_utok_ren ren)
+    -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t))
+    -> computes_to_value_bar bar t u
+    -> computes_to_value_bar bar (ren_utokens ren t) (ren_utokens ren u).
+Proof.
+  introv wf norep disjlib disj comp ext ext'.
+  pose proof (comp _ ext _ ext') as q; simpl in q.
+
+  eapply computes_to_value_alpha_ren_utokens in q;[| | | |].
+
+Qed.
+
+    Locate computes_to_value_ren_utokens.
+    eapply (computes_to_value_ren_utokens _ _ _ (inv_utok_ren ren)) in comp1;
+      allrw @range_utok_ren_inv_utok_ren;
+      allrw @dom_utok_ren_inv_utok_ren;
+      eauto 3 with slow;
+      [|rewrite get_utokens_lib_ren_utokens; auto;
+        apply disjoint_dom_diff_range_map_ren_atom];[].
+
+    rw (inv_ren_utokens_lib lib) in comp1; auto.
+
+    rw @ren_utokens_can in comp1.
+
+    dup comp1 as comp2.
+
+    apply computes_to_value_implies_computes_to_val_exc in comp2;[|eauto 3 with slow];[].
+
+    apply cl2 in comp2; exrepnd.
+    dup comp2 as comp22.
+    eapply (computes_to_value_ren_utokens _ _ _ ren) in comp2; eauto 3 with slow;[].
+    rw @ren_utokens_can in comp2.
+
+    assert (match
+               get_utok_c
+                 match get_utok_c c with
+                   | Some a => NUTok (ren_atom (inv_utok_ren ren) a)
+                   | None => c
+                 end
+             with
+               | Some a => NUTok (ren_atom ren a)
+               | None =>
+                 match get_utok_c c with
+                   | Some a => NUTok (ren_atom (inv_utok_ren ren) a)
+                   | None => c
+                 end
+             end = c) as e.
+    { destruct c; allsimpl; tcsp.
+      rw @inv_ren_atom2; auto.
+      eapply computes_to_value_preserves_utokens in comp; allsimpl; eauto 3 with slow.
+      rw subset_cons_l in comp; repnd.
+      intro i.
+      rw @get_utokens_lib_ren_utokens in comp3; auto.
+      rw in_map_iff in comp3; exrepnd; subst.
+      rw in_diff in i; repnd.
+      destruct (ren_atom_or ren a) as [d|d]; tcsp.
+      rw d in i0.
+      apply in_dom_in_range in i0; auto.
+    }
+    rw e in comp2; clear e.
+
+    apply computes_to_value_implies_computes_to_val_exc in comp2;[|eauto 4 with slow];[].
+
+    eexists; dands;[exact comp2|].
+    unfold lblift; unfold lblift in comp0.
+    allrw map_length; repnd; dands; auto.
+    introv i.
+    applydup comp0 in i.
+    unfold blift; unfold blift in i0.
+    exrepnd.
+    repeat (onerw @selectbt_map; auto; try omega).
+    remember (selectbt tl_subterms n) as b1.
+    remember (selectbt tr_subterms n) as b2.
+
+    dup comp as ss1.
+    eapply @computes_to_value_preserves_utokens in ss1; eauto 3 with slow.
+    eapply (subset_trans _ (get_utokens_lib_b lib b1)) in ss1;
+      [|subst b1; apply get_utokens_lib_b_tl_subterms_subset_get_utokens_lib; auto].
+
+    apply (subset_map_map (ren_atom (inv_utok_ren ren))) in ss1.
+
+    rw <- @get_utokens_lib_b_ren_utokens_b in ss1; auto;
+      [|rewrite dom_utok_ren_inv_utok_ren; auto];[].
+    rw <- @get_utokens_lib_ren_utokens in ss1; auto;
+      [|rewrite dom_utok_ren_inv_utok_ren; auto];[].
+    rw (inv_ren_utokens_lib lib) in ss1; auto;[].
+    applydup @alpha_eq_bterm_preserves_utokens in i2 as put1; allsimpl.
+
+    unfold get_utokens_lib_b in ss1.
+    rw put1 in ss1; clear put1.
+    fold (get_utokens_lib lib nt1) in ss1.
+
+    dup comp22 as ss2.
+    eapply @computes_to_value_preserves_utokens in ss2; allsimpl; eauto 3 with slow.
+    eapply (subset_trans _ (get_utokens_lib_b lib b2)) in ss2;
+      [|subst b2; apply get_utokens_lib_b_tl_subterms_subset_get_utokens_lib;
+        auto; rw <- comp3; auto];[].
+
+    applydup @alpha_eq_bterm_preserves_utokens in i1 as put2; allsimpl.
+
+    unfold get_utokens_lib_b in ss2.
+    rw put2 in ss2; clear put2.
+    fold (get_utokens_lib lib nt2) in ss2.
+
+    apply (alpha_eq_bterm_ren_utokens_b _ _ ren) in i1.
+    apply (alpha_eq_bterm_ren_utokens_b _ _ ren) in i2.
+
+    assert (disjoint (dom_utok_ren ren)
+                     (diff (get_patom_deq o)
+                           (range_utok_ren ren)
+                           (get_utokens_lib_b lib b1))) as d.
+    {
+      eapply computes_to_value_preserves_utokens in comp; allsimpl; eauto 3 with slow.
+      assert (LIn b1 tl_subterms) as itl.
+      { subst b1; unfold selectbt; apply nth_in; auto. }
+
+      eapply subset_get_utokens_lib_oterm_implies_b in comp;[|exact itl].
+      rw @get_utokens_lib_ren_utokens in comp; auto;[].
+      rw <- disjoint_diff_l.
+      eapply subset_disjoint_r;[|exact comp].
+      rw disjoint_diff_l.
+      apply disjoint_dom_diff_range_map_ren_atom.
+    }
+
+    rw (inv_ren_utokens_b2_lib lib) in i2; auto;[].
+    allsimpl.
+    exists lv (ren_utokens ren nt1) (ren_utokens ren nt2); dands; auto.
+
+    unfold olift; unfold olift in i0; repnd.
+    dands.
+    { apply nt_wf_ren_utokens; auto. }
+    { apply nt_wf_ren_utokens; auto. }
+    introv wfs isp1 isp2.
+
+    pose proof (ex_ren_utokens_sub
+                  sub
+                  ren
+                  (get_utokens nt1 ++ get_utokens nt2 ++ get_utokens_library lib)) as exren.
+    autodimp exren hyp; exrepnd.
+
+    pose proof (i0 sub') as h.
+    repeat (autodimp h hyp).
+    { subst; apply wf_sub_ren_utokens_sub_iff in wfs; auto. }
+    { subst; apply isprogram_lsubst_iff in isp1; repnd.
+      apply isprogram_lsubst_iff.
+      rw @nt_wf_ren_utokens_iff in isp0; dands; auto.
+      introv j.
+      rw @free_vars_ren_utokens in isp1.
+      apply isp1 in j; exrepnd.
+      allrw @sub_find_ren_utokens_sub.
+      remember (sub_find sub' v) as sf; symmetry in Heqsf; destruct sf; ginv.
+      eexists; dands; eauto.
+      - apply nt_wf_ren_utokens_iff in j2; auto.
+      - unfold closed in j0; rw @free_vars_ren_utokens in j0; auto. }
+    { subst; apply isprogram_lsubst_iff in isp2; repnd.
+      apply isprogram_lsubst_iff.
+      rw @nt_wf_ren_utokens_iff in isp0; dands; auto.
+      introv j.
+      rw @free_vars_ren_utokens in isp2.
+      apply isp2 in j; exrepnd.
+      allrw @sub_find_ren_utokens_sub.
+      remember (sub_find sub' v) as sf; symmetry in Heqsf; destruct sf; ginv.
+      eexists; dands; eauto.
+      - apply nt_wf_ren_utokens_iff in j2; auto.
+      - unfold closed in j0; rw @free_vars_ren_utokens in j0; auto. }
+
+    pose proof (IHm (lsubst nt1 sub') (lsubst nt2 sub') (ren ++ ren')) as sqn.
+    allrw @range_utok_ren_app.
+    allrw @dom_utok_ren_app.
+    allrw no_repeats_app.
+    allrw disjoint_app_l.
+    allrw disjoint_app_r.
+    repnd.
+
+    assert (disjoint (get_utokens_library lib) (range_utok_ren ren')) as disjl'.
+    {
+      clear sqn.
+      introv j k.
+      apply exren4 in k; rw in_app_iff in k.
+      applydup exren8 in j.
+      applydup dl2 in j.
+      repndors; tcsp.
+    }
+
+    repeat (autodimp sqn hyp); dands; eauto 3 with slow.
+
+    { introv a b; applydup disj1 in a.
+      allrw in_diff; allrw in_app_iff.
+      allrw not_over_or; repnd.
+      apply not_over_and in a0;
+        [|destruct (in_deq _ (get_patom_deq o) t (get_utokens t1));
+          try (complete (left; tcsp));
+          destruct (in_deq _ (get_patom_deq o) t (get_utokens_library lib));
+          try (complete (left; tcsp));
+          right; tcsp];[].
+      repndors; tcsp;[].
+      allrw not_over_or; repnd.
+
+      apply get_utokens_lsubst in b0; allrw in_app_iff; repndors; tcsp;
+        [apply (get_utokens_subset_get_utokens_lib lib) in b0;
+         apply ss1 in b0;
+         unfold get_utokens_lib in b0; rw in_app_iff in b0; tcsp|];[].
+
+      apply in_get_utokens_sub in b0; exrepnd.
+      apply in_sub_keep_first in b4; repnd.
+      pose proof (exren1 t) as hh.
+      repeat (autodimp hh hyp).
+      rw lin_flat_map; apply sub_find_some in b5; apply in_sub_eta in b5; repnd.
+      eexists; dands; eauto.
+    }
+
+    { eapply subset_disjoint;[exact exren4|].
+      apply disjoint_app_l; dands.
+      { apply disjoint_diff_l; rw diff_nil_if_subset; eauto with slow. }
+      { apply disjoint_diff_l; rw diff_nil_if_subset; eauto with slow. }
+    }
+
+    { introv a b; applydup disj2 in a.
+      allrw in_diff; allrw in_app_iff.
+      allrw not_over_or; repnd.
+      apply not_over_and in a0;
+        [|destruct (in_deq _ (get_patom_deq o) t (get_utokens t1));
+          try (complete (left; tcsp));
+          destruct (in_deq _ (get_patom_deq o) t (get_utokens_library lib));
+          try (complete (left; tcsp));
+          right; tcsp];[].
+      repndors; tcsp;[].
+      allrw not_over_or; repnd.
+
+      apply get_utokens_lsubst in b0; allrw in_app_iff; repndors; tcsp;
+        [apply (get_utokens_subset_get_utokens_lib lib) in b0;
+         apply ss2 in b0;
+         unfold get_utokens_lib in b0; rw in_app_iff in b0; tcsp|];[].
+
+      apply in_get_utokens_sub in b0; exrepnd.
+      apply in_sub_keep_first in b4; repnd.
+      pose proof (exren1 t) as hh.
+      repeat (autodimp hh hyp).
+      rw lin_flat_map; apply sub_find_some in b5; apply in_sub_eta in b5; repnd.
+      eexists; dands; eauto.
+    }
+
+    { eapply subset_disjoint;[exact exren4|].
+      apply disjoint_app_l; dands.
+      { apply disjoint_diff_l; rw diff_nil_if_subset; eauto with slow. }
+      { apply disjoint_diff_l; rw diff_nil_if_subset; eauto with slow. }
+    }
+
+    { repeat (rw @lsubst_ren_utokens in sqn).
+      rw exren0 in sqn.
+      repeat (rw @ren_utokens_app_weak_l in sqn; eauto 2 with slow).
+    }
+
+  - clear cl2 cl.
+    dup comp as comp1.
+
+    eapply (computes_to_exception_ren_utokens _ _ _ _ (inv_utok_ren ren)) in comp1;
+      allrw @range_utok_ren_inv_utok_ren;
+      allrw @dom_utok_ren_inv_utok_ren;
+      eauto 3 with slow;
+      [|rw @get_utokens_lib_ren_utokens; auto;
+        apply disjoint_dom_diff_range_map_ren_atom].
+
+    rw (inv_ren_utokens_lib lib) in comp1; auto.
+
+    dup comp1 as comp2.
+
+    apply computes_to_exception_implies_computes_to_exception_exc in comp2;[|eauto 4 with slow];[].
+
+    apply cl3 in comp2; exrepnd.
+    dup comp0 as comp00.
+    eapply (computes_to_exception_ren_utokens _ _ _ _ ren) in comp0; eauto 3 with slow.
+
+    apply computes_to_exception_implies_computes_to_exception_exc in comp0;[|eauto 4 with slow];[].
+
+    eexists; eexists; dands;[exact comp0|idtac|].
+
+    {
+      pose proof (IHm (ren_utokens (inv_utok_ren ren) a) a' ren) as h.
+      repeat (autodimp h hyp).
+
+      { apply computes_to_exception_preserves_utokens in comp1; repnd; eauto 3 with slow. }
+
+      { eapply computes_to_exception_preserves_utokens in comp00; repnd; eauto 3 with slow. }
+
+      rw (inv_ren_utokens2_lib lib) in h; auto.
+      eapply computes_to_exception_preserves_utokens in comp; repnd; eauto 3 with slow.
+      introv i j.
+      rw @get_utokens_lib_ren_utokens in comp4; auto.
+      apply (disjoint_dom_diff_range_map_ren_atom (get_utokens_lib lib t1)) in i; destruct i.
+      allrw in_diff; repnd; dands; auto.
+    }
+
+    {
+      pose proof (IHm (ren_utokens (inv_utok_ren ren) e) e' ren) as h.
+      repeat (autodimp h hyp).
+
+      { apply computes_to_exception_preserves_utokens in comp1; repnd; eauto 3 with slow. }
+
+      { eapply computes_to_exception_preserves_utokens in comp00; repnd; eauto 3 with slow. }
+
+      rw (inv_ren_utokens2_lib lib) in h; auto.
+      eapply computes_to_exception_preserves_utokens in comp; repnd; eauto 3 with slow.
+      introv i j.
+      rw @get_utokens_lib_ren_utokens in comp; auto.
+      apply (disjoint_dom_diff_range_map_ren_atom (get_utokens_lib lib t1)) in i; destruct i.
+      allrw in_diff; repnd; dands; auto.
+    }
+
+(*
+  - clear cl2 cl2.
+    dup comp as comp1.
+
+    apply (computes_to_marker_ren_utokens _ _ _ (inv_utok_ren ren)) in comp1;
+    allrw @range_utok_ren_inv_utok_ren;
+    allrw @dom_utok_ren_inv_utok_ren;
+    auto;[|rw @get_utokens_ren_utokens; apply disjoint_dom_diff_range_map_ren_atom].
+    rw @inv_ren_utokens in comp1; auto.
+
+    dup comp1 as comp2.
+    apply cl in comp2; exrepnd.
+    dup comp2 as comp22.
+    apply (computes_to_marker_ren_utokens _ _ _ ren) in comp2; auto.
+*)
+
+  - dup comp as comp1.
+
+    eapply (reduces_to_ren_utokens _ _ _ (inv_utok_ren ren)) in comp1;
+      allrw @range_utok_ren_inv_utok_ren;
+      allrw @dom_utok_ren_inv_utok_ren;
+      eauto 3 with slow;
+      [|rw @get_utokens_lib_ren_utokens; auto;
+        apply disjoint_dom_diff_range_map_ren_atom].
+
+    rw (inv_ren_utokens_lib lib) in comp1; allsimpl; auto.
+
+    dup comp1 as comp2.
+
+    apply computes_to_seq_implies_computes_to_seq_exc in comp2;[|eauto 4 with slow];[].
+
+    apply cl4 in comp2; exrepnd.
+    dup comp0 as comp00.
+    eapply (reduces_to_ren_utokens _ _ _ ren) in comp2; eauto 3 with slow; allsimpl.
+
+    apply computes_to_seq_implies_computes_to_seq_exc in comp2;[|eauto 4 with slow];[].
+
+    eexists; dands; eauto.
+Qed.*)
 
 (*
 XXXXXXXXXXXXXXX

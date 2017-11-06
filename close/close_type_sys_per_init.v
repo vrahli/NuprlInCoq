@@ -40,23 +40,44 @@ Lemma close_type_system_init {p} :
     type_system ts
     -> defines_only_universes ts
     -> ts lib T T' eq
-    -> type_sys_props (close ts) lib T T' eq.
+    -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
   introv tysys dou e.
   use_dou.
 
-  rw @type_sys_props_iff_type_sys_props2.
-
-  prove_type_sys_props2 SCase; intros.
+  prove_type_sys_props4 SCase; intros.
 
   + SCase "uniquely_valued".
-    spcast; dclose cl cl; dest_close_lr h; spts.
+    spcast; dest_close_lr h; spts.
 
   + SCase "type_symmetric".
     repdors; subst; spcast; dest_close_lr h; apply CL_init; spts.
 
   + SCase "type_value_respecting".
     apply CL_init; sp; subst; try spts.
+
+  + SCase "type_value_respecting_trans".
+    unfold type_equality_respecting_trans; introv h ceq cl.
+    pose proof (ceq lib) as c; simpl in c; autodimp c hyp; eauto 3 with slow; spcast.
+    spcast; apply CL_init; sp; subst; try spts.
+
+    { dup c2 as ct.
+      eapply cequivc_uni in c2;[|eauto].
+      dest_close_lr h.
+      onedts uv tye tys tyt tyvr tes tet tevr.
+      eapply tyt;[|exact h].
+      apply tys.
+      eapply tyvr;[|apply ccequivc_ext_sym;auto].
+      eapply tyt; eauto. }
+
+    { dup c0 as ct.
+      eapply cequivc_uni in c0;[|eauto].
+      dest_close_lr h.
+      onedts uv tye tys tyt tyvr tes tet tevr.
+      eapply tyt;[|exact h].
+      apply tys.
+      eapply tyvr;[|apply ccequivc_ext_sym;auto].
+      eapply tyt; eauto. }
 
   + SCase "term_symmetric".
     onedts uv tye tys tyt tyvr tes tet tevr.

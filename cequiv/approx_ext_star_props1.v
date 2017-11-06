@@ -244,6 +244,17 @@ Proof.
     apply sub_filter_eqvars; rw eqvars_prop; introv; allrw in_app_iff; split; sp.
 Qed.
 
+Lemma computes_to_value_alpha_utoken_implies {o} :
+  forall lib (t : @NTerm o) a,
+    t =a=v>(lib) (mk_utoken a)
+    -> t =v>(lib) (mk_utoken a).
+Proof.
+  introv comp.
+  unfold computes_to_value_alpha in comp; exrepnd.
+  inversion comp0; simpl in *; cpx.
+Qed.
+Hint Resolve computes_to_value_alpha_utoken_implies : slow.
+
 Lemma approx_ext_utoken_implies_reduces_to {o} :
   forall lib a (t : @NTerm o),
     approx_ext lib (mk_utoken a) t
@@ -252,12 +263,20 @@ Proof.
   introv ap.
   destruct ap as [c].
   unfold close_compute_ext in c; repnd.
-  pose proof (c2 (NUTok a) []) as h; fold_terms.
+  pose proof (c2 (NUTok a) [] (trivial_ne_bar lib)) as h; fold_terms.
   autodimp h hyp.
-  { apply computes_to_value_ext_isvalue_refl; eauto with slow. }
-  exrepnd.
-  unfold lblift in h0; allsimpl; repnd; cpx; fold_terms.
-  eauto 3 with slow.
+
+  {
+    apply computes_to_value_implies_computes_to_value_bar; eauto 3 with slow.
+  }
+
+  {
+    exrepnd.
+    unfold lblift in h0; allsimpl; repnd; cpx; fold_terms.
+    eauto 3 with slow.
+    pose proof (h1 lib) as q; simpl in q; autodimp q hyp; eauto 3 with slow.
+    pose proof (q lib) as q; simpl in q; autodimp q hyp; eauto 3 with slow.
+  }
 Qed.
 
 Lemma implies_prog_sub_app {o} :
@@ -450,8 +469,8 @@ Proof.
     applydup (Hind nt nt lv) in Hbt1 as ap; eauto 3 with slow.
     destruct (dec_op_eq_fresh o) as [e|e]; subst.
 
-    + right.
-      pose proof (exists_nrut_sub lv (get_utokens_lib lib nt)) as h; exrepnd; subst.
+    + right; introv.
+      pose proof (exists_nrut_sub lv (l ++ get_utokens_lib lib nt)) as h; exrepnd; subst.
       exists sub; dands; auto.
 
       * pose proof (Hind nt (lsubst nt sub) (dom_sub sub)) as h.
@@ -476,8 +495,9 @@ Proof.
   destruct bt as [lv nt]. simpl. invertsn hbt.
   exrepnd. exists (lv) (nt) (nt); spc.
   destruct (dec_op_eq_fresh op) as [e|e]; subst; eauto with slow.
-  pose proof (exists_nrut_sub lv (get_utokens_lib lib nt)) as h; exrepnd; subst.
-  right; exists sub; dands; eauto 4 with slow.
+  right; introv.
+  pose proof (exists_nrut_sub lv (l ++ get_utokens_lib lib nt)) as h; exrepnd; subst.
+  exists sub; dands; eauto 4 with slow.
   eapply nrut_sub_subset;[|exact h1].
   introv i; allrw in_app_iff; sp.
 Qed.
@@ -1092,7 +1112,8 @@ Proof.
         allrw @lsubst_allvars_preserves_osize2.
         allrw; eauto 3 with slow.
 
-    + subst; repeat (allsimpl; cpx).
+    + pose proof (Has1 []) as Has1; exrepnd.
+      subst; repeat (allsimpl; cpx).
       destruct n; allsimpl; cpx.
       repndors; tcsp; subst; GC.
       unfold selectbt in H1bt0; allsimpl; GC.
@@ -1103,6 +1124,8 @@ Proof.
       unfold lblift_sub in Hrel; allsimpl; repnd; GC.
       pose proof (Hrel 0) as q; autodimp q hyp; clear Hrel.
       unfold blift_sub in q; exrepnd; repndors; exrepnd; tcsp; GC; subst.
+
+      pose proof (q1 []) as q1; exrepnd; tcsp; GC; subst.
       allunfold @selectbt; allsimpl.
       applydup @alphaeqbt1v2 in q0; exrepnd; subst.
       destruct sub0 as [|z sub0]; allsimpl; tcsp.
@@ -1139,7 +1162,9 @@ Proof.
     apply alphaeq_preserves_wf in H2bal3.
     split; constructor; sp3; eauto 4 with slow.
 
-  - apply approx_ext_star_relates_only_wf in H4; repnd.
+  - pose proof (H1 []) as H1; exrepnd; subst.
+
+    apply approx_ext_star_relates_only_wf in H4; repnd.
     apply lsubst_wf_iff in H1; eauto 3 with slow.
     apply lsubst_wf_iff in H4; eauto 3 with slow.
     apply alphaeqbt_preserves_nt_wf in H2.
@@ -1214,9 +1239,7 @@ Proof.
 
   - eexists; eexists; eexists; dands; eauto 3 with slow.
 
-  - exists (dom_sub sub) nt1 nt0; dands; eauto with slow.
-    right.
-    exists sub; dands; auto.
+  - exists x nt1 nt0; dands; auto; eauto 3 with slow.
 Qed.
 
 (* more useful for rewrite tactics*)
@@ -1872,6 +1895,8 @@ Proof.
       subst; auto.
 
     + right.
+      introv.
+      pose proof (bl1 l) as bl1; exrepnd.
 
       pose proof (lsubst_nest_same_alpha nt1n (dom_sub sub) lvn (range sub)) as nest1.
       allrw @length_dom; allrw @length_range.
@@ -2011,13 +2036,15 @@ Proof.
 
   repndors; exrepnd; subst; tcsp.
 
-  alpharwh_as Hp2 Hab1.
-  alpharwh_as Hp3 Hab1.
-  exists (lsubst nt1n (var_ren lv lvn)).
-  exists (lsubst nt2n (var_ren lv lvn)).
-  spc;[| disjoint_reasoningv;spcls;
-         apply disjoint_bound_vars_lsubst; spcls;disjoint_reasoningv;fail].
-  apply approx_ext_star_lsubst_vars;spc.
+  { alpharwh_as Hp2 Hab1.
+    alpharwh_as Hp3 Hab1.
+    exists (lsubst nt1n (var_ren lv lvn)).
+    exists (lsubst nt2n (var_ren lv lvn)).
+    spc;[| disjoint_reasoningv;spcls;
+           apply disjoint_bound_vars_lsubst; spcls;disjoint_reasoningv;fail].
+    apply approx_ext_star_lsubst_vars;spc. }
+
+  { pose proof (Hab1 []) as Hab1; exrepnd; subst; tcsp. }
 Qed.
 
 Lemma approx_ext_star_samevar {p} :
@@ -2088,9 +2115,10 @@ Proof.
   apply alphaeqbt_nilv in Has2; exrepnd; ginv.
   apply alphaeqbt_nilv in Has0; exrepnd; ginv.
   repndors; exrepnd; subst; cpx; eauto 5 with slow.
+  pose proof (Has1 []) as Has1; exrepnd; subst.
   destruct sub; allsimpl; ginv.
   allrw @lsubst_nil.
-  eauto with slow.
+  eauto 5 with slow.
 Qed.
 
 Lemma approx_ext_star_btermd_1var {p} :

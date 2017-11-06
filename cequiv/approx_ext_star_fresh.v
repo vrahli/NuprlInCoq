@@ -263,7 +263,7 @@ Proof.
   autodimp p1 hyp; autodimp p2 hyp; eauto 3 with slow.
   allrw @fold_subst.
   assert (alpha_eq (subst ntcv0 v (mk_utoken a)) (subst ntcv v (mk_utoken a))) as h' by eauto with slow.
-  apply alpha_eq_subst_utoken_not_in_implies in h'; eauto with slow.
+  apply alpha_eq_subst_utoken_not_in_implies in h'; eauto 4 with slow.
   { intro j; destruct ni1; apply alphaeq_preserves_utokens in k3; rw k3; auto. }
   { intro j; destruct ni2; apply alphaeq_preserves_utokens in k0; rw k0; auto. }
 Qed.
@@ -307,7 +307,13 @@ Proof.
   { apply isprogram_fresh; apply isprog_vars_var. }
 
   introv Hv.
-  unfold hasvalue_like in Hv; exrepnd.
+  unfold hasvalue_like_bar in Hv; exrepnd.
+  pose proof (Hv0 (ne_bar_lib_lib _ bar)) as q; simpl in q; autodimp q hyp;
+    try (complete (apply ne_bar_lib_ne)).
+  apply inExt_refl in q; simpl in q.
+  unfold approx_ext.reduces_to_alpha in q; exrepnd.
+  eapply alpha_eq_preserves_isvalue_like_left in Hv1;[|apply alpha_eq_sym;eauto].
+  apply (isvalue_like_implies_is_value_like (ne_bar_lib_lib lib bar)) in Hv1.
   apply (not_fresh_id_reduces_to_is_value_like _ _ x) in Hv1; tcsp.
 Qed.
 
@@ -376,10 +382,10 @@ Lemma blift_sub_diff {o} :
         $ (
             (op <> NCan NFresh # approx_ext_star lib nt1 nt2)
             [+]
-            {sub : Sub
+            forall l, {sub : Sub
              & op = NCan NFresh
              # approx_ext_star lib (lsubst nt1 sub) (lsubst nt2 sub)
-             # nrut_sub (get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2) sub
+             # nrut_sub (l ++ get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2) sub
              # lv = dom_sub sub}
           )
         # alpha_eq_bterm b1 (bterm lv nt1)
@@ -434,7 +440,8 @@ Proof.
   - left; dands; auto.
     apply approx_ext_star_lsubst_vars; eauto 3 with slow.
 
-  - right.
+  - right; introv.
+    pose proof (bl1 l) as bl1; exrepnd.
     exists (combine lvn (range sub)); dands; auto.
 
     + pose proof (lsubst_nest_same_alpha2 nt1n lv lvn (range sub)) as nest1.
@@ -458,7 +465,7 @@ Proof.
 
       apply (lsubst_alpha_congr2 _ _ sub) in h2.
       apply (lsubst_alpha_congr2 _ _ sub) in h3.
-      eauto with slow.
+      eauto 3 with slow.
 
     + repeat (rw @get_utokens_lib_lsubst_allvars; eauto with slow).
       apply (alphaeq_preserves_get_utokens_lib lib) in h2.
@@ -719,7 +726,7 @@ Proof.
     exists t.
     applydup @alpha_eq_bterm_preserves_utokens in aeq as eu; allsimpl; rw <- eu.
     apply alpha_eq_bterm_preserves_free_vars in aeq; allsimpl.
-    rw @cl_subst_trivial; eauto with slow.
+    rw @cl_subst_trivial; eauto 3 with slow.
     introv i.
     assert (LIn v (remove_nvars l (free_vars t))) as j.
     { rw in_remove_nvars; sp. }
@@ -1245,7 +1252,72 @@ Proof.
   apply get_utokens_lsubst_aux_subset in i; allrw in_app_iff; repndors; tcsp.
 Qed.
 
-Lemma approx_ext_star_pushdown_fresh_if_subst {o} :
+Lemma alpha_eq_lsubst_nrut_sub_implies {o} :
+  forall (t1 t2 : @NTerm o) sub l,
+    nrut_sub l sub
+    -> subset (get_utokens t1) l
+    -> subset (get_utokens t2) l
+    -> alpha_eq (lsubst t1 sub) (lsubst t2 sub)
+    -> alpha_eq t1 t2.
+Proof.
+  introv nrut ss1 ss2 aeq.
+
+  pose proof (unfold_lsubst sub t1) as p; destruct p as [t1']; repnd.
+  pose proof (unfold_lsubst sub t2) as q; destruct q as [t2']; repnd.
+  rw p in aeq; rw p2 in aeq.
+
+  pose proof (change_bvars_alpha_wspec (dom_sub sub) t1') as h; destruct h as [t1'']; repnd.
+  pose proof (change_bvars_alpha_wspec (dom_sub sub) t2') as k; destruct k as [t2'']; repnd.
+  dup p5 as a1.
+  apply (computation2.lsubst_aux_alpha_congr_same_cl_sub _ _ sub) in a1; eauto 2 with slow.
+  dup p7 as a2.
+  apply (computation2.lsubst_aux_alpha_congr_same_cl_sub _ _ sub) in a2; eauto 2 with slow.
+
+  assert (alpha_eq (lsubst_aux t1'' sub) (lsubst_aux t2'' sub)) as aeq2 by eauto 4 with slow.
+
+  pose proof (alpha_eq_lsubst_aux_nrut_sub_implies t1'' t2'' sub l) as a.
+  repeat (autodimp a hyp).
+  - apply alphaeq_preserves_utokens in p5; rw <- p5.
+    apply alphaeq_preserves_utokens in p0; rw <- p0; auto.
+  - apply alphaeq_preserves_utokens in p7; rw <- p7.
+    apply alphaeq_preserves_utokens in p3; rw <- p3; auto.
+  - assert (alpha_eq t1 t1'') as aeq11 by eauto 3 with slow.
+    assert (alpha_eq t2 t2'') as aeq22 by eauto 3 with slow.
+    eauto 4 with slow.
+Qed.
+
+Lemma reduces_in_atmost_k_steps_mk_fresh_id {o} :
+  forall (lib : @library o) v k u,
+    reduces_in_atmost_k_steps lib (mk_fresh v (vterm v)) u k
+    -> u = mk_fresh v (vterm v).
+Proof.
+  induction k; introv r.
+  - allrw @reduces_in_atmost_k_steps_0; auto.
+  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
+    csunf r1; allsimpl; boolvar; ginv.
+    apply IHk in r0; auto.
+Qed.
+
+Lemma reduces_in_atmost_k_steps_mk_fresh_id2 {o} :
+  forall (lib : @library o) v k,
+    reduces_in_atmost_k_steps lib (mk_fresh v (vterm v)) (mk_fresh v (vterm v)) k.
+Proof.
+  induction k; introv.
+  - allrw @reduces_in_atmost_k_steps_0; auto.
+  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
+    exists (@mk_fresh o v (vterm v)); dands; auto.
+    csunf; simpl; boolvar; auto.
+Qed.
+
+Lemma isprog_vars_implies_nt_wf {o} :
+  forall (t : @NTerm o) l, isprog_vars l t -> nt_wf t.
+Proof.
+  introv isp.
+  rw @isprog_vars_eq in isp; sp.
+Qed.
+Hint Resolve isprog_vars_implies_nt_wf : slow.
+
+(*Lemma approx_ext_star_pushdown_fresh_if_subst {o} :
   forall lib (t1 t2 : @NTerm o) v1 v2 a,
     !LIn a (get_utokens_lib lib t1)
     -> !LIn a (get_utokens_lib lib t2)
@@ -1396,19 +1468,22 @@ Proof.
       apply (blift_sub_diff (v :: maybe_new_var_b v b1
                                :: maybe_new_var_b v b2
                                :: all_vars_bterm b1
-                               ++ all_vars_bterm b2)) in k; exrepnd.
+                               ++ all_vars_bterm b2)) in k.
+      exrepnd.
       allrw disjoint_cons_r; allrw disjoint_cons_l; allrw disjoint_app_r; allrw disjoint_app_l; repnd.
 
       assert (wf_term nt1) as wfnt1.
       { repndors; exrepnd.
         - allapply @approx_ext_star_relates_only_wf; repnd; eauto 2 with slow.
-        - allapply @approx_ext_star_relates_only_wf; repnd.
+        - pose proof (k1 []) as k1; exrepnd.
+          allapply @approx_ext_star_relates_only_wf; repnd.
           allapply @lsubst_nt_wf; eauto with slow. }
 
       assert (wf_term nt2) as wfnt2.
       { repndors; exrepnd.
         - allapply @approx_ext_star_relates_only_wf; repnd; eauto 2 with slow.
-        - allapply @approx_ext_star_relates_only_wf; repnd.
+        - pose proof (k1 []) as k1; exrepnd.
+          allapply @approx_ext_star_relates_only_wf; repnd.
           allapply @lsubst_nt_wf; eauto with slow. }
 
       pose proof (alpha_eq_subst_bterm_aux_pull_out_token b1 v a lv nt1) as exs1.
@@ -1515,69 +1590,4 @@ Proof.
           apply get_utokens_lib_lsubst_aux_subset in z; rw in_app_iff in z; repndors; tcsp;
             try (apply get_utokens_sub_filter_subset in z; tcsp);
             try (complete (apply in_app_iff in z; repndors; tcsp)).
-Qed.
-
-Lemma alpha_eq_lsubst_nrut_sub_implies {o} :
-  forall (t1 t2 : @NTerm o) sub l,
-    nrut_sub l sub
-    -> subset (get_utokens t1) l
-    -> subset (get_utokens t2) l
-    -> alpha_eq (lsubst t1 sub) (lsubst t2 sub)
-    -> alpha_eq t1 t2.
-Proof.
-  introv nrut ss1 ss2 aeq.
-
-  pose proof (unfold_lsubst sub t1) as p; destruct p as [t1']; repnd.
-  pose proof (unfold_lsubst sub t2) as q; destruct q as [t2']; repnd.
-  rw p in aeq; rw p2 in aeq.
-
-  pose proof (change_bvars_alpha_wspec (dom_sub sub) t1') as h; destruct h as [t1'']; repnd.
-  pose proof (change_bvars_alpha_wspec (dom_sub sub) t2') as k; destruct k as [t2'']; repnd.
-  dup p5 as a1.
-  apply (computation2.lsubst_aux_alpha_congr_same_cl_sub _ _ sub) in a1; eauto 2 with slow.
-  dup p7 as a2.
-  apply (computation2.lsubst_aux_alpha_congr_same_cl_sub _ _ sub) in a2; eauto 2 with slow.
-
-  assert (alpha_eq (lsubst_aux t1'' sub) (lsubst_aux t2'' sub)) as aeq2 by eauto 4 with slow.
-
-  pose proof (alpha_eq_lsubst_aux_nrut_sub_implies t1'' t2'' sub l) as a.
-  repeat (autodimp a hyp).
-  - apply alphaeq_preserves_utokens in p5; rw <- p5.
-    apply alphaeq_preserves_utokens in p0; rw <- p0; auto.
-  - apply alphaeq_preserves_utokens in p7; rw <- p7.
-    apply alphaeq_preserves_utokens in p3; rw <- p3; auto.
-  - assert (alpha_eq t1 t1'') as aeq11 by eauto 3 with slow.
-    assert (alpha_eq t2 t2'') as aeq22 by eauto 3 with slow.
-    eauto 4 with slow.
-Qed.
-
-Lemma reduces_in_atmost_k_steps_mk_fresh_id {o} :
-  forall (lib : @library o) v k u,
-    reduces_in_atmost_k_steps lib (mk_fresh v (vterm v)) u k
-    -> u = mk_fresh v (vterm v).
-Proof.
-  induction k; introv r.
-  - allrw @reduces_in_atmost_k_steps_0; auto.
-  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
-    csunf r1; allsimpl; boolvar; ginv.
-    apply IHk in r0; auto.
-Qed.
-
-Lemma reduces_in_atmost_k_steps_mk_fresh_id2 {o} :
-  forall (lib : @library o) v k,
-    reduces_in_atmost_k_steps lib (mk_fresh v (vterm v)) (mk_fresh v (vterm v)) k.
-Proof.
-  induction k; introv.
-  - allrw @reduces_in_atmost_k_steps_0; auto.
-  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
-    exists (@mk_fresh o v (vterm v)); dands; auto.
-    csunf; simpl; boolvar; auto.
-Qed.
-
-Lemma isprog_vars_implies_nt_wf {o} :
-  forall (t : @NTerm o) l, isprog_vars l t -> nt_wf t.
-Proof.
-  introv isp.
-  rw @isprog_vars_eq in isp; sp.
-Qed.
-Hint Resolve isprog_vars_implies_nt_wf : slow.
+Qed.*)

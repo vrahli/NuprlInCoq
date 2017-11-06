@@ -82,3 +82,29 @@ Proof.
   introv tysys dou mon comp cl.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
+
+Lemma dest_close_per_uatom_ceq_bar_l {p} :
+  forall (ts : cts(p)) lib T T' eq (bar : BarLib lib),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> T ==b==>(bar) mkc_uatom
+    -> close ts lib T T' eq
+    -> per_uatom_bar (close ts) lib T T' eq.
+Proof.
+  introv tysys dou mon comp cl.
+  inversion cl; clear cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_uatom_ceq_bar_r {p} :
+  forall (ts : cts(p)) lib T T' eq (bar : BarLib lib),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> T ==b==>(bar) mkc_uatom
+    -> close ts lib T T' eq
+    -> per_uatom_bar (close ts) lib T T' eq.
+Proof.
+  introv tysys dou mon comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.

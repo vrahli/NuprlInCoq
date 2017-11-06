@@ -32,6 +32,7 @@
 
 Require Export type_sys.
 Require Import dest_close.
+Require Import per_ceq_bar.
 
 
 Lemma per_int_bar_uniquely_valued {p} :
@@ -152,21 +153,42 @@ Proof.
   - apply per_int_bar_term_value_respecting.
 Qed.
 
+Lemma type_equality_respecting_trans_per_int_bar_implies {o} :
+  forall (ts : cts(o)) lib (bar : BarLib lib) T T',
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar bar (fun lib => T ===>(lib) mkc_int)
+    -> all_in_bar bar (fun lib => T' ===>(lib) mkc_int)
+    -> type_equality_respecting_trans (per_int_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans (close ts) lib T T'.
+Proof.
+  introv tsts dou mon inbar1 inbar2 trans h ceq cl.
+  apply CL_int.
+  eapply trans; eauto.
+  repndors; subst.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+Qed.
+
 Lemma close_type_system_int {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> per_int_bar (close ts) lib T T' eq
-    -> type_sys_props (close ts) lib T T' eq.
+    -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
   introv X X0 mon per.
 
   duplicate per as pi.
   unfold per_int_bar in pi; exrepnd; spcast.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_type_sys_props4 SCase; intros.
 
   + SCase "uniquely_valued".
 
@@ -191,9 +213,8 @@ Proof.
         apply tye with (eq := eq); auto.
 
   + SCase "type_value_respecting"; sp; subst; apply CL_int;
-    assert (type_value_respecting (per_int_bar (close ts)))
-           as tvr
-           by (apply per_int_bar_type_value_respecting).
+      assert (type_value_respecting (per_int_bar (close ts)))
+      as tvr by (apply per_int_bar_type_value_respecting).
 
     * apply tvr; auto;
         apply @type_system_type_mem with (T' := T'); auto;
@@ -204,6 +225,11 @@ Proof.
       apply @type_system_type_mem1 with (T := T); auto;
         try (apply per_int_bar_type_transitive);
         try (apply per_int_bar_type_symmetric).
+
+  + SCase "type_value_respecting_trans".
+    eapply type_equality_respecting_trans_per_int_bar_implies; eauto.
+    apply type_system_implies_type_equality_respecting_trans.
+    apply per_int_type_system.
 
   + SCase "term_symmetric".
     assert (term_symmetric (per_int_bar (close ts))) as tes
@@ -239,4 +265,3 @@ Proof.
       dands; apply CL_int; allunfold @per_int_bar; sp;
         exists (intersect_bars bar1 bar0); dands; eauto 2 with slow.
 Qed.
-

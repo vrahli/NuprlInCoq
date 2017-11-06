@@ -99,6 +99,7 @@ Proof.
   exists lvn.
 
   repndors; exrepnd; subst; tcsp; GC.
+  pose proof (Hab1 []) as Hab1; exrepnd; subst; tcsp; GC.
   allrw disjoint_app_r; allrw disjoint_app_l; repnd.
 
   exists (lsubst nt1n (var_ren (dom_sub sub) lvn))
@@ -402,7 +403,7 @@ Proof.
   rw IHsub; rw @isprogram_ren_utokens_iff; sp.
 Qed.
 
-Lemma approx_ext_open_change_utoks {o} :
+(*Lemma approx_ext_open_change_utoks {o} :
   forall lib (t1 t2 : @NTerm o) ren,
     no_repeats (range_utok_ren ren)
     -> no_repeats (dom_utok_ren ren)
@@ -529,7 +530,7 @@ Proof.
     rw exren0 in k.
     repeat (rw @ren_utokens_app_weak_l in k; eauto 2 with slow).
   }
-Qed.
+Qed.*)
 
 Definition utok_ren_cond2 {o} atoms (ren ren' : @utok_ren o) :=
   forall a,
@@ -980,7 +981,7 @@ Proof.
 Qed.
 Hint Resolve nrut_sub_implies_no_repeats : slow.
 
-Lemma change_nr_ut_sub_in_lsubst_aux_approx_ext_star {o} :
+(*Lemma change_nr_ut_sub_in_lsubst_aux_approx_ext_star {o} :
   forall lib (t1 t2 : @NTerm o) ren,
     no_repeats (range_utok_ren ren)
     -> no_repeats (dom_utok_ren ren)
@@ -1385,4 +1386,4 @@ Proof.
         - apply extra_ren'15 in w; sp.
         - apply extra_ren'8 in w; sp.
       }
-Qed.
+Qed.*)
