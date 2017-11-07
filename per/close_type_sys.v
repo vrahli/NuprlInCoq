@@ -41,8 +41,8 @@ Require Import close_type_sys_per_csname.
 Require Import close_type_sys_per_base.
 Require Import close_type_sys_per_sqle.
 Require Import close_type_sys_per_sqequal.
-(*Require Import close_type_sys_per_eq.
-Require Import close_type_sys_per_req.
+Require Import close_type_sys_per_eq.
+(*Require Import close_type_sys_per_req.
 Require Import close_type_sys_per_teq.
 Require Import close_type_sys_per_isect.
 (*Require Import close_type_sys_per_eisect.*)
@@ -193,7 +193,26 @@ Abort.
   that we cannot use these types yet.  This is why we have not yet
   added these types to the type system.
 
-*)
+ *)
+
+
+Lemma ih_implies_all_in_bar_type_sys_props4 {o} :
+  forall {lib} (bar : @BarLib o lib) ts A B eqa,
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar bar
+                  (fun lib =>
+                     type_system ts
+                     -> defines_only_universes ts
+                     -> type_monotone ts
+                     -> type_sys_props4 (close ts) lib A B eqa)
+    -> all_in_bar bar (fun lib => type_sys_props4 (close ts) lib A B eqa).
+Proof.
+  introv tsts dou mon alla br ext.
+  apply (alla lib' br lib'0 ext); auto.
+Qed.
+Hint Resolve ih_implies_all_in_bar_type_sys_props4 : slow.
 
 Lemma close_type_system {o} :
   forall (ts : cts(o)),
@@ -236,7 +255,7 @@ Proof.
     apply close_type_system_cequiv; auto.
 
   - Case "CL_eq".
-    eapply close_type_system_eq; eauto.
+    eapply close_type_system_eq; eauto; eauto 3 with slow.
 
 (*  - Case "CL_req".
     eapply close_type_system_req; eauto.*)

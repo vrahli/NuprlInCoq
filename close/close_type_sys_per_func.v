@@ -30,7 +30,87 @@
 
 Require Export type_sys_useful.
 Require Import dest_close.
+Require Export per_ceq_bar.
 
+
+Lemma eq_term_equals_per_func_ext_eq {o} :
+  forall lib (eqa1 eqa2 : lib-per(o)) eqb1 eqb2,
+    in_ext lib (fun lib => (eqa1 lib) <=2=> (eqa2 lib))
+    -> in_ext lib (fun lib => forall a1 a2 (e1 : eqa1 lib a1 a2) (e2 : eqa2 lib a1 a2), (eqb1 lib a1 a2 e1) <=2=> (eqb2 lib a1 a2 e2))
+    -> (per_func_ext_eq eqa1 eqb1 lib) <=2=> (per_func_ext_eq eqa2 eqb2 lib).
+Proof.
+  introv eqas eqbs; introv.
+  unfold per_func_ext_eq.
+  split; introv h ext; introv.
+
+  - pose proof (h lib' ext) as h; simpl in h.
+    pose proof (eqas lib' ext) as eqas.
+    pose proof (eqbs lib' ext) as eqbs.
+    simpl in *.
+    dup e as e'.
+    apply eqas in e'.
+    apply (eqbs _ _ e'); tcsp.
+
+  - pose proof (h lib' ext) as h; simpl in h.
+    pose proof (eqas lib' ext) as eqas.
+    pose proof (eqbs lib' ext) as eqbs.
+    simpl in *.
+    dup e as e'.
+    apply eqas in e'.
+    apply (eqbs _ _ _ e'); tcsp.
+Qed.
+
+Lemma type_family_ext_function_implies_in_ext_eqas {o} :
+  forall ts lib (T T' : @CTerm o) A A' v B eqa1 eqa2 eqb2,
+    in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa1 lib))
+    -> type_family_ext mkc_function ts lib T T' eqa2 eqb2
+    -> computes_to_valc lib T (mkc_function A v B)
+    -> in_ext lib (fun lib => (eqa1 lib) <=2=> (eqa2 lib)).
+Proof.
+  introv tsp tf comp ext.
+  pose proof (tsp lib' ext) as tsp; simpl in tsp.
+  unfold type_family_ext in tf; exrepnd; spcast.
+  computes_to_eqval.
+  pose proof (tf3 lib' ext) as tf3; simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  apply uv in tf3; auto.
+Qed.
+Hint Resolve type_family_ext_function_implies_in_ext_eqas : slow.
+
+Lemma type_family_ext_function_implies_in_ext_eqbs {o} :
+  forall ts lib (T T' : @CTerm o) A1 A2 v1 v2 B1 B2 eqa1 eqa2 eqb1 eqb2,
+    in_ext lib (fun lib => type_sys_props4 ts lib A1 A2 (eqa1 lib))
+    -> type_family_ext mkc_function ts lib T T' eqa2 eqb2
+    -> computes_to_valc lib T (mkc_function A1 v1 B1)
+    -> in_ext lib
+              (fun lib =>
+                 forall a a' (e : eqa1 lib a a'),
+                   type_sys_props4 ts lib (B1)[[v1\\a]] (B2)[[v2\\a']] (eqb1 lib a a' e))
+    -> in_ext lib
+              (fun lib =>
+                 forall a1 a2 (e1 : eqa1 lib a1 a2) (e2 : eqa2 lib a1 a2),
+                   (eqb1 lib a1 a2 e1) <=2=> (eqb2 lib a1 a2 e2)).
+Proof.
+  introv tspa tf comp tspb ext; repeat introv.
+  pose proof (type_family_ext_function_implies_in_ext_eqas ts lib T T' A1 A2 v1 B1 eqa1 eqa2 eqb2) as eqas.
+  repeat (autodimp eqas hyp);[].
+  pose proof (tspa lib' ext) as tspa; simpl in *.
+  pose proof (tspb lib' ext) as tspb; simpl in *.
+  pose proof (eqas lib' ext) as eqas; simpl in *.
+  unfold type_family_ext in tf; exrepnd; spcast.
+  computes_to_eqval.
+  pose proof (tf3 lib' ext) as tf3; simpl in *.
+  pose proof (tf1 lib' ext) as tf1; simpl in *.
+
+  clear tspa.
+  pose proof (tspb a1 a2 e1) as tsp; clear tspb.
+
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+
+  pose proof (tf1 a1 a2 e2) as q.
+  apply uv in q; auto.
+Qed.
+Hint Resolve type_family_ext_function_implies_in_ext_eqbs : slow.
 
 Lemma close_type_system_func {p} :
   forall lib (ts : cts(p))
@@ -40,10 +120,10 @@ Lemma close_type_system_func {p} :
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> in_ext lib (fun lib => T ===>(lib) (mkc_function A v B))
-    -> in_ext lib (fun lib => T' ===>(lib) (mkc_function A' v' B'))
+    -> computes_to_valc lib T (mkc_function A v B)
+    -> computes_to_valc lib T' (mkc_function A' v' B')
     -> in_ext lib (fun lib => close ts lib A A' (eqa lib))
-    -> in_ext lib (fun lib => type_sys_props (close ts) lib A A' (eqa lib))
+    -> in_ext lib (fun lib => type_sys_props4 (close ts) lib A A' (eqa lib))
     -> in_ext
          lib
          (fun lib =>
@@ -53,46 +133,40 @@ Lemma close_type_system_func {p} :
          lib
          (fun lib =>
             forall (a a' : CTerm) (e : eqa lib a a'),
-              type_sys_props (close ts) lib (substc a v B) (substc a' v' B')
-                             (eqb lib a a' e))
-    -> (eq <=2=> (per_func_eq eqa eqb lib))
-    -> per_func_ext (close ts) lib T T' eq
-    -> type_sys_props (close ts) lib T T' eq.
+              type_sys_props4 (close ts) lib (substc a v B) (substc a' v' B')
+                              (eqb lib a a' e))
+    -> (eq <=2=> (per_func_ext_eq eqa eqb lib))
+    -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
-  introv tysys dou mon comp1 comp2 cla tysysa clb tysysb eqiff; introv perfunc.
+  introv tysys dou mon comp1 comp2 cla tysysa clb tysysb eqiff.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_type_sys_props4 SCase; introv.
 
   + SCase "uniquely_valued".
+    introv cl.
     dclose_lr.
+    clear cl.
 
-    SSCase "CL_func".
-    allunfold @per_func_ext; exrepd.
-    generalize (eq_term_equals_type_family lib T T3 eqa0 eqa eqb0 eqb (close lib ts) A v B A' v' B' mkc_function); intro i.
-    repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp))); repnd.
+    allunfold @per_func_ext; exrepnd.
+    eapply eq_term_equals_trans;[eauto|].
+    eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
+    apply eq_term_equals_per_func_ext_eq; eauto 3 with slow.
 
-    unfold eq_term_equals; sp.
-    rw t0; rw eqiff; split; sp.
+  + SCase "type_symmetric".
+    introv cl eqs.
+    dclose_lr.
+    apply CL_func.
 
-    duplicate e as e'; rw <- i0 in e.
-    generalize (i1 a a' e' e); intro k.
-    rw k; sp.
+    allunfold @per_func_ext; exrepnd.
+    exists eqa0 eqb0.
+    dands; auto.
+    eapply eq_term_equals_trans;[apply eq_term_equals_sym;eauto|];auto.
 
-    duplicate e as e'; rw i0 in e.
-    generalize (i1 a a' e e'); intro k.
-    rw <- k; sp.
+  + SCase "type_value_respecting".
 
-  + SCase "type_symmetric"; repdors; subst;
-    dclose_lr;
-    apply CL_func;
-    clear per;
-    allunfold @per_func; exrepd;
-    unfold per_func;
-    exists eqa0 eqb0; sp;
-    allrw <-; sp.
 
-  + SCase "type_value_respecting"; repdors; subst;
+XXXXXX
+    ; repdors; subst;
     apply CL_func; unfold per_func; exists eqa eqb; sp.
 
     duplicate c1 as ct.

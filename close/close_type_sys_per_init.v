@@ -32,17 +32,61 @@
 
 Require Export type_sys.
 Require Import dest_close.
+Require Export per_ceq_bar.
 
 
+
+Lemma type_equality_respecting_trans_init_implies {o} :
+  forall (ts : cts(o)) lib (bar : BarLib lib) T T' i j,
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar bar (fun lib => T ===>(lib) (mkc_uni i))
+    -> all_in_bar bar (fun lib => T' ===>(lib) (mkc_uni j))
+    -> type_equality_respecting_trans ts lib T T'
+    -> type_equality_respecting_trans (close ts) lib T T'.
+Proof.
+  introv tsts dou mon inbar1 inbar2 trans h ceq cl.
+  apply CL_init.
+  eapply trans; eauto.
+  repndors; subst.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+Qed.
+
+Lemma computes_to_valc_uni_implies_all_in_bar_trivial {o} :
+  forall lib (T : @CTerm o) i,
+    (T ===>(lib) (mkc_uni i))
+    -> all_in_bar (trivial_bar lib) (fun lib => (T ===>(lib) (mkc_uni i))).
+Proof.
+  introv comp br ext; simpl in *.
+  pose proof (computes_to_valc_preserves_lib_extends lib lib'0) as q.
+  autodimp q hyp; eauto 3 with slow.
+  spcast.
+  apply q in comp; exrepnd.
+  apply alphaeqc_mkc_uni in comp0; subst; auto.
+Qed.
+Hint Resolve computes_to_valc_uni_implies_all_in_bar_trivial : slow.
 
 Lemma close_type_system_init {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
     -> defines_only_universes ts
+    -> type_monotone ts
     -> ts lib T T' eq
     -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
-  introv tysys dou e.
+  introv tysys dou mon e.
   use_dou.
 
   prove_type_sys_props4 SCase; intros.
@@ -57,27 +101,8 @@ Proof.
     apply CL_init; sp; subst; try spts.
 
   + SCase "type_value_respecting_trans".
-    unfold type_equality_respecting_trans; introv h ceq cl.
-    pose proof (ceq lib) as c; simpl in c; autodimp c hyp; eauto 3 with slow; spcast.
-    spcast; apply CL_init; sp; subst; try spts.
-
-    { dup c2 as ct.
-      eapply cequivc_uni in c2;[|eauto].
-      dest_close_lr h.
-      onedts uv tye tys tyt tyvr tes tet tevr.
-      eapply tyt;[|exact h].
-      apply tys.
-      eapply tyvr;[|apply ccequivc_ext_sym;auto].
-      eapply tyt; eauto. }
-
-    { dup c0 as ct.
-      eapply cequivc_uni in c0;[|eauto].
-      dest_close_lr h.
-      onedts uv tye tys tyt tyvr tes tet tevr.
-      eapply tyt;[|exact h].
-      apply tys.
-      eapply tyvr;[|apply ccequivc_ext_sym;auto].
-      eapply tyt; eauto. }
+    eapply type_equality_respecting_trans_init_implies; eauto 3 with slow.
+    apply type_system_implies_type_equality_respecting_trans; auto.
 
   + SCase "term_symmetric".
     onedts uv tye tys tyt tyvr tes tet tevr.

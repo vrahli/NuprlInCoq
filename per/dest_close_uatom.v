@@ -101,7 +101,7 @@ Lemma dest_close_per_uatom_ceq_bar_r {p} :
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> T ==b==>(bar) mkc_uatom
+    -> T' ==b==>(bar) mkc_uatom
     -> close ts lib T T' eq
     -> per_uatom_bar (close ts) lib T T' eq.
 Proof.

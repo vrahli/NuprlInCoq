@@ -586,3 +586,1070 @@ Proof.
   eexists; dands; spcast; eauto.
   apply cequivc_sym; auto.
 Qed.
+
+Lemma two_computes_to_valc_ceq_bar_mkc_equality {o} :
+  forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) a1 b1 a2 b2 A B,
+    T ==b==>(bar1) (mkc_equality a1 b1 A)
+    -> T ==b==>(bar2) (mkc_equality a2 b2 B)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2 # ccequivc lib A B).
+Proof.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_implies in comp2; try exact comp1.
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q.
+  spcast.
+  apply cequivc_decomp_equality in q; repnd; dands; spcast; auto.
+Qed.
+
+Lemma two_computes_to_valc_ceq_bar_mkc_equality1 {o} :
+  forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) a1 b1 a2 b2 A B,
+    T ==b==>(bar1) (mkc_equality a1 b1 A)
+    -> T ==b==>(bar2) (mkc_equality a2 b2 B)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib a1 a2).
+Proof.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_mkc_equality in comp2;[|exact comp1].
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q; tcsp.
+Qed.
+
+Lemma two_computes_to_valc_ceq_bar_mkc_equality2 {o} :
+  forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) a1 b1 a2 b2 A B,
+    T ==b==>(bar1) (mkc_equality a1 b1 A)
+    -> T ==b==>(bar2) (mkc_equality a2 b2 B)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib b1 b2).
+Proof.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_mkc_equality in comp2;[|exact comp1].
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q; tcsp.
+Qed.
+
+Lemma two_computes_to_valc_ceq_bar_mkc_equality3 {o} :
+  forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) a1 b1 a2 b2 A B,
+    T ==b==>(bar1) (mkc_equality a1 b1 A)
+    -> T ==b==>(bar2) (mkc_equality a2 b2 B)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib A B).
+Proof.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_mkc_equality in comp2;[|exact comp1].
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q; tcsp.
+Qed.
+
+Lemma cequivc_type_sys_props_implies_equal_types {o} :
+  forall ts lib (A B C : @CTerm o) eqa,
+    type_sys_props ts lib A B eqa
+    -> ccequivc_ext lib A C
+    -> ts lib A C eqa.
+Proof.
+  introv tsp ceq.
+  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
+  pose proof (tyvr A C) as q; repeat (autodimp q hyp).
+Qed.
+
+Lemma all_in_bar_type_sys_props4_implies_type_equality_respecting_trans {o} :
+  forall ts lib (bar1 bar2 : @BarLib o lib) A1 B1 A2 B2 eqa1 eqa2,
+    all_in_bar bar1 (fun lib => type_sys_props4 ts lib A1 B1 eqa1)
+    -> all_in_bar bar2 (fun lib => ts lib A2 B2 eqa2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc_ext lib A1 A2)
+    -> eqa1 <=2=> eqa2.
+Proof.
+  introv tsp cl ceq; simpl in *; exrepnd.
+
+  pose proof (bar_non_empty (intersect_bars bar1 bar2)) as b; exrepnd.
+  simpl in *; exrepnd.
+  pose proof (tsp lib1 b1 lib') as q; autodimp q hyp; eauto 3 with slow; simpl in q.
+  pose proof (cl lib2 b2 lib') as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  pose proof (ceq lib') as w; simpl in w; autodimp w hyp;[eexists; eexists; eauto|].
+  pose proof (w lib') as w; simpl in w; autodimp w hyp; eauto 3 with slow.
+
+  clear tsp cl ceq.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  eapply (tyvrt A1 A2 B2 eqa2) in w; tcsp.
+  apply uv in w; auto.
+Qed.
+
+Lemma all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext {o} :
+  forall lib (bar : BarLib lib) (a b : @CTerm o),
+    all_in_bar bar (fun lib => ccequivc lib a b)
+    -> all_in_bar bar (fun lib => ccequivc_ext lib a b).
+Proof.
+  introv h br ext ext'.
+  apply (h lib' br lib'1); eauto 3 with slow.
+Qed.
+Hint Resolve all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext : slow.
+
+Lemma all_in_bar_type_sys_props4_implies_term_equality_respecting {o} :
+  forall lib (bar : @BarLib o lib) ts A B eqa,
+    all_in_bar bar (fun lib => type_sys_props4 ts lib A B eqa)
+    -> all_in_bar bar (fun lib => term_equality_respecting lib eqa).
+Proof.
+  introv h b ext.
+  pose proof (h lib' b lib'0 ext) as h; simpl in h.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
+Qed.
+Hint Resolve all_in_bar_type_sys_props4_implies_term_equality_respecting : slow.
+
+Lemma all_in_bar_type_sys_props4_implies_term_equality_symmetric {o} :
+  forall lib (bar : @BarLib o lib) ts A B eqa,
+    all_in_bar bar (fun lib => type_sys_props4 ts lib A B eqa)
+    -> term_equality_symmetric eqa.
+Proof.
+  introv h.
+  pose proof (bar_non_empty bar) as b; exrepnd.
+  pose proof (h lib') as h; autodimp h hyp.
+  pose proof (h lib') as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
+Qed.
+Hint Resolve all_in_bar_type_sys_props4_implies_term_equality_symmetric : slow.
+
+Lemma all_in_bar_type_sys_props4_implies_term_equality_transitive {o} :
+  forall lib (bar : @BarLib o lib) ts A B eqa,
+    all_in_bar bar (fun lib => type_sys_props4 ts lib A B eqa)
+    -> term_equality_transitive eqa.
+Proof.
+  introv h.
+  pose proof (bar_non_empty bar) as b; exrepnd.
+  pose proof (h lib') as h; autodimp h hyp.
+  pose proof (h lib') as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
+Qed.
+Hint Resolve all_in_bar_type_sys_props4_implies_term_equality_transitive : slow.
+
+Lemma implies_computes_to_valc_ceq_bar_intersect_bars_left {o} :
+  forall lib (bar1 bar2 : @BarLib o lib) T v,
+    T ==b==>(bar1) v
+    -> T ==b==>(intersect_bars bar1 bar2) v.
+Proof.
+  introv comp br ext; simpl in *; exrepnd.
+  apply (comp lib1 br0 lib'0); eauto 3 with slow.
+Qed.
+Hint Resolve implies_computes_to_valc_ceq_bar_intersect_bars_left : slow.
+
+Lemma implies_computes_to_valc_ceq_bar_intersect_bars_right {o} :
+  forall lib (bar1 bar2 : @BarLib o lib) T v,
+    T ==b==>(bar2) v
+    -> T ==b==>(intersect_bars bar1 bar2) v.
+Proof.
+  introv comp br ext; simpl in *; exrepnd.
+  apply (comp lib2 br2 lib'0); eauto 3 with slow.
+Qed.
+Hint Resolve implies_computes_to_valc_ceq_bar_intersect_bars_right : slow.
+
+Lemma implies_iff_per_eq_eq {o} :
+  forall lib (bar : @BarLib o lib) a1 a2 b1 b2 eqa eqb,
+    (eqa <=2=> eqb)
+    -> all_in_bar bar (fun lib => a1 ~=~(lib) b1)
+    -> all_in_bar bar (fun lib => a2 ~=~(lib) b2)
+    -> term_equality_symmetric eqa
+    -> term_equality_transitive eqa
+    -> all_in_bar bar (fun lib => term_equality_respecting lib eqa)
+    -> (per_eq_eq lib a1 a2 eqa) <=2=> (per_eq_eq lib b1 b2 eqb).
+Proof.
+  introv eqeq alla allb tes tet ter; introv.
+  unfold per_eq_eq, per_eq_eq1; split; introv h; exrepnd.
+
+  - exists (intersect_bars bar bar0).
+    introv b ext; simpl in *; exrepnd.
+    pose proof (h0 lib2 b4 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q; repnd.
+    dands; auto.
+    apply eqeq; auto.
+
+    apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in alla.
+    apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in allb.
+
+    pose proof (alla lib1 b0) as h.
+    pose proof (h lib'0) as h; simpl in h; autodimp h hyp; eauto 3 with slow; spcast.
+
+    pose proof (allb lib1 b0) as w.
+    pose proof (w lib'0) as w; simpl in w; autodimp w hyp; eauto 3 with slow; spcast.
+
+    pose proof (ter lib1 b0) as z.
+    pose proof (z lib'0) as z; simpl in z; autodimp z hyp; eauto 3 with slow; spcast.
+    eapply eqorceq_commutes;eauto; right; auto.
+
+  - exists (intersect_bars bar bar0).
+    introv b ext; simpl in *; exrepnd.
+    pose proof (h0 lib2 b4 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q; repnd.
+    dands; auto.
+    apply eqeq in q; auto.
+
+    apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in alla.
+    apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in allb.
+
+    pose proof (alla lib1 b0) as h.
+    pose proof (h lib'0) as h; simpl in h; autodimp h hyp; eauto 3 with slow; spcast.
+
+    pose proof (allb lib1 b0) as w.
+    pose proof (w lib'0) as w; simpl in w; autodimp w hyp; eauto 3 with slow; spcast.
+
+    pose proof (ter lib1 b0) as z.
+    pose proof (z lib'0) as z; simpl in z; autodimp z hyp; eauto 3 with slow; spcast.
+    eapply eqorceq_commutes;eauto; right; apply ccequivc_ext_sym; auto.
+Qed.
+Hint Resolve implies_iff_per_eq_eq : slow.
+
+Lemma implies_all_in_bar_eqorceq_trans_ccequivc {o} :
+  forall lib (bar : @BarLib o lib) a b c eqa,
+    term_equality_symmetric eqa
+    -> term_equality_transitive eqa
+    -> all_in_bar bar (fun lib => term_equality_respecting lib eqa)
+    -> all_in_bar bar (fun lib => a ~=~(lib) b)
+    -> all_in_bar bar (fun lib => eqorceq lib eqa b c)
+    -> all_in_bar bar (fun lib => eqorceq lib eqa a c).
+Proof.
+  introv tes tet ter alla allb br ext.
+  apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in alla.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *.
+  pose proof (allb lib' br lib'0 ext) as allb; simpl in *.
+  pose proof (ter lib' br lib'0 ext) as ter; simpl in *.
+  eapply eqorceq_trans; eauto.
+  right; eauto.
+Qed.
+
+Lemma all_in_bar_eqorceq_eq_term_equals {o} :
+  forall lib (bar : @BarLib o lib) eq1 eq2 a b,
+    (eq1 <=2=> eq2)
+    -> all_in_bar bar (fun lib => eqorceq lib eq1 a b)
+    -> all_in_bar bar (fun lib => eqorceq lib eq2 a b).
+Proof.
+  introv eqiff alla br ext.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *.
+  eapply eqorceq_eq_term_equals;[|eauto].
+  apply eq_term_equals_sym; auto.
+Qed.
+Hint Resolve all_in_bar_eqorceq_eq_term_equals : slow.
+
+Lemma all_in_bar_eqorceq_eq_term_equals2 {o} :
+  forall lib (bar : @BarLib o lib) eq1 eq2 a b,
+    (eq2 <=2=> eq1)
+    -> all_in_bar bar (fun lib => eqorceq lib eq1 a b)
+    -> all_in_bar bar (fun lib => eqorceq lib eq2 a b).
+Proof.
+  introv eqiff alla br ext.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *.
+  eapply eqorceq_eq_term_equals;[|eauto]; auto.
+Qed.
+Hint Resolve all_in_bar_eqorceq_eq_term_equals2 : slow.
+
+Lemma ccequivc_ext_refl {o} :
+  forall lib (a : @CTerm o), ccequivc_ext lib a a.
+Proof.
+  introv ext; spcast; auto.
+Qed.
+Hint Resolve ccequivc_ext_refl : slow.
+
+Lemma all_in_bar_type_sys_props4_implies_type_equality_respecting_trans2 {o} :
+  forall ts lib (bar1 bar2 : @BarLib o lib) A1 B1 A2 B2 eqa1 eqa2,
+    all_in_bar bar1 (fun lib => type_sys_props4 ts lib A1 B1 eqa1)
+    -> all_in_bar bar2 (fun lib => ts lib A2 B2 eqa2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc_ext lib A1 A2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ts lib A1 B2 eqa1).
+Proof.
+  introv tsp cl ceq br ext; simpl in *; exrepnd.
+
+  pose proof (tsp lib1 br0 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q.
+  pose proof (cl lib2 br2 lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  pose proof (ceq lib') as w; simpl in w; autodimp w hyp;[eexists; eexists; eauto|].
+  pose proof (w lib'0) as w; simpl in w; autodimp w hyp; eauto 3 with slow.
+
+  clear tsp cl ceq.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  eapply (tyvrt A1 A2 B2 eqa2) in w; tcsp.
+  applydup uv in w.
+
+  pose proof (dum A1 A1 B2 eqa1 eqa2) as z; repeat (autodimp z hyp); tcsp.
+  apply tyvr; eauto 3 with slow.
+Qed.
+
+Ltac rename_hyp_with oldname newname :=
+  match goal with
+  | [ H : context[oldname] |- _ ] => rename H into newname
+  end.
+
+Lemma type_sys_props_ts_refl_left {o} :
+  forall lib (bar : @BarLib o lib) ts A B eqa,
+    all_in_bar bar (fun lib => type_sys_props4 ts lib A B eqa)
+    -> all_in_bar bar (fun lib => ts lib A A eqa).
+Proof.
+  introv alla br ext.
+  pose proof (alla lib' br lib'0 ext) as q; simpl in q.
+
+  apply type_sys_prop4_implies_type_sys_props3 in q.
+  apply type_sys_props_iff_type_sys_props3 in q.
+  apply type_sys_props_ts_refl in q; tcsp.
+Qed.
+Hint Resolve type_sys_props_ts_refl_left : slow.
+
+Lemma type_sys_props_ts_refl_right {o} :
+  forall lib (bar : @BarLib o lib) ts A B eqa,
+    all_in_bar bar (fun lib => type_sys_props4 ts lib A B eqa)
+    -> all_in_bar bar (fun lib => ts lib B B eqa).
+Proof.
+  introv alla br ext.
+  pose proof (alla lib' br lib'0 ext) as q; simpl in q.
+
+  apply type_sys_prop4_implies_type_sys_props3 in q.
+  apply type_sys_props_iff_type_sys_props3 in q.
+  apply type_sys_props_ts_refl in q; tcsp.
+Qed.
+Hint Resolve type_sys_props_ts_refl_right : slow.
+
+Lemma eqorceq_refl {o} :
+  forall lib eqa (a : @CTerm o),
+    eqorceq lib eqa a a.
+Proof.
+  introv; right; eauto 3 with slow.
+Qed.
+Hint Resolve eqorceq_refl : slow.
+
+Lemma all_in_bar_eqorceq_refl {o} :
+  forall lib (bar : @BarLib o lib) eqa a,
+    all_in_bar bar (fun lib => eqorceq lib eqa a a).
+Proof.
+  introv br ext; eauto 3 with slow.
+Qed.
+Hint Resolve all_in_bar_eqorceq_refl : slow.
+
+Lemma eqorceq_implies_iff_per_eq_eq {o} :
+  forall lib (bar : @BarLib o lib) a1 a2 b1 b2 eqa eqb,
+    (eqa <=2=> eqb)
+    -> all_in_bar bar (fun lib => eqorceq lib eqa a1 b1)
+    -> all_in_bar bar (fun lib => eqorceq lib eqa a2 b2)
+    -> term_equality_symmetric eqa
+    -> term_equality_transitive eqa
+    -> all_in_bar bar (fun lib => term_equality_respecting lib eqa)
+    -> (per_eq_eq lib a1 a2 eqa) <=2=> (per_eq_eq lib b1 b2 eqb).
+Proof.
+  introv eqeq alla allb tes tet ter; introv.
+  unfold per_eq_eq, per_eq_eq1; split; introv h; exrepnd.
+
+  - exists (intersect_bars bar bar0).
+    introv b ext; simpl in *; exrepnd.
+    pose proof (h0 lib2 b4 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q; repnd.
+    dands; auto.
+    apply eqeq; auto.
+
+    pose proof (alla lib1 b0) as h.
+    pose proof (h lib'0) as h; simpl in h; autodimp h hyp; eauto 3 with slow; spcast.
+
+    pose proof (allb lib1 b0) as w.
+    pose proof (w lib'0) as w; simpl in w; autodimp w hyp; eauto 3 with slow; spcast.
+
+    pose proof (ter lib1 b0) as z.
+    pose proof (z lib'0) as z; simpl in z; autodimp z hyp; eauto 3 with slow; spcast.
+    eapply eqorceq_commutes;eauto; right; auto.
+
+  - exists (intersect_bars bar bar0).
+    introv b ext; simpl in *; exrepnd.
+    pose proof (h0 lib2 b4 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q; repnd.
+    dands; auto.
+    apply eqeq in q; auto.
+
+    pose proof (alla lib1 b0) as h.
+    pose proof (h lib'0) as h; simpl in h; autodimp h hyp; eauto 3 with slow; spcast.
+
+    pose proof (allb lib1 b0) as w.
+    pose proof (w lib'0) as w; simpl in w; autodimp w hyp; eauto 3 with slow; spcast.
+
+    pose proof (ter lib1 b0) as z.
+    pose proof (z lib'0) as z; simpl in z; autodimp z hyp; eauto 3 with slow; spcast.
+    eapply eqorceq_commutes;eauto; apply eqorceq_sym; auto.
+Qed.
+Hint Resolve eqorceq_implies_iff_per_eq_eq : slow.
+
+Lemma type_equality_respecting_trans_per_eq_bar_implies {o} :
+  forall (ts : cts(o)) lib (bar : BarLib lib) T T' a b A a' b' A',
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> T ==b==>(bar) (mkc_equality a b A)
+    -> T' ==b==>(bar) (mkc_equality a' b' A')
+    -> type_equality_respecting_trans (per_eq_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans (close ts) lib T T'.
+Proof.
+  introv tsts dou mon inbar1 inbar2 trans h ceq cl.
+  apply CL_eq.
+  eapply trans; eauto.
+  repndors; subst.
+
+  - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+Qed.
+
+Lemma sub_type_system_implies_type_equality_respecting_trans {o} :
+  forall (ts : cts(o)) lib (T1 T2 : @CTerm o),
+    type_symmetric ts
+    -> type_transitive ts
+    -> type_value_respecting ts
+    -> type_equality_respecting_trans ts lib T1 T2.
+Proof.
+  introv tys tyt tyvr.
+  introv h ceq q; repndors; subst.
+
+  - pose proof (tyvr lib T3 T1 eq') as w.
+    apply ccequivc_ext_sym in ceq.
+    repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
+    apply tys in w.
+    eapply tyt; eauto.
+
+  - pose proof (tyvr lib T3 T2 eq') as w.
+    apply ccequivc_ext_sym in ceq.
+    repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
+    apply tys in w.
+    eapply tyt; eauto.
+
+  - pose proof (tyvr lib T3 T1 eq') as w.
+    apply ccequivc_ext_sym in ceq.
+    repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
+    apply tys in w.
+    eapply tyt; eauto.
+
+  - pose proof (tyvr lib T3 T2 eq') as w.
+    apply ccequivc_ext_sym in ceq.
+    repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
+    apply tys in w.
+    eapply tyt; eauto.
+Qed.
+
+Lemma type_system_implies_all_in_bar_sym {o} :
+  forall lib (bar : @BarLib o lib) ts A B eqa,
+    type_system ts
+    -> all_in_bar bar (fun lib => ts lib A B eqa)
+    -> all_in_bar bar (fun lib => ts lib B A eqa).
+Proof.
+  introv tsts alla br ext.
+  pose proof (alla lib' br lib'0 ext) as q; simpl in q.
+  onedts uv tye tys tyt tyvr tes tet tevr; eauto.
+Qed.
+Hint Resolve type_system_implies_all_in_bar_sym : slow.
+
+Lemma type_system_implies_all_in_bar_trans {o} :
+  forall lib (bar : @BarLib o lib) ts A B C eqa,
+    type_system ts
+    -> all_in_bar bar (fun lib => ts lib A B eqa)
+    -> all_in_bar bar (fun lib => ts lib B C eqa)
+    -> all_in_bar bar (fun lib => ts lib A C eqa).
+Proof.
+  introv tsts alla allb br ext.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *.
+  pose proof (allb lib' br lib'0 ext) as allb; simpl in *.
+  onedts uv tye tys tyt tyvr tes tet tevr; eauto.
+Qed.
+Hint Resolve type_system_implies_all_in_bar_trans : slow.
+
+Lemma type_system_implies_all_in_bar_eqorceq_sym {o} :
+  forall lib (bar : @BarLib o lib) (ts : cts(o)) eqa a b A B,
+    type_system ts
+    -> all_in_bar bar (fun lib => ts lib A B eqa)
+    -> all_in_bar bar (fun lib => eqorceq lib eqa a b)
+    -> all_in_bar bar (fun lib => eqorceq lib eqa b a).
+Proof.
+  introv tsts alla allb br ext.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *.
+  pose proof (allb lib' br lib'0 ext) as allb; simpl in *.
+  onedts uv tye tys tyt tyvr tes tet tevr; eauto.
+  apply eqorceq_sym; eauto.
+Qed.
+Hint Resolve type_system_implies_all_in_bar_eqorceq_sym : slow.
+
+Lemma type_system_all_in_bar_ts_implies_term_equality_symmetric {o} :
+  forall lib (bar : @BarLib o lib) (ts : cts(o)) A B eqa,
+    type_system ts
+    -> all_in_bar bar (fun lib => ts lib A B eqa)
+    -> term_equality_symmetric eqa.
+Proof.
+  introv tsts alla.
+  pose proof (bar_non_empty bar) as b; exrepnd.
+  pose proof (alla lib') as h; autodimp h hyp.
+  pose proof (h lib') as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  onedts uv tye tys tyt tyvr tes tet tevr; eauto.
+Qed.
+Hint Resolve type_system_all_in_bar_ts_implies_term_equality_symmetric : slow.
+
+Lemma type_system_all_in_bar_ts_implies_term_equality_transitive {o} :
+  forall lib (bar : @BarLib o lib) (ts : cts(o)) A B eqa,
+    type_system ts
+    -> all_in_bar bar (fun lib => ts lib A B eqa)
+    -> term_equality_transitive eqa.
+Proof.
+  introv tsts alla.
+  pose proof (bar_non_empty bar) as b; exrepnd.
+  pose proof (alla lib') as h; autodimp h hyp.
+  pose proof (h lib') as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  onedts uv tye tys tyt tyvr tes tet tevr; eauto.
+Qed.
+Hint Resolve type_system_all_in_bar_ts_implies_term_equality_transitive : slow.
+
+Lemma type_system_all_in_bar_ts_implies_term_equality_respecting {o} :
+  forall lib (bar : @BarLib o lib) (ts : cts(o)) A B eqa,
+    type_system ts
+    -> all_in_bar bar (fun lib => ts lib A B eqa)
+    -> all_in_bar bar (fun lib => term_equality_respecting lib eqa).
+Proof.
+  introv tsts alla br ext.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *.
+  onedts uv tye tys tyt tyvr tes tet tevr; eauto.
+Qed.
+Hint Resolve type_system_all_in_bar_ts_implies_term_equality_respecting : slow.
+
+Lemma type_system_implies_type_equality_respecting_trans3 {o} :
+  forall ts lib (bar1 bar2 : @BarLib o lib) A1 B1 A2 B2 eqa1 eqa2,
+    type_system ts
+    -> all_in_bar bar1 (fun lib => ts lib A1 A2 eqa1)
+    -> all_in_bar bar2 (fun lib => ts lib B2 B1 eqa2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib A2 B2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ts lib A1 B1 eqa1).
+Proof.
+  introv tsp ts1 ts2 ceq br ext; simpl in *; exrepnd.
+
+  pose proof (ts1 lib1 br0 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q.
+  pose proof (ts2 lib2 br2 lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in ceq.
+  pose proof (ceq lib') as w; simpl in w; autodimp w hyp;[eexists; eexists; eauto|].
+  pose proof (w lib'0) as w; simpl in w; autodimp w hyp; eauto 3 with slow.
+
+  onedts uv tye tys tyt tyvr tes tet tevr.
+
+  eapply uniquely_valued_trans2;auto;[exact q|].
+  eapply uniquely_valued_trans2;auto;[|exact h].
+  eapply type_reduces_to_symm2;auto;eauto.
+Qed.
+Hint Resolve type_system_implies_type_equality_respecting_trans3 : slow.
+
+Lemma type_system_implies_type_equality_respecting_trans4 {o} :
+  forall ts lib (bar1 bar2 : @BarLib o lib) A1 B1 A2 B2 eqa1 eqa2,
+    type_system ts
+    -> all_in_bar bar1 (fun lib => ts lib A1 A2 eqa1)
+    -> all_in_bar bar2 (fun lib => ts lib B2 B1 eqa2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib A2 B2)
+    -> eqa1 <=2=> eqa2.
+Proof.
+  introv tsp ts1 ts2 ceq; simpl in *; exrepnd.
+
+  pose proof (bar_non_empty (intersect_bars bar1 bar2)) as b; simpl in b; exrepnd.
+
+  pose proof (ts1 lib1 b1 lib') as q; autodimp q hyp; eauto 3 with slow; simpl in q.
+  pose proof (ts2 lib2 b2 lib') as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in ceq.
+  pose proof (ceq lib') as w; simpl in w; autodimp w hyp;[eexists; eexists; eauto|].
+  pose proof (w lib') as w; simpl in w; autodimp w hyp; eauto 3 with slow.
+
+  onedts uv tye tys tyt tyvr tes tet tevr.
+  eapply uniquely_valued_eq2; try (exact q); auto.
+  eapply uniquely_valued_trans2;auto;[|exact h].
+  apply type_system_type_symm;auto.
+  eapply type_reduces_to_symm2;auto;eauto.
+  apply ccequivc_ext_sym;auto.
+Qed.
+Hint Resolve type_system_implies_type_equality_respecting_trans4 : slow.
+
+Lemma implies_all_in_bar_eqorceq {o} :
+  forall lib (bar1 bar2 : @BarLib o lib) a1 b1 a2 b2 eqa1 eqa2,
+    term_equality_symmetric eqa1
+    -> term_equality_transitive eqa1
+    -> all_in_bar bar1 (fun lib => term_equality_respecting lib eqa1)
+    -> all_in_bar bar1 (fun lib => eqorceq lib eqa1 a1 b1)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => b1 ~=~(lib) a2)
+    -> all_in_bar bar2 (fun lib => eqorceq lib eqa2 a2 b2)
+    -> (eqa1 <=2=> eqa2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => eqorceq lib eqa1 a1 b2).
+Proof.
+  introv tes1 tet1 ter1 alla allb allc eqiff br ext; simpl in *; exrepnd.
+  pose proof (alla lib1 br0 lib'0) as alla; simpl in alla; autodimp alla hyp; eauto 3 with slow.
+  pose proof (allc lib2 br2 lib'0) as allc; simpl in allc; autodimp allc hyp; eauto 3 with slow.
+  apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in allb.
+  pose proof (allb lib') as allb; simpl in allb; autodimp allb hyp;[exists lib1 lib2; dands; auto|].
+  pose proof (allb lib'0 ext) as allb; simpl in allb.
+
+  pose proof (ter1 lib1 br0 lib'0) as ter1; autodimp ter1 hyp; eauto 3 with slow; simpl in *.
+
+  eapply eqorceq_trans;auto;[exact alla|].
+  eapply eqorceq_trans;auto;[right;exact allb|].
+  eapply eqorceq_eq_term_equals;[exact eqiff|];auto.
+Qed.
+Hint Resolve implies_all_in_bar_eqorceq : slow.
+
+Lemma all_in_bar_type_sys_props4_sym_implies_type_equality_respecting_trans {o} :
+  forall ts lib (bar1 bar2 : @BarLib o lib) A1 B1 A2 B2 eqa1 eqa2,
+    all_in_bar bar1 (fun lib => type_sys_props4 ts lib B1 A1 eqa1)
+    -> all_in_bar bar2 (fun lib => ts lib A2 B2 eqa2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc_ext lib A1 A2)
+    -> eqa1 <=2=> eqa2.
+Proof.
+  introv tsp cl ceq; simpl in *; exrepnd.
+
+  pose proof (bar_non_empty (intersect_bars bar1 bar2)) as b; exrepnd.
+  simpl in *; exrepnd.
+  pose proof (tsp lib1 b1 lib') as q; autodimp q hyp; eauto 3 with slow; simpl in q.
+  pose proof (cl lib2 b2 lib') as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  pose proof (ceq lib') as w; simpl in w; autodimp w hyp;[eexists; eexists; eauto|].
+  pose proof (w lib') as w; simpl in w; autodimp w hyp; eauto 3 with slow.
+
+  clear tsp cl ceq.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+
+  unfold type_equality_respecting_trans in tyvrt.
+  apply (tyvrt A1 A2 B2 eqa2) in w; auto;[].
+  pose proof (dum A1 B1 B2 eqa1 eqa2) as q; repeat (autodimp q hyp); repnd.
+  apply uv in q; auto.
+Qed.
+
+Lemma all_in_bar_type_sys_props4_sym_implies_type_equality_respecting_trans2 {o} :
+  forall ts lib (bar1 bar2 : @BarLib o lib) A1 B1 A2 B2 eqa1 eqa2,
+    all_in_bar bar1 (fun lib => type_sys_props4 ts lib B1 A1 eqa1)
+    -> all_in_bar bar2 (fun lib => ts lib A2 B2 eqa2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc_ext lib A1 A2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ts lib A1 B2 eqa1).
+Proof.
+  introv tsp cl ceq br ext; simpl in *; exrepnd.
+
+  pose proof (tsp lib1 br0 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q.
+  pose proof (cl lib2 br2 lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  pose proof (ceq lib') as w; simpl in w; autodimp w hyp;[eexists; eexists; eauto|].
+  pose proof (w lib'0) as w; simpl in w; autodimp w hyp; eauto 3 with slow.
+
+  clear tsp cl ceq.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+
+  apply (tyvrt A1 A2 B2 eqa2) in w; auto;[].
+  pose proof (dum A1 B1 B2 eqa1 eqa2) as q; repeat (autodimp q hyp); repnd.
+  apply uv in q; auto.
+
+  pose proof (dum A1 A1 B2 eqa1 eqa2) as z; repeat (autodimp z hyp); tcsp.
+  apply tyvr; eauto 3 with slow.
+Qed.
+
+Lemma all_in_bar_type_sys_props4_implies_ts_sym {o} :
+  forall ts lib (bar : BarLib lib) (A B C : @CTerm o) eqa,
+    all_in_bar bar (fun lib => type_sys_props4 ts lib A B eqa)
+    -> all_in_bar bar (fun lib => ts lib A C eqa)
+    -> all_in_bar bar (fun lib => ts lib C A eqa).
+Proof.
+  introv alla allb br ext.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in alla.
+  pose proof (allb lib' br lib'0 ext) as allb; simpl in allb.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  apply tygs; auto.
+Qed.
+Hint Resolve all_in_bar_type_sys_props4_implies_ts_sym : slow.
+
+Lemma implies_all_in_bar_eqorceq_sym {o} :
+  forall lib (bar : @BarLib o lib) (ts : cts(o)) eqa a b A B,
+    term_equality_symmetric eqa
+    -> all_in_bar bar (fun lib => ts lib A B eqa)
+    -> all_in_bar bar (fun lib => eqorceq lib eqa a b)
+    -> all_in_bar bar (fun lib => eqorceq lib eqa b a).
+Proof.
+  introv tes alla allb br ext.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *.
+  pose proof (allb lib' br lib'0 ext) as allb; simpl in *.
+  apply eqorceq_sym; eauto.
+Qed.
+Hint Resolve implies_all_in_bar_eqorceq_sym : slow.
+
+Lemma eq_term_equals_preserves_term_equality_symmetric {o} :
+  forall (eqa1 eqa2 : per(o)),
+    (eqa1 <=2=> eqa2)
+    -> term_equality_symmetric eqa1
+    -> term_equality_symmetric eqa2.
+Proof.
+  introv eqiff tes ee.
+  apply eqiff in ee; apply eqiff; tcsp.
+Qed.
+Hint Resolve eq_term_equals_preserves_term_equality_symmetric : slow.
+
+Lemma eq_term_equals_preserves_term_equality_transitive {o} :
+  forall (eqa1 eqa2 : per(o)),
+    (eqa1 <=2=> eqa2)
+    -> term_equality_transitive eqa1
+    -> term_equality_transitive eqa2.
+Proof.
+  introv eqiff tet ee1 ee2.
+  apply eqiff in ee1; apply eqiff in ee2; apply eqiff.
+  eapply tet; eauto.
+Qed.
+Hint Resolve eq_term_equals_preserves_term_equality_transitive : slow.
+
+Lemma eq_term_equals_preserves_all_in_bar_term_equality_respecting {o} :
+  forall lib (bar : BarLib lib) (eqa1 eqa2 : per(o)),
+    (eqa1 <=2=> eqa2)
+    -> all_in_bar bar (fun lib => term_equality_respecting lib eqa1)
+    -> all_in_bar bar (fun lib => term_equality_respecting lib eqa2).
+Proof.
+  introv eqiff alla br ext ee ceq.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in alla.
+  apply eqiff in ee; apply eqiff; tcsp.
+Qed.
+Hint Resolve eq_term_equals_preserves_all_in_bar_term_equality_respecting : slow.
+
+Lemma all_in_bar_type_sys_props4_implies_type_equality_respecting_trans3 {o} :
+  forall ts lib (bar1 bar2 : @BarLib o lib) A1 B1 A2 B2 eqa1 eqa2,
+    all_in_bar bar1 (fun lib => type_sys_props4 ts lib A1 B1 eqa1)
+    -> all_in_bar bar2 (fun lib => ts lib B2 A2 eqa2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc_ext lib A1 A2)
+    -> eqa1 <=2=> eqa2.
+Proof.
+  introv tsp cl ceq; simpl in *; exrepnd.
+
+  pose proof (bar_non_empty (intersect_bars bar1 bar2)) as b; exrepnd.
+  simpl in *; exrepnd.
+  pose proof (tsp lib1 b1 lib') as q; autodimp q hyp; eauto 3 with slow; simpl in q.
+  pose proof (cl lib2 b2 lib') as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  pose proof (ceq lib') as w; simpl in w; autodimp w hyp;[eexists; eexists; eauto|].
+  pose proof (w lib') as w; simpl in w; autodimp w hyp; eauto 3 with slow.
+
+  clear tsp cl ceq.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  eapply (tyvrt A1 A2 B2 eqa2) in w; tcsp.
+  apply uv in w; auto.
+Qed.
+
+Lemma all_in_bar_type_sys_props4_sym_implies_type_equality_respecting_trans3 {o} :
+  forall ts lib (bar1 bar2 : @BarLib o lib) A1 B1 A2 B2 eqa1 eqa2,
+    all_in_bar bar1 (fun lib => type_sys_props4 ts lib B1 A1 eqa1)
+    -> all_in_bar bar2 (fun lib => ts lib B2 A2 eqa2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc_ext lib A1 A2)
+    -> eqa1 <=2=> eqa2.
+Proof.
+  introv tsp cl ceq; simpl in *; exrepnd.
+
+  pose proof (bar_non_empty (intersect_bars bar1 bar2)) as b; exrepnd.
+  simpl in *; exrepnd.
+  pose proof (tsp lib1 b1 lib') as q; autodimp q hyp; eauto 3 with slow; simpl in q.
+  pose proof (cl lib2 b2 lib') as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  pose proof (ceq lib') as w; simpl in w; autodimp w hyp;[eexists; eexists; eauto|].
+  pose proof (w lib') as w; simpl in w; autodimp w hyp; eauto 3 with slow.
+
+  clear tsp cl ceq.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  eapply (tyvrt A1 A2 B2 eqa2) in w; tcsp.
+  pose proof (dum A1 B1 B2 eqa1 eqa2) as q; repeat (autodimp q hyp); repnd.
+  apply uv in q; auto.
+Qed.
+
+Lemma all_in_bar_type_sys_props4_implies_type_equality_respecting_trans4 {o} :
+  forall ts lib (bar1 bar2 : @BarLib o lib) A1 B1 A2 B2 eqa1 eqa2,
+    all_in_bar bar1 (fun lib => type_sys_props4 ts lib A1 B1 eqa1)
+    -> all_in_bar bar2 (fun lib => ts lib B2 A2 eqa2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc_ext lib A1 A2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ts lib A1 B2 eqa1).
+Proof.
+  introv tsp cl ceq br ext; simpl in *; exrepnd.
+
+  pose proof (tsp lib1 br0 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q.
+  pose proof (cl lib2 br2 lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  pose proof (ceq lib') as w; simpl in w; autodimp w hyp;[eexists; eexists; eauto|].
+  pose proof (w lib'0) as w; simpl in w; autodimp w hyp; eauto 3 with slow.
+
+  clear tsp cl ceq.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  eapply (tyvrt A1 A2 B2 eqa2) in w; tcsp.
+  applydup uv in w.
+
+  pose proof (dum A1 A1 B2 eqa1 eqa2) as z; repeat (autodimp z hyp); tcsp.
+  apply tyvr; eauto 3 with slow.
+Qed.
+
+Lemma all_in_bar_type_sys_props4_sym_implies_type_equality_respecting_trans4 {o} :
+  forall ts lib (bar1 bar2 : @BarLib o lib) A1 B1 A2 B2 eqa1 eqa2,
+    all_in_bar bar1 (fun lib => type_sys_props4 ts lib B1 A1 eqa1)
+    -> all_in_bar bar2 (fun lib => ts lib B2 A2 eqa2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc_ext lib A1 A2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ts lib A1 B2 eqa1).
+Proof.
+  introv tsp cl ceq br ext; simpl in *; exrepnd.
+
+  pose proof (tsp lib1 br0 lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q.
+  pose proof (cl lib2 br2 lib'0) as h; autodimp h hyp; eauto 3 with slow; simpl in h.
+  pose proof (ceq lib') as w; simpl in w; autodimp w hyp;[eexists; eexists; eauto|].
+  pose proof (w lib'0) as w; simpl in w; autodimp w hyp; eauto 3 with slow.
+
+  clear tsp cl ceq.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  eapply (tyvrt A1 A2 B2 eqa2) in w; tcsp.
+
+  pose proof (dum A1 B1 B2 eqa1 eqa2) as q; repeat (autodimp q hyp); repnd.
+  pose proof (dum B1 A1 B2 eqa1 eqa1) as z; repeat (autodimp z hyp); tcsp.
+  apply tygs; auto.
+Qed.
+
+Lemma all_in_bar_type_sys_props4_change_eq_term_equals1 {o} :
+  forall ts lib (bar : @BarLib o lib) A B C eqa1 eqa2,
+    (eqa1 <=2=> eqa2)
+    -> all_in_bar bar (fun lib => type_sys_props4 ts lib A B eqa1)
+    -> all_in_bar bar (fun lib : library => ts lib A C eqa1)
+    -> all_in_bar bar (fun lib : library => ts lib A C eqa2).
+Proof.
+  introv eqpers allts alla br ext.
+  pose proof (allts lib' br lib'0 ext) as allts; simpl in *.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  apply tys; auto.
+Qed.
+
+Lemma all_in_bar_type_sys_props4_trans1 {o} :
+  forall ts lib (bar : @BarLib o lib) A B C D eqa eqa',
+    all_in_bar bar (fun lib => type_sys_props4 ts lib A B eqa)
+    -> all_in_bar bar (fun lib => ts lib A C eqa')
+    -> all_in_bar bar (fun lib => ts lib A D eqa')
+    -> all_in_bar bar (fun lib => ts lib C D eqa).
+Proof.
+  introv allts alla allb br ext.
+  pose proof (allts lib' br lib'0 ext) as allts.
+  pose proof (alla lib' br lib'0 ext) as alla.
+  pose proof (allb lib' br lib'0 ext) as allb.
+  simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+
+  pose proof (dum A A C eqa eqa') as q1; repeat (autodimp q1 hyp).
+  { pose proof (dum B A A eqa eqa) as w; repeat (autodimp w hyp); tcsp.
+    apply tygs; auto. }
+  repnd.
+
+  pose proof (dum A A D eqa eqa') as q2; repeat (autodimp q2 hyp).
+  { pose proof (dum B A A eqa eqa) as w; repeat (autodimp w hyp); tcsp.
+    apply tygs; auto. }
+  repnd.
+
+  pose proof (dum A C D eqa eqa) as h; repeat (autodimp h hyp); tcsp.
+  apply tygs; auto.
+Qed.
+
+Lemma all_in_bar_type_sys_props4_trans2 {o} :
+  forall ts lib (bar : @BarLib o lib) A B C D eqa eqa',
+    all_in_bar bar (fun lib => type_sys_props4 ts lib A B eqa)
+    -> all_in_bar bar (fun lib => ts lib A C eqa')
+    -> all_in_bar bar (fun lib => ts lib A D eqa')
+    -> all_in_bar bar (fun lib => ts lib C D eqa').
+Proof.
+  introv allts alla allb br ext.
+  pose proof (allts lib' br lib'0 ext) as allts.
+  pose proof (alla lib' br lib'0 ext) as alla.
+  pose proof (allb lib' br lib'0 ext) as allb.
+  simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+
+  pose proof (dum A A C eqa eqa') as q1; repeat (autodimp q1 hyp).
+  { pose proof (dum B A A eqa eqa) as w; repeat (autodimp w hyp); tcsp.
+    apply tygs; auto. }
+  repnd.
+
+  pose proof (dum A A D eqa eqa') as q2; repeat (autodimp q2 hyp).
+  { pose proof (dum B A A eqa eqa) as w; repeat (autodimp w hyp); tcsp.
+    apply tygs; auto. }
+  repnd.
+
+  pose proof (dum A C D eqa eqa') as h; repeat (autodimp h hyp); tcsp.
+  apply tygs; auto.
+Qed.
+
+Definition intersect3bars {o} {lib} (bar1 bar2 bar3 : @BarLib o lib) : BarLib lib :=
+  intersect_bars bar1 (intersect_bars bar2 bar3).
+
+Lemma implies_intersect3bars1 {o} :
+  forall {lib} (bar1 bar2 bar3 : @BarLib o lib) F,
+    all_in_bar bar1 F
+    -> all_in_bar (intersect3bars bar1 bar2 bar3) F.
+Proof.
+  introv alla br ext; simpl in *; exrepnd.
+  apply (alla lib1); eauto 3 with slow.
+Qed.
+Hint Resolve implies_intersect3bars1 : slow.
+
+Lemma implies_intersect3bars2 {o} :
+  forall {lib} (bar1 bar2 bar3 : @BarLib o lib) F,
+    all_in_bar bar2 F
+    -> all_in_bar (intersect3bars bar1 bar2 bar3) F.
+Proof.
+  introv alla br ext; simpl in *; exrepnd.
+  apply (alla lib0); eauto 3 with slow.
+Qed.
+Hint Resolve implies_intersect3bars2 : slow.
+
+Lemma implies_intersect3bars3 {o} :
+  forall {lib} (bar1 bar2 bar3 : @BarLib o lib) F,
+    all_in_bar bar3 F
+    -> all_in_bar (intersect3bars bar1 bar2 bar3) F.
+Proof.
+  introv alla br ext; simpl in *; exrepnd.
+  apply (alla lib3); eauto 3 with slow.
+Qed.
+Hint Resolve implies_intersect3bars3 : slow.
+
+Lemma intersect_bars_1_2_implies_intersect3bars {o} :
+  forall {lib} (bar1 bar2 bar3 : @BarLib o lib) F,
+    all_in_bar (intersect_bars bar1 bar2) F
+    -> all_in_bar (intersect3bars bar1 bar2 bar3) F.
+Proof.
+  introv alla br ext; simpl in *; exrepnd.
+  eapply alla; simpl.
+  { eexists; eexists; dands; eauto; eauto 3 with slow. }
+  { eauto 3 with slow. }
+Qed.
+Hint Resolve intersect_bars_1_2_implies_intersect3bars : slow.
+
+Lemma intersect_bars_1_3_implies_intersect3bars {o} :
+  forall {lib} (bar1 bar2 bar3 : @BarLib o lib) F,
+    all_in_bar (intersect_bars bar1 bar3) F
+    -> all_in_bar (intersect3bars bar1 bar2 bar3) F.
+Proof.
+  introv alla br ext; simpl in *; exrepnd.
+  eapply alla; simpl.
+  { eexists; eexists; dands; eauto; eauto 3 with slow. }
+  { eauto 3 with slow. }
+Qed.
+Hint Resolve intersect_bars_1_3_implies_intersect3bars : slow.
+
+Lemma intersect_bars_2_3_implies_intersect3bars {o} :
+  forall {lib} (bar1 bar2 bar3 : @BarLib o lib) F,
+    all_in_bar (intersect_bars bar2 bar3) F
+    -> all_in_bar (intersect3bars bar1 bar2 bar3) F.
+Proof.
+  introv alla br ext; simpl in *; exrepnd.
+  eapply alla; simpl.
+  { eexists; eexists; dands; eauto; eauto 3 with slow. }
+  { eauto 3 with slow. }
+Qed.
+Hint Resolve intersect_bars_2_3_implies_intersect3bars : slow.
+
+Lemma implies_computes_to_valc_ceq_bar_intersect3bars1 {o} :
+  forall {lib} (bar1 bar2 bar3 : @BarLib o lib) (T v : CTerm),
+    (T ==b==>(bar1) v)
+    -> (T ==b==>(intersect3bars bar1 bar2 bar3) v).
+Proof.
+  introv comp br ext; simpl in *; exrepnd.
+  eapply comp; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve implies_computes_to_valc_ceq_bar_intersect3bars1 : slow.
+
+Lemma implies_computes_to_valc_ceq_bar_intersect3bars2 {o} :
+  forall {lib} (bar1 bar2 bar3 : @BarLib o lib) (T v : CTerm),
+    (T ==b==>(bar2) v)
+    -> (T ==b==>(intersect3bars bar1 bar2 bar3) v).
+Proof.
+  introv comp br ext; simpl in *; exrepnd.
+  eapply comp; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve implies_computes_to_valc_ceq_bar_intersect3bars2 : slow.
+
+Lemma implies_computes_to_valc_ceq_bar_intersect3bars3 {o} :
+  forall {lib} (bar1 bar2 bar3 : @BarLib o lib) (T v : CTerm),
+    (T ==b==>(bar3) v)
+    -> (T ==b==>(intersect3bars bar1 bar2 bar3) v).
+Proof.
+  introv comp br ext; simpl in *; exrepnd.
+  eapply comp; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve implies_computes_to_valc_ceq_bar_intersect3bars3 : slow.
+
+Lemma implies_all_in_bar_eqorceq_trans {o} :
+  forall lib (bar : @BarLib o lib) (ts : cts(o)) eqa a b c A B,
+    term_equality_symmetric eqa
+    -> term_equality_transitive eqa
+    -> all_in_bar bar (fun lib => term_equality_respecting lib eqa)
+    -> all_in_bar bar (fun lib => ts lib A B eqa)
+    -> all_in_bar bar (fun lib => eqorceq lib eqa a b)
+    -> all_in_bar bar (fun lib => eqorceq lib eqa b c)
+    -> all_in_bar bar (fun lib => eqorceq lib eqa a c).
+Proof.
+  introv tes tet ter alla allb allc br ext.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *.
+  pose proof (allb lib' br lib'0 ext) as allb; simpl in *.
+  pose proof (allc lib' br lib'0 ext) as allc; simpl in *.
+  pose proof (ter lib' br lib'0 ext) as ter; simpl in *.
+  eapply eqorceq_trans; eauto.
+Qed.
+Hint Resolve implies_all_in_bar_eqorceq_trans : slow.
+
+Lemma all_in_bar_ccequivc_sym {o} :
+  forall {lib} (bar : @BarLib o lib) a b,
+    all_in_bar bar (fun lib => a ~=~(lib) b)
+    -> all_in_bar bar (fun lib => b ~=~(lib) a).
+Proof.
+  introv alla br ext.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *; spcast; eauto 3 with slow.
+  apply cequivc_sym; auto.
+Qed.
+Hint Resolve all_in_bar_ccequivc_sym : slow.
+
+Lemma all_in_bar_ccequivc_trans {o} :
+  forall {lib} (bar : @BarLib o lib) a b c,
+    all_in_bar bar (fun lib => a ~=~(lib) b)
+    -> all_in_bar bar (fun lib => b ~=~(lib) c)
+    -> all_in_bar bar (fun lib => a ~=~(lib) c).
+Proof.
+  introv alla allb br ext.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *.
+  pose proof (allb lib' br lib'0 ext) as allb; simpl in *.
+  spcast.
+  eapply cequivc_trans; eauto.
+Qed.
+Hint Resolve all_in_bar_ccequivc_trans : slow.
+
+Lemma all_in_bar_type_sys_props4_sym_change_eq_term_equals1 {o} :
+  forall ts lib (bar : @BarLib o lib) A B C eqa1 eqa2,
+    (eqa1 <=2=> eqa2)
+    -> all_in_bar bar (fun lib => type_sys_props4 ts lib B A eqa1)
+    -> all_in_bar bar (fun lib : library => ts lib A C eqa1)
+    -> all_in_bar bar (fun lib : library => ts lib A C eqa2).
+Proof.
+  introv eqpers allts alla br ext.
+  pose proof (allts lib' br lib'0 ext) as allts; simpl in *.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+
+  pose proof (dum B A C eqa1 eqa2) as q; repeat (autodimp q hyp); tcsp.
+
+  { apply tygs; auto. }
+
+  apply tys; auto.
+
+  pose proof (dum A B C eqa1 eqa1) as q; repeat (autodimp q hyp); tcsp.
+Qed.
+
+Lemma all_in_bar_type_sys_props4_sym_trans2 {o} :
+  forall ts lib (bar : @BarLib o lib) A B C D eqa eqa',
+    all_in_bar bar (fun lib => type_sys_props4 ts lib B A eqa)
+    -> all_in_bar bar (fun lib => ts lib A C eqa')
+    -> all_in_bar bar (fun lib => ts lib A D eqa')
+    -> all_in_bar bar (fun lib => ts lib C D eqa').
+Proof.
+  introv allts alla allb br ext.
+  pose proof (allts lib' br lib'0 ext) as allts.
+  pose proof (alla lib' br lib'0 ext) as alla.
+  pose proof (allb lib' br lib'0 ext) as allb.
+  simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+
+  pose proof (dum A A C eqa eqa') as q1; repeat (autodimp q1 hyp).
+  { pose proof (dum B A A eqa eqa) as w; repeat (autodimp w hyp); tcsp.
+    apply tygs; auto. }
+  repnd.
+
+  pose proof (dum A A D eqa eqa') as q2; repeat (autodimp q2 hyp).
+  { pose proof (dum B A A eqa eqa) as w; repeat (autodimp w hyp); tcsp.
+    apply tygs; auto. }
+  repnd.
+
+  pose proof (dum A C D eqa eqa') as h; repeat (autodimp h hyp); tcsp.
+
+  pose proof (dum B C A eqa eqa) as h; repeat (autodimp h hyp); tcsp.
+  apply tygs.
+
+  pose proof (dum A B C eqa eqa) as h; repeat (autodimp h hyp); tcsp.
+Qed.
+
+Hint Resolve eq_term_equals_sym : slow.
+
+Hint Resolve all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext : slow.

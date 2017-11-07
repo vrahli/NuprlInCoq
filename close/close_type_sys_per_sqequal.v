@@ -219,6 +219,12 @@ Proof.
 
   - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
     dclose_lr; auto.
+
+  - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
 Qed.
 
 

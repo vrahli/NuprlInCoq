@@ -197,6 +197,12 @@ Proof.
 
   - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
     dclose_lr; auto.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+    dclose_lr; auto.
 Qed.
 
 Lemma close_type_system_atom {p} :

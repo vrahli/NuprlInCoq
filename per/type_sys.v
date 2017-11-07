@@ -2238,7 +2238,7 @@ Definition type_equality_respecting_trans {o} (ts : cts(o)) lib (T1 T2 : @CTerm 
   forall T T3 T4 eq',
     (T = T1 [+] T = T2)
     -> ccequivc_ext lib T T3
-    -> ts lib T3 T4 eq'
+    -> (ts lib T3 T4 eq' [+] ts lib T4 T3 eq')
     -> ts lib T T4 eq'.
 
 Definition type_sys_props4 {p}
@@ -2348,6 +2348,18 @@ Proof.
     apply ccequivc_ext_sym in ceq.
     repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
     apply tys in w.
+    eapply tyt; eauto.
+
+  - pose proof (tyvr lib T3 T1 eq') as w.
+    apply ccequivc_ext_sym in ceq.
+    repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
+    apply tys.
+    eapply tyt; eauto.
+
+  - pose proof (tyvr lib T3 T2 eq') as w.
+    apply ccequivc_ext_sym in ceq.
+    repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
+    apply tys.
     eapply tyt; eauto.
 Qed.
 

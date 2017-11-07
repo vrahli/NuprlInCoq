@@ -56,3 +56,55 @@ Proof.
   introv tysys dou comp cl.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
+
+Lemma dest_close_per_uni_bar_l {p} :
+  forall (ts : cts(p)) lib T i T' eq (bar : BarLib lib),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar bar (fun lib => T ===>(lib) (mkc_uni i))
+    -> close ts lib T T' eq
+    -> ts lib T T' eq.
+Proof.
+  introv tysys dou mon comp cl.
+  inversion cl; clear cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_uni_bar_r {p} :
+  forall (ts : cts(p)) lib T i T' eq (bar : BarLib lib),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar bar (fun lib => T' ===>(lib) (mkc_uni i))
+    -> close ts lib T T' eq
+    -> ts lib T T' eq.
+Proof.
+  introv tysys dou mon comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_uni_ceq_bar_l {p} :
+  forall (ts : cts(p)) lib T i T' eq (bar : BarLib lib),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> T ==b==>(bar) (mkc_uni i)
+    -> close ts lib T T' eq
+    -> ts lib T T' eq.
+Proof.
+  introv tysys dou mon comp cl.
+  inversion cl; clear cl; subst; try close_diff_all; auto.
+Qed.
+
+Lemma dest_close_per_uni_ceq_bar_r {p} :
+  forall (ts : cts(p)) lib T i T' eq (bar : BarLib lib),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> T' ==b==>(bar) (mkc_uni i)
+    -> close ts lib T T' eq
+    -> ts lib T T' eq.
+Proof.
+  introv tysys dou mon comp cl.
+  inversion cl; subst; try close_diff_all; auto.
+Qed.
