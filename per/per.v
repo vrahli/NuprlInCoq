@@ -1345,8 +1345,8 @@ Definition per_union_bar {p}
   {eqa, eqb : per
   , {A1, A2, B1, B2 : CTerm
   , {bar : BarLib lib
-    , all_in_bar bar (fun lib => T1 ===>(lib) (mkc_union A1 B1))
-    # all_in_bar bar (fun lib => T2 ===>(lib) (mkc_union A2 B2))
+    , T1 ==b==>(bar) (mkc_union A1 B1)
+    # T2 ==b==>(bar) (mkc_union A2 B2)
     # all_in_bar bar (fun lib => ts lib A1 A2 eqa)
     # all_in_bar bar (fun lib => ts lib B1 B2 eqb)}
   # eq <=2=> (per_union_eq_bar lib eqa eqb) }}.
@@ -2942,8 +2942,8 @@ Definition close_ind' {pp}
                   (B B'  : @CTerm pp)
                   (eqa   : per)
                   (eqb   : per)
-                  (c1    : all_in_bar bar (fun lib => T ===>(lib) (mkc_union A B)))
-                  (c2    : all_in_bar bar (fun lib => T' ===>(lib) (mkc_union A' B')))
+                  (c1    : T ==b==>(bar) (mkc_union A B))
+                  (c2    : T' ==b==>(bar) (mkc_union A' B'))
                   (cla   : all_in_bar bar (fun lib => close ts lib A A' eqa))
                   (reca  : all_in_bar bar (fun lib => P ts lib A A' eqa))
                   (clb   : all_in_bar bar (fun lib => close ts lib B B' eqb))

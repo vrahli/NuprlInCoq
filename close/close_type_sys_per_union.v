@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,45 +21,22 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
 
-Require Import type_sys_useful.
-Require Import dest_close.
+Require Export type_sys_useful.
+Require Export dest_close.
+Require Export per_ceq_bar.
 
 
 
-Lemma eq_term_equals_per_union_eq_if {p} :
-  forall lib (eqa1 eqa2 eqb1 eqb2 : per(p)),
-    eq_term_equals eqa1 eqa2
-    -> eq_term_equals eqb1 eqb2
-    -> eq_term_equals (per_union_eq lib eqa1 eqb1) (per_union_eq lib eqa2 eqb2).
-Proof.
-  introv eqta eqtb.
-  unfold eq_term_equals, per_union_eq, per_union_eq_L, per_union_eq_R;
-    introv; split; intro k; repdors; exrepnd.
-
-  left.
-  exists x y; sp.
-  apply eqta; sp.
-
-  right.
-  exists x y; sp.
-  apply eqtb; sp.
-
-  left.
-  exists x y; sp.
-  apply eqta; sp.
-
-  right.
-  exists x y; sp.
-  apply eqtb; sp.
-Qed.
-
-Lemma per_union_eq_symmetric {p} :
+(*Lemma per_union_eq_symmetric {p} :
   forall lib (eqa eqb : per(p)) t1 t2,
     term_equality_symmetric eqa
     -> term_equality_symmetric eqb
@@ -121,74 +101,286 @@ Proof.
   exists x b; sp; spcast; sp.
   apply resb; spcast; sp.
   apply trb with (t2 := y); sp.
+Qed.*)
+
+
+Lemma implies_eq_term_equals_per_union_bar {p} :
+  forall lib (eqa1 eqa2 eqb1 eqb2 : per(p)),
+    (eqa1 <=2=> eqa2)
+    -> (eqb1 <=2=> eqb2)
+    -> (per_union_eq_bar lib eqa1 eqb1) <=2=> (per_union_eq_bar lib eqa2 eqb2).
+Proof.
+  introv eqta eqtb; introv.
+  unfold per_union_eq_bar; split; introv h; exrepnd; exists bar;
+    introv br ext;
+    pose proof (h0 lib' br lib'0 ext) as h0; simpl in *;
+      unfold per_union_eq, per_union_eq_L, per_union_eq_R in *;
+      repndors; exrepnd;[left|right|left|right];
+        eexists; eexists; dands; eauto;
+          try (complete (apply eqta; auto));
+          try (complete (apply eqtb; auto)).
 Qed.
 
+Lemma approx_decomp_union {o} :
+  forall lib (a b c d : @NTerm o),
+    approx lib (mk_union a b) (mk_union c d)
+    <=> approx lib a c # approx lib b d.
+Proof.
+  split; unfold mk_union; introv Hyp.
+  - applydup @approx_relates_only_progs in Hyp. repnd.
+    apply  approx_canonical_form2 in Hyp.
+    unfold lblift in Hyp.
+    repnd; allsimpl.
+    alpharelbtd; GC.
+    applydup @isprogram_union_iff in Hyp1.
+    applydup @isprogram_union_iff in Hyp0.
+    repnd.
+    eapply blift_approx_open_nobnd in Hyp1bt; eauto 3 with slow.
+    eapply blift_approx_open_nobnd in Hyp0bt; eauto 3 with slow.
+  - repnd.
+    applydup @approx_relates_only_progs in Hyp; repnd.
+    applydup @approx_relates_only_progs in Hyp0; repnd.
+    apply approx_canonical_form3.
+    + apply isprogram_ot_iff. allsimpl. dands; auto. introv Hin.
+      repndors; subst; tcsp; apply implies_isprogram_bt0; eauto 3 with slow.
+    + apply isprogram_ot_iff. allsimpl. dands; auto. introv Hin.
+      repndors; subst; tcsp; apply implies_isprogram_bt0; eauto 3 with slow.
+    + unfold lblift. allsimpl. split; auto.
+      introv Hin. unfold selectbt.
+      repeat(destruct n; try (omega;fail); allsimpl);
+      apply blift_approx_open_nobnd2; sp.
+Qed.
 
-Lemma close_type_system_union {p} :
-  forall lib (ts : cts(p))
+Lemma cequiv_decomp_union {o} :
+  forall lib (a b c d : @NTerm o),
+    cequiv lib (mk_union a b) (mk_union c d)
+    <=> cequiv lib a c # cequiv lib b d.
+Proof.
+  intros.
+  unfold cequiv.
+  generalize (approx_decomp_union lib a b c d); intro X.
+  trewrite X; clear X.
+  generalize (approx_decomp_union lib c d a b); intro X.
+  trewrite X; clear X.
+  split; sp.
+Qed.
+
+Lemma cequivc_decomp_union {o} :
+  forall lib (a b c d : @CTerm o),
+    cequivc lib (mkc_union a b) (mkc_union c d)
+    <=> cequivc lib a c # cequivc lib b d.
+Proof.
+  introv; destruct_cterms; unfold cequivc, mkc_cequiv; simpl.
+  apply cequiv_decomp_union.
+Qed.
+
+Lemma two_computes_to_valc_ceq_bar_mkc_union {o} :
+  forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) a1 b1 a2 b2,
+    T ==b==>(bar1) (mkc_union a1 b1)
+    -> T ==b==>(bar2) (mkc_union a2 b2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2).
+Proof.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_implies in comp2; try exact comp1.
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q.
+  spcast.
+  apply cequivc_decomp_union in q; repnd; dands; spcast; auto.
+Qed.
+
+Lemma two_computes_to_valc_ceq_bar_mkc_union1 {o} :
+  forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) a1 b1 a2 b2,
+    T ==b==>(bar1) (mkc_union a1 b1)
+    -> T ==b==>(bar2) (mkc_union a2 b2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib a1 a2).
+Proof.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_mkc_union in comp2;[|exact comp1].
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q; tcsp.
+Qed.
+
+Lemma two_computes_to_valc_ceq_bar_mkc_union2 {o} :
+  forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) a1 b1 a2 b2,
+    T ==b==>(bar1) (mkc_union a1 b1)
+    -> T ==b==>(bar2) (mkc_union a2 b2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib b1 b2).
+Proof.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_mkc_union in comp2;[|exact comp1].
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q; tcsp.
+Qed.
+
+Lemma all_in_bar_type_sys_props4_sym {o} :
+  forall ts lib (bar : BarLib lib) (A B : @CTerm o) eqa,
+    all_in_bar bar (fun lib => type_sys_props4 ts lib A B eqa)
+    -> all_in_bar bar (fun lib => type_sys_props4 ts lib B A eqa).
+Proof.
+  introv alla br ext.
+  pose proof (alla lib' br lib'0 ext) as alla; simpl in *.
+  apply type_sys_props4_sym; auto.
+Qed.
+Hint Resolve all_in_bar_type_sys_props4_sym : slow.
+
+Lemma close_type_system_union {o} :
+  forall (ts : cts(o))
+         lib (bar : BarLib lib)
          T T'
          (eq : per)
          A1 A2 B1 B2 eqa eqb,
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_union A1 B1)
-    -> computes_to_valc lib T' (mkc_union A2 B2)
-    -> close lib ts A1 A2 eqa
-    -> type_sys_props lib (close lib ts) A1 A2 eqa
-    -> close lib ts B1 B2 eqb
-    -> type_sys_props lib (close lib ts) B1 B2 eqb
-    -> (forall t t' : CTerm, eq t t' <=> per_union_eq lib eqa eqb t t')
-    -> per_union lib (close lib ts) T T' eq
-    -> type_sys_props lib (close lib ts) T T' eq.
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> (T ==b==>(bar) (mkc_union A1 B1))
+    -> (T' ==b==>(bar) (mkc_union A2 B2))
+    -> all_in_bar bar (fun lib => close ts lib A1 A2 eqa)
+    -> all_in_bar bar (fun lib => type_sys_props4 (close ts) lib A1 A2 eqa)
+    -> all_in_bar bar (fun lib => close ts lib B1 B2 eqb)
+    -> all_in_bar bar (fun lib => type_sys_props4 (close ts) lib B1 B2 eqb)
+    -> (eq <=2=> (per_union_eq_bar lib eqa eqb))
+    -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
-  introv tysys dou c1 c2 cla reca clb recb eqiff per.
+  introv tysys dou mon c1 c2 cla reca clb recb eqiff.
 
-  rw @type_sys_props_iff_type_sys_props3.
-  prove_type_sys_props3 SCase; intros.
+  prove_type_sys_props4 SCase; introv.
 
   - SCase "uniquely_valued".
+    introv cl.
     dclose_lr.
+    clear cl.
 
-    + SSCase "CL_union".
-      clear per.
-      allunfold @per_union; exrepd.
-      unfold eq_term_equals; intros.
-      allrw.
-      ccomputes_to_eqval.
-      revert t1 t2; rw @fold_eq_term_equals.
-      apply eq_term_equals_per_union_eq_if.
-      apply type_sys_props_eq_term_equals4 with (B := A3) (eq1 := eqa0) in reca; sp.
-      apply type_sys_props_eq_term_equals4 with (B := B3) (eq1 := eqb0) in recb; sp.
+    allunfold @per_union_bar; exrepnd.
 
-  - SCase "type_symmetric"; repdors; subst; dclose_lr;
-    apply CL_union;
-    clear per;
-    allunfold @per_union; exrepd;
-    unfold per_union;
-    ccomputes_to_eqval.
+    eapply eq_term_equals_trans;[eauto|].
+    eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
 
-    + exists eqa0 eqb0 A1 A3 B1 B3; sp; spcast; sp.
-      apply eq_term_equals_trans with (eq2 := eq); sp.
-      apply eq_term_equals_sym; sp.
+    pose proof (two_computes_to_valc_ceq_bar_mkc_union1 bar bar0 T A1 B1 A0 B0) as ceq1.
+    repeat (autodimp ceq1 hyp).
+    apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in ceq1.
+    pose proof (two_computes_to_valc_ceq_bar_mkc_union2 bar bar0 T A1 B1 A0 B0) as ceq2.
+    repeat (autodimp ceq2 hyp).
+    apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in ceq2.
 
-  - SCase "type_value_respecting"; repdors; subst;
-    apply CL_union; unfold per_union.
+    apply implies_eq_term_equals_per_union_bar.
 
-    (* 1 *)
-    generalize (cequivc_mkc_union lib T T3 A1 B1); introv k; repeat (autodimp k hyp); exrepnd.
-    exists eqa eqb A1 a' B1 b'; sp; spcast; sp.
-    generalize (type_sys_props_cequivc lib (close lib ts) A1 A2 a' eqa); sp.
-    generalize (type_sys_props_cequivc lib (close lib ts) B1 B2 b' eqb); sp.
+    { eapply all_in_bar_type_sys_props4_implies_type_equality_respecting_trans; eauto. }
 
-    (* 2 *)
-    generalize (cequivc_mkc_union lib T' T3 A2 B2); introv k; repeat (autodimp k hyp); exrepnd.
-    exists eqa eqb A2 a' B2 b'; sp; spcast; sp.
-    apply type_sys_props_sym in reca.
-    generalize (type_sys_props_cequivc lib (close lib ts) A2 A1 a' eqa); sp.
-    apply type_sys_props_sym in recb.
-    generalize (type_sys_props_cequivc lib (close lib ts) B2 B1 b' eqb); sp.
+    { eapply all_in_bar_type_sys_props4_implies_type_equality_respecting_trans; eauto. }
+
+  - SCase "type_symmetric".
+    introv cl ee.
+    dclose_lr; clear cl.
+    apply CL_union.
+    allunfold @per_union_bar; exrepnd.
+    exists eqa0 eqb0 A0 A3 B0 B3; dands; auto; eauto.
+    eapply eq_term_equals_trans;[apply eq_term_equals_sym;eauto|]; auto.
+
+  - SCase "type_value_respecting".
+    introv h ceq.
+    repndors; subst; apply CL_union.
+
+    { eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto].
+      exists eqa eqb A1 A1 B1 B1; dands; auto.
+      exists bar; dands; auto; eauto 3 with slow. }
+
+    { eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto].
+      exists eqa eqb A2 A2 B2 B2; dands; auto.
+      exists bar; dands; auto; eauto 3 with slow. }
+
+  - SCase "type_value_respecting_trans".
+    introv h ceq cl.
+    repndors; subst;
+      eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;eauto;
+        dclose_lr; clear cl; apply CL_union.
+
+    {
+      unfold per_union_bar in *; exrepnd.
+
+      pose proof (two_computes_to_valc_ceq_bar_mkc_union1 bar bar0 T3 A1 B1 A0 B0) as ceq1.
+      repeat (autodimp ceq1 hyp).
+      apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in ceq1.
+      pose proof (two_computes_to_valc_ceq_bar_mkc_union2 bar bar0 T3 A1 B1 A0 B0) as ceq2.
+      repeat (autodimp ceq2 hyp).
+      apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in ceq2.
+
+      exists eqa eqb; eexists; eexists; eexists; eexists; dands; eauto.
+
+      - exists (intersect_bars bar bar0); dands; eauto 3 with slow;
+          eapply all_in_bar_type_sys_props4_implies_type_equality_respecting_trans2; eauto.
+
+      - eapply eq_term_equals_trans;[eauto|].
+        apply eq_term_equals_sym.
+        apply implies_eq_term_equals_per_union_bar;
+          eapply all_in_bar_type_sys_props4_implies_type_equality_respecting_trans; eauto.
+    }
+
+    {
+      unfold per_union_bar in *; exrepnd.
+
+      pose proof (two_computes_to_valc_ceq_bar_mkc_union1 bar bar0 T3 A2 B2 A0 B0) as ceq1.
+      repeat (autodimp ceq1 hyp).
+      apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in ceq1.
+      pose proof (two_computes_to_valc_ceq_bar_mkc_union2 bar bar0 T3 A2 B2 A0 B0) as ceq2.
+      repeat (autodimp ceq2 hyp).
+      apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in ceq2.
+
+      exists eqa eqb; eexists; eexists; eexists; eexists; dands; eauto.
+
+      - exists (intersect_bars bar bar0); dands; eauto 3 with slow;
+          eapply all_in_bar_type_sys_props4_sym_implies_type_equality_respecting_trans2; eauto.
+
+      - eapply eq_term_equals_trans;[eauto|].
+        apply eq_term_equals_sym.
+        apply implies_eq_term_equals_per_union_bar;
+          eapply all_in_bar_type_sys_props4_sym_implies_type_equality_respecting_trans; eauto.
+    }
+
+    {
+      unfold per_union_bar in *; exrepnd.
+
+      pose proof (two_computes_to_valc_ceq_bar_mkc_union1 bar bar0 T3 A1 B1 A3 B3) as ceq1.
+      repeat (autodimp ceq1 hyp).
+      apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in ceq1.
+      pose proof (two_computes_to_valc_ceq_bar_mkc_union2 bar bar0 T3 A1 B1 A3 B3) as ceq2.
+      repeat (autodimp ceq2 hyp).
+      apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in ceq2.
+
+      exists eqa eqb; eexists; eexists; eexists; eexists; dands; eauto.
+
+      - exists (intersect_bars bar bar0); dands; eauto 3 with slow;
+          eapply all_in_bar_type_sys_props4_implies_type_equality_respecting_trans4; eauto.
+
+      - eapply eq_term_equals_trans;[eauto|].
+        apply eq_term_equals_sym.
+        apply implies_eq_term_equals_per_union_bar;
+          eapply all_in_bar_type_sys_props4_implies_type_equality_respecting_trans3; eauto.
+    }
+
+    {
+      unfold per_union_bar in *; exrepnd.
+
+      pose proof (two_computes_to_valc_ceq_bar_mkc_union1 bar bar0 T3 A2 B2 A3 B3) as ceq1.
+      repeat (autodimp ceq1 hyp).
+      apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in ceq1.
+      pose proof (two_computes_to_valc_ceq_bar_mkc_union2 bar bar0 T3 A2 B2 A3 B3) as ceq2.
+      repeat (autodimp ceq2 hyp).
+      apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in ceq2.
+
+      exists eqa eqb; eexists; eexists; eexists; eexists; dands; eauto.
+
+      - exists (intersect_bars bar bar0); dands; eauto 3 with slow;
+          eapply all_in_bar_type_sys_props4_sym_implies_type_equality_respecting_trans4; eauto.
+
+      - eapply eq_term_equals_trans;[eauto|].
+        apply eq_term_equals_sym.
+        apply implies_eq_term_equals_per_union_bar;
+          eapply all_in_bar_type_sys_props4_sym_implies_type_equality_respecting_trans3; eauto.
+    }
 
   - SCase "term_symmetric".
+
+XXXXXX
     unfold term_equality_symmetric; introv eqt.
     rw eqiff in eqt; rw eqiff.
     apply per_union_eq_symmetric; sp;

@@ -175,6 +175,8 @@ Qed.
 Hint Resolve iscvalue_mkc_uatom : slow.
 
 Hint Resolve iscvalue_mkc_equality : slow.
+Hint Resolve iscvalue_mkc_union : slow.
+
 
 Ltac apply_cequivc_val :=
 
@@ -331,6 +333,55 @@ Ltac apply_cequivc_val :=
     apply cequivc_sym in c;
     eapply cequivc_mkc_equality in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
     destruct c as [a [b [T [c [h1 [h2 h3] ] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst
+
+
+  (* mkc_union *)
+
+  | [ H : cequivc _ (mkc_union _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    eapply cequivc_mkc_union in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst
+
+  | [ H : cequivc _ _ (mkc_union _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_union in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst
+
+  | [ H : ccequivc_ext ?lib (mkc_union _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_union in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst
+
+  | [ H : ccequivc_ext ?lib _ (mkc_union _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_union in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
     apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst
 
 

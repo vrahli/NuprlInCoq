@@ -45,9 +45,9 @@ Require Import close_type_sys_per_eq.
 (*Require Import close_type_sys_per_req.
 Require Import close_type_sys_per_teq.
 Require Import close_type_sys_per_isect.
-(*Require Import close_type_sys_per_eisect.*)
+(*Require Import close_type_sys_per_eisect.*)*)
 Require Import close_type_sys_per_func.
-Require Import close_type_sys_per_disect.
+(*Require Import close_type_sys_per_disect.
 Require Import close_type_sys_per_pertype.
 Require Import close_type_sys_per_ipertype.
 Require Import close_type_sys_per_spertype.
@@ -214,6 +214,46 @@ Proof.
 Qed.
 Hint Resolve ih_implies_all_in_bar_type_sys_props4 : slow.
 
+Lemma ih_implies_in_ext_type_sys_props4 {o} :
+  forall lib ts (A B : @CTerm o) eqa,
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> in_ext lib
+              (fun lib =>
+                 type_system ts
+                 -> defines_only_universes ts
+                 -> type_monotone ts
+                 -> type_sys_props4 (close ts) lib A B (eqa lib))
+    -> in_ext lib (fun lib => type_sys_props4 (close ts) lib A B (eqa lib)).
+Proof.
+  introv tsts dou mon i ext.
+  apply (i lib' ext); auto.
+Qed.
+Hint Resolve ih_implies_in_ext_type_sys_props4 : slow.
+
+Lemma ih_implies_in_ext_type_sys_props4_dep {o} :
+  forall lib (ts : cts(o)) v B v' B' eqa eqb,
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> in_ext lib
+              (fun lib =>
+                 forall a a' (e : eqa lib a a'),
+                   type_system ts
+                   -> defines_only_universes ts
+                   -> type_monotone ts
+                   -> type_sys_props4 (close ts) lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+    -> in_ext lib
+              (fun lib =>
+                 forall a a' (e : eqa lib a a'),
+                   type_sys_props4 (close ts) lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e)).
+Proof.
+  introv tsts dou mon i ext; introv.
+  apply (i lib' ext); auto.
+Qed.
+Hint Resolve ih_implies_in_ext_type_sys_props4_dep : slow.
+
 Lemma close_type_system {o} :
   forall (ts : cts(o)),
     type_system ts
@@ -267,7 +307,7 @@ Proof.
     eapply close_type_system_isect; eauto.*)
 
   - Case "CL_func".
-    eapply close_type_system_func; eauto.
+    eapply close_type_system_func; eauto; eauto 3 with slow.
 
 (*  - Case "CL_disect".
     eapply close_type_system_disect; eauto.*)
