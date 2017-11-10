@@ -53,9 +53,9 @@ Require Import close_type_sys_per_ipertype.
 Require Import close_type_sys_per_spertype.
 Require Import close_type_sys_per_w.
 Require Import close_type_sys_per_m.
-Require Import close_type_sys_per_texc.
+Require Import close_type_sys_per_texc.*)
 Require Import close_type_sys_per_union.
-Require Import close_type_sys_per_image.
+(*Require Import close_type_sys_per_image.
 Require Import close_type_sys_per_partial.
 Require Import close_type_sys_per_admiss.
 Require Import close_type_sys_per_mono.
@@ -63,9 +63,9 @@ Require Import close_type_sys_per_ffatom.
 Require Import close_type_sys_per_effatom.
 Require Import close_type_sys_per_ffatoms.
 Require Import close_type_sys_per_set.
-Require Import close_type_sys_per_tunion.
+Require Import close_type_sys_per_tunion.*)
 Require Import close_type_sys_per_product.
-Require Import close_type_sys_per_pw.
+(*Require Import close_type_sys_per_pw.
 Require Import close_type_sys_per_pm.*)
 
 (** printing #  $\times$ #×# *)
@@ -341,7 +341,7 @@ Proof.
     eapply close_type_system_texc; eauto.*)
 
   - Case "CL_union".
-    eapply close_type_system_union; eauto.
+    eapply close_type_system_union; eauto; eauto 3 with slow.
 
 (*  - Case "CL_image".
     eapply close_type_system_image; eauto; spcast; auto.*)
@@ -371,16 +371,17 @@ Proof.
     eapply close_type_system_tunion; eauto.*)
 
   - Case "CL_product".
-    eapply close_type_system_product; eauto.
+    eapply close_type_system_product; eauto; eauto 3 with slow.
 Qed.
 
 (* begin hide *)
 
 Lemma close_uniquely_valued {o} :
-  forall lib (ts : cts(o)),
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> uniquely_valued (close lib ts).
+  forall (ts : cts(o)),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> uniquely_valued (close ts).
 Proof.
   intros.
   apply close_type_system in X; auto.
@@ -388,10 +389,11 @@ Proof.
 Qed.
 
 Lemma close_type_symmetric {o} :
-  forall lib (ts : cts(o)),
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> type_symmetric (close lib ts).
+  forall (ts : cts(o)),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> type_symmetric (close ts).
 Proof.
   intros.
   apply close_type_system in X; auto.
@@ -399,10 +401,11 @@ Proof.
 Qed.
 
 Lemma close_type_extensionality {o} :
-  forall lib (ts : cts(o)),
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> type_extensionality (close lib ts).
+  forall (ts : cts(o)),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> type_extensionality (close ts).
 Proof.
   intros.
   apply close_type_system in X; auto.
@@ -410,10 +413,11 @@ Proof.
 Qed.
 
 Lemma close_type_transitive {o} :
-  forall lib (ts : cts(o)),
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> type_transitive (close lib ts).
+  forall (ts : cts(o)),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> type_transitive (close ts).
 Proof.
   intros.
   apply close_type_system in X; auto.
@@ -421,10 +425,11 @@ Proof.
 Qed.
 
 Lemma close_type_value_respecting {o} :
-  forall lib (ts : cts(o)),
-    type_system lib ts
-    -> defines_only_universes lib ts
-    -> type_value_respecting lib (close lib ts).
+  forall (ts : cts(o)),
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> type_value_respecting (close ts).
 Proof.
   intros.
   apply close_type_system in X; auto.

@@ -32,6 +32,7 @@
 
 Require Export close_type_sys.
 Require Export Peano.
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ *)
@@ -48,20 +49,22 @@ Require Export Peano.
 
 
 Lemma defines_only_universes_univi {o} :
-  forall lib i, @defines_only_universes o lib (univi lib i).
+  forall i, @defines_only_universes o (univi i).
 Proof.
   unfold defines_only_universes; sp.
   allrw @univi_exists_iff; sp.
   exists j; sp.
 Qed.
+Hint Resolve defines_only_universes_univi : slow.
 
 Lemma defines_only_universes_univ {o} :
-  forall lib, @defines_only_universes o lib (univ lib).
+  @defines_only_universes o univ.
 Proof.
   unfold defines_only_universes, univ; sp.
   induction i; allsimpl; sp.
   exists i; sp.
 Qed.
+Hint Resolve defines_only_universes_univ : slow.
 
 
 (* end hide *)
@@ -73,8 +76,19 @@ Qed.
 
 *)
 
+Lemma ccequivc_ext_uni {o} :
+  forall lib (T T' : @CTerm o) i,
+    ccequivc_ext lib T T'
+    -> ccomputes_to_valc lib T (mkc_uni i)
+    -> ccomputes_to_valc lib T' (mkc_uni i).
+Proof.
+  introv ceq comp.
+  pose proof (ceq lib) as ceq'; simpl in ceq'; autodimp ceq' hyp; eauto 3 with slow; spcast.
+  eapply cequivc_uni in ceq';[|eauto]; exrepnd; auto.
+Qed.
+
 Lemma univi_type_system {o} :
-  forall lib (i : nat), @type_system o lib (univi lib i).
+  forall (i : nat), @type_system o (univi i).
 Proof.
   induction i using comp_ind_type.
   unfold type_system; sp.
@@ -101,25 +115,23 @@ Proof.
   - unfold type_value_respecting; sp.
     allrw @univi_exists_iff; sp.
     exists j; sp; thin_trivials.
-    spcast; apply cequivc_uni with (t := T); auto.
+    eapply ccequivc_ext_uni; eauto.
 
   - unfold term_symmetric, term_equality_symmetric; sp.
     allrw @univi_exists_iff; sp; spcast.
     discover; sp.
     allrw.
     exists eqa; auto.
-    generalize (@close_type_system o lib (univi lib j)); intro k.
-    repeat (dest_imp k hyp).
-    apply defines_only_universes_univi.
+    generalize (@close_type_system o (univi j)); intro k.
+    repeat (dest_imp k hyp); eauto 3 with slow.
     inversion k; sp.
 
   - unfold term_transitive, term_equality_transitive; sp.
     allrw @univi_exists_iff; sp.
     discover; sp; spcast.
     allrw.
-    generalize (@close_type_system o lib (univi lib j)); intro k.
-    repeat (dest_imp k hyp).
-    apply defines_only_universes_univi.
+    generalize (@close_type_system o (univi j)); intro k.
+    repeat (dest_imp k hyp); eauto 3 with slow.
     inversion k; sp.
     exists eqa0.
     apply uniquely_valued_trans4 with (T2 := t2) (eq1 := eqa); sp.
@@ -129,70 +141,69 @@ Proof.
     discover; sp; spcast; GC.
     allrw.
     exists eqa.
-    generalize (@close_type_system o lib (univi lib j)); intro k.
-    repeat (dest_imp k hyp).
-    apply defines_only_universes_univi.
+    generalize (@close_type_system o (univi j)); intro k.
+    repeat (dest_imp k hyp); eauto 3 with slow.
     inversion k; sp.
 Qed.
+Hint Resolve univi_type_system : slow.
 
 (* begin hide *)
 
 Lemma nuprli_type_system {o} :
-  forall lib (i : nat), @type_system o lib (nuprli lib i).
+  forall (i : nat), @type_system o (nuprli i).
 Proof.
   unfold nuprli; sp.
-  apply close_type_system.
-  apply univi_type_system.
-  apply defines_only_universes_univi.
+  apply close_type_system; eauto 3 with slow.
 Qed.
+Hint Resolve nuprli_type_system : slow.
 
 Lemma nuprli_uniquely_valued {o} :
   forall lib i1 i2 (T T' : @CTerm o) eq eq',
-    nuprli lib i1 T T' eq
-    -> nuprli lib i2 T T' eq'
-    -> eq_term_equals eq eq'.
+    nuprli i1 lib T T' eq
+    -> nuprli i2 lib T T' eq'
+    -> eq <=2=> eq'.
 Proof.
   sp.
-  assert (nuprli lib (i2 + i1) T T' eq) as c1 by (apply typable_in_higher_univ; auto).
-  assert (nuprli lib (i1 + i2) T T' eq') as c2 by (apply typable_in_higher_univ; auto).
+  assert (nuprli (i2 + i1) lib T T' eq) as c1 by (apply typable_in_higher_univ; auto).
+  assert (nuprli (i1 + i2) lib T T' eq') as c2 by (apply typable_in_higher_univ; auto).
   assert (i1 + i2 = i2 + i1) as e by omega.
   rww e.
-  generalize (@nuprli_type_system o lib (i2 + i1)); intro nts.
+  generalize (@nuprli_type_system o (i2 + i1)); intro nts.
   destruct nts; sp.
   unfold uniquely_valued in u.
-  apply u with (T := T) (T' := T'); auto.
+  eapply u; eauto.
 Qed.
 
 Lemma nuprli_type_transitive {o} :
   forall lib i1 i2 (T1 T2 T3 : @CTerm o) eq,
-    nuprli lib i1 T1 T2 eq
-    -> nuprli lib i2 T2 T3 eq
-    -> {i : nat & nuprli lib i T1 T3 eq # i1 <= i # i2 <= i}.
+    nuprli i1 lib T1 T2 eq
+    -> nuprli i2 lib T2 T3 eq
+    -> {i : nat & nuprli i lib T1 T3 eq # i1 <= i # i2 <= i}.
 Proof.
   sp.
-  assert (nuprli lib (i1 + i2) T1 T2 eq) as c1 by (apply typable_in_higher_univ_r; auto).
-  assert (nuprli lib (i1 + i2) T2 T3 eq) as c2 by (apply typable_in_higher_univ; auto).
+  assert (nuprli (i1 + i2) lib T1 T2 eq) as c1 by (apply typable_in_higher_univ_r; auto).
+  assert (nuprli (i1 + i2) lib T2 T3 eq) as c2 by (apply typable_in_higher_univ; auto).
   exists (i1 + i2); sp; try omega.
-  generalize (@nuprli_type_system o lib (i1 + i2)); intro nts.
+  generalize (@nuprli_type_system o (i1 + i2)); intro nts.
   destruct nts; sp.
   apply p2 with (T2 := T2); sp.
 Qed.
 
 Lemma univi_uniquely_valued {o} :
   forall lib i1 i2 (T T' : @CTerm o) eq eq',
-    univi lib i1 T T' eq
-    -> univi lib i2 T T' eq'
-    -> eq_term_equals eq eq'.
+    univi i1 lib T T' eq
+    -> univi i2 lib T T' eq'
+    -> eq <=2=> eq'.
 Proof.
   sp.
-  assert (univi lib (i2 + i1) T T' eq) as c1 by (apply uni_in_higher_univ; auto).
-  assert (univi lib (i1 + i2) T T' eq') as c2 by (apply uni_in_higher_univ; auto).
+  assert (univi (i2 + i1) lib T T' eq) as c1 by (apply uni_in_higher_univ; auto).
+  assert (univi (i1 + i2) lib T T' eq') as c2 by (apply uni_in_higher_univ; auto).
   assert (i1 + i2 = i2 + i1) as e by omega.
   rww e.
-  generalize (@univi_type_system o lib (i2 + i1)); intro uts.
+  generalize (@univi_type_system o (i2 + i1)); intro uts.
   destruct uts; sp.
   unfold uniquely_valued in u.
-  apply u with (T := T) (T' := T'); auto.
+  eapply u; eauto.
 Qed.
 
 (* end hide *)
@@ -204,7 +215,7 @@ Qed.
 
 *)
 
-Lemma univ_type_system {o} : forall lib, @type_system o lib (univ lib).
+Lemma univ_type_system {o} : @type_system o univ.
 Proof.
   unfold univ, type_system; sp.
 
@@ -213,47 +224,48 @@ Proof.
 
   - unfold type_extensionality; sp.
     exists i.
-    generalize (@univi_type_system o lib i); intro uts.
+    generalize (@univi_type_system o i); intro uts.
     dest_ts uts.
     unfold type_extensionality in ts_ext.
     apply ts_ext with (eq := eq); auto.
 
   - unfold type_symmetric; sp.
     exists i.
-    generalize (@univi_type_system o lib i); intro uts.
+    generalize (@univi_type_system o i); intro uts.
     dest_ts uts; auto.
 
   - unfold type_transitive; introv u1 u2; exrepnd.
     apply uni_in_higher_univ with (k := i0) in u0.
     apply uni_in_higher_univ_r with (k := i) in u2.
     exists (i0 + i).
-    generalize (@univi_type_system o lib (i0 + i)); intro uts.
+    generalize (@univi_type_system o (i0 + i)); intro uts.
     dest_ts uts; auto.
     apply ts_tyt with (T2 := T2); auto.
 
   - unfold type_value_respecting; sp.
     exists i.
-    generalize (@univi_type_system o lib i); intro uts.
+    generalize (@univi_type_system o i); intro uts.
     dest_ts uts; sp.
 
   - unfold term_symmetric, term_equality_symmetric; introv u e1; exrepnd.
-    generalize (@univi_type_system o lib i); intro uts.
+    generalize (@univi_type_system o i); intro uts.
     dest_ts uts; sp.
     apply ts_tes in u0.
     apply u0; auto.
 
   - unfold term_transitive, term_equality_transitive; introv u e1 e2; exrepnd.
-    generalize (@univi_type_system o lib i); intro uts.
+    generalize (@univi_type_system o i); intro uts.
     dest_ts uts; sp.
     apply ts_tet in u0.
     apply u0 with (t2 := t2); auto.
 
   - unfold term_value_respecting, term_equality_respecting; introv u e1 c1; exrepnd.
-    generalize (@univi_type_system o lib i); intro uts.
+    generalize (@univi_type_system o i); intro uts.
     dest_ts uts; sp.
     apply ts_tev in u0.
     apply u0; auto.
 Qed.
+Hint Resolve univ_type_system : slow.
 
 (**
 
@@ -261,21 +273,20 @@ Qed.
 
 *)
 
-Lemma nuprl_type_system {p} : forall lib, @type_system p lib (nuprl lib).
+Lemma nuprl_type_system {p} : @type_system p nuprl.
 Proof.
   introv.
-  apply close_type_system.
-  apply univ_type_system.
-  apply defines_only_universes_univ.
+  apply close_type_system; eauto 3 with slow.
 Qed.
+Hint Resolve nuprl_type_system : slow.
 
 (* begin hide *)
 
 (** Here is a tactic to use the fact that nuprl is a type system *)
 Ltac nts :=
   match goal with
-      [ p : POpid , lib : library |- _ ] =>
-      pose proof (@nuprl_type_system p lib) as nts;
+      [ p : POpid |- _ ] =>
+      pose proof (@nuprl_type_system p) as nts;
         destruct nts as [ nts_uv nts ];
         destruct nts as [ nts_ext nts ];
         destruct nts as [ nts_tys nts ];
@@ -309,7 +320,7 @@ Proof.
   introv n1 n2; nts.
   use_trans t2; sp.
   use_ext eq2; sp.
-  apply uniquely_valued_eq with (ts := nuprl lib) (T := t2) (T1 := t3) (T2 := t1); sp.
+  eapply uniquely_valued_eq; eauto.
 Qed.
 
 Lemma nuprl_uniquely_valued {p} :
@@ -319,26 +330,26 @@ Lemma nuprl_uniquely_valued {p} :
     -> eq_term_equals eq1 eq2.
 Proof.
   introv n1 n2; nts.
-  apply nts_uv with (T := t) (T' := t); sp.
+  eapply nts_uv; eauto.
 Qed.
 
 Lemma nuprl_value_respecting_left {p} :
   forall lib (t1 t2 t3 : @CTerm p) eq,
     nuprl lib t1 t2 eq
-    -> cequivc lib t1 t3
+    -> ccequivc_ext lib t1 t3
     -> nuprl lib t3 t2 eq.
 Proof.
   intros.
   nts.
   assert (nuprl lib t1 t3 eq) as eq13
-    by (apply nts_tyv; auto; apply nts_tyt with (T2 := t2); auto).
+    by (apply nts_tyv; auto; eapply nts_tyt; eauto).
   apply nts_tyt with (T2 := t1); auto.
 Qed.
 
 Lemma nuprl_value_respecting_right {p} :
   forall lib t1 t2 t3 eq,
     @nuprl p lib t1 t2 eq
-    -> cequivc lib t2 t3
+    -> ccequivc_ext lib t2 t3
     -> nuprl lib t1 t3 eq.
 Proof.
   intros.
@@ -356,14 +367,16 @@ Lemma nuprl_eq_implies_eqorceq_refl {p} :
 Proof.
   introv n e.
   nts; sp; left.
-  unfold term_transitive, term_equality_transitive in nts_tet.
-  apply nts_tet with (t2 := t2) (T := T1) (T' := T2); sp.
-  unfold term_symmetric, term_equality_symmetric in nts_tes.
-  apply nts_tes with (T := T1) (T' := T2); sp.
-  unfold term_transitive, term_equality_transitive in nts_tet.
-  apply nts_tet with (t2 := t1) (T := T1) (T' := T2); sp.
-  unfold term_symmetric, term_equality_symmetric in nts_tes.
-  apply nts_tes with (T := T1) (T' := T2); sp.
+
+  { unfold term_transitive, term_equality_transitive in nts_tet.
+    eapply nts_tet; eauto.
+    unfold term_symmetric, term_equality_symmetric in nts_tes.
+    eapply nts_tes; eauto. }
+
+  { unfold term_transitive, term_equality_transitive in nts_tet.
+    eapply nts_tet; eauto.
+    unfold term_symmetric, term_equality_symmetric in nts_tes.
+    eapply nts_tes; eauto. }
 Qed.
 
 (* end hide *)

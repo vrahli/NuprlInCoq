@@ -30,6 +30,7 @@
 *)
 
 
+Require Export per_ceq_bar.
 Require Export nuprl_type_sys.
 Require Export univ_tacs.
 Require Import rel_nterm.
@@ -50,10 +51,10 @@ Require Import rel_nterm.
 
 Lemma nuprli_refl {p} :
   forall lib i t1 t2 eq,
-    @nuprli p lib i t1 t2 eq -> nuprli lib i t1 t1 eq.
+    @nuprli p i lib t1 t2 eq -> nuprli i lib t1 t1 eq.
 Proof.
   intros.
-  generalize (@nuprli_type_system p lib i); intro nts.
+  generalize (@nuprli_type_system p i); intro nts.
   dest_ts nts.
   apply ts_tyt with (T2 := t2); sp.
 Qed.
@@ -121,7 +122,7 @@ Lemma equality_eq_sym {p} :
     -> eq b a.
 Proof.
   sp; nts.
-  apply nts_tes with (T := A) (T' := B); sp.
+  eapply nts_tes; eauto.
 Qed.
 
 Lemma equality_eq_trans {p} :
@@ -132,7 +133,7 @@ Lemma equality_eq_trans {p} :
     -> eq a c.
 Proof.
   sp; nts.
-  apply nts_tet with (T := A) (T' := B) (t2 := b); sp.
+  eapply nts_tet; eauto.
 Qed.
 
 Lemma equality_sym {p} :
@@ -203,7 +204,7 @@ Qed.
 
 Lemma fold_equorsq {p} :
   forall lib t1 t2 T,
-    (@equality p lib t1 t2 T {+} ccequivc lib t1 t2) = equorsq lib t1 t2 T.
+    (@equality p lib t1 t2 T {+} ccequivc_ext lib t1 t2) = equorsq lib t1 t2 T.
 Proof. sp. Qed.
 
 Lemma fold_equorsq2 {p} :
@@ -281,18 +282,20 @@ Proof.
   rw <- (equality_eq1 lib B A b d eq n0).
   nts.
   split; sp.
-  apply (eqorceq_commutes lib) with (a := a) (c := c); auto.
-  apply nts_tev with (T := A); auto.
-  apply nts_tes with (T := A) (T' := A); auto.
-  apply nts_tet with (T := A) (T' := A); auto.
-  apply (eqorceq_commutes lib) with (a := b) (c := d); auto.
-  apply nts_tev with (T := A); auto.
-  apply nts_tes with (T := A) (T' := A); auto.
-  apply nts_tet with (T := A) (T' := A); auto.
-  apply eqorceq_sym; auto.
-  apply nts_tes with (T := A) (T' := A); auto.
-  apply eqorceq_sym; auto.
-  apply nts_tes with (T := A) (T' := A); auto.
+
+  { apply (eqorceq_commutes lib) with (a := a) (c := c); auto.
+    - apply nts_tev with (T := A); auto.
+    - eapply nts_tes; eauto.
+    - eapply nts_tet; eauto. }
+
+  { apply (eqorceq_commutes lib) with (a := b) (c := d); auto.
+    - apply nts_tev with (T := A); auto.
+    - eapply nts_tes; eauto.
+    - eapply nts_tet; eauto.
+    - apply eqorceq_sym; auto.
+      eapply nts_tes; eauto.
+    - apply eqorceq_sym; auto.
+      eapply nts_tes; eauto. }
 Qed.
 
 Lemma eq_equality1 {p} :
@@ -321,7 +324,7 @@ Defined.
 Lemma eq_equality3 {p} :
   forall lib a b A B (eq : per(p)) i,
     eq a b
-    -> nuprli lib i A B eq
+    -> nuprli i lib A B eq
     -> equality lib a b A.
 Proof.
   introv e n.
@@ -332,16 +335,26 @@ Qed.
 
 Lemma equality_respects_cequivc {p} :
   forall lib t1 t2 T,
-    @cequivc p lib t1 t2
+    @ccequivc_ext p lib t1 t2
     -> member lib t1 T
     -> equality lib t1 t2 T.
 Proof.
   unfold member, equality; sp.
   exists eq; sp.
   nts.
-  apply nts_tev with (T := T); sp; spcast; sp.
+  eapply nts_tev; eauto.
 Qed.
 Hint Resolve equality_respects_cequivc : nequality.
+
+Lemma alphaeqc_implies_ccequivc_ext {o} :
+  forall lib (t1 t2 : @CTerm o),
+    alphaeqc t1 t2
+    -> ccequivc_ext lib t1 t2.
+Proof.
+  introv aeq ext; spcast.
+  apply alphaeqc_implies_cequivc; auto.
+Qed.
+Hint Resolve alphaeqc_implies_ccequivc_ext : slow.
 
 Lemma equality_respects_alphaeqc {p} :
   forall lib t1 t2 T,
@@ -352,14 +365,13 @@ Proof.
   unfold member, equality; introv a m; exrepnd.
   exists eq; sp.
   nts.
-  apply nts_tev with (T := T); sp; spcast.
-  apply alphaeqc_implies_cequivc; sp.
+  eapply nts_tev; eauto; eauto 3 with slow.
 Qed.
 Hint Resolve equality_respects_alphaeqc : nequality.
 
 Lemma equality_respects_cequivc_left {p} :
   forall lib t1 t2 t T,
-    @cequivc p lib t1 t
+    @ccequivc_ext p lib t1 t
     -> equality lib t1 t2 T
     -> equality lib t t2 T.
 Proof.
@@ -373,7 +385,7 @@ Hint Resolve equality_respects_cequivc_left : nequality.
 
 Lemma equality_respects_cequivc_right {p} :
   forall lib t1 t2 t T,
-    @cequivc p lib t2 t
+    @ccequivc_ext p lib t2 t
     -> equality lib t1 t2 T
     -> equality lib t1 t T.
 Proof.
@@ -394,8 +406,7 @@ Proof.
   sp.
   apply @equality_trans with (t2 := t1); sp.
   apply equality_sym.
-  apply equality_respects_cequivc; sp.
-  apply alphaeqc_implies_cequivc; sp.
+  apply equality_respects_cequivc; sp; eauto 3 with slow.
   allapply @equality_refl; sp.
 Qed.
 Hint Resolve equality_respects_alphaeqc_left : nequality.
@@ -408,8 +419,7 @@ Lemma equality_respects_alphaeqc_right {p} :
 Proof.
   introv a e.
   apply @equality_trans with (t2 := t2); sp.
-  apply equality_respects_cequivc; sp.
-  apply alphaeqc_implies_cequivc; sp.
+  apply equality_respects_cequivc; sp; eauto 3 with slow.
   apply equality_sym in e.
   allapply @equality_refl; sp.
 Qed.
@@ -417,7 +427,7 @@ Hint Resolve equality_respects_alphaeqc_right : nequality.
 
 Lemma tequality_respects_cequivc_left {p} :
   forall lib T1 T2 T3,
-    @cequivc p lib T1 T3
+    @ccequivc_ext p lib T1 T3
     -> tequality lib T1 T2
     -> tequality lib T3 T2.
 Proof.
@@ -429,7 +439,7 @@ Hint Resolve tequality_respects_cequivc_left : nequality.
 
 Lemma tequality_respects_cequivc_right {p} :
   forall lib T1 T2 T3,
-    @cequivc p lib T2 T3
+    @ccequivc_ext p lib T2 T3
     -> tequality lib T1 T2
     -> tequality lib T1 T3.
 Proof.
@@ -447,8 +457,7 @@ Lemma tequality_respects_alphaeqc_left {p} :
 Proof.
   unfold tequality; sp.
   exists eq.
-  apply nuprl_value_respecting_left with (t1 := T1); auto.
-  apply alphaeqc_implies_cequivc; sp.
+  apply nuprl_value_respecting_left with (t1 := T1); auto; eauto 3 with slow.
 Qed.
 Hint Resolve tequality_respects_alphaeqc_left : nequality.
 
@@ -460,14 +469,13 @@ Lemma tequality_respects_alphaeqc_right {p} :
 Proof.
   unfold tequality; sp.
   exists eq.
-  apply nuprl_value_respecting_right with (t2 := T2); auto.
-  apply alphaeqc_implies_cequivc; sp.
+  apply nuprl_value_respecting_right with (t2 := T2); auto; eauto 3 with slow.
 Qed.
 Hint Resolve tequality_respects_alphaeqc_right : nequality.
 
 Lemma type_respects_cequivc_left {p} :
   forall lib T T',
-    @cequivc p lib T T'
+    @ccequivc_ext p lib T T'
     -> type lib T
     -> tequality lib T' T.
 Proof.
@@ -478,7 +486,7 @@ Hint Resolve type_respects_cequivc_left : nequality.
 
 Lemma type_respects_cequivc_right {p} :
   forall lib T T',
-    @cequivc p lib T T'
+    @ccequivc_ext p lib T T'
     -> type lib T
     -> tequality lib T T'.
 Proof.
@@ -510,15 +518,13 @@ Qed.
 Lemma cequivc_preserving_equality {p} :
   forall lib a b A B,
     @equality p lib a b A
-    -> cequivc lib A B
+    -> ccequivc_ext lib A B
     -> equality lib a b B.
 Proof.
   unfold equality; introv e c; exrepnd.
   nts.
   unfold type_value_respecting in nts_tyv.
-  apply nts_tyv with (eq := eq) in c; sp.
-  exists eq; sp.
-  generalize (type_system_type_mem2 (nuprl lib) A B eq); sp.
+  eapply nts_tyv in c; eauto.
 Qed.
 
 Lemma alphaeqc_preserving_equality {p} :
@@ -530,10 +536,10 @@ Proof.
   unfold equality; introv e al; exrepnd.
   nts.
   unfold type_value_respecting in nts_tyv.
-  apply (alphaeqc_implies_cequivc lib) in al.
+  apply (alphaeqc_implies_ccequivc_ext lib) in al.
   apply nts_tyv with (eq := eq) in al; sp.
   exists eq; sp.
-  generalize (type_system_type_mem2 (nuprl lib) A B eq); sp.
+  generalize (type_system_type_mem2 nuprl lib A B eq); sp.
 Qed.
 
 Lemma tequality_preserving_equality {p} :
@@ -548,7 +554,7 @@ Proof.
   apply type_system_type_mem2; sp.
   exists eq; sp.
   assert (eq_term_equals eq0 eq) as eqt.
-  apply uniquely_valued_eq with (ts := nuprl lib) (T := A) (T1 := A) (T2 := A); sp.
+  eapply uniquely_valued_eq; eauto.
   apply eqt; sp.
 Qed.
 Hint Resolve tequality_preserving_equality : nequality.
@@ -579,14 +585,14 @@ Proof.
   duniv j h.
   allrw @univi_exists_iff; exrepd.
   discover; exrepnd.
-  allfold (@nuprli p lib j0).
+  allfold (@nuprli p j0).
   allapply @nuprli_implies_nuprl.
   nts.
   assert (nuprl lib A A eqa # nuprl lib B B eqa); repd.
   apply type_system_type_mem2; sp.
   exists eqa; sp.
   assert (eq_term_equals eq0 eqa) as k.
-  apply uniquely_valued_eq with (ts := nuprl lib) (T := A) (T1 := A) (T2 := A); sp.
+  eapply uniquely_valued_eq; eauto; sp.
   allunfold @eq_term_equals.
   apply k; auto.
 Qed.
@@ -663,7 +669,7 @@ Qed.
 
 Hint Resolve tequality_preserving_equality cequivc_preserving_equality : nequality.
 
-Lemma cequivc_equality {p} : forall lib, respects3 (cequivc lib) (@equality p lib).
+Lemma cequivc_equality {p} : forall lib, respects3 (ccequivc_ext lib) (@equality p lib).
 Proof.
   introv; unfolds_base; dands; introv Hr Heq;
   eauto 3 with nequality.
@@ -678,6 +684,14 @@ Qed.
 Hint Resolve sym_cequivc_eauto : nequality.
 Hint Resolve sym_cequivc_eauto : respects.
 
+Lemma sym_ccequivc_ext_eauto {p} : forall lib, symm_rel (@ccequivc_ext p lib).
+Proof.
+  introv Hab.
+  apply ccequivc_ext_sym; auto.
+Qed.
+Hint Resolve sym_ccequivc_ext_eauto : nequality.
+Hint Resolve sym_ccequivc_ext_eauto : respects.
+
 Lemma cequorsq2_prop {p} :
   forall lib A a1 a2 b1 b2,
     @equorsq2 p lib a1 b1 a2 b2 A
@@ -687,19 +701,19 @@ Proof.
   introv ceq e1.
   unfold equorsq2, equorsq in ceq; repnd; repdors; spcast.
 
-  apply equality_trans with (t2 := a2); sp.
+  { apply equality_trans with (t2 := a2); sp. }
 
-  apply equality_trans with (t2 := a2); sp.
+  { apply equality_trans with (t2 := a2); sp. }
 
-  apply equality_trans with (t2 := a2); sp.
-  apply cequivc_sym in ceq.
-  rwg ceq.
-  apply equality_sym in e1; apply equality_refl in e1; auto.
+  { apply equality_trans with (t2 := a2); sp.
+    apply ccequivc_ext_sym in ceq.
+    rwg ceq.
+    apply equality_sym in e1; apply equality_refl in e1; auto. }
 
-  apply equality_trans with (t2 := a2); sp.
-  apply cequivc_sym in ceq.
-  rwg ceq.
-  apply equality_sym in e1; apply equality_refl in e1; auto.
+  { apply equality_trans with (t2 := a2); sp.
+    apply ccequivc_ext_sym in ceq.
+    rwg ceq.
+    apply equality_sym in e1; apply equality_refl in e1; auto. }
 Qed.
 
 Lemma cequorsq_equality_trans1 {p} :
@@ -712,7 +726,7 @@ Proof.
   unfold equorsq in c; sp.
   apply @equality_trans with (t2 := t2); sp.
   spcast; apply @equality_respects_cequivc_left with (t1 := t2); sp.
-  apply cequivc_sym; sp.
+  apply ccequivc_ext_sym; sp.
 Qed.
 
 Lemma cequorsq_equality_trans2 {p} :
@@ -732,7 +746,7 @@ Lemma cequorsq_sym {p} :
 Proof.
   unfold equorsq; introv ceq; sp.
   left; apply equality_sym; sp.
-  right; spcast; sp; apply cequivc_sym; sp.
+  right; spcast; sp; apply ccequivc_ext_sym; sp.
 Qed.
 
 Hint Resolve alphaeqc_preserving_equality : nequality.
@@ -761,7 +775,7 @@ Qed.
 Hint Resolve respects_alphaeqc_tequality : respects.
 
 Lemma respects_cequivc_tequality {p} :
-  forall lib, respects2 (cequivc lib) (@tequality p lib).
+  forall lib, respects2 (ccequivc_ext lib) (@tequality p lib).
 Proof.
   introv; unfolds_base; dands; introv Hr Heq;
   eauto 3 with nequality.
@@ -769,7 +783,8 @@ Qed.
 
 Hint Resolve respects_cequivc_tequality : respects.
 
-Lemma respects_cequivc_equality {p} : forall lib, respects3 (cequivc lib) (@equality p lib).
+Lemma respects_cequivc_equality {p} :
+  forall lib, respects3 (ccequivc_ext lib) (@equality p lib).
 Proof.
   introv; unfolds_base; dands; introv Hr Heq;
   eauto 3 with nequality.
@@ -779,10 +794,10 @@ Hint Resolve respects_cequivc_equality : respects.
 
 Lemma nuprli_sym {p} :
   forall lib i t1 t2 eq,
-    @nuprli p lib i t1 t2 eq -> nuprli lib i t2 t1 eq.
+    @nuprli p i lib t1 t2 eq -> nuprli i lib t2 t1 eq.
 Proof.
   intros.
-  generalize (@nuprli_type_system p lib i); intro nts.
+  generalize (@nuprli_type_system p i); intro nts.
   dest_ts nts.
   apply ts_tys; sp.
 Qed.
@@ -799,12 +814,12 @@ Qed.
 
 Lemma nuprli_ext {p} :
   forall lib i t1 t2 eq1 eq2,
-    @nuprli p lib i t1 t2 eq1
+    @nuprli p i lib t1 t2 eq1
     -> eq1 <=2=> eq2
-    -> nuprli lib i t1 t2 eq2.
+    -> nuprli i lib t1 t2 eq2.
 Proof.
   introv n1 eqs.
-  generalize (@nuprli_type_system p lib i); intro nts.
+  generalize (@nuprli_type_system p i); intro nts.
   dest_ts nts.
   apply ts_ext with (eq := eq1); sp.
 Qed.
@@ -835,23 +850,25 @@ Proof.
 Qed.
 
 
-Lemma respects_cequivc_equorsq {p} : forall lib, respects3 (cequivc lib) (@equorsq p lib).
+Lemma respects_cequivc_equorsq {p} :
+  forall lib, respects3 (ccequivc_ext lib) (@equorsq p lib).
 Proof.
   unfold equorsq; introv; unfolds_base; dands; introv Hr Heq; allsimpl; dorn Heq;
   try (complete (left; eauto 3 with nequality));
   right; spcast; eauto 3 with nequality.
-  apply (cequivc_trans lib a' a b); auto; apply cequivc_sym; auto.
-  apply (cequivc_trans lib a b b'); auto; apply cequivc_sym; auto.
+  apply (ccequivc_ext_trans lib a' a b); auto; apply ccequivc_ext_sym; auto.
+  apply (ccequivc_ext_trans lib a b b'); auto; apply ccequivc_ext_sym; auto.
 Qed.
 Hint Resolve respects_cequivc_equorsq : respects.
 
-Lemma respects_alphaeqc_equorsq {p} : forall lib, respects3 alphaeqc (@equorsq p lib).
+Lemma respects_alphaeqc_equorsq {p} :
+  forall lib, respects3 alphaeqc (@equorsq p lib).
 Proof.
   unfold equorsq; introv; unfolds_base; dands; introv Hr Heq; allsimpl; dorn Heq;
   try (complete (left; eauto 3 with nequality));
   right; spcast; eauto 3 with nequality.
-  apply (cequivc_trans lib a' a b); auto; apply cequivc_sym; apply alphaeqc_implies_cequivc; auto.
-  apply (cequivc_trans lib a b b'); auto; apply alphaeqc_implies_cequivc; auto.
+  { apply (ccequivc_ext_trans lib a' a b); auto; apply ccequivc_ext_sym; eauto 3 with slow. }
+  { apply (ccequivc_ext_trans lib a b b'); auto; eauto 3 with slow. }
 Qed.
 Hint Resolve respects_alphaeqc_equorsq : respects.
 
@@ -863,7 +880,7 @@ Proof.
   introv e.
   allunfold @equorsq; sp.
   left; apply equality_sym; auto.
-  right; spcast; sp; apply cequivc_sym; sp.
+  right; spcast; sp; apply ccequivc_ext_sym; sp.
 Qed.
 
 
@@ -878,18 +895,18 @@ Proof.
   introv n e1 e2 e3.
   apply (eqorceq_commutes lib) with (a := a) (c := c); sp.
 
-  nts.
-  unfold term_value_respecting in nts_tev.
-  apply nts_tev with (T := A).
-  allapply @nuprl_refl; sp.
+  { nts.
+    unfold term_value_respecting in nts_tev.
+    apply nts_tev with (T := A).
+    allapply @nuprl_refl; sp. }
 
-  nts.
-  unfold term_symmetric in nts_tes.
-  apply nts_tes with (T := A) (T' := B); sp.
+  { nts.
+    unfold term_symmetric in nts_tes.
+    eapply nts_tes; eauto. }
 
-  nts.
-  unfold term_transitive in nts_tet.
-  apply nts_tet with (T := A) (T' := B); sp.
+  { nts.
+    unfold term_transitive in nts_tet.
+    eapply nts_tet; eauto. }
 Qed.
 
 Lemma eqorceq_sym_trans {p} :
@@ -902,7 +919,7 @@ Proof.
   apply eqorceq_sym; sp.
   nts.
   unfold term_symmetric in nts_tes.
-  apply nts_tes with (T := A) (T' := B); sp.
+  eapply nts_tes; eauto.
 Qed.
 
 Lemma nuprl_refl2 {p} :
@@ -927,7 +944,7 @@ Qed.
 Lemma equality_or_cequivc_eqorceq {p} :
   forall lib (A a b : @CTerm p) eq,
     nuprl lib A A eq
-    -> (eqorceq lib eq a b <=> (equality lib a b A {+} ccequivc lib a b)).
+    -> (eqorceq lib eq a b <=> (equality lib a b A {+} ccequivc_ext lib a b)).
 Proof.
   unfold eqorceq; introv n; split; intro e; repdors; try (complete sp);
   left;
@@ -940,11 +957,23 @@ Lemma eqorceq_implies_equality_or_cequivc {p} :
   forall lib (A a b : @CTerm p) eq,
     nuprl lib A A eq
     -> eqorceq lib eq a b
-    -> (equality lib a b A {+} ccequivc lib a b).
+    -> (equality lib a b A {+} ccequivc_ext lib a b).
 Proof.
   introv n e.
   generalize (equality_or_cequivc_eqorceq lib A a b eq); sp.
   allrw <-; sp.
+Qed.
+
+Lemma mkc_approx_computes_to_valc_ceq_bar_implies {o} :
+  forall lib (bar : BarLib lib) (a b c d : @CTerm o),
+    ((mkc_approx a b) ==b==>(bar) (mkc_approx c d))
+    -> all_in_bar bar (fun lib => ccequivc lib a c # ccequivc lib b d).
+Proof.
+  introv comp br ext.
+  pose proof (comp lib' br lib'0 ext) as comp; simpl in *; exrepnd; spcast.
+  computes_to_value_isvalue.
+  apply cequivc_decomp_approx in comp0; repnd.
+  dands; spcast; auto.
 Qed.
 
 Lemma false_not_inhabited {p} :
@@ -954,10 +983,24 @@ Proof.
   rewrite mkc_false_eq in m.
   unfold member, equality, nuprl in m; exrepnd.
   inversion m1; subst; try not_univ.
-  allunfold @per_approx; exrepnd.
-  computes_to_value_isvalue.
-  discover; sp; GC.
-  spcast; allapply @not_axiom_approxc_bot; sp.
+  rename_hyp_with @per_approx_bar pera.
+  allunfold @per_approx_bar; exrepnd.
+  apply pera1 in m0; clear pera1.
+  unfold per_approx_eq_bar, per_approx_eq_bar1 in *; exrepnd.
+  apply mkc_approx_computes_to_valc_ceq_bar_implies in pera0.
+  apply mkc_approx_computes_to_valc_ceq_bar_implies in pera3.
+
+  pose proof (bar_non_empty (intersect_bars bar bar0)) as br; simpl in *; exrepnd.
+
+  pose proof (m2 lib2 br2 lib' br0) as m2; simpl in *.
+  pose proof (pera0 lib1 br1 lib' br3) as pera0; simpl in *.
+  pose proof (pera2 lib1 br1 lib' br3) as pera2; simpl in *.
+  pose proof (pera3 lib1 br1 lib' br3) as pera3; simpl in *.
+  repnd; spcast.
+
+  eapply approxc_cequivc_trans in m2;[|apply cequivc_sym;eauto].
+  eapply cequivc_approxc_trans in m2;[|eauto].
+  apply not_axiom_approxc_bot in m2; auto.
 Qed.
 
 Lemma equality3_implies_equorsq2 {p} :
@@ -1064,7 +1107,7 @@ Qed.
 Lemma inhabited_if_inhabited_type_i {p} :
   forall lib (T U : @CTerm p) eq i,
     inhabited_type lib T
-    -> nuprli lib i T U eq
+    -> nuprli i lib T U eq
     -> inhabited eq.
 Proof.
   introv inh neq.
@@ -1074,7 +1117,7 @@ Qed.
 
 Lemma inhabited_type_if_inhabited_i {p} :
   forall lib (T U : @CTerm p) eq i,
-    nuprli lib i T U eq
+    nuprli i lib T U eq
     -> inhabited eq
     -> inhabited_type lib T.
 Proof.
@@ -1085,7 +1128,7 @@ Qed.
 
 Lemma inhabited_type_iff_inhabited_i {p} :
   forall lib (T U : @CTerm p) eq i,
-    nuprli lib i T U eq
+    nuprli i lib T U eq
     -> (inhabited eq <=> inhabited_type lib T).
 Proof.
   introv neq.
@@ -1243,7 +1286,7 @@ Ltac dest_per :=
 
 Lemma inhabited_type_cequivc {p} :
   forall lib (a b : @CTerm p),
-    cequivc lib a b
+    ccequivc_ext lib a b
     -> inhabited_type lib a
     -> inhabited_type lib b.
 Proof.
@@ -1255,7 +1298,7 @@ Proof.
 Qed.
 
 Lemma inhabited_type_respects_cequivc {p} :
-  forall lib, respects1 (@cequivc p lib) (inhabited_type lib).
+  forall lib, respects1 (@ccequivc_ext p lib) (inhabited_type lib).
 Proof.
   introv; introv.
   apply inhabited_type_cequivc.
@@ -1286,13 +1329,13 @@ Lemma inhabited_type_respects_alphaeqc {o} :
   forall lib, respects1 alphaeqc (@inhabited_type o lib).
 Proof.
   introv aeq inh.
-  apply (alphaeqc_implies_cequivc lib) in aeq.
-  apply @inhabited_type_cequivc with (a := a); auto.
+  apply (alphaeqc_implies_ccequivc_ext lib) in aeq.
+  apply @inhabited_type_cequivc with (a := a); auto; eauto 3 with slow.
 Qed.
 Hint Resolve inhabited_type_respects_alphaeqc : respects.
 
 Lemma type_respects_cequivc {o} :
-  forall lib, respects1 (cequivc lib) (@type o lib).
+  forall lib, respects1 (ccequivc_ext lib) (@type o lib).
 Proof.
   introv ceq typ.
   apply type_respects_cequivc_left in ceq; auto.
@@ -1304,7 +1347,7 @@ Lemma type_respects_alphaeqc {o} :
   forall lib, respects1 alphaeqc (@type o lib).
 Proof.
   introv aeq inh.
-  apply (alphaeqc_implies_cequivc lib) in aeq.
+  apply (alphaeqc_implies_ccequivc_ext lib) in aeq.
   apply type_respects_cequivc_left in aeq; auto.
   apply tequality_refl in aeq; auto.
 Qed.
@@ -1333,6 +1376,19 @@ Proof.
   eapply reduces_to_trans; eauto.
 Qed.
 
+Lemma reduces_toc_implies_ccequivc_ext {p} :
+  forall lib t x,
+    @reduces_toc p lib t x
+    -> ccequivc_ext lib t x.
+Proof.
+  introv r ext.
+  destruct_cterms.
+  unfold reduces_toc in *; simpl in *.
+  spcast; unfold cequivc; simpl.
+  eapply lib_extends_preserves_reduces_to in r;[|eauto|]; eauto 3 with slow.
+  apply reduces_to_implies_cequiv; eauto 3 with slow.
+Qed.
+
 Lemma member_respects_reduces_toc {o} :
   forall lib (t1 t2 T : @CTerm o),
   reduces_toc lib t1 t2
@@ -1340,17 +1396,17 @@ Lemma member_respects_reduces_toc {o} :
   -> member lib t1 T.
 Proof.
   introv r m.
-  apply reduces_toc_implies_cequivc in r.
-  apply cequivc_sym in r.
+  apply reduces_toc_implies_ccequivc_ext in r.
+  apply ccequivc_ext_sym in r.
   eapply equality_respects_cequivc in r;[|exact m].
   apply equality_sym in r; apply equality_refl in r; auto.
 Qed.
 
 Lemma member_respects_cequivc {o} :
   forall lib (t1 t2 T : @CTerm o),
-  cequivc lib t1 t2
-  -> member lib t1 T
-  -> member lib t2 T.
+    ccequivc_ext lib t1 t2
+    -> member lib t1 T
+    -> member lib t2 T.
 Proof.
   introv c m.
   eapply equality_respects_cequivc in c;[|exact m].
@@ -1359,9 +1415,9 @@ Qed.
 
 Lemma member_respects_cequivc_type {o} :
   forall lib (t T1 T2 : @CTerm o),
-  cequivc lib T1 T2
-  -> member lib t T1
-  -> member lib t T2.
+    ccequivc_ext lib T1 T2
+    -> member lib t T1
+    -> member lib t T2.
 Proof.
   introv c m.
   eapply cequivc_preserving_equality; eauto.

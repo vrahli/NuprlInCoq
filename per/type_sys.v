@@ -451,6 +451,7 @@ Proof.
   allrw @univi_exists_iff.
   exists j; dands; tcsp; spcast; eauto 3 with slow.
 Qed.
+Hint Resolve monotone_univi : slow.
 
 Lemma monotone_univ {o} : @type_monotone o univ.
 Proof.
@@ -460,6 +461,7 @@ Proof.
   exrepnd.
   exists eq' i; auto.
 Qed.
+Hint Resolve monotone_univ : slow.
 
 
 (*

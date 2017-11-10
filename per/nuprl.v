@@ -940,14 +940,14 @@ Definition typei {p} lib i (T : @CTerm p) := tequalityi lib i T T.
 
 (** This is similar to eqorsq but using 'equality' instead of 'eq' *)
 Definition equorsq {p} lib (t1 t2 T : @CTerm p) :=
-  equality lib t1 t2 T {+} ccequivc lib t1 t2.
+  equality lib t1 t2 T {+} ccequivc_ext lib t1 t2.
 
 Definition equorsq2 {p} lib (t1 t2 t3 t4 T : @CTerm p) :=
   equorsq lib t1 t2 T # equorsq lib t3 t4 T.
 
 Lemma fold_equorsq {p} :
   forall lib (t1 t2 T : @CTerm p),
-    (equality lib t1 t2 T {+} ccequivc lib t1 t2) = equorsq lib t1 t2 T.
+    (equality lib t1 t2 T {+} ccequivc_ext lib t1 t2) = equorsq lib t1 t2 T.
 Proof. sp. Qed.
 
 Lemma fold_equorsq2 {p} :

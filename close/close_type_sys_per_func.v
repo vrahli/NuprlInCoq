@@ -108,7 +108,7 @@ Proof.
       apply CL_func.
       unfold per_func_ext in *; exrepnd.
       exists eqa0 eqb0; dands; auto;[].
-      eapply type_family_ext_value_respecting_trans1; eauto.
+      eapply type_family_ext_value_respecting_trans1; eauto 3 with slow.
     }
 
     {
@@ -118,7 +118,7 @@ Proof.
       apply CL_func.
       unfold per_func_ext in *; exrepnd.
       exists eqa0 eqb0; dands; auto;[].
-      eapply type_family_ext_value_respecting_trans2; eauto.
+      eapply type_family_ext_value_respecting_trans2; eauto 3 with slow.
     }
 
     {
@@ -128,7 +128,7 @@ Proof.
       apply CL_func.
       unfold per_func_ext in *; exrepnd.
       exists eqa0 eqb0; dands; auto;[].
-      eapply type_family_ext_value_respecting_trans3; eauto.
+      eapply type_family_ext_value_respecting_trans3; eauto 3 with slow.
     }
 
     {
@@ -138,7 +138,7 @@ Proof.
       apply CL_func.
       unfold per_func_ext in *; exrepnd.
       exists eqa0 eqb0; dands; auto;[].
-      eapply type_family_ext_value_respecting_trans4; eauto.
+      eapply type_family_ext_value_respecting_trans4; eauto 3 with slow.
     }
 
   + SCase "term_symmetric".
