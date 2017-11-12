@@ -1655,50 +1655,50 @@ Hint Resolve eq_term_equals_sym : slow.
 Hint Resolve all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext : slow.
 
 Lemma eq_term_equals_per_func_ext_eq {o} :
-  forall lib (eqa1 eqa2 : lib-per(o)) eqb1 eqb2,
-    in_ext lib (fun lib => (eqa1 lib) <=2=> (eqa2 lib))
-    -> in_ext lib (fun lib => forall a1 a2 (e1 : eqa1 lib a1 a2) (e2 : eqa2 lib a1 a2), (eqb1 lib a1 a2 e1) <=2=> (eqb2 lib a1 a2 e2))
-    -> (per_func_ext_eq eqa1 eqb1 lib) <=2=> (per_func_ext_eq eqa2 eqb2 lib).
+  forall lib (eqa1 eqa2 : lib-per(lib,o)) eqb1 eqb2,
+    in_ext_ext lib (fun lib' x => (eqa1 lib' x) <=2=> (eqa2 lib' x))
+    -> in_ext_ext lib (fun lib' x => forall a1 a2 (e1 : eqa1 lib' x a1 a2) (e2 : eqa2 lib' x a1 a2), (eqb1 lib' x a1 a2 e1) <=2=> (eqb2 lib' x a1 a2 e2))
+    -> (per_func_ext_eq lib eqa1 eqb1) <=2=> (per_func_ext_eq lib eqa2 eqb2).
 Proof.
   introv eqas eqbs; introv.
   unfold per_func_ext_eq.
-  split; introv h ext; introv.
+  split; introv h; introv.
 
-  - pose proof (h lib' ext) as h; simpl in h.
-    pose proof (eqas lib' ext) as eqas.
-    pose proof (eqbs lib' ext) as eqbs.
+  - pose proof (h lib' e) as h; simpl in h.
+    pose proof (eqas lib' e) as eqas.
+    pose proof (eqbs lib' e) as eqbs.
     simpl in *.
-    dup e as e'.
+    dup e0 as e'.
     apply eqas in e'.
     apply (eqbs _ _ e'); tcsp.
 
-  - pose proof (h lib' ext) as h; simpl in h.
-    pose proof (eqas lib' ext) as eqas.
-    pose proof (eqbs lib' ext) as eqbs.
+  - pose proof (h lib' e) as h; simpl in h.
+    pose proof (eqas lib' e) as eqas.
+    pose proof (eqbs lib' e) as eqbs.
     simpl in *.
-    dup e as e'.
+    dup e0 as e'.
     apply eqas in e'.
     apply (eqbs _ _ _ e'); tcsp.
 Qed.
 
 Lemma eq_term_equals_per_product_eq_bar {o} :
-  forall lib (eqa1 eqa2 : lib-per(o)) eqb1 eqb2,
-    in_ext lib (fun lib => (eqa1 lib) <=2=> (eqa2 lib))
-    -> in_ext lib (fun lib => forall a1 a2 (e1 : eqa1 lib a1 a2) (e2 : eqa2 lib a1 a2), (eqb1 lib a1 a2 e1) <=2=> (eqb2 lib a1 a2 e2))
+  forall lib (eqa1 eqa2 : lib-per(lib,o)) eqb1 eqb2,
+    in_ext_ext lib (fun lib' x => (eqa1 lib' x) <=2=> (eqa2 lib' x))
+    -> in_ext_ext lib (fun lib' x => forall a1 a2 (e1 : eqa1 lib' x a1 a2) (e2 : eqa2 lib' x a1 a2), (eqb1 lib' x a1 a2 e1) <=2=> (eqb2 lib' x a1 a2 e2))
     -> (per_product_eq_bar lib eqa1 eqb1) <=2=> (per_product_eq_bar lib eqa2 eqb2).
 Proof.
   introv eqas eqbs; introv.
   unfold per_product_eq_bar.
-  split; introv h; exrepnd; exists bar; introv br ext.
+  split; introv h; exrepnd; exists bar; repeat introv.
 
-  - pose proof (h0 lib' br lib'0 ext) as h0; simpl in *.
+  - pose proof (h0 lib' b lib'0 e) as h0; simpl in *.
     unfold per_product_eq in *; exrepnd.
     dup h3 as x.
     apply eqas in x; eauto 3 with slow.
     eexists; eexists; eexists; eexists; exists x; dands; eauto.
     eapply eqbs; eauto 3 with slow.
 
-  - pose proof (h0 lib' br lib'0 ext) as h0; simpl in *.
+  - pose proof (h0 lib' b lib'0 e) as h0; simpl in *.
     unfold per_product_eq in *; exrepnd.
     dup h3 as x.
     apply eqas in x; eauto 3 with slow.
@@ -1764,18 +1764,18 @@ Record constructor_inj {o} (C : forall (A : @CTerm o) v, @CVTerm o [v] -> @CTerm
 Lemma type_family_ext_implies_in_ext_eqas {o} :
   forall ts lib C (T T' : @CTerm o) A A' v B eqa1 eqa2 eqb2,
     constructor_inj C
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa1 lib))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa1 lib' x))
     -> type_family_ext C ts lib T T' eqa2 eqb2
     -> computes_to_valc lib T (C A v B)
-    -> in_ext lib (fun lib => (eqa1 lib) <=2=> (eqa2 lib)).
+    -> in_ext_ext lib (fun lib' x => (eqa1 lib' x) <=2=> (eqa2 lib' x)).
 Proof.
-  introv cond tsp tf comp ext.
-  pose proof (tsp lib' ext) as tsp; simpl in tsp.
+  introv cond tsp tf comp; repeat introv.
+  pose proof (tsp lib' e) as tsp; simpl in tsp.
   unfold type_family_ext in tf; exrepnd; spcast.
   computes_to_eqval.
   applydup (cons_inj1 _ cond) in eq; repnd; subst.
   apply (cons_inj2 _ cond) in eq; subst.
-  pose proof (tf3 lib' ext) as tf3; simpl in *.
+  pose proof (tf3 lib' e) as tf3; simpl in *.
   onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
   apply uv in tf3; auto.
 Qed.
@@ -1784,32 +1784,34 @@ Hint Resolve type_family_ext_implies_in_ext_eqas : slow.
 Lemma type_family_ext_implies_in_ext_eqbs {o} :
   forall ts lib C (T T' : @CTerm o) A1 A2 v1 v2 B1 B2 eqa1 eqa2 eqb1 eqb2,
     constructor_inj C
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A1 A2 (eqa1 lib))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A1 A2 (eqa1 lib' x))
     -> type_family_ext C ts lib T T' eqa2 eqb2
     -> computes_to_valc lib T (C A1 v1 B1)
-    -> in_ext lib
-              (fun lib =>
-                 forall a a' (e : eqa1 lib a a'),
-                   type_sys_props4 ts lib (B1)[[v1\\a]] (B2)[[v2\\a']] (eqb1 lib a a' e))
-    -> in_ext lib
-              (fun lib =>
-                 forall a1 a2 (e1 : eqa1 lib a1 a2) (e2 : eqa2 lib a1 a2),
-                   (eqb1 lib a1 a2 e1) <=2=> (eqb2 lib a1 a2 e2)).
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a a' (e : eqa1 lib' x a a'),
+              type_sys_props4 ts lib' (B1)[[v1\\a]] (B2)[[v2\\a']] (eqb1 lib' x a a' e))
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a1 a2 (e1 : eqa1 lib' x a1 a2) (e2 : eqa2 lib' x a1 a2),
+              (eqb1 lib' x a1 a2 e1) <=2=> (eqb2 lib' x a1 a2 e2)).
 Proof.
-  introv cond tspa tf comp tspb ext; repeat introv.
+  introv cond tspa tf comp tspb; repeat introv.
   pose proof (type_family_ext_implies_in_ext_eqas ts lib C T T' A1 A2 v1 B1 eqa1 eqa2 eqb2) as eqas.
   repeat (autodimp eqas hyp);[].
-  pose proof (tspa lib' ext) as tspa; simpl in *.
-  pose proof (tspb lib' ext) as tspb; simpl in *.
-  pose proof (eqas lib' ext) as eqas; simpl in *.
+  pose proof (tspa lib' e) as tspa; simpl in *.
+  pose proof (tspb lib' e) as tspb; simpl in *.
+  pose proof (eqas lib' e) as eqas; simpl in *.
   unfold type_family_ext in tf; exrepnd; spcast.
 
   computes_to_eqval.
   applydup (cons_inj1 _ cond) in eq; repnd; subst.
   apply (cons_inj2 _ cond) in eq; subst.
 
-  pose proof (tf3 lib' ext) as tf3; simpl in *.
-  pose proof (tf1 lib' ext) as tf1; simpl in *.
+  pose proof (tf3 lib' e) as tf3; simpl in *.
+  pose proof (tf1 lib' e) as tf1; simpl in *.
 
   clear tspa.
   pose proof (tspb a1 a2 e1) as tsp; clear tspb.
@@ -1961,32 +1963,34 @@ Lemma type_family_ext_cequivc {o} :
     -> computes_to_valc lib T2 (C A2 v2 B2)
     -> ccequivc_ext lib A1 A2
     -> bcequivc_ext lib [v1] B1 [v2] B2
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A1 A (eqa lib))
-    -> in_ext lib (fun lib =>
-                     forall a1 a2 (e : eqa lib a1 a2),
-                       type_sys_props4 ts lib
-                                       (substc a1 v1 B1)
-                                       (substc a2 v B)
-                                       (eqb lib a1 a2 e))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A1 A (eqa lib' x))
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a1 a2 (e : eqa lib' x a1 a2),
+              type_sys_props4 ts lib'
+                              (substc a1 v1 B1)
+                              (substc a2 v B)
+                              (eqb lib' x a1 a2 e))
     -> type_family_ext C ts lib T1 T2 eqa eqb.
 Proof.
   introv co1 co2 ca cb tspa tspb.
 
   exists A1 A2 v1 v2 B1 B2; dands; spcast; auto.
 
-  - introv ext.
-    pose proof (tspa lib' ext) as tspa; simpl in *.
+  - repeat introv.
+    pose proof (tspa lib' e) as tspa; simpl in *.
 
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
     eapply tyvr; eauto 3 with slow.
 
-  - introv ext; introv.
-    pose proof (tspa lib' ext) as tspa; simpl in *.
-    pose proof (tspb lib' ext) as tspb; simpl in *.
+  - repeat introv.
+    pose proof (tspa lib' e) as tspa; simpl in *.
+    pose proof (tspb lib' e) as tspb; simpl in *.
 
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
 
-    assert (eqa lib' a' a') as e' by (apply tet with (t2 := a); sp).
+    assert (eqa lib' e a' a') as e' by (apply tet with (t2 := a); sp).
 
     pose proof (tspb a' a' e') as i.
 
@@ -2000,11 +2004,11 @@ Proof.
       apply (bcequivc_ext_implies_ccequivc_ext _ _ _ _ _ a'); auto.
     }
 
-    pose proof (tspb a a' e) as i.
+    pose proof (tspb a a' e0) as i.
     pose proof (tspb a' a' e') as j.
 
-    pose proof (type_sys_props_eq ts lib' (substc a v1 B1) (substc a' v1 B1) (substc a' v B) (eqb lib' a a' e) (eqb lib' a' a' e')) as l; repeat (autodimp l hyp); eauto 3 with slow;[].
-    pose proof (type_sys_props_ts_trans3 ts lib' (substc a v1 B1) (substc a' v1 B1) (substc a' v2 B2) (substc a' v B) (eqb lib' a a' e) (eqb lib' a' a' e') (eqb lib' a' a' e')) as w; repeat (autodimp w hyp); eauto 3 with slow.
+    pose proof (type_sys_props_eq ts lib' (substc a v1 B1) (substc a' v1 B1) (substc a' v B) (eqb lib' e a a' e0) (eqb lib' e a' a' e')) as l; repeat (autodimp l hyp); eauto 3 with slow;[].
+    pose proof (type_sys_props_ts_trans3 ts lib' (substc a v1 B1) (substc a' v1 B1) (substc a' v2 B2) (substc a' v B) (eqb lib' e a a' e0) (eqb lib' e a' a' e') (eqb lib' e a' a' e')) as w; repeat (autodimp w hyp); eauto 3 with slow.
 Qed.
 
 Lemma type_sys_props4_sym {p} :
@@ -2061,6 +2065,15 @@ Lemma in_ext_type_sys_props4_sym {p} :
 Proof.
   introv tsp ext.
   pose proof (tsp lib' ext) as tcsp; apply type_sys_props4_sym; auto.
+Qed.
+
+Lemma in_ext_ext_type_sys_props4_sym {p} :
+  forall (ts : cts(p)) lib A B eq,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eq lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B A (eq lib' x)).
+Proof.
+  introv tsp; repeat introv.
+  pose proof (tsp lib' e) as tcsp; apply type_sys_props4_sym; auto.
 Qed.
 
 Lemma type_sys_props4_eqb_comm {p} :
@@ -2242,14 +2255,14 @@ Lemma type_family_ext_cequivc2 {p} :
     -> computes_to_valc lib T2 (C A2 v2 B2)
     -> ccequivc_ext lib A1 A2
     -> bcequivc_ext lib [v1] B1 [v2] B2
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A1 (eqa lib))
-    -> in_ext lib (fun lib =>
-                     forall a1 a2 (e : eqa lib a1 a2),
-                       type_sys_props4
-                         ts lib
-                         (substc a1 v B)
-                         (substc a2 v1 B1)
-                         (eqb lib a1 a2 e))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A1 (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x =>
+                         forall a1 a2 (e : eqa lib' x a1 a2),
+                           type_sys_props4
+                             ts lib'
+                             (substc a1 v B)
+                             (substc a2 v1 B1)
+                             (eqb lib' x a1 a2 e))
     -> type_family_ext C ts lib T1 T2 eqa eqb.
 Proof.
   introv co1 co2 ca cb tspa tspb.
@@ -2265,18 +2278,18 @@ Proof.
       (A := A)
       (v := v)
       (B := B); sp;
-    try (complete (apply (in_ext_type_sys_props4_sym ts lib); sp)).
+    try (complete (apply (in_ext_ext_type_sys_props4_sym ts lib); sp)).
 
-  introv ext; introv.
-  pose proof (tspa lib' ext) as tspa.
-  pose proof (tspb lib' ext) as tspb.
+  repeat introv.
+  pose proof (tspa lib' e) as tspa.
+  pose proof (tspb lib' e) as tspb.
   simpl in *.
 
   onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
 
-  assert (eqa lib' a2 a1) as e1 by sp.
-  assert (eqa lib' a1 a1) as e2 by (apply tet with (t2 := a2); sp).
-  assert (eqa lib' a2 a2) as e3 by (apply tet with (t2 := a1); sp).
+  assert (eqa lib' e a2 a1) as e1 by sp.
+  assert (eqa lib' e a1 a1) as e2 by (apply tet with (t2 := a2); sp).
+  assert (eqa lib' e a2 a2) as e3 by (apply tet with (t2 := a1); sp).
 
   apply type_sys_props4_sym; sp.
   apply type_sys_props4_eqb_comm; sp.
@@ -2289,10 +2302,10 @@ Lemma type_family_ext_value_respecting_trans1 {o} :
     -> computes_to_valc lib T3 (C A1 v1 B1)
     -> ccequivc_ext lib A A1
     -> bcequivc_ext lib [v] B [v1] B1
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext lib (fun lib =>
-                     forall a a' (e : eqa lib a a'),
-                       type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x =>
+                         forall a a' (e : eqa lib' x a a'),
+                           type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> type_family_ext C ts lib T3 T4 eqa1 eqb1
     -> type_family_ext C ts lib T T4 eqa1 eqb1.
 Proof.
@@ -2305,32 +2318,32 @@ Proof.
 
   exists A A'0 v v'0 B B'0; dands; spcast; auto.
 
-  - introv ext.
-    pose proof (tf3 lib' ext) as tf3.
-    pose proof (tf1 lib' ext) as tf1.
-    pose proof (tspa lib' ext) as tspa.
+  - repeat introv.
+    pose proof (tf3 lib' e) as tf3.
+    pose proof (tf1 lib' e) as tf1.
+    pose proof (tspa lib' e) as tspa.
     simpl in *.
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
     eapply tyvrt; eauto; eauto 3 with slow.
 
-  - introv ext; introv.
-    pose proof (tf3 lib' ext) as tf3.
-    pose proof (tf1 lib' ext) as tf1.
-    pose proof (tspa lib' ext) as tspa.
-    pose proof (tspb lib' ext) as tspb.
+  - repeat introv.
+    pose proof (tf3 lib' e) as tf3.
+    pose proof (tf1 lib' e) as tf1.
+    pose proof (tspa lib' e) as tspa.
+    pose proof (tspb lib' e) as tspb.
     simpl in *.
 
-    pose proof (tf1 a a' e) as tf1.
+    pose proof (tf1 a a' e0) as tf1.
     apply (bcequivc_ext_implies_ccequivc_ext _ _ _ _ _ a) in ceqb; auto.
     apply (lib_extends_preserves_ccequivc_ext lib lib') in ceqb; auto.
 
-    assert ((eqa lib') <=2=> (eqa1 lib')) as eqas.
+    assert ((eqa lib' e) <=2=> (eqa1 lib' e)) as eqas.
     {
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-      pose proof (tyvrt A A1 A'0 (eqa1 lib')) as q; repeat (autodimp q hyp); eauto 3 with slow.
+      pose proof (tyvrt A A1 A'0 (eqa1 lib' e)) as q; repeat (autodimp q hyp); eauto 3 with slow.
     }
 
-    dup e as e1.
+    dup e0 as e1.
     apply eqas in e1.
     pose proof (tspb a a' e1) as tspb.
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
@@ -2344,10 +2357,10 @@ Lemma type_family_ext_value_respecting_trans2 {o} :
     -> computes_to_valc lib T3 (C A1 v1 B1)
     -> ccequivc_ext lib A' A1
     -> bcequivc_ext lib [v'] B' [v1] B1
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext lib (fun lib =>
-                     forall a a' (e : eqa lib a a'),
-                       type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x =>
+                     forall a a' (e : eqa lib' x a a'),
+                       type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> type_family_ext C ts lib T3 T4 eqa1 eqb1
     -> type_family_ext C ts lib T T4 eqa1 eqb1.
 Proof.
@@ -2360,38 +2373,38 @@ Proof.
 
   exists A' A'0 v' v'0 B' B'0; dands; spcast; auto.
 
-  - introv ext.
-    pose proof (tf3 lib' ext) as tf3.
-    pose proof (tf1 lib' ext) as tf1.
-    pose proof (tspa lib' ext) as tspa.
+  - repeat introv.
+    pose proof (tf3 lib' e) as tf3.
+    pose proof (tf1 lib' e) as tf1.
+    pose proof (tspa lib' e) as tspa.
     simpl in *.
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
     eapply tyvrt; eauto; eauto 3 with slow.
 
-  - introv ext; introv.
-    pose proof (tf3 lib' ext) as tf3.
-    pose proof (tf1 lib' ext) as tf1.
-    pose proof (tspa lib' ext) as tspa.
-    pose proof (tspb lib' ext) as tspb.
+  - repeat introv.
+    pose proof (tf3 lib' e) as tf3.
+    pose proof (tf1 lib' e) as tf1.
+    pose proof (tspa lib' e) as tspa.
+    pose proof (tspb lib' e) as tspb.
     simpl in *.
 
-    assert ((eqa lib') <=2=> (eqa1 lib')) as eqas.
+    assert ((eqa lib' e) <=2=> (eqa1 lib' e)) as eqas.
     {
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-      pose proof (tyvrt A' A1 A'0 (eqa1 lib')) as q; repeat (autodimp q hyp); eauto 3 with slow.
-      pose proof (dum A' A A'0 (eqa lib') (eqa1 lib')) as w; repeat (autodimp w hyp); repnd.
+      pose proof (tyvrt A' A1 A'0 (eqa1 lib' e)) as q; repeat (autodimp q hyp); eauto 3 with slow.
+      pose proof (dum A' A A'0 (eqa lib' e) (eqa1 lib' e)) as w; repeat (autodimp w hyp); repnd.
       apply uv in w; auto.
     }
 
-    assert (eqa1 lib' a a) as e1.
+    assert (eqa1 lib' e a a) as e1.
     {
       apply eqas.
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-      eapply tet;[|apply tes; apply eqas;exact e].
+      eapply tet;[|apply tes; apply eqas;exact e0].
       apply eqas; auto.
     }
 
-    pose proof (tf1 a a' e) as etf1.
+    pose proof (tf1 a a' e0) as etf1.
     apply (bcequivc_ext_implies_ccequivc_ext _ _ _ _ _ a) in ceqb; auto.
     apply (lib_extends_preserves_ccequivc_ext lib lib') in ceqb; auto.
 
@@ -2400,7 +2413,7 @@ Proof.
     pose proof (tspb a a e2) as etspb.
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
 
-    pose proof (tyvrt (B')[[v'\\a]] (B1)[[v1\\a]] (B'0)[[v'0\\a']] (eqb1 lib' a a' e)) as q.
+    pose proof (tyvrt (B')[[v'\\a]] (B1)[[v1\\a]] (B'0)[[v'0\\a']] (eqb1 lib' e a a' e0)) as q.
     repeat (autodimp q hyp); eauto 3 with slow.
 Qed.
 
@@ -2445,10 +2458,10 @@ Lemma type_family_ext_value_respecting_trans3 {o} :
     -> computes_to_valc lib T3 (C A1 v1 B1)
     -> ccequivc_ext lib A A1
     -> bcequivc_ext lib [v] B [v1] B1
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext lib (fun lib =>
-                     forall a a' (e : eqa lib a a'),
-                       type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x =>
+                         forall a a' (e : eqa lib' x a a'),
+                           type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> type_family_ext C ts lib T4 T3 eqa1 eqb1
     -> type_family_ext C ts lib T T4 eqa1 eqb1.
 Proof.
@@ -2461,35 +2474,35 @@ Proof.
 
   exists A A0 v v0 B B0; dands; spcast; auto.
 
-  - introv ext.
-    pose proof (tf3 lib' ext) as tf3.
-    pose proof (tf1 lib' ext) as tf1.
-    pose proof (tspa lib' ext) as tspa.
+  - repeat introv.
+    pose proof (tf3 lib' e) as tf3.
+    pose proof (tf1 lib' e) as tf1.
+    pose proof (tspa lib' e) as tspa.
     simpl in *.
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
     eapply tyvrt; eauto; eauto 3 with slow.
 
-  - introv ext; introv.
-    pose proof (tf3 lib' ext) as tf3.
-    pose proof (tf1 lib' ext) as tf1.
-    pose proof (tspa lib' ext) as tspa.
-    pose proof (tspb lib' ext) as tspb.
+  - repeat introv.
+    pose proof (tf3 lib' e) as tf3.
+    pose proof (tf1 lib' e) as tf1.
+    pose proof (tspa lib' e) as tspa.
+    pose proof (tspb lib' e) as tspb.
     simpl in *.
 
-    assert ((eqa lib') <=2=> (eqa1 lib')) as eqas.
+    assert ((eqa lib' e) <=2=> (eqa1 lib' e)) as eqas.
     {
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-      pose proof (tyvrt A A1 A0 (eqa1 lib')) as q; repeat (autodimp q hyp); eauto 3 with slow.
+      pose proof (tyvrt A A1 A0 (eqa1 lib' e)) as q; repeat (autodimp q hyp); eauto 3 with slow.
     }
 
-    assert (eqa1 lib' a' a) as e1.
+    assert (eqa1 lib' e a' a) as e1.
     {
       apply eqas.
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
       apply tes; apply eqas; auto.
     }
 
-    assert (eqa1 lib' a' a') as x1.
+    assert (eqa1 lib' e a' a') as x1.
     {
       apply eqas.
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
@@ -2501,21 +2514,21 @@ Proof.
     apply (bcequivc_ext_implies_ccequivc_ext _ _ _ _ _ a) in aceqb; auto.
     apply (lib_extends_preserves_ccequivc_ext lib lib') in aceqb; auto.
 
-    dup e as e2.
+    dup e0 as e2.
     apply eqas in e2.
     pose proof (tspb a a' e2) as atspb.
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
 
-    pose proof (tyvrt (B)[[v\\a]] (B1)[[v1\\a]] (B0)[[v0\\a']] (eqb1 lib' a' a e1)) as q.
+    pose proof (tyvrt (B)[[v\\a]] (B1)[[v1\\a]] (B0)[[v0\\a']] (eqb1 lib' e a' a e1)) as q.
     repeat (autodimp q hyp).
 
     applydup uv in q.
     apply tys.
 
     {
-      pose proof (dum (B)[[v\\a]] (B')[[v'\\a']] (B0)[[v0\\a']] (eqb lib' a a' e2) (eqb1 lib' a' a e1)) as w.
+      pose proof (dum (B)[[v\\a]] (B')[[v'\\a']] (B0)[[v0\\a']] (eqb lib' e a a' e2) (eqb1 lib' e a' a e1)) as w.
       repeat (autodimp w hyp); try (complete (apply tygs; auto)); repnd; auto.
-      pose proof (dum (B')[[v'\\a']] (B)[[v\\a]] (B0)[[v0\\a']] (eqb1 lib' a' a e1) (eqb lib' a a' e2)) as z.
+      pose proof (dum (B')[[v'\\a']] (B)[[v\\a]] (B0)[[v0\\a']] (eqb1 lib' e a' a e1) (eqb lib' e a a' e2)) as z.
       repeat (autodimp z hyp); try (complete (apply tygs; auto)); repnd; auto.
     }
 
@@ -2524,15 +2537,15 @@ Proof.
       apply eqas in x2.
       pose proof (tspb a' a' x2) as btspb.
 
-      assert ((eqb lib' a' a' x2) <=2=> (eqb1 lib' a a' e)) as eqbs1.
+      assert ((eqb lib' e a' a' x2) <=2=> (eqb1 lib' e a a' e0)) as eqbs1.
       {
-        pose proof (tf1 a a' e) as btf1.
+        pose proof (tf1 a a' e0) as btf1.
         dup ceqb as bceqb.
         apply (bcequivc_ext_implies_ccequivc_ext _ _ _ _ _ a') in bceqb; auto.
         apply (lib_extends_preserves_ccequivc_ext lib lib') in bceqb; auto.
 
         onedtsp4 uv2 tys2 tyvr2 tyvrt2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-        pose proof (tyvrt2 (B)[[v\\a']] (B1)[[v1\\a']] (B0)[[v0\\a]] (eqb1 lib' a a' e)) as z.
+        pose proof (tyvrt2 (B)[[v\\a']] (B1)[[v1\\a']] (B0)[[v0\\a]] (eqb1 lib' e a a' e0)) as z.
         repeat (autodimp z hyp);[].
         apply uv2 in z; auto.
       }
@@ -2550,10 +2563,10 @@ Lemma type_family_ext_value_respecting_trans4 {o} :
     -> computes_to_valc lib T3 (C A1 v1 B1)
     -> ccequivc_ext lib A' A1
     -> bcequivc_ext lib [v'] B' [v1] B1
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext lib (fun lib =>
-                     forall a a' (e : eqa lib a a'),
-                       type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x =>
+                         forall a a' (e : eqa lib' x a a'),
+                           type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> type_family_ext C ts lib T4 T3 eqa1 eqb1
     -> type_family_ext C ts lib T T4 eqa1 eqb1.
 Proof.
@@ -2566,49 +2579,49 @@ Proof.
 
   exists A' A0 v' v0 B' B0; dands; spcast; auto.
 
-  - introv ext.
-    pose proof (tf3 lib' ext) as tf3.
-    pose proof (tf1 lib' ext) as tf1.
-    pose proof (tspa lib' ext) as tspa.
+  - repeat introv.
+    pose proof (tf3 lib' e) as tf3.
+    pose proof (tf1 lib' e) as tf1.
+    pose proof (tspa lib' e) as tspa.
     simpl in *.
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
     eapply tyvrt; eauto; eauto 3 with slow.
 
-  - introv ext; introv.
-    pose proof (tf3 lib' ext) as tf3.
-    pose proof (tf1 lib' ext) as tf1.
-    pose proof (tspa lib' ext) as tspa.
-    pose proof (tspb lib' ext) as tspb.
+  - repeat introv.
+    pose proof (tf3 lib' e) as tf3.
+    pose proof (tf1 lib' e) as tf1.
+    pose proof (tspa lib' e) as tspa.
+    pose proof (tspb lib' e) as tspb.
     simpl in *.
 
-    assert ((eqa lib') <=2=> (eqa1 lib')) as eqas.
+    assert ((eqa lib' e) <=2=> (eqa1 lib' e)) as eqas.
     {
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-      pose proof (tyvrt A' A1 A0 (eqa1 lib')) as q; repeat (autodimp q hyp); eauto 3 with slow.
-      pose proof (dum A' A A0 (eqa lib') (eqa1 lib')) as w; repeat (autodimp w hyp); repnd.
+      pose proof (tyvrt A' A1 A0 (eqa1 lib' e)) as q; repeat (autodimp q hyp); eauto 3 with slow.
+      pose proof (dum A' A A0 (eqa lib' e) (eqa1 lib' e)) as w; repeat (autodimp w hyp); repnd.
       apply uv in w; auto.
     }
 
-    assert (eqa1 lib' a a) as e1.
+    assert (eqa1 lib' e a a) as e1.
     {
       apply eqas.
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-      eapply tet;[apply eqas;exact e|].
+      eapply tet;[apply eqas;exact e0|].
       apply tes; apply eqas; auto.
     }
 
-    assert (eqa1 lib' a' a) as e2.
+    assert (eqa1 lib' e a' a) as e2.
     {
       apply eqas.
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
       apply tes; apply eqas; auto.
     }
 
-    assert (eqa1 lib' a' a') as x1.
+    assert (eqa1 lib' e a' a') as x1.
     {
       apply eqas.
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-      eapply tet;[|apply eqas;exact e].
+      eapply tet;[|apply eqas;exact e0].
       apply tes; apply eqas; auto.
     }
 
@@ -2623,20 +2636,20 @@ Proof.
     pose proof (tspb a a e3) as etspb.
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
 
-    pose proof (tyvrt (B')[[v'\\a]] (B1)[[v1\\a]] (B0)[[v0\\a']] (eqb1 lib' a' a e2)) as q.
+    pose proof (tyvrt (B')[[v'\\a]] (B1)[[v1\\a]] (B0)[[v0\\a']] (eqb1 lib' e a' a e2)) as q.
     repeat (autodimp q hyp); eauto 3 with slow.
 
-    pose proof (dum (B)[[v\\a]] (B')[[v'\\a]] (B0)[[v0\\a']] (eqb lib' a a e3) (eqb1 lib' a a' e)) as w.
+    pose proof (dum (B)[[v\\a]] (B')[[v'\\a]] (B0)[[v0\\a']] (eqb lib' e a a e3) (eqb1 lib' e a a' e0)) as w.
     repeat (autodimp w hyp); repnd; tcsp; try (complete (apply tygs; auto)).
 
-    pose proof (dum (B')[[v'\\a]] (B)[[v\\a]] (B0)[[v0\\a']] (eqb lib' a a e3) (eqb1 lib' a' a e2)) as z.
+    pose proof (dum (B')[[v'\\a]] (B)[[v\\a]] (B0)[[v0\\a']] (eqb lib' e a a e3) (eqb1 lib' e a' a e2)) as z.
     repeat (autodimp z hyp); repnd; tcsp; try (complete (apply tygs; auto)).
 
     applydup uv in z.
     apply tys.
 
     {
-      pose proof (dum (B')[[v'\\a]] (B)[[v\\a]] (B0)[[v0\\a']] (eqb lib' a a e3) (eqb1 lib' a' a e2)) as w.
+      pose proof (dum (B')[[v'\\a]] (B)[[v\\a]] (B0)[[v0\\a']] (eqb lib' e a a e3) (eqb1 lib' e a' a e2)) as w.
       repeat (autodimp w hyp); try (complete (apply tygs; auto)); repnd; auto.
     }
 
@@ -2645,17 +2658,17 @@ Proof.
       apply eqas in x2.
       pose proof (tspb a' a' x2) as btspb.
 
-      assert ((eqb lib' a' a' x2) <=2=> (eqb1 lib' a a' e)) as eqbs1.
+      assert ((eqb lib' e a' a' x2) <=2=> (eqb1 lib' e a a' e0)) as eqbs1.
       {
-        pose proof (tf1 a a' e) as btf1.
+        pose proof (tf1 a a' e0) as btf1.
         dup ceqb as bceqb.
         apply (bcequivc_ext_implies_ccequivc_ext _ _ _ _ _ a') in bceqb; auto.
         apply (lib_extends_preserves_ccequivc_ext lib lib') in bceqb; auto.
 
         onedtsp4 uv2 tys2 tyvr2 tyvrt2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-        pose proof (tyvrt2 (B')[[v'\\a']] (B1)[[v1\\a']] (B0)[[v0\\a]] (eqb1 lib' a a' e)) as u.
+        pose proof (tyvrt2 (B')[[v'\\a']] (B1)[[v1\\a']] (B0)[[v0\\a]] (eqb1 lib' e a a' e0)) as u.
         repeat (autodimp u hyp);[].
-        pose proof (dum2 (B')[[v'\\a']] (B)[[v\\a']] (B0)[[v0\\a]] (eqb lib' a' a' x2) (eqb1 lib' a a' e)) as w.
+        pose proof (dum2 (B')[[v'\\a']] (B)[[v\\a']] (B0)[[v0\\a]] (eqb lib' e a' a' x2) (eqb1 lib' e a a' e0)) as w.
         repeat (autodimp w hyp); try (complete (apply tygs; auto)); repnd; auto.
 
         apply uv2 in w; auto.
@@ -2664,7 +2677,7 @@ Proof.
 
       apply type_sys_props4_implies_eq_term_equals_sym in tspb; eauto 3 with slow;[].
       repnd; tcsp.
-      dup e as x3.
+      dup e0 as x3.
       apply eqas in x3.
       pose proof (tspb0 a a' x3 e3) as p1.
       pose proof (tspb1 a' a x3 x2) as p2.
@@ -2698,10 +2711,10 @@ Lemma type_family_ext_sym {o} :
   forall ts lib C (T1 T2 : @CTerm o) A v B A' v' B' eqa eqb eqa1 eqb1,
     constructor_inj C
     -> computes_to_valc lib T1 (C A v B)
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext lib (fun lib =>
-                     forall a a' (e : eqa lib a a'),
-                       type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x =>
+                         forall a a' (e : eqa lib' x a a'),
+                           type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> type_family_ext C ts lib T1 T2 eqa1 eqb1
     -> type_family_ext C ts lib T2 T1 eqa1 eqb1.
 Proof.
@@ -2718,29 +2731,29 @@ Proof.
 
   eexists;eexists;eexists;eexists;eexists;eexists; dands; spcast; eauto.
 
-  - introv ext.
-    pose proof (tf3 lib' ext) as tf3.
-    pose proof (tf1 lib' ext) as tf1.
-    pose proof (tspa lib' ext) as tspa.
+  - repeat introv.
+    pose proof (tf3 lib' e) as tf3.
+    pose proof (tf1 lib' e) as tf1.
+    pose proof (tspa lib' e) as tspa.
     simpl in *.
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; tcsp.
     eapply tygs; auto.
 
-  - introv ext; introv.
-    pose proof (tf3 lib' ext) as tf3.
-    pose proof (tf1 lib' ext) as tf1.
-    pose proof (tspa lib' ext) as tspa.
-    pose proof (tspb lib' ext) as tspb.
-    pose proof (eqbs lib' ext) as eqbs.
+  - repeat introv.
+    pose proof (tf3 lib' e) as tf3.
+    pose proof (tf1 lib' e) as tf1.
+    pose proof (tspa lib' e) as tspa.
+    pose proof (tspb lib' e) as tspb.
+    pose proof (eqbs lib' e) as eqbs.
     simpl in *.
 
-    assert ((eqa lib') <=2=> (eqa1 lib')) as eqas.
+    assert ((eqa lib' e) <=2=> (eqa1 lib' e)) as eqas.
     {
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
       apply uv in tf3; auto.
     }
 
-    assert (eqa1 lib' a' a) as e1.
+    assert (eqa1 lib' e a' a) as e1.
     {
       apply eqas.
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
@@ -2755,15 +2768,15 @@ Proof.
     eapply type_sys_props4_change_per1 in tf1;[|eauto].
 
 
-    assert (term_equality_symmetric (eqa1 lib')) as tees by (eauto 3 with slow).
-    assert (term_equality_transitive (eqa1 lib')) as teet by (eauto 3 with slow).
+    assert (term_equality_symmetric (eqa1 lib' e)) as tees by (eauto 3 with slow).
+    assert (term_equality_transitive (eqa1 lib' e)) as teet by (eauto 3 with slow).
 
-    assert (eqa lib' a a) as e3 by (apply eqas; eauto).
-    assert (eqa lib' a' a') as e4 by (apply eqas; eauto).
-    assert (eqa lib' a a') as e5 by (apply eqas; eauto).
+    assert (eqa lib' e a a) as e3 by (apply eqas; eauto).
+    assert (eqa lib' e a' a') as e4 by (apply eqas; eauto).
+    assert (eqa lib' e a a') as e5 by (apply eqas; eauto).
 
     pose proof (eq_term_equals_sym_tsp
-                  ts lib' (eqa lib') (eqb lib') a a' e3 e5 e2 v B v' B') as q.
+                  ts lib' (eqa lib' e) (eqb lib' e) a a' e3 e5 e2 v B v' B') as q.
     repeat (autodimp q hyp).
     { introv; apply type_sys_props4_implies_type_sys_props; tcsp. }
     repnd.
@@ -2777,11 +2790,11 @@ Qed.
 Lemma per_func_ext_sym {o} :
   forall ts lib (T1 T2 : @CTerm o) A A' v v' B B' equ eqa eqb,
     computes_to_valc lib T1 (mkc_function A v B)
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext lib
-              (fun lib =>
-                 forall a a' (e : eqa lib a a'),
-                   type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib
+                  (fun lib' x =>
+                     forall a a' (e : eqa lib' x a a'),
+                       type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> per_func_ext ts lib T1 T2 equ
     -> per_func_ext ts lib T2 T1 equ.
 Proof.
@@ -2826,11 +2839,11 @@ Hint Resolve bcequivc_ext_refl : slow.
 Lemma per_func_ext_sym_rev {o} :
   forall ts lib (T1 T2 : @CTerm o) A A' v v' B B' equ eqa eqb,
     computes_to_valc lib T1 (mkc_function A v B)
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext lib
-              (fun lib =>
-                 forall a a' (e : eqa lib a a'),
-                   type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib
+                  (fun lib' x =>
+                     forall a a' (e : eqa lib' x a a'),
+                       type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> per_func_ext ts lib T2 T1 equ
     -> per_func_ext ts lib T1 T2 equ.
 Proof.
@@ -2880,12 +2893,12 @@ Lemma type_family_ext_trans1 {o} :
   forall ts lib C (T T1 T2 : @CTerm o) eqa1 eqb1 eqa2 eqb2 eqa eqb A v B A' v' B',
     constructor_inj C
     -> computes_to_valc lib T (C A v B)
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext
          lib
-         (fun lib =>
-            forall a a' (e : eqa lib a a'),
-              type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> type_family_ext C ts lib T T2 eqa1 eqb1
     -> type_family_ext C ts lib T1 T eqa2 eqb2
     -> type_family_ext C ts lib T1 T2 eqa2 eqb2.
@@ -2914,59 +2927,59 @@ Proof.
   eexists; eexists; eexists; eexists; eexists; eexists;
     dands; spcast; eauto.
 
-  - introv ext.
-    pose proof (tspa lib' ext) as tspa.
-    pose proof (tspb lib' ext) as tspb.
-    pose proof (tfa3 lib' ext) as tfa3.
-    pose proof (tfb3 lib' ext) as tfb3.
-    pose proof (tfa1 lib' ext) as tfa1.
-    pose proof (tfb1 lib' ext) as tfb1.
+  - repeat introv.
+    pose proof (tspa lib' e) as tspa.
+    pose proof (tspb lib' e) as tspb.
+    pose proof (tfa3 lib' e) as tfa3.
+    pose proof (tfb3 lib' e) as tfb3.
+    pose proof (tfa1 lib' e) as tfa1.
+    pose proof (tfb1 lib' e) as tfb1.
     simpl in *.
 
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-    pose proof (dum A A0 A'1 (eqa2 lib') (eqa1 lib')) as q; repeat (autodimp q hyp); tcsp.
+    pose proof (dum A A0 A'1 (eqa2 lib' e) (eqa1 lib' e)) as q; repeat (autodimp q hyp); tcsp.
 
-  - introv ext.
-    pose proof (tspa lib' ext) as tspa.
-    pose proof (tspb lib' ext) as tspb.
-    pose proof (tfa3 lib' ext) as tfa3.
-    pose proof (tfb3 lib' ext) as tfb3.
-    pose proof (tfa1 lib' ext) as tfa1.
-    pose proof (tfb1 lib' ext) as tfb1.
-    pose proof (eqbs1 lib' ext) as eqbs1.
-    pose proof (eqbs2 lib' ext) as eqbs2.
+  - repeat introv.
+    pose proof (tspa lib' e) as tspa.
+    pose proof (tspb lib' e) as tspb.
+    pose proof (tfa3 lib' e) as tfa3.
+    pose proof (tfb3 lib' e) as tfb3.
+    pose proof (tfa1 lib' e) as tfa1.
+    pose proof (tfb1 lib' e) as tfb1.
+    pose proof (eqbs1 lib' e) as eqbs1.
+    pose proof (eqbs2 lib' e) as eqbs2.
     simpl in *.
 
     introv.
 
-    assert ((eqa lib') <=2=> (eqa1 lib')) as eqas1.
+    assert ((eqa lib' e) <=2=> (eqa1 lib' e)) as eqas1.
     {
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
       apply uv in tfa3; auto.
     }
 
-    assert ((eqa lib') <=2=> (eqa2 lib')) as eqas2.
+    assert ((eqa lib' e) <=2=> (eqa2 lib' e)) as eqas2.
     {
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
       apply tygs in tfb3.
       apply uv in tfb3; auto.
     }
 
-    assert (term_equality_symmetric (eqa lib')) as tees by (eauto 3 with slow).
-    assert (term_equality_transitive (eqa lib')) as teet by (eauto 3 with slow).
+    assert (term_equality_symmetric (eqa lib' e)) as tees by (eauto 3 with slow).
+    assert (term_equality_transitive (eqa lib' e)) as teet by (eauto 3 with slow).
 
-    assert (eqa2 lib' a a) as e1.
+    assert (eqa2 lib' e a a) as e1.
     {
       apply eqas2; eapply teet;[apply eqas2;eauto|].
       apply tees; apply eqas2; auto.
     }
 
-    assert (eqa1 lib' a a') as e2.
+    assert (eqa1 lib' e a a') as e2.
     {
       apply eqas1; apply eqas2; auto.
     }
 
-    assert (eqa lib' a a') as e3.
+    assert (eqa lib' e a a') as e3.
     {
       apply eqas2; auto.
     }
@@ -2974,7 +2987,7 @@ Proof.
     pose proof (tfa1 a a' e2) as h1.
     pose proof (tfb1 a a e1) as h2.
 
-    pose proof (eqbs2 a a' e3 e) as z1.
+    pose proof (eqbs2 a a' e3 e0) as z1.
 
     pose proof (tspb a a' e3) as q1.
     eapply type_sys_props4_change_per1 in h1;[|exact q1].
@@ -2982,19 +2995,19 @@ Proof.
 
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
 
-    pose proof (dum (B)[[v\\a]] (B0)[[v0\\a]] (B'1)[[v'1\\a']] (eqb2 lib' a a e1) (eqb2 lib' a a' e)) as w.
+    pose proof (dum (B)[[v\\a]] (B0)[[v0\\a]] (B'1)[[v'1\\a']] (eqb2 lib' e a a e1) (eqb2 lib' e a a' e0)) as w.
     repeat (autodimp w hyp); tcsp.
 Qed.
 
 Lemma per_func_ext_function_trans1 {o} :
   forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 eqa eqb A v B A' v' B',
     computes_to_valc lib T (mkc_function A v B)
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext
          lib
-         (fun lib =>
-            forall a a' (e : eqa lib a a'),
-              type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> per_func_ext ts lib T T2 eq2
     -> per_func_ext ts lib T1 T eq1
     -> per_func_ext ts lib T1 T2 eq1.
@@ -3009,12 +3022,12 @@ Lemma type_family_ext_trans2 {o} :
   forall ts lib C (T T1 T2 : @CTerm o) eqa1 eqb1 eqa2 eqb2 eqa eqb A v B A' v' B',
     constructor_inj C
     -> computes_to_valc lib T (C A v B)
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext
          lib
-         (fun lib =>
-            forall a a' (e : eqa lib a a'),
-              type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> type_family_ext C ts lib T T2 eqa1 eqb1
     -> type_family_ext C ts lib T1 T eqa2 eqb2
     -> type_family_ext C ts lib T1 T2 eqa1 eqb1.
@@ -3043,59 +3056,59 @@ Proof.
   eexists; eexists; eexists; eexists; eexists; eexists;
     dands; spcast; eauto.
 
-  - introv ext.
-    pose proof (tspa lib' ext) as tspa.
-    pose proof (tspb lib' ext) as tspb.
-    pose proof (tfa3 lib' ext) as tfa3.
-    pose proof (tfb3 lib' ext) as tfb3.
-    pose proof (tfa1 lib' ext) as tfa1.
-    pose proof (tfb1 lib' ext) as tfb1.
+  - repeat introv.
+    pose proof (tspa lib' e) as tspa.
+    pose proof (tspb lib' e) as tspb.
+    pose proof (tfa3 lib' e) as tfa3.
+    pose proof (tfb3 lib' e) as tfb3.
+    pose proof (tfa1 lib' e) as tfa1.
+    pose proof (tfb1 lib' e) as tfb1.
     simpl in *.
 
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-    pose proof (dum A A0 A'1 (eqa2 lib') (eqa1 lib')) as q; repeat (autodimp q hyp); tcsp.
+    pose proof (dum A A0 A'1 (eqa2 lib' e) (eqa1 lib' e)) as q; repeat (autodimp q hyp); tcsp.
 
-  - introv ext.
-    pose proof (tspa lib' ext) as tspa.
-    pose proof (tspb lib' ext) as tspb.
-    pose proof (tfa3 lib' ext) as tfa3.
-    pose proof (tfb3 lib' ext) as tfb3.
-    pose proof (tfa1 lib' ext) as tfa1.
-    pose proof (tfb1 lib' ext) as tfb1.
-    pose proof (eqbs1 lib' ext) as eqbs1.
-    pose proof (eqbs2 lib' ext) as eqbs2.
+  - repeat introv.
+    pose proof (tspa lib' e) as tspa.
+    pose proof (tspb lib' e) as tspb.
+    pose proof (tfa3 lib' e) as tfa3.
+    pose proof (tfb3 lib' e) as tfb3.
+    pose proof (tfa1 lib' e) as tfa1.
+    pose proof (tfb1 lib' e) as tfb1.
+    pose proof (eqbs1 lib' e) as eqbs1.
+    pose proof (eqbs2 lib' e) as eqbs2.
     simpl in *.
 
     introv.
 
-    assert ((eqa lib') <=2=> (eqa1 lib')) as eqas1.
+    assert ((eqa lib' e) <=2=> (eqa1 lib' e)) as eqas1.
     {
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
       apply uv in tfa3; auto.
     }
 
-    assert ((eqa lib') <=2=> (eqa2 lib')) as eqas2.
+    assert ((eqa lib' e) <=2=> (eqa2 lib' e)) as eqas2.
     {
       onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
       apply tygs in tfb3.
       apply uv in tfb3; auto.
     }
 
-    assert (term_equality_symmetric (eqa lib')) as tees by (eauto 3 with slow).
-    assert (term_equality_transitive (eqa lib')) as teet by (eauto 3 with slow).
+    assert (term_equality_symmetric (eqa lib' e)) as tees by (eauto 3 with slow).
+    assert (term_equality_transitive (eqa lib' e)) as teet by (eauto 3 with slow).
 
-    assert (eqa2 lib' a a) as e1.
+    assert (eqa2 lib' e a a) as e1.
     {
       apply eqas2; eapply teet;[apply eqas1;eauto|].
       apply tees; apply eqas1; auto.
     }
 
-    assert (eqa1 lib' a a') as e2.
+    assert (eqa1 lib' e a a') as e2.
     {
       apply eqas1; apply eqas1; auto.
     }
 
-    assert (eqa lib' a a') as e3.
+    assert (eqa lib' e a a') as e3.
     {
       apply eqas1; auto.
     }
@@ -3103,7 +3116,7 @@ Proof.
     pose proof (tfa1 a a' e2) as h1.
     pose proof (tfb1 a a e1) as h2.
 
-    pose proof (eqbs1 a a' e3 e) as z1.
+    pose proof (eqbs1 a a' e3 e0) as z1.
 
     pose proof (tspb a a' e3) as q1.
     eapply type_sys_props4_change_per1 in h1;[|exact q1].
@@ -3111,19 +3124,19 @@ Proof.
 
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
 
-    pose proof (dum (B)[[v\\a]] (B0)[[v0\\a]] (B'1)[[v'1\\a']] (eqb2 lib' a a e1) (eqb1 lib' a a' e)) as w.
+    pose proof (dum (B)[[v\\a]] (B0)[[v0\\a]] (B'1)[[v'1\\a']] (eqb2 lib' e a a e1) (eqb1 lib' e a a' e0)) as w.
     repeat (autodimp w hyp); tcsp.
 Qed.
 
 Lemma per_func_ext_function_trans2 {o} :
   forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 eqa eqb A v B A' v' B',
     computes_to_valc lib T (mkc_function A v B)
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext
          lib
-         (fun lib =>
-            forall a a' (e : eqa lib a a'),
-              type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> per_func_ext ts lib T T2 eq2
     -> per_func_ext ts lib T1 T eq1
     -> per_func_ext ts lib T1 T2 eq2.
@@ -3192,12 +3205,12 @@ Qed.
 Lemma per_func_ext_function_trans3 {o} :
   forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 eqa eqb A v B A' v' B',
     computes_to_valc lib T (mkc_function A' v' B')
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext
          lib
-         (fun lib =>
-            forall a a' (e : eqa lib a a'),
-              type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> per_func_ext ts lib T T2 eq2
     -> per_func_ext ts lib T1 T eq1
     -> per_func_ext ts lib T1 T2 eq1.
@@ -3206,24 +3219,24 @@ Proof.
   apply (per_func_ext_function_trans1 ts lib T T1 T2 eq1 eq2 eqa eqb A' v' B' A v B);
     try exact pera; try exact perb; eauto.
 
-  - apply in_ext_type_sys_props4_sym; auto.
+  - apply in_ext_ext_type_sys_props4_sym; auto.
 
-  - introv ext; introv.
-    pose proof (tspa lib' ext) as tspa; simpl in *.
-    pose proof (tspb lib' ext) as tspb; simpl in *.
+  - repeat introv.
+    pose proof (tspa lib' e) as tspa; simpl in *.
+    pose proof (tspb lib' e) as tspb; simpl in *.
     apply type_sys_props4_sym.
 
-    assert (term_equality_symmetric (eqa lib')) as tees by (eauto 3 with slow).
-    assert (term_equality_transitive (eqa lib')) as teet by (eauto 3 with slow).
+    assert (term_equality_symmetric (eqa lib' e)) as tees by (eauto 3 with slow).
+    assert (term_equality_transitive (eqa lib' e)) as teet by (eauto 3 with slow).
 
-    assert (eqa lib' a' a) as e1 by tcsp.
+    assert (eqa lib' e a' a) as e1 by tcsp.
     pose proof (tspb a' a e1) as q.
 
     pose proof (type_sys_props4_implies_eq_term_equals_sym
-                  ts lib' (eqa lib') (eqb lib') v B v' B') as w.
+                  ts lib' (eqa lib' e) (eqb lib' e) v B v' B') as w.
     repeat (autodimp w hyp); repnd.
 
-    pose proof (w a a' e e1) as w.
+    pose proof (w a a' e0 e1) as w.
     eapply type_sys_props4_change_per;[|eauto].
     apply eq_term_equals_sym; auto.
 Qed.
@@ -3231,12 +3244,12 @@ Qed.
 Lemma per_func_ext_function_trans4 {o} :
   forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 eqa eqb A v B A' v' B',
     computes_to_valc lib T (mkc_function A' v' B')
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext
          lib
-         (fun lib =>
-            forall a a' (e : eqa lib a a'),
-              type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> per_func_ext ts lib T T2 eq2
     -> per_func_ext ts lib T1 T eq1
     -> per_func_ext ts lib T1 T2 eq2.
@@ -3245,24 +3258,24 @@ Proof.
   apply (per_func_ext_function_trans2 ts lib T T1 T2 eq1 eq2 eqa eqb A' v' B' A v B);
     try exact pera; try exact perb; eauto.
 
-  - apply in_ext_type_sys_props4_sym; auto.
+  - apply in_ext_ext_type_sys_props4_sym; auto.
 
-  - introv ext; introv.
-    pose proof (tspa lib' ext) as tspa; simpl in *.
-    pose proof (tspb lib' ext) as tspb; simpl in *.
+  - repeat introv.
+    pose proof (tspa lib' e) as tspa; simpl in *.
+    pose proof (tspb lib' e) as tspb; simpl in *.
     apply type_sys_props4_sym.
 
-    assert (term_equality_symmetric (eqa lib')) as tees by (eauto 3 with slow).
-    assert (term_equality_transitive (eqa lib')) as teet by (eauto 3 with slow).
+    assert (term_equality_symmetric (eqa lib' e)) as tees by (eauto 3 with slow).
+    assert (term_equality_transitive (eqa lib' e)) as teet by (eauto 3 with slow).
 
-    assert (eqa lib' a' a) as e1 by tcsp.
+    assert (eqa lib' e a' a) as e1 by tcsp.
     pose proof (tspb a' a e1) as q.
 
     pose proof (type_sys_props4_implies_eq_term_equals_sym
-                  ts lib' (eqa lib') (eqb lib') v B v' B') as w.
+                  ts lib' (eqa lib' e) (eqb lib' e) v B v' B') as w.
     repeat (autodimp w hyp); repnd.
 
-    pose proof (w a a' e e1) as w.
+    pose proof (w a a' e0 e1) as w.
     eapply type_sys_props4_change_per;[|eauto].
     apply eq_term_equals_sym; auto.
 Qed.
@@ -3637,32 +3650,32 @@ Qed.
 
 Lemma per_product_eq_bar_sym {o} :
   forall lib eqa eqb (t1 t2 : @CTerm o),
-    in_ext lib (fun lib => term_equality_symmetric (eqa lib))
-    -> in_ext lib (fun lib =>
-                     forall (a1 a2 : CTerm) (e : eqa lib a1 a2),
-                       term_equality_symmetric (eqb lib a1 a2 e))
-    -> in_ext lib (fun lib =>
-                     forall (a1 a2 : CTerm) (e1 : eqa lib a1 a2) (e2 : eqa lib a2 a1),
-                       (eqb lib a1 a2 e1) <=2=> (eqb lib a2 a1 e2))
+    in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x =>
+                         forall (a1 a2 : CTerm) (e : eqa lib' x a1 a2),
+                           term_equality_symmetric (eqb lib' x a1 a2 e))
+    -> in_ext_ext lib (fun lib' x =>
+                         forall (a1 a2 : CTerm) (e1 : eqa lib' x a1 a2) (e2 : eqa lib' x a2 a1),
+                           (eqb lib' x a1 a2 e1) <=2=> (eqb lib' x a2 a1 e2))
     -> per_product_eq_bar lib eqa eqb t1 t2
     -> per_product_eq_bar lib eqa eqb t2 t1.
 Proof.
   introv syma symb symb2 per.
   allunfold @per_product_eq_bar; exrepnd.
   exists bar.
-  introv br ext.
-  pose proof (per0 lib' br lib'0 ext) as per0; simpl in *.
-  pose proof (syma lib'0) as syma; simpl in *; autodimp syma hyp; eauto 3 with slow.
-  pose proof (symb lib'0) as symb; simpl in *; autodimp symb hyp; eauto 3 with slow.
-  pose proof (symb2 lib'0) as symb2; simpl in *; autodimp symb2 hyp; eauto 3 with slow.
+  repeat introv.
+  pose proof (per0 lib' b lib'0 e) as per0; simpl in *.
+  pose proof (syma lib'0 (lib_extends_trans lib'0 lib' lib e (bar_lib_ext bar lib' b))) as syma; simpl in *.
+  pose proof (symb lib'0 (lib_extends_trans lib'0 lib' lib e (bar_lib_ext bar lib' b))) as symb; simpl in *.
+  pose proof (symb2 lib'0 (lib_extends_trans lib'0 lib' lib e (bar_lib_ext bar lib' b))) as symb2; simpl in *.
 
   unfold per_product_eq in *; exrepnd.
 
-  dup e as x.
+  dup e0 as x.
   apply syma in x.
   eexists; eexists; eexists; eexists; exists x; dands; eauto.
 
-  apply (symb2 a a' e x).
+  apply (symb2 a a' e0 x).
   apply symb; auto.
 Qed.
 
@@ -3676,6 +3689,16 @@ Proof.
 Qed.
 Hint Resolve in_ext_type_sys_prop4_implies_in_ext_term_equality_symmetric : slow.
 
+Lemma in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_symmetric {o} :
+  forall ts lib (A A' : @CTerm o) eqa,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x)).
+Proof.
+  introv i; introv.
+  pose proof (i lib' e) as i; simpl in i; eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_symmetric : slow.
+
 Lemma in_ext_type_sys_prop4_implies_in_ext_term_equality_transitive {o} :
   forall ts lib (A A' : @CTerm o) eqa,
     in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
@@ -3685,6 +3708,16 @@ Proof.
   pose proof (i lib' ext) as i; simpl in i; eauto 3 with slow.
 Qed.
 Hint Resolve in_ext_type_sys_prop4_implies_in_ext_term_equality_transitive : slow.
+
+Lemma in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_transitive {o} :
+  forall ts lib (A A' : @CTerm o) eqa,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x)).
+Proof.
+  introv i; introv.
+  pose proof (i lib' e) as i; simpl in i; eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_transitive : slow.
 
 Lemma in_ext_type_sys_prop4_implies_in_ext_term_equality_respecting {o} :
   forall ts lib (A A' : @CTerm o) eqa,
@@ -3696,6 +3729,17 @@ Proof.
   onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
 Qed.
 Hint Resolve in_ext_type_sys_prop4_implies_in_ext_term_equality_respecting : slow.
+
+Lemma in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_respecting {o} :
+  forall ts lib (A A' : @CTerm o) eqa,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x)).
+Proof.
+  introv i; introv.
+  pose proof (i lib' e) as i; simpl in i; eauto 3 with slow.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
+Qed.
+Hint Resolve in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_respecting : slow.
 
 Lemma in_ext_type_sys_props4_dep_implies_in_ext_term_equality_symmetric_dep {o} :
   forall ts lib v (B : @CVTerm o [v]) v' B' eqa eqb,
@@ -3713,6 +3757,24 @@ Proof.
 Qed.
 Hint Resolve in_ext_type_sys_props4_dep_implies_in_ext_term_equality_symmetric_dep : slow.
 
+Lemma in_ext_ext_type_sys_props4_dep_implies_in_ext_term_equality_symmetric_dep {o} :
+  forall ts lib v (B : @CVTerm o [v]) v' B' eqa eqb,
+    in_ext_ext
+      lib
+      (fun lib' x =>
+         forall a a' (e : eqa lib' x a a'),
+           type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a1 a2 (e : eqa lib' x a1 a2),
+              term_equality_symmetric (eqb lib' x a1 a2 e)).
+Proof.
+  introv i; introv.
+  pose proof (i lib' e a1 a2 e0) as i; eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_ext_type_sys_props4_dep_implies_in_ext_term_equality_symmetric_dep : slow.
+
 Lemma in_ext_type_sys_props4_dep_implies_in_ext_term_equality_transitive_dep {o} :
   forall ts lib v (B : @CVTerm o [v]) v' B' eqa eqb,
     in_ext lib
@@ -3728,6 +3790,24 @@ Proof.
   pose proof (i lib' ext a1 a2 e) as i; eauto 3 with slow.
 Qed.
 Hint Resolve in_ext_type_sys_props4_dep_implies_in_ext_term_equality_transitive_dep : slow.
+
+Lemma in_ext_ext_type_sys_props4_dep_implies_in_ext_term_equality_transitive_dep {o} :
+  forall ts lib v (B : @CVTerm o [v]) v' B' eqa eqb,
+    in_ext_ext
+      lib
+      (fun lib' x =>
+         forall a a' (e : eqa lib' x a a'),
+           type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a1 a2 (e : eqa lib' x a1 a2),
+              term_equality_transitive (eqb lib' x a1 a2 e)).
+Proof.
+  introv i; introv.
+  pose proof (i lib' e a1 a2 e0) as i; eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_ext_type_sys_props4_dep_implies_in_ext_term_equality_transitive_dep : slow.
 
 Lemma in_ext_type_sys_props4_dep_implies_in_ext_term_equality_respecting_dep {o} :
   forall ts lib v (B : @CVTerm o [v]) v' B' eqa eqb,
@@ -3746,121 +3826,279 @@ Proof.
 Qed.
 Hint Resolve in_ext_type_sys_props4_dep_implies_in_ext_term_equality_respecting_dep : slow.
 
-Lemma in_ext_type_sys_props4_dep_implies_in_ext_eq_term_equals1_dep {o} :
-  forall ts lib v (B : @CVTerm o [v]) v' B' (eqa : lib-per(o)) eqb,
-    in_ext lib (fun lib => term_equality_transitive (eqa lib))
-    -> in_ext lib
-              (fun lib =>
-                 forall a a' (e : eqa lib a a'),
-                   type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
-    -> in_ext lib
-              (fun lib =>
-                 forall a1 a2 (e1 : eqa lib a1 a2) (e2 : eqa lib a2 a1),
-                   (eqb lib a1 a2 e1) <=2=> (eqb lib a2 a1 e2)).
+Lemma in_ext_ext_type_sys_props4_dep_implies_in_ext_term_equality_respecting_dep {o} :
+  forall ts lib v (B : @CVTerm o [v]) v' B' eqa eqb,
+    in_ext_ext
+      lib
+      (fun lib' x =>
+         forall a a' (e : eqa lib' x a a'),
+           type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a1 a2 (e : eqa lib' x a1 a2),
+              term_equality_respecting lib' (eqb lib' x a1 a2 e)).
 Proof.
-  introv tr i ext; introv.
-  pose proof (tr lib' ext) as tr; simpl in tr.
-  pose proof (i lib' ext) as i; simpl in i.
+  introv i; introv.
+  pose proof (i lib' e a1 a2 e0) as i; eauto 3 with slow.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
+Qed.
+Hint Resolve in_ext_ext_type_sys_props4_dep_implies_in_ext_term_equality_respecting_dep : slow.
+
+Lemma in_ext_type_sys_props4_dep_implies_in_ext_eq_term_equals1_dep {o} :
+  forall ts lib v (B : @CVTerm o [v]) v' B' (eqa : lib-per(lib,o)) eqb,
+    in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_ext_ext lib
+                  (fun lib' x =>
+                     forall a a' (e : eqa lib' x a a'),
+                       type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> in_ext_ext lib
+                  (fun lib' x =>
+                     forall a1 a2 (e1 : eqa lib' x a1 a2) (e2 : eqa lib' x a2 a1),
+                       (eqb lib' x a1 a2 e1) <=2=> (eqb lib' x a2 a1 e2)).
+Proof.
+  introv tr i; repeat introv.
+  pose proof (tr lib' e) as tr; simpl in tr.
+  pose proof (i lib' e) as i; simpl in i.
   pose proof (type_sys_props4_implies_eq_term_equals_sym
-                ts lib' (eqa lib') (eqb lib') v B v' B') as k.
-  repeat (autodimp k hyp); tcsp.
+                ts lib' (eqa lib' e) (eqb lib' e) v B v' B') as k.
+  repeat (autodimp k hyp); repnd; tcsp; try apply k.
 Qed.
 Hint Resolve in_ext_type_sys_props4_dep_implies_in_ext_eq_term_equals1_dep : slow.
 
-Lemma per_product_eq_bar_trans {p} :
-  forall lib (eqa : lib-per(p)) eqb t1 t2 t3,
-    in_ext lib (fun lib => term_equality_symmetric (eqa lib))
-    -> in_ext lib (fun lib => term_equality_transitive (eqa lib))
-    -> in_ext lib (fun lib =>
-                     forall a1 a2 (e : eqa lib a1 a2),
-                       term_equality_transitive (eqb lib a1 a2 e))
-    -> in_ext lib (fun lib =>
-                     forall a1 a2 (e1 : eqa lib a1 a2) (e : eqa lib a1 a1),
-                       (eqb lib a1 a2 e1) <=2=> (eqb lib a1 a1 e))
-    -> in_ext lib (fun lib =>
-                     forall a1 a2 (e2 : eqa lib a2 a1) (e : eqa lib a1 a1),
-                       (eqb lib a2 a1 e2) <=2=> (eqb lib a1 a1 e))
-    -> per_product_eq_bar lib eqa eqb t1 t2
-    -> per_product_eq_bar lib eqa eqb t2 t3
-    -> per_product_eq_bar lib eqa eqb t1 t3.
-Proof.
-  introv syma tra trb refb1 refb2 per1 per2.
-  allunfold @per_product_eq_bar; exrepnd.
-
-  exists (intersect_bars bar bar0).
-  introv br ext; simpl in *; exrepnd.
-
-  pose proof (syma lib'0) as syma; simpl in *; autodimp syma hyp; eauto 4 with slow.
-  pose proof (tra lib'0) as tra; simpl in *; autodimp tra hyp; eauto 4 with slow.
-  pose proof (trb lib'0) as trb; simpl in *; autodimp trb hyp; eauto 4 with slow.
-  pose proof (refb1 lib'0) as refb1; simpl in *; autodimp refb1 hyp; eauto 4 with slow.
-  pose proof (refb2 lib'0) as refb2; simpl in *; autodimp refb2 hyp; eauto 4 with slow.
-
-  pose proof (per2 lib2 br2 lib'0) as per2; simpl in *; autodimp per2 hyp; eauto 4 with slow.
-  pose proof (per0 lib1 br0 lib'0) as per0; simpl in *; autodimp per0 hyp; eauto 4 with slow.
-
-  unfold per_product_eq in *; exrepnd.
-  ccomputes_to_eqval.
-
-  assert (eqa lib'0 a0 a') as e' by (apply tra with (t2 := a'0); sp).
-  exists a0 a' b0 b' e'; sp; try (complete (spcast; sp)).
-  assert (eqa lib'0 a0 a0) as e1 by (apply tra with (t2 := a'0); sp).
-  assert (eqa lib'0 a'0 a'0) as e2 by (apply tra with (t2 := a0); sp).
-  generalize (refb1 a'0 a' e e2); intro eqt1.
-  apply eqt1 in per1.
-
-  generalize (refb2 a'0 a0 e0 e2); intro eqt2.
-  apply eqt2 in per1.
-
-  generalize (trb a0 a'0 e0 b0 b'0 b'); intro trb1.
-  repeat (autodimp trb1 hyp).
-  generalize (refb1 a0 a'0 e0 e1); intro eqt3.
-  generalize (refb1 a0 a' e' e1); intro eqt4.
-  rw eqt3 in trb1.
-  rw eqt4; sp.
-Qed.
-
 Lemma in_ext_type_sys_props4_dep_implies_in_ext_eq_term_equals2_dep {o} :
-  forall ts lib v (B : @CVTerm o [v]) v' B' (eqa : lib-per(o)) eqb,
-    in_ext lib (fun lib => term_equality_transitive (eqa lib))
-    -> in_ext lib
-              (fun lib =>
-                 forall a a' (e : eqa lib a a'),
-                   type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
-    -> in_ext lib
-              (fun lib =>
-                 forall a1 a2 (e1 : eqa lib a1 a2) (e2 : eqa lib a1 a1),
-                   (eqb lib a1 a2 e1) <=2=> (eqb lib a1 a1 e2)).
+  forall ts lib v (B : @CVTerm o [v]) v' B' (eqa : lib-per(lib,o)) eqb,
+    in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_ext_ext lib
+                  (fun lib' x =>
+                     forall a a' (e : eqa lib' x a a'),
+                       type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> in_ext_ext lib
+                  (fun lib' x =>
+                     forall a1 a2 (e1 : eqa lib' x a1 a2) (e2 : eqa lib' x a1 a1),
+                       (eqb lib' x a1 a2 e1) <=2=> (eqb lib' x a1 a1 e2)).
 Proof.
-  introv tr i ext; introv.
-  pose proof (tr lib' ext) as tr; simpl in tr.
-  pose proof (i lib' ext) as i; simpl in i.
+  introv tr i; repeat introv.
+  pose proof (tr lib' e) as tr; simpl in tr.
+  pose proof (i lib' e) as i; simpl in i.
   pose proof (type_sys_props4_implies_eq_term_equals_sym
-                ts lib' (eqa lib') (eqb lib') v B v' B') as k.
-  repeat (autodimp k hyp); tcsp.
+                ts lib' (eqa lib' e) (eqb lib' e) v B v' B') as k.
+  repeat (autodimp k hyp); repnd; tcsp; try apply k0.
 Qed.
 Hint Resolve in_ext_type_sys_props4_dep_implies_in_ext_eq_term_equals2_dep : slow.
 
 Lemma in_ext_type_sys_props4_dep_implies_in_ext_eq_term_equals3_dep {o} :
-  forall ts lib v (B : @CVTerm o [v]) v' B' (eqa : lib-per(o)) eqb,
-    in_ext lib (fun lib => term_equality_transitive (eqa lib))
-    -> in_ext lib
-              (fun lib =>
-                 forall a a' (e : eqa lib a a'),
-                   type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
-    -> in_ext lib
-              (fun lib =>
-                 forall a1 a2 (e1 : eqa lib a2 a1) (e2 : eqa lib a1 a1),
-                   (eqb lib a2 a1 e1) <=2=> (eqb lib a1 a1 e2)).
+  forall ts lib v (B : @CVTerm o [v]) v' B' (eqa : lib-per(lib,o)) eqb,
+    in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_ext_ext lib
+                  (fun lib' x =>
+                     forall a a' (e : eqa lib' x a a'),
+                       type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> in_ext_ext lib
+                  (fun lib' x =>
+                     forall a1 a2 (e1 : eqa lib' x a2 a1) (e2 : eqa lib' x a1 a1),
+                       (eqb lib' x a2 a1 e1) <=2=> (eqb lib' x a1 a1 e2)).
 Proof.
-  introv tr i ext; introv.
-  pose proof (tr lib' ext) as tr; simpl in tr.
-  pose proof (i lib' ext) as i; simpl in i.
+  introv tr i; repeat introv.
+  pose proof (tr lib' e) as tr; simpl in tr.
+  pose proof (i lib' e) as i; simpl in i.
   pose proof (type_sys_props4_implies_eq_term_equals_sym
-                ts lib' (eqa lib') (eqb lib') v B v' B') as k.
-  repeat (autodimp k hyp); tcsp.
+                ts lib' (eqa lib' e) (eqb lib' e) v B v' B') as k.
+  repeat (autodimp k hyp); repnd; tcsp; try apply k1.
 Qed.
 Hint Resolve in_ext_type_sys_props4_dep_implies_in_ext_eq_term_equals3_dep : slow.
+
+Lemma per_product_bar_sym {o} :
+  forall ts lib (T1 T2 : @CTerm o) A A' v v' B B' equ eqa eqb,
+    computes_to_valc lib T1 (mkc_product A v B)
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib
+                  (fun lib' x =>
+                     forall a a' (e : eqa lib' x a a'),
+                       type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> per_product_bar ts lib T1 T2 equ
+    -> per_product_bar ts lib T2 T1 equ.
+Proof.
+  introv comp tspa tspb per.
+
+  unfold per_product_bar in *; exrepnd.
+  exists eqa0 eqb0; dands; auto;[].
+  eapply type_family_ext_sym; eauto 3 with slow.
+Qed.
+
+Lemma per_product_bar_sym_rev {o} :
+  forall ts lib (T1 T2 : @CTerm o) A A' v v' B B' equ eqa eqb,
+    computes_to_valc lib T1 (mkc_product A v B)
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> per_product_bar ts lib T2 T1 equ
+    -> per_product_bar ts lib T1 T2 equ.
+Proof.
+  introv comp tspa tspb per.
+
+  unfold per_product_bar in *; exrepnd.
+  exists eqa0 eqb0; dands; auto;[].
+
+  eapply type_family_ext_value_respecting_trans3;
+    try (exact tspa);
+    try (exact tspb); eauto; eauto 3 with slow.
+Qed.
+
+Lemma per_product_bar_trans1 {o} :
+  forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 eqa eqb A v B A' v' B',
+    computes_to_valc lib T (mkc_product A v B)
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> per_product_bar ts lib T T2 eq2
+    -> per_product_bar ts lib T1 T eq1
+    -> per_product_bar ts lib T1 T2 eq1.
+Proof.
+  introv comp tspa tspb pera perb.
+  unfold per_product_bar in *; exrepnd.
+  exists eqa0 eqb0; dands; auto.
+  eapply type_family_ext_trans1; eauto 3 with slow.
+Qed.
+
+Lemma per_product_bar_trans2 {o} :
+  forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 eqa eqb A v B A' v' B',
+    computes_to_valc lib T (mkc_product A v B)
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> per_product_bar ts lib T T2 eq2
+    -> per_product_bar ts lib T1 T eq1
+    -> per_product_bar ts lib T1 T2 eq2.
+Proof.
+  introv comp tspa tspb pera perb.
+  unfold per_product_bar in *; exrepnd.
+  exists eqa1 eqb1; dands; auto.
+  eapply type_family_ext_trans2; eauto 3 with slow.
+Qed.
+
+Definition term_equality_change_lib_extends {o} {lib} (eqa : lib-per(lib,o)) :=
+  forall lib' (x1 x2 : lib_extends lib' lib) a1 a2,
+    eqa lib' x1 a1 a2
+    -> eqa lib' x2 a1 a2.
+
+Definition term_equality_change_lib_extends_fam {o} {lib} {eqa : lib-per(lib,o)} (eqb : lib-per-fam(lib,eqa)) :=
+  forall lib' (x1 x2 : lib_extends lib' lib) (a1 a2 : @CTerm o) e1 e2 (t1 t2 : @CTerm o),
+    eqb lib' x1 a1 a2 e1 t1 t2
+    -> eqb lib' x2 a1 a2 e2 t1 t2.
+
+Lemma in_ext_ext_type_sys_props4_implies_change_lib_extends {o} :
+  forall ts lib (A A' : @CTerm o) eqa,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> term_equality_change_lib_extends eqa.
+Proof.
+  introv i ea.
+  pose proof (i lib' x1) as j; simpl in *.
+  pose proof (i lib' x2) as k; simpl in *.
+
+  onedtsp4 uv1 tys1 tyvr1 tyvrt1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
+  onedtsp4 uv2 tys2 tyvr2 tyvrt2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
+
+  apply uv1 in tygt2.
+  apply tygt2; auto.
+Qed.
+Hint Resolve in_ext_ext_type_sys_props4_implies_change_lib_extends : slow.
+
+Lemma in_ext_ext_type_sys_props4_fam_implies_change_lib_extends_fam {o} :
+  forall ts lib v (B : @CVTerm o [v]) v' B' (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa)),
+    in_ext_ext
+      lib
+      (fun lib' x =>
+         forall a a' (e : eqa lib' x a a'),
+           type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> term_equality_change_lib_extends_fam eqb.
+Proof.
+  introv i eb.
+  pose proof (i lib' x1 a1 a2 e1) as j; simpl in *.
+  pose proof (i lib' x2 a1 a2 e2) as k; simpl in *.
+
+  onedtsp4 uv1 tys1 tyvr1 tyvrt1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
+  onedtsp4 uv2 tys2 tyvr2 tyvrt2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
+
+  apply uv1 in tygt2.
+  apply tygt2; auto.
+Qed.
+Hint Resolve in_ext_ext_type_sys_props4_fam_implies_change_lib_extends_fam : slow.
+
+Lemma per_product_eq_bar_trans {o} :
+  forall lib (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa)) (t1 t2 t3 : @CTerm o),
+    term_equality_change_lib_extends eqa
+    -> term_equality_change_lib_extends_fam eqb
+    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x =>
+                         forall a1 a2 (e : eqa lib' x a1 a2),
+                           term_equality_transitive (eqb lib' x a1 a2 e))
+    -> in_ext_ext lib (fun lib' x =>
+                         forall a1 a2 (e1 : eqa lib' x a1 a2) (e : eqa lib' x a1 a1),
+                           (eqb lib' x a1 a2 e1) <=2=> (eqb lib' x a1 a1 e))
+    -> in_ext_ext lib (fun lib' x =>
+                         forall a1 a2 (e2 : eqa lib' x a2 a1) (e : eqa lib' x a1 a1),
+                           (eqb lib' x a2 a1 e2) <=2=> (eqb lib' x a1 a1 e))
+    -> per_product_eq_bar lib eqa eqb t1 t2
+    -> per_product_eq_bar lib eqa eqb t2 t3
+    -> per_product_eq_bar lib eqa eqb t1 t3.
+Proof.
+  introv cha chb syma tra trb refb1 refb2 per1 per2.
+  allunfold @per_product_eq_bar; exrepnd.
+
+  exists (intersect_bars bar bar0).
+  repeat introv.
+
+  remember (lib_extends_trans lib'0 lib' lib e (bar_lib_ext (intersect_bars bar bar0) lib' b)) as x.
+  clear Heqx.
+
+  pose proof (syma lib'0 x) as syma.
+  pose proof (tra lib'0 x) as tra.
+  pose proof (trb lib'0 x) as trb.
+  pose proof (refb1 lib'0 x) as refb1.
+  pose proof (refb2 lib'0 x) as refb2.
+  simpl in *; exrepnd.
+
+  pose proof (per2 lib2 b2 lib'0 (lib_extends_trans lib'0 lib' lib2 e b1)) as per2; simpl in *.
+  pose proof (per0 lib1 b0 lib'0 (lib_extends_trans lib'0 lib' lib1 e b3)) as per0; simpl in *.
+
+  unfold per_product_eq in *; exrepnd.
+  ccomputes_to_eqval.
+
+  assert (eqa lib'0 x a0 a') as e' by (eapply tra; eauto).
+
+  exists a0 a' b4 b' e'; sp; try (complete (spcast; sp)).
+  assert (eqa lib'0 x a0 a0) as ee1 by (eapply tra; eauto).
+  assert (eqa lib'0 x a'0 a'0) as e2 by (eapply tra; eauto).
+  assert (eqa lib'0 x a'0 a') as e3 by (eapply tra; eauto).
+  assert (eqa lib'0 x a0 a'0) as e4 by (eapply tra; eauto).
+
+  apply (chb _ _ x _ _ _ e3) in per1.
+  apply (chb _ _ x _ _ _ e4) in per5.
+
+  generalize (refb1 a'0 a' e3 e2); intro eqt1.
+  apply eqt1 in per1.
+
+  generalize (refb2 a'0 a0 e4 e2); intro eqt2.
+  apply eqt2 in per1.
+
+  generalize (trb a0 a'0 e4 b4 b'0 b'); intro trb1.
+  repeat (autodimp trb1 hyp).
+  generalize (refb1 a0 a'0 e4 ee1); intro eqt3.
+  generalize (refb1 a0 a' e' ee1); intro eqt4.
+  rw eqt3 in trb1.
+  rw eqt4; sp.
+Qed.
 
 Lemma ccequivc_ext_pair {o} :
   forall lib (T T' : @CTerm o) a b,
@@ -3898,14 +4136,14 @@ Proof.
 Qed.
 
 Lemma per_product_eq_bar_cequivc {o} :
-  forall lib (eqa : lib-per(o)) eqb t1 t2,
-    in_ext lib (fun lib => term_equality_respecting lib (eqa lib))
-    -> in_ext lib (fun lib =>
-                     forall a1 a2 (e : eqa lib a1 a2),
-                       term_equality_respecting lib (eqb lib a1 a2 e))
-    -> in_ext lib (fun lib =>
-                     forall a1 a2 (e1 : eqa lib a1 a2) (e : eqa lib a1 a1),
-                       eq_term_equals (eqb lib a1 a2 e1) (eqb lib a1 a1 e))
+  forall lib (eqa : lib-per(lib,o)) eqb t1 t2,
+    in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x =>
+                         forall a1 a2 (e : eqa lib' x a1 a2),
+                           term_equality_respecting lib' (eqb lib' x a1 a2 e))
+    -> in_ext_ext lib (fun lib' x =>
+                         forall a1 a2 (e1 : eqa lib' x a1 a2) (e : eqa lib' x a1 a1),
+                           eq_term_equals (eqb lib' x a1 a2 e1) (eqb lib' x a1 a1 e))
     -> ccequivc_ext lib t1 t2
     -> per_product_eq_bar lib eqa eqb t1 t1
     -> per_product_eq_bar lib eqa eqb t1 t2.
@@ -3914,111 +4152,34 @@ Proof.
 
   allunfold @per_product_eq_bar; exrepnd.
   exists bar.
-  introv br ext.
+  repeat introv.
 
-  pose proof (peq0 lib' br lib'0 ext) as peq0; simpl in *.
-  pose proof (tera lib'0) as tera; autodimp tera hyp; eauto 3 with slow; simpl in *.
-  pose proof (terb lib'0) as terb; autodimp terb hyp; eauto 3 with slow; simpl in *.
-  pose proof (eqt1 lib'0) as eqt1; autodimp eqt1 hyp; eauto 3 with slow; simpl in *.
+  pose proof (peq0 lib' b lib'0 e) as peq0; simpl in *.
+  pose proof (tera lib'0 (lib_extends_trans lib'0 lib' lib e (bar_lib_ext bar lib' b))) as tera.
+  pose proof (terb lib'0 (lib_extends_trans lib'0 lib' lib e (bar_lib_ext bar lib' b))) as terb.
+  pose proof (eqt1 lib'0 (lib_extends_trans lib'0 lib' lib e (bar_lib_ext bar lib' b))) as eqt1.
   apply (lib_extends_preserves_ccequivc_ext _ lib'0) in ceq; eauto 3 with slow.
 
   unfold per_product_eq in *; exrepnd; spcast; computes_to_eqval.
-  pose proof (ccequivc_ext_pair lib'0 t1 t2 a b) as k.
+  pose proof (ccequivc_ext_pair lib'0 t1 t2 a b0) as k.
   repeat (autodimp k hyp); exrepnd.
-  assert (eqa lib'0 a a') as e' by (apply tera; auto).
-  exists a a' b b' e'; sp; try (complete (spcast; sp)).
-  generalize (eqt1 a a' e' e); intro eqt.
+  assert (eqa lib'0 (lib_extends_trans lib'0 lib' lib e (bar_lib_ext bar lib' b)) a a') as e' by (apply tera; auto).
+  exists a a' b0 b' e'; sp; try (complete (spcast; sp)).
+  generalize (eqt1 a a' e' e0); intro eqt.
   apply eqt in peq1.
   generalize (terb a a' e'); intro k.
   apply k; sp; try (spcast; sp).
 Qed.
 
-Lemma per_product_bar_sym {o} :
-  forall ts lib (T1 T2 : @CTerm o) A A' v v' B B' equ eqa eqb,
-    computes_to_valc lib T1 (mkc_product A v B)
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext lib
-              (fun lib =>
-                 forall a a' (e : eqa lib a a'),
-                   type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
-    -> per_product_bar ts lib T1 T2 equ
-    -> per_product_bar ts lib T2 T1 equ.
-Proof.
-  introv comp tspa tspb per.
-
-  unfold per_product_bar in *; exrepnd.
-  exists eqa0 eqb0; dands; auto;[].
-  eapply type_family_ext_sym; eauto 3 with slow.
-Qed.
-
-Lemma per_product_bar_sym_rev {o} :
-  forall ts lib (T1 T2 : @CTerm o) A A' v v' B B' equ eqa eqb,
-    computes_to_valc lib T1 (mkc_product A v B)
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext lib
-              (fun lib =>
-                 forall a a' (e : eqa lib a a'),
-                   type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
-    -> per_product_bar ts lib T2 T1 equ
-    -> per_product_bar ts lib T1 T2 equ.
-Proof.
-  introv comp tspa tspb per.
-
-  unfold per_product_bar in *; exrepnd.
-  exists eqa0 eqb0; dands; auto;[].
-
-  eapply type_family_ext_value_respecting_trans3;
-    try (exact tspa);
-    try (exact tspb); eauto; eauto 3 with slow.
-Qed.
-
-Lemma per_product_bar_trans1 {o} :
-  forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 eqa eqb A v B A' v' B',
-    computes_to_valc lib T (mkc_product A v B)
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext
-         lib
-         (fun lib =>
-            forall a a' (e : eqa lib a a'),
-              type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
-    -> per_product_bar ts lib T T2 eq2
-    -> per_product_bar ts lib T1 T eq1
-    -> per_product_bar ts lib T1 T2 eq1.
-Proof.
-  introv comp tspa tspb pera perb.
-  unfold per_product_bar in *; exrepnd.
-  exists eqa0 eqb0; dands; auto.
-  eapply type_family_ext_trans1; eauto 3 with slow.
-Qed.
-
-Lemma per_product_bar_trans2 {o} :
-  forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 eqa eqb A v B A' v' B',
-    computes_to_valc lib T (mkc_product A v B)
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext
-         lib
-         (fun lib =>
-            forall a a' (e : eqa lib a a'),
-              type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
-    -> per_product_bar ts lib T T2 eq2
-    -> per_product_bar ts lib T1 T eq1
-    -> per_product_bar ts lib T1 T2 eq2.
-Proof.
-  introv comp tspa tspb pera perb.
-  unfold per_product_bar in *; exrepnd.
-  exists eqa1 eqb1; dands; auto.
-  eapply type_family_ext_trans2; eauto 3 with slow.
-Qed.
-
 Lemma per_product_bar_trans3 {o} :
   forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 eqa eqb A v B A' v' B',
     computes_to_valc lib T (mkc_product A' v' B')
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext
          lib
-         (fun lib =>
-            forall a a' (e : eqa lib a a'),
-              type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> per_product_bar ts lib T T2 eq2
     -> per_product_bar ts lib T1 T eq1
     -> per_product_bar ts lib T1 T2 eq1.
@@ -4027,24 +4188,24 @@ Proof.
   apply (per_product_bar_trans1 ts lib T T1 T2 eq1 eq2 eqa eqb A' v' B' A v B);
     try exact pera; try exact perb; eauto.
 
-  - apply in_ext_type_sys_props4_sym; auto.
+  - apply in_ext_ext_type_sys_props4_sym; auto.
 
-  - introv ext; introv.
-    pose proof (tspa lib' ext) as tspa; simpl in *.
-    pose proof (tspb lib' ext) as tspb; simpl in *.
+  - repeat introv.
+    pose proof (tspa lib' e) as tspa; simpl in *.
+    pose proof (tspb lib' e) as tspb; simpl in *.
     apply type_sys_props4_sym.
 
-    assert (term_equality_symmetric (eqa lib')) as tees by (eauto 3 with slow).
-    assert (term_equality_transitive (eqa lib')) as teet by (eauto 3 with slow).
+    assert (term_equality_symmetric (eqa lib' e)) as tees by (eauto 3 with slow).
+    assert (term_equality_transitive (eqa lib' e)) as teet by (eauto 3 with slow).
 
-    assert (eqa lib' a' a) as e1 by tcsp.
+    assert (eqa lib' e a' a) as e1 by tcsp.
     pose proof (tspb a' a e1) as q.
 
     pose proof (type_sys_props4_implies_eq_term_equals_sym
-                  ts lib' (eqa lib') (eqb lib') v B v' B') as w.
+                  ts lib' (eqa lib' e) (eqb lib' e) v B v' B') as w.
     repeat (autodimp w hyp); repnd.
 
-    pose proof (w a a' e e1) as w.
+    pose proof (w a a' e0 e1) as w.
     eapply type_sys_props4_change_per;[|eauto].
     apply eq_term_equals_sym; auto.
 Qed.
@@ -4052,12 +4213,12 @@ Qed.
 Lemma per_product_bar_trans4 {o} :
   forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 eqa eqb A v B A' v' B',
     computes_to_valc lib T (mkc_product A' v' B')
-    -> in_ext lib (fun lib => type_sys_props4 ts lib A A' (eqa lib))
-    -> in_ext
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext
          lib
-         (fun lib =>
-            forall a a' (e : eqa lib a a'),
-              type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> per_product_bar ts lib T T2 eq2
     -> per_product_bar ts lib T1 T eq1
     -> per_product_bar ts lib T1 T2 eq2.
@@ -4066,24 +4227,24 @@ Proof.
   apply (per_product_bar_trans2 ts lib T T1 T2 eq1 eq2 eqa eqb A' v' B' A v B);
     try exact pera; try exact perb; eauto.
 
-  - apply in_ext_type_sys_props4_sym; auto.
+  - apply in_ext_ext_type_sys_props4_sym; auto.
 
-  - introv ext; introv.
-    pose proof (tspa lib' ext) as tspa; simpl in *.
-    pose proof (tspb lib' ext) as tspb; simpl in *.
+  - repeat introv.
+    pose proof (tspa lib' e) as tspa; simpl in *.
+    pose proof (tspb lib' e) as tspb; simpl in *.
     apply type_sys_props4_sym.
 
-    assert (term_equality_symmetric (eqa lib')) as tees by (eauto 3 with slow).
-    assert (term_equality_transitive (eqa lib')) as teet by (eauto 3 with slow).
+    assert (term_equality_symmetric (eqa lib' e)) as tees by (eauto 3 with slow).
+    assert (term_equality_transitive (eqa lib' e)) as teet by (eauto 3 with slow).
 
-    assert (eqa lib' a' a) as e1 by tcsp.
+    assert (eqa lib' e a' a) as e1 by tcsp.
     pose proof (tspb a' a e1) as q.
 
     pose proof (type_sys_props4_implies_eq_term_equals_sym
-                  ts lib' (eqa lib') (eqb lib') v B v' B') as w.
+                  ts lib' (eqa lib' e) (eqb lib' e) v B v' B') as w.
     repeat (autodimp w hyp); repnd.
 
-    pose proof (w a a' e e1) as w.
+    pose proof (w a a' e0 e1) as w.
     eapply type_sys_props4_change_per;[|eauto].
     apply eq_term_equals_sym; auto.
 Qed.

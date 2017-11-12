@@ -43,20 +43,20 @@ Lemma close_type_system_func {p} :
     -> type_monotone ts
     -> computes_to_valc lib T (mkc_function A v B)
     -> computes_to_valc lib T' (mkc_function A' v' B')
-    -> in_ext lib (fun lib => close ts lib A A' (eqa lib))
-    -> in_ext lib (fun lib => type_sys_props4 (close ts) lib A A' (eqa lib))
-    -> in_ext
+    -> in_ext_ext lib (fun lib' x => close ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
+    -> in_ext_ext
          lib
-         (fun lib =>
-            forall (a a' : CTerm) (e : eqa lib a a'),
-              close ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e))
-    -> in_ext
+         (fun lib' x =>
+            forall (a a' : CTerm) (e : eqa lib' x a a'),
+              close ts lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e))
+    -> in_ext_ext
          lib
-         (fun lib =>
-            forall (a a' : CTerm) (e : eqa lib a a'),
-              type_sys_props4 (close ts) lib (substc a v B) (substc a' v' B')
-                              (eqb lib a a' e))
-    -> (eq <=2=> (per_func_ext_eq eqa eqb lib))
+         (fun lib' x =>
+            forall (a a' : CTerm) (e : eqa lib' x a a'),
+              type_sys_props4 (close ts) lib' (substc a v B) (substc a' v' B')
+                              (eqb lib' x a a' e))
+    -> (eq <=2=> (per_func_ext_eq lib eqa eqb))
     -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp1 comp2 cla tysysa clb tysysb eqiff.
@@ -144,52 +144,52 @@ Proof.
   + SCase "term_symmetric".
     introv ee.
     apply eqiff in ee; apply eqiff; clear eqiff.
-    introv ext.
-    pose proof (ee lib' ext) as ee; simpl in *; introv.
+    introv.
+    pose proof (ee lib' e) as ee; simpl in *; introv.
 
-    assert (term_equality_symmetric (eqa lib')) as tees by (eauto 3 with slow).
-    assert (term_equality_transitive (eqa lib')) as teet by (eauto 3 with slow).
+    assert (term_equality_symmetric (eqa lib' e)) as tees by (eauto 3 with slow).
+    assert (term_equality_transitive (eqa lib' e)) as teet by (eauto 3 with slow).
 
-    assert (eqa lib' a a) as e1 by (eauto).
-    assert (eqa lib' a' a) as e2 by (eauto).
+    assert (eqa lib' e a a) as e1 by (eauto).
+    assert (eqa lib' e a' a) as e2 by (eauto).
 
     pose proof (eq_term_equals_sym_tsp
-                  (close ts) lib' (eqa lib') (eqb lib') a a' e1 e e2 v B v' B') as q.
+                  (close ts) lib' (eqa lib' e) (eqb lib' e) a a' e1 e0 e2 v B v' B') as q.
     repeat (autodimp q hyp).
     { introv; apply type_sys_props4_implies_type_sys_props; tcsp. }
     repnd.
 
     pose proof (ee a' a e2) as ee'; apply q in ee'.
 
-    pose proof (tysysb lib' ext a a' e) as x; simpl in x.
+    pose proof (tysysb lib' e a a' e0) as x; simpl in x.
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
 
   + SCase "term_transitive".
     introv ee1 ee2.
     apply eqiff in ee1; apply eqiff in ee2; apply eqiff; clear eqiff.
 
-    introv ext; introv.
-    pose proof (ee1 lib' ext) as ee1.
-    pose proof (ee2 lib' ext) as ee2.
+    repeat introv.
+    pose proof (ee1 lib' e) as ee1.
+    pose proof (ee2 lib' e) as ee2.
     simpl in *.
 
-    assert (term_equality_symmetric (eqa lib')) as tees by (eauto 3 with slow).
-    assert (term_equality_transitive (eqa lib')) as teet by (eauto 3 with slow).
+    assert (term_equality_symmetric (eqa lib' e)) as tees by (eauto 3 with slow).
+    assert (term_equality_transitive (eqa lib' e)) as teet by (eauto 3 with slow).
 
-    assert (eqa lib' a a) as e1 by (eauto).
-    assert (eqa lib' a' a) as e2 by (eauto).
+    assert (eqa lib' e a a) as e1 by (eauto).
+    assert (eqa lib' e a' a) as e2 by (eauto).
 
     pose proof (ee1 a a e1) as ee1.
-    pose proof (ee2 a a' e) as ee2.
+    pose proof (ee2 a a' e0) as ee2.
 
     pose proof (eq_term_equals_sym_tsp
-                  (close ts) lib' (eqa lib') (eqb lib') a a' e1 e e2 v B v' B') as q.
+                  (close ts) lib' (eqa lib' e) (eqb lib' e) a a' e1 e0 e2 v B v' B') as q.
     repeat (autodimp q hyp).
     { introv; apply type_sys_props4_implies_type_sys_props; tcsp. }
     repnd.
     apply q0 in ee1.
 
-    pose proof (tysysb lib' ext a a' e) as x; simpl in x.
+    pose proof (tysysb lib' e a a' e0) as x; simpl in x.
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
     eapply tet; eauto.
 
@@ -197,18 +197,18 @@ Proof.
     introv ee ceq.
     apply eqiff in ee; apply eqiff; clear eqiff.
 
-    introv ext; introv.
-    pose proof (ee lib' ext) as ee; simpl in *.
+    repeat introv.
+    pose proof (ee lib' e) as ee; simpl in *.
 
-    assert (term_equality_symmetric (eqa lib')) as tees by (eauto 3 with slow).
-    assert (term_equality_transitive (eqa lib')) as teet by (eauto 3 with slow).
+    assert (term_equality_symmetric (eqa lib' e)) as tees by (eauto 3 with slow).
+    assert (term_equality_transitive (eqa lib' e)) as teet by (eauto 3 with slow).
 
-    assert (eqa lib' a a) as e1 by (eauto).
-    assert (eqa lib' a' a) as e2 by (eauto).
-    assert (eqa lib' a' a') as e3 by (eauto).
+    assert (eqa lib' e a a) as e1 by (eauto).
+    assert (eqa lib' e a' a) as e2 by (eauto).
+    assert (eqa lib' e a' a') as e3 by (eauto).
 
     pose proof (eq_term_equals_sym_tsp
-                  (close ts) lib' (eqa lib') (eqb lib') a' a e3 e2 e v B v' B') as q.
+                  (close ts) lib' (eqa lib' e) (eqb lib' e) a' a e3 e2 e0 v B v' B') as q.
     repeat (autodimp q hyp).
     { introv; apply type_sys_props4_implies_type_sys_props; tcsp. }
     repnd.
@@ -216,7 +216,7 @@ Proof.
     pose proof (ee a' a' e3) as eex.
     apply q1 in eex.
 
-    pose proof (tysysb lib' ext a a' e) as x; simpl in x.
+    pose proof (tysysb lib' e a a' e0) as x; simpl in x.
     onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
     eapply tet;
       [|eapply tevr;[exact eex|];

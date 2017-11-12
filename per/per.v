@@ -318,12 +318,10 @@ Notation "T [[ v \\ a ]]" := (substc a v T) (at level 0).
 
 (* begin hide *)
 
-Notation "lib-per" := (library -> CTerm -> CTerm -> [U]).
+Notation "lib-per( lib , o )" := (forall (lib' : @library o), lib_extends lib' lib -> @CTerm o -> @CTerm o -> [U]).
 
-Notation "lib-per( o )" := (@library o -> @CTerm o -> @CTerm o -> [U]).
-
-Notation "lib-per-fam ( eqa )" :=
-  (forall lib a a' (p : eqa lib a a'), per) (at level 0).
+Notation "lib-per-fam ( lib , eqa )" :=
+  (forall lib' (ext : lib_extends lib' lib) a a' (p : eqa lib' ext a a'), per) (at level 0).
 
 (* ------ types definitions ------ *)
 
@@ -1086,13 +1084,28 @@ Definition per_func_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) 
 Definition TyConType {o} :=
   @CTerm o -> forall v : NVar, @CVTerm o [v] -> @CTerm o.
 
+Definition in_ext_ext {o} (lib : @library o) (F : forall (lib' : @library o), lib_extends lib' lib -> Prop) :=
+  forall (lib' : library) (e : lib_extends lib' lib), F lib' e.
+
+Definition all_in_bar_ext {o} {lib}
+           (bar : BarLib lib)
+           (F : forall (lib' : @library o), lib_extends lib' lib -> Prop) :=
+  forall (lib' : library) (b : bar_lib_bar bar lib'),
+    in_ext_ext lib' (fun l e => F l (lib_extends_trans
+                                       l
+                                       lib'
+                                       lib
+                                       e
+                                       (bar_lib_ext bar lib' b))).
+
+
 Definition type_family_bar {o}
            (tycon : TyConType)
            (ts    : cts(o))
            (lib   : library)
            (T1 T2 : @CTerm o)
-           (eqa   : lib-per(o))
-           (eqb   : lib-per-fam(eqa)) : [U]:=
+           (eqa   : lib-per(lib,o))
+           (eqb   : lib-per-fam(lib,eqa)) : [U]:=
   {A, A' : CTerm
   , {v, v' : NVar
   , {B : CVTerm [v]
@@ -1100,11 +1113,12 @@ Definition type_family_bar {o}
   , {bar : BarLib lib
   , all_in_bar bar (fun lib => T1 ===>(lib) (tycon A v B))
   # all_in_bar bar (fun lib => T2 ===>(lib) (tycon A' v' B'))
-  # all_in_bar bar (fun lib => ts lib A A' (eqa lib))
-  # all_in_bar
+  # all_in_bar_ext bar (fun lib' x => ts lib' A A' (eqa lib' x))
+  # all_in_bar_ext
       bar
-      (fun lib => (forall a a' (e : eqa lib a a'),
-                      ts lib (B[[v\\a]]) (B'[[v'\\a']]) (eqb lib a a' e)))
+      (fun lib' x =>
+         forall a a' (e : eqa lib' x a a'),
+           ts lib' (B[[v\\a]]) (B'[[v'\\a']]) (eqb lib' x a a' e))
   }}}}}.
 
 Definition type_family_ext {o}
@@ -1112,37 +1126,38 @@ Definition type_family_ext {o}
            (ts    : cts(o))
            (lib   : library)
            (T1 T2 : @CTerm o)
-           (eqa   : lib-per(o))
-           (eqb   : lib-per-fam(eqa)) : [U]:=
+           (eqa   : lib-per(lib,o))
+           (eqb   : lib-per-fam(lib,eqa)) : [U]:=
   {A, A' : CTerm
   , {v, v' : NVar
   , {B : CVTerm [v]
   , {B' : CVTerm [v']
   , T1 ===>(lib) (tycon A v B)
   # T2 ===>(lib) (tycon A' v' B')
-  # in_ext lib (fun lib => ts lib A A' (eqa lib))
-  # in_ext
+  # in_ext_ext lib (fun lib' x => ts lib' A A' (eqa lib' x))
+  # in_ext_ext
       lib
-      (fun lib => (forall a a' (e : eqa lib a a'),
-                      ts lib (B[[v\\a]]) (B'[[v'\\a']]) (eqb lib a a' e)))
+      (fun lib' x =>
+         forall a a' (e : eqa lib' x a a'),
+           ts lib' (B[[v\\a]]) (B'[[v'\\a']]) (eqb lib' x a a' e))
   }}}}.
 
 Definition per_func_ext_eq {o}
-           (eqa  : lib-per(o))
-           (eqb  : lib-per-fam(eqa))
            (lib  : library)
+           (eqa  : lib-per(lib,o))
+           (eqb  : lib-per-fam(lib,eqa))
            (t t' : @CTerm o) :=
-  in_ext
+  in_ext_ext
     lib
-    (fun lib =>
-       forall a a' (e : eqa lib a a'),
-         (eqb lib a a' e) (mkc_apply t a) (mkc_apply t' a')).
+    (fun lib' x =>
+       forall a a' (e : eqa lib' x a a'),
+         (eqb lib' x a a' e) (mkc_apply t a) (mkc_apply t' a')).
 
-Definition per_func_ext {p} (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
-  {eqa : lib-per
-  , {eqb : lib-per-fam(eqa)
+Definition per_func_ext {o} (ts : cts(o)) lib T1 T2 (eq : per(o)) : [U] :=
+  {eqa : lib-per(lib,o)
+  , {eqb : lib-per-fam(lib,eqa)
   , type_family_ext mkc_function ts lib T1 T2 eqa eqb
-  # eq <=2=> (per_func_ext_eq eqa eqb lib) }}.
+  # eq <=2=> (per_func_ext_eq lib eqa eqb) }}.
 
 
 
@@ -1180,11 +1195,11 @@ Definition per_product_bar0 {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p
 
 Definition per_product_eq_bar {o}
            (lib  : library)
-           (eqa  : lib-per(o))
-           (eqb  : lib-per-fam(eqa))
+           (eqa  : lib-per(lib,o))
+           (eqb  : lib-per-fam(lib,eqa))
            (t t' : CTerm) : [U] :=
   {bar : BarLib lib
-  , all_in_bar bar (fun lib => per_product_eq lib (eqa lib) (eqb lib) t t')}.
+  , all_in_bar_ext bar (fun lib' x => per_product_eq lib' (eqa lib' x) (eqb lib' x) t t')}.
 
 (* I was using [type_family_bar] here before but then it doesn't make
    sense because the elements of the sum type could use a lower bar than
@@ -1193,13 +1208,13 @@ Definition per_product_eq_bar {o}
 
    One thing we could do though is enforce that the bar of the equality is
    at least higher than the one of the family *)
-Definition per_product_bar {p}
+Definition per_product_bar {o}
            (ts    : cts)
            (lib   : library)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @CTerm o)
            (eq    : per) : [U] :=
-  {eqa : lib-per
-  , {eqb : lib-per-fam(eqa)
+  {eqa : lib-per(lib,o)
+  , {eqb : lib-per-fam(lib,eqa)
   , type_family_ext mkc_product ts lib T1 T2 eqa eqb
   # eq <=2=> (per_product_eq_bar lib eqa eqb) }}.
 
@@ -2623,15 +2638,15 @@ Definition close_ind' {pp}
                  (v v'  : NVar)
                  (B     : CVTerm [v])
                  (B'    : CVTerm [v'])
-                 (eqa   : lib-per)
-                 (eqb   : lib-per-fam(eqa))
+                 (eqa   : lib-per(lib,pp))
+                 (eqb   : lib-per-fam(lib,eqa))
                  (c1    : T ===>(lib) (mkc_function A v B))
                  (c2    : T' ===>(lib) (mkc_function A' v' B'))
-                 (cla   : in_ext lib (fun lib => close ts lib A A' (eqa lib)))
-                 (reca  : in_ext lib (fun lib => P ts lib A A' (eqa lib)))
-                 (clb   : in_ext lib (fun lib => forall a a' (e : eqa lib a a'), close ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
-                 (recb  : in_ext lib (fun lib => forall a a' (e : eqa lib a a'), P ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
-                 (eqiff : eq <=2=> (per_func_ext_eq eqa eqb lib))
+                 (cla   : in_ext_ext lib (fun lib' x => close ts lib' A A' (eqa lib' x)))
+                 (reca  : in_ext_ext lib (fun lib' x => P ts lib' A A' (eqa lib' x)))
+                 (clb   : in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), close ts lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e)))
+                 (recb  : in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), P ts lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e)))
+                 (eqiff : eq <=2=> (per_func_ext_eq lib eqa eqb))
                  (per   : per_func_ext (close ts) lib T T' eq),
             P ts lib T T' eq)
 
@@ -3189,14 +3204,14 @@ Definition close_ind' {pp}
                     (v v'  : NVar)
                     (B     : CVTerm [v])
                     (B'    : CVTerm [v'])
-                    (eqa   : lib-per)
-                    (eqb   : lib-per-fam(eqa))
+                    (eqa   : lib-per(lib,pp))
+                    (eqb   : lib-per-fam(lib,eqa))
                     (c1    : T ===>(lib) (mkc_product A v B))
                     (c2    : T' ===>(lib) (mkc_product A' v' B'))
-                    (cla   : in_ext lib (fun lib => close ts lib A A' (eqa lib)))
-                    (reca  : in_ext lib (fun lib => P ts lib A A' (eqa lib)))
-                    (clb   : in_ext lib (fun lib => forall a a' (e : eqa lib a a'), close ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
-                    (recb  : in_ext lib (fun lib => forall a a' (e : eqa lib a a'), P ts lib (substc a v B) (substc a' v' B') (eqb lib a a' e)))
+                    (cla   : in_ext_ext lib (fun lib' x => close ts lib' A A' (eqa lib' x)))
+                    (reca  : in_ext_ext lib (fun lib' x => P ts lib' A A' (eqa lib' x)))
+                    (clb   : in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), close ts lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e)))
+                    (recb  : in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), P ts lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e)))
                     (eqiff : eq <=2=> (per_product_eq_bar lib eqa eqb))
                     (per   : per_product_bar (close ts) lib T T' eq),
       P ts lib T T' eq)
@@ -3383,14 +3398,14 @@ Definition close_ind' {pp}
               c2
               tsa
               (fun (lib' : library) (i : lib_extends lib' lib) =>
-                 rec ts lib' A A' (eqa lib') (tsa lib' i))
+                 rec ts lib' A A' (eqa lib' i) (tsa lib' i))
               tsb
               (fun (lib' : library) (i : lib_extends lib' lib)
-                   a a' (e : eqa lib' a a') =>
+                   a a' (e : eqa lib' i a a') =>
                  rec ts lib'
                      (substc a v B)
                      (substc a' v' B')
-                     (eqb lib' a a' e)
+                     (eqb lib' i a a' e)
                      (tsb lib' i a a' e))
               eqiff
               pts
@@ -4048,14 +4063,14 @@ Definition close_ind' {pp}
                c2
                tsa
                (fun (lib' : library) (i : lib_extends lib' lib) =>
-                  rec ts lib' A A' (eqa lib') (tsa lib' i))
+                  rec ts lib' A A' (eqa lib' i) (tsa lib' i))
                tsb
                (fun (lib' : library) (i : lib_extends lib' lib)
-                    a a' (e : eqa lib' a a') =>
+                    a a' (e : eqa lib' i a a') =>
                   rec ts lib'
                       (substc a v B)
                       (substc a' v' B')
-                      (eqb lib' a a' e)
+                      (eqb lib' i a a' e)
                       (tsb lib' i a a' e))
                teq
                pts

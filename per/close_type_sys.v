@@ -232,6 +232,25 @@ Proof.
 Qed.
 Hint Resolve ih_implies_in_ext_type_sys_props4 : slow.
 
+Lemma ih_implies_in_ext_ext_type_sys_props4 {o} :
+  forall lib ts (A B : @CTerm o) eqa,
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            type_system ts
+            -> defines_only_universes ts
+            -> type_monotone ts
+            -> type_sys_props4 (close ts) lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x)).
+Proof.
+  introv tsts dou mon i; introv.
+  apply (i lib' e); auto.
+Qed.
+Hint Resolve ih_implies_in_ext_ext_type_sys_props4 : slow.
+
 Lemma ih_implies_in_ext_type_sys_props4_dep {o} :
   forall lib (ts : cts(o)) v B v' B' eqa eqb,
     type_system ts
@@ -253,6 +272,30 @@ Proof.
   apply (i lib' ext); auto.
 Qed.
 Hint Resolve ih_implies_in_ext_type_sys_props4_dep : slow.
+
+Lemma ih_implies_in_ext_ext_type_sys_props4_dep {o} :
+  forall lib (ts : cts(o)) v B v' B' eqa eqb,
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_system ts
+              -> defines_only_universes ts
+              -> type_monotone ts
+              -> type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e)).
+Proof.
+  introv tsts dou mon i; introv.
+  apply (i lib' e); auto.
+Qed.
+Hint Resolve ih_implies_in_ext_ext_type_sys_props4_dep : slow.
 
 Lemma close_type_system {o} :
   forall (ts : cts(o)),

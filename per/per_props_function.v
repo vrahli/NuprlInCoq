@@ -43,8 +43,8 @@ Lemma tequality_function {p} :
               (mkc_function A1 v1 B1)
               (mkc_function A2 v2 B2)
     <=>
-    (tequality lib A1 A2
-     # forall a a', equality lib a a' A1 -> tequality lib (substc a v1 B1) (substc a' v2 B2)).
+    ((forall lib', lib_extends lib' lib -> tequality lib' A1 A2)
+     # forall lib' a a', lib_extends lib' lib -> equality lib' a a' A1 -> tequality lib' (substc a v1 B1) (substc a' v2 B2)).
 Proof.
   intros.
   sp_iff Case.
@@ -53,19 +53,24 @@ Proof.
     intros teq.
     unfold tequality, nuprl in teq; exrepnd.
     inversion teq0; subst; try not_univ.
+    rename_hyp_with @per_func_ext pera.
     allunfold_per.
     computes_to_value_isvalue.
-    unfold tequality; sp.
+    unfold tequality; dands; introv ext.
 
-    exists eqa; sp.
+    { exists (eqa lib'); sp.
+      apply i; eauto 3 with slow. }
 
-    assert (eqa a a') as xa
-      by (generalize (equality_eq1 lib A A' a a' eqa); intro e;
-          dest_imp e hyp;
-          try (exists i; auto);
-          apply e; auto).
-    exists (eqb a a' xa); sp.
-    apply c2.
+    introv ea.
+    assert (eqa lib' a a') as xa.
+    {
+      pose proof (equality_eq1 lib' A A' a a' (eqa lib')) as x.
+      repeat (autodimp x hyp); try (apply i; eauto 3 with slow).
+      apply x; auto.
+    }
+
+    exists (eqb lib' a a' xa); sp.
+    apply i0; eauto 3 with slow.
 
   - Case "<-".
     introv e; exrepnd.
@@ -75,8 +80,7 @@ Proof.
     generalize (choice_teq lib A1 v1 B1 v2 B2 teqb); intro n; exrepnd.
 
     exists (fun t1 t2 =>
-              forall a1 a2 : CTerm,
-              forall e : eqa a1 a2,
+              forall (a1 a2 : CTerm) (e : eqa a1 a2),
                 f a1
                   a2
                   (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)
@@ -84,9 +88,9 @@ Proof.
                   (mkc_apply t2 a2)).
     apply CL_func; fold (@nuprl p lib).
     unfold per_func.
-    exists eqa.
+    exists (fun (lib : @library p) => eqa).
 
-    exists (fun a1 a2 e => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)); sp.
+    exists (fun (l : @library p) a1 a2 e => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)); sp.
 
     exists A1 A2 v1 v2 B1 B2; sp;
     try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).

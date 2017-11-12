@@ -364,7 +364,7 @@ Proof.
   - Case "CL_func".
     apply CL_func; unfold per_func; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp; introv j;
+    exists A A' v v' B B'; sp; introv;
       try (apply reca; auto);
       try (introv; apply recb; auto).
 
@@ -476,7 +476,7 @@ Proof.
     apply CL_product; unfold per_product; sp.
     exists eqa eqb; sp.
     exists A A' v v' B B'; sp;
-      introv j; try (eapply reca; eauto);
+      introv; try (eapply reca; eauto);
         introv; try (eapply recb; eauto).
 Qed.
 
@@ -703,7 +703,7 @@ Proof.
     apply CL_func.
     unfold per_func, type_family; sp.
     exists eqa eqb; sp; try (exists A A' v v' B B'); sp;
-      try (introv j);
+      try (introv);
       try (eapply reca; eauto);
       try (introv; try (eapply recb; eauto));
       try (complete (eapply IHn; eauto)).
@@ -872,7 +872,7 @@ Proof.
     apply CL_product.
     unfold per_product, type_family; sp.
     exists eqa eqb; sp; try (exists A A' v v' B B'); sp;
-      introv j; try (eapply reca; eauto);
+      introv; try (eapply reca; eauto);
         introv; eapply recb; eauto.
 Qed.
 

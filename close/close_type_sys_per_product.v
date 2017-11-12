@@ -45,16 +45,18 @@ Lemma close_type_system_product {o} :
     -> type_monotone ts
     -> computes_to_valc lib T (mkc_product A v B)
     -> computes_to_valc lib T' (mkc_product A' v' B')
-    -> in_ext lib (fun lib => close ts lib A A' (eqa lib))
-    -> in_ext lib (fun lib => type_sys_props4 (close ts) lib A A' (eqa lib))
-    -> in_ext lib
-              (fun lib =>
-                 forall a a' (e : eqa lib a a'),
-                   close ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
-    -> in_ext lib
-              (fun lib =>
-                 forall a a' (e : eqa lib a a'),
-                   type_sys_props4 (close ts) lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+    -> in_ext_ext lib (fun lib' x => close ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              close ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> in_ext_ext
+         lib
+         (fun lib' x =>
+            forall a a' (e : eqa lib' x a a'),
+              type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> (eq <=2=> (per_product_eq_bar lib eqa eqb))
     -> type_sys_props4 (close ts) lib T T' eq.
 Proof.

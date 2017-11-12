@@ -149,17 +149,18 @@ Lemma choice_teqi {p} :
               per
         , forall a1 a2 : CTerm,
           forall e : equality lib a1 a2 A,
-            nuprli lib i (substc a1 v1 B1) (substc a2 v2 B2) (f a1 a2 e)}.
+            nuprli i lib (substc a1 v1 B1) (substc a2 v2 B2) (f a1 a2 e)}.
 Proof.
   introv F.
   generalize (FunctionalChoice_on
                 {a1 : CTerm & {a2 : CTerm & equality lib a1 a2 A}}
                 per
-                (fun a b => nuprli lib
-                                   i
-                                   (substc (projT1 a) v1 B1)
-                                   (substc (projT1 (projT2 a)) v2 B2)
-                                   b));
+                (fun a b => nuprli
+                              i
+                              lib
+                              (substc (projT1 a) v1 B1)
+                              (substc (projT1 (projT2 a)) v2 B2)
+                              b));
     intro C.
   dest_imp C hyp.
 
@@ -171,7 +172,7 @@ Proof.
   allrw @univi_exists_iff; exrepnd.
   computes_to_value_isvalue; GC.
   discover; exrepnd.
-  allfold (@nuprli p lib j0).
+  allfold (@nuprli p j0 lib).
   exists eqa; sp.
 
   exrepnd.
@@ -192,13 +193,13 @@ Lemma choice_spteqi {p} :
   forall lib i F1 F2,
     (forall x y : CTerm, equality lib (F1 x y) (F2 x y) (mkc_uni i))
     -> {f : forall x y : @CTerm p, per(p)
-        , forall x y : CTerm, nuprli lib i (F1 x y) (F2 x y) (f x y)}.
+        , forall x y : CTerm, nuprli i lib (F1 x y) (F2 x y) (f x y)}.
 Proof.
   introv F.
   generalize (FunctionalChoice_on
                 (CTerm # CTerm)
                 per
-                (fun p e => nuprli lib i
+                (fun p e => nuprli i lib
                                    (F1 (fst p) (snd p))
                                    (F2 (fst p) (snd p))
                                    e));
@@ -213,7 +214,7 @@ Proof.
   allrw @univi_exists_iff; exrepnd.
   computes_to_value_isvalue; GC.
   discover; exrepnd.
-  allfold (@nuprli p lib j0).
+  allfold (@nuprli p j0 lib).
   exists eqa; sp.
 
   exrepnd.
