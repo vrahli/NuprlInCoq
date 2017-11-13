@@ -190,26 +190,34 @@ Proof.
   allfold (@nuprl p).
   computes_to_value_isvalue.
 
-  exists (eqb lib' x x0 y).
+  assert (eq <=2=> (eqa lib' x)) as eqas.
+  {
+    pose proof (i lib' x) as i; simpl in i.
+    eapply nuprl_uniquely_valued in i;[|exact e1]; auto.
+  }
+  dup e0 as w.
+  apply eqas in w.
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+  exists (eqb lib' x x0 y w); dands; auto.
 
-  generalize (nuprl_uniquely_valued lib A0 eqa eq); intro k; repeat (dest_imp k hyp).
-  rw <- k in e0.
+  {
+    pose proof (i0 lib' x x0 y w) as i0; simpl in i0.
+    eapply nuprl_refl; eauto.
+  }
 
-  exists (eqb x y e0); sp.
-
-  apply nuprl_refl with (t2 := substc y v0 B0); sp.
+  apply e in m0; apply m0.
 Qed.
 
 (* This is 'functionExtensionality' *)
 Lemma implies_member_function {p} :
   forall lib (f : @CTerm p) g A v B,
     type lib A
-    -> (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
-    -> (forall a a',
-          equality lib a a' A
-          -> equality lib (mkc_apply f a) (mkc_apply g a') (substc a v B))
+    -> (forall lib' (x : lib_extends lib' lib) a a',
+           equality lib' a a' A
+           -> tequality lib' (substc a v B) (substc a' v B))
+    -> (forall lib' (x : lib_extends lib' lib) a a',
+          equality lib' a a' A
+          -> equality lib' (mkc_apply f a) (mkc_apply g a') (substc a v B))
     -> equality lib f g (mkc_function A v B).
 Proof.
   introv ty teq eqap.
@@ -229,8 +237,9 @@ Proof.
                  (mkc_apply t1 a1)
                  (mkc_apply t2 a2)); sp.
 
-  unfold nuprl; apply CL_func; fold @nuprl; unfold per_func.
-  exists eqa.
+  {
+    unfold nuprl; apply CL_func; fold @nuprl; unfold per_func.
+    exists eqa.
 
   exists (fun a1 a2 e => f0 a1 a2 (eq_equality1 lib a1 a2 A eqa e ty0)); sp.
 
