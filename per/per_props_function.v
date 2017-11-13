@@ -33,7 +33,86 @@
 Require Export nuprl_props.
 Require Export choice.
 Require Export cvterm.
+Require Export nuprl_mon.
 
+
+
+Lemma choice_ext_lib_teq {o} :
+  forall lib (A B : @CTerm o),
+    (forall lib', lib_extends lib' lib -> tequality lib' A B)
+    -> {eqa : lib-per(lib,o),
+        forall lib' (e : lib_extends lib' lib), nuprl lib' A B (eqa lib' e) }.
+Proof.
+  introv F.
+
+  pose proof (FunctionalChoice_on
+                {lib' : library & lib_extends lib' lib}
+                per(o)
+                (fun a b => nuprl (projT1 a) A B b)) as C.
+  autodimp C hyp.
+
+  {
+    unfold tequality in F.
+    introv; exrepnd; simpl in *; auto.
+  }
+
+  exrepnd.
+
+  exists (fun (lib' : library) (ext : lib_extends lib' lib) =>
+            f (existT (fun lib' => lib_extends lib' lib) lib' ext)).
+  introv.
+  pose proof (C0 (existT (fun lib' => lib_extends lib' lib) lib' e)) as C.
+  simpl in *; auto.
+Qed.
+
+Lemma choice_ext_lib_teq_fam {o} :
+  forall lib (A1 : @CTerm o) v1 B1 A2 v2 B2 eqa,
+    (forall lib' e, nuprl lib' A1 A2 (eqa lib' e))
+    -> (forall lib',
+           lib_extends lib' lib
+           -> forall a a' : CTerm,
+             equality lib' a a' A1
+             -> exists eq, nuprl lib' (B1)[[v1\\a]] (B2)[[v2\\a']] eq)
+    -> {eqb : lib-per-fam(lib,eqa,o),
+              forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
+                nuprl lib' (B1)[[v1\\a]] (B2)[[v2\\a']] (eqb lib' x a a' e) }.
+Proof.
+  introv teqa F.
+
+  assert (forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
+             exists eq, nuprl lib' (B1) [[v1 \\ a]] (B2) [[v2 \\ a']] eq) as G.
+  {
+    introv e.
+    apply (F lib' x a a').
+    apply (equality_eq1 lib' A1 A2 a a' (eqa lib' x)); auto.
+  }
+  clear F; rename G into F.
+
+  pose proof (FunctionalChoice_on
+                {lib' : library & {ext : lib_extends lib' lib & {a1 : CTerm & {a2 : CTerm & eqa lib' ext a1 a2}}}}
+                per
+                (fun a b => nuprl
+                              (projT1 a)
+                              (substc (projT1 (projT2 (projT2 a))) v1 B1)
+                              (substc (projT1 (projT2 (projT2 (projT2 a)))) v2 B2)
+                              b)) as C.
+  autodimp C hyp.
+  {
+    introv; exrepnd; simpl in *.
+    eapply F; eauto.
+  }
+
+  clear F.
+  exrepnd.
+
+  exists (fun (lib' : library) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
+            f (existT _ lib' (existT _ x (existT _ a (existT _ a' e))))).
+  introv; simpl in *.
+  pose proof (C0 (existT _ lib' (existT _ x (existT _ a (existT _ a' e))))) as C.
+  simpl in *; auto.
+Qed.
+
+Hint Resolve computes_to_valc_refl : slow.
 
 
 (* This is basically 'functionEquality' *)
@@ -43,7 +122,7 @@ Lemma tequality_function {p} :
               (mkc_function A1 v1 B1)
               (mkc_function A2 v2 B2)
     <=>
-    ((forall lib', lib_extends lib' lib -> tequality lib' A1 A2)
+    (tequality lib A1 A2
      # forall lib' a a', lib_extends lib' lib -> equality lib' a a' A1 -> tequality lib' (substc a v1 B1) (substc a' v2 B2)).
 Proof.
   intros.
@@ -56,62 +135,64 @@ Proof.
     rename_hyp_with @per_func_ext pera.
     allunfold_per.
     computes_to_value_isvalue.
-    unfold tequality; dands; introv ext.
+    unfold tequality; dands.
 
-    { exists (eqa lib'); sp.
+    { exists (eqa lib (lib_extends_refl lib)); sp.
       apply i; eauto 3 with slow. }
 
-    introv ea.
-    assert (eqa lib' a a') as xa.
+    introv ext ea.
+    assert (eqa lib' ext a a') as xa.
     {
-      pose proof (equality_eq1 lib' A A' a a' (eqa lib')) as x.
+      pose proof (equality_eq1 lib' A A' a a' (eqa lib' ext)) as x.
       repeat (autodimp x hyp); try (apply i; eauto 3 with slow).
       apply x; auto.
     }
 
-    exists (eqb lib' a a' xa); sp.
+    exists (eqb lib' ext a a' xa); sp.
     apply i0; eauto 3 with slow.
 
   - Case "<-".
     introv e; exrepnd.
-    rename e0 into teqa; rename e into teqb.
-    unfold tequality in teqa; exrepnd.
-    rename eq into eqa.
-    generalize (choice_teq lib A1 v1 B1 v2 B2 teqb); intro n; exrepnd.
 
-    exists (fun t1 t2 =>
-              forall (a1 a2 : CTerm) (e : eqa a1 a2),
-                f a1
-                  a2
-                  (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)
-                  (mkc_apply t1 a1)
-                  (mkc_apply t2 a2)).
-    apply CL_func; fold (@nuprl p lib).
-    unfold per_func.
-    exists (fun (lib : @library p) => eqa).
+    assert (forall lib', lib_extends lib' lib -> tequality lib' A1 A2) as teqa by eauto 3 with slow.
+    clear e0.
 
-    exists (fun (l : @library p) a1 a2 e => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)); sp.
+    rename e into teqb.
 
-    exists A1 A2 v1 v2 B1 B2; sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
+    assert (forall (lib' : library) (e : lib_extends lib' lib) (a a' : CTerm),
+               equality lib' a a' A1 -> tequality lib' (B1) [[v1 \\ a]] (B2) [[v2 \\ a']]) as teqb' by tcsp.
+    clear teqb; rename teqb' into teqb.
+    unfold tequality in *.
+
+    apply choice_ext_lib_teq in teqa; exrepnd.
+    eapply choice_ext_lib_teq_fam in teqb;[|eauto]; exrepnd.
+
+    exists (per_func_ext_eq lib eqa eqb).
+    apply CL_func.
+    exists eqa eqb.
+    dands; eauto 3 with slow.
+    exists A1 A2 v1 v2 B1 B2.
+    dands; spcast; eauto 3 with slow.
 Qed.
-
-
 
 Lemma if_member_function {p} :
   forall lib (f : @CTerm p) A v B,
     member lib f (mkc_function A v B)
-    -> forall x y,
-         equality lib x y A
-         -> equality lib (mkc_apply f x) (mkc_apply f y) (substc x v B).
+    ->
+    forall lib' (x : lib_extends lib' lib) x y,
+      equality lib' x y A
+      -> equality lib' (mkc_apply f x) (mkc_apply f y) (substc x v B).
 Proof.
-  unfold member, equality, nuprl; introv m e; exrepnd.
+  unfold member, equality, nuprl; introv m x e; exrepnd.
   inversion m1; subst; try not_univ.
 
   allunfold_per; spcast; computes_to_eqval.
-  allfold (@nuprl p lib).
+  allfold (@nuprl p).
   computes_to_value_isvalue.
-  discover.
+
+  exists (eqb lib' x x0 y).
+
+(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
   generalize (nuprl_uniquely_valued lib A0 eqa eq); intro k; repeat (dest_imp k hyp).
   rw <- k in e0.
