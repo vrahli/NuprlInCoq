@@ -35,22 +35,22 @@ Require Export type_sys.
 
 Ltac not_univ_p1 :=
   match goal with
-    | [ H : _ _ (@close _ (@univ _)) _ _ _ _ |- _ ] =>
-        inversion H; exrepd; subst;
-      try (match goal with
-             | [ H : type_family _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : type_family_ext _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-           end)
-    | [ H : _ _ (@close _ (@univi _ _)) _ _ _ |- _ ] =>
-        inversion H; exrepd; subst;
-      try (match goal with
-             | [ H : type_family _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : type_family_ext _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-             | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
-           end)
+  | [ H : _ (@close _ (@univ _)) _ _ _ _ |- _ ] =>
+    inversion H; exrepd; subst;
+    try (match goal with
+         | [ H : type_family _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+         | [ H : type_family_ext _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+         | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+         | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+         end)
+  | [ H : _ (@close _ (@univi _ _)) _ _ _ _ |- _ ] =>
+    inversion H; exrepd; subst;
+    try (match goal with
+         | [ H : type_family _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+         | [ H : type_family_ext _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+         | [ H : etype_family _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+         | [ H : type_pfamily _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ ] => inversion H; exrepd; subst
+         end)
   end.
 
 (* !!MOVE *)

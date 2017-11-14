@@ -346,7 +346,7 @@ Proof.
     apply CL_eq; unfold per_eq; sp.
     exists A B a1 a2 b1 b2 eqa; sp.
     exists bar; sp.
-    introv j w; eapply reca; eauto.
+    introv b e; repeat introv; eapply reca; eauto.
 
 (*  - Case "CL_req".
     apply CL_req; unfold per_req; sp.
@@ -674,8 +674,7 @@ Proof.
     unfold per_eq; sp.
     exists A B a1 a2 b1 b2 eqa; sp.
     exists bar; sp.
-    introv j w.
-    eapply reca; eauto.
+    introv b e; repeat introv; eapply reca; eauto.
 
 (*  - Case "CL_req".
     apply CL_req.

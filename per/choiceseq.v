@@ -1228,7 +1228,7 @@ Proof.
     }
 
     {
-      try (introv i).
+      repeat introv.
       apply CL_nat.
       unfold per_nat_bar.
       dands.
@@ -3701,7 +3701,7 @@ Proof.
     }
 
     {
-      introv i.
+      repeat introv.
       apply CL_nat.
       unfold per_nat_bar.
       dands.
@@ -3738,7 +3738,7 @@ Proof.
     }
 
     {
-      introv i; introv.
+      repeat introv.
       autorewrite with slow.
       apply CL_nat.
       unfold per_nat_bar.

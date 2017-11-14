@@ -43,30 +43,30 @@ Require Import close_type_sys_per_sqle.
 Require Import close_type_sys_per_sqequal.
 Require Import close_type_sys_per_eq.
 (*Require Import close_type_sys_per_req.
-Require Import close_type_sys_per_teq.
-Require Import close_type_sys_per_isect.
+ Require Import close_type_sys_per_teq.
+ Require Import close_type_sys_per_isect.
 (*Require Import close_type_sys_per_eisect.*)*)
 Require Import close_type_sys_per_func.
 (*Require Import close_type_sys_per_disect.
-Require Import close_type_sys_per_pertype.
-Require Import close_type_sys_per_ipertype.
-Require Import close_type_sys_per_spertype.
-Require Import close_type_sys_per_w.
-Require Import close_type_sys_per_m.
-Require Import close_type_sys_per_texc.*)
+ Require Import close_type_sys_per_pertype.
+ Require Import close_type_sys_per_ipertype.
+ Require Import close_type_sys_per_spertype.
+ Require Import close_type_sys_per_w.
+ Require Import close_type_sys_per_m.
+ Require Import close_type_sys_per_texc.*)
 Require Import close_type_sys_per_union.
 (*Require Import close_type_sys_per_image.
-Require Import close_type_sys_per_partial.
-Require Import close_type_sys_per_admiss.
-Require Import close_type_sys_per_mono.
-Require Import close_type_sys_per_ffatom.
-Require Import close_type_sys_per_effatom.
-Require Import close_type_sys_per_ffatoms.
-Require Import close_type_sys_per_set.
-Require Import close_type_sys_per_tunion.*)
+ Require Import close_type_sys_per_partial.
+ Require Import close_type_sys_per_admiss.
+ Require Import close_type_sys_per_mono.
+ Require Import close_type_sys_per_ffatom.
+ Require Import close_type_sys_per_effatom.
+ Require Import close_type_sys_per_ffatoms.
+ Require Import close_type_sys_per_set.
+ Require Import close_type_sys_per_tunion.*)
 Require Import close_type_sys_per_product.
 (*Require Import close_type_sys_per_pw.
-Require Import close_type_sys_per_pm.*)
+ Require Import close_type_sys_per_pm.*)
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
@@ -213,6 +213,25 @@ Proof.
   apply (alla lib' br lib'0 ext); auto.
 Qed.
 Hint Resolve ih_implies_all_in_bar_type_sys_props4 : slow.
+
+Lemma ih_implies_all_in_bar_ext_type_sys_props4 {o} :
+  forall {lib} (bar : @BarLib o lib) ts A B eqa,
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> all_in_bar_ext
+         bar
+         (fun lib' x =>
+            type_system ts
+            -> defines_only_universes ts
+            -> type_monotone ts
+            -> type_sys_props4 (close ts) lib' A B (eqa lib' x))
+    -> all_in_bar_ext bar (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x)).
+Proof.
+  introv tsts dou mon alla br ext; introv.
+  apply (alla lib' br lib'0 ext x); auto.
+Qed.
+Hint Resolve ih_implies_all_in_bar_ext_type_sys_props4 : slow.
 
 Lemma ih_implies_in_ext_type_sys_props4 {o} :
   forall lib ts (A B : @CTerm o) eqa,

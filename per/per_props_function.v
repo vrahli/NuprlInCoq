@@ -39,7 +39,7 @@ Require Export nuprl_mon.
 
 Lemma choice_ext_lib_teq {o} :
   forall lib (A B : @CTerm o),
-    (forall lib', lib_extends lib' lib -> tequality lib' A B)
+    in_ext lib (fun lib' => tequality lib' A B)
     -> {eqa : lib-per(lib,o),
         forall lib' (e : lib_extends lib' lib), nuprl lib' A B (eqa lib' e) }.
 Proof.
@@ -123,7 +123,7 @@ Lemma tequality_function {p} :
               (mkc_function A2 v2 B2)
     <=>
     (tequality lib A1 A2
-     # forall lib' a a', lib_extends lib' lib -> equality lib' a a' A1 -> tequality lib' (substc a v1 B1) (substc a' v2 B2)).
+     # in_ext lib (fun lib' => forall a a', equality lib' a a' A1 -> tequality lib' (substc a v1 B1) (substc a' v2 B2))).
 Proof.
   intros.
   sp_iff Case.
@@ -159,9 +159,6 @@ Proof.
 
     rename e into teqb.
 
-    assert (forall (lib' : library) (e : lib_extends lib' lib) (a a' : CTerm),
-               equality lib' a a' A1 -> tequality lib' (B1) [[v1 \\ a]] (B2) [[v2 \\ a']]) as teqb' by tcsp.
-    clear teqb; rename teqb' into teqb.
     unfold tequality in *.
 
     apply choice_ext_lib_teq in teqa; exrepnd.
@@ -208,9 +205,101 @@ Proof.
   apply e in m0; apply m0.
 Qed.
 
+(* !!MOVE to nuprl_mon *)
+Definition type_monotone3 {o} (ts : cts(o)) :=
+  forall lib T1 T2 eq,
+    ts lib T1 T2 eq
+    ->
+    exists (eq' : lib-per(lib,o)),
+    forall lib' (x : lib_extends lib' lib),
+      ts lib' T1 T2 (eq' lib' x) # sub_per eq (eq' lib' x).
+
+(* !!MOVE to nuprl_mon *)
+Lemma type_monotone2_implies_type_monotone3 {o} :
+  forall (ts : cts(o)), type_monotone2 ts -> type_monotone3 ts.
+Proof.
+  introv mon tsts.
+  pose proof (mon lib) as mon.
+
+  assert (forall (T1 T2 : CTerm) (eq : per(o)),
+             ts lib T1 T2 eq
+             ->
+             forall (lib' : library),
+               lib_extends lib' lib
+               -> exists eq', ts lib' T1 T2 eq' # sub_per eq eq') as mon'.
+  { introv h ext; eapply mon in h; eauto. }
+  clear mon; rename mon' into mon.
+
+  pose proof (mon T1 T2 eq) as mon; autodimp mon hyp.
+
+  pose proof (FunctionalChoice_on
+                {lib' : library & lib_extends lib' lib}
+                per(o)
+                (fun a b => ts (projT1 a) T1 T2 b # sub_per eq b)) as mon'.
+  autodimp mon' hyp.
+  { introv; exrepnd; simpl in *; auto. }
+
+  clear mon; rename mon' into mon.
+  exrepnd.
+
+  exists (fun (lib' : library) (ext : lib_extends lib' lib) =>
+            f (existT (fun lib' => lib_extends lib' lib) lib' ext)).
+  introv.
+  pose proof (mon0 (existT (fun lib' => lib_extends lib' lib) lib' x)) as mon.
+  simpl in *; auto.
+Qed.
+
+Lemma choice_ext_lib_eq_fam {o} :
+  forall lib (A A' : @CTerm o) v B eqa F1 F2,
+    (forall lib' e, nuprl lib' A A' (eqa lib' e))
+    -> (forall lib' (x : lib_extends lib' lib) a a',
+           equality lib' a a' A
+           -> equality lib' (F1 a) (F2 a') (B)[[v\\a]])
+    -> {eqb : lib-per-fam(lib,eqa,o),
+              forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
+                nuprl lib' (B)[[v\\a]] (B)[[v\\a]] (eqb lib' x a a' e)
+                      # eqb lib' x a a' e (F1 a) (F2 a')}.
+Proof.
+  introv teqa F.
+
+  assert (forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
+             equality lib' (F1 a) (F2 a') (B)[[v\\a]]) as G.
+  {
+    introv e.
+    apply (F lib' x a a').
+    apply (equality_eq1 lib' A A' a a' (eqa lib' x)); auto.
+  }
+  clear F; rename G into F.
+
+  pose proof (FunctionalChoice_on
+                {lib' : library & {ext : lib_extends lib' lib & {a1 : CTerm & {a2 : CTerm & eqa lib' ext a1 a2}}}}
+                per
+                (fun a b => nuprl
+                              (projT1 a)
+                              (substc (projT1 (projT2 (projT2 a))) v B)
+                              (substc (projT1 (projT2 (projT2 a))) v B)
+                              b
+                              # b (F1 (projT1 (projT2 (projT2 a))))
+                                  (F2 (projT1 (projT2 (projT2 (projT2 a))))))) as C.
+  autodimp C hyp.
+  {
+    introv; exrepnd; simpl in *.
+    eapply F; eauto.
+  }
+
+  clear F.
+  exrepnd.
+
+  exists (fun (lib' : library) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
+            f (existT _ lib' (existT _ x (existT _ a (existT _ a' e))))).
+  introv; simpl in *.
+  pose proof (C0 (existT _ lib' (existT _ x (existT _ a (existT _ a' e))))) as C.
+  simpl in *; auto.
+Qed.
+
 (* This is 'functionExtensionality' *)
-Lemma implies_member_function {p} :
-  forall lib (f : @CTerm p) g A v B,
+Lemma implies_member_function {o} :
+  forall lib (f : @CTerm o) g A v B,
     type lib A
     -> (forall lib' (x : lib_extends lib' lib) a a',
            equality lib' a a' A
@@ -225,37 +314,37 @@ Proof.
   unfold type, tequality in ty; exrepnd.
   rename eq into eqa.
 
-  generalize (choice_eq lib A v B (fun a => mkc_apply f a) (fun a => mkc_apply g a) eqap);
-    intro n; exrepnd.
+  pose proof (@nuprl_monotone2 o) as mon.
+  apply type_monotone2_implies_type_monotone3 in mon.
+  pose proof (mon lib A A eqa ty0) as tya; exrepnd.
+  rename eq' into eqa'.
 
-  exists (fun t1 t2 =>
-            forall a1 a2 : CTerm,
-            forall e : eqa a1 a2,
-              f0 a1
-                 a2
-                 (eq_equality1 lib a1 a2 A eqa e ty0)
-                 (mkc_apply t1 a1)
-                 (mkc_apply t2 a2)); sp.
+  eapply choice_ext_lib_teq_fam in teq;[|apply tya0].
+  exrepnd.
+
+  eapply choice_ext_lib_eq_fam in eqap;[|apply tya0].
+  exrepnd.
+  rename eqb0 into eqb'.
+
+  exists (per_func_ext_eq lib eqa' eqb).
+  dands;[|].
 
   {
-    unfold nuprl; apply CL_func; fold @nuprl; unfold per_func.
-    exists eqa.
+    apply CL_func.
+    exists eqa' eqb.
+    dands; auto;[].
+    exists A A v v B B; dands; spcast; eauto 3 with slow;[].
 
-  exists (fun a1 a2 e => f0 a1 a2 (eq_equality1 lib a1 a2 A eqa e ty0)); sp.
+    fold (@nuprl o) in *.
+    introv; apply tya0.
+  }
 
-  unfold type_family.
-  exists A A v v B B; sp;
-  try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
-
-  generalize (n0 a a' (eq_equality1 lib a a' A eqa e ty0)); intro n; repnd.
-
-  generalize (choice_teq lib A v B v B teq); intro m; exrepnd.
-  generalize (m0 a a' (eq_equality1 lib a a' A eqa e ty0)); intro m.
-
-  apply nuprl_trans with (t2 := substc a v B)
-                           (eq2 := f1 a a' (eq_equality1 lib a a' A eqa e ty0)); sp.
-
-  generalize (n0 a1 a2 (eq_equality1 lib a1 a2 A eqa e ty0)); sp.
+  introv.
+  pose proof (eqap0 lib' e a a' e0) as q;repnd.
+  pose proof (teq0 lib' e a a' e0) as h.
+  apply nuprl_refl in h.
+  eapply nuprl_uniquely_valued in h;[|exact q0].
+  apply h; auto.
 Qed.
 
 (**
@@ -283,121 +372,47 @@ Qed.
  *)
 
 (* This is the <=> verison of 'implies_member_function' *)
-Lemma equality_in_function {p} :
-  forall lib (f : @CTerm p) g A v B,
+Lemma equality_in_function {o} :
+  forall lib (f : @CTerm o) g A v B,
     equality lib f g (mkc_function A v B)
     <=>
     (type lib A
-     # (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
-     # (forall a a',
-          equality lib a a' A
-          -> equality lib (mkc_apply f a) (mkc_apply g a') (substc a v B))).
+     # (forall lib' (x : lib_extends lib' lib) a a',
+           equality lib' a a' A
+           -> tequality lib' (substc a v B) (substc a' v B))
+     # (forall lib' (x : lib_extends lib' lib) a a',
+           equality lib' a a' A
+           -> equality lib' (mkc_apply f a) (mkc_apply g a') (substc a v B))).
 Proof.
-  introv; sp_iff Case; introv e; try (complete (apply implies_member_function; sp)).
+  introv; sp_iff Case; introv e; try (complete (apply implies_member_function; sp));[].
 
   unfold equality in e; exrepnd.
-  inversion e1; subst; try not_univ.
+  inversion e1; subst; try not_univ;[].
 
   one_dest_per_fam eqa feqb A1 A2 v1 v2 B1 B2 c1 c2 tsa tsb eqt.
-  allunfold_per; spcast; computes_to_eqval; allfold (@nuprl p lib).
+  allunfold_per; spcast; computes_to_eqval; allfold (@nuprl o).
   computes_to_value_isvalue; dands.
 
-  exists eqa; sp.
+  { exists (eqa lib (lib_extends_refl lib)); sp. }
 
-  introv e.
-  unfold equality in e; exrepnd.
-  generalize (nuprl_uniquely_valued lib A1 eqa eq0); intro k; repeat (dest_imp k hyp).
-  rw <- k in e2.
-  generalize (tsb a a' e2); intro n.
-  exists (feqb a a' e2); sp.
-
-  introv e.
-  discover.
-  unfold equality in e; exrepnd.
-  generalize (nuprl_uniquely_valued lib A1 eqa eq0); intro k; repeat (dest_imp k hyp).
-  rw <- k in e2.
-  generalize (tsb a a' e2); intro n.
-  exists (feqb a a' e2); sp.
-  allapply @nuprl_refl; sp.
-Qed.
-
-Lemma equality_function {p} :
-  forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2 i,
-    equality lib (mkc_function A1 v1 B1)
-             (mkc_function A2 v2 B2)
-             (mkc_uni i)
-    <=>
-    (equality lib A1 A2 (mkc_uni i)
-     # forall a a',
-         equality lib a a' A1
-         -> equality lib (substc a v1 B1) (substc a' v2 B2) (mkc_uni i)).
-Proof.
-  introv.
-  sp_iff Case.
-
-  - Case "->".
-    intros teq.
-    unfold equality, nuprl in teq; exrepnd.
-    inversion teq1; subst; try not_univ.
-    duniv j h.
-    allrw @univi_exists_iff; exrepd.
-    computes_to_value_isvalue; GC.
-    discover; exrepnd.
-    rename eqa into eqi.
-    ioneclose; subst; try not_univ.
-
-    one_dest_per_fam eqa feqb A3 A4 v3 v4 B3 B4 c1 c2 tsa tsb eqt.
-    computes_to_value_isvalue; GC.
-    dands.
-
-    exists eq; sp.
-    allrw.
-    exists eqa; sp.
-
-    introv e.
-    exists eq; sp.
-    allfold (@nuprli p lib j0).
-    allrw.
+  {
+    introv x e.
     unfold equality in e; exrepnd.
-    generalize (nuprl_uniquely_valued lib A3 eqa eq0);
-      intro k; repeat (dest_imp k hyp);
-      try (complete (apply nuprli_implies_nuprl with (i := j0); sp;
-                     allapply @nuprli_refl; sp)).
-    rw <- k in e0.
-    generalize (tsb a a' e0); intro n.
-    exists (feqb a a' e0); sp.
+    generalize (nuprl_uniquely_valued lib' A1 (eqa lib' x) eq0); intro k; repeat (autodimp k hyp);[].
+    rw <- k in e2.
+    generalize (tsb lib' x a a' e2); intro n.
+    exists (feqb lib' x a a' e2); sp.
+  }
 
-  - Case "<-".
-    intro eqs.
-    destruct eqs as [eqa eqb].
-    unfold equality in eqa; exrepnd.
-    inversion eqa1; subst; try not_univ.
-    duniv j h.
-    allrw @univi_exists_iff; exrepd.
-    computes_to_value_isvalue; GC.
-    discover; exrepnd.
-    allfold (@nuprli p lib j0).
-
-    exists eq; sp.
-    allrw.
-
-    generalize (choice_teqi lib j0 A1 v1 B1 v2 B2 eqb); intro n; exrepnd.
-
-    exists (fun t1 t2 =>
-              forall a1 a2 : CTerm,
-              forall e : eqa a1 a2,
-                f a1 a2
-                  (eq_equality3 lib a1 a2 A1 A2 eqa j0 e h0)
-                  (mkc_apply t1 a1) (mkc_apply t2 a2)).
-    unfold nuprli.
-    apply CL_func; fold (@nuprli p lib j0).
-    unfold per_func.
-    exists eqa.
-
-    exists (fun a1 a2 e => f a1 a2 (eq_equality3 lib a1 a2 A1 A2 eqa j0 e h0)); sp.
-
-    exists A1 A2 v1 v2 B1 B2; sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
+  {
+    introv x e.
+    apply eqt in e0.
+    unfold equality in e; exrepnd.
+    generalize (nuprl_uniquely_valued lib' A1 (eqa lib' x) eq0); intro k; repeat (dest_imp k hyp).
+    rw <- k in e2.
+    generalize (tsb lib' x a a' e2); intro n.
+    exists (feqb lib' x a a' e2); sp; try (complete (allapply @nuprl_refl; sp)).
+  }
 Qed.
 
 Lemma equality_in_function2 {p} :
@@ -405,18 +420,18 @@ Lemma equality_in_function2 {p} :
     equality lib f g (mkc_function A v B)
     <=>
     (type lib (mkc_function A v B)
-     # (forall a a',
-          equality lib a a' A
-          -> equality lib (mkc_apply f a) (mkc_apply g a') (substc a v B))).
+     # (forall lib' (x : lib_extends lib' lib) a a',
+          equality lib' a a' A
+          -> equality lib' (mkc_apply f a) (mkc_apply g a') (substc a v B))).
 Proof.
   introv.
   rw @equality_in_function; split; intro k; repnd; dands; try (complete sp).
 
-  unfold type; rw @tequality_function; sp.
+  { unfold type; rw @tequality_function; sp. }
 
-  rw @tequality_function in k0; sp.
+  { rw @tequality_function in k0; sp. }
 
-  rw @tequality_function in k0; sp.
+  { rw @tequality_function in k0; sp. }
 Qed.
 
 Lemma inhabited_function {p} :
@@ -424,11 +439,11 @@ Lemma inhabited_function {p} :
     inhabited_type lib (mkc_function A v B)
     <=>
     (type lib A
-     # (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
+     # (forall lib' (x : lib_extends lib' lib) a a', equality lib' a a' A -> tequality lib' (substc a v B) (substc a' v B))
      # {f : CTerm
-        , forall a a',
-            equality lib a a' A
-            -> equality lib (mkc_apply f a) (mkc_apply f a') (substc a v B)}).
+        , forall lib' (x : lib_extends lib' lib) a a',
+            equality lib' a a' A
+            -> equality lib' (mkc_apply f a) (mkc_apply f a') (substc a v B)}).
 Proof.
   introv; split; intro k.
 
@@ -446,12 +461,13 @@ Lemma equality_in_function3 {p} :
     equality lib f g (mkc_function A v B)
     <=>
     (type lib A
-     # (forall a a',
-          equality lib a a' A
-          -> tequality lib (substc a v B) (substc a' v B)
-             # equality lib (mkc_apply f a) (mkc_apply g a') (substc a v B))).
+     # (forall lib' (x : lib_extends lib' lib) a a',
+          equality lib' a a' A
+          -> tequality lib' (substc a v B) (substc a' v B)
+             # equality lib' (mkc_apply f a) (mkc_apply g a') (substc a v B))).
 Proof.
-  introv; rw @equality_in_function; split; sp; discover; sp.
+  introv; rw @equality_in_function; split; introv h; repnd;
+    dands; tcsp; introv x e; eapply h; eauto.
 Qed.
 
 Lemma tequality_function_fun {p} :
@@ -462,10 +478,10 @@ Lemma tequality_function_fun {p} :
 Proof.
   introv o; repdors.
 
-  apply tequality_respects_alphaeqc_right with (T2 := mkc_function A v (mk_cv [v] B)); sp.
+  { apply tequality_respects_alphaeqc_right with (T2 := mkc_function A v (mk_cv [v] B)); sp. }
 
-  apply tequality_respects_alphaeqc_left with (T1 := mkc_fun A B); sp.
-  apply alphaeqc_sym; sp.
+  { apply tequality_respects_alphaeqc_left with (T1 := mkc_fun A B); sp.
+    apply alphaeqc_sym; sp. }
 Qed.
 
 Lemma tequality_mkc_fun_dom {p} :
@@ -483,18 +499,20 @@ Lemma tequality_fun {p} :
   forall lib (A1 A2 B1 B2 : @CTerm p),
     tequality lib (mkc_fun A1 B1) (mkc_fun A2 B2)
     <=>
-    (tequality lib A1 A2 # (inhabited_type lib A1 -> tequality lib B1 B2)).
+    (tequality lib A1 A2
+      # (forall lib' (x : lib_extends lib' lib), inhabited_type lib' A1 -> tequality lib' B1 B2)).
 Proof.
   intros.
   allrw <- @fold_mkc_fun.
   rw @tequality_function.
-  split; intro teq; repnd; dands; auto; introv e.
+  split; intro teq; repnd; dands; auto; introv x e.
 
   - unfold inhabited_type in e; exrepnd.
-    generalize (teq t t); intro k; autodimp k hyp.
+    generalize (teq lib' x t t); intro k; autodimp k hyp.
     repeat (rw @csubst_mk_cv in k); sp.
 
-  - autodimp teq hyp.
+  - pose proof (teq lib' x) as teq.
+    autodimp teq hyp.
     exists a; allapply @equality_refl; sp.
     repeat (rw @csubst_mk_cv); sp.
 Qed.
@@ -513,60 +531,233 @@ Lemma equality_in_fun {p} :
     equality lib f g (mkc_fun A B)
     <=>
     (type lib A
-     # (inhabited_type lib A -> type lib B)
-     # (forall a a',
-          equality lib a a' A
-          -> equality lib (mkc_apply f a) (mkc_apply g a') B)).
+     # (forall lib' (x : lib_extends lib' lib), inhabited_type lib' A -> type lib' B)
+     # (forall lib' (x : lib_extends lib' lib) a a',
+          equality lib' a a' A
+          -> equality lib' (mkc_apply f a) (mkc_apply g a') B)).
 Proof.
   introv.
   rw <- @fold_mkc_fun.
   rw @equality_in_function.
   split; intro k; repnd; dands; auto.
 
-  introv i.
-  unfold inhabited_type in i; exrepnd.
-  generalize (k1 t t); intro j; autodimp j hyp.
-  repeat (rw @csubst_mk_cv in j); sp.
+  {
+    introv x i.
+    unfold inhabited_type in i; exrepnd.
+    generalize (k1 lib' x t t); intro j; autodimp j hyp.
+    repeat (rw @csubst_mk_cv in j); sp.
+  }
 
-  introv e.
-  apply k in e.
-  repeat (rw @csubst_mk_cv in e); sp.
+  {
+    introv x e.
+    apply k in e; auto.
+    repeat (rw @csubst_mk_cv in e); sp.
+  }
 
-  introv e.
-  repeat (rw @csubst_mk_cv); sp.
-  autodimp k1 hyp.
-  exists a; allapply @equality_refl; sp.
+  {
+    introv x e.
+    repeat (rw @csubst_mk_cv); sp.
+    pose proof (k1 lib' x) as k1.
+    autodimp k1 hyp.
+    exists a; allapply @equality_refl; sp.
+  }
 
-  introv e.
-  repeat (rw @csubst_mk_cv); sp.
+  {
+    introv x e.
+    repeat (rw @csubst_mk_cv); sp.
+  }
 Qed.
 
 Lemma tequality_mkc_fun {p} :
   forall lib (A1 A2 B1 B2 : @CTerm p),
     tequality lib (mkc_fun A1 B1) (mkc_fun A2 B2)
-              <=> (tequality lib A1 A2 # (inhabited_type lib A1 -> tequality lib B1 B2)).
+    <=> (tequality lib A1 A2
+         # (forall lib' (x : lib_extends lib' lib), inhabited_type lib' A1 -> tequality lib' B1 B2)).
 Proof.
   introv.
   allrw <- @fold_mkc_fun.
   rw @tequality_function.
-  split; intro k; repnd; dands; auto.
+  split; intro k; repnd; dands; auto; introv x.
 
-  introv i.
-  unfold inhabited_type in i; exrepnd.
-  generalize (k t t i0); intro teq.
-  allrw @csubst_mk_cv; auto.
+  {
+    introv i.
+    unfold inhabited_type in i; exrepnd.
+    generalize (k lib' x t t i0); intro teq.
+    allrw @csubst_mk_cv; auto.
+  }
 
-  introv e.
-  allrw @csubst_mk_cv; auto.
-  apply equality_refl in e.
-  autodimp k hyp.
-  exists a; auto.
+  {
+    introv e.
+    allrw @csubst_mk_cv; auto.
+    apply equality_refl in e.
+    pose proof (k lib' x) as k.
+    autodimp k hyp.
+    exists a; auto.
+  }
 Qed.
 
 Lemma type_mkc_fun {p} :
   forall lib (A B : @CTerm p),
-    type lib (mkc_fun A B) <=> (type lib A # (inhabited_type lib A -> type lib B)).
+    type lib (mkc_fun A B) <=> (type lib A # (forall lib' (x : lib_extends lib' lib), inhabited_type lib' A -> type lib' B)).
 Proof.
   introv.
   rw @tequality_mkc_fun; sp.
+Qed.
+
+Lemma choice_ext_teqi {o} :
+  forall lib i (A A' : @CTerm o) v1 B1 v2 B2 (eqa : lib-per(lib,o)),
+    (forall lib' e, nuprl lib' A A' (eqa lib' e))
+    -> (forall lib' (x : lib_extends lib' lib) a1 a2,
+           equality lib' a1 a2 A
+           -> equality lib' (substc a1 v1 B1) (substc a2 v2 B2) (mkc_uni i))
+    -> {eqb : lib-per-fam(lib,eqa,o),
+         forall lib' (x : lib_extends lib' lib) a1 a2 (e : eqa lib' x a1 a2),
+            nuprli i lib' (substc a1 v1 B1) (substc a2 v2 B2) (eqb lib' x a1 a2 e)}.
+Proof.
+  introv teqa F.
+
+  assert (forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
+             equality lib' (B1)[[v1\\a]] (B2)[[v2\\a']] (mkc_uni i)) as G.
+  {
+    introv e.
+    apply (F lib' x a a').
+    apply (equality_eq1 lib' A A' a a' (eqa lib' x)); auto.
+  }
+  clear F; rename G into F.
+
+  pose proof (FunctionalChoice_on
+                {lib' : library & {ext : lib_extends lib' lib & {a1 : CTerm & {a2 : CTerm & eqa lib' ext a1 a2}}}}
+                per
+                (fun a b => nuprli
+                              i
+                              (projT1 a)
+                              (substc (projT1 (projT2 (projT2 a))) v1 B1)
+                              (substc (projT1 (projT2 (projT2 (projT2 a)))) v2 B2)
+                              b)) as C.
+  autodimp C hyp.
+  {
+    introv; exrepnd; simpl in *.
+    pose proof (F lib' ext a0 a1 a3) as G.
+    unfold equality in G; exrepnd.
+    inversion G1; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepnd.
+    computes_to_value_isvalue; GC.
+    discover; exrepnd.
+    allfold (@nuprli o j0).
+    exists eqa0; sp.
+  }
+  clear F.
+  exrepnd.
+
+  exists (fun (lib' : library) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
+            f (existT _ lib' (existT _ x (existT _ a (existT _ a' e))))).
+  introv; simpl in *.
+  pose proof (C0 (existT _ lib' (existT _ x (existT _ a1 (existT _ a2 e))))) as C.
+  simpl in *; auto.
+Qed.
+
+Lemma equality_function {o} :
+  forall lib (A1 A2 : @CTerm o) v1 v2 B1 B2 i,
+    equality
+      lib
+      (mkc_function A1 v1 B1)
+      (mkc_function A2 v2 B2)
+      (mkc_uni i)
+    <=>
+    (equality lib A1 A2 (mkc_uni i)
+     # forall lib' (x : lib_extends lib' lib) a a',
+         equality lib' a a' A1
+         -> equality lib' (substc a v1 B1) (substc a' v2 B2) (mkc_uni i)).
+Proof.
+  introv.
+  sp_iff Case.
+
+  - Case "->".
+    intros teq.
+
+    dands.
+
+    {
+      unfold equality, nuprl in teq; exrepnd.
+      fold (@nuprl o) in *.
+
+      inversion teq1; subst; try not_univ;[].
+      duniv j h.
+      allrw @univi_exists_iff; exrepd.
+      computes_to_value_isvalue; GC.
+      discover; exrepnd.
+      rename eqa into eqi.
+      ioneclose; subst; try not_univ;[].
+
+      one_dest_per_fam eqa feqb A3 A4 v3 v4 B3 B4 c1 c2 tsa tsb eqt.
+      computes_to_value_isvalue; GC.
+
+      exists eq; sp.
+      allrw.
+      exists (eqa lib (lib_extends_refl lib)); sp.
+    }
+
+    {
+      introv x ea.
+      eapply equality_monotone in teq;[|eauto].
+
+      unfold equality, nuprl in teq; exrepnd.
+      fold (@nuprl o) in *.
+
+      inversion teq1; subst; try not_univ;[].
+      duniv j h.
+      allrw @univi_exists_iff; exrepd.
+      computes_to_value_isvalue; GC.
+      discover; exrepnd.
+      rename eqa into eqi.
+      ioneclose; subst; try not_univ;[].
+
+      one_dest_per_fam eqa feqb A3 A4 v3 v4 B3 B4 c1 c2 tsa tsb eqt.
+      computes_to_value_isvalue; GC.
+
+      exists eq; sp; try (complete (apply teq1'0));[].
+
+      allfold (@nuprli o j0).
+      allrw.
+      unfold equality in ea; exrepnd.
+
+      eapply nuprl_uniquely_valued in ea1;
+        [|eapply nuprli_implies_nuprl;eapply nuprli_refl;eapply (tsa lib' (lib_extends_refl lib'))];[].
+      apply ea1 in ea0.
+      pose proof (tsb lib' (lib_extends_refl lib') a a' ea0) as n.
+      exists (feqb lib' (lib_extends_refl lib') a a' ea0); sp.
+    }
+
+  - Case "<-".
+    intro eqs.
+    destruct eqs as [eqa eqb].
+    unfold equality in eqa; exrepnd.
+    inversion eqa1; subst; try not_univ.
+    duniv j h.
+    allrw @univi_exists_iff; exrepd.
+    computes_to_value_isvalue; GC.
+    discover; exrepnd.
+    allfold (@nuprli o j0).
+
+    exists eq; sp.
+    allrw.
+
+    pose proof (@nuprli_monotone2 o j0) as mon.
+    apply type_monotone2_implies_type_monotone3 in mon.
+    pose proof (mon lib A1 A2 eqa h0) as tya; exrepnd.
+    rename eq' into eqa'.
+
+    eapply choice_ext_teqi in eqb;
+      [|introv;eapply nuprli_implies_nuprl;apply (tya0 lib' e)].
+
+    exrepnd.
+    rename eqb0 into eqb'.
+
+    exists (per_func_ext_eq lib eqa' eqb').
+    apply CL_func.
+    exists eqa' eqb'.
+    dands; auto;[].
+    exists A1 A2 v1 v2 B1 B2; dands; spcast; eauto 3 with slow;
+      try (complete (introv; apply tya0)).
 Qed.

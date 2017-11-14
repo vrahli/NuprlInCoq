@@ -695,7 +695,7 @@ Qed.
 Hint Resolve entry_extends_preserves_entry_in_library_extends : slow.
 
 Lemma lib_extends_trans {o} :
-  forall (lib1 lib2 lib3 : @library o),
+  forall {lib1 lib2 lib3 : @library o},
     lib_extends lib1 lib2
     -> lib_extends lib2 lib3
     -> lib_extends lib1 lib3.
