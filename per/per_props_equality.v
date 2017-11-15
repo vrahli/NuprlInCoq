@@ -54,21 +54,77 @@ Require Export per_props_function.
 
 (* begin hide *)
 
-Lemma member_equality {p} :
-  forall lib (t1 t2 T : @CTerm p),
+(* MOVE *)
+Lemma implies_all_in_bar_ext_trivial_bar {o} :
+  forall (lib : @library o) F,
+    in_ext_ext lib F
+    -> all_in_bar_ext (trivial_bar lib) F.
+Proof.
+  introv i br ext; simpl in *.
+  eapply i; eauto 3 with slow.
+Qed.
+
+(* MOVE *)
+Lemma choice_ext_lib_eq {o} :
+  forall lib (a b A : @CTerm o),
+    (forall lib' (x : lib_extends lib' lib), equality lib' a b A)
+    -> {eqa : lib-per(lib,o),
+        forall lib' (x : lib_extends lib' lib), nuprl lib' A A (eqa lib' x) # eqa lib' x a b}.
+Proof.
+  introv F.
+
+  pose proof (FunctionalChoice_on
+                {lib' : library & lib_extends lib' lib}
+                per(o)
+                (fun x y => nuprl (projT1 x) A A y # y a b)) as C.
+  autodimp C hyp.
+
+  {
+    unfold equality in F.
+    introv; exrepnd; simpl in *; auto.
+  }
+
+  clear F.
+  exrepnd.
+
+  exists (fun (lib' : library) (ext : lib_extends lib' lib) =>
+            f (existT (fun lib' => lib_extends lib' lib) lib' ext)).
+  introv.
+  pose proof (C0 (existT (fun lib' => lib_extends lib' lib) lib' x)) as C.
+  simpl in *; auto.
+Qed.
+
+Lemma member_equality {o} :
+  forall lib (t1 t2 T : @CTerm o),
     equality lib t1 t2 T
     -> member lib mkc_axiom (mkc_equality t1 t2 T).
 Proof.
-  unfold member, equality; sp.
-  exists (fun (t t' : @CTerm p) => t ===>(lib) mkc_axiom
-                      # t' ===>(lib) mkc_axiom
-                      # eq t1 t2);
-    sp; spcast; try computes_to_value_refl.
-  apply CL_eq.
-  unfold per_eq.
-  exists T T t1 t2 t1 t2 eq; sp; spcast; try computes_to_value_refl;
-  pose proof (nuprl_eq_implies_eqorceq_refl lib T T eq t1 t2); sp.
-(* universe inconsistency *)
+  introv h.
+  assert (forall lib' (x : lib_extends lib' lib), equality lib' t1 t2 T) as q by eauto 3 with slow.
+  clear h.
+  apply choice_ext_lib_eq in q; exrepnd.
+
+  exists (per_eq_eq lib t1 t2 eqa).
+  dands; auto.
+
+  {
+    apply CL_eq.
+    unfold per_eq_bar.
+    exists T T t1 t2 t1 t2 eqa.
+    dands; auto.
+    exists (trivial_bar lib); dands; eauto 3 with slow refl.
+    fold (@nuprl o) in *.
+    apply implies_all_in_bar_ext_trivial_bar.
+    introv; apply q0.
+  }
+
+  {
+    unfold per_eq_eq.
+    exists (trivial_bar lib).
+    unfold per_eq_eq1.
+    apply implies_all_in_bar_ext_trivial_bar.
+    introv; dands; spcast; eauto 3 with slow refl; try apply q0.
+  }
 Qed.
 
 (* end hide *)
@@ -90,11 +146,19 @@ Lemma member_equality_iff {p} :
     equality lib t1 t2 T
     <=> member lib mkc_axiom (mkc_equality t1 t2 T).
 Proof.
-  sp; split; intro e.
-  apply member_equality; sp.
+  introv; split; intro e.
+
+  { apply member_equality; sp. }
+
   allunfold @member; allunfold @equality; exrepnd.
 
-  inversion e1; subst; try not_univ.
+  inversion e1; subst; try not_univ; clear e1; [].
+  rename_hyp_with @per_eq_bar h.
+  unfold per_eq_bar in *; exrepnd.
+  apply h0 in e0; clear h0.
+
+
+XXXXXX
 
   allunfold_per.
   computes_to_value_isvalue.
