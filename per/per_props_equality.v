@@ -33,7 +33,8 @@
 (*Require Export per_props.*)
 Require Export per_props_cequiv.
 Require Export per_props_function.
-Require Export per_props_uni.
+
+(*Require Export per_props_uni.*)
 
 
 (** printing #  $\times$ #×# *)

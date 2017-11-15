@@ -353,6 +353,189 @@ Proof.
   eqconstr comp1.
 Qed.
 
+Lemma cequivc_mkc_cequiv_implies {o} :
+  forall lib (t a b : @CTerm o),
+    cequivc lib (mkc_cequiv a b) t
+    -> {a', b' : CTerm $ computes_to_valc lib t (mkc_cequiv a' b') # cequivc lib a a' # cequivc lib b b'}.
+Proof.
+  introv ceq.
+  eapply cequivc_mkc_cequiv in ceq;[|apply computes_to_valc_refl;eauto 3 with slow];auto.
+Qed.
+
+Lemma cequiv_not_approx_ceq_bar {o} :
+  forall {lib} (bar : @BarLib o lib) u v a b,
+    (mkc_cequiv u v) ==b==>(bar) (mkc_approx a b)
+    -> False.
+Proof.
+  introv comp.
+  pose proof (bar_non_empty bar) as ne; exrepnd.
+  pose proof (comp lib' ne0 lib') as comp; autodimp comp hyp; eauto 2 with slow; simpl in *.
+  exrepnd; spcast.
+  apply computes_to_valc_isvalue_eq in comp1; auto; subst; eauto 3 with slow.
+  apply cequivc_mkc_cequiv_implies in comp0; exrepnd.
+  apply computes_to_valc_isvalue_eq in comp1; eauto 3 with slow.
+  eqconstr comp1.
+Qed.
+
+Lemma cequiv_not_equality_ceq_bar {o} :
+  forall {lib} (bar : @BarLib o lib) u v a b c,
+    (mkc_cequiv u v) ==b==>(bar) (mkc_equality a b c)
+    -> False.
+Proof.
+  introv comp.
+  pose proof (bar_non_empty bar) as ne; exrepnd.
+  pose proof (comp lib' ne0 lib') as comp; autodimp comp hyp; eauto 2 with slow; simpl in *.
+  exrepnd; spcast.
+  apply computes_to_valc_isvalue_eq in comp1; auto; subst; eauto 3 with slow.
+  apply cequivc_mkc_cequiv_implies in comp0; exrepnd.
+  apply computes_to_valc_isvalue_eq in comp1; eauto 3 with slow.
+  eqconstr comp1.
+Qed.
+
+Lemma cequiv_not_function_ceq_bar {o} :
+  forall {lib} (bar : @BarLib o lib) u w a v b,
+    (mkc_cequiv u w) ==b==>(bar) (mkc_function a v b)
+    -> False.
+Proof.
+  introv comp.
+  pose proof (bar_non_empty bar) as ne; exrepnd.
+  pose proof (comp lib' ne0 lib') as comp; autodimp comp hyp; eauto 2 with slow; simpl in *.
+  exrepnd; spcast.
+  apply computes_to_valc_isvalue_eq in comp1; auto; subst; eauto 2 with slow.
+  apply cequivc_mkc_cequiv_implies in comp0; exrepnd.
+  apply computes_to_valc_isvalue_eq in comp1; eauto 3 with slow.
+  eqconstr comp1.
+Qed.
+
+Lemma cequiv_not_product_ceq_bar {o} :
+  forall {lib} (bar : @BarLib o lib) u w a v b,
+    (mkc_cequiv u w) ==b==>(bar) (mkc_product a v b)
+    -> False.
+Proof.
+  introv comp.
+  pose proof (bar_non_empty bar) as ne; exrepnd.
+  pose proof (comp lib' ne0 lib') as comp; autodimp comp hyp; eauto 2 with slow; simpl in *.
+  exrepnd; spcast.
+  apply computes_to_valc_isvalue_eq in comp1; auto; subst; eauto 2 with slow.
+  apply cequivc_mkc_cequiv_implies in comp0; exrepnd.
+  apply computes_to_valc_isvalue_eq in comp1; eauto 3 with slow.
+  eqconstr comp1.
+Qed.
+
+Lemma cequiv_not_union_ceq_bar {o} :
+  forall {lib} (bar : @BarLib o lib) u v a b,
+    (mkc_cequiv u v) ==b==>(bar) (mkc_union a b)
+    -> False.
+Proof.
+  introv comp.
+  pose proof (bar_non_empty bar) as ne; exrepnd.
+  pose proof (comp lib' ne0 lib') as comp; autodimp comp hyp; eauto 2 with slow; simpl in *.
+  exrepnd; spcast.
+  apply computes_to_valc_isvalue_eq in comp1; auto; subst; eauto 3 with slow.
+  apply cequivc_mkc_cequiv_implies in comp0; exrepnd.
+  apply computes_to_valc_isvalue_eq in comp1; eauto 3 with slow.
+  eqconstr comp1.
+Qed.
+
+Lemma cequivc_mkc_base_implies {o} :
+  forall lib (t : @CTerm o),
+    cequivc lib mkc_base t
+    -> computes_to_valc lib t mkc_base.
+Proof.
+  introv ceq.
+  eapply cequivc_base in ceq;[|apply computes_to_valc_refl;eauto 3 with slow];auto.
+Qed.
+
+Lemma base_not_approx_ceq_bar {o} :
+  forall {lib} (bar : @BarLib o lib) a b,
+    mkc_base ==b==>(bar) (mkc_approx a b)
+    -> False.
+Proof.
+  introv comp.
+  pose proof (bar_non_empty bar) as ne; exrepnd.
+  pose proof (comp lib' ne0 lib') as comp; autodimp comp hyp; eauto 2 with slow; simpl in *.
+  exrepnd; spcast.
+  apply computes_to_valc_isvalue_eq in comp1; auto; subst; eauto 3 with slow.
+  apply cequivc_mkc_base_implies in comp0; exrepnd.
+  apply computes_to_valc_isvalue_eq in comp0; eauto 3 with slow.
+  eqconstr comp0.
+Qed.
+
+Lemma base_not_cequiv_ceq_bar {o} :
+  forall {lib} (bar : @BarLib o lib) a b,
+    mkc_base ==b==>(bar) (mkc_cequiv a b)
+    -> False.
+Proof.
+  introv comp.
+  pose proof (bar_non_empty bar) as ne; exrepnd.
+  pose proof (comp lib' ne0 lib') as comp; autodimp comp hyp; eauto 2 with slow; simpl in *.
+  exrepnd; spcast.
+  apply computes_to_valc_isvalue_eq in comp1; auto; subst; eauto 3 with slow.
+  apply cequivc_mkc_base_implies in comp0; exrepnd.
+  apply computes_to_valc_isvalue_eq in comp0; eauto 3 with slow.
+  eqconstr comp0.
+Qed.
+
+Lemma base_not_equality_ceq_bar {o} :
+  forall {lib} (bar : @BarLib o lib) a b c,
+    mkc_base ==b==>(bar) (mkc_equality a b c)
+    -> False.
+Proof.
+  introv comp.
+  pose proof (bar_non_empty bar) as ne; exrepnd.
+  pose proof (comp lib' ne0 lib') as comp; autodimp comp hyp; eauto 2 with slow; simpl in *.
+  exrepnd; spcast.
+  apply computes_to_valc_isvalue_eq in comp1; auto; subst; eauto 3 with slow.
+  apply cequivc_mkc_base_implies in comp0; exrepnd.
+  apply computes_to_valc_isvalue_eq in comp0; eauto 3 with slow.
+  eqconstr comp0.
+Qed.
+
+Lemma base_not_function_ceq_bar {o} :
+  forall {lib} (bar : @BarLib o lib) a v b,
+    mkc_base ==b==>(bar) (mkc_function a v b)
+    -> False.
+Proof.
+  introv comp.
+  pose proof (bar_non_empty bar) as ne; exrepnd.
+  pose proof (comp lib' ne0 lib') as comp; autodimp comp hyp; eauto 2 with slow; simpl in *.
+  exrepnd; spcast.
+  apply computes_to_valc_isvalue_eq in comp1; auto; subst; eauto 2 with slow.
+  apply cequivc_mkc_base_implies in comp0; exrepnd.
+  apply computes_to_valc_isvalue_eq in comp0; eauto 3 with slow.
+  eqconstr comp0.
+Qed.
+
+Lemma base_not_product_ceq_bar {o} :
+  forall {lib} (bar : @BarLib o lib) a v b,
+    mkc_base ==b==>(bar) (mkc_product a v b)
+    -> False.
+Proof.
+  introv comp.
+  pose proof (bar_non_empty bar) as ne; exrepnd.
+  pose proof (comp lib' ne0 lib') as comp; autodimp comp hyp; eauto 2 with slow; simpl in *.
+  exrepnd; spcast.
+  apply computes_to_valc_isvalue_eq in comp1; auto; subst; eauto 2 with slow.
+  apply cequivc_mkc_base_implies in comp0; exrepnd.
+  apply computes_to_valc_isvalue_eq in comp0; eauto 3 with slow.
+  eqconstr comp0.
+Qed.
+
+Lemma base_not_union_ceq_bar {o} :
+  forall {lib} (bar : @BarLib o lib) a b,
+    mkc_base ==b==>(bar) (mkc_union a b)
+    -> False.
+Proof.
+  introv comp.
+  pose proof (bar_non_empty bar) as ne; exrepnd.
+  pose proof (comp lib' ne0 lib') as comp; autodimp comp hyp; eauto 2 with slow; simpl in *.
+  exrepnd; spcast.
+  apply computes_to_valc_isvalue_eq in comp1; auto; subst; eauto 3 with slow.
+  apply cequivc_mkc_base_implies in comp0; exrepnd.
+  apply computes_to_valc_isvalue_eq in comp0; eauto 3 with slow.
+  eqconstr comp0.
+Qed.
+
 Lemma cequivc_mkc_function_implies {o} :
   forall lib (T A : @CTerm o) (v : NVar) (B : CVTerm [v]),
     cequivc lib (mkc_function A v B) T
@@ -477,6 +660,19 @@ Ltac computes_to_valc_ceq_bar_false :=
   | [ H : computes_to_valc_ceq_bar _ (mkc_approx _ _) (mkc_function _ _ _) |- _ ] => apply approx_not_function_ceq_bar in H; inversion H
   | [ H : computes_to_valc_ceq_bar _ (mkc_approx _ _) (mkc_product _ _ _)  |- _ ] => apply approx_not_product_ceq_bar  in H; inversion H
   | [ H : computes_to_valc_ceq_bar _ (mkc_approx _ _) (mkc_union _ _)      |- _ ] => apply approx_not_union_ceq_bar    in H; inversion H
+
+  | [ H : computes_to_valc_ceq_bar _ (mkc_cequiv _ _) (mkc_approx _ _)     |- _ ] => apply cequiv_not_approx_ceq_bar   in H; inversion H
+  | [ H : computes_to_valc_ceq_bar _ (mkc_cequiv _ _) (mkc_equality _ _ _) |- _ ] => apply cequiv_not_equality_ceq_bar in H; inversion H
+  | [ H : computes_to_valc_ceq_bar _ (mkc_cequiv _ _) (mkc_function _ _ _) |- _ ] => apply cequiv_not_function_ceq_bar in H; inversion H
+  | [ H : computes_to_valc_ceq_bar _ (mkc_cequiv _ _) (mkc_product _ _ _)  |- _ ] => apply cequiv_not_product_ceq_bar  in H; inversion H
+  | [ H : computes_to_valc_ceq_bar _ (mkc_cequiv _ _) (mkc_union _ _)      |- _ ] => apply cequiv_not_union_ceq_bar    in H; inversion H
+
+  | [ H : computes_to_valc_ceq_bar _ mkc_base (mkc_approx _ _)     |- _ ] => apply base_not_approx_ceq_bar   in H; inversion H
+  | [ H : computes_to_valc_ceq_bar _ mkc_base (mkc_cequiv _ _)     |- _ ] => apply base_not_cequiv_ceq_bar   in H; inversion H
+  | [ H : computes_to_valc_ceq_bar _ mkc_base (mkc_equality _ _ _) |- _ ] => apply base_not_equality_ceq_bar in H; inversion H
+  | [ H : computes_to_valc_ceq_bar _ mkc_base (mkc_function _ _ _) |- _ ] => apply base_not_function_ceq_bar in H; inversion H
+  | [ H : computes_to_valc_ceq_bar _ mkc_base (mkc_product _ _ _)  |- _ ] => apply base_not_product_ceq_bar  in H; inversion H
+  | [ H : computes_to_valc_ceq_bar _ mkc_base (mkc_union _ _)      |- _ ] => apply base_not_union_ceq_bar    in H; inversion H
 
   | [ H : computes_to_valc_ceq_bar _ (mkc_function _ _ _) (mkc_approx _ _)     |- _ ] => apply function_not_approx_ceq_bar   in H; inversion H
   | [ H : computes_to_valc_ceq_bar _ (mkc_function _ _ _) (mkc_cequiv _ _)     |- _ ] => apply function_not_cequiv_ceq_bar   in H; inversion H
