@@ -32,6 +32,7 @@
 
 Require Export nuprl.
 Require Export bar.
+Require Export choiceseq.
 Require Export computation_lib_extends2.
 
 

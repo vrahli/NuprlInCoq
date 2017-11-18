@@ -141,8 +141,8 @@ Qed.
 
  *)
 
-Lemma member_equality_iff {p} :
-  forall lib (t1 t2 T : @CTerm p),
+Lemma member_equality_iff {o} :
+  forall lib (t1 t2 T : @CTerm o),
     equality lib t1 t2 T
     <=> member lib mkc_axiom (mkc_equality t1 t2 T).
 Proof.
@@ -156,7 +156,15 @@ Proof.
   rename_hyp_with @per_eq_bar h.
   unfold per_eq_bar in *; exrepnd.
   apply h0 in e0; clear h0.
+  fold (@nuprl o) in *.
 
+  unfold per_eq_eq, per_eq_eq1 in e0.
+
+  (* have another clause in [close] for bared types?
+     If a type is defined at a bar of a library, then it is defined at the library?
+   *)
+
+  SearchAbout computes_to_valc_ceq_bar mkc_equality.
 
 XXXXXX
 

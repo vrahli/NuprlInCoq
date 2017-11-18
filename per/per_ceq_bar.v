@@ -811,6 +811,16 @@ Proof.
 Qed.
 Hint Resolve all_in_bar_ext_type_sys_props4_implies_change_lib_extends_bar : slow.
 
+Lemma in_ext_ext_implies_all_in_bar_ext {o} :
+  forall lib (bar : @BarLib o lib) F,
+    in_ext_ext lib F
+    -> all_in_bar_ext bar F.
+Proof.
+  introv i br ext; introv.
+  apply i; auto.
+Qed.
+Hint Resolve in_ext_ext_implies_all_in_bar_ext : slow.
+
 Lemma implies_iff_per_eq_eq {o} :
   forall lib (bar : @BarLib o lib) a1 a2 b1 b2 eqa eqb,
     all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
