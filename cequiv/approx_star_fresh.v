@@ -1557,9 +1557,3 @@ Proof.
   rw @isprog_vars_eq in isp; sp.
 Qed.
 Hint Resolve isprog_vars_implies_nt_wf : slow.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

@@ -48,11 +48,14 @@ Require Export rules_false.
 Require Export rules_struct.
 Require Export rules_function.
 Require Export rules_uni.
+Require Export rules_equality2.
 Require Export rules_equality3.
 Require Export rules_equality4.
 Require Export rules_equality5.
 Require Export rules_integer.
+Require Export rules_number.
 Require Export rules_unfold.
+Require Export rules_base.
 
 
 
@@ -282,6 +285,9 @@ Definition pre_rule_equality_equality_hyp1 {o} (H : @bhyps o) A B i :=
 Definition pre_rule_equality_equality_hyp2 {o} (H : @bhyps o) a b A :=
   mk_pre_bseq H (mk_pre_concl (mk_equality a b A)).
 
+Definition pre_rule_equality_equality_hyp3 {o} (H : @bhyps o) a b :=
+  mk_pre_bseq H (mk_pre_concl (mk_equality a b mk_base)).
+
 Definition pre_rule_introduction_concl {o} (H : @bhyps o) C :=
   mk_pre_bseq H (mk_pre_concl C).
 
@@ -404,6 +410,15 @@ Definition pre_rule_cequiv_subst_hyp_hyp1 {o} (H : @bhyps o) z T x b J C :=
 Definition pre_rule_cequiv_subst_hyp_hyp2 {o} (H : @bhyps o) z T x a J b :=
   mk_pre_bseq (snoc H (mk_hyp z (subst T x a)) ++ J) (mk_pre_concl (mk_cequiv a b)).
 
+Definition pre_rule_base_equality_concl {o} (H : @bhyps o) i :=
+  mk_pre_bseq H (mk_pre_concl (mk_member mk_base (mk_uni i))).
+
+Definition pre_rule_int_equality_concl {o} (H : @bhyps o) i :=
+  mk_pre_bseq H (mk_pre_concl (mk_equality mk_int mk_int (mk_uni i))).
+
+Definition pre_rule_base_closed_concl {o} (t : @NTerm o) :=
+  mk_pre_bseq [] (mk_pre_concl (mk_member t mk_base)).
+
 
 
 
@@ -472,16 +487,19 @@ Defined.
 Record named_concl {o} :=
   MkNamedConcl
     {
-      nm_conclusion_name : LemmaName;
-      nm_conclusion_type : @NTerm o;
+      nm_conclusion_name    : LemmaName;
+      nm_conclusion_type    : @NTerm o;
     }.
 Arguments MkNamedConcl [o] _ _.
 
 Definition opname2opabs (op : opname) : opabs :=
   mk_opabs op [] [].
 
+Definition LemmaName2extract {o} (n : LemmaName) : @NTerm o :=
+  mk_abs (opname2opabs n) [].
+
 Definition named_concl2concl {o} (n : @named_concl o) : conclusion :=
-  mk_concl (nm_conclusion_type n) (mk_abs (opname2opabs (nm_conclusion_name n)) []).
+  mk_concl (nm_conclusion_type n) (LemmaName2extract (nm_conclusion_name n)).
 
 Definition named_concl2bseq {o} H (n : @named_concl o) : baresequent :=
   mk_bseq H (named_concl2concl n).
@@ -491,6 +509,18 @@ Definition named_concl2pre_concl {o} (n : @named_concl o) : pre_conclusion :=
 
 Definition named_concl2pre_bseq {o} H (n : @named_concl o) : pre_baresequent :=
   mk_pre_bseq H (named_concl2pre_concl n).
+
+Definition named_concl2concl_with_extract {o} (n : @named_concl o) t : conclusion :=
+  mk_concl (mk_equality t t (nm_conclusion_type n)) mk_axiom.
+
+Definition named_concl2bseq_with_extract {o} H (n : @named_concl o) t : baresequent :=
+  mk_bseq H (named_concl2concl_with_extract n t).
+
+Definition named_concl2pre_concl_with_extract {o} (n : @named_concl o) t : pre_conclusion :=
+  mk_pre_concl (mk_equality t t (nm_conclusion_type n)).
+
+Definition named_concl2pre_bseq_with_extract {o} H (n : @named_concl o) t : pre_baresequent :=
+  mk_pre_bseq H (named_concl2pre_concl_with_extract n t).
 
 (*Record wf_conclusion {o} :=
   MkWfConcl
@@ -768,6 +798,11 @@ Defined.
 
 Inductive proof_step {o} :=
 | proof_step_lemma                     (name : LemmaName)
+| proof_step_lemma_with_extract        (name : LemmaName)
+| proof_step_base_closed
+| proof_step_base_closed2
+| proof_step_int_equality
+| proof_step_base_equality
 | proof_step_isect_equality            (y : NVar)
 | proof_step_function_equality         (y : NVar)
 | proof_step_isect_member_formation    (z : NVar) (i : nat)
@@ -787,6 +822,7 @@ Inductive proof_step {o} :=
 | proof_step_maybe_hidden_hypothesis_equality
 | proof_step_unhide_equality           (x : NVar)
 | proof_step_equality_equality
+| proof_step_equality_equality_base
 | proof_step_integer_equality
 | proof_step_introduction              (t : @NTerm o)
 | proof_step_axiom_equality
@@ -1557,6 +1593,35 @@ Definition valid_proof_node_context {o}
       # c = named_concl2bseq H (MkNamedConcl name T)
       # hs = [] }}
 
+  | proof_step_lemma_with_extract name =>
+    {T : NTerm $ {t : NTerm $ {r : NTerm $ {H : bhyps $
+      LIn (MkNamedConcl name T) (PC_conclusions ctxt)
+      # c = named_concl2bseq_with_extract H (MkNamedConcl name T) t
+      # reduces_to ctxt (LemmaName2extract name) r
+      # alpha_eq r t
+      # hs = [] }}}}
+
+  | proof_step_base_closed =>
+    {t : NTerm $
+      c = rule_base_closed_concl t
+      # hs = [] }
+
+  | proof_step_base_closed2 =>
+    {x : NTerm $ {t : NTerm $
+      c = mk_bseq [] (mk_concl x mk_axiom)
+      # reduces_in_atmost_k_steps ctxt x (mk_equality t t mk_base) 1
+      # hs = [] }}
+
+  | proof_step_int_equality =>
+    {H : bhyps $ {i : nat $
+      c = rule_int_equality_concl H i
+      # hs = [] }}
+
+  | proof_step_base_equality =>
+    {H : bhyps $ {i : nat $
+      c = rule_base_equality_concl H i
+      # hs = [] }}
+
   | proof_step_isect_equality y =>
     {a1 , a2 , b1 , b2 , e1 , e2 : NTerm $ {x1 , x2 : NVar $ {i : nat $ {H : bhyps $
       ! LIn y (vars_hyps H)
@@ -1718,6 +1783,13 @@ Definition valid_proof_node_context {o}
              rule_equality_equality_hyp2 H a1 b1 A e2,
              rule_equality_equality_hyp2 H a2 b2 A e3] }}}}
 
+  | proof_step_equality_equality_base =>
+    {A , B , a1 , a2 , b1 , b2 : NTerm $ {e1 , e2 , e3 : NTerm $ {i : nat $ {H : bhyps $
+    c = rule_equality_equality_concl H a1 a2 b1 b2 A B i
+    # hs = [rule_equality_equality_hyp1 H A B i e1,
+             rule_equality_equality_hyp3 H a1 b1 e2,
+             rule_equality_equality_hyp3 H a2 b2 e3] }}}}
+
   | proof_step_integer_equality =>
     {n : Z $ {H : bhyps $
     c = rule_integer_equality_concl H n
@@ -1878,6 +1950,15 @@ Proof.
   introv wf; unfold wf_bseq in *; repnd; auto.
 Qed.
 Hint Resolve wf_bseq_implies_wf_hypotheses : slow.
+
+Lemma wf_bseq_with_extract_implies_wf_hypotheses {o} :
+  forall (H : @bhyps o) s t,
+    wf_bseq (named_concl2bseq_with_extract H s t)
+    -> wf_hypotheses H.
+Proof.
+  introv wf; unfold wf_bseq in *; repnd; auto.
+Qed.
+Hint Resolve wf_bseq_with_extract_implies_wf_hypotheses : slow.
 
 
 (* ===========================================================
@@ -2171,6 +2252,14 @@ Definition wf_proof_context {o} (ctxt : @ProofContext o) :=
     -> LIn c (PC_conclusions ctxt)
     -> mon_true_sequent_wf ctxt (named_concl2bseq H c).
 
+Definition wf_proof_context_with_extract {o} (ctxt : @ProofContext o) :=
+  forall c a t H,
+    wf_hypotheses H
+    -> LIn c (PC_conclusions ctxt)
+    -> reduces_to ctxt (LemmaName2extract (nm_conclusion_name c)) a
+    -> alpha_eq a t
+    -> mon_true_sequent_wf ctxt (named_concl2bseq_with_extract H c t).
+
 Fixpoint proof_size {o} (p : @proof o) : nat :=
   match p with
   | proof_node n c ps => S (addl (map proof_size ps))
@@ -2204,6 +2293,125 @@ Proof.
   apply (le_addl proof_size) in i; try omega.
 Defined.
 
+Lemma isprogram_implies_covered {o} :
+  forall (a : @NTerm o) l,
+    isprogram a
+    -> covered a l.
+Proof.
+  introv isp.
+  destruct isp as [cl wf].
+  unfold covered; allrw; auto.
+Qed.
+Hint Resolve isprogram_implies_covered : slow.
+
+Lemma isprogram_implies_disjoint_free_vars {o} :
+  forall (a : @NTerm o) l,
+    isprogram a
+    -> disjoint l (free_vars a).
+Proof.
+  introv isp.
+  destruct isp as [cl wf]; rewrite cl; auto.
+Qed.
+Hint Resolve isprogram_implies_disjoint_free_vars : slow.
+
+Lemma covered_implies_closed {o} :
+  forall (t : @NTerm o),
+    covered t []
+    -> closed t.
+Proof.
+  introv cov.
+  unfold closed.
+  unfold covered in cov.
+  apply subvars_nil_r in cov; auto.
+Qed.
+Hint Resolve covered_implies_closed : slow.
+
+Lemma cequiv_preserves_mon_true_sequent_wf {o} :
+  forall lib H (a b e : @NTerm o),
+    (forall lib', lib_extends lib' lib -> cequiv lib' a b)
+    -> mon_true_sequent_wf lib (mk_bseq H (mk_concl a e))
+    -> mon_true_sequent_wf lib (mk_bseq H (mk_concl b e)).
+Proof.
+  introv ceq mon.
+  unfold mon_true_sequent_wf, sequent_true_ext_lib_wf in *; exrepnd.
+  pose proof (ceq lib (lib_extends_refl lib)) as isp.
+  applydup @cequiv_isprogram in isp; repnd.
+
+  assert (wf_csequent (mk_bseq H (mk_concl b e))) as wf.
+  {
+    clear mon0.
+    unfold wf_csequent, wf_sequent, wf_concl, closed_type in *; simpl in *; repnd.
+    dands; eauto 3 with slow.
+  }
+  exists wf.
+  rw @sequent_true_ext_lib_ex in mon0; simpl in *.
+  apply sequent_true_ext_lib_all; simpl in *; introv ext sim hf; introv.
+  pose proof (mon0 lib0 s1 s2 ext hf sim) as mon0; exrepnd.
+
+  unfold wf_csequent, wf_sequent, wf_concl in *; simpl in *; repnd; simpl in *.
+  proof_irr.
+
+  dands.
+
+  - eapply tequality_respects_cequivc_left;
+      [|eapply tequality_respects_cequivc_right];[| |eauto];
+        unfold cequivc; simpl;
+          repeat (rewrite csubst_trivial; eauto 3 with slow).
+
+  - eapply cequivc_preserving_equality;[eauto|].
+    unfold cequivc; simpl.
+    repeat (rewrite csubst_trivial; eauto 3 with slow).
+Qed.
+
+Lemma reduces_to_preserves_mon_true_sequent_wf {o} :
+  forall lib H (a b e : @NTerm o),
+    isprogram b
+    -> reduces_to lib b a
+    -> mon_true_sequent_wf lib (mk_bseq H (mk_concl a e))
+    -> mon_true_sequent_wf lib (mk_bseq H (mk_concl b e)).
+Proof.
+  introv isp r mon.
+  eapply cequiv_preserves_mon_true_sequent_wf;[|eauto].
+  introv ext.
+  eapply reduces_to_preserves_lib_extends in r;[|eauto].
+  apply cequiv_sym.
+  apply reduces_to_implies_cequiv; auto.
+Qed.
+
+Lemma wf_bseq_nil_implies_isprogram {o} :
+  forall (t : @NTerm o) e,
+    wf_bseq (mk_bseq [] (mk_concl t e)) -> isprogram t.
+Proof.
+  introv wf.
+  unfold wf_bseq, closed_type_baresequent, closed_type in *; simpl in *; repnd.
+  split; eauto 3 with slow.
+Qed.
+Hint Resolve wf_bseq_nil_implies_isprogram : slow.
+
+Lemma reduces_in_1_step_implies_wf_bseq_rule_base_closed_concl {o} :
+  forall lib (x t : @NTerm o),
+    reduces_in_atmost_k_steps lib x (mk_equality t t mk_base) 1
+    -> wf_bseq (mk_bseq [] (mk_concl x mk_axiom))
+    -> wf_bseq (rule_base_closed_concl t).
+Proof.
+  introv r wf.
+  unfold wf_bseq, closed_type_baresequent, closed_type in *; simpl in *; repnd.
+  rw @wf_member_iff2.
+  rw @covered_member.
+  apply reduces_in_atmost_k_steps_implies_reduces_to in r.
+  applydup @reduces_to_free_vars in r; eauto 3 with slow.
+  apply reduces_to_preserves_wf in r; auto.
+  rw @wf_member_iff2 in r; repnd.
+  simpl in *; autorewrite with slow in *.
+  apply app_subset in r0; repnd.
+  dands; eauto 2 with slow.
+  unfold covered in *.
+  allrw subvars_eq.
+  introv i; apply r2 in i; apply wf in i; auto.
+Qed.
+Hint Resolve reduces_in_1_step_implies_wf_bseq_rule_base_closed_concl : slow.
+
+
 (* By assuming [wf_bseq seq], when we start with a sequent with no hypotheses,
    it means that we have to prove that the conclusion is well-formed and closed.
  *)
@@ -2211,11 +2419,12 @@ Lemma valid_proof {o} :
   forall (ctxt : @ProofContext o) s (prf : proof),
     wf_bseq s
     -> wf_proof_context ctxt
+    -> wf_proof_context_with_extract ctxt
     -> proof_of_bseq prf s
     -> valid_proof_context ctxt prf
     -> mon_true_sequent_wf ctxt s.
 Proof.
-  introv wfs wfc pob valid.
+  introv wfs wfc wfce pob valid.
   revert dependent s.
 
   induction prf using proof_better_ind; introv wfs pob;[].
@@ -2229,6 +2438,17 @@ Proof.
     repeat (apply cons_inj in val0; repnd; GC).
 
   - apply wfc; eauto 3 with slow.
+
+  - eapply wfce; eauto 3 with slow.
+
+  - apply rule_base_closed_true_ext_lib; simpl in *; tcsp.
+
+  - eapply reduces_to_preserves_mon_true_sequent_wf;[|exists 1;eauto|];
+      [|apply rule_base_closed_true_ext_lib; simpl in *; tcsp]; eauto 3 with slow.
+
+  - apply rule_int_equality_true_ext_lib; simpl in *; tcsp.
+
+  - apply rule_base_equality_true_ext_lib; simpl in *; tcsp.
 
   - apply (rule_isect_equality2_true_ext_lib ctxt a1 a2 b1 b2 e1 e2 x1 x2 y i H); simpl; tcsp.
 
@@ -2354,6 +2574,19 @@ Proof.
 
     + apply (ind p1); auto; try (unfold proof_of_bseq; auto).
       apply (rule_equality_equality_wf2 H A B a1 a2 b1 b2 e1 e2 e3 i); simpl; tcsp.
+
+  - apply (rule_equality_equality_base_true_ext_lib ctxt H A B a1 a2 b1 b2 e1 e2 e3 i); simpl; tcsp.
+
+    introv e; repndors; subst; tcsp.
+
+    + apply (ind p); auto; try (unfold proof_of_bseq; auto).
+      apply (rule_equality_equality_base_wf2 H A B a1 a2 b1 b2 e1 e2 e3 i); simpl; tcsp.
+
+    + apply (ind p0); auto; try (unfold proof_of_bseq; auto).
+      apply (rule_equality_equality_base_wf2 H A B a1 a2 b1 b2 e1 e2 e3 i); simpl; tcsp.
+
+    + apply (ind p1); auto; try (unfold proof_of_bseq; auto).
+      apply (rule_equality_equality_base_wf2 H A B a1 a2 b1 b2 e1 e2 e3 i); simpl; tcsp.
 
   - apply (rule_integer_equality_true_ext_lib ctxt); simpl; tcsp.
 
@@ -3129,6 +3362,22 @@ Inductive DEBUG_MSG {o} :=
 
 | renamed
 
+| could_not_apply_base_equality_rule
+| applied_base_equality_rule
+
+| could_not_apply_base_closed_rule_terms_differ (a b : @NTerm o)
+| could_not_apply_base_closed_rule_not_an_equality (c : @pre_conclusion o)
+| could_not_apply_base_closed_rule_non_empty_hypotheses (H : @bhyps o)
+| applied_base_closed_rule
+
+| could_not_apply_base_closed2_rule_terms_differ (a b : @NTerm o)
+| could_not_apply_base_closed2_rule_not_an_equality (c : @pre_conclusion o)
+| could_not_apply_base_closed2_rule_non_empty_hypotheses (H : @bhyps o)
+| applied_base_closed2_rule
+
+| could_not_apply_int_equality_rule
+| applied_int_equality_rule
+
 | could_not_apply_isect_eq_rule_not_isects
 | could_not_apply_isect_eq_rule_type_not_universe
 | could_not_apply_isect_eq_rule_not_equality
@@ -3202,12 +3451,28 @@ Inductive DEBUG_MSG {o} :=
 | could_not_apply_lemma_rule
 | applied_lemma_rule
 
+| could_not_apply_lemma_with_extract_rule_named_concl_not_found
+| could_not_apply_lemma_with_extract_rule_not_alpha_eq (a b : @NTerm o)
+| could_not_apply_lemma_with_extract_rule_members_not_equal (a b : @NTerm o)
+| could_not_apply_lemma_with_extract_rule
+| applied_lemma_with_extract_rule
+
 | could_not_apply_apply_equality_rule
 | applied_apply_equality_rule
 
 | could_not_apply_isect_elimination_rule
 | applied_isect_elimination_rule
 
+| could_not_apply_isect_elimination2_rule_variables_not_different1 (a b : NVar)
+| could_not_apply_isect_elimination2_rule_variables_not_different2 (a b : NVar)
+| could_not_apply_isect_elimination2_rule_variables_not_different3 (a b : NVar)
+| could_not_apply_isect_elimination2_rule_variable_in_hypotheses1 (a : NVar) (l : list NVar)
+| could_not_apply_isect_elimination2_rule_variable_in_hypotheses2 (a : NVar) (l : list NVar)
+| could_not_apply_isect_elimination2_rule_variable_in_hypotheses3 (a : NVar) (l : list NVar)
+| could_not_apply_isect_elimination2_rule_variable_in_hypotheses4 (a : NVar) (l : list NVar)
+| could_not_apply_isect_elimination2_rule_not_covered (a : @NTerm o) (l : list NVar)
+| could_not_apply_isect_elimination2_rule_not_well_formed (a : @NTerm o)
+| could_not_apply_isect_elimination2_rule_hypothesis_not_found (a : NVar) (l : list NVar)
 | could_not_apply_isect_elimination2_rule
 | applied_isect_elimination2_rule
 
@@ -3222,6 +3487,9 @@ Inductive DEBUG_MSG {o} :=
 
 | could_not_apply_equality_equality_rule
 | applied_equality_equality_rule
+
+| could_not_apply_equality_equality_base_rule
+| applied_equality_equality_base_rule
 
 | could_not_apply_introduction_rule
 | applied_introduction_rule
@@ -4237,17 +4505,16 @@ Definition pre_concl2type {o} (c : @pre_conclusion o) : option NTerm :=
   | pre_concl_typ t => None
   end.
 
-Definition named_concl2extract {o} (n : @named_concl o) : @NTerm o :=
-  mk_abs (opname2opabs (nm_conclusion_name n)) [].
-
 Definition finish_pre_proof_node {o} (n : @proof_step o) (c : @pre_baresequent o) (l : list (@proof o)) : option NTerm :=
   match n with
-  | proof_step_lemma name =>
-    match pre_concl2type (pre_concl c) with
-    | Some T => Some (named_concl2extract (MkNamedConcl name T))
-    | None => None
-    end
+  | proof_step_lemma name => Some (LemmaName2extract name)
 
+  | proof_step_lemma_with_extract name => Some mk_axiom
+
+  | proof_step_base_closed => Some mk_axiom
+  | proof_step_base_closed2 => Some mk_axiom
+  | proof_step_int_equality => Some mk_axiom
+  | proof_step_base_equality => Some mk_axiom
   | proof_step_isect_equality y => Some mk_axiom
   | proof_step_function_equality z => Some mk_axiom
 
@@ -4309,6 +4576,7 @@ Definition finish_pre_proof_node {o} (n : @proof_step o) (c : @pre_baresequent o
   | proof_step_maybe_hidden_hypothesis_equality => Some mk_axiom
   | proof_step_unhide_equality x => Some mk_axiom
   | proof_step_equality_equality => Some mk_axiom
+  | proof_step_equality_equality_base => Some mk_axiom
   | proof_step_integer_equality => Some mk_axiom
 
   | proof_step_introduction t => Some t
@@ -4650,6 +4918,35 @@ Definition valid_pre_proof_node_context {o}
       # c = named_concl2pre_bseq H (MkNamedConcl name T)
       # hs = [] }}
 
+  | proof_step_lemma_with_extract name =>
+    {T : NTerm $ {t : NTerm $ {r : NTerm $ {H : bhyps $
+      LIn (MkNamedConcl name T) (PC_conclusions ctxt)
+      # c = named_concl2pre_bseq_with_extract H (MkNamedConcl name T) t
+      # reduces_to ctxt (LemmaName2extract name) r
+      # alpha_eq r t
+      # hs = [] }}}}
+
+  | proof_step_base_closed =>
+    {t : NTerm $
+      c = pre_rule_base_closed_concl t
+      # hs = [] }
+
+  | proof_step_base_closed2 =>
+    {x : NTerm $ {t : NTerm $
+      c = mk_pre_bseq [] (mk_pre_concl x)
+      # reduces_in_atmost_k_steps ctxt x (mk_equality t t mk_base) 1
+      # hs = [] }}
+
+  | proof_step_int_equality =>
+    {H : bhyps $ {i : nat $
+      c = pre_rule_int_equality_concl H i
+      # hs = [] }}
+
+  | proof_step_base_equality =>
+    {H : bhyps $ {i : nat $
+      c = pre_rule_base_equality_concl H i
+      # hs = [] }}
+
   | proof_step_isect_equality y =>
     {a1 , a2 , b1 , b2 : NTerm $ {x1 , x2 : NVar $ {i : nat $ {H : bhyps $
       ! LIn y (vars_hyps H)
@@ -4810,6 +5107,13 @@ Definition valid_pre_proof_node_context {o}
     # hs = [pre_rule_equality_equality_hyp1 H A B i,
              pre_rule_equality_equality_hyp2 H a1 b1 A,
              pre_rule_equality_equality_hyp2 H a2 b2 A] }}}
+
+  | proof_step_equality_equality_base =>
+    {A , B , a1 , a2 , b1 , b2 : NTerm $ {i : nat $ {H : bhyps $
+    c = pre_rule_equality_equality_concl H a1 a2 b1 b2 A B i
+    # hs = [pre_rule_equality_equality_hyp1 H A B i,
+             pre_rule_equality_equality_hyp3 H a1 b1,
+             pre_rule_equality_equality_hyp3 H a2 b2] }}}
 
   | proof_step_integer_equality =>
     {n : Z $ {H : bhyps $
@@ -5039,10 +5343,16 @@ Proof.
   destruct n; simpl in *; ginv;
     try (apply valid_pre_extract_axiom).
 
-  - destruct c; simpl in *; ginv.
+(*  - repeat (destruct l; simpl in *; ginv).
+    exrepnd; subst; simpl in *.
+    repeat (apply cons_inj in val1; repnd; GC).
+    admit.
+ *)
+
+(*  - destruct c; simpl in *; ginv.
     destruct pre_concl0; simpl in *; ginv.
     unfold named_concl2extract; simpl.
-    apply valid_pre_extract_mk_abs_opname2opabs.
+    apply valid_pre_extract_mk_abs_opname2opabs.*)
 
   - repeat (destruct l; simpl in *; ginv).
     exrepnd; subst; simpl in *.
@@ -6350,6 +6660,28 @@ Definition apply_proof_step_equality_equality {o}
     end
   end.
 
+Definition apply_proof_step_equality_equality_base {o}
+           (s : @pre_baresequent o) : option (list (@pre_baresequent o)) * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext
+        (oterm (Can NEquality) [bterm [] (oterm (Can NEquality) [bterm [] a1, bterm [] a2, bterm [] A]),
+                                bterm [] (oterm (Can NEquality) [bterm [] b1, bterm [] b2, bterm [] B]),
+                                bterm [] (oterm (Can (NUni i)) [])]) =>
+
+        let prf1 := pre_rule_equality_equality_hyp1 H A B i in
+        let prf2 := pre_rule_equality_equality_hyp3 H a1 b1 in
+        let prf3 := pre_rule_equality_equality_hyp3 H a2 b2 in
+        (Some [prf1, prf2, prf3],
+         applied_equality_equality_base_rule)
+
+    | c => (None,
+            could_not_apply_equality_equality_base_rule)
+    end
+  end.
+
 Lemma pre_rule_integer_equality_concl_as_pre_baresequent {o} :
   forall (H : @bhyps o) n1 n2
          (p : n2 = n1),
@@ -6863,43 +7195,43 @@ Definition apply_proof_step_isect_elimination2 {o}
                            applied_isect_elimination2_rule)
 
                         | left _ => (None,
-                                     could_not_apply_isect_elimination2_rule)
+                                     could_not_apply_isect_elimination2_rule_variables_not_different3 y f)
                         end
 
                       | left _ => (None,
-                                   could_not_apply_isect_elimination2_rule)
+                                   could_not_apply_isect_elimination2_rule_variables_not_different2 z y)
                       end
 
                     | left _ => (None,
-                                 could_not_apply_isect_elimination2_rule)
+                                 could_not_apply_isect_elimination2_rule_variables_not_different1 z f )
                     end
 
                   | inr _ => (None,
-                              could_not_apply_isect_elimination2_rule)
+                              could_not_apply_isect_elimination2_rule_variable_in_hypotheses4 y (vars_hyps J))
                   end
 
                 | inr _ => (None,
-                            could_not_apply_isect_elimination2_rule)
+                            could_not_apply_isect_elimination2_rule_variable_in_hypotheses3 y (vars_hyps G))
                 end
 
               | inr _ => (None,
-                          could_not_apply_isect_elimination2_rule)
+                          could_not_apply_isect_elimination2_rule_variable_in_hypotheses2 z (vars_hyps J))
               end
 
             | inr _ => (None,
-                        could_not_apply_isect_elimination2_rule)
+                        could_not_apply_isect_elimination2_rule_variable_in_hypotheses1 z (vars_hyps G))
             end
 
           | inr _ => (None,
-                      could_not_apply_isect_elimination2_rule)
+                      could_not_apply_isect_elimination2_rule_not_covered a (snoc (vars_hyps G) f ++ vars_hyps J))
           end
 
         | None => (None,
-                   could_not_apply_isect_elimination2_rule)
+                   could_not_apply_isect_elimination2_rule_not_well_formed a)
         end
 
       | _ => (None,
-              could_not_apply_isect_elimination2_rule)
+              could_not_apply_isect_elimination2_rule_hypothesis_not_found f (vars_hyps H))
       end
 
     | c => (None,
@@ -7228,11 +7560,171 @@ Definition apply_proof_step_cequiv_eq {o}
     end
   end.
 
+Definition apply_proof_step_base_equality {o}
+           (s : @pre_baresequent o) : option (list (@pre_baresequent o)) * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext
+        (oterm (Can NEquality) [bterm [] (oterm (Can NBase) []),
+                                bterm [] (oterm (Can NBase) []),
+                                bterm [] (oterm (Can (NUni i)) [])]) =>
+
+        (Some [],
+         applied_base_equality_rule)
+
+    | c => (None,
+            could_not_apply_base_equality_rule)
+    end
+  end.
+
+Definition apply_proof_step_int_equality {o}
+           (s : @pre_baresequent o) : option (list (@pre_baresequent o)) * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext
+        (oterm (Can NEquality) [bterm [] (oterm (Can NInt) []),
+                                bterm [] (oterm (Can NInt) []),
+                                bterm [] (oterm (Can (NUni i)) [])]) =>
+
+        (Some [],
+         applied_int_equality_rule)
+
+    | c => (None,
+            could_not_apply_int_equality_rule)
+    end
+  end.
+
+Definition apply_proof_step_base_closed {o}
+           (s : @pre_baresequent o) : option (list (@pre_baresequent o)) * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match H with
+    | [] =>
+
+      match C with
+      | pre_concl_ext
+          (oterm (Can NEquality) [bterm [] a,
+                                  bterm [] b,
+                                  bterm [] (oterm (Can NBase) [])]) =>
+
+        match term_dec_op a b with
+        | Some eqas =>
+
+          (Some [],
+           applied_base_closed_rule)
+
+        | None => (None,
+                   could_not_apply_base_closed_rule_terms_differ a b)
+        end
+
+      | c => (None,
+              could_not_apply_base_closed_rule_not_an_equality C)
+      end
+
+    | _ => (None,
+            could_not_apply_base_closed_rule_non_empty_hypotheses H)
+    end
+  end.
+
+Definition apply_proof_step_base_closed2 {o}
+           (ctxt : ProofContext)
+           (s : @pre_baresequent o) : option (list (@pre_baresequent o)) * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match H with
+    | [] =>
+
+      match C with
+      | pre_concl_ext ((oterm (Abs _) _) as t) =>
+
+        let x := compute_atmost_k_steps ctxt 1 t in
+
+        match x with
+        | oterm (Can NEquality) [bterm [] a,
+                                 bterm [] b,
+                                 bterm [] (oterm (Can NBase) [])] =>
+
+          match term_dec_op a b with
+          | Some eqas =>
+
+            (Some [],
+             applied_base_closed2_rule)
+
+          | None => (None,
+                     could_not_apply_base_closed2_rule_terms_differ a b)
+          end
+
+        | _ => (None,
+                could_not_apply_base_closed2_rule_not_an_equality C)
+        end
+
+      | c => (None,
+              could_not_apply_base_closed2_rule_not_an_equality C)
+      end
+
+    | _ => (None,
+            could_not_apply_base_closed2_rule_non_empty_hypotheses H)
+    end
+  end.
+
+Definition apply_proof_step_lemma_with_extract {o}
+           (ctxt : ProofContext)
+           (s    : @pre_baresequent o)
+           (name : LemmaName) : option (list (@pre_baresequent o)) * @DEBUG_MSG o :=
+  match s with
+  | MkPreBaresequent H C =>
+
+    match C with
+    | pre_concl_ext
+        (oterm (Can NEquality) [bterm [] a, bterm [] b, bterm [] T]) =>
+
+      match term_dec_op a b with
+      | Some eqas =>
+
+        let nc := MkNamedConcl name T in
+        let x := (*compute_atmost_k_steps ctxt 1*) (LemmaName2extract name) in
+
+        match alpha_eq_dec_op x a with
+        | Some aeq =>
+
+          match find_named_concl nc (PC_conclusions ctxt) with
+          | Some i =>
+
+            (Some [],
+             applied_lemma_with_extract_rule)
+
+          | None => (None,
+                     could_not_apply_lemma_with_extract_rule_named_concl_not_found)
+          end
+
+        | None => (None,
+                   could_not_apply_lemma_with_extract_rule_not_alpha_eq x a)
+        end
+
+      | None => (None,
+                 could_not_apply_lemma_with_extract_rule_members_not_equal a b)
+      end
+
+    | c => (None,
+            could_not_apply_lemma_with_extract_rule)
+    end
+  end.
+
 Definition apply_proof_step {o}
            (ctxt : ProofContext)
            (s    : @pre_baresequent o)
            (step : proof_step) : option (list pre_baresequent) * DEBUG_MSG :=
   match step with
+  | proof_step_base_closed                      => apply_proof_step_base_closed s
+  | proof_step_base_closed2                     => apply_proof_step_base_closed2 ctxt s
+  | proof_step_base_equality                    => apply_proof_step_base_equality s
+  | proof_step_int_equality                     => apply_proof_step_int_equality s
   | proof_step_isect_equality y                 => apply_proof_step_isect_eq s y
   | proof_step_isect_member_formation z i       => apply_proof_step_isect_member_formation s z i
   | proof_step_hypothesis x                     => apply_proof_step_hypothesis s x
@@ -7251,9 +7743,11 @@ Definition apply_proof_step {o}
   | proof_step_maybe_hidden_hypothesis_equality => apply_proof_step_maybe_hidden_hypothesis_eq s
   | proof_step_unhide_equality x                => apply_proof_step_unhide_equality s x
   | proof_step_equality_equality                => apply_proof_step_equality_equality s
+  | proof_step_equality_equality_base           => apply_proof_step_equality_equality_base s
   | proof_step_integer_equality                 => apply_proof_step_integer_equality s
   | proof_step_introduction t                   => apply_proof_step_introduction s t
   | proof_step_lemma name                       => apply_proof_step_lemma ctxt s name
+  | proof_step_lemma_with_extract name          => apply_proof_step_lemma_with_extract ctxt s name
   | proof_step_axiom_equality                   => apply_proof_step_axiom_equality s
   | proof_step_thin x                           => apply_proof_step_thin s x
   | proof_step_thin_num n                       => apply_proof_step_thin_num s n
@@ -9005,6 +9499,11 @@ Definition rename_opnames r names := map (rename_opname r) names.
 Definition rename_proof_step {o} (r : renaming) (s : @proof_step o) : proof_step :=
   match s with
   | proof_step_lemma n                          => proof_step_lemma (rename_LemmaName r n)
+  | proof_step_lemma_with_extract n             => proof_step_lemma_with_extract (rename_LemmaName r n)
+  | proof_step_base_closed                      => proof_step_base_closed
+  | proof_step_base_closed2                     => proof_step_base_closed2
+  | proof_step_int_equality                     => proof_step_int_equality
+  | proof_step_base_equality                    => proof_step_base_equality
   | proof_step_isect_equality y                 => proof_step_isect_equality y
   | proof_step_function_equality y              => proof_step_function_equality y
   | proof_step_isect_member_formation z i       => proof_step_isect_member_formation z i
@@ -9024,6 +9523,7 @@ Definition rename_proof_step {o} (r : renaming) (s : @proof_step o) : proof_step
   | proof_step_maybe_hidden_hypothesis_equality => proof_step_maybe_hidden_hypothesis_equality
   | proof_step_unhide_equality x                => proof_step_unhide_equality x
   | proof_step_equality_equality                => proof_step_equality_equality
+  | proof_step_equality_equality_base           => proof_step_equality_equality_base
   | proof_step_integer_equality                 => proof_step_integer_equality
   | proof_step_introduction t                   => proof_step_introduction (rename_term r t)
   | proof_step_axiom_equality                   => proof_step_axiom_equality
@@ -10418,6 +10918,14 @@ Proof.
   destruct a; simpl; tcsp.
 Qed.
 
+Lemma LemmaName2extract_rename_LemmaName {o} :
+  forall r name,
+    @LemmaName2extract o (rename_LemmaName r name)
+    = rename_term r (LemmaName2extract name).
+Proof.
+  tcsp.
+Qed.
+
 Lemma implies_rename_valid_proof_node_context {o} :
   forall r ctxt n (c : @baresequent o) l,
     valid_proof_node_context ctxt n c l
@@ -10432,6 +10940,23 @@ Proof.
 
   - exists (rename_term r T) (rename_barehypotheses r H); simpl; dands; auto.
     apply (rename_in_PC_conclusions r) in valid0; simpl in *; auto.
+
+  - exists (rename_term r T) (rename_term r t) (rename_term r r0) (rename_barehypotheses r H);
+      simpl; dands; auto; try rewrite LemmaName2extract_rename_LemmaName; eauto 3 with slow.
+    apply (rename_in_PC_conclusions r) in valid0; simpl in *; auto.
+
+  - exists (rename_term r t).
+    repeat (autorewrite with slow ren; simpl; dands; auto).
+
+  - exists (rename_term r x) (rename_term r t).
+    repeat (autorewrite with slow ren; simpl; dands; auto).
+    apply (reduces_in_atmost_k_steps_rename r) in valid2; simpl in *; auto.
+
+  - exists (rename_barehypotheses r H) i.
+    repeat (autorewrite with slow ren; simpl; dands; auto).
+
+  - exists (rename_barehypotheses r H) i.
+    repeat (autorewrite with slow ren; simpl; dands; auto).
 
   - exists (rename_term r a1) (rename_term r a2) (rename_term r b1) (rename_term r b2) (rename_term r e1) (rename_term r e2) x1 x2 i; exists (rename_barehypotheses r H).
     repeat (autorewrite with slow ren; simpl; dands; auto).
@@ -10491,6 +11016,9 @@ Proof.
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
   - exists (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C) (rename_term r e) (rename_barehypotheses r G) (rename_barehypotheses r J).
+    repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
+
+  - exists (rename_term r A) (rename_term r B) (rename_term r a1) (rename_term r a2) (rename_term r b1) (rename_term r b2) (rename_term r e1) (rename_term r e2) (rename_term r e3); exists i (rename_barehypotheses r H).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
   - exists (rename_term r A) (rename_term r B) (rename_term r a1) (rename_term r a2) (rename_term r b1) (rename_term r b2) (rename_term r e1) (rename_term r e2) (rename_term r e3); exists i (rename_barehypotheses r H).
@@ -10578,6 +11106,23 @@ Proof.
   - exists (rename_term r T) (rename_barehypotheses r H); simpl; dands; auto.
     apply (rename_in_PC_conclusions r) in valid0; simpl in *; auto.
 
+  - exists (rename_term r T) (rename_term r t) (rename_term r r0) (rename_barehypotheses r H);
+      simpl; dands; auto; try rewrite LemmaName2extract_rename_LemmaName; eauto 3 with slow.
+    apply (rename_in_PC_conclusions r) in valid0; simpl in *; auto.
+
+  - exists (rename_term r t).
+    repeat (autorewrite with slow ren; simpl; dands; auto).
+
+  - exists (rename_term r x) (rename_term r t).
+    repeat (autorewrite with slow ren; simpl; dands; auto).
+    apply (reduces_in_atmost_k_steps_rename r) in valid2; simpl in *; auto.
+
+  - exists (rename_barehypotheses r H) i.
+    repeat (autorewrite with slow ren; simpl; dands; auto).
+
+  - exists (rename_barehypotheses r H) i.
+    repeat (autorewrite with slow ren; simpl; dands; auto).
+
   - exists (rename_term r a1) (rename_term r a2) (rename_term r b1) (rename_term r b2) x1 x2 i; exists (rename_barehypotheses r H).
     repeat (autorewrite with slow ren; simpl; dands; auto).
 
@@ -10636,6 +11181,9 @@ Proof.
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
   - exists (rename_term r A) (rename_term r t1) (rename_term r t2) (rename_term r C) (rename_barehypotheses r G) (rename_barehypotheses r J).
+    repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
+
+  - exists (rename_term r A) (rename_term r B) (rename_term r a1) (rename_term r a2) (rename_term r b1) (rename_term r b2); exists i (rename_barehypotheses r H).
     repeat (autorewrite with slow ren; simpl; dands; auto; eauto 2 with slow).
 
   - exists (rename_term r A) (rename_term r B) (rename_term r a1) (rename_term r a2) (rename_term r b1) (rename_term r b2); exists i (rename_barehypotheses r H).
@@ -11216,6 +11764,15 @@ Proof.
     dands; auto.
     apply in_conclusions_extend_proof_context; auto.
 
+  - exists T t r H.
+    dands; auto.
+    { apply in_conclusions_extend_proof_context; auto. }
+    { apply extend_proof_context_preserves_reduces_to; auto. }
+
+  - exists x t.
+    dands; auto.
+    apply extend_proof_context_preserves_reduces_in_atmost_k_steps; auto.
+
   - exists a b H.
     dands; auto.
     apply extend_proof_context_preserves_reduces_to; auto.
@@ -11324,6 +11881,29 @@ Proof.
   - exists T H; simpl; dands; auto; ginv.
     destruct l; ginv.
 
+  - exists T t0 r H; simpl; dands; auto; ginv.
+    destruct l; ginv.
+
+  - repeat (destruct l; simpl in *; ginv).
+    repeat (apply cons_inj in valnode1; repnd; GC).
+    exists t0.
+    dands; auto.
+
+  - repeat (destruct l; simpl in *; ginv).
+    repeat (apply cons_inj in valnode1; repnd; GC).
+    exists x t0.
+    dands; auto.
+
+  - repeat (destruct l; simpl in *; ginv).
+    repeat (apply cons_inj in valnode1; repnd; GC).
+    exists H i.
+    dands; auto.
+
+  - repeat (destruct l; simpl in *; ginv).
+    repeat (apply cons_inj in valnode1; repnd; GC).
+    exists H i.
+    dands; auto.
+
   - repeat (destruct l; simpl in *; ginv).
     repeat (apply cons_inj in valnode1; repnd; GC).
     exists a1 a2 b1 b2 (proof2extract p) (proof2extract p0) x1 x2 i; exists H.
@@ -11421,6 +12001,13 @@ Proof.
   - repeat (destruct l; simpl in *; ginv).
     repeat (apply cons_inj in valnode1; repnd; GC).
     exists A t1 t2 C (proof2extract p) G J.
+    dands; auto.
+    repeat (rewrite proof2bseq_as_proof2pre_bseq).
+    allrw; simpl; auto.
+
+  - repeat (destruct l; simpl in *; ginv).
+    repeat (apply cons_inj in valnode1; repnd; GC).
+    exists A B a1 a2 b1 b2 (proof2extract p) (proof2extract p0) (proof2extract p1); exists i H.
     dands; auto.
     repeat (rewrite proof2bseq_as_proof2pre_bseq).
     allrw; simpl; auto.
@@ -11712,6 +12299,12 @@ Qed.
 
 Ltac dest_match :=
   match goal with
+  | [ H : context[match compute_atmost_k_steps ?l ?n ?t with _ => _ end] |- _ ] =>
+    let x := fresh "x" in
+    remember (compute_atmost_k_steps l n t) as x; destruct x; simpl in *; ginv;[]
+  | [ H : context[match compute_step ?l ?t with _ => _ end] |- _ ] =>
+    let x := fresh "x" in
+    remember (compute_step l t) as x; destruct x; simpl in *; ginv;[]
   | [ H : context[match ?x with _ => _ end] |- _ ] =>
     destruct x; simpl in *; ginv;[]
   end.
@@ -11727,6 +12320,39 @@ Proof.
   - unfold apply_proof_step_lemma in appstep.
     repeat dest_match.
     exists ctype pre_hyps0; dands; auto.
+
+  - unfold apply_proof_step_lemma_with_extract in appstep.
+    repeat dest_match.
+    exists n1 n0 (@LemmaName2extract o name) pre_hyps0; dands; auto; eauto 3 with slow.
+
+    (*
+    remember (compute_step ctxt (LemmaName2extract name)) as comp; symmetry in Heqcomp; destruct comp.
+    { exists n1 n0 n pre_hyps0; dands; auto; eauto 3 with slow. }
+    { exists n1 n0 (@LemmaName2extract o name) pre_hyps0; dands; auto; eauto 3 with slow. }
+*)
+
+  - unfold apply_proof_step_base_closed in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
+
+  - unfold apply_proof_step_base_closed2 in appstep.
+    repeat dest_match.
+
+    pose proof (reduces_atmost_k_steps_of_compute_atmost_k_steps ctxt 1 (mk_abs o0 l0)) as h; exrepnd.
+    simpl in *; unfold mk_abs in *.
+    rw <- Heqx in h0; fold_terms.
+    destruct n; simpl in *; try omega;
+      [allrw @reduces_in_atmost_k_steps_0; ginv|].
+    destruct n; simpl in *; try omega;[].
+    repeat eexists; eauto.
+
+  - unfold apply_proof_step_int_equality in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
+
+  - unfold apply_proof_step_base_equality in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
 
   - unfold apply_proof_step_isect_eq in appstep.
     repeat dest_match.
@@ -11816,6 +12442,10 @@ Proof.
     repeat eexists; auto.
 
   - unfold apply_proof_step_equality_equality in appstep.
+    repeat dest_match.
+    repeat eexists; auto.
+
+  - unfold apply_proof_step_equality_equality_base in appstep.
     repeat dest_match.
     repeat eexists; auto.
 
@@ -12053,6 +12683,169 @@ Proof.
 Qed.
 Hint Resolve update_pre_proof_seq_preserves_valid_pre_proofs : slow.
 
+Lemma mon_true_sequent_wf_named_concl2bseq_implies_isprogram {o} :
+  forall lib (c : @named_concl o),
+    mon_true_sequent_wf lib (named_concl2bseq [] c)
+    -> isprogram (nm_conclusion_type c).
+Proof.
+  introv mon.
+  unfold mon_true_sequent_wf, sequent_true_ext_lib_wf in *; exrepnd.
+  clear mon0.
+  unfold wf_csequent, wf_sequent in *; simpl in *; repnd.
+  unfold named_concl2concl in *; destruct c; simpl in *.
+  unfold wf_concl, closed_type in *; simpl in *; repnd.
+  split; eauto 3 with slow.
+Qed.
+Hint Resolve mon_true_sequent_wf_named_concl2bseq_implies_isprogram : slow.
+
+Lemma implies_mon_true_sequent_wf_named_with_extract {o} :
+  forall name (ext : @NTerm o) valid ctxt stmt,
+    mon_true_sequent_wf
+      (extract2def name ext valid :: ctxt)
+      (NLemma stmt ext)
+    -> mon_true_sequent_wf
+         (extract2def name ext valid :: ctxt)
+         (mk_bseq [] (mk_concl
+                        (mk_equality
+                           (LemmaName2extract name)
+                           (LemmaName2extract name)
+                           stmt)
+                        mk_axiom)).
+Proof.
+  introv strue.
+  apply implies_mon_true_sequent_wf_named in strue.
+  fold (@LemmaName2extract o name) in *.
+
+  unfold mon_true_sequent_wf in *; exrepnd.
+  apply rule_equality_to_extract_true_ext_lib; simpl; auto.
+
+  {
+    unfold sequent_true_ext_lib_wf in strue; exrepnd.
+    clear strue0.
+    unfold wf_csequent, wf_sequent in *.
+    unfold wf_bseq; simpl in *.
+    unfold wf_concl in *; simpl in *.
+    repnd; dands; auto; eauto 2 with slow.
+    { apply wf_member; auto. }
+    unfold closed_type_baresequent; simpl.
+    unfold closed_type in *; simpl in *.
+    apply covered_member; dands; auto.
+  }
+
+  introv h; repndors; subst; tcsp.
+Qed.
+
+Lemma correct_library_with_extract {o} :
+  forall (L : RigidLibrary) (c : @named_concl o),
+    ValidRigidLibrary L
+    -> lemma_in_RigidLibrary (named_concl2bseq [] c) L
+    -> mon_true_sequent_wf
+         (RigidLibrary2ProofContext L)
+         (mk_bseq []
+                  (mk_concl
+                     (mk_equality
+                        (LemmaName2extract (nm_conclusion_name c))
+                        (LemmaName2extract (nm_conclusion_name c))
+                        (nm_conclusion_type c))
+                     mk_axiom)).
+Proof.
+  induction L; introv valid i; simpl in *; tcsp.
+  repnd; repndors;
+    [|apply IHL in i; auto; destruct a; simpl in *; repnd; tcsp;
+      apply sequent_true_mono_lib; auto].
+
+  destruct a; simpl in *; tcsp;[].
+  destruct c as [nm T]; simpl in *; ginv.
+  repnd; subst; simpl in *.
+  unfold named_concl2bseq, named_concl2concl; simpl.
+
+  assert (forall c,
+             lemma_in_RigidLibrary (named_concl2bseq [] c) L
+             -> mon_true_sequent_wf
+                  (RigidLibrary2ProofContext L)
+                  (mk_bseq []
+                           (mk_concl
+                              (mk_equality
+                                 (LemmaName2extract (nm_conclusion_name c))
+                                 (LemmaName2extract (nm_conclusion_name c))
+                                 (nm_conclusion_type c)) mk_axiom))) as imp.
+  { introv i; apply IHL; auto. }
+  clear IHL.
+
+  assert (forall c,
+             LIn c (PC_conclusions (RigidLibrary2ProofContext L))
+             -> mon_true_sequent_wf
+                  (RigidLibrary2ProofContext L)
+                  (mk_bseq []
+                           (mk_concl
+                              (mk_equality
+                                 (LemmaName2extract (nm_conclusion_name c))
+                                 (LemmaName2extract (nm_conclusion_name c))
+                                 (nm_conclusion_type c)) mk_axiom))) as w.
+  { introv i; apply imp; auto; clear imp.
+    apply lemma_in_RigidLibrary_named_concl2bseq_iff; auto. }
+  clear imp.
+
+  remember (RigidLibrary2ProofContext L) as ctxt.
+
+  apply implies_mon_true_sequent_wf_named_with_extract.
+
+  apply sequent_true_mono_lib; auto.
+Qed.
+
+Hint Resolve vswf_hypotheses_nil_if : slow.
+
+Lemma covered_nil_implies_covered_not_nil {o} :
+  forall (t : @NTerm o) l,
+    covered t []
+    -> covered t l.
+Proof.
+  introv cov.
+  apply covered_implies_closed in cov.
+  unfold covered in *; allrw; auto.
+Qed.
+Hint Resolve covered_nil_implies_covered_not_nil : slow.
+
+Lemma nh_vars_hyps_nil_eq {o} :
+  @nh_vars_hyps o [] = [].
+Proof.
+  unfold nh_vars_hyps; simpl; auto.
+Qed.
+Hint Rewrite @nh_vars_hyps_nil_eq : slow.
+
+Lemma covered_op_nil_implies_covered_not_nil {o} :
+  forall (t : option (@NTerm o)) l,
+    covered_op t []
+    -> covered_op t l.
+Proof.
+  introv cov.
+  destruct t; simpl in *; auto; eauto 3 with slow.
+Qed.
+Hint Resolve covered_op_nil_implies_covered_not_nil : slow.
+
+Lemma mon_true_sequent_wf_nil_hyps_implies {o} :
+  forall lib (H : @bhyps o) C,
+    wf_hypotheses H
+    -> mon_true_sequent_wf lib (mk_bseq [] C)
+    -> mon_true_sequent_wf lib (mk_bseq H C).
+Proof.
+  introv wfh mon.
+  unfold mon_true_sequent_wf, sequent_true_ext_lib_wf in *; exrepnd.
+
+  assert (wf_csequent (mk_bseq H C)) as wf.
+  {
+    clear mon0.
+    unfold wf_csequent, wf_sequent, closed_type, closed_extract in *; repnd; simpl in *.
+    dands; auto; autorewrite with slow in *; eauto 3 with slow.
+  }
+
+  exists wf.
+  unfold wf_csequent, wf_sequent, mk_wcseq in *; repnd; simpl in *.
+  autorewrite with slow in *.
+  proof_irr.
+  eapply sequent_true_ext_lib_no_hyps_implies; eauto.
+Qed.
+
 Lemma update_preserves_validity {o} :
   forall (state : @SoftLibrary o) (cmd : command),
     ValidSoftLibrary state -> ValidSoftLibrary (update state cmd).
@@ -12094,10 +12887,43 @@ Proof.
           destruct fin; ginv.
 
       + dands; auto; eauto 3 with slow;[].
-        apply (valid_proof _ _ prf); eauto 3 with slow;[].
+        apply (valid_proof _ _ prf); eauto 3 with slow;[|].
 
-        introv wf i; apply implies_lemma_in_RigidLibrary_named_concl2bseq in i.
-        apply correct_library in i; auto; eauto 3 with slow.
+        {
+          introv wf i; apply implies_lemma_in_RigidLibrary_named_concl2bseq in i.
+          apply correct_library in i; auto; eauto 3 with slow.
+        }
+
+        {
+          introv wf i redto aeq.
+          applydup @implies_lemma_in_RigidLibrary_named_concl2bseq in i.
+
+          assert (forall lib',
+                     lib_extends lib' (RigidLibrary2ProofContext L)
+                     -> cequiv lib' t (LemmaName2extract (nm_conclusion_name c))) as ceq.
+          {
+            introv ext.
+            eapply cequiv_rw_l_eauto;[eauto|].
+            apply cequiv_sym.
+            apply reduces_to_implies_cequiv;eauto 2 with slow.
+          }
+
+          eapply cequiv_preserves_mon_true_sequent_wf.
+
+          {
+            introv ext.
+
+            apply cequiv_decomp_equality; dands;
+              [apply cequiv_sym; apply ceq; auto
+              |apply cequiv_sym; apply ceq; auto
+              |apply cequiv_refl].
+
+            applydup @correct_library in i0; auto; eauto 3 with slow.
+          }
+
+          apply mon_true_sequent_wf_nil_hyps_implies; auto.
+          apply correct_library_with_extract; auto.
+        }
     }
 
     {

@@ -21,7 +21,9 @@
    ({variable:OPID,A:v}();
     {bound_id:OPID,x:v}
     ({variable:OPID,B:v}
-     ({variable:OPID,x:v}()))))))
+     ({variable:OPID,x:v}())))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{236250\:n\,3295093900\:time\,1752\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {ABS:t,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,equal\ def:t}
 ({source:t}
  ({!abstraction:OPID}
@@ -41,7 +43,9 @@
    {equal:OPID}
    ({variable:OPID,T:v}();
     {variable:OPID,t:v}();
-    {variable:OPID,t:v}()))))
+    {variable:OPID,t:v}())));
+ {dependencies:t}
+ ({ABS:t,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o}()))
 {ABS:t,!stamp\{140926\:n\,3271095033\:time\,1952\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,universe\ def:t}
 ({source:t}
  ({!abstraction:OPID}
@@ -53,7 +57,9 @@
  ({!abstraction:OPID}
   ({!condition_cons:OPID}();
    {prop:OPID,i:l}();
-   {universe:OPID,i:l}())))
+   {universe:OPID,i:l}()));
+ {dependencies:t}
+ ({ABS:t,!stamp\{140926\:n\,3271095033\:time\,1952\:n\,5480d260_8f9_c2e7dc8f\:t\}:o}()))
 {ABS:t,!stamp\{236418\:n\,3295094001\:time\,1771\:n\,5480d560_32b0_c44b6f0d\:t\}:o,apply\ def:t}
 ({source:t}
  ({!abstraction:OPID}
@@ -71,7 +77,9 @@
     {variable:OPID,s:v}());
    {apply:OPID}
    ({variable:OPID,x:v}();
-    {variable:OPID,s:v}()))))
+    {variable:OPID,s:v}())));
+ {dependencies:t}
+ ({ABS:t,!stamp\{236418\:n\,3295094001\:time\,1771\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {ABS:t,!stamp\{234298\:n\,3295088715\:time\,1527\:n\,5480d560_32b0_c44b6f0d\:t\}:o,sqequal\ def:t}
 ({source:t}
  ({!abstraction:OPID}
@@ -122,7 +130,9 @@
      ({variable:OPID,T:v}();
       {bound_id:OPID,x:v}
       ({variable:OPID,b:v}()));
-     {variable:OPID,t:v}())))))
+     {variable:OPID,t:v}()))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{234298\:n\,3295088715\:time\,1527\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{3485\:n\,3111419132\:time\,23\:n\,8888629_22c9_b9747a4a\:t\}:o,sqequalRule:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -141,7 +151,9 @@
     ({variable:OPID,SubGoals:v}();
      {variable:OPID,t:v}());
     {!call_lisp:OPID,SQEQ:t}());
-   {variable:OPID,SubGoals:v}())))
+   {variable:OPID,SubGoals:v}()));
+ {dependencies:t}
+ ({ABS:t,!stamp\{234298\:n\,3295088715\:time\,1527\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{3455\:n\,3111419132\:time\,23\:n\,8888629_22c9_b9747a4a\:t\}:o,sqequalReflexivity:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -156,7 +168,9 @@
    {!rule:OPID,sqequalReflexivity:t}
    ({!rule_arg_cons:OPID}());
    {!cons:OPID}();
-   {!subgoal_cons:OPID}())))
+   {!subgoal_cons:OPID}()));
+ {dependencies:t}
+ ({ABS:t,!stamp\{234298\:n\,3295088715\:time\,1527\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{7470842\:n\,3624910282\:time\,445674\:n\,805469B7_89B_D80180C7\:t\}:o,sqequalTransitivity:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -189,7 +203,9 @@
       ({variable:OPID,c:v}();
        {variable:OPID,b:v}());
       {axiom:OPID}());
-     {!subgoal_cons:OPID}())))))
+     {!subgoal_cons:OPID}()))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{234298\:n\,3295088715\:time\,1527\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{5432555\:n\,3624729053\:time\,285392\:n\,805469B7_89B_D80180C7\:t\}:o,computationStep:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -206,7 +222,9 @@
    {!let:OPID}
    ({!rule_arg_cons:OPID}();
     {!call_lisp:OPID,COMPUTATION-STEP:t}());
-   {!subgoal_cons:OPID}())))
+   {!subgoal_cons:OPID}()));
+ {dependencies:t}
+ ({ABS:t,!stamp\{234298\:n\,3295088715\:time\,1527\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{1965\:n\,3111418843\:time\,13\:n\,8888629_22c9_b9747a4a\:t\}:o,isect_memberFormation:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -249,7 +267,9 @@
        {variable:OPID,A:v}();
        {variable:OPID,A:v}());
       {axiom:OPID}());
-     {!subgoal_cons:OPID}())))))
+     {!subgoal_cons:OPID}()))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{236250\:n\,3295093900\:time\,1752\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{140926\:n\,3271095033\:time\,1952\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{1780\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,introduction:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -268,7 +288,9 @@
     ({variable:OPID,T:v}();
      {variable:OPID,t:v}();
      {variable:OPID,t:v}());
-    {axiom:OPID}()))))
+    {axiom:OPID}())));
+ {dependencies:t}
+ ({ABS:t,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {ABS:t,!stamp\{236323\:n\,3295093934\:time\,1760\:n\,5480d560_32b0_c44b6f0d\:t\}:o,lambda\ def:t}
 ({source:t}
  ({!abstraction:OPID}
@@ -315,7 +337,9 @@
        ({variable:OPID,S:v}());
        {variable:OPID,J:v}()));
      {variable:OPID,T:v}();
-     {variable:OPID,t:v}())))))
+     {variable:OPID,t:v}()))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{236418\:n\,3295094001\:time\,1771\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{236323\:n\,3295093934\:time\,1760\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{1960\:n\,3111418843\:time\,13\:n\,8888629_22c9_b9747a4a\:t\}:o,isectEquality:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -368,7 +392,9 @@
         {bound_id:OPID,x2:v}
         ({variable:OPID,y:v}())));
       {axiom:OPID}());
-     {!subgoal_cons:OPID}())))))
+     {!subgoal_cons:OPID}()))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{236250\:n\,3295093900\:time\,1752\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{140926\:n\,3271095033\:time\,1952\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{1795\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,cumulativity:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -394,7 +420,9 @@
     ({universe:OPID,j:l}();
      {variable:OPID,t:v}();
      {variable:OPID,t:v}());
-    {axiom:OPID}()))))
+    {axiom:OPID}())));
+ {dependencies:t}
+ ({ABS:t,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{140926\:n\,3271095033\:time\,1952\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{1760\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,hypothesisEquality:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -415,7 +443,9 @@
    {!rule:OPID,hypothesisEquality:t}
    ({assumption-index:OPID,%ai:n}());
    {!cons:OPID}();
-   {!subgoal_cons:OPID}())))
+   {!subgoal_cons:OPID}()));
+ {dependencies:t}
+ ({ABS:t,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{1866548\:n\,3639747892\:time\,12044\:n\,805469B7_13A0_D8EA1500\:t\}:o,sqequalHypSubstitution:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -472,7 +502,9 @@
          ({variable:OPID,b:v}())));
        {variable:OPID,J:v}()));
      {variable:OPID,C:v}();
-     {variable:OPID,t:v}())))))
+     {variable:OPID,t:v}()))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{234298\:n\,3295088715\:time\,1527\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{1750\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,axiomEquality:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -497,7 +529,9 @@
     ({variable:OPID,A:v}();
      {variable:OPID,a1:v}();
      {variable:OPID,a2:v}());
-    {axiom:OPID}()))))
+    {axiom:OPID}())));
+ {dependencies:t}
+ ({ABS:t,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{6602448\:n\,3621077144\:time\,500350\:n\,AC140F28_6CC_D78ECCF8\:t\}:o,equalityTransitivity:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -533,7 +567,9 @@
        {variable:OPID,x:v}();
        {variable:OPID,t:v}());
       {axiom:OPID}());
-     {!subgoal_cons:OPID}())))))
+     {!subgoal_cons:OPID}()))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{1765\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,hypothesis:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -575,7 +611,9 @@
     ({variable:OPID,T:v}();
      {variable:OPID,t:v}();
      {variable:OPID,s:v}());
-    {axiom:OPID}()))))
+    {axiom:OPID}())));
+ {dependencies:t}
+ ({ABS:t,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {ABS:t,!stamp\{236104\:n\,3295093799\:time\,1736\:n\,5480d560_32b0_c44b6f0d\:t\}:o,function\ def:t}
 ({source:t}
  ({!abstraction:OPID}
@@ -630,7 +668,9 @@
       ({variable:OPID,b2:v}();
        {bound_id:OPID,x2:v}
        ({variable:OPID,y:v}())));
-     {axiom:OPID}())))))
+     {axiom:OPID}()))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{236104\:n\,3295093799\:time\,1736\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{140926\:n\,3271095033\:time\,1952\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{1275\:n\,3093619364\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,universeEquality:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -648,7 +688,9 @@
    {!let:OPID}
    ({!rule_arg_cons:OPID}();
     {!call_lisp:OPID,LE-UNIVERSE-EQUALITY:t}());
-   {!subgoal_cons:OPID}())))
+   {!subgoal_cons:OPID}()));
+ {dependencies:t}
+ ({ABS:t,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{140926\:n\,3271095033\:time\,1952\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{1970\:n\,3111418843\:time\,13\:n\,8888629_22c9_b9747a4a\:t\}:o,isect_memberEquality:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -697,7 +739,9 @@
        {variable:OPID,A:v}();
        {variable:OPID,A:v}());
       {axiom:OPID}());
-     {!subgoal_cons:OPID}())))))
+     {!subgoal_cons:OPID}()))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{236250\:n\,3295093900\:time\,1752\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{140926\:n\,3271095033\:time\,1952\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {RULE:t,!stamp\{1980\:n\,3111418843\:time\,13\:n\,8888629_22c9_b9747a4a\:t\}:o,isectElimination:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -779,7 +823,9 @@
            {!assum_cons:OPID}())))));
       {variable:OPID,T:v}();
       {variable:OPID,t:v}());
-     {!subgoal_cons:OPID}())))))
+     {!subgoal_cons:OPID}()))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{236250\:n\,3295093900\:time\,1752\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o}()))
 {RULE:t,!stamp\{1770\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,thin:t}
 ({source:t}
  ({!rule_definition:OPID}
@@ -845,7 +891,9 @@
      ({variable:OPID,A:v}();
       {variable:OPID,a1:v}();
       {variable:OPID,a2:v}());
-     {axiom:OPID}())))))
+     {axiom:OPID}()))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{236418\:n\,3295094001\:time\,1771\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{236104\:n\,3295093799\:time\,1736\:n\,5480d560_32b0_c44b6f0d\:t\}:o,!stamp\{140833\:n\,3271094936\:time\,1937\:n\,5480d260_8f9_c2e7dc8f\:t\}:o,!stamp\{233989\:n\,3295088509\:time\,1498\:n\,5480d560_32b0_c44b6f0d\:t\}:o}()))
 {STM:t,!stamp\{922552\:n\,3491852731\:time\,48885\:n\,573ffdff_49a0_d00d3908\:t\}:o,uall_wf:t}
 ({source:t}
  ({uall:OPID}
@@ -865,6 +913,9 @@
         ({so_apply:OPID}
          ({variable:OPID,B:v}();
           {variable:OPID,x:v}())))))))));
+ {dependencies:t}
+ ({ABS:t,!stamp\{922506\:n\,3491852726\:time\,48885\:n\,573ffdff_49a0_d00d3908\:t\}:o,!stamp\{1990\:n\,3126032885\:time\,37\:n\,8888629_200e_ba53717e\:t\}:o,!stamp\{2905\:n\,3093619635\:time\,15\:n\,1900031899_480_B864DF0F\:t\}:o,!stamp\{2775\:n\,3093619633\:time\,15\:n\,1900031899_480_B864DF0F\:t\}:o}();
+  {RULE:t,!stamp\{1581376\:n\,3639399576\:time\,7298\:n\,805469B7_13A0_D8EA1500\:t\}:o,!stamp\{3485\:n\,3111419132\:time\,23\:n\,8888629_22c9_b9747a4a\:t\}:o,!stamp\{3455\:n\,3111419132\:time\,23\:n\,8888629_22c9_b9747a4a\:t\}:o,!stamp\{7470842\:n\,3624910282\:time\,445674\:n\,805469B7_89B_D80180C7\:t\}:o,!stamp\{5432555\:n\,3624729053\:time\,285392\:n\,805469B7_89B_D80180C7\:t\}:o,!stamp\{1965\:n\,3111418843\:time\,13\:n\,8888629_22c9_b9747a4a\:t\}:o,!stamp\{1780\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,!stamp\{1775\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,!stamp\{1960\:n\,3111418843\:time\,13\:n\,8888629_22c9_b9747a4a\:t\}:o,!stamp\{1795\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,!stamp\{1760\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,!stamp\{1866548\:n\,3639747892\:time\,12044\:n\,805469B7_13A0_D8EA1500\:t\}:o,!stamp\{1750\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,!stamp\{6602448\:n\,3621077144\:time\,500350\:n\,AC140F28_6CC_D78ECCF8\:t\}:o,!stamp\{1765\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,!stamp\{6602198\:n\,3621077024\:time\,500323\:n\,AC140F28_6CC_D78ECCF8\:t\}:o,!stamp\{1585\:n\,3093619366\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,!stamp\{1275\:n\,3093619364\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,!stamp\{1970\:n\,3111418843\:time\,13\:n\,8888629_22c9_b9747a4a\:t\}:o,!stamp\{1980\:n\,3111418843\:time\,13\:n\,8888629_22c9_b9747a4a\:t\}:o,!stamp\{1770\:n\,3093619367\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o,!stamp\{1605\:n\,3093619366\:time\,12\:n\,1900031899_480_B864DF0F\:t\}:o}());
  {proof:t}
  ({!inf_tree:OPID}
   ({!inf_goal:OPID}
