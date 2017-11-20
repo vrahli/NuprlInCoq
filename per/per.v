@@ -323,6 +323,9 @@ Notation "lib-per( lib , o )" := (forall (lib' : @library o), lib_extends lib' l
 Notation "lib-per-fam ( lib , eqa )" :=
   (forall lib' (ext : lib_extends lib' lib) a a' (p : eqa lib' ext a a'), per) (at level 0).
 
+Definition sub_per {o} (per1 per2 : per(o)) :=
+  forall a b, per1 a b -> per2 a b.
+
 (* ------ types definitions ------ *)
 
 (* end hide *)
@@ -2359,8 +2362,26 @@ Definition close_compute {p} (ts : cts) lib (T1 T2 : @CTerm p) (eq : per(p)) :=
 
  *)
 
+Definition per_bar_eq {o}
+           {lib}
+           (bar : @BarLib o lib)
+           (eqa : lib-per(lib,o))
+           (t1 t2 : CTerm) :=
+  all_in_bar_ext bar (fun lib' x => eqa lib' x t1 t2).
+
+Definition per_bar {o}
+           (ts    : cts(o))
+           (lib   : library)
+           (T1 T2 : CTerm)
+           (eq    : per(o)) : [U] :=
+  {bar : BarLib lib
+  , {eqa : lib-per(lib,o)
+  , all_in_bar_ext bar (fun lib' x => ts lib' T1 T2 (eqa lib' x))
+  # eq <=2=> (per_bar_eq bar eqa) }}.
+
 Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_init     : ts lib T T' eq -> close ts lib T T' eq
+  | CL_bar      : per_bar          (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_int      : per_int_bar      (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_nat      : per_nat_bar      (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_csname   : per_csname_bar   (close ts) lib T T' eq -> close ts lib T T' eq
@@ -2401,6 +2422,7 @@ Hint Constructors close.
 (*  | CL_eisect   : per_eisect   lib (close lib ts) T T' eq -> close lib ts T T' eq*)
 
 Arguments CL_init     {p} [ts] [lib] [T] [T'] [eq] _.
+Arguments CL_bar      {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_int      {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_nat      {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_csname   {p} [ts] [lib] [T] [T'] [eq] _.
@@ -2441,6 +2463,7 @@ Arguments CL_product  {p} [ts] [lib] [T] [T'] [eq] _.
 Tactic Notation "close_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "CL_init"
+  | Case_aux c "CL_bar"
   | Case_aux c "CL_int"
   | Case_aux c "CL_nat"
   | Case_aux c "CL_csname"
@@ -2486,12 +2509,26 @@ Definition close_ind' {pp}
                  (T T' : @CTerm pp)
                  (eq   : per),
             ts lib T T' eq -> P ts lib T T' eq)
+
+  (pbar : forall (ts    : cts)
+                 (lib   : library)
+                 (T T'  : @CTerm pp)
+                 (eq    : per)
+                 (bar   : BarLib lib)
+                 (eqa   : lib-per(lib,pp))
+                 (cla   : all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x)))
+                 (reca  : all_in_bar_ext bar (fun lib' x => P ts lib' T T' (eqa lib' x)))
+                 (eqiff : eq <=2=> (per_bar_eq bar eqa))
+                 (per   : per_bar (close ts) lib T T' eq),
+      P ts lib T T' eq)
+
   (int  : forall (ts   : cts)
                  (lib  : library)
                  (T T' : @CTerm pp)
                  (eq   : per)
                  (per  : per_int_bar (close ts) lib T T' eq),
             P ts lib T T' eq)
+
   (nat  : forall (ts   : cts)
                  (lib  : library)
                  (T T' : @CTerm pp)
@@ -3245,6 +3282,26 @@ Definition close_ind' {pp}
          : P ts lib T T' eq :=
    match t in close _ _ _ _ _ return P ts lib T T' eq with
    | CL_init   pts => init   ts lib T T' eq pts
+
+   | CL_bar    pts =>
+     let (bar,  x) := pts in
+     let (eqa,  x) := x in
+     let (alla, eqiff) := x in
+     pbar ts lib T T' eq
+          bar
+          eqa
+          alla
+          (fun (lib'  : library)
+               (p     : bar_lib_bar bar lib')
+               (lib'' : library)
+               (i     : lib_extends lib'' lib')
+               (x     : lib_extends lib'' lib) =>
+             rec ts lib'' T T'
+                 (eqa lib'' x(*(lib_extends_trans i (bar_lib_ext bar lib' p))*))
+                 (alla lib' p lib'' i x))
+          eqiff
+          pts
+
    | CL_int    pts => int    ts lib T T' eq pts
    | CL_nat    pts => nat    ts lib T T' eq pts
    | CL_csname pts => csname ts lib T T' eq pts
@@ -4135,6 +4192,7 @@ Ltac one_dest_per_fam eqa feqb A1 A2 v1 v2 B1 B2 c1 c2 tsa tsb eqt :=
 Ltac one_unfold_per :=
   match goal with
     | [ H : per_int         _ _ _ _ _ |- _ ] => unfold per_int         in H; exrepd
+    | [ H : per_bar         _ _ _ _ _ |- _ ] => unfold per_bar         in H; exrepd
     | [ H : per_int_bar     _ _ _ _ _ |- _ ] => unfold per_int_bar     in H; exrepd
     | [ H : per_nat_bar     _ _ _ _ _ |- _ ] => unfold per_nat_bar     in H; exrepd
     | [ H : per_csname_bar  _ _ _ _ _ |- _ ] => unfold per_csname_bar  in H; exrepd

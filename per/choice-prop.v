@@ -24,13 +24,9 @@
 *)
 
 
-Require Import nuprl_props.
+Require Export nuprl_props.
+Require Export axiom_func_choice_on.
 
-
-Axiom FunctionalChoice_on :
-  forall (A B : Type) (R : A -> B -> Prop),
-    (forall a : A, exists (b : B), R a b)
-    -> (exists (f : A -> B), forall a : A, R a (f a)).
 
 Lemma choice_teq {p} :
   forall lib (A : @CTerm p) v1 B1 v2 B2,

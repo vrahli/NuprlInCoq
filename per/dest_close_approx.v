@@ -31,6 +31,67 @@
 
 
 Require Export dest_close_tacs.
+Require Export bar_fam.
+
+
+Lemma local_equality_of_approx_bar {o} :
+  forall {lib} (bar : @BarLib o lib) a b t1 t2,
+    all_in_bar_ext bar (fun lib' (x : lib_extends lib' lib) => per_approx_eq_bar lib' a b t1 t2)
+    -> per_approx_eq_bar lib a b t1 t2.
+Proof.
+  introv alla.
+  apply all_in_bar_ext_exists_bar_implies in alla; exrepnd.
+  exists (bar_of_bar_fam fbar).
+  introv br ext; simpl in *; exrepnd.
+  eapply alla0; eauto.
+Qed.
+
+Lemma sub_per_approx_eq_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib) a b,
+    sub_per (per_approx_eq_bar lib a b) (per_approx_eq_bar lib' a b).
+Proof.
+  introv ext h.
+  unfold per_approx_eq_bar, per_approx_eq_bar1 in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br e; simpl in *; exrepnd.
+  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_approx_eq_bar : slow.
+
+Lemma local_per_approx_bar {o} :
+  forall {lib} (bar : @BarLib o lib) ts T T' eq eqa,
+    (eq <=2=> (per_bar_eq bar eqa))
+    -> all_in_bar_ext bar (fun lib' x => per_approx_bar ts lib' T T' (eqa lib' x))
+    -> per_approx_bar ts lib T T' eq.
+Proof.
+  introv eqiff alla.
+  unfold per_approx_bar in *.
+  apply all_in_bar_ext_and_implies in alla; repnd.
+
+  apply all_in_bar_ext_exists_bar_implies in alla0.
+  exrepnd.
+  dands.
+
+  {
+    exists (bar_of_bar_fam fbar).
+    dands; introv br ext; simpl in *; exrepnd; eapply alla1; eauto.
+  }
+
+  eapply eq_term_equals_trans;[eauto|].
+  introv.
+  split; introv h.
+
+  {
+    eapply per_bar_eq_preserves_all_in_bar_ext_eq_term_equals in alla;[|eauto].
+    eapply local_equality_of_approx_bar; eauto.
+  }
+
+  {
+    introv br ext; introv.
+    eapply alla; eauto.
+    eapply sub_per_equality_of_approx_bar; eauto.
+  }
+Qed.
 
 
 Lemma dest_close_per_approx_l {p} :

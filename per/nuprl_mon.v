@@ -31,143 +31,8 @@
 
 
 Require Export nuprl_props.
+Require Export raise_bar.
 
-
-Lemma choice_sequence_vals_extend_preserves_inf_choice_sequence_vals_extend {o} :
-  forall (entry0 entry1 : @ChoiceSeqEntry o) entry,
-    choice_sequence_vals_extend entry0 entry1
-    -> inf_choice_sequence_vals_extend entry entry0
-    -> inf_choice_sequence_vals_extend entry entry1.
-Proof.
-  introv ext1 ext2 sel.
-  apply ext2.
-  unfold choice_sequence_vals_extend in *; exrepnd.
-  rewrite ext0.
-  rewrite select_app_left; auto.
-  apply select_lt in sel; auto.
-Qed.
-Hint Resolve choice_sequence_vals_extend_preserves_inf_choice_sequence_vals_extend : slow.
-
-Lemma choice_sequence_entry_extend_preserves_inf_choice_sequence_entry_extend {o} :
-  forall (entry0 entry1 : @ChoiceSeqEntry o) entry,
-    choice_sequence_entry_extend entry0 entry1
-    -> inf_choice_sequence_entry_extend entry entry0
-    -> inf_choice_sequence_entry_extend entry entry1.
-Proof.
-  introv ext1 ext2.
-  unfold inf_choice_sequence_entry_extend in *; repnd.
-  unfold choice_sequence_entry_extend in *; repnd.
-  dands; try congruence; eauto 3 with slow.
-Qed.
-Hint Resolve choice_sequence_entry_extend_preserves_inf_choice_sequence_entry_extend : slow.
-
-Lemma entry_extends_preserves_inf_entry_extends {o} :
-  forall (e' e : @library_entry o) ie,
-    entry_extends e' e
-    -> inf_entry_extends ie e'
-    -> inf_entry_extends ie e.
-Proof.
-  introv ext1 ext2.
-  destruct ie, e', e; simpl in *; repnd; subst; dands; tcsp; ginv; eauto 3 with slow;
-    try (complete (inversion ext1; subst; auto)).
-Qed.
-Hint Resolve entry_extends_preserves_inf_entry_extends : slow.
-
-Lemma entry_extends_preserves_inf_matching_entries {o} :
-  forall (e' e : @library_entry o) ie,
-    entry_extends e' e
-    -> inf_matching_entries ie e
-    -> inf_matching_entries ie e'.
-Proof.
-  introv ext m.
-  unfold inf_matching_entries in *.
-  destruct ie, e, e'; simpl in *; repnd; subst; tcsp; ginv;
-    try (complete (inversion ext; auto)).
-Qed.
-Hint Resolve entry_extends_preserves_inf_matching_entries : slow.
-
-Lemma entry_extends_preserves_entry_in_inf_library_extends {o} :
-  forall n (entry' entry : @library_entry o) infLib,
-    entry_extends entry' entry
-    -> entry_in_inf_library_extends entry' n infLib
-    -> entry_in_inf_library_extends entry n infLib.
-Proof.
-  induction n; introv ext i; simpl in *; tcsp.
-  repndors; tcsp; eauto 3 with slow.
-  right; repnd.
-  dands; eauto 3 with slow.
-  introv m; destruct i0; eauto 3 with slow.
-Qed.
-Hint Resolve entry_extends_preserves_entry_in_inf_library_extends : slow.
-
-Lemma inf_lib_extends_lib_extends_trans {o} :
-  forall infLib (lib' lib : @library o),
-    inf_lib_extends infLib lib'
-    -> lib_extends lib' lib
-    -> inf_lib_extends infLib lib.
-Proof.
-  introv inf ext.
-  destruct inf as [inf safe].
-  split.
-
-  - introv i.
-    applydup ext in i.
-    apply entry_in_library_extends_implies_entry_in_library in i0; exrepnd.
-    applydup inf in i0; exrepnd.
-    exists n; eauto 3 with slow.
-
-  - introv s.
-    eapply lib_extends_safe in s;[|eauto]; tcsp.
-Qed.
-Hint Resolve inf_lib_extends_lib_extends_trans : slow.
-
-Definition raise_bar {o} {lib lib'}
-           (bar : @BarLib o lib)
-           (ext : lib_extends lib' lib) : @BarLib o lib'.
-Proof.
-  exists (fun (lib0 : library) =>
-            exists lib1,
-              bar_lib_bar bar lib1
-              /\ lib_extends lib0 lib1
-              /\ lib_extends lib0 lib').
-
-  - introv e.
-    destruct bar as [bar1 bars1 ext1].
-    simpl in *.
-
-    pose proof (bars1 infLib) as q; autodimp q hyp; eauto 3 with slow.
-    exrepnd.
-
-    pose proof (intersect_inf_lib_extends2 infLib lib' lib'0) as h.
-    repeat (autodimp h hyp).
-    exrepnd.
-    exists lib0; dands; eauto 3 with slow.
-    exists lib'0; dands; eauto 3 with slow.
-
-  - introv h; exrepnd; auto.
-Defined.
-
-Lemma implies_all_in_bar_raise_bar {o} :
-  forall {lib lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) F,
-    all_in_bar bar F
-    -> all_in_bar (raise_bar bar ext) F.
-Proof.
-  introv alla br e.
-  simpl in *; exrepnd.
-  apply (alla lib1 br1); eauto 3 with slow.
-Qed.
-Hint Resolve implies_all_in_bar_raise_bar : slow.
-
-Lemma implies_computes_to_valc_seq_bar_raise_bar {o} :
-  forall {lib lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) t v,
-    t ==b==>(bar) v
-    -> t ==b==>(raise_bar bar ext) v.
-Proof.
-  introv comp br e.
-  simpl in *; exrepnd.
-  apply (comp lib1 br1); eauto 3 with slow.
-Qed.
-Hint Resolve implies_computes_to_valc_seq_bar_raise_bar : slow.
 
 Lemma per_int_monotone {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
@@ -516,9 +381,6 @@ Proof.
 Qed.
 Hint Resolve tequality_monotone : slow.
 
-Definition sub_per {o} (per1 per2 : per(o)) :=
-  forall a b, per1 a b -> per2 a b.
-
 Definition type_monotone2 {p} (ts : cts(p)) :=
   forall lib lib' T1 T2 eq,
     ts lib T1 T2 eq
@@ -537,18 +399,6 @@ Proof.
 Qed.
 Hint Resolve sub_per_eq_eq_term_equals_left : slow.
 
-Lemma sub_per_equality_of_int_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
-    sub_per (equality_of_int_bar lib) (equality_of_int_bar lib').
-Proof.
-  introv ext h.
-  unfold equality_of_int_bar, equality_of_int_bar1 in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br e; simpl in *; exrepnd.
-  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
-Qed.
-Hint Resolve sub_per_equality_of_int_bar : slow.
-
 Lemma per_int_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
     per_int_bar (close ts) lib T T' eq
@@ -561,18 +411,6 @@ Proof.
   exists (raise_bar bar ext).
   dands; eauto 3 with slow.
 Qed.
-
-Lemma sub_per_equality_of_nat_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
-    sub_per (equality_of_nat_bar lib) (equality_of_nat_bar lib').
-Proof.
-  introv ext h.
-  unfold equality_of_nat_bar, equality_of_nat in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br e; simpl in *; exrepnd.
-  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
-Qed.
-Hint Resolve sub_per_equality_of_nat_bar : slow.
 
 Lemma per_nat_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
@@ -587,18 +425,6 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
-Lemma sub_per_equality_of_csname_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
-    sub_per (equality_of_csname_bar lib) (equality_of_csname_bar lib').
-Proof.
-  introv ext h.
-  unfold equality_of_csname_bar, equality_of_csname in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br e; simpl in *; exrepnd.
-  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
-Qed.
-Hint Resolve sub_per_equality_of_csname_bar : slow.
-
 Lemma per_csname_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
     per_csname_bar (close ts) lib T T' eq
@@ -611,18 +437,6 @@ Proof.
   exists (raise_bar bar ext).
   dands; eauto 3 with slow.
 Qed.
-
-Lemma sub_per_equality_of_atom_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
-    sub_per (equality_of_atom_bar lib) (equality_of_atom_bar lib').
-Proof.
-  introv ext h.
-  unfold equality_of_atom_bar, equality_of_atom_bar1 in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br e; simpl in *; exrepnd.
-  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
-Qed.
-Hint Resolve sub_per_equality_of_atom_bar : slow.
 
 Lemma per_atom_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
@@ -637,18 +451,6 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
-Lemma sub_per_equality_of_uatom_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
-    sub_per (equality_of_uatom_bar lib) (equality_of_uatom_bar lib').
-Proof.
-  introv ext h.
-  unfold equality_of_uatom_bar, equality_of_uatom_bar1 in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br e; simpl in *; exrepnd.
-  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
-Qed.
-Hint Resolve sub_per_equality_of_uatom_bar : slow.
-
 Lemma per_uatom_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
     per_uatom_bar (close ts) lib T T' eq
@@ -662,18 +464,6 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
-Lemma sub_per_base_eq {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
-    sub_per (per_base_eq lib) (per_base_eq lib').
-Proof.
-  introv ext h.
-  unfold per_base_eq, per_base_eq1 in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br e; simpl in *; exrepnd.
-  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
-Qed.
-Hint Resolve sub_per_base_eq : slow.
-
 Lemma per_base_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
     per_base_bar (close ts) lib T T' eq
@@ -686,18 +476,6 @@ Proof.
   exists (raise_bar bar ext).
   dands; eauto 3 with slow.
 Qed.
-
-Lemma sub_per_approx_eq_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib) a b,
-    sub_per (per_approx_eq_bar lib a b) (per_approx_eq_bar lib' a b).
-Proof.
-  introv ext h.
-  unfold per_approx_eq_bar, per_approx_eq_bar1 in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br e; simpl in *; exrepnd.
-  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
-Qed.
-Hint Resolve sub_per_approx_eq_bar : slow.
 
 Lemma per_approx_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,

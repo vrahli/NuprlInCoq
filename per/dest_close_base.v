@@ -31,6 +31,66 @@
 
 
 Require Export dest_close_tacs.
+Require Export bar_fam.
+
+Lemma local_equality_of_base_bar {o} :
+  forall {lib} (bar : @BarLib o lib) t1 t2,
+    all_in_bar_ext bar (fun lib' (x : lib_extends lib' lib) => per_base_eq lib' t1 t2)
+    -> per_base_eq lib t1 t2.
+Proof.
+  introv alla.
+  apply all_in_bar_ext_exists_bar_implies in alla; exrepnd.
+  exists (bar_of_bar_fam fbar).
+  introv br ext; simpl in *; exrepnd.
+  eapply alla0; eauto.
+Qed.
+
+Lemma sub_per_base_eq {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+    sub_per (per_base_eq lib) (per_base_eq lib').
+Proof.
+  introv ext h.
+  unfold per_base_eq, per_base_eq1 in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br e; simpl in *; exrepnd.
+  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_base_eq : slow.
+
+Lemma local_per_base_bar {o} :
+  forall {lib} (bar : @BarLib o lib) ts T T' eq eqa,
+    (eq <=2=> (per_bar_eq bar eqa))
+    -> all_in_bar_ext bar (fun lib' x => per_base_bar ts lib' T T' (eqa lib' x))
+    -> per_base_bar ts lib T T' eq.
+Proof.
+  introv eqiff alla.
+  unfold per_base_bar in *.
+  apply all_in_bar_ext_and_implies in alla; repnd.
+
+  apply all_in_bar_ext_exists_bar_implies in alla0.
+  exrepnd.
+  dands.
+
+  {
+    exists (bar_of_bar_fam fbar).
+    dands; introv br ext; simpl in *; exrepnd; eapply alla1; eauto.
+  }
+
+  eapply eq_term_equals_trans;[eauto|].
+  introv.
+  split; introv h.
+
+  {
+    eapply per_bar_eq_preserves_all_in_bar_ext_eq_term_equals in alla;[|eauto].
+    eapply local_equality_of_base_bar; eauto.
+  }
+
+  {
+    introv br ext; introv.
+    eapply alla; eauto.
+    eapply sub_per_base_eq; eauto.
+  }
+Qed.
 
 
 Lemma dest_close_per_base_l {p} :
@@ -42,7 +102,9 @@ Lemma dest_close_per_base_l {p} :
     -> per_base_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
-  inversion cl; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  eapply local_per_base_bar; eauto.
+  introv br ext; introv; apply (reca lib' br lib'0 ext x); eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_base_r {p} :
@@ -54,7 +116,9 @@ Lemma dest_close_per_base_r {p} :
     -> per_base_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
-  inversion cl; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  eapply local_per_base_bar; eauto.
+  introv br ext; introv; apply (reca lib' br lib'0 ext x); eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_base_bar_l {p} :
@@ -67,7 +131,9 @@ Lemma dest_close_per_base_bar_l {p} :
     -> per_base_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
-  inversion cl; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  eapply local_per_base_bar; eauto.
+  introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_base_bar_r {p} :
@@ -80,7 +146,9 @@ Lemma dest_close_per_base_bar_r {p} :
     -> per_base_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
-  inversion cl; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  eapply local_per_base_bar; eauto.
+  introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_base_ceq_bar_l {p} :
@@ -93,7 +161,9 @@ Lemma dest_close_per_base_ceq_bar_l {p} :
     -> per_base_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
-  inversion cl; clear cl; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  eapply local_per_base_bar; eauto.
+  introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_base_ceq_bar_r {p} :
@@ -106,5 +176,7 @@ Lemma dest_close_per_base_ceq_bar_r {p} :
     -> per_base_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
-  inversion cl; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  eapply local_per_base_bar; eauto.
+  introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.

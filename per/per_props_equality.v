@@ -160,6 +160,7 @@ Proof.
 
   unfold per_eq_eq, per_eq_eq1 in e0.
 
+
   (* have another clause in [close] for bared types?
      If a type is defined at a bar of a library, then it is defined at the library?
    *)

@@ -342,6 +342,11 @@ Proof.
   clear cl.
   close_cases (induction IHk using @close_ind') Case; sp; subst.
 
+  - Case "CL_bar".
+    apply CL_bar.
+    exists bar eqa; dands; auto.
+    introv br ext; introv; eapply reca; eauto.
+
   - Case "CL_eq".
     apply CL_eq; unfold per_eq; sp.
     exists A B a1 a2 b1 b2 eqa; sp.
@@ -668,6 +673,11 @@ Proof.
   - Case "CL_init".
     apply CL_init.
     exists i; sp.
+
+  - Case "CL_bar".
+    apply CL_bar.
+    exists bar eqa; dands; auto.
+    introv br ext; introv; eapply reca; eauto.
 
   - Case "CL_eq".
     apply CL_eq.

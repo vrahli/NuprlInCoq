@@ -620,8 +620,7 @@ Ltac close_diff_bar_ceq_bar :=
     try (spcast; computes_to_valc_diff)
   end.
 
-Ltac close_diff_ceq_bar_ceq_bar :=
-  allunfold_per;
+Ltac close_diff_ceq_bar_ceq_bar0 :=
   match goal with
   | [ H1 : computes_to_valc_ceq_bar ?bar1 ?T _,
       H2 : computes_to_valc_ceq_bar ?bar2 ?T _ |- _ ] =>
@@ -654,6 +653,10 @@ Ltac close_diff_ceq_bar_ceq_bar :=
     repeat apply_cequivc_val;
     try (spcast; computes_to_valc_diff)
   end.
+
+Ltac close_diff_ceq_bar_ceq_bar :=
+  allunfold_per;
+  close_diff_ceq_bar_ceq_bar0.
 
 Ltac close_diff_ext_bar :=
   allunfold_per;
@@ -801,19 +804,20 @@ Ltac close_diff_ceq :=
 
 Ltac close_diff_all :=
   first [ complete auto
-        | close_diff
-        | close_diff_ceq
-        | close_diff_bar
-        | close_diff_ceq_bar
-        | close_diff_ext
-        | close_diff_bar_bar
-        | close_diff_bar_ceq_bar
-        | close_diff_ceq_bar_ceq_bar
-        | close_diff_ext_bar
-        | close_diff_ext_ceq_bar
-        | close_diff_init_bar_left
-        | close_diff_init_bar_right
-        | close_diff_init_ext
+        | complete close_diff
+        | complete close_diff_ceq
+        | complete close_diff_bar
+        | complete close_diff_ceq_bar
+        | complete close_diff_ext
+        | complete close_diff_bar_bar
+        | complete close_diff_bar_ceq_bar
+        | complete close_diff_ceq_bar_ceq_bar0
+        | complete close_diff_ceq_bar_ceq_bar
+        | complete close_diff_ext_bar
+        | complete close_diff_ext_ceq_bar
+        | complete close_diff_init_bar_left
+        | complete close_diff_init_bar_right
+        | complete close_diff_init_ext
         ].
 
 Lemma cequivc_ext_mkc_approx_right {o} :
