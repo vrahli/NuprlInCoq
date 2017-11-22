@@ -35,15 +35,19 @@ Require Export dest_close_tacs.
 
 
 
+Definition per_func_ext_or {o} ts lib (T T' : @CTerm o) eq :=
+  per_func_ext ts lib T T' eq
+  {+} per_bar ts lib T T' eq.
+
 Lemma dest_close_per_func_l {p} :
   forall (ts : cts(p)) lib T A v B T' eq,
     type_system ts
     -> defines_only_universes ts
     -> computes_to_valc lib T (mkc_function A v B)
     -> close ts lib T T' eq
-    -> per_func_ext (close ts) lib T T' eq.
+    -> per_func_ext_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_func_ext_or.
   inversion cl; clear cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -53,9 +57,9 @@ Lemma dest_close_per_func_r {p} :
     -> defines_only_universes ts
     -> computes_to_valc lib T' (mkc_function A v B)
     -> close ts lib T T' eq
-    -> per_func_ext (close ts) lib T T' eq.
+    -> per_func_ext_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_func_ext_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -66,9 +70,9 @@ Lemma dest_close_per_func_bar_l {p} :
     -> type_monotone ts
     -> all_in_bar bar (fun lib => T ===>(lib) (mkc_function A v B))
     -> close ts lib T T' eq
-    -> per_func_ext (close ts) lib T T' eq.
+    -> per_func_ext_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou mon comp cl.
+  introv tysys dou mon comp cl; unfold per_func_ext_or.
   inversion cl; clear cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -79,9 +83,9 @@ Lemma dest_close_per_func_bar_r {p} :
     -> type_monotone ts
     -> all_in_bar bar (fun lib => T' ===>(lib) (mkc_function A v B))
     -> close ts lib T T' eq
-    -> per_func_ext (close ts) lib T T' eq.
+    -> per_func_ext_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou mon comp cl.
+  introv tysys dou mon comp cl; unfold per_func_ext_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -91,9 +95,9 @@ Lemma dest_close_per_func_ext_l {p} :
     -> defines_only_universes ts
     -> in_ext lib (fun lib => T ===>(lib) (mkc_function A v B))
     -> close ts lib T T' eq
-    -> per_func_ext (close ts) lib T T' eq.
+    -> per_func_ext_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_func_ext_or.
   inversion cl; clear cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -103,8 +107,8 @@ Lemma dest_close_per_func_ext_r {p} :
     -> defines_only_universes ts
     -> in_ext lib (fun lib => T' ===>(lib) (mkc_function A v B))
     -> close ts lib T T' eq
-    -> per_func_ext (close ts) lib T T' eq.
+    -> per_func_ext_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_func_ext_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.

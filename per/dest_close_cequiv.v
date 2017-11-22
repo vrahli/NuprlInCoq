@@ -31,7 +31,12 @@
 
 
 Require Export dest_close_tacs.
+Require Export bar_fam.
 
+
+Definition per_cequiv_bar_or {o} ts lib (T T' : @CTerm o) eq :=
+  per_cequiv_bar ts lib T T' eq
+  {+} per_bar ts lib T T' eq.
 
 Lemma dest_close_per_cequiv_l {p} :
   forall (ts : cts(p)) lib T A B T' eq,
@@ -39,9 +44,9 @@ Lemma dest_close_per_cequiv_l {p} :
     -> defines_only_universes ts
     -> computes_to_valc lib T (mkc_cequiv A B)
     -> close ts lib T T' eq
-    -> per_cequiv_bar (close ts) lib T T' eq.
+    -> per_cequiv_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_cequiv_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -51,9 +56,9 @@ Lemma dest_close_per_cequiv_r {p} :
     -> defines_only_universes ts
     -> computes_to_valc lib T' (mkc_cequiv A B)
     -> close ts lib T T' eq
-    -> per_cequiv_bar (close ts) lib T T' eq.
+    -> per_cequiv_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_cequiv_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -63,9 +68,9 @@ Lemma dest_close_per_cequiv_l_ceq {p} :
     -> defines_only_universes ts
     -> computes_to_valc_ceq_bar bar T (mkc_cequiv A B)
     -> close ts lib T T' eq
-    -> per_cequiv_bar (close ts) lib T T' eq.
+    -> per_cequiv_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_cequiv_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -75,8 +80,8 @@ Lemma dest_close_per_cequiv_r_ceq {p} :
     -> defines_only_universes ts
     -> computes_to_valc_ceq_bar bar T' (mkc_cequiv A B)
     -> close ts lib T T' eq
-    -> per_cequiv_bar (close ts) lib T T' eq.
+    -> per_cequiv_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_cequiv_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.

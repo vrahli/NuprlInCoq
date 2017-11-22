@@ -58,23 +58,57 @@ Proof.
 Qed.
 Hint Resolve sub_per_approx_eq_bar : slow.
 
-Lemma local_per_approx_bar {o} :
+Lemma per_approx_bar_eq {o} :
+  forall ts lib (T1 T2 : @CTerm o) eq,
+    per_approx_bar ts lib T1 T2 eq
+    <=>
+    {bar : BarLib lib
+    , {a, b, c, d : CTerm
+    , T1 ==b==>(bar) (mkc_approx a b)
+    # T2 ==b==>(bar) (mkc_approx c d)
+    # all_in_bar bar (fun lib => (a ~<~(lib) b <=> c ~<~(lib) d))
+    # eq <=2=> (per_approx_eq_bar lib a b) }}.
+Proof.
+  introv; unfold per_approx_bar; split; intro h; exrepnd.
+  { eexists; eexists; eexists; eexists; eexists; dands; eauto. }
+  { eexists; eexists; eexists; eexists; dands; eauto. }
+Qed.
+
+Lemma all_in_bar_ext_per_approx_bar_eq {o} :
+  forall ts lib (bar : @BarLib o lib) (T1 T2 : @CTerm o) eqa,
+    all_in_bar_ext bar (fun lib' x => per_approx_bar ts lib' T1 T2 (eqa lib' x))
+    <=>
+    (all_in_bar_ext
+       bar
+       (fun lib' x =>
+          {bar : BarLib lib'
+          , {a, b, c, d : CTerm
+          , T1 ==b==>(bar) (mkc_approx a b)
+          # T2 ==b==>(bar) (mkc_approx c d)
+          # all_in_bar bar (fun lib => (a ~<~(lib) b <=> c ~<~(lib) d))
+          # (eqa lib' x) <=2=> (per_approx_eq_bar lib' a b) }})).
+Proof.
+  introv; split; introv h br ext; introv.
+  { pose proof (h lib' br lib'0 ext x) as h; simpl in h.
+    apply per_approx_bar_eq in h; auto. }
+  { apply per_approx_bar_eq; eapply h; eauto. }
+Qed.
+
+(*Lemma local_per_approx_bar {o} :
   forall {lib} (bar : @BarLib o lib) ts T T' eq eqa,
     (eq <=2=> (per_bar_eq bar eqa))
     -> all_in_bar_ext bar (fun lib' x => per_approx_bar ts lib' T T' (eqa lib' x))
     -> per_approx_bar ts lib T T' eq.
 Proof.
   introv eqiff alla.
-  unfold per_approx_bar in *.
-  apply all_in_bar_ext_and_implies in alla; repnd.
-
-  apply all_in_bar_ext_exists_bar_implies in alla0.
+  allrw @per_approx_bar_eq.
+  allrw @all_in_bar_ext_per_approx_bar_eq.
+  apply all_in_bar_ext_exists_bar_implies in alla.
   exrepnd.
-  dands.
 
-  {
-    exists (bar_of_bar_fam fbar).
-    dands; introv br ext; simpl in *; exrepnd; eapply alla1; eauto.
+  exists (bar_of_bar_fam fbar).
+
+  dands; introv br ext; simpl in *; exrepnd; eapply alla1; eauto.
   }
 
   eapply eq_term_equals_trans;[eauto|].
@@ -91,8 +125,11 @@ Proof.
     eapply alla; eauto.
     eapply sub_per_equality_of_approx_bar; eauto.
   }
-Qed.
+Qed.*)
 
+Definition per_approx_bar_or {o} ts lib (T T' : @CTerm o) eq :=
+  per_approx_bar ts lib T T' eq
+  {+} per_bar ts lib T T' eq.
 
 Lemma dest_close_per_approx_l {p} :
   forall (ts : cts(p)) lib T A B T' eq,
@@ -100,9 +137,9 @@ Lemma dest_close_per_approx_l {p} :
     -> defines_only_universes ts
     -> computes_to_valc lib T (mkc_approx A B)
     -> close ts lib T T' eq
-    -> per_approx_bar (close ts) lib T T' eq.
+    -> per_approx_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_approx_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -112,9 +149,9 @@ Lemma dest_close_per_approx_r {p} :
     -> defines_only_universes ts
     -> computes_to_valc lib T' (mkc_approx A B)
     -> close ts lib T T' eq
-    -> per_approx_bar (close ts) lib T T' eq.
+    -> per_approx_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_approx_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -124,9 +161,9 @@ Lemma dest_close_per_approx_l_ceq {p} :
     -> defines_only_universes ts
     -> computes_to_valc_ceq_bar bar T (mkc_approx A B)
     -> close ts lib T T' eq
-    -> per_approx_bar (close ts) lib T T' eq.
+    -> per_approx_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_approx_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -136,8 +173,8 @@ Lemma dest_close_per_approx_r_ceq {p} :
     -> defines_only_universes ts
     -> computes_to_valc_ceq_bar bar T' (mkc_approx A B)
     -> close ts lib T T' eq
-    -> per_approx_bar (close ts) lib T T' eq.
+    -> per_approx_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_approx_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.

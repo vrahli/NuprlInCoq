@@ -1065,7 +1065,7 @@ Proof.
 Qed.
 Hint Resolve eqorceq_implies_iff_per_eq_eq : slow.
 
-Lemma type_equality_respecting_trans_per_eq_bar_implies {o} :
+(*Lemma type_equality_respecting_trans_per_eq_bar_implies {o} :
   forall (ts : cts(o)) lib (bar : BarLib lib) T T' a b A a' b' A',
     type_system ts
     -> defines_only_universes ts
@@ -1076,12 +1076,20 @@ Lemma type_equality_respecting_trans_per_eq_bar_implies {o} :
     -> type_equality_respecting_trans (close ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
+  repndors; subst; dclose_lr; auto.
+
+  - eapply dest_close_per_equality_ceq_bar_l in cl; eauto.
+
+XXXXXXXXX
+
   apply CL_eq.
   eapply trans; eauto.
   repndors; subst.
 
   - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
     dclose_lr; auto.
+    unfold per_eq_bar_or in *; auto; repndors; tcsp.
+
 
   - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
     dclose_lr; auto.
@@ -1091,7 +1099,7 @@ Proof.
 
   - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
     dclose_lr; auto.
-Qed.
+Qed.*)
 
 Lemma sub_type_system_implies_type_equality_respecting_trans {o} :
   forall (ts : cts(o)) lib (T1 T2 : @CTerm o),
@@ -2161,7 +2169,7 @@ Proof.
   - Case "type_mtransitive".
     introv ee ts1 ts2.
     repndors; subst; try (complete (eapply dum; eauto));
-      try (complete (pose proof (dum A T3 T4 eq1 eq2) as q; tcsp)).
+      try (complete (pd (dum A T3 T4 eq1 eq2))).
 Qed.
 
 Lemma in_ext_type_sys_props4_sym {p} :
@@ -2344,14 +2352,14 @@ Proof.
       generalize (ftspb a2 a1 e1); intro i.
       apply type_sys_props4_implies_type_sys_props in i.
       onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
-      generalize (tymt2 (substc a2 v1 B1) T3 T4 eq1 eq2); sp.
+      pd (tymt2 (substc a2 v1 B1) T3 T4 eq1 eq2).
     }
 
     {
       generalize (ftspb a2 a1 e1); intro i.
       apply type_sys_props4_implies_type_sys_props in i.
       onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
-      generalize (tymt2 (substc a1 v2 B2) T3 T4 eq1 eq2); sp.
+      pd (tymt2 (substc a1 v2 B2) T3 T4 eq1 eq2).
     }
 Qed.
 

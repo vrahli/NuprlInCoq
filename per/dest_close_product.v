@@ -34,15 +34,19 @@ Require Export dest_close_tacs.
 
 
 
+Definition per_product_bar_or {o} ts lib (T T' : @CTerm o) eq :=
+  per_product_bar ts lib T T' eq
+  {+} per_bar ts lib T T' eq.
+
 Lemma dest_close_per_product_l {p} :
   forall (ts : cts(p)) lib T A v B T' eq,
     type_system ts
     -> defines_only_universes ts
     -> computes_to_valc lib T (mkc_product A v B)
     -> close ts lib T T' eq
-    -> per_product_bar (close ts) lib T T' eq.
+    -> per_product_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_product_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -52,8 +56,8 @@ Lemma dest_close_per_product_r {p} :
     -> defines_only_universes ts
     -> computes_to_valc lib T' (mkc_product A v B)
     -> close ts lib T T' eq
-    -> per_product_bar (close ts) lib T T' eq.
+    -> per_product_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_product_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.

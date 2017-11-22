@@ -34,6 +34,7 @@ Require Export nuprl.
 Require Export bar.
 Require Export choiceseq.
 Require Export computation_lib_extends2.
+Require Export raise_bar.
 
 
 (** printing #  $\times$ #×# *)
@@ -454,11 +455,25 @@ Proof.
 Qed.
 Hint Resolve monotone_univi : slow.
 
+Lemma monotone_univi_bar {o} :
+  forall i, @type_monotone o (univi_bar i).
+Proof.
+  introv h ext.
+  unfold univi_bar, per_bar in *; exrepnd.
+  exists (per_bar_eq (raise_bar bar ext) (raise_lib_per eqa ext))
+         (raise_bar bar ext)
+         (raise_lib_per eqa ext).
+  dands; tcsp;[].
+  introv br w; introv; simpl in *; exrepnd.
+  eapply h0; eauto 3 with slow.
+Qed.
+Hint Resolve monotone_univi_bar : slow.
+
 Lemma monotone_univ {o} : @type_monotone o univ.
 Proof.
   introv u e.
   unfold univ in *; exrepnd.
-  eapply monotone_univi in u0; autodimp u0 hyp; eauto.
+  eapply monotone_univi_bar in u0; autodimp u0 hyp; eauto.
   exrepnd.
   exists eq' i; auto.
 Qed.
@@ -494,11 +509,11 @@ Definition type_sys_props {p}
            (eq    : per) :=
   (* uniquely valued *)
   (forall T3 eq',
-     (ts lib T1 T3 eq' [+] ts lib T2 T3 eq')
+     (ts lib T1 T3 eq' {+} ts lib T2 T3 eq')
      -> eq_term_equals eq eq')
     # (* type_extensionality *)
     (forall T T3 eq',
-       (T = T1 [+] T = T2)
+       (T = T1 {+} T = T2)
        -> ts lib T T3 eq
        -> eq_term_equals eq eq'
        -> ts lib T T3 eq')
@@ -513,7 +528,7 @@ Definition type_sys_props {p}
 (*    # (* type monotone *)
     (forall lib', lib_extends lib' lib -> ts lib' T1 T2 eq)*)
     # (* type value respecting *)
-    (forall T T3, (T = T1 [+] T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
+    (forall T T3, (T = T1 {+} T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
     # (* term symmetric *)
     term_equality_symmetric eq
     # (* term transitivive (1) *)
@@ -521,17 +536,17 @@ Definition type_sys_props {p}
     # (* term value respecting *)
     term_equality_respecting lib eq
     # (* type symmetric *)
-    (forall T T3 eq', (T = T1 [+] T = T2) -> (ts lib T T3 eq' <=> ts lib T3 T eq'))
+    (forall T T3 eq', (T = T1 {+} T = T2) -> (ts lib T T3 eq' <=> ts lib T3 T eq'))
     # (* type transitive (3) *)
     ts lib T1 T2 eq
     (*(forall T T3 T4 eq1 eq2,
-       (T = T1 [+] T = T2)
+       (T = T1 {+} T = T2)
        -> ts T T3 eq1
        -> ts T3 T4 eq2
        -> ts T T4 eq1 # ts T T4 eq2)*)
     # (* type transitive (4) *)
     (forall T T3 T4 eq1 eq2,
-       (T = T1 [+] T = T2)
+       (T = T1 {+} T = T2)
        -> ts lib T3 T eq1
        -> ts lib T T4 eq2
        -> ts lib T3 T4 eq1 # ts lib T3 T4 eq2 # ts lib T T3 eq1).
@@ -607,18 +622,18 @@ Definition type_sys_props2 {p}
            (eq    : per) :=
   (* uniquely valued *)
   (forall T3 eq',
-     (ts lib T1 T3 eq' [+] ts lib T2 T3 eq')
+     (ts lib T1 T3 eq' {+} ts lib T2 T3 eq')
      -> eq_term_equals eq eq')
     # (* type_extensionality *)
     (forall T T3 eq',
-       (T = T1 [+] T = T2)
+       (T = T1 {+} T = T2)
        -> ts lib T T3 eq
        -> eq_term_equals eq eq'
        -> ts lib T T3 eq')
 (*    # (* type monotone *)
     (forall lib', lib_extends lib' lib -> ts lib' T1 T2 eq)*)
     # (* type value respecting *)
-    (forall T T3, (T = T1 [+] T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
+    (forall T T3, (T = T1 {+} T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
     # (* term symmetric *)
     term_equality_symmetric eq
     # (* term transitivive (1) *)
@@ -626,17 +641,17 @@ Definition type_sys_props2 {p}
     # (* term value respecting *)
     term_equality_respecting lib eq
     # (* type symmetric *)
-    (forall T T3 eq', (T = T1 [+] T = T2) -> (ts lib T T3 eq' <=> ts lib T3 T eq'))
+    (forall T T3 eq', (T = T1 {+} T = T2) -> (ts lib T T3 eq' <=> ts lib T3 T eq'))
     # (* type transitive (3) *)
     ts lib T1 T2 eq
     (*(forall T T3 T4 eq1 eq2,
-       (T = T1 [+] T = T2)
+       (T = T1 {+} T = T2)
        -> ts lib T T3 eq1
        -> ts lib T3 T4 eq2
        -> ts lib T T4 eq1 # ts lib T T4 eq2)*)
     # (* type transitive (4) *)
     (forall T T3 T4 eq1 eq2,
-       (T = T1 [+] T = T2)
+       (T = T1 {+} T = T2)
        -> ts lib T3 T eq1
        -> ts lib T T4 eq2
        -> ts lib T3 T4 eq1 # ts lib T3 T4 eq2 # ts lib T T3 eq1).
@@ -694,8 +709,9 @@ Proof.
 
     + Case "type_transitive".
       introv e.
-      generalize (tymt T2 T1 T3 eq eq'); sp.
-      generalize (tymt T2 T3 T3 eq' eq'); intro k.
+      pose proof (tymt T2 T1 T3 eq eq') as q.
+      repeat (autodimp q hyp); repnd; dands; auto.
+      pose proof (tymt T2 T3 T3 eq' eq') as k.
       repeat (dest_imp k hyp).
       generalize (tygs T2 T3 eq'); intro j; dest_imp j hyp.
       apply j; sp.
@@ -732,7 +748,7 @@ Definition type_sys_props3 {p}
 (*    # (* type monotone *)
     (forall lib', lib_extends lib' lib -> ts lib' T1 T2 eq)*)
     # (* type value respecting *)
-    (forall T T3, (T = T1 [+] T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
+    (forall T T3, (T = T1 {+} T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
     # (* term symmetric *)
     term_equality_symmetric eq
     # (* term transitivive (1) *)
@@ -745,7 +761,7 @@ Definition type_sys_props3 {p}
     ts lib T1 T2 eq
     # (* type transitive (4) *)
     (forall T T3 T4 eq1 eq2,
-       (T = T1 [+] T = T2)
+       (T = T1 {+} T = T2)
        -> ts lib T3 T eq1
        -> ts lib T T4 eq2
        -> ts lib T3 T4 eq1 # ts lib T3 T4 eq2).
@@ -804,16 +820,16 @@ Proof.
       generalize (uv T3 eq'); sp.
 
     + Case "type_mtransitive".
-      subst; generalize (tymt T1 T3 T4 eq1 eq2); sp.
+      subst; pose proof (tymt T1 T3 T4 eq1 eq2) as q; repeat (autodimp q hyp); tcsp.
 
     + Case "type_mtransitive".
-      subst; generalize (tymt T2 T3 T4 eq1 eq2); sp.
+      subst; pose proof (tymt T2 T3 T4 eq1 eq2) as q; repeat (autodimp q hyp); tcsp.
 
     + Case "type_mtransitive".
-      subst; generalize (tymt T1 T3 T4 eq1 eq2); sp.
+      subst; pose proof (tymt T1 T3 T4 eq1 eq2) as q; repeat (autodimp q hyp); tcsp.
 
     + Case "type_mtransitive".
-      subst; generalize (tymt T2 T3 T4 eq1 eq2); sp.
+      subst; pose proof (tymt T2 T3 T4 eq1 eq2) as q; repeat (autodimp q hyp); tcsp.
 
   - onedtsp3 uv tys (*tymn*) tyvr tes tet tevr tygs tygt tymt.
     prove_type_sys_props2 Case; try (complete sp).
@@ -872,7 +888,7 @@ Ltac implies_ts_or T H :=
   match type of H with
     | ?ts ?lib ?T1 ?T2 ?eq =>
       let name := fresh "or" in
-      (assert (ts lib T1 T2 eq [+] ts lib T T2 eq) as name by (left; auto);
+      (assert (ts lib T1 T2 eq {+} ts lib T T2 eq) as name by (left; auto);
        clear H;
        rename name into H)
   end.
@@ -881,7 +897,7 @@ Ltac rev_implies_ts_or T H :=
   match type of H with
     | ?ts ?lib ?T1 ?T2 ?eq =>
       let name := fresh "or" in
-      (assert (ts lib T T2 eq [+] ts lib T1 T2 eq) as name by (right; auto);
+      (assert (ts lib T T2 eq {+} ts lib T1 T2 eq) as name by (right; auto);
        clear H;
        rename name into H)
   end.
@@ -1029,7 +1045,7 @@ Proof.
   generalize (tygs A B eq1); intro j; dest_imp j h.
   apply j.
   generalize (tyst B eq2 tsa); intro k; repnd.
-  generalize (tymt C A B eq1 eq1); sp.
+  pose proof (tymt C A B eq1 eq1) as q; repeat (autodimp q hyp); tcsp.
 Qed.
 
 Lemma type_sys_props_ts_sym5 {p} :
@@ -1044,7 +1060,7 @@ Proof.
   apply j.
   generalize (tyt B eq2 tsa); intro k; repnd.
   apply tygs in tygt; sp.
-  generalize (tymt C A B eq1 eq1); sp.
+  pose proof (tymt C A B eq1 eq1) as q; repeat (autodimp q hyp); tcsp.
 Qed.
 
 Lemma type_sys_props_ts_sym6 {p} :
@@ -1131,11 +1147,12 @@ Proof.
   onedtsp uv tys tyt tyst (*tymn*) tyvr tes tet tevr tygs tygt tymt.
   prove_type_sys_props Case.
 
-  - Case "uniquely_valued"; sp.
-    rev_implies_ts_or A t.
-    apply uv in t; auto.
-    implies_ts_or B t.
-    apply uv in t; auto.
+  - Case "uniquely_valued".
+    introv h; repndors; tcsp.
+    { rev_implies_ts_or A h.
+      apply uv in h; auto. }
+    implies_ts_or B h.
+    apply uv in h; auto.
 
   - Case "type_symmetric"; sp.
 
@@ -1166,16 +1183,16 @@ Proof.
     rw <- i; sp.
 
   - Case "type_mtransitive"; sp; subst; sp.
-    generalize (tymt B T3 T4 eq1 eq2); sp.
-    generalize (tymt A T3 T4 eq1 eq2); sp.
-    generalize (tymt B T3 T4 eq1 eq2); sp.
-    generalize (tymt A T3 T4 eq1 eq2); sp.
+    { pose proof (tymt B T3 T4 eq1 eq2) as q; repeat (autodimp q hyp); tcsp. }
+    { pose proof (tymt A T3 T4 eq1 eq2) as q; repeat (autodimp q hyp); tcsp. }
+    { pose proof (tymt B T3 T4 eq1 eq2) as q; repeat (autodimp q hyp); tcsp. }
+    { pose proof (tymt A T3 T4 eq1 eq2) as q; repeat (autodimp q hyp); tcsp. }
 
-    generalize (tygs B T3 eq1); intro i; dest_imp i h.
-    rw i; sp.
+    { pose proof (tygs B T3 eq1) as i; dest_imp i h.
+      rw i; sp. }
 
-    generalize (tygs A T3 eq1); intro i; dest_imp i h.
-    rw i; sp.
+    { pose proof (tygs A T3 eq1) as i; dest_imp i h.
+      rw i; sp. }
 Qed.
 
 Lemma type_system_type_symm {p} :
@@ -2239,9 +2256,9 @@ Qed.*)
 
 Definition type_equality_respecting_trans {o} (ts : cts(o)) lib (T1 T2 : @CTerm o) :=
   forall T T3 T4 eq',
-    (T = T1 [+] T = T2)
+    (T = T1 {+} T = T2)
     -> ccequivc_ext lib T T3
-    -> (ts lib T3 T4 eq' [+] ts lib T4 T3 eq')
+    -> (ts lib T3 T4 eq' {+} ts lib T4 T3 eq')
     -> ts lib T T4 eq'.
 
 Definition type_sys_props4 {p}
@@ -2254,7 +2271,7 @@ Definition type_sys_props4 {p}
     # (* type_extensionality *)
     (forall T3 eq', ts lib T1 T3 eq -> eq <=2=> eq' -> ts lib T1 T3 eq')
     # (* type value respecting *)
-    (forall T T3, (T = T1 [+] T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
+    (forall T T3, (T = T1 {+} T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
     # (* type value respecting trans *)
     type_equality_respecting_trans ts lib T1 T2
     # (* term symmetric *)
@@ -2269,7 +2286,7 @@ Definition type_sys_props4 {p}
     ts lib T1 T2 eq
     # (* type transitive (4) *)
     (forall T T3 T4 eq1 eq2,
-       (T = T1 [+] T = T2)
+       (T = T1 {+} T = T2)
        -> ts lib T3 T eq1
        -> ts lib T T4 eq2
        -> (ts lib T3 T4 eq1 # ts lib T3 T4 eq2)).

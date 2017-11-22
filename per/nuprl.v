@@ -100,14 +100,14 @@ Definition univ' {p} lib (T T' : @CTerm p) eq :=
 
  *)
 
-Definition univi_eq {o} (ts : cts(o)) lib (A A' : @CTerm o) :=
-  {eqa : per , close ts lib A A' eqa}.
-
 Definition univi_eq_bar {o} (ts : cts(o)) lib (A A' : @CTerm o) :=
   {eqa : per , {bar : BarLib lib , all_in_bar bar (fun lib => close ts lib A A' eqa)}}.
 
 Definition univi_eq_ext {o} (ts : cts(o)) lib (A A' : @CTerm o) :=
   {eqa : per , in_ext lib (fun lib => close ts lib A A' eqa)}.
+
+Definition univi_eq {o} (ts : cts(o)) lib (A A' : @CTerm o) :=
+  {eqa : per , close ts lib A A' eqa}.
 
 Fixpoint univi {p} (i : nat) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   match i with
@@ -120,6 +120,9 @@ Fixpoint univi {p} (i : nat) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
     )
     {+} univi n lib T T' eq
   end.
+
+Definition univi_bar {o} (i : nat) lib (T T' : @CTerm o) eq :=
+  per_bar (univi i) lib T T' eq.
 
 (**
 
@@ -209,10 +212,10 @@ Proof.
 Qed.
 
 
-Definition nuprli {p} (i : nat) := @close p (univi i).
+Definition nuprli {p} (i : nat) := @close p (univi_bar i).
 
 Lemma fold_nuprli {p} :
-  forall i, close (univi i) = @nuprli p i.
+  forall i, close (univi_bar i) = @nuprli p i.
 Proof.
   sp.
 Qed.
@@ -236,7 +239,7 @@ Qed.
  *)
 
 Definition univ {p} lib (T T' : @CTerm p) (eq : per) :=
-  {i : nat , univi i lib T T' eq}.
+  {i : nat , univi_bar i lib T T' eq}.
 
 (**
 
@@ -253,7 +256,7 @@ Definition defines_only_universes {o} (ts : cts(o)) :=
 
 Lemma univi_iff_univ {p} :
   forall lib (a b : @CTerm p) eq,
-    univ lib a b eq <=> {i : nat , univi i lib a b eq}.
+    univ lib a b eq <=> {i : nat , univi_bar i lib a b eq}.
 Proof.
   sp; split; sp.
 Qed.
@@ -331,6 +334,19 @@ Definition Nuprl {p} lib (T T' : @CTerm p) (eq : per) :=
  *)
 
 
+Lemma implies_univi_bar_successor {o} :
+  forall i lib (T T' : @CTerm o) eq,
+    univi_bar i lib T T' eq
+    -> univi_bar (S i) lib T T' eq.
+Proof.
+  introv u.
+  unfold univi_bar, per_bar in *; exrepnd.
+  exists bar eqa; dands; auto.
+  introv br ext; introv.
+  pose proof (u0 lib' br lib'0 ext x) as u0; simpl in *; tcsp.
+Qed.
+Hint Resolve implies_univi_bar_successor : slow.
+
 Lemma typable_in_higher_univ {pp} :
   forall i lib (T T' : @CTerm pp) eq,
     nuprli i lib T T' eq
@@ -338,9 +354,12 @@ Lemma typable_in_higher_univ {pp} :
 Proof.
   unfold nuprli; introv cl; induction k; simpl; sp.
 
-  remember (univi (k + i)) as u; revert Hequ.
+  remember (univi_bar (k + i)) as u; revert Hequ.
   clear cl.
   close_cases (induction IHk using @close_ind') Case; sp; subst.
+
+  - Case "CL_init".
+    apply CL_init; eauto 3 with slow.
 
   - Case "CL_bar".
     apply CL_bar.
@@ -666,7 +685,7 @@ Lemma nuprli_implies_nuprl {pp} :
     -> nuprl lib a b eq.
 Proof.
   unfold nuprli, nuprl; introv n.
-  remember (univi i) as k.
+  remember (univi_bar i) as k.
   revert i Heqk.
   close_cases (induction n using @close_ind') Case; sp; subst.
 

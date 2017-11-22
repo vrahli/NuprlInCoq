@@ -35,33 +35,33 @@ Require Export dest_close_int.
 Require Export dest_close_nat.
 Require Export dest_close_csname.
 Require Export dest_close_func.
-Require Export dest_close_isect.
+(*Require Export dest_close_isect.*)
 Require Export dest_close_product.
-Require Export dest_close_w.
-Require Export dest_close_m.
-Require Export dest_close_pw.
-Require Export dest_close_pm.
-Require Export dest_close_disect.
-Require Export dest_close_set.
-Require Export dest_close_tunion.
+(*Require Export dest_close_w.*)
+(*Require Export dest_close_m.*)
+(*Require Export dest_close_pw.*)
+(*Require Export dest_close_pm.*)
+(*Require Export dest_close_disect.*)
+(*Require Export dest_close_set.*)
+(*Require Export dest_close_tunion.*)
 Require Export dest_close_approx.
 Require Export dest_close_cequiv.
-Require Export dest_close_texc.
+(*Require Export dest_close_texc.*)
 Require Export dest_close_union.
-Require Export dest_close_image.
-Require Export dest_close_partial.
-Require Export dest_close_admiss.
-Require Export dest_close_mono.
-Require Export dest_close_ffatom.
-Require Export dest_close_pertype.
+(*Require Export dest_close_image.*)
+(*Require Export dest_close_partial.*)
+(*Require Export dest_close_admiss.*)
+(*Require Export dest_close_mono.*)
+(*Require Export dest_close_ffatom.*)
+(*Require Export dest_close_pertype.*)
 Require Export dest_close_equality.
-Require Export dest_close_requality.
-Require Export dest_close_tequality.
+(*Require Export dest_close_requality.*)
+(*Require Export dest_close_tequality.*)
 Require Export dest_close_base.
 Require Export dest_close_atom.
 Require Export dest_close_uatom.
 Require Export dest_close_uni.
-Require Export dest_close_tuni.
+(*Require Export dest_close_tuni.*)
 
 
 
@@ -115,7 +115,7 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_func_ext_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
 
-    (* isect *)
+(*    (* isect *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
         H3 : computes_to_valc ?lib ?T (mkc_isect ?A ?v ?B),
@@ -128,7 +128,7 @@ Ltac dest_close_lr h :=
         H3 : computes_to_valc ?lib ?T' (mkc_isect ?A ?v ?B),
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_isect_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_isect_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h*)
 
 (*    (* eisect *)
     | [ H1 : type_system ?ts,
@@ -146,7 +146,7 @@ Ltac dest_close_lr h :=
       generalize (dest_close_per_eisect_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
  *)
 
-    (* disect*)
+(*    (* disect*)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
         H3 : computes_to_valc ?lib ?T (mkc_disect ?A ?v ?B),
@@ -159,7 +159,7 @@ Ltac dest_close_lr h :=
         H3 : computes_to_valc ?lib ?T' (mkc_disect ?A ?v ?B),
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_disect_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_disect_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h*)
 
     (* product *)
     | [ H1 : type_system ?ts,
@@ -176,7 +176,7 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_product_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
 
-    (* w *)
+(*    (* w *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
         H3 : computes_to_valc ?lib ?T (mkc_w ?A ?v ?B),
@@ -264,7 +264,7 @@ Ltac dest_close_lr h :=
         H3 : computes_to_valc ?lib ?T' (mkc_tunion ?A ?v ?B),
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_tunion_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_tunion_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h*)
 
     (* approx *)
     | [ H1 : type_system ?ts,
@@ -326,7 +326,7 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_cequiv_r_ceq ts lib bar T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
 
-    (* texc *)
+(*    (* texc *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
         H3 : computes_to_valc ?lib ?T (mkc_texc ?A ?B),
@@ -339,7 +339,7 @@ Ltac dest_close_lr h :=
         H3 : computes_to_valc ?lib ?T' (mkc_texc ?A ?B),
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_texc_r ts lib T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_texc_r ts lib T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h*)
 
     (* union *)
     | [ H1 : type_system ?ts,
@@ -387,7 +387,7 @@ Ltac dest_close_lr h :=
       generalize (dest_close_per_eunion_r ts lib T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
 *)
 
-    (* image *)
+(*    (* image *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
         H3 : computes_to_valc ?lib ?T (mkc_image ?A ?B),
@@ -535,7 +535,7 @@ Ltac dest_close_lr h :=
         H3 : computes_to_valc ?lib ?T' (mkc_spertype ?A),
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_spertype_r ts lib T A T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_spertype_r ts lib T A T' eq H1 H2 H3 H4); intro h; no_duplicate h*)
 
     (* equality *)
     | [ H1 : type_system ?ts,
@@ -582,7 +582,7 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_equality_ceq_bar_r ts lib bar T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h
 
-    (* requality *)
+(*    (* requality *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
         H3 : computes_to_valc ?lib ?T (mkc_requality ?a ?b ?A),
@@ -610,7 +610,7 @@ Ltac dest_close_lr h :=
         H3 : computes_to_valc ?lib ?T' (mkc_tequality ?a ?b),
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_tequality_r ts lib T a b T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_tequality_r ts lib T a b T' eq H1 H2 H3 H4); intro h; no_duplicate h*)
 
     (* base *)
     | [ H1 : type_system ?ts,
@@ -938,7 +938,7 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_uni_ceq_bar_r ts lib T i T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 
-    (* tuni *)
+(*    (* tuni *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
         H3 : computes_to_valc ?lib ?T (mkc_tuni ?i),
@@ -951,7 +951,7 @@ Ltac dest_close_lr h :=
         H3 : computes_to_valc ?lib ?T' (mkc_tuni ?i),
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_tuni_r ts lib T i T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_tuni_r ts lib T i T' eq H1 H2 H3 H4); intro h; no_duplicate h*)
 
   end.
 

@@ -36,7 +36,7 @@ Require Export per_ceq_bar.
 
 
 
-Lemma type_equality_respecting_trans_init_implies {o} :
+(*Lemma type_equality_respecting_trans_init_implies {o} :
   forall (ts : cts(o)) lib (bar : BarLib lib) T T' i j,
     type_system ts
     -> defines_only_universes ts
@@ -62,7 +62,7 @@ Proof.
 
   - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
     dclose_lr; auto.
-Qed.
+Qed.*)
 
 Lemma computes_to_valc_uni_implies_all_in_bar_trivial {o} :
   forall lib (T : @CTerm o) i,
@@ -89,10 +89,12 @@ Proof.
   introv tysys dou mon e.
   use_dou.
 
-  prove_type_sys_props4 SCase; intros.
+  prove_type_sys_props4 SCase; introv.
 
   + SCase "uniquely_valued".
-    spcast; dest_close_lr h; spts.
+    introv cl.
+    spcast; dest_close_lr h.
+    unfold ts_or_per_bar in h; repndors; try spts.
 
   + SCase "type_symmetric".
     repdors; subst; spcast; dest_close_lr h; apply CL_init; spts.

@@ -48,6 +48,11 @@ Require Export decompose_alphaeq.
 (** printing mkc_int     $\intg$ *)
 (** printing mkc_integer $\mathtt{int}$ *)
 
+Ltac pd t :=
+  let h := fresh "h" in
+  let xxx := fresh "xxx" in
+  pose proof t as h; repeat (autodimp h xxx); tcsp.
+
 
 Lemma eq_term_equals_sym_tsp {p} :
   forall (ts : cts(p)) lib eqa (eqb : per-fam(eqa))
@@ -305,13 +310,13 @@ Proof.
   - Case "type_mtransitive".
     repdors; subst.
 
-    generalize (ftspb a2 a1 e1); intro i.
-    onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
-    generalize (tymt2 (substc a2 v1 B1) T3 T4 eq1 eq2); sp.
+    { generalize (ftspb a2 a1 e1); intro i.
+      onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
+      pose proof (tymt2 (substc a2 v1 B1) T3 T4 eq1 eq2) as q; repeat (autodimp q hyp); tcsp. }
 
-    generalize (ftspb a2 a1 e1); intro i.
-    onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
-    generalize (tymt2 (substc a1 v2 B2) T3 T4 eq1 eq2); sp.
+    { generalize (ftspb a2 a1 e1); intro i.
+      onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
+      pose proof (tymt2 (substc a1 v2 B2) T3 T4 eq1 eq2) as q; repeat (autodimp q hyp); tcsp. }
 Qed.
 
 Lemma eq_term_equals_type_family {p} :
@@ -710,7 +715,7 @@ Proof.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs A B eq); intro j; dest_imp j h.
   rw j in i.
-  generalize (tymt A B C eq eq2); sp.
+  pose proof (tymt A B C eq eq2) as q; repeat (autodimp q hyp); tcsp.
 Qed.
 
 Lemma type_sys_props_ts_trans3 {p} :
@@ -722,7 +727,7 @@ Lemma type_sys_props_ts_trans3 {p} :
 Proof.
   introv ts1 ts2 tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-  generalize (tymt B A C eq1 eq2); sp.
+  pose proof (tymt B A C eq1 eq2) as q; repeat (autodimp q hyp); tcsp.
 Qed.
 
 Lemma type_sys_props_ts_trans4 {p} :
@@ -734,7 +739,7 @@ Lemma type_sys_props_ts_trans4 {p} :
 Proof.
   introv ts1 ts2 tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-  generalize (tymt B A C eq1 eq2); sp.
+  pose proof (tymt B A C eq1 eq2) as q; repeat (autodimp q hyp); tcsp.
 Qed.
 
 Lemma type_sys_props_ts_trans5 {p} :
@@ -750,8 +755,7 @@ Proof.
   generalize (tygs A C eq2); intro i; dest_imp i h.
   rw j in ts1.
   applydup i in ts2 as ts3.
-  generalize (tymt A B C eq1 eq2); sp;
-  generalize (tymt A C C eq2 eq2); sp.
+  pd (tymt A B C eq1 eq2); pd (tymt A C C eq2 eq2).
 Qed.
 
 Lemma type_sys_props_ts_trans6 {p} :
@@ -764,7 +768,7 @@ Proof.
   introv ts1 ts2 tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
   generalize (tyt C eq2); sp.
-  generalize (dum B A C eq1 eq2); sp.
+  pd (dum B A C eq1 eq2).
 Qed.
 
 Lemma type_family_refl {p} :
@@ -931,7 +935,8 @@ Proof.
   sp.
 
   exists A1 A'0 v1 v'0 B1 B'0; sp; spcast; sp.
-  generalize (tymt A A1 A'0 eqa1 eqa2); sp.
+
+  { pd (tymt A A1 A'0 eqa1 eqa2). }
 
   assert (eqa1 a' a') as e1 by (apply tet with (t2 := a); auto).
   assert (eqa2 a' a') as e2 by (rw <- eqta; sp).
@@ -940,11 +945,11 @@ Proof.
   generalize (tf2 a' a' e2); intro ts2.
   generalize (ftspb a' a' e1); intro tspb.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
-  generalize (tymt2 (substc a' v B)
-                    (substc a v1 B1)
-                    (substc a' v'0 B'0)
-                    (eqb1 a a' e)
-                    (eqb2 a' a' e2)); sp.
+  pd (tymt2 (substc a' v B)
+            (substc a v1 B1)
+            (substc a' v'0 B'0)
+            (eqb1 a a' e)
+            (eqb2 a' a' e2)).
 Qed.
 
 Definition bcequivc_ext {p}
@@ -1190,8 +1195,8 @@ Proof.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1; sp.
   generalize (ftsp a a2 e2); intro tsp2.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2; sp.
-  generalize (uv2 (substc a1 v2 B2) (eqb a a1 e1)); intro i; sp.
-  rw i; sp.
+  pd (uv2 (substc a1 v2 B2) (eqb a a1 e1)).
+  rw h; sp.
 Qed.
 
 Lemma weq_trans {o} :

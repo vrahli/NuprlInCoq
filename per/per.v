@@ -2362,6 +2362,19 @@ Definition close_compute {p} (ts : cts) lib (T1 T2 : @CTerm p) (eq : per(p)) :=
 
  *)
 
+Notation "bar-per( lib , bar , o )" :=
+  (forall (lib1 : library) (br : bar_lib_bar bar lib1)
+          (lib2 : library) (ext : lib_extends lib2 lib1)
+          (x : lib_extends lib2 lib), per(o)).
+
+Definition all_in_bar_ext2 {o} {lib}
+           (bar : @BarLib o lib)
+           (F : forall (lib1 : library) (br : bar_lib_bar bar lib1)
+                       (lib2 : library) (ext : lib_extends lib2 lib1)
+                       (x : lib_extends lib2 lib), Prop) :=
+  forall (lib' : library) (b : bar_lib_bar bar lib'),
+    in_ext_ext lib' (fun l e => forall (x : lib_extends l lib), F lib' b l e x).
+
 Definition per_bar_eq {o}
            {lib}
            (bar : @BarLib o lib)

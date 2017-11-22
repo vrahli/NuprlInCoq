@@ -33,15 +33,19 @@
 Require Export dest_close_tacs.
 
 
+Definition per_union_bar_or {o} ts lib (T T' : @CTerm o) eq :=
+  per_union_bar ts lib T T' eq
+  {+} per_bar ts lib T T' eq.
+
 Lemma dest_close_per_union_l {p} :
   forall (ts : cts(p)) lib T A B T' eq,
     type_system ts
     -> defines_only_universes ts
     -> computes_to_valc lib T (mkc_union A B)
     -> close ts lib T T' eq
-    -> per_union_bar (close ts) lib T T' eq.
+    -> per_union_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_union_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -51,9 +55,9 @@ Lemma dest_close_per_union_r {p} :
     -> defines_only_universes ts
     -> computes_to_valc lib T' (mkc_union A B)
     -> close ts lib T T' eq
-    -> per_union_bar (close ts) lib T T' eq.
+    -> per_union_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_union_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -63,9 +67,9 @@ Lemma dest_close_per_union_bar_l {p} :
     -> defines_only_universes ts
     -> all_in_bar bar (fun lib => T ===>(lib) (mkc_union A B))
     -> close ts lib T T' eq
-    -> per_union_bar (close ts) lib T T' eq.
+    -> per_union_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_union_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -75,9 +79,9 @@ Lemma dest_close_per_union_bar_r {p} :
     -> defines_only_universes ts
     -> all_in_bar bar (fun lib => T' ===>(lib) (mkc_union A B))
     -> close ts lib T T' eq
-    -> per_union_bar (close ts) lib T T' eq.
+    -> per_union_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_union_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -87,9 +91,9 @@ Lemma dest_close_per_union_ceq_bar_l {p} :
     -> defines_only_universes ts
     -> T ==b==>(bar) (mkc_union A B)
     -> close ts lib T T' eq
-    -> per_union_bar (close ts) lib T T' eq.
+    -> per_union_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_union_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
@@ -99,9 +103,9 @@ Lemma dest_close_per_union_ceq_bar_r {p} :
     -> defines_only_universes ts
     -> T' ==b==>(bar) (mkc_union A B)
     -> close ts lib T T' eq
-    -> per_union_bar (close ts) lib T T' eq.
+    -> per_union_bar_or (close ts) lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
+  introv tysys dou comp cl; unfold per_union_bar_or.
   inversion cl; subst; try close_diff_all; auto.
 Qed.
 
