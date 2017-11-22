@@ -30,7 +30,8 @@
 *)
 
 
-Require Export nuprl_props.
+
+Require Export computation_lib_extends2.
 Require Export raise_bar.
 
 
@@ -137,15 +138,6 @@ Proof.
   exists (raise_bar bar ext).
   dands; eauto 3 with slow.
 Qed.
-
-Definition raise_lib_per {o} {lib lib'}
-           (per : lib-per(lib,o))
-           (ext : lib_extends lib' lib) : lib-per(lib',o).
-Proof.
-  introv e.
-  apply (per lib'0).
-  eapply lib_extends_trans; eauto.
-Defined.
 
 Lemma implies_in_ext_ext_ts_raise_lib_per {o} :
   forall (ts : cts(o)) lib lib' (ext : lib_extends lib' lib) A A' eqa,
@@ -278,6 +270,27 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Definition per_bar_monotone {o} :
+  forall (ts : cts(o)) lib lib' T T' eq,
+    per_bar (close ts) lib T T' eq
+    -> lib_extends lib' lib
+    -> exists eq', per_bar (close ts) lib' T T' eq'.
+Proof.
+  introv per ext.
+  unfold per_bar in *; exrepnd.
+
+  exists (per_bar_eq (raise_bar bar ext) (raise_lib_per eqa ext))
+         (raise_bar bar ext) (raise_lib_per eqa ext).
+  dands; tcsp; eauto 3 with slow.
+Qed.
+
+Definition type_monotone {p} (ts : cts(p)) :=
+  forall lib lib' T1 T2 eq,
+    ts lib T1 T2 eq
+    -> lib_extends lib' lib
+    -> exists eq', ts lib' T1 T2 eq'.
+(* it should be that [subset eq eq'] *)
+
 Lemma close_monotone {o} :
   forall (ts : cts(o)), type_monotone ts -> type_monotone (close ts).
 Proof.
@@ -289,6 +302,12 @@ Proof.
     exrepnd.
     exists eq'.
     apply CL_init; auto.
+
+  - Case "CL_bar".
+    pose proof (per_bar_monotone ts lib lib' T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'.
+    apply CL_bar; auto.
 
   - Case "CL_int".
     pose proof (per_int_monotone ts lib lib' T T' eq) as q.
@@ -363,6 +382,41 @@ Proof.
     apply CL_product; auto.
 Qed.
 
+Lemma monotone_univi {o} :
+  forall i, @type_monotone o (univi i).
+Proof.
+  introv h ext.
+  allrw @univi_exists_iff; exrepnd.
+  exists (fun A A' => (exists eqa, close (univi j) lib' A A' eqa)).
+  allrw @univi_exists_iff.
+  exists j; dands; tcsp; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve monotone_univi : slow.
+
+Lemma monotone_univi_bar {o} :
+  forall i, @type_monotone o (univi_bar i).
+Proof.
+  introv h ext.
+  unfold univi_bar, per_bar in *; exrepnd.
+  exists (per_bar_eq (raise_bar bar ext) (raise_lib_per eqa ext))
+         (raise_bar bar ext)
+         (raise_lib_per eqa ext).
+  dands; tcsp;[].
+  introv br w; introv; simpl in *; exrepnd.
+  eapply h0; eauto 3 with slow.
+Qed.
+Hint Resolve monotone_univi_bar : slow.
+
+Lemma monotone_univ {o} : @type_monotone o univ.
+Proof.
+  introv u e.
+  unfold univ in *; exrepnd.
+  eapply monotone_univi_bar in u0; autodimp u0 hyp; eauto.
+  exrepnd.
+  exists eq' i; auto.
+Qed.
+Hint Resolve monotone_univ : slow.
+
 Lemma nuprl_monotone {o} : @type_monotone o nuprl.
 Proof.
   unfold nuprl.
@@ -399,9 +453,21 @@ Proof.
 Qed.
 Hint Resolve sub_per_eq_eq_term_equals_left : slow.
 
+Lemma sub_per_equality_of_int_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+    sub_per (equality_of_int_bar lib) (equality_of_int_bar lib').
+Proof.
+  introv ext h.
+  unfold equality_of_int_bar, equality_of_int_bar1 in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br e; simpl in *; exrepnd.
+  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_equality_of_int_bar : slow.
+
 Lemma per_int_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
-    per_int_bar (close ts) lib T T' eq
+    per_int_bar ts lib T T' eq
     -> lib_extends lib' lib
     -> exists eq', per_int_bar ts lib' T T' eq' # sub_per eq eq'.
 Proof.
@@ -412,9 +478,21 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_equality_of_nat_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+    sub_per (equality_of_nat_bar lib) (equality_of_nat_bar lib').
+Proof.
+  introv ext h.
+  unfold equality_of_nat_bar, equality_of_nat in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br e; simpl in *; exrepnd.
+  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_equality_of_nat_bar : slow.
+
 Lemma per_nat_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
-    per_nat_bar (close ts) lib T T' eq
+    per_nat_bar ts lib T T' eq
     -> lib_extends lib' lib
     -> exists eq', per_nat_bar ts lib' T T' eq' # sub_per eq eq'.
 Proof.
@@ -425,9 +503,21 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_equality_of_csname_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+    sub_per (equality_of_csname_bar lib) (equality_of_csname_bar lib').
+Proof.
+  introv ext h.
+  unfold equality_of_csname_bar, equality_of_csname in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br e; simpl in *; exrepnd.
+  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_equality_of_csname_bar : slow.
+
 Lemma per_csname_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
-    per_csname_bar (close ts) lib T T' eq
+    per_csname_bar ts lib T T' eq
     -> lib_extends lib' lib
     -> exists eq', per_csname_bar ts lib' T T' eq' # sub_per eq eq'.
 Proof.
@@ -438,9 +528,21 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_equality_of_atom_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+    sub_per (equality_of_atom_bar lib) (equality_of_atom_bar lib').
+Proof.
+  introv ext h.
+  unfold equality_of_atom_bar, equality_of_atom_bar1 in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br e; simpl in *; exrepnd.
+  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_equality_of_atom_bar : slow.
+
 Lemma per_atom_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
-    per_atom_bar (close ts) lib T T' eq
+    per_atom_bar ts lib T T' eq
     -> lib_extends lib' lib
     -> exists eq', per_atom_bar ts lib' T T' eq' # sub_per eq eq'.
 Proof.
@@ -451,9 +553,21 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_equality_of_uatom_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+    sub_per (equality_of_uatom_bar lib) (equality_of_uatom_bar lib').
+Proof.
+  introv ext h.
+  unfold equality_of_uatom_bar, equality_of_uatom_bar1 in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br e; simpl in *; exrepnd.
+  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_equality_of_uatom_bar : slow.
+
 Lemma per_uatom_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
-    per_uatom_bar (close ts) lib T T' eq
+    per_uatom_bar ts lib T T' eq
     -> lib_extends lib' lib
     -> exists eq', per_uatom_bar ts lib' T T' eq' # sub_per eq eq'.
 Proof.
@@ -464,9 +578,21 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_base_eq {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+    sub_per (per_base_eq lib) (per_base_eq lib').
+Proof.
+  introv ext h.
+  unfold per_base_eq, per_base_eq1 in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br e; simpl in *; exrepnd.
+  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_base_eq : slow.
+
 Lemma per_base_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
-    per_base_bar (close ts) lib T T' eq
+    per_base_bar ts lib T T' eq
     -> lib_extends lib' lib
     -> exists eq', per_base_bar ts lib' T T' eq' # sub_per eq eq'.
 Proof.
@@ -477,9 +603,21 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_approx_eq_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib) a b,
+    sub_per (per_approx_eq_bar lib a b) (per_approx_eq_bar lib' a b).
+Proof.
+  introv ext h.
+  unfold per_approx_eq_bar, per_approx_eq_bar1 in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br e; simpl in *; exrepnd.
+  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_approx_eq_bar : slow.
+
 Lemma per_approx_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
-    per_approx_bar (close ts) lib T T' eq
+    per_approx_bar ts lib T T' eq
     -> lib_extends lib' lib
     -> exists eq', per_approx_bar ts lib' T T' eq' # sub_per eq eq'.
 Proof.
@@ -505,7 +643,7 @@ Hint Resolve sub_per_cequiv_eq_bar : slow.
 
 Lemma per_cequiv_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
-    per_cequiv_bar (close ts) lib T T' eq
+    per_cequiv_bar ts lib T T' eq
     -> lib_extends lib' lib
     -> exists eq', per_cequiv_bar ts lib' T T' eq' # sub_per eq eq'.
 Proof.
@@ -531,9 +669,9 @@ Hint Resolve sub_per_per_eq_eq : slow.
 
 Lemma per_eq_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
-    per_eq_bar (close ts) lib T T' eq
+    per_eq_bar ts lib T T' eq
     -> lib_extends lib' lib
-    -> exists eq', per_eq_bar (close ts) lib' T T' eq' # sub_per eq eq'.
+    -> exists eq', per_eq_bar ts lib' T T' eq' # sub_per eq eq'.
 Proof.
   introv per ext.
   unfold per_eq_bar in *; exrepnd.
@@ -557,9 +695,9 @@ Hint Resolve sub_per_per_func_ext_eq : slow.
 
 Lemma per_func_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
-    per_func_ext (close ts) lib T T' eq
+    per_func_ext ts lib T T' eq
     -> lib_extends lib' lib
-    -> exists eq', per_func_ext (close ts) lib' T T' eq' # sub_per eq eq'.
+    -> exists eq', per_func_ext ts lib' T T' eq' # sub_per eq eq'.
 Proof.
   introv per ext.
   unfold per_func_ext in *; exrepnd.
@@ -586,9 +724,9 @@ Hint Resolve sub_per_per_union_eq_bar : slow.
 
 Lemma per_union_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
-    per_union_bar (close ts) lib T T' eq
+    per_union_bar ts lib T T' eq
     -> lib_extends lib' lib
-    -> exists eq', per_union_bar (close ts) lib' T T' eq' # sub_per eq eq'.
+    -> exists eq', per_union_bar ts lib' T T' eq' # sub_per eq eq'.
 Proof.
   introv per ext.
   unfold per_union_bar in *; exrepnd.
@@ -617,7 +755,7 @@ Proof.
 Qed.
 Hint Resolve sub_per_per_product_bar_eq : slow.
 
-Lemma type_system_implies_in_ext_ext_type_sys_props4 {o} :
+(*Lemma type_system_implies_in_ext_ext_type_sys_props4 {o} :
   forall (ts : cts(o)) lib A A' eqa,
     type_system ts
     -> in_ext_ext lib (fun lib' x => ts lib' A A' (eqa lib' x))
@@ -628,9 +766,9 @@ Proof.
   apply type_system_prop4 in tsts.
   apply tsts; auto.
 Qed.
-Hint Resolve type_system_implies_in_ext_ext_type_sys_props4 : slow.
+Hint Resolve type_system_implies_in_ext_ext_type_sys_props4 : slow.*)
 
-Lemma type_family_ext_implies_term_equality_change_lib_extends {o} :
+(*Lemma type_family_ext_implies_term_equality_change_lib_extends {o} :
   forall (ts : cts(o)) lib T T' eqa eqb,
     type_system ts
     -> type_family_ext mkc_product ts lib T T' eqa eqb
@@ -640,9 +778,9 @@ Proof.
   unfold type_family_ext in *; exrepnd.
   apply (in_ext_ext_type_sys_props4_implies_change_lib_extends ts lib A A'); eauto 3 with slow.
 Qed.
-Hint Resolve type_family_ext_implies_term_equality_change_lib_extends : slow.
+Hint Resolve type_family_ext_implies_term_equality_change_lib_extends : slow.*)
 
-Lemma type_system_implies_in_ext_ext_type_sys_props4_fam {o} :
+(*Lemma type_system_implies_in_ext_ext_type_sys_props4_fam {o} :
   forall (ts : cts(o)) lib eqa eqb v B v' B',
     type_system ts
     -> in_ext_ext
@@ -661,9 +799,9 @@ Proof.
   apply type_system_prop4 in tsts.
   apply tsts; auto.
 Qed.
-Hint Resolve type_system_implies_in_ext_ext_type_sys_props4_fam : slow.
+Hint Resolve type_system_implies_in_ext_ext_type_sys_props4_fam : slow.*)
 
-Lemma type_family_ext_implies_term_equality_change_lib_extends_fam {o} :
+(*Lemma type_family_ext_implies_term_equality_change_lib_extends_fam {o} :
   forall (ts : cts(o)) lib T T' eqa eqb,
     type_system ts
     -> type_family_ext mkc_product ts lib T T' eqa eqb
@@ -673,16 +811,15 @@ Proof.
   unfold type_family_ext in *; exrepnd.
   apply (in_ext_ext_type_sys_props4_fam_implies_change_lib_extends_fam ts lib v B v' B'); eauto 3 with slow.
 Qed.
-Hint Resolve type_family_ext_implies_term_equality_change_lib_extends_fam : slow.
+Hint Resolve type_family_ext_implies_term_equality_change_lib_extends_fam : slow.*)
 
 Lemma per_product_monotone2 {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
-    type_system (close ts)
-    -> per_product_bar (close ts) lib T T' eq
+    per_product_bar ts lib T T' eq
     -> lib_extends lib' lib
-    -> exists eq', per_product_bar (close ts) lib' T T' eq' # sub_per eq eq'.
+    -> exists eq', per_product_bar ts lib' T T' eq' # sub_per eq eq'.
 Proof.
-  introv tsts per ext.
+  introv per ext.
   unfold per_product_bar in *; exrepnd.
 
   exists (per_product_eq_bar lib' (raise_lib_per eqa ext) (raise_lib_per_fam eqb ext)).
@@ -693,13 +830,37 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_per_bar_eq {o} :
+  forall {lib} {lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) eq eqa,
+    (eq <=2=> (per_bar_eq bar eqa))
+    -> sub_per eq (per_bar_eq (raise_bar bar ext) (raise_lib_per eqa ext)).
+Proof.
+  introv eqiff h.
+  apply eqiff in h; clear eqiff.
+  introv br e; introv; simpl in *; exrepnd.
+  eapply h; eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_per_bar_eq : slow.
+
+Lemma per_bar_monotone2 {o} :
+  forall (ts : cts(o)) lib lib' T T' eq,
+    per_bar ts lib T T' eq
+    -> lib_extends lib' lib
+    -> exists eq', per_bar ts lib' T T' eq' # sub_per eq eq'.
+Proof.
+  introv per ext.
+  unfold per_bar in *; exrepnd.
+
+  exists (per_bar_eq (raise_bar bar ext) (raise_lib_per eqa ext)); dands; eauto 3 with slow.
+  exists (raise_bar bar ext) (raise_lib_per eqa ext); dands; eauto 3 with slow.
+Qed.
+
 Lemma close_monotone2 {o} :
   forall (ts : cts(o)),
-    type_system (close ts)
-    -> type_monotone2 ts
+    type_monotone2 ts
     -> type_monotone2 (close ts).
 Proof.
-  introv tscl m cl.
+  introv m cl.
   close_cases (induction cl using @close_ind') Case; introv ext.
 
   - Case "CL_init".
@@ -707,68 +868,73 @@ Proof.
     exrepnd.
     exists eq'; dands; auto.
 
+  - Case "CL_bar".
+    pose proof (per_bar_monotone2 (close ts) lib lib' T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; dands; auto.
+
   - Case "CL_int".
-    pose proof (per_int_monotone2 ts lib lib' T T' eq) as q.
+    pose proof (per_int_monotone2 (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 
   - Case "CL_nat".
-    pose proof (per_nat_monotone2 ts lib lib' T T' eq) as q.
+    pose proof (per_nat_monotone2 (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 
   - Case "CL_csname".
-    pose proof (per_csname_monotone2 ts lib lib' T T' eq) as q.
+    pose proof (per_csname_monotone2 (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 
   - Case "CL_atom".
-    pose proof (per_atom_monotone2 ts lib lib' T T' eq) as q.
+    pose proof (per_atom_monotone2 (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 
   - Case "CL_uatom".
-    pose proof (per_uatom_monotone2 ts lib lib' T T' eq) as q.
+    pose proof (per_uatom_monotone2 (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 
   - Case "CL_base".
-    pose proof (per_base_monotone2 ts lib lib' T T' eq) as q.
+    pose proof (per_base_monotone2 (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 
   - Case "CL_approx".
-    pose proof (per_approx_monotone2 ts lib lib' T T' eq) as q.
+    pose proof (per_approx_monotone2 (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 
   - Case "CL_cequiv".
-    pose proof (per_cequiv_monotone2 ts lib lib' T T' eq) as q.
+    pose proof (per_cequiv_monotone2 (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 
   - Case "CL_eq".
-    pose proof (per_eq_monotone2 ts lib lib' T T' eq) as q.
+    pose proof (per_eq_monotone2 (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 
   - Case "CL_func".
-    pose proof (per_func_monotone2 ts lib lib' T T' eq) as q.
+    pose proof (per_func_monotone2 (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 
   - Case "CL_union".
-    pose proof (per_union_monotone2 ts lib lib' T T' eq) as q.
+    pose proof (per_union_monotone2 (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 
   - Case "CL_product".
-    pose proof (per_product_monotone2 ts lib lib' T T' eq) as q.
+    pose proof (per_product_monotone2 (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 Qed.
 
-Hint Resolve close_type_system : slow.
+(*Hint Resolve close_type_system : slow.*)
 
 Lemma univi_monotone2 {o} :
   forall i, @type_monotone2 o (univi i).
@@ -783,6 +949,7 @@ Proof.
   { exists j; dands; tcsp; spcast; eauto 3 with slow. }
 
   { introv h.
+    unfold univi_eq in *.
     apply h0 in h; exrepnd.
 
     pose proof (@close_monotone2 o (univi j)) as q.
@@ -793,11 +960,20 @@ Proof.
 Qed.
 Hint Resolve univi_monotone2 : slow.
 
+Lemma univi_bar_monotone2 {o} :
+  forall i, @type_monotone2 o (univi_bar i).
+Proof.
+  introv h ext.
+  unfold univi_bar in *.
+  eapply per_bar_monotone2; eauto.
+Qed.
+Hint Resolve univi_bar_monotone2 : slow.
+
 Lemma univ_monotone2 {o} : @type_monotone2 o univ.
 Proof.
   introv u e.
   unfold univ in *; exrepnd.
-  eapply univi_monotone2 in u0; autodimp u0 hyp; eauto.
+  eapply univi_bar_monotone2 in u0; autodimp u0 hyp; eauto.
   exrepnd.
   exists eq'; dands; auto.
   exists i; auto.
@@ -817,7 +993,7 @@ Lemma nuprli_monotone2 {o} : forall i, @type_monotone2 o (nuprli i).
 Proof.
   introv u e.
   unfold nuprli in *; exrepnd.
-  pose proof (@close_monotone2 o (univi i)) as q.
+  pose proof (@close_monotone2 o (univi_bar i)) as q.
   repeat (autodimp q hyp); eauto 3 with slow.
 Qed.
 Hint Resolve nuprli_monotone2 : slow.
@@ -846,7 +1022,7 @@ Proof.
 Qed.
 Hint Resolve member_monotone : slow.
 
-Lemma type_monotone {o} :
+Lemma meta_type_monotone {o} :
   forall lib lib' (A : @CTerm o),
     lib_extends lib' lib
     -> type lib A
@@ -855,4 +1031,4 @@ Proof.
   introv ext equ.
   eapply tequality_monotone in equ; eauto.
 Qed.
-Hint Resolve type_monotone : slow.
+Hint Resolve meta_type_monotone : slow.

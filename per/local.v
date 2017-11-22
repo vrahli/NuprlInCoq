@@ -78,6 +78,46 @@ Lemma local_univi_bar {o} :
 Proof.
   introv eqiff alla.
   unfold univi_bar in *.
+  destruct i.
+
+  {
+    unfold univi_bar, per_bar in *; simpl in *.
+    pose proof (bar_non_empty bar) as q; exrepnd.
+    pose proof (alla lib' q0 lib' (lib_extends_refl lib') (bar_lib_ext bar lib' q0)) as h; simpl in *.
+    exrepnd.
+    pose proof (bar_non_empty bar0) as w; exrepnd.
+    pose proof (h0 lib'0 w0 lib'0 (lib_extends_refl lib'0)) as h0; simpl in *.
+    autodimp h0 hyp; tcsp; eauto 3 with slow.
+  }
+
+  remember (S i) as k.
+
+  apply all_in_bar_ext_exists_bar_implies in alla; exrepnd.
+
+  exists (bar_of_bar_fam fbar).
+
+  exists (fun lib' (x : lib_extends lib' lib) => univi_eq (univi i) lib').
+  dands.
+
+  {
+    introv br ext x; simpl in *; exrepnd.
+
+    pose proof (alla0 lib1 br lib2 ext0 x0) as alla0.
+    exrepnd.
+    remember (fbar lib1 br lib2 ext0 x0) as b.
+    pose proof (alla0
+                  lib' br0 lib'0 ext
+                  (lib_extends_trans ext (bar_lib_ext b lib' br0)))
+      as alla0; simpl in *.
+
+    allrw @univi_exists_iff; exrepnd.
+    exists j; dands; auto; tcsp.
+
+    SearchAbout univi.
+  }
+
+
+XXXXXXX
 
 Lemma local_per_bar {o} :
   forall {lib} (bar : @BarLib o lib) ts T T' eq eqa,

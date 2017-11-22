@@ -46,18 +46,6 @@ Proof.
   eapply alla0; eauto.
 Qed.
 
-Lemma sub_per_approx_eq_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib) a b,
-    sub_per (per_approx_eq_bar lib a b) (per_approx_eq_bar lib' a b).
-Proof.
-  introv ext h.
-  unfold per_approx_eq_bar, per_approx_eq_bar1 in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br e; simpl in *; exrepnd.
-  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
-Qed.
-Hint Resolve sub_per_approx_eq_bar : slow.
-
 Lemma per_approx_bar_eq {o} :
   forall ts lib (T1 T2 : @CTerm o) eq,
     per_approx_bar ts lib T1 T2 eq

@@ -135,13 +135,6 @@ Definition type_symmetric {p} (ts : cts(p)) :=
 Definition type_transitive {p} (ts : cts(p)) :=
   forall lib T1 T2 T3 eq, ts lib T1 T2 eq -> ts lib T2 T3 eq -> ts lib T1 T3 eq.
 
-Definition type_monotone {p} (ts : cts(p)) :=
-  forall lib lib' T1 T2 eq,
-    ts lib T1 T2 eq
-    -> lib_extends lib' lib
-    -> exists eq', ts lib' T1 T2 eq'.
-(* it should be that [subset eq eq'] *)
-
 (*
 (* This is not part of a type system, but is sometimes easier to prove
  because stronger than type_transitive. *)
@@ -443,41 +436,6 @@ Proof.
       dest_imp k hyp.
       dest_is_ts uv tye tys tyt (*tmn*) tyvr tes tet tevr; auto.
 Qed.
-
-Lemma monotone_univi {o} :
-  forall i, @type_monotone o (univi i).
-Proof.
-  introv h ext.
-  allrw @univi_exists_iff; exrepnd.
-  exists (fun A A' => (exists eqa, close (univi j) lib' A A' eqa)).
-  allrw @univi_exists_iff.
-  exists j; dands; tcsp; spcast; eauto 3 with slow.
-Qed.
-Hint Resolve monotone_univi : slow.
-
-Lemma monotone_univi_bar {o} :
-  forall i, @type_monotone o (univi_bar i).
-Proof.
-  introv h ext.
-  unfold univi_bar, per_bar in *; exrepnd.
-  exists (per_bar_eq (raise_bar bar ext) (raise_lib_per eqa ext))
-         (raise_bar bar ext)
-         (raise_lib_per eqa ext).
-  dands; tcsp;[].
-  introv br w; introv; simpl in *; exrepnd.
-  eapply h0; eauto 3 with slow.
-Qed.
-Hint Resolve monotone_univi_bar : slow.
-
-Lemma monotone_univ {o} : @type_monotone o univ.
-Proof.
-  introv u e.
-  unfold univ in *; exrepnd.
-  eapply monotone_univi_bar in u0; autodimp u0 hyp; eauto.
-  exrepnd.
-  exists eq' i; auto.
-Qed.
-Hint Resolve monotone_univ : slow.
 
 
 (*

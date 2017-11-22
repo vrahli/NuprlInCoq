@@ -161,13 +161,13 @@ Check (fun T T' => univi 1 T T' (fun A A' => {eqa : per & close (univi 0) A A' e
 *)
 
 
-Lemma univi_mkc_uni {p} :
-  forall lib (i : nat),
+Lemma univi_mkc_uni {o} :
+  forall (lib : @library o) (i : nat),
     univi (S i)
           lib
           (mkc_uni i)
           (mkc_uni i)
-          (fun A A' => {eqa : per(p) , close (univi i) lib A A' eqa}).
+          (univi_eq (univi i) lib).
 Proof.
   intros.
   simpl.
@@ -183,8 +183,7 @@ Lemma univi_exists {p} :
         , j < i
          # T ===>(lib) (mkc_uni j)
          # T' ===>(lib) (mkc_uni j)
-         # forall A A',
-              eq A A' <=> {eqa : per , close (univi j) lib A A' eqa}}.
+         # eq <=2=> (univi_eq (univi j) lib)}.
 Proof.
   induction i; introv u; simpl in *; tcsp.
   repndors; repnd; try (complete (apply IHi in u; exrepnd; exists j; sp)).
@@ -198,8 +197,7 @@ Lemma univi_exists_iff {p} :
           , j < i
           # T ===>(lib) (mkc_uni j)
           # T' ===>(lib) (mkc_uni j)
-          # forall A A',
-               eq A A' <=> {eqa : per , close (univi j) lib A A' eqa}}.
+          # eq <=2=> (univi_eq (univi j) lib) }.
 Proof.
   introv; split; intro k.
   { apply univi_exists; auto. }

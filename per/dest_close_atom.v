@@ -46,18 +46,6 @@ Proof.
   eapply alla0; eauto.
 Qed.
 
-Lemma sub_per_equality_of_atom_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
-    sub_per (equality_of_atom_bar lib) (equality_of_atom_bar lib').
-Proof.
-  introv ext h.
-  unfold equality_of_atom_bar, equality_of_atom_bar1 in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br e; simpl in *; exrepnd.
-  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
-Qed.
-Hint Resolve sub_per_equality_of_atom_bar : slow.
-
 Lemma local_per_atom_bar {o} :
   forall {lib} (bar : @BarLib o lib) ts T T' eq eqa,
     (eq <=2=> (per_bar_eq bar eqa))
