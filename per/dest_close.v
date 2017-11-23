@@ -907,36 +907,40 @@ Ltac dest_close_lr h :=
       generalize (dest_close_per_uatom_ceq_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 
     (* uni *)
-    | [ H1 : type_system ?ts,
-        H2 : defines_only_universes ?ts,
-        H3 : computes_to_valc ?lib ?T (mkc_uni ?i),
-        H4 : close ?ts ?lib ?T ?T' ?eq
+    | [ H1 : local_ts ?ts,
+        H2 : type_system ?ts,
+        H3 : defines_only_universes ?ts,
+        H4 : computes_to_valc ?lib ?T (mkc_uni ?i),
+        H5 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_uni_l ts lib T i T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_uni_l ts lib T i T' eq H1 H2 H3 H4 H5); intro h; no_duplicate h
 
-    | [ H1 : type_system ?ts,
-        H2 : defines_only_universes ?ts,
-        H3 : computes_to_valc ?lib ?T' (mkc_uni ?i),
-        H4 : close ?ts ?lib ?T ?T' ?eq
+    | [ H1 : local_ts ?ts,
+        H2 : type_system ?ts,
+        H3 : defines_only_universes ?ts,
+        H4 : computes_to_valc ?lib ?T' (mkc_uni ?i),
+        H5 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_uni_r ts lib T i T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_uni_r ts lib T i T' eq H1 H2 H3 H4 H5); intro h; no_duplicate h
 
     (* uni ceq bar *)
-    | [ H1 : type_system ?ts,
-        H2 : defines_only_universes ?ts,
-        H3 : type_monotone ?ts,
-        H4 : ?T ==b==>(?bar) (mkc_uni ?i),
-        H5 : close ?ts ?lib ?T ?T' ?eq
+    | [ H1 : local_ts ?ts,
+        H2 : type_system ?ts,
+        H3 : defines_only_universes ?ts,
+        H4 : type_monotone ?ts,
+        H5 : ?T ==b==>(?bar) (mkc_uni ?i),
+        H6 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_uni_ceq_bar_l ts lib T i T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+      generalize (dest_close_per_uni_ceq_bar_l ts lib T i T' eq bar H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
 
-    | [ H1 : type_system ?ts,
-        H2 : defines_only_universes ?ts,
-        H3 : type_monotone ?ts,
-        H4 : ?T' ==b==>(?bar) (mkc_uni ?i),
-        H5 : close ?ts ?lib ?T ?T' ?eq
+    | [ H1 : local_ts ?ts,
+        H2 : type_system ?ts,
+        H3 : defines_only_universes ?ts,
+        H4 : type_monotone ?ts,
+        H5 : ?T' ==b==>(?bar) (mkc_uni ?i),
+        H6 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_uni_ceq_bar_r ts lib T i T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
+      generalize (dest_close_per_uni_ceq_bar_r ts lib T i T' eq bar H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
 
 (*    (* tuni *)
     | [ H1 : type_system ?ts,

@@ -71,13 +71,17 @@ Proof.
   pose proof (C0 (mk_pack_lib_bar lib1 br lib2 ext x)) as w; auto.
 Qed.
 
+Definition local_ts {o} (ts : cts(o)) :=
+  forall {lib} (bar : @BarLib o lib) T T' eq eqa,
+    (eq <=2=> (per_bar_eq bar eqa))
+    -> all_in_bar_ext bar (fun lib' x => ts lib' T T' (eqa lib' x))
+    -> ts lib T T' eq.
+
 Lemma local_per_bar {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' eq eqa,
+  forall (ts : cts(o)),
     type_extensionality ts
     -> uniquely_valued ts
-    -> (eq <=2=> (per_bar_eq bar eqa))
-    -> all_in_bar_ext bar (fun lib' x => per_bar ts lib' T T' (eqa lib' x))
-    -> per_bar ts lib T T' eq.
+    -> local_ts (per_bar ts).
 Proof.
   introv text uv eqiff alla.
   unfold per_bar in *.
@@ -166,64 +170,42 @@ Proof.
       apply q0; auto.
   }
 Qed.
+Hint Resolve local_per_bar : slow.
+
+Lemma type_extensionality_univi {o} :
+  forall i, @type_extensionality o (univi i).
+Proof.
+  introv u e.
+  allrw @univi_exists_iff; exrepnd.
+  exists j; dands; auto.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym;auto.
+Qed.
+Hint Resolve type_extensionality_univi : slow.
+
+Lemma uniquely_valued_univi {o} :
+  forall i, @uniquely_valued o (univi i).
+Proof.
+  introv u v.
+  allrw @univi_exists_iff; exrepnd.
+  spcast; computes_to_eqval.
+  eapply eq_term_equals_trans;[eauto|].
+  apply eq_term_equals_sym;auto.
+Qed.
+Hint Resolve uniquely_valued_univi : slow.
 
 Lemma local_univi_bar {o} :
-  forall {lib} (bar : @BarLib o lib) i T T' eq eqa,
-    (eq <=2=> (per_bar_eq bar eqa))
-    -> all_in_bar_ext bar (fun lib' x => univi_bar i lib' T T' (eqa lib' x))
-    -> univi_bar i lib T T' eq.
+  forall i, @local_ts o (univi_bar i).
 Proof.
   introv eqiff alla.
-  unfold univi_bar in *.
-  destruct i.
-
-  {
-    unfold univi_bar, per_bar in *; simpl in *.
-    pose proof (bar_non_empty bar) as q; exrepnd.
-    pose proof (alla lib' q0 lib' (lib_extends_refl lib') (bar_lib_ext bar lib' q0)) as h; simpl in *.
-    exrepnd.
-    pose proof (bar_non_empty bar0) as w; exrepnd.
-    pose proof (h0 lib'0 w0 lib'0 (lib_extends_refl lib'0)) as h0; simpl in *.
-    autodimp h0 hyp; tcsp; eauto 3 with slow.
-  }
-
-  remember (S i) as k.
-
-  apply all_in_bar_ext_exists_bar_implies in alla; exrepnd.
-
-  exists (bar_of_bar_fam fbar).
-
-  exists (fun lib' (x : lib_extends lib' lib) => univi_eq (univi i) lib').
-  dands.
-
-  {
-    introv br ext x; simpl in *; exrepnd.
-
-    pose proof (alla0 lib1 br lib2 ext0 x0) as alla0.
-    exrepnd.
-    remember (fbar lib1 br lib2 ext0 x0) as b.
-    pose proof (alla0
-                  lib' br0 lib'0 ext
-                  (lib_extends_trans ext (bar_lib_ext b lib' br0)))
-      as alla0; simpl in *.
-
-    allrw @univi_exists_iff; exrepnd.
-    exists j; dands; auto; tcsp.
-
-    SearchAbout univi.
-  }
-
-
-XXXXXXX
-
-XXXXXXXX
-  induction i; introv eqiff alla; simpl in *.
-
-  {
-    unfold univi_bar, per_bar in *; simpl in *.
-    pose proof (bar_non_empty bar) as q; exrepnd.
-    apply (alla lib' q0 lib' (lib_extends_refl lib')); eauto 3 with slow.
-  }
-
-
+  eapply local_per_bar in alla; eauto 3 with slow.
 Qed.
+Hint Resolve local_univi_bar : slow.
+
+Lemma local_univ {o} : @local_ts o univ.
+Proof.
+  introv eqiff alla.
+
+  (* Do we have to wrap a [per_bar] around [univ]?
+     Or move the universe inside the [per_bar]? *)
+Abort.

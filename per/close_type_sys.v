@@ -31,7 +31,8 @@
 
 
 Require Export type_sys_useful2.
-Require Import dest_close.
+Require Export dest_close.
+
 Require Import close_type_sys_per_init.
 Require Import close_type_sys_per_int.
 Require Import close_type_sys_per_nat.
@@ -39,7 +40,7 @@ Require Import close_type_sys_per_atom.
 Require Import close_type_sys_per_uatom.
 Require Import close_type_sys_per_csname.
 Require Import close_type_sys_per_base.
-Require Import close_type_sys_per_sqle.
+(*Require Import close_type_sys_per_sqle.
 Require Import close_type_sys_per_sqequal.
 Require Import close_type_sys_per_eq.
 (*Require Import close_type_sys_per_req.
@@ -67,6 +68,7 @@ Require Import close_type_sys_per_union.
 Require Import close_type_sys_per_product.
 (*Require Import close_type_sys_per_pw.
  Require Import close_type_sys_per_pm.*)
+ *)
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
@@ -318,12 +320,13 @@ Hint Resolve ih_implies_in_ext_ext_type_sys_props4_dep : slow.
 
 Lemma close_type_system {o} :
   forall (ts : cts(o)),
-    type_system ts
+    local_ts ts
+    -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> type_system (close ts).
 Proof.
-  introv tsts dou mon.
+  introv locts tsts dou mon.
   apply type_system_prop4.
   introv cl.
 
@@ -331,6 +334,8 @@ Proof.
 
   - Case "CL_init".
     apply close_type_system_init; auto.
+
+  - Case "CL_bar".
 
   - Case "CL_int".
     apply close_type_system_int; auto.

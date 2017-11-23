@@ -28,7 +28,7 @@
 
 
 Require Export type_sys.
-Require Import dest_close.
+Require Export dest_close.
 Require Export per_ceq_bar.
 
 

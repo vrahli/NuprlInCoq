@@ -85,14 +85,17 @@ Proof.
 
   - Case "type_symmetric".
     introv e1 e2 e3.
-    generalize (tys T T3 eq'0); introv k.
-    repeat (dest_imp k hyp).
-    generalize (tyt A eq); introv j; repeat (dest_imp j hyp); repnd.
-    apply tygs; sp.
-    generalize (tyst B eq); introv u; repeat (dest_imp u hyp); repnd.
-    repdors; subst.
-    generalize (tymt A A T3 eq eq'); sp.
-    generalize (tymt B B T3 eq eq'); sp.
+    pd (tys T T3 eq'0).
+
+    {
+      pd (tyt A eq); repnd; tcsp.
+      { apply tygs; sp. }
+      pd (tyst B eq); repnd; tcsp.
+      repndors; subst.
+      { pd (tymt A A T3 eq eq'); tcsp. }
+      { pd (tymt B B T3 eq eq'); tcsp. }
+    }
+
     apply eq_term_equals_trans with (eq2 := eq'); sp.
 
   - Case "type_transitive".

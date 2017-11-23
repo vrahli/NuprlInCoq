@@ -34,8 +34,8 @@
 Require Export type_sys.
 Require Export bar.
 Require Export decompose_alphaeq.
-
-
+Require Export nuprl_mon.
+Require Export local.
 
 
 Ltac close_diff_bar :=

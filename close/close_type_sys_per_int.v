@@ -31,8 +31,8 @@
 
 
 Require Export type_sys.
-Require Import dest_close.
-Require Import per_ceq_bar.
+Require Export dest_close.
+Require Export per_ceq_bar.
 
 
 Lemma per_int_bar_uniquely_valued {p} :
