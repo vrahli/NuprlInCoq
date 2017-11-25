@@ -32,6 +32,7 @@
 
 Require Export dest_close_tacs.
 Require Export bar_fam.
+Require Export per_ceq_bar.
 
 
 Lemma local_equality_of_approx_bar {o} :
@@ -117,7 +118,27 @@ Qed.*)
 
 Definition per_approx_bar_or {o} ts lib (T T' : @CTerm o) eq :=
   per_approx_bar ts lib T T' eq
-  {+} per_bar ts lib T T' eq.
+  {+} per_bar (per_approx_bar ts) lib T T' eq.
+
+Lemma per_approx_bar_implies_per_bar {o} :
+  forall ts lib (T T' : @CTerm o) eq,
+    per_approx_bar ts lib T T' eq
+    -> per_bar (per_approx_bar ts) lib T T' eq.
+Proof.
+  introv per.
+  unfold per_approx_bar in *; exrepnd.
+  exists (trivial_bar lib) (fun lib' (x : lib_extends lib' lib) => per_approx_eq_bar lib' a b).
+  dands; auto.
+  - introv br ext x; simpl in *.
+    exists a b c d; dands; tcsp.
+    exists (raise_bar bar x); dands; eauto 3 with slow.
+  - eapply eq_term_equals_trans;[eauto|].
+    introv; split; introv h.
+    + introv br ext x; simpl in *.
+      eapply sub_per_approx_eq_bar; eauto 3 with slow.
+    + pose proof (h lib (lib_extends_refl lib) lib (lib_extends_refl lib) (lib_extends_refl lib)) as h; simpl in *; auto.
+Qed.
+Hint Resolve per_approx_bar_implies_per_bar : slow.
 
 Lemma dest_close_per_approx_l {p} :
   forall (ts : cts(p)) lib T A B T' eq,
@@ -125,10 +146,13 @@ Lemma dest_close_per_approx_l {p} :
     -> defines_only_universes ts
     -> computes_to_valc lib T (mkc_approx A B)
     -> close ts lib T T' eq
-    -> per_approx_bar_or (close ts) lib T T' eq.
+    -> per_bar (per_approx_bar (close ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl; unfold per_approx_bar_or.
-  inversion cl; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
+
+  eapply local_per_bar; eauto; eauto 3 with slow.
+  introv br ext; introv; eapply reca; eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_approx_r {p} :
@@ -137,10 +161,12 @@ Lemma dest_close_per_approx_r {p} :
     -> defines_only_universes ts
     -> computes_to_valc lib T' (mkc_approx A B)
     -> close ts lib T T' eq
-    -> per_approx_bar_or (close ts) lib T T' eq.
+    -> per_bar (per_approx_bar (close ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl; unfold per_approx_bar_or.
-  inversion cl; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
+  eapply local_per_bar; eauto; eauto 3 with slow.
+  introv br ext; introv; eapply reca; eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_approx_l_ceq {p} :
@@ -149,10 +175,12 @@ Lemma dest_close_per_approx_l_ceq {p} :
     -> defines_only_universes ts
     -> computes_to_valc_ceq_bar bar T (mkc_approx A B)
     -> close ts lib T T' eq
-    -> per_approx_bar_or (close ts) lib T T' eq.
+    -> per_bar (per_approx_bar (close ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl; unfold per_approx_bar_or.
-  inversion cl; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
+  eapply local_per_bar; eauto; eauto 3 with slow.
+  introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_approx_r_ceq {p} :
@@ -161,8 +189,10 @@ Lemma dest_close_per_approx_r_ceq {p} :
     -> defines_only_universes ts
     -> computes_to_valc_ceq_bar bar T' (mkc_approx A B)
     -> close ts lib T T' eq
-    -> per_approx_bar_or (close ts) lib T T' eq.
+    -> per_bar (per_approx_bar (close ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl; unfold per_approx_bar_or.
-  inversion cl; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
+  eapply local_per_bar; eauto; eauto 3 with slow.
+  introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.

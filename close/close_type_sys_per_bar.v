@@ -35,12 +35,158 @@ Require Export dest_close.
 Require Export per_ceq_bar.
 
 
-Lemma close_type_system_int {p} :
+Lemma type_sys_props4_implies_eq_term_equals {o} :
+  forall ts lib (T T1 T2 : @CTerm o) eq1 eq2,
+    type_sys_props4 ts lib T T1 eq1
+    -> ts lib T T2 eq2
+    -> eq1 <=2=> eq2.
+Proof.
+  introv tsp eqt.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  eapply uv; eauto.
+Qed.
+
+Lemma type_sys_props4_implies_ts {o} :
+  forall (ts : cts(o)) (lib : library) (T1 T2 : CTerm) eq,
+    type_sys_props4 ts lib T1 T2 eq -> ts lib T1 T2 eq.
+Proof.
+  introv h.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
+Qed.
+
+Lemma all_in_bar_ext_type_sys_props4_implies_ts {o} :
+  forall (ts : cts(o)) (lib : library) (bar : BarLib lib) (T1 T2 : CTerm) eq,
+    all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' T1 T2 (eq lib' x))
+    -> all_in_bar_ext bar (fun lib' x => ts lib' T1 T2 (eq lib' x)).
+Proof.
+  introv h br ext; introv.
+  apply type_sys_props4_implies_ts; eapply h; eauto 3 with slow.
+Qed.
+
+Lemma all_in_bar_close_int {o} :
+  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+    type_system ts
+    -> defines_only_universes ts
+    -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
+    -> all_in_bar bar (fun lib => (T) ===>(lib) (mkc_int))
+    -> all_in_bar_ext bar (fun lib' x => per_int_bar (close ts) lib' T T' (eqa lib' x)).
+Proof.
+  introv tsts dou alla allb br ext; introv.
+  pose proof (alla lib' br lib'0 ext x) as alla.
+  pose proof (allb lib' br lib'0 ext) as allb.
+  simpl in *; spcast.
+  dclose_lr; auto.
+Qed.
+
+Lemma all_in_bar_close_nat {o} :
+  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+    type_system ts
+    -> defines_only_universes ts
+    -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
+    -> all_in_bar bar (fun lib => (T) ===>(lib) (mkc_Nat))
+    -> all_in_bar_ext bar (fun lib' x => per_nat_bar (close ts) lib' T T' (eqa lib' x)).
+Proof.
+  introv tsts dou alla allb br ext; introv.
+  pose proof (alla lib' br lib'0 ext x) as alla.
+  pose proof (allb lib' br lib'0 ext) as allb.
+  simpl in *; spcast.
+  dclose_lr; auto.
+Qed.
+
+Lemma all_in_bar_close_csname {o} :
+  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+    type_system ts
+    -> defines_only_universes ts
+    -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
+    -> all_in_bar bar (fun lib => (T) ===>(lib) (mkc_csname))
+    -> all_in_bar_ext bar (fun lib' x => per_csname_bar (close ts) lib' T T' (eqa lib' x)).
+Proof.
+  introv tsts dou alla allb br ext; introv.
+  pose proof (alla lib' br lib'0 ext x) as alla.
+  pose proof (allb lib' br lib'0 ext) as allb.
+  simpl in *; spcast.
+  dclose_lr; auto.
+Qed.
+
+Lemma all_in_bar_close_atom {o} :
+  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+    type_system ts
+    -> defines_only_universes ts
+    -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
+    -> all_in_bar bar (fun lib => (T) ===>(lib) (mkc_atom))
+    -> all_in_bar_ext bar (fun lib' x => per_atom_bar (close ts) lib' T T' (eqa lib' x)).
+Proof.
+  introv tsts dou alla allb br ext; introv.
+  pose proof (alla lib' br lib'0 ext x) as alla.
+  pose proof (allb lib' br lib'0 ext) as allb.
+  simpl in *; spcast.
+  dclose_lr; auto.
+Qed.
+
+Lemma all_in_bar_close_uatom {o} :
+  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+    type_system ts
+    -> defines_only_universes ts
+    -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
+    -> all_in_bar bar (fun lib => (T) ===>(lib) (mkc_uatom))
+    -> all_in_bar_ext bar (fun lib' x => per_uatom_bar (close ts) lib' T T' (eqa lib' x)).
+Proof.
+  introv tsts dou alla allb br ext; introv.
+  pose proof (alla lib' br lib'0 ext x) as alla.
+  pose proof (allb lib' br lib'0 ext) as allb.
+  simpl in *; spcast.
+  dclose_lr; auto.
+Qed.
+
+Lemma all_in_bar_close_base {o} :
+  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+    type_system ts
+    -> defines_only_universes ts
+    -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
+    -> all_in_bar bar (fun lib => (T) ===>(lib) (mkc_base))
+    -> all_in_bar_ext bar (fun lib' x => per_base_bar (close ts) lib' T T' (eqa lib' x)).
+Proof.
+  introv tsts dou alla allb br ext; introv.
+  pose proof (alla lib' br lib'0 ext x) as alla.
+  pose proof (allb lib' br lib'0 ext) as allb.
+  simpl in *; spcast.
+  dclose_lr; auto.
+Qed.
+
+Lemma all_in_bar_eq_term_equals_implies {o} :
+  forall {lib} (bar : @BarLib o lib) (eqa eqb : lib-per(lib,o)) t1 t2,
+    all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
+    -> all_in_bar_ext bar (fun lib' x => eqa lib' x t1 t2)
+    -> all_in_bar_ext bar (fun lib' x => eqb lib' x t1 t2).
+Proof.
+  introv alla allb br ext; introv.
+  eapply alla; eauto 3 with slow.
+  eapply allb; eauto 3 with slow.
+Qed.
+
+Lemma all_in_bar_close_approx {o} :
+  forall {lib} (bar : @BarLib o lib) ts T T' eqa a b,
+    type_system ts
+    -> defines_only_universes ts
+    -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
+    -> T ==b==>(bar) (mkc_approx a b)
+    -> per_bar (per_approx_bar (close ts)) lib T T' (per_bar_eq bar eqa).
+Proof.
+  introv tsts dou alla allb.
+  eapply local_per_bar; eauto 3 with slow.
+  introv br ext; introv.
+  pose proof (alla lib' br lib'0 ext x) as alla.
+  simpl in *; spcast.
+  apply (implies_computes_to_valc_seq_bar_raise_bar _ x) in allb.
+  dclose_lr; auto.
+Qed.
+
+Lemma close_type_system_bar {p} :
   forall (ts : cts(p)) lib (bar : BarLib lib) T T' eq eqa,
     local_ts ts
     -> type_system ts
     -> defines_only_universes ts
-    -> type_monotone ts
+    -> type_monotone2 ts
     -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
     -> all_in_bar_ext bar (fun lib' x => type_sys_props4 (close ts) lib' T T' (eqa lib' x))
     -> (eq <=2=> (per_bar_eq bar eqa))
@@ -49,21 +195,188 @@ Lemma close_type_system_int {p} :
 Proof.
   introv locts tysys dou mon allcl alltsp eqiff per.
 
-  prove_type_sys_props4 SCase; intros.
+  prove_type_sys_props4 SCase; introv.
 
   + SCase "uniquely_valued".
+    introv cl.
+    clear per.
+    eapply eq_term_equals_trans;[eauto|]; clear eqiff.
 
-    (* We need to extend the dclose_lr tactic to handle all_in_bar bar (fun lib => T ===>(lib) T') *)
-    dclose_lr.
+    introv; apply eq_term_equals_sym; split; intro h.
 
-    * SSCase "CL_int".
-      assert (uniquely_valued (per_int_bar (close ts))) as uv
-        by (apply per_int_bar_uniquely_valued).
-      eapply uv;eauto.
-      eapply uniquely_valued_trans5;eauto.
-      { apply per_int_bar_type_extensionality. }
-      { apply per_int_bar_type_symmetric. }
-      { apply per_int_bar_type_transitive. }
+    {
+      introv br ext; introv.
+      pose proof (alltsp lib' br lib'0 ext x) as alltsp; simpl in *.
+      apply (close_monotone2 _ mon _ lib'0) in cl; auto; exrepnd.
+      apply cl0 in h.
+      eapply type_sys_props4_implies_eq_term_equals in cl1;[|eauto].
+      apply cl1; auto.
+    }
+
+    {
+      unfold per_bar_eq in *.
+
+      Lemma xxx {o} :
+        forall ts lib (bar : @BarLib o lib) T T1 T2 eq eqa t1 t2,
+          type_system ts
+          -> defines_only_universes ts
+          -> all_in_bar_ext bar (fun lib' x => type_sys_props4 (close ts) lib' T T1 (eqa lib' x))
+          -> all_in_bar_ext bar (fun lib' x => eqa lib' x t1 t2)
+          -> close ts lib T T2 eq
+          -> eq t1 t2.
+      Proof.
+        introv tsts dou tysys eqt cl.
+        close_cases (induction cl using @close_ind') Case; introv.
+
+        - Case "CL_init".
+
+          (* prove that this is true about universes,
+             and assume that it is true about [ts] *)
+          admit.
+
+        - Case "CL_bar".
+          apply eqiff.
+          introv br ext; introv.
+          pose proof (reca lib' br lib'0 ext x (raise_bar bar x) (raise_lib_per eqa x)) as reca; simpl in *.
+          repeat (autodimp reca hyp).
+
+          {
+            introv b e; introv.
+            simpl in *; unfold raise_lib_per; exrepnd.
+            eapply tysys; eauto 3 with slow.
+          }
+
+          {
+            introv b e; introv.
+            simpl in *; unfold raise_lib_per; exrepnd.
+            eapply eqt; eauto 3 with slow.
+          }
+
+        - Case "CL_int".
+          unfold per_int_bar in *; exrepnd.
+          apply per; clear per.
+
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in tysys.
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in eqt.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per0.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per1.
+          remember (intersect_bars bar bar0) as b; clear Heqb.
+
+          apply all_in_bar_ext_type_sys_props4_implies_ts in tysys.
+          apply all_in_bar_close_int in tysys; auto.
+          apply all_in_bar_ext_and_implies in tysys; repnd.
+          eapply all_in_bar_eq_term_equals_implies in tysys;[|eauto 3 with slow].
+          apply local_equality_of_int_bar in tysys; auto.
+
+        - Case "CL_nat".
+          unfold per_nat_bar in *; exrepnd.
+          apply per; clear per.
+
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in tysys.
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in eqt.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per0.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per1.
+          remember (intersect_bars bar bar0) as b; clear Heqb.
+
+          apply all_in_bar_ext_type_sys_props4_implies_ts in tysys.
+          apply all_in_bar_close_nat in tysys; auto.
+          apply all_in_bar_ext_and_implies in tysys; repnd.
+          eapply all_in_bar_eq_term_equals_implies in tysys;[|eauto 3 with slow].
+          apply local_equality_of_nat_bar in tysys; auto.
+
+        - Case "CL_csname".
+          unfold per_csname_bar in *; exrepnd.
+          apply per; clear per.
+
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in tysys.
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in eqt.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per0.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per1.
+          remember (intersect_bars bar bar0) as b; clear Heqb.
+
+          apply all_in_bar_ext_type_sys_props4_implies_ts in tysys.
+          apply all_in_bar_close_csname in tysys; auto.
+          apply all_in_bar_ext_and_implies in tysys; repnd.
+          eapply all_in_bar_eq_term_equals_implies in tysys;[|eauto 3 with slow].
+          apply local_equality_of_csname_bar in tysys; auto.
+
+        - Case "CL_atom".
+          unfold per_atom_bar in *; exrepnd.
+          apply per; clear per.
+
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in tysys.
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in eqt.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per0.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per1.
+          remember (intersect_bars bar bar0) as b; clear Heqb.
+
+          apply all_in_bar_ext_type_sys_props4_implies_ts in tysys.
+          apply all_in_bar_close_atom in tysys; auto.
+          apply all_in_bar_ext_and_implies in tysys; repnd.
+          eapply all_in_bar_eq_term_equals_implies in tysys;[|eauto 3 with slow].
+          apply local_equality_of_atom_bar in tysys; auto.
+
+        - Case "CL_uatom".
+          unfold per_uatom_bar in *; exrepnd.
+          apply per; clear per.
+
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in tysys.
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in eqt.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per0.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per1.
+          remember (intersect_bars bar bar0) as b; clear Heqb.
+
+          apply all_in_bar_ext_type_sys_props4_implies_ts in tysys.
+          apply all_in_bar_close_uatom in tysys; auto.
+          apply all_in_bar_ext_and_implies in tysys; repnd.
+          eapply all_in_bar_eq_term_equals_implies in tysys;[|eauto 3 with slow].
+          apply local_equality_of_uatom_bar in tysys; auto.
+
+        - Case "CL_base".
+          unfold per_base_bar in *; exrepnd.
+          apply per; clear per.
+
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in tysys.
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in eqt.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per0.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per1.
+          remember (intersect_bars bar bar0) as b; clear Heqb.
+
+          apply all_in_bar_ext_type_sys_props4_implies_ts in tysys.
+          apply all_in_bar_close_base in tysys; auto.
+          apply all_in_bar_ext_and_implies in tysys; repnd.
+          eapply all_in_bar_eq_term_equals_implies in tysys;[|eauto 3 with slow].
+          apply local_equality_of_base_bar in tysys; auto.
+
+        - Case "CL_approx".
+          unfold per_approx_bar in *; exrepnd.
+          apply per1; clear per1.
+
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in tysys.
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in eqt.
+          apply (implies_computes_to_valc_ceq_bar_intersect_bars_right _ bar) in per0.
+          apply (implies_computes_to_valc_ceq_bar_intersect_bars_right _ bar) in per3.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per2.
+          remember (intersect_bars bar bar0) as bar1; clear Heqbar1.
+
+          apply all_in_bar_ext_type_sys_props4_implies_ts in tysys.
+          eapply all_in_bar_close_approx in tysys; eauto.
+          unfold per_bar in tysys; exrepnd.
+          fold (per_bar_eq bar1 eqa t1 t2) in *.
+          apply tysys1 in eqt; clear tysys1.
+
+          apply (local_equality_of_approx_bar bar2).
+          introv br ext x.
+          pose proof (tysys0 lib' br lib'0 ext x) as tysys0; simpl in *.
+          pose proof (eqt lib' br lib'0 ext x) as eqt; simpl in *.
+          unfold per_approx_bar in tysys0; exrepnd.
+          apply tysys0 in eqt; clear tysys0.
+          eapply (eq_per_approx_eq_bar (intersect_bars (raise_bar bar1 x) bar3)); eauto.
+          eapply two_computes_to_valc_ceq_bar_mkc_approx; eauto 3 with slow.
+
+      Qed.
+
+    }
 
   + SCase "type_symmetric"; repdors; subst; dclose_lr;
       apply CL_int; auto;

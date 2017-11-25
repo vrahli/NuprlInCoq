@@ -28,7 +28,7 @@
 
 
 Require Export type_sys_useful.
-Require Import dest_close.
+Require Import dest_close_tacs.
 
 
 (* !!MOVE *)
@@ -247,33 +247,17 @@ Proof.
   eapply cequivc_trans in h0;[|eauto]; auto.
 Qed.
 
-Lemma two_computes_to_valc_ceq_bar_mkc_approx {o} :
-  forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) a1 b1 a2 b2,
-    T ==b==>(bar1) (mkc_approx a1 b1)
-    -> T ==b==>(bar2) (mkc_approx a2 b2)
-    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2).
+Lemma type_extensionality_per_approx_bar {o} :
+  forall (ts : cts(o)),
+    type_extensionality (per_approx_bar ts).
 Proof.
-  introv comp1 comp2.
-  eapply two_computes_to_valc_ceq_bar_implies in comp2; try exact comp1.
-  introv b ext.
-  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q.
-  spcast.
-  apply cequivc_decomp_approx in q; repnd; dands; spcast; auto.
+  introv h e.
+  unfold per_approx_bar in *; exrepnd.
+  exists a b c d; dands; eauto.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym; auto.
 Qed.
-
-Lemma two_computes_to_valc_ceq_bar_mkc_approx_same_bar {o} :
-  forall {lib} (bar : BarLib lib) (T : @CTerm o) a1 b1 a2 b2,
-    T ==b==>(bar) (mkc_approx a1 b1)
-    -> T ==b==>(bar) (mkc_approx a2 b2)
-    -> all_in_bar bar (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2).
-Proof.
-  introv comp1 comp2.
-  eapply two_computes_to_valc_ceq_bar_same_bar_implies in comp2; try exact comp1.
-  introv b ext.
-  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q.
-  spcast.
-  apply cequivc_decomp_approx in q; repnd; dands; spcast; auto.
-Qed.
+Hint Resolve type_extensionality_per_approx_bar : slow.
 
 Lemma eq_per_approx_eq_bar {o} :
   forall {lib} (bar : @BarLib o lib) (a1 a2 b1 b2 : @CTerm o),
@@ -334,6 +318,45 @@ Proof.
     repnd.
     apply c1; tcsp.
 Qed.
+
+Lemma two_computes_to_valc_ceq_bar_mkc_approx {o} :
+  forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) a1 b1 a2 b2,
+    T ==b==>(bar1) (mkc_approx a1 b1)
+    -> T ==b==>(bar2) (mkc_approx a2 b2)
+    -> all_in_bar (intersect_bars bar1 bar2) (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2).
+Proof.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_implies in comp2; try exact comp1.
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q.
+  spcast.
+  apply cequivc_decomp_approx in q; repnd; dands; spcast; auto.
+Qed.
+
+Lemma two_computes_to_valc_ceq_bar_mkc_approx_same_bar {o} :
+  forall {lib} (bar : BarLib lib) (T : @CTerm o) a1 b1 a2 b2,
+    T ==b==>(bar) (mkc_approx a1 b1)
+    -> T ==b==>(bar) (mkc_approx a2 b2)
+    -> all_in_bar bar (fun lib => ccequivc lib a1 a2 # ccequivc lib b1 b2).
+Proof.
+  introv comp1 comp2.
+  eapply two_computes_to_valc_ceq_bar_same_bar_implies in comp2; try exact comp1.
+  introv b ext.
+  pose proof (comp2 lib' b lib'0 ext) as q; simpl in q.
+  spcast.
+  apply cequivc_decomp_approx in q; repnd; dands; spcast; auto.
+Qed.
+
+Lemma uniquely_valued_per_approx_bar {o} :
+  forall (ts : cts(o)), uniquely_valued (per_approx_bar ts).
+Proof.
+  introv h q.
+  unfold per_approx_bar in *; exrepnd.
+  eapply eq_term_equals_trans;[eauto|].
+  eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
+  eapply eq_per_approx_eq_bar; eapply two_computes_to_valc_ceq_bar_mkc_approx; eauto.
+Qed.
+Hint Resolve uniquely_valued_per_approx_bar : slow.
 
 Lemma two_computes_to_valc_ceq_bar_mkc_cequiv {o} :
   forall {lib} (bar1 bar2 : BarLib lib) (T : @CTerm o) a1 b1 a2 b2,
