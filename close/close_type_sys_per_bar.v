@@ -181,6 +181,23 @@ Proof.
   dclose_lr; auto.
 Qed.
 
+Lemma all_in_bar_close_cequiv {o} :
+  forall {lib} (bar : @BarLib o lib) ts T T' eqa a b,
+    type_system ts
+    -> defines_only_universes ts
+    -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
+    -> T ==b==>(bar) (mkc_cequiv a b)
+    -> per_bar (per_cequiv_bar (close ts)) lib T T' (per_bar_eq bar eqa).
+Proof.
+  introv tsts dou alla allb.
+  eapply local_per_bar; eauto 3 with slow.
+  introv br ext; introv.
+  pose proof (alla lib' br lib'0 ext x) as alla.
+  simpl in *; spcast.
+  apply (implies_computes_to_valc_seq_bar_raise_bar _ x) in allb.
+  dclose_lr; auto.
+Qed.
+
 Lemma close_type_system_bar {p} :
   forall (ts : cts(p)) lib (bar : BarLib lib) T T' eq eqa,
     local_ts ts
@@ -373,6 +390,34 @@ Proof.
           apply tysys0 in eqt; clear tysys0.
           eapply (eq_per_approx_eq_bar (intersect_bars (raise_bar bar1 x) bar3)); eauto.
           eapply two_computes_to_valc_ceq_bar_mkc_approx; eauto 3 with slow.
+
+        - Case "CL_cequiv".
+          unfold per_cequiv_bar in *; exrepnd.
+          apply per1; clear per1.
+
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in tysys.
+          apply (implies_all_in_bar_ext_intersect_bars_left _ bar0) in eqt.
+          apply (implies_computes_to_valc_ceq_bar_intersect_bars_right _ bar) in per0.
+          apply (implies_computes_to_valc_ceq_bar_intersect_bars_right _ bar) in per3.
+          apply (implies_all_in_bar_intersect_bars_right _ bar) in per2.
+          remember (intersect_bars bar bar0) as bar1; clear Heqbar1.
+
+          apply all_in_bar_ext_type_sys_props4_implies_ts in tysys.
+          eapply all_in_bar_close_cequiv in tysys; eauto.
+          unfold per_bar in tysys; exrepnd.
+          fold (per_bar_eq bar1 eqa t1 t2) in *.
+          apply tysys1 in eqt; clear tysys1.
+
+          apply (local_equality_of_cequiv_bar bar2).
+          introv br ext x.
+          pose proof (tysys0 lib' br lib'0 ext x) as tysys0; simpl in *.
+          pose proof (eqt lib' br lib'0 ext x) as eqt; simpl in *.
+          unfold per_cequiv_bar in tysys0; exrepnd.
+          apply tysys0 in eqt; clear tysys0.
+          eapply (eq_per_cequiv_eq_bar (intersect_bars (raise_bar bar1 x) bar3)); eauto.
+          eapply two_computes_to_valc_ceq_bar_mkc_cequiv; eauto 3 with slow.
+
+        - Case "CL_eq".
 
       Qed.
 

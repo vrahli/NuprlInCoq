@@ -116,9 +116,9 @@ Proof.
   }
 Qed.*)
 
-Definition per_approx_bar_or {o} ts lib (T T' : @CTerm o) eq :=
+(*Definition per_approx_bar_or {o} ts lib (T T' : @CTerm o) eq :=
   per_approx_bar ts lib T T' eq
-  {+} per_bar (per_approx_bar ts) lib T T' eq.
+  {+} per_bar (per_approx_bar ts) lib T T' eq.*)
 
 Lemma per_approx_bar_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
@@ -148,9 +148,8 @@ Lemma dest_close_per_approx_l {p} :
     -> close ts lib T T' eq
     -> per_bar (per_approx_bar (close ts)) lib T T' eq.
 Proof.
-  introv tysys dou comp cl; unfold per_approx_bar_or.
+  introv tysys dou comp cl; try unfold per_approx_bar_or.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
-
   eapply local_per_bar; eauto; eauto 3 with slow.
   introv br ext; introv; eapply reca; eauto 3 with slow.
 Qed.
@@ -163,7 +162,7 @@ Lemma dest_close_per_approx_r {p} :
     -> close ts lib T T' eq
     -> per_bar (per_approx_bar (close ts)) lib T T' eq.
 Proof.
-  introv tysys dou comp cl; unfold per_approx_bar_or.
+  introv tysys dou comp cl; try unfold per_approx_bar_or.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
   eapply local_per_bar; eauto; eauto 3 with slow.
   introv br ext; introv; eapply reca; eauto 3 with slow.
@@ -177,7 +176,7 @@ Lemma dest_close_per_approx_l_ceq {p} :
     -> close ts lib T T' eq
     -> per_bar (per_approx_bar (close ts)) lib T T' eq.
 Proof.
-  introv tysys dou comp cl; unfold per_approx_bar_or.
+  introv tysys dou comp cl; try unfold per_approx_bar_or.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
   eapply local_per_bar; eauto; eauto 3 with slow.
   introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
@@ -191,7 +190,7 @@ Lemma dest_close_per_approx_r_ceq {p} :
     -> close ts lib T T' eq
     -> per_bar (per_approx_bar (close ts)) lib T T' eq.
 Proof.
-  introv tysys dou comp cl; unfold per_approx_bar_or.
+  introv tysys dou comp cl; try unfold per_approx_bar_or.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
   eapply local_per_bar; eauto; eauto 3 with slow.
   introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
