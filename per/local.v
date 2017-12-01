@@ -25,7 +25,7 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
 
 *)
 
@@ -77,7 +77,30 @@ Definition local_ts {o} (ts : cts(o)) :=
     -> all_in_bar_ext bar (fun lib' x => ts lib' T T' (eqa lib' x))
     -> ts lib T T' eq.
 
-Lemma local_per_bar {o} :
+Definition lib_per_per_bar {o}
+           {lib  : @library o}
+           {bar  : BarLib lib}
+           (fbar : bar_fam bar)
+           (feqa : bar-lib-per(lib,bar,o)) : lib-per(lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) t1 t2 =>
+            {lib1 : library
+            , {br : bar_lib_bar bar lib1
+            , {lib2 : library
+            , {ext : lib_extends lib2 lib1
+            , {x : lib_extends lib2 lib
+            , {lib0 : library
+            , {w : lib_extends lib' lib0
+            , {fb : bar_lib_bar (fbar lib1 br lib2 ext x) lib0
+            , feqa lib1 br lib2 ext x lib' (lib_extends_trans w (bar_lib_ext (fbar lib1 br lib2 ext x) lib0 fb)) t1 t2}}}}}}}}).
+
+  introv x y; introv.
+  split; introv h; exrepnd.
+  - exists lib1 br lib2 ext x0 lib0 w fb; auto.
+  - exists lib1 br lib2 ext x0 lib0 w fb; auto.
+Defined.
+
+(*Lemma local_per_bar {o} :
   forall (ts : cts(o)),
     type_extensionality ts
     -> uniquely_valued ts
@@ -92,20 +115,11 @@ Proof.
 
   apply all_in_bar_ext2_exists_eqa_implies in alla0; exrepnd.
 
-  exists (fun lib' (x : lib_extends lib' lib) t1 t2 =>
-            {lib1 : library
-            , {br : bar_lib_bar bar lib1
-            , {lib2 : library
-            , {ext : lib_extends lib2 lib1
-            , {x : lib_extends lib2 lib
-            , {lib0 : library
-            , {w : lib_extends lib' lib0
-            , {fb : bar_lib_bar (fbar lib1 br lib2 ext x) lib0
-            , feqa lib1 br lib2 ext x lib' (lib_extends_trans w (bar_lib_ext (fbar lib1 br lib2 ext x) lib0 fb)) t1 t2}}}}}}}}).
+  exists (lib_per_per_bar fbar feqa).
   dands.
 
   {
-    introv br ext; introv x.
+    introv br ext; introv.
     simpl in *; exrepnd.
 
     pose proof (alla1 lib1 br lib2 ext0 x0) as alla0.
@@ -135,13 +149,17 @@ Proof.
   {
     eapply eq_term_equals_trans;[eauto|].
     introv.
-    unfold per_bar_eq; split; introv h br ext; introv.
+    unfold per_bar_eq; split; introv h; exrepnd.
 
-    - introv x.
-      simpl in *; exrepnd.
-      pose proof (alla1 lib1 br lib2 ext0 x0) as q; repnd.
-      pose proof (h lib1 br lib2 ext0 x0) as h; simpl in *.
-      apply q in h.
+    - exists bar'.
+      introv br ext; introv; simpl in *; exrepnd.
+      pose proof (alla1 lib0 br lib3 ext0 x0) as q; repnd.
+
+      pose proof (h0 lib') as h0.
+      autodimp h0 hyp; simpl in *.
+      { simpl; eexists; eexists; dands; eauto 4 with slow. }
+      pose proof (h0 lib'0 ext x) as h0; simpl in *.
+      apply q0 in h0.
 
       clear q q0.
 
@@ -209,3 +227,4 @@ Proof.
   (* Do we have to wrap a [per_bar] around [univ]?
      Or move the universe inside the [per_bar]? *)
 Abort.
+ *)

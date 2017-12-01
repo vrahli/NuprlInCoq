@@ -227,7 +227,7 @@ Proof.
   - apply per_approx_bar_term_value_respecting; auto.
 Qed.
 
-Lemma type_equality_respecting_trans_per_approx_bar_implies {o} :
+(*Lemma type_equality_respecting_trans_per_approx_bar_implies {o} :
   forall (ts : cts(o)) lib (bar : BarLib lib) T T' a b a' b',
     type_system ts
     -> defines_only_universes ts
@@ -238,12 +238,13 @@ Lemma type_equality_respecting_trans_per_approx_bar_implies {o} :
     -> type_equality_respecting_trans (close ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
-  apply CL_approx.
-  eapply trans; eauto.
   repndors; subst.
 
   - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
-    dclose_lr; auto.
+    dclose_lr; auto; clear cl.
+    apply CL_approx.
+    eapply trans; eauto.
+
 
   - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
     dclose_lr; auto.
@@ -254,7 +255,7 @@ Proof.
   - eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto];[].
     dclose_lr; auto.
 Qed.
-
+*)
 
 Lemma close_type_system_approx {p} :
   forall lib (ts : cts(p)),
@@ -274,15 +275,30 @@ Proof.
   + SCase "uniquely_valued".
     dclose_lr.
 
-    * SSCase "CL_approx".
-      assert (uniquely_valued (per_approx_bar (close ts)))
-        as uv
-          by (apply per_approx_bar_uniquely_valued).
-      apply (uv lib T T'); auto.
-      apply uniquely_valued_trans5 with (T2 := T3) (eq2 := eq); auto.
-      { apply per_approx_bar_type_extensionality. }
-      { apply per_approx_bar_type_symmetric. }
-      { apply per_approx_bar_type_transitive. }
+    assert (uniquely_valued (per_approx_bar (close ts)))
+      as uv
+        by (apply per_approx_bar_uniquely_valued).
+
+    apply per_approx_bar_implies_per_bar in per.
+
+Lemma per_bar_uniquely_valued {p} :
+  forall (ts : cts(p)), uniquely_valued (per_bar ts).
+Proof.
+  unfold uniquely_valued, per_bar; introv h q; introv; exrepnd.
+  rw q1.
+  rw h1.
+  split; introv w br ext; introv.
+
+Qed.
+
+
+    XXXX
+    apply (uv lib T T'); auto.
+
+    apply uniquely_valued_trans5 with (T2 := T3) (eq2 := eq); auto.
+    { apply per_approx_bar_type_extensionality. }
+    { apply per_approx_bar_type_symmetric. }
+    { apply per_approx_bar_type_transitive. }
 
   + SCase "type_symmetric"; repdors; subst; dclose_lr;
     apply CL_approx; auto;

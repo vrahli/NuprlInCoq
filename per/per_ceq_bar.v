@@ -766,7 +766,7 @@ Definition term_equality_change_lib_extends {o} {lib} (eqa : lib-per(lib,o)) :=
     -> eqa lib' x2 a1 a2.
 
 Lemma in_ext_ext_type_sys_props4_implies_change_lib_extends {o} :
-  forall ts lib (A A' : @CTerm o) eqa,
+  forall ts lib (A A' : @CTerm o) (eqa : lib-per(lib,o)),
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
     -> term_equality_change_lib_extends eqa.
 Proof.
@@ -818,7 +818,7 @@ Definition term_equality_change_lib_extends_bar {o} {lib}
     -> eqa lib' x2 a1 a2.
 
 Lemma all_in_bar_ext_type_sys_props4_implies_change_lib_extends_bar {o} :
-  forall ts lib (bar : BarLib lib) (A A' : @CTerm o) eqa,
+  forall ts lib (bar : BarLib lib) (A A' : @CTerm o) (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
     -> term_equality_change_lib_extends_bar bar eqa.
 Proof.
@@ -845,7 +845,7 @@ Qed.
 Hint Resolve in_ext_ext_implies_all_in_bar_ext : slow.
 
 Lemma implies_iff_per_eq_eq {o} :
-  forall lib (bar : @BarLib o lib) a1 a2 b1 b2 eqa eqb,
+  forall lib (bar : @BarLib o lib) a1 a2 b1 b2 (eqa eqb : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
     -> all_in_bar bar (fun lib => a1 ~=~(lib) b1)
     -> all_in_bar bar (fun lib => a2 ~=~(lib) b2)
@@ -1032,7 +1032,7 @@ Qed.
 Hint Resolve all_in_bar_eqorceq_refl : slow.
 
 Lemma eqorceq_implies_iff_per_eq_eq {o} :
-  forall lib (bar : @BarLib o lib) a1 a2 b1 b2 eqa eqb,
+  forall lib (bar : @BarLib o lib) a1 a2 b1 b2 (eqa eqb : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
     -> all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a1 b1)
     -> all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a2 b2)
@@ -1792,7 +1792,7 @@ Hint Resolve eq_term_equals_sym : slow.
 Hint Resolve all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext : slow.
 
 Lemma eq_term_equals_per_func_ext_eq {o} :
-  forall lib (eqa1 eqa2 : lib-per(lib,o)) eqb1 eqb2,
+  forall lib (eqa1 eqa2 : lib-per(lib,o)) (eqb1 : lib-per-fam(lib,eqa1,o)) (eqb2 : lib-per-fam(lib,eqa2,o)),
     in_ext_ext lib (fun lib' x => (eqa1 lib' x) <=2=> (eqa2 lib' x))
     -> in_ext_ext lib (fun lib' x => forall a1 a2 (e1 : eqa1 lib' x a1 a2) (e2 : eqa2 lib' x a1 a2), (eqb1 lib' x a1 a2 e1) <=2=> (eqb2 lib' x a1 a2 e2))
     -> (per_func_ext_eq lib eqa1 eqb1) <=2=> (per_func_ext_eq lib eqa2 eqb2).
@@ -1819,7 +1819,7 @@ Proof.
 Qed.
 
 Lemma eq_term_equals_per_product_eq_bar {o} :
-  forall lib (eqa1 eqa2 : lib-per(lib,o)) eqb1 eqb2,
+  forall lib (eqa1 eqa2 : lib-per(lib,o)) (eqb1 : lib-per-fam(lib,eqa1,o)) (eqb2 : lib-per-fam(lib,eqa2,o)),
     in_ext_ext lib (fun lib' x => (eqa1 lib' x) <=2=> (eqa2 lib' x))
     -> in_ext_ext lib (fun lib' x => forall a1 a2 (e1 : eqa1 lib' x a1 a2) (e2 : eqa2 lib' x a1 a2), (eqb1 lib' x a1 a2 e1) <=2=> (eqb2 lib' x a1 a2 e2))
     -> (per_product_eq_bar lib eqa1 eqb1) <=2=> (per_product_eq_bar lib eqa2 eqb2).
@@ -2095,7 +2095,7 @@ Qed.
 Hint Resolve type_sys_props4_implies_type_sys_props : slow.
 
 Lemma type_family_ext_cequivc {o} :
-  forall C ts lib (T1 T2 : @CTerm o) eqa eqb A1 v1 B1 A2 v2 B2 A v B,
+  forall C ts lib (T1 T2 : @CTerm o) (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) A1 v1 B1 A2 v2 B2 A v B,
     computes_to_valc lib T1 (C A1 v1 B1)
     -> computes_to_valc lib T2 (C A2 v2 B2)
     -> ccequivc_ext lib A1 A2
@@ -2386,8 +2386,8 @@ Proof.
     }
 Qed.
 
-Lemma type_family_ext_cequivc2 {p} :
-  forall C (ts : cts(p)) lib T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
+Lemma type_family_ext_cequivc2 {o} :
+  forall C (ts : cts(o)) lib T1 T2 (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) A1 v1 B1 A2 v2 B2 A v B,
     computes_to_valc lib T1 (C A1 v1 B1)
     -> computes_to_valc lib T2 (C A2 v2 B2)
     -> ccequivc_ext lib A1 A2
@@ -3418,40 +3418,57 @@ Proof.
 Qed.
 
 Lemma implies_eq_term_equals_per_union_bar {p} :
-  forall lib (eqa1 eqa2 eqb1 eqb2 : per(p)),
-    (eqa1 <=2=> eqa2)
-    -> (eqb1 <=2=> eqb2)
+  forall lib (bar : BarLib lib) (eqa1 eqa2 eqb1 eqb2 : lib-per(lib,p)),
+    all_in_bar_ext bar (fun lib' x => (eqa1 lib' x) <=2=> (eqa2 lib' x))
+    -> all_in_bar_ext bar (fun lib' x => (eqb1 lib' x) <=2=> (eqb2 lib' x))
     -> (per_union_eq_bar lib eqa1 eqb1) <=2=> (per_union_eq_bar lib eqa2 eqb2).
 Proof.
   introv eqta eqtb; introv.
-  unfold per_union_eq_bar; split; introv h; exrepnd; exists bar;
-    introv br ext;
-    pose proof (h0 lib' br lib'0 ext) as h0; simpl in *;
-      unfold per_union_eq, per_union_eq_L, per_union_eq_R in *;
-      repndors; exrepnd;[left|right|left|right];
-        eexists; eexists; dands; eauto;
-          try (complete (apply eqta; auto));
-          try (complete (apply eqtb; auto)).
+  unfold per_union_eq_bar; split; introv h; exrepnd.
+
+  - exists (intersect_bars bar bar0).
+    introv br ext; introv; simpl in *; exrepnd.
+    pose proof (h0 lib2 br2 lib'0 (lib_extends_trans ext br1) x) as h0; simpl in *.
+    pose proof (eqta lib1 br0 lib'0 (lib_extends_trans ext br3) x) as eqta; simpl in *.
+    pose proof (eqtb lib1 br0 lib'0 (lib_extends_trans ext br3) x) as eqtb; simpl in *.
+    unfold per_union_eq, per_union_eq_L, per_union_eq_R in *.
+    repndors; exrepnd;[left|right];
+      eexists; eexists; dands; eauto;
+        try (complete (apply eqta; auto));
+        try (complete (apply eqtb; auto)).
+
+  - exists (intersect_bars bar bar0).
+    introv br ext; introv; simpl in *; exrepnd.
+    pose proof (h0 lib2 br2 lib'0 (lib_extends_trans ext br1) x) as h0; simpl in *.
+    pose proof (eqta lib1 br0 lib'0 (lib_extends_trans ext br3) x) as eqta; simpl in *.
+    pose proof (eqtb lib1 br0 lib'0 (lib_extends_trans ext br3) x) as eqtb; simpl in *.
+    unfold per_union_eq, per_union_eq_L, per_union_eq_R in *.
+    repndors; exrepnd;[left|right];
+      eexists; eexists; dands; eauto;
+        try (complete (apply eqta; auto));
+        try (complete (apply eqtb; auto)).
 Qed.
 
 Lemma per_union_eq_bar_symmetric {p} :
-  forall lib (eqa eqb : per(p)) t1 t2,
-    term_equality_symmetric eqa
-    -> term_equality_symmetric eqb
+  forall lib (bar : BarLib lib) (eqa eqb : lib-per(lib,p)) t1 t2,
+    all_in_bar_ext bar (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> all_in_bar_ext bar (fun lib' x => term_equality_symmetric (eqb lib' x))
     -> per_union_eq_bar lib eqa eqb t1 t2
     -> per_union_eq_bar lib eqa eqb t2 t1.
 Proof.
   introv tes tet per.
   unfold per_union_eq_bar, per_union_eq, per_union_eq_L, per_union_eq_R in *.
-  exrepnd; exists bar; introv br ext.
-  pose proof (per0 lib' br lib'0 ext) as per0; simpl in *.
+  exrepnd; exists (intersect_bars bar bar0); introv br ext; introv; simpl in *; exrepnd.
+  pose proof (per0 lib2 br2 lib'0 (lib_extends_trans ext br1) x) as per0; simpl in *.
+  pose proof (tes lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tes; simpl in *.
+  pose proof (tet lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tet; simpl in *.
   repndors; exrepnd;[left|right]; eexists; eexists; dands; eauto.
 Qed.
 
 Lemma per_union_eq_bar_transitive {p} :
-  forall lib (eqa eqb : per(p)) t1 t2 t3,
-    term_equality_transitive eqa
-    -> term_equality_transitive eqb
+  forall lib (bar : BarLib lib) (eqa eqb : lib-per(lib,p)) t1 t2 t3,
+    all_in_bar_ext bar (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> all_in_bar_ext bar (fun lib' x => term_equality_transitive (eqb lib' x))
     -> per_union_eq_bar lib eqa eqb t1 t2
     -> per_union_eq_bar lib eqa eqb t2 t3
     -> per_union_eq_bar lib eqa eqb t1 t3.
@@ -3459,11 +3476,13 @@ Proof.
   introv teta tetb pera perb.
   unfold per_union_eq_bar, per_union_eq, per_union_eq_L, per_union_eq_R in *.
   exrepnd.
-  exists (intersect_bars bar bar0); introv br ext.
+  exists (intersect3bars bar bar0 bar1); introv br ext; introv.
   simpl in *; exrepnd.
 
-  pose proof (pera0 lib2 br2 lib'0) as q; simpl in q; autodimp q hyp; eauto 3 with slow.
-  pose proof (perb0 lib1 br0 lib'0) as h; simpl in h; autodimp h hyp; eauto 3 with slow.
+  pose proof (pera0 lib3 br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as q; simpl in q.
+  pose proof (perb0 lib0 br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as h; simpl in h.
+  pose proof (teta lib1 br0 lib'0 (lib_extends_trans ext br3) x) as teta; simpl in *.
+  pose proof (tetb lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tetb; simpl in *.
   repndors; exrepnd; ccomputes_to_eqval.
 
   - left; eexists; eexists; dands; spcast; eauto.
@@ -3516,13 +3535,13 @@ Proof.
 Qed.
 
 Lemma per_union_eq_bar_cequiv {p} :
-  forall lib (bar1 bar2 : BarLib lib) (eqa eqb : per(p)) t1 t2,
-    all_in_bar bar1 (fun lib => term_equality_respecting lib eqa)
-    -> all_in_bar bar2 (fun lib => term_equality_respecting lib eqb)
-    -> term_equality_symmetric eqa
-    -> term_equality_symmetric eqb
-    -> term_equality_transitive eqa
-    -> term_equality_transitive eqb
+  forall lib (bar1 bar2 : BarLib lib) (eqa eqb : lib-per(lib,p)) t1 t2,
+    all_in_bar_ext bar1 (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> all_in_bar_ext bar2 (fun lib' x => term_equality_respecting lib' (eqb lib' x))
+    -> all_in_bar_ext bar1 (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> all_in_bar_ext bar2 (fun lib' x => term_equality_symmetric (eqb lib' x))
+    -> all_in_bar_ext bar1 (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> all_in_bar_ext bar2 (fun lib' x => term_equality_transitive (eqb lib' x))
     -> ccequivc_ext lib t1 t2
     -> per_union_eq_bar lib eqa eqb t1 t1
     -> per_union_eq_bar lib eqa eqb t1 t2.
@@ -3531,11 +3550,15 @@ Proof.
 
   unfold per_union_eq_bar, per_union_eq, per_union_eq_L, per_union_eq_R in *; exrepnd.
   exists (intersect3bars bar1 bar2 bar).
-  introv br ext; simpl in *; exrepnd.
+  introv br ext; introv; simpl in *; exrepnd.
 
-  pose proof (tera lib1 br0 lib'0) as tera; simpl in tera; autodimp tera hyp; eauto 3 with slow.
-  pose proof (terb lib0 br4 lib'0) as terb; simpl in terb; autodimp terb hyp; eauto 3 with slow.
-  pose proof (per0 lib3 br5 lib'0) as per0; simpl in per0; autodimp per0 hyp; eauto 3 with slow.
+  pose proof (tera lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tera; simpl in *.
+  pose proof (terb lib0 br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as terb; simpl in *.
+  pose proof (per0 lib3 br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as per0; simpl in *.
+  pose proof (teta lib1 br0 lib'0 (lib_extends_trans ext br3) x) as teta; simpl in *.
+  pose proof (tesa lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tesa; simpl in *.
+  pose proof (tetb lib0 br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as tetb; simpl in *.
+  pose proof (tesb lib0 br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as tesb; simpl in *.
   apply (lib_extends_preserves_ccequivc_ext _ lib'0) in ceq; eauto 4 with slow;[].
   spcast.
 
@@ -3786,7 +3809,7 @@ Proof.
 Qed.
 
 Lemma per_product_eq_bar_sym {o} :
-  forall lib eqa eqb (t1 t2 : @CTerm o),
+  forall lib (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) (t1 t2 : @CTerm o),
     in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
     -> in_ext_ext lib (fun lib' x =>
                          forall (a1 a2 : CTerm) (e : eqa lib' x a1 a2),
@@ -4216,7 +4239,7 @@ Proof.
 Qed.
 
 Lemma per_product_eq_bar_cequivc {o} :
-  forall lib (eqa : lib-per(lib,o)) eqb t1 t2,
+  forall lib (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) t1 t2,
     in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
     -> in_ext_ext lib (fun lib' x =>
                          forall a1 a2 (e : eqa lib' x a1 a2),

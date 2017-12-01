@@ -340,8 +340,8 @@ Proof.
   introv u.
   unfold univi_bar, per_bar in *; exrepnd.
   exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (u0 lib' br lib'0 ext x) as u0; simpl in *; tcsp.
+  repeat introv.
+  pose proof (u0 lib' b lib'0 e) as u0; simpl in *; tcsp.
 Qed.
 Hint Resolve implies_univi_bar_successor : slow.
 
@@ -362,13 +362,13 @@ Proof.
   - Case "CL_bar".
     apply CL_bar.
     exists bar eqa; dands; auto.
-    introv br ext; introv; eapply reca; eauto.
+    repeat introv; eapply reca; eauto.
 
   - Case "CL_eq".
     apply CL_eq; unfold per_eq; sp.
     exists A B a1 a2 b1 b2 eqa; sp.
-    exists bar; sp.
-    introv b e; repeat introv; eapply reca; eauto.
+    (*exists bar; sp.
+    introv b e; repeat introv; eapply reca; eauto.*)
 
 (*  - Case "CL_req".
     apply CL_req; unfold per_req; sp.
@@ -440,7 +440,9 @@ Proof.
   - Case "CL_union".
     apply CL_union; unfold per_union; sp.
     exists eqa eqb A A' B B'; sp.
-    exists bar; sp; introv j w; try (eapply reca; eauto); try (eapply recb; eauto).
+    (*exists bar; sp; introv j w;
+      try (introv; eapply reca; eauto);
+      try (introv; eapply recb; eauto).*)
 
     (*
   - Case "CL_eunion".
@@ -694,14 +696,14 @@ Proof.
   - Case "CL_bar".
     apply CL_bar.
     exists bar eqa; dands; auto.
-    introv br ext; introv; eapply reca; eauto.
+    repeat introv; eapply reca; eauto.
 
   - Case "CL_eq".
     apply CL_eq.
     unfold per_eq; sp.
-    exists A B a1 a2 b1 b2 eqa; sp.
-    exists bar; sp.
-    introv b e; repeat introv; eapply reca; eauto.
+    exists A B a1 a2 b1 b2 eqa; sp; eauto.
+    (*exists bar; sp.
+    introv b e; repeat introv; eapply reca; eauto.*)
 
 (*  - Case "CL_req".
     apply CL_req.
@@ -810,10 +812,10 @@ Proof.
   - Case "CL_union".
     apply CL_union.
     unfold per_union; sp.
-    exists eqa eqb A A' B B'; sp.
-    exists bar; sp.
-    + introv j w; eapply reca; eauto.
-    + introv j w; eapply recb; eauto.
+    exists eqa eqb A A' B B'; sp; eauto.
+    (*exists bar; sp.
+    + introv j w; introv; eapply reca; eauto.
+    + introv j w; introv; eapply recb; eauto.*)
 
       (*
   - Case "CL_eunion".

@@ -33,6 +33,7 @@
 Require Export nuprl.
 Require Export nat_defs.
 Require Export computation_choice_seq.
+Require Export computation_lib_extends2.
 
 
 Definition memNat {o} : @Mem o :=
@@ -111,6 +112,7 @@ Proof.
   unfold lib_0 in i; simpl in i; repndors; tcsp; subst.
   simpl; introv k; omega.
 Qed.
+Hint Resolve safe_library_lib0 : slow.
 
 Lemma find_cs_some_implies_list_in {o} :
   forall (lib : @library o) name e,
@@ -1190,6 +1192,33 @@ Qed.
 
 
 
+Definition equality_of_nat_bar_lib_per_fam {o}
+           (lib : @library o)
+           (eqa : lib-per(lib,o)) : lib-per-fam(lib,eqa,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) (a b : CTerm) (p : eqa lib' x a b) => equality_of_nat_bar lib').
+  introv x z; tcsp.
+Defined.
+
+Definition equality_of_nat_lib_per {o}
+           (lib : @library o) : lib-per(lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) => equality_of_nat lib').
+  introv x y; tcsp.
+Defined.
+
+(*Lemma all_in_bar_ext_intersect_bars_trivial_left_implies {o} :
+  forall {lib} (bar : @BarLib o lib) F,
+    all_in_bar_ext (intersect_bars (trivial_bar lib) bar) F
+    -> all_in_bar_ext bar F.
+Proof.
+  introv alla; repeat introv.
+  pose proof (alla lib') as alla. ; autodimp alla hyp.
+  simpl.
+  exists lib' lib'; dands; eauto 3 with slow.
+Qed.*)
+
+Hint Resolve computes_to_valc_refl : slow.
 
 (*
 
@@ -1207,7 +1236,10 @@ Proof.
   {
     apply CL_func.
     unfold per_func_ext.
-    eexists; eexists.
+    exists (@equality_of_nat_bar_lib_per o lib_0)
+           (equality_of_nat_bar_lib_per_fam
+              lib_0
+              (@equality_of_nat_bar_lib_per o lib_0)).
     dands;[|apply eq_term_equals_refl].
 
     unfold type_family_ext.
@@ -1230,114 +1262,50 @@ Proof.
     {
       repeat introv.
       apply CL_nat.
-      unfold per_nat_bar.
-      dands.
-
-      {
-        first[assert (BarLib lib') as bar
-             |assert (BarLib (@lib_0 o)) as bar].
-        {
-          first[exists (const_bar lib')
-               |exists (const_bar (@lib_0 o))].
-
-          - introv ext.
-            unfold const_bar; eexists; dands; tcsp.
-            eauto 2 with slow.
-
-          - introv b; unfold const_bar in b; subst.
-            simpl in *; repndors; subst; tcsp; eauto 2 with slow.
-        }
-        exists bar.
-        dands; auto.
-
-        {
-          introv b w; spcast.
-          apply computes_to_valc_refl; eauto 2 with slow.
-        }
-
-        {
-          introv b w; spcast.
-          apply computes_to_valc_refl; eauto 2 with slow.
-        }
-      }
-
-      {
-        apply eq_term_equals_refl.
-      }
+      unfold per_nat; dands; spcast; eauto 3 with slow.
     }
 
     {
       try (introv i); introv.
       autorewrite with slow.
       apply CL_nat.
-      unfold per_nat_bar.
-      dands.
-
-      {
-        first[assert (BarLib lib') as bar
-             |assert (BarLib (@lib_0 o)) as bar].
-        {
-          first[exists (const_bar lib')
-               |exists (const_bar (@lib_0 o))].
-
-          - introv j.
-            unfold const_bar; eexists; dands; tcsp.
-            eauto 2 with slow.
-
-          - introv b; unfold const_bar in b; subst.
-            simpl in *; repndors; subst; tcsp; eauto 2 with slow.
-        }
-        exists bar.
-        dands; auto.
-
-        {
-          introv b w; spcast.
-          apply computes_to_valc_refl; eauto 2 with slow.
-        }
-
-        {
-          introv b w; spcast.
-          apply computes_to_valc_refl; eauto 2 with slow.
-        }
-      }
-
-      {
-        apply eq_term_equals_refl.
-      }
+      unfold per_nat.
+      dands; spcast; eauto 3 with slow.
     }
   }
 
   {
     unfold per_func_eq.
-    first [introv i e|introv e].
+    try (exists (@trivial_bar o lib_0)); simpl.
+    introv xt1 xt2 x en; simpl in *.
 
     unfold equality_of_nat_bar in *; exrepnd.
 
-    first[match goal with
-          | [ H : lib_extends _ _ |- _ ] =>
-            dup H as safe; apply lib_extends_preserves_safe in safe;[|apply safe_library_lib0]
-          end
-         |pose proof (@safe_library_lib0 o) as safe].
+    applydup @lib_extends_preserves_safe in xt2 as safe; eauto 3 with slow.
 
-    exists (extend_bar_nat_following_coq_law_upto bar safe e0).
-    introv b e; simpl in *.
+    exists (extend_bar_nat_following_coq_law_upto bar safe en0).
+    introv b z; simpl in *.
     exrepnd; subst.
 
-    remember (equality_of_nat_imp_tt (e0 _ b lib0 _)) as w; symmetry in Heqw.
+    remember (equality_of_nat_imp_tt (en0 _ b lib0 _)) as w; symmetry in Heqw.
     unfold equality_of_nat_tt in w; exrepnd.
     simpl in *.
 
-    first[assert (lib_extends lib'1 lib0) as ext1 by eauto 2 with slow
+    first[assert (lib_extends lib'2 lib0) as ext1 by eauto 2 with slow
+         |assert (lib_extends lib'1 lib0) as ext1 by eauto 2 with slow
          |assert (lib_extends lib'0 lib0) as ext1 by eauto 2 with slow].
-    first[assert (lib_extends lib'1 lib_0) as ext2 by eauto 4 with slow
+    first[assert (lib_extends lib'2 lib_0) as ext2 by eauto 4 with slow
+         |assert (lib_extends lib'1 lib_0) as ext2 by eauto 4 with slow
          |assert (lib_extends lib'0 lib_0) as ext2 by eauto 4 with slow].
     assert (lib_extends lib0 lib_0) as ext3 by eauto 4 with slow.
 
     clear Heqw.
 
-    first[eapply (computes_to_valc_nat_if_lib_extends lib'1 lib0) in w1; eauto 2 with slow
+    first[eapply (computes_to_valc_nat_if_lib_extends lib'2 lib0) in w1; eauto 2 with slow
+         |eapply (computes_to_valc_nat_if_lib_extends lib'1 lib0) in w1; eauto 2 with slow
          |eapply (computes_to_valc_nat_if_lib_extends lib'0 lib0) in w1; eauto 2 with slow].
-    first[eapply (computes_to_valc_nat_if_lib_extends lib'1 lib0) in w0; eauto 2 with slow
+    first[eapply (computes_to_valc_nat_if_lib_extends lib'2 lib0) in w0; eauto 2 with slow
+         |eapply (computes_to_valc_nat_if_lib_extends lib'1 lib0) in w0; eauto 2 with slow
          |eapply (computes_to_valc_nat_if_lib_extends lib'0 lib0) in w0; eauto 2 with slow].
 
     pose proof (bar_preserves_safe bar lib0) as safe1.
@@ -1353,7 +1321,7 @@ Proof.
     unfold law_0 in ext4.
     destruct restr2; simpl in *; ginv.
 
-    dup e as ee.
+    dup z as ee.
     eapply extend_library_follow_coq_law_upto_implies_find_cs in ee;
       [|auto|allrw; eauto].
     unfold const_0 in ee.
@@ -1389,6 +1357,7 @@ Proof.
   unfold lib_1 in i; simpl in i; repndors; tcsp; subst.
   simpl; dands; auto; tcsp; eauto 2 with slow.
 Qed.
+Hint Resolve safe_library_lib1 : slow.
 
 Fixpoint ntimes {T} (n : nat) (t : T) : list T :=
   match n with
@@ -3680,7 +3649,10 @@ Proof.
   {
     apply CL_func.
     unfold per_func_ext.
-    eexists; eexists.
+    exists (@equality_of_nat_bar_lib_per o lib_1)
+           (equality_of_nat_bar_lib_per_fam
+              lib_1
+              (@equality_of_nat_bar_lib_per o lib_1)).
     dands;[|apply eq_term_equals_refl].
 
     unfold type_family_ext.
@@ -3703,95 +3675,31 @@ Proof.
     {
       repeat introv.
       apply CL_nat.
-      unfold per_nat_bar.
-      dands.
-
-      {
-        assert (BarLib lib') as bar.
-        {
-          exists (const_bar lib').
-
-          - introv ext.
-            unfold const_bar; eexists; dands; tcsp.
-            eauto 2 with slow.
-
-          - introv b; unfold const_bar in b; subst.
-            simpl in *; repndors; subst; tcsp; eauto 2 with slow.
-        }
-        exists bar.
-        dands; auto.
-
-        {
-          introv b w; spcast.
-          apply computes_to_valc_refl; eauto 2 with slow.
-        }
-
-        {
-          introv b w; spcast.
-          apply computes_to_valc_refl; eauto 2 with slow.
-        }
-      }
-
-      {
-        apply eq_term_equals_refl.
-      }
+      unfold per_nat; dands; spcast; eauto 3 with slow.
     }
 
     {
       repeat introv.
       autorewrite with slow.
       apply CL_nat.
-      unfold per_nat_bar.
-      dands.
-
-      {
-        assert (BarLib lib') as bar.
-        {
-          exists (const_bar lib').
-
-          - introv j.
-            unfold const_bar; eexists; dands; tcsp.
-            eauto 2 with slow.
-
-          - introv b; unfold const_bar in b; subst.
-            simpl in *; repndors; subst; tcsp; eauto 2 with slow.
-        }
-        exists bar.
-        dands; auto.
-
-        {
-          introv b w; spcast.
-          apply computes_to_valc_refl; eauto 2 with slow.
-        }
-
-        {
-          introv b w; spcast.
-          apply computes_to_valc_refl; eauto 2 with slow.
-        }
-      }
-
-      {
-        apply eq_term_equals_refl.
-      }
+      unfold per_nat; dands; spcast; eauto 3 with slow.
     }
   }
 
   {
     unfold per_func_eq.
-    introv i e.
+    try (exists (@trivial_bar o lib_1)); simpl.
+    introv xt1 xt2 x en; introv; simpl in *.
 
     unfold equality_of_nat_bar in *; exrepnd.
 
-    match goal with
-    | [ H : lib_extends _ _ |- _ ] =>
-      dup H as safe; apply lib_extends_preserves_safe in safe;[|apply safe_library_lib1]
-    end.
+    applydup @lib_extends_preserves_safe in xt2 as safe; eauto 3 with slow.
 
-    exists (extend_bar_nat_lawless_upto bar safe e0).
+    exists (extend_bar_nat_lawless_upto bar safe en0).
     introv b; simpl in *.
     exrepnd; subst.
 
-    remember (equality_of_nat_imp_tt (e0 _ b lib0 _)) as w; symmetry in Heqw.
+    remember (equality_of_nat_imp_tt (en0 _ b lib0 _)) as w; symmetry in Heqw.
     unfold equality_of_nat_tt in w; exrepnd; simpl in *.
 
     introv lext.
@@ -3805,10 +3713,10 @@ Proof.
 
     applydup @extend_library_lawless_upto_preserves_safe_library in b1 as safe2; auto;[].
 
-    assert (lib_extends lib0 lib_1) as ext by (eauto 3 with slow).
+    assert (lib_extends lib0 lib_1) as ext by (eauto 4 with slow).
     apply lib_extends_lib1_implies_entry_in_library in ext; exrepnd.
 
-    pose proof (extend_library_lawless_upto_implies_find_cs lib'0 lib0 seq_1 k vals (mkc_nat 0) memNat memNat0) as q.
+    pose proof (extend_library_lawless_upto_implies_find_cs lib'1 lib0 seq_1 k vals (mkc_nat 0) memNat memNat0) as q.
     repeat (autodimp q hyp); exrepnd.
     eapply lib_extends_preserves_find_cs_value_at in q1;[|eauto].
 
@@ -3816,6 +3724,7 @@ Proof.
     exists n0; simpl.
     dands; spcast;
       eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl;
-        try (complete (eapply (computes_to_valc_nat_if_lib_extends memNat);[|eauto];eauto 2 with slow)).
+        try (complete (eapply (computes_to_valc_nat_if_lib_extends memNat);[|eauto];eauto 2 with slow));
+        eauto 3 with slow.
   }
 Qed.

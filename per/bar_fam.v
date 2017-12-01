@@ -107,7 +107,7 @@ Definition mk_pack_lib_bar {o} {lib} {bar : BarLib lib}
            (x    : lib_extends lib2 lib) : pack_lib_bar bar :=
   existT _ lib1 (existT _ br (existT _ lib2 (existT _ ext x))).
 
-Lemma per_bar_eq_preserves_all_in_bar_ext_eq_term_equals {o} :
+(*Lemma per_bar_eq_preserves_all_in_bar_ext_eq_term_equals {o} :
   forall {lib} (bar : @BarLib o lib) eqa t1 t2 F,
     per_bar_eq bar eqa t1 t2
     -> all_in_bar_ext
@@ -118,7 +118,7 @@ Proof.
   introv per alla br ext; introv.
   apply (alla lib' br lib'0 ext x).
   eapply per; eauto.
-Qed.
+Qed.*)
 
 Lemma all_in_bar_ext_exists_bar_implies {o} :
   forall {lib} (bar : @BarLib o lib) F,

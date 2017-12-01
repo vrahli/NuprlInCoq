@@ -127,14 +127,14 @@ Lemma per_approx_bar_implies_per_bar {o} :
 Proof.
   introv per.
   unfold per_approx_bar in *; exrepnd.
-  exists (trivial_bar lib) (fun lib' (x : lib_extends lib' lib) => per_approx_eq_bar lib' a b).
+  exists (trivial_bar lib) (per_approx_eq_bar_lib_per lib a b).
   dands; auto.
-  - introv br ext x; simpl in *.
+  - introv br ext; introv; simpl in *.
     exists a b c d; dands; tcsp.
     exists (raise_bar bar x); dands; eauto 3 with slow.
   - eapply eq_term_equals_trans;[eauto|].
     introv; split; introv h.
-    + introv br ext x; simpl in *.
+    + introv br ext; introv; simpl in *.
       eapply sub_per_approx_eq_bar; eauto 3 with slow.
     + pose proof (h lib (lib_extends_refl lib) lib (lib_extends_refl lib) (lib_extends_refl lib)) as h; simpl in *; auto.
 Qed.

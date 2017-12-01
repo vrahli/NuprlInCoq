@@ -30,7 +30,7 @@
 *)
 
 
-Require Export nuprl.
+Require Export bar.
 
 
 
@@ -158,19 +158,3 @@ Proof.
   apply (alla lib1 br1); eauto 3 with slow.
 Qed.
 Hint Resolve implies_all_in_bar_raise_bar : slow.
-
-Lemma implies_computes_to_valc_seq_bar_raise_bar {o} :
-  forall {lib lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) t v,
-    t ==b==>(bar) v
-    -> t ==b==>(raise_bar bar ext) v.
-Proof.
-  introv comp br e.
-  simpl in *; exrepnd.
-  apply (comp lib1 br1); eauto 3 with slow.
-Qed.
-Hint Resolve implies_computes_to_valc_seq_bar_raise_bar : slow.
-
-Definition raise_lib_per {o} {lib lib'}
-           (per : lib-per(lib,o))
-           (ext : lib_extends lib' lib) : lib-per(lib',o) :=
-  fun lib'' x => per lib'' (lib_extends_trans x ext).

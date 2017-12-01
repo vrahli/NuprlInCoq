@@ -46,39 +46,15 @@ Proof.
   eapply alla0; eauto.
 Qed.
 
-Lemma local_per_int_bar {o} :
+Lemma local_per_int {o} :
   forall {lib} (bar : @BarLib o lib) ts T T' eq eqa,
     (eq <=2=> (per_bar_eq bar eqa))
-    -> all_in_bar_ext bar (fun lib' x => per_int_bar ts lib' T T' (eqa lib' x))
-    -> per_int_bar ts lib T T' eq.
+    -> all_in_bar_ext bar (fun lib' x => per_int ts lib' T T' (eqa lib' x))
+    -> per_bar (per_int ts) lib T T' eq.
 Proof.
   introv eqiff alla.
-  unfold per_int_bar in *.
-  apply all_in_bar_ext_and_implies in alla; repnd.
-
-  apply all_in_bar_ext_exists_bar_implies in alla0.
-  exrepnd.
-  dands.
-
-  {
-    exists (bar_of_bar_fam fbar).
-    dands; introv br ext; simpl in *; exrepnd; eapply alla1; eauto.
-  }
-
-  eapply eq_term_equals_trans;[eauto|].
-  introv.
-  split; introv h.
-
-  {
-    eapply per_bar_eq_preserves_all_in_bar_ext_eq_term_equals in alla;[|eauto].
-    eapply local_equality_of_int_bar; eauto.
-  }
-
-  {
-    introv br ext; introv.
-    eapply alla; eauto.
-    eapply sub_per_equality_of_int_bar; eauto.
-  }
+  unfold per_int in *.
+  exists bar eqa; dands; auto.
 Qed.
 
 Lemma dest_close_per_int_l {p} :
@@ -87,10 +63,16 @@ Lemma dest_close_per_int_l {p} :
     -> defines_only_universes ts
     -> computes_to_valc lib T mkc_int
     -> close ts lib T T' eq
-    -> per_int_bar (close ts) lib T T' eq.
+    -> per_int (close ts) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+
+  Focus 2.
+  allunfold_per.
+  unfold per_csname in *.
+  { eapply local_per_int; eauto 3 with slow; introv br ext; introv. ; eapply reca; eauto 3 with slow.
+Focus 2.
   eapply local_per_int_bar; eauto.
   introv br ext; introv; eapply reca; eauto 3 with slow.
 Qed.
