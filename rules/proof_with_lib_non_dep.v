@@ -2862,13 +2862,18 @@ Arguments MkSoftLibrary [o] _ _.
 
 Definition address := list nat.
 
+Record Abstraction {o} :=
+  MkAbstraction
+    {
+      abs_opabs   : opabs;
+      abs_vars    : list sovar_sig;
+      abs_rhs     : @SOTerm o;
+      abs_correct : correct_abs abs_opabs abs_vars abs_rhs;
+    }.
+
 Inductive command {o} :=
 (* add a definition at the head *)
-| COM_add_def
-    (opabs   : opabs)
-    (vars    : list sovar_sig)
-    (rhs     : @SOTerm o)
-    (correct : correct_abs opabs vars rhs)
+| COM_add_def (abs : @Abstraction o)
 (* tries to complete a proof if it has no holes *)
 | COM_finish_proof (name : LemmaName)
 (* do a proof step *)
@@ -10765,12 +10770,18 @@ Definition SoftLibrary_rename {o}
     (MkSoftLibrary lib unf)
     [renamed].
 
+Definition SoftLibrary_add_abs {o} state (abs : @Abstraction o) :=
+  match abs with
+  | MkAbstraction _ opabs vars rhs correct =>
+    SoftLibrary_add_def state opabs vars rhs correct
+  end.
+
 Definition update {o}
            (state : @SoftLibrary o)
            (cmd   : command) : UpdRes :=
   match cmd with
-  | COM_add_def opabs vars rhs correct =>
-    SoftLibrary_add_def state opabs vars rhs correct
+  | COM_add_def abs =>
+    SoftLibrary_add_abs state abs
 
   | COM_finish_proof name =>
     SoftLibrary_finish_proof state name
@@ -12868,6 +12879,7 @@ Proof.
   - (* addition of a definition *)
     destruct state as [L pre_prfs]; simpl in *.
     unfold ValidSoftLibrary in *; simpl in *; repnd.
+    destruct abs as [opabs vars rhs correct]; simpl in *.
 
     destruct (entry_in_lib_dec
                 (RigidLibraryEntry_abs (lib_abs opabs vars rhs correct))
