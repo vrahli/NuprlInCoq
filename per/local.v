@@ -100,7 +100,7 @@ Proof.
   - exists lib1 br lib2 ext x0 lib0 w fb; auto.
 Defined.
 
-(*Lemma local_per_bar {o} :
+Lemma local_per_bar {o} :
   forall (ts : cts(o)),
     type_extensionality ts
     -> uniquely_valued ts
@@ -151,22 +151,19 @@ Proof.
     introv.
     unfold per_bar_eq; split; introv h; exrepnd.
 
-    - exists bar'.
-      introv br ext; introv; simpl in *; exrepnd.
-      pose proof (alla1 lib0 br lib3 ext0 x0) as q; repnd.
+    - introv br ext; introv; simpl in *; exrepnd.
+      remember (fbar lib1 br lib2 ext0 x0) as b.
+      pose proof (alla1 lib1 br lib2 ext0 x0) as alla; repnd.
 
-      pose proof (h0 lib') as h0.
-      autodimp h0 hyp; simpl in *.
-      { simpl; eexists; eexists; dands; eauto 4 with slow. }
-      pose proof (h0 lib'0 ext x) as h0; simpl in *.
-      apply q0 in h0.
+      pose proof (h lib1 br lib2 ext0 x0) as h0; simpl in *.
+      apply alla in h0.
 
-      clear q q0.
-
+      subst.
       exists lib1 br lib2 ext0 x0 lib' ext br0.
-      eapply h; eauto.
+      eapply h0; eauto.
 
-    - pose proof (alla1 lib' br lib'0 ext x) as z; repnd.
+    - introv br ext; introv.
+      pose proof (alla1 lib' br lib'0 ext x) as z; repnd.
       apply z.
       introv fb w; introv.
 
@@ -227,4 +224,3 @@ Proof.
   (* Do we have to wrap a [per_bar] around [univ]?
      Or move the universe inside the [per_bar]? *)
 Abort.
- *)

@@ -62,7 +62,7 @@ Proof.
   introv h e.
   unfold per_int_bar in h; exrepnd.
   apply h in e; apply h.
-  unfold equality_of_int_bar in *; exrepnd; exists bar0.
+  unfold equality_of_int_bar, equality_of_int in *; exrepnd; exists bar0.
   introv ie i; apply e0 in i; auto.
   exrepnd; exists k; tcsp.
 Qed.
@@ -87,7 +87,7 @@ Proof.
   introv h e ceq.
   unfold per_int_bar in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
-  unfold equality_of_int_bar in *; exrepnd; exists bar0.
+  unfold equality_of_int_bar, equality_of_int in *; exrepnd; exists bar0.
   introv ie i; applydup e0 in i; auto.
   exrepnd; exists k; repnd; dands; auto.
   pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].

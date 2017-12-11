@@ -33,13 +33,14 @@
 Require Export type_sys_useful2.
 Require Export dest_close.
 
+
 Require Import close_type_sys_per_init.
-Require Import close_type_sys_per_int.
+(*Require Import close_type_sys_per_int.
 Require Import close_type_sys_per_nat.
 Require Import close_type_sys_per_atom.
 Require Import close_type_sys_per_uatom.
 Require Import close_type_sys_per_csname.
-Require Import close_type_sys_per_base.
+Require Import close_type_sys_per_base.*)
 (*Require Import close_type_sys_per_sqle.
 Require Import close_type_sys_per_sqequal.
 Require Import close_type_sys_per_eq.

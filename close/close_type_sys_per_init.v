@@ -73,9 +73,6 @@ Proof.
   introv comp br ext; simpl in *.
   pose proof (computes_to_valc_preserves_lib_extends lib lib'0) as q.
   autodimp q hyp; eauto 3 with slow.
-  spcast.
-  apply q in comp; exrepnd.
-  apply alphaeqc_mkc_uni in comp0; subst; auto.
 Qed.
 Hint Resolve computes_to_valc_uni_implies_all_in_bar_trivial : slow.
 

@@ -340,7 +340,7 @@ Proof.
   introv u.
   unfold univi_bar, per_bar in *; exrepnd.
   exists bar eqa; dands; auto.
-  repeat introv.
+  try introv b e; repeat introv.
   pose proof (u0 lib' b lib'0 e) as u0; simpl in *; tcsp.
 Qed.
 Hint Resolve implies_univi_bar_successor : slow.
@@ -362,11 +362,12 @@ Proof.
   - Case "CL_bar".
     apply CL_bar.
     exists bar eqa; dands; auto.
-    repeat introv; eapply reca; eauto.
+    try introv b e; repeat introv; eapply reca; eauto.
 
   - Case "CL_eq".
     apply CL_eq; unfold per_eq; sp.
     exists A B a1 a2 b1 b2 eqa; sp.
+    introv; eapply reca; eauto.
     (*exists bar; sp.
     introv b e; repeat introv; eapply reca; eauto.*)
 
@@ -439,7 +440,7 @@ Proof.
 
   - Case "CL_union".
     apply CL_union; unfold per_union; sp.
-    exists eqa eqb A A' B B'; sp.
+    exists eqa eqb A A' B B'; sp; introv;[eapply reca|eapply recb]; eauto.
     (*exists bar; sp; introv j w;
       try (introv; eapply reca; eauto);
       try (introv; eapply recb; eauto).*)
@@ -696,12 +697,13 @@ Proof.
   - Case "CL_bar".
     apply CL_bar.
     exists bar eqa; dands; auto.
-    repeat introv; eapply reca; eauto.
+    try introv b e; repeat introv; eapply reca; eauto.
 
   - Case "CL_eq".
     apply CL_eq.
     unfold per_eq; sp.
     exists A B a1 a2 b1 b2 eqa; sp; eauto.
+    introv; eapply reca; eauto.
     (*exists bar; sp.
     introv b e; repeat introv; eapply reca; eauto.*)
 
@@ -812,7 +814,7 @@ Proof.
   - Case "CL_union".
     apply CL_union.
     unfold per_union; sp.
-    exists eqa eqb A A' B B'; sp; eauto.
+    exists eqa eqb A A' B B'; sp; eauto; introv;[eapply reca|eapply recb]; eauto.
     (*exists bar; sp.
     + introv j w; introv; eapply reca; eauto.
     + introv j w; introv; eapply recb; eauto.*)

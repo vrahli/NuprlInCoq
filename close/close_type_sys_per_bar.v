@@ -164,7 +164,7 @@ Proof.
   eapply allb; eauto 3 with slow.
 Qed.
 
-Lemma all_in_bar_close_approx {o} :
+(*Lemma all_in_bar_close_approx {o} :
   forall {lib} (bar : @BarLib o lib) ts T T' (eqa : lib-per(lib,o)) a b,
     type_system ts
     -> defines_only_universes ts
@@ -179,9 +179,9 @@ Proof.
   simpl in *; spcast.
   apply (implies_computes_to_valc_seq_bar_raise_bar _ x) in allb.
   dclose_lr; auto.
-Qed.
+Qed.*)
 
-Lemma all_in_bar_close_cequiv {o} :
+(*Lemma all_in_bar_close_cequiv {o} :
   forall {lib} (bar : @BarLib o lib) ts T T' (eqa : lib-per(lib,o)) a b,
     type_system ts
     -> defines_only_universes ts
@@ -196,22 +196,21 @@ Proof.
   simpl in *; spcast.
   apply (implies_computes_to_valc_seq_bar_raise_bar _ x) in allb.
   dclose_lr; auto.
-Qed.
+Qed.*)
 
-Lemma per_int_bar_implies_per_bar {o} :
+Lemma per_int_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
-    per_int_bar (close ts) lib T T' eq
+    per_int (close ts) lib T T' eq
     -> per_bar (close ts) lib T T' eq.
 Proof.
   introv per.
-  unfold per_int_bar in *; exrepnd.
-  exists bar (equality_of_int_bar_lib_per lib).
+  unfold per_int in *; exrepnd.
+  exists (trivial_bar lib) (equality_of_int_bar_lib_per lib).
   dands.
 
   - introv br ext; introv.
     apply CL_int.
-    unfold per_int_bar; dands; auto.
-    exists (raise_bar bar x); dands; eauto 3 with slow.
+    unfold per_int; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per.
     unfold per_bar_eq; introv; simpl.
@@ -219,22 +218,21 @@ Proof.
     introv br ext x.
     eapply sub_per_equality_of_int_bar; eauto 3 with slow.
 Qed.
-Hint Resolve per_int_bar_implies_per_bar : slow.
+Hint Resolve per_int_implies_per_bar : slow.
 
-Lemma per_nat_bar_implies_per_bar {o} :
+Lemma per_nat_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
-    per_nat_bar (close ts) lib T T' eq
+    per_nat (close ts) lib T T' eq
     -> per_bar (close ts) lib T T' eq.
 Proof.
   introv per.
-  unfold per_nat_bar in *; exrepnd.
-  exists bar (equality_of_nat_bar_lib_per lib).
+  unfold per_nat in *; exrepnd.
+  exists (trivial_bar lib) (equality_of_nat_bar_lib_per lib).
   dands.
 
   - introv br ext; introv.
     apply CL_nat.
-    unfold per_nat_bar; dands; auto.
-    exists (raise_bar bar x); dands; eauto 3 with slow.
+    unfold per_nat; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per.
     unfold per_bar_eq; introv; simpl.
@@ -242,22 +240,21 @@ Proof.
     introv br ext x.
     eapply sub_per_equality_of_nat_bar; eauto 3 with slow.
 Qed.
-Hint Resolve per_nat_bar_implies_per_bar : slow.
+Hint Resolve per_nat_implies_per_bar : slow.
 
-Lemma per_csname_bar_implies_per_bar {o} :
+Lemma per_csname_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
-    per_csname_bar (close ts) lib T T' eq
+    per_csname (close ts) lib T T' eq
     -> per_bar (close ts) lib T T' eq.
 Proof.
   introv per.
-  unfold per_csname_bar in *; exrepnd.
-  exists bar (equality_of_csname_bar_lib_per lib).
+  unfold per_csname in *; exrepnd.
+  exists (trivial_bar lib) (equality_of_csname_bar_lib_per lib).
   dands.
 
   - introv br ext; introv.
     apply CL_csname.
-    unfold per_csname_bar; dands; auto.
-    exists (raise_bar bar x); dands; eauto 3 with slow.
+    unfold per_csname in *; repnd; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per.
     unfold per_bar_eq; introv; simpl.
@@ -265,22 +262,21 @@ Proof.
     introv br ext x.
     eapply sub_per_equality_of_csname_bar; eauto 3 with slow.
 Qed.
-Hint Resolve per_csname_bar_implies_per_bar : slow.
+Hint Resolve per_csname_implies_per_bar : slow.
 
-Lemma per_atom_bar_implies_per_bar {o} :
+Lemma per_atom_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
-    per_atom_bar (close ts) lib T T' eq
+    per_atom (close ts) lib T T' eq
     -> per_bar (close ts) lib T T' eq.
 Proof.
   introv per.
-  unfold per_atom_bar in *; exrepnd.
-  exists bar (equality_of_atom_bar_lib_per lib).
+  unfold per_atom in *; exrepnd.
+  exists (trivial_bar lib) (equality_of_atom_bar_lib_per lib).
   dands.
 
   - introv br ext; introv.
     apply CL_atom.
-    unfold per_atom_bar; dands; auto.
-    exists (raise_bar bar x); dands; eauto 3 with slow.
+    unfold per_atom; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per.
     unfold per_bar_eq; introv; simpl.
@@ -288,22 +284,21 @@ Proof.
     introv br ext x.
     eapply sub_per_equality_of_atom_bar; eauto 3 with slow.
 Qed.
-Hint Resolve per_atom_bar_implies_per_bar : slow.
+Hint Resolve per_atom_implies_per_bar : slow.
 
-Lemma per_uatom_bar_implies_per_bar {o} :
+Lemma per_uatom_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
-    per_uatom_bar (close ts) lib T T' eq
+    per_uatom (close ts) lib T T' eq
     -> per_bar (close ts) lib T T' eq.
 Proof.
   introv per.
-  unfold per_uatom_bar in *; exrepnd.
-  exists bar (equality_of_uatom_bar_lib_per lib).
+  unfold per_uatom in *; exrepnd.
+  exists (trivial_bar lib) (equality_of_uatom_bar_lib_per lib).
   dands.
 
   - introv br ext; introv.
     apply CL_uatom.
-    unfold per_uatom_bar; dands; auto.
-    exists (raise_bar bar x); dands; eauto 3 with slow.
+    unfold per_uatom; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per.
     unfold per_bar_eq; introv; simpl.
@@ -311,22 +306,21 @@ Proof.
     introv br ext x.
     eapply sub_per_equality_of_uatom_bar; eauto 3 with slow.
 Qed.
-Hint Resolve per_uatom_bar_implies_per_bar : slow.
+Hint Resolve per_uatom_implies_per_bar : slow.
 
-Lemma per_base_bar_implies_per_bar {o} :
+Lemma per_base_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
-    per_base_bar (close ts) lib T T' eq
+    per_base (close ts) lib T T' eq
     -> per_bar (close ts) lib T T' eq.
 Proof.
   introv per.
-  unfold per_base_bar in *; exrepnd.
-  exists bar (per_base_eq_lib_per lib).
+  unfold per_base in *; exrepnd.
+  exists (trivial_bar lib) (per_base_eq_lib_per lib).
   dands.
 
   - introv br ext; introv.
     apply CL_base.
-    unfold per_base_bar; dands; auto.
-    exists (raise_bar bar x); dands; eauto 3 with slow.
+    unfold per_base; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per.
     unfold per_bar_eq; introv; simpl.
@@ -334,79 +328,76 @@ Proof.
     introv br ext x.
     eapply sub_per_base_eq; eauto 3 with slow.
 Qed.
-Hint Resolve per_base_bar_implies_per_bar : slow.
+Hint Resolve per_base_implies_per_bar : slow.
 
-Lemma per_approx_bar_implies_per_bar {o} :
+Lemma per_approx_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
-    per_approx_bar (close ts) lib T T' eq
+    per_approx (close ts) lib T T' eq
     -> per_bar (close ts) lib T T' eq.
 Proof.
   introv per.
-  unfold per_approx_bar in *; exrepnd.
-  exists bar (per_approx_eq_bar_lib_per lib a b).
+  unfold per_approx in *; exrepnd.
+  exists (trivial_bar lib) (per_approx_eq_bar_lib_per lib a b).
   dands.
 
   - introv br ext; introv.
     apply CL_approx.
-    unfold per_approx_bar; dands; auto.
-    exists a b c d; dands; auto.
-    exists (raise_bar bar x); dands; eauto 3 with slow.
+    unfold per_approx; dands; auto.
+    exists a b c d; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per1.
-    unfold per_approx_eq_bar; introv; simpl.
+    unfold per_bar_eq; introv; simpl.
     introv; split; introv h;[|eapply local_equality_of_approx_bar; eauto].
-    introv br ext; introv.
+    introv br ext x.
     eapply sub_per_approx_eq_bar; eauto 3 with slow.
 Qed.
-Hint Resolve per_approx_bar_implies_per_bar : slow.
+Hint Resolve per_approx_implies_per_bar : slow.
 
-Lemma per_cequiv_bar_implies_per_bar {o} :
+Lemma per_cequiv_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
-    per_cequiv_bar (close ts) lib T T' eq
+    per_cequiv (close ts) lib T T' eq
     -> per_bar (close ts) lib T T' eq.
 Proof.
   introv per.
-  unfold per_cequiv_bar in *; exrepnd.
-  exists bar (per_cequiv_eq_bar_lib_per lib a b).
+  unfold per_cequiv in *; exrepnd.
+  exists (trivial_bar lib) (per_cequiv_eq_bar_lib_per lib a b).
   dands.
 
   - introv br ext; introv.
     apply CL_cequiv.
-    unfold per_cequiv_bar; dands; auto.
-    exists a b c d; dands; auto.
-    exists (raise_bar bar x); dands; eauto 3 with slow.
+    unfold per_cequiv; dands; auto.
+    exists a b c d; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per1.
-    unfold per_cequiv_eq_bar; introv; simpl.
+    unfold per_bar_eq; introv; simpl.
     introv; split; introv h;[|eapply local_equality_of_cequiv_bar; eauto].
-    introv br ext; introv.
+    introv br ext x.
     eapply sub_per_cequiv_eq_bar; eauto 3 with slow.
 Qed.
-Hint Resolve per_cequiv_bar_implies_per_bar : slow.
+Hint Resolve per_cequiv_implies_per_bar : slow.
 
-Lemma per_eq_bar_implies_per_bar {o} :
+Lemma per_eq_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
-    per_eq_bar (close ts) lib T T' eq
+    per_eq (close ts) lib T T' eq
     -> per_bar (close ts) lib T T' eq.
 Proof.
   introv per.
-  unfold per_eq_bar in *; exrepnd.
-  exists bar (per_eq_eq_lib_per eqa a1 a2).
+  unfold per_eq in *; exrepnd.
+  exists (trivial_bar lib) (eq_per_eq_bar_lib_per lib a1 a2 eqa).
   dands.
 
   - introv br ext; introv.
     apply CL_eq.
-    unfold per_eq_bar; dands; auto.
-    exists A B a1 a2 b1 b2 (raise_lib_per eqa x); dands; auto;[].
-    exists (raise_bar bar x); dands; eauto 3 with slow.
+    unfold per_eq; dands; auto.
+    exists A B a1 a2 b1 b2 (raise_lib_per eqa x); dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per0.
     introv; simpl.
     introv; split; introv h;[|eapply local_equality_of_eq_bar; eauto];[].
-    introv br ext; introv.
-    eapply sub_per_per_eq_eq; eauto 3 with slow.
+    introv br ext; introv; simpl.
+    eapply sub_per_eq_per_eq_bar; eauto 3 with slow.
 Qed.
-Hint Resolve per_eq_bar_implies_per_bar : slow.
+Hint Resolve per_eq_implies_per_bar : slow.
 
 Definition per_func_ext_eq_lib_per
            {o}
@@ -419,34 +410,39 @@ Proof.
 
   repeat introv.
   unfold per_func_ext_eq, raise_lib_per_fam, raise_lib_per, raise_ext_per, raise_ext_per_fam; simpl.
-  split; intro h; exrepnd; introv.
+  split; intro h; exrepnd; introv; exists bar; introv br ext; repeat introv.
 
-  - pose proof (h lib'0 e0 a a') as h; simpl in *.
-    assert (eqa lib'0 (lib_extends_trans e0 e) a a') as e2.
+  - pose proof (h0 _ br _ ext x) as h0; simpl in h0.
+    pose proof (h0 a a') as h0; simpl in *.
+    assert (eqa lib'1 (lib_extends_trans x e) a a') as e2.
     { eapply (lib_per_cond _ eqa); eauto. }
-    pose proof (h e2) as h.
+    pose proof (h0 e2) as h.
     eapply (lib_per_fam_cond _ eqb); eauto.
 
-  - pose proof (h lib'0 e0 a a') as h; simpl in *.
-    assert (eqa lib'0 (lib_extends_trans e0 y) a a') as e2.
+  - pose proof (h0 _ br _ ext x) as h0; simpl in h0.
+    pose proof (h0 a a') as h0; simpl in *.
+    assert (eqa lib'1 (lib_extends_trans x y) a a') as e2.
     { eapply (lib_per_cond _ eqa); eauto. }
-    pose proof (h e2) as h.
+    pose proof (h0 e2) as h.
     eapply (lib_per_fam_cond _ eqb); eauto.
 Defined.
 
 Lemma local_per_func_ext_eq_trivial_bar {o} :
-  forall {lib} (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) t1 t2,
-    per_bar_eq (trivial_bar lib) (per_func_ext_eq_lib_per eqa eqb) t1 t2
+  forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) t1 t2,
+    per_bar_eq bar (per_func_ext_eq_lib_per eqa eqb) t1 t2
     -> per_func_ext_eq lib eqa eqb t1 t2.
 Proof.
   introv alla.
-  unfold per_bar_eq in alla.
+  apply all_in_bar_ext_exists_bar_implies in alla; exrepnd.
+  exists (bar_of_bar_fam fbar).
+  introv br ext; introv; simpl in *; exrepnd.
+  pose proof (alla0 _ br _ ext0 x0) as alla0.
+  unfold per_func_eq, raise_lib_per, raise_ext_per in alla0.
   introv.
-  assert (eqa lib' (lib_extends_trans e (lib_extends_refl lib)) a a') as e2.
-  { eapply (lib_per_cond _ eqa); eauto. }
-  pose proof (alla lib (lib_extends_refl lib)
-                   lib (lib_extends_refl lib) (lib_extends_refl lib)
-                   lib' e a a' e2) as alla; simpl in *.
+  pose proof (alla0 _ br0 _ ext (lib_extends_trans ext (bar_lib_ext _ _ br0)) a a') as alla0; simpl in *.
+  assert (eqa lib'0 (lib_extends_trans (lib_extends_trans ext (bar_lib_ext (fbar lib1 br lib2 ext0 x0) lib' br0)) x0) a a') as e'.
+  { eapply (lib_per_cond lib eqa); eauto. }
+  pose proof (alla0 e') as alla0; simpl in *.
   unfold raise_ext_per_fam in *.
   eapply (lib_per_fam_cond _ eqb); eauto.
 Qed.
@@ -521,21 +517,20 @@ Qed.
 
 Lemma per_union_bar_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
-    per_union_bar (close ts) lib T T' eq
+    per_union (close ts) lib T T' eq
     -> per_bar (close ts) lib T T' eq.
 Proof.
   introv per.
-  unfold per_union_bar in *; exrepnd.
+  unfold per_union in *; exrepnd.
 
-  exists bar (per_union_eq_bar_lib_per eqa eqb).
+  exists (trivial_bar lib) (per_union_eq_bar_lib_per eqa eqb).
   dands.
 
   - introv br ext; introv; simpl in *.
     apply CL_union.
-    unfold per_union_bar; dands; auto.
+    unfold per_union; dands; auto.
     exists (raise_lib_per eqa x) (raise_lib_per eqb x); dands; eauto 3 with slow.
-    exists A1 A2 B1 B2; dands; auto.
-    exists (raise_bar bar x); dands; eauto 3 with slow.
+    exists A1 A2 B1 B2; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per1.
     introv; simpl.
@@ -655,7 +650,7 @@ Definition ts_implies_per_bar_above {o} {lib} (ts : cts(o)) (bar : BarLib lib) :
     ts lib T T' eq
     -> per_bar_above ts bar T T' eq.
 
-Lemma per_int_bar_implies_per_bar_above {o} :
+(*Lemma per_int_bar_implies_per_bar_above {o} :
   forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_int_bar (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
@@ -940,6 +935,7 @@ Hint Resolve per_eq_bar_implies_per_bar_above : slow.
 
 
 Qed.*)
+*)
 
 Lemma per_bar_eq_intersect_bars_left {o} :
   forall {lib} (bar1 bar2 : @BarLib o lib) eqa a b,
@@ -964,17 +960,17 @@ Qed.
 Lemma close_type_system_bar {o} :
   forall (ts : cts(o)) lib (bar : BarLib lib) T T' eq (eqa : lib-per(lib,o)),
     ts_implies_per_bar ts
-    -> local_ts ts
+    (*-> local_ts ts*)
     -> type_system ts
     -> defines_only_universes ts
-    -> type_monotone2 ts
+    -> type_monotone ts
     -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
     -> all_in_bar_ext bar (fun lib' x => type_sys_props4 (close ts) lib' T T' (eqa lib' x))
     -> (eq <=2=> (per_bar_eq bar eqa))
     -> per_bar (close ts) lib T T' eq
     -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
-  introv tib locts tysys dou mon allcl alltsp eqiff per.
+  introv tib (*locts*) tysys dou mon allcl alltsp eqiff per.
 
   prove_type_sys_props4 SCase; introv.
 
@@ -983,12 +979,12 @@ Proof.
 
     eapply eq_term_equals_trans;[eauto|]; clear eqiff.
 
-    introv; apply eq_term_equals_sym; split; intro h.
+    apply eq_term_equals_sym; introv; split; intro h.
 
     {
       introv br ext; introv.
       pose proof (alltsp lib' br lib'0 ext x) as alltsp; simpl in *.
-      apply (close_monotone2 _ mon _ lib'0) in cl; auto; exrepnd.
+      apply (close_monotone _ mon _ lib'0) in cl; auto; exrepnd.
       apply cl0 in h.
       eapply type_sys_props4_implies_eq_term_equals in cl1;[|eauto].
       apply cl1; auto.
@@ -999,8 +995,8 @@ Proof.
       assert (close ts lib T T' eq) as cl'.
       { apply CL_bar; auto. }
 
-XXXXXXXXXXXX
-      apply close_implies_per_bar in cl;auto.
+      (* it would be great to have the "above" version here *)
+      apply close_implies_per_bar in cl;auto;[].
       unfold per_bar in cl; exrepnd.
       apply cl1; clear cl1.
 

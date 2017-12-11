@@ -552,7 +552,7 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_equality_r ts lib T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h
 
-    (* equality bar *)
+(*    (* equality bar *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
         H3 : all_in_bar ?bar (fun lib => ?T ===>(lib) (mkc_equality ?a ?b ?A)),
@@ -565,9 +565,9 @@ Ltac dest_close_lr h :=
         H3 : all_in_bar ?bar (fun lib => ?T' ===>(lib) (mkc_equality ?a ?b ?A)),
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_equality_bar_r ts lib bar T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_equality_bar_r ts lib bar T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h*)
 
-    (* equality ceq bar *)
+(*    (* equality ceq bar *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
         H3 : computes_to_valc_ceq_bar ?bar ?T (mkc_equality ?a ?b ?A),
@@ -580,7 +580,7 @@ Ltac dest_close_lr h :=
         H3 : computes_to_valc_ceq_bar ?bar ?T' (mkc_equality ?a ?b ?A),
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_equality_ceq_bar_r ts lib bar T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_equality_ceq_bar_r ts lib bar T a b A T' eq H1 H2 H3 H4); intro h; no_duplicate h*)
 
 (*    (* requality *)
     | [ H1 : type_system ?ts,

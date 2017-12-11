@@ -34,7 +34,7 @@ Require Export dest_close_tacs.
 
 
 Definition per_union_bar_or {o} ts lib (T T' : @CTerm o) eq :=
-  per_union_bar ts lib T T' eq
+  per_union ts lib T T' eq
   {+} per_bar ts lib T T' eq.
 
 Lemma dest_close_per_union_l {p} :

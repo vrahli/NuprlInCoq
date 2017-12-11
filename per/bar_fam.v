@@ -30,8 +30,9 @@
  *)
 
 
-Require Export raise_bar.
+Require Export nuprl.
 Require Export axiom_func_choice_on.
+Require Export computation_lib_extends2.
 
 
 Definition bar_fam {o} {lib} (bar : @BarLib o lib) :=
@@ -107,15 +108,33 @@ Definition mk_pack_lib_bar {o} {lib} {bar : BarLib lib}
            (x    : lib_extends lib2 lib) : pack_lib_bar bar :=
   existT _ lib1 (existT _ br (existT _ lib2 (existT _ ext x))).
 
-(*Lemma per_bar_eq_preserves_all_in_bar_ext_eq_term_equals {o} :
-  forall {lib} (bar : @BarLib o lib) eqa t1 t2 F,
-    per_bar_eq bar eqa t1 t2
-    -> all_in_bar_ext
-         bar
-         (fun lib' x => (eqa lib' x) <=2=> (F lib' x))
-    -> all_in_bar_ext bar (fun lib' x => F lib' x t1 t2).
+Lemma ccomputes_to_valc_implies_all_in_bar {o} :
+  forall lib (bar : @BarLib o lib) a b,
+    a ===>(lib) b
+    -> all_in_bar bar (fun lib' => a ===>(lib') b).
 Proof.
-  introv per alla br ext; introv.
+  introv comp br ext; spcast; eauto 4 with slow.
+Qed.
+Hint Resolve ccomputes_to_valc_implies_all_in_bar : slow.
+
+Lemma all_in_bar_ext_eq_term_equals_preserves_per_bar_eq {o} :
+  forall lib (bar : @BarLib o lib) (eqa eqb : lib-per(lib,o)) t1 t2,
+    all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
+    -> per_bar_eq bar eqa t1 t2
+    -> per_bar_eq bar eqb t1 t2.
+Proof.
+  introv alla allb br ext; introv.
+  apply (alla _ br _ ext x).
+  apply (allb _ br _ ext x).
+Qed.
+
+(*Lemma per_bar_eq_preserves_all_in_bar_ext_eq_term_equals {o} :
+  forall {lib} (bar : @BarLib o lib) eqa eqb t1 t2,
+    all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
+    -> per_bar_eq bar eqa t1 t2
+    -> per_bar_eq bar eqb t1 t2).
+Proof.
+  introv alla per br ext; introv.
   apply (alla lib' br lib'0 ext x).
   eapply per; eauto.
 Qed.*)

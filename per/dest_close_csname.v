@@ -45,6 +45,24 @@ Proof.
   introv br ext; simpl in *; exrepnd.
   eapply alla0; eauto.
 Qed.
+Hint Resolve local_equality_of_csname_bar : slow.
+
+Lemma all_in_bar_ext_equal_equality_of_csname_bar_implies_per_bar_eq_implies_equality_of_csname_bar {o} :
+  forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)),
+    all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (equality_of_csname_bar lib'))
+    -> (per_bar_eq bar eqa) <=2=> (equality_of_csname_bar lib).
+Proof.
+  introv alla; introv; split; introv h.
+
+  - pose proof (all_in_bar_ext_eq_term_equals_preserves_per_bar_eq
+                  _ bar eqa (equality_of_csname_bar_lib_per lib) t1 t2 alla h) as q.
+    eauto 3 with slow.
+
+  - introv br ext; introv.
+    apply (alla _ br _ ext x).
+    eapply sub_per_equality_of_csname_bar; eauto 3 with slow.
+Qed.
+Hint Resolve all_in_bar_ext_equal_equality_of_csname_bar_implies_per_bar_eq_implies_equality_of_csname_bar : slow.
 
 Lemma local_per_csname_bar {o} :
   forall {lib} (bar : @BarLib o lib) ts T T' eq eqa,
@@ -70,8 +88,7 @@ Proof.
   split; introv h.
 
   {
-    eapply per_bar_eq_preserves_all_in_bar_ext_eq_term_equals in alla;[|eauto].
-    eapply local_equality_of_csname_bar; eauto.
+    apply all_in_bar_ext_equal_equality_of_csname_bar_implies_per_bar_eq_implies_equality_of_csname_bar in alla; apply alla; auto.
   }
 
   {
@@ -81,6 +98,22 @@ Proof.
   }
 Qed.
 
+Lemma per_csname_implies_per_csname_bar {o} :
+  forall ts lib (T T' : @CTerm o) eq,
+    per_csname ts lib T T' eq
+    -> per_csname_bar ts lib T T' eq.
+Proof.
+  introv per.
+  unfold per_csname in per; repnd.
+  unfold per_csname_bar.
+  dands; auto.
+  exists (trivial_bar lib).
+  dands; eauto 3 with slow.
+Qed.
+Hint Resolve per_csname_implies_per_csname_bar : slow.
+
+
+(* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_csname_l {p} :
   forall (ts : cts(p)) lib T T' eq,
@@ -91,7 +124,7 @@ Lemma dest_close_per_csname_l {p} :
     -> per_csname_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
-  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
   eapply local_per_csname_bar; eauto.
   introv br ext; introv; apply (reca lib' br lib'0 ext x); eauto 3 with slow.
 Qed.
@@ -105,7 +138,7 @@ Lemma dest_close_per_csname_r {p} :
     -> per_csname_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
-  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
   eapply local_per_csname_bar; eauto.
   introv br ext; introv; apply (reca lib' br lib'0 ext x); eauto 3 with slow.
 Qed.
@@ -120,7 +153,7 @@ Lemma dest_close_per_csname_bar_l {p} :
     -> per_csname_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
-  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
   eapply local_per_csname_bar; eauto.
   introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
@@ -135,7 +168,7 @@ Lemma dest_close_per_csname_bar_r {p} :
     -> per_csname_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
-  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
   eapply local_per_csname_bar; eauto.
   introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
@@ -150,7 +183,7 @@ Lemma dest_close_per_csname_ceq_bar_l {p} :
     -> per_csname_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
-  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
   eapply local_per_csname_bar; eauto.
   introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
@@ -165,7 +198,7 @@ Lemma dest_close_per_csname_ceq_bar_r {p} :
     -> per_csname_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
-  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
   eapply local_per_csname_bar; eauto.
   introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
