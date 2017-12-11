@@ -1503,13 +1503,24 @@ Definition valid_extract_of_proof {o} (p : @proof o) :=
   | _ => False
   end.
 
+Definition type_of_proof_is_prog {o} (p : @proof o) := isprog (proof2type p).
+
+Record wf_proof {o} (p : @proof o) :=
+  MkWfProof {
+      wf_proof_type : type_of_proof_is_prog p;
+      wf_proof_ext  : valid_extract_of_proof p
+    }.
+
+Arguments MkWfProof [o] [p] _ _.
+Arguments wf_proof_type [o] [p] _.
+Arguments wf_proof_ext  [o] [p] _.
+
 Inductive RigidLibraryEntry {o} :=
 | RigidLibraryEntry_abs (e : @library_entry o)
 | RigidLibraryEntry_proof
     (name  : LemmaName)
     (prf   : @proof o)
-    (isp   : isprog (proof2type prf))
-    (valid : valid_extract_of_proof prf).
+    (wf    : wf_proof prf).
 
 (* A library is just a list of entries such that we store the most recent
    entry at the front of the list
@@ -1554,10 +1565,10 @@ Definition extend_proof_context {o}
            (e    : RigidLibraryEntry) : ProofContext :=
   match e with
   | RigidLibraryEntry_abs e => updLibProofContext ctxt e
-  | RigidLibraryEntry_proof name prf isp valid =>
+  | RigidLibraryEntry_proof name prf wf =>
     updLibProofContext
       (updConclProofContext ctxt (MkNamedConcl name (proof2type prf)))
-      (proof2def name valid)
+      (proof2def name (wf_proof_ext wf))
   end.
 
 Fixpoint RigidLibrary2ProofContext {o} (L : @RigidLibrary o) : ProofContext :=
@@ -1927,7 +1938,7 @@ Definition ValidRigidLibraryEntry {o}
            (e    : RigidLibraryEntry) : Type :=
   match e with
   | RigidLibraryEntry_abs e => entry_not_in_lib e ctxt
-  | RigidLibraryEntry_proof name prf isp valid =>
+  | RigidLibraryEntry_proof name prf wf =>
     (valid_proof_context ctxt prf)
     # proof_has_extract prf = true
     # name_not_in_lib name ctxt
@@ -2890,7 +2901,7 @@ Qed.
 Definition RigidLibraryEntry2opabs {o} (e : @RigidLibraryEntry o) : opabs :=
   match e with
   | RigidLibraryEntry_abs e => opabs_of_lib_entry e
-  | RigidLibraryEntry_proof name prf isp valid => opname2opabs name
+  | RigidLibraryEntry_proof name prf wf => opname2opabs name
   end.
 
 Definition entry_in_lib {o} (e : @RigidLibraryEntry o) (l : @library o) :=
@@ -5724,7 +5735,7 @@ Proof.
   destruct (isprog_dec_op (proof2type p));[|right].
   destruct (valid_extract_of_proof_dec_op p);[|right].
 
-  exact (Some (RigidLibraryEntry_proof name p i v)).
+  exact (Some (RigidLibraryEntry_proof name p (MkWfProof i v))).
 Defined.
 
 (*Lemma name_of_finish_pre_proof_seq {o} :
@@ -10363,12 +10374,13 @@ Qed.
 Definition rename_RigidLibraryEntry {o} r (e : @RigidLibraryEntry o) : RigidLibraryEntry :=
   match e with
   | RigidLibraryEntry_abs e => RigidLibraryEntry_abs (rename_library_entry r e)
-  | RigidLibraryEntry_proof name prf isp valid =>
+  | RigidLibraryEntry_proof name prf wf =>
     RigidLibraryEntry_proof
       (rename_LemmaName r name)
       (rename_proof r prf)
-      (implies_isprog_proof2type_rename_proof r isp)
-      (implies_valid_extract_of_proof_proof2extract_rename_proof r valid)
+      (MkWfProof
+         (implies_isprog_proof2type_rename_proof r (wf_proof_type wf))
+         (implies_valid_extract_of_proof_proof2extract_rename_proof r (wf_proof_ext wf)))
   end.
 
 Definition rename_RigidLibrary {o} r (lib : @RigidLibrary o) : RigidLibrary :=
@@ -11358,7 +11370,7 @@ Definition lemma_in_RigidLibraryEntry {o}
            (e : RigidLibraryEntry) : Type :=
   match e with
   | RigidLibraryEntry_abs e => False
-  | RigidLibraryEntry_proof name prf isp valid =>
+  | RigidLibraryEntry_proof name prf wf =>
     s = named_concl2bseq [] (MkNamedConcl name (proof2type prf)) (*mk_baresequent [] (mk_concl stmt ext)*)
   end.
 
@@ -12182,8 +12194,8 @@ Qed.
 Hint Resolve finish_pre_proof_implies_valid : slow.
 
 Lemma finish_pre_proof_seq_implies_valid {o} :
-  forall ctxt (pp : @pre_proof_seq o) name p isp valid,
-    finish_pre_proof_seq pp = Some (RigidLibraryEntry_proof name p isp valid)
+  forall ctxt (pp : @pre_proof_seq o) name p wf,
+    finish_pre_proof_seq pp = Some (RigidLibraryEntry_proof name p wf)
     -> valid_pre_proof_seq_context ctxt pp
     -> valid_proof_context ctxt p.
 Proof.
@@ -12886,7 +12898,8 @@ Proof.
         remember (finish_pre_proof pre_proof_seq_proof0) as fin; symmetry in Heqfin;
           destruct fin; ginv.
 
-      + dands; auto; eauto 3 with slow;[].
+      + destruct wf as [valt vale].
+        dands; auto; eauto 3 with slow;[].
         apply (valid_proof _ _ prf); eauto 3 with slow;[|].
 
         {
