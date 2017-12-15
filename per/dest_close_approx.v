@@ -134,8 +134,15 @@ Proof.
   - eapply eq_term_equals_trans;[eauto|].
     introv; split; introv h.
     + introv br ext; introv; simpl in *.
-      eapply sub_per_approx_eq_bar; eauto 3 with slow.
+      exists (trivial_bar lib'0).
+      introv br' ext' x'.
+      eapply sub_per_approx_eq_bar;[|eauto]; eauto 3 with slow.
     + pose proof (h lib (lib_extends_refl lib) lib (lib_extends_refl lib) (lib_extends_refl lib)) as h; simpl in *; auto.
+      exrepnd.
+      apply all_in_bar_ext_exists_bar_implies in h0; exrepnd.
+      exists (bar_of_bar_fam fbar).
+      introv br ext; simpl in *; exrepnd.
+      eapply h1; eauto.
 Qed.
 Hint Resolve per_approx_implies_per_bar : slow.
 
@@ -148,7 +155,7 @@ Proof.
   introv x y; introv; simpl; tcsp.
 Defined.
 
-Lemma local_per_bar_per_approx {o} :
+(*Lemma local_per_bar_per_approx {o} :
   forall (ts : cts(o)), local_ts (per_bar (per_approx ts)).
 Proof.
   introv eqiff alla.
@@ -174,12 +181,30 @@ Proof.
   {
     eapply eq_term_equals_trans;[eauto|]; clear eqiff.
     introv.
-    unfold per_bar_eq; split; introv h; introv br ext; introv; simpl in *; exrepnd.
+    repeat (rw @per_bar_eq_iff).
+    split; intro h; exrepnd.
 
-    - pose proof (alla0 _ br _ ext0 x0) as alla0; exrepnd.
-      remember (fbar lib1 br lib2 ext0 x0) as bb.
-      pose proof (alla0 _ br0 _ ext (lib_extends_trans ext (bar_lib_ext bb lib' br0))) as alla0; simpl in *.
+    - exists bar'.
+      introv br ext; introv; simpl in *; exrepnd.
+
+      pose proof (alla0 _ br _ ext0 x0) as alla; exrepnd.
+      remember (fbar _ br _ ext0 x0) as bb.
+      pose proof (alla2 _ br4 _ (lib_extends_trans ext br3) (lib_extends_trans ext (lib_extends_trans br3 (bar_lib_ext _ _ br4)))) as alla2; simpl in *.
+      unfold per_approx in *; exrepnd.
+      exists a b; dands; auto.
+      apply alla2; clear alla2.
+
       pose proof (h _ br _ ext0 x0) as h; simpl in *.
+
+
+
+
+      exrepnd.
+      exists bar'.
+
+
+
+
       apply alla1 in h.
       pose proof (h _ br0 _ ext (lib_extends_trans ext (bar_lib_ext bb lib' br0))) as h; simpl in *.
       unfold per_approx in alla0; exrepnd.
@@ -198,7 +223,7 @@ Proof.
       spcast; computes_to_eqval; auto.
       apply alla0; auto.
   }
-Qed.
+Qed.*)
 
 
 (* ====== dest lemmas ====== *)
@@ -213,6 +238,7 @@ Lemma dest_close_per_approx_l {p} :
 Proof.
   introv tysys dou comp cl; try unfold per_approx_bar_or.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
+
   eapply local_per_bar_per_approx; eauto; eauto 3 with slow.
   introv br ext; introv; eapply reca; eauto 3 with slow.
 Qed.

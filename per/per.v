@@ -2373,7 +2373,13 @@ Definition per_bar_eq {o}
            (bar : @BarLib o lib)
            (eqa : lib-per(lib,o))
            (t1 t2 : CTerm) :=
-  all_in_bar_ext bar (fun lib' x => eqa lib' x t1 t2).
+  all_in_bar_ext
+    bar
+    (fun lib' (x : lib_extends lib' lib) =>
+       {bar' : BarLib lib'
+       , all_in_bar_ext
+           bar' (fun lib'' (y : lib_extends lib'' lib') =>
+                   eqa lib'' (lib_extends_trans y x) t1 t2) }).
 
 Definition per_bar {o}
            (ts    : cts(o))

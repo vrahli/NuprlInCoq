@@ -474,11 +474,17 @@ Proof.
   unfold per_bar_eq in *; exrepnd.
   introv br' e; introv; simpl in *; exrepnd.
   unfold raise_ext_per.
-  eapply h; eauto 3 with slow.
+
+  pose proof (h _ br'1 _ (lib_extends_trans e br'2) (lib_extends_trans x ext)) as h; simpl in *.
+  exrepnd.
+  exists bar'.
+  introv br'' e''; introv.
+  pose proof (h0 _ br'' _ e'' x0) as h0; simpl in *.
+  eapply (lib_per_cond _ eqa); eauto.
 Qed.
 Hint Resolve sub_per_per_bar_eq : slow.
 
-Definition per_bar_monotone {o} :
+Lemma per_bar_monotone {o} :
   forall (ts : cts(o)), type_monotone (per_bar ts).
 Proof.
   introv per ext.
@@ -488,6 +494,7 @@ Proof.
   exists (raise_bar bar ext) (raise_lib_per eqa ext).
   dands; tcsp; eauto 3 with slow.
 Qed.
+Hint Resolve per_bar_monotone : slow.
 
 Lemma lib_extends_preserves_ccequivc_ext {o} :
   forall lib lib' (a b : @CTerm o),

@@ -29,6 +29,7 @@
 
 Require Export type_sys_useful.
 Require Import dest_close_tacs.
+Require Export bar_fam.
 
 
 (* !!MOVE *)
@@ -5099,3 +5100,30 @@ Definition local_ts_T2 {o} (ts : cts(o)) (lib : @library o) (T' : @CTerm o) :=
     (eq <=2=> (per_bar_eq bar eqa))
     -> all_in_bar_ext bar (fun lib' x => ts lib' T T' (eqa lib' x))
     -> ts lib T T' eq.
+
+Definition per_bar_eq_bi {o} {lib}
+           (bar : @BarLib o lib)
+           (eqa : lib-per(lib,o))
+           (t1 t2 : CTerm) :=
+  exists bar', all_in_bar_ext (intersect_bars bar bar') (fun lib' x => eqa lib' x t1 t2).
+
+Lemma per_bar_eq_iff {o} :
+  forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2,
+    per_bar_eq bar eqa t1 t2
+    <=> per_bar_eq_bi bar eqa t1 t2.
+Proof.
+  introv; unfold per_bar_eq; split; introv h.
+
+  - apply all_in_bar_ext_exists_bar_implies in h; simpl in *; exrepnd.
+    exists (bar_of_bar_fam fbar).
+    introv br ext; introv; simpl in *; exrepnd.
+    pose proof (h0 _ br _ ext0 x0 _ br4 _ (lib_extends_trans ext br1) (lib_extends_trans (lib_extends_trans ext br1) (bar_lib_ext _ _ br4))) as h0; simpl in *.
+    eapply (lib_per_cond _ eqa); eauto.
+
+  - introv br ext; introv.
+    unfold per_bar_eq_bi in *; exrepnd.
+    exists (raise_bar bar' x).
+    introv br' ext'; introv; simpl in *; exrepnd.
+    pose proof (h0 lib'1) as h0; simpl in *; autodimp h0 hyp.
+    eexists; eexists; dands; eauto; eauto 3 with slow.
+Qed.
