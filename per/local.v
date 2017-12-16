@@ -106,39 +106,6 @@ Proof.
   - exists lib1 br lib2 ext x0 lib0 w fb; auto.
 Defined.
 
-Definition lib_per_per_bar2 {o}
-           {lib  : @library o}
-           {bar  : BarLib lib}
-           (fbar : bar_fam bar)
-           (feqa : bar-lib-per(lib,bar,o)) : lib-per(lib,o).
-Proof.
-  exists (fun lib' (x : lib_extends lib' lib) t1 t2 =>
-            {lib1 : library
-            , {br : bar_lib_bar bar lib1
-            , {lib2 : library
-            , {ext : lib_extends lib2 lib1
-            , {x : lib_extends lib2 lib
-            , {lib0 : library
-            , {fb : bar_lib_bar (fbar lib1 br lib2 ext x) lib0
-            , {w : lib_extends lib' lib0
-            , {bar' : BarLib lib'
-            , all_in_bar_ext
-                bar'
-                (fun lib'' x'' =>
-                   feqa lib1 br lib2 ext x lib''
-                        (lib_extends_trans
-                           x''
-                           (lib_extends_trans
-                              w
-                              (bar_lib_ext (fbar lib1 br lib2 ext x) lib0 fb)))
-                        t1 t2)}}}}}}}}}).
-
-  introv x y; introv.
-  split; introv h; exrepnd.
-  - exists lib1 br lib2 ext x0 lib0 fb w bar'; auto.
-  - exists lib1 br lib2 ext x0 lib0 fb w bar'; auto.
-Defined.
-
 Definition sub_per_from_bar {o} {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) :=
   forall lib1 (br : bar_lib_bar bar lib1)
          lib2 (x1 : lib_extends lib2 lib1)
@@ -304,54 +271,6 @@ Proof.
 Qed.
 Hint Resolve eq_term_equals_per_bar_eq_bar_of_bar_fam : slow.
 
-Lemma local_per_bar {o} :
-  forall (ts : cts(o)),
-    type_extensionality ts
-    -> uniquely_valued ts
-    -> local_unique ts
-    -> type_monotone ts
-    -> local_ts (per_bar ts).
-Proof.
-  introv text uv loc mon eqiff alla.
-
-  unfold per_bar in *.
-
-  apply all_in_bar_ext_exists_bar_implies in alla; exrepnd.
-  exists (bar_of_bar_fam fbar).
-  exists eqa.
-  dands.
-
-  {
-    introv br ext; introv.
-    simpl in *; exrepnd.
-
-    assert (lib_extends lib'0 lib1) as xt1 by eauto 4 with slow.
-    assert (lib_extends lib'0 lib2) as xt2 by eauto 3 with slow.
-
-    pose proof (alla0 lib1 br lib2 ext0 x0) as allb.
-    exrepnd.
-    remember (fbar lib1 br lib2 ext0 x0) as b1.
-
-    assert (lib_extends lib'0 lib1) as x1 by eauto 4 with slow.
-
-    pose proof (alla0 _ br _ x1 x) as allc.
-    exrepnd.
-    remember (fbar lib1 br lib'0 x1 x) as b2.
-
-    pose proof (local_unique_bar ts T T' b1 br0 ext b2 xt2 eqa0 eqa1) as h.
-    repeat (autodimp h hyp).
-    eapply text;[|apply eq_term_equals_sym;exact allc0].
-    eapply text;[|exact h].
-    eapply allb1; eauto 3 with slow.
-  }
-
-  {
-    clear text uv loc mon alla0.
-    eapply eq_term_equals_trans;[eauto|]; clear eqiff.
-    apply eq_term_equals_per_bar_eq_bar_of_bar_fam.
-  }
-Qed.
-
 Definition per_bar_eq2 {o}
            {lib}
            (bar : @BarLib o lib)
@@ -409,7 +328,7 @@ Proof.
     eapply (lib_per_cond _ eqa); eauto.
 Qed.
 
-Lemma local_per_bar2 {o} :
+Lemma local_per_bar {o} :
   forall (ts : cts(o)),
     type_extensionality ts
     -> uniquely_valued ts
@@ -456,8 +375,6 @@ Proof.
   {
     eapply eq_term_equals_trans;[eauto|]; clear eqiff.
 
-(*    eapply eq_term_equals_trans;[apply (eq_term_equals_per_bar_eq_bar_of_bar_fam _ fbar)|].*)
-
     introv; split; intro h.
 
     - rw @per_bar_eq_iff in h; unfold per_bar_eq_bi in *; exrepnd.
@@ -483,32 +400,87 @@ Proof.
       remember (feqa lib0 br lib'0 xt1 x) as eqb.
       eapply (lib_per_cond _ eqb); eauto.
 
-      (* XXXXXXXXXXXXXXXXX *)
+    - rw @per_bar_eq_iff.
+      exists (bar_of_bar_fam fbar).
+      introv br ext; introv; simpl in *; exrepnd.
+      assert (lib_extends lib'0 lib0) as xt1 by eauto 5 with slow.
+      pose proof (alla1 _ br lib'0 xt1 x) as allb; simpl in *; repnd.
+      apply allb; clear allb.
 
-    - introv br ext; introv.
-      pose proof (alla1 lib' br lib'0 ext x) as z; repnd.
-      apply z.
-      introv fb w; introv.
+      introv br' ext'; introv.
+      pose proof (h lib'1) as h; simpl in *; autodimp h hyp.
+      { eexists; eexists; eexists; eexists; eexists; eauto. }
+      assert (lib_extends lib'2 lib) as xt2 by eauto 3 with slow.
+      pose proof (h lib'2 ext' xt2) as h; simpl in h; exrepnd.
+      exists bar'.
 
-      pose proof (h lib'1) as h.
-      simpl in h.
+      introv br'' ext''; introv.
+      pose proof (h0 _ br'' _ ext'' x2) as h0; simpl in *; exrepnd.
 
-      autodimp h hyp.
-      { exists lib' br lib'0 ext x; auto. }
+      assert (lib_extends lib'4 lib'1) as xt3 by eauto 3 with slow.
+      assert (lib_extends lib'4 lib'0) as xt4 by eauto 3 with slow.
+      pose proof (allb0 _ br' lib'4 xt3 xt4) as allb0; simpl in *.
 
-      pose proof (h lib'2 w) as h; simpl in *.
-      autodimp h hyp; eauto 3 with slow.
-      exrepnd.
+      pose proof (alla1 _ br2 _ ext1 x3) as q; repnd.
+      assert (lib_extends lib'4 lib5) as xt5 by eauto 3 with slow.
+      pose proof (q0 _ fb _ w xt5) as q0; simpl in *.
+      eapply uv in q0; autodimp q0 hyp;[exact allb0|].
 
-      pose proof (z0 lib'1 fb lib'2 w x0) as z0; simpl in *.
-
-      pose proof (alla1 lib1 br0 lib2 ext0 x1) as q; repnd.
-      pose proof (q0 lib0 fb0 lib'2 w0 (lib_extends_trans w0 (bar_lib_ext (fbar lib1 br0 lib2 ext0 x1) lib0 fb0))) as q0; simpl in *.
-      eapply uv in q0; autodimp q0 hyp;[exact z0|].
-      apply q0; auto.
+      remember (feqa lib0 br lib'0 xt1 x) as eqb.
+      remember (feqa lib4 br2 lib5 ext1 x3) as eqc.
+      eapply (lib_per_cond _ eqb); apply q0.
+      eapply (lib_per_cond _ eqc); apply h0.
   }
 Qed.
-Hint Resolve local_per_bar : slow.*)
+Hint Resolve local_per_bar : slow.
+
+Lemma local_per_bar2 {o} :
+  forall (ts : cts(o)),
+    type_extensionality ts
+    -> uniquely_valued ts
+    -> local_unique ts
+    -> type_monotone ts
+    -> local_ts (per_bar ts).
+Proof.
+  introv text uv loc mon eqiff alla.
+
+  unfold per_bar in *.
+
+  apply all_in_bar_ext_exists_bar_implies in alla; exrepnd.
+  exists (bar_of_bar_fam fbar).
+  exists eqa.
+  dands.
+
+  {
+    introv br ext; introv.
+    simpl in *; exrepnd.
+
+    assert (lib_extends lib'0 lib1) as xt1 by eauto 4 with slow.
+    assert (lib_extends lib'0 lib2) as xt2 by eauto 3 with slow.
+
+    pose proof (alla0 lib1 br lib2 ext0 x0) as allb.
+    exrepnd.
+    remember (fbar lib1 br lib2 ext0 x0) as b1.
+
+    assert (lib_extends lib'0 lib1) as x1 by eauto 4 with slow.
+
+    pose proof (alla0 _ br _ x1 x) as allc.
+    exrepnd.
+    remember (fbar lib1 br lib'0 x1 x) as b2.
+
+    pose proof (local_unique_bar ts T T' b1 br0 ext b2 xt2 eqa0 eqa1) as h.
+    repeat (autodimp h hyp).
+    eapply text;[|apply eq_term_equals_sym;exact allc0].
+    eapply text;[|exact h].
+    eapply allb1; eauto 3 with slow.
+  }
+
+  {
+    clear text uv loc mon alla0.
+    eapply eq_term_equals_trans;[eauto|]; clear eqiff.
+    apply eq_term_equals_per_bar_eq_bar_of_bar_fam.
+  }
+Qed.
 
 Lemma type_extensionality_univi {o} :
   forall i, @type_extensionality o (univi i).
@@ -532,13 +504,13 @@ Proof.
 Qed.
 Hint Resolve uniquely_valued_univi : slow.
 
-(*Lemma local_univi_bar {o} :
+Lemma local_univi_bar {o} :
   forall i, @local_ts o (univi_bar i).
 Proof.
   introv eqiff alla.
   eapply local_per_bar in alla; eauto 3 with slow.
 Qed.
-Hint Resolve local_univi_bar : slow.*)
+Hint Resolve local_univi_bar : slow.
 
 Lemma local_univ {o} : @local_ts o univ.
 Proof.

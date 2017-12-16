@@ -31,10 +31,11 @@
 
 
 Require Export dest_close_tacs.
+Require Export local.
 
 
-(*Definition ts_or_per_bar {o} ts lib (T1 T2 : @CTerm o) eq :=
-  ts lib T1 T2 eq {+} per_bar (close ts) lib T1 T2 eq.*)
+Definition ts_or_per_bar {o} ts lib (T1 T2 : @CTerm o) eq :=
+  ts lib T1 T2 eq {+} per_bar (close ts) lib T1 T2 eq.
 
 Lemma dest_close_per_uni_l {p} :
   forall (ts : cts(p)) lib T i T' eq,
