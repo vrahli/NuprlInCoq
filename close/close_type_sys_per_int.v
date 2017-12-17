@@ -41,6 +41,15 @@ Proof.
  unfold uniquely_valued, per_int_bar, eq_term_equals; sp.
  allrw; sp.
 Qed.
+Hint Resolve per_int_bar_uniquely_valued : slow.
+
+Lemma per_int_uniquely_valued {p} :
+  forall (ts : cts(p)), uniquely_valued (per_int ts).
+Proof.
+ unfold uniquely_valued, per_int, eq_term_equals; sp.
+ allrw; sp.
+Qed.
+Hint Resolve per_int_uniquely_valued : slow.
 
 Lemma per_int_bar_type_extensionality {p} :
   forall (ts : cts(p)), type_extensionality (per_int_bar ts).
@@ -48,6 +57,15 @@ Proof.
   unfold type_extensionality, per_int_bar, eq_term_equals; sp.
   allrw <-; sp.
 Qed.
+Hint Resolve per_int_bar_type_extensionality : slow.
+
+Lemma per_int_type_extensionality {p} :
+  forall (ts : cts(p)), type_extensionality (per_int ts).
+Proof.
+  unfold type_extensionality, per_int, eq_term_equals; sp.
+  allrw <-; sp.
+Qed.
+Hint Resolve per_int_type_extensionality : slow.
 
 Lemma per_int_bar_type_symmetric {p} :
   forall (ts : cts(p)), type_symmetric (per_int_bar ts).
@@ -55,6 +73,14 @@ Proof.
   unfold type_symmetric, per_int_bar; sp.
   exists bar; dands; auto.
 Qed.
+Hint Resolve per_int_bar_type_symmetric : slow.
+
+Lemma per_int_type_symmetric {p} :
+  forall (ts : cts(p)), type_symmetric (per_int ts).
+Proof.
+  unfold type_symmetric, per_int; sp.
+Qed.
+Hint Resolve per_int_type_symmetric : slow.
 
 Lemma per_int_bar_term_symmetric {p} :
   forall (ts : cts(p)), term_symmetric (per_int_bar ts).
@@ -66,6 +92,20 @@ Proof.
   introv ie i; apply e0 in i; auto.
   exrepnd; exists k; tcsp.
 Qed.
+Hint Resolve per_int_bar_term_symmetric : slow.
+
+Lemma per_int_term_symmetric {p} :
+  forall (ts : cts(p)), term_symmetric (per_int ts).
+Proof.
+  introv h e.
+  unfold per_int in h; exrepnd.
+  apply h in e; apply h.
+  unfold equality_of_int_bar, equality_of_int in *; exrepnd.
+  exists bar.
+  introv ie i; apply e0 in i; auto.
+  exrepnd; exists k; tcsp.
+Qed.
+Hint Resolve per_int_term_symmetric : slow.
 
 Lemma per_int_bar_type_value_respecting {p} :
   forall (ts : cts(p)), type_value_respecting (per_int_bar ts).
@@ -80,6 +120,19 @@ Proof.
   spcast.
   eapply cequivc_int; eauto.
 Qed.
+Hint Resolve per_int_bar_type_value_respecting : slow.
+
+Lemma per_int_type_value_respecting {p} :
+  forall (ts : cts(p)), type_value_respecting (per_int ts).
+Proof.
+  introv per ceq.
+  unfold type_value_respecting, per_int in *; exrepnd; GC.
+  dands; auto;[].
+  pose proof (ceq lib) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
+  spcast.
+  eapply cequivc_int; eauto.
+Qed.
+Hint Resolve per_int_type_value_respecting : slow.
 
 Lemma per_int_bar_term_value_respecting {p} :
   forall (ts : cts(p)), term_value_respecting (per_int_bar ts).
@@ -94,6 +147,22 @@ Proof.
   spcast.
   apply @cequivc_integer with (t := t); auto.
 Qed.
+Hint Resolve per_int_bar_term_value_respecting : slow.
+
+Lemma per_int_term_value_respecting {p} :
+  forall (ts : cts(p)), term_value_respecting (per_int ts).
+Proof.
+  introv h e ceq.
+  unfold per_int in *; exrepnd; spcast.
+  apply h in e; apply h; clear h.
+  unfold equality_of_int_bar, equality_of_int in *; exrepnd; exists bar.
+  introv ie i; applydup e0 in i; auto.
+  exrepnd; exists k; repnd; dands; auto.
+  pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
+  spcast.
+  apply @cequivc_integer with (t := t); auto.
+Qed.
+Hint Resolve per_int_term_value_respecting : slow.
 
 Lemma per_int_bar_type_transitive {p} :
   forall (ts : cts(p)), type_transitive (per_int_bar ts).
@@ -113,6 +182,16 @@ Proof.
     pose proof (per4 lib1) as q; autodimp q hyp.
     pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
 Qed.
+Hint Resolve per_int_bar_type_transitive : slow.
+
+Lemma per_int_type_transitive {p} :
+  forall (ts : cts(p)), type_transitive (per_int ts).
+Proof.
+  introv per1 per2.
+  unfold type_transitive, per_int in *; exrepnd.
+  dands; auto.
+Qed.
+Hint Resolve per_int_type_transitive : slow.
 
 Lemma per_int_bar_term_transitive {p} :
   forall (ts : cts(p)), term_transitive (per_int_bar ts).
@@ -126,7 +205,7 @@ Proof.
   clear per per0 per1.
 
   exists (intersect_bars bar1 bar0).
-  unfold equality_of_int_bar1 in *.
+  unfold equality_of_int in *.
   introv i j; simpl in *; exrepnd.
 
   pose proof (i0 lib1) as q; autodimp q hyp; clear i0.
@@ -138,22 +217,49 @@ Proof.
   computes_to_eqval.
   exists k0; dands; spcast; auto.
 Qed.
+Hint Resolve per_int_bar_term_transitive : slow.
 
-Lemma per_int_type_system {p} :
+Lemma per_int_term_transitive {p} :
+  forall (ts : cts(p)), term_transitive (per_int ts).
+Proof.
+  introv per i j.
+  unfold per_int in per; exrepnd.
+  apply per in i; apply per in j; apply per.
+  unfold equality_of_int_bar in *.
+  exrepnd.
+
+  clear per per0 per1.
+
+  exists (intersect_bars bar0 bar).
+  unfold equality_of_int in *.
+  introv i j; simpl in *; exrepnd.
+
+  pose proof (i0 lib1) as q; autodimp q hyp; clear i0.
+  pose proof (q lib'0) as w; clear q; autodimp w hyp; eauto 2 with slow; simpl in w.
+
+  pose proof (j0 lib2) as q; autodimp q hyp; clear j0.
+  pose proof (q lib'0) as z; clear q; autodimp z hyp; eauto 2 with slow; simpl in z.
+  exrepnd; spcast.
+  computes_to_eqval.
+  exists k0; dands; spcast; auto.
+Qed.
+Hint Resolve per_int_term_transitive : slow.
+
+Lemma per_int_bar_type_system {p} :
   forall (ts : cts(p)), type_system (per_int_bar ts).
 Proof.
-  intros; unfold type_system; sp.
-  - apply per_int_bar_uniquely_valued.
-  - apply per_int_bar_type_extensionality.
-  - apply per_int_bar_type_symmetric.
-  - apply per_int_bar_type_transitive.
-  - apply per_int_bar_type_value_respecting.
-  - apply per_int_bar_term_symmetric.
-  - apply per_int_bar_term_transitive.
-  - apply per_int_bar_term_value_respecting.
+  intros; unfold type_system; sp; eauto 3 with slow.
 Qed.
+Hint Resolve per_int_bar_type_system : slow.
 
-Lemma type_equality_respecting_trans_per_int_bar_implies {o} :
+Lemma per_int_type_system {p} :
+  forall (ts : cts(p)), type_system (per_int ts).
+Proof.
+  intros; unfold type_system; sp; eauto 3 with slow.
+Qed.
+Hint Resolve per_int_type_system : slow.
+
+(*Lemma type_equality_respecting_trans_per_int_bar_implies {o} :
   forall (ts : cts(o)) lib (bar : BarLib lib) T T',
     type_system ts
     -> defines_only_universes ts
@@ -179,20 +285,20 @@ Proof.
 
   - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
     dclose_lr; auto.
-Qed.
+Qed.*)
 
 Lemma close_type_system_int {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> per_int_bar (close ts) lib T T' eq
+    -> per_int (close ts) lib T T' eq
     -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
-  introv X X0 mon per.
+  introv tsp dou mon per.
 
   duplicate per as pi.
-  unfold per_int_bar in pi; exrepnd; spcast.
+  unfold per_int in pi; exrepnd; spcast.
 
   prove_type_sys_props4 SCase; intros.
 
@@ -205,10 +311,10 @@ Proof.
       assert (uniquely_valued (per_int_bar (close ts))) as uv
         by (apply per_int_bar_uniquely_valued).
       eapply uv;eauto.
-      eapply uniquely_valued_trans5;eauto.
-      { apply per_int_bar_type_extensionality. }
-      { apply per_int_bar_type_symmetric. }
-      { apply per_int_bar_type_transitive. }
+      eapply uniquely_valued_trans5;
+        try exact h;
+        try (apply per_int_implies_per_int_bar; exact per);
+        eauto 3 with slow.
 
   + SCase "type_symmetric"; repdors; subst; dclose_lr;
       apply CL_int; auto;

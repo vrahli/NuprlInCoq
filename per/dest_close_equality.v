@@ -34,7 +34,7 @@ Require Export dest_close_tacs.
 Require Export bar_fam.
 Require Export per_ceq_bar.
 Require Export nuprl_mon_func.
-
+Require Export local.
 
 
 Definition per_eq_bar_or {o} ts lib (T T' : @CTerm o) eq :=
@@ -222,51 +222,72 @@ Proof.
   {
     eapply eq_term_equals_trans;[eauto|].
     introv.
-    unfold per_bar_eq; split; introv h br ext; introv.
+    split; intro h; exrepnd.
 
-    - introv.
+    - rw @per_bar_eq_iff in h; unfold per_bar_eq_bi in *; exrepnd.
+      apply per_bar_eq_iff2.
+      exists bar'.
+      introv br ext; introv; simpl in *; exrepnd.
+      pose proof (h0 lib') as h0; simpl in *; autodimp h0 hyp.
+      { eexists; eexists; dands; eauto 4 with slow. }
+      pose proof (h0 _ ext x) as h0; simpl in *.
+
+      assert (lib_extends lib'0 lib0) as xt1 by eauto 5 with slow.
+
+      pose proof (alla1 _ br lib'0 xt1 x) as allb; repnd.
+      apply allb in h0.
+      rw @per_bar_eq_iff in h0; unfold per_bar_eq_bi in *; exrepnd.
+
+      exists (intersect_bars (fbar lib0 br lib'0 xt1 x) bar'0).
+      introv br' ext' x'.
+      pose proof (h1 _ br' _ ext' x') as h1; simpl in h1.
       simpl in *; exrepnd.
-      pose proof (alla1 lib1 br lib2 ext0 x0) as q; repnd.
-      pose proof (h lib1 br lib2 ext0 x0) as h; simpl in *.
-      apply q in h.
 
-      clear q q0.
+      exists lib0 br lib'0 xt1 x lib4 (lib_extends_trans ext' br'3) br'0.
+      remember (feqa lib0 br lib'0 xt1 x) as eqb.
+      eapply (lib_per_cond _ eqb); eauto.
 
-      exists lib1 br lib2 ext0 x0 lib' ext br0.
-      eapply h; eauto.
+    - rw @per_bar_eq_iff.
+      exists (bar_of_bar_fam fbar).
+      introv br ext; introv; simpl in *; exrepnd.
+      assert (lib_extends lib'0 lib0) as xt1 by eauto 5 with slow.
+      pose proof (alla1 _ br lib'0 xt1 x) as allb; simpl in *; repnd.
+      apply allb; clear allb.
 
-    - pose proof (alla1 lib' br lib'0 ext x) as z; repnd.
-      apply z.
-      introv fb w; introv.
+      introv br' ext'; introv.
+      pose proof (h lib'1) as h; simpl in *; autodimp h hyp.
+      { eexists; eexists; eexists; eexists; eexists; eauto. }
+      assert (lib_extends lib'2 lib) as xt2 by eauto 3 with slow.
+      pose proof (h lib'2 ext' xt2) as h; simpl in h; exrepnd.
+      exists bar'.
 
-      pose proof (h lib'1) as h.
-      simpl in h.
+      introv br'' ext''; introv.
+      pose proof (h0 _ br'' _ ext'' x2) as h0; simpl in *; exrepnd.
 
-      autodimp h hyp.
-      { exists lib' br lib'0 ext x; auto. }
+      assert (lib_extends lib'4 lib'1) as xt3 by eauto 3 with slow.
+      assert (lib_extends lib'4 lib'0) as xt4 by eauto 3 with slow.
+      pose proof (allb0 _ br' lib'4 xt3 xt4) as allb0; simpl in *.
 
-      pose proof (h lib'2 w) as h; simpl in *.
-      autodimp h hyp; eauto 3 with slow.
-      exrepnd.
+      pose proof (alla1 _ br2 _ ext1 x3) as q; repnd.
+      assert (lib_extends lib'4 lib5) as xt5 by eauto 3 with slow.
+      pose proof (q0 _ fb _ w xt5) as q0; simpl in *.
 
-      pose proof (z0 lib'1 fb lib'2 w x0) as z0; simpl in *.
-
-      pose proof (alla1 lib1 br0 lib2 ext0 x1) as q; repnd.
-      pose proof (q0 lib0 fb0 lib'2 w0 (lib_extends_trans w0 (bar_lib_ext (fbar lib1 br0 lib2 ext0 x1) lib0 fb0))) as q0; simpl in *.
-
-      unfold per_eq in z0.
+      unfold per_eq in allb0.
       unfold per_eq in q0.
       exrepnd.
 
-      apply z1; clear z1.
-      apply q1 in h1; clear q1.
+      remember (feqa lib0 br lib'0 xt1 x) as eqb.
+      remember (feqa lib4 br2 lib5 ext1 x3) as eqc.
 
-      assert (lib_extends lib'2 lib) as xx by eauto 3 with slow.
+      eapply (lib_per_cond _ eqb); apply allb1; clear allb1.
+      eapply (lib_per_cond _ eqc) in h0; apply q1 in h0; clear q1.
+
+      assert (lib_extends lib'4 lib) as xx by eauto 3 with slow.
       dup comp as c.
       apply (lib_extends_preserves_ccomputes_to_valc xx) in c.
       spcast; repeat computes_to_eqval.
 
-      eapply (simple_implies_iff_per_eq_eq _ (trivial_bar lib'2));[|eauto].
+      eapply (simple_implies_iff_per_eq_eq _ (trivial_bar lib'4));[|eauto];[].
       apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
       eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals2;
         try (exact tsp); eauto.
@@ -303,15 +324,28 @@ Proof.
       exists (raise_bar bar x).
       introv br' ext'; introv; simpl in *; exrepnd.
       unfold raise_ext_per.
-      pose proof (h0 _ br'1 _ (lib_extends_trans ext' br'2)) as h0; simpl in *.
-      apply h0.
+
+      assert (lib_extends lib'2 lib) as w by eauto 3 with slow.
+      exists (raise_bar bar w).
+      introv br'' ext''; introv; simpl in *; exrepnd.
+
+      assert (lib_extends lib'4 lib1) as xt1 by eauto 3 with slow.
+      assert (lib_extends lib'4 lib) as xt2 by eauto 3 with slow.
+      pose proof (h0 _ br'1 lib'4 xt1 (lib_extends_trans x1 (lib_extends_trans x0 x))) as h0; simpl in *; auto.
 
     - apply all_in_bar_ext_trivial_bar_implies_in_ext_ext in h.
       simpl in *.
       pose proof (h lib (lib_extends_refl lib)) as h; simpl in h; exrepnd.
-      eapply (simple_implies_iff_per_eq_eq _ (trivial_bar lib));[|exact h]; simpl.
-      apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
-      repeat introv; simpl; apply (lib_per_cond _ eqa).
+
+      apply all_in_bar_ext_exists_bar_implies in h0; exrepnd.
+      exists (bar_of_bar_fam fbar).
+      introv br ext; introv; simpl in *; exrepnd.
+
+      assert (lib_extends lib'0 lib2) as xt1 by eauto 4 with slow.
+      pose proof (h1 _ br _ ext0 x0 _ br0 _ ext xt1) as h1; simpl in *.
+      eapply sub_per_eq_per_eq; try exact h1; eauto 3 with slow.
+      introv w; simpl in *; unfold raise_ext_per in w.
+      eapply (lib_per_cond _ eqa); eauto.
   }
 Qed.
 Hint Resolve per_eq_implies_per_bar : slow.
@@ -371,52 +405,72 @@ Proof.
 
   {
     eapply eq_term_equals_trans;[eauto|].
-    introv.
-    unfold per_bar_eq; split; introv h br ext; introv.
+    split; intro h; exrepnd.
 
-    - introv.
+    - rw @per_bar_eq_iff in h; unfold per_bar_eq_bi in *; exrepnd.
+      apply per_bar_eq_iff2.
+      exists bar'.
+      introv br ext; introv; simpl in *; exrepnd.
+      pose proof (h0 lib') as h0; simpl in *; autodimp h0 hyp.
+      { eexists; eexists; dands; eauto 4 with slow. }
+      pose proof (h0 _ ext x) as h0; simpl in *.
+
+      assert (lib_extends lib'0 lib0) as xt1 by eauto 5 with slow.
+
+      pose proof (alla1 _ br lib'0 xt1 x) as allb; repnd.
+      apply allb in h0.
+      rw @per_bar_eq_iff in h0; unfold per_bar_eq_bi in *; exrepnd.
+
+      exists (intersect_bars (fbar lib0 br lib'0 xt1 x) bar'0).
+      introv br' ext' x'.
+      pose proof (h1 _ br' _ ext' x') as h1; simpl in h1.
       simpl in *; exrepnd.
-      pose proof (alla1 lib1 br lib2 ext0 x0) as q; repnd.
-      pose proof (h lib1 br lib2 ext0 x0) as h; simpl in *.
-      apply q in h.
 
-      clear q q0.
+      exists lib0 br lib'0 xt1 x lib4 (lib_extends_trans ext' br'3) br'0.
+      remember (feqa lib0 br lib'0 xt1 x) as eqb.
+      eapply (lib_per_cond _ eqb); eauto.
 
-      exists lib1 br lib2 ext0 x0 lib' ext br0.
-      eapply h; eauto.
+    - rw @per_bar_eq_iff.
+      exists (bar_of_bar_fam fbar).
+      introv br ext; introv; simpl in *; exrepnd.
+      assert (lib_extends lib'0 lib0) as xt1 by eauto 5 with slow.
+      pose proof (alla1 _ br lib'0 xt1 x) as allb; simpl in *; repnd.
+      apply allb; clear allb.
 
-    - pose proof (alla1 lib' br lib'0 ext x) as z; repnd.
-      apply z.
-      introv fb w; introv.
+      introv br' ext'; introv.
+      pose proof (h lib'1) as h; simpl in *; autodimp h hyp.
+      { eexists; eexists; eexists; eexists; eexists; eauto. }
+      assert (lib_extends lib'2 lib) as xt2 by eauto 3 with slow.
+      pose proof (h lib'2 ext' xt2) as h; simpl in h; exrepnd.
+      exists bar'.
 
-      pose proof (h lib'1) as h.
-      simpl in h.
+      introv br'' ext''; introv.
+      pose proof (h0 _ br'' _ ext'' x2) as h0; simpl in *; exrepnd.
 
-      autodimp h hyp.
-      { exists lib' br lib'0 ext x; auto. }
+      assert (lib_extends lib'4 lib'1) as xt3 by eauto 3 with slow.
+      assert (lib_extends lib'4 lib'0) as xt4 by eauto 3 with slow.
+      pose proof (allb0 _ br' lib'4 xt3 xt4) as allb0; simpl in *.
 
-      pose proof (h lib'2 w) as h; simpl in *.
-      autodimp h hyp; eauto 3 with slow.
-      exrepnd.
+      pose proof (alla1 _ br2 _ ext1 x3) as q; repnd.
+      assert (lib_extends lib'4 lib5) as xt5 by eauto 3 with slow.
+      pose proof (q0 _ fb _ w xt5) as q0; simpl in *.
 
-      pose proof (z0 lib'1 fb lib'2 w x0) as z0; simpl in *.
-
-      pose proof (alla1 lib1 br0 lib2 ext0 x1) as q; repnd.
-      pose proof (q0 lib0 fb0 lib'2 w0 (lib_extends_trans w0 (bar_lib_ext (fbar lib1 br0 lib2 ext0 x1) lib0 fb0))) as q0; simpl in *.
-
-      unfold per_eq in z0.
+      unfold per_eq in allb0.
       unfold per_eq in q0.
       exrepnd.
 
-      apply z1; clear z1.
-      apply q1 in h1; clear q1.
+      remember (feqa lib0 br lib'0 xt1 x) as eqb.
+      remember (feqa lib4 br2 lib5 ext1 x3) as eqc.
 
-      assert (lib_extends lib'2 lib) as xx by eauto 3 with slow.
+      eapply (lib_per_cond _ eqb); apply allb1; clear allb1.
+      eapply (lib_per_cond _ eqc) in h0; apply q1 in h0; clear q1.
+
+      assert (lib_extends lib'4 lib) as xx by eauto 3 with slow.
       dup comp as c.
       apply (lib_extends_preserves_ccomputes_to_valc xx) in c.
       spcast; repeat computes_to_eqval.
 
-      eapply (simple_implies_iff_per_eq_eq _ (trivial_bar lib'2));[|eauto].
+      eapply (simple_implies_iff_per_eq_eq _ (trivial_bar lib'4));[|eauto];[].
       apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
       eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals3;
         try (exact tsp); eauto.

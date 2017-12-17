@@ -337,6 +337,7 @@ Proof.
     apply close_type_system_init; auto.
 
   - Case "CL_bar".
+    admit.
 
   - Case "CL_int".
     apply close_type_system_int; auto.

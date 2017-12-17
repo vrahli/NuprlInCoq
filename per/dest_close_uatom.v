@@ -47,6 +47,23 @@ Proof.
 Qed.
 Hint Resolve local_equality_of_uatom_bar : slow.
 
+Lemma per_bar_eq_equality_of_uatom_bar_implies {o} :
+  forall {lib} (bar : @BarLib o lib) t1 t2,
+    per_bar_eq bar (equality_of_uatom_bar_lib_per lib) t1 t2
+    -> equality_of_uatom_bar lib t1 t2.
+Proof.
+  introv alla.
+  unfold per_bar_eq in alla.
+  apply all_in_bar_ext_exists_bar_implies in alla; exrepnd; simpl in *.
+  apply all_in_bar_ext_exists_fbar_implies in alla0; exrepnd; simpl in *.
+
+  exists (bar_of_bar_fam_fam ffbar).
+  introv br ext; simpl in *; exrepnd.
+  pose proof (alla1 _ br _ ext0 x _ br' _ ext' x') as alla0; simpl in *.
+  eapply alla0; eauto.
+Qed.
+Hint Resolve per_bar_eq_equality_of_uatom_bar_implies : slow.
+
 Lemma all_in_bar_ext_equal_equality_of_uatom_bar_implies_per_bar_eq_implies_equality_of_uatom_bar {o} :
   forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (equality_of_uatom_bar lib'))
@@ -59,8 +76,10 @@ Proof.
     eauto 3 with slow.
 
   - introv br ext; introv.
-    apply (alla _ br _ ext x).
-    eapply sub_per_equality_of_uatom_bar; eauto 3 with slow.
+    exists (trivial_bar lib'0).
+    introv br' ext'; introv; simpl in *.
+    apply (alla _ br _ (lib_extends_trans x0 ext) (lib_extends_trans x0 x)).
+    eapply sub_per_equality_of_uatom_bar;[|eauto]; eauto 3 with slow.
 Qed.
 Hint Resolve all_in_bar_ext_equal_equality_of_uatom_bar_implies_per_bar_eq_implies_equality_of_uatom_bar : slow.
 
@@ -83,19 +102,7 @@ Proof.
     dands; introv br ext; simpl in *; exrepnd; eapply alla1; eauto.
   }
 
-  eapply eq_term_equals_trans;[eauto|].
-  introv.
-  split; introv h.
-
-  {
-    apply all_in_bar_ext_equal_equality_of_uatom_bar_implies_per_bar_eq_implies_equality_of_uatom_bar in alla; apply alla; auto.
-  }
-
-  {
-    introv br ext; introv.
-    eapply alla; eauto.
-    eapply sub_per_equality_of_uatom_bar; eauto.
-  }
+  eapply eq_term_equals_trans;[eauto|]; eauto 3 with slow.
 Qed.
 
 Lemma per_uatom_implies_per_uatom_bar {o} :

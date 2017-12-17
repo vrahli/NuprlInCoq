@@ -32,6 +32,7 @@
 
 Require Export dest_close_tacs.
 Require Export bar_fam.
+Require Export local.
 
 
 Lemma local_equality_of_int_bar {o} :

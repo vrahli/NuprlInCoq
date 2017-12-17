@@ -33,6 +33,7 @@
 Require Export dest_close_tacs.
 Require Export bar_fam.
 Require Export per_ceq_bar.
+Require Export local.
 
 
 Lemma local_equality_of_cequiv_bar {o} :
@@ -101,8 +102,15 @@ Proof.
   - eapply eq_term_equals_trans;[eauto|].
     introv; split; introv h.
     + introv br ext; introv; simpl in *.
-      eapply sub_per_cequiv_eq_bar; eauto 3 with slow.
+      exists (trivial_bar lib'0).
+      introv br' ext' x'.
+      eapply sub_per_cequiv_eq_bar;[|eauto]; eauto 3 with slow.
     + pose proof (h lib (lib_extends_refl lib) lib (lib_extends_refl lib) (lib_extends_refl lib)) as h; simpl in *; auto.
+      exrepnd.
+      apply all_in_bar_ext_exists_bar_implies in h0; exrepnd.
+      exists (bar_of_bar_fam fbar).
+      introv br ext; simpl in *; exrepnd.
+      eapply h1; eauto.
 Qed.
 Hint Resolve per_cequiv_implies_per_bar : slow.
 
@@ -164,29 +172,58 @@ Proof.
   {
     eapply eq_term_equals_trans;[eauto|]; clear eqiff.
     introv.
-    unfold per_bar_eq; split; introv h; introv br ext; introv; simpl in *; exrepnd.
+    split; intro h; exrepnd.
 
-    - pose proof (alla0 _ br _ ext0 x0) as alla0; exrepnd.
-      remember (fbar lib1 br lib2 ext0 x0) as bb.
-      pose proof (alla0 _ br0 _ ext (lib_extends_trans ext (bar_lib_ext bb lib' br0))) as alla0; simpl in *.
-      pose proof (h _ br _ ext0 x0) as h; simpl in *.
-      apply alla1 in h.
-      pose proof (h _ br0 _ ext (lib_extends_trans ext (bar_lib_ext bb lib' br0))) as h; simpl in *.
-      unfold per_cequiv in alla0; exrepnd.
-      apply alla0 in h.
+    - rw @per_bar_eq_iff in h; unfold per_bar_eq_bi in h; exrepnd.
+      apply per_bar_eq_iff2.
+      exists bar'.
+      introv br ext; introv; simpl in *; exrepnd.
+
+      pose proof (h0 lib') as h0; simpl in *; autodimp h0 hyp.
+      { eexists; eexists; dands; eauto 4 with slow. }
+      pose proof (h0 _ ext x) as h0; simpl in *.
+
+      assert (lib_extends lib'0 lib0) as xt1 by eauto 5 with slow.
+
+      pose proof (alla0 _ br lib'0 xt1 x) as allb; exrepnd.
+      apply allb0 in h0; clear allb0.
+      rw @per_bar_eq_iff in h0; unfold per_bar_eq_bi in *; exrepnd.
+
+      exists (intersect_bars (fbar lib0 br lib'0 xt1 x) bar'0).
+      introv br' ext' x'.
+      pose proof (h1 _ br' _ ext' x') as h1; simpl in h1.
+      simpl in *; exrepnd.
+
+      assert (lib_extends lib'2 lib4) as xt2 by eauto 3 with slow.
+      pose proof (allb1 _ br'0 lib'2 xt2 x') as allb1; simpl in *.
+      unfold per_cequiv in allb1; exrepnd.
+      apply allb1 in h1; clear allb1.
       exists a b; dands; auto.
 
-    - pose proof (alla0 _ br _ ext x) as alla0; exrepnd.
-      apply alla1; clear alla1.
+    - rw @per_bar_eq_iff.
+      exists (bar_of_bar_fam fbar).
+      introv br ext; introv; simpl in *; exrepnd.
+      assert (lib_extends lib'0 lib0) as xt1 by eauto 5 with slow.
+      pose proof (alla0 _ br lib'0 xt1 x) as allb; simpl in *; exrepnd.
+      apply allb0; clear allb0.
+
       introv br' ext'; introv.
-      pose proof (alla0 _ br' _ ext' x0) as alla0; simpl in *.
-      pose proof (h lib'1) as h; simpl in h; autodimp h hyp;
-        [eexists; eexists; eexists; eexists; eexists; eauto|].
-      pose proof (h lib'2 ext') as h; simpl in *; autodimp h hyp; eauto 3 with slow;[].
-      exrepnd.
-      unfold per_cequiv in *; exrepnd.
+      pose proof (h lib'1) as h; simpl in *; autodimp h hyp.
+      { eexists; eexists; eexists; eexists; eexists; eauto. }
+      assert (lib_extends lib'2 lib) as xt2 by eauto 3 with slow.
+      pose proof (h lib'2 ext' xt2) as h; simpl in h; exrepnd.
+      exists bar'.
+
+      introv br'' ext''; introv.
+      pose proof (h0 _ br'' _ ext'' x2) as h0; simpl in *; exrepnd.
+
+      assert (lib_extends lib'4 lib'1) as xt3 by eauto 3 with slow.
+      assert (lib_extends lib'4 lib'0) as xt4 by eauto 3 with slow.
+      pose proof (allb1 _ br' lib'4 xt3 xt4) as allb0; simpl in *.
+
+      unfold per_cequiv in allb0; exrepnd.
+      eapply (lib_per_cond _ eqa0); apply allb0.
       spcast; computes_to_eqval; auto.
-      apply alla0; auto.
   }
 Qed.
 
