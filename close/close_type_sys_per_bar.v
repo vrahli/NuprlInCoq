@@ -36,6 +36,10 @@ Require Export per_ceq_bar.
 
 Require Export close_util_int.
 Require Export close_util_nat.
+Require Export close_util_atom.
+Require Export close_util_uatom.
+Require Export close_util_base.
+Require Export close_util_csname.
 
 
 Lemma type_sys_props4_implies_eq_term_equals {o} :
@@ -239,8 +243,6 @@ Proof.
 Qed.
 Hint Resolve per_nat_implies_per_bar : slow.
 
-XXXXXXXX
-
 Lemma per_csname_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
     per_csname (close ts) lib T T' eq
@@ -256,10 +258,7 @@ Proof.
     unfold per_csname in *; repnd; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per.
-    unfold per_bar_eq; introv; simpl.
-    introv; split; introv h;[|eapply local_equality_of_csname_bar; eauto].
-    introv br ext x.
-    eapply sub_per_equality_of_csname_bar; eauto 3 with slow.
+    apply eq_term_equals_sym; apply per_bar_eq_equality_of_csname_bar_lib_per.
 Qed.
 Hint Resolve per_csname_implies_per_bar : slow.
 
@@ -278,10 +277,7 @@ Proof.
     unfold per_atom; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per.
-    unfold per_bar_eq; introv; simpl.
-    introv; split; introv h;[|eapply local_equality_of_atom_bar; eauto].
-    introv br ext x.
-    eapply sub_per_equality_of_atom_bar; eauto 3 with slow.
+    apply eq_term_equals_sym; apply per_bar_eq_equality_of_atom_bar_lib_per.
 Qed.
 Hint Resolve per_atom_implies_per_bar : slow.
 
@@ -300,10 +296,7 @@ Proof.
     unfold per_uatom; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per.
-    unfold per_bar_eq; introv; simpl.
-    introv; split; introv h;[|eapply local_equality_of_uatom_bar; eauto].
-    introv br ext x.
-    eapply sub_per_equality_of_uatom_bar; eauto 3 with slow.
+    apply eq_term_equals_sym; apply per_bar_eq_equality_of_uatom_bar_lib_per.
 Qed.
 Hint Resolve per_uatom_implies_per_bar : slow.
 
@@ -322,10 +315,7 @@ Proof.
     unfold per_base; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per.
-    unfold per_bar_eq; introv; simpl.
-    introv; split; introv h;[|eapply local_equality_of_base_bar; eauto].
-    introv br ext x.
-    eapply sub_per_base_eq; eauto 3 with slow.
+    apply eq_term_equals_sym; apply per_bar_eq_per_base_eq_lib_per.
 Qed.
 Hint Resolve per_base_implies_per_bar : slow.
 
@@ -345,6 +335,7 @@ Proof.
     exists a b c d; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per1.
+
     unfold per_bar_eq; introv; simpl.
     introv; split; introv h;[|eapply local_equality_of_approx_bar; eauto].
     introv br ext x.
