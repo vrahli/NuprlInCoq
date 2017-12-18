@@ -69,10 +69,13 @@ Require Export cequiv_tacs.
 >>
  *)
 
+Definition rule_cequiv_refl_concl {o} (H : @bhyps o) a :=
+  mk_baresequent H (mk_conclax (mk_cequiv a a)).
+
 Definition rule_cequiv_refl {o}
-           (H  : @barehypotheses o)
-           (a  : NTerm) :=
-  mk_rule (mk_baresequent H (mk_conclax (mk_cequiv a a))) [] [].
+           (H : @barehypotheses o)
+           (a : NTerm) :=
+  mk_rule (rule_cequiv_refl_concl H a) [] [].
 
 Lemma rule_cequiv_refl_true {o} :
   forall lib (H  : @barehypotheses o) (a  : NTerm),
@@ -112,6 +115,31 @@ Proof.
   intros.
   generalize (rule_cequiv_refl_true lib H a); intro rt.
   apply rule_true_iff_rule_true2; sp.
+Qed.
+
+Lemma rule_cequiv_refl_true3 {o} :
+  forall lib H a, rule_true3 lib (@rule_cequiv_refl o H a).
+Proof.
+  intros.
+  generalize (rule_cequiv_refl_true2 lib H a); intro rt.
+  apply rule_true2_implies_rule_true3; auto.
+  introv i; simpl; apply (@wf_axiom o).
+Qed.
+
+Lemma rule_cequiv_refl_true_ext_lib {o} :
+  forall lib H a, rule_true_ext_lib lib (@rule_cequiv_refl o H a).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_cequiv_refl_true3.
+Qed.
+
+Lemma rule_cequiv_refl_wf2 {o} :
+  forall (H : @bhyps o) a, wf_rule2 (rule_cequiv_refl H a).
+Proof.
+  introv pwf m.
+  allsimpl; repndors; tcsp; subst; allunfold @wf_bseq; wfseq; tcsp.
 Qed.
 
 

@@ -30,8 +30,7 @@
 *)
 
 
-Require Export proof_with_lib.
-Require Export proof_with_lib_notation.
+Require Export proof_with_lib_non_dep.
 
 
 
@@ -57,8 +56,8 @@ Definition cmds1 {o} : @commands o :=
             nvart
             (mk_member
                (mk_abs opabs_member [nobnd (mk_var nvart), nobnd (mk_var nvarT)])
-               (mk_uni 0))))
-      (eq_refl, eq_refl),
+               (mk_uni 0)))),
+
     COM_update_proof
       "member_wf"
       []
@@ -137,8 +136,7 @@ Definition cmds1 {o} : @commands o :=
     (* We prove that Z is inhabited (by 17 here) *)
     COM_start_proof
       "int_member"
-      mk_int
-      (eq_refl, eq_refl),
+      mk_int,
     COM_update_proof
       "int_member"
       []
@@ -153,8 +151,7 @@ Definition cmds1 {o} : @commands o :=
     (* We prove that 'int_member' computes to 17 in 1 computation step *)
     COM_start_proof
       "int_member_cequiv"
-      (mk_cequiv (mk_abs (opname2opabs "int_member") []) (mk_integer 17))
-      (eq_refl, eq_refl),
+      (mk_cequiv (mk_abs (opname2opabs "int_member") []) (mk_integer 17)),
     COM_update_proof
       "int_member_cequiv"
       []
@@ -172,8 +169,7 @@ Definition cmds1 {o} : @commands o :=
     (* We prove that 'myint' computes to 17 in 2 computation steps *)
     COM_start_proof
       "myint_cequiv"
-      (mk_cequiv (mk_abs opabs_myint []) (mk_integer 17))
-      (eq_refl, eq_refl),
+      (mk_cequiv (mk_abs opabs_myint []) (mk_integer 17)),
     COM_update_proof
       "myint_cequiv"
       []
@@ -184,8 +180,7 @@ Definition cmds1 {o} : @commands o :=
     (* We prove once more that Z is inhabited.  We'll use our previous proof *)
     COM_start_proof
       "int_member_v2"
-      mk_int
-      (eq_refl, eq_refl),
+      mk_int,
     COM_update_proof
       "int_member_v2"
       []

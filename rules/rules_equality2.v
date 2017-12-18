@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -24,6 +27,7 @@
 *)
 
 
+Require Export sequents_lib.
 Require Export rules_useful.
 Require Export per_props_equality.
 Require Export per_props_union.
@@ -34,12 +38,18 @@ Require Export subst_tacs.
 (** printing ->  $\rightarrow$ *)
 
 
+Definition rule_equality_to_extract_concl {o} (H : @bhyps o) t T :=
+  mk_baresequent H (mk_conclax (mk_member t T)).
+
+Definition rule_equality_to_extract_hyp {o} (H : @bhyps o) t T :=
+  mk_baresequent H (mk_concl T t).
+
 Definition rule_equality_to_extract {o}
            (T t : @NTerm o)
            (H : barehypotheses) :=
     mk_rule
-      (mk_baresequent H (mk_conclax (mk_member t T)))
-      [ mk_baresequent H (mk_concl T t) ]
+      (rule_equality_to_extract_concl H t T)
+      [ rule_equality_to_extract_hyp H t T ]
       [].
 
 Lemma rule_equality_to_extract_true {p} :
@@ -80,9 +90,15 @@ Proof.
   apply equality_refl in h1; auto.
 Qed.
 
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)
+Lemma rule_equality_to_extract_true_ext_lib {p} :
+  forall lib
+         (T t : NTerm)
+         (H : @barehypotheses p),
+    rule_true_ext_lib lib (rule_equality_to_extract T t H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_true_implies_rule_true3; auto;[|apply rule_equality_to_extract_true].
+  introv h; apply @wf_axiom.
+Qed.

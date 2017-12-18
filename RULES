@@ -172,7 +172,7 @@
 {20,isatomReduceTrue}                       .                                         : .
 {26,isaxiomCases}                           rules/rules_axiom_cases.v                 : rule_isaxiom_cases_true
 {10,isaxiomExceptionCases}                  rules/rules_cft_exception.v               : rule_can_test_exception_cases_true
-{12876,isectElimination}                    .                                         : .
+{12876,isectElimination}                    rules/rules_isect_elimination.v           : rule_isect_elimination_true3
 {331,isectEquality}                         rules/rules_isect.v                       : rule_isect_equality_true3
 {10008,isect_memberEquality}                rules/rules_isect2.v                      : rule_isect_member_equality_true
 {10524,isect_memberFormation}               rules/rules_isect.v                       : rule_isect_member_formation_true3
@@ -282,5 +282,5 @@
 {7964,voidElimination}                      rules/rules_void.v                        : rule_void_elimination_true
 {6596,voidEquality}                         rules/rules_void.v                        : rule_void_equality_true3
 
-TOTAL RULES PROVED: 142 out of 283
+TOTAL RULES PROVED: 143 out of 283
 (not counting 2 UNFINISHED)

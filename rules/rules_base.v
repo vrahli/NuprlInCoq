@@ -30,6 +30,7 @@
 
 
 Require Export sequents2.
+Require Export sequents_lib.
 Require Export sequents_tacs.
 Require Export sequents_equality.
 Require Export per_props_uni.
@@ -107,6 +108,10 @@ Proof.
 Qed.
 
 
+
+Definition rule_base_closed_concl {o} (t : @NTerm o) :=
+  mk_baresequent [] (mk_conclax (mk_member t mk_base)).
+
 (*
    |- t in Base
 
@@ -116,7 +121,7 @@ Qed.
 Definition rule_base_closed {o}
            (t : @NTerm o) :=
   mk_rule
-    (mk_baresequent [] (mk_conclax (mk_member t mk_base)))
+    (rule_base_closed_concl t)
     []
     [].
 
@@ -150,6 +155,28 @@ Proof.
   allrw @tequality_mkc_member_base; spcast; auto.
 Qed.
 
+Lemma rule_base_closed_true_ext_lib {o} :
+  forall lib (t : @NTerm o),
+    rule_true_ext_lib lib (rule_base_closed t).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib; introv.
+  apply rule_true_implies_rule_true3;[|apply rule_base_closed_true].
+  introv h; apply @wf_axiom.
+Qed.
+
+Lemma rule_base_closed_wf2 {o} :
+  forall (t : @NTerm o),
+    wf_rule2 (rule_base_closed t).
+Proof.
+  introv wf m; allsimpl; tcsp.
+Qed.
+
+
+
+Definition rule_base_equality_concl {o} (H : @bhyps o) i :=
+  mk_baresequent H (mk_conclax (mk_member mk_base (mk_uni i))).
+
 (*
    |- Base = Base in U(i)
 
@@ -159,7 +186,7 @@ Qed.
 Definition rule_base_equality {o}
            (H : @bhyps o) i :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_member mk_base (mk_uni i))))
+    (rule_base_equality_concl H i)
     []
     [].
 
@@ -194,4 +221,21 @@ Proof.
     try (apply tequality_mkc_uni);
     try (complete (right; spcast; auto));
     try (apply base_in_uni).
+Qed.
+
+Lemma rule_base_equality_true_ext_lib {o} :
+  forall lib (H : @barehypotheses o) i,
+    rule_true_ext_lib lib (rule_base_equality H i).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_base_equality_true3.
+Qed.
+
+Lemma rule_base_equality_wf2 {o} :
+  forall (H : @barehypotheses o) i,
+    wf_rule2 (rule_base_equality H i).
+Proof.
+  introv wf m; allsimpl; tcsp.
 Qed.

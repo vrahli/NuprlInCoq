@@ -31,10 +31,17 @@
 
 
 Require Export sequents2.
+Require Export sequents_lib.
 Require Export sequents_tacs.
 Require Export sequents_equality.
 Require Export per_props_equality.
 
+
+Definition rule_equality_concl {o} (H : @bhyps o) a b T :=
+  mk_baresequent H (mk_conclax (mk_equality a b T)).
+
+Definition rule_equality_hyp {o} (H : @bhyps o) a b T e :=
+  mk_baresequent H (mk_concl (mk_equality a b T) e).
 
 (*
    H |- a = b in T
@@ -44,15 +51,15 @@ Require Export per_props_equality.
      H |- b = a in T
  *)
 Definition rule_equality_symmetry {o}
-           (H : @bhyps o) a b T :=
+           (H : @bhyps o) a b T e :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_equality a b T)))
-    [ mk_baresequent H (mk_conclax (mk_equality b a T)) ]
+    (rule_equality_concl H a b T)
+    [ rule_equality_hyp H b a T e ]
     [].
 
 Lemma rule_equality_symmetry_true3 {o} :
-  forall lib (H : @bhyps o) a b T,
-    rule_true3 lib (rule_equality_symmetry H a b T).
+  forall lib (H : @bhyps o) a b T e,
+    rule_true3 lib (rule_equality_symmetry H a b T e).
 Proof.
   intros.
   unfold rule_equality_symmetry, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -100,13 +107,34 @@ Proof.
     { apply similarity_sym; auto. }
     exrepnd.
     lsubst_tac.
-    rw <- @member_equality_iff in q1.
+    apply equality_in_mkc_equality in q1; repnd.
+    clear q1 q3.
     applydup @equality_commutes4 in q0; auto.
     apply equality_sym; auto.
     apply tequality_mkc_equality_sp in q0; repnd.
-    eapply tequality_preserving_equality;[exact q2|]; auto.
+    eapply tequality_preserving_equality;[exact q1|]; auto.
   }
 Qed.
+
+Lemma rule_equality_symmetry_true_ext_lib {o} :
+  forall lib (H : @bhyps o) a b T e,
+    rule_true_ext_lib lib (rule_equality_symmetry H a b T e).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_equality_symmetry_true3.
+Qed.
+
+Lemma rule_equality_symmetry_wf2 {o} :
+  forall (H : @bhyps o) a b T e,
+    wf_rule2 (rule_equality_symmetry H a b T e).
+Proof.
+  introv wf j.
+  allsimpl; repndors; subst; tcsp;
+    allunfold @wf_bseq; repnd; allsimpl; wfseq.
+Qed.
+
 
 
 (*
@@ -118,18 +146,18 @@ Qed.
      H |- c = b in T
  *)
 Definition rule_equality_transitivity {o}
-           (H : @bhyps o) a b c T :=
+           (H : @bhyps o) a b c T e1 e2 :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_equality a b T)))
+    (rule_equality_concl H a b T)
     [
-      mk_baresequent H (mk_conclax (mk_equality a c T)),
-      mk_baresequent H (mk_conclax (mk_equality c b T))
+      rule_equality_hyp H a c T e1,
+      rule_equality_hyp H c b T e2
     ]
     [].
 
 Lemma rule_equality_transitivity_true3 {o} :
-  forall lib (H : @bhyps o) a b c T,
-    rule_true3 lib (rule_equality_transitivity H a b c T).
+  forall lib (H : @bhyps o) a b c T e1 e2,
+    rule_true3 lib (rule_equality_transitivity H a b c T e1 e2).
 Proof.
   intros.
   unfold rule_equality_transitivity, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -177,7 +205,31 @@ Proof.
     pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
     lsubst_tac.
     allrw <- @member_equality_iff.
-    eapply equality_trans;[exact q1|].
+    apply equality_in_mkc_equality in q1; repnd.
+    apply equality_in_mkc_equality in h1; repnd.
+    clear q1 q3 h1 h3.
+    eapply equality_trans;[exact q2|].
     applydup @equality_commutes4 in h0; auto.
   }
+Qed.
+
+Lemma rule_equality_transitivity_true_ext_lib {o} :
+  forall lib (H : @bhyps o) a b c T e1 e2,
+    rule_true_ext_lib lib (rule_equality_transitivity H a b c T e1 e2).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_equality_transitivity_true3.
+Qed.
+
+Lemma rule_equality_transitivity_wf2 {o} :
+  forall (H : @bhyps o) a b c T e1 e2,
+    wf_term c
+    -> covered c (vars_hyps H)
+    -> wf_rule2 (rule_equality_transitivity H a b c T e1 e2).
+Proof.
+  introv wfc covc wf j.
+  allsimpl; repndors; subst; tcsp;
+    allunfold @wf_bseq; repnd; allsimpl; wfseq.
 Qed.

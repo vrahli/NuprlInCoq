@@ -25,12 +25,17 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
 
-*)
+ *)
 
 
-Require Export rules_isect_equality.
-Require Export rules_isect_member_formation.
-Require Export rules_isect_member_equality.
-Require Export rules_isect_elimination.
+Require Export proof_with_lib.
+
+
+Notation "𝕌( i )" := (oterm (Can (NUni i)) []).
+Notation "𝕍( v )" := (vterm (nvar v)) (at level 0).
+Notation "𝕎( v )" := (sovar (nvar v) []) (at level 0).
+Notation "★" := (oterm (Can NAxiom) []).
+Notation "LibraryEntry_proof( name , stmt , exp )" := (RigidLibraryEntry_proof _ name stmt exp _ _ _).
+Notation "'ℤ'" := (oterm (Can NInt) []).

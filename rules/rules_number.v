@@ -30,6 +30,7 @@
 
 
 Require Export sequents2.
+Require Export sequents_lib.
 Require Export sequents_tacs.
 Require Export sequents_equality.
 Require Export per_props_uni.
@@ -117,6 +118,9 @@ Proof.
 Qed.
 
 
+Definition rule_int_equality_concl {o} (H : @bhyps o) i :=
+  mk_baresequent H (mk_conclax (mk_equality mk_int mk_int (mk_uni i))).
+
 (*
    H |- Int = Int in Type(i)
 
@@ -126,7 +130,7 @@ Definition rule_int_equality {o}
            (H : @bhyps o)
            (i : nat) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_equality mk_int mk_int (mk_uni i))))
+    (rule_int_equality_concl H i)
     []
     [].
 
@@ -176,6 +180,25 @@ Proof.
   lsubst_tac.
   apply int_in_uni.
 Qed.
+
+Lemma rule_int_equality_true_ext_lib {o} :
+  forall lib (H : @bhyps o) i,
+    rule_true_ext_lib lib (rule_int_equality H i).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true_ext_lib.
+  introv.
+  apply rule_int_equality_true3.
+Qed.
+
+
+Lemma rule_int_equality_wf2 {o} :
+  forall (H : @bhyps o) i,
+    wf_rule2 (rule_int_equality H i).
+Proof.
+  introv wf m; allsimpl; tcsp.
+Qed.
+
 
 
 (*

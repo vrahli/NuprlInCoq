@@ -35,6 +35,7 @@ Require Export sequents_equality.
 Definition rule_tyfam_equality {p}
            C
            (a1 a2 b1 b2 : NTerm)
+           (e1 e2 : NTerm)
            (x1 x2 y : NVar)
            (i   : nat)
            (H   : @barehypotheses p) :=
@@ -44,21 +45,19 @@ Definition rule_tyfam_equality {p}
        (mk_conclax (mk_equality (C a1 x1 b1) (C a2 x2 b2) (mk_uni i))))
     [ mk_baresequent
         H
-        (mk_conclax (mk_equality a1 a2 (mk_uni i))),
+        (mk_concl (mk_equality a1 a2 (mk_uni i)) e1),
       mk_baresequent
         (snoc H (mk_hyp y a1))
-        (mk_conclax (mk_equality
-                       (subst b1 x1 (mk_var y))
-                       (subst b2 x2 (mk_var y))
-                       (mk_uni i)))
+        (mk_concl (mk_equality
+                     (subst b1 x1 (mk_var y))
+                     (subst b2 x2 (mk_var y))
+                     (mk_uni i)) e2)
     ]
     [ sarg_var y ].
 
 Lemma rule_tyfam_equality_true3 {pp} :
-  forall lib C Cc (a1 a2 b1 b2 : NTerm),
-  forall x1 x2 y : NVar,
-  forall i   : nat,
-  forall H   : @barehypotheses pp,
+  forall lib C Cc (a1 a2 b1 b2 : NTerm) (e1 e2 : NTerm)
+         (x1 x2 y : NVar) (i : nat) (H : @barehypotheses pp),
 (*  forall bc1 : !LIn y (bound_vars b1),
   forall bc2 : !LIn y (bound_vars b2), *)
   forall fvsC : forall a x b, free_vars (C a x b) = free_vars a ++ remove_nvars [x] (free_vars b),
@@ -77,7 +76,7 @@ Lemma rule_tyfam_equality_true3 {pp} :
                             equality lib a a' a1
                             -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))),
     rule_true3 lib (rule_tyfam_equality
-                      C a1 a2 b1 b2
+                      C a1 a2 b1 b2 e1 e2
                       x1 x2 y
                       i
                       H).
@@ -94,8 +93,11 @@ Proof.
   destseq; allsimpl; proof_irr; GC.
 
   assert (wf_csequent ((H) ||- (mk_conclax (mk_equality (C a1 x1 b1) (C a2 x2 b2) (mk_uni i))))) as wfc.
-  { unfold wf_csequent, wf_sequent, wf_concl; simpl.
-    dands; auto. }
+  {
+    unfold wf_csequent, wf_sequent, wf_concl; simpl.
+    dands; eauto 2 with slow.
+    apply covered_axiom.
+  }
 
   exists wfc.
   unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
@@ -121,6 +123,11 @@ Proof.
                      allrw in_app_iff;
                      allrw in_remove_nvars; allsimpl;
                      autodimp p hyp; tcsp;
+                     right; tcsp));
+      try (complete (generalize (wfc2 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
                      right; tcsp)).
   }
 
@@ -139,8 +146,8 @@ Proof.
   teq_and_eq (@mk_uni pp i) (C a1 x1 b1) (C a2 x2 b2) s1 s2 H;
     [apply tequality_mkc_uni|].
 
-  pose proof (pd a1 x1 b1 w1 s1 ca1) as e; exrepnd; rw e1; clear e1.
-  pose proof (pd a2 x2 b2 w2 s2 cb2) as e; exrepnd; rw e1; clear e1.
+  pose proof (pd a1 x1 b1 w1 s1 ca1) as z; exrepnd; rw z1; clear z1.
+  pose proof (pd a2 x2 b2 w2 s2 cb2) as z; exrepnd; rw z1; clear z1.
   apply eqC.
   dands.
 
@@ -150,8 +157,7 @@ Proof.
     repeat (autodimp hyp hh).
     exrepnd.
     lsubst_tac.
-    rw @member_eq in hyp1.
-    rw <- @member_equality_iff in hyp1; auto.
+    apply equality_in_mkc_equality in hyp1; repnd.
     apply equality_commutes4 in hyp0; auto.
   }
 
@@ -178,8 +184,7 @@ Proof.
       autodimp hyp1 hyp1'.
       autodimp hyp1 hyp1'; exrepnd; clear_irr.
       lift_lsubst in hyp0; lift_lsubst in hyp1.
-      rw @member_eq in hyp1.
-      rw <- @member_equality_iff in hyp1.
+      apply equality_in_mkc_equality in hyp1; repnd.
       apply @equality_commutes2 in hyp0; auto.
       allapply @equality_in_uni; auto. }
 
@@ -188,8 +193,7 @@ Proof.
 
     exrepnd; clear_irr.
     lsubst_tac.
-    rw @member_eq in h1.
-    rw <- @member_equality_iff in h1.
+    apply equality_in_mkc_equality in h1; repnd.
 
     assert (!LIn y (dom_csub s1)) as nys1.
     { allapply @similarity_dom; exrepd; allrw; sp. }
@@ -227,10 +231,8 @@ Proof.
 Qed.
 
 Lemma rule_tyfam_equality_true {pp} :
-  forall lib C Cc (a1 a2 b1 b2 : NTerm),
-  forall x1 x2 y : NVar,
-  forall i   : nat,
-  forall H   : @barehypotheses pp,
+  forall lib C Cc (a1 a2 b1 b2 : NTerm) (e1 e2 : NTerm)
+         (x1 x2 y : NVar) (i : nat) (H : @barehypotheses pp),
 (*  forall bc1 : !LIn y (bound_vars b1),
   forall bc2 : !LIn y (bound_vars b2), *)
   forall fvsC : forall a x b, free_vars (C a x b) = free_vars a ++ remove_nvars [x] (free_vars b),
@@ -249,7 +251,7 @@ Lemma rule_tyfam_equality_true {pp} :
                             equality lib a a' a1
                             -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))),
     rule_true lib (rule_tyfam_equality
-                     C a1 a2 b1 b2
+                     C a1 a2 b1 b2 e1 e2
                      x1 x2 y
                      i
                      H).

@@ -32,6 +32,10 @@
 *)
 
 
+(* contains an alternate definition of sosub: *)
+Require Import sosub_variant.
+
+
 (* contains an alternate definition of alphaeq in terms of variable swapping: *)
 Require Import swap.
 
@@ -179,6 +183,8 @@ Require Import nuprl_lemmas2.
 Require Import proof1.
 Require Import proof_with_lib.
 Require Import proof_with_lib_example1.
+Require Import proof_with_lib_non_dep.
+Require Import proof_with_lib_non_dep_example1.
 Require Import sterm.
 
 

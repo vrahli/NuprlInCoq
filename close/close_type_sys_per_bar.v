@@ -40,6 +40,7 @@ Require Export close_util_atom.
 Require Export close_util_uatom.
 Require Export close_util_base.
 Require Export close_util_csname.
+Require Export close_util_approx.
 
 
 Lemma type_sys_props4_implies_eq_term_equals {o} :
@@ -335,11 +336,7 @@ Proof.
     exists a b c d; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per1.
-
-    unfold per_bar_eq; introv; simpl.
-    introv; split; introv h;[|eapply local_equality_of_approx_bar; eauto].
-    introv br ext x.
-    eapply sub_per_approx_eq_bar; eauto 3 with slow.
+    apply eq_term_equals_sym; apply per_bar_eq_per_approx_eq_bar_lib_per.
 Qed.
 Hint Resolve per_approx_implies_per_bar : slow.
 
