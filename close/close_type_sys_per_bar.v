@@ -34,6 +34,9 @@ Require Export type_sys.
 Require Export dest_close.
 Require Export per_ceq_bar.
 
+Require Export close_util_int.
+Require Export close_util_nat.
+
 
 Lemma type_sys_props4_implies_eq_term_equals {o} :
   forall ts lib (T T1 T2 : @CTerm o) eq1 eq2,
@@ -213,10 +216,7 @@ Proof.
     unfold per_int; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per.
-    unfold per_bar_eq; introv; simpl.
-    introv; split; introv h;[|eapply local_equality_of_int_bar; eauto].
-    introv br ext x.
-    eapply sub_per_equality_of_int_bar; eauto 3 with slow.
+    apply eq_term_equals_sym; apply per_bar_eq_equality_of_int_bar_lib_per.
 Qed.
 Hint Resolve per_int_implies_per_bar : slow.
 
@@ -235,12 +235,11 @@ Proof.
     unfold per_nat; dands; auto; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|]; clear per.
-    unfold per_bar_eq; introv; simpl.
-    introv; split; introv h;[|eapply local_equality_of_nat_bar; eauto].
-    introv br ext x.
-    eapply sub_per_equality_of_nat_bar; eauto 3 with slow.
+    apply eq_term_equals_sym; apply per_bar_eq_equality_of_nat_bar_lib_per.
 Qed.
 Hint Resolve per_nat_implies_per_bar : slow.
+
+XXXXXXXX
 
 Lemma per_csname_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,

@@ -35,8 +35,8 @@ Require Export dest_close.
 
 
 Require Import close_type_sys_per_init.
-(*Require Import close_type_sys_per_int.
-Require Import close_type_sys_per_nat.
+Require Import close_type_sys_per_int.
+(*Require Import close_type_sys_per_nat.
 Require Import close_type_sys_per_atom.
 Require Import close_type_sys_per_uatom.
 Require Import close_type_sys_per_csname.
