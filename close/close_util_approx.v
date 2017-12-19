@@ -22,7 +22,7 @@
 
 
   Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
 
 *)
 
@@ -30,6 +30,7 @@
 Require Export type_sys.
 Require Export dest_close.
 Require Export per_ceq_bar.
+Require Export close_util_bar.
 
 
 Lemma per_approx_bar_uniquely_valued {p} :
@@ -258,40 +259,6 @@ Proof.
 Qed.
  *)
 
-Lemma in_ext_implies_all_in_bar_trivial_bar {o} :
-  forall (lib : @library o) F,
-    in_ext lib F
-    -> all_in_bar (trivial_bar lib) F.
-Proof.
-  introv f br ext; introv.
-  eapply f; eauto 3 with slow.
-Qed.
-
-Lemma collapse2bars {o} :
-  forall {lib} F,
-    (exists (bar : @BarLib o lib),
-        all_in_bar_ext
-          bar
-          (fun lib' x => exists (bar' : @BarLib o lib'), all_in_bar bar' F))
-      <=> exists (bar : @BarLib o lib), all_in_bar bar F.
-Proof.
-  introv; split; introv h.
-
-  - exrepnd.
-    apply all_in_bar_ext_exists_bar_implies in h0; exrepnd; simpl in *.
-    exists (bar_of_bar_fam fbar).
-    introv br ext; simpl in *; exrepnd.
-    pose proof (h1 _ br _ ext0 x _ br0 _ ext) as h1; auto.
-
-  - exrepnd.
-    exists bar.
-    introv br ext x.
-    exists (trivial_bar lib'0).
-    apply in_ext_implies_all_in_bar_trivial_bar.
-    introv y.
-    eapply h0; eauto 3 with slow.
-Qed.
-
 Lemma per_bar_eq_per_approx_eq_bar_lib_per {o} :
   forall lib (bar : @BarLib o lib) a b,
     (per_bar_eq bar (per_approx_eq_bar_lib_per lib a b))
@@ -326,3 +293,310 @@ Proof.
     apply in_ext_implies_all_in_bar_trivial_bar; introv y.
     apply (h0 _ br'1 lib'3); eauto 3 with slow.
 Qed.
+
+Lemma per_approx_uniquely_valued {p} :
+  forall (ts : cts(p)), uniquely_valued (per_approx ts).
+Proof.
+  unfold uniquely_valued, per_approx, eq_term_equals; sp.
+  spcast; repeat computes_to_eqval.
+  allrw; sp.
+Qed.
+Hint Resolve per_approx_uniquely_valued : slow.
+
+Lemma per_bar_per_approx_uniquely_valued {p} :
+  forall (ts : cts(p)), uniquely_valued (per_bar (per_approx ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_bar_per_approx_uniquely_valued : slow.
+
+Lemma per_approx_type_extensionality {p} :
+  forall (ts : cts(p)), type_extensionality (per_approx ts).
+Proof.
+  introv per eqiff.
+  unfold per_approx in *; exrepnd.
+  exists a b c d; dands; auto.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym; auto.
+Qed.
+Hint Resolve per_approx_type_extensionality : slow.
+
+Lemma per_bar_per_approx_type_extensionality {p} :
+  forall (ts : cts(p)), type_extensionality (per_bar (per_approx ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_bar_per_approx_type_extensionality : slow.
+
+Lemma per_approx_type_symmetric {p} :
+  forall (ts : cts(p)), type_symmetric (per_approx ts).
+Proof.
+  introv per.
+  unfold per_approx in *; exrepnd.
+  exists c d a b; dands; auto.
+
+  {
+    introv ext.
+    pose proof (per3 _ ext) as per3; simpl in *.
+    allrw; tcsp.
+  }
+
+  eapply eq_term_equals_trans;[eauto|].
+  apply (approx_iff_implies_eq_per_approx_eq_bar (trivial_bar lib)).
+  apply in_ext_implies_all_in_bar_trivial_bar; auto.
+Qed.
+Hint Resolve per_approx_type_symmetric : slow.
+
+Lemma per_bar_per_approx_type_symmetric {p} :
+  forall (ts : cts(p)), type_symmetric (per_bar (per_approx ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_approx_type_symmetric : slow.
+
+Lemma per_approx_type_transitive {p} :
+  forall (ts : cts(p)), type_transitive (per_approx ts).
+Proof.
+  introv pera perb.
+  unfold per_approx in *; exrepnd.
+  spcast; repeat computes_to_eqval.
+
+  exists a0 b0 c d; dands; spcast; auto.
+
+  introv x.
+  pose proof (pera3 _ x) as pera3.
+  pose proof (perb3 _ x) as perb3.
+  allrw; tcsp.
+Qed.
+Hint Resolve per_approx_type_transitive : slow.
+
+Lemma per_bar_per_approx_type_transitive {p} :
+  forall (ts : cts(p)), type_transitive (per_bar (per_approx ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_approx_type_transitive : slow.
+
+Lemma per_bar_per_approx_implies_close {o} :
+  forall (ts : cts(o)) lib T T' eq,
+    per_bar (per_approx (close ts)) lib T T' eq
+    -> close ts lib T T' eq.
+Proof.
+  introv per.
+  apply CL_bar.
+  unfold per_bar in per; exrepnd.
+  exists bar eqa; dands; auto.
+  introv br ext; introv.
+  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  apply CL_approx; auto.
+Qed.
+
+Lemma ccequivc_ext_approx {o} :
+  forall lib (T T' : @CTerm o) a b,
+    ccequivc_ext lib T T'
+    -> computes_to_valc lib T (mkc_approx a b)
+    -> {a' : CTerm , {b' : CTerm ,
+        ccomputes_to_valc lib T' (mkc_approx a' b')
+        # ccequivc_ext lib a a'
+        # ccequivc_ext lib b b' }}.
+Proof.
+  introv ceq comp.
+  pose proof (ceq lib) as ceq'; simpl in ceq'; autodimp ceq' hyp; eauto 3 with slow; spcast.
+  eapply cequivc_mkc_approx in ceq';[|eauto]; exrepnd.
+  exists a' b'; dands; spcast; auto.
+
+  {
+    introv ext.
+    pose proof (ceq lib' ext) as c; simpl in c; spcast.
+
+    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T (mkc_approx a b) comp) as w.
+    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T' (mkc_approx a' b') ceq'0) as z.
+    eapply cequivc_mkc_approx in c;[|eauto]; exrepnd.
+    computes_to_eqval; auto.
+  }
+
+  {
+    introv ext.
+    pose proof (ceq lib' ext) as c; simpl in c; spcast.
+
+    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T (mkc_approx a b) comp) as w.
+    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T' (mkc_approx a' b') ceq'0) as z.
+    eapply cequivc_mkc_approx in c;[|eauto]; exrepnd.
+    computes_to_eqval; auto.
+  }
+Qed.
+
+Lemma cequivc_implies_capproxc {o} :
+  forall lib (a a' b b' : @CTerm o),
+    cequivc lib a a'
+    -> cequivc lib b b'
+    -> (a ~<~(lib) b) <=> (a' ~<~(lib) b').
+Proof.
+  introv ceq1 ceq2; split; intro h; spcast; eauto 3 with slow.
+
+  - eapply approxc_cequivc_trans; eauto.
+    eapply cequivc_approxc_trans;[|eauto].
+    apply cequivc_sym; auto.
+
+  - eapply approxc_cequivc_trans;[|apply cequivc_sym;eauto].
+    eapply cequivc_approxc_trans;[|eauto]; auto.
+Qed.
+Hint Resolve cequivc_implies_capproxc : slow.
+
+Lemma per_approx_type_value_respecting {p} :
+  forall (ts : cts(p)), type_value_respecting (per_approx ts).
+Proof.
+  introv per ceq.
+  unfold per_approx in *; exrepnd.
+  spcast; computes_to_eqval.
+  eapply ccequivc_ext_approx in ceq;[|eauto]; exrepnd; spcast.
+  exists a b a' b'; dands; spcast; auto.
+
+  introv ext.
+  pose proof (per3 _ ext) as per3; simpl in *.
+  pose proof (ceq1 _ ext) as ceq1; simpl in *.
+  pose proof (ceq2 _ ext) as ceq2; simpl in *.
+  spcast; eauto 3 with slow.
+Qed.
+Hint Resolve per_approx_type_value_respecting : slow.
+
+Lemma per_bar_per_approx_type_value_respecting {p} :
+  forall (ts : cts(p)), type_value_respecting (per_bar (per_approx ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_approx_type_value_respecting : slow.
+
+Lemma type_equality_respecting_trans_per_bar_per_approx_implies {o} :
+  forall (ts : cts(o)) lib T T' a b c d,
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> computes_to_valc lib T  (mkc_approx a b)
+    -> computes_to_valc lib T' (mkc_approx c d)
+    -> type_equality_respecting_trans (per_bar (per_approx (close ts))) lib T T'
+    -> type_equality_respecting_trans (close ts) lib T T'.
+Proof.
+  introv tsts dou mon comp1 comp2 trans h ceq cl.
+  apply per_bar_per_approx_implies_close.
+  eapply trans; eauto.
+  repndors; subst.
+
+  - eapply ccequivc_ext_approx in ceq;[|eauto]; exrepnd; spcast.
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_approx in ceq;[|eauto]; exrepnd; spcast.
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_approx in ceq;[|eauto]; exrepnd; spcast.
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_approx in ceq;[|eauto]; exrepnd; spcast.
+    dclose_lr; auto.
+Qed.
+
+Lemma per_approx_term_symmetric {p} :
+  forall (ts : cts(p)), term_symmetric (per_approx ts).
+Proof.
+  introv pera perb.
+  unfold per_approx in *; exrepnd.
+  spcast; repeat computes_to_eqval.
+  allrw pera1; clear pera1.
+
+  unfold per_approx_eq_bar in *; exrepnd.
+  exists bar; introv br ext; introv.
+  pose proof (perb0 _ br _ ext) as perb0; simpl in *.
+
+  unfold per_approx_eq in *; repnd; dands; auto.
+Qed.
+Hint Resolve per_approx_term_symmetric : slow.
+
+Lemma per_bar_per_approx_term_symmetric {p} :
+  forall (ts : cts(p)), term_symmetric (per_bar (per_approx ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_approx_term_symmetric : slow.
+
+Lemma per_approx_term_transitive {p} :
+  forall (ts : cts(p)), term_transitive (per_approx ts).
+Proof.
+  introv per e1 e2.
+  unfold per_approx in *; exrepnd.
+  spcast; repeat computes_to_eqval.
+  allrw per1; clear per1.
+
+  unfold per_approx_eq_bar in *; exrepnd.
+  exists (intersect_bars bar bar0); introv br ext; introv; simpl in *; exrepnd.
+  pose proof (e1 _ br2 lib'0 (lib_extends_trans ext br1)) as e1; simpl in *.
+  pose proof (e0 _ br0 lib'0 (lib_extends_trans ext br3)) as e0; simpl in *.
+
+  unfold per_approx_eq in *; repnd; dands; auto.
+Qed.
+Hint Resolve per_approx_term_transitive : slow.
+
+Lemma per_bar_per_approx_term_transitive {p} :
+  forall (ts : cts(p)), term_transitive (per_bar (per_approx ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_approx_term_transitive : slow.
+
+Lemma per_approx_term_value_respecting {p} :
+  forall (ts : cts(p)), term_value_respecting (per_approx ts).
+Proof.
+  introv per e ceq.
+  unfold per_approx in *; exrepnd.
+  spcast; repeat computes_to_eqval.
+  allrw per1; clear per1.
+
+  unfold per_approx_eq_bar in *; exrepnd.
+  exists bar; introv br ext; introv; simpl in *; exrepnd.
+  pose proof (e0 _ br _ ext) as e0; simpl in *.
+
+  pose proof (ceq lib'0) as ceq; simpl in ceq; autodimp ceq hyp; eauto 3 with slow.
+  unfold per_approx_eq in *; repnd; dands; auto.
+  spcast.
+  eapply cequivc_axiom; eauto.
+Qed.
+Hint Resolve per_approx_term_value_respecting : slow.
+
+Lemma per_bar_per_approx_term_value_respecting {p} :
+  forall (ts : cts(p)), term_value_respecting (per_bar (per_approx ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_approx_term_value_respecting : slow.
+
+Lemma per_bar_per_approx_type_system {p} :
+  forall (ts : cts(p)), type_system (per_bar (per_approx ts)).
+Proof.
+  intros; unfold type_system; sp; eauto 3 with slow.
+Qed.
+Hint Resolve per_bar_per_approx_type_system : slow.
+
+Lemma per_approx_bar_uniquely_valued2 {p} :
+  forall (ts : cts(p)), uniquely_valued2 (per_approx_bar ts).
+Proof.
+  unfold uniquely_valued2, per_approx_bar, eq_term_equals; sp.
+  pose proof (two_computes_to_valc_ceq_bar_mkc_approx bar0 bar T a0 b0 a b) as q; repeat (autodimp q hyp).
+  allrw; sp.
+  eapply eq_per_approx_eq_bar; eauto.
+Qed.
+Hint Resolve per_approx_bar_uniquely_valued2 : slow.
+
+Lemma per_approx_uniquely_valued2 {p} :
+  forall (ts : cts(p)), uniquely_valued2 (per_approx ts).
+Proof.
+  unfold uniquely_valued2, per_approx, eq_term_equals; sp.
+  spcast; repeat computes_to_eqval.
+  allrw; sp.
+Qed.
+Hint Resolve per_approx_uniquely_valued2 : slow.
+
+Lemma per_bar_per_approx_uniquely_valued2 {p} :
+  forall (ts : cts(p)), uniquely_valued2 (per_bar (per_approx ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_bar_per_approx_uniquely_valued2 : slow.

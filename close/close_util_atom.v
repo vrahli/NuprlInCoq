@@ -22,7 +22,7 @@
 
 
   Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
 
 *)
 

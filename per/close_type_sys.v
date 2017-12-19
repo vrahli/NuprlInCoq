@@ -41,8 +41,8 @@ Require Import close_type_sys_per_atom.
 Require Import close_type_sys_per_uatom.
 Require Import close_type_sys_per_csname.
 Require Import close_type_sys_per_base.
-(*Require Import close_type_sys_per_sqle.
-Require Import close_type_sys_per_sqequal.
+Require Import close_type_sys_per_sqle.
+(*Require Import close_type_sys_per_sqequal.
 Require Import close_type_sys_per_eq.
 (*Require Import close_type_sys_per_req.
  Require Import close_type_sys_per_teq.
@@ -337,7 +337,6 @@ Proof.
     apply close_type_system_init; auto.
 
   - Case "CL_bar".
-    admit.
 
   - Case "CL_int".
     apply close_type_system_int; auto.
