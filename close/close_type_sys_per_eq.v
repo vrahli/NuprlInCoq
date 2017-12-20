@@ -28,44 +28,129 @@ Require Export type_sys.
 Require Import dest_close.
 Require Export per_ceq_bar.
 
+Require Export close_util_eq.
 
-Lemma close_type_system_eq {p} :
-  forall lib (bar : BarLib lib) (ts : cts(p))
-         T T' (eq : per) A B a1 a2 b1 b2 eqa,
+
+Lemma implies_eq_term_equals_per_bar_eq {o} :
+  forall {lib} (bar1 bar2 : @BarLib o lib) (eqa eqb : lib-per(lib,o)),
+    all_in_bar_ext (intersect_bars bar1 bar2) (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
+    -> (per_bar_eq bar1 eqa) <=2=> (per_bar_eq bar2 eqb).
+Proof.
+  introv alla; introv; split; intro h.
+
+  - apply (per_bar_eq_intersect_bars_right bar2 bar1).
+    eapply all_in_bar_ext_eq_term_equals_preserves_per_bar_eq; eauto.
+    apply (per_bar_eq_intersect_bars_left bar1 bar2); auto.
+
+  - apply (per_bar_eq_intersect_bars_left bar1 bar2).
+    apply all_in_bar_ext_eq_term_equals_sym in alla.
+    eapply all_in_bar_ext_eq_term_equals_preserves_per_bar_eq; eauto.
+    apply (per_bar_eq_intersect_bars_right bar2 bar1); auto.
+Qed.
+
+Definition uniquely_valued_def {o} (ts : cts(o)) lib T :=
+  forall T1 T2 eq1 eq2,
+    ts lib T T1 eq1
+    -> ts lib T T2 eq2
+    -> eq1 <=2=> eq2.
+
+Lemma uniquely_valued_per_bar2 {o} :
+  forall (ts : cts(o)) lib T,
+    in_ext lib (fun lib => uniquely_valued_def ts lib T)
+    -> uniquely_valued_def (per_bar ts) lib T.
+Proof.
+  introv uv pera perb.
+  unfold per_bar in *; exrepnd.
+  eapply eq_term_equals_trans;[eauto|].
+  eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
+  clear pera1 perb1.
+
+  apply implies_eq_term_equals_per_bar_eq.
+  introv br ext; introv; simpl in *; exrepnd.
+
+  pose proof (pera0 _ br0 lib'0 (lib_extends_trans ext br3) x) as pera0.
+  pose proof (perb0 _ br2 lib'0 (lib_extends_trans ext br1) x) as perb0.
+  simpl in *.
+  eapply uv; eauto.
+Qed.
+
+Lemma type_sys_props4_implies_eq_term_equals {o} :
+  forall (ts : cts(o)) lib A B C D eqa eqa1 eqa2,
+    type_sys_props4 ts lib A B eqa
+    -> ts lib A C eqa1
+    -> ts lib A D eqa2
+    -> eqa1 <=2=> eqa2.
+Proof.
+  introv h w q; introv.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  apply uv in w.
+  apply uv in q.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym;auto.
+Qed.
+
+Lemma uniquely_valued_per_bar_per_eq {o} :
+  forall (ts : cts(o)) lib T T1 T2 eq1 eq2 a1 a2 A B eqa,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> per_bar (per_eq ts) lib T T1 eq1
+    -> per_bar (per_eq ts) lib T T2 eq2
+    -> (eq1 <=2=> eq2).
+Proof.
+  introv tsp comp pera perb.
+  eapply uniquely_valued_per_bar2; eauto.
+  clear eq1 eq2 pera perb.
+  introv ext pera perb.
+  unfold per_eq in *; exrepnd; spcast.
+
+  eapply lib_extends_preserves_computes_to_valc in comp;[|exact ext].
+  repeat computes_to_eqval.
+  eapply eq_term_equals_trans;[eauto|].
+  eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
+  clear pera0 perb0.
+
+  apply (simple_implies_iff_per_eq_eq _ (trivial_bar lib')).
+  apply in_ext_ext_implies_all_in_bar_ext.
+
+  introv.
+  pose proof (pera3 _ e) as pera3; simpl in *.
+  pose proof (perb3 _ e) as perb3; simpl in *.
+  pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
+  eapply type_sys_props4_implies_eq_term_equals; eauto.
+Qed.
+Hint Resolve uniquely_valued_per_bar_per_eq : slow.
+
+
+Lemma close_type_system_eq {o} :
+  forall lib (ts : cts(o))
+         T T' (eq : per) A B a1 a2 b1 b2 (eqa : lib-per(lib,o)),
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> T ==b==>(bar) (mkc_equality a1 a2 A)
-    -> T' ==b==>(bar) (mkc_equality b1 b2 B)
-    -> all_in_bar_ext bar (fun lib' x => close ts lib' A B (eqa lib' x))
-    -> all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a1 b1)
-    -> all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a2 b2)
-    -> (eq <=2=> (per_eq_eq lib a1 a2 eqa))
-    -> per_eq_bar (close ts) lib T T' eq
-    -> all_in_bar_ext bar (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x))
+    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> computes_to_valc lib T' (mkc_equality b1 b2 B)
+    -> in_ext_ext lib (fun lib' x => close ts lib' A B (eqa lib' x))
+    -> eqorceq_ext lib eqa a1 b1
+    -> eqorceq_ext lib eqa a2 b2
+    -> (eq <=2=> (eq_per_eq_bar lib a1 a2 eqa))
+    -> per_eq (close ts) lib T T' eq
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x))
     -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
-  introv tsts dou mon c1 c2 X1 eos1 eos2 eqiff per; introv IHX1.
+  introv tsts dou mon c1 c2 inextcl eos1 eos2 eqiff per; introv inexttsp.
 
-  prove_type_sys_props4 SCase; intros.
+  prove_type_sys_props4 SCase; introv.
 
   + SCase "uniquely_valued".
-    clear per.
-    dclose_lr;[].
-
-    allunfold @per_eq_bar; exrepnd.
-    introv; allrw.
-
-    pose proof (two_computes_to_valc_ceq_bar_mkc_equality1 bar bar0 T a1 a2 a0 a3 A A0) as q1.
-    repeat (autodimp q1 hyp);[].
-    pose proof (two_computes_to_valc_ceq_bar_mkc_equality2 bar bar0 T a1 a2 a0 a3 A A0) as q2.
-    repeat (autodimp q2 hyp);[].
-    pose proof (two_computes_to_valc_ceq_bar_mkc_equality3 bar bar0 T a1 a2 a0 a3 A A0) as q3.
-    repeat (autodimp q3 hyp);[].
-
-    eapply implies_iff_per_eq_eq; eauto 5 with slow refl.
+    introv cl.
+    dclose_lr.
+    apply per_eq_implies_per_bar in per.
+    eapply uniquely_valued_per_bar_per_eq; eauto.
 
   + SCase "type_symmetric".
+    introv cl eqs.
+
+XXXXXX
     clear per.
     repdors; subst; dclose_lr.
     allunfold @per_eq_bar; exrepd.

@@ -101,10 +101,9 @@ Qed.
 
 Lemma type_extensionality_per_bar {o} :
   forall (ts : cts(o)),
-    type_extensionality ts
-    -> type_extensionality (per_bar ts).
+    type_extensionality (per_bar ts).
 Proof.
-  introv ext per eqiff.
+  introv per eqiff.
   unfold per_bar in *; exrepnd.
   exists bar eqa; dands; auto.
   eapply eq_term_equals_trans;[|eauto].
@@ -209,16 +208,16 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_sym {o} :
-  forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2,
-    all_in_bar_ext bar (fun lib' x => term_equality_symmetric (eqa lib' x))
-    -> per_bar_eq bar eqa t1 t2
-    -> per_bar_eq bar eqa t2 t1.
+  forall {lib} (bar1 bar2 : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2,
+    all_in_bar_ext bar1 (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> per_bar_eq bar2 eqa t1 t2
+    -> per_bar_eq bar2 eqa t2 t1.
 Proof.
   introv sym per; unfold per_bar_eq in *; introv br ext; introv.
   pose proof (per _ br _ ext x) as per; simpl in *; exrepnd.
-  exists bar'.
-  introv br' ext'; introv.
-  pose proof (per0 _ br' _ ext' x0) as per0; simpl in *.
+  exists (intersect_bars bar' (raise_bar bar1 x)).
+  introv br' ext'; introv; simpl in *; exrepnd.
+  pose proof (per0 _ br'0 _ (lib_extends_trans ext' br'3) x0) as per0; simpl in *.
   eapply sym; eauto 3 with slow.
 Qed.
 Hint Resolve per_bar_eq_sym : slow.
@@ -247,20 +246,20 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_trans {o} :
-  forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2 t3,
-    all_in_bar_ext bar (fun lib' x => term_equality_transitive (eqa lib' x))
-    -> per_bar_eq bar eqa t1 t2
-    -> per_bar_eq bar eqa t2 t3
-    -> per_bar_eq bar eqa t1 t3.
+  forall {lib} (bar1 bar2 : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2 t3,
+    all_in_bar_ext bar1 (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> per_bar_eq bar2 eqa t1 t2
+    -> per_bar_eq bar2 eqa t2 t3
+    -> per_bar_eq bar2 eqa t1 t3.
 Proof.
   introv trans pera perb; unfold per_bar_eq in *; introv br ext; introv.
   pose proof (pera _ br _ ext x) as pera; simpl in *; exrepnd.
   pose proof (perb _ br _ ext x) as perb; simpl in *; exrepnd.
-  exists (intersect_bars bar' bar'0).
+  exists (intersect3bars bar' bar'0 (raise_bar bar1 x)).
   introv br' ext'; introv; simpl in *; exrepnd.
   pose proof (pera0 _ br'0 lib'2 (lib_extends_trans ext' br'3) x0) as pera0; simpl in *.
-  pose proof (perb0 _ br'2 lib'2 (lib_extends_trans ext' br'1) x0) as perb0; simpl in *.
-  eapply trans; eauto 3 with slow.
+  pose proof (perb0 _ br'4 lib'2 (lib_extends_trans (lib_extends_trans ext' br'1) br'6) x0) as perb0; simpl in *.
+  eapply trans; eauto 4 with slow.
 Qed.
 Hint Resolve per_bar_eq_trans : slow.
 
@@ -288,17 +287,17 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_value_respecting {o} :
-  forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) t t',
-    all_in_bar_ext bar (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+  forall {lib} (bar1 bar2 : @BarLib o lib) (eqa : lib-per(lib,o)) t t',
+    all_in_bar_ext bar1 (fun lib' x => term_equality_respecting lib' (eqa lib' x))
     -> ccequivc_ext lib t t'
-    -> per_bar_eq bar eqa t t
-    -> per_bar_eq bar eqa t t'.
+    -> per_bar_eq bar2 eqa t t
+    -> per_bar_eq bar2 eqa t t'.
 Proof.
   introv resp ceq pera; unfold per_bar_eq in *; introv br ext; introv.
   pose proof (pera _ br _ ext x) as pera; simpl in *; exrepnd.
-  exists bar'.
+  exists (intersect_bars bar' (raise_bar bar1 x)).
   introv br' ext'; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br' _ ext' x0) as pera0; simpl in *.
+  pose proof (pera0 _ br'0 _ (lib_extends_trans ext' br'3) x0) as pera0; simpl in *.
   eapply resp; eauto 3 with slow.
 Qed.
 Hint Resolve per_bar_eq_value_respecting : slow.

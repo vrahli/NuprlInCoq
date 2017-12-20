@@ -314,3 +314,260 @@ Proof.
     apply in_ext_implies_all_in_bar_trivial_bar; introv y.
     apply (h0 _ br'1 lib'3); eauto 3 with slow.
 Qed.
+
+Lemma per_cequiv_uniquely_valued {p} :
+  forall (ts : cts(p)), uniquely_valued (per_cequiv ts).
+Proof.
+  unfold uniquely_valued, per_cequiv, eq_term_equals; sp.
+  spcast; repeat computes_to_eqval.
+  allrw; sp.
+Qed.
+Hint Resolve per_cequiv_uniquely_valued : slow.
+
+Lemma per_bar_per_cequiv_uniquely_valued {p} :
+  forall (ts : cts(p)), uniquely_valued (per_bar (per_cequiv ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_bar_per_cequiv_uniquely_valued : slow.
+
+Lemma per_cequiv_type_extensionality {p} :
+  forall (ts : cts(p)), type_extensionality (per_cequiv ts).
+Proof.
+  introv per eqiff.
+  unfold per_cequiv in *; exrepnd.
+  exists a b c d; dands; auto.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym; auto.
+Qed.
+Hint Resolve per_cequiv_type_extensionality : slow.
+
+Lemma per_bar_per_cequiv_type_extensionality {p} :
+  forall (ts : cts(p)), type_extensionality (per_bar (per_cequiv ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_bar_per_cequiv_type_extensionality : slow.
+
+Lemma per_cequiv_type_symmetric {p} :
+  forall (ts : cts(p)), type_symmetric (per_cequiv ts).
+Proof.
+  introv per.
+  unfold per_cequiv in *; exrepnd.
+  exists c d a b; dands; auto.
+
+  {
+    introv ext.
+    pose proof (per3 _ ext) as per3; simpl in *.
+    allrw; tcsp.
+  }
+
+  eapply eq_term_equals_trans;[eauto|].
+  apply (cequiv_iff_implies_eq_per_cequiv_eq_bar (trivial_bar lib)).
+  apply in_ext_implies_all_in_bar_trivial_bar; auto.
+Qed.
+Hint Resolve per_cequiv_type_symmetric : slow.
+
+Lemma per_bar_per_cequiv_type_symmetric {p} :
+  forall (ts : cts(p)), type_symmetric (per_bar (per_cequiv ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_cequiv_type_symmetric : slow.
+
+Lemma per_cequiv_type_transitive {p} :
+  forall (ts : cts(p)), type_transitive (per_cequiv ts).
+Proof.
+  introv pera perb.
+  unfold per_cequiv in *; exrepnd.
+  spcast; repeat computes_to_eqval.
+
+  exists a0 b0 c d; dands; spcast; auto.
+
+  introv x.
+  pose proof (pera3 _ x) as pera3.
+  pose proof (perb3 _ x) as perb3.
+  allrw; tcsp.
+Qed.
+Hint Resolve per_cequiv_type_transitive : slow.
+
+Lemma per_bar_per_cequiv_type_transitive {p} :
+  forall (ts : cts(p)), type_transitive (per_bar (per_cequiv ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_cequiv_type_transitive : slow.
+
+Lemma cequivc_implies_ccequivc {o} :
+  forall lib (a a' b b' : @CTerm o),
+    cequivc lib a a'
+    -> cequivc lib b b'
+    -> (a ~=~(lib) b) <=> (a' ~=~(lib) b').
+Proof.
+  introv ceq1 ceq2; split; intro h; spcast; eauto 3 with slow.
+
+  - eapply cequivc_trans;[|eauto].
+    eapply cequivc_trans;[apply cequivc_sym;eauto|];auto.
+
+  - eapply cequivc_trans;[eauto|].
+    eapply cequivc_trans;[|apply cequivc_sym;eauto];auto.
+Qed.
+Hint Resolve cequivc_implies_ccequivc : slow.
+
+Lemma per_cequiv_type_value_respecting {p} :
+  forall (ts : cts(p)), type_value_respecting (per_cequiv ts).
+Proof.
+  introv per ceq.
+  unfold per_cequiv in *; exrepnd.
+  spcast; computes_to_eqval.
+  eapply ccequivc_ext_cequiv in ceq;[|eauto]; exrepnd; spcast.
+  exists a b a' b'; dands; spcast; auto.
+
+  introv ext.
+  pose proof (per3 _ ext) as per3; simpl in *.
+  pose proof (ceq1 _ ext) as ceq1; simpl in *.
+  pose proof (ceq2 _ ext) as ceq2; simpl in *.
+  spcast; eauto 3 with slow.
+Qed.
+Hint Resolve per_cequiv_type_value_respecting : slow.
+
+Lemma per_bar_per_cequiv_type_value_respecting {p} :
+  forall (ts : cts(p)), type_value_respecting (per_bar (per_cequiv ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_cequiv_type_value_respecting : slow.
+
+Lemma type_equality_respecting_trans_per_bar_per_cequiv_implies {o} :
+  forall (ts : cts(o)) lib T T' a b c d,
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> computes_to_valc lib T  (mkc_cequiv a b)
+    -> computes_to_valc lib T' (mkc_cequiv c d)
+    -> type_equality_respecting_trans (per_bar (per_cequiv (close ts))) lib T T'
+    -> type_equality_respecting_trans (close ts) lib T T'.
+Proof.
+  introv tsts dou mon comp1 comp2 trans h ceq cl.
+  apply per_bar_per_cequiv_implies_close.
+  eapply trans; eauto.
+  repndors; subst.
+
+  - eapply ccequivc_ext_cequiv in ceq;[|eauto]; exrepnd; spcast.
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_cequiv in ceq;[|eauto]; exrepnd; spcast.
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_cequiv in ceq;[|eauto]; exrepnd; spcast.
+    dclose_lr; auto.
+
+  - eapply ccequivc_ext_cequiv in ceq;[|eauto]; exrepnd; spcast.
+    dclose_lr; auto.
+Qed.
+
+Lemma per_cequiv_term_symmetric {p} :
+  forall (ts : cts(p)), term_symmetric (per_cequiv ts).
+Proof.
+  introv pera perb.
+  unfold per_cequiv in *; exrepnd.
+  spcast; repeat computes_to_eqval.
+  allrw pera1; clear pera1.
+
+  unfold per_cequiv_eq_bar in *; exrepnd.
+  exists bar; introv br ext; introv.
+  pose proof (perb0 _ br _ ext) as perb0; simpl in *.
+
+  unfold per_cequiv_eq in *; repnd; dands; auto.
+Qed.
+Hint Resolve per_cequiv_term_symmetric : slow.
+
+Lemma per_bar_per_cequiv_term_symmetric {p} :
+  forall (ts : cts(p)), term_symmetric (per_bar (per_cequiv ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_cequiv_term_symmetric : slow.
+
+Lemma per_cequiv_term_transitive {p} :
+  forall (ts : cts(p)), term_transitive (per_cequiv ts).
+Proof.
+  introv per e1 e2.
+  unfold per_cequiv in *; exrepnd.
+  spcast; repeat computes_to_eqval.
+  allrw per1; clear per1.
+
+  unfold per_cequiv_eq_bar in *; exrepnd.
+  exists (intersect_bars bar bar0); introv br ext; introv; simpl in *; exrepnd.
+  pose proof (e1 _ br2 lib'0 (lib_extends_trans ext br1)) as e1; simpl in *.
+  pose proof (e0 _ br0 lib'0 (lib_extends_trans ext br3)) as e0; simpl in *.
+
+  unfold per_cequiv_eq in *; repnd; dands; auto.
+Qed.
+Hint Resolve per_cequiv_term_transitive : slow.
+
+Lemma per_bar_per_cequiv_term_transitive {p} :
+  forall (ts : cts(p)), term_transitive (per_bar (per_cequiv ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_cequiv_term_transitive : slow.
+
+Lemma per_cequiv_term_value_respecting {p} :
+  forall (ts : cts(p)), term_value_respecting (per_cequiv ts).
+Proof.
+  introv per e ceq.
+  unfold per_cequiv in *; exrepnd.
+  spcast; repeat computes_to_eqval.
+  allrw per1; clear per1.
+
+  unfold per_cequiv_eq_bar in *; exrepnd.
+  exists bar; introv br ext; introv; simpl in *; exrepnd.
+  pose proof (e0 _ br _ ext) as e0; simpl in *.
+
+  pose proof (ceq lib'0) as ceq; simpl in ceq; autodimp ceq hyp; eauto 3 with slow.
+  unfold per_cequiv_eq in *; repnd; dands; auto.
+  spcast.
+  eapply cequivc_axiom; eauto.
+Qed.
+Hint Resolve per_cequiv_term_value_respecting : slow.
+
+Lemma per_bar_per_cequiv_term_value_respecting {p} :
+  forall (ts : cts(p)), term_value_respecting (per_bar (per_cequiv ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_cequiv_term_value_respecting : slow.
+
+Lemma per_bar_per_cequiv_type_system {p} :
+  forall (ts : cts(p)), type_system (per_bar (per_cequiv ts)).
+Proof.
+  intros; unfold type_system; sp; eauto 3 with slow.
+Qed.
+Hint Resolve per_bar_per_cequiv_type_system : slow.
+
+Lemma per_cequiv_bar_uniquely_valued2 {p} :
+  forall (ts : cts(p)), uniquely_valued2 (per_cequiv_bar ts).
+Proof.
+  unfold uniquely_valued2, per_cequiv_bar, eq_term_equals; sp.
+  pose proof (two_computes_to_valc_ceq_bar_mkc_cequiv bar0 bar T a0 b0 a b) as q; repeat (autodimp q hyp).
+  allrw; sp.
+  eapply eq_per_cequiv_eq_bar; eauto.
+Qed.
+Hint Resolve per_cequiv_bar_uniquely_valued2 : slow.
+
+Lemma per_cequiv_uniquely_valued2 {p} :
+  forall (ts : cts(p)), uniquely_valued2 (per_cequiv ts).
+Proof.
+  unfold uniquely_valued2, per_cequiv, eq_term_equals; sp.
+  spcast; repeat computes_to_eqval.
+  allrw; sp.
+Qed.
+Hint Resolve per_cequiv_uniquely_valued2 : slow.
+
+Lemma per_bar_per_cequiv_uniquely_valued2 {p} :
+  forall (ts : cts(p)), uniquely_valued2 (per_bar (per_cequiv ts)).
+Proof.
+  introv; eauto 3 with slow.
+Qed.
+Hint Resolve per_bar_per_cequiv_uniquely_valued2 : slow.

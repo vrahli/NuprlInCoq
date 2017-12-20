@@ -35,6 +35,7 @@ Require Export dest_close.
 
 
 Require Import close_type_sys_per_init.
+Require Import close_type_sys_per_bar.
 Require Import close_type_sys_per_int.
 Require Import close_type_sys_per_nat.
 Require Import close_type_sys_per_atom.
@@ -42,8 +43,8 @@ Require Import close_type_sys_per_uatom.
 Require Import close_type_sys_per_csname.
 Require Import close_type_sys_per_base.
 Require Import close_type_sys_per_sqle.
-(*Require Import close_type_sys_per_sqequal.
-Require Import close_type_sys_per_eq.
+Require Import close_type_sys_per_sqequal.
+(*Require Import close_type_sys_per_eq.
 (*Require Import close_type_sys_per_req.
  Require Import close_type_sys_per_teq.
  Require Import close_type_sys_per_isect.
@@ -219,19 +220,23 @@ Hint Resolve ih_implies_all_in_bar_type_sys_props4 : slow.
 
 Lemma ih_implies_all_in_bar_ext_type_sys_props4 {o} :
   forall {lib} (bar : @BarLib o lib) ts A B eqa,
-    type_system ts
+    local_ts ts
+    -> ts_implies_per_bar ts
+    -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> all_in_bar_ext
          bar
          (fun lib' x =>
-            type_system ts
+            local_ts ts
+            -> ts_implies_per_bar ts
+            -> type_system ts
             -> defines_only_universes ts
             -> type_monotone ts
             -> type_sys_props4 (close ts) lib' A B (eqa lib' x))
     -> all_in_bar_ext bar (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x)).
 Proof.
-  introv tsts dou mon alla br ext; introv.
+  introv locts ibar tsts dou mon alla br ext; introv.
   apply (alla lib' br lib'0 ext x); auto.
 Qed.
 Hint Resolve ih_implies_all_in_bar_ext_type_sys_props4 : slow.
@@ -322,12 +327,13 @@ Hint Resolve ih_implies_in_ext_ext_type_sys_props4_dep : slow.
 Lemma close_type_system {o} :
   forall (ts : cts(o)),
     local_ts ts
+    -> ts_implies_per_bar ts
     -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> type_system (close ts).
 Proof.
-  introv locts tsts dou mon.
+  introv locts ibar tsts dou mon.
   apply type_system_prop4.
   introv cl.
 
@@ -337,6 +343,7 @@ Proof.
     apply close_type_system_init; auto.
 
   - Case "CL_bar".
+    eapply close_type_system_bar; eauto 3 with slow.
 
   - Case "CL_int".
     apply close_type_system_int; auto.
