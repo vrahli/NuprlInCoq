@@ -120,6 +120,131 @@ Proof.
 Qed.
 Hint Resolve uniquely_valued_per_bar_per_eq : slow.
 
+Lemma per_bar_per_eq_implies_close {o} :
+  forall (ts : cts(o)) lib T T' eq,
+    per_bar (per_eq (close ts)) lib T T' eq
+    -> close ts lib T T' eq.
+Proof.
+  introv per.
+  apply CL_bar.
+  unfold per_bar in per; exrepnd.
+  exists bar eqa; dands; auto.
+  introv br ext; introv.
+  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  apply CL_eq; auto.
+Qed.
+
+Lemma ccequivc_ext_equality {o} :
+  forall lib (T T' : @CTerm o) a b A,
+    ccequivc_ext lib T T'
+    -> computes_to_valc lib T (mkc_equality a b A)
+    -> {a' : CTerm , {b' : CTerm , {A' : CTerm ,
+        ccomputes_to_valc lib T' (mkc_equality a' b' A')
+        # ccequivc_ext lib a a'
+        # ccequivc_ext lib b b'
+        # ccequivc_ext lib A A' }}}.
+Proof.
+  introv ceq comp.
+  pose proof (ceq lib) as ceq'; simpl in ceq'; autodimp ceq' hyp; eauto 3 with slow; spcast.
+  eapply cequivc_mkc_equality in ceq';[|eauto]; exrepnd.
+  exists a' b' T'0; dands; spcast; auto.
+
+  {
+    introv ext.
+    pose proof (ceq lib' ext) as c; simpl in c; spcast.
+
+    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T (mkc_equality a b A) comp) as w.
+    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T' (mkc_equality a' b' T'0) ceq'1) as z.
+    eapply cequivc_mkc_equality in c;[|eauto]; exrepnd.
+    computes_to_eqval; auto.
+  }
+
+  {
+    introv ext.
+    pose proof (ceq lib' ext) as c; simpl in c; spcast.
+
+    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T (mkc_equality a b A) comp) as w.
+    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T' (mkc_equality a' b' T'0) ceq'1) as z.
+    eapply cequivc_mkc_equality in c;[|eauto]; exrepnd.
+    computes_to_eqval; auto.
+  }
+
+  {
+    introv ext.
+    pose proof (ceq lib' ext) as c; simpl in c; spcast.
+
+    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T (mkc_equality a b A) comp) as w.
+    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T' (mkc_equality a' b' T'0) ceq'1) as z.
+    eapply cequivc_mkc_equality in c;[|eauto]; exrepnd.
+    computes_to_eqval; auto.
+  }
+Qed.
+
+Lemma ccequivc_ext_implies_eqorceq_ext {o} :
+  forall lib (a b : @CTerm o) eqa,
+    ccequivc_ext lib a b
+    -> eqorceq_ext lib eqa a b.
+Proof.
+  introv ceq; introv.
+  right; eauto 3 with slow.
+Qed.
+Hint Resolve ccequivc_ext_implies_eqorceq_ext : slow.
+
+Lemma in_ext_ext_type_sys_props4_ccequivc_ext_implies {o} :
+  forall lib (ts : cts(o)) T A B A' eqa,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> (T = A {+} T = B)
+    -> ccequivc_ext lib T A'
+    -> in_ext_ext lib (fun lib' x => ts lib' T A' (eqa lib' x)).
+Proof.
+  introv tsp h ceq; introv.
+  pose proof (tsp _ e) as tsp.
+  simpl in *; spcast.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  apply tyvr; eauto 3 with slow.
+Qed.
+
+Lemma in_ext_ext_eq_term_equals_refl {o} :
+  forall lib (eqa : lib-per(lib,o)),
+    in_ext_ext lib (fun lib' x => (eqa lib' x) <=2=> (eqa lib' x)).
+Proof.
+  repeat introv; tcsp.
+Qed.
+Hint Resolve in_ext_ext_eq_term_equals_refl : slow.
+
+
+Lemma ccequivc_ext_implies_per_eq1 {o} :
+  forall (ts : cts(o)) lib T0 T T' T3 eq a1 a2 A b1 b2 B (eqa : lib-per(lib,o)),
+    computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> computes_to_valc lib T' (mkc_equality b1 b2 B)
+    -> in_ext_ext lib (fun lib' x => ts lib' A B (eqa lib' x))
+    -> eqorceq_ext lib eqa a1 b1
+    -> eqorceq_ext lib eqa a2 b2
+    -> (eq <=2=> (eq_per_eq_bar lib a1 a2 eqa))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> (T0 = T {+} T0 = T')
+    -> ccequivc_ext lib T0 T3
+    -> per_eq ts lib T0 T3 eq.
+Proof.
+  introv comp1 comp2 iext eor1 eor2 eqiff tsp h ceq; unfold per_eq in *; exrepnd; spcast.
+
+  repndors; subst.
+
+  - eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
+    exists A A' a1 a2 a' b' eqa; dands; spcast; auto; eauto 3 with slow.
+    eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; eauto.
+
+  - eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
+    exists B A' b1 b2 a' b' eqa; dands; spcast; auto; eauto 3 with slow.
+
+    { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; eauto. }
+
+    eapply eq_term_equals_trans;[eauto|].
+    apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib));
+      try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
+      try apply in_ext_implies_all_in_bar_trivial_bar; eauto 3 with slow.
+Qed.
+
 
 Lemma close_type_system_eq {o} :
   forall lib (ts : cts(o))
@@ -143,73 +268,50 @@ Proof.
 
   + SCase "uniquely_valued".
     introv cl.
-    dclose_lr.
+    dclose_lr; clear cl.
     apply per_eq_implies_per_bar in per.
     eapply uniquely_valued_per_bar_per_eq; eauto.
 
   + SCase "type_symmetric".
     introv cl eqs.
-
-XXXXXX
-    clear per.
-    repdors; subst; dclose_lr.
-    allunfold @per_eq_bar; exrepd.
-    apply CL_eq; unfold per_eq_bar.
-
-    pose proof (two_computes_to_valc_ceq_bar_mkc_equality1 bar bar0 T a1 a2 a0 a3 A A0) as h1.
-    repeat (autodimp h1 hyp);[].
-    pose proof (two_computes_to_valc_ceq_bar_mkc_equality2 bar bar0 T a1 a2 a0 a3 A A0) as h2.
-    repeat (autodimp h2 hyp);[].
-    pose proof (two_computes_to_valc_ceq_bar_mkc_equality3 bar bar0 T a1 a2 a0 a3 A A0) as h3.
-    repeat (autodimp h3 hyp);[].
-
-    pose proof (all_in_bar_ext_type_sys_props4_implies_type_equality_respecting_trans (close ts) lib (intersect_bars bar bar0) A B A0 B0 eqa eqa0) as q.
-    repeat (autodimp q hyp); eauto 3 with slow;[].
-
-    (* 1 *)
-    exists A B0 a1 a2 b0 b3 eqa; sp; spcast; sp.
-
-    {
-      exists (intersect_bars bar bar0).
-      dands; auto; eauto 3 with slow.
-
-      - eapply all_in_bar_ext_type_sys_props4_implies_type_equality_respecting_trans2; eauto 3 with slow.
-
-      - eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto; eauto 3 with slow.
-
-      - eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto; eauto 3 with slow.
-    }
-
-    {
-      eapply eq_term_equals_trans;[apply eq_term_equals_sym;eauto|].
-      eapply eq_term_equals_trans;[eauto|].
-      apply eq_term_equals_sym.
-      eapply implies_iff_per_eq_eq; eauto 3 with slow.
-    }
+    dclose_lr; clear cl.
+    apply per_bar_per_eq_implies_close.
+    eapply type_extensionality_per_bar; eauto.
 
   + SCase "type_value_respecting".
-    clear per.
-    repdors; subst; apply CL_eq; allunfold @per_eq_bar; sp.
-
-    {
-      rename_hyp_with @ccequivc_ext ceq.
-      eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto].
-      exists A A a1 a2 a1 a2 eqa; dands; auto.
-      exists bar; dands; auto; eauto 3 with slow.
-    }
-
-    {
-      rename_hyp_with @ccequivc_ext ceq.
-      eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in ceq;[|eauto].
-      exists B B b1 b2 b1 b2 eqa; dands; auto.
-
-      - exists bar; dands; auto; eauto 3 with slow.
-
-      - eapply eq_term_equals_trans;[eauto|].
-        eapply eqorceq_implies_iff_per_eq_eq; eauto 2 with slow.
-    }
+    introv h ceq.
+    apply CL_eq.
+    eapply ccequivc_ext_implies_per_eq1; try exact h; eauto.
 
   + SCase "type_value_respecting_trans".
+    introv h ceq cl.
+
+    repndors; subst.
+
+    - eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
+      dclose_lr.
+
+Lemma dest_close_per_equality_ceq_l {o} :
+  forall (ts : cts(o)) lib T a b A B A' T' eq (eqa : lib-per(lib,o)),
+    type_system ts
+    -> defines_only_universes ts
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x))
+    -> computes_to_valc lib T (mkc_equality a b A')
+    -> ccequivc_ext lib A A'
+    -> close ts lib T T' eq
+    -> per_bar (per_eq (close ts)) lib T T' eq.
+Proof.
+  introv tysys dou tsp comp ceq cl; try unfold per_eq_bar_or.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
+
+  eapply local_per_bar_per_eq_bar; spcast; eauto.
+  introv br ext; introv.
+  pose proof (reca _ br _ ext x (raise_lib_per eqa x)) as reca; simpl in *.
+  eapply reca; eauto 3 with slow.
+  apply (implies_in_ext_ext_raise_ext_per (fun lib e => type_sys_props4 (close ts) lib A B e)); auto.
+Qed.
+
+XXXXXXXX
     clear per.
     eapply type_equality_respecting_trans_per_eq_bar_implies; eauto.
     introv e ceq cl.
