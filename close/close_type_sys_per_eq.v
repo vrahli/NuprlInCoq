@@ -245,6 +245,404 @@ Proof.
       try apply in_ext_implies_all_in_bar_trivial_bar; eauto 3 with slow.
 Qed.
 
+Lemma ccequivc_ext_preserves_in_ext_ext_type_sys_props4 {o} :
+  forall ts lib (A A' B : @CTerm o) eqa,
+    ccequivc_ext lib A A'
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A' B (eqa lib' x)).
+Proof.
+  introv ceq tsp; introv.
+  pose proof (tsp _ e) as tsp; simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  unfold type_sys_props4; dands; auto.
+
+  - introv tsts.
+    apply (uv T3).
+    apply (tyvrt A A' T3 eq'); eauto 3 with slow.
+
+  - introv tsts eqs.
+    pose proof (tyvrt A A' T3 (eqa lib' e)) as q.
+    repeat (autodimp q hyp); eauto 3 with slow.
+    eapply tys in q;eauto.
+    pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
+    pose proof (dum A A' T3 (eqa lib' e) eq') as w.
+    repeat (autodimp w hyp); tcsp.
+    apply tygs; auto.
+
+  - introv w c.
+    repndors; subst; tcsp.
+
+    pose proof (tyvr A T3) as q; repeat (autodimp q hyp); eauto 3 with slow.
+    pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
+    pose proof (dum A A' T3 (eqa lib' e) (eqa lib' e)) as w.
+    repeat (autodimp w hyp); tcsp.
+    apply tygs; auto.
+
+  - introv h c tsts.
+    repndors; subst; tcsp; try (complete (eapply tyvrt; eauto)).
+
+    + pose proof (tyvrt A T3 T4 eq') as q; repeat (autodimp q hyp); eauto 3 with slow.
+      pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
+      pose proof (dum A A' T4 (eqa lib' e) eq') as w.
+      repeat (autodimp w hyp); tcsp.
+      apply tygs; auto.
+
+    + pose proof (tyvrt A T3 T4 eq') as q; repeat (autodimp q hyp); eauto 3 with slow.
+      pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
+      pose proof (dum A A' T4 (eqa lib' e) eq') as w.
+      repeat (autodimp w hyp); tcsp.
+      apply tygs; auto.
+
+  - introv; split; intro q.
+
+    + pose proof (tyvrt A A' T3 eq') as h; repeat (autodimp h hyp); eauto 3 with slow.
+      apply tygs in h.
+      pose proof (tyvr A A') as z; repeat (autodimp z hyp); eauto 3 with slow.
+      pose proof (dum A T3 A' eq' (eqa lib' e)) as w.
+      repeat (autodimp w hyp); tcsp.
+
+    + pose proof (tyvrt A A' T3 eq') as h; repeat (autodimp h hyp); eauto 3 with slow.
+      pose proof (tyvr A A') as z; repeat (autodimp z hyp); eauto 3 with slow.
+      apply tygs in z.
+      pose proof (dum A A' T3 (eqa lib' e) eq') as w.
+      repeat (autodimp w hyp); tcsp.
+
+  - pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
+    pose proof (dum A A' B (eqa lib' e) (eqa lib' e)) as w.
+    repeat (autodimp w hyp); tcsp.
+    apply tygs; auto.
+
+  - introv h ts1 ts2.
+    repndors; subst; tcsp; try (complete (eapply dum; eauto)).
+
+    pose proof (tyvrt A A' T4 eq2) as h; repeat (autodimp h hyp); eauto 3 with slow.
+    pose proof (tyvrt A A' T3 eq1) as q; repeat (autodimp q hyp); eauto 3 with slow.
+    apply tygs in q.
+
+    pose proof (dum A T3 T4 eq1 eq2) as w.
+    repeat (autodimp w hyp); tcsp; try (complete (apply tygs; auto)).
+Qed.
+
+Lemma cequivc_ext_eqorceq_ext_trans1 {o} :
+  forall lib (a b c : @CTerm o) (eqa : lib-per(lib,o)),
+    in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> ccequivc_ext lib a b
+    -> eqorceq_ext lib eqa b c
+    -> eqorceq_ext lib eqa a c.
+Proof.
+  introv resp trans sym ceq eoc; introv.
+  pose proof (eoc _ e) as eoc.
+  pose proof (resp _ e) as resp.
+  pose proof (sym _ e) as sym.
+  pose proof (trans _ e) as trans.
+  simpl in *; spcast.
+  unfold eqorceq in *; repndors.
+
+  - left.
+    eapply trans;[|eauto].
+    apply sym.
+    apply resp;[|apply ccequivc_ext_sym; eauto 3 with slow].
+    eapply trans;[eauto|]; tcsp.
+
+  - right.
+    eapply ccequivc_ext_trans;[|eauto]; eauto 3 with slow.
+Qed.
+
+Lemma eq_term_equals_preserves_term_equality_respecting {o} :
+  forall lib (eqa1 eqa2 : per(o)),
+    (eqa1 <=2=> eqa2)
+    -> term_equality_respecting lib eqa1
+    -> term_equality_respecting lib eqa2.
+Proof.
+  introv eqs resp e ceq.
+  apply eqs.
+  apply resp; auto.
+  apply eqs; auto.
+Qed.
+Hint Resolve eq_term_equals_preserves_term_equality_respecting : slow.
+
+Lemma eq_term_equals_preserves_term_equality_symmetric {o} :
+  forall (eqa1 eqa2 : per(o)),
+    (eqa1 <=2=> eqa2)
+    -> term_equality_symmetric eqa1
+    -> term_equality_symmetric eqa2.
+Proof.
+  introv eqs sym e.
+  apply eqs; apply eqs in e; tcsp.
+Qed.
+Hint Resolve eq_term_equals_preserves_term_equality_symmetric : slow.
+
+Lemma eq_term_equals_preserves_term_equality_transitive {o} :
+  forall (eqa1 eqa2 : per(o)),
+    (eqa1 <=2=> eqa2)
+    -> term_equality_transitive eqa1
+    -> term_equality_transitive eqa2.
+Proof.
+  introv eqs tr e1 e2.
+  apply eqs; apply eqs in e1; apply eqs in e2; tcsp.
+  eapply tr; eauto.
+Qed.
+Hint Resolve eq_term_equals_preserves_term_equality_transitive : slow.
+
+Lemma in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals1 {o} :
+  forall ts lib' lib (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)) A B A' B',
+    lib_extends lib' lib
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> in_ext_ext lib' (fun lib' x => ts lib' A' B' (eqa1 lib' x))
+    -> ccequivc_ext lib A A'
+    -> in_ext_ext lib' (fun lib'' x => term_equality_respecting lib'' (eqa1 lib'' x)).
+Proof.
+  introv ext tsp tsts ceq; introv.
+  pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
+  pose proof (tsts _ e) as tsts; simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  pose proof (tyvrt A A' B' (eqa1 lib'0 e)) as q.
+  repeat (autodimp q hyp); eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals1 : slow.
+
+Lemma in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals1 {o} :
+  forall ts lib' lib (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)) A B A' B',
+    lib_extends lib' lib
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> in_ext_ext lib' (fun lib' x => ts lib' A' B' (eqa1 lib' x))
+    -> ccequivc_ext lib A A'
+    -> in_ext_ext lib' (fun lib'' x => term_equality_transitive (eqa1 lib'' x)).
+Proof.
+  introv ext tsp tsts ceq; introv.
+  pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
+  pose proof (tsts _ e) as tsts; simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  pose proof (tyvrt A A' B' (eqa1 lib'0 e)) as q.
+  repeat (autodimp q hyp); eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals1 : slow.
+
+Lemma in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals1 {o} :
+  forall ts lib' lib (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)) A B A' B',
+    lib_extends lib' lib
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> in_ext_ext lib' (fun lib' x => ts lib' A' B' (eqa1 lib' x))
+    -> ccequivc_ext lib A A'
+    -> in_ext_ext lib' (fun lib'' x => term_equality_symmetric (eqa1 lib'' x)).
+Proof.
+  introv ext tsp tsts ceq; introv.
+  pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
+  pose proof (tsts _ e) as tsts; simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  pose proof (tyvrt A A' B' (eqa1 lib'0 e)) as q.
+  repeat (autodimp q hyp); eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals1 : slow.
+
+Lemma in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals2 {o} :
+  forall ts lib' lib (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)) A B A' B',
+    lib_extends lib' lib
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> in_ext_ext lib' (fun lib' x => ts lib' B' A' (eqa1 lib' x))
+    -> ccequivc_ext lib A A'
+    -> in_ext_ext lib' (fun lib'' x => term_equality_respecting lib'' (eqa1 lib'' x)).
+Proof.
+  introv ext tsp tsts ceq; introv.
+  pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
+  pose proof (tsts _ e) as tsts; simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  pose proof (tyvrt A A' B' (eqa1 lib'0 e)) as q.
+  repeat (autodimp q hyp); eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals2 : slow.
+
+Lemma in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals2 {o} :
+  forall ts lib' lib (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)) A B A' B',
+    lib_extends lib' lib
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> in_ext_ext lib' (fun lib' x => ts lib' B' A' (eqa1 lib' x))
+    -> ccequivc_ext lib A A'
+    -> in_ext_ext lib' (fun lib'' x => term_equality_transitive (eqa1 lib'' x)).
+Proof.
+  introv ext tsp tsts ceq; introv.
+  pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
+  pose proof (tsts _ e) as tsts; simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  pose proof (tyvrt A A' B' (eqa1 lib'0 e)) as q.
+  repeat (autodimp q hyp); eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals2 : slow.
+
+Lemma in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals2 {o} :
+  forall ts lib' lib (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)) A B A' B',
+    lib_extends lib' lib
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> in_ext_ext lib' (fun lib' x => ts lib' B' A' (eqa1 lib' x))
+    -> ccequivc_ext lib A A'
+    -> in_ext_ext lib' (fun lib'' x => term_equality_symmetric (eqa1 lib'' x)).
+Proof.
+  introv ext tsp tsts ceq; introv.
+  pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
+  pose proof (tsts _ e) as tsts; simpl in *.
+  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  pose proof (tyvrt A A' B' (eqa1 lib'0 e)) as q.
+  repeat (autodimp q hyp); eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals2 : slow.
+
+Lemma type_value_respecting_trans_per_bar_per_eq1 {o} :
+  forall lib (ts : cts(o)) T T1 T2 A A' B a1 a' a2 b' (eqa : lib-per(lib,o)) eq,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> computes_to_valc lib T1 (mkc_equality a' b' A')
+    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> ccequivc_ext lib a1 a'
+    -> ccequivc_ext lib a2 b'
+    -> ccequivc_ext lib A A'
+    -> per_bar (per_eq ts) lib T1 T2 eq
+    -> per_bar (per_eq ts) lib T T2 eq.
+Proof.
+  introv tsp comp1 comp2 ceq1 ceq2 ceq3 per.
+  unfold per_bar in *; exrepnd.
+  exists bar eqa0; dands; auto.
+  introv br ext; introv.
+  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+
+  unfold per_eq in *; exrepnd.
+  spcast.
+  eapply lib_extends_preserves_computes_to_valc in comp1;[|exact x].
+  eapply lib_extends_preserves_computes_to_valc in comp2;[|exact x].
+  computes_to_eqval.
+  exists A B0 a1 a2 b1 b2 eqa1; dands; spcast; eauto 3 with slow.
+
+  - introv.
+    pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
+    pose proof (per4 lib'1 e) as per4; simpl in *.
+    onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+    eapply tyvrt; eauto; eauto 3 with slow.
+
+  - eapply cequivc_ext_eqorceq_ext_trans1; eauto; eauto 3 with slow.
+
+  - eapply cequivc_ext_eqorceq_ext_trans1; eauto; eauto 3 with slow.
+
+  - eapply eq_term_equals_trans;[eauto|].
+    apply eq_term_equals_sym.
+    apply (implies_iff_per_eq_eq _ (trivial_bar lib'0));
+      try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
+      try apply in_ext_implies_all_in_bar_trivial_bar; eauto 3 with slow.
+Qed.
+
+Lemma cequivc_ext_eqorceq_ext_trans2 {o} :
+  forall lib (a b c : @CTerm o) (eqa : lib-per(lib,o)),
+    in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> ccequivc_ext lib a b
+    -> eqorceq_ext lib eqa c b
+    -> eqorceq_ext lib eqa a c.
+Proof.
+  introv resp trans sym ceq eoc; introv.
+  pose proof (eoc _ e) as eoc.
+  pose proof (resp _ e) as resp.
+  pose proof (sym _ e) as sym.
+  pose proof (trans _ e) as trans.
+  simpl in *; spcast.
+  unfold eqorceq in *; repndors.
+
+  - left.
+    eapply trans;[|eauto].
+    apply sym.
+    apply resp;[|apply ccequivc_ext_sym; eauto 3 with slow].
+    eapply trans;[eauto|]; tcsp.
+
+  - right.
+    apply ccequivc_ext_sym in eoc.
+    eapply ccequivc_ext_trans;[|eauto]; eauto 3 with slow.
+Qed.
+
+Lemma type_value_respecting_trans_per_bar_per_eq2 {o} :
+  forall lib (ts : cts(o)) T T1 T2 A A' B a1 a' a2 b' (eqa : lib-per(lib,o)) eq,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> computes_to_valc lib T1 (mkc_equality a' b' A')
+    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> ccequivc_ext lib a1 a'
+    -> ccequivc_ext lib a2 b'
+    -> ccequivc_ext lib A A'
+    -> per_bar (per_eq ts) lib T2 T1 eq
+    -> per_bar (per_eq ts) lib T T2 eq.
+Proof.
+  introv tsp comp1 comp2 ceq1 ceq2 ceq3 per.
+  unfold per_bar in *; exrepnd.
+  exists bar eqa0; dands; auto.
+  introv br ext; introv.
+  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+
+  unfold per_eq in *; exrepnd.
+  spcast.
+  eapply lib_extends_preserves_computes_to_valc in comp1;[|exact x].
+  eapply lib_extends_preserves_computes_to_valc in comp2;[|exact x].
+  computes_to_eqval.
+  exists A A0 a1 a2 a0 a3 eqa1; dands; spcast; eauto 3 with slow.
+
+  - introv.
+    pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
+    pose proof (per4 lib'1 e) as per4; simpl in *.
+    onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+    eapply tyvrt; eauto; eauto 3 with slow.
+
+  - eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 3 with slow.
+
+  - eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 3 with slow.
+
+  - eapply eq_term_equals_trans;[eauto|].
+    apply eq_term_equals_sym.
+    apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib'0));
+      try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
+      try apply in_ext_implies_all_in_bar_trivial_bar; eauto 3 with slow;
+        eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 3 with slow.
+Qed.
+
+Lemma eq_per_eq_bar_sym {o} :
+  forall lib a1 a2 (eqa : lib-per(lib,o)) t1 t2,
+    eq_per_eq_bar lib a1 a2 eqa t1 t2
+    -> eq_per_eq_bar lib a1 a2 eqa t2 t1.
+Proof.
+  introv e; unfold eq_per_eq_bar in *; exrepnd.
+  exists bar; introv br ext; introv.
+  pose proof (e0 _ br _ ext x) as e0; simpl in *.
+  unfold eq_per_eq in *.
+  repnd; dands; auto.
+Qed.
+
+Lemma eq_per_eq_bar_trans {o} :
+  forall lib a1 a2 (eqa : lib-per(lib,o)) t1 t2 t3,
+    eq_per_eq_bar lib a1 a2 eqa t1 t2
+    -> eq_per_eq_bar lib a1 a2 eqa t2 t3
+    -> eq_per_eq_bar lib a1 a2 eqa t1 t3.
+Proof.
+  introv e1 e2; unfold eq_per_eq_bar in *; exrepnd.
+  exists (intersect_bars bar0 bar); introv br ext; introv.
+  simpl in *; exrepnd.
+  pose proof (e2 _ br0 lib'0 (lib_extends_trans ext br3) x) as e2; simpl in *.
+  pose proof (e0 _ br2 lib'0 (lib_extends_trans ext br1) x) as e0; simpl in *.
+  unfold eq_per_eq in *.
+  repnd; dands; auto.
+Qed.
+
+Lemma eq_per_eq_bar_resp {o} :
+  forall lib a1 a2 (eqa : lib-per(lib,o)) t1 t2,
+    eq_per_eq_bar lib a1 a2 eqa t1 t1
+    -> ccequivc_ext lib t1 t2
+    -> eq_per_eq_bar lib a1 a2 eqa t1 t2.
+Proof.
+  introv e ceq; unfold eq_per_eq_bar in *; exrepnd.
+  exists bar; introv br ext; introv.
+  simpl in *; exrepnd.
+  pose proof (e0 _ br _ ext x) as e0; simpl in *.
+  unfold eq_per_eq in *.
+
+  pose proof (ceq _ x) as ceq; simpl in ceq; spcast.
+  repnd; dands; spcast; auto.
+  eapply cequivc_axiom;[eauto|]; eauto 3 with slow.
+Qed.
+
 
 Lemma close_type_system_eq {o} :
   forall lib (ts : cts(o))
@@ -288,188 +686,76 @@ Proof.
 
     repndors; subst.
 
-    - eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
-      dclose_lr.
+    * dup ceq as c.
+      eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
+      dup inexttsp as inexttsp'.
+      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in inexttsp';[|eauto].
+      dclose_lr; clear cl.
+      apply per_bar_per_eq_implies_close.
+      eapply type_value_respecting_trans_per_bar_per_eq1;
+        try exact h; try exact c1; eauto 3 with slow.
 
-Lemma dest_close_per_equality_ceq_l {o} :
-  forall (ts : cts(o)) lib T a b A B A' T' eq (eqa : lib-per(lib,o)),
-    type_system ts
-    -> defines_only_universes ts
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x))
-    -> computes_to_valc lib T (mkc_equality a b A')
-    -> ccequivc_ext lib A A'
-    -> close ts lib T T' eq
-    -> per_bar (per_eq (close ts)) lib T T' eq.
-Proof.
-  introv tysys dou tsp comp ceq cl; try unfold per_eq_bar_or.
-  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
+    * dup ceq as c.
+      eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
+      dup inexttsp as inexttsp'.
+      apply in_ext_ext_type_sys_props4_sym in inexttsp'.
+      dup inexttsp' as inexttsp''.
+      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in inexttsp';[|eauto].
+      dclose_lr; clear cl.
+      apply per_bar_per_eq_implies_close.
+      eapply type_value_respecting_trans_per_bar_per_eq1;
+        try exact h; try exact c2; eauto 3 with slow.
 
-  eapply local_per_bar_per_eq_bar; spcast; eauto.
-  introv br ext; introv.
-  pose proof (reca _ br _ ext x (raise_lib_per eqa x)) as reca; simpl in *.
-  eapply reca; eauto 3 with slow.
-  apply (implies_in_ext_ext_raise_ext_per (fun lib e => type_sys_props4 (close ts) lib A B e)); auto.
-Qed.
+    * dup ceq as c.
+      eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
+      dup inexttsp as inexttsp'.
+      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in inexttsp';[|eauto].
+      apply in_ext_ext_type_sys_props4_sym in inexttsp'.
+      dclose_lr; clear cl.
+      apply per_bar_per_eq_implies_close.
+      eapply type_value_respecting_trans_per_bar_per_eq2;
+        try exact h; try exact c1; eauto 3 with slow.
 
-XXXXXXXX
-    clear per.
-    eapply type_equality_respecting_trans_per_eq_bar_implies; eauto.
-    introv e ceq cl.
-    repndors; subst; allunfold @per_eq_bar; exrepnd.
-
-    {
-      dup cl1 as cl'.
-      eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in cl';[|apply ccequivc_ext_sym;eauto].
-
-      pose proof (two_computes_to_valc_ceq_bar_mkc_equality1 bar bar0 T a1 a2 a0 a3 A A0) as h1.
-      repeat (autodimp h1 hyp);[].
-      pose proof (two_computes_to_valc_ceq_bar_mkc_equality2 bar bar0 T a1 a2 a0 a3 A A0) as h2.
-      repeat (autodimp h2 hyp);[].
-      pose proof (two_computes_to_valc_ceq_bar_mkc_equality3 bar bar0 T a1 a2 a0 a3 A A0) as h3.
-      repeat (autodimp h3 hyp);[].
-      apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in h3.
-      pose proof (all_in_bar_ext_type_sys_props4_implies_type_equality_respecting_trans (close ts) lib (intersect_bars bar bar0) A B A0 B0 eqa eqa0) as h4.
-      repeat (autodimp h4 hyp); eauto 3 with slow;[].
-
-      exists A B0 a1 a2 b0 b3 eqa; dands; auto.
-
-      - exists (intersect_bars bar bar0); dands; eauto 3 with slow.
-        { eapply all_in_bar_ext_type_sys_props4_implies_type_equality_respecting_trans2; eauto 3 with slow. }
-        { eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto 3 with slow. }
-        { eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto 3 with slow. }
-
-      - eapply eq_term_equals_trans;[eauto|].
-        apply eq_term_equals_sym;eauto 3 with slow.
-        eapply implies_iff_per_eq_eq; eauto; eauto 3 with slow.
-    }
-
-    {
-      dup cl1 as cl'.
-      eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in cl';[|apply ccequivc_ext_sym;eauto].
-
-      pose proof (two_computes_to_valc_ceq_bar_mkc_equality1 bar bar0 T' b1 b2 a0 a3 B A0) as h1.
-      repeat (autodimp h1 hyp);[].
-      pose proof (two_computes_to_valc_ceq_bar_mkc_equality2 bar bar0 T' b1 b2 a0 a3 B A0) as h2.
-      repeat (autodimp h2 hyp);[].
-      pose proof (two_computes_to_valc_ceq_bar_mkc_equality3 bar bar0 T' b1 b2 a0 a3 B A0) as h3.
-      repeat (autodimp h3 hyp);[].
-      apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in h3.
-      pose proof (all_in_bar_ext_type_sys_props4_sym_implies_type_equality_respecting_trans (close ts) lib (intersect_bars bar bar0) B A A0 B0 eqa eqa0) as h4.
-      repeat (autodimp h4 hyp); eauto 3 with slow;[].
-
-      exists B B0 b1 b2 b0 b3 eqa; dands; auto.
-
-      - exists (intersect_bars bar bar0); dands; eauto 3 with slow.
-        { eapply all_in_bar_ext_type_sys_props4_sym_implies_type_equality_respecting_trans2; eauto 3 with slow. }
-        { eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto 3 with slow. }
-        { eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto 3 with slow. }
-
-      - eapply eq_term_equals_trans;[eauto|].
-        apply eq_term_equals_sym;eauto 3 with slow.
-        eapply implies_iff_per_eq_eq; eauto; eauto 3 with slow.
-    }
-
-    {
-      dup cl3 as cl'.
-      eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in cl';[|apply ccequivc_ext_sym;eauto].
-
-      pose proof (two_computes_to_valc_ceq_bar_mkc_equality1 bar bar0 T a1 a2 b0 b3 A B0) as h1.
-      repeat (autodimp h1 hyp);[].
-      pose proof (two_computes_to_valc_ceq_bar_mkc_equality2 bar bar0 T a1 a2 b0 b3 A B0) as h2.
-      repeat (autodimp h2 hyp);[].
-      pose proof (two_computes_to_valc_ceq_bar_mkc_equality3 bar bar0 T a1 a2 b0 b3 A B0) as h3.
-      repeat (autodimp h3 hyp);[].
-      apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in h3.
-      pose proof (all_in_bar_ext_type_sys_props4_implies_type_equality_respecting_trans3 (close ts) lib (intersect_bars bar bar0) A B B0 A0 eqa eqa0) as h4.
-      repeat (autodimp h4 hyp); eauto 3 with slow;[].
-      exists A A0 a1 a2 a0 a3 eqa; dands; auto.
-
-      - exists (intersect_bars bar bar0); dands; eauto 3 with slow.
-        { eapply all_in_bar_ext_type_sys_props4_implies_type_equality_respecting_trans4; eauto 3 with slow. }
-        { eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto 3 with slow.
-          eapply implies_all_in_bar_ext_eqorceq_sym; eauto 3 with slow. }
-        { eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto 3 with slow.
-          eapply implies_all_in_bar_ext_eqorceq_sym; eauto 3 with slow. }
-
-      - eapply eq_term_equals_trans;[eauto|].
-        apply eq_term_equals_sym;eauto 3 with slow.
-        eapply (eqorceq_implies_iff_per_eq_eq _  (intersect_bars bar bar0)); eauto 3 with slow.
-
-        { eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto 3 with slow.
-          eapply implies_all_in_bar_ext_eqorceq_sym; eauto 3 with slow. }
-
-        { eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto 3 with slow.
-          eapply implies_all_in_bar_ext_eqorceq_sym; eauto 3 with slow. }
-    }
-
-    {
-      dup cl3 as cl'.
-      eapply cequivc_ext_preserves_computes_to_valc_ceq_bar in cl';[|apply ccequivc_ext_sym;eauto].
-
-      pose proof (two_computes_to_valc_ceq_bar_mkc_equality1 bar bar0 T' b1 b2 b0 b3 B B0) as h1.
-      repeat (autodimp h1 hyp);[].
-      pose proof (two_computes_to_valc_ceq_bar_mkc_equality2 bar bar0 T' b1 b2 b0 b3 B B0) as h2.
-      repeat (autodimp h2 hyp);[].
-      pose proof (two_computes_to_valc_ceq_bar_mkc_equality3 bar bar0 T' b1 b2 b0 b3 B B0) as h3.
-      repeat (autodimp h3 hyp);[].
-      apply all_in_bar_ccequivc_implies_all_in_bar_ccequivc_ext in h3.
-      pose proof (all_in_bar_ext_type_sys_props4_sym_implies_type_equality_respecting_trans3 (close ts) lib (intersect_bars bar bar0) B A B0 A0 eqa eqa0) as h4.
-      repeat (autodimp h4 hyp);eauto 3 with slow;[].
-      exists B A0 b1 b2 a0 a3 eqa; dands; auto.
-
-      - exists (intersect_bars bar bar0); dands; eauto 3 with slow.
-        { eapply all_in_bar_ext_type_sys_props4_sym_implies_type_equality_respecting_trans4; eauto 3 with slow. }
-        { eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto 3 with slow.
-          eapply implies_all_in_bar_ext_eqorceq_sym; eauto 3 with slow. }
-        { eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto 3 with slow.
-          eapply implies_all_in_bar_ext_eqorceq_sym; eauto 3 with slow. }
-
-      - eapply eq_term_equals_trans;[eauto|].
-        apply eq_term_equals_sym;eauto 3 with slow.
-        eapply (eqorceq_implies_iff_per_eq_eq _  (intersect_bars bar bar0)); eauto 3 with slow.
-
-        { eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto 3 with slow.
-          eapply implies_all_in_bar_ext_eqorceq_sym; eauto 3 with slow. }
-
-        { eapply implies_all_in_bar_ext_eqorceq_trans_ccequivc; eauto 3 with slow.
-          eapply implies_all_in_bar_ext_eqorceq_sym; eauto 3 with slow. }
-    }
+    * dup ceq as c.
+      eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
+      dup inexttsp as inexttsp'.
+      apply in_ext_ext_type_sys_props4_sym in inexttsp'.
+      dup inexttsp' as inexttsp''.
+      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in inexttsp';[|eauto].
+      apply in_ext_ext_type_sys_props4_sym in inexttsp'.
+      dclose_lr; clear cl.
+      apply per_bar_per_eq_implies_close.
+      eapply type_value_respecting_trans_per_bar_per_eq2;
+        try exact h; try exact c2; eauto 3 with slow.
 
   + SCase "term_symmetric".
     clear per.
     introv ee.
     apply eqiff in ee; apply eqiff.
-    unfold per_eq_eq, per_eq_eq1 in *; exrepnd.
-    exists bar0.
-    introv br ext; introv.
-    pose proof (ee0 lib' br lib'0 ext x) as ee0; simpl in ee0.
-    repnd; dands; auto.
+    apply eq_per_eq_bar_sym; auto.
 
   + SCase "term_transitive".
     clear per.
     introv ee1 ee2.
     apply eqiff in ee1; apply eqiff in ee2; apply eqiff.
-    unfold per_eq_eq, per_eq_eq1 in *; exrepnd.
-    exists (intersect_bars bar1 bar0).
-    introv br ext; introv; simpl in *; exrepnd.
-    pose proof (ee2 lib1 br0 lib'0 (lib_extends_trans ext br3) x) as ee2; simpl in ee2.
-    pose proof (ee0 lib2 br2 lib'0 (lib_extends_trans ext br1) x) as ee0; simpl in ee0.
-    repnd; dands; auto.
+    eapply eq_per_eq_bar_trans; eauto.
 
   + SCase "term_value_respecting".
     clear per.
     introv ee ceq.
     apply eqiff in ee; apply eqiff; clear eqiff.
-    unfold per_eq_eq, per_eq_eq1 in *; exrepnd.
-    exists bar0.
-    introv br ext; introv.
-    pose proof (ee0 lib' br lib'0 ext x) as ee0; simpl in ee0.
-    repnd; dands; auto.
-    pose proof (ceq lib'0) as ceq; simpl in ceq; autodimp ceq hyp; eauto 3 with slow.
-    spcast; eapply cequivc_axiom; eauto.
+    apply eq_per_eq_bar_resp; auto.
 
   + SCase "type_gsymmetric".
     clear per.
+    dup inexttsp as inexttsp'.
+    apply in_ext_ext_type_sys_props4_sym in inexttsp'.
+
+    split; introv cl; dclose_lr; apply per_bar_per_eq_implies_close.
+
+    *
+
+XXXX
     split; introv cl; dclose_lr; apply CL_eq;
       unfold per_eq_bar in *; exrepnd.
 
