@@ -44,12 +44,12 @@ Require Import close_type_sys_per_csname.
 Require Import close_type_sys_per_base.
 Require Import close_type_sys_per_sqle.
 Require Import close_type_sys_per_sqequal.
-(*Require Import close_type_sys_per_eq.
+Require Import close_type_sys_per_eq.
 (*Require Import close_type_sys_per_req.
  Require Import close_type_sys_per_teq.
  Require Import close_type_sys_per_isect.
 (*Require Import close_type_sys_per_eisect.*)*)
-Require Import close_type_sys_per_func.
+(*Require Import close_type_sys_per_func.
 (*Require Import close_type_sys_per_disect.
  Require Import close_type_sys_per_pertype.
  Require Import close_type_sys_per_ipertype.
@@ -261,19 +261,23 @@ Hint Resolve ih_implies_in_ext_type_sys_props4 : slow.
 
 Lemma ih_implies_in_ext_ext_type_sys_props4 {o} :
   forall lib ts (A B : @CTerm o) eqa,
-    type_system ts
+    local_ts ts
+    -> ts_implies_per_bar ts
+    -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> in_ext_ext
          lib
          (fun lib' x =>
-            type_system ts
+            local_ts ts
+            -> ts_implies_per_bar ts
+            -> type_system ts
             -> defines_only_universes ts
             -> type_monotone ts
             -> type_sys_props4 (close ts) lib' A B (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x)).
 Proof.
-  introv tsts dou mon i; introv.
+  introv loc ibar tsts dou mon i; introv.
   apply (i lib' e); auto.
 Qed.
 Hint Resolve ih_implies_in_ext_ext_type_sys_props4 : slow.

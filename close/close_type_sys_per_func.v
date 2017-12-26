@@ -32,12 +32,15 @@ Require Export type_sys_useful.
 Require Import dest_close.
 Require Export per_ceq_bar.
 
+Require Export close_util_func.
 
-Lemma close_type_system_func {p} :
-  forall lib (ts : cts(p))
+
+Lemma close_type_system_func {o} :
+  forall lib (ts : cts(o))
          T T'
          (eq : per)
-         A A' v v' B B' eqa eqb,
+         A A' v v' B B'
+         (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)),
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
@@ -66,6 +69,10 @@ Proof.
   + SCase "uniquely_valued".
     introv cl.
     dclose_lr.
+
+    (* Why is dclose_lr not working? *)
+
+XXX
     clear cl.
 
     allunfold @per_func_ext; exrepnd.
