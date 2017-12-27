@@ -49,7 +49,7 @@ Require Import close_type_sys_per_eq.
  Require Import close_type_sys_per_teq.
  Require Import close_type_sys_per_isect.
 (*Require Import close_type_sys_per_eisect.*)*)
-(*Require Import close_type_sys_per_func.
+Require Import close_type_sys_per_func.
 (*Require Import close_type_sys_per_disect.
  Require Import close_type_sys_per_pertype.
  Require Import close_type_sys_per_ipertype.
@@ -67,7 +67,7 @@ Require Import close_type_sys_per_union.
  Require Import close_type_sys_per_ffatoms.
  Require Import close_type_sys_per_set.
  Require Import close_type_sys_per_tunion.*)
-Require Import close_type_sys_per_product.
+(*Require Import close_type_sys_per_product.
 (*Require Import close_type_sys_per_pw.
  Require Import close_type_sys_per_pm.*)
  *)
@@ -306,14 +306,18 @@ Hint Resolve ih_implies_in_ext_type_sys_props4_dep : slow.
 
 Lemma ih_implies_in_ext_ext_type_sys_props4_dep {o} :
   forall lib (ts : cts(o)) v B v' B' eqa eqb,
-    type_system ts
+    local_ts ts
+    -> ts_implies_per_bar ts
+    -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> in_ext_ext
          lib
          (fun lib' x =>
             forall a a' (e : eqa lib' x a a'),
-              type_system ts
+              local_ts ts
+              -> ts_implies_per_bar ts
+              -> type_system ts
               -> defines_only_universes ts
               -> type_monotone ts
               -> type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
@@ -323,7 +327,7 @@ Lemma ih_implies_in_ext_ext_type_sys_props4_dep {o} :
             forall a a' (e : eqa lib' x a a'),
               type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e)).
 Proof.
-  introv tsts dou mon i; introv.
+  introv loc ibar tsts dou mon i; introv.
   apply (i lib' e); auto.
 Qed.
 Hint Resolve ih_implies_in_ext_ext_type_sys_props4_dep : slow.

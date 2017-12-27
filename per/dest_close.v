@@ -350,19 +350,25 @@ Ltac dest_close_lr h :=
     (* union *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
-        H3 : computes_to_valc ?lib ?T (mkc_union ?A ?B),
-        H4 : close ?ts ?lib ?T ?T' ?eq
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A ?A' (?eaa lib' x)),
+        H4 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?B ?B' (?ebb lib' x)),
+        H5 : computes_to_valc ?lib ?T (mkc_union ?A ?B),
+        H6 : close ?ts ?lib ?T ?T' ?eq,
+        H' : context[per_union_eq_bar ?lib ?ea ?eb]
       |- _ ] =>
-      generalize (dest_close_per_union_l ts lib T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_union_l ts lib T A B A' B' T' eq ea eb H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
 
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
-        H3 : computes_to_valc ?lib ?T' (mkc_union ?A ?B),
-        H4 : close ?ts ?lib ?T ?T' ?eq
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A' ?A (?eaa lib' x)),
+        H4 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?B' ?B (?ebb lib' x)),
+        H5 : computes_to_valc ?lib ?T' (mkc_union ?A ?B),
+        H6 : close ?ts ?lib ?T ?T' ?eq,
+        H' : context[per_union_eq_bar ?lib ?ea ?eb]
       |- _ ] =>
-      generalize (dest_close_per_union_r ts lib T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_union_r ts lib T A B A' B' T' eq ea eb H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
 
-    (* union ceq bar *)
+(*    (* union ceq bar *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
         H3 : computes_to_valc_ceq_bar ?bar ?T (mkc_union ?A ?B),
@@ -375,7 +381,7 @@ Ltac dest_close_lr h :=
         H3 : computes_to_valc_ceq_bar ?bar ?T' (mkc_union ?A ?B),
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_union_ceq_bar_r ts lib bar T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_union_ceq_bar_r ts lib bar T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h*)
 
 (*    (* eunion *)
     | [ H1 : type_system ?ts,
