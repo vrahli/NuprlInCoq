@@ -33,6 +33,7 @@
 Require Export type_sys.
 Require Export dest_close.
 Require Export per_ceq_bar.
+Require Export nuprl_mon_func2.
 
 Require Export close_util_int.
 Require Export close_util_nat.
@@ -480,6 +481,112 @@ Definition ts_implies_per_bar {o} (ts : cts(o)) :=
   forall lib (T T' : @CTerm o) eq,
     ts lib T T' eq
     -> per_bar ts lib T T' eq.
+
+Definition per_bar_lib_per
+           {o}
+           {ts}
+           {lib : @library o}
+           {T T'}
+           {eq : per}
+           (p : per_bar ts lib T T' eq) : lib-per(lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) => eq).
+  repeat introv; tcsp.
+Defined.
+
+Lemma per_bar_implies_eq_term_equals_per_bar_eq_per_bar_lib_per {o} :
+  forall (ts : cts(o)) lib T T' eq (p : per_bar ts lib T T' eq),
+    eq <=2=> (per_bar_eq (trivial_bar lib) (per_bar_lib_per p)).
+Proof.
+  repeat introv; split; introv h.
+
+  - unfold per_bar_eq, per_bar_lib_per; simpl.
+    unfold per_bar in p; exrepnd.
+    apply in_ext_ext_implies_all_in_bar_ext; introv x; simpl in *.
+    exists (raise_bar bar x); introv br' ext' x'; auto.
+
+  - unfold per_bar_eq, per_bar_lib_per in h; simpl in *.
+    pose proof (h lib (lib_extends_refl lib) lib (lib_extends_refl lib) (lib_extends_refl lib)) as h; simpl in h.
+    unfold per_bar in p; exrepnd.
+    pose proof (bar_non_empty bar') as z; exrepnd.
+    assert (lib_extends lib' lib) as xt by eauto 3 with slow.
+    pose proof (h0 _ z0 lib' (lib_extends_refl lib') xt) as h0; simpl in h0; auto.
+Qed.
+
+Lemma implies_eq_term_equals_per_bar_eq_trivial_bar_mon {o} :
+  forall (ts : cts(o)) lib T T' eq (eqa : lib-per(lib,o)),
+    uniquely_valued ts
+    -> per_bar ts lib T T' eq
+    -> (forall lib' x, per_bar ts lib' T T' (eqa lib' x) # sub_per eq (eqa lib' x) # sub_lib_per eqa x)
+    -> (eq) <=2=> (per_bar_eq (trivial_bar lib) eqa).
+Proof.
+  introv uv per imp; introv; split; intro h.
+
+  - unfold per_bar_eq; simpl.
+    apply in_ext_ext_implies_all_in_bar_ext; introv; simpl in *.
+    pose proof (imp _ e) as imp; repnd.
+    apply imp1 in h.
+    exists (trivial_bar lib').
+    apply in_ext_ext_implies_all_in_bar_ext; introv; simpl in *.
+    apply imp; auto.
+
+  - unfold per_bar_eq, per_bar_lib_per in h; simpl in *.
+    pose proof (h lib (lib_extends_refl lib) lib (lib_extends_refl lib) (lib_extends_refl lib)) as h; simpl in h; exrepnd.
+    unfold per_bar in per; exrepnd.
+    apply per1.
+    introv br ext; introv.
+
+    apply collapse2bars_ext.
+    { introv; apply (lib_per_cond _ eqa0). }
+
+    exists (raise_bar bar' x).
+    introv br' ext'; introv; simpl in *; exrepnd.
+    assert (lib_extends lib'2 lib1) as xt1 by eauto 3 with slow.
+    assert (lib_extends lib'2 lib) as xt2 by eauto 3 with slow.
+    pose proof (h0 _ br'1 lib'2 xt1 xt2) as h0; simpl in *.
+    pose proof (imp lib'2 xt2) as imp; repnd.
+    unfold per_bar in imp0; exrepnd.
+    eapply (lib_per_cond _ eqa) in h0; apply imp0 in h0.
+    unfold per_bar_eq in h0.
+
+    apply collapse2bars_ext.
+    { introv; apply (lib_per_cond _ eqa0). }
+
+    exists bar0.
+    introv br'' ext''; introv.
+    pose proof (h0 _ br'' _ ext'' x1) as h0; simpl in *.
+
+    exrepnd.
+    exists bar'0.
+    introv br''' ext'''; introv.
+    pose proof (h1 _ br''' _ ext''' x2) as h1; simpl in *.
+
+    assert (lib_extends lib'6 lib'3) as xt3 by eauto 3 with slow.
+    assert (lib_extends lib'6 lib'2) as xt4 by eauto 3 with slow.
+    pose proof (imp2 _ br'' lib'6 xt3 xt4) as imp2; simpl in *.
+
+    assert (lib_extends lib'6 lib') as xt5 by eauto 5 with slow.
+    assert (lib_extends lib'6 lib) as xt6 by eauto 3 with slow.
+    pose proof (per0 _ br lib'6 xt5 xt6) as per0; simpl in *.
+
+    eapply uv in per0; autodimp per0 hyp;[exact imp2|].
+    eapply (lib_per_cond _ eqa0); apply per0.
+    eapply (lib_per_cond _ eqa1); eauto.
+Qed.
+
+Lemma ts_implies_per_bar_univ {o} : @ts_implies_per_bar o univ.
+Proof.
+  introv u.
+  unfold univ in *; exrepnd.
+
+  applydup @per_bar_monotone_func in u; exrepnd.
+  exists (trivial_bar lib) eq'.
+  dands;[|eapply implies_eq_term_equals_per_bar_eq_trivial_bar_mon; eauto; eauto 3 with slow].
+
+  apply in_ext_ext_implies_all_in_bar_ext; introv.
+  apply u1.
+Qed.
+Hint Resolve ts_implies_per_bar_univ : slow.
 
 Lemma close_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,

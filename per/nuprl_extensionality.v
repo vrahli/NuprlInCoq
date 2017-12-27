@@ -158,11 +158,21 @@ Proof.
 Qed.
 Hint Resolve type_extensionality_univi_bar : slow.
 
+Lemma type_extensionality_univ_ex {o} : @type_extensionality o univ_ex.
+Proof.
+  introv u e.
+  unfold univ_ex in *; exrepnd; exists i.
+  eapply type_extensionality_univi; eauto.
+Qed.
+Hint Resolve type_extensionality_univ_ex : slow.
+
 Lemma type_extensionality_univ {o} : @type_extensionality o univ.
 Proof.
   introv u e.
   unfold univ in *; exrepnd.
-  exists i.
-  eapply type_extensionality_univi_bar; eauto 3 with slow.
+  unfold per_bar in *; exrepnd.
+  exists bar eqa; dands;auto.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym; auto.
 Qed.
 Hint Resolve type_extensionality_univ : slow.

@@ -236,8 +236,11 @@ Qed.
 
  *)
 
+Definition univ_ex {p} lib (T T' : @CTerm p) (eq : per) :=
+  {i : nat , univi i lib T T' eq}.
+
 Definition univ {p} lib (T T' : @CTerm p) (eq : per) :=
-  {i : nat , univi_bar i lib T T' eq}.
+  per_bar univ_ex lib T T' eq.
 
 (**
 
@@ -252,12 +255,12 @@ Definition defines_only_universes {o} (ts : cts(o)) :=
 
 (* begin hide *)
 
-Lemma univi_iff_univ {p} :
+(*Lemma univi_iff_univ {p} :
   forall lib (a b : @CTerm p) eq,
     univ lib a b eq <=> {i : nat , univi_bar i lib a b eq}.
 Proof.
   sp; split; sp.
-Qed.
+Qed.*)
 
 (* end hide *)
 
@@ -678,7 +681,31 @@ Proof.
     generalize (nuprli_type_system n); sp.
     inversion X; sp.
 Qed.
-*)
+ *)
+
+Lemma in_ext_ext_implies_all_in_bar_ext {o} :
+  forall lib (bar : @BarLib o lib) F,
+    in_ext_ext lib F
+    -> all_in_bar_ext bar F.
+Proof.
+  introv i br ext; introv.
+  apply i; auto.
+Qed.
+Hint Resolve in_ext_ext_implies_all_in_bar_ext : slow.
+
+Lemma univi_bar_implies_univ {o} :
+  forall i lib (T T' : @CTerm o) eq,
+    univi_bar i lib T T' eq
+    -> univ lib T T' eq.
+Proof.
+  introv u.
+  unfold univi_bar, per_bar in u; exrepnd.
+  exists bar eqa; dands; auto.
+  introv br ext; introv.
+  pose proof (u0 _ br _ ext x) as u0; simpl in *.
+  exists i; auto.
+Qed.
+Hint Resolve univi_bar_implies_univ : slow.
 
 Lemma nuprli_implies_nuprl {pp} :
   forall lib (a b : @CTerm pp) i eq,
@@ -691,8 +718,7 @@ Proof.
   close_cases (induction n using @close_ind') Case; sp; subst.
 
   - Case "CL_init".
-    apply CL_init.
-    exists i; sp.
+    apply CL_init; eauto 3 with slow.
 
   - Case "CL_bar".
     apply CL_bar.

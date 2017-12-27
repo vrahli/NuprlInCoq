@@ -482,17 +482,6 @@ Proof.
   }
 Qed.
 
-Lemma type_extensionality_univi {o} :
-  forall i, @type_extensionality o (univi i).
-Proof.
-  introv u e.
-  allrw @univi_exists_iff; exrepnd.
-  exists j; dands; auto.
-  eapply eq_term_equals_trans;[|eauto].
-  apply eq_term_equals_sym;auto.
-Qed.
-Hint Resolve type_extensionality_univi : slow.
-
 Lemma uniquely_valued_univi {o} :
   forall i, @uniquely_valued o (univi i).
 Proof.
@@ -503,6 +492,18 @@ Proof.
   apply eq_term_equals_sym;auto.
 Qed.
 Hint Resolve uniquely_valued_univi : slow.
+
+Lemma uniquely_valued_univ_ex {o} : @uniquely_valued o univ_ex.
+Proof.
+  introv u v.
+  unfold univ_ex in *; exrepnd.
+
+  eapply uni_in_higher_univ in u0.
+  eapply uni_in_higher_univ_r in v0.
+  eapply uniquely_valued_univi in v0; autodimp v0 hyp;[exact u0|].
+  apply eq_term_equals_sym; auto.
+Qed.
+Hint Resolve uniquely_valued_univ_ex : slow.
 
 Lemma local_univi_bar {o} :
   forall i, @local_ts o (univi_bar i).
@@ -515,7 +516,5 @@ Hint Resolve local_univi_bar : slow.
 Lemma local_univ {o} : @local_ts o univ.
 Proof.
   introv eqiff alla.
-
-  (* Do we have to wrap a [per_bar] around [univ]?
-     Or move the universe inside the [per_bar]? *)
-Abort.
+  eapply local_per_bar; eauto; eauto 3 with slow.
+Qed.

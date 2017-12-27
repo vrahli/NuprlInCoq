@@ -71,8 +71,8 @@ Ltac dest_close_lr h :=
     (* function *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
-        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A ?A' (?ea lib' x)),
-        H4 : in_ext_ext ?lib (fun lib' x => forall a a' (e : ?ea lib' x a a'), type_sys_props4 (close ?ts) lib' (substc ?a ?v ?B) (substc ?a' ?v' ?B') (?eb lib' x a a' e)),
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A ?A' (?eaa lib' x)),
+        H4 : in_ext_ext ?lib (fun lib' x => forall a a' (e : ?eaa lib' x a a'), type_sys_props4 (close ?ts) lib' (substc ?a ?v ?B) (substc ?a' ?v' ?B') (?ebb lib' x a a' e)),
         H5 : computes_to_valc ?lib ?T (mkc_function ?A ?v ?B),
         H6 : close ?ts ?lib ?T ?T' ?eq,
         H' : context[per_func_ext_eq ?lib ?ea ?eb]
@@ -81,8 +81,8 @@ Ltac dest_close_lr h :=
 
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
-        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A' ?A (?ea lib' x)),
-        H4 : in_ext_ext ?lib (fun lib' x => forall a a' (e : ?ea lib' x a a'), type_sys_props4 (close ?ts) lib' (substc ?a ?v' ?B') (substc ?a' ?v ?B) (?eb lib' x a a' e)),
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A' ?A (?eaa lib' x)),
+        H4 : in_ext_ext ?lib (fun lib' x => forall a a' (e : ?eaa lib' x a a'), type_sys_props4 (close ?ts) lib' (substc ?a ?v' ?B') (substc ?a' ?v ?B) (?ebb lib' x a a' e)),
         H5 : computes_to_valc ?lib ?T' (mkc_function ?A ?v ?B),
         H6 : close ?ts ?lib ?T ?T' ?eq,
         H' : context[per_func_ext_eq ?lib ?ea ?eb]

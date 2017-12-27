@@ -29,7 +29,7 @@
 
 
 Require Export type_sys_useful.
-Require Import dest_close.
+Require Export dest_close.
 Require Export per_ceq_bar.
 
 Require Export close_util_func.
@@ -69,12 +69,10 @@ Proof.
   + SCase "uniquely_valued".
     introv cl.
     dclose_lr.
-
-    (* Why is dclose_lr not working? *)
-
-XXX
     clear cl.
 
+
+XXXXX
     allunfold @per_func_ext; exrepnd.
     eapply eq_term_equals_trans;[eauto|].
     eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].

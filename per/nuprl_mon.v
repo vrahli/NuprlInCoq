@@ -793,14 +793,22 @@ Proof.
 Qed.
 Hint Resolve univi_bar_monotone : slow.
 
+Lemma univ_ex_monotone {o} : @type_monotone o univ_ex.
+Proof.
+  introv u e.
+  unfold univ_ex in *; exrepnd.
+  eapply univi_monotone in u0; autodimp u0 hyp; eauto.
+  exrepnd.
+  exists eq'; dands; auto.
+  exists i; auto.
+Qed.
+Hint Resolve univ_ex_monotone : slow.
+
 Lemma univ_monotone {o} : @type_monotone o univ.
 Proof.
   introv u e.
   unfold univ in *; exrepnd.
-  eapply univi_bar_monotone in u0; autodimp u0 hyp; eauto.
-  exrepnd; dands; auto.
-  exists eq'; dands; auto.
-  exists i; auto.
+  eapply per_bar_monotone in u; autodimp u hyp; eauto.
 Qed.
 Hint Resolve univ_monotone : slow.
 
