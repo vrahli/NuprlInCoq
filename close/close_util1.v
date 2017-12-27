@@ -119,14 +119,13 @@ Proof.
 Qed.
 Hint Resolve in_ext_ext_eq_term_equals_refl : slow.
 
-Lemma ccequivc_ext_preserves_in_ext_ext_type_sys_props4 {o} :
-  forall ts lib (A A' B : @CTerm o) eqa,
+Lemma ccequivc_ext_preserves_in_type_sys_props4 {o} :
+  forall ts lib (A A' B : @CTerm o) eq,
     ccequivc_ext lib A A'
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A' B (eqa lib' x)).
+    -> type_sys_props4 ts lib A B eq
+    -> type_sys_props4 ts lib A' B eq.
 Proof.
   introv ceq tsp; introv.
-  pose proof (tsp _ e) as tsp; simpl in *.
   onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
   unfold type_sys_props4; dands; auto.
 
@@ -135,11 +134,11 @@ Proof.
     apply (tyvrt A A' T3 eq'); eauto 3 with slow.
 
   - introv tsts eqs.
-    pose proof (tyvrt A A' T3 (eqa lib' e)) as q.
+    pose proof (tyvrt A A' T3 eq) as q.
     repeat (autodimp q hyp); eauto 3 with slow.
     eapply tys in q;eauto.
     pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
-    pose proof (dum A A' T3 (eqa lib' e) eq') as w.
+    pose proof (dum A A' T3 eq eq') as w.
     repeat (autodimp w hyp); tcsp.
     apply tygs; auto.
 
@@ -148,7 +147,7 @@ Proof.
 
     pose proof (tyvr A T3) as q; repeat (autodimp q hyp); eauto 3 with slow.
     pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
-    pose proof (dum A A' T3 (eqa lib' e) (eqa lib' e)) as w.
+    pose proof (dum A A' T3 eq eq) as w.
     repeat (autodimp w hyp); tcsp.
     apply tygs; auto.
 
@@ -157,13 +156,13 @@ Proof.
 
     + pose proof (tyvrt A T3 T4 eq') as q; repeat (autodimp q hyp); eauto 3 with slow.
       pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
-      pose proof (dum A A' T4 (eqa lib' e) eq') as w.
+      pose proof (dum A A' T4 eq eq') as w.
       repeat (autodimp w hyp); tcsp.
       apply tygs; auto.
 
     + pose proof (tyvrt A T3 T4 eq') as q; repeat (autodimp q hyp); eauto 3 with slow.
       pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
-      pose proof (dum A A' T4 (eqa lib' e) eq') as w.
+      pose proof (dum A A' T4 eq eq') as w.
       repeat (autodimp w hyp); tcsp.
       apply tygs; auto.
 
@@ -172,17 +171,17 @@ Proof.
     + pose proof (tyvrt A A' T3 eq') as h; repeat (autodimp h hyp); eauto 3 with slow.
       apply tygs in h.
       pose proof (tyvr A A') as z; repeat (autodimp z hyp); eauto 3 with slow.
-      pose proof (dum A T3 A' eq' (eqa lib' e)) as w.
+      pose proof (dum A T3 A' eq' eq) as w.
       repeat (autodimp w hyp); tcsp.
 
     + pose proof (tyvrt A A' T3 eq') as h; repeat (autodimp h hyp); eauto 3 with slow.
       pose proof (tyvr A A') as z; repeat (autodimp z hyp); eauto 3 with slow.
       apply tygs in z.
-      pose proof (dum A A' T3 (eqa lib' e) eq') as w.
+      pose proof (dum A A' T3 eq eq') as w.
       repeat (autodimp w hyp); tcsp.
 
   - pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
-    pose proof (dum A A' B (eqa lib' e) (eqa lib' e)) as w.
+    pose proof (dum A A' B eq eq) as w.
     repeat (autodimp w hyp); tcsp.
     apply tygs; auto.
 
@@ -195,6 +194,17 @@ Proof.
 
     pose proof (dum A T3 T4 eq1 eq2) as w.
     repeat (autodimp w hyp); tcsp; try (complete (apply tygs; auto)).
+Qed.
+
+Lemma ccequivc_ext_preserves_in_ext_ext_type_sys_props4 {o} :
+  forall ts lib (A A' B : @CTerm o) eqa,
+    ccequivc_ext lib A A'
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A' B (eqa lib' x)).
+Proof.
+  introv ceq tsp; introv.
+  pose proof (tsp _ e) as tsp; simpl in *.
+  eapply ccequivc_ext_preserves_in_type_sys_props4; eauto; eauto 3 with slow.
 Qed.
 
 Lemma cequivc_ext_eqorceq_ext_trans1 {o} :

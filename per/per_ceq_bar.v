@@ -3897,7 +3897,7 @@ Lemma in_ext_type_sys_props4_dep_implies_in_ext_term_equality_symmetric_dep {o} 
     in_ext lib
            (fun lib =>
               forall a a' (e : eqa lib a a'),
-                type_sys_props4 (close ts) lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+                type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
     -> in_ext lib
               (fun lib =>
                  forall a1 a2 (e : eqa lib a1 a2),
@@ -3914,7 +3914,7 @@ Lemma in_ext_ext_type_sys_props4_dep_implies_in_ext_term_equality_symmetric_dep 
       lib
       (fun lib' x =>
          forall a a' (e : eqa lib' x a a'),
-           type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+           type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> in_ext_ext
          lib
          (fun lib' x =>
@@ -3931,7 +3931,7 @@ Lemma in_ext_type_sys_props4_dep_implies_in_ext_term_equality_transitive_dep {o}
     in_ext lib
            (fun lib =>
               forall a a' (e : eqa lib a a'),
-                type_sys_props4 (close ts) lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+                type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
     -> in_ext lib
               (fun lib =>
                  forall a1 a2 (e : eqa lib a1 a2),
@@ -3948,7 +3948,7 @@ Lemma in_ext_ext_type_sys_props4_dep_implies_in_ext_term_equality_transitive_dep
       lib
       (fun lib' x =>
          forall a a' (e : eqa lib' x a a'),
-           type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+           type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> in_ext_ext
          lib
          (fun lib' x =>
@@ -3965,7 +3965,7 @@ Lemma in_ext_type_sys_props4_dep_implies_in_ext_term_equality_respecting_dep {o}
     in_ext lib
            (fun lib =>
               forall a a' (e : eqa lib a a'),
-                type_sys_props4 (close ts) lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+                type_sys_props4 ts lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
     -> in_ext lib
               (fun lib =>
                  forall a1 a2 (e : eqa lib a1 a2),
@@ -3983,7 +3983,7 @@ Lemma in_ext_ext_type_sys_props4_dep_implies_in_ext_term_equality_respecting_dep
       lib
       (fun lib' x =>
          forall a a' (e : eqa lib' x a a'),
-           type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+           type_sys_props4 ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> in_ext_ext
          lib
          (fun lib' x =>
