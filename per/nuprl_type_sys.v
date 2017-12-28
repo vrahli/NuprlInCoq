@@ -33,6 +33,7 @@
 Require Export close_type_sys.
 Require Export Peano.
 
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ *)
@@ -48,21 +49,54 @@ Require Export Peano.
 (* begin hide *)
 
 
+Lemma implies_computes_to_uni {o} :
+  forall lib (T : @CTerm o) i,
+    computes_to_valc lib T (mkc_uni i)
+    -> computes_to_uni lib T.
+Proof.
+  introv comp.
+  exists (trivial_bar lib).
+  apply in_ext_implies_all_in_bar_trivial_bar.
+  introv x.
+  exists i; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve implies_computes_to_uni : slow.
+
 Lemma defines_only_universes_univi {o} :
   forall i, @defines_only_universes o (univi i).
 Proof.
   unfold defines_only_universes; sp.
-  allrw @univi_exists_iff; sp.
-  exists j; sp.
+  allrw @univi_exists_iff; sp; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve defines_only_universes_univi : slow.
+
+Lemma defines_only_universes_univi_bar {o} :
+  forall i, @defines_only_universes o (univi_bar i).
+Proof.
+  introv u.
+  unfold univi_bar, per_bar in u; exrepnd.
+  exists bar.
+  introv br ext.
+
+  assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
+  pose proof (u0 _ br _ ext x) as per0; simpl in *; exrepnd.
+  allrw @univi_exists_iff; exrepnd.
+  exists j; auto.
+Qed.
+Hint Resolve defines_only_universes_univi_bar : slow.
 
 Lemma defines_only_universes_univ {o} :
   @defines_only_universes o univ.
 Proof.
-  unfold defines_only_universes, univ; sp.
-  induction i; allsimpl; sp.
-  exists i; sp.
+  unfold defines_only_universes, univ, univ_ex; introv per.
+  unfold per_bar in *; exrepnd.
+  exists bar.
+  introv br ext.
+
+  assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
+  pose proof (per0 _ br _ ext x) as per0; simpl in *; exrepnd.
+  allrw @univi_exists_iff; exrepnd.
+  exists j; auto.
 Qed.
 Hint Resolve defines_only_universes_univ : slow.
 
@@ -87,63 +121,281 @@ Proof.
   eapply cequivc_uni in ceq';[|eauto]; exrepnd; auto.
 Qed.
 
+Lemma per_bar_univi_uniquely_valued {o} :
+  forall i lib (T T' : @CTerm o) eq1 eq2,
+    per_bar (univi i) lib T T' eq1
+    -> per_bar (univi i) lib T T' eq2
+    -> eq1 <=2=> eq2.
+Proof.
+  introv u v.
+  unfold per_bar in *; exrepnd.
+  eapply eq_term_equals_trans;[eauto|].
+  eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
+  eapply eq_term_equals_trans;[|apply (per_bar_eq_intersect_bars_left _ bar0)].
+  eapply eq_term_equals_trans;[apply eq_term_equals_sym;apply (per_bar_eq_intersect_bars_right _ bar)|].
+
+  unfold per_bar_eq; introv; split; intro h.
+
+  - introv br ext; introv.
+    pose proof (h _ br _ ext x) as h; simpl in *; exrepnd.
+    exists bar'.
+
+    introv br' ext'; introv.
+    pose proof (h0 _ br' _ ext' x0) as h0; simpl in *.
+
+    pose proof (u0 _ br2 _ (lib_extends_trans x0 (lib_extends_trans ext br1)) (lib_extends_trans x0 x)) as u0.
+    pose proof (v0 _ br0 _ (lib_extends_trans x0 (lib_extends_trans ext br3)) (lib_extends_trans x0 x)) as v0.
+    simpl in *.
+    allrw @univi_exists_iff; exrepnd; spcast.
+    computes_to_eqval.
+    apply v2; apply u2; auto.
+
+  - introv br ext; introv.
+    pose proof (h _ br _ ext x) as h; simpl in *; exrepnd.
+    exists bar'.
+
+    introv br' ext'; introv.
+    pose proof (h0 _ br' _ ext' x0) as h0; simpl in *.
+
+    pose proof (u0 _ br2 _ (lib_extends_trans x0 (lib_extends_trans ext br1)) (lib_extends_trans x0 x)) as u0.
+    pose proof (v0 _ br0 _ (lib_extends_trans x0 (lib_extends_trans ext br3)) (lib_extends_trans x0 x)) as v0.
+    simpl in *.
+    allrw @univi_exists_iff; exrepnd; spcast.
+    computes_to_eqval.
+    apply u2; apply v2; auto.
+Qed.
+
+Lemma uniquely_valued_univi {o} :
+  forall i, @uniquely_valued o (univi i).
+Proof.
+  introv u v.
+  allrw @univi_exists_iff; exrepnd; spcast.
+  computes_to_eqval.
+  eapply eq_term_equals_trans;[eauto|].
+  apply eq_term_equals_sym; auto.
+Qed.
+Hint Resolve uniquely_valued_univi : slow.
+
+Lemma type_symmetric_univi {o} :
+  forall i, @type_symmetric o (univi i).
+Proof.
+  introv u.
+  allrw @univi_exists_iff; exrepnd.
+  exists j; sp.
+Qed.
+Hint Resolve type_symmetric_univi : slow.
+
+Lemma type_extensionality_univi {o} :
+  forall i, @type_extensionality o (univi i).
+Proof.
+  introv u e.
+  allrw @univi_exists_iff; exrepnd.
+  exists j; dands; auto.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym;auto.
+Qed.
+Hint Resolve type_extensionality_univi : slow.
+
+Lemma type_transitive_univi {o} :
+  forall i, @type_transitive o (univi i).
+Proof.
+  introv u v.
+  allrw @univi_exists_iff; exrepnd.
+  spcast; computes_to_eqval.
+  exists j0; dands; spcast; auto.
+Qed.
+Hint Resolve type_transitive_univi : slow.
+
+Lemma type_value_respecting_univi {o} :
+  forall i, @type_value_respecting o (univi i).
+Proof.
+  introv u c.
+  allrw @univi_exists_iff; exrepnd.
+  spcast.
+  pose proof (c _ (lib_extends_refl lib)) as c; simpl in *; spcast.
+  eapply cequivc_uni in c;[|eauto].
+  exists j; dands; spcast; auto.
+Qed.
+Hint Resolve type_value_respecting_univi : slow.
+
+Lemma ts_implies_per_bar_univi_bar {o} :
+  forall i, @ts_implies_per_bar o (univi_bar i).
+Proof.
+  introv u.
+  unfold univi_bar in *; exrepnd.
+
+  applydup @nuprl_mon_func2.per_bar_monotone_func in u; exrepnd.
+  exists (trivial_bar lib) eq'.
+  dands.
+
+  { apply in_ext_ext_implies_all_in_bar_ext; introv.
+    apply u1. }
+
+  { eapply implies_eq_term_equals_per_bar_eq_trivial_bar_mon; eauto; eauto 3 with slow. }
+Qed.
+Hint Resolve ts_implies_per_bar_univi_bar : slow.
+
+Lemma term_symmetric_univi_bar {o} :
+  forall i,
+    (forall m, m < i -> @type_system o (univi_bar m))
+    -> @term_symmetric o (univi_bar i).
+Proof.
+  introv IND u e.
+  unfold univi_bar, per_bar in u; exrepnd.
+  apply u1 in e; apply u1; clear u1.
+  unfold per_bar_eq in *.
+  introv br ext; introv.
+  pose proof (e _ br _ ext x) as e; simpl in *; exrepnd.
+  exists bar'.
+  introv br' ext'; introv.
+  pose proof (e0 _ br' _ ext' x0) as e0; simpl in *.
+
+  pose proof (u0 _ br lib'2 (lib_extends_trans x0 ext) (lib_extends_trans x0 x)) as u0; simpl in *.
+  allrw @univi_exists_iff; exrepnd.
+  spcast.
+  apply u1 in e0; apply u1; clear u1.
+  unfold univi_eq in *; exrepnd.
+  exists eqa0.
+
+  apply close_type_symmetric; eauto 3 with slow.
+Qed.
+Hint Resolve term_symmetric_univi_bar : slow.
+
+Lemma term_transitive_univi_bar {o} :
+  forall i,
+    (forall m, m < i -> @type_system o (univi_bar m))
+    -> @term_transitive o (univi_bar i).
+Proof.
+  introv IND u e f.
+  unfold univi_bar, per_bar in u; exrepnd.
+  apply u1 in e; apply u1 in f; apply u1; clear u1.
+  unfold per_bar_eq in *.
+  introv br ext; introv.
+  pose proof (e _ br _ ext x) as e; simpl in *; exrepnd.
+  pose proof (f _ br _ ext x) as f; simpl in *; exrepnd.
+  exists (intersect_bars bar' bar'0).
+  introv br' ext'; introv; simpl in *; exrepnd.
+  pose proof (e0 _ br'0 _ (lib_extends_trans ext' br'3) x0) as e0; simpl in *.
+  pose proof (f0 _ br'2 _ (lib_extends_trans ext' br'1) x0) as f0; simpl in *.
+
+  pose proof (u0 _ br lib'2 (lib_extends_trans x0 ext) (lib_extends_trans x0 x)) as u0; simpl in *.
+  allrw @univi_exists_iff; exrepnd.
+  spcast.
+  apply u1 in e0; apply u1 in f0; apply u1; clear u1.
+  unfold univi_eq in *; exrepnd.
+  exists eqa0.
+
+  eapply close_type_transitive; eauto; eauto 3 with slow.
+  eapply close_type_extensionality; eauto 2 with slow.
+
+  assert (close (univi_bar j) lib'2 t2 t2 eqa1) as h1.
+  { eapply close_type_transitive; eauto; eauto 3 with slow.
+    eapply close_type_symmetric; eauto; eauto 3 with slow. }
+
+  assert (close (univi_bar j) lib'2 t2 t2 eqa0) as h2.
+  { eapply close_type_transitive; eauto; eauto 3 with slow.
+    eapply close_type_symmetric; eauto; eauto 3 with slow. }
+
+  eapply close_uniquely_valued in h1; eauto 3 with slow.
+Qed.
+Hint Resolve term_transitive_univi_bar : slow.
+
+Lemma term_value_respecting_univi_bar {o} :
+  forall i,
+    (forall m, m < i -> @type_system o (univi_bar m))
+    -> @term_value_respecting o (univi_bar i).
+Proof.
+  introv IND u e c.
+  unfold univi_bar, per_bar in u; exrepnd.
+  apply u1 in e; apply u1; clear u1.
+  unfold per_bar_eq in *.
+  introv br ext; introv.
+  pose proof (e _ br _ ext x) as e; simpl in *; exrepnd.
+  exists bar'.
+  introv br' ext'; introv.
+  pose proof (e0 _ br' _ ext' x0) as e0; simpl in *.
+
+  pose proof (u0 _ br lib'2 (lib_extends_trans x0 ext) (lib_extends_trans x0 x)) as u0; simpl in *.
+  allrw @univi_exists_iff; exrepnd.
+  spcast.
+  apply u1 in e0; apply u1; clear u1.
+  unfold univi_eq in *; exrepnd.
+  exists eqa0.
+
+  eapply close_type_value_respecting; eauto 3 with slow.
+Qed.
+Hint Resolve term_value_respecting_univi_bar : slow.
+
+Lemma univi_bar_type_system {o} :
+  forall (i : nat), @type_system o (univi_bar i).
+Proof.
+  induction i using comp_ind_type.
+  unfold type_system; dands; eauto 2 with slow.
+
+  - eapply uniquely_valued_per_bar; eauto 3 with slow.
+
+  - apply type_symmetric_per_bar; eauto 3 with slow.
+
+  - apply type_transitive_per_bar; eauto 3 with slow.
+
+  - apply type_value_respecting_per_bar; eauto 3 with slow.
+Qed.
+Hint Resolve univi_bar_type_system : slow.
+
+Lemma term_symmetric_univi {o} :
+  forall i, @term_symmetric o (univi i).
+Proof.
+  introv u e.
+  allrw @univi_exists_iff; exrepnd.
+  spcast.
+  apply u0 in e; apply u0; clear u0.
+  unfold univi_eq in *; exrepnd.
+  exists eqa.
+  eapply close_type_symmetric; eauto 3 with slow.
+Qed.
+Hint Resolve term_symmetric_univi : slow.
+
+Lemma term_transitive_univi {o} :
+  forall i, @term_transitive o (univi i).
+Proof.
+  introv u e f.
+  allrw @univi_exists_iff; exrepnd.
+  spcast.
+  apply u0 in e; apply u0 in f; apply u0; clear u0.
+  unfold univi_eq in *; exrepnd.
+  exists eqa.
+  eapply close_type_transitive; eauto 3 with slow.
+  eapply close_type_extensionality; eauto 2 with slow.
+
+  assert (close (univi_bar j) lib t2 t2 eqa0) as h1.
+  { eapply close_type_transitive; eauto; eauto 3 with slow.
+    eapply close_type_symmetric; eauto; eauto 3 with slow. }
+
+  assert (close (univi_bar j) lib t2 t2 eqa) as h2.
+  { eapply close_type_transitive; eauto; eauto 3 with slow.
+    eapply close_type_symmetric; eauto; eauto 3 with slow. }
+
+  eapply close_uniquely_valued in h1; eauto 3 with slow.
+Qed.
+Hint Resolve term_transitive_univi : slow.
+
+Lemma term_value_respecting_univi {o} :
+  forall i, @term_value_respecting o (univi i).
+Proof.
+  introv u e c.
+  allrw @univi_exists_iff; exrepnd.
+  spcast.
+  apply u0 in e; apply u0; clear u0.
+  unfold univi_eq in *; exrepnd.
+  exists eqa.
+  eapply close_type_value_respecting; eauto 3 with slow.
+Qed.
+Hint Resolve term_value_respecting_univi : slow.
+
 Lemma univi_type_system {o} :
   forall (i : nat), @type_system o (univi i).
 Proof.
-  induction i using comp_ind_type.
-  unfold type_system; sp.
-
-  - unfold uniquely_valued, eq_term_equals; sp.
-    allrw @univi_exists_iff; sp.
-    spcast; computes_to_eqval.
-    allrw; sp.
-
-  - introv q h.
-    allrw @univi_exists_iff; exrepnd.
-    exists j; sp.
-    rw <- h; auto.
-
-  - unfold type_symmetric; sp.
-    allrw @univi_exists_iff; sp.
-    exists j; sp.
-
-  - unfold type_transitive; sp.
-    allrw @univi_exists_iff; sp.
-    spcast; computes_to_eqval.
-    eexists; sp; spcast; sp.
-
-  - unfold type_value_respecting; sp.
-    allrw @univi_exists_iff; sp.
-    exists j; sp; thin_trivials.
-    eapply ccequivc_ext_uni; eauto.
-
-  - unfold term_symmetric, term_equality_symmetric; sp.
-    allrw @univi_exists_iff; sp; spcast.
-    discover; sp.
-    allrw.
-    exists eqa; auto.
-    generalize (@close_type_system o (univi j)); intro k.
-    repeat (dest_imp k hyp); eauto 3 with slow.
-    inversion k; sp.
-
-  - unfold term_transitive, term_equality_transitive; sp.
-    allrw @univi_exists_iff; sp.
-    discover; sp; spcast.
-    allrw.
-    generalize (@close_type_system o (univi j)); intro k.
-    repeat (dest_imp k hyp); eauto 3 with slow.
-    inversion k; sp.
-    exists eqa0.
-    apply uniquely_valued_trans4 with (T2 := t2) (eq1 := eqa); sp.
-
-  - unfold term_value_respecting, term_equality_respecting; sp.
-    allrw @univi_exists_iff; sp.
-    discover; sp; spcast; GC.
-    allrw.
-    exists eqa.
-    generalize (@close_type_system o (univi j)); intro k.
-    repeat (dest_imp k hyp); eauto 3 with slow.
-    inversion k; sp.
+  introv; unfold type_system; dands; eauto 3 with slow.
 Qed.
 Hint Resolve univi_type_system : slow.
 
@@ -195,15 +447,12 @@ Lemma univi_uniquely_valued {o} :
     -> univi i2 lib T T' eq'
     -> eq <=2=> eq'.
 Proof.
-  sp.
+  introv u v.
   assert (univi (i2 + i1) lib T T' eq) as c1 by (apply uni_in_higher_univ; auto).
   assert (univi (i1 + i2) lib T T' eq') as c2 by (apply uni_in_higher_univ; auto).
   assert (i1 + i2 = i2 + i1) as e by omega.
   rww e.
-  generalize (@univi_type_system o (i2 + i1)); intro uts.
-  destruct uts; sp.
-  unfold uniquely_valued in u.
-  eapply u; eauto.
+  eapply uniquely_valued_univi; eauto.
 Qed.
 
 (* end hide *)
@@ -380,4 +629,3 @@ Proof.
 Qed.
 
 (* end hide *)
-

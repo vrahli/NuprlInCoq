@@ -170,17 +170,23 @@ Ltac dest_close_lr h :=
     (* product *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
-        H3 : computes_to_valc ?lib ?T (mkc_product ?A ?v ?B),
-        H4 : close ?ts ?lib ?T ?T' ?eq
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A ?A' (?eaa lib' x)),
+        H4 : in_ext_ext ?lib (fun lib' x => forall a a' (e : ?eaa lib' x a a'), type_sys_props4 (close ?ts) lib' (substc ?a ?v ?B) (substc ?a' ?v' ?B') (?ebb lib' x a a' e)),
+        H5 : computes_to_valc ?lib ?T (mkc_product ?A ?v ?B),
+        H6 : close ?ts ?lib ?T ?T' ?eq,
+        H' : context[per_product_eq_bar ?lib ?ea ?eb]
       |- _ ] =>
-      generalize (dest_close_per_product_l ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_product_l ts lib T A v B A' v' B' T' eq ea eb H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
 
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
-        H3 : computes_to_valc ?lib ?T' (mkc_product ?A ?v ?B),
-        H4 : close ?ts ?lib ?T ?T' ?eq
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A' ?A (?eaa lib' x)),
+        H4 : in_ext_ext ?lib (fun lib' x => forall a a' (e : ?eaa lib' x a a'), type_sys_props4 (close ?ts) lib' (substc ?a ?v' ?B') (substc ?a' ?v ?B) (?ebb lib' x a a' e)),
+        H5 : computes_to_valc ?lib ?T' (mkc_product ?A ?v ?B),
+        H6 : close ?ts ?lib ?T ?T' ?eq,
+        H' : context[per_product_eq_bar ?lib ?ea ?eb]
       |- _ ] =>
-      generalize (dest_close_per_product_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_product_r ts lib T A v B A' v' B' T' eq ea eb H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
 
 (*    (* w *)
     | [ H1 : type_system ?ts,
@@ -924,39 +930,42 @@ Ltac dest_close_lr h :=
 
     (* uni *)
     | [ H1 : local_ts ?ts,
-        H2 : type_system ?ts,
-        H3 : defines_only_universes ?ts,
-        H4 : computes_to_valc ?lib ?T (mkc_uni ?i),
-        H5 : close ?ts ?lib ?T ?T' ?eq
+        H2 : computes_to_valc ?lib ?T (mkc_uni ?i),
+        H3 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_uni_l ts lib T i T' eq H1 H2 H3 H4 H5); intro h; no_duplicate h
+      generalize (dest_close_per_uni_l ts lib T i T' eq H1 H2 H3); intro h; no_duplicate h
 
     | [ H1 : local_ts ?ts,
-        H2 : type_system ?ts,
-        H3 : defines_only_universes ?ts,
-        H4 : computes_to_valc ?lib ?T' (mkc_uni ?i),
-        H5 : close ?ts ?lib ?T ?T' ?eq
+        H2 : computes_to_valc ?lib ?T' (mkc_uni ?i),
+        H3 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_uni_r ts lib T i T' eq H1 H2 H3 H4 H5); intro h; no_duplicate h
+      generalize (dest_close_per_uni_r ts lib T i T' eq H1 H2 H3); intro h; no_duplicate h
+
+    (* uni comp *)
+    | [ H1 : local_ts ?ts,
+        H2 : computes_to_uni ?lib ?T,
+        H3 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_uni_comp_l ts lib T T' eq H1 H2 H3); intro h; no_duplicate h
+
+    | [ H1 : local_ts ?ts,
+        H2 : computes_to_uni ?lib ?T',
+        H3 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_uni_comp_r ts lib T T' eq H1 H2 H3); intro h; no_duplicate h
 
     (* uni ceq bar *)
     | [ H1 : local_ts ?ts,
-        H2 : type_system ?ts,
-        H3 : defines_only_universes ?ts,
-        H4 : type_monotone ?ts,
-        H5 : ?T ==b==>(?bar) (mkc_uni ?i),
-        H6 : close ?ts ?lib ?T ?T' ?eq
+        H2 : ?T ==b==>(?bar) (mkc_uni ?i),
+        H3 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_uni_ceq_bar_l ts lib T i T' eq bar H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
+      generalize (dest_close_per_uni_ceq_bar_l ts lib T i T' eq bar H1 H2 H3); intro h; no_duplicate h
 
     | [ H1 : local_ts ?ts,
-        H2 : type_system ?ts,
-        H3 : defines_only_universes ?ts,
-        H4 : type_monotone ?ts,
-        H5 : ?T' ==b==>(?bar) (mkc_uni ?i),
-        H6 : close ?ts ?lib ?T ?T' ?eq
+        H2 : ?T' ==b==>(?bar) (mkc_uni ?i),
+        H3 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_uni_ceq_bar_r ts lib T i T' eq bar H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
+      generalize (dest_close_per_uni_ceq_bar_r ts lib T i T' eq bar H1 H2 H3); intro h; no_duplicate h
 
 (*    (* tuni *)
     | [ H1 : type_system ?ts,

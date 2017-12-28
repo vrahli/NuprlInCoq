@@ -31,7 +31,6 @@
 Require Export close_util_func2.
 
 
-
 Lemma close_type_system_func {o} :
   forall lib (ts : cts(o))
          T T'

@@ -1949,27 +1949,307 @@ Ltac computes_to_eqval :=
        eqconstr name
   end.
 
-Ltac apply_defines_only_universes :=
+Lemma computes_to_uni_in_bar_implies {o} :
+  forall (lib : @library o) T,
+    computes_to_uni lib T
+    -> exists lib' i, lib_extends lib' lib /\ T ===>(lib') (mkc_uni i).
+Proof.
+  introv h; unfold computes_to_uni in h; exrepnd.
+  pose proof (bar_non_empty bar) as ne; exrepnd.
+  pose proof (h0 _ ne0 lib' (lib_extends_refl lib')) as h0; simpl in *; exrepnd.
+  exists lib' i; dands; auto; eauto 3 with slow.
+Qed.
+
+Ltac apply_defines_only_universes0 :=
   match goal with
-    | [ H1 : type_system ?ts, H2 : defines_only_universes ?ts, H3 : ?ts ?lib ?T1 ?T2 ?eq |- _ ] =>
-      let h  := fresh "h" in
-      let h' := fresh "h'" in
-      let e1 := fresh "e1" in
-      let e2 := fresh "e2" in
-      generalize (type_system_ts_refl ts lib T1 T2 eq);
-        intro h;
-        repeat (dest_imp h h');
-        destruct h as [e1 e2];
-        apply H2 in e1;
-        apply H2 in e2;
-        exrepnd
+  | [ H1 : type_system ?ts,
+      H2 : defines_only_universes0 ?ts,
+      H3 : ?ts ?lib ?T1 ?T2 ?eq |- _ ] =>
+    let h  := fresh "h" in
+    let h' := fresh "h'" in
+    let e1 := fresh "e1" in
+    let e2 := fresh "e2" in
+    pose proof (type_system_ts_refl ts lib T1 T2 eq) as h;
+    repeat (autodimp h h');
+    destruct h as [e1 e2];
+    apply H2 in e1;
+    apply H2 in e2;
+    exrepnd
+  end.
+
+Ltac apply_defines_only_universes_basic :=
+  match goal with
+  | [ H1 : type_system ?ts,
+      H2 : defines_only_universes ?ts,
+      H3 : ?ts ?lib ?T1 ?T2 ?eq |- _ ] =>
+    let h  := fresh "h" in
+    let h' := fresh "h'" in
+    let e1 := fresh "e1" in
+    let e2 := fresh "e2" in
+    let l1 := fresh "l1" in
+    let l2 := fresh "l2" in
+    let i1 := fresh "i1" in
+    let i2 := fresh "i2" in
+    let f1 := fresh "f1" in
+    let f2 := fresh "f2" in
+    pose proof (type_system_ts_refl ts lib T1 T2 eq) as h;
+    repeat (autodimp h h');
+    destruct h as [e1 e2];
+    apply H2 in e1;
+    apply H2 in e2;
+    apply computes_to_uni_in_bar_implies in e1;
+    apply computes_to_uni_in_bar_implies in e2;
+    destruct e1 as [l1 [i1 [e1 f1] ] ];
+    destruct e2 as [l2 [i2 [e2 f2] ] ]
+  end.
+
+Lemma computes_to_uni_in_bar_implies_bar {o} :
+  forall {lib lib' : @library o} (b : @BarLib o lib) T v,
+    all_in_bar b (fun lib => T ===>(lib) v)
+    -> computes_to_uni lib' T
+    -> lib_extends lib' lib
+    -> exists i, v = mkc_uni i.
+Proof.
+  introv a h ext; unfold computes_to_uni in *; exrepnd.
+  apply (implies_all_in_bar_raise_bar _ ext) in a.
+  apply (implies_all_in_bar_intersect_bars_left _ bar) in a.
+  apply (implies_all_in_bar_intersect_bars_right _ (raise_bar b ext)) in h0.
+  remember (intersect_bars (raise_bar b ext) bar) as B; clear HeqB.
+  pose proof (bar_non_empty B) as ne; exrepnd.
+  pose proof (a _ ne0 lib'0 (lib_extends_refl lib'0)) as a.
+  pose proof (h0 _ ne0 lib'0 (lib_extends_refl lib'0)) as h0.
+  simpl in *; exrepnd.
+  spcast; computes_to_eqval.
+  exists i; auto.
+Qed.
+
+Ltac apply_defines_only_universes_bar_left :=
+  match goal with
+  | [ H1 : type_system ?ts,
+      H2 : defines_only_universes ?ts,
+      H3 : ?ts ?lib ?T1 ?T2 ?eq,
+      H4 : all_in_bar ?bar (fun lib => ccomputes_to_valc lib ?T1 ?v) |- _ ] =>
+    let h  := fresh "h" in
+    let h' := fresh "h'" in
+    let e1 := fresh "e1" in
+    let e2 := fresh "e2" in
+    let b1 := fresh "b1" in
+    let b2 := fresh "b2" in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let i1 := fresh "i1" in
+    let i2 := fresh "i2" in
+    pose proof (type_system_ts_refl ts lib T1 T2 eq) as h;
+    repeat (autodimp h h');
+    destruct h as [e1 e2];
+    apply H2 in e1;
+    apply H2 in e2;
+    pose proof (computes_to_uni_in_bar_implies_bar bar T1 v H4 e1) as h1;
+    autodimp h1 h';[eauto 2 with slow|];[];
+    destruct h1 as [i1 h1];
+    try (dest_cterms h1; inversion h1; fail)
+  end.
+
+Ltac apply_defines_only_universes_bar_right :=
+  match goal with
+  | [ H1 : type_system ?ts,
+      H2 : defines_only_universes ?ts,
+      H3 : ?ts ?lib ?T1 ?T2 ?eq,
+      H4 : all_in_bar ?bar (fun lib => ccomputes_to_valc lib ?T2 ?v) |- _ ] =>
+    let h  := fresh "h" in
+    let h' := fresh "h'" in
+    let e1 := fresh "e1" in
+    let e2 := fresh "e2" in
+    let b1 := fresh "b1" in
+    let b2 := fresh "b2" in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let i1 := fresh "i1" in
+    let i2 := fresh "i2" in
+    pose proof (type_system_ts_refl ts lib T1 T2 eq) as h;
+    repeat (autodimp h h');
+    destruct h as [e1 e2];
+    apply H2 in e1;
+    apply H2 in e2;
+    pose proof (computes_to_uni_in_bar_implies_bar bar T2 v H4 e2) as h2;
+    autodimp h2 h';[eauto 2 with slow|];[];
+    destruct h2 as [i2 h2];
+    try (dest_cterms h2; inversion h2; fail)
+  end.
+
+Lemma computes_to_uni_in_bar_implies_bar_ceq {o} :
+  forall {lib lib' : @library o} (b : @BarLib o lib) T v,
+    computes_to_valc_ceq_bar b T v
+    -> computes_to_uni lib' T
+    -> lib_extends lib' lib
+    -> exists l i, ccomputes_to_valc l v (mkc_uni i).
+Proof.
+  introv a h ext; unfold computes_to_uni in *; exrepnd.
+  unfold computes_to_valc_ceq_bar in a.
+  apply (implies_all_in_bar_raise_bar _ ext) in a.
+  apply (implies_all_in_bar_intersect_bars_left _ bar) in a.
+  apply (implies_all_in_bar_intersect_bars_right _ (raise_bar b ext)) in h0.
+  remember (intersect_bars (raise_bar b ext) bar) as B; clear HeqB.
+  pose proof (bar_non_empty B) as ne; exrepnd.
+  pose proof (a _ ne0 lib'0 (lib_extends_refl lib'0)) as a.
+  pose proof (h0 _ ne0 lib'0 (lib_extends_refl lib'0)) as h0.
+  simpl in *; exrepnd.
+  spcast.
+  computes_to_eqval.
+  eapply cequivc_uni in a0;[|apply computes_to_valc_refl;eauto 2 with slow].
+  exists lib'0 i; spcast; auto.
+Qed.
+
+Ltac apply_defines_only_universes_bar_ceq_left :=
+  match goal with
+  | [ H1 : type_system ?ts,
+      H2 : defines_only_universes ?ts,
+      H3 : ?ts ?lib ?T1 ?T2 ?eq,
+      H4 : computes_to_valc_ceq_bar ?bar ?T1 ?v |- _ ] =>
+    let h  := fresh "h" in
+    let h' := fresh "h'" in
+    let e1 := fresh "e1" in
+    let e2 := fresh "e2" in
+    let b1 := fresh "b1" in
+    let b2 := fresh "b2" in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let l1 := fresh "l1" in
+    let l2 := fresh "l2" in
+    let i1 := fresh "i1" in
+    let i2 := fresh "i2" in
+    pose proof (type_system_ts_refl ts lib T1 T2 eq) as h;
+    repeat (autodimp h h');
+    destruct h as [e1 e2];
+    apply H2 in e1;
+    apply H2 in e2;
+    pose proof (computes_to_uni_in_bar_implies_bar_ceq bar T1 v H4 e1) as h1;
+    autodimp h1 h';[eauto 2 with slow|];[];
+    destruct h1 as [l1 [i1 h1] ];
+    uncast;
+    apply computes_to_valc_isvalue_eq in h1;[|eauto 2 with slow];[];
+    try (dest_cterms h1; inversion h1; fail)
+  end.
+
+Ltac apply_defines_only_universes_bar_ceq_right :=
+  match goal with
+  | [ H1 : type_system ?ts,
+      H2 : defines_only_universes ?ts,
+      H3 : ?ts ?lib ?T1 ?T2 ?eq,
+      H4 : computes_to_valc_ceq_bar ?bar ?T2 ?v |- _ ] =>
+    let h  := fresh "h" in
+    let h' := fresh "h'" in
+    let e1 := fresh "e1" in
+    let e2 := fresh "e2" in
+    let b1 := fresh "b1" in
+    let b2 := fresh "b2" in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let l1 := fresh "l1" in
+    let l2 := fresh "l2" in
+    let i1 := fresh "i1" in
+    let i2 := fresh "i2" in
+    pose proof (type_system_ts_refl ts lib T1 T2 eq) as h;
+    repeat (autodimp h h');
+    destruct h as [e1 e2];
+    apply H2 in e1;
+    apply H2 in e2;
+    pose proof (computes_to_uni_in_bar_implies_bar_ceq bar T2 v H4 e2) as h2;
+    autodimp h2 h';[eauto 2 with slow|];[];
+    destruct h2 as [l2 [i2 h2] ];
+    uncast;
+    apply computes_to_valc_isvalue_eq in h2;[|eauto 2 with slow];[];
+    try (dest_cterms h2; inversion h2; fail)
+  end.
+
+Ltac usedou :=
+  match goal with
+  | [ H1 : defines_only_universes ?ts, H2 : ?ts ?lib ?T1 ?T2 ?eq |- _ ] =>
+    let cu1 := fresh "cu1" in
+    let cu2 := fresh "cu2" in
+    let xxx := fresh "xxx" in
+    pose proof (type_system_ts_refl ts lib T1 T2 eq) as cu1;
+    repeat (autodimp cu1 xxx);
+    destruct cu1 as [cu1 cu2];
+    apply H1 in cu1;
+    apply H1 in cu2
+  end.
+
+Lemma computes_to_uni_monotone {o} :
+  forall {lib lib'} (x : lib_extends lib' lib) (T : @CTerm o),
+    computes_to_uni lib T
+    -> computes_to_uni lib' T.
+Proof.
+  introv x comp.
+  unfold computes_to_uni in *.
+  exrepnd.
+  exists (raise_bar bar x).
+  eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_uni_monotone : slow.
+
+Lemma computes_to_uni_implies_eq {o} :
+  forall lib (T : @CTerm o) v,
+    computes_to_uni lib T
+    -> computes_to_valc lib T v
+    -> exists i, v = mkc_uni i.
+Proof.
+  introv compu compv.
+  apply computes_to_uni_in_bar_implies in compu; exrepnd; spcast.
+  apply (lib_extends_preserves_computes_to_valc _ _ compu0) in compv.
+  computes_to_eqval.
+  exists i; auto.
+Qed.
+
+Ltac use_computes_to_uni :=
+  match goal with
+  | [ H1 : computes_to_uni ?lib ?T,
+      H2 : computes_to_valc ?lib ?T ?v |- _ ] =>
+    let h := fresh "h" in
+    let i := fresh "i" in
+    pose proof (computes_to_uni_implies_eq lib T v H1 H2) as h;
+    destruct h as [i h];
+    try (dest_cterms h; inversion h; fail)
+
+  | [ H1 : computes_to_uni ?lib ?T,
+      H2 : ccomputes_to_valc ?lib ?T ?v |- _ ] =>
+    let h := fresh "h" in
+    let i := fresh "i" in
+    uncast;
+    pose proof (computes_to_uni_implies_eq lib T v H1 H2) as h;
+    destruct h as [i h];
+    try (dest_cterms h; inversion h; fail)
+  end.
+
+Ltac apply_defines_only_universes :=
+  first
+    [ use_computes_to_uni
+    | apply_defines_only_universes_bar_left
+    | apply_defines_only_universes_bar_right
+    | apply_defines_only_universes_bar_ceq_left
+    | apply_defines_only_universes_bar_ceq_right
+    | apply_defines_only_universes_basic
+    ].
+
+Ltac computes_to_valc_diff_ext :=
+  match goal with
+  | [ H1 : computes_to_valc ?lib1 ?T ?T1,
+      H2 : computes_to_valc ?lib2 ?T ?T2,
+      H3 : lib_extends ?lib2 ?lib1
+    |- _ ] =>
+    let name := fresh "eq" in
+    apply (lib_extends_preserves_computes_to_valc _ _ H3) in H1;
+    assert (T1 = T2) as name by (apply (computes_to_valc_eq lib2 T); auto);
+    dest_cterms name;
+    inversion name;
+    fail
   end.
 
 Ltac close_diff :=
   allunfold_per;
   try (apply_defines_only_universes);
   uncast;
-  computes_to_valc_diff.
+  first [computes_to_valc_diff_ext | computes_to_valc_diff].
 
 Ltac ccomputes_to_eqval :=
   uncast; repeat computes_to_eqval.

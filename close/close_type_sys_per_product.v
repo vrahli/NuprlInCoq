@@ -30,16 +30,14 @@
 *)
 
 
-Require Export type_sys_useful.
-Require Export dest_close.
-Require Export per_ceq_bar.
+Require Export close_util_product2.
 
 
 Lemma close_type_system_product {o} :
   forall lib (ts : cts(o))
          T T'
          (eq : per)
-         A A' v v' B B' eqa eqb,
+         A A' v v' B B' (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)),
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
@@ -60,27 +58,27 @@ Lemma close_type_system_product {o} :
     -> (eq <=2=> (per_product_eq_bar lib eqa eqb))
     -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
-  introv tsts dou mon c1 c2 cla tspa clb tspb eqiff.
+  introv tsts dou mon comp1 comp2 cla tsa clb tsb eqiff.
 
   prove_type_sys_props4 SCase; introv.
 
   + SCase "uniquely_valued".
     introv cl.
     dclose_lr; clear cl.
-
-    unfold per_product_bar in h; exrepd.
-    eapply eq_term_equals_trans;[|apply eq_term_equals_sym;exact e].
     eapply eq_term_equals_trans;[eauto|].
-
-    apply eq_term_equals_per_product_eq_bar; eauto 3 with slow.
+    apply eq_term_equals_sym.
+    eapply per_bar_per_product_bar_implies_eq_term_equals_per_product_bar_eq;
+      try exact comp1; eauto.
 
   + SCase "type_symmetric".
-    introv cl ee.
-    dclose_lr; clear cl; apply CL_product; eauto 3 with slow.
+    introv cl eqs.
+    dclose_lr; clear cl.
+    apply per_bar_per_product_bar_implies_close.
+    eapply type_extensionality_per_bar;[eauto|]; auto.
 
   + SCase "type_value_respecting".
-    introv ee ceq; repndors; subst; apply CL_product;
-      exists eqa eqb; dands; auto.
+    introv ee ceq; repndors; subst;
+      apply CL_product; exists eqa eqb; dands; auto.
 
     {
       eapply ccequivc_ext_product in ceq;[|eauto]; exrepnd; spcast.
@@ -97,66 +95,92 @@ Proof.
     repndors; subst.
 
     {
+      dup ceq as c.
       eapply ccequivc_ext_product in ceq;[|eauto]; exrepnd; spcast.
-      dclose_lr.
-      clear cl.
-      apply CL_product.
-      unfold per_product_bar in *; exrepnd.
-      exists eqa0 eqb0; dands; auto;[].
-
-
-      eapply type_family_ext_value_respecting_trans1; eauto 3 with slow.
+      dup tsa as tsa'.
+      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
+      dup tsb as tsb'.
+      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4_fam in tsb';[|eauto].
+      dclose_lr; clear cl.
+      apply per_bar_per_product_bar_implies_close.
+      eapply type_value_respecting_trans_per_bar_per_product_bar1;
+        try exact h; try exact comp1; eauto 3 with slow.
     }
 
     {
+      dup ceq as c.
       eapply ccequivc_ext_product in ceq;[|eauto]; exrepnd; spcast.
-      dclose_lr.
-      clear cl.
-      apply CL_product.
-      unfold per_product_bar in *; exrepnd.
-      exists eqa0 eqb0; dands; auto;[].
-      eapply type_family_ext_value_respecting_trans2; eauto 3 with slow.
+      dup tsa as tsa'.
+      apply in_ext_ext_type_sys_props4_sym in tsa'.
+      dup tsa' as tsa''.
+      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
+      dup tsb as tsb'.
+      eapply in_ext_ext_type_sys_props4_fam_sym in tsb'; eauto.
+      dup tsb' as tsb''.
+      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4_fam in tsb';[|eauto].
+      dclose_lr; clear cl.
+      apply per_bar_per_product_bar_implies_close.
+      eapply type_value_respecting_trans_per_bar_per_product_bar1;
+        try exact h; try exact comp2; eauto 3 with slow.
     }
 
     {
+      dup ceq as c.
       eapply ccequivc_ext_product in ceq;[|eauto]; exrepnd; spcast.
-      dclose_lr.
-      clear cl.
-      apply CL_product.
-      unfold per_product_bar in *; exrepnd.
-      exists eqa0 eqb0; dands; auto;[].
-      eapply type_family_ext_value_respecting_trans3; eauto 3 with slow.
+      dup tsa as tsa'.
+      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
+      dup tsb as tsb'.
+      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4_fam in tsb';[|eauto].
+      apply in_ext_ext_type_sys_props4_sym in tsa'.
+      eapply in_ext_ext_type_sys_props4_fam_sym in tsb'; eauto.
+      dclose_lr; clear cl.
+      apply per_bar_per_product_bar_implies_close.
+      eapply type_value_respecting_trans_per_bar_per_product_bar2;
+        try exact h; try exact comp1; eauto 3 with slow.
     }
 
     {
+      dup ceq as c.
       eapply ccequivc_ext_product in ceq;[|eauto]; exrepnd; spcast.
-      dclose_lr.
-      clear cl.
-      apply CL_product.
-      unfold per_product_bar in *; exrepnd.
-      exists eqa0 eqb0; dands; auto;[].
-      eapply type_family_ext_value_respecting_trans4; eauto 3 with slow.
+      dup tsa as tsa'.
+      apply in_ext_ext_type_sys_props4_sym in tsa'.
+      dup tsa' as tsa''.
+      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
+      dup tsb as tsb'.
+      eapply in_ext_ext_type_sys_props4_fam_sym in tsb'; eauto.
+      dup tsb' as tsb''.
+      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4_fam in tsb';[|eauto].
+      apply in_ext_ext_type_sys_props4_sym in tsa'.
+      eapply in_ext_ext_type_sys_props4_fam_sym in tsb'; eauto.
+      dclose_lr; clear cl.
+      apply per_bar_per_product_bar_implies_close.
+      eapply type_value_respecting_trans_per_bar_per_product_bar2;
+        try exact h; try exact comp2; eauto 3 with slow.
     }
 
   + SCase "term_symmetric".
     introv ee.
     apply eqiff in ee; apply eqiff; clear eqiff.
-    apply per_product_eq_bar_sym; eauto 3 with slow.
+    eapply per_product_eq_bar_sym; eauto.
 
   + SCase "term_transitive".
     introv ee1 ee2.
     apply eqiff in ee1; apply eqiff in ee2; apply eqiff; clear eqiff.
-    eapply per_product_eq_bar_trans; try exact ee1; eauto; eauto 3 with slow.
+    eapply per_product_eq_bar_trans; eauto.
 
   + SCase "term_value_respecting".
     introv ee ceq.
     apply eqiff in ee; apply eqiff; clear eqiff.
-    apply per_product_eq_bar_cequivc; eauto 3 with slow.
+    eapply per_product_eq_bar_resp; eauto.
 
   + SCase "type_gsymmetric".
-    split; intro cl; dclose_lr; clear cl; apply CL_product.
-    { eapply per_product_bar_sym; eauto. }
-    { eapply per_product_bar_sym_rev; eauto. }
+    dup tsa as tsa'.
+    apply in_ext_ext_type_sys_props4_sym in tsa'.
+    dup tsb as tsb'.
+    eapply in_ext_ext_type_sys_props4_fam_sym in tsb'; eauto.
+    split; intro cl; dclose_lr; clear cl; apply per_bar_per_product_bar_implies_close.
+    { eapply per_bar_per_product_bar_sym; try exact comp1;eauto. }
+    { eapply per_bar_per_product_bar_sym_rev; try exact comp1;eauto. }
 
   + SCase "type_gtransitive".
     apply CL_product.
@@ -164,10 +188,16 @@ Proof.
     eexists; eexists; eexists; eexists; eexists; eexists; dands; spcast; eauto.
 
   + SCase "type_mtransitive".
-    introv ee cl1 cl2; repndors; subst; dclose_lr; clear cl1 cl2;
-      dands; apply CL_product.
-    { eapply per_product_bar_trans1; try exact h; try exact h0; eauto. }
-    { eapply per_product_bar_trans2; try exact h; try exact h0; eauto. }
-    { eapply per_product_bar_trans3; try exact h; try exact h0; eauto. }
-    { eapply per_product_bar_trans4; try exact h; try exact h0; eauto. }
+    introv ee cl1 cl2.
+    dup tsa as tsa'.
+    apply in_ext_ext_type_sys_props4_sym in tsa'.
+    dup tsb as tsb'.
+    eapply in_ext_ext_type_sys_props4_fam_sym in tsb'; eauto.
+
+    repndors; subst; dclose_lr; clear cl1 cl2; dands; apply per_bar_per_product_bar_implies_close.
+
+    { eapply per_bar_per_product_bar_trans1; try exact comp1; try exact h; try exact h0; eauto. }
+    { eapply per_bar_per_product_bar_trans2; try exact comp1; try exact h; try exact h0; eauto. }
+    { eapply per_bar_per_product_bar_trans3; try exact comp2; try exact h; try exact h0; eauto. }
+    { eapply per_bar_per_product_bar_trans4; try exact comp2; try exact h; try exact h0; eauto. }
 Qed.

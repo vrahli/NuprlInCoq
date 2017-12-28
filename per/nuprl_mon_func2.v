@@ -669,7 +669,7 @@ Definition univi_eq_lib_per {o}
            (lib : @library o)
            (i : nat) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) => univi_eq (univi i) lib').
+  exists (fun lib' (x : lib_extends lib' lib) => univi_eq (univi_bar i) lib').
   introv x y; introv; tcsp.
 Defined.
 
@@ -680,11 +680,28 @@ Lemma sub_lib_per_univi_eq_lib_per {o} :
 Proof.
   introv mon y h; simpl in *.
   unfold univi_eq in *; exrepnd.
-  pose proof (@close_monotone o (univi j)) as q; autodimp q hyp.
+  pose proof (@close_monotone o (univi_bar j)) as q; autodimp q hyp; eauto 3 with slow.
   eapply q in h0; autodimp h0 hyp; eauto.
   exrepnd; eauto.
 Qed.
 Hint Resolve sub_lib_per_univi_eq_lib_per : slow.
+
+Lemma univi_monotone_func_implies_univi_bar_monotone_func {o} :
+  forall i,
+    @type_monotone_func o (univi i)
+    -> @type_monotone_func o (univi_bar i).
+Proof.
+  introv mon h.
+  unfold univi_bar, per_bar in *; exrepnd.
+  exists (per_bar_eq_bar_lib_per lib bar eqa); introv; simpl.
+  dands; auto; eauto 3 with slow;[].
+  exists (raise_bar bar x) (raise_lib_per eqa x).
+  dands; tcsp;[].
+  introv br xt; introv; simpl in *; exrepnd.
+  eapply type_extensionality_univi;[apply (h0 lib1 br1 lib'1 (lib_extends_trans xt br2))|].
+  introv; split; intro h; eauto.
+Qed.
+Hint Resolve univi_monotone_func_implies_univi_bar_monotone_func : slow.
 
 Lemma univi_monotone_func {o} :
   forall i, @type_monotone_func o (univi i).
@@ -702,7 +719,7 @@ Proof.
     unfold univi_eq in *.
     apply h0 in h; exrepnd.
 
-    pose proof (@close_monotone o (univi j)) as q.
+    pose proof (@close_monotone o (univi_bar j)) as q.
     repeat (autodimp q hyp); eauto 3 with slow;[].
     pose proof (q lib lib' a b eqa) as q.
     repeat (autodimp q hyp); exrepnd.
@@ -713,15 +730,7 @@ Hint Resolve univi_monotone_func : slow.
 Lemma univi_bar_monotone_func {o} :
   forall i, @type_monotone_func o (univi_bar i).
 Proof.
-  introv h.
-  unfold univi_bar, per_bar in *; exrepnd.
-  exists (per_bar_eq_bar_lib_per lib bar eqa); introv; simpl.
-  dands; auto; eauto 3 with slow;[].
-  exists (raise_bar bar x) (raise_lib_per eqa x).
-  dands; tcsp;[].
-  introv br xt; introv; simpl in *; exrepnd.
-  eapply type_extensionality_univi;[apply (h0 lib1 br1 lib'1 (lib_extends_trans xt br2))|].
-  introv; split; intro h; eauto.
+  introv; eauto 3 with slow.
 Qed.
 Hint Resolve univi_bar_monotone_func : slow.
 

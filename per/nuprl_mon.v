@@ -754,13 +754,30 @@ Proof.
     exrepnd; exists eq'; dands; auto.
 Qed.
 
+Lemma univi_monotone_implies_univi_bar_monotone {o} :
+  forall i,
+    @type_monotone o (univi i)
+    -> @type_monotone o (univi_bar i).
+Proof.
+  introv mon h ext.
+  unfold univi_bar, per_bar in *; exrepnd.
+  exists (per_bar_eq (raise_bar bar ext) (raise_lib_per eqa ext)).
+  dands; auto; eauto 3 with slow.
+  exists (raise_bar bar ext) (raise_lib_per eqa ext).
+  dands; tcsp;[].
+  introv br xt; introv; simpl in *; exrepnd.
+  eapply type_extensionality_univi;[apply (h0 lib1 br1 lib'1 (lib_extends_trans xt br2))|].
+  introv; split; intro h; eauto.
+Qed.
+Hint Resolve univi_monotone_implies_univi_bar_monotone : slow.
+
 Lemma univi_monotone {o} :
   forall i, @type_monotone o (univi i).
 Proof.
   induction i as [? ind] using comp_ind_type.
   introv h ext.
   allrw @univi_exists_iff; exrepnd.
-  exists (fun A A' => (exists eqa, close (univi j) lib' A A' eqa)).
+  exists (@univi_eq o (univi_bar j) lib').
   allrw @univi_exists_iff.
   dands.
 
@@ -770,7 +787,7 @@ Proof.
     unfold univi_eq in *.
     apply h0 in h; exrepnd.
 
-    pose proof (@close_monotone o (univi j)) as q.
+    pose proof (@close_monotone o (univi_bar j)) as q.
     repeat (autodimp q hyp); eauto 3 with slow;[].
     pose proof (q lib lib' a b eqa) as q.
     repeat (autodimp q hyp); exrepnd.
@@ -781,15 +798,7 @@ Hint Resolve univi_monotone : slow.
 Lemma univi_bar_monotone {o} :
   forall i, @type_monotone o (univi_bar i).
 Proof.
-  introv h ext.
-  unfold univi_bar, per_bar in *; exrepnd.
-  exists (per_bar_eq (raise_bar bar ext) (raise_lib_per eqa ext)).
-  dands; auto; eauto 3 with slow.
-  exists (raise_bar bar ext) (raise_lib_per eqa ext).
-  dands; tcsp;[].
-  introv br xt; introv; simpl in *; exrepnd.
-  eapply type_extensionality_univi;[apply (h0 lib1 br1 lib'1 (lib_extends_trans xt br2))|].
-  introv; split; intro h; eauto.
+  introv; eauto 3 with slow.
 Qed.
 Hint Resolve univi_bar_monotone : slow.
 

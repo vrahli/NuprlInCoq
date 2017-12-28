@@ -35,33 +35,50 @@ Require Export dest_close.
 Require Export per_ceq_bar.
 
 
+Lemma ccequivc_ext_preserves_computes_to_uni {o} :
+  forall lib (T T' : @CTerm o),
+    ccequivc_ext lib T T'
+    -> computes_to_uni lib T
+    -> computes_to_uni lib T'.
+Proof.
+  introv ceq comp.
+  unfold computes_to_uni in *; exrepnd.
+  exists bar.
+  introv br ext.
+  pose proof (comp0 _ br _ ext) as comp0; simpl in *.
+
+  assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
+  pose proof (ceq _ x) as ceq; simpl in *.
+
+  exrepnd; exists i.
+  spcast.
+  eapply cequivc_uni in comp1;[|eauto]; auto.
+Qed.
+Hint Resolve ccequivc_ext_preserves_computes_to_uni : slow.
 
 Lemma type_equality_respecting_trans_init_implies {o} :
-  forall (ts : cts(o)) lib (bar : BarLib lib) T T' i j,
+  forall (ts : cts(o)) lib T T',
     local_ts ts
-    -> type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> all_in_bar bar (fun lib => T ===>(lib) (mkc_uni i))
-    -> all_in_bar bar (fun lib => T' ===>(lib) (mkc_uni j))
+    -> computes_to_uni lib T
+    -> computes_to_uni lib T'
     -> type_equality_respecting_trans ts lib T T'
     -> type_equality_respecting_trans (close ts) lib T T'.
 Proof.
-  introv locts tsts dou mon inbar1 inbar2 trans h ceq cl.
+  introv locts inbar1 inbar2 trans h ceq cl.
   apply CL_init.
   eapply trans; eauto.
   repndors; subst.
 
-  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+  - apply ccequivc_ext_preserves_computes_to_uni in ceq; auto.
     dclose_lr; auto.
 
-  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+  - apply ccequivc_ext_preserves_computes_to_uni in ceq; auto.
     dclose_lr; auto.
 
-  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+  - apply ccequivc_ext_preserves_computes_to_uni in ceq; auto.
     dclose_lr; auto.
 
-  - eapply ccequivc_ext_preserves_all_in_bar in ceq;[|eauto];[].
+  - apply ccequivc_ext_preserves_computes_to_uni in ceq; auto.
     dclose_lr; auto.
 Qed.
 
@@ -76,6 +93,7 @@ Proof.
 Qed.
 Hint Resolve computes_to_valc_uni_implies_all_in_bar_trivial : slow.
 
+
 Lemma close_type_system_init {p} :
   forall (ts : cts(p)) lib T T' eq,
     local_ts ts
@@ -86,7 +104,7 @@ Lemma close_type_system_init {p} :
     -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
   introv locts tysys dou mon e.
-  use_dou.
+  usedou.
 
   prove_type_sys_props4 SCase; introv.
 

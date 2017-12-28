@@ -116,7 +116,7 @@ Fixpoint univi {p} (i : nat) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
     (
       T ===>(lib) (mkc_uni n)
       # T' ===>(lib) (mkc_uni n)
-      # eq <=2=> (univi_eq (univi n) lib)
+      # eq <=2=> (univi_eq (per_bar (univi n)) lib)
     )
     {+} univi n lib T T' eq
   end.
@@ -167,7 +167,7 @@ Lemma univi_mkc_uni {o} :
           lib
           (mkc_uni i)
           (mkc_uni i)
-          (univi_eq (univi i) lib).
+          (univi_eq (univi_bar i) lib).
 Proof.
   intros.
   simpl.
@@ -183,7 +183,7 @@ Lemma univi_exists {p} :
         , j < i
          # T ===>(lib) (mkc_uni j)
          # T' ===>(lib) (mkc_uni j)
-         # eq <=2=> (univi_eq (univi j) lib)}.
+         # eq <=2=> (univi_eq (univi_bar j) lib)}.
 Proof.
   induction i; introv u; simpl in *; tcsp.
   repndors; repnd; try (complete (apply IHi in u; exrepnd; exists j; sp)).
@@ -197,7 +197,7 @@ Lemma univi_exists_iff {p} :
           , j < i
           # T ===>(lib) (mkc_uni j)
           # T' ===>(lib) (mkc_uni j)
-          # eq <=2=> (univi_eq (univi j) lib) }.
+          # eq <=2=> (univi_eq (univi_bar j) lib) }.
 Proof.
   introv; split; intro k.
   { apply univi_exists; auto. }
@@ -250,8 +250,17 @@ Definition univ {p} lib (T T' : @CTerm p) (eq : per) :=
 
 *)
 
-Definition defines_only_universes {o} (ts : cts(o)) :=
+Definition defines_only_universes0 {o} (ts : cts(o)) :=
   forall lib (T : @CTerm o) eq, ts lib T T eq -> {i : nat , T ===>(lib) (mkc_uni i)}.
+
+Definition computes_to_uni {o} lib (T : @CTerm o) :=
+  exists (bar : @BarLib o lib),
+    all_in_bar bar (fun lib => {i : nat , T ===>(lib) (mkc_uni i)}).
+
+Definition defines_only_universes {o} (ts : cts(o)) :=
+  forall lib (T : @CTerm o) eq,
+    ts lib T T eq
+    -> computes_to_uni lib T.
 
 (* begin hide *)
 

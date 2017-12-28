@@ -34,43 +34,43 @@ Require Export type_sys_useful2.
 Require Export dest_close.
 
 
-Require Import close_type_sys_per_init.
-Require Import close_type_sys_per_bar.
-Require Import close_type_sys_per_int.
-Require Import close_type_sys_per_nat.
-Require Import close_type_sys_per_atom.
-Require Import close_type_sys_per_uatom.
-Require Import close_type_sys_per_csname.
-Require Import close_type_sys_per_base.
-Require Import close_type_sys_per_sqle.
-Require Import close_type_sys_per_sqequal.
-Require Import close_type_sys_per_eq.
-(*Require Import close_type_sys_per_req.
- Require Import close_type_sys_per_teq.
- Require Import close_type_sys_per_isect.
-(*Require Import close_type_sys_per_eisect.*)*)
-Require Import close_type_sys_per_func.
-(*Require Import close_type_sys_per_disect.
- Require Import close_type_sys_per_pertype.
- Require Import close_type_sys_per_ipertype.
- Require Import close_type_sys_per_spertype.
- Require Import close_type_sys_per_w.
- Require Import close_type_sys_per_m.
- Require Import close_type_sys_per_texc.*)
-Require Import close_type_sys_per_union.
-(*Require Import close_type_sys_per_image.
- Require Import close_type_sys_per_partial.
- Require Import close_type_sys_per_admiss.
- Require Import close_type_sys_per_mono.
- Require Import close_type_sys_per_ffatom.
- Require Import close_type_sys_per_effatom.
- Require Import close_type_sys_per_ffatoms.
- Require Import close_type_sys_per_set.
- Require Import close_type_sys_per_tunion.*)
-(*Require Import close_type_sys_per_product.
-(*Require Import close_type_sys_per_pw.
- Require Import close_type_sys_per_pm.*)
- *)
+Require Export close_type_sys_per_init.
+Require Export close_type_sys_per_bar.
+Require Export close_type_sys_per_int.
+Require Export close_type_sys_per_nat.
+Require Export close_type_sys_per_atom.
+Require Export close_type_sys_per_uatom.
+Require Export close_type_sys_per_csname.
+Require Export close_type_sys_per_base.
+Require Export close_type_sys_per_sqle.
+Require Export close_type_sys_per_sqequal.
+Require Export close_type_sys_per_eq.
+(*Require Export close_type_sys_per_req.
+ Require Export close_type_sys_per_teq.
+ Require Export close_type_sys_per_isect.
+(*Require Export close_type_sys_per_eisect.*)*)
+Require Export close_type_sys_per_func.
+(*Require Export close_type_sys_per_disect.
+ Require Export close_type_sys_per_pertype.
+ Require Export close_type_sys_per_ipertype.
+ Require Export close_type_sys_per_spertype.
+ Require Export close_type_sys_per_w.
+ Require Export close_type_sys_per_m.
+ Require Export close_type_sys_per_texc.*)
+Require Export close_type_sys_per_union.
+(*Require Export close_type_sys_per_image.
+ Require Export close_type_sys_per_partial.
+ Require Export close_type_sys_per_admiss.
+ Require Export close_type_sys_per_mono.
+ Require Export close_type_sys_per_ffatom.
+ Require Export close_type_sys_per_effatom.
+ Require Export close_type_sys_per_ffatoms.
+ Require Export close_type_sys_per_set.
+ Require Export close_type_sys_per_tunion.*)
+Require Export close_type_sys_per_product.
+(*Require Export close_type_sys_per_pw.
+ Require Export close_type_sys_per_pm.*)
+
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
@@ -461,7 +461,9 @@ Qed.
 
 Lemma close_uniquely_valued {o} :
   forall (ts : cts(o)),
-    type_system ts
+    local_ts ts
+    -> ts_implies_per_bar ts
+    -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> uniquely_valued (close ts).
@@ -473,7 +475,9 @@ Qed.
 
 Lemma close_type_symmetric {o} :
   forall (ts : cts(o)),
-    type_system ts
+    local_ts ts
+    -> ts_implies_per_bar ts
+    -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> type_symmetric (close ts).
@@ -485,7 +489,9 @@ Qed.
 
 Lemma close_type_extensionality {o} :
   forall (ts : cts(o)),
-    type_system ts
+    local_ts ts
+    -> ts_implies_per_bar ts
+    -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> type_extensionality (close ts).
@@ -497,7 +503,9 @@ Qed.
 
 Lemma close_type_transitive {o} :
   forall (ts : cts(o)),
-    type_system ts
+    local_ts ts
+    -> ts_implies_per_bar ts
+    -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> type_transitive (close ts).
@@ -509,7 +517,9 @@ Qed.
 
 Lemma close_type_value_respecting {o} :
   forall (ts : cts(o)),
-    type_system ts
+    local_ts ts
+    -> ts_implies_per_bar ts
+    -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> type_value_respecting (close ts).

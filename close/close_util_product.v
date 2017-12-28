@@ -28,12 +28,11 @@
 
 
 Require Export type_sys.
-Require Export dest_close.
 Require Export per_ceq_bar.
 Require Export close_util_bar.
 
 
-Definition per_product_bar_eq_lib_per
+Definition per_product_eq_bar_lib_per
            {o}
            {lib : @library o}
            (eqa : lib-per(lib,o))
@@ -104,7 +103,7 @@ Qed.
 
 Lemma per_bar_eq_per_product_eq_bar_lib_per {o} :
   forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)) eqb,
-    (per_bar_eq bar (per_product_eq_bar_lib_per lib eqa eqb))
+    (per_bar_eq bar (per_product_eq_bar_lib_per eqa eqb))
     <=2=> (per_product_eq_bar lib eqa eqb).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.

@@ -449,7 +449,7 @@ Hint Resolve per_union_bar_implies_per_bar : slow.
 
 Lemma local_per_product_bar_eq_trivial_bar {o} :
   forall {lib} (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) t1 t2,
-    per_bar_eq (trivial_bar lib) (per_product_bar_eq_lib_per eqa eqb) t1 t2
+    per_bar_eq (trivial_bar lib) (per_product_eq_bar_lib_per eqa eqb) t1 t2
     -> per_product_eq_bar lib eqa eqb t1 t2.
 Proof.
   introv alla.
@@ -464,7 +464,7 @@ Proof.
   introv per.
   unfold per_product_bar in *; exrepnd.
 
-  exists (trivial_bar lib) (per_product_bar_eq_lib_per eqa eqb).
+  exists (trivial_bar lib) (per_product_eq_bar_lib_per eqa eqb).
   dands.
 
   - introv br ext; introv; simpl in *.
@@ -826,7 +826,7 @@ Proof.
   introv per.
   unfold per_product_bar in *; exrepnd.
 
-  exists bar (per_product_bar_eq_lib_per eqa eqb).
+  exists bar (per_product_eq_bar_lib_per eqa eqb).
   dands.
 
   - introv br ext; introv; simpl in *.
