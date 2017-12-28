@@ -518,3 +518,4 @@ Proof.
   introv eqiff alla.
   eapply local_per_bar; eauto; eauto 3 with slow.
 Qed.
+Hint Resolve local_univ : slow.
