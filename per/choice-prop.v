@@ -1,6 +1,9 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -135,8 +138,95 @@ Proof.
 Qed.
 *)
 
-Lemma choice_teqi {p} :
-  forall lib i (A : @CTerm p) v1 B1 v2 B2,
+Lemma all_in_bar_ext_exists_lib_per_implies_exists {o} :
+  forall {lib} (bar : @BarLib o lib)
+         (F : forall lib' (x : lib_extends lib' lib) (eqa : lib-per(lib',o)), Prop),
+    all_in_bar_ext bar (fun lib' x => {eqa : lib-per(lib',o) , F lib' x eqa})
+    ->
+    exists (feqa : bar-lib-per(lib,bar,o)),
+    forall lib1 (br : bar_lib_bar bar lib1)
+           lib2 (ext : lib_extends lib2 lib1)
+           (x : lib_extends lib2 lib),
+      F lib2 x (feqa lib1 br lib2 ext x).
+Proof.
+  introv h.
+  pose proof (DependentFunctionalChoice_on
+                (pack_lib_bar bar)
+                (fun x => lib-per(plb_lib2 _ x,o))
+                (fun x e => F (plb_lib2 _ x)
+                              (plb_x _ x)
+                              e)) as C.
+  simpl in C.
+  repeat (autodimp C hyp).
+  { introv; destruct x; simpl in *; eapply h; eauto. }
+  exrepnd.
+  exists (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
+            (f (MkPackLibBar lib1 br lib2 ext x))).
+  introv.
+  pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
+Qed.
+
+Notation "bar-per( lib , bar , o )" :=
+  (forall (lib1 : library) (br : bar_lib_bar bar lib1)
+          (lib2 : library) (ext : lib_extends lib2 lib1)
+          (x : lib_extends lib2 lib), per(o)).
+
+Lemma all_in_bar_ext_exists_per_implies_exists {o} :
+  forall {lib} (bar : @BarLib o lib)
+         (F : forall lib' (x : lib_extends lib' lib) (eqa : per(o)), Prop),
+    all_in_bar_ext bar (fun lib' x => {eqa : per(o) , F lib' x eqa})
+    ->
+    exists (feqa : bar-per(lib,bar,o)),
+    forall lib1 (br : bar_lib_bar bar lib1)
+           lib2 (ext : lib_extends lib2 lib1)
+           (x : lib_extends lib2 lib),
+      F lib2 x (feqa lib1 br lib2 ext x).
+Proof.
+  introv h.
+  pose proof (DependentFunctionalChoice_on
+                (pack_lib_bar bar)
+                (fun x => per(o))
+                (fun x e => F (plb_lib2 _ x)
+                              (plb_x _ x)
+                              e)) as C.
+  simpl in C.
+  repeat (autodimp C hyp).
+  { introv; destruct x; simpl in *; eapply h; eauto. }
+  exrepnd.
+  exists (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
+            (f (MkPackLibBar lib1 br lib2 ext x))).
+  introv.
+  pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
+Qed.
+
+Lemma nuprli_type_extensionality {o} :
+  forall i, @type_extensionality o (nuprli i).
+Proof.
+  apply nuprli_type_system.
+Qed.
+Hint Resolve nuprli_type_extensionality : slow.
+
+Definition bar_per2lib_per {o}
+           {lib  : @library o}
+           {bar  : BarLib lib}
+           (feqa : bar-per(lib,bar,o)) : lib-per(lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) t1 t2 =>
+            {lib1 : library
+            , {br : bar_lib_bar bar lib1
+            , {ext : lib_extends lib' lib1
+            , {x : lib_extends lib' lib
+            , feqa lib1 br lib' ext x t1 t2}}}}).
+
+  introv x y; introv.
+  split; introv h; exrepnd.
+  - exists lib1 br ext x0; auto.
+  - exists lib1 br ext x0; auto.
+Defined.
+
+(* CRAZY *)
+Lemma choice_teqi {o} :
+  forall lib i (A : @CTerm o) v1 B1 v2 B2,
     (forall a1 a2 : CTerm,
        equality lib a1 a2 A
        -> equality lib (substc a1 v1 B1) (substc a2 v2 B2) (mkc_uni i))
@@ -160,16 +250,44 @@ Proof.
     intro C.
   dest_imp C hyp.
 
-  intros; exrepnd.
-  generalize (F a1 a2 a3); intros teq; simpl; sp.
-  unfold equality in teq; exrepnd.
-  inversion teq1; try not_univ.
-  duniv j h.
-  allrw @univi_exists_iff; exrepnd.
-  computes_to_value_isvalue; GC.
-  discover; exrepnd.
-  allfold (@nuprli p j0 lib).
-  exists eqa; sp.
+  {
+    intros; exrepnd.
+    generalize (F a1 a2 a3); intros teq; simpl; sp.
+    unfold equality in teq; exrepnd.
+
+    apply dest_nuprl_uni in teq1.
+    apply univ_implies_univi_bar3 in teq1; exrepnd.
+    apply teq2 in teq0.
+    clear dependent eq.
+
+    assert (exists (bar : BarLib lib), per_bar_eq bar (univi_eq_lib_per lib i) (B1)[[v1\\a1]] (B2)[[v2\\a2]]) as h by (exists bar; auto).
+    clear dependent bar.
+    unfold per_bar_eq in h; simpl in *.
+
+    pose proof (@collapse2bars_ext o lib (fun lib' x => univi_eq (univi_bar i) lib' (B1) [[v1\\a1]] (B2)[[v2\\a2]])) as q.
+    simpl in q; autodimp q hyp; tcsp;[].
+    apply q in h; clear q.
+    exrepnd.
+    unfold univi_eq in h0; fold (@nuprli o i) in *.
+
+    apply all_in_bar_ext_exists_per_implies_exists in h0; exrepnd.
+    exists (per_bar_eq bar (bar_per2lib_per feqa)).
+    apply CL_bar.
+    exists bar (bar_per2lib_per feqa).
+    dands; tcsp.
+
+    introv br ext; introv; simpl; try (fold (@nuprli o i)).
+    pose proof (h1 _ br _ ext x) as q.
+    eapply nuprli_type_extensionality;[eauto|].
+    introv; split; intro h.
+
+    { exists lib' br ext x; auto. }
+
+    exrepnd.
+    pose proof (h1 _ br0 _ ext0 x0) as h1.
+    eapply nuprli_uniquely_valued in h1; try exact q.
+    apply h1; auto.
+  }
 
   exrepnd.
 
@@ -185,10 +303,10 @@ Proof.
                                  e))); simpl; sp.
 Qed.
 
-Lemma choice_spteqi {p} :
+Lemma choice_spteqi {o} :
   forall lib i F1 F2,
     (forall x y : CTerm, equality lib (F1 x y) (F2 x y) (mkc_uni i))
-    -> {f : forall x y : @CTerm p, per(p)
+    -> {f : forall x y : @CTerm o, per(o)
         , forall x y : CTerm, nuprli i lib (F1 x y) (F2 x y) (f x y)}.
 Proof.
   introv F.
@@ -202,16 +320,44 @@ Proof.
     intro C.
   dest_imp C hyp.
 
-  intros; exrepnd.
-  generalize (F a0 a); intros teq.
-  unfold equality in teq; exrepnd; simpl.
-  inversion teq1; try not_univ.
-  duniv j h.
-  allrw @univi_exists_iff; exrepnd.
-  computes_to_value_isvalue; GC.
-  discover; exrepnd.
-  allfold (@nuprli p j0 lib).
-  exists eqa; sp.
+  {
+    intros; exrepnd.
+    generalize (F a0 a); intros teq.
+    unfold equality in teq; exrepnd; simpl.
+
+    apply dest_nuprl_uni in teq1.
+    apply univ_implies_univi_bar3 in teq1; exrepnd.
+    apply teq2 in teq0.
+    clear dependent eq.
+
+    assert (exists (bar : BarLib lib), per_bar_eq bar (univi_eq_lib_per lib i) (F1 a0 a) (F2 a0 a)) as h by (exists bar; auto).
+    clear dependent bar.
+    unfold per_bar_eq in h; simpl in *.
+
+    pose proof (@collapse2bars_ext o lib (fun lib' x => univi_eq (univi_bar i) lib' (F1 a0 a) (F2 a0 a))) as q.
+    simpl in q; autodimp q hyp; tcsp;[].
+    apply q in h; clear q.
+    exrepnd.
+    unfold univi_eq in h0; fold (@nuprli o i) in *.
+
+    apply all_in_bar_ext_exists_per_implies_exists in h0; exrepnd.
+    exists (per_bar_eq bar (bar_per2lib_per feqa)).
+    apply CL_bar.
+    exists bar (bar_per2lib_per feqa).
+    dands; tcsp.
+
+    introv br ext; introv; simpl; try (fold (@nuprli o i)).
+    pose proof (h1 _ br _ ext x) as q.
+    eapply nuprli_type_extensionality;[eauto|].
+    introv; split; intro h.
+
+    { exists lib' br ext x; auto. }
+
+    exrepnd.
+    pose proof (h1 _ br0 _ ext0 x0) as h1.
+    eapply nuprli_uniquely_valued in h1; try exact q.
+    apply h1; auto.
+  }
 
   exrepnd.
 
@@ -245,10 +391,12 @@ Proof.
     intro C.
   dest_imp C hyp.
 
-  intros; exrepnd.
-  generalize (F a1 a2 a3); intros teq.
-  unfold equality in teq; exrepnd; simpl.
-  exists eq; sp.
+  {
+    intros; exrepnd.
+    generalize (F a1 a2 a3); intros teq.
+    unfold equality in teq; exrepnd; simpl.
+    exists eq; sp.
+  }
 
   exrepnd.
 
@@ -282,10 +430,12 @@ Proof.
     intro C.
   dest_imp C hyp.
 
-  intros; exrepnd.
-  generalize (F a1 a2 a3); intros teq.
-  unfold tequality in teq; exrepnd; simpl.
-  exists eq; sp.
+  {
+    intros; exrepnd.
+    generalize (F a1 a2 a3); intros teq.
+    unfold tequality in teq; exrepnd; simpl.
+    exists eq; sp.
+  }
 
   exrepnd.
 
@@ -341,11 +491,13 @@ Proof.
                            b)).
   intro k; autodimp k hyp.
 
-  introv; exrepnd.
-  generalize (F p1 p2 (eq_equality1 lib p1 p2 P eqp ep np)
-                a1 a0 (eq_equality2 lib a1 a0 (substc p1 ap A) (substc p2 ap A) (eqa p1 p2 ep)
-                                    a3 (na p1 p2 ep))); intro teq.
-  unfold tequality in teq; auto.
+  {
+    introv; exrepnd.
+    generalize (F p1 p2 (eq_equality1 lib p1 p2 P eqp ep np)
+                  a1 a0 (eq_equality2 lib a1 a0 (substc p1 ap A) (substc p2 ap A) (eqa p1 p2 ep)
+                                      a3 (na p1 p2 ep))); intro teq.
+    unfold tequality in teq; auto.
+  }
 
   exrepnd.
   exists (fun p1 p2 ep a1 a2 ea =>

@@ -2263,10 +2263,10 @@ Record bar_per {o} {lib} (bar : @BarLib o lib) :=
 
 Notation "bar-per( lib , bar , o )" := (@bar_per o lib bar).
 
-Notation "bar-lib-per( lib , bar , o )" :=
+(*Notation "bar-lib-per( lib , bar , o )" :=
   (forall (lib1 : library) (br : bar_lib_bar bar lib1)
           (lib2 : library) (ext : lib_extends lib2 lib1),
-      lib-per(lib2,o)).
+      lib-per(lib2,o)).*)
 
 Definition all_in_bar_ext2 {o} {lib}
            (bar : @BarLib o lib)
