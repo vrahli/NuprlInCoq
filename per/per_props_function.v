@@ -33,9 +33,25 @@
 Require Export nuprl_props.
 Require Export choice.
 Require Export cvterm.
-Require Export nuprl_mon.
 
 
+
+Definition pair2lib_per {o}
+           {lib A  B}
+           (f : {lib' : library $ lib_extends lib' lib} -> per(o))
+           (p : forall a, nuprl (projT1 a) A B (f a)): lib-per(lib,o).
+Proof.
+  exists (fun (lib' : library) (ext : lib_extends lib' lib) =>
+            f (existT (fun lib' => lib_extends lib' lib) lib' ext)).
+
+  introv.
+  pose proof (p (exI(lib',e))) as a.
+  pose proof (p (exI(lib',y))) as b.
+  apply nuprl_refl in a.
+  apply nuprl_refl in b.
+  simpl in *.
+  eapply nuprl_uniquely_valued; eauto.
+Defined.
 
 Lemma choice_ext_lib_teq {o} :
   forall lib (A B : @CTerm o),
@@ -57,16 +73,34 @@ Proof.
   }
 
   exrepnd.
-
-  exists (fun (lib' : library) (ext : lib_extends lib' lib) =>
-            f (existT (fun lib' => lib_extends lib' lib) lib' ext)).
+  exists (pair2lib_per f C0); simpl.
   introv.
   pose proof (C0 (existT (fun lib' => lib_extends lib' lib) lib' e)) as C.
   simpl in *; auto.
 Qed.
 
+Definition pair_dep2lib_per {o}
+           {lib : library}
+           {eqa : lib-per(lib,o)}
+           {v1 v2 B1 B2}
+           (f : {lib' : library $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}} -> per(o))
+           (p : forall a, nuprl (projT1 a) (B1)[[v1\\projT1(projT2(projT2 a))]] (B2)[[v2\\projT1(projT2(projT2(projT2 a)))]] (f a))
+  : lib-per-fam(lib,eqa,o).
+Proof.
+  exists (fun (lib' : library) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
+            f (existT _ lib' (existT _ x (existT _ a (existT _ a' e))))).
+
+  introv.
+  pose proof (p (exI( lib', exI( e, exI( a, exI( b, p0)))))) as w.
+  pose proof (p (exI( lib', exI( y, exI( a, exI( b, q)))))) as z.
+  apply nuprl_refl in w.
+  apply nuprl_refl in z.
+  simpl in *.
+  eapply nuprl_uniquely_valued; eauto.
+Defined.
+
 Lemma choice_ext_lib_teq_fam {o} :
-  forall lib (A1 : @CTerm o) v1 B1 A2 v2 B2 eqa,
+  forall lib (A1 : @CTerm o) v1 B1 A2 v2 B2 (eqa : lib-per(lib,o)),
     (forall lib' e, nuprl lib' A1 A2 (eqa lib' e))
     -> (forall lib',
            lib_extends lib' lib
@@ -105,14 +139,121 @@ Proof.
   clear F.
   exrepnd.
 
-  exists (fun (lib' : library) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
-            f (existT _ lib' (existT _ x (existT _ a (existT _ a' e))))).
+  exists (pair_dep2lib_per f C0); simpl.
   introv; simpl in *.
   pose proof (C0 (existT _ lib' (existT _ x (existT _ a (existT _ a' e))))) as C.
   simpl in *; auto.
 Qed.
 
 Hint Resolve computes_to_valc_refl : slow.
+
+Lemma type_extensionality_per_func_ext_nuprl {o} :
+  @type_extensionality o (per_func_ext nuprl).
+Proof.
+  introv per e.
+  unfold per_func_ext in *; exrepnd.
+  exists eqa eqb; dands; auto.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym; auto.
+Qed.
+Hint Resolve type_extensionality_per_func_ext_nuprl : slow.
+
+Lemma uniquely_valued_per_func_ext_nuprl {o} :
+  @uniquely_valued o (per_func_ext nuprl).
+Proof.
+  introv pera perb.
+  unfold per_func_ext in *; exrepnd.
+
+  eapply eq_term_equals_trans;[eauto|].
+  eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
+
+  unfold type_family_ext in *; exrepnd; spcast; repeat computes_to_eqval.
+
+  apply implies_eq_term_equals_per_func_ext_eq.
+
+  {
+    introv.
+    pose proof (pera4 _ e) as pera4.
+    pose proof (perb4 _ e) as perb4.
+    simpl in *.
+    apply nuprl_refl in pera4.
+    apply nuprl_refl in perb4.
+    eapply nuprl_uniquely_valued; eauto.
+  }
+
+  {
+    introv.
+    pose proof (pera0 _ e a a' u) as pera0.
+    pose proof (perb0 _ e a a' v) as perb0.
+    simpl in *.
+    apply nuprl_refl in pera0.
+    apply nuprl_refl in perb0.
+    eapply nuprl_uniquely_valued; eauto.
+  }
+Qed.
+Hint Resolve uniquely_valued_per_func_ext_nuprl : slow.
+
+Lemma local_per_bar_per_func_ext_nuprl {o} :
+  @local_ts o (per_bar (per_func_ext nuprl)).
+Proof.
+  apply local_per_bar; eauto 3 with slow.
+Qed.
+Hint Resolve local_per_bar_per_func_ext_nuprl : slow.
+
+Lemma dest_nuprl_per_func_l {o} :
+  forall (ts : cts(o)) lib T A v B T' eq,
+    ts = univ
+    -> computes_to_valc lib T (mkc_function A v B)
+    -> close ts lib T T' eq
+    -> per_bar (per_func_ext (close ts)) lib T T' eq.
+Proof.
+  introv equ comp cl.
+  assert (type_system ts) as sys by (subst; eauto 3 with slow).
+  assert (defines_only_universes ts) as dou by (subst; eauto 3 with slow).
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
+
+  eapply local_per_bar_per_func_ext_nuprl; eauto.
+  introv br ext; introv.
+  pose proof (reca _ br _ ext x) as reca; simpl in *.
+  eapply reca; eauto 3 with slow.
+Qed.
+
+Lemma dest_nuprl_function {o} :
+  forall (lib : @library o) (A : @CTerm o) v B C w D eq,
+    nuprl lib (mkc_function A v B) (mkc_function C w D) eq
+    -> per_bar (per_func_ext nuprl) lib (mkc_function A v B) (mkc_function C w D) eq.
+Proof.
+  introv cl.
+  unfold nuprl in cl.
+  eapply dest_nuprl_per_func_l in cl; auto;
+    try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
+Qed.
+
+Lemma dest_nuprl_approx2 {o} :
+  forall lib (eq : per(o)) A v B C w D,
+    nuprl lib (mkc_function A v B) (mkc_function C w D) eq
+    ->
+    exists (bar : BarLib lib) (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)),
+      eq <=2=> (per_bar_eq bar (per_func_ext_eq_bar_lib_per lib eqa eqb)).
+Proof.
+  introv u.
+  apply dest_nuprl_function in u.
+  unfold per_bar in u; exrepnd.
+  exists bar.
+
+  (* We now have to get hold of [eqa] and [eqb]...
+     Like I did in choice.choice_teqi? *)
+
+XXXXXXX
+
+  eapply eq_term_equals_trans;[eauto|].
+  apply implies_eq_term_equals_per_bar_eq.
+  apply all_in_bar_ext_intersect_bars_same; simpl; auto.
+  introv br ext; introv.
+  pose proof (u0 _ br _ ext x) as u0; simpl in *.
+  unfold per_approx in *; exrepnd; spcast.
+  computes_to_value_isvalue.
+Qed.
 
 
 (* This is basically 'functionEquality' *)
@@ -131,6 +272,9 @@ Proof.
   - Case "->".
     intros teq.
     unfold tequality, nuprl in teq; exrepnd.
+
+
+XXXXXXXX
     inversion teq0; subst; try not_univ.
     rename_hyp_with @per_func_ext pera.
     allunfold_per.
