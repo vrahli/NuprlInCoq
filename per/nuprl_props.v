@@ -1138,24 +1138,58 @@ Proof.
     try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
 Qed.
 
+Lemma implies_all_in_bar_in_ext {o} :
+  forall {lib} (bar : @BarLib o lib) F,
+    all_in_bar bar F
+    -> all_in_bar bar (fun lib' => in_ext lib' F).
+Proof.
+  introv h br ext x.
+  apply (h _ br lib'1); eauto 3 with slow.
+Qed.
+
+Lemma all_in_bar_in_ext_implies {o} :
+  forall {lib} (bar : @BarLib o lib) F,
+    all_in_bar bar (fun lib' => in_ext lib' F)
+    -> all_in_bar bar F.
+Proof.
+  introv h br ext.
+  apply (h _ br lib'0); eauto 3 with slow.
+Qed.
+
 Lemma dest_nuprl_approx2 {o} :
   forall lib (eq : per(o)) a b c d,
     nuprl lib (mkc_approx a b) (mkc_approx c d) eq
     ->
     exists (bar : BarLib lib),
-      eq <=2=> (per_bar_eq bar (per_approx_eq_bar_lib_per lib a b)).
+      (eq <=2=> (per_bar_eq bar (per_approx_eq_bar_lib_per lib a b)))
+        # all_in_bar bar (fun lib => (capproxc lib a b <=> capproxc lib c d)).
 Proof.
   introv u.
   apply dest_nuprl_approx in u.
   unfold per_bar in u; exrepnd.
   exists bar.
-  eapply eq_term_equals_trans;[eauto|].
-  apply implies_eq_term_equals_per_bar_eq.
-  apply all_in_bar_ext_intersect_bars_same; simpl; auto.
-  introv br ext; introv.
-  pose proof (u0 _ br _ ext x) as u0; simpl in *.
-  unfold per_approx in *; exrepnd; spcast.
-  computes_to_value_isvalue.
+
+  dands.
+
+  {
+    eapply eq_term_equals_trans;[eauto|].
+    apply implies_eq_term_equals_per_bar_eq.
+    apply all_in_bar_ext_intersect_bars_same; simpl; auto.
+    introv br ext; introv.
+    pose proof (u0 _ br _ ext x) as u0; simpl in *.
+    unfold per_approx in *; exrepnd; spcast.
+    computes_to_value_isvalue.
+  }
+
+  {
+    apply all_in_bar_in_ext_implies.
+    introv br ext.
+    assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
+    pose proof (u0 _ br _ ext xt) as u0; simpl in *.
+    unfold per_approx in *; exrepnd.
+    spcast.
+    computes_to_value_isvalue.
+  }
 Qed.
 
 Lemma false_not_inhabited {p} :
@@ -1165,7 +1199,7 @@ Proof.
   rewrite mkc_false_eq in m.
   unfold member, equality, nuprl in m; exrepnd.
   apply dest_nuprl_approx2 in m1; exrepnd.
-  apply m2 in m0; clear m2.
+  apply m1 in m0; clear m2.
 
   unfold per_bar_eq in m0.
   pose proof (bar_non_empty bar) as na; exrepnd.
@@ -1175,7 +1209,7 @@ Proof.
 
   pose proof (bar_non_empty bar') as nb; exrepnd.
   assert (lib_extends lib'0 lib') as y by eauto 3 with slow.
-  pose proof (m1 _ nb0 lib'0 (lib_extends_refl lib'0) y) as m1; simpl in *.
+  pose proof (m2 _ nb0 lib'0 (lib_extends_refl lib'0) y) as m2; simpl in *.
 
   unfold per_approx_eq_bar in *; exrepnd.
   pose proof (bar_non_empty bar0) as nc; exrepnd.
