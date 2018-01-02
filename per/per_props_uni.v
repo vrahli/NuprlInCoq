@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -30,22 +31,63 @@
  *)
 
 
-Require Export per_props_nat.
+Require Export nuprl_props.
+Require Export choice.
+Require Export cvterm.
+
+(*Require Export per_props_nat.*)
 
 
-Lemma equality_in_uni {p} :
-  forall lib a b i,
-    @equality p lib a b (mkc_uni i)
+Lemma per_bar_eq_univi_eq_lib_per_implies {o} :
+  forall {lib} (bar : @BarLib o lib) i a b,
+    per_bar_eq bar (univi_eq_lib_per lib i) a b
+    -> exists (bar : BarLib lib), all_in_bar_ext bar (fun (lib' : library) x => univi_eq (univi_bar i) lib' a b).
+Proof.
+  introv per.
+
+  assert (exists (bar : BarLib lib), per_bar_eq bar (univi_eq_lib_per lib i) a b) as h by (exists bar; auto).
+  clear per; rename h into per.
+
+  pose proof (@collapse2bars_ext o lib (fun lib' x => univi_eq (univi_bar i) lib' a b)) as q.
+  simpl in q; autodimp q hyp; tcsp;[].
+  apply q in per; clear q.
+  exrepnd.
+  exists bar0; auto.
+Qed.
+
+Lemma equality_in_uni {o} :
+  forall lib (a b : @CTerm o) i,
+    equality lib a b (mkc_uni i)
     -> tequality lib a b.
 Proof.
   unfold tequality, equality, nuprl; introv e; exrepnd.
 
-  inversion e1; subst; try not_univ.
-  duniv j h.
-  induction j; allsimpl; sp.
-  discover; exrepnd.
-  exists eqa; sp.
-  allapply @nuprli_implies_nuprl; auto.
+  apply dest_nuprl_uni in e1.
+  apply univ_implies_univi_bar3 in e1; exrepnd.
+  apply e2 in e0.
+  clear dependent eq.
+
+  apply per_bar_eq_univi_eq_lib_per_implies in e0.
+  clear dependent bar; exrepnd.
+  unfold univi_eq in e1.
+  fold (@nuprli o i) in *.
+
+  apply all_in_bar_ext_exists_per_implies_exists in e1; exrepnd.
+  exists (per_bar_eq bar (bar_per2lib_per feqa)).
+  apply CL_bar; exists bar (bar_per2lib_per feqa); dands; tcsp;[].
+
+  introv br xt ; introv; simpl; fold (@nuprl o).
+  pose proof (e0 _ br _ xt x) as q.
+  eapply type_extensionality_nuprl;[eauto 3 with slow|].
+
+  introv; split; intro h.
+
+  { exists lib' br xt x; auto. }
+
+  exrepnd.
+  pose proof (e0 _ br0 _ ext x0) as e0.
+  eapply nuprli_uniquely_valued in e0; try exact q.
+  apply e0; auto.
 Qed.
 
 Lemma member_in_uni {p} :
@@ -55,182 +97,37 @@ Proof.
   apply equality_in_uni in e; sp.
 Qed.
 
-(* This is not provable, because in general we can't find the type level
- * of a type family. *)
-Lemma equality_in_uni_iff {p} :
-  forall lib a b,
-    {i : nat , @equality p lib a b (mkc_uni i)}
-    <=> tequality lib a b.
-Proof.
-  sp; split; introv e; exrepnd.
-  apply equality_in_uni in e0; sp.
-
-  allunfold @tequality; allunfold @equality; exrepnd.
-  unfold nuprl in e0; sp.
-  remember (univ lib) as T.
-  generalize HeqT; clear HeqT.
-  close_cases (induction e0 using @close_ind') Case; intros HeqT; subst.
-
-  - Case "CL_init".
-    duniv i h.
-    exists i (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}); sp.
-    unfold nuprl.
-    apply CL_init; unfold univ.
-    exists (S i); simpl; left; sp; try (spcast; computes_to_value_refl).
-    exists eq; sp.
-
-  - Case "CL_int".
-    exists 1 (fun A A' => {eqa : per(p) , close lib (univi lib 1) A A' eqa}); sp.
-    unfold nuprl, univ.
-    apply CL_init.
-    exists 2; left; sp; try (spcast; computes_to_value_refl).
-    exists eq; apply CL_int.
-    allunfold @per_int; sp.
-
-  - Case "CL_atom".
-    admit.
-
-  - Case "CL_uatom".
-    admit.
-
-  - Case "CL_base".
-    admit.
-
-  - Case "CL_approx".
-    admit.
-
-  - Case "CL_cequiv".
-    admit.
-
-  - Case "CL_eq".
-    dest_imp IHe0 hyp; exrepnd.
-    admit.
-
-  - Case "CL_req".
-    admit.
-
-  - Case "CL_teq".
-    admit.
-
-  - Case "CL_isect".
-    dest_imp IHe0 hyp; exrepnd.
-    admit.
-
-  - Case "CL_func".
-    admit.
-
-  - Case "CL_disect".
-    admit.
-
-  - Case "CL_pertype".
-    admit.
-(*Error: Universe inconsistency.*)
-Abort.
-
-Lemma computes_to_valc_tuni_implies {o} :
-  forall lib (t : @CTerm o) v,
-    computes_to_valc lib (mkc_tuni t) v
-    -> {k : nat
-        & computes_to_valc lib t (mkc_nat k)
-        # v = mkc_uni k}.
-Proof.
-  introv comp.
-  destruct_cterms.
-  allunfold @computes_to_valc; allsimpl.
-  allunfold @computes_to_value; repnd.
-  unfold reduces_to in comp0; exrepnd.
-  rename x0 into t.
-  revert dependent t.
-  induction k; introv isp r.
-  - allrw @reduces_in_atmost_k_steps_0; subst.
-    inversion comp; subst; allsimpl; tcsp.
-  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
-    csunf r1; allsimpl.
-    destruct t as [v|f|op bs]; allsimpl; ginv.
-    dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv.
-    + apply compute_step_tuni_success in r1; exrepnd; subst; GC; fold_terms.
-      exists n; dands; eauto 3 with slow.
-      apply reduces_in_atmost_k_steps_if_isvalue_like in r0; eauto 3 with slow; subst.
-      apply cterm_eq; simpl; auto.
-    + remember (compute_step lib (oterm (NCan ncan) bs)) as c; destruct c; allsimpl; ginv.
-      symmetry in Heqc.
-      applydup @preserve_compute_step in Heqc; eauto 3 with slow.
-      apply IHk in r0; clear IHk; eauto 3 with slow; exrepnd.
-      inversion r1; subst.
-      exists k0; dands; eauto 3 with slow.
-      eapply reduces_to_if_split2; eauto.
-    + apply reduces_in_atmost_k_steps_if_isvalue_like in r0; eauto 3 with slow; subst.
-      inversion comp; subst; allsimpl; tcsp.
-    + remember (compute_step lib (oterm (Abs abs) bs)) as c; destruct c; allsimpl; ginv.
-      symmetry in Heqc.
-      applydup @preserve_compute_step in Heqc; eauto 3 with slow.
-      apply IHk in r0; clear IHk; eauto 3 with slow; exrepnd.
-      inversion r1; subst.
-      exists k0; dands; eauto 3 with slow.
-      eapply reduces_to_if_split2; eauto.
-Qed.
-
-Lemma tequality_mkc_tuni {o} :
-  forall lib (a b : @CTerm o),
-    tequality lib (mkc_tuni a) (mkc_tuni b)
-    <=> equality_of_nat lib a b.
-Proof.
-  introv.
-  split; intro k.
-
-  - unfold tequality in k; exrepnd.
-    inversion k0; subst; try not_univ;
-    try (complete (allunfold_per; computes_to_value_isvalue; allfold (@nuprl o);
-                   allapply @computes_to_valc_tuni_implies; exrepnd; ginv;
-                   match goal with [ H : _ |- _ ] => complete (eqconstr H) end)).
-    clear k0.
-    duniv j h.
-    allrw @univi_exists_iff; exrepd; spcast.
-    allapply @computes_to_valc_tuni_implies; exrepnd; ginv.
-    exists k0; dands; spcast; auto.
-
-  - unfold equality_of_nat in k; exrepnd; spcast.
-    unfold tequality.
-    pose proof (computes_to_valc_tuni lib a (Z.of_nat k0)) as c1.
-    pose proof (computes_to_valc_tuni lib b (Z.of_nat k0)) as c2.
-    allrw @Znat.Nat2Z.id; fold_terms.
-    repeat (autodimp c1 hyp); try omega.
-    repeat (autodimp c2 hyp); try omega.
-    exists (fun A A' => (exists eqa, close lib (univi lib k0) A A' eqa)).
-    apply CL_init.
-    exists (S k0).
-    left.
-    dands; spcast; auto.
-Qed.
-
-Lemma mkc_uni_in_nuprl {p} :
-  forall lib (i : nat),
-    nuprl lib (mkc_uni i)
-          (mkc_uni i)
-          (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}).
+Lemma mkc_uni_in_nuprl {o} :
+  forall (lib : @library o) (i : nat) (bar : BarLib lib),
+    nuprl lib (mkc_uni i) (mkc_uni i) (per_bar_eq bar (univi_eq_lib_per lib i)).
 Proof.
   introv.
   apply CL_init.
+  exists bar (univi_eq_lib_per lib i); dands; tcsp.
   exists (S i); simpl.
   left; sp; spcast; apply computes_to_valc_refl; sp.
 Qed.
+Hint Resolve mkc_uni_in_nuprl : slow.
 
 Lemma uni_in_uni {o} :
   forall lib i j, i < j -> @member o lib (mkc_uni i) (mkc_uni j).
 Proof.
   introv h.
-  unfold member, equality, nuprl.
-  exists (fun A A' => {eqa : per , close lib (univi lib j) A A' eqa}).
-  dands.
+  unfold member, equality.
+  exists (per_bar_eq (trivial_bar lib) (univi_eq_lib_per lib j)); dands; eauto 2 with slow.
 
-  { apply mkc_uni_in_nuprl. }
+  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar; introv.
+  exists (trivial_bar lib').
+  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar; introv.
+  simpl.
 
-  {
-    exists (fun A A' => {eqa : per , close lib (univi lib i) A A' eqa}).
-    apply CL_init.
-    apply univi_exists_iff.
-    exists i; dands; spcast; tcsp; try (apply computes_to_valc_refl; eauto 3 with slow).
-  }
+  exists (per_bar_eq (trivial_bar lib'0) (univi_eq_lib_per lib'0 i)); dands; eauto 2 with slow.
+
+  apply CL_init.
+  exists (trivial_bar lib'0) (univi_eq_lib_per lib'0 i); dands; tcsp.
+  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar; introv.
+  apply univi_exists_iff.
+  exists i; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma cumulativity {o} :
@@ -239,33 +136,34 @@ Lemma cumulativity {o} :
     -> equality lib A B (mkc_uni i)
     -> equality lib A B (mkc_uni j).
 Proof.
-  introv h equ.
-  unfold member, equality, nuprl in *; destruct equ as [eqa equ]; repnd.
-  exists (fun A A' => {eqa : per , close lib (univi lib j) A A' eqa}).
-  dands.
+  introv h e.
+  unfold member, equality in *; exrepnd.
+  apply dest_nuprl_uni in e1.
+  apply univ_implies_univi_bar3 in e1; exrepnd.
+  apply e2 in e0.
 
-  { apply mkc_uni_in_nuprl. }
+  exists (per_bar_eq bar (univi_eq_lib_per lib j)); dands; eauto 2 with slow.
+  introv br ext; introv.
+  pose proof (e0 _ br _ ext x) as e0; simpl in *.
+  exrepnd.
+  exists bar'.
+  introv br' ext' x'.
+  pose proof (e1 _ br' _ ext' x') as e1; simpl in *.
 
-  {
-    dup equ0 as n.
-    eapply nuprl_uniquely_valued in equ0;[|apply mkc_uni_in_nuprl].
-    apply equ0 in equ; exrepnd; clear equ0.
-    fold (nuprli lib i) in equ1.
-    exists eqa0.
-    fold (nuprli lib j).
-    pose proof (typable_in_higher_univ lib i A B eqa0 equ1 (j - i)) as q.
-    rewrite minus_plus_n in q; auto; try omega.
-  }
+  unfold univi_eq in *; exrepnd.
+  exists eqa.
+  fold (@nuprli o i) in *.
+  fold (@nuprli o j) in *.
+  pose proof (typable_in_higher_univ i lib'2 A B eqa e0 (j - i)) as q.
+  rewrite minus_plus_n in q; auto; try omega.
 Qed.
-
 
 Lemma nuprl_mkc_uni {p} :
   forall lib (i : nat),
     {eq : per(p) , nuprl lib (mkc_uni i) (mkc_uni i) eq}.
 Proof.
-  intros.
-  exists (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}).
-  apply mkc_uni_in_nuprl.
+  introv.
+  exists (per_bar_eq (trivial_bar lib) (univi_eq_lib_per lib i)); eauto 2 with slow.
 Qed.
 
 Lemma tequality_mkc_uni {p} :
@@ -274,23 +172,50 @@ Proof.
   generalize (@nuprl_mkc_uni p); sp.
 Qed.
 
-Lemma equality_nuprli {p} :
-  forall lib (A B C : @CTerm p) i eq,
+Lemma per_bar_eq_univi_eq_lib_per_implies_eq_nuprli {o} :
+  forall lib (bar : BarLib lib) i (A B : @CTerm o),
+    per_bar_eq bar (univi_eq_lib_per lib i) A B
+    -> exists eq', nuprli i lib A B eq'.
+Proof.
+  introv e0.
+  unfold per_bar_eq in e0; simpl in *.
+  apply per_bar_eq_univi_eq_lib_per_implies in e0.
+  clear dependent bar.
+  exrepnd.
+  unfold univi_eq in e1.
+  apply all_in_bar_ext_exists_per_implies_exists in e1; exrepnd.
+
+  exists (per_bar_eq bar (bar_per2lib_per feqa)).
+  apply CL_bar; exists bar (bar_per2lib_per feqa); dands; tcsp;[].
+  introv br ext; introv.
+  pose proof (e0 _ br _ ext x) as q; simpl in *.
+  fold (@nuprli o i) in *.
+  eapply nuprli_type_extensionality;[eauto 3 with slow|].
+
+  introv; split; intro h.
+
+  { exists lib' br ext x; auto. }
+
+  exrepnd.
+  pose proof (e0 _ br0 _ ext0 x0) as e0.
+  eapply nuprli_uniquely_valued in e0; try exact q.
+  apply e0; auto.
+Qed.
+
+Lemma equality_nuprli {o} :
+  forall lib (A B C : @CTerm o) i eq,
     equality lib A B (mkc_uni i)
-    -> nuprli lib i A C eq
-    -> nuprli lib i A B eq.
+    -> nuprli i lib A C eq
+    -> nuprli i lib A B eq.
 Proof.
   introv e n.
-  unfold equality, nuprl in e; exrepnd.
-  inversion e1; try not_univ.
-  duniv j h.
-  allrw @univi_exists_iff; exrepnd.
-  computes_to_value_isvalue; GC.
-  discover; exrepnd.
-  allfold (@nuprli p lib j0).
-  generalize (nuprli_uniquely_valued lib j0 j0 A A eqa eq); intro k.
-  repeat (autodimp k hyp).
-  apply nuprli_refl in h2; auto.
-  apply nuprli_refl in n; auto.
-  apply (nuprli_ext lib j0 A B eqa eq); auto.
+  unfold equality in e; exrepnd.
+  apply dest_nuprl_uni in e1.
+  apply univ_implies_univi_bar3 in e1; exrepnd.
+  apply e2 in e0.
+  apply per_bar_eq_univi_eq_lib_per_implies_eq_nuprli in e0; exrepnd.
+  eapply nuprli_type_extensionality;[eauto|].
+  apply nuprli_refl in e1.
+  apply nuprli_refl in n.
+  eapply nuprli_uniquely_valued; eauto.
 Qed.

@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -596,9 +597,6 @@ Proof.
   - assert (eqa lib' e a a') as f by (eapply lib_per_cond; eauto).
     exists f; eapply lib_per_fam_cond; eauto.
 Defined.
-
-(* !!MOVE *)
-Hint Resolve nuprli_implies_nuprl : slow.
 
 (* This is basically 'functionEquality' *)
 Lemma tequality_function {o} :
@@ -1740,7 +1738,7 @@ Proof.
       apply teq3 in teq0.
 
       exists (per_bar_eq (raise_bar bar x) (univi_eq_lib_per lib' i)).
-      dands; auto.
+      dands; auto; eauto 2 with slow.
 
       {
         apply CL_init; exists (raise_bar bar x) (univi_eq_lib_per lib' i); dands; tcsp.

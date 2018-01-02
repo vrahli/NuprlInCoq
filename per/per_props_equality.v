@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -25,7 +26,7 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli & Abhishek Anand
 
 *)
 
@@ -33,8 +34,7 @@
 (*Require Export per_props.*)
 Require Export per_props_cequiv.
 Require Export per_props_function.
-
-(*Require Export per_props_uni.*)
+Require Export per_props_uni.
 
 
 (** printing #  $\times$ #×# *)
@@ -514,7 +514,7 @@ Lemma tequality_mkc_equality_implies {o} :
     (
       tequality lib A B
       # (equality lib a1 a2 A -> equality lib b1 b2 B)
-      # (equality lib a1 b1 A {+} ccequivc lib a1 b1)
+      # all_in_ex_bar lib (fun lib => (equality lib a1 b1 A {+} ccequivc_ext lib a1 b1))
     ).
 Proof.
   unfold tequality, nuprl; introv teq; exrepnd.
@@ -556,35 +556,13 @@ Proof.
   }
 
   {
-    (* only true in the bar *)
-
+    exists bar; introv br ext.
+    assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
+    pose proof (teq2 _ br _ ext xt) as teq2; simpl in *.
+    pose proof (teq3 _ br _ ext xt) as teq3; simpl in *.
+    apply nuprl_refl in teq2.
+    eapply eqorceq_implies_equality_or_cequivc in teq3; eauto.
   }
-
-
-XXXXXX
-  inversion teq0; subst; try (not_univ).
-
-  allunfold @per_eq; exrepnd.
-  computes_to_value_isvalue.
-  allfold @nuprl.
-  dands.
-
-  - exists eqa; sp.
-
-  - intro e; allunfold @equality; exrepnd.
-    assert (eq_term_equals eq0 eqa)
-      as etq
-        by (apply uniquely_valued_eq with (ts := nuprl lib) (T := A0) (T1 := A0) (T2 := B0);
-            sp; nts; sp).
-    exists eqa; sp.
-    allapply @nuprl_refl2; sp.
-    unfold eq_term_equals in etq; discover.
-    apply (eqorceq_commutes_nuprl lib) with (a := a0) (c := a3) (A := A0) (B := A0); sp.
-    apply nuprl_uniquely_eq_ext with (eq1 := eq0); sp.
-
-  - allunfold @eqorceq; sp;
-    left; unfold equality; exists eqa; sp;
-    allapply @nuprl_refl; sp.
 Qed.
 
 Lemma tequality_mkc_equality_in_universe_true {p} :
@@ -622,6 +600,9 @@ Proof.
   introv; split; intro k.
 
   - unfold tequality, nuprl in k; exrepnd.
+
+XXXXX
+
     inversion k0; subst; try not_univ.
     allunfold @per_eq; exrepnd.
     computes_to_value_isvalue.

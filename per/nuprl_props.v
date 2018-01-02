@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -25,7 +26,7 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli & Abhishek Anand
 
 *)
 
@@ -48,6 +49,9 @@ Require Import rel_nterm.
 (** printing mkc_int     $\intg$ *)
 (** printing mkc_integer $\mathtt{int}$ *)
 
+
+(* !!MOVE *)
+Hint Resolve nuprli_implies_nuprl : slow.
 
 Lemma nuprli_refl {p} :
   forall lib i t1 t2 eq,
@@ -658,12 +662,26 @@ Proof.
 Qed.
 Hint Resolve type_transitive_nuprl : slow.
 
+Lemma type_transitive_nuprli {o} :
+  forall i, @type_transitive o (nuprli i).
+Proof.
+  introv; apply nuprli_type_system.
+Qed.
+Hint Resolve type_transitive_nuprli : slow.
+
 Lemma type_symmetric_nuprl {o} :
   @type_symmetric o nuprl.
 Proof.
   apply nuprl_type_system.
 Qed.
 Hint Resolve type_symmetric_nuprl : slow.
+
+Lemma type_symmetric_nuprli {o} :
+  forall i, @type_symmetric o (nuprli i).
+Proof.
+  apply nuprli_type_system.
+Qed.
+Hint Resolve type_symmetric_nuprli : slow.
 
 Lemma uniquely_valued_nuprl {o} :
   @uniquely_valued o nuprl.
