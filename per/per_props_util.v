@@ -686,3 +686,44 @@ Proof.
   rw <- @collapse2bars; split; intro h; exrepnd; exists bar;
     introv br ext; try intro x; eapply h0; eauto 3 with slow.
 Qed.
+
+Lemma all_in_ex_bar_equality_implies_equality {o} :
+  forall lib (a b A : @CTerm o),
+    all_in_ex_bar lib (fun lib => equality lib a b A)
+    -> equality lib a b A.
+Proof.
+  introv h.
+  unfold all_in_ex_bar in h; exrepnd.
+  unfold equality in h0.
+
+  apply all_in_bar_exists_per_implies_exists in h0; exrepnd.
+  exists (per_bar_eq bar (bar_per2lib_per feqa)).
+  dands; auto.
+
+  {
+    apply CL_bar; exists bar (bar_per2lib_per feqa); dands; auto.
+    fold (@nuprl o).
+    introv br ext; introv.
+    pose proof (h1 _ br _ ext x) as q; simpl in *; auto; repnd.
+
+    eapply type_extensionality_nuprl;[eauto|].
+    introv; split; intro h.
+
+    { exists lib' br ext x; auto. }
+
+    exrepnd.
+    pose proof (h1 _ br0 _ ext0 x0) as w; repnd.
+    apply nuprl_refl in w0; apply nuprl_refl in q0.
+    eapply nuprl_uniquely_valued in w0; try exact q0.
+    apply w0; auto.
+  }
+
+  {
+    introv br ext; introv.
+    exists (trivial_bar lib'0).
+    apply in_ext_ext_implies_all_in_bar_ext_trivial_bar; introv; simpl.
+    pose proof (h1 _ br _ (lib_extends_trans e ext) (lib_extends_trans e x)) as h1; repnd.
+    eexists; eexists; eexists; eexists; eauto.
+  }
+Qed.
+Hint Resolve all_in_ex_bar_equality_implies_equality : slow.

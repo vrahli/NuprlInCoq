@@ -178,129 +178,207 @@ Proof.
 
   - applydup @inhabited_implies_tequality in k.
     apply types_converge in k0.
-
-XXXXXX
-    spcast.
-    apply hasvaluec_mkc_less in k0.
+    unfold chaltsc_bar in k0.
+    eapply all_in_ex_bar_modus_ponens1;[|eauto]; clear k0.
+    introv x q; spcast.
+    apply hasvaluec_mkc_less in q.
     exrepnd.
 
-    exists k1 k0; dands; spcast; eauto with slow;
+    exists k1 k2; dands; spcast; eauto with slow;
     try (complete (apply computes_to_valc_iff_reduces_toc; dands; eauto with slow)).
 
-    assert (cequivc lib
-                    (mkc_less a b c d)
-                    (mkc_less (mkc_integer k1) (mkc_integer k0) c d)) as c1.
-    { apply reduces_toc_implies_cequivc.
+    assert (ccequivc_ext
+              lib'
+              (mkc_less a b c d)
+              (mkc_less (mkc_integer k1) (mkc_integer k2) c d)) as c1.
+    { apply reduces_toc_implies_ccequivc_ext.
       destruct_cterms; allunfold @reduces_toc; allunfold @computes_to_valc; allsimpl.
-      apply reduce_to_prinargs_comp; eauto with slow.
-      allunfold @computes_to_value; sp; eauto with slow. }
+      apply reduce_to_prinargs_comp; eauto 3 with slow.
+      allunfold @computes_to_value; sp; eauto 3 with slow. }
 
     repndors; repnd.
 
     + left; dands; auto.
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer k1) (mkc_integer k0) c d)
-                      c) as c2.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib'
+                (mkc_less (mkc_integer k1) (mkc_integer k2) c d)
+                c) as c2.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      apply cequivc_sym in c1.
-      apply cequivc_sym in c2.
-      rwg c2.
-      rwg c1; auto.
+      eapply cequivc_preserving_equality;[|exact c2].
+      eapply cequivc_preserving_equality;[|exact c1].
+      eauto 3 with slow.
 
     + right; dands; auto.
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer k1) (mkc_integer k0) c d)
-                      d) as c2.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib'
+                (mkc_less (mkc_integer k1) (mkc_integer k2) c d)
+                d) as c2.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      apply cequivc_sym in c1.
-      apply cequivc_sym in c2.
-      rwg c2.
-      rwg c1; auto.
+      eapply cequivc_preserving_equality;[|exact c2].
+      eapply cequivc_preserving_equality;[|exact c1].
+      eauto 3 with slow.
 
-  - spcast.
-    assert (cequivc lib
-                    (mkc_less a b c d)
-                    (mkc_less (mkc_integer ka) (mkc_integer kb) c d)) as c1.
-    { apply reduces_toc_implies_cequivc.
+  - apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens1;[|eauto]; clear k.
+    introv x k; exrepnd; spcast.
+    assert (ccequivc_ext
+              lib'
+              (mkc_less a b c d)
+              (mkc_less (mkc_integer ka) (mkc_integer kb) c d)) as c1.
+    { apply reduces_toc_implies_ccequivc_ext.
       destruct_cterms; allunfold @reduces_toc; allunfold @computes_to_valc; allsimpl.
-      apply reduce_to_prinargs_comp; eauto with slow. }
+      apply reduce_to_prinargs_comp; eauto 3 with slow. }
 
-    rwg c1.
+    apply ccequivc_ext_sym in c1.
+    eapply cequivc_preserving_equality;[|exact c1].
 
     repndors; repnd.
 
-    + assert (cequivc lib
-                      (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
-                      c) as c2.
-      { apply reduces_toc_implies_cequivc.
+    + assert (ccequivc_ext
+                lib'
+                (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
+                c) as c2.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      rwg c2; auto.
+      apply ccequivc_ext_sym in c2.
+      eapply cequivc_preserving_equality;[|exact c2].
+      auto.
 
-    + assert (cequivc lib
-                      (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
-                      d) as c2.
-      { apply reduces_toc_implies_cequivc.
+    + assert (ccequivc_ext
+                lib'
+                (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
+                d) as c2.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      rwg c2; auto.
+      apply ccequivc_ext_sym in c2.
+      eapply cequivc_preserving_equality;[|exact c2].
+      auto.
 Qed.
+
+(* !!MOVE to per_props_util *)
+Definition computes_to_valc_ex_bar {o} lib (a b : @CTerm o) :=
+  all_in_ex_bar lib (fun lib => a ===>(lib) b).
+Notation "t1 ===b>( lib ) t2" := (computes_to_valc_ex_bar lib t1 t2) (at level 0).
+
+(* !!MOVE to per_props_util *)
+Lemma computes_to_valc_implies_computes_to_valc_ex_bar {o} :
+  forall lib (a b : @CTerm o),
+    computes_to_valc lib a b
+    -> a ===b>(lib) b.
+Proof.
+  introv comp.
+  exists (trivial_bar lib).
+  apply in_ext_implies_all_in_bar_trivial_bar; introv x; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_valc_implies_computes_to_valc_ex_bar : slow.
 
 Lemma equality_in_true {o} :
   forall lib (u v : @CTerm o),
     equality lib u v mkc_true
     <=>
-    (u ===>(lib) mkc_axiom
-     # v ===>(lib) mkc_axiom).
+    (u ===b>(lib) mkc_axiom
+     # v ===b>(lib) mkc_axiom).
 Proof.
   introv.
   rw @mkc_true_eq.
   rw <- @equality_in_approx; split; intro k; dands; repnd; spcast; auto.
-  unfold approxc; simpl.
-  apply approx_decomp_axiom.
+
+  {
+    eapply all_in_ex_bar_modus_ponens1;[|eauto]; clear k.
+    introv x k; repnd; auto.
+  }
+
+  {
+    eapply all_in_ex_bar_modus_ponens1;[|eauto]; clear k.
+    introv x k; repnd; auto.
+  }
+
+  {
+    unfold computes_to_valc_ex_bar in *.
+    unfold all_in_ex_bar in *; exrepnd.
+    apply (implies_all_in_bar_intersect_bars_left _ bar) in k2.
+    apply (implies_all_in_bar_intersect_bars_right _ bar0) in k1.
+    remember (intersect_bars bar0 bar) as b.
+    clear dependent bar.
+    clear dependent bar0.
+    exists b.
+    introv br ext.
+    pose proof (k2 _ br _ ext) as k2.
+    pose proof (k1 _ br _ ext) as k1.
+    simpl in *.
+    dands; spcast; auto; eauto 3 with slow.
+    unfold approxc; simpl.
+    apply approx_decomp_axiom.
+  }
 Qed.
 
 Lemma equality_in_less_than {o} :
   forall lib (u v a b : @CTerm o),
     equality lib u v (mkc_less_than a b)
     <=>
-    {ka : Z
-     , {kb : Z
-        , u ===>(lib) mkc_axiom
-        # v ===>(lib) mkc_axiom
-        # a ===>(lib) (mkc_integer ka)
-        # b ===>(lib) (mkc_integer kb)
-        # (ka < kb)%Z}}.
+    all_in_ex_bar
+      lib
+      (fun lib =>
+         {ka , kb : Z
+         , u ===>(lib) mkc_axiom
+         # v ===>(lib) mkc_axiom
+         # a ===>(lib) (mkc_integer ka)
+         # b ===>(lib) (mkc_integer kb)
+         # (ka < kb)%Z}).
 Proof.
   introv.
   rw @mkc_less_than_eq.
   rw @equality_in_less.
-  split; intro k; exrepnd; spcast.
-  - repndors; repnd.
+  split; intro k.
+
+  - apply collapse_all_in_ex_bar.
+    eapply all_in_ex_bar_modus_ponens1;[|eauto]; clear k; introv x k; exrepnd; spcast.
+    repndors; repnd.
+
     + apply equality_in_true in k1; repnd; spcast.
-      exists ka kb; dands; spcast; auto.
+      unfold computes_to_valc_ex_bar in *.
+      unfold all_in_ex_bar in *; exrepnd.
+      apply (implies_all_in_bar_intersect_bars_left _ bar) in k1.
+      apply (implies_all_in_bar_intersect_bars_right _ bar0) in k5.
+      remember (intersect_bars bar0 bar) as bar'.
+      clear dependent bar.
+      clear dependent bar0.
+      rename bar' into bar.
+
+      exists bar.
+      introv br ext.
+      pose proof (k1 _ br _ ext) as k1.
+      pose proof (k5 _ br _ ext) as k5.
+      simpl in *.
+
+      exists ka kb; dands; spcast; auto; eauto 4 with slow.
+
     + apply equality_in_false in k1; sp.
-  - exists ka kb; dands; spcast; auto.
+
+  - eapply all_in_ex_bar_modus_ponens1;[|eauto]; clear k; introv x k; exrepnd; spcast.
+    exists ka kb; dands; spcast; auto.
     left; dands; auto.
-    apply equality_in_true; dands; spcast; auto.
+    apply equality_in_true; dands; spcast; auto; eauto 3 with slow.
 Qed.
 
 Lemma inhabited_less_than {o} :
