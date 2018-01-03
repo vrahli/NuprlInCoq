@@ -40,8 +40,10 @@ Require Export per_props_cequiv.
 Require Export per_props_equality.
 Require Export per_props_product.
 Require Export per_props_set.
-
 Require Export per_props_compute.
+Require Export per_props_false.
+Require Export per_props_not.
+
 Require Export per_props_nat.
 Require Export per_props_nat2.
 Require Export per_props_iff.
@@ -51,8 +53,6 @@ Require Export per_props_w.
 Require Export per_props_pertype.
 Require Export per_props_uni2.
 Require Export per_props_true.
-Require Export per_props_false.
-Require Export per_props_not.
 Require Export per_props_tequality.
 Require Export per_props_erase.
 Require Export per_props_isect.

@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -34,10 +35,10 @@ Require Export cvterm.
 Require Export nat_defs.
 Require Export cequiv_props4.
 Require Export per_props_set.
-Require Export per_props_union.
 Require Export per_props_false.
-Require Export per_props_not.
 Require Export per_props_product.
+Require Export per_props_not.
+Require Export per_props_union.
 Require Export types_converge.
 (*Require Export list.  (* ??? *)*)
 

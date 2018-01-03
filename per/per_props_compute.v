@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -25,7 +26,8 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
+           Abhishek Anand
 
 *)
 
@@ -33,7 +35,6 @@
 Require Export nuprl_props.
 Require Export choice.
 Require Export cvterm.
-(*Require Export per_props.*)
 
 
 Lemma fold_less {o} :
@@ -104,6 +105,16 @@ Proof.
   boolvar; auto; try omega.
 Qed.
 
+Lemma computes_to_valc_implies_ccequivc_ext {o} :
+  forall lib (t1 t2 : @CTerm o),
+    computes_to_valc lib t1 t2
+    -> ccequivc_ext lib t1 t2.
+Proof.
+  introv c e; spcast.
+  apply computes_to_valc_implies_cequivc; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_valc_implies_ccequivc_ext : slow.
+
 Lemma nuprl_computes_left {o} :
   forall lib (t1 t2 t3 : @CTerm o) eq,
     nuprl lib t1 t2 eq
@@ -112,8 +123,7 @@ Lemma nuprl_computes_left {o} :
 Proof.
   introv n c.
   apply @nuprl_value_respecting_left with (t1 := t1); auto.
-  apply cequivc_sym.
-  apply computes_to_valc_implies_cequivc; auto.
+  apply ccequivc_ext_sym; eauto 3 with slow.
 Qed.
 
 Lemma nuprl_computes_right {o} :
@@ -124,8 +134,7 @@ Lemma nuprl_computes_right {o} :
 Proof.
   introv n c.
   apply @nuprl_value_respecting_right with (t2 := t2); auto.
-  apply cequivc_sym.
-  apply computes_to_valc_implies_cequivc; auto.
+  apply ccequivc_ext_sym; eauto 3 with slow.
 Qed.
 
 Lemma computes_to_valc_tuni {o} :

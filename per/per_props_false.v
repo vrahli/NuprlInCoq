@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -39,17 +40,22 @@ Lemma tequality_false {p} :
 Proof.
   introv.
   rw @mkc_false_eq.
-  rw @tequality_mkc_approx; split; intro k; spcast;
-  apply not_axiom_approxc_bot in k; sp.
+  rw @tequality_mkc_approx.
+  exists (trivial_bar lib).
+  apply in_ext_implies_all_in_bar_trivial_bar; introv e.
+  split; intro k; spcast; apply not_axiom_approxc_bot in k; sp.
 Qed.
-Hint Immediate tequality_false.
+Hint Resolve tequality_false : slow.
 
 Lemma equality_in_false {p} :
   forall lib (t1 t2 : @CTerm p), equality lib t1 t2 mkc_false <=> False.
 Proof.
   introv; split; intro e; sp.
   rw @mkc_false_eq in e.
-  rw <- @equality_in_approx in e; repnd; spcast.
+  rw <- @equality_in_approx in e.
+  unfold all_in_ex_bar in e; exrepnd.
+  pose proof (bar_non_empty bar) as q; exrepnd.
+  pose proof (e0 _ q0 _ (lib_extends_refl lib')) as e0; simpl in *; repnd; spcast.
   allapply @not_axiom_approxc_bot; sp.
 Qed.
 

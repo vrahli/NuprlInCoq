@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -34,51 +35,68 @@ Require Export per_props_false.
 Require Export per_props_function.
 
 
+Definition empty_lib_per_fam {o} {lib} (eqa : lib-per(lib,o)) : lib-per-fam(lib,eqa,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) (a a' : CTerm) (e : eqa lib' x a a') (t t' : @CTerm o) => False).
+  introv u v; tcsp.
+Defined.
+
 Lemma nuprl_mkc_not {o} :
   forall lib (a b : @CTerm o) eq,
     nuprl lib a b eq
-    -> nuprl lib (mkc_not a) (mkc_not b) (fun t t' => forall a a', eq a a' -> False).
+    -> exists eq', nuprl lib (mkc_not a) (mkc_not b) eq'.
 Proof.
   introv n.
+
+  pose proof (nuprl_monotone_func lib a b eq n) as tya; exrepnd.
+  rename eq' into eqa.
+
+  exists (per_func_ext_eq lib eqa (empty_lib_per_fam eqa)).
   apply CL_func.
-  unfold per_func.
-  exists eq (fun (a a' : CTerm) (e : eq a a') (t t' : @CTerm o) => False); dands.
+  exists eqa (empty_lib_per_fam eqa); dands; tcsp;[].
 
-  - unfold type_family.
-    eexists; eexists; eexists; eexists; eexists; eexists;
-    dands; auto; spcast; try (fold nuprl).
+  unfold type_family.
+  unfold mkc_not.
+  repeat (rw <- @fold_mkc_fun).
+  eexists; eexists; eexists; eexists; eexists; eexists;
+    dands; auto; spcast; eauto 3 with slow; try (fold (@nuprl o)).
 
-    unfold mkc_not.
-    rw <- @fold_mkc_fun.
-    apply computes_to_valc_refl.
-    apply iscvalue_mkc_function.
+  { introv; apply tya0. }
 
-    unfold mkc_not.
-    rw <- @fold_mkc_fun.
-    apply computes_to_valc_refl.
-    apply iscvalue_mkc_function.
-
-    auto.
-
-    introv e.
-    allrw @csubst_mk_cv.
-    apply CL_approx.
-    unfold per_approx.
-    eexists; eexists; eexists; eexists; dands; auto; spcast;
+  introv.
+  allrw @csubst_mk_cv; simpl.
+  apply CL_approx.
+  eexists; eexists; eexists; eexists; dands; auto; spcast;
     try (rw @mkc_void_eq_mkc_false; rw @mkc_false_eq);
     try (apply @computes_to_valc_refl; apply @iscvalue_mkc_approx).
-    introv; split; intro k; repnd; sp; spcast.
-    apply not_axiom_approxc_bot in k; sp.
 
-  - sp.
+  { introv; split; intro k; repnd; sp; spcast. }
+
+  {
+    introv; split; intro k; tcsp.
+    unfold per_approx_eq_bar in k.
+    exrepnd.
+    pose proof (bar_non_empty bar) as q; exrepnd.
+    pose proof (k0 _ q0 _ (lib_extends_refl lib'0)) as k0; simpl in *.
+    unfold per_approx_eq in k0; repnd; spcast.
+    apply not_axiom_approxc_bot in k0; sp.
+  }
 Qed.
 
 Lemma tequality_void {p} :
   forall lib, @tequality p lib mkc_void mkc_void.
 Proof.
-  introv; rw @mkc_void_eq_mkc_false; sp.
+  introv; rw @mkc_void_eq_mkc_false; eauto 3 with slow.
 Qed.
-Hint Immediate tequality_void.
+Hint Resolve tequality_void : slow.
+
+Lemma type_void {p} :
+  forall lib, @type p lib mkc_void.
+Proof.
+  introv.
+  unfold type; eauto 3 with slow.
+Qed.
+Hint Resolve type_void : slow.
 
 Lemma tequality_not {p} :
   forall lib (A1 A2 : @CTerm p),
@@ -87,26 +105,30 @@ Lemma tequality_not {p} :
     tequality lib A1 A2.
 Proof.
   intros.
-  rw @tequality_fun; split; sp.
+  rw @tequality_fun; split; sp; eauto 3 with slow.
 Qed.
 
 Lemma equality_in_not {p} :
   forall lib (t1 t2 A : @CTerm p),
     equality lib t1 t2 (mkc_not A)
     <=>
-    (type lib A # !inhabited_type lib A).
+    (type lib A # in_ext lib (fun lib => !inhabited_type lib A)).
 Proof.
   introv.
-  rw @equality_in_fun; split; intro e; repnd; dands; auto; try (complete sp).
+  rw @equality_in_fun; split; intro e; repnd; dands; auto; tcsp; eauto 3 with slow;[|].
 
-  intro inh.
-  destruct inh.
-  discover.
-  allapply @equality_in_void; sp.
+  {
+    introv x inh.
+    unfold inhabited_type in inh; exrepnd.
+    pose proof (e _ x _ _ inh0) as e.
+    allapply @equality_in_void; sp.
+  }
 
-  introv ea.
-  apply equality_in_void.
-  apply e.
-  exists a.
-  allapply @equality_refl; auto.
+  {
+    introv x ea.
+    apply equality_in_void.
+    apply (e _ x).
+    exists a.
+    allapply @equality_refl; auto.
+  }
 Qed.
