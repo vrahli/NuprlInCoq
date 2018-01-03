@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1723,15 +1724,23 @@ Definition per_quotient {p}
 Definition per_set_eq {o} (eqa : per(o)) (eqb : per-fam(eqa)) (t t' : @CTerm o) :=
   {e : eqa t t' , @inhabited o (eqb t t' e)}.
 
-Definition per_set {p}
+Definition per_set_eq_bar {o}
+           (lib  : library)
+           (eqa  : lib-per(lib,o))
+           (eqb  : lib-per-fam(lib,eqa))
+           (t t' : CTerm) : [U] :=
+  {bar : BarLib lib
+  , all_in_bar_ext bar (fun lib' x => per_set_eq (eqa lib' x) (eqb lib' x) t t')}.
+
+Definition per_set {o}
            (ts    : cts)
            (lib   : library)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @CTerm o)
            (eq    : per) : [U] :=
-  {eqa : per
-  , {eqb : per-fam(eqa)
-  , type_family mkc_set ts lib T1 T2 eqa eqb
-  # eq <=2=> (per_set_eq eqa eqb)}}.
+  {eqa : lib-per(lib,o)
+  , {eqb : lib-per-fam(lib,eqa,o)
+  , type_family_ext mkc_set ts lib T1 T2 eqa eqb
+  # eq <=2=> (per_set_eq_bar lib eqa eqb)}}.
 
 (**
 
@@ -2437,7 +2446,7 @@ Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
 (*  | CL_ffatom   : per_ffatom   (close ts) lib T T' eq -> close ts lib T T' eq*)
 (*  | CL_effatom  : per_effatom  (close ts) lib T T' eq -> close ts lib T T' eq*)
 (*  | CL_ffatoms  : per_ffatoms  (close ts) lib T T' eq -> close ts lib T T' eq*)
-(*  | CL_set      : per_set      (close ts) lib T T' eq -> close ts lib T T' eq*)
+  | CL_set      : per_set      (close ts) lib T T' eq -> close ts lib T T' eq
 (*  | CL_tunion   : per_tunion   (close ts) lib T T' eq -> close ts lib T T' eq*)
   | CL_product  : per_product_bar  (close ts) lib T T' eq -> close ts lib T T' eq.
 Hint Constructors close.
@@ -2478,7 +2487,7 @@ Arguments CL_union    {p} [ts] [lib] [T] [T'] [eq] _.
 (*Arguments CL_ffatom   {p} [ts] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_effatom  {p} [ts] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_ffatoms  {p} [ts] [lib] [T] [T'] [eq] _.*)
-(*Arguments CL_set      {p} [ts] [lib] [T] [T'] [eq] _.*)
+Arguments CL_set      {p} [ts] [lib] [T] [T'] [eq] _.
 (*Arguments CL_tunion   {p} [ts] [lib] [T] [T'] [eq] _.*)
 Arguments CL_product  {p} [ts] [lib] [T] [T'] [eq] _.
 
@@ -2522,7 +2531,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
 (*  | Case_aux c "CL_ffatom"*)
 (*  | Case_aux c "CL_effatom"*)
 (*  | Case_aux c "CL_ffatoms"*)
-(*  | Case_aux c "CL_set"*)
+  | Case_aux c "CL_set"
 (*  | Case_aux c "CL_tunion"*)
   | Case_aux c "CL_product"
   ].
@@ -3231,7 +3240,7 @@ Definition close_ind' {pp}
                     (per : per_ffatoms (close ts) lib T T' eq),
                P ts lib T T' eq)*)
 
-(*  (subset : forall (ts   : cts)
+  (subset : forall (ts   : cts)
                    (lib  : library)
                    (T T' : @CTerm pp)
                    (eq   : per)
@@ -3239,17 +3248,17 @@ Definition close_ind' {pp}
                    (v v' : NVar)
                    (B    : CVTerm [v])
                    (B'   : CVTerm [v'])
-                   (eqa  : per)
-                   (eqb  : forall a a' : CTerm, forall e : eqa a a', per)
+                   (eqa  : lib-per(lib,pp))
+                   (eqb  : lib-per-fam(lib,eqa,pp))
                    (c1   : T ===>(lib) (mkc_set A v B))
                    (c2   : T' ===>(lib) (mkc_set A' v' B'))
-                   (cla  : close ts lib A A' eqa)
-                   (reca : P ts lib A A' eqa)
-                   (clb  : forall a a', forall e : eqa a a', close ts lib (substc a v B) (substc a' v' B') (eqb a a' e))
-                   (recb : forall a a', forall e : eqa a a', P ts lib (substc a v B) (substc a' v' B') (eqb a a' e))
-                   (eqiff : forall t t', eq t t' <=> {e : eqa t t' , inhabited (eqb t t' e)})
+                   (cla  : in_ext_ext lib (fun lib' x => close ts lib' A A' (eqa lib' x)))
+                   (reca : in_ext_ext lib (fun lib' x => P ts lib' A A' (eqa lib' x)))
+                   (clb  : in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), close ts lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e)))
+                   (recb : in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), P ts lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e)))
+                   (eqiff : eq <=2=> (per_set_eq_bar lib eqa eqb))
                    (per  : per_set (close ts) lib T T' eq),
-              P ts lib T T' eq)*)
+              P ts lib T T' eq)
 
 (*  (tunion : forall (ts   : cts)
                    (lib  : library)
@@ -4112,7 +4121,7 @@ Definition close_ind' {pp}
                eqt
                pts*)
 
-(*   | CL_set pts =>
+   | CL_set pts =>
        let (eqa, x) := pts in
        let (eqb, x) := x in
        let (tf, teq) := x in
@@ -4129,16 +4138,16 @@ Definition close_ind' {pp}
               c1
               c2
               tsa
-              (rec ts lib A A' eqa tsa)
+              (fun lib' (i : lib_extends lib' lib) => rec ts lib' A A' (eqa lib' i) (tsa lib' i))
               tsb
-              (fun a a' eqa =>
-                 rec ts lib
+              (fun lib' (i : lib_extends lib' lib)  a a' (e : eqa lib' i a a') =>
+                 rec ts lib'
                      (substc a v B)
                      (substc a' v' B')
-                     (eqb a a' eqa)
-                     (tsb a a' eqa))
+                     (eqb lib' i a a' e)
+                     (tsb lib' i a a' e))
               teq
-              pts*)
+              pts
 
 (*   | CL_tunion pts =>
        let (eqa, x) := pts in

@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -626,6 +627,37 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_per_set_eq_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib) eqa eqb,
+    sub_per (per_set_eq_bar lib eqa eqb)
+            (per_set_eq_bar lib' (raise_lib_per eqa ext) (raise_lib_per_fam eqb ext)).
+Proof.
+  introv h; repeat introv.
+  unfold raise_lib_per in *.
+  unfold raise_lib_per_fam; simpl in *; tcsp.
+  unfold per_set_eq_bar, per_set_eq in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br lex; introv; simpl in *; exrepnd.
+  pose proof (h0 lib1 br1 lib'1 (lib_extends_trans lex br2) (lib_extends_trans x ext)) as q; simpl in q.
+  exrepnd.
+  exists e; auto.
+Qed.
+Hint Resolve sub_per_per_set_eq_bar : slow.
+
+Lemma per_set_monotone {o} :
+  forall (ts : cts(o)), type_monotone (per_set ts).
+Proof.
+  introv per ext.
+  unfold per_set in *; exrepnd.
+
+  exists (per_set_eq_bar lib' (raise_lib_per eqa ext) (raise_lib_per_fam eqb ext)).
+  dands; eauto 3 with slow.
+
+  exists (raise_lib_per eqa ext)
+         (raise_lib_per_fam eqb ext).
+  dands; eauto 3 with slow.
+Qed.
+
 Lemma sub_per_eq_per_eq_bar {o} :
   forall (lib lib' : @library o) (ext : lib_extends lib' lib) a b (eqa : lib-per(lib,o)),
     sub_per (eq_per_eq_bar lib a b eqa) (eq_per_eq_bar lib' a b (raise_lib_per eqa ext)).
@@ -745,6 +777,11 @@ Proof.
 
   - Case "CL_union".
     pose proof (per_union_monotone (close ts) lib lib' T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; dands; auto.
+
+  - Case "CL_set".
+    pose proof (per_set_monotone (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 

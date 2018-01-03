@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -31,6 +32,7 @@
 
 
 Require Export per.
+
 
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
@@ -499,10 +501,12 @@ Proof.
     apply CL_ffatoms; unfold per_ffatoms; sp.
     exists A1 A2 x1 x2 eqa; sp.*)
 
-(*  - Case "CL_set".
+  - Case "CL_set".
     apply CL_set; unfold per_set; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.*)
+    exists A A' v v' B B'; sp;
+      introv; try (eapply reca; eauto);
+        introv; try (eapply recb; eauto).
 
 (*  - Case "CL_tunion".
     apply CL_tunion; unfold per_tunion; sp.
@@ -919,12 +923,12 @@ Proof.
     exists A1 A2 x1 x2 eqa; sp.
     apply IHn with (i0 := i); sp.*)
 
-(*  - Case "CL_set".
+  - Case "CL_set".
     apply CL_set.
     unfold per_set, type_family; sp.
-    exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
-    apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.*)
+    exists eqa eqb; sp; try (exists A A' v v' B B'); sp;
+      introv; try (eapply reca; eauto);
+        introv; eapply recb; eauto.
 
 (*  - Case "CL_tunion".
     apply CL_tunion.

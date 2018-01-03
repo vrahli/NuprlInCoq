@@ -30,9 +30,7 @@
 *)
 
 
-Require Export nuprl_props.
-Require Export choice.
-Require Export cvterm.
+Require Export per_props_util.
 
 
 (* MOVE *)
@@ -58,118 +56,6 @@ Proof.
   apply computes_to_valc_isvalue_eq in comp1; eauto 3 with slow; subst.
   apply cequivc_decomp_approx in comp0; repnd; dands; spcast; auto.
 Qed.
-
-(* MOVE *)
-Lemma ccequivc_trans {o} :
-  forall lib (a b c : @CTerm o),
-    (a) ~=~(lib) (b)
-    -> (b) ~=~(lib) (c)
-    -> (a) ~=~(lib) (c).
-Proof.
-  introv h q; spcast; eapply cequivc_trans; eauto.
-Qed.
-
-(* MOVE *)
-Lemma capproxc_trans {o} :
-  forall lib (a b c : @CTerm o),
-    (a) ~<~(lib) (b)
-    -> (b) ~<~(lib) (c)
-    -> (a) ~<~(lib) (c).
-Proof.
-  introv h q; spcast; eapply approxc_trans; eauto.
-Qed.
-
-(* MOVE *)
-Lemma ccequivc_implies_capproxc {o} :
-  forall lib (a b : @CTerm o),
-    (a) ~=~(lib) (b)
-    -> (a) ~<~(lib) (b).
-Proof.
-  introv h; spcast; destruct h; auto.
-Qed.
-
-(* MOVE *)
-Lemma ccequivc_sym {o} :
-  forall lib (a b : @CTerm o),
-    (a) ~=~(lib) (b)
-    -> (b) ~=~(lib) (a).
-Proof.
-  introv  q; spcast; eapply cequivc_sym; eauto.
-Qed.
-
-(* MOVE *)
-Lemma implies_all_in_bar_iff_ccequivc {o} :
-  forall lib (bar : @BarLib o lib) a b c d a' b' c' d',
-    all_in_bar bar (fun lib => (a) ~=~(lib) (a') # (b) ~=~(lib) (b'))
-    -> all_in_bar bar (fun lib => (c) ~=~(lib) (c') # (d) ~=~(lib) (d'))
-    -> all_in_bar bar (fun lib => (a') ~=~(lib) (b') <=> (c') ~=~(lib) (d'))
-    -> all_in_bar bar (fun lib => (a) ~=~(lib) (b) <=> (c) ~=~(lib) (d)).
-Proof.
-  introv alla allb allc br ext.
-  pose proof (alla lib' br lib'0 ext) as alla.
-  pose proof (allb lib' br lib'0 ext) as allb.
-  pose proof (allc lib' br lib'0 ext) as allc.
-  simpl in *.
-  repnd.
-  split; introv q.
-
-  { eapply ccequivc_trans;[eauto|].
-    eapply ccequivc_trans;[|apply ccequivc_sym;eauto].
-    apply allc.
-    eapply ccequivc_trans;[apply ccequivc_sym;eauto|].
-    eapply ccequivc_trans;[|eauto]; auto. }
-
-  { eapply ccequivc_trans;[eauto|].
-    eapply ccequivc_trans;[|apply ccequivc_sym;eauto].
-    apply allc.
-    eapply ccequivc_trans;[apply ccequivc_sym;eauto|].
-    eapply ccequivc_trans;[|eauto]; auto. }
-Qed.
-
-(* MOVE *)
-Lemma implies_all_in_bar_iff_capproxc {o} :
-  forall lib (bar : @BarLib o lib) a b c d a' b' c' d',
-    all_in_bar bar (fun lib => (a) ~=~(lib) (a') # (b) ~=~(lib) (b'))
-    -> all_in_bar bar (fun lib => (c) ~=~(lib) (c') # (d) ~=~(lib) (d'))
-    -> all_in_bar bar (fun lib => (a') ~<~(lib) (b') <=> (c') ~<~(lib) (d'))
-    -> all_in_bar bar (fun lib => (a) ~<~(lib) (b) <=> (c) ~<~(lib) (d)).
-Proof.
-  introv alla allb allc br ext.
-  pose proof (alla lib' br lib'0 ext) as alla.
-  pose proof (allb lib' br lib'0 ext) as allb.
-  pose proof (allc lib' br lib'0 ext) as allc.
-  simpl in *.
-  repnd.
-  split; introv q.
-
-  { eapply capproxc_trans;[apply ccequivc_implies_capproxc;eauto|].
-    eapply capproxc_trans;[|apply ccequivc_implies_capproxc;apply ccequivc_sym;eauto].
-    apply allc.
-    eapply capproxc_trans;[apply ccequivc_implies_capproxc;apply ccequivc_sym;eauto|].
-    eapply capproxc_trans;[|apply ccequivc_implies_capproxc;eauto]; auto. }
-
-  { eapply capproxc_trans;[apply ccequivc_implies_capproxc;eauto|].
-    eapply capproxc_trans;[|apply ccequivc_implies_capproxc;apply ccequivc_sym;eauto].
-    apply allc.
-    eapply capproxc_trans;[apply ccequivc_implies_capproxc;apply ccequivc_sym;eauto|].
-    eapply capproxc_trans;[|apply ccequivc_implies_capproxc;eauto]; auto. }
-Qed.
-
-(*(* MOVE *)
-Lemma computes_to_valc_ceq_bar_refl {o} :
-  forall {lib} (bar : @BarLib o lib) v,
-    iscvalue v
-    -> v ==b==>(bar) v.
-Proof.
-  introv isv br ext.
-  exists v; dands; spcast; eauto 3 with slow.
-  apply computes_to_valc_refl; auto.
-Qed.
-Hint Resolve computes_to_valc_ceq_bar_refl : refl.*)
-
-(* MOVE *)
-Definition all_in_ex_bar {o} (lib : @library o) F :=
-  {bar : BarLib lib , all_in_bar bar F}.
 
 Lemma dest_nuprl_cequiv {o} :
   forall (lib : @library o) (a b c d : @CTerm o) eq,
@@ -309,19 +195,6 @@ Proof.
   }
 Qed.
 
-(* !!MOVE *)
-Lemma nuprl_per_bar_eq_bar {o} :
-  forall {lib} (bar : @BarLib o lib) i,
-    nuprl lib (mkc_uni i) (mkc_uni i) (per_bar_eq bar (univi_eq_lib_per lib i)).
-Proof.
-  introv.
-  apply CL_init; exists bar (univi_eq_lib_per lib i); dands; tcsp.
-  introv br ext; introv; simpl.
-  exists (S i).
-  apply univi_exists_iff; exists i; dands; spcast; tcsp; eauto 3 with slow.
-Qed.
-Hint Resolve nuprl_per_bar_eq_bar : slow.
-
 Lemma mkc_cequiv_equality_in_uni {o} :
   forall lib (a b c d : @CTerm o) i,
     equality lib (mkc_cequiv a b) (mkc_cequiv c d) (mkc_uni i)
@@ -432,81 +305,6 @@ Proof.
     eapply (e0 _ br); eauto 3 with slow.
 Qed.
 
-(* MOVE *)
-Hint Resolve approxc_refl : refl.
-
-(* MOVE *)
-Lemma all_in_bar_iff_capproxc_same {o} :
-  forall {lib} (bar : @BarLib o lib) a b,
-    all_in_bar bar (fun lib => (a) ~<~(lib) (a) <=> (b) ~<~(lib) (b)).
-Proof.
-  introv br ext; split; introv h; spcast; auto; eauto 3 with slow refl.
-Qed.
-Hint Resolve all_in_bar_iff_capproxc_same : slow.
-
-(* MOVE *)
-Lemma in_ext_iff_capproxc_same {o} :
-  forall (lib : @library o) a b,
-    in_ext lib (fun lib => (a) ~<~(lib) (a) <=> (b) ~<~(lib) (b)).
-Proof.
-  introv ext; split; introv h; spcast; auto; eauto 3 with slow refl.
-Qed.
-Hint Resolve in_ext_iff_capproxc_same : slow.
-
-(* MOVE *)
-Lemma all_in_bar_iff_capproxc_same2 {o} :
-  forall {lib} (bar : @BarLib o lib) a b,
-    all_in_bar bar (fun lib => (a) ~<~(lib) (b) <=> (a) ~<~(lib) (b)).
-Proof.
-  introv br ext; split; introv h; spcast; auto; eauto 3 with slow refl.
-Qed.
-Hint Resolve all_in_bar_iff_capproxc_same2 : slow.
-
-(* MOVE *)
-Lemma in_ext_iff_capproxc_same2 {o} :
-  forall (lib : @library o) a b,
-    in_ext lib (fun lib => (a) ~<~(lib) (b) <=> (a) ~<~(lib) (b)).
-Proof.
-  introv ext; split; introv h; spcast; auto; eauto 3 with slow refl.
-Qed.
-Hint Resolve in_ext_iff_capproxc_same2 : slow.
-
-(* MOVE *)
-Lemma all_in_bar_iff_ccequivc_same {o} :
-  forall {lib} (bar : @BarLib o lib) a b,
-    all_in_bar bar (fun lib => (a) ~=~(lib) (a) <=> (b) ~=~(lib) (b)).
-Proof.
-  introv br ext; split; introv h; spcast; auto; eauto 3 with slow refl.
-Qed.
-Hint Resolve all_in_bar_iff_ccequivc_same : slow.
-
-(* MOVE *)
-Lemma in_ext_iff_ccequivc_same {o} :
-  forall (lib : @library o) a b,
-    in_ext lib (fun lib => (a) ~=~(lib) (a) <=> (b) ~=~(lib) (b)).
-Proof.
-  introv ext; split; introv h; spcast; auto; eauto 3 with slow refl.
-Qed.
-Hint Resolve in_ext_iff_ccequivc_same : slow.
-
-(* MOVE *)
-Lemma all_in_bar_iff_ccequivc_same2 {o} :
-  forall {lib} (bar : @BarLib o lib) a b,
-    all_in_bar bar (fun lib => (a) ~=~(lib) (b) <=> (a) ~=~(lib) (b)).
-Proof.
-  introv br ext; split; introv h; spcast; auto; eauto 3 with slow refl.
-Qed.
-Hint Resolve all_in_bar_iff_ccequivc_same2 : slow.
-
-(* MOVE *)
-Lemma in_ext_iff_ccequivc_same2 {o} :
-  forall (lib : @library o) a b,
-    in_ext lib (fun lib => (a) ~=~(lib) (b) <=> (a) ~=~(lib) (b)).
-Proof.
-  introv ext; split; introv h; spcast; auto; eauto 3 with slow refl.
-Qed.
-Hint Resolve in_ext_iff_ccequivc_same2 : slow.
-
 Lemma member_approx_refl {p} :
   forall lib t, @member p lib mkc_axiom (mkc_approx t t).
 Proof.
@@ -564,26 +362,6 @@ Proof.
   exists t t u u; dands; spcast; eauto 3 with slow.
 Qed.
 
-(* MOVE *)
-Lemma all_in_bar_ccomputes_to_valc_refl {o} :
-  forall {lib} (bar : @BarLib o lib) v,
-    iscvalue v
-    -> all_in_bar bar (fun lib => v ===>(lib) v).
-Proof.
-  introv isv br ext; spcast.
-  apply computes_to_valc_refl; auto.
-Qed.
-Hint Resolve all_in_bar_ccomputes_to_valc_refl : refl.
-
-(* MOVE *)
-Lemma all_in_bar_ccequivc_refl {o} :
-  forall {lib} (bar : @BarLib o lib) v,
-    all_in_bar bar (fun lib => v ~=~(lib) v).
-Proof.
-  introv br ext; spcast; auto.
-Qed.
-Hint Resolve all_in_bar_ccequivc_refl : refl.
-
 Lemma member_base {p} :
   forall lib t, @member p lib t mkc_base.
 Proof.
@@ -596,19 +374,7 @@ Proof.
   exists (trivial_bar lib).
   introv br ext; spcast; eauto 3 with slow.
 Qed.
-
-(* MOVE *)
-Lemma implies_all_in_bar_trivial_bar {o} :
-  forall (lib : @library o) F,
-    in_ext lib F
-    -> all_in_bar (trivial_bar lib) F.
-Proof.
-  introv i br ext; simpl in *.
-  eapply i; eauto 3 with slow.
-Qed.
-
-(* MOVE *)
-Hint Resolve computes_to_valc_refl : refl.
+Hint Resolve member_base : slow.
 
 Lemma member_cequiv {o} :
   forall lib (t1 t2 : @CTerm o),
@@ -1116,16 +882,6 @@ Proof.
 
   apply hasvaluec_as_approxc; auto.
 Qed.
-
-Lemma all_in_ex_bar_iff_same {o} :
-  forall (lib : @library o) (F : library -> Prop),
-    all_in_ex_bar lib (fun lib => F lib <=> F lib).
-Proof.
-  introv; exists (trivial_bar lib).
-  apply implies_all_in_bar_trivial_bar.
-  introv ext; tcsp.
-Qed.
-Hint Resolve all_in_ex_bar_iff_same : refl.
 
 Lemma type_mkc_halts {p} :
   forall lib (a : @CTerm p), type lib (mkc_halts a).

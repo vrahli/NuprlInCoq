@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -373,6 +374,90 @@ Proof.
   dands; tcsp; eauto 3 with slow.
 Qed.
 
+Lemma eq_term_equals_preserves_inhabited {o} :
+  forall (e1 e2 : per(o)),
+    (e1 <=2=> e2)
+    -> inhabited e1
+    -> inhabited e2.
+Proof.
+  unfold inhabited; introv h q; exrepnd; exists t; apply h; auto.
+Qed.
+Hint Resolve eq_term_equals_preserves_inhabited : slow.
+
+Definition per_set_eq_bar_lib_per {o}
+           (lib : @library o)
+           (eqa : lib-per(lib,o))
+           (eqb : lib-per-fam(lib,eqa,o)) : lib-per(lib,o).
+Proof.
+  exists (fun lib' x => per_set_eq_bar lib' (raise_lib_per eqa x) (raise_lib_per_fam eqb x)).
+  repeat introv.
+  unfold per_set_eq_bar, per_set_eq; split; intro h; exrepnd;
+    exists bar; introv br ext; introv.
+
+  - pose proof (h0 _ br _ ext x) as h0; simpl in *; exrepnd.
+    unfold raise_ext_per in *; simpl in *.
+    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
+    dup e0 as e2; apply e1 in e2; clear e1.
+    exists e2.
+    eapply eq_term_equals_preserves_inhabited;[|eauto].
+    apply lib_per_fam_cond.
+
+  - pose proof (h0 _ br _ ext x) as h0; simpl in *; exrepnd.
+    unfold raise_ext_per in *; simpl in *.
+    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
+    dup e0 as e2; apply e1 in e2; clear e1.
+    exists e2.
+    eapply eq_term_equals_preserves_inhabited;[|eauto].
+    apply lib_per_fam_cond.
+Defined.
+
+Lemma sub_per_per_set_bar_eq2 {o} :
+  forall (lib lib' lib'' : @library o)
+         (x : lib_extends lib' lib)
+         (y : lib_extends lib'' lib')
+         (w : lib_extends lib'' lib) eqa eqb,
+    sub_per (per_set_eq_bar lib' (raise_lib_per eqa x) (raise_lib_per_fam eqb x))
+            (per_set_eq_bar lib'' (raise_lib_per eqa w) (raise_lib_per_fam eqb w)).
+Proof.
+  introv y h; repeat introv.
+  unfold per_set_eq_bar, per_set_eq in *; exrepnd.
+  exists (raise_bar bar y).
+  introv br xt; repeat introv.
+  unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
+  unfold raise_lib_per_fam, raise_ext_per_fam; simpl in *; tcsp.
+  pose proof (h0 _ br1 lib'1 (lib_extends_trans xt br2) (lib_extends_trans x0 y)) as h0; simpl in *.
+  exrepnd.
+  assert (eqa lib'1 (lib_extends_trans x0 w) a b) as f by (eapply (lib_per_cond _ eqa); eauto).
+  exists f.
+  eapply eq_term_equals_preserves_inhabited;[|eauto].
+  apply lib_per_fam_cond.
+Qed.
+Hint Resolve sub_per_per_set_bar_eq2 : slow.
+
+Lemma sub_lib_per_per_set_eq_bar_lib_per {o} :
+  forall {lib lib'} (x : @lib_extends o lib' lib) eqa eqb,
+    sub_lib_per (per_set_eq_bar_lib_per lib eqa eqb) x.
+Proof.
+  introv h z; simpl in *.
+  eapply sub_per_per_set_bar_eq2;[|eauto];auto.
+Qed.
+Hint Resolve sub_lib_per_per_set_eq_bar_lib_per : slow.
+
+Lemma per_set_monotone_func {o} :
+  forall (ts : cts(o)), type_monotone_func (per_set ts).
+Proof.
+  introv per.
+  unfold per_set in *; exrepnd.
+
+  exists (per_set_eq_bar_lib_per lib eqa eqb).
+  introv; simpl in *.
+  dands; eauto 3 with slow;[].
+
+  exists (raise_lib_per eqa x)
+         (raise_lib_per_fam eqb x).
+  dands; eauto 3 with slow.
+Qed.
+
 Definition per_product_eq_bar_lib_per {o}
            (lib : @library o)
            (eqa : lib-per(lib,o))
@@ -654,6 +739,12 @@ Proof.
 
   - Case "CL_union".
     pose proof (per_union_monotone_func (close ts) lib T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
+      repnd; dands; eauto 3 with slow.
+
+  - Case "CL_set".
+    pose proof (per_set_monotone_func (close ts) lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.

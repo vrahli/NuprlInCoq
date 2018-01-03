@@ -46,6 +46,7 @@ Require Export close_util_cequiv.
 Require Export close_util_eq.
 Require Export close_util_func.
 Require Export close_util_union.
+Require Export close_util_set.
 Require Export close_util_product.
 
 
@@ -446,6 +447,36 @@ Proof.
     apply eq_term_equals_sym; apply per_bar_eq_per_union_eq_bar_lib_per.
 Qed.
 Hint Resolve per_union_bar_implies_per_bar : slow.
+
+Lemma local_per_set_eq_bar_trivial_bar {o} :
+  forall {lib} (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) t1 t2,
+    per_bar_eq (trivial_bar lib) (per_set_eq_bar_lib_per eqa eqb) t1 t2
+    -> per_set_eq_bar lib eqa eqb t1 t2.
+Proof.
+  introv alla.
+  apply per_bar_eq_per_set_eq_bar_lib_per in alla; auto.
+Qed.
+
+Lemma per_set_implies_per_bar {o} :
+  forall ts lib (T T' : @CTerm o) eq,
+    per_set (close ts) lib T T' eq
+    -> per_bar (close ts) lib T T' eq.
+Proof.
+  introv per.
+  unfold per_set in *; exrepnd.
+
+  exists (trivial_bar lib) (per_set_eq_bar_lib_per eqa eqb).
+  dands.
+
+  - introv br ext; introv; simpl in *.
+    apply CL_set.
+    unfold per_set; dands; auto.
+    exists (raise_lib_per eqa x) (raise_lib_per_fam eqb x); dands; eauto 3 with slow.
+
+  - eapply eq_term_equals_trans;[eauto|]; clear per1.
+    apply eq_term_equals_sym; apply per_bar_eq_per_set_eq_bar_lib_per.
+Qed.
+Hint Resolve per_set_implies_per_bar : slow.
 
 Lemma local_per_product_bar_eq_trivial_bar {o} :
   forall {lib} (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) t1 t2,

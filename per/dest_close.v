@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -42,7 +43,7 @@ Require Export dest_close_product.
 (*Require Export dest_close_pw.*)
 (*Require Export dest_close_pm.*)
 (*Require Export dest_close_disect.*)
-(*Require Export dest_close_set.*)
+Require Export dest_close_set.
 (*Require Export dest_close_tunion.*)
 Require Export dest_close_approx.
 Require Export dest_close_cequiv.
@@ -247,22 +248,30 @@ Ltac dest_close_lr h :=
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
       generalize (dest_close_per_pm_r ts lib T P ap A bp ba B cp ca cb C p T' eq H1 H2 H3 H4); intro h; no_duplicate h
+*)
 
-    (*  set *)
+    (* set *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
-        H3 : computes_to_valc ?lib ?T (mkc_set ?A ?v ?B),
-        H4 : close ?ts ?lib ?T ?T' ?eq
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A ?A' (?eaa lib' x)),
+        H4 : in_ext_ext ?lib (fun lib' x => forall a a' (e : ?eaa lib' x a a'), type_sys_props4 (close ?ts) lib' (substc ?a ?v ?B) (substc ?a' ?v' ?B') (?ebb lib' x a a' e)),
+        H5 : computes_to_valc ?lib ?T (mkc_set ?A ?v ?B),
+        H6 : close ?ts ?lib ?T ?T' ?eq,
+        H' : context[per_set_eq_bar ?lib ?ea ?eb]
       |- _ ] =>
-      generalize (dest_close_per_set_l ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_set_l ts lib T A v B A' v' B' T' eq ea eb H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
 
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
-        H3 : computes_to_valc ?lib ?T' (mkc_set ?A ?v ?B),
-        H4 : close ?ts ?lib ?T ?T' ?eq
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A' ?A (?eaa lib' x)),
+        H4 : in_ext_ext ?lib (fun lib' x => forall a a' (e : ?eaa lib' x a a'), type_sys_props4 (close ?ts) lib' (substc ?a ?v' ?B') (substc ?a' ?v ?B) (?ebb lib' x a a' e)),
+        H5 : computes_to_valc ?lib ?T' (mkc_set ?A ?v ?B),
+        H6 : close ?ts ?lib ?T ?T' ?eq,
+        H' : context[per_set_eq_bar ?lib ?ea ?eb]
       |- _ ] =>
-      generalize (dest_close_per_set_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_set_r ts lib T A v B A' v' B' T' eq ea eb H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
 
+    (*
     (*  tunion *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,

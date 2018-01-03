@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -106,14 +107,12 @@ Proof.
 
   - Case "CL_eq".
     apply CL_eq.
-    unfold per_eq in *; exrepnd; dands; auto.
     exists A B a1 a2 b1 b2 eqa; dands; auto.
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
   - Case "CL_func".
     apply CL_func.
-    unfold per_func_ext in *; exrepnd; dands; auto.
     exists eqa eqb; dands; auto.
     { exists A A' v v' B B'; dands; auto. }
     eapply eq_term_equals_trans;[|eauto].
@@ -121,14 +120,19 @@ Proof.
 
   - Case "CL_union".
     apply CL_union.
-    unfold per_union in *; exrepnd; dands; auto.
     exists eqa eqb A A' B B'; dands; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+
+  - Case "CL_set".
+    apply CL_set.
+    exists eqa eqb; dands; auto.
+    { exists A A' v v' B B'; dands; auto. }
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
   - Case "CL_product".
     apply CL_product.
-    unfold per_product_bar in *; exrepnd; dands; auto.
     exists eqa eqb; dands; auto.
     { exists A A' v v' B B'; dands; auto. }
     eapply eq_term_equals_trans;[|eauto].

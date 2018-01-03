@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -64,9 +65,9 @@ Require Export close_type_sys_per_union.
  Require Export close_type_sys_per_mono.
  Require Export close_type_sys_per_ffatom.
  Require Export close_type_sys_per_effatom.
- Require Export close_type_sys_per_ffatoms.
- Require Export close_type_sys_per_set.
- Require Export close_type_sys_per_tunion.*)
+ Require Export close_type_sys_per_ffatoms.*)
+Require Export close_type_sys_per_set.
+(* Require Export close_type_sys_per_tunion.*)
 Require Export close_type_sys_per_product.
 (*Require Export close_type_sys_per_pw.
  Require Export close_type_sys_per_pm.*)
@@ -447,8 +448,8 @@ Proof.
 (*  - Case "CL_ffatoms".
     eapply close_type_system_ffatoms; eauto.*)
 
-(*  - Case "CL_set".
-    eapply close_type_system_set; eauto.*)
+  - Case "CL_set".
+    eapply close_type_system_set; eauto; eauto 3 with slow.
 
 (*  - Case "CL_tunion".
     eapply close_type_system_tunion; eauto.*)
