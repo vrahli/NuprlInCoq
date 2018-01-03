@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -25,29 +26,61 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
+           Abhishek Anand
 
 *)
 
+
+Require Export per_props_util.
 Require Export per_props_compute.
 
+
+Definition chaltsc_bar {o} lib (t : @CTerm o) :=
+  all_in_ex_bar lib (fun lib => chaltsc lib t).
+
+Lemma computes_to_valc_implies_chaltsc_bar_left {o} :
+  forall lib (a b : @CTerm o),
+    computes_to_valc lib a b
+    -> chaltsc_bar lib a.
+Proof.
+  introv comp.
+  exists (trivial_bar lib).
+  apply in_ext_implies_all_in_bar_trivial_bar; introv x.
+  spcast.
+  eapply computes_to_valc_implies_hasvaluec; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_valc_implies_chaltsc_bar_left : slow.
+
 Lemma types_converge {o} :
-  forall lib (t : @CTerm o), type lib t -> chaltsc lib t.
+  forall lib (t : @CTerm o), type lib t -> chaltsc_bar lib t.
 Proof.
   introv n.
   unfold type, tequality, nuprl in n; exrepnd.
-  induction n0
-    as [ h | h | h | h | h
-         | h | h | h | h | h
-         | h | h | h | h | h
-         | h | h | h | h | h
-         | h | h | h | h | h
-         | h | h | h | h | h
-         | h | h ];
-    allunfold_per; uncast; allapply @computes_to_valc_implies_hasvaluec;
-    try (complete (spcast; auto)).
-  inversion h as [i u].
-  rw @univi_exists_iff in u; exrepnd.
-  spcast.
-  apply computes_to_valc_implies_hasvaluec in u2; auto.
+  remember univ as u.
+  revert Hequ.
+  close_cases (induction n0 using @close_ind') Case; intro Hequ; subst;
+    allunfold_per; uncast; eauto 3 with slow.
+
+  {
+    rename_hyp_with @univ h.
+    unfold univ, per_bar in h; exrepnd.
+    exists bar.
+    introv br ext.
+    assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
+    pose proof (h0 _ br _ ext x) as h0; simpl in *.
+    unfold univ_ex in *; exrepnd.
+    rw @univi_exists_iff in h2; exrepnd.
+    spcast.
+    apply computes_to_valc_implies_hasvaluec in h4; auto.
+  }
+
+  {
+    apply collapse_all_in_ex_bar.
+    exists bar.
+    introv br ext.
+    assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
+    fold (chaltsc_bar lib'0 T').
+    apply (reca _ br); eauto 3 with slow.
+  }
 Qed.

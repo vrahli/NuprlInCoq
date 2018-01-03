@@ -46,6 +46,8 @@ Proof.
   introv; split; intro teq; repnd.
 
   - unfold tequality in teq; exrepnd.
+
+XXXXXXX
     inversion teq0; try not_univ; allunfold @per_union; exrepnd.
     computes_to_value_isvalue; sp; try (complete (spcast; sp)).
     exists eqa; sp.

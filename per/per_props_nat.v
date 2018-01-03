@@ -26,7 +26,8 @@
              http://nuprl.org/html/Nuprl2Coq
              https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
+           Abhishek Anand
 
 *)
 
@@ -38,50 +39,102 @@ Require Export per_props_set.
 Require Export per_props_false.
 Require Export per_props_product.
 Require Export per_props_not.
-Require Export per_props_union.
 Require Export types_converge.
+
+(*Require Export per_props_union.*)
+
 (*Require Export list.  (* ??? *)*)
 
 
+Lemma dest_nuprl_int {o} :
+  forall (lib : @library o) eq,
+    nuprl lib mkc_int mkc_int eq
+    -> per_bar (per_int nuprl) lib mkc_int mkc_int eq.
+Proof.
+  introv cl.
+  eapply dest_close_per_int_l in cl;
+    try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
+  unfold per_int_bar in *; exrepnd.
+  exists bar (equality_of_int_bar_lib_per lib).
+  dands; auto.
+
+  {
+    introv br ext; introv.
+    unfold per_int; dands; spcast; eauto 3 with slow.
+  }
+
+  {
+    eapply eq_term_equals_trans;[eauto|].
+    apply eq_term_equals_sym;apply per_bar_eq_equality_of_int_bar_lib_per.
+  }
+Qed.
+
+Lemma dest_nuprl_int2 {o} :
+  forall lib (eq : per(o)),
+    nuprl lib mkc_int mkc_int eq
+    -> eq <=2=> (equality_of_int_bar lib).
+Proof.
+  introv u.
+  apply dest_nuprl_int in u.
+  unfold per_bar in u; exrepnd.
+
+  eapply eq_term_equals_trans;[eauto|].
+  eapply eq_term_equals_trans;[|apply (per_bar_eq_equality_of_int_bar_lib_per _ bar)].
+  apply implies_eq_term_equals_per_bar_eq.
+  apply all_in_bar_ext_intersect_bars_same; simpl; auto.
+  introv br ext; introv.
+  pose proof (u0 _ br _ ext x) as u0; simpl in *.
+  unfold per_int in *; exrepnd; spcast; auto.
+Qed.
+
+
 Lemma nuprl_int {p} :
-  forall lib, @nuprl p lib mkc_int mkc_int (equality_of_int lib).
+  forall lib, @nuprl p lib mkc_int mkc_int (equality_of_int_bar lib).
 Proof.
   sp.
   apply CL_int.
   unfold per_int; sp; spcast; try computes_to_value_refl.
 Qed.
+Hint Resolve nuprl_int : slow.
 
-Lemma equality_of_int_xxx {p} :
-  forall lib, @close p lib (univ lib) mkc_int mkc_int (equality_of_int lib).
+Lemma equality_of_int_xxx {o} :
+  forall lib, @close o univ lib mkc_int mkc_int (equality_of_int_bar lib).
 Proof.
   apply nuprl_int.
 Qed.
+Hint Resolve equality_of_int_xxx : slow.
 
-Lemma nat_in_int {p} : forall lib (n : nat), @member p lib (mkc_nat n) mkc_int.
+Lemma equality_of_int_bar_same_nat {o} :
+  forall (lib : @library o) n,
+    equality_of_int_bar lib (mkc_nat n) (mkc_nat n).
 Proof.
-  unfold member, equality; sp.
-  exists (@equality_of_int p lib).
-  sp;[apply equality_of_int_xxx|].
+  introv; exists (trivial_bar lib).
+  apply in_ext_implies_all_in_bar_trivial_bar.
+  introv x.
   exists (Z_of_nat n); sp;
   unfold mkc_nat, mkc_integer, isprog_mk_nat, isprog_mk_integer, mk_nat;
     spcast; computes_to_value_refl.
 Qed.
+Hint Resolve equality_of_int_bar_same_nat : slow.
+
+Lemma nat_in_int {p} : forall lib (n : nat), @member p lib (mkc_nat n) mkc_int.
+Proof.
+  unfold member, equality; sp.
+  exists (@equality_of_int_bar p lib).
+  dands; eauto 3 with slow.
+Qed.
 
 Lemma equality_in_int {p} :
   forall lib (t1 t2 : @CTerm p),
-    equality lib t1 t2 mkc_int <=> equality_of_int lib t1 t2.
+    equality lib t1 t2 mkc_int <=> equality_of_int_bar lib t1 t2.
 Proof.
   intros; split; intro e.
 
-  - unfold equality, nuprl in e; exrepnd.
-    inversion e1; subst; try not_univ.
-    allunfold @per_int; sp.
-    discover; sp.
+  - unfold equality in e; exrepnd.
+    apply dest_nuprl_int2 in e1.
+    apply e1 in e0; auto.
 
-  - unfold equality, nuprl.
-    exists (fun a b : @CTerm p => equality_of_int lib a b); dands; tcsp.
-    apply CL_int; unfold per_int; sp;
-    spcast; apply computes_to_value_isvalue_refl; repeat constructor; simpl; sp.
+  - exists (equality_of_int_bar lib); dands; auto; eauto 3 with slow.
 Qed.
 
 Lemma hasvaluec_mkc_less {o} :
@@ -107,15 +160,17 @@ Lemma equality_in_less {o} :
   forall lib (u v a b c d : @CTerm o),
     equality lib u v (mkc_less a b c d)
     <=>
-    {ka : Z
-     , {kb : Z
-        , a ===>(lib) (mkc_integer ka)
-        # b ===>(lib) (mkc_integer kb)
-        # (
-            ((ka < kb)%Z # equality lib u v c)
-            {+}
-            ((kb <= ka)%Z # equality lib u v d)
-          )}}.
+    all_in_ex_bar
+      lib
+      (fun lib =>
+         {ka , kb : Z
+         , a ===>(lib) (mkc_integer ka)
+         # b ===>(lib) (mkc_integer kb)
+         # (
+             ((ka < kb)%Z # equality lib u v c)
+             {+}
+             ((kb <= ka)%Z # equality lib u v d)
+           )}).
 Proof.
   introv.
 
@@ -123,6 +178,8 @@ Proof.
 
   - applydup @inhabited_implies_tequality in k.
     apply types_converge in k0.
+
+XXXXXX
     spcast.
     apply hasvaluec_mkc_less in k0.
     exrepnd.
