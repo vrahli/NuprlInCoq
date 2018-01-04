@@ -582,9 +582,6 @@ Proof.
 Qed.
 Hint Resolve equality_respects_equorsq_bar2 : slow.
 
-Definition ccequivc_bar {o} lib (t1 t2 : @CTerm o) :=
-  all_in_ex_bar lib (fun lib => ccequivc_ext lib t1 t2).
-
 Lemma all_in_bar_exists_per_implies_exists {o} :
   forall {lib} (bar : @BarLib o lib)
          (F : forall lib' (eqa : per(o)), Prop),
@@ -794,3 +791,80 @@ Proof.
   apply (h0 _ br1); eauto 3 with slow.
 Qed.
 Hint Resolve lib_extends_preserves_all_in_ex_bar : slow.
+
+Lemma lib_extends_inhabited_type {o} :
+  forall {lib lib'} (x : lib_extends lib' lib) (T : @CTerm o),
+    inhabited_type lib T
+    -> inhabited_type lib' T.
+Proof.
+  introv x inh.
+  unfold inhabited_type in *; exrepnd; exists t; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_inhabited_type : slow.
+
+Lemma inhabited_type_implies_inhabited_type_bar {o} :
+  forall lib (T : @CTerm o),
+    inhabited_type lib T -> inhabited_type_bar lib T.
+Proof.
+  introv h.
+  apply in_ext_implies_all_in_ex_bar; introv x; eauto 3 with slow.
+Qed.
+Hint Resolve inhabited_type_implies_inhabited_type_bar : slow.
+
+Lemma fold_inhabited_type_bar {o} :
+  forall lib (A : @CTerm o),
+    all_in_ex_bar lib (fun lib => inhabited_type lib A)
+    = inhabited_type_bar lib A.
+Proof.
+  tcsp.
+Qed.
+
+Lemma inhabited_type_bar_cequivc {p} :
+  forall lib (a b : @CTerm p),
+    ccequivc_ext lib a b
+    -> inhabited_type_bar lib a
+    -> inhabited_type_bar lib b.
+Proof.
+  introv ceq inh.
+  eapply all_in_ex_bar_modus_ponens1;try exact inh; clear inh; introv w inh; exrepnd; spcast.
+  eapply inhabited_type_cequivc; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve inhabited_type_bar_cequivc : slow.
+
+Lemma inhabited_type_bar_respects_alphaeqc {o} :
+  forall lib, respects1 alphaeqc (@inhabited_type_bar o lib).
+Proof.
+  introv aeq inh.
+  apply (alphaeqc_implies_ccequivc_ext lib) in aeq; eauto 3 with slow.
+Qed.
+Hint Resolve inhabited_type_bar_respects_alphaeqc : respects.
+
+Lemma computes_to_valc_implies_reduces_toc {o} :
+  forall lib (t1 t2 : @CTerm o),
+    computes_to_valc lib t1 t2
+    -> reduces_toc lib t1 t2.
+Proof.
+  introv comp.
+  allrw @computes_to_valc_iff_reduces_toc; sp.
+Qed.
+Hint Resolve computes_to_valc_implies_reduces_toc : slow.
+
+Definition ccequivc_ext_bar {o} lib (t1 t2 : @CTerm o) :=
+  all_in_ex_bar lib (fun lib => ccequivc_ext lib t1 t2).
+
+Definition ccequivc_bar {o} lib (a b : @CTerm o) :=
+  all_in_ex_bar lib (fun lib => ccequivc lib a b).
+
+Lemma ccequivc_ext_bar_iff_ccequivc_bar {o} :
+  forall lib (a b : @CTerm o),
+    ccequivc_ext_bar lib a b <=> ccequivc_bar lib a b.
+Proof.
+  introv; split; introv e.
+
+  - eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd; eauto 3 with slow.
+
+  - unfold ccequivc_bar, ccequivc_ext_bar, all_in_ex_bar in *; exrepnd.
+    exists bar.
+    introv br ext x.
+    apply (e0 _ br); eauto 3 with slow.
+Qed.

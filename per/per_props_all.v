@@ -43,8 +43,8 @@ Require Export per_props_set.
 Require Export per_props_compute.
 Require Export per_props_false.
 Require Export per_props_not.
-
 Require Export per_props_nat.
+
 Require Export per_props_nat2.
 Require Export per_props_iff.
 Require Export per_props_squash.

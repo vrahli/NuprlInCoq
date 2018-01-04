@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -37,6 +38,46 @@ Require Export cequiv_seq_util.
 (*Require Export per_respects.*)
 Require Export per_props_nat.
 
+(*Require Export per_props_union.*)
+
+
+Lemma equality_mkc_inl_implies {o} :
+  forall lib (t1 t2 A B : @CTerm o),
+    equality lib (mkc_inl t1) (mkc_inl t2) (mkc_union A B)
+    -> equality lib t1 t2 A.
+Proof.
+  introv e.
+  apply equality_mkc_union in e; repnd.
+  repndors; exrepnd; spcast;
+  apply computes_to_valc_isvalue_eq in e2; eauto 3 with slow;
+  apply computes_to_valc_isvalue_eq in e4; eauto 3 with slow;
+  eqconstr e2; eqconstr e4; auto.
+Qed.
+
+Lemma equality_tt_in_bool_implies_cequiv {o} :
+  forall lib (t : @CTerm o),
+    equality lib t tt mkc_bool
+    -> ccequivc lib t tt.
+Proof.
+  introv e.
+  apply equality_in_bool in e; repndors; repnd; spcast; eauto with slow.
+  apply tt_not_cequivc_ff in e; sp.
+Qed.
+
+Lemma implies_isl_in_bool {o} :
+  forall lib (A B a b : @CTerm o),
+    equality lib a b (mkc_union A B)
+    -> equality lib (mkc_isl a) (mkc_isl b) mkc_bool.
+Proof.
+  introv e.
+  apply equality_mkc_union in e; exrepnd.
+  apply equality_in_bool.
+  repndors; exrepnd; spcast;[left|right]; dands; spcast.
+  - eapply computes_to_valc_inl_implies_cequivc_isl_tt; eauto.
+  - eapply computes_to_valc_inl_implies_cequivc_isl_tt; eauto.
+  - eapply computes_to_valc_inr_implies_cequivc_isl_ff; eauto.
+  - eapply computes_to_valc_inr_implies_cequivc_isl_ff; eauto.
+Qed.
 
 Lemma tequality_natk2nat {o} :
   forall lib (a b : @CTerm o),

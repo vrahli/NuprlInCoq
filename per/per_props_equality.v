@@ -1007,7 +1007,8 @@ Proof.
     apply dest_nuprl_equality2 in k0; exrepnd.
     dands.
 
-    + unfold ccequivc_bar, all_in_ex_bar.
+    + apply ccequivc_ext_bar_iff_ccequivc_bar.
+      unfold ccequivc_ext_bar, all_in_ex_bar.
       apply collapse2bars.
       exists bar.
 
@@ -1030,7 +1031,8 @@ Proof.
         introv e; eauto 3 with slow.
       }
 
-    + unfold ccequivc_bar, all_in_ex_bar.
+    + apply ccequivc_ext_bar_iff_ccequivc_bar.
+      unfold ccequivc_ext_bar, all_in_ex_bar.
       apply collapse2bars.
       exists bar.
 
@@ -1053,7 +1055,10 @@ Proof.
         introv e; eauto 3 with slow.
       }
 
-  - unfold ccequivc_bar, all_in_ex_bar in *; repnd; exrepnd.
+  - repnd.
+    apply ccequivc_ext_bar_iff_ccequivc_bar in k0.
+    apply ccequivc_ext_bar_iff_ccequivc_bar in k.
+    unfold ccequivc_ext_bar, all_in_ex_bar in *; repnd; exrepnd.
     apply (implies_all_in_bar_intersect_bars_left _ bar) in k2.
     apply (implies_all_in_bar_intersect_bars_right _ bar0) in k1.
     remember (intersect_bars bar0 bar) as bar1.
@@ -1180,7 +1185,8 @@ Proof.
   { split; intro h; eauto 3 with slow. }
 
   {
-    unfold ccequivc_bar, all_in_ex_bar in e; exrepnd.
+    apply ccequivc_ext_bar_iff_ccequivc_bar in e.
+    unfold ccequivc_ext_bar, all_in_ex_bar in e; exrepnd.
     exists bar.
     introv br ext; pose proof (e0 _ br _ ext) as e0; tcsp.
   }
