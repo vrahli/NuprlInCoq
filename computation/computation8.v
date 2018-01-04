@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -16,11 +19,16 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with VPrl.  Ifnot, see <http://www.gnu.org/licenses/>.
+  along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand & Vincent Rahli & Mark Bickford
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Abhishek Anand
+           Vincent Rahli
+           Mark Bickford
 
 *)
 
@@ -217,7 +225,7 @@ Qed.
 Lemma reduces_to_fresh2 {o} :
   forall (lib : library) (t u : @NTerm o) (v : NVar) a,
   wf_term t
-  -> !LIn a (get_utokens t)
+  -> !LIn a (get_utokens_lib lib t)
   -> reduces_to lib (subst t v (mk_utoken a)) u
   -> {z : NTerm
       $ reduces_to lib (mk_fresh v t) (mk_fresh v z)
@@ -228,13 +236,13 @@ Proof.
   pose proof (reduces_to_change_utok_sub
                 lib t u
                 [(v,mk_utoken a)]
-                [(v,mk_utoken (get_fresh_atom t))]) as r'.
+                [(v,mk_utoken (get_fresh_atom lib t))]) as r'.
   allrw @get_utokens_sub_cons; allrw @get_utokens_sub_nil; allsimpl.
   allrw disjoint_singleton_l.
   repeat (autodimp r' hyp); eauto 3 with slow.
   { apply nr_ut_sub_cons; eauto with slow.
-    intro i; apply get_fresh_atom_prop. }
-  { apply get_fresh_atom_prop. }
+    intro i; apply get_fresh_atom_prop_and_lib. }
+  { apply get_fresh_atom_prop_and_lib. }
   exrepnd.
 
   allrw disjoint_singleton_l.
@@ -244,7 +252,7 @@ Proof.
   repeat (autodimp h hyp); exrepnd.
   exists z; dands; auto.
 
-  remember (get_fresh_atom t) as a'.
+  remember (get_fresh_atom lib t) as a'.
 
   pose proof (alpha_eq_subst_utokens
                 s (subst w0 v (mk_utoken a'))
@@ -253,7 +261,9 @@ Proof.
   repeat (autodimp aeqs1 hyp); eauto 3 with slow.
   pose proof (simple_alphaeq_subst_utokens_subst w0 v a') as aeqs2.
   autodimp aeqs2 hyp.
-  { subst; intro i; apply r'4 in i; apply get_fresh_atom_prop in i; sp. }
+  { subst; intro i.
+    eapply get_utokens_subset_get_utokens_lib in i.
+    apply r'4 in i; apply get_fresh_atom_prop_and_lib in i; sp. }
   eapply alpha_eq_trans in aeqs2;[|exact aeqs1]; clear aeqs1.
   eapply alpha_eq_trans in aeqs2;[|exact h0].
   eapply alpha_eq_trans;[exact aeqs2|].
@@ -265,6 +275,8 @@ Proof.
   repeat (autodimp aeqs1 hyp); eauto 3 with slow.
   pose proof (simple_alphaeq_subst_utokens_subst w0 v a) as aeqs3.
   autodimp aeqs3 hyp.
+  { intro i.
+    eapply get_utokens_subset_get_utokens_lib in i; tcsp. }
   eapply alpha_eq_trans in aeqs3;[|exact aeqs1]; eauto with slow.
 Qed.
 
@@ -276,10 +288,3 @@ Proof.
   introv aeq.
   apply alpha_eq_subst_utokens; eauto with slow.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

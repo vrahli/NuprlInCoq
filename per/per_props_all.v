@@ -44,6 +44,7 @@ Require Export per_props_compute.
 Require Export per_props_false.
 Require Export per_props_not.
 Require Export per_props_nat.
+Require Export per_props_union.
 
 Require Export per_props_nat2.
 Require Export per_props_iff.
@@ -57,6 +58,6 @@ Require Export per_props_tequality.
 Require Export per_props_erase.
 Require Export per_props_isect.
 Require Export per_props_admiss.
-Require Export per_props_union.
 Require Export per_props_cequiv2.
 Require Export per_props_top.
+Require Export per_props_union2.

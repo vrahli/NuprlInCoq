@@ -918,6 +918,7 @@ Proof.
   introv; allrw @mkc_unit_eq.
   rw @tequality_mkc_approx; eauto 3 with slow refl.
 Qed.
+Hint Resolve tequality_unit : slow.
 
 Lemma equality_in_unit {o} :
   forall lib (a b : @CTerm o),
