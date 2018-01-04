@@ -868,3 +868,26 @@ Proof.
     introv br ext x.
     apply (e0 _ br); eauto 3 with slow.
 Qed.
+
+Lemma implies_ccequivc_ext_apply {o} :
+  forall lib (f g a b : @CTerm o),
+    ccequivc_ext lib f g
+    -> ccequivc_ext lib a b
+    -> ccequivc_ext lib (mkc_apply f a) (mkc_apply g b).
+Proof.
+  introv ceqa ceqb x.
+  pose proof (ceqa _ x) as ceqa.
+  pose proof (ceqb _ x) as ceqb.
+  simpl in *; spcast.
+  apply implies_cequivc_apply; auto.
+Qed.
+Hint Resolve implies_ccequivc_ext_apply : slow.
+
+Lemma all_in_ex_bar_member_implies_member {o} :
+  forall lib (a A : @CTerm o),
+    all_in_ex_bar lib (fun lib => member lib a A)
+    -> member lib a A.
+Proof.
+  introv h.
+  apply all_in_ex_bar_equality_implies_equality in h; auto.
+Qed.

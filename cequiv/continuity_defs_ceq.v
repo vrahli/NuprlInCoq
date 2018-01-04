@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1073,10 +1075,20 @@ Proof.
   apply alpha_eq_bterm_congr; auto.
 Qed.
 
+Lemma not_in_get_utokens_lib_implies_not_in_get_utokens {o} :
+  forall a lib (t : @NTerm o),
+    !LIn a (get_utokens_lib lib t)
+    -> !LIn a (get_utokens t).
+Proof.
+  introv ni i.
+  eapply get_utokens_subset_get_utokens_lib in i; apply ni in i; auto.
+Qed.
+Hint Resolve not_in_get_utokens_lib_implies_not_in_get_utokens : slow.
+
 Lemma fresh_reduces_to_implies {o} :
   forall lib v (t : @NTerm o) x a,
     nt_wf t
-    -> !LIn a (get_utokens t)
+    -> !LIn a (get_utokens_lib lib t)
     -> reduces_to lib (mk_fresh v t) x
     -> isvalue_like x
     -> {u : NTerm
@@ -1109,11 +1121,11 @@ Proof.
       dands; eauto 3 with slow.
       apply implies_alpha_eq_pushdown_fresh_same.
       apply alpha_eq_sym.
-      apply simple_alphaeq_subst_utokens_subst;auto.
+      apply simple_alphaeq_subst_utokens_subst;auto; eauto 3 with slow.
 
     + repnd; subst.
-      remember (get_fresh_atom t) as a'.
-      pose proof (get_fresh_atom_prop t) as gfap; rw <- Heqa' in gfap.
+      remember (get_fresh_atom lib t) as a'.
+      pose proof (get_fresh_atom_prop_and_lib lib t) as gfap; rw <- Heqa' in gfap.
 
       pose proof (compute_step_subst_utoken lib t x0 [(v,mk_utoken a')]) as h.
       allrw @fold_subst.
@@ -1142,10 +1154,11 @@ Proof.
          |apply implies_alpha_eq_mk_fresh;
            eapply alpha_eq_trans;
            [apply alpha_eq_subst_utokens_same; exact h1
-           |apply simple_alphaeq_subst_utokens_subst;auto] ].
+           |apply simple_alphaeq_subst_utokens_subst;auto] ];
+        eauto 3 with slow;[].
       exrepnd.
 
-      assert (!LIn a (get_utokens w)) as niaw.
+      assert (!LIn a (get_utokens_lib lib w)) as niaw.
       { introv j; apply h4 in j; sp. }
 
       assert (isvalue_like t2') as isvt2'.
@@ -1252,7 +1265,7 @@ Qed.
 
 Lemma approx_fresh_subst1 {o} :
   forall lib (t : @NTerm o) v a op,
-    !LIn a (get_utokens t)
+    !LIn a (get_utokens_lib lib t)
     -> isprog_vars [v] t
     -> iscan_op op
     -> reduces_to lib (subst t v (mk_utoken a)) (spoterm op)
@@ -1308,7 +1321,7 @@ Qed.
 
 Lemma approx_subst_fresh1 {o} :
   forall lib (t : @NTerm o) v a op,
-    !LIn a (get_utokens t)
+    !LIn a (get_utokens_lib lib t)
     -> isprog_vars [v] t
     -> iscan_op op
     -> !LIn a (get_utokens (spoterm op))
@@ -1357,7 +1370,7 @@ Qed.
 
 Lemma cequiv_fresh_subst1 {o} :
   forall lib op (t : @NTerm o) v a,
-    !LIn a (get_utokens t)
+    !LIn a (get_utokens_lib lib t)
     -> isprog_vars [v] t
     -> iscan_op op
     -> !LIn a (get_utokens (spoterm op))

@@ -37,8 +37,7 @@ Require Export natk2.
 Require Export cequiv_seq_util.
 (*Require Export per_respects.*)
 Require Export per_props_nat.
-
-(*Require Export per_props_union.*)
+Require Export per_props_union.
 
 
 Lemma equality_mkc_inl_implies {o} :
@@ -48,19 +47,23 @@ Lemma equality_mkc_inl_implies {o} :
 Proof.
   introv e.
   apply equality_mkc_union in e; repnd.
+  apply all_in_ex_bar_equality_implies_equality.
+  eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd; spcast.
   repndors; exrepnd; spcast;
-  apply computes_to_valc_isvalue_eq in e2; eauto 3 with slow;
-  apply computes_to_valc_isvalue_eq in e4; eauto 3 with slow;
-  eqconstr e2; eqconstr e4; auto.
+    apply computes_to_valc_isvalue_eq in e2; eauto 3 with slow;
+      apply computes_to_valc_isvalue_eq in e4; eauto 3 with slow;
+        eqconstr e2; eqconstr e4; auto.
 Qed.
 
 Lemma equality_tt_in_bool_implies_cequiv {o} :
   forall lib (t : @CTerm o),
     equality lib t tt mkc_bool
-    -> ccequivc lib t tt.
+    -> ccequivc_bar lib t tt.
 Proof.
   introv e.
-  apply equality_in_bool in e; repndors; repnd; spcast; eauto with slow.
+  apply equality_in_bool in e.
+  eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd.
+  repndors; repnd; spcast; eauto with slow.
   apply tt_not_cequivc_ff in e; sp.
 Qed.
 
@@ -72,6 +75,7 @@ Proof.
   introv e.
   apply equality_mkc_union in e; exrepnd.
   apply equality_in_bool.
+  eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd.
   repndors; exrepnd; spcast;[left|right]; dands; spcast.
   - eapply computes_to_valc_inl_implies_cequivc_isl_tt; eauto.
   - eapply computes_to_valc_inl_implies_cequivc_isl_tt; eauto.
@@ -82,25 +86,19 @@ Qed.
 Lemma tequality_natk2nat {o} :
   forall lib (a b : @CTerm o),
     tequality lib (natk2nat a) (natk2nat b)
-     <=> {k1 : Z
-          , {k2 : Z
+     <=> all_in_ex_bar lib (fun lib => {k1 , k2 : Z
           , (a) ===>(lib) (mkc_integer k1)
           # (b) ===>(lib) (mkc_integer k2)
           # (forall k : Z,
                (0 <= k)%Z ->
-               ((k < k1)%Z # (k < k2)%Z){+}(k1 <= k)%Z # (k2 <= k)%Z)}}.
+               ((k < k1)%Z # (k < k2)%Z){+}(k1 <= k)%Z # (k2 <= k)%Z)}).
 Proof.
   introv.
   unfold natk2nat.
   rw @tequality_mkc_fun.
   rw @tequality_mkc_natk.
   split; intro k; exrepnd; dands; eauto 3 with slow.
-
-  - spcast; exists k1 k0; dands; spcast; auto.
-
-  - spcast; exists k1 k2; dands; spcast; auto.
-
-  - introv inh; apply type_tnat.
+  introv x inh; apply type_tnat.
 Qed.
 
 Lemma lsubstc_mk_unit {o} :
@@ -124,16 +122,6 @@ Proof.
   rw @lsubstc_mkc_tnat.
   rw @lsubstc_mk_unit.
   apply alphaeqc_refl.
-Qed.
-
-Lemma type_natU {o} :
-  forall (lib : @library o),
-    type lib natU.
-Proof.
-  introv.
-  apply tequality_bunion; dands; eauto 3 with slow.
-  - apply type_tnat.
-  - apply tequality_unit.
 Qed.
 
 Lemma lsubstc_mk_nat2nat {o} :
@@ -171,6 +159,7 @@ Proof.
 
   apply equality_in_natk in e; exrepnd; spcast.
   apply equality_in_tnat.
+  eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd.
   exists m; dands; spcast; auto.
 Qed.
 
@@ -183,13 +172,19 @@ Proof.
   introv m e.
 
   allrw @equality_in_tnat.
+  apply all_in_ex_bar_equality_implies_equality.
+  eapply all_in_ex_bar_modus_ponens1;try exact m; clear m; introv x m; exrepnd.
   allunfold @equality_of_nat; exrepnd; spcast; GC.
+  eapply equality_monotone in e;[|eauto].
+  clear dependent lib.
+  rename lib' into lib.
 
   allrw @equality_in_fun; repnd; dands; eauto 3 with slow.
   { apply type_mkc_natk.
-    exists (Z.of_nat k); spcast; auto. }
+    apply in_ext_implies_all_in_ex_bar; introv y.
+    exists (Z.of_nat k); spcast; eauto 3 with slow. }
 
-  introv en.
+  introv x en.
   apply equality_natk_to_tnat in en; apply e in en; auto.
 Qed.
 
@@ -199,6 +194,7 @@ Lemma nat_in_nat {o} :
 Proof.
   introv.
   apply equality_in_tnat.
+  apply in_ext_implies_all_in_ex_bar; introv y.
   exists n; dands; spcast; apply computes_to_valc_refl; eauto 3 with slow.
 Qed.
 
@@ -354,7 +350,9 @@ Lemma equality_in_tnat_nat {o} :
   forall (lib : @library o) n, equality lib (mkc_nat n) (mkc_nat n) mkc_tnat.
 Proof.
   introv.
-  apply equality_in_tnat; unfold equality_of_nat; exists n.
+  apply equality_in_tnat.
+  apply in_ext_implies_all_in_ex_bar; introv x.
+  unfold equality_of_nat; exists n.
   dands; spcast; apply computes_to_valc_refl; eauto 3 with slow.
 Qed.
 Hint Resolve equality_in_tnat_nat : slow.
@@ -362,27 +360,27 @@ Hint Resolve equality_in_tnat_nat : slow.
 Lemma member_tnat_implies_computes {o} :
   forall lib (t : @CTerm o),
     member lib t mkc_tnat
-    -> {k : nat & computes_to_valc lib t (mkc_nat k)}.
+    -> all_in_ex_bar lib (fun lib => {k : nat , ccomputes_to_valc lib t (mkc_nat k)}).
 Proof.
   introv mem.
   apply equality_in_tnat in mem.
+  eapply all_in_ex_bar_modus_ponens1;try exact mem; clear mem; introv x mem; exrepnd.
   apply equality_of_nat_imp_tt in mem.
   unfold equality_of_nat_tt in mem; exrepnd.
-  exists k; auto.
+  exists k; spcast; auto.
 Qed.
 
 Lemma member_tnat_iff {o} :
   forall lib (t : @CTerm o),
     member lib t mkc_tnat
-    <=> {k : nat & computes_to_valc lib t (mkc_nat k)}.
+    <=> all_in_ex_bar lib (fun lib => {k : nat , ccomputes_to_valc lib t (mkc_nat k)}).
 Proof.
   introv; split; introv mem.
   - apply member_tnat_implies_computes; auto.
   - apply equality_in_tnat.
-    exrepnd.
+    eapply all_in_ex_bar_modus_ponens1;try exact mem; clear mem; introv x mem; exrepnd; spcast.
     exists k; dands; spcast; auto.
 Qed.
-
 
 Lemma equality_nat2nat_apply {o} :
   forall lib (f g a b : @CTerm o),
@@ -393,19 +391,20 @@ Proof.
   introv eqf eqn.
   unfold nat2nat in eqf.
   apply equality_in_fun in eqf; repnd.
-  apply eqf in eqn; auto.
+  apply eqf in eqn; auto; eauto 3 with slow.
 Qed.
 
 Lemma equality_int_nat_implies_cequivc {o} :
   forall lib (a b : @CTerm o),
     equality lib a b mkc_tnat
-    -> cequivc lib a b.
+    -> ccequivc_bar lib a b.
 Proof.
-  introv eqn.
-  apply equality_in_tnat in eqn.
-  apply equality_of_nat_imp_tt in eqn.
-  unfold equality_of_nat_tt in eqn; exrepnd.
-  eapply cequivc_trans;[apply computes_to_valc_implies_cequivc;exact eqn1|].
+  introv e.
+  apply equality_in_tnat in e.
+  eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd; spcast.
+  apply equality_of_nat_imp_tt in e.
+  unfold equality_of_nat_tt in e; exrepnd.
+  eapply cequivc_trans;[apply computes_to_valc_implies_cequivc;exact e1|].
   apply cequivc_sym.
   apply computes_to_valc_implies_cequivc; auto.
 Qed.
@@ -417,24 +416,37 @@ Proof.
   introv.
   unfold nat2nat.
   apply equality_in_fun; dands; tcsp; eauto 3 with slow.
-  introv eqn.
+  introv x eqn.
   applydup @equality_int_nat_implies_cequivc in eqn.
-  apply equality_respects_cequivc.
-  { apply implies_cequivc_apply; auto. }
+  apply ccequivc_ext_bar_iff_ccequivc_bar in eqn0.
+  apply all_in_ex_bar_equality_implies_equality.
+  eapply all_in_ex_bar_modus_ponens1;try exact eqn0; clear eqn0; introv y eqn0; exrepnd; spcast.
+  eapply equality_monotone in eqn;[|eauto].
+  clear dependent lib.
+  clear dependent lib'.
+  rename lib'0 into lib.
+  apply equality_respects_cequivc; eauto 3 with slow refl;[].
   clear eqn0.
+
   apply equality_refl in eqn.
   apply member_tnat_iff in eqn; exrepnd.
+  apply all_in_ex_bar_member_implies_member.
+  eapply all_in_ex_bar_modus_ponens1;try exact eqn; clear eqn; introv x eqn; exrepnd; spcast.
+  clear dependent lib.
+  rename lib' into lib.
 
   eapply member_respects_cequivc.
-  { apply cequivc_sym.
-    apply implies_cequivc_apply;
-      [apply cequivc_refl
-      |apply computes_to_valc_implies_cequivc;exact eqn0].
+  {
+    apply ccequivc_ext_sym.
+    apply implies_ccequivc_ext_apply;
+      [apply ccequivc_ext_refl
+      |apply computes_to_valc_implies_ccequivc_ext;exact eqn0].
   }
 
   apply (member_respects_cequivc _ (mkc_nat (s k))).
-  { apply cequivc_sym.
-    apply reduces_toc_implies_cequivc.
+  {
+    apply ccequivc_ext_sym.
+    apply reduces_toc_implies_ccequivc_ext.
     unfold reduces_toc; simpl.
     eapply reduces_to_if_split2.
     { csunf; simpl; auto. }
