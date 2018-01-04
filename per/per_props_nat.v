@@ -275,23 +275,6 @@ Proof.
       auto.
 Qed.
 
-(* !!MOVE to per_props_util *)
-Definition computes_to_valc_ex_bar {o} lib (a b : @CTerm o) :=
-  all_in_ex_bar lib (fun lib => a ===>(lib) b).
-Notation "t1 ===b>( lib ) t2" := (computes_to_valc_ex_bar lib t1 t2) (at level 0).
-
-(* !!MOVE to per_props_util *)
-Lemma computes_to_valc_implies_computes_to_valc_ex_bar {o} :
-  forall lib (a b : @CTerm o),
-    computes_to_valc lib a b
-    -> a ===b>(lib) b.
-Proof.
-  introv comp.
-  exists (trivial_bar lib).
-  apply in_ext_implies_all_in_bar_trivial_bar; introv x; spcast; eauto 3 with slow.
-Qed.
-Hint Resolve computes_to_valc_implies_computes_to_valc_ex_bar : slow.
-
 Lemma equality_in_true {o} :
   forall lib (u v : @CTerm o),
     equality lib u v mkc_true
@@ -385,18 +368,24 @@ Lemma inhabited_less_than {o} :
   forall lib (a b : @CTerm o),
     inhabited_type lib (mkc_less_than a b)
     <=>
-    {ka : Z
-     , {kb : Z
-        , a ===>(lib) (mkc_integer ka)
-        # b ===>(lib) (mkc_integer kb)
-        # (ka < kb)%Z}}.
+    all_in_ex_bar
+      lib
+      (fun lib =>
+         {ka , kb : Z
+         , a ===>(lib) (mkc_integer ka)
+         # b ===>(lib) (mkc_integer kb)
+         # (ka < kb)%Z}).
 Proof.
   introv.
   unfold inhabited_type; split; intro k; exrepnd; spcast.
+
   - rw @equality_in_less_than in k0; exrepnd; spcast.
+    eapply all_in_ex_bar_modus_ponens1;[|eauto]; clear k0; introv x k; exrepnd; spcast.
     exists ka kb; dands; spcast; auto.
+
   - exists (@mkc_axiom o).
     apply equality_in_less_than.
+    eapply all_in_ex_bar_modus_ponens1;[|eauto]; clear k; introv x k; exrepnd; spcast.
     exists ka kb; dands; spcast; auto;
     apply computes_to_valc_refl; eauto with slow.
 Qed.
@@ -422,17 +411,19 @@ Lemma tequality_mkc_less_aux {o} :
 Proof.
   introv ca cb ce cf.
 
-  assert (cequivc lib
-                  (mkc_less a b c d)
-                  (mkc_less (mkc_integer ka) (mkc_integer kb) c d)) as c1.
-  { apply reduces_toc_implies_cequivc.
+  assert (ccequivc_ext
+            lib
+            (mkc_less a b c d)
+            (mkc_less (mkc_integer ka) (mkc_integer kb) c d)) as c1.
+  { apply reduces_toc_implies_ccequivc_ext.
     destruct_cterms; allunfold @reduces_toc; allunfold @computes_to_valc; allsimpl.
     apply reduce_to_prinargs_comp; eauto with slow. }
 
-  assert (cequivc lib
-                  (mkc_less e f g h)
-                  (mkc_less (mkc_integer ke) (mkc_integer kf) g h)) as c2.
-  { apply reduces_toc_implies_cequivc.
+  assert (ccequivc_ext
+            lib
+            (mkc_less e f g h)
+            (mkc_less (mkc_integer ke) (mkc_integer kf) g h)) as c2.
+  { apply reduces_toc_implies_ccequivc_ext.
     destruct_cterms; allunfold @reduces_toc; allunfold @computes_to_valc; allsimpl.
     apply reduce_to_prinargs_comp; eauto with slow. }
 
@@ -442,231 +433,239 @@ Proof.
 
     + left; dands; auto.
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
-                      c) as c3.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
+                c) as c3.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
-                      g) as c4.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
+                g) as c4.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      apply cequivc_sym in c1.
-      apply cequivc_sym in c2.
-      apply cequivc_sym in c3.
-      apply cequivc_sym in c4.
-      rwg c3.
-      rwg c4.
-      rwg c1.
-      rwg c2; auto.
+      eapply tequality_respects_cequivc_left;[exact c3|].
+      eapply tequality_respects_cequivc_right;[exact c4|].
+      eapply tequality_respects_cequivc_left;[exact c1|].
+      eapply tequality_respects_cequivc_right;[exact c2|].
+      auto.
 
     + right; right; left; dands; auto; try omega.
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
-                      c) as c3.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
+                c) as c3.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
-                      h) as c4.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
+                h) as c4.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      apply cequivc_sym in c1.
-      apply cequivc_sym in c2.
-      apply cequivc_sym in c3.
-      apply cequivc_sym in c4.
-      rwg c3.
-      rwg c4.
-      rwg c1.
-      rwg c2; auto.
+      eapply tequality_respects_cequivc_left;[exact c3|].
+      eapply tequality_respects_cequivc_right;[exact c4|].
+      eapply tequality_respects_cequivc_left;[exact c1|].
+      eapply tequality_respects_cequivc_right;[exact c2|].
+      auto.
 
     + right; right; right; dands; auto; try omega.
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
-                      d) as c3.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
+                d) as c3.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
-                      g) as c4.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
+                g) as c4.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      apply cequivc_sym in c1.
-      apply cequivc_sym in c2.
-      apply cequivc_sym in c3.
-      apply cequivc_sym in c4.
-      rwg c3.
-      rwg c4.
-      rwg c1.
-      rwg c2; auto.
+      eapply tequality_respects_cequivc_left;[exact c3|].
+      eapply tequality_respects_cequivc_right;[exact c4|].
+      eapply tequality_respects_cequivc_left;[exact c1|].
+      eapply tequality_respects_cequivc_right;[exact c2|].
+      auto.
 
     + right; left; dands; auto; try omega.
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
-                      d) as c3.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
+                d) as c3.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
-                      h) as c4.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
+                h) as c4.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      apply cequivc_sym in c1.
-      apply cequivc_sym in c2.
-      apply cequivc_sym in c3.
-      apply cequivc_sym in c4.
-      rwg c3.
-      rwg c4.
-      rwg c1.
-      rwg c2; auto.
+      eapply tequality_respects_cequivc_left;[exact c3|].
+      eapply tequality_respects_cequivc_right;[exact c4|].
+      eapply tequality_respects_cequivc_left;[exact c1|].
+      eapply tequality_respects_cequivc_right;[exact c2|].
+      auto.
 
-  - rwg c1.
-    rwg c2.
+  - eapply tequality_respects_cequivc_left;[apply ccequivc_ext_sym; exact c1|].
+    eapply tequality_respects_cequivc_right;[apply ccequivc_ext_sym; exact c2|].
     clear c1 c2 ca cb ce cf.
     repndors; exrepnd.
 
-    + assert (cequivc lib
-                      (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
-                      c) as c3.
-      { apply reduces_toc_implies_cequivc.
+    + assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
+                c) as c3.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
-                      g) as c4.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
+                g) as c4.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      rwg c3.
-      rwg c4; auto.
+      eapply tequality_respects_cequivc_left;[apply ccequivc_ext_sym; exact c3|].
+      eapply tequality_respects_cequivc_right;[apply ccequivc_ext_sym; exact c4|].
+      auto.
 
-    + assert (cequivc lib
-                      (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
-                      d) as c3.
-      { apply reduces_toc_implies_cequivc.
+    + assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
+                d) as c3.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
-                      h) as c4.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
+                h) as c4.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      rwg c3.
-      rwg c4; auto.
+      eapply tequality_respects_cequivc_left;[apply ccequivc_ext_sym; exact c3|].
+      eapply tequality_respects_cequivc_right;[apply ccequivc_ext_sym; exact c4|].
+      auto.
 
-    + assert (cequivc lib
-                      (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
-                      c) as c3.
-      { apply reduces_toc_implies_cequivc.
+    + assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
+                c) as c3.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
-                      h) as c4.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
+                h) as c4.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      rwg c3.
-      rwg c4; auto.
+      eapply tequality_respects_cequivc_left;[apply ccequivc_ext_sym; exact c3|].
+      eapply tequality_respects_cequivc_right;[apply ccequivc_ext_sym; exact c4|].
+      auto.
 
-    + assert (cequivc lib
-                      (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
-                      d) as c3.
-      { apply reduces_toc_implies_cequivc.
+    + assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ka) (mkc_integer kb) c d)
+                d) as c3.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      assert (cequivc lib
-                      (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
-                      g) as c4.
-      { apply reduces_toc_implies_cequivc.
+      assert (ccequivc_ext
+                lib
+                (mkc_less (mkc_integer ke) (mkc_integer kf) g h)
+                g) as c4.
+      { apply reduces_toc_implies_ccequivc_ext.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
         unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
 
-      rwg c3.
-      rwg c4; auto.
+      eapply tequality_respects_cequivc_left;[apply ccequivc_ext_sym; exact c3|].
+      eapply tequality_respects_cequivc_right;[apply ccequivc_ext_sym; exact c4|].
+      auto.
 Qed.
 
 Lemma tequality_mkc_less {o} :
   forall lib (a b c d e f g h : @CTerm o),
     tequality lib (mkc_less a b c d) (mkc_less e f g h)
     <=>
-    {ka : Z
-     , {kb : Z
-     , {ke : Z
-     , {kf : Z
-        , a ===>(lib) (mkc_integer ka)
-        # b ===>(lib) (mkc_integer kb)
-        # e ===>(lib) (mkc_integer ke)
-        # f ===>(lib) (mkc_integer kf)
-        # (
-            ((ka < kb)%Z # (ke < kf)%Z # tequality lib c g)
-            {+}
-            ((kb <= ka)%Z # (kf <= ke)%Z # tequality lib d h)
-            {+}
-            ((ka < kb)%Z # (kf <= ke)%Z # tequality lib c h)
-            {+}
-            ((kb <= ka)%Z # (ke < kf)%Z # tequality lib d g)
-          )}}}}.
+    all_in_ex_bar
+      lib
+      (fun lib =>
+         {ka , kb , ke , kf : Z
+         , a ===>(lib) (mkc_integer ka)
+         # b ===>(lib) (mkc_integer kb)
+         # e ===>(lib) (mkc_integer ke)
+         # f ===>(lib) (mkc_integer kf)
+         # (
+             ((ka < kb)%Z # (ke < kf)%Z # tequality lib c g)
+             {+}
+             ((kb <= ka)%Z # (kf <= ke)%Z # tequality lib d h)
+             {+}
+             ((ka < kb)%Z # (kf <= ke)%Z # tequality lib c h)
+             {+}
+             ((kb <= ka)%Z # (ke < kf)%Z # tequality lib d g)
+           )}).
 Proof.
   introv.
 
@@ -678,6 +677,9 @@ Proof.
     allrw @fold_type.
     apply types_converge in k0.
     apply types_converge in k1.
+
+    eapply all_in_ex_bar_modus_ponens2;[|exact k0|exact k1].
+    clear k0 k1; introv x k0 k1.
     spcast.
 
     apply hasvaluec_mkc_less in k0.
@@ -685,16 +687,21 @@ Proof.
     exrepnd.
 
     exists k6 k0 k2 k1; dands; spcast; eauto with slow;
-    try (complete (apply computes_to_valc_iff_reduces_toc; dands; eauto with slow)).
+    try (complete (apply computes_to_valc_iff_reduces_toc; dands; eauto 3 with slow)).
 
     pose proof (tequality_mkc_less_aux
-                  lib a b c d e f g h k6 k0 k2 k1) as p.
+                  lib' a b c d e f g h k6 k0 k2 k1) as p.
     repeat (autodimp p hyp);
-    try (complete (apply computes_to_valc_iff_reduces_toc; dands; eauto with slow)).
+      try (complete (apply computes_to_valc_iff_reduces_toc; dands; eauto 3 with slow)).
+
+    eapply tequality_monotone in k;[|exact x].
     apply p in k; sp.
 
-  - pose proof (tequality_mkc_less_aux
-                  lib a b c d e f g h ka kb ke kf) as p.
+  - apply all_in_ex_bar_tequality_implies_tequality.
+    eapply all_in_ex_bar_modus_ponens1;[|exact k]; clear k; introv x k.
+    exrepnd.
+    pose proof (tequality_mkc_less_aux
+                  lib' a b c d e f g h ka kb ke kf) as p.
     spcast.
     repeat (autodimp p hyp).
     apply p.
@@ -720,64 +727,64 @@ Lemma true_not_equal_to_false {o} :
 Proof.
   introv teq.
   unfold tequality, nuprl in teq; exrepnd.
-  inversion teq0; subst; try not_univ.
-  - duniv j h.
-    allrw @univi_exists_iff; exrepd; spcast; repeat computes_to_value_isvalue.
-  - allunfold @per_approx; exrepnd; spcast; repeat computes_to_value_isvalue.
-    match goal with
-      | [ H : computes_to_valc ?a ?b ?c |- _ ] => rename H into k
-    end.
 
-    apply @computes_to_valc_isvalue_eq in k; try (apply iscvalue_mkc_true).
-    allrw @mkc_true_eq.
-    allrw @mkc_false_eq.
-    allapply @mkc_approx_eq; repnd; subst.
+  rw @mkc_true_eq in teq0.
+  rw @mkc_false_eq in teq0.
+  apply dest_nuprl_approx2 in teq0; exrepnd.
+  clear dependent eq.
 
-    match goal with
-      | [ H : _ <=> _ |- _ ] => rename H into h
-    end.
-    destruct h.
-    destruct c as [k]; spcast.
+  pose proof (bar_non_empty bar) as b; exrepnd.
+  pose proof (teq1 _ b0 _ (lib_extends_refl lib')) as teq1; simpl in *.
 
-    { unfold approxc; simpl.
-      apply approx_decomp_axiom. }
-
-    apply not_axiom_approxc_bot in k; sp.
+  destruct teq1 as [h1 h2].
+  clear h2.
+  autodimp h1 hyp; spcast; eauto 3 with slow refl.
+  apply not_axiom_approxc_bot in h1; sp.
 Qed.
 
 Lemma type_mkc_true {o} :
   forall (lib : @library o), type lib mkc_true.
 Proof.
   introv; rw @mkc_true_eq.
-  apply tequality_mkc_approx; sp.
+  apply tequality_mkc_approx.
+  apply in_ext_implies_all_in_ex_bar.
+  introv x; tcsp.
 Qed.
+Hint Resolve type_mkc_true : slow.
+
+Lemma tequality_mkc_true {o} :
+  forall (lib : @library o), tequality lib mkc_true mkc_true.
+Proof.
+  introv; apply type_mkc_true.
+Qed.
+Hint Resolve tequality_mkc_true : slow.
 
 Lemma tequality_mkc_less_than {o} :
   forall lib (a b c d : @CTerm o),
     tequality lib (mkc_less_than a b) (mkc_less_than c d)
     <=>
-    {ka : Z
-     , {kb : Z
-     , {kc : Z
-     , {kd : Z
-        , a ===>(lib) (mkc_integer ka)
-        # b ===>(lib) (mkc_integer kb)
-        # c ===>(lib) (mkc_integer kc)
-        # d ===>(lib) (mkc_integer kd)
-        # (
-            ((ka < kb)%Z # (kc < kd)%Z)
-            {+}
-            ((kb <= ka)%Z # (kd <= kc)%Z)
-          )}}}}.
+    all_in_ex_bar
+      lib
+      (fun lib =>
+         {ka , kb , kc , kd : Z
+         , a ===>(lib) (mkc_integer ka)
+         # b ===>(lib) (mkc_integer kb)
+         # c ===>(lib) (mkc_integer kc)
+         # d ===>(lib) (mkc_integer kd)
+         # (
+             ((ka < kb)%Z # (kc < kd)%Z)
+             {+}
+             ((kb <= ka)%Z # (kd <= kc)%Z)
+           )}).
 Proof.
   introv.
   allrw @mkc_less_than_eq.
-  rw (tequality_mkc_less
-        lib a b mkc_true mkc_false c d mkc_true mkc_false).
+  rw (tequality_mkc_less lib a b mkc_true mkc_false c d mkc_true mkc_false).
 
   split; intro k; exrepnd.
 
-  - exists ka kb ke kf; dands; auto.
+  - eapply all_in_ex_bar_modus_ponens1;[|exact k]; clear k; introv x k; exrepnd.
+    exists ka kb ke kf; dands; auto.
     repndors; repnd; tcsp.
 
     + apply true_not_equal_to_false in k1; sp.
@@ -785,36 +792,55 @@ Proof.
     + apply tequality_sym in k1.
       apply true_not_equal_to_false in k1; sp.
 
-  - exists ka kb kc kd; dands; auto.
+  - eapply all_in_ex_bar_modus_ponens1;[|exact k]; clear k; introv x k; exrepnd.
+    exists ka kb kc kd; dands; auto.
     repndors; repnd; tcsp.
 
-    left; sp.
-    apply type_mkc_true.
+    { left; dands; eauto 3 with slow. }
+
+    { right; left; dands; eauto 3 with slow. }
 Qed.
 
 Lemma equality_in_le {o} :
   forall lib (u v a b : @CTerm o),
     equality lib u v (mkc_le a b)
     <=>
-    {ka : Z
-     , {kb : Z
-        , a ===>(lib) (mkc_integer ka)
-        # b ===>(lib) (mkc_integer kb)
-        # (ka <= kb)%Z}}.
+    all_in_ex_bar
+      lib
+      (fun lib =>
+         {ka , kb : Z
+         , a ===>(lib) (mkc_integer ka)
+         # b ===>(lib) (mkc_integer kb)
+         # (ka <= kb)%Z}).
 Proof.
   introv.
   rw @mkc_le_eq.
   rw @equality_in_not.
   rw @tequality_mkc_less_than.
-  rw @inhabited_less_than.
+
   split; intro k; exrepnd; spcast; dands.
-  - repeat computes_to_eqval.
+
+  - eapply all_in_ex_bar_modus_ponens1;[|exact k0]; clear k0; introv x k0; exrepnd; spcast.
+    pose proof (k _ x) as k; simpl in *.
+    repeat computes_to_eqval.
     exists kb ka; dands; spcast; auto.
     repndors; repnd; tcsp.
     destruct k.
-    exists ka kb; dands; spcast; auto.
-  - exists kb ka kb ka; dands; spcast; auto.
-  - intro h; exrepnd; spcast.
+    apply inhabited_less_than.
+    apply in_ext_implies_all_in_ex_bar.
+    introv y.
+    exists ka kb; dands; spcast; auto; eauto 3 with slow.
+
+  - eapply all_in_ex_bar_modus_ponens1;[|exact k]; clear k; introv x k; exrepnd; spcast.
+    exists kb ka kb ka; dands; spcast; auto.
+
+  - introv x h.
+    apply inhabited_less_than in h.
+    apply (non_dep_all_in_ex_bar_implies lib').
+    eapply lib_extends_preserves_all_in_ex_bar in k;[|exact x].
+    eapply all_in_ex_bar_modus_ponens2;[|exact k|exact h].
+    clear h k; introv y h k.
+    exrepnd; spcast.
     repeat computes_to_eqval.
     omega.
 Qed.
@@ -823,18 +849,24 @@ Lemma inhabited_le {o} :
   forall lib (a b : @CTerm o),
     inhabited_type lib (mkc_le a b)
     <=>
-    {ka : Z
-     , {kb : Z
-        , a ===>(lib) (mkc_integer ka)
-        # b ===>(lib) (mkc_integer kb)
-        # (ka <= kb)%Z}}.
+    all_in_ex_bar
+      lib
+      (fun lib =>
+         {ka , kb : Z
+         , a ===>(lib) (mkc_integer ka)
+         # b ===>(lib) (mkc_integer kb)
+         # (ka <= kb)%Z}).
 Proof.
   introv.
   unfold inhabited_type; split; intro k; exrepnd; spcast.
+
   - apply equality_in_le in k0; exrepnd; spcast.
+    eapply all_in_ex_bar_modus_ponens1;[|exact k0]; clear k0; introv x k0; exrepnd; spcast.
     exists ka kb; dands; spcast; auto.
+
   - exists (@mkc_axiom o).
     apply equality_in_le.
+    eapply all_in_ex_bar_modus_ponens1;[|exact k]; clear k; introv x k; exrepnd; spcast.
     exists ka kb; dands; spcast; auto.
 Qed.
 
@@ -842,31 +874,33 @@ Lemma tequality_mkc_le {o} :
   forall lib (a b c d : @CTerm o),
     tequality lib (mkc_le a b) (mkc_le c d)
     <=>
-    {ka : Z
-     , {kb : Z
-     , {kc : Z
-     , {kd : Z
-        , a ===>(lib) (mkc_integer ka)
-        # b ===>(lib) (mkc_integer kb)
-        # c ===>(lib) (mkc_integer kc)
-        # d ===>(lib) (mkc_integer kd)
-        # (
-            ((ka <= kb)%Z # (kc <= kd)%Z)
-            {+}
-            ((kb < ka)%Z # (kd < kc)%Z)
-          )}}}}.
+    all_in_ex_bar
+      lib
+      (fun lib =>
+         {ka , kb , kc , kd : Z
+         , a ===>(lib) (mkc_integer ka)
+         # b ===>(lib) (mkc_integer kb)
+         # c ===>(lib) (mkc_integer kc)
+         # d ===>(lib) (mkc_integer kd)
+         # (
+             ((ka <= kb)%Z # (kc <= kd)%Z)
+             {+}
+             ((kb < ka)%Z # (kd < kc)%Z)
+           )}).
 Proof.
   introv.
   allrw @mkc_le_eq.
   rw @tequality_not.
   rw @tequality_mkc_less_than.
 
-  split; intro k; exrepnd.
+  split; intro k.
 
-  - exists kb ka kd kc; dands; auto.
+  - eapply all_in_ex_bar_modus_ponens1;[|exact k]; clear k; introv x k; exrepnd; spcast.
+    exists kb ka kd kc; dands; spcast; auto.
     repndors; repnd; tcsp.
 
-  - exists kb ka kd kc; dands; auto.
+  - eapply all_in_ex_bar_modus_ponens1;[|exact k]; clear k; introv x k; exrepnd; spcast.
+    exists kb ka kd kc; dands; spcast; auto.
     repndors; repnd; tcsp.
 Qed.
 
@@ -876,7 +910,7 @@ Hint Resolve computes_to_valc_refl : slow.
 Lemma tequality_int {p} : forall lib, @tequality p lib mkc_int mkc_int.
 Proof.
   introv.
-  exists (@equality_of_int p lib).
+  exists (@equality_of_int_bar p lib).
   apply CL_int; split; dands; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve tequality_int : slow.
@@ -889,10 +923,11 @@ Proof.
   introv.
   rw @mkc_tnat_eq.
   apply tequality_set; dands; eauto 3 with slow.
-  introv ea.
+  introv x ea.
   autorewrite with slow.
   apply tequality_mkc_le.
   apply equality_in_int in ea.
+  eapply all_in_ex_bar_modus_ponens1;[|exact ea]; clear ea; introv y ea; exrepnd; spcast.
   unfold equality_of_int in ea; exrepnd; spcast.
   exists 0%Z k 0%Z k.
   rw @mkc_zero_eq; rw @mkc_nat_eq; simpl.
@@ -1089,10 +1124,11 @@ Proof.
   introv.
   rw @mkc_tnatp_eq.
   apply tequality_set; dands; eauto 3 with slow.
-  introv ea.
+  introv x ea.
   autorewrite with slow.
   apply tequality_mkc_le.
   apply equality_in_int in ea.
+  eapply all_in_ex_bar_modus_ponens1;[|exact ea]; clear ea; introv y ea; exrepnd; spcast.
   unfold equality_of_int in ea; exrepnd; spcast.
   exists 1%Z k 1%Z k.
   rw @mkc_one_eq; rw @mkc_nat_eq; simpl.
@@ -1506,6 +1542,8 @@ Proof.
   dands; try (apply isvalue_mk_integer);
   exists x; auto.
 Qed.
+
+XXXXXXX
 
 Lemma tequality_mkc_natk {o} :
   forall lib (t1 t2 : @CTerm o),

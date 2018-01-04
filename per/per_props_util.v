@@ -664,6 +664,27 @@ Proof.
   apply h; eauto 3 with slow.
 Qed.
 
+Lemma all_in_ex_bar_modus_ponens2 {o} :
+  forall (lib : @library o) (G H F : library -> Prop),
+    in_ext lib (fun lib => G lib -> H lib -> F lib)
+    -> all_in_ex_bar lib G
+    -> all_in_ex_bar lib H
+    -> all_in_ex_bar lib F.
+Proof.
+  introv h q w.
+  unfold all_in_ex_bar in *; exrepnd.
+  apply (implies_all_in_bar_intersect_bars_left _ bar) in q0.
+  apply (implies_all_in_bar_intersect_bars_right _ bar0) in w0.
+  remember (intersect_bars bar0 bar) as bar'.
+  clear dependent bar0.
+  clear dependent bar.
+  exists bar'.
+  introv br ext.
+  pose proof (q0 _ br _ ext) as q0; simpl in *.
+  pose proof (w0 _ br _ ext) as w0; simpl in *.
+  apply h; eauto 3 with slow.
+Qed.
+
 Hint Resolve inhabited_type_if_equality : slow.
 
 Lemma all_in_ex_bar_type_implies_type {o} :
@@ -727,3 +748,49 @@ Proof.
   }
 Qed.
 Hint Resolve all_in_ex_bar_equality_implies_equality : slow.
+
+Definition computes_to_valc_ex_bar {o} lib (a b : @CTerm o) :=
+  all_in_ex_bar lib (fun lib => a ===>(lib) b).
+Notation "t1 ===b>( lib ) t2" := (computes_to_valc_ex_bar lib t1 t2) (at level 0).
+
+Lemma computes_to_valc_implies_computes_to_valc_ex_bar {o} :
+  forall lib (a b : @CTerm o),
+    computes_to_valc lib a b
+    -> a ===b>(lib) b.
+Proof.
+  introv comp.
+  exists (trivial_bar lib).
+  apply in_ext_implies_all_in_bar_trivial_bar; introv x; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_valc_implies_computes_to_valc_ex_bar : slow.
+
+Lemma in_ext_implies_all_in_ex_bar {o} :
+  forall (lib : @library o) F,
+    in_ext lib F -> all_in_ex_bar lib F.
+Proof.
+  introv h.
+  exists (trivial_bar lib).
+  apply in_ext_implies_all_in_bar_trivial_bar; auto.
+Qed.
+
+Lemma non_dep_all_in_ex_bar_implies {o} :
+  forall (lib : @library o) P,
+    all_in_ex_bar lib (fun _ => P) -> P.
+Proof.
+  introv h.
+  unfold all_in_ex_bar in h; exrepnd.
+  pose proof (bar_non_empty bar) as b; exrepnd.
+  pose proof (h0 _ b0 _ (lib_extends_refl lib')) as h0; simpl in *; auto.
+Qed.
+
+Lemma lib_extends_preserves_all_in_ex_bar {o} :
+  forall {lib lib'} (x : @lib_extends o lib' lib) F,
+    all_in_ex_bar lib F
+    -> all_in_ex_bar lib' F.
+Proof.
+  introv x h.
+  unfold all_in_ex_bar in *; exrepnd.
+  exists (raise_bar bar x); introv br ext; simpl in *; exrepnd.
+  apply (h0 _ br1); eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_all_in_ex_bar : slow.
