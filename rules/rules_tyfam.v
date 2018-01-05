@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,10 +22,14 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli & Mark Bickford
 
 *)
+
 
 Require Export sequents2.
 Require Export rules_useful.
@@ -69,12 +76,12 @@ Lemma rule_tyfam_equality_true3 {pp} :
                    & lsubstc (C a x b) w s c
                      = Cc (lsubstc a wa s ca) x (lsubstc_vars b wb (csub_filter s [x]) [x] cb)
                }}}}),
-  forall eqC : (forall a1 a2 v1 v2 b1 b2 i,
+  forall eqC : (in_ext lib (fun lib => forall a1 a2 v1 v2 b1 b2 i,
                   equality lib (Cc a1 v1 b1) (Cc a2 v2 b2) (mkc_uni i)
                   <=> (equality lib a1 a2 (mkc_uni i)
-                       # (forall a a',
+                       # (in_ext lib (fun lib => forall a a',
                             equality lib a a' a1
-                            -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))),
+                            -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))))),
     rule_true3 lib (rule_tyfam_equality
                       C a1 a2 b1 b2 e1 e2
                       x1 x2 y
@@ -144,17 +151,17 @@ Proof.
   rw <- @member_equality_iff.
 
   teq_and_eq (@mk_uni pp i) (C a1 x1 b1) (C a2 x2 b2) s1 s2 H;
-    [apply tequality_mkc_uni|].
+    [apply tequality_mkc_uni|];[].
 
   pose proof (pd a1 x1 b1 w1 s1 ca1) as z; exrepnd; rw z1; clear z1.
   pose proof (pd a2 x2 b2 w2 s2 cb2) as z; exrepnd; rw z1; clear z1.
-  apply eqC.
+  apply eqC; auto;[].
   dands.
 
   { (* First, we prove that the a's are types *)
     vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2) as hyp; clear hyp1.
-    repeat (autodimp hyp hh).
+    pose proof (hyp1 _ ext s1 s2) as hyp; clear hyp1.
+    repeat (autodimp hyp hh); eauto 3 with slow.
     exrepnd.
     lsubst_tac.
     apply equality_in_mkc_equality in hyp1; repnd.
@@ -162,34 +169,38 @@ Proof.
   }
 
   { (* Then we prove that the b's are type families *)
-    intros a a' eqaa'.
+    intros lib'' xt a a' eqaa'.
     vr_seq_true in hyp2.
     repeat substc_lsubstc_vars3.
 
-    pose proof (hyp2 (snoc s1 (y, a)) (snoc s2 (y, a'))) as h; clear hyp2.
+    pose proof (hyp2 _ (lib_extends_trans xt ext) (snoc s1 (y, a)) (snoc s2 (y, a'))) as h; clear hyp2.
+
+    eapply lib_extends_preserves_hyps_functionality_ext in hf;[|exact xt].
+
     repeat (autodimp h hyp).
 
     { (* we have to prove the functionality of our hypotheses *)
-      intros s3 sim2.
+      intros lib''' x s3 sim2.
       inversion sim2; cpx; allsimpl; cpx.
       rw @eq_hyps_snoc; simpl.
       assert (cover_vars a1 s4)
         as cv4
-          by (apply (similarity_cover_vars lib) with (hs := H) (s1 := s1); auto).
-      exists s1 s4 a t2 w p cv4; sp.
+          by (apply (similarity_cover_vars lib''') with (hs := H) (s1 := s1); auto).
+      exists s1 s4 a t2 w p cv4; sp; eauto 2 with slow; try (eapply hf; eauto).
       (* while proving that functionality result, we have to prove that
        * a1 is functional, which we prove using our 1st hyp *)
       vr_seq_true in hyp1.
-      generalize (hyp1 s1 s4); thin hyp1; intro hyp1.
-      autodimp hyp1 hyp1'.
-      autodimp hyp1 hyp1'; exrepnd; clear_irr.
+      assert (lib_extends lib''' lib) as xt' by eauto 3 with slow.
+      generalize (hyp1 _ xt' s1 s4); thin hyp1; intro hyp1.
+      autodimp hyp1 hyp1'; eauto 3 with slow.
+      autodimp hyp1 hyp1'; eauto 3 with slow; exrepnd; clear_irr.
       lift_lsubst in hyp0; lift_lsubst in hyp1.
       apply equality_in_mkc_equality in hyp1; repnd.
       apply @equality_commutes2 in hyp0; auto.
       allapply @equality_in_uni; auto. }
 
     { rw @similarity_snoc; simpl.
-      exists s1 s2 a a' wa ca; dands; tcsp. }
+      exists s1 s2 a a' wa ca; dands; tcsp; eauto 3 with slow. }
 
     exrepnd; clear_irr.
     lsubst_tac.
@@ -244,12 +255,12 @@ Lemma rule_tyfam_equality_true {pp} :
                    & lsubstc (C a x b) w s c
                      = Cc (lsubstc a wa s ca) x (lsubstc_vars b wb (csub_filter s [x]) [x] cb)
                }}}}),
-  forall eqC : (forall a1 a2 v1 v2 b1 b2 i,
+  forall eqC : (in_ext lib (fun lib => forall a1 a2 v1 v2 b1 b2 i,
                   equality lib (Cc a1 v1 b1) (Cc a2 v2 b2) (mkc_uni i)
                   <=> (equality lib a1 a2 (mkc_uni i)
-                       # (forall a a',
+                       # (in_ext lib (fun lib => forall a a',
                             equality lib a a' a1
-                            -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))),
+                            -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))))),
     rule_true lib (rule_tyfam_equality
                      C a1 a2 b1 b2 e1 e2
                      x1 x2 y

@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,12 +22,17 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
 
+
 Require Export sequents.
+
 
 Definition wf_bseq {o} (s : @baresequent o) :=
   vswf_hypotheses [] (hyps s)
@@ -79,10 +87,3 @@ Proof. sp. Qed.
 (* This is a variant of [wf_rule] that uses [wf_bseq] instead of [pwf_sequent] *)
 Definition wf_rule2 {o} (R : @rule o) :=
   wf_bseq (goal R) -> wf_subgoals2 R.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

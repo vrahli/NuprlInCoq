@@ -36,6 +36,7 @@ Require Export natk2.
 Require Export terms_union.
 Require Export cequiv_props.
 Require Export per_props_cequiv.
+Require Export per_props_uni.
 
 
 
@@ -1074,4 +1075,75 @@ Proof.
   introv.
   rw @equality_in_bool; split; intro k;
     eapply all_in_ex_bar_modus_ponens1;try exact k; clear k; introv x k; exrepnd; spcast; tcsp.
+Qed.
+
+Lemma equality_union_in_uni {o} :
+  forall lib (A1 A2 B1 B2 : @CTerm o) i,
+    equality lib (mkc_union A1 B1)
+             (mkc_union A2 B2)
+             (mkc_uni i)
+    <=>
+    (equality lib A1 A2 (mkc_uni i)
+     # equality lib B1 B2 (mkc_uni i)).
+Proof.
+  introv.
+  sp_iff Case.
+
+  - Case "->".
+    intros teq.
+    unfold equality in teq; exrepnd.
+
+    applydup @dest_nuprl_uni in teq1.
+    apply univ_implies_univi_bar3 in teq2; exrepnd.
+    apply teq3 in teq0.
+
+    apply per_bar_eq_univi_eq_lib_per_implies_eq_nuprli in teq0; exrepnd.
+    apply dest_nuprli_union2 in teq2; exrepnd.
+
+    dands; exists eq; dands; auto; apply teq3; clear dependent eq;
+      introv br ext; introv; exists (raise_bar bar0 x);
+        introv br' ext'; introv; simpl in *; exrepnd.
+
+    + pose proof (teq4 _ br'1 _ (lib_extends_trans ext' br'2) (lib_extends_trans x0 x)) as teq4; simpl in *.
+      exists (eqa lib'2 (lib_extends_trans x0 x)); auto.
+
+    + pose proof (teq0 _ br'1 _ (lib_extends_trans ext' br'2) (lib_extends_trans x0 x)) as teq0; simpl in *.
+      exists (eqb lib'2 (lib_extends_trans x0 x)); auto.
+
+  - Case "<-".
+    intro eqs.
+    destruct eqs as [eqas eqbs].
+    unfold equality in eqas; exrepnd.
+    unfold equality in eqbs; exrepnd.
+
+    applydup @dest_nuprl_uni in eqas1.
+    applydup @dest_nuprl_uni in eqbs1.
+
+    eapply univ_uniquely_valued in eqbs2; autodimp eqbs2 hyp;[exact eqas2|].
+    apply eqbs2 in eqbs0.
+    eapply type_extensionality_nuprl in eqbs1.
+    apply eqbs1 in eqbs2; clear eqbs1.
+    clear eq0.
+    apply univ_implies_univi_bar3 in eqas2; exrepnd.
+    apply eqas3 in eqas0.
+    apply eqas3 in eqbs0.
+
+    apply per_bar_eq_univi_eq_lib_per_implies_eq_nuprli in eqas0; exrepnd.
+    apply per_bar_eq_univi_eq_lib_per_implies_eq_nuprli in eqbs0; exrepnd.
+
+    exists eq; dands; auto; apply eqas3; clear dependent eq.
+    introv br ext; introv.
+    exists (trivial_bar lib'0).
+    apply in_ext_ext_implies_all_in_bar_ext_trivial_bar; introv; simpl.
+
+    pose proof (nuprli_monotone_func i lib A1 A2 eq' eqas2) as tya; exrepnd.
+    rename eq'1 into eqa.
+    pose proof (nuprli_monotone_func i lib B1 B2 eq'0 eqbs1) as tyb; exrepnd.
+    rename eq'1 into eqb.
+
+    exists (per_union_eq_bar lib'1 (raise_lib_per eqa (lib_extends_trans e x)) (raise_lib_per eqb (lib_extends_trans e x))).
+    apply CL_union; fold (@nuprli o i).
+    exists (raise_lib_per eqa (lib_extends_trans e x)) (raise_lib_per eqb (lib_extends_trans e x)).
+    exists A1 A2 B1 B2; dands; spcast; eauto 3 with slow; introv; simpl;
+      try eapply tya0; try eapply tyb0.
 Qed.

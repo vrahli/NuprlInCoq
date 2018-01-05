@@ -891,3 +891,10 @@ Proof.
   introv h.
   apply all_in_ex_bar_equality_implies_equality in h; auto.
 Qed.
+
+Lemma univ_uniquely_valued {o} :
+  @uniquely_valued o univ.
+Proof.
+  apply univ_type_system.
+Qed.
+Hint Resolve univ_uniquely_valued : slow.

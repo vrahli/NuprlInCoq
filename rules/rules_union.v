@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -41,66 +44,6 @@ Require Import sequents_tacs2.
 Require Import per_props_union.
 Require Import lsubst_hyps.
 Require Import list.
-
-
-Lemma equality_union_in_uni {p} :
-  forall lib (A1 A2 B1 B2 : @CTerm p) i,
-    equality lib (mkc_union A1 B1)
-             (mkc_union A2 B2)
-             (mkc_uni i)
-    <=>
-    (equality lib A1 A2 (mkc_uni i)
-     #  equality lib B1 B2 (mkc_uni i)).
-Proof.
-  introv.
-  sp_iff Case.
-
-  - Case "->".
-    intros teq.
-    unfold equality, nuprl in teq; exrepnd.
-    inversion teq1; subst; try not_univ.
-    duniv j h.
-    allrw @univi_exists_iff; exrepd.
-    computes_to_value_isvalue; GC.
-    discover; exrepnd.
-    rename eqa into eqi.
-    ioneclose; subst; try not_univ.
-
-    destruct H as [eqa H]; exrepnd.
-    computes_to_value_isvalue; GC.
-    dands.
-    + exists eq; sp.
-      allrw.
-      exists eqa; sp.
-    + exists eq; sp.
-      allrw.
-      exists eqb; sp.
-  - Case "<-".
-    intro eqs.
-    destruct eqs as [eqa eqb].
-    unfold equality in eqa; exrepnd.
-    inversion eqa1; subst; try not_univ.
-    unfold equality in eqb; exrepnd.
-    inversion eqb1; subst; try not_univ.
-    duniv j1 h1.
-    duniv j2 h2.
-    allrw @univi_exists_iff. exrepd.
-    computes_to_value_isvalue; GC.
-    discover; exrepnd.
-    allfold (@nuprli p lib j0).
-
-    exists eq; sp.
-    allrw.
-
-    exists (per_union_eq lib eqa eqa2).
-    unfold nuprli.
-    apply CL_union; fold (@nuprli p lib j0).
-    unfold per_union.
-    exists eqa eqa2.
-
-    exists A1 A2 B1 B2; sp;
-    spcast; apply computes_to_valc_refl; apply iscvalue_mkc_union.
-Qed.
 
 
 
@@ -669,7 +612,7 @@ Lemma rule_union_elimination_true {p} :
   forall A B C l r : NTerm,
   forall z x y : NVar,
   forall H J: @barehypotheses p,
-    rule_true lib 
+    rule_true lib
          (rule_union_elimination
                  A B C l r z x y H J).
 Proof.

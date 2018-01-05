@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -6135,3 +6136,40 @@ Qed.
 *)
 
 (* end hide *)
+
+Lemma lib_extends_preserves_similarity {o} :
+  forall {lib lib'} (x : lib_extends lib' lib) H (s1 s2 : @CSub o),
+    similarity lib s1 s2 H
+    -> similarity lib' s1 s2 H.
+Proof.
+  induction H using rev_list_indT; simpl; introv sim.
+
+  - inversion sim; subst; cpx.
+
+  - inversion sim; subst; simpl in *; cpx.
+    eapply equality_monotone in e;[|eauto].
+    eapply sim_cons; eauto.
+Qed.
+Hint Resolve lib_extends_preserves_similarity : slow.
+
+Lemma similarity_hyps_functionality_ext_trans {o} :
+  forall lib s1 s2 (H : @bhyps o),
+    similarity lib s1 s2 H
+    -> hyps_functionality_ext lib s1 H
+    -> hyps_functionality_ext lib s2 H.
+Proof.
+  introv sim imp x sim3.
+  applydup imp in x.
+  eapply similarity_hyps_functionality_trans; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve similarity_hyps_functionality_ext_trans : slow.
+
+Lemma lib_extends_preserves_hyps_functionality_ext {o} :
+  forall {lib lib'} (x : lib_extends lib' lib) H (s : @CSub o),
+    hyps_functionality_ext lib s H
+    -> hyps_functionality_ext lib' s H.
+Proof.
+  introv x hf ext.
+  apply hf; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_hyps_functionality_ext : slow.

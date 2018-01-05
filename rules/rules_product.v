@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -41,6 +43,7 @@ Require Export sequents_equality.
 Require Export sequents_tacs2.
 Require Export rules_tyfam.
 Require Export lsubst_hyps.
+
 
 (** printing |- $\vdash$ *)
 (** printing ->  $\rightarrow$ *)
@@ -105,7 +108,7 @@ Proof.
 
   - introv; apply lsubstc_mk_product_ex.
 
-  - introv; apply equality_product.
+  - introv x; apply equality_product.
 Qed.
 
 (* begin hide *)

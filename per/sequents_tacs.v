@@ -1,6 +1,10 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -18,7 +22,10 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
   Authors: Abhishek Anand & Vincent Rahli
 
 *)
@@ -26,6 +33,7 @@
 
 Require Export sequents.
 Require Export lift_lsubst_tacs.
+
 
 Ltac free_vars_rw :=
   match goal with
@@ -556,7 +564,7 @@ Tactic Notation "vr_seq_true" :=
   rw @sequent_true_eq_VR;
   rw @VR_sequent_true_all;
   simpl;
-  introv sim eqh;
+  introv ext sim eqh;
   introv;
   proof_irr;
   GC.
@@ -598,4 +606,3 @@ Ltac subst_app_step :=
   end.
 
 Ltac subst_app := repeat subst_app_step.
-

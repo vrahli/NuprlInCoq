@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -19,13 +22,20 @@
   along with VPrl.  If not, see <http://www.gnu.org/licenses/>.
 
 
-  Website: http://nuprl.org/html/verification/
-  Authors: Abhishek Anand &  Vincent Rahli & Mark Bickford
+  Websites: http://nuprl.org/html/verification/
+            http://nuprl.org/html/Nuprl2Coq
+            https://github.com/vrahli/NuprlInCoq
+
+  Authors: Abhishek Anand
+           Vincent Rahli
+           Mark Bickford
 
 *)
 
+
 Require Export list.
 Require Export sequents.
+
 
 (** substitute_hyp applies a substitution to the type of an hypothesis *)
 Definition lsubst_hyp {o} (sub : (@Substitution o)) (h : hypothesis) : hypothesis :=
@@ -326,8 +336,11 @@ Proof.
       eapply ext_alpha_eq_subst_subset;[|exact aeq2]; eauto 3 with slow.
 Qed.
 
+Definition cequiv_ext {o} lib (a b : @NTerm o) :=
+  in_ext lib (fun lib => Cast (cequiv lib a b)).
+
 Definition cequiv_hyp {o} lib (h1 h2 : @hypothesis o) :=
-  cequiv lib (htyp h1) (htyp h2).
+  cequiv_ext lib (htyp h1) (htyp h2).
 
 Inductive cequiv_hyps {o} (lib : library) : @barehypotheses o -> @barehypotheses o -> Type :=
 | ceq_hs_nil : cequiv_hyps lib [] []
@@ -338,8 +351,11 @@ Inductive cequiv_hyps {o} (lib : library) : @barehypotheses o -> @barehypotheses
       -> cequiv_hyps lib (h1 :: hs1) (h2 :: hs2).
 Hint Constructors cequiv_hyps.
 
+Definition cequiv_open_ext {o} lib (a b : @NTerm o) :=
+  in_ext lib (fun lib => Cast (cequiv_open lib a b)).
+
 Definition cequiv_open_hyp {o} lib (h1 h2 : @hypothesis o) :=
-  cequiv_open lib (htyp h1) (htyp h2).
+  cequiv_open_ext lib (htyp h1) (htyp h2).
 
 Inductive cequiv_open_hyps {o} (lib : library) : @barehypotheses o -> @barehypotheses o -> Type :=
 | ceq_open_hs_nil : cequiv_open_hyps lib [] []
@@ -389,6 +405,7 @@ Proof.
   destruct h1, h2.
   unfold alpha_eq_hyp in aeq; allsimpl.
   unfold cequiv_open_hyp; simpl.
+  introv x; spcast.
   allunfold @wf_hyp; allsimpl.
   apply alpha_implies_cequiv_open; eauto 3 with slow.
 Qed.
@@ -687,22 +704,26 @@ Proof.
   apply olift_approx_cequiv; apply approx_open_lsubst_congr2; auto.
 Qed.
 
+Definition cequiv_subst_ext {o} lib (s1 s2 : @Sub o) :=
+  in_ext lib (fun lib => Cast (cequiv_subst lib s1 s2)).
+
 Lemma cequiv_open_hyp_same_hyps {o} :
   forall lib (h : @hypothesis o) sub1 sub2,
     wf_hyp h
-    -> cequiv_subst lib sub1 sub2
+    -> cequiv_subst_ext lib sub1 sub2
     -> cequiv_open_hyp lib (lsubst_hyp sub1 h) (lsubst_hyp sub2 h).
 Proof.
   introv wf ceq.
   destruct h; unfold cequiv_open_hyp; simpl.
   unfold wf_hyp in wf; allsimpl.
+  introv x; apply ceq in x; spcast.
   apply cequiv_open_lsubst_same_term; auto.
 Qed.
 
 Lemma cequiv_open_hyps_same_hyps {o} :
   forall lib (hs : @bhyps o) sub1 sub2,
     wf_hyps hs
-    -> cequiv_subst lib sub1 sub2
+    -> cequiv_subst_ext lib sub1 sub2
     -> cequiv_open_hyps lib (lsubst_hyps sub1 hs) (lsubst_hyps sub2 hs).
 Proof.
   induction hs; introv wf ceq; simpl; auto.
@@ -767,9 +788,11 @@ Lemma similarity_preserves_cequiv_open_hyps {o} :
     -> similarity lib s1 s2 hs2.
 Proof.
   induction hs1 using rev_list_indT; introv wf2 efvs vsh ceq sim; allsimpl.
+
   - destruct hs2; allsimpl; cpx.
+
   - inversion sim as [|? ? ? ? ? ? wf cov equ sim'];
-    ginv; subst; cpx; clear sim.
+      ginv; subst; cpx; clear sim.
     allapply @cequiv_open_hyps_snoc_implies; exrepnd; subst.
     allrw @vars_hyps_snoc; cpx.
     allrw @wf_hyps_snoc; repnd.
@@ -789,11 +812,13 @@ Proof.
     exists s0 s3 t1 t2 wf2 cov'; dands; auto.
 
     eapply cequivc_preserving_equality;[eauto|].
+
+    introv x; apply ceq1 in x; spcast.
     unfold cequivc, lsubstc; simpl.
     apply lsubst_cequiv_congr; eauto 2 with slow;
-    apply isprogram_lsubst_if_isprog_sub; eauto 2 with slow;
-    allrw @dom_csub_eq; allrw @cover_vars_eq;
-    apply subvars_eq; auto.
+      apply isprogram_lsubst_if_isprog_sub; eauto 2 with slow;
+        allrw @dom_csub_eq; allrw @cover_vars_eq;
+          apply subvars_eq; auto.
 Qed.
 
 Lemma implies_wf_hyps_lsubst_hyps {o} :
@@ -1329,6 +1354,9 @@ Inductive cequiv_csub {o} (lib : library) : @CSub o -> @CSub o -> Type :=
       -> cequiv_csub lib ((v,t1) :: s1) ((v,t2) :: s2).
 Hint Constructors cequiv_csub.
 
+Definition cequiv_csub_ext {o} lib (s1 s2 : @CSub o) :=
+  in_ext lib (fun lib => Cast (cequiv_csub lib s1 s2)).
+
 Lemma cequiv_csub_implies_eq_dom_csub {o} :
   forall lib (s1 s2 : @CSub o),
     cequiv_csub lib s1 s2 -> dom_csub s1 = dom_csub s2.
@@ -1344,14 +1372,14 @@ Lemma cequiv_csub_snoc {o} :
     -> cequiv_csub lib (snoc s1 (v,t1)) (snoc s2 (v,t2)).
 Proof.
   induction s1; introv ceq1 ceq2; allsimpl; tcsp;
-  inversion ceq1; subst; allsimpl; tcsp.
+    inversion ceq1; subst; allsimpl; tcsp.
 Qed.
 
 Lemma tequalityi_cequivc_l {o} :
-forall lib n (a b c : @CTerm o),
-  cequivc lib a b
-  -> tequalityi lib n a c
-  -> tequalityi lib n b c.
+  forall lib n (a b c : @CTerm o),
+    ccequivc_ext lib a b
+    -> tequalityi lib n a c
+    -> tequalityi lib n b c.
 Proof.
   introv ceq teq.
   allunfold @tequalityi.
@@ -1360,10 +1388,10 @@ Qed.
 Hint Resolve tequalityi_cequivc_l : nequality.
 
 Lemma tequalityi_cequivc_r {o} :
-forall lib n (a b c : @CTerm o),
-  cequivc lib b c
-  -> tequalityi lib n a b
-  -> tequalityi lib n a c.
+  forall lib n (a b c : @CTerm o),
+    ccequivc_ext lib b c
+    -> tequalityi lib n a b
+    -> tequalityi lib n a c.
 Proof.
   introv ceq teq.
   allunfold @tequalityi.
@@ -1373,7 +1401,7 @@ Hint Resolve tequalityi_cequivc_r : nequality.
 
 Lemma eqtypes_cequivc_l {o} :
   forall lib lvl (a b c : @CTerm o),
-    cequivc lib a b
+    ccequivc_ext lib a b
     -> eqtypes lib lvl a c
     -> eqtypes lib lvl b c.
 Proof.
@@ -1385,7 +1413,7 @@ Hint Resolve eqtypes_cequivc_l : nequality.
 
 Lemma eqtypes_cequivc_r {o} :
   forall lib lvl (a b c : @CTerm o),
-    cequivc lib b c
+    ccequivc_ext lib b c
     -> eqtypes lib lvl a b
     -> eqtypes lib lvl a c.
 Proof.
@@ -1400,7 +1428,7 @@ Lemma cequiv_subst_iff_cequiv_csub {o} :
     cequiv_csub lib s1 s2 <=> cequiv_subst lib (csub2sub s1) (csub2sub s2).
 Proof.
   induction s1; introv; split; intro h; allsimpl;
-  try (complete (inversion h; subst; allsimpl; auto)).
+    try (complete (inversion h; subst; allsimpl; auto)).
   - inversion h; destruct s2; allsimpl; ginv.
   - inversion h; subst; allsimpl.
     constructor; auto.
@@ -1430,16 +1458,35 @@ Proof.
 Qed.
 Hint Resolve cequiv_csub_refl : slow.
 
+Lemma alpha_eq_hyps_sym {o} :
+  forall (hs1 hs2 : @bhyps o),
+    alpha_eq_hyps hs1 hs2
+    -> alpha_eq_hyps hs2 hs1.
+Proof.
+  induction hs1; introv aeq; inversion aeq; subst; cpx; clear aeq.
+  constructor; auto.
+  apply alpha_eq_sym; auto.
+Qed.
+
+Lemma cequiv_csub_ext_implies_eq_dom_csub {o} :
+  forall lib (s1 s2 : @CSub o),
+    cequiv_csub_ext lib s1 s2 -> dom_csub s1 = dom_csub s2.
+Proof.
+  introv h.
+  pose proof (h _ (lib_extends_refl lib)) as h; simpl in *; spcast.
+  eapply cequiv_csub_implies_eq_dom_csub; eauto.
+Qed.
+
 Lemma sub_eq_hyps_cequiv_csub1 {o} :
   forall lib (hs : @bhyps o) s1 s2 s3 s4 s',
-    cequiv_csub lib s1 s'
+    cequiv_csub_ext lib s1 s'
     -> sub_eq_hyps lib s1 s2 s3 s4 hs
     -> sub_eq_hyps lib s' s2 s3 s4 hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv ceq seh;
   inversion seh; subst; cpx.
 
-  applydup @cequiv_csub_implies_eq_dom_csub in ceq as edoms.
+  applydup @cequiv_csub_ext_implies_eq_dom_csub in ceq as edoms.
 
   assert (cover_vars (htyp a) (s' ++ s0)) as p1'.
   { clear eqt seh seh0.
@@ -1449,11 +1496,16 @@ Proof.
     rw edoms in i; tcsp. }
 
   apply @sub_eq_hyps_cons with (w := w) (p1 := p1') (p2 := p2); auto;
-  [|eapply IHhs; eauto];[].
+    [|eapply IHhs; eauto];[].
+  clear IHhs.
 
   eapply eqtypes_cequivc_l;[|eauto].
 
   clear eqt seh seh0.
+
+  introv x.
+  pose proof (ceq _ x) as ceq; simpl in *.
+  spcast.
   unfold cequivc; simpl.
 
   allrw @cover_vars_eq.
@@ -1472,14 +1524,14 @@ Qed.
 
 Lemma sub_eq_hyps_cequiv_csub2 {o} :
   forall lib (hs : @bhyps o) s1 s2 s3 s4 s',
-    cequiv_csub lib s2 s'
+    cequiv_csub_ext lib s2 s'
     -> sub_eq_hyps lib s1 s2 s3 s4 hs
     -> sub_eq_hyps lib s1 s' s3 s4 hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv ceq seh;
   inversion seh; subst; cpx.
 
-  applydup @cequiv_csub_implies_eq_dom_csub in ceq as edoms.
+  applydup @cequiv_csub_ext_implies_eq_dom_csub in ceq as edoms.
 
   assert (cover_vars (htyp a) (s' ++ s5)) as p2'.
   { clear eqt seh seh0.
@@ -1494,6 +1546,9 @@ Proof.
   eapply eqtypes_cequivc_r;[|eauto].
 
   clear eqt seh seh0.
+  introv x.
+  pose proof (ceq _ x) as ceq; simpl in *.
+  spcast.
   unfold cequivc; simpl.
 
   allrw @cover_vars_eq.
@@ -1509,20 +1564,3 @@ Proof.
   - apply cequiv_subst_iff_cequiv_csub.
     apply implies_cequiv_csub; eauto 3 with slow.
 Qed.
-
-Lemma alpha_eq_hyps_sym {o} :
-  forall (hs1 hs2 : @bhyps o),
-    alpha_eq_hyps hs1 hs2
-    -> alpha_eq_hyps hs2 hs1.
-Proof.
-  induction hs1; introv aeq; inversion aeq; subst; cpx; clear aeq.
-  constructor; auto.
-  apply alpha_eq_sym; auto.
-Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)
