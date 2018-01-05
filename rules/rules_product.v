@@ -43,6 +43,7 @@ Require Export sequents_equality.
 Require Export sequents_tacs2.
 Require Export rules_tyfam.
 Require Export lsubst_hyps.
+Require Export terms_pi.
 
 
 (** printing |- $\vdash$ *)
@@ -283,15 +284,23 @@ Proof.
   lsubst_tac.
 
   rw @equality_in_product in sim2; exrepnd; spcast.
+  eapply all_in_ex_bar_teq_and_eq_implies_teq_and_eq.
+  eapply all_in_ex_bar_modus_ponens1;try exact sim2; clear sim2; introv y sim2; exrepnd; spcast.
   substc_lsubstc_vars3.
 
+  assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
+
   vr_seq_true in hyp1.
-  pose proof (hyp1 (snoc (snoc (snoc s1a0 (p,t1)) (a,a1)) (b,b1) ++ s1b)
-                   (snoc (snoc (snoc s2a0 (p,t2)) (a,a2)) (b,b2) ++ s2b))
+  pose proof (hyp1
+                _ xt
+                (snoc (snoc (snoc s1a0 (p,t1)) (a,a1)) (b,b1) ++ s1b)
+                (snoc (snoc (snoc s2a0 (p,t2)) (a,a2)) (b,b2) ++ s2b))
     as h; clear hyp1.
   repeat (autodimp h hyp); exrepnd.
 
-  { introv sim'.
+XXXXXXXX
+  {
+    introv sim'.
     rw @similarity_app in sim'; exrepnd; subst.
     rw @similarity_snoc in sim'5; exrepnd; subst.
     rw @similarity_snoc in sim'7; exrepnd; subst.

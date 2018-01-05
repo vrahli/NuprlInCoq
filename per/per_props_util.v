@@ -898,3 +898,17 @@ Proof.
   apply univ_type_system.
 Qed.
 Hint Resolve univ_uniquely_valued : slow.
+
+Lemma all_in_ex_bar_teq_and_eq_implies_teq_and_eq {o} :
+  forall lib (A B a b T : @CTerm o),
+    all_in_ex_bar lib (fun lib => tequality lib A B # equality lib a b T)
+    -> tequality lib A B # equality lib a b T.
+Proof.
+  introv e; dands.
+
+  - apply all_in_ex_bar_tequality_implies_tequality; auto.
+    eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd; eauto 3 with slow.
+
+  - apply all_in_ex_bar_equality_implies_equality; auto.
+    eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd; eauto 3 with slow.
+Qed.
