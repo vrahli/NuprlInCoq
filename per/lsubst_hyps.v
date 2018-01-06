@@ -1564,3 +1564,53 @@ Proof.
   - apply cequiv_subst_iff_cequiv_csub.
     apply implies_cequiv_csub; eauto 3 with slow.
 Qed.
+
+Lemma cequiv_subst_ext_snoc {o} :
+  forall lib v (t1 t2 : @NTerm o) s1 s2,
+    cequiv_subst_ext lib s1 s2
+    -> cequiv_ext lib t1 t2
+    -> cequiv_subst_ext lib (snoc s1 (v,t1)) (snoc s2 (v,t2)).
+Proof.
+  introv c1 c2 x.
+  pose proof (c1 _ x) as c1.
+  pose proof (c2 _ x) as c2.
+  simpl in *; spcast.
+  apply cequiv_subst_snoc; auto.
+Qed.
+
+Lemma cequiv_subst_ext_csub2sub_refl {o} :
+  forall lib (s : @CSub o),
+    cequiv_subst_ext lib (csub2sub s) (csub2sub s).
+Proof.
+  introv x; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve cequiv_subst_ext_csub2sub_refl : slow.
+
+Lemma ccequivc_ext_implies_cequiv_ext {o} :
+  forall lib (a b : @CTerm o),
+    ccequivc_ext lib a b
+    -> cequiv_ext lib (get_cterm a) (get_cterm b).
+Proof.
+  tcsp.
+Qed.
+
+Lemma cequiv_csub_ext_snoc {o} :
+  forall lib (s1 s2 : @CSub o) v t1 t2,
+    cequiv_csub_ext lib s1 s2
+    -> ccequivc_ext lib t1 t2
+    -> cequiv_csub_ext lib (snoc s1 (v,t1)) (snoc s2 (v,t2)).
+Proof.
+  introv c1 c2 x.
+  pose proof (c1 _ x) as c1.
+  pose proof (c2 _ x) as c2.
+  simpl in *; spcast.
+  apply cequiv_csub_snoc; eauto.
+Qed.
+Hint Resolve cequiv_csub_ext_snoc : slow.
+
+Lemma cequiv_csub_ext_refl {o} :
+  forall lib (s : @CSub o), cequiv_csub_ext lib s s.
+Proof.
+  introv x; eauto 3 with slow.
+Qed.
+Hint Resolve cequiv_csub_ext_refl : slow.

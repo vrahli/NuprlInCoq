@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -25,7 +26,8 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
+           Abhishek Anand
 
 *)
 
@@ -40,12 +42,12 @@ Lemma tequality_uatom {p} :
 Proof.
   introv.
   unfold tequality.
-  exists (@equality_of_uatom p lib).
+  exists (@equality_of_uatom_bar p lib).
   unfold nuprl.
   apply CL_uatom.
   unfold per_uatom; sp; spcast;
-  try (apply computes_to_valc_refl);
-  try (apply iscvalue_mkc_uatom; auto).
+    try (apply computes_to_valc_refl);
+    try (apply iscvalue_mkc_uatom; auto).
 Qed.
 
 Lemma equality_in_uatom_iff {p} :
@@ -56,7 +58,12 @@ Lemma equality_in_uatom_iff {p} :
         # t2 ===>(lib) (mkc_utoken a)}.
 Proof.
   intros; split; intro i; exrepnd.
+
   - unfold equality, nuprl in i; exrepnd.
+
+    (* need the usual dest_nuprl_atom2... *)
+
+XXXXXXX
     inversion i1; subst; try not_univ.
     allunfold @per_uatom; repnd.
     allunfold @eq_term_equals.

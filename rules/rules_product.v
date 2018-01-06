@@ -26,7 +26,8 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
+           Abhishek Anand
 
 *)
 
@@ -44,6 +45,8 @@ Require Export sequents_tacs2.
 Require Export rules_tyfam.
 Require Export lsubst_hyps.
 Require Export terms_pi.
+
+
 
 
 (** printing |- $\vdash$ *)
@@ -419,11 +422,9 @@ Proof.
         + repeat (rw @substitute_hyps_as_lsubst_hyps).
           apply cequiv_open_hyps_same_hyps; auto.
           repeat (rw @csub2sub_snoc).
-
-          (* Write a [cequiv_subst_ext_snoc] lemma *)
-          apply cequiv_subst_snoc; eauto 2 with slow.
-          apply cequiv_sym.
-          apply computes_to_value_implies_cequiv; eauto 3 with slow.
+          apply cequiv_subst_ext_snoc; simpl; eauto 2 with slow;[].
+          apply ccequivc_ext_implies_cequiv_ext.
+          apply ccequivc_ext_sym; eauto 3 with slow.
     }
 
     apply eq_hyps_app in h; exrepnd.
@@ -471,7 +472,7 @@ Proof.
 
       - lsubst_tac.
         apply tequality_product in h6; repnd.
-        apply h6 in sim'6; clear h6.
+        apply h6 in sim'6; clear h6; eauto 3 with slow;[].
         repeat (substc_lsubstc_vars3;[]).
 
         assert (wf_term (@mk_var o a)) as wa.
@@ -533,12 +534,7 @@ Proof.
       eapply sub_eq_hyps_cequiv_csub1;
         [|eapply sub_eq_hyps_cequiv_csub2;
            [|exact h1]
-        ];[|].
-
-      - apply cequiv_csub_snoc; eauto 3 with slow.
-        apply computes_to_valc_implies_cequivc; auto.
-
-      - apply cequiv_csub_snoc; eauto 3 with slow.
+        ];[|]; eauto 4 with slow.
     }
   }
 
@@ -563,14 +559,17 @@ Proof.
         { apply cover_vars_snoc_weak; auto. }
         dands; auto.
 
-        * sim_snoc; dands; auto.
+        * sim_snoc; dands; auto; eauto 3 with slow;[].
           lsubst_tac; auto.
-          apply equality_in_product; dands; auto;[].
+          apply equality_in_product; dands; eauto 3 with slow;[].
+
+          (* WARNING *)
+          apply in_ext_implies_all_in_ex_bar; introv y''.
           eexists; eexists; eexists; eexists; dands; spcast;
-          try (apply computes_to_valc_refl; eauto 2 with slow);
-          eauto.
+            try (apply computes_to_valc_refl; eauto 2 with slow);
+            eauto 3 with slow;[].
           repeat substc_lsubstc_vars3;[].
-          clear_irr; auto.
+          clear_irr; eauto 3 with slow.
 
         * lsubst_tac; clear_irr; auto.
 
@@ -637,8 +636,9 @@ Proof.
       apply wf_hypotheses_implies_wf_hyps in wfh.
       rw @wf_hyps_app in wfh; repnd.
 
-      eapply similarity_preserves_cequiv_open_hyps; try (exact sim1);
-      autorewrite with slow core; auto.
+      eapply similarity_preserves_cequiv_open_hyps;
+        try (eapply lib_extends_preserves_similarity;[|eauto]; eauto 3 with slow);
+        autorewrite with slow core; auto; eauto 3 with slow.
 
       + rw @substitute_hyps_as_lsubst_hyps.
         apply implies_wf_hyps_lsubst_hyps; auto.
@@ -657,8 +657,8 @@ Proof.
       + repeat (rw @substitute_hyps_as_lsubst_hyps).
         apply cequiv_open_hyps_same_hyps; auto.
         repeat (rw @csub2sub_snoc).
-        apply cequiv_subst_snoc; eauto 2 with slow.
-        apply computes_to_value_implies_cequiv; eauto 3 with slow.
+        apply cequiv_subst_ext_snoc; eauto 2 with slow.
+        apply ccequivc_ext_implies_cequiv_ext; eauto 3 with slow.
   }
 
   lsubst_tac.
@@ -696,7 +696,8 @@ Proof.
   { eapply tequality_respects_cequivc_left;
     [|eapply tequality_respects_cequivc_right;[|exact h0] ].
 
-    - unfold cequivc; simpl.
+    - introv x'; spcast.
+      unfold cequivc; simpl.
       apply cequiv_lsubst.
 
       + apply isprogram_lsubst_if_isprog_sub; eauto 3 with slow.
@@ -716,9 +717,10 @@ Proof.
       + simpl.
         constructor; eauto 2 with slow;[].
         apply cequivc_sym.
-        apply computes_to_valc_implies_cequivc; auto.
+        apply computes_to_valc_implies_cequivc; auto; eauto 3 with slow.
 
-    - unfold cequivc; simpl.
+    - introv x'; spcast.
+      unfold cequivc; simpl.
       apply cequiv_lsubst.
 
       + apply isprogram_lsubst_if_isprog_sub; eauto 3 with slow.
@@ -738,21 +740,23 @@ Proof.
       + simpl.
         constructor; eauto 2 with slow;[].
         apply cequivc_sym.
-        apply computes_to_valc_implies_cequivc; auto.
+        apply computes_to_valc_implies_cequivc; auto; eauto 3 with slow.
   }
 
   { eapply equality_respects_cequivc_left;
-    [apply implies_cequivc_mkc_spread1;apply cequivc_sym;
-     apply computes_to_valc_implies_cequivc; eauto
-    |].
+      [introv x'; spcast;
+       apply implies_cequivc_mkc_spread1;apply cequivc_sym;
+       apply computes_to_valc_implies_cequivc; eauto 3 with slow
+      |];[].
     eapply equality_respects_cequivc_right;
-      [apply implies_cequivc_mkc_spread1;apply cequivc_sym;
-       apply computes_to_valc_implies_cequivc; eauto
-      |].
+      [introv x'; spcast;
+       apply implies_cequivc_mkc_spread1;apply cequivc_sym;
+       apply computes_to_valc_implies_cequivc; eauto 3 with slow
+      |];[].
     eapply equality_respects_cequivc_left;
-      [apply cequivc_sym;apply cequivc_mkc_spread_mkc_pair |].
+      [introv x'; spcast; apply cequivc_sym;apply cequivc_mkc_spread_mkc_pair |];[].
     eapply equality_respects_cequivc_right;
-      [apply cequivc_sym;apply cequivc_mkc_spread_mkc_pair |].
+      [introv x'; spcast; apply cequivc_sym;apply cequivc_mkc_spread_mkc_pair |];[].
 
     eapply equality_respects_cequivc_left;
       [|eapply equality_respects_cequivc_right;
@@ -761,7 +765,8 @@ Proof.
          ]
       ].
 
-    - unfold cequivc; simpl.
+    - introv x'; spcast.
+      unfold cequivc; simpl.
       rw @csubst_app; simpl.
       apply alpha_implies_cequiv.
 
@@ -833,7 +838,8 @@ Proof.
                   allapply @similarity_dom; repnd; allrw;
                     autorewrite with slow core; tcsp.
 
-    - unfold cequivc; simpl.
+    - introv x'; spcast.
+      unfold cequivc; simpl.
       rw @csubst_app; simpl.
       apply alpha_implies_cequiv.
 
@@ -905,7 +911,8 @@ Proof.
                   allapply @similarity_dom; repnd; allrw;
                     autorewrite with slow core; tcsp.
 
-    - unfold cequivc; simpl.
+    - introv x'; spcast.
+      unfold cequivc; simpl.
       apply cequiv_lsubst.
 
       + apply isprogram_lsubst_if_isprog_sub; eauto 3 with slow.
@@ -925,7 +932,7 @@ Proof.
       + simpl.
         constructor; eauto 2 with slow;[].
         apply cequivc_sym.
-        apply computes_to_valc_implies_cequivc; auto.
+        apply computes_to_valc_implies_cequivc; eauto 3 with slow.
   }
 Qed.
 

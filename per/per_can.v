@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -25,7 +26,8 @@
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
-  Authors: Abhishek Anand & Vincent Rahli
+  Authors: Vincent Rahli
+           Abhishek Anand
 
  *)
 
@@ -816,26 +818,28 @@ Proof.
   { apply isvalue_iff; dands; eauto 3 with slow. }
 Qed.
 
+Definition chaltsc_bar {o} lib (a : @CTerm o) :=
+  all_in_ex_bar lib (fun lib => chaltsc lib a).
+
 Lemma cequorsq_mkc_halts {p} :
   forall lib i (a b : @CTerm p),
     equorsq lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
     <=>
-    (hasvaluec lib a <=> hasvaluec lib b).
+    all_in_ex_bar lib (fun lib => chaltsc lib a <=> chaltsc lib b).
 Proof.
   unfold equorsq; introv; split; introv h.
-  - split; introv q; apply hasvaluec_stable; repndors;
-     allrw @equality_in_uni_mkc_halts.
-     + apply h; spcast; auto.
-     + spcast.
-       apply cequivc_decomp_halts in h; repnd.
-       apply h0; auto.
-     + apply h; spcast; auto.
-     + spcast.
-       apply cequivc_decomp_halts in h; repnd.
-       apply h0; auto.
+
+  - repndors.
+
+    + allrw @equality_in_uni_mkc_halts; auto.
+
+    + apply in_ext_implies_all_in_ex_bar; introv x.
+      pose proof (h _ x) as h; simpl in *; spcast.
+      apply cequivc_decomp_halts in h; repnd; auto.
+      split; intro q; spcast; apply h0; auto.
+
   - left.
-    apply equality_in_uni_mkc_halts.
-    split; intro q; spcast; apply h; auto.
+    apply equality_in_uni_mkc_halts; auto.
 Qed.
 
 Lemma isexc_as_raises_exceptionc {o} :
@@ -876,34 +880,51 @@ Proof.
       apply reduces_to_if_isvalue_like in comp; eauto 3 with slow; ginv. }
 Qed.
 
+Definition craises_exceptionc {o} lib (a : @CTerm o) :=
+  Cast (raises_exceptionc lib a).
+
+Lemma raises_exceptionc_stable {o} :
+  forall lib (a : @CTerm o), craises_exceptionc lib a -> raises_exceptionc lib a.
+Proof.
+  introv h.
+  apply isexc_as_raises_exceptionc; inversion h.
+  apply isexc_as_raises_exceptionc; auto.
+Qed.
+
+Lemma raises_exceptionc_stable_iff {o} :
+  forall lib (a : @CTerm o), craises_exceptionc lib a <=> raises_exceptionc lib a.
+Proof.
+  introv; split; intro h; unfold craises_exceptionc in *; spcast; auto.
+  apply raises_exceptionc_stable; auto.
+Qed.
+
 Lemma tequality_mkc_isexc {o} :
   forall lib (a b : @CTerm o),
     tequality lib (mkc_isexc a) (mkc_isexc b)
-    <=> (raises_exceptionc lib a <=> raises_exceptionc lib b).
+    <=> all_in_ex_bar lib (fun lib => craises_exceptionc lib a <=> craises_exceptionc lib b).
 Proof.
   introv.
   allrw @mkc_isexc_eq.
   rw @tequality_mkc_approx.
-  allrw @isexc_as_raises_exceptionc; sp.
+  split; intro e;
+    eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd; spcast;
+      allrw @isexc_as_raises_exceptionc; allrw @raises_exceptionc_stable_iff; auto.
 Qed.
+
+Definition raises_exceptionc_bar {o} lib (t : @CTerm o) :=
+  all_in_ex_bar lib (fun lib => craises_exceptionc lib t).
 
 Lemma member_isexc_iff {p} :
   forall lib (t : @CTerm p),
-    raises_exceptionc lib t
+    raises_exceptionc_bar lib t
     <=> member lib mkc_axiom (mkc_isexc t).
 Proof.
   introv.
   rw @mkc_isexc_eq.
   rw <- @member_approx_iff.
-  rw @isexc_as_raises_exceptionc; sp.
-Qed.
-
-Lemma raises_exceptionc_stable {o} :
-  forall lib (a : @CTerm o), Cast (raises_exceptionc lib a) -> raises_exceptionc lib a.
-Proof.
-  introv h.
-  apply isexc_as_raises_exceptionc; inversion h.
-  apply isexc_as_raises_exceptionc; auto.
+  split; intro e;
+    eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd;
+      allrw @isexc_as_raises_exceptionc; allrw @raises_exceptionc_stable_iff; auto.
 Qed.
 
 Lemma cequivc_decomp_isexc {o} :
@@ -939,30 +960,38 @@ Lemma equality_in_uni_mkc_isexc {p} :
   forall lib i (a b : @CTerm p),
     equality lib (mkc_isexc a) (mkc_isexc b) (mkc_uni i)
     <=>
-    (raises_exceptionc lib a <=> raises_exceptionc lib b).
+    all_in_ex_bar lib (fun lib => craises_exceptionc lib a <=> craises_exceptionc lib b).
 Proof.
   introv.
   allrw @mkc_isexc_eq.
   allrw @mkc_approx_equality_in_uni.
-  allrw @isexc_as_raises_exceptionc; sp.
+  split; intro e;
+    eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd;
+      allrw @isexc_as_raises_exceptionc; allrw @raises_exceptionc_stable_iff; auto.
 Qed.
 
 Lemma cequorsq_mkc_isexc {p} :
   forall lib i (a b : @CTerm p),
     equorsq lib (mkc_isexc a) (mkc_isexc b) (mkc_uni i)
     <=>
-    (raises_exceptionc lib a <=> raises_exceptionc lib b).
+    all_in_ex_bar lib (fun lib => craises_exceptionc lib a <=> craises_exceptionc lib b).
 Proof.
   unfold equorsq; introv; split; introv h.
-  - split; introv q; apply raises_exceptionc_stable; repndors;
-    allapply @equality_in_uni;
-    allrw @tequality_mkc_isexc; spcast;
-    try (complete (apply h; auto)).
-    + rw @cequivc_decomp_isexc in h.
-      apply raises_exceptionc_preserves_cequivc in h; auto.
-    + rw @cequivc_decomp_isexc in h.
-      apply cequivc_sym in h.
-      apply raises_exceptionc_preserves_cequivc in h; auto.
+
+  - repndors.
+
+    + allapply @equality_in_uni.
+      allrw @tequality_mkc_isexc; spcast; auto.
+
+    + apply in_ext_implies_all_in_ex_bar; introv x.
+      pose proof (h _ x) as h; simpl in *; spcast.
+      rw @cequivc_decomp_isexc in h.
+      unfold craises_exceptionc; split; intro q; spcast.
+
+      * apply raises_exceptionc_preserves_cequivc in h; auto.
+
+      * apply cequivc_sym in h; apply raises_exceptionc_preserves_cequivc in h; auto.
+
   - left.
     apply equality_in_uni_mkc_isexc; auto.
 Qed.
@@ -1089,28 +1118,6 @@ Proof.
   introv.
   destruct_cterms.
   apply cterm_eq; simpl; auto.
-Qed.
-
-Lemma tequality_mkc_halts_like {o} :
-  forall lib (a b : @CTerm o),
-    tequality lib (mkc_halts_like a) (mkc_halts_like b)
-    <=> (hasvalue_likec lib a <=> hasvalue_likec lib b).
-Proof.
-  introv.
-  allrw @mkc_halts_like_eq.
-  rw @tequality_mkc_approx.
-  allrw @cast_halts_likec_as_hasvalue_likec; sp.
-Qed.
-
-Lemma member_halts_like_iff {p} :
-  forall lib (t : @CTerm p),
-    member lib mkc_axiom (mkc_halts_like t)
-    <=> hasvalue_likec lib t.
-Proof.
-  introv.
-  rw @mkc_halts_like_eq.
-  rw <- @member_approx_iff.
-  rw @cast_halts_likec_as_hasvalue_likec; sp.
 Qed.
 
 Definition computes_to_approx_exception_or_value {o} lib (a b : @NTerm o) :=
@@ -1242,6 +1249,87 @@ Proof.
       apply computes_to_value_exception in comp3; sp.
 Qed.
 
+Definition chasvalue_likec {o} lib (a : @CTerm o) :=
+  Cast (hasvalue_likec lib a).
+
+Lemma cast_halts_likec_as_chasvalue_likec {o} :
+  forall lib (a : @CTerm o) v,
+    Cast (halts_likec lib a v) <=> chasvalue_likec lib a.
+Proof.
+  introv; unfold chasvalue_likec; split; intro h; spcast.
+  - apply halts_likec_as_hasvalue_likec in h; auto.
+  - apply halts_likec_as_hasvalue_likec; auto.
+Qed.
+
+Definition hasvalue_likec_bar {o} lib (a : @CTerm o) :=
+  all_in_ex_bar lib (fun lib => chasvalue_likec lib a).
+
+Lemma member_halts_like_iff {p} :
+  forall lib (t : @CTerm p),
+    member lib mkc_axiom (mkc_halts_like t)
+    <=> hasvalue_likec_bar lib t.
+Proof.
+  introv.
+  rw @mkc_halts_like_eq.
+  rw <- @member_approx_iff.
+  split; intro e;
+    eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd; auto;
+      allrw @cast_halts_likec_as_chasvalue_likec; auto.
+Qed.
+
+Lemma lib_extends_preserves_hasvalue_likec {o} :
+  forall {lib lib'} (x : lib_extends lib' lib) (a : @CTerm o),
+    hasvalue_likec lib a
+    -> hasvalue_likec lib' a.
+Proof.
+  introv x h.
+  unfold hasvalue_likec, hasvalue_like in *; exrepnd.
+  exists v; dands; auto; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_hasvalue_likec : slow.
+
+Lemma chasvalue_likec_implies_hasvalue_likec_bar {o} :
+  forall lib (a : @CTerm o),
+    chasvalue_likec lib a
+    -> hasvalue_likec_bar lib a.
+Proof.
+  introv h.
+  apply in_ext_implies_all_in_ex_bar; introv x.
+  unfold chasvalue_likec in *; spcast; eauto 3 with slow.
+Qed.
+
+Lemma hasvalue_likec_stable {o} :
+  forall lib (a : @CTerm o), chasvalue_likec lib a -> hasvalue_likec lib a.
+Proof.
+  introv h.
+  unfold chasvalue_likec in h.
+
+  pose proof (cast_halts_likec_as_hasvalue_likec lib a nvarx) as q.
+  apply q; spcast.
+  apply halts_likec_as_hasvalue_likec.
+  auto.
+Qed.
+
+Lemma hasvalue_likec_stable_iff {o} :
+  forall lib (a : @CTerm o), chasvalue_likec lib a <=> hasvalue_likec lib a.
+Proof.
+  introv; split; intro h; try apply hasvalue_likec_stable; auto.
+  constructor; auto.
+Qed.
+
+Lemma tequality_mkc_halts_like {o} :
+  forall lib (a b : @CTerm o),
+    tequality lib (mkc_halts_like a) (mkc_halts_like b)
+    <=> all_in_ex_bar lib (fun lib => chasvalue_likec lib a <=> chasvalue_likec lib b).
+Proof.
+  introv.
+  allrw @mkc_halts_like_eq.
+  rw @tequality_mkc_approx.
+  split; intro e;
+    eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd;
+      allrw @cast_halts_likec_as_hasvalue_likec; allrw @hasvalue_likec_stable_iff; auto.
+Qed.
+
 Lemma cequiv_decomp_halts_exc_as_cbv {o} :
   forall lib (a b : @NTerm o) v,
     isprogram a
@@ -1308,22 +1396,14 @@ Lemma equality_in_uni_mkc_halts_like {p} :
   forall lib i (a b : @CTerm p),
     equality lib (mkc_halts_like a) (mkc_halts_like b) (mkc_uni i)
     <=>
-    (hasvalue_likec lib a <=> hasvalue_likec lib b).
+    all_in_ex_bar lib (fun lib => chasvalue_likec lib a <=> chasvalue_likec lib b).
 Proof.
   introv.
   allrw @mkc_halts_like_eq.
   allrw @mkc_approx_equality_in_uni.
-  allrw @cast_halts_likec_as_hasvalue_likec.
-  allrw @isexc_as_raises_exceptionc; sp.
-Qed.
-
-Lemma hasvalue_likec_stable {o} :
-  forall lib (a : @CTerm o), Cast (hasvalue_likec lib a) -> hasvalue_likec lib a.
-Proof.
-  introv h.
-  rw <- @member_halts_like_iff.
-  spcast.
-  apply member_halts_like_iff; auto.
+  split; intro e;
+    eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd;
+      allrw @cast_halts_likec_as_hasvalue_likec; allrw @hasvalue_likec_stable_iff; auto.
 Qed.
 
 Lemma cequivc_halts_like_preserves_hasvalue_likec {o} :
@@ -1350,16 +1430,25 @@ Lemma cequorsq_mkc_halts_like {p} :
   forall lib i (a b : @CTerm p),
     equorsq lib (mkc_halts_like a) (mkc_halts_like b) (mkc_uni i)
     <=>
-    (hasvalue_likec lib a <=> hasvalue_likec lib b).
+    all_in_ex_bar lib (fun lib => chasvalue_likec lib a <=> chasvalue_likec lib b).
 Proof.
   unfold equorsq; introv; split; introv h.
-  - split; introv q; apply hasvalue_likec_stable; repndors;
-    allapply @equality_in_uni;
-    allrw @tequality_mkc_halts_like; spcast;
-    try (complete (apply h; auto)).
-    + eapply cequivc_halts_like_preserves_hasvalue_likec; eauto.
-    + apply cequivc_sym in h.
-      eapply cequivc_halts_like_preserves_hasvalue_likec; eauto.
+
+  - repndors.
+
+    + allapply @equality_in_uni.
+      allrw @tequality_mkc_halts_like; auto.
+
+    + apply in_ext_implies_all_in_ex_bar; introv x.
+      pose proof (h _ x) as h; simpl in *; spcast.
+      allrw @hasvalue_likec_stable_iff; auto.
+      split; intro q.
+
+      * eapply cequivc_halts_like_preserves_hasvalue_likec; eauto.
+
+      * apply cequivc_sym in h.
+        eapply cequivc_halts_like_preserves_hasvalue_likec; eauto.
+
   - left.
     apply equality_in_uni_mkc_halts_like; auto.
 Qed.
