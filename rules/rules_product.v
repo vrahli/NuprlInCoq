@@ -298,9 +298,8 @@ Proof.
     as h; clear hyp1.
   repeat (autodimp h hyp); exrepnd.
 
-XXXXXXXX
   {
-    introv sim'.
+    introv y' sim'.
     rw @similarity_app in sim'; exrepnd; subst.
     rw @similarity_snoc in sim'5; exrepnd; subst.
     rw @similarity_snoc in sim'7; exrepnd; subst.
@@ -321,20 +320,26 @@ XXXXXXXX
               | [ H : context[hvar (mk_hyp _ _)] |- _ ] => simpl in H
             end).
 
-    pose proof (eqh (snoc s2a1 (p,mkc_pair t5 t3) ++ s2b0)) as h; clear eqh.
+    assert (lib_extends lib'1 lib') as xt' by eauto 3 with slow.
+
+    pose proof (eqh _ xt' (snoc s2a1 (p,mkc_pair t5 t3) ++ s2b0)) as h; clear eqh.
     autodimp h hyp.
 
-    { apply similarity_app.
+    {
+      apply similarity_app.
       eexists; eexists; eexists; eexists; dands; eauto; allrw length_snoc; try omega.
 
       - sim_snoc; dands; auto.
         eapply equality_respects_cequivc_left;
-          [apply cequivc_sym; apply computes_to_valc_implies_cequivc;eauto|].
+          [apply ccequivc_ext_sym; apply computes_to_valc_implies_ccequivc_ext;eauto 3 with slow|];[].
         lsubst_tac.
-        apply equality_in_product; dands; auto.
+        apply equality_in_product; dands; auto; eauto 3 with slow;[].
+
+        (* WARNING *)
+        apply in_ext_implies_all_in_ex_bar; introv y''.
         eexists; eexists; eexists; eexists; dands; spcast;
-        try (apply computes_to_valc_refl; eauto 2 with slow);
-        auto.
+          try (apply computes_to_valc_refl; eauto 2 with slow);
+          auto; eauto 3 with slow;[].
         repeat substc_lsubstc_vars3;[].
 
         assert (wf_term (@mk_var o a)) as wa.
@@ -349,7 +354,7 @@ XXXXXXXX
         lsubst_tac.
 
         repeat lsubstc_snoc2.
-        GC; proof_irr; auto.
+        GC; proof_irr; auto; eauto 3 with slow.
 
       - assert (alpha_eq_hyps
                   (substitute_hyps
@@ -414,6 +419,8 @@ XXXXXXXX
         + repeat (rw @substitute_hyps_as_lsubst_hyps).
           apply cequiv_open_hyps_same_hyps; auto.
           repeat (rw @csub2sub_snoc).
+
+          (* Write a [cequiv_subst_ext_snoc] lemma *)
           apply cequiv_subst_snoc; eauto 2 with slow.
           apply cequiv_sym.
           apply computes_to_value_implies_cequiv; eauto 3 with slow.
