@@ -32,9 +32,92 @@
 *)
 
 
-Require Export nuprl_props.
-Require Export choice.
-Require Export cvterm.
+Require Export per_props_util.
+
+
+Lemma dest_nuprl_atom {o} :
+  forall (lib : @library o) eq,
+    nuprl lib mkc_atom mkc_atom eq
+    -> per_bar (per_atom nuprl) lib mkc_atom mkc_atom eq.
+Proof.
+  introv cl.
+  eapply dest_close_per_atom_l in cl;
+    try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
+  unfold per_atom_bar in *; exrepnd.
+  exists bar (equality_of_atom_bar_lib_per lib).
+  dands; auto.
+
+  {
+    introv br ext; introv.
+    unfold per_atom; dands; spcast; eauto 3 with slow.
+  }
+
+  {
+    eapply eq_term_equals_trans;[eauto|].
+    apply eq_term_equals_sym.
+    apply per_bar_eq_equality_of_atom_bar_lib_per.
+  }
+Qed.
+
+Lemma dest_nuprl_atom2 {o} :
+  forall lib (eq : per(o)),
+    nuprl lib mkc_atom mkc_atom eq
+    -> eq <=2=> (equality_of_atom_bar lib).
+Proof.
+  introv u.
+  apply dest_nuprl_atom in u.
+  unfold per_bar in u; exrepnd.
+
+  eapply eq_term_equals_trans;[eauto|].
+  eapply eq_term_equals_trans;[|apply (per_bar_eq_equality_of_atom_bar_lib_per _ bar)].
+  apply implies_eq_term_equals_per_bar_eq.
+  apply all_in_bar_ext_intersect_bars_same; simpl; auto.
+  introv br ext; introv.
+  pose proof (u0 _ br _ ext x) as u0; simpl in *.
+  unfold per_atom in *; exrepnd; spcast; auto.
+Qed.
+
+Lemma dest_nuprl_uatom {o} :
+  forall (lib : @library o) eq,
+    nuprl lib mkc_uatom mkc_uatom eq
+    -> per_bar (per_uatom nuprl) lib mkc_uatom mkc_uatom eq.
+Proof.
+  introv cl.
+  eapply dest_close_per_uatom_l in cl;
+    try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
+  unfold per_uatom_bar in *; exrepnd.
+  exists bar (equality_of_uatom_bar_lib_per lib).
+  dands; auto.
+
+  {
+    introv br ext; introv.
+    unfold per_uatom; dands; spcast; eauto 3 with slow.
+  }
+
+  {
+    eapply eq_term_equals_trans;[eauto|].
+    apply eq_term_equals_sym.
+    apply per_bar_eq_equality_of_uatom_bar_lib_per.
+  }
+Qed.
+
+Lemma dest_nuprl_uatom2 {o} :
+  forall lib (eq : per(o)),
+    nuprl lib mkc_uatom mkc_uatom eq
+    -> eq <=2=> (equality_of_uatom_bar lib).
+Proof.
+  introv u.
+  apply dest_nuprl_uatom in u.
+  unfold per_bar in u; exrepnd.
+
+  eapply eq_term_equals_trans;[eauto|].
+  eapply eq_term_equals_trans;[|apply (per_bar_eq_equality_of_uatom_bar_lib_per _ bar)].
+  apply implies_eq_term_equals_per_bar_eq.
+  apply all_in_bar_ext_intersect_bars_same; simpl; auto.
+  introv br ext; introv.
+  pose proof (u0 _ br _ ext x) as u0; simpl in *.
+  unfold per_uatom in *; exrepnd; spcast; auto.
+Qed.
 
 
 Lemma tequality_uatom {p} :
@@ -53,27 +136,19 @@ Qed.
 Lemma equality_in_uatom_iff {p} :
   forall lib (t1 t2 : @CTerm p),
     equality lib t1 t2 mkc_uatom
-    <=> {a : get_patom_set p
+    <=> all_in_ex_bar lib (fun lib => {a : get_patom_set p
         , t1 ===>(lib) (mkc_utoken a)
-        # t2 ===>(lib) (mkc_utoken a)}.
+        # t2 ===>(lib) (mkc_utoken a)}).
 Proof.
   intros; split; intro i; exrepnd.
 
-  - unfold equality, nuprl in i; exrepnd.
+  - unfold equality in i; exrepnd.
+    apply dest_nuprl_uatom2 in i1.
+    apply i1 in i0; auto.
 
-    (* need the usual dest_nuprl_atom2... *)
-
-XXXXXXX
-    inversion i1; subst; try not_univ.
-    allunfold @per_uatom; repnd.
-    allunfold @eq_term_equals.
-    discover.
-    allunfold @equality_of_uatom; exrepnd.
-    exists u; sp.
-  - exists (@equality_of_uatom p lib); dands.
-    apply CL_uatom; unfold per_uatom; sp;
-    spcast; apply computes_to_value_isvalue_refl; repeat constructor; simpl; sp.
-    exists a; sp.
+  - exists (equality_of_uatom_bar lib); dands; auto.
+    apply CL_uatom.
+    unfold per_uatom; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma tequality_atom {p} :
@@ -81,31 +156,28 @@ Lemma tequality_atom {p} :
 Proof.
   introv.
   unfold tequality.
-  exists (@equality_of_atom p lib).
+  exists (@equality_of_atom_bar p lib).
   unfold nuprl.
   apply CL_atom.
   unfold per_atom; sp; spcast;
-  try (apply computes_to_valc_refl);
-  try (apply iscvalue_mkc_atom; auto).
+    try (apply computes_to_valc_refl);
+    try (apply iscvalue_mkc_atom; auto).
 Qed.
 
 Lemma equality_in_atom_iff {p} :
   forall lib (t1 t2 : @CTerm p),
     equality lib t1 t2 mkc_atom
-    <=> {a : String.string
+    <=> all_in_ex_bar lib (fun lib => {a : String.string
         , t1 ===>(lib) (mkc_token a)
-        # t2 ===>(lib) (mkc_token a)}.
+        # t2 ===>(lib) (mkc_token a)}).
 Proof.
   intros; split; intro i; exrepnd.
-  - unfold equality, nuprl in i; exrepnd.
-    inversion i1; subst; try not_univ.
-    allunfold @per_atom; repnd.
-    allunfold @eq_term_equals.
-    discover.
-    allunfold @equality_of_atom; exrepnd.
-    exists s; sp.
-  - exists (@equality_of_atom p lib); dands.
-    apply CL_atom; unfold per_atom; sp;
-    spcast; apply computes_to_value_isvalue_refl; repeat constructor; simpl; sp.
-    exists a; sp.
+
+  - unfold equality in i; exrepnd.
+    apply dest_nuprl_atom2 in i1.
+    apply i1 in i0; auto.
+
+  - exists (equality_of_atom_bar lib); dands; auto.
+    apply CL_atom.
+    unfold per_atom; dands; spcast; eauto 3 with slow.
 Qed.

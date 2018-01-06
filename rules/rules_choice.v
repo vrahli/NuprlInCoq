@@ -27,40 +27,68 @@
             https://github.com/vrahli/NuprlInCoq
 
   Authors: Vincent Rahli
-           Abhishek Anand
 
 *)
 
 
-Require Export per_props_util.
-Require Export per_props_fam.
-Require Export per_props_function.
-Require Export per_props_uni.
-Require Export per_props_cequiv.
+Require Export rules_useful.
+Require Export subst_tacs_aeq.
+Require Export subst_tacs3.
+Require Export cequiv_tacs.
+Require Export cequiv_props3.
 Require Export per_props_equality.
 Require Export per_props_product.
-Require Export per_props_set.
-Require Export per_props_compute.
-Require Export per_props_false.
-Require Export per_props_not.
 Require Export per_props_nat.
-Require Export per_props_union.
-Require Export per_props_nat2.
-Require Export per_props_atom.
+Require Export sequents_equality.
+Require Export sequents_tacs2.
+Require Export rules_tyfam.
+Require Export lsubst_hyps.
+Require Export terms_pi.
 Require Export per_props_natk2nat.
 
-Require Export per_props_iff.
-Require Export per_props_squash.
-Require Export per_props_image.
-Require Export per_props_w.
-Require Export per_props_pertype.
-Require Export per_props_uni2.
-Require Export per_props_true.
-Require Export per_props_tequality.
-Require Export per_props_erase.
-Require Export per_props_isect.
-Require Export per_props_admiss.
-Require Export per_props_cequiv2.
-Require Export per_props_top.
-Require Export per_props_union2.
-Require Export per_props_nat3.
+
+
+(**
+
+<<
+   H |- ∀ (f : ℕn→ℕ). ∃ (a:Free). f = a ∈ ℕn→ℕ
+
+     By LS1
+>>
+
+ *)
+
+Locate equality_natk2nat_implies.
+
+Definition ls1 {o} (n f a : NVar) : @NTerm o :=
+  mk_function
+    mk_tnat
+    n
+    (mk_function
+       (mk_natk2nat (mk_var n))
+       f
+       (mk_exists
+          mk_csname
+          a
+          (mk_equality
+             (mk_var f)
+             (mk_var a)
+             (mk_natk2nat (mk_var n))))).
+
+(* Write a proper extract instead of axiom *)
+Definition rule_ls1 {o}
+           (lib   : @library o)
+           (n f a : NVar)
+           (H     : @bhyps o) :=
+  mk_rule
+    (mk_baresequent H (mk_concl (ls1 n f a) (mk_axiom)))
+    []
+    [].
+
+
+Lemma rule_ls1_true {p} :
+  forall lib (n f a : NVar) (H : @barehypotheses p),
+    rule_true lib (rule_ls1 lib n f a H).
+Proof.
+
+Qed.
