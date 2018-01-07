@@ -47,6 +47,22 @@ Require Export terms_pi.
 Require Export per_props_natk2nat.
 
 
+Definition entry_free_from_choice_seq_name {o} (e : @library_entry o) (name : choice_sequence_name) :=
+  match e with
+  | lib_cs n l =>
+    if choice_sequence_name_deq n name then False
+    else True
+  | lib_abs _ _ _ _ => True
+  end.
+
+Fixpoint lib_free_from_choice_seq_name {o} (lib : @library o) (name : choice_sequence_name) :=
+  match lib with
+  | [] => True
+  | e :: es =>
+    (entry_free_from_choice_seq_name e name)
+      # lib_free_from_choice_seq_name es name
+  end.
+
 
 (**
 
@@ -57,8 +73,6 @@ Require Export per_props_natk2nat.
 >>
 
  *)
-
-Locate equality_natk2nat_implies.
 
 Definition ls1 {o} (n f a : NVar) : @NTerm o :=
   mk_function
@@ -75,20 +89,33 @@ Definition ls1 {o} (n f a : NVar) : @NTerm o :=
              (mk_var a)
              (mk_natk2nat (mk_var n))))).
 
+Definition ls1_extract {o} (name : choice_sequence_name) (n f : NVar) : @NTerm o :=
+  mk_lam n (mk_lam f (mk_pair (mk_choice_seq name) mk_axiom)).
+
 (* Write a proper extract instead of axiom *)
 Definition rule_ls1 {o}
            (lib   : @library o)
+           (name  : choice_sequence_name)
            (n f a : NVar)
            (H     : @bhyps o) :=
   mk_rule
-    (mk_baresequent H (mk_concl (ls1 n f a) (mk_axiom)))
+    (mk_baresequent H (mk_concl (ls1 n f a) (ls1_extract name n f)))
     []
     [].
 
-
-Lemma rule_ls1_true {p} :
-  forall lib (n f a : NVar) (H : @barehypotheses p),
-    rule_true lib (rule_ls1 lib n f a H).
+Lemma rule_ls1_true {o} :
+  forall lib (name : choice_sequence_name) (n f a : NVar) (H : @bhyps o),
+    lib_free_from_choice_seq_name lib name
+    -> rule_true lib (rule_ls1 lib name n f a H).
 Proof.
+  unfold rule_ls1, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  clear cargs hyps.
+  destseq; allsimpl.
+
+  assert (@covered o (ls1_extract name n f) (nh_vars_hyps H)) as cv.
+  { dwfseq; tcsp. }
+
+  exists cv.
 
 Qed.
