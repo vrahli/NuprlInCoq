@@ -959,6 +959,46 @@ Qed.
 (* end hide *)
 
 
+(* MOVE *)
+Lemma hyps_functionality_ext_snoc {o} :
+  forall lib (H : @bhyps o) h s t,
+    in_ext lib (fun lib => forall t' s' w c c',
+       equality lib t t' (lsubstc (htyp h) w s c)
+       -> similarity lib s s' H
+       -> eqtypes lib (lvl h) (lsubstc (htyp h) w s c) (lsubstc (htyp h) w s' c'))
+    -> hyps_functionality_ext lib s H
+    -> hyps_functionality_ext lib (snoc s (hvar h, t)) (snoc H h).
+Proof.
+  introv imp hf ext sim.
+  rw @similarity_snoc in sim; exrepnd; subst; cpx.
+  rw @eq_hyps_snoc; simpl.
+
+  assert (cover_vars (htyp h) s2a)
+    as c
+      by (clear sim1;
+          allrw @cover_vars_covered; allapply @similarity_dom; exrepnd; allrw; sp;
+          rw <- sim0; sp).
+
+  exists s1a s2a t1 t2 w p c; sp; eauto 3 with slow.
+  apply hf; auto.
+Qed.
+
+(* MOVE *)
+Lemma hyps_functionality_ext_snoc2 {o} :
+  forall lib (H : @bhyps o) h s t v,
+    in_ext lib (fun lib => forall t' s' w c c',
+       equality lib t t' (lsubstc (htyp h) w s c)
+       -> similarity lib s s' H
+       -> eqtypes lib (lvl h) (lsubstc (htyp h) w s c) (lsubstc (htyp h) w s' c'))
+    -> hyps_functionality_ext lib s H
+    -> v = hvar h
+    -> hyps_functionality_ext lib (snoc s (v, t)) (snoc H h).
+Proof.
+  intros; subst.
+  apply hyps_functionality_ext_snoc; sp.
+Qed.
+
+
 (* [23] ============ PAIR FORMATION ============ *)
 
 (**
@@ -1045,7 +1085,7 @@ Proof.
 
   lsubst_tac.
 
-  assert (forall s3,
+  assert (in_ext lib' (fun lib => forall s3,
             similarity lib s1 s3 H
             -> {ca3 : cover_vars A s3
                 & {cb3 : cover_vars_upto B (csub_filter s3 [x]) [x]
@@ -1054,9 +1094,9 @@ Proof.
                     (mkc_product (lsubstc A w1 s1 c1) x
                                  (lsubstc_vars B w2 (csub_filter s1 [x]) [x] c2))
                     (mkc_product (lsubstc A w1 s3 ca3) x
-                                 (lsubstc_vars B w2 (csub_filter s3 [x]) [x] cb3)) }}) as teq.
+                                 (lsubstc_vars B w2 (csub_filter s3 [x]) [x] cb3)) }})) as teq.
 
-  { introv sim'.
+  { introv xt sim'.
     dup sim' as ca3.
     eapply similarity_cover_vars in ca3;[|exact c1].
     dup sim' as cb3.
@@ -1067,28 +1107,38 @@ Proof.
     apply tequality_product; dands.
 
     + vr_seq_true in hyp1.
-      pose proof (hyp1 s1 s3 eqh sim') as h; clear hyp1; exrepnd.
+      pose proof (hyp1
+                    _ (lib_extends_trans xt ext)
+                    s1 s3
+                    (lib_extends_preserves_hyps_functionality_ext xt _ _ eqh)
+                    sim') as h; clear hyp1; exrepnd.
       lsubst_tac; proof_irr.
       clear h1.
       apply tequality_mkc_member_sp in h0; repnd; auto.
 
-    + intros a1 a2 ea.
+    + intros lib'' xt' a1 a2 ea.
       repeat (substc_lsubstc_vars3;[]).
 
       vr_seq_true in hyp3.
-      pose proof (hyp3 (snoc s1 (z,a1)) (snoc s3 (z,a2))) as h; clear hyp3.
+      pose proof (hyp3
+                    _ (lib_extends_trans xt' (lib_extends_trans xt ext))
+                    (snoc s1 (z,a1)) (snoc s3 (z,a2))) as h; clear hyp3.
       repeat (autodimp h hyp).
 
-      * apply hyps_functionality_snoc2; simpl; auto;[].
-        introv equ sim''.
+      * apply hyps_functionality_ext_snoc2; simpl; auto; eauto 3 with slow;[].
+        introv xt'' equ sim''.
 
         vr_seq_true in hyp1.
-        pose proof (hyp1 s1 s' eqh sim'') as h; clear hyp1; exrepnd.
+        pose proof (hyp1
+                      _ (lib_extends_trans xt'' (lib_extends_trans xt' (lib_extends_trans xt ext)))
+                      s1 s'
+                      (lib_extends_preserves_hyps_functionality_ext (lib_extends_trans xt'' (lib_extends_trans xt' xt)) _ _ eqh)
+                      sim'') as h; clear hyp1; exrepnd.
         lsubst_tac; proof_irr.
         clear h1.
         apply tequality_mkc_member_sp in h0; repnd; auto.
 
-      * sim_snoc; dands; auto.
+      * sim_snoc; dands; auto; eauto 3 with slow.
 
       * exrepnd.
         lsubst_tac; proof_irr.
@@ -1111,37 +1161,48 @@ Proof.
 
   dands.
 
-  { apply teq in sim; clear teq; exrepnd; proof_irr; auto. }
+  { apply teq in sim; clear teq; exrepnd; proof_irr; auto; eauto 3 with slow. }
 
   apply equality_in_product; dands.
 
-  { apply teq in sim; clear teq; exrepnd; proof_irr; auto.
+  { apply teq in sim; clear teq; exrepnd; proof_irr; auto; eauto 3 with slow.
     apply tequality_product in sim1; repnd.
     apply tequality_refl in sim0; auto. }
 
-  { intros a1 a2 ea.
+  { intros lib'' xt' a1 a2 ea.
     repeat (substc_lsubstc_vars3;[]).
     apply similarity_refl in sim.
-    apply teq in sim; clear teq; exrepnd; proof_irr.
+    apply teq in sim; clear teq; exrepnd; proof_irr; eauto 3 with slow.
     apply tequality_product in sim1; repnd; proof_irr.
-    apply sim1 in ea; clear sim1.
+    apply sim1 in ea; clear sim1; eauto 3 with slow.
     repeat (substc_lsubstc_vars3;[]).
     proof_irr; auto. }
 
+  apply in_ext_implies_all_in_ex_bar; introv xt.
   eexists; eexists; eexists; eexists; dands; spcast;
-  try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|].
+    try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|].
 
   - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 eqh sim) as h; clear hyp1; exrepnd.
+    pose proof (hyp1
+                  _ (lib_extends_trans xt ext)
+                  s1 s2
+                  (lib_extends_preserves_hyps_functionality_ext xt _ _ eqh)
+                  (lib_extends_preserves_similarity xt _ _ _ sim)) as h; clear hyp1; exrepnd.
     lsubst_tac; proof_irr.
     apply tequality_mkc_member_sp in h0; repnd.
     apply member_if_inhabited in h1.
     allrw @fold_equorsq.
-    eapply cequorsq_equality_trans2;[eauto|];auto.
+    eapply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens1;try exact h0; clear h0; introv xt' h0; exrepnd; spcast.
+    eapply cequorsq_equality_trans2;[eauto|];eauto 3 with slow.
 
   - repeat (substc_lsubstc_vars3;[]).
     vr_seq_true in hyp2.
-    pose proof (hyp2 s1 s2 eqh sim) as h; clear hyp2; exrepnd.
+    pose proof (hyp2
+                  _ (lib_extends_trans xt ext)
+                  s1 s2
+                  (lib_extends_preserves_hyps_functionality_ext xt _ _ eqh)
+                  (lib_extends_preserves_similarity xt _ _ _ sim)) as h; clear hyp2; exrepnd.
 
     repeat lsubstc_subst_aeq.
     repeat (substc_lsubstc_vars3;[]).
@@ -1279,8 +1340,8 @@ Proof.
   lsubst_tac.
   rw <- @member_equality_iff.
 
-  assert (forall s1 s2,
-            hyps_functionality lib s1 H ->
+  assert (in_ext lib' (fun lib => forall s1 s2,
+            hyps_functionality_ext lib s1 H ->
             similarity lib s1 s2 H
             -> {ca1 : cover_vars A s1
                 & {cb1 : cover_vars_upto B (csub_filter s1 [x]) [x]
@@ -1291,10 +1352,11 @@ Proof.
                     (mkc_product (lsubstc A w0 s1 ca1) x
                                  (lsubstc_vars B w3 (csub_filter s1 [x]) [x] cb1))
                     (mkc_product (lsubstc A w0 s2 ca2) x
-                                 (lsubstc_vars B w3 (csub_filter s2 [x]) [x] cb2)) }}}}) as teq.
+                                 (lsubstc_vars B w3 (csub_filter s2 [x]) [x] cb2)) }}}})) as teq.
 
-  { introv eqh' sim'.
+  { introv xt eqh' sim'.
     dup sim' as ca.
+    eapply lib_extends_preserves_similarity in sim;[|exact xt].
     eapply similarity_cover_vars2 in ca;[|exact sim|exact c4]; repnd; GC;[].
     dup sim' as cb.
     eapply similarity_cover_vars_upto2 in cb;[|exact sim|exact c5]; repnd; GC;[].
@@ -1304,28 +1366,32 @@ Proof.
     apply tequality_product; dands.
 
     + vr_seq_true in hyp1.
-      pose proof (hyp1 s0 s3 eqh' sim') as h; clear hyp1; exrepnd.
+      pose proof (hyp1 _ (lib_extends_trans xt ext) s0 s3 eqh' sim') as h; clear hyp1; exrepnd.
       lsubst_tac; proof_irr.
       clear h1.
       apply tequality_mkc_equality_sp in h0; repnd; auto.
 
-    + intros a a' ea.
+    + intros lib'' xt' a a' ea.
       repeat (substc_lsubstc_vars3;[]).
 
       vr_seq_true in hyp3.
-      pose proof (hyp3 (snoc s0 (z,a)) (snoc s3 (z,a'))) as h; clear hyp3.
+      pose proof (hyp3 _ (lib_extends_trans xt' (lib_extends_trans xt ext)) (snoc s0 (z,a)) (snoc s3 (z,a'))) as h; clear hyp3.
       repeat (autodimp h hyp).
 
-      * apply hyps_functionality_snoc2; simpl; auto;[].
-        introv equ sim''.
+      * apply hyps_functionality_ext_snoc2; simpl; eauto 3 with slow;[].
+        introv xt'' equ sim''.
 
         vr_seq_true in hyp1.
-        pose proof (hyp1 s0 s' eqh' sim'') as h; clear hyp1; exrepnd.
+        pose proof (hyp1
+                      _ (lib_extends_trans xt'' (lib_extends_trans xt' (lib_extends_trans xt ext)))
+                      s0 s'
+                      (lib_extends_preserves_hyps_functionality_ext (lib_extends_trans xt'' xt') _ _ eqh')
+                      sim'') as h; clear hyp1; exrepnd.
         lsubst_tac; proof_irr.
         clear h1.
         apply tequality_mkc_equality_sp in h0; repnd; auto.
 
-      * sim_snoc; dands; auto.
+      * sim_snoc; dands; eauto 3 with slow.
 
       * exrepnd.
         lsubst_tac; proof_irr.
@@ -1347,14 +1413,14 @@ Proof.
         proof_irr; auto. }
 
   pose proof (teq_and_eq_if_equality
-                lib (mk_product A x B) (mk_pair a1 b1) (mk_pair a2 b2)
+                lib' (mk_product A x B) (mk_pair a1 b1) (mk_pair a2 b2)
                 s1 s2 H wT w1 w2 c1 c0 c2 c3 cT cT0
                 eqh sim) as eqp.
   repeat (autodimp eqp hyp); auto;
   [| |lsubst_tac; clear_irr; auto];[|].
 
   { lsubst_tac; clear_irr.
-    apply teq in sim; clear teq; exrepnd; proof_irr; auto. }
+    apply teq in sim; clear teq; exrepnd; proof_irr; eauto 3 with slow. }
 
   clear dependent s1.
   clear dependent s2.
@@ -1362,46 +1428,62 @@ Proof.
   lsubst_tac.
   apply equality_in_product; dands.
 
-  { apply teq in sim; clear teq; exrepnd; proof_irr; auto.
+  { apply teq in sim; clear teq; exrepnd; proof_irr; eauto 3 with slow.
     apply tequality_product in sim1; repnd.
     apply tequality_refl in sim0; auto. }
 
-  { intros a a' ea.
+  { intros lib'' xt' a a' ea.
     repeat (substc_lsubstc_vars3;[]).
     apply similarity_refl in sim.
-    apply teq in sim; auto; clear teq; exrepnd; proof_irr.
+    apply teq in sim; auto; clear teq; exrepnd; proof_irr; eauto 3 with slow.
     apply tequality_product in sim1; repnd; proof_irr.
-    apply sim1 in ea; clear sim1.
+    apply sim1 in ea; clear sim1; eauto 3 with slow.
     repeat (substc_lsubstc_vars3;[]).
     proof_irr; auto. }
 
+  apply in_ext_implies_all_in_ex_bar; introv xt.
   eexists; eexists; eexists; eexists; dands; spcast;
-  try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|].
+    try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|].
 
   - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    pose proof (hyp1
+                  _ (lib_extends_trans xt ext)
+                  s1 s2
+                  (lib_extends_preserves_hyps_functionality_ext xt _ _ hf)
+                  (lib_extends_preserves_similarity xt _ _ _ sim)) as h; clear hyp1; exrepnd.
     lsubst_tac; proof_irr.
     apply tequality_mkc_equality_sp in h0; repnd.
     rw <- @member_equality_iff in h1.
     allrw @fold_equorsq.
-    eapply cequorsq_equality_trans2;[eauto|];auto.
+    apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens1;try exact h0; clear h0; introv xt' h0; exrepnd; spcast.
+    eapply cequorsq_equality_trans2;[eauto|];eauto 3 with slow.
 
   - repeat (substc_lsubstc_vars3;[]).
     vr_seq_true in hyp2.
-    pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+    pose proof (hyp2
+                  _ (lib_extends_trans xt ext)
+                  s1 s2
+                  (lib_extends_preserves_hyps_functionality_ext xt _ _ hf)
+                  (lib_extends_preserves_similarity xt _ _ _ sim)) as h; clear hyp2; exrepnd.
     lsubst_tac; proof_irr.
     apply tequality_mkc_equality_sp in h0; repnd.
     rw <- @member_equality_iff in h1.
-    allrw @fold_equorsq.
     clear h2.
 
     assert (cover_vars a1 s2) as cov.
     { eapply similarity_cover_vars in sim; eauto. }
 
+    apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens2;[|exact h0|exact h3]; clear h0 h3; introv xt' h0 h3; exrepnd; spcast.
+
+    allrw @fold_equorsq.
     repeat lsubstc_subst_aeq.
     repeat (substc_lsubstc_vars3;[]).
     proof_irr; auto.
-    eapply cequorsq_equality_trans2;[eauto|];auto.
+
+    eapply equality_monotone in h1;[|exact xt'].
+    eapply cequorsq_equality_trans2;[eauto|]; eauto 3 with slow.
 Qed.
 
 (* !!MOVE *)
@@ -1638,31 +1720,40 @@ Proof.
   rw <- @member_equality_iff.
 
   pose proof (teq_and_eq_if_equality
-                lib (subst C z e1)
+                lib' (subst C z e1)
                 (mk_spread e1 x1 y1 t1)
                 (mk_spread e2 x2 y2 t2)
                 s1 s2 H wT w1 w2 c1 c0 c2 c3 cT cT0
-                eqh sim) as eqp.
+                eqh
+                sim) as eqp.
   repeat (autodimp eqp hyp); auto;[| |lsubst_tac; clear_irr; auto];[|].
 
   - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 eqh sim) as h; exrepnd; proof_irr.
+    pose proof (hyp1 _ ext s1 s2 eqh sim) as h; exrepnd; proof_irr.
     lsubst_tac.
     rw <- @member_equality_iff in h1.
     apply equality_commutes3 in h0;auto;[].
     clear h1.
 
-    apply equality_in_product in h0; exrepnd; spcast; proof_irr.
+    apply equality_in_product in h0; repnd.
+    apply all_in_ex_bar_tequality_implies_tequality.
+    eapply all_in_ex_bar_modus_ponens1;try exact h0; clear h0; introv xt' h0; exrepnd; spcast; proof_irr.
+
+    apply (lib_extends_preserves_hyps_functionality_ext xt') in eqh.
+    apply (lib_extends_preserves_similarity xt') in sim.
 
     vr_seq_true in hyp2.
-    pose proof (hyp2 (snoc (snoc (snoc s1 (a,a1)) (b,b1)) (y,mkc_axiom))
-                     (snoc (snoc (snoc s2 (a,a2)) (b,b2)) (y,mkc_axiom))) as q.
+    pose proof (hyp2
+                  _
+                  (lib_extends_trans xt' ext)
+                  (snoc (snoc (snoc s1 (a,a1)) (b,b1)) (y,mkc_axiom))
+                  (snoc (snoc (snoc s2 (a,a2)) (b,b2)) (y,mkc_axiom))) as q.
     clear hyp2.
     repeat (autodimp q hyp).
 
-    + apply hyps_functionality_snoc2; simpl; auto.
+    + apply hyps_functionality_ext_snoc2; simpl; auto.
 
-      * introv equ sim'.
+      * introv xt'' equ sim'.
         lsubst_tac.
 
         apply similarity_snoc in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
@@ -1677,33 +1768,36 @@ Proof.
 
         apply tequality_mkc_equality_sp; dands.
 
-        { pose proof (hyp1 s1a s2a0) as q.
-          repeat (autodimp q hyp); exrepnd; proof_irr.
+        { pose proof (hyp1 _ (lib_extends_trans xt'' (lib_extends_trans xt' ext)) s1a s2a0) as q.
+          repeat (autodimp q hyp); exrepnd; proof_irr; eauto 3 with slow;[].
           lsubst_tac; auto.
           apply tequality_mkc_equality_sp in q0; repnd; auto. }
 
-        { left.
-          pose proof (hyp1 s1a s2a0) as q.
-          repeat (autodimp q hyp); exrepnd; proof_irr.
+        { apply in_ext_implies_all_in_ex_bar; introv xt'''.
+          left.
+          pose proof (hyp1 _ (lib_extends_trans xt''' (lib_extends_trans xt'' (lib_extends_trans xt' ext))) s1a s2a0) as q.
+          repeat (autodimp q hyp); exrepnd; proof_irr; eauto 3 with slow;[].
           lsubst_tac; auto.
           rw <- @member_equality_iff in q1; auto.
           apply equality_commutes3 in q0; auto. }
 
-        { left.
-          apply equality_in_product; dands; auto;[].
+        { apply in_ext_implies_all_in_ex_bar; introv xt'''.
+          left.
+          apply equality_in_product; dands; eauto 4 with slow;[].
+          apply in_ext_implies_all_in_ex_bar; introv xt''''.
           eexists; eexists; eexists; eexists; dands; spcast;
-          try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|];
-          try (complete (allsimpl; auto));[].
+            try (complete (apply computes_to_valc_refl; eauto 5 with slow));[|];
+              try (complete (allsimpl; auto)); eauto 3 with slow;[].
           simpl in sim'1.
           lsubstc_subst_aeq2.
           repeat (substc_lsubstc_vars3;[]).
           lsubst_tac.
           repeat (lsubstc_snoc2;[]).
-          proof_irr; auto. }
+          proof_irr; eauto 3 with slow. }
 
-      * apply hyps_functionality_snoc2; simpl; auto.
+      * apply hyps_functionality_ext_snoc2; simpl; auto.
 
-        { introv equ sim'.
+        { introv xt'' equ sim'.
           lsubst_tac.
 
           apply similarity_snoc in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
@@ -1724,25 +1818,28 @@ Proof.
           repeat (lsubstc_snoc2;[]).
           proof_irr.
 
-          pose proof (hyp1 s1a s2a) as q.
-          repeat (autodimp q hyp); exrepnd; proof_irr.
+          pose proof (hyp1
+                        _
+                        (lib_extends_trans xt'' (lib_extends_trans xt' ext))
+                        s1a s2a) as q.
+          repeat (autodimp q hyp); exrepnd; proof_irr; eauto 3 with slow;[].
           lsubst_tac; auto.
           clear q1.
           apply tequality_mkc_equality_sp in q0; repnd.
           clear q0 q2.
           apply tequality_product in q1; repnd.
           clear q0.
-          pose proof (q1 t0 t3) as h; clear q1.
+          pose proof (q1 _ (lib_extends_refl lib'1) t0 t3) as h; clear q1.
           autodimp h hyp;[].
           repeat (substc_lsubstc_vars3;[]).
           proof_irr; auto. }
 
-        { apply hyps_functionality_snoc2; simpl; auto;[].
+        { apply hyps_functionality_ext_snoc2; simpl; auto;[].
 
-          introv equ sim'.
+          introv xt'' equ sim'.
 
-          pose proof (hyp1 s1 s') as q.
-          repeat (autodimp q hyp); exrepnd; proof_irr;[].
+          pose proof (hyp1 _ (lib_extends_trans xt'' (lib_extends_trans xt' ext)) s1 s') as q.
+          repeat (autodimp q hyp); exrepnd; proof_irr; eauto 3 with slow;[].
           clear q1.
           lsubst_tac; auto.
           apply tequality_mkc_equality_sp in q0; repnd.
@@ -1797,30 +1894,34 @@ Proof.
       * lsubst_tac.
         rw <- @member_equality_iff.
         eapply equality_respects_cequivc_left;
-          [apply cequivc_sym; apply computes_to_valc_implies_cequivc;eauto|].
+          [apply ccequivc_ext_sym; apply computes_to_valc_implies_ccequivc_ext;eauto|].
         apply member_product2.
 
         dands; auto.
 
-        { apply tequality_product; dands; auto;[].
-          introv i.
-          apply h2 in i.
+        { apply tequality_product; dands; eauto 3 with slow;[].
+          introv xt'' i.
+          apply h2 in i; eauto 3 with slow.
 
           repeat (substc_lsubstc_vars3;[]).
           repeat (lsubstc_snoc2;[]).
-          proof_irr; auto. }
+          proof_irr; eauto 3 with slow. }
 
-        { eexists; eexists; dands; spcast;
-          try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|].
-          - apply equality_refl in h5; auto.
+        { apply in_ext_implies_all_in_ex_bar; introv xt''.
+          eexists; eexists; dands; spcast;
+            try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|].
+          - apply equality_refl in h5; auto; eauto 3 with slow.
           - repeat (substc_lsubstc_vars3;[]).
             repeat (lsubstc_snoc2;[]).
             proof_irr; auto.
-            apply equality_refl in h0; auto. }
+            apply equality_refl in h0; eauto 3 with slow. }
 
     + exrepnd.
       lsubst_tac.
       apply tequality_mkc_equality_sp in q0; repnd.
+
+      apply all_in_ex_bar_tequality_implies_tequality.
+      eapply all_in_ex_bar_modus_ponens2;[|exact q0|exact q3]; clear q0 q3; introv xt'' q0 q3; exrepnd; spcast.
       allrw @fold_equorsq.
 
       assert (cover_vars (mk_pair (mk_var a) (mk_var b))
@@ -1840,10 +1941,13 @@ Proof.
       lsubst_tac.
       repeat (lsubstc_snoc2;[]).
       proof_irr; auto; GC.
+
+      eapply tequality_monotone in q2;[|exact xt''].
       eapply tequality_respects_cequivc_left;
         [|eapply tequality_respects_cequivc_right;[|exact q2] ].
 
-      * apply cequiv_lsubst.
+      * introv xt'''; spcast.
+        apply cequiv_lsubst.
 
         { apply isprogram_lsubst_if_isprog_sub; eauto 3 with slow.
           rw @dom_csub_eq; simpl.
@@ -1859,11 +1963,12 @@ Proof.
 
         { simpl.
           constructor; eauto 2 with slow;[].
-          apply cequiv_sym.
-          apply computes_to_value_implies_cequiv; auto.
-          apply isprogram_csubst; eauto 3 with slow. }
+          assert (csubst e1 s1 = get_cterm (lsubstc e1 w0 s1 c4)) as xx by auto; rewrite xx; clear xx; rewrite @fold_cequivc.
+          apply cequivc_sym.
+          apply computes_to_valc_implies_cequivc; eauto 3 with slow. }
 
-      * apply cequiv_lsubst.
+      * introv xt'''; spcast.
+        apply cequiv_lsubst.
 
         { apply isprogram_lsubst_if_isprog_sub; eauto 3 with slow.
           rw @dom_csub_eq; simpl.
@@ -1879,9 +1984,9 @@ Proof.
 
         { simpl.
           constructor; eauto 2 with slow;[].
-          apply cequiv_sym.
-          apply computes_to_value_implies_cequiv; auto.
-          apply isprogram_csubst; eauto 3 with slow. }
+          assert (csubst e1 s2 = get_cterm (lsubstc e1 w0 s2 c8)) as xx by auto; rewrite xx; clear xx; rewrite @fold_cequivc.
+          apply cequivc_sym.
+          apply computes_to_valc_implies_cequivc; eauto 3 with slow. }
 
   - clear dependent s1.
     clear dependent s2.
@@ -1890,39 +1995,45 @@ Proof.
     lsubst_tac.
 
     vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 hf sim) as h; exrepnd; proof_irr.
+    pose proof (hyp1 _ ext s1 s2 hf sim) as h; exrepnd; proof_irr.
     lsubst_tac.
     rw <- @member_equality_iff in h1.
     apply equality_commutes4 in h0;auto;[].
     clear h1.
-    apply equality_in_product in h0; exrepnd; spcast; proof_irr.
+    apply equality_in_product in h0; repnd.
+
+    apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens1;try exact h0; clear h0; introv xt' h0; exrepnd; spcast; proof_irr.
 
     eapply equality_respects_cequivc_left;
-      [apply cequivc_sym;
+      [apply ccequivc_ext_sym; introv xt''; spcast;
         apply implies_cequivc_mkc_spread1;
-        apply computes_to_valc_implies_cequivc;eauto
+        apply computes_to_valc_implies_cequivc;eauto 3 with slow
       |].
     eapply equality_respects_cequivc_right;
-      [apply cequivc_sym;
+      [apply ccequivc_ext_sym; introv xt''; spcast;
         apply implies_cequivc_mkc_spread1;
-        apply computes_to_valc_implies_cequivc;eauto
+        apply computes_to_valc_implies_cequivc;eauto 3 with slow
       |].
     eapply equality_respects_cequivc_left;
-      [apply cequivc_sym; apply cequivc_mkc_spread_mkc_pair
+      [apply ccequivc_ext_sym; introv xt''; spcast; apply cequivc_mkc_spread_mkc_pair
       |].
     eapply equality_respects_cequivc_right;
-      [apply cequivc_sym; apply cequivc_mkc_spread_mkc_pair
+      [apply ccequivc_ext_sym; introv xt''; spcast; apply cequivc_mkc_spread_mkc_pair
       |].
 
     vr_seq_true in hyp2.
-    pose proof (hyp2 (snoc (snoc (snoc s1 (a,a1)) (b,b1)) (y,mkc_axiom))
-                     (snoc (snoc (snoc s2 (a,a2)) (b,b2)) (y,mkc_axiom))) as q.
+    pose proof (hyp2
+                  _
+                  (lib_extends_trans xt' ext)
+                  (snoc (snoc (snoc s1 (a,a1)) (b,b1)) (y,mkc_axiom))
+                  (snoc (snoc (snoc s2 (a,a2)) (b,b2)) (y,mkc_axiom))) as q.
     clear hyp2.
     repeat (autodimp q hyp).
 
-    + apply hyps_functionality_snoc2; simpl; auto.
+    + apply hyps_functionality_ext_snoc2; simpl; auto.
 
-      * introv equ sim'.
+      * introv xt'' equ sim'.
         lsubst_tac.
 
         apply similarity_snoc in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
@@ -1937,33 +2048,37 @@ Proof.
 
         apply tequality_mkc_equality_sp; dands.
 
-        { pose proof (hyp1 s1a s2a0) as q.
-          repeat (autodimp q hyp); exrepnd; proof_irr.
+        { pose proof (hyp1 _ (lib_extends_trans xt'' (lib_extends_trans xt' ext)) s1a s2a0) as q.
+          repeat (autodimp q hyp); exrepnd; proof_irr; eauto 3 with slow.
           lsubst_tac; auto.
           apply tequality_mkc_equality_sp in q0; repnd; auto. }
 
-        { left.
-          pose proof (hyp1 s1a s2a0) as q.
-          repeat (autodimp q hyp); exrepnd; proof_irr.
+        { apply in_ext_implies_all_in_ex_bar; introv xt'''.
+          left.
+          pose proof (hyp1 _ (lib_extends_trans xt''' (lib_extends_trans xt'' (lib_extends_trans xt' ext))) s1a s2a0) as q.
+          repeat (autodimp q hyp); exrepnd; proof_irr; eauto 4 with slow;[].
           lsubst_tac; auto.
           rw <- @member_equality_iff in q1; auto.
           apply equality_commutes3 in q0; auto. }
 
-        { left.
-          apply equality_in_product; dands; auto;[].
+        { apply in_ext_implies_all_in_ex_bar; introv xt'''.
+          left.
+          apply equality_in_product; dands; eauto 4 with slow;[].
+
+          apply in_ext_implies_all_in_ex_bar; introv xt''''.
           eexists; eexists; eexists; eexists; dands; spcast;
-          try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|];
-          try (complete (allsimpl; auto));[].
+            try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|];
+              try (complete (allsimpl; auto)); eauto 3 with slow;[].
           simpl in sim'1.
           lsubstc_subst_aeq2.
           repeat (substc_lsubstc_vars3;[]).
           lsubst_tac.
           repeat (lsubstc_snoc2;[]).
-          proof_irr; auto. }
+          proof_irr; eauto 3 with slow. }
 
-      * apply hyps_functionality_snoc2; simpl; auto.
+      * apply hyps_functionality_ext_snoc2; simpl; auto.
 
-        { introv equ sim'.
+        { introv xt'' equ sim'.
           lsubst_tac.
 
           apply similarity_snoc in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
@@ -1984,25 +2099,25 @@ Proof.
           repeat (lsubstc_snoc2;[]).
           proof_irr.
 
-          pose proof (hyp1 s1a s2a) as q.
-          repeat (autodimp q hyp); exrepnd; proof_irr.
+          pose proof (hyp1 _ (lib_extends_trans xt'' (lib_extends_trans xt' ext)) s1a s2a) as q.
+          repeat (autodimp q hyp); exrepnd; proof_irr; eauto 3 with slow.
           lsubst_tac; auto.
           clear q1.
           apply tequality_mkc_equality_sp in q0; repnd.
           clear q0 q2.
           apply tequality_product in q1; repnd.
           clear q0.
-          pose proof (q1 t0 t3) as h; clear q1.
+          pose proof (q1 _ (lib_extends_refl lib'1) t0 t3) as h; clear q1.
           autodimp h hyp;[].
           repeat (substc_lsubstc_vars3;[]).
           proof_irr; auto. }
 
-        { apply hyps_functionality_snoc2; simpl; auto;[].
+        { apply hyps_functionality_ext_snoc2; simpl; eauto 3 with slow;[].
 
-          introv equ sim'.
+          introv xt'' equ sim'.
 
-          pose proof (hyp1 s1 s') as q.
-          repeat (autodimp q hyp); exrepnd; proof_irr;[].
+          pose proof (hyp1 _ (lib_extends_trans xt'' (lib_extends_trans xt' ext)) s1 s') as q.
+          repeat (autodimp q hyp); exrepnd; proof_irr; eauto 3 with slow;[].
           clear q1.
           lsubst_tac; auto.
           apply tequality_mkc_equality_sp in q0; repnd.
@@ -2046,7 +2161,7 @@ Proof.
 
         sim_snoc; dands; auto.
 
-        { sim_snoc; dands; auto. }
+        { sim_snoc; dands; eauto 3 with slow. }
 
         { repeat (lsubstc_subst_aeq2;[]).
           repeat (substc_lsubstc_vars3;[]).
@@ -2057,26 +2172,27 @@ Proof.
       * lsubst_tac.
         rw <- @member_equality_iff.
         eapply equality_respects_cequivc_left;
-          [apply cequivc_sym; apply computes_to_valc_implies_cequivc;eauto|].
+          [apply ccequivc_ext_sym; apply computes_to_valc_implies_ccequivc_ext;eauto|].
         apply member_product2.
 
         dands; auto.
 
-        { apply tequality_product; dands; auto;[].
-          introv i.
-          apply h2 in i.
+        { apply tequality_product; dands; eauto 3 with slow;[].
+          introv xt'' i.
+          apply h2 in i; eauto 3 with slow.
 
           repeat (substc_lsubstc_vars3;[]).
           repeat (lsubstc_snoc2;[]).
           proof_irr; auto. }
 
-        { eexists; eexists; dands; spcast;
-          try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|].
-          - apply equality_refl in h5; auto.
+        { apply in_ext_implies_all_in_ex_bar; introv xt''.
+          eexists; eexists; dands; spcast;
+            try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|].
+          - apply equality_refl in h5; eauto 3 with slow.
           - repeat (substc_lsubstc_vars3;[]).
             repeat (lsubstc_snoc2;[]).
             proof_irr; auto.
-            apply equality_refl in h0; auto. }
+            apply equality_refl in h0; eauto 3 with slow. }
 
     + exrepnd.
       lsubst_tac.
@@ -2199,7 +2315,8 @@ Proof.
           apply in_dom_csub_exists in vs2; exrepnd.
           rw vs1; simpl; auto. }
 
-      * apply cequiv_lsubst.
+      * introv xt'' ;spcast.
+        apply cequiv_lsubst.
 
         { apply isprogram_lsubst_if_isprog_sub; eauto 3 with slow.
           rw @dom_csub_eq; simpl.
@@ -2215,9 +2332,9 @@ Proof.
 
         { simpl.
           constructor; eauto 2 with slow;[].
-          apply cequiv_sym.
-          apply computes_to_value_implies_cequiv; auto.
-          apply isprogram_csubst; eauto 3 with slow. }
+          assert (csubst e1 s1 = get_cterm (lsubstc e1 w0 s1 c1)) as xx by auto; rewrite xx; clear xx; rewrite @fold_cequivc.
+          apply cequivc_sym.
+          apply computes_to_valc_implies_cequivc; eauto 3 with slow. }
 Qed.
 
 
@@ -2295,7 +2412,8 @@ Proof.
   (* we now start proving the sequent *)
   vr_seq_true.
   vr_seq_true in hyp1.
-  generalize (hyp1 s1 s2 eqh sim); clear hyp1; intro hyp1; exrepnd.
+
+  pose proof (hyp1 _ ext s1 s2 eqh sim) as hyp1; exrepnd.
 
   lsubst_tac.
   allrw <- @member_equality_iff.
@@ -2304,13 +2422,14 @@ Proof.
   repeat (rw prod_assoc).
   allunfold @equorsq2; repnd.
 
-  assert (cequivc
-            lib
+  assert (ccequivc_ext
+            lib'
             (mkc_spread (mkc_pair (lsubstc s w5 s1 c10) (lsubstc t w6 s1 c11)) x y
                         (lsubstc_vars u w4 (csub_filter s1 [x, y]) [x, y] c7))
             (lsubstc (lsubst u [(x,s),(y,t)]) w1 s1 c1))
     as ceq1.
-  { eapply cequivc_trans;[apply cequivc_mkc_spread_mkc_pair|].
+  { introv xt; spcast.
+    eapply cequivc_trans;[apply cequivc_mkc_spread_mkc_pair|].
     destruct_cterms; unfold cequivc; simpl.
     rw @csubst_app.
     eapply cequiv_rw_r_eauto;[apply alpha_eq_sym;apply combine_sub_nest|].
@@ -2357,13 +2476,14 @@ Proof.
     rw vs1; simpl; auto.
   }
 
-  assert (cequivc
-            lib
+  assert (ccequivc_ext
+            lib'
             (mkc_spread (mkc_pair (lsubstc s w5 s2 c12) (lsubstc t w6 s2 c13)) x y
                         (lsubstc_vars u w4 (csub_filter s2 [x, y]) [x, y] c9))
             (lsubstc (lsubst u [(x,s),(y,t)]) w1 s2 c0))
     as ceq2.
-  { eapply cequivc_trans;[apply cequivc_mkc_spread_mkc_pair|].
+  { introv xt; spcast.
+    eapply cequivc_trans;[apply cequivc_mkc_spread_mkc_pair|].
     destruct_cterms; unfold cequivc; simpl.
     rw @csubst_app.
     eapply cequiv_rw_r_eauto;[apply alpha_eq_sym;apply combine_sub_nest|].
@@ -2412,15 +2532,27 @@ Proof.
 
   dands; try (complete sp).
 
-  - left.
-    eapply @equality_respects_cequivc_left;[apply cequivc_sym; exact ceq1|].
+  - apply in_ext_implies_all_in_ex_bar; introv xt.
+    left.
+    eapply @equality_respects_cequivc_left;[apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext;try exact ceq1;auto|].
     apply @equality_sym.
-    eapply @equality_respects_cequivc_left;[apply cequivc_sym;exact ceq2|].
+    eapply @equality_respects_cequivc_left;[apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext;try exact ceq2;auto|].
     apply @equality_sym.
+
+    apply all_in_ex_bar_equality_implies_equality.
+    unfold equorsq2_bar, equorsq_bar in hyp0; repnd.
+    eapply lib_extends_preserves_all_in_ex_bar in hyp3;[|exact xt].
+    eapply lib_extends_preserves_all_in_ex_bar in hyp0;[|exact xt].
+
+    eapply all_in_ex_bar_modus_ponens2;[|exact hyp0|exact hyp3]; clear hyp0 hyp3; introv xt' hyp0 hyp3; exrepnd; spcast; proof_irr.
+
     unfold equorsq in hyp3; repdors; spcast; sp.
     apply @equality_respects_cequivc; sp.
-    allapply @equality_refl; sp.
+    allapply @equality_refl; sp; eauto 3 with slow.
 
-  - eapply @equality_respects_cequivc_left;[apply cequivc_sym;exact ceq1|].
+  - unfold equorsq2_bar, equorsq_bar in *; repnd.
+    eapply all_in_ex_bar_modus_ponens2;[|exact hyp0|exact hyp3]; clear hyp0 hyp3; introv xt' hyp0 hyp3; exrepnd; spcast; proof_irr; auto.
+
+  - eapply @equality_respects_cequivc_left;[apply ccequivc_ext_sym;exact ceq1|].
     auto.
 Qed.
