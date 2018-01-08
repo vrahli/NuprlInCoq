@@ -707,6 +707,32 @@ Proof.
 Qed.
 Hint Resolve per_union_monotone : slow.
 
+Lemma sub_per_per_image_eq_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib) (eqa : lib-per(lib,o)) f,
+    sub_per (per_image_eq_bar lib eqa f) (per_image_eq_bar lib' (raise_lib_per eqa ext) f).
+Proof.
+  introv h.
+  unfold per_image_eq_bar in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br x; introv; simpl in *; exrepnd.
+  eapply h0; eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_per_image_eq_bar : slow.
+
+Lemma per_image_monotone {o} :
+  forall (ts : cts(o)), type_monotone (per_image ts).
+Proof.
+  introv per ext.
+  unfold per_image in *; exrepnd.
+
+  exists (per_image_eq_bar lib' (raise_lib_per eqa ext) f1).
+  dands; eauto 3 with slow;[].
+
+  exists (raise_lib_per eqa ext) A1 A2 f1 f2.
+  dands; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve per_image_monotone : slow.
+
 Lemma close_monotone {o} :
   forall (ts : cts(o)),
     type_monotone ts
@@ -777,6 +803,11 @@ Proof.
 
   - Case "CL_union".
     pose proof (per_union_monotone (close ts) lib lib' T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; dands; auto.
+
+  - Case "CL_image".
+    pose proof (per_image_monotone (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 

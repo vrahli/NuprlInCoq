@@ -1342,22 +1342,30 @@ Inductive per_image_eq {p} lib (eqa : per(p)) (f t1 t2 : @CTerm p) : [U] :=
 | image_eq_eq :
     forall a1 a2,
       eqa a1 a2
-      -> t1 ~=~(lib) (mkc_apply f a1)
-      -> t2 ~=~(lib) (mkc_apply f a2)
+      -> ccequivc_ext lib t1 (mkc_apply f a1)
+      -> ccequivc_ext lib t2 (mkc_apply f a2)
       -> per_image_eq lib eqa f t1 t2.
 
-Definition per_image {p}
+Definition per_image_eq_bar {o}
+           (lib  : library)
+           (eqa  : lib-per(lib,o))
+           (f    : CTerm)
+           (t t' : CTerm) : [U] :=
+  {bar : BarLib lib
+  , all_in_bar_ext bar (fun lib' x => per_image_eq lib' (eqa lib' x) f t t')}.
+
+Definition per_image {o}
            (ts    : cts)
            (lib   : library)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @CTerm o)
            (eq    : per) : [U] :=
-  {eqa : per
+  {eqa : lib-per(lib,o)
    , {A1, A2, f1, f2 : CTerm
       , T1 ===>(lib) (mkc_image A1 f1)
       # T2 ===>(lib) (mkc_image A2 f2)
-      # ts lib A1 A2 eqa
-      # f1 ~=~(lib) f2
-      # eq <=2=> (per_image_eq lib eqa f1)}}.
+      # in_ext_ext lib (fun lib' x => ts lib' A1 A2 (eqa lib' x))
+      # ccequivc_ext lib f1 f2
+      # eq <=2=> (per_image_eq_bar lib eqa f1)}}.
 
 
 (**
@@ -2439,7 +2447,7 @@ Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
 (*  | CL_pm       : per_pm       (close ts) lib T T' eq -> close ts lib T T' eq*)
 (*  | CL_texc     : per_texc     (close ts) lib T T' eq -> close ts lib T T' eq*)
   | CL_union    : per_union        (close ts) lib T T' eq -> close ts lib T T' eq
-(*  | CL_image    : per_image    (close ts) lib T T' eq -> close ts lib T T' eq*)
+  | CL_image    : per_image        (close ts) lib T T' eq -> close ts lib T T' eq
 (*  | CL_partial  : per_partial  (close ts) lib T T' eq -> close ts lib T T' eq*)
 (*  | CL_admiss   : per_admiss   (close ts) lib T T' eq -> close ts lib T T' eq*)
 (*  | CL_mono     : per_mono     (close ts) lib T T' eq -> close ts lib T T' eq*)
@@ -2480,7 +2488,7 @@ Arguments CL_func     {p} [ts] [lib] [T] [T'] [eq] _.
 (*Arguments CL_pm       {p} [ts] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_texc     {p} [ts] [lib] [T] [T'] [eq] _.*)
 Arguments CL_union    {p} [ts] [lib] [T] [T'] [eq] _.
-(*Arguments CL_image    {p} [ts] [lib] [T] [T'] [eq] _.*)
+Arguments CL_image    {p} [ts] [lib] [T] [T'] [eq] _.
 (*Arguments CL_partial  {p} [ts] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_admiss   {p} [ts] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_mono     {p} [ts] [lib] [T] [T'] [eq] _.*)
@@ -2523,7 +2531,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
   | Case_aux c "CL_union"
 (*(*  | Case_aux c "CL_eunion"*)*)
 (*(*  | Case_aux c "CL_union2"*)*)
-(*  | Case_aux c "CL_image"*)
+  | Case_aux c "CL_image"
 (*(*  | Case_aux c "CL_eisect"*)*)
 (*  | Case_aux c "CL_partial"*)
 (*  | Case_aux c "CL_admiss"*)
@@ -3086,20 +3094,21 @@ Definition close_ind' {pp}
                   (per : per_union2 (close ts) lib T T' eq),
             P ts lib T T' eq)*)
 
-(*  (image : forall (ts   : cts)
-                  (lib  : library)
-                  (T T' : @CTerm pp)
-                  (eq   : per)
-                  (A A' f f' : @CTerm pp)
-                  (eqa : per)
-                  (c1 : T ===>(lib) (mkc_image A f))
-                  (c2 : T' ===>(lib) (mkc_image A' f'))
-                  (cla : close ts lib A A' eqa)
-                  (reca : P ts lib A A' eqa)
-                  (ceq : ccequivc lib f f')
-                  (eqiff : forall t t', eq t t' <=> per_image_eq lib eqa f t t')
-                  (per : per_image (close ts) lib T T' eq),
-            P ts lib T T' eq)*)
+  (image : forall (ts    : cts)
+                  (lib   : library)
+                  (T T'  : @CTerm pp)
+                  (eq    : per(pp))
+                  (A A'  : CTerm)
+                  (f f'  : @CTerm pp)
+                  (eqa   : lib-per(lib,pp))
+                  (c1    : T ===>(lib) (mkc_image A f))
+                  (c2    : T' ===>(lib) (mkc_image A' f'))
+                  (cla   : in_ext_ext lib (fun lib' x => close ts lib' A A' (eqa lib' x)))
+                  (reca  : in_ext_ext lib (fun lib' x => P ts lib' A A' (eqa lib' x)))
+                  (ceq   : ccequivc_ext lib f f')
+                  (eqiff : eq <=2=> (per_image_eq_bar lib eqa f))
+                  (per   : per_image (close ts) lib T T' eq),
+            P ts lib T T' eq)
 
   (*  (eisect : forall (ts : cts)
                    (T T' : @CTerm pp)
@@ -3946,7 +3955,7 @@ Definition close_ind' {pp}
                 eqiff
                 pts*)
 
-(*   | CL_image pts =>
+   | CL_image pts =>
        let (eqa, x) := pts in
        let (A,   x) := x in
        let (A',  x) := x in
@@ -3960,10 +3969,10 @@ Definition close_ind' {pp}
                c1
                c2
                tsa
-               (rec ts lib A A' eqa tsa)
+               (fun lib' x => rec ts lib' A A' (eqa lib' x) (tsa lib' x))
                ceq
                eqiff
-               pts*)
+               pts
 
 (*   | CL_eisect pts =>
        let (eqa,  x)   := pts in

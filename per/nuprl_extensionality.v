@@ -124,6 +124,12 @@ Proof.
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
+  - Case "CL_image".
+    apply CL_image.
+    exists eqa A A' f f'; dands; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+
   - Case "CL_set".
     apply CL_set.
     exists eqa eqb; dands; auto.

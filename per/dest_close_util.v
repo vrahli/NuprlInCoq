@@ -154,3 +154,17 @@ Proof.
   eapply eq_term_equals_trans;[|eauto].
   apply eq_term_equals_sym;auto.
 Qed.
+
+Lemma implies_ccequivc_ext_apply {o} :
+  forall lib (f g a b : @CTerm o),
+    ccequivc_ext lib f g
+    -> ccequivc_ext lib a b
+    -> ccequivc_ext lib (mkc_apply f a) (mkc_apply g b).
+Proof.
+  introv ceqa ceqb x.
+  pose proof (ceqa _ x) as ceqa.
+  pose proof (ceqb _ x) as ceqb.
+  simpl in *; spcast.
+  apply implies_cequivc_apply; auto.
+Qed.
+Hint Resolve implies_ccequivc_ext_apply : slow.

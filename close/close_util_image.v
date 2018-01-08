@@ -34,45 +34,35 @@ Require Export per_ceq_bar.
 Require Export close_util_bar.
 
 
-Lemma implies_eq_term_equals_eq_per_eq {o} :
-  forall lib a b (eqa eqb : per(o)),
-    (eqa <=2=> eqb)
-    -> (eq_per_eq lib a b eqa) <=2=> (eq_per_eq lib a b eqb).
-Proof.
-  introv eqiff; introv; unfold eq_per_eq; introv; split; intro h; repnd; dands;
-    auto; apply eqiff; auto.
-Qed.
-
-Lemma per_bar_eq_eq_per_eq_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib) a b (eqa : lib-per(lib,o)),
-    (per_bar_eq bar (eq_per_eq_bar_lib_per lib a b eqa))
-    <=2=> (eq_per_eq_bar lib a b eqa).
+Lemma per_bar_eq_per_image_eq_bar_lib_per {o} :
+  forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)) f,
+    (per_bar_eq bar (per_image_eq_bar_lib_per lib eqa f))
+    <=2=> (per_image_eq_bar lib eqa f).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
 
-  - unfold per_bar_eq, eq_per_eq_bar_lib_per in h; simpl in *.
-    unfold eq_per_eq_bar in h.
+  - unfold per_bar_eq in h; simpl in *.
+    unfold per_image_eq_bar in *; simpl in *.
 
     assert (all_in_bar_ext
               bar
               (fun lib' x =>
                  exists (bar : BarLib lib'),
-                   all_in_bar_ext bar (fun lib'' y => eq_per_eq lib'' a b (eqa lib'' (lib_extends_trans y x)) t1 t2))) as q.
+                   all_in_bar_ext bar (fun lib'' y => per_image_eq lib'' (eqa lib'' (lib_extends_trans y x)) f t1 t2))) as q.
     {
       introv br ext; introv.
       pose proof (h _ br _ ext x) as h; simpl in h.
       unfold raise_ext_per in *.
       apply collapse2bars_ext.
 
-      { introv; apply implies_eq_term_equals_eq_per_eq; apply (lib_per_cond _ eqa). }
+      { introv; apply implies_eq_term_equals_eq_image_eq; apply lib_per_cond. }
 
       exrepnd; exists bar'.
       introv br' ext'; introv.
       pose proof (h0 _ br' _ ext' x0) as h0; simpl in *; exrepnd.
       exists bar0; introv br'' ext''; introv.
       pose proof (h1 _ br'' _ ext'' x1) as h1; simpl in *.
-      eapply implies_eq_term_equals_eq_per_eq;[|eauto].
-      apply (lib_per_cond _ eqa).
+      eapply implies_eq_term_equals_eq_image_eq;[|eauto]; apply lib_per_cond.
     }
     clear h.
 
@@ -81,10 +71,9 @@ Proof.
     introv br ext; introv; simpl in *; exrepnd.
     assert (lib_extends lib'0 lib2) as xt by eauto 3 with slow.
     pose proof (q0 _ br _ ext0 x0 _ br0 _ ext xt) as h0; simpl in *; auto.
-    eapply implies_eq_term_equals_eq_per_eq;[|eauto].
-    apply (lib_per_cond _ eqa).
+    eapply implies_eq_term_equals_eq_image_eq;[|eauto]; apply lib_per_cond.
 
-  - unfold eq_per_eq_bar in *; exrepnd.
+  - unfold per_image_eq_bar in *; exrepnd.
     introv br ext; introv.
     exists (raise_bar bar0 x); introv br' ext'; introv; simpl in *; exrepnd.
     exists (trivial_bar lib'2).

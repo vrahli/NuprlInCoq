@@ -465,9 +465,9 @@ Proof.
     exists eqa1 eqa2 eqb1 eqb2 A A' B B'; sp.
      *)
 
-(*  - Case "CL_image".
+  - Case "CL_image".
     apply CL_image; unfold per_image; sp.
-    exists eqa A A' f f'; sp.*)
+    exists eqa A A' f f'; sp; introv; eapply reca; eauto.
 
 (*
   - Case "CL_eisect".
@@ -868,11 +868,10 @@ Proof.
     + apply IHn3 with (i0 := i); sp.
     + apply IHn4 with (i0 := i); sp.*)
 
-(*  - Case "CL_image".
+  - Case "CL_image".
     apply CL_image.
     unfold per_image; sp.
-    exists eqa A A' f f'; sp.
-    apply IHn with (i0 := i); sp.*)
+    exists eqa A A' f f'; sp; eauto; introv; eapply reca; eauto.
 
 (*
   - Case "CL_eisect".

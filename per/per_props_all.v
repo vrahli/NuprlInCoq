@@ -48,10 +48,10 @@ Require Export per_props_union.
 Require Export per_props_nat2.
 Require Export per_props_atom.
 Require Export per_props_natk2nat.
+Require Export per_props_image.
+Require Export per_props_squash.
 
 Require Export per_props_iff.
-Require Export per_props_squash.
-Require Export per_props_image.
 Require Export per_props_w.
 Require Export per_props_pertype.
 Require Export per_props_uni2.

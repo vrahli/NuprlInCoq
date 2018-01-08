@@ -27,7 +27,6 @@
             https://github.com/vrahli/NuprlInCoq
 
   Authors: Vincent Rahli
-           Abhishek Anand
 
 *)
 

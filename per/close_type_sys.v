@@ -59,8 +59,8 @@ Require Export close_type_sys_per_func.
  Require Export close_type_sys_per_m.
  Require Export close_type_sys_per_texc.*)
 Require Export close_type_sys_per_union.
-(*Require Export close_type_sys_per_image.
- Require Export close_type_sys_per_partial.
+Require Export close_type_sys_per_image.
+(* Require Export close_type_sys_per_partial.
  Require Export close_type_sys_per_admiss.
  Require Export close_type_sys_per_mono.
  Require Export close_type_sys_per_ffatom.
@@ -427,8 +427,8 @@ Proof.
   - Case "CL_union".
     eapply close_type_system_union; eauto; eauto 3 with slow.
 
-(*  - Case "CL_image".
-    eapply close_type_system_image; eauto; spcast; auto.*)
+  - Case "CL_image".
+    eapply close_type_system_image; eauto; eauto 3 with slow.
 
 (*  - Case "CL_partial".
     eapply close_type_system_partial; eauto.*)

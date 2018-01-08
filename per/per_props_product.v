@@ -1271,8 +1271,6 @@ Proof.
     exists (mkc_pair t0 t).
     apply equality_in_prod; dands; eauto 3 with slow.
 
-    { eapply inhabited_implies_tequality; eauto. }
-
     { introv e inh; eapply inhabited_implies_tequality; eauto 3 with slow. }
 
     { exists (trivial_bar lib'0).

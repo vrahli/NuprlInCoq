@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -46,6 +47,7 @@ Require Export close_util_cequiv.
 Require Export close_util_eq.
 Require Export close_util_func.
 Require Export close_util_union.
+Require Export close_util_image.
 Require Export close_util_set.
 Require Export close_util_product.
 
@@ -448,6 +450,37 @@ Proof.
 Qed.
 Hint Resolve per_union_bar_implies_per_bar : slow.
 
+Lemma local_per_image_eq_bar {o} :
+  forall {lib} (bar : BarLib lib) (eqa : lib-per(lib,o)) f t1 t2,
+    per_bar_eq bar (per_image_eq_bar_lib_per lib eqa f) t1 t2
+    -> per_image_eq_bar lib eqa f t1 t2.
+Proof.
+  introv alla.
+  apply per_bar_eq_per_image_eq_bar_lib_per in alla; auto.
+Qed.
+
+Lemma per_image_bar_implies_per_bar {o} :
+  forall ts lib (T T' : @CTerm o) eq,
+    per_image (close ts) lib T T' eq
+    -> per_bar (close ts) lib T T' eq.
+Proof.
+  introv per.
+  unfold per_image in *; exrepnd.
+
+  exists (trivial_bar lib) (per_image_eq_bar_lib_per lib eqa f1).
+  dands.
+
+  - introv br ext; introv; simpl in *.
+    apply CL_image.
+    unfold per_image; dands; auto.
+    exists (raise_lib_per eqa x); dands; eauto 3 with slow.
+    exists A1 A2 f1 f2; dands; auto; eauto 3 with slow.
+
+  - eapply eq_term_equals_trans;[eauto|]; clear per1.
+    apply eq_term_equals_sym; apply per_bar_eq_per_image_eq_bar_lib_per.
+Qed.
+Hint Resolve per_image_bar_implies_per_bar : slow.
+
 Lemma local_per_set_eq_bar_trivial_bar {o} :
   forall {lib} (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) t1 t2,
     per_bar_eq (trivial_bar lib) (per_set_eq_bar_lib_per eqa eqb) t1 t2
@@ -610,7 +643,7 @@ Proof.
   introv u.
   unfold univ in *; exrepnd.
 
-  applydup @per_bar_monotone_func in u; exrepnd.
+  applydup @per_bar_monotone_func2 in u; exrepnd.
   exists (trivial_bar lib) eq'.
   dands;[|eapply implies_eq_term_equals_per_bar_eq_trivial_bar_mon; eauto; eauto 3 with slow].
 
@@ -891,6 +924,28 @@ Proof.
     apply eq_term_equals_sym; apply per_bar_eq_per_union_eq_bar_lib_per.
 Qed.
 Hint Resolve per_union_bar_implies_per_bar_above : slow.
+
+Lemma per_image_bar_implies_per_bar_above {o} :
+  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+    per_image (close ts) lib T T' eq
+    -> per_bar_above (close ts) bar T T' eq.
+Proof.
+  introv per.
+  unfold per_image in *; exrepnd.
+
+  exists bar (per_image_eq_bar_lib_per lib eqa f1).
+  dands.
+
+  - introv br ext; introv; simpl in *.
+    apply CL_image.
+    unfold per_image; dands; auto.
+    exists (raise_lib_per eqa x); dands; eauto 3 with slow.
+    exists A1 A2 f1 f2; dands; auto; eauto 3 with slow.
+
+  - eapply eq_term_equals_trans;[eauto|]; clear per1.
+    apply eq_term_equals_sym; apply per_bar_eq_per_image_eq_bar_lib_per.
+Qed.
+Hint Resolve per_image_bar_implies_per_bar_above : slow.
 
 Lemma per_bar_implies_per_bar_above {o} :
   forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,

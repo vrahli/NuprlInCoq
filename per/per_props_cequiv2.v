@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -47,7 +48,7 @@ Lemma type_mkc_cequiv {o} :
     type lib (mkc_cequiv a b).
 Proof.
   introv.
-  apply tequality_mkc_cequiv; tcsp.
+  apply tequality_mkc_cequiv; tcsp; eauto 3 with slow.
 Qed.
 Hint Resolve type_mkc_cequiv : slow.
 

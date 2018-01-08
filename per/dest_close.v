@@ -49,7 +49,7 @@ Require Export dest_close_approx.
 Require Export dest_close_cequiv.
 (*Require Export dest_close_texc.*)
 Require Export dest_close_union.
-(*Require Export dest_close_image.*)
+Require Export dest_close_image.
 (*Require Export dest_close_partial.*)
 (*Require Export dest_close_admiss.*)
 (*Require Export dest_close_mono.*)
@@ -414,21 +414,26 @@ Ltac dest_close_lr h :=
       generalize (dest_close_per_eunion_r ts lib T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
 *)
 
-(*    (* image *)
+    (* image *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
-        H3 : computes_to_valc ?lib ?T (mkc_image ?A ?B),
-        H4 : close ?ts ?lib ?T ?T' ?eq
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A ?A' (?eaa lib' x)),
+        H4 : computes_to_valc ?lib ?T (mkc_image ?A ?B),
+        H5 : close ?ts ?lib ?T ?T' ?eq,
+        H' : context[per_image_eq_bar ?lib ?ea]
       |- _ ] =>
-      generalize (dest_close_per_image_l ts lib T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_image_l ts lib T A A' B T' eq ea H1 H2 H3 H4 H5); intro h; no_duplicate h
 
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
-        H3 : computes_to_valc ?lib ?T' (mkc_image ?A ?B),
-        H4 : close ?ts ?lib ?T ?T' ?eq
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A' ?A (?eaa lib' x)),
+        H4 : computes_to_valc ?lib ?T' (mkc_image ?A ?B),
+        H5 : close ?ts ?lib ?T ?T' ?eq,
+        H' : context[per_image_eq_bar ?lib ?ea]
       |- _ ] =>
-      generalize (dest_close_per_image_r ts lib T A B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_image_r ts lib T A A' B T' eq ea H1 H2 H3 H4 H5); intro h; no_duplicate h
 
+    (*
     (* partial *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,

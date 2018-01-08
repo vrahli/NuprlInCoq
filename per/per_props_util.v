@@ -869,20 +869,6 @@ Proof.
     apply (e0 _ br); eauto 3 with slow.
 Qed.
 
-Lemma implies_ccequivc_ext_apply {o} :
-  forall lib (f g a b : @CTerm o),
-    ccequivc_ext lib f g
-    -> ccequivc_ext lib a b
-    -> ccequivc_ext lib (mkc_apply f a) (mkc_apply g b).
-Proof.
-  introv ceqa ceqb x.
-  pose proof (ceqa _ x) as ceqa.
-  pose proof (ceqb _ x) as ceqb.
-  simpl in *; spcast.
-  apply implies_cequivc_apply; auto.
-Qed.
-Hint Resolve implies_ccequivc_ext_apply : slow.
-
 Lemma all_in_ex_bar_member_implies_member {o} :
   forall lib (a A : @CTerm o),
     all_in_ex_bar lib (fun lib => member lib a A)
@@ -912,3 +898,61 @@ Proof.
   - apply all_in_ex_bar_equality_implies_equality; auto.
     eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd; eauto 3 with slow.
 Qed.
+
+Lemma inhabited_type_implies_type {o} :
+  forall lib (T : @CTerm o),
+    inhabited_type lib T
+    -> type lib T.
+Proof.
+  introv e.
+  unfold inhabited_type in e; exrepnd.
+  apply inhabited_implies_tequality in e0; auto.
+Qed.
+Hint Resolve inhabited_type_implies_type : slow.
+
+Lemma inhabited_type_bar_implies_type {o} :
+  forall lib (T : @CTerm o),
+    inhabited_type_bar lib T
+    -> type lib T.
+Proof.
+  introv e.
+  apply all_in_ex_bar_type_implies_type.
+  eapply all_in_ex_bar_modus_ponens1;[|exact e]; clear e; introv x e; eauto 3 with slow.
+Qed.
+Hint Resolve inhabited_type_bar_implies_type : slow.
+
+Lemma all_in_ex_bar_modus_ponens3 {o} :
+  forall (lib : @library o) (G H K F : library -> Prop),
+    in_ext lib (fun lib => G lib -> H lib -> K lib -> F lib)
+    -> all_in_ex_bar lib G
+    -> all_in_ex_bar lib H
+    -> all_in_ex_bar lib K
+    -> all_in_ex_bar lib F.
+Proof.
+  introv h q z w.
+  unfold all_in_ex_bar in *; exrepnd.
+  apply (implies_all_in_bar_intersect_bars_left _ bar) in q0.
+  apply (implies_all_in_bar_intersect_bars_left _ bar0) in q0.
+  apply (implies_all_in_bar_intersect_bars_right _ bar1) in w0.
+  apply (implies_all_in_bar_intersect_bars_left _ bar0) in w0.
+  apply (implies_all_in_bar_intersect_bars_right _ (intersect_bars bar1 bar)) in z0.
+  remember (intersect_bars (intersect_bars bar1 bar) bar0) as bar'.
+  clear dependent bar0.
+  clear dependent bar1.
+  clear dependent bar.
+  exists bar'.
+  introv br ext.
+  pose proof (q0 _ br _ ext) as q0; simpl in *.
+  pose proof (w0 _ br _ ext) as w0; simpl in *.
+  pose proof (z0 _ br _ ext) as z0; simpl in *.
+  apply h; eauto 3 with slow.
+Qed.
+
+Lemma ccequivc_bar_refl {o} :
+  forall lib (T : @CTerm o),
+    ccequivc_bar lib T T.
+Proof.
+  introv.
+  apply in_ext_implies_all_in_ex_bar; introv x; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve ccequivc_bar_refl : slow.

@@ -380,6 +380,56 @@ Proof.
 Qed.
 Hint Resolve per_eq_monotone_func : slow.
 
+Lemma implies_eq_term_equals_eq_image_eq {o} :
+  forall lib (eqa eqb : per(o)) f,
+    (eqa <=2=> eqb)
+    -> (per_image_eq lib eqa f) <=2=> (per_image_eq lib eqb f).
+Proof.
+  introv h; introv; split; intro p; induction p; auto.
+
+  - eapply image_eq_cl; eauto.
+
+  - eapply image_eq_eq; eauto; apply h; auto.
+
+  - eapply image_eq_cl; eauto.
+
+  - eapply image_eq_eq; eauto; apply h; auto.
+Qed.
+
+Definition per_image_eq_bar_lib_per {o}
+           (lib : @library o)
+           (eqa : lib-per(lib,o))
+           (f   : @CTerm o) : lib-per(lib,o).
+Proof.
+  exists (fun lib' x => per_image_eq_bar lib' (raise_lib_per eqa x) f).
+  repeat introv.
+  unfold per_image_eq_bar; split; intro h; exrepnd;
+    exists bar; introv br ext; introv.
+
+  - pose proof (h0 _ br _ ext x) as h0; simpl in *.
+    eapply implies_eq_term_equals_eq_image_eq;[|eauto]; simpl.
+    eapply lib_per_cond.
+
+  - pose proof (h0 _ br _ ext x) as h0; simpl in *.
+    eapply implies_eq_term_equals_eq_image_eq;[|eauto]; simpl.
+    eapply lib_per_cond.
+Defined.
+
+Lemma per_image_monotone_func {o} :
+  forall (ts : cts(o)), type_monotone_func (per_image ts).
+Proof.
+  introv per.
+  unfold per_image in *; exrepnd.
+
+  exists (per_image_eq_bar_lib_per lib eqa f1).
+  introv; simpl in *.
+  dands; eauto 3 with slow;[].
+
+  exists (raise_lib_per eqa x) A1 A2 f1 f2.
+  dands; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve per_image_monotone_func : slow.
+
 Lemma per_union_monotone_func {o} :
   forall (ts : cts(o)), type_monotone_func (per_union ts).
 Proof.
@@ -477,6 +527,12 @@ Proof.
 
   - Case "CL_union".
     pose proof (per_union_monotone_func (close ts) lib T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
+      repnd; dands; eauto 3 with slow.
+
+  - Case "CL_image".
+    pose proof (per_image_monotone_func (close ts) lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.

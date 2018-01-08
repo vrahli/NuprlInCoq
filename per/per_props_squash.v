@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -37,64 +38,65 @@ Require Export csubst6.
 Lemma equality_in_mkc_squash {p} :
   forall lib (t1 t2 T : @CTerm p),
     equality lib t1 t2 (mkc_squash T)
-    <=> (t1 ===>(lib) mkc_axiom
-         # t2 ===>(lib) mkc_axiom
-         # inhabited_type lib T).
+    <=> (computes_to_valc_ex_bar lib t1 mkc_axiom
+         # computes_to_valc_ex_bar lib t2 mkc_axiom
+         # inhabited_type_bar lib T).
 Proof.
   intros.
-  rw @equality_in_mkc_image; split; intro e; exrepnd; spcast.
+  rw @equality_in_mkc_image; split; intro e; exrepnd; dands; eauto 3 with slow.
 
-  - applydup @equal_in_image_prop in e; exrepnd; spcast.
-
-    generalize (cequivc_beta lib nvarx (mk_cv [nvarx] mkc_axiom) a1); intro c1.
-    generalize (cequivc_beta lib nvarx (mk_cv [nvarx] mkc_axiom) a2); intro c2.
+  - eapply all_in_ex_bar_modus_ponens1;[|exact e]; clear e; introv x e.
+    applydup @equal_in_image_prop in e; exrepnd.
+    pose proof (e2 _ (lib_extends_refl lib')) as e2; cbv beta in *; spcast.
+    pose proof (cequivc_beta lib' nvarx (mk_cv [nvarx] mkc_axiom) a1) as c1.
 
     allrw @mk_cv_as_cvterm_var.
     allrw @substc_cvterm_var.
 
-    assert (cequivc lib t1 mkc_axiom) as c3.
-    eapply cequivc_trans.
-    exact e2.
-    sp.
+    assert (cequivc lib' t1 mkc_axiom) as c3;
+      [|eapply cequivc_axiom;[|apply cequivc_sym;eauto]; eauto 3 with slow];[].
+    eapply cequivc_trans;[exact e2|]; auto.
 
-    assert (cequivc lib t2 mkc_axiom) as c4.
-    eapply cequivc_trans.
-    exact e3.
-    sp.
+  - eapply all_in_ex_bar_modus_ponens1;[|exact e]; clear e; introv x e.
+    applydup @equal_in_image_prop in e; exrepnd.
+    pose proof (e3 _ (lib_extends_refl lib')) as e3; cbv beta in *; spcast.
+    pose proof (cequivc_beta lib' nvarx (mk_cv [nvarx] mkc_axiom) a2) as c2.
 
-    generalize (cequivc_axiom lib mkc_axiom t1); intro i1.
-    dest_imp i1 hyp.
-    apply computes_to_valc_refl; apply isvalue_axiom.
-    dest_imp i1 hyp.
-    apply cequivc_sym; sp.
+    allrw @mk_cv_as_cvterm_var.
+    allrw @substc_cvterm_var.
 
-    generalize (cequivc_axiom lib mkc_axiom t2); intro i2.
-    dest_imp i2 hyp.
-    apply computes_to_valc_refl; apply isvalue_axiom.
-    dest_imp i2 hyp.
-    apply cequivc_sym; sp.
+    assert (cequivc lib' t2 mkc_axiom) as c3;
+      [|eapply cequivc_axiom;[|apply cequivc_sym;eauto]; eauto 3 with slow];[].
+    eapply cequivc_trans;[exact e3|]; auto.
 
-    sp; try (complete (spcast; sp)).
-    exists a1.
-    allapply @equality_refl; sp.
+  - eapply all_in_ex_bar_modus_ponens1;[|exact e]; clear e; introv x e.
+    apply equal_in_image_prop in e; exrepnd.
+    exists a1; auto.
 
-  - unfold inhabited_type in e; exrepnd.
+  - eapply all_in_ex_bar_modus_ponens3;[|exact e0|exact e1|exact e];
+      clear e0 e1 e; introv x e0 e1 e; spcast.
+
+    unfold inhabited_type in e; exrepnd.
     applydup @inhabited_implies_tequality in e2; dands; auto.
-    apply eq_in_image_eq with (a1 := t) (a2 := t); auto; spcast.
+    apply eq_in_image_eq with (a1 := t) (a2 := t); auto; introv y; spcast.
 
-    apply cequivc_trans with (b := mkc_axiom).
-    apply computes_to_valc_implies_cequivc; sp.
-    apply cequivc_sym.
-    generalize (cequivc_beta lib nvarx (mk_cv [nvarx] mkc_axiom) t); intro c.
-    allrw @mk_cv_as_cvterm_var.
-    allrw @substc_cvterm_var; sp.
+    {
+      apply cequivc_trans with (b := mkc_axiom).
+      { apply computes_to_valc_implies_cequivc; eauto 3 with slow. }
+      apply cequivc_sym.
+      generalize (cequivc_beta lib'0 nvarx (mk_cv [nvarx] mkc_axiom) t); intro c.
+      allrw @mk_cv_as_cvterm_var.
+      allrw @substc_cvterm_var; sp.
+    }
 
-    apply cequivc_trans with (b := mkc_axiom).
-    apply computes_to_valc_implies_cequivc; sp.
-    apply cequivc_sym.
-    generalize (cequivc_beta lib nvarx (mk_cv [nvarx] mkc_axiom) t); intro c.
-    allrw @mk_cv_as_cvterm_var.
-    allrw @substc_cvterm_var; sp.
+    {
+      apply cequivc_trans with (b := mkc_axiom).
+      { apply computes_to_valc_implies_cequivc; eauto 3 with slow. }
+      apply cequivc_sym.
+      generalize (cequivc_beta lib'0 nvarx (mk_cv [nvarx] mkc_axiom) t); intro c.
+      allrw @mk_cv_as_cvterm_var.
+      allrw @substc_cvterm_var; sp.
+    }
 Qed.
 
 Lemma tequality_mkc_squash {p} :
@@ -103,8 +105,7 @@ Lemma tequality_mkc_squash {p} :
     <=> tequality lib T1 T2.
 Proof.
   introv.
-  rw @tequality_mkc_image; split; sp; spcast.
-  apply cequivc_refl.
+  rw @tequality_mkc_image; split; sp; spcast; eauto 3 with slow.
 Qed.
 
 Lemma implies_tequality_equality_mkc_squash {o} :
@@ -117,8 +118,7 @@ Proof.
   introv teq inh.
   rw @equality_in_mkc_squash.
   rw @tequality_mkc_squash.
-  dands; auto; spcast;
-  apply computes_to_valc_refl; eauto 3 with slow.
+  dands; auto; spcast; eauto 3 with slow.
 Qed.
 
 Lemma implies_tequality_equality_mkc_squash_and {o} :
@@ -134,26 +134,23 @@ Qed.
 Lemma equality_in_mkc_squash_ax {o} :
   forall lib (t : @CTerm o),
     equality lib mkc_axiom mkc_axiom (mkc_squash t)
-    <=> inhabited_type lib t.
+    <=> inhabited_type_bar lib t.
 Proof.
   introv.
-  rw @equality_in_mkc_squash; split; intro h; repnd; dands; auto; spcast;
-    apply computes_to_valc_refl; eauto 3 with slow.
+  rw @equality_in_mkc_squash; split; intro h; repnd; dands; auto; spcast; eauto 3 with slow.
 Qed.
 
 Lemma inhabited_squash {o} :
   forall lib (t : @CTerm o),
-    inhabited_type lib (mkc_squash t) <=> inhabited_type lib t.
+    inhabited_type lib (mkc_squash t) <=> inhabited_type_bar lib t.
 Proof.
   introv.
   split; intro k; allunfold @inhabited_type; exrepnd.
-  - allrw @equality_in_mkc_squash; repnd.
-    allunfold @inhabited_type; exrepnd.
-    exists t1; auto.
+
+  - allrw @equality_in_mkc_squash; repnd; auto.
+
   - exists (@mkc_axiom o).
-    apply equality_in_mkc_squash; dands; spcast; auto;
-    try (apply computes_to_valc_refl; eauto 3 with slow).
-    exists t0; auto.
+    apply equality_in_mkc_squash; dands; spcast; auto; eauto 3 with slow.
 Qed.
 
 Lemma cover_vars_upto_squash {o} :
