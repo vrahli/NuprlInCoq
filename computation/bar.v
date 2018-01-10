@@ -74,15 +74,23 @@ Inductive inf_library_entry {o} (*M*) :=
 
 Definition inf_library {o} (*M*) := nat -> @inf_library_entry o (*M*).
 
-Definition safe_inf_choice_sequence_entry {o} (e : @InfChoiceSeqEntry o (*M*)) :=
+Definition safe_inf_choice_sequence_entry {o} (name : choice_sequence_name) (e : @InfChoiceSeqEntry o (*M*)) :=
   match e with
   | MkInfChoiceSeqEntry _ vals restriction =>
-    inf_choice_sequence_satisfies_restriction vals restriction
+    correct_restriction name restriction
+    /\ inf_choice_sequence_satisfies_restriction vals restriction
   end.
+
+Definition upd_restr_inf_entry {o} (name : choice_sequence_name) (e : @InfChoiceSeqEntry o) :=
+  if is0kind name then
+    match e with
+    | MkInfChoiceSeqEntry _ vals restriction => MkInfChoiceSeqEntry o vals csc_type_nat
+    end
+  else e.
 
 Definition safe_inf_library_entry {o} (e : @inf_library_entry o (*M*)) :=
   match e with
-  | inf_lib_cs name cse => safe_inf_choice_sequence_entry cse
+  | inf_lib_cs name cse => safe_inf_choice_sequence_entry name ((*upd_restr_inf_entry name*) cse)
   | _ => True
   end.
 
@@ -253,7 +261,7 @@ Proof.
   unfold FreshFun.
   introv.
 
-  exists (String.append "x" (append_string_list l)).
+  exists (MkChoiceSequenceName (String.append "x" (append_string_list (map csn_name l))) 0).
   remember ("x") as extra.
   assert (0 < String.length extra)%nat as len by (subst; simpl; auto).
   clear Heqextra.
@@ -261,13 +269,16 @@ Proof.
   induction l; introv s; allsimpl; tcsp.
   rw string_append_assoc.
   introv k; repndors;[|apply IHl in k;auto;rw string_length_append; omega].
+  destruct a as [nm ki].
+  inversion k as [xx]; clear k.
+  subst ki.
 
-  assert (String.length a
+  assert (String.length nm
           = String.length
               (String.append
-                 (String.append extra a)
-                 (append_string_list l))) as e.
-  { rewrite k at 1; auto. }
+                 (String.append extra nm)
+                 (append_string_list (map csn_name l)))) as e.
+  { rewrite xx at 1; auto. }
   allrw string_length_append.
   omega.
 Defined.
@@ -349,7 +360,7 @@ Proof.
 Qed.
 
 Definition simple_inf_choice_seq {o} (name : choice_sequence_name) : @inf_library_entry o :=
-  inf_lib_cs name (MkInfChoiceSeqEntry _ (fun _ => mkc_zero) csc_no).
+  inf_lib_cs name (MkInfChoiceSeqEntry _ (fun _ => mkc_zero) csc_type_nat).
 
 Lemma inf_choice_sequence_entry_extend_choice_seq_entry2inf {o} :
   forall (entry : @ChoiceSeqEntry o),
@@ -376,25 +387,21 @@ Qed.
 Hint Resolve inf_matching_entries_library_entry2inf_implies : slow.
 
 Lemma implies_safe_inf_choice_sequence_entry2inf {o} :
-  forall (entry : @ChoiceSeqEntry o),
-    safe_choice_sequence_entry entry
-    -> safe_inf_choice_sequence_entry (choice_seq_entry2inf entry).
+  forall name (entry : @ChoiceSeqEntry o),
+    safe_choice_sequence_entry name entry
+    -> safe_inf_choice_sequence_entry name (choice_seq_entry2inf entry).
 Proof.
-  introv h; destruct entry as [vals restr]; simpl in *.
-  introv.
-  destruct restr; simpl in *; auto; GC.
+  introv h; destruct entry as [vals restr]; simpl in *; repnd; dands; auto.
 
-  - exrepnd.
-    dands; auto.
-    introv.
-    unfold choice_seq_vals2inf.
+  destruct restr; simpl in *; auto; GC; introv.
+
+  - unfold choice_seq_vals2inf.
     remember (select n vals) as s; symmetry in Heqs.
     destruct s; auto.
     apply h.
     apply select_in in Heqs; apply LIn_implies_In in Heqs; auto.
 
-  - introv.
-    unfold choice_seq_vals2inf.
+  - unfold choice_seq_vals2inf.
     remember (select n vals) as s; symmetry in Heqs.
     destruct s; auto.
     rewrite (h n) in Heqs;[inversion Heqs; auto|].
@@ -490,6 +497,11 @@ Proof.
 
   apply sl in i0.
   destruct e; simpl in *; eauto 2 with slow.
+(*  unfold upd_restr_entry, upd_restr_inf_entry, is0kind in *; boolvar; simpl in *; eauto 3 with slow.
+
+  destruct entry in *; simpl in *.
+  introv.
+  unfold choice_seq_vals2inf.*)
 Qed.
 Hint Resolve implies_safe_inf_library_library2inf : slow.
 
@@ -556,10 +568,25 @@ Proof.
 Qed.
 Hint Resolve inf_lib_extends_implies_safe_inf_library : slow.
 
+Lemma is_nat_restriction_csc_type_nat {o} :
+  @is_nat_restriction o csc_type_nat.
+Proof.
+  introv.
+  unfold is_nat_restriction; simpl; dands; tcsp.
+Qed.
+Hint Resolve is_nat_restriction_csc_type_nat : slow.
+
+Lemma correct_restriction_csc_type_nat {o} :
+  forall name, @correct_restriction o name csc_type_nat.
+Proof.
+  introv; unfold correct_restriction, is0kind; boolvar; eauto 3 with slow.
+Qed.
+Hint Resolve correct_restriction_csc_type_nat : slow.
+
 Lemma safe_inf_library_entry_simple_inf_choice_seq {o} :
   forall name, @safe_inf_library_entry o (simple_inf_choice_seq name).
 Proof.
-  introv; unfold safe_inf_library_entry; simpl; auto.
+  introv; unfold safe_inf_library_entry; simpl; dands; eauto 3 with slow.
 Qed.
 Hint Resolve safe_inf_library_entry_simple_inf_choice_seq : slow.
 

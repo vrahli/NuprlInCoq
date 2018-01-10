@@ -81,7 +81,25 @@ Definition choice_sequence_satisfies_restriction {o}
     forall (i : nat), i < length vals -> select i vals = Some (f i)
   end.
 
-(*
+
+(* =============== *)
+(* nat restriction *)
+Definition is_integer {o} (t : @CTerm o) : Prop :=
+  exists (i : Z), t = mkc_integer i.
+
+Lemma is_integer_zero {o} : @is_integer o mkc_zero.
+Proof.
+  introv.
+  exists 0%Z.
+  apply cterm_eq; simpl; auto.
+Qed.
+Hint Resolve is_integer_zero : slow.
+
+Definition csc_type_nat {o} : @ChoiceSeqRestriction o :=
+  csc_type mkc_zero is_integer is_integer_zero.
+(* =============== *)
+
+(*(*
   (M v T) is meant to be (v is a member of T)
 
   [entry1] extends [entry2]
@@ -90,6 +108,14 @@ Definition extension_satisfies_restriction {o}
            (entry1 entry2 : @ChoiceSeqEntry o) : Prop :=
   choice_sequence_satisfies_restriction entry2 (cse_restriction entry2)
   -> choice_sequence_satisfies_restriction entry1 (cse_restriction entry1).
+
+Lemma extension_satisfies_restriction_refl {o} :
+  forall (entry : @ChoiceSeqEntry o), extension_satisfies_restriction entry entry.
+Proof.
+  introv.
+  unfold extension_satisfies_restriction; tcsp.
+Qed.
+Hint Resolve extension_satisfies_restriction_refl : slow.*)
 
 (* [entry1] extends [entry2] *)
 Definition choice_sequence_entry_extend {o} (entry1 entry2 : @ChoiceSeqEntry o) : Prop :=
@@ -131,15 +157,40 @@ Fixpoint entry_in_library_extends {o}
 Definition lsubset {A} (l1 l2 : list A) : Prop :=
   forall a, List.In a l1 -> List.In a l2.
 
-Definition safe_choice_sequence_entry {o} (e : @ChoiceSeqEntry o) :=
+Definition is0kind (name : choice_sequence_name) : bool :=
+  if deq_nat (csn_kind name) 0 then true else false.
+
+Definition is_nat_restriction {o} (restr : @ChoiceSeqRestriction o) :=
+  match restr with
+  | csc_no => False
+  | csc_type d M Md =>
+    d = mkc_zero
+    /\ (forall v, M v <-> is_integer v)
+  | csc_coq_law _ => False
+  end.
+
+Definition correct_restriction {o} (name : choice_sequence_name) (restr : @ChoiceSeqRestriction o) :=
+  if is0kind name then is_nat_restriction restr
+  else True.
+
+Definition safe_choice_sequence_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntry o) :=
   match e with
   | MkChoiceSeqEntry _ vals restriction =>
-    choice_sequence_satisfies_restriction vals restriction
+    correct_restriction name restriction
+    /\ choice_sequence_satisfies_restriction vals restriction
   end.
+
+Definition upd_restr_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntry o) :=
+  if is0kind name then
+    match e with
+    | MkChoiceSeqEntry _ vals restriction => MkChoiceSeqEntry o vals csc_type_nat
+    end
+  else e.
 
 Definition safe_library_entry {o} (e : @library_entry o) :=
   match e with
-  | lib_cs name cse => safe_choice_sequence_entry cse
+  | lib_cs name cse =>
+    safe_choice_sequence_entry name ((*upd_restr_entry name*) cse)
   | _ => True
   end.
 
@@ -266,14 +317,6 @@ Proof.
   introv; exists ([] : @ChoiceSeqVals o); autorewrite with slow; auto.
 Qed.
 Hint Resolve choice_sequence_vals_extend_refl : slow.
-
-Lemma extension_satisfies_restriction_refl {o} :
-  forall (entry : @ChoiceSeqEntry o), extension_satisfies_restriction entry entry.
-Proof.
-  introv.
-  unfold extension_satisfies_restriction; tcsp.
-Qed.
-Hint Resolve extension_satisfies_restriction_refl : slow.
 
 Lemma choice_sequence_entry_extend_refl {o} :
   forall (entry : @ChoiceSeqEntry o), choice_sequence_entry_extend entry entry.

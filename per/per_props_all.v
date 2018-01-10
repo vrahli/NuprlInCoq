@@ -32,6 +32,7 @@
 *)
 
 
+(* FIXED *)
 Require Export per_props_util.
 Require Export per_props_fam.
 Require Export per_props_function.
@@ -51,6 +52,7 @@ Require Export per_props_natk2nat.
 Require Export per_props_image.
 Require Export per_props_squash.
 
+(* NOT FIXED *)
 Require Export per_props_iff.
 Require Export per_props_w.
 Require Export per_props_pertype.

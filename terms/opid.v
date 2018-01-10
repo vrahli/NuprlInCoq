@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -165,12 +166,24 @@ Inductive CanInj :=
 | NInl : CanInj
 | NInr : CanInj.
 
-Definition choice_sequence_name := String.string.
+Definition cs_name := String.string.
+(* 0 is going to be used for free choice sequences of numbers *)
+Definition cs_kind := nat.
+
+Record choice_sequence_name :=
+  MkChoiceSequenceName
+    {
+      csn_name : cs_name;
+      csn_kind : cs_kind;
+    }.
 
 Definition choice_sequence_name_deq : Deq choice_sequence_name.
 Proof.
   introv.
-  destruct (String.string_dec x y) as [d|d]; subst; tcsp.
+  destruct x as [n1 k1], y as [n2 k2].
+  destruct (String.string_dec n1 n2) as [d|d]; subst;
+    destruct (deq_nat k1 k2) as [g|g]; subst; tcsp;
+      right; intro xx; inversion xx; subst; tcsp.
 Defined.
 
 (* ------ operators ------ *)

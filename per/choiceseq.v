@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -43,7 +44,7 @@ Definition memNat {o} : @Mem o :=
 
 Definition const_0 {o} : nat -> @CTerm o := fun n => mkc_nat 0.
 
-Definition seq_0 : choice_sequence_name := "seq0".
+Definition seq_0 : choice_sequence_name := MkChoiceSequenceName "seq0" 0.
 
 Definition law_0 {o} : @ChoiceSeqRestriction o := csc_coq_law const_0.
 
@@ -1335,7 +1336,7 @@ Qed.
 
 
 
-Definition seq_1 : choice_sequence_name := "seq1".
+Definition seq_1 : choice_sequence_name := MkChoiceSequenceName "seq1" 0.
 
 Lemma memNat0 {o} : @memNat o (mkc_nat 0).
 Proof.
