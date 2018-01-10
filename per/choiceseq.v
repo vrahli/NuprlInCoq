@@ -44,7 +44,7 @@ Definition memNat {o} : @Mem o :=
 
 Definition const_0 {o} : nat -> @CTerm o := fun n => mkc_nat 0.
 
-Definition seq_0 : choice_sequence_name := MkChoiceSequenceName "seq0" 0.
+Definition seq_0 : choice_sequence_name := MkChoiceSequenceName "seq0" 1.
 
 Definition law_0 {o} : @ChoiceSeqRestriction o := csc_coq_law const_0.
 
@@ -65,7 +65,7 @@ Hint Resolve iscvalue_mkc_Nat : slow.
 Hint Rewrite @csubst_mk_cv : slow.
 
 Definition simple_choice_seq {o} (name : choice_sequence_name) : @library_entry o :=
-  lib_cs name (MkChoiceSeqEntry _ [] csc_no).
+  lib_cs name (MkChoiceSeqEntry _ [] csc_type_nat).
 
 (*Lemma shift_inf_lib_library2infinite_cons {o} :
   forall entry (lib : @library o) d,
@@ -103,7 +103,7 @@ Qed.
 Lemma safe_library_entry_simple_choice_seq {o} :
   forall name, @safe_library_entry o (simple_choice_seq name).
 Proof.
-  introv; unfold safe_library_entry; simpl; auto.
+  introv; unfold safe_library_entry; simpl; dands; tcsp; eauto 3 with slow.
 Qed.
 Hint Resolve safe_library_entry_simple_choice_seq : slow.
 
@@ -111,7 +111,7 @@ Lemma safe_library_lib0 {o} : @safe_library o lib_0.
 Proof.
   introv i.
   unfold lib_0 in i; simpl in i; repndors; tcsp; subst.
-  simpl; introv k; omega.
+  simpl; dands; eauto 3 with slow; tcsp.
 Qed.
 Hint Resolve safe_library_lib0 : slow.
 
@@ -334,6 +334,7 @@ Proof.
   introv safe; destruct e; simpl in *; boolvar; subst; tcsp.
   destruct entry as [vals restr]; simpl in *.
   destruct restr; simpl in *; tcsp.
+  repnd; dands; auto.
 
   introv j.
   allrw length_app; autorewrite with slow in *.
@@ -413,8 +414,8 @@ Proof.
 Qed.
 
 Lemma implies_inf_choice_sequence_entry_extend_extend_choice_seq_entry_following_coq_law_upto {o} :
-  forall (entry1 : @InfChoiceSeqEntry o) entry2 m,
-    safe_inf_choice_sequence_entry entry1
+  forall name (entry1 : @InfChoiceSeqEntry o) entry2 m,
+    safe_inf_choice_sequence_entry name entry1
     -> inf_choice_sequence_entry_extend entry1 entry2
     -> inf_choice_sequence_entry_extend
          entry1
@@ -1336,7 +1337,7 @@ Qed.
 
 
 
-Definition seq_1 : choice_sequence_name := MkChoiceSequenceName "seq1" 0.
+Definition seq_1 : choice_sequence_name := MkChoiceSequenceName "seq1" 1.
 
 Lemma memNat0 {o} : @memNat o (mkc_nat 0).
 Proof.
