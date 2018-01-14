@@ -544,10 +544,11 @@ let print_abstraction (abs_names : string list) (abs : abstraction) out =
 	let str_soterm    = nuprl_term2so abs_names rhs in
 
 	output_string out ("    COM_add_def\n");
-	output_string out ("      (Build_opabs \"" ^ name ^ "\" " ^ str_params ^ " " ^ str_nat_sign ^ ")\n");
-	output_string out ("      " ^ str_name_sign ^ "\n");
-	output_string out ("      " ^ str_soterm ^ "\n");
-	output_string out ("      " ^ "(eq_refl, (eq_refl, (eq_refl, (eq_refl, eq_refl))))");
+	output_string out ("      (MkAbstraction\n");
+        output_string out ("        " ^ "(Build_opabs \"" ^ name ^ "\" " ^ str_params ^ " " ^ str_nat_sign ^ ")\n");
+	output_string out ("        " ^ str_name_sign ^ "\n");
+	output_string out ("        " ^ str_soterm ^ "\n");
+	output_string out ("        " ^ "(eq_refl, (eq_refl, (eq_refl, (eq_refl, eq_refl)))))");
 
 (*	print_string "****************\n";
 	print_terms [lhs];
@@ -1027,7 +1028,7 @@ let rec print_proof_tree lemma_name abs abs_names inf_tree rules termofs out pos
 	     output_string out ("    COM_update_proof\n");
 	     output_string out ("      \"" ^ lemma_name ^ "\"\n");
 	     output_string out ("      " ^ strpos ^ "\n");
-	     output_string out ("      " ^ "(proof_step_isect_elimination2 " ^ sn ^ " " ^ tA ^ " (nvar \"" ^ vn ^ "\") (nvar \"" ^ wn ^ "\")),\n");
+	     output_string out ("      " ^ "(proof_step_isect_elimination2 " ^ sn ^ " " ^ tA ^ " (nvar \"" ^ wn ^ "\") (nvar \"" ^ vn ^ "\")),\n");
 
              List.iteri (fun i sg -> print_proof_tree lemma_name abs abs_names sg rules termofs out (List.append pos [i + 1])) subgoals
 

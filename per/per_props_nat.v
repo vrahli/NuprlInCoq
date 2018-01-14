@@ -1525,7 +1525,8 @@ Proof.
 
   split; intro h; exrepnd; dands.
 
-  - allrw @equality_in_int.
+  - clear h0.
+    allrw @equality_in_int.
     unfold equality_of_int in h1; exrepnd; spcast.
     eapply inhabited_type_respects_alphaeqc in h;[|apply mkcv_prod_substc].
     allrw @mkcv_le_substc2.
@@ -1535,8 +1536,8 @@ Proof.
     allrw @csubst_mk_cv.
     allrw @inhabited_prod; repnd.
     allrw @inhabited_le; exrepnd; spcast.
-    apply computes_to_valc_isvalue_eq in h6; eauto with slow.
-    rw @mkc_zero_eq in h6; rw @mkc_nat_eq in h6; ginv.
+    apply computes_to_valc_isvalue_eq in h5; eauto with slow.
+    rw @mkc_zero_eq in h5; rw @mkc_nat_eq in h5; ginv.
     computes_to_eqval.
     allrw @inhabited_less_than; exrepnd; spcast.
     computes_to_eqval.

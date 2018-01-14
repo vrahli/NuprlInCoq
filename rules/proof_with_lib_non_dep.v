@@ -2870,6 +2870,7 @@ Record Abstraction {o} :=
       abs_rhs     : @SOTerm o;
       abs_correct : correct_abs abs_opabs abs_vars abs_rhs;
     }.
+Arguments MkAbstraction [o] _ _ _ _.
 
 Inductive command {o} :=
 (* add a definition at the head *)
@@ -10772,7 +10773,7 @@ Definition SoftLibrary_rename {o}
 
 Definition SoftLibrary_add_abs {o} state (abs : @Abstraction o) :=
   match abs with
-  | MkAbstraction _ opabs vars rhs correct =>
+  | MkAbstraction opabs vars rhs correct =>
     SoftLibrary_add_def state opabs vars rhs correct
   end.
 
