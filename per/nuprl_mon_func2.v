@@ -85,8 +85,8 @@ Proof.
 Qed.
 
 Lemma sub_lib_per_equality_of_csname_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib),
-    sub_lib_per (equality_of_csname_bar_lib_per lib) x.
+  forall n {lib lib'} (x : @lib_extends o lib' lib),
+    sub_lib_per (equality_of_csname_bar_lib_per lib n) x.
 Proof.
   introv h z; simpl in *.
   eapply sub_per_equality_of_csname_bar;[|eauto]; eauto.
@@ -98,8 +98,9 @@ Lemma per_csname_monotone_func2 {o} :
 Proof.
   introv per.
   unfold per_csname in *; exrepnd.
-  exists (equality_of_csname_bar_lib_per lib); introv; simpl.
+  exists (equality_of_csname_bar_lib_per lib n); introv; simpl.
   dands; spcast; eauto 3 with slow.
+  exists n; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma sub_lib_per_equality_of_atom_bar_lib_per {o} :

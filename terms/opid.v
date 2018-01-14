@@ -168,7 +168,10 @@ Inductive CanInj :=
 
 Definition cs_name := String.string.
 (* 0 is going to be used for free choice sequences of numbers *)
-Definition cs_kind := nat.
+
+Inductive cs_kind :=
+| cs_kind_nat (n : nat)
+| cs_kind_seq (l : list nat).
 
 Record choice_sequence_name :=
   MkChoiceSequenceName
@@ -177,12 +180,23 @@ Record choice_sequence_name :=
       csn_kind : cs_kind;
     }.
 
+Definition cs_kind_deq : Deq cs_kind.
+Proof.
+  introv.
+  destruct x as [n1|l1], y as [n2|l2];
+    try (complete (right; intro xx; inversion xx; subst; tcsp)).
+  { destruct (deq_nat n1 n2) as [g|g]; subst; tcsp;
+      right; intro xx; inversion xx; subst; tcsp. }
+  { destruct (deq_list deq_nat l1 l2); subst; tcsp;
+      right; intro xx; inversion xx; subst; tcsp. }
+Defined.
+
 Definition choice_sequence_name_deq : Deq choice_sequence_name.
 Proof.
   introv.
   destruct x as [n1 k1], y as [n2 k2].
   destruct (String.string_dec n1 n2) as [d|d]; subst;
-    destruct (deq_nat k1 k2) as [g|g]; subst; tcsp;
+    destruct (cs_kind_deq k1 k2) as [g|g]; subst; tcsp;
       right; intro xx; inversion xx; subst; tcsp.
 Defined.
 
@@ -239,7 +253,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NTEquality     : CanonicalOp
  | NInt           : CanonicalOp
  | NNatNum        : CanonicalOp (* type of natural numbers *)
- | NCSName        : CanonicalOp (* type of choice sequence names *)
+ | NCSName        : nat -> CanonicalOp (* type of choice sequence names *)
  | NAtom          : CanonicalOp
  | NUAtom         : CanonicalOp (* Unguessable atoms *)
  | NBase          : CanonicalOp
@@ -310,7 +324,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NTEquality     => [0,0]
   | NInt           => []
   | NNatNum        => []
-  | NCSName        => []
+  | NCSName _      => []
   | NBase          => []
   | NAtom          => []
   | NUAtom         => []
@@ -642,6 +656,9 @@ Proof.
   - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
 
+  - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
+    right; intro k; ginv; tcsp.
+
   - destruct (get_dp dc g g0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
 
@@ -762,6 +779,9 @@ Proof.
   - assert (Deq (get_patom_set p)) as d by (destruct p; destruct patom0; auto).
     pose proof (d g g0) as h; dorn h; subst; sp.
     right; intro k; inversion k; sp.
+
+  - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
+    right; intro k; ginv; tcsp.
 
   - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.

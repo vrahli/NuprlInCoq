@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1873,6 +1874,14 @@ Proof.
   inversion e; auto.
 Qed.
 
+Lemma mkc_csname_eq {o} :
+  forall (n1 n2 : nat),
+    @mkc_csname o n1 = mkc_csname n2 -> n1 = n2.
+Proof.
+  introv e.
+  inversion e; auto.
+Qed.
+
 Ltac eqconstr0 name :=
   match type of name with
     | mkc_uni _           = mkc_uni _           => apply mkc_uni_eq            in name
@@ -1880,6 +1889,7 @@ Ltac eqconstr0 name :=
     | mkc_inr _           = mkc_inr _           => apply mkc_inr_eq            in name
     | mkc_integer _       = mkc_integer _       => apply mkc_integer_eq        in name
     | mkc_choice_seq _    = mkc_choice_seq _    => apply mkc_choice_seq_eq     in name
+    | mkc_csname _        = mkc_csname _        => apply mkc_csname_eq         in name
     | mkc_nat _           = mkc_nat     _       => apply mkc_nat_eq_implies    in name
     | mkc_token _         = mkc_token _         => apply mkc_token_eq          in name
     | mkc_utoken _        = mkc_utoken _        => apply mkc_utoken_eq         in name

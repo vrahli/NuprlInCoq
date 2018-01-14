@@ -187,14 +187,22 @@ Definition ChoiceSeqVals {o} := list (@ChoiceSeqVal o).
 
 Definition CSVal2term {o} (v : @ChoiceSeqVal o) : NTerm := get_cterm v.
 
+Definition RestrictionPred {o} := nat -> @CTerm o -> Prop.
+
 Inductive ChoiceSeqRestriction {o} :=
-(* no constraints *)
-| csc_no
 (* constrains the values of the sequence to have that type *)
 (* [d] is a default value e*)
-| csc_type (d : @ChoiceSeqVal o) (typ : @CTerm o -> Prop) (typd : typ d)
+| csc_type (d : nat -> @ChoiceSeqVal o) (typ : @RestrictionPred o) (typd : forall n, typ n (d n))
 (* constrains the values of the sequence to follow the law given by the function *)
 | csc_coq_law (f : nat -> @CTerm o).
+
+(* no constraints *)
+Definition csc_no {o} : @ChoiceSeqRestriction o :=
+  csc_type (fun _ => mkc_zero) (fun _ _ => True) (fun _ => I).
+
+(* A way to define a coq law using the type restriction *)
+Definition csc_coq_law_as_type {o} (f : nat -> @CTerm o) : @ChoiceSeqRestriction o :=
+  csc_type f (fun n v => v = f n) (fun _ => eq_refl).
 
 Record ChoiceSeqEntry {o} :=
   MkChoiceSeqEntry
@@ -305,6 +313,13 @@ Fixpoint find_value_of_cs_at {o} (L : @ChoiceSeqVals o) n : option ChoiceSeqVal 
   | t :: _, 0 => Some t
   | _ :: l, S m => find_value_of_cs_at l m
   end.
+
+Lemma find_value_of_cs_at_is_select {o} :
+  forall n (L : @ChoiceSeqVals o),
+    find_value_of_cs_at L n = select n L.
+Proof.
+  induction n; introv; simpl; destruct L; simpl; auto.
+Qed.
 
 Definition find_cs_value_at {o} lib name n : option (@ChoiceSeqVal o) :=
   match find_cs lib name with

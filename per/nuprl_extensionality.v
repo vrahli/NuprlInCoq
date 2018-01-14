@@ -69,7 +69,8 @@ Proof.
 
   - Case "CL_csname".
     apply CL_csname.
-    unfold per_csname in *; repnd; dands; auto.
+    unfold per_csname in *; exrepnd; dands; auto.
+    exists n; dands; auto.
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 

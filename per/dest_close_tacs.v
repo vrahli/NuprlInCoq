@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -121,10 +122,10 @@ Qed.
 Hint Resolve iscvalue_mkc_Nat : slow.
 
 Lemma cequivc_csname {o} :
-  forall lib (T T' : @CTerm o),
-    computes_to_valc lib T mkc_csname
+  forall n lib (T T' : @CTerm o),
+    computes_to_valc lib T (mkc_csname n)
     -> cequivc lib T T'
-    -> computes_to_valc lib T' mkc_csname.
+    -> computes_to_valc lib T' (mkc_csname n).
 Proof.
   sp.
   allapply @computes_to_valc_to_valuec; allsimpl.
@@ -132,7 +133,7 @@ Proof.
   apply lblift_cequiv0 in p; subst; auto.
 Qed.
 
-Lemma iscvalue_mkc_csname {o} : @iscvalue o mkc_csname.
+Lemma iscvalue_mkc_csname {o} : forall n, @iscvalue o (mkc_csname n).
 Proof.
   repeat constructor; simpl; tcsp.
 Qed.
@@ -474,16 +475,16 @@ Ltac apply_cequivc_val :=
 
   (* mkc_csname *)
 
-  | [ H : cequivc _ mkc_csname _ |- _ ] =>
+  | [ H : cequivc _ (mkc_csname _) _ |- _ ] =>
     eapply cequivc_csname in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
     apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst
 
-  | [ H : cequivc _ _ mkc_csname |- _ ] =>
+  | [ H : cequivc _ _ (mkc_csname _) |- _ ] =>
     apply cequivc_sym in H;
     eapply cequivc_csname in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
     apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst
 
-  | [ H : ccequivc_ext ?lib mkc_csname _ |- _ ] =>
+  | [ H : ccequivc_ext ?lib (mkc_csname _) _ |- _ ] =>
     let c  := fresh "c"  in
     let xx := fresh "xx" in
     pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
@@ -491,7 +492,7 @@ Ltac apply_cequivc_val :=
     eapply cequivc_csname in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
     apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst
 
-  | [ H : ccequivc_ext ?lib _ mkc_csname |- _ ] =>
+  | [ H : ccequivc_ext ?lib _ (mkc_csname _) |- _ ] =>
     let c  := fresh "c"  in
     let xx := fresh "xx" in
     pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;

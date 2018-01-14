@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -33,11 +34,19 @@
 Require Export terms2.
 
 
-Definition mk_csname {o} : @NTerm o := oterm (Can NCSName) [].
+Definition mk_csname {o} n : @NTerm o := oterm (Can (NCSName n)) [].
 
-Theorem isprog_csname {o} : @isprog o mk_csname.
+Theorem isprog_csname {o} : forall n, @isprog o (mk_csname n).
 Proof.
   repeat constructor.
 Qed.
 
-Definition mkc_csname {o} : @CTerm o := exist isprog mk_csname isprog_csname.
+Definition mkc_csname {o} n : @CTerm o := exist isprog (mk_csname n) (isprog_csname n).
+
+Lemma fold_csname {o} : forall n, @oterm o (Can (NCSName n)) [] = mk_csname n.
+Proof.
+  tcsp.
+Qed.
+
+Definition mkcv_csname {o} (vs : list NVar) n : @CVTerm o vs :=
+  mk_cv vs (mkc_csname n).

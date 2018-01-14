@@ -111,12 +111,12 @@ Proof.
 Qed.
 
 Lemma all_in_bar_close_csname {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+  forall {lib} (bar : @BarLib o lib) ts T T' eqa n,
     type_system ts
     -> defines_only_universes ts
     -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
-    -> all_in_bar bar (fun lib => (T) ===>(lib) (mkc_csname))
-    -> all_in_bar_ext bar (fun lib' x => per_csname_bar (close ts) lib' T T' (eqa lib' x)).
+    -> all_in_bar bar (fun lib => (T) ===>(lib) (mkc_csname n))
+    -> all_in_bar_ext bar (fun lib' x => per_bar (per_csname (close ts)) lib' T T' (eqa lib' x)).
 Proof.
   introv tsts dou alla allb br ext; introv.
   pose proof (alla lib' br lib'0 ext x) as alla.
@@ -260,14 +260,14 @@ Lemma per_csname_implies_per_bar {o} :
 Proof.
   introv per.
   unfold per_csname in *; exrepnd.
-  exists (trivial_bar lib) (equality_of_csname_bar_lib_per lib).
+  exists (trivial_bar lib) (equality_of_csname_bar_lib_per lib n).
   dands.
 
   - introv br ext; introv.
     apply CL_csname.
-    unfold per_csname in *; repnd; dands; auto; eauto 3 with slow.
+    exists n; repnd; dands; auto; eauto 3 with slow.
 
-  - eapply eq_term_equals_trans;[eauto|]; clear per.
+  - eapply eq_term_equals_trans;[eauto|].
     apply eq_term_equals_sym; apply per_bar_eq_equality_of_csname_bar_lib_per.
 Qed.
 Hint Resolve per_csname_implies_per_bar : slow.
@@ -732,14 +732,14 @@ Lemma per_csname_implies_per_bar_above {o} :
 Proof.
   introv per.
   unfold per_csname in *; exrepnd.
-  exists bar (equality_of_csname_bar_lib_per lib).
+  exists bar (equality_of_csname_bar_lib_per lib n).
   dands.
 
   - introv br ext; introv.
     apply CL_csname.
-    unfold per_csname; dands; auto; eauto 3 with slow.
+    exists n; dands; auto; eauto 3 with slow.
 
-  - eapply eq_term_equals_trans;[eauto|]; clear per.
+  - eapply eq_term_equals_trans;[eauto|].
     apply eq_term_equals_sym; apply per_bar_eq_equality_of_csname_bar_lib_per.
 Qed.
 Hint Resolve per_csname_implies_per_bar_above : slow.

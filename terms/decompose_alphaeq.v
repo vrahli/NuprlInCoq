@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1501,9 +1502,9 @@ Proof.
 Qed.
 
 Lemma alpha_eq_mk_csname {o} :
-  forall (u : @NTerm o),
-    alpha_eq mk_csname u
-    -> u = mk_csname.
+  forall n (u : @NTerm o),
+    alpha_eq (mk_csname n) u
+    -> u = mk_csname n.
 Proof.
   introv aeq.
   inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
@@ -1511,9 +1512,9 @@ Proof.
 Qed.
 
 Lemma alphaeqc_mkc_csname {o} :
-  forall (u : @CTerm o),
-    alphaeqc mkc_csname u
-    -> u = mkc_csname.
+  forall n (u : @CTerm o),
+    alphaeqc (mkc_csname n) u
+    -> u = mkc_csname n.
 Proof.
   introv aeq.
   destruct_cterms; simpl in *.
@@ -1693,13 +1694,13 @@ Ltac alphaeqc_decompose :=
   | [ H : alphaeqc (mkc_spertype _) _ |- _ ] => apply alphaeqc_mkc_spertype in H; exrepnd; try subst
   | [ H : alphaeqc (mkc_tuni     _) _ |- _ ] => apply alphaeqc_mkc_tuni     in H; exrepnd; try subst
 
-  | [ H : alphaeqc mkc_base    _ |- _ ] => apply alphaeqc_mkc_base   in H; exrepnd; try subst
-  | [ H : alphaeqc mkc_int     _ |- _ ] => apply alphaeqc_mkc_int    in H; exrepnd; try subst
-  | [ H : alphaeqc mkc_csname  _ |- _ ] => apply alphaeqc_mkc_csname in H; exrepnd; try subst
-  | [ H : alphaeqc mkc_Nat     _ |- _ ] => apply alphaeqc_mkc_Nat    in H; exrepnd; try subst
-  | [ H : alphaeqc mkc_atom    _ |- _ ] => apply alphaeqc_mkc_atom   in H; exrepnd; try subst
-  | [ H : alphaeqc mkc_uatom   _ |- _ ] => apply alphaeqc_mkc_uatom  in H; exrepnd; try subst
-  | [ H : alphaeqc (mkc_uni _) _ |- _ ] => apply alphaeqc_mkc_uni    in H; exrepnd; try subst
+  | [ H : alphaeqc mkc_base        _ |- _ ] => apply alphaeqc_mkc_base   in H; exrepnd; try subst
+  | [ H : alphaeqc mkc_int         _ |- _ ] => apply alphaeqc_mkc_int    in H; exrepnd; try subst
+  | [ H : alphaeqc mkc_Nat         _ |- _ ] => apply alphaeqc_mkc_Nat    in H; exrepnd; try subst
+  | [ H : alphaeqc mkc_atom        _ |- _ ] => apply alphaeqc_mkc_atom   in H; exrepnd; try subst
+  | [ H : alphaeqc mkc_uatom       _ |- _ ] => apply alphaeqc_mkc_uatom  in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_uni _)     _ |- _ ] => apply alphaeqc_mkc_uni    in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_csname _)  _ |- _ ] => apply alphaeqc_mkc_csname in H; exrepnd; try subst
 
   | [ H : alphaeqc (mkc_pw _ _ _ _ _ _ _ _ _ _ _) _ |- _ ] => apply alphaeqc_mkc_pw in H; exrepnd; try subst
   | [ H : alphaeqc (mkc_pm _ _ _ _ _ _ _ _ _ _ _) _ |- _ ] => apply alphaeqc_mkc_pm in H; exrepnd; try subst

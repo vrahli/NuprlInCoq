@@ -67,8 +67,8 @@ Lemma per_csname_monotone_func {o} :
 Proof.
   introv per.
   unfold per_csname in *; exrepnd.
-  exists (equality_of_csname_bar_lib_per lib); introv; simpl.
-  dands; spcast; eauto 3 with slow.
+  exists (equality_of_csname_bar_lib_per lib n); introv; simpl.
+  dands; spcast; eauto 3 with slow; exists n; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma per_atom_monotone_func {o} :

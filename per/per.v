@@ -460,25 +460,38 @@ Definition per_nat {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] 
 
 
 
+Definition compatible_cs_kind (n : nat) (k : cs_kind) :=
+  if deq_nat n 0 then
+    match k with
+    | cs_kind_nat m => m = 0
+    | cs_kind_seq _ => True
+    end
+  else True.
 
-Definition equality_of_csname {o} lib (t t' : @CTerm o) :=
+Definition compatible_choice_sequence_name (n : nat) (name : choice_sequence_name) :=
+  compatible_cs_kind n (csn_kind name).
+
+Definition equality_of_csname {o} lib n (t t' : @CTerm o) :=
   {name : choice_sequence_name
-  , t ===>(lib) (mkc_choice_seq name)
+  , compatible_choice_sequence_name n name
+  # t ===>(lib) (mkc_choice_seq name)
   # t' ===>(lib) (mkc_choice_seq name)}.
 
-Definition equality_of_csname_bar {o} lib (t t' : @CTerm o) :=
-  {bar : BarLib lib , all_in_bar bar (fun lib => equality_of_csname lib t t')}.
-
-Definition per_csname_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-  {bar : BarLib lib
-  , all_in_bar bar (fun lib => T1 ===>(lib) mkc_csname)
-  # all_in_bar bar (fun lib => T2 ===>(lib) mkc_csname) }
-  # eq <=2=> (equality_of_csname_bar lib).
+Definition equality_of_csname_bar {o} lib n (t t' : @CTerm o) :=
+  {bar : BarLib lib , all_in_bar bar (fun lib => equality_of_csname lib n t t')}.
 
 Definition per_csname {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-  T1 ===>(lib) mkc_csname
-  # T2 ===>(lib) mkc_csname
-  # eq <=2=> (equality_of_csname_bar lib).
+  {n : nat
+  , T1 ===>(lib) (mkc_csname n)
+  # T2 ===>(lib) (mkc_csname n)
+  # eq <=2=> (equality_of_csname_bar lib n) }.
+
+Definition per_csname_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  {n : nat
+  , {bar : BarLib lib
+    , all_in_bar bar (fun lib => T1 ===>(lib) (mkc_csname n))
+    # all_in_bar bar (fun lib => T2 ===>(lib) (mkc_csname n)) }
+    # eq <=2=> (equality_of_csname_bar lib n) }.
 
 
 
@@ -4279,7 +4292,7 @@ Ltac one_unfold_per :=
     | [ H : per_nat         _ _ _ _ _ |- _ ] => unfold per_nat         in H; exrepd
     | [ H : per_nat_bar     _ _ _ _ _ |- _ ] => unfold per_nat_bar     in H; exrepd
     | [ H : per_csname      _ _ _ _ _ |- _ ] => unfold per_csname      in H; exrepd
-    | [ H : per_csname_bar  _ _ _ _ _ |- _ ] => unfold per_csname_bar  in H; exrepd
+(*    | [ H : per_csname_bar  _ _ _ _ _ |- _ ] => unfold per_csname_bar  in H; exrepd*)
     | [ H : per_atom        _ _ _ _ _ |- _ ] => unfold per_atom        in H; exrepd
     | [ H : per_atom_bar    _ _ _ _ _ |- _ ] => unfold per_atom_bar    in H; exrepd
     | [ H : per_uatom       _ _ _ _ _ |- _ ] => unfold per_uatom       in H; exrepd
@@ -4378,9 +4391,9 @@ Proof.
 Defined.
 
 Definition equality_of_csname_bar_lib_per {o}
-           (lib : @library o) : lib-per(lib,o).
+           (lib : @library o) (n : nat) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) => equality_of_csname_bar lib').
+  exists (fun lib' (x : lib_extends lib' lib) => equality_of_csname_bar lib' n).
   introv x y; tcsp.
 Defined.
 
