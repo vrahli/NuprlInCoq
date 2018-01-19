@@ -102,6 +102,54 @@ Proof.
 Qed.
 Hint Resolve entry_extends_preserves_entry_in_inf_library_extends : slow.
 
+Lemma choice_sequence_entry_extend_preserves_is_default_choice_seq_entry {o} :
+  forall (entry' entry : @ChoiceSeqEntry o),
+    choice_sequence_entry_extend entry' entry
+    -> is_default_choice_seq_entry entry'
+    -> is_default_choice_seq_entry entry.
+Proof.
+  introv h q.
+  unfold is_default_choice_seq_entry, choice_sequence_entry_extend in *; repnd.
+  unfold choice_sequence_vals_extend in *; exrepnd.
+  destruct entry', entry; simpl in *; subst; eauto 3 with slow.
+  unfold is_default_choice_sequence, same_restrictions in *.
+  destruct cse_restriction, cse_restriction0; simpl in *; repnd; tcsp; introv s.
+
+  - pose proof (q n v) as q.
+    rewrite select_app_l in q; eauto 3 with slow.
+    autodimp q hyp; subst; eauto.
+
+  - pose proof (q n v) as q.
+    rewrite select_app_l in q; eauto 3 with slow.
+    autodimp q hyp; subst; eauto.
+Qed.
+Hint Resolve choice_sequence_entry_extend_preserves_is_default_choice_seq_entry : slow.
+
+Lemma entry_extends_preserves_is_cs_default_entry {o} :
+  forall (entry entry' : @library_entry o),
+    entry_extends entry' entry
+    -> is_cs_default_entry entry'
+    -> is_cs_default_entry entry.
+Proof.
+  introv h q.
+  unfold is_cs_default_entry, entry_extends in *.
+  destruct entry, entry'; repnd; subst; tcsp; dands; ginv; eauto 3 with slow.
+Qed.
+Hint Resolve entry_extends_preserves_is_cs_default_entry : slow.
+
+Lemma entry_extends_preserves_entry_in_inf_library_default {o} :
+  forall (entry entry' : @library_entry o) infLib,
+    entry_extends entry' entry
+    -> entry_in_inf_library_default entry' infLib
+    -> entry_in_inf_library_default entry infLib.
+Proof.
+  introv h w.
+  unfold entry_in_inf_library_default in *; repnd.
+  dands; eauto 3 with slow.
+  introv xx; destruct (w0 n); eauto 3 with slow.
+Qed.
+Hint Resolve entry_extends_preserves_entry_in_inf_library_default : slow.
+
 Lemma inf_lib_extends_lib_extends_trans {o} :
   forall infLib (lib' lib : @library o),
     inf_lib_extends infLib lib'
@@ -116,7 +164,8 @@ Proof.
     applydup ext in i.
     apply entry_in_library_extends_implies_entry_in_library in i0; exrepnd.
     applydup inf in i0; exrepnd.
-    exists n; eauto 3 with slow.
+    repndors; exrepnd; eauto 3 with slow;[].
+    left; exists n; eauto 3 with slow.
 
   - introv s.
     eapply lib_extends_safe in s;[|eauto]; tcsp.
