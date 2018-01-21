@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -31,9 +32,10 @@
 
 
 Require Export sequents2.
-Require Export sequents_lib.
+(*Require Export sequents_lib.*)
 Require Export sequents_tacs.
 Require Export sequents_tacs2.
+Require Export sequents_util.
 Require Export rules_useful.
 Require Export per_props_equality.
 Require Export sequents_equality.
@@ -209,39 +211,40 @@ Proof.
   rw @equality_in_function in sim2; repnd.
 
   vr_seq_true in hyp2.
-  generalize (hyp2 (snoc (snoc s1a0 (f, t1) ++ s1b) (z, mkc_axiom))
-                   (snoc (snoc s2a0 (f, t2) ++ s2b) (z, mkc_axiom)));
+  generalize (hyp2
+                _
+                ext
+                (snoc (snoc s1a0 (f, t1) ++ s1b) (z, mkc_axiom))
+                (snoc (snoc s2a0 (f, t2) ++ s2b) (z, mkc_axiom)));
     clear hyp2; intros hyp2.
   repeat (autodimp hyp2 h); exrepnd.
 
   {
     (* hyps_functionality *)
 
-    pose proof (hyps_functionality_snoc
-                  lib
-                  (snoc H (mk_hyp f (mk_function A x B)) ++ J)
-                  (mk_hyp z (mk_member (mk_apply (mk_var f) a) (subst B x a)))
-                  (snoc s1a0 (f, t1) ++ s1b)
-                  mkc_axiom) as k; simpl in k.
-    apply k; try (complete auto); clear k.
-    introv eq sim; GC; lsubst_tac.
+    apply hyps_functionality_ext_snoc2; simpl; auto.
+    introv xt eq sim; GC; lsubst_tac.
     rw @tequality_mkc_member_sp.
     apply equality_refl in eq.
     rw <- @member_member_iff in eq.
 
     vr_seq_true in hyp1.
-    generalize (hyp1 (snoc s1a0 (f, t1) ++ s1b) s'); clear hyp1; intros hyp1.
-    repeat (autodimp hyp1 h); exrepnd.
+    generalize (hyp1 _ (lib_extends_trans xt ext) (snoc s1a0 (f, t1) ++ s1b) s'); clear hyp1; intros hyp1.
+    repeat (autodimp hyp1 h); exrepnd; eauto 3 with slow;[].
     lsubst_tac.
     allapply @member_if_inhabited.
+
     rw @tequality_mkc_member_sp in hyp0; repnd.
 
-    assert (equality lib (lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) c3)
-                     (lsubstc a wa s' c5)
-                     (lsubstc A w1 s1a0 c1)) as eqa.
+    assert (equality
+              lib'0
+              (lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) c3)
+              (lsubstc a wa s' c5)
+              (lsubstc A w1 s1a0 c1)) as eqa.
     {
       sp.
       unfold member in hyp1.
+
       spcast; apply @equality_respects_cequivc_right with (t2 := lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) c3); sp.
     }
 

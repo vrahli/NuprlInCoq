@@ -582,7 +582,7 @@ Proof.
 
   - unfold tequality in teq; exrepnd.
     apply dest_nuprl_union2 in teq0; exrepnd.
-    dands;[exists (per_bar_eq bar eqa)|exists (per_bar_eq bar eqb)]; eauto 3 with slow.
+    dands; eauto 3 with slow.
 
   - unfold tequality in teq0; exrepnd.
     rename eq into eqa.

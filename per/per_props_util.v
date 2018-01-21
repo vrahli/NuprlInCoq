@@ -719,11 +719,9 @@ Proof.
   dands; auto.
 
   {
-    apply CL_bar; exists bar (bar_per2lib_per feqa); dands; auto.
-    fold (@nuprl o).
-    introv br ext; introv.
-    pose proof (h1 _ br _ ext x) as q; simpl in *; auto; repnd.
-
+    eapply local_ts_nuprl;[apply eq_term_equals_refl|].
+    introv br ext; introv; simpl.
+    pose proof (h1 _ br _ ext x) as q; repnd.
     eapply type_extensionality_nuprl;[eauto|].
     introv; split; intro h.
 
