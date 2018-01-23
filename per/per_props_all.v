@@ -52,6 +52,7 @@ Require Export per_props_natk2nat.
 Require Export per_props_image.
 Require Export per_props_squash.
 
+(*
 (* NOT FIXED *)
 Require Export per_props_iff.
 Require Export per_props_w.
@@ -66,3 +67,4 @@ Require Export per_props_cequiv2.
 Require Export per_props_top.
 Require Export per_props_union2.
 Require Export per_props_nat3.
+*)
