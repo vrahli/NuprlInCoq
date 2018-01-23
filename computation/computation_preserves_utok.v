@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -2143,19 +2144,12 @@ Proof.
 
                 assert (!LIn a (get_utokens t4)) as niat1 by (eauto 6 with slow).
 
-                destruct pk; simpl; tcsp; unfold compute_step_comp; simpl; boolvar; ginv; tcsp.
+                destruct pk; simpl; tcsp; unfold compute_step_comp; simpl; boolvar; ginv; tcsp;
+                  try (complete (rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow;
+                                 rewrite not_in_get_utokens_implies_ren_utok_same; auto)).
 
-                - rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow.
-                  rewrite not_in_get_utokens_implies_ren_utok_same; auto.
-
-                - simpl in *.
-                  allrw not_over_or; tcsp.
-
-                - rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow.
-                  rewrite not_in_get_utokens_implies_ren_utok_same; auto.
-
-                - rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow.
-                  rewrite not_in_get_utokens_implies_ren_utok_same; auto.
+                simpl in *.
+                allrw not_over_or; tcsp.
               }
 
             * autorewrite with slow in *.

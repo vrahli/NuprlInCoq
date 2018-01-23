@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -535,6 +536,7 @@ Definition is_comp_op {o} (op : ComparisonOp) (c : @CanonicalOp o) :=
     | CompOpEq,   Nint _  => True
     | CompOpEq,   NTok _  => True
     | CompOpEq,   NUTok _ => True
+    | CompOpEq,   Ncseq _ => True
     | _,_ => False
   end.
 
@@ -896,14 +898,15 @@ Lemma co_wf_dec {o} :
 Proof.
   introv.
   destruct arg1c; simpl; tcsp;
-  try (complete (right;unfold co_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv));
-  destruct arg1bts; tcsp;
-  try (complete (right;unfold co_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv));
-  destruct op; tcsp;
-  try (complete (right;unfold co_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv));
-  try (complete (left; unfold co_wf_def; exists (@PKi o z); dands; tcsp));
-  try (complete (left; unfold co_wf_def; exists (@PKs o s); dands; tcsp));
-  try (complete (left; unfold co_wf_def; exists (@PKa o g); dands; tcsp)).
+    try (complete (right;unfold co_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv));
+    destruct arg1bts; tcsp;
+      try (complete (right;unfold co_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv));
+      destruct op; tcsp;
+        try (complete (right;unfold co_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv));
+        try (complete (left; unfold co_wf_def; exists (@PKi o z); dands; tcsp));
+        try (complete (left; unfold co_wf_def; exists (@PKs o s); dands; tcsp));
+        try (complete (left; unfold co_wf_def; exists (@PKa o g); dands; tcsp));
+        try (complete (left; unfold co_wf_def; exists (@PKc o c); dands; tcsp)).
   left; unfold co_wf_def.
   exists (@PKi o z); dands; tcsp.
   right.

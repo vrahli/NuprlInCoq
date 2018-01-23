@@ -32,3 +32,4 @@
 
 
 Require Export rules_product.
+Require Export rules_choice.

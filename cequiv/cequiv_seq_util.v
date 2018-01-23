@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1219,6 +1220,13 @@ Proof.
     unfold computes_to_value in h1; repnd; auto.
 
   - pose proof (c2 (Nint z) []) as h; fold_terms.
+    autodimp h hyp.
+    { apply computes_to_value_isvalue_refl; eauto with slow. }
+    exrepnd.
+    unfold lblift in h0; allsimpl; repnd; cpx; fold_terms.
+    unfold computes_to_value in h1; repnd; auto.
+
+  - pose proof (c2 (Ncseq c5) []) as h; fold_terms.
     autodimp h hyp.
     { apply computes_to_value_isvalue_refl; eauto with slow. }
     exrepnd.

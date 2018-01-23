@@ -1,6 +1,10 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -23,7 +27,9 @@
 
 *)
 
+
 Require Export terms2.
+Require Export terms_choice.
 
 
 
@@ -41,13 +47,15 @@ Hint Resolve isprog_mk_nat : slow.
 Inductive param_kind {o} :=
 | PKs : String.string -> param_kind
 | PKa : get_patom_set o -> param_kind
-| PKi : Z -> param_kind.
+| PKi : Z -> param_kind
+| PKc : choice_sequence_name -> param_kind.
 
 Definition get_param_from_cop {o} (c: @CanonicalOp o) : option (@param_kind o) :=
   match c with
     | NTok s  => Some (PKs s)
     | NUTok a => Some (PKa a)
     | Nint z  => Some (PKi z)
+    | Ncseq c => Some (PKc c)
     | _       => None
   end.
 
@@ -58,6 +66,7 @@ Proof.
     try (complete (destruct (String.string_dec s s0); subst; tcsp; right; intro h; ginv; tcsp));
     try (complete (destruct (Z.eq_dec z z0); subst; tcsp; right; intro h; ginv; tcsp));
     try (complete (destruct (get_patom_deq o g g0); subst; tcsp; right; intro h; ginv; tcsp));
+    try (complete (destruct (choice_sequence_name_deq c c0); subst; tcsp; right; intro h; ginv; tcsp));
     try (complete (right; introv h; ginv)).
 Qed.
 
@@ -90,6 +99,7 @@ Definition pk2term {o} (pk : @param_kind o) : NTerm :=
     | PKi i => mk_integer i
     | PKs s => mk_token s
     | PKa a => mk_utoken a
+    | PKc c => mk_choice_seq c
   end.
 
 Definition pk2can {o} (pk : @param_kind o) : CanonicalOp :=
@@ -97,6 +107,7 @@ Definition pk2can {o} (pk : @param_kind o) : CanonicalOp :=
     | PKi i => Nint i
     | PKs s => NTok s
     | PKa a => NUTok a
+    | PKc c => Ncseq c
   end.
 
 Lemma pk2term_eq {o} :
@@ -110,6 +121,15 @@ Lemma pk2term_utoken {o} :
   forall (pk : @param_kind o) a,
     pk2term pk = mk_utoken a
     -> pk = PKa a.
+Proof.
+  introv e.
+  destruct pk; allsimpl; ginv; auto.
+Qed.
+
+Lemma pk2term_choice_seq {o} :
+  forall (pk : @param_kind o) a,
+    pk2term pk = mk_choice_seq a
+    -> pk = PKc a.
 Proof.
   introv e.
   destruct pk; allsimpl; ginv; auto.
@@ -135,6 +155,13 @@ Proof.
   introv; repeat constructor; simpl; sp.
 Qed.
 Hint Resolve isvalue_utoken : slow.
+
+Lemma isvalue_choice_seq {o} :
+  forall c, @isvalue o (mk_choice_seq c).
+Proof.
+  introv; repeat constructor; simpl; sp.
+Qed.
+Hint Resolve isvalue_choice_seq : slow.
 
 Lemma isvalue_pk2term {o} :
   forall (pk : @param_kind o), isvalue (pk2term pk).
@@ -176,6 +203,14 @@ Proof.
 Qed.
 Hint Resolve isprogram_token : slow.
 
+Lemma isprogram_choice_seq {o} :
+  forall s, @isprogram o (mk_choice_seq s).
+Proof.
+  introv.
+  repeat constructor; simpl; tcsp.
+Qed.
+Hint Resolve isprogram_choice_seq : slow.
+
 Lemma isprogram_pk2term {o} :
   forall (pk : @param_kind o),
     isprogram (pk2term pk).
@@ -216,6 +251,13 @@ Definition pk2termc {o} (pk : @param_kind o) : CTerm :=
 Lemma mkc_utoken_eq_pk2termc {o} :
   forall (a : get_patom_set o),
     mkc_utoken a = pk2termc (PKa a).
+Proof.
+  introv; apply cterm_eq; simpl; auto.
+Qed.
+
+Lemma mkc_choice_seq_eq_pk2termc {o} :
+  forall (a : choice_sequence_name),
+    @mkc_choice_seq o a = pk2termc (PKc a).
 Proof.
   introv; apply cterm_eq; simpl; auto.
 Qed.
@@ -281,6 +323,14 @@ Proof.
   exists (@PKa o a); simpl; auto.
 Qed.
 Hint Resolve ispk_utoken : slow.
+
+Lemma ispk_choice_seq {o} :
+  forall a, ispk (@mk_choice_seq o a).
+Proof.
+  introv.
+  exists (@PKc o a); simpl; auto.
+Qed.
+Hint Resolve ispk_choice_seq : slow.
 
 Lemma iswfpk_pk2term {o} :
   forall (pk : @param_kind o),
