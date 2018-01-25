@@ -31,5 +31,9 @@
 *)
 
 
-Require Export rules_product.
-Require Export rules_choice_roadmap.
+(* Contains a proof of a squashed version of LS1 as well as a proof that
+   all choice sequences of numbers are in the baire space: *)
+Require Export rules_choice.
+
+(* Contains a proof of intensional LS2: *)
+Require Export rules_choice2.
