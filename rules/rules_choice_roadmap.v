@@ -37,3 +37,7 @@ Require Export rules_choice.
 
 (* Contains a proof of intensional LS2: *)
 Require Export rules_choice2.
+
+(* Similar to the proof that all choice sequences of numbers are in the baire space,
+   we've proved: ∀ (a ∈ Free) (n ∈ ℕ). ∃ (x:ℕ). a(n) = x ∈ ℕ *)
+Require Export rules_choice3.
