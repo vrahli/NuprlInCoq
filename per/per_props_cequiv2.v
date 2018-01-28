@@ -49,6 +49,7 @@ Lemma type_mkc_cequiv {o} :
 Proof.
   introv.
   apply tequality_mkc_cequiv; tcsp; eauto 3 with slow.
+  apply in_ext_implies_all_in_ex_bar; introv xt; tcsp.
 Qed.
 Hint Resolve type_mkc_cequiv : slow.
 
@@ -58,6 +59,7 @@ Lemma type_mkc_approx {o} :
 Proof.
   introv.
   apply tequality_mkc_approx; tcsp.
+  apply in_ext_implies_all_in_ex_bar; introv xt; tcsp.
 Qed.
 Hint Resolve type_mkc_approx : slow.
 
@@ -151,8 +153,7 @@ Lemma hasvaluec_mkc_apply2 {q} :
   forall lib (t a : @CTerm q),
     hasvaluec lib (mkc_apply t a)
     -> {v : NVar $ {b : CVTerm [v] $ computes_to_valc lib t (mkc_lam v b)}}
-       [+] {n : nseq $ computes_to_valc lib t (mkc_nseq n)}
-       [+] {n : ntseqc $ computes_to_valc lib t (mkc_ntseq n)}.
+       [+] {n : choice_sequence_name $ computes_to_valc lib t (mkc_choice_seq n)}.
 Proof.
   introv hv.
   apply hasvaluec_mkc_apply in hv; repndors; exrepnd.
@@ -164,28 +165,7 @@ Proof.
     exists v (mk_cvterm [v] b hv0).
     unfold computes_to_valc; simpl; auto.
 
-  - right; left.
-    exists n; auto.
-
-  - right; right.
-    unfold computes_to_seqnc in hv0.
-    unfold computes_to_seq in hv0.
-    applydup @reduces_to_preserves_program in hv0; auto.
-    rw @isprogram_mk_ntseq in hv1.
-    assert (forall x, isprog_nout (n x)) as nout.
-    { introv.
-      pose proof (hv1 x) as h; clear hv1; repnd.
-      destruct h0 as [cl wf].
-      apply isprog_nout_iff; dands; auto. }
-
-    exists (fun x => mk_cnterm (n x) (nout x)).
-    unfold computes_to_valc, computes_to_value; simpl; auto.
-    unfold ntseqc2seq; simpl; dands; auto.
-    split; simpl; auto.
-    apply nt_wf_sterm_implies_isprogram.
-    apply nt_wf_sterm_iff; introv.
-    pose proof (nout n0) as h.
-    apply isprog_nout_iff in h; sp.
+  - right; exists n; auto.
 Qed.
 
 Lemma cequivc_mkc_islambda_mkc_lam {o} :
@@ -199,20 +179,9 @@ Proof.
   apply reduces_to_if_step; csunf; simpl; auto.
 Qed.
 
-Lemma cequivc_mkc_islambda_mkc_nseq {o} :
+Lemma cequivc_mkc_islambda_mkc_choice_seq {o} :
   forall lib s (t1 t2 : @CTerm o),
-    cequivc lib (mkc_islambda (mkc_nseq s) t1 t2) t2.
-Proof.
-  introv.
-  apply reduces_toc_implies_cequivc.
-  destruct_cterms.
-  unfold reduces_toc; simpl.
-  apply reduces_to_if_step; csunf; simpl; auto.
-Qed.
-
-Lemma cequivc_mkc_islambda_mkc_ntseq {o} :
-  forall lib s (t1 t2 : @CTerm o),
-    cequivc lib (mkc_islambda (mkc_ntseq s) t1 t2) t2.
+    cequivc lib (mkc_islambda (mkc_choice_seq s) t1 t2) t2.
 Proof.
   introv.
   apply reduces_toc_implies_cequivc.
@@ -229,11 +198,15 @@ Lemma member_mkc_or_inl {p} :
          # member lib a A).
 Proof.
   introv.
-  rw @equality_mkc_or; split; intro h; repnd; repndors; exrepnd; spcast; dands; auto;
-  computes_to_value_isvalue.
-  left.
-  exists a a; dands; spcast; auto;
-  apply computes_to_valc_refl; eauto 3 with slow.
+  rw @equality_mkc_or; split; intro h; repnd; dands; auto.
+
+  - apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens1;[|exact h]; clear h; introv xt h.
+    repndors; exrepnd; spcast; dands; auto; computes_to_value_isvalue.
+
+  - apply in_ext_implies_all_in_ex_bar; introv xt.
+    left.
+    exists a a; dands; spcast; auto; eauto 3 with slow.
 Qed.
 
 Lemma member_mkc_or_inr {p} :
@@ -244,11 +217,15 @@ Lemma member_mkc_or_inr {p} :
          # member lib b B).
 Proof.
   introv.
-  rw @equality_mkc_or; split; intro h; repnd; repndors; exrepnd; spcast; dands; auto;
-  computes_to_value_isvalue.
-  right.
-  exists b b; dands; spcast; auto;
-  apply computes_to_valc_refl; eauto 3 with slow.
+  rw @equality_mkc_or; split; intro h; repnd; dands; auto.
+
+  - apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens1;[|exact h]; clear h; introv xt h.
+    repndors; exrepnd; spcast; dands; auto; computes_to_value_isvalue.
+
+  - apply in_ext_implies_all_in_ex_bar; introv xt.
+    right.
+    exists b b; dands; spcast; auto; eauto 3 with slow.
 Qed.
 
 Lemma nt_wf_int_iff {p} :
@@ -257,7 +234,7 @@ Lemma nt_wf_int_iff {p} :
     <=> bs = [].
 Proof.
   introv; split; intro k.
-  - inversion k as [|?|? ? imp e]; clear k; subst.
+  - inversion k as [|? ? imp e]; clear k; subst.
     allsimpl.
     repeat (destruct bs; allsimpl; ginv).
   - exrepnd; subst.
@@ -286,16 +263,7 @@ Proof.
   unfold hasvalue in hv; exrepnd.
   unfold computes_to_value in hv0; repnd.
   inversion hv0 as [v isp isc]; subst; clear hv0.
-  destruct t' as [v|f|op bs]; allsimpl; tcsp; GC.
-  - right.
-    eapply cequiv_trans;
-      [apply implies_cequiv_isint;
-        [apply reduces_to_implies_cequiv; eauto 3 with slow
-        |apply cequiv_refl;eauto 3 with slow
-        |apply cequiv_refl;eauto 3 with slow]
-      |].
-    apply reduces_to_implies_cequiv; eauto 3 with slow.
-    apply isprogram_isint; eauto 3 with slow.
+  destruct t' as [v|op bs]; allsimpl; tcsp; GC.
   - dopid op as [can|ncan|exc|abs] Case; tcsp; GC;[].
     destruct (dec_can_int can) as [d|d]; exrepnd; subst.
     + left.
@@ -345,24 +313,7 @@ Proof.
   unfold hasvalue in hv; exrepnd.
   unfold computes_to_value in hv0; repnd.
   inversion hv0 as [v isp isc]; subst; clear hv0.
-  destruct t' as [v|f|op bs]; allsimpl; tcsp; GC.
-
-  - right.
-    exists (mk_cterm (sterm f) isp); simpl.
-    dands.
-
-    + unfold computes_to_value; dands; eauto 3 with slow.
-
-    + unfold isinteger; intro h; exrepnd; ginv.
-
-    + eapply cequiv_trans;
-      [apply implies_cequiv_isint;
-        [apply reduces_to_implies_cequiv; eauto 3 with slow
-        |apply cequiv_refl;eauto 3 with slow
-        |apply cequiv_refl;eauto 3 with slow]
-      |].
-      apply reduces_to_implies_cequiv; eauto 3 with slow.
-      apply isprogram_isint; eauto 3 with slow.
+  destruct t' as [v|op bs]; allsimpl; tcsp; GC.
 
   - dopid op as [can|ncan|exc|abs] Case; tcsp; GC;[].
     destruct (dec_can_int can) as [d|d]; exrepnd; subst.
@@ -415,64 +366,6 @@ Proof.
   allrw <- @fold_mkc_halts.
   apply cequivc_decomp_approx; dands; eauto 3 with slow.
   apply simpl_cequivc_mkc_cbv; auto.
-Qed.
-
-Lemma hasvalue_likec_apply_nseq_implies_integer {o} :
-  forall lib s (v : @CTerm o),
-    iscvalue v
-    -> hasvalue_likec lib (mkc_apply (mkc_nseq s) v)
-    -> isintegerc v.
-Proof.
-  introv isv hv.
-  destruct_cterms.
-  unfold iscvalue in isv.
-  unfold hasvalue_likec in hv.
-  unfold isintegerc; allsimpl.
-  unfold hasvalue_like in hv; exrepnd.
-  apply isvalue_implies in isv; repnd.
-  apply reduces_to_split2 in hv1; repndors; subst.
-  - unfold isvalue_like in hv0; allsimpl; tcsp.
-  - exrepnd.
-    csunf hv1; allsimpl; ginv.
-    apply reduces_to_split2 in hv2; repndors; subst.
-    + unfold isvalue_like in hv0; allsimpl; tcsp.
-    + exrepnd.
-      csunf hv2; allsimpl; dcwf xx; allsimpl.
-      apply iscan_implies in isv0; repndors; exrepnd; subst; ginv.
-      destruct c; allsimpl; ginv.
-      destruct bterms; allsimpl; ginv.
-      boolvar; ginv; fold_terms; eauto 3 with slow.
-Qed.
-
-Lemma hasvalue_likec_apply_ntseq_implies_integer {o} :
-  forall lib s (v : @CTerm o),
-    iscvalue v
-    -> hasvalue_likec lib (mkc_apply (mkc_ntseq s) v)
-    -> isintegerc v.
-Proof.
-  introv isv hv.
-  destruct_cterms.
-  unfold iscvalue in isv.
-  unfold hasvalue_likec in hv.
-  unfold isintegerc; allsimpl.
-  unfold hasvalue_like in hv; exrepnd.
-  apply isvalue_implies in isv; repnd.
-  apply reduces_to_split2 in hv1; repndors; subst.
-  - unfold isvalue_like in hv0; allsimpl; tcsp.
-  - exrepnd.
-    csunf hv1; allsimpl; ginv.
-    apply reduces_to_split2 in hv2; repndors; subst.
-    + unfold isvalue_like in hv0; allsimpl; tcsp.
-    + exrepnd.
-      csunf hv2; allsimpl.
-      apply iscan_implies in isv0; repndors; exrepnd; subst; ginv.
-      apply compute_step_eapply_success in hv2; exrepnd.
-      destruct l; allsimpl; ginv.
-      repndors; exrepnd; subst; GC; allsimpl; tcsp.
-      * destruct c; ginv.
-        destruct bterms; allsimpl; ginv.
-        exists z; auto.
-      * unfold isnoncan_like in hv5; allsimpl; tcsp.
 Qed.
 
 Lemma type_base {o} : forall lib, @type o lib mkc_base.
@@ -552,21 +445,8 @@ Proof.
   assert (cequiv lib (mk_apply (mk_integer n) b) v) as ceq2.
   { eapply cequiv_trans; [exact ceq1 | auto]. }
 
-  destruct val; destruct v as [v|f|op bs]; allsimpl; auto;
+  destruct val; destruct v as [v|op bs]; allsimpl; auto;
   try (destruct op; allsimpl; auto).
-
-  - assert (cequiv lib mk_bottom (sterm f)) as ceq3.
-    { eapply cequiv_trans;[|exact ceq2].
-      split;[apply bottom_approx_any|]; eauto 3 with slow.
-      apply approx_assume_hasvalue; eauto 3 with slow.
-      introv hv; provefalse.
-      unfold hasvalue_like in hv; exrepnd.
-      apply reduces_to_split2 in hv1; repndors; exrepnd; subst; ginv.
-      unfold isvalue_like in hv0; allsimpl; tcsp. }
-    destruct ceq3 as [ap1 ap2].
-    apply hasvalue_approx in ap2;
-      [apply not_hasvalue_bot in ap2; tcsp|].
-    apply hasvalue_sterm; auto.
 
   - pose proof (cequiv_canonical_form
                   lib
@@ -691,7 +571,7 @@ Proof.
 
       * unfold close_compute_val in cl2.
         pose proof (cl2 c bterms) as h.
-        clear cl2 cl3 cl4.
+        clear cl2 cl3.
         autodimp h hyp.
         { unfold computes_to_value; dands; auto. }
         exrepnd.
@@ -759,11 +639,6 @@ Proof.
         rw @subvars_eq in isp0; auto.
         apply isp0 in xx; allsimpl; tcsp.
 
-      * apply cl4 in hv1; clear cl2 cl3 cl4.
-        exrepnd.
-        apply reduces_to_if_value in hv1; ginv;
-        try (apply isvalue_iff; dands; simpl; auto).
-
     + apply implies_approx_lam2; try (apply isprog_vars_apply_implies);
       eauto 3 with slow.
 
@@ -801,7 +676,7 @@ Proof.
 
       * unfold close_compute_val in cl2.
         pose proof (cl2 c bterms) as h.
-        clear cl2 cl3 cl4.
+        clear cl2 cl3.
         autodimp h hyp.
         { unfold computes_to_value; dands; auto. }
         exrepnd.
@@ -867,11 +742,6 @@ Proof.
         apply isprog_vars_eq in isp; repnd.
         rw @subvars_eq in isp0; auto.
         apply isp0 in xx; allsimpl; tcsp.
-
-      * apply cl4 in hv1; clear cl2 cl3 cl4.
-        exrepnd.
-        apply reduces_to_if_value in hv1; ginv;
-        try (apply isvalue_iff; dands; simpl; auto).
 Qed.
 
 Lemma mkc_cv_app_r_mkc_var {o} :
@@ -887,8 +757,7 @@ Lemma if_raises_exceptionc_apply2 {o} :
     raises_exceptionc lib (mkc_apply  t a)
     -> raises_exceptionc lib t
        [+] {v : NVar $ {b : CVTerm [v] $ computes_to_valc lib t (mkc_lam v b)}}
-       [+] {n: nseq $ computes_to_valc lib t (mkc_nseq n)}
-       [+] {n: ntseqc $ computes_to_valc lib t (mkc_ntseq n)}.
+       [+] {n: choice_sequence_name $ computes_to_valc lib t (mkc_choice_seq n)}.
 Proof.
   introv hv.
   apply if_raises_exceptionc_apply in hv; repndors; exrepnd; tcsp.
@@ -900,67 +769,51 @@ Proof.
     exists v (mk_cvterm [v] b hv0).
     unfold computes_to_valc; simpl; auto.
 
-  - right; right; left.
+  - right; right.
     exists n; auto.
-
-  - right; right; right.
-    unfold computes_to_seqnc in hv0.
-    unfold computes_to_seq in hv0.
-    applydup @reduces_to_preserves_program in hv0; auto.
-    rw @isprogram_mk_ntseq in hv1.
-    assert (forall x, isprog_nout (n x)) as nout.
-    { introv.
-      pose proof (hv1 x) as h; clear hv1; repnd.
-      destruct h0 as [cl wf].
-      apply isprog_nout_iff; dands; auto. }
-
-    exists (fun x => mk_cnterm (n x) (nout x)).
-    unfold computes_to_valc, computes_to_value; simpl; auto.
-    unfold ntseqc2seq; simpl; dands; auto.
-    split; simpl; auto.
-    apply nt_wf_sterm_implies_isprogram.
-    apply nt_wf_sterm_iff; introv.
-    pose proof (nout n0) as h.
-    apply isprog_nout_iff in h; sp.
-Qed.
-
-Lemma inhabited_type_or {o} :
-  forall lib (a b : @CTerm o),
-    inhabited_type lib (mkc_or a b)
-    <=> ((inhabited_type lib a # type lib b)
-         {+} (inhabited_type lib b # type lib a)).
-Proof.
-  introv; split; intro h.
-  - unfold inhabited_type in h; exrepnd.
-    apply equality_mkc_or in h0; repnd; repndors; exrepnd.
-    + left; dands; auto.
-      exists a1.
-      apply equality_refl in h0; auto.
-    + right; dands; auto.
-      exists b1.
-      apply equality_refl in h0; auto.
-  - repndors; unfold inhabited_type in h; exrepnd.
-    + exists (mkc_inl t).
-      apply member_mkc_or_inl; dands; auto.
-      apply inhabited_implies_tequality in h1; auto.
-    + exists (mkc_inr t).
-      apply member_mkc_or_inr; dands; auto.
-      apply inhabited_implies_tequality in h1; auto.
 Qed.
 
 Lemma base_in_uni {p} :
   forall lib i, @member p lib mkc_base (mkc_uni i).
 Proof.
   introv.
-  unfold member, equality.
-  exists (fun A A' => {eqa : per , close lib (univi lib i) A A' eqa}).
-  unfold nuprl.
-  dands.
+  exists (per_bar_eq (trivial_bar lib) (univi_eq_lib_per lib i)); dands; eauto 3 with slow.
+  introv br ext; introv.
+  exists (trivial_bar lib'0); introv br' ext'; introv; simpl.
+  exists (per_base_eq lib'2).
+  apply CL_base; unfold per_base; dands; spcast; eauto 3 with slow.
+Qed.
 
-  { apply mkc_uni_in_nuprl. }
+Lemma inhabited_type_or {o} :
+  forall lib (a b : @CTerm o),
+    inhabited_type_bar lib (mkc_or a b)
+    <=> all_in_ex_bar
+           lib
+           (fun lib =>
+              (inhabited_type lib a # type lib b)
+              {+} (inhabited_type lib b # type lib a)).
+Proof.
+  introv; split; intro h.
 
-  { exists (fun t t' => t ~=~(lib) t').
-    apply CL_base.
-    unfold per_base; dands; spcast; auto;
-      apply computes_to_valc_refl; eauto 3 with slow. }
+  - apply collapse_all_in_ex_bar.
+    eapply all_in_ex_bar_modus_ponens1;[|exact h]; clear h; introv xt h.
+    unfold inhabited_type in h; exrepnd.
+    apply equality_mkc_or in h0; repnd.
+    eapply all_in_ex_bar_modus_ponens1;[|exact h0]; clear h0; introv xt' h0.
+    repndors; exrepnd.
+
+    + left; dands; auto; eauto 3 with slow.
+
+    + right; dands; auto; eauto 3 with slow.
+
+  - eapply all_in_ex_bar_modus_ponens1;[|exact h]; clear h; introv xt h.
+    repndors; unfold inhabited_type in h; exrepnd.
+
+    + exists (mkc_inl t).
+      apply member_mkc_or_inl; dands; auto.
+      apply inhabited_implies_tequality in h1; auto.
+
+    + exists (mkc_inr t).
+      apply member_mkc_or_inr; dands; auto.
+      apply inhabited_implies_tequality in h1; auto.
 Qed.

@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -32,26 +35,34 @@ Require Export per_props_equality.
 Require Export sequents_equality.
 Require Export per_props_nat.
 Require Export per_can.
-Require Export per_props_top.
+(*Require Export per_props_top.*)
 Require Export computation_arith.
+
 
 Lemma computes_to_integer_member_int {o} :
    forall lib (z : Z) (t : CTerm),
    computes_to_valc lib t (mkc_integer z) -> member lib t (@mkc_int o).
 Proof.
-      unfold member, equality; sp.
-      exists (@equality_of_int o lib);sp; [apply equality_of_int_xxx| exists z; sp; spcast; auto].
+  unfold member, equality; sp.
+  exists (@equality_of_int_bar o lib);sp; eauto 3 with slow.
+  exists (trivial_bar lib).
+  apply implies_all_in_bar_trivial_bar.
+  introv xt.
+  exists z; dands; spcast; eauto 3 with slow.
 Qed.
-
 
 Lemma member_int_iff {o} :
    forall lib  (t : CTerm),
-   member lib t (@mkc_int o) <-> Cast {z : Z $  computes_to_valc lib t (mkc_integer z)}.
-Proof. intros; split; intro.
-      - unfold member in H. apply equality_in_int in H. unfold equality_of_int in H.
-        exrepnd. unfold ccomputes_to_valc in H0. destruct H0; exrepnd.
-        constructor. exists k; auto.
-      - destruct H. exrepnd. apply computes_to_integer_member_int in X0. auto.
+   member lib t (@mkc_int o) <-> all_in_ex_bar lib (fun lib => {z : Z ,  ccomputes_to_valc lib t (mkc_integer z)}).
+Proof.
+  intros; split; intro k.
+  { apply equality_in_int in k.
+    eapply all_in_ex_bar_modus_ponens1;[|exact k]; clear k; introv xt k.
+    unfold equality_of_int in k; exrepnd.
+    exists k0; dands; auto. }
+  { apply equality_in_int.
+    eapply all_in_ex_bar_modus_ponens1;[|exact k]; clear k; introv xt k; exrepnd.
+    exists z; dands; auto. }
 Qed.
 
 Lemma  cequiv_member_int {o} :
@@ -59,29 +70,29 @@ Lemma  cequiv_member_int {o} :
    cequivc lib a b ->
    computes_to_valc lib a (mkc_integer z) ->
    tequality lib (mkc_member a (@mkc_int o)) (mkc_member b (@mkc_int o)).
-Proof. introv ceq compa.
-  
-  pose proof (cequivc_integer lib a b z).
-  assert (computes_to_valc lib b (mkc_integer z)) as compb by auto.
-  clear X. 
-  rw (@tequality_mkc_member o); sp.
-  apply tequality_int.
-  apply computes_to_integer_member_int in compa.
-  apply computes_to_integer_member_int in compb.
-  split; auto.
-  unfold ccequivc; right; auto. 
+Proof.
+  introv ceq compa.
+  apply tequality_mkc_member_sp; dands; eauto 3 with slow.
+  eapply cequivc_integer in ceq;[|eauto].
+  apply in_ext_implies_all_in_ex_bar; introv xt; right.
+  eapply ccequivc_ext_trans;[apply computes_to_valc_implies_ccequivc_ext; eauto 3 with slow|].
+  apply ccequivc_ext_sym; eauto 3 with slow.
 Qed.
 
 Lemma tequality_member_int {o} :
   forall lib (t1 t2: CTerm),
-  tequality lib (mkc_member t1 mkc_int)
-                (mkc_member t2 (@mkc_int o)) ->
-    member lib t1 mkc_int ->
-   equality_of_int lib t1 t2.
-Proof. introv teq mem. apply equality_in_int. apply tequality_mkc_member in teq.
-       exrepnd. repndors; auto.
-       apply cequiv_stable in teq.
-      apply equality_respects_cequivc; auto.
+    tequality lib (mkc_member t1 mkc_int) (mkc_member t2 (@mkc_int o))
+    -> member lib t1 mkc_int
+    -> equality_of_int_bar lib t1 t2.
+Proof.
+  introv teq mem.
+  apply equality_in_int.
+  apply tequality_mkc_member_sp in teq; repnd.
+  apply all_in_ex_bar_equality_implies_equality.
+  eapply all_in_ex_bar_modus_ponens1;[|exact teq]; clear teq; introv xt teq; exrepnd.
+  repndors; auto.
+  eapply equality_respects_cequivc_right;[eauto|].
+  eauto 3 with slow.
 Qed.
 
 
@@ -124,7 +135,7 @@ Proof.
     introv ab cd. allunfold @equality_of_int. exrepnd.
     exists (get_arith_op op k0 k); split; apply ccomputes_to_valc_arithop; auto.
 Qed.
- 
+
 Lemma equality_of_int_mkc_integer {o} :
   forall lib  i j,
   equality_of_int lib (mkc_integer i) (@mkc_integer o j) <-> i = j.
@@ -135,8 +146,3 @@ Proof.  intros; split; introv H.
   - subst. unfold equality_of_int. exists j; split; spcast; apply computes_to_valc_refl;
     apply iscvalue_mkc_integer.
 Qed.
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

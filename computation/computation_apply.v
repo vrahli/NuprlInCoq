@@ -71,7 +71,6 @@ Lemma compute_step_apply_can_success {o} :
     {v : NVar $ {b : NTerm $ c = NLambda
      # l =  [bterm [v] b]
      # u = (apply_bterm (bterm [v] b) [a])}}
-    [+] {n: nseq $ c = Nseq n # l = [] # u = mk_eapply (mk_nseq n) a}
     [+] {n : choice_sequence_name $ c = Ncseq n # l = [] # u = mk_eapply (mk_choice_seq n) a}.
 Proof.
   introv cs. csunf cs; allsimpl.
@@ -81,9 +80,7 @@ Proof.
     destruct l0; allsimpl; destruct l; allsimpl; inversion cs; subst.
     left; exists n0 n; auto.
 
-  - destruct l; allsimpl; inversion cs; right; left; exists n; auto.
-
-  - destruct l; simpl in *; ginv; right; right; eexists; dands; eauto.
+  - destruct l; simpl in *; ginv; right; eexists; dands; eauto.
 Qed.
 
 
@@ -94,8 +91,6 @@ Lemma if_computes_to_exc_apply {q} :
     -> computes_to_exception lib n (mk_apply t a) e
     -> computes_to_exception lib n t e
        [+] {v : NVar $ {b : NTerm $ computes_to_value lib t (mk_lam v b)}}
-       [+] {n: nseq $ computes_to_value lib t (mk_nseq n)}
-       [+] {n: ntseq $ computes_to_seq lib t n}
        [+] {n: choice_sequence_name $ computes_to_value lib t (mk_choice_seq n)}.
 Proof.
  unfold computes_to_exception, reduces_to.
@@ -107,10 +102,7 @@ Proof.
   - apply reduces_in_atmost_k_steps_0 in r; inversion r.
 
   - rw @reduces_in_atmost_k_steps_S in r; exrepnd.
-    destruct t as [z|f|op1 bs]; try (complete (inversion r1)).
-
-    { right; right; right; left.
-      exists f; apply computes_to_value_isvalue_refl; eauto 3 with slow. }
+    destruct t as [z|op1 bs]; try (complete (inversion r1)).
 
     dopid op1 as [can|ncan|exc|abs] Case; try (complete (inversion r1)).
 
@@ -120,9 +112,7 @@ Proof.
       * right. left. exists v b. split; eauto 3 with slow.
         constructor; simpl; auto.
 
-      * right. right; left. exists n0. split; eauto 3 with slow.
-
-      * right; right; right; right;exists n0; eauto 3 with slow.
+      * right; right; exists n0; eauto 3 with slow.
 
     + Case "NCan". rw @compute_step_apply_ncan in r1.
       remember (compute_step lib (oterm (NCan ncan) bs)) as c;
@@ -140,13 +130,7 @@ Proof.
         exists v b; sp.
         eapply computes_to_value_step; eauto. }
 
-      { right. right; left. exists n1. eapply computes_to_value_step; eauto. }
-
-      { right; right; right; left.
-        exists n1.
-        eapply reduces_to_if_split2; eauto. }
-
-      { right; right; right; right.
+      { right; right.
         exists n1; eauto 3 with slow. }
 
     + Case "Exc". rw @compute_step_apply_exc in r1. inversion r1; subst.
@@ -170,14 +154,7 @@ Proof.
         exists v b; sp.
         eapply computes_to_value_step; eauto. }
 
-      { right. right; left. exists n1; sp.
-       eapply computes_to_value_step; eauto. }
-
-      { right; right; right; left.
-        exists n1.
-        eapply reduces_to_if_split2; eauto. }
-
-      { right; right; right; right.
+      { right; right.
         exists n1; eauto 3 with slow. }
 Qed.
 
@@ -189,19 +166,13 @@ Lemma if_raises_exception_apply {o} :
     -> raises_exception lib (mk_apply t a)
     -> raises_exception lib t
        [+] {v : NVar $ {b : NTerm $ computes_to_value lib t (mk_lam v b)}}
-       [+] {n: nseq $ computes_to_value lib t ( mk_nseq n)}
-       [+] {n: ntseq $ computes_to_seq lib t n}
        [+] {n: choice_sequence_name $ computes_to_value lib t (mk_choice_seq n)}.
 Proof.
   introv ispt ispa re.
   unfold raises_exception in re; exrepnd.
   pose proof (if_computes_to_exc_apply lib a0 t a e ispt ispa re1 ) as h.
-  repndors; exrepnd.
+  repndors; exrepnd; eauto.
   - left; eexists; eauto.
-  - right. left. eexists; eauto.
-  - right. right; left. eexists; eauto.
-  - right. right; right; left; eexists; eauto.
-  - right. right; right; right; eexists; eauto.
 Qed.
 
 (* !!MOVE *)
@@ -210,15 +181,12 @@ Lemma if_raises_exceptionc_apply {o} :
     raises_exceptionc lib (mkc_apply  t a)
     -> raises_exceptionc lib t
        [+] {v : NVar $ {b : NTerm $ computes_to_valuec lib t (mk_lam v b)}}
-       [+] {n: nseq $ computes_to_valuec lib t (mk_nseq n)}
-       [+] {n: ntseq $ computes_to_seqnc lib t n}
        [+] {n: choice_sequence_name $ computes_to_valuec lib t (mk_choice_seq n)}.
 Proof.
   introv re.
   destruct_cterms. allsimpl.
   allunfold @raises_exceptionc.
   allunfold @computes_to_valuec.
-  allunfold @computes_to_seqnc.
   allsimpl.
   pose proof (if_raises_exception_apply lib x0 x) as h.
   repeat (autodimp h hyp); eauto 3 with slow.
@@ -233,27 +201,21 @@ Lemma apply_raises_exceptionc_two_cases {o} :
 Proof.
   introv ex.
   apply if_raises_exceptionc_apply in ex;
-  repndors; exrepnd; [left | right | right | right | right]; auto;
+  repndors; exrepnd; [left | right | right]; auto;
   allunfold @computes_to_valuec;
-  allunfold @computes_to_seqnc;
   unfold hasvaluec; destruct_cterms; allsimpl;
   eapply @computes_to_value_hasvalue; eauto.
-  unfold computes_to_value; dands; eauto 3 with slow.
-  constructor; simpl; eauto 3 with slow.
 Qed.
 
 Lemma hasvaluec_mkc_apply {q} :
   forall lib (t a : @CTerm q),
     hasvaluec lib (mkc_apply t a)
     -> {v : NVar $ {b : NTerm $ computes_to_valuec lib t (mk_lam v b)}}
-       [+] {n: nseq $ computes_to_valuec lib t (mk_nseq n)}
-       [+] {n: ntseq $ computes_to_seqnc lib t n}
        [+] {n: choice_sequence_name $ computes_to_valuec lib t (mk_choice_seq n)}.
 Proof.
   introv hv.
   destruct_cterms.
   unfold computes_to_valuec.
-  unfold computes_to_seqnc.
   simpl.
   rename x0 into t.
   rename x into a.
@@ -269,13 +231,9 @@ Proof.
     inversion isv; allsimpl; tcsp.
 
   - rw @reduces_in_atmost_k_steps_S in comp; exrepnd.
-    destruct t as [v|f|op bs].
+    destruct t as [v|op bs].
 
     + inversion comp1.
-
-    + right; right; left.
-      exists f; dands.
-      apply reduces_to_symm.
 
     +  dopid op as [can | ncan | ex | abs] Case.
 
@@ -286,11 +244,7 @@ Proof.
            apply computes_to_value_isvalue_refl. constructor; simpl; auto.
            apply isprogram_eq. auto. }
 
-         { right; left; exists n.
-           apply computes_to_value_isvalue_refl. constructor; simpl; auto.
-           apply isprogram_eq. auto. }
-
-         { right; right; right; exists n; eauto 3 with slow. }
+         { right; exists n; eauto 3 with slow. }
 
       * Case "NCan".
 
@@ -303,11 +257,9 @@ Proof.
         try rw<- @isprog_eq; auto.
         rw<- @isprog_eq in Heqc0.
         apply IHk in comp0; auto; try apply isprog_eq; auto.
-        repndors; exrepnd; [left | right; left | right; right; left | right; right; right ].
+        repndors; exrepnd; [left | right ].
         { exists v b.
           eapply computes_to_value_step; eauto. }
-        { exists n0. eapply computes_to_value_step; eauto. }
-        { exists n0; eapply reduces_to_if_split2; eauto. }
         { exists n0. eapply computes_to_value_step; eauto. }
 
       * Case "Exc".
@@ -326,11 +278,9 @@ Proof.
         try rw<- @isprog_eq; auto.
         rw<- @isprog_eq in Heqc0.
         apply IHk in comp0; auto; try apply isprog_eq; auto.
-        repndors; exrepnd; [left | right; left | right; right; left | right; right; right ].
+        repndors; exrepnd; [left | right ].
         { exists v b.
           eapply computes_to_value_step; eauto. }
-        { exists n0;  eapply computes_to_value_step; eauto. }
-        { exists n0; eapply reduces_to_if_split2; eauto. }
         { exists n0;  eapply computes_to_value_step; eauto. }
 Qed.
 
@@ -343,9 +293,6 @@ Proof.
   apply hasvaluec_mkc_apply in  hv.
   repndors; exrepnd;
   allunfold @computes_to_valuec;
-  allunfold @computes_to_seqnc;
   unfold hasvaluec; destruct_cterms; allsimpl;
   eapply @computes_to_value_hasvalue; eauto.
-  unfold computes_to_value; dands; eauto 3 with slow.
-  constructor; simpl; eauto 3 with slow.
 Qed.

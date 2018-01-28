@@ -75,22 +75,6 @@ Proof.
   exists (oterm (Can c) tr_subterms); dands; auto.
 Qed.
 
-Lemma cast_capprox_seq {o} :
-  forall lib (a b : @NTerm o) f,
-    Cast (approx lib a b)
-    -> computes_to_seq lib a f
-    -> {k : nat
-        , {f' : ntseq
-        , reduces_in_atmost_k_steps lib b (sterm f') k }}.
-Proof.
-  introv apr comp; spcast.
-  inversion apr as [cc].
-  unfold close_comput in cc; repnd.
-  apply cc4 in comp; exrepnd.
-  unfold computes_to_seq, reduces_to in comp1; exrepnd.
-  exists k f'; dands; auto.
-Qed.
-
 Lemma cast_capprox_value2 {o} :
   forall lib (a b : @NTerm o) c bs,
     Cast (approx lib a b)
@@ -145,11 +129,9 @@ Proof.
   introv.
   remember (compute_at_most_k_steps lib k t) as c; symmetry in Heqc.
   destruct c.
-  - destruct n as [v|f|op bs].
+  - destruct n as [v|op bs].
     + right.
       intro r; exrepnd.
-      rw r1 in Heqc; ginv.
-    + right; introv r; exrepnd.
       rw r1 in Heqc; ginv.
     + dopid op as [can|ncan|exc|abs] Case;
       try (complete (right; intro r; exrepnd; rw r1 in Heqc; ginv)).
@@ -193,7 +175,7 @@ Lemma dec_isccan {o} :
   forall (t : @NTerm o), decidable (isccan t).
 Proof.
   introv.
-  destruct t as [v|f|op bs]; simpl; tcsp; try (complete (right; sp)).
+  destruct t as [v|op bs]; simpl; tcsp; try (complete (right; sp)).
   dopid op as [can|ncan|exc|abs] Case; tcsp; try (complete (right; sp)).
 Qed.
 
@@ -269,44 +251,6 @@ Proof.
   destruct (dec_ex_reduces_in_atmost_k_steps_exc_prop lib k t) as [d|d]; sp.
 Qed.
 
-Lemma dec_ex_reduces_in_atmost_k_steps_seq {o} :
-  forall lib k (t : @NTerm o),
-    decidable {f : ntseq & reduces_in_atmost_k_steps lib t (sterm f) k}.
-Proof.
-  introv.
-  remember (compute_at_most_k_steps lib k t) as c; symmetry in Heqc.
-  destruct c.
-  - destruct n as [v|f|op bs].
-    + right.
-      intro r; exrepnd.
-      rw r0 in Heqc; ginv.
-    + left.
-      exists f; auto.
-    + right.
-      intro r; exrepnd.
-      rw r0 in Heqc; ginv.
-  - right; intro r; exrepnd; rw r0 in Heqc; ginv.
-Qed.
-
-Lemma dec_ex_reduces_in_atmost_k_steps_seq_prop {o} :
-  forall lib k (t : @NTerm o),
-    decidable {f : ntseq , reduces_in_atmost_k_steps lib t (sterm f) k}.
-Proof.
-  introv.
-  destruct (dec_ex_reduces_in_atmost_k_steps_seq lib k t) as [d|d].
-  - left; exrepnd; exists f; sp.
-  - right; intro h; exrepnd; destruct d; exists f; sp.
-Qed.
-
-Lemma dec_ex_reduces_in_atmost_k_steps_seq_prop2 {o} :
-  forall lib k (t : @NTerm o),
-    {{f : ntseq , reduces_in_atmost_k_steps lib t (sterm f) k}}
-    + {!{f : ntseq , reduces_in_atmost_k_steps lib t (sterm f) k}}.
-Proof.
-  introv.
-  destruct (dec_ex_reduces_in_atmost_k_steps_seq_prop lib k t) as [d|d]; sp.
-Qed.
-
 Lemma ex_reduces_in_atmost_k_steps_can {o} :
   forall lib (t : @NTerm o) k,
     {u : NTerm , reduces_in_atmost_k_steps lib t u k # iscan u}
@@ -350,19 +294,6 @@ Proof.
     exists n e; auto.
   - provefalse; exrepnd; destruct d.
     exists n e; auto.
-Qed.
-
-Lemma ex_reduces_in_atmost_k_steps_seq {o} :
-  forall lib (t : @NTerm o) k,
-    {f : ntseq , reduces_in_atmost_k_steps lib t (sterm f) k}
-    -> {f : ntseq & reduces_in_atmost_k_steps lib t (sterm f) k}.
-Proof.
-  introv comp.
-  destruct (dec_ex_reduces_in_atmost_k_steps_seq lib k t) as [d|d].
-  - exrepnd.
-    exists f; auto.
-  - provefalse; exrepnd; destruct d.
-    exists f; auto.
 Qed.
 
 Lemma cast_capprox_value3 {o} :
@@ -434,7 +365,7 @@ Lemma isccan_implies {p} :
         & t = oterm (Can c) bterms}}.
 Proof.
   introv isc.
-  destruct t as [v|f|op bs]; try (complete (inversion isc)).
+  destruct t as [v|op bs]; try (complete (inversion isc)).
   destruct op; try (complete (inversion isc)).
   exists c bs; sp.
 Qed.
@@ -442,24 +373,17 @@ Qed.
 Lemma alpha_stable {o} :
   forall (a b : @NTerm o), Cast (alpha_eq a b) -> alpha_eq a b.
 Proof.
-  nterm_ind1s a as [v|f ind|op bs ind] Case; introv ca.
+  nterm_ind1s a as [v|op bs ind] Case; introv ca.
 
   - Case "vterm".
-    destruct b as [v2|f2|op2 bs2];
+    destruct b as [v2|op2 bs2];
       try (complete (provefalse; spcast; inversion ca; subst; tcsp)).
 
     destruct (deq_nvar v v2); subst; auto.
     provefalse; spcast; inversion ca; subst; tcsp.
 
-  - Case "sterm".
-    destruct b as [v2|f2|op2 bs2];
-      try (complete (provefalse; spcast; inversion ca; subst; tcsp)).
-    constructor; introv.
-    apply ind; spcast.
-    inversion ca; auto.
-
   - Case "oterm".
-    destruct b as [v2|f2|op2 bs2];
+    destruct b as [v2|op2 bs2];
       try (complete (provefalse; spcast; inversion ca; subst; tcsp)).
 
     assert (op = op2) as eqop.
@@ -665,36 +589,6 @@ Proof.
         [|exact cp2|eauto 2 with slow|eauto 2 with slow].
       ginv.
       clear cp4; repndors; try (complete (unfold bot2 in cp3; sp)). }
-
-  - introv comp.
-    dup h as ca.
-    eapply cast_capprox_seq in ca;[|exact comp].
-    apply (constructive_indefinite_ground_description nat (fun x => x) (fun x => x))
-      in ca; auto;
-    [|introv;apply dec_ex_reduces_in_atmost_k_steps_seq_prop2].
-
-    exrepnd.
-    apply ex_reduces_in_atmost_k_steps_seq in ca0; exrepnd.
-    exists f0.
-    applydup @reduces_to_preserves_program in comp; eauto 3 with slow.
-    applydup @reduces_atmost_preserves_program in ca1; eauto 3 with slow.
-    dands; auto.
-
-    { exists x; auto. }
-
-    { introv.
-      left.
-      apply CIH; eauto 3 with slow.
-      spcast.
-      inversion h as [cl].
-      unfold close_comput in cl; repnd.
-      apply cl4 in comp; exrepnd.
-      allapply @reduces_in_atmost_k_steps_implies_reduces_to.
-      eapply reduces_to_eq_val_like in ca1;
-        [|exact comp2|eauto 2 with slow|eauto 2 with slow].
-      allunfold @mk_ntseq; ginv; auto.
-      pose proof (comp1 n) as q; repndors; tcsp.
-      inversion q. }
 Qed.
 
 Lemma cequiv_stable {o} :
@@ -875,9 +769,6 @@ Proof.
       applydup @preserve_program_exc2 in h1; eauto 3 with slow; repnd.
       exists a e; dands; auto; left;
       unfold mk_bot; apply bottom_approx_any; eauto 3 with slow. }
-
-    { introv comp.
-      apply reduces_to_if_isvalue_like in comp; eauto 3 with slow; ginv. }
 Qed.
 
 Definition craises_exceptionc {o} lib (a : @CTerm o) :=
@@ -1095,9 +986,6 @@ Proof.
         dands; eauto 3 with slow;
         try (complete (left; unfold mk_bot; apply bottom_approx_any; eauto 3 with slow)).
         apply cbv_raises_exception; eauto 3 with slow.
-
-    + introv comp.
-      apply reduces_to_if_isvalue_like in comp; ginv; eauto 3 with slow.
 Qed.
 
 Lemma cast_halts_likec_as_hasvalue_likec {o} :
@@ -1236,17 +1124,6 @@ Proof.
           exists a0 e; dands;
           try (complete (left; unfold mk_bot; apply bottom_approx_any; eauto 3 with slow)).
           apply cbv_raises_exception; auto. }
-
-    + introv comp; repnd.
-      apply computes_to_seq_implies_computes_to_value in comp;
-        [|apply isprogram_cbv_iff2;dands; eauto 3 with slow].
-      apply computes_to_value_hasvalue in comp.
-      apply if_hasvalue_cbv in comp; eauto 3 with slow.
-      exrepnd.
-      applydup @preserve_program in comp1; auto.
-      rw @subst_trivial in comp0; eauto 3 with slow.
-      unfold hasvalue in comp0; exrepnd.
-      apply computes_to_value_exception in comp3; sp.
 Qed.
 
 Definition chasvalue_likec {o} lib (a : @CTerm o) :=

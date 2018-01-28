@@ -1,6 +1,10 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -275,20 +279,16 @@ Proof.
     inversion iv; allsimpl; tcsp.
 
   - rw @reduces_in_atmost_k_steps_S in comp; exrepnd.
-    destruct a as [v|f|op1 bs].
+    destruct a as [v|op1 bs].
 
     + inversion comp1.
-
-    + csunf comp1; allsimpl; ginv.
 
     + dopid op1 as [can | ncan | ex | abs] Case.
 
       * Case "Can".
-        destruct b as [v|f|op1 bs1].
+        destruct b as [v|op1 bs1].
 
         { apply (@compute_step_arithop_can_vterm_success q) in comp1. inversion comp1. }
-
-        { csunf comp1; allsimpl; ginv; dcwf h. }
 
         { dopid op1 as [bcan | bncan | bex | babs] BCase.
 
@@ -367,17 +367,15 @@ Proof.
   - apply reduces_in_atmost_k_steps_0 in r; inversion r.
 
   - rw @reduces_in_atmost_k_steps_S in r; exrepnd.
-    destruct t1 as [z|f|op1 bs]; try (complete (inversion r1));[].
+    destruct t1 as [z|op1 bs]; try (complete (inversion r1));[].
 
     dopid op1 as [can|ncan|exc|abs] Case; try (complete (inversion r1)).
 
     + Case "Can".
 
-      destruct t2 as [v|f|op1 bs1].
+      destruct t2 as [v|op1 bs1].
 
       { apply (@compute_step_arithop_can_vterm_success q) in r1. inversion r1. }
-
-      { csunf r1; allsimpl; ginv; dcwf h. }
 
       { dopid op1 as [bcan | bncan | bex | babs] SCase.
 
@@ -562,15 +560,9 @@ Proof.
     + introv red. apply @reduces_in_atmost_k_steps_S in red; exrepnd.
       apply IHk in red0. exrepnd.
 
-      destruct b as [v|f|op1 bs].
+      destruct b as [v|op1 bs].
 
       { inversion red1. }
-
-      { csunf red1; allsimpl; ginv.
-        destruct k0.
-        - allrw @reduces_in_atmost_k_steps_0; ginv.
-        - allrw @reduces_in_atmost_k_steps_S; exrepnd.
-          csunf red1; allsimpl; dcwf h. }
 
       dopid op1 as [can | ncan |ex |abs] Case; simpl.
 
@@ -616,12 +608,9 @@ Proof.
     introv redb.
     pose proof (IHk0 k u red0 b redb) as hyp; clear IHk0; exrepnd.
 
-    destruct a as [v|f|op1 bs].
+    destruct a as [v|op1 bs].
 
     { inversion red1. }
-
-    { csunf red1; allsimpl; ginv.
-      apply reduces_in_atmost_k_steps_if_isvalue_like in red0; eauto 3 with slow. }
 
     dopid op1 as [can | ncan |ex |abs] Case; simpl.
 

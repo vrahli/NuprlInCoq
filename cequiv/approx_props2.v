@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -53,9 +55,6 @@ Proof.
       exrepnd.
       unfold computes_to_value in h1; repnd.
       apply not_bot_reduces_to_is_value_like in h2; eauto 3 with slow.
-
-    + apply cc4 in hv1; exrepnd.
-      apply not_bot_reduces_to_value_like in hv1; eauto 3 with slow.
 
   - apply isexc_implies2 in hv0; exrepnd; subst.
     applydup @reduces_to_preserves_program in hv1; auto.
@@ -167,10 +166,3 @@ Proof.
   allrw remove_nvars_nil_l; allrw app_nil_r.
   allrw subvars_app_l; sp.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)
