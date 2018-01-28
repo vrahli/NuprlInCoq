@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -179,7 +180,7 @@ Lemma lsubst_approx_star_congr_aux {p} :
   -> bin_rel_nterm (approx_star lib) lnta lnta'
   -> approx_star lib (lsubst_aux b (combine lvi lnta)) (lsubst_aux b' (combine lvi lnta')).
 Proof.
-  nterm_ind1s b as [x|f ind|o lbt Hind] Case; introv Hap H1len H2len Hdis Hbin;
+  nterm_ind1s b as [x|o lbt Hind] Case; introv Hap H1len H2len Hdis Hbin;
   rw flat_map_app in Hdis; duplicate Hbin as Hbb;
   apply @approx_rel_wf_sub with (lvi:=lvi) in Hbb; repnd.
 
@@ -204,17 +205,6 @@ Proof.
 
     + dsub_find xa'; [provefalse; eauto with slow | ].
       introv. apply approx_open_implies_approx_star.
-
-  - Case "sterm".
-    allsimpl.
-    inversion Hap as [|? ? ? ? wf1 wf2 imp aop|]; subst; clear Hap.
-    econstructor; eauto.
-    apply (approx_open_lsubst_congr _ _ _ (combine lvi lnta')) in aop; eauto 3 with slow.
-    autorewrite with slow in *.
-    unfold lsubst in aop; boolvar; auto.
-    allrw disjoint_app_r; repnd.
-    allrw <- @sub_free_vars_is_flat_map_free_vars_range.
-    rw @sub_free_vars_combine in n; tcsp.
 
   - Case "oterm".
     allsimpl.
@@ -656,7 +646,7 @@ Lemma lsubst_aux_nest_same_str2 {p} :
   -> lsubst_aux (lsubst_aux t (filt_var_ren lvi lvio lf)) (filt_combine lvio lnt lf)
      = lsubst_aux t (filt_combine lvi lnt lf).
 Proof.
-  nterm_ind1s t as [v|f ind|o lbt Hind] Case;
+  nterm_ind1s t as [v|o lbt Hind] Case;
   introv Hl1 Hl2 Hnr Hdisb Hdisf; tcsp.
 
   { Case "vterm".
@@ -1086,32 +1076,6 @@ Proof.
   eapply approx_star_open_bt_trans; eauto.
 Qed.
 
-Lemma howe_lemma2_seq {o} :
-  forall lib (f : @ntseq o) (b : @NTerm o),
-    isprogram (sterm f)
-    -> isprogram b
-    -> approx_star lib (sterm f) b
-    -> {f' : ntseq
-        & (forall n, approx_star lib (f n) (f' n))
-        # computes_to_seq lib b f'}.
-Proof.
-  introv Hprt Hprb Hap.
-  inversion Hap as [|? ? ? ? wf1 wf2 imp aop|]; clear Hap; subst.
-
-  apply approx_open_approx in aop; eauto 3 with slow.
-  invertsna aop Hclose.
-  repnud Hclose.
-  dimp (Hclose4 f2); [apply reduces_to_symm|].
-  exrepnd.
-  eexists; dands;[|eauto].
-  introv; eauto 3 with slow.
-  pose proof (hyp0 n) as h; clear hyp0.
-  pose proof(imp n) as q; clear imp.
-  eapply approx_star_open_trans;[eauto|].
-  apply approx_implies_approx_open; auto.
-  apply remove_bot_approx; auto.
-Qed.
-
 Lemma howe_lemma2_implies_iscan {p} :
   forall lib (t b : @NTerm p),
     isprogram t
@@ -1130,13 +1094,6 @@ Proof.
     { allunfold @lblift_sub; repnd; auto. }
     apply approx_implies_approx_open.
     apply reduces_to_implies_approx_eauto; prove_isprogram; eauto 3 with slow.
-  - apply howe_lemma2_seq in apr; auto.
-    exrepnd.
-    unfold computes_to_value.
-    unfold computes_to_seq in apr0.
-    applydup @reduces_to_preserves_program in apr0; auto.
-    eexists;dands;[|eauto| |]; simpl; eauto 3 with slow.
-    eapply apss;[| |eauto|]; eauto 3 with slow.
 Qed.
 
 Lemma howe_lemma2_exc {p} :
@@ -1685,7 +1642,6 @@ Qed.
 Definition get_bterms {p} (nt:@NTerm p) : list BTerm :=
   match nt with
     | vterm v => []
-    | sterm _ => []
     | oterm o lbt => lbt
   end.
 
@@ -1910,20 +1866,6 @@ Lemma approx_star_nat {p} :
     isprogram t
     -> approx_star lib (mk_nat n) t
     -> computes_to_value lib t (mk_nat n).
-Proof.
-  introv isp apr.
-  apply howe_lemma2 in apr; fold_terms; eauto 3 with slow.
-  exrepnd.
-  unfold approx_starbts, lblift_sub in apr1; allsimpl; repnd; cpx.
-Qed.
-
-Hint Resolve isprogram_mk_nseq : slow.
-
-Lemma approx_star_nseq {p} :
-  forall lib (t : @NTerm p) s,
-    isprogram t
-    -> approx_star lib (mk_nseq s) t
-    -> computes_to_value lib t (mk_nseq s).
 Proof.
   introv isp apr.
   apply howe_lemma2 in apr; fold_terms; eauto 3 with slow.
@@ -2293,7 +2235,7 @@ Proof.
     destruct bs as [|b bs]; ginv.
     destruct b as [l t].
     destruct l; ginv.
-    destruct t as [z|f|op bts]; ginv;[].
+    destruct t as [z|op bts]; ginv;[].
     dopid op as [can|ncan|exc|abs] Case; ginv.
 
     + Case "Can".

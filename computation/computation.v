@@ -123,7 +123,7 @@ Lemma simple_size_lsubst_aux {o} :
     shallow_sub sub
     -> size (lsubst_aux t sub) = size t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv ss; allsimpl; tcsp.
+  nterm_ind t as [v|op bs ind] Case; introv ss; allsimpl; tcsp.
 
   - Case "vterm".
     remember (sub_find sub v) as sf; symmetry in Heqsf; destruct sf; allsimpl; auto.
@@ -241,48 +241,12 @@ Function compute_step {o}
   end.
 *)
 
-Definition compute_step_seq_apply {o}
-           (t  : @NTerm o)
-           (f  : ntseq)
-           (bs : list BTerm) :=
-  match bs with
-    | [bterm [] arg] => csuccess (mk_eapply (mk_ntseq f) arg)
-    | _ => cfailure bad_args t
-  end.
-
 Definition compute_step_seq_can_test {o}
            (t  : NTerm)
            (bs : list (@BTerm o)) :=
   match bs with
     | [bterm [] _, bterm [] a] => csuccess a
     | _ => cfailure canonical_form_test_not_well_formed t
-  end.
-
-Definition compute_step_seq {o}
-           (lib   : @library o)
-           (t     : @NTerm o)
-           (ncr   : NonCanonicalOp)
-           (f     : ntseq)
-           (bs    : list (@BTerm o))
-           (cstep : Comput_Result) :=
-  match ncr with
-    | NApply    => compute_step_seq_apply t f bs
-    | NEApply   => compute_step_eapply lib bs t cstep (mk_ntseq f) ncr
-(*    | NApseq _  => cfailure bad_args t*)
-    | NFix      => compute_step_fix t (mk_ntseq f) bs
-    | NSpread   => cfailure bad_args t
-    | NDsup     => cfailure bad_args t
-    | NDecide   => cfailure bad_args t
-    | NCbv      => compute_step_cbv t (mk_ntseq f) bs
-    | NSleep    => cfailure bad_args t
-    | NTUni     => cfailure bad_args t
-    | NMinus    => cfailure bad_args t
-    | NFresh    => cfailure bad_args t
-    | NTryCatch => compute_step_try t (mk_ntseq f) bs
-    | NParallel => cfailure bad_args t
-    | NCompOp    _ => cfailure bad_args t
-    | NArithOp   _ => cfailure bad_args t
-    | NCanTest   _ => compute_step_seq_can_test t bs
   end.
 
 (*
@@ -475,13 +439,6 @@ Proof.
   introv; simpl; omega.
 Qed.
 
-Lemma compute_step'_size4 {o} :
-  forall ncr f l x (bs : list (@BTerm o)),
-    size x < size (oterm (NCan ncr) (bterm [] (sterm f) :: bterm l x :: bs)).
-Proof.
-  introv; simpl; omega.
-Qed.
-
 Definition compute_step {o}
            (lib : @library o)
            (t : @NTerm o) : Comput_Result :=
@@ -492,7 +449,6 @@ Definition compute_step {o}
        (fun t =>
           match t with
             | vterm v => fun _ => cfailure compute_step_error_not_closed t
-            | sterm _ => fun _ => csuccess t
             | oterm (Can _) _ => fun _ => csuccess t
             | oterm Exc _ => fun _ => csuccess t
             | oterm (NCan _) [] => fun _ => cfailure "no args supplied" t
@@ -511,12 +467,6 @@ Definition compute_step {o}
                                             | bterm l x :: bs => fun F => F x (compute_step'_size2 ncr arg1c arg1bts l x bs)
                                             | _ => fun _ => cfailure bad_args t
                                           end) F)
-            | oterm (NCan ncr) (bterm [] (sterm f) :: btsr) =>
-              fun F => compute_step_seq lib t ncr f btsr
-                                        ((match btsr with
-                                            | bterm l x :: bs => fun F => F x (compute_step'_size4 ncr f l x bs)
-                                            | _ => fun _ => cfailure bad_args t
-                                          end) F)
             (* assuming qst arg is always principal *)
             (* if the principal argument is an exception, we raise the exception *)
             | oterm (NCan ncr) ((bterm [] (oterm Exc arg1bts))::btsr) =>
@@ -533,7 +483,6 @@ Definition compute_step_unfold {o}
          (t : @NTerm o) : Comput_Result :=
   match t with
     | vterm v => cfailure compute_step_error_not_closed t
-    | sterm _ => csuccess t
     | oterm (Can _) _ => csuccess t
     | oterm Exc _ => csuccess t
     | oterm (NCan _) [] => cfailure "no args supplied" t
@@ -545,12 +494,6 @@ Definition compute_step_unfold {o}
                          a
     | oterm (NCan ncr) (bterm [] (oterm (Can arg1c) arg1bts as arg1) :: btsr) =>
       compute_step_can lib t ncr arg1c arg1bts arg1 btsr
-                       (match btsr with
-                          | bterm _ x :: _ => compute_step lib x
-                          | _ => cfailure bad_args t
-                        end)
-    | oterm (NCan ncr) (bterm [] (sterm f) :: btsr) =>
-      compute_step_seq lib t ncr f btsr
                        (match btsr with
                           | bterm _ x :: _ => compute_step lib x
                           | _ => cfailure bad_args t
@@ -570,37 +513,12 @@ Lemma compute_step_eq_unfold {o} :
   forall lib (t : @NTerm o),
     compute_step lib t = compute_step_unfold lib t.
 Proof.
-  destruct t as [v|f|op bs]; simpl; try reflexivity.
+  destruct t as [v|op bs]; simpl; try reflexivity.
   dopid op as [can|ncan|exc|abs] Case; try reflexivity.
   destruct bs as [|b bs]; try reflexivity.
   destruct b as [l t].
   destruct l as [|v vs]; try reflexivity.
-  - destruct t as [v1|f1|op1 bs1]; try reflexivity.
-    { unfold compute_step at 1.
-      destruct bs; try reflexivity;[].
-      destruct b.
-      destruct ncan; try reflexivity;[].
-      destruct l; try reflexivity;[].
-      destruct n; try reflexivity;[].
-      destruct o0; try reflexivity;[].
-      simpl.
-      rw Fix_eq; simpl; try reflexivity;[].
-      introv F.
-      destruct x as [v'|f'|op bs']; auto;[].
-      destruct op; auto;[].
-      destruct bs'; auto;[].
-      destruct b.
-      destruct l0.
-      - destruct n1; auto.
-        + destruct bs'; auto.
-          destruct b; auto.
-          f_equal; tcsp.
-        + destruct o0; try (complete (f_equal; tcsp));[].
-          destruct bs'; auto.
-          destruct b.
-          f_equal; tcsp.
-      - f_equal; tcsp.
-    }
+  - destruct t as [v1|op1 bs1]; try reflexivity;[].
     dopid op1 as [can1|ncan1|exc1|abs2] SCase; try reflexivity.
     + unfold compute_step at 1.
       destruct bs; try reflexivity.
@@ -608,15 +526,12 @@ Proof.
       rw Fix_eq; simpl.
       * f_equal.
       * introv F.
-        destruct x as [v'|f'|op bs']; auto.
+        destruct x as [v'|op bs']; auto.
         destruct op; auto.
         destruct bs'; auto.
         destruct b;[].
-        destruct l0; auto.
-        { destruct n1; auto.
-          { destruct bs'; auto.
-            destruct b; auto.
-            f_equal; tcsp. }
+        destruct l0; auto;[|].
+        { destruct n1; auto;[].
           destruct o0; auto; try (complete (f_equal; tcsp)).
           destruct bs'; auto.
           destruct b; auto.
@@ -626,15 +541,12 @@ Proof.
       rw Fix_eq; simpl.
       * f_equal.
       * introv F.
-        destruct x as [v'|f'|op bs']; auto.
+        destruct x as [v'|op bs']; auto.
         destruct op; auto.
         destruct bs'; auto.
         destruct b;[].
         destruct l; auto.
         { destruct n0; auto.
-          { destruct bs'; auto.
-            destruct b.
-            f_equal; tcsp. }
           destruct o0; auto; try (complete (f_equal; tcsp)).
           destruct bs'; auto.
           destruct b; auto.
@@ -644,15 +556,12 @@ Proof.
     rw Fix_eq; simpl.
     + f_equal.
     + introv F.
-      destruct x as [v'|f'|op bs']; auto.
+      destruct x as [v'|op bs']; auto.
       destruct op; auto.
       destruct bs'; auto.
       destruct b;[].
       destruct l; auto.
       { destruct n0; auto.
-        { destruct bs'; auto.
-          destruct b.
-          f_equal; tcsp. }
         destruct o0; auto; try (complete (f_equal; tcsp)).
         destruct bs'; auto.
         destruct b; auto.

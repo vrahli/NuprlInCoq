@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -68,7 +69,7 @@ Proof.
   introv; split; intro i.
   apply wf_atom_eq; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)) (k (nobnd d)); intros k1 k2 k3 k4.
   repeat (dest_imp k1 hyp).
   repeat (dest_imp k2 hyp).
@@ -340,7 +341,7 @@ Proof.
     destruct bs as [|b bs]; ginv.
     destruct b as [l t].
     destruct l; ginv.
-    destruct t as [z|f|op bts]; ginv;[].
+    destruct t as [z|op bts]; ginv;[].
     dopid op as [can|ncan|exc|abs] Case; ginv.
 
     + Case "Can".
@@ -387,7 +388,7 @@ Proof.
   exrepnd.
   exists k; dands; auto.
   left.
-  destruct b as [v|f|op bs]; allsimpl; tcsp;[allapply @isvalue_vterm;tcsp|].
+  destruct b as [v|op bs]; allsimpl; tcsp;[allapply @isvalue_vterm;tcsp|].
   allapply @isvalue_implies; repnd; auto.
 Qed.
 
@@ -454,7 +455,7 @@ Proof.
   - allrw @has_value_like_0; repnd.
     unfold isvalue_like in r; allsimpl; sp.
   - allrw @has_value_like_S; exrepnd.
-    destruct t as [v|f|op bs1]; try (complete (csunf r1; allsimpl; dcwf h)).
+    destruct t as [v|op bs1]; try (complete (csunf r1; allsimpl; dcwf h)).
     dopid op as [can2|ncan2|exc2|abs2] Case.
     + exists 0; dands; try omega.
       rw @has_value_like_0; dands; eauto 3 with slow.
@@ -496,7 +497,7 @@ Proof.
   - allrw @has_value_like_0; repnd.
     unfold isvalue_like in r; allsimpl; sp.
   - allrw @has_value_like_S; exrepnd.
-    destruct t as [v|f|op bs1]; try (complete (csunf r1; allsimpl; dcwf h)).
+    destruct t as [v|op bs1]; try (complete (csunf r1; allsimpl; dcwf h)).
     dopid op as [can2|ncan2|exc2|abs2] Case.
     + exists 0; dands; try omega.
       rw @has_value_like_0; dands; eauto 3 with slow.
@@ -562,12 +563,9 @@ Proof.
     unfold isvalue_like in r; allsimpl; sp.
 
   - allrw @has_value_like_S; exrepnd.
-    destruct t as [v|f|op l].
+    destruct t as [v|op l].
 
     { simpl in r1; ginv. }
-
-    { exists 0; dands; try omega.
-      rw @has_value_like_0; dands; eauto 3 with slow; simpl; sp. }
 
     dopid op as [can1|ncan1|exc1|abs1] Case.
 
@@ -625,12 +623,9 @@ Proof.
     unfold isvalue_like in r; allsimpl; sp.
 
   - allrw @has_value_like_S; exrepnd.
-    destruct t as [v|f|op l].
+    destruct t as [v|op l].
 
     { simpl in r1; ginv. }
-
-    { exists 0; dands; try omega.
-      rw @has_value_like_0; eauto 3 with slow. }
 
     dopid op as [can1|ncan1|exc1|abs1] Case.
 

@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -109,7 +112,7 @@ Lemma allvars_swap {o} :
     -> allvars (swap (mk_swapping vs1 vs2) t)
        = swapbvars (mk_swapping vs1 vs2) (allvars t).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv norep disj; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv norep disj; allsimpl; auto.
 
   Case "oterm".
   rw flat_map_map; unfold compose.
@@ -127,7 +130,7 @@ Lemma allvars_cswap {o} :
     -> allvars (cswap (mk_swapping vs1 vs2) t)
        = swapbvars (mk_swapping vs1 vs2) (allvars t).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv norep disj; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv norep disj; allsimpl; auto.
 
   Case "oterm".
   rw flat_map_map; unfold compose.
@@ -147,7 +150,7 @@ Lemma alphaeq_cswap_cl {o} :
     -> no_repeats vs2
     -> alphaeq (cswap (mk_swapping vs1 vs2) t) t.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case;
+  nterm_ind1s t as [v|op bs ind] Case;
   introv d1 d2 d3 len norep; allsimpl; eauto 3 with slow.
 
   - Case "vterm".
@@ -874,11 +877,3 @@ Proof.
   allrw @isprog_eq; allunfold @isprogram; repnd.
   allrw isp0; sp.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

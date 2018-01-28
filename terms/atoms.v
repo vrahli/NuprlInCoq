@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -49,7 +51,6 @@ Definition oatomvs {o} (l : list (get_patom_set o)) : list (oatom o) :=
 Fixpoint get_cutokens {p} (t : @NTerm p) : oatom p :=
   match t with
     | vterm _ => oatoml []
-    | sterm f => oatoms (fun n => get_cutokens (f n))
     | oterm o bterms =>
       oappl ((oatomvs (get_utokens_o o))
                ++ (map get_cutokens_b bterms))
@@ -62,7 +63,6 @@ with get_cutokens_b {p} (bt : @BTerm p) : oatom p :=
 Fixpoint get_utokens_so {p} (t : @SOTerm p) : list (get_patom_set p) :=
   match t with
   | sovar _ ts => flat_map get_utokens_so ts
-  | soseq s => []
   | soterm op bs => (get_utokens_o op) ++ (flat_map get_utokens_b_so bs)
   end
 with get_utokens_b_so {p} (bt : @SOBTerm p) : list (get_patom_set p) :=
@@ -73,7 +73,6 @@ with get_utokens_b_so {p} (bt : @SOBTerm p) : list (get_patom_set p) :=
 Fixpoint get_cutokens_so {p} (t : @SOTerm p) : oatom p :=
   match t with
   | sovar _ ts => oappl (map get_cutokens_so ts)
-  | soseq s => oatoms (fun n => get_cutokens (s n))
   | soterm op bs => oappl ((oatomvs (get_utokens_o op))
                              ++ (map get_cutokens_b_so bs))
   end

@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -117,18 +118,12 @@ Qed.
 Definition get_op {o} (t : @NTerm o) : Opid :=
   match t with
     | vterm _ => Exc
-    | sterm _ => Exc
     | oterm op _ => op
   end.
 
-Inductive same_value_like {o} lib : @NTerm o -> @NTerm o -> Type :=
-| svl_c : forall c bs1 bs2, same_value_like lib (oterm (Can c) bs1) (oterm (Can c) bs2)
-| svl_e : forall bs1 bs2, same_value_like lib (oterm Exc bs1) (oterm Exc bs2)
-| svl_s :
-    forall f1 f2,
-      (*(forall n, alpha_eq (f1 n) (f2 n))*)
-      (forall n, approx_star lib (f1 n) (f2 n))
-      -> same_value_like lib (sterm f1) (sterm f2).
+Inductive same_value_like {o} : @NTerm o -> @NTerm o -> Type :=
+| svl_c : forall c bs1 bs2, same_value_like (oterm (Can c) bs1) (oterm (Can c) bs2)
+| svl_e : forall bs1 bs2, same_value_like (oterm Exc bs1) (oterm Exc bs2).
 Hint Constructors same_value_like.
 
 Lemma approx_starbts_nil {o} :
@@ -145,7 +140,7 @@ Lemma howe_lemma2_implies_same_value_like {o} :
     -> isvalue_like t
     -> approx_star lib t u
     -> {v : NTerm
-        & same_value_like lib t v
+        & same_value_like t v
         # approx_starbts lib (get_op t) (get_bterms t) (get_bterms v)
         # reduces_to lib u v}.
 Proof.
@@ -158,9 +153,6 @@ Proof.
       exrepnd.
       exists (oterm (Can c) lbt'); dands; eauto.
       unfold computes_to_value in h0; repnd; auto.
-
-    + apply howe_lemma2_seq in ap; auto; exrepnd.
-      exists (sterm f'); dands; simpl; eauto 3 with slow; tcsp.
 
   - apply isexc_implies2 in isv; exrepnd; subst.
     applydup @isprogram_exception_implies in ispt; exrepnd; subst.
@@ -175,27 +167,25 @@ Proof.
 Qed.
 
 Lemma same_value_like_alpha_eq_r {o} :
-  forall lib (t u v : @NTerm o),
-    same_value_like lib t u
+  forall (t u v : @NTerm o),
+    same_value_like t u
     -> alpha_eq u v
-    -> same_value_like lib t v.
+    -> same_value_like t v.
 Proof.
   introv svl aeq.
-  inversion svl as [| |? ? imp1]; clear svl; subst;
-  inversion aeq as [|? ? imp2|]; clear aeq; subst; auto.
-  constructor; introv; eauto 3 with slow.
+  inversion svl as [|? ? imp1]; clear svl; subst;
+  inversion aeq as [|]; clear aeq; subst; auto.
 Qed.
 
 Lemma same_value_like_alpha_eq_l {o} :
-  forall lib (t u v : @NTerm o),
-    same_value_like lib t u
+  forall (t u v : @NTerm o),
+    same_value_like t u
     -> alpha_eq t v
-    -> same_value_like lib v u.
+    -> same_value_like v u.
 Proof.
   introv svl aeq.
-  inversion svl as [| |? ? imp1]; clear svl; subst;
-  inversion aeq as [|? ? imp2|]; clear aeq; subst; auto.
-  constructor; introv; eauto 3 with slow.
+  inversion svl as [|? ? imp1]; clear svl; subst;
+  inversion aeq as [|]; clear aeq; subst; auto.
 Qed.
 
 Lemma approx_starbts_get_bterms_alpha_eq {o} :
@@ -205,15 +195,12 @@ Lemma approx_starbts_get_bterms_alpha_eq {o} :
     -> approx_starbts lib op (get_bterms t) (get_bterms v).
 Proof.
   introv ap aeq.
-  destruct t as [v1|f1|op1 bs1]; destruct u as [v2|f2|op2 bs2]; allsimpl; auto;
+  destruct t as [v1|op1 bs1]; destruct u as [v2|op2 bs2]; allsimpl; auto;
   try (complete (inversion aeq; subst; allsimpl; tcsp)).
   - unfold approx_starbts, lblift_sub in ap; allsimpl; repnd; cpx.
     inversion aeq; subst; allsimpl; cpx; auto.
     unfold approx_starbts, lblift_sub; simpl; sp.
-  - unfold approx_starbts, lblift_sub in ap; allsimpl; repnd; cpx.
-    inversion aeq; subst; allsimpl; cpx; auto.
-    unfold approx_starbts, lblift_sub; simpl; sp.
-  - inversion aeq as [|?|? ? ? len imp]; subst; simpl.
+  - inversion aeq as [|? ? ? len imp]; subst; simpl.
     allunfold @approx_starbts.
     allunfold @lblift_sub; repnd; dands; auto; try omega.
     introv i.
@@ -290,8 +277,8 @@ Proof.
 Qed.
 
 Lemma same_value_like_implies_same_op {o} :
-  forall lib op1 op2 (bs1 bs2 : list (@BTerm o)),
-    same_value_like lib (oterm op1 bs1) (oterm op2 bs2)
+  forall op1 op2 (bs1 bs2 : list (@BTerm o)),
+    same_value_like (oterm op1 bs1) (oterm op2 bs2)
     -> op1 = op2.
 Proof.
   introv s; inversion s; auto.
@@ -318,13 +305,10 @@ Lemma change_bvars_alpha_norep {o} :
      # alpha_eq t u
      # no_repeats (bound_vars u)}.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv.
+  nterm_ind1s t as [v|op bs ind] Case; introv.
 
   - Case "vterm".
     exists (@mk_var o v); simpl; dands; auto.
-
-  - Case "sterm".
-    exists (sterm f); simpl; dands; eauto 3 with slow.
 
   - Case "oterm".
 
@@ -550,12 +534,12 @@ Lemma alpha_eq_lsubst_aux_pull_out_token {o} :
     -> alpha_eq t (lsubst_aux t' sub)
     -> {u : NTerm $ t = lsubst_aux u sub # disjoint (get_utokens u) (get_utokens_sub sub)}.
 Proof.
-  nterm_ind t as [x|f ind|op bs ind] Case;
+  nterm_ind t as [x|op bs ind] Case;
   introv disj1 disj2 disj3 norep nrut ss nrs wf aeq;
   allsimpl; GC.
 
   - Case "vterm".
-    destruct t' as [z|f|op' bs']; allsimpl;
+    destruct t' as [z|op' bs']; allsimpl;
     try (complete (inversion aeq)).
 
     remember (sub_find sub z) as sf; symmetry in Heqsf; destruct sf.
@@ -566,11 +550,8 @@ Proof.
       exists (@mk_var o z); simpl; boolvar; tcsp.
       rw Heqsf; auto.
 
-  - Case "sterm".
-    exists (sterm f); simpl; dands; auto.
-
   - Case "oterm".
-    destruct t' as [z|f|op' bs']; allsimpl; try (complete (inversion aeq)).
+    destruct t' as [z|op' bs']; allsimpl; try (complete (inversion aeq)).
 
     + remember (sub_find sub z) as sf; symmetry in Heqsf; destruct sf;
       try (complete (inversion aeq)).
@@ -831,7 +812,7 @@ Lemma null_get_utokens_sub_keep_first_free_vars_eq {o} :
     -> null (get_utokens_sub (sub_keep_first sub (free_vars t)))
     -> lsubst_aux t sub = t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv nrut nu; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv nrut nu; allsimpl; auto.
 
   - Case "vterm".
     remember (sub_find sub v) as sf; symmetry in Heqsf; destruct sf; auto.
@@ -876,7 +857,7 @@ Lemma alpha_eq_lsubst_aux_nrut_sub_implies {o} :
     -> alpha_eq (lsubst_aux t1 sub) (lsubst_aux t2 sub)
     -> alpha_eq t1 t2.
 Proof.
-  nterm_ind1s t1 as [v1|f1 ind1|op1 bs1 ind1] Case;
+  nterm_ind1s t1 as [v1|op1 bs1 ind1] Case;
   introv nrut ss1 ss2 disj1 disj2 aeq; allsimpl.
 
   - Case "vterm".
@@ -885,7 +866,7 @@ Proof.
     + apply sub_find_some in Heqsf.
       dup Heqsf as i.
       eapply in_nrut_sub in i; eauto; exrepnd; subst.
-      destruct t2 as [v2|f2|op2 bs2]; allsimpl;
+      destruct t2 as [v2|op2 bs2]; allsimpl;
       try (complete (inversion aeq)).
 
       * remember (sub_find sub v2) as sf'; symmetry in Heqsf'; destruct sf'.
@@ -902,7 +883,7 @@ Proof.
         allrw singleton_subset; tcsp.
 
     + apply sub_find_none2 in Heqsf.
-      destruct t2 as [v2|f2|op2 bs2]; allsimpl;
+      destruct t2 as [v2|op2 bs2]; allsimpl;
       try (complete (inversion aeq)).
 
       remember (sub_find sub v2) as sf'; symmetry in Heqsf'; destruct sf'.
@@ -914,16 +895,9 @@ Proof.
 
       { inversion aeq; subst; auto. }
 
-  - Case "sterm".
-    applydup @alphaeq_preserves_utokens in aeq; allsimpl.
-    symmetry in aeq0; apply null_iff_nil in aeq0.
-    eapply eqset_preserves_null in aeq0;[|apply get_utokens_lsubst_aux].
-    allrw @null_app; repnd.
-    erewrite null_get_utokens_sub_keep_first_free_vars_eq in aeq; eauto.
-
   - Case "oterm".
     allrw subset_app; repnd.
-    destruct t2 as [v2|f2|op2 bs2]; allsimpl; try (complete (inversion aeq)).
+    destruct t2 as [v2|op2 bs2]; allsimpl; try (complete (inversion aeq)).
 
     + remember (sub_find sub v2) as sf'; symmetry in Heqsf'; destruct sf'.
 
@@ -1187,15 +1161,12 @@ Lemma approx_starbts_get_bterms_alpha_eq_l {o} :
     -> approx_starbts lib op (get_bterms v) (get_bterms u).
 Proof.
   introv ap aeq.
-  destruct t as [v1|f1|op1 bs1]; destruct u as [v2|f2|op2 bs2]; allsimpl; auto;
+  destruct t as [v1|op1 bs1]; destruct u as [v2|op2 bs2]; allsimpl; auto;
   try (complete (inversion aeq; subst; allsimpl; auto)).
   - unfold approx_starbts, lblift_sub in ap; allsimpl; repnd; cpx.
     inversion aeq; subst; allsimpl; cpx; auto.
     unfold approx_starbts, lblift_sub; simpl; sp.
-  - unfold approx_starbts, lblift_sub in ap; allsimpl; repnd; cpx.
-    inversion aeq; subst; allsimpl; cpx; auto.
-    unfold approx_starbts, lblift_sub; simpl; sp.
-  - inversion aeq as [|?|? ? ? len imp]; subst; simpl.
+  - inversion aeq as [|? ? ? len imp]; subst; simpl.
     allunfold @approx_starbts.
     allunfold @lblift_sub; repnd; dands; auto; try omega.
     introv i.
@@ -1203,14 +1174,6 @@ Proof.
     pose proof (imp n) as h2; autodimp h2 hyp; try omega.
     eapply approx_star_bterm_alpha_fun_l;[apply alpha_eq_bterm_sym; exact h2|]; auto.
 Qed.
-
-Lemma subst_sterm {o} :
-  forall (f : @ntseq o) v t,
-    subst (sterm f) v t = sterm f.
-Proof.
-  introv; unfold subst; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @subst_sterm : slow.
 
 (*
 Lemma same_value_like_sterm_implies_approx_star {o} :
@@ -1251,7 +1214,7 @@ Lemma approx_star_pushdown_fresh_if_subst {o} :
     -> !LIn a (get_utokens_lib lib t2)
     -> isprog_vars [v1] t1
     -> isprog_vars [v2] t2
-    -> same_value_like lib (subst t1 v1 (mk_utoken a)) (subst t2 v2 (mk_utoken a))
+    -> same_value_like (subst t1 v1 (mk_utoken a)) (subst t2 v2 (mk_utoken a))
     -> approx_starbts lib (get_op t1) (get_bterms (subst t1 v1 (mk_utoken a))) (get_bterms (subst t2 v2 (mk_utoken a)))
     -> approx_star lib (pushdown_fresh v1 t1) (pushdown_fresh v2 t2).
 Proof.
@@ -1321,7 +1284,7 @@ Proof.
   rename nt2 into t2.
 
   repeat (unfsubst in svl); repeat (unfsubst in ap); allsimpl.
-  destruct t1 as [x|f|op bs]; allsimpl; tcsp; GC.
+  destruct t1 as [x|op bs]; allsimpl; tcsp; GC.
 
   - boolvar.
 
@@ -1340,15 +1303,8 @@ Proof.
 
     + inversion svl.
 
-  - autorewrite with slow in *.
-    destruct t2 as [v2|f2|op bs]; allsimpl; boolvar; allsimpl;
-    try (complete (inversion svl)); eauto 4 with slow.
-    inversion svl; subst; clear svl.
-    allrw @isprog_vars_eq; repnd.
-    econstructor;[| |eauto|]; eauto 3 with slow.
-
   - allsimpl.
-    destruct t2 as [x|f|op' bs']; allsimpl; GC; try (complete (inversion svl)).
+    destruct t2 as [x|op' bs']; allsimpl; GC; try (complete (inversion svl)).
 
     + boolvar; try (complete (inversion svl)).
       inversion svl; subst; allsimpl.

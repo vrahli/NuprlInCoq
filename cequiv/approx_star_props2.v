@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -55,8 +56,8 @@ Lemma approx_star_trans {p} : forall lib t1 t2 t3,
   -> approx_star lib t2 t3
   -> approx_star lib t1 t3.
 Proof.
-  nterm_ind1s t1 as [v1|f ind|o lbt1 Hind] Case; introv H1as H2as;
-  inversion H1as as [? ? ? aop|?|]; subst; clear H1as.
+  nterm_ind1s t1 as [v1|o lbt1 Hind] Case; introv H1as H2as;
+  inversion H1as as [? ? ? aop|]; subst; clear H1as.
 Abort. (** see comments above for approx_star_open_trans*)
 
 Lemma le_approx_ntwf {p} :
@@ -620,12 +621,9 @@ Lemma ex_ren_utokens2 {o} :
      # no_repeats (range_utok_ren ren')
      # utok_ren_cond2 (get_utokens t) ren ren' }.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv.
+  nterm_ind t as [v|op bs ind] Case; introv.
 
   - Case "vterm".
-    exists ([] : @utok_ren o); simpl; dands; eauto with slow.
-
-  - Case "sterm".
     exists ([] : @utok_ren o); simpl; dands; eauto with slow.
 
   - Case "oterm".
@@ -874,7 +872,7 @@ Lemma no_repeats_get_utokens_ren_utokens {o} :
     -> utok_ren_cond (get_utokens t) ren
     -> no_repeats (get_utokens (ren_utokens ren t)).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv nrr nrt cond; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv nrr nrt cond; allsimpl; auto.
   Case "oterm".
   allrw no_repeats_app; repnd; dands; eauto 3 with slow.
 
@@ -990,25 +988,19 @@ Lemma change_nr_ut_sub_in_lsubst_aux_approx_star {o} :
     -> approx_star lib t1 t2
     -> approx_star lib (ren_utokens ren t1) (ren_utokens ren t2).
 Proof.
-  nterm_ind1s t1 as [v1|f1 ind1|op1 bs1 ind1] Case;
+  nterm_ind1s t1 as [v1|op1 bs1 ind1] Case;
     introv norep1 norep2 dl1 dl2 disj1 disj2 apr.
 
   - Case "vterm".
     allsimpl.
     constructor.
-    inversion apr as [? ? ? apo|?|]; subst; clear apr.
+    inversion apr as [? ? ? apo|]; subst; clear apr.
 
     pose proof (approx_open_change_utoks lib (vterm v1) t2 ren) as h.
     repeat (autodimp h hyp).
 
-  - Case "sterm".
-    allsimpl.
-    inversion apr as [|? ? ? ? wf1 wf2 imp aop|]; subst; clear apr.
-    econstructor; eauto.
-    apply (approx_open_change_utoks _ _ _ ren) in aop; auto.
-
   - Case "oterm".
-    inversion apr as [|?|? ? ? ? ? len lift apo]; subst.
+    inversion apr as [|? ? ? ? ? len lift apo]; subst.
 
     pose proof (ex_ren_utokens2
                   (oterm op1 lbt1')

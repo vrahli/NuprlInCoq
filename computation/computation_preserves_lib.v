@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -560,15 +561,10 @@ Lemma compute_step_consistent_with_new_definition {o} {lib} :
          (comp : compute_step lib a = csuccess b),
     {b' : NTerm & compute_step (e :: lib) a = csuccess b' # alpha_eq b b'}.
 Proof.
-  nterm_ind1s a as [v|f ind|op bs ind] Case; introv wf comp.
+  nterm_ind1s a as [v|op bs ind] Case; introv wf comp.
 
   - Case "vterm".
     csunf comp; allsimpl; ginv.
-
-  - Case "sterm".
-    csunf comp; allsimpl; ginv.
-    csunf; simpl.
-    eexists; dands; eauto.
 
   - Case "oterm".
     dopid op as [can|ncan|exc|abs] SCase.
@@ -583,38 +579,7 @@ Proof.
       destruct b1 as [l t]; try (complete (allsimpl; ginv)).
       destruct l; try (complete (allsimpl; ginv)).
 
-      { destruct t as [x|f|op bts]; try (complete (allsimpl; ginv));[|].
-
-        - csunf comp; allsimpl.
-          dopid_noncan ncan SSCase; allsimpl; ginv;
-            try (complete (csunf; simpl; allrw; eexists; dands; eauto));[].
-
-          SSCase "NEApply".
-
-          apply compute_step_eapply_success in comp; exrepnd; subst.
-          repndors; exrepnd; allsimpl; subst.
-
-          + apply compute_step_eapply2_success in comp1; repnd; subst.
-            repndors; exrepnd; subst; ginv.
-            csunf; simpl.
-            dcwf h; simpl.
-            boolvar; try omega.
-            autorewrite with slow; eexists; dands; eauto.
-
-          + csunf; simpl.
-            apply isexc_implies2 in comp0; exrepnd; subst.
-            dcwf h; simpl; auto.
-            eexists; dands; eauto.
-
-          + fold_terms.
-            rewrite compute_step_eapply_iscan_isnoncan_like; auto.
-            pose proof (ind arg2 arg2 []) as h; clear ind.
-            repeat (autodimp h hyp); eauto 3 with slow.
-            apply h in comp1; clear h; eauto 3 with wf.
-            exrepnd.
-            allrw; simpl.
-            eexists; dands; eauto.
-            repeat prove_alpha_eq4.
+      { destruct t as [x|op bts]; try (complete (allsimpl; ginv));[].
 
         - dopid op as [can2|ncan2|exc2|abs2] SSCase.
 
@@ -646,13 +611,6 @@ Proof.
                   dcwf h; simpl.
                   apply iscan_implies in comp0; repndors; exrepnd; subst; simpl; auto;
                     try (complete (eexists; dands; eauto)).
-
-                + unfold mk_nseq in *; allsimpl; ginv.
-                  csunf; simpl.
-                  dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
-                  autorewrite with slow.
-                  eexists; dands; eauto.
 
                 + unfold mk_choice_seq in *; allsimpl; ginv.
                   csunf; simpl.
@@ -1047,7 +1005,6 @@ Definition get_all_abs_opid {o} (op : @Opid o) : OList opabs :=
 Fixpoint get_all_abs {o} (t : @NTerm o) : OList opabs :=
   match t with
   | vterm _ => onil
-  | sterm f => OLS (fun n => get_all_abs (f n))
   | oterm op bs => oapp (get_all_abs_opid op) (OLL (map get_all_abs_b bs))
   end
 with get_all_abs_b {o} (b : @BTerm o) : OList opabs :=
@@ -1091,7 +1048,6 @@ Definition found_opid_in_library_sign {o} (lib : @library o) (op : @Opid o) : bo
 Fixpoint all_abstractions_are_defined {o} lib (t : @NTerm o) : obool :=
   match t with
   | vterm _ => otrue
-  | sterm f => obseq (fun n => all_abstractions_are_defined lib (f n))
   | oterm op bs =>
     oband
       (bool2obool (found_opid_in_library_sign lib op))
@@ -1107,26 +1063,12 @@ Lemma all_abs_are_defined_eq {o} :
     all_abs_are_defined lib t
     <=> isotrue (all_abstractions_are_defined lib t).
 Proof.
-  nterm_ind t as [|f ind|op bs ind] Case; unfold all_abs_are_defined; simpl;
+  nterm_ind t as [|op bs ind] Case; unfold all_abs_are_defined; simpl;
   split; introv h; auto.
 
   - Case "vterm".
     introv i.
     inversion i; subst; exrepnd; allsimpl; tcsp.
-
-  - Case "sterm".
-    introv.
-    pose proof (ind n) as q; clear ind.
-    apply q; auto.
-    unfold all_abs_are_defined; introv i.
-    apply h.
-    constructor; eexists; eauto.
-
-  - Case "sterm".
-    introv i.
-    inversion i as [| |F j]; subst; clear i; exrepnd.
-    pose proof (h n) as q; clear h.
-    apply ind in q; apply q; auto.
 
   - Case "oterm".
     apply isotrue_oband; dands.
@@ -1171,14 +1113,7 @@ Lemma isotrue_all_abstractions_are_defined_implies_eq_term2otrue {o} :
     isotrue (all_abstractions_are_defined lib t)
     -> all_abstractions_are_defined lib t = term2otrue t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; intro h; allsimpl; auto.
-
-  - Case "sterm".
-    f_equal.
-    apply functional_extensionality.
-    introv.
-    pose proof (h x) as q.
-    apply ind in q; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; intro h; allsimpl; auto.
 
   - Case "oterm".
     allrw isotrue_oband; repnd.
@@ -1212,12 +1147,7 @@ Lemma isotrue_all_abstractions_are_defined_if_eq_term2otrue {o} :
     all_abstractions_are_defined lib t = term2otrue t
     -> isotrue (all_abstractions_are_defined lib t).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; intro h; allsimpl; auto.
-
-  - Case "sterm".
-    introv; apply ind.
-    inversion h as [e]; clear h.
-    eapply equal_f in e; eauto.
+  nterm_ind t as [v|op bs ind] Case; introv; intro h; allsimpl; auto.
 
   - Case "oterm".
     remember (found_opid_in_library_sign lib op) as b; destruct b; allsimpl; auto;
@@ -1294,7 +1224,7 @@ Lemma implies_isotrue_all_abstractions_are_defined_lsubst_aux {o} :
     -> isotrue (all_abstractions_are_defined_sub lib sub)
     -> isotrue (all_abstractions_are_defined lib (lsubst_aux t sub)).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv isot isos; allsimpl; tcsp.
+  nterm_ind1s t as [v|op bs ind] Case; introv isot isos; allsimpl; tcsp.
 
   - Case "vterm".
     remember (sub_find sub v) as p; destruct p; symmetry in Heqp; simpl; auto.
@@ -1339,7 +1269,7 @@ Lemma all_abstractions_are_defined_preserves_cswap {o} :
     all_abstractions_are_defined lib (cswap sw t)
     = all_abstractions_are_defined lib t.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; allsimpl; introv; tcsp.
+  nterm_ind1s t as [v|op bs ind] Case; allsimpl; introv; tcsp.
 
   Case "oterm".
   f_equal.
@@ -1370,7 +1300,7 @@ Lemma all_abstractions_are_defined_so_preserves_so_swap {o} :
     all_abstractions_are_defined_so lib (so_swap sw t)
     = all_abstractions_are_defined_so lib t.
 Proof.
-  soterm_ind1s t as [v ts ind|f ind|op bs ind] Case; allsimpl; introv; tcsp.
+  soterm_ind1s t as [v ts ind|op bs ind] Case; allsimpl; introv; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl; unfold all_abstractions_are_defined_so; simpl; auto.
@@ -1395,17 +1325,10 @@ Lemma all_abstractions_are_defined_preserves_alphaeq {o} :
     alphaeq t u
     -> all_abstractions_are_defined lib t = all_abstractions_are_defined lib u.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; allsimpl; introv aeq.
+  nterm_ind1s t as [v|op bs ind] Case; allsimpl; introv aeq.
 
   - Case "vterm".
     inversion aeq; subst; simpl; auto.
-
-  - Case "sterm".
-    inversion aeq as [|? g q|]; subst; simpl.
-    f_equal.
-    apply functional_extensionality; introv.
-    apply ind; auto; clear ind.
-    apply q.
 
   - Case "oterm".
     apply alphaeq_oterm_implies_combine in aeq; exrepnd; subst; allsimpl.
@@ -1431,10 +1354,10 @@ Lemma all_abstractions_are_defined_so_preserves_so_alphaeq {o} :
     so_alphaeq t u
     -> all_abstractions_are_defined_so lib t = all_abstractions_are_defined_so lib u.
 Proof.
-  soterm_ind1s t as [v ts ind|f ind|op bs ind] Case; allsimpl; introv aeq.
+  soterm_ind1s t as [v ts ind|op bs ind] Case; allsimpl; introv aeq.
 
   - Case "sovar".
-    inversion aeq as [? ? ? len imp| |]; subst; simpl; auto; clear aeq.
+    inversion aeq as [? ? ? len imp|]; subst; simpl; auto; clear aeq.
     unfold all_abstractions_are_defined_so; simpl; auto.
     allrw @all_abstractions_are_defined_apply_list.
     f_equal; f_equal.
@@ -1445,16 +1368,8 @@ Proof.
     apply ind; auto.
     apply in_combine in i; sp.
 
-  - Case "soseq".
-    inversion aeq as [|? g q|]; subst; simpl.
-    unfold all_abstractions_are_defined_so; simpl.
-    f_equal.
-    apply functional_extensionality; introv.
-    apply all_abstractions_are_defined_preserves_alphaeq.
-    apply q.
-
   - Case "soterm".
-    inversion aeq as [| |? ? ? len imp]; subst; clear aeq.
+    inversion aeq as [|? ? ? len imp]; subst; clear aeq.
     unfold all_abstractions_are_defined_so; simpl.
     f_equal; f_equal.
     repeat (rewrite map_map); unfold compose.
@@ -1518,7 +1433,7 @@ Lemma implies_isotrue_all_abstractions_are_defined_subst_utokens_aux {o} :
     -> isotrue (all_abstractions_are_defined_utok_sub lib sub)
     -> isotrue (all_abstractions_are_defined lib (subst_utokens_aux t sub)).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case;
+  nterm_ind1s t as [v|op bs ind] Case;
   introv isot isos; tcsp.
   Case "oterm".
   rewrite subst_utokens_aux_oterm.
@@ -1600,7 +1515,7 @@ Qed.
     compute_step lib t = csuccess u
     -> osubset (get_all_abs u) (get_all_abs t).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv comp.
+  nterm_ind1s t as [v|op bs ind] Case; introv comp.
 
   - Case "vterm".
     csunf comp; allsimpl; ginv.
@@ -2034,7 +1949,7 @@ Lemma implies_isotrue_all_abstractions_are_defined_sosub_aux {o} :
     -> isotrue (all_abstractions_are_defined_sosub lib sub)
     -> isotrue (all_abstractions_are_defined lib (sosub_aux sub t)).
 Proof.
-  soterm_ind1s t as [v ts ind|f ind|op bs ind] Case;
+  soterm_ind1s t as [v ts ind|op bs ind] Case;
   introv isot isos; allsimpl; auto.
 
   - Case "sovar".
@@ -2177,7 +2092,7 @@ Lemma compute_step_preserves_all_abstractions_are_defined {o} :
       -> isotrue (all_abstractions_are_defined lib t)
       -> isotrue (all_abstractions_are_defined lib u).
 Proof.
-  introv undef; nterm_ind1s t as [v|f ind|op bs ind] Case; introv comp allabs.
+  introv undef; nterm_ind1s t as [v|op bs ind] Case; introv comp allabs.
 
   - Case "vterm".
     csunf comp; allsimpl; ginv.
@@ -2908,7 +2823,7 @@ Lemma compute_step_preserves_agreeing_libraries {o} :
         -> compute_step lib1 t = csuccess u
         -> compute_step lib2 t = csuccess u.
 Proof.
-  introv wflib1 wflib2 agree norep; nterm_ind1s t as [v|f ind|op bs ind] Case; introv wft allabs1 allabs2 comp.
+  introv wflib1 wflib2 agree norep; nterm_ind1s t as [v|op bs ind] Case; introv wft allabs1 allabs2 comp.
 
   - Case "vterm".
     csunf comp; allsimpl; ginv.

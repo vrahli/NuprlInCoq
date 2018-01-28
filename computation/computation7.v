@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -79,11 +82,6 @@ Definition compute_eager_exc {o}
            (a e : @NTerm o) : Comput_Result :=
   match a with
     | vterm _ => cfailure compute_step_error_not_closed (mk_exception a e)
-    | sterm f =>
-      match compute_step lib e with
-        | csuccess e' => csuccess (mk_exception a e')
-        | cfailure m e' => cfailure m (mk_exception a e')
-      end
     | oterm op _ =>
       match op with
         | Can _ =>
@@ -130,9 +128,3 @@ Definition reduces_in_atmost_k_steps_exc {o} lib (t u : @NTerm o) k :=
 
 Definition reduces_in_atmost_k_steps_excc {o} lib (t u : @CTerm o) k :=
   reduces_in_atmost_k_steps_exc lib (get_cterm t) (get_cterm u) k.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -43,7 +46,7 @@ Lemma nt_wf_NPair_iff {o} :
     <=> {a : NTerm & {b : NTerm & bs = [nobnd a, nobnd b] # nt_wf a # nt_wf b }}.
 Proof.
   introv; split; intro h; exrepnd; subst.
-  - inversion h as [|?|? ? imp e]; clear h; subst; allsimpl.
+  - inversion h as [|? ? imp e]; clear h; subst; allsimpl.
     repeat (destruct bs; allsimpl; tcsp).
     destruct b as [l1 t1].
     destruct b0 as [l2 t2].
@@ -83,11 +86,6 @@ Proof.
       apply reduces_to_if_step.
       destruct c; try (complete (simpl; sp)).
   }
-
-  { right; introv.
-    eapply reduces_to_trans;[apply reduces_to_prinarg;eauto|].
-    apply reduces_to_if_step.
-    csunf; simpl; auto. }
 Qed.
 
 Lemma ispair_cases_c {p} :
@@ -160,11 +158,6 @@ Proof.
         [apply reduces_to_prinarg;eauto|].
       apply reduces_to_if_step; csunf; simpl; auto.
       repeat (destruct c; try (complete (simpl; sp))).
-
-  - right; introv.
-    eapply reduces_to_trans;
-      [apply reduces_to_prinarg;eauto|].
-    apply reduces_to_if_step; csunf; simpl; auto.
 Qed.
 
 Lemma isinl_cases_c {p} :
@@ -237,11 +230,6 @@ Proof.
         [apply reduces_to_prinarg;eauto|].
       apply reduces_to_if_step; csunf; simpl; auto.
       repeat (destruct c; try (complete (simpl; sp))).
-
-  - right; introv.
-    eapply reduces_to_trans;
-      [apply reduces_to_prinarg;eauto|].
-    apply reduces_to_if_step; csunf; simpl; auto.
 Qed.
 
 Lemma isinr_cases_c {p} :
@@ -309,11 +297,6 @@ Proof.
         [apply reduces_to_prinarg;eauto|].
       apply reduces_to_if_step; csunf; simpl; auto.
       destruct c; try (complete (simpl; sp)).
-
-  - right; introv.
-    eapply reduces_to_trans;
-      [apply reduces_to_prinarg;eauto|].
-    apply reduces_to_if_step; csunf; simpl; auto.
 Qed.
 
 (* Need islambda_cases_c ?? But first need  (mkc_lambda v a)  and what is it?
@@ -361,11 +344,6 @@ Proof.
         [apply reduces_to_prinarg;eauto|].
       apply reduces_to_if_step; csunf; simpl; auto.
       destruct c; try (complete (simpl; sp)).
-
-  - right; introv.
-    eapply reduces_to_trans;
-      [apply reduces_to_prinarg;eauto|].
-    apply reduces_to_if_step; csunf; simpl; auto.
 Qed.
 
 Lemma isaxiom_cases_c {p} :

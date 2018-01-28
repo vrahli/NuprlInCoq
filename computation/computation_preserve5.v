@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -145,13 +146,7 @@ Proof.
       [|].
 
     { SSSCase "nilcase".
-      destruct arg1nt as [v89|f|arg1o arg1bts];[inverts Hcomp| |];[|].
-
-      { csunf Hcomp; allsimpl.
-        left.
-        exists (sterm f) lbt (sterm f) 0.
-        allrw @reduces_in_atmost_k_steps_0.
-        dands; eauto 3 with slow. }
+      destruct arg1nt as [v89|arg1o arg1bts];[inverts Hcomp|];[].
 
       left.
       dopid arg1o as [arg1c | arg1nc | arg1exc | arg1abs] SSSSCase.
@@ -224,13 +219,7 @@ Proof.
     dlist arg1vs SSSCase as [|arg1v1];[|].
 
     { SSSCase "nilcase".
-      destruct arg1nt as [v89|f| arg1o arg1bts]; [inverts Hcomp| |];[|].
-
-      { csunf Hcomp; allsimpl.
-        left.
-        exists (sterm f) lbt (sterm f) 0.
-        allrw @reduces_in_atmost_k_steps_0.
-        dands; eauto 3 with slow; try omega. }
+      destruct arg1nt as [v89|arg1o arg1bts]; [inverts Hcomp|];[].
 
       dopid arg1o as [arg1c | arg1nc | arg1exc | arg1abs] SSSSCase.
 
@@ -491,7 +480,7 @@ Lemma nterm_trico_like {o} :
     [+] isnoncan_like t.
 Proof.
   introv.
-  destruct t as [v|f|op bs]; simpl; tcsp; eauto 3 with slow.
+  destruct t as [v|op bs]; simpl; tcsp; eauto 3 with slow.
   right.
   dopid op as [can|ncan|exc|abs] Case; unfold isvalue_like, isnoncan_like; simpl; sp.
 Qed.
@@ -516,7 +505,7 @@ Lemma simple_subst_aux_subst_utokens_aux_aeq {o} :
          (subst_aux (subst_utokens_aux t1 [(a, mk_var v)]) v (mk_utoken a))
          t2.
 Proof.
-  nterm_ind1s t1 as [x|f ind|op bs ind] Case; introv wf ni1 ni2 aeq; auto.
+  nterm_ind1s t1 as [x|op bs ind] Case; introv wf ni1 ni2 aeq; auto.
 
   - Case "vterm".
     allsimpl.

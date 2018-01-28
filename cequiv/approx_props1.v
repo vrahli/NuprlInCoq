@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -115,10 +116,6 @@ Proof.
     clear cl2 cl.
     apply cl3 in comp; exrepnd.
     eexists; eexists; dands; eauto.
-
-  - introv comp.
-    apply cl4 in comp; exrepnd.
-    eexists; dands; eauto.
 Qed.
 
 Lemma approx_implies_approx_bad {o} :
@@ -153,13 +150,6 @@ Proof.
     apply cl3 in comp; exrepnd.
     repndors; try (complete (allunfold @bot2; sp)).
     eexists; eexists; dands; eauto.
-
-  - introv comp.
-    apply cl4 in comp; exrepnd.
-    eexists; dands; eauto.
-    introv.
-    pose proof (comp0 n) as h; repndors; tcsp.
-    unfold bot2 in h; tcsp.
 Qed.
 
 Lemma approx_open_simpler_equiv_r {o} :
@@ -634,22 +624,6 @@ Proof.
     apply cl in comp.
     eapply compute_to_marker_alpha in comp; eauto.
 *)
-
-  - introv comp.
-    apply cl4 in comp; exrepnd.
-    eapply computes_to_seq_alpha in comp1; eauto 3 with slow; exrepnd.
-    eexists; dands; eauto.
-    introv.
-    pose proof (comp0 n) as h; clear comp0.
-    pose proof (comp2 n) as q; clear comp2.
-
-    repndors; tcsp; right.
-
-    + apply hr.
-      eexists; dands; eauto.
-
-    + apply hb.
-      eapply resp; eauto.
 Qed.
 Hint Resolve respects_alpha_r_approx_aux : slow.
 
@@ -773,23 +747,6 @@ Proof.
     introv comp.
     apply (compute_to_marker_alpha _ _ b) in comp; auto.
 *)
-
-  - introv comp.
-    eapply computes_to_seq_alpha in comp;[| | eauto]; eauto 3 with slow; exrepnd.
-    apply cl4 in comp1; exrepnd.
-    eexists; dands; eauto.
-    introv.
-    pose proof (comp0 n) as h; clear comp0.
-    pose proof (comp2 n) as q; clear comp2.
-
-    repndors; tcsp; right.
-
-    + apply hr.
-      eexists; dands; eauto.
-
-    + apply hb.
-      apply alpha_eq_sym in h.
-      eapply resp; eauto.
 Qed.
 Hint Resolve respects_alpha_l_approx_aux : slow.
 
@@ -832,14 +789,6 @@ Proof.
     apply Hcl3 in Hcomp; exrepnd.
     exists a' e'; dands; auto; repndors; auto; tcsp;
     try (complete (left; apply CIH; apply OBG; tcsp; eauto 3 with slow)).
-
-  - introv comp.
-    apply Hcl4 in comp; exrepnd.
-    eexists; dands; eauto.
-    introv.
-    pose proof (comp0 n) as h; clear comp0; repndors; tcsp.
-    left.
-    apply CIH; apply OBG; tcsp; eauto 3 with slow.
 Qed.
 
 (*
@@ -1593,7 +1542,7 @@ Lemma inv_ren_utokens_lib {o} :
     -> disjoint (range_utok_ren ren) (diff (get_patom_deq o) (dom_utok_ren ren) (get_utokens_lib lib t))
     -> ren_utokens (inv_utok_ren ren) (ren_utokens ren t) = t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv norep disj; tcsp.
+  nterm_ind t as [v|op bs ind] Case; introv norep disj; tcsp.
   Case "oterm".
   allrw @ren_utokens_oterm.
   remember (get_utok op) as guo; symmetry in Heqguo; destruct guo.
@@ -1674,7 +1623,7 @@ Lemma inv_ren_utokens2_lib {o} :
     -> disjoint (dom_utok_ren ren) (diff (get_patom_deq o) (range_utok_ren ren) (get_utokens_lib lib t))
     -> ren_utokens ren (ren_utokens (inv_utok_ren ren) t) = t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv norep disj; tcsp.
+  nterm_ind t as [v|op bs ind] Case; introv norep disj; tcsp.
   Case "oterm".
   allrw @ren_utokens_oterm.
   remember (get_utok op) as guo; symmetry in Heqguo; destruct guo.
@@ -2047,24 +1996,6 @@ Proof.
     dup comp2 as comp22.
     apply (computes_to_marker_ren_utokens _ _ _ ren) in comp2; auto.
 *)
-
-  - dup comp as comp1.
-
-    apply (reduces_to_ren_utokens _ _ _ (inv_utok_ren ren)) in comp1;
-      allrw @range_utok_ren_inv_utok_ren;
-      allrw @dom_utok_ren_inv_utok_ren;
-      eauto 3 with slow;
-      [|rw @get_utokens_lib_ren_utokens; auto;
-        apply disjoint_dom_diff_range_map_ren_atom].
-
-    rw (inv_ren_utokens_lib lib) in comp1; allsimpl; auto.
-
-    dup comp1 as comp2.
-    apply cl4 in comp2; exrepnd.
-    dup comp0 as comp00.
-    apply (reduces_to_ren_utokens _ _ _ ren) in comp2; eauto 3 with slow; allsimpl.
-
-    eexists; dands; eauto.
 Qed.
 
 (*

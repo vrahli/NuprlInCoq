@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -293,25 +294,22 @@ Proof.
   assert (isvalue_like w1) as isvlw1.
   { repeat (rw @cl_subst_subst_aux in ap2; eauto 2 with slow).
     unfold subst_aux in ap2.
-    inversion ap2 as [? ? ? e1 e2| ? ? e1 e2|].
+    inversion ap2 as [? ? ? e1 e2|].
 
-    - destruct u as [z11|f11|op11 bs11]; allsimpl; boolvar; tcsp; ginv.
+    - destruct u as [z11|op11 bs11]; allsimpl; boolvar; tcsp; ginv.
 
       + repeat (rw @cl_subst_subst_aux in gopu; eauto 2 with slow); allunfold @subst_aux; allsimpl; boolvar; allsimpl;
         try (complete (inversion gopu)).
 
       + repeat (rw @cl_subst_subst_aux in gopu; eauto 2 with slow); allunfold @subst_aux; allsimpl; boolvar; allsimpl;
         try (complete (inversion gopu)); ginv.
-        destruct w1 as [z22|f22|op22 bs22]; allsimpl; boolvar; GC; tcsp; ginv; eauto 3 with slow.
+        destruct w1 as [z22|op22 bs22]; allsimpl; boolvar; GC; tcsp; ginv; eauto 3 with slow.
         inversion e2; subst; allsimpl; fold_terms; GC.
         allrw subset_cons_l; repnd; tcsp.
         allrw not_over_or; tcsp.
 
-    - destruct u as [z11|f11|op11 bs11]; allsimpl; boolvar; tcsp; ginv.
-      destruct w1 as [z22|f22|op22 bs22]; allsimpl; boolvar; GC; tcsp; ginv; eauto 3 with slow.
-
-    - destruct u as [z11|f11|op11 bs11]; allsimpl; boolvar; tcsp; ginv.
-      destruct w1 as [z22|f22|op22 bs22]; allsimpl; boolvar; GC; tcsp; ginv; eauto 3 with slow.
+    - destruct u as [z11|op11 bs11]; allsimpl; boolvar; tcsp; ginv.
+      destruct w1 as [z22|op22 bs22]; allsimpl; boolvar; GC; tcsp; ginv; eauto 3 with slow.
   }
 
   pose proof (compute_step_fresh_if_isvalue_like lib vr w1 isvlw1) as comp.

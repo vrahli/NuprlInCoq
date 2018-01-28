@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -59,7 +61,7 @@ Proof.
   allrw remove_nvars_nil_l.
   allrw app_nil_r.
   allrw app_eq_nil_iff; repnd; allrw.
-  inversion w as [| | o lnt k meq ]; allsimpl; subst.
+  inversion w as [| o lnt k meq ]; allsimpl; subst.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)); intros i1 i2 i3.
   dest_imp i1 hyp; dest_imp i2 hyp; dest_imp i3 hyp.
   unfold isprogram; allrw.

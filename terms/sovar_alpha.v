@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -57,7 +58,6 @@ Fixpoint so_swap {p} (l : swapping) (t : @SOTerm p) : SOTerm :=
     if bnull ts
     then sovar (swapvar l v) []
     else sovar v (map (so_swap l) ts)
-  | soseq s => soseq s
   | soterm o bts => soterm o (map (so_swapbt l) bts)
   end
 with so_swapbt {p} (l : swapping) (bt : SOBTerm) :=
@@ -93,7 +93,7 @@ Lemma wf_soterm_so_swap {o} :
   forall (t : @SOTerm o) s,
     wf_soterm t <=> wf_soterm (so_swap s t).
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl; introv; tcsp.
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl; introv; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl; allrw @wf_sovar; tcsp.
@@ -133,10 +133,6 @@ Inductive so_alphaeq_vs {p} (l : list NVar) : @SOTerm p -> @SOTerm p -> Type :=
         length ts1 = length ts2
         -> (forall t1 t2, LIn (t1,t2) (combine ts1 ts2) -> so_alphaeq_vs l t1 t2)
         -> so_alphaeq_vs l (sovar v ts1) (sovar v ts2)
-  | soaeqs :
-      forall f1 f2,
-        (forall n, alphaeq_vs l (f1 n) (f2 n))
-        -> so_alphaeq_vs l (soseq f1) (soseq f2)
   | soaeqo :
       forall o bts1 bts2,
         length bts1 = length bts2
@@ -290,7 +286,7 @@ Lemma sosize_so_swap {p} :
   forall (t : @SOTerm p) l,
     sosize (so_swap l t) = sosize t.
 Proof.
-  soterm_ind1 t as [v ts Hind | | o bts Hind] Case; introv; simpl; auto; tcsp.
+  soterm_ind1 t as [v ts Hind | o bts Hind] Case; introv; simpl; auto; tcsp.
   - boolvar; subst; simpl; auto.
     f_equal; f_equal.
     rw map_map; unfold compose.
@@ -318,7 +314,7 @@ Lemma disjoint_all_fo_vars_so_swap {p} :
     -> disjoint vs (all_fo_vars t)
     -> disjoint vs (all_fo_vars (so_swap (mk_swapping vs1 vs2) t)).
 Proof.
-  soterm_ind1s t as [v ts Hind | | o lbt Hind] Case;
+  soterm_ind1s t as [v ts Hind | o lbt Hind] Case;
   introv len disj1 disj2 disj3; allsimpl; tcsp.
 
   - Case "sovar".
@@ -346,7 +342,7 @@ Lemma so_swap_so_swap {p} :
   forall s1 s2 (t : @SOTerm p),
     so_swap s1 (so_swap s2 t) = so_swap (s2 ++ s1) t.
 Proof.
-  soterm_ind1 t as [v ts Hind | | o lbt Hind] Case; simpl; tcsp.
+  soterm_ind1 t as [v ts Hind | o lbt Hind] Case; simpl; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl; boolvar; allsimpl; auto; tcsp;
@@ -386,7 +382,7 @@ Lemma so_swap_app_so_swap {p} :
                         (vs4 ++ vs3))
            t.
 Proof.
-  soterm_ind1s t as [v ts Hind | | o lbt Hind] Case;
+  soterm_ind1s t as [v ts Hind | o lbt Hind] Case;
   introv len1 len2 norep2 norep3;
   introv disj1 disj2 disj3 disj4 disj5 disj6 disj7;
   tcsp.
@@ -429,10 +425,10 @@ Lemma so_alphaeq_add_so_swap {p} :
          (so_swap (mk_swapping vs1 vs2) t1)
          (so_swap (mk_swapping vs1 vs2) t2).
 Proof.
-  soterm_ind1s t1 as [v1 ts1 Hind | | o1 lbt1 Hind] Case; introv len norep2 disj aeq; tcsp.
+  soterm_ind1s t1 as [v1 ts1 Hind | o1 lbt1 Hind] Case; introv len norep2 disj aeq; tcsp.
 
   - Case "sovar".
-    inversion aeq as [? ? ? e imp| | ]; clear aeq; subst; allsimpl; auto.
+    inversion aeq as [? ? ? e imp| ]; clear aeq; subst; allsimpl; auto.
     boolvar; subst; allsimpl; tcsp;
     try (complete (destruct ts2; allsimpl; cpx));
     try (complete (destruct ts1; allsimpl; cpx)).
@@ -448,13 +444,9 @@ Proof.
            ]); repnd.
     dands; auto.
 
-  - Case "soseq".
-    allsimpl.
-    inversion aeq; subst; allsimpl; auto.
-
   - Case "soterm".
     allsimpl.
-    inversion aeq as [| | ? ? ? eqlens aeqbts e1 oeq]; subst; clear aeq.
+    inversion aeq as [| ? ? ? eqlens aeqbts e1 oeq]; subst; clear aeq.
     allsimpl.
     apply soaeqo; allrw map_length; auto.
     introv lt.
@@ -510,7 +502,7 @@ Lemma so_swap_disj_chain {p} :
     -> so_swap (mk_swapping (vs1 ++ vs) (vs ++ vs2)) t
        = so_swap (mk_swapping vs1 vs2) t.
 Proof.
-  soterm_ind1s t as [v ts Hind | | o lbt Hind] Case;
+  soterm_ind1s t as [v ts Hind | o lbt Hind] Case;
   introv len1 len2 norep1 norep2 disj1 disj2;
   allsimpl; tcsp.
 
@@ -541,24 +533,18 @@ Lemma so_alphaeq_vs_implies_less {p} :
     -> subvars l2 l1
     -> so_alphaeq_vs l2 t1 t2.
 Proof.
-  soterm_ind1s t1 as [v1 ts1 Hind | | o1 lbt1 Hind] Case; introv aeq sv; tcsp.
+  soterm_ind1s t1 as [v1 ts1 Hind | o1 lbt1 Hind] Case; introv aeq sv; tcsp.
 
   - Case "sovar".
-    inversion aeq as [? ? ? e imp | | ]; clear aeq; subst; auto.
+    inversion aeq as [? ? ? e imp | ]; clear aeq; subst; auto.
     constructor; auto.
     introv i.
     applydup imp in i.
     apply in_combine in i; repnd.
     eapply Hind; eauto.
 
-  - Case "soseq".
-    allsimpl.
-    inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
-    constructor; introv; eauto 3 with slow.
-    eapply alphaeq_vs_implies_less; eauto.
-
   - Case "soterm".
-    inversion aeq as [| | ? ? ? len aeqbts]; subst; clear aeq.
+    inversion aeq as [| ? ? ? len aeqbts]; subst; clear aeq.
     constructor; auto.
     introv i.
     applydup aeqbts in i as h.
@@ -594,23 +580,18 @@ Qed.
 Lemma so_alphaeq_implies_alphaeq_vs {p} :
   forall t1 t2 : @SOTerm p, so_alphaeq t1 t2 -> forall l, so_alphaeq_vs l t1 t2.
 Proof.
-  soterm_ind1s t1 as [v1 ts1 ind1 | | o1 lbt1 ind1] Case; introv aeq; introv; tcsp.
+  soterm_ind1s t1 as [v1 ts1 ind1 | o1 lbt1 ind1] Case; introv aeq; introv; tcsp.
 
   - Case "sovar".
-    inversion aeq as [? ? ? len imp | |]; clear aeq; subst; auto.
+    inversion aeq as [? ? ? len imp |]; clear aeq; subst; auto.
     constructor; auto.
     introv i.
     applydup imp in i.
     apply ind1; auto.
     apply in_combine in i; sp.
 
-  - Case "soseq".
-    inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
-    constructor; introv.
-    eapply alphaeq_vs_implies_more; eauto.
-
   - Case "soterm".
-    inversion aeq as [| | ? ? ? len aeqbts]; subst; clear aeq.
+    inversion aeq as [| ? ? ? len aeqbts]; subst; clear aeq.
     constructor; auto.
     introv i.
     applydup aeqbts in i as h.
@@ -710,7 +691,7 @@ Proof.
   - constructor; simpl; auto.
     introv k; sp; cpx.
   - autodimp h hyp.
-    inversion h as [ | |? ? ? ? imp]; subst; allsimpl; GC.
+    inversion h as [ |? ? ? ? imp]; subst; allsimpl; GC.
     apply imp; sp.
 Qed.
 
@@ -871,7 +852,7 @@ Lemma lsubst_aux_swap_swap {o} :
            (swap (mk_swapping vs1 vs2) t)
            (swap_sub (mk_swapping vs1 vs2) sub).
 Proof.
-  nterm_ind1 t as [v|f ind|op bts Hind] Case; introv norep disj; simpl; auto.
+  nterm_ind1 t as [v|op bts Hind] Case; introv norep disj; simpl; auto.
 
   - Case "vterm".
     remember (sub_find sub v) as p; destruct p; symmetry in Heqp.
@@ -901,7 +882,7 @@ Lemma lsubst_aux_cswap_cswap {o} :
            (cswap (mk_swapping vs1 vs2) t)
            (cswap_sub (mk_swapping vs1 vs2) sub).
 Proof.
-  nterm_ind1 t as [v|f ind|op bts Hind] Case; introv norep disj; simpl; auto.
+  nterm_ind1 t as [v|op bts Hind] Case; introv norep disj; simpl; auto.
 
   - Case "vterm".
     remember (sub_find sub v) as p; destruct p; symmetry in Heqp.
@@ -1358,7 +1339,7 @@ Lemma sosub_aux_swap_swap {p} :
        = sosub_aux (swap_sosub (mk_swapping vs1 vs2) sub)
                    (so_swap (mk_swapping vs1 vs2) t).
 Proof.
-  soterm_ind1s t as [v ts ind | | o lbt Hind] Case;
+  soterm_ind1s t as [v ts ind | o lbt Hind] Case;
   introv norep disj cov; tcsp.
 
   - Case "sovar".
@@ -1396,9 +1377,6 @@ Proof.
       autodimp cov0 hyp; tcsp.
       rw null_iff_nil; auto.
 
-  - Case "soseq".
-    allsimpl.
-
   - Case "soterm".
     simpl.
     f_equal.
@@ -1422,7 +1400,7 @@ Lemma sosub_aux_cswap_cswap {p} :
        = sosub_aux (cswap_sosub (mk_swapping vs1 vs2) sub)
                    (so_swap (mk_swapping vs1 vs2) t).
 Proof.
-  soterm_ind1s t as [v ts ind | | o lbt Hind] Case;
+  soterm_ind1s t as [v ts ind | o lbt Hind] Case;
   introv norep disj cov; tcsp.
 
   - Case "sovar".
@@ -1888,7 +1866,7 @@ Lemma free_fo_vars_so_swap {o} :
     -> length vs1 = length vs2
     -> disjoint vs1 (get_fo_vars (so_free_vars (so_swap (mk_swapping vs1 vs2) t))).
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl;
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl;
   introv disj1 disj2 norep len; tcsp.
 
   - Case "sovar".
@@ -1930,7 +1908,7 @@ Lemma fo_bound_vars_so_swap {o} :
     -> length vs1 = length vs2
     -> disjoint vs1 (fo_bound_vars (so_swap (mk_swapping vs1 vs2) t)).
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl;
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl;
   introv disj1 disj2 norep len; tcsp.
 
   - Case "sovar".
@@ -1986,7 +1964,6 @@ Fixpoint fovars {p} (t : @SOTerm p) : list NVar :=
     if bnull ts
     then v :: flat_map fovars ts
     else flat_map fovars ts
-  | soseq s => []
   | soterm op bs => flat_map fovars_bterm bs
   end
 with fovars_bterm {p} (bt : @SOBTerm p) : list NVar :=
@@ -1998,7 +1975,7 @@ Lemma fovars_subvars_all_fo_vars {o} :
   forall t : @SOTerm o,
     subvars (fovars t) (all_fo_vars t).
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl; introv; tcsp.
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl; introv; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl; auto.
@@ -2068,7 +2045,7 @@ Lemma fovars_eqvars {o} :
       (fovars t)
       (get_fo_vars (so_free_vars t) ++ fo_bound_vars t).
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl; introv; tcsp.
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl; introv; tcsp.
 
   - Case "sovar".
     boolvar; subst; simpl; auto.
@@ -2185,7 +2162,7 @@ Lemma sosub_aux_sosub_filter {o} :
     -> sosub_aux (sosub_filter sub (vars2sovars l)) t
        = sosub_aux sub t.
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl; introv disj; tcsp.
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl; introv disj; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl.
@@ -2241,7 +2218,7 @@ Lemma fo_bound_var_so_swap {o} :
     fo_bound_vars (so_swap (mk_swapping vs1 vs2) t)
     = swapbvars (mk_swapping vs1 vs2) (fo_bound_vars t).
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl; introv; tcsp.
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl; introv; tcsp.
 
   - Case "sovar".
     boolvar; subst; simpl; auto.
@@ -2280,7 +2257,7 @@ Lemma fovars_so_swap {o} :
     fovars (so_swap (mk_swapping vs1 vs2) t)
     = swapbvars (mk_swapping vs1 vs2) (fovars t).
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl; introv; tcsp.
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl; introv; tcsp.
 
   - Case "sovar".
     boolvar; subst; simpl; boolvar; simpl; auto; cpx.
@@ -2312,7 +2289,7 @@ Proof.
   unfold free_vars_sosub_kind; simpl.
 
   revert l.
-  nterm_ind n as [v|f ind|op bs ind] Case; simpl; introv; auto.
+  nterm_ind n as [v|op bs ind] Case; simpl; introv; auto.
 
   - Case "vterm".
     repeat (rw remove_nvars_cons_r); boolvar; simpl;
@@ -2322,10 +2299,6 @@ Proof.
     + destruct Heqb.
       rw in_map_iff.
       eexists; eauto.
-
-  - Case "sterm".
-    allrw remove_nvars_nil_r.
-    unfold swapbvars; simpl; auto.
 
   - Case "oterm".
     repeat (rw remove_nvars_flat_map); unfold compose.
@@ -2349,7 +2322,7 @@ Proof.
   unfold free_vars_sosub_kind; simpl.
 
   revert l.
-  nterm_ind n as [v|f ind|op bs ind] Case; simpl; introv; auto.
+  nterm_ind n as [v|op bs ind] Case; simpl; introv; auto.
 
   - Case "vterm".
     repeat (rw remove_nvars_cons_r); boolvar; simpl;
@@ -2359,10 +2332,6 @@ Proof.
     + destruct Heqb.
       rw in_map_iff.
       eexists; eauto.
-
-  - Case "sterm".
-    allrw remove_nvars_nil_r.
-    unfold swapbvars; simpl; auto.
 
   - Case "oterm".
     repeat (rw remove_nvars_flat_map); unfold compose.
@@ -2420,7 +2389,7 @@ Lemma bound_vars_swap {o} :
     bound_vars (swap (mk_swapping vs1 vs2) t)
     = swapbvars (mk_swapping vs1 vs2) (bound_vars t).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; simpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
   rw @swapbvars_flat_map.
   rw flat_map_map; unfold compose.
   apply eq_flat_maps; introv i; destruct x; simpl.
@@ -2434,7 +2403,7 @@ Lemma bound_vars_cswap {o} :
     bound_vars (cswap (mk_swapping vs1 vs2) t)
     = swapbvars (mk_swapping vs1 vs2) (bound_vars t).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; simpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
   rw @swapbvars_flat_map.
   rw flat_map_map; unfold compose.
   apply eq_flat_maps; introv i; destruct x; simpl.
@@ -2587,7 +2556,7 @@ Lemma cover_so_vars_so_swap {o} :
          (so_swap (mk_swapping vs1 vs2) t)
          (combine vs (map (swapsk (mk_swapping vs1 vs2)) sks)).
 Proof.
-  soterm_ind1s t as [ v ts ind | | op lbt ind ] Case; simpl; introv cov; tcsp.
+  soterm_ind1s t as [ v ts ind | op lbt ind ] Case; simpl; introv cov; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl; auto;
@@ -2611,9 +2580,6 @@ Proof.
       applydup cov in k1.
       apply ind; auto.
 
-  - Case "soseq".
-    allunfold @cover_so_vars; allsimpl; auto.
-
   - Case "soterm".
     allrw @cover_so_vars_soterm; introv i.
     rw in_map_iff in i; exrepnd.
@@ -2629,7 +2595,7 @@ Lemma cover_so_vars_so_swapc {o} :
          (so_swap (mk_swapping vs1 vs2) t)
          (combine vs (map (cswapsk (mk_swapping vs1 vs2)) sks)).
 Proof.
-  soterm_ind1s t as [ v ts ind | | op lbt ind ] Case; simpl; introv cov; tcsp.
+  soterm_ind1s t as [ v ts ind | op lbt ind ] Case; simpl; introv cov; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl; auto;
@@ -2652,9 +2618,6 @@ Proof.
     + rw in_map_iff in k; exrepnd; subst.
       applydup cov in k1.
       apply ind; auto.
-
-  - Case "soseq".
-    allunfold @cover_so_vars; allsimpl; auto.
 
   - Case "soterm".
     allrw @cover_so_vars_soterm; introv i.
@@ -2722,7 +2685,7 @@ Lemma cswap_trivial {o} :
     -> disjoint (allvars t) vs2
     -> cswap (mk_swapping vs1 vs2) t = t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv d1 d2; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv d1 d2; allsimpl; auto.
 
   - Case "vterm".
     allrw disjoint_singleton_l.
@@ -2789,11 +2752,11 @@ Lemma sosub_aux_alpha_congr {p} :
     -> bin_rel_sk alphaeq_sk ts1 ts2
     -> alphaeq (sosub_aux sub1 t1) (sosub_aux sub2 t2).
 Proof.
-  soterm_ind1s t1 as [ v1 ts1 ind1 | | op1 lbt1 ind1 ] Case; simpl;
+  soterm_ind1s t1 as [ v1 ts1 ind1 | op1 lbt1 ind1 ] Case; simpl;
   introv aeq len1 len2 d1 d2 d3 d4 cov1 cov2 ask; tcsp.
 
   - Case "sovar".
-    inversion aeq as [? ? ? len imp | |]; subst; clear aeq; simpl.
+    inversion aeq as [? ? ? len imp |]; subst; clear aeq; simpl.
     remember (sosub_find (combine vs ts0) (v1, length ts1)) as o;
       destruct o; symmetry in Heqo;
       remember (sosub_find (combine vs ts2) (v1, length ts4)) as q;
@@ -3022,12 +2985,8 @@ Proof.
           apply cov2; auto.
         }
 
-  - Case "soseq".
-    inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
-    constructor; introv; tcsp.
-
   - Case "soterm".
-    inversion aeq as [ | |? ? ? len imp]; subst; clear aeq; simpl.
+    inversion aeq as [ |? ? ? len imp]; subst; clear aeq; simpl.
     constructor; try (complete (repeat (rw map_length); auto)).
     introv i.
     rw map_length in i.
@@ -3448,12 +3407,12 @@ Lemma so_alphaeq_vs_trans {o} :
     -> so_alphaeq_vs vs t2 t3
     -> so_alphaeq_vs vs t1 t3.
 Proof.
-  soterm_ind1s t1 as [v1 ts1 ind1 | | op1 bs1 ind1] Case;
+  soterm_ind1s t1 as [v1 ts1 ind1 | op1 bs1 ind1] Case;
   introv aeq1 aeq2; allsimpl; tcsp.
 
   - Case "sovar".
-    inversion aeq1 as [? ? ? len1 imp1 | |]; subst; clear aeq1.
-    inversion aeq2 as [? ? ? len2 imp2 | |]; subst; clear aeq2.
+    inversion aeq1 as [? ? ? len1 imp1 |]; subst; clear aeq1.
+    inversion aeq2 as [? ? ? len2 imp2 |]; subst; clear aeq2.
     constructor; try omega.
     introv i.
     rw in_combine_sel_iff in i; exrepnd.
@@ -3478,15 +3437,9 @@ Proof.
     eapply ind1; eauto.
     apply nth_in; auto.
 
-  - Case "soseq".
-    inversion aeq1 as [ | ? ? F1 | ]; clear aeq1; subst; allsimpl; tcsp.
-    inversion aeq2 as [ | ? ? F2 | ]; clear aeq2; subst; allsimpl; tcsp.
-    constructor; introv; tcsp.
-    eapply alphaeq_vs_trans; eauto.
-
   - Case "soterm".
-    inversion aeq1 as [ | |? ? ? len1 imp1]; subst; clear aeq1.
-    inversion aeq2 as [ | |? ? ? len2 imp2]; subst; clear aeq2.
+    inversion aeq1 as [ |? ? ? len1 imp1]; subst; clear aeq1.
+    inversion aeq2 as [ |? ? ? len2 imp2]; subst; clear aeq2.
     constructor; try omega.
     introv i.
     destruct b1, b2.
@@ -3582,7 +3535,6 @@ Fixpoint so_rename {p} (ren : soren) (t : @SOTerm p) :=
       sovar
         (sovar2var (rename_sovar ren (v,length ts)))
         (map (so_rename ren) ts)
-    | soseq s => soseq s
     | soterm o bs => soterm o (map (so_rename_bt ren) bs)
   end
 with so_rename_bt {p} ren bt :=
@@ -3626,10 +3578,10 @@ Lemma so_alphaeq_vs_sym {o} :
   forall (t1 t2 : @SOTerm o) vs,
     so_alphaeq_vs vs t1 t2 -> so_alphaeq_vs vs t2 t1.
 Proof.
-  soterm_ind1s t1 as [v ts ind | | op bs ind] Case; introv aeq; tcsp.
+  soterm_ind1s t1 as [v ts ind | op bs ind] Case; introv aeq; tcsp.
 
   - Case "sovar".
-    inversion aeq as [? ? ? len imp | |]; subst; clear aeq.
+    inversion aeq as [? ? ? len imp |]; subst; clear aeq.
     constructor; auto.
     introv i.
     apply in_combine_swap in i; auto.
@@ -3637,13 +3589,8 @@ Proof.
     apply ind; auto.
     apply in_combine in i; sp.
 
-  - Case "soseq".
-    inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
-    constructor; introv; tcsp.
-    apply alphaeq_vs_sym; auto.
-
   - Case "soterm".
-    inversion aeq as [ | |? ? ? len imp]; subst; clear aeq.
+    inversion aeq as [ |? ? ? len imp]; subst; clear aeq.
     constructor; auto.
     introv i.
     apply in_combine_swap in i; auto.
@@ -3661,7 +3608,7 @@ Qed.
 Lemma so_alphaeq_refl {o} :
   forall t : @SOTerm o, so_alphaeq t t.
 Proof.
-  soterm_ind1s t as [v ts ind | | op bs ind] Case; auto; tcsp.
+  soterm_ind1s t as [v ts ind | op bs ind] Case; auto; tcsp.
 
   - Case "sovar".
     constructor; auto.
@@ -3669,9 +3616,6 @@ Proof.
     apply in_combine_sel_iff in i; exrepnd.
     rw <- i3 in i0; ginv; apply ind; auto.
     symmetry in i3; apply select_in in i3; auto.
-
-  - Case "soseq".
-    constructor; introv; apply alphaeq_vs_refl.
 
   - Case "soterm".
     constructor; auto.
@@ -3974,7 +3918,7 @@ Lemma so_swap_disj_chain2 {o} :
     -> so_swap (mk_swapping (vs1 ++ vs2 ++ vs) (vs ++ vs3 ++ vs4)) t
        = so_swap (mk_swapping (vs1 ++ vs2) (vs4 ++ vs3)) t.
 Proof.
-  soterm_ind1s t as [v ts ind | | op bs ind] Case;
+  soterm_ind1s t as [v ts ind | op bs ind] Case;
   introv len1 len2 len3;
   introv disj1 disj2 disj3 disj4 disj5 disj6 disj7 disj8 disj9;
   introv norep1 norep2 norep3;
@@ -4019,7 +3963,7 @@ Lemma so_alphaeq_fo_change_bvars_alpha {o} :
          (so_swap (mk_swapping vs1 vs2) t)
          (fo_change_bvars_alpha vs (mk_swapping vs1 vs2) t).
 Proof.
-  soterm_ind t as [v ts ind | | op bs ind] Case;
+  soterm_ind t as [v ts ind | op bs ind] Case;
   introv len disj1 disj2 disj3 norep; simpl; tcsp.
 
   - Case "sovar".
@@ -4163,7 +4107,7 @@ Qed.
 Lemma so_swap_nil {o} :
   forall t : @SOTerm o, so_swap [] t = t.
 Proof.
-  soterm_ind t as [v ts ind | | op bs ind] Case; introv; simpl; tcsp.
+  soterm_ind t as [v ts ind | op bs ind] Case; introv; simpl; tcsp.
 
   - Case "sovar".
     boolvar; subst; auto.
@@ -4192,7 +4136,7 @@ Lemma fo_bound_vars_fo_change_bvars_alpha {o} :
   forall (t : @SOTerm o) vs ren,
     disjoint vs (fo_bound_vars (fo_change_bvars_alpha vs ren t)).
 Proof.
-  soterm_ind t as [v ts ind | | op bs ind] Case; introv; simpl; tcsp.
+  soterm_ind t as [v ts ind | op bs ind] Case; introv; simpl; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl; auto.
@@ -4718,7 +4662,7 @@ Lemma so_free_vars_so_swap {o} :
     -> so_free_vars (so_swap (mk_swapping vs1 vs2) t)
        = swap_fo_vars (mk_swapping vs1 vs2) (so_free_vars t).
 Proof.
-  soterm_ind t as [v ts ind | | op bs ind] Case;
+  soterm_ind t as [v ts ind | op bs ind] Case;
   introv norep disj; allsimpl; tcsp.
 
   - Case "sovar".
@@ -4767,10 +4711,10 @@ Lemma so_alphaeq_preserves_free_vars {o} :
     so_alphaeq t1 t2
     -> so_free_vars t1 = so_free_vars t2.
 Proof.
-  soterm_ind1s t1 as [v1 ts1 ind1 | | op1 bs1 ind1] Case; introv aeq; tcsp.
+  soterm_ind1s t1 as [v1 ts1 ind1 | op1 bs1 ind1] Case; introv aeq; tcsp.
 
   - Case "sovar".
-    inversion aeq as [? ? ? len imp | |]; subst; clear aeq.
+    inversion aeq as [? ? ? len imp |]; subst; clear aeq.
     simpl; rw len; f_equal.
     apply eq_flat_maps_diff; auto.
     introv i.
@@ -4778,11 +4722,8 @@ Proof.
     apply ind1 in i0; auto.
     apply in_combine in i; sp.
 
-  - Case "soseq".
-    inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
-
   - Case "soterm".
-    inversion aeq as [| |? ? ? len imp]; subst; clear aeq; simpl.
+    inversion aeq as [|? ? ? len imp]; subst; clear aeq; simpl.
     apply eq_flat_maps_diff; auto.
     intros b1 b2 i.
     applydup imp in i.

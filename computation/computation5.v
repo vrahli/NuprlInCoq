@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -294,10 +297,3 @@ Proof.
   unfold reduces_to in r; exrepnd.
   apply reduces_in_atmost_k_steps_vbot in r0; sp.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/")
-*** End:
-*)

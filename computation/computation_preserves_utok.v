@@ -58,8 +58,6 @@ Proof.
 
   - eapply IHsub; eauto; inversion nrut.
 
-  - eapply IHsub; eauto; inversion nrut.
-
   - destruct o0; auto; try (complete (eapply IHsub; eauto; inversion nrut));[].
     destruct c; auto; try (complete (eapply IHsub; eauto; inversion nrut));[].
     destruct l; simpl; auto; try (complete (eapply IHsub; eauto; inversion nrut));[].
@@ -86,7 +84,6 @@ Definition ren_utok_op {o} (op : @Opid o) (a b : get_patom_set o) : Opid :=
 Fixpoint ren_utok {o} (t : @NTerm o) (a b : get_patom_set o) : NTerm :=
   match t with
   | vterm v => t
-  | sterm f => t
   | oterm op bs => oterm (ren_utok_op op a b) (map (fun bt => ren_utok_b bt a b) bs)
   end
 with ren_utok_b {o} (bt : @BTerm o) a b : BTerm :=
@@ -157,7 +154,7 @@ Lemma not_in_get_utokens_lib_implies_ren_utok_same {o} :
     !LIn a (get_utokens_lib lib t)
     -> ren_utok t a b = t.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv ni; tcsp.
+  nterm_ind1s t as [v|op bs ind] Case; introv ni; tcsp.
   Case "oterm".
   simpl.
   rewrite not_in_get_utokens_o_implies_ren_utok_op_same; eauto 2 with slow.
@@ -172,7 +169,7 @@ Lemma not_in_get_utokens_implies_ren_utok_same {o} :
     !LIn a (get_utokens t)
     -> ren_utok t a b = t.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv ni; tcsp.
+  nterm_ind1s t as [v|op bs ind] Case; introv ni; tcsp.
   Case "oterm".
   simpl.
   rewrite not_in_get_utokens_o_implies_ren_utok_op_same; eauto 2 with slow.
@@ -196,7 +193,7 @@ Lemma ren_utok_lsubst_aux {o} :
     -> ren_utok (lsubst_aux t [(v, mk_utoken a)]) a b
        = lsubst_aux t [(v, mk_utoken b)].
 Proof.
-  nterm_ind1s t as [x|f ind|op bs ind] Case; introv ni; allsimpl; tcsp.
+  nterm_ind1s t as [x|op bs ind] Case; introv ni; allsimpl; tcsp.
 
   - Case "vterm".
     boolvar; tcsp; GC; autorewrite with slow; auto.
@@ -341,7 +338,6 @@ Definition ren_utoks_op {o} (ren : utok_ren) (op : @Opid o) : Opid :=
 Fixpoint ren_utoks {o} (ren : @utok_ren o) (t : @NTerm o) : NTerm :=
   match t with
   | vterm v => t
-  | sterm f => t
   | oterm op bs => oterm (ren_utoks_op ren op) (map (fun bt => ren_utoks_b ren bt) bs)
   end
 with ren_utoks_b {o} ren (bt : @BTerm o) : BTerm :=
@@ -599,7 +595,7 @@ Lemma not_in_get_utokens_implies_ren_utoks_same {o} :
     disjoint (get_utokens t) (dom_utok_ren ren)
     -> ren_utoks ren t = t.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv d; tcsp.
+  nterm_ind1s t as [v|op bs ind] Case; introv d; tcsp.
   Case "oterm".
   simpl in *.
   allrw disjoint_app_l; repnd.
@@ -638,7 +634,7 @@ Lemma ren_utoks_lsubst_aux_sub_filter {o} :
     -> ren_utoks (subs2utok_ren sub1 sub2) (lsubst_aux t (sub_filter sub1 l))
        = lsubst_aux t (sub_filter sub2 l).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case;
+  nterm_ind1s t as [v|op bs ind] Case;
     introv norep eqdoms iu1 iu2 norep1 norep2 disj1 disj2; tcsp; simpl in *.
 
   - Case "vterm".
@@ -736,7 +732,7 @@ Lemma isnoncan_like_lsubst_aux_is_utok_sub_implies {o} :
     -> isnoncan_like t.
 Proof.
   introv isu isn.
-  destruct t as [v|f|op bs]; allsimpl; tcsp.
+  destruct t as [v|op bs]; allsimpl; tcsp.
   remember (sub_find sub v) as sf; symmetry in Heqsf; destruct sf; tcsp.
   apply sub_find_some in Heqsf.
   apply isu in Heqsf.
@@ -901,7 +897,7 @@ Lemma bound_vars_ren_utoks {o} :
   forall (t : @NTerm o) ren,
     bound_vars (ren_utoks ren t) = bound_vars t.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv; simpl in *; tcsp.
+  nterm_ind1s t as [v|op bs ind] Case; introv; simpl in *; tcsp.
   rw flat_map_map; unfold compose.
   apply eq_flat_maps; introv i.
   destruct x; simpl; f_equal.
@@ -913,7 +909,7 @@ Lemma free_vars_ren_utoks {o} :
   forall (t : @NTerm o) ren,
     free_vars (ren_utoks ren t) = free_vars t.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv; simpl in *; tcsp.
+  nterm_ind1s t as [v|op bs ind] Case; introv; simpl in *; tcsp.
   rw flat_map_map; unfold compose.
   apply eq_flat_maps; introv i.
   destruct x; simpl; f_equal.
@@ -935,7 +931,7 @@ Lemma lsubst_aux_var_ren_ren_utoks {o} :
     lsubst_aux (ren_utoks ren t) (var_ren l1 l2)
     = ren_utoks ren (lsubst_aux t (var_ren l1 l2)).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv; simpl in *; tcsp.
+  nterm_ind1s t as [v|op bs ind] Case; introv; simpl in *; tcsp.
 
   - Case "vterm".
     remember (sub_find (var_ren l1 l2) v) as sf; symmetry in Heqsf; destruct sf; tcsp.
@@ -953,7 +949,7 @@ Lemma change_bvars_alpha_ren_utoks {o} :
   forall (t : @NTerm o) l ren,
     change_bvars_alpha l (ren_utoks ren t) = ren_utoks ren (change_bvars_alpha l t).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv; simpl in *; tcsp.
+  nterm_ind1s t as [v|op bs ind] Case; introv; simpl in *; tcsp.
   f_equal.
   allrw map_map; unfold compose.
   apply eq_maps; introv i.
@@ -1148,7 +1144,7 @@ Lemma subst_utokens_aux_ren_utoks_snoc_single {o} :
     -> subst_utokens_aux (ren_utoks (snoc ren (a, b)) t) [(b, mk_var v)]
        = ren_utoks ren (subst_utokens_aux t [(a, mk_var v)]).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case;
+  nterm_ind1s t as [v|op bs ind] Case;
     introv niv nia nib1 nib2; try (complete (simpl in *; auto)).
 
   Case "oterm".
@@ -1305,7 +1301,7 @@ Lemma bound_vars_ren_utok {o} :
   forall (t : @NTerm o) a b,
     bound_vars (ren_utok t a b) = bound_vars t.
 Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv; simpl in *; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl in *; auto.
   Case "oterm".
   allrw flat_map_map; unfold compose.
   apply eq_flat_maps; introv i.
@@ -1319,7 +1315,7 @@ Lemma free_vars_ren_utok {o} :
   forall (t : @NTerm o) a b,
     free_vars (ren_utok t a b) = free_vars t.
 Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv; simpl in *; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl in *; auto.
   Case "oterm".
   allrw flat_map_map; unfold compose.
   apply eq_flat_maps; introv i.
@@ -1344,7 +1340,7 @@ Lemma lsubst_aux_ren_utok_all_vars {o} :
     allvars_sub sub
     -> lsubst_aux (ren_utok t a b) sub = ren_utok (lsubst_aux t sub) a b.
 Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv asub; simpl in *; auto.
+  nterm_ind t as [v|op bs ind] Case; introv asub; simpl in *; auto.
 
   - Case "vterm".
     remember (sub_find sub v) as q; destruct q; symmetry in Heqq; simpl in *; tcsp.
@@ -1364,7 +1360,7 @@ Lemma change_bvars_alpha_ren_utok {o} :
   forall (t : @NTerm o) a b l,
     change_bvars_alpha l (ren_utok t a b) = ren_utok (change_bvars_alpha l t) a b.
 Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv; simpl in *; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl in *; auto.
   Case "oterm".
   f_equal.
   allrw map_map; unfold compose.
@@ -1413,7 +1409,7 @@ Lemma subst_utokens_aux_ren_utok3 {o} :
     -> subst_utokens_aux (ren_utok (ren_utok (ren_utok t a' x) a b) x b') [(b', mk_var v)]
        = ren_utok (subst_utokens_aux t [(a', mk_var v)]) a b.
 Proof.
-  nterm_ind t as [z|f|op bs ind] Case;
+  nterm_ind t as [z|op bs ind] Case;
     introv dxa dxb dxa' dxb' dbb' nixt nib't nivt; tcsp.
 
   Case "oterm".
@@ -1507,7 +1503,7 @@ Lemma get_utokens_change_bvars_alpha {o} :
   forall (t : @NTerm o) l,
     get_utokens (change_bvars_alpha l t) = get_utokens t.
 Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv; simpl; tcsp.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; tcsp.
   Case "oterm".
   f_equal.
   allrw flat_map_map; unfold compose.
@@ -1592,7 +1588,7 @@ Lemma ren_utok_lsubst_aux_gen {o} :
     ren_utok (lsubst_aux t sub) a b
     = lsubst_aux (ren_utok t a b) (ren_utok_sub sub a b).
 Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv; simpl; tcsp.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; tcsp.
 
   - Case "vterm".
     rewrite sub_find_ren_utok_sub.
@@ -1661,7 +1657,7 @@ Lemma iscan_lsubst_aux_utoken {o} :
     -> iscan t [+] t = mk_var v.
 Proof.
   introv isc.
-  destruct t as [x|f|op bs ind]; simpl in *; tcsp.
+  destruct t as [x|op bs ind]; simpl in *; tcsp.
   boolvar; tcsp.
 Qed.
 
@@ -1671,7 +1667,7 @@ Lemma iscan_lsubst_aux_change_utoken {o} :
     -> iscan (lsubst_aux t [(v, mk_utoken b)]).
 Proof.
   introv isc.
-  destruct t as [x|f|op bs ind]; simpl in *; tcsp.
+  destruct t as [x|op bs ind]; simpl in *; tcsp.
   boolvar; tcsp.
 Qed.
 Hint Resolve iscan_lsubst_aux_change_utoken : slow.
@@ -1683,7 +1679,7 @@ Lemma lsubst_aux_eq_can_nil_implies {o} :
     lsubst_aux t [(v, mk_utoken a)] = oterm (Can can) []
     -> t = oterm (Can can) [] [+] (t = mk_var v # can = NUTok a).
 Proof.
-  introv equ; destruct t as [x|f|op bs]; simpl in *; ginv; tcsp.
+  introv equ; destruct t as [x|op bs]; simpl in *; ginv; tcsp.
 
   - boolvar; unfold mk_utoken in *; ginv; tcsp.
 
@@ -1818,7 +1814,7 @@ Lemma ren_utok_sosub_aux_mk_abs_subst {o} :
     -> ren_utok (sosub_aux sub t) a b
        = sosub_aux (ren_utok_sosub sub a b) t.
 Proof.
-  soterm_ind t as [v ts ind|f|op bs ind] Case; introv niat; simpl in *; auto.
+  soterm_ind t as [v ts ind|op bs ind] Case; introv niat; simpl in *; auto.
 
   - Case "sovar".
     rewrite sosub_find_ren_utok_sosub.
@@ -1909,7 +1905,7 @@ Lemma allvars_ren_utok {o} :
   forall (t : @NTerm o) a b,
     allvars (ren_utok t a b) = allvars t.
 Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv; simpl in *; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl in *; auto.
   Case "oterm".
   allrw flat_map_map; unfold compose.
   apply eq_flat_maps; introv i.
@@ -1939,7 +1935,7 @@ Lemma get_utokens_so_fo_change_bvars_alpha {o} :
   forall (t : @SOTerm o) l ren,
     get_utokens_so (fo_change_bvars_alpha l ren t) = get_utokens_so t.
 Proof.
-  soterm_ind t as [v ts ind|f|op bs ind] Case; introv; simpl; auto.
+  soterm_ind t as [v ts ind|op bs ind] Case; introv; simpl; auto.
 
   - Case "sovar".
     boolvar; subst; simpl; auto.
@@ -2001,7 +1997,7 @@ Lemma compute_step_subst_utoken2 {o} :
     -> compute_step lib (subst_aux t v (mk_utoken a)) = csuccess u
     -> compute_step lib (subst_aux t v (mk_utoken b)) = csuccess (ren_utok u a b).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case;
+  nterm_ind1s t as [v|op bs ind] Case;
     introv wf nia nib comp; tcsp.
 
   - Case "vterm".
@@ -2014,11 +2010,6 @@ Proof.
       unfold ren_utok_op; simpl; boolvar; tcsp.
 
     + csunf comp; simpl in *; ginv.
-
-  - Case "sterm".
-    csunf comp; allsimpl; ginv.
-    csunf; simpl.
-    unfold subst_aux; simpl; auto.
 
   - Case "oterm".
     dopid op as [can|ncan|exc|abs] SCase.
@@ -2053,7 +2044,7 @@ Proof.
       destruct l; try (complete (allsimpl; ginv)).
 
       {
-        destruct t as [x|f|op bts]; try (complete (allsimpl; ginv));[| |].
+        destruct t as [x|op bts]; try (complete (allsimpl; ginv));[|].
 
         - allsimpl.
           unfold subst_aux in *; simpl in *; boolvar; simpl in *; ginv.
@@ -2210,118 +2201,6 @@ Proof.
               rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow.
               rewrite (not_in_get_utokens_implies_ren_utok_same _ _ t4); eauto 2 with slow.
 
-        - csunf comp; simpl in comp.
-          dopid_noncan ncan SSCase; allsimpl; ginv;[| | | | |].
-
-          + apply compute_step_seq_apply_success in comp; exrepnd; subst; allsimpl.
-            unfold nobnd in *; ginv.
-            repeat (destruct bs; allsimpl; ginv).
-            destruct b0 as [la ta]; ginv.
-            simpl.
-
-            csunf; simpl.
-            unfold ren_utok_op; simpl.
-
-            assert (!LIn a (get_utokens_lib lib ta)) as ni1 by (eauto 5 with slow).
-            rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow.
-            rewrite (not_in_get_utokens_implies_ren_utok_same _ _ ta); eauto 2 with slow.
-
-          + apply nt_wf_eapply_iff in wf; exrepnd; ginv; simpl in *.
-
-            apply compute_step_eapply_success in comp; exrepnd; subst; allsimpl.
-            unfold nobnd in *; ginv.
-
-            repndors; exrepnd; subst.
-
-            * apply compute_step_eapply2_success in comp1.
-              exrepnd; GC.
-              repndors; exrepnd; ginv;[].
-
-              apply (lsubst_aux_equal_mk_nat lib _ _ _ (sterm f0)) in comp4; eauto 3 with slow.
-              subst; simpl in *.
-              csunf; simpl.
-              unfold compute_step_eapply; simpl; boolvar; try omega.
-              autorewrite with slow.
-              rewrite not_in_get_utokens_implies_ren_utok_same; auto.
-              rw @nt_wf_sterm_iff in wf2.
-              pose proof (wf2 n) as q; clear wf2; repnd.
-              rewrite q; simpl; tcsp.
-
-            * apply (isexc_lsubst_aux_nr_ut_sub lib _ _ (sterm f)) in comp0; eauto 3 with slow.
-              apply isexc_implies2 in comp0; exrepnd; subst.
-              apply nt_wf_Exc in wf1; exrepnd; subst; simpl in *.
-              csunf; simpl.
-              unfold compute_step_eapply; simpl.
-
-              unfold nobnd in *.
-
-              assert (!LIn a (get_utokens_lib lib a0)) as ni1 by (eauto 5 with slow).
-              rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow.
-              rewrite (not_in_get_utokens_implies_ren_utok_same _ _ a0); eauto 2 with slow.
-
-              assert (!LIn a (get_utokens_lib lib b0)) as ni2 by (eauto 5 with slow).
-              rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow.
-              rewrite (not_in_get_utokens_implies_ren_utok_same _ _ b0); eauto 2 with slow.
-
-            * apply isnoncan_like_lsubst_aux_is_utok_sub_implies in comp3; eauto 3 with slow.
-              unfold subst_aux; simpl.
-              fold_terms; unfold mk_eapply.
-              rewrite compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow.
-
-              pose proof (ind b0 b0 []) as q; repeat (autodimp q hyp); eauto 2 with slow;[]; clear ind.
-              pose proof (q x v a b) as w; clear q.
-              fold_terms.
-
-              unfold mk_eapply in *.
-              unfold nobnd in *.
-
-              assert (!LIn a (get_utokens_lib lib b0)) as ni1 by (eauto 5 with slow).
-              assert (!LIn b (get_utokens_lib lib b0)) as ni2 by (eauto 5 with slow).
-
-              unfold subst_aux in *.
-              repeat (autodimp w hyp).
-              allrw; auto.
-
-          + apply nt_wf_NFix in wf; exrepnd; subst; simpl in *.
-            destruct bs; simpl in *; ginv.
-
-          + apply nt_wf_NCbv in wf; exrepnd; subst; simpl in *.
-            repeat (destruct bs; simpl in *; ginv).
-            destruct b1; simpl in *.
-            unfold nobnd in *; ginv.
-            csunf; simpl.
-            unfold apply_bterm; simpl.
-            autorewrite with slow.
-            boolvar; simpl; autorewrite with slow.
-
-            * assert (!LIn a (get_utokens_lib lib b0)) as ni1 by (eauto 5 with slow).
-              rewrite ren_utok_lsubst_gen; simpl; autorewrite with slow.
-              rewrite (not_in_get_utokens_implies_ren_utok_same _ _ b0); eauto 2 with slow.
-
-            * assert (!LIn a (get_utokens_lib lib b0)) as ni1 by (eauto 5 with slow).
-              rewrite ren_utok_lsubst_gen; simpl; autorewrite with slow.
-              rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow.
-              rewrite (not_in_get_utokens_implies_ren_utok_same _ _ b0); eauto 2 with slow.
-
-          + apply nt_wf_NTryCatch in wf; exrepnd; subst.
-            repeat (destruct bs; simpl in *; ginv).
-            unfold nobnd in *; ginv.
-            csunf; simpl.
-            unfold ren_utok_op; simpl.
-
-            assert (!LIn a (get_utokens_lib lib b0)) as ni1 by (eauto 5 with slow).
-            rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow.
-            rewrite (not_in_get_utokens_implies_ren_utok_same _ _ b0); eauto 2 with slow.
-
-          + apply nt_wf_NCanTest in wf; exrepnd; subst.
-            repeat (destruct bs; simpl in *; ginv).
-            unfold nobnd in *; ginv.
-            csunf; simpl.
-
-            assert (!LIn a (get_utokens_lib lib t3)) as ni1 by (eauto 5 with slow).
-            rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow.
-            rewrite (not_in_get_utokens_implies_ren_utok_same _ _ t3); eauto 2 with slow.
-
         - dopid op as [can2|ncan2|exc2|abs2] SSCase.
 
           + SSCase "Can".
@@ -2350,18 +2229,6 @@ Proof.
                 rewrite (not_in_get_utokens_implies_ren_utok_same _ _ t2); eauto 2 with slow.
 
                 boolvar; simpl; autorewrite with slow; tcsp.
-
-              - repeat (destruct bs; simpl in *; ginv).
-                repeat (destruct bts; simpl in *; ginv).
-                destruct b0 as [l1 t1].
-                simpl in *; ginv.
-                csunf; simpl.
-
-                unfold ren_utok_op; simpl.
-
-                assert (!LIn a (get_utokens_lib lib t1)) as ni1 by (eauto 5 with slow).
-                repeat (rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow).
-                rewrite (not_in_get_utokens_implies_ren_utok_same _ _ t1); eauto 2 with slow.
 
               - repeat (destruct bs; simpl in *; ginv).
                 repeat (destruct bts; simpl in *; ginv).
@@ -2412,16 +2279,6 @@ Proof.
                   boolvar; simpl; autorewrite with slow; tcsp.
 
                 + repeat (destruct bts; simpl in *; ginv).
-                  unfold mk_nseq in *; ginv.
-                  apply (lsubst_aux_equal_mk_nat lib _ _ _ (mk_nseq f)) in comp4; eauto 3 with slow.
-                  subst; simpl in *; GC.
-                  csunf; simpl.
-                  unfold compute_step_eapply; simpl.
-                  boolvar; try omega.
-                  autorewrite with slow.
-                  unfold ren_utok_op; simpl; auto.
-
-                + repeat (destruct bts; simpl in *; ginv).
                   unfold mk_choice_seq in *; ginv.
                   apply (lsubst_aux_equal_mk_nat lib _ _ _ (mk_choice_seq name)) in comp4; eauto 3 with slow.
                   subst; simpl in *; GC.
@@ -2438,8 +2295,6 @@ Proof.
                   allrw disjoint_singleton_l.
                   repeat (autodimp w hyp).
                   rw in_app_iff in w; rw not_over_or in w; repnd; tcsp.
-
-                + repeat (destruct bts; simpl in *; ginv).
 
               - assert (!LIn a (get_utokens_lib lib b0)) as ni1 by (eauto 5 with slow).
 

@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -658,7 +659,7 @@ Lemma sosub_filter_if_not_in_dom {o} :
     disjoint (sodom sub) vs
     -> sosub_aux (sosub_filter sub vs) t = sosub_aux sub t.
 Proof.
-  soterm_ind t as [v ts ind| |op bs ind] Case; introv disj; allsimpl; auto.
+  soterm_ind t as [v ts ind|op bs ind] Case; introv disj; allsimpl; auto.
 
   - Case "sovar".
     destruct (in_deq sovar_sig sovar_sig_dec (v,length ts) vs) as [i|i].
@@ -795,7 +796,7 @@ Lemma sosub_aux_sosub_filter_so_swap {o} :
        = cswap (mk_swapping vs1 vs2)
                (sosub_aux (sosub_filter sub (vars2sovars vs)) t).
 Proof.
-  soterm_ind t as [v ts ind| |op bs ind] Case;
+  soterm_ind t as [v ts ind|op bs ind] Case;
   introv disj1 disj2 disj3 disj4 disj5 disj6 disj7;
   introv norep cov sv len; allsimpl; auto.
 
@@ -1174,12 +1175,12 @@ Lemma sosub_aux_approx_star_congr_al {p} :
     -> approx_star_sosub lib opr sub1 sub2
     -> approx_star lib (sosub_aux sub1 t1) (sosub_aux sub2 t2).
 Proof.
-  soterm_ind1s t1 as [v ts ind| |op lbt ind] Case; simpl;
+  soterm_ind1s t1 as [v ts ind|op lbt ind] Case; simpl;
   introv wf1 wf2 aeq eqdoms d1 d2 d3 d4 cov1 cov2; introv d ap.
 
   - Case "sovar".
     applydup @eq_sodoms_implies_eq_so_doms in eqdoms as eqdoms'.
-    inversion aeq as [? ? ? len imp| |]; subst; clear aeq; allsimpl.
+    inversion aeq as [? ? ? len imp|]; subst; clear aeq; allsimpl.
     remember (sosub_find sub1 (v, length ts)) as o;
       destruct o; symmetry in Heqo;
       remember (sosub_find sub2 (v, length ts2)) as q;
@@ -1311,16 +1312,9 @@ Proof.
 
         { rw @cover_so_vars_sovar in cov2; sp. }
 
-  - Case "soseq".
-    inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
-    eapply apss; try (apply approx_open_refl); eauto 3 with slow.
-    introv.
-    apply alpha_implies_approx_star; eauto 3 with slow.
-    apply alphaeq_eq;apply F.
-
   - Case "soterm".
     applydup @eq_sodoms_implies_eq_so_doms in eqdoms as eqdoms'.
-    inversion aeq as [| |? ? ? len imp]; subst; clear aeq; allsimpl.
+    inversion aeq as [|? ? ? len imp]; subst; clear aeq; allsimpl.
     allrw disjoint_app_r; repnd.
 
     allrw @wf_soterm_iff; repnd.

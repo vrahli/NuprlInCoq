@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -79,16 +81,6 @@ Proof.
       apply reduces_to_prinarg; auto; destruct h0; auto.
     }
 
-    { apply howe_lemma2_seq in h1; exrepnd; auto.
-      apply (Hi _ _ c0) in hh; auto.
-      eapply approx_star_open_trans;[exact hh|clear hh].
-      apply approx_implies_approx_open.
-      apply reduces_to_implies_approx_eauto; prove_isprogram.
-      eapply reduces_to_trans;[apply reduces_to_prinarg;eauto|].
-      apply reduces_to_if_step.
-      csunf; simpl; auto.
-    }
-
   - apply isexc_implies in Hcv0; auto; exrepnd; subst.
     csunf XX1; allsimpl; ginv.
     apply reduces_atmost_exc in XX0; subst.
@@ -103,9 +95,3 @@ Proof.
     apply reduces_to_prinarg; auto.
     apply reduces_to_if_step; reflexivity.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

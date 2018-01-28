@@ -1587,17 +1587,6 @@ Proof.
 Qed.
 Hint Resolve type_respects_alphaeqc : respects.
 
-Lemma reduces_toc_eapply_nseq {o} :
-  forall lib s (t u : @CTerm o),
-    reduces_toc lib t u
-    -> reduces_toc lib (mkc_eapply (mkc_nseq s) t) (mkc_eapply (mkc_nseq s) u).
-Proof.
-  introv r.
-  destruct_cterms.
-  allunfold @reduces_toc; allsimpl.
-  apply implies_eapply_red_aux; eauto 3 with slow.
-Qed.
-
 Lemma reduces_toc_trans {o} :
   forall lib (a b c : @CTerm o),
     reduces_toc lib a b

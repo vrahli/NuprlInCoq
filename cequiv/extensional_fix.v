@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -90,28 +91,6 @@ Proof.
       apply approx_implies_approx_open.
       apply reduces_to_implies_approx_eauto; try (rw <- @isprogram_fix_iff; auto).
       eapply reduces_to_if_split1; eauto.
-    }
-
-    { csunf XX1; allsimpl; ginv.
-      apply (Hi _ _ f0) in h; auto.
-      apply howe_lemma2_seq in h; exrepnd; auto.
-
-      applydup @reduces_to_preserves_program in h0; auto.
-
-      apply no_change_after_val_like with (k2:=k) in XX0; auto.
-      make_red_val_like XX0 ca0.
-      apply (Hi _ _ (mk_apply (mk_ntseq f') (oterm (NCan NFix) [bterm [] (sterm f')]))) in ca0;
-        try prove_isprogram;
-        [|repeat (prove_approx_star; eauto 2 with slow; prove_isprogram);
-           eapply apss;try (exact h1); eauto 3 with slow].
-
-      eapply approx_star_open_trans;[exact ca0|].
-      apply approx_implies_approx_open.
-      apply reduces_to_implies_approx_eauto; try (rw <- @isprogram_fix_iff; auto).
-      eapply reduces_to_trans;
-        [apply reduces_to_prinarg;exact h0|].
-      eapply reduces_to_if_step.
-      csunf; simpl; auto.
     }
 
   - apply isexc_implies in Hcv0; auto; exrepnd; subst.

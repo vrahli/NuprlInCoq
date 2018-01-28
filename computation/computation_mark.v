@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -430,7 +431,7 @@ Lemma simple_subst_lsubst_aux {o} :
                   [(v, lsubst_aux u sub)]
        = lsubst_aux (lsubst_aux t [(v, u)]) sub.
 Proof.
-  nterm_ind t as [x|f|op bs ind] Case; introv clsub cov disj2; auto.
+  nterm_ind t as [x|op bs ind] Case; introv clsub cov disj2; auto.
 
   - Case "vterm".
     simpl; boolvar.
@@ -1616,11 +1617,6 @@ Proof.
   introv isv r.
   destruct a; auto.
   - provefalse; unfold isvalue_like in isv; sp.
-  - unfold reduces_to in r; exrepnd.
-    induction k.
-    * rw @reduces_in_atmost_k_steps_0 in r0; auto.
-    * rw @reduces_in_atmost_k_steps_S in r0; exrepnd.
-      csunf r0; allsimpl; ginv; sp.
   - dopid o as [can|ncan|exc|abs] Case.
     + Case "Can".
       unfold reduces_to in r; exrepnd.
@@ -1679,11 +1675,6 @@ Proof.
   introv isv r.
   destruct a.
   - provefalse; unfold is_value_like, isvalue_like in isv; sp.
-  - unfold reduces_to in r; exrepnd.
-    induction k.
-    * rw @reduces_in_atmost_k_steps_0 in r0; auto.
-    * rw @reduces_in_atmost_k_steps_S in r0; exrepnd.
-      csunf r0; allsimpl; ginv; sp.
   - dopid o as [can|ncan|exc|abs] Case.
     + Case "Can".
       unfold reduces_to in r; exrepnd.
@@ -1758,9 +1749,7 @@ Proof.
 
   - rw @reduces_in_atmost_k_steps_S in comp; exrepnd.
     csunf comp1; allsimpl.
-    destruct t as [|f|op bs1]; ginv.
-
-    + exists (sterm f); simpl; dands; eauto 3 with slow.
+    destruct t as [|op bs1]; ginv.
 
     + dopid op as [can2|ncan2|exc2|abs2] Case; ginv.
 
@@ -1804,9 +1793,7 @@ Proof.
     provefalse; unfold is_value_like, isvalue_like in isv; sp.
 
   - rw @reduces_in_atmost_k_steps_S in comp; exrepnd.
-    destruct t as [|f|op bs1]; ginv.
-
-    { exists (sterm f); simpl; dands; eauto 3 with slow. }
+    destruct t as [|op bs1]; ginv.
 
     dopid op as [can2|ncan2|exc2|abs2] Case; ginv.
 
@@ -2185,25 +2172,14 @@ Proof.
 
   - duplicate H1v.
     rename H2c into Hck. rename k2 into k.
-    destruct ntp2 as [| | ntp2o  ntp2lbt];
-      [rw @compute_at_most_steps_var in Hck; spc; fail| |].
-
-    { rw @compute_at_most_k_steps_isvalue_like in Hck; eauto 3 with slow; ginv; GC.
-      eapply Hind in H1c; auto;
-      [|rw @compute_at_most_k_steps_isvalue_like;try reflexivity;eauto 3 with slow].
-      exrepnd.
-      exists j; dands; auto; try omega. }
+    destruct ntp2 as [|ntp2o  ntp2lbt];
+      [rw @compute_at_most_steps_var in Hck; spc; fail|].
 
     allsimpl.
     remember (compute_at_most_k_steps lib k (oterm ntp2o ntp2lbt)) as ck.
     destruct ck as [csk | cf]; spc;[].
     pose proof (Hind _ csk H1c H1v0 eq_refl) as XX. clear H1v0. exrepnd.
-    destruct csk as [sckv| | csko csklbt]; [inverts Hck; fail| |];[|].
-
-    { csunf Hck; allsimpl; ginv.
-      eapply Hind in H1c; eauto.
-      exrepnd.
-      exists j; dands; auto; try omega. }
+    destruct csk as [sckv|csko csklbt]; [inverts Hck; fail|];[].
 
     dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
     + Case "Can".
@@ -2270,25 +2246,14 @@ Proof.
 
   - duplicate H1v.
     rename H2c into Hck. rename k2 into k.
-    destruct ntp2 as [| | ntp2o  ntp2lbt];
-      [rw @compute_at_most_steps_var in Hck; spc; fail| |].
-
-    { rw @compute_at_most_k_steps_isvalue_like in Hck; eauto 3 with slow; ginv.
-      eapply Hind in H1c; auto;
-      [|rw @compute_at_most_k_steps_isvalue_like;try reflexivity;eauto 3 with slow].
-      exrepnd.
-      exists j; dands; auto; try omega. }
+    destruct ntp2 as [| ntp2o  ntp2lbt];
+      [rw @compute_at_most_steps_var in Hck; spc; fail|].
 
     allsimpl.
     remember (compute_at_most_k_steps lib k (oterm ntp2o ntp2lbt)) as ck.
     destruct ck as [csk | cf]; spc;[].
     pose proof (Hind _ csk H1c H1v0 eq_refl) as XX. clear H1v0. exrepnd.
-    destruct csk as [sckv| | csko csklbt]; [inverts Hck; fail| |].
-
-    { csunf Hck; allsimpl; ginv.
-      eapply Hind in H1c; eauto.
-      exrepnd.
-      exists j; dands; auto; try omega. }
+    destruct csk as [sckv|csko csklbt]; [inverts Hck; fail|].
 
     dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
     + Case "Can".
@@ -2480,7 +2445,7 @@ Proof.
   introv cl1 cl2.
   repeat unflsubst.
   revert sub1 sub2 cl1 cl2.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv cl1 cl2; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv cl1 cl2; allsimpl; auto.
 
   - Case "vterm".
     rw @sub_find_sub_filter_eq; boolvar; allsimpl; auto.
@@ -2791,7 +2756,7 @@ Lemma isnoncan_like_lsubst_aux {o} :
        [+] isnoncan_like t.
 Proof.
   introv isn.
-  destruct t as [v|f|op bs]; allsimpl; auto.
+  destruct t as [v|op bs]; allsimpl; auto.
   remember (sub_find sub v) as sf; symmetry in Heqsf; destruct sf.
   - left.
     exists v n; dands; auto.

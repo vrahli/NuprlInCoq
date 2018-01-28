@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -75,9 +77,3 @@ Proof.
     apply reduces_to_prinarg; auto.
     apply reduces_to_if_step; reflexivity.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

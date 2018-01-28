@@ -1295,14 +1295,10 @@ Lemma compute_step_preserves_lib_extends {o} :
          (comp : compute_step lib1 a = csuccess b),
     {b' : NTerm & compute_step lib2 a = csuccess b' # alpha_eq b' b}.
 Proof.
-  nterm_ind1s a as [v|f ind|op bs ind] Case; introv wfa comp.
+  nterm_ind1s a as [v|op bs ind] Case; introv wfa comp.
 
   - Case "vterm".
     csunf comp; allsimpl; ginv.
-
-  - Case "sterm".
-    csunf comp; allsimpl; ginv.
-    csunf; simpl; eexists; dands; eauto.
 
   - Case "oterm".
     dopid op as [can|ncan|exc|abs] SCase.
@@ -1316,38 +1312,7 @@ Proof.
       destruct b1 as [l t]; try (complete (allsimpl; ginv)).
       destruct l; try (complete (allsimpl; ginv)).
 
-      { destruct t as [x|f|op bts]; try (complete (allsimpl; ginv));[|].
-
-        - csunf comp; allsimpl.
-          dopid_noncan ncan SSCase; allsimpl; ginv;
-            try (complete (csunf; simpl; eexists; dands; eauto));[].
-
-          SSCase "NEApply".
-
-          apply compute_step_eapply_success in comp; exrepnd; subst.
-          repndors; exrepnd; allsimpl; subst.
-
-          + apply compute_step_eapply2_success in comp1; repnd; subst.
-            repndors; exrepnd; subst; ginv.
-            csunf; simpl.
-            dcwf h; simpl.
-            boolvar; try omega.
-            rewrite Znat.Nat2Z.id; auto.
-            eexists; dands; eauto.
-
-          + csunf; simpl.
-            apply isexc_implies2 in comp0; exrepnd; subst.
-            dcwf h; simpl; auto.
-            eexists; dands; eauto.
-
-          + fold_terms.
-            rewrite compute_step_eapply_iscan_isnoncan_like; auto.
-            pose proof (ind arg2 arg2 []) as h; clear ind.
-            repeat (autodimp h hyp); eauto 3 with slow.
-            apply h in comp1; clear h; eauto 2 with slow wf.
-            exrepnd; allrw; simpl.
-            eexists; dands; eauto.
-            repeat prove_alpha_eq4.
+      { destruct t as [x|op bts]; try (complete (allsimpl; ginv));[].
 
         - dopid op as [can2|ncan2|exc2|abs2] SSCase.
 
@@ -1379,13 +1344,6 @@ Proof.
                   dcwf h; simpl.
                   apply iscan_implies in comp0; repndors; exrepnd; subst; simpl; auto;
                     eexists; dands; eauto.
-
-                + unfold mk_nseq in *; allsimpl; ginv.
-                  csunf; simpl.
-                  dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
-                  rewrite Znat.Nat2Z.id; auto.
-                  eexists; dands; eauto.
 
                 + unfold mk_choice_seq in *; allsimpl; ginv.
                   csunf; simpl.

@@ -1,6 +1,10 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -223,7 +227,7 @@ Lemma wf_outl {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [| | o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)); simpl; intros bw1.
   autodimp bw1 hyp.
   inversion bw1; subst.
@@ -252,7 +256,7 @@ Lemma wf_outr {p} :
 Proof.
   introv; split; intro w; repnd.
   rw @wf_term_eq in w.
-  inversion w as [| | o l bw e]; subst.
+  inversion w as [| o l bw e]; subst.
   generalize (bw (nobnd a)); simpl; intros bw1.
   autodimp bw1 hyp.
   inversion bw1; subst.

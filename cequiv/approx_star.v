@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -105,15 +106,7 @@ Proof.
   - unfold computes_to_val_like_in_max_k_steps, reduces_in_atmost_k_steps in comp; repnd.
     simpl in comp0; inversion comp0; subst; auto.
 
-  - destruct a as [|f|o lba]; [inversion Hpra as [c w]; inversion c| |].
-
-    + apply howe_lemma2_seq in ap; auto; exrepnd.
-      apply computes_to_val_like_in_max_k_steps_if_isvalue_like in comp;
-        eauto 2 with slow; subst.
-      applydup @reduces_to_preserves_program in ap0; auto.
-      econstructor;[| |eauto|]; eauto 3 with slow.
-      apply approx_implies_approx_open.
-      apply reduces_to_implies_approx1; auto.
+  - destruct a as [|o lba]; [inversion Hpra as [c w]; inversion c|].
 
     + pose proof (@nuprl_extensional p) as Hex.
       applydup @approx_star_otd in ap; auto; []; exrepnd.
@@ -167,32 +160,6 @@ Proof.
   apply @howe_lemma3 with (a := a); auto.
   apply isprogram_exception; auto.
   apply computes_to_exception_implies_val_like; auto.
-Qed.
-
-Lemma computes_to_seq_implies_computes_to_val_like {o} :
-  forall lib (a : @NTerm o) f,
-    (a =s>(lib) f)
-    -> computes_to_val_like lib a (sterm f).
-Proof.
-  introv comp.
-  unfold computes_to_seq, reduces_to in comp; exrepnd.
-  unfold computes_to_val_like.
-  exists k.
-  unfold computes_to_val_like_in_max_k_steps; dands; eauto 3 with slow.
-Qed.
-Hint Resolve computes_to_seq_implies_computes_to_val_like : slow.
-
-Lemma howe_lemma3_seq {o} :
-  forall lib (a b : @NTerm o) f,
-    isprogram a
-    -> isprogram b
-    -> isprogram (sterm f)
-    -> (a =s>(lib) f)
-    -> approx_star lib a b
-    -> approx_star lib (sterm f) b.
-Proof.
-  introv ispa ispa' ispb comp ap.
-  apply @howe_lemma3 with (a := a); eauto 3 with slow.
 Qed.
 
 (*
@@ -288,16 +255,6 @@ Proof.
     try (apply isprogram_exception; auto); exrepnd;[].
     applydup @preserve_program_exc2 in comp3; auto; repnd.
     exists a' e'; dands; auto; tcsp.
-
-  - introv comp.
-    applydup @reduces_to_preserves_program in comp; auto.
-    eapply howe_lemma3_seq in Has0; eauto.
-    apply howe_lemma2_seq in Has0; auto; exrepnd.
-    applydup @reduces_to_preserves_program in Has2; auto.
-    eexists; dands; eauto.
-    introv.
-    pose proof (Has0 n) as q; clear Has0.
-    right; apply Cih; dands; eauto 3 with slow.
 Qed.
 
 (* end hide *)
@@ -717,47 +674,9 @@ Proof.
         destruct Hv2; auto.
     }
 
-    { apply @approx_trans with (b := mk_fix (mk_nseq s)).
-
-      + apply @approx_trans with (b := mk_apply (mk_nseq s) (mk_fix (mk_nseq s))); auto.
-
-        * apply implies_approx_apply.
-          { apply reduces_to_implies_approx2; auto.
-            destruct Hv1; auto. }
-          { apply implies_approx_fix.
-            apply reduces_to_implies_approx2; auto.
-            destruct Hv1; auto. }
-
-        * apply reduces_to_implies_approx1; auto; prove_isprogram.
-          apply reduces_to_if_step; reflexivity.
-
-      + apply implies_approx_fix; auto.
-        apply reduces_to_implies_approx_eauto; prove_isprogram.
-        destruct Hv1; auto.
-    }
-
     { apply @approx_trans with (b := mk_fix (mk_choice_seq n)).
 
       + apply @approx_trans with (b := mk_apply (mk_choice_seq n) (mk_fix (mk_choice_seq n))); auto.
-
-        * apply implies_approx_apply.
-          { apply reduces_to_implies_approx2; auto.
-            destruct Hv1; auto. }
-          { apply implies_approx_fix.
-            apply reduces_to_implies_approx2; auto.
-            destruct Hv1; auto. }
-
-        * apply reduces_to_implies_approx1; auto; prove_isprogram.
-          apply reduces_to_if_step; reflexivity.
-
-      + apply implies_approx_fix; auto.
-        apply reduces_to_implies_approx_eauto; prove_isprogram.
-        destruct Hv1; auto.
-    }
-
-    { apply @approx_trans with (b := mk_fix (mk_ntseq s)).
-
-      + apply @approx_trans with (b := mk_apply (mk_ntseq s) (mk_fix (mk_ntseq s))); auto.
 
         * apply implies_approx_apply.
           { apply reduces_to_implies_approx2; auto.
@@ -796,24 +715,6 @@ Proof.
       * apply implies_approx_fix; auto.
         apply reduces_to_implies_approx_eauto; prove_isprogram; auto.
 
-    + apply @approx_trans with (b := mk_fix (mk_nseq s)).
-
-      * apply @approx_trans with (b := mk_apply (mk_nseq s) (mk_fix (mk_nseq s))); auto.
-
-        { apply implies_approx_apply.
-          { apply reduces_to_implies_approx2; auto. }
-          { apply implies_approx_fix.
-            apply reduces_to_implies_approx2; auto. }
-        }
-
-        { apply reduces_to_implies_approx1; auto.
-          { apply isprogram_fix; eauto 3 with slow. }
-          { apply reduces_to_if_step; reflexivity. }
-        }
-
-      * apply implies_approx_fix; auto.
-        apply reduces_to_implies_approx_eauto; prove_isprogram; auto.
-
     + apply @approx_trans with (b := mk_fix (mk_choice_seq n)).
 
       * apply @approx_trans with (b := mk_apply (mk_choice_seq n) (mk_fix (mk_choice_seq n))); auto.
@@ -826,26 +727,6 @@ Proof.
 
         { apply reduces_to_implies_approx1; auto.
           { apply isprogram_fix; eauto 3 with slow. }
-          { apply reduces_to_if_step; reflexivity. }
-        }
-
-      * apply implies_approx_fix; auto.
-        apply reduces_to_implies_approx_eauto; prove_isprogram; auto.
-
-    + apply @approx_trans with (b := mk_fix (mk_ntseq s)).
-
-      * apply @approx_trans with (b := mk_apply (mk_ntseq s) (mk_fix (mk_ntseq s))); auto.
-
-        { apply implies_approx_apply.
-          { apply reduces_to_implies_approx2; auto. }
-          { apply implies_approx_fix.
-            apply reduces_to_implies_approx2; auto. }
-        }
-
-        { apply reduces_to_implies_approx1; auto.
-          { apply isprogram_fix.
-            rw <- @isprogram_fix_iff in Hpr0.
-            apply reduces_to_preserves_program in Hv0; auto. }
           { apply reduces_to_if_step; reflexivity. }
         }
 

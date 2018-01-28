@@ -67,4 +67,4 @@ Require Export per_props_cequiv2.
 Require Export per_props_top.
 Require Export per_props_union2.
 Require Export per_props_nat3.
-*)
+ *)

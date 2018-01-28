@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -2097,7 +2098,6 @@ Fixpoint lsubst_aux {p} (nt : @NTerm p) (sub : Substitution) : NTerm :=
       | Some t => t
       | None => nt
       end
-  | sterm f => sterm f
   | oterm op bts => oterm op (map (fun t => lsubst_bterm_aux t sub) bts)
   end
  with lsubst_bterm_aux {p} (bt : BTerm) (sub : Substitution) : BTerm :=
@@ -2119,7 +2119,6 @@ Fixpoint lsubst_aux {p} (nt : @NTerm p) (sub : Substitution) : NTerm :=
 Fixpoint change_bvars_alpha {p} (lv : list NVar) (t : @NTerm p) :=
   match t with
     | vterm v => vterm v
-    | sterm f => sterm f
     | oterm o lbt => oterm o (map (change_bvars_alphabt lv) lbt)
   end
 with change_bvars_alphabt {p} lv bt:=
@@ -2246,7 +2245,6 @@ Fixpoint lsubst_vs {p} (vars : list NVar) (t : @NTerm p) (sub : Substitution) : 
       | Some t => t
       | None => t
       end
-  | sterm f => sterm f
   | oterm op bts => oterm op (map (fun t => lsubst_vs_bterm vars t sub) bts)
   end
  with lsubst_vs_bterm {p} (vars : list NVar) (bt : BTerm) (sub : Substitution) : BTerm :=
@@ -2385,7 +2383,7 @@ Lemma lsubst_aux_trivial {p} :
     -> lsubst_aux t sub = t.
 Proof.
   unfold lsubst.
-  nterm_ind t as [|f ind|op lbt ind]  Case; simpl; introv imp; auto.
+  nterm_ind t as [|op lbt ind]  Case; simpl; introv imp; auto.
 
   - Case "vterm".
     allunfold @isprogram; allunfold @closed; sp.
@@ -2987,7 +2985,7 @@ Lemma isprogram_lsubst_aux1 {p} :
     -> nt_wf (lsubst_aux t sub)
        # free_vars (lsubst_aux t sub) = remove_nvars (dom_sub sub) (free_vars t).
 Proof.
-  nterm_ind t as [|f ind|o lbt ind] Case; simpl; introv wf k; auto.
+  nterm_ind t as [|o lbt ind] Case; simpl; introv wf k; auto.
 
   - Case "vterm".
     remember (sub_find sub n); destruct o; symmetry in Heqo; simpl.
@@ -3003,9 +3001,6 @@ Proof.
       symmetry.
       rw <- remove_nvars_unchanged.
       unfold disjoint; simpl; sp; subst; auto.
-
-  - Case "sterm".
-    allrw remove_nvars_nil_r; dands; auto.
 
   - Case "oterm".
     inversion wf; subst; sp.
@@ -3105,7 +3100,7 @@ Lemma isprogram_lsubst_aux2 {p} :
     (forall v u, LIn (v, u) sub -> isprogram u)
     -> free_vars (lsubst_aux t sub) = remove_nvars (dom_sub sub) (free_vars t).
 Proof.
-  nterm_ind t as [|f ind| o lbt ind ] Case; simpl; introv k.
+  nterm_ind t as [|o lbt ind ] Case; simpl; introv k.
 
   - Case "vterm".
     remember (sub_find sub n); destruct o; symmetry in Heqo; simpl.
@@ -3121,9 +3116,6 @@ Proof.
       symmetry.
       rw <- remove_nvars_unchanged.
       unfold disjoint; simpl; sp; subst; auto.
-
-  - Case "sterm".
-    rw remove_nvars_nil_r; auto.
 
   - Case "oterm".
     auto.
@@ -3443,7 +3435,7 @@ Lemma lsubst_aux_preserves_wf {p} :
     -> (forall v u, LIn (v, u) sub -> nt_wf u)
     -> nt_wf (lsubst_aux t sub).
 Proof.
-  nterm_ind1 t as [?|f ind| o lbt Hind]Case; simpl; introv HX hwf; auto.
+  nterm_ind1 t as [?|o lbt Hind]Case; simpl; introv HX hwf; auto.
 
   - Case "vterm".
     remember (sub_find sub n); destruct o; symmetry in Heqo; sp.
@@ -3486,7 +3478,7 @@ Lemma change_bvars_alpha_preserves_wf {p} :
     nt_wf nt
     -> nt_wf (change_bvars_alpha lv nt).
 Proof.
-  nterm_ind1 nt as [v|f ind| o lbt Hind] Case; introv HX; auto;[].
+  nterm_ind1 nt as [v|o lbt Hind] Case; introv HX; auto;[].
   invertsna HX  Hwf; subst.
   simpl; constructor.
   - introv i.
@@ -3925,7 +3917,7 @@ Lemma lsubst_aux_sub_filter_aux {o} :
     (forall v, LIn v (free_vars t) -> LIn v l -> !LIn v (dom_sub sub))
     -> lsubst_aux t (sub_filter sub l) = lsubst_aux t sub.
 Proof.
-  nterm_ind1 t as [v|f ind|op bs ind] Case; simpl; introv disj; auto.
+  nterm_ind1 t as [v|op bs ind] Case; simpl; introv disj; auto.
 
   - Case "vterm".
     allrw disjoint_singleton_l.
@@ -4079,10 +4071,10 @@ Lemma lsubst_aux_nt_wf {p} :
     nt_wf (@lsubst_aux p t sub)
     -> nt_wf t.
 Proof.
-  nterm_ind t as [|f ind|o lbt ind] Case; simpl; introv w; auto.
+  nterm_ind t as [|o lbt ind] Case; simpl; introv w; auto.
 
   Case "oterm".
-  inversion w as [|f|op lnt k e]; subst; auto.
+  inversion w as [|op lnt k e]; subst; auto.
   constructor.
 
   - introv i; destruct l.
@@ -4282,7 +4274,7 @@ Lemma lsubst_aux_shift {p} :
     -> disjoint (dom_sub sub1) (dom_sub sub2)
     -> lsubst_aux t (sub1 ++ sub2 ++ sub3) = lsubst_aux t (sub2 ++ sub1 ++ sub3).
 Proof.
-  nterm_ind t as [|f ind|o lbt ind] Case; simpl; introv k d; auto.
+  nterm_ind t as [|o lbt ind] Case; simpl; introv k d; auto.
 
   - Case "vterm".
     repeat (rw @sub_find_app).
@@ -4631,7 +4623,7 @@ Lemma lsubst_aux_app {p} :
     -> disjoint_bv_sub t sub2
     -> lsubst_aux (lsubst_aux t sub1) sub2 = lsubst_aux t (lsubst_sub sub1 sub2 ++ sub2).
 Proof.
-  nterm_ind1 t as [v|f ind|o lbt Hind] Case; simpl; introns Hss; auto.
+  nterm_ind1 t as [v|o lbt Hind] Case; simpl; introns Hss; auto.
 
   - Case "vterm".
     rw @sub_find_app.
@@ -4904,7 +4896,7 @@ Theorem free_vars_lsubst_aux {p} :
             [+] {v' : NVar
                  $ {t : NTerm
                  $ LIn (v',t) sub # LIn v' (free_vars nt) # LIn v (free_vars t)}}.
-Proof. nterm_ind1 nt as [vn| f ind | o lbt Hind] Case; introv Hdis Hin; auto.
+Proof. nterm_ind1 nt as [vn|o lbt Hind] Case; introv Hdis Hin; auto.
    Case "vterm". induction sub as [| (vs,ts) sub].
    - rw @lsubst_aux_nil in Hin. left;auto.
    - destruct (eq_var_dec vn vs) as [? | Hneq];
@@ -5213,10 +5205,11 @@ invertsn Heq. split; [ |apply sub_filter_allvars; trivial; fail].
 Qed.
 
 
- Lemma lsubst_aux_allvars_preserves_size {p} : forall nt sub,
+Lemma lsubst_aux_allvars_preserves_size {p} : forall nt sub,
     @allvars_sub p sub
-   -> size (lsubst_aux nt sub) = size nt.
-Proof. nterm_ind1 nt as [v|f ind|o lbt Hind] Case; introv Hall; auto.
+    -> size (lsubst_aux nt sub) = size nt.
+Proof.
+   nterm_ind1 nt as [v|o lbt Hind] Case; introv Hall; auto.
   Case "vterm". simpl.
     cases (sub_find sub v ) as Hsf; try reflexivity.
     apply sub_find_allvars in Hsf; trivial. exrepnd. subst; auto.
@@ -5254,7 +5247,6 @@ Proof.
   - simpl. unfold lsubst. simpl. cases (sub_find sub n) as Hc.
     apply sub_find_allvars in Hc; auto. exrepnd. subst.
     split ;eexists; eauto.  apply t_iff_refl.
-  - unfold lsubst; simpl; sp.
   - unfold lsubst.
     cases_if;simpl; allrw @not_isvarc_ot; apply t_iff_refl.
 Qed.
@@ -5471,10 +5463,6 @@ Proof.
       rewrite remove_nvars_nil_r.
       applydup @sub_keep_first_singleton_r_none in Heqo.
       rewrite Heqo1; simpl; sp.
-
-  - Case "sterm".
-    allrw remove_nvars_nil_r; allsimpl.
-    allrw @sub_keep_first_nil_r; simpl; auto.
 
   - Case "oterm".
     rewrite remove_nvars_flat_map.
@@ -5877,7 +5865,7 @@ Theorem freevars_lsubst_aux_allvars {pp} :
     -> map vterm (free_vars (lsubst_aux t sub))
        = map (fun t=> lsubst_aux t sub) (map (@vterm pp) (free_vars t)).
 Proof.
-  nterm_ind1 t as [v|f ind|o lbt Hind] Case; introv Hnr Hdis; auto.
+  nterm_ind1 t as [v|o lbt Hind] Case; introv Hnr Hdis; auto.
   - Case "vterm".
     simpl.
     unfold lmap_apply.
@@ -6342,7 +6330,7 @@ Lemma boundvars_lsubst_aux {p}:
       {v' : NVar &
       {t : @NTerm p & sub_find sub v' =Some t # LIn v' (free_vars nt) # LIn v (bound_vars t)}}.
 Proof.
-  nterm_ind1s nt as [v|f ind| o lbt Hind] Case; introv  Hdis Hin; auto; auto.
+  nterm_ind1s nt as [v|o lbt Hind] Case; introv  Hdis Hin; auto; auto.
   - Case "vterm". allsimpl. right. 
     allsimpl. dsub_find sn; cpx;[].
     exists v sns. split; auto.
@@ -6387,7 +6375,7 @@ Lemma boundvars_lsubst_aux_vars {p} :
   -> bound_vars (lsubst_aux nt (@var_ren p lvi lvo))
      = bound_vars nt.
 Proof.
-  nterm_ind1s nt as [v|f ind|o lbt Hind] Case; introv Hl Hdis; auto.
+  nterm_ind1s nt as [v|o lbt Hind] Case; introv Hl Hdis; auto.
   - Case "vterm". simpl. rewrite sub_lmap_find. 
     destruct (lmap_find deq_nvar (var_ren lvi lvo) v) as [s1s| n1n];auto; exrepnd.
     allsimpl. apply in_var_ren in s1s0. exrepnd. subst. auto.
@@ -6567,7 +6555,7 @@ Lemma lsubst_aux_nest_swap2 {p} : forall t sub1 sub2,
   -> disjoint (bound_vars t) ((flat_map free_vars lnt1) ++ (flat_map free_vars lnt2)) (**o/w renaming will occur*)
   -> lsubst_aux(lsubst_aux t sub1) sub2 = lsubst_aux(lsubst_aux t sub2) sub1.
 Proof.
-  nterm_ind1s t as [v|f ind|o lbt Hind] Case; auto;
+  nterm_ind1s t as [v|o lbt Hind] Case; auto;
   introv H1dis H2dis H3dis H4dis H5dis Hdist; simpl;
   pose proof (sub_eta sub1) as Xsub1eta;
   pose proof (sub_eta sub2) as Xsub2eta;
@@ -6757,7 +6745,7 @@ Lemma lsubst_aux_nest_same_str {p} :
   -> lsubst_aux (lsubst_aux t (filt_var_ren lvi lvio lf)) (filt_combine lvio lnt lf)
      = lsubst_aux t (filt_combine lvi lnt lf).
 Proof.
-  nterm_ind1s t as [v|f ind|o lbt Hind] Case; auto;
+  nterm_ind1s t as [v|o lbt Hind] Case; auto;
   introv Hl1 Hl2 Hnr Hdisb Hdisf.
   Focus 2.
   Case "oterm". (**this part is easier!!*)
@@ -6975,7 +6963,8 @@ Theorem free_vars_lsubst_aux2 {p} :
                 [+] {v' : NVar
                      & {t : NTerm
                      & LIn (v',t) sub # LIn v' (free_vars nt) # LIn v (free_vars t)}}.
-Proof. nterm_ind1 nt as [vn|f ind|o lbt Hind] Case; introv Hdis Hin; auto.
+Proof.
+  nterm_ind1 nt as [vn|o lbt Hind] Case; introv Hdis Hin; auto.
    Case "vterm". induction sub as [| (vs,ts) sub]. 
    - rw @lsubst_aux_nil in Hin. left; split; auto. sp. 
    - destruct (eq_var_dec vn vs) as [? | Hneq];
@@ -6988,9 +6977,8 @@ Proof. nterm_ind1 nt as [vn|f ind|o lbt Hind] Case; introv Hdis Hin; auto.
              right; exists vn n; split; auto. right;auto. simpl. split; auto.
           * left;split;auto. allsimpl;subst. introv Hc. dorn Hc; subst; sp.
             subst. apply sub_find_none2 in Hf. sp.
-   - Case "sterm".
-     allsimpl; tcsp.
-  - Case "oterm".
+
+   - Case "oterm".
     simpl in Hin. rw lin_flat_map in Hin.
     destruct Hin as [bt' Hin]. repnd. apply in_map_iff in Hin0.
     destruct Hin0 as [bt Hin0]. repnd. subst. destruct bt as [lv nt].
@@ -7236,7 +7224,7 @@ Lemma prog_lsubst_aux_app {p} : forall nt sub sub2,
   -> prog_sub sub2
   -> lsubst_aux nt sub = lsubst_aux nt (sub++sub2).
 Proof.
-  nterm_ind1 nt as [v|f ind|o lbt Hind] Case. introv; auto.
+  nterm_ind1 nt as [v|o lbt Hind] Case. introv; auto.
 
   - Case "vterm".
     simpl. dsub_find2 sv.
@@ -7248,9 +7236,6 @@ Proof.
       rw @dom_sub_app in Heqsa.
       rw in_app_iff in Heqsa.
       cpx.
-
-  - Case "sterm".
-    simpl; sp.
 
   - Case "oterm".
     introv Hpr Hbv Hps. simpl. f_equal. apply eq_maps.
@@ -7318,7 +7303,7 @@ Lemma lsubst_aux_trim {p} :
     (forall v u, LIn (v, u) sub -> disjoint (@free_vars p u) (bound_vars t))
     -> lsubst_aux t sub = lsubst_aux t (sub_keep_first sub (free_vars t)).
 Proof.
-  nterm_ind1 t as [v|f ind|o lbt Hind] Case;  introv Hdis; auto.
+  nterm_ind1 t as [v|o lbt Hind] Case;  introv Hdis; auto.
   - Case "vterm". simpl.
     dsub_find2 ds.
     + apply sub_keep_first_singleton_r_some in Heqds.

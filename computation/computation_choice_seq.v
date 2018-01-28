@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -38,7 +39,7 @@ Lemma eapply_wf_def_mk_choice_seq {o} :
   forall name, @eapply_wf_def o (mk_choice_seq name).
 Proof.
   introv; unfold eapply_wf_def.
-  right; right; left.
+  left.
   eexists; eauto.
 Qed.
 Hint Resolve eapply_wf_def_mk_choice_seq : slow.

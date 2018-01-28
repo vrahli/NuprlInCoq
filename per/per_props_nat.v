@@ -1222,12 +1222,9 @@ Lemma deq_nterm_int {p} :
   forall (t : @NTerm p) z, {t = mk_integer z} + {t <> mk_integer z}.
 Proof.
   introv.
-  nterm_ind1 t as [v1|f1 ind|o1 lbt1 Hind] Case; intros.
+  nterm_ind1 t as [v1|o1 lbt1 Hind] Case; intros.
 
   - Case "vterm".
-    right; intro k; inversion k.
-
-  - Case "sterm".
     right; intro k; inversion k.
 
   - Case "oterm".

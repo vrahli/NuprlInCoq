@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -95,12 +96,6 @@ Inductive approx_star {p} :
 | apsv: forall lib v t2,
           (approx_open lib (vterm v) t2)
           -> (approx_star lib (vterm v) t2)
-| apss: forall lib t (f1 f2 : ntseq),
-          wf_term (sterm f1)
-          -> wf_term (sterm f2)
-          -> (forall n, approx_star lib (f1 n) (f2 n))
-          -> approx_open lib (sterm f2) t
-          -> approx_star lib (sterm f1) t
 | apso: forall lib
                (op : Opid)
                (t2: NTerm)

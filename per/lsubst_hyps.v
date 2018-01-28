@@ -261,7 +261,7 @@ Lemma lsubst_aux_snoc_not_in {o} :
     !LIn v (free_vars t)
     -> lsubst_aux t (snoc s (v,u)) = lsubst_aux t s.
 Proof.
-  nterm_ind t as [x|f ind|op bs ind] Case ; introv nit; allsimpl; auto.
+  nterm_ind t as [x|op bs ind] Case ; introv nit; allsimpl; auto.
 
   - Case "vterm".
     allrw not_over_or; repnd; GC.

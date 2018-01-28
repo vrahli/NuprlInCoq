@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1046,8 +1047,6 @@ Proof.
       boolvar; intros isv h; auto; subst.
       allrw @isprogram_vterm; sp.
 
-    + allsimpl; GC; subst; sp.
-
     + destruct o; inversion h; subst; simpl; tcsp.
 
   - intro h; repnd.
@@ -1080,9 +1079,7 @@ Lemma if_computes_to_exception_apply {p} :
     -> isprogram a
     -> computes_to_exception lib en (mk_apply f a) e
     -> {v : NVar & {b : @NTerm p & reduces_to lib f (mk_lam v b)}}
-       [+] {s : nseq & reduces_to lib f (mk_nseq s) }
        [+] {n : choice_sequence_name & reduces_to lib f (mk_choice_seq n) }
-       [+] {s : ntseq & reduces_to lib f (mk_ntseq s) }
        [+] computes_to_exception lib en f e.
 Proof.
   introv.
@@ -1097,11 +1094,6 @@ Proof.
     simpl in comp1.
     destruct f; try (complete (inversion comp1)).
 
-    { csunf comp1; allsimpl; ginv; allsimpl.
-      right; right; right; left.
-      exists n 0; eauto 3 with slow.
-      apply reduces_in_atmost_k_steps_0; auto. }
-
     dopid o as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
@@ -1113,9 +1105,6 @@ Proof.
         exists v b 0; sp. }
 
       { right; left.
-        exists f 0; sp. }
-
-      { right; right; left.
         exists n 0; sp. }
 
     + Case "NCan".
@@ -1133,21 +1122,11 @@ Proof.
         exists n; sp.
 
       * right; left.
-        exists s (S k0).
-        rw @reduces_in_atmost_k_steps_S.
-        exists n; sp.
-
-      * right; right; left.
         exists n0 (S k0).
         rw @reduces_in_atmost_k_steps_S.
         exists n; sp.
 
-      * right; right; right; left.
-        exists s (S k0).
-        rw @reduces_in_atmost_k_steps_S.
-        exists n; sp.
-
-      * right; right; right; right.
+      * right; right.
         exists (S k0).
         rw @reduces_in_atmost_k_steps_S.
         exists n; sp.
@@ -1156,7 +1135,7 @@ Proof.
       csunf comp1; allsimpl; ginv.
       apply reduces_atmost_exc in comp0.
       inversion comp0; subst.
-      right; right; right; right; exists 0; sp.
+      right; right; exists 0; sp.
 
     + Case "Abs".
       unfold mk_apply, nobnd in comp1.
@@ -1173,21 +1152,11 @@ Proof.
         exists n; sp.
 
       * right; left.
-        exists s (S k0).
-        rw @reduces_in_atmost_k_steps_S.
-        exists n; sp.
-
-      * right; right; left.
         exists n0 (S k0).
         rw @reduces_in_atmost_k_steps_S.
         exists n; sp.
 
-      * right; right; right; left.
-        exists s (S k0).
-        rw @reduces_in_atmost_k_steps_S.
-        exists n; sp.
-
-      * right; right; right; right.
+      * right; right.
         exists (S k0).
         rw @reduces_in_atmost_k_steps_S.
         exists n; sp.
@@ -1249,10 +1218,6 @@ Proof.
   - rw @reduces_in_atmost_k_steps_S in r; exrepnd.
     simpl in r1.
     destruct t; try (complete (inversion r1)).
-
-    { csunf r1; allsimpl; ginv; allsimpl.
-      right.
-      exists (sterm n); dands; eauto 3 with slow. }
 
     dopid o as [can|ncan|exc|abs] Case; try (complete (inversion r1)).
 
@@ -1341,7 +1306,7 @@ Lemma iscan_compute_step {o} :
     -> compute_step lib t = csuccess t.
 Proof.
   introv isc.
-  destruct t as [v|f|op bs]; allsimpl; tcsp.
+  destruct t as [v|op bs]; allsimpl; tcsp.
   dopid op as [can|ncan|exc|abs] Case; allsimpl; tcsp.
 Qed.
 
@@ -1416,9 +1381,6 @@ Proof.
     generalize (IHk v u e u0 comp2 comp0); intro h; exrepnd.
 
     destruct t; try (complete (inversion comp1)).
-
-    { csunf comp1; allsimpl; ginv; allsimpl.
-      apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow; ginv. }
 
     dopid o as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
 

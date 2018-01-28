@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -45,7 +48,7 @@ Lemma lsubst_aux_cons_sub_filter {o} :
     lsubst_aux t ((v,u) :: sub_filter sub [v])
     = lsubst_aux t ((v,u) :: sub).
 Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; allsimpl; auto.
 
   - Case "vterm".
     boolvar; auto.

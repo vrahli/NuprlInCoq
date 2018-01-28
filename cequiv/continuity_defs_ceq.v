@@ -138,9 +138,6 @@ Proof.
 
   - introv comp.
     apply can_doesnt_raise_an_exception in comp; sp.
-
-  - introv comp.
-    apply reduces_to_if_isvalue_like in comp; ginv; eauto 3 with slow.
 Qed.
 
 Lemma alphaeq_product_prod {p} :
@@ -207,9 +204,6 @@ Proof.
 
   - introv comp.
     apply can_doesnt_raise_an_exception in comp; sp.
-
-  - introv comp.
-    apply reduces_to_if_isvalue_like in comp; ginv; eauto 3 with slow.
 Qed.
 
 Lemma isprog_vars_lsubst_prog_sub {o} :
@@ -324,9 +318,6 @@ Proof.
 
   - introv comp.
     apply can_doesnt_raise_an_exception in comp; sp.
-
-  - introv comp.
-    apply reduces_to_if_isvalue_like in comp; ginv; eauto 3 with slow.
 Qed.
 
 Lemma approx_open_mk_prod {o} :
@@ -412,9 +403,6 @@ Proof.
 
   - introv comp.
     apply can_doesnt_raise_an_exception in comp; sp.
-
-  - introv comp.
-    apply reduces_to_if_isvalue_like in comp; ginv; eauto 3 with slow.
 Qed.
 
 Lemma cequiv_mk_fun {o} :
@@ -487,41 +475,6 @@ Proof.
     exists (oterm (Can c) tr_subterms); dands; tcsp.
     apply clearbot_relbt in h0.
     apply approx_canonical_form3; eauto with slow.
-
-  - unfold close_comput, close_compute_seq in cl; repnd.
-    pose proof (cl4 f) as h.
-    autodimp h hyp.
-    { apply reduces_to_symm. }
-    exrepnd.
-    exists (sterm f'); dands; eauto 3 with slow.
-    apply howetheorem1; auto;[|destruct h1;eauto 2 with slow].
-    applydup @reduces_to_preserves_program in h1; auto.
-    econstructor; eauto; try (apply approx_open_refl); eauto 3 with slow.
-    introv.
-    apply le_bin_rel_approx1_eauto.
-    apply remove_bot_approx; auto.
-Qed.
-
-Lemma approx_sterm {o} :
-  forall lib (t t' : @NTerm o) f,
-    (t =v>(lib) (sterm f))
-    -> approx lib t t'
-    -> {f' : ntseq
-        & (t' =v>(lib) (sterm f'))
-        # (forall n, approx lib (f n) (f' n)) }.
-Proof.
-  introv comp ap.
-  applydup @approx_relates_only_progs in ap; repnd.
-  apply computes_to_value_implies_approx in comp; eauto 3 with slow; repnd.
-  applydup @approx_relates_only_progs in comp0; repnd; GC.
-  eapply approx_trans in ap;[|exact comp0].
-  apply le_bin_rel_approx1_eauto in ap.
-  apply howe_lemma2_seq in ap; auto.
-  exrepnd.
-  exists f'; dands; auto.
-  - unfold computes_to_value; dands; eauto 3 with slow.
-  - introv.
-    apply howetheorem1; auto; eauto 3 with slow.
 Qed.
 
 Lemma approx_open_mk_less {o} :
@@ -570,7 +523,7 @@ Proof.
 
   constructor.
   unfold close_comput.
-  allrw @isprogram_eq; allrw @isprog_less; dands; auto;[| |].
+  allrw @isprogram_eq; allrw @isprog_less; dands; auto;[|].
 
   - introv comp.
     apply computes_to_value_mk_less in comp; exrepnd;
@@ -655,51 +608,6 @@ Proof.
       allunfold @computes_to_exception.
       eapply reduces_to_trans;
         [apply reduce_to_prinargs_comp2;[exact h1|idtac|exact h0] |]; eauto 3 with slow.
-
-  - introv comp.
-    applydup @reduces_to_preserves_program in comp;
-      [|apply isprog_eq; apply isprog_less_implies;auto];[].
-
-    pose proof (computes_to_value_mk_less
-                  lib
-                  (lsubst_aux a1 sub)
-                  (lsubst_aux b1 sub)
-                  (lsubst_aux c1 sub)
-                  (lsubst_aux d1 sub)
-                  (sterm f)) as h.
-    repeat (autodimp h hyp); eauto 3 with slow.
-    { unfold computes_to_value; dands; eauto 3 with slow. }
-    exrepnd.
-
-    eapply approx_comput_functionality_left in h1;[|exact h0].
-    eapply approx_comput_functionality_left in h2;[|exact h6].
-    allapply @approx_integer_implies_reduces_to.
-
-    repndors; repnd;[|].
-
-    + eapply approx_sterm in h5;[|eauto]; exrepnd.
-      allunfold @computes_to_value; repnd.
-      exists f'; dands; auto;[|].
-      {
-        eapply reduces_to_trans;
-        [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
-        eapply reduces_to_if_split2;
-          [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
-        boolvar;tcsp;try omega.
-      }
-      { introv; apply remove_bot_approx; auto. }
-
-    + eapply approx_sterm in h5;[|eauto]; exrepnd.
-      allunfold @computes_to_value; repnd.
-      exists f'; dands; auto;[|].
-      {
-        eapply reduces_to_trans;
-        [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
-        eapply reduces_to_if_split2;
-          [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
-        boolvar;tcsp;try omega.
-      }
-      { introv; apply remove_bot_approx; auto. }
 Qed.
 
 Lemma approx_open_mk_less_than {o} :
@@ -773,9 +681,6 @@ Proof.
 
   - introv comp.
     apply can_doesnt_raise_an_exception in comp; sp.
-
-  - introv comp.
-    apply reduces_to_if_isvalue_like in comp; ginv; eauto 3 with slow.
 Qed.
 
 Lemma cequiv_mk_natk {o} :
@@ -1188,7 +1093,7 @@ Lemma isvalue_like_pushdown_fresh_implies {o} :
     -> isvalue_like t.
 Proof.
   introv isv.
-  destruct t as [x|f|op bs]; allsimpl; auto.
+  destruct t as [x|op bs]; allsimpl; auto.
 Qed.
 
 Lemma combine_implies_approx_bts {o} :
@@ -1249,11 +1154,9 @@ Proof.
   introv isv.
   pose proof (unfold_subst_utokens sub t) as h; exrepnd.
   rw h0 in isv.
-  destruct t' as [v|f|op bs]; auto.
+  destruct t' as [v|op bs]; auto.
   - unfold subst_utokens in isv; allsimpl; auto.
     inversion h1; subst; auto.
-  - allsimpl.
-    inversion h1; subst; eauto 3 with slow.
   - rw @subst_utokens_aux_oterm in isv.
     apply alpha_eq_sym in h1; apply alpha_eq_oterm_implies_combine2 in h1; exrepnd; subst.
     remember (get_utok op) as guo; symmetry in Heqguo; destruct guo.
@@ -1412,7 +1315,7 @@ Lemma decidable_mk_nat {o} :
   forall n (t : @NTerm o), decidable (t = mk_nat n).
 Proof.
   introv.
-  destruct t as [v|f|op bs]; try (complete (right; intro e; complete ginv)).
+  destruct t as [v|op bs]; try (complete (right; intro e; complete ginv)).
   destruct op; try (complete (right; intro e; complete ginv)).
   destruct c; try (complete (right; intro e; complete ginv)).
   destruct bs; try (complete (right; intro e; complete ginv)).
@@ -1431,7 +1334,7 @@ Lemma decidable_ex_mk_nat {o} :
   forall (t : @NTerm o), decidable ({n : nat & t = mk_nat n}).
 Proof.
   introv.
-  destruct t as [v|f|op bs]; try (complete (right; intro e; exrepnd; complete ginv)).
+  destruct t as [v|op bs]; try (complete (right; intro e; exrepnd; complete ginv)).
   destruct op; try (complete (right; intro e; exrepnd; complete ginv)).
   destruct c; try (complete (right; intro e; exrepnd; complete ginv)).
   destruct bs; try (complete (right; intro e; exrepnd; complete ginv)).
@@ -1929,7 +1832,7 @@ Proof.
   repeat (unflsubst in aeq).
   allsimpl; fold_terms.
   apply alpha_eq_mk_zero in aeq.
-  destruct t as [v|f|op bs]; allsimpl; ginv.
+  destruct t as [v|op bs]; allsimpl; ginv.
   - rw @sub_find_ax_sub in aeq; boolvar; ginv.
   - inversion aeq; subst.
     destruct bs; allsimpl; cpx; GC; fold_terms; GC.
@@ -2182,7 +2085,7 @@ Lemma dec_isexc {o} :
   forall (t : @NTerm o), decidable (isexc t).
 Proof.
   introv.
-  destruct t as [v|f|op bs]; simpl; try (complete (right; sp)).
+  destruct t as [v|op bs]; simpl; try (complete (right; sp)).
   dopid op as [can|ncan|exc|abs] Case; try (complete (right; sp)).
   left; sp.
 Qed.
@@ -2302,17 +2205,17 @@ Lemma decidable_spexc {o} :
   forall a (t : @NTerm o), decidable (t = spexc a).
 Proof.
   introv.
-  destruct t as [v|f|op bs]; try (complete (right; intro e; complete ginv)).
+  destruct t as [v|op bs]; try (complete (right; intro e; complete ginv)).
   destruct op; try (complete (right; intro e; complete ginv)).
   repeat (destruct bs; try (complete (right; intro e; complete ginv))).
   destruct b as [l1 t1]; destruct b0 as [l2 t2].
   destruct l1; try (complete (right; intro e; complete ginv)).
   destruct l2; try (complete (right; intro e; complete ginv)).
-  destruct t1 as [v|f|op bs]; try (complete (right; intro e; complete ginv)).
+  destruct t1 as [v|op bs]; try (complete (right; intro e; complete ginv)).
   destruct op; try (complete (right; intro e; complete ginv)).
   destruct c; try (complete (right; intro e; complete ginv)).
   destruct bs; try (complete (right; intro e; complete ginv)).
-  destruct t2 as [v|f|op bs]; try (complete (right; intro e; complete ginv)).
+  destruct t2 as [v|op bs]; try (complete (right; intro e; complete ginv)).
   destruct op; try (complete (right; intro e; complete ginv)).
   destruct c; try (complete (right; intro e; complete ginv)).
   destruct bs; try (complete (right; intro e; complete ginv)).
@@ -2379,12 +2282,7 @@ Proof.
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
     allrw @reduces_in_atmost_k_steps_exc_S.
     applydup IHk in r0; auto.
-    destruct t as [x|f|op bs]; ginv.
-
-    { csunf r1; allsimpl; ginv.
-      apply reduces_in_atmost_k_steps_if_isvalue_like in r0; eauto 3 with slow; subst.
-      right; dands; tcsp.
-      csunf; simpl; eexists; dands; eauto. }
+    destruct t as [x|op bs]; ginv.
 
     dopid op as [can|ncan|exc|abs] Case.
 

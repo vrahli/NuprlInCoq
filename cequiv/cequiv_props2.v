@@ -41,15 +41,9 @@ Proof.
   allunfold @hasvalue. exrepnd.
   assert (isvalue t') as val by (unfold computes_to_value in hlt0; sp).
   destruct ceq as [c1 c2].
-  destruct t' as [v|f|op bs].
+  destruct t' as [v|op bs].
 
   { inversion val; allsimpl; tcsp. }
-
-  { inversion c1 as [cl]; clear c1.
-    unfold close_comput in cl; repnd; GC.
-    allunfold @computes_to_value; repnd.
-    apply cl4 in hlt1; exrepnd.
-    exists (sterm f'); dands; eauto 3 with slow. }
 
   destruct op; try (complete (inversion val; allsimpl; tcsp)).
 

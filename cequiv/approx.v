@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -87,11 +89,6 @@ Definition close_compute_seq {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
     -> {f' : ntseq & (tr =s>(lib) f') # (forall n, R (f n) (f' n)) }.
 *)
 
-Definition close_compute_seq {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
-  forall f,
-    (tl =s>(lib) f)
-    -> {f' : ntseq & (tr =s>(lib) f') # (forall n, R (f n) (f' n)) }.
-
 
 Definition close_compute_mrk {p} lib (R: @NTrel p) (tl tr : @NTerm p) : [univ]:=
   forall m, (tl =m>(lib) m) -> (tr =m>(lib) m).
@@ -101,7 +98,6 @@ Definition close_comput {p} lib (R: NTrel) (tl tr : @NTerm p) : [univ]:=
   # isprogram tr
   # close_compute_val lib R tl tr
   # close_compute_exc lib R tl tr
-  # close_compute_seq lib R tl tr
   # True (*close_compute_mrk lib R tl tr*).
 
 (** % \noindent \\* %  At this point, one could directly define [approx] as: *)
@@ -183,13 +179,6 @@ Proof.
   - introv Hcomp.
     apply Hcl3 in Hcomp; exrepnd.
     exists a' e'; dands; auto; repdors; auto.
-
-  - introv comp; allsimpl.
-    apply Hcl4 in comp; exrepnd.
-    eexists; dands; eauto.
-    introv.
-    pose proof (comp0 n) as h; clear comp0.
-    repndors; auto.
 Qed.
 
 (* begin hide *)
@@ -239,17 +228,6 @@ Definition continuous {p} (F : bin_rel NTerm -> bin_rel NTerm) :=
 Lemma close_comp_cont {p} : forall lib, @continuous p (close_comput lib).
 Abort.
 
-Lemma computes_to_seq_implies_hasvalue_like {o} :
-  forall lib (t : @NTerm o) f,
-    (t =s>(lib) f)
-    -> hasvalue_like lib t.
-Proof.
-  introv comp.
-  unfold hasvalue_like.
-  eexists; dands; eauto 3 with slow.
-Qed.
-Hint Resolve computes_to_seq_implies_hasvalue_like : slow.
-
 (* end hide *)
 
 (** %\noindent \\*%The following lemma says that for programs
@@ -289,10 +267,6 @@ Proof.
       eexists; dands; eauto with slow. }
     invertsn Hha.
     unfold close_comput in Hha; repnd; eauto.*)
-
-  - autodimp Hha hyp; eauto 3 with slow.
-    invertsn Hha.
-    unfold close_comput in Hha; repnd; eauto.
 Qed.
 
 (** %\noindent \\*% The following is an easy corollary of the above.
@@ -310,14 +284,6 @@ Proof.
 Qed.
 
 (* begin hide *)
-
-Lemma axiom_doesnt_compute_to_seq {o} :
-  forall lib (f : @ntseq o), !(mk_axiom =s>(lib) f).
-Proof.
-  introv comp.
-  unfold computes_to_seq in comp.
-  apply reduces_to_if_isvalue_like in comp; eauto 3 with slow; ginv.
-Qed.
 
 Lemma hasvalue_as_approx {pp} :
   forall lib a,
@@ -346,9 +312,6 @@ Proof.
 
     + introv ce.
       apply axiom_doesnt_raise_an_exception in ce; sp.
-
-    + introv comp.
-      apply axiom_doesnt_compute_to_seq in comp; sp.
 
 (*
     + introv cm.
@@ -438,23 +401,6 @@ Proof.
   rw @isprogram_exception_iff in Hcv; sp.
 Qed.
 
-Lemma isprogram_mk_ntseq {o} :
-  forall (f : @ntseq o),
-    isprogram (mk_ntseq f)
-    <=> (forall n, isprogram (f n) # noutokens (f n)).
-Proof.
-  introv; split; intro h.
-  - introv; inversion h as [c w]; clear c.
-    rw @nt_wf_sterm_iff in w.
-    pose proof (w n) as q; repnd.
-    dands; auto.
-    constructor; auto.
-  - constructor; unfold closed; simpl; auto.
-    constructor; introv.
-    pose proof (h n) as q; repnd.
-    inversion q0 as [c w]; dands; auto.
-Qed.
-
 (* end hide *)
 
 (** %\noindent% We formalize a co-inductive proof
@@ -493,14 +439,6 @@ Proof.
 
   - applydup @preserve_program_exc2 in comp; auto; repnd.
     exists a e; dands; auto.
-
-  - eexists; dands; eauto.
-    introv.
-    right.
-    applydup @reduces_to_preserves_program in comp as wf; auto.
-    apply CIH; dands; auto.
-    rw @isprogram_mk_ntseq in wf.
-    pose proof (wf n) as q; tcsp.
 Qed.
 
 Definition approx_open {p} lib := olift (@approx p lib).
@@ -510,16 +448,8 @@ Definition approx_bts {p} lib := lblift (@approx_open p lib).
 Lemma approx_open_refl {p} :
   forall lib (nt: @NTerm p), (nt_wf nt) -> approx_open lib nt nt.
 Proof.
-  induction nt as [v|f| op bts Hind] using NTerm_better_ind; intros Hwf;
+  induction nt as [v| op bts Hind] using NTerm_better_ind; intros Hwf;
   constructor; try split; auto; intros  ? Hcl Hisp ?; apply approx_refl; auto.
-Qed.
-
-Lemma vbot_doesnt_compute_to_seq {o} :
-  forall lib v (f : @ntseq o), !(mk_vbot v =s>(lib) f).
-Proof.
-  introv comp.
-  unfold computes_to_seq in comp.
-  apply reduces_to_vbot_if_isvalue_like in comp; eauto 3 with slow.
 Qed.
 
 (**
@@ -547,8 +477,6 @@ Proof.
 (*
   - apply vbot_doesnt_mark in comp; sp.
  *)
-
-  - apply vbot_doesnt_compute_to_seq in comp; tcsp.
 Qed.
 
 (* begin hide *)
@@ -581,9 +509,6 @@ Proof.
 
   - apply Hrab3 in comp; exrepnd.
     exists a' e'; dands; auto.
-
-  - apply Hrab4 in comp; exrepnd.
-    eexists; dands; eauto.
 Defined.
 
 Lemma le_bin_rel_approx {p} :
@@ -613,20 +538,6 @@ Proof.
   cofix.
  *)
 
-Lemma computes_to_seq_alpha {o} :
-  forall lib (t1 t2 : @NTerm o) f,
-    nt_wf t1
-    -> alpha_eq t1 t2
-    -> (t1 =s>(lib) f)
-    -> {f' : ntseq & (t2 =s>(lib) f') # (forall n, alpha_eq (f n) (f' n))}.
-Proof.
-  introv wf aeq comp.
-  eapply reduces_to_alpha in comp; eauto 3 with slow.
-  exrepnd.
-  inversion comp0 as [|? ? imp|]; subst; clear comp0.
-  eexists; dands; eauto.
-Qed.
-
 Lemma respects_alpha_r_approx_aux_bot2 {p} :
   forall lib, respects_alpha_r (@approx_aux p lib bot2).
 Proof.
@@ -648,7 +559,7 @@ Proof.
     apply cv in ca; exrepnd; clear cv.
     eapply compute_to_value_alpha with (t1' := oterm (Can c) tr_subterms) in aeq;
       eauto 3 with slow; exrepnd.
-    inversion aeq0 as [|f| ? ? ? leq aeqbt]; subst; eauto 3 with slow.
+    inversion aeq0 as [| ? ? ? leq aeqbt]; subst; eauto 3 with slow.
     exists lbt2; dands; auto.
     allunfold @lblift; dands; repnd; auto; try omega.
     introv k.
@@ -676,18 +587,6 @@ Proof.
     apply cm in ca.
     eapply compute_to_marker_alpha in ca; eauto.
  *)
-
-  - introv comp.
-    apply cs in comp; exrepnd.
-    eapply computes_to_seq_alpha in comp1; eauto 3 with slow.
-    exrepnd.
-    eexists; dands; eauto.
-    introv.
-    pose proof (comp0 n) as h; clear comp0.
-    pose proof (comp2 n) as q; clear comp2.
-    repndors; eauto 3 with slow.
-    left.
-    eapply IND; eauto.
 Qed.
 
 Lemma respects_alpha_r_approx_aux_bot2_or_bot2 {p} :
@@ -721,7 +620,7 @@ Proof.
     apply alpha_eq_sym in aeq.
     eapply compute_to_value_alpha with (t1' := oterm (Can c) tl_subterms) in aeq;
       eauto 3 with slow; exrepnd.
-    inversion aeq0 as [|?| ? ? ? leq aeqbt]; subst.
+    inversion aeq0 as [| ? ? ? leq aeqbt]; subst.
     apply cv in aeq1; exrepnd; clear cv.
     exists tr_subterms; dands; auto.
     allunfold @lblift; dands; repnd; auto; try omega.
@@ -755,21 +654,6 @@ Proof.
     eapply compute_to_marker_alpha in ca;[|eauto].
     apply cm in ca; auto.
  *)
-
-  - introv comp.
-    applydup @alpha_prog_eauto in aeq as wfa'; auto.
-    apply alpha_eq_sym in aeq.
-    eapply computes_to_seq_alpha in comp;[| |eauto]; eauto 3 with slow.
-    exrepnd.
-    apply cs in comp1; exrepnd.
-    eexists; dands; eauto.
-    introv.
-    pose proof (comp0 n) as h; clear comp0.
-    pose proof (comp2 n) as q; clear comp2.
-    repndors; eauto 3 with slow.
-    left.
-    apply alpha_eq_sym in h.
-    eapply IND; eauto.
 Qed.
 
 Lemma respects_alpha_l_approx_aux_bot2_or_bot2 {p} :
@@ -816,9 +700,6 @@ Proof.
       spc; eauto.
       eauto with slow.
 
-    + subst; allsimpl.
-      inversion Hcv0.
-
   - introv comp.
     eapply compute_to_exception_alpha with (t2:=a) in comp; eauto with slow.
     exrepnd.
@@ -834,19 +715,6 @@ Proof.
     eapply compute_to_marker_alpha in comp;[|apply alpha_eq_sym; eauto].
     apply Hap in comp; auto.
  *)
-
-  - introv comp.
-    applydup @alpha_prog_eauto in Hal as wfa'; auto.
-    apply alpha_eq_sym in Hal.
-    eapply computes_to_seq_alpha in comp;[| |eauto]; eauto 3 with slow; exrepnd.
-    apply Hap4 in comp1; exrepnd.
-    eexists; dands; eauto.
-    introv.
-    pose proof (comp2 n) as q; clear comp2.
-    pose proof (comp0 n) as h; clear comp0.
-    eauto 3 with slow.
-(*    apply alpha_eq_sym in h.
-    eapply rR; eauto.*)
 Qed.
 
 Lemma approxr_alpha_rw_l_aux {p} :
@@ -923,11 +791,6 @@ Proof.
     apply Hap in comp.
     eapply compute_to_marker_alpha in comp; eauto.
  *)
-
-  - introv comp.
-    apply Hap4 in comp; exrepnd.
-    eapply computes_to_seq_alpha in comp1;[| |eauto]; eauto 3 with slow; exrepnd.
-    eexists; dands; eauto.
 Qed.
 
 Lemma approxr_alpha_rw_r_aux {p} :
@@ -1355,20 +1218,6 @@ Proof.
     introv comp.
     apply Hab in comp; apply Hbc in comp; auto.
  *)
-
-  - repnd.
-    introv comp.
-    apply Hab4 in comp; exrepnd.
-    apply Hbc4 in comp1; exrepnd.
-    eexists; dands; eauto.
-    introv.
-    pose proof (comp2 n) as h; clear comp2.
-    pose proof (comp0 n) as q; clear comp0.
-    repndors; eauto;[].
-
-    right.
-    apply CIH.
-    eexists; eexists; eexists; dands; eauto.
 Qed.
 
 
@@ -1474,9 +1323,6 @@ Proof.
     allunfold @computes_to_marker; repnd; dands; auto.
     eapply reduces_to_trans; eauto.
  *)
-
-  - apply Hap4.
-    eapply reduces_to_trans; eauto.
 Qed.
 
 Lemma reduces_to_isvalue_like_eq {o} :
@@ -1514,10 +1360,6 @@ Proof.
   - apply Hap in comp.
     eapply reduces_to_marker_eq in comp; eauto.
  *)
-
-  - apply Hap4 in comp; exrepnd.
-    exists f'; dands; auto.
-    eapply reduces_to_isvalue_like_eq; eauto 3 with slow.
 Qed.
 
 Lemma reduces_to_implies_approx {p} :
@@ -1656,10 +1498,6 @@ Proof.
   applydup @computes_to_value_can in c; repndors; exrepd; subst.
   - apply cc2 in c; sp.
     exists (oterm (Can c1) tr_subterms); sp.
-  - unfold computes_to_value in c; repnd.
-    apply cc4 in c0; exrepnd.
-    unfold computes_to_value.
-    eexists; dands; eauto 3 with slow.
 Qed.
 (* begin hide *)
 
@@ -1703,7 +1541,7 @@ Proof.
   applydup @approx_relates_only_progs in ap as p.
   destruct p as [pu px].
 
-  nterm_ind t as [z|f ind|op bs ind] Case; auto.
+  nterm_ind t as [z|op bs ind] Case; auto.
 
   - Case "vterm".
     allrw @isprog_vars_vterm; allsimpl; repndors; tcsp; subst.
@@ -2323,8 +2161,6 @@ Proof.
 (*
   - apply can_doesnt_mark in comp; sp.
 *)
-
-  - apply reduces_to_if_isvalue_like in comp; eauto 3 with slow; ginv.
 Qed.
 
 Lemma approx_canonical_form_exc {o} :
@@ -2349,8 +2185,6 @@ Proof.
 (*
   - apply exception_doesnt_mark in comp; sp.
 *)
-
-  - apply reduces_to_exception in comp; eauto 3 with slow; ginv.
 Qed.
 
 

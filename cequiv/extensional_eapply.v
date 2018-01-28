@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -67,7 +68,7 @@ Proof.
 
       apply compute_step_eapply_success in XX1; exrepnd; allunfold @nobnd; ginv.
       apply eapply_wf_def_oterm_implies in XX3.
-      destruct XX3 as [XX3|XX3];[|destruct XX3 as [XX3|XX3]]; exrepnd; subst; ginv.
+      destruct XX3 as [XX3|XX3]; exrepnd; subst; ginv.
 
       { apply howe_lemma2 in q; exrepnd; auto.
         unfold approx_starbts, lblift_sub in q1; repnd; allsimpl; cpx.
@@ -179,86 +180,6 @@ Proof.
       }
 
       { fold_terms.
-        apply approx_star_nseq in q; auto;[].
-
-        repndors; exrepnd; subst; ginv.
-
-        - eapply compute_step_eapply2_success in XX1; repnd; GC.
-          repndors; exrepnd; ginv;[].
-          apply approx_star_nat in Has1bt; auto;[].
-          apply reduces_in_atmost_k_steps_if_isvalue_like in XX0; eauto 2 with slow; subst.
-          apply approx_open_implies_approx_star.
-          apply approx_implies_approx_open.
-          apply reduces_to_implies_approx1;[apply isprogram_eapply;eauto 2 with slow|].
-          allunfold @computes_to_value; repnd.
-          eapply reduces_to_trans;
-            [apply implies_eapply_red;
-              [|eauto
-               |eauto]
-            |]; eauto 3 with slow.
-          apply reduces_to_if_step; csunf; simpl.
-          dcwf xx; simpl; boolvar; try omega.
-          rw @Znat.Nat2Z.id; auto.
-
-        - apply isexc_implies in XX2; auto; exrepnd; subst.
-          apply reduces_in_atmost_k_steps_if_isvalue_like in XX0; eauto 2 with slow; subst.
-          apply howe_lemma2_exc in Has1bt; prove_isprogram; exrepnd.
-
-          apply approx_star_open_trans with (b := mk_exception a' e').
-          { apply approx_star_exception; auto. }
-
-          apply approx_implies_approx_open.
-          apply computes_to_exception_implies_approx; auto; prove_isprogram.
-          eapply eapply_nseq_exception_implies; eauto.
-
-        - fold_terms.
-          apply reduces_in_atmost_k_steps_eapply_nseq_to_isvalue_like in XX0; auto.
-
-          repndors; exrepnd; subst.
-
-          + applydup @preserve_compute_step in XX1; auto.
-            assert (reduces_in_atmost_k_steps lib arg2 (mk_nat n) (S i)) as ra2.
-            { rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto. }
-            apply no_change_after_val_like with (k2:=k) in ra2; eauto 2 with slow; try omega;[].
-            make_red_val_like ra2 cck.
-            pose proof (Hi arg2 (mk_nat n) a0r) as z.
-            repeat (autodimp z hyp); eauto 2 with slow;[].
-            apply approx_star_nat in z; eauto 2 with slow;[].
-
-            apply approx_open_implies_approx_star.
-            apply approx_implies_approx_open.
-            apply reduces_to_implies_approx1;[apply isprogram_eapply;eauto 2 with slow|].
-            allunfold @computes_to_value; repnd.
-            eapply reduces_to_trans;
-              [apply implies_eapply_red;
-                [|eauto
-                 |eauto]
-              |]; eauto 3 with slow.
-            apply reduces_to_if_step; csunf; simpl.
-            dcwf xx; simpl; boolvar; try omega.
-            rw @Znat.Nat2Z.id; auto.
-
-          + apply isexc_implies in XX2; auto; exrepnd; subst.
-
-            assert (reduces_in_atmost_k_steps lib arg2 (mk_exception a0 e) (S j)) as ra2.
-            { rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto. }
-
-            apply no_change_after_val_like with (k2:=k) in ra2; try splr; try omega.
-            make_red_val_like ra2 ca0.
-            pose proof (Hi arg2 (mk_exception a0 e) a0r) as z.
-            repeat (autodimp z hyp); eauto 2 with slow;[].
-            apply howe_lemma2_exc in z; exrepnd; auto; prove_isprogram.
-
-            apply approx_star_open_trans with (b := mk_exception a' e').
-            { apply approx_star_exception; auto. }
-
-            apply approx_implies_approx_open.
-            apply computes_to_exception_implies_approx; auto; prove_isprogram.
-            allrw @computes_to_exception_as_reduces_to.
-            eapply eapply_nseq_exception_implies; eauto.
-      }
-
-      { fold_terms.
         apply approx_star_choice_seq in q; auto;[].
 
         repndors; exrepnd; subst; ginv.
@@ -333,79 +254,6 @@ Proof.
             eapply eapply_choice_seq_exception_implies; eauto.
       }
 
-    }
-
-
-    { allsimpl.
-      csunf XX1; allsimpl; ginv.
-      apply howe_lemma2_seq in q; exrepnd; auto; prove_isprogram.
-      apply compute_step_eapply_success in XX1; exrepnd; allunfold @nobnd; ginv.
-      applydup @reduces_to_preserves_program in q0; auto.
-      fold_terms.
-
-      repndors; exrepnd; subst.
-
-      - apply compute_step_eapply2_success in XX1; repnd; GC.
-        repndors; exrepnd; ginv.
-        apply approx_star_nat in Has1bt; auto.
-
-        apply no_change_after_val_like with (k2:=k) in XX0; eauto 2 with slow; try omega;[].
-        make_red_val_like XX0 ca0.
-        pose proof (Hi (f n) a (f' n)) as z.
-        repeat (autodimp z hyp); eauto 2 with slow;[].
-
-        eapply approx_star_open_trans;[eauto|].
-        apply approx_implies_approx_open.
-        apply reduces_to_implies_approx_eauto; prove_isprogram.
-        apply eapply_red_sterm_nat_implies; auto.
-
-      - apply isexc_implies in XX2; auto; exrepnd; subst.
-        apply reduces_in_atmost_k_steps_if_isvalue_like in XX0; eauto 2 with slow; subst.
-        apply howe_lemma2_exc in Has1bt; exrepnd; auto; prove_isprogram.
-
-        apply approx_star_open_trans with (b := mk_exception a' e').
-        { apply approx_star_exception; auto. }
-
-        apply approx_implies_approx_open.
-        apply computes_to_exception_implies_approx; auto; prove_isprogram.
-        eapply eapply_red_sterm_exception_implies; eauto.
-
-      - apply reduces_in_atmost_k_steps_eapply_sterm_to_isvalue_like in XX0; auto.
-        repndors; exrepnd.
-
-        + assert (reduces_in_atmost_k_steps lib arg2 (mk_nat n) (S i)) as ra2.
-          { rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto. }
-          apply no_change_after_value_ra with (k2:=k) in ra2; eauto 2 with slow; try omega;[].
-          pose proof (Hi arg2 (mk_nat n) a0r) as z.
-          make_red_val_like ra2 ca0.
-          repeat (autodimp z hyp); eauto 2 with slow;[].
-          apply approx_star_nat in z; auto.
-
-          apply no_change_after_val_like with (k2:=k) in XX2; eauto 2 with slow; try omega;[].
-          make_red_val_like XX2 caf.
-          pose proof (Hi (f0 n) a (f' n)) as w.
-          repeat (autodimp w hyp); eauto 2 with slow;[].
-          eapply approx_star_open_trans;[eauto|].
-
-          apply approx_implies_approx_open.
-          apply reduces_to_implies_approx_eauto; prove_isprogram.
-          apply eapply_red_sterm_nat_implies; auto.
-
-        + apply isexc_implies in XX2; auto; exrepnd; subst.
-          assert (reduces_in_atmost_k_steps lib arg2 (mk_exception a0 e) (S j)) as ra2.
-          { rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto. }
-          apply no_change_after_val_like with (k2:=k) in ra2; try splr; try omega.
-          make_red_val_like ra2 ca0.
-          pose proof (Hi arg2 (mk_exception a0 e) a0r) as z.
-          repeat (autodimp z hyp); eauto 2 with slow;[].
-          apply howe_lemma2_exc in z; exrepnd; auto; prove_isprogram.
-
-          apply approx_star_open_trans with (b := mk_exception a' e').
-          { apply approx_star_exception; auto. }
-
-          apply approx_implies_approx_open.
-          apply computes_to_exception_implies_approx; auto; prove_isprogram.
-          eapply eapply_red_sterm_exception_implies; eauto.
     }
 
   - apply isexc_implies in Hcv0; auto; exrepnd; subst.

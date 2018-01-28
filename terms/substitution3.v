@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -51,7 +54,7 @@ Lemma lsubst_aux_trivial_cl {p} :
     -> disjoint (dom_sub sub) (free_vars t)
     -> lsubst_aux t sub = t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; simpl; introv cl disj; auto.
+  nterm_ind t as [v|op bs ind] Case; simpl; introv cl disj; auto.
 
   - Case "vterm".
     allrw disjoint_singleton_r.
@@ -149,7 +152,7 @@ Lemma free_vars_lsubst_aux_cl {p} :
     cl_sub sub
     -> free_vars (lsubst_aux t sub) = remove_nvars (dom_sub sub) (free_vars t).
 Proof.
-  nterm_ind t as [v|f ind|op lbt ind] Case; simpl; introv k; auto.
+  nterm_ind t as [v|op lbt ind] Case; simpl; introv k; auto.
 
   - Case "vterm".
     remember (sub_find sub v) as f; destruct f; symmetry in Heqf; simpl.
@@ -165,9 +168,6 @@ Proof.
       symmetry.
       rw <- remove_nvars_unchanged.
       unfold disjoint; simpl; sp; subst; auto.
-
-  - Case "sterm".
-    allrw remove_nvars_nil_r; auto.
 
   - Case "oterm".
     rw flat_map_map; unfold compose.
@@ -279,7 +279,7 @@ Lemma cl_lsubst_aux_app_sub_filter {o} :
     lsubst_aux t (s1 ++ s2)
     = lsubst_aux t (s1 ++ sub_filter s2 (dom_sub s1)).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; simpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
 
   - Case "vterm".
     allrw @sub_find_app.
@@ -328,7 +328,7 @@ Lemma cl_lsubst_aux_app {o} :
     -> lsubst_aux t (s1 ++ s2)
        = lsubst_aux (lsubst_aux t s1) s2.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv cl1 cl2; simpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv cl1 cl2; simpl; auto.
 
   - Case "vterm".
     allrw @sub_find_app.
@@ -370,7 +370,7 @@ Lemma cl_lsubst_aux_swap {o} :
     -> lsubst_aux (lsubst_aux t s1) s2
        = lsubst_aux (lsubst_aux t s2) s1.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv cl1 cl2 disj; simpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv cl1 cl2 disj; simpl; auto.
 
   - Case "vterm".
     remember (sub_find s1 v) as sf1; symmetry in Heqsf1; destruct sf1; auto;
@@ -436,7 +436,7 @@ Lemma lsubst_aux_trivial_cl_term {p} :
     disjoint (free_vars t) (dom_sub sub)
     -> lsubst_aux t sub = t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; simpl; introv cl; auto.
+  nterm_ind t as [v|op bs ind] Case; simpl; introv cl; auto.
 
   - Case "vterm".
     allrw disjoint_singleton_l.
@@ -476,10 +476,3 @@ Proof.
   apply alphaeq_preserves_free_vars in h1.
   rw h1; tcsp.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

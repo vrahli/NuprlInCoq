@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -252,7 +253,6 @@ Proof.
   dorn iv.
   - apply iscan_implies in iv; repndors; exrepnd; subst.
     + inversion aeq; subst; left; sp.
-    + inversion aeq; subst; left; sp.
   - apply alphaeq_preserves_isexc in aeq; sp.
 Qed.
 
@@ -266,7 +266,6 @@ Definition compute_1_step {p} lib (t : @NTerm p) :=
   match t with
     | oterm (Can _) _ => cfailure "term is already a value" t
     | oterm Exc _ => cfailure "term is already a exception" t
-    | sterm _ => cfailure "term is already a value" t
     | vterm _ => compute_step lib t
     | oterm (NCan _) _ => compute_step lib t
     | oterm (Abs _) _ => compute_step lib t
@@ -540,15 +539,13 @@ Lemma computes_to_value_can {p} :
     @computes_to_value p lib t v
     -> {c : CanonicalOp
         & {bts : list BTerm
-        & v = oterm (Can c) bts}}
-       [+] {f : ntseq & v = sterm f}.
+        & v = oterm (Can c) bts}}.
 Proof.
   unfold computes_to_value; introv Hcv; repnd; sp.
   allrw @isvalue_iff; repnd.
   allapply @iscan_implies.
   repndors; exrepnd; subst; allsimpl.
-  - left; eexists; eexists; sp.
-  - right; eexists; eauto.
+  - eexists; eexists; sp.
 Qed.
 
 Lemma compute_at_most_k_steps_eq {p} :
@@ -1217,12 +1214,6 @@ Lemma compute_step_apply_success {p} :
         # arg1bts = [bterm [v] b]
         # bstr = [bterm [] arg]
         # u = subst b v arg}}
-      [+] {f : nseq
-           & {arg : NTerm
-           & arg1c = Nseq f
-           # arg1bts = []
-           # bstr = [bterm [] arg]
-           # u = mk_eapply (mk_nseq f) arg}}
       [+] {n : choice_sequence_name
            & {arg : NTerm
            & arg1c = Ncseq n
@@ -1245,13 +1236,7 @@ Proof.
     destruct b.
     destruct l; ginv.
     destruct bstr; ginv.
-    right; left.
-    exists n n0; sp.
-  - destruct bstr; ginv.
-    destruct b.
-    destruct l; ginv.
-    destruct bstr; ginv.
-    right; right.
+    right.
     eexists; eexists; eauto.
 Qed.
 
@@ -1379,7 +1364,6 @@ Lemma compute_step_try_catch {p} :
     compute_step lib (mk_try e a v b)
     = match e with
         | vterm x => cfailure compute_step_error_not_closed (mk_try e a v b)
-        | sterm f => csuccess (mk_atom_eq a a e mk_bot)
         | oterm (Can _) _ => csuccess (mk_atom_eq a a e mk_bot)
         | oterm Exc bs =>
           match bs with
@@ -1394,7 +1378,7 @@ Lemma compute_step_try_catch {p} :
       end.
 Proof.
   introv.
-  destruct e as [x|f|op bs]; auto.
+  destruct e as [x|op bs]; auto.
   dopid op as [can|ncan|exc|abs] Case; simpl; auto.
   csunf; simpl; auto.
 Qed.
@@ -1767,14 +1751,6 @@ Ltac dest_find_atom a e :=
   end;
   allunfold (@found_atom).
 
-Lemma isvalue_like_sterm {o} :
-  forall (f : @ntseq o), isvalue_like (sterm f).
-Proof.
-  introv.
-  unfold isvalue_like; simpl; sp.
-Qed.
-Hint Resolve isvalue_like_sterm : slow.
-
 Lemma compute_step_fresh_success {o} :
   forall lib nc x v vs (t : @NTerm o) bs comp a u,
     compute_step_fresh lib nc x v vs t bs comp a
@@ -1799,10 +1775,8 @@ Proof.
   destruct vs; allsimpl; ginv.
   destruct bs; allsimpl; ginv.
   dands; auto.
-  destruct t as [v1|f1|op1 bs1]; ginv; allsimpl; auto.
+  destruct t as [v1|op1 bs1]; ginv; allsimpl; auto.
   - boolvar; ginv; tcsp.
-  - right; left.
-    dands; eauto 3 with slow.
   - dopid op1 as [can1|ncan1|exc1|abs1] Case; ginv.
     + Case "Can".
       right; left; dands; eauto with slow.
@@ -2731,10 +2705,10 @@ Lemma wf_soterm_so_alphaeq {o} :
     -> wf_soterm t1
     -> wf_soterm t2.
 Proof.
-  soterm_ind1s t1 as [v1 ts1 ind1 | | op1 bs1 ind1] Case; introv aeq wf; tcsp.
+  soterm_ind1s t1 as [v1 ts1 ind1 | op1 bs1 ind1] Case; introv aeq wf; tcsp.
 
   - Case "sovar".
-    inversion aeq as [? ? ? len imp | |]; subst; clear aeq.
+    inversion aeq as [? ? ? len imp |]; subst; clear aeq.
     allrw @wf_sovar.
     introv i.
     pose proof (combine_in_right _ _ ts2 ts1) as h.
@@ -2745,14 +2719,8 @@ Proof.
     applydup wf in k3.
     eapply ind1; eauto.
 
-  - Case "soseq".
-    inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
-    unfold wf_soterm in *; allsimpl.
-    eapply wf_term_alphaeq;[|eauto].
-    constructor; auto.
-
   - Case "soterm".
-    inversion aeq as [ | |? ? ? len imp]; subst; clear aeq.
+    inversion aeq as [ |? ? ? len imp]; subst; clear aeq.
     allrw @wf_soterm_iff; repnd; dands; auto.
 
     + rw <- wf0.
@@ -2839,7 +2807,7 @@ Lemma wf_exception_iff {p} :
 Proof.
   introv; split; intro k.
   - allrw <- @nt_wf_eq.
-    inversion k as [|?|? ? i eop]; subst; allsimpl.
+    inversion k as [|? ? i eop]; subst; allsimpl.
     pose proof (i (nobnd e)) as h1; autodimp h1 hyp.
     pose proof (i (nobnd a)) as h2; autodimp h2 hyp.
     inversion h1; inversion h2; subst; auto.
@@ -2965,7 +2933,7 @@ Lemma free_vars_subst_utokens_aux {o} :
     subvars (free_vars (subst_utokens_aux t sub))
             (free_vars t ++ free_vars_utok_sub sub).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; auto.
 
   - Case "vterm".
     simpl; allrw subvars_prop; simpl; introv k; repndors; tcsp.
@@ -3114,7 +3082,7 @@ Lemma wf_subst_utokens_aux {o} :
     -> wf_utok_sub sub
     -> wf_term (subst_utokens_aux t sub).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv wt ws; auto.
+  nterm_ind t as [v|op bs ind] Case; introv wt ws; auto.
 
   Case "oterm".
   rw @subst_utokens_aux_oterm.
@@ -3448,7 +3416,7 @@ Lemma simple_lsubst_aux_lsubst_aux_sub {o} :
                   (lsubst_aux_sub sub1 sub2)
        = lsubst_aux (lsubst_aux t sub1) sub2.
 Proof.
-  nterm_ind t as [x|f ind|op bs ind] Case; introv clsub disj2.
+  nterm_ind t as [x|op bs ind] Case; introv clsub disj2.
 
   - Case "vterm".
     allsimpl.
@@ -3471,9 +3439,6 @@ Proof.
         apply lsubst_aux_trivial_cl_term2; auto.
 
       * rw @sub_find_lsubst_aux_sub; rw i0; simpl; auto.
-
-  - Case "sterm".
-    simpl; auto.
 
   - Case "oterm".
     simpl.
@@ -3562,16 +3527,13 @@ Lemma eqvars_bound_vars_lsubst_aux {o} :
     eqvars (bound_vars (lsubst_aux t sub))
            (bound_vars t ++ sub_bound_vars (sub_keep_first sub (free_vars t))).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; allsimpl.
+  nterm_ind t as [v|op bs ind] Case; introv; allsimpl.
 
   - Case "vterm".
     remember (sub_find sub v) as sf; symmetry in Heqsf; destruct sf.
     + apply sub_keep_first_singleton_r_some in Heqsf; rw Heqsf; simpl.
       allrw app_nil_r; sp.
     + apply sub_keep_first_singleton_r_none in Heqsf; rw Heqsf; simpl; auto.
-
-  - Case "sterm".
-    rw @sub_keep_first_nil_r; simpl; auto.
 
   - Case "oterm".
     allrw flat_map_map; unfold compose.
@@ -3739,7 +3701,7 @@ Proof.
     }
 
     pose proof (h1 l) as h; clear h1.
-    inversion h as [|?|? ? ? ? i]; subst; allsimpl; tcsp; GC.
+    inversion h as [|? ? ? ? i]; subst; allsimpl; tcsp; GC.
     pose proof (i 0) as p; tcsp.
 
   - pose proof (k []); auto.
@@ -4338,7 +4300,7 @@ Lemma lsubst_aux_sosub_aux_aeq {o} :
     -> lsubst_aux (sosub_aux sub1 t) sub2
        = sosub_aux (lsubst_aux_sosub sub2 sub1 ++ sub2sosub sub2) t.
 Proof.
-  soterm_ind t as [v ts ind | | op bs ind] Case;
+  soterm_ind t as [v ts ind | op bs ind] Case;
   introv cl socov disj1 disj2 disj3; tcsp.
 
   - Case "sovar".
@@ -4498,7 +4460,7 @@ Lemma subvars_bound_vars_lsubst_aux {o} :
       (bound_vars (lsubst_aux t sub))
       (bound_vars t ++ sub_bound_vars sub).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; simpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
 
   - Case "vterm".
     remember (sub_find sub v) as f; symmetry in Heqf; destruct f; simpl; auto.
@@ -4749,7 +4711,7 @@ Lemma subvars_bound_vars_lsubst_aux2 {o} :
   forall (t : @NTerm o) sub,
     subvars (bound_vars t) (bound_vars (lsubst_aux t sub)).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; simpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
   rw flat_map_map; unfold compose.
   apply subvars_flat_map2; introv i; destruct x; simpl.
   apply subvars_app_lr; auto.
@@ -4796,7 +4758,7 @@ Lemma fo_bound_vars_subvars_all_fo_vars {o} :
   forall t : @SOTerm o,
     subvars (fo_bound_vars t) (all_fo_vars t).
 Proof.
-  soterm_ind t as [v ts ind | | op bs ind] Case; simpl; tcsp.
+  soterm_ind t as [v ts ind | op bs ind] Case; simpl; tcsp.
 
   - Case "sovar".
     apply subvars_cons_r.
@@ -4924,7 +4886,7 @@ Lemma sosub_aux_trim_aux {o} :
     (forall v, LIn v (so_free_vars t) -> LIn v (sodom sub2) -> LIn v (sodom sub1))
     -> sosub_aux (sub1 ++ sub2) t = sosub_aux sub1 t.
 Proof.
-  soterm_ind t as [v ts ind | | op bs ind] Case; introv sv; allsimpl; tcsp.
+  soterm_ind t as [v ts ind | op bs ind] Case; introv sv; allsimpl; tcsp.
 
   - Case "sovar".
     rw @sosub_find_app.
@@ -5232,7 +5194,7 @@ Lemma get_utokens_lsubst_aux_diff {o} :
     -> diff (get_patom_deq o) atoms (get_utokens (lsubst_aux t sub))
        = diff (get_patom_deq o) atoms (get_utokens t).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv ss; simpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv ss; simpl; auto.
 
   - Case "vterm".
     remember (sub_find sub v) as sf; symmetry in Heqsf; destruct sf; allsimpl;
@@ -5363,7 +5325,7 @@ Lemma trivial_subst_utokens_aux {o} :
     disjoint (get_utokens t) (utok_sub_dom usub)
     -> subst_utokens_aux t usub = t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv disj; auto.
+  nterm_ind t as [v|op bs ind] Case; introv disj; auto.
 
   - Case "oterm".
     rw @subst_utokens_aux_oterm; allsimpl.
@@ -5421,7 +5383,7 @@ Lemma lsubst_aux_subst_utokens_aux_disj {o} :
     -> lsubst_aux (subst_utokens_aux t usub) sub
        = subst_utokens_aux (lsubst_aux t sub) usub.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv disj1 disj2; auto.
+  nterm_ind t as [v|op bs ind] Case; introv disj1 disj2; auto.
 
   - Case "vterm".
     simpl.
@@ -5502,7 +5464,7 @@ Lemma alphaeq_swap_disj_free_vars {o} :
     -> disjoint vs1 vs2
     -> alphaeq (swap (mk_swapping vs1 vs2) t) t.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; introv len norep d1 d2 d3; allsimpl; auto.
+  nterm_ind1s t as [v|op bs ind] Case; introv len norep d1 d2 d3; allsimpl; auto.
 
   - Case "vterm".
     allrw disjoint_singleton_l.
@@ -5668,7 +5630,7 @@ Lemma cswap_subst_utokens_aux {o} :
     cswap sw (subst_utokens_aux t usub)
     = subst_utokens_aux (cswap sw t) (cswap_utok_sub sw usub).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; auto.
 
   - Case "oterm".
     allrw @cswap_oterm.
@@ -5721,14 +5683,11 @@ Lemma alpha_eq_subst_utokens_aux {o} :
     -> alphaeq_utok_sub s1 s2
     -> alpha_eq (subst_utokens_aux t1 s1) (subst_utokens_aux t2 s2).
 Proof.
-  nterm_ind1s t1 as [v|f ind|op bs ind] Case; introv d1 d2 aeqt aeqs; auto.
+  nterm_ind1s t1 as [v|op bs ind] Case; introv d1 d2 aeqt aeqs; auto.
 
   - Case "vterm".
     inversion aeqt; subst; clear aeqt.
     simpl; auto.
-
-  - Case "sterm".
-    inversion aeqt; subst; allsimpl; auto.
 
   - Case "oterm".
     apply alpha_eq_oterm_implies_combine in aeqt; exrepnd; subst.
@@ -6098,7 +6057,7 @@ Lemma cl_lsubst_aux_trivial2 {o} :
     -> free_vars (lsubst_aux t sub)
        = remove_nvars (dom_sub sub) (free_vars t).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv cl; allsimpl.
+  nterm_ind t as [v|op bs ind] Case; introv cl; allsimpl.
 
   - Case "vterm".
     remember (sub_find sub v) as sf; destruct sf; symmetry in Heqsf; allsimpl.
@@ -6112,9 +6071,6 @@ Proof.
     + apply sub_find_none2 in Heqsf.
       rw remove_nvars_cons_r; boolvar; tcsp.
       rw remove_nvars_nil_r; auto.
-
-  - Case "sterm".
-    allrw remove_nvars_nil_r; auto.
 
   - Case "oterm".
     rw flat_map_map; unfold compose.
@@ -6159,7 +6115,7 @@ Lemma get_utokens_so_swap {o} :
   forall s (t : @SOTerm o),
     get_utokens_so (so_swap s t) = get_utokens_so t.
 Proof.
-  soterm_ind t as [v ts ind | | op bs ind] Case; introv; allsimpl; tcsp.
+  soterm_ind t as [v ts ind | op bs ind] Case; introv; allsimpl; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl; auto.
@@ -6179,21 +6135,18 @@ Lemma get_utokens_so_soalphaeq {o} :
     so_alphaeq t1 t2
     -> get_utokens_so t1 = get_utokens_so t2.
 Proof.
-  soterm_ind1s t1 as [v ts ind | | op bs ind] Case; introv aeq; allsimpl; tcsp.
+  soterm_ind1s t1 as [v ts ind | op bs ind] Case; introv aeq; allsimpl; tcsp.
 
   - Case "sovar".
-    inversion aeq as [? ? ? len imp | |]; subst; simpl; auto.
+    inversion aeq as [? ? ? len imp |]; subst; simpl; auto.
     apply eq_flat_maps_diff; auto.
     introv i.
     applydup imp in i.
     applydup in_combine in i; repnd.
     apply ind in i0; auto.
 
-  - Case "soseq".
-    inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
-
   - Case "soterm".
-    inversion aeq as [| | ? ? ? len imp]; subst; clear aeq.
+    inversion aeq as [| ? ? ? len imp]; subst; clear aeq.
     simpl.
     apply app_if; auto.
     apply eq_flat_maps_diff; auto.
@@ -6238,7 +6191,7 @@ Lemma get_utokens_lsubst_aux_subset {o} :
       (get_utokens (lsubst_aux t sub))
       (get_utokens t ++ get_utokens_sub sub).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; allsimpl; auto.
 
   - Case "vterm".
     remember (sub_find sub v) as f.
@@ -6276,7 +6229,7 @@ Lemma get_cutokens_onil {o} :
   forall (t : @NTerm o),
     get_cutokens t = oapp (get_cutokens t) onil.
 Proof.
-  destruct t as [v|f ind|op bs ind]; introv; allsimpl; eauto 3 with slow.
+  destruct t as [v|op bs ind]; introv; allsimpl; eauto 3 with slow.
   rw @oappl_app_as_oapp.
   rw @oapp_assoc.
   f_equal.
@@ -6329,7 +6282,7 @@ Lemma get_utokens_sosub_aux_subset {o} :
       (get_utokens (sosub_aux sub t))
       (get_utokens_so t ++ get_utokens_sosub sub).
 Proof.
-  soterm_ind t as [v ts ind | |op bs ind] Case; introv; allsimpl; tcsp.
+  soterm_ind t as [v ts ind |op bs ind] Case; introv; allsimpl; tcsp.
 
   - Case "sovar".
     remember (sosub_find sub (v,length ts)) as f.
@@ -7408,13 +7361,10 @@ Lemma get_utokens_subst_utokens_aux_subset {o} :
     subset (get_utokens (subst_utokens_aux t sub))
            (diff (get_patom_deq o) (utok_sub_dom sub) (get_utokens t) ++ get_utokens_utok_ren sub).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; auto.
 
   - Case "vterm".
     allsimpl; auto.
-
-  - Case "sterm".
-    simpl; auto.
 
   - Case "oterm".
     rw @subst_utokens_aux_oterm.
@@ -7496,7 +7446,7 @@ Lemma get_cutokens_cswap {o} :
   forall s (t : @NTerm o),
     get_cutokens (cswap s t) = get_cutokens t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; simpl; auto.
+  nterm_ind t as [v|op bs ind] Case; simpl; auto.
   f_equal; f_equal.
   rw map_map; unfold compose.
   apply eq_maps; introv i.
@@ -7509,15 +7459,10 @@ Lemma alphaeq_preserves_cutokens {o} :
     alpha_eq t1 t2
     -> get_cutokens t1 = get_cutokens t2.
 Proof.
-  nterm_ind1s t1 as [v1|f1 ind1|op1 bs1 ind1] Case; introv aeq; allsimpl.
+  nterm_ind1s t1 as [v1|op1 bs1 ind1] Case; introv aeq; allsimpl.
 
   - Case "vterm".
     inversion aeq; subst; clear aeq; allsimpl; auto.
-
-  - Case "sterm".
-    inversion aeq as [|? ? imp|]; subst; clear aeq; allsimpl; auto.
-    f_equal.
-    apply functional_extensionality; introv; apply ind1; auto.
 
   - Case "oterm".
     apply alpha_eq_oterm_implies_combine in aeq; exrepnd; subst; allsimpl.
@@ -7604,7 +7549,7 @@ Lemma free_vars_pushdown_fresh {o} :
     free_vars (pushdown_fresh v t)
     = remove_nvars [v] (free_vars t).
 Proof.
-  destruct t as [v|f|op bs]; introv; simpl; allrw app_nil_r; auto.
+  destruct t as [v|op bs]; introv; simpl; allrw app_nil_r; auto.
   rw remove_nvars_flat_map; unfold compose.
   unfold mk_fresh_bterms.
   rw flat_map_map; unfold compose.
@@ -7640,7 +7585,7 @@ Lemma get_utokens_pushdown_fresh {o} :
     get_utokens (pushdown_fresh v t)
     = get_utokens t.
 Proof.
-  destruct t as [v|f|op bs]; introv; simpl; auto.
+  destruct t as [v|op bs]; introv; simpl; auto.
   f_equal.
   unfold mk_fresh_bterms; rw flat_map_map; unfold compose.
   apply eq_flat_maps; introv i; destruct x as [l t]; simpl.
@@ -7665,7 +7610,7 @@ Lemma get_cutokens_pushdown_fresh {o} :
     get_cutokens (pushdown_fresh v t)
     = get_cutokens t.
 Proof.
-  destruct t as [v|f|op bs]; introv; simpl; auto.
+  destruct t as [v|op bs]; introv; simpl; auto.
   f_equal; f_equal.
   unfold mk_fresh_bterms; rw map_map; unfold compose.
   apply eq_maps; introv i; destruct x as [l t]; simpl.
@@ -7677,7 +7622,7 @@ Lemma nt_wf_fresh {o} :
     nt_wf (mk_fresh v t) <=> nt_wf t.
 Proof.
   introv; split; intro k.
-  - inversion k as [|?|? ? imp e]; subst; allsimpl.
+  - inversion k as [|? ? imp e]; subst; allsimpl.
     pose proof (imp (bterm [v] t)) as h; autodimp h hyp.
     inversion h; subst; auto.
   - constructor; simpl; auto.
@@ -7689,9 +7634,9 @@ Lemma nt_wf_pushdown_fresh {o} :
   forall v (t : @NTerm o),
     nt_wf (pushdown_fresh v t) <=> nt_wf t.
 Proof.
-  destruct t as [x|f|op bs]; simpl; split; intro k; auto.
+  destruct t as [x|op bs]; simpl; split; intro k; auto.
   - apply nt_wf_fresh; auto.
-  - inversion k as [|?|? ? imp e]; subst.
+  - inversion k as [|? ? imp e]; subst.
     constructor.
     + intros b i.
       pose proof (imp (mk_fresh_bterm v b)) as h.
@@ -7706,7 +7651,7 @@ Proof.
       apply eq_maps; introv i.
       destruct x as [l t].
       unfold mk_fresh_bterm; simpl; boolvar; auto.
-  - inversion k as [|?|? ? imp e]; subst.
+  - inversion k as [|? ? imp e]; subst.
     constructor.
     + intros b i.
       rw in_map_iff in i; exrepnd; subst.
@@ -7734,7 +7679,7 @@ Proof.
   allrw disjoint_app_r; repnd.
   repeat (rw @lsubst_lsubst_aux2 in a; tcsp; eauto with slow).
   simpl in a.
-  inversion a as [|?|? ? ? len imp x e]; subst; clear a.
+  inversion a as [|? ? ? len imp x e]; subst; clear a.
   destruct t; allsimpl; ginv.
   - remember (sub_find (var_ren vs2 lv) n) as sf.
     destruct sf; allsimpl; symmetry in Heqsf; subst; ginv.
@@ -8121,7 +8066,7 @@ Lemma alpha_eq_lsubst_aux_if_ext_eq {o} :
     -> disjoint (bound_vars t2) (sub_free_vars sub2)
     -> alpha_eq (lsubst_aux t1 sub1) (lsubst_aux t2 sub2).
 Proof.
-  nterm_ind1s t1 as [v1|f1 ind1|op1 bs1 ind1] Case; introv aeq ext d1 d2; allsimpl.
+  nterm_ind1s t1 as [v1|op1 bs1 ind1] Case; introv aeq ext d1 d2; allsimpl.
 
   - Case "vterm".
     inversion aeq; subst; allsimpl.
@@ -8129,9 +8074,6 @@ Proof.
     remember (sub_find sub1 v1) as sf1; symmetry in Heqsf1; destruct sf1;
     remember (sub_find sub2 v1) as sf2; symmetry in Heqsf2; destruct sf2;
     allsimpl; tcsp.
-
-  - Case "sterm".
-    inversion aeq; subst; allsimpl; auto.
 
   - Case "oterm".
     apply alpha_eq_oterm_implies_combine in aeq; exrepnd; subst; allsimpl.
@@ -8306,7 +8248,7 @@ Lemma implies_alpha_eq_pushdown_fresh {o} :
     alpha_eq_bterm (bterm [v1] t1) (bterm [v2] t2)
     -> alpha_eq (pushdown_fresh v1 t1) (pushdown_fresh v2 t2).
 Proof.
-  destruct t1 as [x1|f1|op1 bs1]; destruct t2 as [x2|f2|op2 bs2];
+  destruct t1 as [x1|op1 bs1]; destruct t2 as [x2|op2 bs2];
   simpl; introv aeq; auto;
   try (complete (provefalse;
                  inversion aeq as [? ? ? ? ? ? ? ? ? a]; subst; allsimpl; cpx;
@@ -8315,8 +8257,6 @@ Proof.
   - constructor; simpl; auto.
     introv i.
     destruct n; cpx.
-
-  - inversion aeq as [? ? ? ? ? ? ? ? ? a]; subst; allsimpl; cpx.
 
   - applydup @alpha_eq_bterm_oterm in aeq; exrepnd; ginv.
     apply alpha_eq_oterm_combine; dands.
@@ -8555,7 +8495,7 @@ Proof.
   introv; allrw <- @nt_wf_eq.
   split; intro k.
 
-  - inversion k as [|?|? ? imp e]; subst; allsimpl.
+  - inversion k as [|? ? imp e]; subst; allsimpl.
     allunfold @num_bvars; allsimpl; GC.
     pose proof (imp (nobnd a)) as i1.
     pose proof (imp (nobnd b)) as i2.
@@ -8601,20 +8541,17 @@ Proof.
   introv w.
   unfold eapply_wf in w.
   unfold eapply_wf_def.
-  destruct t as [v|f|op bs]; allsimpl; tcsp; ginv.
-  - left; eexists; eauto.
+  destruct t as [v|op bs]; allsimpl; tcsp; ginv;[].
   - destruct op; allsimpl; tcsp; ginv;[].
-    destruct c; allsimpl; tcsp; ginv;[| |].
+    destruct c; allsimpl; tcsp; ginv;[|].
     { destruct bs as [|b bs]; allsimpl; tcsp.
       destruct b as [l t]; allsimpl.
       destruct l as [|v l]; allsimpl; tcsp.
       destruct l as [|? l]; allsimpl; tcsp.
       destruct bs as [|? bs]; allsimpl; tcsp; ginv.
-      right; right; right; eexists; eexists; unfold mk_lam; dands; eauto. }
+      right; eexists; eexists; unfold mk_lam; dands; eauto. }
     { destruct bs; allsimpl; ginv; fold_terms.
-      right; left; eexists; eauto. }
-    { destruct bs; allsimpl; ginv; fold_terms.
-      right; right; left; unfold mk_choice_seq; eexists; eauto. }
+      left; unfold mk_choice_seq; eexists; eauto. }
 Qed.
 
 Lemma co_wf_false_implies_not {o} :
@@ -8705,13 +8642,10 @@ Lemma eapply_wf_def_len_implies {o} :
 Proof.
   introv len w.
   allunfold @eapply_wf_def.
-  exrepnd; repndors; exrepnd; subst; allsimpl; cpx; ginv;[| |].
-  { allunfold @mk_nseq; ginv; allsimpl.
-    destruct bs2; allsimpl; ginv; fold_terms.
-    right; left; exists f; auto. }
+  exrepnd; repndors; exrepnd; subst; allsimpl; cpx; ginv;[|].
   { allunfold @mk_choice_seq; ginv.
     destruct bs2; simpl in *; ginv.
-    right; right; left.
+    left.
     eexists; eauto. }
   { allunfold @mk_lam; ginv.
     allsimpl; cpx.
@@ -8721,28 +8655,12 @@ Proof.
     destruct l as [|x l]; allsimpl; ginv.
     destruct l as [|? l]; allsimpl; ginv.
     allunfold @num_bvars; allsimpl; GC.
-    right; right; right; eexists; eexists; dands; eauto. }
+    right; eexists; eexists; dands; eauto. }
 Qed.
 Hint Resolve eapply_wf_def_len_implies : slow.
 
 (* !!MOVE *)
 Hint Rewrite map_length : slow.
-
-Lemma compute_step_seq_apply_success {o} :
-  forall (t : @NTerm o) f bs u,
-    compute_step_seq_apply t f bs = csuccess u
-    -> {arg : NTerm
-        & bs = [nobnd arg]
-        # u = mk_eapply (mk_ntseq f) arg }.
-Proof.
-  introv comp.
-  destruct bs; allsimpl; ginv.
-  destruct b.
-  destruct l; allsimpl; ginv.
-  destruct bs; allsimpl; ginv.
-  unfold nobnd.
-  eexists; dands; eauto.
-Qed.
 
 Lemma compute_step_eapply1_success {o} :
   forall lib bs (t : @NTerm o) cstep arg1 ncr u,
@@ -8764,8 +8682,7 @@ Proof.
   destruct b as [vs arg2].
   destruct vs; ginv.
   exists arg2 l; dands; auto.
-  destruct arg2 as [|f|op bs2]; ginv.
-  - left; dands; simpl; auto.
+  destruct arg2 as [|op bs2]; ginv.
   - dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv.
     + right; right.
       destruct cstep; allsimpl; ginv.
@@ -8871,43 +8788,21 @@ Lemma compute_step_eapply2_success {o} :
             & arg1 = mk_lam v b
             # u = apply_bterm (bterm [v] b) [arg2] }}
            [+]
-           {f : nseq
-            & {n : nat
-            & arg1 = mk_nseq f
-            # arg2 = mk_nat n
-            # u = mk_nat (f n) }}
-           [+]
            {name : choice_sequence_name
             & {n : nat
             & {v : ChoiceSeqVal
             & arg1 = mk_choice_seq name
             # arg2 = mk_nat n
             # find_cs_value_at lib name n = Some v
-            # u = CSVal2term v }}}
-           [+]
-           {f : ntseq
-            & {n : nat
-            & arg1 = mk_ntseq f
-            # arg2 = mk_nat n
-            # u = f n }})).
+            # u = CSVal2term v }}})).
 Proof.
   introv comp.
   destruct bs; allsimpl; ginv;[].
   dands; auto;[].
-  destruct arg1 as [|f1|op1 bs1]; allsimpl; ginv;[|].
+  destruct arg1 as [|op1 bs1]; allsimpl; ginv;[].
 
-  - destruct arg2 as [|f2|op2 bs2]; allsimpl; ginv.
-    destruct op2 as [can2|ncan2|exc2|abs2]; allsimpl; ginv;[].
-    destruct can2; allsimpl; ginv.
-    destruct bs2; allsimpl; ginv.
-    boolvar; ginv.
-    right; right; right.
-    eexists; eexists; dands; eauto.
-    unfold mk_nat.
-    rw Znat.Z2Nat.id; auto.
-
-  - destruct op1 as [can1|ncan1|exc1|abs1]; allsimpl; ginv;[].
-    destruct can1; allsimpl; ginv;[| |].
+  destruct op1 as [can1|ncan1|exc1|abs1]; allsimpl; ginv;[].
+    destruct can1; allsimpl; ginv;[|].
 
     { destruct bs1 as [|b bs1]; allsimpl; ginv;[].
       destruct b as [vs b].
@@ -8918,24 +8813,12 @@ Proof.
       eexists; eexists; dands; eauto. }
 
     { destruct bs1 as [|b bs1]; allsimpl; ginv;[].
-      destruct arg2 as [v|f|op bs]; allsimpl; ginv;[].
+      destruct arg2 as [v|op bs]; allsimpl; ginv;[].
       dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv;[].
       destruct can; allsimpl; ginv;[].
       destruct bs; allsimpl; ginv.
       boolvar; ginv.
-      right; left.
-      fold_terms.
-      exists n (Z.to_nat z); dands; auto.
-      unfold mk_nat.
-      rw Znat.Z2Nat.id; auto. }
-
-    { destruct bs1 as [|b bs1]; allsimpl; ginv;[].
-      destruct arg2 as [v|f|op bs]; allsimpl; ginv;[].
-      dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv;[].
-      destruct can; allsimpl; ginv;[].
-      destruct bs; allsimpl; ginv.
-      boolvar; ginv.
-      right; right; left.
+      right.
       remember (find_cs_value_at lib c (Z.to_nat z)) as fcs;
         symmetry in Heqfcs; destruct fcs; ginv.
       fold_terms.
@@ -8964,7 +8847,7 @@ Lemma get_cutokens_lsubst_aux {o} :
     oeqset (get_cutokens (lsubst_aux t sub))
            (oapp (get_cutokens t) (get_cutokens_sub (sub_keep_first sub (free_vars t)))).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; allsimpl.
+  nterm_ind t as [v|op bs ind] Case; introv; allsimpl.
 
   - Case "vterm".
     rw @sub_keep_singleton.
@@ -8974,13 +8857,6 @@ Proof.
     + unfold get_cutokens_sub; simpl; allrw app_nil_r; auto.
       rw @oappl_get_cutokens_singleton; eauto 3 with slow.
     + unfold get_cutokens_sub; simpl; eauto 3 with slow.
-
-  - Case "sterm".
-    allrw @sub_keep_first_nil_r; simpl.
-    unfold get_cutokens_sub; simpl; auto.
-    eapply oeqset_trans;[|apply oeqset_oapp_sym].
-    eapply oeqset_trans;[|apply oeqset_sym;apply oapp_nil_l].
-    eauto 3 with slow.
 
   - Case "oterm".
     unfold oatoml.
@@ -9081,7 +8957,7 @@ Lemma get_cutokens_so_swap {o} :
   forall s (t : @SOTerm o),
     get_cutokens_so (so_swap s t) = get_cutokens_so t.
 Proof.
-  soterm_ind t as [v ts ind | |op bs ind] Case; introv; allsimpl; tcsp.
+  soterm_ind t as [v ts ind |op bs ind] Case; introv; allsimpl; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl; auto.
@@ -9102,10 +8978,10 @@ Lemma get_cutokens_so_soalphaeq {o} :
     so_alphaeq t1 t2
     -> get_cutokens_so t1 = get_cutokens_so t2.
 Proof.
-  soterm_ind1s t1 as [v ts ind | |op bs ind] Case; introv aeq; allsimpl; tcsp.
+  soterm_ind1s t1 as [v ts ind |op bs ind] Case; introv aeq; allsimpl; tcsp.
 
   - Case "sovar".
-    inversion aeq as [? ? ? len imp | |]; subst; simpl; auto.
+    inversion aeq as [? ? ? len imp |]; subst; simpl; auto.
     f_equal.
     apply eq_maps3; auto.
     introv i.
@@ -9113,14 +8989,8 @@ Proof.
     applydup in_combine in i; repnd.
     apply ind in i0; auto.
 
-  - Case "soseq".
-    inversion aeq as [ | ? ? F | ]; clear aeq; subst; allsimpl; tcsp.
-    f_equal.
-    apply functional_extensionality; introv.
-    apply alphaeq_preserves_cutokens; apply alphaeq_eq; apply F.
-
   - Case "soterm".
-    inversion aeq as [| | ? ? ? len imp]; subst; clear aeq.
+    inversion aeq as [| ? ? ? len imp]; subst; clear aeq.
     simpl.
     f_equal; f_equal.
     apply eq_maps3; auto.
@@ -9227,7 +9097,7 @@ Lemma get_cutokens_lsubst_aux_subset {o} :
       (get_cutokens (lsubst_aux t sub))
       (oapp (get_cutokens t) (get_cutokens_sub sub)).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; allsimpl; auto.
 
   - Case "vterm".
     remember (sub_find sub v) as f.
@@ -9242,9 +9112,6 @@ Proof.
       eexists; dands; auto.
       apply in_range_iff; eexists; eauto.
     + apply osubset_nil_l.
-
-  - Case "sterm".
-    apply implies_osubset_oapp; left; eauto 3 with slow.
 
   - Case "oterm".
     eapply osubset_trans;
@@ -9330,7 +9197,7 @@ Lemma get_cutokens_sosub_aux_subset {o} :
       (get_cutokens (sosub_aux sub t))
       (oapp (get_cutokens_so t) (get_cutokens_sosub sub)).
 Proof.
-  soterm_ind t as [v ts ind | |op bs ind] Case; introv; allsimpl; tcsp.
+  soterm_ind t as [v ts ind |op bs ind] Case; introv; allsimpl; tcsp.
 
   - Case "sovar".
     remember (sosub_find sub (v,length ts)) as f.
@@ -9373,9 +9240,6 @@ Proof.
       apply implies_osubset_oappl_right.
       eexists;dands;[|eauto 3 with slow].
       rw in_map_iff; eexists; eauto.
-
-  - Case "soseq".
-    apply implies_osubset_oapp; left; eauto 3 with slow.
 
   - Case "soterm".
     allrw map_map; unfold compose.
@@ -9458,7 +9322,7 @@ Lemma nt_wf_NCompOp {o} :
          # nt_wf t4 }}}}.
 Proof.
   introv; split; introv h.
-  - inversion h as [|?|? ? imp e]; subst; allsimpl; clear h.
+  - inversion h as [|? ? imp e]; subst; allsimpl; clear h.
     repeat (destruct bs; allsimpl; ginv).
     destruct b as [l1 t1]; allsimpl.
     destruct b0 as [l2 t2]; allsimpl.
@@ -9496,7 +9360,7 @@ Lemma nt_wf_NArithOp {o} :
          # nt_wf t2 }}.
 Proof.
   introv; split; introv h.
-  - inversion h as [|?|? ? imp e]; subst; allsimpl; clear h.
+  - inversion h as [|? ? imp e]; subst; allsimpl; clear h.
     repeat (destruct bs; allsimpl; ginv).
     destruct b as [l1 t1]; allsimpl.
     destruct b0 as [l2 t2]; allsimpl.
@@ -9524,7 +9388,7 @@ Lemma simple_osize_lsubst_aux {o} :
     oshallow_sub sub
     -> osize (lsubst_aux t sub) = osize t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv ss; allsimpl; tcsp.
+  nterm_ind t as [v|op bs ind] Case; introv ss; allsimpl; tcsp.
 
   - Case "vterm".
     remember (sub_find sub v) as sf; symmetry in Heqsf; destruct sf; allsimpl; auto.
@@ -9571,16 +9435,10 @@ Lemma get_cutokens_subst_utokens_aux_subset {o} :
             (oapp (odiff (get_patom_deq o) (utok_sub_dom sub) (get_cutokens t))
                   (get_cutokens_utok_ren sub)).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; auto.
 
   - Case "vterm".
     allsimpl; apply osubset_nil_l.
-
-  - Case "sterm".
-    simpl; auto.
-    unfold oatoms.
-    apply osubset_singleton_OLS_l; introv.
-    SearchAbout osubset OLS.
 
   - Case "oterm".
     rw @subst_utokens_aux_oterm.
@@ -9686,7 +9544,7 @@ Lemma swap_subst_utokens_aux {o} :
     swap sw (subst_utokens_aux t usub)
     = subst_utokens_aux (swap sw t) (swap_utok_sub sw usub).
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; auto.
 
   - Case "oterm".
     allrw @swap_oterm.
@@ -9759,7 +9617,7 @@ Lemma isnexc_implies {o} :
         # has_name a v }}}.
 Proof.
   introv i.
-  destruct t as [v|f|op bs]; allsimpl; tcsp.
+  destruct t as [v|op bs]; allsimpl; tcsp.
   destruct op; allsimpl; tcsp.
   destruct bs; allsimpl; tcsp.
   destruct b; allsimpl; tcsp.

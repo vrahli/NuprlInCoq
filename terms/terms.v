@@ -88,7 +88,7 @@ Require Export variables.
  *)
 Inductive NTerm {p} : tuniv :=
 | vterm: NVar -> NTerm
-| sterm : (nat -> NTerm) -> NTerm (* closed free choice sequence *)
+(*| sterm : (nat -> NTerm) -> NTerm (* closed free choice sequence *)*)
 | oterm: @Opid p -> list BTerm -> NTerm
 with BTerm {p} : tuniv :=
 | bterm: (list NVar) -> NTerm -> BTerm.
@@ -143,7 +143,7 @@ Fixpoint oaddl (ts : list ord) : ord :=
 Fixpoint osize {o} (t : @NTerm o) : ord :=
   match t with
     | vterm _ => O1
-    | sterm f => OS (OL (fun x => osize (f x)))
+(*    | sterm f => OS (OL (fun x => osize (f x)))*)
     | oterm op bterms => OS (oaddl (map osize_bterm bterms))
   end
 with osize_bterm {o} (bt : BTerm) : ord :=
@@ -471,21 +471,21 @@ Definition isvariable {p} (t : @NTerm p) :=
 Definition iscanonical {p} (t : @NTerm p) :=
   match t with
     | oterm (Can _) _ => true
-    | sterm _ => true
+(*    | sterm _ => true*)
     | _ => false
   end.
 
 Definition iscan {p} (t : @NTerm p) :=
   match t with
     | oterm (Can _) _ => True
-    | sterm _ => True
+(*    | sterm _ => True*)
     | _ => False
   end.
 
 Definition isnoncan {p} (t : @NTerm p) :=
   match t with
     | vterm _ => False
-    | sterm _ => False
+(*    | sterm _ => False*)
     | oterm o _ =>
       match o with
         | NCan _ => True
@@ -496,7 +496,7 @@ Definition isnoncan {p} (t : @NTerm p) :=
 Definition isexception {p} (t: @NTerm p) :=
   match t with
     | vterm _ => false
-    | sterm _ => false
+(*    | sterm _ => false*)
     | oterm o _ =>
       match o with
         | Exc => true
@@ -507,7 +507,7 @@ Definition isexception {p} (t: @NTerm p) :=
 Definition isexc {p} (t: @NTerm p) :=
   match t with
     | vterm _ => False
-    | sterm _ => False
+(*    | sterm _ => False*)
     | oterm o _ =>
       match o with
         | Exc => True
@@ -518,19 +518,12 @@ Definition isexc {p} (t: @NTerm p) :=
 Definition isabs {p} (t: @NTerm p) :=
   match t with
     | vterm _ => False
-    | sterm _ => False
+(*    | sterm _ => False*)
     | oterm o _ =>
       match o with
         | Abs _ => True
         | _ => False
       end
-  end.
-
-Definition isseq {p} (t : @NTerm p) :=
-  match t with
-    | vterm _ => False
-    | sterm _ => True
-    | oterm _ _ => False
   end.
 
 Ltac d_isnoncan H :=
@@ -539,8 +532,8 @@ Ltac d_isnoncan H :=
       let tlbt := fresh t "lbt" in
       let tnc := fresh t "nc" in
       let tt := fresh "temp" in
-      destruct t as [tt|tt|tt tlbt];
-        [complete (inverts H as H)|complete (inverts H as H)|];
+      destruct t as [tt|tt tlbt];
+        [complete (inverts H as H)|];
         destruct tt as [tt|tnc|tex|tabs];
         [ complete(inverts H as H)
         | idtac
@@ -556,13 +549,13 @@ Ltac d_isexc H :=
       let tnc := fresh t "nc" in
       let tt := fresh "temp" in
       destruct t as [tt|tt|tt tlbt];
-        [complete (inverts H as H)|complete (inverts H as H)|];
-        destruct tt as [tt|tnc|tex|tabs];
-        [ complete(inverts H as H)
-        | complete(inverts H as H)
-        | idtac
-        | complete(inverts H as H)
-        ]
+      [complete (inverts H as H)|];
+      destruct tt as [tt|tnc|tex|tabs];
+      [ complete(inverts H as H)
+      | complete(inverts H as H)
+      | idtac
+      | complete(inverts H as H)
+      ]
   end.
 
 Ltac d_isabs H :=
@@ -571,8 +564,8 @@ Ltac d_isabs H :=
       let x  := fresh t "x" in
       let bs := fresh t "bs" in
       let tt := fresh "temp" in
-      destruct t as [tt|tt|tt tlbt];
-        [complete (inverts H as H)|complete (inverts H as H)|];
+      destruct t as [tt|tt tlbt];
+        [complete (inverts H as H)|];
         destruct tt as [tt|tnc|tex|tabs];
         [ complete(inverts H as H)
         | complete(inverts H as H)
@@ -681,7 +674,7 @@ Definition num_bvars {p} (bt : @BTerm p) := length (get_vars bt).
 Fixpoint free_vars {p} (t:@NTerm p) : list NVar :=
   match t with
   | vterm v => [v]
-  | sterm _ => []
+(*  | sterm _ => []*)
   | oterm op bts => flat_map free_vars_bterm bts
   end
  with free_vars_bterm {p} (bt : BTerm) :=
@@ -692,7 +685,7 @@ Fixpoint free_vars {p} (t:@NTerm p) : list NVar :=
 Fixpoint bound_vars {p} (t : @NTerm p) : list NVar :=
   match t with
   | vterm _ => []
-  | sterm _ => []
+(*  | sterm _ => []*)
   | oterm _ bts => flat_map bound_vars_bterm bts
   end
  with bound_vars_bterm {p} (bt : BTerm) :=
@@ -719,7 +712,7 @@ Definition get_utokens_o {p} (o : @Opid p) : list (get_patom_set p) :=
 Fixpoint get_utokens {p} (t : @NTerm p) : list (get_patom_set p) :=
   match t with
     | vterm _ => []
-    | sterm _ => []
+(*    | sterm _ => []*)
     | oterm o bterms => (get_utokens_o o) ++ (flat_map get_utokens_b bterms)
   end
 with get_utokens_b {p} (bt : @BTerm p) : list (get_patom_set p) :=
@@ -740,7 +733,7 @@ Definition noutokens {o} (t : @NTerm o) := get_utokens t = [].
 Fixpoint allvars {p} (t : @NTerm p) : list NVar :=
   match t with
     | vterm v => [v]
-    | sterm _ => []
+(*    | sterm _ => []*)
     | oterm o bts => flat_map allvarsbt bts
   end
 with allvarsbt {p} (bt : BTerm) :=
@@ -1672,7 +1665,7 @@ Definition ovar_s f : OVar := OLS f.
 Fixpoint allovars {p} (t : @NTerm p) : OVar :=
   match t with
     | vterm v => ovar_v v
-    | sterm f => ovar_s (fun n => allovars (f n))
+(*    | sterm f => ovar_s (fun n => allovars (f n))*)
     | oterm o bts => oappl (map allovarsbt bts)
   end
 with allovarsbt {p} (bt : BTerm) : OVar :=
@@ -1694,9 +1687,9 @@ Definition sat_ntseq {o} (f : ntseq) (P : @NTerm o -> Prop) : Prop :=
 *)
 Inductive nt_wf {p} : @NTerm p -> [univ] :=
 | wfvt: forall nv, nt_wf (vterm nv)
-| wfst: forall f,
+(*| wfst: forall f,
           (forall n, nt_wf (f n) # closed (f n) # noutokens (f n))
-          -> nt_wf (sterm f)
+          -> nt_wf (sterm f)*)
 | wfot: forall (o: Opid) (lnt: list BTerm),
           (forall l, LIn l lnt -> bt_wf l)
           -> map (num_bvars) lnt
@@ -1816,7 +1809,7 @@ Lemma noncan_not_is_can_or_exc {p} :
     -> False.
 Proof.
   introv Hisnc Hisv.
-  destruct e as [|?| o lbt]; allsimpl; cpx.
+  destruct e as [|(*?| *)o lbt]; allsimpl; cpx.
   destruct o; cpx.
   destruct Hisv as [Hisv|Hisv]; auto.
 Qed.
@@ -1829,7 +1822,7 @@ Lemma isabs_not_is_can_or_exc {p} :
     -> False.
 Proof.
   introv Hisnc Hisv.
-  destruct e as [|?|o lbt]; allsimpl; cpx.
+  destruct e as [|o lbt]; allsimpl; cpx.
   destruct o; cpx.
   destruct Hisv as [Hisv|Hisv]; auto.
 Qed.
@@ -1894,7 +1887,7 @@ Defined.
 Lemma NTerm_better_ind2 {p} :
   forall P : (@NTerm p) -> Type,
     (forall n : NVar, P (vterm n))
-    -> (forall f, (forall n, P (f n)) -> P (sterm f))
+(*    -> (forall f, (forall n, P (f n)) -> P (sterm f))*)
     -> (forall (o : Opid) (lbt : list BTerm),
           (forall (nt nt': NTerm) (lv: list NVar),
              (LIn (bterm lv nt) lbt)
@@ -1905,29 +1898,19 @@ Lemma NTerm_better_ind2 {p} :
        )
     -> forall t : NTerm, P t.
 Proof.
- intros P Hvar Hseq Hbt.
+ intros P Hvar Hbt.
 
  assert (forall n t, (osize t) =o= n -> P t) as Hass;
    [|introv;
-      apply Hass with (n := osize t);
-      apply ord_eq_refl].
+     apply Hass with (n := osize t);
+     apply ord_eq_refl].
 
  induction n as [n Hind] using comp_ind_ord.
  intros t Hsz.
- destruct t as [v|f|op bs].
+ destruct t as [v|op bs].
 
- - clear Hseq Hbt.
+ - clear Hbt.
    apply Hvar.
-
- - clear Hvar Hbt.
-   apply Hseq; introv; allsimpl; clear Hseq.
-
-   pose proof (Hind (osize (f n0))) as h; clear Hind.
-   autodimp h hyp; [|apply h; apply ord_eq_refl].
-   eapply ord_lt_eq_trans;[|exact Hsz]; clear Hsz.
-   apply implies_ord_lt_OS.
-   eapply implies_ord_le_limit_right.
-   apply ord_le_refl.
 
  - apply Hbt.
    introv Hin Hs; allsimpl.
@@ -1943,7 +1926,6 @@ Defined.
 Lemma NTerm_better_ind {p} :
   forall P : @NTerm p -> Type,
     (forall n : NVar, P (vterm n))
-    -> (forall f, (forall n, P (f n)) -> P (sterm f))
     -> (forall (o : Opid) (lbt : list BTerm),
           (forall (nt : NTerm) (lv: list NVar),
              (LIn (bterm lv nt) lbt) -> P nt
@@ -1952,7 +1934,7 @@ Lemma NTerm_better_ind {p} :
        )
     -> forall t : NTerm, P t.
 Proof.
- introv Hv Hs Hind.
+ introv Hv Hind.
  apply NTerm_better_ind2; auto.
  introv Hx.
  apply Hind.
@@ -1964,7 +1946,6 @@ Defined.
 Fixpoint size {p} (t : @NTerm p) : nat :=
   match t with
   | vterm _ => 1
-  | sterm _ => 1
   | oterm op bterms => S (addl (map size_bterm bterms))
   end
  with size_bterm {p} (bt: BTerm) :=
@@ -1997,7 +1978,6 @@ Defined.
 Lemma NTerm_simple_better_ind2 {p} :
   forall P : (@NTerm p) -> Type,
     (forall n : NVar, P (vterm n))
-    -> (forall f, P (sterm f))
     -> (forall (o : Opid) (lbt : list BTerm),
           (forall (nt nt': NTerm) (lv: list NVar),
              (LIn (bterm lv nt) lbt)
@@ -2008,14 +1988,14 @@ Lemma NTerm_simple_better_ind2 {p} :
        )
     -> forall t : NTerm, P t.
 Proof.
- intros P Hvar Hseq Hbt.
+ intros P Hvar Hbt.
 
  assert (forall n t, (size t) = n -> P t) as Hass;
    [|introv; apply Hass with (n := size t); reflexivity].
 
  induction n as [n Hind] using comp_ind_type.
  intros t Hsz.
- destruct t as [v|f|op bs]; auto.
+ destruct t as [v|op bs]; auto.
 
  apply Hbt.
  introv Hin Hs; allsimpl.
@@ -2029,7 +2009,6 @@ Defined.
 Lemma NTerm_simple_better_ind {p} :
   forall P : @NTerm p -> Type,
     (forall n : NVar, P (vterm n))
-    -> (forall f, P (sterm f))
     -> (forall (o : Opid) (lbt : list BTerm),
           (forall (nt : NTerm) (lv: list NVar),
              (LIn (bterm lv nt) lbt) -> P nt
@@ -2038,7 +2017,7 @@ Lemma NTerm_simple_better_ind {p} :
        )
     -> forall t : NTerm, P t.
 Proof.
- introv Hv Hs Hind.
+ introv Hv Hind.
  apply NTerm_simple_better_ind2; auto.
  introv Hx.
  apply Hind.
@@ -2049,7 +2028,6 @@ Defined.
 Fixpoint NTerm_BTerm_mutual_ind {p}
     (PN : @NTerm p -> Type) (PB : BTerm -> Type)
     (vcase : forall n : NVar, PN (vterm n))
-    (scase : forall f, (forall n, PN (f n)) -> PN (sterm f))
     (bcase: forall (lv : list NVar) (nt : NTerm),
              PN nt ->  PB (bterm lv nt))
     (ocase: forall (o : Opid) (lbt : list BTerm),
@@ -2060,7 +2038,6 @@ Fixpoint NTerm_BTerm_mutual_ind {p}
 with
     BTerm_NTerm_mutual_ind {p} (PN : @NTerm p -> Type) (PB : BTerm -> Type)
     (vcase : forall n : NVar, PN (vterm n))
-    (scase : forall f, (forall n, PN (f n)) -> PN (sterm f))
     (bcase: forall (lv : list NVar) (nt : NTerm),
              PN nt ->  PB (bterm lv nt))
     (ocase: forall (o : Opid) (lbt : list BTerm),
@@ -2069,9 +2046,7 @@ with
             -> PN (oterm o lbt))
     (bt : BTerm) {struct bt}  : PB bt.
 Proof.
-  - destruct t as [?|f|o lbt];[ apply vcase; fail| |].
-    { apply scase; auto; introv.
-      apply NTerm_BTerm_mutual_ind with (PB := PB); auto. }
+  - destruct t as [?|o lbt];[ apply vcase; fail|].
     apply ocase.
     introv Hin.
     induction lbt as [| btt lbt HBInd];[inverts Hin|].
@@ -2090,7 +2065,6 @@ Defined.
 Lemma  NBTerm_mutual_ind {p}  : forall
     (PN : @NTerm p -> Type) (PB : BTerm -> Type)
     (vcase : forall n : NVar, PN (vterm n))
-    (scase : forall f, (forall n, PN (f n)) -> PN (sterm f))
     (bcase: forall (lv : list NVar) (nt : NTerm),
              PN nt ->  PB (bterm lv nt))
     (ocase: forall (o : Opid) (lbt : list BTerm),
@@ -2108,7 +2082,6 @@ Defined.
 Lemma NTerm_better_ind_direct {p} :
   forall P : @NTerm p -> Type,
     (forall n : NVar, P (vterm n))
-    -> (forall f, (forall n, P (f n)) -> P (sterm f))
     -> (forall (o : Opid) (lbt : list BTerm),
           (forall (nt : NTerm) (lv: list NVar),
              (LIn (bterm lv nt) lbt) -> P nt
@@ -2117,10 +2090,10 @@ Lemma NTerm_better_ind_direct {p} :
        )
     -> forall t : NTerm, P t.
 Proof.
-  introv Hv Hs Hind.
+  introv Hv Hind.
   fix 1.
   intro t.
-  destruct t as [|f|o lbt];[apply Hv;fail|apply Hs;auto;fail|].
+  destruct t as [|o lbt];[apply Hv;fail|].
   apply Hind.
   introv Hin.
   induction lbt as [| bt lbt HBInd];[inverts Hin|].
@@ -2134,35 +2107,30 @@ Defined.
 Tactic Notation "nterm_ind" ident(h) ident(c) :=
   induction h using NTerm_better_ind;
   [ Case_aux c "vterm"
-  | Case_aux c "sterm"
   | Case_aux c "oterm"
   ].
 
 Tactic Notation "nterm_ind" ident(h) "as" simple_intropattern(I)  ident(c) :=
   induction h as I using NTerm_better_ind;
   [ Case_aux c "vterm"
-  | Case_aux c "sterm"
   | Case_aux c "oterm"
   ].
 
 Tactic Notation "nterm_ind1" ident(h) "as" simple_intropattern(I)  ident(c) :=
   induction h as I using NTerm_better_ind;
   [ Case_aux c "vterm"
-  | Case_aux c "sterm"
   | Case_aux c "oterm"
   ].
 
 Tactic Notation "sp_nterm_ind1" ident(h) "as" simple_intropattern(I)  ident(c) :=
   induction h as I using NTerm_simple_better_ind;
   [ Case_aux c "vterm"
-  | Case_aux c "sterm"
   | Case_aux c "oterm"
   ].
 
 Tactic Notation "nterm_ind1s" ident(h) "as" simple_intropattern(I)  ident(c) :=
   induction h as I using NTerm_better_ind2;
   [ Case_aux c "vterm"
-  | Case_aux c "sterm"
   | Case_aux c "oterm"
   ].
 

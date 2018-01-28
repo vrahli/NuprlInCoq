@@ -709,44 +709,6 @@ Proof.
         eapply reduces_to_trans;[apply reduces_to_prinarg;exact comp1|].
         auto.
       }
-
-  + introv comp; allsimpl.
-    apply computes_to_seq_implies_computes_to_value in comp;
-      [|apply isprogram_mk_less; dands; eauto 3 with slow].
-    applydup @computes_to_value_mk_less in comp; exrepnd; eauto 3 with slow.
-
-    pose proof (imp k1) as h; autodimp h hyp.
-    { split; dands; eauto 3 with slow. }
-
-    destruct h as [h1 h2]; clear h2.
-    inversion h1 as [cl]; clear h1.
-    unfold close_comput in cl; repnd; GC.
-    clear cl2 cl3.
-
-    pose proof (cl4 f) as h.
-    autodimp h hyp.
-
-    * eapply reduces_to_trans;
-        [apply reduce_to_prinargs_comp;
-          [apply computes_to_value_isvalue_refl;eauto 3 with slow
-          |eauto 3 with slow
-          |exact comp2]
-        |].
-      repndors; repnd; allunfold @computes_to_value; repnd.
-
-      { eapply reduces_to_if_split2;[|exact comp4].
-        csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl.
-        boolvar;try omega;auto. }
-
-      { eapply reduces_to_if_split2;[|exact comp4].
-        csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl.
-        boolvar;try omega;auto. }
-
-    * exrepnd.
-      exists f'; dands; auto.
-
-      eapply reduces_to_trans;[apply reduces_to_prinarg;exact comp1|].
-      auto.
 Qed.
 
 Lemma implies_cequivc_mkc_less1 {o} :
@@ -1106,9 +1068,6 @@ Proof.
 
   + introv comp.
     apply can_doesnt_raise_an_exception in comp; sp.
-
-  + introv comp.
-    apply reduces_to_if_isvalue_like in comp; eauto 3 with slow; ginv.
 Qed.
 
 Lemma implies_cequiv_lam {o} :
@@ -1226,7 +1185,7 @@ Proof.
     unfold lblift in h0; allsimpl; repnd; cpx; fold_terms.
     unfold computes_to_value in h1; repnd; auto.
 
-  - pose proof (c2 (Ncseq c5) []) as h; fold_terms.
+  - pose proof (c2 (Ncseq c4) []) as h; fold_terms.
     autodimp h hyp.
     { apply computes_to_value_isvalue_refl; eauto with slow. }
     exrepnd.
@@ -1327,7 +1286,7 @@ Proof.
 
   constructor.
   unfold close_comput.
-  allrw @isprogram_eq; allrw @isprog_inteq; dands; auto;[| |].
+  allrw @isprogram_eq; allrw @isprog_inteq; dands; auto;[|].
 
   - introv comp.
     apply computes_to_value_mk_int_eq in comp; exrepnd;
@@ -1429,44 +1388,6 @@ Proof.
       allrw @pk2term_eq.
       dcwf h; try (complete (allrw @co_wf_pk2can;ginv));[].
       simpl; auto.
-
-  - introv comp.
-    apply computes_to_seq_implies_computes_to_value in comp;
-      [|apply isprogram_compop_iff;eexists; eexists; eexists; eexists;
-        unfold nobnd; dands; eauto 3 with slow];[].
-
-    apply computes_to_value_mk_int_eq in comp; exrepnd;
-    try (apply lsubst_aux_preserves_wf_term2; eauto 3 with slow);[].
-
-    eapply approx_comput_functionality_left in h1;[|exact comp0].
-    eapply approx_comput_functionality_left in h2;[|exact comp2].
-    allapply @approx_pk2term_implies_reduces_to.
-
-    repndors; repnd; subst;[|].
-
-    + eapply approx_sterm in h3;[|eauto]; exrepnd.
-      exists f'; dands; auto;[|introv; left; apply h0].
-      eapply reduces_to_trans;
-        [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
-      eapply reduces_to_if_split2;
-        [csunf; simpl; allrw @pk2term_eq; dcwf h;
-         allsimpl; unfold compute_step_comp; simpl;
-         allrw @get_param_from_cop_pk2can; auto;
-         allrw @co_wf_pk2can;ginv|];[].
-      boolvar;tcsp;try omega.
-      allunfold @computes_to_value; sp.
-
-    + eapply approx_sterm in h4;[|eauto]; exrepnd.
-      exists f'; dands; auto;[|introv; left; apply h0].
-      eapply reduces_to_trans;
-        [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
-      eapply reduces_to_if_split2;
-        [csunf; simpl; allrw @pk2term_eq; dcwf h;
-         allsimpl; unfold compute_step_comp; simpl;
-         allrw @get_param_from_cop_pk2can; auto;
-         allrw @co_wf_pk2can;ginv|];[].
-      boolvar;tcsp;try omega.
-      allunfold @computes_to_value; sp.
 Qed.
 
 Lemma approx_mk_int_eq {o} :
@@ -1766,79 +1687,6 @@ Proof.
       apply reduces_to_if_step; csunf; simpl; auto.
 
     + apply can_doesnt_raise_an_exception in comp0; sp.
-
-  - introv comp.
-    apply computes_to_seq_implies_computes_to_value in comp;
-      [|apply isprogram_mk_int_eq; dands; eauto 3 with slow;
-        apply isprogram_mk_less; dands; eauto 3 with slow].
-
-    apply computes_to_value_mk_int_eq in comp;
-      try (apply wf_less); eauto 3 with slow.
-    exrepnd.
-    apply reduces_to_if_isvalue_like in comp2; eauto 3 with slow.
-    destruct pk2; allsimpl; ginv.
-    unfold mk_nat in comp2; ginv; fold_terms.
-    repndors; repnd; subst.
-
-    + exists f.
-      dands; auto;
-      [|introv; left; apply approx_refl;
-        destruct comp1 as [comp isv];
-        inversion isv; eauto 3 with slow].
-
-      allunfold @computes_to_value; repnd; dands; auto.
-      eapply reduces_to_trans;
-        [apply reduces_to_prinarg;exact comp0|].
-      eapply reduces_to_if_split2;
-        [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-      boolvar; try omega.
-      eapply reduces_to_trans;
-        [apply reduces_to_prinarg;exact comp0|].
-      eapply reduces_to_if_split2;
-        [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-      boolvar; tcsp.
-
-    + apply computes_to_value_mk_less in comp1; eauto 3 with slow.
-      exrepnd.
-      apply reduces_to_if_isvalue_like in comp4; eauto 3 with slow.
-      unfold mk_nat in comp4; ginv; fold_terms.
-      eapply reduces_to_eq_val_like in comp0;
-        [|exact comp3
-         |eauto 3 with slow
-         |eauto 3 with slow].
-      destruct pk1; allsimpl; ginv.
-      repndors; repnd; subst.
-
-      * exists f.
-        dands; auto;
-        [|introv; left; apply approx_refl;
-          destruct comp1 as [comp isv];
-          inversion isv; eauto 3 with slow].
-
-        allunfold @computes_to_value; repnd; dands; auto.
-        eapply reduces_to_trans;
-          [apply reduces_to_prinarg;exact comp3|].
-        eapply reduces_to_if_split2;
-          [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; try omega; auto.
-
-      * exists f.
-        dands; auto;
-        [|introv; left; apply approx_refl;
-          destruct comp1 as [comp isv];
-          inversion isv; eauto 3 with slow].
-
-        allunfold @computes_to_value; repnd; dands; auto.
-        eapply reduces_to_trans;
-          [apply reduces_to_prinarg;exact comp3|].
-        eapply reduces_to_if_split2;
-          [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; try omega; auto.
-        eapply reduces_to_trans;
-          [apply reduces_to_prinarg;exact comp3|].
-        eapply reduces_to_if_split2;
-          [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar;tcsp.
 Qed.
 
 Lemma approx_less_inteq_swap1 {o} :
@@ -2031,79 +1879,6 @@ Proof.
       apply reduces_to_if_step; csunf; simpl; auto.
 
     + apply can_doesnt_raise_an_exception in comp0; sp.
-
-  - introv comp.
-    apply computes_to_seq_implies_computes_to_value in comp;
-      [|apply isprogram_mk_less; dands; eauto 3 with slow;
-        apply isprogram_mk_int_eq; dands; eauto 3 with slow].
-
-    apply computes_to_value_mk_less in comp;
-      try (apply wf_less); eauto 3 with slow.
-    exrepnd.
-    apply reduces_to_if_isvalue_like in comp2; eauto 3 with slow.
-    unfold mk_nat in comp2; ginv; fold_terms.
-    repndors; repnd; subst.
-
-    + exists f.
-      dands; auto;
-      [|introv; left; apply approx_refl;
-        destruct comp1 as [comp isv];
-        inversion isv; eauto 3 with slow].
-
-      allunfold @computes_to_value; repnd; dands; auto.
-      eapply reduces_to_trans;
-        [apply reduces_to_prinarg;exact comp0|].
-      eapply reduces_to_if_split2;
-        [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-      boolvar; ginv; try omega.
-      eapply reduces_to_trans;
-        [apply reduces_to_prinarg;exact comp0|].
-      eapply reduces_to_if_split2;
-        [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-      boolvar; tcsp; try omega.
-
-    + apply computes_to_value_mk_int_eq in comp1; eauto 3 with slow.
-      exrepnd.
-      apply reduces_to_if_isvalue_like in comp4; eauto 3 with slow.
-      destruct pk2; allsimpl; ginv.
-      unfold mk_nat in comp4; ginv; fold_terms.
-      eapply reduces_to_eq_val_like in comp0;
-        [|exact comp3
-         |eauto 3 with slow
-         |eauto 3 with slow].
-      destruct pk1; allsimpl; ginv.
-      repndors; repnd; subst; ginv.
-
-      * exists f.
-        dands; auto;
-        [|introv; left; apply approx_refl;
-          destruct comp1 as [comp isv];
-          inversion isv; eauto 3 with slow].
-
-        allunfold @computes_to_value; repnd; dands; auto.
-        eapply reduces_to_trans;
-          [apply reduces_to_prinarg;exact comp3|].
-        eapply reduces_to_if_split2;
-          [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; try omega; tcsp.
-
-      * exists f.
-        dands; auto;
-        [|introv; left; apply approx_refl;
-          destruct comp1 as [comp isv];
-          inversion isv; eauto 3 with slow].
-
-        allunfold @computes_to_value; repnd; dands; auto.
-        eapply reduces_to_trans;
-          [apply reduces_to_prinarg;exact comp3|].
-        eapply reduces_to_if_split2;
-          [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; ginv; try omega; tcsp.
-        eapply reduces_to_trans;
-          [apply reduces_to_prinarg;exact comp3|].
-        eapply reduces_to_if_split2;
-          [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar;tcsp;try omega.
 Qed.
 
 Lemma cequivc_inteq_less_swap1 {o} :

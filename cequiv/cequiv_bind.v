@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -74,7 +77,7 @@ Lemma eq_lsubst_aux_if_ext_eq {o} :
     -> disjoint (bound_vars t) (sub_free_vars sub2)
     -> lsubst_aux t sub1 = lsubst_aux t sub2.
 Proof.
-  nterm_ind1s t as [v|f|op bs ind] Case; introv ext d1 d2; allsimpl; auto.
+  nterm_ind1s t as [v|op bs ind] Case; introv ext d1 d2; allsimpl; auto.
 
   - Case "vterm".
     pose proof (ext v) as h.
@@ -346,9 +349,6 @@ Proof.
 
   + introv comp.
     apply can_doesnt_raise_an_exception in comp; sp.
-
-  + introv comp.
-    apply reduces_to_if_isvalue_like in comp; ginv; eauto 3 with slow.
 Qed.
 
 Lemma cequivc_iff_approxc {o} :
@@ -463,9 +463,6 @@ Proof.
 
   - introv comp.
     apply can_doesnt_raise_an_exception in comp; sp.
-
-  - introv comp.
-    apply reduces_to_if_isvalue_like in comp; ginv; eauto 3 with slow.
 Qed.
 
 Lemma implies_approxc_lam2 {o} :
@@ -506,7 +503,7 @@ Lemma nt_wf_lambda_iff {p} :
         # nt_wf b}}.
 Proof.
   introv; split; intro k.
-  - inversion k as [|?|? ? imp e]; clear k; subst.
+  - inversion k as [|? ? imp e]; clear k; subst.
     allsimpl.
     repeat (destruct bs; allsimpl; ginv).
     destruct b as [l1 t1].
@@ -521,10 +518,3 @@ Proof.
     repeat constructor.
     introv i; allsimpl; repndors; subst; tcsp.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

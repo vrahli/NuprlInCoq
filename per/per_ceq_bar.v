@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -43,91 +44,6 @@ Qed.
 Hint Resolve computes_to_value_implies_isprogram : slow.
 
 (* !!MOVE *)
-Lemma approx_sterm {o} :
-  forall lib (t t' : @NTerm o) f,
-    computes_to_value lib t (sterm f)
-    -> approx lib t t'
-    -> {f' : nat -> NTerm
-        & computes_to_value lib t' (sterm f')
-        # forall n, approx lib (f n) (f' n) }.
-Proof.
-  introv comp apr.
-  invertsn apr.
-  repnud apr.
-  destruct comp as [comp isv].
-  apply apr4 in comp; exrepnd.
-  applydup @reduces_to_preserves_program in comp1; auto.
-
-  exists f'; dands; auto.
-
-  { split; auto. }
-
-  { introv.
-    pose proof (comp0 n) as q.
-    repndors; tcsp; inversion q. }
-Qed.
-
-(* !!MOVE *)
-Lemma cequiv_seq {o} :
-  forall lib (t t' : @NTerm o) f,
-    computes_to_value lib t (sterm f)
-    -> cequiv lib t t'
-    -> {f' : nat -> NTerm
-        & computes_to_value lib t' (sterm f')
-        # forall n, cequiv lib (f n) (f' n)}.
-Proof.
-  introv comp ceq.
-  allunfold @cequiv; repnd.
-  eapply approx_sterm in ceq0;[|eauto].
-  exrepnd.
-  exists f'; dands; auto.
-  introv; dands; auto.
-  eapply approx_sterm in ceq;[|eauto].
-  exrepnd.
-  eapply computes_to_value_eq in comp;[|eauto]; ginv; tcsp.
-Qed.
-
-(* !!MOVE *)
-Lemma approx_open_sterm_congruence {o} :
-  forall lib (f1 f2 : nat -> @NTerm o),
-    (forall n, approx_open lib (f1 n) (f2 n))
-    -> nt_wf (sterm f1)
-    -> nt_wf (sterm f2)
-    -> approx_open lib (sterm f1) (sterm f2).
-Proof.
-  introv apr wf1 wf2.
-  apply approx_star_implies_approx_open.
-  econstructor;[| |introv;apply approx_star_iff_approx_open;apply apr|]; eauto 2 with slow.
-Qed.
-
-(* !!MOVE *)
-Lemma approx_sterm_congruence {o} :
-  forall lib (f1 f2 : nat -> @NTerm o),
-    (forall n, approx lib (f1 n) (f2 n))
-    -> isprogram (sterm f1)
-    -> isprogram (sterm f2)
-    -> approx lib (sterm f1) (sterm f2).
-Proof.
-   introv apr isp1 isp2.
-   apply approx_open_approx; auto.
-   apply approx_open_sterm_congruence; eauto 2 with slow.
-   introv; apply approx_implies_approx_open; auto.
-Qed.
-
-(* !!MOVE *)
-Lemma cequiv_sterm_congruence {o} :
-  forall lib (f1 f2 : nat -> @NTerm o),
-    (forall n, cequiv lib (f1 n) (f2 n))
-    -> isprogram (sterm f1)
-    -> isprogram (sterm f2)
-    -> cequiv lib (sterm f1) (sterm f2).
-Proof.
-  introv ceq isp1 isp2.
-  split; apply approx_sterm_congruence; auto; introv;
-    pose proof (ceq n) as q; destruct q; auto.
-Qed.
-
-(* !!MOVE *)
 Lemma cequiv_value {o} :
   forall lib (t t' v : @NTerm o),
     t =v>(lib) v
@@ -144,11 +60,6 @@ Proof.
     exrepnd.
     eexists; dands; eauto.
     apply cequiv_congruence; eauto 2 with slow.
-
-  - eapply cequiv_seq in ceq;[|split;[eauto|];eauto 2 with slow].
-    exrepnd.
-    eexists; dands; eauto.
-    apply cequiv_sterm_congruence; eauto 2 with slow.
 Qed.
 
 (* !!MOVE *)
@@ -535,26 +446,6 @@ Proof.
     eexists; dands; eauto.
     apply approx_congruence; auto; eauto 3 with slow;[].
     apply clearbot_relbt; auto.
-
-  - unfold computes_to_value in comp; repnd.
-    applydup cl4 in comp0; exrepnd.
-    exists (sterm f'); dands; auto.
-
-    { unfold computes_to_value; dands; eauto 3 with slow. }
-
-    constructor.
-    split; dands; auto; eauto 2 with slow.
-
-    { introv comp'.
-      apply computes_to_value_isvalue_eq in comp'; eauto 3 with slow; ginv. }
-
-    { introv comp'.
-      apply reduces_to_if_value in comp'; eauto 3 with slow; ginv. }
-
-    introv comp'.
-    apply reduces_to_if_value in comp'; eauto 3 with slow; unfold mk_ntseq in *; ginv.
-    exists f'; dands; auto.
-    apply reduces_to_symm.
 Qed.
 
 Lemma cequiv_preserves_computes_to_value {o} :

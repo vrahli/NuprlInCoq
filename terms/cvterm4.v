@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -38,7 +40,7 @@ Proof.
   introv; split; intro i.
   apply wf_less; sp.
   allrw @wf_term_eq.
-  inversion i as [| | o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (nobnd b)) (k (nobnd c)) (k (nobnd d)); intros k1 k2 k3 k4.
   repeat (dest_imp k1 hyp).
   repeat (dest_imp k2 hyp).
@@ -128,10 +130,3 @@ Proof.
   apply cterm_eq; simpl.
   repeat unfsubst.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

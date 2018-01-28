@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -77,7 +78,7 @@ Lemma subst_utokens_aux_var_ren_utok {o} :
     -> subst_utokens_aux (ren_utok t a a') [(a', mk_var n)]
        = subst_utokens_aux t [(a, mk_var n)].
 Proof.
-  nterm_ind t as [v|f|op bs ind] Case; introv h; tcsp.
+  nterm_ind t as [v|op bs ind] Case; introv h; tcsp.
   Case "oterm".
   allrw @ren_utok_oterm.
   allrw @subst_utokens_aux_oterm.
@@ -137,12 +138,9 @@ Lemma lib_extends_preserves_compute_step {o} :
          (comp : compute_step lib1 a = csuccess b),
     compute_step lib2 a = csuccess b.
 Proof.
-  nterm_ind1s a as [v|f ind|op bs ind] Case; introv wf comp.
+  nterm_ind1s a as [v|op bs ind] Case; introv wf comp.
 
   - Case "vterm".
-    csunf comp; allsimpl; ginv.
-
-  - Case "sterm".
     csunf comp; allsimpl; ginv.
 
   - Case "oterm".
@@ -156,34 +154,7 @@ Proof.
       destruct b1 as [l t]; try (complete (allsimpl; ginv)).
       destruct l; try (complete (allsimpl; ginv)).
 
-      { destruct t as [x|f|op bts]; try (complete (allsimpl; ginv));[|].
-
-        - csunf comp; allsimpl.
-          dopid_noncan ncan SSCase; allsimpl; ginv.
-
-          SSCase "NEApply".
-
-          apply compute_step_eapply_success in comp; exrepnd; subst.
-          repndors; exrepnd; allsimpl; subst.
-
-          + apply compute_step_eapply2_success in comp1; repnd; subst.
-            repndors; exrepnd; subst; ginv.
-            csunf; simpl.
-            dcwf h; simpl.
-            boolvar; try omega.
-            rewrite Znat.Nat2Z.id; auto.
-
-          + csunf; simpl.
-            apply isexc_implies2 in comp0; exrepnd; subst.
-            dcwf h; simpl; auto.
-
-          + fold_terms.
-            rewrite compute_step_eapply_iscan_isnoncan_like; auto.
-            pose proof (ind arg2 arg2 []) as h; clear ind.
-            repeat (autodimp h hyp); eauto 3 with slow.
-            apply h in comp1; clear h; eauto 3 with slow.
-            SearchAbout nt_wf oterm.
-            rewrite comp1; auto.
+      { destruct t as [x|op bts]; try (complete (allsimpl; ginv));[].
 
         - dopid op as [can2|ncan2|exc2|abs2] SSCase.
 
@@ -213,12 +184,6 @@ Proof.
                   csunf; simpl.
                   dcwf h; simpl.
                   apply iscan_implies in comp0; repndors; exrepnd; subst; simpl; auto.
-
-                + unfold mk_nseq in *; allsimpl; ginv.
-                  csunf; simpl.
-                  dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
-                  rewrite Znat.Nat2Z.id; auto.
 
                 + unfold mk_choice_seq in *; allsimpl; ginv.
                   csunf; simpl.

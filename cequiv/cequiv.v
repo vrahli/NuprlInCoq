@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1784,9 +1785,6 @@ Proof.
     + introv comp.
       apply can_doesnt_mark in comp; sp.
 *)
-
-    + introv comp.
-      apply reduces_to_if_isvalue_like in comp; eauto 3 with slow; ginv.
 Qed.
 
 (*
@@ -1840,10 +1838,6 @@ Proof.
     + introv comp.
       apply computes_to_value_and_marker_false with (v := mk_axiom) in comp; sp.
 *)
-
-    + introv comp.
-      allunfold @computes_to_value; repnd.
-      eapply reduces_to_eq_val_like in k1; try exact comp; eauto 3 with slow; ginv.
 Qed.
 
 Lemma approx_decomp_axiom {p} :
@@ -2077,16 +2071,6 @@ Proof.
 Qed.
 *)
 
-Lemma computes_to_seq_implies_computes_to_value {o} :
-  forall lib (t : @NTerm o) f,
-    isprogram t
-    -> computes_to_seq lib t f
-    -> computes_to_value lib t (sterm f).
-Proof.
-  introv isp comp.
-  unfold computes_to_value; dands; eauto 3 with slow.
-Qed.
-
 Lemma approx_decomp_halts_as_cbv {p} :
   forall lib a b,
     @isprogram p a
@@ -2165,23 +2149,6 @@ Proof.
       rw @subst_mk_axiom in comp0.
       apply can_doesnt_mark in comp0; sp.
 *)
-
-    + introv comp.
-      apply computes_to_seq_implies_computes_to_value in comp;
-        try (apply isprogram_cbv_iff2; dands; auto;
-             apply implies_isprogram_bt_lam;
-             apply isprogram_lam;
-             apply isprog_vars_axiom).
-      applydup @computes_to_value_hasvalue in comp.
-      apply if_hasvalue_cbv0 in comp0; try (complete (rw @isprog_eq; sp)); sp.
-      apply cbv_reduce0 with (v := nvarx) (u := mk_axiom) in comp0; sp;
-      try (complete (rw @isprog_eq; sp)).
-      apply cbv_reduce0 with (v := nvarx) (u := mk_axiom) in k0; sp;
-      try (complete (rw @isprog_eq; sp)).
-      apply computes_to_value_if_reduces_to in comp0; sp.
-      apply computes_to_value_if_reduces_to in k0; sp.
-      apply computes_to_value_eq with (v1 := mk_axiom) in comp; auto.
-      inversion comp; subst; allfold @mk_axiom.
 Qed.
 
 Lemma cequiv_decomp_halts_as_cbv {p} :

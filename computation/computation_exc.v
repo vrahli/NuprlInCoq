@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -70,20 +73,9 @@ Lemma reduces_in_atmost_k_steps_exc_S {o} :
 Proof.
   introv.
   unfold reduces_in_atmost_k_steps_exc; simpl.
-  destruct t as [v|f|op bs]; simpl.
+  destruct t as [v|op bs]; simpl.
 
   - split; intro e; repndors; exrepnd; ginv.
-
-  - split; intro e.
-
-    + apply compute_at_most_k_steps_exc_iscan in e; simpl; auto; subst.
-      right; dands; tcsp.
-      csunf; simpl.
-      eexists; dands; eauto.
-      apply compute_at_most_k_steps_exc_iscan; simpl; auto.
-
-    + repndors; exrepnd; ginv; GC.
-      csunf e2; allsimpl; ginv.
 
   - dopid op as [can|ncan|exc|abs] Case; allsimpl.
 
@@ -122,11 +114,7 @@ Proof.
                 { left.
                   exists t1 t2.
                   unfold compute_eager_exc in e.
-                  destruct t1 as [v|f|op bs]; ginv.
-
-                  { remember (compute_step lib t2) as c; destruct c; ginv.
-                    exists (sterm f) n; dands; auto.
-                    left; dands; eauto 3 with slow. }
+                  destruct t1 as [v|op bs]; ginv.
 
                   dopid op as [can|ncan|exc|abs] SCase.
                   - SCase "Can".

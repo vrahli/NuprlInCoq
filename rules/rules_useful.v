@@ -454,7 +454,7 @@ Proof.
 
   revert_dependents sub2.
   revert_dependents sub1.
-  nterm_ind t as [| | oo lbt ind] Case; allsimpl;
+  nterm_ind t as [|oo lbt ind] Case; allsimpl;
   introv disj1 disj2 hyp1 hyp2 disj3; auto.
 
   - Case "vterm".

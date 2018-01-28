@@ -58,27 +58,14 @@ Proof.
     end.
     exrepnd. exists j. dands; spc. omega.
   - rename H2c into Hck. rename k2 into k.
-    destruct ntp2 as [|f|ntp2o ntp2lbt];
-      [rw @compute_at_most_steps_var in Hck; spc; fail| |].
-
-    { rw @compute_at_most_k_steps_isvalue_like in Hck; eauto 3 with slow; ginv.
-      pose proof (Hind ntpc1 (sterm f)) as h; clear Hind.
-      repeat (autodimp h hyp).
-      { rw @compute_at_most_k_steps_isvalue_like; eauto 3 with slow; ginv. }
-      exrepnd.
-      eexists; dands; eauto; try omega. }
+    destruct ntp2 as [|ntp2o ntp2lbt];
+      [rw @compute_at_most_steps_var in Hck; spc; fail|].
 
     allsimpl.
     remember (compute_at_most_k_steps lib k (oterm ntp2o ntp2lbt)) as ck.
     destruct ck as [csk | cf]; spc;[].
     pose proof (Hind _ csk H1c H1v eq_refl) as XX. exrepnd.
-    destruct csk as [sckv|f| csko csklbt]; [inverts Hck; fail| |].
-
-    { csunf Hck; allsimpl; ginv.
-      pose proof (Hind ntpc1 (sterm f)) as h; clear Hind.
-      repeat (autodimp h hyp).
-      exrepnd.
-      eexists; dands; eauto; try omega. }
+    destruct csk as [sckv| csko csklbt]; [inverts Hck; fail|].
 
     dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
     + Case "Can".
@@ -156,28 +143,15 @@ Proof.
     end.
     exrepnd. exists j. dands; spc. omega.
   - rename H2c into Hck. rename k2 into k.
-    destruct ntp2 as [|f|ntp2o ntp2lbt];
-      [rw @compute_at_most_steps_var in Hck; spc; fail| |].
-
-    { rw @compute_at_most_k_steps_isvalue_like in Hck; eauto 3 with slow; ginv.
-      pose proof (Hind ntpc1 (sterm f)) as h; clear Hind.
-      repeat (autodimp h hyp).
-      { rw @compute_at_most_k_steps_isvalue_like; eauto 3 with slow; ginv. }
-      exrepnd.
-      eexists; dands; eauto; try omega. }
+    destruct ntp2 as [|ntp2o ntp2lbt];
+      [rw @compute_at_most_steps_var in Hck; spc; fail|].
 
     allsimpl.
     remember (compute_at_most_k_steps lib k (oterm ntp2o ntp2lbt)) as ck.
     destruct ck as [csk | cf]; spc;[].
     pose proof (Hind _ csk H1c H1v eq_refl) as XX. exrepnd.
     unfold isinteger in H1v; exrepnd; subst.
-    destruct csk as [sckv|f|csko csklbt]; [inverts Hck; fail| |].
-
-    { csunf Hck; allsimpl; ginv.
-      pose proof (Hind (mk_integer z) (sterm f)) as h; clear Hind.
-      repeat (autodimp h hyp); eauto 3 with slow.
-      exrepnd.
-      eexists; dands; eauto; try omega. }
+    destruct csk as [sckv|csko csklbt]; [inverts Hck; fail|].
 
     dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
     + Case "Can".

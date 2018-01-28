@@ -227,7 +227,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NSup       : CanonicalOp
  | NRefl      : CanonicalOp
  | Nint       : Z -> CanonicalOp
- | Nseq       : nseq -> CanonicalOp
+(* | Nseq       : nseq -> CanonicalOp*)
  | Ncseq      : choice_sequence_name -> CanonicalOp
  | NTok       : String.string -> CanonicalOp
  | NUTok      : get_patom_set p -> CanonicalOp (* Unguessable tokens *)
@@ -311,7 +311,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NSup           => [0,0]
   | NRefl          => [0]
   | Nint _         => []
-  | Nseq _         => []
+(*  | Nseq _         => []*)
   | Ncseq _        => []
   | NUni _         => []
   | NTok _         => []
@@ -601,7 +601,7 @@ Tactic Notation "dopid_noncan" ident(onc) ident(c) :=
 
 Definition no_seq_can {o} (c : @CanonicalOp o) :=
   match c with
-    | Nseq _ => false
+(*    | Nseq _ => false*)
     | _ => true
   end.
 

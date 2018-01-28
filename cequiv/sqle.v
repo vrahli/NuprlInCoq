@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -175,11 +176,6 @@ Proof.
     applydup_clear Hbc in Hcb.
     exrepnd; auto.
 *)
-
-  - introv comp.
-    apply Hab4 in comp; exrepnd.
-    apply Hbc4 in comp1; exrepnd.
-    eexists; dands; eauto.
 Qed.
 
 Lemma sqlen_n_trans {o} : forall lib n, trans_rel (@sqle_n o lib n).
@@ -246,10 +242,6 @@ Proof.
   - introv ce.
     apply Hrp3 in ce; exrepnd.
     exists a' e'; auto.
-
-  - introv comp.
-    apply Hrp4 in comp; exrepnd.
-    eexists; dands; eauto.
 Qed.
 
 (*
@@ -329,10 +321,6 @@ Proof.
   - introv ce.
     apply Hcr4 in ce; exrepnd.
     exists a' e'; auto.
-
-  - introv comp.
-    apply Hcr5 in comp; exrepnd.
-    eexists; dands; eauto.
 Qed.
 
 Definition nt_id_prog {o} :=
@@ -428,14 +416,6 @@ Proof.
       applydup Hap3 in ce; exrepnd.
       exists a' e'; sp; inversion b0.
 
-    + introv comp.
-      apply Hap4 in comp; exrepnd.
-      eexists; dands; eauto.
-      introv.
-      apply IHn; auto.
-      pose proof (comp0 n0) as h; repndors; tcsp.
-      unfold bot2 in h; tcsp.
-
   - Case "<-"; introv Hsq.
     revert a b Hsq.
     apply (approx_acc).
@@ -512,21 +492,5 @@ Proof.
       repnud H1s.
       applydup H1s in ce; exrepnd; auto.
 *)
-
-    + introv comp.
-      invertsn H1s.
-      repnud H1s.
-      applydup H1s6 in comp; exrepnd.
-      eexists; dands; eauto.
-
-      introv.
-      right; apply Hs.
-      intro k.
-      pose proof (Hsq (S k)) as h.
-      invertsn h.
-      repnud h.
-      apply h4 in comp; exrepnd.
-      eapply reduces_to_eq_val_like in comp3;
-        try (exact comp0); eauto 3 with slow; ginv; auto.
 Qed.
 (* begin hide *)

@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -73,7 +76,7 @@ Lemma dec_iscan {o} :
   forall (t : @NTerm o), decidable (iscan t).
 Proof.
   introv.
-  destruct t as [v|f|op bs]; simpl; tcsp; try (complete (right; sp)).
+  destruct t as [v|op bs]; simpl; tcsp; try (complete (right; sp)).
   dopid op as [can|ncan|exc|abs] Case; tcsp; try (complete (right; sp)).
 Qed.
 
@@ -183,8 +186,8 @@ Lemma dec_eq_terms {o} :
     -> noseq a
     -> decidable (a = b).
 Proof.
-  nterm_ind a as [v1|f1|op1 bs1 imp] Case; introv noc nos;
-  destruct b as [v2|f2|op2 bs2];
+  nterm_ind a as [v1|op1 bs1 imp] Case; introv noc nos;
+  destruct b as [v2|op2 bs2];
   try (complete (right; intro xx; ginv; tcsp)).
 
   - Case "vterm".

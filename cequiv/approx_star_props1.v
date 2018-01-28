@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -206,7 +207,7 @@ Proof.
   repeat unflsubst.
   revert s1 s2 cl1 cl2.
 
-  nterm_ind t as [v|f ind|op bs ind] Case; introv cl1 cl2; simpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv cl1 cl2; simpl; auto.
 
   - Case "vterm".
     rw @sub_find_sub_filter_eq.
@@ -279,11 +280,11 @@ Lemma nr_ut_sub_approx_star_aux {o} :
     -> approx_star lib t1 t2
     -> approx_star lib (lsubst_aux t1 sub) (lsubst_aux t2 sub).
 Proof.
-  nterm_ind1s t1 as [v|f ind|op bs ind] Case; introv ut ap; auto.
+  nterm_ind1s t1 as [v|op bs ind] Case; introv ut ap; auto.
 
   - Case "vterm".
     simpl.
-    inversion ap as [? ? ? apo|?|]; subst; clear ap.
+    inversion ap as [? ? ? apo|]; subst; clear ap.
     pose proof (approx_open_lsubst_congr lib (vterm v) t2 sub) as h.
     repeat (autodimp h hyp); eauto with slow.
     repeat (unflsubst in h); allsimpl.
@@ -296,23 +297,9 @@ Proof.
 
     + constructor; auto.
 
-  - Case "sterm".
-    allsimpl.
-    inversion ap as [|? ? ? ? wf1 wf2 imp aop|]; clear ap; subst.
-    apply (apss _ _ _ f2); auto.
-    allrw <- @approx_open_simpler_equiv.
-    allunfold @simpl_olift; repnd; dands; eauto 3 with slow.
-    introv ps isp1 isp2.
-    repeat (rewrite @cl_lsubst_lsubst_aux; eauto 3 with slow); simpl.
-    repeat (rewrite @cl_lsubst_lsubst_aux in isp2; eauto 3 with slow).
-    rw <- @cl_lsubst_aux_app; eauto 3 with slow.
-    rw <- @cl_lsubst_aux_app in isp2; eauto 3 with slow.
-    pose proof (aop (sub ++ sub0)) as h.
-    repeat (rewrite @cl_lsubst_lsubst_aux in h; eauto 4 with slow; allsimpl).
-
   - Case "oterm".
     simpl.
-    inversion ap as [|?|? ? ? ? ? len lbls apo]; subst.
+    inversion ap as [|? ? ? ? ? len lbls apo]; subst.
     apply (apso _ _ _ _ (map (fun t : BTerm => lsubst_bterm_aux t sub) lbt1')).
 
     + allrw map_length; auto.
@@ -392,17 +379,6 @@ Proof.
   apply ss in i; apply nrut in i; sp.
 Qed.
 
-Lemma nt_wf_sterm_implies_nt_wf_app {o} :
-  forall (f : @ntseq o) n,
-    nt_wf (sterm f)
-    -> nt_wf (f n).
-Proof.
-  introv wf.
-  rw @nt_wf_sterm_iff in wf.
-  pose proof (wf n) as h; sp.
-Qed.
-Hint Resolve nt_wf_sterm_implies_nt_wf_app : slow.
-
 Lemma simple_osize_lsubst {o} :
   forall (t : @NTerm o) sub,
     oshallow_sub sub
@@ -430,10 +406,7 @@ Hint Resolve nrut_sub_implies_oshallow_sub : slow.
 
 Lemma approx_star_refl {p} : forall lib t, @nt_wf p t -> approx_star lib t t.
 Proof.
-  nterm_ind1s t as [?|f ind |o lbt Hind] Case; introv Hwf; eauto 3 with slow.
-
-  - Case "sterm".
-    apply (apss _ _ _ f); eauto 3 with slow.
+  nterm_ind1s t as [?|o lbt Hind] Case; introv Hwf; eauto 3 with slow.
 
   - Case "oterm".
 
@@ -488,17 +461,7 @@ Lemma approx_open_implies_approx_star {p} :
     approx_open lib t1 t2
     -> approx_star lib t1 t2.
 Proof.
-  nterm_ind t1 as [v|f ind|op bs ind] Case; eauto 3 with slow.
-
-  - Case "sterm".
-    introv Hap.
-    applydup @approx_open_relates_only_wf in Hap; repnd.
-
-    apply (apss _ _ _ f); eauto 2 with slow.
-    introv.
-    apply ind.
-    apply approx_open_relates_only_wf in Hap; repnd.
-    apply approx_open_refl; eauto 3 with slow.
+  nterm_ind t1 as [v|op bs ind] Case; eauto 3 with slow.
 
   - Case "oterm".
     introv Hap.
@@ -683,7 +646,7 @@ Lemma simple_lsubst_aux_lsubst_aux_sub_disj {o} :
                   (lsubst_aux_sub sub1 sub2)
        = lsubst_aux (lsubst_aux t sub1) sub2.
 Proof.
-  nterm_ind t as [x|f ind|op bs ind] Case; introv disj1 disj2 disj3 disj4; tcsp.
+  nterm_ind t as [x|op bs ind] Case; introv disj1 disj2 disj3 disj4; tcsp.
 
   - Case "vterm".
     allsimpl.
@@ -1056,14 +1019,10 @@ Qed.
 Theorem approx_star_relates_only_wf {p} : forall lib (t1 t2 : @NTerm p),
   approx_star lib t1 t2 -> nt_wf t1 # nt_wf t2.
 Proof.
-  nterm_ind1s t1 as [v1|f ind|o lbt1 Hind] Case; introv Hap.
+  nterm_ind1s t1 as [v1|o lbt1 Hind] Case; introv Hap.
 
   - Case "vterm".
     invertsn Hap. apply approx_open_relates_only_wf in Hap; sp.
-
-  - Case "sterm".
-    inversion Hap as [|? ? ? ? wf1 wf2 imp aop|]; clear Hap; subst.
-    allapply @approx_open_relates_only_wf; repnd; dands; eauto 3 with slow.
 
   - Case "oterm".
     inverts Hap as Hlen Hrel Hapo.
@@ -1185,12 +1144,8 @@ Lemma approx_star_alpha_fun_l {p} :
   -> alpha_eq nt1 nt1'
   -> approx_star lib nt1' nt2.
 Proof.
-  nterm_ind1s nt1 as [v1|f ind|o lbt1 Hind] Case; introv Has Hal; duplicate Hal;
-  inverts Hal as Hal Hlen; sp;[|].
-
-  { Case "sterm".
-    inversion Has as [|? ? ? ? wf1 wf2 imp aop|]; clear Has; subst.
-    econstructor;[| | |eauto]; eauto 3 with slow. }
+  nterm_ind1s nt1 as [v1|o lbt1 Hind] Case; introv Has Hal; duplicate Hal;
+  inverts Hal as Hal Hlen; sp;[].
 
   Case "oterm".
   inverts Has as H1as H2as H3as.
@@ -1257,19 +1212,14 @@ Lemma approx_star_alpha_fun_r {p} :
   -> alpha_eq nt2 nt2'
   -> approx_star lib nt1 nt2'.
 Proof.
-  destruct nt1 as [v1|f|o lbt1];
-  [Case "vterm" | Case "sterm" | Case "oterm"];
+  destruct nt1 as [v1|o lbt1];
+  [Case "vterm" | Case "oterm"];
   introv Has Hal.
 
   - Case "vterm".
     inverts Has. constructor. apply alpha_eq_sym in Hal.
     unfold approx_open.
     rwg Hal; auto.
-
-  - Case "sterm".
-    inversion Has as [|? ? ? ? imp aop|]; subst; clear Has.
-    econstructor; eauto.
-    eapply approx_open_alpha_rw_r_aux; eauto.
 
   - Case "oterm".
     applydup @alpha_eq_sym in Hal.
@@ -1523,7 +1473,7 @@ Lemma get_utokens_lsubst_aux_allvars {o} :
     allvars_sub sub
     -> get_utokens (lsubst_aux t sub) = get_utokens t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv avs; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv avs; allsimpl; auto.
 
   - Case "vterm".
     remember (sub_find sub v) as sf; symmetry in Heqsf; destruct sf; allsimpl; auto.
@@ -1643,14 +1593,6 @@ Proof.
   apply app_if; auto.
 Qed.
 
-Lemma lsubst_sterm {o} :
-  forall (f : @ntseq o) sub,
-    lsubst (sterm f) sub = sterm f.
-Proof.
-  introv; unfold lsubst; simpl; auto.
-Qed.
-Hint Rewrite @lsubst_sterm : slow.
-
 Lemma allvars_sub_implies_oshallow_sub {o} :
   forall (sub : @Sub o), allvars_sub sub -> oshallow_sub sub.
 Proof.
@@ -1730,19 +1672,12 @@ Theorem approx_star_lsubst_vars {p} :
     approx_star lib a b
     -> approx_star lib (lsubst a sub) (lsubst b sub).
 Proof.
-  nterm_ind1s a as [?|f ind| o lbta Hind] Case; introv len Hap; auto.
+  nterm_ind1s a as [?| o lbta Hind] Case; introv len Hap; auto.
 
   - Case "vterm".
     invertsn Hap.
     apply approx_open_implies_approx_star.
     apply approx_open_lsubst; sp.
-
-  - Case "sterm".
-    autorewrite with slow.
-    inversion Hap as [|? ? ? ? wf1 wf2 imp aop|]; subst; clear Hap.
-    econstructor; eauto.
-    apply (approx_open_lsubst _ _ _ lvi lvo) in aop;
-      autorewrite with slow in *; auto.
 
   - Case "oterm".
     apply (approx_ot_change _ lvo) in Hap; exrepnd.

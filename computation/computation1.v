@@ -129,11 +129,6 @@ Definition compute_step_apply {p}
           csuccess (apply_bterm (bterm [v] b) [arg])
         | _,_ => cfailure compute_step_apply_not_well_formed t
       end
-    | Nseq f =>
-      match arg1bts, btsr with
-        | [], [bterm [] arg] => csuccess (mk_eapply (mk_nseq f) arg)
-        | _,_ => cfailure compute_step_apply_not_well_formed t
-      end
     | Ncseq name =>
       match arg1bts, btsr with
         | [], [bterm [] arg] => csuccess (mk_eapply (mk_choice_seq name) arg)
@@ -169,14 +164,6 @@ Definition compute_step_eapply2 {o}
   | [] =>
     match arg1 with
     | oterm (Can NLambda) [bterm [v] b] => csuccess (apply_bterm (bterm [v] b) [arg2])
-    | oterm (Can (Nseq f)) [] =>
-      match arg2 with
-      | oterm (Can (Nint z)) [] =>
-        if Z_le_gt_dec 0 z
-        then csuccess (mk_nat (f (Z.to_nat z)))
-        else cfailure bad_args t
-      | _ => cfailure bad_args t
-      end
     | oterm (Can (Ncseq name)) [] =>
       match arg2 with
       | oterm (Can (Nint z)) [] =>
@@ -186,14 +173,6 @@ Definition compute_step_eapply2 {o}
           | Some u => csuccess (CSVal2term u)
           | None => cfailure bad_args t
           end
-        else cfailure bad_args t
-      | _ => cfailure bad_args t
-      end
-    | sterm f =>
-      match arg2 with
-      | oterm (Can (Nint z)) [] =>
-        if Z_le_gt_dec 0 z
-        then csuccess (f (Z.to_nat z))
         else cfailure bad_args t
       | _ => cfailure bad_args t
       end
@@ -218,33 +197,26 @@ Definition compute_step_eapply1 {o}
   | bterm [] (oterm Exc _ as arg2) :: _ => csuccess arg2
   | bterm [] (oterm _ _) :: bs2 => (* ncan/abs *)
     on_success cstep (fun f => oterm (NCan ncr) (nobnd arg1 :: nobnd f :: bs2))
-  | bterm [] (sterm _ as arg2) :: btsr3 =>
-    compute_step_eapply2 lib t arg1 arg2 btsr3
   end.
 
 Definition eapply_wf {o} (t : @NTerm o) :=
   match t with
-    | sterm _ => true
-    | oterm (Can (Nseq _)) [] => true
     | oterm (Can (Ncseq _)) [] => true
     | oterm (Can NLambda) [bterm [_] _] => true
     | _ => false
   end.
 
 Definition eapply_wf_def {o} (t : @NTerm o) :=
-  {f : ntseq & t = sterm f}
-  [+] {f : nseq & t = mk_nseq f}
-  [+] {name : choice_sequence_name & t = mk_choice_seq name}
+  {name : choice_sequence_name & t = mk_choice_seq name}
   [+] {v : NVar & {b : NTerm & t = mk_lam v b}}.
 
 Lemma eapply_wf_dec {o} :
   forall (t : @NTerm o), decidable (eapply_wf_def t).
 Proof.
   introv.
-  destruct t as [v|f|op bs]; allsimpl; tcsp;
+  destruct t as [v|op bs]; allsimpl; tcsp;
   try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-  - left; left; eexists; eauto.
-  - destruct op; allsimpl; tcsp;
+  destruct op; allsimpl; tcsp;
     try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
     destruct c; allsimpl; tcsp;
     try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
@@ -257,13 +229,10 @@ Proof.
       try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
       destruct l as [|? l]; allsimpl; tcsp;
       try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-      left; right; right; right; eexists; eexists; unfold mk_lam; dands; eauto. }
+      left; right; eexists; eexists; unfold mk_lam; dands; eauto. }
     { destruct bs as [|b bs]; allsimpl; tcsp;
       try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-      left; right; left; eexists; unfold mk_nseq; eauto. }
-    { destruct bs as [|b bs]; allsimpl; tcsp;
-      try (complete (right;unfold eapply_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv)).
-      left; right; right; left; eexists; unfold mk_choice_seq; eauto. }
+      left; left; eexists; unfold mk_choice_seq; eauto. }
 Qed.
 
 Definition compute_step_eapply {o}
@@ -780,7 +749,6 @@ Definition ca_aux {o} btsr (t : @NTerm o) arg1bts arg1c op cstep arg1 ncr :=
     | bterm [] (oterm Exc _ as arg2nt) :: _ => csuccess arg2nt
     | bterm [] (oterm _ _) :: btsr3 => (* ncan/abs *)
       on_success cstep (fun f => oterm (NCan ncr) (bterm [] arg1::bterm [] f::btsr3))
-    | bterm [] (sterm _) :: btsr3 => cfailure cop_malformed_2nd_arg t
   end.
 
 Definition ca_wf {o} (arg1c : @CanonicalOp o) (arg1bts : list (@BTerm o)) :=
@@ -871,7 +839,6 @@ Definition co_aux {o} btsr (t : @NTerm o) arg1bts arg1c op cstep arg1 ncr :=
     | bterm [] (oterm Exc _ as arg2nt) :: _ => csuccess arg2nt
     | bterm [] (oterm _ _) :: btsr3 => (* ncan/abs *)
       on_success cstep (fun f => oterm (NCan ncr) (bterm [] arg1::bterm [] f::btsr3))
-    | bterm [] (sterm _) :: btsr3 => cfailure cop_malformed_2nd_arg t
   end.
 
 Definition co_wf {o} op (arg1c : @CanonicalOp o) (arg1bts : list (@BTerm o)) :=
@@ -1013,7 +980,6 @@ Definition subst_utok {o} (a : @get_patom_set o) (bs : list BTerm) (sub : utok_s
 Fixpoint subst_utokens_aux {o} (t : @NTerm o) (sub : utok_sub) : NTerm :=
   match t with
     | vterm v => t
-    | sterm f => sterm f
     | oterm op bs =>
       match op with
         | Can (NUTok a) => subst_utok a (map (fun b => subst_utokens_aux_b b sub) bs) sub
@@ -1244,98 +1210,27 @@ Qed.
 Fixpoint get_utokens_step_seq {o} (t : @NTerm o) : list (get_patom_set o) :=
   match t with
     | vterm _ => []
-    | sterm _ => []
     | oterm op bs =>
       (get_utokens_o op)
         ++ (flat_map get_utokens_step_seq_b bs)
-        ++ (match op with
-              | NCan NApply =>
-                match bs with
-                  | bterm [] (sterm f) :: bterm [] (oterm (Can (Nint z)) _) :: _ =>
-                    if Z_le_gt_dec 0 z
-                    then get_utokens_step_seq (f (Z.to_nat z))
-                    else []
-                  | _ => []
-                end
-              | NCan NEApply =>
-                match bs with
-                  | bterm [] (sterm f) :: bterm [] (oterm (Can (Nint z)) _) :: _ =>
-                    if Z_le_gt_dec 0 z
-                    then get_utokens_step_seq (f (Z.to_nat z))
-                    else []
-                  | _ => []
-                end
-              | _ => []
-            end)
   end
 with get_utokens_step_seq_b {o} (bt : @BTerm o) : list (get_patom_set o) :=
        match bt with
          | bterm _ t => get_utokens_step_seq t
        end.
 
-Definition get_utokens_step_seq_oterm {o} (op : @Opid o) (bs : list (@BTerm o)) :=
-  match op with
-    | NCan NApply =>
-      match bs with
-        | bterm [] (sterm f) :: bterm [] (oterm (Can (Nint z)) _) :: _ =>
-          if Z_le_gt_dec 0 z
-          then get_utokens_step_seq (f (Z.to_nat z))
-          else []
-        | _ => []
-      end
-    | NCan NEApply =>
-      match bs with
-        | bterm [] (sterm f) :: bterm [] (oterm (Can (Nint z)) _) :: _ =>
-          if Z_le_gt_dec 0 z
-          then get_utokens_step_seq (f (Z.to_nat z))
-          else []
-        | _ => []
-      end
-    | _ => []
-  end.
-
-Definition fold_get_utokens_step_seq_oterm {o} :
-  forall op (bs : list (@BTerm o)),
-    match op with
-      | NCan NApply =>
-        match bs with
-          | bterm [] (sterm f) :: bterm [] (oterm (Can (Nint z)) _) :: _ =>
-            if Z_le_gt_dec 0 z
-            then get_utokens_step_seq (f (Z.to_nat z))
-            else []
-          | _ => []
-        end
-      | NCan NEApply =>
-        match bs with
-          | bterm [] (sterm f) :: bterm [] (oterm (Can (Nint z)) _) :: _ =>
-            if Z_le_gt_dec 0 z
-            then get_utokens_step_seq (f (Z.to_nat z))
-            else []
-          | _ => []
-        end
-      | _ => []
-    end = get_utokens_step_seq_oterm op bs.
-Proof. sp. Qed.
-
 Lemma subset_get_utokens_get_utokens_step_seq {o} :
   forall (t : @NTerm o),
     subset (get_utokens t) (get_utokens_step_seq t).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case; simpl; eauto 3 with slow.
-  Case "oterm".
-  apply app_subset; dands; eauto 3 with slow;[].
-  apply subset_app_l.
-  apply subset_app_r.
-  apply subset_flat_map2; introv i.
-  destruct x as [l t]; simpl.
-  eapply ind; eauto 3 with slow.
+  nterm_ind1s t as [v|op bs ind] Case; simpl; eauto 3 with slow.
 Qed.
 
 Lemma osubset_get_utokens_step_seq_get_cutokens {o} :
   forall (t : @NTerm o),
     subseto (get_utokens_step_seq t) (get_cutokens t).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case;
+  nterm_ind1s t as [v|op bs ind] Case;
   simpl; eauto 3 with slow.
   Case "oterm".
   allrw @subseto_app_l.
@@ -1350,58 +1245,6 @@ Proof.
 
     destruct x as [l t]; simpl.
     eapply ind; eauto 3 with slow.
-
-  - dopid op as [can|ncan|exc|abs] SCase; simpl; eauto 3 with slow;[].
-    SCase "NCan".
-    dopid_noncan ncan SSCase; simpl; eauto 3 with slow;[|].
-
-    + SSCase "NApply".
-      destruct bs as [|b1 bs]; simpl; eauto 3 with slow;[].
-      destruct b1 as [l1 t1].
-      destruct l1; simpl; eauto 3 with slow;[].
-      destruct t1 as [v1|f1|op1 bs1]; simpl; eauto 3 with slow;[].
-      destruct bs as [|b2 bs]; simpl; eauto 3 with slow;[].
-      destruct b2 as [l2 t2].
-      destruct l2; simpl; eauto 3 with slow;[].
-      destruct t2 as [v2|f2|op2 bs2]; simpl; eauto 3 with slow;[].
-      dopid op2 as [can2|ncan2|exc2|abs2] SSSCase; simpl; eauto 3 with slow;[].
-
-      SSSCase "Can".
-      destruct can2; simpl; eauto 3 with slow; [].
-      boolvar; simpl; eauto 3 with slow;[].
-      eapply subseto_oeqset;[|apply oeqset_sym;apply oeqset_oappl_OLL].
-      apply implies_subseto_cons_ols_r; left.
-      apply Wf_Z.Z_of_nat_complete_inf in l; exrepnd; subst.
-      rw Znat.Nat2Z.id.
-      exists n.
-      eapply ind;simpl;[left;reflexivity|].
-      simpl.
-      eapply ord_le_trans;[|apply ord_le_OS].
-      eapply implies_ord_le_limit_right; apply ord_le_refl.
-
-    + SSCase "NEApply".
-      destruct bs as [|b1 bs]; simpl; eauto 3 with slow;[].
-      destruct b1 as [l1 t1].
-      destruct l1; simpl; eauto 3 with slow;[].
-      destruct t1 as [v1|f1|op1 bs1]; simpl; eauto 3 with slow;[].
-      destruct bs as [|b2 bs]; simpl; eauto 3 with slow;[].
-      destruct b2 as [l2 t2].
-      destruct l2; simpl; eauto 3 with slow;[].
-      destruct t2 as [v2|f2|op2 bs2]; simpl; eauto 3 with slow;[].
-      dopid op2 as [can2|ncan2|exc2|abs2] SSSCase; simpl; eauto 3 with slow;[].
-
-      SSSCase "Can".
-      destruct can2; simpl; eauto 3 with slow; [].
-      boolvar; simpl; eauto 3 with slow;[].
-      eapply subseto_oeqset;[|apply oeqset_sym;apply oeqset_oappl_OLL].
-      apply implies_subseto_cons_ols_r; left.
-      apply Wf_Z.Z_of_nat_complete_inf in l; exrepnd; subst.
-      rw Znat.Nat2Z.id.
-      exists n.
-      eapply ind;simpl;[left;reflexivity|].
-      simpl.
-      eapply ord_le_trans;[|apply ord_le_OS].
-      eapply implies_ord_le_limit_right; apply ord_le_refl.
 Qed.
 
 Definition get_utokens_lib {o} lib (t : @NTerm o) :=
@@ -1494,7 +1337,6 @@ Definition mk_fresh_bterms {o} (v : NVar) (bs : list (@BTerm o)) :=
 Definition pushdown_fresh {o} (v : NVar) (t : @NTerm o) :=
   match t with
     | vterm x => mk_fresh v t
-    | sterm f => sterm f
     | oterm op bs => oterm op (mk_fresh_bterms v bs)
   end.
 
@@ -1515,7 +1357,6 @@ Definition compute_step_fresh {o}
           if deq_nvar v x
           then csuccess t
           else cfailure compute_step_error_not_closed t
-        | sterm f => csuccess (pushdown_fresh v u)
         | oterm (Can _) _ => csuccess (pushdown_fresh v u)
         | oterm Exc _ => csuccess (pushdown_fresh v u)
         | oterm (Abs  _) _ => on_success comp (fun r => mk_fresh v (subst_utokens r [(a,mk_var v)]))

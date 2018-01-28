@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -43,7 +44,6 @@ Require Export terms_apply.
  *)
 Inductive SOTerm {o} : tuniv :=
 | sovar : NVar -> list SOTerm -> SOTerm
-| soseq : (nat -> @NTerm o) -> SOTerm
 | soterm : @Opid o -> list SOBTerm -> SOTerm
 with SOBTerm {o} : tuniv :=
 | sobterm : list NVar -> SOTerm -> SOBTerm.
@@ -79,7 +79,6 @@ with is_bterm {o} (bt : @SOBTerm o) : bool :=
 Fixpoint soterm2nterm {o} (t : @SOTerm o) : @NTerm o :=
   match t with
   | sovar v ts => apply_list (mk_var v) (map soterm2nterm ts)
-  | soseq s => sterm s
   | soterm opid bs => oterm opid (map sobterm2bterm bs)
   end
 with sobterm2bterm {o} (bt : @SOBTerm o) : @BTerm o :=
@@ -90,7 +89,6 @@ with sobterm2bterm {o} (bt : @SOBTerm o) : @BTerm o :=
 Fixpoint nterm2soterm {o} (t : @NTerm o) : @SOTerm o :=
   match t with
   | vterm v => sovar v []
-  | sterm s => soseq s
   | oterm opid bs => soterm opid (map bterm2sobterm bs)
   end
 with bterm2sobterm {o} (bt : @BTerm o) : @SOBTerm o :=
@@ -225,7 +223,6 @@ Definition vars2sovars := map var2sovar.
 Fixpoint so_free_vars {o} (t : @SOTerm o) : list sovar_sig :=
   match t with
   | sovar v ts => (v,length ts) :: (flat_map so_free_vars ts)
-  | soseq s => []
   | soterm op bs => flat_map so_free_vars_bterm bs
   end
 with so_free_vars_bterm {o} (bt : @SOBTerm o) : list sovar_sig :=
@@ -239,7 +236,6 @@ with so_free_vars_bterm {o} (bt : @SOBTerm o) : list sovar_sig :=
 Fixpoint all_fo_vars {o} (t : @SOTerm o) : list NVar :=
   match t with
   | sovar v ts => v :: flat_map all_fo_vars ts
-  | soseq s => []
   | soterm op bs => flat_map all_fo_vars_bterm bs
   end
 with all_fo_vars_bterm {o} (bt : @SOBTerm o) : list NVar :=
@@ -250,7 +246,6 @@ with all_fo_vars_bterm {o} (bt : @SOBTerm o) : list NVar :=
 Fixpoint fo_bound_vars {p} (t : @SOTerm p) : list NVar :=
   match t with
   | sovar _ ts => flat_map fo_bound_vars ts
-  | soseq _ => []
   | soterm op bs => flat_map fo_bound_vars_bterm bs
   end
 with fo_bound_vars_bterm {p} (bt : @SOBTerm p) : list NVar :=
@@ -376,7 +371,6 @@ Fixpoint sosub_aux {o} (sub : @SOSub o) (t : SOTerm) : NTerm :=
     | Some (sosk vs u) => lsubst_aux u (combine vs (map (sosub_aux sub) ts))
     | None => apply_list (mk_var var) (map (sosub_aux sub) ts)
     end
-  | soseq s => sterm s
   | soterm opid bts => oterm opid (map (sosub_b_aux sub) bts)
   end
 with sosub_b_aux {o} (sub : @SOSub o) (bt : SOBTerm) : BTerm :=
@@ -552,7 +546,6 @@ Fixpoint fo_change_bvars_alpha {p} (disj : list NVar) (ren : foren) (t : @SOTerm
     if bnull ts
     then sovar (rename_var ren v) []
     else sovar v (map (fo_change_bvars_alpha disj ren) ts)
-  | soseq s => soseq s
   | soterm o bs => soterm o (map (fo_change_bvars_alphabt disj ren) bs)
   end
 with fo_change_bvars_alphabt {p} disj ren bt :=
@@ -569,7 +562,6 @@ Fixpoint so_change_bvars_alpha {p} (disj : list NVar) (ren : soren) (t : @SOTerm
     sovar
       (sovar2var (rename_sovar ren (v,length ts)))
       (map (so_change_bvars_alpha disj ren) ts)
-  | soseq s => soseq s
   | soterm o bs => soterm o (map (so_change_bvars_alphabt disj ren) bs)
   end
 with so_change_bvars_alphabt {p} disj ren bt :=
@@ -1019,7 +1011,6 @@ Fixpoint get_fo_vars (l : list sovar_sig) : list NVar :=
 Fixpoint sosize {p} (t : @SOTerm p) : nat :=
   match t with
   | sovar _ ts => S (addl (map sosize ts))
-  | soseq s => 0
   | soterm op bs => S (addl (map sosize_bterm bs))
   end
 with sosize_bterm {p} (b : SOBTerm) :=
@@ -1050,7 +1041,6 @@ Lemma SOTerm_better_ind2 {p} :
     (forall v ts,
        (forall t, LIn t ts -> P t)
        -> P (sovar v ts))
-    -> (forall s, P (soseq s))
     -> (forall (o : Opid) (bs : list SOBTerm),
           (forall (t t': SOTerm) (vs : list NVar),
              (LIn (sobterm vs t) bs)
@@ -1061,7 +1051,7 @@ Lemma SOTerm_better_ind2 {p} :
        )
     -> forall t : SOTerm, P t.
 Proof.
-  intros P Hvar Hseq Hbt.
+  intros P Hvar Hbt.
   assert (forall n t, sosize t = n -> P t)
     as Hass;
     [ | intros; apply Hass with (n := sosize t); eauto; fail ].
@@ -1074,7 +1064,6 @@ Proof.
     destruct n; cpx.
     pose proof (Hind (sosize t)) as k; autodimp k hyp.
     apply sosize_in in i; omega.
-  - apply Hseq.
   - apply Hbt.
     introv Hin Hs.
     apply Hind with (m := sosize t'); auto.
@@ -1087,14 +1076,13 @@ Lemma SOTerm_better_ind {p} :
     (forall v ts,
        (forall t, LIn t ts -> P t)
        -> P (sovar v ts))
-    -> (forall s, P (soseq s))
     -> (forall (o : Opid) (bs : list SOBTerm),
           (forall t vs, LIn (sobterm vs t) bs -> P t)
           -> P (soterm o bs)
        )
     -> forall t : SOTerm, P t.
 Proof.
-  introv Hv Hseq Hind.
+  introv Hv Hind.
   apply SOTerm_better_ind2; auto.
   introv Hx.
   apply Hind.
@@ -1105,28 +1093,24 @@ Qed.
 Tactic Notation "soterm_ind" ident(h) ident(c) :=
   induction h using SOTerm_better_ind;
   [ Case_aux c "sovar"
-  | Case_aux c "soseq"
   | Case_aux c "soterm"
   ].
 
 Tactic Notation "soterm_ind" ident(h) "as" simple_intropattern(I)  ident(c) :=
   induction h as I using SOTerm_better_ind;
   [ Case_aux c "sovar"
-  | Case_aux c "soseq"
   | Case_aux c "soterm"
   ].
 
 Tactic Notation "soterm_ind1" ident(h) "as" simple_intropattern(I)  ident(c) :=
   induction h as I using SOTerm_better_ind;
   [ Case_aux c "sovar"
-  | Case_aux c "soseq"
   | Case_aux c "soterm"
   ].
 
 Tactic Notation "soterm_ind1s" ident(h) "as" simple_intropattern(I)  ident(c) :=
   induction h as I using SOTerm_better_ind2;
   [ Case_aux c "sovar"
-  | Case_aux c "soseq"
   | Case_aux c "soterm"
   ].
 
@@ -1210,7 +1194,7 @@ Proof.
   introv wf i.
   allunfold @wf_soterm.
   apply wf_term_eq in wf; allsimpl.
-  inversion wf as [|?|? ? imp e]; subst; clear e.
+  inversion wf as [|? ? imp e]; subst; clear e.
   pose proof (imp (bterm vs (soterm2nterm t))) as h; clear imp.
   autodimp h hyp.
   - rw in_map_iff.
@@ -1347,7 +1331,7 @@ Lemma so_free_vars_in_all_fo_vars {o} :
   forall (t : @SOTerm o) v n,
     LIn (v, n) (so_free_vars t) -> LIn v (all_fo_vars t).
 Proof.
-  soterm_ind t as [ v ts ind |  | op lbt ind ] Case; simpl; introv i; tcsp.
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl; introv i; tcsp.
 
   - Case "sovar".
     dorn i; cpx.
@@ -1416,7 +1400,7 @@ Lemma free_vars_lsubst_aux_subvars {p} :
       (free_vars (lsubst_aux t sub))
       (remove_nvars (dom_sub sub) (free_vars t) ++ sub_free_vars sub).
 Proof.
-  nterm_ind t as [ v | f ind | o lbt ind ] Case; simpl; introv.
+  nterm_ind t as [ v | o lbt ind ] Case; simpl; introv.
 
   - Case "vterm".
     remember (sub_find sub v) as o;
@@ -1433,9 +1417,6 @@ Proof.
       intro k.
       apply in_dom_sub_exists in k; exrepnd.
       rw Heqo in k0; cpx.
-
-  - Case "sterm".
-    allrw remove_nvars_nil_r; simpl; auto.
 
   - Case "oterm".
     rw flat_map_map; unfold compose.
@@ -1514,7 +1495,7 @@ Lemma isprogram_sosub_aux_wf {p} :
     -> sosub_wf sub
     -> wf_term (sosub_aux sub t).
 Proof.
-  soterm_ind t as [ v ts ind | | o lbt ind ] Case; simpl; introv wft wfs; tcsp.
+  soterm_ind t as [ v ts ind | o lbt ind ] Case; simpl; introv wft wfs; tcsp.
 
   - Case "sovar".
     remember (sosub_find sub (v, length ts)) as o;
@@ -1541,7 +1522,7 @@ Proof.
 
     + unfold wf_soterm in wft; simpl in wft.
       apply wf_term_eq in wft.
-      inversion wft as [|?| ? ? imp e]; subst.
+      inversion wft as [|? ? imp e]; subst.
       rw map_map in e; unfold compose in e.
       apply wf_term_eq.
       constructor.
@@ -1570,7 +1551,7 @@ Lemma isprogram_sosub_aux_free_vars {p} :
       (sovars2vars (remove_so_vars (sodom sub) (so_free_vars t))
                    ++ free_vars_sosub sub).
 Proof.
-  soterm_ind t as [ v ts ind | | o lbt ind ] Case; simpl; introv; tcsp.
+  soterm_ind t as [ v ts ind | o lbt ind ] Case; simpl; introv; tcsp.
 
   - Case "sovar".
     remember (sosub_find sub (v, length ts)) as o;
@@ -1771,10 +1752,10 @@ Proof.
   unfold wf_soterm; simpl.
   rw @wf_term_eq.
   split; intro k; repnd; dands.
-  - inversion k as [|?|? ? imp e]; subst.
+  - inversion k as [|? ? imp e]; subst.
     rw <- e; rw map_map; unfold compose; apply eq_maps; introv i.
     destruct x; simpl; unfold num_bvars; auto.
-  - inversion k as [|?|? ? imp e]; subst.
+  - inversion k as [|? ? imp e]; subst.
     introv i.
     pose proof (imp (bterm vs (soterm2nterm t))) as h; autodimp h hyp.
     rw in_map_iff; eexists; dands; eauto.
@@ -1806,7 +1787,7 @@ Lemma wf_soterm_fo_change_bvars_alpha {o} :
   forall (t : @SOTerm o) disj ren,
     wf_soterm t <=> wf_soterm (fo_change_bvars_alpha disj ren t).
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl; introv; tcsp.
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl; introv; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl; allrw @wf_sovar; allsimpl; tcsp.
@@ -1850,7 +1831,7 @@ Lemma wf_soterm_so_change_bvars_alpha {o} :
   forall (t : @SOTerm o) disj ren,
     wf_soterm t <=> wf_soterm (so_change_bvars_alpha disj ren t).
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl; introv; tcsp.
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl; introv; tcsp.
 
   - Case "sovar".
     split; intro k; apply wf_sovar; allsimpl; introv i; tcsp.
@@ -1866,7 +1847,7 @@ Proof.
     allunfold @wf_soterm; allsimpl.
     repeat (rw @wf_term_eq).
     split; intro wf.
-    + inversion wf as [|?| ? ? imp e]; subst; clear wf.
+    + inversion wf as [| ? ? imp e]; subst; clear wf.
       constructor.
       * introv i.
         rw in_map_iff in i; exrepnd; subst.
@@ -1885,7 +1866,7 @@ Proof.
         apply eq_maps; introv i.
         destruct x; simpl; unfold num_bvars; simpl.
         rw length_fresh_distinct_vars; auto.
-    + inversion wf as [|?| ? ? imp e]; subst; clear wf.
+    + inversion wf as [| ? ? imp e]; subst; clear wf.
       constructor.
       * introv i; rw in_map_iff in i; exrepnd; subst.
         destruct a; simpl.
@@ -1943,7 +1924,7 @@ Lemma sovars2vars_so_free_vars_subvars_all_fo_vars {o} :
   forall (t : @SOTerm o),
     subvars (sovars2vars (so_free_vars t)) (all_fo_vars t).
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl; introv; tcsp.
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl; introv; tcsp.
 
   - Case "sovar".
     apply subvars_cons_lr.
@@ -2083,7 +2064,7 @@ Lemma so_free_vars_so_change_bvars_alpha {o} :
     so_free_vars (so_change_bvars_alpha disj ren t)
     = map (rename_sovar ren) (so_free_vars t).
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl; introv; tcsp.
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl; introv; tcsp.
 
   - Case "sovar".
     apply eq_cons.
@@ -2175,7 +2156,7 @@ Lemma so_free_vars_fo_change_bvars_alpha {o} :
     so_free_vars (fo_change_bvars_alpha disj ren t)
     = map (rename_sovar (foren2soren ren)) (so_free_vars t).
 Proof.
-  soterm_ind t as [ v ts ind | | op lbt ind ] Case; simpl; introv; tcsp.
+  soterm_ind t as [ v ts ind | op lbt ind ] Case; simpl; introv; tcsp.
 
   - Case "sovar".
     boolvar; subst; allsimpl.
@@ -2406,7 +2387,7 @@ Lemma free_vars_lsubst_aux_var_ren {o} :
     -> remove_nvars (vs2 ++ vs) (free_vars (lsubst_aux t (var_ren vs1 vs2)))
        = remove_nvars (vs1 ++ vs) (free_vars t).
 Proof.
-  nterm_ind t as [v|f induction|op bs ind] Case; introv disj1 disj2 len; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv disj1 disj2 len; allsimpl; auto.
 
   - Case "vterm".
     rw disjoint_singleton_r in disj1.
@@ -2422,9 +2403,6 @@ Proof.
       allrw remove_nvars_cons_r; boolvar; tcsp;
       allrw remove_nvars_nil_r; auto;
       provefalse; allrw in_app_iff; allrw not_over_or; tcsp.
-
-  - Case "sterm".
-    allrw remove_nvars_nil_r; auto.
 
   - Case "oterm".
     rw flat_map_map; unfold compose.
@@ -2497,7 +2475,7 @@ Lemma free_vars_change_bvars_alpha {o} :
   forall (t : @NTerm o) vs,
     free_vars (change_bvars_alpha vs t) = free_vars t.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv; simpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
   rw flat_map_map; unfold compose; apply eq_flat_maps; introv i.
   destruct x; simpl.
   match goal with

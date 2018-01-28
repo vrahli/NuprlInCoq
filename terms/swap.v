@@ -1,6 +1,10 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -79,7 +83,6 @@ Definition swapbvars (l : swapping) (vs : list NVar) :=
 Fixpoint swap {p} (l : swapping) (t : @NTerm p) :=
   match t with
     | vterm v => vterm (swapvar l v)
-    | sterm f => sterm (fun n => swap l (f n))
     | oterm o bts => oterm o (map (swapbt l) bts)
   end
 with swapbt {p} (l : swapping) (bt : BTerm) :=
@@ -90,7 +93,6 @@ with swapbt {p} (l : swapping) (bt : BTerm) :=
 Fixpoint cswap {p} (l : swapping) (t : @NTerm p) :=
   match t with
     | vterm v => vterm (swapvar l v)
-    | sterm f => sterm f
     | oterm o bts => oterm o (map (cswapbt l) bts)
   end
 with cswapbt {p} (l : swapping) (bt : BTerm) :=
@@ -112,10 +114,6 @@ Definition mk_swapping (vs1 vs2 : list NVar) : swapping :=
 
 Inductive alphaeq_vs {p} (l : list NVar) : @NTerm p -> @NTerm p -> Type :=
   | aeqv : forall v, alphaeq_vs l (vterm v) (vterm v)
-  | aeqs :
-      forall f1 f2,
-        (forall n, alphaeq_vs l (f1 n) (f2 n))
-        -> alphaeq_vs l (sterm f1) (sterm f2)
   | aeqo :
       forall o bts1 bts2,
         length bts1 = length bts2
@@ -151,7 +149,7 @@ Lemma size_swap {p} :
   forall t l,
     size (@swap p l t) = size t.
 Proof.
-  nterm_ind1 t as [v|f ind|o bts Hind] Case; introv; simpl; auto.
+  nterm_ind1 t as [v|o bts Hind] Case; introv; simpl; auto.
   assert (map size_bterm (map (swapbt l) bts) = map size_bterm bts)
     as e; [| complete (rw e; auto)].
   rw map_map; unfold compose.
@@ -163,12 +161,7 @@ Qed.
 Lemma osize_swap {p} :
   forall t l, osize (@swap p l t) = osize t.
 Proof.
-  nterm_ind1 t as [v|f ind|o bts Hind] Case; introv; simpl; auto.
-
-  - Case "sterm".
-    f_equal; f_equal.
-    apply functional_extensionality.
-    introv; sp.
+  nterm_ind1 t as [v|o bts Hind] Case; introv; simpl; auto.
 
   - Case "oterm".
     f_equal; f_equal.
@@ -181,7 +174,7 @@ Qed.
 Lemma osize_cswap {p} :
   forall t l, osize (@cswap p l t) = osize t.
 Proof.
-  nterm_ind1 t as [v|f ind|o bts Hind] Case; introv; simpl; auto.
+  nterm_ind1 t as [v|o bts Hind] Case; introv; simpl; auto.
 
   Case "oterm".
   f_equal; f_equal.
@@ -378,7 +371,6 @@ Lemma lsubst_is_vterm {p} :
 Proof.
   destruct t; introv; unfold lsubst; simpl.
   - intro k; exists n; auto.
-  - intro k; ginv.
   - dest_dec_disjointv; introv k; inversion k.
 Qed.
 
@@ -389,7 +381,6 @@ Lemma lsubst_aux_is_vterm {p} :
 Proof.
   destruct t; introv; simpl.
   - intro k; exists n; auto.
-  - intro k; ginv.
   - introv k; inversion k.
 Qed.
 
@@ -444,15 +435,10 @@ Lemma swap_swap {p} :
   forall s1 s2 t,
     swap s1 (@swap p s2 t) = swap (s2 ++ s1) t.
 Proof.
-  nterm_ind1 t as [v|f ind| o lbt Hind] Case; simpl.
+  nterm_ind1 t as [v| o lbt Hind] Case; simpl.
 
   - Case "vterm".
     rw swapvar_swapvar; auto.
-
-  - Case "sterm".
-    f_equal.
-    apply functional_extensionality.
-    introv; sp.
 
   - Case "oterm".
     apply oterm_eq; auto.
@@ -468,7 +454,7 @@ Lemma cswap_cswap {p} :
   forall s1 s2 t,
     cswap s1 (@cswap p s2 t) = cswap (s2 ++ s1) t.
 Proof.
-  nterm_ind1 t as [v|f ind| o lbt Hind] Case; simpl; auto.
+  nterm_ind1 t as [v| o lbt Hind] Case; simpl; auto.
 
   - Case "vterm".
     rw swapvar_swapvar; auto.
@@ -500,18 +486,13 @@ Lemma alphaeq_vs_implies_less {p} :
     -> subvars l2 l1
     -> alphaeq_vs l2 t1 t2.
 Proof.
-  nterm_ind1s t1 as [v1|f1 ind|o1 lbt1 Hind] Case; introv aeq sv.
+  nterm_ind1s t1 as [v1|o1 lbt1 Hind] Case; introv aeq sv.
 
   - Case "vterm".
     inversion aeq; subst; auto.
 
-  - Case "sterm".
-    inversion aeq as [|? ? imp|]; subst; clear aeq.
-    constructor; introv.
-    eapply ind; eauto.
-
   - Case "oterm".
-    inversion aeq as [| | ? ? ? len aeqbts]; subst; clear aeq.
+    inversion aeq as [| ? ? ? len aeqbts]; subst; clear aeq.
     constructor; auto.
     introv i.
     applydup aeqbts in i as h.
@@ -740,7 +721,7 @@ Lemma disjoint_allvars_implies {p} :
     -> disjoint vs (allvars (@swap p (mk_swapping vs1 vs2) t))
     -> disjoint vs (allvars (swap (mk_swapping vs1 vs3) t)).
 Proof.
-  nterm_ind1s t as [v|f ind|o lbt Hind] Case;
+  nterm_ind1s t as [v|o lbt Hind] Case;
   introv len disj1 disj2 disj3 disj4 disj5 d; allsimpl; auto.
 
   - Case "vterm".
@@ -771,7 +752,7 @@ Lemma disjoint_allvars_swap {p} :
     -> disjoint vs (@allvars p t)
     -> disjoint vs (allvars (swap (mk_swapping vs1 vs2) t)).
 Proof.
-  nterm_ind1s t as [v|f ind|o lbt Hind] Case; introv len disj1 disj2 disj3; allsimpl; auto.
+  nterm_ind1s t as [v|o lbt Hind] Case; introv len disj1 disj2 disj3; allsimpl; auto.
 
   - Case "vterm".
     allrw disjoint_singleton_r.
@@ -797,7 +778,7 @@ Lemma disjoint_allvars_cswap {p} :
     -> disjoint vs (@allvars p t)
     -> disjoint vs (allvars (cswap (mk_swapping vs1 vs2) t)).
 Proof.
-  nterm_ind1s t as [v|f ind|o lbt Hind] Case; introv len disj1 disj2 disj3; allsimpl; auto.
+  nterm_ind1s t as [v|o lbt Hind] Case; introv len disj1 disj2 disj3; allsimpl; auto.
 
   - Case "vterm".
     allrw disjoint_singleton_r.
@@ -1013,17 +994,12 @@ Lemma swap_swap2 {o} :
             (swap (mk_swapping vs2 vs4) t)
        = swap (mk_swapping vs2 vs4) (swap (mk_swapping vs1 vs3) t).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case;
+  nterm_ind1s t as [v|op bs ind] Case;
   introv len1 norep1 disj1 disj2 disj3; auto.
 
   - Case "vterm".
     allsimpl; f_equal.
     rw <- swapvar_swapvar2; auto.
-
-  - Case "sterm".
-    allsimpl; f_equal.
-    apply functional_extensionality; introv.
-    apply ind; auto.
 
   - Case "oterm".
     simpl; f_equal.
@@ -1046,7 +1022,7 @@ Lemma cswap_cswap2 {o} :
              (cswap (mk_swapping vs2 vs4) t)
        = cswap (mk_swapping vs2 vs4) (cswap (mk_swapping vs1 vs3) t).
 Proof.
-  nterm_ind1s t as [v|f ind|op bs ind] Case;
+  nterm_ind1s t as [v|op bs ind] Case;
   introv len1 norep1 disj1 disj2 disj3; auto.
 
   - Case "vterm".
@@ -1114,19 +1090,14 @@ Lemma alphaeq_add_cswap {o} :
          (cswap (mk_swapping vs1 vs2) t1)
          (cswap (mk_swapping vs1 vs2) t2).
 Proof.
-  nterm_ind1s t1 as [v1|f1 ind1|o1 lbt1 Hind] Case; introv len norep2 disj aeq; auto.
+  nterm_ind1s t1 as [v1|o1 lbt1 Hind] Case; introv len norep2 disj aeq; auto.
 
   - Case "vterm".
     inversion aeq; subst; allsimpl; auto.
 
-  - Case "sterm".
-    inversion aeq as [|? ? imp|]; subst; clear aeq.
-    allsimpl.
-    constructor; introv; auto.
-
   - Case "oterm".
     allsimpl.
-    inversion aeq as [| |? ? ? eqlens aeqbts e1 oeq]; subst; clear aeq.
+    inversion aeq as [|? ? ? eqlens aeqbts e1 oeq]; subst; clear aeq.
     allsimpl.
     apply aeqo; allrw map_length; auto.
     introv lt.
@@ -1260,7 +1231,7 @@ Lemma cswap_disj_chain {o} :
     -> cswap (mk_swapping (vs1 ++ vs) (vs ++ vs2)) t
        = cswap (mk_swapping vs1 vs2) t.
 Proof.
-  nterm_ind1s t as [v|f ind|op bs Hind] Case;
+  nterm_ind1s t as [v|op bs Hind] Case;
   introv len1 len2 norep1 norep2 disj1 disj2; allsimpl; auto.
 
   - Case "vterm".
@@ -1282,18 +1253,13 @@ Qed.
 Lemma alphaeq_implies_alphaeq_vs {p} :
   forall t1 t2, @alphaeq p t1 t2 -> forall l, alphaeq_vs l t1 t2.
 Proof.
-  nterm_ind1s t1 as [v1|f ind|o1 lbt1 Hind] Case; introv aeq; introv; auto.
+  nterm_ind1s t1 as [v1|o1 lbt1 Hind] Case; introv aeq; introv; auto.
 
   - Case "vterm".
     inversion aeq; subst; auto.
 
-  - Case "sterm".
-    inversion aeq as [|? ? imp|]; subst; clear aeq.
-    constructor; introv.
-    apply ind; apply imp.
-
   - Case "oterm".
-    inversion aeq as [|?| ? ? ? len aeqbts]; subst; clear aeq.
+    inversion aeq as [|? ? ? len aeqbts]; subst; clear aeq.
     constructor; auto.
     introv i.
     applydup aeqbts in i as h.
@@ -1395,7 +1361,7 @@ Qed.
 Lemma allvars_eq_all_vars {p} :
   forall t, eqvars (@allvars p t) (all_vars t).
 Proof.
-  nterm_ind1 t as [v|f ind|o lbt Hind] Case; simpl; auto.
+  nterm_ind1 t as [v|o lbt Hind] Case; simpl; auto.
 
   Case "oterm".
   unfold all_vars; simpl.
@@ -1461,7 +1427,7 @@ Lemma disjoint_allvars_lsubst_aux {p} :
     -> disjoint vs (flat_map allvars (@range p sub))
     -> disjoint vs (allvars (lsubst_aux t sub)).
 Proof.
-  nterm_ind1 t as [v|f ind|o lbt Hind] Case; simpl;
+  nterm_ind1 t as [v|o lbt Hind] Case; simpl;
   introv d1 d2; auto.
 
   - Case "vterm".
@@ -1739,7 +1705,7 @@ Lemma lsubst_swap_swap {p} :
                   (var_ren (swapbvars (mk_swapping vs1 vs2) l) vs)
        = swap (mk_swapping vs1 vs2) (lsubst_aux t (@var_ren p l vs)).
 Proof.
-  nterm_ind1s t as [v|f ind|o lbt Hind] Case;
+  nterm_ind1s t as [v|o lbt Hind] Case;
   introv len1 len2 norep1 norep2 disj1 disj2; auto.
 
   - Case "vterm".
@@ -1787,7 +1753,7 @@ Lemma lsubst_cswap_cswap {p} :
                   (var_ren (swapbvars (mk_swapping vs1 vs2) l) vs)
        = cswap (mk_swapping vs1 vs2) (lsubst_aux t (@var_ren p l vs)).
 Proof.
-  nterm_ind1s t as [v|f ind|o lbt Hind] Case;
+  nterm_ind1s t as [v|o lbt Hind] Case;
   introv len1 len2 norep1 norep2 disj1 disj2; auto.
 
   - Case "vterm".
@@ -1889,7 +1855,7 @@ Lemma lsubst_aux_lsubst_aux_sub_filter_var_ren {p} :
                   (var_ren l vs)
        = lsubst_aux (lsubst_aux t (var_ren l vs)) (@var_ren p vs1 vs2).
 Proof.
-  nterm_ind1s t as [v|f ind|o lbt Hind] Case;
+  nterm_ind1s t as [v|o lbt Hind] Case;
   introv len1 len2 disj1 disj2; auto.
 
   - Case "vterm".
@@ -1963,7 +1929,7 @@ Lemma alpha_eq_cswap_and_rename {p} :
     -> alpha_eq (cswap (mk_swapping vs1 vs2) t)
                 (rename_aux t vs1 vs2).
 Proof.
-  nterm_ind1s t as [v|f ind|o lbt Hind] Case;
+  nterm_ind1s t as [v|o lbt Hind] Case;
   introv len norep disj1 disj2; allsimpl; auto.
 
   - Case "vterm".
@@ -2061,21 +2027,15 @@ Lemma alphaeq_eq {p} :
   forall t1 t2,
     @alphaeq p t1 t2 <=> alpha_eq t1 t2.
 Proof.
-  nterm_ind1s t1 as [v|f ind|o lbt Hind] Case; introv; auto.
+  nterm_ind1s t1 as [v|o lbt Hind] Case; introv; auto.
 
   - Case "vterm".
     split; intro aeq; inversion aeq; subst; constructor.
 
-  - Case "sterm".
-    split; intro aeq;
-    inversion aeq as [|? ? imp|]; subst; clear aeq;
-    constructor; introv;
-    apply ind; apply imp.
-
   - Case "oterm".
     split; intro aeq.
 
-    + inversion aeq as [|?|? ? ? len aeqbts]; subst.
+    + inversion aeq as [|? ? ? len aeqbts]; subst.
       constructor; auto.
       introv lt.
       applydup aeqbts in lt as abt; clear aeqbts.
@@ -2117,7 +2077,7 @@ Proof.
 
       apply alpha_eq_trans with (nt2 := cswap (mk_swapping vs2 vs) t2); auto.
 
-    + inversion aeq as [|?|? ? ? len aeqbts]; subst.
+    + inversion aeq as [|? ? ? len aeqbts]; subst.
       constructor; auto.
       introv lt.
       applydup aeqbts in lt as abt; clear aeqbts.
@@ -2270,39 +2230,17 @@ Lemma nt_wf_swap_and_free_vars {o} :
      # (free_vars (swap s t) = swapbvars s (free_vars t))
      # (get_utokens (swap s t) = get_utokens  t)).
 Proof.
-  nterm_ind1 t as [v|f ind|op bts Hind] Case; introv; simpl; auto.
+  nterm_ind1 t as [v|op bts Hind] Case; introv; simpl; auto.
 
   - Case "vterm".
     dands; auto.
     split; introv wf; tcsp.
 
-  - Case "sterm".
-    dands; auto.
-    split; introv wf.
-
-    + inversion wf as [|? imp|];subst; clear wf.
-      constructor; introv.
-      pose proof (imp n) as h; clear imp; repnd.
-      pose proof (ind n s) as q; repnd.
-      rw <- q0.
-      unfold closed, noutokens.
-      rw q; rw q1; rw h1; simpl; dands; auto.
-
-    + inversion wf as [|? imp|];subst; clear wf.
-      constructor; introv.
-      pose proof (imp n) as h; clear imp; repnd.
-      pose proof (ind n s) as q; repnd.
-      rw <- q0 in h0.
-      unfold noutokens in h; unfold closed in h1; rw q in h; rw q1 in h1; allsimpl.
-      dands; auto.
-      unfold closed.
-      remember (free_vars (f n)) as fvs; destruct fvs; ginv.
-
   - Case "oterm".
 
     dands.
 
-    { split; intro wf; inversion wf as [|?| ? ? imp e]; subst.
+    { split; intro wf; inversion wf as [| ? ? imp e]; subst.
       + constructor; auto.
         * introv i.
           rw in_map_iff in i; exrepnd; subst.
@@ -2348,17 +2286,14 @@ Abort.
 Lemma nt_wf_cswap {o} :
   forall (t : @NTerm o) s, nt_wf t <=> nt_wf (cswap s t).
 Proof.
-  nterm_ind1 t as [v|f ind|op bts Hind] Case; introv; simpl; auto.
+  nterm_ind1 t as [v|op bts Hind] Case; introv; simpl; auto.
 
   - Case "vterm".
     split; introv wf; tcsp.
 
-  - Case "sterm".
-    split; introv wf; inversion wf as [|? imp|];subst; clear wf; eauto.
-
   - Case "oterm".
 
-    { split; intro wf; inversion wf as [|?| ? ? imp e]; subst.
+    { split; intro wf; inversion wf as [| ? ? imp e]; subst.
       + constructor; auto.
         * introv i.
           rw in_map_iff in i; exrepnd; subst.

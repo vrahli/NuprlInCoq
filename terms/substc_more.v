@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -751,7 +752,7 @@ Proof.
   introv; split; intro i.
   apply wf_apply; sp.
   allrw @wf_term_eq.
-  inversion i as [|?| o lnt k e]; subst; allsimpl.
+  inversion i as [| o lnt k e]; subst; allsimpl.
   generalize (k (nobnd a)) (k (nobnd b)); intros k1 k2.
   repeat (dest_imp k1 hyp).
   repeat (dest_imp k2 hyp).

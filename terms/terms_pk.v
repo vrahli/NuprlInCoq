@@ -413,19 +413,14 @@ Lemma isvalue_like_implies1 {o} :
     -> {op : Opid
         & {bterms : list BTerm
         & t = oterm op bterms
-        # iscan_like_op op}}
-       [+] {f : ntseq & t = sterm f}.
+        # iscan_like_op op}}.
 Proof.
   introv isv.
   unfold isvalue_like in isv; repndors.
   - apply iscan_implies in isv; repndors; exrepnd; subst.
-    + left.
-      eexists; eexists; dands; eauto.
+    + eexists; eexists; dands; eauto.
       left; eexists; eauto.
-    + right.
-      eexists; eauto.
   - apply isexc_implies2 in isv; exrepnd; subst.
-    left.
     eexists; eexists; dands; eauto.
     right; unfold isexc_op; auto.
 Qed.

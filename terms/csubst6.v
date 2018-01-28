@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -314,7 +316,7 @@ Lemma cl_lsubst_aux_swap_filter0 {o} :
     -> (forall v, LIn v (dom_sub s) -> LIn v vs -> !LIn v (free_vars t))
     -> lsubst_aux t (sub_filter s vs) = lsubst_aux t s.
 Proof.
-  nterm_ind t as [v|f ind|op bs ind] Case; introv cl disj; allsimpl; auto.
+  nterm_ind t as [v|op bs ind] Case; introv cl disj; allsimpl; auto.
 
   - Case "vterm".
     rw @sub_find_sub_filter_eq; boolvar; tcsp.
@@ -1022,10 +1024,3 @@ Proof.
   allrw <- @sub_free_vars_is_flat_map_free_vars_range.
   allrw @sub_free_vars_csub2sub; boolvar; tcsp.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

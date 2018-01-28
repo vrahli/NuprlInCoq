@@ -50,7 +50,7 @@ Lemma alpha_eq_mk_function {o} :
         # alpha_eq_bterm (bterm [v] a) (bterm [v'] a')}}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -96,7 +96,7 @@ Lemma alpha_eq_mk_isect {o} :
         # alpha_eq_bterm (bterm [v] a) (bterm [v'] a')}}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -142,7 +142,7 @@ Lemma alpha_eq_mk_disect {o} :
         # alpha_eq_bterm (bterm [v] a) (bterm [v'] a')}}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -188,7 +188,7 @@ Lemma alpha_eq_mk_set {o} :
         # alpha_eq_bterm (bterm [v] a) (bterm [v'] a')}}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -234,7 +234,7 @@ Lemma alpha_eq_mk_tunion {o} :
         # alpha_eq_bterm (bterm [v] a) (bterm [v'] a')}}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -280,7 +280,7 @@ Lemma alpha_eq_mk_product {o} :
         # alpha_eq_bterm (bterm [v] a) (bterm [v'] a')}}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -326,7 +326,7 @@ Lemma alpha_eq_mk_w {o} :
         # alpha_eq_bterm (bterm [v] a) (bterm [v'] a')}}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -372,7 +372,7 @@ Lemma alpha_eq_mk_m {o} :
         # alpha_eq_bterm (bterm [v] a) (bterm [v'] a')}}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -430,7 +430,7 @@ Lemma alpha_eq_mk_pw {o} :
           }}}}}}}}}}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl; try omega.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -514,7 +514,7 @@ Lemma alpha_eq_mk_pm {o} :
           }}}}}}}}}}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl; try omega.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -585,7 +585,7 @@ Lemma alpha_eq_mk_approx {o} :
         # alpha_eq a a' }}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -635,7 +635,7 @@ Lemma alpha_eq_mk_cequiv {o} :
         # alpha_eq a a' }}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -685,7 +685,7 @@ Lemma alpha_eq_mk_texc {o} :
         # alpha_eq a a' }}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -735,7 +735,7 @@ Lemma alpha_eq_mk_union {o} :
         # alpha_eq a a' }}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -785,7 +785,7 @@ Lemma alpha_eq_mk_image {o} :
         # alpha_eq a a' }}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -835,7 +835,7 @@ Lemma alpha_eq_mk_ffatoms {o} :
         # alpha_eq a a' }}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -885,7 +885,7 @@ Lemma alpha_eq_mk_tequality {o} :
         # alpha_eq a a' }}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -937,7 +937,7 @@ Lemma alpha_eq_mk_ffatom {o} :
         # alpha_eq a a' }}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -993,7 +993,7 @@ Lemma alpha_eq_mk_effatom {o} :
         # alpha_eq a a' }}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -1049,7 +1049,7 @@ Lemma alpha_eq_mk_equality {o} :
         # alpha_eq a a' }}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -1105,7 +1105,7 @@ Lemma alpha_eq_mk_requality {o} :
         # alpha_eq a a' }}}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
@@ -1157,7 +1157,7 @@ Lemma alpha_eq_mk_partial {o} :
         # alpha_eq t t' }.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   clear i.
@@ -1201,7 +1201,7 @@ Lemma alpha_eq_mk_admiss {o} :
         # alpha_eq t t' }.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   clear i.
@@ -1245,7 +1245,7 @@ Lemma alpha_eq_mk_mono {o} :
         # alpha_eq t t' }.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   clear i.
@@ -1289,7 +1289,7 @@ Lemma alpha_eq_mk_pertype {o} :
         # alpha_eq t t' }.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   clear i.
@@ -1333,7 +1333,7 @@ Lemma alpha_eq_mk_spertype {o} :
         # alpha_eq t t' }.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   clear i.
@@ -1377,7 +1377,7 @@ Lemma alpha_eq_mk_tuni {o} :
         # alpha_eq t t' }.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   clear i.
@@ -1421,7 +1421,7 @@ Lemma alpha_eq_mk_ipertype {o} :
         # alpha_eq t t' }.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   clear i.
@@ -1463,7 +1463,7 @@ Lemma alpha_eq_mk_base {o} :
     -> u = mk_base.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
 Qed.
 
@@ -1485,7 +1485,7 @@ Lemma alpha_eq_mk_int {o} :
     -> u = mk_int.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
 Qed.
 
@@ -1507,7 +1507,7 @@ Lemma alpha_eq_mk_csname {o} :
     -> u = mk_csname n.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
 Qed.
 
@@ -1529,7 +1529,7 @@ Lemma alpha_eq_mk_Nat {o} :
     -> u = mk_Nat.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
 Qed.
 
@@ -1551,7 +1551,7 @@ Lemma alpha_eq_mk_atom {o} :
     -> u = mk_atom.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
 Qed.
 
@@ -1573,7 +1573,7 @@ Lemma alpha_eq_mk_uatom {o} :
     -> u = mk_uatom.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
 Qed.
 
@@ -1595,7 +1595,7 @@ Lemma alpha_eq_mk_uni {o} :
     -> u = mk_uni i.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len j]; subst; allsimpl.
+  inversion aeq as [|? ? ? len j]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
 Qed.
 
@@ -1621,7 +1621,7 @@ Lemma alpha_eq_mk_sup {o} :
         # alpha_eq a a' }}.
 Proof.
   introv aeq.
-  inversion aeq as [|?|? ? ? len i]; subst; allsimpl.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
   pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
