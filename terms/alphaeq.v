@@ -1915,13 +1915,13 @@ end.
 
 Ltac get_lt_rhs H :=
 match type of H with
-| _ < ?m => constr:m
+| _ < ?m => constr:(m)
 end.
 
 Ltac get_alphabt_hyp HH :=
 let m:= get_lt_rhs HH in 
 match goal with 
-| [ H : (forall _ : nat, _ < m -> _) |- _ ] => constr:H
+| [ H : (forall _ : nat, _ < m -> _) |- _ ] => constr:(H)
 end.
 
 Ltac prove_alpha_eq :=
@@ -2072,7 +2072,7 @@ Qed.
 
 Ltac get_alpha_lhs H :=
 match type of H with
-| alpha_eq  ?m _ => constr:m
+| alpha_eq  ?m _ => constr:(m)
 end.
 
 Ltac alpharw H := let X99:= fresh "Xalrw" in
