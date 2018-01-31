@@ -45,7 +45,7 @@ Require Export cequiv_tacs.
 Require Export seq_util.
 Require Export per_props_cequiv2.
 Require Export lsubstc_vars.
-Require Export rules_apply_callbyvalue0.
+Require Export rules_apply.
 
 
 (*
