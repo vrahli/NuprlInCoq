@@ -2,6 +2,9 @@
 
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -24,6 +27,7 @@
 
  *)
 
+
 Require Export per_props_nat.
 Require Export per_props_uni.
 
@@ -34,15 +38,9 @@ Lemma tuni_fun {o} :
 Proof.
   introv.
   apply tequality_function; dands; [apply type_tnat|].
-  introv en.
+  introv ext en.
   apply equality_in_tnat in en.
   allrw @mkcv_tuni_substc; spcast.
   allrw @mkc_var_substc.
   apply tequality_mkc_tuni; auto.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../close/")
-*** End:
-*)

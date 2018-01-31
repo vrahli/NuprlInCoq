@@ -30,6 +30,17 @@
 
 Require Export sequents.
 
+
+Lemma hyps_functionality_ext_nil {o} :
+  forall (lib : @library o),
+    hyps_functionality_ext lib [] [].
+Proof.
+  introv ext; eauto 3 with slow.
+Qed.
+Hint Resolve hyps_functionality_ext_nil : slow.
+
+
+
 (* ========= CONSISTENCY ========= *)
 
 (* end hide *)
@@ -62,8 +73,8 @@ Proof.
   repeat (dest_imp rt hyp; sp).
   rw @sequent_true_eq_VR in s.
   rw @VR_sequent_true_ex in s; allsimpl.
-  generalize (s [] []); clear s; intro s.
-  dest_imp s hyp; sp.
+  generalize (s lib (lib_extends_refl lib) [] []); clear s; intro s.
+  dest_imp s hyp; sp; eauto 3 with slow.
   dest_imp s hyp; sp; allsimpl.
   allrewrite @lsubstc_mk_false.
   proof_irr.
@@ -79,4 +90,4 @@ Lemma weak_consistency2 {o} :
     -> !(rule_true lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] [])).
 Proof.
 Qed.
-*)
+ *)

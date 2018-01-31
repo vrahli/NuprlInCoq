@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -40,7 +41,6 @@ Fixpoint sosub2_aux {o} (sub : @SOSub o) (t : SOTerm) : NTerm :=
     | Some (sosk vs u) => lsubst u (combine vs (map (sosub2_aux sub) ts))
     | None => apply_list (mk_var var) (map (sosub2_aux sub) ts)
     end
-  | soseq s => sterm s
   | soterm opid bts => oterm opid (map (sosub2_b_aux sub) bts)
   end
 with sosub2_b_aux {o} (sub : @SOSub o) (bt : SOBTerm) : BTerm :=
@@ -201,7 +201,7 @@ Lemma alpha_eq_sosub2_aub_1 {o} :
     alphaeq_sosub s1 s2
     -> alpha_eq (sosub2_aux s1 t) (sosub2_aux s2 t).
 Proof.
-  soterm_ind t as [v ts ind|f|op bs ind] Case; introv aeq; simpl in *; auto.
+  soterm_ind t as [v ts ind|op bs ind] Case; introv aeq; simpl in *; auto.
 
   - Case "sovar".
 
@@ -262,11 +262,11 @@ Lemma alpha_eq_sosub2_aub_2 {o} :
     -> so_alphaeq t1 t2
     -> alpha_eq (sosub2_aux s t1) (sosub2_aux s t2).
 Proof.
-  soterm_ind1s t1 as [v ts ind|f|op bs ind] Case; introv disj1 disj2 aeq; simpl in *; auto.
+  soterm_ind1s t1 as [v ts ind|op bs ind] Case; introv disj1 disj2 aeq; simpl in *; auto.
 
   - Case "sovar".
 
-    inversion aeq as [? ? ? len imp| |]; subst; clear aeq; simpl in *.
+    inversion aeq as [? ? ? len imp|]; subst; clear aeq; simpl in *.
 
     remember (sosub_find s (v, length ts)) as sf; symmetry in Heqsf; destruct sf.
 
@@ -301,15 +301,9 @@ Proof.
       applydup in_combine in i1; repnd.
       apply ind; auto; eauto 4 with slow.
 
-  - Case "soseq".
-
-    inversion aeq as [|? ? imp|]; subst; simpl in *; auto.
-    constructor; introv.
-    apply alphaeq_eq; apply imp.
-
   - Case "soterm".
 
-    inversion aeq as [| |? ? ? len imp]; subst; simpl in *; clear aeq.
+    inversion aeq as [|? ? ? len imp]; subst; simpl in *; clear aeq.
     apply alpha_eq_oterm_combine; autorewrite with list in *; dands; auto.
     introv i.
     allrw <- @map_combine.
@@ -345,7 +339,7 @@ Lemma alpha_eq_sosub_aux_sosub2_aub_1 {o} :
     -> disjoint (all_fo_vars t) (bound_vars_sosub s)
     -> alpha_eq (sosub_aux s t) (sosub2_aux s t).
 Proof.
-  soterm_ind t as [v ts ind|f|op bs ind] Case; introv disj2 disj3; simpl in *; auto.
+  soterm_ind t as [v ts ind|op bs ind] Case; introv disj2 disj3; simpl in *; auto.
 
   - Case "sovar".
 
