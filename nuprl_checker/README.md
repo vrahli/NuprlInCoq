@@ -23,6 +23,9 @@ In addition to using this tool to automatically check Nuprl proofs,
 one can use it as a standalone tool to build new proofs.  See
 `proof_with_lib_non_dep_example1.v` for a simple example.
 
+To run the code below, in addition to Coq, you'll need `ocamlbuild`,
+`batteries`, and `menhir`, which you can get through opam.
+
 To try our proof checker run (1 and 2 are to build our Coq formalization):
 
 1. `(cs ..; ./create_makefile.sh)`
