@@ -32,5 +32,6 @@
 
 
 Require Export rules_product.
+Require Export rules_union.
 Require Export rules_choice_roadmap.
 Require Export rules_apply_callbyvalue0.

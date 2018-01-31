@@ -198,12 +198,14 @@ Require Import weak_consistency.
 (* Function/pi type *)
  Require Import rules_function.
  Require Import rules_function2.
+*)
 
 
 (* Product/sum type *)
- Require Import rules_product.
+Require Import rules_product.
 
 
+(*
 (* Image type *)
  Require Import rules_image.
 
@@ -239,12 +241,14 @@ Require Import weak_consistency.
 
 (* Void type: *)
  Require Import rules_void.
+*)
 
 
 (* Union type: *)
- Require Import rules_union.
+Require Import rules_union.
 
 
+(*
 (* Squash rules (derivable) *)
  Require Import rules_squash.
 

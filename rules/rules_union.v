@@ -181,31 +181,35 @@ Lemma rule_inl_equality_true {p} :
   forall A B a1 a2 : NTerm,
   forall i : nat,
   forall H : @barehypotheses p,
-    rule_true lib 
-         (rule_inl_equality
+    rule_true lib
+              (rule_inl_equality
                  A B a1 a2 i H).
 Proof.
    unfold rule_inl_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   clear cargs.
-    (* We prove the well-formedness of things *)
+
+  (* We prove the well-formedness of things *)
+
   destseq; allsimpl.
   dLin_hyp; exrepnd.
   rename Hyp0 into hyp1.
   rename Hyp1 into hyp2.
   destseq; allsimpl; proof_irr; GC.
   exists (@covered_axiom p (nh_vars_hyps H)).
-   (* we now start proving the sequent *)
+
+  (* we now start proving the sequent *)
+
   vr_seq_true.
   lift_lsubst.
   rw @member_eq.
   rw <- @member_equality_iff.
 
   vr_seq_true in hyp1.
-  generalize (hyp1 s1 s2); intro h.
+  generalize (hyp1 lib' ext s1 s2); intro h.
   repeat (autodimp h hyp); exrepnd.
   vr_seq_true in hyp2.
-  generalize (hyp2 s1 s2); intro h.
+  generalize (hyp2 lib' ext s1 s2); intro h.
   repeat (autodimp h hyp); exrepnd.
   lsubst_tac.
   allrw @member_eq.
@@ -213,49 +217,73 @@ Proof.
   apply tequality_mkc_equality_implies in h0.
   apply tequality_mkc_equality_implies in h2.
   repnd.
-  generalize (teq_and_eq_if_equality lib (mk_union A B) (mk_inl a1) (mk_inl a2) s1 s2 H
-              wT w1 w2 c1 c0 c2 c3  cT cT0  eqh sim 
-              ); intro k; lsubst_tac; apply k; clear k; auto.
- 
-  - apply tequality_mkc_union; dands; auto; destruct h2 as [xx | yy];  auto.
-    + apply equality_in_uni in xx; auto.
-    + spcast. eapply equality_in_uni. apply equality_respects_cequivc; eauto.
-  - clear dependent s1.
-  clear dependent s2.
-  introv hf sim.
-  lsubst_tac.
-  generalize (hyp1 s1 s2 hf sim); clear hyp1; intro hyp1; exrepnd.
-  generalize (hyp2 s1 s2 hf sim); clear hyp2; intro hyp2; exrepnd.
-  lsubst_tac.
-  allrw @member_eq.
-  allrw <- @member_equality_iff.
-  apply tequality_mkc_equality_implies in hyp3.
-  repnd.
-  generalize_lsubstc_terms a11.
-  generalize_lsubstc_terms a22.
-  generalize_lsubstc_terms A1.
-  generalize_lsubstc_terms B1.
-  revert hyp1.
-  generalize_lsubstc_terms a21.
-  revert hyp0.
-  generalize_lsubstc_terms a12.
-  generalize_lsubstc_terms A2.
-  introv teq eq.
-  apply tequality_mkc_equality_implies in teq.
-  repnd.
-  dimp teq1.
-  assert ( type lib B1 ) as Btyp.
-  { apply equality_in_uni in hyp2.
-   eapply tequality_refl; eauto. }
-  
-  assert (equality lib a11 a22  A1) as eq2.
-  + eapply equality_trans with (t2 := a12). 
-    { destruct teq; auto; spcast. apply equality_respects_cequivc; auto. eapply equality_refl. eauto. }
-    { eapply tequality_preserving_equality; [exact hyp |apply tequality_sym;auto ]. }
-  + apply equality_mkc_union; dands; auto.
-  * eapply tequality_refl; eauto.
-  * left. eexists; eexists; dands; [spcast | spcast | exact eq2];
-    apply computes_to_valc_refl; apply iscvalue_mkc_inl.
+
+  generalize (teq_and_eq_if_equality
+                lib' (mk_union A B) (mk_inl a1) (mk_inl a2) s1 s2 H
+                wT w1 w2 c1 c0 c2 c3  cT cT0  eqh sim);
+    intro k; lsubst_tac; apply k; clear k; auto.
+
+   - apply tequality_mkc_union; dands; auto.
+     apply all_in_ex_bar_tequality_implies_tequality.
+     eapply all_in_ex_bar_modus_ponens1;try exact h2; clear h2; introv y h2; exrepnd; spcast.
+     destruct h2 as [xx | yy];  auto.
+
+     + apply equality_in_uni in xx; auto.
+
+     + spcast.
+       eapply equality_in_uni.
+       apply equality_respects_cequivc; eauto 3 with slow.
+
+   - clear dependent s1.
+     clear dependent s2.
+     introv hf sim.
+     lsubst_tac.
+     generalize (hyp1 lib' ext s1 s2 hf sim); clear hyp1; intro hyp1; exrepnd.
+     generalize (hyp2 lib' ext s1 s2 hf sim); clear hyp2; intro hyp2; exrepnd.
+     lsubst_tac.
+     allrw @member_eq.
+     allrw <- @member_equality_iff.
+     apply tequality_mkc_equality_implies in hyp3.
+     repnd.
+     generalize_lsubstc_terms a11.
+     generalize_lsubstc_terms a22.
+     generalize_lsubstc_terms A1.
+     generalize_lsubstc_terms B1.
+     revert hyp1.
+     generalize_lsubstc_terms a21.
+     revert hyp0.
+     generalize_lsubstc_terms a12.
+     generalize_lsubstc_terms A2.
+     introv teq eq.
+     apply tequality_mkc_equality_implies in teq.
+     repnd.
+
+     dimp teq1.
+     assert ( type lib' B1 ) as Btyp.
+     { apply equality_in_uni in hyp2.
+       eapply tequality_refl; eauto 3 with slow. }
+
+     assert (equality lib' a11 a22  A1) as eq2.
+     + eapply equality_trans with (t2 := a12).
+       {
+         apply all_in_ex_bar_equality_implies_equality.
+         eapply all_in_ex_bar_modus_ponens1;try exact teq; clear teq; introv y teq; exrepnd; spcast.
+         destruct teq; auto; spcast.
+         apply equality_respects_cequivc; auto.
+         eapply equality_refl; eauto 3 with slow.
+       }
+
+       {
+         eapply tequality_preserving_equality; [exact hyp |apply tequality_sym;auto ].
+       }
+
+     + apply equality_mkc_union; dands; auto.
+
+       * eapply tequality_refl; eauto.
+
+       * eapply all_in_ex_bar_modus_ponens2;[|exact teq|exact hyp3]; clear teq hyp3; introv y teq hyp3; exrepnd; spcast.
+         left.
+         eexists; eexists; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma rule_inr_equality_true {p} :
@@ -267,27 +295,31 @@ Lemma rule_inr_equality_true {p} :
          (rule_inr_equality
                  A B b1 b2 i H).
 Proof.
-   unfold rule_inr_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_inr_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   clear cargs.
-    (* We prove the well-formedness of things *)
+
+  (* We prove the well-formedness of things *)
+
   destseq; allsimpl.
   dLin_hyp; exrepnd.
   rename Hyp0 into hyp1.
   rename Hyp1 into hyp2.
   destseq; allsimpl; proof_irr; GC.
   exists (@covered_axiom p (nh_vars_hyps H)).
-   (* we now start proving the sequent *)
+
+  (* we now start proving the sequent *)
+
   vr_seq_true.
   lift_lsubst.
   rw @member_eq.
   rw <- @member_equality_iff.
 
   vr_seq_true in hyp1.
-  generalize (hyp1 s1 s2); intro h.
+  generalize (hyp1 lib' ext s1 s2); intro h.
   repeat (autodimp h hyp); exrepnd.
   vr_seq_true in hyp2.
-  generalize (hyp2 s1 s2); intro h.
+  generalize (hyp2 lib' ext s1 s2); intro h.
   repeat (autodimp h hyp); exrepnd.
   lsubst_tac.
   allrw @member_eq.
@@ -295,49 +327,70 @@ Proof.
   apply tequality_mkc_equality_implies in h0.
   apply tequality_mkc_equality_implies in h2.
   repnd.
-  generalize (teq_and_eq_if_equality lib (mk_union A B) (mk_inr b1) (mk_inr b2) s1 s2 H
-              wT w1 w2 c1 c0 c2 c3  cT cT0  eqh sim
-              ); intro k; lsubst_tac; apply k; clear k; auto.
 
-  - apply tequality_mkc_union; dands; auto; destruct h2 as [xx | yy];  auto.
+  generalize (teq_and_eq_if_equality
+                lib' (mk_union A B) (mk_inr b1) (mk_inr b2) s1 s2 H
+                wT w1 w2 c1 c0 c2 c3  cT cT0  eqh sim);
+    intro k; lsubst_tac; apply k; clear k; auto.
+
+  - apply tequality_mkc_union; dands; auto.
+    apply all_in_ex_bar_tequality_implies_tequality.
+    eapply all_in_ex_bar_modus_ponens1;try exact h2; clear h2; introv y h2; exrepnd; spcast.
+    destruct h2 as [xx | yy];  auto.
+
     + apply equality_in_uni in xx; auto.
-    + spcast. eapply equality_in_uni. apply equality_respects_cequivc; eauto.
-  - clear dependent s1.
-  clear dependent s2.
-  introv hf sim.
-  lsubst_tac.
-  generalize (hyp1 s1 s2 hf sim); clear hyp1; intro hyp1; exrepnd.
-  generalize (hyp2 s1 s2 hf sim); clear hyp2; intro hyp2; exrepnd.
-  lsubst_tac.
-  allrw @member_eq.
-  allrw <- @member_equality_iff.
-  apply tequality_mkc_equality_implies in hyp3.
-  repnd.
-  generalize_lsubstc_terms b11.
-  generalize_lsubstc_terms b22.
-  generalize_lsubstc_terms A1.
-  generalize_lsubstc_terms B1.
-  revert hyp1.
-  generalize_lsubstc_terms b21.
-  revert hyp0.
-  generalize_lsubstc_terms b12.
-  generalize_lsubstc_terms B2.
-  introv teq eq.
-  apply tequality_mkc_equality_implies in teq.
-  repnd.
-  dimp teq1.
-  assert ( type lib A1 ) as Atyp.
-  { apply equality_in_uni in hyp2.
-   eapply tequality_refl; eauto. }
 
-  assert (equality lib b11 b22  B1) as eq2.
-  + eapply equality_trans with (t2 := b12).
-    { destruct teq; auto; spcast. apply equality_respects_cequivc; auto. eapply equality_refl. eauto. }
-    { eapply tequality_preserving_equality; [exact hyp |apply tequality_sym;auto ]. }
-  + apply equality_mkc_union; dands; auto.
-  * eapply tequality_refl; eauto.
-  * right. eexists; eexists; dands; [spcast | spcast | exact eq2];
-    apply computes_to_valc_refl; apply iscvalue_mkc_inr.
+    + spcast.
+      eapply equality_in_uni.
+      apply equality_respects_cequivc; eauto 3 with slow.
+
+  - clear dependent s1.
+    clear dependent s2.
+    introv hf sim.
+    lsubst_tac.
+    generalize (hyp1 lib' ext s1 s2 hf sim); clear hyp1; intro hyp1; exrepnd.
+    generalize (hyp2 lib' ext s1 s2 hf sim); clear hyp2; intro hyp2; exrepnd.
+    lsubst_tac.
+    allrw @member_eq.
+    allrw <- @member_equality_iff.
+    apply tequality_mkc_equality_implies in hyp3.
+    repnd.
+    generalize_lsubstc_terms b11.
+    generalize_lsubstc_terms b22.
+    generalize_lsubstc_terms A1.
+    generalize_lsubstc_terms B1.
+    revert hyp1.
+    generalize_lsubstc_terms b21.
+    revert hyp0.
+    generalize_lsubstc_terms b12.
+    generalize_lsubstc_terms B2.
+    introv teq eq.
+    apply tequality_mkc_equality_implies in teq.
+    repnd.
+    dimp teq1.
+    assert ( type lib' A1 ) as Atyp.
+    { apply equality_in_uni in hyp2.
+      eapply tequality_refl; eauto. }
+
+    assert (equality lib' b11 b22  B1) as eq2.
+    + eapply equality_trans with (t2 := b12).
+      {
+         apply all_in_ex_bar_equality_implies_equality.
+         eapply all_in_ex_bar_modus_ponens1;try exact teq; clear teq; introv y teq; exrepnd; spcast.
+         destruct teq; auto; spcast.
+         apply equality_respects_cequivc; auto.
+         eapply equality_refl; eauto 3 with slow.
+      }
+
+      { eapply tequality_preserving_equality; [exact hyp |apply tequality_sym;auto ]. }
+
+    + apply equality_mkc_union; dands; auto.
+
+      * eapply tequality_refl; eauto.
+
+      * eapply all_in_ex_bar_modus_ponens2;[|exact teq|exact hyp3]; clear teq hyp3; introv y teq hyp3; exrepnd; spcast.
+        right.
+        eexists; eexists; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma rule_inl_formation_true3 {p} :
@@ -372,8 +425,8 @@ Proof.
   vr_seq_true.
   vr_seq_true in hyp1.
   vr_seq_true in hyp2.
-  pose proof (hyp1 s1 s2 eqh sim) as q.
-  pose proof (hyp2 s1 s2 eqh sim) as h.
+  pose proof (hyp1 lib' ext s1 s2 eqh sim) as q.
+  pose proof (hyp2 lib' ext s1 s2 eqh sim) as h.
   clear hyp1 hyp2.
   exrepnd.
   lsubst_tac.
@@ -387,9 +440,10 @@ Proof.
     try (complete (eapply member_in_uni; eauto));
     try (complete (eapply inhabited_implies_tequality; eauto)).
 
+  apply in_ext_implies_all_in_ex_bar; introv y.
   left.
   exists (lsubstc s wfce0 s1 pt4) (lsubstc s wfce0 s2 pt5).
-  dands; spcast; auto; try (apply computes_to_valc_refl; eauto 3 with slow).
+  dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma rule_inr_formation_true3 {p} :
@@ -424,8 +478,8 @@ Proof.
   vr_seq_true.
   vr_seq_true in hyp1.
   vr_seq_true in hyp2.
-  pose proof (hyp1 s1 s2 eqh sim) as q.
-  pose proof (hyp2 s1 s2 eqh sim) as h.
+  pose proof (hyp1 lib' ext s1 s2 eqh sim) as q.
+  pose proof (hyp2 lib' ext s1 s2 eqh sim) as h.
   clear hyp1 hyp2.
   exrepnd.
   lsubst_tac.
@@ -439,9 +493,45 @@ Proof.
     try (complete (eapply member_in_uni; eauto));
     try (complete (eapply inhabited_implies_tequality; eauto)).
 
+  apply in_ext_implies_all_in_ex_bar.
   right.
   exists (lsubstc s wfce0 s1 pt4) (lsubstc s wfce0 s2 pt5).
-  dands; spcast; auto; try (apply computes_to_valc_refl; eauto 3 with slow).
+  dands; spcast; eauto 3 with slow.
+Qed.
+
+(* MOVE to per_props_util *)
+Lemma all_in_ex_bar_modus_ponens4 {o} :
+  forall (lib : @library o) (G H K L F : library -> Prop),
+    in_ext lib (fun lib => G lib -> H lib -> K lib -> L lib -> F lib)
+    -> all_in_ex_bar lib G
+    -> all_in_ex_bar lib H
+    -> all_in_ex_bar lib K
+    -> all_in_ex_bar lib L
+    -> all_in_ex_bar lib F.
+Proof.
+  introv h q z w x.
+  unfold all_in_ex_bar in *; exrepnd.
+  apply (implies_all_in_bar_intersect_bars_left _ bar) in q0.
+  apply (implies_all_in_bar_intersect_bars_left _ bar0) in q0.
+  apply (implies_all_in_bar_intersect_bars_left _ bar1) in q0.
+  apply (implies_all_in_bar_intersect_bars_right _ (intersect_bars (intersect_bars bar2 bar) bar0)) in z0.
+  apply (implies_all_in_bar_intersect_bars_right _ (intersect_bars bar2 bar)) in w0.
+  apply (implies_all_in_bar_intersect_bars_left _ bar1) in w0.
+  apply (implies_all_in_bar_intersect_bars_right _ bar2) in x0.
+  apply (implies_all_in_bar_intersect_bars_left _ bar0) in x0.
+  apply (implies_all_in_bar_intersect_bars_left _ bar1) in x0.
+  remember (intersect_bars (intersect_bars (intersect_bars bar2 bar) bar0) bar1) as bar'.
+  clear dependent bar2.
+  clear dependent bar0.
+  clear dependent bar1.
+  clear dependent bar.
+  exists bar'.
+  introv br ext.
+  pose proof (q0 _ br _ ext) as q0; simpl in *.
+  pose proof (w0 _ br _ ext) as w0; simpl in *.
+  pose proof (z0 _ br _ ext) as z0; simpl in *.
+  pose proof (x0 _ br _ ext) as x0; simpl in *.
+  apply h; eauto 3 with slow.
 Qed.
 
 Lemma rule_union_equality_true {p} :
@@ -488,73 +578,79 @@ Proof.
   (* xxx *)
   (* done with proving these simple facts *)
 
-  allrw @sequent_true_eq_VR.
-  rw @VR_sequent_true_all; simpl; introv sim eqh.
-  intros.
+  vr_seq_true.
   lsubst_tac.
-  assert ( tequality lib (mkc_uni i) (mkc_uni i)) as Z by
-   (apply tequality_mkc_uni).
+  assert (tequality lib (mkc_uni i) (mkc_uni i)) as Z by
+        (apply tequality_mkc_uni).
   assert (wf_term (mk_union A1 B1)) as wfa by (apply wf_union; auto).
   assert (wf_term (mk_union A2 B2)) as wfb by (apply wf_union; auto).
-   
-  pose proof (teq_and_eq_if_equality lib (@mk_uni p i) (mk_union A1 B1) (mk_union A2 B2)
-              s1 s2 H wT wfa wfb c1 c0 c2 c3 cT cT0 eqh sim) as X.
+
+  pose proof (teq_and_eq_if_equality
+                lib' (@mk_uni p i) (mk_union A1 B1) (mk_union A2 B2)
+                s1 s2 H wT wfa wfb c1 c0 c2 c3 cT cT0 eqh sim) as X.
   lsubst_tac.
-  allrw @member_eq;
-  allrw <- @member_equality_iff. 
-  apply X; auto.
+  allrw @member_eq; allrw <- @member_equality_iff.
+  apply X; eauto 3 with slow.
   introv hfun ss.
   lsubst_tac.
   clear dependent s1.
   clear dependent s2.
   rename s0 into s1.
   rename s3 into s2.
-  
-  
+
   apply equality_union_in_uni.
-  rw @VR_sequent_true_ex in hyp1; rw @VR_sequent_true_ex in hyp2. allsimpl. 
-  generalize (hyp1 s1 s2) (hyp2 s1 s2); clear hyp1 hyp2; intros hyp1 hyp2.
+
+  vr_seq_true in hyp1.
+  vr_seq_true in hyp2.
+  pose proof (hyp1 lib' ext s1 s2) as hyp1.
+  pose proof (hyp2 lib' ext s1 s2) as hyp2.
   repeat (dest_imp hyp1 h); repeat (dest_imp hyp2 h); exrepnd.
   lsubst_tac.
-  allrw @member_eq;
-  allrw <- @member_equality_iff.
+  allrw @member_eq; allrw <- @member_equality_iff.
   rw @tequality_mkc_equality in hyp0; rw @tequality_mkc_equality in hyp3; repnd.
   dands; auto.
+
   - generalize_lsubstc_terms A11.
     generalize_lsubstc_terms A22.
-    revert hyp3. generalize_lsubstc_terms A21.
-    revert hyp6. generalize_lsubstc_terms A12.
-    introv aa. 
-    assert (equality lib A11 A12 (mkc_uni i)) as eq1 by
-      ( destruct aa; auto;
-        spcast; apply equality_respects_cequivc; auto;
-         eapply equality_refl; eauto).
-    assert (equality lib A21 A11 (mkc_uni i)) by
-      (apply equality_sym; auto).
-    introv bb. 
-    assert (equality lib A21 A22 (mkc_uni i)) as eq2 by
-      (destruct bb; auto;
-        spcast; apply equality_respects_cequivc; auto;
-         eapply equality_refl; eauto).
-    eapply equality_trans; [exact hyp1 | auto].
-    
-  -  generalize_lsubstc_terms B11.
+    revert hyp3; generalize_lsubstc_terms A21.
+    revert hyp6; generalize_lsubstc_terms A12.
+    introv aa bb.
+
+    apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens4;[|exact hyp9|exact hyp0|exact aa|exact bb]; clear hyp9 hyp0 aa bb; introv y hyp9 hyp0 aa bb; exrepnd; spcast.
+
+    assert (equality lib'0 A11 A12 (mkc_uni i)) as eq1 by
+          ( destruct aa; auto;
+            spcast; apply equality_respects_cequivc; auto;
+            eapply equality_refl; eauto 3 with slow).
+    assert (equality lib'0 A21 A11 (mkc_uni i)) by
+        (apply equality_sym; eauto 3 with slow).
+    assert (equality lib'0 A21 A22 (mkc_uni i)) as eq2 by
+          (destruct bb; auto;
+           spcast; apply equality_respects_cequivc; auto;
+           eapply equality_refl; eauto 3 with slow).
+    eapply equality_trans; [eapply equality_monotone; try exact hyp1 | auto]; eauto 3 with slow.
+
+  - generalize_lsubstc_terms B11.
     generalize_lsubstc_terms B22.
-    revert hyp0. generalize_lsubstc_terms B21.
-    revert hyp9. generalize_lsubstc_terms B12.
-    introv aa. 
-    assert (equality lib B11 B12 (mkc_uni i)) as eq1 by
-      ( destruct aa; auto;
-        spcast; apply equality_respects_cequivc; auto;
-         eapply equality_refl; eauto).
-    assert (equality lib B21 B11 (mkc_uni i)) by
-      (apply equality_sym; auto).
-    introv bb. 
-    assert (equality lib B21 B22 (mkc_uni i)) as eq2 by
-      (destruct bb; auto;
-        spcast; apply equality_respects_cequivc; auto;
-         eapply equality_refl; eauto).
-    eapply equality_trans; [exact hyp2 | auto].
+    revert hyp0; generalize_lsubstc_terms B21.
+    revert hyp9; generalize_lsubstc_terms B12.
+    introv aa bb.
+
+    apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens4;[|exact hyp6|exact hyp3|exact aa|exact bb]; clear hyp6 hyp3 aa bb; introv y hyp6 hyp3 aa bb; exrepnd; spcast.
+
+    assert (equality lib'0 B11 B12 (mkc_uni i)) as eq1 by
+          ( destruct aa; auto;
+            spcast; apply equality_respects_cequivc; auto;
+            eapply equality_refl; eauto 3 with slow).
+    assert (equality lib'0 B21 B11 (mkc_uni i)) by
+        (apply equality_sym; eauto 3 with slow).
+    assert (equality lib'0 B21 B22 (mkc_uni i)) as eq2 by
+          (destruct bb; auto;
+           spcast; apply equality_respects_cequivc; auto;
+           eapply equality_refl; eauto 3 with slow).
+    eapply equality_trans; [eapply equality_monotone; try exact hyp2 | auto]; eauto 3 with slow.
 Qed.
 
 
