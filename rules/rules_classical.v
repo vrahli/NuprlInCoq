@@ -127,16 +127,26 @@ Proof.
   }
   (* end proof of assert *)
 
+  clear hyp1.
+  clear lib ext.
+  rename lib' into lib.
   dands; spcast; eauto 3 with slow;[].
 
-  generalize (classic (in_ext lib' (fun lib => inhabited_type lib (lsubstc P w0 s1 c0)))); intro inh.
+  (*
+  apply in_ext_implies_all_in_ex_bar; introv xt.
+  eapply tequality_monotone in teq;[|eauto].
+  clear lib xt sim eqh.
+  rename lib' into lib.
+   *)
+
+  generalize (classic (all_in_ex_bar lib (fun lib => inhabited_type lib (lsubstc P w0 s1 c0)))); intro inh.
   destruct inh as [inh | ninh].
 
   {
     (* First, we assume that P is inhabited *)
-    pose proof (inh lib' (lib_extends_refl lib')) as inh; simpl in * |-.
+    eapply all_in_ex_bar_modus_ponens1;try exact inh; clear inh; introv y inh; exrepnd; spcast.
+    (*destruct inh as [lib' [ext' inh] ].*)
     destruct inh as [t inh].
-    apply in_ext_implies_all_in_ex_bar; introv xt.
     exists (mkc_inl t).
     rw @equality_mkc_union; dands; auto;
       try (complete (allapply @tequality_refl; eauto 3 with slow));
@@ -157,7 +167,9 @@ Proof.
     right.
     exists (@mkc_axiom o) (@mkc_axiom o); auto; dands; spcast; eauto 3 with slow.
     rw @equality_in_not; dands; auto; allapply @tequality_refl; eauto 3 with slow.
-    introv y.
+    introv y inh.
+    destruct ninh.
+
   }
 Qed.
 
