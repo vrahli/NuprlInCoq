@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -37,6 +38,7 @@ Require Export Classical_Prop.
 Require Export per_props_union.
 Require Export per_props_equality.
 Require Export per_props_squash.
+Require Export per_props_not.
 Require Export sequents_squash.
 
 (** printing |- $\vdash$ *)
@@ -112,39 +114,49 @@ Proof.
   rw @member_eq.
   rw @equality_in_mkc_squash.
 
-  assert (tequality lib (lsubstc P w0 s1 c0) (lsubstc P w0 s2 c4)) as teq.
+  assert (tequality lib' (lsubstc P w0 s1 c0) (lsubstc P w0 s2 c4)) as teq.
   (* begin proof of assert *)
-  vr_seq_true in hyp1.
-  generalize (hyp1 s1 s2 eqh sim); clear hyp1; intro hyp1; exrepnd.
-  lsubst_tac.
-  rw @member_eq in hyp1.
-  rw <- @member_member_iff in hyp1.
-  apply member_in_uni in hyp1.
-  apply tequality_in_uni_implies_tequality in hyp0; auto.
+  {
+    vr_seq_true in hyp1.
+    generalize (hyp1 lib' ext s1 s2 eqh sim); clear hyp1; intro hyp1; exrepnd; eauto 3 with slow.
+    lsubst_tac.
+    rw @member_eq in hyp1.
+    rw <- @member_member_iff in hyp1.
+    apply member_in_uni in hyp1.
+    apply tequality_in_uni_implies_tequality in hyp0; eauto 3 with slow.
+  }
   (* end proof of assert *)
 
-  dands; auto; try (spcast; computes_to_value_refl).
+  dands; spcast; eauto 3 with slow;[].
 
-  generalize (classic (inhabited_type lib (lsubstc P w0 s1 c0))); intro inh.
+  generalize (classic (inhabited_type lib' (lsubstc P w0 s1 c0))); intro inh.
   destruct inh as [inh | ninh].
 
-  (* First, we assume that P is inhabited *)
-  destruct inh as [t inh].
-  exists (mkc_inl t).
-  rw @equality_mkc_union; dands; auto;
-  try (complete (allapply @tequality_refl; auto));
-  try (complete (rw @tequality_not; allapply @tequality_refl; auto)).
-  left.
-  exists t t; auto; dands; try (spcast; computes_to_value_refl); auto.
+  {
+    (* First, we assume that P is inhabited *)
+    destruct inh as [t inh].
+    apply in_ext_implies_all_in_ex_bar; introv xt.
+    exists (mkc_inl t).
+    rw @equality_mkc_union; dands; auto;
+      try (complete (allapply @tequality_refl; eauto 3 with slow));
+      try (complete (rw @tequality_not; allapply @tequality_refl; eauto 3 with slow));[].
+    apply in_ext_implies_all_in_ex_bar; introv xt'.
+    left.
+    exists t t; auto; dands; spcast; eauto 3 with slow.
+  }
 
-  (* Now, we assume that P is not inhabited *)
-  exists (@mkc_inr o mkc_axiom).
-  rw @equality_mkc_union; dands; auto;
-  try (complete (allapply @tequality_refl; auto));
-  try (complete (rw @tequality_not; allapply @tequality_refl; auto)).
-  right.
-  exists (@mkc_axiom o) (@mkc_axiom o); auto; dands; try (spcast; computes_to_value_refl); auto.
-  rw @equality_in_not; dands; auto; allapply @tequality_refl; auto.
+  {
+    (* Now, we assume that P is not inhabited *)
+    apply in_ext_implies_all_in_ex_bar; introv xt.
+    exists (@mkc_inr o mkc_axiom).
+    rw @equality_mkc_union; dands; auto;
+      try (complete (allapply @tequality_refl; eauto 3 with slow));
+      try (complete (rw @tequality_not; allapply @tequality_refl; eauto 3 with slow)).
+    apply in_ext_implies_all_in_ex_bar; introv xt'.
+    right.
+    exists (@mkc_axiom o) (@mkc_axiom o); auto; dands; spcast; eauto 3 with slow.
+    rw @equality_in_not; dands; auto; allapply @tequality_refl; eauto 3 with slow.
+  }
 Qed.
 
 (* begin hide *)
