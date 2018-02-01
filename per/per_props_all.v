@@ -53,13 +53,13 @@ Require Export per_props_image.
 Require Export per_props_squash.
 Require Export per_props_cequiv2.
 Require Export per_props_cs.
+Require Export per_props_uni2.
 
 (*
 (* NOT FIXED *)
 Require Export per_props_iff.
 Require Export per_props_w.
 Require Export per_props_pertype.
-Require Export per_props_uni2.
 Require Export per_props_true.
 Require Export per_props_tequality.
 Require Export per_props_erase.

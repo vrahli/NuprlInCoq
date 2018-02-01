@@ -31,7 +31,42 @@
  *)
 
 
+
+Require Export per_props_util.
 Require Export per_props_uni.
+Require Export types_converge.
+
+
+Lemma tequality_converge_left {o} :
+  forall lib (t1 t2 : @CTerm o), tequality lib t1 t2 -> chaltsc_bar lib t1.
+Proof.
+  introv teq.
+  apply tequality_refl in teq.
+  apply types_converge in teq; auto.
+Qed.
+
+Lemma tequality_converge_right {o} :
+  forall lib (t1 t2 : @CTerm o), tequality lib t1 t2 -> chaltsc_bar lib t2.
+Proof.
+  introv teq.
+  apply tequality_sym in teq.
+  apply tequality_refl in teq.
+  apply types_converge in teq; auto.
+Qed.
+
+Lemma nuprl_converge_left {o} :
+  forall lib (t1 t2 : @CTerm o) eq, nuprl lib t1 t2 eq -> chaltsc_bar lib t1.
+Proof.
+  introv teq.
+  eapply tequality_converge_left; exists eq; eauto.
+Qed.
+
+Lemma nuprl_converge_right {o} :
+  forall lib (t1 t2 : @CTerm o) eq, nuprl lib t1 t2 eq -> chaltsc_bar lib t2.
+Proof.
+  introv teq.
+  eapply tequality_converge_right; exists eq; eauto.
+Qed.
 
 
 (*(* This is not provable, because in general we can't find the type level
@@ -125,7 +160,7 @@ Proof.
     inversion comp; subst; allsimpl; tcsp.
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
     csunf r1; allsimpl.
-    destruct t as [v|f|op bs]; allsimpl; ginv.
+    destruct t as [v|op bs]; allsimpl; ginv.
     dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv.
     + apply compute_step_tuni_success in r1; exrepnd; subst; GC; fold_terms.
       exists n; dands; eauto 3 with slow.
@@ -149,35 +184,170 @@ Proof.
       eapply reduces_to_if_split2; eauto.
 Qed.
 
+Lemma hasvaluec_implies_computes_to_valc {o} :
+  forall lib (a : @CTerm o),
+    hasvaluec lib a -> {b : CTerm $ computes_to_valc lib a b }.
+Proof.
+  introv hv; destruct_cterms.
+  unfold hasvaluec in *; simpl in *.
+  unfold hasvalue in *; exrepnd.
+  applydup @computes_to_value_implies_isprogram in hv0.
+  exists (mk_cterm t' hv1); unfold computes_to_valc; simpl; auto.
+Qed.
+
+Lemma dest_nuprl_uni_diff {o} :
+  forall (lib : @library o) i j eq,
+    nuprl lib (mkc_uni i) (mkc_uni j) eq
+    -> univ lib  (mkc_uni i) (mkc_uni j) eq.
+Proof.
+  introv cl.
+  eapply dest_close_per_uni_l in cl;
+    try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
+Qed.
+
+
+Lemma univ_implies_univi_bar_diff {o} :
+  forall lib i1 i2 (eq : per(o)),
+    univ lib (mkc_uni i1) (mkc_uni i2) eq
+    -> i1 = i2 # exists k, i1 < k # univi_bar k lib (mkc_uni i1) (mkc_uni i1) eq.
+Proof.
+  introv u.
+  dands.
+
+  {
+    unfold univ, univi_bar, per_bar in *; exrepnd.
+    pose proof (bar_non_empty bar) as q; exrepnd.
+    assert (lib_extends lib' lib) as ext by eauto 3 with slow.
+    pose proof (u0 _ q0 _ (lib_extends_refl lib') ext) as u0; simpl in *.
+    unfold univ_ex in u0; exrepnd.
+    allrw @univi_exists_iff; exrepnd; spcast.
+    computes_to_value_isvalue.
+  }
+
+  exists (S i1); dands; try omega.
+  unfold univ, univi_bar, per_bar in *; exrepnd.
+  exists bar eqa; dands; auto.
+  introv br ext; introv.
+  pose proof (u0 _ br _ ext x) as u0; simpl in *.
+  unfold univ_ex in u0; exrepnd.
+  allrw @univi_exists_iff; exrepnd; spcast.
+  computes_to_value_isvalue.
+  left; dands; spcast; auto; eauto 3 with slow.
+Qed.
+
+Lemma univ_implies_univi_bar2_diff {o} :
+  forall lib i1 i2 (eq : per(o)),
+    univ lib (mkc_uni i1) (mkc_uni i2) eq
+    ->
+    i1 = i2 #
+    exists (bar : BarLib lib) (eqa : lib-per(lib,o)),
+      (eq <=2=> (per_bar_eq bar eqa))
+        # all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (univi_eq (univi_bar i2) lib')).
+Proof.
+  introv u.
+  unfold univ, univi_bar, per_bar in u; exrepnd.
+
+  dands.
+
+  {
+    pose proof (bar_non_empty bar) as q; exrepnd.
+    assert (lib_extends lib' lib) as ext by eauto 3 with slow.
+    pose proof (u0 _ q0 _ (lib_extends_refl lib') ext) as u0; simpl in *.
+    unfold univ_ex in u0; exrepnd.
+    allrw @univi_exists_iff; exrepnd; spcast.
+    computes_to_value_isvalue.
+  }
+
+  exists bar eqa; dands; auto.
+  introv br ext; introv.
+  pose proof (u0 _ br _ ext x) as u0; simpl in *.
+  unfold univ_ex in u0; exrepnd.
+  allrw @univi_exists_iff; exrepnd; spcast.
+  computes_to_value_isvalue.
+Qed.
+
+Lemma univ_implies_univi_bar3_diff {o} :
+  forall lib i1 i2 (eq : per(o)),
+    univ lib (mkc_uni i1) (mkc_uni i2) eq
+    ->
+    i1 = i2 #
+    exists (bar : BarLib lib),
+      eq <=2=> (per_bar_eq bar (univi_eq_lib_per lib i1)).
+Proof.
+  introv u.
+  apply univ_implies_univi_bar2_diff in u; exrepnd; subst.
+  dands; auto.
+  exists bar.
+  eapply eq_term_equals_trans;[eauto|].
+  apply implies_eq_term_equals_per_bar_eq.
+  apply all_in_bar_ext_intersect_bars_same; simpl; auto.
+Qed.
+
+Lemma dest_nuprl_tuni_sub_per {o} :
+  forall (lib : @library o) a b eq,
+    nuprl lib (mkc_tuni a) (mkc_tuni b) eq
+    ->
+    all_in_ex_bar
+      lib
+      (fun lib =>
+         exists i,
+           ccomputes_to_valc lib a (mkc_nat i)
+           /\ ccomputes_to_valc lib b (mkc_nat i)
+           /\ exists (bar : BarLib lib), sub_per eq (per_bar_eq bar (univi_eq_lib_per lib i))).
+Proof.
+  introv cl.
+  applydup @nuprl_converge_left in cl.
+  applydup @nuprl_converge_right in cl.
+  eapply all_in_ex_bar_modus_ponens2;[|exact cl0|exact cl1]; clear cl0 cl1; introv x cl0 cl1; exrepnd; spcast.
+
+  apply hasvaluec_implies_computes_to_valc in cl0; exrepnd.
+  apply hasvaluec_implies_computes_to_valc in cl1; exrepnd.
+
+  apply nuprl_monotone_func2 in cl; exrepnd.
+  pose proof (cl1 _ x) as cl1; repnd.
+
+  eapply nuprl_value_respecting_left in cl3;
+    [|apply computes_to_valc_implies_ccequivc_ext;eauto].
+  eapply nuprl_value_respecting_right in cl3;
+    [|apply computes_to_valc_implies_ccequivc_ext;eauto].
+
+  apply computes_to_valc_tuni_implies in cl2.
+  apply computes_to_valc_tuni_implies in cl0.
+  exrepnd; subst.
+  apply dest_nuprl_uni_diff in cl3.
+  apply univ_implies_univi_bar3_diff in cl3; repnd; subst.
+  exists k; dands; spcast; auto.
+  exrepnd.
+  exists bar.
+  introv h.
+  apply cl4 in h; apply cl5 in h; auto.
+Qed.
+
 Lemma tequality_mkc_tuni {o} :
   forall lib (a b : @CTerm o),
     tequality lib (mkc_tuni a) (mkc_tuni b)
-    <=> equality_of_nat lib a b.
+    <=> equality_of_nat_bar lib a b.
 Proof.
   introv.
   split; intro k.
 
   - unfold tequality in k; exrepnd.
-    inversion k0; subst; try not_univ;
-    try (complete (allunfold_per; computes_to_value_isvalue; allfold (@nuprl o);
-                   allapply @computes_to_valc_tuni_implies; exrepnd; ginv;
-                   match goal with [ H : _ |- _ ] => complete (eqconstr H) end)).
-    clear k0.
-    duniv j h.
-    allrw @univi_exists_iff; exrepd; spcast.
-    allapply @computes_to_valc_tuni_implies; exrepnd; ginv.
-    exists k0; dands; spcast; auto.
+    apply dest_nuprl_tuni_sub_per in k0.
+    eapply all_in_ex_bar_modus_ponens1;[|exact k0]; clear k0; introv x k0; exrepnd; spcast.
+    exists i; dands; spcast; auto.
 
-  - unfold equality_of_nat in k; exrepnd; spcast.
-    unfold tequality.
-    pose proof (computes_to_valc_tuni lib a (Z.of_nat k0)) as c1.
-    pose proof (computes_to_valc_tuni lib b (Z.of_nat k0)) as c2.
+  - apply all_in_ex_bar_tequality_implies_tequality.
+    eapply all_in_ex_bar_modus_ponens1;[|exact k]; clear k; introv x k; exrepnd; spcast.
+    unfold equality_of_nat in k; exrepnd; spcast.
+    pose proof (computes_to_valc_tuni lib' a (Z.of_nat n)) as c1.
+    pose proof (computes_to_valc_tuni lib' b (Z.of_nat n)) as c2.
     allrw @Znat.Nat2Z.id; fold_terms.
+    allrw <- @mkc_nat_eq.
     repeat (autodimp c1 hyp); try omega.
     repeat (autodimp c2 hyp); try omega.
-    exists (fun A A' => (exists eqa, close lib (univi lib k0) A A' eqa)).
-    apply CL_init.
-    exists (S k0).
-    left.
-    dands; spcast; auto.
+    eapply tequality_respects_cequivc_left;
+      [apply ccequivc_ext_sym; apply computes_to_valc_implies_ccequivc_ext;eauto|].
+    eapply tequality_respects_cequivc_right;
+      [apply ccequivc_ext_sym; apply computes_to_valc_implies_ccequivc_ext;eauto|].
+    apply tequality_mkc_uni.
 Qed.

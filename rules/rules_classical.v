@@ -129,11 +129,12 @@ Proof.
 
   dands; spcast; eauto 3 with slow;[].
 
-  generalize (classic (inhabited_type lib' (lsubstc P w0 s1 c0))); intro inh.
+  generalize (classic (in_ext lib' (fun lib => inhabited_type lib (lsubstc P w0 s1 c0)))); intro inh.
   destruct inh as [inh | ninh].
 
   {
     (* First, we assume that P is inhabited *)
+    pose proof (inh lib' (lib_extends_refl lib')) as inh; simpl in * |-.
     destruct inh as [t inh].
     apply in_ext_implies_all_in_ex_bar; introv xt.
     exists (mkc_inl t).
@@ -156,6 +157,7 @@ Proof.
     right.
     exists (@mkc_axiom o) (@mkc_axiom o); auto; dands; spcast; eauto 3 with slow.
     rw @equality_in_not; dands; auto; allapply @tequality_refl; eauto 3 with slow.
+    introv y.
   }
 Qed.
 

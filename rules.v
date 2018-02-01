@@ -44,9 +44,9 @@ Require Import swap.
 Require Import rules_all.
 
 
-(*
 (* contains a proof that n:Nat->Univ(n) is a Nuprl type: *)
- Require Import function_all_types.
+Require Import function_all_types.
+(*
 (* contains a proof that U(n:Nat;Univ(n)) is a Nuprl type: *)
  Require Import union_all_types.
  *)

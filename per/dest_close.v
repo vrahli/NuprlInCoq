@@ -62,7 +62,7 @@ Require Export dest_close_base.
 Require Export dest_close_atom.
 Require Export dest_close_uatom.
 Require Export dest_close_uni.
-(*Require Export dest_close_tuni.*)
+Require Export dest_close_tuni.
 
 
 
@@ -983,20 +983,18 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_uni_ceq_bar_r ts lib T i T' eq bar H1 H2 H3); intro h; no_duplicate h
 
-(*    (* tuni *)
-    | [ H1 : type_system ?ts,
-        H2 : defines_only_universes ?ts,
-        H3 : computes_to_valc ?lib ?T (mkc_tuni ?i),
-        H4 : close ?ts ?lib ?T ?T' ?eq
+    (* tuni *)
+    | [ H1 : local_ts ?ts,
+        H2 : computes_to_valc ?lib ?T (mkc_tuni ?i),
+        H3 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_tuni_l ts lib T i T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_tuni_l ts lib T i T' eq H1 H2 H3); intro h; no_duplicate h
 
-    | [ H1 : type_system ?ts,
-        H2 : defines_only_universes ?ts,
-        H3 : computes_to_valc ?lib ?T' (mkc_tuni ?i),
-        H4 : close ?ts ?lib ?T ?T' ?eq
+    | [ H1 : local_ts ?ts,
+        H2 : computes_to_valc ?lib ?T' (mkc_tuni ?i),
+        H3 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
-      generalize (dest_close_per_tuni_r ts lib T i T' eq H1 H2 H3 H4); intro h; no_duplicate h*)
+      generalize (dest_close_per_tuni_r ts lib T i T' eq H1 H2 H3); intro h; no_duplicate h
 
   end.
 

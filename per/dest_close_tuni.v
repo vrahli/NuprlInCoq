@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -31,28 +32,31 @@
 
 
 Require Export dest_close_tacs.
+Require Export local.
 
 
 Lemma dest_close_per_tuni_l {p} :
   forall (ts : cts(p)) lib T i T' eq,
-    type_system ts
-    -> defines_only_universes ts
+    local_ts ts
     -> computes_to_valc lib T (mkc_tuni i)
     -> close ts lib T T' eq
     -> ts lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
-  inversion cl; subst; try close_diff_all; auto.
+  introv locts comp cl.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  eapply locts; eauto.
+  introv br ext; introv; eapply reca; eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_tuni_r {p} :
   forall (ts : cts(p)) lib T i T' eq,
-    type_system ts
-    -> defines_only_universes ts
+    local_ts ts
     -> computes_to_valc lib T' (mkc_tuni i)
     -> close ts lib T T' eq
     -> ts lib T T' eq.
 Proof.
-  introv tysys dou comp cl.
-  inversion cl; subst; try close_diff_all; auto.
+  introv locts comp cl.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  eapply locts; eauto.
+  introv br ext; introv; eapply reca; eauto 3 with slow.
 Qed.
