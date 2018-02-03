@@ -167,6 +167,12 @@ Proof.
     right.
     exists (@mkc_axiom o) (@mkc_axiom o); auto; dands; spcast; eauto 3 with slow.
     rw @equality_in_not; dands; auto; allapply @tequality_refl; eauto 3 with slow.
+
+    (*
+        To prove the negation of this squashed LEM, we need a proposition which is false
+        in the current library and some extensions
+     *)
+
     introv y inh.
     destruct ninh.
 

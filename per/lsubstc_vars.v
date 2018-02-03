@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -116,6 +117,98 @@ Lemma lsubstc_vars_mk_apply_as_mkcv {o} :
      & {c2 : cover_vars_upto t2 s vs
      & lsubstc_vars (mk_apply t1 t2) w s vs c
        = mkcv_apply
+           vs
+           (lsubstc_vars t1 w1 s vs c1)
+           (lsubstc_vars t2 w2 s vs c2) }}}}.
+Proof.
+  introv.
+
+  dup w as w'.
+  rw <- @wf_apply_iff in w'; repnd.
+  dup c as c'.
+  rw @cover_vars_upto_apply in c'; repnd.
+
+  exists w'0 w' c'0 c'.
+  apply cvterm_eq; simpl.
+  unfold csubst.
+  repeat unflsubst.
+  simpl; fold_terms.
+  allrw @sub_filter_nil_r; auto.
+Qed.
+
+Lemma isprog_vars_or_implies {p} :
+  forall vs (a b : @NTerm p),
+    isprog_vars vs a
+    -> isprog_vars vs b
+    -> isprog_vars vs (mk_or a b).
+Proof.
+  introv ispa ispb.
+  allrw @isprog_vars_eq.
+  simpl in *; autorewrite with slow.
+  repnd; dands; auto.
+  { rw subvars_app_l; dands; auto. }
+  { repeat constructor; simpl; introv k; repndors; subst; tcsp; constructor; auto. }
+Qed.
+
+Lemma isprog_vars_union_implies {p} :
+  forall vs (a b : @NTerm p),
+    isprog_vars vs a
+    -> isprog_vars vs b
+    -> isprog_vars vs (mk_union a b).
+Proof.
+  introv ispa ispb.
+  allrw @isprog_vars_eq.
+  simpl in *; autorewrite with slow.
+  repnd; dands; auto.
+  { rw subvars_app_l; dands; auto. }
+  { repeat constructor; simpl; introv k; repndors; subst; tcsp; constructor; auto. }
+Qed.
+
+Definition mkcv_union {p} vs (A B : @CVTerm p vs) : CVTerm vs :=
+  let (a,x) := A in
+  let (b,y) := B in
+  exist (isprog_vars vs) (mk_union a b) (isprog_vars_union_implies vs a b x y).
+
+Definition mkcv_or {p} vs (A B : @CVTerm p vs) : CVTerm vs :=
+  let (a,x) := A in
+  let (b,y) := B in
+  exist (isprog_vars vs) (mk_or a b) (isprog_vars_or_implies vs a b x y).
+
+Lemma lsubstc_vars_mk_union_as_mkcv {o} :
+  forall (t1 t2 : @NTerm o) w s vs c,
+    {w1 : wf_term t1
+     & {w2 : wf_term t2
+     & {c1 : cover_vars_upto t1 s vs
+     & {c2 : cover_vars_upto t2 s vs
+     & lsubstc_vars (mk_union t1 t2) w s vs c
+       = mkcv_union
+           vs
+           (lsubstc_vars t1 w1 s vs c1)
+           (lsubstc_vars t2 w2 s vs c2) }}}}.
+Proof.
+  introv.
+
+  dup w as w'.
+  rw <- @wf_apply_iff in w'; repnd.
+  dup c as c'.
+  rw @cover_vars_upto_apply in c'; repnd.
+
+  exists w'0 w' c'0 c'.
+  apply cvterm_eq; simpl.
+  unfold csubst.
+  repeat unflsubst.
+  simpl; fold_terms.
+  allrw @sub_filter_nil_r; auto.
+Qed.
+
+Lemma lsubstc_vars_mk_or_as_mkcv {o} :
+  forall (t1 t2 : @NTerm o) w s vs c,
+    {w1 : wf_term t1
+     & {w2 : wf_term t2
+     & {c1 : cover_vars_upto t1 s vs
+     & {c2 : cover_vars_upto t2 s vs
+     & lsubstc_vars (mk_or t1 t2) w s vs c
+       = mkcv_or
            vs
            (lsubstc_vars t1 w1 s vs c1)
            (lsubstc_vars t2 w2 s vs c2) }}}}.
@@ -407,6 +500,36 @@ Ltac lsubstc_vars_as_mkcv :=
         clear hyp;
         proof_irr
 
+    | [ H : context[lsubstc_vars (mk_union ?t1 ?t2) ?w ?s ?vs ?c] |- _ ] =>
+      let hyp := fresh "hyp" in
+      let wf1 := fresh "w1" in
+      let wf2 := fresh "w2" in
+      let cv1 := fresh "c1" in
+      let cv2 := fresh "c2" in
+      pose proof (lsubstc_vars_mk_union_as_mkcv t1 t2 w s vs c) as hyp;
+        destruct hyp as [wf1 hyp];
+        destruct hyp as [wf2 hyp];
+        destruct hyp as [cv1 hyp];
+        destruct hyp as [cv2 hyp];
+        rewrite hyp in H;
+        clear hyp;
+        proof_irr
+
+    | [ H : context[lsubstc_vars (mk_or ?t1 ?t2) ?w ?s ?vs ?c] |- _ ] =>
+      let hyp := fresh "hyp" in
+      let wf1 := fresh "w1" in
+      let wf2 := fresh "w2" in
+      let cv1 := fresh "c1" in
+      let cv2 := fresh "c2" in
+      pose proof (lsubstc_vars_mk_or_as_mkcv t1 t2 w s vs c) as hyp;
+        destruct hyp as [wf1 hyp];
+        destruct hyp as [wf2 hyp];
+        destruct hyp as [cv1 hyp];
+        destruct hyp as [cv2 hyp];
+        rewrite hyp in H;
+        clear hyp;
+        proof_irr
+
     | [ H : context[lsubstc_vars (mk_apply2 ?t1 ?t2 ?t3) ?w ?s ?vs ?c] |- _ ] =>
       let hyp := fresh "hyp" in
       let wf1 := fresh "w1" in
@@ -601,6 +724,36 @@ Ltac lsubstc_vars_as_mkcv :=
       let cv1 := fresh "c1" in
       let cv2 := fresh "c2" in
       pose proof (lsubstc_vars_mk_apply_as_mkcv t1 t2 w s vs c) as hyp;
+        destruct hyp as [wf1 hyp];
+        destruct hyp as [wf2 hyp];
+        destruct hyp as [cv1 hyp];
+        destruct hyp as [cv2 hyp];
+        rewrite hyp;
+        clear hyp;
+        proof_irr
+
+    | [ |- context[lsubstc_vars (mk_union ?t1 ?t2) ?w ?s ?vs ?c] ] =>
+      let hyp := fresh "hyp" in
+      let wf1 := fresh "w1" in
+      let wf2 := fresh "w2" in
+      let cv1 := fresh "c1" in
+      let cv2 := fresh "c2" in
+      pose proof (lsubstc_vars_mk_union_as_mkcv t1 t2 w s vs c) as hyp;
+        destruct hyp as [wf1 hyp];
+        destruct hyp as [wf2 hyp];
+        destruct hyp as [cv1 hyp];
+        destruct hyp as [cv2 hyp];
+        rewrite hyp;
+        clear hyp;
+        proof_irr
+
+    | [ |- context[lsubstc_vars (mk_or ?t1 ?t2) ?w ?s ?vs ?c] ] =>
+      let hyp := fresh "hyp" in
+      let wf1 := fresh "w1" in
+      let wf2 := fresh "w2" in
+      let cv1 := fresh "c1" in
+      let cv2 := fresh "c2" in
+      pose proof (lsubstc_vars_mk_or_as_mkcv t1 t2 w s vs c) as hyp;
         destruct hyp as [wf1 hyp];
         destruct hyp as [wf2 hyp];
         destruct hyp as [cv1 hyp];

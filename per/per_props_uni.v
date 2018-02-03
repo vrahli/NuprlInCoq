@@ -89,6 +89,7 @@ Proof.
   eapply nuprli_uniquely_valued in e0; try exact q.
   apply e0; auto.
 Qed.
+Hint Resolve equality_in_uni : slow.
 
 Lemma member_in_uni {p} :
   forall lib a i, @member p lib a (mkc_uni i) -> type lib a.
@@ -96,6 +97,7 @@ Proof.
   unfold member, type; introv e.
   apply equality_in_uni in e; sp.
 Qed.
+Hint Resolve member_in_uni : slow.
 
 Lemma mkc_uni_in_nuprl {o} :
   forall (lib : @library o) (i : nat) (bar : BarLib lib),
@@ -171,6 +173,14 @@ Lemma tequality_mkc_uni {p} :
 Proof.
   generalize (@nuprl_mkc_uni p); sp.
 Qed.
+Hint Resolve tequality_mkc_uni : slow.
+
+Lemma type_mkc_uni {o} :
+  forall lib (i : nat), @type o lib (mkc_uni i).
+Proof.
+  unfold type; eauto 3 with slow.
+Qed.
+Hint Resolve type_mkc_uni : slow.
 
 Lemma per_bar_eq_univi_eq_lib_per_implies_eq_nuprli {o} :
   forall lib (bar : BarLib lib) i (A B : @CTerm o),
