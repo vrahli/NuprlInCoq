@@ -193,12 +193,12 @@ Require Import weak_consistency.
  Require Import proof_with_lib_non_dep.
  Require Import proof_with_lib_non_dep_example1.
  Require Import sterm.
+*)
 
 
 (* Function/pi type *)
- Require Import rules_function.
- Require Import rules_function2.
-*)
+Require Import rules_function.
+Require Import rules_function2.
 
 
 (* Product/sum type *)

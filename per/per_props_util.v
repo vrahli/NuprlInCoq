@@ -954,3 +954,68 @@ Proof.
   apply in_ext_implies_all_in_ex_bar; introv x; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve ccequivc_bar_refl : slow.
+
+Lemma ccequivc_ext_beta {o} :
+  forall lib v (b : @CVTerm o [v]) (a : CTerm),
+    ccequivc_ext lib (mkc_apply (mkc_lam v b) a) (b) [[v \\ a]].
+Proof.
+  introv ext; spcast; apply cequivc_beta.
+Qed.
+
+Ltac betared2 :=
+  match goal with
+  (* on conclusion *)
+  | [ lib : library |- context[mkc_apply (mkc_lam ?v ?b) ?a] ] =>
+    let h := fresh "h" in
+    pose proof (ccequivc_ext_beta lib v b a) as h;
+    first
+      [ eapply equality_respects_cequivc_left;
+        [apply ccequivc_ext_sym;exact h|]
+      | eapply equality_respects_cequivc_right;
+        [apply ccequivc_ext_sym;exact h|]
+      ];
+    clear h
+  end.
+
+Lemma equality_implies_all_in_ex_bar_equality {o} :
+  forall lib (a b : @CTerm o) A,
+    equality lib a b A
+    -> all_in_ex_bar lib (fun lib => equality lib a b A).
+Proof.
+  introv equ.
+  apply in_ext_implies_all_in_ex_bar; introv x; eauto 3 with slow.
+Qed.
+
+Lemma all_in_ex_bar_modus_ponens4 {o} :
+  forall (lib : @library o) (G H K L F : library -> Prop),
+    in_ext lib (fun lib => G lib -> H lib -> K lib -> L lib -> F lib)
+    -> all_in_ex_bar lib G
+    -> all_in_ex_bar lib H
+    -> all_in_ex_bar lib K
+    -> all_in_ex_bar lib L
+    -> all_in_ex_bar lib F.
+Proof.
+  introv h q z w x.
+  unfold all_in_ex_bar in *; exrepnd.
+  apply (implies_all_in_bar_intersect_bars_left _ bar) in q0.
+  apply (implies_all_in_bar_intersect_bars_left _ bar0) in q0.
+  apply (implies_all_in_bar_intersect_bars_left _ bar1) in q0.
+  apply (implies_all_in_bar_intersect_bars_right _ (intersect_bars (intersect_bars bar2 bar) bar0)) in z0.
+  apply (implies_all_in_bar_intersect_bars_right _ (intersect_bars bar2 bar)) in w0.
+  apply (implies_all_in_bar_intersect_bars_left _ bar1) in w0.
+  apply (implies_all_in_bar_intersect_bars_right _ bar2) in x0.
+  apply (implies_all_in_bar_intersect_bars_left _ bar0) in x0.
+  apply (implies_all_in_bar_intersect_bars_left _ bar1) in x0.
+  remember (intersect_bars (intersect_bars (intersect_bars bar2 bar) bar0) bar1) as bar'.
+  clear dependent bar2.
+  clear dependent bar0.
+  clear dependent bar1.
+  clear dependent bar.
+  exists bar'.
+  introv br ext.
+  pose proof (q0 _ br _ ext) as q0; simpl in *.
+  pose proof (w0 _ br _ ext) as w0; simpl in *.
+  pose proof (z0 _ br _ ext) as z0; simpl in *.
+  pose proof (x0 _ br _ ext) as x0; simpl in *.
+  apply h; eauto 3 with slow.
+Qed.

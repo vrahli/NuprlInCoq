@@ -499,47 +499,12 @@ Proof.
   dands; spcast; eauto 3 with slow.
 Qed.
 
-(* MOVE to per_props_util *)
-Lemma all_in_ex_bar_modus_ponens4 {o} :
-  forall (lib : @library o) (G H K L F : library -> Prop),
-    in_ext lib (fun lib => G lib -> H lib -> K lib -> L lib -> F lib)
-    -> all_in_ex_bar lib G
-    -> all_in_ex_bar lib H
-    -> all_in_ex_bar lib K
-    -> all_in_ex_bar lib L
-    -> all_in_ex_bar lib F.
-Proof.
-  introv h q z w x.
-  unfold all_in_ex_bar in *; exrepnd.
-  apply (implies_all_in_bar_intersect_bars_left _ bar) in q0.
-  apply (implies_all_in_bar_intersect_bars_left _ bar0) in q0.
-  apply (implies_all_in_bar_intersect_bars_left _ bar1) in q0.
-  apply (implies_all_in_bar_intersect_bars_right _ (intersect_bars (intersect_bars bar2 bar) bar0)) in z0.
-  apply (implies_all_in_bar_intersect_bars_right _ (intersect_bars bar2 bar)) in w0.
-  apply (implies_all_in_bar_intersect_bars_left _ bar1) in w0.
-  apply (implies_all_in_bar_intersect_bars_right _ bar2) in x0.
-  apply (implies_all_in_bar_intersect_bars_left _ bar0) in x0.
-  apply (implies_all_in_bar_intersect_bars_left _ bar1) in x0.
-  remember (intersect_bars (intersect_bars (intersect_bars bar2 bar) bar0) bar1) as bar'.
-  clear dependent bar2.
-  clear dependent bar0.
-  clear dependent bar1.
-  clear dependent bar.
-  exists bar'.
-  introv br ext.
-  pose proof (q0 _ br _ ext) as q0; simpl in *.
-  pose proof (w0 _ br _ ext) as w0; simpl in *.
-  pose proof (z0 _ br _ ext) as z0; simpl in *.
-  pose proof (x0 _ br _ ext) as x0; simpl in *.
-  apply h; eauto 3 with slow.
-Qed.
-
 Lemma rule_union_equality_true {p} :
   forall lib,
   forall A1 A2 B1 B2 : NTerm,
   forall i : nat,
   forall H : @barehypotheses p,
-    rule_true lib 
+    rule_true lib
          (rule_union_equality
                  A1 A2 B1 B2
                  i

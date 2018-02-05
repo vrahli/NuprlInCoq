@@ -34,6 +34,7 @@
 Require Export sequents2.
 Require Export sequents_tacs2.
 Require Export sequents_equality.
+Require Export sequents_util.
 Require Export rules_useful.
 Require Export per_props_equality.
 Require Export sequents_equality.
@@ -128,7 +129,7 @@ Proof.
   rw <- @member_equality_iff.
 
   pose proof (teq_and_eq_if_equality
-                lib
+                lib'
                 (subst B x a1)
                 (mk_apply (mk_lam x1 b1) a1)
                 (mk_apply (mk_lam x2 b2) a2)
@@ -144,8 +145,10 @@ Proof.
     proof_irr.
 
     vr_seq_true in hyp1.
-    pose proof (hyp1 (snoc s1 (z,lsubstc a1 w3 s1 c3))
-                     (snoc s2 (z,lsubstc a1 w3 s2 c9)))
+    pose proof (hyp1
+                  _ ext
+                  (snoc s1 (z,lsubstc a1 w3 s1 c3))
+                  (snoc s2 (z,lsubstc a1 w3 s2 c9)))
       as h; clear hyp1.
     repeat (autodimp h hyp).
 
@@ -153,11 +156,12 @@ Proof.
 
       (* proving hyps_functionality *)
 
-      apply hyps_functionality_snoc2; simpl; auto; [].
-      introv equ sim'.
+      apply hyps_functionality_ext_snoc2; simpl; auto; [].
+      introv ext' equ sim'.
 
       vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s' eqh sim') as q; clear hyp2.
+      pose proof (hyp2 _ (lib_extends_trans ext' ext) s1 s') as q.
+      repeat (autodimp q hyp); eauto 3 with slow.
       exrepnd.
       lsubst_tac.
       apply tequality_mkc_equality_sp in q0; sp.
@@ -172,7 +176,7 @@ Proof.
       sim_snoc2; dands; auto;[].
 
       vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s2 eqh sim) as q; clear hyp2.
+      pose proof (hyp2 _ ext s1 s2 eqh sim) as q; clear hyp2.
       exrepnd.
       lsubst_tac.
       rw <- @member_equality_iff in q1.
@@ -217,13 +221,15 @@ Proof.
     introv eqh sim.
     lsubst_tac.
 
-    repeat betared.
+    repeat betared2.
     repeat lsubstc_subst_aeq2.
     proof_irr.
 
     vr_seq_true in hyp1.
-    pose proof (hyp1 (snoc s1 (z,lsubstc a1 w3 s1 c2))
-                     (snoc s2 (z,lsubstc a2 w5 s2 c3)))
+    pose proof (hyp1
+                  _ ext
+                  (snoc s1 (z,lsubstc a1 w3 s1 c2))
+                  (snoc s2 (z,lsubstc a2 w5 s2 c3)))
       as h; clear hyp1.
     repeat (autodimp h hyp).
 
@@ -231,11 +237,12 @@ Proof.
 
       (* proving hyps_functionality *)
 
-      apply hyps_functionality_snoc2; simpl; auto; [].
-      introv equ sim'.
+      apply hyps_functionality_ext_snoc2; simpl; auto; [].
+      introv ext' equ sim'.
 
       vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s' eqh sim') as q; clear hyp2.
+      pose proof (hyp2 _ (lib_extends_trans ext' ext) s1 s') as q.
+      repeat (autodimp q hyp); eauto 3 with slow.
       exrepnd.
       lsubst_tac.
       apply tequality_mkc_equality_sp in q0; sp.
@@ -250,7 +257,7 @@ Proof.
       sim_snoc2; dands; auto;[].
 
       vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s2 eqh sim) as q; clear hyp2.
+      pose proof (hyp2 _ ext s1 s2 eqh sim) as q; clear hyp2.
       exrepnd.
       lsubst_tac.
       rw <- @member_equality_iff in q1.
@@ -290,6 +297,6 @@ Proof.
     exrepnd.
     rw q0 in h0; clear q0.
 
-    proof_irr; auto.
+    proof_irr; auto; eauto 3 with slow.
   }
 Qed.

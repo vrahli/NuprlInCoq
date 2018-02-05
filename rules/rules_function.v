@@ -1175,29 +1175,6 @@ Proof.
 Qed.
 
 
-(* MOVE *)
-Lemma ccequivc_ext_beta {o} :
-  forall lib v (b : @CVTerm o [v]) (a : CTerm),
-    ccequivc_ext lib (mkc_apply (mkc_lam v b) a) (b) [[v \\ a]].
-Proof.
-  introv ext; spcast; apply cequivc_beta.
-Qed.
-
-Ltac betared2 :=
-  match goal with
-  (* on conclusion *)
-  | [ lib : library |- context[mkc_apply (mkc_lam ?v ?b) ?a] ] =>
-    let h := fresh "h" in
-    pose proof (ccequivc_ext_beta lib v b a) as h;
-    first
-      [ eapply equality_respects_cequivc_left;
-        [apply ccequivc_ext_sym;exact h|]
-      | eapply equality_respects_cequivc_right;
-        [apply ccequivc_ext_sym;exact h|]
-      ];
-    clear h
-  end.
-
 
 
 (* end hide *)
@@ -1633,51 +1610,75 @@ Proof.
   rw @tequality_mkc_equality2_sp in hyp0.
   rw @tequality_mkc_equality2_sp; repnd.
   repeat (rw prod_assoc).
-  rw @tequality_function in hyp1; repnd.
-
-  allunfold @equorsq2; repnd.
+  rw @tequality_function in hyp8; repnd.
+  unfold equorsq2_bar in *; repnd.
 
   (* a few assertions *)
   assert (equality
-            lib
+            lib'
             (lsubstc t1 w1 s1 c1)
             (lsubstc t1 w1 s2 c0)
             (lsubstc A wT s1 cT))
-    as eq1
-      by (apply @cequorsq_equality_trans2 with (t2 := lsubstc t1 w1 s1 c1); sp;
-          allapply @equality_refl; sp).
+    as eq1.
+  {
+    apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens2;[|exact hyp3|exact hyp12]; clear hyp3 hyp12; introv y hyp3 hyp12; exrepnd; spcast.
+    apply @cequorsq_equality_trans2 with (t2 := lsubstc t1 w1 s1 c1); sp.
+    allapply @equality_refl; eauto 3 with slow.
+  }
 
-  assert (equality lib (lsubstc f1 w0 s1 c4)
-                   (lsubstc f1 w0 s2 c6)
-                   (mkc_function (lsubstc A wT s1 cT) x
-                                 (lsubstc_vars B w5 (csub_filter s1 [x]) [x] c7)))
-         as eq3
-         by (apply @cequorsq_equality_trans2 with (t2 := lsubstc f1 w0 s1 c4); sp;
-             allapply @equality_refl; sp).
+  assert (equality
+            lib'
+            (lsubstc f1 w0 s1 c4)
+            (lsubstc f1 w0 s2 c6)
+            (mkc_function (lsubstc A wT s1 cT) x
+                          (lsubstc_vars B w5 (csub_filter s1 [x]) [x] c7)))
+    as eq3.
+  {
+    apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens2;[|exact hyp0|exact hyp11]; clear hyp0 hyp11; introv y hyp0 hyp11; exrepnd; spcast.
+    apply @cequorsq_equality_trans2 with (t2 := lsubstc f1 w0 s1 c4); sp.
+    allapply @equality_refl; eauto 3 with slow.
+  }
 
-  assert (equality lib (lsubstc t2 w2 s1 c2)
-                   (lsubstc t2 w2 s2 c3)
-                   (lsubstc A wT s1 cT))
+  assert (equality
+            lib'
+            (lsubstc t2 w2 s1 c2)
+            (lsubstc t2 w2 s2 c3)
+            (lsubstc A wT s1 cT))
     as eq5.
   {
+    apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens2;[|exact hyp3|exact hyp12]; clear hyp3 hyp12; introv y hyp3 hyp12; exrepnd; spcast.
     apply @cequorsq_equality_trans2 with (t2 := lsubstc t2 w2 s1 c2); sp.
-    apply @equality_sym in hyp4; apply @equality_refl in hyp4; sp.
+    apply @equality_sym in hyp4; apply @equality_refl in hyp4; eauto 3 with slow.
   }
 
-  assert (equality lib (lsubstc f2 w3 s1 c5)
-                   (lsubstc f2 w3 s2 c8)
-                   (mkc_function (lsubstc A wT s1 cT) x
-                                 (lsubstc_vars B w5 (csub_filter s1 [x]) [x] c7)))
+  assert (equality
+            lib'
+            (lsubstc f2 w3 s1 c5)
+            (lsubstc f2 w3 s2 c8)
+            (mkc_function (lsubstc A wT s1 cT) x
+                          (lsubstc_vars B w5 (csub_filter s1 [x]) [x] c7)))
     as eq6.
   {
+    apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens2;[|exact hyp0|exact hyp11]; clear hyp0 hyp11; introv y hyp0 hyp11; exrepnd; spcast.
     apply @cequorsq_equality_trans2 with (t2 := lsubstc f2 w3 s1 c5); sp.
-    apply @equality_sym in hyp6; apply @equality_refl in hyp6; sp.
+    apply @equality_sym in hyp6; apply @equality_refl in hyp6; eauto 3 with slow.
   }
 
-  assert (equality lib (lsubstc t1 w1 s1 c1)
-                   (lsubstc t2 w2 s2 c3)
-                   (lsubstc A wT s1 cT))
-         as eq7 by (apply @equality_trans with (t2 := lsubstc t2 w2 s1 c2); sp).
+  assert (equality
+            lib'
+            (lsubstc t1 w1 s1 c1)
+            (lsubstc t2 w2 s2 c3)
+            (lsubstc A wT s1 cT))
+    as eq7.
+  {
+    apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens2;[|exact hyp3|exact hyp12]; clear hyp3 hyp12; introv y hyp3 hyp12; exrepnd; spcast.
+    apply @equality_trans with (t2 := lsubstc t2 w2 s1 c2); eauto 3 with slow.
+  }
 
   assert (wf_term (subst B x t2))
          as wfs2
@@ -1716,12 +1717,14 @@ Proof.
     rw sim0 in cv2; sp.
   }
 
-  assert (tequality lib (lsubstc (subst B x t1) wT1 s1 cT3)
-                    (lsubstc (subst B x t2) wfs2 s1 cv2)) as teqB.
+  assert (tequality
+            lib'
+            (lsubstc (subst B x t1) wT1 s1 cT3)
+            (lsubstc (subst B x t2) wfs2 s1 cv2)) as teqB.
   {
-    generalize (hyp1 (lsubstc t1 w1 s1 c1) (lsubstc t2 w2 s2 c3)); intro k1.
+    generalize (hyp8 _ (lib_extends_refl lib') (lsubstc t1 w1 s1 c1) (lsubstc t2 w2 s2 c3)); intro k1.
     autodimp k1 hyp; sp.
-    generalize (hyp1 (lsubstc t2 w2 s1 c2) (lsubstc t2 w2 s2 c3)); intro k2.
+    generalize (hyp8 _ (lib_extends_refl lib') (lsubstc t2 w2 s1 c2) (lsubstc t2 w2 s2 c3)); intro k2.
     autodimp k2 hyp; sp.
 
     repeat lsubstc_subst_aeq2.
@@ -1736,7 +1739,7 @@ Proof.
 
   {
     (* from hyp 4 *)
-    generalize (hyp1 (lsubstc t1 w1 s1 c1) (lsubstc t1 w1 s2 c0) eq1); intro teq.
+    generalize (hyp8 _ (lib_extends_refl lib') (lsubstc t1 w1 s1 c1) (lsubstc t1 w1 s2 c0) eq1); intro teq.
     repeat lsubstc_subst_aeq2.
     proof_irr.
     auto.
@@ -1745,23 +1748,25 @@ Proof.
   {
     (* from eq3 and eq1 *)
     rw @equality_in_function in eq3; repnd.
-    generalize (eq3 (lsubstc t1 w1 s1 c1) (lsubstc t1 w1 s2 c0) eq1); intro e'.
+    generalize (eq3 _ (lib_extends_refl lib') (lsubstc t1 w1 s1 c1) (lsubstc t1 w1 s2 c0) eq1); intro e'.
+    apply equality_implies_all_in_ex_bar_equality in e'.
+    eapply all_in_ex_bar_modus_ponens1;try exact e'; clear e'; introv y e'; exrepnd; spcast.
     repeat lsubstc_subst_aeq2.
-    proof_irr.
-    tcsp.
+    proof_irr; tcsp.
   }
 
   {
     (* from eq6 and eq5 *)
     rw @equality_in_function in eq6; repnd.
-    generalize (eq6 (lsubstc t2 w2 s1 c2) (lsubstc t2 w2 s2 c3) eq5); intro e'.
+    generalize (eq6 _ (lib_extends_refl lib') (lsubstc t2 w2 s1 c2) (lsubstc t2 w2 s2 c3) eq5); intro e'.
+    apply equality_implies_all_in_ex_bar_equality in e'.
+    eapply all_in_ex_bar_modus_ponens1;try exact e'; clear e'; introv y e'; exrepnd; spcast.
     repeat lsubstc_subst_aeq2.
-    proof_irr.
-    tcsp.
+    proof_irr; tcsp.
     left.
     eapply @tequality_preserving_equality.
     exact e'.
-    apply @tequality_sym; sp.
+    apply @tequality_sym; eauto 3 with slow.
   }
 
   {
@@ -1772,7 +1777,7 @@ Proof.
     tcsp.
 
     rw @equality_in_function in hyp6; repnd.
-    apply hyp6 in hyp4; auto.
+    apply hyp6 in hyp4; auto; eauto 3 with slow.
   }
 Qed.
 
@@ -1784,30 +1789,6 @@ Lemma rule_apply_equality_true {o} :
 Proof.
   introv.
   apply rule_true3_implies_rule_true.
-  apply rule_apply_equality_true3; auto.
-Qed.
-
-Lemma rule_apply_equality_true_ext_lib {o} :
-  forall lib (A B f1 f2 t1 t2 e1 e2 : NTerm)
-         (x : NVar)
-         (H : @barehypotheses o),
-    rule_true_ext_lib lib (rule_apply_equality A B f1 f2 t1 t2 e1 e2 x H).
-Proof.
-  introv.
-  apply rule_true3_implies_rule_true_ext_lib.
-  introv.
-  apply rule_apply_equality_true3; auto.
-Qed.
-
-Lemma rule_apply_equality_true_ext_lib2 {o} :
-  forall lib (A B f1 f2 t1 t2 e1 e2 : NTerm)
-         (x : NVar)
-         (H : @barehypotheses o),
-    rule_true_ext_lib lib (rule_apply_equality A B f1 f2 t1 t2 e1 e2 x H).
-Proof.
-  introv.
-  apply rule_true3_implies_rule_true_ext_lib.
-  introv.
   apply rule_apply_equality_true3; auto.
 Qed.
 
@@ -1910,7 +1891,7 @@ Proof.
   (* we now start proving the sequent *)
   vr_seq_true.
   vr_seq_true in hyp1.
-  generalize (hyp1 s1 s2 eqh sim); clear hyp1; intro hyp1; exrepnd.
+  generalize (hyp1 _ ext s1 s2 eqh sim); clear hyp1; intro hyp1; exrepnd.
 
   lsubst_tac.
   allrw @member_eq.
@@ -1918,79 +1899,94 @@ Proof.
   rw @tequality_mkc_equality2_sp in hyp0; repnd.
   rw @tequality_mkc_equality2_sp.
   repeat (rw prod_assoc).
-  allunfold @equorsq2; repnd.
+  allunfold @equorsq2_bar; repnd.
 
-  assert (cequivc lib
+  assert (ccequivc_ext
+            lib'
             (mkc_apply
                (mkc_lam x (lsubstc_vars t wt (csub_filter s1 [x]) [x] c10))
                (lsubstc s ws s1 c6))
             (lsubstc (subst t x s) w1 s1 c1))
-         as ceq1.
-  (* begin proof of assert *)
-  destruct_cterms; unfold cequivc; simpl.
-  generalize (cequiv_beta lib x (csubst t (csub_filter s1 [x])) (csubst s s1)); intro k.
-  autodimp k hyp.
-  rw <- @isprog_vars_csubst_iff.
-  rw @isprog_vars_eq; sp.
-  rw @nt_wf_eq; sp.
-  autodimp k hyp.
-  apply isprogram_csubst; sp.
-  rw @nt_wf_eq; sp.
-  eapply cequiv_trans.
-  exact k.
-  rw <- @simple_csubst_subst; sp.
-  apply cequiv_refl.
-  apply isprogram_csubst; sp.
-  unfold subst; apply lsubst_wf_iff; try (rw @nt_wf_eq; sp).
-  unfold wf_sub, sub_range_sat; simpl; sp; cpx; rw @nt_wf_eq; sp.
-  (* end proof of assert *)
+    as ceq1.
+  {
+    introv ext'; spcast.
+    (* begin proof of assert *)
+    destruct_cterms; unfold cequivc; simpl.
+    generalize (cequiv_beta lib'0 x (csubst t (csub_filter s1 [x])) (csubst s s1)); intro k.
+    autodimp k hyp.
+    rw <- @isprog_vars_csubst_iff.
+    rw @isprog_vars_eq; sp.
+    rw @nt_wf_eq; sp.
+    autodimp k hyp.
+    apply isprogram_csubst; sp.
+    rw @nt_wf_eq; sp.
+    eapply cequiv_trans.
+    exact k.
+    rw <- @simple_csubst_subst; sp.
+    apply cequiv_refl.
+    apply isprogram_csubst; sp.
+    unfold subst; apply lsubst_wf_iff; try (rw @nt_wf_eq; sp).
+    unfold wf_sub, sub_range_sat; simpl; sp; cpx; rw @nt_wf_eq; sp.
+    (* end proof of assert *)
+  }
 
-  assert (cequivc lib
+  assert (ccequivc_ext
+            lib'
             (mkc_apply
                (mkc_lam x (lsubstc_vars t wt (csub_filter s2 [x]) [x] c11))
                (lsubstc s ws s2 c9))
             (lsubstc (subst t x s) w1 s2 c0))
-         as ceq2.
-  (* begin proof of assert *)
-  destruct_cterms; unfold cequivc; simpl.
-  generalize (cequiv_beta lib x (csubst t (csub_filter s2 [x])) (csubst s s2)); intro k.
-  autodimp k hyp.
-  rw <- @isprog_vars_csubst_iff.
-  rw @isprog_vars_eq; sp.
-  rw @nt_wf_eq; sp.
-  autodimp k hyp.
-  apply isprogram_csubst; sp.
-  rw @nt_wf_eq; sp.
-  eapply cequiv_trans.
-  exact k.
-  rw <- @simple_csubst_subst; sp.
-  apply cequiv_refl.
-  apply isprogram_csubst; sp.
-  unfold subst; apply lsubst_wf_iff; try (rw @nt_wf_eq; sp).
-  unfold wf_sub, sub_range_sat; simpl; sp; cpx; rw @nt_wf_eq; sp.
-  (* end proof of assert *)
+    as ceq2.
+  {
+    introv ext'; spcast.
+    (* begin proof of assert *)
+    destruct_cterms; unfold cequivc; simpl.
+    generalize (cequiv_beta lib'0 x (csubst t (csub_filter s2 [x])) (csubst s s2)); intro k.
+    autodimp k hyp.
+    rw <- @isprog_vars_csubst_iff.
+    rw @isprog_vars_eq; sp.
+    rw @nt_wf_eq; sp.
+    autodimp k hyp.
+    apply isprogram_csubst; sp.
+    rw @nt_wf_eq; sp.
+    eapply cequiv_trans.
+    exact k.
+    rw <- @simple_csubst_subst; sp.
+    apply cequiv_refl.
+    apply isprogram_csubst; sp.
+    unfold subst; apply lsubst_wf_iff; try (rw @nt_wf_eq; sp).
+    unfold wf_sub, sub_range_sat; simpl; sp; cpx; rw @nt_wf_eq; sp.
+    (* end proof of assert *)
+  }
 
 
   (* we start proving our conclusion *)
   dands; try (complete sp).
 
-  left.
-  eapply @equality_respects_cequivc_left.
-  apply cequivc_sym.
-  exact ceq1.
-  apply @equality_sym.
-  eapply @equality_respects_cequivc_left.
-  apply cequivc_sym.
-  exact ceq2.
-  apply @equality_sym.
-  unfold equorsq in hyp3; repdors; spcast; sp.
-  apply @equality_respects_cequivc; sp.
-  allapply @equality_refl; sp.
+  {
+    apply in_ext_implies_all_in_ex_bar; introv ext'.
+    left.
+    eapply @equality_respects_cequivc_left.
+    { apply ccequivc_ext_sym.
+      eapply lib_extends_preserves_ccequivc_ext; try exact ceq1; eauto. }
+    apply @equality_sym.
+    eapply @equality_respects_cequivc_left.
+    { apply ccequivc_ext_sym.
+      eapply lib_extends_preserves_ccequivc_ext; try exact ceq2; eauto. }
+    apply @equality_sym.
+    apply all_in_ex_bar_equality_implies_equality.
+    eapply all_in_ex_bar_modus_ponens2;[|eapply lib_extends_preserves_all_in_ex_bar; try exact hyp3|eapply lib_extends_preserves_all_in_ex_bar; try exact hyp0]; eauto 3 with slow;clear hyp3 hyp0; introv y hyp3 hyp0; exrepnd; spcast.
+    unfold equorsq in hyp3; repdors; spcast; sp.
+    apply @equality_respects_cequivc; sp.
+    allapply @equality_refl; eauto 3 with slow.
+  }
 
-  eapply @equality_respects_cequivc_left.
-  apply cequivc_sym.
-  exact ceq1.
-  sp.
+  {
+    eapply @equality_respects_cequivc_left.
+    { apply ccequivc_ext_sym.
+      eapply lib_extends_preserves_ccequivc_ext; try exact ceq1; eauto 3 with slow. }
+    eauto 3 with slow.
+  }
 Qed.
 
 (* begin hide *)
@@ -2079,23 +2075,24 @@ Proof.
           # !LIn z (free_vars f2)
           # !LIn z (free_vars A)
           # !LIn z (vars_hyps H)) as vhyps.
-
-  clear hyp1 hyp2.
-  dwfseq.
-  sp;
-  try (complete (generalize (cg z); sp;
-                 allrw in_remove_nvars; allsimpl;
-                 autodimp X0 h; sp));
-  try (complete (generalize (cg0 z); sp;
-                 allrw in_remove_nvars; allsimpl;
-                 autodimp X0 h; sp));
-  try (complete (generalize (cg1 z); sp;
-                 allrw in_remove_nvars; allsimpl;
-                 autodimp X0 h; sp));
-  try (complete (apply_in_hyp p;
-                 generalize (subvars_hs_vars_hyps H); intro sv;
-                 rw subvars_prop in sv;
-                 apply sv in p; sp)).
+  {
+    clear hyp1 hyp2.
+    dwfseq.
+    sp;
+      try (complete (generalize (cg z); sp;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp X0 h; sp));
+      try (complete (generalize (cg0 z); sp;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp X0 h; sp));
+      try (complete (generalize (cg1 z); sp;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp X0 h; sp));
+      try (complete (apply_in_hyp p;
+                     generalize (subvars_hs_vars_hyps H); intro sv;
+                     rw subvars_prop in sv;
+                     apply sv in p; sp)).
+  }
 
   destruct vhyps as [ nzB  vhyps ].
   destruct vhyps as [ nzf1 vhyps ].
@@ -2110,277 +2107,318 @@ Proof.
   rw @member_eq.
   rw <- @member_equality_iff.
 
-  assert (tequality lib
+  assert (tequality
+            lib'
             (mkc_function (lsubstc A wA s1 c4) x
                           (lsubstc_vars B wB (csub_filter s1 [x]) [x] c5))
             (mkc_function (lsubstc A wA s2 c6) x
                           (lsubstc_vars B wB (csub_filter s2 [x]) [x] c7))) as eqfunc.
 
-  rw @tequality_function.
+  {
+    rw @tequality_function.
 
-  split.
+    split.
 
-  (* First, we prove that the a's are types *)
-  vr_seq_true in hyp2.
-  generalize (hyp2 s1 s2 eqh sim); clear hyp2; intro hyp2.
-  exrepd.
-  lift_lsubst in t.
-  lift_lsubst in e.
-  rw @member_eq in e.
-  rw <- @member_equality_iff in e.
-  applydup @equality_in_uni in e as e'.
-  rw @fold_type in e'.
-  apply @equality_commutes2 in t; try (complete auto).
-  apply @equality_in_uni in t; sp.
+    {
+      (* First, we prove that the a's are types *)
+      vr_seq_true in hyp2.
+      generalize (hyp2 _ ext s1 s2 eqh sim); clear hyp2; intro hyp2.
+      exrepd.
+      lift_lsubst in t.
+      lift_lsubst in e.
+      rw @member_eq in e.
+      rw <- @member_equality_iff in e.
+      applydup @equality_in_uni in e as e'.
+      rw @fold_type in e'.
+      apply @equality_commutes2 in t; try (complete auto).
+      apply @equality_in_uni in t; sp.
+    }
 
-  (* Then we prove that the b's are type families *)
-  intros a a' eqaa'.
-  vr_seq_true in hyp1.
-  generalize (hyp1 (snoc s1 (z, a)) (snoc s2 (z, a'))); clear hyp1; intro hyp1.
-  autodimp hyp1 hyp.
+    {
+      (* Then we prove that the b's are type families *)
+      intros lib'' ext' a a' eqaa'.
+      vr_seq_true in hyp1.
+      generalize (hyp1 _ (lib_extends_trans ext' ext) (snoc s1 (z, a)) (snoc s2 (z, a'))); clear hyp1; intro hyp1.
+      autodimp hyp1 hyp.
 
-  (* we have to prove the functionality of our hypotheses *)
-  apply hyps_functionality_snoc2; simpl; try (complete sp).
-  introv eq s.
-  vr_seq_true in hyp2.
-  generalize (hyp2 s1 s' eqh s); clear hyp2; intro hyp2.
-  exrepd.
-  lift_lsubst in t.
-  lift_lsubst in e.
-  rw @member_eq in e.
-  rw <- @member_equality_iff in e.
-  applydup @equality_in_uni in e as e'.
-  rw @fold_type in e'.
-  apply @equality_commutes2 in t; try (complete auto).
-  apply @equality_in_uni in t; sp.
+      {
+        (* we have to prove the functionality of our hypotheses *)
+        apply hyps_functionality_ext_snoc2; simpl; try (complete sp); eauto 3 with slow;[].
+        introv ext''  eq s.
+        vr_seq_true in hyp2.
+        pose proof (hyp2 _ (lib_extends_trans ext'' (lib_extends_trans ext' ext)) s1 s') as hyp2.
+        repeat (autodimp hyp2 hyp); eauto 3 with slow;[].
+        exrepd.
+        lift_lsubst in t.
+        lift_lsubst in e.
+        rw @member_eq in e.
+        rw <- @member_equality_iff in e.
+        applydup @equality_in_uni in e as e'.
+        rw @fold_type in e'.
+        apply @equality_commutes2 in t; try (complete auto).
+        apply @equality_in_uni in t; sp.
+      }
 
-  (* we have to prove the similarity of our hypotheses *)
-  autodimp hyp1 hyp.
-  rw @similarity_snoc; simpl.
-  exists s1 s2 a a' wA c4; sp.
+      {
+        (* we have to prove the similarity of our hypotheses *)
+        autodimp hyp1 hyp.
 
-  (* we can now use hyp1 *)
-  exrepnd; lsubst_tac.
+        { rw @similarity_snoc; simpl.
+          exists s1 s2 a a' wA c4; sp; eauto 3 with slow. }
 
-  (* we use hyp0 *)
-  rw @tequality_mkc_equality2_sp in hyp0; repnd.
+        (* we can now use hyp1 *)
+        exrepnd; lsubst_tac.
 
-  (* we use hyp3 *)
-  assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s1 (z, a)) cT1
-          = substc a x (lsubstc_vars B wB (csub_filter s1 [x]) [x] c5)) as eq1
-         by (apply lsubstc_subst_snoc_eq; try (complete sp);
-             allapply @similarity_dom; exrepd; allrw; sp).
+        (* we use hyp0 *)
+        rw @tequality_mkc_equality2_sp in hyp0; repnd.
 
-  rewrite eq1 in hyp3.
+        (* we use hyp3 *)
+        assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s1 (z, a)) cT1
+                = substc a x (lsubstc_vars B wB (csub_filter s1 [x]) [x] c5)) as eq1
+            by (apply lsubstc_subst_snoc_eq; try (complete sp);
+                allapply @similarity_dom; exrepd; allrw; sp).
 
-  assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s2 (z, a')) cT2
-          = substc a' x (lsubstc_vars B wB (csub_filter s2 [x]) [x] c7)) as eq2
-         by (apply lsubstc_subst_snoc_eq; try (complete sp);
-             allapply @similarity_dom; exrepd; allrw; sp).
+        rewrite eq1 in hyp3.
 
-  rewrite eq2 in hyp3.
+        assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s2 (z, a')) cT2
+                = substc a' x (lsubstc_vars B wB (csub_filter s2 [x]) [x] c7)) as eq2
+            by (apply lsubstc_subst_snoc_eq; try (complete sp);
+                allapply @similarity_dom; exrepd; allrw; sp).
 
-  sp.
+        rewrite eq2 in hyp3.
+
+        sp.
+      }
+    }
+  }
 
 
   (* we prove the membership *)
-  assert (forall a a' s1 s2,
-            hyps_functionality lib s1 H
-            -> similarity lib s1 s2 H
-            -> {c1f : cover_vars f1 s1
+  assert (forall lib'' a a' s1 s2,
+             lib_extends lib'' lib'
+             -> hyps_functionality_ext lib'' s1 H
+             -> similarity lib'' s1 s2 H
+             -> {c1f : cover_vars f1 s1
                 , {c2f : cover_vars f2 s2
                 , {c1A : cover_vars A s1
                 , {c1B : cover_vars_upto B (csub_filter s1 [x]) [x]
-                , equality lib a a' (lsubstc A wA s1 c1A)
-                  -> equality lib
+                , equality lib'' a a' (lsubstc A wA s1 c1A)
+                  -> equality lib''
                        (mkc_apply (lsubstc f1 wf1 s1 c1f) a)
                        (mkc_apply (lsubstc f2 wf2 s2 c2f) a')
                        (substc a x (lsubstc_vars B wB (csub_filter s1 [x]) [x] c1B))}}}}) as eqlam.
-  introv eqh0 sim0.
+  {
+    introv ext' eqh0 sim0.
 
-  assert (cover_vars f1 s0) as c1f1.
-  clear eqfunc.
-  allapply @similarity_dom; repnd.
-  allrw @cover_vars_eq.
-  allrw.
-  rw sim2 in c1; sp.
+    assert (cover_vars f1 s0) as c1f1.
+    { clear eqfunc.
+      allapply @similarity_dom; repnd.
+      allrw @cover_vars_eq.
+      allrw.
+      rw sim2 in c1; sp. }
 
-  assert (cover_vars f1 s3) as c2f1.
-  clear eqfunc.
-  allapply @similarity_dom; repnd.
-  allrw @cover_vars_eq.
-  allrw.
-  rw sim2 in c1; sp.
+    assert (cover_vars f1 s3) as c2f1.
+    { clear eqfunc.
+      allapply @similarity_dom; repnd.
+      allrw @cover_vars_eq.
+      allrw.
+      rw sim2 in c1; sp. }
 
-  assert (cover_vars f2 s0) as c1f2.
-  clear eqfunc.
-  allapply @similarity_dom; repnd.
-  allrw @cover_vars_eq.
-  allrw.
-  rw sim2 in c2; sp.
+    assert (cover_vars f2 s0) as c1f2.
+    { clear eqfunc.
+      allapply @similarity_dom; repnd.
+      allrw @cover_vars_eq.
+      allrw.
+      rw sim2 in c2; sp. }
 
-  assert (cover_vars f2 s3) as c2f2.
-  clear eqfunc.
-  allapply @similarity_dom; repnd.
-  allrw @cover_vars_eq.
-  allrw.
-  rw sim2 in c2; sp.
+    assert (cover_vars f2 s3) as c2f2.
+    { clear eqfunc.
+      allapply @similarity_dom; repnd.
+      allrw @cover_vars_eq.
+      allrw.
+      rw sim2 in c2; sp. }
 
-  assert (cover_vars_upto B (csub_filter s0 [x]) [x]) as cB0.
-  clear eqfunc.
-  allapply @similarity_dom; repnd.
-  allunfold @cover_vars_upto.
-  allrw @dom_csub_csub_filter.
-  allrw.
-  rw sim in c7; sp.
+    assert (cover_vars_upto B (csub_filter s0 [x]) [x]) as cB0.
+    { clear eqfunc.
+      allapply @similarity_dom; repnd.
+      allunfold @cover_vars_upto.
+      allrw @dom_csub_csub_filter.
+      allrw.
+      rw sim in c7; sp. }
 
-  assert (cover_vars_upto B (csub_filter s3 [x]) [x]) as cB3.
-  clear eqfunc.
-  allapply @similarity_dom; repnd.
-  allunfold @cover_vars_upto.
-  allrw @dom_csub_csub_filter.
-  allrw.
-  rw sim in c7; sp.
+    assert (cover_vars_upto B (csub_filter s3 [x]) [x]) as cB3.
+    { clear eqfunc.
+      allapply @similarity_dom; repnd.
+      allunfold @cover_vars_upto.
+      allrw @dom_csub_csub_filter.
+      allrw.
+      rw sim in c7; sp. }
 
-  assert (cover_vars A s0) as cA0.
-  clear eqfunc.
-  allrw @cover_vars_eq.
-  allapply @similarity_dom; repnd.
-  allrw.
-  rw sim in c6; sp.
+    assert (cover_vars A s0) as cA0.
+    { clear eqfunc.
+      allrw @cover_vars_eq.
+      allapply @similarity_dom; repnd.
+      allrw.
+      rw sim in c6; sp. }
 
-  assert (cover_vars A s3) as cA3.
-  clear eqfunc.
-  allrw @cover_vars_eq.
-  allapply @similarity_dom; repnd.
-  allrw.
-  rw sim in c6; sp.
+    assert (cover_vars A s3) as cA3.
+    { clear eqfunc.
+      allrw @cover_vars_eq.
+      allapply @similarity_dom; repnd.
+      allrw.
+      rw sim in c6; sp. }
 
-  exists c1f1 c2f2 cA0 cB0.
-  introv eqaa'.
+    exists c1f1 c2f2 cA0 cB0.
+    introv eqaa'.
 
-  vr_seq_true in hyp1.
-  generalize (hyp1 (snoc s0 (z, a)) (snoc s3 (z, a'))); clear hyp1; intro hyp1.
-  autodimp hyp1 hyp.
+    vr_seq_true in hyp1.
+    generalize (hyp1 _ (lib_extends_trans ext' ext) (snoc s0 (z, a)) (snoc s3 (z, a'))); clear hyp1; intro hyp1.
+    autodimp hyp1 hyp.
 
-  (* we have to prove the functionality of our hypotheses *)
-  apply hyps_functionality_snoc2; simpl; try (complete sp).
-  introv eq s.
-  vr_seq_true in hyp2.
-  generalize (hyp2 s0 s' eqh0 s); clear hyp2; intro hyp2.
-  exrepd.
-  lift_lsubst in t.
-  lift_lsubst in e.
-  rw @member_eq in e.
-  rw <- @member_equality_iff in e.
-  applydup @equality_in_uni in e as e'.
-  rw @fold_type in e'.
-  apply @equality_commutes2 in t; try (complete auto).
-  apply @equality_in_uni in t; sp.
+    {
+      (* we have to prove the functionality of our hypotheses *)
+      apply hyps_functionality_ext_snoc2; simpl; try (complete sp); eauto 3 with slow;[].
+      introv ext'' eq s.
+      vr_seq_true in hyp2.
+      pose proof (hyp2 _ (lib_extends_trans ext'' (lib_extends_trans ext' ext)) s0 s') as hyp2.
+      repeat (autodimp hyp2 hyp); eauto 3 with slow;[].
+      exrepd.
+      lift_lsubst in t.
+      lift_lsubst in e.
+      rw @member_eq in e.
+      rw <- @member_equality_iff in e.
+      applydup @equality_in_uni in e as e'.
+      rw @fold_type in e'.
+      apply @equality_commutes2 in t; try (complete auto).
+      apply @equality_in_uni in t; sp.
+    }
 
-  (* we have to prove the similarity of our hypotheses *)
-  autodimp hyp1 hyp.
-  rw @similarity_snoc; simpl.
-  exists s0 s3 a a' wA cA0; sp.
+    {
+      (* we have to prove the similarity of our hypotheses *)
+      autodimp hyp1 hyp.
+      rw @similarity_snoc; simpl.
+      exists s0 s3 a a' wA cA0; sp; eauto 3 with slow.
 
-  (* we can now use hyp1 *)
-  exrepnd; lsubst_tac.
-  rw @tequality_mkc_equality2_sp in hyp0; repnd.
-  rw @member_eq in hyp1.
-  rw <- @member_equality_iff in hyp1.
-  clear_irr; GC.
+      (* we can now use hyp1 *)
+      exrepnd; lsubst_tac.
+      rw @tequality_mkc_equality2_sp in hyp0; repnd.
+      rw @member_eq in hyp1.
+      rw <- @member_equality_iff in hyp1.
+      clear_irr; GC.
 
-  assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s0 (z, a)) cT1
-          = substc a x (lsubstc_vars B wB (csub_filter s0 [x]) [x] cB0)) as eq1
-         by (apply lsubstc_subst_snoc_eq; try (complete sp);
-             allapply @similarity_dom; exrepd; allrw; sp).
+      assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s0 (z, a)) cT1
+              = substc a x (lsubstc_vars B wB (csub_filter s0 [x]) [x] cB0)) as eq1
+          by (apply lsubstc_subst_snoc_eq; try (complete sp);
+              allapply @similarity_dom; exrepd; allrw; sp).
 
-  rewrite eq1 in hyp0.
-  rewrite eq1 in hyp1.
-  rewrite eq1 in hyp3.
-  clear eq1.
+      rewrite eq1 in hyp0.
+      rewrite eq1 in hyp1.
+      rewrite eq1 in hyp3.
+      clear eq1.
 
-  assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s3 (z, a')) cT2
-          = substc a' x (lsubstc_vars B wB (csub_filter s3 [x]) [x] cB3)) as eq2
-         by (apply lsubstc_subst_snoc_eq; try (complete sp);
-             allapply @similarity_dom; exrepd; allrw; sp).
+      assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s3 (z, a')) cT2
+              = substc a' x (lsubstc_vars B wB (csub_filter s3 [x]) [x] cB3)) as eq2
+          by (apply lsubstc_subst_snoc_eq; try (complete sp);
+              allapply @similarity_dom; exrepd; allrw; sp).
 
-  rewrite eq2 in hyp3.
-  clear eq2.
+      rewrite eq2 in hyp3.
+      clear eq2.
 
-  apply @cequorsq2_prop in hyp0; try (complete auto).
+      unfold equorsq2_bar in *; repnd.
+      apply all_in_ex_bar_equality_implies_equality.
+      eapply all_in_ex_bar_modus_ponens2;[|exact hyp4|exact hyp0]; eauto 3 with slow;clear hyp4 hyp0; introv y hyp4 hyp0; exrepnd; spcast.
+
+      eapply cequorsq2_prop;[split;eauto|]; eauto 3 with slow.
+    }
+  }
 
   (* a few useful assertions *)
-  assert (similarity lib s1 s1 H)
-         as sim1
-         by (allapply @similarity_refl; sp).
-  assert (similarity lib s2 s2 H)
-         as sim2
-         by (apply @similarity_sym in sim; allapplydup @similarity_refl; sp;
-             apply eqh in sim; sp).
-  assert (hyps_functionality lib s2 H)
-         as eqh2
-         by (apply @similarity_hyps_functionality_trans with (s1 := s1); sp).
+  assert (similarity lib' s1 s1 H)
+    as sim1
+      by (allapply @similarity_refl; sp).
+  assert (similarity lib' s2 s2 H)
+    as sim2
+      by (apply @similarity_sym in sim; allapplydup @similarity_refl; sp;
+          apply eqh in sim; eauto 3 with slow).
+  assert (hyps_functionality_ext lib' s2 H)
+    as eqh2
+      by (apply @similarity_hyps_functionality_ext_trans with (s1 := s1); sp).
 
 
   (* we start proving our conclusion *)
   rw @equality_in_function2.
   dands; try (complete sp).
 
+  {
+    (* tequality *)
+    rw @tequality_mkc_equality2_sp.
+    dands; try (complete sp); eauto 3 with slow.
 
-  (* tequality *)
-  rw @tequality_mkc_equality2_sp.
-  dands; try (complete sp).
+    (* we prove cequorsq2 *)
+    split.
 
-  (* we prove cequorsq2 *)
-  split.
+    {
+      (* application in B *)
+      apply in_ext_implies_all_in_ex_bar; introv ext'.
+      left.
+      rw @equality_in_function2.
+      split; try (complete (apply @tequality_refl in eqfunc; eauto 3 with slow));[].
+      introv ext'' e.
+      assert (equality lib'1 a' a' (lsubstc A wA s2 c6))
+        as e'
+          by (apply @equality_sym in e; apply @equality_refl in e;
+              rw @tequality_function in eqfunc; repnd;
+              eapply @tequality_preserving_equality;
+              try (exact e); eauto 3 with slow).
 
-  (* application in B *)
-  left.
-  rw @equality_in_function2.
-  split; try (complete (apply @tequality_refl in eqfunc; sp)).
-  introv e.
-  assert (equality lib a' a' (lsubstc A wA s2 c6))
-         as e'
-         by (apply @equality_sym in e; apply @equality_refl in e;
-             rw @tequality_function in eqfunc; repnd;
-             eapply @tequality_preserving_equality;
-             try (exact e); sp).
+      pose proof (eqlam _ a a' s1 s2 (lib_extends_trans ext'' ext')) as k1.
+      repeat (autodimp k1 hyp); eauto 3 with slow; exrepnd; clear_irr; sp.
+      pose proof (eqlam _ a' a' s2 s2 (lib_extends_trans ext'' ext')) as k2.
+      repeat (autodimp k2 hyp); eauto 3 with slow; exrepnd; clear_irr; sp.
 
-  generalize (eqlam a a' s1 s2 eqh sim); intro k1; exrepnd; clear_irr; sp.
-  generalize (eqlam a' a' s2 s2 eqh2 sim2); intro k2; exrepnd; clear_irr; sp.
+      eapply @equality_trans; sp.
+      exact k1.
+      apply @equality_sym.
+      eapply @tequality_preserving_equality.
+      exact k2.
+      apply @tequality_sym.
+      rw @tequality_function in eqfunc; repnd; sp; eauto 3 with slow.
+    }
 
-  eapply @equality_trans; sp.
-  exact k1.
-  apply @equality_sym.
-  eapply @tequality_preserving_equality.
-  exact k2.
-  apply @tequality_sym.
-  rw @tequality_function in eqfunc; repnd; sp.
+    {
+      (* application in B *)
+      apply in_ext_implies_all_in_ex_bar; introv ext'.
+      left.
+      rw @equality_in_function2.
+      split; try (complete (apply @tequality_refl in eqfunc; eauto 3 with slow)).
+      introv ext'' e.
+      assert (equality lib'1 a a (lsubstc A wA s1 c4)) as e' by (allapply @equality_refl; eauto 3 with slow).
 
-  (* application in B *)
-  left.
-  rw @equality_in_function2.
-  split; try (complete (apply @tequality_refl in eqfunc; sp)).
-  introv e.
-  assert (equality lib a a (lsubstc A wA s1 c4)) as e' by (allapply @equality_refl; sp).
+      pose proof (eqlam _ a a' s1 s2 (lib_extends_trans ext'' ext')) as k1.
+      repeat (autodimp k1 hyp); eauto 3 with slow; exrepnd; clear_irr; sp.
+      pose proof (eqlam _ a a s1 s1 (lib_extends_trans ext'' ext')) as k2.
+      repeat (autodimp k2 hyp); eauto 3 with slow; exrepnd; clear_irr; sp.
 
-  generalize (eqlam a a' s1 s2 eqh sim); intro k1; exrepnd; clear_irr; sp.
-  generalize (eqlam a a s1 s1 eqh sim1); intro k2; exrepnd; clear_irr; sp.
-
-  eapply @equality_trans; sp.
-  apply equality_sym.
-  exact k2.
-  auto.
+      eapply @equality_trans; sp.
+      apply equality_sym.
+      exact k2.
+      auto.
+    }
+  }
 
 
-  (* type *)
-  apply @tequality_refl in eqfunc; sp.
+  {
+    (* type *)
+    apply @tequality_refl in eqfunc; sp.
+  }
 
 
-  (* application in B *)
-  introv e.
-  generalize (eqlam a a' s1 s1 eqh sim1); intro k; exrepnd; clear_irr; sp.
+  {
+    (* application in B *)
+    introv ext'' e.
+    pose proof (eqlam _ a a' s1 s1 ext'') as k.
+    repeat (autodimp k hyp); eauto 3 with slow; exrepnd; clear_irr; sp.
+  }
 Qed.
 
 (* end hide *)
