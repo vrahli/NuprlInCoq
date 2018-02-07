@@ -42,6 +42,7 @@ Require Export lsubstc_vars.
 
 
 (*
+(*
 
    forall m : nat, squash (exists n : nat, P(m,n))
 
@@ -73,7 +74,7 @@ Lemma axiom_of_choice_00 {o} :
                                (mk_cv [n,m] P)
                                (mk_cv_app_l [n] [m] (mkc_var m))
                                (mk_cv_app_r [m] [n] (mkc_var n))))))
-    -> inhabited_type
+    -> inhabited_type_bar
          lib
          (mkc_exists
             nat2nat
@@ -376,6 +377,7 @@ Proof.
     }
   }
 Qed.
+*)
 
 
 Definition rule_AC00 {o}
@@ -424,9 +426,9 @@ Proof.
   vr_seq_true.
 
   vr_seq_true in hyp1.
-  pose proof (hyp1 s1 s2 eqh sim) as hh; exrepnd; clear hyp1.
+  pose proof (hyp1 _ ext s1 s2 eqh sim) as hh; exrepnd; clear hyp1.
   vr_seq_true in hyp2.
-  pose proof (hyp2 s1 s2 eqh sim) as qq; exrepnd; clear hyp2.
+  pose proof (hyp2 _ ext s1 s2 eqh sim) as qq; exrepnd; clear hyp2.
 
   allunfold @mk_forall.
   allunfold @mk_exists.
@@ -440,40 +442,9 @@ Proof.
   lsubst_tac.
   allrw @lsubstc_mkc_tnat.
 
-  pose proof (axiom_of_choice_00 lib f n m (lsubstc P wt s1 ct1)) as ac.
-  repeat (autodimp ac hyp).
+  dands.
 
-  - (* from qq1 *)
-    introv m1 m2.
-    apply equality_in_fun in qq1; repnd.
-    pose proof (qq1 a a) as h.
-    autodimp h hyp.
-    lsubst_tac.
-    allrw @lsubstc_mkc_tnat.
-    apply equality_in_fun in h; repnd.
-    pose proof (h b b) as q.
-    autodimp q hyp.
-    apply equality_in_uni in q; auto.
-    allrw <- @mkc_apply2_eq; auto.
-
-  - (* from hh1 *)
-    apply equality_refl in hh1.
-    exists (lsubstc e wfce1 s1 pt0).
-
-    repeat lsubstc_vars_as_mkcv.
-    auto.
-
-  - repeat lsubstc_vars_as_mkcv.
-
-    dands;
-      [|apply equality_in_mkc_squash; dands; spcast;
-        try (apply computes_to_valc_refl; eauto 3 with slow);
-        allunfold @mkc_exists; allunfold @mkcv_forall;
-        eapply inhabited_type_respects_alphaeqc;[|exact ac];
-        apply alphaeqc_mkc_product1;
-        apply alphaeqc_sym; apply lsubstc_mk_nat2nat].
-
-    apply tequality_mkc_squash.
+  - apply tequality_mkc_squash.
 
     eapply tequality_respects_alphaeqc_left;
       [apply alphaeqc_mkc_product1;
@@ -488,9 +459,10 @@ Proof.
     apply tequality_product; dands.
     { apply type_nat2nat. }
 
-    introv eqf.
+    introv ext' eqf.
+    repeat lsubstc_vars_as_mkcv.
     repeat (rw @substc_mkcv_function; auto;[]).
-    allrw @mkcv_tnat_substc.
+    autorewrite with slow.
     allrw @substcv_as_substc2.
     allrw @substc2_squash.
     allrw @substc2_apply2.
@@ -500,10 +472,10 @@ Proof.
     repeat (rw @substc2_mk_cv_app_l; auto;[]).
     allrw @mkc_var_substc.
 
-    apply tequality_function; dands.
+    apply tequality_function; dands; eauto 3 with slow.
     { apply tnat_type. }
 
-    introv eqn.
+    introv ext'' eqn.
     allrw @substc_mkcv_squash.
     allrw @mkcv_apply2_substc.
     allrw @mkcv_apply_substc.
@@ -512,15 +484,50 @@ Proof.
 
     apply tequality_mkc_squash.
     apply equality_in_fun in qq0; repnd.
-    applydup qq0 in eqn.
+    applydup qq0 in eqn; eauto 3 with slow;[].
     lsubst_tac.
     apply equality_in_fun in eqn0; repnd.
-    pose proof (eqn0 (mkc_apply a a0) (mkc_apply a' a'0)) as q.
+    pose proof (eqn0 _ (lib_extends_refl _) (mkc_apply a a0) (mkc_apply a' a'0)) as q.
     allrw @lsubstc_mkc_tnat.
     autodimp q hyp.
-    { apply equality_nat2nat_apply; auto. }
+    { apply equality_nat2nat_apply; eauto 3 with slow. }
     allrw <- @mkc_apply2_eq.
     apply equality_in_uni in q; auto.
+
+  - apply equality_in_mkc_squash; dands; spcast; eauto 3 with slow.
+
+    SearchAbout equality mkc_squash.
+
+    pose proof (axiom_of_choice_00 lib f n m (lsubstc P wt s1 ct1)) as ac.
+    repeat (autodimp ac hyp).
+
+    + (* from qq1 *)
+      introv m1 m2.
+      apply equality_in_fun in qq1; repnd.
+      pose proof (qq1 a a) as h.
+      autodimp h hyp.
+      lsubst_tac.
+      allrw @lsubstc_mkc_tnat.
+      apply equality_in_fun in h; repnd.
+      pose proof (h b b) as q.
+      autodimp q hyp.
+      apply equality_in_uni in q; auto.
+      allrw <- @mkc_apply2_eq; auto.
+
+    + (* from hh1 *)
+      apply equality_refl in hh1.
+      exists (lsubstc e wfce1 s1 pt0).
+
+      repeat lsubstc_vars_as_mkcv.
+      auto.
+
+    + repeat lsubstc_vars_as_mkcv.
+
+      dands;
+        [|allunfold @mkc_exists; allunfold @mkcv_forall;
+          eapply inhabited_type_respects_alphaeqc;[|exact ac];
+          apply alphaeqc_mkc_product1;
+          apply alphaeqc_sym; apply lsubstc_mk_nat2nat].
 Qed.
 
 

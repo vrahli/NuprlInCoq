@@ -35,3 +35,6 @@ Require Export rules_product.
 Require Export rules_union.
 Require Export rules_choice_roadmap.
 Require Export rules_apply.
+Require Export rules_not_classical.
+Require Export rules_function.
+Require Export rules_function2.

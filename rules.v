@@ -220,12 +220,15 @@ Require Import rules_product.
 (* W type *)
  Require Import rules_w.
  Require Import rules_pw3.
+*)
 
 
 (* classical rules *)
- Require Import rules_classical.
+(* Require Import rules_classical.*)
+Require Import rules_not_classical.
 
 
+(*
 (* Domain theory *)
  Require Import rules_partial.
  Require Import rules_mono.
