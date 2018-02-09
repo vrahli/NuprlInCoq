@@ -32,6 +32,7 @@
 
 
 Require Export rules_choice.
+Require Export per_can.
 
 
 
@@ -402,6 +403,148 @@ Proof.
 Qed.
 Hint Resolve implies_ccequivc_ext_comp_seq1 : slow.
 
+Definition mkc_fresh_choice_nat_seq {o} (l : list nat) : @CTerm o :=
+  let cs := "a" in
+  mkc_choice_seq (MkChoiceSequenceName cs (cs_kind_seq l)).
+
+Lemma mk_comp_seq2_reduces_to_choice_seq {o} :
+  forall lib (f : @NTerm o) l w,
+    0 < length l
+    -> (forall n i,
+           select n l = Some i -> mk_apply f (mk_nat (length w + n)) =v>(lib) mk_nat i)
+    -> reduces_to
+         lib
+         (mk_comp_seq2 w (length w + length l) (mk_apply f (mk_nat (length w))) f)
+         (mk_fresh_choice_nat_seq lib (w ++ l)).
+Proof.
+  induction l; introv cond imp; simpl in *; autorewrite with slow nat; try omega.
+
+  pose proof (imp 0 a) as q; simpl in q; autodimp q hyp.
+  autorewrite with slow nat in *.
+  destruct q as [q isv].
+  eapply reduces_to_trans;[apply reduces_to_prinarg;exact q|].
+
+  destruct (deq_nat (length l) 0) as [d|d].
+
+  { apply reduces_to_if_step.
+    csunf; simpl; boolvar; autorewrite with slow in *; try omega.
+    destruct l; simpl in *; tcsp; GC.
+    rewrite <- snoc_as_append; auto. }
+
+  eapply reduces_to_if_split2.
+  { csunf; simpl; boolvar; try omega; autorewrite with slow; eauto. }
+  rewrite <- snoc_append_r.
+  rewrite <- plus_Snm_nSm.
+
+  pose proof (IHl (snoc w a)) as h.
+  autodimp h hyp; try omega;[].
+  allrw length_snoc.
+  autodimp h hyp.
+  introv s.
+  pose proof (imp (S n) i) as z; simpl in z; autodimp z hyp.
+  rewrite <- plus_Snm_nSm in z; auto.
+Qed.
+
+Lemma mk_comp_seq1_reduces_to_choice_seq {o} :
+  forall lib k (f : @NTerm o) l,
+    length l = k
+    -> (forall n i,
+           select n l = Some i
+           -> computes_to_value lib (mk_apply f (mk_nat n)) (mk_nat i))
+    -> computes_to_value lib (mk_comp_seq1 (mk_nat k) f) (mk_fresh_choice_nat_seq lib l).
+Proof.
+  introv eqlen imp.
+  destruct (deq_nat k 0).
+
+  { subst.
+    split; eauto 3 with slow.
+    apply reduces_to_if_step; csunf; simpl.
+    boolvar; autorewrite with slow in *; try omega.
+    destruct l; simpl in *; tcsp. }
+
+  eapply computes_to_value_step;
+    [|csunf; simpl; boolvar; autorewrite with slow in *; subst; try omega; eauto].
+
+  split; eauto 2 with slow.
+
+  pose proof (mk_comp_seq2_reduces_to_choice_seq lib f l []) as q.
+  simpl in *; autorewrite with slow in *.
+  repeat (autodimp q hyp); try omega.
+Qed.
+
+Lemma ccomputes_to_valc_implies_ex {o} :
+  forall lib (a b : @NTerm o),
+    Cast (computes_to_value lib a b)
+    -> {k : nat
+        , reduces_in_atmost_k_steps lib a b k
+        # iscan b}.
+Proof.
+  introv comp; spcast.
+  unfold hasvalue, computes_to_value, reduces_to in comp; exrepnd.
+  exists k; dands; eauto 2 with slow.
+Qed.
+
+Lemma dec_eq_nat {o} :
+  forall (t : @NTerm o) k,
+    decidable (t = mk_nat k).
+Proof.
+  introv.
+  destruct t as [v|op bs].
+  - right; introv xx; ginv.
+  - destruct op; try (complete (right; introv xx; ginv)).
+    destruct c; try (complete (right; introv xx; ginv)).
+    destruct bs; try (complete (right; introv xx; ginv)).
+    destruct (Z_noteq_dec z (Z.of_nat k)); subst; tcsp.
+    right; introv xx; inversion xx; tcsp.
+Qed.
+
+Lemma dec_reduces_in_atmost_k_steps_nat {o} :
+  forall lib k (t : @NTerm o) n,
+    decidable (reduces_in_atmost_k_steps lib t (mk_nat n) k).
+Proof.
+  introv.
+  unfold reduces_in_atmost_k_steps.
+  remember (compute_at_most_k_steps lib k t) as c; symmetry in Heqc.
+  destruct c.
+  - destruct (dec_eq_nat n0 n); subst; tcsp.
+    right; introv xx; ginv.
+  - right; introv xx; ginv.
+Qed.
+
+Lemma computes_to_valc_nat_stable {o} :
+  forall lib (a : @CTerm o) k, ccomputes_to_valc lib a (mkc_nat k) -> computes_to_valc lib a (mkc_nat k).
+Proof.
+  introv.
+  destruct_cterms.
+  intro h.
+  apply ccomputes_to_valc_implies_ex in h; simpl in *.
+  assert (exists k0, reduces_in_atmost_k_steps lib x (mk_nat k) k0) as q.
+  { exrepnd; eexists; eauto. }
+  clear h; rename q into h.
+  apply (constructive_indefinite_ground_description nat (fun x => x) (fun x => x))
+    in h; auto;
+    [|introv; destruct (dec_reduces_in_atmost_k_steps_nat lib x0 x k); tcsp].
+  exrepnd.
+  split; simpl; auto.
+  exists x0; auto.
+Qed.
+
+Lemma mkc_comp_seq1_reduces_to_choice_seq {o} :
+  forall lib k (f : @CTerm o) l,
+    length l = k
+    -> (forall n i,
+           select n l = Some i
+           -> (mkc_apply f (mkc_nat n)) ===>(lib) (mkc_nat i))
+    -> computes_to_valc lib (mkc_comp_seq1 (mkc_nat k) f) (mkc_fresh_choice_nat_seq l).
+Proof.
+  introv eqlen imp.
+  destruct_cterms.
+  apply mk_comp_seq1_reduces_to_choice_seq; auto.
+  introv s.
+  apply imp in s.
+  apply computes_to_valc_nat_stable in s; auto.
+Qed.
+
 
 
 (**
@@ -728,8 +871,11 @@ Proof.
     eapply equality_in_csname_implies_equality_in_natk2nat; eauto.
   }
 
-  apply in_ext_implies_all_in_ex_bar.
-  introv xt.
+  remember (MkChoiceSequenceName "a" (cs_kind_seq l)) as name.
+  assert (is_nat_or_seq_kind name) as isn by (subst; eauto 3 with slow; tcsp).
+
+  exists (extend_seq_to_bar lib safe k name isn).
+  introv br ext.
 
   exists (mkc_comp_seq1 a0 a1) (mkc_comp_seq1 a' a'0) (@mkc_axiom o) (@mkc_axiom o).
   dands; spcast; eauto 3 with slow.
@@ -737,79 +883,47 @@ Proof.
   {
     eapply equality_respects_cequivc_left;
       [apply ccequivc_ext_sym;apply implies_ccequivc_ext_comp_seq1;
-       [apply computes_to_valc_implies_ccequivc_ext;eauto 3 with slow|apply ccequivc_ext_refl]
+       [apply computes_to_valc_implies_ccequivc_ext;eauto 4 with slow|apply ccequivc_ext_refl]
       |].
     eapply equality_respects_cequivc_right;
       [apply ccequivc_ext_sym;apply implies_ccequivc_ext_comp_seq1;
-       [apply computes_to_valc_implies_ccequivc_ext;eauto 3 with slow|apply ccequivc_ext_refl]
+       [apply computes_to_valc_implies_ccequivc_ext;eauto 4 with slow|apply ccequivc_ext_refl]
       |].
+    eapply equality_respects_cequivc_left;
+      [apply ccequivc_ext_sym;
+       apply computes_to_valc_implies_ccequivc_ext;
+       apply mkc_comp_seq1_reduces_to_choice_seq; eauto;
+       introv ss;
+       apply enf0 in ss; repnd; spcast; eauto 4 with slow|].
+    eapply equality_respects_cequivc_right;
+      [apply ccequivc_ext_sym;
+       apply computes_to_valc_implies_ccequivc_ext;
+       apply mkc_comp_seq1_reduces_to_choice_seq; eauto;
+       introv ss;
+       apply enf0 in ss; repnd; spcast; eauto 4 with slow|].
+    unfold mkc_fresh_choice_nat_seq.
 
-Definition mkc_fresh_choice_nat_seq {o} (l : list nat) : @CTerm o :=
-  let cs := "a" in
-  mkc_choice_seq (MkChoiceSequenceName cs (cs_kind_seq l)).
-
-Lemma mk_comp_seq1_reduces_to_choice_seq {o} :
-  forall lib k (f : @NTerm o) l,
-    length l = k
-    -> (forall n i,
-           select n l = Some i
-           -> computes_to_value lib (mk_apply f (mk_nat n)) (mk_nat i))
-    -> computes_to_value lib (mk_comp_seq1 (mk_nat k) f) (mk_fresh_choice_nat_seq lib l).
-Proof.
-  introv eqlen imp.
-  destruct (deq_nat k 0).
-
-  { subst.
-    split; eauto 3 with slow.
-    apply reduces_to_if_step; csunf; simpl.
-    boolvar; autorewrite with slow in *; try omega.
-    destruct l; simpl in *; tcsp. }
-
-  eapply computes_to_value_step;
-    [|csunf; simpl; boolvar; autorewrite with slow in *; subst; try omega; eauto].
-
-  (* some induction on [k] *)
-Qed.
-
-Lemma mkc_comp_seq1_reduces_to_choice_seq {o} :
-  forall lib k (f : @CTerm o) l,
-    length l = k
-    -> (forall n i,
-           select n l = Some i
-           -> (mkc_apply f (mkc_nat n)) ===>(lib) (mkc_nat i))
-    -> computes_to_valc lib (mkc_comp_seq1 (mkc_nat k) f) (mkc_fresh_choice_nat_seq l).
-Proof.
-  introv eqlen imp.
-  destruct_cterms.
-Qed.
-
-
-  }
-
-  (* show that [mkc_comp_seq1 a0 a1] computes to mk_choice_seq("a",l) *)
-
-XXXXXXXx
-  pose proof (fresh_choice_seq_name_in_library lib l) as w.
-  exrepnd.
-
-  assert (is_nat_or_seq_kind name) as isn.
-  eauto 3 with slow.
-
-  exists (@mkc_pair o (mkc_choice_seq name) mkc_axiom).
-  exists (extend_seq_to_bar lib safe k name isn).
-  introv br ext.
-  exists (@mkc_choice_seq o name) (@mkc_axiom o).
-  autorewrite with slow.
-
-  dands; spcast; eauto 3 with slow;[|].
-
-  {
     apply equality_in_csname_iff.
-    apply in_ext_implies_all_in_ex_bar; introv xt.
-    exists name; dands; spcast; eauto 3 with slow.
+    apply in_ext_implies_all_in_ex_bar; introv xt'.
+    unfold equality_of_csname.
+    eexists; dands; spcast;[|eauto 3 with slow|eauto 3 with slow].
+    unfold compatible_choice_sequence_name; simpl.
+    unfold compatible_cs_kind; boolvar; tcsp.
   }
 
+  autorewrite with slow.
   rw <- @member_equality_iff.
+  eapply equality_respects_cequivc_right;
+    [apply ccequivc_ext_sym;apply implies_ccequivc_ext_comp_seq1;
+     [apply computes_to_valc_implies_ccequivc_ext;eauto 4 with slow|apply ccequivc_ext_refl]
+    |].
+  eapply equality_respects_cequivc_right;
+    [apply ccequivc_ext_sym;
+     apply computes_to_valc_implies_ccequivc_ext;
+     apply mkc_comp_seq1_reduces_to_choice_seq; eauto;
+     introv ss;
+     apply enf0 in ss; repnd; spcast; eauto 4 with slow|].
+
   eapply cequivc_preserving_equality;
     [|apply ccequivc_ext_sym;
       introv xt; spcast; apply implies_cequivc_natk2nat;
@@ -839,7 +953,7 @@ XXXXXXXx
 
   pose proof (enf0 m i) as enf0.
   autodimp enf0 hyp;
-    [eapply satisfies_cs_kind_seq_implies_select_iff; eauto; try omega|];[].
+    [eapply satisfies_cs_kind_seq_implies_select_iff; eauto; try omega; subst; simpl; auto|];[].
   repnd; spcast.
 
   exists i.
@@ -857,8 +971,9 @@ XXXXXXXx
   exrepnd; simpl in *.
   destruct entry2; simpl in *.
   unfold find_cs_value_at.
+  rewrite <- Heqname.
   allrw;simpl.
   rewrite find_value_of_cs_at_is_select.
   erewrite choice_sequence_vals_extends_implies_select_some; eauto; simpl; auto.
 Qed.
-Hint Resolve rule_ls1_true : slow.
+Hint Resolve rule_nsls1_true : slow.

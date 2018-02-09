@@ -41,3 +41,6 @@ Require Export rules_choice2.
 (* Similar to the proof that all choice sequences of numbers are in the baire space,
    we've proved: ∀ (a ∈ Free) (n ∈ ℕ). ∃ (x:ℕ). a(n) = x ∈ ℕ *)
 Require Export rules_choice3.
+
+(* Contains a proof of a non-squashed version of LS1 *)
+Require Export rules_choice4.
