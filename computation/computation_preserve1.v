@@ -109,6 +109,161 @@ Proof.
     introv i; repndors; subst; tcsp; allrw @bt_wf_iff; auto.
 Qed.
 
+Lemma compute_step_comp_seq1_success {o} :
+  forall lib can (t : @NTerm o) bts bs u,
+    compute_step_comp_seq1 lib can t bts bs = csuccess u
+    -> {i : nat
+        & {f : NTerm
+        & can = Nint (Z.of_nat i)
+        # bts = []
+        # bs = [nobnd f]
+        #
+        (
+          (i = 0 # u = mk_fresh_choice_nat_seq lib [])
+          [+]
+          (i > 0 # u = mk_comp_seq2 [] i (mk_apply f mk_zero) f)
+        )
+       }}.
+Proof.
+  introv e; allsimpl; destruct can; allsimpl; ginv; boolvar; ginv.
+
+  { destruct bts; allsimpl; ginv.
+    destruct bs; allsimpl; ginv.
+    destruct b.
+    destruct l0; ginv.
+    destruct bs; allsimpl; ginv.
+    exists (Z.to_nat z) n.
+    rewrite Z2Nat.id; dands; tcsp. }
+
+  { destruct bts; allsimpl; ginv.
+    destruct bs; allsimpl; ginv.
+    destruct b.
+    destruct l0; ginv.
+    destruct bs; allsimpl; ginv.
+    exists (Z.to_nat z) n0.
+    rewrite Z2Nat.id; dands; tcsp.
+    right; dands; auto; try omega. }
+Qed.
+
+Lemma compute_step_comp_seq2_success {o} :
+  forall lib nfo can (t : @NTerm o) bts bs u,
+    compute_step_comp_seq2 lib nfo can t bts bs = csuccess u
+    -> {l : list nat
+        & {i : nat
+        & {k : nat
+        & {f : NTerm
+        & nfo = MkCompSeqNfo l i
+        # can = Nint (Z.of_nat k)
+        # bts = []
+        # bs = [nobnd f]
+        #
+        (
+          (i = S (length l) # u = mk_fresh_choice_nat_seq lib (snoc l k))
+          [+]
+          (i > S (length l) # u = mk_comp_seq2 (snoc l k) i (mk_apply f (mk_nat (S (length l)))) f)
+        )
+       }}}}.
+Proof.
+  introv e; allsimpl.
+  unfold compute_step_comp_seq2 in e.
+  destruct nfo as [l i]; allsimpl.
+  exists l i.
+  destruct can; allsimpl; ginv; boolvar; ginv; subst;[|].
+
+
+  { destruct bts; allsimpl; ginv.
+    destruct bs; allsimpl; ginv.
+    destruct b.
+    destruct l1; ginv.
+    destruct bs; allsimpl; ginv.
+    exists (Z.to_nat z) n.
+    rewrite Z2Nat.id; auto.
+    dands; auto; try omega. }
+
+  { destruct bts; allsimpl; ginv.
+    destruct bs; allsimpl; ginv.
+    destruct b.
+    destruct l1; ginv.
+    destruct bs; allsimpl; ginv.
+    exists (Z.to_nat z) n0.
+    rewrite Z2Nat.id; auto.
+    dands; auto; try omega.
+    right; dands; try omega; auto. }
+Qed.
+
+Lemma implies_nt_wf_mk_comp_seq2 {o} :
+  forall l i (a b : @NTerm o),
+    nt_wf a
+    -> nt_wf b
+    -> nt_wf (mk_comp_seq2 l i a b).
+Proof.
+  introv wfa wfb.
+  repeat constructor; introv k; simpl in *; repndors; subst; tcsp;
+    apply bt_wf_iff; auto.
+Qed.
+Hint Resolve implies_nt_wf_mk_comp_seq2 : slow.
+
+Lemma nt_wf_mk_comp_seq1_iff {o} :
+  forall (a b : @NTerm o),
+    nt_wf (mk_comp_seq1 a b) <=> (nt_wf a # nt_wf b).
+Proof.
+  introv; split; intro h.
+
+  {
+    inversion h as [|? ? imp eqm]; subst; simpl in *.
+    unfold nobnd, num_bvars in *; simpl in *; GC.
+    pose proof (imp (bterm [] a)) as q1; autodimp q1 hyp.
+    pose proof (imp (bterm [] b)) as q2; autodimp q2 hyp.
+    allrw @bt_wf_iff; tcsp.
+  }
+
+  {
+    repnd.
+    repeat constructor; introv k; simpl in *; repndors; subst; tcsp;
+      apply bt_wf_iff; auto.
+  }
+Qed.
+
+Lemma nt_wf_mk_comp_seq2_iff {o} :
+  forall l i (a b : @NTerm o),
+    nt_wf (mk_comp_seq2 l i a b) <=> (nt_wf a # nt_wf b).
+Proof.
+  introv; split; intro h.
+
+  {
+    inversion h as [|? ? imp eqm]; subst; simpl in *.
+    unfold nobnd, num_bvars in *; simpl in *; GC.
+    pose proof (imp (bterm [] a)) as q1; autodimp q1 hyp.
+    pose proof (imp (bterm [] b)) as q2; autodimp q2 hyp.
+    allrw @bt_wf_iff; tcsp.
+  }
+
+  {
+    repnd.
+    repeat constructor; introv k; simpl in *; repndors; subst; tcsp;
+      apply bt_wf_iff; auto.
+  }
+Qed.
+
+Lemma implies_nt_wf_apply {o} :
+  forall (a b : @NTerm o),
+    nt_wf a
+    -> nt_wf b
+    -> nt_wf (mk_apply a b).
+Proof.
+  introv wfa wfb.
+  allrw <- @wf_term_eq.
+  apply wf_apply; auto.
+Qed.
+Hint Resolve implies_nt_wf_apply : slow.
+
+Lemma nt_wf_mk_fresh_choice_nat_seq {o} :
+  forall (lib : @library o) l, nt_wf (mk_fresh_choice_nat_seq lib l).
+Proof.
+  introv; repeat constructor; simpl; tcsp.
+Qed.
+Hint Resolve nt_wf_mk_fresh_choice_nat_seq : slow.
+
 Lemma compute_step_preserves {o} :
   forall lib (t u : @NTerm o),
     nt_wf t
@@ -450,6 +605,30 @@ Proof.
           apply compute_step_parallel_success in comp; subst; allsimpl.
           allrw remove_nvars_nil_l; dands; simpl;
           autorewrite with slow; eauto with slow.
+        }
+
+        { SSSCase "NCompSeq1".
+
+          allsimpl.
+          apply compute_step_comp_seq1_success in comp.
+          exrepnd; repndors; exrepnd;subst; simpl in *; autorewrite with slow.
+
+          { dands; eauto 3 with slow. }
+
+          apply nt_wf_mk_comp_seq1_iff in wf; repnd.
+          dands; eauto 4 with slow.
+        }
+
+        { SSSCase "NCompSeq2".
+
+          allsimpl.
+          apply compute_step_comp_seq2_success in comp; exrepnd; subst.
+          repndors; exrepnd; subst; simpl; autorewrite with slow;
+            try (complete (dands; auto; eauto 3 with slow)).
+          repndors; exrepnd; subst; simpl; autorewrite with slow;
+            try (complete (dands; auto; eauto 3 with slow)).
+          apply nt_wf_mk_comp_seq2_iff in wf; repnd.
+          dands; eauto 5 with slow.
         }
 
         { SSSCase "NCompOp".

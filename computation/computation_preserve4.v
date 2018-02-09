@@ -30,6 +30,7 @@
 
 *)
 
+
 Require Export computation_preserve3.
 
 
@@ -373,6 +374,22 @@ Proof.
             csunf comp; allsimpl.
             apply compute_step_parallel_success in comp; subst; allsimpl; fold_terms.
             exists (@mk_axiom o); dands; auto. }
+
+          { SSSCase "NCompSeq1".
+            csunf comp; allsimpl.
+            apply compute_step_comp_seq1_success in comp; exrepnd; subst; simpl in *.
+            csunf; simpl.
+            repndors; repnd; subst; simpl in *; boolvar; subst; autorewrite with slow in *; try omega;
+              eexists; dands; eauto.
+          }
+
+          { SSSCase "NCompSeq2".
+            csunf comp; allsimpl.
+            apply compute_step_comp_seq2_success in comp; exrepnd; subst; simpl in *.
+            csunf; simpl.
+            repndors; repnd; subst; simpl in *; boolvar; subst; autorewrite with slow in *; try omega;
+              eexists; dands; eauto.
+          }
 
           { SSSCase "NCompOp".
 

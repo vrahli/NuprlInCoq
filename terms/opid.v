@@ -425,6 +425,13 @@ Defined.
 
  *)
 
+Record CompSeqNfo :=
+  MkCompSeqNfo
+    {
+      comp_seq_nfo_list : list nat;
+      comp_seq_nfo_to   : nat;
+    }.
+
 Inductive NonCanonicalOp : Set :=
  | NApply     : NonCanonicalOp
  | NEApply    : NonCanonicalOp
@@ -440,6 +447,8 @@ Inductive NonCanonicalOp : Set :=
  | NFresh     : NonCanonicalOp
  | NTryCatch  : NonCanonicalOp (* named try/catch *)
  | NParallel  : NonCanonicalOp
+ | NCompSeq1  : NonCanonicalOp
+ | NCompSeq2  : CompSeqNfo    -> NonCanonicalOp
  | NCompOp    : ComparisonOp  -> NonCanonicalOp
  | NArithOp   : ArithOp       -> NonCanonicalOp
  | NCanTest   : CanonicalTest -> NonCanonicalOp.
@@ -466,6 +475,8 @@ Definition OpBindingsNCan (nc : NonCanonicalOp) : opsign :=
   | NFresh       => [1] (* fresh(x.e[x]) generates a fresh atom "a" and subst x for "a" in "e" *)
   | NTryCatch    => [0,0,1] (* 1: try part; 2: name; 3: catch part*)
   | NParallel    => [0,0]
+  | NCompSeq1    => [0,0]
+  | NCompSeq2  _ => [0,0]
   | NCompOp    _ => [0,0,0,0]
   | NArithOp   _ => [0,0]
   | NCanTest   _ => [0,0,0]
@@ -582,6 +593,8 @@ Tactic Notation "dopid_noncan" ident(onc) ident(c) :=
   | Case_aux c "NFresh"
   | Case_aux c "NTryCatch"
   | Case_aux c "NParallel"
+  | Case_aux c "NCompSeq1"
+  | Case_aux c "NCompSeq2"
   | Case_aux c "NCompOp"
   | Case_aux c "NArithOp"
   | Case_aux c "NCanTest"
@@ -697,6 +710,17 @@ Proof.
   introv; apply deq_nat.
 Defined.
 
+Lemma comp_seq_nfo_dec : Deq CompSeqNfo.
+Proof.
+  introv.
+  destruct x as [l a], y as [k b].
+  destruct (deq_list deq_nat l k); subst;
+    try (complete (right; introv xx; inversion xx; subst; tcsp)).
+  destruct (deq_nat a b); subst;
+    try (complete (right; introv xx; inversion xx; subst; tcsp)).
+  left; tcsp.
+Defined.
+
 Lemma opid_dec {o} :
   dec_consts o
   -> forall x y : @Opid o,
@@ -716,8 +740,10 @@ Proof.
     try (right; intro k; inversion k; subst; sp; fail).
 
   - destruct ncan1; destruct ncan2;
-    try (left; auto; fail);
-    try (right; sp; inversion H; fail).
+      try (left; auto; fail);
+      try (right; sp; inversion H; fail).
+    + destruct (comp_seq_nfo_dec c c0); subst; tcsp;
+        try (complete (right; introv xx; inversion xx; subst; tcsp)).
     + try destruct c; try destruct c0;
       try (left; auto; fail);
       try (right; sp; inversion H; fail).
@@ -804,8 +830,10 @@ Proof.
     try (right; intro k; inversion k; subst; sp; fail).
 
   - destruct ncan1; destruct ncan2;
-    try (left; auto; fail);
-    try (right; sp; inversion H; fail).
+      try (left; auto; fail);
+      try (right; sp; inversion H; fail).
+    + destruct (comp_seq_nfo_dec c c0); subst; tcsp;
+        try (complete (right; introv xx; inversion xx; subst; tcsp)).
     + try destruct c; try destruct c0;
       try (left; auto; fail);
       try (right; sp; inversion H; fail).

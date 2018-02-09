@@ -1420,7 +1420,7 @@ Lemma compute_step_catch_success {p} :
 Proof.
   introv c.
   dopid_noncan nc Case; allsimpl;
-  try (complete (inversion c; subst; right; dands; auto; intro k; inversion k)).
+    try (complete (inversion c; subst; right; dands; auto; intro k; inversion k)).
   destruct bstr; boolvar; ginv; subst;
   try (complete (right; dands; auto; intro k; inversion k; subst; sp)).
   destruct b; try (complete (inversion c)).

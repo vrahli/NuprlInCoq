@@ -2646,6 +2646,8 @@ Proof.
   introv i; allsimpl; repndors; ginv; tcsp.
 Qed.
 
+Hint Rewrite Nat2Z.id : slow.
+
 
 (* end hide *)
 
@@ -2947,6 +2949,40 @@ Proof.
               csunf Hcomp; allsimpl.
               apply compute_step_parallel_success in Hcomp; subst; allsimpl.
               exists (@mk_axiom p); dands; auto.
+
+            - SSSSSCase "NCompSeq1".
+
+              csunf Hcomp; allsimpl.
+              apply compute_step_comp_seq1_success in Hcomp; exrepnd; subst; simpl in *; cpx.
+              repeat (destruct lbt2; ginv).
+              generalize (Hal 1); intro k1; autodimp k1 hyp.
+              unfold selectbt in k1; simpl in k1.
+              apply alpha_eq_bterm_nobnd in k1; exrepnd; subst.
+              csunf; simpl.
+              boolvar; repndors; repnd; subst; autorewrite with slow in *; try omega; GC.
+
+              { eexists; dands; eauto. }
+
+              eexists; dands; eauto.
+              unfold mk_comp_seq2, mk_apply, nobnd.
+              repeat prove_alpha_eq3.
+
+            - SSSSSCase "NCompSeq2".
+
+              csunf Hcomp; allsimpl.
+              apply compute_step_comp_seq2_success in Hcomp; exrepnd; subst; simpl in *; cpx.
+              repeat (destruct lbt2; ginv).
+              generalize (Hal 1); intro k1; autodimp k1 hyp.
+              unfold selectbt in k1; simpl in k1.
+              apply alpha_eq_bterm_nobnd in k1; exrepnd; subst.
+              csunf; simpl.
+              boolvar; repndors; exrepnd; subst; autorewrite with slow in *; try omega.
+
+              { eexists; dands; eauto. }
+
+              eexists; dands; eauto.
+              unfold mk_comp_seq2, mk_apply, nobnd.
+              repeat prove_alpha_eq3.
 
             - SSSSSCase "NCompOp".
 
@@ -4582,6 +4618,10 @@ Proof.
 
   - Case "NParallel".
     apply compute_step_parallel_success in comp; subst; tcsp.
+
+  - Case "NCompSeq2".
+    apply compute_step_comp_seq2_success in comp; exrepnd; subst.
+    repndors; exrepnd; subst; tcsp; ginv.
 
   - Case "NCompOp".
     right; right; right; right; left.

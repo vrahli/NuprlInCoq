@@ -34,6 +34,9 @@ Require Import Coq.Init.Wf.
 Require Export substitution.
 Require Export computation1.
 
+Require Export fresh_cs.
+
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 
@@ -178,6 +181,62 @@ Definition size_bs {o} (bs : list (@BTerm o)) :=
     while evaluating a non-canonical term, its priciple argumens
     must be first evaluated down to a normal form. *)
 
+Definition mk_comp_seq1 {o} (n f : @NTerm o) :=
+  oterm (NCan NCompSeq1) [nobnd n, nobnd f].
+
+Definition mk_comp_seq2 {o} l i (n f : @NTerm o) :=
+  oterm (NCan (NCompSeq2 (MkCompSeqNfo l i))) [nobnd n, nobnd f].
+
+Definition mk_fresh_choice_nat_seq {o} (lib : @library o) (l : list nat) : @NTerm o :=
+  let cs := "a" (*fresh_cs_in_lib lib*) in
+  mk_choice_seq (MkChoiceSequenceName cs (cs_kind_seq l)).
+
+Definition compute_step_comp_seq1 {o}
+           (lib : @library o)
+           (arg1c : @CanonicalOp o)
+           (t : @NTerm o)
+           (arg1bts btsr : list (@BTerm o)) :=
+  match arg1c with
+  | Nint z =>
+    if Z_le_gt_dec 0 z
+    then
+      let i := Z.to_nat z in
+      match arg1bts, btsr with
+      | [], [bterm [] f] =>
+        if deq_nat i 0
+        then csuccess (mk_fresh_choice_nat_seq lib [])
+        else csuccess (mk_comp_seq2 [] i (mk_apply f mk_zero) f)
+      | _, _ => cfailure bad_args t
+      end
+    else cfailure bad_args t
+  | _ => cfailure bad_args t
+  end.
+
+Definition compute_step_comp_seq2 {o}
+           (lib : @library o)
+           (nfo : CompSeqNfo)
+           (arg1c : @CanonicalOp o)
+           (t : @NTerm o)
+           (arg1bts btsr : list (@BTerm o)) :=
+  match nfo, arg1c with
+  | MkCompSeqNfo l i, Nint z =>
+    if le_gt_dec i (length l)
+    then cfailure bad_args t
+    else
+      if Z_le_gt_dec 0 z
+      then
+        let k := Z.to_nat z in
+        match arg1bts, btsr with
+        | [], [bterm [] f] =>
+          if deq_nat i (S (length l))
+          then csuccess (mk_fresh_choice_nat_seq lib (snoc l k))
+          else csuccess (mk_comp_seq2 (snoc l k) i (mk_apply f (mk_nat (S (length l)))) f)
+        | _, _ => cfailure bad_args t
+        end
+      else cfailure bad_args t
+  | _, _ => cfailure bad_args t
+  end.
+
 Definition compute_step_can {o}
            lib
            (t : @NTerm o)
@@ -202,6 +261,8 @@ Definition compute_step_can {o}
     | NFresh    => cfailure "fresh has a bound variable" t
     | NTryCatch      => compute_step_try t arg1 btsr
     | NParallel      => compute_step_parallel arg1c t arg1bts btsr
+    | NCompSeq1      => compute_step_comp_seq1 lib arg1c t arg1bts btsr
+    | NCompSeq2  nfo => compute_step_comp_seq2 lib nfo arg1c t arg1bts btsr
     | NCompOp    op  => co btsr t arg1bts arg1c op comp arg1 ncr
     | NArithOp   op  => ca btsr t arg1bts arg1c op comp arg1 ncr
     | NCanTest   top => compute_step_can_test top arg1c t arg1bts btsr

@@ -2265,3 +2265,173 @@ Proof.
       rw @computes_to_val_like_in_max_k_steps_S.
       exists u; auto.
 Qed.
+
+Lemma isprogram_comp_seq1_implies_ex {o} :
+  forall (l : list (@BTerm o)),
+    isprogram (oterm (NCan NCompSeq1) l)
+    -> {t1 : NTerm & {t2 : NTerm
+        & l = [nobnd t1, nobnd t2]
+        # isprogram t1
+        # isprogram t2}}.
+Proof.
+  introv isp.
+  unfold isprogram, closed in *; repnd; simpl in *.
+  inversion isp as [|? ? imp eqm]; subst; simpl in *.
+  repeat (destruct l; simpl in *; ginv).
+  destruct b as [l1 t1].
+  destruct b0 as [l2 t2].
+  unfold num_bvars in *; simpl in *.
+  destruct l1; simpl in *; ginv.
+  destruct l2; simpl in *; ginv.
+  autorewrite with slow in *.
+  allrw app_eq_nil_iff; repnd.
+  pose proof (imp (bterm [] t1)) as q1; autodimp q1 hyp.
+  pose proof (imp (bterm [] t2)) as q2; autodimp q2 hyp.
+  allrw @bt_wf_iff.
+  exists t1 t2; dands; auto.
+Qed.
+
+Lemma isprogram_comp_seq2_implies_ex {o} :
+  forall nfo (l : list (@BTerm o)),
+    isprogram (oterm (NCan (NCompSeq2 nfo)) l)
+    -> {t1 : NTerm & {t2 : NTerm
+        & l = [nobnd t1, nobnd t2]
+        # isprogram t1
+        # isprogram t2}}.
+Proof.
+  introv isp.
+  unfold isprogram, closed in *; repnd; simpl in *.
+  inversion isp as [|? ? imp eqm]; subst; simpl in *.
+  repeat (destruct l; simpl in *; ginv).
+  destruct b as [l1 t1].
+  destruct b0 as [l2 t2].
+  unfold num_bvars in *; simpl in *.
+  destruct l1; simpl in *; ginv.
+  destruct l2; simpl in *; ginv.
+  autorewrite with slow in *.
+  allrw app_eq_nil_iff; repnd.
+  pose proof (imp (bterm [] t1)) as q1; autodimp q1 hyp.
+  pose proof (imp (bterm [] t2)) as q2; autodimp q2 hyp.
+  allrw @bt_wf_iff.
+  exists t1 t2; dands; auto.
+Qed.
+
+Lemma isprogram_comp_seq1_implies {o} :
+  forall (a b : @NTerm o),
+    isprogram (mk_comp_seq1 a b)
+    -> (isprogram a # isprogram b).
+Proof.
+  introv isp.
+  apply isprogram_comp_seq1_implies_ex in isp; exrepnd; ginv; tcsp.
+Qed.
+
+Lemma isprogram_comp_seq2_implies {o} :
+  forall l k (a b : @NTerm o),
+    isprogram (mk_comp_seq2 l k a b)
+    -> (isprogram a # isprogram b).
+Proof.
+  introv isp.
+  apply isprogram_comp_seq2_implies_ex in isp; exrepnd; ginv; tcsp.
+Qed.
+
+Lemma reduces_in_atmost_k_steps_isvalue_implies {o} :
+  forall lib k (a b : @NTerm o),
+    reduces_in_atmost_k_steps lib a b k
+    -> isvalue a
+    -> b = a.
+Proof.
+  induction k; introv comp isv.
+
+  - allrw @reduces_in_atmost_k_steps_0; auto.
+
+  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
+    rewrite compute_step_value in comp1; auto; ginv.
+    apply IHk in comp0; auto.
+Qed.
+
+Lemma isvalue_mk_fresh_choice_nat_seq {o} :
+  forall (lib : @library o) l,
+    isvalue (mk_fresh_choice_nat_seq lib l).
+Proof.
+  introv.
+  repeat constructor; simpl; tcsp.
+Qed.
+Hint Resolve isvalue_mk_fresh_choice_nat_seq : slow.
+
+Lemma implies_isprogram_mk_comp_seq2 {o} :
+  forall l i (a b : @NTerm o),
+    isprogram a
+    -> isprogram b
+    -> isprogram (mk_comp_seq2 l i a b).
+Proof.
+  introv ispa ispb.
+  unfold isprogram, closed in *; repnd; simpl in *.
+  allrw; dands; eauto 3 with slow.
+Qed.
+Hint Resolve implies_isprogram_mk_comp_seq2 : slow.
+
+Lemma approx_star_bterm_nobnd_iff {o} :
+  forall lib (op : Opid) (a b : @NTerm o),
+    approx_star_bterm lib op (bterm [] a) (bterm [] b) <=> approx_star lib a b.
+Proof.
+  introv; split; intro h.
+  - eapply approx_star_bterm_nobnd2; eauto.
+  - unfold approx_star_bterm, blift_sub; simpl.
+    exists ([] : list NVar) a b; dands; auto.
+    destruct (dec_op_eq_fresh op); subst; tcsp.
+    right.
+    exists ([] : @Sub o); dands; autorewrite with slow; tcsp; eauto 3 with slow.
+Qed.
+
+Lemma approx_starbts_nil {o} :
+  forall (lib : @library o) nc, approx_starbts lib nc [] [].
+Proof.
+  introv; unfold approx_starbts, lblift_sub; simpl; dands; tcsp.
+Qed.
+Hint Resolve approx_starbts_nil : slow.
+
+Lemma implies_approx_star_mk_comp_seq2 {o} :
+  forall lib l i (a b c d : @NTerm o),
+    approx_star lib a c
+    -> approx_star lib b d
+    -> approx_star lib (mk_comp_seq2 l i a b) (mk_comp_seq2 l i c d).
+Proof.
+  introv apra aprb.
+  apply approx_star_congruence; simpl; auto.
+  allrw @approx_starbts_cons.
+  allrw @approx_star_bterm_nobnd_iff; dands; auto; eauto 2 with slow.
+Qed.
+Hint Resolve implies_approx_star_mk_comp_seq2 : slow.
+
+Lemma implies_approx_star_mk_apply {o} :
+  forall lib (a b c d : @NTerm o),
+    approx_star lib a c
+    -> approx_star lib b d
+    -> approx_star lib (mk_apply a b) (mk_apply c d).
+Proof.
+  introv apra aprb.
+  apply approx_star_congruence; simpl; auto.
+  allrw @approx_starbts_cons.
+  allrw @approx_star_bterm_nobnd_iff; dands; auto; eauto 2 with slow.
+Qed.
+Hint Resolve implies_approx_star_mk_apply : slow.
+
+Lemma implies_approx_star_mk_zero {o} :
+  forall (lib : @library o),
+    approx_star lib mk_zero mk_zero.
+Proof.
+  introv.
+  apply approx_star_congruence; simpl; auto; eauto 2 with slow.
+Qed.
+Hint Resolve implies_approx_star_mk_zero : slow.
+
+Hint Resolve isprogram_mk_nat : slow.
+
+Lemma implies_approx_star_mk_nat {o} :
+  forall (lib : @library o) k,
+    approx_star lib (mk_nat k) (mk_nat k).
+Proof.
+  introv.
+  apply approx_star_congruence; simpl; auto; eauto 2 with slow.
+Qed.
+Hint Resolve implies_approx_star_mk_nat : slow.

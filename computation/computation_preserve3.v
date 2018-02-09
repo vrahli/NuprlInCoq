@@ -808,6 +808,18 @@ Proof.
   apply alphaeq_preserves_utokens; auto.
 Qed.
 
+Lemma get_utokens_lib_mk_fresh_choice_nat_seq_subset_get_utokens_lib {o} :
+  forall lib l (t : @NTerm o),
+    subset
+      (get_utokens_lib lib (mk_fresh_choice_nat_seq lib l))
+      (get_utokens_lib lib t).
+Proof.
+  introv h; simpl in *.
+  unfold get_utokens_lib in *; simpl in *.
+  apply in_app_iff; tcsp.
+Qed.
+Hint Resolve get_utokens_lib_mk_fresh_choice_nat_seq_subset_get_utokens_lib : slow.
+
 Lemma compute_step_subst_utoken {o} :
   forall lib (t u : @NTerm o) sub,
     nt_wf t
@@ -2058,6 +2070,95 @@ Proof.
             exists (@mk_axiom o); allsimpl.
             rw (@cl_lsubst_trivial o mk_axiom); simpl; dands; eauto 3 with slow.
             unflsubst.
+          }
+
+          { SSSCase "NCompSeq1".
+            unflsubst in comp; allsimpl.
+            csunf comp; allsimpl.
+            apply compute_step_comp_seq1_success in comp.
+            exrepnd; subst; allsimpl.
+            repeat (destruct bts; simpl in *; ginv).
+            repeat (destruct bs; simpl in *; ginv).
+            unfold nobnd in *.
+            destruct b; simpl in *.
+            destruct l; ginv; simpl in *.
+            repndors; repnd; subst.
+
+            { exists (mk_fresh_choice_nat_seq lib []); allsimpl.
+              unflsubst; simpl.
+              dands; auto; eauto 3 with slow;[].
+
+              introv nrut' eqdoms disj'.
+              exists (mk_fresh_choice_nat_seq lib []); allsimpl.
+              unflsubst. }
+
+            autorewrite with slow.
+            exists (mk_comp_seq2 [] i (mk_apply n mk_zero) n).
+            unflsubst; simpl.
+            autorewrite with slow.
+            dands; eauto 3 with slow.
+
+            { introv a b; apply disj in a; destruct a.
+              unfold get_utokens_lib in *; simpl in *; autorewrite with slow in *.
+              allrw in_app_iff; repndors; tcsp. }
+
+            { introv a.
+              unfold get_utokens_lib in *; simpl in *; autorewrite with slow in *.
+              allrw in_app_iff; repndors; tcsp. }
+
+            introv nrut' eqdoms disj'.
+            exists (mk_comp_seq2 [] i (mk_apply (lsubst n sub') mk_zero) (lsubst n sub')).
+            unflsubst; simpl.
+            csunf; simpl.
+            boolvar; autorewrite with slow in *; try omega;[].
+            unflsubst; dands; auto.
+            unflsubst; simpl; autorewrite with slow; auto.
+          }
+
+          { SSSCase "NCompSeq2".
+            unflsubst in comp; allsimpl.
+            csunf comp; allsimpl.
+            apply compute_step_comp_seq2_success in comp.
+            exrepnd; subst; allsimpl.
+            repeat (destruct bts; simpl in *; ginv).
+            repeat (destruct bs; simpl in *; ginv).
+            unfold nobnd in *.
+            destruct b; simpl in *.
+            destruct l0; ginv; simpl in *.
+            repndors; repnd; subst.
+
+            { exists (mk_fresh_choice_nat_seq lib (snoc l k)); allsimpl.
+              unflsubst; simpl.
+              dands; auto; eauto 3 with slow;[].
+
+              introv nrut' eqdoms disj'.
+              exists (mk_fresh_choice_nat_seq lib (snoc l k)); allsimpl.
+              unflsubst; simpl.
+              dands; auto.
+              csunf; simpl.
+              boolvar; ginv; autorewrite with slow; try omega; auto. }
+
+            autorewrite with slow.
+            exists (mk_comp_seq2 (snoc l k) i (mk_apply n (mk_nat (S (length l)))) n).
+            unflsubst; simpl.
+            autorewrite with slow.
+            dands; eauto 3 with slow.
+
+            { introv a b; apply disj in a; destruct a.
+              unfold get_utokens_lib in *; simpl in *; autorewrite with slow in *.
+              allrw in_app_iff; repndors; tcsp. }
+
+            { introv a.
+              unfold get_utokens_lib in *; simpl in *; autorewrite with slow in *.
+              allrw in_app_iff; repndors; tcsp. }
+
+            introv nrut' eqdoms disj'.
+            exists (mk_comp_seq2 (snoc l k) i (mk_apply (lsubst n sub') (mk_nat (S (length l)))) (lsubst n sub')).
+            unflsubst; simpl.
+            csunf; simpl.
+            boolvar; autorewrite with slow in *; try omega;[].
+            unflsubst; dands; auto.
+            unflsubst; simpl; autorewrite with slow; auto.
           }
 
           { SSSCase "NCompOp".

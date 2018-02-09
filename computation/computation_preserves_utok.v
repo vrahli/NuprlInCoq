@@ -2598,6 +2598,42 @@ Proof.
             }
 
             {
+              SSSCase "NCompSeq1".
+
+              csunf comp; simpl in *.
+              apply compute_step_comp_seq1_success in comp; exrepnd; subst; simpl in *.
+              repeat (destruct bts; simpl in *; ginv).
+              repeat (destruct bs; simpl in *; ginv).
+              unfold nobnd in *.
+              destruct b0; simpl in *.
+              destruct l; simpl in *; ginv.
+              repndors; repnd; subst; simpl in *; csunf; simpl; boolvar;
+                autorewrite with slow in *; ginv; try omega; tcsp.
+
+              repeat (rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow).
+              rewrite (not_in_get_utokens_implies_ren_utok_same _ _ n);[|eauto 4 with slow].
+              boolvar; simpl; autorewrite with slow; tcsp.
+            }
+
+            {
+              SSSCase "NCompSeq2".
+
+              csunf comp; simpl in *.
+              apply compute_step_comp_seq2_success in comp; exrepnd; subst; simpl in *.
+              repeat (destruct bts; simpl in *; ginv).
+              repeat (destruct bs; simpl in *; ginv).
+              unfold nobnd in *.
+              destruct b0; simpl in *.
+              destruct l0; simpl in *; ginv.
+              repndors; repnd; subst; simpl in *; csunf; simpl; boolvar;
+                autorewrite with slow in *; ginv; try omega; tcsp.
+
+              repeat (rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow).
+              rewrite (not_in_get_utokens_implies_ren_utok_same _ _ n);[|eauto 4 with slow].
+              boolvar; simpl; autorewrite with slow; tcsp.
+            }
+
+            {
               SSSCase "NCompOp".
 
               allrw @nt_wf_NCompOp; exrepnd; subst.

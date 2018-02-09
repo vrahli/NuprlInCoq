@@ -295,6 +295,29 @@ Proof.
             }
 
             {
+              SSSCase "NCompSeq1".
+
+              csunf comp; allsimpl.
+              apply compute_step_comp_seq1_success in comp; exrepnd; subst.
+              repndors; repnd; subst; csunf; simpl.
+              { eexists; dands; eauto. }
+              boolvar; autorewrite with slow in *; try omega.
+              eexists; dands; eauto.
+            }
+
+            {
+              SSSCase "NCompSeq2".
+
+              csunf comp; allsimpl.
+              apply compute_step_comp_seq2_success in comp; exrepnd; subst.
+              repndors; repnd; subst; csunf; simpl.
+              { boolvar; autorewrite with slow in *; try omega.
+                eexists; dands; eauto. }
+              { boolvar; autorewrite with slow in *; try omega.
+                eexists; dands; eauto. }
+            }
+
+            {
               SSSCase "NCompOp".
 
               apply compute_step_ncompop_can1_success in comp; repnd.

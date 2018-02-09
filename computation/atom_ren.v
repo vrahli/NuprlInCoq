@@ -2038,6 +2038,22 @@ Proof.
             destruct can2; allsimpl; tcsp.
           }
 
+          { SSSCase "NCompSeq1".
+            csunf comp; simpl in comp.
+            apply compute_step_comp_seq1_success in comp; exrepnd; subst.
+            csunf; simpl.
+            repndors; repnd; subst; simpl in *; tcsp;
+              boolvar; autorewrite with slow in *; try omega; tcsp.
+          }
+
+          { SSSCase "NCompSeq2".
+            csunf comp; simpl in comp.
+            apply compute_step_comp_seq2_success in comp; exrepnd; subst.
+            csunf; simpl.
+            repndors; repnd; subst; simpl in *; tcsp;
+              boolvar; autorewrite with slow in *; try omega; tcsp.
+          }
+
           { SSSCase "NCompOp".
 
             destruct bs; try (complete (csunf comp; allsimpl; dcwf h)).
