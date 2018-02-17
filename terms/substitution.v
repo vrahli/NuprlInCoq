@@ -6261,9 +6261,9 @@ Proof.
   assert (n=n0) by (eapply is_first_index_unique; eauto).
   subst. rename n0 into n. GC.
   repeat (dpair_eq).
-  exists n; dands; cpx; try congruence.
-  rewrite H1s2l; auto.
-  rewrite H1s2l; auto.
+  exists n; dands; cpx; try congruence; auto;
+    try rewrite H1s2l; auto;
+      try rewrite H1s2l; auto.
 Qed.
 
 Lemma sub_find_some_none_contra {p} : forall lv lnt1 lnt2 v t1,
@@ -6567,7 +6567,8 @@ Proof.
   remember (range sub2) as lnt2.
   Case "vterm".
 
-  - simpl. destructr (sub_find sub1 v) as  [s1|n1].
+  - simpl.
+    destructr (sub_find sub1 v) as [s1|n1].
     + symmetry in HeqHdeq. applydup @sub_find_some in HeqHdeq.
       simpl. rw Xsub1eta in HeqHdeq0.
       apply in_combine in HeqHdeq0. repnd.

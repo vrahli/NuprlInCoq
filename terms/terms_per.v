@@ -464,6 +464,8 @@ Proof.
 
   allrw @isprog_vars_lam_iff.
   rw <- @isprog_vars_isect_iff.
+  rw <- @isprog_vars_isect_iff.
+  rw <- @isprog_vars_isect_iff.
   rw @isprog_vars_uand.
   allrw <- @isprog_vars_equality_iff.
   allrw <- @isprog_vars_tequality_iff.
@@ -498,6 +500,8 @@ Proof.
   }
 
   {
+    repeat (apply isprog_vars_cons_if2 in k0;
+            [|allrw in_app_iff; allrw not_over_or; repnd;tcsp]).
     apply isprog_vars_cons_app1 in k0; auto.
     allrw in_app_iff; allrw not_over_or; repnd.
     simpl; introv xx; repndors; subst; tcsp.
@@ -506,6 +510,8 @@ Proof.
   {
     allrw in_app_iff; allrw not_over_or; repnd.
     apply isprog_vars_cons_if2 in k1; auto.
+    repeat (apply isprog_vars_cons_if2 in k1;
+            [|allrw in_app_iff; allrw not_over_or; repnd;tcsp]).
     apply isprog_vars_cons_app1 in k1; auto.
     simpl; introv xx; repndors; subst; tcsp.
   }

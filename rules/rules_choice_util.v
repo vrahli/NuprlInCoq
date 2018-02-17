@@ -1244,7 +1244,6 @@ Proof.
   rewrite find_value_of_cs_at_vals_as_select.
   rewrite find_value_of_cs_at_vals_as_select in w0.
   rewrite select_ntimes in *.
-  rewrite select_ntimes in w0.
   boolvar; tcsp.
 Qed.
 

@@ -238,6 +238,7 @@ Proof.
       try (complete (introv i; discover; allunfold @disjoint; discover; auto));
       try (complete (discover; allrw in_app_iff; allrw in_snoc; repndors; tcsp));
       try (complete (introv i; discover; allrw in_app_iff; allrw in_snoc; allsimpl; repndors; tcsp));
+      try (complete (introv i; discover; allsimpl; allrw in_app_iff; allrw in_snoc; tcsp));
       try (complete (assert (LIn p (remove_nvars [x] (free_vars B)))
                       as i by (rw in_remove_nvars; rw in_single_iff; sp);
                      discover; tcsp));
@@ -246,8 +247,7 @@ Proof.
                      discover; tcsp));
       try (complete (assert (LIn b (remove_nvars [x] (free_vars B)))
                       as i by (rw in_remove_nvars; rw in_single_iff; sp);
-                     discover; tcsp));
-      try (complete (introv i; discover; allsimpl; allrw in_app_iff; allrw in_snoc; tcsp)).
+                     discover; tcsp)).
   }
 
   destruct vhyps as [ daj    vhyps ].
@@ -310,7 +310,7 @@ Proof.
     rw @similarity_snoc in sim'8; exrepnd; subst.
     allrw length_snoc; cpx.
     apply app_split in sim'0;[|repeat (rw length_snoc); omega].
-    repnd; subst; cpx; ginv.
+    repnd; subst; cpx; simpl in *; GC; ginv.
     autorewrite with slow core in *.
 
     assert (!LIn a (dom_csub s1a1)) as nias1.
@@ -391,7 +391,8 @@ Proof.
           allrw @dom_csub_eq; GC.
 
           - destruct niph.
-            allapply @similarity_dom; repnd; rw <- sim10; auto.
+            allapply @similarity_dom; repnd.
+            rw <- sim'0; auto.
 
           - destruct_cterms; simpl; eauto 3 with slow. }
 
@@ -433,7 +434,7 @@ Proof.
     allrw length_snoc.
     apply app_split in h2;[|repeat (rw length_snoc); omega]; repnd; subst.
     apply app_split in h0;[|repeat (rw length_snoc); omega]; repnd; subst.
-    cpx; ginv.
+    cpx; simpl in *; GC; ginv.
     repeat (match goal with
               | [ H : context[htyp (mk_hyp _ _)] |- _ ] => simpl in H
               | [ H : context[hvar (mk_hyp _ _)] |- _ ] => simpl in H
@@ -588,10 +589,10 @@ Proof.
 
     - assert (!LIn a (dom_csub s1a0)) as nia.
       { allapply @similarity_dom; repnd.
-        rw sim11; auto. }
+        rw sim10; auto. }
       assert (!LIn b (dom_csub s1a0)) as nib.
       { allapply @similarity_dom; repnd.
-        rw sim11; auto. }
+        rw sim10; auto. }
 
       assert (alpha_eq_hyps
                 (substitute_hyps
@@ -625,7 +626,7 @@ Proof.
 
         - destruct niph.
           allapply @similarity_dom; repnd.
-          rw <- sim11; auto.
+          rw <- sim10; auto.
 
         - destruct_cterms; simpl; eauto 3 with slow. }
 
@@ -1670,8 +1671,8 @@ Proof.
       * introv xt'' equ sim'.
         lsubst_tac.
 
-        apply similarity_snoc in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
-        apply similarity_snoc in sim'3; exrepnd; subst; cpx; ginv; proof_irr; GC.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
+        apply similarity_snoc in sim'3; simpl in sim'3; exrepnd; subst; cpx; ginv; proof_irr; GC.
         revert c22 c24 c25 c26 c27.
         repeat (rw (@hvar_mk_hyp o)); introv.
         lsubst_tac; clear_irr.
@@ -1714,7 +1715,7 @@ Proof.
         { introv xt'' equ sim'.
           lsubst_tac.
 
-          apply similarity_snoc in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
+          apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
           revert c'.
           repeat (rw (@hvar_mk_hyp o)); introv.
 
@@ -1950,8 +1951,8 @@ Proof.
       * introv xt'' equ sim'.
         lsubst_tac.
 
-        apply similarity_snoc in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
-        apply similarity_snoc in sim'3; exrepnd; subst; cpx; ginv; proof_irr; GC.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
+        apply similarity_snoc in sim'3; simpl in sim'3; exrepnd; subst; cpx; ginv; proof_irr; GC.
         revert c16 c20 c21 c18 c19.
         repeat (rw (@hvar_mk_hyp o)); introv.
         lsubst_tac; clear_irr.
@@ -1995,7 +1996,7 @@ Proof.
         { introv xt'' equ sim'.
           lsubst_tac.
 
-          apply similarity_snoc in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
+          apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
           revert c'.
           repeat (rw (@hvar_mk_hyp o)); introv.
 

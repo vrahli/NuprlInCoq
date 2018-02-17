@@ -650,6 +650,7 @@ Ltac lsubstc_vars_as_mkcv :=
               simpl;
               repeat propagate_true_step;
               dands; auto;
+              let xxx := fresh "xxx" in
               intro xxx; repnd; repndors; auto;
               GC; match xxx with | _ => idtac end;
               tcsp);

@@ -134,9 +134,9 @@ Proof.
       apply (lib_extends_preserves_computes_to_valc _ lib'0) in comp;[|eauto 3 with slow];[].
       repeat computes_to_eqval.
 
-      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 ts x A1 A' A'1 eqa eqa1) as q1.
+      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 ts x A0 A' A'1 eqa eqa1) as q1.
       repeat (autodimp q1 hyp);[].
-      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 ts x A1 A' A'1 eqa eqa2) as q2.
+      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 ts x A0 A' A'1 eqa eqa2) as q2.
       repeat (autodimp q2 hyp);[].
 
       eapply in_ext_ext_type_sys_props4_fam_implies_in_ext_ext_eq_term_equals_fam2;
@@ -297,9 +297,9 @@ Proof.
       apply (lib_extends_preserves_computes_to_valc _ lib'0) in comp;[|eauto 3 with slow];[].
       repeat computes_to_eqval.
 
-      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 ts x A'1 A' A1 eqa eqa1) as q1.
+      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 ts x A'0 A' A1 eqa eqa1) as q1.
       repeat (autodimp q1 hyp);[].
-      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 ts x A'1 A' A1 eqa eqa2) as q2.
+      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 ts x A'0 A' A1 eqa eqa2) as q2.
       repeat (autodimp q2 hyp);[].
 
       eapply in_ext_ext_type_sys_props4_fam_implies_in_ext_ext_eq_term_equals_fam3;

@@ -3240,10 +3240,10 @@ Proof.
               apply alphaeqbt_nilv2 in k0.
               apply alphaeqbt_nilv2 in k1.
               apply alphaeqbt_nilv2 in k2.
-              exists (mk_atom_eq n n0 (subst n1 n2 n3) (mk_exception n0 n3)); dands; auto.
+              exists (mk_atom_eq n0 n (subst n2 n3 n1) (mk_exception n n1)); dands; auto.
               apply implies_alpha_eq_mk_atom_eq; auto.
               generalize (apply_bterm_alpha_congr
-                            (bterm [v] b) (bterm [n2] n1) [e] [n3]);
+                            (bterm [v] b) (bterm [n3] n2) [e] [n1]);
                 intro k; repeat (autodimp k hyp).
               unfold bin_rel_nterm; apply binrel_list_cons; dands; auto.
               apply binrel_list_nil.
@@ -5559,7 +5559,7 @@ Proof.
     autodimp nrut2 hyp.
     eapply nr_ut_sub_in_false in nrut0; eauto.
     + apply get_utokens_lib_subst; rw in_app_iff; boolvar; tcsp.
-    + pose proof (eqvars_free_vars_disjoint u [(v2,mk_utoken a0)]) as h.
+    + pose proof (eqvars_free_vars_disjoint u [(v1,mk_utoken a0)]) as h.
       rw eqvars_prop in h; apply h; clear h; simpl.
       rw in_app_iff; left.
       rw in_remove_nvars; simpl; sp.
@@ -5568,7 +5568,7 @@ Proof.
     autodimp nrut2 hyp.
     eapply nr_ut_sub_in_false in nrut0; eauto.
     + apply get_utokens_lib_subst; rw in_app_iff; boolvar; tcsp.
-    + pose proof (eqvars_free_vars_disjoint u [(v1,mk_utoken a0)]) as h.
+    + pose proof (eqvars_free_vars_disjoint u [(v2,mk_utoken a0)]) as h.
       rw eqvars_prop in h; apply h; clear h; simpl.
       rw in_app_iff; left.
       rw in_remove_nvars; simpl; sp.

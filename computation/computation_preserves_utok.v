@@ -487,7 +487,7 @@ Proof.
       apply is_utok_implies in isu3; exrepnd; subst; simpl in *.
       boolvar; subst; tcsp.
 
-      * pose proof (norep1 p0 v (mk_utoken a2) (mk_utoken a2)) as q.
+      * pose proof (norep1 p0 v (mk_utoken a1) (mk_utoken a1)) as q.
         simpl in q; boolvar; tcsp;[].
         repeat (autodimp q hyp).
         exrepnd; ginv; tcsp.
@@ -2673,9 +2673,6 @@ Proof.
 
                 + csunf; simpl.
                   dcwf h; simpl; GC.
-
-                + csunf; simpl.
-                  dcwf h; simpl; GC.
                   unfold compute_step_comp; simpl; allrw; simpl.
 
                   boolvar; simpl; autorewrite with slow; tcsp.
@@ -2687,6 +2684,9 @@ Proof.
                   * repeat (rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow).
                     rewrite (not_in_get_utokens_implies_ren_utok_same _ _ t4);[|eauto 6 with slow].
                     auto.
+
+                + csunf; simpl.
+                  dcwf h; simpl; GC.
 
                 + csunf; simpl.
                   dcwf h; simpl; GC;[].

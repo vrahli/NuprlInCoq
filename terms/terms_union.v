@@ -174,22 +174,23 @@ Proof.
                                 ++ all_vars t2)) as h;
       exrepnd.
     allsimpl.
-    repeat (rw in_app_iff in h3).
-    repeat (rw not_over_or in h3); repnd.
+    repeat (rw in_app_iff in h2).
+    repeat (rw not_over_or in h2); repnd.
     apply al_bterm with (lv := [v0]); allsimpl; auto.
-    rw disjoint_singleton_l.
-    repeat (rw in_app_iff); sp.
+
+    { rw disjoint_singleton_l.
+      repeat (rw in_app_iff); sp. }
 
     subst.
-    rw @lsubst_aux_nil.
+    try rw @lsubst_aux_nil.
     rw @lsubst_aux_sub_filter;
       try (complete (introv k; apply in_csub2sub in k; auto));
       try (complete (rw disjoint_singleton_r;
                      pose proof (newvarlst_prop [A, B]) as h; simpl in h; intro k; apply h;
                      rw in_app_iff; sp)).
     rw (lsubst_trivial4 (lsubst_aux A (csub2sub sub))); simpl;
-    try (complete (rw disjoint_singleton_l; destruct ispa as [cl wf]; rw cl; sp));
-    try (complete (introv k; sp; cpx; simpl; rw disjoint_singleton_l; auto)).
+      try (complete (rw disjoint_singleton_l; destruct ispa as [cl wf]; rw cl; sp));
+      try (complete (introv k; sp; cpx; simpl; rw disjoint_singleton_l; auto)).
 
     boolvar.
 
@@ -222,11 +223,11 @@ Proof.
                                 ++ all_vars t2)) as h;
       exrepnd.
     allsimpl.
-    repeat (rw in_app_iff in h3).
-    repeat (rw not_over_or in h3); repnd.
+    repeat (rw in_app_iff in h2).
+    repeat (rw not_over_or in h2); repnd.
     apply al_bterm with (lv := [v0]); allsimpl; auto.
-    rw disjoint_singleton_l.
-    repeat (rw in_app_iff); sp.
+    { rw disjoint_singleton_l.
+      repeat (rw in_app_iff); sp. }
 
     subst.
     rw (lsubst_trivial4 (lsubst_aux B (csub2sub sub))); simpl;

@@ -787,10 +787,10 @@ Proof.
   allrw @nrut_sub_cons; exrepnd; subst.
   repndors; subst; tcsp; cpx.
   - destruct nrut2; rw lin_flat_map.
-    apply in_sub_eta in ni1; repnd.
+    apply in_sub_eta in ni2; repnd.
     eexists; dands; eauto; simpl; tcsp.
   - destruct nrut2; rw lin_flat_map.
-    apply in_sub_eta in ni2; repnd.
+    apply in_sub_eta in ni1; repnd.
     eexists; dands; eauto; simpl; tcsp.
   - eapply IHsub; eauto.
 Qed.

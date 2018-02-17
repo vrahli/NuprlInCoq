@@ -1378,14 +1378,14 @@ Proof.
     exists (intersect4bars bar bar0 bar1 bar2).
 
   {
-    exists eqa1; dands; auto.
+    exists eqa0; dands; auto.
 
     {
       introv br ext; introv; simpl in *; exrepnd.
       pose proof (alltsp _ br7 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br9) x) as alltsp; simpl in *.
       pose proof (pera0  _ br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as pera0; simpl in *.
-      pose proof (perb0  _ br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as perb0; simpl in *.
-      pose proof (perc0  _ br8 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br0) x) as perc0; simpl in *.
+      pose proof (perc0  _ br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as perc0; simpl in *.
+      pose proof (perb0  _ br8 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br0) x) as perb0; simpl in *.
       eapply (type_sys_props4_implies_type_transitive1 _ _ T1 T1 T2); eauto.
     }
 
@@ -1394,6 +1394,28 @@ Proof.
       apply eq_term_equals_sym.
       eapply eq_term_equals_trans;[apply per_bar_eq_intersect3bars_as2_left|].
       eapply eq_term_equals_trans;[apply close_util_bar.per_bar_eq_intersect_bars_left|].
+      eapply eq_term_equals_trans;[apply close_util_bar.per_bar_eq_intersect_bars_left|].
+      apply close_util_bar.per_bar_eq_intersect_bars_right.
+    }
+  }
+
+  {
+    exists eqa1; dands; auto.
+
+    {
+      introv br ext; introv; simpl in *; exrepnd.
+      pose proof (alltsp _ br7 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br9) x) as alltsp; simpl in *.
+      pose proof (pera0  _ br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as pera0; simpl in *.
+      pose proof (perb0  _ br8 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br0) x) as perb0; simpl in *.
+      pose proof (perc0  _ br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as perc0; simpl in *.
+      eapply (type_sys_props4_implies_type_transitive2 _ _ T1 T1 T2); eauto.
+    }
+
+    {
+      eapply eq_term_equals_trans;[eauto|].
+      apply eq_term_equals_sym.
+      eapply eq_term_equals_trans;[apply per_bar_eq_intersect3bars_as2_left|].
+      eapply eq_term_equals_trans;[apply close_util_bar.per_bar_eq_intersect_bars_left|].
       apply close_util_bar.per_bar_eq_intersect_bars_right.
     }
   }
@@ -1405,9 +1427,9 @@ Proof.
       introv br ext; introv; simpl in *; exrepnd.
       pose proof (alltsp _ br7 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br9) x) as alltsp; simpl in *.
       pose proof (pera0  _ br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as pera0; simpl in *.
-      pose proof (perb0  _ br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as perb0; simpl in *.
-      pose proof (perc0  _ br8 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br0) x) as perc0; simpl in *.
-      eapply (type_sys_props4_implies_type_transitive2 _ _ T1 T1 T2); eauto.
+      pose proof (perc0  _ br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as perc0; simpl in *.
+      pose proof (perb0  _ br8 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br0) x) as perb0; simpl in *.
+      eapply (type_sys_props4_implies_type_transitive1 _ _ T2 T1 T2); eauto.
     }
 
     {
@@ -1427,29 +1449,8 @@ Proof.
       introv br ext; introv; simpl in *; exrepnd.
       pose proof (alltsp _ br7 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br9) x) as alltsp; simpl in *.
       pose proof (pera0  _ br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as pera0; simpl in *.
-      pose proof (perb0  _ br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as perb0; simpl in *.
-      pose proof (perc0  _ br8 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br0) x) as perc0; simpl in *.
-      eapply (type_sys_props4_implies_type_transitive1 _ _ T2 T1 T2); eauto.
-    }
-
-    {
-      eapply eq_term_equals_trans;[eauto|].
-      apply eq_term_equals_sym.
-      eapply eq_term_equals_trans;[apply per_bar_eq_intersect3bars_as2_left|].
-      eapply eq_term_equals_trans;[apply close_util_bar.per_bar_eq_intersect_bars_left|].
-      apply close_util_bar.per_bar_eq_intersect_bars_right.
-    }
-  }
-
-  {
-    exists eqa0; dands; auto.
-
-    {
-      introv br ext; introv; simpl in *; exrepnd.
-      pose proof (alltsp _ br7 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br9) x) as alltsp; simpl in *.
-      pose proof (pera0  _ br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as pera0; simpl in *.
-      pose proof (perb0  _ br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as perb0; simpl in *.
-      pose proof (perc0  _ br8 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br0) x) as perc0; simpl in *.
+      pose proof (perc0  _ br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as perc0; simpl in *.
+      pose proof (perb0  _ br8 lib'0 (lib_extends_trans (lib_extends_trans ext br3) br0) x) as perb0; simpl in *.
       eapply (type_sys_props4_implies_type_transitive2 _ _ T2 T1 T2); eauto.
     }
 
@@ -1457,7 +1458,6 @@ Proof.
       eapply eq_term_equals_trans;[eauto|].
       apply eq_term_equals_sym.
       eapply eq_term_equals_trans;[apply per_bar_eq_intersect3bars_as2_left|].
-      eapply eq_term_equals_trans;[apply close_util_bar.per_bar_eq_intersect_bars_left|].
       eapply eq_term_equals_trans;[apply close_util_bar.per_bar_eq_intersect_bars_left|].
       apply close_util_bar.per_bar_eq_intersect_bars_right.
     }

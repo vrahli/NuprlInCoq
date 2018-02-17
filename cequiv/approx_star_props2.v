@@ -1121,7 +1121,7 @@ Proof.
       applydup extra_ren2 in a.
       applydup disj1 in a0; allrw in_diff; destruct a2; dands; tcsp.
       rw in_app_iff; left.
-      rw in_app_iff; right; rw lin_flat_map; eexists; dands; eauto; simpl.
+      simpl; rw in_app_iff; right; rw lin_flat_map; eexists; dands; eauto; simpl.
       apply alpha_eq_bterm_preserves_utokens in i2; allsimpl; rw i2; auto.
 
     + pose proof (ex_ren_utokens_sub2
@@ -1249,7 +1249,7 @@ Proof.
         applydup extra_ren2 in a.
         applydup disj1 in a0; allrw in_diff; destruct a2; dands; tcsp.
         apply in_app_iff; left.
-        rw in_app_iff; right; rw lin_flat_map; eexists; dands; eauto; simpl.
+        simpl; rw in_app_iff; right; rw lin_flat_map; eexists; dands; eauto; simpl.
         apply alpha_eq_bterm_preserves_utokens in i2; allsimpl; rw i2; auto.
       }
 
