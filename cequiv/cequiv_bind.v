@@ -446,7 +446,7 @@ Proof.
         autodimp h hyp.
         { allrw @isprog_vars_eq; repnd.
           allrw subvars_eq.
-          introv h; apply isp0 in h; allsimpl; tcsp. }
+          introv h; apply isp3 in h; allsimpl; tcsp. }
 
         eapply approx_alpha_rw_r_aux;[exact h|].
         allrw @fold_subst; eauto 3 with slow.
@@ -521,10 +521,3 @@ Proof.
     repeat constructor.
     introv i; allsimpl; repndors; subst; tcsp.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

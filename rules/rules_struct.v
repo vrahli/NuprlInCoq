@@ -501,7 +501,7 @@ Proof.
   applydup @equality_refl in e3; sp.
 
   split; sp; GC.
-  apply @tequality_preserving_equality with (A := lsubstc A wtA s1a p1); auto.
+  apply @tequality_preserving_equality with (A := lsubstc A wtA s1a p); auto.
   rewrite member_eq.
   apply equality_sym in e3.
   apply equality_refl in e3; sp.
@@ -667,7 +667,7 @@ Proof.
   applydup @equality_refl in e3; sp.
 
   split; sp; GC.
-  apply @tequality_preserving_equality with (A := lsubstc A wtA s1a p1); auto.
+  apply @tequality_preserving_equality with (A := lsubstc A wtA s1a p); auto.
   rewrite member_eq.
   apply equality_sym in e3.
   apply equality_refl in e3; sp.
@@ -892,7 +892,7 @@ Proof.
   repnd; subst.
 
   apply similarity_snoc in sim5; exrepnd; cpx; allsimpl.
-  ginv; proof_irr; auto.
+  proof_irr; auto.
 Qed.
 
 Lemma rule_hypothesis_true_ext_lib {o} :
@@ -1371,7 +1371,7 @@ Proof.
   rw @eq_hyps_snoc in imp5; exrepnd; sp; cpx; allsimpl; cpx; clear_irr.
 
   (* from imp0 and sequent 3 *)
-  generalize (subtype_tequality lib s1a0 s2a H T U x t1 t4 w w0 p1 p0 c2 (wfh0, (wfct0, wfce1), (ct, ce)));
+  generalize (subtype_tequality lib s1a0 s2a H T U x t1 t4 w w0 p p0 c2 (wfh0, (wfct0, wfce1), (ct, ce)));
     intro j; repeat (autodimp j hyp).
   apply hyps_functionality_init_seg with (s3 := s2b1) in eqh; sp.
 

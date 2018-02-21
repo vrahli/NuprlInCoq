@@ -332,7 +332,7 @@ Proof.
 
     pose proof (continuity_axiom_v2
                   lib
-                  (lsubstc F wt1 s1 ct4)
+                  (lsubstc F wt1 s1 ct6)
                   (lsubstc T wt s1 ct2)) as cont.
     repeat (autodimp cont hyp).
     (* I need to generalize agree_upto in Lemma comp_force_int_step3_2 in continuity3_2_v2,
@@ -345,14 +345,14 @@ Proof.
       eapply alphaeqc_preserving_equality;[apply h|].
       apply alphaeqc_mkc_fun; eauto 2 with slow.
 
-      pose proof (lsubstc_mk_fun_ex mk_int T s1 wT0 cT0) as xx; exrepnd.
+      pose proof (lsubstc_mk_fun_ex mk_int T s1 wT0 cT1) as xx; exrepnd.
       eapply alphaeqc_trans;[exact xx1|clear xx1].
       clear_irr.
       rw @lsubstc_mk_int.
       apply alphaeqc_refl.
     }
 
-    pose proof (cont (lsubstc f wt0 s1 ct3)) as cont1; clear cont.
+    pose proof (cont (lsubstc f wt0 s1 ct4)) as cont1; clear cont.
     autodimp cont1 hyp.
     {
       revert k1; unfold member; intro h.

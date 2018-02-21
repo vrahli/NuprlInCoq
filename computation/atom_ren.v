@@ -3355,19 +3355,19 @@ Proof.
   destruct a as [v u]; allrw @nrut_sub_cons; exrepnd; subst; allsimpl.
   boolvar; ginv; tcsp.
   - exists a; sp.
-  - apply sub_find_some in sf1.
-    dup sf1 as i.
-    eapply in_nrut_sub in i; eauto; exrepnd; ginv.
-    unfold get_utokens_sub in nr2.
-    apply in_sub_eta in sf1; repnd.
-    destruct nr2.
-    rw lin_flat_map.
-    exists (mk_utoken a0); simpl; sp.
   - apply sub_find_some in sf2.
     dup sf2 as i.
     eapply in_nrut_sub in i; eauto; exrepnd; ginv.
     unfold get_utokens_sub in nr2.
     apply in_sub_eta in sf2; repnd.
+    destruct nr2.
+    rw lin_flat_map.
+    exists (mk_utoken a0); simpl; sp.
+  - apply sub_find_some in sf1.
+    dup sf1 as i.
+    eapply in_nrut_sub in i; eauto; exrepnd; ginv.
+    unfold get_utokens_sub in nr2.
+    apply in_sub_eta in sf1; repnd.
     destruct nr2.
     rw lin_flat_map.
     exists (mk_utoken a0); simpl; sp.

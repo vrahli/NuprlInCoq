@@ -1930,7 +1930,7 @@ Proof.
               exrepnd; subst.
 
               allsimpl; cpx; allsimpl; GC.
-              clear imp2.
+              clear imp1.
 
               pose proof (imp (nobnd t1) x) as d1.
               autodimp d1 hyp.
@@ -2895,10 +2895,4 @@ Proof.
   eapply (comp_force_int2 _ _ _ b);[|idtac|idtac|apply r];
   try (apply differ_app_F2); eauto 4 with slow.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)
+ 

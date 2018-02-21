@@ -5411,7 +5411,7 @@ Proof.
   apply app_split in sim'2; repnd; subst; try (complete (allrw length_snoc; allrw; sp)).
   rw @similarity_snoc in sim'5; exrepnd; subst; cpx; clear_irr.
   apply similarity_refl in sim'6.
-  exists s1a w0 p sim'6.
+  exists s1a w0 p1 sim'6.
   allapply @eqtypes_refl; sp.
 Qed.
 

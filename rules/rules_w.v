@@ -418,7 +418,7 @@ Proof.
              allrw @dom_csub_snoc; simpl; allapply @similarity_dom; repnd; allrw; sp).
 
   rw @eq_hyps_snoc; simpl.
-  exists s1a0 s2a0 t6 t7 w1 p2 cov4; sp.
+  exists s1a0 s2a0 t6 t7 w1 c1 cov4; sp.
 
   apply @hyps_functionality_init_seg_snoc2 with (t' := t2) (w := w0) (c := p) in eqh; sp.
   lsubst_tac; sp.
@@ -450,12 +450,12 @@ Proof.
   autodimp teqb hyp.
 
   revert_dependents w6.
-  revert_dependents c1.
-  revert_dependents c7.
+  revert_dependents c6.
   revert_dependents c4.
+  revert_dependents c8.
   repeat (rw @fold_subst); introv e1 e2.
 
-  assert (lsubstc (subst B v (mk_var a)) w6 (snoc s1a (a, t6)) c1
+  assert (lsubstc (subst B v (mk_var a)) w6 (snoc s1a (a, t6)) c4
           = substc t6 v (lsubstc_vars B w2 (csub_filter s1a [v]) [v] c2)) as eq.
   (* begin proof of assert *)
   apply lsubstc_subst_snoc_eq;
@@ -465,8 +465,8 @@ Proof.
 
   rw eq; clear eq.
 
-  assert (lsubstc (subst B v (mk_var a)) w6 (snoc s2a1 (a, t7)) c7
-          = substc t7 v (lsubstc_vars B w2 (csub_filter s2a1 [v]) [v] c10)) as eq.
+  assert (lsubstc (subst B v (mk_var a)) w6 (snoc s2a1 (a, t7)) c8
+          = substc t7 v (lsubstc_vars B w2 (csub_filter s2a1 [v]) [v] c11)) as eq.
   (* begin proof of assert *)
   apply lsubstc_subst_snoc_eq;
     try (complete sp);
@@ -500,12 +500,12 @@ Proof.
              allrw @dom_csub_snoc; simpl; allapply @similarity_dom; repnd; allrw; sp;
              rw subvars_prop; sp; splst; sp).
 
-  generalize (simple_substc2 b1 b (mk_w A v B) (snoc s1a (a, t6)) w0 cv1 c6);
+  generalize (simple_substc2 b1 b (mk_w A v B) (snoc s1a (a, t6)) w0 cv1 c5);
     intro e1; dest_imp e1 hyp;
     try (complete (splst; allapply @similarity_dom; repnd; allrw; sp)).
   rw <- e1; clear e1.
 
-  generalize (simple_substc2 b2 b (mk_w A v B) (snoc s2a1 (a, t7)) w0 cv2 c8);
+  generalize (simple_substc2 b2 b (mk_w A v B) (snoc s2a1 (a, t7)) w0 cv2 c9);
     intro e2; dest_imp e2 hyp;
     try (complete (splst; allapply @similarity_dom; repnd; allrw; sp)).
   rw <- e2; clear e2.
@@ -546,11 +546,11 @@ Proof.
   autodimp teqb hyp.
 
   revert_dependents w6.
-  revert_dependents c1.
   revert_dependents c.
+  revert_dependents c4.
   rw @fold_subst; introv e1 e2.
 
-  assert (lsubstc (subst B v (mk_var a)) w6 (snoc s1a (a, t6)) c1
+  assert (lsubstc (subst B v (mk_var a)) w6 (snoc s1a (a, t6)) c4
           = substc t6 v (lsubstc_vars B w2 (csub_filter s1a [v]) [v] c2)) as eq.
   (* begin proof of assert *)
   apply lsubstc_subst_snoc_eq;
@@ -561,7 +561,7 @@ Proof.
   rw eq; clear eq.
 
   assert (lsubstc (subst B v (mk_var a)) w6 (snoc s2a1 (a, t7)) c
-          = substc t7 v (lsubstc_vars B w2 (csub_filter s2a1 [v]) [v] c10)) as eq.
+          = substc t7 v (lsubstc_vars B w2 (csub_filter s2a1 [v]) [v] c11)) as eq.
   (* begin proof of assert *)
   apply lsubstc_subst_snoc_eq;
     try (complete sp);
@@ -574,12 +574,15 @@ Proof.
   (* we prove that the co-domain is functional *)
   intros b1 b2 eib.
 
+  revert_dependents w7.
+  revert_dependents c7.
+  revert_dependents c9.
+  revert_dependents c4.
   revert_dependents w6.
-  revert_dependents c1.
-  rw @fold_subst; introv e1 e2 eib.
+  rw @fold_subst; introv e1 eib e2.
 
-  assert (lsubstc (subst B v (mk_var a)) w6 (snoc s1a0 (a, t6)) c1
-          = substc t6 v (lsubstc_vars B w2 (csub_filter s1a0 [v]) [v] c2)) as eq.
+  assert (lsubstc (subst B v (mk_var a)) w6 (snoc s1a0 (a, t6)) c4
+          = substc t6 v (lsubstc_vars B w2 (csub_filter s1a0 [v]) [v] c2)) as equ.
   (* begin proof of assert *)
   apply lsubstc_subst_snoc_eq;
     try (complete sp);
@@ -587,10 +590,10 @@ Proof.
   (* end proof of assert *)
 
   duplicate eib as eib1.
-  rw eq in eib; clear eq.
+  rewrite equ in eib; clear equ.
 
   assert (equality lib (mkc_apply t0 b1) (mkc_apply t5 b2)
-                   (mkc_w (lsubstc A w1 s1a0 p2) v
+                   (mkc_w (lsubstc A w1 s1a0 c1) v
                           (lsubstc_vars B w2 (csub_filter s1a0 [v]) [v] c2)))
          as eap. (* from e1 *)
   (* begin proof of assert *)
@@ -603,7 +606,7 @@ Proof.
              allrw @dom_csub_snoc; simpl; allapply @similarity_dom; repnd; allrw; sp;
              rw subvars_prop; sp; splst; sp).
 
-  generalize (simple_substc2 b1 b (mk_w A v B) (snoc s1a0 (a, t6)) w0 cv1 c6);
+  generalize (simple_substc2 b1 b (mk_w A v B) (snoc s1a0 (a, t6)) w0 cv1 c5);
     intro eq1; dest_imp eq1 hyp;
     try (complete (splst; allapply @similarity_dom; repnd; allrw; sp)).
   rw <- eq1 in eq; clear eq1.
@@ -628,7 +631,7 @@ Proof.
   assert (substc b1 b
                  (lsubstc_vars (lsubst Q [(w, mk_apply (mk_var f) (mk_var b))]) w7
                                (csub_filter (snoc (snoc s1a0 (a, t6)) (f, t0)) [b])
-                               [b] c5)
+                               [b] c7)
           = lsubstc Q wfct (snoc s1a0 (w, mkc_apply t0 b1)) cv1)
          as eq1.
   (* begin proof of assert *)
@@ -640,7 +643,7 @@ Proof.
          as cvsub by (rw @cover_vars_csubst3; simpl; sp).
   generalize (simple_substc
                 b1 b (lsubst Q [(w, mk_apply (mk_var f) (mk_var b))])
-                wfsub (snoc (snoc s1a0 (a, t6)) (f, t0)) cvsub w7 c5);
+                wfsub (snoc (snoc s1a0 (a, t6)) (f, t0)) cvsub w7 c7);
     intro eq1; rw <- eq1; clear eq1.
   revert_dependents wfsub.
   revert_dependents cvsub.
@@ -667,7 +670,7 @@ Proof.
   lsubstc_snoc_vs.
   rw @lsubstc_cterm in eq1.
   rw eq1; clear eq1.
-  generalize (simple_substc2 (mkc_apply t0 b1) w Q s1a0 wfct cv1 c12);
+  generalize (simple_substc2 (mkc_apply t0 b1) w Q s1a0 wfct cv1 c13);
     intro eq1; dest_imp eq1 hyp;
     try (complete (allapply @similarity_dom; repnd; allrw; sp)).
   (* end proof of assert *)
@@ -677,7 +680,7 @@ Proof.
   assert (substc b2 b
                  (lsubstc_vars (lsubst Q [(w, mk_apply (mk_var f) (mk_var b))]) w7
                                (csub_filter (snoc (snoc s2a0 (a, t7)) (f, t5)) [b])
-                               [b] c8)
+                               [b] c9)
           = lsubstc Q wfct (snoc s2a0 (w, mkc_apply t5 b2)) cv2)
          as eq2.
   (* begin proof of assert *)
@@ -689,7 +692,7 @@ Proof.
          as cvsub by (rw @cover_vars_csubst3; simpl; sp).
   generalize (simple_substc
                 b2 b (lsubst Q [(w, mk_apply (mk_var f) (mk_var b))])
-                wfsub (snoc (snoc s2a0 (a, t7)) (f, t5)) cvsub w7 c8);
+                wfsub (snoc (snoc s2a0 (a, t7)) (f, t5)) cvsub w7 c9);
     intro eq1; rw <- eq1; clear eq1.
   revert_dependents wfsub.
   revert_dependents cvsub.
@@ -716,7 +719,7 @@ Proof.
   lsubstc_snoc_vs.
   rw @lsubstc_cterm in eq1.
   rw eq1; clear eq1.
-  generalize (simple_substc2 (mkc_apply t5 b2) w Q s2a0 wfct cv2 c12);
+  generalize (simple_substc2 (mkc_apply t5 b2) w Q s2a0 wfct cv2 c13);
     intro eq1; dest_imp eq1 hyp;
     try (complete (allapply @similarity_dom; repnd; allrw; sp)).
   (* end proof of assert *)

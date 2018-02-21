@@ -350,7 +350,7 @@ Proof.
     allrw length_snoc.
     apply app_split in eqhh2;[|repeat (rw length_snoc); omega]; repnd; subst.
     apply app_split in eqhh0;[|repeat (rw length_snoc); omega]; repnd; subst.
-    cpx; ginv.
+    cpx; simpl in *; GC; ginv.
     repeat (match goal with
               | [ H : context[htyp (mk_hyp _ _)] |- _ ] => simpl in H
               | [ H : context[hvar (mk_hyp _ _)] |- _ ] => simpl in H

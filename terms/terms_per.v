@@ -464,6 +464,8 @@ Proof.
 
   allrw @isprog_vars_lam_iff.
   rw <- @isprog_vars_isect_iff.
+  rw <- @isprog_vars_isect_iff.
+  rw <- @isprog_vars_isect_iff.
   rw @isprog_vars_uand.
   allrw <- @isprog_vars_equality_iff.
   allrw <- @isprog_vars_tequality_iff.
@@ -498,15 +500,24 @@ Proof.
   }
 
   {
+    apply isprog_vars_cons_if2 in k0;
+      try (complete (repeat (rw in_app_iff in Heqp1); repeat (rw not_over_or in Heqp1); sp)).
+    apply isprog_vars_cons_if2 in k0;
+      try (complete (repeat (rw in_app_iff in Heqp0); repeat (rw not_over_or in Heqp0); sp)).
     apply isprog_vars_cons_app1 in k0; auto.
     allrw in_app_iff; allrw not_over_or; repnd.
     simpl; introv xx; repndors; subst; tcsp.
   }
 
   {
+    apply isprog_vars_cons_if2 in k;
+      try (complete (repeat (rw in_app_iff in Heqp); repeat (rw not_over_or in Heqp); sp)).
+    apply isprog_vars_cons_if2 in k;
+      try (complete (repeat (rw in_app_iff in Heqp1); repeat (rw not_over_or in Heqp1); sp)).
+    apply isprog_vars_cons_if2 in k;
+      try (complete (repeat (rw in_app_iff in Heqp0); repeat (rw not_over_or in Heqp0); sp)).
     allrw in_app_iff; allrw not_over_or; repnd.
-    apply isprog_vars_cons_if2 in k1; auto.
-    apply isprog_vars_cons_app1 in k1; auto.
+    apply isprog_vars_cons_app1 in k; auto.
     simpl; introv xx; repndors; subst; tcsp.
   }
 Qed.

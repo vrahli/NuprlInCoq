@@ -257,6 +257,7 @@ Proof.
  assert (equality_of_int lib (mkc_arithop op m1 n1)
           (mkc_arithop op m2 n2)) by (apply @equality_of_int_arithop; auto).
  *) split.
+
   - (* tequality *) apply @tequality_mkc_equality_sp; split.
     apply tequality_int. split; left; apply equality_in_int; 
     auto; apply equality_of_int_arithop; auto.
@@ -265,10 +266,8 @@ Proof.
      rw @member_eq. rw <- @member_equality_iff.
      rw @equality_in_int. 
       clear dependent n2. clear dependent m2.
-    allrw @member_int_iff. spcast. exrepnd.
-     exists (get_arith_op op z0 z). sp; spcast; apply computes_to_valc_arithop; auto.
-  
-   
+      allrw @member_int_iff. spcast. exrepnd.
+      exists (get_arith_op op z z0). sp; spcast; apply computes_to_valc_arithop; auto.
 Qed.
 
 
@@ -323,8 +322,8 @@ Proof.
      clear dependent k2. clear dependent n2. clear dependent m2.
     allrw @member_int_iff. spcast. exrepnd.
    unfold equality_of_int.
-   assert ((z0 + z1 + z)%Z = (z0 + (z1 + z))%Z) as eq by omega.
-   exists (z0 + z1 + z)%Z. sp; auto; spcast;
+   assert ((z + z0 + z1)%Z = (z + (z0 + z1))%Z) as eq by omega.
+   exists (z + z0 + z1)%Z. sp; auto; spcast;
      [ | rw eq]; repeat (apply computes_to_valc_arithop;auto).
 Qed.
 
@@ -373,8 +372,8 @@ Proof.
      clear dependent n2. clear dependent m2.
     allrw @member_int_iff. spcast. exrepnd.
    unfold equality_of_int.
-   assert ((z0 + z)%Z = (z + z0)%Z) as eq by omega.
-   exists (z0 + z)%Z. sp; auto; spcast;
+   assert ((z + z0)%Z = (z0 + z)%Z) as eq by omega.
+   exists (z + z0)%Z. sp; auto; spcast;
      [ | rw eq]; repeat (apply computes_to_valc_arithop;auto).
 Qed.
 
@@ -429,8 +428,8 @@ Proof.
      clear dependent k2. clear dependent n2. clear dependent m2.
     allrw @member_int_iff. spcast. exrepnd.
    unfold equality_of_int.
-   assert ((z0 * z1 * z)%Z = (z0 * (z1 * z))%Z) as eq by (rw Z.mul_assoc;auto).
-   exists (z0 * z1 * z)%Z. sp; auto; spcast;
+   assert ((z * z0 * z1)%Z = (z * (z0 * z1))%Z) as eq by (rw Z.mul_assoc;auto).
+   exists (z * z0 * z1)%Z. sp; auto; spcast;
      [ | rw eq]; repeat (apply computes_to_valc_arithop;auto).
 Qed.
 
@@ -485,8 +484,8 @@ Proof.
      clear dependent k2. clear dependent n2. clear dependent m2.
     allrw @member_int_iff. spcast. exrepnd.
    unfold equality_of_int.
-   assert ((z0 * (z1 + z))%Z = ((z0 * z1) + (z0 * z))%Z) as eq by (rw Z.mul_add_distr_l;auto).
-   exists (z0 * (z1 + z))%Z. sp; auto; spcast;
+   assert ((z * (z0 + z1))%Z = ((z * z0) + (z * z1))%Z) as eq by (rw Z.mul_add_distr_l;auto).
+   exists (z * (z0 + z1))%Z. sp; auto; spcast;
      [ | rw eq]; repeat (apply computes_to_valc_arithop;auto).
 Qed.
 
@@ -536,8 +535,8 @@ Proof.
      clear dependent n2. clear dependent m2.
     allrw @member_int_iff. spcast. exrepnd.
    unfold equality_of_int.
-   assert ((z0 * z)%Z = (z * z0)%Z) as eq by(rw Z.mul_comm;auto).
-   exists (z0 * z)%Z. sp; auto; spcast;
+   assert ((z * z0)%Z = (z0 * z)%Z) as eq by(rw Z.mul_comm;auto).
+   exists (z * z0)%Z. sp; auto; spcast;
      [ | rw eq]; repeat (apply computes_to_valc_arithop;auto).
 Qed.
 
@@ -586,8 +585,9 @@ Proof.
      clear dependent n2. clear dependent m2.
     allrw @member_int_iff. spcast. exrepnd.
    unfold equality_of_int.
-   exists z. sp; auto; spcast; auto.
-   assert ( (mkc_integer z) = @mkc_integer o (z0 + (z - z0))) as eq by 
+   exists z0.
+   sp; auto; spcast; auto.
+   assert ( (mkc_integer z0) = @mkc_integer o (z + (z0 - z))) as eq by 
      (apply mkc_integer_eq_iff; omega).
      rw eq; repeat (apply computes_to_valc_arithop;auto).
 Qed.
@@ -694,10 +694,3 @@ Proof.
     apply iscvalue_mkc_integer.
 
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

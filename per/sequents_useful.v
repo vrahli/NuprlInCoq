@@ -146,7 +146,7 @@ Proof.
   rw @eq_hyps_snoc in i; exrepnd; allsimpl; cpx.
   ai_lsubst_tac.
 
-  generalize (subtype_tequality lib s1a s2a H T U x t3 t' w w1 p1 c c4 wc); intro i.
+  generalize (subtype_tequality lib s1a s2a H T U x t3 t' w w1 c c4 c5 wc); intro i.
   repeat (autodimp i hyp).
 
   allrw @similarity_snoc; exrepnd; allsimpl; cpx.
@@ -154,19 +154,19 @@ Proof.
 
   lsubst_tac.
 
-  generalize (subtype_equality lib t3 t4 T U s1a s2a w w1 p1 c5 H x wc); intro j;
+  generalize (subtype_equality lib t3 t4 T U s1a s2a w w1 c c6 H x wc); intro j;
   repeat (autodimp j hyp).
 
-  generalize (subtype_tequality lib s1a s2a H T U x t3 t' w w1 p1 c5 c8 wc); intro k;
+  generalize (subtype_tequality lib s1a s2a H T U x t3 t' w w1 c c6 c9 wc); intro k;
   repeat (autodimp k hyp).
 
   apply tequality_mkc_equality; sp.
 
   split; sp; try (complete (apply @equality_refl with (t2 := t4); sp)).
   apply equality_sym in j.
-  assert (equality lib t4 t0 (lsubstc U w1 s1a c5))
+  assert (equality lib t4 t0 (lsubstc U w1 s1a c6))
     as eq by (apply @equality_trans with (t2 := t3); sp).
-  apply tequality_preserving_equality with (A := lsubstc U w1 s1a c5); sp.
+  apply tequality_preserving_equality with (A := lsubstc U w1 s1a c6); sp.
 Qed.
 
 Lemma similarity_widening {o} :

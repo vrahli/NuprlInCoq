@@ -130,7 +130,7 @@ Proof.
     + apply hyps_functionality_snoc2; simpl; auto.
 
       * introv equ' sim'.
-        apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx; GC; ginv.
         allsimpl.
         lsubst_tac.
         apply tequality_free_from_atom; dands; eauto 3 with slow.
@@ -228,7 +228,7 @@ Proof.
     + apply hyps_functionality_snoc2; simpl; auto.
 
       * introv equ' sim'.
-        apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx; GC; ginv.
         allsimpl.
         lsubst_tac.
         apply tequality_free_from_atom; dands; eauto 3 with slow.
@@ -336,7 +336,7 @@ Proof.
       * apply hyps_functionality_snoc2; simpl; auto.
 
         { introv equ' sim'.
-          apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+          apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx; GC; ginv.
           allsimpl.
           lsubst_tac.
           apply tequality_free_from_atom; dands; eauto 3 with slow.
@@ -598,8 +598,8 @@ Proof.
     + apply hyps_functionality_snoc2; simpl; auto.
 
       { introv equ' sim'.
-        apply similarity_snoc in sim'; exrepnd; cpx; ginv.
-        apply similarity_snoc in sim'3; exrepnd; cpx; ginv.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx; GC; ginv.
+        apply similarity_snoc in sim'3; simpl in sim'3; exrepnd; cpx; GC; ginv.
         allsimpl.
         lsubst_tac.
         apply tequality_free_from_atom; dands; eauto 3 with slow;[].
@@ -633,7 +633,7 @@ Proof.
       apply hyps_functionality_snoc2; simpl; auto.
 
       { introv equ' sim'.
-        apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx; GC; ginv.
         allsimpl.
         lsubst_tac.
         apply tequality_free_from_atom; dands; eauto 3 with slow;[].
@@ -780,8 +780,8 @@ Proof.
     + apply hyps_functionality_snoc2; simpl; auto.
 
       { introv equ' sim'.
-        apply similarity_snoc in sim'; exrepnd; cpx; ginv.
-        apply similarity_snoc in sim'3; exrepnd; cpx; ginv.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx; GC; ginv.
+        apply similarity_snoc in sim'3; simpl in sim'3; exrepnd; cpx; GC; ginv.
         allsimpl.
         lsubst_tac.
         apply tequality_free_from_atom; dands; eauto 3 with slow;[].
@@ -815,7 +815,7 @@ Proof.
       apply hyps_functionality_snoc2; simpl; auto.
 
       { introv equ' sim'.
-        apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx; GC; ginv.
         allsimpl.
         lsubst_tac.
         apply tequality_free_from_atom; dands; eauto 3 with slow;[].
@@ -954,7 +954,7 @@ Proof.
       { apply hyps_functionality_snoc2; simpl; auto.
 
         { introv equ' sim'.
-          apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+          apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx; GC; ginv.
           allsimpl.
           lsubst_tac.
           apply tequality_free_from_atom; dands; eauto 3 with slow.
@@ -1089,7 +1089,7 @@ Proof.
       { apply hyps_functionality_snoc2; simpl; auto.
 
         { introv equ' sim'.
-          apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+          apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx; GC; ginv.
           allsimpl.
           lsubst_tac.
           apply tequality_free_from_atom; dands; eauto 3 with slow.
@@ -1317,7 +1317,7 @@ Proof.
     + apply hyps_functionality_snoc2; simpl; auto.
 
       * introv equ' sim'.
-        apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx; GC; ginv.
         allsimpl.
         lsubst_tac.
 
@@ -1454,7 +1454,7 @@ Proof.
     + apply hyps_functionality_snoc2; simpl; auto.
 
       * introv equ' sim'.
-        apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx; GC; ginv.
         allsimpl.
         lsubst_tac.
 
@@ -1595,7 +1595,7 @@ Proof.
       * apply hyps_functionality_snoc2; simpl; auto.
 
         { introv equ' sim'.
-          apply similarity_snoc in sim'; exrepnd; cpx; ginv.
+          apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx; GC; ginv.
           allsimpl.
           lsubst_tac.
 
@@ -1733,10 +1733,3 @@ Proof.
           GC; proof_irr; auto. }
 *)
 Abort.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

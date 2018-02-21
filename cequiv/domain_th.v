@@ -1268,9 +1268,8 @@ Proof.
     | subset ?l ?r => let rs:= eval simpl in r in
                         assert (subset l rs) as Xss by trivial
     end.
-    apply subset_disjoint with (l3:=[vy]) in Xss;[|
-      introv Hin Hinc; repeat(in_reasoning);subst;
-      inverts Hin;cpx; fail].
+    apply subset_disjoint with (l3:=[vy]) in Xss;
+      [|introv Hin Hinc; repeat(in_reasoning);subst; tcsp];[].
     apply' (@lsubst_bterm_aux_trim p [vy]) Xss.
 
   destruct e1bt1nt as [e1bt1v|f| e1bt1o e1bt1lbt]; invertsn Hcs.

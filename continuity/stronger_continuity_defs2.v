@@ -761,10 +761,10 @@ Proof.
         try (apply isprog_apply);
         try (apply isprog_mk_nat);
         eauto 3 with slow.
-        * exists (get_cterm a') (get_cterm e'); dands; eauto 3 with slow.
-          unfold computes_to_exception; exists k1; auto.
         * exists (get_cterm a'0) (get_cterm e'0); dands; eauto 3 with slow.
           unfold computes_to_exception; exists k0; auto.
+        * exists (get_cterm a') (get_cterm e'); dands; eauto 3 with slow.
+          unfold computes_to_exception; exists k1; auto.
 
      + provefalse.
        repndors; exrepnd; spcast.
@@ -2558,8 +2558,8 @@ Proof.
         { allunfold @computes_to_can_in_max_k_steps; repnd.
           apply reduces_in_atmost_k_steps_if_isvalue_like in comp7; eauto 3 with slow.
           apply reduces_in_atmost_k_steps_if_isvalue_like in comp2; eauto 3 with slow.
-          unfold mk_zero, mk_nat in comp7; ginv.
-          unfold mk_integer in comp2; ginv; fold_terms.
+          unfold mk_integer in comp7; ginv; fold_terms.
+          unfold mk_zero, mk_nat in comp2; ginv.
           pose proof (Wf_Z.Z_of_nat_complete_inf i1) as hi1; autodimp hi1 hyp; exrepnd; subst.
           fold_terms.
           exists 0; dands; tcsp; try omega.
@@ -4464,8 +4464,8 @@ Proof.
           simpl in imp.
           fold_terms.
 
-          pose proof (imp (nobnd (sterm f1)) x0 x) as d1; autodimp d1 hyp.
-          pose proof (imp (nobnd b) y0 y) as d2; autodimp d2 hyp.
+          pose proof (imp (nobnd (sterm f1)) x x0) as d1; autodimp d1 hyp.
+          pose proof (imp (nobnd b) y y0) as d2; autodimp d2 hyp.
           clear imp.
 
           inversion d1 as [? ? ? ? d3]; subst; clear d1.
@@ -4752,9 +4752,9 @@ Proof.
               cpx; GC; allsimpl.
               allrw @wf_term_apply_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
 
-              pose proof (imp (nobnd (mk_lam v b)) (nobnd a2) (nobnd a1)) as d1.
+              pose proof (imp (nobnd (mk_lam v b)) (nobnd a1) (nobnd a2)) as d1.
               autodimp d1 hyp.
-              pose proof (imp (nobnd b0) (nobnd b2) (nobnd b1)) as d2.
+              pose proof (imp (nobnd b0) (nobnd b1) (nobnd b2)) as d2.
               autodimp d2 hyp.
               clear imp.
 
@@ -4770,12 +4770,12 @@ Proof.
               destruct x0 as [l2 t2].
               allrw @wf_term_lambda_iff; exrepnd; ginv; fold_terms.
 
-              pose proof (imp1 (bterm [v0] a0) (bterm [v2] a2) (bterm [v1] a1)) as d1.
+              pose proof (imp1 (bterm [v2] a2) (bterm [v1] a1) (bterm [v0] a0)) as d1.
               autodimp d1 hyp.
               clear imp1.
               inversion d1 as [? ? ? ? d2]; subst; clear d1.
 
-              exists (subst a2 v1 b2) (subst a1 v1 b1) (subst a0 v1 b0).
+              exists (subst a1 v0 b1) (subst a0 v0 b2) (subst a2 v0 b0).
               dands; eauto 3 with slow.
             }
 
@@ -4786,9 +4786,9 @@ Proof.
               cpx; GC; allsimpl.
               allrw @wf_term_apply_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
 
-              pose proof (imp (nobnd (mk_nseq f0)) (nobnd a2) (nobnd a1)) as d1.
+              pose proof (imp (nobnd (mk_nseq f0)) (nobnd a1) (nobnd a2)) as d1.
               autodimp d1 hyp.
-              pose proof (imp (nobnd b) (nobnd b1) (nobnd b0)) as d2.
+              pose proof (imp (nobnd b) (nobnd b0) (nobnd b1)) as d2.
               autodimp d2 hyp.
               clear imp.
 
@@ -4803,7 +4803,7 @@ Proof.
               clear imp1.
               fold_terms.
 
-              exists (mk_eapply (mk_nseq f0) b1) (mk_eapply (mk_nseq f0) b0) (mk_eapply (mk_nseq f0) b).
+              exists (mk_eapply (mk_nseq f0) b0) (mk_eapply (mk_nseq f0) b1) (mk_eapply (mk_nseq f0) b).
               dands; eauto 3 with slow.
 
               apply differ_try_implies_differ_try_alpha.
@@ -4996,7 +4996,7 @@ Proof.
             cpx; GC; allsimpl.
             allrw @wf_term_fix_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
 
-            pose proof (imp (nobnd (oterm (Can can1) bs1)) (nobnd a2) (nobnd a1)) as d1.
+            pose proof (imp (nobnd (oterm (Can can1) bs1)) (nobnd a1) (nobnd a2)) as d1.
             autodimp d1 hyp.
             clear imp.
 
@@ -5034,9 +5034,9 @@ Proof.
             cpx; GC; allsimpl.
             allrw @wf_term_spread_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
 
-            pose proof (imp (nobnd (mk_pair a0 b)) (nobnd a3) (nobnd a2)) as d1.
+            pose proof (imp (nobnd (mk_pair a0 b)) (nobnd a2) (nobnd a3)) as d1.
             autodimp d1 hyp.
-            pose proof (imp (bterm [v1,v2] b0) (bterm [v4,v5] b2) (bterm [v0,v3] b1)) as d2.
+            pose proof (imp (bterm [v1,v2] b0) (bterm [v0,v3] b1) (bterm [v4,v5] b2)) as d2.
             autodimp d2 hyp.
             clear imp.
 
@@ -5052,17 +5052,17 @@ Proof.
             destruct x0 as [l2 t2].
             allrw @wf_term_pair_iff; exrepnd; ginv; fold_terms; ginv.
 
-            pose proof (imp1 (nobnd a1) (nobnd a3) (nobnd a2)) as d1.
+            pose proof (imp1 (nobnd a3) (nobnd a2) (nobnd a1)) as d1.
             autodimp d1 hyp.
-            pose proof (imp1 (nobnd b3) (nobnd b5) (nobnd b4)) as d2.
+            pose proof (imp1 (nobnd b5) (nobnd b4) (nobnd b3)) as d2.
             autodimp d2 hyp.
             clear imp1.
             inversion d1 as [? ? ? ? d3]; subst; clear d1.
             inversion d2 as [? ? ? ? d5]; subst; clear d2.
 
-            exists (lsubst b2 [(v0,a3),(v3,b5)])
-                   (lsubst b1 [(v0,a2),(v3,b4)])
-                   (lsubst b0 [(v0,a1),(v3,b3)]);
+            exists (lsubst b1 [(v4,a2),(v5,b4)])
+                   (lsubst b2 [(v4,a1),(v5,b3)])
+                   (lsubst b0 [(v4,a3),(v5,b5)]);
             dands; eauto 4 with slow.
 
           - SSSCase "NDsup".
@@ -5076,9 +5076,9 @@ Proof.
             cpx; GC; allsimpl.
             allrw @wf_term_dsup_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
 
-            pose proof (imp (nobnd (mk_sup a0 b)) (nobnd a3) (nobnd a2)) as d1.
+            pose proof (imp (nobnd (mk_sup a0 b)) (nobnd a2) (nobnd a3)) as d1.
             autodimp d1 hyp.
-            pose proof (imp (bterm [v1,v2] b0) (bterm [v4,v5] b2) (bterm [v0,v3] b1)) as d2.
+            pose proof (imp (bterm [v1,v2] b0) (bterm [v0,v3] b1) (bterm [v4,v5] b2)) as d2.
             autodimp d2 hyp.
             clear imp.
 
@@ -5094,18 +5094,18 @@ Proof.
             destruct x0 as [l2 t2].
             allrw @wf_term_sup_iff; exrepnd; ginv; fold_terms; ginv.
 
-            pose proof (imp1 (nobnd a1) (nobnd a3) (nobnd a2)) as d1.
+            pose proof (imp1 (nobnd a3) (nobnd a2) (nobnd a1)) as d1.
             autodimp d1 hyp.
-            pose proof (imp1 (nobnd b3) (nobnd b5) (nobnd b4)) as d2.
+            pose proof (imp1 (nobnd b5) (nobnd b4) (nobnd b3)) as d2.
             autodimp d2 hyp.
             clear imp1.
             inversion d1 as [? ? ? ? d3]; subst; clear d1.
             inversion d2 as [? ? ? ? d5]; subst; clear d2.
 
-            exists (lsubst b2 [(v0,a3),(v3,b5)])
-                   (lsubst b1 [(v0,a2),(v3,b4)])
-                   (lsubst b0 [(v0,a1),(v3,b3)]);
-            dands; eauto 4 with slow.
+            exists (lsubst b1 [(v4,a2),(v5,b4)])
+                   (lsubst b2 [(v4,a1),(v5,b3)])
+                   (lsubst b0 [(v4,a3),(v5,b5)]);
+              dands; eauto 4 with slow.
 
           - SSSCase "NDecide".
             clear ind indhyp.
@@ -5118,11 +5118,11 @@ Proof.
             cpx; GC; allsimpl.
             allrw @terms5.wf_term_decide_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
 
-            pose proof (imp (nobnd (oterm (Can can1) [nobnd d0])) (nobnd a2) (nobnd a1)) as d1.
+            pose proof (imp (nobnd (oterm (Can can1) [nobnd d0])) (nobnd a1) (nobnd a2)) as d1.
             autodimp d1 hyp.
-            pose proof (imp (bterm [v0] b1) (bterm [v6] b4) (bterm [v4] b0)) as d2.
+            pose proof (imp (bterm [v0] b1) (bterm [v4] b0) (bterm [v6] b4)) as d2.
             autodimp d2 hyp.
-            pose proof (imp (bterm [v3] b2) (bterm [v7] b5) (bterm [v5] b3)) as d3.
+            pose proof (imp (bterm [v3] b2) (bterm [v5] b3) (bterm [v7] b5)) as d3.
             autodimp d3 hyp.
             clear imp.
 
@@ -5145,14 +5145,14 @@ Proof.
 
             repndors; repnd; subst.
 
-            + exists (lsubst b4 [(v4,t1)])
-                     (lsubst b0 [(v4,t2)])
-                     (lsubst b1 [(v4,d0)]);
+            + exists (lsubst b0 [(v6,t1)])
+                     (lsubst b4 [(v6,t2)])
+                     (lsubst b1 [(v6,d0)]);
                 dands; eauto 4 with slow.
 
-            + exists (lsubst b5 [(v5,t1)])
-                     (lsubst b3 [(v5,t2)])
-                     (lsubst b2 [(v5,d0)]);
+            + exists (lsubst b3 [(v7,t1)])
+                     (lsubst b5 [(v7,t2)])
+                     (lsubst b2 [(v7,d0)]);
                 dands; eauto 4 with slow.
 
           - SSSCase "NCbv".
@@ -5311,9 +5311,9 @@ Proof.
             cpx; GC; allsimpl.
             allrw @wf_term_cbv_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
 
-            pose proof (imp (nobnd (oterm (Can can1) bs1)) (nobnd a1) (nobnd a0)) as d1.
+            pose proof (imp (nobnd (oterm (Can can1) bs1)) (nobnd a0) (nobnd a1)) as d1.
             autodimp d1 hyp.
-            pose proof (imp (bterm [v] x) (bterm [v0] b0) (bterm [v1] b)) as d2.
+            pose proof (imp (bterm [v] x) (bterm [v1] b) (bterm [v0] b0)) as d2.
             autodimp d2 hyp.
             clear imp.
 
@@ -5324,9 +5324,9 @@ Proof.
 
             { ex_spfexc. }
 
-            exists (lsubst b0 [(v1,oterm (Can can1) bs2)])
-                   (lsubst b [(v1,oterm (Can can1) bs3)])
-                   (lsubst x [(v1,oterm (Can can1) bs1)]);
+            exists (lsubst b [(v0,oterm (Can can1) bs2)])
+                   (lsubst b0 [(v0,oterm (Can can1) bs3)])
+                   (lsubst x [(v0,oterm (Can can1) bs1)]);
               dands; eauto 4 with slow.
 
           - SSSCase "NSleep".
@@ -5340,7 +5340,7 @@ Proof.
             cpx; GC; allsimpl.
             allrw @wf_term_sleep_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
 
-            pose proof (imp (nobnd (mk_integer z)) (nobnd a2) (nobnd a1)) as d1.
+            pose proof (imp (nobnd (mk_integer z)) (nobnd a1) (nobnd a2)) as d1.
             autodimp d1 hyp.
             clear imp.
 
@@ -5367,7 +5367,7 @@ Proof.
             cpx; GC; allsimpl.
             allrw @wf_term_tuni_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
 
-            pose proof (imp (nobnd (mk_nat n)) (nobnd a2) (nobnd a1)) as d1.
+            pose proof (imp (nobnd (mk_nat n)) (nobnd a1) (nobnd a2)) as d1.
             autodimp d1 hyp.
             clear imp.
 
@@ -5396,7 +5396,7 @@ Proof.
             cpx; GC; allsimpl.
             allrw @wf_term_minus_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
 
-            pose proof (imp (nobnd (mk_integer z)) (nobnd a2) (nobnd a1)) as d1.
+            pose proof (imp (nobnd (mk_integer z)) (nobnd a1) (nobnd a2)) as d1.
             autodimp d1 hyp.
             clear imp.
 
@@ -5428,11 +5428,11 @@ Proof.
             cpx; GC; allsimpl.
             allrw @wf_term_try_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
 
-            pose proof (imp (nobnd (oterm (Can can1) bs1)) (nobnd a3) (nobnd a2)) as d1.
+            pose proof (imp (nobnd (oterm (Can can1) bs1)) (nobnd a2) (nobnd a3)) as d1.
             autodimp d1 hyp.
-            pose proof (imp (nobnd b) (nobnd b1) (nobnd b0)) as d2.
+            pose proof (imp (nobnd b) (nobnd b0) (nobnd b1)) as d2.
             autodimp d2 hyp.
-            pose proof (imp (bterm [v0] c0) (bterm [v2] c2) (bterm [v1] c1)) as d3.
+            pose proof (imp (bterm [v0] c0) (bterm [v1] c1) (bterm [v2] c2)) as d3.
             autodimp d3 hyp.
             clear imp.
 
@@ -5448,7 +5448,7 @@ Proof.
 
               - unfold ispk in hv0; exrepnd; subst.
 
-                pose proof (indhyp b b1 b0 (pk2term pk) j) as h.
+                pose proof (indhyp b b0 b1 (pk2term pk) j) as h.
                 repeat (autodimp h hyp); eauto 3 with slow; exrepnd.
                 apply differ_try_alpha_pk2term in h1.
 
@@ -5501,7 +5501,7 @@ Proof.
               - applydup @reduces_in_atmost_k_steps_preserves_wf in hv2; auto.
                 apply wf_isexc_implies in hv0; exrepnd; subst; auto.
 
-                pose proof (indhyp b b1 b0 (mk_exception a0 e) j) as h.
+                pose proof (indhyp b b0 b1 (mk_exception a0 e) j) as h.
                 repeat (autodimp h hyp); eauto 3 with slow; exrepnd.
                 apply differ_try_alpha_exception in h1.
 
@@ -5534,10 +5534,10 @@ Proof.
                     apply reduces_to_if_step; csunf; simpl; auto.
             }
 
-            exists (mk_atom_eq b1 b1 (oterm (Can can1) bs2) mk_bot)
-                   (mk_atom_eq b0 b0 (oterm (Can can1) bs3) mk_bot)
+            exists (mk_atom_eq b0 b0 (oterm (Can can1) bs2) mk_bot)
+                   (mk_atom_eq b1 b1 (oterm (Can can1) bs3) mk_bot)
                    (mk_atom_eq b b (oterm (Can can1) bs1) mk_bot);
-            dands; eauto 4 with slow.
+              dands; eauto 4 with slow;[].
 
             apply differ_try_implies_differ_try_alpha.
             apply differ_try_oterm; simpl; tcsp;[].
@@ -5557,9 +5557,9 @@ Proof.
             allrw @wf_term_parallel_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
             allsimpl.
 
-            pose proof (imp (nobnd (oterm (Can can1) bs1)) (nobnd a2) (nobnd a1)) as d1.
+            pose proof (imp (nobnd (oterm (Can can1) bs1)) (nobnd a1) (nobnd a2)) as d1.
             autodimp d1 hyp.
-            pose proof (imp (nobnd b) (nobnd b1) (nobnd b0)) as d2.
+            pose proof (imp (nobnd b) (nobnd b0) (nobnd b1)) as d2.
             autodimp d2 hyp.
             clear imp.
 
@@ -5719,20 +5719,20 @@ Proof.
               apply if_has_value_like_k_ncompop_can1 in hv; exrepnd.
               allrw @wf_term_ncompop_iff; exrepnd; ginv.
               allsimpl.
-              pose proof (imp (nobnd c1) (nobnd c3) (nobnd c2)) as h1; autodimp h1 hyp.
-              pose proof (imp (nobnd d) (nobnd d1) (nobnd d0)) as h2; autodimp h2 hyp.
+              pose proof (imp (nobnd c1) (nobnd c2) (nobnd c3)) as h1; autodimp h1 hyp.
+              pose proof (imp (nobnd d) (nobnd d0) (nobnd d1)) as h2; autodimp h2 hyp.
               inversion h1 as [? ? ? ? h3]; subst; clear h1.
               inversion h2 as [? ? ? ? h4]; subst; clear h2.
 
-              pose proof (q b1 b0 t' j) as ih; clear q.
+              pose proof (q b0 b1 t' j) as ih; clear q.
               repeat (autodimp ih hyp); eauto 2 with slow;[|].
 
               { introv l w1 w2 w3 isv r d'.
                 apply (indhyp t1 t2 t3 v m); eauto 3 with slow; try omega. }
 
               exrepnd.
-              exists (mk_compop c0 (oterm (Can can1) bs4) t2' c3 d1)
-                     (mk_compop c0 (oterm (Can can1) bs5) t3' c2 d0)
+              exists (mk_compop c0 (oterm (Can can1) bs4) t2' c2 d0)
+                     (mk_compop c0 (oterm (Can can1) bs5) t3' c3 d1)
                      (mk_compop c0 (oterm (Can can1) bs1) u' c1 d).
               dands; eauto 3 with slow.
 
@@ -5847,9 +5847,9 @@ Proof.
               repeat (destruct bs'; allsimpl; ginv).
               allsimpl.
 
-              pose proof (imp (nobnd (oterm (Can can1) bs1)) (nobnd a3) (nobnd a2)) as d1.
+              pose proof (imp (nobnd (oterm (Can can1) bs1)) (nobnd a2) (nobnd a3)) as d1.
               autodimp d1 hyp.
-              pose proof (imp (nobnd b) (nobnd b1) (nobnd b0)) as d2.
+              pose proof (imp (nobnd b) (nobnd b0) (nobnd b1)) as d2.
               autodimp d2 hyp.
               clear imp.
 
@@ -5863,7 +5863,7 @@ Proof.
               pose proof (ind b b []) as q; clear ind.
               repeat (autodimp q hyp);eauto 3 with slow;[].
               apply if_has_value_like_k_narithop_can1 in hv; exrepnd.
-              pose proof (q b1 b0 t' j) as ih; clear q.
+              pose proof (q b0 b1 t' j) as ih; clear q.
               repeat (autodimp ih hyp); eauto 2 with slow;[|].
 
               { introv l w1 w2 w3 isv r d'.
@@ -5939,11 +5939,11 @@ Proof.
 
             allrw @wf_term_cantest_iff; exrepnd; allunfold @nobnd; ginv; fold_terms.
 
-            pose proof (imp (nobnd (oterm (Can can1) bs1)) (nobnd a2) (nobnd a1)) as d1.
+            pose proof (imp (nobnd (oterm (Can can1) bs1)) (nobnd a1) (nobnd a2)) as d1.
             autodimp d1 hyp.
-            pose proof (imp (nobnd b) (nobnd b1) (nobnd b0)) as d2.
+            pose proof (imp (nobnd b) (nobnd b0) (nobnd b1)) as d2.
             autodimp d2 hyp.
-            pose proof (imp (nobnd c1) (nobnd c3) (nobnd c2)) as d3.
+            pose proof (imp (nobnd c1) (nobnd c2) (nobnd c3)) as d3.
             autodimp d3 hyp.
             clear imp.
 
@@ -5955,8 +5955,8 @@ Proof.
 
             { ex_spfexc. }
 
-            exists (if canonical_form_test_for c0 can1 then b1 else c3)
-                   (if canonical_form_test_for c0 can1 then b0 else c2)
+            exists (if canonical_form_test_for c0 can1 then b0 else c2)
+                   (if canonical_form_test_for c0 can1 then b1 else c3)
                    (if canonical_form_test_for c0 can1 then b else c1);
             dands; eauto 4 with slow.
             remember (canonical_form_test_for c0 can1) as cc; destruct cc; eauto 3 with slow.
@@ -5993,7 +5993,7 @@ Proof.
 
           inversion d as [? ? ? ? ? ? ? ? ? ? ? ? ? ? ? d1 aeq1 aeq2 aeq3|? ? ? spf|?|?|? ? ? ? len1 len2 nia imp]; subst; allsimpl; clear d; GC;[|idtac|].
 
-          - clear wt1 wt2 wt3 wt5.
+          - clear wt1 wt2 wt3 wt0.
             fold_terms.
             applydup @has_value_like_k_bound_nat_try_aux in hv'; exrepnd; eauto 3 with slow.
             repndors; exrepnd.
@@ -6424,7 +6424,7 @@ Proof.
 
           inversion d as [? ? ? ? ? ? ? ? ? ? ? ? ? ? ? d1 aeq1 aeq2 aeq3|?|?|?|? ? ? ? len1 len2 nia imp]; subst; allsimpl; clear d; GC;[|idtac|].
 
-          - clear wt1 wt2 wt3 wt5.
+          - clear wt1 wt2 wt3 wt0.
             fold_terms.
             applydup @has_value_like_k_bound_nat_try_aux in hv'; exrepnd; eauto 3 with slow;[].
             repndors; exrepnd.
@@ -6995,10 +6995,3 @@ Proof.
   apply (differ_try_reduces_in_atmost_k_steps_aux lib a f g c k t1 t2 t3); auto.
   apply eq_fun2natE_implies_eq_fun2TE; auto.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

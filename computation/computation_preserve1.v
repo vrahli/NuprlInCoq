@@ -253,7 +253,7 @@ Proof.
           { allsimpl; allrw remove_nvars_nil_l; allrw app_nil_r.
             dands; eauto 3 with slow.
             allrw @nt_wf_eq.
-            allrw <- @wf_apply_iff; repnd.
+            allrw <- @wf_apply_iff; allrw <- @wf_eapply_iff; repnd.
             dands; auto.
           }
         }

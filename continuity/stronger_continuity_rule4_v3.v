@@ -100,7 +100,8 @@ Proof.
   introv nieF niefF nienF.
   unfold spM.
   allrw @covered_lam.
-  unfold test_try2.
+  unfold test2, test_try2.
+  rw @covered_fresh.
   rw @covered_try.
   rw @covered_var; simpl.
   unfold app_bound2.
