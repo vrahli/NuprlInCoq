@@ -144,7 +144,7 @@ Lemma dest_close_per_int_l {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
     -> defines_only_universes ts
-    -> computes_to_valc lib T mkc_int
+    -> ccomputes_to_valc_ext lib T mkc_int
     -> close ts lib T T' eq
     -> per_int_bar (close ts) lib T T' eq.
 Proof.
@@ -158,7 +158,7 @@ Lemma dest_close_per_int_r {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
     -> defines_only_universes ts
-    -> computes_to_valc lib T' mkc_int
+    -> ccomputes_to_valc_ext lib T' mkc_int
     -> close ts lib T T' eq
     -> per_int_bar (close ts) lib T T' eq.
 Proof.
@@ -168,7 +168,7 @@ Proof.
   introv br ext; introv; eapply reca; eauto 3 with slow.
 Qed.
 
-Lemma dest_close_per_int_bar_l {p} :
+(*Lemma dest_close_per_int_bar_l {p} :
   forall (ts : cts(p)) lib T T' eq (bar : BarLib lib),
     type_system ts
     -> defines_only_universes ts
@@ -227,3 +227,4 @@ Proof.
   eapply local_per_int_bar; eauto.
   introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
+ *)

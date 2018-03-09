@@ -447,6 +447,7 @@ Inductive NonCanonicalOp : Set :=
  | NFresh     : NonCanonicalOp
  | NTryCatch  : NonCanonicalOp (* named try/catch *)
  | NParallel  : NonCanonicalOp
+ | NLastCs    : NonCanonicalOp
  | NCompSeq1  : NonCanonicalOp
  | NCompSeq2  : CompSeqNfo    -> NonCanonicalOp
  | NCompOp    : ComparisonOp  -> NonCanonicalOp
@@ -475,6 +476,7 @@ Definition OpBindingsNCan (nc : NonCanonicalOp) : opsign :=
   | NFresh       => [1] (* fresh(x.e[x]) generates a fresh atom "a" and subst x for "a" in "e" *)
   | NTryCatch    => [0,0,1] (* 1: try part; 2: name; 3: catch part*)
   | NParallel    => [0,0]
+  | NLastCs      => [0]
   | NCompSeq1    => [0,0]
   | NCompSeq2  _ => [0,0]
   | NCompOp    _ => [0,0,0,0]
@@ -593,6 +595,7 @@ Tactic Notation "dopid_noncan" ident(onc) ident(c) :=
   | Case_aux c "NFresh"
   | Case_aux c "NTryCatch"
   | Case_aux c "NParallel"
+  | Case_aux c "NLastCs"
   | Case_aux c "NCompSeq1"
   | Case_aux c "NCompSeq2"
   | Case_aux c "NCompOp"

@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -146,6 +147,27 @@ Proof.
   introv x y; introv; simpl; tcsp.
 Defined.
 
+Lemma per_cequiv_eq_bar_respects_ccequivc_ext {o} :
+  forall lib (a1 a2 b1 b2 : @CTerm o) t1 t2,
+    per_cequiv_eq_bar lib a1 b1 t1 t2
+    -> ccequivc_ext lib a1 a2
+    -> ccequivc_ext lib b1 b2
+    -> per_cequiv_eq_bar lib a2 b2 t1 t2.
+Proof.
+  introv per ceqa ceqb.
+  unfold per_cequiv_eq_bar in *; exrepnd.
+  exists bar; introv br ext.
+  pose proof (per0 _ br _ ext) as per0; simpl in *.
+  unfold per_cequiv_eq in *; repnd.
+  dands; eauto 3 with slow.
+  pose proof (ceqa lib'0) as ceqa; autodimp ceqa hyp; eauto 3 with slow.
+  pose proof (ceqb lib'0) as ceqb; autodimp ceqb hyp; eauto 3 with slow.
+  simpl in *; spcast.
+  eapply cequivc_trans;[apply cequivc_sym;eauto|].
+  eapply cequivc_trans;[exact per0|]; auto.
+Qed.
+Hint Resolve per_cequiv_eq_bar_respects_ccequivc_ext : slow.
+
 Lemma local_per_bar_per_cequiv {o} :
   forall (ts : cts(o)), local_ts (per_bar (per_cequiv ts)).
 Proof.
@@ -165,7 +187,8 @@ Proof.
     unfold per_cequiv in *; exrepnd.
     exists a b c d; dands; auto.
     introv; split; intro h; exrepnd; dands; auto.
-    - spcast; computes_to_eqval; auto.
+    - computes_to_eqval_ext.
+      apply cequivc_ext_mkc_cequiv_right in ceq; repnd; eauto 3 with slow.
     - exists a b; dands; auto.
   }
 
@@ -223,7 +246,8 @@ Proof.
 
       unfold per_cequiv in allb0; exrepnd.
       eapply (lib_per_cond _ eqa0); apply allb0.
-      spcast; computes_to_eqval; auto.
+      computes_to_eqval_ext.
+      apply cequivc_ext_mkc_cequiv_right in ceq; repnd; eauto 4 with slow.
   }
 Qed.
 
@@ -234,7 +258,7 @@ Lemma dest_close_per_cequiv_l {p} :
   forall (ts : cts(p)) lib T A B T' eq,
     type_system ts
     -> defines_only_universes ts
-    -> computes_to_valc lib T (mkc_cequiv A B)
+    -> ccomputes_to_valc_ext lib T (mkc_cequiv A B)
     -> close ts lib T T' eq
     -> per_bar (per_cequiv (close ts)) lib T T' eq.
 Proof.
@@ -248,7 +272,7 @@ Lemma dest_close_per_cequiv_r {p} :
   forall (ts : cts(p)) lib T A B T' eq,
     type_system ts
     -> defines_only_universes ts
-    -> computes_to_valc lib T' (mkc_cequiv A B)
+    -> ccomputes_to_valc_ext lib T' (mkc_cequiv A B)
     -> close ts lib T T' eq
     -> per_bar (per_cequiv (close ts)) lib T T' eq.
 Proof.
@@ -258,6 +282,7 @@ Proof.
   introv br ext; introv; eapply reca; eauto 3 with slow.
 Qed.
 
+(*
 Lemma dest_close_per_cequiv_l_ceq {p} :
   forall (ts : cts(p)) lib (bar : BarLib lib) T A B T' eq,
     type_system ts
@@ -285,3 +310,4 @@ Proof.
   eapply local_per_bar_per_cequiv; eauto; eauto 3 with slow.
   introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
+ *)

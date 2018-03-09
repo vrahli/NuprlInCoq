@@ -1941,16 +1941,51 @@ Ltac eqconstr name :=
 
 Ltac computes_to_eqval :=
   match goal with
+    | [ H1 : ccomputes_to_valc_ext ?lib ?T ?T2,
+        H2 : ccomputes_to_valc_ext ?lib ?T ?T1
+        |- _ ] =>
+      let eqt := fresh "eqt" in
+      let c1  := fresh "c1" in
+      let c2  := fresh "c2" in
+      let d1  := fresh "d1" in
+      let d2  := fresh "d2" in
+      let e1  := fresh "e1" in
+      let e2  := fresh "e2" in
+      let x1  := fresh "x1" in
+      let x2  := fresh "x2" in
+      pose proof (H1 lib (lib_extends_refl lib)) as c1; simpl in c1; destruct c1 as [x1 [c1 [d1 e1] ] ];
+      pose proof (H2 lib (lib_extends_refl lib)) as c2; simpl in c2; destruct c2 as [x2 [c2 [d2 e2] ] ];
+      hide_hyp H1; hide_hyp H2;
+      uncast;
+      assert (x1 = x2) as eqt by (apply (computes_to_valc_eq lib T); auto);
+      subst x1;
+      assert (cequivc lib T1 T2) as eqt by (eapply cequivc_trans;[|apply cequivc_sym];eauto);
+      clear e1 e2;
+      eqconstr eqt
+
+    (*| [ H1 : ccomputes_to_valc_ext ?lib ?T ?T2,
+        H2 : ccomputes_to_valc_ext ?lib ?T ?T1
+        |- _ ] =>
+      let eqt := fresh "eqt" in
+      let c1  := fresh "c1" in
+      let c2  := fresh "c2" in
+      pose proof (H1 lib (lib_extends_refl lib)) as c1; simpl in c1;
+      pose proof (H2 lib (lib_extends_refl lib)) as c2; simpl in c2;
+      uncast;
+      assert (T1 = T2) as eqt by (apply (computes_to_valc_eq lib T); auto);
+      eqconstr eqt*)
+
     | [ H1 : computes_to_valc ?lib ?T ?T2,
-             H2 : computes_to_valc ?lib ?T ?T1
+        H2 : computes_to_valc ?lib ?T ?T1
         |- _ ] =>
       let name := fresh "eq" in
       assert (T1 = T2)
         as name
           by (apply (computes_to_valc_eq lib T); auto);
         eqconstr name
+
     | [ H1 : computes_to_excc ?lib ?a2 ?T ?T2,
-             H2 : computes_to_excc ?lib ?a1 ?T ?T1
+        H2 : computes_to_excc ?lib ?a1 ?T ?T1
         |- _ ] =>
       let name := fresh "eq" in
       assert (a1 = a2 # T1 = T2)
@@ -2013,6 +2048,28 @@ Ltac apply_defines_only_universes_basic :=
     destruct e2 as [l2 [i2 [e2 f2] ] ]
   end.
 
+Lemma cequivc_uni_left_iscvalue {o} :
+  forall lib (t : @CTerm o) (n : nat),
+    cequivc lib (mkc_uni n) t
+    -> iscvalue t
+    -> t = mkc_uni n.
+Proof.
+  introv ceq isc.
+  eapply cequivc_uni in ceq;[|apply computes_to_valc_refl;eauto 3 with slow].
+  apply computes_to_valc_isvalue_eq in ceq; auto.
+Qed.
+
+Lemma cequivc_uni_right_iscvalue {o} :
+  forall lib (t : @CTerm o) (n : nat),
+    cequivc lib t (mkc_uni n)
+    -> iscvalue t
+    -> t = mkc_uni n.
+Proof.
+  introv ceq isc.
+  apply cequivc_sym in ceq.
+  eapply cequivc_uni_left_iscvalue; eauto.
+Qed.
+
 Lemma computes_to_uni_in_bar_implies_bar {o} :
   forall {lib lib' : @library o} (b : @BarLib o lib) T v,
     all_in_bar b (fun lib => T ===>(lib) v)
@@ -2030,7 +2087,7 @@ Proof.
   pose proof (h0 _ ne0 lib'0 (lib_extends_refl lib'0)) as h0.
   simpl in *; exrepnd.
   spcast; computes_to_eqval.
-  exists i; auto.
+  apply cequivc_uni_left_iscvalue in eqt; eauto 3 with slow.
 Qed.
 
 Ltac apply_defines_only_universes_bar_left :=
@@ -2106,7 +2163,8 @@ Proof.
   simpl in *; exrepnd.
   spcast.
   computes_to_eqval.
-  eapply cequivc_uni in a0;[|apply computes_to_valc_refl;eauto 2 with slow].
+  eapply cequivc_uni_left_iscvalue in eqt; eauto 3 with slow; subst.
+  eapply cequivc_uni in a0;[|eauto 3 with slow].
   exists lib'0 i; spcast; auto.
 Qed.
 
@@ -2201,34 +2259,37 @@ Hint Resolve computes_to_uni_monotone : slow.
 Lemma computes_to_uni_implies_eq {o} :
   forall lib (T : @CTerm o) v,
     computes_to_uni lib T
-    -> computes_to_valc lib T v
+    -> ccomputes_to_valc_ext lib T v
     -> exists i, v = mkc_uni i.
 Proof.
   introv compu compv.
   apply computes_to_uni_in_bar_implies in compu; exrepnd; spcast.
-  apply (lib_extends_preserves_computes_to_valc _ _ compu0) in compv.
-  computes_to_eqval.
-  exists i; auto.
+  pose proof (compv _ compu0) as compv; simpl in *.
+  pose proof (compu1 _ (lib_extends_refl _)) as compu1; simpl in *.
+  exrepnd.
+  uncast; computes_to_eqval.
+  apply cequivc_uni_left_iscvalue in compu2; eauto 3 with slow; subst.
+  apply cequivc_uni_right_iscvalue in compv0; eauto 3 with slow; subst.
 Qed.
 
 Ltac use_computes_to_uni :=
   match goal with
   | [ H1 : computes_to_uni ?lib ?T,
-      H2 : computes_to_valc ?lib ?T ?v |- _ ] =>
+      H2 : ccomputes_to_valc_ext ?lib ?T ?v |- _ ] =>
     let h := fresh "h" in
     let i := fresh "i" in
     pose proof (computes_to_uni_implies_eq lib T v H1 H2) as h;
     destruct h as [i h];
     try (dest_cterms h; inversion h; fail)
 
-  | [ H1 : computes_to_uni ?lib ?T,
+(*  | [ H1 : computes_to_uni ?lib ?T,
       H2 : ccomputes_to_valc ?lib ?T ?v |- _ ] =>
     let h := fresh "h" in
     let i := fresh "i" in
     uncast;
     pose proof (computes_to_uni_implies_eq lib T v H1 H2) as h;
     destruct h as [i h];
-    try (dest_cterms h; inversion h; fail)
+    try (dest_cterms h; inversion h; fail)*)
   end.
 
 Ltac apply_defines_only_universes :=
@@ -2241,7 +2302,7 @@ Ltac apply_defines_only_universes :=
     | apply_defines_only_universes_basic
     ].
 
-Ltac computes_to_valc_diff_ext :=
+(*Ltac computes_to_valc_diff_ext :=
   match goal with
   | [ H1 : computes_to_valc ?lib1 ?T ?T1,
       H2 : computes_to_valc ?lib2 ?T ?T2,
@@ -2253,6 +2314,805 @@ Ltac computes_to_valc_diff_ext :=
     dest_cterms name;
     inversion name;
     fail
+  end.*)
+
+Lemma cequivc_Nat {o} :
+  forall lib (T T' : @CTerm o),
+    computes_to_valc lib T mkc_Nat
+    -> cequivc lib T T'
+    -> computes_to_valc lib T' mkc_Nat.
+Proof.
+  sp.
+  allapply @computes_to_valc_to_valuec; allsimpl.
+  apply cequivc_canonical_form with (t' := T') in X; sp.
+  apply lblift_cequiv0 in p; subst; auto.
+Qed.
+
+Lemma iscvalue_mkc_Nat {o} : @iscvalue o mkc_Nat.
+Proof.
+  repeat constructor; simpl; tcsp.
+Qed.
+Hint Resolve iscvalue_mkc_Nat : slow.
+
+Lemma cequivc_csname {o} :
+  forall n lib (T T' : @CTerm o),
+    computes_to_valc lib T (mkc_csname n)
+    -> cequivc lib T T'
+    -> computes_to_valc lib T' (mkc_csname n).
+Proof.
+  sp.
+  allapply @computes_to_valc_to_valuec; allsimpl.
+  apply cequivc_canonical_form with (t' := T') in X; sp.
+  apply lblift_cequiv0 in p; subst; auto.
+Qed.
+
+Lemma iscvalue_mkc_csname {o} : forall n, @iscvalue o (mkc_csname n).
+Proof.
+  repeat constructor; simpl; tcsp.
+Qed.
+Hint Resolve iscvalue_mkc_csname : slow.
+
+Lemma cequivc_atom {o} :
+  forall lib (T T' : @CTerm o),
+    computes_to_valc lib T mkc_atom
+    -> cequivc lib T T'
+    -> computes_to_valc lib T' mkc_atom.
+Proof.
+  sp.
+  allapply @computes_to_valc_to_valuec; allsimpl.
+  apply cequivc_canonical_form with (t' := T') in X; sp.
+  apply lblift_cequiv0 in p; subst; auto.
+Qed.
+
+Lemma iscvalue_mkc_atom {o} : @iscvalue o mkc_atom.
+Proof.
+  repeat constructor; simpl; tcsp.
+Qed.
+Hint Resolve iscvalue_mkc_atom : slow.
+
+Lemma cequivc_uatom {o} :
+  forall lib (T T' : @CTerm o),
+    computes_to_valc lib T mkc_uatom
+    -> cequivc lib T T'
+    -> computes_to_valc lib T' mkc_uatom.
+Proof.
+  sp.
+  allapply @computes_to_valc_to_valuec; allsimpl.
+  apply cequivc_canonical_form with (t' := T') in X; sp.
+  apply lblift_cequiv0 in p; subst; auto.
+Qed.
+
+Lemma iscvalue_mkc_uatom {o} : @iscvalue o mkc_uatom.
+Proof.
+  repeat constructor; simpl; tcsp.
+Qed.
+Hint Resolve iscvalue_mkc_uatom : slow.
+
+Hint Resolve iscvalue_mkc_equality : slow.
+Hint Resolve iscvalue_mkc_union : slow.
+
+Lemma cequivc_Nat_left_iscvalue {o} :
+  forall lib (t : @CTerm o),
+    cequivc lib mkc_Nat t -> iscvalue t -> t = mkc_Nat.
+Proof.
+  introv ceq isc.
+  apply cequivc_Nat in ceq; eauto 3 with slow.
+  apply computes_to_valc_isvalue_eq in ceq; auto.
+Qed.
+
+Ltac apply_cequivc_val :=
+
+  (* mkc_approx *)
+
+  match goal with
+  | [ H : cequivc _ (mkc_approx _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    eapply cequivc_mkc_approx in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_approx _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_approx in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_approx _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_approx in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_approx _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_approx in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_cequiv *)
+
+  | [ H : cequivc _ (mkc_cequiv _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    eapply cequivc_mkc_cequiv in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_cequiv _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_cequiv in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_cequiv _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_cequiv in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_cequiv _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_cequiv in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_equality *)
+
+  | [ H : cequivc _ (mkc_equality _ _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let T  := fresh "T"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let h3 := fresh "h3" in
+    eapply cequivc_mkc_equality in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [T [H [h1 [h2 h3] ] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_equality _ _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let T  := fresh "T"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let h3 := fresh "h3" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_equality in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [T [H [h1 [h2 h3] ] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_equality _ _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let T  := fresh "T"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let h3 := fresh "h3" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_equality in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [T [c [h1 [h2 h3] ] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_equality _ _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let T  := fresh "T"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let h3 := fresh "h3" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_equality in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [T [c [h1 [h2 h3] ] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_union *)
+
+  | [ H : cequivc _ (mkc_union _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    eapply cequivc_mkc_union in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_union _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_union in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_union _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_union in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_union _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_union in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_image *)
+
+  | [ H : cequivc _ (mkc_image _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    eapply cequivc_mkc_image in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_image _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_image in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_image _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_image in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_image _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_image in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+      try (eqconstr H)
+
+
+  (* mkc_set *)
+
+  | [ H : cequivc _ (mkc_set _ _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    eapply cequivc_mkc_set in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [v [b [H [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_set _ _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_set in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [v [b [H [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_set _ _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_set in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [v [b [c [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_set _ _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_set in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [v [b [c [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+      try (eqconstr H)
+
+
+  (* mkc_product *)
+
+  | [ H : cequivc _ (mkc_product _ _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    eapply cequivc_mkc_product in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [v [b [H [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_product _ _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_product in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [v [b [H [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_product _ _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_product in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [v [b [c [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_product _ _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_product in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [v [b [c [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+      try (eqconstr H)
+
+
+  (* mkc_function *)
+
+  | [ H : cequivc _ (mkc_function _ _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    eapply cequivc_mkc_function in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [v [b [H [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_function _ _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_function in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [v [b [H [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_function _ _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_function in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [v [b [c [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_function _ _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_function in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [v [b [c [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+      try (eqconstr H)
+
+
+  (* mkc_uni *)
+
+  | [ H : cequivc _ (mkc_uni _) _ |- _ ] =>
+    eapply cequivc_uni in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_uni _) |- _ ] =>
+    apply cequivc_sym in H;
+    eapply cequivc_uni in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_uni _) _ |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_uni in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_uni _) |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_uni in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_int *)
+
+  | [ H : cequivc _ mkc_int _ |- _ ] =>
+    eapply cequivc_int in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ mkc_int |- _ ] =>
+    apply cequivc_sym in H;
+    eapply cequivc_int in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib mkc_int _ |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_int in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ mkc_int |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_int in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_Nat *)
+
+  | [ H : cequivc _ mkc_Nat _ |- _ ] =>
+    eapply cequivc_Nat in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ mkc_Nat |- _ ] =>
+    apply cequivc_sym in H;
+    eapply cequivc_Nat in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib mkc_Nat _ |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_Nat in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ mkc_Nat |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_Nat in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_csname *)
+
+  | [ H : cequivc _ (mkc_csname _) _ |- _ ] =>
+    eapply cequivc_csname in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_csname _) |- _ ] =>
+    apply cequivc_sym in H;
+    eapply cequivc_csname in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_csname _) _ |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_csname in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_csname _) |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_csname in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_atom *)
+
+  | [ H : cequivc _ mkc_atom _ |- _ ] =>
+    eapply cequivc_atom in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ mkc_atom |- _ ] =>
+    apply cequivc_sym in H;
+    eapply cequivc_atom in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib mkc_atom _ |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_atom in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ mkc_atom |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_atom in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_uatom *)
+
+  | [ H : cequivc _ mkc_uatom _ |- _ ] =>
+    eapply cequivc_uatom in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ mkc_uatom |- _ ] =>
+    apply cequivc_sym in H;
+    eapply cequivc_uatom in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib mkc_uatom _ |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_uatom in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ mkc_uatom |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_uatom in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_base *)
+
+  | [ H : cequivc _ mkc_base _ |- _ ] =>
+    eapply cequivc_base in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ mkc_base |- _ ] =>
+    apply cequivc_sym in H;
+    eapply cequivc_base in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib mkc_base _ |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_base in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ mkc_base |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_base in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+  end.
+
+Ltac cequivc_false :=
+  match goal with
+  | [ H : cequivc ?lib (mkc_uni _) _ |- _ ] =>
+    apply cequivc_uni_left_iscvalue in H;[|eauto 2 with slow];complete (eqconstr H)
+
+  | [ H : cequivc ?lib mkc_Nat _ |- _ ] =>
+    apply cequivc_Nat_left_iscvalue in H;[|eauto 2 with slow];complete (eqconstr H)
+  end.
+
+Ltac computes_to_valc_diff_ext :=
+  match goal with
+  | [ H1 : ccomputes_to_valc_ext ?lib1 ?T ?T2,
+           H2 : ccomputes_to_valc_ext ?lib2 ?T ?T1
+      |- _ ] =>
+    let ext := fresh "eqt" in
+    let eqt := fresh "eqt" in
+    let c1  := fresh "c1" in
+    let c2  := fresh "c2" in
+    let d1  := fresh "d1" in
+    let d2  := fresh "d2" in
+    let e1  := fresh "e1" in
+    let e2  := fresh "e2" in
+    let x1  := fresh "x1" in
+    let x2  := fresh "x2" in
+    assert (lib_extends lib2 lib1) as ext by eauto 3 with slow;
+    pose proof (H1 lib2 ext) as c1; simpl in c1; destruct c1 as [x1 [c1 [d1 e1] ] ];
+    pose proof (H2 lib2 (lib_extends_refl lib2)) as c2; simpl in c2; destruct c2 as [x2 [c2 [d2 e2] ] ];
+    hide_hyp H1; hide_hyp H2;
+    uncast;
+    assert (x1 = x2) as eqt by (apply (computes_to_valc_eq lib2 T); auto);
+    subst x1;
+    assert (cequivc lib2 T1 T2) as eqt by (eapply cequivc_trans;[|apply cequivc_sym];eauto);
+    clear e1 e2;
+    eqconstr eqt;
+    complete apply_cequivc_val(*cequivc_false*)
   end.
 
 Ltac close_diff :=
@@ -2260,6 +3120,39 @@ Ltac close_diff :=
   try (apply_defines_only_universes);
   uncast;
   first [computes_to_valc_diff_ext | computes_to_valc_diff].
+
+Ltac close_diff_diff :=
+  first [computes_to_valc_diff_ext | computes_to_valc_diff].
+
+Ltac computes_to_eqval_ext :=
+  match goal with
+    | [ H1 : ccomputes_to_valc_ext ?lib ?T ?T2,
+        H2 : ccomputes_to_valc_ext ?lib ?T ?T1
+        |- _ ] =>
+      let ceq  := fresh "ceq" in
+      let lib' := fresh "lib'" in
+      let ext  := fresh "ext" in
+      let eqt  := fresh "eqt" in
+      let c1   := fresh "c1" in
+      let c2   := fresh "c2" in
+      let d1   := fresh "d1" in
+      let d2   := fresh "d2" in
+      let e1   := fresh "e1" in
+      let e2   := fresh "e2" in
+      let x1   := fresh "x1" in
+      let x2   := fresh "x2" in
+      assert (ccequivc_ext lib T1 T2) as ceq;
+      [intros lib' ext;
+       pose proof (H1 _ ext) as c1; simpl in c1; destruct c1 as [x1 [c1 [d1 e1] ] ];
+       pose proof (H2 _ ext) as c2; simpl in c2; destruct c2 as [x2 [c2 [d2 e2] ] ];
+       hide_hyp H1; hide_hyp H2;
+       uncast;
+       assert (x1 = x2) as eqt by (apply (computes_to_valc_eq lib' T); auto);
+       subst x1;
+       spcast;
+       eapply cequivc_trans;[|apply cequivc_sym];eauto
+      |]
+  end.
 
 Ltac ccomputes_to_eqval :=
   uncast; repeat computes_to_eqval.
@@ -2502,11 +3395,18 @@ Proof.
 
 Qed.*)
 
-Definition type_equality_respecting_trans {o} (ts : cts(o)) lib (T1 T2 : @CTerm o) :=
+Definition type_equality_respecting_trans1 {o} (ts : cts(o)) lib (T1 T2 : @CTerm o) :=
   forall T T3 T4 eq',
     (T = T1 {+} T = T2)
     -> ccequivc_ext lib T T3
     -> (ts lib T3 T4 eq' {+} ts lib T4 T3 eq')
+    -> ts lib T T4 eq'.
+
+Definition type_equality_respecting_trans2 {o} (ts : cts(o)) lib (T1 T2 : @CTerm o) :=
+  forall T T3 T4 eq',
+    (T = T1 {+} T = T2)
+    -> (ts lib T T3 eq' {+} ts lib T3 T eq')
+    -> ccequivc_ext lib T3 T4
     -> ts lib T T4 eq'.
 
 Definition type_sys_props4 {p}
@@ -2521,7 +3421,9 @@ Definition type_sys_props4 {p}
     # (* type value respecting *)
     (forall T T3, (T = T1 {+} T = T2) -> ccequivc_ext lib T T3 -> ts lib T T3 eq)
     # (* type value respecting trans *)
-    type_equality_respecting_trans ts lib T1 T2
+    type_equality_respecting_trans1 ts lib T1 T2
+    # (* type value respecting trans *)
+    type_equality_respecting_trans2 ts lib T1 T2
     # (* term symmetric *)
     term_equality_symmetric eq
     # (* term transitivive (1) *)
@@ -2543,24 +3445,25 @@ Definition type_sys4 {p} (ts : cts(p)) :=
   forall lib T1 T2 eq,
     ts lib T1 T2 eq -> type_sys_props4 ts lib T1 T2 eq.
 
-(** Destruct type_sys_props3 *)
-Ltac dest_tsp4 c uv tys tyvr tyvrt tes tet tevr tygs tygt tymt :=
+(** Destruct type_sys_props4 *)
+Ltac dest_tsp4 c uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt tymt :=
   let tmp := fresh "tmp" in
-  unfold type_sys_props3 in c;
+  unfold type_sys_props4 in c;
   destruct c   as [ uv   tmp ];
   destruct tmp as [ tys  tmp ];
   destruct tmp as [ tyvr tmp ];
-  destruct tmp as [ tyvrt tmp ];
+  destruct tmp as [ tyvrt1 tmp ];
+  destruct tmp as [ tyvrt2 tmp ];
   destruct tmp as [ tes  tmp ];
   destruct tmp as [ tet  tmp ];
   destruct tmp as [ tevr tmp ];
   destruct tmp as [ tygs tmp ];
   destruct tmp as [ tygt tymt ].
 
-Ltac onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt tymt :=
+Ltac onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt tymt :=
   match goal with
   | [ H : type_sys_props4 _ _ _ _ _ |- _ ] =>
-    dest_tsp4 H uv tys tyvr tyvrt tes tet tevr tygs tygt tymt
+    dest_tsp4 H uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt tymt
   end.
 
 Tactic Notation "prove_type_sys_props4" ident(c) :=
@@ -2569,7 +3472,8 @@ Tactic Notation "prove_type_sys_props4" ident(c) :=
   [ Case_aux c "uniquely_valued"
   | Case_aux c "type_symmetric"
   | Case_aux c "type_value_respecting"
-  | Case_aux c "type_value_respecting_trans"
+  | Case_aux c "type_value_respecting_trans1"
+  | Case_aux c "type_value_respecting_trans2"
   | Case_aux c "term_symmetric"
   | Case_aux c "term_transitive"
   | Case_aux c "term_value_respecting"
@@ -2597,9 +3501,9 @@ Proof.
   apply type_sys_prop4_implies_type_sys_props3; auto.
 Qed.
 
-Lemma type_system_implies_type_equality_respecting_trans {o} :
+Lemma type_system_implies_type_equality_respecting_trans1 {o} :
   forall (ts : cts(o)) lib (T1 T2 : @CTerm o),
-    type_system ts -> type_equality_respecting_trans ts lib T1 T2.
+    type_system ts -> type_equality_respecting_trans1 ts lib T1 T2.
 Proof.
   introv tsts.
   onedts uv tye tys tyt tyvr tes tet tevr.
@@ -2631,6 +3535,32 @@ Proof.
     eapply tyt; eauto.
 Qed.
 
+Lemma type_system_implies_type_equality_respecting_trans2 {o} :
+  forall (ts : cts(o)) lib (T1 T2 : @CTerm o),
+    type_system ts -> type_equality_respecting_trans2 ts lib T1 T2.
+Proof.
+  introv tsts.
+  onedts uv tye tys tyt tyvr tes tet tevr.
+
+  introv h ceq q; repndors; subst.
+
+  - pose proof (tyvr lib T3 T4 eq') as w.
+    repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
+    eapply tyt; eauto.
+
+  - pose proof (tyvr lib T3 T4 eq') as w.
+    repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
+    eapply tyt; eauto.
+
+  - pose proof (tyvr lib T3 T4 eq') as w.
+    repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
+    eapply tyt; eauto.
+
+  - pose proof (tyvr lib T3 T4 eq') as w.
+    repeat (autodimp w hyp);[eapply tyt;[eauto|apply tys;auto] |].
+    eapply tyt; eauto.
+Qed.
+
 Lemma type_system_prop4 {p} :
   forall (ts : cts(p)),
     type_system ts <=> type_sys4 ts.
@@ -2650,8 +3580,10 @@ Proof.
   + SCase "type_value_respecting"; sp; subst; sp.
     * apply (type_reduces_to_symm ts lib) with (T2 := T2); auto.
     * apply (type_reduces_to_symm ts lib) with (T2 := T1); auto.
-  + SCase "type_value_respecting_trans".
-    apply type_system_implies_type_equality_respecting_trans; unfold type_system; tcsp.
+  + SCase "type_value_respecting_trans1".
+    apply type_system_implies_type_equality_respecting_trans1; unfold type_system; tcsp.
+  + SCase "type_value_respecting_trans2".
+    apply type_system_implies_type_equality_respecting_trans2; unfold type_system; tcsp.
   + SCase "term_symmetric"; sp.
     apply tes with (lib := lib) (T := T1) (T' := T2); auto.
   + SCase "term_transitive"; sp.

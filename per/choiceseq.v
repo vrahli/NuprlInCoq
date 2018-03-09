@@ -36,6 +36,8 @@ Require Export nat_defs.
 Require Export computation_choice_seq.
 Require Export computation_lib_extends2.
 
+Require Export axiom_func_choice_on.
+
 
 (*Definition memNat {o} : @Mem o :=
   fun c => exists (n : nat), c = mkc_nat n.*)
@@ -759,8 +761,8 @@ Definition equality_of_nat_tt {o} lib (n m : @CTerm o) :=
   # computes_to_valc lib m (mkc_nat k)}.
 
 Definition reducek_pair {o} lib (t1 t2 : @NTerm o) (k : nat) (n : nat) :=
-    reduces_in_atmost_k_steps lib t1 (mk_nat k) n
-  # reduces_in_atmost_k_steps lib t2 (mk_nat k) n.
+    (forall lib', lib_extends lib' lib -> reduces_in_atmost_k_steps lib' t1 (mk_nat k) n)
+  # (forall lib', lib_extends lib' lib -> reduces_in_atmost_k_steps lib' t2 (mk_nat k) n).
 
 Definition equality_of_nat_p_2 {o} lib (n m : @NTerm o) :=
   {x : nat # nat , reducek_pair lib n m (fst x) (snd x)}.
@@ -768,7 +770,18 @@ Definition equality_of_nat_p_2 {o} lib (n m : @NTerm o) :=
 Definition equality_of_nat_p_2_c {o} lib (n m : @CTerm o) :=
   equality_of_nat_p_2 lib (get_cterm n) (get_cterm m).
 
-Lemma equality_of_nat_imp1 {o} :
+(*Lemma ccomputes_to_valc_ext_implies {o} :
+  forall lib (a b : @CTerm o),
+    ccomputes_to_valc_ext lib a b
+    -> ccomputes_to_valc lib a b.
+Proof.
+  introv comp.
+  pose proof (comp _ (lib_extends_refl _)) as comp; simpl in comp; exrepnd.
+  apply comp; eauto 3 with slow.
+Qed.
+Hint Resolve ccomputes_to_valc_ext_implies : slow.*)
+
+(*Lemma equality_of_nat_imp1 {o} :
   forall lib (n m : @CTerm o),
     equality_of_nat lib n m
     <-> equality_of_nat_p_2_c lib n m.
@@ -777,29 +790,39 @@ Proof.
 
   - introv e.
     unfold equality_of_nat in e; exrepnd; spcast.
+
+    applydup @ccomputes_to_valc_ext_implies in e1.
+    applydup @ccomputes_to_valc_ext_implies in e0.
+    spcast.
+
     allunfold @computes_to_valc; allsimpl.
     allunfold @computes_to_value; repnd.
     allunfold @reduces_to; exrepnd.
     allunfold @reduces_in_atmost_k_steps.
-    Check no_change_after_value2.
+
     pose proof (no_change_after_value2 lib
-                  (get_cterm n) k0 (mk_nat n0) e2 e1 (Peano.max k0 k)) as h1.
+                  (get_cterm n) k0 (mk_nat n0) e4 e2 (Peano.max k0 k)) as h1.
     autodimp h1 hyp; try (apply max_prop1).
     pose proof (no_change_after_value2 lib
-                (get_cterm m) k (mk_nat n0) e4 e0 (Peano.max k0 k)) as h2.
+                (get_cterm m) k (mk_nat n0) e6 e3 (Peano.max k0 k)) as h2.
     autodimp h2 hyp; try (apply max_prop2).
-    exists ((n0,Peano.max k0 k)); simpl; sp.
+
+    exists ((n0,Peano.max k0 k)); simpl; split; introv ext.
+
+    { pose proof (e1 _ ext) as e1; simpl in e1.
+
+
     unfold reducek_pair; sp.
 
   - introv e.
     unfold equality_of_nat.
     unfold equality_of_nat_p_2_c, equality_of_nat_p_2, reducek_pair in e.
     exrepnd; allsimpl.
-    exists x0; dands; spcast;
-    unfold computes_to_valc, computes_to_value; simpl;
-    dands; try (apply isvalue_mk_nat);
-    exists x; auto.
-Qed.
+    exists x0; dands; spcast; introv ext; spcast;
+      unfold computes_to_valc, computes_to_value; simpl;
+        dands; try (apply isvalue_mk_nat);
+          exists x; eauto; try apply e1.
+Qed.*)
 
 Inductive before_witness (P : nat -> nat -> Prop) (k : nat) : Prop :=
   | stop : forall (z n : nat), k = z + n -> P z n -> before_witness P k
@@ -1023,7 +1046,7 @@ Proof.
       exists u; sp.
 Qed.
 
-Lemma reducek_pair_dec {o} :
+(*Lemma reducek_pair_dec {o} :
   forall lib (t1 t2 : @NTerm o) z n,
     reducek_pair lib t1 t2 z n [+] !(reducek_pair lib t1 t2 z n).
 Proof.
@@ -1036,7 +1059,7 @@ Proof.
   - right; sp.
   - right; sp.
   - right; sp.
-Qed.
+Qed.*)
 
 Fixpoint O_witness
          (P : nat -> nat -> Prop)
@@ -1046,7 +1069,7 @@ Fixpoint O_witness
     | S n => fun b => O_witness P n (next P n b)
   end.
 
-Definition constructive_indefinite_ground_description_nat {o}
+(*Definition constructive_indefinite_ground_description_nat {o}
            lib (t1 t2 : @CTerm o) :
   equality_of_nat_p_2_c lib t1 t2
   -> {x : nat # nat & reducek_pair lib (get_cterm t1) (get_cterm t2) (fst x) (snd x)}.
@@ -1058,9 +1081,9 @@ Proof.
   exrepnd; allsimpl.
   apply O_witness with (k := x0 + x).
   apply stop with (z := x0) (n := x); auto.
-Qed.
+Qed.*)
 
-Lemma equality_of_nat_imp_tt {o} :
+(*Lemma equality_of_nat_imp_tt {o} :
   forall {lib} {n m : @CTerm o},
     equality_of_nat lib n m
     -> equality_of_nat_tt lib n m.
@@ -1075,7 +1098,7 @@ Proof.
   unfold computes_to_valc, computes_to_value; simpl;
   dands; try (apply isvalue_mk_integer);
   exists x; auto.
-Qed.
+Qed.*)
 
 Lemma in_map_in :
   forall {A B}
@@ -1097,7 +1120,9 @@ Defined.
 Definition extend_bar_nat_following_coq_law_upto {o} {lib} {a} {a'}
            (bar  : @BarLib o lib)
            (safe : safe_library lib)
-           (F    : all_in_bar bar (fun lib => equality_of_nat lib a a'))
+           {F    : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), nat}
+           (G    : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'),
+               a ===>(lib'') (mkc_nat (F _ b _ ext)) # a' ===>(lib'') (mkc_nat (F _ b _ ext)))
   : BarLib lib.
 Proof.
   exists (fun (lib' : library) =>
@@ -1105,7 +1130,7 @@ Proof.
               lib' = extend_library_following_coq_law_upto
                        lib0
                        seq_0
-                       (S (projT1 (equality_of_nat_imp_tt (F lib0 b lib0 (lib_extends_refl lib0)))))).
+                       (S (F lib0 b lib0 (lib_extends_refl lib0)))).
 
   - introv ext'; simpl.
     destruct bar as [bar cond ext]; simpl in *.
@@ -1115,13 +1140,11 @@ Proof.
 
     exists (extend_library_following_coq_law_upto
               lib' seq_0
-              (S (projT1 (equality_of_nat_imp_tt (F lib' q1 lib' (lib_extends_refl lib')))))).
+              (S (F lib' q1 lib' (lib_extends_refl lib')))).
     dands; eauto 3 with slow.
 
   - introv b; exrepnd; subst.
-    remember (equality_of_nat_imp_tt (F lib0 b lib0 _)) as z; symmetry in Heqz.
-    unfold equality_of_nat_tt in z.
-    exrepnd.
+    pose proof (G lib0 b lib0 (lib_extends_refl _)) as z; repnd.
     eauto 3 with slow.
 Defined.
 
@@ -1218,6 +1241,62 @@ Qed.*)
 
 Hint Resolve computes_to_valc_refl : slow.
 
+Record pack_all_in_bar {o} {lib} (bar : @BarLib o lib) :=
+  MkPackAllInBar
+    {
+      pack_lib1 : library;
+      pack_br   : bar_lib_bar bar pack_lib1;
+      pack_lib2 : library;
+      pack_ext  : lib_extends pack_lib2 pack_lib1;
+    }.
+Arguments MkPackAllInBar {o} {lib} [bar] _ _ _ _.
+
+Lemma all_in_bar_equality_of_nat_implies {o} :
+  forall lib (bar : @BarLib o lib) a a',
+    all_in_bar bar (fun lib => equality_of_nat lib a a')
+    ->
+    exists (F : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), nat),
+    forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'),
+      a ===>(lib'') (mkc_nat (F _ b _ ext)) # a' ===>(lib'') (mkc_nat (F _ b _ ext)).
+Proof.
+  introv h.
+  pose proof (FunctionalChoice_on
+                (pack_all_in_bar bar)
+                nat
+                (fun p n => a ===>(pack_lib2 _ p) (mkc_nat n) # a' ===>(pack_lib2 _ p) (mkc_nat n))) as q.
+  autodimp q hyp; tcsp.
+  { introv.
+    destruct a0 as [lib' br lib'' ext].
+    eapply h; eauto. }
+
+  exrepnd.
+  exists (fun lib' br lib'' ext => f (MkPackAllInBar lib' br lib'' ext)); introv.
+  remember (MkPackAllInBar lib' b lib'' ext) as w.
+  pose proof (q0 w) as q0; subst; simpl in *; auto.
+Qed.
+
+Hint Resolve lib_extends_preserves_find_cs_value_at : slow.
+
+Lemma cequivc_nat_implies_computes_to_valc {o} :
+  forall lib (t : @CTerm o) (n : nat),
+    cequivc lib (mkc_nat n) t
+    -> computes_to_valc lib t (mkc_nat n).
+Proof.
+  introv ceq.
+  pose proof (cequivc_integer lib (mkc_nat n) t (Z.of_nat n)) as h.
+  repeat (autodimp h hyp); eauto 3 with slow.
+Qed.
+
+Lemma computes_to_valc_implies_iscvalue {o} :
+  forall lib (t1 t2 : @CTerm o),
+    computes_to_valc lib t1 t2 -> iscvalue t2.
+Proof.
+  introv comp.
+  rw @computes_to_valc_iff_reduces_toc in comp; tcsp.
+Qed.
+Hint Resolve computes_to_valc_implies_iscvalue : slow.
+
+
 (*
 
   We prove here that the lawlike choice sequence seq_0 is in the type [nat -> nat]
@@ -1247,14 +1326,14 @@ Proof.
 
     {
       try (introv i).
-      spcast.
-      apply computes_to_valc_refl; eauto 2 with slow.
+      eexists; dands;spcast;[| |apply cequivc_refl];
+        try apply computes_to_valc_refl; eauto 2 with slow.
     }
 
     {
       try (introv i).
-      spcast.
-      apply computes_to_valc_refl; eauto 2 with slow.
+      eexists; dands;spcast;[| |apply cequivc_refl];
+        try apply computes_to_valc_refl; eauto 2 with slow.
     }
 
     {
@@ -1280,14 +1359,11 @@ Proof.
     unfold equality_of_nat_bar in *; exrepnd.
 
     applydup @lib_extends_preserves_safe in xt2 as safe; eauto 3 with slow.
+    apply all_in_bar_equality_of_nat_implies in en0; exrepnd.
 
-    exists (extend_bar_nat_following_coq_law_upto bar safe en0).
+    exists (extend_bar_nat_following_coq_law_upto bar safe en1).
     introv b z; simpl in *.
     exrepnd; subst.
-
-    remember (equality_of_nat_imp_tt (en0 _ b lib0 _)) as w; symmetry in Heqw.
-    unfold equality_of_nat_tt in w; exrepnd.
-    simpl in *.
 
     first[assert (lib_extends lib'2 lib0) as ext1 by eauto 2 with slow
          |assert (lib_extends lib'1 lib0) as ext1 by eauto 2 with slow
@@ -1297,19 +1373,15 @@ Proof.
          |assert (lib_extends lib'0 lib_0) as ext2 by eauto 4 with slow].
     assert (lib_extends lib0 lib_0) as ext3 by eauto 4 with slow.
 
-    clear Heqw.
-
-    first[eapply (computes_to_valc_nat_if_lib_extends lib'2 lib0) in w1; eauto 2 with slow
-         |eapply (computes_to_valc_nat_if_lib_extends lib'1 lib0) in w1; eauto 2 with slow
-         |eapply (computes_to_valc_nat_if_lib_extends lib'0 lib0) in w1; eauto 2 with slow].
-    first[eapply (computes_to_valc_nat_if_lib_extends lib'2 lib0) in w0; eauto 2 with slow
-         |eapply (computes_to_valc_nat_if_lib_extends lib'1 lib0) in w0; eauto 2 with slow
-         |eapply (computes_to_valc_nat_if_lib_extends lib'0 lib0) in w0; eauto 2 with slow].
+    pose proof (en1 lib0 b lib0 (lib_extends_refl _)) as w; repnd; simpl in *.
+    remember (F lib0 b lib0 (lib_extends_refl lib0)) as k; clear Heqk.
+    clear dependent F.
 
     pose proof (bar_preserves_safe bar lib0) as safe1.
     repeat (autodimp safe1 hyp);[].
 
-    applydup @lib_extends_safe in ext1 as safe2; auto;[].
+    dup ext1 as safe2.
+    apply @lib_extends_safe in safe2; auto;[].
 
     eapply (lib_extends_preserves_find_cs _ _ seq_0) in ext3;[|simpl; eauto].
     exrepnd.
@@ -1325,9 +1397,26 @@ Proof.
     unfold const_0 in ee.
 
     exists 0; simpl.
-    dands; spcast;
-      eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl;
-        try (complete (rewrite ext4 in ee; auto)).
+    rewrite ext4 in ee; unfold const_0 in ee.
+    dands; spcast.
+
+    {
+      introv ext.
+      pose proof (w0 _ (lib_extends_trans ext ext1)) as w1; simpl in w1; exrepnd; spcast.
+      apply cequivc_nat_implies_computes_to_valc in w2.
+      apply computes_to_valc_isvalue_eq in w2; eauto 3 with slow;subst;[].
+      eexists; dands; spcast;[| |apply cequivc_refl];eauto 2 with slow.
+      eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl; eauto 4 with slow.
+    }
+
+    {
+      introv ext.
+      pose proof (w _ (lib_extends_trans ext ext1)) as w1; simpl in w1; exrepnd; spcast.
+      apply cequivc_nat_implies_computes_to_valc in w2.
+      apply computes_to_valc_isvalue_eq in w2; eauto 3 with slow;subst;[].
+      eexists; dands; spcast;[| |apply cequivc_refl]; eauto 2 with slow.
+      eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl; eauto 3 with slow.
+    }
   }
 Qed.
 
@@ -2263,7 +2352,9 @@ Qed.
 Definition extend_bar_nat_lawless_upto {o} {lib} {a} {a'}
            (bar  : @BarLib o lib)
            (safe : safe_library lib)
-           (F    : all_in_bar bar (fun lib => equality_of_nat lib a a'))
+           {F    : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), nat}
+           (G    : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'),
+               a ===>(lib'') (mkc_nat (F _ b _ ext)) # a' ===>(lib'') (mkc_nat (F _ b _ ext)))
   : BarLib lib.
 Proof.
   exists (fun (lib' : library) =>
@@ -2272,7 +2363,7 @@ Proof.
                 lib'
                 lib0
                 seq_1
-                (S (projT1 (equality_of_nat_imp_tt (F lib0 b lib0 (lib_extends_refl lib0)))))).
+                (S (F lib0 b lib0 (lib_extends_refl lib0)))).
 
   - introv ext'; simpl.
 
@@ -2286,14 +2377,13 @@ Proof.
     assert (exists lib',
                extend_library_lawless_upto
                  lib' lib1 seq_1
-                 (S (projT1 (equality_of_nat_imp_tt (F lib1 q1 lib1 (lib_extends_refl lib1)))))
+                 (S (F lib1 q1 lib1 (lib_extends_refl lib1)))
                /\ lib_extends lib' lib
                /\ inf_lib_extends infLib lib') as exlib;
       [|exrepnd; exists lib'; dands; auto; exists lib1 q1; auto];[].
 
-    remember (equality_of_nat_imp_tt (F lib1 q1 lib1 (lib_extends_refl lib1))) as w; symmetry in Heqw.
-    unfold equality_of_nat_tt in w; exrepnd; simpl in *.
-    clear Heqw.
+    pose proof (G _ q1 _ (lib_extends_refl lib1)) as w; repnd.
+    remember (F lib1 q1 lib1 (lib_extends_refl lib1)) as k.
 
     assert (exists lib',
                extend_library_lawless_upto lib' lib1 seq_1 (S k)
@@ -2310,9 +2400,9 @@ Proof.
 
   - introv j; exrepnd.
 
-    remember (equality_of_nat_imp_tt (F lib0 b lib0 (lib_extends_refl lib0))) as z; symmetry in Heqz.
-    unfold equality_of_nat_tt in z.
-    exrepnd; simpl in *.
+    pose proof (G _ b _ (lib_extends_refl lib0)) as w; repnd.
+    remember (F _ b _ (lib_extends_refl lib0)) as k.
+
     eauto 4 with slow.
 Defined.
 
@@ -2485,14 +2575,14 @@ Proof.
 
     {
       try introv i.
-      spcast.
-      apply computes_to_valc_refl; eauto 2 with slow.
+      eexists; dands;spcast;[| |apply cequivc_refl];
+        try apply computes_to_valc_refl; eauto 2 with slow.
     }
 
     {
       try introv i.
-      spcast.
-      apply computes_to_valc_refl; eauto 2 with slow.
+      eexists; dands;spcast;[| |apply cequivc_refl];
+        try apply computes_to_valc_refl; eauto 2 with slow.
     }
 
     {
@@ -2517,19 +2607,17 @@ Proof.
     unfold equality_of_nat_bar in *; exrepnd.
 
     applydup @lib_extends_preserves_safe in xt2 as safe; eauto 3 with slow.
+    apply all_in_bar_equality_of_nat_implies in en0; exrepnd.
 
-    exists (extend_bar_nat_lawless_upto bar safe en0).
+    exists (extend_bar_nat_lawless_upto bar safe en1).
     introv b; simpl in *.
     exrepnd; subst.
 
-    remember (equality_of_nat_imp_tt (en0 _ b lib0 _)) as w; symmetry in Heqw.
-    unfold equality_of_nat_tt in w; exrepnd; simpl in *.
+    pose proof (en1 lib0 b lib0 (lib_extends_refl _)) as w; repnd; simpl in *.
+    remember (F lib0 b lib0 (lib_extends_refl lib0)) as k; clear Heqk.
+    clear dependent F.
 
     introv lext.
-
-    clear Heqw.
-    eapply (computes_to_valc_nat_if_lib_extends lib'1 lib0) in w1; eauto 3 with slow;[].
-    eapply (computes_to_valc_nat_if_lib_extends lib'1 lib0) in w0; eauto 3 with slow;[].
 
     pose proof (bar_preserves_safe bar lib0) as safe1.
     repeat (autodimp safe1 hyp);[].
@@ -2548,9 +2636,27 @@ Proof.
     apply ext0 in q0.
     unfold is_nat in q0; exrepnd; subst.
     exists i; simpl.
-    dands; spcast;
-      eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl;
-        try (complete (eapply (computes_to_valc_nat_if_lib_extends memNat);[|eauto];eauto 2 with slow));
-        eauto 3 with slow.
+
+    dands; spcast.
+
+    {
+      introv ext.
+      assert (lib_extends lib'3 lib0) as xt by (eauto 4 with slow).
+      pose proof (w0 _ xt) as w1; simpl in w1; exrepnd; spcast.
+      apply cequivc_nat_implies_computes_to_valc in w2.
+      apply computes_to_valc_isvalue_eq in w2; eauto 3 with slow;subst;[].
+      eexists; dands; spcast;[| |apply cequivc_refl]; eauto 2 with slow.
+      eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl; eauto 3 with slow.
+    }
+
+    {
+      introv ext.
+      assert (lib_extends lib'3 lib0) as xt by (eauto 4 with slow).
+      pose proof (w _ xt) as w1; simpl in w1; exrepnd; spcast.
+      apply cequivc_nat_implies_computes_to_valc in w2.
+      apply computes_to_valc_isvalue_eq in w2; eauto 3 with slow;subst;[].
+      eexists; dands; spcast;[| |apply cequivc_refl]; eauto 2 with slow.
+      eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl; eauto 3 with slow.
+    }
   }
 Qed.

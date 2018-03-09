@@ -820,6 +820,55 @@ Proof.
 Qed.
 Hint Resolve get_utokens_lib_mk_fresh_choice_nat_seq_subset_get_utokens_lib : slow.
 
+Lemma get_utokens_csval2term_subset {o} :
+  forall entry (v : @ChoiceSeqVal o),
+    last_cs_entry entry = Some v
+    -> subset (get_utokens (CSVal2term v))
+              (flat_map getc_utokens entry).
+Proof.
+  induction entry; introv h; simpl in *; ginv.
+  destruct entry; ginv; simpl in *; autorewrite with slow; eauto 3 with slow.
+Qed.
+Hint Resolve get_utokens_csval2term_subset : slow.
+
+
+Lemma find_last_cs_implies_subset_get_utokens_CSVal2term {o} :
+  forall lib name entry (v : @ChoiceSeqVal o),
+    find_cs lib name = Some entry
+    -> last_cs_entry entry = Some v
+    -> subset (get_utokens (CSVal2term v)) (get_utokens_library lib).
+Proof.
+  induction lib; simpl; introv h q; ginv.
+  destruct a; simpl in *; tcsp; boolvar; subst; ginv; eauto 3 with slow.
+Qed.
+Hint Resolve find_last_cs_implies_subset_get_utokens_CSVal2term : slow.
+
+Lemma disjoint_get_utokens_lib_csval2term_if_find_last_cs {o} :
+  forall lib name entry (v : @ChoiceSeqVal o) l t,
+    find_cs lib name = Some entry
+    -> last_cs_entry entry = Some v
+    -> disjoint l (get_utokens_lib lib t)
+    -> disjoint l (get_utokens_lib lib (CSVal2term v)).
+Proof.
+  introv f eqv d x z; apply d in x; clear d; destruct x.
+  apply in_app_iff in z; apply in_app_iff; repndors; tcsp.
+  eapply find_last_cs_implies_subset_get_utokens_CSVal2term in z; eauto.
+Qed.
+Hint Resolve disjoint_get_utokens_lib_csval2term_if_find_last_cs : slow.
+
+Lemma subset_get_utokens_lib_csval2term_get_utokens_lib {o} :
+  forall lib name entry (v : @ChoiceSeqVal o) t,
+    find_cs lib name = Some entry
+    -> last_cs_entry entry = Some v
+    -> subset (get_utokens_lib lib (CSVal2term v))
+              (get_utokens_lib lib t).
+Proof.
+  introv f q h.
+  allrw in_app_iff; repndors; tcsp.
+  eapply find_last_cs_implies_subset_get_utokens_CSVal2term in h; eauto.
+Qed.
+Hint Resolve subset_get_utokens_lib_csval2term_get_utokens_lib : slow.
+
 Lemma compute_step_subst_utoken {o} :
   forall lib (t u : @NTerm o) sub,
     nt_wf t
@@ -2070,6 +2119,27 @@ Proof.
             exists (@mk_axiom o); allsimpl.
             rw (@cl_lsubst_trivial o mk_axiom); simpl; dands; eauto 3 with slow.
             unflsubst.
+          }
+
+          { SSSCase "NLastCs".
+            unflsubst in comp; allsimpl.
+            csunf comp; allsimpl.
+            apply compute_step_last_cs_success in comp.
+            exrepnd; subst; allsimpl.
+            repeat (destruct bts; simpl in *; ginv).
+            repeat (destruct bs; simpl in *; ginv).
+
+            exists (CSVal2term v).
+            autorewrite with slow.
+
+            unflsubst.
+            autorewrite with slow.
+            dands; eauto 3 with slow.
+
+            introv nrut' eqdoms disj'.
+            csunf; simpl; allrw.
+            eexists; dands; eauto.
+            unflsubst; autorewrite with slow; auto.
           }
 
           { SSSCase "NCompSeq1".

@@ -35,6 +35,7 @@ Require Export per_ceq_bar.
 Require Export nuprl_type_sys.
 Require Export univ_tacs.
 Require Import rel_nterm.
+
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 (** printing ~<~  $\preceq$ *)

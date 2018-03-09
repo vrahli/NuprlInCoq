@@ -2038,6 +2038,15 @@ Proof.
             destruct can2; allsimpl; tcsp.
           }
 
+          { SSSCase "NLastCs".
+            csunf comp; simpl in comp.
+            apply compute_step_last_cs_success in comp; exrepnd; subst.
+            csunf; simpl; allrw.
+            simpl in *.
+            rewrite ren_utokens_trivial; auto; eauto 3 with slow.
+            apply disjoint_sym in disjlib; eauto 3 with slow.
+          }
+
           { SSSCase "NCompSeq1".
             csunf comp; simpl in comp.
             apply compute_step_comp_seq1_success in comp; exrepnd; subst.

@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -121,31 +122,59 @@ Proof.
     exrepnd.
     apply z0 in w1; clear z0.
 
-    dup comp as c.
-    apply (lib_extends_preserves_ccomputes_to_valc x) in c.
-    spcast; repeat computes_to_eqval.
+    unfold type_family_ext in *; exrepnd.
+    apply (ccomputes_to_valc_ext_monotone _ lib'0) in comp;[|eauto 3 with slow];[].
+    computes_to_eqval_ext.
+    hide_hyp z2.
+    computes_to_eqval_ext.
+    hide_hyp z0.
+    computes_to_eqval_ext.
+    apply constructor_inj_implies_ext in ceq; eauto 3 with slow;[]; repnd.
+    apply constructor_inj_implies_ext in ceq0; eauto 3 with slow;[]; repnd.
+    apply constructor_inj_implies_ext in ceq1; eauto 3 with slow;[]; repnd.
 
     eapply implies_eq_term_equals_per_func_ext_eq;[| |eauto];[|].
 
-    { unfold type_family_ext in *; exrepnd.
-      spcast.
-      apply (lib_extends_preserves_computes_to_valc _ lib'0) in comp;[|eauto 3 with slow];[].
-      repeat computes_to_eqval.
+    {
       eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals2;
-        try (exact tsa); eauto. }
+        try (exact tsa); eauto.
 
-    { unfold type_family_ext in *; exrepnd.
-      spcast.
-      apply (lib_extends_preserves_computes_to_valc _ lib'0) in comp;[|eauto 3 with slow];[].
-      repeat computes_to_eqval.
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+          try exact tsa; try exact alla6; eauto 3 with slow. }
 
-      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 ts x A0 A' A'1 eqa eqa1) as q1.
-      repeat (autodimp q1 hyp);[].
-      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 ts x A0 A' A'1 eqa eqa2) as q2.
-      repeat (autodimp q2 hyp);[].
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies in z3;
+          try exact tsa; eauto 3 with slow.
+        eapply trans_ccequivc_ext_in_ext_eq_types_implies2;
+          try exact tsa; try exact z3; eauto 3 with slow. }
+    }
+
+    {
+      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4
+                    ts x A A' A'1 eqa eqa1) as q1.
+      repeat (autodimp q1 hype);[|].
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+          try exact tsa; try exact alla6 ; eauto 3 with slow. }
+
+      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4
+                    ts x A A' A'0 eqa eqa2) as q2.
+      repeat (autodimp q2 hyp);[|].
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+          try exact tsa; try exact z3; eauto 3 with slow. }
 
       eapply in_ext_ext_type_sys_props4_fam_implies_in_ext_ext_eq_term_equals_fam2;
-        try exact tsb; eauto. }
+        try exact tsb; eauto.
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_fam_implies;
+          try exact tsb; try exact alla3; eauto 3 with slow. }
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_fam_implies in z1;
+          try exact tsa; eauto 3 with slow;
+            [|eapply bcequivc_ext_trans; eauto];[].
+        eapply trans_ccequivc_ext_in_ext_eq_types_fam_implies2;
+          try exact tsa; try exact z1; eauto 3 with slow. }
+    }
   }
 
   {
@@ -214,24 +243,61 @@ Proof.
 
       assert (lib_extends lib'4 lib) as xx by eauto 3 with slow.
       dup comp as c.
-      apply (lib_extends_preserves_computes_to_valc _ _ xx) in c.
-      spcast; repeat computes_to_eqval.
 
-      apply (lib_extends_preserves_computes_to_valc _ lib'4) in comp;[|eauto 3 with slow];[].
-      repeat computes_to_eqval.
+      apply (ccomputes_to_valc_ext_monotone _ lib'4) in c;[|eauto 3 with slow];[].
+      computes_to_eqval_ext.
+      apply constructor_inj_implies_ext in ceq; eauto 3 with slow;[]; repnd.
+
+      apply (ccomputes_to_valc_ext_monotone _ lib'4) in comp;[|eauto 3 with slow];[].
+      hide_hyp q2.
+      computes_to_eqval_ext.
+      apply constructor_inj_implies_ext in ceq1; eauto 3 with slow;[]; repnd.
+
+      hide_hyp c.
+      computes_to_eqval_ext.
+      apply constructor_inj_implies_ext in ceq3; eauto 3 with slow;[]; repnd.
 
       eapply implies_eq_term_equals_per_func_ext_eq;[| |eauto];[|].
 
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals2;
-          try (exact tsa); eauto. }
+          try (exact tsa); eauto.
 
-      { pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 ts xx A1 A' A'1 eqa eqa1) as qq1.
-        repeat (autodimp qq1 hyp);[].
-        pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 ts xx A1 A' A'1 eqa eqa2) as qq2.
-        repeat (autodimp qq2 hyp);[].
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+            try exact tsa; try exact allb4; eauto 3 with slow. }
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies in q4;
+            try exact tsa; eauto 3 with slow.
+          eapply trans_ccequivc_ext_in_ext_eq_types_implies2;
+            try exact tsa; try exact q4; eauto 3 with slow. }
+      }
+
+      { pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4
+                      ts xx A A' A'0 eqa eqa1) as qq1.
+        repeat (autodimp qq1 hyp);[|].
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+            try exact tsa; try exact q4; eauto 3 with slow. }
+
+        pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4
+                      ts xx A A' A'1 eqa eqa2) as qq2.
+        repeat (autodimp qq2 hyp);[|].
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+            try exact tsa; try exact allb4; eauto 3 with slow. }
 
         eapply in_ext_ext_type_sys_props4_fam_implies_in_ext_ext_eq_term_equals_fam2;
-          try exact tsb; eauto. }
+          try exact tsb; eauto.
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_fam_implies;
+            try exact tsb; try exact allb1; eauto 3 with slow.
+          eapply bcequivc_ext_sym; auto. }
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_fam_implies in q1;
+            try exact tsa; eauto 3 with slow;
+              [|eapply bcequivc_ext_sym; eauto];[].
+          eapply trans_ccequivc_ext_in_ext_eq_types_fam_implies2;
+            try exact tsa; try exact q1; eauto 3 with slow. }
+      }
   }
 Qed.
 Hint Resolve local_per_bar_per_func_ext : slow.
@@ -284,31 +350,59 @@ Proof.
     exrepnd.
     apply z0 in w1; clear z0.
 
-    dup comp as c.
-    apply (lib_extends_preserves_ccomputes_to_valc x) in c.
-    spcast; repeat computes_to_eqval.
+    unfold type_family_ext in *; exrepnd.
+    apply (ccomputes_to_valc_ext_monotone _ lib'0) in comp;[|eauto 3 with slow];[].
+    computes_to_eqval_ext.
+    hide_hyp z2.
+    computes_to_eqval_ext.
+    hide_hyp z0.
+    computes_to_eqval_ext.
+    apply constructor_inj_implies_ext in ceq; eauto 3 with slow;[]; repnd.
+    apply constructor_inj_implies_ext in ceq0; eauto 3 with slow;[]; repnd.
+    apply constructor_inj_implies_ext in ceq1; eauto 3 with slow;[]; repnd.
 
     eapply implies_eq_term_equals_per_func_ext_eq;[| |eauto];[|].
 
-    { unfold type_family_ext in *; exrepnd.
-      spcast.
-      apply (lib_extends_preserves_computes_to_valc _ lib'0) in comp;[|eauto 3 with slow];[].
-      repeat computes_to_eqval.
+    {
       eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals3;
-        try (exact tsa); eauto. }
+        try (exact tsa); eauto.
 
-    { unfold type_family_ext in *; exrepnd.
-      spcast.
-      apply (lib_extends_preserves_computes_to_valc _ lib'0) in comp;[|eauto 3 with slow];[].
-      repeat computes_to_eqval.
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+          try exact tsa; try exact alla6; eauto 3 with slow. }
 
-      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 ts x A'0 A' A1 eqa eqa1) as q1.
-      repeat (autodimp q1 hyp);[].
-      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 ts x A'0 A' A1 eqa eqa2) as q2.
-      repeat (autodimp q2 hyp);[].
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies3 in z3;
+          try exact tsa; eauto 3 with slow.
+        eapply trans_ccequivc_ext_in_ext_eq_types_implies4;
+          try exact tsa; try exact z3; eauto 3 with slow. }
+    }
+
+    {
+      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5
+                    ts x A A' A1 eqa eqa1) as q1.
+      repeat (autodimp q1 hyp);[|].
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+          try exact tsa; try exact alla6 ; eauto 3 with slow. }
+
+      pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5
+                    ts x A A' A0 eqa eqa2) as q2.
+      repeat (autodimp q2 hyp);[|].
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+          try exact tsa; try exact z3; eauto 3 with slow. }
 
       eapply in_ext_ext_type_sys_props4_fam_implies_in_ext_ext_eq_term_equals_fam3;
-        try exact tsb; eauto. }
+        try exact tsb; eauto.
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_fam_implies3;
+          try exact tsb; try exact alla3; eauto 3 with slow. }
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_fam_implies3 in z1;
+          try exact tsa; eauto 3 with slow;
+            [|eapply bcequivc_ext_trans; eauto];[].
+        eapply trans_ccequivc_ext_in_ext_eq_types_fam_implies4;
+          try exact tsa; try exact z1; eauto 3 with slow. }
+    }
   }
 
   {
@@ -377,24 +471,61 @@ Proof.
 
       assert (lib_extends lib'4 lib) as xx by eauto 3 with slow.
       dup comp as c.
-      apply (lib_extends_preserves_computes_to_valc _ _ xx) in c.
-      spcast; repeat computes_to_eqval.
 
-      apply (lib_extends_preserves_computes_to_valc _ lib'4) in comp;[|eauto 3 with slow];[].
-      repeat computes_to_eqval.
+      apply (ccomputes_to_valc_ext_monotone _ lib'4) in c;[|eauto 3 with slow];[].
+      computes_to_eqval_ext.
+      apply constructor_inj_implies_ext in ceq; eauto 3 with slow;[]; repnd.
+
+      apply (ccomputes_to_valc_ext_monotone _ lib'4) in comp;[|eauto 3 with slow];[].
+      hide_hyp q3.
+      computes_to_eqval_ext.
+      apply constructor_inj_implies_ext in ceq1; eauto 3 with slow;[]; repnd.
+
+      hide_hyp c.
+      computes_to_eqval_ext.
+      apply constructor_inj_implies_ext in ceq3; eauto 3 with slow;[]; repnd.
 
       eapply implies_eq_term_equals_per_func_ext_eq;[| |eauto];[|].
 
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals3;
-          try (exact tsa); eauto. }
+          try (exact tsa); eauto.
 
-      { pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 ts xx A'1 A' A1 eqa eqa1) as qq1.
-        repeat (autodimp qq1 hyp);[].
-        pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 ts xx A'1 A' A1 eqa eqa2) as qq2.
-        repeat (autodimp qq2 hyp);[].
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+            try exact tsa; try exact allb4; eauto 3 with slow. }
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies3 in q4;
+            try exact tsa; eauto 3 with slow.
+          eapply trans_ccequivc_ext_in_ext_eq_types_implies4;
+            try exact tsa; try exact q4; eauto 3 with slow. }
+      }
+
+      { pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5
+                      ts xx A A' A0 eqa eqa1) as qq1.
+        repeat (autodimp qq1 hyp);[|].
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+            try exact tsa; try exact q4; eauto 3 with slow. }
+
+        pose proof (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5
+                      ts xx A A' A1 eqa eqa2) as qq2.
+        repeat (autodimp qq2 hyp);[|].
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+            try exact tsa; try exact allb4; eauto 3 with slow. }
 
         eapply in_ext_ext_type_sys_props4_fam_implies_in_ext_ext_eq_term_equals_fam3;
-          try exact tsb; eauto. }
+          try exact tsb; eauto.
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_fam_implies3;
+            try exact tsb; try exact allb1; eauto 3 with slow.
+          eapply bcequivc_ext_sym; auto. }
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_fam_implies3 in q1;
+            try exact tsa; eauto 3 with slow;
+              [|eapply bcequivc_ext_sym; eauto];[].
+          eapply trans_ccequivc_ext_in_ext_eq_types_fam_implies4;
+            try exact tsa; try exact q1; eauto 3 with slow. }
+      }
   }
 Qed.
 Hint Resolve local_per_bar_per_func_ext2 : slow.
@@ -408,7 +539,7 @@ Lemma dest_close_per_func_l {o} :
     -> defines_only_universes ts
     -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), type_sys_props4 (close ts) lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e))
-    -> computes_to_valc lib T (mkc_function A v B)
+    -> ccomputes_to_valc_ext lib T (mkc_function A v B)
     -> close ts lib T T' eq
     -> per_bar (per_func_ext (close ts)) lib T T' eq.
 Proof.
@@ -431,7 +562,7 @@ Lemma dest_close_per_func_r {o} :
     -> defines_only_universes ts
     -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A' A (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), type_sys_props4 (close ts) lib' (substc a v' B') (substc a' v B) (eqb lib' x a a' e))
-    -> computes_to_valc lib T' (mkc_function A v B)
+    -> ccomputes_to_valc_ext lib T' (mkc_function A v B)
     -> close ts lib T T' eq
     -> per_bar (per_func_ext (close ts)) lib T T' eq.
 Proof.

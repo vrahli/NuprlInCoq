@@ -73,6 +73,15 @@ Proof.
 Qed.
 Hint Resolve per_union_implies_per_bar : slow.
 
+Lemma cequivc_ext_mkc_union_right {o} :
+  forall lib (a b c d : @CTerm o),
+    ccequivc_ext lib (mkc_union a b) (mkc_union c d)
+    -> ccequivc_ext lib a c # ccequivc_ext lib b d.
+Proof.
+  introv ceq; dands; introv ext; pose proof (ceq lib' ext) as q; simpl in q;
+    clear ceq; spcast; apply cequivc_decomp_union in q; sp.
+Qed.
+
 Lemma local_per_bar_per_union {o} :
   forall (ts : cts(o)) lib T A B A' B' (eqa eqb : lib-per(lib,o)),
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
@@ -117,18 +126,45 @@ Proof.
     exrepnd.
     apply z0 in w1; clear z0.
 
-    dup comp as c.
-    apply (lib_extends_preserves_ccomputes_to_valc x) in c.
-    spcast; repeat computes_to_eqval.
+    apply (ccomputes_to_valc_ext_monotone _ lib'0) in comp;[|eauto 3 with slow];[].
+    computes_to_eqval_ext.
+    hide_hyp z2.
+    computes_to_eqval_ext.
+    hide_hyp z1.
+    computes_to_eqval_ext.
+    apply cequivc_ext_mkc_union_right in ceq.
+    apply cequivc_ext_mkc_union_right in ceq0.
+    apply cequivc_ext_mkc_union_right in ceq1.
+    repnd.
 
     eapply (implies_eq_term_equals_per_union_bar _ (trivial_bar lib'0));[| |eauto];
       apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;[|].
 
-    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals2;
-        try (exact tsa); eauto. }
+    {
+      eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals2;
+        try (exact tsa); eauto.
 
-    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals2;
-        try (exact tsb); eauto. }
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+          try exact tsa; try exact alla5; eauto 3 with slow. }
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies in z3;
+          try exact tsa; eauto 3 with slow.
+        eapply trans_ccequivc_ext_in_ext_eq_types_implies2;
+          try exact tsa; try exact z3; eauto 3 with slow. }
+    }
+
+    {
+      eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals2;
+        try (exact tsb); eauto.
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+          try exact tsb; try exact alla6; eauto 3 with slow. }
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies in z4;
+          try exact tsb; eauto 3 with slow.
+        eapply trans_ccequivc_ext_in_ext_eq_types_implies2;
+          try exact tsb; try exact z4; eauto 3 with slow. }
+    }
   }
 
   {
@@ -186,7 +222,7 @@ Proof.
 
       unfold per_union in allb0.
       unfold per_union in q0.
-      exrepnd; spcast; repeat computes_to_eqval.
+      exrepnd; spcast.
 
       remember (feqa lib0 br lib'0 xt1 x) as eqz.
       remember (feqa lib4 br2 lib5 ext1 x3) as eqw.
@@ -196,20 +232,46 @@ Proof.
 
       assert (lib_extends lib'4 lib) as xx by eauto 3 with slow.
       dup comp as c.
-      apply (lib_extends_preserves_computes_to_valc _ _ xx) in c.
-      spcast; repeat computes_to_eqval.
 
-      apply (lib_extends_preserves_computes_to_valc _ lib'4) in comp;[|eauto 3 with slow];[].
-      repeat computes_to_eqval.
+      apply (ccomputes_to_valc_ext_monotone _ lib'4) in c;[|eauto 3 with slow];[].
+      computes_to_eqval_ext.
+      apply cequivc_ext_mkc_union_right in ceq; repnd.
+
+      apply (ccomputes_to_valc_ext_monotone _ lib'4) in comp;[|eauto 3 with slow];[].
+      hide_hyp q1.
+      computes_to_eqval_ext.
+      apply cequivc_ext_mkc_union_right in ceq1; repnd.
+
+      hide_hyp c.
+      computes_to_eqval_ext.
+      apply cequivc_ext_mkc_union_right in ceq3; repnd.
 
       eapply (implies_eq_term_equals_per_union_bar _ (trivial_bar lib'4));[| |eauto];
         apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;[|].
 
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals2;
-          try (exact tsa); eauto. }
+          try (exact tsa); eauto.
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+            try exact tsa; try exact allb3; eauto 3 with slow. }
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies in q3;
+            try exact tsa; eauto 3 with slow.
+          eapply trans_ccequivc_ext_in_ext_eq_types_implies2;
+            try exact tsa; try exact q3; eauto 3 with slow. }
+      }
 
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals2;
-          try (exact tsb); eauto. }
+          try (exact tsb); eauto.
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+            try exact tsb; try exact allb4; eauto 3 with slow. }
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies in q4;
+            try exact tsb; eauto 3 with slow.
+          eapply trans_ccequivc_ext_in_ext_eq_types_implies2;
+            try exact tsb; try exact q4; eauto 3 with slow. }
+      }
   }
 Qed.
 Hint Resolve local_per_bar_per_union : slow.
@@ -258,18 +320,43 @@ Proof.
     exrepnd.
     apply z0 in w1; clear z0.
 
-    dup comp as c.
-    apply (lib_extends_preserves_ccomputes_to_valc x) in c.
-    spcast; repeat computes_to_eqval.
+    apply (ccomputes_to_valc_ext_monotone _ lib'0) in comp;[|eauto 3 with slow];[].
+    computes_to_eqval_ext.
+    hide_hyp z2.
+    computes_to_eqval_ext.
+    hide_hyp z1.
+    computes_to_eqval_ext.
+    apply cequivc_ext_mkc_union_right in ceq.
+    apply cequivc_ext_mkc_union_right in ceq0.
+    apply cequivc_ext_mkc_union_right in ceq1.
+    repnd.
 
     eapply (implies_eq_term_equals_per_union_bar _ (trivial_bar lib'0));[| |eauto];
       apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;[|].
 
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals3;
-        try (exact tsa); eauto. }
+        try (exact tsa); eauto.
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+          try exact tsa; try exact alla5; eauto 3 with slow. }
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies3 in z3;
+          try exact tsa; eauto 3 with slow.
+        eapply trans_ccequivc_ext_in_ext_eq_types_implies4;
+          try exact tsa; try exact z3; eauto 3 with slow. }
+    }
 
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals3;
-        try (exact tsb); eauto. }
+        try (exact tsb); eauto.
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+          try exact tsb; try exact alla6; eauto 3 with slow. }
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies3 in z4;
+          try exact tsb; eauto 3 with slow.
+        eapply trans_ccequivc_ext_in_ext_eq_types_implies4;
+          try exact tsb; try exact z4; eauto 3 with slow. }
+    }
   }
 
   {
@@ -327,7 +414,7 @@ Proof.
 
       unfold per_union in allb0.
       unfold per_union in q0.
-      exrepnd; spcast; repeat computes_to_eqval.
+      exrepnd.
 
       remember (feqa lib0 br lib'0 xt1 x) as eqz.
       remember (feqa lib4 br2 lib5 ext1 x3) as eqw.
@@ -337,20 +424,46 @@ Proof.
 
       assert (lib_extends lib'4 lib) as xx by eauto 3 with slow.
       dup comp as c.
-      apply (lib_extends_preserves_computes_to_valc _ _ xx) in c.
-      spcast; repeat computes_to_eqval.
 
-      apply (lib_extends_preserves_computes_to_valc _ lib'4) in comp;[|eauto 3 with slow];[].
-      repeat computes_to_eqval.
+      apply (ccomputes_to_valc_ext_monotone _ lib'4) in c;[|eauto 3 with slow];[].
+      computes_to_eqval_ext.
+      apply cequivc_ext_mkc_union_right in ceq; repnd.
+
+      apply (ccomputes_to_valc_ext_monotone _ lib'4) in comp;[|eauto 3 with slow];[].
+      hide_hyp q2.
+      computes_to_eqval_ext.
+      apply cequivc_ext_mkc_union_right in ceq1; repnd.
+
+      hide_hyp c.
+      computes_to_eqval_ext.
+      apply cequivc_ext_mkc_union_right in ceq3; repnd.
 
       eapply (implies_eq_term_equals_per_union_bar _ (trivial_bar lib'4));[| |eauto];
         apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;[|].
 
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals3;
-          try (exact tsa); eauto. }
+          try (exact tsa); eauto.
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+            try exact tsa; try exact allb3; eauto 3 with slow. }
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies3 in q3;
+            try exact tsa; eauto 3 with slow.
+          eapply trans_ccequivc_ext_in_ext_eq_types_implies4;
+            try exact tsa; try exact q3; eauto 3 with slow. }
+      }
 
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals3;
-          try (exact tsb); eauto. }
+          try (exact tsb); eauto.
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+            try exact tsb; try exact allb4; eauto 3 with slow. }
+
+        { eapply trans_ccequivc_ext_in_ext_eq_types_implies3 in q4;
+            try exact tsb; eauto 3 with slow.
+          eapply trans_ccequivc_ext_in_ext_eq_types_implies4;
+            try exact tsb; try exact q4; eauto 3 with slow. }
+      }
   }
 Qed.
 Hint Resolve local_per_bar_per_union2 : slow.
@@ -365,7 +478,7 @@ Lemma dest_close_per_union_l {o} :
     -> defines_only_universes ts
     -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' B B' (eqb lib' x))
-    -> computes_to_valc lib T (mkc_union A B)
+    -> ccomputes_to_valc_ext lib T (mkc_union A B)
     -> close ts lib T T' eq
     -> per_bar (per_union (close ts)) lib T T' eq.
 Proof.
@@ -386,7 +499,7 @@ Lemma dest_close_per_union_r {o} :
     -> defines_only_universes ts
     -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A' A (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' B' B (eqb lib' x))
-    -> computes_to_valc lib T' (mkc_union A B)
+    -> ccomputes_to_valc_ext lib T' (mkc_union A B)
     -> close ts lib T T' eq
     -> per_bar (per_union (close ts)) lib T T' eq.
 Proof.

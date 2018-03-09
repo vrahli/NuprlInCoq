@@ -1281,6 +1281,7 @@ Proof.
 Qed.
 
 (*
+(*
 
   We should be able to prove equality!
   I left the lemma above.
@@ -1662,7 +1663,9 @@ Proof.
       rewrite comp0.
       eexists; dands; eauto.
 Qed.
+*)
 
+(*
 Lemma reduces_in_atmost_k_steps_preserves_lib_extends {o} :
   forall (lib1 lib2 : library)
          (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
@@ -1692,7 +1695,9 @@ Proof.
     eexists; dands;[rw @reduces_in_atmost_k_steps_S;eexists; dands; eauto|].
     eauto 2 with slow.
 Qed.
+*)
 
+(*
 Lemma reduces_to_preserves_lib_extends {o} :
   forall (lib1 lib2 : library)
          (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
@@ -1707,7 +1712,9 @@ Proof.
   exrepnd.
   eexists; eexists; dands; eauto.
 Qed.
+*)
 
+(*
 Lemma computes_to_valc_preserves_lib_extends {o} :
   forall (lib1 lib2 : library)
          (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
@@ -1728,6 +1735,7 @@ Proof.
   allrw @isprogram_eq.
   exists (mk_ct b' comp0); simpl; dands; eauto 2 with slow.
 Qed.
+*)
 
 Lemma alphaeqc_mkc_nat_implies {o} :
   forall n (t : @CTerm o),
@@ -1738,6 +1746,7 @@ Proof.
   apply alpha_eq_mk_nat in aeq; auto.
 Qed.
 
+(*
 Lemma computes_to_valc_nat_if_lib_extends {o} :
   forall (lib1 lib2 : @library o) t n,
     lib_extends lib1 lib2
@@ -1750,3 +1759,4 @@ Proof.
   exrepnd.
   apply alphaeqc_mkc_nat_implies in h0; subst; auto.
 Qed.
+ *)

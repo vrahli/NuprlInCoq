@@ -40,6 +40,7 @@ Definition ccompute_1step {p} lib t1 t2 := Cast (@compute_1step p lib t1 t2).
 Definition chaltsc {p} lib t := Cast (@hasvaluec p lib t).
 Definition reduces_kstepsc {o} lib (t1 t2 : @CTerm o) k := Cast (@reduces_in_atmost_k_stepsc o lib t1 t2 k).
 Definition reduces_ksteps_excc {o} lib (t1 t2 : @CTerm o) k := Cast (@reduces_in_atmost_k_steps_excc o lib t1 t2 k).
+Definition ciscvalue {o} (t : @CTerm o) := Cast (iscvalue t).
 
 Ltac uncast_step :=
   match goal with
@@ -51,6 +52,7 @@ Ltac uncast_step :=
     | [ H : chaltsc _ _                 |- _ ] => destruct H as [H]
     | [ H : reduces_kstepsc _ _ _ _     |- _ ] => destruct H as [H]
     | [ H : reduces_ksteps_excc _ _ _ _ |- _ ] => destruct H as [H]
+    | [ H : ciscvalue _                 |- _ ] => destruct H as [H]
     | [ H : Cast _                      |- _ ] => destruct H as [H]
   end.
 
@@ -66,6 +68,7 @@ Ltac uncastc :=
     | [ |- chaltsc _ _                 ] => constructor
     | [ |- reduces_kstepsc _ _ _ _     ] => constructor
     | [ |- reduces_ksteps_excc _ _ _ _ ] => constructor
+    | [ |- ciscvalue _                 ] => constructor
     | [ |- Cast _                      ] => constructor
   end.
 

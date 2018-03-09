@@ -2950,6 +2950,15 @@ Proof.
               apply compute_step_parallel_success in Hcomp; subst; allsimpl.
               exists (@mk_axiom p); dands; auto.
 
+            - SSSSSCase "NLastCs".
+
+              csunf Hcomp; allsimpl.
+              apply compute_step_last_cs_success in Hcomp; exrepnd; subst; simpl in *; cpx.
+              repeat (destruct lbt2; ginv).
+              csunf; simpl.
+              allrw.
+              eexists; dands; eauto.
+
             - SSSSSCase "NCompSeq1".
 
               csunf Hcomp; allsimpl.

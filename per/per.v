@@ -78,6 +78,7 @@ Notation "{ a , b , c , d , e , f : T , P }" :=
 
 
 
+
 (* ==================================================================
  *
  * This is like per_type.v but I changed the definition of function
@@ -306,14 +307,31 @@ Notation "cts( p )" := (@library p -> @CTerm p -> @CTerm p -> per(p) -> [U]).
 
 (* begin hide *)
 
+Definition ccomputes_to_valc_ext {o} (lib : @library o) (a b : @CTerm o) :=
+  in_ext lib (fun lib => exists c, ccomputes_to_valc lib a c /\ ciscvalue b /\ ccequivc lib b c).
+
+Definition ccomputes_to_excc_ext {o} (lib : @library o) (e a b : @CTerm o) :=
+  in_ext lib (fun lib => ccomputes_to_excc lib e a b).
+
 Notation "a ~<~ b" := (capproxc a b) (at level 0).
 Notation "a ~<~( lib ) b" := (capproxc lib a b) (at level 0).
 Notation "a ~=~ b" := (ccequivc a b) (at level 0).
 Notation "a ~=~( lib ) b" := (ccequivc lib a b) (at level 0).
-Notation "a ===> b" := (ccomputes_to_valc a b) (at level 0).
-Notation "a ===>( lib ) b" := (ccomputes_to_valc lib a b) (at level 0).
-Notation "a ===e>( lib , e ) b" := (ccomputes_to_excc lib e a b) (at level 0).
+(*Notation "a ===> b" := (ccomputes_to_valc a b) (at level 0).*)
+Notation "a ===>( lib ) b" := (ccomputes_to_valc_ext lib a b) (at level 0).
+Notation "a ===e>( lib , e ) b" := (ccomputes_to_excc_ext lib e a b) (at level 0).
 Notation "T [[ v \\ a ]]" := (substc a v T) (at level 0).
+
+Lemma ccomputes_to_valc_ext_monotone {o} :
+  forall lib lib' (a b : @CTerm o),
+    lib_extends lib' lib
+    -> a ===>(lib) b
+    -> a ===>(lib') b.
+Proof.
+  introv ext comp xt.
+  eapply comp; eauto 3 with slow.
+Qed.
+Hint Resolve ccomputes_to_valc_ext_monotone : slow.
 
 (* end hide *)
 
@@ -783,9 +801,6 @@ Definition per_compute {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : 
  *)
 
 (*Definition eqorceq {p} lib (eq : per(p)) a b : [U] := eq a b {+} a ~=~(lib) b.*)
-
-(*Definition computes_to_valc_ext {o} (lib : @library o) (a b : @CTerm o) :=
-  in_ext lib (fun lib => a ===>(lib) b).*)
 
 Definition eqorceq {p} lib (eq : per(p)) a b : [U] :=
   eq a b {+} ccequivc_ext lib a b.
@@ -2261,8 +2276,8 @@ Definition per_rec (ts : cts) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
  * from the per definitions *)
 Definition close_compute {p} (ts : cts) lib (T1 T2 : @CTerm p) (eq : per(p)) :=
   {T3, T4 : CTerm
-   $ ccomputes_to_valc lib T1 T3
-   # ccomputes_to_valc lib T2 T4
+   $ T1 ===>(lib) T3
+   # T2 ===>(lib) T4
    # ts lib T3 T4 eq}.
 
 (* end hide *)

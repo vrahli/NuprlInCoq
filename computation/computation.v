@@ -237,6 +237,31 @@ Definition compute_step_comp_seq2 {o}
   | _, _ => cfailure bad_args t
   end.
 
+Fixpoint last_cs_entry {o} (l : @ChoiceSeqVals o) : option ChoiceSeqVal :=
+  match l with
+  | [] => None
+  | [v] => Some v
+  | _ :: k => last_cs_entry k
+  end.
+
+Definition compute_step_last_cs {o}
+           (lib   : @library o)
+           (arg1c : @CanonicalOp o)
+           (t     : @NTerm o)
+           (arg1bts btsr : list (@BTerm o)) :=
+  match arg1c, arg1bts, btsr with
+  | Ncseq name, [], [] =>
+    match find_cs lib name with
+    | Some entry =>
+      match last_cs_entry entry with
+      | Some v => csuccess (CSVal2term v)
+      | None => cfailure bad_args t
+      end
+    | None => cfailure bad_args t
+    end
+  | _, _, _ => cfailure bad_args t
+  end.
+
 Definition compute_step_can {o}
            lib
            (t : @NTerm o)
@@ -261,6 +286,7 @@ Definition compute_step_can {o}
     | NFresh    => cfailure "fresh has a bound variable" t
     | NTryCatch      => compute_step_try t arg1 btsr
     | NParallel      => compute_step_parallel arg1c t arg1bts btsr
+    | NLastCs        => compute_step_last_cs   lib arg1c t arg1bts btsr
     | NCompSeq1      => compute_step_comp_seq1 lib arg1c t arg1bts btsr
     | NCompSeq2  nfo => compute_step_comp_seq2 lib nfo arg1c t arg1bts btsr
     | NCompOp    op  => co btsr t arg1bts arg1c op comp arg1 ncr

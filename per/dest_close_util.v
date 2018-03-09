@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -49,7 +50,7 @@ Proof.
   pose proof (w _ e) as w.
   pose proof (h _ (lib_extends_trans e ext)) as h.
   simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply uv in w.
   apply eq_term_equals_sym;auto.
 Qed.
@@ -79,7 +80,7 @@ Proof.
   pose proof (h _ (lib_extends_trans e ext) a a' z) as h.
   simpl in *.
 
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply uv in w.
   apply uv in q.
   eapply eq_term_equals_trans;[|eauto].
@@ -106,7 +107,7 @@ Proof.
   pose proof (w _ e) as w.
   pose proof (h _ (lib_extends_trans e ext)) as h.
   simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply tygs in tygt.
   pose proof (dum A C B) as q.
   eapply q in w; eauto; repnd.
@@ -140,7 +141,7 @@ Proof.
   pose proof (h _ (lib_extends_trans e ext) a a' z) as h.
   simpl in *.
 
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
 
   apply tygs in tygt.
   pose proof (dum (substc a' va A) (substc a vc C) (substc a vb B)) as qa.

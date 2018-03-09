@@ -130,6 +130,7 @@ Proof.
     rewrite subst_utokens_aux_var_ren_utok; autorewrite with slow; tcsp.
 Qed.
 
+(*
 Lemma lib_extends_preserves_compute_step {o} :
   forall (lib1 lib2 : library)
          (ext  : lib_extends lib2 lib1) (* lib2 extends lib1 *)
@@ -534,3 +535,4 @@ Proof.
   eauto 3 with slow.
 Qed.
 Hint Resolve lib_extends_preserves_computes_to_valc : slow.
+ *)

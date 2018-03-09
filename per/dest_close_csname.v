@@ -113,7 +113,7 @@ Proof.
     unfold per_csname in *; exrepnd.
     exists n; dands; auto.
     introv; split; intro h; exrepnd; dands; auto.
-    - spcast; computes_to_eqval; auto.
+    - spcast; computes_to_eqval; apply_cequivc_val; auto.
     - exists n; dands; auto.
   }
 
@@ -171,7 +171,7 @@ Proof.
 
       unfold per_csname in allb0; exrepnd.
       eapply (lib_per_cond _ eqa0); apply allb2.
-      spcast; computes_to_eqval; auto.
+      spcast; computes_to_eqval; apply_cequivc_val; auto.
   }
 Qed.
 
@@ -208,7 +208,7 @@ Lemma dest_close_per_csname_l {p} :
   forall (ts : cts(p)) lib T T' eq n,
     type_system ts
     -> defines_only_universes ts
-    -> computes_to_valc lib T (mkc_csname n)
+    -> ccomputes_to_valc_ext lib T (mkc_csname n)
     -> close ts lib T T' eq
     -> per_bar (per_csname (close ts)) lib T T' eq.
 Proof.
@@ -222,7 +222,7 @@ Lemma dest_close_per_csname_r {p} :
   forall (ts : cts(p)) lib T T' eq n,
     type_system ts
     -> defines_only_universes ts
-    -> computes_to_valc lib T' (mkc_csname n)
+    -> ccomputes_to_valc_ext lib T' (mkc_csname n)
     -> close ts lib T T' eq
     -> per_bar (per_csname (close ts)) lib T T' eq.
 Proof.

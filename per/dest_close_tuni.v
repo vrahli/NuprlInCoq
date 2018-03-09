@@ -38,7 +38,7 @@ Require Export local.
 Lemma dest_close_per_tuni_l {p} :
   forall (ts : cts(p)) lib T i T' eq,
     local_ts ts
-    -> computes_to_valc lib T (mkc_tuni i)
+    -> ccomputes_to_valc_ext lib T (mkc_tuni i)
     -> close ts lib T T' eq
     -> ts lib T T' eq.
 Proof.
@@ -51,7 +51,7 @@ Qed.
 Lemma dest_close_per_tuni_r {p} :
   forall (ts : cts(p)) lib T i T' eq,
     local_ts ts
-    -> computes_to_valc lib T' (mkc_tuni i)
+    -> ccomputes_to_valc_ext lib T' (mkc_tuni i)
     -> close ts lib T T' eq
     -> ts lib T T' eq.
 Proof.

@@ -2598,6 +2598,20 @@ Proof.
             }
 
             {
+              SSSCase "NLastCs".
+
+              csunf comp; simpl in *.
+              apply compute_step_last_cs_success in comp; exrepnd; subst; simpl in *.
+              repeat (destruct bts; simpl in *; ginv).
+              repeat (destruct bs; simpl in *; ginv).
+              csunf; simpl; allrw.
+              rewrite not_in_get_utokens_implies_ren_utok_same; eauto 3 with slow.
+              introv xx.
+              eapply find_last_cs_implies_subset_get_utokens_CSVal2term in xx; eauto.
+              rw in_app_iff in nia; rw not_over_or in nia; tcsp.
+            }
+
+            {
               SSSCase "NCompSeq1".
 
               csunf comp; simpl in *.

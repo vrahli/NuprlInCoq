@@ -162,6 +162,16 @@ Print Universes.
 Check (fun T T' => univi 1 T T' (fun A A' => {eqa : per & close (univi 0) A A' eqa})).
 *)
 
+Lemma ccomputes_to_valc_ext_refl {o} :
+  forall lib (a : @CTerm o),
+    iscvalue a
+    -> ccomputes_to_valc_ext lib a a.
+Proof.
+  introv isc ext.
+  exists a; dands; spcast; auto.
+  apply computes_to_valc_refl; eauto 3 with slow.
+Qed.
+Hint Resolve ccomputes_to_valc_ext_refl : slow.
 
 Lemma univi_mkc_uni {o} :
   forall (lib : @library o) (i : nat),
@@ -174,8 +184,7 @@ Proof.
   intros.
   simpl.
   left.
-  dands; try (spcast; apply computes_to_valc_refl; sp).
-  sp.
+  dands; try (spcast; eauto 3 with slow).
 Qed.
 
 Lemma univi_exists {p} :

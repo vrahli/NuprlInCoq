@@ -483,12 +483,22 @@ Proof.
   }
 Qed.
 
+Lemma ccequivc_ext_uni_uni_implies {o} :
+  forall (lib : @library o) i j,
+    ccequivc_ext lib (mkc_uni i) (mkc_uni j) -> i = j.
+Proof.
+  introv ceq; pose proof (ceq _ (lib_extends_refl _)) as ceq; simpl in ceq; spcast.
+  apply cequivc_uni_right_iscvalue in ceq; eauto 3 with slow.
+  eqconstr ceq; auto.
+Qed.
+
 Lemma uniquely_valued_univi {o} :
   forall i, @uniquely_valued o (univi i).
 Proof.
   introv u v.
   allrw @univi_exists_iff; exrepnd.
-  spcast; computes_to_eqval.
+  spcast; computes_to_eqval_ext.
+  apply ccequivc_ext_uni_uni_implies in ceq; subst; GC.
   eapply eq_term_equals_trans;[eauto|].
   apply eq_term_equals_sym;auto.
 Qed.

@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -37,7 +38,7 @@ Require Export local.
 Lemma dest_close_per_uni_l {p} :
   forall (ts : cts(p)) lib T i T' eq,
     local_ts ts
-    -> computes_to_valc lib T (mkc_uni i)
+    -> ccomputes_to_valc_ext lib T (mkc_uni i)
     -> close ts lib T T' eq
     -> ts lib  T T' eq.
 Proof.
@@ -50,7 +51,7 @@ Qed.
 Lemma dest_close_per_uni_r {p} :
   forall (ts : cts(p)) lib T i T' eq,
     local_ts ts
-    -> computes_to_valc lib T' (mkc_uni i)
+    -> ccomputes_to_valc_ext lib T' (mkc_uni i)
     -> close ts lib T T' eq
     -> ts lib T T' eq.
 Proof.
@@ -86,6 +87,7 @@ Proof.
   introv br ext; introv; eapply reca; eauto 3 with slow.
 Qed.
 
+(*
 Lemma dest_close_per_uni_bar_l {p} :
   forall (ts : cts(p)) lib T i T' eq (bar : BarLib lib),
     local_ts ts
@@ -137,3 +139,4 @@ Proof.
   eapply locts; eauto.
   introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
+ *)

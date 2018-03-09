@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -126,7 +127,7 @@ Lemma dest_close_per_base_l {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
     -> defines_only_universes ts
-    -> computes_to_valc lib T mkc_base
+    -> ccomputes_to_valc_ext lib T mkc_base
     -> close ts lib T T' eq
     -> per_base_bar (close ts) lib T T' eq.
 Proof.
@@ -140,7 +141,7 @@ Lemma dest_close_per_base_r {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
     -> defines_only_universes ts
-    -> computes_to_valc lib T' mkc_base
+    -> ccomputes_to_valc_ext lib T' mkc_base
     -> close ts lib T T' eq
     -> per_base_bar (close ts) lib T T' eq.
 Proof.
@@ -150,6 +151,7 @@ Proof.
   introv br ext; introv; apply (reca lib' br lib'0 ext x); eauto 3 with slow.
 Qed.
 
+(*
 Lemma dest_close_per_base_bar_l {p} :
   forall (ts : cts(p)) lib T T' eq (bar : BarLib lib),
     type_system ts
@@ -209,3 +211,4 @@ Proof.
   eapply local_per_base_bar; eauto.
   introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
+*)

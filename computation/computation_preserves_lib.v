@@ -547,6 +547,7 @@ Proof.
 Qed.
 Hint Resolve not_in_subset : slow.
 
+(*
 (* we should be able to prove that b = b'.  For that we would need something
    like what I started to prove in computation_preserves_utok.  That one there
    is not exactly right, but we should be able to prove that s and w only differ
@@ -943,7 +944,9 @@ Proof.
            apply found_entry_add_new_abs; eauto|].
         auto.
 Qed.
+*)
 
+(*
 Lemma reduces_to_consistent_with_new_definition {o} {lib} :
   forall (a b : @NTerm o)
          (wf  : wf_term a)
@@ -980,6 +983,7 @@ Proof.
     eexists; dands;[rw @reduces_in_atmost_k_steps_S;eexists; dands; eauto|].
     eauto 2 with slow.
 Qed.
+*)
 
 Lemma matching_entry_sign_deq :
   forall oa1 oa2, decidable (matching_entry_sign oa1 oa2).

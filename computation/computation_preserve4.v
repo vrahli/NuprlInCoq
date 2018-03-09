@@ -375,6 +375,14 @@ Proof.
             apply compute_step_parallel_success in comp; subst; allsimpl; fold_terms.
             exists (@mk_axiom o); dands; auto. }
 
+          { SSSCase "NLastCs".
+            csunf comp; allsimpl.
+            apply compute_step_last_cs_success in comp; exrepnd; subst; simpl in *.
+            csunf; simpl; allrw.
+            eexists; dands; eauto.
+            autorewrite with slow in *; auto.
+          }
+
           { SSSCase "NCompSeq1".
             csunf comp; allsimpl.
             apply compute_step_comp_seq1_success in comp; exrepnd; subst; simpl in *.

@@ -123,7 +123,7 @@ Lemma dest_close_per_nat_l {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
     -> defines_only_universes ts
-    -> computes_to_valc lib T mkc_Nat
+    -> ccomputes_to_valc_ext lib T mkc_Nat
     -> close ts lib T T' eq
     -> per_nat_bar (close ts) lib T T' eq.
 Proof.
@@ -137,7 +137,7 @@ Lemma dest_close_per_nat_r {p} :
   forall (ts : cts(p)) lib T T' eq,
     type_system ts
     -> defines_only_universes ts
-    -> computes_to_valc lib T' mkc_Nat
+    -> ccomputes_to_valc_ext lib T' mkc_Nat
     -> close ts lib T T' eq
     -> per_nat_bar (close ts) lib T T' eq.
 Proof.
@@ -147,6 +147,7 @@ Proof.
   introv br ext; introv; apply (reca lib' br lib'0 ext x); eauto 3 with slow.
 Qed.
 
+(*
 Lemma dest_close_per_nat_bar_l {p} :
   forall (ts : cts(p)) lib T T' eq (bar : BarLib lib),
     type_system ts
@@ -206,3 +207,4 @@ Proof.
   eapply local_per_nat_bar; eauto.
   introv br ext; introv; apply (reca lib' br lib'0 ext x (raise_bar bar x)); eauto 3 with slow.
 Qed.
+*)

@@ -30,7 +30,9 @@
 
  *)
 
+
 Require Export computation2.
+
 
 Hint Rewrite app_nil_r : slow.
 Hint Rewrite @sub_filter_nil_r : slow.
@@ -107,6 +109,28 @@ Proof.
   - exrepnd; subst.
     constructor; unfold num_bvars; simpl; auto.
     introv i; repndors; subst; tcsp; allrw @bt_wf_iff; auto.
+Qed.
+
+Lemma compute_step_last_cs_success {o} :
+  forall lib can (t : @NTerm o) bts bs u,
+    compute_step_last_cs lib can t bts bs = csuccess u
+    -> {name : choice_sequence_name
+        & {entry : ChoiceSeqEntry
+        & {v : ChoiceSeqVal
+        & can = Ncseq name
+        # bts = []
+        # bs = []
+        # find_cs lib name = Some entry
+        # last_cs_entry entry = Some v
+        # u = CSVal2term v }}}.
+Proof.
+  introv e; allsimpl; destruct can; allsimpl; ginv; boolvar; ginv.
+
+  destruct bts; allsimpl; ginv.
+  destruct bs; allsimpl; ginv.
+  remember (find_cs lib c) as f; symmetry in Heqf; destruct f; ginv.
+  remember (last_cs_entry c0) as z; symmetry in Heqz; destruct z; ginv.
+  exists c c0 c1; dands; auto.
 Qed.
 
 Lemma compute_step_comp_seq1_success {o} :
@@ -605,6 +629,13 @@ Proof.
           apply compute_step_parallel_success in comp; subst; allsimpl.
           allrw remove_nvars_nil_l; dands; simpl;
           autorewrite with slow; eauto with slow.
+        }
+
+        { SSSCase "NLastCs".
+
+          allsimpl; autorewrite with slow in *.
+          apply compute_step_last_cs_success in comp; exrepnd; subst; simpl in *.
+          autorewrite with slow; dands; auto; eauto 3 with slow.
         }
 
         { SSSCase "NCompSeq1".

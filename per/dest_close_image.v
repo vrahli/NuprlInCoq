@@ -104,6 +104,69 @@ Proof.
   apply eq_term_equals_sym; eapply h.
 Qed.
 
+Lemma approx_decomp_image {o} :
+  forall lib (a b c d : @NTerm o),
+    approx lib (mk_image a b) (mk_image c d)
+    <=> approx lib a c # approx lib b d.
+Proof.
+  split; unfold mk_image; introv Hyp.
+  - applydup @approx_relates_only_progs in Hyp. repnd.
+    apply  approx_canonical_form2 in Hyp.
+    unfold lblift in Hyp.
+    repnd; allsimpl.
+    alpharelbtd; GC.
+    applydup @isprogram_image_iff in Hyp1.
+    applydup @isprogram_image_iff in Hyp0.
+    repnd.
+    eapply blift_approx_open_nobnd in Hyp1bt; eauto 3 with slow.
+    eapply blift_approx_open_nobnd in Hyp0bt; eauto 3 with slow.
+  - repnd.
+    applydup @approx_relates_only_progs in Hyp; repnd.
+    applydup @approx_relates_only_progs in Hyp0; repnd.
+    apply approx_canonical_form3.
+    + apply isprogram_ot_iff. allsimpl. dands; auto. introv Hin.
+      repndors; subst; tcsp; apply implies_isprogram_bt0; eauto 3 with slow.
+    + apply isprogram_ot_iff. allsimpl. dands; auto. introv Hin.
+      repndors; subst; tcsp; apply implies_isprogram_bt0; eauto 3 with slow.
+    + unfold lblift. allsimpl. split; auto.
+      introv Hin. unfold selectbt.
+      repeat(destruct n; try (omega;fail); allsimpl);
+      apply blift_approx_open_nobnd2; sp.
+Qed.
+
+Lemma cequiv_decomp_image {o} :
+  forall lib (a b c d : @NTerm o),
+    cequiv lib (mk_image a b) (mk_image c d)
+    <=> cequiv lib a c # cequiv lib b d.
+Proof.
+  intros.
+  unfold cequiv.
+  generalize (approx_decomp_image lib a b c d); intro X.
+  trewrite X; clear X.
+  generalize (approx_decomp_image lib c d a b); intro X.
+  trewrite X; clear X.
+  split; sp.
+Qed.
+
+Lemma cequivc_decomp_image {o} :
+  forall lib (a b c d : @CTerm o),
+    cequivc lib (mkc_image a b) (mkc_image c d)
+    <=> cequivc lib a c # cequivc lib b d.
+Proof.
+  introv.
+  introv; destruct_cterms; unfold cequivc, mkc_cequiv; simpl.
+  apply cequiv_decomp_image.
+Qed.
+
+Lemma cequivc_ext_mkc_image_implies {o} :
+  forall lib (a b c d : @CTerm o),
+    ccequivc_ext lib (mkc_image a b) (mkc_image c d)
+    -> ccequivc_ext lib a c # ccequivc_ext lib b d.
+Proof.
+  introv ceq; dands; introv ext; pose proof (ceq lib' ext) as q; simpl in q;
+    clear ceq; spcast; apply cequivc_decomp_image in q; sp.
+Qed.
+
 Lemma local_per_bar_per_image {o} :
   forall (ts : cts(o)) lib T A A' f (eqa : lib-per(lib,o)),
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
@@ -147,12 +210,27 @@ Proof.
     exrepnd.
     apply z1 in w1; clear z1.
 
-    dup comp as c.
-    apply (lib_extends_preserves_ccomputes_to_valc x) in c.
-    spcast; repeat computes_to_eqval.
+    apply (ccomputes_to_valc_ext_monotone _ lib'0) in comp;[|eauto 3 with slow];[].
+    computes_to_eqval_ext.
+    hide_hyp z2.
+    computes_to_eqval_ext.
+    hide_hyp z0.
+    computes_to_eqval_ext.
+    apply cequivc_ext_mkc_image_implies in ceq.
+    apply cequivc_ext_mkc_image_implies in ceq0.
+    apply cequivc_ext_mkc_image_implies in ceq1.
+    repnd.
 
     eapply implies_eq_term_equals_per_image_eq_bar;[| |eauto]; eauto 3 with slow;[].
     eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals2; try (exact tsa); eauto.
+
+    { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+        try exact tsa; try exact z3; eauto 3 with slow. }
+
+    { eapply trans_ccequivc_ext_in_ext_eq_types_implies in z3;
+        try exact tsa; eauto 3 with slow.
+      eapply trans_ccequivc_ext_in_ext_eq_types_implies2;
+        try exact tsa; try exact z3; eauto 3 with slow. }
   }
 
   {
@@ -210,7 +288,7 @@ Proof.
 
       unfold per_image in allb0.
       unfold per_image in q0.
-      exrepnd; spcast; repeat computes_to_eqval.
+      exrepnd.
 
       remember (feqa lib0 br lib'0 xt1 x) as eqz.
       remember (feqa lib4 br2 lib5 ext1 x3) as eqw.
@@ -219,15 +297,28 @@ Proof.
       eapply (lib_per_cond _ eqw) in h0; apply q1 in h0; clear q1.
 
       assert (lib_extends lib'4 lib) as xx by eauto 3 with slow.
-      dup comp as c.
-      apply (lib_extends_preserves_computes_to_valc _ _ xx) in c.
-      spcast; repeat computes_to_eqval.
 
-      apply (lib_extends_preserves_computes_to_valc _ lib'4) in comp;[|eauto 3 with slow];[].
-      repeat computes_to_eqval.
+      apply (ccomputes_to_valc_ext_monotone _ lib'4) in comp;[|eauto 3 with slow];[].
+      computes_to_eqval_ext.
+      hide_hyp q2.
+      computes_to_eqval_ext.
+      hide_hyp q0.
+      computes_to_eqval_ext.
+      apply cequivc_ext_mkc_image_implies in ceq.
+      apply cequivc_ext_mkc_image_implies in ceq0.
+      apply cequivc_ext_mkc_image_implies in ceq1.
+      repnd.
 
       eapply implies_eq_term_equals_per_image_eq_bar;[| |eauto]; eauto 3 with slow;[].
       eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals2; try (exact tsa); eauto.
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+          try exact tsa; try exact z3; eauto 3 with slow. }
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies in q3;
+          try exact tsa; eauto 3 with slow.
+        eapply trans_ccequivc_ext_in_ext_eq_types_implies2;
+          try exact tsa; try exact q3; eauto 3 with slow. }
   }
 Qed.
 Hint Resolve local_per_bar_per_image : slow.
@@ -275,12 +366,27 @@ Proof.
     exrepnd.
     apply z1 in w1; clear z1.
 
-    dup comp as c.
-    apply (lib_extends_preserves_ccomputes_to_valc x) in c.
-    spcast; repeat computes_to_eqval.
+    apply (ccomputes_to_valc_ext_monotone _ lib'0) in comp;[|eauto 3 with slow];[].
+    computes_to_eqval_ext.
+    hide_hyp z2.
+    computes_to_eqval_ext.
+    hide_hyp z0.
+    computes_to_eqval_ext.
+    apply cequivc_ext_mkc_image_implies in ceq.
+    apply cequivc_ext_mkc_image_implies in ceq0.
+    apply cequivc_ext_mkc_image_implies in ceq1.
+    repnd.
 
     eapply implies_eq_term_equals_per_image_eq_bar;[| |eauto]; eauto 3 with slow;[].
     eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals3; try (exact tsa); eauto.
+
+    { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+        try exact tsa; try exact alla5; eauto 3 with slow. }
+
+    { eapply trans_ccequivc_ext_in_ext_eq_types_implies3 in z3;
+        try exact tsa; eauto 3 with slow.
+      eapply trans_ccequivc_ext_in_ext_eq_types_implies4;
+        try exact tsa; try exact z3; eauto 3 with slow. }
   }
 
   {
@@ -338,7 +444,7 @@ Proof.
 
       unfold per_image in allb0.
       unfold per_image in q0.
-      exrepnd; spcast; repeat computes_to_eqval.
+      exrepnd.
 
       remember (feqa lib0 br lib'0 xt1 x) as eqz.
       remember (feqa lib4 br2 lib5 ext1 x3) as eqw.
@@ -347,15 +453,28 @@ Proof.
       eapply (lib_per_cond _ eqw) in h0; apply q1 in h0; clear q1.
 
       assert (lib_extends lib'4 lib) as xx by eauto 3 with slow.
-      dup comp as c.
-      apply (lib_extends_preserves_computes_to_valc _ _ xx) in c.
-      spcast; repeat computes_to_eqval.
 
-      apply (lib_extends_preserves_computes_to_valc _ lib'4) in comp;[|eauto 3 with slow];[].
-      repeat computes_to_eqval.
+      apply (ccomputes_to_valc_ext_monotone _ lib'4) in comp;[|eauto 3 with slow];[].
+      computes_to_eqval_ext.
+      hide_hyp q2.
+      computes_to_eqval_ext.
+      hide_hyp q0.
+      computes_to_eqval_ext.
+      apply cequivc_ext_mkc_image_implies in ceq.
+      apply cequivc_ext_mkc_image_implies in ceq0.
+      apply cequivc_ext_mkc_image_implies in ceq1.
+      repnd.
 
       eapply implies_eq_term_equals_per_image_eq_bar;[| |eauto]; eauto 3 with slow;[].
       eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals3; try (exact tsa); eauto.
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+          try exact tsa; try exact allb3; eauto 3 with slow. }
+
+      { eapply trans_ccequivc_ext_in_ext_eq_types_implies3 in q3;
+          try exact tsa; eauto 3 with slow.
+        eapply trans_ccequivc_ext_in_ext_eq_types_implies4;
+          try exact tsa; try exact q3; eauto 3 with slow. }
   }
 Qed.
 Hint Resolve local_per_bar_per_image2 : slow.
@@ -370,7 +489,7 @@ Lemma dest_close_per_image_l {o} :
     type_system ts
     -> defines_only_universes ts
     -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
-    -> computes_to_valc lib T (mkc_image A f)
+    -> ccomputes_to_valc_ext lib T (mkc_image A f)
     -> close ts lib T T' eq
     -> per_bar (per_image (close ts)) lib T T' eq.
 Proof.
@@ -389,7 +508,7 @@ Lemma dest_close_per_image_r {o} :
     type_system ts
     -> defines_only_universes ts
     -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A' A (eqa lib' x))
-    -> computes_to_valc lib T' (mkc_image A f)
+    -> ccomputes_to_valc_ext lib T' (mkc_image A f)
     -> close ts lib T T' eq
     -> per_bar (per_image (close ts)) lib T T' eq.
 Proof.

@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -319,13 +320,12 @@ Proof.
       pose proof (tymt2 (substc a1 v2 B2) T3 T4 eq1 eq2) as q; repeat (autodimp q hyp); tcsp. }
 Qed.
 
-Lemma eq_term_equals_type_family {p} :
+(*Lemma eq_term_equals_type_family {p} :
   forall lib (T1 T2 : @CTerm p) eqa1 eqa2 eqb1 eqb2 ts A v B A' v' B'
          (C : CTerm -> forall v : NVar, CVTerm [v] -> CTerm),
-    (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
-    -> (forall x y z c, C x y z = C x y c -> z = c)
+    (forall x y z a b c, cequivc lib (C x y z) (C a b c)-> cequivc lib x a # bcequivc lib [y] z [b] c)
     -> type_family C ts lib T1 T2 eqa1 eqb1
-    -> computes_to_valc lib T1 (C A v B)
+    -> ccomputes_to_valc_ext lib T1 (C A v B)
     -> type_sys_props ts lib A A' eqa2
     -> (forall (a a' : CTerm) (e : eqa2 a a'),
           type_sys_props ts lib
@@ -344,15 +344,20 @@ Lemma eq_term_equals_type_family {p} :
        # type_family C ts lib T1 T2 eqa2 eqb2
        # type_family C ts lib T2 T1 eqa2 eqb2.
 Proof.
-  introv c1 c2 tf co1 tspa ftspb; introv.
+  introv c1 tf co1 tspa ftspb; introv.
   unfold type_family in tf; exrepd.
   ccomputes_to_eqval.
-  applydup c1 in eq; repd; subst; apply c2 in eq; subst; GC.
+  apply c1 in eqt; repnd; subst.
 
   (* First clause *)
   assert (eq_term_equals eqa2 eqa1) as eqta.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  apply uv with (T3 := A'0); sp.
+  {
+    onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
+    apply uv with (T3 := A'0); sp.
+    pose proof (tyvr A A0) as q; repeat (autodimp q hyp).
+    Focus 2.
+
+  }
 
   (* Second clause *)
   assert (forall (a1 a2 : CTerm) (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
@@ -450,15 +455,15 @@ Proof.
          as i
          by (apply (type_sys_props_ts_uv3 ts lib) with (C := substc a v' B') (eq1 := eqb1 a' a e1) (eq2 := eqb2 a' a e2); sp).
   apply (type_sys_props_ts_sym3 ts) with (C := substc a v' B') (eq1 := eqb2 a' a e2); sp.
-Qed.
+Qed.*)
 
-Lemma eq_term_equals_type_family2 {p} :
+(*Lemma eq_term_equals_type_family2 {p} :
   forall lib (T1 T2 : @CTerm p) eqa1 eqa2 eqb1 eqb2 ts A v B A' v' B'
          (C : CTerm -> forall v : NVar, CVTerm [v] -> CTerm),
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
     -> type_family C ts lib T1 T2 eqa1 eqb1
-    -> computes_to_valc lib T2 (C A v B)
+    -> ccomputes_to_valc_ext lib T2 (C A v B)
     -> type_sys_props ts lib A A' eqa2
     -> (forall (a a' : CTerm) (e : eqa2 a a'),
           type_sys_props ts lib
@@ -480,7 +485,7 @@ Proof.
   introv c1 c2 tf co1 tspa ftspb; introv.
   unfold type_family in tf; exrepd.
   ccomputes_to_eqval.
-  applydup c1 in eq; repd; subst; apply c2 in eq; subst; GC.
+  applydup c1 in eqt; repd; subst; apply c2 in eqt; subst; GC.
   generalize (type_sys_props_ts_refl ts lib A'0 A' eqa2); intro k; dest_imp k h; repnd.
 
   (* First clause *)
@@ -590,14 +595,14 @@ Proof.
          as i
          by (apply (type_sys_props_ts_uv4 ts lib) with (C := substc a' v' B') (eq1 := eqb1 a' a e1) (eq2 := eqb2 a a' e); sp).
   apply (type_sys_props_ts_sym2 ts) with (C := substc a' v' B') (eq1 := eqb2 a a' e); sp.
-Qed.
+Qed.*)
 
-Lemma type_family_trans {p} :
+(*Lemma type_family_trans {p} :
   forall C (ts : cts(p)) lib T1 T2 T3 eqa eqb eqa1 eqb1 eqa2 eqb2 A v B A' v' B',
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
-    -> computes_to_valc lib T1 (C A v B)
-    -> computes_to_valc lib T2 (C A' v' B')
+    -> ccomputes_to_valc_ext lib T1 (C A v B)
+    -> ccomputes_to_valc_ext lib T2 (C A' v' B')
     -> type_sys_props ts lib A A' eqa
     -> (forall (a a' : CTerm) (e : eqa a a'),
           type_sys_props ts lib
@@ -617,11 +622,11 @@ Proof.
   introv c1 c2 co1 co2 tspa ftspb tf1 tf2.
   allunfold @type_family; exrepnd.
   ccomputes_to_eqval.
-  applydup c1 in eq; repd; subst; apply c2 in eq; subst; GC.
+  applydup c1 in eqt; repd; subst; apply c2 in eqt; subst; GC.
   ccomputes_to_eqval.
-  applydup c1 in eq; repd; subst; apply c2 in eq; subst; GC.
+  applydup c1 in eqt; repd; subst; apply c2 in eqt; subst; GC.
   ccomputes_to_eqval.
-  applydup c1 in eq; repd; subst; apply c2 in eq; subst; GC.
+  applydup c1 in eqt; repd; subst; apply c2 in eqt; subst; GC.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
 
   (* We prove the first clause *)
@@ -687,7 +692,7 @@ Proof.
   generalize (ftspb a a' e); intro tspb.
 
   apply (type_sys_props_ts_trans ts lib) with (B := substc a' v' B') (eq1 := eqb1 a a' e4) (eq2 := eqb2 a' a' e3); sp.
-Qed.
+Qed.*)
 
 Lemma type_sys_props_eq {p} :
   forall (ts : cts(p)) lib A B C eq1 eq2,
@@ -771,14 +776,14 @@ Proof.
   pd (dum B A C eq1 eq2).
 Qed.
 
-Lemma type_family_refl {p} :
+(*Lemma type_family_refl {p} :
   forall C (ts : cts(p)) lib T1 T2 eqa eqb A v B A' v' B',
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
     -> type_sys_props ts lib A A' eqa
     -> (forall (a a' : CTerm) (e : eqa a a'),
           type_sys_props ts lib (substc a v B) (substc a' v' B') (eqb a a' e))
-    -> computes_to_valc lib T1 (C A v B)
+    -> ccomputes_to_valc_ext lib T1 (C A v B)
     -> type_family C ts lib T1 T2 eqa eqb
     -> type_family C ts lib T1 T1 eqa eqb
        # type_family C ts lib T2 T2 eqa eqb.
@@ -786,7 +791,7 @@ Proof.
   introv c1 c2 tspa tspb co1 tf.
   allunfold @type_family; exrepd.
   ccomputes_to_eqval.
-  applydup c1 in eq; repd; subst; apply c2 in eq; subst; GC.
+  applydup c1 in eqt; repd; subst; apply c2 in eqt; subst; GC.
 
   dands.
 
@@ -816,7 +821,7 @@ Proof.
   generalize (t0 a a e'); intro k.
 
   generalize (type_sys_props_ts_trans2 ts lib (substc a v B) (substc a v'0 B'0) (substc a' v'0 B'0) (substc a' v' B') (eqb a a e') (eqb a a' e) (eqb a a' e)); sp.
-Qed.
+Qed.*)
 
 (*
 Lemma type_family_trans :
@@ -890,11 +895,11 @@ Proof.
 Qed.
 *)
 
-Lemma type_family_trans2 {p} :
+(*Lemma type_family_trans2 {p} :
   forall C (ts : cts(p)) lib T1 T2 T3 eqa1 eqb1 eqa2 eqb2 A v B A' v' B',
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
-    -> computes_to_valc lib T2 (C A v B)
+    -> ccomputes_to_valc_ext lib T2 (C A v B)
     -> type_sys_props ts lib A A' eqa1
     -> (forall (a a' : CTerm) (e : eqa1 a a'),
           type_sys_props ts lib
@@ -911,9 +916,9 @@ Proof.
   introv c1 c2 co tspa ftspb tf1 tf2.
   allunfold @type_family; exrepnd.
   ccomputes_to_eqval.
-  applydup c1 in eq; repd; subst; apply c2 in eq; subst; GC.
+  applydup c1 in eqt; repd; subst; apply c2 in eqt; subst; GC.
   ccomputes_to_eqval.
-  applydup c1 in eq; repd; subst; apply c2 in eq; subst; GC.
+  applydup c1 in eqt; repd; subst; apply c2 in eqt; subst; GC.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
 
   (* We prove the first clause *)
@@ -950,7 +955,7 @@ Proof.
             (substc a' v'0 B'0)
             (eqb1 a a' e)
             (eqb2 a' a' e2)).
-Qed.
+Qed.*)
 
 Definition bcequivc_ext {p}
            (lib : library)
@@ -974,8 +979,8 @@ Qed.
 Lemma type_family_cequivc {p} :
   forall C (ts : cts(p)) lib T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
     cequivc lib T1 T2
-    -> computes_to_valc lib T1 (C A1 v1 B1)
-    -> computes_to_valc lib T2 (C A2 v2 B2)
+    -> ccomputes_to_valc_ext lib T1 (C A1 v1 B1)
+    -> ccomputes_to_valc_ext lib T2 (C A2 v2 B2)
     -> ccequivc_ext lib A1 A2
     -> bcequivc_ext lib [v1] B1 [v2] B2
     -> ts lib A1 A eqa
@@ -1016,8 +1021,8 @@ Qed.
 Lemma type_family_cequivc2 {p} :
   forall C (ts : cts(p)) lib T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
     cequivc lib T1 T2
-    -> computes_to_valc lib T1 (C A1 v1 B1)
-    -> computes_to_valc lib T2 (C A2 v2 B2)
+    -> ccomputes_to_valc_ext lib T1 (C A1 v1 B1)
+    -> ccomputes_to_valc_ext lib T2 (C A2 v2 B2)
     -> ccequivc_ext lib A1 A2
     -> bcequivc_ext lib [v1] B1 [v2] B2
     -> ts lib A A1 eqa
@@ -1199,7 +1204,7 @@ Proof.
   rw h; sp.
 Qed.
 
-Lemma weq_trans {o} :
+(*Lemma weq_trans {o} :
   forall (lib : @library o) eqa eqb t1 t2 t3 ts v1 B1 v2 B2,
     term_equality_symmetric eqa
     -> term_equality_transitive eqa
@@ -1237,7 +1242,7 @@ Proof.
   generalize (ftsp a'0 a e'); intro tsp.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1; sp.
   apply tet1 with (t2 := b); sp.
-Qed.
+Qed.*)
 
 (*
 Lemma weq_cequivc2 :
@@ -1283,60 +1288,82 @@ Proof.
 Abort.
 *)
 
-Lemma ccequivc_ext_mkc_sup {p} :
-  forall lib t t' a b,
-    computes_to_valc lib t (mkc_sup a b)
-    -> ccequivc_ext lib t t'
-    -> {a', b' : @CTerm p
-       , ccomputes_to_valc lib t' (mkc_sup a' b')
-       # ccequivc_ext lib a a'
-       # ccequivc_ext lib b b'}.
+Lemma cequivc_val {o} :
+  forall lib (t t' : @CTerm o) v,
+    computes_to_valc lib t v
+    -> cequivc lib t t'
+    -> {w : CTerm & computes_to_valc lib t' w}.
 Proof.
   introv comp ceq.
-  pose proof (ceq lib) as q; autodimp q hyp; eauto 2 with slow.
-  simpl in *; spcast.
-  dup comp as comp'.
-  eapply cequivc_mkc_sup in comp';[|eauto].
+  destruct ceq as [h1 h2].
+  dup h1 as apr.
+  invertsn apr.
+  repnud apr.
+  dup comp as c.
+  unfold computes_to_valc, computes_to_value in c; repnd.
+  unfold computes_to_valc in *.
+  applydup @isvalue_implies_iscan in c.
+  apply iscan_implies in c1; exrepnd; rewrite c1 in *.
+  apply apr2 in comp; exrepnd.
+  applydup @preserve_program in comp1; eauto 3 with slow.
+  exists (mk_cterm (oterm (Can c2) tr_subterms) comp2); simpl; dands; eauto 3 with slow.
+Qed.
+
+Lemma implies_approx_sup {p} :
+  forall lib f g a b,
+    approx lib f g
+    -> @approx p lib a b
+    -> approx lib (mk_sup f a) (mk_sup g b).
+Proof.
+  introv H1p H2p.
+  applydup @approx_relates_only_progs in H1p.
+  applydup @approx_relates_only_progs in H2p.
+  repnd.
+  repeat (prove_approx);sp.
+Qed.
+
+Lemma implies_cequivc_sup {p} :
+  forall lib f g a b,
+    cequivc lib f g
+    -> @cequivc p lib a b
+    -> cequivc lib (mkc_sup f a) (mkc_sup g b).
+Proof.
+  unfold cequivc. introv H1c H2c.
+  destruct_cterms. allsimpl. apply isprogram_eq in i0.
+  allrw @isprog_eq.
+  repnud H1c.
+  repnud H2c.
+  repnd.
+  split; apply implies_approx_sup; auto.
+Qed.
+
+Lemma ccequivc_ext_refl {o} :
+  forall lib (a : @CTerm o), ccequivc_ext lib a a.
+Proof.
+  introv ext; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve ccequivc_ext_refl : slow.
+
+Lemma ccequivc_ext_mkc_sup {o} :
+  forall lib t t' (a b : @CTerm o),
+    ccomputes_to_valc_ext lib t (mkc_sup a b)
+    -> ccequivc_ext lib t t'
+    -> ccomputes_to_valc_ext lib t' (mkc_sup a b).
+Proof.
+  introv comp ceq.
+  introv i.
+  applydup comp in i as comp'; exrepnd.
+  applydup ceq in i; spcast.
+  eapply cequivc_mkc_sup in comp'0;[|eauto 3 with slow].
   exrepnd.
-  exists a' b'; dands; spcast; auto.
-
-  { introv i.
-    applydup ceq in i; spcast.
-
-    eapply computes_to_valc_preserves_lib_extends in comp'0;[|eauto]; exrepnd.
-    apply alphaeqc_mkc_sup in comp'3; exrepnd; subst.
-    eapply cequivc_mkc_sup in comp'0;[|eauto]; exrepnd.
-
-    eapply computes_to_valc_preserves_lib_extends in comp;[|eauto]; exrepnd.
-    apply alphaeqc_mkc_sup in comp0; exrepnd; subst.
-    eapply cequivc_mkc_sup in comp1;[|eauto]; exrepnd.
-
-    eapply computes_to_valc_eq in comp'4;[|exact comp2].
-    apply mkc_sup_eq in comp'4; repnd; subst.
-
-    eapply cequivc_trans;[apply alphaeqc_implies_cequivc;eauto|].
-    eapply cequivc_trans;[eauto|].
-    eapply cequivc_trans;[|apply cequivc_sym;apply alphaeqc_implies_cequivc;eauto].
-    apply cequivc_sym; auto. }
-
-  { introv i.
-    applydup ceq in i; spcast.
-
-    eapply computes_to_valc_preserves_lib_extends in comp'0;[|eauto]; exrepnd.
-    apply alphaeqc_mkc_sup in comp'3; exrepnd; subst.
-    eapply cequivc_mkc_sup in comp'0;[|eauto]; exrepnd.
-
-    eapply computes_to_valc_preserves_lib_extends in comp;[|eauto]; exrepnd.
-    apply alphaeqc_mkc_sup in comp0; exrepnd; subst.
-    eapply cequivc_mkc_sup in comp1;[|eauto]; exrepnd.
-
-    eapply computes_to_valc_eq in comp'4;[|exact comp2].
-    apply mkc_sup_eq in comp'4; repnd; subst.
-
-    eapply cequivc_trans;[apply alphaeqc_implies_cequivc;eauto|].
-    eapply cequivc_trans;[eauto|].
-    eapply cequivc_trans;[|apply cequivc_sym;apply alphaeqc_implies_cequivc;eauto].
-    apply cequivc_sym; auto. }
+  apply computes_to_valc_isvalue_eq in comp'3; eauto 3 with slow; subst.
+  dup i0 as ceq'.
+  eapply @cequivc_val in ceq';[|eauto]; exrepnd.
+  exists w; dands; spcast; eauto 3 with slow.
+  eapply cequivc_trans;[|apply computes_to_valc_implies_cequivc;eauto].
+  eapply cequivc_trans;[|eauto].
+  apply cequivc_sym;eapply cequivc_trans;[apply computes_to_valc_implies_cequivc; eauto|].
+  apply cequivc_sym;apply implies_cequivc_sup; auto.
 Qed.
 
 Lemma sp_implies_ccequivc_ext_apply {o} :
@@ -1372,29 +1399,9 @@ Proof.
   rename a' into a1.
   rename f' into f1.
   spcast.
-  generalize (ccequivc_ext_mkc_sup lib t1 t2 a1 f1); intros i.
+  pose proof (ccequivc_ext_mkc_sup lib t1 t2 a1 f1) as i.
   repeat (dest_imp i hyp); exrepnd.
-
-  rename a' into a2.
-  rename b' into f2.
-  unfold term_equality_respecting in tera.
-  generalize (tera a1 a2); intro j.
-  repeat (dest_imp j hyp); spcast; sp.
-  apply teta with (t2 := a); sp.
-  generalize (teta a a1 a2); intro k; repeat (dest_imp k hyp).
-  apply @weq_cons with (a := a) (f := f) (a' := a2) (f' := f2) (e := k);
-    try (complete (spcast; sp)); introv hyp.
-  apply h' with (b' := b'); sp.
-
-  {
-    generalize (eq_term_equals_sym_tsp2 ts lib eqa eqb v1 B1 v2 B2 teta ftspb); introv i.
-    repeat (dest_imp i hyp); repnd.
-    assert (eqa a a) as e' by (apply teta with (t2 := a1); sp).
-    generalize (i3 a a1 e e'); intro eqt1; rw eqt1.
-    generalize (i3 a a2 k e'); intro eqt2; rw eqt2 in hyp; sp.
-  }
-
-  apply sp_implies_ccequivc_ext_apply; sp.
+  eapply weq_cons; eauto.
 Qed.
 
 Lemma type_sys_props_cequivc {p} :
