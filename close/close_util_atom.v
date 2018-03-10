@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -84,9 +85,8 @@ Proof.
   exists bar; dands; auto.
   introv ie i.
   applydup per0 in i; auto.
-  pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
-  spcast.
-  eapply cequivc_atom; eauto.
+  assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
+  eauto 3 with slow.
 Qed.
 Hint Resolve per_atom_bar_type_value_respecting : slow.
 
@@ -104,6 +104,50 @@ Proof.
   exrepnd; exists s; tcsp.
 Qed.
 Hint Resolve per_atom_bar_term_symmetric : slow.
+
+(* !! MOVE to cequiv *)
+Lemma cequiv_token {pp} :
+  forall lib T T' s,
+    @computes_to_value pp lib T (mk_token s)
+    -> cequiv lib T T'
+    -> computes_to_value lib T' (mk_token s).
+Proof.
+  sp.
+  apply cequiv_canonical_form with (t' := T') in X; sp.
+  apply @lblift_cequiv0 in p; subst; auto.
+Qed.
+
+(* !! MOVE to cequiv *)
+Lemma cequivc_token {o} :
+  forall lib (t t' : @CTerm o) n,
+    computes_to_valc lib t (mkc_token n)
+    -> cequivc lib t t'
+    -> computes_to_valc lib t' (mkc_token n).
+Proof.
+  sp.
+  allapply @computes_to_valc_to_valuec; allsimpl.
+  apply @cequivc_canonical_form with (t' := t') in X; sp.
+  apply lblift_cequiv0 in p; subst; auto.
+Qed.
+
+Lemma iscvalue_mkc_token {o} :
+  forall i, @iscvalue o (mkc_token i).
+Proof.
+  introv; unfold iscvalue; simpl; eauto with slow.
+Qed.
+Hint Resolve iscvalue_mkc_token : slow.
+
+Lemma ccequivc_ext_mkc_token_implies {o} :
+  forall (lib : @library o) k1 k2,
+    ccequivc_ext lib (mkc_token k1) (mkc_token k2)
+    -> k1 = k2.
+Proof.
+  introv ceq.
+  pose proof (ceq lib) as ceq; autodimp ceq hyp; eauto 3 with slow; simpl in *; spcast.
+  eapply cequivc_token in ceq;[|eauto 3 with slow].
+  apply computes_to_valc_isvalue_eq in ceq; eauto 3 with slow.
+  eqconstr ceq; auto.
+Qed.
 
 Lemma per_atom_bar_term_transitive {p} :
   forall (ts : cts(p)), term_transitive (per_atom_bar ts).
@@ -123,35 +167,11 @@ Proof.
   pose proof (j0 lib2) as q; autodimp q hyp; clear j0.
   pose proof (q lib'0) as z; clear q; autodimp z hyp; eauto 2 with slow; simpl in z.
   exrepnd; spcast.
-  computes_to_eqval.
-  eexists; dands; spcast; eauto.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_token_implies in ceq; subst.
+  exists s0; dands; spcast; auto.
 Qed.
 Hint Resolve per_atom_bar_term_transitive : slow.
-
-(* !! MOVE to cequiv *)
-Lemma cequiv_token {pp} :
-  forall lib T T' s,
-    @computes_to_value pp lib T (mk_token s)
-    -> cequiv lib T T'
-    -> computes_to_value lib T' (mk_token s).
-Proof.
-  sp.
-  apply cequiv_canonical_form with (t' := T') in X; sp.
-  apply @lblift_cequiv0 in p; subst; auto.
-Qed.
-
-(* !! MOVE to cequiv *)
-Lemma cequivc_token {pp} :
-  forall lib T T' s,
-    computes_to_valc lib T (mkc_token s)
-    -> @cequivc pp lib T T'
-    -> computes_to_valc lib T' (mkc_token s).
-Proof.
-  sp.
-  allapply @computes_to_valc_to_valuec; allsimpl.
-  apply cequivc_canonical_form with (t' := T') in X; sp.
-  apply lblift_cequiv0 in p; subst; auto.
-Qed.
 
 Lemma per_atom_bar_term_value_respecting {p} :
   forall (ts : cts(p)), term_value_respecting (per_atom_bar ts).
@@ -163,9 +183,7 @@ Proof.
   exrepnd; exists bar.
   introv ie i; applydup e0 in i; auto; exrepnd.
   exists s; repnd; dands; auto.
-  pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
-  spcast.
-  eapply cequivc_token; eauto.
+  assert (lib_extends lib'0 lib) as ext; eauto 3 with slow.
 Qed.
 Hint Resolve per_atom_bar_term_value_respecting : slow.
 
@@ -222,23 +240,21 @@ Qed.
 Lemma ccequivc_ext_preserves_computes_to_valc_atom {o} :
   forall lib (T T' : @CTerm o),
     ccequivc_ext lib T T'
-    -> computes_to_valc lib T mkc_atom
+    -> ccomputes_to_valc_ext lib T mkc_atom
     -> T' ===>(lib) mkc_atom.
 Proof.
-  introv ceq comp.
-  pose proof (ceq lib) as ceq; autodimp ceq hyp; eauto 3 with slow; simpl in *.
-  spcast; eapply cequivc_atom; eauto.
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
-Lemma type_equality_respecting_trans_per_atom_bar_implies {o} :
+Lemma type_equality_respecting_trans1_per_atom_bar_implies {o} :
   forall (ts : cts(o)) lib T T',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T mkc_atom
-    -> computes_to_valc lib T' mkc_atom
-    -> type_equality_respecting_trans (per_atom_bar (close ts)) lib T T'
-    -> type_equality_respecting_trans (close ts) lib T T'.
+    -> ccomputes_to_valc_ext lib T mkc_atom
+    -> ccomputes_to_valc_ext lib T' mkc_atom
+    -> type_equality_respecting_trans1 (per_atom_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans1 (close ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_atom_bar_implies_close.
@@ -256,4 +272,20 @@ Proof.
 
   - apply ccequivc_ext_preserves_computes_to_valc_atom in ceq; auto; spcast.
     dclose_lr; auto.
+Qed.
+
+Lemma type_equality_respecting_trans2_per_atom_bar_implies {o} :
+  forall (ts : cts(o)) lib T T',
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> ccomputes_to_valc_ext lib T mkc_atom
+    -> ccomputes_to_valc_ext lib T' mkc_atom
+    -> type_equality_respecting_trans2 (per_atom_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans2 (close ts) lib T T'.
+Proof.
+  introv tsts dou mon inbar1 inbar2 trans h ceq cl.
+  apply per_atom_bar_implies_close.
+  eapply trans; eauto.
+  repndors; subst; dclose_lr; auto.
 Qed.

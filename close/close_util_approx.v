@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -33,10 +34,11 @@ Require Export per_ceq_bar.
 Require Export close_util_bar.
 
 
-Lemma per_approx_bar_uniquely_valued {p} :
+(*Lemma per_approx_bar_uniquely_valued {p} :
   forall (ts : cts(p)), uniquely_valued (per_approx_bar ts).
 Proof.
   unfold uniquely_valued, per_approx_bar, eq_term_equals; sp.
+  Check two_computes_to_valc_ceq_bar_mkc_approx.
   pose proof (two_computes_to_valc_ceq_bar_mkc_approx bar0 bar T a0 b0 a b) as q; repeat (autodimp q hyp).
   allrw; sp.
   eapply eq_per_approx_eq_bar; eauto.
@@ -227,7 +229,8 @@ Lemma per_approx_bar_type_system {p} :
 Proof.
   intros; unfold type_system; sp; eauto 3 with slow.
 Qed.
-Hint Resolve per_approx_bar_type_system : slow.
+Hint Resolve per_approx_bar_type_system : slow.*)
+
 
 (*Lemma type_equality_respecting_trans_per_approx_bar_implies {o} :
   forall (ts : cts(o)) lib (bar : BarLib lib) T T' a b a' b',
@@ -297,9 +300,16 @@ Qed.
 Lemma per_approx_uniquely_valued {p} :
   forall (ts : cts(p)), uniquely_valued (per_approx ts).
 Proof.
-  unfold uniquely_valued, per_approx, eq_term_equals; sp.
-  spcast; repeat computes_to_eqval.
-  allrw; sp.
+  unfold uniquely_valued, per_approx, eq_term_equals; introv cts h q; introv.
+  exrepnd.
+  computes_to_eqval_ext.
+  hide_hyp q2.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_approx_right in ceq.
+  apply cequivc_ext_mkc_approx_right in ceq0.
+  repnd.
+  allrw.
+  split; intro w; eapply per_approx_eq_bar_respects_ccequivc_ext; try exact w; eauto 3 with slow.
 Qed.
 Hint Resolve per_approx_uniquely_valued : slow.
 
@@ -354,19 +364,40 @@ Proof.
 Qed.
 Hint Resolve per_approx_type_symmetric : slow.
 
+Lemma ccequivc_ext_implies_iff_capproxc_ext {o} :
+  forall lib lib' (a a' b b' : @CTerm o),
+    lib_extends lib' lib
+    -> ccequivc_ext lib a a'
+    -> ccequivc_ext lib b b'
+    -> a' ~<~(lib') b' <=> a ~<~(lib') b.
+Proof.
+  introv ext ceqa ceqb.
+  pose proof (ceqa _ ext) as ceqa.
+  pose proof (ceqb _ ext) as ceqb.
+  simpl in *.
+  split; introv h; spcast.
+  { eapply approxc_cequivc_trans;[|apply cequivc_sym;eauto].
+    eapply cequivc_approxc_trans;[|eauto]; auto. }
+  { eapply approxc_cequivc_trans;[|eauto].
+    eapply cequivc_approxc_trans;[apply cequivc_sym;eauto|]; auto. }
+Qed.
+
 Lemma per_approx_type_transitive {p} :
   forall (ts : cts(p)), type_transitive (per_approx ts).
 Proof.
   introv pera perb.
   unfold per_approx in *; exrepnd.
-  spcast; repeat computes_to_eqval.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_approx_right in ceq; repnd.
 
   exists a0 b0 c d; dands; spcast; auto.
 
   introv x.
   pose proof (pera3 _ x) as pera3.
   pose proof (perb3 _ x) as perb3.
-  allrw; tcsp.
+  simpl in *.
+  rw pera3; rw <- perb3.
+  eapply ccequivc_ext_implies_iff_capproxc_ext; eauto.
 Qed.
 Hint Resolve per_approx_type_transitive : slow.
 

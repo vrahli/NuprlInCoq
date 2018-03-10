@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -102,9 +103,7 @@ Proof.
   exists bar; dands; auto.
   introv ie i.
   applydup per0 in i; auto.
-  pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
-  spcast.
-  eapply cequivc_Nat; eauto.
+  assert (lib_extends lib'0 lib) as ext; eauto 3 with slow.
 Qed.
 Hint Resolve per_nat_bar_type_value_respecting : slow.
 
@@ -119,9 +118,7 @@ Proof.
   introv ie i; applydup e0 in i; auto.
   unfold equality_of_nat in *; exrepnd.
   exists n; repnd; dands; auto.
-  pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
-  spcast.
-  apply @cequivc_integer with (t := t); auto.
+  assert (lib_extends lib'0 lib) as ext; eauto 3 with slow.
 Qed.
 Hint Resolve per_nat_bar_term_value_respecting : slow.
 
@@ -145,6 +142,18 @@ Proof.
 Qed.
 Hint Resolve per_nat_bar_type_transitive : slow.
 
+Lemma ccequivc_ext_mkc_nat_implies {o} :
+  forall (lib : @library o) k1 k2,
+    ccequivc_ext lib (mkc_nat k1) (mkc_nat k2)
+    -> k1 = k2.
+Proof.
+  introv ceq.
+  pose proof (ceq lib) as ceq; autodimp ceq hyp; eauto 3 with slow; simpl in *; spcast.
+  apply cequivc_nat_implies_computes_to_valc in ceq.
+  apply computes_to_valc_isvalue_eq in ceq; eauto 3 with slow.
+  eqconstr ceq; auto.
+Qed.
+
 Lemma per_nat_bar_term_transitive {p} :
   forall (ts : cts(p)), term_transitive (per_nat_bar ts).
 Proof.
@@ -166,7 +175,8 @@ Proof.
   pose proof (j0 lib2) as q; autodimp q hyp; clear j0.
   pose proof (q lib'0) as z; clear q; autodimp z hyp; eauto 2 with slow; simpl in z.
   exrepnd; spcast.
-  computes_to_eqval.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_nat_implies in ceq; subst.
   eexists; dands; spcast; eauto.
 Qed.
 Hint Resolve per_nat_bar_term_transitive : slow.
@@ -189,12 +199,10 @@ Hint Resolve per_nat_type_system : slow.
 Lemma ccequivc_ext_preserves_computes_to_valc_nat {o} :
   forall lib (T T' : @CTerm o),
     ccequivc_ext lib T T'
-    -> computes_to_valc lib T mkc_Nat
+    -> ccomputes_to_valc_ext lib T mkc_Nat
     -> T' ===>(lib) mkc_Nat.
 Proof.
-  introv ceq comp.
-  pose proof (ceq lib) as ceq; autodimp ceq hyp; eauto 3 with slow; simpl in *.
-  spcast; eapply cequivc_Nat; eauto.
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
 Lemma equality_of_nat_bar_monotone {o} :
@@ -240,15 +248,15 @@ Proof.
     apply per_bar_eq_equality_of_nat_bar_lib_per.
 Qed.
 
-Lemma type_equality_respecting_trans_per_nat_bar_implies {o} :
+Lemma type_equality_respecting_trans1_per_nat_bar_implies {o} :
   forall (ts : cts(o)) lib T T',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T mkc_Nat
-    -> computes_to_valc lib T' mkc_Nat
-    -> type_equality_respecting_trans (per_nat_bar (close ts)) lib T T'
-    -> type_equality_respecting_trans (close ts) lib T T'.
+    -> ccomputes_to_valc_ext lib T mkc_Nat
+    -> ccomputes_to_valc_ext lib T' mkc_Nat
+    -> type_equality_respecting_trans1 (per_nat_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans1 (close ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_nat_bar_implies_close.
@@ -267,4 +275,21 @@ Proof.
   - apply ccequivc_ext_preserves_computes_to_valc_nat in ceq; auto; spcast.
     dclose_lr; auto.
 Qed.
-Hint Resolve type_equality_respecting_trans_per_nat_bar_implies : slow.
+Hint Resolve type_equality_respecting_trans1_per_nat_bar_implies : slow.
+
+Lemma type_equality_respecting_trans2_per_nat_bar_implies {o} :
+  forall (ts : cts(o)) lib T T',
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> ccomputes_to_valc_ext lib T mkc_Nat
+    -> ccomputes_to_valc_ext lib T' mkc_Nat
+    -> type_equality_respecting_trans2 (per_nat_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans2 (close ts) lib T T'.
+Proof.
+  introv tsts dou mon inbar1 inbar2 trans h ceq cl.
+  apply per_nat_bar_implies_close.
+  eapply trans; eauto.
+  repndors; subst; dclose_lr; auto.
+Qed.
+Hint Resolve type_equality_respecting_trans2_per_nat_bar_implies : slow.

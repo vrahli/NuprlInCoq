@@ -160,6 +160,25 @@ Proof.
   eapply cequivc_trans in h0;[|eauto]; auto.
 Qed.*)
 
+Lemma ccequivc_ext_ccomputes_to_valc_ext {o} :
+  forall lib (T T' : @CTerm o) v,
+    ccequivc_ext lib T T'
+    -> ccomputes_to_valc_ext lib T v
+    -> ccomputes_to_valc_ext lib T' v.
+Proof.
+  introv ceq comp i.
+  applydup comp in i as comp'; exrepnd.
+  applydup ceq in i; spcast.
+  dup comp'1 as xx.
+  eapply cequivc_val in xx;[|eauto]; exrepnd.
+  exists w; dands; spcast; eauto 3 with slow.
+  eapply cequivc_trans;[eauto|].
+  eapply cequivc_trans;[apply cequivc_sym;apply computes_to_valc_implies_cequivc;eauto|].
+  eapply cequivc_trans;[eauto|].
+  apply computes_to_valc_implies_cequivc; auto.
+Qed.
+Hint Resolve ccequivc_ext_ccomputes_to_valc_ext : slow.
+
 Lemma type_extensionality_per_approx_bar {o} :
   forall (ts : cts(o)),
     type_extensionality (per_approx_bar ts).
@@ -1860,19 +1879,7 @@ Lemma ccequivc_ext_product {o} :
     -> ccomputes_to_valc_ext lib T (mkc_product A v B)
     -> ccomputes_to_valc_ext lib T' (mkc_product A v B).
 Proof.
-  introv ceq comp i.
-  applydup comp in i as comp'; exrepnd.
-  applydup ceq in i; spcast.
-  eapply cequivc_mkc_product in comp'0;[|eauto 3 with slow].
-  exrepnd.
-  apply computes_to_valc_isvalue_eq in comp'0; eauto 3 with slow; subst.
-  dup i0 as ceq'.
-  eapply @cequivc_val in ceq';[|eauto]; exrepnd.
-  exists w; dands; spcast; eauto 3 with slow.
-  eapply cequivc_trans;[|apply computes_to_valc_implies_cequivc;eauto].
-  eapply cequivc_trans;[|eauto].
-  apply cequivc_sym;eapply cequivc_trans;[apply computes_to_valc_implies_cequivc; eauto|].
-  apply cequivc_sym; apply implies_cequivc_product; auto.
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
 Lemma ccequivc_ext_function {o} :
@@ -1881,19 +1888,7 @@ Lemma ccequivc_ext_function {o} :
     -> ccomputes_to_valc_ext lib T (mkc_function A v B)
     -> ccomputes_to_valc_ext lib T' (mkc_function A v B).
 Proof.
-  introv ceq comp i.
-  applydup comp in i as comp'; exrepnd.
-  applydup ceq in i; spcast.
-  eapply cequivc_mkc_function in comp'0;[|eauto 3 with slow].
-  exrepnd.
-  apply computes_to_valc_isvalue_eq in comp'0; eauto 3 with slow; subst.
-  dup i0 as ceq'.
-  eapply @cequivc_val in ceq';[|eauto]; exrepnd.
-  exists w; dands; spcast; eauto 3 with slow.
-  eapply cequivc_trans;[|apply computes_to_valc_implies_cequivc;eauto].
-  eapply cequivc_trans;[|eauto].
-  apply cequivc_sym;eapply cequivc_trans;[apply computes_to_valc_implies_cequivc; eauto|].
-  apply cequivc_sym; apply implies_cequivc_function; auto.
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
 Record constructor_inj {o} (C : forall (A : @CTerm o) v, @CVTerm o [v] -> @CTerm o) :=
@@ -3716,19 +3711,7 @@ Lemma ccequivc_ext_inl {o} :
     -> ccomputes_to_valc_ext lib T (mkc_inl a)
     -> ccomputes_to_valc_ext lib T' (mkc_inl a).
 Proof.
-  introv ceq comp i.
-  applydup comp in i as comp'; exrepnd.
-  applydup ceq in i; spcast.
-  eapply cequivc_mkc_inl in comp'0;[|eauto 3 with slow].
-  exrepnd.
-  apply computes_to_valc_isvalue_eq in comp'0; eauto 3 with slow; subst.
-  dup i0 as ceq'.
-  eapply @cequivc_val in ceq';[|eauto]; exrepnd.
-  exists w; dands; spcast; eauto 3 with slow.
-  eapply cequivc_trans;[|apply computes_to_valc_implies_cequivc;eauto].
-  eapply cequivc_trans;[|eauto].
-  apply cequivc_sym;eapply cequivc_trans;[apply computes_to_valc_implies_cequivc; eauto|].
-  apply cequivc_sym; apply implies_cequivc_inl; auto.
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
 Lemma ccequivc_ext_inr {o} :
@@ -3737,19 +3720,7 @@ Lemma ccequivc_ext_inr {o} :
     -> ccomputes_to_valc_ext lib T (mkc_inr a)
     -> ccomputes_to_valc_ext lib T' (mkc_inr a).
 Proof.
-  introv ceq comp i.
-  applydup comp in i as comp'; exrepnd.
-  applydup ceq in i; spcast.
-  eapply cequivc_mkc_inr in comp'0;[|eauto 3 with slow].
-  exrepnd.
-  apply computes_to_valc_isvalue_eq in comp'0; eauto 3 with slow; subst.
-  dup i0 as ceq'.
-  eapply @cequivc_val in ceq';[|eauto]; exrepnd.
-  exists w; dands; spcast; eauto 3 with slow.
-  eapply cequivc_trans;[|apply computes_to_valc_implies_cequivc;eauto].
-  eapply cequivc_trans;[|eauto].
-  apply cequivc_sym;eapply cequivc_trans;[apply computes_to_valc_implies_cequivc; eauto|].
-  apply cequivc_sym; apply implies_cequivc_inr; auto.
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
 Lemma inr_ccomputes_to_valc_ext_inl_false {o} :
@@ -4502,19 +4473,7 @@ Lemma ccequivc_ext_pair {o} :
     -> ccomputes_to_valc_ext lib T (mkc_pair a b)
     -> ccomputes_to_valc_ext lib T' (mkc_pair a b).
 Proof.
-  introv ceq comp i.
-  applydup comp in i as comp'; exrepnd.
-  applydup ceq in i; spcast.
-  eapply cequivc_mkc_pair in comp'0;[|eauto 3 with slow].
-  exrepnd.
-  apply computes_to_valc_isvalue_eq in comp'3; eauto 3 with slow; subst.
-  dup i0 as ceq'.
-  eapply @cequivc_val in ceq';[|eauto]; exrepnd.
-  exists w; dands; spcast; eauto 3 with slow.
-  eapply cequivc_trans;[|apply computes_to_valc_implies_cequivc;eauto].
-  eapply cequivc_trans;[|eauto].
-  apply cequivc_sym;eapply cequivc_trans;[apply computes_to_valc_implies_cequivc; eauto|].
-  apply cequivc_sym; apply implies_cequivc_pair; auto.
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
 Lemma iscvalue_mkc_pair {o} :

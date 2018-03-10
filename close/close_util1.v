@@ -1,6 +1,10 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -80,7 +84,7 @@ Lemma type_sys_props4_implies_eq_term_equals {o} :
     -> eqa1 <=2=> eqa2.
 Proof.
   introv h w q; introv.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply uv in w.
   apply uv in q.
   eapply eq_term_equals_trans;[|eauto].
@@ -107,7 +111,7 @@ Proof.
   introv tsp h ceq; introv.
   pose proof (tsp _ e) as tsp.
   simpl in *; spcast.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply tyvr; eauto 3 with slow.
 Qed.
 
@@ -126,15 +130,15 @@ Lemma ccequivc_ext_preserves_in_type_sys_props4 {o} :
     -> type_sys_props4 ts lib A' B eq.
 Proof.
   introv ceq tsp; introv.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   unfold type_sys_props4; dands; auto.
 
   - introv tsts.
     apply (uv T3).
-    apply (tyvrt A A' T3 eq'); eauto 3 with slow.
+    apply (tyvrt1 A A' T3 eq'); eauto 3 with slow.
 
   - introv tsts eqs.
-    pose proof (tyvrt A A' T3 eq) as q.
+    pose proof (tyvrt1 A A' T3 eq) as q.
     repeat (autodimp q hyp); eauto 3 with slow.
     eapply tys in q;eauto.
     pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
@@ -152,15 +156,32 @@ Proof.
     apply tygs; auto.
 
   - introv h c tsts.
-    repndors; subst; tcsp; try (complete (eapply tyvrt; eauto)).
+    repndors; subst; tcsp; try (complete (eapply tyvrt1; eauto)).
 
-    + pose proof (tyvrt A T3 T4 eq') as q; repeat (autodimp q hyp); eauto 3 with slow.
+    + pose proof (tyvrt1 A T3 T4 eq') as q; repeat (autodimp q hyp); eauto 3 with slow.
       pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
       pose proof (dum A A' T4 eq eq') as w.
       repeat (autodimp w hyp); tcsp.
       apply tygs; auto.
 
-    + pose proof (tyvrt A T3 T4 eq') as q; repeat (autodimp q hyp); eauto 3 with slow.
+    + pose proof (tyvrt1 A T3 T4 eq') as q; repeat (autodimp q hyp); eauto 3 with slow.
+      pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
+      pose proof (dum A A' T4 eq eq') as w.
+      repeat (autodimp w hyp); tcsp.
+      apply tygs; auto.
+
+  - introv h c tsts.
+    repndors; subst; tcsp; try (complete (eapply tyvrt2; eauto)).
+
+    + pose proof (tyvrt1 A A' T3 eq') as z; repeat (autodimp z hyp); eauto 3 with slow.
+      pose proof (tyvrt2 A T3 T4 eq') as q; repeat (autodimp q hyp); eauto 3 with slow.
+      pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
+      pose proof (dum A A' T4 eq eq') as w.
+      repeat (autodimp w hyp); tcsp.
+      apply tygs; auto.
+
+    + pose proof (tyvrt1 A A' T3 eq') as z; repeat (autodimp z hyp); eauto 3 with slow.
+      pose proof (tyvrt2 A T3 T4 eq') as q; repeat (autodimp q hyp); eauto 3 with slow.
       pose proof (tyvr A A') as h; repeat (autodimp h hyp); eauto 3 with slow.
       pose proof (dum A A' T4 eq eq') as w.
       repeat (autodimp w hyp); tcsp.
@@ -168,13 +189,13 @@ Proof.
 
   - introv; split; intro q.
 
-    + pose proof (tyvrt A A' T3 eq') as h; repeat (autodimp h hyp); eauto 3 with slow.
+    + pose proof (tyvrt1 A A' T3 eq') as h; repeat (autodimp h hyp); eauto 3 with slow.
       apply tygs in h.
       pose proof (tyvr A A') as z; repeat (autodimp z hyp); eauto 3 with slow.
       pose proof (dum A T3 A' eq' eq) as w.
       repeat (autodimp w hyp); tcsp.
 
-    + pose proof (tyvrt A A' T3 eq') as h; repeat (autodimp h hyp); eauto 3 with slow.
+    + pose proof (tyvrt1 A A' T3 eq') as h; repeat (autodimp h hyp); eauto 3 with slow.
       pose proof (tyvr A A') as z; repeat (autodimp z hyp); eauto 3 with slow.
       apply tygs in z.
       pose proof (dum A A' T3 eq eq') as w.
@@ -188,8 +209,8 @@ Proof.
   - introv h ts1 ts2.
     repndors; subst; tcsp; try (complete (eapply dum; eauto)).
 
-    pose proof (tyvrt A A' T4 eq2) as h; repeat (autodimp h hyp); eauto 3 with slow.
-    pose proof (tyvrt A A' T3 eq1) as q; repeat (autodimp q hyp); eauto 3 with slow.
+    pose proof (tyvrt1 A A' T4 eq2) as h; repeat (autodimp h hyp); eauto 3 with slow.
+    pose proof (tyvrt1 A A' T3 eq1) as q; repeat (autodimp q hyp); eauto 3 with slow.
     apply tygs in q.
 
     pose proof (dum A T3 T4 eq1 eq2) as w.
@@ -281,8 +302,8 @@ Proof.
   introv ext tsp tsts ceq; introv.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-  pose proof (tyvrt A A' B' (eqa1 lib'0 e)) as q.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+  pose proof (tyvrt1 A A' B' (eqa1 lib'0 e)) as q.
   repeat (autodimp q hyp); eauto 3 with slow.
 Qed.
 Hint Resolve in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals1 : slow.
@@ -298,8 +319,8 @@ Proof.
   introv ext tsp tsts ceq; introv.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-  pose proof (tyvrt A A' B' (eqa1 lib'0 e)) as q.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+  pose proof (tyvrt1 A A' B' (eqa1 lib'0 e)) as q.
   repeat (autodimp q hyp); eauto 3 with slow.
 Qed.
 Hint Resolve in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals1 : slow.
@@ -315,8 +336,8 @@ Proof.
   introv ext tsp tsts ceq; introv.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-  pose proof (tyvrt A A' B' (eqa1 lib'0 e)) as q.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+  pose proof (tyvrt1 A A' B' (eqa1 lib'0 e)) as q.
   repeat (autodimp q hyp); eauto 3 with slow.
 Qed.
 Hint Resolve in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals1 : slow.
@@ -332,8 +353,8 @@ Proof.
   introv ext tsp tsts ceq; introv.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-  pose proof (tyvrt A A' B' (eqa1 lib'0 e)) as q.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+  pose proof (tyvrt1 A A' B' (eqa1 lib'0 e)) as q.
   repeat (autodimp q hyp); eauto 3 with slow.
 Qed.
 Hint Resolve in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals2 : slow.
@@ -349,8 +370,8 @@ Proof.
   introv ext tsp tsts ceq; introv.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-  pose proof (tyvrt A A' B' (eqa1 lib'0 e)) as q.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+  pose proof (tyvrt1 A A' B' (eqa1 lib'0 e)) as q.
   repeat (autodimp q hyp); eauto 3 with slow.
 Qed.
 Hint Resolve in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals2 : slow.
@@ -366,8 +387,8 @@ Proof.
   introv ext tsp tsts ceq; introv.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-  pose proof (tyvrt A A' B' (eqa1 lib'0 e)) as q.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+  pose proof (tyvrt1 A A' B' (eqa1 lib'0 e)) as q.
   repeat (autodimp q hyp); eauto 3 with slow.
 Qed.
 Hint Resolve in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals2 : slow.
@@ -425,7 +446,7 @@ Proof.
   introv ext tsp tsts ceq; introv.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply uv in tsts.
   apply tsts in ceq; apply tsts; tcsp.
 Qed.
@@ -441,7 +462,7 @@ Proof.
   introv ext tsp tsts e1 e2; introv.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply uv in tsts.
   apply tsts in e1; apply tsts in e2; apply tsts; tcsp.
   eapply tet; eauto.
@@ -458,7 +479,7 @@ Proof.
   introv ext tsp tsts e1 ceq; introv.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply uv in tsts.
   apply tsts in e1; apply tsts; tcsp.
 Qed.
@@ -474,7 +495,7 @@ Proof.
   introv ext tsp tsts ceq; introv.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply tygs in tsts.
   apply uv in tsts.
   apply tsts in ceq; apply tsts; tcsp.
@@ -491,7 +512,7 @@ Proof.
   introv ext tsp tsts e1 e2; introv.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply tygs in tsts.
   apply uv in tsts.
   apply tsts in e1; apply tsts in e2; apply tsts; tcsp.
@@ -509,7 +530,7 @@ Proof.
   introv ext tsp tsts e1 ceq; introv.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply tygs in tsts.
   apply uv in tsts.
   apply tsts in e1; apply tsts; tcsp.
@@ -566,7 +587,7 @@ Proof.
   pose proof (tsb _ e) as tsb.
   pose proof (tsp _ (lib_extends_trans e ext)) as tsp.
   simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply tygs in tsa.
   apply uv in tsa.
   apply uv in tsb.

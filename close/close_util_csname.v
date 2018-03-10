@@ -208,12 +208,10 @@ Hint Resolve per_csname_bar_type_system : slow.
 Lemma ccequivc_ext_preserves_computes_to_valc_csname {o} :
   forall lib (T T' : @CTerm o) n,
     ccequivc_ext lib T T'
-    -> computes_to_valc lib T (mkc_csname n)
+    -> ccomputes_to_valc_ext lib T (mkc_csname n)
     -> T' ===>(lib) (mkc_csname n).
 Proof.
-  introv ceq comp.
-  pose proof (ceq lib) as ceq; autodimp ceq hyp; eauto 3 with slow; simpl in *.
-  spcast; eapply cequivc_csname; eauto.
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
 Lemma equality_of_csname_bar_monotone {o} :
@@ -316,32 +314,48 @@ Proof.
   eapply cequivc_csname in ceq';[|eauto]; exrepnd; auto.
 Qed.
 
-Lemma type_equality_respecting_trans_per_csname_bar_implies {o} :
+Lemma type_equality_respecting_trans1_per_csname_bar_implies {o} :
   forall (ts : cts(o)) lib T T' n n',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T (mkc_csname n)
-    -> computes_to_valc lib T' (mkc_csname n')
-    -> type_equality_respecting_trans (per_bar (per_csname (close ts))) lib T T'
-    -> type_equality_respecting_trans (close ts) lib T T'.
+    -> ccomputes_to_valc_ext lib T (mkc_csname n)
+    -> ccomputes_to_valc_ext lib T' (mkc_csname n')
+    -> type_equality_respecting_trans1 (per_bar (per_csname (close ts))) lib T T'
+    -> type_equality_respecting_trans1 (close ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_bar_per_csname_implies_close.
   eapply trans; eauto.
   repndors; subst.
 
-  - eapply ccequivc_ext_csname in ceq;[|eauto]; exrepnd; spcast.
+  - eapply ccequivc_ext_preserves_computes_to_valc_csname in ceq;[|eauto]; exrepnd; spcast.
     dclose_lr; auto.
 
-  - eapply ccequivc_ext_csname in ceq;[|eauto]; exrepnd; spcast.
+  - eapply ccequivc_ext_preserves_computes_to_valc_csname in ceq;[|eauto]; exrepnd; spcast.
     dclose_lr; auto.
 
-  - eapply ccequivc_ext_csname in ceq;[|eauto]; exrepnd; spcast.
+  - eapply ccequivc_ext_preserves_computes_to_valc_csname in ceq;[|eauto]; exrepnd; spcast.
     dclose_lr; auto.
 
-  - eapply ccequivc_ext_csname in ceq;[|eauto]; exrepnd; spcast.
+  - eapply ccequivc_ext_preserves_computes_to_valc_csname in ceq;[|eauto]; exrepnd; spcast.
     dclose_lr; auto.
+Qed.
+
+Lemma type_equality_respecting_trans2_per_csname_bar_implies {o} :
+  forall (ts : cts(o)) lib T T' n n',
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> ccomputes_to_valc_ext lib T (mkc_csname n)
+    -> ccomputes_to_valc_ext lib T' (mkc_csname n')
+    -> type_equality_respecting_trans2 (per_bar (per_csname (close ts))) lib T T'
+    -> type_equality_respecting_trans2 (close ts) lib T T'.
+Proof.
+  introv tsts dou mon inbar1 inbar2 trans h ceq cl.
+  apply per_bar_per_csname_implies_close.
+  eapply trans; eauto.
+  repndors; subst; dclose_lr; auto.
 Qed.
 
 Lemma per_bar_eq_per_csname_eq_bar_lib_per {o} :
@@ -359,12 +373,25 @@ Proof.
   apply (h0 _ br'1 lib'3); eauto 3 with slow.
 Qed.
 
+Lemma ccequivc_ext_mkc_csname_implies {o} :
+  forall (lib : @library o) k1 k2,
+    ccequivc_ext lib (mkc_csname k1) (mkc_csname k2)
+    -> k1 = k2.
+Proof.
+  introv ceq.
+  pose proof (ceq lib) as ceq; autodimp ceq hyp; eauto 3 with slow; simpl in *; spcast.
+  eapply cequivc_csname in ceq;[|eauto 3 with slow].
+  apply computes_to_valc_isvalue_eq in ceq; eauto 3 with slow.
+  eqconstr ceq; auto.
+Qed.
+
 Lemma per_csname_uniquely_valued {p} :
   forall (ts : cts(p)), uniquely_valued (per_csname ts).
 Proof.
   unfold uniquely_valued, per_csname, eq_term_equals; sp.
-  spcast; repeat computes_to_eqval.
-  allrw; sp.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_csname_implies in ceq; subst.
+  spcast; allrw; sp.
 Qed.
 Hint Resolve per_csname_uniquely_valued : slow.
 
@@ -414,7 +441,8 @@ Lemma per_csname_type_transitive {p} :
 Proof.
   introv pera perb.
   unfold per_csname in *; exrepnd.
-  spcast; repeat computes_to_eqval.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_csname_implies in ceq; subst; GC.
   exists n0; dands; spcast; auto.
 Qed.
 Hint Resolve per_csname_type_transitive : slow.
@@ -431,9 +459,9 @@ Lemma per_csname_type_value_respecting {p} :
 Proof.
   introv per ceq.
   unfold per_csname in *; exrepnd.
-  spcast; computes_to_eqval.
-  eapply ccequivc_ext_csname in ceq;[|eauto]; exrepnd; spcast.
-  exists n; dands; spcast; auto.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_csname_implies in ceq0; subst; GC.
+  exists n; dands; spcast; auto; eauto 3 with slow.
 Qed.
 Hint Resolve per_csname_type_value_respecting : slow.
 
@@ -444,32 +472,48 @@ Proof.
 Qed.
 Hint Resolve per_csname_type_value_respecting : slow.
 
-Lemma type_equality_respecting_trans_per_bar_per_csname_implies {o} :
+Lemma type_equality_respecting_trans1_per_bar_per_csname_implies {o} :
   forall (ts : cts(o)) lib T T' n n',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T  (mkc_csname n)
-    -> computes_to_valc lib T' (mkc_csname n')
-    -> type_equality_respecting_trans (per_bar (per_csname (close ts))) lib T T'
-    -> type_equality_respecting_trans (close ts) lib T T'.
+    -> ccomputes_to_valc_ext lib T  (mkc_csname n)
+    -> ccomputes_to_valc_ext lib T' (mkc_csname n')
+    -> type_equality_respecting_trans1 (per_bar (per_csname (close ts))) lib T T'
+    -> type_equality_respecting_trans1 (close ts) lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_bar_per_csname_implies_close.
   eapply trans; eauto.
   repndors; subst.
 
-  - eapply ccequivc_ext_csname in ceq;[|eauto]; exrepnd; spcast.
+  - eapply ccequivc_ext_preserves_computes_to_valc_csname in ceq; eauto 3 with slow.
     dclose_lr; auto.
 
-  - eapply ccequivc_ext_csname in ceq;[|eauto]; exrepnd; spcast.
+  - eapply ccequivc_ext_preserves_computes_to_valc_csname in ceq; eauto 3 with slow.
     dclose_lr; auto.
 
-  - eapply ccequivc_ext_csname in ceq;[|eauto]; exrepnd; spcast.
+  - eapply ccequivc_ext_preserves_computes_to_valc_csname in ceq; eauto 3 with slow.
     dclose_lr; auto.
 
-  - eapply ccequivc_ext_csname in ceq;[|eauto]; exrepnd; spcast.
+  - eapply ccequivc_ext_preserves_computes_to_valc_csname in ceq; eauto 3 with slow.
     dclose_lr; auto.
+Qed.
+
+Lemma type_equality_respecting_trans2_per_bar_per_csname_implies {o} :
+  forall (ts : cts(o)) lib T T' n n',
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> ccomputes_to_valc_ext lib T  (mkc_csname n)
+    -> ccomputes_to_valc_ext lib T' (mkc_csname n')
+    -> type_equality_respecting_trans2 (per_bar (per_csname (close ts))) lib T T'
+    -> type_equality_respecting_trans2 (close ts) lib T T'.
+Proof.
+  introv tsts dou mon comp1 comp2 trans h ceq cl.
+  apply per_bar_per_csname_implies_close.
+  eapply trans; eauto.
+  repndors; subst; dclose_lr; auto.
 Qed.
 
 Lemma per_csname_term_symmetric {p} :
@@ -495,6 +539,25 @@ Proof.
 Qed.
 Hint Resolve per_csname_term_symmetric : slow.
 
+Lemma iscvalue_mkc_choice_seq {o} :
+  forall i, @iscvalue o (mkc_choice_seq i).
+Proof.
+  introv; unfold iscvalue; simpl; eauto with slow.
+Qed.
+Hint Resolve iscvalue_mkc_choice_seq : slow.
+
+Lemma ccequivc_ext_mkc_choice_seq_implies {o} :
+  forall (lib : @library o) k1 k2,
+    ccequivc_ext lib (mkc_choice_seq k1) (mkc_choice_seq k2)
+    -> k1 = k2.
+Proof.
+  introv ceq.
+  pose proof (ceq lib) as ceq; autodimp ceq hyp; eauto 3 with slow; simpl in *; spcast.
+  eapply cequivc_choice_seq in ceq;[|eauto 3 with slow].
+  apply computes_to_valc_isvalue_eq in ceq; eauto 3 with slow.
+  eqconstr ceq; auto.
+Qed.
+
 Lemma per_csname_term_transitive {p} :
   forall (ts : cts(p)), term_transitive (per_csname ts).
 Proof.
@@ -509,7 +572,9 @@ Proof.
   pose proof (e0 _ br0 lib'0 (lib_extends_trans ext br3)) as e0; simpl in *.
 
   unfold equality_of_csname in *; exrepnd.
-  spcast; computes_to_eqval.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_choice_seq_implies in ceq; subst; GC.
+
   exists name0; dands; spcast; auto.
 Qed.
 Hint Resolve per_csname_term_transitive : slow.
@@ -526,18 +591,14 @@ Lemma per_csname_term_value_respecting {p} :
 Proof.
   introv per e ceq.
   unfold per_csname in *; exrepnd.
-  spcast; repeat computes_to_eqval.
   allrw per0; clear per0.
 
   unfold equality_of_csname_bar in *; exrepnd.
   exists bar; introv br ext; introv; simpl in *; exrepnd.
   pose proof (e0 _ br _ ext) as e0; simpl in *.
-
-  pose proof (ceq lib'0) as ceq; simpl in ceq; autodimp ceq hyp; eauto 3 with slow.
   unfold equality_of_csname in *; exrepnd; dands; auto.
-  spcast.
-  eapply cequivc_choice_seq in ceq; eauto.
-  exists name; dands; spcast; auto.
+  assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
+  exists name; dands; spcast; auto; eauto 3 with slow.
 Qed.
 Hint Resolve per_csname_term_value_respecting : slow.
 
@@ -585,7 +646,9 @@ Proof.
   pose proof (perb0 _ br _ ext x) as perb0.
   simpl in *.
   unfold per_csname in *; exrepnd; spcast.
-  computes_to_eqval.
+
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_csname_implies in ceq; subst; GC.
 
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].

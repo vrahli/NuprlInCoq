@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -116,9 +117,8 @@ Proof.
   exists bar; dands; auto.
   introv ie i.
   applydup per0 in i; auto.
-  pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
-  spcast.
-  eapply cequivc_int; eauto.
+  assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
+  eauto 3 with slow.
 Qed.
 Hint Resolve per_int_bar_type_value_respecting : slow.
 
@@ -127,10 +127,7 @@ Lemma per_int_type_value_respecting {p} :
 Proof.
   introv per ceq.
   unfold type_value_respecting, per_int in *; exrepnd; GC.
-  dands; auto;[].
-  pose proof (ceq lib) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
-  spcast.
-  eapply cequivc_int; eauto.
+  dands; eauto 3 with slow.
 Qed.
 Hint Resolve per_int_type_value_respecting : slow.
 
@@ -143,9 +140,7 @@ Proof.
   unfold equality_of_int_bar, equality_of_int in *; exrepnd; exists bar0.
   introv ie i; applydup e0 in i; auto.
   exrepnd; exists k; repnd; dands; auto.
-  pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
-  spcast.
-  apply @cequivc_integer with (t := t); auto.
+  assert (lib_extends lib'0 lib) as ext by eauto 3 with slow; eauto 3 with slow.
 Qed.
 Hint Resolve per_int_bar_term_value_respecting : slow.
 
@@ -158,9 +153,7 @@ Proof.
   unfold equality_of_int_bar, equality_of_int in *; exrepnd; exists bar.
   introv ie i; applydup e0 in i; auto.
   exrepnd; exists k; repnd; dands; auto.
-  pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
-  spcast.
-  apply @cequivc_integer with (t := t); auto.
+  assert (lib_extends lib'0 lib) as ext by eauto 3 with slow; eauto 3 with slow.
 Qed.
 Hint Resolve per_int_term_value_respecting : slow.
 
@@ -193,6 +186,18 @@ Proof.
 Qed.
 Hint Resolve per_int_type_transitive : slow.
 
+Lemma ccequivc_ext_mkc_integer_implies {o} :
+  forall (lib : @library o) k1 k2,
+    ccequivc_ext lib (mkc_integer k1) (mkc_integer k2)
+    -> k1 = k2.
+Proof.
+  introv ceq.
+  pose proof (ceq lib) as ceq; autodimp ceq hyp; eauto 3 with slow; simpl in *; spcast.
+  eapply cequivc_integer in ceq;[|eauto 3 with slow].
+  apply computes_to_valc_isvalue_eq in ceq; eauto 3 with slow.
+  eqconstr ceq; auto.
+Qed.
+
 Lemma per_int_bar_term_transitive {p} :
   forall (ts : cts(p)), term_transitive (per_int_bar ts).
 Proof.
@@ -214,7 +219,8 @@ Proof.
   pose proof (j0 lib2) as q; autodimp q hyp; clear j0.
   pose proof (q lib'0) as z; clear q; autodimp z hyp; eauto 2 with slow; simpl in z.
   exrepnd; spcast.
-  computes_to_eqval.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_integer_implies in ceq; subst.
   exists k0; dands; spcast; auto.
 Qed.
 Hint Resolve per_int_bar_term_transitive : slow.
@@ -240,7 +246,9 @@ Proof.
   pose proof (j0 lib2) as q; autodimp q hyp; clear j0.
   pose proof (q lib'0) as z; clear q; autodimp z hyp; eauto 2 with slow; simpl in z.
   exrepnd; spcast.
-  computes_to_eqval.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_integer_implies in ceq; subst.
+
   exists k0; dands; spcast; auto.
 Qed.
 Hint Resolve per_int_term_transitive : slow.
@@ -305,23 +313,21 @@ Qed.
 Lemma ccequivc_ext_preserves_computes_to_valc_int {o} :
   forall lib (T T' : @CTerm o),
     ccequivc_ext lib T T'
-    -> computes_to_valc lib T mkc_int
+    -> ccomputes_to_valc_ext lib T mkc_int
     -> T' ===>(lib) mkc_int.
 Proof.
-  introv ceq comp.
-  pose proof (ceq lib) as ceq; autodimp ceq hyp; eauto 3 with slow; simpl in *.
-  spcast; eapply cequivc_int; eauto.
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
-Lemma type_equality_respecting_trans_per_int_bar_implies {o} :
+Lemma type_equality_respecting_trans1_per_int_bar_implies {o} :
   forall (ts : cts(o)) lib T T',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T  mkc_int
-    -> computes_to_valc lib T' mkc_int
-    -> type_equality_respecting_trans (per_int_bar (close ts)) lib T T'
-    -> type_equality_respecting_trans (close ts) lib T T'.
+    -> ccomputes_to_valc_ext lib T  mkc_int
+    -> ccomputes_to_valc_ext lib T' mkc_int
+    -> type_equality_respecting_trans1 (per_int_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans1 (close ts) lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_int_bar_implies_close.
@@ -339,4 +345,20 @@ Proof.
 
   - apply ccequivc_ext_preserves_computes_to_valc_int in ceq; auto; spcast.
     dclose_lr; auto.
+Qed.
+
+Lemma type_equality_respecting_trans2_per_int_bar_implies {o} :
+  forall (ts : cts(o)) lib T T',
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> ccomputes_to_valc_ext lib T  mkc_int
+    -> ccomputes_to_valc_ext lib T' mkc_int
+    -> type_equality_respecting_trans2 (per_int_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans2 (close ts) lib T T'.
+Proof.
+  introv tsts dou mon comp1 comp2 trans h ceq cl.
+  apply per_int_bar_implies_close.
+  eapply trans; eauto.
+  repndors; subst; dclose_lr; auto.
 Qed.

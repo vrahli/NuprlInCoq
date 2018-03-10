@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -84,9 +85,7 @@ Proof.
   exists bar; dands; auto.
   introv ie i.
   applydup per0 in i; auto.
-  pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
-  spcast.
-  eapply cequivc_base; eauto.
+  assert (lib_extends lib'0 lib); eauto 3 with slow.
 Qed.
 Hint Resolve per_base_bar_type_value_respecting : slow.
 
@@ -193,23 +192,21 @@ Qed.
 Lemma ccequivc_ext_preserves_computes_to_valc_base {o} :
   forall lib (T T' : @CTerm o),
     ccequivc_ext lib T T'
-    -> computes_to_valc lib T mkc_base
+    -> ccomputes_to_valc_ext lib T mkc_base
     -> T' ===>(lib) mkc_base.
 Proof.
-  introv ceq comp.
-  pose proof (ceq lib) as ceq; autodimp ceq hyp; eauto 3 with slow; simpl in *.
-  spcast; eapply cequivc_base; eauto.
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
-Lemma type_equality_respecting_trans_per_base_bar_implies {o} :
+Lemma type_equality_respecting_trans1_per_base_bar_implies {o} :
   forall (ts : cts(o)) lib T T',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T mkc_base
-    -> computes_to_valc lib T' mkc_base
-    -> type_equality_respecting_trans (per_base_bar (close ts)) lib T T'
-    -> type_equality_respecting_trans (close ts) lib T T'.
+    -> ccomputes_to_valc_ext lib T mkc_base
+    -> ccomputes_to_valc_ext lib T' mkc_base
+    -> type_equality_respecting_trans1 (per_base_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans1 (close ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_base_bar_implies_close.
@@ -227,4 +224,20 @@ Proof.
 
   - apply ccequivc_ext_preserves_computes_to_valc_base in ceq; auto; spcast.
     dclose_lr; auto.
+Qed.
+
+Lemma type_equality_respecting_trans2_per_base_bar_implies {o} :
+  forall (ts : cts(o)) lib T T',
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> ccomputes_to_valc_ext lib T mkc_base
+    -> ccomputes_to_valc_ext lib T' mkc_base
+    -> type_equality_respecting_trans2 (per_base_bar (close ts)) lib T T'
+    -> type_equality_respecting_trans2 (close ts) lib T T'.
+Proof.
+  introv tsts dou mon inbar1 inbar2 trans h ceq cl.
+  apply per_base_bar_implies_close.
+  eapply trans; eauto.
+  repndors; subst; dclose_lr; auto.
 Qed.
