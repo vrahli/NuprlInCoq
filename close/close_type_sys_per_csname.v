@@ -80,9 +80,14 @@ Proof.
         try (apply per_bar_per_csname_type_transitive);
         try (apply per_bar_per_csname_type_symmetric).
 
-  + SCase "type_value_respecting_trans".
-    eapply type_equality_respecting_trans_per_bar_per_csname_implies; eauto.
-    apply type_system_implies_type_equality_respecting_trans.
+  + SCase "type_value_respecting_trans1".
+    eapply type_equality_respecting_trans1_per_bar_per_csname_implies; eauto.
+    apply type_system_implies_type_equality_respecting_trans1.
+    apply per_bar_per_csname_type_system.
+
+  + SCase "type_value_respecting_trans2".
+    eapply type_equality_respecting_trans2_per_bar_per_csname_implies; eauto.
+    apply type_system_implies_type_equality_respecting_trans2.
     apply per_bar_per_csname_type_system.
 
   + SCase "term_symmetric".

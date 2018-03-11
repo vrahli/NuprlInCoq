@@ -425,36 +425,10 @@ Qed.
 Lemma ccequivc_ext_approx {o} :
   forall lib (T T' : @CTerm o) a b,
     ccequivc_ext lib T T'
-    -> computes_to_valc lib T (mkc_approx a b)
-    -> {a' : CTerm , {b' : CTerm ,
-        ccomputes_to_valc lib T' (mkc_approx a' b')
-        # ccequivc_ext lib a a'
-        # ccequivc_ext lib b b' }}.
+    -> ccomputes_to_valc_ext lib T (mkc_approx a b)
+    -> ccomputes_to_valc_ext lib T' (mkc_approx a b).
 Proof.
-  introv ceq comp.
-  pose proof (ceq lib) as ceq'; simpl in ceq'; autodimp ceq' hyp; eauto 3 with slow; spcast.
-  eapply cequivc_mkc_approx in ceq';[|eauto]; exrepnd.
-  exists a' b'; dands; spcast; auto.
-
-  {
-    introv ext.
-    pose proof (ceq lib' ext) as c; simpl in c; spcast.
-
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T (mkc_approx a b) comp) as w.
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T' (mkc_approx a' b') ceq'0) as z.
-    eapply cequivc_mkc_approx in c;[|eauto]; exrepnd.
-    computes_to_eqval; auto.
-  }
-
-  {
-    introv ext.
-    pose proof (ceq lib' ext) as c; simpl in c; spcast.
-
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T (mkc_approx a b) comp) as w.
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T' (mkc_approx a' b') ceq'0) as z.
-    eapply cequivc_mkc_approx in c;[|eauto]; exrepnd.
-    computes_to_eqval; auto.
-  }
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
 Lemma cequivc_implies_capproxc {o} :
@@ -479,15 +453,10 @@ Lemma per_approx_type_value_respecting {p} :
 Proof.
   introv per ceq.
   unfold per_approx in *; exrepnd.
-  spcast; computes_to_eqval.
-  eapply ccequivc_ext_approx in ceq;[|eauto]; exrepnd; spcast.
-  exists a b a' b'; dands; spcast; auto.
-
-  introv ext.
-  pose proof (per3 _ ext) as per3; simpl in *.
-  pose proof (ceq1 _ ext) as ceq1; simpl in *.
-  pose proof (ceq2 _ ext) as ceq2; simpl in *.
-  spcast; eauto 3 with slow.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_approx_right in ceq0; repnd.
+  exists a b a b; dands; spcast; auto; eauto 3 with slow.
+  introv ext; tcsp.
 Qed.
 Hint Resolve per_approx_type_value_respecting : slow.
 
@@ -498,15 +467,15 @@ Proof.
 Qed.
 Hint Resolve per_approx_type_value_respecting : slow.
 
-Lemma type_equality_respecting_trans_per_bar_per_approx_implies {o} :
+Lemma type_equality_respecting_trans1_per_bar_per_approx_implies {o} :
   forall (ts : cts(o)) lib T T' a b c d,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T  (mkc_approx a b)
-    -> computes_to_valc lib T' (mkc_approx c d)
-    -> type_equality_respecting_trans (per_bar (per_approx (close ts))) lib T T'
-    -> type_equality_respecting_trans (close ts) lib T T'.
+    -> ccomputes_to_valc_ext lib T  (mkc_approx a b)
+    -> ccomputes_to_valc_ext lib T' (mkc_approx c d)
+    -> type_equality_respecting_trans1 (per_bar (per_approx (close ts))) lib T T'
+    -> type_equality_respecting_trans1 (close ts) lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_bar_per_approx_implies_close.
@@ -524,6 +493,22 @@ Proof.
 
   - eapply ccequivc_ext_approx in ceq;[|eauto]; exrepnd; spcast.
     dclose_lr; auto.
+Qed.
+
+Lemma type_equality_respecting_trans2_per_bar_per_approx_implies {o} :
+  forall (ts : cts(o)) lib T T' a b c d,
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> ccomputes_to_valc_ext lib T  (mkc_approx a b)
+    -> ccomputes_to_valc_ext lib T' (mkc_approx c d)
+    -> type_equality_respecting_trans2 (per_bar (per_approx (close ts))) lib T T'
+    -> type_equality_respecting_trans2 (close ts) lib T T'.
+Proof.
+  introv tsts dou mon comp1 comp2 trans h ceq cl.
+  apply per_bar_per_approx_implies_close.
+  eapply trans; eauto.
+  repndors; subst; dclose_lr; auto.
 Qed.
 
 Lemma per_approx_term_symmetric {p} :
@@ -573,22 +558,28 @@ Proof.
 Qed.
 Hint Resolve per_approx_term_transitive : slow.
 
+Lemma per_approx_eq_ccequivc_ext_terms {o} :
+  forall lib (a b : @CTerm o) t1 t2 t3 t4,
+    ccequivc_ext lib t1 t2
+    -> ccequivc_ext lib t3 t4
+    -> per_approx_eq lib a b t1 t3
+    -> per_approx_eq lib a b t2 t4.
+Proof.
+  introv ceqa ceqb per; unfold per_approx_eq in *; repnd; dands; eauto 3 with slow.
+Qed.
+
 Lemma per_approx_term_value_respecting {p} :
   forall (ts : cts(p)), term_value_respecting (per_approx ts).
 Proof.
   introv per e ceq.
   unfold per_approx in *; exrepnd.
-  spcast; repeat computes_to_eqval.
   allrw per1; clear per1.
 
   unfold per_approx_eq_bar in *; exrepnd.
   exists bar; introv br ext; introv; simpl in *; exrepnd.
   pose proof (e0 _ br _ ext) as e0; simpl in *.
 
-  pose proof (ceq lib'0) as ceq; simpl in ceq; autodimp ceq hyp; eauto 3 with slow.
-  unfold per_approx_eq in *; repnd; dands; auto.
-  spcast.
-  eapply cequivc_axiom; eauto.
+  eapply per_approx_eq_ccequivc_ext_terms; try exact e0; eauto 4 with slow.
 Qed.
 Hint Resolve per_approx_term_value_respecting : slow.
 
@@ -606,7 +597,7 @@ Proof.
 Qed.
 Hint Resolve per_bar_per_approx_type_system : slow.
 
-Lemma per_approx_bar_uniquely_valued2 {p} :
+(*Lemma per_approx_bar_uniquely_valued2 {p} :
   forall (ts : cts(p)), uniquely_valued2 (per_approx_bar ts).
 Proof.
   unfold uniquely_valued2, per_approx_bar, eq_term_equals; sp.
@@ -614,14 +605,32 @@ Proof.
   allrw; sp.
   eapply eq_per_approx_eq_bar; eauto.
 Qed.
-Hint Resolve per_approx_bar_uniquely_valued2 : slow.
+Hint Resolve per_approx_bar_uniquely_valued2 : slow.*)
+
+Lemma per_approx_eq_ccequivc_ext {o} :
+  forall lib (a1 b1 a2 b2 : @CTerm o) t1 t2,
+    ccequivc_ext lib a1 a2
+    -> ccequivc_ext lib b1 b2
+    -> per_approx_eq lib a1 b1 t1 t2
+    -> per_approx_eq lib a2 b2 t1 t2.
+Proof.
+  introv ceqa ceqb per; unfold per_approx_eq in *; repnd; dands; eauto 3 with slow.
+  pose proof (ceqa _ (lib_extends_refl _)) as ceqa; simpl in *.
+  pose proof (ceqb _ (lib_extends_refl _)) as ceqb; simpl in *.
+  spcast.
+  eapply cequivc_approxc_trans;[apply cequivc_sym;exact ceqa|].
+  eapply approxc_cequivc_trans;[exact per|]; auto.
+Qed.
+Hint Resolve per_approx_eq_ccequivc_ext : slow.
 
 Lemma per_approx_uniquely_valued2 {p} :
   forall (ts : cts(p)), uniquely_valued2 (per_approx ts).
 Proof.
   unfold uniquely_valued2, per_approx, eq_term_equals; sp.
-  spcast; repeat computes_to_eqval.
-  allrw; sp.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_approx_right in ceq; repnd.
+  allrw.
+  split; introv h; eauto 4 with slow.
 Qed.
 Hint Resolve per_approx_uniquely_valued2 : slow.
 

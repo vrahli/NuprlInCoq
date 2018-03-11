@@ -1,6 +1,10 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -35,7 +39,7 @@ Require Export close_util1.
 Lemma uniquely_valued_per_bar_per_eq {o} :
   forall (ts : cts(o)) lib T T1 T2 eq1 eq2 a1 a2 A B eqa,
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
-    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
     -> per_bar (per_eq ts) lib T T1 eq1
     -> per_bar (per_eq ts) lib T T2 eq2
     -> (eq1 <=2=> eq2).
@@ -46,20 +50,51 @@ Proof.
   introv ext pera perb.
   unfold per_eq in *; exrepnd; spcast.
 
-  eapply lib_extends_preserves_computes_to_valc in comp;[|exact ext].
-  repeat computes_to_eqval.
+  eapply lib_extends_preserves_ccomputes_to_valc in comp;[|exact ext].
+  computes_to_eqval_ext.
+  hide_hyp perb1.
+  computes_to_eqval_ext.
+  hide_hyp pera1.
+
+  apply ccequivc_ext_mkc_equality_implies in ceq.
+  apply ccequivc_ext_mkc_equality_implies in ceq0.
+  repnd.
+
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
   clear pera0 perb0.
 
-  apply (simple_implies_iff_per_eq_eq _ (trivial_bar lib')).
-  apply in_ext_ext_implies_all_in_bar_ext.
+  introv; split; introv h.
 
-  introv.
-  pose proof (pera3 _ e) as pera3; simpl in *.
-  pose proof (perb3 _ e) as perb3; simpl in *.
-  pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
-  eapply type_sys_props4_implies_eq_term_equals; eauto.
+  { eapply eq_per_eq_bar_respects_ccequivc_ext in h;
+      [| | |
+       |eapply ccequivc_ext_trans;[apply ccequivc_ext_sym;exact ceq1|exact ceq3]
+       |eapply ccequivc_ext_trans;[apply ccequivc_ext_sym;exact ceq2|exact ceq4]
+      ]; eauto 3 with slow.
+
+    eapply (simple_implies_iff_per_eq_eq _ (trivial_bar lib')); try exact h.
+    apply in_ext_ext_implies_all_in_bar_ext.
+
+    introv.
+    pose proof (pera3 _ e) as pera3; simpl in *.
+    pose proof (perb3 _ e) as perb3; simpl in *.
+    pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
+    eapply type_sys_props4_ccequivc_ext_implies_eq_term_equals; eauto 3 with slow. }
+
+  { eapply eq_per_eq_bar_respects_ccequivc_ext in h;
+      [| | |
+       |eapply ccequivc_ext_trans;[apply ccequivc_ext_sym;exact ceq3|exact ceq1]
+       |eapply ccequivc_ext_trans;[apply ccequivc_ext_sym;exact ceq4|exact ceq2]
+      ]; eauto 3 with slow.
+
+    eapply (simple_implies_iff_per_eq_eq _ (trivial_bar lib')); try exact h.
+    apply in_ext_ext_implies_all_in_bar_ext.
+
+    introv.
+    pose proof (pera3 _ e) as pera3; simpl in *.
+    pose proof (perb3 _ e) as perb3; simpl in *.
+    pose proof (tsp _ (lib_extends_trans e ext)) as tsp; simpl in *.
+    eapply type_sys_props4_ccequivc_ext_implies_eq_term_equals; eauto 3 with slow. }
 Qed.
 Hint Resolve uniquely_valued_per_bar_per_eq : slow.
 
@@ -80,53 +115,16 @@ Qed.
 Lemma ccequivc_ext_equality {o} :
   forall lib (T T' : @CTerm o) a b A,
     ccequivc_ext lib T T'
-    -> computes_to_valc lib T (mkc_equality a b A)
-    -> {a' : CTerm , {b' : CTerm , {A' : CTerm ,
-        ccomputes_to_valc lib T' (mkc_equality a' b' A')
-        # ccequivc_ext lib a a'
-        # ccequivc_ext lib b b'
-        # ccequivc_ext lib A A' }}}.
+    -> ccomputes_to_valc_ext lib T (mkc_equality a b A)
+    -> ccomputes_to_valc_ext lib T' (mkc_equality a b A).
 Proof.
-  introv ceq comp.
-  pose proof (ceq lib) as ceq'; simpl in ceq'; autodimp ceq' hyp; eauto 3 with slow; spcast.
-  eapply cequivc_mkc_equality in ceq';[|eauto]; exrepnd.
-  exists a' b' T'0; dands; spcast; auto.
-
-  {
-    introv ext.
-    pose proof (ceq lib' ext) as c; simpl in c; spcast.
-
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T (mkc_equality a b A) comp) as w.
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T' (mkc_equality a' b' T'0) ceq'1) as z.
-    eapply cequivc_mkc_equality in c;[|eauto]; exrepnd.
-    computes_to_eqval; auto.
-  }
-
-  {
-    introv ext.
-    pose proof (ceq lib' ext) as c; simpl in c; spcast.
-
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T (mkc_equality a b A) comp) as w.
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T' (mkc_equality a' b' T'0) ceq'1) as z.
-    eapply cequivc_mkc_equality in c;[|eauto]; exrepnd.
-    computes_to_eqval; auto.
-  }
-
-  {
-    introv ext.
-    pose proof (ceq lib' ext) as c; simpl in c; spcast.
-
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T (mkc_equality a b A) comp) as w.
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T' (mkc_equality a' b' T'0) ceq'1) as z.
-    eapply cequivc_mkc_equality in c;[|eauto]; exrepnd.
-    computes_to_eqval; auto.
-  }
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
 Lemma ccequivc_ext_implies_per_eq1 {o} :
   forall (ts : cts(o)) lib T0 T T' T3 eq a1 a2 A b1 b2 B (eqa : lib-per(lib,o)),
-    computes_to_valc lib T (mkc_equality a1 a2 A)
-    -> computes_to_valc lib T' (mkc_equality b1 b2 B)
+    ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
+    -> ccomputes_to_valc_ext lib T' (mkc_equality b1 b2 B)
     -> in_ext_ext lib (fun lib' x => ts lib' A B (eqa lib' x))
     -> eqorceq_ext lib eqa a1 b1
     -> eqorceq_ext lib eqa a2 b2
@@ -141,13 +139,13 @@ Proof.
   repndors; subst.
 
   - eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
-    exists A A' a1 a2 a' b' eqa; dands; spcast; auto; eauto 3 with slow.
-    eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; eauto.
+    exists A A a1 a2 a1 a2 eqa; dands; spcast; auto; eauto 3 with slow.
+    eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; eauto 3 with slow.
 
   - eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
-    exists B A' b1 b2 a' b' eqa; dands; spcast; auto; eauto 3 with slow.
+    exists B B b1 b2 b1 b2 eqa; dands; spcast; auto; eauto 3 with slow.
 
-    { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; eauto. }
+    { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; eauto 3 with slow. }
 
     eapply eq_term_equals_trans;[eauto|].
     apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib));
@@ -158,8 +156,8 @@ Qed.
 Lemma type_value_respecting_trans_per_bar_per_eq1 {o} :
   forall lib (ts : cts(o)) T T1 T2 A A' B a1 a' a2 b' (eqa : lib-per(lib,o)) eq,
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
-    -> computes_to_valc lib T1 (mkc_equality a' b' A')
-    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> ccomputes_to_valc_ext lib T1 (mkc_equality a' b' A')
+    -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
     -> ccequivc_ext lib a1 a'
     -> ccequivc_ext lib a2 b'
     -> ccequivc_ext lib A A'
@@ -173,34 +171,70 @@ Proof.
   pose proof (per0 _ br _ ext x) as per0; simpl in *.
 
   unfold per_eq in *; exrepnd.
-  spcast.
-  eapply lib_extends_preserves_computes_to_valc in comp1;[|exact x].
-  eapply lib_extends_preserves_computes_to_valc in comp2;[|exact x].
-  computes_to_eqval.
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
+  eapply lib_extends_preserves_ccomputes_to_valc in comp2;[|exact x].
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
+
   exists A B0 a1 a2 b1 b2 eqa1; dands; spcast; eauto 3 with slow.
 
   - introv.
     pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
     pose proof (per4 lib'1 e) as per4; simpl in *.
-    onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-    eapply tyvrt; eauto; eauto 3 with slow.
+    onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+    eapply tyvrt1; eauto; eauto 4 with slow.
+
+  - eapply cequivc_ext_eqorceq_ext_trans1; try exact per5; eauto 3 with slow.
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
+        try exact tsp; try exact per4; eauto 3 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
+        try exact tsp; try exact per4; eauto 3 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+        try exact tsp; try exact per4; eauto 3 with slow. }
 
   - eapply cequivc_ext_eqorceq_ext_trans1; eauto; eauto 3 with slow.
-
-  - eapply cequivc_ext_eqorceq_ext_trans1; eauto; eauto 3 with slow.
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
+        try exact tsp; try exact per4; eauto 3 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
+        try exact tsp; try exact per4; eauto 3 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+        try exact tsp; try exact per4; eauto 3 with slow. }
 
   - eapply eq_term_equals_trans;[eauto|].
     apply eq_term_equals_sym.
-    apply (implies_iff_per_eq_eq _ (trivial_bar lib'0));
-      try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
-      try apply in_ext_implies_all_in_bar_trivial_bar; eauto 3 with slow.
+
+    introv; split; introv h.
+
+    { eapply eq_per_eq_bar_respects_ccequivc_ext in h;
+        [| | |
+         |eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext;[exact x|exact ceq1] |exact ceq0]
+         |eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext;[exact x|exact ceq2] |exact ceq4]
+        ]; eauto 3 with slow.
+      { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
+          try exact tsp; try exact per4; eauto 3 with slow. }
+      { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+          try exact tsp; try exact per4; eauto 3 with slow. }
+      { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
+          try exact tsp; try exact per4; eauto 3 with slow. } }
+
+    { eapply eq_per_eq_bar_respects_ccequivc_ext in h;
+        [| | |
+         |eapply ccequivc_ext_trans;apply ccequivc_ext_sym;[exact ceq0|eapply lib_extends_preserves_ccequivc_ext;[exact x|exact ceq1] ]
+         |eapply ccequivc_ext_trans;apply ccequivc_ext_sym;[exact ceq4|eapply lib_extends_preserves_ccequivc_ext;[exact x|exact ceq2] ]
+        ]; eauto 3 with slow.
+      { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
+          try exact tsp; try exact per4; eauto 3 with slow. }
+      { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+          try exact tsp; try exact per4; eauto 3 with slow. }
+      { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
+          try exact tsp; try exact per4; eauto 3 with slow. } }
 Qed.
 
 Lemma type_value_respecting_trans_per_bar_per_eq2 {o} :
   forall lib (ts : cts(o)) T T1 T2 A A' B a1 a' a2 b' (eqa : lib-per(lib,o)) eq,
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
-    -> computes_to_valc lib T1 (mkc_equality a' b' A')
-    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> ccomputes_to_valc_ext lib T1 (mkc_equality a' b' A')
+    -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
     -> ccequivc_ext lib a1 a'
     -> ccequivc_ext lib a2 b'
     -> ccequivc_ext lib A A'
@@ -214,6 +248,8 @@ Proof.
   pose proof (per0 _ br _ ext x) as per0; simpl in *.
 
   unfold per_eq in *; exrepnd.
+
+
   spcast.
   eapply lib_extends_preserves_computes_to_valc in comp1;[|exact x].
   eapply lib_extends_preserves_computes_to_valc in comp2;[|exact x].

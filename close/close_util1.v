@@ -91,6 +91,25 @@ Proof.
   apply eq_term_equals_sym;auto.
 Qed.
 
+Lemma type_sys_props4_ccequivc_ext_implies_eq_term_equals {o} :
+  forall (ts : cts(o)) lib A B C D A1 A2 eqa eqa1 eqa2,
+    type_sys_props4 ts lib A B eqa
+    -> ts lib A1 C eqa1
+    -> ts lib A2 D eqa2
+    -> ccequivc_ext lib A A1
+    -> ccequivc_ext lib A A2
+    -> eqa1 <=2=> eqa2.
+Proof.
+  introv h w q u v; introv.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+  pose proof (tyvrt1 A A1 C eqa1) as xx; repeat (autodimp xx hyp).
+  pose proof (tyvrt1 A A2 D eqa2) as yy; repeat (autodimp yy hyp).
+  apply uv in xx.
+  apply uv in yy.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym;auto.
+Qed.
+
 Lemma ccequivc_ext_implies_eqorceq_ext {o} :
   forall lib (a b : @CTerm o) eqa,
     ccequivc_ext lib a b

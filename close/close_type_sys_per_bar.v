@@ -107,10 +107,15 @@ Proof.
     introv h ceq; apply CL_bar;
       eapply all_in_bar_ext_type_sys_props4_implies_type_value_respecting_per_bar; eauto.
 
-  + SCase "type_value_respecting_trans".
+  + SCase "type_value_respecting_trans1".
     introv h ceq cl; apply CL_bar; repndors; subst;
       apply close_implies_per_bar in cl; auto;
         eapply all_in_bar_ext_type_sys_props4_implies_type_value_respecting_trans_per_bar1; eauto.
+
+  + SCase "type_value_respecting_trans2".
+    introv h cl ceq; apply CL_bar; repndors; subst;
+      apply close_implies_per_bar in cl; auto;
+        eapply all_in_bar_ext_type_sys_props4_implies_type_value_respecting_trans_per_bar2; eauto.
 
   + SCase "term_symmetric".
     introv e.

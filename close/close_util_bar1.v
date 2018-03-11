@@ -59,7 +59,7 @@ Lemma type_sys_props4_implies_eq_term_equals {o} :
     -> eq1 <=2=> eq2.
 Proof.
   introv tsp eqt.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   eapply uv; eauto.
 Qed.
 
@@ -68,7 +68,7 @@ Lemma type_sys_props4_implies_ts {o} :
     type_sys_props4 ts lib T1 T2 eq -> ts lib T1 T2 eq.
 Proof.
   introv h.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum; auto.
 Qed.
 
 Lemma all_in_bar_ext_type_sys_props4_implies_ts {o} :
@@ -1025,7 +1025,7 @@ Lemma type_sys_props4_ccequivc_ext_left {o} :
     -> ts lib T1 T3 eq.
 Proof.
   introv tsp ceq.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum; auto.
 Qed.
 
 Lemma type_sys_props4_change_per2 {o} :
@@ -1036,7 +1036,7 @@ Lemma type_sys_props4_change_per2 {o} :
     -> ts lib T1 T3 eqb.
 Proof.
   introv tsp ts1 ts2.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply uv in ts1.
   apply tys; auto.
 Qed.
@@ -1049,7 +1049,7 @@ Lemma type_sys_props4_change_per3 {o} :
     -> ts lib T1 T3 eqb.
 Proof.
   introv tsp ts1 ts2.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply tygs in ts1.
   apply uv in ts1.
   apply tys; auto.
@@ -1111,8 +1111,8 @@ Lemma type_sys_props4_implies_type_value_respecting1 {o} :
     -> ts lib T T4 eq'.
 Proof.
   introv tsp h ceq tsts.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-  eapply tyvrt; eauto.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+  eapply tyvrt1; eauto.
 Qed.
 
 Lemma per_bar_eq_intersect3bars_as2_left {o} :
@@ -1215,6 +1215,87 @@ Proof.
 Qed.
 Hint Resolve all_in_bar_ext_type_sys_props4_implies_type_value_respecting_trans_per_bar1 : slow.
 
+Lemma all_in_bar_ext_type_sys_props4_implies_type_value_respecting_trans_per_bar2 {o} :
+  forall (ts : cts(o)) {lib} (bar : BarLib lib) T1 T2 (eqa : lib-per(lib,o)) eq,
+    all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' T1 T2 (eqa lib' x))
+    -> per_bar ts lib T1 T2 eq
+    ->
+    forall T T3 T4 eq',
+      (T = T1 {+} T = T2)
+      -> ccequivc_ext lib T3 T4
+      -> (per_bar ts lib T T3 eq' {+} per_bar ts lib T3 T eq')
+      -> per_bar ts lib T T4 eq'.
+Proof.
+  introv alltsp pera h ceq perb.
+  unfold per_bar in *; repndors; exrepnd;
+    repndors; subst; exists (intersect3bars bar bar0 bar1) eqa0; dands; auto.
+
+  {
+    introv br ext; introv; simpl in *; exrepnd.
+    pose proof (alltsp _ br0 lib'0 (lib_extends_trans ext br3) x) as alltsp; simpl in *.
+    pose proof (pera0 _ br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as pera0; simpl in *.
+    pose proof (perb0 _ br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as perb0; simpl in *.
+    eapply type_sys_props4_implies_type_equality_respecting_trans2; eauto; eauto 3 with slow.
+  }
+
+  {
+    eapply eq_term_equals_trans;[eauto|].
+    apply eq_term_equals_sym.
+    eapply eq_term_equals_trans;[apply per_bar_eq_intersect3bars_as2_left|].
+    eapply eq_term_equals_trans;[apply close_util_bar.per_bar_eq_intersect_bars_left|].
+    apply close_util_bar.per_bar_eq_intersect_bars_right.
+  }
+
+  {
+    introv br ext; introv; simpl in *; exrepnd.
+    pose proof (alltsp _ br0 lib'0 (lib_extends_trans ext br3) x) as alltsp; simpl in *.
+    pose proof (pera0 _ br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as pera0; simpl in *.
+    pose proof (perb0 _ br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as perb0; simpl in *.
+    eapply type_sys_props4_implies_type_equality_respecting_trans2; eauto; eauto 3 with slow.
+  }
+
+  {
+    eapply eq_term_equals_trans;[eauto|].
+    apply eq_term_equals_sym.
+    eapply eq_term_equals_trans;[apply per_bar_eq_intersect3bars_as2_left|].
+    eapply eq_term_equals_trans;[apply close_util_bar.per_bar_eq_intersect_bars_left|].
+    apply close_util_bar.per_bar_eq_intersect_bars_right.
+  }
+
+  {
+    introv br ext; introv; simpl in *; exrepnd.
+    pose proof (alltsp _ br0 lib'0 (lib_extends_trans ext br3) x) as alltsp; simpl in *.
+    pose proof (pera0 _ br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as pera0; simpl in *.
+    pose proof (perb0 _ br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as perb0; simpl in *.
+    eapply type_sys_props4_implies_type_equality_respecting_trans2; eauto; eauto 3 with slow.
+  }
+
+  {
+    eapply eq_term_equals_trans;[eauto|].
+    apply eq_term_equals_sym.
+    eapply eq_term_equals_trans;[apply per_bar_eq_intersect3bars_as2_left|].
+    eapply eq_term_equals_trans;[apply close_util_bar.per_bar_eq_intersect_bars_left|].
+    apply close_util_bar.per_bar_eq_intersect_bars_right.
+  }
+
+  {
+    introv br ext; introv; simpl in *; exrepnd.
+    pose proof (alltsp _ br0 lib'0 (lib_extends_trans ext br3) x) as alltsp; simpl in *.
+    pose proof (pera0 _ br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as pera0; simpl in *.
+    pose proof (perb0 _ br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as perb0; simpl in *.
+    eapply type_sys_props4_implies_type_equality_respecting_trans2; eauto; eauto 3 with slow.
+  }
+
+  {
+    eapply eq_term_equals_trans;[eauto|].
+    apply eq_term_equals_sym.
+    eapply eq_term_equals_trans;[apply per_bar_eq_intersect3bars_as2_left|].
+    eapply eq_term_equals_trans;[apply close_util_bar.per_bar_eq_intersect_bars_left|].
+    apply close_util_bar.per_bar_eq_intersect_bars_right.
+  }
+Qed.
+Hint Resolve all_in_bar_ext_type_sys_props4_implies_type_value_respecting_trans_per_bar2 : slow.
+
 Lemma all_in_bar_ext_type_sys_props4_implies_term_equality_symmetric2 {o} :
   forall {lib} (bar : @BarLib o lib) ts A B eqa eqb,
     all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
@@ -1224,7 +1305,7 @@ Proof.
   introv alla allb br ext; introv.
   pose proof (alla _ br _ ext x) as alla; simpl in *.
   pose proof (allb _ br _ ext x) as allb; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply uv in allb.
   eapply eq_term_equals_preserves_term_equality_symmetric; eauto.
 Qed.
@@ -1239,7 +1320,7 @@ Proof.
   introv alla allb br ext; introv.
   pose proof (alla _ br _ ext x) as alla; simpl in *.
   pose proof (allb _ br _ ext x) as allb; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply uv in allb.
   eapply eq_term_equals_preserves_term_equality_transitive; eauto.
 Qed.
@@ -1264,7 +1345,7 @@ Proof.
   introv alla allb br ext; introv.
   pose proof (alla _ br _ ext x) as alla; simpl in *.
   pose proof (allb _ br _ ext x) as allb; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply uv in allb.
   eapply eq_term_equals_preserves_term_equality_respecting; eauto.
 Qed.
@@ -1276,7 +1357,7 @@ Lemma type_sys_props4_implies_type_symmetric1 {o} :
     -> ts lib T1 T3 eq' <=> ts lib T3 T1 eq'.
 Proof.
   introv tsp; split; intro tsts;
-    onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum;
+    onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum;
     apply tygs; auto.
 Qed.
 
@@ -1336,7 +1417,7 @@ Lemma type_sys_props4_implies_type_transitive0 {o} :
     -> ts lib T3 T4 eq1 # ts lib T3 T4 eq2.
 Proof.
   introv tsp h ceq tsts.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   eapply dum; eauto.
 Qed.
 

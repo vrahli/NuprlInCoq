@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -76,9 +77,13 @@ Proof.
     * apply tvr; auto.
       apply @type_system_type_mem1 with (T := T); eauto 3 with slow.
 
-  + SCase "type_value_respecting_trans".
-    eapply type_equality_respecting_trans_per_base_bar_implies; eauto.
-    apply type_system_implies_type_equality_respecting_trans; eauto 3 with slow.
+  + SCase "type_value_respecting_trans1".
+    eapply type_equality_respecting_trans1_per_base_bar_implies; eauto.
+    apply type_system_implies_type_equality_respecting_trans1; eauto 3 with slow.
+
+  + SCase "type_value_respecting_trans2".
+    eapply type_equality_respecting_trans2_per_base_bar_implies; eauto.
+    apply type_system_implies_type_equality_respecting_trans2; eauto 3 with slow.
 
   + SCase "term_symmetric".
     assert (term_symmetric (per_base_bar (close ts)))

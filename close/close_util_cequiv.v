@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -33,7 +34,7 @@ Require Export per_ceq_bar.
 Require Export close_util_bar.
 
 
-Lemma per_cequiv_bar_uniquely_valued {p} :
+(*Lemma per_cequiv_bar_uniquely_valued {p} :
   forall (ts : cts(p)), uniquely_valued (per_cequiv_bar ts).
 Proof.
   unfold uniquely_valued, per_cequiv_bar, eq_term_equals; sp.
@@ -202,6 +203,7 @@ Proof.
   intros; unfold type_system; sp; eauto 3 with slow.
 Qed.
 Hint Resolve per_cequiv_bar_type_system : slow.
+*)
 
 Lemma per_bar_per_cequiv_implies_close {o} :
   forall (ts : cts(o)) lib T T' eq,
@@ -220,47 +222,21 @@ Qed.
 Lemma ccequivc_ext_cequiv {o} :
   forall lib (T T' : @CTerm o) a b,
     ccequivc_ext lib T T'
-    -> computes_to_valc lib T (mkc_cequiv a b)
-    -> {a' : CTerm , {b' : CTerm ,
-        ccomputes_to_valc lib T' (mkc_cequiv a' b')
-        # ccequivc_ext lib a a'
-        # ccequivc_ext lib b b' }}.
+    -> ccomputes_to_valc_ext lib T (mkc_cequiv a b)
+    -> ccomputes_to_valc_ext lib T' (mkc_cequiv a b).
 Proof.
-  introv ceq comp.
-  pose proof (ceq lib) as ceq'; simpl in ceq'; autodimp ceq' hyp; eauto 3 with slow; spcast.
-  eapply cequivc_mkc_cequiv in ceq';[|eauto]; exrepnd.
-  exists a' b'; dands; spcast; auto.
-
-  {
-    introv ext.
-    pose proof (ceq lib' ext) as c; simpl in c; spcast.
-
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T (mkc_cequiv a b) comp) as w.
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T' (mkc_cequiv a' b') ceq'0) as z.
-    eapply cequivc_mkc_cequiv in c;[|eauto]; exrepnd.
-    computes_to_eqval; auto.
-  }
-
-  {
-    introv ext.
-    pose proof (ceq lib' ext) as c; simpl in c; spcast.
-
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T (mkc_cequiv a b) comp) as w.
-    pose proof (lib_extends_preserves_computes_to_valc lib lib' ext T' (mkc_cequiv a' b') ceq'0) as z.
-    eapply cequivc_mkc_cequiv in c;[|eauto]; exrepnd.
-    computes_to_eqval; auto.
-  }
+  introv ceq comp; eauto 3 with slow.
 Qed.
 
-Lemma type_equality_respecting_trans_per_cequiv_bar_implies {o} :
+Lemma type_equality_respecting_trans1_per_cequiv_bar_implies {o} :
   forall (ts : cts(o)) lib T T' a b a' b',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T (mkc_cequiv a b)
-    -> computes_to_valc lib T' (mkc_cequiv a' b')
-    -> type_equality_respecting_trans (per_bar (per_cequiv (close ts))) lib T T'
-    -> type_equality_respecting_trans (close ts) lib T T'.
+    -> ccomputes_to_valc_ext lib T (mkc_cequiv a b)
+    -> ccomputes_to_valc_ext lib T' (mkc_cequiv a' b')
+    -> type_equality_respecting_trans1 (per_bar (per_cequiv (close ts))) lib T T'
+    -> type_equality_respecting_trans1 (close ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_bar_per_cequiv_implies_close.
@@ -278,6 +254,22 @@ Proof.
 
   - eapply ccequivc_ext_cequiv in ceq;[|eauto]; exrepnd; spcast.
     dclose_lr; auto.
+Qed.
+
+Lemma type_equality_respecting_trans2_per_bar_per_cequiv_implies {o} :
+  forall (ts : cts(o)) lib T T' a b c d,
+    type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> ccomputes_to_valc_ext lib T  (mkc_cequiv a b)
+    -> ccomputes_to_valc_ext lib T' (mkc_cequiv c d)
+    -> type_equality_respecting_trans2 (per_bar (per_cequiv (close ts))) lib T T'
+    -> type_equality_respecting_trans2 (close ts) lib T T'.
+Proof.
+  introv tsts dou mon comp1 comp2 trans h ceq cl.
+  apply per_bar_per_cequiv_implies_close.
+  eapply trans; eauto.
+  repndors; subst; dclose_lr; auto.
 Qed.
 
 Lemma per_bar_eq_per_cequiv_eq_bar_lib_per {o} :
@@ -318,9 +310,16 @@ Qed.
 Lemma per_cequiv_uniquely_valued {p} :
   forall (ts : cts(p)), uniquely_valued (per_cequiv ts).
 Proof.
-  unfold uniquely_valued, per_cequiv, eq_term_equals; sp.
-  spcast; repeat computes_to_eqval.
-  allrw; sp.
+  unfold uniquely_valued, per_cequiv, eq_term_equals; introv cts h q; introv.
+  exrepnd.
+  computes_to_eqval_ext.
+  hide_hyp q2.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_cequiv_right in ceq.
+  apply cequivc_ext_mkc_cequiv_right in ceq0.
+  repnd.
+  allrw.
+  split; intro w; eapply per_cequiv_eq_bar_respects_ccequivc_ext; try exact w; eauto 3 with slow.
 Qed.
 Hint Resolve per_cequiv_uniquely_valued : slow.
 
@@ -375,19 +374,43 @@ Proof.
 Qed.
 Hint Resolve per_cequiv_type_symmetric : slow.
 
+Lemma ccequivc_ext_implies_iff_ccequivc_ext {o} :
+  forall lib lib' (a a' b b' : @CTerm o),
+    lib_extends lib' lib
+    -> ccequivc_ext lib a a'
+    -> ccequivc_ext lib b b'
+    -> a' ~=~(lib') b' <=> a ~=~(lib') b.
+Proof.
+  introv ext ceqa ceqb.
+  pose proof (ceqa _ ext) as ceqa.
+  pose proof (ceqb _ ext) as ceqb.
+  simpl in *.
+  split; introv h; spcast.
+  { eapply cequivc_trans;[exact ceqa|].
+    eapply cequivc_trans;[exact h|].
+    apply cequivc_sym; auto. }
+  { eapply cequivc_trans;[|exact ceqb].
+    apply cequivc_sym.
+    eapply cequivc_trans;[|exact ceqa].
+    apply cequivc_sym; auto. }
+Qed.
+
 Lemma per_cequiv_type_transitive {p} :
   forall (ts : cts(p)), type_transitive (per_cequiv ts).
 Proof.
   introv pera perb.
   unfold per_cequiv in *; exrepnd.
-  spcast; repeat computes_to_eqval.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_cequiv_right in ceq; repnd.
 
   exists a0 b0 c d; dands; spcast; auto.
 
   introv x.
   pose proof (pera3 _ x) as pera3.
   pose proof (perb3 _ x) as perb3.
-  allrw; tcsp.
+  simpl in *.
+  rw pera3; rw <- perb3.
+  eapply ccequivc_ext_implies_iff_ccequivc_ext; eauto.
 Qed.
 Hint Resolve per_cequiv_type_transitive : slow.
 
@@ -419,15 +442,10 @@ Lemma per_cequiv_type_value_respecting {p} :
 Proof.
   introv per ceq.
   unfold per_cequiv in *; exrepnd.
-  spcast; computes_to_eqval.
-  eapply ccequivc_ext_cequiv in ceq;[|eauto]; exrepnd; spcast.
-  exists a b a' b'; dands; spcast; auto.
-
-  introv ext.
-  pose proof (per3 _ ext) as per3; simpl in *.
-  pose proof (ceq1 _ ext) as ceq1; simpl in *.
-  pose proof (ceq2 _ ext) as ceq2; simpl in *.
-  spcast; eauto 3 with slow.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_cequiv_right in ceq0; repnd.
+  exists a b a b; dands; spcast; auto; eauto 3 with slow.
+  introv ext; tcsp.
 Qed.
 Hint Resolve per_cequiv_type_value_respecting : slow.
 
@@ -438,15 +456,15 @@ Proof.
 Qed.
 Hint Resolve per_cequiv_type_value_respecting : slow.
 
-Lemma type_equality_respecting_trans_per_bar_per_cequiv_implies {o} :
+Lemma type_equality_respecting_trans1_per_bar_per_cequiv_implies {o} :
   forall (ts : cts(o)) lib T T' a b c d,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T  (mkc_cequiv a b)
-    -> computes_to_valc lib T' (mkc_cequiv c d)
-    -> type_equality_respecting_trans (per_bar (per_cequiv (close ts))) lib T T'
-    -> type_equality_respecting_trans (close ts) lib T T'.
+    -> ccomputes_to_valc_ext lib T  (mkc_cequiv a b)
+    -> ccomputes_to_valc_ext lib T' (mkc_cequiv c d)
+    -> type_equality_respecting_trans1 (per_bar (per_cequiv (close ts))) lib T T'
+    -> type_equality_respecting_trans1 (close ts) lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_bar_per_cequiv_implies_close.
@@ -513,22 +531,28 @@ Proof.
 Qed.
 Hint Resolve per_cequiv_term_transitive : slow.
 
+Lemma per_cequiv_eq_ccequivc_ext_terms {o} :
+  forall lib (a b : @CTerm o) t1 t2 t3 t4,
+    ccequivc_ext lib t1 t2
+    -> ccequivc_ext lib t3 t4
+    -> per_cequiv_eq lib a b t1 t3
+    -> per_cequiv_eq lib a b t2 t4.
+Proof.
+  introv ceqa ceqb per; unfold per_cequiv_eq in *; repnd; dands; eauto 3 with slow.
+Qed.
+
 Lemma per_cequiv_term_value_respecting {p} :
   forall (ts : cts(p)), term_value_respecting (per_cequiv ts).
 Proof.
   introv per e ceq.
   unfold per_cequiv in *; exrepnd.
-  spcast; repeat computes_to_eqval.
   allrw per1; clear per1.
 
   unfold per_cequiv_eq_bar in *; exrepnd.
   exists bar; introv br ext; introv; simpl in *; exrepnd.
   pose proof (e0 _ br _ ext) as e0; simpl in *.
 
-  pose proof (ceq lib'0) as ceq; simpl in ceq; autodimp ceq hyp; eauto 3 with slow.
-  unfold per_cequiv_eq in *; repnd; dands; auto.
-  spcast.
-  eapply cequivc_axiom; eauto.
+  eapply per_cequiv_eq_ccequivc_ext_terms; try exact e0; eauto 4 with slow.
 Qed.
 Hint Resolve per_cequiv_term_value_respecting : slow.
 
@@ -546,7 +570,7 @@ Proof.
 Qed.
 Hint Resolve per_bar_per_cequiv_type_system : slow.
 
-Lemma per_cequiv_bar_uniquely_valued2 {p} :
+(*Lemma per_cequiv_bar_uniquely_valued2 {p} :
   forall (ts : cts(p)), uniquely_valued2 (per_cequiv_bar ts).
 Proof.
   unfold uniquely_valued2, per_cequiv_bar, eq_term_equals; sp.
@@ -554,14 +578,32 @@ Proof.
   allrw; sp.
   eapply eq_per_cequiv_eq_bar; eauto.
 Qed.
-Hint Resolve per_cequiv_bar_uniquely_valued2 : slow.
+Hint Resolve per_cequiv_bar_uniquely_valued2 : slow.*)
+
+Lemma per_cequiv_eq_ccequivc_ext {o} :
+  forall lib (a1 b1 a2 b2 : @CTerm o) t1 t2,
+    ccequivc_ext lib a1 a2
+    -> ccequivc_ext lib b1 b2
+    -> per_cequiv_eq lib a1 b1 t1 t2
+    -> per_cequiv_eq lib a2 b2 t1 t2.
+Proof.
+  introv ceqa ceqb per; unfold per_cequiv_eq in *; repnd; dands; eauto 3 with slow.
+  pose proof (ceqa _ (lib_extends_refl _)) as ceqa; simpl in *.
+  pose proof (ceqb _ (lib_extends_refl _)) as ceqb; simpl in *.
+  spcast.
+  eapply cequivc_trans;[apply cequivc_sym;exact ceqa|].
+  eapply cequivc_trans;[exact per|]; auto.
+Qed.
+Hint Resolve per_cequiv_eq_ccequivc_ext : slow.
 
 Lemma per_cequiv_uniquely_valued2 {p} :
   forall (ts : cts(p)), uniquely_valued2 (per_cequiv ts).
 Proof.
   unfold uniquely_valued2, per_cequiv, eq_term_equals; sp.
-  spcast; repeat computes_to_eqval.
-  allrw; sp.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_cequiv_right in ceq; repnd.
+  allrw.
+  split; introv h; eauto 4 with slow.
 Qed.
 Hint Resolve per_cequiv_uniquely_valued2 : slow.
 
