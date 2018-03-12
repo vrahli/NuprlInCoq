@@ -46,11 +46,17 @@ Require Export close_type_sys_per_base.
 Require Export close_type_sys_per_sqle.
 Require Export close_type_sys_per_sqequal.
 Require Export close_type_sys_per_eq.
+Require Export close_type_sys_per_func.
+Require Export close_type_sys_per_set.
+Require Export close_type_sys_per_product.
+
+Require Export close_type_sys_per_union.
+Require Export close_type_sys_per_image.
+
 (*Require Export close_type_sys_per_req.
  Require Export close_type_sys_per_teq.
  Require Export close_type_sys_per_isect.
 (*Require Export close_type_sys_per_eisect.*)*)
-Require Export close_type_sys_per_func.
 (*Require Export close_type_sys_per_disect.
  Require Export close_type_sys_per_pertype.
  Require Export close_type_sys_per_ipertype.
@@ -58,17 +64,13 @@ Require Export close_type_sys_per_func.
  Require Export close_type_sys_per_w.
  Require Export close_type_sys_per_m.
  Require Export close_type_sys_per_texc.*)
-Require Export close_type_sys_per_union.
-Require Export close_type_sys_per_image.
 (* Require Export close_type_sys_per_partial.
  Require Export close_type_sys_per_admiss.
  Require Export close_type_sys_per_mono.
  Require Export close_type_sys_per_ffatom.
  Require Export close_type_sys_per_effatom.
  Require Export close_type_sys_per_ffatoms.*)
-Require Export close_type_sys_per_set.
 (* Require Export close_type_sys_per_tunion.*)
-Require Export close_type_sys_per_product.
 (*Require Export close_type_sys_per_pw.
  Require Export close_type_sys_per_pm.*)
 

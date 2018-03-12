@@ -42,8 +42,8 @@ Lemma close_type_system_eq {o} :
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T (mkc_equality a1 a2 A)
-    -> computes_to_valc lib T' (mkc_equality b1 b2 B)
+    -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
+    -> ccomputes_to_valc_ext lib T' (mkc_equality b1 b2 B)
     -> in_ext_ext lib (fun lib' x => close ts lib' A B (eqa lib' x))
     -> eqorceq_ext lib eqa a1 b1
     -> eqorceq_ext lib eqa a2 b2
@@ -73,52 +73,11 @@ Proof.
     apply CL_eq.
     eapply ccequivc_ext_implies_per_eq1; try exact h; eauto.
 
-  + SCase "type_value_respecting_trans".
-    introv h ceq cl.
+  + SCase "type_value_respecting_trans1".
+    eapply implies_type_equality_respecting_trans1_per_eq; eauto.
 
-    repndors; subst.
-
-    * dup ceq as c.
-      eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
-      dup inexttsp as inexttsp'.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in inexttsp';[|eauto].
-      dclose_lr; clear cl.
-      apply per_bar_per_eq_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_eq1;
-        try exact h; try exact c1; eauto 3 with slow.
-
-    * dup ceq as c.
-      eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
-      dup inexttsp as inexttsp'.
-      apply in_ext_ext_type_sys_props4_sym in inexttsp'.
-      dup inexttsp' as inexttsp''.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in inexttsp';[|eauto].
-      dclose_lr; clear cl.
-      apply per_bar_per_eq_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_eq1;
-        try exact h; try exact c2; eauto 3 with slow.
-
-    * dup ceq as c.
-      eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
-      dup inexttsp as inexttsp'.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in inexttsp';[|eauto].
-      apply in_ext_ext_type_sys_props4_sym in inexttsp'.
-      dclose_lr; clear cl.
-      apply per_bar_per_eq_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_eq2;
-        try exact h; try exact c1; eauto 3 with slow.
-
-    * dup ceq as c.
-      eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
-      dup inexttsp as inexttsp'.
-      apply in_ext_ext_type_sys_props4_sym in inexttsp'.
-      dup inexttsp' as inexttsp''.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in inexttsp';[|eauto].
-      apply in_ext_ext_type_sys_props4_sym in inexttsp'.
-      dclose_lr; clear cl.
-      apply per_bar_per_eq_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_eq2;
-        try exact h; try exact c2; eauto 3 with slow.
+  + SCase "type_value_respecting_trans2".
+    eapply implies_type_equality_respecting_trans2_per_eq; eauto.
 
   + SCase "term_symmetric".
     clear per.

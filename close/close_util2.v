@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -110,7 +111,7 @@ Lemma in_ext_ext_type_sys_props4_sym_eq {o} :
 Proof.
   introv tsp e.
   pose proof (tsp _ x) as tsp; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum; auto.
 Qed.
 Hint Resolve in_ext_ext_type_sys_props4_sym_eq : slow.
 
@@ -122,7 +123,7 @@ Lemma in_ext_ext_type_sys_props4_trans1_eq {o} :
 Proof.
   introv tsp e.
   pose proof (tsp _ x) as tsp; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum; auto.
   eapply tet;[eauto|]; auto.
 Qed.
 Hint Resolve in_ext_ext_type_sys_props4_trans1_eq : slow.
@@ -135,7 +136,7 @@ Lemma in_ext_ext_type_sys_props4_trans2_eq {o} :
 Proof.
   introv tsp e.
   pose proof (tsp _ x) as tsp; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum; auto.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum; auto.
   eapply tet;[|eauto]; auto.
 Qed.
 Hint Resolve in_ext_ext_type_sys_props4_trans2_eq : slow.
@@ -162,8 +163,8 @@ Proof.
   introv tsp ceq tsts; introv.
   pose proof (tsp _ e) as tsp.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-  eapply tyvrt; eauto; eauto 3 with slow.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+  eapply tyvrt1; eauto; eauto 3 with slow.
 Qed.
 
 Lemma in_ext_ext_type_sys_props_type_value_respecting_trans2 {o} :
@@ -176,8 +177,8 @@ Proof.
   introv tsp ceq tsts; introv.
   pose proof (tsp _ e) as tsp.
   pose proof (tsts _ e) as tsts; simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-  eapply tyvrt; eauto; eauto 3 with slow.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+  eapply tyvrt1; eauto; eauto 3 with slow.
 Qed.
 
 Lemma in_ext_ext_type_sys_props4_in_ext_ext_sym {o} :
@@ -190,7 +191,7 @@ Proof.
   pose proof (tsp _ e) as tsp.
   pose proof (tsts _ e) as tsts.
   simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply tygs; auto.
 Qed.
 
@@ -204,7 +205,7 @@ Proof.
   pose proof (tsp _ e) as tsp.
   pose proof (tsts _ e) as tsts.
   simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   apply tygs; auto.
 Qed.
 
@@ -220,7 +221,7 @@ Proof.
   pose proof (ts1 _ e) as ts1.
   pose proof (ts2 _ e) as ts2.
   simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   pose proof (dum A A1 A2 (eqa1 lib' e) (eqa2 lib' e)) as q.
   repeat (autodimp q hyp); tcsp.
 Qed.
@@ -237,7 +238,7 @@ Proof.
   pose proof (ts1 _ e) as ts1.
   pose proof (ts2 _ e) as ts2.
   simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   pose proof (dum A A1 A2 (eqa1 lib' e) (eqa2 lib' e)) as q.
   repeat (autodimp q hyp); tcsp.
 Qed.
@@ -254,7 +255,7 @@ Proof.
   pose proof (ts1 _ e) as ts1.
   pose proof (ts2 _ e) as ts2.
   simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   pose proof (dum A A1 A2 (eqa1 lib' e) (eqa2 lib' e)) as q.
   repeat (autodimp q hyp); tcsp.
 Qed.
@@ -271,7 +272,7 @@ Proof.
   pose proof (ts1 _ e) as ts1.
   pose proof (ts2 _ e) as ts2.
   simpl in *.
-  onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
   pose proof (dum A A1 A2 (eqa1 lib' e) (eqa2 lib' e)) as q.
   repeat (autodimp q hyp); tcsp.
 Qed.

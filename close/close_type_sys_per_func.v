@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -40,8 +41,8 @@ Lemma close_type_system_func {o} :
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T (mkc_function A v B)
-    -> computes_to_valc lib T' (mkc_function A' v' B')
+    -> ccomputes_to_valc_ext lib T (mkc_function A v B)
+    -> ccomputes_to_valc_ext lib T' (mkc_function A' v' B')
     -> in_ext_ext lib (fun lib' x => close ts lib' A A' (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
     -> in_ext_ext
@@ -82,81 +83,19 @@ Proof.
 
     {
       eapply ccequivc_ext_function in ceq;[|eauto]; exrepnd; spcast.
-      eapply type_family_ext_cequivc; eauto.
+      eapply type_family_ext_cequivc; eauto 3 with slow.
     }
 
     {
       eapply ccequivc_ext_function in ceq;[|eauto]; exrepnd; spcast.
-      eapply type_family_ext_cequivc2; eauto.
+      eapply type_family_ext_cequivc2; eauto 3 with slow.
     }
 
-  + SCase "type_value_respecting_trans".
-    introv ee ceq cl.
-    repndors; subst.
+  + SCase "type_value_respecting_trans1".
+    eapply implies_type_value_respecting_trans1_per_func; eauto.
 
-    {
-      dup ceq as c.
-      eapply ccequivc_ext_function in ceq;[|eauto]; exrepnd; spcast.
-      dup tsa as tsa'.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
-      dup tsb as tsb'.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4_fam in tsb';[|eauto].
-      dclose_lr; clear cl.
-      apply per_bar_per_func_ext_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_func_ext1;
-        try exact h; try exact comp1; eauto 3 with slow.
-    }
-
-    {
-      dup ceq as c.
-      eapply ccequivc_ext_function in ceq;[|eauto]; exrepnd; spcast.
-      dup tsa as tsa'.
-      apply in_ext_ext_type_sys_props4_sym in tsa'.
-      dup tsa' as tsa''.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
-      dup tsb as tsb'.
-      eapply in_ext_ext_type_sys_props4_fam_sym in tsb'; eauto.
-      dup tsb' as tsb''.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4_fam in tsb';[|eauto].
-      dclose_lr; clear cl.
-      apply per_bar_per_func_ext_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_func_ext1;
-        try exact h; try exact comp2; eauto 3 with slow.
-    }
-
-    {
-      dup ceq as c.
-      eapply ccequivc_ext_function in ceq;[|eauto]; exrepnd; spcast.
-      dup tsa as tsa'.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
-      dup tsb as tsb'.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4_fam in tsb';[|eauto].
-      apply in_ext_ext_type_sys_props4_sym in tsa'.
-      eapply in_ext_ext_type_sys_props4_fam_sym in tsb'; eauto.
-      dclose_lr; clear cl.
-      apply per_bar_per_func_ext_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_func_ext2;
-        try exact h; try exact comp1; eauto 3 with slow.
-    }
-
-    {
-      dup ceq as c.
-      eapply ccequivc_ext_function in ceq;[|eauto]; exrepnd; spcast.
-      dup tsa as tsa'.
-      apply in_ext_ext_type_sys_props4_sym in tsa'.
-      dup tsa' as tsa''.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
-      dup tsb as tsb'.
-      eapply in_ext_ext_type_sys_props4_fam_sym in tsb'; eauto.
-      dup tsb' as tsb''.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4_fam in tsb';[|eauto].
-      apply in_ext_ext_type_sys_props4_sym in tsa'.
-      eapply in_ext_ext_type_sys_props4_fam_sym in tsb'; eauto.
-      dclose_lr; clear cl.
-      apply per_bar_per_func_ext_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_func_ext2;
-        try exact h; try exact comp2; eauto 3 with slow.
-    }
+  + SCase "type_value_respecting_trans2".
+    eapply implies_type_value_respecting_trans2_per_func; eauto.
 
   + SCase "term_symmetric".
     introv ee.

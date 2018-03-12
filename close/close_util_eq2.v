@@ -248,30 +248,47 @@ Proof.
   pose proof (per0 _ br _ ext x) as per0; simpl in *.
 
   unfold per_eq in *; exrepnd.
-
-
-  spcast.
-  eapply lib_extends_preserves_computes_to_valc in comp1;[|exact x].
-  eapply lib_extends_preserves_computes_to_valc in comp2;[|exact x].
-  computes_to_eqval.
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
+  eapply lib_extends_preserves_ccomputes_to_valc in comp2;[|exact x].
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
   exists A A0 a1 a2 a0 a3 eqa1; dands; spcast; eauto 3 with slow.
 
   - introv.
     pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
     pose proof (per4 lib'1 e) as per4; simpl in *.
-    onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-    eapply tyvrt; eauto; eauto 3 with slow.
+    onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+    eapply tyvrt1; eauto; eauto 4 with slow.
 
   - eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 3 with slow.
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
+        try exact tsp; try exact per4; eauto 3 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
+        try exact tsp; try exact per4; eauto 3 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+        try exact tsp; try exact per4; eauto 3 with slow. }
 
   - eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 3 with slow.
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
+        try exact tsp; try exact per4; eauto 3 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
+        try exact tsp; try exact per4; eauto 3 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+        try exact tsp; try exact per4; eauto 3 with slow. }
 
   - eapply eq_term_equals_trans;[eauto|].
     apply eq_term_equals_sym.
     apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib'0));
       try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
-      try apply in_ext_implies_all_in_bar_trivial_bar; eauto 3 with slow;
-        eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 3 with slow.
+      try apply in_ext_implies_all_in_bar_trivial_bar;
+      eauto 3 with slow;
+      try (eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 3 with slow);
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
+                     try exact tsp; try exact per4; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
+                     try exact tsp; try exact per4; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+                     try exact tsp; try exact per4; eauto 3 with slow)).
 Qed.
 
 Lemma eq_per_eq_bar_sym {o} :
@@ -312,16 +329,13 @@ Proof.
   simpl in *; exrepnd.
   pose proof (e0 _ br _ ext x) as e0; simpl in *.
   unfold eq_per_eq in *.
-
-  pose proof (ceq _ x) as ceq; simpl in ceq; spcast.
-  repnd; dands; spcast; auto.
-  eapply cequivc_axiom;[eauto|]; eauto 3 with slow.
+  repnd; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma type_symmetric_per_bar_per_eq1 {o} :
   forall lib (ts : cts(o)) T T' A B a1 a2 (eqa : lib-per(lib,o)) eq,
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
-    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
     -> per_bar (per_eq ts) lib T T' eq
     -> per_bar (per_eq ts) lib T' T eq.
 Proof.
@@ -332,43 +346,58 @@ Proof.
   pose proof (per0 _ br _ ext x) as per0; simpl in *.
 
   unfold per_eq in *; exrepnd.
-  spcast.
-  eapply lib_extends_preserves_computes_to_valc in comp1;[|exact x].
-  computes_to_eqval.
-  exists B0 A0 b1 b2 a0 a3 eqa1; dands; spcast; eauto 3 with slow.
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
+  exists B0 A b1 b2 a1 a2 eqa1; dands; spcast; eauto 3 with slow.
 
   - introv.
     pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
     pose proof (per4 lib'1 e) as per4; simpl in *.
-    onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-    eapply tygs; eauto.
+    onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+    eapply tygs; eauto 5 with slow.
 
   - eapply eqorceq_ext_sym; auto;
-      eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals3;
-      [|eauto|eauto]; eauto 3 with slow.
+      [eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+       try exact tsp; try exact per4; eauto 3 with slow
+      |eapply eqorceq_ext_trans;[| | |apply ccequivc_ext_implies_eqorceq_ext;eauto|eauto] ].
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+        try exact tsp; try exact per4; eauto 3 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
+        try exact tsp; try exact per4; eauto 3 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
+        try exact tsp; try exact per4; eauto 3 with slow. }
 
   - eapply eqorceq_ext_sym; auto;
-      eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals3;
-      [|eauto|eauto]; eauto 3 with slow.
+      [eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+       try exact tsp; try exact per4; eauto 3 with slow
+      |eapply eqorceq_ext_trans;[| | |apply ccequivc_ext_implies_eqorceq_ext;eauto|eauto] ].
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+        try exact tsp; try exact per4; eauto 3 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
+        try exact tsp; try exact per4; eauto 3 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
+        try exact tsp; try exact per4; eauto 3 with slow. }
 
   - eapply eq_term_equals_trans;[eauto|].
-    apply eq_term_equals_sym.
+    apply eq_term_equals_sym;
     apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib'0));
       try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
       try apply in_ext_implies_all_in_bar_trivial_bar;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals3;
-      try exact tsp; try exact per4; eauto 3 with slow;
-        eapply eqorceq_ext_sym; auto;
-          try eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals3;
-          try exact tsp; try exact per4; eauto 3 with slow.
+      try (apply eqorceq_ext_sym; auto);
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+                     try exact tsp; try exact per4; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
+                     try exact tsp; try exact per4; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
+                     try exact tsp; try exact per4; eauto 3 with slow));
+      eauto 3 with slow.
 Qed.
 
 Lemma type_symmetric_per_bar_per_eq2 {o} :
   forall lib (ts : cts(o)) T T' A B a1 a2 (eqa : lib-per(lib,o)) eq,
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
-    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
     -> per_bar (per_eq ts) lib T' T eq
     -> per_bar (per_eq ts) lib T T' eq.
 Proof.
@@ -379,43 +408,50 @@ Proof.
   pose proof (per0 _ br _ ext x) as per0; simpl in *.
 
   unfold per_eq in *; exrepnd.
-  spcast.
-  eapply lib_extends_preserves_computes_to_valc in comp1;[|exact x].
-  computes_to_eqval.
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
   exists B0 A0 b1 b2 a0 a3 eqa1; dands; spcast; eauto 3 with slow.
 
   - introv.
     pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
     pose proof (per4 lib'1 e) as per4; simpl in *.
-    onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-    eapply tygs; eauto.
+    onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
 
-  - eapply eqorceq_ext_sym; auto;
-      eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals4;
-      [|eauto|eauto]; eauto 3 with slow.
+    pose proof (tyvrt1 A B0 A0 (eqa1 lib'1 e)) as w.
+    repeat (autodimp w hyp); eauto 3 with slow.
+    pose proof (tyvr A B0) as z; repeat (autodimp z hyp); eauto 3 with slow.
+    apply tygs in z.
+    pose proof (dum A B0 A0 (eqa lib'1 (lib_extends_trans e x)) (eqa1 lib'1 e)) as u.
+    repeat (autodimp u hyp); tcsp.
 
-  - eapply eqorceq_ext_sym; auto;
-      eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals4;
-      [|eauto|eauto]; eauto 3 with slow.
+  - eapply eqorceq_ext_sym; auto.
+    eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+      try (exact tsp); try exact per4; eauto 3 with slow.
+
+  - eapply eqorceq_ext_sym; auto.
+    eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+      try (exact tsp); try exact per4; eauto 3 with slow.
 
   - eapply eq_term_equals_trans;[eauto|].
     apply eq_term_equals_sym.
     apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib'0));
       try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
       try apply in_ext_implies_all_in_bar_trivial_bar;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals4;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals4;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals4;
-      try exact tsp; try exact per4; eauto 3 with slow;
-        eapply eqorceq_ext_sym; auto;
-          try eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals4;
-          try exact tsp; try exact per4; eauto 3 with slow.
+      try (apply eqorceq_ext_sym; auto);
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+                     try exact tsp; try exact per4; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
+                     try exact tsp; try exact per4; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
+                     try exact tsp; try exact per4; eauto 3 with slow));
+      eauto 3 with slow.
 Qed.
 
 Lemma type_transitive_per_bar_per_eq1 {o} :
   forall lib (ts : cts(o)) T T1 T2 A B a1 a2 (eqa : lib-per(lib,o)) eq1 eq2,
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
-    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
     -> per_bar (per_eq ts) lib T1 T eq1
     -> per_bar (per_eq ts) lib T T2 eq2
     -> per_bar (per_eq ts) lib T1 T2 eq1.
@@ -432,56 +468,91 @@ Proof.
   pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
 
   unfold per_eq in *; exrepnd.
-  spcast.
-  eapply lib_extends_preserves_computes_to_valc in comp1;[|exact x].
-  repeat computes_to_eqval.
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
+  computes_to_eqval_ext.
+  hide_hyp perb0.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
+  apply ccequivc_ext_mkc_equality_implies in ceq0; repnd.
   exists A1 B0 a4 a5 b1 b2 eqa2; dands; spcast; eauto 3 with slow.
 
   - introv.
     pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
     pose proof (pera4 lib'1 e) as pera4; simpl in *.
     pose proof (perb4 lib'1 e) as perb4; simpl in *.
-    onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-    pose proof (dum B1 A1 B0 (eqa3 lib'1 e) (eqa2 lib'1 e)) as q.
+    onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+
+    pose proof (tyvrt1 A B1 A1 (eqa3 lib'1 e)) as xx.
+    repeat (autodimp xx hyp); eauto 2 with slow;[].
+
+    pose proof (tyvrt1 A A0 B0 (eqa2 lib'1 e)) as yy.
+    repeat (autodimp yy hyp); eauto 2 with slow;[].
+    apply tygs in xx.
+
+    pose proof (dum A A1 B0 (eqa3 lib'1 e) (eqa2 lib'1 e)) as q.
     repeat (autodimp q hyp); tcsp.
 
   - eapply eqorceq_ext_trans1; eauto;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals3;
-      try exact tsp; try exact perb4; eauto 3 with slow.
-    eapply eqorceq_ext_eq_change_per1;[|eauto].
-    eapply in_ext_ext_type_sys_props4_trans_implies_eq_term_equals1;
-      try exact tsp; eauto.
+      [| |
+       |eapply eqorceq_ext_eq_change_per1;
+        [|eapply eqorceq_ext_sym;
+          [|eapply cequivc_ext_eqorceq_ext_trans2;
+            [| | | |eauto];[| | |eauto 3 with slow] ] ] ];
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+                     try exact tsp; eauto; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
+                     try exact tsp; eauto; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
+                     try exact tsp; eauto; eauto 3 with slow)).
+    { eapply in_ext_ext_type_sys_props4_ccequivc_ext_trans_implies_eq_term_equals1;
+        try exact tsp; try exact pera4; try exact perb4; eauto 3 with slow. }
 
   - eapply eqorceq_ext_trans1; eauto;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals3;
-      try exact tsp; try exact perb4; eauto 3 with slow.
-    eapply eqorceq_ext_eq_change_per1;[|eauto].
-    eapply in_ext_ext_type_sys_props4_trans_implies_eq_term_equals1;
-      try exact tsp; eauto.
+      [| |
+       |eapply eqorceq_ext_eq_change_per1;
+        [|eapply eqorceq_ext_sym;
+          [|eapply cequivc_ext_eqorceq_ext_trans2;
+            [| | | |eauto];[| | |eauto 3 with slow] ] ] ];
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+                     try exact tsp; eauto; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
+                     try exact tsp; eauto; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
+                     try exact tsp; eauto; eauto 3 with slow)).
+    { eapply in_ext_ext_type_sys_props4_ccequivc_ext_trans_implies_eq_term_equals1;
+        try exact tsp; try exact pera4; try exact perb4; eauto 3 with slow. }
 
   - eapply eq_term_equals_trans;[eauto|].
-    apply eq_term_equals_sym.
     apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib'0));
       try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
       try apply in_ext_implies_all_in_bar_trivial_bar;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals3;
-      try exact tsp; try exact perb4; try exact pera4; eauto 3 with slow;
-        try apply eqorceq_ext_refl.
-    apply in_ext_ext_eq_term_equals_sym.
-    eapply in_ext_ext_type_sys_props4_trans_implies_eq_term_equals1;
-      try exact tsp; eauto.
+      try apply eqorceq_ext_refl.
+    { eapply in_ext_ext_type_sys_props4_ccequivc_ext_trans_implies_eq_term_equals1;
+        try exact tsp; try exact pera4; try exact perb4; eauto 2 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+        try (exact tsp); try exact per4; eauto 2 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
+        try (exact tsp); try exact per4; eauto 2 with slow. }
+    { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
+        try (exact tsp); try exact per4; eauto 2 with slow. }
 Qed.
 
 Lemma type_transitive_per_bar_per_eq2 {o} :
   forall lib (ts : cts(o)) T T1 T2 A B a1 a2 (eqa : lib-per(lib,o)) eq1 eq2,
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
-    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
     -> per_bar (per_eq ts) lib T1 T eq1
     -> per_bar (per_eq ts) lib T T2 eq2
     -> per_bar (per_eq ts) lib T1 T2 eq2.
@@ -498,53 +569,241 @@ Proof.
   pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
 
   unfold per_eq in *; exrepnd.
-  spcast.
-  eapply lib_extends_preserves_computes_to_valc in comp1;[|exact x].
-  repeat computes_to_eqval.
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
+  computes_to_eqval_ext.
+  hide_hyp perb0.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
+  apply ccequivc_ext_mkc_equality_implies in ceq0; repnd.
   exists A1 B0 a4 a5 b1 b2 eqa2; dands; spcast; eauto 3 with slow.
 
   - introv.
     pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
     pose proof (pera4 lib'1 e) as pera4; simpl in *.
     pose proof (perb4 lib'1 e) as perb4; simpl in *.
-    onedtsp4 uv tys tyvr tyvrt tes tet tevr tygs tygt dum.
-    pose proof (dum B1 A1 B0 (eqa3 lib'1 e) (eqa2 lib'1 e)) as q.
+    onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+
+    pose proof (tyvrt1 A B1 A1 (eqa3 lib'1 e)) as xx.
+    repeat (autodimp xx hyp); eauto 2 with slow;[].
+
+    pose proof (tyvrt1 A A0 B0 (eqa2 lib'1 e)) as yy.
+    repeat (autodimp yy hyp); eauto 2 with slow;[].
+    apply tygs in xx.
+
+    pose proof (dum A A1 B0 (eqa3 lib'1 e) (eqa2 lib'1 e)) as q.
     repeat (autodimp q hyp); tcsp.
 
   - eapply eqorceq_ext_trans1; eauto;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals3;
-      try exact tsp; try exact perb4; eauto 3 with slow.
-    eapply eqorceq_ext_eq_change_per1;[|eauto].
-    eapply in_ext_ext_type_sys_props4_trans_implies_eq_term_equals1;
-      try exact tsp; eauto.
+      [| |
+       |eapply eqorceq_ext_eq_change_per1;
+        [|eapply eqorceq_ext_sym;
+          [|eapply cequivc_ext_eqorceq_ext_trans2;
+            [| | | |eauto];[| | |eauto 3 with slow] ] ] ];
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+                     try exact tsp; eauto; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
+                     try exact tsp; eauto; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
+                     try exact tsp; eauto; eauto 3 with slow)).
+    { eapply in_ext_ext_type_sys_props4_ccequivc_ext_trans_implies_eq_term_equals1;
+        try exact tsp; try exact pera4; try exact perb4; eauto 3 with slow. }
 
   - eapply eqorceq_ext_trans1; eauto;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals3;
-      try exact tsp; try exact perb4; eauto 3 with slow.
-    eapply eqorceq_ext_eq_change_per1;[|eauto].
-    eapply in_ext_ext_type_sys_props4_trans_implies_eq_term_equals1;
-      try exact tsp; eauto.
+      [| |
+       |eapply eqorceq_ext_eq_change_per1;
+        [|eapply eqorceq_ext_sym;
+          [|eapply cequivc_ext_eqorceq_ext_trans2;
+            [| | | |eauto];[| | |eauto 3 with slow] ] ] ];
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+                     try exact tsp; eauto; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
+                     try exact tsp; eauto; eauto 3 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
+                     try exact tsp; eauto; eauto 3 with slow)).
+    { eapply in_ext_ext_type_sys_props4_ccequivc_ext_trans_implies_eq_term_equals1;
+        try exact tsp; try exact pera4; try exact perb4; eauto 3 with slow. }
 
   - eapply eq_term_equals_trans;[eauto|].
-    apply eq_term_equals_sym.
     apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib'0));
       try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
       try apply in_ext_implies_all_in_bar_trivial_bar;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_symmetric_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_transitive_eq_term_equals3;
-      try eapply in_ext_ext_type_sys_props4_implies_term_equality_respecting_eq_term_equals3;
-      try exact tsp; try exact perb4; try exact pera4; eauto 3 with slow;
-        try apply eqorceq_ext_refl.
+      try apply eqorceq_ext_refl;
+      try (complete (introv; tcsp));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow));
+      try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
+                     try (exact tsp); try exact per4; eauto 2 with slow)).
 
-    { eapply eqorceq_ext_eq_change_per1;[|eauto].
-      eapply in_ext_ext_type_sys_props4_trans_implies_eq_term_equals1;
-        try exact tsp; eauto. }
+    { apply eqorceq_ext_sym;
+        try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+                       try (exact tsp); try exact per4; eauto 2 with slow)).
 
-    { eapply eqorceq_ext_eq_change_per1;[|eauto].
-      eapply in_ext_ext_type_sys_props4_trans_implies_eq_term_equals1;
-        try exact tsp; eauto. }
+      eapply eqorceq_ext_eq_change_per1;
+        [|eapply eqorceq_ext_trans1; try exact pera5;
+          try apply ccequivc_ext_implies_eqorceq_ext;
+          try (eapply ccequivc_ext_trans; try exact ceq1; apply ccequivc_ext_sym;auto);
+          try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+                         try (exact tsp); try exact per4; eauto 2 with slow));
+          try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
+                         try (exact tsp); try exact per4; eauto 2 with slow));
+          try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
+                         try (exact tsp); try exact per4; eauto 2 with slow))
+        ].
+      { eapply in_ext_ext_type_sys_props4_ccequivc_ext_trans_implies_eq_term_equals1;
+          try exact tsp; try exact pera4; try exact perb4; eauto 3 with slow. }
+    }
+
+    { apply eqorceq_ext_sym;
+        try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
+                       try (exact tsp); try exact per4; eauto 2 with slow)).
+
+      eapply eqorceq_ext_eq_change_per1;
+        [|eapply eqorceq_ext_trans1; try exact pera6;
+          try apply ccequivc_ext_implies_eqorceq_ext;
+          try (eapply ccequivc_ext_trans; try exact ceq2; apply ccequivc_ext_sym;auto);
+          try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
+                         try (exact tsp); try exact per4; eauto 2 with slow));
+          try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
+                         try (exact tsp); try exact per4; eauto 2 with slow));
+          try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
+                         try (exact tsp); try exact per4; eauto 2 with slow))
+        ].
+      { eapply in_ext_ext_type_sys_props4_ccequivc_ext_trans_implies_eq_term_equals1;
+          try exact tsp; try exact pera4; try exact perb4; eauto 3 with slow. }
+    }
+Qed.
+
+Lemma implies_type_equality_respecting_trans1_per_eq {o} :
+  forall lib ts (T T' : @CTerm o) A B a1 a2 b1 b2 (eqa : lib-per(lib,o)),
+    type_system ts
+    -> defines_only_universes ts
+    -> T ===>(lib) (mkc_equality a1 a2 A)
+    -> T' ===>( lib) (mkc_equality b1 b2 B)
+    -> in_ext_ext lib (fun lib' x => close ts lib' A B (eqa lib' x))
+    -> eqorceq_ext lib eqa a1 b1
+    -> eqorceq_ext lib eqa a2 b2
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x))
+    -> type_equality_respecting_trans1 (close ts) lib T T'.
+Proof.
+  introv tsts dou c1 c2 inextcl eos1 eos2 inexttsp; introv h ceq cl.
+  repndors; subst.
+
+  * dup ceq as c.
+    eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
+    dup inexttsp as inexttsp'.
+    eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in inexttsp';[|apply ccequivc_ext_refl].
+    dclose_lr; clear cl.
+    apply per_bar_per_eq_implies_close.
+    eapply type_value_respecting_trans_per_bar_per_eq1;
+      try exact h; try exact c1; eauto 3 with slow.
+
+  * dup ceq as c.
+    eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
+    dup inexttsp as inexttsp'.
+    apply in_ext_ext_type_sys_props4_sym in inexttsp'.
+    dup inexttsp' as inexttsp''.
+    eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in inexttsp';[|apply ccequivc_ext_refl].
+    dclose_lr; clear cl.
+    apply per_bar_per_eq_implies_close.
+    eapply type_value_respecting_trans_per_bar_per_eq1;
+      try exact h; try exact c2; eauto 3 with slow.
+
+  * dup ceq as c.
+    eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
+    dup inexttsp as inexttsp'.
+    eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in inexttsp';[|apply ccequivc_ext_refl].
+    apply in_ext_ext_type_sys_props4_sym in inexttsp'.
+    dclose_lr; clear cl.
+    apply per_bar_per_eq_implies_close.
+    eapply type_value_respecting_trans_per_bar_per_eq2;
+      try exact h; try exact c1; eauto 3 with slow.
+
+  * dup ceq as c.
+    eapply ccequivc_ext_equality in ceq;[|eauto]; exrepnd; spcast.
+    dup inexttsp as inexttsp'.
+    apply in_ext_ext_type_sys_props4_sym in inexttsp'.
+    dup inexttsp' as inexttsp''.
+    eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in inexttsp';[|apply ccequivc_ext_refl].
+    apply in_ext_ext_type_sys_props4_sym in inexttsp'.
+    dclose_lr; clear cl.
+    apply per_bar_per_eq_implies_close.
+    eapply type_value_respecting_trans_per_bar_per_eq2;
+      try exact h; try exact c2; eauto 3 with slow.
+Qed.
+
+Lemma type_value_respecting_trans_per_bar_per_eq3 {o} :
+  forall lib (ts : cts(o)) T T1 T2 A B a b (eqa : lib-per(lib,o)) eq,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> ccomputes_to_valc_ext lib T (mkc_equality a b A)
+    -> ccequivc_ext lib T1 T2
+    -> per_bar (per_eq ts) lib T T1 eq
+    -> per_bar (per_eq ts) lib T T2 eq.
+Proof.
+  introv tsp comp1 ceq1 per.
+  unfold per_bar in *; exrepnd.
+  exists bar eqa0; dands; auto.
+  introv br ext; introv.
+  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+
+  unfold per_eq in *; exrepnd.
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
+
+  eapply lib_extends_preserves_ccequivc_ext in ceq1;[|eauto].
+  eapply ccequivc_ext_equality in ceq1;[|eauto].
+
+  exists A0 B0 a1 a2 b1 b2 eqa1; dands; spcast; eauto 3 with slow.
+Qed.
+
+Lemma implies_type_equality_respecting_trans2_per_eq {o} :
+  forall lib ts (T T' : @CTerm o) A B a1 a2 b1 b2 (eqa : lib-per(lib,o)),
+    type_system ts
+    -> defines_only_universes ts
+    -> T ===>(lib) (mkc_equality a1 a2 A)
+    -> T' ===>( lib) (mkc_equality b1 b2 B)
+    -> in_ext_ext lib (fun lib' x => close ts lib' A B (eqa lib' x))
+    -> eqorceq_ext lib eqa a1 b1
+    -> eqorceq_ext lib eqa a2 b2
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x))
+    -> type_equality_respecting_trans2 (close ts) lib T T'.
+Proof.
+  introv tsts dou c1 c2 inextcl eos1 eos2 inexttsp; introv h cl ceq.
+  repndors; subst.
+
+  * dclose_lr; clear cl.
+    apply per_bar_per_eq_implies_close.
+    eapply type_value_respecting_trans_per_bar_per_eq3; eauto.
+
+  * apply in_ext_ext_type_sys_props4_sym in inexttsp.
+    dclose_lr; clear cl.
+    apply per_bar_per_eq_implies_close.
+    eapply type_value_respecting_trans_per_bar_per_eq3; eauto.
+
+  * apply in_ext_ext_type_sys_props4_sym in inexttsp.
+    dclose_lr; clear cl.
+    apply per_bar_per_eq_implies_close.
+    apply in_ext_ext_type_sys_props4_sym in inexttsp.
+    eapply type_symmetric_per_bar_per_eq2 in h; eauto.
+    eapply type_value_respecting_trans_per_bar_per_eq3; eauto.
+
+  * dclose_lr; clear cl.
+    apply per_bar_per_eq_implies_close.
+    apply in_ext_ext_type_sys_props4_sym in inexttsp.
+    eapply type_symmetric_per_bar_per_eq2 in h; eauto.
+    eapply type_value_respecting_trans_per_bar_per_eq3; eauto.
 Qed.

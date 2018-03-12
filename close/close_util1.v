@@ -644,3 +644,40 @@ Proof.
   right; eauto 3 with slow.
 Qed.
 Hint Resolve eqorceq_ext_refl : slow.
+
+Lemma eqorceq_ext_trans {o} :
+  forall lib (eqa : lib-per(lib,o)) (a b c : @CTerm o),
+    in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> eqorceq_ext lib eqa a b
+    -> eqorceq_ext lib eqa b c
+    -> eqorceq_ext lib eqa a c.
+Proof.
+  introv sym trans resp h q; introv.
+  pose proof (h _ e) as h; simpl in h.
+  pose proof (q _ e) as q; simpl in q.
+  eapply eqorceq_trans; eauto.
+Qed.
+
+Lemma in_ext_ext_type_sys_props4_ccequivc_ext_trans_implies_eq_term_equals1 {o} :
+  forall ts lib lib' (eqa1 eqa2 : lib-per(lib',o)) (eqa : lib-per(lib,o)) A B C D B1 B2,
+    lib_extends lib' lib
+    -> in_ext_ext lib (fun lib'' x => type_sys_props4 ts lib'' B D (eqa lib'' x))
+    -> ccequivc_ext lib' B B1
+    -> ccequivc_ext lib' B B2
+    -> in_ext_ext lib' (fun lib'' x => ts lib'' A B1 (eqa1 lib'' x))
+    -> in_ext_ext lib' (fun lib'' x => ts lib'' B2 C (eqa2 lib'' x))
+    -> in_ext_ext lib' (fun lib'' x => (eqa1 lib'' x) <=2=> (eqa2 lib'' x)).
+Proof.
+  introv ext tsp ceqa eqb h w.
+  eapply in_ext_ext_type_sys_props4_trans_implies_eq_term_equals1;
+    try exact tsp; auto.
+
+  { eapply trans_ccequivc_ext_in_ext_eq_types_implies3;
+      try exact h; eauto; eauto 3 with slow.
+    apply in_ext_ext_type_sys_props4_sym; eauto. }
+
+  { eapply trans_ccequivc_ext_in_ext_eq_types_implies;
+      try exact w; eauto; eauto 3 with slow. }
+Qed.
