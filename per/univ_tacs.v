@@ -150,7 +150,7 @@ Ltac apply_iscvalue :=
             ]
   end.
 
-Lemma all_in_bar_computes_to_valc_iscvalue_eq {o} :
+(*Lemma all_in_bar_computes_to_valc_iscvalue_eq {o} :
   forall {lib} (bar : @BarLib o lib) t v,
     all_in_bar bar (fun lib => t ===>(lib) v)
     -> iscvalue t
@@ -161,7 +161,7 @@ Proof.
   pose proof (comp lib' ne0 lib') as comp; autodimp comp hyp; eauto 2 with slow; simpl in *.
   spcast.
   apply computes_to_valc_isvalue_eq in comp; auto.
-Qed.
+Qed.*)
 
 Lemma cequivc_uni_implies {o} :
   forall lib i (a : @CTerm o),

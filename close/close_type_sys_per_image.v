@@ -39,8 +39,8 @@ Lemma close_type_system_image {o} :
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T (mkc_image A f)
-    -> computes_to_valc lib T' (mkc_image A' f')
+    -> ccomputes_to_valc_ext lib T (mkc_image A f)
+    -> ccomputes_to_valc_ext lib T' (mkc_image A' f')
     -> in_ext_ext lib (fun lib' x => close ts lib' A A' (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
     -> ccequivc_ext lib f f'
@@ -72,71 +72,23 @@ Proof.
 
     {
       eapply ccequivc_ext_image in ceq;[|eauto]; exrepnd; spcast.
-      exists eqa A A'0 f f'0; dands; spcast; auto.
-      eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; try exact tsa; auto.
+      exists eqa A A f f; dands; spcast; eauto 3 with slow.
+      eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; try exact tsa; auto; eauto 3 with slow.
     }
 
     {
       eapply ccequivc_ext_image in ceq;[|eauto]; exrepnd; spcast.
-      exists eqa A' A'0 f' f'0; dands; spcast; auto.
-      { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; try exact tsa; auto. }
+      exists eqa A' A' f' f'; dands; spcast; auto; eauto 3 with slow.
+      { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; try exact tsa; auto; eauto 3 with slow. }
       { eapply eq_term_equals_trans;[eauto|].
         apply implies_eq_term_equals_per_image_eq_bar; eauto 3 with slow. }
     }
 
-  - SCase "type_value_respecting_trans".
-    introv h ceq cl.
-    repndors; subst.
+  - SCase "type_value_respecting_trans1".
+    eapply implies_type_value_respecting_trans1_per_image; eauto.
 
-    {
-      dup ceq as c.
-      eapply ccequivc_ext_image in ceq;[|eauto]; exrepnd; spcast.
-      dup tsa as tsa'.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
-      dclose_lr; clear cl.
-      apply per_bar_per_image_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_image1;
-        try exact h; try exact c1; eauto 3 with slow.
-    }
-
-    {
-      dup ceq as c.
-      eapply ccequivc_ext_image in ceq;[|eauto]; exrepnd; spcast.
-      dup tsa as tsa'.
-      apply in_ext_ext_type_sys_props4_sym in tsa'.
-      dup tsa' as tsa''.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
-      dclose_lr; clear cl.
-      apply per_bar_per_image_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_image1;
-        try exact h; try exact c2; eauto 3 with slow.
-    }
-
-    {
-      dup ceq as c.
-      eapply ccequivc_ext_image in ceq;[|eauto]; exrepnd; spcast.
-      dup tsa as tsa'.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
-      apply in_ext_ext_type_sys_props4_sym in tsa'.
-      dclose_lr; clear cl.
-      apply per_bar_per_image_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_image2;
-        try exact h; try exact c1; eauto 3 with slow.
-    }
-
-    {
-      dup ceq as c.
-      eapply ccequivc_ext_image in ceq;[|eauto]; exrepnd; spcast.
-      dup tsa as tsa'.
-      apply in_ext_ext_type_sys_props4_sym in tsa'.
-      dup tsa' as tsa''.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
-      apply in_ext_ext_type_sys_props4_sym in tsa'.
-      dclose_lr; clear cl.
-      apply per_bar_per_image_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_image2;
-        try exact h; try exact c2; eauto 3 with slow.
-    }
+  - SCase "type_value_respecting_trans2".
+    eapply implies_type_value_respecting_trans2_per_image; eauto.
 
   - SCase "term_symmetric".
     introv ee.

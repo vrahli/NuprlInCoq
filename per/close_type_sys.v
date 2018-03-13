@@ -50,7 +50,6 @@ Require Export close_type_sys_per_func.
 Require Export close_type_sys_per_set.
 Require Export close_type_sys_per_product.
 Require Export close_type_sys_per_union.
-
 Require Export close_type_sys_per_image.
 
 (*Require Export close_type_sys_per_req.

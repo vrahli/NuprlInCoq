@@ -52,7 +52,7 @@ Require Export Peano.
 
 Lemma implies_computes_to_uni {o} :
   forall lib (T : @CTerm o) i,
-    computes_to_valc lib T (mkc_uni i)
+    ccomputes_to_valc_ext lib T (mkc_uni i)
     -> computes_to_uni lib T.
 Proof.
   introv comp.
@@ -148,7 +148,8 @@ Proof.
     pose proof (v0 _ br0 _ (lib_extends_trans x0 (lib_extends_trans ext br3)) (lib_extends_trans x0 x)) as v0.
     simpl in *.
     allrw @univi_exists_iff; exrepnd; spcast.
-    computes_to_eqval.
+    computes_to_eqval_ext.
+    apply ccequivc_ext_uni_uni_implies in ceq; subst.
     apply v2; apply u2; auto.
 
   - introv br ext; introv.
@@ -162,7 +163,8 @@ Proof.
     pose proof (v0 _ br0 _ (lib_extends_trans x0 (lib_extends_trans ext br3)) (lib_extends_trans x0 x)) as v0.
     simpl in *.
     allrw @univi_exists_iff; exrepnd; spcast.
-    computes_to_eqval.
+    computes_to_eqval_ext.
+    apply ccequivc_ext_uni_uni_implies in ceq; subst.
     apply u2; apply v2; auto.
 Qed.
 
@@ -171,7 +173,8 @@ Lemma uniquely_valued_univi {o} :
 Proof.
   introv u v.
   allrw @univi_exists_iff; exrepnd; spcast.
-  computes_to_eqval.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_uni_uni_implies in ceq; subst.
   eapply eq_term_equals_trans;[eauto|].
   apply eq_term_equals_sym; auto.
 Qed.
@@ -202,7 +205,8 @@ Lemma type_transitive_univi {o} :
 Proof.
   introv u v.
   allrw @univi_exists_iff; exrepnd.
-  spcast; computes_to_eqval.
+  spcast; computes_to_eqval_ext.
+  apply ccequivc_ext_uni_uni_implies in ceq; subst.
   exists j0; dands; spcast; auto.
 Qed.
 Hint Resolve type_transitive_univi : slow.
@@ -213,9 +217,7 @@ Proof.
   introv u c.
   allrw @univi_exists_iff; exrepnd.
   spcast.
-  pose proof (c _ (lib_extends_refl lib)) as c; simpl in *; spcast.
-  eapply cequivc_uni in c;[|eauto].
-  exists j; dands; spcast; auto.
+  exists j; dands; eauto 3 with slow.
 Qed.
 Hint Resolve type_value_respecting_univi : slow.
 
