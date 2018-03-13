@@ -276,3 +276,20 @@ Proof.
   pose proof (dum A A1 A2 (eqa1 lib' e) (eqa2 lib' e)) as q.
   repeat (autodimp q hyp); tcsp.
 Qed.
+
+Lemma in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 {o} :
+  forall (ts : cts(o)) {lib lib'} (ext : lib_extends lib' lib) A' A B C (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
+    -> ccequivc_ext lib' A A'
+    -> in_ext_ext lib' (fun lib'' x => ts lib'' A' C (eqa1 lib'' x))
+    -> in_ext_ext lib' (fun lib'' x => (eqa1 lib'' x) <=2=> (eqa lib'' (lib_extends_trans x ext))).
+Proof.
+  introv h ceq w; introv.
+  pose proof (w _ e) as w.
+  pose proof (h _ (lib_extends_trans e ext)) as h.
+  simpl in *.
+  onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
+  pose proof (tyvrt1 A A' C (eqa1 lib'0 e)) as xx; repeat (autodimp xx hyp); eauto 3 with slow.
+  apply uv in xx.
+  apply eq_term_equals_sym;auto.
+Qed.

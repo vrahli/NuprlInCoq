@@ -43,8 +43,8 @@ Lemma close_type_system_union {o} :
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> computes_to_valc lib T (mkc_union A1 B1)
-    -> computes_to_valc lib T' (mkc_union A2 B2)
+    -> ccomputes_to_valc_ext lib T (mkc_union A1 B1)
+    -> ccomputes_to_valc_ext lib T' (mkc_union A2 B2)
     -> in_ext_ext lib (fun lib' x => close ts lib' A1 A2 (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A1 A2 (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => close ts lib' B1 B2 (eqb lib' x))
@@ -76,85 +76,23 @@ Proof.
 
     {
       eapply ccequivc_ext_union in ceq;[|eauto]; exrepnd; spcast.
-      exists eqa eqb A1 A' B1 B'; dands; spcast; auto.
-      { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; try exact tsa; auto. }
-      { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; try exact tsb; auto. }
+      exists eqa eqb A1 A1 B1 B1; dands; spcast; auto.
+      { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; try exact tsa; eauto 3 with slow. }
+      { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; try exact tsb; eauto 3 with slow. }
     }
 
     {
       eapply ccequivc_ext_union in ceq;[|eauto]; exrepnd; spcast.
-      exists eqa eqb A2 A' B2 B'; dands; spcast; auto.
-      { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; try exact tsa; auto. }
-      { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; try exact tsb; auto. }
+      exists eqa eqb A2 A2 B2 B2; dands; spcast; auto.
+      { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; try exact tsa; eauto 3 with slow. }
+      { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; try exact tsb; eauto 3 with slow. }
     }
 
-  - SCase "type_value_respecting_trans".
-    introv h ceq cl.
-    repndors; subst.
+  - SCase "type_value_respecting_trans1".
+    eapply implies_type_value_respecting_trans1_per_union; eauto.
 
-    {
-      dup ceq as c.
-      eapply ccequivc_ext_union in ceq;[|eauto]; exrepnd; spcast.
-      dup tsa as tsa'.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
-      dup tsb as tsb'.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsb';[|eauto].
-      dclose_lr; clear cl.
-      apply per_bar_per_union_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_union1;
-        try exact h; try exact c1; eauto 3 with slow.
-    }
-
-    {
-      dup ceq as c.
-      eapply ccequivc_ext_union in ceq;[|eauto]; exrepnd; spcast.
-      dup tsa as tsa'.
-      apply in_ext_ext_type_sys_props4_sym in tsa'.
-      dup tsa' as tsa''.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
-      dup tsb as tsb'.
-      eapply in_ext_ext_type_sys_props4_sym in tsb'; eauto.
-      dup tsb' as tsb''.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsb';[|eauto].
-      dclose_lr; clear cl.
-      apply per_bar_per_union_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_union1;
-        try exact h; try exact c2; eauto 3 with slow.
-    }
-
-    {
-      dup ceq as c.
-      eapply ccequivc_ext_union in ceq;[|eauto]; exrepnd; spcast.
-      dup tsa as tsa'.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
-      dup tsb as tsb'.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsb';[|eauto].
-      apply in_ext_ext_type_sys_props4_sym in tsa'.
-      apply in_ext_ext_type_sys_props4_sym in tsb'.
-      dclose_lr; clear cl.
-      apply per_bar_per_union_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_union2;
-        try exact h; try exact c1; eauto 3 with slow.
-    }
-
-    {
-      dup ceq as c.
-      eapply ccequivc_ext_union in ceq;[|eauto]; exrepnd; spcast.
-      dup tsa as tsa'.
-      apply in_ext_ext_type_sys_props4_sym in tsa'.
-      dup tsa' as tsa''.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsa';[|eauto].
-      dup tsb as tsb'.
-      eapply in_ext_ext_type_sys_props4_sym in tsb'; eauto.
-      dup tsb' as tsb''.
-      eapply ccequivc_ext_preserves_in_ext_ext_type_sys_props4 in tsb';[|eauto].
-      apply in_ext_ext_type_sys_props4_sym in tsa'.
-      apply in_ext_ext_type_sys_props4_sym in tsb'.
-      dclose_lr; clear cl.
-      apply per_bar_per_union_implies_close.
-      eapply type_value_respecting_trans_per_bar_per_union2;
-        try exact h; try exact c2; eauto 3 with slow.
-    }
+  - SCase "type_value_respecting_trans2".
+    eapply implies_type_value_respecting_trans2_per_union; eauto.
 
   - SCase "term_symmetric".
     introv ee.

@@ -115,7 +115,7 @@ Qed.
 
 Lemma per_bar_per_image_implies_eq_term_equals_per_image_eq_bar {o} :
   forall (ts : cts(o)) lib T T' eq (eqa : lib-per(lib,o)) A A' f,
-    computes_to_valc lib T (mkc_image A f)
+    ccomputes_to_valc_ext lib T (mkc_image A f)
     -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
     -> per_bar (per_image ts) lib T T' eq
     -> eq <=2=> (per_image_eq_bar lib eqa f).
