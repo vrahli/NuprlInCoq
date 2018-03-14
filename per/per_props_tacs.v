@@ -60,4 +60,9 @@ Ltac ccomputes_to_valc_ext_val :=
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
     apply cequivc_ext_mkc_approx_right in H;
     repnd
+
+  | [ H : (mkc_equality _ _ _) ===>(_) (mkc_equality _ _ _) |- _ ] =>
+    apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply ccequivc_ext_mkc_equality_implies in H;
+    repnd
   end.

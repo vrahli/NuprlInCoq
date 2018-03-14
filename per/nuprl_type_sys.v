@@ -821,4 +821,79 @@ Proof.
     eapply nts_tes; eauto. }
 Qed.
 
+Lemma in_ext_ext_nuprl_implies_in_ext_ext_term_equality_respecting {o} :
+  forall lib (eqa : lib-per(lib,o)) A B,
+    in_ext_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x)).
+Proof.
+  introv h; introv.
+  pose proof (h _ e) as h; simpl in h.
+  nts; auto.
+  eapply term_reduces_to_symm; eauto.
+Qed.
+Hint Resolve in_ext_ext_nuprl_implies_in_ext_ext_term_equality_respecting : slow.
+
+Lemma in_ext_ext_nuprl_implies_in_ext_ext_term_equality_transitive {o} :
+  forall lib (eqa : lib-per(lib,o)) A B,
+    in_ext_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x)).
+Proof.
+  introv h; introv.
+  pose proof (h _ e) as h; simpl in h.
+  nts; auto.
+  apply nts_tet in h; auto.
+Qed.
+Hint Resolve in_ext_ext_nuprl_implies_in_ext_ext_term_equality_transitive : slow.
+
+Lemma in_ext_ext_nuprl_implies_in_ext_ext_term_equality_symmetric {o} :
+  forall lib (eqa : lib-per(lib,o)) A B,
+    in_ext_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x)).
+Proof.
+  introv h; introv.
+  pose proof (h _ e) as h; simpl in h.
+  nts; auto.
+  apply nts_tes in h; auto.
+Qed.
+Hint Resolve in_ext_ext_nuprl_implies_in_ext_ext_term_equality_symmetric : slow.
+
+Lemma in_ext_ext_nuprli_implies_in_ext_ext_term_equality_respecting {o} :
+  forall i lib (eqa : lib-per(lib,o)) A B,
+    in_ext_ext lib (fun lib' x => nuprli i lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x)).
+Proof.
+  introv h; introv.
+  pose proof (h _ e) as h; simpl in h.
+  apply nuprli_implies_nuprl in h.
+  nts; auto.
+  eapply term_reduces_to_symm; eauto.
+Qed.
+Hint Resolve in_ext_ext_nuprli_implies_in_ext_ext_term_equality_respecting : slow.
+
+Lemma in_ext_ext_nuprli_implies_in_ext_ext_term_equality_transitive {o} :
+  forall i lib (eqa : lib-per(lib,o)) A B,
+    in_ext_ext lib (fun lib' x => nuprli i lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x)).
+Proof.
+  introv h; introv.
+  pose proof (h _ e) as h; simpl in h.
+  apply nuprli_implies_nuprl in h.
+  nts; auto.
+  apply nts_tet in h; auto.
+Qed.
+Hint Resolve in_ext_ext_nuprli_implies_in_ext_ext_term_equality_transitive : slow.
+
+Lemma in_ext_ext_nuprli_implies_in_ext_ext_term_equality_symmetric {o} :
+  forall i lib (eqa : lib-per(lib,o)) A B,
+    in_ext_ext lib (fun lib' x => nuprli i lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x)).
+Proof.
+  introv h; introv.
+  pose proof (h _ e) as h; simpl in h.
+  apply nuprli_implies_nuprl in h.
+  nts; auto.
+  apply nts_tes in h; auto.
+Qed.
+Hint Resolve in_ext_ext_nuprli_implies_in_ext_ext_term_equality_symmetric : slow.
+
 (* end hide *)

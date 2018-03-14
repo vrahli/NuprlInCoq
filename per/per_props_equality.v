@@ -106,6 +106,55 @@ Proof.
 Qed.
 Hint Resolve type_extensionality_per_eq_nuprli : slow.
 
+Lemma ccequivc_ext_implies_eq_per_eq_bar {o} :
+  forall lib (a1 a2 b1 b2 : @CTerm o) (eqa eqb : lib-per(lib, o)),
+    in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
+    -> ccequivc_ext lib a1 a2
+    -> ccequivc_ext lib b1 b2
+    -> (eq_per_eq_bar lib a1 b1 eqa) <=2=> (eq_per_eq_bar lib a2 b2 eqb).
+Proof.
+  introv resp sym trans alla ceqa ceqb; introv.
+  unfold eq_per_eq_bar, eq_per_eq; split; introv h; exrepnd; exists bar.
+
+  - introv br ext; introv.
+    pose proof (h0 _ br _ ext x) as h0; simpl in *; repnd; dands; auto.
+    apply alla.
+
+    assert (eqa lib'0 x a1 a2) as w.
+    { apply resp; eauto 3 with slow.
+      eapply trans;[eauto|].
+      apply sym; auto. }
+
+    assert (eqa lib'0 x b1 b2) as z.
+    { apply resp; eauto 3 with slow.
+      eapply trans;[|eauto].
+      apply sym; auto. }
+
+    eapply trans;[apply sym;eauto|].
+    eapply trans;[exact h0|]; auto.
+
+  - introv br ext; introv.
+    pose proof (h0 _ br _ ext x) as h0; simpl in *; repnd; dands; auto.
+    apply alla in h0.
+
+    assert (eqa lib'0 x a1 a2) as w.
+    { apply sym; apply resp; eauto 3 with slow.
+      eapply trans;[eauto|].
+      apply sym; auto. }
+
+    assert (eqa lib'0 x b1 b2) as z.
+    { apply sym; apply resp; eauto 3 with slow.
+      eapply trans;[|eauto].
+      apply sym; auto. }
+
+    eapply trans;[exact w|].
+    eapply trans;[exact h0|].
+    apply sym; auto.
+Qed.
+
 Lemma uniquely_valued_per_eq_nuprl {o} :
   @uniquely_valued o (per_eq nuprl).
 Proof.
@@ -125,13 +174,7 @@ Proof.
   eapply in_ext_ext_nuprl_value_respecting_left  in pera3;[|apply ccequivc_ext_sym;eauto].
   eapply in_ext_ext_nuprl_value_respecting_right in pera3;[|apply ccequivc_ext_sym;eauto].
 
-  Check simple_implies_iff_per_eq_eq.
-  SearchAbout eq_per_eq_bar ccequivc_ext.
-
-XXXXXXXXX
-  apply (simple_implies_iff_per_eq_eq _ (trivial_bar lib)).
-  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
-  introv.
+  apply ccequivc_ext_implies_eq_per_eq_bar; eauto 2 with slow.
 
   introv.
   pose proof (pera3 _ e) as pera3.
@@ -151,11 +194,18 @@ Proof.
 
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
-  spcast; repeat computes_to_eqval.
 
-  apply (simple_implies_iff_per_eq_eq _ (trivial_bar lib)).
-  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
-  introv.
+  computes_to_eqval_ext.
+  hide_hyp perb2.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_equality_implies in ceq.
+  apply ccequivc_ext_mkc_equality_implies in ceq0.
+  repnd.
+
+  eapply in_ext_ext_nuprli_value_respecting_left  in pera3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_right in pera3;[|apply ccequivc_ext_sym;eauto].
+
+  apply ccequivc_ext_implies_eq_per_eq_bar; eauto 2 with slow.
 
   introv.
   pose proof (pera3 _ e) as pera3.
@@ -184,7 +234,7 @@ Hint Resolve local_per_bar_per_eq_nuprli : slow.
 Lemma dest_nuprl_per_eq_l {o} :
   forall (ts : cts(o)) lib T a1 a2 A T' eq,
     ts = univ
-    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
     -> close ts lib T T' eq
     -> per_bar (per_eq (close ts)) lib T T' eq.
 Proof.
@@ -202,7 +252,7 @@ Qed.
 Lemma dest_nuprli_per_eq_l {o} :
   forall i (ts : cts(o)) lib T a1 a2 A T' eq,
     ts = univi_bar i
-    -> computes_to_valc lib T (mkc_equality a1 a2 A)
+    -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
     -> close ts lib T T' eq
     -> per_bar (per_eq (close ts)) lib T T' eq.
 Proof.
@@ -239,6 +289,57 @@ Proof.
     try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
 Qed.
 
+(* MOVE *)
+Lemma eqorceq_ext_ccequivc_ext_trans_left {o} :
+  forall lib (a b c : @CTerm o) (eqa : lib-per(lib,o)),
+    in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> ccequivc_ext lib a b
+    -> eqorceq_ext lib eqa b c
+    -> eqorceq_ext lib eqa a c.
+Proof.
+  introv trans sym resp ceq eoc; introv.
+  pose proof (eoc _ e) as eoc.
+  simpl in *; spcast.
+  unfold eqorceq in *; repndors; tcsp.
+
+  - left.
+    pose proof (resp _ e) as resp; simpl in resp.
+    pose proof (resp b a) as w; repeat (autodimp w hyp); eauto 3 with slow;[|].
+    { eapply trans;[eauto|]; apply sym; auto. }
+    apply sym in w.
+    eapply trans; eauto.
+
+  - right.
+    eapply ccequivc_ext_trans;[|eauto]; eauto 3 with slow.
+Qed.
+
+(* MOVE *)
+Lemma eqorceq_ext_ccequivc_ext_trans_right {o} :
+  forall lib (a b c : @CTerm o) (eqa : lib-per(lib,o)),
+    in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> eqorceq_ext lib eqa a b
+    -> ccequivc_ext lib b c
+    -> eqorceq_ext lib eqa a c.
+Proof.
+  introv trans sym resp eoc ceq; introv.
+  pose proof (eoc _ e) as eoc.
+  simpl in *; spcast.
+  unfold eqorceq in *; repndors; tcsp.
+
+  - left.
+    pose proof (resp _ e) as resp; simpl in resp.
+    pose proof (resp b c) as w; repeat (autodimp w hyp); eauto 3 with slow;[|].
+    { eapply trans;[|eauto]; apply sym; auto. }
+    eapply trans; eauto.
+
+  - right.
+    eapply ccequivc_ext_trans;[|eauto]; eauto 3 with slow.
+Qed.
+
 Lemma dest_nuprl_equality2 {o} :
   forall lib (eq : per(o)) a1 a2 A b1 b2 B,
     nuprl lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
@@ -265,8 +366,16 @@ Proof.
     introv br ext; introv.
     pose proof (u0 _ br _ ext x) as u0; simpl in *.
     unfold per_eq in *; exrepnd.
-    spcast; computes_to_value_isvalue.
-    exists eqa0; dands; auto.
+    repeat ccomputes_to_valc_ext_val.
+    eapply in_ext_ext_nuprl_value_respecting_left  in u4;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprl_value_respecting_right in u4;[|apply ccequivc_ext_sym;eauto].
+    eapply eqorceq_ext_ccequivc_ext_trans_left  in u5; eauto; eauto 3 with slow;[].
+    eapply eqorceq_ext_ccequivc_ext_trans_right in u5; try apply ccequivc_ext_sym; eauto; eauto 3 with slow;[].
+    eapply eqorceq_ext_ccequivc_ext_trans_left  in u6; eauto; eauto 3 with slow;[].
+    eapply eqorceq_ext_ccequivc_ext_trans_right in u6; try apply ccequivc_ext_sym; eauto; eauto 3 with slow;[].
+    exists eqa0; dands; auto; eauto 2 with slow.
+    eapply eq_term_equals_trans;[eauto|].
+    eapply ccequivc_ext_implies_eq_per_eq_bar; eauto 3 with slow.
   }
   clear u0.
 
@@ -294,13 +403,10 @@ Proof.
     split; intro h.
 
     - exists lib' br (lib_extends_trans e ext) (lib_extends_trans e x).
-      unfold type_family_ext in u0; exrepnd; spcast.
-      computes_to_value_isvalue.
       pose proof (u0 _ e) as u0; simpl in *.
 
       pose proof (e0 lib' br _ (lib_extends_trans e ext) (lib_extends_trans e x)) as q.
       unfold type_family_ext in q; exrepnd; spcast.
-      computes_to_value_isvalue.
       pose proof (q0 _ (lib_extends_refl lib'1)) as q0; simpl in *.
       apply nuprl_refl in q0.
       apply nuprl_refl in u0.
@@ -409,8 +515,16 @@ Proof.
     introv br ext; introv.
     pose proof (u0 _ br _ ext x) as u0; simpl in *.
     unfold per_eq in *; exrepnd.
-    spcast; computes_to_value_isvalue.
-    exists eqa0; dands; auto.
+    repeat ccomputes_to_valc_ext_val.
+    eapply in_ext_ext_nuprli_value_respecting_left  in u4;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprli_value_respecting_right in u4;[|apply ccequivc_ext_sym;eauto].
+    eapply eqorceq_ext_ccequivc_ext_trans_left  in u5; eauto; eauto 3 with slow;[].
+    eapply eqorceq_ext_ccequivc_ext_trans_right in u5; try apply ccequivc_ext_sym; eauto; eauto 3 with slow;[].
+    eapply eqorceq_ext_ccequivc_ext_trans_left  in u6; eauto; eauto 3 with slow;[].
+    eapply eqorceq_ext_ccequivc_ext_trans_right in u6; try apply ccequivc_ext_sym; eauto; eauto 3 with slow;[].
+    exists eqa0; dands; auto; eauto 2 with slow.
+    eapply eq_term_equals_trans;[eauto|].
+    eapply ccequivc_ext_implies_eq_per_eq_bar; eauto 3 with slow.
   }
   clear u0.
 
@@ -438,13 +552,10 @@ Proof.
     split; intro h.
 
     - exists lib' br (lib_extends_trans e ext) (lib_extends_trans e x).
-      unfold type_family_ext in u0; exrepnd; spcast.
-      computes_to_value_isvalue.
       pose proof (u0 _ e) as u0; simpl in *.
 
       pose proof (e0 lib' br _ (lib_extends_trans e ext) (lib_extends_trans e x)) as q.
       unfold type_family_ext in q; exrepnd; spcast.
-      computes_to_value_isvalue.
       pose proof (q0 _ (lib_extends_refl lib'1)) as q0; simpl in *.
       apply nuprli_refl in q0.
       apply nuprli_refl in u0.
