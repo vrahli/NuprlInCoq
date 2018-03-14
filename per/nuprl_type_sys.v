@@ -696,6 +696,111 @@ Proof.
   apply nts_tyt with (T2 := t2); auto.
 Qed.
 
+Ltac ntsi :=
+  match goal with
+    [ o : POpid , H : nuprli ?i _ _ _ _ |- _ ] =>
+    pose proof (@nuprli_type_system o i) as nts;
+    destruct nts as [ nts_uv nts ];
+    destruct nts as [ nts_ext nts ];
+    destruct nts as [ nts_tys nts ];
+    destruct nts as [ nts_tyt nts ];
+    destruct nts as [ nts_tyv nts ];
+    destruct nts as [ nts_tes nts ];
+    destruct nts as [ nts_tet nts_tev ]
+  end.
+
+Lemma nuprli_value_respecting_left {o} :
+  forall i lib (t1 t2 t3 : @CTerm o) eq,
+    nuprli i lib t1 t2 eq
+    -> ccequivc_ext lib t1 t3
+    -> nuprli i lib t3 t2 eq.
+Proof.
+  intros.
+  ntsi.
+  assert (nuprli i lib t1 t3 eq) as eq13
+    by (apply nts_tyv; auto; eapply nts_tyt; eauto).
+  apply nts_tyt with (T2 := t1); auto.
+Qed.
+
+Lemma nuprli_value_respecting_right {o} :
+  forall i lib (t1 t2 t3 : @CTerm o) eq,
+    nuprli i lib t1 t2 eq
+    -> ccequivc_ext lib t2 t3
+    -> nuprli i lib t1 t3 eq.
+Proof.
+  intros.
+  ntsi.
+  assert (nuprli i lib t2 t3 eq) as eq23
+    by (apply nts_tyv; auto; apply nts_tyt with (T2 := t1); auto).
+  apply nts_tyt with (T2 := t2); auto.
+Qed.
+
+Lemma in_ext_ext_nuprli_value_respecting_left {o} :
+  forall i lib (t1 t2 t3 : @CTerm o) (eq : lib-per(lib,o)),
+    in_ext_ext lib (fun lib x => nuprli i lib t1 t2 (eq lib x))
+    -> ccequivc_ext lib t1 t3
+    -> in_ext_ext lib (fun lib x => nuprli i lib t3 t2 (eq lib x)).
+Proof.
+  introv h ceq; introv.
+  pose proof (h _ e) as h; simpl in h.
+  eapply nuprli_value_respecting_left;[eauto|]; eauto 3 with slow.
+Qed.
+
+Lemma in_ext_ext_nuprli_value_respecting_right {o} :
+  forall i lib (t1 t2 t3 : @CTerm o) eq,
+    in_ext_ext lib (fun lib x => nuprli i lib t1 t2 (eq lib x))
+    -> ccequivc_ext lib t2 t3
+    -> in_ext_ext lib (fun lib x => nuprli i lib t1 t3 (eq lib x)).
+Proof.
+  introv h ceq; introv.
+  pose proof (h _ e) as h; simpl in h.
+  eapply nuprli_value_respecting_right;[eauto|]; eauto 3 with slow.
+Qed.
+
+Lemma in_ext_ext_fam_nuprli_value_respecting_left {o} :
+  forall i lib v1 v2 v3 (t1 : @CVTerm o [v1]) t2 t3 eqa (eq : lib-per-fam(lib,eqa,o)),
+    in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprli i lib (substc a v1 t1) (substc a' v2 t2) (eq lib x a a' e))
+    -> bcequivc_ext lib [v1] t1 [v3] t3
+    -> in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprli i lib (substc a v3 t3) (substc a' v2 t2) (eq lib x a a' e)).
+Proof.
+  introv h ceq; introv.
+  pose proof (h _ e) as h; simpl in h.
+  eapply nuprli_value_respecting_left;[eauto|]; eauto 3 with slow.
+Qed.
+
+Lemma in_ext_ext_fam_nuprli_value_respecting_right {o} :
+  forall i lib v1 v2 v3 (t1 : @CVTerm o [v1]) t2 t3 eqa (eq : lib-per-fam(lib,eqa,o)),
+    in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprli i lib (substc a v1 t1) (substc a' v2 t2) (eq lib x a a' e))
+    -> bcequivc_ext lib [v2] t2 [v3] t3
+    -> in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprli i lib (substc a v1 t1) (substc a' v3 t3) (eq lib x a a' e)).
+Proof.
+  introv h ceq; introv.
+  pose proof (h _ e) as h; simpl in h.
+  eapply nuprli_value_respecting_right;[eauto|]; eauto 3 with slow.
+Qed.
+
+Lemma in_ext_ext_nuprl_value_respecting_left {o} :
+  forall lib (t1 t2 t3 : @CTerm o) (eq : lib-per(lib,o)),
+    in_ext_ext lib (fun lib x => nuprl lib t1 t2 (eq lib x))
+    -> ccequivc_ext lib t1 t3
+    -> in_ext_ext lib (fun lib x => nuprl lib t3 t2 (eq lib x)).
+Proof.
+  introv h ceq; introv.
+  pose proof (h _ e) as h; simpl in h.
+  eapply nuprl_value_respecting_left;[eauto|]; eauto 3 with slow.
+Qed.
+
+Lemma in_ext_ext_nuprl_value_respecting_right {o} :
+  forall lib (t1 t2 t3 : @CTerm o) eq,
+    in_ext_ext lib (fun lib x => nuprl lib t1 t2 (eq lib x))
+    -> ccequivc_ext lib t2 t3
+    -> in_ext_ext lib (fun lib x => nuprl lib t1 t3 (eq lib x)).
+Proof.
+  introv h ceq; introv.
+  pose proof (h _ e) as h; simpl in h.
+  eapply nuprl_value_respecting_right;[eauto|]; eauto 3 with slow.
+Qed.
+
 Lemma nuprl_eq_implies_eqorceq_refl {p} :
   forall lib T1 T2 eq t1 t2,
     @nuprl p lib T1 T2 eq

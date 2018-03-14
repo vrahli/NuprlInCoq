@@ -453,7 +453,8 @@ Proof.
     allrw @wf_hypotheses_app; repnd.
     allrw @wf_hypotheses_snoc; repnd.
     allapply @isprog_vars_implies_wf.
-    allrw <- @wf_function_iff; tcsp.
+    simpl in *.
+    allrw <- @wf_isect_iff; tcsp.
 
   - allrw @vswf_hypotheses_nil_eq.
     allrw @wf_hypotheses_app; repnd.
@@ -476,7 +477,7 @@ Proof.
           allrw @wf_hypotheses_snoc; repnd.
           allsimpl.
           allapply @isprog_vars_implies_wf.
-          allrw <- @wf_function_iff; tcsp.
+          allrw <- @wf_isect_iff; tcsp.
         * rw @isprog_vars_iff_covered; dands; auto.
           rw @vars_hyps_app.
           rw @vars_hyps_snoc; simpl; auto.
@@ -661,7 +662,7 @@ Proof.
     allrw @wf_hypotheses_app; repnd.
     allrw @wf_hypotheses_snoc; repnd.
     allapply @isprog_vars_implies_wf.
-    allrw <- @wf_function_iff; tcsp.
+    allrw <- @wf_isect_iff; tcsp.
 
   - allrw @vswf_hypotheses_nil_eq.
     allrw @wf_hypotheses_app; repnd.
@@ -699,7 +700,7 @@ Proof.
           allrw @wf_hypotheses_snoc; repnd.
           allsimpl.
           allapply @isprog_vars_implies_wf.
-          allrw <- @wf_function_iff; tcsp.
+          allrw <- @wf_isect_iff; tcsp.
 
         + rw @isprog_vars_iff_covered; dands; auto.
           rw @vars_hyps_snoc; simpl; auto.
@@ -740,7 +741,7 @@ Proof.
           allrw @wf_hypotheses_snoc; repnd.
           allsimpl.
           allapply @isprog_vars_implies_wf.
-          allrw <- @wf_function_iff; tcsp.
+          allrw <- @wf_isect_iff; tcsp.
 
         + rw @isprog_vars_iff_covered; dands; auto.
           rw @vars_hyps_app.

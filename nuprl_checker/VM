@@ -1,7 +1,5 @@
-Nuprl Proof Checker
-===================
-
-We have written a proof checker that can take as input a proof
+We've built a VM containing our formalization of Nuprl in Coq,
+including a Nuprl proof checker that can take as input a proof
 exported from Nuprl, and outputs a script (a list of commands), which
 can then be evaluated within Coq to construct a library and check the
 validity of the proof: if the library is valid, the proof is valid.
@@ -12,8 +10,13 @@ which form a sub-library of Nuprl's library.  Our OCaml program
 converts such an XML-like file into a script to reconstruct the
 corresponding sub-library within our Coq implementation of Nuprl.
 
+This VM runs Ubuntu 17.10 64bits.  The `NuprlInCoq` repository is in
+the user repository: user name cav2018, password cav2018.  It was
+tested on a i7-5600U laptop with 2 hyper-threaded cores, and 16GB of
+memory, running Ubuntu 17.04.
+
 The interface to our Coq formalization is essentially in
-`../proof_with_lib_non_dep.v`.  It contains, among other things,
+`rules/proof_with_lib_non_dep.v`.  It contains, among other things,
 definitions of complete and incomplete proofs, of a library of
 definitions and facts, and of what it means for a library to be valid.
 It also provides a simple script language to manipulate the library:
@@ -23,18 +26,8 @@ In addition to using this tool to automatically check Nuprl proofs,
 one can use it as a standalone tool to build new proofs.  See
 `rules/proof_with_lib_non_dep_example1.v` for a simple example.
 
-To run the code below, in addition to Coq, you'll need `ocamlbuild`,
-`batteries`, and `menhir`, which you can get through opam.
-
-To try our proof checker run (1 and 2 are to build our Coq formalization):
-
-1. `(cs ..; ./create_makefile.sh)`
-
-2. `(cd ..; make)`
-
-3. `make` to create a binary.  This will create `Parse.native`
-
-4. Then to convert the `uall_wf` proof, type:
+Everything is already built.  To test the checker go to
+`nuprl_checker` within `NuprlInCoq`, and run in a terminal:
 
        `./Parse.native --i uall_wf.term-list --o uall_output.v`
 

@@ -384,12 +384,14 @@ Proof.
   repndors; subst; allsimpl; tcsp; allunfold @wf_bseq; allsimpl;
   repnd; dands; destseq; allsimpl; tcsp;
   allrw @covered_approx; repnd;
-  allrw <- @wf_approx_iff; repnd;
-  allsimpl; dands; tcsp;
-  try (apply vswf_hypotheses_nil_eq);
-  try (complete (rw @vars_hyps_snoc; simpl; apply covered_snoc_weak; auto));
-  try (apply wf_cbv; eauto 2 with slow);
-  auto.
+    allrw <- @wf_approx_iff; repnd;
+      allrw @wf_member_iff2;
+      allsimpl; dands; tcsp;
+        try (apply vswf_hypotheses_nil_eq);
+        try (complete (rw @vars_hyps_snoc; simpl; apply covered_snoc_weak; auto));
+        try (apply wf_cbv; eauto 2 with slow);
+        try (apply wf_halts; auto);
+        auto.
 
   - apply wf_hypotheses_snoc; dands; simpl; auto.
     apply isprog_vars_halts.
@@ -401,11 +403,13 @@ Proof.
     rw @isprog_vars_eq.
     allunfold @covered; dands; eauto 3 with slow.
 
-  - unfold mk_cbv, covered; simpl.
-    autorewrite with slow; auto.
+  - unfold closed_type_baresequent, closed_type, covered; simpl; autorewrite with slow.
+    apply subvars_app_l; dands; auto.
 
-  - unfold mk_cbv, covered; simpl.
-    autorewrite with slow; auto.
+  - apply wf_isexc; auto.
+
+  - unfold closed_type_baresequent, closed_type, covered; simpl; autorewrite with slow.
+    apply subvars_app_l; dands; auto.
 Qed.
 
 

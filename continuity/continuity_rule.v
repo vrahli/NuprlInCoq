@@ -305,7 +305,7 @@ Proof.
     allrw @tequality_mkc_member_sp; repnd.
     allrw @fold_equorsq.
 
-    pose proof (continuity_axiom lib (lsubstc F wt0 s1 ct2)) as cont.
+    pose proof (continuity_axiom lib (lsubstc F wt0 s1 ct3)) as cont.
     autodimp cont hyp.
     {
       revert h1; unfold member; intro h.

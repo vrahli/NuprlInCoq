@@ -4435,11 +4435,11 @@ Proof.
           repndors; exrepnd; subst; allsimpl; cpx; allsimpl.
 
           - pose proof (imp (bterm [] (oterm Exc [bterm [] a', bterm [] e]))
-                            (bterm [] (oterm Exc [x0, y0]))) as d1; autodimp d1 hyp.
-            pose proof (imp (bterm [] a) x) as d2; autodimp d2 hyp.
-            pose proof (imp (bterm [v] b0) y) as d3; autodimp d3 hyp.
-            pose proof (imp1 (bterm [] a') x0) as d4; autodimp d4 hyp.
-            pose proof (imp1 (bterm [] e) y0) as d5; autodimp d5 hyp.
+                            (bterm [] (oterm Exc [x, y]))) as d1; autodimp d1 hyp.
+            pose proof (imp (bterm [] a) x0) as d2; autodimp d2 hyp.
+            pose proof (imp (bterm [v] b0) y0) as d3; autodimp d3 hyp.
+            pose proof (imp1 (bterm [] a') x) as d4; autodimp d4 hyp.
+            pose proof (imp1 (bterm [] e) y) as d5; autodimp d5 hyp.
             clear imp imp1.
 
             inversion d1 as [? ? ? df66 dg66 d6]; subst; clear d1.
@@ -4948,10 +4948,3 @@ Proof.
 
   apply differ_app_F3; auto; allrw; tcsp.
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

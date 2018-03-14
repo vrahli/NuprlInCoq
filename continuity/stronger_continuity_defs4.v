@@ -2514,17 +2514,17 @@ Proof.
 
             repndors; exrepnd; subst; allsimpl; fold_terms; cpx; allsimpl; fold_terms.
 
-            { pose proof (imp1 (nobnd a') x0) as d1.
+            { pose proof (imp1 (nobnd a') x) as d1.
               autodimp d1 hyp.
-              pose proof (imp1 (nobnd e) y0) as d2.
+              pose proof (imp1 (nobnd e) y) as d2.
               autodimp d2 hyp.
               clear imp1.
               inversion d1 as [? ? ? d3]; subst; clear d1.
               inversion d2 as [? ? ? d4]; subst; clear d2.
 
-              pose proof (imp (nobnd a0) x) as d1.
+              pose proof (imp (nobnd a0) x0) as d1.
               autodimp d1 hyp.
-              pose proof (imp (bterm [v] b0) y) as d2.
+              pose proof (imp (bterm [v] b0) y0) as d2.
               autodimp d2 hyp.
               clear imp.
               inversion d1 as [? ? ? d5]; subst; clear d1.
@@ -3009,11 +3009,3 @@ Proof.
   introv i; repndors; tcsp; ginv; constructor; eauto 3 with slow.
   apply differ_force_nat; auto.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

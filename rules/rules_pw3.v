@@ -890,7 +890,7 @@ Proof.
              allrw @dom_csub_snoc; simpl; allapply @similarity_dom; repnd; allrw; sp).
 
   rw @eq_hyps_snoc; simpl.
-  exists s1a0 s2a1 t8 t9 wP p7 cv3; sp.
+  exists s1a0 s2a1 t8 t9 wP cvP cv3; sp.
 
 
   (* the base eq_hyps is easy *)
@@ -991,9 +991,9 @@ Proof.
   assert (lsubstc2 bp t8 ba t6
                    (lsubstc_vars B wB (csub_filter s1a [bp, ba]) [bp, ba] cvB)
           = lsubstc (lsubst B [(bp, mk_var q), (ba, mk_var a)]) w6
-                    (snoc (snoc s1a (q, t8)) (a, t6)) c5) as eq1.
+                    (snoc (snoc s1a (q, t8)) (a, t6)) c3) as eq1.
   (* begin proof of assert *)
-  generalize (lsubstc2_lsubstc_var bp ba B t8 t6 wB s1a cvB q a w6 c5); intro k.
+  generalize (lsubstc2_lsubstc_var bp ba B t8 t6 wB s1a cvB q a w6 c3); intro k.
   repeat (autodimp k hyp); try (complete (allapply @similarity_dom; repnd; allrw; sp)).
   (* end proof of assert *)
 
@@ -1024,9 +1024,9 @@ Proof.
   assert (substc a0 b
                  (lsubstc_vars
                     (mk_pw P ap A bp ba B cp ca cb C
-                           (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)])) w8
-                    (csub_filter (snoc (snoc s1a (q, t8)) (a, t6)) [b]) [b] c6)
-          = mkc_pw (lsubstc P wP s1a p7)
+                           (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)])) w7
+                    (csub_filter (snoc (snoc s1a (q, t8)) (a, t6)) [b]) [b] c4)
+          = mkc_pw (lsubstc P wP s1a cvP)
                    ap
                    (lsubstc_vars A wA (csub_filter s1a [ap]) [ap] cvA)
                    bp ba
@@ -1061,7 +1061,7 @@ Proof.
                        (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)]))
                 wfc
                 (snoc (snoc s1a (q, t8)) (a, t6))
-                cvc w8 c6); intro eq.
+                cvc w7 c4); intro eq.
   rw <- eq; clear eq.
 
   generalize (simple_csubst_pw
@@ -1100,9 +1100,9 @@ Proof.
   assert (substc a' b
                  (lsubstc_vars
                     (mk_pw P ap A bp ba B cp ca cb C
-                           (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)])) w8
+                           (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)])) w7
                     (csub_filter (snoc (snoc s2a0 (q, t9)) (a, t7)) [b]) [b] c8)
-          = mkc_pw (lsubstc P wP s2a0 cvP)
+          = mkc_pw (lsubstc P wP s2a0 cvP0)
                    ap
                    (lsubstc_vars A wA (csub_filter s2a0 [ap]) [ap] cvA0)
                    bp ba
@@ -1137,7 +1137,7 @@ Proof.
                        (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)]))
                 wfc
                 (snoc (snoc s2a0 (q, t9)) (a, t7))
-                cvc w8 c8); intro eq.
+                cvc w7 c8); intro eq.
   rw <- eq; clear eq.
 
   generalize (simple_csubst_pw
@@ -1193,7 +1193,7 @@ Proof.
   rw <- eq; sp.
   generalize (eq a0 a'); clear eq; intro eq.
   autodimp eq hyp.
-  generalize (lsubstc2_lsubstc_var bp ba B t8 t6 wB s1a cvB q a w6 c5); intro k.
+  generalize (lsubstc2_lsubstc_var bp ba B t8 t6 wB s1a cvB q a w6 c3); intro k.
   repeat (autodimp k hyp); try (complete (allapply @similarity_dom; repnd; allrw; sp)).
 
   (* we now prove that the squashed function is functional using hyp2 and eqh *)
@@ -1246,9 +1246,9 @@ Proof.
   assert (lsubstc2 bp t8 ba t6
                    (lsubstc_vars B wB (csub_filter s1a [bp, ba]) [bp, ba] cvB)
           = lsubstc (lsubst B [(bp, mk_var q), (ba, mk_var a)]) w6
-                    (snoc (snoc s1a (q, t8)) (a, t6)) c5) as eq1.
+                    (snoc (snoc s1a (q, t8)) (a, t6)) c3) as eq1.
   (* begin proof of assert *)
-  generalize (lsubstc2_lsubstc_var bp ba B t8 t6 wB s1a cvB q a w6 c5); intro k.
+  generalize (lsubstc2_lsubstc_var bp ba B t8 t6 wB s1a cvB q a w6 c3); intro k.
   repeat (autodimp k hyp); try (complete (allapply @similarity_dom; repnd; allrw; sp)).
   (* end proof of assert *)
 
@@ -1284,9 +1284,9 @@ Proof.
   assert (lsubstc2 bp t8 ba t6
                    (lsubstc_vars B wB (csub_filter s1a [bp, ba]) [bp, ba] cvB)
           = lsubstc (lsubst B [(bp, mk_var q), (ba, mk_var a)]) w6
-                    (snoc (snoc s1a (q, t8)) (a, t6)) c5) as eq1.
+                    (snoc (snoc s1a (q, t8)) (a, t6)) c3) as eq1.
   (* begin proof of assert *)
-  generalize (lsubstc2_lsubstc_var bp ba B t8 t6 wB s1a cvB q a w6 c5); intro k.
+  generalize (lsubstc2_lsubstc_var bp ba B t8 t6 wB s1a cvB q a w6 c3); intro k.
   repeat (autodimp k hyp); try (complete (allapply @similarity_dom; repnd; allrw; sp)).
   (* end proof of assert *)
 
@@ -1308,7 +1308,7 @@ Proof.
                       (lsubstc_vars C wC (csub_filter s1a [cp, ca, cb]) [cp, ca, cb] cvC))
             (lsubstc3 cp t9 ca t7 cb a'
                       (lsubstc_vars C wC (csub_filter s2a0 [cp, ca, cb]) [cp, ca, cb] cvC0))
-            (lsubstc P wP s1a p7))
+            (lsubstc P wP s1a cvP))
          as eCs.
   (* begin proof of assert *)
   apply imp5; auto.
@@ -1323,7 +1323,7 @@ Proof.
   (* end proof of assert *)
 
   assert (equality lib (mkc_apply t0 a0) (mkc_apply t5 a')
-                   (mkc_pw (lsubstc P wP s1a p7) ap
+                   (mkc_pw (lsubstc P wP s1a cvP) ap
                            (lsubstc_vars A wA (csub_filter s1a [ap]) [ap] cvA) bp ba
                            (lsubstc_vars B wB (csub_filter s1a [bp, ba]) [bp, ba] cvB) cp ca cb
                            (lsubstc_vars C wC (csub_filter s1a [cp, ca, cb]) [cp, ca, cb] cvC)
@@ -1336,9 +1336,9 @@ Proof.
   assert (lsubstc2 bp t8 ba t6
                    (lsubstc_vars B wB (csub_filter s1a [bp, ba]) [bp, ba] cvB)
           = lsubstc (lsubst B [(bp, mk_var q), (ba, mk_var a)]) w6
-                    (snoc (snoc s1a (q, t8)) (a, t6)) c5) as eq1.
+                    (snoc (snoc s1a (q, t8)) (a, t6)) c3) as eq1.
   (* - begin proof of assert *)
-  generalize (lsubstc2_lsubstc_var bp ba B t8 t6 wB s1a cvB q a w6 c5); intro k.
+  generalize (lsubstc2_lsubstc_var bp ba B t8 t6 wB s1a cvB q a w6 c3); intro k.
   repeat (autodimp k hyp); try (complete (allapply @similarity_dom; repnd; allrw; sp)).
   (* - end proof of assert *)
   rw eq1 in eib.
@@ -1365,7 +1365,7 @@ Proof.
                        (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)]))
                 wfc
                 (snoc (snoc s1a (q, t8)) (a, t6))
-                cvc w8 c6); intro eq.
+                cvc w7 c4); intro eq.
   rw <- eq in e; clear eq.
 
   generalize (simple_csubst_pw
@@ -1672,9 +1672,9 @@ Proof.
   assert (substc a0 b
                  (lsubstc_vars
                     (mk_apply (lsubst Q [(w, mk_apply (mk_var f) (mk_var b))])
-                              (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)])) w7
+                              (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)])) w8
                     (csub_filter (snoc (snoc (snoc s1a (q, t8)) (a, t6)) (f, t0)) [b])
-                    [b] c4)
+                    [b] c6)
           = mkc_apply (lsubstc Q w1 (snoc s1a (w, mkc_apply t0 a0)) cv1)
                       (lsubstc3 cp t8 ca t6 cb a0
                                 (lsubstc_vars C wC (csub_filter s1a [cp, ca, cb])
@@ -1702,7 +1702,7 @@ Proof.
                           (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)]))
                 wfc
                 (snoc (snoc (snoc s1a (q, t8)) (a, t6)) (f, t0))
-                cvc w7 c4); intro eq.
+                cvc w8 c6); intro eq.
   rw <- eq; clear eq.
 
   revert wfc cvc.
@@ -1786,7 +1786,7 @@ Proof.
   assert (substc a' b
                  (lsubstc_vars
                     (mk_apply (lsubst Q [(w, mk_apply (mk_var f) (mk_var b))])
-                              (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)])) w7
+                              (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)])) w8
                     (csub_filter (snoc (snoc (snoc s2a0 (q, t9)) (a, t7)) (f, t5)) [b])
                     [b] c8)
           = mkc_apply (lsubstc Q w1 (snoc s2a0 (w, mkc_apply t5 a')) cv2)
@@ -1816,7 +1816,7 @@ Proof.
                           (lsubst C [(cp, mk_var q), (ca, mk_var a), (cb, mk_var b)]))
                 wfc
                 (snoc (snoc (snoc s2a0 (q, t9)) (a, t7)) (f, t5))
-                cvc w7 c8); intro eq.
+                cvc w8 c8); intro eq.
   rw <- eq; clear eq.
 
   revert wfc cvc.

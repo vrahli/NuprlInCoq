@@ -432,8 +432,7 @@ Lemma all_in_bar_ccomputes_to_valc_refl {o} :
     iscvalue v
     -> all_in_bar bar (fun lib => v ===>(lib) v).
 Proof.
-  introv isv br ext; spcast.
-  apply computes_to_valc_refl; auto.
+  introv isv br ext; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve all_in_bar_ccomputes_to_valc_refl : refl.
 
@@ -750,7 +749,7 @@ Notation "t1 ===b>( lib ) t2" := (computes_to_valc_ex_bar lib t1 t2) (at level 0
 
 Lemma computes_to_valc_implies_computes_to_valc_ex_bar {o} :
   forall lib (a b : @CTerm o),
-    computes_to_valc lib a b
+    ccomputes_to_valc_ext lib a b
     -> a ===b>(lib) b.
 Proof.
   introv comp.

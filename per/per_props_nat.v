@@ -1783,8 +1783,11 @@ Proof.
 
   - clear h0.
     allrw @equality_in_int.
+<<<<<<< HEAD
     apply collapse_all_in_ex_bar.
     eapply all_in_ex_bar_modus_ponens2;[|exact h|exact h1]; clear h h1; introv x h h1; exrepnd; spcast.
+=======
+>>>>>>> e6717e4c33ad2e8c3ff125270f6f69a91acf43c4
     unfold equality_of_int in h1; exrepnd; spcast.
     eapply inhabited_type_respects_alphaeqc in h;[|apply mkcv_prod_substc].
     allrw @mkcv_le_substc2.
@@ -1795,6 +1798,7 @@ Proof.
 
     apply inhabited_type_implies_inhabited_type_bar in h.
     allrw @inhabited_prod; repnd.
+<<<<<<< HEAD
     apply inhabited_bar_le in h4.
     apply inhabited_bar_less_than in h.
     eapply all_in_ex_bar_modus_ponens2;[|exact h|exact h4]; clear h h4; introv y h h4; exrepnd; spcast.
@@ -1806,6 +1810,15 @@ Proof.
     repeat computes_to_eqval.
 
     exists (Z.to_nat ka0) kb0; dands; spcast; tcsp;
+=======
+    allrw @inhabited_le; exrepnd; spcast.
+    apply computes_to_valc_isvalue_eq in h5; eauto with slow.
+    rw @mkc_zero_eq in h5; rw @mkc_nat_eq in h5; ginv.
+    computes_to_eqval.
+    allrw @inhabited_less_than; exrepnd; spcast.
+    computes_to_eqval.
+    exists (Z.to_nat k) kb; dands; spcast; tcsp;
+>>>>>>> e6717e4c33ad2e8c3ff125270f6f69a91acf43c4
     try (complete (rw @mkc_nat_eq; rw Znat.Z2Nat.id; auto)).
     rw Znat.Z2Nat.id; auto.
 

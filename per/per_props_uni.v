@@ -107,7 +107,7 @@ Proof.
   apply CL_init.
   exists bar (univi_eq_lib_per lib i); dands; tcsp.
   exists (S i); simpl.
-  left; sp; spcast; apply computes_to_valc_refl; sp.
+  left; sp; eauto 3 with slow.
 Qed.
 Hint Resolve mkc_uni_in_nuprl : slow.
 

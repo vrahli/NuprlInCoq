@@ -6261,9 +6261,9 @@ Proof.
   assert (n=n0) by (eapply is_first_index_unique; eauto).
   subst. rename n0 into n. GC.
   repeat (dpair_eq).
-  exists n; dands; cpx; try congruence; auto;
-    try rewrite H1s2l; auto;
-      try rewrite H1s2l; auto.
+  exists n; dands; cpx; try congruence;
+    try (rewrite H1s2l; auto);
+    try (rewrite H1s2l; auto).
 Qed.
 
 Lemma sub_find_some_none_contra {p} : forall lv lnt1 lnt2 v t1,

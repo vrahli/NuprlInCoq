@@ -31,6 +31,7 @@
 *)
 
 
+Require Export per_props_tacs.
 Require Export per_props_cequiv.
 Require Export per_props_function.
 Require Export per_props_uni.
@@ -113,8 +114,21 @@ Proof.
 
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
-  spcast; repeat computes_to_eqval.
 
+  computes_to_eqval_ext.
+  hide_hyp perb2.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_equality_implies in ceq.
+  apply ccequivc_ext_mkc_equality_implies in ceq0.
+  repnd.
+
+  eapply in_ext_ext_nuprl_value_respecting_left  in pera3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_right in pera3;[|apply ccequivc_ext_sym;eauto].
+
+  Check simple_implies_iff_per_eq_eq.
+  SearchAbout eq_per_eq_bar ccequivc_ext.
+
+XXXXXXXXX
   apply (simple_implies_iff_per_eq_eq _ (trivial_bar lib)).
   apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
   introv.

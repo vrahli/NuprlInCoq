@@ -391,8 +391,12 @@ Proof.
           allrw @dom_csub_eq; GC.
 
           - destruct niph.
+<<<<<<< HEAD
             allapply @similarity_dom; repnd.
             rw <- sim'0; auto.
+=======
+            allapply @similarity_dom; repnd; rw <- sim11; auto.
+>>>>>>> e6717e4c33ad2e8c3ff125270f6f69a91acf43c4
 
           - destruct_cterms; simpl; eauto 3 with slow. }
 
@@ -1671,8 +1675,13 @@ Proof.
       * introv xt'' equ sim'.
         lsubst_tac.
 
+<<<<<<< HEAD
         apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
         apply similarity_snoc in sim'3; simpl in sim'3; exrepnd; subst; cpx; ginv; proof_irr; GC.
+=======
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx; GC; ginv; proof_irr; GC.
+        apply similarity_snoc in sim'3; simpl in sim'3; exrepnd; subst; cpx; GC; ginv; proof_irr; GC.
+>>>>>>> e6717e4c33ad2e8c3ff125270f6f69a91acf43c4
         revert c22 c24 c25 c26 c27.
         repeat (rw (@hvar_mk_hyp o)); introv.
         lsubst_tac; clear_irr.
@@ -1715,7 +1724,11 @@ Proof.
         { introv xt'' equ sim'.
           lsubst_tac.
 
+<<<<<<< HEAD
           apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
+=======
+          apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx; GC; ginv; proof_irr; GC.
+>>>>>>> e6717e4c33ad2e8c3ff125270f6f69a91acf43c4
           revert c'.
           repeat (rw (@hvar_mk_hyp o)); introv.
 
@@ -1951,8 +1964,13 @@ Proof.
       * introv xt'' equ sim'.
         lsubst_tac.
 
+<<<<<<< HEAD
         apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
         apply similarity_snoc in sim'3; simpl in sim'3; exrepnd; subst; cpx; ginv; proof_irr; GC.
+=======
+        apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx; GC; ginv; proof_irr; GC.
+        apply similarity_snoc in sim'3; simpl in sim'3; exrepnd; subst; cpx; GC; ginv; proof_irr; GC.
+>>>>>>> e6717e4c33ad2e8c3ff125270f6f69a91acf43c4
         revert c16 c20 c21 c18 c19.
         repeat (rw (@hvar_mk_hyp o)); introv.
         lsubst_tac; clear_irr.
@@ -1996,7 +2014,11 @@ Proof.
         { introv xt'' equ sim'.
           lsubst_tac.
 
+<<<<<<< HEAD
           apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx; ginv; proof_irr; GC.
+=======
+          apply similarity_snoc in sim'; simpl in sim'; exrepnd; subst; cpx; GC; ginv; proof_irr; GC.
+>>>>>>> e6717e4c33ad2e8c3ff125270f6f69a91acf43c4
           revert c'.
           repeat (rw (@hvar_mk_hyp o)); introv.
 

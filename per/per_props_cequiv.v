@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -30,10 +31,11 @@
 *)
 
 
+Require Export per_props_tacs.
 Require Export per_props_util.
 
 
-(* MOVE *)
+(*(* MOVE *)
 Lemma mkc_cequiv_computes_to_valc_ceq_bar_mkc_cequiv_implies {o} :
   forall {lib} (bar : @BarLib o lib) a b c d,
     (mkc_cequiv a b) ==b==>(bar) (mkc_cequiv c d)
@@ -41,6 +43,7 @@ Lemma mkc_cequiv_computes_to_valc_ceq_bar_mkc_cequiv_implies {o} :
 Proof.
   introv comp br ext.
   pose proof (comp lib' br lib'0 ext) as comp; simpl in *; exrepnd; spcast.
+  eapply ccequivc_ext_cequiv in comp1.
   apply computes_to_valc_isvalue_eq in comp1; eauto 3 with slow; subst.
   apply dest_close_tacs.cequivc_decomp_cequiv in comp0; repnd; dands; spcast; auto.
 Qed.
@@ -55,7 +58,7 @@ Proof.
   pose proof (comp lib' br lib'0 ext) as comp; simpl in *; exrepnd; spcast.
   apply computes_to_valc_isvalue_eq in comp1; eauto 3 with slow; subst.
   apply cequivc_decomp_approx in comp0; repnd; dands; spcast; auto.
-Qed.
+Qed.*)
 
 Lemma dest_nuprl_cequiv {o} :
   forall (lib : @library o) (a b c d : @CTerm o) eq,
@@ -87,6 +90,37 @@ Proof.
     try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
 Qed.
 
+Lemma implies_in_ext_cequivc_iff {o} :
+  forall lib (a a' b b' c c' d d' : @CTerm o),
+    ccequivc_ext lib a a'
+    -> ccequivc_ext lib b b'
+    -> ccequivc_ext lib c c'
+    -> ccequivc_ext lib d d'
+    -> in_ext lib (fun lib => a' ~=~(lib) b' <=> c' ~=~(lib) d')
+    -> in_ext lib (fun lib => a ~=~(lib) b <=> c ~=~(lib) d).
+Proof.
+  introv ceqa ceqb ceqc ceqd h ext.
+  pose proof (ceqa _ ext) as ceqa.
+  pose proof (ceqb _ ext) as ceqb.
+  pose proof (ceqc _ ext) as ceqc.
+  pose proof (ceqd _ ext) as ceqd.
+  pose proof (h _ ext) as h.
+  simpl in *.
+  split; intro q; spcast.
+
+  { eapply cequivc_trans;[eauto|].
+    eapply cequivc_trans;[|apply cequivc_sym;eauto].
+    apply cequiv_stable; apply h; spcast.
+    eapply cequivc_trans;[apply cequivc_sym;eauto|].
+    eapply cequivc_trans;[|eauto];auto. }
+
+  { eapply cequivc_trans;[eauto|].
+    eapply cequivc_trans;[|apply cequivc_sym;eauto].
+    apply cequiv_stable; apply h; spcast.
+    eapply cequivc_trans;[apply cequivc_sym;eauto|].
+    eapply cequivc_trans;[|eauto];auto. }
+Qed.
+
 Lemma dest_nuprl_cequiv2 {o} :
   forall lib (eq : per(o)) a b c d,
     nuprl lib (mkc_cequiv a b) (mkc_cequiv c d) eq
@@ -109,7 +143,9 @@ Proof.
     introv br ext; introv.
     pose proof (u0 _ br _ ext x) as u0; simpl in *.
     unfold per_cequiv in *; exrepnd; spcast.
-    computes_to_value_isvalue.
+    repeat ccomputes_to_valc_ext_val.
+    eapply eq_term_equals_trans;[eauto|].
+    introv; split; intro xx; eapply per_cequiv_eq_bar_respects_ccequivc_ext; eauto 3 with slow.
   }
 
   {
@@ -118,8 +154,8 @@ Proof.
     assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
     pose proof (u0 _ br _ ext xt) as u0; simpl in *.
     unfold per_cequiv in *; exrepnd.
-    spcast.
-    computes_to_value_isvalue.
+    repeat ccomputes_to_valc_ext_val.
+    eapply implies_in_ext_cequivc_iff; eauto.
   }
 Qed.
 
@@ -145,7 +181,9 @@ Proof.
     introv br ext; introv.
     pose proof (u0 _ br _ ext x) as u0; simpl in *.
     unfold per_cequiv in *; exrepnd; spcast.
-    computes_to_value_isvalue.
+    repeat ccomputes_to_valc_ext_val.
+    eapply eq_term_equals_trans;[eauto|].
+    introv; split; intro xx; eapply per_cequiv_eq_bar_respects_ccequivc_ext; eauto 3 with slow.
   }
 
   {
@@ -154,8 +192,8 @@ Proof.
     assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
     pose proof (u0 _ br _ ext xt) as u0; simpl in *.
     unfold per_cequiv in *; exrepnd.
-    spcast.
-    computes_to_value_isvalue.
+    repeat ccomputes_to_valc_ext_val.
+    eapply implies_in_ext_cequivc_iff; eauto.
   }
 Qed.
 
@@ -181,7 +219,9 @@ Proof.
     introv br ext; introv.
     pose proof (u0 _ br _ ext x) as u0; simpl in *.
     unfold per_approx in *; exrepnd; spcast.
-    computes_to_value_isvalue.
+    repeat ccomputes_to_valc_ext_val.
+    eapply eq_term_equals_trans;[eauto|].
+    introv; split; intro xx; eapply per_approx_eq_bar_respects_ccequivc_ext; eauto 3 with slow.
   }
 
   {
@@ -190,8 +230,8 @@ Proof.
     assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
     pose proof (u0 _ br _ ext xt) as u0; simpl in *.
     unfold per_approx in *; exrepnd.
-    spcast.
-    computes_to_value_isvalue.
+    repeat ccomputes_to_valc_ext_val.
+    eapply implies_in_ext_ccequiv_iff; eauto.
   }
 Qed.
 

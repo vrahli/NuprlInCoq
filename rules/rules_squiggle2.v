@@ -953,13 +953,13 @@ Proof.
             proof_irr.
 
             apply tequality_respects_cequivc_left
-              with (T1 := substc (lsubstc a wt2 s1a ct4) x
-                                 (lsubstc_vars T wT (csub_filter s1a [x]) [x] cb2));
+              with (T1 := substc (lsubstc a wt1 s1a ct3) x
+                                 (lsubstc_vars T wT (csub_filter s1a [x]) [x] cb3));
               try (complete (eauto with cequivc)).
 
             apply tequality_respects_cequivc_right
-              with (T2 := substc (lsubstc a wt2 s2a ct5) x
-                                 (lsubstc_vars T wT (csub_filter s2a [x]) [x] cb3));
+              with (T2 := substc (lsubstc a wt1 s2a ct4) x
+                                 (lsubstc_vars T wT (csub_filter s2a [x]) [x] cb2));
               auto;
               try (complete (eauto with cequivc)).
           }

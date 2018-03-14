@@ -40,10 +40,11 @@ Definition cmds1 {o} : @commands o :=
   [
     (* We add the 'member' abstraction *)
     COM_add_def
-      opabs_member
-      [(nvart, 0), (nvarT, 0)]
-      (mk_so_equality (sovar nvart []) (sovar nvart []) (sovar nvarT []))
-      opabs_member_correct,
+      (MkAbstraction
+         opabs_member
+         [(nvart, 0), (nvarT, 0)]
+         (mk_so_equality (sovar nvart []) (sovar nvart []) (sovar nvarT []))
+         opabs_member_correct),
 
     (* We prove that 'member' is well-formed *)
     COM_start_proof
@@ -161,10 +162,11 @@ Definition cmds1 {o} : @commands o :=
 
     (* We define a new abstraction on top of the one we got from "int_member"'s proof *)
     COM_add_def
-      opabs_myint
-      []
-      (mk_simple_so_abs (opname2opabs "int_member"))
-      (eq_refl, (eq_refl, (eq_refl, (eq_refl, eq_refl)))),
+      (MkAbstraction
+         opabs_myint
+         []
+         (mk_simple_so_abs (opname2opabs "int_member"))
+         (eq_refl, (eq_refl, (eq_refl, (eq_refl, eq_refl))))),
 
     (* We prove that 'myint' computes to 17 in 2 computation steps *)
     COM_start_proof

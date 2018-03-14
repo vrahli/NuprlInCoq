@@ -2315,8 +2315,8 @@ Proof.
 
   dands.
 
-  exists P0 P2 ap0 ap2 A0 A2.
-  exists bp0 bp2 ba0 ba2 B0 B2; dands; spcast; auto;
+  exists P1 P3 ap1 ap3 A1 A3.
+  exists bp1 bp3 ba1 ba3 B1 B3; dands; spcast; auto;
   try (rw fold_equal_fams);
   try (rw fold_equal_fams_fams);
   try (fold (equal_Cparams eqp1 eqa1 eqb1 cp1 ca1 cb1 C1 cp3 ca3 cb3 C3)).
@@ -2324,7 +2324,7 @@ Proof.
 
   (* equality of the Ps *)
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  generalize (dum P P0 P2 eqp1 eqp2); sp.
+  generalize (dum P P1 P3 eqp1 eqp2); sp.
 
 
   (* equality of the As *)

@@ -122,7 +122,7 @@ Proof.
 
     apply similarity_app in sim'; exrepnd; subst; allrw length_snoc.
     apply app_split in sim'0; exrepd; allrw length_snoc; try (complete (allrw; sp)); subst; cpx.
-    apply similarity_snoc in sim'5; exrepnd; subst; allrw length_snoc; cpx; allsimpl.
+    apply similarity_snoc in sim'5; exrepnd; subst; allrw length_snoc; cpx; allsimpl; GC.
     ginv.
 
     autodimp eqh' hyp.
@@ -148,7 +148,7 @@ Proof.
     rw @eq_hyps_app in eqh'; exrepnd; allrw length_snoc.
     apply app_split in eqh'0; exrepd; allrw length_snoc; try (complete (allrw; sp)); subst; cpx.
     apply app_split in eqh'2; exrepd; allrw length_snoc; try (complete (allrw; sp)); subst; cpx.
-    apply eq_hyps_snoc in eqh'5; exrepnd; cpx; allsimpl; ginv.
+    apply eq_hyps_snoc in eqh'5; exrepnd; cpx; allsimpl; GC; ginv.
 
     apply eq_hyps_app.
     eexists; eexists; eexists; eexists; dands;
@@ -170,7 +170,7 @@ Proof.
     apply equality_in_universe in h0; auto.
     apply equality_in_uni in h1.
     eapply tequality_trans;[apply tequality_sym;eauto|].
-    eapply tequality_trans;[eauto|];auto.
+    eapply tequality_trans;[exact eqh'0|];auto.
   }
 
   {

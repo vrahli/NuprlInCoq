@@ -181,13 +181,13 @@ Proof.
 
   remember (@top_in_type o); allsimpl.
   remember (projT1 n).
-  duplicate Heqy as eq.
+  duplicate Heqn0 as eq.
   rw Heqn in eq.
-  rw Heqy in eq.
+  rw Heqn0 in eq.
   simpl in eq.
-  clear Heqy Heqn.
+  clear Heqn0 Heqn.
   unfold nprove in n; exrepnd; allsimpl; subst.
-  apply sequent_true_change_wf with (w2 := c) in n1; auto.
+  apply sequent_true_change_wf with (w2 := c) in n2; auto.
 
 
   (* now we prove the wf subgoals *)

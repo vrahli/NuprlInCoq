@@ -2153,7 +2153,7 @@ Proof.
     + eapply tequality_respects_alphaeqc_left;
       [apply alphaeqc_sym; apply (lsubstc_mod_fun_type_v2_aux x T w3 s1 c4 wT cT);auto|].
       eapply tequality_respects_alphaeqc_right;
-        [apply alphaeqc_sym; apply (lsubstc_mod_fun_type_v2_aux x T w3 s2 c6 wT cT1);auto|].
+        [apply alphaeqc_sym; apply (lsubstc_mod_fun_type_v2_aux x T w3 s2 c6 wT cT0);auto|].
       apply tequality_modulus_fun_type_u_v2; auto.
 
     + intros M1 M2 em.
@@ -2169,7 +2169,7 @@ Proof.
       * eapply tequality_respects_alphaeqc_left;
         [apply alphaeqc_sym;apply (lsubstc_mk_nat2T_sp1 T w0 s1 c2 wT cT)|].
         eapply tequality_respects_alphaeqc_right;
-          [apply alphaeqc_sym;apply (lsubstc_mk_nat2T_sp1 T w0 s2 c13 wT cT1)|].
+          [apply alphaeqc_sym;apply (lsubstc_mk_nat2T_sp1 T w0 s2 c13 wT cT0)|].
         apply tequality_nat2T; auto.
 
       * intros f1 f2 en2n.
@@ -2238,7 +2238,7 @@ Proof.
     unfold mk_exists.
     lsubst_tac.
 
-    exists (mkc_pair (spM_c (lsubstc F wt0 s1 ct2))
+    exists (mkc_pair (spM_c (lsubstc F wt0 s1 ct3))
                      (mkc_lam f (mkcv_axiom f))).
 
     apply equality_in_product.
@@ -2376,7 +2376,7 @@ Proof.
 
             pose proof (spM_in_modulus_fun_type_u_v2
                           lib
-                          (lsubstc F wt0 s1 ct2)
+                          (lsubstc F wt0 s1 ct3)
                           (lsubstc t wt s1 ct1)
                           (lsubstc T wT s1 cT)) as h.
             repeat (autodimp h hyp);[].
@@ -2431,7 +2431,7 @@ Proof.
           try (apply computes_to_valc_refl; eauto 3 with slow);[].
 
           applydup @equality_refl in en2n as mf1.
-          pose proof (spM_cond_v2 lib (lsubstc F wt0 s1 ct2) f1 (lsubstc T wT s1 cT) h1 mf1) as h.
+          pose proof (spM_cond_v2 lib (lsubstc F wt0 s1 ct3) f1 (lsubstc T wT s1 cT) h1 mf1) as h.
           exrepnd.
 
           allrw @lsubstc_mkc_tnat.
@@ -2457,7 +2457,7 @@ Proof.
 
               pose proof (spM_in_modulus_fun_type_u_v2
                             lib
-                            (lsubstc F wt0 s1 ct2)
+                            (lsubstc F wt0 s1 ct3)
                             (lsubstc t wt s1 ct1)
                             (lsubstc T wT s1 cT)) as h.
               repeat (autodimp h hyp);[].

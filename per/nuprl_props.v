@@ -589,6 +589,16 @@ Proof.
     try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
 Qed.
 
+Lemma ccomputes_to_valc_ext_implies_ccequivc_ext {o} :
+  forall lib (a b : @CTerm o),
+    ccomputes_to_valc_ext lib a b
+    -> ccequivc_ext lib a b.
+Proof.
+  introv comp ext; apply comp in ext; clear comp; exrepnd; spcast.
+  eapply cequivc_trans;[apply computes_to_valc_implies_cequivc;eauto|].
+  apply cequivc_sym;auto.
+Qed.
+
 Lemma univ_implies_univi_bar {o} :
   forall lib i (eq : per(o)),
     univ lib (mkc_uni i) (mkc_uni i) eq
@@ -601,8 +611,9 @@ Proof.
   introv br ext; introv.
   pose proof (u0 _ br _ ext x) as u0; simpl in *.
   unfold univ_ex in u0; exrepnd.
-  allrw @univi_exists_iff; exrepnd; spcast.
-  computes_to_value_isvalue.
+  allrw @univi_exists_iff; exrepnd; GC.
+  apply ccomputes_to_valc_ext_implies_ccequivc_ext in u3.
+  apply ccequivc_ext_uni_uni_implies in u3; subst.
   left; dands; spcast; auto; eauto 3 with slow.
 Qed.
 
@@ -620,8 +631,9 @@ Proof.
   introv br ext; introv.
   pose proof (u0 _ br _ ext x) as u0; simpl in *.
   unfold univ_ex in u0; exrepnd.
-  allrw @univi_exists_iff; exrepnd; spcast.
-  computes_to_value_isvalue.
+  allrw @univi_exists_iff; exrepnd; GC.
+  apply ccomputes_to_valc_ext_implies_ccequivc_ext in u3.
+  apply ccequivc_ext_uni_uni_implies in u3; subst; auto.
 Qed.
 
 Lemma univ_implies_univi_bar3 {o} :
@@ -1135,7 +1147,7 @@ Proof.
   allrw <-; sp.
 Qed.
 
-Lemma mkc_approx_computes_to_valc_ceq_bar_implies {o} :
+(*Lemma mkc_approx_computes_to_valc_ceq_bar_implies {o} :
   forall lib (bar : BarLib lib) (a b c d : @CTerm o),
     ((mkc_approx a b) ==b==>(bar) (mkc_approx c d))
     -> all_in_bar bar (fun lib => ccequivc lib a c # ccequivc lib b d).
@@ -1145,7 +1157,7 @@ Proof.
   computes_to_value_isvalue.
   apply cequivc_decomp_approx in comp0; repnd.
   dands; spcast; auto.
-Qed.
+Qed.*)
 
 Lemma dest_nuprl_approx {o} :
   forall (lib : @library o) (a b c d : @CTerm o) eq,
@@ -1175,6 +1187,47 @@ Proof.
   apply (h _ br lib'0); eauto 3 with slow.
 Qed.
 
+Lemma ccequivc_ext_implies_eq_term_equals_per_approx_eq_bar {o} :
+  forall lib (a1 a2 b1 b2 : @CTerm o),
+    ccequivc_ext lib a1 a2
+    -> ccequivc_ext lib b1 b2
+    -> (per_approx_eq_bar lib a1 b1) <=2=> (per_approx_eq_bar lib a2 b2).
+Proof.
+  introv ceq1 ceq2; introv; split; intro h;
+    eapply per_approx_eq_bar_respects_ccequivc_ext; eauto; eauto 3 with slow.
+Qed.
+
+Lemma implies_in_ext_ccequiv_iff {o} :
+  forall lib (a a' b b' c c' d d' : @CTerm o),
+    ccequivc_ext lib a a'
+    -> ccequivc_ext lib b b'
+    -> ccequivc_ext lib c c'
+    -> ccequivc_ext lib d d'
+    -> in_ext lib (fun lib => a' ~<~(lib) b' <=> c' ~<~(lib) d')
+    -> in_ext lib (fun lib => a ~<~(lib) b <=> c ~<~(lib) d).
+Proof.
+  introv ceqa ceqb ceqc ceqd h ext.
+  pose proof (ceqa _ ext) as ceqa.
+  pose proof (ceqb _ ext) as ceqb.
+  pose proof (ceqc _ ext) as ceqc.
+  pose proof (ceqd _ ext) as ceqd.
+  pose proof (h _ ext) as h.
+  simpl in *.
+  split; intro q; spcast.
+
+  { eapply cequivc_approxc_trans;[exact ceqc|].
+    eapply approxc_cequivc_trans;[|apply cequivc_sym;exact ceqd].
+    apply approx_stable; apply h; spcast.
+    eapply cequivc_approxc_trans;[apply cequivc_sym;exact ceqa|].
+    eapply approxc_cequivc_trans;[|exact ceqb]; auto. }
+
+  { eapply cequivc_approxc_trans;[exact ceqa|].
+    eapply approxc_cequivc_trans;[|apply cequivc_sym;exact ceqb].
+    apply approx_stable; apply h; spcast.
+    eapply cequivc_approxc_trans;[apply cequivc_sym;exact ceqc|].
+    eapply approxc_cequivc_trans;[|exact ceqd]; auto. }
+Qed.
+
 Lemma dest_nuprl_approx2 {o} :
   forall lib (eq : per(o)) a b c d,
     nuprl lib (mkc_approx a b) (mkc_approx c d) eq
@@ -1197,7 +1250,14 @@ Proof.
     introv br ext; introv.
     pose proof (u0 _ br _ ext x) as u0; simpl in *.
     unfold per_approx in *; exrepnd; spcast.
-    computes_to_value_isvalue.
+
+    apply ccomputes_to_valc_ext_implies_ccequivc_ext in u2.
+    apply ccomputes_to_valc_ext_implies_ccequivc_ext in u3.
+    apply cequivc_ext_mkc_approx_right in u2.
+    apply cequivc_ext_mkc_approx_right in u3.
+    repnd.
+    eapply eq_term_equals_trans;[eauto|].
+    apply ccequivc_ext_implies_eq_term_equals_per_approx_eq_bar; eauto 3 with slow.
   }
 
   {
@@ -1206,8 +1266,13 @@ Proof.
     assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
     pose proof (u0 _ br _ ext xt) as u0; simpl in *.
     unfold per_approx in *; exrepnd.
-    spcast.
-    computes_to_value_isvalue.
+
+    apply ccomputes_to_valc_ext_implies_ccequivc_ext in u2.
+    apply ccomputes_to_valc_ext_implies_ccequivc_ext in u3.
+    apply cequivc_ext_mkc_approx_right in u2.
+    apply cequivc_ext_mkc_approx_right in u3.
+    repnd.
+    eapply implies_in_ext_ccequiv_iff; eauto.
   }
 Qed.
 
@@ -1600,7 +1665,7 @@ Proof.
   eapply reduces_to_trans; eauto.
 Qed.
 
-Lemma reduces_toc_implies_ccequivc_ext {p} :
+(*Lemma reduces_toc_implies_ccequivc_ext {p} :
   forall lib t x,
     @reduces_toc p lib t x
     -> ccequivc_ext lib t x.
@@ -1611,9 +1676,9 @@ Proof.
   spcast; unfold cequivc; simpl.
   eapply lib_extends_preserves_reduces_to in r;[|eauto|]; eauto 3 with slow.
   apply reduces_to_implies_cequiv; eauto 3 with slow.
-Qed.
+Qed.*)
 
-Lemma member_respects_reduces_toc {o} :
+(*Lemma member_respects_reduces_toc {o} :
   forall lib (t1 t2 T : @CTerm o),
   reduces_toc lib t1 t2
   -> member lib t2 T
@@ -1624,7 +1689,7 @@ Proof.
   apply ccequivc_ext_sym in r.
   eapply equality_respects_cequivc in r;[|exact m].
   apply equality_sym in r; apply equality_refl in r; auto.
-Qed.
+Qed.*)
 
 Lemma member_respects_cequivc {o} :
   forall lib (t1 t2 T : @CTerm o),

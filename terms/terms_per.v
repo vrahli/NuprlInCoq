@@ -1,6 +1,10 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -500,14 +504,22 @@ Proof.
   }
 
   {
-    repeat (apply isprog_vars_cons_if2 in k0;
-            [|allrw in_app_iff; allrw not_over_or; repnd;tcsp]).
+    apply isprog_vars_cons_if2 in k0;
+      try (complete (repeat (rw in_app_iff in Heqp1); repeat (rw not_over_or in Heqp1); sp)).
+    apply isprog_vars_cons_if2 in k0;
+      try (complete (repeat (rw in_app_iff in Heqp0); repeat (rw not_over_or in Heqp0); sp)).
     apply isprog_vars_cons_app1 in k0; auto.
     allrw in_app_iff; allrw not_over_or; repnd.
     simpl; introv xx; repndors; subst; tcsp.
   }
 
   {
+    apply isprog_vars_cons_if2 in k;
+      try (complete (repeat (rw in_app_iff in Heqp); repeat (rw not_over_or in Heqp); sp)).
+    apply isprog_vars_cons_if2 in k;
+      try (complete (repeat (rw in_app_iff in Heqp1); repeat (rw not_over_or in Heqp1); sp)).
+    apply isprog_vars_cons_if2 in k;
+      try (complete (repeat (rw in_app_iff in Heqp0); repeat (rw not_over_or in Heqp0); sp)).
     allrw in_app_iff; allrw not_over_or; repnd.
     apply isprog_vars_cons_if2 in k1; auto.
     repeat (apply isprog_vars_cons_if2 in k1;
