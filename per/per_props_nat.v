@@ -91,7 +91,7 @@ Lemma nuprl_int {p} :
 Proof.
   sp.
   apply CL_int.
-  unfold per_int; sp; spcast; try computes_to_value_refl.
+  unfold per_int; sp; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve nuprl_int : slow.
 
@@ -109,9 +109,7 @@ Proof.
   introv; exists (trivial_bar lib).
   apply in_ext_implies_all_in_bar_trivial_bar.
   introv x.
-  exists (Z_of_nat n); sp;
-  unfold mkc_nat, mkc_integer, isprog_mk_nat, isprog_mk_integer, mk_nat;
-    spcast; computes_to_value_refl.
+  exists (Z_of_nat n); rw <- @mkc_nat_eq; dands; eauto 2 with slow.
 Qed.
 Hint Resolve equality_of_int_bar_same_nat : slow.
 
@@ -154,6 +152,16 @@ Proof.
   apply hasvalue_mk_less in hv; eauto 3 with slow.
 Qed.
 
+(* MOVE *)
+Lemma implies_all_in_ex_bar_in_ext {o} :
+  forall (lib : @library o) F,
+    all_in_ex_bar lib F -> all_in_ex_bar lib (fun lib' => in_ext lib' F).
+Proof.
+  introv h; unfold all_in_ex_bar in *; exrepnd; exists bar.
+  apply implies_all_in_bar_in_ext; auto.
+Qed.
+
+
 Lemma equality_in_less {o} :
   forall lib (u v a b c d : @CTerm o),
     equality lib u v (mkc_less a b c d)
@@ -175,15 +183,16 @@ Proof.
   split; intro k; exrepnd.
 
   - applydup @inhabited_implies_tequality in k.
-    apply types_converge in k0.
-    unfold chaltsc_bar in k0.
+    apply types_converge2 in k0.
     eapply all_in_ex_bar_modus_ponens1;[|eauto]; clear k0.
-    introv x q; spcast.
+    introv x q; exrepnd.
+
+XXXXXXXXX
     apply hasvaluec_mkc_less in q.
     exrepnd.
 
-    exists k1 k2; dands; spcast; eauto with slow;
-    try (complete (apply computes_to_valc_iff_reduces_toc; dands; eauto with slow)).
+    exists k1 k2; dands; spcast; eauto 2 with slow;
+    try (complete (apply computes_to_valc_iff_reduces_toc; dands; eauto 2 with slow)).
 
     assert (ccequivc_ext
               lib'

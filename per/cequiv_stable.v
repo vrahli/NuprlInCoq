@@ -597,3 +597,115 @@ Proof.
   dands; apply approx_stable; spcast;
   rw @cequivc_iff_approxc in h; sp.
 Qed.
+
+Lemma cast_hasvalue {o} :
+  forall lib (a : @NTerm o),
+    Cast (hasvalue lib a)
+    -> {k : nat
+        , {u : NTerm
+        , reduces_in_atmost_k_steps lib a u k
+        # isprog u
+        # iscan u}}.
+Proof.
+  introv comp; spcast.
+  unfold hasvalue, computes_to_value, reduces_to in comp; exrepnd.
+  exists k t'; dands; eauto 2 with slow.
+  apply compute_max_steps_eauto2 in comp0; eauto 3 with slow.
+Qed.
+
+Lemma cast_hasvalue2 {o} :
+  forall lib (a : @NTerm o),
+    Cast (hasvalue lib a)
+    -> {k : nat
+        , {u : NTerm
+        , reduces_in_atmost_k_steps lib a u k
+        # iscan u}}.
+Proof.
+  introv comp; spcast.
+  unfold hasvalue, computes_to_value, reduces_to in comp; exrepnd.
+  exists k t'; dands; eauto 2 with slow.
+Qed.
+
+(*
+Lemma dec_ex_reduces_in_atmost_k_steps_isprog_iscan {o} :
+  forall lib k (t : @NTerm o),
+    decidable {v : NTerm & reduces_in_atmost_k_steps lib t v k # isprog v # iscan v}.
+Proof.
+  introv.
+  destruct (dec_ex_reduces_in_atmost_k_steps lib k t) as [d|d].
+  - exrepnd.
+    destruct (dec_iscan v) as [p|p].
+    + destruct (decidable_isprog v) as [q|q].
+      * left; exists v; sp.
+      * right; intro h; exrepnd.
+        eapply reduces_in_atmost_k_steps_eq in d0;[|exact h1]; subst; sp.
+    + right; intro h; exrepnd.
+      eapply reduces_in_atmost_k_steps_eq in d0;[|exact h1]; subst; sp.
+  - right; introv h; destruct d; exrepnd.
+    exists v; auto.
+Qed.
+
+Lemma dec_ex_reduces_in_atmost_k_steps_isprog_iscan_prop {o} :
+  forall lib k (t : @NTerm o),
+    decidable {v : NTerm , reduces_in_atmost_k_steps lib t v k # isprog v # iscan v}.
+Proof.
+  introv.
+  destruct (dec_ex_reduces_in_atmost_k_steps_isprog_iscan lib k t) as [d|d].
+  - left; exrepnd; exists v; sp.
+  - right; intro h; exrepnd; destruct d; exists v; sp.
+Qed.
+
+Lemma dec_ex_reduces_in_atmost_k_steps_isprog_iscan_prop2 {o} :
+  forall lib k (t : @NTerm o),
+    {{v : NTerm , reduces_in_atmost_k_steps lib t v k # isprog v # iscan v}}
+    + {!{v : NTerm , reduces_in_atmost_k_steps lib t v k # isprog v # iscan v}}.
+Proof.
+  introv.
+  destruct (dec_ex_reduces_in_atmost_k_steps_isprog_iscan_prop lib k t) as [d|d]; sp.
+Qed.
+
+Lemma ex_reduces_in_atmost_k_steps_isprog_iscan {o} :
+  forall lib (t : @NTerm o) k,
+    {u : NTerm , reduces_in_atmost_k_steps lib t u k # isprog u # iscan u}
+    -> {u : NTerm & reduces_in_atmost_k_steps lib t u k # isprog u # iscan u}.
+Proof.
+  introv comp.
+  destruct (dec_ex_reduces_in_atmost_k_steps_isprog_iscan lib k t) as [d|d].
+  - exrepnd.
+    exists v; auto.
+  - provefalse; exrepnd; destruct d.
+    exists u; auto.
+Qed.
+ *)
+
+Lemma ex_reduces_in_atmost_k_steps_iscan {o} :
+  forall lib (t : @NTerm o) k,
+    {u : NTerm , reduces_in_atmost_k_steps lib t u k # iscan u}
+    -> {u : NTerm & reduces_in_atmost_k_steps lib t u k # iscan u}.
+Proof.
+  introv comp.
+  destruct (dec_ex_reduces_in_atmost_k_steps_iscan lib k t) as [d|d].
+  - exrepnd.
+    exists v; auto.
+  - provefalse; exrepnd; destruct d.
+    exists u; auto.
+Qed.
+
+Lemma hasvaluec_stable {o} :
+  forall lib (a : @CTerm o), chaltsc lib a -> hasvaluec lib a.
+Proof.
+  introv.
+  destruct_cterms.
+  unfold chaltsc, hasvaluec; simpl.
+  intro h.
+  apply cast_hasvalue2 in h.
+  apply (constructive_indefinite_ground_description nat (fun x => x) (fun x => x))
+    in h; auto;
+  [|introv; apply dec_ex_reduces_in_atmost_k_steps_iscan_prop2].
+  exrepnd.
+  apply ex_reduces_in_atmost_k_steps_iscan in h0; exrepnd.
+  exists u.
+  unfold computes_to_value; dands; auto.
+  { exists x0; auto. }
+  { apply isvalue_iff; dands; eauto 3 with slow. }
+Qed.

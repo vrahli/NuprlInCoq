@@ -68,7 +68,7 @@ Proof.
   apply CL_approx.
   eexists; eexists; eexists; eexists; dands; auto; spcast;
     try (rw @mkc_void_eq_mkc_false; rw @mkc_false_eq);
-    try (apply @computes_to_valc_refl; apply @iscvalue_mkc_approx).
+    try (apply @ccomputes_to_valc_ext_refl; apply @iscvalue_mkc_approx).
 
   { introv; split; intro k; repnd; sp; spcast. }
 

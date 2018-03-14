@@ -32,6 +32,7 @@
 *)
 
 
+Require Export per_props_tacs.
 Require Export per_props_fam.
 Require Export per_props_util.
 Require Export csubst6.
@@ -57,7 +58,18 @@ Proof.
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
 
-  unfold type_family_ext in *; exrepnd; spcast; repeat computes_to_eqval.
+  unfold type_family_ext in *; exrepnd.
+  computes_to_eqval_ext.
+  hide_hyp pera3.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_product_implies in ceq.
+  apply ccequivc_ext_mkc_product_implies in ceq0.
+  repnd.
+
+  eapply in_ext_ext_nuprl_value_respecting_left  in pera4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_right in pera4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_fam_nuprl_value_respecting_left  in pera0;[|apply bcequivc_ext_sym;eauto].
+  eapply in_ext_ext_fam_nuprl_value_respecting_right in pera0;[|apply bcequivc_ext_sym;eauto].
 
   apply implies_eq_term_equals_per_product_eq_bar.
 
@@ -74,7 +86,7 @@ Proof.
   {
     introv.
     pose proof (pera0 _ e a a' u) as pera0.
-    pose proof (perb0 _ e a a' v) as perb0.
+    pose proof (perb0 _ e a a' v1) as perb0.
     simpl in *.
     apply nuprl_refl in pera0.
     apply nuprl_refl in perb0.
@@ -93,7 +105,7 @@ Hint Resolve local_per_bar_per_product_bar_nuprl : slow.
 Lemma dest_nuprl_per_product_l {o} :
   forall (ts : cts(o)) lib T A v B T' eq,
     ts = univ
-    -> computes_to_valc lib T (mkc_product A v B)
+    -> ccomputes_to_valc_ext lib T (mkc_product A v B)
     -> close ts lib T T' eq
     -> per_bar (per_product_bar (close ts)) lib T T' eq.
 Proof.
@@ -127,7 +139,17 @@ Lemma type_family_ext_nuprl_product_uniquely_valued_eqas {o} :
 Proof.
   introv tfa tfb.
   unfold type_family_ext in *; exrepnd; spcast.
-  repeat computes_to_eqval.
+  repeat ccomputes_to_valc_ext_val.
+
+  eapply in_ext_ext_nuprl_value_respecting_left  in tfa3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_right in tfa3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_left  in tfb3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_right in tfb3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_fam_nuprl_value_respecting_left  in tfa1;[|apply bcequivc_ext_sym;eauto].
+  eapply in_ext_ext_fam_nuprl_value_respecting_right in tfa1;[|apply bcequivc_ext_sym;eauto].
+  eapply in_ext_ext_fam_nuprl_value_respecting_left  in tfb1;[|apply bcequivc_ext_sym;eauto].
+  eapply in_ext_ext_fam_nuprl_value_respecting_right in tfb1;[|apply bcequivc_ext_sym;eauto].
+
   introv.
   pose proof (tfa3 _ e) as tfa3.
   pose proof (tfb3 _ e) as tfb3.
@@ -231,12 +253,24 @@ Proof.
 
       - exists lib' br (lib_extends_trans e ext) (lib_extends_trans e x).
         unfold type_family_ext in u0; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprl_value_respecting_left  in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprl_value_respecting_right in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_left  in u0;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_right in u0;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (u3 _ e) as u3; simpl in *.
 
         pose proof (F lib' br _ (lib_extends_trans e ext) (lib_extends_trans e x)) as q.
         unfold type_family_ext in q; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprl_value_respecting_left  in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprl_value_respecting_right in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_left  in q1;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_right in q1;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (q3 _ (lib_extends_refl lib'1)) as q3; simpl in *.
         apply nuprl_refl in q3.
         apply nuprl_refl in u3.
@@ -245,12 +279,24 @@ Proof.
 
       - exrepnd.
         unfold type_family_ext in u0; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprl_value_respecting_left  in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprl_value_respecting_right in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_left  in u0;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_right in u0;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (u3 _ e) as u3; simpl in *.
 
         pose proof (F lib1 br0 _ ext0 x0) as q.
         unfold type_family_ext in q; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprl_value_respecting_left  in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprl_value_respecting_right in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_left  in q1;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_right in q1;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (q3 _ (lib_extends_refl lib'1)) as q3; simpl in *.
         apply nuprl_refl in q3.
         apply nuprl_refl in u3.
@@ -264,12 +310,24 @@ Proof.
 
       - exists lib' br (lib_extends_trans e ext) (lib_extends_trans e x).
         unfold type_family_ext in u0; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprl_value_respecting_left  in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprl_value_respecting_right in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_left  in u0;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_right in u0;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (u0 _ e a a' u) as u0; simpl in *.
 
         pose proof (F lib' br _ (lib_extends_trans e ext) (lib_extends_trans e x)) as q.
         unfold type_family_ext in q; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprl_value_respecting_left  in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprl_value_respecting_right in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_left  in q1;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_right in q1;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (q1 _ (lib_extends_refl lib'1) a a') as q1; simpl in *.
         remember (bar_and_fam_per2lib_per_implies_lpaf_eqa F lib' br  (lib_extends_trans e ext) (lib_extends_trans e x) v0) as xxx.
         pose proof (q1 xxx) as q1; simpl in *.
@@ -282,12 +340,24 @@ Proof.
 
       - exrepnd.
         unfold type_family_ext in u0; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprl_value_respecting_left  in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprl_value_respecting_right in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_left  in u0;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_right in u0;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (u0 _ e a a' u) as u0; simpl in *.
 
         pose proof (F lib1 br0 _ ext0 y) as q.
         unfold type_family_ext in q; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprl_value_respecting_left  in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprl_value_respecting_right in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_left  in q1;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprl_value_respecting_right in q1;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (q1 _ (lib_extends_refl lib'1) a a') as q1; simpl in *.
         remember (bar_and_fam_per2lib_per_implies_lpaf_eqa F lib1 br0 ext0 y v0) as xxx.
         pose proof (q1 xxx) as q1; simpl in *.
@@ -306,7 +376,13 @@ Proof.
     pose proof (u2 _ br _ ext x) as h; simpl in *; repnd.
     clear h.
     unfold type_family_ext in h0; exrepnd.
-    computes_to_value_isvalue.
+
+    repeat ccomputes_to_valc_ext_val.
+    eapply in_ext_ext_nuprl_value_respecting_left  in h3;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprl_value_respecting_right in h3;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_fam_nuprl_value_respecting_left  in h0;[|apply bcequivc_ext_sym;eauto].
+    eapply in_ext_ext_fam_nuprl_value_respecting_right in h0;[|apply bcequivc_ext_sym;eauto].
+
     pose proof (h3 _ (lib_extends_refl lib'0)) as h3; simpl in *.
     eapply type_extensionality_nuprl;[eauto|].
 
@@ -318,7 +394,13 @@ Proof.
       pose proof (u2 _ br0 _ ext0 x0) as u2; repnd.
       clear u2.
       unfold type_family_ext in u0; exrepnd.
-      computes_to_value_isvalue.
+
+      repeat ccomputes_to_valc_ext_val.
+      eapply in_ext_ext_nuprl_value_respecting_left  in u4;[|apply ccequivc_ext_sym;eauto].
+      eapply in_ext_ext_nuprl_value_respecting_right in u4;[|apply ccequivc_ext_sym;eauto].
+      eapply in_ext_ext_fam_nuprl_value_respecting_left  in u0;[|apply bcequivc_ext_sym;eauto].
+      eapply in_ext_ext_fam_nuprl_value_respecting_right in u0;[|apply bcequivc_ext_sym;eauto].
+
       pose proof (u4 _ (lib_extends_refl lib'0)) as u4; simpl in *.
       apply nuprl_refl in u4.
       apply nuprl_refl in h3.
@@ -332,7 +414,13 @@ Proof.
     pose proof (u2 _ br0 _ ext0 x0) as h; simpl in *; repnd.
     clear h.
     unfold type_family_ext in h0; exrepnd.
-    computes_to_value_isvalue.
+
+    repeat ccomputes_to_valc_ext_val.
+    eapply in_ext_ext_nuprl_value_respecting_left  in h3;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprl_value_respecting_right in h3;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_fam_nuprl_value_respecting_left  in h0;[|apply bcequivc_ext_sym;eauto].
+    eapply in_ext_ext_fam_nuprl_value_respecting_right in h0;[|apply bcequivc_ext_sym;eauto].
+
     pose proof (h0 _ (lib_extends_refl lib'0) a a' e1) as h0; simpl in *.
     eapply type_extensionality_nuprl;[eauto|].
 
@@ -345,7 +433,13 @@ Proof.
       pose proof (u2 _ br1 _ ext1 y) as u2; repnd.
       clear u2.
       unfold type_family_ext in u0; exrepnd.
-      computes_to_value_isvalue.
+
+      repeat ccomputes_to_valc_ext_val.
+      eapply in_ext_ext_nuprl_value_respecting_left  in u4;[|apply ccequivc_ext_sym;eauto].
+      eapply in_ext_ext_nuprl_value_respecting_right in u4;[|apply ccequivc_ext_sym;eauto].
+      eapply in_ext_ext_fam_nuprl_value_respecting_left  in u0;[|apply bcequivc_ext_sym;eauto].
+      eapply in_ext_ext_fam_nuprl_value_respecting_right in u0;[|apply bcequivc_ext_sym;eauto].
+
       remember (bar_and_fam_per2lib_per_implies_lpaf_eqa F lib0 br1 ext1 y (ex_intro _ lib1 (ex_intro _ br0 (ex_intro _ ext0 (ex_intro _ x0 e1))))) as xxx.
       pose proof (u0 _ (lib_extends_refl lib'0) a a' xxx) as u0; simpl in *.
       subst.
@@ -376,7 +470,18 @@ Proof.
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
 
-  unfold type_family_ext in *; exrepnd; spcast; repeat computes_to_eqval.
+  unfold type_family_ext in *; exrepnd.
+
+  computes_to_eqval_ext.
+  hide_hyp perb3.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_product_implies in ceq.
+  apply ccequivc_ext_mkc_product_implies in ceq0.
+  repnd.
+  eapply in_ext_ext_nuprli_value_respecting_left  in pera4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_right in pera4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_fam_nuprli_value_respecting_left  in pera0;[|apply bcequivc_ext_sym;eauto].
+  eapply in_ext_ext_fam_nuprli_value_respecting_right in pera0;[|apply bcequivc_ext_sym;eauto].
 
   apply implies_eq_term_equals_per_product_eq_bar.
 
@@ -393,7 +498,7 @@ Proof.
   {
     introv.
     pose proof (pera0 _ e a a' u) as pera0.
-    pose proof (perb0 _ e a a' v) as perb0.
+    pose proof (perb0 _ e a a' v1) as perb0.
     simpl in *.
     apply nuprli_refl in pera0.
     apply nuprli_refl in perb0.
@@ -412,7 +517,7 @@ Hint Resolve local_per_bar_per_product_bar_nuprli : slow.
 Lemma dest_nuprli_per_product_l {o} :
   forall i (ts : cts(o)) lib T A v B T' eq,
     ts = univi_bar i
-    -> computes_to_valc lib T (mkc_product A v B)
+    -> ccomputes_to_valc_ext lib T (mkc_product A v B)
     -> close ts lib T T' eq
     -> per_bar (per_product_bar (close ts)) lib T T' eq.
 Proof.
@@ -446,7 +551,17 @@ Lemma type_family_ext_nuprli_product_uniquely_valued_eqas {o} :
 Proof.
   introv tfa tfb.
   unfold type_family_ext in *; exrepnd; spcast.
-  repeat computes_to_eqval.
+
+  repeat ccomputes_to_valc_ext_val.
+  eapply in_ext_ext_nuprli_value_respecting_left  in tfa3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_right in tfa3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_fam_nuprli_value_respecting_left  in tfa1;[|apply bcequivc_ext_sym;eauto].
+  eapply in_ext_ext_fam_nuprli_value_respecting_right in tfa1;[|apply bcequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_left  in tfb3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_right in tfb3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_fam_nuprli_value_respecting_left  in tfb1;[|apply bcequivc_ext_sym;eauto].
+  eapply in_ext_ext_fam_nuprli_value_respecting_right in tfb1;[|apply bcequivc_ext_sym;eauto].
+
   introv.
   pose proof (tfa3 _ e) as tfa3.
   pose proof (tfb3 _ e) as tfb3.
@@ -550,12 +665,24 @@ Proof.
 
       - exists lib' br (lib_extends_trans e ext) (lib_extends_trans e x).
         unfold type_family_ext in u0; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprli_value_respecting_left  in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprli_value_respecting_right in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_left  in u0;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_right in u0;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (u3 _ e) as u3; simpl in *.
 
         pose proof (F lib' br _ (lib_extends_trans e ext) (lib_extends_trans e x)) as q.
         unfold type_family_ext in q; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprli_value_respecting_left  in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprli_value_respecting_right in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_left  in q1;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_right in q1;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (q3 _ (lib_extends_refl lib'1)) as q3; simpl in *.
         apply nuprli_refl in q3.
         apply nuprli_refl in u3.
@@ -564,12 +691,24 @@ Proof.
 
       - exrepnd.
         unfold type_family_ext in u0; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprli_value_respecting_left  in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprli_value_respecting_right in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_left  in u0;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_right in u0;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (u3 _ e) as u3; simpl in *.
 
         pose proof (F lib1 br0 _ ext0 x0) as q.
         unfold type_family_ext in q; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprli_value_respecting_left  in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprli_value_respecting_right in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_left  in q1;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_right in q1;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (q3 _ (lib_extends_refl lib'1)) as q3; simpl in *.
         apply nuprli_refl in q3.
         apply nuprli_refl in u3.
@@ -583,12 +722,24 @@ Proof.
 
       - exists lib' br (lib_extends_trans e ext) (lib_extends_trans e x).
         unfold type_family_ext in u0; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprli_value_respecting_left  in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprli_value_respecting_right in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_left  in u0;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_right in u0;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (u0 _ e a a' u) as u0; simpl in *.
 
         pose proof (F lib' br _ (lib_extends_trans e ext) (lib_extends_trans e x)) as q.
         unfold type_family_ext in q; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprli_value_respecting_left  in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprli_value_respecting_right in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_left  in q1;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_right in q1;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (q1 _ (lib_extends_refl lib'1) a a') as q1; simpl in *.
         remember (bar_and_fam_per2lib_per_implies_lpaf_eqa_i F lib' br  (lib_extends_trans e ext) (lib_extends_trans e x) v0) as xxx.
         pose proof (q1 xxx) as q1; simpl in *.
@@ -601,12 +752,24 @@ Proof.
 
       - exrepnd.
         unfold type_family_ext in u0; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprli_value_respecting_left  in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprli_value_respecting_right in u3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_left  in u0;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_right in u0;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (u0 _ e a a' u) as u0; simpl in *.
 
         pose proof (F lib1 br0 _ ext0 y) as q.
         unfold type_family_ext in q; exrepnd; spcast.
-        computes_to_value_isvalue.
+
+        repeat ccomputes_to_valc_ext_val.
+        eapply in_ext_ext_nuprli_value_respecting_left  in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_nuprli_value_respecting_right in q3;[|apply ccequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_left  in q1;[|apply bcequivc_ext_sym;eauto].
+        eapply in_ext_ext_fam_nuprli_value_respecting_right in q1;[|apply bcequivc_ext_sym;eauto].
+
         pose proof (q1 _ (lib_extends_refl lib'1) a a') as q1; simpl in *.
         remember (bar_and_fam_per2lib_per_implies_lpaf_eqa_i F lib1 br0 ext0 y v0) as xxx.
         pose proof (q1 xxx) as q1; simpl in *.
@@ -625,7 +788,13 @@ Proof.
     pose proof (u2 _ br _ ext x) as h; simpl in *; repnd.
     clear h.
     unfold type_family_ext in h0; exrepnd.
-    computes_to_value_isvalue.
+
+    repeat ccomputes_to_valc_ext_val.
+    eapply in_ext_ext_nuprli_value_respecting_left  in h3;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprli_value_respecting_right in h3;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_fam_nuprli_value_respecting_left  in h0;[|apply bcequivc_ext_sym;eauto].
+    eapply in_ext_ext_fam_nuprli_value_respecting_right in h0;[|apply bcequivc_ext_sym;eauto].
+
     pose proof (h3 _ (lib_extends_refl lib'0)) as h3; simpl in *.
     eapply nuprli_type_extensionality;[eauto|].
 
@@ -637,7 +806,13 @@ Proof.
       pose proof (u2 _ br0 _ ext0 x0) as u2; repnd.
       clear u2.
       unfold type_family_ext in u0; exrepnd.
-      computes_to_value_isvalue.
+
+      repeat ccomputes_to_valc_ext_val.
+      eapply in_ext_ext_nuprli_value_respecting_left  in u4;[|apply ccequivc_ext_sym;eauto].
+      eapply in_ext_ext_nuprli_value_respecting_right in u4;[|apply ccequivc_ext_sym;eauto].
+      eapply in_ext_ext_fam_nuprli_value_respecting_left  in u0;[|apply bcequivc_ext_sym;eauto].
+      eapply in_ext_ext_fam_nuprli_value_respecting_right in u0;[|apply bcequivc_ext_sym;eauto].
+
       pose proof (u4 _ (lib_extends_refl lib'0)) as u4; simpl in *.
       apply nuprli_refl in u4.
       apply nuprli_refl in h3.
@@ -651,7 +826,13 @@ Proof.
     pose proof (u2 _ br0 _ ext0 x0) as h; simpl in *; repnd.
     clear h.
     unfold type_family_ext in h0; exrepnd.
-    computes_to_value_isvalue.
+
+    repeat ccomputes_to_valc_ext_val.
+    eapply in_ext_ext_nuprli_value_respecting_left  in h3;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprli_value_respecting_right in h3;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_fam_nuprli_value_respecting_left  in h0;[|apply bcequivc_ext_sym;eauto].
+    eapply in_ext_ext_fam_nuprli_value_respecting_right in h0;[|apply bcequivc_ext_sym;eauto].
+
     pose proof (h0 _ (lib_extends_refl lib'0) a a' e1) as h0; simpl in *.
     eapply nuprli_type_extensionality;[eauto|].
 
@@ -664,7 +845,13 @@ Proof.
       pose proof (u2 _ br1 _ ext1 y) as u2; repnd.
       clear u2.
       unfold type_family_ext in u0; exrepnd.
-      computes_to_value_isvalue.
+
+      repeat ccomputes_to_valc_ext_val.
+      eapply in_ext_ext_nuprli_value_respecting_left  in u4;[|apply ccequivc_ext_sym;eauto].
+      eapply in_ext_ext_nuprli_value_respecting_right in u4;[|apply ccequivc_ext_sym;eauto].
+      eapply in_ext_ext_fam_nuprli_value_respecting_left  in u0;[|apply bcequivc_ext_sym;eauto].
+      eapply in_ext_ext_fam_nuprli_value_respecting_right in u0;[|apply bcequivc_ext_sym;eauto].
+
       remember (bar_and_fam_per2lib_per_implies_lpaf_eqa_i F lib0 br1 ext1 y (ex_intro _ lib1 (ex_intro _ br0 (ex_intro _ ext0 (ex_intro _ x0 e1))))) as xxx.
       pose proof (u0 _ (lib_extends_refl lib'0) a a' xxx) as u0; simpl in *.
       subst.

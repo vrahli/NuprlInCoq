@@ -105,7 +105,7 @@ Proof.
   boolvar; auto; try omega.
 Qed.
 
-Lemma computes_to_valc_implies_ccequivc_ext {o} :
+(*Lemma computes_to_valc_implies_ccequivc_ext {o} :
   forall lib (t1 t2 : @CTerm o),
     computes_to_valc lib t1 t2
     -> ccequivc_ext lib t1 t2.
@@ -113,12 +113,14 @@ Proof.
   introv c e; spcast.
   apply computes_to_valc_implies_cequivc; eauto 3 with slow.
 Qed.
-Hint Resolve computes_to_valc_implies_ccequivc_ext : slow.
+Hint Resolve computes_to_valc_implies_ccequivc_ext : slow.*)
+
+Hint Resolve ccomputes_to_valc_ext_implies_ccequivc_ext : slow.
 
 Lemma nuprl_computes_left {o} :
   forall lib (t1 t2 t3 : @CTerm o) eq,
     nuprl lib t1 t2 eq
-    -> computes_to_valc lib t3 t1
+    -> ccomputes_to_valc_ext lib t3 t1
     -> nuprl lib t3 t2 eq.
 Proof.
   introv n c.
@@ -129,7 +131,7 @@ Qed.
 Lemma nuprl_computes_right {o} :
   forall lib (t1 t2 t3 : @CTerm o) eq,
     nuprl lib t1 t2 eq
-    -> computes_to_valc lib t3 t2
+    -> ccomputes_to_valc_ext lib t3 t2
     -> nuprl lib t1 t3 eq.
 Proof.
   introv n c.
@@ -162,7 +164,13 @@ Lemma ccomputes_to_valc_tuni {o} :
     -> (mkc_tuni t) ===>(lib) (mkc_uni (Z.to_nat k)).
 Proof.
   introv le c.
+  introv ext; apply c in ext; clear c; exrepnd.
   spcast.
+  eapply cequivc_integer in ext0;[|eauto 3 with slow].
+  apply computes_to_valc_isvalue_eq in ext0; eauto 3 with slow; subst.
+
+  exists (@mkc_uni o (Z.to_nat k)).
+  dands; spcast; auto.
   destruct_cterms.
   allunfold @computes_to_valc; allsimpl.
   allunfold @computes_to_value; repnd; dands; auto; try (apply isvalue_mk_uni).

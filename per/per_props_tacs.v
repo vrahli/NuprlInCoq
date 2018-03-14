@@ -44,11 +44,41 @@ Proof.
       apply computes_to_valc_isvalue_eq in ext1; eauto 3 with slow; eqconstr ext1; auto.
 Qed.
 
+Lemma ccequivc_ext_mkc_product_implies {o} :
+  forall lib (A A' : @CTerm o) v v' B B',
+    ccequivc_ext lib (mkc_product A v B) (mkc_product A' v' B')
+    -> ccequivc_ext lib A A' # bcequivc_ext lib [v] B [v'] B'.
+Proof.
+  introv ceq; dands; introv ext; apply ceq in ext; simpl in *; spcast;
+    eapply cequivc_mkc_product in ext; exrepnd;eauto 3 with slow;
+      apply computes_to_valc_isvalue_eq in ext1; eauto 3 with slow; eqconstr ext1; auto.
+Qed.
+
+Lemma ccequivc_ext_mkc_set_implies {o} :
+  forall lib (A A' : @CTerm o) v v' B B',
+    ccequivc_ext lib (mkc_set A v B) (mkc_set A' v' B')
+    -> ccequivc_ext lib A A' # bcequivc_ext lib [v] B [v'] B'.
+Proof.
+  introv ceq; dands; introv ext; apply ceq in ext; simpl in *; spcast;
+    eapply cequivc_mkc_set in ext; exrepnd;eauto 3 with slow;
+      apply computes_to_valc_isvalue_eq in ext1; eauto 3 with slow; eqconstr ext1; auto.
+Qed.
+
 Ltac ccomputes_to_valc_ext_val :=
   match goal with
   | [ H : (mkc_function _ _ _) ===>(_) (mkc_function _ _ _) |- _ ] =>
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
     apply ccequivc_ext_mkc_function_implies in H;
+    repnd
+
+  | [ H : (mkc_product _ _ _) ===>(_) (mkc_product _ _ _) |- _ ] =>
+    apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply ccequivc_ext_mkc_product_implies in H;
+    repnd
+
+  | [ H : (mkc_set _ _ _) ===>(_) (mkc_set _ _ _) |- _ ] =>
+    apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply ccequivc_ext_mkc_set_implies in H;
     repnd
 
   | [ H : (mkc_cequiv _ _) ===>(_) (mkc_cequiv _ _) |- _ ] =>

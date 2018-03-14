@@ -779,6 +779,28 @@ Proof.
   eapply nuprli_value_respecting_right;[eauto|]; eauto 3 with slow.
 Qed.
 
+Lemma in_ext_ext_fam_nuprl_value_respecting_left {o} :
+  forall lib v1 v2 v3 (t1 : @CVTerm o [v1]) t2 t3 eqa (eq : lib-per-fam(lib,eqa,o)),
+    in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprl lib (substc a v1 t1) (substc a' v2 t2) (eq lib x a a' e))
+    -> bcequivc_ext lib [v1] t1 [v3] t3
+    -> in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprl lib (substc a v3 t3) (substc a' v2 t2) (eq lib x a a' e)).
+Proof.
+  introv h ceq; introv.
+  pose proof (h _ e) as h; simpl in h.
+  eapply nuprl_value_respecting_left;[eauto|]; eauto 3 with slow.
+Qed.
+
+Lemma in_ext_ext_fam_nuprl_value_respecting_right {o} :
+  forall lib v1 v2 v3 (t1 : @CVTerm o [v1]) t2 t3 eqa (eq : lib-per-fam(lib,eqa,o)),
+    in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprl lib (substc a v1 t1) (substc a' v2 t2) (eq lib x a a' e))
+    -> bcequivc_ext lib [v2] t2 [v3] t3
+    -> in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprl lib (substc a v1 t1) (substc a' v3 t3) (eq lib x a a' e)).
+Proof.
+  introv h ceq; introv.
+  pose proof (h _ e) as h; simpl in h.
+  eapply nuprl_value_respecting_right;[eauto|]; eauto 3 with slow.
+Qed.
+
 Lemma in_ext_ext_nuprl_value_respecting_left {o} :
   forall lib (t1 t2 t3 : @CTerm o) (eq : lib-per(lib,o)),
     in_ext_ext lib (fun lib x => nuprl lib t1 t2 (eq lib x))
