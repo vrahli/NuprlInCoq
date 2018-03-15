@@ -46,13 +46,13 @@ Require Export per_props_false.
 Require Export per_props_not.
 Require Export per_props_nat.
 Require Export per_props_union.
-Require Export per_props_nat2.
 Require Export per_props_atom.
-Require Export per_props_natk2nat.
 Require Export per_props_image.
+Require Export per_props_nat2.
+Require Export per_props_cs.
+Require Export per_props_natk2nat.
 Require Export per_props_squash.
 Require Export per_props_cequiv2.
-Require Export per_props_cs.
 Require Export per_props_uni2.
 
 (*

@@ -31,7 +31,9 @@
 *)
 
 
+Require Export per_props_tacs.
 Require Export per_props_util.
+
 
 Lemma lsubstc_mk_csname {o} :
   forall n w (s : @CSub o) c,
@@ -40,7 +42,6 @@ Proof.
   introv; apply cterm_eq; simpl; auto.
 Qed.
 Hint Rewrite @lsubstc_mk_csname : slow.
-
 
 Lemma substc_mkcv_csname {o} :
   forall v (t : @CTerm o) n,
@@ -76,7 +77,7 @@ Proof.
   introv br ext; introv.
   pose proof (u0 _ br _ ext x) as u0; simpl in *.
   unfold per_csname in *; exrepnd; spcast; auto; GC.
-  apply computes_to_valc_isvalue_eq in u0; eauto 2 with slow; ginv; auto.
+  ccomputes_to_valc_ext_val; auto.
 Qed.
 
 Lemma tequality_csname {o} :

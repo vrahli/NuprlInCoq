@@ -32,6 +32,7 @@
 *)
 
 
+Require Export per_props_tacs.
 Require Export natk2.
 Require Export terms_union.
 Require Export cequiv_props.
@@ -70,6 +71,19 @@ Proof.
 
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
+
+  computes_to_eqval_ext.
+  hide_hyp perb2.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_union_right in ceq.
+  apply cequivc_ext_mkc_union_right in ceq0.
+  repnd.
+
+  eapply in_ext_ext_nuprl_value_respecting_left  in pera3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_right in pera3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_left  in pera4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_right in pera4;[|apply ccequivc_ext_sym;eauto].
+
   spcast; repeat computes_to_eqval.
 
   apply (implies_eq_term_equals_per_union_bar _ (trivial_bar lib));
@@ -106,7 +120,18 @@ Proof.
 
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
-  spcast; repeat computes_to_eqval.
+
+  computes_to_eqval_ext.
+  hide_hyp perb2.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_union_right in ceq.
+  apply cequivc_ext_mkc_union_right in ceq0.
+  repnd.
+
+  eapply in_ext_ext_nuprli_value_respecting_left  in pera3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_right in pera3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_left  in pera4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_right in pera4;[|apply ccequivc_ext_sym;eauto].
 
   apply (implies_eq_term_equals_per_union_bar _ (trivial_bar lib));
     apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
@@ -151,7 +176,7 @@ Hint Resolve local_per_bar_per_union_nuprli : slow.
 Lemma dest_nuprl_per_union_l {o} :
   forall (ts : cts(o)) lib T A B T' eq,
     ts = univ
-    -> computes_to_valc lib T (mkc_union A B)
+    -> ccomputes_to_valc_ext lib T (mkc_union A B)
     -> close ts lib T T' eq
     -> per_bar (per_union (close ts)) lib T T' eq.
 Proof.
@@ -169,7 +194,7 @@ Qed.
 Lemma dest_nuprli_per_union_l {o} :
   forall i (ts : cts(o)) lib T A B T' eq,
     ts = univi_bar i
-    -> computes_to_valc lib T (mkc_union A B)
+    -> ccomputes_to_valc_ext lib T (mkc_union A B)
     -> close ts lib T T' eq
     -> per_bar (per_union (close ts)) lib T T' eq.
 Proof.
@@ -312,7 +337,14 @@ Proof.
     introv br ext; introv.
     pose proof (u0 _ br _ ext x) as u0; simpl in *.
     unfold per_union in *; exrepnd.
-    spcast; computes_to_value_isvalue.
+
+    repeat ccomputes_to_valc_ext_val.
+
+    eapply in_ext_ext_nuprl_value_respecting_left  in u4;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprl_value_respecting_right in u4;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprl_value_respecting_left  in u5;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprl_value_respecting_right in u5;[|apply ccequivc_ext_sym;eauto].
+
     exists eqa0 eqb; dands; auto.
   }
   clear u0.
@@ -453,7 +485,14 @@ Proof.
     introv br ext; introv.
     pose proof (u0 _ br _ ext x) as u0; simpl in *.
     unfold per_union in *; exrepnd.
-    spcast; computes_to_value_isvalue.
+
+    repeat ccomputes_to_valc_ext_val.
+
+    eapply in_ext_ext_nuprli_value_respecting_left  in u4;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprli_value_respecting_right in u4;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprli_value_respecting_left  in u5;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprli_value_respecting_right in u5;[|apply ccequivc_ext_sym;eauto].
+
     exists eqa0 eqb; dands; auto.
   }
   clear u0.
@@ -736,15 +775,11 @@ Proof.
 
     repndors;[left|right]; exrepnd; spcast.
 
-    + eapply lib_extends_preserves_computes_to_valc in e3;[|exact e1].
-      eapply lib_extends_preserves_computes_to_valc in e5;[|exact e1].
-      eexists; eexists; dands; spcast; eauto.
+    + eexists; eexists; dands; spcast; eauto 3 with slow.
       apply (equality_eq1 lib'0 A A a1 a2 (eqa' lib'0 e1)); eauto 3 with slow.
       eapply tya0.
 
-    + eapply lib_extends_preserves_computes_to_valc in e3;[|exact e1].
-      eapply lib_extends_preserves_computes_to_valc in e5;[|exact e1].
-      eexists; eexists; dands; spcast; eauto.
+    + eexists; eexists; dands; spcast; eauto 3 with slow.
       apply (equality_eq1 lib'0 B B b1 b2 (eqb' lib'0 e1)); eauto 3 with slow.
       eapply tyb0.
 Qed.
@@ -786,14 +821,68 @@ Proof.
   apply in_ext_implies_all_in_ex_bar; introv x; dands; spcast; eauto 3 with slow.
 Qed.
 
+(* MOVE *)
+Lemma ccomputes_to_valc_ext_implies_cequivc {o} :
+  forall lib (a b : @CTerm o),
+    ccomputes_to_valc_ext lib a b
+    -> cequivc lib a b.
+Proof.
+  introv comp.
+  pose proof (comp _ (lib_extends_refl _)) as comp; simpl in *.
+  apply cequiv_stable; exrepnd; spcast.
+  eapply cequivc_trans;[|apply cequivc_sym;exact comp0].
+  apply computes_to_valc_implies_cequivc; auto.
+Qed.
+Hint Resolve ccomputes_to_valc_ext_implies_cequivc : slow.
+
+Lemma ccequivc_ext_mkc_inl_if {p} :
+  forall lib (a b : @CTerm p),
+    ccequivc_ext lib a b
+    -> ccequivc_ext lib (mkc_inl a) (mkc_inl b).
+Proof.
+  introv ceq ext; apply ceq in ext; spcast.
+  apply cequivc_mkc_inl_if; auto.
+Qed.
+
+Lemma ccequivc_ext_mkc_inr_if {p} :
+  forall lib (a b : @CTerm p),
+    ccequivc_ext lib a b
+    -> ccequivc_ext lib (mkc_inr a) (mkc_inr b).
+Proof.
+  introv ceq ext; apply ceq in ext; spcast.
+  apply cequivc_mkc_inr_if; auto.
+Qed.
+
+Lemma ccequivc_ext_mkc_inl_implies {o} :
+  forall lib (t a : @CTerm o),
+    ccequivc_ext lib (mkc_inl a) t
+    -> ccomputes_to_valc_ext lib t (mkc_inl a).
+Proof.
+  introv ceq ext; apply ceq in ext; spcast.
+  apply cequivc_mkc_inl_implies in ext; exrepnd.
+  exists (mkc_inl b); dands; spcast; auto; eauto 3 with slow.
+  apply cequivc_mkc_inl_if; auto.
+Qed.
+
+Lemma ccequivc_ext_mkc_inr_implies {o} :
+  forall lib (t a : @CTerm o),
+    ccequivc_ext lib (mkc_inr a) t
+    -> ccomputes_to_valc_ext lib t (mkc_inr a).
+Proof.
+  introv ceq ext; apply ceq in ext; spcast.
+  apply cequivc_mkc_inr_implies in ext; exrepnd.
+  exists (mkc_inr b); dands; spcast; auto; eauto 3 with slow.
+  apply cequivc_mkc_inr_if; auto.
+Qed.
+
 Lemma equality_in_bool {o} :
   forall lib (a b : @CTerm o),
     equality lib a b mkc_bool
     <=>
     all_in_ex_bar lib (fun lib =>
-      (a ~=~(lib) tt # b ~=~(lib) tt)
+      (ccequivc_ext lib a tt # ccequivc_ext lib b tt)
       {+}
-      (a ~=~(lib) ff # b ~=~(lib) ff)
+      (ccequivc_ext lib a ff # ccequivc_ext lib b ff)
     ).
 Proof.
   introv.
@@ -806,50 +895,48 @@ Proof.
 
     + allrw @equality_in_unit; repnd.
       eapply all_in_ex_bar_modus_ponens1;try exact k3; clear k3; introv y k3; exrepnd; spcast.
-      eapply lib_extends_preserves_computes_to_valc in k2;[|exact y].
-      eapply lib_extends_preserves_computes_to_valc in k4;[|exact y].
+      eapply lib_extends_preserves_ccomputes_to_valc in k2;[|exact y].
+      eapply lib_extends_preserves_ccomputes_to_valc in k4;[|exact y].
       left; dands; spcast.
 
-      * allapply @computes_to_valc_implies_cequivc.
-        apply (cequivc_trans lib'0 a (mkc_inl a1) tt); auto.
-        apply cequivc_mkc_inl_if; auto.
+      * allapply @ccomputes_to_valc_ext_implies_ccequivc_ext.
+        apply (ccequivc_ext_trans lib'0 a (mkc_inl a1) tt); auto.
+        apply ccequivc_ext_mkc_inl_if; auto.
 
-      * allapply @computes_to_valc_implies_cequivc.
-        apply (cequivc_trans lib'0 b (mkc_inl a2) tt); auto.
-        apply cequivc_mkc_inl_if; auto.
+      * allapply @ccomputes_to_valc_ext_implies_ccequivc_ext.
+        apply (ccequivc_ext_trans lib'0 b (mkc_inl a2) tt); auto.
+        apply ccequivc_ext_mkc_inl_if; auto.
 
     + allrw @equality_in_unit; repnd.
       eapply all_in_ex_bar_modus_ponens1;try exact k3; clear k3; introv y k3; exrepnd; spcast.
-      eapply lib_extends_preserves_computes_to_valc in k2;[|exact y].
-      eapply lib_extends_preserves_computes_to_valc in k4;[|exact y].
+      eapply lib_extends_preserves_ccomputes_to_valc in k2;[|exact y].
+      eapply lib_extends_preserves_ccomputes_to_valc in k4;[|exact y].
       right; dands; spcast.
 
-      * allapply @computes_to_valc_implies_cequivc.
-        apply (cequivc_trans lib'0 a (mkc_inr b1) ff); auto.
-        apply cequivc_mkc_inr_if; auto.
+      * allapply @ccomputes_to_valc_ext_implies_ccequivc_ext.
+        apply (ccequivc_ext_trans lib'0 a (mkc_inr b1) ff); auto.
+        apply ccequivc_ext_mkc_inr_if; auto.
 
-      * allapply @computes_to_valc_implies_cequivc.
-        apply (cequivc_trans lib'0 b (mkc_inr b2) ff); auto.
-        apply cequivc_mkc_inr_if; auto.
+      * allapply @ccomputes_to_valc_ext_implies_ccequivc_ext.
+        apply (ccequivc_ext_trans lib'0 b (mkc_inr b2) ff); auto.
+        apply ccequivc_ext_mkc_inr_if; auto.
 
   - eapply all_in_ex_bar_modus_ponens1;try exact k; clear k; introv x k; exrepnd; spcast.
     repndors; repnd; spcast;[left|right].
 
-    + apply cequivc_sym in k0.
-      apply cequivc_sym in k.
-      apply cequivc_mkc_inl_implies in k0.
-      apply cequivc_mkc_inl_implies in k.
-      exrepnd.
-      exists b1 b0; dands; auto; spcast; sp.
-      apply implies_equality_in_unit; spcast; apply cequivc_axiom_implies; sp.
+    + apply ccequivc_ext_sym in k0.
+      apply ccequivc_ext_sym in k.
+      apply ccequivc_ext_mkc_inl_implies in k0.
+      apply ccequivc_ext_mkc_inl_implies in k.
+      eexists; eexists; dands; eauto.
+      apply implies_equality_in_unit; eauto 3 with slow.
 
-    + apply cequivc_sym in k0.
-      apply cequivc_sym in k.
-      apply cequivc_mkc_inr_implies in k0.
-      apply cequivc_mkc_inr_implies in k.
-      exrepnd.
-      exists b1 b0; dands; auto; spcast; sp.
-      apply implies_equality_in_unit; spcast; apply cequivc_axiom_implies; sp.
+    + apply ccequivc_ext_sym in k0.
+      apply ccequivc_ext_sym in k.
+      apply ccequivc_ext_mkc_inr_implies in k0.
+      apply ccequivc_ext_mkc_inr_implies in k.
+      eexists; eexists; dands; eauto.
+      apply implies_equality_in_unit; eauto 3 with slow.
 Qed.
 
 
@@ -1070,7 +1157,7 @@ Lemma member_in_bool {o} :
   forall lib (a : @CTerm o),
     member lib a mkc_bool
     <=>
-    all_in_ex_bar lib (fun lib => a ~=~(lib) tt {+} a ~=~(lib) ff).
+    all_in_ex_bar lib (fun lib => ccequivc_ext lib a tt {+} ccequivc_ext lib a ff).
 Proof.
   introv.
   rw @equality_in_bool; split; intro k;

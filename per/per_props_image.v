@@ -31,6 +31,7 @@
  *)
 
 
+Require Export per_props_tacs.
 Require Export per_props_util.
 Require Export csubst6.
 
@@ -66,7 +67,16 @@ Proof.
 
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
-  spcast; repeat computes_to_eqval.
+
+  computes_to_eqval_ext.
+  hide_hyp perb2.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_image_implies in ceq.
+  apply cequivc_ext_mkc_image_implies in ceq0.
+  repnd.
+
+  eapply in_ext_ext_nuprl_value_respecting_left  in pera3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_right in pera3;[|apply ccequivc_ext_sym;eauto].
 
   apply implies_eq_term_equals_per_image_eq_bar; eauto 3 with slow.
   introv.
@@ -89,7 +99,16 @@ Proof.
 
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
-  spcast; repeat computes_to_eqval.
+
+  computes_to_eqval_ext.
+  hide_hyp perb2.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_image_implies in ceq.
+  apply cequivc_ext_mkc_image_implies in ceq0.
+  repnd.
+
+  eapply in_ext_ext_nuprli_value_respecting_left  in pera3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_right in pera3;[|apply ccequivc_ext_sym;eauto].
 
   apply implies_eq_term_equals_per_image_eq_bar; eauto 3 with slow.
   introv.
@@ -121,7 +140,7 @@ Hint Resolve local_per_bar_per_image_nuprli : slow.
 Lemma dest_nuprl_per_image_l {o} :
   forall (ts : cts(o)) lib T A f T' eq,
     ts = univ
-    -> computes_to_valc lib T (mkc_image A f)
+    -> ccomputes_to_valc_ext lib T (mkc_image A f)
     -> close ts lib T T' eq
     -> per_bar (per_image (close ts)) lib T T' eq.
 Proof.
@@ -139,7 +158,7 @@ Qed.
 Lemma dest_nuprli_per_image_l {o} :
   forall i (ts : cts(o)) lib T A f T' eq,
     ts = univi_bar i
-    -> computes_to_valc lib T (mkc_image A f)
+    -> ccomputes_to_valc_ext lib T (mkc_image A f)
     -> close ts lib T T' eq
     -> per_bar (per_image (close ts)) lib T T' eq.
 Proof.
@@ -209,8 +228,18 @@ Proof.
     introv br ext; introv.
     pose proof (u0 _ br _ ext x) as u0; simpl in *.
     unfold per_image in *; exrepnd.
-    spcast; computes_to_value_isvalue.
+
+    repeat ccomputes_to_valc_ext_val.
+    eapply in_ext_ext_nuprl_value_respecting_left  in u4;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprl_value_respecting_right in u4;[|apply ccequivc_ext_sym;eauto].
+
     exists eqa0; dands; auto.
+
+    { eapply ccequivc_ext_trans;[eauto|].
+      eapply ccequivc_ext_trans;[|apply ccequivc_ext_sym;eauto]; auto. }
+
+    { eapply eq_term_equals_trans;[eauto|].
+      apply implies_eq_term_equals_per_image_eq_bar; eauto 2 with slow. }
   }
   clear u0.
 
@@ -237,13 +266,10 @@ Proof.
     split; intro h.
 
     - exists lib' br (lib_extends_trans e ext) (lib_extends_trans e x).
-      unfold type_family_ext in u0; exrepnd; spcast.
-      computes_to_value_isvalue.
       pose proof (u0 _ e) as u0; simpl in *.
 
       pose proof (e0 lib' br _ (lib_extends_trans e ext) (lib_extends_trans e x)) as q.
       unfold type_family_ext in q; exrepnd; spcast.
-      computes_to_value_isvalue.
       pose proof (q0 _ (lib_extends_refl lib'1)) as q0; simpl in *.
       apply nuprl_refl in q0.
       apply nuprl_refl in u0.
@@ -311,8 +337,18 @@ Proof.
     introv br ext; introv.
     pose proof (u0 _ br _ ext x) as u0; simpl in *.
     unfold per_image in *; exrepnd.
-    spcast; computes_to_value_isvalue.
+
+    repeat ccomputes_to_valc_ext_val.
+    eapply in_ext_ext_nuprli_value_respecting_left  in u4;[|apply ccequivc_ext_sym;eauto].
+    eapply in_ext_ext_nuprli_value_respecting_right in u4;[|apply ccequivc_ext_sym;eauto].
+
     exists eqa0; dands; auto.
+
+    { eapply ccequivc_ext_trans;[eauto|].
+      eapply ccequivc_ext_trans;[|apply ccequivc_ext_sym;eauto]; auto. }
+
+    { eapply eq_term_equals_trans;[eauto|].
+      apply implies_eq_term_equals_per_image_eq_bar; eauto 2 with slow. }
   }
   clear u0.
 

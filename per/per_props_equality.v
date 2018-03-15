@@ -289,57 +289,6 @@ Proof.
     try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
 Qed.
 
-(* MOVE *)
-Lemma eqorceq_ext_ccequivc_ext_trans_left {o} :
-  forall lib (a b c : @CTerm o) (eqa : lib-per(lib,o)),
-    in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
-    -> ccequivc_ext lib a b
-    -> eqorceq_ext lib eqa b c
-    -> eqorceq_ext lib eqa a c.
-Proof.
-  introv trans sym resp ceq eoc; introv.
-  pose proof (eoc _ e) as eoc.
-  simpl in *; spcast.
-  unfold eqorceq in *; repndors; tcsp.
-
-  - left.
-    pose proof (resp _ e) as resp; simpl in resp.
-    pose proof (resp b a) as w; repeat (autodimp w hyp); eauto 3 with slow;[|].
-    { eapply trans;[eauto|]; apply sym; auto. }
-    apply sym in w.
-    eapply trans; eauto.
-
-  - right.
-    eapply ccequivc_ext_trans;[|eauto]; eauto 3 with slow.
-Qed.
-
-(* MOVE *)
-Lemma eqorceq_ext_ccequivc_ext_trans_right {o} :
-  forall lib (a b c : @CTerm o) (eqa : lib-per(lib,o)),
-    in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
-    -> eqorceq_ext lib eqa a b
-    -> ccequivc_ext lib b c
-    -> eqorceq_ext lib eqa a c.
-Proof.
-  introv trans sym resp eoc ceq; introv.
-  pose proof (eoc _ e) as eoc.
-  simpl in *; spcast.
-  unfold eqorceq in *; repndors; tcsp.
-
-  - left.
-    pose proof (resp _ e) as resp; simpl in resp.
-    pose proof (resp b c) as w; repeat (autodimp w hyp); eauto 3 with slow;[|].
-    { eapply trans;[|eauto]; apply sym; auto. }
-    eapply trans; eauto.
-
-  - right.
-    eapply ccequivc_ext_trans;[|eauto]; eauto 3 with slow.
-Qed.
-
 Lemma dest_nuprl_equality2 {o} :
   forall lib (eq : per(o)) a1 a2 A b1 b2 B,
     nuprl lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq

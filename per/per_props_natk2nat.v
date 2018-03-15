@@ -40,11 +40,9 @@ Lemma tequality_natk2nat_nat {o} :
     @tequality o lib (natk2nat (mkc_nat n)) (natk2nat (mkc_nat n)).
 Proof.
   introv.
-  apply tequality_natk2nat.
-  apply in_ext_implies_all_in_ex_bar; introv x.
-  exists (Z.of_nat n) (Z.of_nat n).
-  dands; spcast; try (apply computes_to_valc_refl; eauto 3 with slow).
-  introv ltk.
+  eapply tequality_natk2nat_aux;
+    allrw @mkc_nat_eq; eauto 3 with slow.
+  introv x.
   destruct (Z_lt_le_dec k (Z.of_nat n)); sp.
 Qed.
 Hint Resolve tequality_natk2nat_nat : slow.

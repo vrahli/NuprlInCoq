@@ -128,9 +128,7 @@ Proof.
   exists (@equality_of_uatom_bar p lib).
   unfold nuprl.
   apply CL_uatom.
-  unfold per_uatom; sp; spcast;
-    try (apply computes_to_valc_refl);
-    try (apply iscvalue_mkc_uatom; auto).
+  unfold per_uatom; sp; spcast; eauto 3 with slow.
 Qed.
 
 Lemma equality_in_uatom_iff {p} :
@@ -159,9 +157,7 @@ Proof.
   exists (@equality_of_atom_bar p lib).
   unfold nuprl.
   apply CL_atom.
-  unfold per_atom; sp; spcast;
-    try (apply computes_to_valc_refl);
-    try (apply iscvalue_mkc_atom; auto).
+  unfold per_atom; sp; spcast; eauto 3 with slow.
 Qed.
 
 Lemma equality_in_atom_iff {p} :

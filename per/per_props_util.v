@@ -1018,3 +1018,60 @@ Proof.
   pose proof (x0 _ br _ ext) as x0; simpl in *.
   apply h; eauto 3 with slow.
 Qed.
+
+Lemma implies_all_in_ex_bar_in_ext {o} :
+  forall (lib : @library o) F,
+    all_in_ex_bar lib F -> all_in_ex_bar lib (fun lib' => in_ext lib' F).
+Proof.
+  introv h; unfold all_in_ex_bar in *; exrepnd; exists bar.
+  apply implies_all_in_bar_in_ext; auto.
+Qed.
+
+Lemma eqorceq_ext_ccequivc_ext_trans_left {o} :
+  forall lib (a b c : @CTerm o) (eqa : lib-per(lib,o)),
+    in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> ccequivc_ext lib a b
+    -> eqorceq_ext lib eqa b c
+    -> eqorceq_ext lib eqa a c.
+Proof.
+  introv trans sym resp ceq eoc; introv.
+  pose proof (eoc _ e) as eoc.
+  simpl in *; spcast.
+  unfold eqorceq in *; repndors; tcsp.
+
+  - left.
+    pose proof (resp _ e) as resp; simpl in resp.
+    pose proof (resp b a) as w; repeat (autodimp w hyp); eauto 3 with slow;[|].
+    { eapply trans;[eauto|]; apply sym; auto. }
+    apply sym in w.
+    eapply trans; eauto.
+
+  - right.
+    eapply ccequivc_ext_trans;[|eauto]; eauto 3 with slow.
+Qed.
+
+Lemma eqorceq_ext_ccequivc_ext_trans_right {o} :
+  forall lib (a b c : @CTerm o) (eqa : lib-per(lib,o)),
+    in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> eqorceq_ext lib eqa a b
+    -> ccequivc_ext lib b c
+    -> eqorceq_ext lib eqa a c.
+Proof.
+  introv trans sym resp eoc ceq; introv.
+  pose proof (eoc _ e) as eoc.
+  simpl in *; spcast.
+  unfold eqorceq in *; repndors; tcsp.
+
+  - left.
+    pose proof (resp _ e) as resp; simpl in resp.
+    pose proof (resp b c) as w; repeat (autodimp w hyp); eauto 3 with slow;[|].
+    { eapply trans;[|eauto]; apply sym; auto. }
+    eapply trans; eauto.
+
+  - right.
+    eapply ccequivc_ext_trans;[|eauto]; eauto 3 with slow.
+Qed.
