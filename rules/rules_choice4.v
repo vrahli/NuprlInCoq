@@ -278,7 +278,7 @@ Hint Resolve isprogram_lam_pair_comp_seq1 : slow.
 
 Lemma ccequivc_ext_mkc_apply_nsls1c_extract {o} :
   forall lib (a : @CTerm o) n f k (d : n <> f),
-    computes_to_valc lib a (mkc_nat k)
+    ccomputes_to_valc_ext lib a (mkc_nat k)
     -> ccequivc_ext
          lib
          (mkc_apply (nsls1c_extract n f) a)
@@ -293,7 +293,6 @@ Lemma ccequivc_ext_mkc_apply_nsls1c_extract {o} :
                (mkcv_ax _))).
 Proof.
   introv d comp ext; spcast.
-  eapply lib_extends_preserves_computes_to_valc in comp;[|eauto].
   destruct_cterms.
   unfold computes_to_valc in *; simpl in *.
   unfold cequivc; simpl.
@@ -535,13 +534,15 @@ Lemma mkc_comp_seq1_reduces_to_choice_seq {o} :
     -> (forall n i,
            select n l = Some i
            -> (mkc_apply f (mkc_nat n)) ===>(lib) (mkc_nat i))
-    -> computes_to_valc lib (mkc_comp_seq1 (mkc_nat k) f) (mkc_fresh_choice_nat_seq l).
+    -> ccomputes_to_valc_ext lib (mkc_comp_seq1 (mkc_nat k) f) (mkc_fresh_choice_nat_seq l).
 Proof.
   introv eqlen imp.
-  destruct_cterms.
+  apply in_ext_computes_to_valc_implies_ccomputes_to_valc_ext; introv ext.
+  destruct_cterms; spcast.
   apply mk_comp_seq1_reduces_to_choice_seq; auto.
   introv s.
   apply imp in s.
+  eapply ccomputes_to_valc_ext_integer_implies_computes_to_valc_in_ext in s; eauto.
   apply computes_to_valc_nat_stable in s; auto.
 Qed.
 
@@ -634,10 +635,10 @@ Proof.
       autorewrite with slow.
       eapply tequality_respects_cequivc_left;
         [apply ccequivc_ext_sym; introv z; spcast; apply implies_cequivc_natk2nat;
-         apply computes_to_valc_implies_cequivc;eauto 3 with slow|].
+         apply ccomputes_to_valc_ext_implies_cequivc;eauto 3 with slow|].
       eapply tequality_respects_cequivc_right;
         [apply ccequivc_ext_sym; introv z; spcast; apply implies_cequivc_natk2nat;
-         apply computes_to_valc_implies_cequivc;eauto 3 with slow|].
+         apply ccomputes_to_valc_ext_implies_cequivc;eauto 3 with slow|].
       eauto 3 with slow.
     }
 
@@ -645,8 +646,8 @@ Proof.
 
     eapply lib_extends_preserves_similarity in sim;[|eauto].
     eapply lib_extends_preserves_hyps_functionality_ext in eqh;[|eauto].
-    eapply lib_extends_preserves_computes_to_valc in ea1;[|eauto].
-    eapply lib_extends_preserves_computes_to_valc in ea0;[|eauto].
+    eapply lib_extends_preserves_ccomputes_to_valc in ea1;[|eauto].
+    eapply lib_extends_preserves_ccomputes_to_valc in ea0;[|eauto].
     assert (safe_library lib') as safe' by eauto 3 with slow.
     clear lib xt safe.
     rename lib' into lib; rename safe' into safe.
@@ -662,8 +663,8 @@ Proof.
 
     eapply lib_extends_preserves_similarity in sim;[|eauto].
     eapply lib_extends_preserves_hyps_functionality_ext in eqh;[|eauto].
-    eapply lib_extends_preserves_computes_to_valc in ea1;[|eauto].
-    eapply lib_extends_preserves_computes_to_valc in ea0;[|eauto].
+    eapply lib_extends_preserves_ccomputes_to_valc in ea1;[|eauto].
+    eapply lib_extends_preserves_ccomputes_to_valc in ea0;[|eauto].
     eapply equality_monotone in ef;[|eauto].
     assert (safe_library lib') as safe' by eauto 3 with slow.
     clear lib xt safe.
@@ -678,10 +679,10 @@ Proof.
     {
       eapply tequality_respects_cequivc_left;
         [apply ccequivc_ext_sym; introv z; spcast; apply implies_cequivc_natk2nat;
-         apply computes_to_valc_implies_cequivc;eauto 3 with slow|].
+         apply ccomputes_to_valc_ext_implies_cequivc;eauto 3 with slow|].
       eapply tequality_respects_cequivc_right;
         [apply ccequivc_ext_sym; introv z; spcast; apply implies_cequivc_natk2nat;
-         apply computes_to_valc_implies_cequivc;eauto 3 with slow|].
+         apply ccomputes_to_valc_ext_implies_cequivc;eauto 3 with slow|].
       eauto 3 with slow.
     }
 
@@ -739,10 +740,10 @@ Proof.
       autorewrite with slow.
       eapply tequality_respects_cequivc_left;
         [apply ccequivc_ext_sym; introv z; spcast; apply implies_cequivc_natk2nat;
-         apply computes_to_valc_implies_cequivc;eauto 3 with slow|].
+         apply ccomputes_to_valc_ext_implies_cequivc;eauto 3 with slow|].
       eapply tequality_respects_cequivc_right;
         [apply ccequivc_ext_sym; introv z; spcast; apply implies_cequivc_natk2nat;
-         apply computes_to_valc_implies_cequivc;eauto 3 with slow|].
+         apply ccomputes_to_valc_ext_implies_cequivc;eauto 3 with slow|].
       eauto 3 with slow.
     }
 
@@ -750,8 +751,8 @@ Proof.
 
     eapply lib_extends_preserves_similarity in sim;[|eauto].
     eapply lib_extends_preserves_hyps_functionality_ext in eqh;[|eauto].
-    eapply lib_extends_preserves_computes_to_valc in ea1;[|eauto].
-    eapply lib_extends_preserves_computes_to_valc in ea0;[|eauto].
+    eapply lib_extends_preserves_ccomputes_to_valc in ea1;[|eauto].
+    eapply lib_extends_preserves_ccomputes_to_valc in ea0;[|eauto].
     assert (safe_library lib') as safe' by eauto 3 with slow.
     clear lib xt safe.
     rename lib' into lib; rename safe' into safe.
@@ -767,8 +768,8 @@ Proof.
 
     eapply lib_extends_preserves_similarity in sim;[|eauto].
     eapply lib_extends_preserves_hyps_functionality_ext in eqh;[|eauto].
-    eapply lib_extends_preserves_computes_to_valc in ea1;[|eauto].
-    eapply lib_extends_preserves_computes_to_valc in ea0;[|eauto].
+    eapply lib_extends_preserves_ccomputes_to_valc in ea1;[|eauto].
+    eapply lib_extends_preserves_ccomputes_to_valc in ea0;[|eauto].
     eapply equality_monotone in ef;[|eauto].
     assert (safe_library lib') as safe' by eauto 3 with slow.
     clear lib xt safe.
@@ -783,10 +784,10 @@ Proof.
     {
       eapply tequality_respects_cequivc_left;
         [apply ccequivc_ext_sym; introv z; spcast; apply implies_cequivc_natk2nat;
-         apply computes_to_valc_implies_cequivc;eauto 3 with slow|].
+         apply ccomputes_to_valc_ext_implies_cequivc;eauto 3 with slow|].
       eapply tequality_respects_cequivc_right;
         [apply ccequivc_ext_sym; introv z; spcast; apply implies_cequivc_natk2nat;
-         apply computes_to_valc_implies_cequivc;eauto 3 with slow|].
+         apply ccomputes_to_valc_ext_implies_cequivc;eauto 3 with slow|].
       eauto 3 with slow.
     }
 
@@ -797,8 +798,8 @@ Proof.
 
   eapply lib_extends_preserves_similarity in sim;[|eauto].
   eapply lib_extends_preserves_hyps_functionality_ext in eqh;[|eauto].
-  eapply lib_extends_preserves_computes_to_valc in ea1;[|eauto].
-  eapply lib_extends_preserves_computes_to_valc in ea0;[|eauto].
+  eapply lib_extends_preserves_ccomputes_to_valc in ea1;[|eauto].
+  eapply lib_extends_preserves_ccomputes_to_valc in ea0;[|eauto].
   assert (safe_library lib') as safe' by eauto 3 with slow.
   clear lib xt safe.
   rename lib' into lib; rename safe' into safe.
@@ -817,7 +818,7 @@ Proof.
   dup ef as en2n.
   eapply cequivc_preserving_equality in ef;
     [|introv ext; spcast; apply implies_cequivc_natk2nat;
-      apply computes_to_valc_implies_cequivc;eauto 3 with slow].
+      apply ccomputes_to_valc_ext_implies_cequivc;eauto 3 with slow].
   dup ef as enf.
   apply equality_natk2nat_implies2 in enf.
 
@@ -826,8 +827,8 @@ Proof.
 
   eapply lib_extends_preserves_similarity in sim;[|eauto].
   eapply lib_extends_preserves_hyps_functionality_ext in eqh;[|eauto].
-  eapply lib_extends_preserves_computes_to_valc in ea1;[|eauto].
-  eapply lib_extends_preserves_computes_to_valc in ea0;[|eauto].
+  eapply lib_extends_preserves_ccomputes_to_valc in ea1;[|eauto].
+  eapply lib_extends_preserves_ccomputes_to_valc in ea0;[|eauto].
   eapply equality_monotone in ef;[|eauto].
   eapply equality_monotone in en2n;[|eauto].
   assert (safe_library lib') as safe' by eauto 3 with slow.
@@ -843,8 +844,8 @@ Proof.
 
     eapply lib_extends_preserves_similarity in sim;[|eauto].
     eapply lib_extends_preserves_hyps_functionality_ext in eqh;[|eauto].
-    eapply lib_extends_preserves_computes_to_valc in ea1;[|eauto].
-    eapply lib_extends_preserves_computes_to_valc in ea0;[|eauto].
+    eapply lib_extends_preserves_ccomputes_to_valc in ea1;[|eauto].
+    eapply lib_extends_preserves_ccomputes_to_valc in ea0;[|eauto].
     eapply equality_monotone in ef;[|eauto].
     eapply equality_monotone in en2n;[|eauto].
     assert (safe_library lib') as safe' by eauto 3 with slow.
@@ -861,10 +862,10 @@ Proof.
     {
       eapply tequality_respects_cequivc_left;
         [apply ccequivc_ext_sym; introv z; spcast; apply implies_cequivc_natk2nat;
-         apply computes_to_valc_implies_cequivc;eauto 3 with slow|].
+         apply ccomputes_to_valc_ext_implies_cequivc;eauto 3 with slow|].
       eapply tequality_respects_cequivc_right;
         [apply ccequivc_ext_sym; introv z; spcast; apply implies_cequivc_natk2nat;
-         apply computes_to_valc_implies_cequivc;eauto 3 with slow|].
+         apply ccomputes_to_valc_ext_implies_cequivc;eauto 3 with slow|].
       eauto 3 with slow.
     }
 
@@ -883,21 +884,22 @@ Proof.
   {
     eapply equality_respects_cequivc_left;
       [apply ccequivc_ext_sym;apply implies_ccequivc_ext_comp_seq1;
-       [apply computes_to_valc_implies_ccequivc_ext;eauto 4 with slow|apply ccequivc_ext_refl]
+       [apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto 4 with slow|apply ccequivc_ext_refl]
       |].
     eapply equality_respects_cequivc_right;
       [apply ccequivc_ext_sym;apply implies_ccequivc_ext_comp_seq1;
-       [apply computes_to_valc_implies_ccequivc_ext;eauto 4 with slow|apply ccequivc_ext_refl]
+       [apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto 4 with slow|apply ccequivc_ext_refl]
       |].
+
     eapply equality_respects_cequivc_left;
       [apply ccequivc_ext_sym;
-       apply computes_to_valc_implies_ccequivc_ext;
+       apply ccomputes_to_valc_ext_implies_ccequivc_ext;
        apply mkc_comp_seq1_reduces_to_choice_seq; eauto;
        introv ss;
        apply enf0 in ss; repnd; spcast; eauto 4 with slow|].
     eapply equality_respects_cequivc_right;
       [apply ccequivc_ext_sym;
-       apply computes_to_valc_implies_ccequivc_ext;
+       apply ccomputes_to_valc_ext_implies_ccequivc_ext;
        apply mkc_comp_seq1_reduces_to_choice_seq; eauto;
        introv ss;
        apply enf0 in ss; repnd; spcast; eauto 4 with slow|].
@@ -915,11 +917,11 @@ Proof.
   rw <- @member_equality_iff.
   eapply equality_respects_cequivc_right;
     [apply ccequivc_ext_sym;apply implies_ccequivc_ext_comp_seq1;
-     [apply computes_to_valc_implies_ccequivc_ext;eauto 4 with slow|apply ccequivc_ext_refl]
+     [apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto 4 with slow|apply ccequivc_ext_refl]
     |].
   eapply equality_respects_cequivc_right;
     [apply ccequivc_ext_sym;
-     apply computes_to_valc_implies_ccequivc_ext;
+     apply ccomputes_to_valc_ext_implies_ccequivc_ext;
      apply mkc_comp_seq1_reduces_to_choice_seq; eauto;
      introv ss;
      apply enf0 in ss; repnd; spcast; eauto 4 with slow|].
@@ -927,7 +929,9 @@ Proof.
   eapply cequivc_preserving_equality;
     [|apply ccequivc_ext_sym;
       introv xt; spcast; apply implies_cequivc_natk2nat;
-      apply computes_to_valc_implies_cequivc;eauto 5 with slow].
+      apply ccomputes_to_valc_ext_implies_cequivc;
+      eapply lib_extends_preserves_ccomputes_to_valc;
+      [|eauto];eauto 4 with slow ].
 
   simpl in *; exrepnd.
 
@@ -936,6 +940,7 @@ Proof.
   applydup safe' in br2.
 
   pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry k) as q.
+
   repeat (autodimp q hyp); exrepnd.
 
   apply implies_equality_natk2nat_prop.
@@ -957,8 +962,9 @@ Proof.
   repnd; spcast.
 
   exists i.
-  dands; spcast; eauto 5 with slow;[].
+  dands; spcast;[eauto 5 with slow|];[].
 
+  apply in_ext_computes_to_valc_implies_ccomputes_to_valc_ext; introv xt; spcast.
   unfold computes_to_valc; simpl.
   split; eauto 3 with slow.
   eapply reduces_to_if_split2;[csunf; simpl; reflexivity|].
@@ -967,12 +973,14 @@ Proof.
   unfold compute_step_eapply; simpl; boolvar; try omega;[].
   autorewrite with slow.
 
-  eapply lib_extends_preserves_find_cs in q0;[|eauto].
+  assert (lib_extends lib'1 lib') as xt' by eauto 3 with slow.
+  eapply lib_extends_preserves_find_cs in q0;[|exact xt'].
   exrepnd; simpl in *.
   destruct entry2; simpl in *.
   unfold find_cs_value_at.
   rewrite <- Heqname.
-  allrw;simpl.
+
+  allrw; simpl.
   rewrite find_value_of_cs_at_is_select.
   erewrite choice_sequence_vals_extends_implies_select_some; eauto; simpl; auto.
 Qed.

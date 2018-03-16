@@ -1665,31 +1665,33 @@ Proof.
   eapply reduces_to_trans; eauto.
 Qed.
 
-(*Lemma reduces_toc_implies_ccequivc_ext {p} :
-  forall lib t x,
-    @reduces_toc p lib t x
+Definition reduces_toc_ext {o} lib (a b : @CTerm o) :=
+  in_ext lib (fun lib => Cast (reduces_toc lib a b)).
+
+Lemma reduces_toc_ext_implies_ccequivc_ext {o} :
+  forall lib (t x : @CTerm o),
+    reduces_toc_ext lib t x
     -> ccequivc_ext lib t x.
 Proof.
-  introv r ext.
+  introv r ext; apply r in ext; clear r; spcast.
   destruct_cterms.
   unfold reduces_toc in *; simpl in *.
   spcast; unfold cequivc; simpl.
-  eapply lib_extends_preserves_reduces_to in r;[|eauto|]; eauto 3 with slow.
   apply reduces_to_implies_cequiv; eauto 3 with slow.
-Qed.*)
+Qed.
 
-(*Lemma member_respects_reduces_toc {o} :
+Lemma member_respects_reduces_toc_ext {o} :
   forall lib (t1 t2 T : @CTerm o),
-  reduces_toc lib t1 t2
+  reduces_toc_ext lib t1 t2
   -> member lib t2 T
   -> member lib t1 T.
 Proof.
   introv r m.
-  apply reduces_toc_implies_ccequivc_ext in r.
+  apply reduces_toc_ext_implies_ccequivc_ext in r.
   apply ccequivc_ext_sym in r.
   eapply equality_respects_cequivc in r;[|exact m].
   apply equality_sym in r; apply equality_refl in r; auto.
-Qed.*)
+Qed.
 
 Lemma member_respects_cequivc {o} :
   forall lib (t1 t2 T : @CTerm o),

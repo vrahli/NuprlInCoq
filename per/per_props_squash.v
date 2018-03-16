@@ -35,6 +35,50 @@ Require Export per_props_image.
 Require Export csubst6.
 
 
+(* MOVE *)
+Lemma iscvalue_implies_hasvaluec {o} :
+  forall lib (a : @CTerm o),
+    iscvalue a
+    -> hasvaluec lib a.
+Proof.
+  introv iscv.
+  destruct_cterms; simpl in *.
+  unfold iscvalue in iscv; simpl in *.
+  unfold hasvaluec, hasvalue.
+  exists x; simpl; eauto 3 with slow.
+Qed.
+Hint Resolve iscvalue_implies_hasvaluec : slow.
+
+(* MOVE *)
+Lemma hasvaluec_implies_computes_to_valc {o} :
+  forall lib (a : @CTerm o),
+    hasvaluec lib a
+    -> {v : CTerm & computes_to_valc lib a v}.
+Proof.
+  introv hv.
+  destruct_cterms; unfold hasvaluec, hasvalue in *; simpl in *; exrepnd.
+  applydup @computes_to_value_implies_isprogram in hv0.
+  exists (mk_cterm t' hv1); unfold computes_to_valc; simpl; auto.
+Qed.
+
+(* MOVE *)
+Lemma ccequivc_ext_isvalue_implies_ccomputes_to_valc_ext {o} :
+  forall lib (a b : @CTerm o),
+    iscvalue b
+    -> ccequivc_ext lib a b
+    -> a ===>(lib) b.
+Proof.
+  introv iscv ceq ext.
+  apply ceq in ext; clear ceq; spcast.
+  apply cequivc_sym in ext.
+  applydup @hasvaluec_cequivc in ext; eauto 3 with slow;[].
+  apply hasvaluec_implies_computes_to_valc in ext0; exrepnd.
+  exists v; dands; spcast; eauto 2 with slow.
+  eapply cequivc_trans;[eauto|].
+  apply computes_to_valc_implies_cequivc; auto.
+Qed.
+Hint Resolve ccequivc_ext_isvalue_implies_ccomputes_to_valc_ext : slow.
+
 Lemma equality_in_mkc_squash {p} :
   forall lib (t1 t2 T : @CTerm p),
     equality lib t1 t2 (mkc_squash T)
@@ -47,27 +91,23 @@ Proof.
 
   - eapply all_in_ex_bar_modus_ponens1;[|exact e]; clear e; introv x e.
     applydup @equal_in_image_prop in e; exrepnd.
-    pose proof (e2 _ (lib_extends_refl lib')) as e2; cbv beta in *; spcast.
-    pose proof (cequivc_beta lib' nvarx (mk_cv [nvarx] mkc_axiom) a1) as c1.
+    apply ccequivc_ext_sym in e2;eapply ccequivc_ext_trans in e2;[|apply ccequivc_ext_sym;apply ccequivc_ext_beta].
+    apply ccequivc_ext_sym in e3;eapply ccequivc_ext_trans in e3;[|apply ccequivc_ext_sym;apply ccequivc_ext_beta].
 
     allrw @mk_cv_as_cvterm_var.
     allrw @substc_cvterm_var.
-
-    assert (cequivc lib' t1 mkc_axiom) as c3;
-      [|eapply cequivc_axiom;[|apply cequivc_sym;eauto]; eauto 3 with slow];[].
-    eapply cequivc_trans;[exact e2|]; auto.
+    apply ccequivc_ext_sym in e2.
+    eauto 3 with slow.
 
   - eapply all_in_ex_bar_modus_ponens1;[|exact e]; clear e; introv x e.
     applydup @equal_in_image_prop in e; exrepnd.
-    pose proof (e3 _ (lib_extends_refl lib')) as e3; cbv beta in *; spcast.
-    pose proof (cequivc_beta lib' nvarx (mk_cv [nvarx] mkc_axiom) a2) as c2.
+    apply ccequivc_ext_sym in e2;eapply ccequivc_ext_trans in e2;[|apply ccequivc_ext_sym;apply ccequivc_ext_beta].
+    apply ccequivc_ext_sym in e3;eapply ccequivc_ext_trans in e3;[|apply ccequivc_ext_sym;apply ccequivc_ext_beta].
 
     allrw @mk_cv_as_cvterm_var.
     allrw @substc_cvterm_var.
-
-    assert (cequivc lib' t2 mkc_axiom) as c3;
-      [|eapply cequivc_axiom;[|apply cequivc_sym;eauto]; eauto 3 with slow];[].
-    eapply cequivc_trans;[exact e3|]; auto.
+    apply ccequivc_ext_sym in e2.
+    eauto 3 with slow.
 
   - eapply all_in_ex_bar_modus_ponens1;[|exact e]; clear e; introv x e.
     apply equal_in_image_prop in e; exrepnd.
@@ -78,24 +118,23 @@ Proof.
 
     unfold inhabited_type in e; exrepnd.
     applydup @inhabited_implies_tequality in e2; dands; auto.
-    apply eq_in_image_eq with (a1 := t) (a2 := t); auto; introv y; spcast.
+
+    apply eq_in_image_eq with (a1 := t) (a2 := t); auto.
 
     {
-      apply cequivc_trans with (b := mkc_axiom).
-      { apply computes_to_valc_implies_cequivc; eauto 3 with slow. }
-      apply cequivc_sym.
-      generalize (cequivc_beta lib'0 nvarx (mk_cv [nvarx] mkc_axiom) t); intro c.
+      eapply ccequivc_ext_trans;[apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto|].
+      apply ccequivc_ext_sym.
+      eapply ccequivc_ext_trans;[apply ccequivc_ext_beta|].
       allrw @mk_cv_as_cvterm_var.
-      allrw @substc_cvterm_var; sp.
+      allrw @substc_cvterm_var; eauto 2 with slow.
     }
 
     {
-      apply cequivc_trans with (b := mkc_axiom).
-      { apply computes_to_valc_implies_cequivc; eauto 3 with slow. }
-      apply cequivc_sym.
-      generalize (cequivc_beta lib'0 nvarx (mk_cv [nvarx] mkc_axiom) t); intro c.
+      eapply ccequivc_ext_trans;[apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto|].
+      apply ccequivc_ext_sym.
+      eapply ccequivc_ext_trans;[apply ccequivc_ext_beta|].
       allrw @mk_cv_as_cvterm_var.
-      allrw @substc_cvterm_var; sp.
+      allrw @substc_cvterm_var; eauto 2 with slow.
     }
 Qed.
 

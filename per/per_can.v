@@ -481,7 +481,7 @@ Proof.
       allrw @cast_halts_likec_as_chasvalue_likec; auto.
 Qed.
 
-Lemma lib_extends_preserves_hasvalue_likec {o} :
+(*Lemma lib_extends_preserves_hasvalue_likec {o} :
   forall {lib lib'} (x : lib_extends lib' lib) (a : @CTerm o),
     hasvalue_likec lib a
     -> hasvalue_likec lib' a.
@@ -490,9 +490,9 @@ Proof.
   unfold hasvalue_likec, hasvalue_like in *; exrepnd.
   exists v; dands; auto; eauto 3 with slow.
 Qed.
-Hint Resolve lib_extends_preserves_hasvalue_likec : slow.
+Hint Resolve lib_extends_preserves_hasvalue_likec : slow.*)
 
-Lemma chasvalue_likec_implies_hasvalue_likec_bar {o} :
+(*Lemma chasvalue_likec_implies_hasvalue_likec_bar {o} :
   forall lib (a : @CTerm o),
     chasvalue_likec lib a
     -> hasvalue_likec_bar lib a.
@@ -500,7 +500,7 @@ Proof.
   introv h.
   apply in_ext_implies_all_in_ex_bar; introv x.
   unfold chasvalue_likec in *; spcast; eauto 3 with slow.
-Qed.
+Qed.*)
 
 Lemma hasvalue_likec_stable {o} :
   forall lib (a : @CTerm o), chasvalue_likec lib a -> hasvalue_likec lib a.

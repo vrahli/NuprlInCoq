@@ -309,6 +309,18 @@ Proof.
       introv xx; repndors; ginv; tcsp; eauto 3 with slow.
 Qed.
 
+Lemma ccequivc_ext_apply_apply_ls2c_extract {o} :
+  forall lib a b (d : a <> b) (a1 b1 : @CTerm o),
+    ccequivc_ext
+      lib
+      (mkc_apply (mkc_apply (ls2c_extract a b) a1) b1)
+      (mkc_cs_eq a1 b1 mkc_btrue mkc_bfalse).
+Proof.
+  introv d ext; spcast.
+  apply reduces_toc_implies_cequivc.
+  apply apply_apply_ls2c_extract; auto.
+Qed.
+
 Lemma implies_approx_cs_eq {o} :
   forall lib (a1 a2 a3 a4 b1 b2 b3 b4 : @NTerm o),
     approx lib a1 b1
@@ -465,10 +477,10 @@ Proof.
     {
       eapply tequality_respects_cequivc_left;
         [apply ccequivc_ext_sym;apply implies_ccequivc_ext_cequiv;
-         apply computes_to_valc_implies_ccequivc_ext;eauto |].
+         apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto |].
       eapply tequality_respects_cequivc_right;
         [apply ccequivc_ext_sym;apply implies_ccequivc_ext_cequiv;
-         apply computes_to_valc_implies_ccequivc_ext;eauto |].
+         apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto |].
       apply tequality_mkc_cequiv.
       apply in_ext_implies_all_in_ex_bar; introv xt; tcsp.
     }
@@ -484,10 +496,10 @@ Proof.
     apply tequality_not.
     eapply tequality_respects_cequivc_left;
       [apply ccequivc_ext_sym;apply implies_ccequivc_ext_cequiv;
-       apply computes_to_valc_implies_ccequivc_ext;eauto |].
+       apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto |].
     eapply tequality_respects_cequivc_right;
       [apply ccequivc_ext_sym;apply implies_ccequivc_ext_cequiv;
-       apply computes_to_valc_implies_ccequivc_ext;eauto |].
+       apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto |].
     apply tequality_mkc_cequiv.
     apply in_ext_implies_all_in_ex_bar; introv xt; tcsp.
   }
@@ -540,10 +552,10 @@ Proof.
     {
       eapply tequality_respects_cequivc_left;
         [apply ccequivc_ext_sym;apply implies_ccequivc_ext_cequiv;
-         apply computes_to_valc_implies_ccequivc_ext;eauto |].
+         apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto |].
       eapply tequality_respects_cequivc_right;
         [apply ccequivc_ext_sym;apply implies_ccequivc_ext_cequiv;
-         apply computes_to_valc_implies_ccequivc_ext;eauto |].
+         apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto |].
       apply tequality_mkc_cequiv.
       apply in_ext_implies_all_in_ex_bar; introv xt; tcsp.
     }
@@ -559,10 +571,10 @@ Proof.
     apply tequality_not.
     eapply tequality_respects_cequivc_left;
       [apply ccequivc_ext_sym;apply implies_ccequivc_ext_cequiv;
-       apply computes_to_valc_implies_ccequivc_ext;eauto |].
+       apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto |].
     eapply tequality_respects_cequivc_right;
       [apply ccequivc_ext_sym;apply implies_ccequivc_ext_cequiv;
-       apply computes_to_valc_implies_ccequivc_ext;eauto |].
+       apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto |].
     apply tequality_mkc_cequiv.
     apply in_ext_implies_all_in_ex_bar; introv xt; tcsp.
   }
@@ -577,11 +589,9 @@ Proof.
   rename lib' into lib; rename safe' into safe.
 
   eapply equality_respects_cequivc_left;
-    [apply ccequivc_ext_sym;apply reduces_toc_implies_ccequivc_ext;
-     apply apply_apply_ls2c_extract;tcsp|].
+    [apply ccequivc_ext_sym;apply ccequivc_ext_apply_apply_ls2c_extract;tcsp|].
   eapply equality_respects_cequivc_right;
-    [apply ccequivc_ext_sym;apply reduces_toc_implies_ccequivc_ext;
-     apply apply_apply_ls2c_extract;tcsp|].
+    [apply ccequivc_ext_sym;apply ccequivc_ext_apply_apply_ls2c_extract;tcsp|].
 
   repeat rewrite substcv_as_substc2.
   autorewrite with slow.
@@ -602,16 +612,16 @@ Proof.
 
   eapply equality_respects_cequivc_left;
     [apply ccequivc_ext_sym;apply implies_ccequivc_ext_cs_eq;
-     [apply computes_to_valc_implies_ccequivc_ext;eauto
-     |apply computes_to_valc_implies_ccequivc_ext;eauto
+     [apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto
+     |apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto
      |apply ccequivc_ext_refl
      |apply ccequivc_ext_refl]
     |].
 
   eapply equality_respects_cequivc_right;
     [apply ccequivc_ext_sym;apply implies_ccequivc_ext_cs_eq;
-     [apply computes_to_valc_implies_ccequivc_ext;eauto
-     |apply computes_to_valc_implies_ccequivc_ext;eauto
+     [apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto
+     |apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto
      |apply ccequivc_ext_refl
      |apply ccequivc_ext_refl]
     |].
@@ -634,10 +644,10 @@ Proof.
     apply tequality_not.
     eapply tequality_respects_cequivc_left;
       [apply ccequivc_ext_sym;apply implies_ccequivc_ext_cequiv;
-       apply computes_to_valc_implies_ccequivc_ext;eauto |].
+       apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto |].
     eapply tequality_respects_cequivc_right;
       [apply ccequivc_ext_sym;apply implies_ccequivc_ext_cequiv;
-       apply computes_to_valc_implies_ccequivc_ext;eauto |].
+       apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto |].
     apply tequality_mkc_cequiv.
     apply in_ext_implies_all_in_ex_bar; introv xt; tcsp.
   }
@@ -645,10 +655,10 @@ Proof.
   apply in_ext_implies_all_in_ex_bar.
   introv xt.
 
-  eapply lib_extends_preserves_computes_to_valc in ea2;[|eauto].
-  eapply lib_extends_preserves_computes_to_valc in ea0;[|eauto].
-  eapply lib_extends_preserves_computes_to_valc in eb2;[|eauto].
-  eapply lib_extends_preserves_computes_to_valc in eb0;[|eauto].
+  eapply lib_extends_preserves_ccomputes_to_valc in ea2;[|eauto].
+  eapply lib_extends_preserves_ccomputes_to_valc in ea0;[|eauto].
+  eapply lib_extends_preserves_ccomputes_to_valc in eb2;[|eauto].
+  eapply lib_extends_preserves_ccomputes_to_valc in eb0;[|eauto].
   eapply lib_extends_preserves_similarity in sim;[|eauto].
   eapply lib_extends_preserves_hyps_functionality_ext in eqh;[|eauto].
   assert (safe_library lib') as safe' by eauto 3 with slow.
@@ -662,19 +672,21 @@ Proof.
     exists (@mkc_axiom o) (@mkc_axiom o).
     dands; spcast.
 
-    { unfold computes_to_valc; simpl.
+    { apply in_ext_computes_to_valc_implies_ccomputes_to_valc_ext; introv ext; spcast.
+      unfold computes_to_valc; simpl.
       split; eauto 3 with slow.
       apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
       unfold compute_step_comp; simpl; boolvar; tcsp. }
 
-    { unfold computes_to_valc; simpl.
+    { apply in_ext_computes_to_valc_implies_ccomputes_to_valc_ext; introv ext; spcast.
+      unfold computes_to_valc; simpl.
       split; eauto 3 with slow.
       apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
       unfold compute_step_comp; simpl; boolvar; tcsp. }
 
     eapply cequivc_preserving_equality;
       [|apply ccequivc_ext_sym;apply implies_ccequivc_ext_cequiv;
-        apply computes_to_valc_implies_ccequivc_ext; eauto ].
+        apply ccomputes_to_valc_ext_implies_ccequivc_ext; eauto ].
     apply equality_in_mkc_cequiv.
     apply in_ext_implies_all_in_ex_bar; introv xt; dands; spcast; eauto 3 with slow.
   }
@@ -684,12 +696,14 @@ Proof.
     exists (@mkc_axiom o) (@mkc_axiom o).
     dands; spcast.
 
-    { unfold computes_to_valc; simpl.
+    { apply in_ext_computes_to_valc_implies_ccomputes_to_valc_ext; introv ext; spcast.
+      unfold computes_to_valc; simpl.
       split; eauto 3 with slow.
       apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
       unfold compute_step_comp; simpl; boolvar; tcsp; ginv; tcsp. }
 
-    { unfold computes_to_valc; simpl.
+    { apply in_ext_computes_to_valc_implies_ccomputes_to_valc_ext; introv ext; spcast.
+      unfold computes_to_valc; simpl.
       split; eauto 3 with slow.
       apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
       unfold compute_step_comp; simpl; boolvar; tcsp; ginv; tcsp. }
@@ -703,7 +717,7 @@ Proof.
     eapply cequivc_preserving_equality;
       [|apply ccequivc_ext_sym;apply implies_ccequivc_ext_not;
         apply implies_ccequivc_ext_cequiv;
-        apply computes_to_valc_implies_ccequivc_ext; eauto ].
+        apply ccomputes_to_valc_ext_implies_ccequivc_ext; eauto ].
 
     apply equality_in_not; dands.
 

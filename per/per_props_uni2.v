@@ -32,6 +32,7 @@
 
 
 
+Require Export per_props_tacs.
 Require Export per_props_util.
 Require Export per_props_uni.
 Require Export types_converge.
@@ -221,7 +222,7 @@ Proof.
     pose proof (u0 _ q0 _ (lib_extends_refl lib') ext) as u0; simpl in *.
     unfold univ_ex in u0; exrepnd.
     allrw @univi_exists_iff; exrepnd; spcast.
-    computes_to_value_isvalue.
+    repeat ccomputes_to_valc_ext_val; auto.
   }
 
   exists (S i1); dands; try omega.
@@ -231,7 +232,7 @@ Proof.
   pose proof (u0 _ br _ ext x) as u0; simpl in *.
   unfold univ_ex in u0; exrepnd.
   allrw @univi_exists_iff; exrepnd; spcast.
-  computes_to_value_isvalue.
+  repeat ccomputes_to_valc_ext_val; auto.
   left; dands; spcast; auto; eauto 3 with slow.
 Qed.
 
@@ -255,7 +256,7 @@ Proof.
     pose proof (u0 _ q0 _ (lib_extends_refl lib') ext) as u0; simpl in *.
     unfold univ_ex in u0; exrepnd.
     allrw @univi_exists_iff; exrepnd; spcast.
-    computes_to_value_isvalue.
+    repeat ccomputes_to_valc_ext_val; auto.
   }
 
   exists bar eqa; dands; auto.
@@ -263,8 +264,8 @@ Proof.
   pose proof (u0 _ br _ ext x) as u0; simpl in *.
   unfold univ_ex in u0; exrepnd.
   allrw @univi_exists_iff; exrepnd; spcast.
-  computes_to_value_isvalue.
-Qed.
+  repeat ccomputes_to_valc_ext_val; auto.
+ Qed.
 
 Lemma univ_implies_univi_bar3_diff {o} :
   forall lib i1 i2 (eq : per(o)),
@@ -283,7 +284,8 @@ Proof.
   apply all_in_bar_ext_intersect_bars_same; simpl; auto.
 Qed.
 
-Lemma dest_nuprl_tuni_sub_per {o} :
+
+(*Lemma dest_nuprl_tuni_sub_per {o} :
   forall (lib : @library o) a b eq,
     nuprl lib (mkc_tuni a) (mkc_tuni b) eq
     ->
@@ -291,8 +293,8 @@ Lemma dest_nuprl_tuni_sub_per {o} :
       lib
       (fun lib =>
          exists i,
-           ccomputes_to_valc lib a (mkc_nat i)
-           /\ ccomputes_to_valc lib b (mkc_nat i)
+           ccomputes_to_valc_ext lib a (mkc_nat i)
+           /\ ccomputes_to_valc_ext lib b (mkc_nat i)
            /\ exists (bar : BarLib lib), sub_per eq (per_bar_eq bar (univi_eq_lib_per lib i))).
 Proof.
   introv cl.
@@ -307,9 +309,9 @@ Proof.
   pose proof (cl1 _ x) as cl1; repnd.
 
   eapply nuprl_value_respecting_left in cl3;
-    [|apply computes_to_valc_implies_ccequivc_ext;eauto].
+    [|apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto].
   eapply nuprl_value_respecting_right in cl3;
-    [|apply computes_to_valc_implies_ccequivc_ext;eauto].
+    [|apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto].
 
   apply computes_to_valc_tuni_implies in cl2.
   apply computes_to_valc_tuni_implies in cl0.
@@ -350,4 +352,4 @@ Proof.
     eapply tequality_respects_cequivc_right;
       [apply ccequivc_ext_sym; apply computes_to_valc_implies_ccequivc_ext;eauto|].
     apply tequality_mkc_uni.
-Qed.
+Qed.*)

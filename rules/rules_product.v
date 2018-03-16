@@ -335,7 +335,7 @@ Proof.
 
       - sim_snoc; dands; auto.
         eapply equality_respects_cequivc_left;
-          [apply ccequivc_ext_sym; apply computes_to_valc_implies_ccequivc_ext;eauto 3 with slow|];[].
+          [apply ccequivc_ext_sym; apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto 3 with slow|];[].
         lsubst_tac.
         apply equality_in_product; dands; auto; eauto 3 with slow;[].
 
@@ -391,12 +391,8 @@ Proof.
           allrw @dom_csub_eq; GC.
 
           - destruct niph.
-<<<<<<< HEAD
             allapply @similarity_dom; repnd.
             rw <- sim'0; auto.
-=======
-            allapply @similarity_dom; repnd; rw <- sim11; auto.
->>>>>>> e6717e4c33ad2e8c3ff125270f6f69a91acf43c4
 
           - destruct_cterms; simpl; eauto 3 with slow. }
 
@@ -722,7 +718,9 @@ Proof.
 
       + simpl.
         constructor; eauto 2 with slow;[].
-        apply cequivc_sym.
+        apply cequivc_sym; eauto 3 with slow.
+
+XXXXXXX
         apply computes_to_valc_implies_cequivc; auto; eauto 3 with slow.
 
     - introv x'; spcast.

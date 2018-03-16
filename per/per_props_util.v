@@ -1075,3 +1075,12 @@ Proof.
   - right.
     eapply ccequivc_ext_trans;[|eauto]; eauto 3 with slow.
 Qed.
+
+Lemma in_ext_computes_to_valc_implies_ccomputes_to_valc_ext {o} :
+  forall lib (a b : @CTerm o),
+    in_ext lib (fun lib => ccomputes_to_valc lib a b)
+    -> ccomputes_to_valc_ext lib a b.
+Proof.
+  introv h ext; apply h in ext; clear h; spcast.
+  exists b; dands; spcast; eauto 2 with slow.
+Qed.

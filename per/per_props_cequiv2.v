@@ -202,7 +202,10 @@ Proof.
 
   - apply all_in_ex_bar_equality_implies_equality.
     eapply all_in_ex_bar_modus_ponens1;[|exact h]; clear h; introv xt h.
-    repndors; exrepnd; spcast; dands; auto; computes_to_value_isvalue.
+    repndors; exrepnd; spcast; dands; auto; repeat ccomputes_to_valc_ext_val.
+    eapply equality_respects_cequivc_left;[apply ccequivc_ext_sym;exact h2|].
+    eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym;exact h4|].
+    auto.
 
   - apply in_ext_implies_all_in_ex_bar; introv xt.
     left.
@@ -221,7 +224,10 @@ Proof.
 
   - apply all_in_ex_bar_equality_implies_equality.
     eapply all_in_ex_bar_modus_ponens1;[|exact h]; clear h; introv xt h.
-    repndors; exrepnd; spcast; dands; auto; computes_to_value_isvalue.
+    repndors; exrepnd; spcast; dands; auto; repeat ccomputes_to_valc_ext_val.
+    eapply equality_respects_cequivc_left;[apply ccequivc_ext_sym;exact h2|].
+    eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym;exact h4|].
+    auto.
 
   - apply in_ext_implies_all_in_ex_bar; introv xt.
     right.
@@ -618,9 +624,7 @@ Proof.
           apply cequiv_refl.
           apply implies_isprogram_bt_lam in isp.
           apply isprog_vars_iff_isprogram_bt in isp.
-          apply isprogram_lsubst_if_isprog_sub; simpl; eauto 3 with slow.
-          apply isprog_vars_eq in isp; repnd.
-          rw @subvars_eq in isp0; auto. }
+          apply isprogram_lsubst_if_isprog_sub; simpl; eauto 3 with slow. }
 
         rw (lsubst_aux_trivial_cl b [(x,u)]); simpl; eauto 3 with slow.
 
@@ -628,9 +632,7 @@ Proof.
           apply cequiv_refl.
           apply implies_isprogram_bt_lam in isp.
           apply isprog_vars_iff_isprogram_bt in isp.
-          apply isprogram_lsubst_if_isprog_sub; simpl; eauto 3 with slow.
-          apply isprog_vars_eq in isp; repnd.
-          rw @subvars_eq in isp0; auto. }
+          apply isprogram_lsubst_if_isprog_sub; simpl; eauto 3 with slow. }
 
         apply disjoint_singleton_l; intro xx.
         apply implies_isprogram_bt_lam in isp.
@@ -722,9 +724,7 @@ Proof.
           apply cequiv_refl.
           apply implies_isprogram_bt_lam in isp.
           apply isprog_vars_iff_isprogram_bt in isp.
-          apply isprogram_lsubst_if_isprog_sub; simpl; eauto 3 with slow.
-          apply isprog_vars_eq in isp; repnd.
-          rw @subvars_eq in isp0; auto. }
+          apply isprogram_lsubst_if_isprog_sub; simpl; eauto 3 with slow. }
 
         rw (lsubst_aux_trivial_cl b [(x,u)]); simpl; eauto 3 with slow.
 
@@ -732,9 +732,7 @@ Proof.
           apply cequiv_refl.
           apply implies_isprogram_bt_lam in isp.
           apply isprog_vars_iff_isprogram_bt in isp.
-          apply isprogram_lsubst_if_isprog_sub; simpl; eauto 3 with slow.
-          apply isprog_vars_eq in isp; repnd.
-          rw @subvars_eq in isp0; auto. }
+          apply isprogram_lsubst_if_isprog_sub; simpl; eauto 3 with slow. }
 
         apply disjoint_singleton_l; intro xx.
         apply implies_isprogram_bt_lam in isp.

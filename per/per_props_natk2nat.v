@@ -52,20 +52,19 @@ Lemma implies_equality_natk2nat {o} :
     (forall m,
        m < n
        -> {k : nat
-           & computes_to_valc lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
-           # computes_to_valc lib (mkc_apply g (mkc_nat m)) (mkc_nat k)})
+           & ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
+           # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)})
     -> equality lib f g (natk2nat (mkc_nat n)).
 Proof.
   introv imp.
   apply equality_in_fun; dands; eauto 3 with slow.
 
-  { apply type_mkc_natk.
-    apply in_ext_implies_all_in_ex_bar; introv x.
-    exists (Z.of_nat n); spcast.
-    apply computes_to_valc_refl; eauto 3 with slow. }
+  { eapply type_mkc_natk_aux;
+    allrw @mkc_nat_eq; eauto 3 with slow. }
 
   introv x e.
-  apply equality_in_natk in e; exrepnd; spcast.
+  eapply equality_in_natk_aux in e; exrepnd; spcast;
+    allrw @mkc_nat_eq; eauto 3 with slow.
 
   eapply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv y e; exrepnd; spcast.
@@ -74,38 +73,35 @@ Proof.
     [apply implies_ccequivc_ext_apply;
       [apply ccequivc_ext_refl
       |apply ccequivc_ext_sym;
-        apply computes_to_valc_implies_ccequivc_ext;
-        exact e0]
+        apply ccomputes_to_valc_ext_implies_ccequivc_ext;
+        exact e1]
     |].
 
   eapply equality_respects_cequivc_right;
     [apply implies_ccequivc_ext_apply;
       [apply ccequivc_ext_refl
       |apply ccequivc_ext_sym;
-        apply computes_to_valc_implies_ccequivc_ext;
+        apply ccomputes_to_valc_ext_implies_ccequivc_ext;
         exact e2]
     |].
 
   clear dependent a.
   clear dependent a'.
 
-  apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
-  rw @mkc_nat_eq in e3; ginv.
-
   assert (m < n) as ltm by omega.
-  clear e1.
+  clear e0.
 
   apply equality_in_tnat.
   pose proof (imp m ltm) as h; exrepnd.
   apply in_ext_implies_all_in_ex_bar; introv z.
-  exists k; dands; spcast; eauto 4 with slow.
+  exists k; dands; eauto 4 with slow.
 Qed.
 
 Lemma implies_member_natk2nat {o} :
   forall lib (f : @CTerm o) n,
     (forall m,
        m < n
-       -> {k : nat & computes_to_valc lib (mkc_apply f (mkc_nat m)) (mkc_nat k)})
+       -> {k : nat & ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)})
     -> member lib f (natk2nat (mkc_nat n)).
 Proof.
   introv imp.
@@ -120,8 +116,8 @@ Lemma equality_natk2nat_implies {o} :
     m < n
     -> equality lib f g (natk2nat (mkc_nat n))
     -> all_in_ex_bar lib (fun lib => {k : nat
-        , ccomputes_to_valc lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
-        # ccomputes_to_valc lib (mkc_apply g (mkc_nat m)) (mkc_nat k)}).
+        , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
+        # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)}).
 Proof.
   introv ltm mem.
   apply equality_in_fun in mem; repnd.
@@ -129,15 +125,14 @@ Proof.
   pose proof (mem _ (lib_extends_refl lib) (mkc_nat m) (mkc_nat m)) as h; clear mem.
   autodimp h hyp.
 
-  { apply equality_in_natk.
+  { eapply equality_in_natk_aux;
+    allrw @mkc_nat_eq; eauto 3 with slow.
     apply in_ext_implies_all_in_ex_bar; introv x.
-    exists m (Z.of_nat n); dands; spcast; try omega;
-    try (apply computes_to_valc_refl; eauto 2 with slow). }
+    exists m; dands; try omega; rw @mkc_nat_eq; eauto 3 with slow. }
 
-  apply equality_in_tnat in h.
+  eapply equality_in_tnat in h.
   eapply all_in_ex_bar_modus_ponens1;try exact h; clear h; introv x h; exrepnd; spcast.
-  apply equality_of_nat_imp_tt in h.
-  unfold equality_of_nat_tt in h; exrepnd.
+  unfold per_props_nat.equality_of_nat in h; exrepnd.
   exists k; auto; dands; spcast; auto.
 Qed.
 
@@ -145,7 +140,7 @@ Lemma member_natk2nat_implies {o} :
   forall lib m (f : @CTerm o) n,
     m < n
     -> member lib f (natk2nat (mkc_nat n))
-    -> all_in_ex_bar lib (fun lib => {k : nat , ccomputes_to_valc lib (mkc_apply f (mkc_nat m)) (mkc_nat k)}).
+    -> all_in_ex_bar lib (fun lib => {k : nat , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)}).
 Proof.
   introv ltm mem.
   eapply equality_natk2nat_implies in mem;[|exact ltm].

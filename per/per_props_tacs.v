@@ -88,10 +88,15 @@ Proof.
   eqconstr comp1.
 Qed.
 
+
 Ltac ccomputes_to_valc_ext_val :=
   match goal with
   | [ H : (mkc_function _ _ _) ===>(_) (mkc_function _ _ _) |- _ ] =>
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply ccequivc_ext_mkc_function_implies in H;
+    repnd
+
+  | [ H : ccequivc_ext _ (mkc_function _ _ _) (mkc_function _ _ _) |- _ ] =>
     apply ccequivc_ext_mkc_function_implies in H;
     repnd
 
@@ -100,8 +105,16 @@ Ltac ccomputes_to_valc_ext_val :=
     apply ccequivc_ext_mkc_product_implies in H;
     repnd
 
+  | [ H : ccequivc_ext _ (mkc_product _ _ _) (mkc_product _ _ _) |- _ ] =>
+    apply ccequivc_ext_mkc_product_implies in H;
+    repnd
+
   | [ H : (mkc_set _ _ _) ===>(_) (mkc_set _ _ _) |- _ ] =>
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply ccequivc_ext_mkc_set_implies in H;
+    repnd
+
+  | [ H : ccequivc_ext _ (mkc_set _ _ _) (mkc_set _ _ _) |- _ ] =>
     apply ccequivc_ext_mkc_set_implies in H;
     repnd
 
@@ -110,8 +123,16 @@ Ltac ccomputes_to_valc_ext_val :=
     apply cequivc_ext_mkc_cequiv_right in H;
     repnd
 
+  | [ H : ccequivc_ext _ (mkc_cequiv _ _) (mkc_cequiv _ _) |- _ ] =>
+    apply cequivc_ext_mkc_cequiv_right in H;
+    repnd
+
   | [ H : (mkc_approx _ _) ===>(_) (mkc_approx _ _) |- _ ] =>
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply cequivc_ext_mkc_approx_right in H;
+    repnd
+
+  | [ H : ccequivc_ext _ (mkc_approx _ _) (mkc_approx _ _) |- _ ] =>
     apply cequivc_ext_mkc_approx_right in H;
     repnd
 
@@ -120,8 +141,16 @@ Ltac ccomputes_to_valc_ext_val :=
     apply ccequivc_ext_mkc_equality_implies in H;
     repnd
 
+  | [ H : ccequivc_ext _ (mkc_equality _ _ _) (mkc_equality _ _ _) |- _ ] =>
+    apply ccequivc_ext_mkc_equality_implies in H;
+    repnd
+
   | [ H : (mkc_union _ _) ===>(_) (mkc_union _ _) |- _ ] =>
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply cequivc_ext_mkc_union_right in H;
+    repnd
+
+  | [ H : ccequivc_ext _ (mkc_union _ _) (mkc_union _ _) |- _ ] =>
     apply cequivc_ext_mkc_union_right in H;
     repnd
 
@@ -130,8 +159,16 @@ Ltac ccomputes_to_valc_ext_val :=
     apply cequivc_ext_mkc_image_implies in H;
     repnd
 
+  | [ H : ccequivc_ext _ (mkc_image _ _) (mkc_image _ _) |- _ ] =>
+    apply cequivc_ext_mkc_image_implies in H;
+    repnd
+
   | [ H : (mkc_inl _) ===>(_) (mkc_inl _) |- _ ] =>
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply ccequivc_ext_inl_inl_implies in H;
+    repnd
+
+  | [ H : ccequivc_ext _ (mkc_inl _) (mkc_inl _) |- _ ] =>
     apply ccequivc_ext_inl_inl_implies in H;
     repnd
 
@@ -140,9 +177,44 @@ Ltac ccomputes_to_valc_ext_val :=
     apply ccequivc_ext_inr_inr_implies in H;
     repnd
 
+  | [ H : ccequivc_ext _ (mkc_inr _)(mkc_inr _) |- _ ] =>
+    apply ccequivc_ext_inr_inr_implies in H;
+    repnd
+
   | [ H : (mkc_csname _) ===>(_) (mkc_csname _) |- _ ] =>
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
     apply ccequivc_ext_mkc_csname_implies in H;
+    try subst
+
+  | [ H : ccequivc_ext _ (mkc_csname _) (mkc_csname _) |- _ ] =>
+    apply ccequivc_ext_mkc_csname_implies in H;
+    try subst
+
+  | [ H : (mkc_uni _) ===>(_) (mkc_uni _) |- _ ] =>
+    apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply ccequivc_ext_uni_uni_implies in H;
+    try subst
+
+  | [ H : ccequivc_ext _ (mkc_uni _) (mkc_uni _) |- _ ] =>
+    apply ccequivc_ext_uni_uni_implies in H;
+    try subst
+
+  | [ H : (mkc_integer _) ===>(_) (mkc_integer _) |- _ ] =>
+    apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply ccequivc_ext_mkc_integer_implies in H;
+    try subst
+
+  | [ H : ccequivc_ext _ (mkc_integer _) (mkc_integer _) |- _ ] =>
+    apply ccequivc_ext_mkc_integer_implies in H;
+    try subst
+
+  | [ H : (mkc_choice_seq _) ===>(_) (mkc_choice_seq _) |- _ ] =>
+    apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply ccequivc_ext_mkc_choice_seq_implies in H;
+    try subst
+
+  | [ H : ccequivc_ext _ (mkc_choice_seq _) (mkc_choice_seq _) |- _ ] =>
+    apply ccequivc_ext_mkc_choice_seq_implies in H;
     try subst
 
   | [ H : (mkc_inr _) ===>(_) (mkc_inl _) |- _ ] =>
