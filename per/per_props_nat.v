@@ -471,7 +471,7 @@ Hint Resolve isprogram_less : slow.
 
 Hint Resolve isprog_implies : slow.
 
-Lemma implies_cequivc_apply {o} :
+Lemma implies_cequivc_less {o} :
   forall lib (a1 a2 b1 b2 c1 c2 d1 d2 : @CTerm o),
     cequivc lib a1 a2
     -> cequivc lib b1 b2
@@ -508,7 +508,7 @@ Proof.
   eapply ccomputes_to_valc_ext_integer_implies_computes_to_valc_in_ext in compa;[|eauto].
   eapply ccomputes_to_valc_ext_integer_implies_computes_to_valc_in_ext in compb;[|eauto].
   spcast.
-  apply implies_cequivc_apply; eauto 3 with slow.
+  apply implies_cequivc_less; eauto 3 with slow.
 Qed.
 
 Lemma ccequivc_ext_mkc_less_integer_if_lt {o} :

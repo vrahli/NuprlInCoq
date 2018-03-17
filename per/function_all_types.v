@@ -42,6 +42,5 @@ Proof.
   introv ext en.
   apply equality_in_tnat in en.
   allrw @mkcv_tuni_substc; spcast.
-  allrw @mkc_var_substc.
-  apply tequality_mkc_tuni; auto.
+  allrw @mkc_var_substc; eauto 3 with slow.
 Qed.

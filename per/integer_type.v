@@ -33,6 +33,7 @@ Require Export sequents_tacs.
 Require Export sequents_tacs2.
 Require Export per_props_equality.
 Require Export sequents_equality.
+Require Export per_props_tacs.
 Require Export per_props_nat.
 Require Export per_can.
 (*Require Export per_props_top.*)
@@ -41,7 +42,7 @@ Require Export computation_arith.
 
 Lemma computes_to_integer_member_int {o} :
    forall lib (z : Z) (t : CTerm),
-   computes_to_valc lib t (mkc_integer z) -> member lib t (@mkc_int o).
+   ccomputes_to_valc_ext lib t (mkc_integer z) -> member lib t (@mkc_int o).
 Proof.
   unfold member, equality; sp.
   exists (@equality_of_int_bar o lib);sp; eauto 3 with slow.
@@ -53,7 +54,8 @@ Qed.
 
 Lemma member_int_iff {o} :
    forall lib  (t : CTerm),
-   member lib t (@mkc_int o) <-> all_in_ex_bar lib (fun lib => {z : Z ,  ccomputes_to_valc lib t (mkc_integer z)}).
+     member lib t (@mkc_int o)
+     <-> all_in_ex_bar lib (fun lib => {z : Z ,  ccomputes_to_valc_ext lib t (mkc_integer z)}).
 Proof.
   intros; split; intro k.
   { apply equality_in_int in k.
@@ -65,17 +67,32 @@ Proof.
     exists z; dands; auto. }
 Qed.
 
+Lemma ccequivc_ext_integer {o} :
+  forall lib (t t' : @CTerm o) (n : Z),
+    ccomputes_to_valc_ext lib t (mkc_integer n)
+    -> ccequivc_ext lib t t'
+    -> ccomputes_to_valc_ext lib t' (mkc_integer n).
+Proof.
+  introv comp ceq.
+  apply in_ext_computes_to_valc_implies_ccomputes_to_valc_ext; introv ext.
+  pose proof (ceq _ ext) as ceq.
+  eapply ccomputes_to_valc_ext_integer_implies_computes_to_valc_in_ext in comp;[|eauto].
+  simpl in *; spcast.
+  eapply cequivc_integer; eauto.
+Qed.
+Hint Resolve ccequivc_ext_integer : slow.
+
 Lemma  cequiv_member_int {o} :
   forall lib (z :Z) (a b : CTerm),
-   cequivc lib a b ->
-   computes_to_valc lib a (mkc_integer z) ->
+   ccequivc_ext lib a b ->
+   ccomputes_to_valc_ext lib a (mkc_integer z) ->
    tequality lib (mkc_member a (@mkc_int o)) (mkc_member b (@mkc_int o)).
 Proof.
   introv ceq compa.
   apply tequality_mkc_member_sp; dands; eauto 3 with slow.
-  eapply cequivc_integer in ceq;[|eauto].
+  eapply ccequivc_ext_integer in ceq;[|eauto].
   apply in_ext_implies_all_in_ex_bar; introv xt; right.
-  eapply ccequivc_ext_trans;[apply computes_to_valc_implies_ccequivc_ext; eauto 3 with slow|].
+  eapply ccequivc_ext_trans;[apply ccomputes_to_valc_ext_implies_ccequivc_ext; eauto 3 with slow|].
   apply ccequivc_ext_sym; eauto 3 with slow.
 Qed.
 
@@ -121,8 +138,13 @@ Lemma  ccomputes_to_valc_arithop {o} :
    b ===>( lib)(mkc_integer j)->
   (mkc_arithop op a b) ===>( lib)(mkc_integer (get_arith_op op i j)).
 Proof.
-  unfold ccomputes_to_valc; introv ai bj.
-  destruct ai. destruct bj. constructor.
+  introv compa compb.
+  apply in_ext_computes_to_valc_implies_ccomputes_to_valc_ext; introv ext.
+  eapply ccomputes_to_valc_ext_integer_implies_computes_to_valc_in_ext in compa;[|eauto].
+  eapply ccomputes_to_valc_ext_integer_implies_computes_to_valc_in_ext in compb;[|eauto].
+  spcast.
+  unfold ccomputes_to_valc.
+  constructor; simpl in *; eauto 3 with slow.
   apply computes_to_valc_arithop; auto.
 Qed.
 
@@ -138,11 +160,10 @@ Qed.
 
 Lemma equality_of_int_mkc_integer {o} :
   forall lib  i j,
-  equality_of_int lib (mkc_integer i) (@mkc_integer o j) <-> i = j.
-Proof.  intros; split; introv H.
-  - unfold equality_of_int in H; exrepnd; spcast.
-    allunfold @computes_to_valc. allunfold @get_cterm. allunfold @mkc_integer.
-    allunfold @computes_to_value. sp. allapply @integer_reduces_to; subst; auto.
-  - subst. unfold equality_of_int. exists j; split; spcast; apply computes_to_valc_refl;
-    apply iscvalue_mkc_integer.
+    equality_of_int lib (mkc_integer i) (@mkc_integer o j) <-> i = j.
+Proof.
+  intros; split; introv xx; subst.
+  - unfold equality_of_int in xx; exrepnd.
+    repeat ccomputes_to_valc_ext_val; auto.
+  - exists j; dands; eauto 3 with slow.
 Qed.

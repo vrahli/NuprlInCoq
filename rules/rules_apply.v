@@ -175,11 +175,14 @@ Proof.
   apply equality_in_halts in hyp1; repnd.
   apply all_in_ex_bar_teq_and_eq_implies_teq_and_eq.
 
+  apply implies_all_in_ex_bar_in_ext in hyp1.
   apply ccequivc_ext_bar_iff_ccequivc_bar in ceq0.
   eapply all_in_ex_bar_modus_ponens2;[|exact hyp1|exact ceq0]; clear hyp1 ceq0; introv xt hyp1 ceq0; repnd.
 
-  clear hyp3 hyp1.
-  clear hyp0.
+  assert (in_ext lib'0 (fun lib => chaltsc lib (mkc_apply (lsubstc f wt s1 ct1) (lsubstc a w2 s1 c2)))) as hlt.
+  { introv xxt; apply hyp1 in xxt; tcsp. }
+
+  clear hyp1 hyp0.
   spcast.
 
   dands.
@@ -222,13 +225,19 @@ Proof.
     clear dependent s2.
     rw @member_eq.
 
+    Check hasvaluec_mkc_apply_implies_hasvaluec.
+    Check hasvaluec_mkc_apply2.
+
+    (* Assuming that [f] has a value is not enough.  We also have to assume that it's monotonic. *)
+
+XXXXXXXXXX
     applydup @hasvaluec_mkc_apply_implies_hasvaluec in hyp2 as hv.
     apply hasvaluec_mkc_apply2 in hyp2.
     repndors; exrepnd; spcast.
 
     + eapply member_respects_cequivc;
         [apply implies_ccequivc_ext_islambda;
-          [apply ccequivc_ext_sym;apply computes_to_valc_implies_ccequivc_ext;exact hyp1
+          [apply ccequivc_ext_sym;apply ccomputes_to_valc_ext_implies_ccequivc_ext;exact hyp1
           |apply ccequivc_ext_refl
           |apply ccequivc_ext_refl]
         |].

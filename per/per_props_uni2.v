@@ -285,71 +285,98 @@ Proof.
 Qed.
 
 
-(*Lemma dest_nuprl_tuni_sub_per {o} :
-  forall (lib : @library o) a b eq,
-    nuprl lib (mkc_tuni a) (mkc_tuni b) eq
-    ->
-    all_in_ex_bar
-      lib
-      (fun lib =>
-         exists i,
-           ccomputes_to_valc_ext lib a (mkc_nat i)
-           /\ ccomputes_to_valc_ext lib b (mkc_nat i)
-           /\ exists (bar : BarLib lib), sub_per eq (per_bar_eq bar (univi_eq_lib_per lib i))).
+Lemma implies_cequivc_tuni {o} :
+  forall lib (a b : @CTerm o),
+    cequivc lib a b
+    -> cequivc lib (mkc_tuni a) (mkc_tuni b).
 Proof.
-  introv cl.
-  applydup @nuprl_converge_left in cl.
-  applydup @nuprl_converge_right in cl.
-  eapply all_in_ex_bar_modus_ponens2;[|exact cl0|exact cl1]; clear cl0 cl1; introv x cl0 cl1; exrepnd; spcast.
+  unfold cequivc; introv ceq; destruct_cterms; simpl in *.
+  repnud ceq.
+  split; apply approx_congruence; fold_terms;
+    try (apply isprogram_tuni; apply isprog_implies; auto).
 
-  apply hasvaluec_implies_computes_to_valc in cl0; exrepnd.
-  apply hasvaluec_implies_computes_to_valc in cl1; exrepnd.
+  { unfold lblift; simpl; dands; auto; introv w.
+    repeat (destruct n; try omega); unfold selectbt; simpl;
+      apply blift_approx_open_nobnd2; eauto 2 with slow. }
 
-  apply nuprl_monotone_func2 in cl; exrepnd.
-  pose proof (cl1 _ x) as cl1; repnd.
+  { unfold lblift; simpl; dands; auto; introv w.
+    repeat (destruct n; try omega); unfold selectbt; simpl;
+      apply blift_approx_open_nobnd2; eauto 2 with slow. }
+Qed.
 
-  eapply nuprl_value_respecting_left in cl3;
-    [|apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto].
-  eapply nuprl_value_respecting_right in cl3;
-    [|apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto].
+Lemma implies_ccequivc_ext_tuni {o} :
+  forall lib (a b : @CTerm o),
+    ccequivc_ext lib a b
+    -> ccequivc_ext lib (mkc_tuni a) (mkc_tuni b).
+Proof.
+  introv ceq ext; apply ceq in ext; spcast.
+  apply implies_cequivc_tuni; auto.
+Qed.
 
-  apply computes_to_valc_tuni_implies in cl2.
-  apply computes_to_valc_tuni_implies in cl0.
-  exrepnd; subst.
-  apply dest_nuprl_uni_diff in cl3.
-  apply univ_implies_univi_bar3_diff in cl3; repnd; subst.
-  exists k; dands; spcast; auto.
-  exrepnd.
-  exists bar.
-  introv h.
-  apply cl4 in h; apply cl5 in h; auto.
+Lemma ccequivc_ext_mkc_tuni_mkc_nat_implies_ccequivc_mkc_uni {o} :
+  forall lib (a : @CTerm o) i,
+    ccequivc_ext lib a (mkc_tuni (mkc_nat i))
+    -> ccequivc_ext lib a (mkc_uni i).
+Proof.
+  introv ceq ext; apply ceq in ext; clear ceq; spcast.
+  eapply cequivc_trans;[eauto|]; clear ext.
+  apply computes_to_valc_implies_cequivc; eauto 2 with slow.
+  pose proof (computes_to_valc_tuni lib' (mkc_nat i) (Z.of_nat i)) as xx.
+  autorewrite with slow in xx; apply xx; try omega.
+  rewrite <- mkc_nat_eq; eauto 3 with slow.
+Qed.
+
+Lemma dest_nuprl_tuni_sub_per {o} :
+  forall (lib : @library o) a b eq i,
+    ccomputes_to_valc_ext lib a (mkc_nat i)
+    -> ccomputes_to_valc_ext lib b (mkc_nat i)
+    -> nuprl lib (mkc_tuni a) (mkc_tuni b) eq
+    -> exists bar, (eq) <=2=> (per_bar_eq bar (univi_eq_lib_per lib i)).
+Proof.
+  introv compa compb cl.
+  apply ccomputes_to_valc_ext_implies_ccequivc_ext in compa.
+  apply ccomputes_to_valc_ext_implies_ccequivc_ext in compb.
+  apply implies_ccequivc_ext_tuni in compa.
+  apply implies_ccequivc_ext_tuni in compb.
+  apply ccequivc_ext_mkc_tuni_mkc_nat_implies_ccequivc_mkc_uni in compa.
+  apply ccequivc_ext_mkc_tuni_mkc_nat_implies_ccequivc_mkc_uni in compb.
+
+  eapply nuprl_value_respecting_left  in cl;[|eauto].
+  eapply nuprl_value_respecting_right in cl;[|eauto].
+  clear dependent a.
+  clear dependent b.
+
+  apply dest_nuprl_uni_diff in cl.
+  apply univ_implies_univi_bar3_diff in cl; repnd; subst; GC; auto.
 Qed.
 
 Lemma tequality_mkc_tuni {o} :
-  forall lib (a b : @CTerm o),
-    tequality lib (mkc_tuni a) (mkc_tuni b)
-    <=> equality_of_nat_bar lib a b.
+  forall lib (a b : @CTerm o) i,
+    ccomputes_to_valc_ext lib a (mkc_nat i)
+    -> ccomputes_to_valc_ext lib b (mkc_nat i)
+    -> tequality lib (mkc_tuni a) (mkc_tuni b).
 Proof.
-  introv.
-  split; intro k.
+  introv compa compb.
+  apply ccomputes_to_valc_ext_implies_ccequivc_ext in compa.
+  apply ccomputes_to_valc_ext_implies_ccequivc_ext in compb.
+  apply implies_ccequivc_ext_tuni in compa.
+  apply implies_ccequivc_ext_tuni in compb.
+  apply ccequivc_ext_mkc_tuni_mkc_nat_implies_ccequivc_mkc_uni in compa.
+  apply ccequivc_ext_mkc_tuni_mkc_nat_implies_ccequivc_mkc_uni in compb.
+  eapply tequality_respects_cequivc_left;[apply ccequivc_ext_sym;eauto|].
+  eapply tequality_respects_cequivc_right;[apply ccequivc_ext_sym;eauto|].
+  apply tequality_mkc_uni.
+Qed.
+Hint Resolve tequality_mkc_tuni : slow.
 
-  - unfold tequality in k; exrepnd.
-    apply dest_nuprl_tuni_sub_per in k0.
-    eapply all_in_ex_bar_modus_ponens1;[|exact k0]; clear k0; introv x k0; exrepnd; spcast.
-    exists i; dands; spcast; auto.
-
-  - apply all_in_ex_bar_tequality_implies_tequality.
-    eapply all_in_ex_bar_modus_ponens1;[|exact k]; clear k; introv x k; exrepnd; spcast.
-    unfold equality_of_nat in k; exrepnd; spcast.
-    pose proof (computes_to_valc_tuni lib' a (Z.of_nat n)) as c1.
-    pose proof (computes_to_valc_tuni lib' b (Z.of_nat n)) as c2.
-    allrw @Znat.Nat2Z.id; fold_terms.
-    allrw <- @mkc_nat_eq.
-    repeat (autodimp c1 hyp); try omega.
-    repeat (autodimp c2 hyp); try omega.
-    eapply tequality_respects_cequivc_left;
-      [apply ccequivc_ext_sym; apply computes_to_valc_implies_ccequivc_ext;eauto|].
-    eapply tequality_respects_cequivc_right;
-      [apply ccequivc_ext_sym; apply computes_to_valc_implies_ccequivc_ext;eauto|].
-    apply tequality_mkc_uni.
-Qed.*)
+Lemma equality_of_nat_bar_implies_tequality_mkc_uni {o} :
+  forall lib (a b : @CTerm o),
+    equality_of_nat_bar lib a b
+    -> tequality lib (mkc_tuni a) (mkc_tuni b).
+Proof.
+  introv e.
+  apply all_in_ex_bar_tequality_implies_tequality.
+  eapply all_in_ex_bar_modus_ponens1;[|exact e]; clear e; introv x e.
+  unfold equality_of_nat in *; exrepnd; eauto 3 with slow.
+Qed.
+Hint Resolve equality_of_nat_bar_implies_tequality_mkc_uni : slow.
