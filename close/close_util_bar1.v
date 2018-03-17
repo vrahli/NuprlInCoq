@@ -38,6 +38,7 @@ Require Export nuprl_mon_func2.
 
 Require Export close_util_int.
 Require Export close_util_nat.
+Require Export close_util_qnat.
 Require Export close_util_atom.
 Require Export close_util_uatom.
 Require Export close_util_base.
@@ -102,6 +103,21 @@ Lemma all_in_bar_close_nat {o} :
     -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
     -> all_in_bar bar (fun lib => (T) ===>(lib) (mkc_Nat))
     -> all_in_bar_ext bar (fun lib' x => per_nat_bar (close ts) lib' T T' (eqa lib' x)).
+Proof.
+  introv tsts dou alla allb br ext; introv.
+  pose proof (alla lib' br lib'0 ext x) as alla.
+  pose proof (allb lib' br lib'0 ext) as allb.
+  simpl in *; spcast.
+  dclose_lr; auto.
+Qed.
+
+Lemma all_in_bar_close_qnat {o} :
+  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+    type_system ts
+    -> defines_only_universes ts
+    -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
+    -> all_in_bar bar (fun lib => (T) ===>(lib) (mkc_qnat))
+    -> all_in_bar_ext bar (fun lib' x => per_qnat_bar (close ts) lib' T T' (eqa lib' x)).
 Proof.
   introv tsts dou alla allb br ext; introv.
   pose proof (alla lib' br lib'0 ext x) as alla.
@@ -252,6 +268,25 @@ Proof.
     apply eq_term_equals_sym; apply per_bar_eq_equality_of_nat_bar_lib_per.
 Qed.
 Hint Resolve per_nat_implies_per_bar : slow.
+
+Lemma per_qnat_implies_per_bar {o} :
+  forall ts lib (T T' : @CTerm o) eq,
+    per_qnat (close ts) lib T T' eq
+    -> per_bar (close ts) lib T T' eq.
+Proof.
+  introv per.
+  unfold per_qnat in *; exrepnd.
+  exists (trivial_bar lib) (equality_of_qnat_bar_lib_per lib).
+  dands.
+
+  - introv br ext; introv.
+    apply CL_qnat.
+    unfold per_qnat; dands; auto; eauto 3 with slow.
+
+  - eapply eq_term_equals_trans;[eauto|]; clear per.
+    apply eq_term_equals_sym; apply per_bar_eq_equality_of_qnat_bar_lib_per.
+Qed.
+Hint Resolve per_qnat_implies_per_bar : slow.
 
 Lemma per_csname_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
@@ -724,6 +759,25 @@ Proof.
     apply eq_term_equals_sym; apply per_bar_eq_equality_of_nat_bar_lib_per.
 Qed.
 Hint Resolve per_nat_implies_per_bar_above : slow.
+
+Lemma per_qnat_implies_per_bar_above {o} :
+  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+    per_qnat (close ts) lib T T' eq
+    -> per_bar_above (close ts) bar T T' eq.
+Proof.
+  introv per.
+  unfold per_qnat in *; exrepnd.
+  exists bar (equality_of_qnat_bar_lib_per lib).
+  dands.
+
+  - introv br ext; introv.
+    apply CL_qnat.
+    unfold per_qnat; dands; auto; eauto 3 with slow.
+
+  - eapply eq_term_equals_trans;[eauto|]; clear per.
+    apply eq_term_equals_sym; apply per_bar_eq_equality_of_qnat_bar_lib_per.
+Qed.
+Hint Resolve per_qnat_implies_per_bar_above : slow.
 
 Lemma per_csname_implies_per_bar_above {o} :
   forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,

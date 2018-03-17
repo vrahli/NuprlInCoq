@@ -114,6 +114,38 @@ Proof.
   exists (equality_of_nat_bar lib'); dands; spcast; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_equality_of_qnat_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+    sub_per (equality_of_qnat_bar lib) (equality_of_qnat_bar lib').
+Proof.
+  introv ext h.
+  unfold equality_of_qnat_bar, equality_of_qnat in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br e; simpl in *; exrepnd.
+  apply (h0 lib1 br1 lib'1); eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_equality_of_qnat_bar : slow.
+
+Lemma sub_per_equality_of_qnat {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+    sub_per (equality_of_qnat lib) (equality_of_qnat lib').
+Proof.
+  introv ext h.
+  unfold equality_of_qnat in *; exrepnd.
+  dands; introv xt.
+  { pose proof (h0 _ (lib_extends_trans xt ext)) as h0; simpl in *; exrepnd; exists n; auto. }
+  { pose proof (h _ (lib_extends_trans xt ext)) as h; simpl in *; exrepnd; exists n; auto. }
+Qed.
+Hint Resolve sub_per_equality_of_qnat : slow.
+
+Lemma per_qnat_monotone {o} :
+  forall (ts : cts(o)), type_monotone (per_qnat ts).
+Proof.
+  introv per ext.
+  unfold per_qnat in *; exrepnd.
+  exists (equality_of_qnat_bar lib'); dands; spcast; eauto 3 with slow.
+Qed.
+
 Lemma sub_per_equality_of_csname_bar {o} :
   forall n (lib lib' : @library o) (ext : lib_extends lib' lib),
     sub_per (equality_of_csname_bar lib n) (equality_of_csname_bar lib' n).
@@ -759,6 +791,11 @@ Proof.
 
   - Case "CL_nat".
     pose proof (per_nat_monotone ts lib lib' T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; dands; auto.
+
+  - Case "CL_qnat".
+    pose proof (per_qnat_monotone ts lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 

@@ -478,6 +478,36 @@ Definition per_nat {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] 
 
 
 
+
+Definition mk_qnat {o} : @NTerm o := oterm (Can NQNat) [].
+
+Theorem isprog_qnat {o} : @isprog o mk_qnat.
+Proof.
+  repeat constructor.
+Qed.
+
+Definition mkc_qnat {o} : @CTerm o := exist isprog mk_qnat isprog_qnat.
+
+Definition equality_of_qnat {o} lib (t t' : @CTerm o) :=
+  in_ext lib (fun lib => {n : nat , ccomputes_to_valc lib t (mkc_nat n)})
+  # in_ext lib (fun lib => {n : nat , ccomputes_to_valc lib t' (mkc_nat n)}).
+
+Definition equality_of_qnat_bar {o} lib (t t' : @CTerm o) :=
+  {bar : BarLib lib , all_in_bar bar (fun lib => equality_of_qnat lib t t')}.
+
+Definition per_qnat_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  {bar : BarLib lib
+  , all_in_bar bar (fun lib => T1 ===>(lib) mkc_qnat)
+  # all_in_bar bar (fun lib => T2 ===>(lib) mkc_qnat) }
+  # eq <=2=> (equality_of_qnat_bar lib).
+
+Definition per_qnat {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  T1 ===>(lib) mkc_qnat
+  # T2 ===>(lib) mkc_qnat
+  # eq <=2=> (equality_of_qnat_bar lib).
+
+
+
 Definition compatible_cs_kind (n : nat) (k : cs_kind) :=
   if deq_nat n 0 then
     match k with
@@ -2454,6 +2484,7 @@ Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_bar      : per_bar          (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_int      : per_int          (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_nat      : per_nat          (close ts) lib T T' eq -> close ts lib T T' eq
+  | CL_qnat     : per_qnat         (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_csname   : per_csname       (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_atom     : per_atom         (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_uatom    : per_uatom        (close ts) lib T T' eq -> close ts lib T T' eq
@@ -2495,6 +2526,7 @@ Arguments CL_init     {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_bar      {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_int      {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_nat      {p} [ts] [lib] [T] [T'] [eq] _.
+Arguments CL_qnat     {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_csname   {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_atom     {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_uatom    {p} [ts] [lib] [T] [T'] [eq] _.
@@ -2536,6 +2568,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
   | Case_aux c "CL_bar"
   | Case_aux c "CL_int"
   | Case_aux c "CL_nat"
+  | Case_aux c "CL_qnat"
   | Case_aux c "CL_csname"
   | Case_aux c "CL_atom"
   | Case_aux c "CL_uatom"
@@ -2597,20 +2630,29 @@ Definition close_ind' {pp}
                  (T T' : @CTerm pp)
                  (eq   : per)
                  (per  : per_int (close ts) lib T T' eq),
-            P ts lib T T' eq)
+      P ts lib T T' eq)
 
   (nat  : forall (ts   : cts)
                  (lib  : library)
                  (T T' : @CTerm pp)
                  (eq   : per)
                  (per  : per_nat (close ts) lib T T' eq),
-            P ts lib T T' eq)
+      P ts lib T T' eq)
+
+  (qnat  : forall (ts   : cts)
+                  (lib  : library)
+                  (T T' : @CTerm pp)
+                  (eq   : per)
+                  (per  : per_qnat (close ts) lib T T' eq),
+      P ts lib T T' eq)
+
   (csname : forall (ts   : cts)
                    (lib  : library)
                    (T T' : @CTerm pp)
                    (eq   : per)
                    (per  : per_csname (close ts) lib T T' eq),
       P ts lib T T' eq)
+
   (atom : forall (ts   : cts)
                  (lib  : library)
                  (T T' : @CTerm pp)
@@ -3392,6 +3434,7 @@ Definition close_ind' {pp}
 
    | CL_int    pts => int    ts lib T T' eq pts
    | CL_nat    pts => nat    ts lib T T' eq pts
+   | CL_qnat   pts => qnat   ts lib T T' eq pts
    | CL_csname pts => csname ts lib T T' eq pts
    | CL_atom   pts => atom   ts lib T T' eq pts
    | CL_uatom  pts => uatom  ts lib T T' eq pts
@@ -4306,6 +4349,7 @@ Ltac one_unfold_per :=
     | [ H : per_int_bar     _ _ _ _ _ |- _ ] => unfold per_int_bar     in H; exrepd
     | [ H : per_nat         _ _ _ _ _ |- _ ] => unfold per_nat         in H; exrepd
     | [ H : per_nat_bar     _ _ _ _ _ |- _ ] => unfold per_nat_bar     in H; exrepd
+    | [ H : per_qnat        _ _ _ _ _ |- _ ] => unfold per_qnat        in H; exrepd
     | [ H : per_csname      _ _ _ _ _ |- _ ] => unfold per_csname      in H; exrepd
 (*    | [ H : per_csname_bar  _ _ _ _ _ |- _ ] => unfold per_csname_bar  in H; exrepd*)
     | [ H : per_atom        _ _ _ _ _ |- _ ] => unfold per_atom        in H; exrepd
@@ -4395,6 +4439,13 @@ Definition equality_of_nat_bar_lib_per {o}
            (lib : @library o) : lib-per(lib,o).
 Proof.
   exists (fun lib' (x : lib_extends lib' lib) => equality_of_nat_bar lib').
+  introv x y; tcsp.
+Defined.
+
+Definition equality_of_qnat_bar_lib_per {o}
+           (lib : @library o) : lib-per(lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) => equality_of_qnat_bar lib').
   introv x y; tcsp.
 Defined.
 

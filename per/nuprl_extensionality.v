@@ -67,6 +67,12 @@ Proof.
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
+  - Case "CL_qnat".
+    apply CL_qnat.
+    unfold per_qnat in *; repnd; dands; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+
   - Case "CL_csname".
     apply CL_csname.
     unfold per_csname in *; exrepnd; dands; auto.

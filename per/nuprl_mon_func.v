@@ -62,6 +62,15 @@ Proof.
   dands; spcast; eauto 3 with slow.
 Qed.
 
+Lemma per_qnat_monotone_func {o} :
+  forall (ts : cts(o)), type_monotone_func (per_qnat ts).
+Proof.
+  introv per.
+  unfold per_qnat in *; exrepnd.
+  exists (equality_of_qnat_bar_lib_per lib); introv; simpl.
+  dands; spcast; eauto 3 with slow.
+Qed.
+
 Lemma per_csname_monotone_func {o} :
   forall (ts : cts(o)), type_monotone_func (per_csname ts).
 Proof.
@@ -473,6 +482,12 @@ Proof.
 
   - Case "CL_nat".
     pose proof (per_nat_monotone_func ts lib T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
+      repnd; dands; eauto 3 with slow.
+
+  - Case "CL_qnat".
+    pose proof (per_qnat_monotone_func ts lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.

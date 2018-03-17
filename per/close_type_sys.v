@@ -39,6 +39,7 @@ Require Export close_type_sys_per_init.
 Require Export close_type_sys_per_bar.
 Require Export close_type_sys_per_int.
 Require Export close_type_sys_per_nat.
+Require Export close_type_sys_per_qnat.
 Require Export close_type_sys_per_atom.
 Require Export close_type_sys_per_uatom.
 Require Export close_type_sys_per_csname.
@@ -360,6 +361,9 @@ Proof.
 
   - Case "CL_nat".
     apply close_type_system_nat; auto.
+
+  - Case "CL_qnat".
+    apply close_type_system_qnat; auto.
 
   - Case "CL_csname".
     apply close_type_system_csname; auto.
