@@ -94,8 +94,33 @@ To try our proof checker run (1 and 2 are to build our Coq formalization):
        `coqc -R ../axiom_choice axiom_choice -R ../bar_induction bar_induction -R ../cequiv cequiv -R ../close close -R ../computation computation -R ../continuity continuity -R ../per per -R ../rules rules -R ../terms terms -R ../util util uall_output.v`
 
 
+Examples
+--------
+
+
+This directory contains two examples so far:
+
+- `uall_wf.term-list`
+
+   This contains a proof that the `uall` (i.e., uniform universal
+   quantifier) operator is well-formed in the sense that it builds
+   propositions out of families of propositions.
+
+- `true_wf.term-list`
+
+   This contains a proof that the proposition True is indeed a
+   proposition.
+
+
+We selected these examples because they are simple enough to be proven
+fully automatically in Nuprl.  Because these proofs are automatically
+generated, they use a large amount of fundamental rules, as well as
+definitions and proofs already stored in the current library.
+
+
 Roadmap
 -------
+
 
 As hinted above, the main file is `Parse.ml`.  It contains the
 translator from Nuprl proofs to proofs in our verified
@@ -110,7 +135,9 @@ How to extend the tool
 
 To extend the tool with a new rule, you have to:
 
-1. Prove the validity of the rule if we haven't done so yet.
+1. Provide a proof for the validity of the rule (either from the
+kernel of rules we have already validated, or by producing a new
+proof).
 
 2. Add support for this rule in our Coq checker of Nuprl proofs in
 `../rules/proof_with_lib_non_dep.v`.  There are a few things to add
