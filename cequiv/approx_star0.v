@@ -31,6 +31,7 @@
 *)
 
 
+Require Export csubst_ref.
 Require Export approx_star_props2.
 Require Export computation6.
 
@@ -2435,35 +2436,3 @@ Proof.
   apply approx_star_congruence; simpl; auto; eauto 2 with slow.
 Qed.
 Hint Resolve implies_approx_star_mk_nat : slow.
-
-Lemma isprogram_last_cs_implies_ex {o} :
-  forall (l : list (@BTerm o)),
-    isprogram (oterm (NCan NLastCs) l)
-    -> {t : NTerm
-        & l = [nobnd t]
-        # isprogram t}.
-Proof.
-  introv isp.
-  unfold isprogram, closed in *; repnd; simpl in *.
-  inversion isp as [|? ? imp eqm]; subst; simpl in *.
-  repeat (destruct l; simpl in *; ginv).
-  destruct b as [l1 t1].
-  unfold num_bvars in *; simpl in *.
-  destruct l1; simpl in *; ginv.
-  autorewrite with slow in *.
-  allrw app_eq_nil_iff; repnd.
-  pose proof (imp (bterm [] t1)) as q1; autodimp q1 hyp.
-  allrw @bt_wf_iff.
-  exists t1; dands; auto.
-Qed.
-
-Definition mk_last_cs {o} (t : @NTerm o) := oterm (NCan NLastCs) [nobnd t].
-
-Lemma isprogram_last_cs_implies {o} :
-  forall (a : @NTerm o),
-    isprogram (mk_last_cs a)
-    -> isprogram a.
-Proof.
-  introv isp.
-  apply isprogram_last_cs_implies_ex in isp; exrepnd; ginv; tcsp.
-Qed.

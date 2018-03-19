@@ -34,6 +34,34 @@
 Require Export approx_star0.
 
 
+Lemma implies_isprogram_find_last_entry_default {o} :
+  forall lib name (d : @NTerm o),
+    isprogram d
+    -> isprogram (find_last_entry_default lib name d).
+Proof.
+  introv isp.
+  unfold find_last_entry_default.
+  remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; auto.
+  remember (last_cs_entry c) as lcs; symmetry in Heqlcs; destruct lcs; auto.
+Qed.
+Hint Resolve implies_isprogram_find_last_entry_default : slow.
+
+Lemma implies_approx_star_find_last_entry_default {o} :
+  forall lib name (a b : @NTerm o),
+    approx_star lib a b
+    -> approx_star
+         lib
+         (find_last_entry_default lib name a)
+         (find_last_entry_default lib name b).
+Proof.
+  introv apr.
+  unfold find_last_entry_default.
+  remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; auto.
+  remember (last_cs_entry c) as lcs; symmetry in Heqlcs; destruct lcs; auto.
+  apply approx_star_refl; eauto 3 with slow.
+Qed.
+Hint Resolve implies_approx_star_find_last_entry_default : slow.
+
 Lemma extensional_last_cs {p} : extensional_op (@NCan p NLastCs).
 Proof.
   introv Hpra Hprt Hprt' Hcv Has Hi.
@@ -90,17 +118,14 @@ Proof.
       make_red_val_like XX0 hh.
       applydup @isprogram_last_cs_implies in Hprt'; repnd.
 
-      pose proof (Hi (CSVal2term v)
+      pose proof (Hi (find_last_entry_default lib name d)
                      c
-                     (CSVal2term v)) as q.
-      repeat (autodimp q hyp); eauto 2 with slow;
-        try (apply implies_isprogram_mk_comp_seq2; eauto 2 with slow).
-      { apply approx_star_refl; eauto 3 with slow. }
+                     (find_last_entry_default lib name dr)) as q.
+      repeat (autodimp q hyp); eauto 2 with slow;[].
 
       eapply approx_star_open_trans;[eauto|].
       apply reduces_to_implies_approx_open1; eauto 2 with slow.
       eapply reduces_to_if_split1; eauto.
-      csunf; simpl; boolvar; autorewrite with slow in *; allrw; auto.
     }
 
   - apply isexc_implies in Hcv0; auto; exrepnd; subst.
@@ -118,11 +143,11 @@ Proof.
     apply howe_lemma2_exc in h; exrepnd; auto; prove_isprogram.
 
     apply approx_star_open_trans with (b := mk_exception a' e').
-    apply approx_star_exception; auto.
+    { apply approx_star_exception; auto. }
     apply approx_implies_approx_open.
     apply computes_to_exception_implies_approx; auto; prove_isprogram.
     allrw @computes_to_exception_as_reduces_to.
-    apply reduces_to_trans with (b := mk_last_cs (mk_exception a' e')).
+    apply reduces_to_trans with (b := mk_last_cs (mk_exception a' e') ur).
     { apply reduces_to_prinarg; auto. }
     apply reduces_to_if_step; reflexivity.
 Qed.

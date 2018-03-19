@@ -869,6 +869,53 @@ Proof.
 Qed.
 Hint Resolve subset_get_utokens_lib_csval2term_get_utokens_lib : slow.
 
+Lemma lsubst_aux_find_last_entry_default {o} :
+  forall lib name (a : @NTerm o) sub,
+    lsubst_aux (find_last_entry_default lib name a) sub
+    = find_last_entry_default lib name (lsubst_aux a sub).
+Proof.
+  introv.
+  unfold find_last_entry_default.
+  remember (find_cs lib name) as fcs; destruct fcs; tcsp.
+  remember (last_cs_entry c) as lcs; destruct lcs; tcsp.
+  autorewrite with slow; auto.
+Qed.
+
+Lemma get_utokens_lib_mk_last_cs_choice_seq {o} :
+  forall lib name (a : @NTerm o),
+    get_utokens_lib lib (mk_last_cs (mk_choice_seq name) a)
+    = get_utokens_lib lib a.
+Proof.
+  introv.
+  unfold get_utokens_lib; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @get_utokens_lib_mk_last_cs_choice_seq : slow.
+
+Lemma get_utokens_lib_find_last_entry_default_subset {o} :
+  forall lib name (a : @NTerm o),
+    subset
+      (get_utokens_lib lib (find_last_entry_default lib name a))
+      (get_utokens_lib lib a).
+Proof.
+  introv i.
+  unfold find_last_entry_default in i.
+  remember (find_cs lib name) as fcs; destruct fcs; symmetry in Heqfcs; simpl in *; tcsp.
+  remember (last_cs_entry c) as lcs; destruct lcs; symmetry in Heqlcs; simpl in *; tcsp.
+  autorewrite with slow in *.
+  eapply subset_get_utokens_lib_csval2term_get_utokens_lib; eauto.
+Qed.
+Hint Resolve get_utokens_lib_find_last_entry_default_subset : slow.
+
+Lemma implies_disjoint_get_utokens_lib_find_last_entry_default {o} :
+  forall l lib name (a : @NTerm o),
+    disjoint l (get_utokens_lib lib a)
+    -> disjoint l (get_utokens_lib lib (find_last_entry_default lib name a)).
+Proof.
+  introv disj h q.
+  apply get_utokens_lib_find_last_entry_default_subset in q; apply disj in q; tcsp.
+Qed.
+Hint Resolve implies_disjoint_get_utokens_lib_find_last_entry_default : slow.
+
 Lemma compute_step_subst_utoken {o} :
   forall lib (t u : @NTerm o) sub,
     nt_wf t
@@ -2128,18 +2175,23 @@ Proof.
             exrepnd; subst; allsimpl.
             repeat (destruct bts; simpl in *; ginv).
             repeat (destruct bs; simpl in *; ginv).
+            unfold nobnd in *; destruct b; simpl in *; ginv;[].
 
-            exists (CSVal2term v).
+            exists (find_last_entry_default lib name n).
             autorewrite with slow.
 
             unflsubst.
-            autorewrite with slow.
+            rewrite lsubst_aux_find_last_entry_default.
+            fold (@mk_choice_seq o name) in *; fold_terms.
+            fold (@mk_last_cs o (mk_choice_seq name) n) in *.
+            autorewrite with slow in *.
             dands; eauto 3 with slow.
 
             introv nrut' eqdoms disj'.
             csunf; simpl; allrw.
             eexists; dands; eauto.
-            unflsubst; autorewrite with slow; auto.
+            repeat unflsubst; rewrite lsubst_aux_find_last_entry_default.
+            simpl; autorewrite with slow; auto.
           }
 
           { SSSCase "NCompSeq1".

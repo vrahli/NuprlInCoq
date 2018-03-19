@@ -35,6 +35,7 @@ Require Export cequiv_props.
 Require Export subst_per.
 Require Export csubst3.
 Require Export csubst5.
+Require Export csubst_ref.
 Require Export csubst_decide.
 Require Export csubst_arith.
 Require Export csubst_cft.
@@ -67,6 +68,11 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
     (* Int *)
     | context [lsubstc mk_int ?w ?s ?c ] =>
       generalize (lsubstc_mk_int w s c);
+        intro name; tac
+
+    (* QNat *)
+    | context [lsubstc mk_qnat ?w ?s ?c ] =>
+      generalize (lsubstc_mk_qnat w s c);
         intro name; tac
 
     (* Atom *)
@@ -1025,6 +1031,20 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c1 name];
         destruct name as [c2 name];
         destruct name as [c3 name];
+        clear_irr; tac
+
+    (* LastCs *)
+    | context [lsubstc (mk_last_cs ?a ?b) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let w2 := fresh "w2" in
+      let c1 := fresh "c1" in
+      let c2 := fresh "c2" in
+      generalize (lsubstc_mk_last_cs_ex a b s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [w2 name];
+        destruct name as [c1 name];
+        destruct name as [c2 name];
         clear_irr; tac
 
     (* Inl *)

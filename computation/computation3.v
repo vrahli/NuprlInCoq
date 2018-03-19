@@ -2648,6 +2648,21 @@ Qed.
 
 Hint Rewrite Nat2Z.id : slow.
 
+Lemma implies_alpha_eq_find_last_entry_default {o} :
+  forall lib name (a b : @NTerm o),
+    alpha_eq a b
+    -> alpha_eq
+         (find_last_entry_default lib name a)
+         (find_last_entry_default lib name b).
+Proof.
+  introv aeq.
+  unfold find_last_entry_default.
+  remember (find_cs lib name) as fcs; destruct fcs; auto.
+  remember (last_cs_entry c) as lcs; destruct lcs; auto.
+Qed.
+Hint Resolve implies_alpha_eq_find_last_entry_default : slow.
+
+
 
 (* end hide *)
 
@@ -2955,9 +2970,12 @@ Proof.
               csunf Hcomp; allsimpl.
               apply compute_step_last_cs_success in Hcomp; exrepnd; subst; simpl in *; cpx.
               repeat (destruct lbt2; ginv).
+              pose proof (Hal 1) as Hal; autodimp Hal hyp.
+              unfold selectbt in Hal; simpl in *.
+              apply alpha_eq_bterm_nobnd in Hal; exrepnd; subst.
               csunf; simpl.
               allrw.
-              eexists; dands; eauto.
+              eexists; dands; eauto 3 with slow.
 
             - SSSSSCase "NCompSeq1".
 

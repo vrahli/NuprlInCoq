@@ -2597,6 +2597,21 @@ Proof.
               unfold compute_step_parallel; auto.
             }
 
+              Lemma ren_utok_find_last_entry_default {o} :
+                forall lib name (t : @NTerm o) a b,
+                  !LIn a (get_utokens_library lib)
+                  -> ren_utok (find_last_entry_default lib name t) a b
+                     = find_last_entry_default lib name (ren_utok t a b).
+              Proof.
+                introv ni.
+                unfold find_last_entry_default.
+                remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; auto.
+                remember (last_cs_entry c) as lcs; symmetry in Heqlcs; destruct lcs; auto.
+                rewrite not_in_get_utokens_implies_ren_utok_same; eauto 3 with slow.
+                introv xx.
+                eapply find_last_cs_implies_subset_get_utokens_CSVal2term in xx; eauto.
+              Qed.
+
             {
               SSSCase "NLastCs".
 
@@ -2604,11 +2619,16 @@ Proof.
               apply compute_step_last_cs_success in comp; exrepnd; subst; simpl in *.
               repeat (destruct bts; simpl in *; ginv).
               repeat (destruct bs; simpl in *; ginv).
+              destruct b0; unfold nobnd in *.
+              destruct l; simpl in *; ginv.
+
+              fold (@mk_choice_seq o name) in *; fold_terms.
+              fold (mk_last_cs (mk_choice_seq name) n) in *.
+              autorewrite with slow in *.
               csunf; simpl; allrw.
-              rewrite not_in_get_utokens_implies_ren_utok_same; eauto 3 with slow.
-              introv xx.
-              eapply find_last_cs_implies_subset_get_utokens_CSVal2term in xx; eauto.
-              rw in_app_iff in nia; rw not_over_or in nia; tcsp.
+              rewrite ren_utok_find_last_entry_default;
+                [|rw in_app_iff in nia; rw not_over_or in nia; tcsp];[].
+              rw @ren_utok_lsubst_aux; auto; eauto 3 with slow.
             }
 
             {

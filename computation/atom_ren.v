@@ -1834,6 +1834,22 @@ Proof.
       eapply IHlib;[unfold find_cs_value_at;allrw;eauto|]; auto.
 Qed.
 
+Lemma ren_utokens_find_last_entry_default {o} :
+  forall ren lib name (d : @NTerm o),
+    disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> ren_utokens ren (find_last_entry_default lib name d)
+       = find_last_entry_default lib name (ren_utokens ren d).
+Proof.
+  introv disj.
+  unfold find_last_entry_default.
+  remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; auto.
+  remember (last_cs_entry c) as lcs; symmetry in Heqlcs; destruct lcs; auto.
+  rewrite ren_utokens_trivial; auto; eauto 3 with slow.
+  introv i j.
+  eapply find_last_cs_implies_subset_get_utokens_CSVal2term in j; eauto.
+  apply disj in i; tcsp.
+Qed.
+
 Lemma compute_step_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
     nt_wf t
@@ -2043,8 +2059,9 @@ Proof.
             apply compute_step_last_cs_success in comp; exrepnd; subst.
             csunf; simpl; allrw.
             simpl in *.
-            rewrite ren_utokens_trivial; auto; eauto 3 with slow.
-            apply disjoint_sym in disjlib; eauto 3 with slow.
+            fold (@mk_choice_seq o name) in *; fold_terms.
+            fold (mk_last_cs (mk_choice_seq name) d) in *.
+            rewrite ren_utokens_find_last_entry_default; auto.
           }
 
           { SSSCase "NCompSeq1".

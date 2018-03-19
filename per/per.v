@@ -479,15 +479,6 @@ Definition per_nat {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] 
 
 
 
-Definition mk_qnat {o} : @NTerm o := oterm (Can NQNat) [].
-
-Theorem isprog_qnat {o} : @isprog o mk_qnat.
-Proof.
-  repeat constructor.
-Qed.
-
-Definition mkc_qnat {o} : @CTerm o := exist isprog mk_qnat isprog_qnat.
-
 Definition equality_of_qnat {o} lib (t t' : @CTerm o) :=
   in_ext lib (fun lib => {n : nat , ccomputes_to_valc lib t (mkc_nat n)})
   # in_ext lib (fun lib => {n : nat , ccomputes_to_valc lib t' (mkc_nat n)}).

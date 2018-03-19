@@ -380,6 +380,7 @@ Proof.
             apply compute_step_last_cs_success in comp; exrepnd; subst; simpl in *.
             csunf; simpl; allrw.
             eexists; dands; eauto.
+            rewrite lsubst_aux_find_last_entry_default.
             autorewrite with slow in *; auto.
           }
 

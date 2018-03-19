@@ -244,21 +244,23 @@ Fixpoint last_cs_entry {o} (l : @ChoiceSeqVals o) : option ChoiceSeqVal :=
   | _ :: k => last_cs_entry k
   end.
 
+Definition find_last_entry_default {o} (lib : @library o) name (d : NTerm) : NTerm :=
+  match find_cs lib name with
+  | Some entry =>
+    match last_cs_entry entry with
+    | Some v => CSVal2term v
+    | None => d
+    end
+  | None => d
+  end.
+
 Definition compute_step_last_cs {o}
            (lib   : @library o)
            (arg1c : @CanonicalOp o)
            (t     : @NTerm o)
            (arg1bts btsr : list (@BTerm o)) :=
   match arg1c, arg1bts, btsr with
-  | Ncseq name, [], [] =>
-    match find_cs lib name with
-    | Some entry =>
-      match last_cs_entry entry with
-      | Some v => csuccess (CSVal2term v)
-      | None => cfailure bad_args t
-      end
-    | None => cfailure bad_args t
-    end
+  | Ncseq name, [], [bterm [] d] => csuccess (find_last_entry_default lib name d)
   | _, _, _ => cfailure bad_args t
   end.
 

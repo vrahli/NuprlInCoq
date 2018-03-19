@@ -32,6 +32,7 @@
 
 
 Require Export computation2.
+Require Export csubst_ref.
 
 
 Hint Rewrite app_nil_r : slow.
@@ -46,6 +47,7 @@ Hint Rewrite @sub_keep_first_nil_r : slow.
 Hint Resolve subset_get_utokens_get_utokens_step_seq : slow.
 Hint Resolve oeqset_implies_osubset : slow.
 Hint Resolve subset_disjoint_r : slow.
+
 
 Lemma isprog_nout_implies_isprog {o} :
   forall (t : @NTerm o), isprog_nout t -> isprog t.
@@ -115,22 +117,18 @@ Lemma compute_step_last_cs_success {o} :
   forall lib can (t : @NTerm o) bts bs u,
     compute_step_last_cs lib can t bts bs = csuccess u
     -> {name : choice_sequence_name
-        & {entry : ChoiceSeqEntry
-        & {v : ChoiceSeqVal
+        & {d : NTerm
         & can = Ncseq name
         # bts = []
-        # bs = []
-        # find_cs lib name = Some entry
-        # last_cs_entry entry = Some v
-        # u = CSVal2term v }}}.
+        # bs = [nobnd d]
+        # u = find_last_entry_default lib name d }}.
 Proof.
   introv e; allsimpl; destruct can; allsimpl; ginv; boolvar; ginv.
 
   destruct bts; allsimpl; ginv.
   destruct bs; allsimpl; ginv.
-  remember (find_cs lib c) as f; symmetry in Heqf; destruct f; ginv.
-  remember (last_cs_entry c0) as z; symmetry in Heqz; destruct z; ginv.
-  exists c c0 c1; dands; auto.
+  destruct b, l, bs; ginv.
+  eexists; eexists; dands; unfold nobnd; eauto.
 Qed.
 
 Lemma compute_step_comp_seq1_success {o} :
@@ -287,6 +285,31 @@ Proof.
   introv; repeat constructor; simpl; tcsp.
 Qed.
 Hint Resolve nt_wf_mk_fresh_choice_nat_seq : slow.
+
+Lemma free_vars_find_last_entry_default_subvars {o} :
+  forall lib name (d : @NTerm o),
+    subvars (free_vars (find_last_entry_default lib name d)) (free_vars d).
+Proof.
+  introv; allrw subvars_eq; introv i.
+  unfold find_last_entry_default in i.
+  remember (find_cs lib name) as fcs; destruct fcs; simpl in *; auto.
+  remember (last_cs_entry c) as lcs; destruct lcs; simpl in *; auto.
+  autorewrite with slow in *; simpl in *; tcsp.
+Qed.
+Hint Resolve free_vars_find_last_entry_default_subvars : slow.
+
+Lemma nt_wf_find_last_entry_default {o} :
+  forall lib name (d : @NTerm o),
+    nt_wf d
+    -> nt_wf (find_last_entry_default lib name d).
+Proof.
+  introv wf; allrw subvars_eq.
+  unfold find_last_entry_default.
+  remember (find_cs lib name) as fcs; destruct fcs; simpl in *; auto.
+  remember (last_cs_entry c) as lcs; destruct lcs; simpl in *; auto.
+  eauto 3 with slow.
+Qed.
+Hint Resolve nt_wf_find_last_entry_default : slow.
 
 Lemma compute_step_preserves {o} :
   forall lib (t u : @NTerm o),
@@ -635,6 +658,7 @@ Proof.
 
           allsimpl; autorewrite with slow in *.
           apply compute_step_last_cs_success in comp; exrepnd; subst; simpl in *.
+          allrw @nt_wf_last_cs; repnd.
           autorewrite with slow; dands; auto; eauto 3 with slow.
         }
 
