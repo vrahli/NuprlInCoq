@@ -189,6 +189,26 @@ Proof.
 Qed.
 Hint Resolve in_ext_exists_ccomputes_to_valc_mkc_last_cs_choice_seq : slow.
 
+Lemma in_ext_exists_ccomputes_to_valc_nat {o} :
+  forall (lib : @library o) k,
+    in_ext lib (fun lib => exists n, ccomputes_to_valc lib (mkc_nat k) (mkc_nat n)).
+Proof.
+  introv ext; exists k; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_exists_ccomputes_to_valc_nat : slow.
+
+Lemma equality_nat_in_qnat {o} :
+  forall (lib : @library o) k, equality lib (mkc_nat k) (mkc_nat k) mkc_qnat.
+Proof.
+  introv.
+  apply equality_in_qnat; eauto 2 with slow.
+  apply in_ext_implies_all_in_ex_bar; introv xt.
+  unfold equality_of_qnat.
+  dands; eauto 3 with slow.
+Qed.
+Hint Resolve equality_nat_in_qnat : slow.
+
+
 
 
 (**
@@ -284,4 +304,83 @@ Proof.
   assert (safe_library lib'1) as safe' by eauto 4 with slow.
   unfold equality_of_qnat.
   dands; eauto 3 with slow.
+Qed.
+
+
+
+(**
+
+<<
+   H |- n ∈ ℕ\\True
+
+     By QNat_subtype Nat
+
+     H |- n ∈ ℕ
+>>
+
+ *)
+
+
+Definition rule_qnat_subtype_nat {o}
+           (lib : @library o)
+           (n   : NTerm)
+           (e   : NTerm)
+           (H   : @bhyps o) :=
+  mk_rule
+    (mk_baresequent H (mk_conclax (mk_member n mk_qnat)))
+    [mk_baresequent H (mk_concl (mk_member n mk_tnat) e)]
+    [].
+
+Lemma rule_qnat_subtype_nat_true {o} :
+  forall lib (n e : NTerm) (H : @bhyps o) (safe : safe_library lib),
+    rule_true lib (rule_qnat_subtype_nat lib n e H).
+Proof.
+  unfold rule_qnat_subtype_nat, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  clear cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (@covered o mk_axiom (nh_vars_hyps H)) as cv.
+  { dwfseq; tcsp. }
+  exists cv.
+
+  (* pick a fresh choice sequence name, and define a constraint based on [hyp1] and [hyp2] *)
+
+  vr_seq_true.
+  lsubst_tac.
+
+  rw <- @member_member_iff.
+  pose proof (teq_and_member_if_member
+                lib' mk_qnat n s1 s2 H wT wt ct0 ct1 cT cT0) as q.
+  lsubst_tac.
+  repeat (autodimp q hyp); eauto 2 with slow.
+
+  clear dependent s1.
+  clear dependent s2.
+  introv eqh sim.
+
+  vr_seq_true in hyp1.
+  pose proof (hyp1 lib' ext s1 s2 eqh sim) as hyp1; exrepnd.
+
+  lsubst_tac.
+  apply member_if_inhabited in hyp1.
+  apply tequality_mkc_member_implies_sp in hyp0; auto;[].
+  autorewrite with slow in *.
+
+  clear hyp1.
+  apply equality_in_tnat in hyp0.
+
+  apply all_in_ex_bar_equality_implies_equality.
+  eapply all_in_ex_bar_modus_ponens1;[|exact hyp0]; clear hyp0; introv y hyp0.
+  unfold equality_of_nat in hyp0; exrepnd.
+  apply ccomputes_to_valc_ext_implies_ccequivc_ext in hyp0.
+  apply ccomputes_to_valc_ext_implies_ccequivc_ext in hyp1.
+  eapply equality_respects_cequivc_left; [apply ccequivc_ext_sym;eauto|].
+  eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym;eauto|].
+  eauto 3 with slow.
 Qed.
