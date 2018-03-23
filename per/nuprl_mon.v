@@ -126,17 +126,17 @@ Proof.
 Qed.
 Hint Resolve sub_per_equality_of_qnat_bar : slow.
 
-Lemma sub_per_equality_of_qnat {o} :
+(*Lemma sub_per_equality_of_qnat {o} :
   forall (lib lib' : @library o) (ext : lib_extends lib' lib),
     sub_per (equality_of_qnat lib) (equality_of_qnat lib').
 Proof.
   introv ext h.
   unfold equality_of_qnat in *; exrepnd.
-  dands; introv xt.
+  dands; spcast; eexists; dands; eauto.
   { pose proof (h0 _ (lib_extends_trans xt ext)) as h0; simpl in *; exrepnd; exists n; auto. }
   { pose proof (h _ (lib_extends_trans xt ext)) as h; simpl in *; exrepnd; exists n; auto. }
 Qed.
-Hint Resolve sub_per_equality_of_qnat : slow.
+Hint Resolve sub_per_equality_of_qnat : slow.*)
 
 Lemma per_qnat_monotone {o} :
   forall (ts : cts(o)), type_monotone (per_qnat ts).
@@ -461,6 +461,34 @@ Proof.
 
   exists (raise_lib_per eqa ext)
          (raise_lib_per_fam eqb ext).
+  dands; eauto 3 with slow.
+Qed.
+
+Lemma sub_per_per_qtime_eq_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib) eqa,
+    sub_per (per_qtime_eq_bar lib eqa)
+            (per_qtime_eq_bar lib' (raise_lib_per eqa ext)).
+Proof.
+  introv h; repeat introv.
+  unfold per_qtime_eq_bar in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br xt; repeat introv.
+  unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
+  unfold raise_lib_per_fam, raise_ext_per_fam; simpl in *; tcsp.
+  eapply h0; eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_per_qtime_eq_bar : slow.
+
+Lemma per_qtime_monotone {o} :
+  forall (ts : cts(o)), type_monotone (per_qtime ts).
+Proof.
+  introv per ext.
+  unfold per_qtime in *; exrepnd.
+
+  exists (per_qtime_eq_bar lib' (raise_lib_per eqa ext)).
+  dands; eauto 3 with slow.
+
+  exists (raise_lib_per eqa ext) A B.
   dands; eauto 3 with slow.
 Qed.
 
@@ -831,6 +859,11 @@ Proof.
 
   - Case "CL_eq".
     pose proof (per_eq_monotone (close ts) lib lib' T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; dands; auto.
+
+  - Case "CL_qtime".
+    pose proof (per_qtime_monotone (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 

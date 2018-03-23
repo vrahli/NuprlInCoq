@@ -65,7 +65,7 @@ Lemma equality_of_qnat_sym {o} :
     equality_of_qnat lib t1 t2
     -> equality_of_qnat lib t2 t1.
 Proof.
-  introv e; unfold equality_of_qnat in *; exrepnd; dands; auto.
+  introv e; unfold equality_of_qnat in *; exrepnd; spcast; dands; eexists; spcast; eauto.
 Qed.
 Hint Resolve equality_of_qnat_sym : slow.
 
@@ -116,9 +116,7 @@ Proof.
   exrepnd; exists bar0.
   introv ie i; applydup e0 in i; auto.
   unfold equality_of_qnat in *; exrepnd; GC; dands; eauto.
-  introv ext.
-  pose proof (i1 _ ext) as i1; simpl in *; exrepnd; spcast.
-  assert (lib_extends lib'1 lib) as xt by eauto 4 with slow.
+  assert (lib_extends lib'0 lib) as xt by eauto 4 with slow.
   pose proof (ceq _ xt) as ceq; simpl in *; spcast.
   exists n; spcast.
   apply cequivc_nat_implies_computes_to_valc.
@@ -180,7 +178,7 @@ Proof.
 
   pose proof (j0 lib2) as q; autodimp q hyp; clear j0.
   pose proof (q lib'0) as z; clear q; autodimp z hyp; eauto 2 with slow; simpl in z.
-  exrepnd; spcast; dands; auto.
+  exrepnd; spcast; dands; eexists; spcast; eauto.
 Qed.
 Hint Resolve per_qnat_bar_term_transitive : slow.
 

@@ -1882,6 +1882,17 @@ Proof.
   inversion e; auto.
 Qed.
 
+Lemma mkc_qtime_eq {p} :
+  forall A B : @CTerm p,
+    mkc_qtime A = mkc_qtime B
+    -> A = B.
+Proof.
+  intros.
+  destruct_cterms; allsimpl.
+  inversion H; subst.
+  eauto with pi.
+Qed.
+
 Ltac eqconstr0 name :=
   match type of name with
     | mkc_uni _           = mkc_uni _           => apply mkc_uni_eq            in name
@@ -1905,6 +1916,7 @@ Ltac eqconstr0 name :=
     | mkc_image _ _       = mkc_image _ _       => apply mkc_image_eq          in name
     | mkc_texc _ _        = mkc_texc _ _        => apply mkc_texc_eq           in name
     | mkc_union _ _       = mkc_union _ _       => apply mkc_union_eq          in name
+    | mkc_qtime _         = mkc_qtime _         => apply mkc_qtime_eq          in name
     | mkc_eunion _ _      = mkc_eunion _ _      => apply mkc_eunion_eq         in name
     | mkc_sup _ _         = mkc_sup _ _         => apply mkc_sup_eq            in name
     | mkc_refl _          = mkc_refl _          => apply mkc_refl_eq           in name
@@ -2409,6 +2421,33 @@ Hint Resolve iscvalue_mkc_uatom : slow.
 Hint Resolve iscvalue_mkc_equality : slow.
 Hint Resolve iscvalue_mkc_union : slow.
 
+Lemma cequiv_mk_qtime {p} :
+  forall lib t t' a,
+    computes_to_value lib t (mk_qtime a)
+    -> cequiv lib t t'
+    -> {a' : @NTerm p $
+         computes_to_value lib t' (mk_qtime a')
+         # cequiv lib a a'}.
+Proof. prove_cequiv_mk; allrw <- isprogram_union_iff; sp.
+Qed.
+
+Lemma cequivc_mkc_qtime {p} :
+  forall lib t t' a,
+    computes_to_valc lib t (mkc_qtime a)
+    -> cequivc lib t t'
+    -> {a' : @CTerm p $
+         computes_to_valc lib t' (mkc_qtime a')
+         # cequivc lib a a'}.
+Proof.
+  unfold computes_to_valc, cequivc; intros; destruct_cterms; allsimpl.
+  generalize (cequiv_mk_qtime lib x1 x0 x); intro k.
+  repeat (dest_imp k hyp); exrepnd.
+  applydup @computes_to_value_isvalue in k1 as j.
+  inversion j as [u isp v]; subst.
+  apply isprogram_qtime_implies in isp.
+  exists (mk_cterm a' isp); simpl; sp.
+Qed.
+
 Lemma cequivc_Nat_left_iscvalue {o} :
   forall lib (t : @CTerm o),
     cequivc lib mkc_Nat t -> iscvalue t -> t = mkc_Nat.
@@ -2646,6 +2685,51 @@ Ltac apply_cequivc_val :=
     apply cequivc_sym in c;
     eapply cequivc_mkc_union in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
     destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_qtime *)
+
+  | [ H : cequivc _ (mkc_qtime _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let h1 := fresh "h1" in
+    eapply cequivc_mkc_qtime in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [H h1] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_qtime _) |- _ ] =>
+    let a  := fresh "a"  in
+    let h1 := fresh "h1" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_qtime in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [H h1] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_qtime _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_qtime in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [c h1] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_qtime _) |- _ ] =>
+    let a  := fresh "a"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_qtime in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [c h1] ];
     apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
     try (eqconstr H)
 

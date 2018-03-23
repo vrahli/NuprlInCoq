@@ -51,6 +51,7 @@ Require Export close_util_union.
 Require Export close_util_image.
 Require Export close_util_set.
 Require Export close_util_product.
+Require Export close_util_qtime.
 
 
 Lemma type_sys_props4_implies_eq_term_equals {o} :
@@ -485,6 +486,36 @@ Proof.
 Qed.
 Hint Resolve per_union_bar_implies_per_bar : slow.
 
+Lemma local_per_qtime_eq_bar {o} :
+  forall {lib} (bar : BarLib lib) (eqa : lib-per(lib,o)) t1 t2,
+    per_bar_eq bar (per_qtime_eq_bar_lib_per eqa) t1 t2
+    -> per_qtime_eq_bar lib eqa t1 t2.
+Proof.
+  introv alla.
+  apply per_bar_eq_per_qtime_eq_bar_lib_per in alla; auto.
+Qed.
+
+Lemma per_qtime_bar_implies_per_bar {o} :
+  forall ts lib (T T' : @CTerm o) eq,
+    per_qtime (close ts) lib T T' eq
+    -> per_bar (close ts) lib T T' eq.
+Proof.
+  introv per.
+  unfold per_qtime in *; exrepnd.
+
+  exists (trivial_bar lib) (per_qtime_eq_bar_lib_per eqa).
+  dands.
+
+  - introv br ext; introv; simpl in *.
+    apply CL_qtime.
+    unfold per_qtime; dands; auto.
+    exists (raise_lib_per eqa x) A B; dands; auto; eauto 3 with slow.
+
+  - eapply eq_term_equals_trans;[eauto|]; clear per1.
+    apply eq_term_equals_sym; apply per_bar_eq_per_qtime_eq_bar_lib_per.
+Qed.
+Hint Resolve per_qtime_bar_implies_per_bar : slow.
+
 Lemma local_per_image_eq_bar {o} :
   forall {lib} (bar : BarLib lib) (eqa : lib-per(lib,o)) f t1 t2,
     per_bar_eq bar (per_image_eq_bar_lib_per lib eqa f) t1 t2
@@ -704,6 +735,7 @@ Proof.
   introv br ext; introv.
   pose proof (tsts0 _ br _ ext x) as tsts0; simpl in *.
   apply CL_init; auto.
+
 Qed.
 
 Definition per_bar_above {o}

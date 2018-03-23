@@ -118,6 +118,12 @@ Proof.
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
+  - Case "CL_qtime".
+    apply CL_qtime.
+    exists eqa A B; dands; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+
   - Case "CL_func".
     apply CL_func.
     exists eqa eqb; dands; auto.

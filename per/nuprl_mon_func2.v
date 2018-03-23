@@ -256,6 +256,47 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_per_qtime_eq_bar2 {o} :
+  forall (lib lib' lib'' : @library o)
+         (x : lib_extends lib' lib)
+         (y : lib_extends lib'' lib')
+         (w : lib_extends lib'' lib) eqa,
+    sub_per (per_qtime_eq_bar lib' (raise_lib_per eqa x))
+            (per_qtime_eq_bar lib'' (raise_lib_per eqa w)).
+Proof.
+  introv y h; repeat introv.
+  unfold per_qtime_eq_bar in *; exrepnd.
+  exists (raise_bar bar y).
+  introv br xt; repeat introv.
+  unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
+  pose proof (h0 _ br1 _ (lib_extends_trans xt br2) (lib_extends_trans x0 y)) as h0; simpl in h0.
+  unfold per_qtime_eq in *; exrepnd.
+  exists x1 y0; dands; auto.
+  eapply (lib_per_cond _ eqa); eauto.
+Qed.
+Hint Resolve sub_per_per_qtime_eq_bar2 : slow.
+
+Lemma sub_lib_per_per_qtime_eq_bar_lib_per {o} :
+  forall {lib lib'} (x : @lib_extends o lib' lib) eqa,
+    sub_lib_per (per_qtime_eq_bar_lib_per lib eqa) x.
+Proof.
+  introv h z; simpl in *.
+  eapply sub_per_per_qtime_eq_bar2;[|eauto];auto.
+Qed.
+Hint Resolve sub_lib_per_per_qtime_eq_bar_lib_per : slow.
+
+Lemma per_qtime_monotone_func2 {o} :
+  forall (ts : cts(o)), type_monotone_func2 (per_qtime ts).
+Proof.
+  introv per.
+  unfold per_qtime in *; exrepnd.
+
+  exists (per_qtime_eq_bar_lib_per lib eqa); introv; simpl; dands; eauto 3 with slow.
+
+  exists (raise_lib_per eqa x) A B.
+  dands; eauto 3 with slow.
+Qed.
+
 Lemma sub_per_per_bar_eq2 {o} :
   forall {lib lib' lib''}
          (bar : @BarLib o lib)
@@ -602,6 +643,12 @@ Proof.
 
   - Case "CL_eq".
     pose proof (per_eq_monotone_func2 (close ts) lib T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
+      repnd; dands; eauto 3 with slow.
+
+  - Case "CL_qtime".
+    pose proof (per_qtime_monotone_func2 (close ts) lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.

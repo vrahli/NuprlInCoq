@@ -192,3 +192,133 @@ Proof.
   apply csubst_trivial; simpl; auto.
 Qed.
 Hint Rewrite @lsubstc_mk_qnat : slow.
+
+
+Lemma isprogram_qtime_implies_ex {o} :
+  forall (l : list (@BTerm o)),
+    isprogram (oterm (Can NQTime) l)
+    -> {t : NTerm
+        & l = [nobnd t]
+        # isprogram t}.
+Proof.
+  introv isp.
+  unfold isprogram, closed in *; repnd; simpl in *.
+  inversion isp as [|? ? imp eqm]; subst; simpl in *.
+  repeat (destruct l; simpl in *; ginv).
+  destruct b as [l1 t1].
+  unfold num_bvars in *; simpl in *.
+  destruct l1; simpl in *; ginv.
+  autorewrite with slow in *.
+  allrw app_eq_nil_iff; repnd.
+  pose proof (imp (bterm [] t1)) as q1; autodimp q1 hyp.
+  allrw @bt_wf_iff.
+  exists t1; dands; auto.
+Qed.
+
+Definition mk_qtime {o} (t : @NTerm o) := oterm (Can NQTime) [nobnd t].
+
+Lemma isprogram_qtime_implies {o} :
+  forall (a : @NTerm o),
+    isprogram (mk_qtime a)
+    -> isprogram a.
+Proof.
+  introv isp.
+  apply isprogram_qtime_implies_ex in isp; exrepnd; ginv; tcsp.
+Qed.
+
+Lemma cover_vars_qtime {o} :
+  forall (a : @NTerm o) sub,
+    cover_vars (mk_qtime a) sub
+    <=> cover_vars a sub.
+Proof.
+  sp; repeat (rw @cover_vars_eq); unfold cover_vars_upto; simpl.
+  rw @remove_nvars_nil_l; rw app_nil_r.
+  allrw subvars_app_l.
+  allrw subvars_remove_nvars; simpl.
+  allrw app_nil_r.
+  allrw @dom_csub_csub_filter; sp.
+Qed.
+
+Lemma implies_isprog_qtime {o} :
+  forall (a : @NTerm o),
+    isprog a
+    -> isprog (mk_qtime a).
+Proof.
+  introv ispa.
+  allrw <- @isprogram_eq.
+  destruct ispa as [cla wfa].
+  split.
+  { unfold closed; simpl; rw cla; simpl; auto. }
+  { repeat constructor; simpl; introv xx; repndors; subst; tcsp;apply bt_wf_iff; auto. }
+Qed.
+
+Lemma implies_isprogram_qtime {o} :
+  forall (a : @NTerm o),
+    isprogram a
+    -> isprogram (mk_qtime a).
+Proof.
+  introv ispa.
+  allrw @isprogram_eq.
+  apply implies_isprog_qtime; auto.
+Qed.
+
+Lemma wf_qtime {o} :
+  forall (a : @NTerm o),
+    wf_term (mk_qtime a) <=> wf_term a.
+Proof.
+  introv; allrw @wf_term_eq; split; intro h; repnd.
+  { inversion h as [|? ? imp e]; subst; simpl in *; clear e.
+    pose proof (imp (nobnd a)) as impa; autodimp impa hyp.
+    allrw @bt_wf_iff; auto. }
+  { repeat constructor; simpl; introv xx; repndors; subst; tcsp; apply bt_wf_iff; auto. }
+Qed.
+
+Lemma nt_wf_qtime {o} :
+  forall (a : @NTerm o),
+    nt_wf (mk_qtime a) <=> nt_wf a.
+Proof.
+  introv.
+  allrw @nt_wf_eq; apply wf_qtime.
+Qed.
+
+Definition mkc_qtime {p} (t : @CTerm p) : CTerm :=
+  let (a,x) := t in
+  exist isprog (mk_qtime a) (implies_isprog_qtime a x).
+
+Lemma lsubstc_mk_qtime {o} :
+  forall (t1 : @NTerm o) sub
+         (w1 : wf_term t1)
+         (w  : wf_term (mk_qtime t1))
+         (c1 : cover_vars t1 sub)
+         (c  : cover_vars (mk_qtime t1) sub),
+    lsubstc (mk_qtime t1) w sub c
+    = mkc_qtime (lsubstc t1 w1 sub c1).
+Proof.
+  sp; unfold lsubstc; simpl.
+  apply cterm_eq; simpl.
+  unfold csubst; simpl.
+  change_to_lsubst_aux4; simpl.
+  rw @sub_filter_nil_r; allrw @fold_nobnd.
+  allrw @sub_filter_csub2sub; sp.
+Qed.
+
+Lemma lsubstc_mk_qtime_ex {o} :
+  forall (t1 : @NTerm o) sub
+         (w : wf_term (mk_qtime t1))
+         (c : cover_vars (mk_qtime t1) sub),
+    {w1 : wf_term t1
+     & {c1 : cover_vars t1 sub
+     & lsubstc (mk_qtime t1) w sub c
+       = mkc_qtime (lsubstc t1 w1 sub c1) }}.
+Proof.
+  sp.
+
+  duplicate w.
+  rw @wf_qtime in w; sp.
+
+  duplicate c.
+  rw @cover_vars_qtime in c; sp.
+
+  exists w c.
+  apply lsubstc_mk_qtime.
+Qed.

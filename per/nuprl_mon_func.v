@@ -163,6 +163,40 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Definition per_qtime_eq_bar_lib_per {o}
+           (lib : @library o)
+           (eqa : lib-per(lib,o)) : lib-per(lib,o).
+Proof.
+  exists (fun lib' x => per_qtime_eq_bar lib' (raise_lib_per eqa x)).
+  repeat introv.
+  unfold per_qtime_eq_bar; split; intro h; exrepnd;
+    exists bar; introv br ext; introv.
+
+  - pose proof (h0 _ br _ ext x) as h0; simpl in *.
+    unfold per_qtime_eq, raise_ext_per in *; simpl in *; introv; exrepnd.
+    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
+    dup h0 as e2; apply e1 in e2; clear e1.
+    exists x0 y0; dands; auto.
+
+  - pose proof (h0 _ br _ ext x) as h0; simpl in *.
+    unfold per_qtime_eq, raise_ext_per in *; simpl in *; introv; exrepnd.
+    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
+    dup h0 as e2; apply e1 in e2; clear e1.
+    exists x0 y0; dands; auto.
+Defined.
+
+Lemma per_qtime_monotone_func {o} :
+  forall (ts : cts(o)), type_monotone_func (per_qtime ts).
+Proof.
+  introv per.
+  unfold per_qtime in *; exrepnd.
+
+  exists (per_qtime_eq_bar_lib_per lib eqa); introv; simpl; dands; eauto 3 with slow.
+
+  exists (raise_lib_per eqa x) A B.
+  dands; eauto 3 with slow.
+Qed.
+
 Definition per_union_eq_bar_lib_per {o}
            (lib : @library o)
            (eqa : lib-per(lib,o))
@@ -530,6 +564,12 @@ Proof.
 
   - Case "CL_eq".
     pose proof (per_eq_monotone_func (close ts) lib T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
+      repnd; dands; eauto 3 with slow.
+
+  - Case "CL_qtime".
+    pose proof (per_qtime_monotone_func (close ts) lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.

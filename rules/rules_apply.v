@@ -225,6 +225,7 @@ Proof.
     clear dependent s2.
     rw @member_eq.
 
+
     Check hasvaluec_mkc_apply_implies_hasvaluec.
     Check hasvaluec_mkc_apply2.
 

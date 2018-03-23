@@ -407,6 +407,12 @@ Proof.
     exists eqa eqb; sp.
     exists A A' v v' B B'; sp.*)
 
+  - Case "CL_qtime".
+    apply CL_qtime; unfold per_qtime; sp.
+    exists eqa A B; sp; introv;
+      try (apply reca; auto);
+      try (introv; apply recb; auto).
+
   - Case "CL_func".
     apply CL_func; unfold per_func; sp.
     exists eqa eqb; sp.
@@ -776,6 +782,15 @@ Proof.
     exists A A' v v' B B'; sp.
     apply IHn with (i0 := i); sp.
     apply recb with (i0 := i); sp.*)
+
+  - Case "CL_qtime".
+    apply CL_qtime.
+    unfold per_qtime; sp.
+    exists eqa; sp; try (exists A B); sp;
+      try (introv);
+      try (eapply reca; eauto);
+      try (introv; try (eapply recb; eauto));
+      try (complete (eapply IHn; eauto)).
 
   - Case "CL_func".
     apply CL_func.

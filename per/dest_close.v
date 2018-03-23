@@ -36,6 +36,7 @@ Require Export dest_close_int.
 Require Export dest_close_nat.
 Require Export dest_close_qnat.
 Require Export dest_close_csname.
+Require Export dest_close_qtime.
 Require Export dest_close_func.
 (*Require Export dest_close_isect.*)
 Require Export dest_close_product.
@@ -69,6 +70,25 @@ Require Export dest_close_tuni.
 
 Ltac dest_close_lr h :=
   match goal with
+
+    (* qtime *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A ?A' (?eaa lib' x)),
+        H4 : ccomputes_to_valc_ext ?lib ?T (mkc_qtime ?A),
+        H5 : close ?ts ?lib ?T ?T' ?eq,
+        H' : context[per_qtime_eq_bar ?lib ?ea]
+      |- _ ] =>
+      generalize (dest_close_per_qtime_l ts lib T A A' T' eq ea H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A' ?A (?eaa lib' x)),
+        H4 : ccomputes_to_valc_ext ?lib ?T' (mkc_qtime ?A),
+        H5 : close ?ts ?lib ?T ?T' ?eq,
+        H' : context[per_qtime_eq_bar ?lib ?ea]
+      |- _ ] =>
+      generalize (dest_close_per_qtime_r ts lib T A A' T' eq ea H1 H2 H3 H4 H5); intro h; no_duplicate h
 
     (* function *)
     | [ H1 : type_system ?ts,

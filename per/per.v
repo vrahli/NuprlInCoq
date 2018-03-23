@@ -338,6 +338,9 @@ Hint Resolve ccomputes_to_valc_ext_monotone : slow.
 
 (* begin hide *)
 
+Definition ccequivc_ext {o} (lib : @library o) (t t' : @CTerm o) :=
+  in_ext lib (fun lib => t ~=~(lib) t').
+
 Definition in_ext_ext {o} (lib : @library o) (F : forall (lib' : @library o), lib_extends lib' lib -> Prop) :=
   forall (lib' : library) (e : lib_extends lib' lib), F lib' e.
 
@@ -480,8 +483,8 @@ Definition per_nat {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] 
 
 
 Definition equality_of_qnat {o} lib (t t' : @CTerm o) :=
-  in_ext lib (fun lib => {n : nat , ccomputes_to_valc lib t (mkc_nat n)})
-  # in_ext lib (fun lib => {n : nat , ccomputes_to_valc lib t' (mkc_nat n)}).
+  {n : nat , ccomputes_to_valc lib t (mkc_nat n)}
+  # {n : nat , ccomputes_to_valc lib t' (mkc_nat n)}.
 
 Definition equality_of_qnat_bar {o} lib (t t' : @CTerm o) :=
   {bar : BarLib lib , all_in_bar bar (fun lib => equality_of_qnat lib t t')}.
@@ -496,6 +499,36 @@ Definition per_qnat {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U]
   T1 ===>(lib) mkc_qnat
   # T2 ===>(lib) mkc_qnat
   # eq <=2=> (equality_of_qnat_bar lib).
+
+
+
+
+(* When using [ccequivc], we cannot prove that [per_qtime_eq_bar] is transitive *)
+Definition per_qtime_eq {p} lib (eqa : per) (t t' : @CTerm p) : [U] :=
+  {x, y : CTerm
+  , ccequivc lib t x
+  # ccequivc lib t' y
+  # ccequivc_ext lib t t'
+  # eqa x y}.
+
+Definition per_qtime_eq_bar {o}
+           (lib  : library)
+           (eqa  : lib-per(lib,o))
+           (t t' : @CTerm o) : [U] :=
+  {bar : BarLib lib
+  , all_in_bar_ext bar (fun lib' x => per_qtime_eq lib' (eqa lib' x) t t') }.
+
+Definition per_qtime {o}
+           (ts : cts)
+           lib
+           (T1 T2 : @CTerm o)
+           (eq : per(o)) : [U] :=
+  {eqa : lib-per(lib,o)
+   , {A, B : CTerm
+   , T1 ===>(lib) (mkc_qtime A)
+   # T2 ===>(lib) (mkc_qtime B)
+   # in_ext_ext lib (fun lib' x => ts lib' A B (eqa lib' x))
+   # eq <=2=> (per_qtime_eq_bar lib eqa)}}.
 
 
 
@@ -666,9 +699,6 @@ Print Universes.
   if they are computationally equivalent.
 
 *)
-
-Definition ccequivc_ext {o} (lib : @library o) (t t' : @CTerm o) :=
-  in_ext lib (fun lib => t ~=~(lib) t').
 
 Definition per_base_eq {o} lib (t t' : @CTerm o) :=
   {bar : BarLib lib , all_in_bar bar (fun lib => t ~=~(lib) t') }.
@@ -2486,6 +2516,7 @@ Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
 (*  | CL_req      : per_req      (close ts) lib T T' eq -> close ts lib T T' eq*)
 (*  | CL_teq      : per_teq      (close ts) lib T T' eq -> close ts lib T T' eq*)
 (*  | CL_isect    : per_isect    (close ts) lib T T' eq -> close ts lib T T' eq*)
+  | CL_qtime    : per_qtime        (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_func     : per_func_ext     (close ts) lib T T' eq -> close ts lib T T' eq
 (*  | CL_disect   : per_disect   (close ts) lib T T' eq -> close ts lib T T' eq*)
 (*  | CL_pertype  : per_pertype  (close ts) lib T T' eq -> close ts lib T T' eq*)
@@ -2528,6 +2559,7 @@ Arguments CL_eq       {p} [ts] [lib] [T] [T'] [eq] _.
 (*Arguments CL_req      {p} [ts] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_teq      {p} [ts] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_isect    {p} [ts] [lib] [T] [T'] [eq] _.*)
+Arguments CL_qtime    {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_func     {p} [ts] [lib] [T] [T'] [eq] _.
 (*Arguments CL_disect   {p} [ts] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_pertype  {p} [ts] [lib] [T] [T'] [eq] _.*)
@@ -2570,6 +2602,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
 (*  | Case_aux c "CL_req"*)
 (*  | Case_aux c "CL_teq"*)
 (*  | Case_aux c "CL_isect"*)
+  | Case_aux c "CL_qtime"
   | Case_aux c "CL_func"
 (*  | Case_aux c "CL_disect"*)
 (*  | Case_aux c "CL_pertype"*)
@@ -2764,6 +2797,20 @@ Definition close_ind' {pp}
                   (eqiff : forall t t', eq t t' <=> (forall a a', forall e : eqa a a', eqb a a' e t t'))
                   (per  : per_isect (close ts) lib T T' eq),
              P ts lib T T' eq)*)
+
+  (qtime : forall (ts    : cts)
+                  (lib   : library)
+                  (T T'  : @CTerm pp)
+                  (eq    : per)
+                  (A B   : @CTerm pp)
+                  (eqa   : lib-per(lib,pp))
+                  (c1    : T ===>(lib) (mkc_qtime A))
+                  (c2    : T' ===>(lib) (mkc_qtime B))
+                  (cla   : in_ext_ext lib (fun lib' x => close ts lib' A B (eqa lib' x)))
+                  (reca  : in_ext_ext lib (fun lib' x => P ts lib' A B (eqa lib' x)))
+                  (eqiff : eq <=2=> (per_qtime_eq_bar lib eqa))
+                  (per   : per_qtime (close ts) lib T T' eq),
+      P ts lib T T' eq)
 
   (func : forall (ts    : cts)
                  (lib   : library)
@@ -3560,6 +3607,22 @@ Definition close_ind' {pp}
                                     (ftsb a a' eqa))
                teq
                pts*)
+
+   | CL_qtime pts =>
+       let (eqa, x) := pts in
+       let (A,   x) := x in
+       let (B,   x) := x in
+       let (c1,  x) := x in
+       let (c2,  x) := x in
+       let (tsa, eqiff) := x in
+         qtime ts lib T T' eq A B eqa
+               c1
+               c2
+               tsa
+               (fun (lib' : library) (i : lib_extends lib' lib) =>
+                  rec ts lib' A B (eqa lib' i) (tsa lib' i))
+               eqiff
+               pts
 
    | CL_func pts =>
        let (eqa, x) := pts in
@@ -4358,6 +4421,7 @@ Ltac one_unfold_per :=
     | [ H : per_req         _ _ _ _ _ |- _ ] => unfold per_req         in H; exrepd
     | [ H : per_teq         _ _ _ _ _ |- _ ] => unfold per_teq         in H; exrepd
     | [ H : per_isect       _ _ _ _ _ |- _ ] => unfold per_isect       in H; exrepd
+    | [ H : per_qtime       _ _ _ _ _ |- _ ] => unfold per_qtime       in H; exrepd
     | [ H : per_func        _ _ _ _ _ |- _ ] => unfold per_func        in H; exrepd
     | [ H : per_func_ext    _ _ _ _ _ |- _ ] => unfold per_func_ext    in H; exrepd
     | [ H : per_disect      _ _ _ _ _ |- _ ] => unfold per_disect      in H; exrepd
