@@ -31,30 +31,15 @@
 *)
 
 
-Require Export rules_useful.
-Require Export subst_tacs_aeq.
-Require Export subst_tacs3.
-Require Export cequiv_tacs.
-Require Export cequiv_props3.
-Require Export per_props_qnat.
-Require Export per_props_nat2.
-Require Export per_props_cs.
-Require Export fresh_cs.
-Require Export sequents_equality.
-Require Export sequents_tacs2.
-Require Export rules_tyfam.
-Require Export lsubst_hyps.
-Require Export terms_pi.
+Require Export per_props_qtime_nat.
+Require Export rules_ref.
 
 
-
-
-(**
-
+(*
 <<
    H |- mk_last_cs(f,d) ∈ ℕ\\True
 
-     By RefWf
+     By RefWf2
 
      H |- f ∈ Free(0)
      H |- d ∈ ℕ
@@ -63,22 +48,22 @@ Require Export terms_pi.
  *)
 
 
-Definition rule_ref_wf {o}
+Definition rule_ref_wf2 {o}
            (lib   : @library o)
            (f d   : NTerm)
            (e1 e2 : NTerm)
            (H     : @bhyps o) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_member (mk_last_cs f d) mk_qnat)))
+    (mk_baresequent H (mk_conclax (mk_member (mk_last_cs f d) mk_qtnat)))
     [mk_baresequent H (mk_concl (mk_member f (mk_csname 0)) e1),
      mk_baresequent H (mk_concl (mk_member d mk_tnat) e2)]
     [].
 
-Lemma rule_ref_wf_true {o} :
+Lemma rule_ref_wf2_true {o} :
   forall lib (f d e1 e2 : NTerm) (H : @bhyps o) (safe : safe_library lib),
-    rule_true lib (rule_ref_wf lib f d e1 e2 H).
+    rule_true lib (rule_ref_wf2 lib f d e1 e2 H).
 Proof.
-  unfold rule_ref_wf, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_ref_wf2, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   clear cargs.
 
@@ -100,8 +85,8 @@ Proof.
 
   rw <- @member_member_iff.
   pose proof (teq_and_member_if_member
-                lib' mk_qnat (mk_last_cs f d) s1 s2 H wT wt ct1 ct2 cT cT0) as q.
-  lsubst_tac.
+                lib' mk_qtnat (mk_last_cs f d) s1 s2 H wT wt ct1 ct2 cT cT0) as q.
+  lsubst_tac; autorewrite with slow in *.
   repeat (autodimp q hyp); eauto 2 with slow.
 
   clear dependent s1.
@@ -136,12 +121,17 @@ Proof.
   eapply equality_respects_cequivc_left; [apply ccequivc_ext_sym;apply implies_ccequivc_ext_last_cs;eauto|].
   eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym;apply implies_ccequivc_ext_last_cs;eauto|].
 
-  apply equality_in_qnat.
+  apply equality_in_qtnat.
   apply in_ext_implies_all_in_ex_bar; introv xt.
 
-  assert (safe_library lib'1) as safe' by eauto 4 with slow.
-  unfold equality_of_qnat.
-  dands; eauto 3 with slow.
+  pose proof (exists_ccomputes_to_valc_mkc_last_cs_choice_seq lib'1 name k) as w.
+  repeat (autodimp w hyp);[eauto 4 with slow|].
+  exrepnd; spcast.
+  exists (@mkc_nat o n) (@mkc_nat o n).
+  dands; spcast; eauto 3 with slow;[].
+
+  apply in_ext_implies_all_in_ex_bar; introv xt'.
+  exists n; dands; eauto 3 with slow.
 Qed.
 
 
@@ -151,7 +141,7 @@ Qed.
 <<
    H |- n ∈ ℕ\\True
 
-     By QNat_subtype Nat
+     By QTNat_subtype Nat
 
      H |- n ∈ ℕ
 >>
@@ -159,21 +149,21 @@ Qed.
  *)
 
 
-Definition rule_qnat_subtype_nat {o}
+Definition rule_qtnat_subtype_nat {o}
            (lib : @library o)
            (n   : NTerm)
            (e   : NTerm)
            (H   : @bhyps o) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_member n mk_qnat)))
+    (mk_baresequent H (mk_conclax (mk_member n mk_qtnat)))
     [mk_baresequent H (mk_concl (mk_member n mk_tnat) e)]
     [].
 
-Lemma rule_qnat_subtype_nat_true {o} :
+Lemma rule_qtnat_subtype_nat_true {o} :
   forall lib (n e : NTerm) (H : @bhyps o) (safe : safe_library lib),
-    rule_true lib (rule_qnat_subtype_nat lib n e H).
+    rule_true lib (rule_qtnat_subtype_nat lib n e H).
 Proof.
-  unfold rule_qnat_subtype_nat, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold rule_qtnat_subtype_nat, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   clear cargs.
 
@@ -194,8 +184,8 @@ Proof.
 
   rw <- @member_member_iff.
   pose proof (teq_and_member_if_member
-                lib' mk_qnat n s1 s2 H wT wt ct0 ct1 cT cT0) as q.
-  lsubst_tac.
+                lib' mk_qtnat n s1 s2 H wT wt ct0 ct1 cT cT0) as q.
+  lsubst_tac; autorewrite with slow in *.
   repeat (autodimp q hyp); eauto 2 with slow.
 
   clear dependent s1.

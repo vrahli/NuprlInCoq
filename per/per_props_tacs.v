@@ -88,6 +88,13 @@ Proof.
   eqconstr comp1.
 Qed.
 
+Lemma iscvalue_qtime {o} : forall (A : @CTerm o), iscvalue (mkc_qtime A).
+Proof.
+  introv; destruct_cterms; unfold iscvalue; simpl; split; simpl; tcsp.
+  apply implies_isprogram_qtime; eauto 3 with slow.
+Qed.
+Hint Resolve iscvalue_qtime : slow.
+
 
 Ltac ccomputes_to_valc_ext_val :=
   match goal with
@@ -152,6 +159,15 @@ Ltac ccomputes_to_valc_ext_val :=
 
   | [ H : ccequivc_ext _ (mkc_union _ _) (mkc_union _ _) |- _ ] =>
     apply cequivc_ext_mkc_union_right in H;
+    repnd
+
+  | [ H : (mkc_qtime _) ===>(_) (mkc_qtime _) |- _ ] =>
+    apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply cequivc_ext_mkc_qtime_right in H;
+    repnd
+
+  | [ H : ccequivc_ext _ (mkc_qtime _) (mkc_qtime _) |- _ ] =>
+    apply cequivc_ext_mkc_qtime_right in H;
     repnd
 
   | [ H : (mkc_image _ _) ===>(_) (mkc_image _ _) |- _ ] =>

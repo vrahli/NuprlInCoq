@@ -31,8 +31,13 @@
 *)
 
 
+(* free choice sequence rules *)
 Require Export rules_choice_roadmap.
+
+(* rules about references *)
 Require Export rules_ref.
+Require Export rules_ref2.
+
 Require Export rules_product.
 Require Export rules_union.
 Require Export rules_not_classical.
