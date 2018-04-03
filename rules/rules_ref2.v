@@ -37,7 +37,7 @@ Require Export rules_ref.
 
 (*
 <<
-   H |- mk_last_cs(f,d) ∈ ℕ\\True
+   H |- mk_last_cs(f,d) ∈ QT(ℕ)
 
      By RefWf2
 
@@ -139,7 +139,7 @@ Qed.
 (**
 
 <<
-   H |- n ∈ ℕ\\True
+   H |- n ∈ QT(ℕ)
 
      By QTNat_subtype Nat
 
