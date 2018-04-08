@@ -53,6 +53,7 @@ Require Import extensional_abs.
 Require Import extensional_fresh.
 Require Import extensional_parallel.
 Require Import extensional_lastcs.
+Require Import extensional_read_ref.
 Require Import extensional_compseq1.
 Require Import extensional_compseq2.
 
@@ -78,6 +79,7 @@ Proof.
     + Case "NTryCatch"; apply extensional_trycatch.
     + Case "NParallel"; apply extensional_parallel.
     + Case "NLastCs";   apply extensional_last_cs.
+    + Case "NReadRef";  apply extensional_read_ref.
     + Case "NCompSeq1"; apply extensional_comp_seq1.
     + Case "NCompSeq2"; apply extensional_comp_seq2.
     + Case "NCompOp";   apply extensional_ncomp.

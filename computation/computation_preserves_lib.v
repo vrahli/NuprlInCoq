@@ -91,18 +91,21 @@ Proof.
 Defined.
 
 Inductive EntryName :=
-| entry_name_cs (name : choice_sequence_name)
+| entry_name_cs  (name : choice_sequence_name)
+| entry_name_ref (name : reference_name)
 | entry_name_abs (name : opabs).
 
 Definition entry2name {o} (e : @library_entry o) : EntryName :=
   match e with
   | lib_cs name _ => entry_name_cs name
+  | lib_ref name _ => entry_name_ref name
   | lib_abs opabs _ _ _ => entry_name_abs opabs
   end.
 
 Definition same_entry_name (n1 n2 : EntryName) :=
   match n1, n2 with
   | entry_name_cs name1, entry_name_cs name2 => name1 = name2
+  | entry_name_ref name1, entry_name_ref name2 => name1 = name2
   | entry_name_abs opabs1, entry_name_abs opabs2 => same_opabs opabs1 opabs2
   | _, _ => False
   end.
@@ -112,6 +115,7 @@ Definition same_entry_name_dec :
 Proof.
   introv; destruct n1, n2; simpl; try (complete (right; tcsp)).
   - destruct (choice_sequence_name_deq name name0);[left|right];tcsp.
+  - destruct (reference_name_deq name name0);[left|right];tcsp.
   - destruct (same_opabs_dec name name0);[left|right]; tcsp.
 Defined.
 
@@ -131,7 +135,8 @@ Proof.
   - right; intro xx; exrepnd; auto.
   - destruct a.
 
-    { destruct name.
+    {
+      destruct name.
       - destruct (choice_sequence_name_deq name name0); subst.
         + left; exists (lib_cs name0 entry); simpl; dands; auto.
         + destruct IHlib as [k|k].
@@ -142,9 +147,38 @@ Proof.
       - destruct IHlib as [k|k].
         + left; exrepnd; exists e; dands; auto.
         + right; intro z; destruct k; exrepnd; exists e; dands; auto.
-          repndors; subst; simpl in *; tcsp. }
+          repndors; subst; simpl in *; tcsp.
+      - destruct IHlib as [k|k].
+        + left; exrepnd; exists e; dands; auto.
+        + right; intro z; destruct k; exrepnd; exists e; dands; auto.
+          repndors; subst; simpl in *; tcsp.
+    }
 
-    { destruct name.
+    {
+      destruct name.
+      - destruct IHlib as [k|k].
+        + left; exrepnd; exists e; dands; auto.
+        + right; intro z; destruct k; exrepnd; exists e; dands; auto.
+          repndors; subst; simpl in *; tcsp.
+      - destruct (reference_name_deq name name0); subst.
+        + left; exists (lib_ref name0 entry); simpl; dands; auto.
+        + destruct IHlib as [k|k].
+          * left; exrepnd; exists e; dands; auto.
+          * right; intro zz; exrepnd; destruct k.
+            exists e; dands; auto.
+            repndors; subst; simpl in *; tcsp.
+      - destruct IHlib as [k|k].
+        + left; exrepnd; exists e; dands; auto.
+        + right; intro z; destruct k; exrepnd; exists e; dands; auto.
+          repndors; subst; simpl in *; tcsp.
+    }
+
+    {
+      destruct name.
+      - destruct IHlib as [k|k]; exrepnd.
+        + left; exrepnd; eexists; eexists; eauto.
+        + right; intro xx; destruct k; exrepnd; exists e; dands; auto.
+          repndors; subst; simpl in *; tcsp.
       - destruct IHlib as [k|k]; exrepnd.
         + left; exrepnd; eexists; eexists; eauto.
         + right; intro xx; destruct k; exrepnd; exists e; dands; auto.
@@ -154,7 +188,8 @@ Proof.
         + destruct IHlib as [k|k]; exrepnd.
           * left; exrepnd; eexists; eexists; eauto.
           * right; intro xx; exrepnd; repndors; subst; allsimpl; tcsp.
-            destruct k; eexists; eexists; eauto. }
+            destruct k; eexists; eexists; eauto.
+    }
 Defined.
 
 Lemma found_entry_in {o} :
@@ -164,10 +199,7 @@ Lemma found_entry_in {o} :
 Proof.
   unfold found_entry.
   induction lib; introv fe; allsimpl; ginv.
-  destruct a.
-
-  { right.
-    eapply IHlib; eauto. }
+  destruct a; try (complete (right; eapply IHlib; eauto));[].
 
   boolvar; ginv; tcsp.
   - apply some_inj in fe; tcsp.
@@ -295,6 +327,10 @@ Proof.
       * remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
         autodimp IHlib hyp; eauto 2 with slow.
         unfold find_cs_value_at; allrw; auto.
+
+    + remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
+      autodimp IHlib hyp; eauto 2 with slow.
+      unfold find_cs_value_at; allrw; auto.
 
     + remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
       autodimp IHlib hyp; eauto 2 with slow.
@@ -1009,6 +1045,7 @@ Fixpoint found_entry_b {o} (lib : @library o) opabs (bs : list (@BTerm o)) : boo
   match lib with
   | [] => false
   | lib_cs _ _ :: l => found_entry_b l opabs bs
+  | lib_ref _ _ :: l => found_entry_b l opabs bs
   | lib_abs oa vars rhs correct :: l =>
     if matching_entry_deq opabs oa vars bs
     then true
@@ -2087,6 +2124,7 @@ Qed.
 Definition no_undefined_abs_in_entry {o} lib (entry : @library_entry o) :=
   match entry with
   | lib_cs _ _ => False
+  | lib_ref _ _ => False
   | lib_abs opabs vars rhs correct =>
     isotrue (all_abstractions_are_defined_so lib rhs)
   end.
@@ -2631,6 +2669,7 @@ Defined.
 Definition wf_entry {o} (e : @library_entry o) : bool :=
   match e with
   | lib_cs _ _ => true
+  | lib_ref _ _ => true
   | lib_abs opabs vars rhs correct =>
     if matching_sign_dec vars (opabs_sign opabs) then true else false
   end.
@@ -2734,11 +2773,8 @@ Lemma same_entry_name_preserves_find_entry {o} :
 Proof.
   induction lib; introv fe me; allsimpl; ginv.
   destruct a; boolvar; simpl in *; ginv; tcsp;
-    try (complete (destruct n; eauto 3 with slow)).
-
-  - eapply IHlib; eauto.
-
-  - pose proof (IHlib name1 name2 e) as q; repeat (autodimp q hyp).
+    try (complete (destruct n; eauto 3 with slow));
+    try (complete (eapply IHlib; eauto)).
 Qed.
 
 Lemma find_entry_sign_implies_in_lib {o} :
@@ -2747,23 +2783,9 @@ Lemma find_entry_sign_implies_in_lib {o} :
     -> in_lib opabs lib.
 Proof.
   induction lib; introv fe; allsimpl; ginv.
-  destruct a; allsimpl; boolvar; ginv; allsimpl.
-
-  - unfold in_lib; simpl.
-    eexists; dands;[left;eauto|].
-    simpl; auto.
-
-  - apply IHlib in fe.
-    unfold in_lib in *; exrepnd.
-    exists e0; simpl; tcsp.
-
-  - unfold in_lib; simpl.
-    eexists; dands;[left;eauto|].
-    simpl; auto.
-
-  - apply IHlib in fe.
-    unfold in_lib in *; exrepnd.
-    exists e0; simpl; tcsp.
+  destruct a; allsimpl; boolvar; ginv; allsimpl;
+    try (complete (unfold in_lib; simpl; eexists; dands;[left;eauto|]; simpl; auto));
+    try (complete (apply IHlib in fe; unfold in_lib in *; exrepnd; exists e0; simpl; tcsp)).
 Qed.
 
 Lemma find_entry_sign_implies_same_entry_name {o} :
@@ -2796,11 +2818,20 @@ Proof.
       apply find_entry_sign_implies_in_lib in Heqfe2.
       eapply same_entry_name_preserves_in_lib in Heqfe2; [|eauto]; tcsp.
 
+    + symmetry in Heqfe2.
+      apply find_entry_sign_implies_in_lib in Heqfe2.
+      eapply same_entry_name_preserves_in_lib in Heqfe2; [|eauto]; tcsp.
+
   - remember (find_entry_sign lib2 name) as fe2; destruct fe2 as [e2|]; allsimpl; auto.
     destruct e2; tcsp.
 
     + destruct name; simpl in *; tcsp.
       symmetry in Heqfe2; apply find_entry_sign_implies_same_entry_name in Heqfe2; simpl in *; tcsp.
+
+    + destruct name; simpl in *; tcsp.
+      symmetry in Heqfe2.
+      apply find_entry_sign_implies_in_lib in Heqfe2.
+      eapply same_entry_name_preserves_in_lib in Heqfe2; [|eauto]; tcsp.
 
     + destruct name; simpl in *; tcsp.
       symmetry in Heqfe2.

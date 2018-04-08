@@ -1641,6 +1641,7 @@ Lemma find_entry_eq_unfold_abs {o} :
   forall lib abs (bs : list (@BTerm o)),
     match find_entry lib abs bs with
     | Some (lib_cs _ _) => unfold_abs lib abs bs = None
+    | Some (lib_ref _ _) => unfold_abs lib abs bs = None
     | Some (lib_abs oa vars rhs correct) =>
       unfold_abs lib abs bs = Some (mk_instance vars bs rhs)
     | None => unfold_abs lib abs bs = None

@@ -384,6 +384,15 @@ Proof.
             autorewrite with slow in *; auto.
           }
 
+          { SSSCase "NReadRef".
+            csunf comp; allsimpl.
+            apply compute_step_read_ref_success in comp; exrepnd; subst; simpl in *.
+            csunf; simpl; allrw.
+            eexists; dands; eauto.
+            rewrite lsubst_aux_find_ref_def.
+            autorewrite with slow in *; auto.
+          }
+
           { SSSCase "NCompSeq1".
             csunf comp; allsimpl.
             apply compute_step_comp_seq1_success in comp; exrepnd; subst; simpl in *.

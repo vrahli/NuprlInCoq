@@ -307,6 +307,7 @@ Qed.
 Definition choice_seq_names_in_entry {o} (e : @library_entry o) : list choice_sequence_name :=
   match e with
   | lib_cs n l => [n]
+  | lib_ref _ _ => []
   | lib_abs _ _ _ _ => []
   end.
 

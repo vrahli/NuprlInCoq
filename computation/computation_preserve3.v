@@ -729,6 +729,10 @@ Proof.
       apply subset_app_l.
       eapply IHlib.
       unfold find_cs_value_at; allrw; auto.
+    + remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
+      apply subset_app_l.
+      eapply IHlib.
+      unfold find_cs_value_at; allrw; auto.
 Qed.
 Hint Resolve find_cs_value_at_implies_subset_get_utokens_CSVal2tern : slow.
 
@@ -915,6 +919,73 @@ Proof.
   apply get_utokens_lib_find_last_entry_default_subset in q; apply disj in q; tcsp.
 Qed.
 Hint Resolve implies_disjoint_get_utokens_lib_find_last_entry_default : slow.
+
+Lemma lsubst_aux_find_ref_def {o} :
+  forall lib name (a : @NTerm o) sub,
+    lsubst_aux (find_ref_def lib name a) sub
+    = find_ref_def lib name (lsubst_aux a sub).
+Proof.
+  introv.
+  unfold find_ref_def.
+  remember (find_ref lib name) as fcs; destruct fcs; tcsp.
+  autorewrite with slow; auto.
+Qed.
+
+Lemma get_utokens_lib_mk_read_ref_ref {o} :
+  forall lib name (a : @NTerm o),
+    get_utokens_lib lib (mk_read_ref (mk_ref name) a)
+    = get_utokens_lib lib a.
+Proof.
+  introv.
+  unfold get_utokens_lib; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @get_utokens_lib_mk_read_ref_ref : slow.
+
+Lemma find_ref_implies_subset_get_utokens_get_cterm {o} :
+  forall lib name (v : @ReferenceEntry o),
+    find_ref lib name = Some v
+    -> subset (get_utokens (get_cterm v)) (get_utokens_library lib).
+Proof.
+  induction lib; simpl; introv h; [introv q; ginv|].
+  destruct a; simpl in *; tcsp; boolvar; subst; ginv; eauto 3 with slow.
+Qed.
+Hint Resolve find_ref_implies_subset_get_utokens_get_cterm : slow.
+
+Lemma subset_get_utokens_lib_get_cterm_get_utokens_lib {o} :
+  forall lib name (v : @ReferenceEntry o) t,
+    find_ref lib name = Some v
+    -> subset (get_utokens_lib lib (get_cterm v))
+              (get_utokens_lib lib t).
+Proof.
+  introv f h.
+  allrw in_app_iff; repndors; tcsp.
+  eapply find_ref_implies_subset_get_utokens_get_cterm in h; eauto.
+Qed.
+Hint Resolve subset_get_utokens_lib_get_cterm_get_utokens_lib : slow.
+
+Lemma get_utokens_lib_find_ref_def_subset {o} :
+  forall lib name (a : @NTerm o),
+    subset
+      (get_utokens_lib lib (find_ref_def lib name a))
+      (get_utokens_lib lib a).
+Proof.
+  introv i.
+  unfold find_ref_def in i.
+  remember (find_ref lib name) as fcs; destruct fcs; symmetry in Heqfcs; simpl in *; tcsp.
+  autorewrite with slow in *.
+  eapply subset_get_utokens_lib_get_cterm_get_utokens_lib; eauto.
+Qed.
+Hint Resolve get_utokens_lib_find_ref_def_subset : slow.
+
+Lemma implies_disjoint_get_utokens_lib_find_ref_def {o} :
+  forall l lib name (a : @NTerm o),
+    disjoint l (get_utokens_lib lib a)
+    -> disjoint l (get_utokens_lib lib (find_ref_def lib name a)).
+Proof.
+  introv disj h q.
+  apply get_utokens_lib_find_ref_def_subset in q; apply disj in q; tcsp.
+Qed.
+Hint Resolve implies_disjoint_get_utokens_lib_find_ref_def : slow.
 
 Lemma compute_step_subst_utoken {o} :
   forall lib (t u : @NTerm o) sub,
@@ -2191,6 +2262,32 @@ Proof.
             csunf; simpl; allrw.
             eexists; dands; eauto.
             repeat unflsubst; rewrite lsubst_aux_find_last_entry_default.
+            simpl; autorewrite with slow; auto.
+          }
+
+          { SSSCase "NReadRef".
+            unflsubst in comp; allsimpl.
+            csunf comp; allsimpl.
+            apply compute_step_read_ref_success in comp.
+            exrepnd; subst; allsimpl.
+            repeat (destruct bts; simpl in *; ginv).
+            repeat (destruct bs; simpl in *; ginv).
+            unfold nobnd in *; destruct b; simpl in *; ginv;[].
+
+            exists (find_ref_def lib name n).
+            autorewrite with slow.
+
+            unflsubst.
+            rewrite lsubst_aux_find_ref_def.
+            fold (@mk_ref o name) in *; fold_terms.
+            fold (@mk_read_ref o (mk_ref name) n) in *.
+            autorewrite with slow in *.
+            dands; eauto 3 with slow.
+
+            introv nrut' eqdoms disj'.
+            csunf; simpl; allrw.
+            eexists; dands; eauto.
+            repeat unflsubst; rewrite lsubst_aux_find_ref_def.
             simpl; autorewrite with slow; auto.
           }
 

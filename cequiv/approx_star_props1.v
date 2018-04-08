@@ -480,6 +480,7 @@ Hint Resolve approx_open_implies_approx_star : slow.
 Definition get_defs_entry {o} (entry : @library_entry o) : list marker :=
   match entry with
   | lib_cs name vals => []
+  | lib_ref name v => []
   | lib_abs opabs vars rhs correct => [opabs_name opabs]
   end.
 
@@ -492,8 +493,8 @@ Lemma find_entry_abs_marker_none_if_not_in {o} :
     -> find_entry lib (abs_marker m) bs = None.
 Proof.
   induction lib; introv ni; simpl; auto.
-  destruct a; allsimpl; allrw not_over_or; repnd.
-  rw IHlib; auto.
+  destruct a; allsimpl; allrw not_over_or; repnd;
+    try (complete (rw IHlib; auto));[].
   boolvar; auto.
   provefalse.
   unfold matching_entry in m0; allsimpl; tcsp.

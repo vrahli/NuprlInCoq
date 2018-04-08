@@ -264,6 +264,31 @@ Definition compute_step_last_cs {o}
   | _, _, _ => cfailure bad_args t
   end.
 
+Fixpoint find_ref {o} lib name : option (@ReferenceEntry o) :=
+  match lib with
+  | [] => None
+  | lib_ref name' e :: l =>
+    if reference_name_deq name name' then Some e
+    else find_ref l name
+  | _ :: l => find_ref l name
+  end.
+
+Definition find_ref_def {o} (lib : @library o) name d : NTerm :=
+  match find_ref lib name with
+  | Some e => get_cterm (ref_val e)
+  | None => d
+  end.
+
+Definition compute_step_read_ref {o}
+           (lib   : @library o)
+           (arg1c : @CanonicalOp o)
+           (t     : @NTerm o)
+           (arg1bts btsr : list (@BTerm o)) :=
+  match arg1c, arg1bts, btsr with
+  | Nref name, [], [bterm [] d] => csuccess (find_ref_def lib name d)
+  | _, _, _ => cfailure bad_args t
+  end.
+
 Definition compute_step_can {o}
            lib
            (t : @NTerm o)
@@ -289,6 +314,7 @@ Definition compute_step_can {o}
     | NTryCatch      => compute_step_try t arg1 btsr
     | NParallel      => compute_step_parallel arg1c t arg1bts btsr
     | NLastCs        => compute_step_last_cs   lib arg1c t arg1bts btsr
+    | NReadRef       => compute_step_read_ref  lib arg1c t arg1bts btsr
     | NCompSeq1      => compute_step_comp_seq1 lib arg1c t arg1bts btsr
     | NCompSeq2  nfo => compute_step_comp_seq2 lib nfo arg1c t arg1bts btsr
     | NCompOp    op  => co btsr t arg1bts arg1c op comp arg1 ncr

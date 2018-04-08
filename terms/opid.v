@@ -180,6 +180,18 @@ Record choice_sequence_name :=
       csn_kind : cs_kind;
     }.
 
+Definition ref_name := String.string.
+
+Inductive ref_kind :=
+| ref_kind_nat (n : nat).
+
+Record reference_name :=
+  MkReferenceName
+    {
+      rf_name : ref_name;
+      rf_kind : ref_kind;
+    }.
+
 Definition cs_kind_deq : Deq cs_kind.
 Proof.
   introv.
@@ -191,12 +203,30 @@ Proof.
       right; intro xx; inversion xx; subst; tcsp. }
 Defined.
 
+Definition ref_kind_deq : Deq ref_kind.
+Proof.
+  introv.
+  destruct x as [n1], y as [n2];
+    try (complete (right; intro xx; inversion xx; subst; tcsp)).
+  { destruct (deq_nat n1 n2) as [g|g]; subst; tcsp;
+      right; intro xx; inversion xx; subst; tcsp. }
+Defined.
+
 Definition choice_sequence_name_deq : Deq choice_sequence_name.
 Proof.
   introv.
   destruct x as [n1 k1], y as [n2 k2].
   destruct (String.string_dec n1 n2) as [d|d]; subst;
     destruct (cs_kind_deq k1 k2) as [g|g]; subst; tcsp;
+      right; intro xx; inversion xx; subst; tcsp.
+Defined.
+
+Definition reference_name_deq : Deq reference_name.
+Proof.
+  introv.
+  destruct x as [n1 k1], y as [n2 k2].
+  destruct (String.string_dec n1 n2) as [d|d]; subst;
+    destruct (ref_kind_deq k1 k2) as [g|g]; subst; tcsp;
       right; intro xx; inversion xx; subst; tcsp.
 Defined.
 
@@ -229,6 +259,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | Nint       : Z -> CanonicalOp
 (* | Nseq       : nseq -> CanonicalOp*)
  | Ncseq      : choice_sequence_name -> CanonicalOp
+ | Nref       : reference_name -> CanonicalOp
  | NTok       : String.string -> CanonicalOp
  | NUTok      : get_patom_set p -> CanonicalOp (* Unguessable tokens *)
  (** %\noindent \\*% Like Martin Lof's theories, types are also
@@ -313,6 +344,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NSup           => [0,0]
   | NRefl          => [0]
   | Nint _         => []
+  | Nref _         => []
 (*  | Nseq _         => []*)
   | Ncseq _        => []
   | NUni _         => []
@@ -452,6 +484,7 @@ Inductive NonCanonicalOp : Set :=
  | NTryCatch  : NonCanonicalOp (* named try/catch *)
  | NParallel  : NonCanonicalOp
  | NLastCs    : NonCanonicalOp
+ | NReadRef   : NonCanonicalOp (* writing is done by directly changing the library *)
  | NCompSeq1  : NonCanonicalOp
  | NCompSeq2  : CompSeqNfo    -> NonCanonicalOp
  | NCompOp    : ComparisonOp  -> NonCanonicalOp
@@ -481,6 +514,7 @@ Definition OpBindingsNCan (nc : NonCanonicalOp) : opsign :=
   | NTryCatch    => [0,0,1] (* 1: try part; 2: name; 3: catch part*)
   | NParallel    => [0,0]
   | NLastCs      => [0,0]
+  | NReadRef     => [0,0]
   | NCompSeq1    => [0,0]
   | NCompSeq2  _ => [0,0]
   | NCompOp    _ => [0,0,0,0]
@@ -600,6 +634,7 @@ Tactic Notation "dopid_noncan" ident(onc) ident(c) :=
   | Case_aux c "NTryCatch"
   | Case_aux c "NParallel"
   | Case_aux c "NLastCs"
+  | Case_aux c "NReadRef"
   | Case_aux c "NCompSeq1"
   | Case_aux c "NCompSeq2"
   | Case_aux c "NCompOp"
@@ -664,6 +699,9 @@ Proof.
     right; intro k; ginv; tcsp.
 
   - destruct (choice_sequence_name_deq c c0) as [d|d]; subst; tcsp.
+    right; intro k; ginv; tcsp.
+
+  - destruct (reference_name_deq r r0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
 
   - destruct (String.string_dec s s0) as [d|d]; subst; tcsp.
@@ -804,6 +842,9 @@ Proof.
     right; intro k; ginv; tcsp.
 
   - destruct (choice_sequence_name_deq c c0) as [d|d]; subst; tcsp.
+    right; intro k; ginv; tcsp.
+
+  - destruct (reference_name_deq r r0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
 
   - destruct (String.string_dec s s0) as [d|d]; subst; tcsp.

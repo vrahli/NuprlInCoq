@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -1040,6 +1041,20 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
       let c1 := fresh "c1" in
       let c2 := fresh "c2" in
       generalize (lsubstc_mk_last_cs_ex a b s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [w2 name];
+        destruct name as [c1 name];
+        destruct name as [c2 name];
+        clear_irr; tac
+
+    (* ReadRef *)
+    | context [lsubstc (mk_read_ref ?a ?b) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let w2 := fresh "w2" in
+      let c1 := fresh "c1" in
+      let c2 := fresh "c2" in
+      generalize (lsubstc_mk_read_ref_ex a b s w c);
         intro name;
         destruct name as [w1 name];
         destruct name as [w2 name];

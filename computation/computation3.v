@@ -2662,6 +2662,19 @@ Proof.
 Qed.
 Hint Resolve implies_alpha_eq_find_last_entry_default : slow.
 
+Lemma implies_alpha_eq_find_ref_def {o} :
+  forall lib name (a b : @NTerm o),
+    alpha_eq a b
+    -> alpha_eq
+         (find_ref_def lib name a)
+         (find_ref_def lib name b).
+Proof.
+  introv aeq.
+  unfold find_ref_def.
+  remember (find_ref lib name) as fcs; destruct fcs; auto.
+Qed.
+Hint Resolve implies_alpha_eq_find_ref_def : slow.
+
 
 
 (* end hide *)
@@ -2969,6 +2982,18 @@ Proof.
 
               csunf Hcomp; allsimpl.
               apply compute_step_last_cs_success in Hcomp; exrepnd; subst; simpl in *; cpx.
+              repeat (destruct lbt2; ginv).
+              pose proof (Hal 1) as Hal; autodimp Hal hyp.
+              unfold selectbt in Hal; simpl in *.
+              apply alpha_eq_bterm_nobnd in Hal; exrepnd; subst.
+              csunf; simpl.
+              allrw.
+              eexists; dands; eauto 3 with slow.
+
+            - SSSSSCase "NReadRef".
+
+              csunf Hcomp; allsimpl.
+              apply compute_step_read_ref_success in Hcomp; exrepnd; subst; simpl in *; cpx.
               repeat (destruct lbt2; ginv).
               pose proof (Hal 1) as Hal; autodimp Hal hyp.
               unfold selectbt in Hal; simpl in *.

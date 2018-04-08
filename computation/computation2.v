@@ -3889,8 +3889,7 @@ Lemma find_entry_implies_unfold_abs {o} :
     -> unfold_abs lib oa1 bs = Some (mk_instance vars bs rhs).
 Proof.
   induction lib; introv fe; allsimpl; tcsp.
-  destruct a; allsimpl; [|].
-  { eapply IHlib; eauto. }
+  destruct a; allsimpl; try (complete (eapply IHlib; eauto));[].
   destruct (matching_entry_deq oa1 opabs vars0 bs).
   - inversion fe; subst; GC; auto.
   - apply IHlib in fe; auto.

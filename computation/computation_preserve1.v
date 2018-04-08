@@ -131,6 +131,24 @@ Proof.
   eexists; eexists; dands; unfold nobnd; eauto.
 Qed.
 
+Lemma compute_step_read_ref_success {o} :
+  forall lib can (t : @NTerm o) bts bs u,
+    compute_step_read_ref lib can t bts bs = csuccess u
+    -> {name : reference_name
+        & {d : NTerm
+        & can = Nref name
+        # bts = []
+        # bs = [nobnd d]
+        # u = find_ref_def lib name d }}.
+Proof.
+  introv e; allsimpl; destruct can; allsimpl; ginv; boolvar; ginv.
+
+  destruct bts; allsimpl; ginv.
+  destruct bs; allsimpl; ginv.
+  destruct b, l, bs; ginv.
+  eexists; eexists; dands; unfold nobnd; eauto.
+Qed.
+
 Lemma compute_step_comp_seq1_success {o} :
   forall lib can (t : @NTerm o) bts bs u,
     compute_step_comp_seq1 lib can t bts bs = csuccess u
@@ -310,6 +328,29 @@ Proof.
   eauto 3 with slow.
 Qed.
 Hint Resolve nt_wf_find_last_entry_default : slow.
+
+Lemma free_vars_find_ref_def_subvars {o} :
+  forall lib name (d : @NTerm o),
+    subvars (free_vars (find_ref_def lib name d)) (free_vars d).
+Proof.
+  introv; allrw subvars_eq; introv i.
+  unfold find_ref_def in i.
+  remember (find_ref lib name) as fcs; destruct fcs; simpl in *; auto.
+  autorewrite with slow in *; simpl in *; tcsp.
+Qed.
+Hint Resolve free_vars_find_ref_def_subvars : slow.
+
+Lemma nt_wf_find_ref_def {o} :
+  forall lib name (d : @NTerm o),
+    nt_wf d
+    -> nt_wf (find_ref_def lib name d).
+Proof.
+  introv wf; allrw subvars_eq.
+  unfold find_ref_def.
+  remember (find_ref lib name) as fcs; destruct fcs; simpl in *; auto.
+  eauto 3 with slow.
+Qed.
+Hint Resolve nt_wf_find_ref_def : slow.
 
 Lemma compute_step_preserves {o} :
   forall lib (t u : @NTerm o),
@@ -659,6 +700,14 @@ Proof.
           allsimpl; autorewrite with slow in *.
           apply compute_step_last_cs_success in comp; exrepnd; subst; simpl in *.
           allrw @nt_wf_last_cs; repnd.
+          autorewrite with slow; dands; auto; eauto 3 with slow.
+        }
+
+        { SSSCase "NReadRef".
+
+          allsimpl; autorewrite with slow in *.
+          apply compute_step_read_ref_success in comp; exrepnd; subst; simpl in *.
+          allrw @nt_wf_read_ref; repnd.
           autorewrite with slow; dands; auto; eauto 3 with slow.
         }
 

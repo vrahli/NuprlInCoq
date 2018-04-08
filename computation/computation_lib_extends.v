@@ -137,6 +137,16 @@ Definition choice_sequence_entry_extend {o} (entry1 entry2 : @ChoiceSeqEntry o) 
 (*  (* the extension satisfies the restriction *)
   /\ extension_satisfies_restriction M entry1 entry2*).
 
+Definition same_ref_restrictions {o} (restr1 restr2 : @RefRestriction o) :=
+  match restr1, restr2 with
+  | rr_type d1 M1 Md1, rr_type d2 M2 Md2 =>
+    d1 = d2
+    /\ (forall v, M1 v <-> M2 v)
+  end.
+
+Definition reference_entry_extend {o} (entry1 entry2 : @ReferenceEntry o) : Prop :=
+  same_ref_restrictions (ref_restriction entry1) (ref_restriction entry2).
+
 (* [entry1] extends [entry2] *)
 Definition entry_extends {o} (entry1 entry2 : @library_entry o) : Prop :=
   match entry1, entry2 with
@@ -144,6 +154,9 @@ Definition entry_extends {o} (entry1 entry2 : @library_entry o) : Prop :=
     name1 = name2
     /\
     choice_sequence_entry_extend entry1 entry2
+  | lib_ref name1 entry1, lib_ref name2 entry2 =>
+    name1 = name2
+    /\ reference_entry_extend entry1 entry2
   | _, _ => entry1 = entry2
   end.
 
@@ -173,12 +186,32 @@ Definition is0kind (name : choice_sequence_name) : bool :=
   | _ => false
   end.
 
-Definition is_nat_restriction {o} (restr : @ChoiceSeqRestriction o) :=
+Definition is_nat_cs_restriction {o} (restr : @ChoiceSeqRestriction o) :=
   match restr with
   | csc_type d M Md =>
     (forall n, d n = mkc_zero)
     /\ (forall n v, M n v <-> is_nat n v)
   | csc_coq_law _ => False
+  end.
+
+Definition ref_is_nat {o} : @RefRestrictionPred o :=
+  fun t => exists (i : nat), t = mkc_nat i.
+
+Lemma ref_is_nat_zero {o} : @ref_is_nat o mkc_zero.
+Proof.
+  exists 0.
+  apply cterm_eq; simpl; auto.
+Qed.
+Hint Resolve ref_is_nat_zero : slow.
+
+Definition rr_nat {o} : @RefRestriction o :=
+  rr_type mkc_zero ref_is_nat ref_is_nat_zero.
+
+Definition is_nat_ref_restriction {o} (restr : @RefRestriction o) :=
+  match restr with
+  | rr_type d M Md =>
+    d = mkc_zero
+    /\ (forall v, M v <-> ref_is_nat v)
   end.
 
 Definition cterm_is_nth {o} (t : @CTerm o) n l :=
@@ -198,19 +231,40 @@ Definition is_nat_seq_restriction {o} (l : list nat) (restr : @ChoiceSeqRestrict
   | csc_coq_law _ => False
   end.
 
-Definition correct_restriction {o} (name : choice_sequence_name) (restr : @ChoiceSeqRestriction o) :=
+Definition correct_cs_restriction {o} (name : choice_sequence_name) (restr : @ChoiceSeqRestriction o) :=
   match csn_kind name with
   | cs_kind_nat n =>
-    if deq_nat n 0 then is_nat_restriction restr
+    if deq_nat n 0 then is_nat_cs_restriction restr
     else True
   | cs_kind_seq l => is_nat_seq_restriction l restr
+  end.
+
+Definition correct_ref_restriction {o} (name : reference_name) (restr : @RefRestriction o) :=
+  match rf_kind name with
+  | ref_kind_nat n =>
+    if deq_nat n 0 then is_nat_ref_restriction restr
+    else True
+  end.
+
+Definition reference_satisfies_restriction {o}
+           (v     : @CTerm o)
+           (restr : RefRestriction) : Prop :=
+  match restr with
+  | rr_type d M Md => M v
   end.
 
 Definition safe_choice_sequence_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntry o) :=
   match e with
   | MkChoiceSeqEntry _ vals restriction =>
-    correct_restriction name restriction
+    correct_cs_restriction name restriction
     /\ choice_sequence_satisfies_restriction vals restriction
+  end.
+
+Definition safe_reference_entry {o} (name : reference_name) (e : @ReferenceEntry o) :=
+  match e with
+  | MkReferenceEntry _ v restriction =>
+    correct_ref_restriction name restriction
+    /\ reference_satisfies_restriction v restriction
   end.
 
 Definition upd_restr_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntry o) :=
@@ -224,6 +278,8 @@ Definition safe_library_entry {o} (e : @library_entry o) :=
   match e with
   | lib_cs name cse =>
     safe_choice_sequence_entry name ((*upd_restr_entry name*) cse)
+  | lib_ref name restr =>
+    safe_reference_entry name restr
   | _ => True
   end.
 
@@ -358,6 +414,13 @@ Proof.
 Qed.
 Hint Resolve same_restrictions_refl : slow.
 
+Lemma same_ref_restrictions_refl {o} :
+  forall (r : @RefRestriction o), same_ref_restrictions r r.
+Proof.
+  introv; destruct r; simpl; tcsp.
+Qed.
+Hint Resolve same_ref_restrictions_refl : slow.
+
 Lemma choice_sequence_entry_extend_refl {o} :
   forall (entry : @ChoiceSeqEntry o), choice_sequence_entry_extend entry entry.
 Proof.
@@ -366,11 +429,19 @@ Proof.
 Qed.
 Hint Resolve choice_sequence_entry_extend_refl : slow.
 
+Lemma reference_entry_extend_refl {o} :
+  forall (entry : @ReferenceEntry o), reference_entry_extend entry entry.
+Proof.
+  introv.
+  unfold reference_entry_extend; dands; eauto 2 with slow.
+Qed.
+Hint Resolve reference_entry_extend_refl : slow.
+
 Lemma entry_extends_refl {o} :
   forall (entry : @library_entry o), entry_extends entry entry.
 Proof.
-  destruct entry; simpl in *; tcsp.
-  dands; eauto 2 with slow.
+  destruct entry; simpl in *; tcsp;
+    try (complete (dands; eauto 2 with slow)).
 Qed.
 Hint Resolve entry_extends_refl : slow.
 
@@ -414,9 +485,7 @@ Lemma entry_in_library_implies_find_entry {o} :
     -> find_entry lib abs bs = Some (lib_abs opabs vars rhs correct).
 Proof.
   induction lib; introv m e; simpl in *; tcsp.
-  destruct a.
-
-  { repndors; repnd; tcsp; ginv. }
+  destruct a; try (complete (repndors; repnd; tcsp; ginv));[].
 
   repndors; repnd.
 
@@ -464,6 +533,12 @@ Proof.
       dands; auto.
     }
 
+    {
+      apply IHlib in h; exrepnd; subst; clear IHlib.
+      exists (lib_ref name entry :: lib1) lib2 oa vars rhs correct.
+      dands; auto.
+    }
+
     boolvar; ginv.
 
     + exists ([] : @library o) lib opabs vars rhs correct; simpl.
@@ -477,6 +552,13 @@ Proof.
 
   - exrepnd; subst.
     destruct a.
+
+    {
+      destruct lib1; simpl in *; ginv.
+      apply IHlib.
+      exists lib1 lib2 oa vars rhs correct.
+      dands; auto.
+    }
 
     {
       destruct lib1; simpl in *; ginv.
@@ -612,9 +694,7 @@ Lemma entry_in_libray_implies_find_entry_some {o} :
     -> find_entry lib abs bs = Some (lib_abs oa vars t correct).
 Proof.
   induction lib; introv m i; simpl in *; tcsp.
-  destruct a; simpl in *.
-
-  { repndors; tcsp; ginv. }
+  destruct a; simpl in *; try (complete (repndors; tcsp; ginv));[].
 
   repndors; repnd.
 
@@ -718,7 +798,7 @@ Proof.
   - right; apply IHl1; tcsp.
 Qed.
 
-Lemma entry_extends_preserves_get_utokens_library_entry {o} :
+(*Lemma entry_extends_preserves_get_utokens_library_entry {o} :
   forall (entry1 entry2 : @library_entry o) a,
     entry_extends entry2 entry1
     -> List.In a (get_utokens_library_entry entry1)
@@ -727,16 +807,29 @@ Proof.
   introv ext i.
   unfold entry_extends in ext.
   destruct entry2; simpl in *; subst; auto.
-  destruct entry1; subst; ginv.
-  repnd; subst; simpl in *.
-  destruct ext as [ext1 ext2].
-  unfold choice_sequence_vals_extend in *; exrepnd; subst.
-  rewrite ext0.
-  rw flat_map_app; rewrite list_in_app; tcsp.
+
+  {
+    destruct entry1; subst; ginv.
+    repnd; subst; simpl in *.
+    destruct ext as [ext1 ext2].
+    unfold choice_sequence_vals_extend in *; exrepnd; subst.
+    rewrite ext0.
+    rw flat_map_app; rewrite list_in_app; tcsp.
+  }
+
+  {
+    destruct entry1; subst; ginv.
+    repnd; subst; simpl in *.
+    destruct ext as [ext1 ext2].
+    unfold choice_sequence_vals_extend in *; exrepnd; subst.
+    rewrite ext0.
+    rw flat_map_app; rewrite list_in_app; tcsp.
+  }
 Qed.
 Hint Resolve entry_extends_preserves_get_utokens_library_entry : slow.
+*)
 
-Lemma lib_extends_implies_subset_get_utokens_library {o} :
+(*Lemma lib_extends_implies_subset_get_utokens_library {o} :
   forall (lib1 lib2 : @library o),
     lib_extends lib2 lib1
     -> subset (get_utokens_library lib1) (get_utokens_library lib2).
@@ -749,6 +842,7 @@ Proof.
   exists entry2; dands; auto; eauto 3 with slow.
 Qed.
 Hint Resolve lib_extends_implies_subset_get_utokens_library : slow.
+*)
 
 (*
 (*
@@ -1241,17 +1335,15 @@ Proof.
       destruct a; simpl in *; boolvar; tcsp; GC;
         eexists; eexists; eexists; eexists; dands; eauto.
 
-  - destruct a; subst; simpl in *; tcsp.
+  - destruct a; subst; simpl in *; tcsp;
+      try (complete (apply IHlib; eexists; eexists; eexists; eexists; dands; eauto)).
+
+    boolvar; tcsp; auto.
+
+    + inversion h0; subst; clear h0; auto.
 
     + apply IHlib.
       eexists; eexists; eexists; eexists; dands; eauto.
-
-    + boolvar; tcsp; auto.
-
-      * inversion h0; subst; clear h0; auto.
-
-      * apply IHlib.
-        eexists; eexists; eexists; eexists; dands; eauto.
 Qed.
 
 Lemma lib_extends_preserves_unfold_abs {o} :

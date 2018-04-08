@@ -175,6 +175,172 @@ Proof.
 Qed.
 
 
+
+Lemma isprogram_read_ref_implies_ex {o} :
+  forall (l : list (@BTerm o)),
+    isprogram (oterm (NCan NReadRef) l)
+    -> {t : NTerm
+        & {u : NTerm
+        & l = [nobnd t, nobnd u]
+        # isprogram t
+        # isprogram u}}.
+Proof.
+  introv isp.
+  unfold isprogram, closed in *; repnd; simpl in *.
+  inversion isp as [|? ? imp eqm]; subst; simpl in *.
+  repeat (destruct l; simpl in *; ginv).
+  destruct b as [l1 t1].
+  destruct b0 as [l2 t2].
+  unfold num_bvars in *; simpl in *.
+  destruct l1; simpl in *; ginv.
+  destruct l2; simpl in *; ginv.
+  autorewrite with slow in *.
+  allrw app_eq_nil_iff; repnd.
+  pose proof (imp (bterm [] t1)) as q1; autodimp q1 hyp.
+  pose proof (imp (bterm [] t2)) as q2; autodimp q2 hyp.
+  allrw @bt_wf_iff.
+  exists t1 t2; dands; auto.
+Qed.
+
+Definition mk_read_ref {o} (t u : @NTerm o) := oterm (NCan NReadRef) [nobnd t, nobnd u].
+
+Lemma isprogram_read_ref_implies {o} :
+  forall (a d : @NTerm o),
+    isprogram (mk_read_ref a d)
+    -> isprogram a # isprogram d.
+Proof.
+  introv isp.
+  apply isprogram_read_ref_implies_ex in isp; exrepnd; ginv; tcsp.
+Qed.
+
+Lemma cover_vars_read_ref {p} :
+  forall a d sub,
+    cover_vars (@mk_read_ref p a d) sub
+    <=> (cover_vars a sub # cover_vars d sub ).
+Proof.
+  sp; repeat (rw @cover_vars_eq); unfold cover_vars_upto; simpl.
+  rw @remove_nvars_nil_l; rw app_nil_r.
+  allrw subvars_app_l.
+  allrw subvars_remove_nvars; simpl.
+  allrw app_nil_r.
+  allrw @dom_csub_csub_filter; sp.
+Qed.
+
+Lemma implies_isprog_read_ref {o} :
+  forall (a d : @NTerm o),
+    isprog a
+    -> isprog d
+    -> isprog (mk_read_ref a d).
+Proof.
+  introv ispa ispb.
+  allrw <- @isprogram_eq.
+  destruct ispa as [cla wfa].
+  destruct ispb as [clb wfb].
+  split.
+  { unfold closed; simpl; rw cla; rw clb; simpl; auto. }
+  { repeat constructor; simpl; introv xx; repndors; subst; tcsp;apply bt_wf_iff; auto. }
+Qed.
+
+Lemma implies_isprogram_read_ref {o} :
+  forall (a b : @NTerm o),
+    isprogram a
+    -> isprogram b
+    -> isprogram (mk_read_ref a b).
+Proof.
+  introv ispa ispb.
+  allrw @isprogram_eq.
+  apply implies_isprog_read_ref; auto.
+Qed.
+
+Lemma wf_read_ref {o} :
+  forall (a b : @NTerm o),
+    wf_term (mk_read_ref a b) <=> (wf_term a # wf_term b).
+Proof.
+  introv; allrw @wf_term_eq; split; intro h; repnd.
+  { inversion h as [|? ? imp e]; subst; simpl in *; clear e.
+    pose proof (imp (nobnd a)) as impa; autodimp impa hyp.
+    pose proof (imp (nobnd b)) as impb; autodimp impb hyp.
+    allrw @bt_wf_iff; auto. }
+  { repeat constructor; simpl; introv xx; repndors; subst; tcsp; apply bt_wf_iff; auto. }
+Qed.
+
+Lemma nt_wf_read_ref {o} :
+  forall (a b : @NTerm o),
+    nt_wf (mk_read_ref a b) <=> (nt_wf a # nt_wf b).
+Proof.
+  introv.
+  allrw @nt_wf_eq; apply wf_read_ref.
+Qed.
+
+Definition mkc_read_ref {p} (t u : @CTerm p) : CTerm :=
+  let (a,x) := t in
+  let (b,y) := u in
+  exist isprog (mk_read_ref a b) (implies_isprog_read_ref a b x y).
+
+Lemma lsubstc_mk_read_ref {o} :
+  forall (t1 t2 : @NTerm o) sub
+         (w1 : wf_term t1)
+         (w2 : wf_term t2)
+         (w  : wf_term (mk_read_ref t1 t2))
+         (c1 : cover_vars t1 sub)
+         (c2 : cover_vars t2 sub)
+         (c  : cover_vars (mk_read_ref t1 t2) sub),
+    lsubstc (mk_read_ref t1 t2) w sub c
+    = mkc_read_ref (lsubstc t1 w1 sub c1) (lsubstc t2 w2 sub c2).
+Proof.
+  sp; unfold lsubstc; simpl.
+  apply cterm_eq; simpl.
+  unfold csubst; simpl.
+  change_to_lsubst_aux4; simpl.
+  rw @sub_filter_nil_r; allrw @fold_nobnd.
+  allrw @sub_filter_csub2sub; sp.
+Qed.
+
+Lemma lsubstc_mk_read_ref_ex {o} :
+  forall (t1 t2 : @NTerm o) sub
+         (w : wf_term (mk_read_ref t1 t2))
+         (c : cover_vars (mk_read_ref t1 t2) sub),
+    {w1 : wf_term t1
+     & {w2 : wf_term t2
+     & {c1 : cover_vars t1 sub
+     & {c2 : cover_vars t2 sub
+     & lsubstc (mk_read_ref t1 t2) w sub c
+       = mkc_read_ref (lsubstc t1 w1 sub c1) (lsubstc t2 w2 sub c2) }}}}.
+Proof.
+  sp.
+
+  duplicate w.
+  rw @wf_read_ref in w; sp.
+
+  duplicate c.
+  rw @cover_vars_read_ref in c; sp.
+
+  exists w1 w c1 c.
+  apply lsubstc_mk_read_ref.
+Qed.
+
+
+
+Definition mk_ref {o} name : @NTerm o := oterm (Can (Nref name)) [].
+
+Lemma isprogram_mk_ref {o} :
+  forall n, @isprogram o (mk_ref n).
+Proof.
+  introv; repeat constructor; simpl; tcsp.
+Qed.
+Hint Resolve isprogram_mk_ref : slow.
+
+Lemma isprog_mk_ref {o} :
+  forall (n : reference_name), @isprog o (mk_ref n).
+Proof.
+  introv; apply isprog_eq; apply isprogram_mk_ref.
+Qed.
+
+Definition mkc_ref {o} name : @CTerm o :=
+  exist isprog (mk_ref name) (isprog_mk_ref name).
+
+
+
 Definition mk_qnat {o} : @NTerm o := oterm (Can NQNat) [].
 
 Theorem isprog_qnat {o} : @isprog o mk_qnat.

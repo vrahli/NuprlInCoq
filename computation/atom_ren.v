@@ -1796,6 +1796,10 @@ Proof.
     + remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
       apply library_has_no_utokens_cons_implies_right in h.
       eapply IHlib in h;[|unfold find_cs_value_at;allrw;eauto]; auto.
+
+    + remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
+      apply library_has_no_utokens_cons_implies_right in h.
+      eapply IHlib in h;[|unfold find_cs_value_at;allrw;eauto]; auto.
 Qed.
 
 Lemma utokens_find_value_of_cs_at_subset_vals {o} :
@@ -1832,6 +1836,11 @@ Proof.
       remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
       apply in_app_iff; right.
       eapply IHlib;[unfold find_cs_value_at;allrw;eauto|]; auto.
+
+    + unfold find_cs_value_at in h; simpl in *.
+      remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
+      apply in_app_iff; right.
+      eapply IHlib;[unfold find_cs_value_at;allrw;eauto|]; auto.
 Qed.
 
 Lemma ren_utokens_find_last_entry_default {o} :
@@ -1849,6 +1858,24 @@ Proof.
   eapply find_last_cs_implies_subset_get_utokens_CSVal2term in j; eauto.
   apply disj in i; tcsp.
 Qed.
+
+
+
+Lemma ren_utokens_find_ref_def {o} :
+  forall ren lib name (d : @NTerm o),
+    disjoint (get_utokens_library lib) (dom_utok_ren ren)
+    -> ren_utokens ren (find_ref_def lib name d)
+       = find_ref_def lib name (ren_utokens ren d).
+Proof.
+  introv disj.
+  unfold find_ref_def.
+  remember (find_ref lib name) as fcs; symmetry in Heqfcs; destruct fcs; auto.
+  rewrite ren_utokens_trivial; auto; eauto 3 with slow.
+  introv i j.
+  eapply find_ref_implies_subset_get_utokens_get_cterm in j; eauto.
+  apply disj in i; tcsp.
+Qed.
+
 
 Lemma compute_step_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
@@ -2062,6 +2089,16 @@ Proof.
             fold (@mk_choice_seq o name) in *; fold_terms.
             fold (mk_last_cs (mk_choice_seq name) d) in *.
             rewrite ren_utokens_find_last_entry_default; auto.
+          }
+
+          { SSSCase "NReadRef".
+            csunf comp; simpl in comp.
+            apply compute_step_read_ref_success in comp; exrepnd; subst.
+            csunf; simpl; allrw.
+            simpl in *.
+            fold (@mk_ref o name) in *; fold_terms.
+            fold (mk_read_ref (mk_ref name) d) in *.
+            rewrite ren_utokens_find_ref_def; auto.
           }
 
           { SSSCase "NCompSeq1".

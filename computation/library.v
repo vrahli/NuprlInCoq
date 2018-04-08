@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -211,11 +212,26 @@ Record ChoiceSeqEntry {o} :=
       cse_restriction : @ChoiceSeqRestriction o;
     }.
 
+Definition RefRestrictionPred {o} := @CTerm o -> Prop.
+
+Inductive RefRestriction {o} :=
+| rr_type (d : @CTerm o) (typ : @RefRestrictionPred o) (typd : typ d).
+
+Record ReferenceEntry {o} :=
+  MkReferenceEntry
+    {
+      ref_val         :> @CTerm o;
+      ref_restriction : @RefRestriction o;
+    }.
+
 Inductive library_entry {o} :=
 (* a choice sequence *)
 | lib_cs
-    (name : choice_sequence_name)
+    (name  : choice_sequence_name)
     (entry : @ChoiceSeqEntry o)
+| lib_ref
+    (name  : reference_name)
+    (entry : @ReferenceEntry o)
 (* a regular abstraction *)
 | lib_abs
     (opabs : opabs)
@@ -286,6 +302,7 @@ Definition unfold_abs_entry {o}
            (bs : list (@BTerm o)): option (@NTerm o) :=
   match entry with
   | lib_cs _ _ => None
+  | lib_ref _ _ => None
   | lib_abs oa vars rhs correct =>
     if matching_entry_deq opabs oa vars bs
     then
@@ -331,6 +348,7 @@ Fixpoint find_entry {o} lib oa0 (bs : list (@BTerm o)) : option (@library_entry 
   match lib with
   | [] => None
   | lib_cs _ _ :: l => find_entry l oa0 bs
+  | lib_ref _ _ :: l => find_entry l oa0 bs
   | (lib_abs oa vars rhs correct as entry) :: l =>
     if matching_entry_deq oa0 oa vars bs
     then Some entry
@@ -524,9 +542,7 @@ Proof.
   induction lib; introv f e.
   - allunfold @found_entry; allsimpl; inversion f.
   - allunfold @found_entry; allsimpl.
-    destruct a;[|].
-
-    { eapply IHlib; eauto. }
+    destruct a; try (complete (eapply IHlib; eauto));[].
 
     destruct (matching_entry_deq oa0 opabs vars0 bs).
     + pose proof (matching_entry_change_bs oa0 opabs vars0 bs bs2) as h; repeat (autodimp h hyp).
@@ -547,9 +563,7 @@ Proof.
   induction lib; introv e f; allsimpl.
   - unfold found_entry in f; simpl in f; inversion f.
   - unfold found_entry in f; simpl in f.
-    destruct a;[|].
-
-    { simpl; eapply IHlib; eauto. }
+    destruct a; try (complete (simpl; eapply IHlib; eauto));[].
 
     unfold unfold_abs_entry.
     destruct (matching_entry_deq oa1 opabs vars0 bs1).
@@ -624,6 +638,7 @@ Qed.
 Definition bound_vars_entry {o} (entry : @library_entry o) : list sovar_sig :=
   match entry with
   | lib_cs _ e => vars2sovars (flat_map (fun t => bound_vars (CSVal2term t)) (cse_vals e))
+  | lib_ref _ e => vars2sovars (bound_vars (get_cterm e))
   | lib_abs opabs vars rhs correct => vars ++ so_bound_vars rhs
   end.
 
@@ -643,7 +658,11 @@ Proof.
 
   - inversion fe.
 
-  - destruct a;[|].
+  - destruct a;[| |].
+
+    { simpl in *.
+      allrw in_app_iff; allrw not_over_or; repnd.
+      eapply IHlib; eauto. }
 
     { simpl in *.
       allrw in_app_iff; allrw not_over_or; repnd.
