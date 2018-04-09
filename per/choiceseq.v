@@ -140,6 +140,9 @@ Proof.
 Qed.
 Hint Resolve safe_library_lib0 : slow.
 
+Definition SL0 {o} : @SL o :=
+  MkSL lib_0 safe_library_lib0.
+
 Lemma find_cs_some_implies_list_in {o} :
   forall (lib : @library o) name e,
     find_cs lib name = Some e
@@ -226,7 +229,8 @@ Lemma entry_extends_extend_library_entry_following_coq_law_upto {o} :
   forall (entry : @library_entry o) name n,
     entry_extends (extend_library_entry_following_coq_law_upto entry name n) entry.
 Proof.
-  introv; destruct entry; simpl in *; tcsp.
+  introv; destruct entry; simpl in *; tcsp;
+    try (complete (dands; auto; eauto 2 with slow));[].
   boolvar; subst; eauto 2 with slow.
   unfold entry_extends; dands; auto; eauto 2 with slow.
 Qed.
@@ -442,13 +446,12 @@ Lemma implies_inf_entry_extends_extend_library_entry_following_coq_law_upto {o} 
          inf_entry
          (extend_library_entry_following_coq_law_upto entry name m).
 Proof.
-  introv safe h; destruct inf_entry; simpl in *; GC.
+  introv safe h; destruct inf_entry; simpl in *; GC;
+    try (complete (destruct entry; simpl in *; tcsp));[].
 
-  - destruct entry; simpl in *; repnd; subst; tcsp.
-    boolvar; subst; simpl in *; tcsp.
-    dands; auto; eauto 2 with slow.
-
-  - destruct entry; simpl in *; tcsp.
+  destruct entry; simpl in *; repnd; subst; tcsp.
+  boolvar; subst; simpl in *; tcsp.
+  dands; auto; eauto 2 with slow.
 Qed.
 Hint Resolve implies_inf_entry_extends_extend_library_entry_following_coq_law_upto : slow.
 
@@ -620,16 +623,38 @@ Proof.
 Qed.
 Hint Resolve implies_is_cs_default_entry_extend_library_entry_following_coq_law_upto : slow.
 
-Lemma implies_entry_in_inf_library_default_extend_law {o} :
-  forall (e : @library_entry o) infLib name n,
-    entry_in_inf_library_default e infLib
-    -> entry_in_inf_library_default (extend_library_entry_following_coq_law_upto e name n) infLib.
+Lemma implies_is_ref_default_entry_extend_library_entry_following_coq_law_upto {o} :
+  forall (e : @library_entry o) name n,
+    is_ref_default_entry e
+    -> is_ref_default_entry (extend_library_entry_following_coq_law_upto e name n).
 Proof.
   introv h.
-  unfold entry_in_inf_library_default in *; repnd; dands; eauto 3 with slow;[].
+  unfold is_ref_default_entry in *.
+  destruct e; simpl in *; repnd; tcsp; boolvar; subst; dands; tcsp; eauto 3 with slow.
+Qed.
+Hint Resolve implies_is_ref_default_entry_extend_library_entry_following_coq_law_upto : slow.
+
+Lemma implies_entry_in_inf_library_cs_default_extend_law {o} :
+  forall (e : @library_entry o) infLib name n,
+    entry_in_inf_library_cs_default e infLib
+    -> entry_in_inf_library_cs_default (extend_library_entry_following_coq_law_upto e name n) infLib.
+Proof.
+  introv h.
+  unfold entry_in_inf_library_cs_default in *; repnd; dands; eauto 3 with slow;[].
   introv xx; destruct (h0 n0); eauto 3 with slow.
 Qed.
-Hint Resolve implies_entry_in_inf_library_default_extend_law : slow.
+Hint Resolve implies_entry_in_inf_library_cs_default_extend_law : slow.
+
+Lemma implies_entry_in_inf_library_ref_default_extend_law {o} :
+  forall (e : @library_entry o) infLib name n,
+    entry_in_inf_library_ref_default e infLib
+    -> entry_in_inf_library_ref_default (extend_library_entry_following_coq_law_upto e name n) infLib.
+Proof.
+  introv h.
+  unfold entry_in_inf_library_ref_default in *; repnd; dands; eauto 3 with slow.
+  introv xx; destruct (h0 n0); eauto 3 with slow.
+Qed.
+Hint Resolve implies_entry_in_inf_library_ref_default_extend_law : slow.
 
 Lemma implies_inf_lib_extends_extend_library_following_coq_law_upto {o} :
   forall (lib : @library o) name n (infLib : inf_library),
@@ -645,8 +670,10 @@ Proof.
     introv i.
     apply entry_in_library_extend_library_following_coq_law_upto_implies in i; exrepnd; subst.
     applydup ext1 in i1.
-    repndors; exrepnd; eauto 3 with slow;[].
-    left; exists n0; eauto 2 with slow.
+    repndors; exrepnd; eauto 3 with slow.
+    { left; exists n0; eauto 2 with slow. }
+    { right; left; eauto 2 with slow. }
+    { right; right; eauto 2 with slow. }
   }
 
 (*  {
@@ -1117,20 +1144,20 @@ Proof.
       eexists; eexists; eauto.
 Defined.
 
-Definition extend_bar_nat_following_coq_law_upto {o} {lib} {a} {a'}
+Definition extend_bar_nat_following_coq_law_upto {o} {lib : SL} {a} {a'}
            (bar  : @BarLib o lib)
-           (safe : safe_library lib)
-           {F    : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), nat}
-           (G    : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'),
+           {F    : forall (lib' : SL) (b : bar_lib_bar bar lib') (lib'' : SL) (ext : lib_extends lib'' lib'), nat}
+           (G    : forall (lib' : SL) (b : bar_lib_bar bar lib') (lib'' : SL) (ext : lib_extends lib'' lib'),
                a ===>(lib'') (mkc_nat (F _ b _ ext)) # a' ===>(lib'') (mkc_nat (F _ b _ ext)))
   : BarLib lib.
 Proof.
   exists (fun (lib' : library) =>
-            exists (lib0 : library) (b : bar_lib_bar bar lib0),
-              lib' = extend_library_following_coq_law_upto
-                       lib0
-                       seq_0
-                       (S (F lib0 b lib0 (lib_extends_refl lib0)))).
+            exists (lib0 : SL) (b : bar_lib_bar bar lib0),
+              lib'
+              = extend_library_following_coq_law_upto
+                  lib0
+                  seq_0
+                  (S (F lib0 b lib0 (lib_extends_refl lib0)))).
 
   - introv ext'; simpl.
     destruct bar as [bar cond ext]; simpl in *.
@@ -1139,9 +1166,10 @@ Proof.
     exrepnd.
 
     exists (extend_library_following_coq_law_upto
-              lib' seq_0
-              (S (F lib' q1 lib' (lib_extends_refl lib')))).
-    dands; eauto 3 with slow.
+              (ext2SL q2) seq_0
+              (S (F (ext2SL q2) q1 (ext2SL q2) (lib_extends_refl (ext2SL q2))))).
+    dands; simpl; eauto 4 with slow.
+    exists (ext2SL q2) q1; simpl; auto.
 
   - introv b; exrepnd; subst.
     pose proof (G lib0 b lib0 (lib_extends_refl _)) as z; repnd.
@@ -1214,17 +1242,17 @@ Qed.
 
 
 Definition equality_of_nat_bar_lib_per_fam {o}
-           (lib : @library o)
+           (lib : @SL o)
            (eqa : lib-per(lib,o)) : lib-per-fam(lib,eqa,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) (a b : CTerm) (p : eqa lib' x a b) => equality_of_nat_bar lib').
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) (a b : CTerm) (p : eqa lib' x a b) => equality_of_nat_bar lib').
   introv x z; tcsp.
 Defined.
 
 Definition equality_of_nat_lib_per {o}
-           (lib : @library o) : lib-per(lib,o).
+           (lib : @SL o) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) => equality_of_nat lib').
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) => equality_of_nat lib').
   introv x y; tcsp.
 Defined.
 
@@ -1244,9 +1272,9 @@ Hint Resolve computes_to_valc_refl : slow.
 Record pack_all_in_bar {o} {lib} (bar : @BarLib o lib) :=
   MkPackAllInBar
     {
-      pack_lib1 : library;
+      pack_lib1 : SL;
       pack_br   : bar_lib_bar bar pack_lib1;
-      pack_lib2 : library;
+      pack_lib2 : SL;
       pack_ext  : lib_extends pack_lib2 pack_lib1;
     }.
 Arguments MkPackAllInBar {o} {lib} [bar] _ _ _ _.
@@ -1255,8 +1283,8 @@ Lemma all_in_bar_equality_of_nat_implies {o} :
   forall lib (bar : @BarLib o lib) a a',
     all_in_bar bar (fun lib => equality_of_nat lib a a')
     ->
-    exists (F : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), nat),
-    forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'),
+    exists (F : forall (lib' : SL) (b : bar_lib_bar bar lib') (lib'' : SL) (ext : lib_extends lib'' lib'), nat),
+    forall (lib' : SL) (b : bar_lib_bar bar lib') (lib'' : SL) (ext : lib_extends lib'' lib'),
       a ===>(lib'') (mkc_nat (F _ b _ ext)) # a' ===>(lib'') (mkc_nat (F _ b _ ext)).
 Proof.
   introv h.
@@ -1270,7 +1298,7 @@ Proof.
     eapply h; eauto. }
 
   exrepnd.
-  exists (fun lib' br lib'' ext => f (MkPackAllInBar lib' br lib'' ext)); introv.
+  exists (fun (lib' : SL) br (lib'' : SL) ext => f (MkPackAllInBar lib' br lib'' ext)); introv.
   remember (MkPackAllInBar lib' b lib'' ext) as w.
   pose proof (q0 w) as q0; subst; simpl in *; auto.
 Qed.
@@ -1305,7 +1333,7 @@ Hint Resolve computes_to_valc_implies_iscvalue : slow.
  *)
 
 Lemma seq0_in_nat2nat {o} :
-  @member o lib_0 (mkc_choice_seq seq_0) Nat2Nat.
+  @member o SL0 (mkc_choice_seq seq_0) Nat2Nat.
 Proof.
   unfold Nat2Nat, member, equality.
   eexists; dands.
@@ -1313,10 +1341,10 @@ Proof.
   {
     apply CL_func.
     unfold per_func_ext.
-    exists (@equality_of_nat_bar_lib_per o lib_0)
+    exists (@equality_of_nat_bar_lib_per o SL0)
            (equality_of_nat_bar_lib_per_fam
-              lib_0
-              (@equality_of_nat_bar_lib_per o lib_0)).
+              SL0
+              (@equality_of_nat_bar_lib_per o SL0)).
     dands;[|apply eq_term_equals_refl].
 
     unfold type_family_ext.
@@ -1326,14 +1354,12 @@ Proof.
 
     {
       try (introv i).
-      eexists; dands;spcast;[| |apply cequivc_refl];
-        try apply computes_to_valc_refl; eauto 2 with slow.
+      eexists; dands;spcast;[| |apply cequivc_refl]; eauto 3 with slow.
     }
 
     {
       try (introv i).
-      eexists; dands;spcast;[| |apply cequivc_refl];
-        try apply computes_to_valc_refl; eauto 2 with slow.
+      eexists; dands;spcast;[| |apply cequivc_refl]; eauto 3 with slow.
     }
 
     {
@@ -1361,9 +1387,10 @@ Proof.
     applydup @lib_extends_preserves_safe in xt2 as safe; eauto 3 with slow.
     apply all_in_bar_equality_of_nat_implies in en0; exrepnd.
 
-    exists (extend_bar_nat_following_coq_law_upto bar safe en1).
+    exists (extend_bar_nat_following_coq_law_upto bar en1).
     introv b z; simpl in *.
-    exrepnd; subst.
+    exrepnd.
+    destruct lib'1 as [lib'1 safe'1]; simpl in *; subst.
 
     first[assert (lib_extends lib'2 lib0) as ext1 by eauto 2 with slow
          |assert (lib_extends lib'1 lib0) as ext1 by eauto 2 with slow
@@ -1440,6 +1467,9 @@ Proof.
   introv; autorewrite with slow; tcsp.
 Qed.
 Hint Resolve safe_library_lib1 : slow.
+
+Definition SL1 {o} : @SL o :=
+  MkSL lib_1 safe_library_lib1.
 
 (*Definition RestrictionPred2 {o} := (nat * @CTerm o) -> Prop.
 
@@ -2338,6 +2368,7 @@ Proof.
   destruct i; apply matching_entries_sym; auto.
 Qed.
 
+
 (*
 Lemma lib_extends_preserves_lib_has_memNat_restriction {o} :
   forall name (lib1 lib2 : @library o),
@@ -2349,16 +2380,15 @@ Proof.
 Qed.
 *)
 
-Definition extend_bar_nat_lawless_upto {o} {lib} {a} {a'}
+Definition extend_bar_nat_lawless_upto {o} {lib : SL} {a} {a'}
            (bar  : @BarLib o lib)
-           (safe : safe_library lib)
-           {F    : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), nat}
-           (G    : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'),
+           {F    : forall (lib' : SL) (b : bar_lib_bar bar lib') (lib'' : SL) (ext : lib_extends lib'' lib'), nat}
+           (G    : forall (lib' : SL) (b : bar_lib_bar bar lib') (lib'' : SL) (ext : lib_extends lib'' lib'),
                a ===>(lib'') (mkc_nat (F _ b _ ext)) # a' ===>(lib'') (mkc_nat (F _ b _ ext)))
   : BarLib lib.
 Proof.
   exists (fun (lib' : library) =>
-            exists (lib0 : library) (b : bar_lib_bar bar lib0),
+            exists (lib0 : SL) (b : bar_lib_bar bar lib0),
               extend_library_lawless_upto
                 lib'
                 lib0
@@ -2372,18 +2402,19 @@ Proof.
 
     exrepnd.
     rename lib' into lib1.
-    applydup @lib_extends_safe in q2 as safe1; auto;[].
+
+    assert (safe_library lib1) as safe1 by eauto 3 with slow.
 
     assert (exists lib',
                extend_library_lawless_upto
                  lib' lib1 seq_1
-                 (S (F lib1 q1 lib1 (lib_extends_refl lib1)))
+                 (S (F (MkSL lib1 safe1) q1 (MkSL lib1 safe1) (lib_extends_refl lib1)))
                /\ lib_extends lib' lib
                /\ inf_lib_extends infLib lib') as exlib;
-      [|exrepnd; exists lib'; dands; auto; exists lib1 q1; auto];[].
+      [|exrepnd; exists lib'; dands; auto; exists (MkSL lib1 safe1) q1; auto];[].
 
-    pose proof (G _ q1 _ (lib_extends_refl lib1)) as w; repnd.
-    remember (F lib1 q1 lib1 (lib_extends_refl lib1)) as k.
+    pose proof (G (MkSL lib1 safe1) q1 (MkSL lib1 safe1) (lib_extends_refl lib1)) as w; repnd.
+    remember (F (MkSL lib1 safe1) q1 (MkSL lib1 safe1) (lib_extends_refl lib1)) as k.
 
     assert (exists lib',
                extend_library_lawless_upto lib' lib1 seq_1 (S k)
@@ -2554,7 +2585,7 @@ Proof.
 Qed*)
 
 Lemma seq1_in_nat2nat {o} :
-  @member o lib_1 (mkc_choice_seq seq_1) Nat2Nat.
+  @member o SL1 (mkc_choice_seq seq_1) Nat2Nat.
 Proof.
   unfold Nat2Nat, member, equality.
   eexists; dands.
@@ -2562,10 +2593,10 @@ Proof.
   {
     apply CL_func.
     unfold per_func_ext.
-    exists (@equality_of_nat_bar_lib_per o lib_1)
+    exists (@equality_of_nat_bar_lib_per o SL1)
            (equality_of_nat_bar_lib_per_fam
-              lib_1
-              (@equality_of_nat_bar_lib_per o lib_1)).
+              SL1
+              (@equality_of_nat_bar_lib_per o SL1)).
     dands;[|apply eq_term_equals_refl].
 
     unfold type_family_ext.
@@ -2575,14 +2606,12 @@ Proof.
 
     {
       try introv i.
-      eexists; dands;spcast;[| |apply cequivc_refl];
-        try apply computes_to_valc_refl; eauto 2 with slow.
+      eexists; dands;spcast;[| |apply cequivc_refl]; eauto 3 with slow.
     }
 
     {
       try introv i.
-      eexists; dands;spcast;[| |apply cequivc_refl];
-        try apply computes_to_valc_refl; eauto 2 with slow.
+      eexists; dands;spcast;[| |apply cequivc_refl]; eauto 3 with slow.
     }
 
     {
@@ -2609,7 +2638,7 @@ Proof.
     applydup @lib_extends_preserves_safe in xt2 as safe; eauto 3 with slow.
     apply all_in_bar_equality_of_nat_implies in en0; exrepnd.
 
-    exists (extend_bar_nat_lawless_upto bar safe en1).
+    exists (extend_bar_nat_lawless_upto bar en1).
     introv b; simpl in *.
     exrepnd; subst.
 

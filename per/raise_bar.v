@@ -137,26 +137,90 @@ Proof.
 Qed.
 Hint Resolve entry_extends_preserves_is_cs_default_entry : slow.
 
-Lemma entry_extends_preserves_entry_in_inf_library_default {o} :
+Lemma entry_extends_preserves_is_ref_default_entry {o} :
+  forall (entry entry' : @library_entry o),
+    entry_extends entry' entry
+    -> is_ref_default_entry entry'
+    -> is_ref_default_entry entry.
+Proof.
+  introv h q.
+  unfold is_ref_default_entry, entry_extends in *.
+  destruct entry, entry'; repnd; subst; tcsp; dands; ginv; eauto 3 with slow.
+Qed.
+Hint Resolve entry_extends_preserves_is_ref_default_entry : slow.
+
+
+Lemma is_cs_default_entry_preserves_safe_library_entry {o} :
+  forall (e1 e2 : @library_entry o),
+    entry_extends e1 e2
+    -> safe_library_entry e1
+    -> is_cs_default_entry e1
+    -> safe_library_entry e2.
+Proof.
+  introv ext safe isc.
+  destruct e1, e2; simpl in *; repnd; subst; tcsp; ginv.
+
+  {
+    destruct entry0 as [vals1 restr1].
+    destruct entry as [vals2 restr2].
+    simpl in *.
+    unfold choice_sequence_entry_extend in *; simpl in *; repnd; subst.
+    unfold choice_sequence_satisfies_restriction in safe.
+    unfold choice_sequence_vals_extend in *.
+    exrepnd; subst.
+    unfold choice_sequence_satisfies_restriction.
+    destruct restr1, restr2; simpl in *; repnd; dands; tcsp; eauto 3 with slow;[|].
+
+    - introv i.
+      rewrite <- ext0.
+      apply safe.
+      rewrite select_app_l; eauto 3 with slow.
+
+    - introv j.
+      rewrite <- ext0.
+      pose proof (safe i) as safe.
+      rewrite length_app in safe.
+      autodimp safe hyp; try omega;[].
+      rewrite select_app_l in safe; eauto 3 with slow.
+  }
+Qed.
+Hint Resolve is_cs_default_entry_preserves_safe_library_entry : slow.
+
+Lemma entry_extends_preserves_entry_in_inf_library_cs_default {o} :
   forall (entry entry' : @library_entry o) infLib,
     entry_extends entry' entry
-    -> entry_in_inf_library_default entry' infLib
-    -> entry_in_inf_library_default entry infLib.
+    -> entry_in_inf_library_cs_default entry' infLib
+    -> entry_in_inf_library_cs_default entry infLib.
 Proof.
   introv h w.
-  unfold entry_in_inf_library_default in *; repnd.
+  unfold entry_in_inf_library_cs_default in *; repnd.
   dands; eauto 3 with slow.
   introv xx; destruct (w0 n); eauto 3 with slow.
 Qed.
-Hint Resolve entry_extends_preserves_entry_in_inf_library_default : slow.
+Hint Resolve entry_extends_preserves_entry_in_inf_library_cs_default : slow.
+
+Lemma entry_extends_preserves_entry_in_inf_library_ref_default {o} :
+  forall (entry entry' : @library_entry o) infLib,
+    safe_library_entry entry
+    -> entry_extends entry' entry
+    -> entry_in_inf_library_ref_default entry' infLib
+    -> entry_in_inf_library_ref_default entry infLib.
+Proof.
+  introv safe h w.
+  unfold entry_in_inf_library_ref_default in *; repnd.
+  dands; eauto 3 with slow.
+  { introv xx; destruct (w0 n); eauto 3 with slow. }
+Qed.
+Hint Resolve entry_extends_preserves_entry_in_inf_library_ref_default : slow.
 
 Lemma inf_lib_extends_lib_extends_trans {o} :
   forall infLib (lib' lib : @library o),
-    inf_lib_extends infLib lib'
+    safe_library lib
+    -> inf_lib_extends infLib lib'
     -> lib_extends lib' lib
     -> inf_lib_extends infLib lib.
 Proof.
-  introv inf ext.
+  introv safe0 inf ext.
   destruct inf as [inf safe].
   split.
 
@@ -164,17 +228,21 @@ Proof.
     applydup ext in i.
     apply entry_in_library_extends_implies_entry_in_library in i0; exrepnd.
     applydup inf in i0; exrepnd.
-    repndors; exrepnd; eauto 3 with slow;[].
-    left; exists n; eauto 3 with slow.
+    repndors; exrepnd; eauto 3 with slow.
+    { left; exists n; eauto 3 with slow. }
+    { right; left; eauto 3 with slow. }
+    { right; right; eauto 3 with slow. }
 
   - introv s.
     eapply lib_extends_safe in s;[|eauto]; tcsp.
 Qed.
 Hint Resolve inf_lib_extends_lib_extends_trans : slow.
 
-Definition raise_bar {o} {lib lib'}
-           (bar : @BarLib o lib)
-           (ext : lib_extends lib' lib) : @BarLib o lib'.
+Definition raise_bar {o}
+           {lib  : slibrary}
+           {lib' : library}
+           (bar  : @BarLib o lib)
+           (ext  : lib_extends lib' lib) : @BarLib o lib'.
 Proof.
   exists (fun (lib0 : library) =>
             exists lib1,
@@ -190,7 +258,7 @@ Proof.
     exrepnd.
 
     pose proof (intersect_inf_lib_extends2 infLib lib' lib'0) as h.
-    repeat (autodimp h hyp).
+    repeat (autodimp h hyp); eauto 3 with slow.
     exrepnd.
     exists lib0; dands; eauto 3 with slow.
     exists lib'0; dands; eauto 3 with slow.
@@ -199,12 +267,13 @@ Proof.
 Defined.
 
 Lemma implies_all_in_bar_raise_bar {o} :
-  forall {lib lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) F,
+  forall {lib : slibrary} {lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) F,
     all_in_bar bar F
     -> all_in_bar (raise_bar bar ext) F.
 Proof.
   introv alla br e.
   simpl in *; exrepnd.
-  apply (alla lib1 br1); eauto 3 with slow.
+  assert (lib_extends lib1 lib) as ext1 by eauto 3 with slow.
+  apply (alla (ext2SL ext1) br1); eauto 3 with slow.
 Qed.
 Hint Resolve implies_all_in_bar_raise_bar : slow.

@@ -1693,16 +1693,15 @@ Lemma find_entry_implies_get_utokens_subset {o} :
     -> subset (get_utokens_so rhs) (get_utokens_library lib).
 Proof.
   induction lib; introv find; simpl in *; ginv.
-  destruct a; tcsp.
+  destruct a; tcsp;
+    try (complete (apply IHlib in find; eauto 3 with slow));[].
 
-  - apply IHlib in find; eauto 3 with slow.
+  boolvar; ginv.
 
-  - boolvar; ginv.
+  + inversion find; subst; simpl; eauto 3 with slow.
 
-    + inversion find; subst; simpl; eauto 3 with slow.
-
-    + simpl.
-      apply IHlib in find; eauto 3 with slow.
+  + simpl.
+    apply IHlib in find; eauto 3 with slow.
 Qed.
 
 Lemma free_vars_sosub_mk_abs_subst_ren_utok {o} :
@@ -1987,6 +1986,35 @@ Proof.
     f_equal.
     rewrite <- ren_utok_sosub_mk_abs_subst.
     autorewrite with slow; auto.
+Qed.
+
+Lemma ren_utok_find_last_entry_default {o} :
+  forall lib name (t : @NTerm o) a b,
+    !LIn a (get_utokens_library lib)
+    -> ren_utok (find_last_entry_default lib name t) a b
+       = find_last_entry_default lib name (ren_utok t a b).
+Proof.
+  introv ni.
+  unfold find_last_entry_default.
+  remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; auto.
+  remember (last_cs_entry c) as lcs; symmetry in Heqlcs; destruct lcs; auto.
+  rewrite not_in_get_utokens_implies_ren_utok_same; eauto 3 with slow.
+  introv xx.
+  eapply find_last_cs_implies_subset_get_utokens_CSVal2term in xx; eauto.
+Qed.
+
+Lemma ren_utok_find_ref_def {o} :
+  forall lib name (t : @NTerm o) a b,
+    !LIn a (get_utokens_library lib)
+    -> ren_utok (find_ref_def lib name t) a b
+       = find_ref_def lib name (ren_utok t a b).
+Proof.
+  introv ni.
+  unfold find_ref_def.
+  remember (find_ref lib name) as fcs; symmetry in Heqfcs; destruct fcs; auto.
+  rewrite not_in_get_utokens_implies_ren_utok_same; eauto 3 with slow.
+  introv xx.
+  eapply find_ref_implies_subset_get_utokens_get_cterm in xx;[|eauto]; tcsp.
 Qed.
 
 Lemma compute_step_subst_utoken2 {o} :
@@ -2597,21 +2625,6 @@ Proof.
               unfold compute_step_parallel; auto.
             }
 
-              Lemma ren_utok_find_last_entry_default {o} :
-                forall lib name (t : @NTerm o) a b,
-                  !LIn a (get_utokens_library lib)
-                  -> ren_utok (find_last_entry_default lib name t) a b
-                     = find_last_entry_default lib name (ren_utok t a b).
-              Proof.
-                introv ni.
-                unfold find_last_entry_default.
-                remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; auto.
-                remember (last_cs_entry c) as lcs; symmetry in Heqlcs; destruct lcs; auto.
-                rewrite not_in_get_utokens_implies_ren_utok_same; eauto 3 with slow.
-                introv xx.
-                eapply find_last_cs_implies_subset_get_utokens_CSVal2term in xx; eauto.
-              Qed.
-
             {
               SSSCase "NLastCs".
 
@@ -2627,6 +2640,26 @@ Proof.
               autorewrite with slow in *.
               csunf; simpl; allrw.
               rewrite ren_utok_find_last_entry_default;
+                [|rw in_app_iff in nia; rw not_over_or in nia; tcsp];[].
+              rw @ren_utok_lsubst_aux; auto; eauto 3 with slow.
+            }
+
+            {
+              SSSCase "NReadRef".
+
+              csunf comp; simpl in *.
+              apply compute_step_read_ref_success in comp; exrepnd; subst; simpl in *.
+              repeat (destruct bts; simpl in *; ginv).
+              repeat (destruct bs; simpl in *; ginv).
+              destruct b0; unfold nobnd in *.
+              destruct l; simpl in *; ginv.
+
+              fold (@mk_ref o name) in *; fold_terms.
+              fold (mk_read_ref (mk_ref name) n) in *.
+              autorewrite with slow in *.
+              csunf; simpl; allrw.
+
+              rewrite ren_utok_find_ref_def;
                 [|rw in_app_iff in nia; rw not_over_or in nia; tcsp];[].
               rw @ren_utok_lsubst_aux; auto; eauto 3 with slow.
             }

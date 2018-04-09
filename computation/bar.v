@@ -441,10 +441,10 @@ Definition all_in_bar0 {o} {lib} (bar : BarLib lib) (F : @library o -> Prop) :=
 (* As opposed to [all_in_bar0], here we require that the property be true in all
    extensions of the bar *)
 
-Definition all_in_bar {o} {lib} (bar : BarLib lib) (F : @library o -> Prop) :=
-  forall (lib' : library), bar_lib_bar bar lib' -> in_ext lib' F.
+Definition all_in_bar {o} {lib} (bar : BarLib lib) (F : @SL o -> Prop) :=
+  forall (lib' : SL), bar_lib_bar bar lib' -> in_ext lib' F.
 
-Definition in_bar {o} (lib : @library o) (F : @library o -> Prop) :=
+Definition in_bar {o} (lib : @SL o) (F : @SL o -> Prop) :=
   exists (bar : BarLib lib), all_in_bar bar F.
 
 
@@ -5480,24 +5480,7 @@ Proof.
 Qed.
 Hint Resolve inf_lib_extends_implies_pre_inf_lib_extends : slow.
 
-Record slibrary {o} :=
-  MkSLibrary
-    {
-      slib_lib  :> @library o;
-      slib_safe : safe_library slib_lib;
-    }.
-
-Definition safe_if_extends_slibrary {o} :
-  forall (lib : @slibrary o) (lib1 : library),
-    lib_extends lib1 lib
-    -> safe_library lib1.
-Proof.
-  introv ext.
-  destruct lib; simpl in *; apply ext; auto.
-Qed.
-Hint Resolve safe_if_extends_slibrary : slow.
-
-Definition intersect_bars {o} {lib : slibrary} (bar1 bar2 : @BarLib o lib) : BarLib lib.
+Definition intersect_bars {o} {lib : SL} (bar1 bar2 : @BarLib o lib) : BarLib lib.
 Proof.
   exists (fun (lib' : library) =>
             exists lib1 lib2,
@@ -5533,7 +5516,7 @@ Proof.
 Defined.
 
 Lemma ex_extends_two_bars {o} :
-  forall {lib : @slibrary o} (bar1 bar2 : BarLib lib),
+  forall {lib : @SL o} (bar1 bar2 : BarLib lib),
   exists (lib1 lib2 lib' : @library o),
     bar_lib_bar bar1 lib1
     /\ bar_lib_bar bar2 lib2
@@ -5547,25 +5530,30 @@ Proof.
   exists lib1 lib2 lib'; tcsp.
 Qed.
 
+Definition ext2SL {o} {lib : SL} {lib' : @library o} (ext : lib_extends lib' lib) : @SL o :=
+  MkSL lib' (lib_extends_safe _ _ ext (slib_safe lib)).
+
 Lemma implies_all_in_bar_intersect_bars_left {o} :
-  forall {lib : slibrary} (bar bar' : @BarLib o lib) F,
+  forall {lib : SL} (bar bar' : @BarLib o lib) F,
     all_in_bar bar F
     -> all_in_bar (intersect_bars bar bar') F.
 Proof.
   introv a i j.
   simpl in *; exrepnd.
-  eapply a; eauto 2 with slow.
+  assert (lib_extends lib1 lib) as ext1 by eauto 3 with slow.
+  eapply (a (ext2SL ext1));simpl;auto; eauto 2 with slow.
 Qed.
 Hint Resolve implies_all_in_bar_intersect_bars_left : slow.
 
 Lemma implies_all_in_bar_intersect_bars_right {o} :
-  forall {lib : slibrary} (bar bar' : @BarLib o lib) F,
+  forall {lib : SL} (bar bar' : @BarLib o lib) F,
     all_in_bar bar F
     -> all_in_bar (intersect_bars bar' bar) F.
 Proof.
   introv a i j.
   simpl in *; exrepnd.
-  eapply a; eauto 2 with slow.
+  assert (lib_extends lib2 lib) as ext1 by eauto 3 with slow.
+  eapply (a (ext2SL ext1));simpl;auto; eauto 2 with slow.
 Qed.
 Hint Resolve implies_all_in_bar_intersect_bars_right : slow.
 

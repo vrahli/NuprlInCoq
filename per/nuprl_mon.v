@@ -36,7 +36,7 @@ Require Export nuprl_extensionality.
 
 
 Definition type_monotone {p} (ts : cts(p)) :=
-  forall lib lib' T1 T2 eq,
+  forall (lib : SL) lib' T1 T2 eq,
     ts lib T1 T2 eq
     -> lib_extends lib' lib
     -> exists eq',
@@ -55,7 +55,7 @@ Qed.
 Hint Resolve sub_per_eq_eq_term_equals_left : slow.
 
 Lemma sub_per_equality_of_int_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+  forall {lib : SL} {lib' : @library o} (ext : lib_extends lib' lib),
     sub_per (equality_of_int_bar lib) (equality_of_int_bar lib').
 Proof.
   introv ext h.
@@ -85,7 +85,7 @@ Proof.
 Qed.
 
 Lemma sub_per_equality_of_nat_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib),
     sub_per (equality_of_nat_bar lib) (equality_of_nat_bar lib').
 Proof.
   introv ext h.
@@ -115,7 +115,7 @@ Proof.
 Qed.
 
 Lemma sub_per_equality_of_qnat_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib),
     sub_per (equality_of_qnat_bar lib) (equality_of_qnat_bar lib').
 Proof.
   introv ext h.
@@ -147,7 +147,7 @@ Proof.
 Qed.
 
 Lemma sub_per_equality_of_csname_bar {o} :
-  forall n (lib lib' : @library o) (ext : lib_extends lib' lib),
+  forall n (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib),
     sub_per (equality_of_csname_bar lib n) (equality_of_csname_bar lib' n).
 Proof.
   introv ext h.
@@ -178,7 +178,7 @@ Proof.
 Qed.
 
 Lemma sub_per_equality_of_atom_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib),
     sub_per (equality_of_atom_bar lib) (equality_of_atom_bar lib').
 Proof.
   introv ext h.
@@ -208,7 +208,7 @@ Proof.
 Qed.
 
 Lemma sub_per_equality_of_uatom_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib),
     sub_per (equality_of_uatom_bar lib) (equality_of_uatom_bar lib').
 Proof.
   introv ext h.
@@ -238,7 +238,7 @@ Proof.
 Qed.
 
 Lemma sub_per_base_eq {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib),
     sub_per (per_base_eq lib) (per_base_eq lib').
 Proof.
   introv ext h.
@@ -260,7 +260,7 @@ Qed.
 Hint Resolve lib_extends_preserves_in_ext : slow.
 
 Lemma sub_eq_per_base {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib),
     sub_per (per_base_eq lib) (per_base_eq lib').
 Proof.
   introv ext h.
@@ -278,7 +278,7 @@ Proof.
 Qed.
 
 Lemma sub_per_approx_eq_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib) a b,
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib) a b,
     sub_per (per_approx_eq_bar lib a b) (per_approx_eq_bar lib' a b).
 Proof.
   introv ext h.
@@ -309,7 +309,7 @@ Proof.
 Qed.
 
 Lemma sub_per_cequiv_eq_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib) a b,
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib) a b,
     sub_per (per_cequiv_eq_bar lib a b) (per_cequiv_eq_bar lib' a b).
 Proof.
   introv ext h.
@@ -349,7 +349,7 @@ Qed.
 Hint Resolve implies_in_ext_ext_ts_raise_lib_per : slow.
 
 Lemma implies_all_in_bar_ext_ts_raise_lib_per {o} :
-  forall (ts : cts(o)) lib (bar : BarLib lib) lib' (ext : lib_extends lib' lib) A A' (eqa : lib-per(lib,o)),
+  forall (ts : cts(o)) (lib : SL) (bar : BarLib lib) lib' (ext : lib_extends lib' lib) A A' (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => ts lib' A A' (eqa lib' x))
     -> all_in_bar_ext (raise_bar bar ext) (fun lib'' x => ts lib'' A A' (raise_lib_per eqa ext lib'' x)).
 Proof.
@@ -360,7 +360,7 @@ Qed.
 Hint Resolve implies_all_in_bar_ext_ts_raise_lib_per : slow.
 
 Lemma implies_all_in_bar_ext_eqorceq_raise_lib_per {o} :
-  forall lib (bar : BarLib lib) lib' (ext : lib_extends lib' lib) a b (eqa : lib-per(lib,o)),
+  forall (lib : SL) (bar : BarLib lib) lib' (ext : lib_extends lib' lib) a b (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a b)
     -> all_in_bar_ext (raise_bar bar ext) (fun lib'' x => eqorceq lib'' (raise_lib_per eqa ext lib'' x) a b).
 Proof.
@@ -436,7 +436,7 @@ Qed.
 Hint Resolve implies_type_family_ext_raise_lib_per : slow.
 
 Lemma sub_per_per_func_ext_eq {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib) eqa eqb,
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib) eqa eqb,
     sub_per (per_func_ext_eq lib eqa eqb)
             (per_func_ext_eq lib' (raise_lib_per eqa ext) (raise_lib_per_fam eqb ext)).
 Proof.
@@ -465,7 +465,7 @@ Proof.
 Qed.
 
 Lemma sub_per_per_qtime_eq_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib) eqa,
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib) eqa,
     sub_per (per_qtime_eq_bar lib eqa)
             (per_qtime_eq_bar lib' (raise_lib_per eqa ext)).
 Proof.
@@ -493,7 +493,7 @@ Proof.
 Qed.
 
 Lemma per_union_bar_monotone {o} :
-  forall (ts : cts(o)) lib lib' T T' eq,
+  forall (ts : cts(o)) (lib : SL) lib' T T' eq,
     per_union_bar (close ts) lib T T' eq
     -> lib_extends lib' lib
     -> exists eq', per_union_bar (close ts) lib' T T' eq'.
@@ -509,7 +509,7 @@ Proof.
 Qed.
 
 Definition raise_bar_per {o} :
-  forall {lib lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib),
+  forall {lib : SL} {lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib),
     bar-per(lib,bar,o) -> bar-per(lib',raise_bar bar ext,o).
 Proof.
   introv b.
@@ -527,7 +527,7 @@ Proof.
 Defined.
 
 Lemma sub_per_per_bar_eq {o} :
-  forall {lib} {lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) eq eqa,
+  forall {lib : SL} {lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) eq eqa,
     (eq <=2=> (per_bar_eq bar eqa))
     -> sub_per eq (per_bar_eq (raise_bar bar ext) (raise_lib_per eqa ext)).
 Proof.
@@ -618,7 +618,7 @@ Qed.
 Hint Resolve sub_per_eq_per_eq_bar : slow.*)
 
 Lemma sub_per_per_union_eq_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib) eqa eqb,
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib) eqa eqb,
     sub_per (per_union_eq_bar lib eqa eqb)
             (per_union_eq_bar lib' (raise_lib_per eqa ext) (raise_lib_per eqb ext)).
 Proof.
@@ -643,7 +643,7 @@ Qed.
 Hint Resolve sub_per_per_union_eq : slow.
 
 Lemma sub_per_eq_per_union_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib) eqa eqa' eqb eqb',
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib) eqa eqa' eqb eqb',
     sub_per eqa eqa'
     -> sub_per eqb eqb'
     -> sub_per (eq_per_union_bar lib eqa eqb) (eq_per_union_bar lib' eqa' eqb').
@@ -657,7 +657,7 @@ Qed.
 Hint Resolve sub_per_eq_per_union_bar : slow.
 
 Lemma sub_per_per_product_bar_eq {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib) eqa eqb,
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib) eqa eqb,
     sub_per (per_product_eq_bar lib eqa eqb)
             (per_product_eq_bar lib' (raise_lib_per eqa ext) (raise_lib_per_fam eqb ext)).
 Proof.
@@ -689,7 +689,7 @@ Proof.
 Qed.
 
 Lemma sub_per_per_set_eq_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib) eqa eqb,
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib) eqa eqb,
     sub_per (per_set_eq_bar lib eqa eqb)
             (per_set_eq_bar lib' (raise_lib_per eqa ext) (raise_lib_per_fam eqb ext)).
 Proof.
@@ -720,7 +720,7 @@ Proof.
 Qed.
 
 Lemma sub_per_eq_per_eq_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib) a b (eqa : lib-per(lib,o)),
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib) a b (eqa : lib-per(lib,o)),
     sub_per (eq_per_eq_bar lib a b eqa) (eq_per_eq_bar lib' a b (raise_lib_per eqa ext)).
 Proof.
   introv h.
@@ -769,7 +769,7 @@ Qed.
 Hint Resolve per_union_monotone : slow.
 
 Lemma sub_per_per_image_eq_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib) (eqa : lib-per(lib,o)) f,
+  forall (lib : SL) (lib' : @library o) (ext : lib_extends lib' lib) (eqa : lib-per(lib,o)) f,
     sub_per (per_image_eq_bar lib eqa f) (per_image_eq_bar lib' (raise_lib_per eqa ext) f).
 Proof.
   introv h.

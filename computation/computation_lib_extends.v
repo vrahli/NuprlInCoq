@@ -309,13 +309,32 @@ Record lib_extends {o} (lib1 lib0 : @library o) : Prop :=
     }.
 Arguments MkLibExtends [o] [lib1] [lib0] _ _ _.
 
-Definition in_ext {o} (lib : @library o) (F : @library o -> Prop) :=
-  forall (lib' : library),
+Record slibrary {o} :=
+  MkSL
+    {
+      slib_lib  :> @library o;
+      slib_safe : safe_library slib_lib;
+    }.
+Arguments MkSL [o] _ _.
+Notation SL := slibrary.
+
+Definition safe_if_extends_slibrary {o} :
+  forall (lib : @SL o) (lib1 : library),
+    lib_extends lib1 lib
+    -> safe_library lib1.
+Proof.
+  introv ext.
+  destruct lib; simpl in *; apply ext; auto.
+Qed.
+Hint Resolve safe_if_extends_slibrary : slow.
+
+Definition in_ext {o} (lib : @SL o) (F : @SL o -> Prop) :=
+  forall (lib' : SL),
     lib_extends lib' lib
     -> F lib'.
 
-Definition inExt {o} (lib : @library o) (F : @library o -> Type) :=
-  forall (lib' : library),
+Definition inExt {o} (lib : @SL o) (F : @SL o -> Type) :=
+  forall (lib' : SL),
     lib_extends lib' lib
     -> F lib'.
 

@@ -224,49 +224,49 @@ Tactic Notation "prove_type_system" ident(c) :=
 
 Definition uniquely_valued_body {p}
            (ts    : cts(p))
-           (lib   : library)
+           (lib   : SL)
            (T1 T2 : CTerm)
            (eq    : per) :=
   forall eq' : per, ts lib T1 T2 eq' -> eq_term_equals eq eq'.
 
 Definition type_extensionality_body {p}
            (ts    : cts(p))
-           (lib   : library)
+           (lib   : SL)
            (T1 T2 : CTerm)
            (eq    : per) :=
   forall eq' : per, eq_term_equals eq eq' -> ts lib T1 T2 eq'.
 
 Definition type_symmetric_body {p}
            (ts    : cts(p))
-           (lib   : library)
+           (lib   : SL)
            (T1 T2 : CTerm)
            (eq    : per) :=
   ts lib T2 T1 eq.
 
 Definition type_transitive_body {p}
            (ts    : cts(p))
-           (lib   : library)
+           (lib   : SL)
            (T1 T2 : CTerm)
            (eq    : per) :=
   forall T3, ts lib T2 T3 eq -> ts lib T1 T3 eq.
 
 Definition type_monotone_body {p}
            (ts    : cts(p))
-           (lib   : library)
+           (lib   : SL)
            (T1 T2 : CTerm)
            (eq    : per) :=
-  forall lib', lib_extends lib' lib -> ts lib' T1 T2 eq.
+  forall (lib' : SL), lib_extends lib' lib -> ts lib' T1 T2 eq.
 
 Definition type_value_respecting_body {p}
            (ts    : cts(p))
-           (lib   : library)
+           (lib   : SL)
            (T1 T2 : @CTerm p)
            (eq    : per) :=
   forall T3, ccequivc_ext lib T1 T3 -> ts lib T1 T3 eq.
 
 Definition type_system_props {p}
            (ts    : cts(p))
-           (lib   : library)
+           (lib   : SL)
            (T1 T2 : CTerm)
            (eq    : per) :=
   uniquely_valued_body          ts lib T1 T2 eq
@@ -463,7 +463,7 @@ Qed.
 
 Definition type_sys_props {p}
            (ts    : cts(p))
-           (lib   : library)
+           (lib   : SL)
            (T1 T2 : CTerm)
            (eq    : per) :=
   (* uniquely valued *)
@@ -576,7 +576,7 @@ Tactic Notation "prove_type_sys_props" ident(c) :=
 
 Definition type_sys_props2 {p}
            (ts    : cts(p))
-           (lib   : library)
+           (lib   : SL)
            (T1 T2 : CTerm)
            (eq    : per) :=
   (* uniquely valued *)
@@ -697,7 +697,7 @@ Qed.
 
 Definition type_sys_props3 {p}
            (ts    : cts(p))
-           (lib   : library)
+           (lib   : SL)
            (T1 T2 : CTerm)
            (eq    : per) :=
   (* uniquely valued *)
@@ -2007,14 +2007,15 @@ Ltac computes_to_eqval :=
   end.
 
 Lemma computes_to_uni_in_bar_implies {o} :
-  forall (lib : @library o) T,
+  forall (lib : @SL o) T,
     computes_to_uni lib T
-    -> exists lib' i, lib_extends lib' lib /\ T ===>(lib') (mkc_uni i).
+    -> exists (lib' : SL) i, lib_extends lib' lib /\ T ===>(lib') (mkc_uni i).
 Proof.
   introv h; unfold computes_to_uni in h; exrepnd.
   pose proof (bar_non_empty bar) as ne; exrepnd.
-  pose proof (h0 _ ne0 lib' (lib_extends_refl lib')) as h0; simpl in *; exrepnd.
-  exists lib' i; dands; auto; eauto 3 with slow.
+  assert (lib_extends lib' lib) as ext by eauto 3 with slow.
+  pose proof (h0 (ext2SL ext) ne0 (ext2SL ext) (lib_extends_refl lib')) as h0; simpl in *; exrepnd.
+  exists (ext2SL ext) i; dands; auto; eauto 3 with slow.
 Qed.
 
 Ltac apply_defines_only_universes0 :=
@@ -2083,7 +2084,7 @@ Proof.
 Qed.
 
 Lemma computes_to_uni_in_bar_implies_bar {o} :
-  forall {lib lib' : @library o} (b : @BarLib o lib) T v,
+  forall {lib : SL} {lib' : @library o} (b : @BarLib o lib) T v,
     all_in_bar b (fun lib => T ===>(lib) v)
     -> computes_to_uni lib' T
     -> lib_extends lib' lib
@@ -2091,9 +2092,9 @@ Lemma computes_to_uni_in_bar_implies_bar {o} :
 Proof.
   introv a h ext; unfold computes_to_uni in *; exrepnd.
   apply (implies_all_in_bar_raise_bar _ ext) in a.
-  apply (implies_all_in_bar_intersect_bars_left _ bar) in a.
-  apply (implies_all_in_bar_intersect_bars_right _ (raise_bar b ext)) in h0.
-  remember (intersect_bars (raise_bar b ext) bar) as B; clear HeqB.
+  apply (@implies_all_in_bar_intersect_bars_left _ (ext2SL ext) _ bar) in a.
+  apply (@implies_all_in_bar_intersect_bars_right _ (ext2SL ext) _ (raise_bar b ext)) in h0.
+  remember (@intersect_bars _ (ext2SL ext) (raise_bar b ext) bar) as B; clear HeqB.
   pose proof (bar_non_empty B) as ne; exrepnd.
   pose proof (a _ ne0 lib'0 (lib_extends_refl lib'0)) as a.
   pose proof (h0 _ ne0 lib'0 (lib_extends_refl lib'0)) as h0.
@@ -2157,7 +2158,7 @@ Ltac apply_defines_only_universes_bar_right :=
   end.
 
 Lemma computes_to_uni_in_bar_implies_bar_ceq {o} :
-  forall {lib lib' : @library o} (b : @BarLib o lib) T v,
+  forall {lib : SL} {lib' : @library o} (b : @BarLib o lib) T v,
     computes_to_valc_ceq_bar b T v
     -> computes_to_uni lib' T
     -> lib_extends lib' lib
@@ -2166,9 +2167,9 @@ Proof.
   introv a h ext; unfold computes_to_uni in *; exrepnd.
   unfold computes_to_valc_ceq_bar in a.
   apply (implies_all_in_bar_raise_bar _ ext) in a.
-  apply (implies_all_in_bar_intersect_bars_left _ bar) in a.
-  apply (implies_all_in_bar_intersect_bars_right _ (raise_bar b ext)) in h0.
-  remember (intersect_bars (raise_bar b ext) bar) as B; clear HeqB.
+  apply (@implies_all_in_bar_intersect_bars_left _ (ext2SL ext) _ bar) in a.
+  apply (@implies_all_in_bar_intersect_bars_right _ (ext2SL ext) _ (raise_bar b ext)) in h0.
+  remember (@intersect_bars _ (ext2SL ext) (raise_bar b ext) bar) as B; clear HeqB.
   pose proof (bar_non_empty B) as ne; exrepnd.
   pose proof (a _ ne0 lib'0 (lib_extends_refl lib'0)) as a.
   pose proof (h0 _ ne0 lib'0 (lib_extends_refl lib'0)) as h0.
@@ -2256,7 +2257,7 @@ Ltac usedou :=
   end.
 
 Lemma computes_to_uni_monotone {o} :
-  forall {lib lib'} (x : lib_extends lib' lib) (T : @CTerm o),
+  forall {lib : SL} {lib'} (x : lib_extends lib' lib) (T : @CTerm o),
     computes_to_uni lib T
     -> computes_to_uni lib' T.
 Proof.

@@ -48,7 +48,7 @@ Hint Resolve nt_wf_oterm_snd : slow.
 
 Hint Resolve nt_wf_oterm_fst : slow.
 
-Lemma lib_extends_implies_subset_get_utokens_lib {o} :
+(*Lemma lib_extends_implies_subset_get_utokens_lib {o} :
   forall (lib1 lib2 : @library o) t,
     lib_extends lib2 lib1
     -> subset (get_utokens_lib lib1 t) (get_utokens_lib lib2 t).
@@ -57,9 +57,9 @@ Proof.
   allrw in_app_iff; repndors; tcsp.
   right.
   eapply lib_extends_implies_subset_get_utokens_library; eauto.
-Qed.
+Qed.*)
 
-Lemma lib_extends_preserves_not_in_get_utokens_lib {o} :
+(*Lemma lib_extends_preserves_not_in_get_utokens_lib {o} :
   forall (lib1 lib2 : @library o) t a,
     lib_extends lib2 lib1
     -> !LIn a (get_utokens_lib lib2 t)
@@ -68,7 +68,7 @@ Proof.
   introv ext i j; destruct i.
   eapply lib_extends_implies_subset_get_utokens_lib; eauto.
 Qed.
-Hint Resolve lib_extends_preserves_not_in_get_utokens_lib : slow.
+Hint Resolve lib_extends_preserves_not_in_get_utokens_lib : slow.*)
 
 Hint Resolve subst_aux_preserves_wf : wf.
 

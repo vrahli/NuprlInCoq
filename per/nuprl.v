@@ -56,7 +56,7 @@ Definition cts_bot {p} (T T' : @CTerm p) (eq : @CTerm p -> @CTerm p -> Type) : S
 Definition univ_def {p}
            (ts   : cts)
            (uni  : CTerm)
-           (lib  : library)
+           (lib  : SL)
            (T T' : @CTerm p)
            (eq   : per) : [U] :=
      (T ===>(lib) uni
@@ -65,7 +65,7 @@ Definition univ_def {p}
          eq A A' <=> {eqa : per , close ts lib A A' eqa})
     {+} ts lib T T' eq.
 
-Definition univ0 {p} (lib : @library p) (T T' : @CTerm p) (eq : per(p)) := False.
+Definition univ0 {p} (lib : @SL p) (T T' : @CTerm p) (eq : per(p)) := False.
 Definition univ1 {p} lib (T T' : @CTerm p) eq := close (univ_def univ0 (mkc_uni 0)) lib T T' eq.
 Definition univ2 {p} lib (T T' : @CTerm p) eq := close (univ_def univ1 (mkc_uni 1)) lib T T' eq.
 Definition univ3 {p} lib (T T' : @CTerm p) eq := close (univ_def univ2 (mkc_uni 2)) lib T T' eq.
@@ -174,7 +174,7 @@ Qed.
 Hint Resolve ccomputes_to_valc_ext_refl : slow.
 
 Lemma univi_mkc_uni {o} :
-  forall (lib : @library o) (i : nat),
+  forall (lib : @SL o) (i : nat),
     univi (S i)
           lib
           (mkc_uni i)
@@ -712,7 +712,7 @@ Qed.
  *)
 
 Lemma in_ext_ext_implies_all_in_bar_ext {o} :
-  forall lib (bar : @BarLib o lib) F,
+  forall {lib : SL} (bar : @BarLib o lib) F,
     in_ext_ext lib F
     -> all_in_bar_ext bar F.
 Proof.
