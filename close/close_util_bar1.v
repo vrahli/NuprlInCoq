@@ -66,7 +66,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props4_implies_ts {o} :
-  forall (ts : cts(o)) (lib : library) (T1 T2 : CTerm) eq,
+  forall (ts : cts(o)) (lib : SL) (T1 T2 : CTerm) eq,
     type_sys_props4 ts lib T1 T2 eq -> ts lib T1 T2 eq.
 Proof.
   introv h.
@@ -74,7 +74,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_ext_type_sys_props4_implies_ts {o} :
-  forall (ts : cts(o)) (lib : library) (bar : BarLib lib) (T1 T2 : CTerm) eq,
+  forall (ts : cts(o)) (lib : SL) (bar : BarLib lib) (T1 T2 : CTerm) eq,
     all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' T1 T2 (eq lib' x))
     -> all_in_bar_ext bar (fun lib' x => ts lib' T1 T2 (eq lib' x)).
 Proof.
@@ -83,7 +83,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_close_int {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+  forall {lib : SL} (bar : @BarLib o lib) ts T T' eqa,
     type_system ts
     -> defines_only_universes ts
     -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
@@ -98,7 +98,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_close_nat {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+  forall {lib : SL} (bar : @BarLib o lib) ts T T' eqa,
     type_system ts
     -> defines_only_universes ts
     -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
@@ -113,7 +113,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_close_qnat {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+  forall {lib : SL} (bar : @BarLib o lib) ts T T' eqa,
     type_system ts
     -> defines_only_universes ts
     -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
@@ -128,7 +128,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_close_csname {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' eqa n,
+  forall {lib : SL} (bar : @BarLib o lib) ts T T' eqa n,
     type_system ts
     -> defines_only_universes ts
     -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
@@ -143,7 +143,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_close_atom {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+  forall {lib : SL} (bar : @BarLib o lib) ts T T' eqa,
     type_system ts
     -> defines_only_universes ts
     -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
@@ -158,7 +158,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_close_uatom {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+  forall {lib : SL} (bar : @BarLib o lib) ts T T' eqa,
     type_system ts
     -> defines_only_universes ts
     -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
@@ -173,7 +173,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_close_base {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' eqa,
+  forall {lib : SL} (bar : @BarLib o lib) ts T T' eqa,
     type_system ts
     -> defines_only_universes ts
     -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
@@ -188,7 +188,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_eq_term_equals_implies {o} :
-  forall {lib} (bar : @BarLib o lib) (eqa eqb : ext-per(lib,o)) t1 t2,
+  forall {lib : SL} (bar : @BarLib o lib) (eqa eqb : ext-per(lib,o)) t1 t2,
     all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
     -> all_in_bar_ext bar (fun lib' x => eqa lib' x t1 t2)
     -> all_in_bar_ext bar (fun lib' x => eqb lib' x t1 t2).
@@ -426,7 +426,7 @@ Qed.
 Hint Resolve per_eq_implies_per_bar : slow.
 
 Lemma local_per_func_ext_eq_trivial_bar {o} :
-  forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) t1 t2,
+  forall {lib : SL} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) t1 t2,
     per_bar_eq bar (per_func_ext_eq_lib_per eqa eqb) t1 t2
     -> per_func_ext_eq lib eqa eqb t1 t2.
 Proof.
@@ -456,7 +456,7 @@ Qed.
 Hint Resolve per_func_ext_implies_per_bar : slow.
 
 Lemma local_per_union_eq_bar {o} :
-  forall {lib} (bar : BarLib lib) (eqa eqb : lib-per(lib,o)) t1 t2,
+  forall {lib : SL} (bar : BarLib lib) (eqa eqb : lib-per(lib,o)) t1 t2,
     per_bar_eq bar (per_union_eq_bar_lib_per eqa eqb) t1 t2
     -> per_union_eq_bar lib eqa eqb t1 t2.
 Proof.
@@ -487,7 +487,7 @@ Qed.
 Hint Resolve per_union_bar_implies_per_bar : slow.
 
 Lemma local_per_qtime_eq_bar {o} :
-  forall {lib} (bar : BarLib lib) (eqa : lib-per(lib,o)) t1 t2,
+  forall {lib : SL} (bar : BarLib lib) (eqa : lib-per(lib,o)) t1 t2,
     per_bar_eq bar (per_qtime_eq_bar_lib_per eqa) t1 t2
     -> per_qtime_eq_bar lib eqa t1 t2.
 Proof.
@@ -517,7 +517,7 @@ Qed.
 Hint Resolve per_qtime_bar_implies_per_bar : slow.
 
 Lemma local_per_image_eq_bar {o} :
-  forall {lib} (bar : BarLib lib) (eqa : lib-per(lib,o)) f t1 t2,
+  forall {lib : SL} (bar : BarLib lib) (eqa : lib-per(lib,o)) f t1 t2,
     per_bar_eq bar (per_image_eq_bar_lib_per lib eqa f) t1 t2
     -> per_image_eq_bar lib eqa f t1 t2.
 Proof.
@@ -615,7 +615,7 @@ Definition ts_implies_per_bar {o} (ts : cts(o)) :=
 Definition per_bar_lib_per
            {o}
            {ts}
-           {lib : @library o}
+           {lib : @SL o}
            {T T'}
            {eq : per}
            (p : per_bar ts lib T T' eq) : lib-per(lib,o).
@@ -625,7 +625,7 @@ Proof.
 Defined.
 
 Lemma per_bar_implies_eq_term_equals_per_bar_eq_per_bar_lib_per {o} :
-  forall (ts : cts(o)) lib T T' eq (p : per_bar ts lib T T' eq),
+  forall (ts : cts(o)) (lib : SL) T T' eq (p : per_bar ts lib T T' eq),
     eq <=2=> (per_bar_eq (trivial_bar lib) (per_bar_lib_per p)).
 Proof.
   repeat introv; split; introv h.
@@ -640,7 +640,7 @@ Proof.
     unfold per_bar in p; exrepnd.
     pose proof (bar_non_empty bar') as z; exrepnd.
     assert (lib_extends lib' lib) as xt by eauto 3 with slow.
-    pose proof (h0 _ z0 lib' (lib_extends_refl lib') xt) as h0; simpl in h0; auto.
+    pose proof (h0 (ext2SL xt) z0 (ext2SL xt) (lib_extends_refl lib') xt) as h0; simpl in h0; auto.
 Qed.
 
 Lemma implies_eq_term_equals_per_bar_eq_trivial_bar_mon {o} :
@@ -740,7 +740,7 @@ Qed.
 
 Definition per_bar_above {o}
            (ts    : cts(o))
-           {lib   : library}
+           {lib   : SL}
            (bar   : BarLib lib)
            (T1 T2 : CTerm)
            (eq    : per(o)) : [U] :=
@@ -749,13 +749,13 @@ Definition per_bar_above {o}
   , all_in_bar_ext (intersect_bars bar bar') (fun lib' x => ts lib' T1 T2 (eqa lib' x))
   # eq <=2=> (per_bar_eq (intersect_bars bar bar') eqa) }}.
 
-Definition ts_implies_per_bar_above {o} {lib} (ts : cts(o)) (bar : BarLib lib) :=
+Definition ts_implies_per_bar_above {o} {lib : SL} (ts : cts(o)) (bar : BarLib lib) :=
   forall (T T' : @CTerm o) eq,
     ts lib T T' eq
     -> per_bar_above ts bar T T' eq.
 
 Lemma per_int_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_int (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -774,7 +774,7 @@ Qed.
 Hint Resolve per_int_implies_per_bar_above : slow.
 
 Lemma per_nat_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_nat (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -793,7 +793,7 @@ Qed.
 Hint Resolve per_nat_implies_per_bar_above : slow.
 
 Lemma per_qnat_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_qnat (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -812,7 +812,7 @@ Qed.
 Hint Resolve per_qnat_implies_per_bar_above : slow.
 
 Lemma per_csname_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_csname (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -831,7 +831,7 @@ Qed.
 Hint Resolve per_csname_implies_per_bar_above : slow.
 
 Lemma per_atom_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_atom (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -850,7 +850,7 @@ Qed.
 Hint Resolve per_atom_implies_per_bar_above : slow.
 
 Lemma per_uatom_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_uatom (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -869,7 +869,7 @@ Qed.
 Hint Resolve per_uatom_implies_per_bar_above : slow.
 
 Lemma per_base_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_base (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -888,7 +888,7 @@ Qed.
 Hint Resolve per_base_implies_per_bar_above : slow.
 
 Lemma per_approx_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_approx (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -908,7 +908,7 @@ Qed.
 Hint Resolve per_approx_implies_per_bar_above : slow.
 
 Lemma per_cequiv_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_cequiv (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -928,7 +928,7 @@ Qed.
 Hint Resolve per_cequiv_implies_per_bar_above : slow.
 
 Lemma per_eq_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_eq (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -948,7 +948,7 @@ Qed.
 Hint Resolve per_eq_implies_per_bar_above : slow.
 
 Lemma per_func_ext_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_func_ext (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -969,7 +969,7 @@ Qed.
 Hint Resolve per_func_ext_implies_per_bar_above : slow.
 
 Lemma per_product_bar_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_product_bar (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -990,7 +990,7 @@ Qed.
 Hint Resolve per_product_bar_implies_per_bar_above : slow.
 
 Lemma per_union_bar_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_union (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -1012,7 +1012,7 @@ Qed.
 Hint Resolve per_union_bar_implies_per_bar_above : slow.
 
 Lemma per_image_bar_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_image (close ts) lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
 Proof.
@@ -1034,7 +1034,7 @@ Qed.
 Hint Resolve per_image_bar_implies_per_bar_above : slow.
 
 Lemma per_bar_implies_per_bar_above {o} :
-  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
     per_bar ts lib T T' eq
     -> per_bar_above ts bar T T' eq.
 Proof.
@@ -1054,7 +1054,7 @@ Qed.
 Hint Resolve per_bar_implies_per_bar_above : slow.
 
 Lemma close_implies_per_bar_above {o} :
-  forall ts {lib} (bar : @BarLib o lib) (T T' : @CTerm o) eq,
+  forall ts {lib : SL} (bar : @BarLib o lib) (T T' : @CTerm o) eq,
     ts_implies_per_bar_above ts bar
     -> close ts lib T T' eq
     -> per_bar_above (close ts) bar T T' eq.
@@ -1075,7 +1075,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_intersect_bars_left {o} :
-  forall {lib} (bar1 bar2 : @BarLib o lib) eqa a b,
+  forall {lib : SL} (bar1 bar2 : @BarLib o lib) eqa a b,
     per_bar_eq bar1 eqa a b
     -> per_bar_eq (intersect_bars bar1 bar2) eqa a b.
 Proof.
@@ -1085,7 +1085,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_intersect_bars_right {o} :
-  forall {lib} (bar1 bar2 : @BarLib o lib) eqa a b,
+  forall {lib : SL} (bar1 bar2 : @BarLib o lib) eqa a b,
     per_bar_eq bar1 eqa a b
     -> per_bar_eq (intersect_bars bar2 bar1) eqa a b.
 Proof.
@@ -1095,7 +1095,7 @@ Proof.
 Qed.
 
 Lemma ts_implies_per_bar_above_implies_ts_implies_per_bar {o} :
-  forall (ts : cts(o)) {lib} (bar : BarLib lib),
+  forall (ts : cts(o)) {lib : SL} (bar : BarLib lib),
     ts_implies_per_bar ts
     -> ts_implies_per_bar_above ts bar.
 Proof.
@@ -1142,7 +1142,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_ext_type_sys_props4_implies_type_value_respecting_per_bar {o} :
-  forall (ts : cts(o)) {lib} (bar : BarLib lib) T1 T2 (eqa : lib-per(lib,o)) eq,
+  forall (ts : cts(o)) {lib : SL} (bar : BarLib lib) T1 T2 (eqa : lib-per(lib,o)) eq,
     all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' T1 T2 (eqa lib' x))
     -> per_bar ts lib T1 T2 eq
     ->
@@ -1202,7 +1202,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_intersect3bars_as2_left {o} :
-  forall {lib} (bar1 bar2 bar3 : @BarLib o lib) eqa,
+  forall {lib : SL} (bar1 bar2 bar3 : @BarLib o lib) eqa,
     (per_bar_eq (intersect3bars bar1 bar2 bar3) eqa)
     <=2=> (per_bar_eq (intersect_bars (intersect_bars bar1 bar2) bar3) eqa).
 Proof.
@@ -1221,7 +1221,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_ext_type_sys_props4_implies_type_value_respecting_trans_per_bar1 {o} :
-  forall (ts : cts(o)) {lib} (bar : BarLib lib) T1 T2 (eqa : lib-per(lib,o)) eq,
+  forall (ts : cts(o)) {lib : SL} (bar : BarLib lib) T1 T2 (eqa : lib-per(lib,o)) eq,
     all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' T1 T2 (eqa lib' x))
     -> per_bar ts lib T1 T2 eq
     ->
@@ -1302,7 +1302,7 @@ Qed.
 Hint Resolve all_in_bar_ext_type_sys_props4_implies_type_value_respecting_trans_per_bar1 : slow.
 
 Lemma all_in_bar_ext_type_sys_props4_implies_type_value_respecting_trans_per_bar2 {o} :
-  forall (ts : cts(o)) {lib} (bar : BarLib lib) T1 T2 (eqa : lib-per(lib,o)) eq,
+  forall (ts : cts(o)) {lib : SL} (bar : BarLib lib) T1 T2 (eqa : lib-per(lib,o)) eq,
     all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' T1 T2 (eqa lib' x))
     -> per_bar ts lib T1 T2 eq
     ->
@@ -1383,7 +1383,7 @@ Qed.
 Hint Resolve all_in_bar_ext_type_sys_props4_implies_type_value_respecting_trans_per_bar2 : slow.
 
 Lemma all_in_bar_ext_type_sys_props4_implies_term_equality_symmetric2 {o} :
-  forall {lib} (bar : @BarLib o lib) ts A B eqa eqb,
+  forall {lib : SL} (bar : @BarLib o lib) ts A B eqa eqb,
     all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
     -> all_in_bar_ext bar (fun lib' x => ts lib' A B (eqb lib' x))
     -> all_in_bar_ext bar (fun lib' x => term_equality_symmetric (eqb lib' x)).
@@ -1398,7 +1398,7 @@ Qed.
 Hint Resolve all_in_bar_ext_type_sys_props4_implies_term_equality_symmetric2 : slow.
 
 Lemma all_in_bar_ext_type_sys_props4_implies_term_equality_transitive2 {o} :
-  forall {lib} (bar : @BarLib o lib) ts A B eqa eqb,
+  forall {lib : SL} (bar : @BarLib o lib) ts A B eqa eqb,
     all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
     -> all_in_bar_ext bar (fun lib' x => ts lib' A B (eqb lib' x))
     -> all_in_bar_ext bar (fun lib' x => term_equality_transitive (eqb lib' x)).
@@ -1423,7 +1423,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_ext_type_sys_props4_implies_term_equality_respecting2 {o} :
-  forall {lib} (bar : @BarLib o lib) ts A B eqa eqb,
+  forall {lib : SL} (bar : @BarLib o lib) ts A B eqa eqb,
     all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
     -> all_in_bar_ext bar (fun lib' x => ts lib' A B (eqb lib' x))
     -> all_in_bar_ext bar (fun lib' x => term_equality_respecting lib' (eqb lib' x)).
@@ -1448,7 +1448,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_ext_type_sys_props4_implies_type_symmetric_per_bar1 {o} :
-  forall (ts : cts(o)) {lib} (bar : BarLib lib) T1 T2 (eqa : lib-per(lib,o)) eq,
+  forall (ts : cts(o)) {lib : SL} (bar : BarLib lib) T1 T2 (eqa : lib-per(lib,o)) eq,
     all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' T1 T2 (eqa lib' x))
     -> per_bar ts lib T1 T2 eq
     -> forall T3 eq', per_bar ts lib T1 T3 eq' <=> per_bar ts lib T3 T1 eq'.
@@ -1491,7 +1491,7 @@ Proof.
 Qed.
 Hint Resolve all_in_bar_ext_type_sys_props4_implies_type_symmetric_per_bar1 : slow.
 
-Definition intersect4bars {o} {lib} (bar1 bar2 bar3 bar4 : @BarLib o lib) : BarLib lib :=
+Definition intersect4bars {o} {lib : SL} (bar1 bar2 bar3 bar4 : @BarLib o lib) : BarLib lib :=
   intersect_bars (intersect_bars bar1 bar2) (intersect_bars bar3 bar4).
 
 Lemma type_sys_props4_implies_type_transitive0 {o} :
@@ -1532,7 +1532,7 @@ Proof.
 Qed.
 
 Lemma all_in_bar_ext_type_sys_props4_implies_type_transitive_per_bar1 {o} :
-  forall (ts : cts(o)) {lib} (bar : BarLib lib) T1 T2 (eqa : lib-per(lib,o)) eq,
+  forall (ts : cts(o)) {lib : SL} (bar : BarLib lib) T1 T2 (eqa : lib-per(lib,o)) eq,
     all_in_bar_ext bar (fun lib' x => type_sys_props4 ts lib' T1 T2 (eqa lib' x))
     -> per_bar ts lib T1 T2 eq
     -> forall T T3 T4 eq1 eq2,

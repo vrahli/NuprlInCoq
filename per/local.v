@@ -38,20 +38,20 @@ Require Export nuprl_mon.
 
 
 Notation "bar-lib-per( lib , bar , o )" :=
-  (forall (lib1 : library) (br : bar_lib_bar bar lib1)
-          (lib2 : library) (ext : lib_extends lib2 lib1)
+  (forall (lib1 : SL) (br : bar_lib_bar bar lib1)
+          (lib2 : SL) (ext : lib_extends lib2 lib1)
           (x : lib_extends lib2 lib), lib-per(lib2,o)).
 
 Lemma all_in_bar_ext2_exists_eqa_implies {o} :
-  forall {lib} (bar : @BarLib o lib) F,
-    (forall lib1 (br : bar_lib_bar bar lib1)
-            lib2 (ext : lib_extends lib2 lib1)
+  forall {lib : SL} (bar : @BarLib o lib) F,
+    (forall (lib1 : SL) (br : bar_lib_bar bar lib1)
+            (lib2 : SL) (ext : lib_extends lib2 lib1)
             (x : lib_extends lib2 lib),
         {eqa : lib-per(lib2,o) , F lib1 br lib2 ext x eqa})
     ->
     exists (feqa : bar-lib-per(lib,bar,o)),
-    forall lib1 (br : bar_lib_bar bar lib1)
-           lib2 (ext : lib_extends lib2 lib1)
+    forall (lib1 : SL) (br : bar_lib_bar bar lib1)
+           (lib2 : SL) (ext : lib_extends lib2 lib1)
            (x : lib_extends lib2 lib),
       F lib1 br lib2 ext x (feqa lib1 br lib2 ext x).
 Proof.
@@ -68,31 +68,31 @@ Proof.
   simpl in C.
   repeat (autodimp C hyp).
   exrepnd.
-  exists (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
+  exists (fun (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
 Qed.
 
 Definition local_ts {o} (ts : cts(o)) :=
-  forall {lib} (bar : @BarLib o lib) T T' eq eqa,
+  forall {lib : SL} (bar : @BarLib o lib) T T' eq eqa,
     (eq <=2=> (per_bar_eq bar eqa))
     -> all_in_bar_ext bar (fun lib' x => ts lib' T T' (eqa lib' x))
     -> ts lib T T' eq.
 
 Definition lib_per_per_bar {o}
-           {lib  : @library o}
+           {lib  : @SL o}
            {bar  : BarLib lib}
            (fbar : bar_fam bar)
            (feqa : bar-lib-per(lib,bar,o)) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) t1 t2 =>
-            {lib1 : library
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) t1 t2 =>
+            {lib1 : SL
             , {br : bar_lib_bar bar lib1
-            , {lib2 : library
+            , {lib2 : SL
             , {ext : lib_extends lib2 lib1
             , {x : lib_extends lib2 lib
-            , {lib0 : library
+            , {lib0 : SL
             , {w : lib_extends lib' lib0
             , {fb : bar_lib_bar (fbar lib1 br lib2 ext x) lib0
             , feqa lib1 br lib2 ext x lib'
@@ -107,16 +107,16 @@ Proof.
   - exists lib1 br lib2 ext x0 lib0 w fb; auto.
 Defined.
 
-Definition sub_per_from_bar {o} {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) :=
-  forall lib1 (br : bar_lib_bar bar lib1)
-         lib2 (x1 : lib_extends lib2 lib1)
+Definition sub_per_from_bar {o} {lib : SL} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) :=
+  forall (lib1 : SL) (br : bar_lib_bar bar lib1)
+         (lib2 : SL) (x1 : lib_extends lib2 lib1)
          (y1 : lib_extends lib2 lib)
-         lib3 (x2 : lib_extends lib3 lib2)
+         (lib3 : SL) (x2 : lib_extends lib3 lib2)
          (y2 : lib_extends lib3 lib),
     sub_per (eqa lib2 y1) (eqa lib3 y2).
 
 Lemma all_in_bar_ext_lib_per_implies_mon {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' (eqa : lib-per(lib,o)),
+  forall {lib : SL} (bar : @BarLib o lib) ts T T' (eqa : lib-per(lib,o)),
     uniquely_valued ts
     -> type_monotone ts
     -> all_in_bar_ext bar (fun lib' x => ts lib' T T' (eqa lib' x))
@@ -125,7 +125,7 @@ Proof.
   introv uv mon alla br x1 x2 e.
   pose proof (alla _ br _ x1 y1) as h; simpl in *.
   pose proof (alla _ br _ (lib_extends_trans x2 x1) y2) as q; simpl in *.
-  pose proof (mon lib2 lib3 T T' (eqa lib2 y1)) as w.
+  pose proof (mon lib2 lib3 x2 T T' (eqa lib2 y1)) as w.
   repeat (autodimp w hyp).
   exrepnd.
   apply w0 in e; clear w0.
@@ -149,7 +149,8 @@ Proof.
     unfold per_bar_eq_bi in h; exrepnd.
     exists (raise_bar (intersect_bars bar0 bar') x).
     introv br' ext'; introv; simpl in *; exrepnd.
-    pose proof (h0 lib1) as h0; autodimp h0 hyp; simpl in *.
+    assert (lib_extends lib1 lib) as ext1 by eauto 3 with slow.
+    pose proof (h0 (ext2SL ext1)) as h0; autodimp h0 hyp; simpl in *.
     { simpl; eexists; eexists; dands; eauto. }
     pose proof (h0 lib'2 (lib_extends_trans ext' br'2) (lib_extends_trans x0 x)) as h0; simpl in *.
 
@@ -163,7 +164,8 @@ Proof.
     unfold per_bar_eq_bi in h; exrepnd.
     exists (raise_bar (intersect_bars bar bar') x).
     introv br' ext'; introv; simpl in *; exrepnd.
-    pose proof (h0 lib1) as h0; autodimp h0 hyp; simpl in *.
+    assert (lib_extends lib1 lib) as ext1 by eauto 3 with slow.
+    pose proof (h0 (ext2SL ext1)) as h0; autodimp h0 hyp; simpl in *.
     { simpl; eexists; eexists; dands; eauto. }
     pose proof (h0 lib'2 (lib_extends_trans ext' br'2) (lib_extends_trans x0 x)) as h0; simpl in *.
 
@@ -176,7 +178,7 @@ Qed.
 Hint Resolve uniquely_valued_per_bar : slow.
 
 Definition local_unique {o} (ts : cts(o)) :=
-  forall {lib} (bar : @BarLib o lib) T T' eq (eqa : lib-per(lib,o)),
+  forall {lib : SL} (bar : @BarLib o lib) T T' eq (eqa : lib-per(lib,o)),
     ts lib T T' eq
     -> all_in_bar_ext bar (fun lib' x => ts lib' T T' (eqa lib' x))
     -> sub_per (per_bar_eq bar eqa) eq.
@@ -196,9 +198,9 @@ Abort.
 
 Lemma local_unique_bar {o} :
   forall (ts : cts(o)) T T'
-         {lib1} (b1 : @BarLib o lib1)
-         {lib} (br : bar_lib_bar b1 lib)
-         {lib2} (x : lib_extends lib2 lib) (b2 : @BarLib o lib2)
+         {lib1 : SL} (b1 : @BarLib o lib1)
+         {lib : SL} (br : bar_lib_bar b1 lib)
+         {lib2 : SL} (x : lib_extends lib2 lib) (b2 : @BarLib o lib2)
          (y : lib_extends lib2 lib1)
          (eqa1 : lib-per(lib1,o))
          (eqa2 : lib-per(lib2,o)),
@@ -232,7 +234,7 @@ Proof.
 Qed.
 
 Lemma eq_term_equals_per_bar_eq_bar_of_bar_fam {o} :
-  forall {lib} (bar : @BarLib o lib) (fbar : bar_fam bar) (eqa : lib-per(lib,o)),
+  forall {lib : SL} (bar : @BarLib o lib) (fbar : bar_fam bar) (eqa : lib-per(lib,o)),
     (per_bar_eq bar eqa) <=2=> (per_bar_eq (bar_of_bar_fam fbar) eqa).
 Proof.
   introv.
@@ -267,13 +269,15 @@ Proof.
     assert (lib_extends lib'2 lib'') as xt1 by eauto 3 with slow.
     assert (lib_extends lib'2 lib2') as xt2 by eauto 3 with slow.
 
-    pose proof (h0 _ br'' lib2' ext'' x'' lib'' br'0 lib'2 xt1 xt2) as h0; simpl in *.
+    assert (lib_extends lib'' lib) as xt'' by eauto 3 with slow.
+
+    pose proof (h0 _ br'' lib2' ext'' x'' (ext2SL xt'') br'0 lib'2 xt1 xt2) as h0; simpl in *.
     eapply (lib_per_cond _ eqa); eauto.
 Qed.
 Hint Resolve eq_term_equals_per_bar_eq_bar_of_bar_fam : slow.
 
 Definition per_bar_eq2 {o}
-           {lib}
+           {lib : SL}
            (bar : @BarLib o lib)
            (eqa : lib-per(lib,o))
            (t1 t2 : CTerm) :=
@@ -287,7 +291,7 @@ Definition per_bar_eq2 {o}
                      eqa lib'' (lib_extends_trans y x) t1 t2) })}.
 
 Lemma all_in_bar_ext_intersect_bars_same {o} :
-  forall {lib} (bar : @BarLib o lib) F,
+  forall {lib : SL} (bar : @BarLib o lib) F,
     all_in_bar_ext (intersect_bars bar bar) F
     <=> all_in_bar_ext bar F.
 Proof.
@@ -301,7 +305,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_iff2 {o} :
-  forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2,
+  forall {lib : SL} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2,
     per_bar_eq bar eqa t1 t2
     <=> per_bar_eq2 bar eqa t1 t2.
 Proof.
@@ -313,6 +317,7 @@ Proof.
   - exrepnd.
     introv br ext; introv.
     apply all_in_bar_ext_exists_bar_implies in h0; simpl in *; exrepnd.
+
     exists (raise_bar (bar_of_bar_fam fbar) x).
     introv br' ext'; introv; simpl in *.
 
@@ -325,6 +330,7 @@ Proof.
 
     assert (lib_extends lib'2 lib'') as xt1 by eauto 3 with slow.
     assert (lib_extends lib'2 lib2') as xt2 by eauto 3 with slow.
+
     pose proof (h1 _ br'' _ ext'' x'' _ br'0 lib'2 xt1 xt2) as h1; simpl in *.
     eapply (lib_per_cond _ eqa); eauto.
 Qed.
@@ -484,7 +490,7 @@ Proof.
 Qed.
 
 Lemma ccequivc_ext_uni_uni_implies {o} :
-  forall (lib : @library o) i j,
+  forall (lib : @SL o) i j,
     ccequivc_ext lib (mkc_uni i) (mkc_uni j) -> i = j.
 Proof.
   introv ceq; pose proof (ceq _ (lib_extends_refl _)) as ceq; simpl in ceq; spcast.

@@ -35,7 +35,7 @@ Require Export bar_fam.
 
 
 Lemma local_equality_of_atom_bar {o} :
-  forall {lib} (bar : @BarLib o lib) t1 t2,
+  forall {lib : SL} (bar : @BarLib o lib) t1 t2,
     all_in_bar_ext bar (fun lib' (x : lib_extends lib' lib) => equality_of_atom_bar lib' t1 t2)
     -> equality_of_atom_bar lib t1 t2.
 Proof.
@@ -48,7 +48,7 @@ Qed.
 Hint Resolve local_equality_of_atom_bar : slow.
 
 Lemma per_bar_eq_equality_of_atom_bar_implies {o} :
-  forall {lib} (bar : @BarLib o lib) t1 t2,
+  forall {lib : SL} (bar : @BarLib o lib) t1 t2,
     per_bar_eq bar (equality_of_atom_bar_lib_per lib) t1 t2
     -> equality_of_atom_bar lib t1 t2.
 Proof.
@@ -65,7 +65,7 @@ Qed.
 Hint Resolve per_bar_eq_equality_of_atom_bar_implies : slow.
 
 Lemma all_in_bar_ext_equal_equality_of_atom_bar_implies_per_bar_eq_implies_equality_of_atom_bar {o} :
-  forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)),
+  forall (lib : SL) (bar : @BarLib o lib) (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (equality_of_atom_bar lib'))
     -> (per_bar_eq bar eqa) <=2=> (equality_of_atom_bar lib).
 Proof.
@@ -84,7 +84,7 @@ Qed.
 Hint Resolve all_in_bar_ext_equal_equality_of_atom_bar_implies_per_bar_eq_implies_equality_of_atom_bar : slow.
 
 Lemma local_per_atom_bar {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' eq eqa,
+  forall {lib : SL} (bar : @BarLib o lib) ts T T' eq eqa,
     (eq <=2=> (per_bar_eq bar eqa))
     -> all_in_bar_ext bar (fun lib' x => per_atom_bar ts lib' T T' (eqa lib' x))
     -> per_atom_bar ts lib T T' eq.

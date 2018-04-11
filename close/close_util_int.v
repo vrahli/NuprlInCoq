@@ -187,7 +187,7 @@ Qed.
 Hint Resolve per_int_type_transitive : slow.
 
 Lemma ccequivc_ext_mkc_integer_implies {o} :
-  forall (lib : @library o) k1 k2,
+  forall (lib : @SL o) k1 k2,
     ccequivc_ext lib (mkc_integer k1) (mkc_integer k2)
     -> k1 = k2.
 Proof.
@@ -268,7 +268,7 @@ Qed.
 Hint Resolve per_int_type_system : slow.
 
 Lemma equality_of_int_bar_monotone {o} :
-  forall {lib' lib : @library o} (ext : lib_extends lib' lib) t1 t2,
+  forall {lib' lib : @SL o} (ext : lib_extends lib' lib) t1 t2,
     equality_of_int_bar lib t1 t2
     -> equality_of_int_bar lib' t1 t2.
 Proof.
@@ -277,7 +277,7 @@ Qed.
 Hint Resolve equality_of_int_bar_monotone : slow.
 
 Lemma per_bar_eq_equality_of_int_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib),
+  forall (lib : SL) (bar : @BarLib o lib),
     (per_bar_eq bar (equality_of_int_bar_lib_per lib))
     <=2=> (equality_of_int_bar lib).
 Proof.
@@ -289,7 +289,7 @@ Proof.
 Qed.
 
 Lemma per_int_bar_implies_close {o} :
-  forall (ts : cts(o)) lib T T' eq,
+  forall (ts : cts(o)) (lib : SL) T T' eq,
     per_int_bar (close ts) lib T T' eq
     -> close ts lib T T' eq.
 Proof.

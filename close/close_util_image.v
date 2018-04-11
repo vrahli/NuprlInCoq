@@ -35,7 +35,7 @@ Require Export close_util_bar.
 
 
 Lemma per_bar_eq_per_image_eq_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)) f,
+  forall (lib : SL) (bar : @BarLib o lib) (eqa : lib-per(lib,o)) f,
     (per_bar_eq bar (per_image_eq_bar_lib_per lib eqa f))
     <=2=> (per_image_eq_bar lib eqa f).
 Proof.

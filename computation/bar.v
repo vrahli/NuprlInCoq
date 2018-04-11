@@ -5480,10 +5480,13 @@ Proof.
 Qed.
 Hint Resolve inf_lib_extends_implies_pre_inf_lib_extends : slow.
 
+Definition ext2SL {o} {lib : SL} {lib' : @library o} (ext : lib_extends lib' lib) : @SL o :=
+  MkSL lib' (lib_extends_safe _ _ ext (slib_safe lib)).
+
 Definition intersect_bars {o} {lib : SL} (bar1 bar2 : @BarLib o lib) : BarLib lib.
 Proof.
   exists (fun (lib' : library) =>
-            exists lib1 lib2,
+            exists (lib1 : SL) (lib2 : SL),
               bar_lib_bar bar1 lib1
               /\ bar_lib_bar bar2 lib2
               /\ lib_extends lib' lib1
@@ -5505,7 +5508,7 @@ Proof.
     exrepnd.
 
     exists lib0; dands; auto; eauto 3 with slow.
-    exists lib1 lib2; dands; auto.
+    exists (ext2SL q1) (ext2SL h1); dands; auto.
 
   - introv h; exrepnd.
 
@@ -5529,9 +5532,6 @@ Proof.
   simpl in *; exrepnd.
   exists lib1 lib2 lib'; tcsp.
 Qed.
-
-Definition ext2SL {o} {lib : SL} {lib' : @library o} (ext : lib_extends lib' lib) : @SL o :=
-  MkSL lib' (lib_extends_safe _ _ ext (slib_safe lib)).
 
 Lemma implies_all_in_bar_intersect_bars_left {o} :
   forall {lib : SL} (bar bar' : @BarLib o lib) F,

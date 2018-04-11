@@ -32,7 +32,7 @@ Require Export close_util_base.
 
 
 Lemma close_type_system_base {p} :
-  forall lib (ts : cts(p)) T T' eq,
+  forall (lib : SL) (ts : cts(p)) T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts

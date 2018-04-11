@@ -34,10 +34,10 @@ Require Export close_util_bar.
 
 Definition per_qtime_eq_bar_lib_per
            {o}
-           {lib : @library o}
+           {lib : @SL o}
            (eqa : lib-per(lib,o)) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) =>
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) =>
             per_qtime_eq_bar lib' (raise_lib_per eqa x)).
 
   repeat introv.
@@ -79,7 +79,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_qtime_eq_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)),
+  forall (lib : SL) (bar : @BarLib o lib) (eqa : lib-per(lib,o)),
     (per_bar_eq bar (per_qtime_eq_bar_lib_per eqa))
     <=2=> (per_qtime_eq_bar lib eqa).
 Proof.

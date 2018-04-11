@@ -34,11 +34,11 @@ Require Export close_util_bar.
 
 Definition per_func_ext_eq_lib_per
            {o}
-           {lib : @library o}
+           {lib : @SL o}
            (eqa : lib-per(lib,o))
            (eqb : lib-per-fam(lib,eqa,o)) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) =>
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) =>
             per_func_ext_eq lib' (raise_lib_per eqa x) (raise_lib_per_fam eqb x)).
 
   repeat introv.
@@ -102,7 +102,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_func_ext_eq_lib_per {o} :
-  forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)) eqb,
+  forall (lib : SL) (bar : @BarLib o lib) (eqa : lib-per(lib,o)) eqb,
     (per_bar_eq bar (per_func_ext_eq_lib_per eqa eqb))
     <=2=> (per_func_ext_eq lib eqa eqb).
 Proof.

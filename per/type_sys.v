@@ -2084,7 +2084,7 @@ Proof.
 Qed.
 
 Lemma computes_to_uni_in_bar_implies_bar {o} :
-  forall {lib : SL} {lib' : @library o} (b : @BarLib o lib) T v,
+  forall {lib lib' : @SL o} (b : @BarLib o lib) T v,
     all_in_bar b (fun lib => T ===>(lib) v)
     -> computes_to_uni lib' T
     -> lib_extends lib' lib
@@ -2096,8 +2096,10 @@ Proof.
   apply (@implies_all_in_bar_intersect_bars_right _ (ext2SL ext) _ (raise_bar b ext)) in h0.
   remember (@intersect_bars _ (ext2SL ext) (raise_bar b ext) bar) as B; clear HeqB.
   pose proof (bar_non_empty B) as ne; exrepnd.
-  pose proof (a _ ne0 lib'0 (lib_extends_refl lib'0)) as a.
-  pose proof (h0 _ ne0 lib'0 (lib_extends_refl lib'0)) as h0.
+  simpl in *.
+  assert (lib_extends lib'0 lib) as ext' by eauto 3 with slow.
+  pose proof (a (ext2SL ext') ne0 (ext2SL ext') (lib_extends_refl lib'0)) as a.
+  pose proof (h0 (ext2SL ext') ne0 (ext2SL ext') (lib_extends_refl lib'0)) as h0.
   simpl in *; exrepnd.
   spcast; computes_to_eqval.
   apply cequivc_uni_left_iscvalue in eqt; eauto 3 with slow.
@@ -2158,7 +2160,7 @@ Ltac apply_defines_only_universes_bar_right :=
   end.
 
 Lemma computes_to_uni_in_bar_implies_bar_ceq {o} :
-  forall {lib : SL} {lib' : @library o} (b : @BarLib o lib) T v,
+  forall {lib lib' : @SL o} (b : @BarLib o lib) T v,
     computes_to_valc_ceq_bar b T v
     -> computes_to_uni lib' T
     -> lib_extends lib' lib
@@ -2171,8 +2173,9 @@ Proof.
   apply (@implies_all_in_bar_intersect_bars_right _ (ext2SL ext) _ (raise_bar b ext)) in h0.
   remember (@intersect_bars _ (ext2SL ext) (raise_bar b ext) bar) as B; clear HeqB.
   pose proof (bar_non_empty B) as ne; exrepnd.
-  pose proof (a _ ne0 lib'0 (lib_extends_refl lib'0)) as a.
-  pose proof (h0 _ ne0 lib'0 (lib_extends_refl lib'0)) as h0.
+  assert (lib_extends lib'0 lib) as ext' by eauto 3 with slow.
+  pose proof (a (ext2SL ext') ne0 (ext2SL ext') (lib_extends_refl lib'0)) as a.
+  pose proof (h0 (ext2SL ext') ne0 (ext2SL ext') (lib_extends_refl lib'0)) as h0.
   simpl in *; exrepnd.
   spcast.
   computes_to_eqval.
@@ -2257,7 +2260,7 @@ Ltac usedou :=
   end.
 
 Lemma computes_to_uni_monotone {o} :
-  forall {lib : SL} {lib'} (x : lib_extends lib' lib) (T : @CTerm o),
+  forall {lib lib' : SL} (x : lib_extends lib' lib) (T : @CTerm o),
     computes_to_uni lib T
     -> computes_to_uni lib' T.
 Proof.
@@ -2270,7 +2273,7 @@ Qed.
 Hint Resolve computes_to_uni_monotone : slow.
 
 Lemma computes_to_uni_implies_eq {o} :
-  forall lib (T : @CTerm o) v,
+  forall (lib : SL) (T : @CTerm o) v,
     computes_to_uni lib T
     -> ccomputes_to_valc_ext lib T v
     -> exists i, v = mkc_uni i.
@@ -3560,7 +3563,7 @@ Definition type_equality_respecting_trans2 {o} (ts : cts(o)) lib (T1 T2 : @CTerm
 
 Definition type_sys_props4 {p}
            (ts    : cts(p))
-           (lib   : library)
+           (lib   : SL)
            (T1 T2 : CTerm)
            (eq    : per) :=
   (* uniquely valued *)

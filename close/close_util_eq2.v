@@ -154,7 +154,7 @@ Proof.
 Qed.
 
 Lemma type_value_respecting_trans_per_bar_per_eq1 {o} :
-  forall lib (ts : cts(o)) T T1 T2 A A' B a1 a' a2 b' (eqa : lib-per(lib,o)) eq,
+  forall (lib : SL) (ts : cts(o)) T T1 T2 A A' B a1 a' a2 b' (eqa : lib-per(lib,o)) eq,
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
     -> ccomputes_to_valc_ext lib T1 (mkc_equality a' b' A')
     -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
@@ -207,8 +207,8 @@ Proof.
 
     { eapply eq_per_eq_bar_respects_ccequivc_ext in h;
         [| | |
-         |eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext;[exact x|exact ceq1] |exact ceq0]
-         |eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext;[exact x|exact ceq2] |exact ceq4]
+         |eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext_sl;[exact x|exact ceq1] |exact ceq0]
+         |eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext_sl;[exact x|exact ceq2] |exact ceq4]
         ]; eauto 3 with slow.
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
           try exact tsp; try exact per4; eauto 3 with slow. }
@@ -219,8 +219,8 @@ Proof.
 
     { eapply eq_per_eq_bar_respects_ccequivc_ext in h;
         [| | |
-         |eapply ccequivc_ext_trans;apply ccequivc_ext_sym;[exact ceq0|eapply lib_extends_preserves_ccequivc_ext;[exact x|exact ceq1] ]
-         |eapply ccequivc_ext_trans;apply ccequivc_ext_sym;[exact ceq4|eapply lib_extends_preserves_ccequivc_ext;[exact x|exact ceq2] ]
+         |eapply ccequivc_ext_trans;apply ccequivc_ext_sym;[exact ceq0|eapply lib_extends_preserves_ccequivc_ext_sl;[exact x|exact ceq1] ]
+         |eapply ccequivc_ext_trans;apply ccequivc_ext_sym;[exact ceq4|eapply lib_extends_preserves_ccequivc_ext_sl;[exact x|exact ceq2] ]
         ]; eauto 3 with slow.
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
           try exact tsp; try exact per4; eauto 3 with slow. }
@@ -764,7 +764,7 @@ Proof.
   computes_to_eqval_ext.
   apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
 
-  eapply lib_extends_preserves_ccequivc_ext in ceq1;[|eauto].
+  eapply lib_extends_preserves_ccequivc_ext_sl in ceq1;[|eauto].
   eapply ccequivc_ext_equality in ceq1;[|eauto].
 
   exists A0 B0 a1 a2 b1 b2 eqa1; dands; spcast; eauto 3 with slow.

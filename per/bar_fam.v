@@ -37,16 +37,16 @@ Require Export computation_lib_extends2.
 
 
 Definition bar_fam {o} {lib} (bar : @BarLib o lib) :=
-  forall lib1 (b : bar_lib_bar bar lib1)
-         lib2 (ext : lib_extends lib2 lib1)
+  forall (lib1 : SL) (b : bar_lib_bar bar lib1)
+         (lib2 : SL) (ext : lib_extends lib2 lib1)
          (x : lib_extends lib2 lib), BarLib lib2.
 
-Definition bar_of_bar_fam {o} {lib} {bar : @BarLib o lib} (h : bar_fam bar) : BarLib lib.
+Definition bar_of_bar_fam {o} {lib : SL} {bar : @BarLib o lib} (h : bar_fam bar) : BarLib lib.
 Proof.
   exists (fun lib' =>
-            exists lib1,
+            exists (lib1 : SL),
               exists (br : bar_lib_bar bar lib1),
-                exists lib2,
+                exists (lib2 : SL),
                   exists (ext : lib_extends lib2 lib1),
                     exists (x : lib_extends lib2 lib),
                       bar_lib_bar (h lib1 br lib2 ext x) lib').
@@ -55,13 +55,13 @@ Proof.
 
     destruct bar as [bar1 bars1 ext1]; simpl in *.
     pose proof (bars1 infLib) as q; autodimp q hyp; exrepnd.
-    remember (h lib' q1 lib' (lib_extends_refl lib') q2) as b; symmetry in Heqb.
+    remember (h (ext2SL q2) q1 (ext2SL q2) (lib_extends_refl lib') q2) as b; symmetry in Heqb.
 
     destruct b as [bar2 bars2 ext2]; simpl in *.
     pose proof (bars2 infLib) as w; autodimp w hyp; exrepnd.
 
     exists lib'0; dands; eauto 3 with slow.
-    exists lib' q1 lib' (lib_extends_refl lib') q2.
+    exists (ext2SL q2) q1 (ext2SL q2) (lib_extends_refl lib') q2.
     rewrite Heqb; simpl; auto.
 
   - introv w; exrepnd.
@@ -72,7 +72,8 @@ Proof.
 Defined.
 
 Lemma all_in_bar_ext_and_implies {o} :
-  forall {lib} (bar : @BarLib o lib) (p1 p2 : forall lib' (x : lib_extends lib' lib), [U]),
+  forall {lib : SL} (bar : @BarLib o lib)
+         (p1 p2 : forall (lib' : SL) (x : lib_extends lib' lib), [U]),
     all_in_bar_ext bar (fun lib' x => p1 lib' x # p2 lib' x)
     -> (all_in_bar_ext bar p1 # all_in_bar_ext bar p2).
 Proof.
@@ -80,7 +81,8 @@ Proof.
 Qed.
 
 Lemma all_in_bar_ext_and_implies1 {o} :
-  forall {lib} (bar : @BarLib o lib) (p1 p2 : forall lib' (x : lib_extends lib' lib), [U]),
+  forall {lib : SL} (bar : @BarLib o lib)
+         (p1 p2 : forall (lib' : SL) (x : lib_extends lib' lib), [U]),
     all_in_bar_ext bar (fun lib' x => p1 lib' x # p2 lib' x)
     -> all_in_bar_ext bar p1.
 Proof.
@@ -88,7 +90,8 @@ Proof.
 Qed.
 
 Lemma all_in_bar_ext_and_implies2 {o} :
-  forall {lib} (bar : @BarLib o lib) (p1 p2 : forall lib' (x : lib_extends lib' lib), [U]),
+  forall {lib : SL} (bar : @BarLib o lib)
+         (p1 p2 : forall (lib' : SL) (x : lib_extends lib' lib), [U]),
     all_in_bar_ext bar (fun lib' x => p1 lib' x # p2 lib' x)
     -> all_in_bar_ext bar p2.
 Proof.
@@ -98,16 +101,16 @@ Qed.
 Record pack_lib_bar {o} {lib} (bar : @BarLib o lib) :=
   MkPackLibBar
     {
-      plb_lib1 : library;
+      plb_lib1 : SL;
       plb_br   : bar_lib_bar bar plb_lib1;
-      plb_lib2 : library;
+      plb_lib2 : SL;
       plb_ext  : lib_extends plb_lib2 plb_lib1;
       plb_x    : lib_extends plb_lib2 lib
     }.
 Arguments MkPackLibBar {o} {lib} [bar] _ _ _ _ _.
 
 Lemma ccomputes_to_valc_implies_all_in_bar {o} :
-  forall lib (bar : @BarLib o lib) a b,
+  forall (lib : SL) (bar : @BarLib o lib) a b,
     a ===>(lib) b
     -> all_in_bar bar (fun lib' => a ===>(lib') b).
 Proof.
@@ -116,7 +119,7 @@ Qed.
 Hint Resolve ccomputes_to_valc_implies_all_in_bar : slow.
 
 Lemma all_in_bar_ext_eq_term_equals_preserves_per_bar_eq {o} :
-  forall lib (bar : @BarLib o lib) (eqa eqb : lib-per(lib,o)) t1 t2,
+  forall (lib : SL) (bar : @BarLib o lib) (eqa eqb : lib-per(lib,o)) t1 t2,
     all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
     -> per_bar_eq bar eqa t1 t2
     -> per_bar_eq bar eqb t1 t2.
@@ -142,12 +145,12 @@ Proof.
 Qed.*)
 
 Lemma all_in_bar_ext_exists_bar_implies {o} :
-  forall {lib} (bar : @BarLib o lib) F,
+  forall {lib : SL} (bar : @BarLib o lib) F,
     all_in_bar_ext bar (fun lib' x => {bar' : BarLib lib' , F lib' x bar'})
     ->
     exists (fbar : bar_fam bar),
-    forall lib1 (br : bar_lib_bar bar lib1)
-           lib2 (ext : lib_extends lib2 lib1)
+    forall (lib1 : SL) (br : bar_lib_bar bar lib1)
+           (lib2 : SL) (ext : lib_extends lib2 lib1)
            (x : lib_extends lib2 lib),
       F lib2 x (fbar lib1 br lib2 ext x).
 Proof.
@@ -162,52 +165,53 @@ Proof.
   repeat (autodimp C hyp).
   { introv; destruct x; simpl in *; eapply h; eauto. }
   exrepnd.
-  exists (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
+  exists (fun (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
 Qed.
 
 Definition bar_fam_fam {o} {lib} (bar : @BarLib o lib) (fbar : bar_fam bar) :=
-  forall lib1 (b : bar_lib_bar bar lib1)
-         lib2 (ext : lib_extends lib2 lib1)
+  forall (lib1 : SL) (b : bar_lib_bar bar lib1)
+         (lib2 : SL) (ext : lib_extends lib2 lib1)
          (x : lib_extends lib2 lib),
-  forall lib1' (b' : bar_lib_bar (fbar lib1 b lib2 ext x) lib1')
-         lib2' (ext' : lib_extends lib2' lib1')
+  forall (lib1' : SL) (b' : bar_lib_bar (fbar lib1 b lib2 ext x) lib1')
+         (lib2' : SL) (ext' : lib_extends lib2' lib1')
          (x' : lib_extends lib2' lib2),
     BarLib lib2'.
 
-Record pack_lib_bar_fam {o} {lib} (bar : @BarLib o lib) (fbar : bar_fam bar) :=
+Record pack_lib_bar_fam {o} {lib : SL} (bar : @BarLib o lib) (fbar : bar_fam bar) :=
   MkPackLibBarFam
     {
-      plbf_lib1  : library;
+      plbf_lib1  : SL;
       plbf_br    : bar_lib_bar bar plbf_lib1;
-      plbf_lib2  : library;
+      plbf_lib2  : SL;
       plbf_ext   : lib_extends plbf_lib2 plbf_lib1;
       plbf_x     : lib_extends plbf_lib2 lib;
-      plbf_lib1' : library;
+      plbf_lib1' : SL;
       plbf_br'   : bar_lib_bar (fbar plbf_lib1 plbf_br plbf_lib2 plbf_ext plbf_x) plbf_lib1';
-      plbf_lib2' : library;
+      plbf_lib2' : SL;
       plbf_ext'  : lib_extends plbf_lib2' plbf_lib1';
       plbf_x'    : lib_extends plbf_lib2' plbf_lib2;
     }.
 Arguments MkPackLibBarFam {o} {lib} [bar] [fbar] _ _ _ _ _ _ _ _ _ _.
 
 Lemma all_in_bar_ext_exists_fbar_implies {o} :
-  forall {lib} (bar : @BarLib o lib) (fbar : bar_fam bar) (F : forall lib2 lib' (x : lib_extends lib' lib2) (b : BarLib lib'), Prop),
-  (forall lib1 (br : bar_lib_bar bar lib1)
-          lib2 (ext : lib_extends lib2 lib1)
+  forall {lib : SL} (bar : @BarLib o lib) (fbar : bar_fam bar)
+         (F : forall (lib2 lib' : SL) (x : lib_extends lib' lib2) (b : BarLib lib'), Prop),
+  (forall (lib1 : SL) (br : bar_lib_bar bar lib1)
+          (lib2 : SL) (ext : lib_extends lib2 lib1)
           (x : lib_extends lib2 lib),
       all_in_bar_ext
         (fbar lib1 br lib2 ext x)
         (fun lib' (x' : lib_extends lib' lib2) => {bar' : BarLib lib' , F lib2 lib' x' bar'}))
   ->
   exists (ffbar : bar_fam_fam bar fbar),
-  forall lib1 (br : bar_lib_bar bar lib1)
-         lib2 (ext : lib_extends lib2 lib1)
+  forall (lib1 : SL) (br : bar_lib_bar bar lib1)
+         (lib2 : SL) (ext : lib_extends lib2 lib1)
          (x : lib_extends lib2 lib),
-  forall lib1' (br' : bar_lib_bar (fbar lib1 br lib2 ext x) lib1')
-         lib2' (ext' : lib_extends lib2' lib1')
+  forall (lib1' : SL) (br' : bar_lib_bar (fbar lib1 br lib2 ext x) lib1')
+         (lib2' : SL) (ext' : lib_extends lib2' lib1')
          (x' : lib_extends lib2' lib2),
     F lib2 lib2' x' (ffbar lib1 br lib2 ext x lib1' br' lib2' ext' x').
 Proof.
@@ -222,32 +226,32 @@ Proof.
                               b)) as C.
   simpl in C.
   repeat (autodimp C hyp).
-  { introv; destruct x; exrepnd; eapply h; eauto. }
+  { introv; destruct x; exrepnd; simpl in *; eapply h; eauto. }
   exrepnd.
-  exists (fun lib1 (br : bar_lib_bar bar lib1)
-              lib2 (ext : lib_extends lib2 lib1)
+  exists (fun (lib1 : SL) (br : bar_lib_bar bar lib1)
+              (lib2 : SL) (ext : lib_extends lib2 lib1)
               (x : lib_extends lib2 lib)
-              lib1' (br' : bar_lib_bar (fbar lib1 br lib2 ext x) lib1')
-              lib2' (ext' : lib_extends lib2' lib1')
-              (x' : lib_extends lib2' lib2)=>
+              (lib1' : SL) (br' : bar_lib_bar (fbar lib1 br lib2 ext x) lib1')
+              (lib2' : SL) (ext' : lib_extends lib2' lib1')
+              (x' : lib_extends lib2' lib2) =>
             (f (MkPackLibBarFam lib1 br lib2 ext x lib1' br' lib2' ext' x'))).
   introv; simpl in *.
   pose proof (C0 (MkPackLibBarFam lib1 br lib2 ext x lib1' br' lib2' ext' x')) as w; auto.
 Qed.
 
-Definition bar_of_bar_fam_fam {o} {lib}
+Definition bar_of_bar_fam_fam {o} {lib : SL}
            {bar : @BarLib o lib} {f : bar_fam bar}
            (h : bar_fam_fam bar f) : BarLib lib.
 Proof.
   exists (fun lib' =>
-            exists lib1,
+            exists (lib1 : SL),
               exists (br : bar_lib_bar bar lib1),
-                exists lib2,
+                exists (lib2 : SL),
                   exists (ext : lib_extends lib2 lib1),
                     exists (x : lib_extends lib2 lib),
-                      exists lib1',
+                      exists (lib1' : SL),
                         exists (br' : bar_lib_bar (f lib1 br lib2 ext x) lib1'),
-                          exists lib2',
+                          exists (lib2' : SL),
                             exists (ext' : lib_extends lib2' lib1'),
                               exists (x' : lib_extends lib2' lib2),
                                 bar_lib_bar (h lib1 br lib2 ext x lib1' br' lib2' ext' x') lib').
@@ -256,21 +260,22 @@ Proof.
 
     destruct bar as [bar1 bars1 ext1]; simpl in *.
     pose proof (bars1 infLib) as q; autodimp q hyp; exrepnd.
-    remember (f lib' q1 lib' (lib_extends_refl lib') q2) as b.
+    remember (f (ext2SL q2) q1 (ext2SL q2) (lib_extends_refl lib') q2) as b.
 
     destruct b as [bar2 bars2 ext2]; simpl in *.
     pose proof (bars2 infLib) as w; autodimp w hyp; exrepnd.
 
-    assert (bar_lib_bar (f lib' q1 lib' (lib_extends_refl lib') q2) lib'0) as z by (rewrite <- Heqb; simpl; auto).
+    assert (bar_lib_bar (f (ext2SL q2) q1 (ext2SL q2) (lib_extends_refl lib') q2) lib'0) as z by (rewrite <- Heqb; simpl; auto).
 
-    remember (h lib' q1 lib' (lib_extends_refl lib') q2 lib'0 z lib'0 (lib_extends_refl lib'0) w2) as q; simpl in *.
+    assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
+    remember (h (ext2SL q2) q1 (ext2SL q2) (lib_extends_refl lib') q2 (ext2SL xt) z (ext2SL xt) (lib_extends_refl lib'0) w2) as q; simpl in *.
 
     destruct q as [bar3 bars3 ext3]; simpl in *.
     pose proof (bars3 infLib) as u; autodimp u hyp; exrepnd.
 
     exists lib'1; dands; eauto 3 with slow.
-    exists lib' q1 lib' (lib_extends_refl lib') q2.
-    exists lib'0 z lib'0 (lib_extends_refl lib'0) w2.
+    exists (ext2SL q2) q1 (ext2SL q2) (lib_extends_refl lib') q2.
+    exists (ext2SL xt) z (ext2SL xt) (lib_extends_refl lib'0) w2.
     rewrite <- Heqq; simpl; auto.
 
   - introv w; exrepnd.

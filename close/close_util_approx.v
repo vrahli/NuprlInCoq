@@ -263,7 +263,7 @@ Qed.
  *)
 
 Lemma per_bar_eq_per_approx_eq_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib) a b,
+  forall (lib : SL) (bar : @BarLib o lib) a b,
     (per_bar_eq bar (per_approx_eq_bar_lib_per lib a b))
     <=2=> (per_approx_eq_bar lib a b).
 Proof.
@@ -365,7 +365,7 @@ Qed.
 Hint Resolve per_approx_type_symmetric : slow.
 
 Lemma ccequivc_ext_implies_iff_capproxc_ext {o} :
-  forall lib lib' (a a' b b' : @CTerm o),
+  forall (lib lib' : SL) (a a' b b' : @CTerm o),
     lib_extends lib' lib
     -> ccequivc_ext lib a a'
     -> ccequivc_ext lib b b'

@@ -35,7 +35,7 @@ Require Export close_util_bar1.
 
 
 Lemma close_type_system_bar {o} :
-  forall (ts : cts(o)) lib (bar : BarLib lib) T T' eq (eqa : lib-per(lib,o)),
+  forall (ts : cts(o)) (lib : SL) (bar : BarLib lib) T T' eq (eqa : lib-per(lib,o)),
     ts_implies_per_bar ts
     -> type_system ts
     -> defines_only_universes ts

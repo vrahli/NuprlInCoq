@@ -33,7 +33,7 @@ Require Export per_ceq_bar.
 
 
 Lemma in_ext_implies_all_in_bar_trivial_bar {o} :
-  forall (lib : @library o) F,
+  forall (lib : @SL o) F,
     in_ext lib F
     -> all_in_bar (trivial_bar lib) F.
 Proof.
@@ -42,7 +42,7 @@ Proof.
 Qed.
 
 Lemma collapse2bars {o} :
-  forall {lib} F,
+  forall {lib : SL} F,
     (exists (bar : @BarLib o lib),
         all_in_bar_ext
           bar
@@ -67,9 +67,9 @@ Proof.
 Qed.
 
 Lemma collapse2bars_ext {o} :
-  forall {lib}
-         (F : forall (lib' : library) (x : lib_extends lib' lib), Prop)
-         (cond : forall lib' (x y : lib_extends lib' lib), F lib' x <=> F lib' y),
+  forall {lib : SL}
+         (F : forall (lib' : SL) (x : lib_extends lib' lib), Prop)
+         (cond : forall (lib' : SL) (x y : lib_extends lib' lib), F lib' x <=> F lib' y),
     (exists (bar : @BarLib o lib),
         all_in_bar_ext
           bar
@@ -126,7 +126,7 @@ Qed.
 Hint Resolve type_symmetric_per_bar : slow.
 
 Lemma per_bar_eq_intersect_bars_left {o} :
-  forall {lib} (bar bar' : @BarLib o lib) eqa,
+  forall {lib : SL} (bar bar' : @BarLib o lib) eqa,
     (per_bar_eq (intersect_bars bar bar') eqa) <=2=> (per_bar_eq bar eqa).
 Proof.
   repeat introv; unfold per_bar_eq; split; introv h; eauto 3 with slow;[].
@@ -136,7 +136,7 @@ Qed.
 Hint Resolve per_bar_eq_intersect_bars_left : slow.
 
 Lemma implies_all_in_bar_ext_intersect_bars_swap {o} :
-  forall {lib} (bar bar' : @BarLib o lib) F,
+  forall {lib : SL} (bar bar' : @BarLib o lib) F,
     all_in_bar_ext (intersect_bars bar bar') F
     -> all_in_bar_ext (intersect_bars bar' bar) F.
 Proof.
@@ -146,7 +146,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_intersect_bars_right {o} :
-  forall {lib} (bar bar' : @BarLib o lib) eqa,
+  forall {lib : SL} (bar bar' : @BarLib o lib) eqa,
     (per_bar_eq (intersect_bars bar' bar) eqa) <=2=> (per_bar_eq bar eqa).
 Proof.
   repeat introv; unfold per_bar_eq; split; introv h; eauto 3 with slow;[].
@@ -197,7 +197,7 @@ Qed.
 Hint Resolve type_value_respecting_per_bar : slow.
 
 Lemma term_symmetric_all_in_bar_ext_implies {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' (eqa : lib-per(lib,o)),
+  forall {lib : SL} (bar : @BarLib o lib) ts T T' (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => ts lib' T T' (eqa lib' x))
     -> term_symmetric ts
     -> all_in_bar_ext bar (fun lib' x => term_equality_symmetric (eqa lib' x)).
@@ -208,7 +208,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_sym {o} :
-  forall {lib} (bar1 bar2 : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2,
+  forall {lib : SL} (bar1 bar2 : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2,
     all_in_bar_ext bar1 (fun lib' x => term_equality_symmetric (eqa lib' x))
     -> per_bar_eq bar2 eqa t1 t2
     -> per_bar_eq bar2 eqa t2 t1.
@@ -235,7 +235,7 @@ Qed.
 Hint Resolve term_symmetric_per_bar : slow.
 
 Lemma term_transitive_all_in_bar_ext_implies {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' (eqa : lib-per(lib,o)),
+  forall {lib : SL} (bar : @BarLib o lib) ts T T' (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => ts lib' T T' (eqa lib' x))
     -> term_transitive ts
     -> all_in_bar_ext bar (fun lib' x => term_equality_transitive (eqa lib' x)).
@@ -246,7 +246,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_trans {o} :
-  forall {lib} (bar1 bar2 : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2 t3,
+  forall {lib : SL} (bar1 bar2 : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2 t3,
     all_in_bar_ext bar1 (fun lib' x => term_equality_transitive (eqa lib' x))
     -> per_bar_eq bar2 eqa t1 t2
     -> per_bar_eq bar2 eqa t2 t3
@@ -276,7 +276,7 @@ Qed.
 Hint Resolve term_transitive_per_bar : slow.
 
 Lemma term_value_respecting_all_in_bar_ext_implies {o} :
-  forall {lib} (bar : @BarLib o lib) ts T (eqa : lib-per(lib,o)),
+  forall {lib : SL} (bar : @BarLib o lib) ts T (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => ts lib' T T (eqa lib' x))
     -> term_value_respecting ts
     -> all_in_bar_ext bar (fun lib' x => term_equality_respecting lib' (eqa lib' x)).
@@ -287,7 +287,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_value_respecting {o} :
-  forall {lib} (bar1 bar2 : @BarLib o lib) (eqa : lib-per(lib,o)) t t',
+  forall {lib : SL} (bar1 bar2 : @BarLib o lib) (eqa : lib-per(lib,o)) t t',
     all_in_bar_ext bar1 (fun lib' x => term_equality_respecting lib' (eqa lib' x))
     -> ccequivc_ext lib t t'
     -> per_bar_eq bar2 eqa t t

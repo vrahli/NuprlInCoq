@@ -128,7 +128,7 @@ Proof.
 Qed.
 
 Lemma local_per_bar_per_qtime {o} :
-  forall (ts : cts(o)) lib T A A' (eqa : lib-per(lib,o)),
+  forall (ts : cts(o)) (lib : SL) T A A' (eqa : lib-per(lib,o)),
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
     -> T ===>(lib) (mkc_qtime A)
     -> local_ts_T (per_bar (per_qtime ts)) lib T.
@@ -170,7 +170,7 @@ Proof.
     exrepnd.
     apply z1 in w1; clear z1.
 
-    apply (ccomputes_to_valc_ext_monotone _ lib'0) in comp;[|eauto 3 with slow];[].
+    apply (@ccomputes_to_valc_ext_monotone _ _ lib'0) in comp;[|eauto 3 with slow];[].
     computes_to_eqval_ext.
     hide_hyp z2.
     computes_to_eqval_ext.
@@ -260,7 +260,7 @@ Proof.
 
       assert (lib_extends lib'4 lib) as xx by eauto 3 with slow.
 
-      apply (ccomputes_to_valc_ext_monotone _ lib'4) in comp;[|eauto 3 with slow];[].
+      apply (@ccomputes_to_valc_ext_monotone _ _ lib'4) in comp;[|eauto 3 with slow];[].
       computes_to_eqval_ext.
       hide_hyp q2.
       computes_to_eqval_ext.
@@ -330,7 +330,7 @@ Proof.
     exrepnd.
     apply z1 in w1; clear z1.
 
-    apply (ccomputes_to_valc_ext_monotone _ lib'0) in comp;[|eauto 3 with slow];[].
+    apply (@ccomputes_to_valc_ext_monotone _ _ lib'0) in comp;[|eauto 3 with slow];[].
     computes_to_eqval_ext.
     hide_hyp z2.
     computes_to_eqval_ext.
@@ -420,7 +420,7 @@ Proof.
 
       assert (lib_extends lib'4 lib) as xx by eauto 3 with slow.
 
-      apply (ccomputes_to_valc_ext_monotone _ lib'4) in comp;[|eauto 3 with slow];[].
+      apply (@ccomputes_to_valc_ext_monotone _ _ lib'4) in comp;[|eauto 3 with slow];[].
       computes_to_eqval_ext.
       hide_hyp q2.
       computes_to_eqval_ext.

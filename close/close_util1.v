@@ -34,7 +34,7 @@ Require Export per_ceq_bar.
 
 
 Lemma implies_eq_term_equals_per_bar_eq {o} :
-  forall {lib} (bar1 bar2 : @BarLib o lib) (eqa eqb : lib-per(lib,o)),
+  forall {lib : SL} (bar1 bar2 : @BarLib o lib) (eqa eqb : lib-per(lib,o)),
     all_in_bar_ext (intersect_bars bar1 bar2) (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
     -> (per_bar_eq bar1 eqa) <=2=> (per_bar_eq bar2 eqb).
 Proof.

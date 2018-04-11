@@ -62,7 +62,7 @@ Proof.
 Qed.
 
 Lemma dest_close_per_uni_comp_l {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) (lib : SL) T T' eq,
     local_ts ts
     -> computes_to_uni lib T
     -> close ts lib T T' eq

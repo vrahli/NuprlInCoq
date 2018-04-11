@@ -239,13 +239,13 @@ Qed.
 Hint Resolve inf_lib_extends_lib_extends_trans : slow.
 
 Definition raise_bar {o}
-           {lib  : slibrary}
-           {lib' : library}
+           {lib  : SL}
+           {lib' : SL}
            (bar  : @BarLib o lib)
            (ext  : lib_extends lib' lib) : @BarLib o lib'.
 Proof.
   exists (fun (lib0 : library) =>
-            exists lib1,
+            exists (lib1 : SL),
               bar_lib_bar bar lib1
               /\ lib_extends lib0 lib1
               /\ lib_extends lib0 lib').
@@ -261,13 +261,13 @@ Proof.
     repeat (autodimp h hyp); eauto 3 with slow.
     exrepnd.
     exists lib0; dands; eauto 3 with slow.
-    exists lib'0; dands; eauto 3 with slow.
+    exists (ext2SL q2); dands; eauto 3 with slow.
 
   - introv h; exrepnd; auto.
 Defined.
 
 Lemma implies_all_in_bar_raise_bar {o} :
-  forall {lib : slibrary} {lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) F,
+  forall {lib lib' : SL} (bar : @BarLib o lib) (ext : lib_extends lib' lib) F,
     all_in_bar bar F
     -> all_in_bar (raise_bar bar ext) F.
 Proof.

@@ -38,7 +38,7 @@ Require Export local.
 
 
 Lemma local_equality_of_csname_bar {o} :
-  forall {lib} (bar : @BarLib o lib) n t1 t2,
+  forall {lib : SL} (bar : @BarLib o lib) n t1 t2,
     all_in_bar_ext bar (fun lib' (x : lib_extends lib' lib) => equality_of_csname_bar lib' n t1 t2)
     -> equality_of_csname_bar lib n t1 t2.
 Proof.
@@ -51,7 +51,7 @@ Qed.
 Hint Resolve local_equality_of_csname_bar : slow.
 
 Lemma per_bar_eq_equality_of_csname_bar_implies {o} :
-  forall {lib} (bar : @BarLib o lib) n t1 t2,
+  forall {lib : SL} (bar : @BarLib o lib) n t1 t2,
     per_bar_eq bar (equality_of_csname_bar_lib_per lib n) t1 t2
     -> equality_of_csname_bar lib n t1 t2.
 Proof.
@@ -68,7 +68,7 @@ Qed.
 Hint Resolve per_bar_eq_equality_of_csname_bar_implies : slow.
 
 Lemma all_in_bar_ext_equal_equality_of_csname_bar_implies_per_bar_eq_implies_equality_of_csname_bar {o} :
-  forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)) n,
+  forall (lib : SL) (bar : @BarLib o lib) (eqa : lib-per(lib,o)) n,
     all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (equality_of_csname_bar lib' n))
     -> (per_bar_eq bar eqa) <=2=> (equality_of_csname_bar lib n).
 Proof.
@@ -87,10 +87,10 @@ Qed.
 Hint Resolve all_in_bar_ext_equal_equality_of_csname_bar_implies_per_bar_eq_implies_equality_of_csname_bar : slow.
 
 Definition equality_of_csname_bar_to_lib_per {o}
-           (lib : library)
+           (lib : SL)
            (T : @CTerm o) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) t t' =>
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) t t' =>
             {n : nat , T ===>(lib') (mkc_csname n) # equality_of_csname_bar lib' n t t' }).
   introv x y; introv; simpl; tcsp.
 Defined.

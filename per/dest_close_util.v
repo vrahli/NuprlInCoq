@@ -41,7 +41,7 @@ Require Export local.
 
 
 Lemma in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 {o} :
-  forall (ts : cts(o)) {lib lib'} (ext : lib_extends lib' lib) A B C (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
+  forall (ts : cts(o)) {lib lib' : SL} (ext : lib_extends lib' lib) A B C (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
     -> in_ext_ext lib' (fun lib'' x => ts lib'' A C (eqa1 lib'' x))
     -> in_ext_ext lib' (fun lib'' x => (eqa1 lib'' x) <=2=> (eqa lib'' (lib_extends_trans x ext))).
@@ -56,7 +56,7 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_type_sys_props4_fam_implies_in_ext_ext_eq_term_equals_fam2 {o} :
-  forall (ts : cts(o)) {lib lib'}
+  forall (ts : cts(o)) {lib lib' : SL}
          (ext : lib_extends lib' lib)
          va A vb B vc C
          (eqa : lib-per(lib,o))
@@ -88,7 +88,7 @@ Proof.
 Qed.
 
 Lemma implies_in_ext_ext_raise_ext_per_fam {o} :
-  forall (F : forall (lib : library), CTerm -> CTerm -> per -> Prop) {lib lib'} (x : lib_extends lib' lib) (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)),
+  forall (F : forall (lib : SL), CTerm -> CTerm -> per -> Prop) {lib lib' : SL} (x : lib_extends lib' lib) (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)),
     in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), F lib' a a' (eqb lib' x a a' e))
     -> in_ext_ext lib' (fun lib'' y => forall a a' (e : raise_lib_per eqa x lib'' y a a'), F lib'' a a' (raise_lib_per_fam eqb x lib'' y a a' e)).
 Proof.
@@ -98,7 +98,7 @@ Qed.
 Hint Resolve implies_in_ext_ext_raise_ext_per_fam : slow.
 
 Lemma in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 {o} :
-  forall (ts : cts(o)) {lib lib'} (ext : lib_extends lib' lib) A B C (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
+  forall (ts : cts(o)) {lib lib' : SL} (ext : lib_extends lib' lib) A B C (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B A (eqa lib' x))
     -> in_ext_ext lib' (fun lib'' x => ts lib'' C A (eqa1 lib'' x))
     -> in_ext_ext lib' (fun lib'' x => (eqa1 lib'' x) <=2=> (eqa lib'' (lib_extends_trans x ext))).
@@ -117,7 +117,7 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_type_sys_props4_fam_implies_in_ext_ext_eq_term_equals_fam3 {o} :
-  forall (ts : cts(o)) {lib lib'}
+  forall (ts : cts(o)) {lib lib' : SL}
          (ext : lib_extends lib' lib)
          va A vb B vc C
          (eqa : lib-per(lib,o))

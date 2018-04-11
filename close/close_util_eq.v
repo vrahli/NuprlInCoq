@@ -44,7 +44,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_eq_per_eq_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib) a b (eqa : lib-per(lib,o)),
+  forall (lib : SL) (bar : @BarLib o lib) a b (eqa : lib-per(lib,o)),
     (per_bar_eq bar (eq_per_eq_bar_lib_per lib a b eqa))
     <=2=> (eq_per_eq_bar lib a b eqa).
 Proof.

@@ -323,7 +323,7 @@ Notation "a ===e>( lib , e ) b" := (ccomputes_to_excc_ext lib e a b) (at level 0
 Notation "T [[ v \\ a ]]" := (substc a v T) (at level 0).
 
 Lemma ccomputes_to_valc_ext_monotone {o} :
-  forall {lib lib' : SL} (a b : @CTerm o),
+  forall (lib lib' : SL) (a b : @CTerm o),
     lib_extends lib' lib
     -> a ===>(lib) b
     -> a ===>(lib') b.
@@ -453,7 +453,7 @@ Definition per_int {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] 
   # T2 ===>(lib) mkc_int
   # eq <=2=> (equality_of_int_bar lib).
 
-Definition per_int_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_int_bar {p} (ts : cts(p)) (lib : SL) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   {bar : BarLib lib
   , all_in_bar bar (fun lib => T1 ===>(lib) mkc_int)
   # all_in_bar bar (fun lib => T2 ===>(lib) mkc_int) }
@@ -470,7 +470,7 @@ Definition equality_of_nat {o} lib (t t' : @CTerm o) :=
 Definition equality_of_nat_bar {o} lib (t t' : @CTerm o) :=
   {bar : BarLib lib , all_in_bar bar (fun lib => equality_of_nat lib t t')}.
 
-Definition per_nat_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_nat_bar {p} (ts : cts(p)) (lib : SL) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   {bar : BarLib lib
   , all_in_bar bar (fun lib => T1 ===>(lib) mkc_Nat)
   # all_in_bar bar (fun lib => T2 ===>(lib) mkc_Nat) }
@@ -491,7 +491,7 @@ Definition equality_of_qnat {o} lib (t t' : @CTerm o) :=
 Definition equality_of_qnat_bar {o} lib (t t' : @CTerm o) :=
   {bar : BarLib lib , all_in_bar bar (fun lib => equality_of_qnat lib t t')}.
 
-Definition per_qnat_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_qnat_bar {p} (ts : cts(p)) (lib : SL) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   {bar : BarLib lib
   , all_in_bar bar (fun lib => T1 ===>(lib) mkc_qnat)
   # all_in_bar bar (fun lib => T2 ===>(lib) mkc_qnat) }
@@ -560,7 +560,7 @@ Definition per_csname {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [
   # T2 ===>(lib) (mkc_csname n)
   # eq <=2=> (equality_of_csname_bar lib n) }.
 
-Definition per_csname_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_csname_bar {p} (ts : cts(p)) (lib : SL) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   {n : nat
   , {bar : BarLib lib
     , all_in_bar bar (fun lib => T1 ===>(lib) (mkc_csname n))
@@ -588,7 +588,7 @@ Definition per_atom {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U]
   # T2 ===>(lib) mkc_atom
   # eq <=2=> (equality_of_atom_bar lib).
 
-Definition per_atom_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_atom_bar {p} (ts : cts(p)) (lib : SL) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   {bar : BarLib lib
   , all_in_bar bar (fun lib => T1 ===>(lib) mkc_atom)
   # all_in_bar bar (fun lib => T2 ===>(lib) mkc_atom)}
@@ -608,7 +608,7 @@ Definition per_uatom {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U
   # T2 ===>(lib) mkc_uatom
   # eq <=2=> (equality_of_uatom_bar lib).
 
-Definition per_uatom_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_uatom_bar {p} (ts : cts(p)) (lib : SL) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   {bar : BarLib lib
   , all_in_bar bar (fun lib => T1 ===>(lib) mkc_uatom)
   # all_in_bar bar (fun lib => T2 ===>(lib) mkc_uatom)}
@@ -710,7 +710,7 @@ Definition per_base {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U]
   # T2 ===>(lib) mkc_base
   # eq <=2=> (per_base_eq lib).
 
-Definition per_base_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_base_bar {p} (ts : cts(p)) (lib : SL) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   {bar : BarLib lib
   , all_in_bar bar (fun lib => T1 ===>(lib) mkc_base)
   # all_in_bar bar (fun lib => T2 ===>(lib) mkc_base) }
@@ -2377,7 +2377,7 @@ Definition all_in_bar_ext2 {o} {lib}
 
 
 Lemma implies_computes_to_valc_seq_bar_raise_bar {o} :
-  forall {lib : SL} {lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) t v,
+  forall {lib lib' : SL} (bar : @BarLib o lib) (ext : lib_extends lib' lib) t v,
     t ==b==>(bar) v
     -> t ==b==>(raise_bar bar ext) v.
 Proof.
@@ -2393,9 +2393,9 @@ Definition raise_ext_per {o} {lib : SL} {lib'}
            (ext : lib_extends lib' lib) : ext-per(lib',o) :=
   fun lib'' x => per lib'' (lib_extends_trans x ext).
 
-Definition raise_lib_per {o} {lib : SL} {lib'}
+Definition raise_lib_per {o} {lib lib' : SL}
            (per : lib-per(lib,o))
-           (ext : lib_extends lib' lib) : lib-per(ext2SL ext,o).
+           (ext : lib_extends lib' lib) : lib-per(lib',o).
 Proof.
   exists (raise_ext_per per ext).
   introv; apply per.

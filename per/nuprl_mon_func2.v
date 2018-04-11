@@ -35,8 +35,8 @@
 Require Export nuprl_mon_func.
 
 
-Definition sub_lib_per {o} {lib lib'} (eqa : lib-per(lib,o)) (x : lib_extends lib' lib) :=
-  forall lib'' (y : lib_extends lib'' lib') (w : lib_extends lib'' lib),
+Definition sub_lib_per {o} {lib lib' : SL} (eqa : lib-per(lib,o)) (x : lib_extends lib' lib) :=
+  forall (lib'' : SL) (y : lib_extends lib'' lib') (w : lib_extends lib'' lib),
     sub_per (eqa lib' x) (eqa lib'' w).
 
 Definition type_monotone_func2 {o} (ts : cts(o)) :=
@@ -49,7 +49,7 @@ Definition type_monotone_func2 {o} (ts : cts(o)) :=
         # sub_lib_per eq' x.
 
 Lemma sub_lib_per_equality_of_int_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib),
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib),
     sub_lib_per (equality_of_int_bar_lib_per lib) x.
 Proof.
   introv h z; simpl in *.
@@ -67,7 +67,7 @@ Proof.
 Qed.
 
 Lemma sub_lib_per_equality_of_nat_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib),
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib),
     sub_lib_per (equality_of_nat_bar_lib_per lib) x.
 Proof.
   introv h z; simpl in *.
@@ -85,7 +85,7 @@ Proof.
 Qed.
 
 Lemma sub_lib_per_equality_of_qnat_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib),
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib),
     sub_lib_per (equality_of_qnat_bar_lib_per lib) x.
 Proof.
   introv h z; simpl in *.
@@ -103,7 +103,7 @@ Proof.
 Qed.
 
 Lemma sub_lib_per_equality_of_csname_bar_lib_per {o} :
-  forall n {lib lib'} (x : @lib_extends o lib' lib),
+  forall n {lib lib' : SL} (x : @lib_extends o lib' lib),
     sub_lib_per (equality_of_csname_bar_lib_per lib n) x.
 Proof.
   introv h z; simpl in *.
@@ -122,7 +122,7 @@ Proof.
 Qed.
 
 Lemma sub_lib_per_equality_of_atom_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib),
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib),
     sub_lib_per (equality_of_atom_bar_lib_per lib) x.
 Proof.
   introv h z; simpl in *.
@@ -140,7 +140,7 @@ Proof.
 Qed.
 
 Lemma sub_lib_per_equality_of_uatom_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib),
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib),
     sub_lib_per (equality_of_uatom_bar_lib_per lib) x.
 Proof.
   introv h z; simpl in *.
@@ -158,7 +158,7 @@ Proof.
 Qed.
 
 Lemma sub_lib_per_per_base_eq_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib),
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib),
     sub_lib_per (per_base_eq_lib_per lib) x.
 Proof.
   introv h z; simpl in *.
@@ -176,7 +176,7 @@ Proof.
 Qed.
 
 Lemma sub_lib_per_per_approx_eq_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) a b,
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) a b,
     sub_lib_per (per_approx_eq_bar_lib_per lib a b) x.
 Proof.
   introv h z; simpl in *.
@@ -195,7 +195,7 @@ Proof.
 Qed.
 
 Lemma sub_lib_per_per_cequiv_eq_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) a b,
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) a b,
     sub_lib_per (per_cequiv_eq_bar_lib_per lib a b) x.
 Proof.
   introv h z; simpl in *.
@@ -214,7 +214,7 @@ Proof.
 Qed.
 
 Lemma sub_per_per_func_ext_eq2 {o} :
-  forall (lib lib' lib'' : @library o)
+  forall (lib lib' lib'' : @SL o)
          (x : lib_extends lib' lib)
          (y : lib_extends lib'' lib')
          (w : lib_extends lib'' lib) eqa eqb,
@@ -235,7 +235,7 @@ Qed.
 Hint Resolve sub_per_per_func_ext_eq2 : slow.
 
 Lemma sub_lib_per_per_func_ext_eq_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) eqa eqb,
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) eqa eqb,
     sub_lib_per (per_func_ext_eq_bar_lib_per lib eqa eqb) x.
 Proof.
   introv h z; simpl in *.
@@ -257,7 +257,7 @@ Proof.
 Qed.
 
 Lemma sub_per_per_qtime_eq_bar2 {o} :
-  forall (lib lib' lib'' : @library o)
+  forall (lib lib' lib'' : @SL o)
          (x : lib_extends lib' lib)
          (y : lib_extends lib'' lib')
          (w : lib_extends lib'' lib) eqa,
@@ -277,7 +277,7 @@ Qed.
 Hint Resolve sub_per_per_qtime_eq_bar2 : slow.
 
 Lemma sub_lib_per_per_qtime_eq_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) eqa,
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) eqa,
     sub_lib_per (per_qtime_eq_bar_lib_per lib eqa) x.
 Proof.
   introv h z; simpl in *.
@@ -298,7 +298,7 @@ Proof.
 Qed.
 
 Lemma sub_per_per_bar_eq2 {o} :
-  forall {lib lib' lib''}
+  forall {lib lib' lib'' : SL}
          (bar : @BarLib o lib)
          (x : lib_extends lib' lib)
          (y : lib_extends lib'' lib')
@@ -323,7 +323,7 @@ Qed.
 Hint Resolve sub_per_per_bar_eq2 : slow.
 
 Lemma sub_lib_per_per_bar_eq_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) bar eqa,
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) bar eqa,
     sub_lib_per (per_bar_eq_bar_lib_per lib bar eqa) x.
 Proof.
   introv h z; simpl in *.
@@ -343,7 +343,7 @@ Proof.
 Qed.
 
 Lemma sub_per_per_set_bar_eq2 {o} :
-  forall (lib lib' lib'' : @library o)
+  forall (lib lib' lib'' : @SL o)
          (x : lib_extends lib' lib)
          (y : lib_extends lib'' lib')
          (w : lib_extends lib'' lib) eqa eqb,
@@ -366,7 +366,7 @@ Qed.
 Hint Resolve sub_per_per_set_bar_eq2 : slow.
 
 Lemma sub_lib_per_per_set_eq_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) eqa eqb,
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) eqa eqb,
     sub_lib_per (per_set_eq_bar_lib_per lib eqa eqb) x.
 Proof.
   introv h z; simpl in *.
@@ -390,7 +390,7 @@ Proof.
 Qed.
 
 Lemma sub_per_per_product_bar_eq2 {o} :
-  forall (lib lib' lib'' : @library o)
+  forall (lib lib' lib'' : @SL o)
          (x : lib_extends lib' lib)
          (y : lib_extends lib'' lib')
          (w : lib_extends lib'' lib) eqa eqb,
@@ -412,7 +412,7 @@ Qed.
 Hint Resolve sub_per_per_product_bar_eq2 : slow.
 
 Lemma sub_lib_per_per_product_eq_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) eqa eqb,
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) eqa eqb,
     sub_lib_per (per_product_eq_bar_lib_per lib eqa eqb) x.
 Proof.
   introv h z; simpl in *.
@@ -436,7 +436,7 @@ Proof.
 Qed.
 
 Lemma sub_per_eq_per_eq_bar2 {o} :
-  forall {lib lib' lib''}
+  forall {lib lib' lib'' : SL}
          (x : lib_extends lib' lib)
          (y : lib_extends lib'' lib')
          (w : lib_extends lib'' lib)
@@ -456,7 +456,7 @@ Qed.
 Hint Resolve sub_per_eq_per_eq_bar2 : slow.
 
 Lemma sub_lib_per_eq_per_eq_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) a1 a2 eqa,
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) a1 a2 eqa,
     sub_lib_per (eq_per_eq_bar_lib_per lib a1 a2 eqa) x.
 Proof.
   introv h z; simpl in *.
@@ -480,7 +480,7 @@ Qed.
 Hint Resolve per_eq_monotone_func : slow.
 
 Lemma sub_per_per_image_eq_bar2 {o} :
-  forall {lib lib' lib''}
+  forall {lib lib' lib'' : SL}
          (x : lib_extends lib' lib)
          (y : lib_extends lib'' lib')
          (w : lib_extends lib'' lib)
@@ -499,7 +499,7 @@ Qed.
 Hint Resolve sub_per_per_image_eq_bar2 : slow.
 
 Lemma sub_lib_per_per_image_eq_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) (eqa : lib-per(lib,o)) f,
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) (eqa : lib-per(lib,o)) f,
     sub_lib_per (per_image_eq_bar_lib_per lib eqa f) x.
 Proof.
   introv h z; simpl in *.
@@ -523,7 +523,7 @@ Qed.
 Hint Resolve per_image_monotone_func2 : slow.
 
 Lemma sub_per_per_union_eq_bar2 {o} :
-  forall {lib lib' lib''}
+  forall {lib lib' lib'' : SL}
          (x : lib_extends lib' lib)
          (y : lib_extends lib'' lib')
          (w : lib_extends lib'' lib)
@@ -544,7 +544,7 @@ Qed.
 Hint Resolve sub_per_per_union_eq_bar2 : slow.
 
 Lemma sub_lib_per_per_union_eq_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) eqa eqb,
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) eqa eqb,
     sub_lib_per (per_union_eq_bar_lib_per lib eqa eqb) x.
 Proof.
   introv h z; simpl in *.
@@ -685,14 +685,14 @@ Proof.
 Qed.
 
 Lemma sub_lib_per_univi_eq_lib_per {o} :
-  forall {lib' lib} (x : @lib_extends o lib' lib) j,
+  forall {lib' lib : SL} (x : @lib_extends o lib' lib) j,
     @type_monotone o (univi j)
     -> sub_lib_per (univi_eq_lib_per lib j) x.
 Proof.
   introv mon y h; simpl in *.
   unfold univi_eq in *; exrepnd.
   pose proof (@close_monotone o (univi_bar j)) as q; autodimp q hyp; eauto 3 with slow.
-  eapply q in h0; autodimp h0 hyp; eauto.
+  eapply q in h0; repeat (autodimp h0 hyp); eauto.
   exrepnd; eauto.
 Qed.
 Hint Resolve sub_lib_per_univi_eq_lib_per : slow.
@@ -732,7 +732,7 @@ Proof.
 
     pose proof (@close_monotone o (univi_bar j)) as q.
     repeat (autodimp q hyp); eauto 3 with slow;[].
-    pose proof (q lib lib' a b eqa) as q.
+    pose proof (q lib lib' x a b eqa) as q.
     repeat (autodimp q hyp); exrepnd.
     exists eq'; dands; auto. }
 Qed.

@@ -106,7 +106,7 @@ Qed.
 
 Lemma eq_term_equals_sym_tsp2 {p} :
   forall (ts  : cts(p))
-         (lib : library)
+         (lib : SL)
          (eqa : per)
          (eqb : per-fam(eqa))
          v1 B1 v2 B2,
@@ -958,7 +958,7 @@ Proof.
 Qed.*)
 
 Definition bcequivc_ext {p}
-           (lib : library)
+           (lib : SL)
            (vs1 : list NVar)
            (t1  : @CVTerm p vs1)
            (vs2 : list NVar)
@@ -966,7 +966,7 @@ Definition bcequivc_ext {p}
   in_ext lib (fun lib => Cast (bcequivc lib vs1 t1 vs2 t2)).
 
 Lemma bcequivc_ext1 {o} :
-  forall (lib : @library o) v1 v2 t1 t2,
+  forall (lib : @SL o) v1 v2 t1 t2,
     bcequivc_ext lib [v1] t1 [v2] t2
     -> forall t,
          ccequivc_ext lib (substc t v1 t1) (substc t v2 t2).
@@ -977,7 +977,7 @@ Proof.
 Qed.
 
 Lemma type_family_cequivc {p} :
-  forall C (ts : cts(p)) lib T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
+  forall C (ts : cts(p)) (lib : SL) T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
     cequivc lib T1 T2
     -> ccomputes_to_valc_ext lib T1 (C A1 v1 B1)
     -> ccomputes_to_valc_ext lib T2 (C A2 v2 B2)
@@ -1019,7 +1019,7 @@ Proof.
 Qed.
 
 Lemma type_family_cequivc2 {p} :
-  forall C (ts : cts(p)) lib T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
+  forall C (ts : cts(p)) (lib : SL) T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
     cequivc lib T1 T2
     -> ccomputes_to_valc_ext lib T1 (C A1 v1 B1)
     -> ccomputes_to_valc_ext lib T2 (C A2 v2 B2)
@@ -1183,7 +1183,7 @@ Proof.
 Qed.
 
 Lemma eq_family_trans1 {o} :
-  forall (lib : @library o) eqa eqb
+  forall (lib : @SL o) eqa eqb
          a a1 a2 t1 t2
          ts v1 B1 v2 B2
          (e1 : eqa a a1) (e2 : eqa a a2),
@@ -1378,7 +1378,7 @@ Proof.
 Qed.
 
 Lemma weq_cequivc {o} :
-  forall (lib : @library o) eqa eqb t t1 t2 ts v1 B1 v2 B2,
+  forall (lib : @SL o) eqa eqb t t1 t2 ts v1 B1 v2 B2,
     term_equality_respecting lib eqa
     -> term_equality_symmetric eqa
     -> term_equality_transitive eqa

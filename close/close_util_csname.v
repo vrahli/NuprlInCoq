@@ -215,7 +215,7 @@ Proof.
 Qed.
 
 Lemma equality_of_csname_bar_monotone {o} :
-  forall {lib' lib : @library o} (ext : lib_extends lib' lib) n t1 t2,
+  forall {lib' lib : @SL o} (ext : lib_extends lib' lib) n t1 t2,
     equality_of_csname_bar lib n t1 t2
     -> equality_of_csname_bar lib' n t1 t2.
 Proof.
@@ -225,7 +225,7 @@ Qed.
 Hint Resolve equality_of_csname_bar_monotone : slow.
 
 Lemma per_bar_eq_equality_of_csname_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib) n,
+  forall (lib : SL) (bar : @BarLib o lib) n,
     (per_bar_eq bar (equality_of_csname_bar_lib_per lib n))
     <=2=> (equality_of_csname_bar lib n).
 Proof.
@@ -359,7 +359,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_csname_eq_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib) n,
+  forall (lib : SL) (bar : @BarLib o lib) n,
     (per_bar_eq bar (equality_of_csname_bar_lib_per lib n))
     <=2=> (equality_of_csname_bar lib n).
 Proof.
@@ -374,7 +374,7 @@ Proof.
 Qed.
 
 Lemma ccequivc_ext_mkc_csname_implies {o} :
-  forall (lib : @library o) k1 k2,
+  forall (lib : @SL o) k1 k2,
     ccequivc_ext lib (mkc_csname k1) (mkc_csname k2)
     -> k1 = k2.
 Proof.
@@ -547,7 +547,7 @@ Qed.
 Hint Resolve iscvalue_mkc_choice_seq : slow.
 
 Lemma ccequivc_ext_mkc_choice_seq_implies {o} :
-  forall (lib : @library o) k1 k2,
+  forall (lib : @SL o) k1 k2,
     ccequivc_ext lib (mkc_choice_seq k1) (mkc_choice_seq k2)
     -> k1 = k2.
 Proof.

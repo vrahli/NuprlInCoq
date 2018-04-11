@@ -147,7 +147,7 @@ Qed.
 Hint Resolve per_base_bar_type_system : slow.
 
 Lemma per_base_eq_monotone {o} :
-  forall {lib' lib : @library o} (ext : lib_extends lib' lib) t1 t2,
+  forall {lib' lib : @SL o} (ext : lib_extends lib' lib) t1 t2,
     per_base_eq lib t1 t2
     -> per_base_eq lib' t1 t2.
 Proof.
@@ -156,7 +156,7 @@ Qed.
 Hint Resolve per_base_eq_monotone : slow.
 
 Lemma per_bar_eq_per_base_eq_lib_per {o} :
-  forall lib (bar : @BarLib o lib),
+  forall (lib : SL) (bar : @BarLib o lib),
     (per_bar_eq bar (per_base_eq_lib_per lib))
     <=2=> (per_base_eq lib).
 Proof.
@@ -168,7 +168,7 @@ Proof.
 Qed.
 
 Lemma per_base_bar_implies_close {o} :
-  forall (ts : cts(o)) lib T T' eq,
+  forall (ts : cts(o)) (lib : SL) T T' eq,
     per_base_bar (close ts) lib T T' eq
     -> close ts lib T T' eq.
 Proof.

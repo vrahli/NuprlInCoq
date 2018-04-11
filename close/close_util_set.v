@@ -44,7 +44,7 @@ Qed.
 Hint Resolve eq_term_equals_preserves_inhabited : slow.
 
 Definition per_set_eq_bar_lib_per {o}
-           {lib : @library o}
+           {lib : @SL o}
            (eqa : lib-per(lib,o))
            (eqb : lib-per-fam(lib,eqa,o)) : lib-per(lib,o).
 Proof.
@@ -114,7 +114,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_set_eq_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)) eqb,
+  forall (lib : SL) (bar : @BarLib o lib) (eqa : lib-per(lib,o)) eqb,
     (per_bar_eq bar (per_set_eq_bar_lib_per eqa eqb))
     <=2=> (per_set_eq_bar lib eqa eqb).
 Proof.

@@ -35,7 +35,7 @@ Require Export close_util_int.
 
 
 Lemma close_type_system_int {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) (lib : SL) T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts

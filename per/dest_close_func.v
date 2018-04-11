@@ -123,7 +123,7 @@ Proof.
     apply z0 in w1; clear z0.
 
     unfold type_family_ext in *; exrepnd.
-    apply (ccomputes_to_valc_ext_monotone _ lib'0) in comp;[|eauto 3 with slow];[].
+    apply (@ccomputes_to_valc_ext_monotone _ _ lib'0) in comp;[|eauto 3 with slow];[].
     computes_to_eqval_ext.
     hide_hyp z2.
     computes_to_eqval_ext.
@@ -244,11 +244,11 @@ Proof.
       assert (lib_extends lib'4 lib) as xx by eauto 3 with slow.
       dup comp as c.
 
-      apply (ccomputes_to_valc_ext_monotone _ lib'4) in c;[|eauto 3 with slow];[].
+      apply (@ccomputes_to_valc_ext_monotone _ _ lib'4) in c;[|eauto 3 with slow];[].
       computes_to_eqval_ext.
       apply constructor_inj_implies_ext in ceq; eauto 3 with slow;[]; repnd.
 
-      apply (ccomputes_to_valc_ext_monotone _ lib'4) in comp;[|eauto 3 with slow];[].
+      apply (@ccomputes_to_valc_ext_monotone _ _ lib'4) in comp;[|eauto 3 with slow];[].
       hide_hyp q2.
       computes_to_eqval_ext.
       apply constructor_inj_implies_ext in ceq1; eauto 3 with slow;[]; repnd.
@@ -351,7 +351,7 @@ Proof.
     apply z0 in w1; clear z0.
 
     unfold type_family_ext in *; exrepnd.
-    apply (ccomputes_to_valc_ext_monotone _ lib'0) in comp;[|eauto 3 with slow];[].
+    apply (@ccomputes_to_valc_ext_monotone _ _ lib'0) in comp;[|eauto 3 with slow];[].
     computes_to_eqval_ext.
     hide_hyp z2.
     computes_to_eqval_ext.

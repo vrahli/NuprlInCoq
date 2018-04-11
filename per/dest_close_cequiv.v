@@ -38,7 +38,7 @@ Require Export local.
 
 
 Lemma local_equality_of_cequiv_bar {o} :
-  forall {lib} (bar : @BarLib o lib) a b t1 t2,
+  forall {lib : SL} (bar : @BarLib o lib) a b t1 t2,
     all_in_bar_ext bar (fun lib' (x : lib_extends lib' lib) => per_cequiv_eq_bar lib' a b t1 t2)
     -> per_cequiv_eq_bar lib a b t1 t2.
 Proof.
@@ -139,16 +139,16 @@ Qed.
 Hint Resolve uniquely_valued_per_cequiv_bar : slow.*)
 
 Definition per_cequiv_eq_to_lib_per {o}
-           (lib : library)
+           (lib : SL)
            (T : @CTerm o) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) t t' =>
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) t t' =>
             {a : CTerm , {b : CTerm , T ===>(lib') (mkc_cequiv a b) # per_cequiv_eq_bar lib' a b t t' }}).
   introv x y; introv; simpl; tcsp.
 Defined.
 
 Lemma per_cequiv_eq_bar_respects_ccequivc_ext {o} :
-  forall lib (a1 a2 b1 b2 : @CTerm o) t1 t2,
+  forall (lib : SL) (a1 a2 b1 b2 : @CTerm o) t1 t2,
     per_cequiv_eq_bar lib a1 b1 t1 t2
     -> ccequivc_ext lib a1 a2
     -> ccequivc_ext lib b1 b2

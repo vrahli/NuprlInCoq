@@ -43,7 +43,7 @@ Definition per_eq_bar_or {o} ts lib (T T' : @CTerm o) eq :=
   {+} per_bar ts lib T T' eq.
 
 Lemma local_equality_of_eq_bar {o} :
-  forall {lib} (bar : @BarLib o lib) a b (eqa : lib-per(lib,o)) t1 t2,
+  forall {lib : SL} (bar : @BarLib o lib) a b (eqa : lib-per(lib,o)) t1 t2,
     all_in_bar_ext bar (fun lib' (x : lib_extends lib' lib) => eq_per_eq_bar lib' a b (raise_lib_per eqa x) t1 t2)
     -> eq_per_eq_bar lib a b eqa t1 t2.
 Proof.
@@ -140,7 +140,7 @@ Qed.
 Hint Resolve per_eq_implies_per_eq_bar : slow.
 
 Lemma simple_implies_iff_per_eq_eq {o} :
-  forall lib (bar : @BarLib o lib) a b (eqa eqb : lib-per(lib,o)),
+  forall (lib : SL) (bar : @BarLib o lib) a b (eqa eqb : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
     -> (eq_per_eq_bar lib a b eqa) <=2=> (eq_per_eq_bar lib a b eqb).
 Proof.
@@ -177,7 +177,7 @@ Proof.
 Qed.
 
 Lemma eq_per_eq_bar_respects_ccequivc_ext {o} :
-  forall lib (a1 a2 b1 b2 : @CTerm o) (eqa : lib-per(lib,o)) t1 t2,
+  forall (lib : SL) (a1 a2 b1 b2 : @CTerm o) (eqa : lib-per(lib,o)) t1 t2,
     in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
@@ -192,8 +192,8 @@ Proof.
   pose proof (per0 _ br _ ext x) as per0; simpl in *.
   unfold eq_per_eq in *; repnd; dands; eauto 3 with slow.
 
-  eapply lib_extends_preserves_ccequivc_ext in ceqa;[|exact x].
-  eapply lib_extends_preserves_ccequivc_ext in ceqb;[|exact x].
+  eapply lib_extends_preserves_ccequivc_ext_sl in ceqa;[|exact x].
+  eapply lib_extends_preserves_ccequivc_ext_sl in ceqb;[|exact x].
   eapply (resp _ x) in ceqa;[|eapply (trans _ x); eauto; apply (sym _ x); auto].
   eapply (resp _ x) in ceqb;[|eapply (trans _ x); eauto; apply (sym _ x); auto].
 

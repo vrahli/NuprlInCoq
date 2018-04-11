@@ -59,8 +59,8 @@ Proof.
 Qed.
 
 Lemma lib_extends_preserves_in_ext_ext_fam {o} :
-  forall {lib lib'} (ext : @lib_extends o lib' lib) (eqa : lib-per(lib,o))
-         (F : forall (lib' : library) (x : lib_extends lib' lib) (a a' : CTerm) (e : eqa lib' x a a'), Prop),
+  forall {lib lib' : SL} (ext : @lib_extends o lib' lib) (eqa : lib-per(lib,o))
+         (F : forall (lib' : SL) (x : lib_extends lib' lib) (a a' : CTerm) (e : eqa lib' x a a'), Prop),
     in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), F lib' x a a' e)
     -> in_ext_ext lib' (fun lib'' x => forall a a' (e : raise_lib_per eqa ext lib'' x a a'), F lib'' (lib_extends_trans x ext) a a' e).
 Proof.
@@ -69,7 +69,7 @@ Proof.
 Qed.
 
 Lemma lib_extends_preserves_bcequivc_ext {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) v B v' B',
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) v B v' B',
     bcequivc_ext lib [v] B [v'] B'
     -> bcequivc_ext lib' [v] B [v'] B'.
 Proof.
@@ -79,7 +79,7 @@ Qed.
 Hint Resolve lib_extends_preserves_bcequivc_ext : slow.
 
 Lemma bcequivc_sym {o} :
-  forall (lib : @library o) v B v' B',
+  forall (lib : @SL o) v B v' B',
     bcequivc lib [v] B [v'] B'
     -> bcequivc lib [v'] B' [v] B.
 Proof.
@@ -94,7 +94,7 @@ Qed.
 Hint Resolve bcequivc_sym : slow.
 
 Lemma bcequivc_ext_sym {o} :
-  forall (lib : @library o) v B v' B',
+  forall (lib : @SL o) v B v' B',
     bcequivc_ext lib [v] B [v'] B'
     -> bcequivc_ext lib [v'] B' [v] B.
 Proof.
@@ -104,7 +104,7 @@ Qed.
 Hint Resolve bcequivc_ext_sym : slow.
 
 Lemma in_ext_ext_type_sys_props4_sym_eq {o} :
-  forall (ts : cts(o)) {lib lib'} (x : lib_extends lib' lib) A A' (eqa : lib-per(lib,o)) a a',
+  forall (ts : cts(o)) {lib lib' : SL} (x : lib_extends lib' lib) A A' (eqa : lib-per(lib,o)) a a',
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
     -> eqa lib' x a a'
     -> eqa lib' x a' a.
@@ -116,7 +116,7 @@ Qed.
 Hint Resolve in_ext_ext_type_sys_props4_sym_eq : slow.
 
 Lemma in_ext_ext_type_sys_props4_trans1_eq {o} :
-  forall (ts : cts(o)) {lib lib'} (x : lib_extends lib' lib) A A' (eqa : lib-per(lib,o)) a a',
+  forall (ts : cts(o)) {lib lib' : SL} (x : lib_extends lib' lib) A A' (eqa : lib-per(lib,o)) a a',
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
     -> eqa lib' x a a'
     -> eqa lib' x a a.
@@ -129,7 +129,7 @@ Qed.
 Hint Resolve in_ext_ext_type_sys_props4_trans1_eq : slow.
 
 Lemma in_ext_ext_type_sys_props4_trans2_eq {o} :
-  forall (ts : cts(o)) {lib lib'} (x : lib_extends lib' lib) A A' (eqa : lib-per(lib,o)) a a',
+  forall (ts : cts(o)) {lib lib' : SL} (x : lib_extends lib' lib) A A' (eqa : lib-per(lib,o)) a a',
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
     -> eqa lib' x a a'
     -> eqa lib' x a' a'.
@@ -278,7 +278,7 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 {o} :
-  forall (ts : cts(o)) {lib lib'} (ext : lib_extends lib' lib) A' A B C (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
+  forall (ts : cts(o)) {lib lib' : SL} (ext : lib_extends lib' lib) A' A B C (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
     -> ccequivc_ext lib' A A'
     -> in_ext_ext lib' (fun lib'' x => ts lib'' A' C (eqa1 lib'' x))

@@ -128,7 +128,7 @@ Proof.
 Qed.
 
 Definition per_func_ext_eq_bar_lib_per {o}
-           (lib : @library o)
+           (lib : @SL o)
            (eqa : lib-per(lib,o))
            (eqb : lib-per-fam(lib,eqa,o)) : lib-per(lib,o).
 Proof.
@@ -164,7 +164,7 @@ Proof.
 Qed.
 
 Definition per_qtime_eq_bar_lib_per {o}
-           (lib : @library o)
+           (lib : @SL o)
            (eqa : lib-per(lib,o)) : lib-per(lib,o).
 Proof.
   exists (fun lib' x => per_qtime_eq_bar lib' (raise_lib_per eqa x)).
@@ -198,7 +198,7 @@ Proof.
 Qed.
 
 Definition per_union_eq_bar_lib_per {o}
-           (lib : @library o)
+           (lib : @SL o)
            (eqa : lib-per(lib,o))
            (eqb : lib-per(lib,o)) : lib-per(lib,o).
 Proof.
@@ -235,11 +235,11 @@ Proof.
 Abort.
 
 Definition per_bar_eq_bar_lib_per {o}
-           (lib : @library o)
+           (lib : @SL o)
            (bar : @BarLib o lib)
            (eqa : lib-per(lib,o)) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) => per_bar_eq (raise_bar bar x) (raise_lib_per eqa x)).
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) => per_bar_eq (raise_bar bar x) (raise_lib_per eqa x)).
   repeat introv.
   unfold per_bar_eq; split; introv h br ext; introv; exrepnd.
 
@@ -288,7 +288,7 @@ Qed.
 Hint Resolve eq_term_equals_preserves_inhabited : slow.
 
 Definition per_set_eq_bar_lib_per {o}
-           (lib : @library o)
+           (lib : @SL o)
            (eqa : lib-per(lib,o))
            (eqb : lib-per-fam(lib,eqa,o)) : lib-per(lib,o).
 Proof.
@@ -330,7 +330,7 @@ Proof.
 Qed.
 
 Definition per_product_eq_bar_lib_per {o}
-           (lib : @library o)
+           (lib : @SL o)
            (eqa : lib-per(lib,o))
            (eqb : lib-per-fam(lib,eqa,o)) : lib-per(lib,o).
 Proof.
@@ -370,11 +370,11 @@ Proof.
 Qed.
 
 Definition eq_per_eq_bar_lib_per {o}
-           (lib : @library o)
+           (lib : @SL o)
            (a1 a2 : @CTerm o)
            (eqa : lib-per(lib,o)) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) => eq_per_eq_bar lib' a1 a2 (raise_lib_per eqa x)).
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) => eq_per_eq_bar lib' a1 a2 (raise_lib_per eqa x)).
   repeat introv.
   unfold eq_per_eq_bar, eq_per_eq; split; introv h; exrepnd; exists bar; introv br ext; introv.
 
@@ -386,11 +386,11 @@ Proof.
 Defined.
 
 Definition eq_per_union_bar_lib_per {o}
-           (lib : @library o)
+           (lib : @SL o)
            (eqa : lib-per(lib,o))
            (eqb : lib-per(lib,o)) : lib-per(lib,o).
 Proof.
-  exists (fun lib' x => eq_per_union_bar lib' (eqa lib' x) (eqb lib' x)).
+  exists (fun (lib' : SL) x => eq_per_union_bar lib' (eqa lib' x) (eqb lib' x)).
   repeat introv.
   unfold eq_per_union_bar; split; intro h; exrepnd;
     exists bar; introv br ext; introv.
@@ -440,7 +440,7 @@ Proof.
 Qed.
 
 Definition per_image_eq_bar_lib_per {o}
-           (lib : @library o)
+           (lib : @SL o)
            (eqa : lib-per(lib,o))
            (f   : @CTerm o) : lib-per(lib,o).
 Proof.
@@ -606,10 +606,10 @@ Proof.
 Qed.
 
 Definition univi_eq_lib_per {o}
-           (lib : @library o)
+           (lib : @SL o)
            (i : nat) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) => univi_eq (univi_bar i) lib').
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) => univi_eq (univi_bar i) lib').
   introv x y; introv; tcsp.
 Defined.
 
@@ -648,7 +648,7 @@ Proof.
 
     pose proof (@close_monotone o (univi_bar j)) as q.
     repeat (autodimp q hyp); eauto 3 with slow;[].
-    pose proof (q lib lib' a b eqa) as q.
+    pose proof (q lib lib' x a b eqa) as q.
     repeat (autodimp q hyp); exrepnd.
     exists eq'; dands; auto. }
 Qed.

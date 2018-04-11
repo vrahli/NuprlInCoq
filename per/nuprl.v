@@ -264,7 +264,7 @@ Definition univ {p} lib (T T' : @CTerm p) (eq : per) :=
 Definition defines_only_universes0 {o} (ts : cts(o)) :=
   forall lib (T : @CTerm o) eq, ts lib T T eq -> {i : nat , T ===>(lib) (mkc_uni i)}.
 
-Definition computes_to_uni {o} lib (T : @CTerm o) :=
+Definition computes_to_uni {o} (lib : SL) (T : @CTerm o) :=
   exists (bar : @BarLib o lib),
     all_in_bar bar (fun lib => {i : nat , T ===>(lib) (mkc_uni i)}).
 
