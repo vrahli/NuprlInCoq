@@ -328,7 +328,8 @@ Proof.
   clear dependent eq.
 
   pose proof (bar_non_empty bar) as b; exrepnd.
-  pose proof (teq1 _ b0 _ (lib_extends_refl lib')) as teq1; simpl in *.
+  assert (lib_extends lib' lib) as xt by eauto 3 with slow.
+  pose proof (teq1 (ext2SL xt) b0 (ext2SL xt) (lib_extends_refl lib')) as teq1; simpl in *.
 
   destruct teq1 as [h1 h2].
   clear h2.
@@ -337,7 +338,7 @@ Proof.
 Qed.
 
 Lemma false_not_equal_to_true {o} :
-  forall (lib : @library o),
+  forall (lib : @SL o),
     !tequality lib mkc_false mkc_true.
 Proof.
   introv teq; apply tequality_sym in teq.
@@ -345,7 +346,7 @@ Proof.
 Qed.
 
 Lemma type_mkc_true {o} :
-  forall (lib : @library o), type lib mkc_true.
+  forall (lib : @SL o), type lib mkc_true.
 Proof.
   introv; rw @mkc_true_eq.
   apply tequality_mkc_approx.
@@ -355,7 +356,7 @@ Qed.
 Hint Resolve type_mkc_true : slow.
 
 Lemma tequality_mkc_true {o} :
-  forall (lib : @library o), tequality lib mkc_true mkc_true.
+  forall (lib : @SL o), tequality lib mkc_true mkc_true.
 Proof.
   introv; apply type_mkc_true.
 Qed.
@@ -439,7 +440,7 @@ Qed.
 
 
 Lemma ccomputes_to_valc_ext_integer_implies_computes_to_valc_in_ext {o} :
-  forall lib lib' (a : @CTerm o) k,
+  forall (lib lib' : SL) (a : @CTerm o) k,
     lib_extends lib' lib
     -> a ===>(lib) (mkc_integer k)
     -> ccomputes_to_valc lib' a (mkc_integer k).
@@ -1812,15 +1813,17 @@ Proof.
 Qed.*)
 
 Lemma all_in_ex_bar_implies_exists_lib_extends {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) F,
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) F,
     all_in_ex_bar lib F
-    -> exists lib'', lib_extends lib'' lib # lib_extends lib'' lib' # F lib''.
+    -> exists (lib'' : SL), lib_extends lib'' lib # lib_extends lib'' lib' # F lib''.
 Proof.
   introv x a.
   unfold all_in_ex_bar in *; exrepnd.
   pose proof (bar_non_empty (raise_bar bar x)) as b; exrepnd; simpl in *; exrepnd.
-  pose proof (a0 _ b0 _ b2) as a0.
-  exists lib'0; dands; auto; eauto 3 with slow.
+  assert (lib_extends lib1 lib) as xt1 by eauto 3 with slow.
+  assert (lib_extends lib'0 lib) as xt2 by eauto 3 with slow.
+  pose proof (a0 (ext2SL xt1) b0 (ext2SL xt2) b2) as a0.
+  exists (ext2SL xt2); dands; auto; eauto 3 with slow.
 Qed.
 
 (*Lemma tequality_mkc_natk {o} :
@@ -2505,7 +2508,7 @@ Proof.
 Qed.
 
 Lemma inhabited_type_mkc_unit {o} :
-  forall (lib : @library o), inhabited_type lib mkc_unit.
+  forall (lib : @SL o), inhabited_type lib mkc_unit.
 Proof.
   introv.
   unfold inhabited_type.
@@ -2516,7 +2519,7 @@ Qed.
 Hint Resolve inhabited_type_mkc_unit : slow.
 
 Lemma type_tnat {o} :
-  forall (lib : @library o), type lib mkc_tnat.
+  forall (lib : @SL o), type lib mkc_tnat.
 Proof.
   introv.
   rw @mkc_tnat_eq.

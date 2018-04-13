@@ -210,7 +210,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_union {o} :
-  forall (lib : @library o) A1 A2 B1 B2 eq,
+  forall (lib : @SL o) A1 A2 B1 B2 eq,
     nuprl lib (mkc_union A1 B1) (mkc_union A2 B2) eq
     -> per_bar (per_union nuprl) lib (mkc_union A1 B1) (mkc_union A2 B2) eq.
 Proof.
@@ -221,7 +221,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_union {o} :
-  forall i (lib : @library o) A1 A2 B1 B2 eq,
+  forall i (lib : @SL o) A1 A2 B1 B2 eq,
     nuprli i lib (mkc_union A1 B1) (mkc_union A2 B2) eq
     -> per_bar (per_union (nuprli i)) lib (mkc_union A1 B1) (mkc_union A2 B2) eq.
 Proof.
@@ -239,19 +239,19 @@ Record two_lib_per {o} {lib} :=
     }.
 
 Notation "bar-two-lib-per( lib , bar , o )" :=
-  (forall (lib1 : library) (br : bar_lib_bar bar lib1)
-          (lib2 : library) (ext : lib_extends lib2 lib1)
+  (forall (lib1 : SL) (br : bar_lib_bar bar lib1)
+          (lib2 : SL) (ext : lib_extends lib2 lib1)
           (x : lib_extends lib2 lib),
       @two_lib_per o lib2).
 
 Lemma all_in_bar_ext_exists2_lib_per_implies_exists2 {o} :
-  forall {lib} (bar : @BarLib o lib)
-         (F : forall lib' (x : lib_extends lib' lib) (eqa eqb : lib-per(lib',o)), Prop),
-    all_in_bar_ext bar (fun lib' x => {eqa , eqb : lib-per(lib',o) , F lib' x eqa eqb})
+  forall {lib : SL} (bar : @BarLib o lib)
+         (F : forall (lib' : SL) (x : lib_extends lib' lib) (eqa eqb : lib-per(lib',o)), Prop),
+    all_in_bar_ext bar (fun (lib' : SL) x => {eqa , eqb : lib-per(lib',o) , F lib' x eqa eqb})
     ->
     exists (feqa : bar-two-lib-per(lib,bar,o)),
-    forall lib1 (br : bar_lib_bar bar lib1)
-           lib2 (ext : lib_extends lib2 lib1)
+    forall (lib1 : SL) (br : bar_lib_bar bar lib1)
+           (lib2 : SL) (ext : lib_extends lib2 lib1)
            (x : lib_extends lib2 lib),
       F lib2 x (tlp_eqa (feqa lib1 br lib2 ext x)) (tlp_eqb (feqa lib1 br lib2 ext x)).
 Proof.
@@ -271,19 +271,19 @@ Proof.
     exists (MkTwoLibPer _ _ eqa eqb); simpl; auto. }
 
   exrepnd.
-  exists (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
+  exists (fun (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
 Qed.
 
 Definition bar_two_lib_per2lib_pera {o}
-           {lib  : @library o}
+           {lib  : @SL o}
            {bar  : BarLib lib}
            (feqa : bar-two-lib-per(lib,bar,o)) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) t1 t2 =>
-            {lib1 : library
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) t1 t2 =>
+            {lib1 : SL
             , {br : bar_lib_bar bar lib1
             , {ext : lib_extends lib' lib1
             , {x : lib_extends lib' lib
@@ -296,12 +296,12 @@ Proof.
 Defined.
 
 Definition bar_two_lib_per2lib_perb {o}
-           {lib  : @library o}
+           {lib  : @SL o}
            {bar  : BarLib lib}
            (feqa : bar-two-lib-per(lib,bar,o)) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) t1 t2 =>
-            {lib1 : library
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) t1 t2 =>
+            {lib1 : SL
             , {br : bar_lib_bar bar lib1
             , {ext : lib_extends lib' lib1
             , {x : lib_extends lib' lib
@@ -649,7 +649,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_union_eq_bar_lib_per_iff {o} :
-  forall {lib} (bar : @BarLib o lib) (eqa eqb : lib-per(lib,o)) p1 p2,
+  forall {lib : SL} (bar : @BarLib o lib) (eqa eqb : lib-per(lib,o)) p1 p2,
     (per_bar_eq bar (per_union_eq_bar_lib_per lib eqa eqb) p1 p2)
       <=>
       exists bar,

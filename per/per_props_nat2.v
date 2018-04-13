@@ -66,7 +66,7 @@ Proof.
 Qed.
 
 Lemma tt_not_ccequivc_ext_ff {o} :
-  forall (lib : @library o), !ccequivc_ext lib tt ff.
+  forall (lib : @SL o), !ccequivc_ext lib tt ff.
 Proof.
   introv h.
   pose proof (h _ (lib_extends_refl _)) as h; simpl in h; spcast.
@@ -179,7 +179,7 @@ Proof.
 Qed.
 
 Lemma type_nat2nat {o} :
-  forall (lib : @library o), type lib nat2nat.
+  forall (lib : @SL o), type lib nat2nat.
 Proof.
   introv.
   unfold nat2nat.
@@ -258,7 +258,7 @@ Proof.
 Qed.
 
 Lemma nat_in_nat {o} :
-  forall (lib : @library o) n,
+  forall (lib : @SL o) n,
     member lib (mkc_nat n) mkc_tnat.
 Proof.
   introv.
@@ -416,7 +416,7 @@ Proof.
 Qed.*)
 
 Lemma equality_in_tnat_nat {o} :
-  forall (lib : @library o) n, equality lib (mkc_nat n) (mkc_nat n) mkc_tnat.
+  forall (lib : @SL o) n, equality lib (mkc_nat n) (mkc_nat n) mkc_tnat.
 Proof.
   introv.
   apply equality_in_tnat.

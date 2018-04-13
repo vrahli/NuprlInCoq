@@ -183,7 +183,7 @@ Qed.
 Hint Resolve iscvalue_image : slow.
 
 Lemma dest_nuprl_image {o} :
-  forall (lib : @library o) A f B g eq,
+  forall (lib : @SL o) A f B g eq,
     nuprl lib (mkc_image A f) (mkc_image B g) eq
     -> per_bar (per_image nuprl) lib (mkc_image A f) (mkc_image B g) eq.
 Proof.
@@ -194,7 +194,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_image {o} :
-  forall i (lib : @library o) A f B g eq,
+  forall i (lib : @SL o) A f B g eq,
     nuprli i lib (mkc_image A f) (mkc_image B g) eq
     -> per_bar (per_image (nuprli i)) lib (mkc_image A f) (mkc_image B g) eq.
 Proof.
@@ -426,7 +426,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_image_eq_bar_lib_per_iff {o} :
-  forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) f p1 p2,
+  forall {lib : SL} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) f p1 p2,
     (per_bar_eq bar (per_image_eq_bar_lib_per lib eqa f) p1 p2)
       <=>
       exists bar,

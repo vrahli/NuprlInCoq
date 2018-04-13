@@ -52,7 +52,7 @@ Qed.
 Hint Rewrite @substc_mkcv_csname : slow.
 
 Lemma dest_nuprl_csname {o} :
-  forall (lib : @library o) eq n,
+  forall (lib : @SL o) eq n,
     nuprl lib (mkc_csname n) (mkc_csname n) eq
     -> per_bar (per_csname nuprl) lib (mkc_csname n) (mkc_csname n) eq.
 Proof.
@@ -105,7 +105,7 @@ Proof.
 Qed.
 
 Lemma type_csname {o} :
-  forall (lib : @library o) n,
+  forall (lib : @SL o) n,
     type lib (mkc_csname n).
 Proof.
   introv; unfold type; eauto 3 with slow.

@@ -342,7 +342,7 @@ Definition cequiv_ext {o} lib (a b : @NTerm o) :=
 Definition cequiv_hyp {o} lib (h1 h2 : @hypothesis o) :=
   cequiv_ext lib (htyp h1) (htyp h2).
 
-Inductive cequiv_hyps {o} (lib : library) : @barehypotheses o -> @barehypotheses o -> Type :=
+Inductive cequiv_hyps {o} (lib : SL) : @barehypotheses o -> @barehypotheses o -> Type :=
 | ceq_hs_nil : cequiv_hyps lib [] []
 | ceq_hs_cons :
     forall h1 h2 hs1 hs2,
@@ -357,7 +357,7 @@ Definition cequiv_open_ext {o} lib (a b : @NTerm o) :=
 Definition cequiv_open_hyp {o} lib (h1 h2 : @hypothesis o) :=
   cequiv_open_ext lib (htyp h1) (htyp h2).
 
-Inductive cequiv_open_hyps {o} (lib : library) : @barehypotheses o -> @barehypotheses o -> Type :=
+Inductive cequiv_open_hyps {o} (lib : SL) : @barehypotheses o -> @barehypotheses o -> Type :=
 | ceq_open_hs_nil : cequiv_open_hyps lib [] []
 | ceq_open_hs_cons :
     forall h1 h2 hs1 hs2,

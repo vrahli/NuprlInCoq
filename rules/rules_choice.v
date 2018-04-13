@@ -50,7 +50,7 @@ Require Export per_props_cs.
 Require Export fresh_cs.
 
 
-Definition entry_free_from_choice_seq_name {o} (e : @library_entry o) (name : choice_sequence_name) :=
+(*Definition entry_free_from_choice_seq_name {o} (e : @library_entry o) (name : choice_sequence_name) :=
   match e with
   | lib_cs n l =>
     if choice_sequence_name_deq n name then False
@@ -64,10 +64,10 @@ Fixpoint lib_free_from_choice_seq_name {o} (lib : @library o) (name : choice_seq
   | e :: es =>
     (entry_free_from_choice_seq_name e name)
       # lib_free_from_choice_seq_name es name
-  end.
+  end.*)
 
-Definition sequent_true_ex_ext {o} lib (s : @csequent o) :=
-  {lib' : library & lib_extends lib' lib # sequent_true lib' s}.
+Definition sequent_true_ex_ext {o} (lib : SL) (s : @csequent o) :=
+  {lib' : SL & lib_extends lib' lib # sequent_true lib' s}.
 
 Definition rule_true_ex_ext {o} lib (R : @rule o) : Type :=
   forall wg : wf_sequent (goal R),
@@ -343,7 +343,7 @@ Proof.
 Qed.
 
 Lemma implies_equality_natk2nat_bar {o} :
-  forall lib (f g : @CTerm o) n,
+  forall (lib : SL) (f g : @CTerm o) n,
     all_in_ex_bar
       lib
       (fun lib =>
@@ -399,7 +399,7 @@ Proof.
 Qed.
 
 Lemma implies_member_natk2nat_bar {o} :
-  forall lib (f : @CTerm o) n,
+  forall (lib : SL) (f : @CTerm o) n,
     all_in_ex_bar
       lib
       (fun lib =>
@@ -428,6 +428,11 @@ Proof.
   destruct a; simpl in *; repndors; repnd; subst; tcsp; GC.
 
   - exists (lib_cs name0 entry); simpl; dands; tcsp.
+
+  - autodimp IHlib hyp; exrepnd.
+    exists entry0; simpl; dands; tcsp.
+    right; dands; tcsp.
+    unfold matching_entries; allrw; simpl; auto.
 
   - autodimp IHlib hyp; exrepnd.
     exists entry0; simpl; dands; tcsp.
@@ -467,9 +472,9 @@ Hint Resolve compatible_choice_sequence_name_0_implies_is_nat_or_seq_kind : slow
 Hint Resolve entry_in_library_implies_find_cs_some : slow.
 
 Lemma cs_entry_in_library_lawless_upto_implies_length_ge {o} :
-  forall (lib lib' : @library o) name k vals restr,
+  forall (lib lib' : @SL o) name k vals restr,
     is_nat_or_seq_kind name
-    -> correct_restriction name restr
+    -> correct_cs_restriction name restr
     -> extend_library_lawless_upto lib lib' name k
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ vals restr)) lib
     -> k <= length vals.

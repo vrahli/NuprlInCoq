@@ -37,7 +37,7 @@ Require Export per_props_equality.
 
 (* This lemma is useful to prove equalities *)
 Lemma teq_and_eq_if_equality {o} :
-  forall lib (A : @NTerm o) a b s1 s2 H wA wa wb ca1 ca2 cb1 cb2 cA1 cA2,
+  forall (lib : SL) (A : @NTerm o) a b s1 s2 H wA wa wb ca1 ca2 cb1 cb2 cA1 cA2,
     hyps_functionality_ext lib s1 H
     -> similarity lib s1 s2 H
     -> tequality lib (lsubstc A wA s1 cA1) (lsubstc A wA s2 cA2)
@@ -82,7 +82,7 @@ Qed.
 
 (* This lemma is useful to prove membeships *)
 Lemma teq_and_member_if_member {o} :
-  forall lib (A : @NTerm o) a s1 s2 H wA wa ca1 ca2 cA1 cA2,
+  forall (lib : SL) (A : @NTerm o) a s1 s2 H wA wa ca1 ca2 cA1 cA2,
     hyps_functionality_ext lib s1 H
     -> similarity lib s1 s2 H
     -> tequality lib (lsubstc A wA s1 cA1) (lsubstc A wA s2 cA2)
@@ -114,7 +114,7 @@ Ltac lsubst_tac_c :=
 Ltac teq_and_eq T a b s1 s2 H :=
   let hyp := fresh "hyp" in
   match goal with
-    | [ lib : library
+    | [ lib : SL
       , wT  : wf_term T
       , wa  : wf_term a
       , wb  : wf_term b
