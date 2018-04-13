@@ -45,7 +45,7 @@ Require Export types_converge.
 
 
 Lemma dest_nuprl_int {o} :
-  forall (lib : @library o) eq,
+  forall (lib : @SL o) eq,
     nuprl lib mkc_int mkc_int eq
     -> per_bar (per_int nuprl) lib mkc_int mkc_int eq.
 Proof.
@@ -103,7 +103,7 @@ Qed.
 Hint Resolve equality_of_int_xxx : slow.
 
 Lemma equality_of_int_bar_same_nat {o} :
-  forall (lib : @library o) n,
+  forall (lib : @SL o) n,
     equality_of_int_bar lib (mkc_nat n) (mkc_nat n).
 Proof.
   introv; exists (trivial_bar lib).
@@ -316,7 +316,7 @@ Proof.
 Qed.
 
 Lemma true_not_equal_to_false {o} :
-  forall (lib : @library o),
+  forall (lib : @SL o),
     !tequality lib mkc_true mkc_false.
 Proof.
   introv teq.

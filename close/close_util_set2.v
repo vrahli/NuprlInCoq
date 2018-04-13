@@ -321,7 +321,7 @@ Proof.
 Qed.
 
 Lemma type_sys_props4_implies_term_equality_respecting {o} :
-  forall (lib : library) (ts : cts(o)) (A B : CTerm) (eqa : per(o)),
+  forall (lib : SL) (ts : cts(o)) (A B : CTerm) (eqa : per(o)),
     type_sys_props4 ts lib A B eqa -> term_equality_respecting lib eqa.
 Proof.
   introv tsp.

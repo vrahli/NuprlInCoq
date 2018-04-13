@@ -38,7 +38,7 @@ Require Export cvterm.
 
 (* MOVE *)
 Lemma implies_all_in_bar_ext_trivial_bar {o} :
-  forall (lib : @library o) F,
+  forall (lib : @SL o) F,
     in_ext_ext lib F
     -> all_in_bar_ext (trivial_bar lib) F.
 Proof.
@@ -47,12 +47,12 @@ Proof.
 Qed.
 
 Definition pair2lib_per2 {o}
-           {lib A B u v}
-           (f : {lib' : library $ lib_extends lib' lib} -> per(o))
+           {lib : SL} {A B u v}
+           (f : {lib' : SL $ lib_extends lib' lib} -> per(o))
            (p : forall a, nuprl (projT1 a) A B (f a) # f a u v) : lib-per(lib,o).
 Proof.
-  exists (fun (lib' : library) (ext : lib_extends lib' lib) =>
-            f (existT (fun lib' => lib_extends lib' lib) lib' ext)).
+  exists (fun (lib' : SL) (ext : lib_extends lib' lib) =>
+            f (existT (fun (lib' : SL) => lib_extends lib' lib) lib' ext)).
 
   introv.
   pose proof (p (exI(lib',e))) as a.
@@ -66,15 +66,15 @@ Defined.
 
 (* MOVE *)
 Lemma choice_ext_lib_eq {o} :
-  forall lib (a b A : @CTerm o),
-    (forall lib' (x : lib_extends lib' lib), equality lib' a b A)
+  forall (lib : SL) (a b A : @CTerm o),
+    (forall (lib' : SL) (x : lib_extends lib' lib), equality lib' a b A)
     -> {eqa : lib-per(lib,o),
-        forall lib' (x : lib_extends lib' lib), nuprl lib' A A (eqa lib' x) # eqa lib' x a b}.
+        forall (lib' : SL) (x : lib_extends lib' lib), nuprl lib' A A (eqa lib' x) # eqa lib' x a b}.
 Proof.
   introv F.
 
   pose proof (FunctionalChoice_on
-                {lib' : library & lib_extends lib' lib}
+                {lib' : SL & lib_extends lib' lib}
                 per(o)
                 (fun x y => nuprl (projT1 x) A A y # y a b)) as C.
   autodimp C hyp.
@@ -89,17 +89,17 @@ Proof.
 
   exists (pair2lib_per2 f C0).
   introv.
-  pose proof (C0 (existT (fun lib' => lib_extends lib' lib) lib' x)) as C.
+  pose proof (C0 (existT (fun (lib' : SL) => lib_extends lib' lib) lib' x)) as C.
   simpl in *; auto.
 Qed.
 
 Definition bar_lib_per2lib_per {o}
-           {lib  : @library o}
+           {lib  : @SL o}
            {bar  : BarLib lib}
            (feqa : bar-lib-per(lib,bar,o)) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) t1 t2 =>
-            {lib1 : library
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) t1 t2 =>
+            {lib1 : SL
             , {br : bar_lib_bar bar lib1
             , {ext : lib_extends lib' lib1
             , {x : lib_extends lib' lib
@@ -125,7 +125,7 @@ Qed.
 Hint Resolve nuprl_term_equality_symmetric : slow.
 
 Lemma all_in_bar_ext_nuprl_implies_nuprl {o} :
-  forall {lib} (bar : @BarLib o lib) A B (eqa : lib-per(lib,o)),
+  forall {lib : SL} (bar : @BarLib o lib) A B (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => nuprl lib' A B (eqa lib' x))
     -> nuprl lib A B (per_bar_eq bar eqa).
 Proof.
@@ -135,7 +135,7 @@ Qed.
 Hint Resolve all_in_bar_ext_nuprl_implies_nuprl : slow.
 
 Lemma all_in_bar_ext_nuprl_implies_tequality {o} :
-  forall {lib} (bar : @BarLib o lib) A B (eqa : lib-per(lib,o)),
+  forall {lib : SL} (bar : @BarLib o lib) A B (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => nuprl lib' A B (eqa lib' x))
     -> tequality lib A B.
 Proof.
@@ -145,7 +145,7 @@ Qed.
 Hint Resolve all_in_bar_ext_nuprl_implies_tequality : slow.
 
 Lemma all_in_bar_ext_nuprl_implies_type {o} :
-  forall {lib} (bar : @BarLib o lib) A (eqa : lib-per(lib,o)),
+  forall {lib : SL} (bar : @BarLib o lib) A (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => nuprl lib' A A (eqa lib' x))
     -> type lib A.
 Proof.
@@ -155,7 +155,7 @@ Qed.
 Hint Resolve all_in_bar_ext_nuprl_implies_type : slow.
 
 Lemma all_in_bar_ext_eqorceq_commutes_equality {o} :
-  forall {lib} (bar : @BarLib o lib) a b c d A B (eqa : lib-per(lib,o)),
+  forall {lib : SL} (bar : @BarLib o lib) a b c d A B (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => nuprl lib' A B (eqa lib' x))
     -> all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a b)
     -> all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) c d)
@@ -215,7 +215,7 @@ Definition all_in_ex_bar {o} (lib : @library o) F :=
   {bar : BarLib lib , all_in_bar bar F}.
 
 Lemma implies_all_in_ex_bar_equality_or_ccequivc_ext {o} :
-  forall {lib} (bar : @BarLib o lib) a b A B (eqa : lib-per(lib,o)),
+  forall {lib : SL} (bar : @BarLib o lib) a b A B (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => nuprl lib' A B (eqa lib' x))
     -> all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a b)
     -> all_in_ex_bar lib (fun lib' => equality lib' a b A {+} ccequivc_ext lib' a b).
@@ -340,7 +340,7 @@ Hint Resolve computes_to_valc_ceq_bar_refl : refl.*)
 
 (* !!MOVE *)
 Lemma nuprl_per_bar_eq_bar {o} :
-  forall {lib} (bar : @BarLib o lib) i,
+  forall {lib : SL} (bar : @BarLib o lib) i,
     nuprl lib (mkc_uni i) (mkc_uni i) (per_bar_eq bar (univi_eq_lib_per lib i)).
 Proof.
   introv.
@@ -365,7 +365,7 @@ Hint Resolve all_in_bar_iff_capproxc_same : slow.
 
 (* MOVE *)
 Lemma in_ext_iff_capproxc_same {o} :
-  forall (lib : @library o) a b,
+  forall (lib : @SL o) a b,
     in_ext lib (fun lib => (a) ~<~(lib) (a) <=> (b) ~<~(lib) (b)).
 Proof.
   introv ext; split; introv h; spcast; auto; eauto 3 with slow refl.
@@ -383,7 +383,7 @@ Hint Resolve all_in_bar_iff_capproxc_same2 : slow.
 
 (* MOVE *)
 Lemma in_ext_iff_capproxc_same2 {o} :
-  forall (lib : @library o) a b,
+  forall (lib : @SL o) a b,
     in_ext lib (fun lib => (a) ~<~(lib) (b) <=> (a) ~<~(lib) (b)).
 Proof.
   introv ext; split; introv h; spcast; auto; eauto 3 with slow refl.
@@ -401,7 +401,7 @@ Hint Resolve all_in_bar_iff_ccequivc_same : slow.
 
 (* MOVE *)
 Lemma in_ext_iff_ccequivc_same {o} :
-  forall (lib : @library o) a b,
+  forall (lib : @SL o) a b,
     in_ext lib (fun lib => (a) ~=~(lib) (a) <=> (b) ~=~(lib) (b)).
 Proof.
   introv ext; split; introv h; spcast; auto; eauto 3 with slow refl.
@@ -419,7 +419,7 @@ Hint Resolve all_in_bar_iff_ccequivc_same2 : slow.
 
 (* MOVE *)
 Lemma in_ext_iff_ccequivc_same2 {o} :
-  forall (lib : @library o) a b,
+  forall (lib : @SL o) a b,
     in_ext lib (fun lib => (a) ~=~(lib) (b) <=> (a) ~=~(lib) (b)).
 Proof.
   introv ext; split; introv h; spcast; auto; eauto 3 with slow refl.
@@ -447,7 +447,7 @@ Hint Resolve all_in_bar_ccequivc_refl : refl.
 
 (* MOVE *)
 Lemma implies_all_in_bar_trivial_bar {o} :
-  forall (lib : @library o) F,
+  forall (lib : @SL o) F,
     in_ext lib F
     -> all_in_bar (trivial_bar lib) F.
 Proof.
@@ -459,7 +459,7 @@ Qed.
 Hint Resolve computes_to_valc_refl : refl.
 
 Lemma all_in_ex_bar_iff_same {o} :
-  forall (lib : @library o) (F : library -> Prop),
+  forall (lib : @SL o) (F : SL -> Prop),
     all_in_ex_bar lib (fun lib => F lib <=> F lib).
 Proof.
   introv; exists (trivial_bar lib).
@@ -582,13 +582,13 @@ Qed.
 Hint Resolve equality_respects_equorsq_bar2 : slow.
 
 Lemma all_in_bar_exists_per_implies_exists {o} :
-  forall {lib} (bar : @BarLib o lib)
-         (F : forall lib' (eqa : per(o)), Prop),
+  forall {lib : SL} (bar : @BarLib o lib)
+         (F : forall (lib' : SL) (eqa : per(o)), Prop),
     all_in_bar bar (fun lib' => {eqa : per(o) , F lib' eqa})
     ->
     exists (feqa : bar-per(lib,bar,o)),
-    forall lib1 (br : bar_lib_bar bar lib1)
-           lib2 (ext : lib_extends lib2 lib1)
+    forall (lib1 : SL) (br : bar_lib_bar bar lib1)
+           (lib2 : SL) (ext : lib_extends lib2 lib1)
            (x : lib_extends lib2 lib),
       F lib2 (feqa lib1 br lib2 ext x).
 Proof.
@@ -602,14 +602,14 @@ Proof.
   repeat (autodimp C hyp).
   { introv; destruct x; simpl in *; eapply h; eauto. }
   exrepnd.
-  exists (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
+  exists (fun (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
 Qed.
 
 Lemma all_in_ex_bar_tequality_implies_tequality {o} :
-  forall lib (T1 T2 : @CTerm o),
+  forall (lib : SL) (T1 T2 : @CTerm o),
     all_in_ex_bar lib (fun lib => tequality lib T1 T2)
     -> tequality lib T1 T2.
 Proof.
@@ -649,7 +649,7 @@ Proof.
 Qed.
 
 Lemma all_in_ex_bar_modus_ponens1 {o} :
-  forall (lib : @library o) (F G : library -> Prop),
+  forall (lib : @SL o) (F G : SL -> Prop),
     in_ext lib (fun lib => G lib -> F lib)
     -> all_in_ex_bar lib G
     -> all_in_ex_bar lib F.
@@ -661,7 +661,7 @@ Proof.
 Qed.
 
 Lemma all_in_ex_bar_modus_ponens2 {o} :
-  forall (lib : @library o) (G H F : library -> Prop),
+  forall (lib : @SL o) (G H F : SL -> Prop),
     in_ext lib (fun lib => G lib -> H lib -> F lib)
     -> all_in_ex_bar lib G
     -> all_in_ex_bar lib H
@@ -684,7 +684,7 @@ Qed.
 Hint Resolve inhabited_type_if_equality : slow.
 
 Lemma all_in_ex_bar_type_implies_type {o} :
-  forall lib (A : @CTerm o),
+  forall (lib : SL) (A : @CTerm o),
     all_in_ex_bar lib (fun lib' => type lib' A)
     -> type lib A.
 Proof.
@@ -692,11 +692,11 @@ Proof.
   apply all_in_ex_bar_tequality_implies_tequality; auto.
 Qed.
 
-Definition inhabited_type_bar {o} lib (A : @CTerm o) :=
+Definition inhabited_type_bar {o} (lib : SL) (A : @CTerm o) :=
   all_in_ex_bar lib (fun lib => inhabited_type lib A).
 
 Lemma collapse_all_in_ex_bar {o} :
-  forall (lib : @library o) F,
+  forall (lib : @SL o) F,
     all_in_ex_bar lib F <=> all_in_ex_bar lib (fun lib => all_in_ex_bar lib F).
 Proof.
   unfold all_in_ex_bar; introv.
@@ -705,7 +705,7 @@ Proof.
 Qed.
 
 Lemma all_in_ex_bar_equality_implies_equality {o} :
-  forall lib (a b A : @CTerm o),
+  forall (lib : SL) (a b A : @CTerm o),
     all_in_ex_bar lib (fun lib => equality lib a b A)
     -> equality lib a b A.
 Proof.
@@ -759,7 +759,7 @@ Qed.
 Hint Resolve computes_to_valc_implies_computes_to_valc_ex_bar : slow.
 
 Lemma in_ext_implies_all_in_ex_bar {o} :
-  forall (lib : @library o) F,
+  forall (lib : @SL o) F,
     in_ext lib F -> all_in_ex_bar lib F.
 Proof.
   introv h.
@@ -768,17 +768,18 @@ Proof.
 Qed.
 
 Lemma non_dep_all_in_ex_bar_implies {o} :
-  forall (lib : @library o) P,
+  forall (lib : @SL o) P,
     all_in_ex_bar lib (fun _ => P) -> P.
 Proof.
   introv h.
   unfold all_in_ex_bar in h; exrepnd.
   pose proof (bar_non_empty bar) as b; exrepnd.
-  pose proof (h0 _ b0 _ (lib_extends_refl lib')) as h0; simpl in *; auto.
+  assert (lib_extends lib' lib) as xt by eauto 3 with slow.
+  pose proof (h0 (ext2SL xt) b0 (ext2SL xt) (lib_extends_refl lib')) as h0; simpl in *; auto.
 Qed.
 
 Lemma lib_extends_preserves_all_in_ex_bar {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib) F,
+  forall {lib lib' : SL} (x : @lib_extends o lib' lib) F,
     all_in_ex_bar lib F
     -> all_in_ex_bar lib' F.
 Proof.
@@ -790,7 +791,7 @@ Qed.
 Hint Resolve lib_extends_preserves_all_in_ex_bar : slow.
 
 Lemma lib_extends_inhabited_type {o} :
-  forall {lib lib'} (x : lib_extends lib' lib) (T : @CTerm o),
+  forall {lib lib' : SL} (x : lib_extends lib' lib) (T : @CTerm o),
     inhabited_type lib T
     -> inhabited_type lib' T.
 Proof.
@@ -809,7 +810,7 @@ Qed.
 Hint Resolve inhabited_type_implies_inhabited_type_bar : slow.
 
 Lemma fold_inhabited_type_bar {o} :
-  forall lib (A : @CTerm o),
+  forall (lib : SL) (A : @CTerm o),
     all_in_ex_bar lib (fun lib => inhabited_type lib A)
     = inhabited_type_bar lib A.
 Proof.
@@ -817,7 +818,7 @@ Proof.
 Qed.
 
 Lemma inhabited_type_bar_cequivc {p} :
-  forall lib (a b : @CTerm p),
+  forall (lib : SL) (a b : @CTerm p),
     ccequivc_ext lib a b
     -> inhabited_type_bar lib a
     -> inhabited_type_bar lib b.
@@ -853,7 +854,7 @@ Definition ccequivc_bar {o} lib (a b : @CTerm o) :=
   all_in_ex_bar lib (fun lib => ccequivc lib a b).
 
 Lemma ccequivc_ext_bar_iff_ccequivc_bar {o} :
-  forall lib (a b : @CTerm o),
+  forall (lib : SL) (a b : @CTerm o),
     ccequivc_ext_bar lib a b <=> ccequivc_bar lib a b.
 Proof.
   introv; split; introv e.
@@ -867,7 +868,7 @@ Proof.
 Qed.
 
 Lemma all_in_ex_bar_member_implies_member {o} :
-  forall lib (a A : @CTerm o),
+  forall (lib : SL) (a A : @CTerm o),
     all_in_ex_bar lib (fun lib => member lib a A)
     -> member lib a A.
 Proof.
@@ -883,7 +884,7 @@ Qed.
 Hint Resolve univ_uniquely_valued : slow.
 
 Lemma all_in_ex_bar_teq_and_eq_implies_teq_and_eq {o} :
-  forall lib (A B a b T : @CTerm o),
+  forall (lib : SL) (A B a b T : @CTerm o),
     all_in_ex_bar lib (fun lib => tequality lib A B # equality lib a b T)
     -> tequality lib A B # equality lib a b T.
 Proof.
@@ -919,7 +920,7 @@ Qed.
 Hint Resolve inhabited_type_bar_implies_type : slow.
 
 Lemma all_in_ex_bar_modus_ponens3 {o} :
-  forall (lib : @library o) (G H K F : library -> Prop),
+  forall (lib : @SL o) (G H K F : SL -> Prop),
     in_ext lib (fun lib => G lib -> H lib -> K lib -> F lib)
     -> all_in_ex_bar lib G
     -> all_in_ex_bar lib H
@@ -946,7 +947,7 @@ Proof.
 Qed.
 
 Lemma ccequivc_bar_refl {o} :
-  forall lib (T : @CTerm o),
+  forall (lib : SL) (T : @CTerm o),
     ccequivc_bar lib T T.
 Proof.
   introv.
@@ -986,7 +987,7 @@ Proof.
 Qed.
 
 Lemma all_in_ex_bar_modus_ponens4 {o} :
-  forall (lib : @library o) (G H K L F : library -> Prop),
+  forall (lib : @SL o) (G H K L F : SL -> Prop),
     in_ext lib (fun lib => G lib -> H lib -> K lib -> L lib -> F lib)
     -> all_in_ex_bar lib G
     -> all_in_ex_bar lib H

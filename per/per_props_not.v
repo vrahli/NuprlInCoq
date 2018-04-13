@@ -37,7 +37,7 @@ Require Export per_props_function.
 
 Definition empty_lib_per_fam {o} {lib} (eqa : lib-per(lib,o)) : lib-per-fam(lib,eqa,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) (a a' : CTerm) (e : eqa lib' x a a') (t t' : @CTerm o) => False).
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) (a a' : CTerm) (e : eqa lib' x a a') (t t' : @CTerm o) => False).
   introv u v; tcsp.
 Defined.
 
@@ -77,7 +77,8 @@ Proof.
     unfold per_approx_eq_bar in k.
     exrepnd.
     pose proof (bar_non_empty bar) as q; exrepnd.
-    pose proof (k0 _ q0 _ (lib_extends_refl lib'0)) as k0; simpl in *.
+    assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
+    pose proof (k0 (ext2SL xt) q0 (ext2SL xt) (lib_extends_refl lib'0)) as k0; simpl in *.
     unfold per_approx_eq in k0; repnd; spcast.
     apply not_axiom_approxc_bot in k0; sp.
   }

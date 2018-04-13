@@ -581,7 +581,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_uni {o} :
-  forall (lib : @library o) i eq,
+  forall (lib : @SL o) i eq,
     nuprl lib (mkc_uni i) (mkc_uni i) eq
     -> univ lib  (mkc_uni i) (mkc_uni i) eq.
 Proof.
@@ -1161,7 +1161,7 @@ Proof.
 Qed.*)
 
 Lemma dest_nuprl_approx {o} :
-  forall (lib : @library o) (a b c d : @CTerm o) eq,
+  forall (lib : @SL o) (a b c d : @CTerm o) eq,
     nuprl lib (mkc_approx a b) (mkc_approx c d) eq
     -> per_bar (per_approx nuprl) lib (mkc_approx a b) (mkc_approx c d) eq.
 Proof.
@@ -1278,7 +1278,7 @@ Proof.
 Qed.
 
 Lemma false_not_inhabited {p} :
-  forall lib (t : @CTerm p), !member lib t mkc_false.
+  forall (lib : SL) (t : @CTerm p), !member lib t mkc_false.
 Proof.
   introv m.
   rewrite mkc_false_eq in m.
@@ -1289,16 +1289,18 @@ Proof.
   unfold per_bar_eq in m0.
   pose proof (bar_non_empty bar) as na; exrepnd.
   assert (lib_extends lib' lib) as x by eauto 3 with slow.
-  pose proof (m0 _ na0 lib' (lib_extends_refl lib') x) as m0; simpl in *.
+  pose proof (m0 (ext2SL x) na0 (ext2SL x) (lib_extends_refl lib') x) as m0; simpl in *.
   exrepnd.
 
   pose proof (bar_non_empty bar') as nb; exrepnd.
   assert (lib_extends lib'0 lib') as y by eauto 3 with slow.
-  pose proof (m2 _ nb0 lib'0 (lib_extends_refl lib'0) y) as m2; simpl in *.
+  assert (lib_extends lib'0 lib) as z by eauto 3 with slow.
+  pose proof (m2 (ext2SL z) nb0 (ext2SL z) (lib_extends_refl lib'0) y) as m2; simpl in *.
 
   unfold per_approx_eq_bar in *; exrepnd.
   pose proof (bar_non_empty bar0) as nc; exrepnd.
-  pose proof (m0 _ nc0 lib'1 (lib_extends_refl lib'1)) as m0; simpl in *.
+  assert (lib_extends lib'1 lib) as w by eauto 3 with slow.
+  pose proof (m0 (ext2SL w) nc0 (ext2SL w) (lib_extends_refl lib'1)) as m0; simpl in *.
 
   unfold per_approx_eq in m0; repnd; spcast.
   apply not_axiom_approxc_bot in m0; auto.
@@ -1755,7 +1757,7 @@ Proof.
 Qed.
 
 Lemma respects_alphaeqc_member {o} :
-  forall (lib : @library o), respects2 alphaeqc (member lib).
+  forall (lib : @SL o), respects2 alphaeqc (member lib).
 Proof.
   introv; unfold respects2; dands; introv aeq1 aeq2; eauto 3 with slow.
   - eapply member_respects_alphaeqc_l; eauto.

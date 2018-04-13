@@ -273,12 +273,12 @@ Proof.
 
   exists eqa1 A A1 f f1; dands; spcast; auto.
   { eapply in_ext_ext_type_sys_props_type_value_respecting_trans2; eauto; eauto 3 with slow. }
-  { eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext;[|eauto];eauto 3 with slow|].
+  { eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext_sl;[|eauto];eauto 3 with slow|].
     eauto 3 with slow. }
   { eapply eq_term_equals_trans;[eauto|].
     apply eq_term_equals_sym.
     apply implies_eq_term_equals_per_image_eq_bar; eauto 3 with slow.
-    eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext;[|eauto];eauto 3 with slow|].
+    eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext_sl;[|eauto];eauto 3 with slow|].
     eauto 3 with slow. }
 Qed.
 
@@ -584,7 +584,7 @@ Proof.
 Qed.
 
 Lemma per_image_eq_bar_symmetric {p} :
-  forall lib (bar : BarLib lib) (eqa : lib-per(lib,p)) f t1 t2,
+  forall (lib : SL) (bar : BarLib lib) (eqa : lib-per(lib,p)) f t1 t2,
     all_in_bar_ext bar (fun lib' x => term_equality_symmetric (eqa lib' x))
     -> per_image_eq_bar lib eqa f t1 t2
     -> per_image_eq_bar lib eqa f t2 t1.
@@ -598,7 +598,7 @@ Proof.
 Qed.
 
 Lemma per_image_eq_bar_transitive {p} :
-  forall lib (bar : BarLib lib) (eqa : lib-per(lib,p)) f t1 t2 t3,
+  forall (lib : SL) (bar : BarLib lib) (eqa : lib-per(lib,p)) f t1 t2 t3,
     all_in_bar_ext bar (fun lib' x => term_equality_transitive (eqa lib' x))
     -> per_image_eq_bar lib eqa f t1 t2
     -> per_image_eq_bar lib eqa f t2 t3
@@ -618,7 +618,7 @@ Proof.
 Qed.
 
 Lemma per_image_eq_bar_cequiv {p} :
-  forall lib (bar1 : BarLib lib) (eqa : lib-per(lib,p)) f t1 t2,
+  forall (lib : SL) (bar1 : BarLib lib) (eqa : lib-per(lib,p)) f t1 t2,
     all_in_bar_ext bar1 (fun lib' x => term_equality_respecting lib' (eqa lib' x))
     -> all_in_bar_ext bar1 (fun lib' x => term_equality_symmetric (eqa lib' x))
     -> all_in_bar_ext bar1 (fun lib' x => term_equality_transitive (eqa lib' x))
@@ -636,7 +636,7 @@ Proof.
   pose proof (per0 lib2 br2 lib'0 (lib_extends_trans ext br1) x) as per0; simpl in *.
   pose proof (teta lib1 br0 lib'0 (lib_extends_trans ext br3) x) as teta; simpl in *.
   pose proof (tesa lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tesa; simpl in *.
-  apply (lib_extends_preserves_ccequivc_ext _ lib'0) in ceq; eauto 4 with slow;[].
+  apply (lib_extends_preserves_ccequivc_ext_sl _ lib'0) in ceq; eauto 4 with slow;[].
   spcast.
 
   eapply per_image_eq_cequiv; eauto.

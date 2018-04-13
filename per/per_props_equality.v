@@ -56,12 +56,12 @@ Require Export per_props_util.
 (* begin hide *)
 
 Lemma member_equality {o} :
-  forall lib (t1 t2 T : @CTerm o),
+  forall (lib : SL) (t1 t2 T : @CTerm o),
     equality lib t1 t2 T
     -> member lib mkc_axiom (mkc_equality t1 t2 T).
 Proof.
   introv h.
-  assert (forall lib' (x : lib_extends lib' lib), equality lib' t1 t2 T) as q by eauto 3 with slow.
+  assert (forall (lib' : SL) (x : lib_extends lib' lib), equality lib' t1 t2 T) as q by eauto 3 with slow.
   clear h.
   apply choice_ext_lib_eq in q; exrepnd.
 
@@ -268,7 +268,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_equality {o} :
-  forall (lib : @library o) a1 a2 A b1 b2 B eq,
+  forall (lib : @SL o) a1 a2 A b1 b2 B eq,
     nuprl lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
     -> per_bar (per_eq nuprl) lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq.
 Proof.
@@ -279,7 +279,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_equality {o} :
-  forall i (lib : @library o) a1 a2 A b1 b2 B eq,
+  forall i (lib : @SL o) a1 a2 A b1 b2 B eq,
     nuprli i lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
     -> per_bar (per_eq (nuprli i)) lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq.
 Proof.

@@ -123,7 +123,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_set {o} :
-  forall (lib : @library o) (A : @CTerm o) v B C w D eq,
+  forall (lib : @SL o) (A : @CTerm o) v B C w D eq,
     nuprl lib (mkc_set A v B) (mkc_set C w D) eq
     -> per_bar (per_set nuprl) lib (mkc_set A v B) (mkc_set C w D) eq.
 Proof.
@@ -163,12 +163,12 @@ Proof.
 Qed.
 
 Lemma bar_and_fam_per2lib_per_implies_lpaf_eqa {o} :
-  forall {lib lib'} {bar : @BarLib o lib} {feqa : bar-and-fam-per(lib,bar,o)}
+  forall {lib lib' : SL} {bar : @BarLib o lib} {feqa : bar-and-fam-per(lib,bar,o)}
          {A v B C w D}
-         (F : forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_set nuprl lib2 (mkc_set A v B) (mkc_set C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
+         (F : forall (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_set nuprl lib2 (mkc_set A v B) (mkc_set C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
          {x : lib_extends lib' lib}
          {a a'}
-         (lib1 : library)
+         (lib1 : SL)
          (br : bar_lib_bar bar lib1)
          (ext : lib_extends lib' lib1)
          (y : lib_extends lib' lib),
@@ -185,15 +185,15 @@ Proof.
 Qed.
 
 Definition bar_and_fam_per2lib_per_fam {o}
-           {lib  : @library o}
+           {lib  : @SL o}
            {bar  : BarLib lib}
            (feqa : bar-and-fam-per(lib,bar,o))
            {A v B C w D}
-           (F : forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_set nuprl lib2 (mkc_set A v B) (mkc_set C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
+           (F : forall (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_set nuprl lib2 (mkc_set A v B) (mkc_set C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
   : lib-per-fam(lib,bar_and_fam_per2lib_per(feqa),o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) a a' (e : bar_and_fam_per2lib_per(feqa) lib' x a a') t1 t2 =>
-            {lib1 : library
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) a a' (e : bar_and_fam_per2lib_per(feqa) lib' x a a') t1 t2 =>
+            {lib1 : SL
             , {br : bar_lib_bar bar lib1
             , {ext : lib_extends lib' lib1
             , {y : lib_extends lib' lib
@@ -228,7 +228,7 @@ Proof.
 
   apply all_in_bar_ext_exists_per_and_fam_implies_exists in u0; exrepnd.
 
-  assert (forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_set nuprl lib2 (mkc_set A v B) (mkc_set C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x))) as F by eapply u2.
+  assert (forall (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_set nuprl lib2 (mkc_set A v B) (mkc_set C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x))) as F by eapply u2.
 
   exists bar.
   exists (bar_and_fam_per2lib_per feqa).
@@ -536,7 +536,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_set {o} :
-  forall i (lib : @library o) (A : @CTerm o) v B C w D eq,
+  forall i (lib : @SL o) (A : @CTerm o) v B C w D eq,
     nuprli i lib (mkc_set A v B) (mkc_set C w D) eq
     -> per_bar (per_set (nuprli i)) lib (mkc_set A v B) (mkc_set C w D) eq.
 Proof.
@@ -575,12 +575,12 @@ Proof.
 Qed.
 
 Lemma bar_and_fam_per2lib_per_implies_lpaf_eqa_i {o} :
-  forall {lib lib'} {bar : @BarLib o lib} {feqa : bar-and-fam-per(lib,bar,o)}
+  forall {lib lib' : SL} {bar : @BarLib o lib} {feqa : bar-and-fam-per(lib,bar,o)}
          {A v B C w D i}
-         (F : forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_set (nuprli i) lib2 (mkc_set A v B) (mkc_set C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
+         (F : forall (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_set (nuprli i) lib2 (mkc_set A v B) (mkc_set C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
          {x : lib_extends lib' lib}
          {a a'}
-         (lib1 : library)
+         (lib1 : SL)
          (br : bar_lib_bar bar lib1)
          (ext : lib_extends lib' lib1)
          (y : lib_extends lib' lib),
@@ -597,15 +597,15 @@ Proof.
 Qed.
 
 Definition bar_and_fam_per2lib_per_fam_i {o}
-           {lib  : @library o}
+           {lib  : @SL o}
            {bar  : BarLib lib}
            (feqa : bar-and-fam-per(lib,bar,o))
            {A v B C w D i}
-           (F : forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_set (nuprli i) lib2 (mkc_set A v B) (mkc_set C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
+           (F : forall (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_set (nuprli i) lib2 (mkc_set A v B) (mkc_set C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
   : lib-per-fam(lib,bar_and_fam_per2lib_per(feqa),o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) a a' (e : bar_and_fam_per2lib_per(feqa) lib' x a a') t1 t2 =>
-            {lib1 : library
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) a a' (e : bar_and_fam_per2lib_per(feqa) lib' x a a') t1 t2 =>
+            {lib1 : SL
             , {br : bar_lib_bar bar lib1
             , {ext : lib_extends lib' lib1
             , {y : lib_extends lib' lib
@@ -640,7 +640,7 @@ Proof.
 
   apply all_in_bar_ext_exists_per_and_fam_implies_exists in u0; exrepnd.
 
-  assert (forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_set (nuprli i) lib2 (mkc_set A v B) (mkc_set C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x))) as F by eapply u2.
+  assert (forall (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_set (nuprli i) lib2 (mkc_set A v B) (mkc_set C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x))) as F by eapply u2.
 
   exists bar.
   exists (bar_and_fam_per2lib_per feqa).
@@ -868,7 +868,7 @@ Qed.
 
 
 Lemma per_bar_eq_per_set_eq_bar_lib_per_iff {o} :
-  forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) p1 p2,
+  forall {lib : SL} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)) p1 p2,
     (per_bar_eq bar (per_set_eq_bar_lib_per lib eqa eqb) p1 p2)
       <=>
       exists bar,
@@ -962,7 +962,7 @@ Proof.
   - Case "<-".
     introv e; exrepnd.
 
-    assert (forall lib', lib_extends lib' lib -> tequality lib' A1 A2) as teqa by eauto 3 with slow.
+    assert (forall (lib' : SL), lib_extends lib' lib -> tequality lib' A1 A2) as teqa by eauto 3 with slow.
     clear e0.
 
     rename e into teqb.
@@ -1093,7 +1093,7 @@ Proof.
     pose proof (nuprli_monotone_func i lib'2 A1 A2 eqa eqa0) as tya; exrepnd.
     rename eq' into eqa'.
 
-    assert (forall lib',
+    assert (forall (lib' : SL),
                lib_extends lib' lib'2 ->
                forall a a',
                  equality lib' a a' A1 ->

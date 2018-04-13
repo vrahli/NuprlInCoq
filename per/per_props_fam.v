@@ -37,12 +37,12 @@ Require Export cvterm.
 
 
 Definition pair2lib_per {o}
-           {lib A  B}
-           (f : {lib' : library $ lib_extends lib' lib} -> per(o))
+           {lib : SL} {A B}
+           (f : {lib' : SL $ lib_extends lib' lib} -> per(o))
            (p : forall a, nuprl (projT1 a) A B (f a)): lib-per(lib,o).
 Proof.
-  exists (fun (lib' : library) (ext : lib_extends lib' lib) =>
-            f (existT (fun lib' => lib_extends lib' lib) lib' ext)).
+  exists (fun (lib' : SL) (ext : lib_extends lib' lib) =>
+            f (existT (fun (lib' : SL) => lib_extends lib' lib) lib' ext)).
 
   introv.
   pose proof (p (exI(lib',e))) as a.
@@ -54,15 +54,15 @@ Proof.
 Defined.
 
 Lemma choice_ext_lib_teq {o} :
-  forall lib (A B : @CTerm o),
+  forall (lib : SL) (A B : @CTerm o),
     in_ext lib (fun lib' => tequality lib' A B)
     -> {eqa : lib-per(lib,o),
-        forall lib' (e : lib_extends lib' lib), nuprl lib' A B (eqa lib' e) }.
+        forall (lib' : SL) (e : lib_extends lib' lib), nuprl lib' A B (eqa lib' e) }.
 Proof.
   introv F.
 
   pose proof (FunctionalChoice_on
-                {lib' : library & lib_extends lib' lib}
+                {lib' : SL & lib_extends lib' lib}
                 per(o)
                 (fun a b => nuprl (projT1 a) A B b)) as C.
   autodimp C hyp.
@@ -75,19 +75,19 @@ Proof.
   exrepnd.
   exists (pair2lib_per f C0); simpl.
   introv.
-  pose proof (C0 (existT (fun lib' => lib_extends lib' lib) lib' e)) as C.
+  pose proof (C0 (existT (fun (lib' : SL) => lib_extends lib' lib) lib' e)) as C.
   simpl in *; auto.
 Qed.
 
 Definition pair_dep2lib_per {o}
-           {lib : library}
+           {lib : SL}
            {eqa : lib-per(lib,o)}
            {v1 v2 B1 B2}
-           (f : {lib' : library $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}} -> per(o))
+           (f : {lib' : SL $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}} -> per(o))
            (p : forall a, nuprl (projT1 a) (B1)[[v1\\projT1(projT2(projT2 a))]] (B2)[[v2\\projT1(projT2(projT2(projT2 a)))]] (f a))
   : lib-per-fam(lib,eqa,o).
 Proof.
-  exists (fun (lib' : library) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
             f (existT _ lib' (existT _ x (existT _ a (existT _ a' e))))).
 
   introv.
@@ -100,20 +100,20 @@ Proof.
 Defined.
 
 Lemma choice_ext_lib_teq_fam {o} :
-  forall lib (A1 : @CTerm o) v1 B1 A2 v2 B2 (eqa : lib-per(lib,o)),
+  forall (lib : SL) (A1 : @CTerm o) v1 B1 A2 v2 B2 (eqa : lib-per(lib,o)),
     (forall lib' e, nuprl lib' A1 A2 (eqa lib' e))
-    -> (forall lib',
+    -> (forall (lib' : SL),
            lib_extends lib' lib
            -> forall a a' : CTerm,
              equality lib' a a' A1
              -> exists eq, nuprl lib' (B1)[[v1\\a]] (B2)[[v2\\a']] eq)
     -> {eqb : lib-per-fam(lib,eqa,o),
-              forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
+              forall (lib' : SL) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
                 nuprl lib' (B1)[[v1\\a]] (B2)[[v2\\a']] (eqb lib' x a a' e) }.
 Proof.
   introv teqa F.
 
-  assert (forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
+  assert (forall (lib' : SL) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
              exists eq, nuprl lib' (B1) [[v1 \\ a]] (B2) [[v2 \\ a']] eq) as G.
   {
     introv e.
@@ -123,7 +123,7 @@ Proof.
   clear F; rename G into F.
 
   pose proof (FunctionalChoice_on
-                {lib' : library & {ext : lib_extends lib' lib & {a1 : CTerm & {a2 : CTerm & eqa lib' ext a1 a2}}}}
+                {lib' : SL & {ext : lib_extends lib' lib & {a1 : CTerm & {a2 : CTerm & eqa lib' ext a1 a2}}}}
                 per
                 (fun a b => nuprl
                               (projT1 a)
@@ -155,19 +155,19 @@ Record lib_per_and_fam {o} {lib} :=
     }.
 
 Notation "bar-and-fam-per( lib , bar , o )" :=
-  (forall (lib1 : library) (br : bar_lib_bar bar lib1)
-          (lib2 : library) (ext : lib_extends lib2 lib1)
+  (forall (lib1 : SL) (br : bar_lib_bar bar lib1)
+          (lib2 : SL) (ext : lib_extends lib2 lib1)
           (x : lib_extends lib2 lib),
       @lib_per_and_fam o lib2).
 
 Lemma all_in_bar_ext_exists_per_and_fam_implies_exists {o} :
-  forall {lib} (bar : @BarLib o lib)
-         (F : forall lib' (x : lib_extends lib' lib) (eqa : lib-per(lib',o)) (eqb : lib-per-fam(lib',eqa,o)), Prop),
-    all_in_bar_ext bar (fun lib' x => {eqa : lib-per(lib',o) , {eqb : lib-per-fam(lib',eqa,o) , F lib' x eqa eqb }})
+  forall {lib : SL} (bar : @BarLib o lib)
+         (F : forall (lib' : SL) (x : lib_extends lib' lib) (eqa : lib-per(lib',o)) (eqb : lib-per-fam(lib',eqa,o)), Prop),
+    all_in_bar_ext bar (fun (lib' : SL) x => {eqa : lib-per(lib',o) , {eqb : lib-per-fam(lib',eqa,o) , F lib' x eqa eqb }})
     ->
     exists (feqa : bar-and-fam-per(lib,bar,o)),
-    forall lib1 (br : bar_lib_bar bar lib1)
-           lib2 (ext : lib_extends lib2 lib1)
+    forall (lib1 : SL) (br : bar_lib_bar bar lib1)
+           (lib2 : SL) (ext : lib_extends lib2 lib1)
            (x : lib_extends lib2 lib),
       F lib2 x (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)).
 Proof.
@@ -186,19 +186,19 @@ Proof.
     exists (MkLibPerAndFam _ _ eqa eqb); simpl; auto. }
 
   exrepnd.
-  exists (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
+  exists (fun (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
 Qed.
 
 Definition bar_and_fam_per2lib_per {o}
-           {lib  : @library o}
+           {lib  : @SL o}
            {bar  : BarLib lib}
            (feqa : bar-and-fam-per(lib,bar,o)) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) t1 t2 =>
-            {lib1 : library
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) t1 t2 =>
+            {lib1 : SL
             , {br : bar_lib_bar bar lib1
             , {ext : lib_extends lib' lib1
             , {x : lib_extends lib' lib
@@ -215,7 +215,7 @@ Definition lib_per_fam2lib_per {o} {lib}
            (a a' : @CTerm o)
            (eqb : lib-per-fam(lib,eqa,o)) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) t1 t2 =>
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) t1 t2 =>
             {e : eqa lib' x a a' ,  eqb lib' x a a' e t1 t2}).
 
   repeat introv.
@@ -227,16 +227,16 @@ Proof.
 Defined.
 
 Definition pair_dep2lib_per2 {o}
-           {lib : library}
+           {lib : SL}
            {eqa : lib-per(lib,o)}
            {v B F1 F2}
-           (f : {lib' : library $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}} -> per(o))
-           (p : forall a : {lib' : library $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}},
+           (f : {lib' : SL $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}} -> per(o))
+           (p : forall a : {lib' : SL $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}},
                (nuprl (projT1 a) (B) [[v \\ projT1 (projT2 (projT2 a))]] (B) [[v \\ projT1 (projT2 (projT2 a))]] (f a))
                  # f a (F1 (projT1 (projT2 (projT2 a)))) (F2 (projT1 (projT2 (projT2 (projT2 a))))))
   : lib-per-fam(lib,eqa,o).
 Proof.
-  exists (fun (lib' : library) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
             f (existT _ lib' (existT _ x (existT _ a (existT _ a' e))))).
 
   introv.
@@ -248,19 +248,19 @@ Proof.
 Defined.
 
 Lemma choice_ext_lib_eq_fam {o} :
-  forall lib (A A' : @CTerm o) v B (eqa : lib-per(lib,o)) F1 F2,
+  forall (lib : SL) (A A' : @CTerm o) v B (eqa : lib-per(lib,o)) F1 F2,
     (forall lib' e, nuprl lib' A A' (eqa lib' e))
-    -> (forall lib' (x : lib_extends lib' lib) a a',
+    -> (forall (lib' : SL) (x : lib_extends lib' lib) a a',
            equality lib' a a' A
            -> equality lib' (F1 a) (F2 a') (B)[[v\\a]])
     -> {eqb : lib-per-fam(lib,eqa,o),
-              forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
+              forall (lib' : SL) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
                 nuprl lib' (B)[[v\\a]] (B)[[v\\a]] (eqb lib' x a a' e)
                       # eqb lib' x a a' e (F1 a) (F2 a')}.
 Proof.
   introv teqa F.
 
-  assert (forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
+  assert (forall (lib' : SL) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
              equality lib' (F1 a) (F2 a') (B)[[v\\a]]) as G.
   {
     introv e.
@@ -270,7 +270,7 @@ Proof.
   clear F; rename G into F.
 
   pose proof (FunctionalChoice_on
-                {lib' : library & {ext : lib_extends lib' lib & {a1 : CTerm & {a2 : CTerm & eqa lib' ext a1 a2}}}}
+                {lib' : SL & {ext : lib_extends lib' lib & {a1 : CTerm & {a2 : CTerm & eqa lib' ext a1 a2}}}}
                 per
                 (fun a b => nuprl
                               (projT1 a)
@@ -295,14 +295,14 @@ Proof.
 Qed.
 
 Definition pair_dep2lib_per3 {o}
-           {lib : library}
+           {lib : SL}
            {eqa : lib-per(lib,o)}
            {v1 v2 B1 B2 i}
-           (f : {lib' : library $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}} -> per(o))
+           (f : {lib' : SL $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}} -> per(o))
            (p : forall a, nuprli i (projT1 a) (B1)[[v1\\projT1(projT2(projT2 a))]] (B2)[[v2\\projT1(projT2(projT2(projT2 a)))]] (f a))
   : lib-per-fam(lib,eqa,o).
 Proof.
-  exists (fun (lib' : library) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
             f (existT _ lib' (existT _ x (existT _ a (existT _ a' e))))).
 
   introv.
@@ -315,18 +315,18 @@ Proof.
 Defined.
 
 Lemma choice_ext_teqi {o} :
-  forall lib i (A A' : @CTerm o) v1 B1 v2 B2 (eqa : lib-per(lib,o)),
+  forall (lib : SL) i (A A' : @CTerm o) v1 B1 v2 B2 (eqa : lib-per(lib,o)),
     (forall lib' e, nuprl lib' A A' (eqa lib' e))
-    -> (forall lib' (x : lib_extends lib' lib) a1 a2,
+    -> (forall (lib' : SL) (x : lib_extends lib' lib) a1 a2,
            equality lib' a1 a2 A
            -> equality lib' (substc a1 v1 B1) (substc a2 v2 B2) (mkc_uni i))
     -> {eqb : lib-per-fam(lib,eqa,o),
-         forall lib' (x : lib_extends lib' lib) a1 a2 (e : eqa lib' x a1 a2),
+         forall (lib': SL) (x : lib_extends lib' lib) a1 a2 (e : eqa lib' x a1 a2),
             nuprli i lib' (substc a1 v1 B1) (substc a2 v2 B2) (eqb lib' x a1 a2 e)}.
 Proof.
   introv teqa F.
 
-  assert (forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
+  assert (forall (lib' : SL) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
              equality lib' (B1)[[v1\\a]] (B2)[[v2\\a']] (mkc_uni i)) as G.
   {
     introv e.
@@ -336,7 +336,7 @@ Proof.
   clear F; rename G into F.
 
   pose proof (FunctionalChoice_on
-                {lib' : library & {ext : lib_extends lib' lib & {a1 : CTerm & {a2 : CTerm & eqa lib' ext a1 a2}}}}
+                {lib' : SL & {ext : lib_extends lib' lib & {a1 : CTerm & {a2 : CTerm & eqa lib' ext a1 a2}}}}
                 per
                 (fun a b => nuprli
                               i

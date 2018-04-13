@@ -61,7 +61,7 @@ Proof.
 Qed.*)
 
 Lemma dest_nuprl_cequiv {o} :
-  forall (lib : @library o) (a b c d : @CTerm o) eq,
+  forall (lib : @SL o) (a b c d : @CTerm o) eq,
     nuprl lib (mkc_cequiv a b) (mkc_cequiv c d) eq
     -> per_bar (per_cequiv nuprl) lib (mkc_cequiv a b) (mkc_cequiv c d) eq.
 Proof.
@@ -71,7 +71,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_cequiv {o} :
-  forall i (lib : @library o) (a b c d : @CTerm o) eq,
+  forall i (lib : @SL o) (a b c d : @CTerm o) eq,
     nuprli i lib (mkc_cequiv a b) (mkc_cequiv c d) eq
     -> per_bar (per_cequiv (nuprli i)) lib (mkc_cequiv a b) (mkc_cequiv c d) eq.
 Proof.
@@ -81,7 +81,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_approx {o} :
-  forall i (lib : @library o) (a b c d : @CTerm o) eq,
+  forall i (lib : @SL o) (a b c d : @CTerm o) eq,
     nuprli i lib (mkc_approx a b) (mkc_approx c d) eq
     -> per_bar (per_approx (nuprli i)) lib (mkc_approx a b) (mkc_approx c d) eq.
 Proof.
@@ -436,7 +436,7 @@ Proof.
 Qed.
 
 Lemma member_cequiv_bar {o} :
-  forall lib (t1 t2 : @CTerm o),
+  forall (lib : SL) (t1 t2 : @CTerm o),
     all_in_ex_bar lib (fun lib => ccequivc lib t1 t2)
     -> member lib mkc_axiom (mkc_cequiv t1 t2).
 Proof.
@@ -475,7 +475,7 @@ Proof.
 Qed.
 
 Lemma member_approx_bar {o} :
-  forall lib (bar : BarLib lib) (t1 t2 : @CTerm o),
+  forall (lib : SL) (bar : BarLib lib) (t1 t2 : @CTerm o),
     all_in_bar bar (fun lib => capproxc lib t1 t2)
     -> member lib mkc_axiom (mkc_approx t1 t2).
 Proof.
@@ -494,7 +494,7 @@ Proof.
 Qed.
 
 Lemma member_approx_iff {o} :
-  forall lib (t1 t2 : @CTerm o),
+  forall (lib : SL) (t1 t2 : @CTerm o),
     all_in_ex_bar lib (fun lib => capproxc lib t1 t2)
     <=> member lib mkc_axiom (mkc_approx t1 t2).
 Proof.
@@ -525,7 +525,7 @@ Proof.
 Qed.
 
 Lemma member_halts_iff {p} :
-  forall lib (t : @CTerm p),
+  forall (lib : SL) (t : @CTerm p),
     all_in_ex_bar lib (fun lib => chaltsc lib t)
     <=> member lib mkc_axiom (mkc_halts t).
 Proof.
@@ -560,7 +560,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_base {o} :
-  forall (lib : @library o) eq,
+  forall (lib : @SL o) eq,
     nuprl lib mkc_base mkc_base eq
     -> per_bar (per_base nuprl) lib mkc_base mkc_base eq.
 Proof.
@@ -725,7 +725,7 @@ Proof.
 Qed.
 
 Lemma member_cequiv_iff {o} :
-  forall lib (t1 t2 : @CTerm o),
+  forall (lib : SL) (t1 t2 : @CTerm o),
     all_in_ex_bar lib (fun lib => ccequivc lib t1 t2)
     <=> member lib mkc_axiom (mkc_cequiv t1 t2).
 Proof.
@@ -783,7 +783,7 @@ Proof.
 Qed.
 
 Lemma equality_in_approx {o} :
-  forall lib (a b t1 t2 : @CTerm o),
+  forall (lib : SL) (a b t1 t2 : @CTerm o),
     all_in_ex_bar lib (fun lib => (capproxc lib t1 t2 # a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom))
     <=> equality lib a b (mkc_approx t1 t2).
 Proof.
@@ -888,8 +888,8 @@ Proof.
 Qed.
 
 Lemma inhabited_halts {o} :
-  forall lib (t : @CTerm o),
-    all_in_ex_bar lib (fun lib => chaltsc lib t)
+  forall (lib : SL) (t : @CTerm o),
+    all_in_ex_bar lib (fun (lib : SL) => chaltsc lib t)
     <=> inhabited_type lib (mkc_halts t).
 Proof.
   introv; split; intro h.
@@ -924,14 +924,14 @@ Proof.
 Qed.
 
 Lemma type_mkc_halts {p} :
-  forall lib (a : @CTerm p), type lib (mkc_halts a).
+  forall (lib : SL) (a : @CTerm p), type lib (mkc_halts a).
 Proof.
   introv; rw @tequality_mkc_halts; eauto 3 with slow refl.
 Qed.
 Hint Immediate type_mkc_halts.
 
 Lemma equality_in_halts {p} :
-  forall lib (a b t : @CTerm p),
+  forall (lib : SL) (a b t : @CTerm p),
     all_in_ex_bar lib (fun lib => (chaltsc lib t # a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom))
     <=> equality lib a b (mkc_halts t).
 Proof.

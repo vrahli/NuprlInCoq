@@ -55,7 +55,8 @@ Proof.
   rw <- @equality_in_approx in e.
   unfold all_in_ex_bar in e; exrepnd.
   pose proof (bar_non_empty bar) as q; exrepnd.
-  pose proof (e0 _ q0 _ (lib_extends_refl lib')) as e0; simpl in *; repnd; spcast.
+  assert (lib_extends lib' lib) as xt by eauto 3 with slow.
+  pose proof (e0 (ext2SL xt) q0 (ext2SL xt) (lib_extends_refl lib')) as e0; simpl in *; repnd; spcast.
   allapply @not_axiom_approxc_bot; sp.
 Qed.
 

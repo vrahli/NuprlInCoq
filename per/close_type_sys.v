@@ -223,7 +223,7 @@ Qed.
 Hint Resolve ih_implies_all_in_bar_type_sys_props4 : slow.
 
 Lemma ih_implies_all_in_bar_ext_type_sys_props4 {o} :
-  forall {lib} (bar : @BarLib o lib) ts A B eqa,
+  forall {lib : SL} (bar : @BarLib o lib) ts A B eqa,
     local_ts ts
     -> ts_implies_per_bar ts
     -> type_system ts

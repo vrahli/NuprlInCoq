@@ -73,8 +73,8 @@ Proof.
     apply nuprl_refl in pera4.
     apply nuprl_refl in perb4.
     eapply nuprl_uniquely_valued; eauto.
-    eapply nuprl_value_respecting_left;[|eapply lib_extends_preserves_ccequivc_ext;[eauto|];eauto ].
-    eapply nuprl_value_respecting_right;[|eapply lib_extends_preserves_ccequivc_ext;[eauto|];eauto ].
+    eapply nuprl_value_respecting_left;[|eapply lib_extends_preserves_ccequivc_ext_sl;[eauto|];eauto ].
+    eapply nuprl_value_respecting_right;[|eapply lib_extends_preserves_ccequivc_ext_sl;[eauto|];eauto ].
     auto.
   }
 
@@ -87,11 +87,11 @@ Proof.
     apply nuprl_refl in perb0.
     eapply nuprl_uniquely_valued; eauto.
     eapply nuprl_value_respecting_left;
-      [|eapply lib_extends_preserves_ccequivc_ext;[eauto|];
+      [|eapply lib_extends_preserves_ccequivc_ext_sl;[eauto|];
         apply bcequivc_ext_implies_ccequivc_ext;eauto
       ].
     eapply nuprl_value_respecting_right;
-      [|eapply lib_extends_preserves_ccequivc_ext;[eauto|];
+      [|eapply lib_extends_preserves_ccequivc_ext_sl;[eauto|];
         apply bcequivc_ext_implies_ccequivc_ext;eauto
       ].
     auto.
@@ -125,7 +125,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_function {o} :
-  forall (lib : @library o) (A : @CTerm o) v B C w D eq,
+  forall (lib : @SL o) (A : @CTerm o) v B C w D eq,
     nuprl lib (mkc_function A v B) (mkc_function C w D) eq
     -> per_bar (per_func_ext nuprl) lib (mkc_function A v B) (mkc_function C w D) eq.
 Proof.
@@ -160,12 +160,12 @@ Proof.
 Qed.
 
 Lemma bar_and_fam_per2lib_per_implies_lpaf_eqa {o} :
-  forall {lib lib'} {bar : @BarLib o lib} {feqa : bar-and-fam-per(lib,bar,o)}
+  forall {lib lib' : SL} {bar : @BarLib o lib} {feqa : bar-and-fam-per(lib,bar,o)}
          {A v B C w D}
-         (F : forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_function nuprl lib2 (mkc_function A v B) (mkc_function C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
+         (F : forall (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_function nuprl lib2 (mkc_function A v B) (mkc_function C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
          {x : lib_extends lib' lib}
          {a a'}
-         (lib1 : library)
+         (lib1 : SL)
          (br : bar_lib_bar bar lib1)
          (ext : lib_extends lib' lib1)
          (y : lib_extends lib' lib),
@@ -182,15 +182,15 @@ Proof.
 Qed.
 
 Definition bar_and_fam_per2lib_per_fam {o}
-           {lib  : @library o}
+           {lib  : @SL o}
            {bar  : BarLib lib}
            (feqa : bar-and-fam-per(lib,bar,o))
            {A v B C w D}
-           (F : forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_function nuprl lib2 (mkc_function A v B) (mkc_function C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
+           (F : forall (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_function nuprl lib2 (mkc_function A v B) (mkc_function C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
   : lib-per-fam(lib,bar_and_fam_per2lib_per(feqa),o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) a a' (e : bar_and_fam_per2lib_per(feqa) lib' x a a') t1 t2 =>
-            {lib1 : library
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) a a' (e : bar_and_fam_per2lib_per(feqa) lib' x a a') t1 t2 =>
+            {lib1 : SL
             , {br : bar_lib_bar bar lib1
             , {ext : lib_extends lib' lib1
             , {y : lib_extends lib' lib
@@ -225,7 +225,7 @@ Proof.
 
   apply all_in_bar_ext_exists_per_and_fam_implies_exists in u0; exrepnd.
 
-  assert (forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_function nuprl lib2 (mkc_function A v B) (mkc_function C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x))) as F by eapply u2.
+  assert (forall (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_function nuprl lib2 (mkc_function A v B) (mkc_function C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x))) as F by eapply u2.
 
   exists bar.
   exists (bar_and_fam_per2lib_per feqa).
@@ -526,7 +526,7 @@ Proof.
   - Case "<-".
     introv e; exrepnd.
 
-    assert (forall lib', lib_extends lib' lib -> tequality lib' A1 A2) as teqa by eauto 3 with slow.
+    assert (forall (lib' : SL), lib_extends lib' lib -> tequality lib' A1 A2) as teqa by eauto 3 with slow.
     clear e0.
 
     rename e into teqb.
@@ -545,10 +545,10 @@ Proof.
 Qed.
 
 Lemma if_member_function {o} :
-  forall lib (f : @CTerm o) A v B,
+  forall (lib : SL) (f : @CTerm o) A v B,
     member lib f (mkc_function A v B)
     ->
-    forall lib' (x : lib_extends lib' lib) x y,
+    forall (lib' : SL) (x : lib_extends lib' lib) x y,
       equality lib' x y A
       -> equality lib' (mkc_apply f x) (mkc_apply f y) (substc x v B).
 Proof.
@@ -678,12 +678,12 @@ Qed.
 
 (* This is 'functionExtensionality' *)
 Lemma implies_member_function {o} :
-  forall lib (f : @CTerm o) g A v B,
+  forall (lib : SL) (f : @CTerm o) g A v B,
     type lib A
-    -> (forall lib' (x : lib_extends lib' lib) a a',
+    -> (forall (lib' : SL) (x : lib_extends lib' lib) a a',
            equality lib' a a' A
            -> tequality lib' (substc a v B) (substc a' v B))
-    -> (forall lib' (x : lib_extends lib' lib) a a',
+    -> (forall (lib' : SL) (x : lib_extends lib' lib) a a',
           equality lib' a a' A
           -> equality lib' (mkc_apply f a) (mkc_apply g a') (substc a v B))
     -> equality lib f g (mkc_function A v B).
@@ -752,14 +752,14 @@ Qed.
 
 (* This is the <=> verison of 'implies_member_function' *)
 Lemma equality_in_function {o} :
-  forall lib (f : @CTerm o) g A v B,
+  forall (lib : SL) (f : @CTerm o) g A v B,
     equality lib f g (mkc_function A v B)
     <=>
     (type lib A
-     # (forall lib' (x : lib_extends lib' lib) a a',
+     # (forall (lib' : SL) (x : lib_extends lib' lib) a a',
            equality lib' a a' A
            -> tequality lib' (substc a v B) (substc a' v B))
-     # (forall lib' (x : lib_extends lib' lib) a a',
+     # (forall (lib' : SL) (x : lib_extends lib' lib) a a',
            equality lib' a a' A
            -> equality lib' (mkc_apply f a) (mkc_apply g a') (substc a v B))).
 Proof.
@@ -885,7 +885,7 @@ Lemma equality_in_function2 {p} :
     equality lib f g (mkc_function A v B)
     <=>
     (type lib (mkc_function A v B)
-     # (forall lib' (x : lib_extends lib' lib) a a',
+     # (forall (lib' : SL) (x : lib_extends lib' lib) a a',
           equality lib' a a' A
           -> equality lib' (mkc_apply f a) (mkc_apply g a') (substc a v B))).
 Proof.
@@ -904,9 +904,9 @@ Lemma inhabited_function {p} :
     inhabited_type lib (mkc_function A v B)
     <=>
     (type lib A
-     # (forall lib' (x : lib_extends lib' lib) a a', equality lib' a a' A -> tequality lib' (substc a v B) (substc a' v B))
+     # (forall (lib' : SL) (x : lib_extends lib' lib) a a', equality lib' a a' A -> tequality lib' (substc a v B) (substc a' v B))
      # {f : CTerm
-        , forall lib' (x : lib_extends lib' lib) a a',
+        , forall (lib' : SL) (x : lib_extends lib' lib) a a',
             equality lib' a a' A
             -> equality lib' (mkc_apply f a) (mkc_apply f a') (substc a v B)}).
 Proof.
@@ -926,7 +926,7 @@ Lemma equality_in_function3 {p} :
     equality lib f g (mkc_function A v B)
     <=>
     (type lib A
-     # (forall lib' (x : lib_extends lib' lib) a a',
+     # (forall (lib' : SL) (x : lib_extends lib' lib) a a',
           equality lib' a a' A
           -> tequality lib' (substc a v B) (substc a' v B)
              # equality lib' (mkc_apply f a) (mkc_apply g a') (substc a v B))).
@@ -965,7 +965,7 @@ Lemma tequality_fun {p} :
     tequality lib (mkc_fun A1 B1) (mkc_fun A2 B2)
     <=>
     (tequality lib A1 A2
-      # (forall lib' (x : lib_extends lib' lib), inhabited_type lib' A1 -> tequality lib' B1 B2)).
+      # (forall (lib' : SL) (x : lib_extends lib' lib), inhabited_type lib' A1 -> tequality lib' B1 B2)).
 Proof.
   intros.
   allrw <- @fold_mkc_fun.
@@ -996,8 +996,8 @@ Lemma equality_in_fun {p} :
     equality lib f g (mkc_fun A B)
     <=>
     (type lib A
-     # (forall lib' (x : lib_extends lib' lib), inhabited_type lib' A -> type lib' B)
-     # (forall lib' (x : lib_extends lib' lib) a a',
+     # (forall (lib' : SL) (x : lib_extends lib' lib), inhabited_type lib' A -> type lib' B)
+     # (forall (lib' : SL) (x : lib_extends lib' lib) a a',
           equality lib' a a' A
           -> equality lib' (mkc_apply f a) (mkc_apply g a') B)).
 Proof.
@@ -1037,7 +1037,7 @@ Lemma tequality_mkc_fun {p} :
   forall lib (A1 A2 B1 B2 : @CTerm p),
     tequality lib (mkc_fun A1 B1) (mkc_fun A2 B2)
     <=> (tequality lib A1 A2
-         # (forall lib' (x : lib_extends lib' lib), inhabited_type lib' A1 -> tequality lib' B1 B2)).
+         # (forall (lib' : SL) (x : lib_extends lib' lib), inhabited_type lib' A1 -> tequality lib' B1 B2)).
 Proof.
   introv.
   allrw <- @fold_mkc_fun.
@@ -1063,7 +1063,7 @@ Qed.
 
 Lemma type_mkc_fun {p} :
   forall lib (A B : @CTerm p),
-    type lib (mkc_fun A B) <=> (type lib A # (forall lib' (x : lib_extends lib' lib), inhabited_type lib' A -> type lib' B)).
+    type lib (mkc_fun A B) <=> (type lib A # (forall (lib' : SL) (x : lib_extends lib' lib), inhabited_type lib' A -> type lib' B)).
 Proof.
   introv.
   rw @tequality_mkc_fun; sp.
@@ -1106,7 +1106,8 @@ Proof.
     pose proof (perb4 _ e) as perb4.
     simpl in *.
 
-    eapply nuprli_value_respecting_left in pera4;[|apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext;eauto].
+    eapply nuprli_value_respecting_left in pera4;
+      [|apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext_sl;eauto].
 
     apply nuprli_refl in pera4.
     apply nuprli_refl in perb4.
@@ -1119,7 +1120,10 @@ Proof.
     pose proof (perb0 _ e a a' v1) as perb0.
     simpl in *.
 
-    eapply nuprli_value_respecting_left in pera0;[|apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext;try eapply bcequivc_ext_implies_ccequivc_ext;eauto].
+    eapply nuprli_value_respecting_left in pera0;
+      [|apply ccequivc_ext_sym;
+        eapply lib_extends_preserves_ccequivc_ext_sl;
+        try eapply bcequivc_ext_implies_ccequivc_ext;eauto].
 
     apply nuprli_refl in pera0.
     apply nuprli_refl in perb0.
@@ -1154,7 +1158,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_function {o} :
-  forall i (lib : @library o) (A : @CTerm o) v B C w D eq,
+  forall i (lib : @SL o) (A : @CTerm o) v B C w D eq,
     nuprli i lib (mkc_function A v B) (mkc_function C w D) eq
     -> per_bar (per_func_ext (nuprli i)) lib (mkc_function A v B) (mkc_function C w D) eq.
 Proof.
@@ -1189,12 +1193,12 @@ Proof.
 Qed.
 
 Lemma bar_and_fam_per2lib_per_implies_lpaf_eqa_i {o} :
-  forall {lib lib'} {bar : @BarLib o lib} {feqa : bar-and-fam-per(lib,bar,o)}
+  forall {lib lib' : SL} {bar : @BarLib o lib} {feqa : bar-and-fam-per(lib,bar,o)}
          {A v B C w D i}
-         (F : forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_function (nuprli i) lib2 (mkc_function A v B) (mkc_function C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
+         (F : forall (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_function (nuprli i) lib2 (mkc_function A v B) (mkc_function C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
          {x : lib_extends lib' lib}
          {a a'}
-         (lib1 : library)
+         (lib1 : SL)
          (br : bar_lib_bar bar lib1)
          (ext : lib_extends lib' lib1)
          (y : lib_extends lib' lib),
@@ -1211,15 +1215,15 @@ Proof.
 Qed.
 
 Definition bar_and_fam_per2lib_per_fam_i {o}
-           {lib  : @library o}
+           {lib  : @SL o}
            {bar  : BarLib lib}
            (feqa : bar-and-fam-per(lib,bar,o))
            {A v B C w D i}
-           (F : forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_function (nuprli i) lib2 (mkc_function A v B) (mkc_function C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
+           (F : forall (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_function (nuprli i) lib2 (mkc_function A v B) (mkc_function C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
   : lib-per-fam(lib,bar_and_fam_per2lib_per(feqa),o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) a a' (e : bar_and_fam_per2lib_per(feqa) lib' x a a') t1 t2 =>
-            {lib1 : library
+  exists (fun (lib' : SL) (x : lib_extends lib' lib) a a' (e : bar_and_fam_per2lib_per(feqa) lib' x a a') t1 t2 =>
+            {lib1 : SL
             , {br : bar_lib_bar bar lib1
             , {ext : lib_extends lib' lib1
             , {y : lib_extends lib' lib
@@ -1254,7 +1258,7 @@ Proof.
 
   apply all_in_bar_ext_exists_per_and_fam_implies_exists in u0; exrepnd.
 
-  assert (forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_function (nuprli i) lib2 (mkc_function A v B) (mkc_function C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x))) as F by eapply u2.
+  assert (forall (lib1 : SL) (br : bar_lib_bar bar lib1) (lib2 : SL) (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_function (nuprli i) lib2 (mkc_function A v B) (mkc_function C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x))) as F by eapply u2.
 
   exists bar.
   exists (bar_and_fam_per2lib_per feqa).
@@ -1292,8 +1296,8 @@ Proof.
 
         eapply in_ext_ext_nuprli_value_respecting_left  in q3;[|apply ccequivc_ext_sym;eauto].
         eapply in_ext_ext_nuprli_value_respecting_right in q3;[|apply ccequivc_ext_sym;eauto].
-        eapply nuprli_value_respecting_left  in u3;[|apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext;eauto].
-        eapply nuprli_value_respecting_right in u3;[|apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext;eauto].
+        eapply nuprli_value_respecting_left  in u3;[|apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext_sl;eauto].
+        eapply nuprli_value_respecting_right in u3;[|apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext_sl;eauto].
 
         pose proof (q3 _ (lib_extends_refl lib'1)) as q3; simpl in *.
         apply nuprli_refl in q3.
@@ -1312,8 +1316,8 @@ Proof.
 
         eapply in_ext_ext_nuprli_value_respecting_left  in q3;[|apply ccequivc_ext_sym;eauto].
         eapply in_ext_ext_nuprli_value_respecting_right in q3;[|apply ccequivc_ext_sym;eauto].
-        eapply nuprli_value_respecting_left  in u3;[|apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext;[|eauto];eauto 3 with slow].
-        eapply nuprli_value_respecting_right in u3;[|apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext;[|eauto];eauto 3 with slow].
+        eapply nuprli_value_respecting_left  in u3;[|apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext_sl;[|eauto];eauto 3 with slow].
+        eapply nuprli_value_respecting_right in u3;[|apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext_sl;[|eauto];eauto 3 with slow].
 
         pose proof (q3 _ (lib_extends_refl lib'1)) as q3; simpl in *.
         apply nuprli_refl in q3.
@@ -1461,7 +1465,7 @@ Lemma equality_function {o} :
       (mkc_uni i)
     <=>
     (equality lib A1 A2 (mkc_uni i)
-     # forall lib' (x : lib_extends lib' lib) a a',
+     # forall (lib' : SL) (x : lib_extends lib' lib) a a',
          equality lib' a a' A1
          -> equality lib' (substc a v1 B1) (substc a' v2 B2) (mkc_uni i)).
 Proof.
@@ -1579,7 +1583,7 @@ Proof.
     pose proof (nuprli_monotone_func i lib'2 A1 A2 eqa eqa0) as tya; exrepnd.
     rename eq' into eqa'.
 
-    assert (forall lib',
+    assert (forall (lib' : SL),
                lib_extends lib' lib'2 ->
                forall a a',
                  equality lib' a a' A1 ->

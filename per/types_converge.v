@@ -45,7 +45,7 @@ Definition comp_val_bar {o} lib (t : @CTerm o) :=
 Hint Resolve computes_to_valc_implies_hasvaluec : slow.
 
 Lemma ccomputes_to_valc_ext_implies_hasvaluec {o} :
-  forall lib lib' (a b : @CTerm o),
+  forall (lib lib' : SL) (a b : @CTerm o),
     lib_extends lib' lib
     -> (a ===>(lib) b)
     -> hasvaluec lib' a.

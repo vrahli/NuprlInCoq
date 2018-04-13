@@ -39,9 +39,9 @@ Require Export cvterm.
 
 
 Lemma per_bar_eq_univi_eq_lib_per_implies {o} :
-  forall {lib} (bar : @BarLib o lib) i a b,
+  forall {lib : SL} (bar : @BarLib o lib) i a b,
     per_bar_eq bar (univi_eq_lib_per lib i) a b
-    -> exists (bar : BarLib lib), all_in_bar_ext bar (fun (lib' : library) x => univi_eq (univi_bar i) lib' a b).
+    -> exists (bar : BarLib lib), all_in_bar_ext bar (fun (lib' : SL) x => univi_eq (univi_bar i) lib' a b).
 Proof.
   introv per.
 
@@ -100,7 +100,7 @@ Qed.
 Hint Resolve member_in_uni : slow.
 
 Lemma mkc_uni_in_nuprl {o} :
-  forall (lib : @library o) (i : nat) (bar : BarLib lib),
+  forall (lib : @SL o) (i : nat) (bar : BarLib lib),
     nuprl lib (mkc_uni i) (mkc_uni i) (per_bar_eq bar (univi_eq_lib_per lib i)).
 Proof.
   introv.
@@ -183,7 +183,7 @@ Qed.
 Hint Resolve type_mkc_uni : slow.
 
 Lemma per_bar_eq_univi_eq_lib_per_implies_eq_nuprli {o} :
-  forall lib (bar : BarLib lib) i (A B : @CTerm o),
+  forall (lib : SL) (bar : BarLib lib) i (A B : @CTerm o),
     per_bar_eq bar (univi_eq_lib_per lib i) A B
     -> exists eq', nuprli i lib A B eq'.
 Proof.
