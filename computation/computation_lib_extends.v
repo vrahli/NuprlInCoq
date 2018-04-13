@@ -31,8 +31,10 @@
  *)
 
 
+Require Export terms_union.
 Require Export computation_preserves_lib.
 Require Import computation_choice_seq.
+Require Export list. (* Why? *)
 
 
 (* This is entry2name *)
@@ -97,6 +99,24 @@ Hint Resolve is_nat_zero : slow.
 
 Definition csc_nat {o} : @ChoiceSeqRestriction o :=
   csc_type (fun _ => mkc_zero) is_nat is_nat_zero.
+(* =============== *)
+
+(* =============== *)
+(* bool restriction *)
+Definition mkc_boolean {o} (b : bool) : @CTerm o :=
+  if b then tt else ff.
+
+Definition is_bool {o} : @RestrictionPred o :=
+  fun n t => exists b, t = mkc_boolean b.
+
+Lemma is_bool_true {o} : forall n, @is_bool o n tt.
+Proof.
+  introv; exists true; tcsp.
+Qed.
+Hint Resolve is_bool_true : slow.
+
+Definition csc_bool {o} : @ChoiceSeqRestriction o :=
+  csc_type (fun _ => tt) is_bool is_bool_true.
 (* =============== *)
 
 (*(*
@@ -167,17 +187,25 @@ Fixpoint entry_in_library_extends {o}
 Definition lsubset {A} (l1 l2 : list A) : Prop :=
   forall a, List.In a l1 -> List.In a l2.
 
-Definition is0kind (name : choice_sequence_name) : bool :=
+(*Definition is0kind (name : choice_sequence_name) : bool :=
   match csn_kind name with
   | cs_kind_nat n => if deq_nat n 0 then true else false
   | _ => false
-  end.
+  end.*)
 
 Definition is_nat_restriction {o} (restr : @ChoiceSeqRestriction o) :=
   match restr with
   | csc_type d M Md =>
     (forall n, d n = mkc_zero)
     /\ (forall n v, M n v <-> is_nat n v)
+  | csc_coq_law _ => False
+  end.
+
+Definition is_bool_restriction {o} (restr : @ChoiceSeqRestriction o) :=
+  match restr with
+  | csc_type d M Md =>
+    (forall n, d n = tt)
+    /\ (forall n v, M n v <-> is_bool n v)
   | csc_coq_law _ => False
   end.
 
@@ -202,6 +230,7 @@ Definition correct_restriction {o} (name : choice_sequence_name) (restr : @Choic
   match csn_kind name with
   | cs_kind_nat n =>
     if deq_nat n 0 then is_nat_restriction restr
+    else if deq_nat n 1 then is_bool_restriction restr
     else True
   | cs_kind_seq l => is_nat_seq_restriction l restr
   end.
@@ -213,12 +242,12 @@ Definition safe_choice_sequence_entry {o} (name : choice_sequence_name) (e : @Ch
     /\ choice_sequence_satisfies_restriction vals restriction
   end.
 
-Definition upd_restr_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntry o) :=
+(*Definition upd_restr_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntry o) :=
   if is0kind name then
     match e with
     | MkChoiceSeqEntry _ vals restriction => MkChoiceSeqEntry o vals csc_nat
     end
-  else e.
+  else e.*)
 
 Definition safe_library_entry {o} (e : @library_entry o) :=
   match e with

@@ -872,7 +872,8 @@ Proof.
   }
 
   remember (MkChoiceSequenceName "a" (cs_kind_seq l)) as name.
-  assert (is_nat_or_seq_kind name) as isn by (subst; eauto 3 with slow; tcsp).
+  assert (is_primitive_kind name) as isn by (subst; eauto 3 with slow; tcsp).
+  assert (compatible_choice_sequence_name 0 name) as comp by (subst; eauto 3 with slow; tcsp).
 
   exists (extend_seq_to_bar lib safe k name isn).
   introv br ext.
@@ -936,7 +937,7 @@ Proof.
   applydup safe' in br2.
 
   pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry k) as q.
-  repeat (autodimp q hyp); exrepnd.
+  repeat (autodimp q hyp); exrepnd;[].
 
   apply implies_equality_natk2nat_prop.
   introv ltk.

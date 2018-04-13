@@ -104,12 +104,12 @@ Proof.
   apply cequivc_mkc_islambda_mkc_choice_seq.
 Qed.
 
-Lemma compatible_choice_sequence_name_1 :
-  forall n, compatible_choice_sequence_name 1 n.
+Lemma compatible_choice_sequence_name_2 :
+  forall n, compatible_choice_sequence_name 2 n.
 Proof.
   tcsp.
 Qed.
-Hint Resolve compatible_choice_sequence_name_1 : slow.
+Hint Resolve compatible_choice_sequence_name_2 : slow.
 
 
 (*
@@ -130,7 +130,7 @@ Definition rule_callbyvalue_apply_cases {o}
       (mk_baresequent H (mk_concl
                            (mk_or
                               (mk_cequiv f (mk_lam x (mk_apply f (mk_var x))))
-                              (mk_member f (mk_csname 1)))
+                              (mk_member f (mk_csname 2)))
                            (mk_islambda f mk_btrue mk_bfalse)))
       [mk_baresequent H (mk_conclax (mk_halts (mk_apply f a))),
        mk_baresequent H (mk_conclax (mk_member f mk_base))]

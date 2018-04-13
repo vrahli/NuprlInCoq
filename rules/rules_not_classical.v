@@ -93,20 +93,6 @@ Proof.
     autorewrite with slow.
     apply tequality_mkc_squash.
     apply tequality_mkc_or; dands; eauto 3 with slow;[].
-
-    pose proof (lsubstc_vars_mk_not_as_mkcv (mk_var P) w4 (csub_filter s1 [P]) [P] c8) as q; exrepnd.
-    eapply tequality_respects_alphaeqc_left;
-      [apply alphaeqc_sym;apply substc_alphaeqcv;exact q1
-      |].
-    clear q1.
-
-    pose proof (lsubstc_vars_mk_not_as_mkcv (mk_var P) w4 (csub_filter s2 [P]) [P] c10) as q; exrepnd.
-    eapply tequality_respects_alphaeqc_right;
-      [apply alphaeqc_sym;apply substc_alphaeqcv;exact q1
-      |].
-    clear q1.
-
-    autorewrite with slow.
     apply tequality_not; eauto 3 with slow.
   }
 
@@ -118,17 +104,6 @@ Proof.
     autorewrite with slow.
     apply tequality_mkc_squash.
     apply tequality_mkc_or; dands; eauto 3 with slow;[].
-
-    pose proof (lsubstc_vars_mk_not_as_mkcv (mk_var P) w2 (csub_filter s1 [P]) [P] c7) as q; exrepnd.
-    eapply tequality_respects_alphaeqc_left;
-      [apply alphaeqc_sym;apply substc_alphaeqcv;exact q1
-      |].
-    eapply tequality_respects_alphaeqc_right;
-      [apply alphaeqc_sym;apply substc_alphaeqcv;exact q1
-      |].
-    clear q1.
-
-    autorewrite with slow.
     apply tequality_not; eauto 3 with slow.
   }
 
@@ -144,7 +119,7 @@ Proof.
   rename safe' into safe.
 
   pose proof (fresh_choice_seq_name_in_library lib []) as w; exrepnd.
-  assert (is_nat_or_seq_kind name) as isn.
+  assert (is_primitive_kind name) as isn.
   eauto 3 with slow.
 
   pose proof (inh2 (choice_sequence_name2entry name :: lib)) as q.
@@ -277,11 +252,6 @@ Proof.
 
   {
     clear q1 q2.
-    pose proof (lsubstc_vars_mk_not_as_mkcv (mk_var P) w6 (csub_filter s1 [P]) [P] c7) as aeq; exrepnd.
-    eapply alphaeqc_preserving_equality in q0;
-      [|apply substc_alphaeqcv;exact aeq1].
-    clear aeq1.
-    autorewrite with slow in q0.
     apply equality_in_not in q0; repnd.
     clear q1.
     eapply not_in_ext_not_inhabited_exists_1_choice; eauto.

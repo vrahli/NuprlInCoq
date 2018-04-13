@@ -466,7 +466,12 @@ Definition compatible_cs_kind (n : nat) (k : cs_kind) :=
     | cs_kind_nat m => m = 0
     | cs_kind_seq _ => True
     end
-  else True.
+  else if deq_nat n 1 then
+         match k with
+         | cs_kind_nat m => m = 1
+         | cs_kind_seq _ => False
+         end
+       else True.
 
 Definition compatible_choice_sequence_name (n : nat) (name : choice_sequence_name) :=
   compatible_cs_kind n (csn_kind name).

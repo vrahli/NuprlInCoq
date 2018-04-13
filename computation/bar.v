@@ -79,12 +79,12 @@ Definition safe_inf_choice_sequence_entry {o} (name : choice_sequence_name) (e :
     /\ inf_choice_sequence_satisfies_restriction vals restriction
   end.
 
-Definition upd_restr_inf_entry {o} (name : choice_sequence_name) (e : @InfChoiceSeqEntry o) :=
+(*Definition upd_restr_inf_entry {o} (name : choice_sequence_name) (e : @InfChoiceSeqEntry o) :=
   if is0kind name then
     match e with
     | MkInfChoiceSeqEntry _ vals restriction => MkInfChoiceSeqEntry o vals csc_nat
     end
-  else e.
+  else e.*)
 
 Definition safe_inf_library_entry {o} (e : @inf_library_entry o (*M*)) :=
   match e with
@@ -136,16 +136,16 @@ Definition is_default_inf_choice_seq_entry {o}
   | MkInfChoiceSeqEntry _ vals restr => is_default_inf_choice_sequence vals restr
   end.
 
-Definition is_nat_or_seq_kind (name : choice_sequence_name) :=
+Definition is_primitive_kind (name : choice_sequence_name) :=
   match csn_kind name with
-  | cs_kind_nat n => n = 0
+  | cs_kind_nat n => n <= 1
   | cs_kind_seq _ => True
   end.
 
 Definition is_cs_default_inf_entry {o} (e : @inf_library_entry o) :=
   match e with
   | inf_lib_cs name cs =>
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     /\ is_default_inf_choice_seq_entry cs
   | inf_lib_abs _ _ _ _ => False
   end.
@@ -238,7 +238,7 @@ Definition is_default_choice_seq_entry {o}
 Definition is_cs_default_entry {o} (e : @library_entry o) :=
   match e with
   | lib_cs name cs =>
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     /\ is_default_choice_seq_entry cs
   | lib_abs _ _ _ _ => False
   end.
@@ -513,10 +513,16 @@ Hint Resolve natSeq2default_restr : slow.
 Definition natSeq2restriction {o} (l : list nat) : @ChoiceSeqRestriction o :=
   @csc_type o (natSeq2default l) (natSeq2restrictionPred l) (natSeq2default_restr l).
 
+Definition default_inf_choice_seq_entry {o} : @InfChoiceSeqEntry o :=
+  MkInfChoiceSeqEntry _ (fun _ => mkc_zero) csc_nat.
+
 Definition simple_inf_choice_seq_entry {o}
            (name : choice_sequence_name) : @InfChoiceSeqEntry o :=
   match csn_kind name with
-  | cs_kind_nat _ => MkInfChoiceSeqEntry _ (fun _ => mkc_zero) csc_nat
+  | cs_kind_nat n =>
+    if deq_nat n 0 then MkInfChoiceSeqEntry _ (fun _ => mkc_zero) csc_nat
+    else if deq_nat n 1 then MkInfChoiceSeqEntry _ (fun _ => tt) csc_bool
+         else default_inf_choice_seq_entry
   | cs_kind_seq l => MkInfChoiceSeqEntry _ (natSeq2default l) (natSeq2restriction l)
   end.
 
@@ -735,7 +741,9 @@ Hint Resolve is_nat_restriction_csc_nat : slow.
 
 Definition is_nat_choice_sequence_name (n : choice_sequence_name) :=
   match csn_kind n with
-  | cs_kind_nat _ => True
+  | cs_kind_nat n =>
+    if deq_nat n 0 then True
+    else False
   | cs_kind_seq _ => False
   end.
 
@@ -749,10 +757,10 @@ Definition is_this_seq_choice_sequence_name (l : list nat) (n : choice_sequence_
   csn_kind n = cs_kind_seq l.
 
 Lemma is_nat_choice_sequence_name_cs_kind_nat :
-  forall x n,
-    is_nat_choice_sequence_name (MkChoiceSequenceName x (cs_kind_nat n)).
+  forall x,
+    is_nat_choice_sequence_name (MkChoiceSequenceName x (cs_kind_nat 0)).
 Proof.
-  introv; simpl; compute; auto.
+  introv; simpl; unfold is_nat_choice_sequence_name; simpl; boolvar; subst; tcsp.
 Qed.
 Hint Resolve is_nat_choice_sequence_name_cs_kind_nat : slow.
 
@@ -779,7 +787,7 @@ Lemma correct_restriction_csc_nat {o} :
 Proof.
   introv isn; unfold correct_restriction.
   destruct n as [name kind], kind as [n|seq]; simpl;
-    boolvar; dands; introv; tcsp; eauto 3 with slow;
+    boolvar; dands; introv; subst; tcsp; eauto 3 with slow;
       try (complete (inversion isn)).
 Qed.
 Hint Resolve correct_restriction_csc_nat : slow.
@@ -845,12 +853,21 @@ Proof.
 Qed.
 Hint Resolve correct_restriction_natSeqs2restriction : slow.
 
+Lemma correct_restriction_1 {o} :
+  forall name, @correct_restriction o (MkChoiceSequenceName name (cs_kind_nat 1)) csc_bool.
+Proof.
+  introv; unfold correct_restriction; simpl; dands; tcsp.
+Qed.
+Hint Resolve correct_restriction_1 : slow.
+
 Lemma safe_inf_choice_sequence_entry_simple_inf_choice_seq_entry {o} :
   forall name, @safe_inf_choice_sequence_entry o name (simple_inf_choice_seq_entry name).
 Proof.
   introv; unfold safe_inf_choice_sequence_entry; simpl.
   unfold simple_inf_choice_seq_entry; simpl.
   destruct name as [name kind], kind as [n|seq]; simpl; dands; eauto 3 with slow.
+  boolvar; simpl; dands; subst; eauto 3 with slow;
+    try (complete (unfold correct_restriction; simpl; boolvar; tcsp)).
 Qed.
 Hint Resolve safe_inf_choice_sequence_entry_simple_inf_choice_seq_entry : slow.
 
@@ -1974,6 +1991,19 @@ Proof.
 Qed.
 Hint Resolve same_restrictions_preserves_is_nat_seq_restriction : slow.
 
+Lemma same_restrictions_preserves_is_bool_restriction {o} :
+  forall (r1 r2 : @ChoiceSeqRestriction o),
+    same_restrictions r1 r2
+    -> is_bool_restriction r1
+    -> is_bool_restriction r2.
+Proof.
+  introv same isn; unfold is_bool_restriction in *.
+  destruct r1, r2; simpl in *; repnd; dands; tcsp; introv;
+    try (complete (rewrite <- same0; auto));
+    try (complete (rewrite <- same; auto)).
+Qed.
+Hint Resolve same_restrictions_preserves_is_bool_restriction : slow.
+
 Lemma same_restrictions_preserves_correct_restriction {o} :
   forall (r1 r2 : @ChoiceSeqRestriction o) name,
     same_restrictions r1 r2
@@ -2247,13 +2277,20 @@ Definition csc_seq {o} (l : list nat) : @ChoiceSeqRestriction o :=
 
 Definition choice_sequence_name2restriction {o} (name : choice_sequence_name) : @ChoiceSeqRestriction o :=
   match csn_kind name with
-  | cs_kind_nat n => csc_nat
+  | cs_kind_nat n =>
+    if deq_nat n 0 then csc_nat
+    else if deq_nat n 1 then csc_bool
+         else csc_nat
   | cs_kind_seq l => csc_seq l
   end.
 
 Definition choice_sequence_name2inf_choice_seq_vals {o} (name : choice_sequence_name) : @InfChoiceSeqVals o :=
   match csn_kind name with
-  | cs_kind_nat n => fun _ => mkc_zero
+  | cs_kind_nat n =>
+    fun _ =>
+      if deq_nat n 0 then mkc_zero
+      else if deq_nat n 1 then tt
+           else mkc_zero
   | cs_kind_seq l => natSeq2default l
   end.
 
@@ -2273,7 +2310,8 @@ Proof.
   unfold correct_restriction; destruct name as [name k]; simpl; auto.
   destruct k; simpl; auto.
 
-  - boolvar; auto; dands; tcsp.
+  - boolvar; auto; dands; subst; tcsp;
+      try (complete (unfold is_nat_restriction; simpl; dands; tcsp)).
 
   - dands; introv len; tcsp; eauto 3 with slow.
 Qed.
@@ -2293,6 +2331,7 @@ Proof.
   destruct k as [n|seq]; simpl; introv;
     unfold choice_sequence_name2inf_choice_seq_vals;
     simpl; eauto 3 with slow.
+  boolvar; subst; simpl; tcsp; introv; eauto 3 with slow.
 Qed.
 Hint Resolve inf_choice_sequence_satisfies_restrictionchoice_sequence_name2inf : slow.
 
@@ -2316,12 +2355,14 @@ Proof.
   unfold choice_sequence_name2restriction.
   destruct name as [name k]; simpl.
   destruct k; simpl; introv; simpl; eauto 3 with slow.
+  boolvar; subst; simpl; introv; tcsp.
+  unfold choice_sequence_name2inf_choice_seq_vals; simpl; boolvar; tcsp.
 Qed.
 Hint Resolve is_default_inf_choice_sequence_choice_sequence_name2inf : slow.
 
 Lemma is_cs_default_inf_entry_choice_sequence_name2inf_entry {o} :
   forall name,
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> @is_cs_default_inf_entry o (choice_sequence_name2inf_entry name).
 Proof.
   introv ins.
@@ -2332,7 +2373,7 @@ Hint Resolve is_cs_default_inf_entry_choice_sequence_name2inf_entry : slow.
 
 Lemma inf_entry_in_inf_library_default_choice_sequence_name2inf_entry {o} :
   forall name (inflib : @inf_library o),
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> ~ (exists n, same_entry_name (inf_entry2name (inflib n)) (entry_name_cs name))
     -> inf_entry_in_inf_library_default (choice_sequence_name2inf_entry name) inflib.
 Proof.
@@ -2347,7 +2388,7 @@ Hint Resolve select_lt : slow.
 Lemma is_default_choice_seq_entry_implies_extends {o} :
   forall name (e : @ChoiceSeqEntry o),
     is_default_choice_seq_entry e
-    -> is_nat_or_seq_kind name
+    -> is_primitive_kind name
     -> safe_choice_sequence_entry name e
     -> inf_entry_extends (choice_sequence_name2inf_entry name) (lib_cs name e).
 Proof.
@@ -2360,7 +2401,7 @@ Proof.
   unfold is_default_choice_seq_entry in h.
   destruct e as [vals restr]; simpl in *; repnd.
   unfold correct_restriction in *; simpl in *.
-  destruct k as [n|seq]; simpl in *; boolvar; subst; tcsp;[|].
+  destruct k as [n|seq]; simpl in *; boolvar; subst; tcsp;[| | |].
 
   - destruct restr in *; simpl in *; tcsp; repnd.
     dands; tcsp.
@@ -2369,6 +2410,16 @@ Proof.
     unfold inf_choice_sequence_vals_extend; introv x.
     applydup h in x; subst.
     rewrite safe1; auto.
+
+  - destruct restr in *; simpl in *; tcsp; repnd.
+    dands; tcsp.
+    { introv; symmetry; eauto. }
+    unfold choice_sequence_name2inf_choice_seq_vals; simpl.
+    unfold inf_choice_sequence_vals_extend; introv x.
+    applydup h in x; subst.
+    rewrite safe1; auto.
+
+  - unfold is_primitive_kind in *; simpl in *; try omega.
 
   - destruct restr in *; simpl in *; tcsp; repnd.
     dands; tcsp.
@@ -2431,7 +2482,10 @@ Fixpoint fun2list {T} n (f : nat -> T) : list T :=
 
 Definition choice_sequence_name2choice_seq_vals_upto {o} n (name : choice_sequence_name) : @ChoiceSeqVals o :=
   match csn_kind name with
-  | cs_kind_nat _ => fun2list n (fun _ => mkc_zero)
+  | cs_kind_nat k =>
+    if deq_nat k 0 then fun2list n (fun _ => mkc_zero)
+    else if deq_nat k 1 then fun2list n (fun _ => tt)
+         else fun2list n (fun _ => mkc_zero)
   | cs_kind_seq l => fun2list n (natSeq2default l)
   end.
 
@@ -2540,7 +2594,7 @@ Lemma entry_in_inf_library_default_implies_exists {o} :
     entry_in_inf_library_default e inflib
     ->
     exists name n restr,
-      is_nat_or_seq_kind name
+      is_primitive_kind name
       /\ entry2name e = entry_name_cs name
       /\ e = choice_sequence_name2entry_upto n name restr
       /\ correct_restriction name restr.
@@ -2569,6 +2623,18 @@ Proof.
     unfold ChoiceSeqVal; rewrite l.
     apply h in l; rewrite l.
     rewrite h4; auto.
+
+  - destruct restr; simpl in *; tcsp; repnd.
+    apply select_implies_eq_lists; autorewrite with slow; auto.
+    introv.
+
+    rewrite select_fun2list; boolvar;[|apply nth_select2; try omega].
+    apply (nth_select1 _ _ mkc_zero) in l.
+    unfold ChoiceSeqVal; rewrite l.
+    apply h in l; rewrite l.
+    rewrite h4; auto.
+
+  - unfold is_primitive_kind in *; simpl in *; try omega.
 
   - destruct restr; simpl in *; tcsp; repnd.
     apply select_implies_eq_lists; autorewrite with slow; auto.
@@ -2607,7 +2673,7 @@ Lemma entry_in_inf_library_default_implies_exists2 {o} :
     -> entry_in_inf_library_default e infLib
     ->
     exists name n restr,
-      is_nat_or_seq_kind name
+      is_primitive_kind name
       /\ entry2name e = entry_name_cs name
       /\ entry_in_library (choice_sequence_name2entry_upto n name restr) lib
       /\ correct_restriction name restr.
@@ -2632,19 +2698,22 @@ Qed.
 
 Lemma correct_restriction_implies_same_restrictions {o} :
   forall (r1 r2 : @ChoiceSeqRestriction o) (name : choice_sequence_name),
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> correct_restriction name r1
     -> correct_restriction name r2
     -> same_restrictions r1 r2.
 Proof.
   introv ins cora corb.
   unfold correct_restriction in *.
-  unfold is_nat_or_seq_kind in *.
+  unfold is_primitive_kind in *.
   unfold same_restrictions.
   destruct name as [name k]; simpl in *.
-  destruct k as [n|seq]; simpl in *; boolvar; tcsp; subst; GC;[|].
+  destruct k as [n|seq]; simpl in *; boolvar; tcsp; subst; GC; try omega;[| |].
 
   - unfold is_nat_restriction in *.
+    destruct r1, r2; simpl in *; repnd; dands; introv; allrw; tcsp.
+
+  - unfold is_bool_restriction in *.
     destruct r1, r2; simpl in *; repnd; dands; introv; allrw; tcsp.
 
   - unfold is_nat_seq_restriction in *.
@@ -2741,8 +2810,10 @@ Proof.
   unfold choice_sequence_name2choice_seq_vals_upto.
   destruct name as [name k], k as [k|seq]; simpl.
 
-  - exists (fun2list (n - m) (fun _ => @mkc_zero o)).
-    apply fun2list_split; auto.
+  - boolvar; subst; tcsp.
+    + exists (fun2list (n - m) (fun _ => @mkc_zero o)); try apply fun2list_split; auto.
+    + exists (fun2list (n - m) (fun _ => @tt o)); try apply fun2list_split; auto.
+    + exists (fun2list (n - m) (fun _ => @mkc_zero o)); try apply fun2list_split; auto.
 
   - exists (fun2list (n - m) (fun k => @natSeq2default o seq (k + m))).
     apply fun2list_split; auto.
@@ -2764,7 +2835,7 @@ Hint Resolve is_nat_natSeq2default : slow.
 
 Lemma safe_library_entry_choice_sequence_name2entry_upto {o} :
   forall n name (restr : @ChoiceSeqRestriction o),
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> correct_restriction name restr
     -> safe_library_entry (choice_sequence_name2entry_upto n name restr).
 Proof.
@@ -2772,8 +2843,14 @@ Proof.
   unfold safe_library_entry; simpl; dands; auto.
   unfold choice_sequence_satisfies_restriction.
   unfold correct_restriction in *.
-  unfold is_nat_or_seq_kind in *.
-  destruct name as [name k], k as [k|seq]; simpl in *; boolvar; subst; tcsp; GC;[|].
+  unfold is_primitive_kind in *.
+  destruct name as [name k], k as [k|seq]; simpl in *; boolvar; subst; tcsp; GC; try omega;[| |].
+
+  - destruct restr; simpl in *; tcsp; repnd.
+    introv h.
+    unfold choice_sequence_name2choice_seq_vals_upto in *; simpl in *.
+    rewrite select_fun2list in h; boolvar; tcsp; ginv.
+    allrw; eauto 3 with slow.
 
   - destruct restr; simpl in *; tcsp; repnd.
     introv h.
@@ -3722,7 +3799,7 @@ Lemma entry_in_inf_library_default_implies_exists3 {o} :
     -> entry_in_inf_library_default e infLib
     ->
     exists name n restr,
-      is_nat_or_seq_kind name
+      is_primitive_kind name
       /\ entry2name e = entry_name_cs name
       /\ entry_in_library (choice_sequence_name2entry_upto n name restr) lib
       /\ correct_restriction name restr.
@@ -3747,21 +3824,22 @@ Qed.
 
 Lemma is_cs_default_entry_choice_sequence_name2entry_upto {o} :
   forall n name (restr : @ChoiceSeqRestriction o),
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> correct_restriction name restr
     -> is_cs_default_entry (choice_sequence_name2entry_upto n name restr).
 Proof.
   introv isns cor.
   unfold is_cs_default_entry; simpl; dands; auto; eauto 3 with slow.
   unfold is_default_choice_sequence.
-  unfold is_nat_or_seq_kind in isns.
+  unfold is_primitive_kind in isns.
   unfold correct_restriction in *.
   destruct name as [name k]; simpl in *.
   unfold choice_sequence_name2choice_seq_vals_upto.
   destruct k as [k|seq]; simpl in *; boolvar; subst; tcsp; GC;
     destruct restr; simpl in *; simpl; introv h; repnd;
       rewrite select_fun2list in h; boolvar; tcsp; ginv;
-        try (complete (allrw; auto)).
+        try (complete (allrw; auto)); try omega;[].
+
   unfold natSeq2default.
 
   remember (select n0 seq) as s; symmetry in Heqs; destruct s.
@@ -3780,7 +3858,7 @@ Lemma entry_in_inf_library_default_choice_sequence_name2entry_upto {o} :
     entry_in_inf_library_default e infLib
     -> matching_entries (choice_sequence_name2entry_upto n1 name restr1) x
     -> matching_entries x e
-    -> is_nat_or_seq_kind name
+    -> is_primitive_kind name
     -> correct_restriction name restr
     -> entry_in_inf_library_default
          (choice_sequence_name2entry_upto n name restr)
@@ -4310,7 +4388,7 @@ Require Export Classical_Prop.
 
 Lemma all_choice_sequence_names_in_inf_lib {o} :
   forall (inflib : @inf_library o) (name : choice_sequence_name),
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     ->
     exists entry,
       entry_in_inf_library entry inflib
@@ -4601,18 +4679,18 @@ Hint Resolve inf_choice_sequence_vals_extend_nil : slow.
 
 Lemma correct_restriction_implies_same_restrictions2 {o} :
   forall name (restr : @ChoiceSeqRestriction o),
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> correct_restriction name restr
     -> same_restrictions restr (choice_sequence_name2restriction name).
 Proof.
   introv isn cor.
   unfold correct_restriction in *.
   unfold same_restrictions.
-  unfold is_nat_or_seq_kind in *.
+  unfold is_primitive_kind in *.
   destruct name as [name k]; simpl in *.
-  destruct k; boolvar; subst; tcsp.
+  destruct k; boolvar; subst; tcsp; try omega;[].
   unfold is_nat_seq_restriction in *.
-  destruct restr; simpl in *; repnd; dands; tcsp; introv.
+  destruct restr; simpl in *; repnd; dands; tcsp; introv; try omega.
 
   - unfold natSeq2default.
     remember (select n l) as s; symmetry in Heqs; destruct s.
@@ -4643,7 +4721,7 @@ Hint Resolve correct_restriction_implies_same_restrictions2 : slow.
 
 Lemma implies_inf_entry_extends_choice_sequence_name2entry {o} :
   forall name (e : @inf_library_entry o),
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> safe_inf_library_entry e
     -> entry_name_cs name = inf_entry2name e
     -> inf_entry_extends e (choice_sequence_name2entry name).
@@ -4658,7 +4736,7 @@ Qed.
 
 Lemma inf_lib_extends_add_cs_if_not_in {o} :
   forall name inflib (lib : @library o),
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> safe_library lib
     -> safe_inf_library inflib
     -> inf_lib_extends inflib lib
@@ -4676,7 +4754,7 @@ Hint Resolve inf_lib_extends_add_cs_if_not_in : slow.
 
 Lemma exists_extend_library_with_name {o} :
   forall (infLib : @inf_library o) name lib,
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> safe_library lib
     -> inf_lib_extends infLib lib
     ->
@@ -4807,10 +4885,15 @@ Proof.
   introv h w cor.
   destruct name as [name kind], kind as [n|seq]; simpl in *; tcsp.
 
-  - unfold correct_restriction in *; simpl in *; boolvar; tcsp.
-    repnd; dands; introv.
-    { rewrite <- h; auto. }
-    { rewrite <- w; auto. }
+  - unfold correct_restriction in *; simpl in *; boolvar; subst; tcsp.
+
+    { repnd; dands; introv.
+      { rewrite <- h; auto. }
+      { rewrite <- w; auto. } }
+
+    { repnd; dands; introv.
+      { rewrite <- h; auto. }
+      { rewrite <- w; auto. } }
 
   - unfold correct_restriction in *; simpl in *; dands; repnd; introv len.
     { rewrite <- h; auto. }
@@ -5900,7 +5983,7 @@ Qed.
 Lemma extend_library_entry_lawless_upto_choice_sequence_name2entry_upto_same {o} :
   forall n m name (restr : @ChoiceSeqRestriction o),
     m <= n
-    -> is_nat_or_seq_kind name
+    -> is_primitive_kind name
     -> correct_restriction name restr
     -> extend_library_entry_lawless_upto
          (choice_sequence_name2entry_upto n name restr)
@@ -5910,16 +5993,29 @@ Lemma extend_library_entry_lawless_upto_choice_sequence_name2entry_upto_same {o}
 Proof.
   introv lena isn cor.
   unfold extend_library_entry_lawless_upto; simpl; boolvar; auto; tcsp; GC.
-  unfold is_nat_or_seq_kind in *.
+  unfold is_primitive_kind in *.
   unfold correct_restriction in *.
   destruct name as [name kd]; simpl in *.
-  destruct kd as [kd|seq]; subst; boolvar; tcsp;[|].
+  destruct kd as [kd|seq]; subst; boolvar; subst; tcsp; try omega;[| |].
 
   - unfold is_nat_restriction in *.
     destruct restr; auto; tcsp; repnd; GC; simpl in *; autorewrite with slow.
     dands; tcsp.
     unfold choice_sequence_name2choice_seq_vals_upto; simpl.
     exists (fun2list (n - m) (fun _ => @mkc_zero o)); autorewrite with slow.
+    dands; auto; try omega.
+
+    + apply fun2list_split; auto; try omega.
+
+    + introv h.
+      rewrite select_fun2list in h; boolvar; ginv.
+      apply cor; eauto 3 with slow.
+
+  - unfold is_bool_restriction in *.
+    destruct restr; auto; tcsp; repnd; GC; simpl in *; autorewrite with slow.
+    dands; tcsp.
+    unfold choice_sequence_name2choice_seq_vals_upto; simpl.
+    exists (fun2list (n - m) (fun _ => @tt o)); autorewrite with slow.
     dands; auto; try omega.
 
     + apply fun2list_split; auto; try omega.
@@ -5956,7 +6052,7 @@ Hint Rewrite Max.max_0_r : slow nat.
 
 Lemma extend_library_entry_lawless_upto_choice_sequence_name2entry_upto_same_max {o} :
   forall n m name (restr : @ChoiceSeqRestriction o),
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> correct_restriction name restr
     -> extend_library_entry_lawless_upto
          (choice_sequence_name2entry_upto (Peano.max n m) name restr)
@@ -5966,16 +6062,31 @@ Lemma extend_library_entry_lawless_upto_choice_sequence_name2entry_upto_same_max
 Proof.
   introv isn cor.
   unfold extend_library_entry_lawless_upto; simpl; boolvar; auto; tcsp; GC.
-  unfold is_nat_or_seq_kind in *.
+  unfold is_primitive_kind in *.
   unfold correct_restriction in *.
   destruct name as [name kd]; simpl in *.
-  destruct kd as [kd|seq]; subst; boolvar; tcsp;[|].
+  destruct kd as [kd|seq]; subst; boolvar; subst; tcsp; try omega;[| |].
 
   - unfold is_nat_restriction in *.
     destruct restr; auto; tcsp; repnd; GC; simpl in *; autorewrite with slow.
     dands; tcsp.
     unfold choice_sequence_name2choice_seq_vals_upto; simpl.
     exists (fun2list ((Peano.max n m) - m) (fun _ => @mkc_zero o)); autorewrite with slow.
+    dands; auto; try omega.
+
+    + apply fun2list_split; auto; try omega; eauto 3 with slow.
+
+    + rewrite <- Nat.sub_max_distr_r; autorewrite with slow nat; auto.
+
+    + introv h.
+      rewrite select_fun2list in h; boolvar; ginv.
+      apply cor; eauto 3 with slow.
+
+  - unfold is_bool_restriction in *.
+    destruct restr; auto; tcsp; repnd; GC; simpl in *; autorewrite with slow.
+    dands; tcsp.
+    unfold choice_sequence_name2choice_seq_vals_upto; simpl.
+    exists (fun2list ((Peano.max n m) - m) (fun _ => @tt o)); autorewrite with slow.
     dands; auto; try omega.
 
     + apply fun2list_split; auto; try omega; eauto 3 with slow.
@@ -6206,7 +6317,7 @@ Definition extend_seq_to_bar {o}
            (safe : safe_library lib)
            (k    : nat)
            (name : choice_sequence_name)
-           (isn  : is_nat_or_seq_kind name)
+           (isn  : is_primitive_kind name)
   : BarLib lib.
 Proof.
   exists (fun (lib' : library) =>
