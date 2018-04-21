@@ -297,6 +297,6 @@ Proof.
     exrepnd.
     rw q0 in h0; clear q0.
 
-    proof_irr; auto; eauto 3 with slow.
+    proof_irr; auto; eauto 2 with slow.
   }
 Qed.

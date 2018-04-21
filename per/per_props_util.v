@@ -975,6 +975,17 @@ Ltac betared2 :=
         [apply ccequivc_ext_sym;exact h|]
       ];
     clear h
+
+  | [ lib : SL |- context[mkc_apply (mkc_lam ?v ?b) ?a] ] =>
+    let h := fresh "h" in
+    pose proof (ccequivc_ext_beta lib v b a) as h;
+    first
+      [ eapply equality_respects_cequivc_left;
+        [apply ccequivc_ext_sym;exact h|]
+      | eapply equality_respects_cequivc_right;
+        [apply ccequivc_ext_sym;exact h|]
+      ];
+    clear h
   end.
 
 Lemma equality_implies_all_in_ex_bar_equality {o} :

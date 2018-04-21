@@ -50,14 +50,14 @@ Qed.
 Hint Rewrite @lsubstc_qtnat : slow.
 
 Lemma tequality_qtnat {o} :
-  forall (lib : @library o), tequality lib mkc_qtnat mkc_qtnat.
+  forall (lib : @SL o), tequality lib mkc_qtnat mkc_qtnat.
 Proof.
   introv; apply tequality_mkc_qtime; apply type_tnat.
 Qed.
 Hint Resolve tequality_qtnat : slow.
 
 Lemma ccomputes_to_valc_ext_nat_implies_computes_to_valc {o} :
-  forall (lib : @library o) a n,
+  forall (lib : @SL o) a n,
     (a) ===>(lib) (mkc_nat n)
     -> ccomputes_to_valc lib a (mkc_nat n).
 Proof.
@@ -96,7 +96,7 @@ Proof.
 Qed.
 
 Lemma equality_nat_in_qtnat {o} :
-  forall (lib : @library o) k, equality lib (mkc_nat k) (mkc_nat k) mkc_qtnat.
+  forall (lib : @SL o) k, equality lib (mkc_nat k) (mkc_nat k) mkc_qtnat.
 Proof.
   introv.
   apply equality_in_qtnat; eauto 2 with slow.

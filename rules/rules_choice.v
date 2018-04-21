@@ -472,7 +472,7 @@ Hint Resolve compatible_choice_sequence_name_0_implies_is_nat_or_seq_kind : slow
 Hint Resolve entry_in_library_implies_find_cs_some : slow.
 
 Lemma cs_entry_in_library_lawless_upto_implies_length_ge {o} :
-  forall (lib lib' : @SL o) name k vals restr,
+  forall (lib lib' : @library o) name k vals restr,
     is_nat_or_seq_kind name
     -> correct_cs_restriction name restr
     -> extend_library_lawless_upto lib lib' name k
@@ -490,7 +490,7 @@ Proof.
     destruct cse_restriction; repnd; exrepnd; subst; ginv;[].
     rewrite length_app; allrw; omega.
 
-  - unfold correct_restriction in *.
+  - unfold correct_cs_restriction in *.
     subst.
     unfold is_nat_or_seq_kind in *.
     destruct name0 as [name kd]; simpl in *.
@@ -518,7 +518,7 @@ Hint Resolve cterm_is_nth_implies_is_nat : slow.
 Lemma cs_entry_in_library_lawless_upto_implies_is_nat {o} :
   forall (lib lib' : @library o) name k vals restr n v,
     is_nat_or_seq_kind name
-    -> correct_restriction name restr
+    -> correct_cs_restriction name restr
     -> choice_sequence_satisfies_restriction vals restr
     -> extend_library_lawless_upto lib lib' name k
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ vals restr)) lib
@@ -536,7 +536,7 @@ Proof.
 
   - destruct entry.
     destruct cse_restriction; repnd; exrepnd; subst; ginv;[].
-    unfold correct_restriction in *; simpl in *.
+    unfold correct_cs_restriction in *; simpl in *.
     destruct name0 as [name0 kd]; simpl in *.
     destruct kd; boolvar; tcsp; subst; GC; repnd.
 
@@ -551,7 +551,7 @@ Proof.
 
       * apply cor in sel; auto; try omega.
 
-  - unfold correct_restriction in *.
+  - unfold correct_cs_restriction in *.
     subst.
     unfold is_nat_or_seq_kind in *.
     destruct name0 as [name kd]; simpl in *.
@@ -592,7 +592,7 @@ Qed.
 
 (* MOVE *)
 Lemma implies_mkc_apply_mkc_choice_seq_ccomputes_to_valc_ext {o} :
-  forall lib lib' name vals restr m (v : @CTerm o),
+  forall lib (lib' : @SL o) name vals restr m (v : @CTerm o),
     lib_extends lib' lib
     -> find_cs lib name = Some (MkChoiceSeqEntry _ vals restr)
     -> select m vals = Some v
@@ -623,7 +623,7 @@ Proof.
 Qed.
 
 Lemma mkc_choice_seq_in_natk2nat {o} :
-  forall (lib : @library o) (name : choice_sequence_name) k,
+  forall (lib : @SL o) (name : choice_sequence_name) k,
     is_nat_or_seq_kind name
     -> safe_library lib
     -> member lib (mkc_choice_seq name) (natk2nat (mkc_nat k)).
@@ -655,7 +655,7 @@ Qed.
 
 
 Lemma equality_in_csname_implies_equality_in_natk2nat {o} :
-  forall lib (a b t : @CTerm o) k,
+  forall (lib : @SL o) (a b t : @CTerm o) k,
     safe_library lib
     -> ccomputes_to_valc_ext lib t (mkc_nat k)
     -> equality lib a b (mkc_csname 0)
@@ -721,8 +721,8 @@ Qed.
 
 Lemma nat2all_in_ex_bar2bar {o} :
   forall (n   : nat)
-         (lib : @library o)
-         (f   : nat -> library -> Prop)
+         (lib : @SL o)
+         (f   : nat -> SL -> Prop)
          (F   : forall m, m < n -> all_in_ex_bar lib (f m)),
     {b : BarLib lib , forall m, m < n -> all_in_bar b (f m)}.
 Proof.
@@ -774,7 +774,7 @@ Proof.
 Qed.
 
 Lemma all_in_ex_bar_inhabited_type_bar_implies_inhabited_type_bar {o} :
-  forall lib (A : @CTerm o),
+  forall (lib : SL) (A : @CTerm o),
     all_in_ex_bar lib (fun lib => inhabited_type_bar lib A)
     -> inhabited_type_bar lib A.
 Proof.
@@ -843,7 +843,7 @@ Proof.
   pose proof (fresh_cs_not_in (map csn_name (choice_seq_names_in_lib lib))) as q.
   remember (fresh_cs (map csn_name (choice_seq_names_in_lib lib))) as v; clear Heqv.
   induction lib; simpl; auto.
-  destruct a;[|].
+  destruct a;[| |].
 
   { destruct name; simpl;[].
     simpl; boolvar; ginv.
@@ -856,6 +856,11 @@ Proof.
       apply IHlib; clear IHlib; introv xx; exrepnd; subst.
       destruct q; exrepnd.
       eexists; dands;eauto. }
+
+  { allrw in_map_iff; simpl in *.
+    apply IHlib; clear IHlib; introv xx; exrepnd; subst.
+    destruct q; exrepnd.
+    eexists; dands;eauto. }
 
   { allrw in_map_iff; simpl in *.
     apply IHlib; clear IHlib; introv xx; exrepnd; subst.
@@ -925,14 +930,14 @@ Qed.
 Lemma satisfies_cs_kind_seq_implies_select_iff {o} :
   forall name l (vals : @ChoiceSeqVals o) restr n i,
     csn_kind name = cs_kind_seq l
-    -> correct_restriction name restr
+    -> correct_cs_restriction name restr
     -> choice_sequence_satisfies_restriction vals restr
     -> length l <= length vals
     -> n < length l
     -> select n l = Some i <-> select n vals = Some (mkc_nat i).
 Proof.
   introv ek cor sat len lenn.
-  unfold correct_restriction in *.
+  unfold correct_cs_restriction in *.
   rewrite ek in *.
   unfold is_nat_seq_restriction in *.
   destruct restr; simpl in *; repnd; tcsp.
@@ -976,8 +981,8 @@ Definition rule_ls1 {o}
     [].
 
 Lemma rule_ls1_true {o} :
-  forall lib (n f a : NVar) (H : @bhyps o)
-         (d1 : n <> f) (d2 : n <> a) (d3 : a <> f) (safe : safe_library lib),
+  forall (lib : SL) (n f a : NVar) (H : @bhyps o)
+         (d1 : n <> f) (d2 : n <> a) (d3 : a <> f),
     rule_true lib (rule_ls1 lib n f a H).
 Proof.
   unfold rule_ls1, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -998,7 +1003,7 @@ Proof.
   autorewrite with slow.
 
   assert (safe_library lib') as safe' by eauto 3 with slow.
-  clear lib safe ext.
+  clear lib ext.
   rename lib' into lib; rename safe' into safe.
 
   assert (tequality lib (ls1c n f a) (ls1c n f a)) as teq.
@@ -1311,7 +1316,9 @@ Proof.
   eapply cequivc_preserving_equality;
     [|apply ccequivc_ext_sym;
       introv xt; spcast; apply implies_cequivc_natk2nat;
-      apply ccomputes_to_valc_ext_implies_cequivc;eauto 5 with slow].
+      apply ccomputes_to_valc_ext_implies_cequivc;
+      eapply lib_extends_preserves_ccomputes_to_valc;[|eauto];
+      eauto 4 with slow].
 
   simpl in *; exrepnd.
 
@@ -1341,7 +1348,10 @@ Proof.
   repnd; spcast.
 
   exists i.
-  dands; spcast; eauto 5 with slow;[].
+  dands; spcast.
+
+  { eapply lib_extends_preserves_ccomputes_to_valc;[|eauto]; eauto 4 with slow. }
+
   eapply implies_mkc_apply_mkc_choice_seq_ccomputes_to_valc_ext; eauto.
 Qed.
 Hint Resolve rule_ls1_true : slow.
@@ -1349,7 +1359,7 @@ Hint Resolve rule_ls1_true : slow.
 
 
 Lemma implies_member_nat2nat_bar {o} :
-  forall lib (f : @CTerm o),
+  forall (lib : SL) (f : @CTerm o),
     all_in_ex_bar
       lib
       (fun lib => forall m, {k : nat , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)})
@@ -1389,7 +1399,7 @@ Proof.
 Qed.
 
 Lemma implies_member_nat2nat_bar2 {o} :
-  forall lib (f : @CTerm o),
+  forall (lib : SL) (f : @CTerm o),
     all_in_ex_bar
       lib
       (fun lib =>
@@ -1432,7 +1442,7 @@ Proof.
 Qed.
 
 Lemma mkc_choice_seq_in_nat2nat {o} :
-  forall (lib : @library o) (name : choice_sequence_name),
+  forall (lib : @SL o) (name : choice_sequence_name),
     is_nat_or_seq_kind name
     -> safe_library lib
     -> member lib (mkc_choice_seq name) nat2nat.
@@ -1469,7 +1479,7 @@ Proof.
 Qed.
 
 Lemma equality_in_csname_implies_equality_in_nat2nat {o} :
-  forall lib (a b : @CTerm o),
+  forall (lib : SL) (a b : @CTerm o),
     safe_library lib
     -> equality lib a b (mkc_csname 0)
     -> equality lib a b nat2nat.
@@ -1525,7 +1535,7 @@ Definition rule_free_sub_baire {o}
     [].
 
 Lemma rule_free_sub_baire_true {o} :
-  forall lib (f e : NTerm) (H : @bhyps o) (safe : safe_library lib),
+  forall (lib : SL) (f e : NTerm) (H : @bhyps o),
     rule_true lib (rule_free_sub_baire lib f e H).
 Proof.
   unfold rule_free_sub_baire, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.

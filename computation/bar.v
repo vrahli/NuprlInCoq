@@ -944,6 +944,23 @@ Proof.
   exists lib'; auto.
 Qed.
 
+Definition ext2SL {o} {lib : SL} {lib' : @library o} (ext : lib_extends lib' lib) : @SL o :=
+  MkSL lib' (lib_extends_safe _ _ ext (slib_safe lib)).
+
+Lemma bar_non_empty_sl {o} :
+  forall {lib : SL} (bar : @BarLib o lib),
+  exists (lib' : SL), bar_lib_bar bar lib'.
+Proof.
+  introv.
+  destruct bar as [bar cond].
+
+  pose proof (fresh_choice_seq_name_in_library lib) as h; exrepnd.
+
+  pose proof (cond (library2inf lib (simple_inf_choice_seq name))) as q.
+  repeat (autodimp q hyp); eauto 3 with slow; exrepnd; simpl in *; tcsp;[].
+  exists (ext2SL q2); auto.
+Qed.
+
 Lemma in_bar_implies_extends {o} :
   forall {lib} (bar : @BarLib o lib) lib',
     bar_lib_bar bar lib' -> lib_extends lib' lib.
@@ -5479,9 +5496,6 @@ Proof.
   destruct ext; auto.
 Qed.
 Hint Resolve inf_lib_extends_implies_pre_inf_lib_extends : slow.
-
-Definition ext2SL {o} {lib : SL} {lib' : @library o} (ext : lib_extends lib' lib) : @SL o :=
-  MkSL lib' (lib_extends_safe _ _ ext (slib_safe lib)).
 
 Definition intersect_bars {o} {lib : SL} (bar1 bar2 : @BarLib o lib) : BarLib lib.
 Proof.

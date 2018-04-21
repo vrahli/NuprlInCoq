@@ -248,7 +248,7 @@ Definition rule_ls_exists {o}
     [].
 
 Lemma rule_ls_exists_true {o} :
-  forall lib (a n x : NVar) (H : @bhyps o)
+  forall (lib : SL) (a n x : NVar) (H : @bhyps o)
          (d1 : a <> n) (d2 : a <> x) (d3 : n <> x) (safe : safe_library lib),
     rule_true lib (rule_ls_exists lib a n x H).
 Proof.

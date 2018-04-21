@@ -128,7 +128,7 @@ Proof.
   unfold rule_true_ex in rt; sp.
 Qed.
 
-Inductive cequiv_ext_subst {p} (lib : @library p) : @CSub p -> @CSub p -> Type :=
+Inductive cequiv_ext_subst {p} (lib : @SL p) : @CSub p -> @CSub p -> Type :=
   | ceq_ext_sub_nil : cequiv_ext_subst lib [] []
   | ceq_ext_sub_cons :
     forall v t1 t2 s1 s2,
@@ -138,7 +138,7 @@ Inductive cequiv_ext_subst {p} (lib : @library p) : @CSub p -> @CSub p -> Type :
 Hint Constructors cequiv_ext_subst.
 
 Lemma cequiv_ext_subst_implies_cequiv_subst {o} :
-  forall lib lib' (sub1 sub2 : @CSub o),
+  forall (lib lib' : SL) (sub1 sub2 : @CSub o),
     lib_extends lib' lib
     -> cequiv_ext_subst lib sub1 sub2
     -> cequiv_subst lib' (csub2sub sub1) (csub2sub sub2).
@@ -2403,9 +2403,9 @@ Proof.
 
   - apply in_ext_implies_all_in_ex_bar; introv xt.
     left.
-    eapply @equality_respects_cequivc_left;[apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext;try exact ceq1;auto|].
+    eapply @equality_respects_cequivc_left;[apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext_sl;try exact ceq1;auto|].
     apply @equality_sym.
-    eapply @equality_respects_cequivc_left;[apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext;try exact ceq2;auto|].
+    eapply @equality_respects_cequivc_left;[apply ccequivc_ext_sym;eapply lib_extends_preserves_ccequivc_ext_sl;try exact ceq2;auto|].
     apply @equality_sym.
 
     apply all_in_ex_bar_equality_implies_equality.

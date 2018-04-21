@@ -36,7 +36,7 @@ Require Export per_props_util.
 
 
 Lemma dest_nuprl_qnat {o} :
-  forall (lib : @library o) eq,
+  forall (lib : @SL o) eq,
     nuprl lib mkc_qnat mkc_qnat eq
     -> per_bar (per_qnat nuprl) lib mkc_qnat mkc_qnat eq.
 Proof.
@@ -165,19 +165,19 @@ Hint Resolve is_nat_mkc_nat : slow.
 Lemma compatible_cs_kind_0_implies_is_nat_restriction {o} :
   forall name (restr : @ChoiceSeqRestriction o) vals v,
     compatible_cs_kind 0 (csn_kind name)
-    -> correct_restriction name restr
+    -> correct_cs_restriction name restr
     -> LIn v vals
     -> choice_sequence_satisfies_restriction vals restr
     -> {n : nat & is_nat n v}.
 Proof.
   introv comp cor iv sat.
-  unfold correct_restriction in *.
+  unfold correct_cs_restriction in *.
   unfold compatible_cs_kind in *; boolvar; tcsp; GC.
   destruct name as [nm kd]; simpl in *.
   destruct kd; subst; boolvar; tcsp; GC.
 
   {
-    unfold is_nat_restriction in *.
+    unfold is_nat_cs_restriction in *.
     unfold choice_sequence_satisfies_restriction in *.
     destruct restr; repnd; dands; tcsp.
     apply in_implies_select in iv; exrepnd.
@@ -219,7 +219,7 @@ Proof.
 Qed.
 
 Lemma in_ext_exists_ccomputes_to_valc_mkc_last_cs_choice_seq {o} :
-  forall (lib : @library o) name k,
+  forall (lib : @SL o) name k,
     safe_library lib
     -> compatible_choice_sequence_name 0 name
     -> in_ext lib (fun lib => exists n, ccomputes_to_valc lib (mkc_last_cs (mkc_choice_seq name) (mkc_nat k)) (mkc_nat n)).
@@ -232,7 +232,7 @@ Proof.
   assert (exists (n : nat), find_last_entry_default lib' name (mk_nat k) = mk_nat n) as z.
   {
     unfold find_last_entry_default.
-    remember (find_cs lib' name) as fcs; symmetry in Heqfcs; destruct fcs;[|eexists; eauto].
+    remember (find_cs (slib_lib lib') name) as fcs; symmetry in Heqfcs; destruct fcs;[|eexists; eauto].
     remember (last_cs_entry c) as lcs; symmetry in Heqlcs; destruct lcs;[|eexists; eauto].
     unfold compatible_choice_sequence_name in *.
     eapply compatible_cs_kind_0_implies_find_nat in Heqfcs; eauto; eauto 3 with slow.
@@ -275,7 +275,7 @@ Qed.
 Hint Resolve exists_ccomputes_to_valc_mkc_last_cs_choice_seq : slow.
 
 Lemma in_ext_exists_ccomputes_to_valc_nat {o} :
-  forall (lib : @library o) k,
+  forall (lib : @SL o) k,
     in_ext lib (fun lib => exists n, ccomputes_to_valc lib (mkc_nat k) (mkc_nat n)).
 Proof.
   introv ext; exists k; spcast; eauto 3 with slow.
@@ -283,7 +283,7 @@ Qed.
 Hint Resolve in_ext_exists_ccomputes_to_valc_nat : slow.
 
 Lemma equality_nat_in_qnat {o} :
-  forall (lib : @library o) k, equality lib (mkc_nat k) (mkc_nat k) mkc_qnat.
+  forall (lib : @SL o) k, equality lib (mkc_nat k) (mkc_nat k) mkc_qnat.
 Proof.
   introv.
   apply equality_in_qnat; eauto 2 with slow.

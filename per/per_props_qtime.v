@@ -168,7 +168,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_qtime {o} :
-  forall (lib : @library o) A B eq,
+  forall (lib : @SL o) A B eq,
     nuprl lib (mkc_qtime A) (mkc_qtime B) eq
     -> per_bar (per_qtime nuprl) lib (mkc_qtime A) (mkc_qtime B) eq.
 Proof.
@@ -179,7 +179,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_qtime {o} :
-  forall i (lib : @library o) A B eq,
+  forall i (lib : @SL o) A B eq,
     nuprli i lib (mkc_qtime A) (mkc_qtime B) eq
     -> per_bar (per_qtime (nuprli i)) lib (mkc_qtime A) (mkc_qtime B) eq.
 Proof.
@@ -407,7 +407,7 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_qtime_eq_bar_lib_per_iff {o} :
-  forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) p1 p2,
+  forall {lib : SL} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) p1 p2,
     (per_bar_eq bar (per_qtime_eq_bar_lib_per lib eqa) p1 p2)
       <=>
       exists bar,

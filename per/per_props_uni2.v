@@ -197,7 +197,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_uni_diff {o} :
-  forall (lib : @library o) i j eq,
+  forall (lib : @SL o) i j eq,
     nuprl lib (mkc_uni i) (mkc_uni j) eq
     -> univ lib  (mkc_uni i) (mkc_uni j) eq.
 Proof.
@@ -219,7 +219,7 @@ Proof.
     unfold univ, univi_bar, per_bar in *; exrepnd.
     pose proof (bar_non_empty bar) as q; exrepnd.
     assert (lib_extends lib' lib) as ext by eauto 3 with slow.
-    pose proof (u0 _ q0 _ (lib_extends_refl lib') ext) as u0; simpl in *.
+    pose proof (u0 (ext2SL ext) q0 (ext2SL ext) (lib_extends_refl lib') ext) as u0; simpl in *.
     unfold univ_ex in u0; exrepnd.
     allrw @univi_exists_iff; exrepnd; spcast.
     repeat ccomputes_to_valc_ext_val; auto.
@@ -253,7 +253,7 @@ Proof.
   {
     pose proof (bar_non_empty bar) as q; exrepnd.
     assert (lib_extends lib' lib) as ext by eauto 3 with slow.
-    pose proof (u0 _ q0 _ (lib_extends_refl lib') ext) as u0; simpl in *.
+    pose proof (u0 (ext2SL ext) q0 (ext2SL ext) (lib_extends_refl lib') ext) as u0; simpl in *.
     unfold univ_ex in u0; exrepnd.
     allrw @univi_exists_iff; exrepnd; spcast.
     repeat ccomputes_to_valc_ext_val; auto.
@@ -327,7 +327,7 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_tuni_sub_per {o} :
-  forall (lib : @library o) a b eq i,
+  forall (lib : @SL o) a b eq i,
     ccomputes_to_valc_ext lib a (mkc_nat i)
     -> ccomputes_to_valc_ext lib b (mkc_nat i)
     -> nuprl lib (mkc_tuni a) (mkc_tuni b) eq
@@ -370,7 +370,7 @@ Qed.
 Hint Resolve tequality_mkc_tuni : slow.
 
 Lemma equality_of_nat_bar_implies_tequality_mkc_uni {o} :
-  forall lib (a b : @CTerm o),
+  forall (lib : SL) (a b : @CTerm o),
     equality_of_nat_bar lib a b
     -> tequality lib (mkc_tuni a) (mkc_tuni b).
 Proof.

@@ -133,7 +133,7 @@ Definition raises_exceptionc_bar {o} lib (t : @CTerm o) :=
   all_in_ex_bar lib (fun lib => craises_exceptionc lib t).
 
 Lemma member_isexc_iff {p} :
-  forall lib (t : @CTerm p),
+  forall (lib : SL) (t : @CTerm p),
     raises_exceptionc_bar lib t
     <=> member lib mkc_axiom (mkc_isexc t).
 Proof.

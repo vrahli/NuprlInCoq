@@ -508,11 +508,11 @@ Proof.
 Qed.*)
 
 Lemma fun_in_uni {p} :
-  forall i lib (A1 A2 B1 B2 : @CTerm p),
+  forall i (lib : SL) (A1 A2 B1 B2 : @CTerm p),
     equality lib (mkc_fun A1 B1) (mkc_fun A2 B2) (mkc_uni i)
     <=>
     (equality lib A1 A2 (mkc_uni i)
-      # (forall lib' (x : lib_extends lib' lib), inhabited_type lib' A1 -> equality lib' B1 B2 (mkc_uni i))).
+      # (forall (lib' : SL) (x : lib_extends lib' lib), inhabited_type lib' A1 -> equality lib' B1 B2 (mkc_uni i))).
 Proof.
   intros.
   allrw <- @fold_mkc_fun.
@@ -650,7 +650,7 @@ Proof.
   unfold choice_sequence_name_and_seq2entry; simpl.
   unfold choice_sequence_name_and_seq2choice_seq_entry; simpl.
   unfold choice_sequence_name2restriction; simpl.
-  unfold correct_restriction in *; simpl in *; repnd.
+  unfold correct_cs_restriction in *; simpl in *; repnd.
 
   assert (forall v, LIn v vals0 -> exists (i : nat), v = mkc_nat i) as vn.
   {
@@ -842,8 +842,8 @@ Proof.
     clear ilib'0 ilib'.
     exists (length l); eauto 3 with slow.
 
-  - unfold entry_in_inf_library_default in ilib'0; simpl in *; repnd; GC.
-    unfold correct_restriction in *.
+  - unfold entry_in_inf_library_cs_default in ilib'0; simpl in *; repnd; GC.
+    unfold correct_cs_restriction in *.
     rewrite ck in *; simpl in *.
 
     unfold is_default_choice_sequence in *.
@@ -859,6 +859,8 @@ Proof.
     rewrite safe2 in q; try omega.
     rewrite mkc_zero_eq in q.
     apply mkc_nat_eq_implies in q; auto.
+
+  - unfold entry_in_inf_library_ref_default in ilib'0; simpl in *; repnd; GC; tcsp.
 Qed.
 
 Lemma select_ntimes :
@@ -893,7 +895,7 @@ Proof.
   unfold choice_sequence_entry_extend in *; simpl in *; repnd.
   unfold same_restrictions in ext0.
   destruct name; simpl in *; subst.
-  unfold correct_restriction in *; simpl in *.
+  unfold correct_cs_restriction in *; simpl in *.
   unfold is_nat_seq_restriction in *.
   destruct restr1; simpl in *; tcsp; ginv; repnd.
   destruct restr; simpl in *; tcsp; ginv; repnd.
@@ -1001,8 +1003,8 @@ Proof.
     clear ilib'0 ilib'.
     exists (length l); eauto 3 with slow.
 
-  - unfold entry_in_inf_library_default in ilib'0; simpl in *; repnd; GC.
-    unfold correct_restriction in *.
+  - unfold entry_in_inf_library_cs_default in ilib'0; simpl in *; repnd; GC.
+    unfold correct_cs_restriction in *.
     rewrite ck in *; simpl in *.
 
     unfold is_default_choice_sequence in *.
@@ -1018,6 +1020,8 @@ Proof.
     rewrite safe2 in q; try omega.
     rewrite mkc_zero_eq in q.
     apply mkc_nat_eq_implies in q; auto.
+
+  - unfold entry_in_inf_library_ref_default in ilib'0; simpl in *; repnd; GC; tcsp.
 Qed.
 
 Lemma iscvalue_mkc_one {o} :
@@ -1093,7 +1097,7 @@ Qed.
 Hint Resolve ccomputes_to_valc_ext_nat_implies_ccomputes_to_valc : slow.
 
 Lemma not_exists_1_choice {o} :
-  forall (lib : @library o) name v n restr,
+  forall (lib : @SL o) name v n restr,
     csn_kind name = cs_kind_seq []
     -> same_restrictions restr (csc_seq [])
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero) restr)) lib
@@ -1109,7 +1113,7 @@ Proof.
 
   unfold all_in_ex_bar in inh; exrepnd.
 
-  assert (exists n restr lib',
+  assert (exists n restr, exists (lib' : SL),
              lib_extends lib' lib
              /\ bar_lib_bar bar lib'
              /\ same_restrictions restr (csc_seq [])
@@ -1132,7 +1136,7 @@ Proof.
     pose proof (entry_extends_cs_zeros_implies lib name name0 n restr lib' entry') as q.
     repeat (autodimp q hyp).
     exrepnd; subst.
-    exists n0 restr0 lib'; dands; auto.
+    exists n0 restr0 (ext2SL q2); dands; auto.
   }
 
   clear n restr srestr ilib.
@@ -1161,7 +1165,7 @@ Proof.
   clear bar0 bar Heqbar1.
   rename bar1 into bar.
 
-  assert (exists n restr lib',
+  assert (exists n restr, exists (lib' : SL),
              lib_extends lib' lib
              /\ bar_lib_bar bar lib'
              /\ same_restrictions restr (csc_seq [])
@@ -1184,7 +1188,7 @@ Proof.
     pose proof (entry_extends_cs_zeros_implies lib name name0 n restr lib' entry') as q.
     repeat (autodimp q hyp).
     exrepnd; subst.
-    exists n0 restr0 lib'; dands; auto.
+    exists n0 restr0 (ext2SL q2); dands; auto.
   }
 
   clear n restr blib3 blib0.
@@ -1295,7 +1299,7 @@ Proof.
   unfold safe_library_entry; simpl; dands; auto.
 
   {
-    unfold correct_restriction.
+    unfold correct_cs_restriction.
     allrw; eauto 3 with slow.
     unfold is_nat_seq_restriction.
     unfold same_restrictions in *.
@@ -1466,14 +1470,15 @@ Proof.
       apply list_in_snoc; tcsp.
 Qed.
 
-Lemma entry_cs_zeros_implies_exists_extension_with_one {o} :
+Lemma entry_cs_zeros_implies_exists_extension_with_one0 {o} :
   forall (lib : @library o) name n restr,
     csn_kind name = cs_kind_seq []
     -> same_restrictions restr (csc_seq [])
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero) restr)) lib
-    -> exists lib',
+    -> exists (lib' : library),
         map entry2name lib' = map entry2name lib
-        /\lib_extends lib' lib
+        /\ (safe_library lib -> safe_library lib')
+        /\ lib_extends lib' lib
         /\ entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero ++ [mkc_one]) restr)) lib'.
 Proof.
   induction lib using rev_list_ind; introv cl srestr ilib; simpl in *; tcsp.
@@ -1486,19 +1491,48 @@ Proof.
 
     { allrw map_snoc; allrw; auto. }
 
+    {
+      intro safe.
+      apply implies_safe_library_snoc; eauto 3 with slow.
+      introv sh.
+      apply safe_library_snoc_implies in safe; repnd; apply safe; eauto 3 with slow.
+    }
+
     { apply implies_lib_extends_snoc_lr_same_names; auto. }
 
   - exists (snoc lib (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero ++ [mkc_one]) restr))); simpl; dands; tcsp; eauto 3 with slow.
 
     { allrw map_snoc; allrw; auto. }
 
+    {
+      intro safe.
+      apply implies_safe_library_snoc; eauto 3 with slow.
+    }
+
     { apply implies_lib_extends_snoc; eauto 3 with slow. }
+Qed.
+
+Lemma entry_cs_zeros_implies_exists_extension_with_one {o} :
+  forall (lib : @SL o) name n restr,
+    csn_kind name = cs_kind_seq []
+    -> same_restrictions restr (csc_seq [])
+    -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero) restr)) lib
+    -> exists (lib' : SL),
+        map entry2name (slib_lib lib') = map entry2name (slib_lib lib)
+        /\ lib_extends lib' lib
+        /\ entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero ++ [mkc_one]) restr)) lib'.
+Proof.
+  introv csk same i.
+  pose proof (entry_cs_zeros_implies_exists_extension_with_one0 lib name n restr) as k.
+  repeat (autodimp k hyp); exrepnd.
+  autodimp k2 hyp; eauto 3 with slow.
+  exists (MkSL lib' k2); simpl; dands; auto.
 Qed.
 
 Hint Resolve nat_in_nat : slow.
 
 Lemma not_in_ext_not_inhabited_exists_1_choice {o} :
-  forall (lib : @library o) name v n restr,
+  forall (lib : @SL o) name v n restr,
     csn_kind name = cs_kind_seq []
     -> same_restrictions restr (csc_seq [])
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero) restr)) lib

@@ -568,7 +568,7 @@ Definition rule_nsls1 {o}
     [].
 
 Lemma rule_nsls1_true {o} :
-  forall lib (n f a : NVar) (H : @bhyps o)
+  forall (lib : SL) (n f a : NVar) (H : @bhyps o)
          (d1 : n <> f) (d2 : n <> a) (d3 : a <> f) (safe : safe_library lib),
     rule_true lib (rule_nsls1 lib n f a H).
 Proof.

@@ -49,7 +49,7 @@ Qed.
 Hint Resolve implies_ccequivc_ext_add : slow.
 
 Lemma ccequivc_ext_mkc_add_nat {o} :
-  forall (lib : @library o) m n,
+  forall (lib : @SL o) m n,
     ccequivc_ext lib (mkc_add (mkc_nat m) (mkc_nat n)) (mkc_nat (m + n)).
 Proof.
   introv ext; spcast.
@@ -89,7 +89,7 @@ Definition rule_add_qtnat {o}
     [].
 
 Lemma rule_add_qtnat_true {o} :
-  forall lib (n m e1 e2 : NTerm) (H : @bhyps o) (safe : safe_library lib),
+  forall (lib : SL) (n m e1 e2 : NTerm) (H : @bhyps o),
     rule_true lib (rule_add_qtnat lib n m e1 e2 H).
 Proof.
   unfold rule_add_qtnat, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.

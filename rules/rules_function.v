@@ -736,7 +736,7 @@ Proof.
   vr_seq_true.
 
   (* We prove our first subgoal *)
-  assert (forall lib2 s2 pC2,
+  assert (forall (lib2 : SL) s2 pC2,
              lib_extends lib2 lib'
              -> similarity lib2 s1 s2 H
             -> tequality lib2 (lsubstc (mk_function A x B) wfi s1 pC1)
@@ -1968,11 +1968,11 @@ Proof.
     left.
     eapply @equality_respects_cequivc_left.
     { apply ccequivc_ext_sym.
-      eapply lib_extends_preserves_ccequivc_ext; try exact ceq1; eauto. }
+      eapply lib_extends_preserves_ccequivc_ext_sl; try exact ceq1; eauto. }
     apply @equality_sym.
     eapply @equality_respects_cequivc_left.
     { apply ccequivc_ext_sym.
-      eapply lib_extends_preserves_ccequivc_ext; try exact ceq2; eauto. }
+      eapply lib_extends_preserves_ccequivc_ext_sl; try exact ceq2; eauto. }
     apply @equality_sym.
     apply all_in_ex_bar_equality_implies_equality.
     eapply all_in_ex_bar_modus_ponens2;[|eapply lib_extends_preserves_all_in_ex_bar; try exact hyp3|eapply lib_extends_preserves_all_in_ex_bar; try exact hyp0]; eauto 3 with slow;clear hyp3 hyp0; introv y hyp3 hyp0; exrepnd; spcast.
@@ -1984,7 +1984,7 @@ Proof.
   {
     eapply @equality_respects_cequivc_left.
     { apply ccequivc_ext_sym.
-      eapply lib_extends_preserves_ccequivc_ext; try exact ceq1; eauto 3 with slow. }
+      eapply lib_extends_preserves_ccequivc_ext_sl; try exact ceq1; eauto 3 with slow. }
     eauto 3 with slow.
   }
 Qed.
@@ -2194,7 +2194,7 @@ Proof.
 
 
   (* we prove the membership *)
-  assert (forall lib'' a a' s1 s2,
+  assert (forall (lib'' : SL) a a' s1 s2,
              lib_extends lib'' lib'
              -> hyps_functionality_ext lib'' s1 H
              -> similarity lib'' s1 s2 H

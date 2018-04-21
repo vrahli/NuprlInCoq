@@ -75,7 +75,7 @@ Definition rule_ref_wf {o}
     [].
 
 Lemma rule_ref_wf_true {o} :
-  forall lib (f d e1 e2 : NTerm) (H : @bhyps o) (safe : safe_library lib),
+  forall (lib : SL) (f d e1 e2 : NTerm) (H : @bhyps o),
     rule_true lib (rule_ref_wf lib f d e1 e2 H).
 Proof.
   unfold rule_ref_wf, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -139,7 +139,8 @@ Proof.
   apply equality_in_qnat.
   apply in_ext_implies_all_in_ex_bar; introv xt.
 
-  assert (safe_library lib'1) as safe' by eauto 4 with slow.
+  assert (safe_library lib'0) as safe'0 by eauto 2 with slow.
+  assert (safe_library lib'1) as safe'1 by eauto 2 with slow.
   unfold equality_of_qnat.
   dands; eauto 3 with slow.
 Qed.
@@ -170,7 +171,7 @@ Definition rule_qnat_subtype_nat {o}
     [].
 
 Lemma rule_qnat_subtype_nat_true {o} :
-  forall lib (n e : NTerm) (H : @bhyps o) (safe : safe_library lib),
+  forall (lib : SL) (n e : NTerm) (H : @bhyps o),
     rule_true lib (rule_qnat_subtype_nat lib n e H).
 Proof.
   unfold rule_qnat_subtype_nat, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.

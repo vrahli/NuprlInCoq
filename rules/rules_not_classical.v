@@ -58,7 +58,7 @@ Definition rule_squashed_excluded_middle {o}
     [].
 
 Lemma rule_squashed_excluded_middle_true {o} :
-  forall lib (P : NVar) (i : nat) (H : @bhyps o) (safe : safe_library lib),
+  forall (lib : SL) (P : NVar) (i : nat) (H : @bhyps o),
     rule_true lib (rule_squashed_excluded_middle P i H).
 Proof.
   unfold rule_squashed_excluded_middle, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -139,17 +139,27 @@ Proof.
   assert (safe_library lib'0) as safe' by eauto 3 with slow.
 
   (* WARNING *)
-  clear lib lib' ext sim eqh ext' safe.
+  clear lib lib' ext sim eqh ext'.
   rename lib'0 into lib.
   rename safe' into safe.
 
   pose proof (fresh_choice_seq_name_in_library lib []) as w; exrepnd.
-  assert (is_nat_or_seq_kind name) as isn.
-  eauto 3 with slow.
+  assert (is_nat_or_seq_kind name) as isn; eauto 3 with slow.
 
-  pose proof (inh2 (choice_sequence_name2entry name :: lib)) as q.
+  SearchAbout safe_library cons.
+
+  Check implies_safe_library_cons.
+  SearchAbout safe_library_entry choice_sequence_name2entry.
+
+  pose proof (inh2 (MkSL
+                      (choice_sequence_name2entry name :: slib_lib lib)
+                      (implies_safe_library_cons
+                         (choice_sequence_name2entry name)
+                         lib
+                         (safe_library_entry_choice_sequence_name2entry name)
+                         (slib_safe lib)))) as q.
   clear inh2.
-  autodimp q hyp; eauto 3 with slow.
+  autodimp q hyp; simpl; eauto 3 with slow.
 
   pose proof (q (exists_1_choice name nvarx) (exists_1_choice name nvarx)) as q.
   autodimp q hyp.
@@ -175,7 +185,13 @@ Proof.
   apply equality_in_mkc_squash in q; repnd.
   clear q0 q1.
 
-  remember (choice_sequence_name2entry name :: lib) as lib'.
+  remember (MkSL
+              (choice_sequence_name2entry name :: slib_lib lib)
+              (implies_safe_library_cons
+                 (choice_sequence_name2entry name)
+                 lib
+                 (safe_library_entry_choice_sequence_name2entry name)
+                 (slib_safe lib))) as lib'.
   assert (entry_in_library (choice_sequence_name2entry name) lib') as eil by (subst; tcsp).
   assert (safe_library lib') as safe' by (subst; eauto 3 with slow).
 
@@ -186,7 +202,7 @@ Proof.
   (* XXXXXXXXXXXXX *)
   unfold inhabited_type_bar, all_in_ex_bar in q; exrepnd.
 
-  assert (exists n restr lib',
+  assert (exists n restr, exists (lib' : SL),
              lib_extends lib' lib
              /\ bar_lib_bar bar lib'
              /\ same_restrictions restr (csc_seq [])
@@ -198,8 +214,10 @@ Proof.
     exrepnd.
     applydup q3 in eil.
 
+    assert (safe_library lib') as safe' by eauto 3 with slow.
+
     apply entry_in_library_extends_implies_entry_in_library in eil0; exrepnd.
-    assert (safe_library_entry entry') as safe' by eauto 3 with slow.
+    assert (safe_library_entry entry') as safee' by eauto 3 with slow.
 
     assert (name <> name0) as dname.
     { introv xx; subst name0.
@@ -209,7 +227,7 @@ Proof.
     pose proof (entry_extends_choice_sequence_name2entry_implies lib name name0 lib' entry') as q.
     repeat (autodimp q hyp);[].
     exrepnd; subst.
-    exists n restr lib'; dands; auto.
+    exists n restr (MkSL lib' safe'); dands; auto.
   }
 
   exrepnd.
@@ -229,7 +247,7 @@ Proof.
   (* XXXXXXXXXXXXX *)
   unfold all_in_ex_bar in q; exrepnd.
 
-  assert (exists n restr lib',
+  assert (exists n restr, exists (lib' : SL),
              lib_extends lib' lib
              /\ bar_lib_bar bar lib'
              /\ same_restrictions restr (csc_seq [])
@@ -242,7 +260,7 @@ Proof.
     applydup q3 in blib0.
 
     apply entry_in_library_extends_implies_entry_in_library in blib1; exrepnd.
-    assert (safe_library_entry entry') as safe' by eauto 3 with slow.
+    assert (safe_library_entry entry') as safee' by eauto 3 with slow.
 
     assert (name <> name0) as dname.
     { introv xx; subst name0.
@@ -252,7 +270,8 @@ Proof.
     pose proof (entry_extends_cs_zeros_implies lib name name0 n restr lib' entry') as q.
     repeat (autodimp q hyp);[].
     exrepnd; subst.
-    exists n0 restr0 lib'; dands; auto.
+    assert (safe_library lib') as safe' by eauto 3 with slow.
+    exists n0 restr0 (MkSL lib' safe'); dands; auto.
   }
 
   clear n restr blib3 blib0.
