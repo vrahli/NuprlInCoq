@@ -49,12 +49,12 @@ Proof.
 
   - right; auto.
 
-  - destruct (choice_sequence_name_deq c c0) as [d|d]; subst; tcsp.
-
   - destruct (String.string_dec s s0) as [d|d]; subst;[left|right]; auto.
 
   - assert (Deq (get_patom_set o)) as d by (destruct o; destruct patom; auto).
     pose proof (d g g0) as h; dorn h;subst;[left|right]; auto.
+
+  - destruct (deq_nat n n0) as [d|d]; subst; [left|right]; auto.
 
   - destruct (deq_nat n n0) as [d|d]; subst; [left|right]; auto.
 
@@ -95,6 +95,7 @@ Proof.
 
     + try destruct c; try destruct c0; try (complete (left; auto)); right; auto.
     + try destruct a; try destruct a0; try (complete (left; auto)); right; auto.
+    + try destruct c; try destruct c0; try (complete (left; auto)); right; auto.
     + try destruct c; try destruct c0; try (complete (left; auto)); right; auto.
 
   - Case "NCan"; SCase "Exc".
@@ -137,18 +138,15 @@ Defined.
 Lemma term_dec_op {o} :
   forall (x y : @NTerm o), option (x = y).
 Proof.
-  sp_nterm_ind1 x as [v1|f1|op1 bs1 ind] Case; introv.
+  sp_nterm_ind1 x as [v1|op1 bs1 ind] Case; introv.
 
   - Case "vterm".
-    destruct y as [v2|f1|op bs2];[|exact None|exact None].
+    destruct y as [v2|op bs2];[|exact None].
     destruct (deq_nvar v1 v2); subst;[|exact None].
     left; reflexivity.
 
-  - Case "sterm".
-    right.
-
   - Case "oterm".
-    destruct y as [v2|f2|op2 bs2];[right|right|].
+    destruct y as [v2|op2 bs2];[right|].
     destruct (opid_dec_op op1 op2); subst;[|right].
 
     assert (option (bs1 = bs2)) as opbs.
