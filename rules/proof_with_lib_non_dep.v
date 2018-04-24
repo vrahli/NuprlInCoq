@@ -35,27 +35,7 @@ Require Export compute_atmost_k_steps.
 
 Require Export name_invariance.
 
-Require Export rules_isect.
-Require Export rules_squiggle.
-Require Export rules_squiggle2.
-Require Export rules_squiggle3.
-Require Export rules_squiggle5.
-Require Export rules_squiggle6.
-Require Export rules_squiggle7.
-Require Export rules_squiggle8.
-Require Export rules_squiggle9.
-Require Export rules_false.
-Require Export rules_struct.
-Require Export rules_function.
-Require Export rules_uni.
-Require Export rules_equality2.
-Require Export rules_equality3.
-Require Export rules_equality4.
-Require Export rules_equality5.
-Require Export rules_integer.
-Require Export rules_number.
-Require Export rules_unfold.
-Require Export rules_base.
+Require Export rules_mon.
 
 
 
