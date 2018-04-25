@@ -2982,14 +2982,6 @@ Proof.
   - exrepnd; subst; autorewrite with slow; auto.
 Qed.
 
-Definition rename_cts {o} (r : renaming) (ts : cts(o)) : cts :=
-  fun lib t1 t2 e =>
-    ts
-      (rename_lib r lib)
-      (rename_cterm r t1)
-      (rename_cterm r t2)
-      (rename_per r e).
-
 Lemma rename_cterm_approx {o} :
   forall r (a b : @CTerm o),
     rename_cterm r (mkc_approx a b)
@@ -4471,6 +4463,116 @@ Proof.
   tcsp.
 Qed.
 
+Lemma equality_of_nat_bar_as_all_in_ex_bar2 {o} :
+  forall lib (t1 t2 : @CTerm o),
+    equality_of_nat_bar lib t1 t2
+    <=> all_in_ex_bar lib (fun lib => equality_of_nat lib t1 t2).
+Proof.
+  tcsp.
+Qed.
+
+Lemma equality_of_atom_bar_as_all_in_ex_bar2 {o} :
+  forall lib (t1 t2 : @CTerm o),
+    equality_of_atom_bar lib t1 t2
+    <=> all_in_ex_bar lib (fun lib => equality_of_atom lib t1 t2).
+Proof.
+  tcsp.
+Qed.
+
+Lemma equality_of_uatom_bar_as_all_in_ex_bar2 {o} :
+  forall lib (t1 t2 : @CTerm o),
+    equality_of_uatom_bar lib t1 t2
+    <=> all_in_ex_bar lib (fun lib => equality_of_uatom lib t1 t2).
+Proof.
+  tcsp.
+Qed.
+
+Lemma equality_of_csname_bar_as_all_in_ex_bar2 {o} :
+  forall lib n (t1 t2 : @CTerm o),
+    equality_of_csname_bar lib n t1 t2
+    <=> all_in_ex_bar lib (fun lib => equality_of_csname lib n t1 t2).
+Proof.
+  tcsp.
+Qed.
+
+Lemma per_base_eq_as_all_in_ex_bar2 {o} :
+  forall lib (t1 t2 : @CTerm o),
+    per_base_eq lib t1 t2
+    <=> all_in_ex_bar lib (fun lib => t1 ~=~(lib) t2).
+Proof.
+  tcsp.
+Qed.
+
+Lemma lib_extends_rename_r2l {o} :
+  forall {r} {lib' lib : @library o},
+    lib_extends lib' (rename_lib r lib)
+    -> lib_extends (rename_lib r lib') lib.
+Proof.
+  introv h.
+  apply (implies_lib_extends_rename_lib r) in h; autorewrite with slow in *; auto.
+Qed.
+
+Definition rename_lib_per {o} r {lib} (eqa : lib-per(lib,o)) : lib-per(rename_lib r lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' (rename_lib r lib)) => rename_per r (eqa (rename_lib r lib') (lib_extends_rename_r2l x)));[].
+  repeat introv; simpl.
+  unfold rename_per.
+  apply eqa.
+Defined.
+
+Definition rename_cts {o} (r : renaming) (ts : cts(o)) : cts :=
+  fun lib t1 t2 e => ts (rename_lib r lib) (rename_cterm r t1) (rename_cterm r t2) (rename_per r e).
+
+Lemma implies_eq_term_equals_rename_per {o} :
+  forall r (e1 e2 : per(o)),
+    (e1 <=2=> e2)
+    -> (rename_per r e1) <=2=> (rename_per r e2).
+Proof.
+  introv h; introv; unfold rename_per; apply h.
+Qed.
+
+Lemma eq_term_equals_rename_per_per_bar_eq {o} :
+  forall r {lib} (bar : @BarLib o lib) eqa,
+    (rename_per r (per_bar_eq bar eqa))
+    <=2=> (per_bar_eq (bar2bar_ren_lib r bar) (rename_lib_per r eqa)).
+Proof.
+  repeat introv; unfold rename_per.
+  split; intro h.
+
+  - unfold per_bar_eq in *.
+    introv br ext; introv; simpl in *.
+    apply (implies_lib_extends_rename_lib r) in ext.
+    pose proof (h _ br _ ext (lib_extends_rename_r2l x)) as h; simpl in h.
+    exrepnd.
+    exists (bar_ren_lib2bar r bar').
+
+    introv br' ext'; introv; simpl in *.
+    apply (implies_lib_extends_rename_lib r) in ext'.
+    pose proof (h0 _ br' _ ext' (implies_lib_extends_rename_lib r _ _ x0)) as h0; simpl in h0.
+    unfold rename_per.
+    eapply lib_per_cond; eauto.
+
+  - unfold per_bar_eq in *.
+    introv br ext; introv; simpl in *.
+    apply (implies_lib_extends_rename_lib r) in ext.
+    pose proof (h (rename_lib r lib')) as h; simpl in h.
+    autorewrite with slow in h; autodimp h hyp;[].
+    pose proof (h _ ext (implies_lib_extends_rename_lib r _ _ x)) as h; simpl in h.
+    exrepnd.
+    exists (bar_ren_lib2bar r bar').
+
+    introv br' ext'; introv; simpl in *.
+    apply (implies_lib_extends_rename_lib r) in ext'.
+    pose proof (h0 _ br' _ ext' (implies_lib_extends_rename_lib r _ _ x0)) as h0; simpl in h0.
+    revert h0; unfold rename_per in *.
+    remember (lib_extends_rename_r2l
+                (lib_extends_trans (implies_lib_extends_rename_lib r lib'2 lib'0 x0)
+                                   (implies_lib_extends_rename_lib r lib'0 lib x))) as w; clear Heqw.
+    revert w.
+    autorewrite with slow; introv h.
+    eapply lib_per_cond; eauto.
+Qed.
+
 Lemma implies_close_rename {o} :
   forall r (u : cts(o)) (lib : library) (t1 t2 : @CTerm o) e,
     (forall lib t1 t2 e,
@@ -4485,16 +4587,27 @@ Lemma implies_close_rename {o} :
          (rename_per r e).
 Proof.
   introv imp cl.
-  remember (u lib) as ts.
-  revert Heqts.
-  close_cases (induction cl using @close_ind') Case; introv eqts; subst.
+  close_cases (induction cl using @close_ind') Case; subst.
 
   - Case "CL_init".
     apply CL_init.
     apply imp; auto.
 
   - Case "CL_bar".
+    apply CL_bar.
+    unfold per_bar.
+    exists (bar2bar_ren_lib r bar) (rename_lib_per r eqa).
+    dands.
 
+    + introv br ext; introv; simpl in *.
+      apply (implies_lib_extends_rename_lib r) in ext.
+      pose proof (reca _ br _ ext (lib_extends_rename_r2l x)) as reca; simpl in reca.
+      autorewrite with slow in *.
+      apply reca; tcsp.
+
+    + eapply eq_term_equals_trans;
+        [apply implies_eq_term_equals_rename_per;eauto|].
+      apply eq_term_equals_rename_per_per_bar_eq.
 
   - Case "CL_int".
     apply CL_int.
@@ -4521,7 +4634,57 @@ Proof.
       autorewrite with slow in *.
       exists k; dands; spcast; auto.
 
-XXXXXXXX
+  - Case "CL_nat".
+    apply CL_nat.
+    unfold per_nat in *; repnd; spcast.
+    apply (computes_to_valc_rename r) in per0.
+    apply (computes_to_valc_rename r) in per1.
+    autorewrite with slow in *.
+    dands; spcast; auto.
+    unfold rename_per; introv; rw per.
+    repeat (rw @equality_of_nat_bar_as_all_in_ex_bar2).
+    rw @all_in_ex_bar_rename_lib2.
+    apply implies_iff_all_in_ex_bar.
+    introv ext.
+
+    unfold equality_of_nat; split; introv h; exrepnd; spcast.
+
+    + apply (computes_to_valc_rename r) in h1.
+      apply (computes_to_valc_rename r) in h0.
+      autorewrite with slow in *.
+      exists n; dands; spcast; auto.
+
+    + apply (computes_to_valc_rename r) in h1.
+      apply (computes_to_valc_rename r) in h0.
+      autorewrite with slow in *.
+      exists n; dands; spcast; auto.
+
+  - Case "CL_csname".
+    apply CL_csname.
+    unfold per_csname in *; exrepnd; spcast.
+    apply (computes_to_valc_rename r) in per2.
+    apply (computes_to_valc_rename r) in per1.
+    autorewrite with slow in *.
+    dands; spcast; auto.
+    exists n; dands; spcast; auto;[].
+    unfold rename_per; introv; rw per0.
+    repeat (rw @equality_of_csname_bar_as_all_in_ex_bar2).
+    rw @all_in_ex_bar_rename_lib2.
+    apply implies_iff_all_in_ex_bar.
+    introv ext.
+
+    unfold equality_of_csname; split; introv h; exrepnd; spcast;
+      exists name.
+
+    + apply (computes_to_valc_rename r) in h2.
+      apply (computes_to_valc_rename r) in h0.
+      autorewrite with slow in *.
+      dands; spcast; auto.
+
+    + apply (computes_to_valc_rename r) in h2.
+      apply (computes_to_valc_rename r) in h0.
+      autorewrite with slow in *.
+      dands; spcast; auto.
 
   - Case "CL_atom".
     apply CL_atom.
@@ -4531,6 +4694,10 @@ XXXXXXXX
     autorewrite with slow in *.
     dands; spcast; auto.
     unfold rename_per; introv; rw per.
+    repeat (rw @equality_of_atom_bar_as_all_in_ex_bar2).
+    rw @all_in_ex_bar_rename_lib2.
+    apply implies_iff_all_in_ex_bar.
+    introv ext.
     unfold equality_of_atom; split; introv h; exrepnd; spcast.
 
     + apply (computes_to_valc_rename r) in h1.
@@ -4551,6 +4718,10 @@ XXXXXXXX
     autorewrite with slow in *.
     dands; spcast; auto.
     unfold rename_per; introv; rw per.
+    repeat (rw @equality_of_uatom_bar_as_all_in_ex_bar2).
+    rw @all_in_ex_bar_rename_lib2.
+    apply implies_iff_all_in_ex_bar.
+    introv ext.
     unfold equality_of_uatom; split; introv h; exrepnd; spcast.
 
     + apply (computes_to_valc_rename r) in h1.
@@ -4571,6 +4742,10 @@ XXXXXXXX
     autorewrite with slow in *.
     dands; spcast; auto.
     unfold rename_per; introv; rw per.
+    repeat (rw @per_base_eq_as_all_in_ex_bar2).
+    rw @all_in_ex_bar_rename_lib2.
+    apply implies_iff_all_in_ex_bar.
+    introv ext.
     split; introv h; exrepnd; spcast;
       apply (implies_cequivc_rename r) in h; autorewrite with slow in *; auto.
 
@@ -4581,6 +4756,8 @@ XXXXXXXX
     apply (computes_to_valc_rename r) in per2.
     autorewrite with slow rename in *.
     eexists; eexists; eexists; eexists; dands; spcast; eauto.
+
+XXXXXXXXX
 
     + split; intro h;
         apply (implies_capproxc_rename r) in h; autorewrite with slow in *;
