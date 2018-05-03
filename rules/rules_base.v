@@ -37,6 +37,29 @@ Require Export per_props_uni.
 Require Export per_props_cequiv2.
 
 
+(* MOVE *)
+Lemma per_base_eq_as_ccequivc_bar {o} :
+  forall lib (a b : @CTerm o),
+    per_base_eq lib a b <=> ccequivc_bar lib a b.
+Proof.
+  tcsp.
+Qed.
+
+(* MOVE *)
+Lemma implies_ccequivc_bar_apply {o} :
+  forall lib (f g a b : @CTerm o),
+    ccequivc_bar lib f g
+    -> ccequivc_bar lib a b
+    -> ccequivc_bar lib (mkc_apply f a) (mkc_apply g b).
+Proof.
+  introv ceqa ceqb.
+  eapply all_in_ex_bar_modus_ponens2;[|exact ceqa|exact ceqb]; clear ceqa ceqb; introv xt ceqa ceqb.
+  spcast.
+  apply implies_cequivc_apply; auto.
+Qed.
+
+
+
 (*
    H |- f a in Base
 
@@ -90,7 +113,7 @@ Proof.
   vr_seq_true.
   lsubst_tac.
   rw <- @member_member_iff.
-  pose proof (teq_and_member_if_member lib mk_base (mk_apply f a) s1 s2 H wT wt ct1 ct2 cT cT0) as q.
+  pose proof (teq_and_member_if_member lib' mk_base (mk_apply f a) s1 s2 H wT wt ct1 ct2 cT cT0) as q.
   lsubst_tac.
   apply q; auto.
   clear dependent s1; clear dependent s2.
@@ -98,13 +121,14 @@ Proof.
   introv hf sim.
   vr_seq_true in hyp1.
   vr_seq_true in hyp2.
-  pose proof (hyp1 s1 s2 hf sim) as q1; clear hyp1; exrepnd.
-  pose proof (hyp2 s1 s2 hf sim) as q2; clear hyp2; exrepnd.
+  pose proof (hyp1 lib' ext s1 s2 hf sim) as q1; clear hyp1; exrepnd.
+  pose proof (hyp2 lib' ext s1 s2 hf sim) as q2; clear hyp2; exrepnd.
   lsubst_tac.
   allrw <- @member_member_iff.
   allrw @tequality_mkc_member_base.
   apply equality_in_base_iff; spcast.
-  apply implies_cequivc_apply; auto.
+  apply per_base_eq_as_ccequivc_bar.
+  apply implies_ccequivc_bar_apply; auto.
 Qed.
 
 
@@ -152,15 +176,14 @@ Proof.
   rw <- @member_member_iff.
   apply similarity_length in sim; repnd; simphyps; cpx; proof_irr.
   dands; try (apply member_base).
-  allrw @tequality_mkc_member_base; spcast; auto.
+  allrw @tequality_mkc_member_base; spcast; auto; eauto 3 with slow.
 Qed.
 
-Lemma rule_base_closed_true_ext_lib {o} :
+Lemma rule_base_closed_true3 {o} :
   forall lib (t : @NTerm o),
-    rule_true_ext_lib lib (rule_base_closed t).
+    rule_true3 lib (rule_base_closed t).
 Proof.
   introv.
-  apply rule_true3_implies_rule_true_ext_lib; introv.
   apply rule_true_implies_rule_true3;[|apply rule_base_closed_true].
   introv h; apply @wf_axiom.
 Qed.
@@ -220,10 +243,11 @@ Proof.
   dands; auto;
     try (apply tequality_mkc_uni);
     try (complete (right; spcast; auto));
-    try (apply base_in_uni).
+    try (apply base_in_uni);
+    try (complete (apply in_ext_implies_all_in_ex_bar; introv xt; right; eauto 3 with slow)).
 Qed.
 
-Lemma rule_base_equality_true_ext_lib {o} :
+(*Lemma rule_base_equality_true_ext_lib {o} :
   forall lib (H : @barehypotheses o) i,
     rule_true_ext_lib lib (rule_base_equality H i).
 Proof.
@@ -231,7 +255,7 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_base_equality_true3.
-Qed.
+Qed.*)
 
 Lemma rule_base_equality_wf2 {o} :
   forall (H : @barehypotheses o) i,

@@ -94,20 +94,22 @@ Require Import weak_consistency.
  Require Import axiom_choice.
  Require Import axiom_choice_gen.
 (*Require Import axiom_choice2.*)
+*)
 
 
 (* Rules(squiggle): *)
- Require Import rules_squiggle.
+(* Require Import rules_squiggle.
  Require Import rules_squiggle2.
  Require Import rules_squiggle3.
  Require Import rules_squiggle4.
  Require Import rules_squiggle5.
- Require Import rules_squiggle6.
- Require Import rules_squiggle7.
- Require Import rules_squiggle8.
- Require Import rules_base.
+ Require Import rules_squiggle6.*)
+Require Import rules_squiggle7.
+(* Require Import rules_squiggle8.*)
+Require Import rules_base.
 
 
+(*
 (* Rules(exception): *)
  Require Import rules_exception.
  Require Import rules_exception2.
@@ -162,9 +164,9 @@ Require Import weak_consistency.
 
 
 (* Equality type *)
- Require Import rules_equality.
- Require Import rules_equality2.
- Require Import rules_equality3.
+ Require Import rules_equality.*)
+Require Import rules_equality2.
+(* Require Import rules_equality3.
  Require Import rules_equality4.
  Require Import rules_equality5.
  Require Import rules_equality6.

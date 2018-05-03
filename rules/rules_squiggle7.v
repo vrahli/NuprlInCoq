@@ -149,6 +149,40 @@ Proof.
   try (rw @dom_csub_eq); auto.
 Qed.
 
+Lemma reduces_to_implies_ccequiv_ext_lsubst {o} :
+  forall lib (t x : @NTerm o) sub wt wx ct cx,
+    reduces_to lib t x
+    -> ccequivc_ext lib (lsubstc t wt sub ct) (lsubstc x wx sub cx).
+Proof.
+  introv rtx ext; spcast.
+  eapply lib_extends_preserves_reduces_to in rtx;[|eauto|];auto;[].
+  unfold cequivc; simpl.
+  apply reduces_to_implies_cequiv_lsubst; auto.
+Qed.
+
+Lemma ccequivc_ext_implies_all_in_ex_bar_ccequivc {o} :
+  forall lib lib' (a b : @CTerm o),
+    lib_extends lib' lib
+    -> ccequivc_ext lib a b
+    -> all_in_ex_bar lib' (fun lib => a ~=~(lib) b).
+Proof.
+  introv ext ceq.
+  apply in_ext_implies_all_in_ex_bar; introv xt.
+  apply ceq; eauto 3 with slow.
+Qed.
+Hint Resolve ccequivc_ext_implies_all_in_ex_bar_ccequivc : slow.
+
+Lemma implies_all_in_ex_bar_iff_if_both_true {o} :
+  forall (lib : @library o) F G,
+    all_in_ex_bar lib F
+    -> all_in_ex_bar lib G
+    -> all_in_ex_bar lib (fun lib => (F lib) <=> (G lib)).
+Proof.
+  introv alla allb.
+  eapply all_in_ex_bar_modus_ponens2;[|exact alla|exact allb]; clear alla allb; introv ext alla allb; tcsp.
+Qed.
+
+
 
 (**
 
@@ -193,15 +227,11 @@ Proof.
   rw @tequality_mkc_cequiv.
   rw <- @member_cequiv_iff.
 
-  pose proof (reduces_to_implies_cequiv_lsubst lib a b s1) as h.
-  repeat (autodimp h hyp).
+  pose proof (reduces_to_implies_ccequiv_ext_lsubst lib a b s1 w1 w2 c1 c2 red) as h.
+  pose proof (reduces_to_implies_ccequiv_ext_lsubst lib a b s2 w1 w2 c0 c3 red) as q.
 
-  pose proof (reduces_to_implies_cequiv_lsubst lib a b s2) as q.
-  repeat (autodimp q hyp).
-
-  dands; spcast; auto;[].
-
-  split; intro z; spcast; eauto 3 with slow.
+  dands; spcast; eauto 2 with slow;[].
+  apply implies_all_in_ex_bar_iff_if_both_true; eauto 3 with slow.
 Qed.
 
 Lemma rule_cequiv_computation_wf2 {o} :
@@ -215,53 +245,16 @@ Proof.
   allrw @covered_approx; repnd; auto.
 Qed.
 
-Lemma rule_cequiv_computation_true_ext_lib {o} :
-  forall lib
-         (a b : NTerm)
-         (H : @barehypotheses o)
-         (r : reduces_to lib a b),
-    rule_true_ext_lib lib (rule_cequiv_computation a b H).
-Proof.
-  unfold rule_cequiv_computation, rule_true_ext_lib, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
-  introv r wf cargs hyps.
-  repnd.
-  clear cargs hyps.
-
-  assert (wf_csequent (rule_cequiv_computation_concl a b H)) as wfc by prove_seq.
-  exists wfc.
-  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
-
-  (* we now start proving the sequent *)
-  seq_true_ext_lib.
-  lsubst_tac.
-  allrw @member_eq.
-  rw @tequality_mkc_cequiv.
-  rw <- @member_cequiv_iff.
-
-  pose proof (reduces_to_preserves_lib_extends lib lib0 extlib a b r) as q1.
-
-  (* First, prove that [reduces_to lib0 a b] *)
-  pose proof (reduces_to_implies_cequiv_lsubst lib0 a b s1) as h.
-  repeat (autodimp h hyp).
-
-  pose proof (reduces_to_implies_cequiv_lsubst lib0 a b s2) as q.
-  repeat (autodimp q hyp).
-
-  dands; spcast; auto;[].
-
-  split; intro z; spcast; eauto 3 with slow.
-Qed.
-
-Lemma rule_cequiv_computation_atmost_true_ext_lib {o} :
+Lemma rule_cequiv_computation_atmost_true3 {o} :
   forall lib
          (a b : NTerm)
          (n : nat)
          (H : @barehypotheses o)
          (r : reduces_in_atmost_k_steps lib a b n),
-    rule_true_ext_lib lib (rule_cequiv_computation a b H).
+    rule_true3 lib (rule_cequiv_computation a b H).
 Proof.
   introv r.
-  apply rule_cequiv_computation_true_ext_lib.
+  apply rule_cequiv_computation_true3.
   apply reduces_in_atmost_k_steps_implies_reduces_to in r; auto.
 Qed.
 
@@ -279,6 +272,18 @@ Proof.
   apply alphaeq_preserves_free_vars in aeq; allrw <-; auto.
 Qed.
 Hint Resolve alpha_eq_preserves_cover_vars : slow.
+
+Lemma alpha_eq_implies_ccequivc_ext {o} :
+  forall lib (a b : @NTerm o) wa wb s ca cb,
+    alpha_eq a b
+    -> ccequivc_ext lib (lsubstc a wa s ca) (lsubstc b wb s cb).
+Proof.
+  introv aeq ext; spcast.
+  unfold cequivc; simpl.
+  eapply cequiv_rw_r_eauto;[|apply cequiv_refl].
+  { apply lsubst_alpha_congr2; auto. }
+  { apply isprogram_csubst; eauto 3 with slow. }
+Qed.
 
 
 (**
@@ -318,36 +323,21 @@ Proof.
 
   applydup @reduces_to_preserves_wf in red; auto.
 
-  pose proof (reduces_to_implies_cequiv_lsubst lib a b s1) as h.
-  repeat (autodimp h hyp).
+  assert (cover_vars b s1) as covb1 by eauto 3 with slow.
+  assert (cover_vars b s2) as covb2 by eauto 3 with slow.
 
-  pose proof (reduces_to_implies_cequiv_lsubst lib a b s2) as q.
-  repeat (autodimp q hyp).
+  pose proof (reduces_to_implies_ccequiv_ext_lsubst lib a b s1 w1 red0 c1 covb1 red) as h.
+  pose proof (reduces_to_implies_ccequiv_ext_lsubst lib a b s2 w1 red0 c0 covb2 red) as q.
 
-  dands; spcast; auto;[|].
+  pose proof (alpha_eq_implies_ccequivc_ext lib b c red0 w2 s1 covb1 c2 aeq) as z.
+  pose proof (alpha_eq_implies_ccequivc_ext lib b c red0 w2 s2 covb2 c3 aeq) as w.
 
-  - split; intro z; spcast.
+  eapply ccequivc_ext_trans in w;[|eauto].
+  eapply ccequivc_ext_trans in z;[|eauto].
+  clear h q.
 
-    + unfold cequivc; simpl.
-      eapply cequiv_trans;[eauto|].
-      apply alpha_implies_cequiv; auto.
-      * apply isprogram_csubst; eauto 3 with slow.
-      * apply isprogram_csubst; eauto 3 with slow.
-      * apply lsubst_alpha_congr2; auto.
-
-    + unfold cequivc; simpl.
-      eapply cequiv_trans;[eauto|].
-      apply alpha_implies_cequiv; auto.
-      * apply isprogram_csubst; eauto 3 with slow.
-      * apply isprogram_csubst; eauto 3 with slow.
-      * apply lsubst_alpha_congr2; auto.
-
-  - unfold cequivc; simpl.
-    eapply cequiv_trans;[eauto|].
-    apply alpha_implies_cequiv; auto.
-    * apply isprogram_csubst; eauto 3 with slow.
-    * apply isprogram_csubst; eauto 3 with slow.
-    * apply lsubst_alpha_congr2; auto.
+  dands; spcast; eauto 3 with slow.
+  apply implies_all_in_ex_bar_iff_if_both_true; eauto 3 with slow.
 Qed.
 
 Lemma rule_cequiv_computation_aeq_wf2 {o} :
@@ -356,65 +346,4 @@ Lemma rule_cequiv_computation_aeq_wf2 {o} :
 Proof.
   introv wf j.
   allsimpl; repdors; sp; subst; allunfold @wf_bseq; wfseq.
-Qed.
-
-Lemma rule_cequiv_computation_aeq_true_ext_lib {o} :
-  forall lib
-         (a b c : NTerm)
-         (H : @barehypotheses o)
-         (r : reduces_to lib a b)
-         (aeq : alpha_eq b c),
-    rule_true_ext_lib lib (rule_cequiv_computation a c H).
-Proof.
-  unfold rule_cequiv_computation, rule_true_ext_lib, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
-  introv r aeq wf cargs hyps.
-  repnd.
-  clear cargs hyps.
-
-  assert (wf_csequent (rule_cequiv_computation_concl a c H)) as wfc by prove_seq.
-  exists wfc.
-  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
-
-  (* we now start proving the sequent *)
-  seq_true_ext_lib.
-  lsubst_tac.
-  allrw @member_eq.
-  rw @tequality_mkc_cequiv.
-  rw <- @member_cequiv_iff.
-
-  applydup @reduces_to_preserves_wf in r; auto.
-
-  pose proof (reduces_to_preserves_lib_extends lib lib0 extlib a b r) as q1.
-
-  (* First, prove that [reduces_to lib0 a b] *)
-  pose proof (reduces_to_implies_cequiv_lsubst lib0 a b s1) as h.
-  repeat (autodimp h hyp).
-
-  pose proof (reduces_to_implies_cequiv_lsubst lib0 a b s2) as q.
-  repeat (autodimp q hyp).
-
-  dands; spcast; auto;[|].
-
-  - split; intro z; spcast.
-
-    + unfold cequivc; simpl.
-      eapply cequiv_trans;[eauto|].
-      apply alpha_implies_cequiv; auto.
-      * apply isprogram_csubst; eauto 3 with slow.
-      * apply isprogram_csubst; eauto 3 with slow.
-      * apply lsubst_alpha_congr2; auto.
-
-    + unfold cequivc; simpl.
-      eapply cequiv_trans;[eauto|].
-      apply alpha_implies_cequiv; auto.
-      * apply isprogram_csubst; eauto 3 with slow.
-      * apply isprogram_csubst; eauto 3 with slow.
-      * apply lsubst_alpha_congr2; auto.
-
-  - unfold cequivc; simpl.
-    eapply cequiv_trans;[eauto|].
-    apply alpha_implies_cequiv; auto.
-    * apply isprogram_csubst; eauto 3 with slow.
-    * apply isprogram_csubst; eauto 3 with slow.
-    * apply lsubst_alpha_congr2; auto.
 Qed.

@@ -39,3 +39,6 @@ Require Export rules_not_classical.
 Require Export rules_not_MP.
 Require Export rules_function.
 Require Export rules_function2.
+Require Export rules_base.
+Require Export rules_squiggle7.
+Require Export rules_equality2.

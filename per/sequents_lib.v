@@ -34,7 +34,7 @@ Require Export sequents2.
 Require Export computation_lib_extends.
 
 
-Definition sequent_true_ext_lib {o} lib0 (s : @csequent o) : Type :=
+(*Definition sequent_true_ext_lib {o} lib0 (s : @csequent o) : Type :=
   forall lib,
     lib_extends lib lib0
     -> VR_sequent_true lib s.
@@ -85,7 +85,7 @@ Proof.
   introv st.
   eapply sequent_true_ext_lib_wf_implies_sequent_true2_if_lib_extends; eauto 2 with slow.
 Qed.
-Hint Resolve sequent_true_ext_lib_wf_implies_sequent_true2 : slow.
+Hint Resolve sequent_true_ext_lib_wf_implies_sequent_true2 : slow.*)
 
 Definition wf_extract_seq {o} (s : @baresequent o) :=
   wf_term_op (extract (concl s)).
@@ -151,7 +151,7 @@ Proof.
   apply rule_true2_implies_rule_true3; auto.
 Qed.
 
-Lemma rule_true3_implies_rule_true_ext_lib {o} :
+(*Lemma rule_true3_implies_rule_true_ext_lib {o} :
   forall (R : @rule o),
     (forall lib, rule_true3 lib R)
     -> forall lib, rule_true_ext_lib lib R.
@@ -320,3 +320,4 @@ Ltac seq_true_ext_lib_ltac H :=
 
 Tactic Notation "seq_true_ext_lib" "in" ident(H) :=
   seq_true_ext_lib_ltac H.
+*)

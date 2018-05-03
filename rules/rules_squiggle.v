@@ -93,9 +93,8 @@ Proof.
   vr_seq_true.
   lift_lsubst.
   rw @member_eq.
-  rw <- @member_cequiv_iff; sp;
-  try (spcast; apply cequiv_refl; apply isprogram_get_cterm).
-  apply equal_cequiv.
+  rw <- @member_cequiv_iff; sp; try apply equal_cequiv.
+  apply in_ext_implies_all_in_ex_bar; introv xt; spcast; eauto 3 with slow.
 Qed.
 
 (* begin hide *)
@@ -126,14 +125,14 @@ Proof.
   introv i; simpl; apply (@wf_axiom o).
 Qed.
 
-Lemma rule_cequiv_refl_true_ext_lib {o} :
+(*Lemma rule_cequiv_refl_true_ext_lib {o} :
   forall lib H a, rule_true_ext_lib lib (@rule_cequiv_refl o H a).
 Proof.
   introv.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_cequiv_refl_true3.
-Qed.
+Qed.*)
 
 Lemma rule_cequiv_refl_wf2 {o} :
   forall (H : @bhyps o) a, wf_rule2 (rule_cequiv_refl H a).
@@ -183,12 +182,12 @@ Proof.
   vr_seq_true.
   lift_lsubst.
   rw @member_eq.
-  rw <- @member_approx_iff; sp;
-  try (spcast; apply approx_refl; apply isprogram_get_cterm).
-  apply equal_approx.
+  rw <- @member_approx_iff; sp; try apply equal_approx.
+  apply in_ext_implies_all_in_ex_bar; introv xt; spcast; eauto 3 with slow.
+  apply approxc_refl.
 Qed.
 
-Lemma rule_approx_refl_true_ext_lib {o} :
+(*Lemma rule_approx_refl_true_ext_lib {o} :
   forall lib (H : @bhyps o) (a  : NTerm),
     rule_true_ext_lib lib (rule_approx_refl H a).
 Proof.
@@ -196,7 +195,7 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_approx_refl_true3.
-Qed.
+Qed.*)
 
 Lemma rule_approx_refl_true {o} :
   forall lib (H : @bhyps o) (a  : NTerm),
@@ -277,11 +276,14 @@ Proof.
 
   sp.
 
-  rw @tequality_mkc_equality; sp;
-  try (apply tequality_mkc_uni);
-  try (complete (right; spcast; apply cequiv_refl; apply isprogram_get_cterm)).
+  {
+    rw @tequality_mkc_equality; sp;
+      try (apply tequality_mkc_uni);
+      apply in_ext_implies_all_in_ex_bar; introv xt; spcast; eauto 3 with slow.
+  }
 
   rw @mkc_cequiv_equality_in_uni; sp.
+  apply in_ext_implies_all_in_ex_bar; introv xt; tcsp.
 Qed.
 
 (* begin hide *)
@@ -352,11 +354,14 @@ Proof.
 
   sp.
 
-  rw @tequality_mkc_equality; sp;
-  try (apply tequality_mkc_uni);
-  try (complete (right; spcast; apply cequiv_refl; apply isprogram_get_cterm)).
+  {
+    rw @tequality_mkc_equality; sp;
+      try (apply tequality_mkc_uni);
+      apply in_ext_implies_all_in_ex_bar; introv xt; spcast; eauto 3 with slow.
+  }
 
   rw @mkc_approx_equality_in_uni; sp.
+  apply in_ext_implies_all_in_ex_bar; introv xt; tcsp.
 Qed.
 
 (* begin hide *)
@@ -443,19 +448,21 @@ Proof.
   (* we now start proving the sequent *)
   vr_seq_true.
   vr_seq_true in hyp1.
-  generalize (hyp1 s1 s2 eqh sim); clear hyp1; intro hyp1; exrepnd.
+  generalize (hyp1 lib' ext s1 s2 eqh sim); clear hyp1; intro hyp1; exrepnd.
   lsubst_tac.
   allrw @member_eq.
   allrw <- @member_equality_iff.
   allrw @equality_in_base_iff.
   rw <- @member_cequiv_iff.
-  sp.
+  dands; tcsp;[].
+
   rw @tequality_mkc_cequiv.
   allrw @tequality_mkc_equality_base_iff; repnd.
+  eapply all_in_ex_bar_modus_ponens3;[|exact hyp1|exact hyp2|exact hyp0]; clear hyp1 hyp2 hyp0; introv xt hyp1 hyp2 hyp0.
   split; sp; spcast; allunfold @cequivc.
   apply @cequiv_trans with (b := get_cterm (lsubstc a w1 s1 c1)); auto.
-  apply cequiv_sym; auto.
-  apply @cequiv_trans with (b := get_cterm (lsubstc b w2 s1 c2)); auto.
+  { apply cequiv_sym; auto. }
+  { apply @cequiv_trans with (b := get_cterm (lsubstc b w2 s1 c2)); auto. }
 Qed.
 
 (* begin hide *)
@@ -528,8 +535,8 @@ Proof.
   vr_seq_true.
   vr_seq_true in hyp1.
   vr_seq_true in hyp2.
-  generalize (hyp1 s1 s2 eqh sim); clear hyp1; intro hyp1.
-  generalize (hyp2 s1 s2 eqh sim); clear hyp2; intro hyp2.
+  generalize (hyp1 lib' ext s1 s2 eqh sim); clear hyp1; intro hyp1.
+  generalize (hyp2 lib' ext s1 s2 eqh sim); clear hyp2; intro hyp2.
   exrepnd.
   lsubst_tac.
   allrw @member_eq.
@@ -537,20 +544,40 @@ Proof.
   allrw <- @member_approx_iff.
   rw @tequality_mkc_cequiv.
   allrw @tequality_mkc_approx.
-  applydup hyp3 in hyp1; clear hyp3.
-  applydup hyp0 in hyp2; clear hyp0.
+
+  assert (all_in_ex_bar
+            lib'
+            (fun lib => (lsubstc a w2 s2 c3) ~<~(lib) (lsubstc b w1 s2 c0))) as h1.
+  {
+    eapply all_in_ex_bar_modus_ponens2;[|exact hyp1|exact hyp3]; clear hyp1 hyp3; introv xt hyp1 hyp3.
+    apply hyp3; auto.
+  }
+
+  assert (all_in_ex_bar
+            lib'
+            (fun lib => (lsubstc b w1 s2 c0) ~<~(lib) (lsubstc a w2 s2 c3))) as h2.
+  {
+    eapply all_in_ex_bar_modus_ponens2;[|exact hyp0|exact hyp2]; clear hyp0 hyp2; introv xt hyp0 hyp2.
+    apply hyp0; auto.
+  }
 
   dands.
 
-  split; intro k; spcast.
-  rw @cequivc_iff_approxc; dands; auto.
-  rw @cequivc_iff_approxc; dands; auto.
+  {
+    eapply all_in_ex_bar_modus_ponens4;[|exact hyp1|exact h1|exact hyp2|exact h2]; clear hyp1 h1 hyp2 h2; introv xt hyp1 h1 hyp2 h2.
+    split; intro k; spcast.
+    { rw @cequivc_iff_approxc; dands; auto. }
+    { rw @cequivc_iff_approxc; dands; auto. }
+  }
 
-  spcast.
-  rw @cequivc_iff_approxc; dands; auto.
+  {
+    eapply all_in_ex_bar_modus_ponens4;[|exact hyp1|exact h1|exact hyp2|exact h2]; clear hyp1 h1 hyp2 h2; introv xt hyp1 h1 hyp2 h2.
+    spcast.
+    rw @cequivc_iff_approxc; dands; auto.
+  }
 Qed.
 
-Lemma rule_cequiv_approx_true_ext_lib {o} :
+(*Lemma rule_cequiv_approx_true_ext_lib {o} :
   forall lib (H : @barehypotheses o) (a b : NTerm),
     rule_true_ext_lib lib (rule_cequiv_approx H a b).
 Proof.
@@ -558,7 +585,7 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_cequiv_approx_true3.
-Qed.
+Qed.*)
 
 Lemma rule_cequiv_approx_true {o} :
   forall lib (H : @barehypotheses o) (a b : NTerm),
@@ -641,8 +668,8 @@ Proof.
   vr_seq_true.
   vr_seq_true in hyp1.
   vr_seq_true in hyp2.
-  generalize (hyp1 s1 s2 eqh sim); clear hyp1; intro hyp1.
-  generalize (hyp2 s1 s2 eqh sim); clear hyp2; intro hyp2.
+  generalize (hyp1 lib' ext s1 s2 eqh sim); clear hyp1; intro hyp1.
+  generalize (hyp2 lib' ext s1 s2 eqh sim); clear hyp2; intro hyp2.
   exrepnd.
   lsubst_tac.
   allrw @member_eq.
@@ -650,20 +677,31 @@ Proof.
   allrw <- @equality_in_approx; repnd.
   rw @tequality_mkc_cequiv.
   allrw @tequality_mkc_approx.
-  applydup hyp3 in hyp4; clear hyp3.
-  applydup hyp0 in hyp6; clear hyp0.
 
   dands.
 
-  split; intro k; spcast.
-  rw @cequivc_iff_approxc; dands; auto.
-  rw @cequivc_iff_approxc; dands; auto.
+  {
+    eapply all_in_ex_bar_modus_ponens4;[|exact hyp0|exact hyp1|exact hyp2|exact hyp3]; clear hyp0 hyp1 hyp2 hyp3; introv xt hyp0 hyp1 hyp2 hyp3.
+    repnd.
+    applydup hyp3 in hyp6; clear hyp3.
+    applydup hyp0 in hyp4; clear hyp0.
 
-  spcast.
-  rw @cequivc_iff_approxc; dands; auto.
+    split; intro k; spcast.
+    rw @cequivc_iff_approxc; dands; auto.
+    rw @cequivc_iff_approxc; dands; auto.
+  }
+
+  {
+    eapply all_in_ex_bar_modus_ponens4;[|exact hyp0|exact hyp1|exact hyp2|exact hyp3]; clear hyp0 hyp1 hyp2 hyp3; introv xt hyp0 hyp1 hyp2 hyp3.
+    repnd.
+    applydup hyp3 in hyp6; clear hyp3.
+    applydup hyp0 in hyp4; clear hyp0.
+    spcast.
+    rw @cequivc_iff_approxc; dands; auto.
+  }
 Qed.
 
-Lemma rule_cequiv_approx2_true_ext_lib {o} :
+(*Lemma rule_cequiv_approx2_true_ext_lib {o} :
   forall lib (H : @barehypotheses o) (a b : NTerm) e1 e2,
     rule_true_ext_lib lib (rule_cequiv_approx2 H a b e1 e2).
 Proof.
@@ -671,7 +709,7 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_cequiv_approx2_true3.
-Qed.
+Qed.*)
 
 Lemma rule_cequiv_approx2_true {o} :
   forall lib (H : @barehypotheses o) (a b : NTerm) e1 e2,
@@ -717,6 +755,45 @@ Qed.
 
 
 (* begin hide *)
+
+
+
+(* MOVE *)
+Lemma implies_all_in_ex_bar_iff_if_both {o} :
+  forall (lib : @library o) F G,
+    all_in_ex_bar lib F
+    -> all_in_ex_bar lib G
+    -> all_in_ex_bar lib (fun lib => (F lib) <=> (G lib)).
+Proof.
+  introv h q.
+  eapply all_in_ex_bar_modus_ponens2;[|exact h|exact q]; clear h q; introv xt h q; tcsp.
+Qed.
+
+(* MOVE *)
+Lemma all_in_ex_bar_ccequivc_ext_implies_all_in_ex_bar_ccequivc {o} :
+  forall (lib : @library o) a b,
+    all_in_ex_bar lib (fun lib => ccequivc_ext lib a b)
+    -> all_in_ex_bar lib (fun lib => ccequivc lib a b).
+Proof.
+  introv h.
+  apply collapse_all_in_ex_bar.
+  eapply all_in_ex_bar_modus_ponens1;[|exact h]; clear h; introv xt h; tcsp.
+  apply in_ext_implies_all_in_ex_bar; tcsp.
+Qed.
+
+(* MOVE *)
+Lemma implies_ccequivc_ext_lam2 {o} :
+  forall lib (v1 v2 : NVar) (t1 : @CVTerm o [v1]) (t2 : @CVTerm o [v2]),
+    (forall u, ccequivc_ext lib (t1) [[v1 \\ u]] (t2) [[v2 \\ u]])
+    -> ccequivc_ext lib (mkc_lam v1 t1) (mkc_lam v2 t2).
+Proof.
+  introv imp.
+  introv ext; spcast.
+  apply implies_cequivc_lam2; introv.
+  pose proof (imp u _ ext) as imp; simpl in *.
+  apply cequiv_stable; auto.
+Qed.
+
 
 
 (* [22] ============ CEQUIV LAMBDA D ============ *)
@@ -768,10 +845,68 @@ Proof.
 
   dands.
 
-  - split; intro h; clear h.
+  - apply implies_all_in_ex_bar_iff_if_both.
 
     + vr_seq_true in hyp1.
       spcast.
+      apply all_in_ex_bar_ccequivc_ext_implies_all_in_ex_bar_ccequivc.
+
+Definition cterm_fam_bar {o} {lib} (f : @CTerm o -> BarLib lib) : @BarLib o lib.
+Proof.
+  exists (fun lib' => exists u, bar_lib_bar (f u) lib').
+
+  - introv ext.
+
+    remember (f mkc_axiom) as bar.
+
+    destruct bar as [bar1 bars1 ext1]; simpl in *.
+    pose proof (bars1 infLib) as q; autodimp q hyp; exrepnd.
+    exists lib'; dands; auto.
+    exists (@mkc_axiom o).
+    rewrite <- Heqbar; simpl; auto.
+
+  - introv w; exrepnd.
+    remember (f u) as b; symmetry in Heqb.
+    destruct b as [bar2 bars2 ext2]; simpl in *.
+    eauto 3 with slow.
+Defined.
+
+Lemma implies_all_in_ex_bar_ccequivc_ext_lam2 {o} :
+  forall lib (v1 v2 : NVar) (t1 : @CVTerm o [v1]) (t2 : @CVTerm o [v2]),
+    (forall u, all_in_ex_bar lib (fun lib => ccequivc_ext lib (t1) [[v1 \\ u]] (t2) [[v2 \\ u]]))
+    -> all_in_ex_bar lib (fun lib => ccequivc_ext lib (mkc_lam v1 t1) (mkc_lam v2 t2)).
+Proof.
+  introv imp.
+  pose proof (FunctionalChoice_on
+                (@CTerm o)
+                (BarLib lib)
+                (fun u b => all_in_bar b (fun lib : library => ccequivc_ext lib (t1) [[v1 \\ u]] (t2) [[v2 \\ u]]))
+             ) as q; simpl in q.
+  autodimp q hyp;[].
+  exrepnd.
+  clear imp.
+
+
+XXXXX
+  exists (cterm_fam_bar f).
+  introv br ext; simpl in *; exrepnd.
+  pose proof (q0 u _ br0 _ ext) as q0; simpl in q0.
+  apply implies_all_in_ex_bar_ccequivc_ext_lam2
+
+  Print all_in_ex_bar.
+  introv ext; spcast.
+  apply implies_cequivc_lam2; introv.
+  pose proof (imp u _ ext) as imp; simpl in *.
+  apply cequiv_stable; auto.
+Qed.
+
+
+      apply in_ext_implies_all_in_ex_bar; introv xt.
+      apply implies_ccequivc_ext_lam2; introv.
+
+      SearchAbout ccequivc_ext mkc_lam.
+
+XXXXXXXXX
       apply implies_cequivc_lam2.
       introv.
       apply cequiv_stable.

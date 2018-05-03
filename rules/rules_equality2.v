@@ -34,8 +34,21 @@ Require Export per_props_union.
 Require Export subst_tacs.
 
 
+
 (** printing |- $\vdash$ *)
 (** printing ->  $\rightarrow$ *)
+
+
+
+Lemma all_in_ex_bar_ccomputes_to_valc_refl {o} :
+  forall lib (v : @CTerm o),
+    iscvalue v
+    -> all_in_ex_bar lib (fun lib => v ===>(lib) v).
+Proof.
+  introv isv.
+  apply in_ext_implies_all_in_ex_bar; introv ext; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve all_in_ex_bar_ccomputes_to_valc_refl : slow.
 
 
 Definition rule_equality_to_extract_concl {o} (H : @bhyps o) t T :=
@@ -78,27 +91,25 @@ Proof.
   vr_seq_true.
 
   vr_seq_true in hyp1.
-  pose proof (hyp1 s1 s2 eqh sim) as h; exrepnd; clear hyp1.
+  pose proof (hyp1 _ ext s1 s2 eqh sim) as h; exrepnd; clear hyp1.
 
   lsubst_tac.
 
   allrw @tequality_mkc_member_sp.
   allrw @equality_in_member.
 
-  dands; auto; spcast;
-  try (apply computes_to_valc_refl; eauto 3 with slow).
+  dands; auto; spcast; eauto 3 with slow.
   apply equality_refl in h1; auto.
 Qed.
 
-Lemma rule_equality_to_extract_true_ext_lib {p} :
+Lemma rule_equality_to_extract_true3 {p} :
   forall lib
          (T t : NTerm)
          (H : @barehypotheses p),
-    rule_true_ext_lib lib (rule_equality_to_extract T t H).
+    rule_true3 lib (rule_equality_to_extract T t H).
 Proof.
   introv.
-  apply rule_true3_implies_rule_true_ext_lib.
-  introv.
-  apply rule_true_implies_rule_true3; auto;[|apply rule_equality_to_extract_true].
-  introv h; apply @wf_axiom.
+  apply rule_true_implies_rule_true3; try (apply rule_equality_to_extract_true); auto.
+  unfold rule_equality_to_extract, wf_extract, wf_extract_sub, wf_extract_goal, wf_extract_seq; simpl.
+  introv xx; eauto 3 with slow.
 Qed.
