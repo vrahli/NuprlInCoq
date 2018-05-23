@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -2888,8 +2889,8 @@ Record Abstraction {o} :=
       abs_correct : correct_abs abs_opabs abs_vars abs_rhs;
     }.
 
-Record ChoiceSeq {o} :=
-  MkChoiceSeq
+Record NewChoiceSeq {o} :=
+  MkNewChoiceSeq
     {
       cs_name  : choice_sequence_name;
       cs_restr : @ChoiceSeqRestriction o;
@@ -2900,7 +2901,7 @@ Inductive command {o} :=
 (* add a definition at the head *)
 | COM_add_def (abs : @Abstraction o)
 (* add a new choice sequence *)
-| COM_add_cs (cs : @ChoiceSeq o)
+| COM_add_cs (cs : @NewChoiceSeq o)
 (* tries to complete a proof if it has no holes *)
 | COM_finish_proof (name : LemmaName)
 (* do a proof step *)
@@ -3519,6 +3520,9 @@ Inductive DEBUG_MSG {o} :=
 
 | could_not_add_choice_sequence_because_already_in_library
 | added_choice_sequence (cs : choice_sequence_name)
+
+| could_not_update_choice_sequence_because_not_in_library
+| updated_choice_sequence (cs : choice_sequence_name)
 
 | started_proof (name : LemmaName)
 
@@ -10947,9 +10951,9 @@ Definition SoftLibrary_add_choice_sequence {o}
     end
   end.
 
-Definition SoftLibrary_add_cs {o} state (cs : @ChoiceSeq o) :=
+Definition SoftLibrary_add_cs {o} state (cs : @NewChoiceSeq o) :=
   match cs with
-  | MkChoiceSeq _ name restr cor =>
+  | MkNewChoiceSeq _ name restr _ =>
     SoftLibrary_add_choice_sequence state name restr
   end.
 
@@ -10960,8 +10964,8 @@ Definition update {o}
   | COM_add_def abs =>
     SoftLibrary_add_abs state abs
 
-  | COM_add_cs cs =>
-    SoftLibrary_add_cs state cs
+  | COM_add_cs ncs =>
+    SoftLibrary_add_cs state ncs
 
   | COM_finish_proof name =>
     SoftLibrary_finish_proof state name
@@ -10993,6 +10997,188 @@ Fixpoint update_list {o}
     | MkUpdRes s2 ms2 => MkUpdRes s2 (ms2 ++ ms1)
     end
   end.
+
+(*Record UpdChoiceSeq {o} :=
+  MkUpdChoiceSeq
+    {
+      csv_name  : choice_sequence_name;
+      csv_val   : @ChoiceSeqVal o;
+      csv_nth   : nat;
+      csv_restr : @ChoiceSeqRestriction o;
+      csv_cor   : nth_choice_satisfies_restriction csv_nth csv_val csv_restr;
+    }.*)
+
+Definition nth_choice_satisfies_restriction {o}
+           (i : nat)
+           (v : ChoiceSeqVal)
+           (r : @ChoiceSeqRestriction o) :=
+  match r with
+  | csc_type _ M _ => M i v
+  | csc_coq_law f => v = f i
+  end.
+
+Definition nth_choice_satisfies_entry {o}
+           (e : @ChoiceSeqEntry o)
+           (v : @ChoiceSeqVal o) :=
+  match e with
+  | MkChoiceSeqEntry _ vals restr =>
+    nth_choice_satisfies_restriction (length vals) v restr
+  end.
+
+Definition update_choice_seq_entry {o}
+           (e : @ChoiceSeqEntry o)
+           (v : ChoiceSeqVal) : nth_choice_satisfies_entry e v -> @ChoiceSeqEntry o.
+Proof.
+  destruct e as [vals restr]; intro cs.
+  exact (MkChoiceSeqEntry _ (snoc vals v) restr).
+Defined.
+
+Definition nth_choice_satisfies_lib_entry {o}
+           (e : @library_entry o)
+           (v : @ChoiceSeqVal o) :=
+  match e with
+  | lib_cs name e => nth_choice_satisfies_entry e v
+  | lib_abs _ _ _ _ => True
+  end.
+
+Definition update_cs_entry {o}
+           (e : @library_entry o)
+           (n : choice_sequence_name)
+           (v : ChoiceSeqVal) : nth_choice_satisfies_lib_entry e v -> option library_entry :=
+  match e with
+  | lib_cs name e =>
+    fun sat =>
+      if choice_sequence_name_deq n name
+      then Some (lib_cs name (update_choice_seq_entry e v sat))
+      else None
+  | lib_abs _ _ _ _ => fun sat => None
+  end.
+
+Definition nth_choice_satisfies_rigid_entry {o}
+           (e : @RigidLibraryEntry o)
+           (v : @ChoiceSeqVal o) :=
+  match e with
+  | RigidLibraryEntry_abs e => nth_choice_satisfies_lib_entry e v
+  | RigidLibraryEntry_proof _ _ _ => True
+  end.
+
+Definition update_cs_rigid_entry {o}
+           (e : @RigidLibraryEntry o)
+           (n : choice_sequence_name)
+           (v : ChoiceSeqVal) : nth_choice_satisfies_rigid_entry e v -> option RigidLibraryEntry :=
+  match e with
+  | RigidLibraryEntry_abs e =>
+    fun sat =>
+      match update_cs_entry e n v sat with
+      | Some e' => Some (RigidLibraryEntry_abs e')
+      | None => None
+      end
+  | RigidLibraryEntry_proof n p w => fun sat => None
+  end.
+
+Print sumbool.
+
+Inductive sumbool_set (A : Prop) (B : Set) : Set :=
+| left_set  : A -> sumbool_set A B
+| right_set : B -> sumbool_set A B.
+
+Fixpoint nth_choice_satisfies_rigid {o}
+         (l : @RigidLibrary o)
+         (v : @ChoiceSeqVal o) : Set :=
+  match l with
+  | [] => True
+  | e :: l =>
+    sumbool_set
+      (nth_choice_satisfies_rigid_entry e v)
+      (nth_choice_satisfies_rigid l v)
+  end.
+
+(*Inductive nth_choice_satisfies_rigid {o} (v : @ChoiceSeqVal o) : @RigidLibrary o -> Type :=
+| nth_cs_left :
+    forall (e : @RigidLibraryEntry o)
+           (l : @RigidLibrary o)
+           (s : nth_choice_satisfies_rigid_entry e v),
+      nth_choice_satisfies_rigid v (e :: l)
+| nth_cs_right :
+    forall (e : @RigidLibraryEntry o)
+           (l : @RigidLibrary o)
+           (s : nth_choice_satisfies_rigid v l),
+      nth_choice_satisfies_rigid v (e :: l).*)
+
+Fixpoint update_cs_rigid {o}
+         (l : @RigidLibrary o)
+         (n : choice_sequence_name)
+         (v : ChoiceSeqVal) : nth_choice_satisfies_rigid l v -> option RigidLibrary :=
+  match l with
+  | [] => fun sat => None
+  | e :: l =>
+    fun sat =>
+      match sat with
+      | left_set _ _ sat =>
+        match update_cs_rigid_entry e n v sat with
+        | Some e' => Some (e' :: l)
+        | None => None
+        end
+      | right_set _ _ sat =>
+        match update_cs_rigid l n v sat with
+        | Some l' => Some (e :: l')
+        | None => None
+        end
+      end
+  end.
+
+Definition nth_choice_satisfies_soft {o}
+           (l : @SoftLibrary o)
+           (v : @ChoiceSeqVal o) : Set :=
+  match l with
+  | MkSoftLibrary L unfinished => nth_choice_satisfies_rigid L v
+  end.
+
+Definition SoftLibrary_update_choice_sequence {o}
+           (state : @SoftLibrary o)
+           (name  : choice_sequence_name)
+           (v     : @ChoiceSeqVal o) : nth_choice_satisfies_soft state v -> UpdRes :=
+  match state with
+  | MkSoftLibrary L unfinished =>
+
+    fun sat =>
+      match update_cs_rigid L name v sat with
+      | Some L' =>
+        MkUpdRes
+          (MkSoftLibrary L' unfinished)
+          [updated_choice_sequence name]
+      | None =>
+        MkUpdRes state [could_not_update_choice_sequence_because_not_in_library]
+      end
+  end.
+
+(*Definition SoftLibrary_update_cs {o} state (cs : @UpdChoiceSeq o) :=
+  match cs with
+  | MkUpdChoiceSeq _ name v nth restr cor =>
+    SoftLibrary_update_choice_sequence state name v nth restr cor
+  end.*)
+
+(*Definition update_choice_seq {o}
+           (state : @SoftLibrary o)
+           (name  : choice_sequence_name)
+           (v     : @ChoiceSeq o) : UpdRes :=
+  match state with
+  | MkSoftLibrary L unfinished =>
+
+    match update_cs_rigid L name v with
+    | Some L' =>
+      MkUpdRes
+        (MkSoftLibrary L' unfinished)
+        [updated_choice_sequence name]
+    | None =>
+      MkUpdRes state [could_not_update_choice_sequence_because_not_in_library]
+    end
+  end.
+
+
+| COM_update_cs ucs =>
+    SoftLibrary_update_cs state ucs
+*)
 
 Definition initRigidLibrary {o} : @RigidLibrary o := [].
 
@@ -13389,6 +13575,133 @@ Proof.
     { apply implies_ValidRigidLibrary_rename; auto. }
     { rewrite <- rename_ProofContext_RigidLibrary2ProofContext.
       apply implies_rename_valid_pre_proofs_context; auto. }
+Qed.
+
+Definition update_choice_sequence {o}
+           (state : @SoftLibrary o)
+           (name  : choice_sequence_name)
+           (v     : @ChoiceSeqVal o) : nth_choice_satisfies_soft state v -> UpdRes :=
+  SoftLibrary_update_choice_sequence state name v.
+
+Lemma select_snoc_eq :
+  forall {A} n (l : list A) x,
+    select n (snoc l x) =
+    if lt_dec n (length l)
+    then select n l
+    else if deq_nat n (length l) then Some x else None.
+Proof.
+  induction n; introv; simpl in *.
+
+  { destruct l; simpl; auto. }
+
+  destruct l; simpl in *; autorewrite with slow; auto.
+  rewrite IHn.
+  boolvar; tcsp; try omega.
+Qed.
+
+Lemma update_choice_sequence_preserves_validity {o} :
+  forall (state : @SoftLibrary o)
+         (name  : choice_sequence_name)
+         (v     : @ChoiceSeqVal o)
+         (sat   : nth_choice_satisfies_soft state v),
+    ValidSoftLibrary state
+    -> ValidSoftLibrary (update_choice_sequence state name v sat).
+Proof.
+  introv valid.
+  destruct state as [L pre_prfs]; simpl in *.
+  unfold ValidSoftLibrary in *; simpl in *; repnd.
+
+  remember (update_cs_rigid L name v sat) as lop; symmetry in Heqlop;
+    destruct lop; simpl; dands; eauto 3 with slow.
+
+    Lemma update_cs_rigid_preserves_valid_rigid_library {o} :
+      forall (L K : @RigidLibrary o) name v sat,
+        update_cs_rigid L name v sat = Some K
+        -> ValidRigidLibrary L
+        -> ValidRigidLibrary K.
+    Proof.
+      induction L; introv upd valid; simpl in *; ginv.
+      destruct sat; repnd.
+
+      - remember (update_cs_rigid_entry a name v n) as k.
+        destruct k; symmetry in Heqk; ginv.
+        inversion upd; subst; clear upd.
+        simpl; dands; auto.
+        destruct a; simpl in *; ginv.
+
+        remember (update_cs_entry e name v n) as g.
+        symmetry in Heqg; destruct g; ginv; repnd.
+        destruct e; simpl in *; ginv.
+        boolvar; ginv; simpl in *.
+        dands; auto.
+        destruct entry as [vals restr]; simpl in *; repnd.
+        dands; auto.
+
+        unfold choice_sequence_satisfies_restriction in *.
+        destruct restr; simpl in *; introv h.
+
+        { allrw @select_snoc_eq; boolvar; ginv; auto. }
+
+        { allrw @select_snoc_eq; boolvar; ginv; auto; subst; auto.
+          allrw @length_snoc; try omega. }
+
+      - remember (update_cs_rigid L name v n) as k.
+        destruct k; symmetry in Heqk; ginv.
+        inversion upd; subst; clear upd.
+        simpl; dands; auto; try (complete (eapply IHL; eauto)).
+
+        Lemma update_cs_rigid_preserves_valid_rigid_library_entry {o} :
+          forall (L : list (@RigidLibraryEntry o)) K name v n e,
+            update_cs_rigid L name v n = Some K
+            -> ValidRigidLibraryEntry (RigidLibrary2ProofContext L) e
+            -> ValidRigidLibraryEntry (RigidLibrary2ProofContext K) e.
+        Proof.
+          introv upd val.
+          destruct e; simpl in *; repnd.
+
+          - dands; auto.
+            unfold entry_not_in_lib in *.
+            intro xx; destruct val0.
+            unfold in_lib in *; exrepnd.
+
+        Lemma update_cs_rigid_preserves_in_rigid_library2proof_context {o} :
+          forall (L : list (@RigidLibraryEntry o)) K name v n (e : library_entry),
+            update_cs_rigid L name v n = Some K
+            -> List.In e (PC_lib (RigidLibrary2ProofContext K))
+            -> {e' : library_entry
+               , List.In e' (PC_lib (RigidLibrary2ProofContext L))
+                 /\ same_entry_name (entry2name e') (entry2name e)}.
+        Proof.
+          induction L; introv upd i; simpl in *; ginv.
+          destruct n; simpl in *; ginv.
+
+          - remember (update_cs_rigid_entry a name v n) as k.
+            symmetry in Heqk; destruct k; ginv.
+            inversion upd; subst; clear upd.
+            simpl in *.
+            destruct a, r; simpl in *; ginv.
+
+            + remember (update_cs_entry e0 name v n) as q.
+              symmetry in Heqq; destruct q; ginv.
+              repndors; subst.
+
+              * exists e0; dands; tcsp.
+                destruct e0; simpl in *; ginv; boolvar; subst; ginv.
+                simpl; auto.
+
+              * exists e; dands; tcsp; eauto 3 with slow.
+
+            +
+            Print extend_proof_context.
+        Qed.
+
+
+        Qed.
+
+
+        SearchAbout ValidRigidLibraryEntry.
+
+    Qed.
 Qed.
 
 Lemma update_list_preserves_validity {o} :
