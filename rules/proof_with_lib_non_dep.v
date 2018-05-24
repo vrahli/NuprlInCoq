@@ -1618,7 +1618,8 @@ Definition valid_proof_node_context {o}
 
   | proof_step_base_closed2 =>
     {x : NTerm $ {t : NTerm $
-      c = mk_bseq [] (mk_concl x mk_axiom)
+      wf_term x
+      # c = mk_bseq [] (mk_concl x mk_axiom)
       # reduces_in_atmost_k_steps ctxt x (mk_equality t t mk_base) 1
       # hs = [] }}
 
@@ -11338,8 +11339,8 @@ Proof.
     repeat (autorewrite with slow ren; simpl; dands; auto).
 
   - exists (rename_term r x) (rename_term r t).
-    repeat (autorewrite with slow ren; simpl; dands; auto).
-    apply (reduces_in_atmost_k_steps_rename r) in valid2; simpl in *; auto.
+    repeat (autorewrite with slow ren; simpl; dands; auto); eauto 3 with slow.
+    apply (reduces_in_atmost_k_steps_rename r) in valid3; simpl in *; auto.
 
   - exists (rename_barehypotheses r H) i.
     repeat (autorewrite with slow ren; simpl; dands; auto).
@@ -13599,6 +13600,599 @@ Proof.
   boolvar; tcsp; try omega.
 Qed.
 
+Lemma in_extend_proof_context_implies {o} :
+  forall (entry : @library_entry o) (e : RigidLibraryEntry) ctxt,
+    List.In entry (PC_lib (extend_proof_context ctxt e))
+    -> List.In entry (PC_lib ctxt)
+       \/ e = RigidLibraryEntry_abs entry
+       \/ (exists name prf wf,
+              entry = proof2def name (wf_proof_ext wf)
+              /\ e = RigidLibraryEntry_proof name prf wf).
+Proof.
+  introv i.
+  unfold extend_proof_context in i.
+  destruct e; simpl in *; repndors; subst; tcsp.
+  right; right.
+  eexists; eexists; eexists; dands; eauto.
+Qed.
+
+Lemma update_cs_rigid_preserves_in_rigid_library2proof_context {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n (e : @library_entry o) x,
+    update_cs_rigid L name v n = Some K
+    -> List.In e (PC_lib (RigidLibrary2ProofContext K))
+    -> same_entry_name x (entry2name e)
+    -> {e' : library_entry
+             , List.In e' (PC_lib (RigidLibrary2ProofContext L))
+               /\ same_entry_name x (entry2name e')}.
+Proof.
+  induction L; introv upd i same; simpl in *; ginv.
+  destruct n; simpl in *; ginv.
+
+  - remember (update_cs_rigid_entry a name v n) as k.
+    symmetry in Heqk; destruct k; ginv.
+    inversion upd; subst; clear upd.
+    simpl in *.
+    destruct a, r; simpl in *; ginv.
+
+    + remember (update_cs_entry e0 name v n) as q.
+      symmetry in Heqq; destruct q; ginv.
+      repndors; subst.
+
+      * exists e0; dands; tcsp.
+        destruct e0; simpl in *; ginv; boolvar; subst; ginv.
+        simpl; auto.
+
+      * exists e; dands; tcsp; eauto 3 with slow.
+
+    + remember (update_cs_entry e0 name v n) as q.
+      symmetry in Heqq; destruct q; ginv.
+
+  - remember (update_cs_rigid L name v n) as k.
+    symmetry in Heqk; destruct k; ginv.
+    inversion upd; subst; clear upd.
+    simpl in *.
+    apply in_extend_proof_context_implies in i.
+    repndors; tcsp.
+
+    + eapply IHL in i; eauto; exrepnd.
+      exists e'; dands; auto; eauto 3 with slow.
+
+    + subst; simpl in *.
+      exists e; dands; tcsp.
+
+    + exrepnd; subst; simpl in *.
+      eexists; dands; eauto.
+Qed.
+
+Lemma update_cs_rigid_preserves_conclusions_rigid_library2proof_context {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n,
+    update_cs_rigid L name v n = Some K
+    -> PC_conclusions (RigidLibrary2ProofContext L)
+       = PC_conclusions (RigidLibrary2ProofContext K).
+Proof.
+  induction L; introv upd; simpl in *; ginv.
+  destruct n.
+
+  - remember (update_cs_rigid_entry a name v n) as k.
+    symmetry in Heqk; destruct k; ginv.
+    inversion upd; subst; clear upd; simpl in *.
+    destruct a; simpl in *; tcsp.
+
+    remember (update_cs_entry e name v n) as q.
+    symmetry in Heqq; destruct q; simpl in *; ginv.
+
+  - remember (update_cs_rigid L name v n) as k.
+    symmetry in Heqk; destruct k; tcsp.
+    inversion upd; subst; clear upd; simpl in *; tcsp.
+
+    destruct a; simpl in *; tcsp.
+
+    { eapply IHL; eauto. }
+
+    f_equal.
+    eapply IHL; eauto.
+Qed.
+
+Lemma choice_sequence_entry_extend_update_choice_seq_entry {o} :
+  forall (entry : @ChoiceSeqEntry o) v n,
+    choice_sequence_entry_extend (update_choice_seq_entry entry v n) entry.
+Proof.
+  introv; destruct entry; simpl.
+  unfold choice_sequence_entry_extend; simpl; dands; eauto 3 with slow.
+  unfold choice_sequence_vals_extend.
+  exists [v].
+  rewrite snoc_as_append; auto.
+Qed.
+Hint Resolve choice_sequence_entry_extend_update_choice_seq_entry : slow.
+
+Lemma update_cs_entry_implies_entry_extends {o} :
+  forall (e : @library_entry o) name v n x,
+    update_cs_entry e name v n = Some x
+    -> entry_extends x e.
+Proof.
+  introv upd.
+  destruct e; simpl in *; boolvar; subst; ginv; simpl; tcsp.
+  dands; auto; eauto 3 with slow.
+Qed.
+Hint Resolve update_cs_entry_implies_entry_extends : slow.
+
+Lemma entry_extends_implies_matching_entries_right2 {o} :
+  forall (e1 e2 e : @library_entry o),
+    matching_entries e1 e
+    -> entry_extends e e2
+    -> matching_entries e1 e2.
+Proof.
+  introv m ext.
+  destruct e1, e2, e; simpl in *; tcsp; ginv;
+    unfold matching_entries in *; simpl in *; tcsp.
+  inversion ext; subst; clear ext; auto.
+Qed.
+
+Lemma update_cs_rigid_preserves_entry_in_library {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n entry,
+    update_cs_rigid L name v n = Some K
+    -> entry_in_library entry (RigidLibrary2ProofContext L)
+    -> entry_in_library_extends entry (RigidLibrary2ProofContext K).
+Proof.
+  induction L; introv upd i; simpl in *; tcsp.
+  destruct n.
+
+  - remember (update_cs_rigid_entry a name v n) as k.
+    symmetry in Heqk; destruct k; tcsp.
+    inversion upd; subst; clear upd; simpl in *; tcsp.
+
+    destruct a; simpl in *; ginv;[].
+
+    remember (update_cs_entry e name v n) as q.
+    symmetry in Heqq; destruct q; ginv; simpl in *.
+    repndors; repnd; subst; tcsp.
+
+    * left; eauto 3 with slow.
+
+    * right; dands; auto; eauto 3 with slow.
+      apply update_cs_entry_implies_entry_extends in Heqq.
+      intro xx.
+      eapply entry_extends_implies_matching_entries_right2 in xx;[|eauto]; tcsp.
+
+  - remember (update_cs_rigid L name v n) as k.
+    symmetry in Heqk; destruct k; ginv; simpl in *.
+    inversion upd; subst; simpl in *; clear upd.
+
+    destruct a; simpl in *; ginv.
+
+    + repndors; repnd; subst; tcsp.
+
+      * left; eauto 3 with slow.
+
+      * right; dands; eauto 3 with slow.
+
+    + repndors; repnd; subst; simpl in *; tcsp.
+      right; dands; eauto 3 with slow.
+Qed.
+Hint Resolve update_cs_rigid_preserves_entry_in_library : slow.
+
+Lemma update_cs_entry_preserves_safe_library_entry {o} :
+  forall (e : @library_entry o) name v n x,
+    update_cs_entry e name v n = Some x
+    -> safe_library_entry e
+    -> safe_library_entry x.
+Proof.
+  introv upd safe.
+  destruct e; simpl in *; boolvar; subst; ginv; simpl; tcsp.
+  unfold safe_choice_sequence_entry; simpl.
+  destruct entry as [vals restr]; simpl in *; repnd; dands; auto.
+  unfold choice_sequence_satisfies_restriction in *.
+  destruct restr; simpl in *; tcsp.
+
+  - introv i.
+    allrw @select_snoc_eq; boolvar; tcsp; subst; ginv; tcsp.
+
+  - introv q.
+    allrw @select_snoc_eq; boolvar; tcsp; subst; ginv; tcsp.
+    allrw length_snoc; try omega.
+Qed.
+Hint Resolve update_cs_entry_preserves_safe_library_entry : slow.
+
+Lemma entry_extends_implies_matching_entries_right3 {o} :
+  forall (e1 e2 e : @library_entry o),
+    matching_entries e1 e
+    -> entry_extends e2 e
+    -> matching_entries e1 e2.
+Proof.
+  introv m ext.
+  destruct e1, e2, e; simpl in *; tcsp; ginv;
+    unfold matching_entries in *; simpl in *; tcsp.
+  inversion ext; subst; clear ext; auto.
+Qed.
+
+Lemma update_cs_rigid_preserves_entry_in_library2 {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n entry,
+    update_cs_rigid L name v n = Some K
+    -> entry_in_library entry (RigidLibrary2ProofContext K)
+    -> exists entry',
+        entry_in_library entry' (RigidLibrary2ProofContext L)
+        /\ entry_extends entry entry'
+        /\ (safe_library_entry entry' -> safe_library_entry entry).
+Proof.
+  induction L; introv upd i; simpl in *; tcsp.
+  destruct n.
+
+  - remember (update_cs_rigid_entry a name v n) as k.
+    symmetry in Heqk; destruct k; tcsp.
+    inversion upd; subst; clear upd; simpl in *; tcsp.
+
+    destruct a; simpl in *; ginv;[].
+
+    remember (update_cs_entry e name v n) as q.
+    symmetry in Heqq; destruct q; ginv; simpl in *.
+    repndors; repnd; subst; tcsp.
+
+    * exists e; dands; tcsp; eauto 3 with slow.
+
+    * exists entry; dands; tcsp; eauto 3 with slow.
+      right; dands; auto; eauto 3 with slow.
+      apply update_cs_entry_implies_entry_extends in Heqq.
+      intro xx.
+      eapply entry_extends_implies_matching_entries_right3 in xx;[|eauto]; tcsp.
+
+  - remember (update_cs_rigid L name v n) as k.
+    symmetry in Heqk; destruct k; ginv; simpl in *.
+    inversion upd; subst; simpl in *; clear upd.
+
+    destruct a; simpl in *; ginv.
+
+    + repndors; repnd; subst; tcsp.
+
+      * exists e; eauto 3 with slow.
+        dands; tcsp; eauto 3 with slow.
+
+      * eapply IHL in i; eauto; exrepnd.
+        exists entry'; dands; tcsp.
+        right; dands; eauto 3 with slow.
+        intro xx.
+        eapply entry_extends_preserves_matching_entries_left_rev in xx; eauto.
+
+    + repndors; repnd; subst; simpl in *; tcsp.
+
+      * eexists; dands; eauto.
+
+      * eapply IHL in i; eauto; exrepnd.
+        exists entry'; dands; tcsp.
+        right; dands; eauto 3 with slow.
+        intro xx.
+        eapply entry_extends_preserves_matching_entries_left_rev in xx; eauto.
+Qed.
+Hint Resolve update_cs_rigid_preserves_entry_in_library2 : slow.
+
+Lemma update_cs_rigid_preserves_safe_library {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n,
+    update_cs_rigid L name v n = Some K
+    -> safe_library (RigidLibrary2ProofContext L)
+    -> safe_library (RigidLibrary2ProofContext K).
+Proof.
+  induction L; introv upd safe; simpl in *; tcsp.
+  destruct n.
+
+  - remember (update_cs_rigid_entry a name v n) as k.
+    symmetry in Heqk; destruct k; tcsp.
+    inversion upd; subst; clear upd; simpl in *; tcsp.
+
+    destruct a; simpl in *; ginv;[].
+
+    remember (update_cs_entry e name v n) as q.
+    symmetry in Heqq; destruct q; ginv; simpl in *.
+
+    introv i; simpl in *; repndors; subst; tcsp.
+
+    + pose proof (safe e) as safe; simpl in safe; autodimp safe hyp; eauto 3 with slow.
+
+    + repnd.
+      pose proof (safe entry) as safe; simpl in *.
+      autodimp safe hyp.
+      right; dands; eauto 3 with slow.
+      apply update_cs_entry_implies_entry_extends in Heqq.
+      intro xx.
+      eapply entry_extends_implies_matching_entries_right3 in xx;[|eauto]; tcsp.
+
+  - remember (update_cs_rigid L name v n) as k.
+    symmetry in Heqk; destruct k; ginv; simpl in *.
+    inversion upd; subst; simpl in *; clear upd.
+
+    destruct a; simpl in *; ginv.
+
+    + introv i; simpl in *; repndors; subst; tcsp.
+
+      * pose proof (safe e) as safe; simpl in safe; autodimp safe hyp.
+
+      * repnd.
+        eapply update_cs_rigid_preserves_entry_in_library2 in i;[|eauto].
+        exrepnd.
+        pose proof (safe entry') as safe; simpl in *.
+        autodimp safe hyp.
+
+        right; dands; tcsp; eauto 3 with slow.
+        intro xx.
+        eapply entry_extends_preserves_matching_entries_left_rev in xx; eauto.
+
+    + introv i; simpl in *; repndors; repnd; subst; tcsp.
+      eapply update_cs_rigid_preserves_entry_in_library2 in i;[|eauto].
+      exrepnd.
+      pose proof (safe entry') as safe; simpl in *.
+      autodimp safe hyp.
+
+      right; dands; tcsp; eauto 3 with slow.
+      intro xx.
+      eapply entry_extends_preserves_matching_entries_left_rev in xx; eauto.
+Qed.
+Hint Resolve update_cs_rigid_preserves_safe_library : slow.
+
+Lemma update_cs_rigid_preserves_in_rigid_library2proof_context2 {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n (e : @library_entry o),
+    update_cs_rigid L name v n = Some K
+    -> List.In e (PC_lib (RigidLibrary2ProofContext L))
+    -> {e' : library_entry
+             , List.In e' (PC_lib (RigidLibrary2ProofContext K))
+               /\ entry_extends e' e}.
+Proof.
+  induction L; introv upd i; simpl in *; ginv.
+  destruct n; simpl in *; ginv.
+
+  - remember (update_cs_rigid_entry a name v n) as k.
+    symmetry in Heqk; destruct k; ginv.
+    inversion upd; subst; clear upd.
+    simpl in *.
+    destruct a, r; simpl in *; ginv.
+
+    + remember (update_cs_entry e0 name v n) as q.
+      symmetry in Heqq; destruct q; ginv.
+      repndors; subst.
+
+      * exists e1; dands; tcsp; eauto 3 with slow.
+
+      * exists e; dands; tcsp; eauto 3 with slow.
+
+    + remember (update_cs_entry e0 name v n) as q.
+      symmetry in Heqq; destruct q; ginv.
+
+  - remember (update_cs_rigid L name v n) as k.
+    symmetry in Heqk; destruct k; ginv.
+    inversion upd; subst; clear upd.
+    simpl in *.
+    apply in_extend_proof_context_implies in i.
+    repndors; tcsp.
+
+    + eapply IHL in i; eauto; exrepnd.
+      exists e'; dands; auto; eauto 3 with slow.
+
+    + subst; simpl in *.
+      exists e; dands; tcsp; eauto 3 with slow.
+
+    + exrepnd; subst; simpl in *.
+      eexists; dands; eauto; tcsp.
+Qed.
+
+Lemma update_cs_rigid_implies_subset_library {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n,
+    update_cs_rigid L name v n = Some K
+    -> subset_library
+         (RigidLibrary2ProofContext L)
+         (RigidLibrary2ProofContext K).
+Proof.
+  introv upd i.
+  eapply update_cs_rigid_preserves_in_rigid_library2proof_context2; eauto.
+Qed.
+Hint Resolve update_cs_rigid_implies_subset_library : slow.
+
+Lemma update_cs_rigid_implies_lib_extends {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n,
+    update_cs_rigid L name v n = Some K
+    -> lib_extends (RigidLibrary2ProofContext K) (RigidLibrary2ProofContext L).
+Proof.
+  introv upd.
+  split; simpl; eauto 3 with slow.
+  introv i; eauto 3 with slow.
+Qed.
+Hint Resolve update_cs_rigid_implies_lib_extends : slow.
+
+Lemma update_cs_rigid_preserves_valid_proof_node_context {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n s c hs,
+    update_cs_rigid L name v n = Some K
+    -> valid_proof_node_context (RigidLibrary2ProofContext L) s c hs
+    -> valid_proof_node_context (RigidLibrary2ProofContext K) s c hs.
+Proof.
+  destruct s; introv upd valid; simpl in *; exrepnd; subst.
+
+  - apply update_cs_rigid_preserves_conclusions_rigid_library2proof_context in upd.
+    rewrite upd in valid0.
+    eexists; eexists; dands; eauto.
+
+  - applydup @update_cs_rigid_preserves_conclusions_rigid_library2proof_context in upd as q.
+    rewrite q in valid0.
+    eexists; eexists; eexists; eexists; dands; eauto.
+    eauto 3 with slow.
+
+  - eexists; dands; eauto.
+
+  - exists x t; dands; auto.
+    eapply lib_extends_preserves_reduces_in_atmost_k_steps; eauto; eauto 3 with slow.
+
+  - eexists; eexists; dands; eauto.
+
+  - eexists; eexists;
+      eexists; eexists;
+        eexists; eexists;
+          eexists; eexists;
+            eexists; eexists.
+    dands; eauto.
+
+  - eexists; eexists;
+      eexists; eexists;
+        eexists; eexists;
+          eauto.
+Qed.
+Hint Resolve update_cs_rigid_preserves_valid_proof_node_context : slow.
+
+Lemma update_cs_rigid_preserves_valid_proof_context {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n prf,
+    update_cs_rigid L name v n = Some K
+    -> valid_proof_context (RigidLibrary2ProofContext L) prf
+    -> valid_proof_context (RigidLibrary2ProofContext K) prf.
+Proof.
+  induction prf using proof_better_ind; introv upd valid; simpl in *.
+  inversion valid as [? ? ? val imp]; subst; clear valid.
+  constructor; tcsp; eauto 3 with slow.
+Qed.
+Hint Resolve update_cs_rigid_preserves_valid_proof_context : slow.
+
+Lemma lib_extends_preserves_mon_true_sequent_wf {o} :
+  forall (lib lib' : @library o) s,
+    lib_extends lib' lib
+    -> mon_true_sequent_wf lib s
+    -> mon_true_sequent_wf lib' s.
+Proof.
+  introv ext mon.
+  unfold mon_true_sequent_wf in *.
+  unfold sequent_true2 in *; exrepnd.
+  exists c.
+  allrw @sequent_true_eq_VR.
+  introv xt.
+  apply (mon0 lib'0); eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_mon_true_sequent_wf : slow.
+
+Lemma update_cs_rigid_preserves_valid_rigid_library_entry {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n e,
+    update_cs_rigid L name v n = Some K
+    -> ValidRigidLibraryEntry (RigidLibrary2ProofContext L) e
+    -> ValidRigidLibraryEntry (RigidLibrary2ProofContext K) e.
+Proof.
+  introv upd val.
+  destruct e; simpl in *; repnd.
+
+  - dands; auto.
+    unfold entry_not_in_lib in *.
+    intro xx; destruct val0.
+    unfold in_lib in *; exrepnd.
+    eapply update_cs_rigid_preserves_in_rigid_library2proof_context; eauto.
+
+  - dands; eauto 3 with slow.
+
+    unfold name_not_in_lib in *.
+    intro xx; destruct val2.
+    unfold in_lib in *; exrepnd.
+    eapply update_cs_rigid_preserves_in_rigid_library2proof_context in xx1; eauto.
+Qed.
+Hint Resolve update_cs_rigid_preserves_valid_rigid_library_entry : slow.
+
+Lemma update_cs_rigid_preserves_valid_rigid_library {o} :
+  forall (L K : @RigidLibrary o) name v sat,
+    update_cs_rigid L name v sat = Some K
+    -> ValidRigidLibrary L
+    -> ValidRigidLibrary K.
+Proof.
+  induction L; introv upd valid; simpl in *; ginv.
+  destruct sat; repnd.
+
+  - remember (update_cs_rigid_entry a name v n) as k.
+    destruct k; symmetry in Heqk; ginv.
+    inversion upd; subst; clear upd.
+    simpl; dands; auto.
+    destruct a; simpl in *; ginv.
+
+    remember (update_cs_entry e name v n) as g.
+    symmetry in Heqg; destruct g; ginv; repnd.
+    destruct e; simpl in *; ginv.
+    boolvar; ginv; simpl in *.
+    dands; auto.
+    destruct entry as [vals restr]; simpl in *; repnd.
+    dands; auto.
+
+    unfold choice_sequence_satisfies_restriction in *.
+    destruct restr; simpl in *; introv h.
+
+    { allrw @select_snoc_eq; boolvar; ginv; auto. }
+
+    { allrw @select_snoc_eq; boolvar; ginv; auto; subst; auto.
+      allrw @length_snoc; try omega. }
+
+  - remember (update_cs_rigid L name v n) as k.
+    destruct k; symmetry in Heqk; ginv.
+    inversion upd; subst; clear upd.
+    simpl; dands; auto; try (complete (eapply IHL; eauto)); eauto 3 with slow.
+Qed.
+Hint Resolve update_cs_rigid_preserves_valid_rigid_library : slow.
+
+Lemma update_cs_rigid_preserves_valid_pre_proof_node_context {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n s c hs,
+    update_cs_rigid L name v n = Some K
+    -> valid_pre_proof_node_context (RigidLibrary2ProofContext L) s c hs
+    -> valid_pre_proof_node_context (RigidLibrary2ProofContext K) s c hs.
+Proof.
+  destruct s; introv upd valid; simpl in *; exrepnd; subst.
+
+  - apply update_cs_rigid_preserves_conclusions_rigid_library2proof_context in upd.
+    rewrite upd in valid0.
+    eexists; eexists; dands; eauto.
+
+  - applydup @update_cs_rigid_preserves_conclusions_rigid_library2proof_context in upd as q.
+    rewrite q in valid0.
+    eexists; eexists; eexists; eexists; dands; eauto.
+    eauto 3 with slow.
+
+  - eexists; dands; eauto.
+
+  - exists x t; dands; auto.
+    eapply lib_extends_preserves_reduces_in_atmost_k_steps; eauto; eauto 3 with slow.
+
+  - eexists; eexists; dands; eauto.
+
+  - eexists; eexists;
+      eexists; eexists;
+        eexists; eexists;
+          eexists; eexists;
+            dands; eauto.
+
+  - eexists; eexists;
+      eexists; eexists;
+        eexists; eauto.
+Qed.
+Hint Resolve update_cs_rigid_preserves_valid_pre_proof_node_context : slow.
+
+Lemma update_cs_rigid_preserves_valid_pre_proof_context {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n prf,
+    update_cs_rigid L name v n = Some K
+    -> valid_pre_proof_context (RigidLibrary2ProofContext L) prf
+    -> valid_pre_proof_context (RigidLibrary2ProofContext K) prf.
+Proof.
+  induction prf using pre_proof_better_ind; introv upd valid; simpl in *; eauto.
+  inversion valid as [|? ? ? val imp]; subst; clear valid.
+  constructor; tcsp; eauto 3 with slow.
+Qed.
+Hint Resolve update_cs_rigid_preserves_valid_pre_proof_context : slow.
+
+Lemma update_cs_rigid_preserves_valid_pre_proof_seq_context {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n prf,
+    update_cs_rigid L name v n = Some K
+    -> valid_pre_proof_seq_context (RigidLibrary2ProofContext L) prf
+    -> valid_pre_proof_seq_context (RigidLibrary2ProofContext K) prf.
+Proof.
+  introv upd valid.
+  destruct prf; simpl in *.
+  unfold valid_pre_proof_seq_context in *; simpl in *; eauto 3 with slow.
+Qed.
+Hint Resolve update_cs_rigid_preserves_valid_pre_proof_seq_context : slow.
+
+Lemma update_cs_rigid_preserves_valid_pre_proofs_context {o} :
+  forall (L : list (@RigidLibraryEntry o)) K name v n prfs,
+    update_cs_rigid L name v n = Some K
+    -> valid_pre_proofs_context (RigidLibrary2ProofContext L) prfs
+    -> valid_pre_proofs_context (RigidLibrary2ProofContext K) prfs.
+Proof.
+  introv upd valid i.
+  apply valid in i; eauto 3 with slow.
+Qed.
+Hint Resolve update_cs_rigid_preserves_valid_pre_proofs_context : slow.
+
 Lemma update_choice_sequence_preserves_validity {o} :
   forall (state : @SoftLibrary o)
          (name  : choice_sequence_name)
@@ -13613,100 +14207,12 @@ Proof.
 
   remember (update_cs_rigid L name v sat) as lop; symmetry in Heqlop;
     destruct lop; simpl; dands; eauto 3 with slow.
-
-    Lemma update_cs_rigid_preserves_valid_rigid_library {o} :
-      forall (L K : @RigidLibrary o) name v sat,
-        update_cs_rigid L name v sat = Some K
-        -> ValidRigidLibrary L
-        -> ValidRigidLibrary K.
-    Proof.
-      induction L; introv upd valid; simpl in *; ginv.
-      destruct sat; repnd.
-
-      - remember (update_cs_rigid_entry a name v n) as k.
-        destruct k; symmetry in Heqk; ginv.
-        inversion upd; subst; clear upd.
-        simpl; dands; auto.
-        destruct a; simpl in *; ginv.
-
-        remember (update_cs_entry e name v n) as g.
-        symmetry in Heqg; destruct g; ginv; repnd.
-        destruct e; simpl in *; ginv.
-        boolvar; ginv; simpl in *.
-        dands; auto.
-        destruct entry as [vals restr]; simpl in *; repnd.
-        dands; auto.
-
-        unfold choice_sequence_satisfies_restriction in *.
-        destruct restr; simpl in *; introv h.
-
-        { allrw @select_snoc_eq; boolvar; ginv; auto. }
-
-        { allrw @select_snoc_eq; boolvar; ginv; auto; subst; auto.
-          allrw @length_snoc; try omega. }
-
-      - remember (update_cs_rigid L name v n) as k.
-        destruct k; symmetry in Heqk; ginv.
-        inversion upd; subst; clear upd.
-        simpl; dands; auto; try (complete (eapply IHL; eauto)).
-
-        Lemma update_cs_rigid_preserves_valid_rigid_library_entry {o} :
-          forall (L : list (@RigidLibraryEntry o)) K name v n e,
-            update_cs_rigid L name v n = Some K
-            -> ValidRigidLibraryEntry (RigidLibrary2ProofContext L) e
-            -> ValidRigidLibraryEntry (RigidLibrary2ProofContext K) e.
-        Proof.
-          introv upd val.
-          destruct e; simpl in *; repnd.
-
-          - dands; auto.
-            unfold entry_not_in_lib in *.
-            intro xx; destruct val0.
-            unfold in_lib in *; exrepnd.
-
-        Lemma update_cs_rigid_preserves_in_rigid_library2proof_context {o} :
-          forall (L : list (@RigidLibraryEntry o)) K name v n (e : library_entry),
-            update_cs_rigid L name v n = Some K
-            -> List.In e (PC_lib (RigidLibrary2ProofContext K))
-            -> {e' : library_entry
-               , List.In e' (PC_lib (RigidLibrary2ProofContext L))
-                 /\ same_entry_name (entry2name e') (entry2name e)}.
-        Proof.
-          induction L; introv upd i; simpl in *; ginv.
-          destruct n; simpl in *; ginv.
-
-          - remember (update_cs_rigid_entry a name v n) as k.
-            symmetry in Heqk; destruct k; ginv.
-            inversion upd; subst; clear upd.
-            simpl in *.
-            destruct a, r; simpl in *; ginv.
-
-            + remember (update_cs_entry e0 name v n) as q.
-              symmetry in Heqq; destruct q; ginv.
-              repndors; subst.
-
-              * exists e0; dands; tcsp.
-                destruct e0; simpl in *; ginv; boolvar; subst; ginv.
-                simpl; auto.
-
-              * exists e; dands; tcsp; eauto 3 with slow.
-
-            +
-            Print extend_proof_context.
-        Qed.
-
-
-        Qed.
-
-
-        SearchAbout ValidRigidLibraryEntry.
-
-    Qed.
 Qed.
 
 Lemma update_list_preserves_validity {o} :
   forall (cmds : commands) (state : @SoftLibrary o),
-    ValidSoftLibrary state -> ValidSoftLibrary (upd_res_state (update_list state cmds)).
+    ValidSoftLibrary state
+    -> ValidSoftLibrary (upd_res_state (update_list state cmds)).
 Proof.
   induction cmds; introv v; simpl in *; auto.
 
