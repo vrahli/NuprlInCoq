@@ -31,6 +31,7 @@
 *)
 
 
+
 Require Export proof_with_lib_non_dep.
 
 
@@ -43,14 +44,31 @@ Definition cmds1 {o} : @commands o :=
   [
     (* We add the 'csa' abstraction *)
     COM_add_cs
-      (MkChoiceSeq
+      (MkNewChoiceSeq
          _
          csa
          csc_nat
          (correct_restriction_csc_nat csa I))
   ].
 
-Definition lib1 {o} : @UpdRes o := update_list_from_init cmds1.
+Definition lib1 {o} : @ValidUpdRes o := initValidUpdRes.
 Eval compute in lib1.
+Time Eval compute in (lib1).
 
-Time Eval compute in (update_list_from_init_with_validity cmds1).
+
+Definition lib2 {o} : @ValidUpdRes o := update_list_with_validity lib1 cmds1.
+Eval compute in lib2.
+Time Eval compute in (lib2).
+
+
+Definition bad_sat {o} : @nth_choice_satisfies_soft o lib2 (mkc_nat 0) := right_set _ _ I.
+Definition lib3_bad {o} : @ValidUpdRes o := update_cs_with_validity lib2 csa (mkc_nat 0) bad_sat.
+Eval compute in lib3_bad.
+Time Eval compute in (lib3_bad).
+
+
+Definition good_sat {o} : @nth_choice_satisfies_soft o lib2 (mkc_nat 0) := left_set _ _ (ex_intro _ _ eq_refl).
+Definition lib3 {o} : @ValidUpdRes o := update_cs_with_validity lib2 csa (mkc_nat 0) good_sat.
+Eval compute in lib3.
+Time Eval compute in (lib3).
+

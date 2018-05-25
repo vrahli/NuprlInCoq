@@ -14264,6 +14264,15 @@ Definition update_list_from_init_with_validity {o}
     (update_list_from_init cmds)
     (valid_update_list_from_init cmds).
 
+Definition update_cs_with_validity {o}
+           (state : @ValidUpdRes o)
+           (name  : choice_sequence_name)
+           (v     : @ChoiceSeqVal o)
+           (sat   : nth_choice_satisfies_soft state v) : ValidUpdRes :=
+  MkValidUpdRes
+    (update_choice_sequence state name v sat)
+    (update_choice_sequence_preserves_validity state name v sat (valid_upd_res_valid state)).
+
 (*Arguments pre_proof_isect_member_formation [o] [ctxt] _ _ _ _ _ _ _ _ _.*)
 (*Arguments pre_proof_hole [o] [ctxt] _.*)
 
