@@ -57,6 +57,7 @@ Require Export rules_equality2.
  Require Export rules_number.
  Require Export rules_unfold.*)
 Require Export rules_base.
+Require Export rules_choice_roadmap.
 
 
 

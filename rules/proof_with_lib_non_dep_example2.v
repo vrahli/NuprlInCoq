@@ -35,14 +35,11 @@
 Require Export proof_with_lib_non_dep.
 
 
-
-Definition csa : choice_sequence_name :=
-  MkChoiceSequenceName "a" (cs_kind_nat 0).
+Definition csa : choice_sequence_name := MkChoiceSequenceName "a" (cs_kind_nat 0).
 
 
 Definition cmds1 {o} : @commands o :=
   [
-    (* We add the 'csa' abstraction *)
     COM_add_cs
       (MkNewChoiceSeq
          _
@@ -50,6 +47,7 @@ Definition cmds1 {o} : @commands o :=
          csc_nat
          (correct_restriction_csc_nat csa I))
   ].
+
 
 Definition lib1 {o} : @ValidUpdRes o := initValidUpdRes.
 Eval compute in lib1.
@@ -72,3 +70,52 @@ Definition lib3 {o} : @ValidUpdRes o := update_cs_with_validity lib2 csa (mkc_na
 Eval compute in lib3.
 Time Eval compute in (lib3).
 
+
+(* [2] means that the choices are unconstrained *)
+Definition csb : choice_sequence_name := MkChoiceSequenceName "b" (cs_kind_nat 2).
+
+
+(* MOVE *)
+(* =============== *)
+(* nat->nat restriction *)
+Definition zero_fun {o} := @mkc_lam o nvarx (mkcv_zero _).
+
+(* TODO: restrictions should depend on the current library *)
+Definition is_nat_fun {o} : @RestrictionPred o :=
+  fun _ t => member [] t nat2nat.
+
+Lemma is_nat_fun_zero_fun {o} : forall n, @is_nat_fun o n zero_fun.
+Proof.
+  introv.
+  unfold is_nat_fun.
+  apply implies_member_nat2nat_bar2.
+  apply in_ext_implies_all_in_ex_bar; introv ext1; introv.
+  apply in_ext_implies_all_in_ex_bar; introv ext2; introv.
+  exists 0.
+  spcast.
+  unfold computes_to_valc; simpl.
+  eapply computes_to_value_step;[|csunf; simpl; eauto].
+  unfold apply_bterm; simpl; unflsubst.
+Qed.
+Hint Resolve is_nat_fun_zero_fun : slow.
+
+Definition csc_nat_fun {o} : @ChoiceSeqRestriction o :=
+  csc_type (fun _ => zero_fun) is_nat_fun is_nat_fun_zero_fun.
+(* =============== *)
+
+
+Definition cmds2 {o} : @commands o :=
+  [
+    COM_add_cs (MkNewChoiceSeq _ csb csc_nat_fun I)
+  ].
+
+
+Definition lib4 {o} : @ValidUpdRes o := update_list_with_validity lib3 cmds2.
+(* TODO: Why does this run forever? *)
+(*Eval compute in lib4.
+Time Eval compute in (lib4).*)
+
+(* TODO: next step is to add the choice [zero_fun].
+     We'll have to prove [is_nat_fun_zero_fun].
+     For that, this lemma should be in the library.
+ *)
