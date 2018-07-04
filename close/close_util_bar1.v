@@ -43,6 +43,7 @@ Require Export close_util_atom.
 Require Export close_util_uatom.
 Require Export close_util_base.
 Require Export close_util_csname.
+Require Export close_util_refname.
 Require Export close_util_approx.
 Require Export close_util_cequiv.
 Require Export close_util_eq.
@@ -134,6 +135,21 @@ Lemma all_in_bar_close_csname {o} :
     -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
     -> all_in_bar bar (fun lib => (T) ===>(lib) (mkc_csname n))
     -> all_in_bar_ext bar (fun lib' x => per_bar (per_csname (close ts)) lib' T T' (eqa lib' x)).
+Proof.
+  introv tsts dou alla allb br ext; introv.
+  pose proof (alla lib' br lib'0 ext x) as alla.
+  pose proof (allb lib' br lib'0 ext) as allb.
+  simpl in *; spcast.
+  dclose_lr; auto.
+Qed.
+
+Lemma all_in_bar_close_refname {o} :
+  forall {lib : SL} (bar : @BarLib o lib) ts T T' eqa n,
+    type_system ts
+    -> defines_only_universes ts
+    -> all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x))
+    -> all_in_bar bar (fun lib => (T) ===>(lib) (mkc_refname n))
+    -> all_in_bar_ext bar (fun lib' x => per_bar (per_refname (close ts)) lib' T T' (eqa lib' x)).
 Proof.
   introv tsts dou alla allb br ext; introv.
   pose proof (alla lib' br lib'0 ext x) as alla.
@@ -307,6 +323,25 @@ Proof.
     apply eq_term_equals_sym; apply per_bar_eq_equality_of_csname_bar_lib_per.
 Qed.
 Hint Resolve per_csname_implies_per_bar : slow.
+
+Lemma per_refname_implies_per_bar {o} :
+  forall ts lib (T T' : @CTerm o) eq,
+    per_refname (close ts) lib T T' eq
+    -> per_bar (close ts) lib T T' eq.
+Proof.
+  introv per.
+  unfold per_refname in *; exrepnd.
+  exists (trivial_bar lib) (equality_of_refname_bar_lib_per lib n).
+  dands.
+
+  - introv br ext; introv.
+    apply CL_refname.
+    exists n; repnd; dands; auto; eauto 3 with slow.
+
+  - eapply eq_term_equals_trans;[eauto|].
+    apply eq_term_equals_sym; apply per_bar_eq_equality_of_refname_bar_lib_per.
+Qed.
+Hint Resolve per_refname_implies_per_bar : slow.
 
 Lemma per_atom_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
@@ -829,6 +864,25 @@ Proof.
     apply eq_term_equals_sym; apply per_bar_eq_equality_of_csname_bar_lib_per.
 Qed.
 Hint Resolve per_csname_implies_per_bar_above : slow.
+
+Lemma per_refname_implies_per_bar_above {o} :
+  forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,
+    per_refname (close ts) lib T T' eq
+    -> per_bar_above (close ts) bar T T' eq.
+Proof.
+  introv per.
+  unfold per_refname in *; exrepnd.
+  exists bar (equality_of_refname_bar_lib_per lib n).
+  dands.
+
+  - introv br ext; introv.
+    apply CL_refname.
+    exists n; dands; auto; eauto 3 with slow.
+
+  - eapply eq_term_equals_trans;[eauto|].
+    apply eq_term_equals_sym; apply per_bar_eq_equality_of_refname_bar_lib_per.
+Qed.
+Hint Resolve per_refname_implies_per_bar_above : slow.
 
 Lemma per_atom_implies_per_bar_above {o} :
   forall ts (lib : SL) (bar : BarLib lib) (T T' : @CTerm o) eq,

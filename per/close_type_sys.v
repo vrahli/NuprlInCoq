@@ -43,6 +43,7 @@ Require Export close_type_sys_per_qnat.
 Require Export close_type_sys_per_atom.
 Require Export close_type_sys_per_uatom.
 Require Export close_type_sys_per_csname.
+Require Export close_type_sys_per_refname.
 Require Export close_type_sys_per_base.
 Require Export close_type_sys_per_sqle.
 Require Export close_type_sys_per_sqequal.
@@ -368,6 +369,9 @@ Proof.
 
   - Case "CL_csname".
     apply close_type_system_csname; auto.
+
+  - Case "CL_refname".
+    apply close_type_system_refname; auto.
 
   - Case "CL_atom".
     apply close_type_system_atom; auto.

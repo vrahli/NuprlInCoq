@@ -38,6 +38,7 @@ Require Export atoms.
 Require Export bar.
 Require Export nat_type.
 Require Export csname_type.
+Require Export refname_type.
 Require Export raise_bar.
 
 
@@ -566,6 +567,40 @@ Definition per_csname_bar {p} (ts : cts(p)) (lib : SL) (T1 T2 : @CTerm p) (eq : 
     , all_in_bar bar (fun lib => T1 ===>(lib) (mkc_csname n))
     # all_in_bar bar (fun lib => T2 ===>(lib) (mkc_csname n)) }
     # eq <=2=> (equality_of_csname_bar lib n) }.
+
+
+
+Definition compatible_ref_kind (n : nat) (k : ref_kind) :=
+  if deq_nat n 0 then
+    match k with
+    | ref_kind_nat m => m = 0
+    end
+  else True.
+
+Definition compatible_reference_name (n : nat) (name : reference_name) :=
+  compatible_ref_kind n (rf_kind name).
+
+Definition equality_of_refname {o} lib n (t t' : @CTerm o) :=
+  {name : reference_name
+  , compatible_reference_name n name
+  # t ===>(lib) (mkc_ref name)
+  # t' ===>(lib) (mkc_ref name)}.
+
+Definition equality_of_refname_bar {o} lib n (t t' : @CTerm o) :=
+  {bar : BarLib lib , all_in_bar bar (fun lib => equality_of_refname lib n t t')}.
+
+Definition per_refname {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  {n : nat
+  , T1 ===>(lib) (mkc_refname n)
+  # T2 ===>(lib) (mkc_refname n)
+  # eq <=2=> (equality_of_refname_bar lib n) }.
+
+Definition per_refname_bar {p} (ts : cts(p)) (lib : SL) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  {n : nat
+  , {bar : BarLib lib
+    , all_in_bar bar (fun lib => T1 ===>(lib) (mkc_refname n))
+    # all_in_bar bar (fun lib => T2 ===>(lib) (mkc_refname n)) }
+    # eq <=2=> (equality_of_refname_bar lib n) }.
 
 
 
@@ -2511,6 +2546,7 @@ Inductive close {p} (ts : cts) (lib : SL) (T T' : @CTerm p) (eq : per(p)) : [U] 
   | CL_nat      : per_nat          (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_qnat     : per_qnat         (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_csname   : per_csname       (close ts) lib T T' eq -> close ts lib T T' eq
+  | CL_refname  : per_refname      (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_atom     : per_atom         (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_uatom    : per_uatom        (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_base     : per_base         (close ts) lib T T' eq -> close ts lib T T' eq
@@ -2554,6 +2590,7 @@ Arguments CL_int      {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_nat      {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_qnat     {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_csname   {p} [ts] [lib] [T] [T'] [eq] _.
+Arguments CL_refname  {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_atom     {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_uatom    {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_base     {p} [ts] [lib] [T] [T'] [eq] _.
@@ -2597,6 +2634,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
   | Case_aux c "CL_nat"
   | Case_aux c "CL_qnat"
   | Case_aux c "CL_csname"
+  | Case_aux c "CL_refname"
   | Case_aux c "CL_atom"
   | Case_aux c "CL_uatom"
   | Case_aux c "CL_base"
@@ -2679,6 +2717,13 @@ Definition close_ind' {pp}
                    (T T' : @CTerm pp)
                    (eq   : per)
                    (per  : per_csname (close ts) lib T T' eq),
+      P ts lib T T' eq)
+
+  (refname : forall (ts   : cts)
+                    (lib  : SL)
+                    (T T' : @CTerm pp)
+                    (eq   : per)
+                    (per  : per_refname (close ts) lib T T' eq),
       P ts lib T T' eq)
 
   (atom : forall (ts   : cts)
@@ -3474,15 +3519,16 @@ Definition close_ind' {pp}
           eqiff
           pts
 
-   | CL_int    pts => int    ts lib T T' eq pts
-   | CL_nat    pts => nat    ts lib T T' eq pts
-   | CL_qnat   pts => qnat   ts lib T T' eq pts
-   | CL_csname pts => csname ts lib T T' eq pts
-   | CL_atom   pts => atom   ts lib T T' eq pts
-   | CL_uatom  pts => uatom  ts lib T T' eq pts
-   | CL_base   pts => base   ts lib T T' eq pts
-   | CL_approx pts => aprx   ts lib T T' eq pts
-   | CL_cequiv pts => ceq    ts lib T T' eq pts
+   | CL_int     pts => int     ts lib T T' eq pts
+   | CL_nat     pts => nat     ts lib T T' eq pts
+   | CL_qnat    pts => qnat    ts lib T T' eq pts
+   | CL_csname  pts => csname  ts lib T T' eq pts
+   | CL_refname pts => refname ts lib T T' eq pts
+   | CL_atom    pts => atom    ts lib T T' eq pts
+   | CL_uatom   pts => uatom   ts lib T T' eq pts
+   | CL_base    pts => base    ts lib T T' eq pts
+   | CL_approx  pts => aprx    ts lib T T' eq pts
+   | CL_cequiv  pts => ceq     ts lib T T' eq pts
 
 (*   | CL_eq pts =>
      let (A,    x) := pts in
@@ -4409,6 +4455,7 @@ Ltac one_unfold_per :=
     | [ H : per_nat_bar     _ _ _ _ _ |- _ ] => unfold per_nat_bar     in H; exrepd
     | [ H : per_qnat        _ _ _ _ _ |- _ ] => unfold per_qnat        in H; exrepd
     | [ H : per_csname      _ _ _ _ _ |- _ ] => unfold per_csname      in H; exrepd
+    | [ H : per_refname     _ _ _ _ _ |- _ ] => unfold per_refname     in H; exrepd
 (*    | [ H : per_csname_bar  _ _ _ _ _ |- _ ] => unfold per_csname_bar  in H; exrepd*)
     | [ H : per_atom        _ _ _ _ _ |- _ ] => unfold per_atom        in H; exrepd
     | [ H : per_atom_bar    _ _ _ _ _ |- _ ] => unfold per_atom_bar    in H; exrepd
@@ -4519,6 +4566,13 @@ Definition equality_of_csname_bar_lib_per {o}
            (lib : @SL o) (n : nat) : lib-per(lib,o).
 Proof.
   exists (fun lib' (x : lib_extends lib' lib) => equality_of_csname_bar lib' n).
+  introv x y; tcsp.
+Defined.
+
+Definition equality_of_refname_bar_lib_per {o}
+           (lib : @SL o) (n : nat) : lib-per(lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) => equality_of_refname_bar lib' n).
   introv x y; tcsp.
 Defined.
 

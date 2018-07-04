@@ -80,6 +80,13 @@ Proof.
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
+  - Case "CL_refname".
+    apply CL_refname.
+    unfold per_refname in *; exrepnd; dands; auto.
+    exists n; dands; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+
   - Case "CL_atom".
     apply CL_atom.
     unfold per_atom in *; repnd; dands; auto.

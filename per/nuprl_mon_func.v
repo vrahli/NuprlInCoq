@@ -80,6 +80,15 @@ Proof.
   dands; spcast; eauto 3 with slow; exists n; dands; spcast; eauto 3 with slow.
 Qed.
 
+Lemma per_refname_monotone_func {o} :
+  forall (ts : cts(o)), type_monotone_func (per_refname ts).
+Proof.
+  introv per.
+  unfold per_refname in *; exrepnd.
+  exists (equality_of_refname_bar_lib_per lib n); introv; simpl.
+  dands; spcast; eauto 3 with slow; exists n; dands; spcast; eauto 3 with slow.
+Qed.
+
 Lemma per_atom_monotone_func {o} :
   forall (ts : cts(o)), type_monotone_func (per_atom ts).
 Proof.
@@ -528,6 +537,12 @@ Proof.
 
   - Case "CL_csname".
     pose proof (per_csname_monotone_func ts lib T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
+      repnd; dands; eauto 3 with slow.
+
+  - Case "CL_refname".
+    pose proof (per_refname_monotone_func ts lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.

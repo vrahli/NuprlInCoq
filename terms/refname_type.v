@@ -31,18 +31,22 @@
 *)
 
 
-(* free choice sequence rules *)
-Require Export rules_choice_roadmap.
+Require Export terms2.
 
-(* rules about references *)
-Require Export rules_ref.
-Require Export rules_ref2.
-Require Export rules_ref3.
-Require Export rules_direct_ref2.
 
-Require Export rules_product.
-Require Export rules_union.
-Require Export rules_not_classical.
-Require Export rules_function.
-Require Export rules_function2.
-(*TO FIX*)(*Require Export rules_apply.*)
+Definition mk_refname {o} n : @NTerm o := oterm (Can (NRefName n)) [].
+
+Theorem isprog_refname {o} : forall n, @isprog o (mk_refname n).
+Proof.
+  repeat constructor.
+Qed.
+
+Definition mkc_refname {o} n : @CTerm o := exist isprog (mk_refname n) (isprog_refname n).
+
+Lemma fold_refname {o} : forall n, @oterm o (Can (NRefName n)) [] = mk_refname n.
+Proof.
+  tcsp.
+Qed.
+
+Definition mkcv_refname {o} (vs : list NVar) n : @CVTerm o vs :=
+  mk_cv vs (mkc_refname n).

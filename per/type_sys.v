@@ -1874,9 +1874,25 @@ Proof.
   inversion e; auto.
 Qed.
 
+Lemma mkc_ref_eq {o} :
+  forall (n1 n2 : reference_name),
+    @mkc_ref o n1 = mkc_ref n2 -> n1 = n2.
+Proof.
+  introv e.
+  inversion e; auto.
+Qed.
+
 Lemma mkc_csname_eq {o} :
   forall (n1 n2 : nat),
     @mkc_csname o n1 = mkc_csname n2 -> n1 = n2.
+Proof.
+  introv e.
+  inversion e; auto.
+Qed.
+
+Lemma mkc_refname_eq {o} :
+  forall (n1 n2 : nat),
+    @mkc_refname o n1 = mkc_refname n2 -> n1 = n2.
 Proof.
   introv e.
   inversion e; auto.
@@ -1900,7 +1916,9 @@ Ltac eqconstr0 name :=
     | mkc_inr _           = mkc_inr _           => apply mkc_inr_eq            in name
     | mkc_integer _       = mkc_integer _       => apply mkc_integer_eq        in name
     | mkc_choice_seq _    = mkc_choice_seq _    => apply mkc_choice_seq_eq     in name
+    | mkc_ref _           = mkc_ref _           => apply mkc_ref_eq            in name
     | mkc_csname _        = mkc_csname _        => apply mkc_csname_eq         in name
+    | mkc_refname _       = mkc_refname _       => apply mkc_refname_eq        in name
     | mkc_nat _           = mkc_nat     _       => apply mkc_nat_eq_implies    in name
     | mkc_token _         = mkc_token _         => apply mkc_token_eq          in name
     | mkc_utoken _        = mkc_utoken _        => apply mkc_utoken_eq         in name
@@ -2385,6 +2403,24 @@ Proof.
   repeat constructor; simpl; tcsp.
 Qed.
 Hint Resolve iscvalue_mkc_csname : slow.
+
+Lemma cequivc_refname {o} :
+  forall n lib (T T' : @CTerm o),
+    computes_to_valc lib T (mkc_refname n)
+    -> cequivc lib T T'
+    -> computes_to_valc lib T' (mkc_refname n).
+Proof.
+  sp.
+  allapply @computes_to_valc_to_valuec; allsimpl.
+  apply cequivc_canonical_form with (t' := T') in X; sp.
+  apply lblift_cequiv0 in p; subst; auto.
+Qed.
+
+Lemma iscvalue_mkc_refname {o} : forall n, @iscvalue o (mkc_refname n).
+Proof.
+  repeat constructor; simpl; tcsp.
+Qed.
+Hint Resolve iscvalue_mkc_refname : slow.
 
 Lemma cequivc_atom {o} :
   forall lib (T T' : @CTerm o),
@@ -3124,6 +3160,39 @@ Ltac apply_cequivc_val :=
     try (hide_hyp H);
     apply cequivc_sym in c;
     eapply cequivc_csname in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_refname *)
+
+  | [ H : cequivc _ (mkc_refname _) _ |- _ ] =>
+    eapply cequivc_refname in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_refname _) |- _ ] =>
+    apply cequivc_sym in H;
+    eapply cequivc_refname in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_refname _) _ |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_refname in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_refname _) |- _ ] =>
+    let c  := fresh "c"  in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_refname in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
     apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
     try (eqconstr H)
 

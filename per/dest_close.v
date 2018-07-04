@@ -36,6 +36,7 @@ Require Export dest_close_int.
 Require Export dest_close_nat.
 Require Export dest_close_qnat.
 Require Export dest_close_csname.
+Require Export dest_close_refname.
 Require Export dest_close_qtime.
 Require Export dest_close_func.
 (*Require Export dest_close_isect.*)
@@ -772,6 +773,21 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_int_ceq_bar_r ts lib T T' eq bar H1 H2 H3 H4 H5); intro h; no_duplicate h
 *)
+
+    (* refname *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : ccomputes_to_valc_ext ?lib ?T (mkc_refname ?n),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_refname_l ts lib T T' eq n H1 H2 H3 H4); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : ccomputes_to_valc_ext ?lib ?T' (mkc_refname ?n),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_refname_r ts lib T T' eq n H1 H2 H3 H4); intro h; no_duplicate h
 
     (* csname *)
     | [ H1 : type_system ?ts,

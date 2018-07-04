@@ -180,6 +180,38 @@ Proof.
   exists n; dands; spcast; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_equality_of_refname_bar {o} :
+  forall n (lib lib' : @SL o) (ext : lib_extends lib' lib),
+    sub_per (equality_of_refname_bar lib n) (equality_of_refname_bar lib' n).
+Proof.
+  introv ext h.
+  unfold equality_of_refname_bar, equality_of_refname in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br e; simpl in *; exrepnd.
+  assert (lib_extends lib1 lib) as ext1 by eauto 2 with slow.
+  apply (h0 (ext2SL ext1) br1 lib'1); eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_equality_of_refname_bar : slow.
+
+Lemma sub_per_equality_of_refname {o} :
+  forall n (lib lib' : @SL o) (ext : lib_extends lib' lib),
+    sub_per (equality_of_refname lib n) (equality_of_refname lib' n).
+Proof.
+  introv ext h.
+  unfold equality_of_refname in *; exrepnd.
+  exists name; dands; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_equality_of_refname : slow.
+
+Lemma per_refname_monotone {o} :
+  forall (ts : cts(o)), type_monotone (per_refname ts).
+Proof.
+  introv ext per.
+  unfold per_refname in *; exrepnd.
+  exists (equality_of_refname_bar lib' n); dands; spcast; eauto 3 with slow.
+  exists n; dands; spcast; eauto 3 with slow.
+Qed.
+
 Lemma sub_per_equality_of_atom_bar {o} :
   forall (lib lib' : @SL o) (ext : lib_extends lib' lib),
     sub_per (equality_of_atom_bar lib) (equality_of_atom_bar lib').
@@ -851,6 +883,11 @@ Proof.
 
   - Case "CL_csname".
     pose proof (per_csname_monotone ts lib lib' ext T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; dands; auto.
+
+  - Case "CL_refname".
+    pose proof (per_refname_monotone ts lib lib' ext T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 

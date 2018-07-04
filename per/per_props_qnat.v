@@ -136,6 +136,37 @@ Proof.
   apply implies_cequivc_last_cs; auto.
 Qed.
 
+Lemma implies_cequivc_read_ref {o} :
+  forall lib (a b u v : @CTerm o),
+    cequivc lib a b
+    -> cequivc lib u v
+    -> cequivc lib (mkc_read_ref a u) (mkc_read_ref b v).
+Proof.
+  unfold cequivc; introv ceqa ceqb; destruct_cterms; simpl in *.
+  repnud ceqa.
+  repnud ceqb.
+  split; apply approx_congruence; fold_terms;
+    try (apply implies_isprogram_read_ref; apply isprog_implies; auto).
+
+  { unfold lblift; simpl; dands; auto; introv w.
+    repeat (destruct n; try omega); unfold selectbt; simpl;
+      apply blift_approx_open_nobnd2; eauto 2 with slow. }
+
+  { unfold lblift; simpl; dands; auto; introv w.
+    repeat (destruct n; try omega); unfold selectbt; simpl;
+      apply blift_approx_open_nobnd2; eauto 2 with slow. }
+Qed.
+
+Lemma implies_ccequivc_ext_read_ref {o} :
+  forall lib (a b u v : @CTerm o),
+    ccequivc_ext lib a b
+    -> ccequivc_ext lib u v
+    -> ccequivc_ext lib (mkc_read_ref a u) (mkc_read_ref b v).
+Proof.
+  introv ceqa ceqb ext; applydup ceqa in ext; applydup ceqb in ext; spcast.
+  apply implies_cequivc_read_ref; auto.
+Qed.
+
 Lemma last_cs_entry_implies_in {o} :
   forall vals (v : @ChoiceSeqVal o),
     last_cs_entry vals = Some v -> LIn v vals.
@@ -292,3 +323,105 @@ Proof.
   dands; eexists; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve equality_nat_in_qnat : slow.
+
+Lemma find_ref_implies_entry_in_library {o} :
+  forall lib name (r : @ReferenceEntry o),
+    find_ref lib name = Some r
+    -> entry_in_library (lib_ref name r) lib.
+Proof.
+  induction lib; introv h; simpl in *; tcsp.
+  destruct a; simpl in *; tcsp.
+  boolvar; ginv; tcsp.
+Qed.
+Hint Resolve find_ref_implies_entry_in_library : slow.
+
+Lemma compatible_ref_kind_0_implies_is_nat_restriction {o} :
+  forall name (restr : @RefRestriction o) v,
+    compatible_ref_kind 0 (rf_kind name)
+    -> correct_ref_restriction name restr
+    -> reference_satisfies_restriction v restr
+    -> exists n, is_nat n v.
+Proof.
+  introv comp cor sat.
+  unfold correct_ref_restriction in *.
+  unfold compatible_ref_kind in *; boolvar; tcsp; GC.
+  destruct name as [nm kd]; simpl in *.
+  destruct kd; subst; boolvar; tcsp; GC.
+
+  unfold is_nat_ref_restriction in *.
+  unfold reference_satisfies_restriction in *.
+  destruct restr; repnd; dands; tcsp; subst.
+  apply cor in sat; auto.
+  unfold ref_is_nat in *; exrepnd; subst; exists i; eauto 3 with slow.
+Qed.
+
+Lemma compatible_ref_kind_0_implies_find_nat {o} :
+  forall (lib : @library o) name r,
+    compatible_ref_kind 0 (rf_kind name)
+    -> safe_library lib
+    -> find_ref lib name = Some r
+    -> exists (n : nat), get_cterm r = mk_nat n.
+Proof.
+  introv comp safe find.
+  assert (entry_in_library (lib_ref name r) lib) as i by eauto 2 with slow.
+  clear find.
+  apply safe in i; simpl in *.
+  destruct r as [val restr]; simpl in *; repnd.
+  eapply compatible_ref_kind_0_implies_is_nat_restriction in comp; eauto; exrepnd.
+  unfold is_nat in comp0; exrepnd; subst.
+  exists i1; simpl; auto.
+Qed.
+
+Lemma in_ext_exists_ccomputes_to_valc_mkc_read_ref_ref {o} :
+  forall (lib : @SL o) name k,
+    safe_library lib
+    -> compatible_reference_name 0 name
+    -> in_ext lib (fun lib => exists n, ccomputes_to_valc lib (mkc_read_ref (mkc_ref name) (mkc_nat k)) (mkc_nat n)).
+Proof.
+  introv safe comp ext.
+
+  assert (compute_step lib' (mk_read_ref (mk_ref name) (mk_nat k)) = csuccess (find_ref_def lib' name (mk_nat k))) as w.
+  { csunf; simpl; auto. }
+
+  assert (exists (n : nat), find_ref_def lib' name (mk_nat k) = mk_nat n) as z.
+  {
+    unfold find_ref_def.
+    remember (find_ref (slib_lib lib') name) as fcs; symmetry in Heqfcs; destruct fcs;[|eexists; eauto].
+    unfold compatible_reference_name in *.
+    eapply compatible_ref_kind_0_implies_find_nat in Heqfcs; eauto; eauto 3 with slow.
+  }
+
+  exrepnd.
+  exists n.
+  rewrite z0 in w; clear z0.
+  spcast.
+  unfold computes_to_valc, computes_to_value; simpl; dands; eauto 2 with slow.
+Qed.
+Hint Resolve in_ext_exists_ccomputes_to_valc_mkc_read_ref_ref : slow.
+
+Lemma exists_ccomputes_to_valc_mkc_read_ref_ref {o} :
+  forall (lib : @library o) name k,
+    safe_library lib
+    -> compatible_reference_name 0 name
+    -> exists n, ccomputes_to_valc lib (mkc_read_ref (mkc_ref name) (mkc_nat k)) (mkc_nat n).
+Proof.
+  introv safe comp.
+
+  assert (compute_step lib (mk_read_ref (mk_ref name) (mk_nat k)) = csuccess (find_ref_def lib name (mk_nat k))) as w.
+  { csunf; simpl; auto. }
+
+  assert (exists (n : nat), find_ref_def lib name (mk_nat k) = mk_nat n) as z.
+  {
+    unfold find_ref_def.
+    remember (find_ref lib name) as fcs; symmetry in Heqfcs; destruct fcs;[|eexists; eauto].
+    unfold compatible_reference_name in *.
+    eapply compatible_ref_kind_0_implies_find_nat in Heqfcs; eauto; eauto 3 with slow.
+  }
+
+  exrepnd.
+  exists n.
+  rewrite z0 in w; clear z0.
+  spcast.
+  unfold computes_to_valc, computes_to_value; simpl; dands; eauto 2 with slow.
+Qed.
+Hint Resolve exists_ccomputes_to_valc_mkc_read_ref_ref : slow.
