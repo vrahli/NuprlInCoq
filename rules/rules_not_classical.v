@@ -146,11 +146,6 @@ Proof.
   pose proof (fresh_choice_seq_name_in_library lib []) as w; exrepnd.
   assert (is_nat_or_seq_kind name) as isn; eauto 3 with slow.
 
-  SearchAbout safe_library cons.
-
-  Check implies_safe_library_cons.
-  SearchAbout safe_library_entry choice_sequence_name2entry.
-
   pose proof (inh2 (MkSL
                       (choice_sequence_name2entry name :: slib_lib lib)
                       (implies_safe_library_cons

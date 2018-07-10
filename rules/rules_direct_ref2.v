@@ -38,11 +38,11 @@ Require Export rules_ref.
 
 (*
 <<
-   H |- mk_last_cs(f,d) ∈ QT(ℕ)
+   H |- read_ref(r,d) ∈ QT(ℕ)
 
-     By RefWf2
+     By DirectRefWf2
 
-     H |- f ∈ Free(0)
+     H |- r ∈ Ref(0)
      H |- d ∈ ℕ
 >>
 
