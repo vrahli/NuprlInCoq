@@ -36,6 +36,7 @@ Require Export cequiv.
 Require Export universe2.
 Require Export atoms.
 Require Export bar.
+Require Export ebar.
 Require Export nat_type.
 Require Export csname_type.
 Require Export raise_bar.
@@ -354,6 +355,8 @@ Definition all_in_bar_ext {o} {lib}
          forall (x : lib_extends l lib),
                 F l x).
 
+
+
 Notation "ext-per( lib , o )" :=
   (forall (lib' : @library o), lib_extends lib' lib -> per(o)).
 
@@ -442,6 +445,9 @@ Definition sub_per {o} (per1 per2 : per(o)) :=
 Definition equality_of_int {p} lib (n m : @CTerm p) :=
   {k : Z , n ===>(lib) (mkc_integer k)
          # m ===>(lib) (mkc_integer k)}.
+
+
+
 
 Definition equality_of_int_bar {o} lib (t t' : @CTerm o) :=
   {bar : BarLib lib , all_in_bar bar (fun lib => equality_of_int lib t t') }.
