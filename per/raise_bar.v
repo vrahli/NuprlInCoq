@@ -119,9 +119,9 @@ Proof.
     rewrite select_app_l in q; eauto 3 with slow.
     autodimp q hyp; subst; eauto.
 
-  - pose proof (q n v) as q.
+(*  - pose proof (q n v) as q.
     rewrite select_app_l in q; eauto 3 with slow.
-    autodimp q hyp; subst; eauto.
+    autodimp q hyp; subst; eauto.*)
 Qed.
 Hint Resolve choice_sequence_entry_extend_preserves_is_default_choice_seq_entry : slow.
 
@@ -169,19 +169,19 @@ Proof.
     unfold choice_sequence_vals_extend in *.
     exrepnd; subst.
     unfold choice_sequence_satisfies_restriction.
-    destruct restr1, restr2; simpl in *; repnd; dands; tcsp; eauto 3 with slow;[|].
+    destruct restr1, restr2; simpl in *; repnd; dands; tcsp; eauto 3 with slow;[(*|*)].
 
     - introv i.
       rewrite <- ext0.
       apply safe.
       rewrite select_app_l; eauto 3 with slow.
 
-    - introv j.
+(*    - introv j.
       rewrite <- ext0.
       pose proof (safe i) as safe.
       rewrite length_app in safe.
       autodimp safe hyp; try omega;[].
-      rewrite select_app_l in safe; eauto 3 with slow.
+      rewrite select_app_l in safe; eauto 3 with slow.*)
   }
 Qed.
 Hint Resolve is_cs_default_entry_preserves_safe_library_entry : slow.

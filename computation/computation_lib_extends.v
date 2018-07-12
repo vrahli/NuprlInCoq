@@ -77,8 +77,8 @@ Definition choice_sequence_satisfies_restriction {o}
   match constraint with
   | csc_type d M Md =>
     forall n v, select n vals = Some v -> M n v (* TODO: Is that going to be enough? *)
-  | csc_coq_law f =>
-    forall (i : nat), i < length vals -> select i vals = Some (f i)
+(*  | csc_coq_law f =>
+    forall (i : nat), i < length vals -> select i vals = Some (f i)*)
   end.
 
 
@@ -122,8 +122,8 @@ Definition same_restrictions {o} (restr1 restr2 : @ChoiceSeqRestriction o) :=
   | csc_type d1 M1 Md1, csc_type d2 M2 Md2 =>
     (forall n, d1 n = d2 n)
     /\ (forall n v, M1 n v <-> M2 n v)
-  | csc_coq_law f1, csc_coq_law f2 => forall n, f1 n = f2 n
-  | _, _ => False
+(*  | csc_coq_law f1, csc_coq_law f2 => forall n, f1 n = f2 n
+  | _, _ => False*)
   end.
 
 (* [entry1] extends [entry2] *)
@@ -191,7 +191,7 @@ Definition is_nat_cs_restriction {o} (restr : @ChoiceSeqRestriction o) :=
   | csc_type d M Md =>
     (forall n, d n = mkc_zero)
     /\ (forall n v, M n v <-> is_nat n v)
-  | csc_coq_law _ => False
+(*  | csc_coq_law _ => False*)
   end.
 
 Definition ref_is_nat {o} : @RefRestrictionPred o :=
@@ -228,7 +228,7 @@ Definition is_nat_seq_restriction {o} (l : list nat) (restr : @ChoiceSeqRestrict
     /\ (forall n v, n < length l -> (M n v <-> cterm_is_nth v n l))
     (* above [length l], the choice sequence can return any integer *)
     /\ (forall n v, length l <= n -> (M n v <-> is_nat n v))
-  | csc_coq_law _ => False
+(*  | csc_coq_law _ => False*)
   end.
 
 Definition correct_cs_restriction {o} (name : choice_sequence_name) (restr : @ChoiceSeqRestriction o) :=

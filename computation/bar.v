@@ -42,7 +42,7 @@ Definition inf_choice_sequence_satisfies_restriction {o}
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
   | csc_type d M Md => forall n, M n (vals n)
-  | csc_coq_law f => forall n, vals n = f n
+(*  | csc_coq_law f => forall n, vals n = f n*)
   end.
 
 (*Definition ex_choice {o}
@@ -133,7 +133,7 @@ Definition is_default_inf_choice_sequence {o}
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
   | csc_type d M Md => forall n, vals n = d n
-  | csc_coq_law f => forall n, vals n = f n
+(*  | csc_coq_law f => forall n, vals n = f n*)
   end.
 
 Definition is_default_inf_choice_seq_entry {o}
@@ -272,7 +272,7 @@ Definition is_default_choice_sequence {o}
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
   | csc_type d M Md => forall n v, select n vals = Some v -> v = d n
-  | csc_coq_law f => forall n v, select n vals = Some v -> v = f n
+(*  | csc_coq_law f => forall n v, select n vals = Some v -> v = f n*)
   end.
 
 Definition is_default_choice_seq_entry {o}
@@ -522,7 +522,7 @@ Definition restriction2default {o}
            (r : @ChoiceSeqRestriction o) : nat -> ChoiceSeqVal :=
   match r with
   | csc_type d _ _ => d
-  | csc_coq_law f => fun n => f n
+(*  | csc_coq_law f => fun n => f n*)
   end.
 
 Definition choice_seq_entry2inf {o} (e : @ChoiceSeqEntry o) : InfChoiceSeqEntry :=
@@ -633,11 +633,11 @@ Proof.
     remember (select n vals) as s; symmetry in Heqs.
     destruct s; auto.
 
-  - unfold choice_seq_vals2inf.
+(*  - unfold choice_seq_vals2inf.
     remember (select n vals) as s; symmetry in Heqs.
     destruct s; auto.
     rewrite (h n) in Heqs;[inversion Heqs; auto|].
-    eapply select_lt; eauto.
+    eapply select_lt; eauto.*)
 Qed.
 Hint Resolve implies_safe_inf_choice_sequence_entry2inf : slow.
 
@@ -1029,7 +1029,7 @@ Proof.
   introv h q; destruct r1, r2, r3; simpl in *; repnd; tcsp; dands; introv.
   { rewrite h0; auto. }
   { rewrite h; auto. }
-  { rewrite h; auto. }
+(*  { rewrite h; auto. }*)
 Qed.
 Hint Resolve same_restrictions_trans : slow.
 
@@ -3226,10 +3226,10 @@ Proof.
     apply select_combine_choice_seq_vals_implies_or in h; repndors; eauto;[].
     apply sat2 in h; apply same; auto.
 
-  - introv h.
+(*  - introv h.
     apply lt_length_combine_choice_seq_vals_implies in h; repndors; repnd; rewrite h.
     { apply sat1; auto. }
-    { rewrite same; apply sat2; auto. }
+    { rewrite same; apply sat2; auto. }*)
 Qed.
 
 Lemma implies_choice_sequence_satisfies_restriction2 {o} :
@@ -3246,10 +3246,10 @@ Proof.
     apply select_combine_choice_seq_vals_implies_or in h; repndors; eauto;[].
     apply same; apply sat1; auto.
 
-  - introv h.
+(*  - introv h.
     apply lt_length_combine_choice_seq_vals_implies in h; repndors; repnd; rewrite h.
     { rewrite <- same; apply sat1; auto. }
-    { apply sat2; auto. }
+    { apply sat2; auto. }*)
 Qed.
 
 Lemma inf_entry_extends_two_entries_implies_entry_extends_safe {o} :
@@ -5770,7 +5770,7 @@ Definition extend_choice_seq_entry_lawless_upto {o}
         vals1 = vals2 ++ vals
         /\ length vals = n - length vals2
         /\ forall n v, select n vals = Some v -> M1 (length vals2 + n) v (*exists k, v = mkc_nat k*)
-  | _, _ => e1 = e2
+(*  | _, _ => e1 = e2*)
   end.
 
 Definition extend_library_entry_lawless_upto {o}
@@ -5945,8 +5945,8 @@ Proof.
   destruct restr1, restr2 in *; repnd; tcsp; introv z.
   - applydup w in z; subst.
     rewrite <- q0; auto.
-  - applydup w in z; subst.
-    rewrite <- q; eauto.
+(*  - applydup w in z; subst.
+    rewrite <- q; eauto.*)
 Qed.
 Hint Resolve is_default_inf_choice_sequence_implies_is_default_choice_sequence : slow.
 
@@ -7049,7 +7049,7 @@ Hint Resolve extend_library_entry_lawless_upto_preserves_diff_entry_names_false 
 Definition memNat_restriction {o} (restr : @ChoiceSeqRestriction o) : Prop :=
   match restr with
   | csc_type d M Md => forall n x, M n x <-> is_nat n x
-  | csc_coq_law f => True
+(*  | csc_coq_law f => True*)
   end.
 
 Definition has_memNat_restriction {o} (e : @library_entry o) name : Prop :=
@@ -7222,7 +7222,7 @@ Proof.
   introv same sat.
   destruct restr1, restr2; simpl in *; repnd; tcsp; introv.
   { apply same; eauto. }
-  { rewrite <- same; eauto. }
+(*  { rewrite <- same; eauto. }*)
 Qed.
 Hint Resolve same_restrictions_preserves_inf_choice_sequence_satisfies_restriction : slow.
 
@@ -7305,8 +7305,8 @@ Proof.
       [|exists (lib_cs name1 entry); simpl; boolvar; subst; tcsp];[].
 
     destruct entry as [vals restr].
-    destruct restr;
-      [|exists (lib_cs name1 (MkChoiceSeqEntry _ vals (csc_coq_law f))); simpl; boolvar; subst; tcsp];[].
+    destruct restr;[](*
+      [|exists (lib_cs name1 (MkChoiceSeqEntry _ vals (csc_coq_law f))); simpl; boolvar; subst; tcsp];[]*).
 
     destruct entry0 as [ivals irestr].
     unfold inf_choice_sequence_entry_extend in i2; simpl in *; repnd; subst.
@@ -7555,8 +7555,8 @@ Proof.
 
   destruct entry as [vals restr].
 
-  destruct restr;
-    [|exists (lib_cs name0 (MkChoiceSeqEntry _ vals (csc_coq_law f))); simpl; boolvar; subst; tcsp];[].
+  destruct restr(*;
+    [|exists (lib_cs name0 (MkChoiceSeqEntry _ vals (csc_coq_law f))); simpl; boolvar; subst; tcsp]*);[].
 
   exists (lib_cs
             name0
