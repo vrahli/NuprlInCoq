@@ -119,8 +119,7 @@ Proof.
   rename safe' into safe.
 
   pose proof (fresh_choice_seq_name_in_library lib []) as w; exrepnd.
-  assert (is_primitive_kind name) as isn.
-  eauto 3 with slow.
+  assert (is_primitive_kind name) as isn by (eauto 3 with slow).
 
   pose proof (inh2 (choice_sequence_name2entry name :: lib)) as q.
   clear inh2.

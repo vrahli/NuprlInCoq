@@ -112,8 +112,8 @@ Definition cmds2 {o} : @commands o :=
 
 Definition lib4 {o} : @ValidUpdRes o := update_list_with_validity lib3 cmds2.
 (* TODO: Why does this run forever? *)
-(*Eval compute in lib4.
-Time Eval compute in (lib4).*)
+(*Eval compute in (upd_res_state (valid_upd_res_state lib4)).*)
+(*Time Eval compute in (lib4).*)
 
 (* TODO: next step is to add the choice [zero_fun].
      We'll have to prove [is_nat_fun_zero_fun].
