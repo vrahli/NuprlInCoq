@@ -662,6 +662,52 @@ Proof.
 Qed.
 Hint Resolve implies_ccequivc_ext_equality : slow.
 
+Lemma equality_exists_1_choice_fun_in_fun {o} :
+  forall (lib : @library o) name v i,
+    equality
+      lib
+      (exists_1_choice_fun name v)
+      (exists_1_choice_fun name v)
+      (mkc_fun mkc_tnat (mkc_uni i)).
+Proof.
+  introv.
+  apply equality_in_fun; dands; eauto 3 with slow;[].
+  introv xt en.
+  unfold exists_1_choice_fun.
+
+  eapply equality_respects_cequivc_left;[apply ccequivc_ext_sym; apply ccequivc_ext_beta|].
+  eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym; apply ccequivc_ext_beta|].
+  autorewrite with slow.
+
+  apply equality_mkc_equality2_sp_in_uni; dands; eauto 3 with slow;[].
+  apply equality_int_nat_implies_cequivc in en.
+  apply ccequivc_ext_bar_iff_ccequivc_bar in en.
+  unfold ccequivc_ext_bar in en.
+
+  split; unfold equorsq_bar;
+    [eapply all_in_ex_bar_modus_ponens1;[|exact en]
+    |eapply all_in_ex_bar_modus_ponens1;[|exact en] ];
+    clear en; introv y en; exrepnd; spcast; right; eauto 3 with slow.
+Qed.
+Hint Resolve equality_exists_1_choice_fun_in_fun : slow.
+
+Lemma type_exists_1_choice {o} :
+  forall (lib : @library o) name v,
+    type lib (exists_1_choice name v).
+Proof.
+  introv; unfold exists_1_choice, mkc_exists.
+  apply tequality_product; dands; eauto 3 with slow.
+  introv xt ea; autorewrite with slow.
+  apply equality_int_nat_implies_cequivc in ea.
+  apply tequality_mkc_equality2_sp; dands; eauto 3 with slow.
+  apply ccequivc_ext_bar_iff_ccequivc_bar in ea.
+  unfold ccequivc_ext_bar in ea.
+  split; unfold equorsq_bar;
+    [eapply all_in_ex_bar_modus_ponens1;[|exact ea]
+    |eapply all_in_ex_bar_modus_ponens1;[|exact ea] ];
+    clear ea; introv y ea; exrepnd; spcast; right; eauto 3 with slow.
+Qed.
+Hint Resolve type_exists_1_choice : slow.
 
 
 
@@ -825,15 +871,341 @@ Proof.
       }
 
       introv xt inh.
+      hide_wf.
+      unfold mk_exists.
+      repeat lsubstc_vars_as_mkcv.
 
-      admit.
+      eapply tequality_respects_alphaeqc_left;
+        [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;tcsp|].
+      eapply tequality_respects_alphaeqc_right;
+        [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;tcsp|].
+      repeat (rewrite mkcv_product_substc; tcsp;[]).
+      autorewrite with slow.
+      apply tequality_product; dands; eauto 3 with slow;[].
+
+      introv xt' en.
+      autorewrite with slow.
+
+      repeat (rewrite lsubstc_vars_mk_var_as_mkcv3_2;
+              [|repeat rewrite dom_csub_csub_filter;
+                repeat rw in_remove_nvars; simpl;
+                intro xx; repnd; allrw not_over_or; repnd; tcsp];[]).
+      autorewrite with slow.
+      repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+      autorewrite with slow.
+      repeat (rewrite substc3_mk_cv_app_r_2; tcsp;[]).
+      repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+      autorewrite with slow.
+
+      lsubst_tac.
+      autorewrite with slow in *.
+      apply equality_in_fun in eb; repnd.
+      clear eb0 eb1.
+      apply eb in en; eauto 3 with slow.
     }
 
-    admit.
+    introv xt inh.
+    clear inh.
+    unfold mk_exists.
+    repeat lsubstc_vars_as_mkcv.
+
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;tcsp|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;tcsp|].
+    repeat (rewrite mkcv_product_substc; tcsp;[]).
+    autorewrite with slow.
+    apply tequality_product; dands; eauto 3 with slow;[].
+
+    introv xt' en.
+    autorewrite with slow.
+
+    aeq_lsubstc_vars_not aeq.
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply implies_alphaeqc_substc2;
+       apply implies_alphaeqc_substc3;exact aeq
+      |clear aeq].
+    aeq_lsubstc_vars_not aeq.
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply implies_alphaeqc_substc2;
+       apply implies_alphaeqc_substc3;exact aeq
+      |clear aeq].
+
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply implies_alphaeqc_substc2;
+       apply substc3_fun|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply implies_alphaeqc_substc2;
+       apply substc3_fun|].
+
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply substc2_fun|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply substc2_fun|].
+
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply mkcv_fun_substc|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym; apply mkcv_fun_substc|].
+
+    repeat (rewrite lsubstc_vars_mk_var_as_mkcv3;
+            [|repeat rewrite dom_csub_csub_filter;
+              repeat rw in_remove_nvars; simpl;
+              intro xx; repnd; allrw not_over_or; repnd; tcsp];[]).
+    autorewrite with slow.
+    repeat lsubstc_vars_as_mkcv.
+    autorewrite with slow.
+
+    repeat (rewrite lsubstc_vars_mk_var_as_mkcv3_2;
+            [|repeat rewrite dom_csub_csub_filter;
+              repeat rw in_remove_nvars; simpl;
+              intro xx; repnd; allrw not_over_or; repnd; tcsp];[]).
+    autorewrite with slow.
+    repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+    autorewrite with slow.
+    repeat (rewrite substc3_mk_cv_app_r_2; tcsp;[]).
+    repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+    autorewrite with slow.
+
+    apply tequality_sym.
+
+    assert (lib_extends lib'0 lib) as xt'' by eauto 3 with slow.
+    apply tequality_fun; dands; eauto 3 with slow;[].
+
+    introv xt''' inh.
+
+    assert (lib_extends lib'1 lib) as xt'''' by eauto 3 with slow.
+
+    lsubst_tac.
+    autorewrite with slow in *.
+    apply equality_in_fun in eb; repnd.
+    clear eb0 eb1.
+    apply equality_sym in en.
+    apply eb in en; eauto 3 with slow.
   }
 
   {
-    admit.
+    apply tequality_function; dands; eauto 3 with slow; autorewrite with slow;[].
+
+    introv xtu eu.
+    repeat rewrite substcv_as_substc2.
+    autorewrite with slow in *.
+
+    repeat lsubstc_vars_as_mkcv.
+    repeat (rewrite substc_mkcv_function; tcsp;[]).
+    autorewrite with slow.
+    apply tequality_function.
+    lsubst_tac; autorewrite with slow.
+    dands;[apply tequality_fun; dands; eauto 3 with slow|];[].
+
+    hide_wf.
+
+    introv xt ef.
+    lsubst_tac; autorewrite with slow in *.
+    repeat rewrite substcv_as_substc2.
+
+    aeq_lsubstc_vars_not aeq.
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply implies_alphaeqc_substc2;exact aeq
+      |clear aeq].
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply substc2_fun|].
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply mkcv_fun_substc|].
+
+    apply tequality_sym.
+
+    aeq_lsubstc_vars_not aeq.
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply implies_alphaeqc_substc2;exact aeq
+      |clear aeq].
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply substc2_fun|].
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply mkcv_fun_substc|].
+
+    apply tequality_sym.
+
+    eapply equality_monotone in eu;[|eauto].
+    clear dependent lib.
+    clear dependent lib'0.
+    rename lib'1 into lib.
+
+    apply tequality_fun.
+    dands.
+
+    {
+      autorewrite with slow in *.
+
+      aeq_lsubstc_vars_not aeq.
+      eapply tequality_respects_alphaeqc_left;
+        [apply alphaeqc_sym;apply substc_alphaeqcv;
+         apply implies_alphaeqc_substc2;exact aeq
+        |clear aeq].
+      eapply tequality_respects_alphaeqc_left;
+        [apply alphaeqc_sym;apply substc_alphaeqcv;
+         apply substc2_fun|].
+      eapply tequality_respects_alphaeqc_left;
+        [apply alphaeqc_sym; apply mkcv_fun_substc|].
+
+      apply tequality_sym.
+
+      aeq_lsubstc_vars_not aeq.
+      eapply tequality_respects_alphaeqc_left;
+        [apply alphaeqc_sym;apply substc_alphaeqcv;
+         apply implies_alphaeqc_substc2;exact aeq
+        |clear aeq].
+      eapply tequality_respects_alphaeqc_left;
+        [apply alphaeqc_sym;apply substc_alphaeqcv;
+         apply substc2_fun|].
+      eapply tequality_respects_alphaeqc_left;
+        [apply alphaeqc_sym; apply mkcv_fun_substc|].
+
+      apply tequality_sym.
+
+      apply tequality_fun.
+      dands.
+
+      {
+        rewrite lsubstc_vars_mk_var_as_mkcv2;
+          [|repeat rewrite dom_csub_csub_filter; intro xx;
+            apply in_remove_nvars in xx; simpl in xx; repnd;
+            apply in_remove_nvars in xx0; simpl in xx0; repnd;
+            apply not_over_or in xx0; repnd; tcsp];[].
+        rewrite lsubstc_vars_mk_var_as_mkcv2;
+          [|repeat rewrite dom_csub_csub_filter; intro xx;
+            apply in_remove_nvars in xx; simpl in xx; repnd;
+            apply in_remove_nvars in xx0; simpl in xx0; repnd;
+            apply not_over_or in xx0; repnd; tcsp];[].
+        autorewrite with slow; eauto 3 with slow.
+      }
+
+      introv xt inh.
+      hide_wf.
+      unfold mk_exists.
+      repeat lsubstc_vars_as_mkcv.
+
+      eapply tequality_respects_alphaeqc_left;
+        [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;tcsp|].
+      eapply tequality_respects_alphaeqc_right;
+        [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;tcsp|].
+      repeat (rewrite mkcv_product_substc; tcsp;[]).
+      autorewrite with slow.
+      apply tequality_product; dands; eauto 3 with slow;[].
+
+      introv xt' en.
+      autorewrite with slow.
+
+      repeat (rewrite lsubstc_vars_mk_var_as_mkcv3_2;
+              [|repeat rewrite dom_csub_csub_filter;
+                repeat rw in_remove_nvars; simpl;
+                intro xx; repnd; allrw not_over_or; repnd; tcsp];[]).
+      autorewrite with slow.
+      repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+      autorewrite with slow.
+      repeat (rewrite substc3_mk_cv_app_r_2; tcsp;[]).
+      repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+      autorewrite with slow.
+
+      lsubst_tac.
+      autorewrite with slow in *.
+      apply equality_in_fun in ef; repnd.
+      clear ef0 ef1.
+      apply ef in en; eauto 3 with slow.
+    }
+
+    introv xt inh.
+    clear inh.
+    unfold mk_exists.
+    repeat lsubstc_vars_as_mkcv.
+
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;tcsp|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;tcsp|].
+    repeat (rewrite mkcv_product_substc; tcsp;[]).
+    autorewrite with slow.
+    apply tequality_product; dands; eauto 3 with slow;[].
+
+    introv xt' en.
+    autorewrite with slow.
+
+    aeq_lsubstc_vars_not aeq.
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply implies_alphaeqc_substc2;
+       apply implies_alphaeqc_substc3;exact aeq
+      |clear aeq].
+    aeq_lsubstc_vars_not aeq.
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply implies_alphaeqc_substc2;
+       apply implies_alphaeqc_substc3;exact aeq
+      |clear aeq].
+
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply implies_alphaeqc_substc2;
+       apply substc3_fun|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply implies_alphaeqc_substc2;
+       apply substc3_fun|].
+
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply substc2_fun|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym;apply substc_alphaeqcv;
+       apply substc2_fun|].
+
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply mkcv_fun_substc|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym; apply mkcv_fun_substc|].
+
+    repeat (rewrite lsubstc_vars_mk_var_as_mkcv3;
+            [|repeat rewrite dom_csub_csub_filter;
+              repeat rw in_remove_nvars; simpl;
+              intro xx; repnd; allrw not_over_or; repnd; tcsp];[]).
+    autorewrite with slow.
+    repeat lsubstc_vars_as_mkcv.
+    autorewrite with slow.
+
+    repeat (rewrite lsubstc_vars_mk_var_as_mkcv3_2;
+            [|repeat rewrite dom_csub_csub_filter;
+              repeat rw in_remove_nvars; simpl;
+              intro xx; repnd; allrw not_over_or; repnd; tcsp];[]).
+    autorewrite with slow.
+    repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+    autorewrite with slow.
+    repeat (rewrite substc3_mk_cv_app_r_2; tcsp;[]).
+    repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+    autorewrite with slow.
+
+    assert (lib_extends lib'0 lib) as xt1' by eauto 3 with slow.
+    assert (lib_extends lib'1 lib) as xt2' by eauto 3 with slow.
+    apply tequality_fun; dands; eauto 3 with slow;[].
+
+    introv xt''' inh.
+
+    assert (lib_extends lib'2 lib) as xt'''' by eauto 3 with slow.
+
+    lsubst_tac.
+    autorewrite with slow in *.
+    apply equality_in_fun in ef; repnd.
+    clear ef0 ef1.
+    apply ef in en; eauto 3 with slow.
   }
 
   introv ext' inh.
@@ -896,7 +1268,8 @@ Proof.
   autodimp q hyp.
 
   {
-    admit.
+    autorewrite with slow.
+    lsubst_tac; autorewrite with slow; eauto 3 with slow.
   }
 
   repeat rewrite substcv_as_substc2 in q.
@@ -934,11 +1307,57 @@ Proof.
     apply equality_in_fun; dands.
 
     {
-      admit.
+      rewrite lsubstc_vars_mk_var_as_mkcv2;
+        [|repeat rewrite dom_csub_csub_filter; intro xx;
+          apply in_remove_nvars in xx; simpl in xx; repnd;
+          apply in_remove_nvars in xx0; simpl in xx0; repnd;
+          apply not_over_or in xx0; repnd; tcsp];[].
+      autorewrite with slow; eauto 3 with slow.
     }
 
     {
-      admit.
+      introv xt inh.
+      unfold mk_exists.
+      repeat lsubstc_vars_as_mkcv.
+
+      eapply type_respects_alphaeqc;
+        [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;tcsp|].
+      repeat (rewrite mkcv_product_substc; tcsp;[]).
+      autorewrite with slow.
+      apply tequality_product; dands; eauto 3 with slow;[].
+
+      introv xt' en.
+      autorewrite with slow.
+
+      repeat (rewrite lsubstc_vars_mk_var_as_mkcv3_2;
+              [|repeat rewrite dom_csub_csub_filter;
+                repeat rw in_remove_nvars; simpl;
+                intro xx; repnd; allrw not_over_or; repnd; tcsp];[]).
+      autorewrite with slow.
+      repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+      autorewrite with slow.
+      repeat (rewrite substc3_mk_cv_app_r_2; tcsp;[]).
+      repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+      autorewrite with slow.
+
+      lsubst_tac.
+      autorewrite with slow in *.
+
+      unfold exists_1_choice_fun.
+
+      eapply tequality_respects_cequivc_left;[apply ccequivc_ext_sym; apply ccequivc_ext_beta|].
+      eapply tequality_respects_cequivc_right;[apply ccequivc_ext_sym; apply ccequivc_ext_beta|].
+      autorewrite with slow.
+
+      apply tequality_mkc_equality2_sp; dands; eauto 3 with slow;[].
+      apply equality_int_nat_implies_cequivc in en.
+      apply ccequivc_ext_bar_iff_ccequivc_bar in en.
+      unfold ccequivc_ext_bar in en.
+
+      split; unfold equorsq_bar;
+        [eapply all_in_ex_bar_modus_ponens1;[|exact en]
+        |eapply all_in_ex_bar_modus_ponens1;[|exact en] ];
+        clear en; introv y en; exrepnd; spcast; right; eauto 3 with slow.
     }
 
     introv xt ea.
