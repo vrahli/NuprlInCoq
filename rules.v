@@ -228,6 +228,8 @@ Require Import rules_product.
 (* classical rules *)
 (* Require Import rules_classical.*)
 Require Import rules_not_classical.
+Require Import rules_not_MP.
+Require Import rules_not_IP.
 
 
 (*

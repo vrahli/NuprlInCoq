@@ -37,6 +37,7 @@ Require Export rules_choice_roadmap.
 Require Export rules_apply.
 Require Export rules_not_classical.
 Require Export rules_not_MP.
+Require Export rules_not_IP.
 Require Export rules_function.
 Require Export rules_function2.
 Require Export rules_base.
