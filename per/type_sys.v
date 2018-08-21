@@ -1927,6 +1927,7 @@ Ltac eqconstr0 name :=
     | mkc_efree_from_atom _ _ _ = mkc_efree_from_atom _ _ _ => apply mkc_efree_from_atom_eq in name
 
     | mkc_free_from_atoms _ _ = mkc_free_from_atoms _ _ => apply mkc_free_from_atoms_eq in name
+    | mkc_free_from_defs  _ _ = mkc_free_from_defs  _ _ => apply mkc_free_from_defs_eq  in name
 
     | mkc_pw _ _ _ _ _ _ _ _ _ _ _ = mkc_pw _ _ _ _ _ _ _ _ _ _ _ => appdup mkc_pw_eq1 name; repd; subst; apply mkc_pw_eq2 in name
     | mkc_pm _ _ _ _ _ _ _ _ _ _ _ = mkc_pm _ _ _ _ _ _ _ _ _ _ _ => appdup mkc_pm_eq1 name; repd; subst; apply mkc_pm_eq2 in name

@@ -59,7 +59,7 @@ Lemma sub_per_equality_of_int_bar {o} :
     sub_per (equality_of_int_bar lib) (equality_of_int_bar lib').
 Proof.
   introv ext h.
-  unfold equality_of_int_bar in *; exrepnd.
+  unfold equality_of_int_bar, all_in_ex_bar in *; exrepnd.
   exists (raise_bar bar ext).
   introv br e; simpl in *; exrepnd.
   apply (h0 lib1 br1 lib'1); eauto 3 with slow.
@@ -734,6 +734,36 @@ Proof.
 Qed.
 Hint Resolve per_image_monotone : slow.
 
+Lemma sub_per_per_ffdefs_eq_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib) (eqa : lib-per(lib,o)) x,
+    sub_per
+      (per_ffdefs_eq_bar lib eqa x)
+      (per_ffdefs_eq_bar lib' (raise_lib_per eqa ext) x).
+Proof.
+  introv h.
+  unfold per_ffdefs_eq_bar, per_ffdefs_eq, all_in_ex_bar in *; exrepnd.
+  exists (raise_bar bar ext).
+  introv br xx; introv; simpl in *; exrepnd.
+  eapply h0; eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_per_ffdefs_eq_bar : slow.
+
+Lemma per_ffdefs_monotone {o} :
+  forall (ts : cts(o)), type_monotone (per_ffdefs ts).
+Proof.
+  introv per ext.
+  unfold per_ffdefs in *; exrepnd.
+
+  exists (per_ffdefs_eq_bar lib' (raise_lib_per eqa ext) x1).
+  dands; eauto 3 with slow;[].
+
+  exists A1 A2 x1 x2 (raise_lib_per eqa ext).
+  dands; spcast; eauto 3 with slow.
+
+  simpl; introv; unfold raise_ext_per; eapply per4.
+Qed.
+Hint Resolve per_ffdefs_monotone : slow.
+
 Lemma close_monotone {o} :
   forall (ts : cts(o)),
     type_monotone ts
@@ -809,6 +839,11 @@ Proof.
 
   - Case "CL_image".
     pose proof (per_image_monotone (close ts) lib lib' T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; dands; auto.
+
+  - Case "CL_ffdefs".
+    pose proof (per_ffdefs_monotone (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 

@@ -385,6 +385,16 @@ Notation "lib-per-fam ( lib , eqa , o )" := (@lib_per_fam o lib eqa).
 Definition sub_per {o} (per1 per2 : per(o)) :=
   forall a b, per1 a b -> per2 a b.
 
+
+(* MOVE *)
+Definition all_in_ex_bar {o} (lib : @library o) F :=
+  {bar : BarLib lib , all_in_bar bar F}.
+
+Definition ccequivc_ext {o} (lib : @library o) (t t' : @CTerm o) :=
+  in_ext lib (fun lib => t ~=~(lib) t').
+
+
+
 (* ------ types definitions ------ *)
 
 (* end hide *)
@@ -423,7 +433,7 @@ Definition equality_of_int {p} lib (n m : @CTerm p) :=
          # m ===>(lib) (mkc_integer k)}.
 
 Definition equality_of_int_bar {o} lib (t t' : @CTerm o) :=
-  {bar : BarLib lib , all_in_bar bar (fun lib => equality_of_int lib t t') }.
+  all_in_ex_bar lib (fun lib => equality_of_int lib t t').
 
 Definition per_int {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   T1 ===>(lib) mkc_int
@@ -618,6 +628,74 @@ Definition per_ffatoms {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : 
       # eq <=2=> (per_ffatoms_eq lib eqa x1)}}.
 
 
+
+
+
+(* ****** free from definition type ****** *)
+
+Inductive def_kind :=
+| defk_abs (a : opabs)
+| defk_cs  (c : choice_sequence_name).
+
+Definition def_kinds := list def_kind.
+
+Definition get_defs_c {p} (c : @CanonicalOp p) : def_kinds :=
+  match c with
+  | Ncseq c => [defk_cs c]
+  | _ => []
+  end.
+
+Definition get_defs_o {p} (o : @Opid p) : def_kinds :=
+  match o with
+  | Can c => get_defs_c c
+  | Abs a => [defk_abs a]
+  | _ => []
+  end.
+
+Fixpoint get_defs {p} (t : @NTerm p) : def_kinds :=
+  match t with
+  | vterm _ => []
+  | oterm o bterms => (get_defs_o o) ++ (flat_map get_defs_b bterms)
+  end
+with get_defs_b {p} (bt : @BTerm p) : def_kinds :=
+       match bt with
+       | bterm _ t => get_defs t
+       end.
+
+Definition nodefs {o} (t : @NTerm o) := get_defs t = [].
+
+Definition nodefsc {o} (t : @CTerm o) := nodefs (get_cterm t).
+
+Definition ex_nodefsc {o} (eqa : per(o)) (t : @CTerm o) :=
+  {u : @CTerm o , eqa t u # nodefsc u}.
+
+Definition per_ffdefs_eq {p}
+           lib
+           (eqa : per(p))
+           (t t1 t2 : @CTerm p) :=
+  t1 ===>(lib) mkc_axiom
+  # t2 ===>(lib) mkc_axiom
+  # ex_nodefsc eqa t.
+
+Definition per_ffdefs_eq_bar {p}
+           lib
+           (eqa : lib-per(lib,p))
+           (t t1 t2 : @CTerm p) :=
+  {bar : BarLib lib
+  , all_in_bar_ext bar (fun lib' x => per_ffdefs_eq lib' (eqa lib' x) t t1 t2)}.
+
+Definition per_ffdefs {o} (ts : cts(o)) lib (T1 T2 : @CTerm o) (eq : per(o)) : [U] :=
+   {A1 , A2, x1 , x2 : CTerm
+   , {eqa : lib-per(lib,o)
+   , T1 ===>(lib) (mkc_free_from_defs A1 x1)
+   # T2 ===>(lib) (mkc_free_from_defs A2 x2)
+   # in_ext_ext lib (fun lib' x => ts lib' A1 A2 (eqa lib' x))
+   # in_ext_ext lib (fun lib' x => eqa lib' x x1 x2)
+   # eq <=2=> (per_ffdefs_eq_bar lib eqa x1) }}.
+
+(* ****** ****** *)
+
+
 (*
 Set Printing Universes.
 Print per_int.
@@ -632,9 +710,6 @@ Print Universes.
   if they are computationally equivalent.
 
 *)
-
-Definition ccequivc_ext {o} (lib : @library o) (t t' : @CTerm o) :=
-  in_ext lib (fun lib => t ~=~(lib) t').
 
 Definition per_base_eq {o} lib (t t' : @CTerm o) :=
   {bar : BarLib lib , all_in_bar bar (fun lib => t ~=~(lib) t') }.
@@ -2472,6 +2547,7 @@ Inductive close {p} (ts : cts) lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
 (*  | CL_ffatom   : per_ffatom   (close ts) lib T T' eq -> close ts lib T T' eq*)
 (*  | CL_effatom  : per_effatom  (close ts) lib T T' eq -> close ts lib T T' eq*)
 (*  | CL_ffatoms  : per_ffatoms  (close ts) lib T T' eq -> close ts lib T T' eq*)
+  | CL_ffdefs   : per_ffdefs   (close ts) lib T T' eq -> close ts lib T T' eq
   | CL_set      : per_set      (close ts) lib T T' eq -> close ts lib T T' eq
 (*  | CL_tunion   : per_tunion   (close ts) lib T T' eq -> close ts lib T T' eq*)
   | CL_product  : per_product_bar  (close ts) lib T T' eq -> close ts lib T T' eq.
@@ -2513,6 +2589,7 @@ Arguments CL_image    {p} [ts] [lib] [T] [T'] [eq] _.
 (*Arguments CL_ffatom   {p} [ts] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_effatom  {p} [ts] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_ffatoms  {p} [ts] [lib] [T] [T'] [eq] _.*)
+Arguments CL_ffdefs   {p} [ts] [lib] [T] [T'] [eq] _.
 Arguments CL_set      {p} [ts] [lib] [T] [T'] [eq] _.
 (*Arguments CL_tunion   {p} [ts] [lib] [T] [T'] [eq] _.*)
 Arguments CL_product  {p} [ts] [lib] [T] [T'] [eq] _.
@@ -2557,6 +2634,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
 (*  | Case_aux c "CL_ffatom"*)
 (*  | Case_aux c "CL_effatom"*)
 (*  | Case_aux c "CL_ffatoms"*)
+  | Case_aux c "CL_ffdefs"
   | Case_aux c "CL_set"
 (*  | Case_aux c "CL_tunion"*)
   | Case_aux c "CL_product"
@@ -3266,6 +3344,22 @@ Definition close_ind' {pp}
                     (eqiff : eq <=2=> (per_ffatoms_eq lib eqa x1))
                     (per : per_ffatoms (close ts) lib T T' eq),
                P ts lib T T' eq)*)
+
+  (ffdefs : forall (ts    : cts)
+                   (lib   : library)
+                   (T T'  : @CTerm pp)
+                   (eq    : per)
+                   (A1 A2 : @CTerm pp)
+                   (x1 x2 : @CTerm pp)
+                   (eqa   : lib-per(lib,pp))
+                   (c1    : T ===>(lib) (mkc_free_from_defs A1 x1))
+                   (c2    : T' ===>(lib) (mkc_free_from_defs A2 x2))
+                   (cla   : in_ext_ext lib (fun lib' x => close ts lib' A1 A2 (eqa lib' x)))
+                   (reca  : in_ext_ext lib (fun lib' x => P ts lib' A1 A2 (eqa lib' x)))
+                   (ex    : in_ext_ext lib (fun lib' x => eqa lib' x x1 x2))
+                   (eqiff : eq <=2=> (per_ffdefs_eq_bar lib eqa x1))
+                   (per   : per_ffdefs (close ts) lib T T' eq),
+      P ts lib T T' eq)
 
   (subset : forall (ts   : cts)
                    (lib  : library)
@@ -4148,6 +4242,25 @@ Definition close_ind' {pp}
                eqt
                pts*)
 
+   | CL_ffdefs pts =>
+       let (A1,  x) := pts in
+       let (A2,  x) := x in
+       let (x1,  x) := x in
+       let (x2,  x) := x in
+       let (eqa, x) := x in
+       let (c1,  x) := x in
+       let (c2,  x) := x in
+       let (cla, x) := x in
+       let (ex,  eqt) := x in
+       ffdefs ts lib T T' eq A1 A2 x1 x2 eqa
+              c1
+              c2
+              cla
+              (fun lib' x => rec ts lib' A1 A2 (eqa lib' x) (cla lib' x))
+              ex
+              eqt
+              pts
+
    | CL_set pts =>
        let (eqa, x) := pts in
        let (eqb, x) := x in
@@ -4334,6 +4447,7 @@ Ltac one_unfold_per :=
     | [ H : per_ffatom      _ _ _ _ _ |- _ ] => unfold per_ffatom      in H; exrepd
     | [ H : per_effatom     _ _ _ _ _ |- _ ] => unfold per_effatom     in H; exrepd
     | [ H : per_ffatoms     _ _ _ _ _ |- _ ] => unfold per_ffatoms     in H; exrepd
+    | [ H : per_ffdefs      _ _ _ _ _ |- _ ] => unfold per_ffdefs      in H; exrepd
     | [ H : per_set         _ _ _ _ _ |- _ ] => unfold per_set         in H; exrepd
     | [ H : per_tunion      _ _ _ _ _ |- _ ] => unfold per_tunion      in H; exrepd
     | [ H : per_product     _ _ _ _ _ |- _ ] => unfold per_product     in H; exrepd
@@ -4372,6 +4486,14 @@ Proof.
   exists (fun lib' (x : lib_extends lib' lib) => per_approx_eq_bar lib' a b).
   introv x y; introv; tcsp.
 Defined.
+
+(*Definition per_ffdefs_eq_lib_per {o}
+           (lib : @library o)
+           (a : @CTerm o) : lib-per(lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) => per_ffdefs_eq lib' a).
+  introv x y; introv; tcsp.
+Defined.*)
 
 Definition per_cequiv_eq_bar_lib_per {o}
            (lib : @library o)

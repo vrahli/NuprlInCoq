@@ -43,6 +43,7 @@ Require Export close_util_uatom.
 Require Export close_util_base.
 Require Export close_util_csname.
 Require Export close_util_approx.
+Require Export close_util_ffdefs.
 Require Export close_util_cequiv.
 Require Export close_util_eq.
 Require Export close_util_func.
@@ -328,6 +329,27 @@ Proof.
     apply eq_term_equals_sym; apply per_bar_eq_per_base_eq_lib_per.
 Qed.
 Hint Resolve per_base_implies_per_bar : slow.
+
+Lemma per_ffdefs_implies_per_bar {o} :
+  forall ts lib (T T' : @CTerm o) eq,
+    per_ffdefs (close ts) lib T T' eq
+    -> per_bar (close ts) lib T T' eq.
+Proof.
+  introv per.
+  unfold per_ffdefs in *; exrepnd.
+  exists (trivial_bar lib) (per_ffdefs_eq_bar_lib_per eqa x1).
+  dands.
+
+  - introv br ext; introv.
+    apply CL_ffdefs.
+    unfold per_ffdefs; dands; auto.
+    exists A1 A2 x1 x2 (raise_lib_per eqa x); dands; auto; eauto 3 with slow.
+    introv; unfold raise_lib_per, raise_ext_per; simpl; eauto.
+
+  - eapply eq_term_equals_trans;[eauto|]; clear per1.
+    apply eq_term_equals_sym; apply per_bar_eq_per_ffdefs_eq_bar_lib_per.
+Qed.
+Hint Resolve per_ffdefs_implies_per_bar : slow.
 
 Lemma per_approx_implies_per_bar {o} :
   forall ts lib (T T' : @CTerm o) eq,
@@ -800,6 +822,27 @@ Proof.
     apply eq_term_equals_sym; apply per_bar_eq_per_base_eq_lib_per.
 Qed.
 Hint Resolve per_base_implies_per_bar_above : slow.
+
+Lemma per_ffdefs_implies_per_bar_above {o} :
+  forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,
+    per_ffdefs (close ts) lib T T' eq
+    -> per_bar_above (close ts) bar T T' eq.
+Proof.
+  introv per.
+  unfold per_ffdefs in *; exrepnd.
+  exists bar (per_ffdefs_eq_bar_lib_per eqa x1).
+  dands.
+
+  - introv br ext; introv.
+    apply CL_ffdefs.
+    unfold per_ffdefs; dands; auto.
+    exists A1 A2 x1 x2 (raise_lib_per eqa x); dands; auto; eauto 3 with slow.
+    introv; unfold raise_lib_per, raise_ext_per; simpl; eauto.
+
+  - eapply eq_term_equals_trans;[eauto|]; clear per1.
+    apply eq_term_equals_sym; apply per_bar_eq_per_ffdefs_eq_bar_lib_per.
+Qed.
+Hint Resolve per_ffdefs_implies_per_bar_above : slow.
 
 Lemma per_approx_implies_per_bar_above {o} :
   forall ts lib (bar : BarLib lib) (T T' : @CTerm o) eq,

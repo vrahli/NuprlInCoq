@@ -248,6 +248,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NFreeFromAtom  : CanonicalOp
  | NEFreeFromAtom : CanonicalOp
  | NFreeFromAtoms : CanonicalOp
+ | NFreeFromDefs  : CanonicalOp
  | NEquality      : CanonicalOp
  | NREquality     : CanonicalOp
  | NTEquality     : CanonicalOp
@@ -319,6 +320,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NFreeFromAtom  => [0,0,0]
   | NEFreeFromAtom => [0,0,0]
   | NFreeFromAtoms => [0,0]
+  | NFreeFromDefs  => [0,0]
   | NEquality      => [0,0,0]
   | NREquality     => [0,0,0]
   | NTEquality     => [0,0]

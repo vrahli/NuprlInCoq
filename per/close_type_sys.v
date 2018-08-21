@@ -43,6 +43,7 @@ Require Export close_type_sys_per_atom.
 Require Export close_type_sys_per_uatom.
 Require Export close_type_sys_per_csname.
 Require Export close_type_sys_per_base.
+Require Export close_type_sys_per_ffdefs.
 Require Export close_type_sys_per_sqle.
 Require Export close_type_sys_per_sqequal.
 Require Export close_type_sys_per_eq.
@@ -447,6 +448,9 @@ Proof.
 
 (*  - Case "CL_ffatoms".
     eapply close_type_system_ffatoms; eauto.*)
+
+  - Case "CL_ffdefs".
+    eapply close_type_system_ffdefs; eauto; eauto 3 with slow.
 
   - Case "CL_set".
     eapply close_type_system_set; eauto; eauto 3 with slow.

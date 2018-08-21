@@ -501,6 +501,10 @@ Proof.
     apply CL_ffatoms; unfold per_ffatoms; sp.
     exists A1 A2 x1 x2 eqa; sp.*)
 
+  - Case "CL_ffdefs".
+    apply CL_ffdefs; unfold per_ffdefs; sp.
+    exists A1 A2 x1 x2 eqa; sp; introv; eapply reca; eauto.
+
   - Case "CL_set".
     apply CL_set; unfold per_set; sp.
     exists eqa eqb; sp.
@@ -921,6 +925,11 @@ Proof.
     unfold per_ffatoms; sp.
     exists A1 A2 x1 x2 eqa; sp.
     apply IHn with (i0 := i); sp.*)
+
+  - Case "CL_ffdefs".
+    apply CL_ffdefs.
+    unfold per_ffdefs; sp.
+    exists A1 A2 x1 x2 eqa; sp; eauto; introv; eapply reca; eauto.
 
   - Case "CL_set".
     apply CL_set.

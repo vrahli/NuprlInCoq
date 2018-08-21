@@ -847,12 +847,42 @@ Proof.
   eexists; eexists; dands; try reflexivity; auto.
 Qed.
 
+Lemma alpha_eq_mk_ffdefs {o} :
+  forall (T t : @NTerm o) u,
+    alpha_eq (mk_free_from_defs T t) u
+    -> {T' : NTerm
+        & {t' : NTerm
+        & u = mk_free_from_defs T' t'
+        # alpha_eq t t'
+        # alpha_eq T T' }}.
+Proof.
+  introv aeq.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
+  destruct lbt2; allsimpl; repeat cpx.
+  pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
+  pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
+  clear i.
+  unfold selectbt in h1, h2; allsimpl.
+  inversion h1 as [? ? ? ? ? disj1 ? ? norep1 aeq1]; subst; allsimpl; cpx; clear h1.
+  inversion h2 as [? ? ? ? ? disj2 ? ? norep2 aeq2]; subst; allsimpl; cpx; clear h2.
+  allrw @var_ren_nil_l; allrw @lsubst_nil.
+  eexists; eexists; dands; try reflexivity; auto.
+Qed.
+
 Lemma isprog_ffatoms_iff {o} :
   forall (a b : @NTerm o), isprog (mk_free_from_atoms a b) <=> (isprog a # isprog b).
 Proof.
   introv.
   allrw @isprog_eq.
   allrw <- @isprogram_free_from_atoms_iff; tcsp.
+Qed.
+
+Lemma isprog_ffdefs_iff {o} :
+  forall (a b : @NTerm o), isprog (mk_free_from_defs a b) <=> (isprog a # isprog b).
+Proof.
+  introv.
+  allrw @isprog_eq.
+  allrw <- @isprogram_free_from_defs_iff; tcsp.
 Qed.
 
 Lemma alphaeqc_mkc_ffatoms {o} :
@@ -872,6 +902,26 @@ Proof.
   apply isprog_ffatoms_iff in j; repnd.
 
   exists (mk_ct t' j0) (mk_ct a' j); simpl; dands; auto.
+  apply cterm_eq; simpl; auto.
+Qed.
+
+Lemma alphaeqc_mkc_ffdefs {o} :
+  forall (T t : @CTerm o) u,
+    alphaeqc (mkc_free_from_defs T t) u
+    -> {T' : CTerm
+        & {t' : CTerm
+        & u = mkc_free_from_defs T' t'
+        # alphaeqc T T'
+        # alphaeqc t t' }}.
+Proof.
+  introv aeq.
+  destruct_cterms; simpl in *.
+  unfold alphaeqc in *; simpl in *.
+  apply alpha_eq_mk_ffdefs in aeq; exrepnd; subst.
+  dup i as j.
+  rw @isprog_ffdefs_iff in j; repnd.
+
+  exists (mk_ct T' j0) (mk_ct t' j); simpl; dands; auto.
   apply cterm_eq; simpl; auto.
 Qed.
 
@@ -1685,14 +1735,15 @@ Ltac alphaeqc_decompose :=
   | [ H : alphaeqc (mkc_free_from_atoms _ _) _ |- _ ] => apply alphaeqc_mkc_ffatoms   in H; exrepnd; try subst
   | [ H : alphaeqc (mkc_tequality       _ _) _ |- _ ] => apply alphaeqc_mkc_tequality in H; exrepnd; try subst
   | [ H : alphaeqc (mkc_sup             _ _) _ |- _ ] => apply alphaeqc_mkc_sup       in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_free_from_defs  _ _) _ |- _ ] => apply alphaeqc_mkc_ffdefs    in H; exrepnd; try subst
 
-  | [ H : alphaeqc (mkc_partial  _) _ |- _ ] => apply alphaeqc_mkc_partial  in H; exrepnd; try subst
-  | [ H : alphaeqc (mkc_mono     _) _ |- _ ] => apply alphaeqc_mkc_mono     in H; exrepnd; try subst
-  | [ H : alphaeqc (mkc_admiss   _) _ |- _ ] => apply alphaeqc_mkc_admiss   in H; exrepnd; try subst
-  | [ H : alphaeqc (mkc_pertype  _) _ |- _ ] => apply alphaeqc_mkc_pertype  in H; exrepnd; try subst
-  | [ H : alphaeqc (mkc_ipertype _) _ |- _ ] => apply alphaeqc_mkc_ipertype in H; exrepnd; try subst
-  | [ H : alphaeqc (mkc_spertype _) _ |- _ ] => apply alphaeqc_mkc_spertype in H; exrepnd; try subst
-  | [ H : alphaeqc (mkc_tuni     _) _ |- _ ] => apply alphaeqc_mkc_tuni     in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_partial         _) _ |- _ ] => apply alphaeqc_mkc_partial  in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_mono            _) _ |- _ ] => apply alphaeqc_mkc_mono     in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_admiss          _) _ |- _ ] => apply alphaeqc_mkc_admiss   in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_pertype         _) _ |- _ ] => apply alphaeqc_mkc_pertype  in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_ipertype        _) _ |- _ ] => apply alphaeqc_mkc_ipertype in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_spertype        _) _ |- _ ] => apply alphaeqc_mkc_spertype in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_tuni            _) _ |- _ ] => apply alphaeqc_mkc_tuni     in H; exrepnd; try subst
 
   | [ H : alphaeqc mkc_base        _ |- _ ] => apply alphaeqc_mkc_base   in H; exrepnd; try subst
   | [ H : alphaeqc mkc_int         _ |- _ ] => apply alphaeqc_mkc_int    in H; exrepnd; try subst

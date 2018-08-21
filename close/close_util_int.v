@@ -88,7 +88,7 @@ Proof.
   introv h e.
   unfold per_int_bar in h; exrepnd.
   apply h in e; apply h.
-  unfold equality_of_int_bar, equality_of_int in *; exrepnd; exists bar0.
+  unfold equality_of_int_bar, equality_of_int, all_in_ex_bar in *; exrepnd; exists bar0.
   introv ie i; apply e0 in i; auto.
   exrepnd; exists k; tcsp.
 Qed.
@@ -100,7 +100,7 @@ Proof.
   introv h e.
   unfold per_int in h; exrepnd.
   apply h in e; apply h.
-  unfold equality_of_int_bar, equality_of_int in *; exrepnd.
+  unfold equality_of_int_bar, equality_of_int, all_in_ex_bar in *; exrepnd.
   exists bar.
   introv ie i; apply e0 in i; auto.
   exrepnd; exists k; tcsp.
@@ -140,7 +140,7 @@ Proof.
   introv h e ceq.
   unfold per_int_bar in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
-  unfold equality_of_int_bar, equality_of_int in *; exrepnd; exists bar0.
+  unfold equality_of_int_bar, equality_of_int, all_in_ex_bar in *; exrepnd; exists bar0.
   introv ie i; applydup e0 in i; auto.
   exrepnd; exists k; repnd; dands; auto.
   pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
@@ -155,7 +155,7 @@ Proof.
   introv h e ceq.
   unfold per_int in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
-  unfold equality_of_int_bar, equality_of_int in *; exrepnd; exists bar.
+  unfold equality_of_int_bar, equality_of_int, all_in_ex_bar in *; exrepnd; exists bar.
   introv ie i; applydup e0 in i; auto.
   exrepnd; exists k; repnd; dands; auto.
   pose proof (ceq lib'0) as q; autodimp q hyp; eauto 3 with slow; simpl in q;[].
@@ -199,7 +199,7 @@ Proof.
   introv per i j.
   unfold per_int_bar in per; exrepnd.
   apply per in i; apply per in j; apply per.
-  unfold equality_of_int_bar in *.
+  unfold equality_of_int_bar, all_in_ex_bar in *.
   exrepnd.
 
   clear per per0 per1.
@@ -225,7 +225,7 @@ Proof.
   introv per i j.
   unfold per_int in per; exrepnd.
   apply per in i; apply per in j; apply per.
-  unfold equality_of_int_bar in *.
+  unfold equality_of_int_bar, all_in_ex_bar in *.
   exrepnd.
 
   clear per per0 per1.

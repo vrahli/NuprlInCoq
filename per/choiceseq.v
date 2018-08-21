@@ -793,7 +793,6 @@ Proof.
     allunfold @computes_to_value; repnd.
     allunfold @reduces_to; exrepnd.
     allunfold @reduces_in_atmost_k_steps.
-    Check no_change_after_value2.
     pose proof (no_change_after_value2 lib
                   (get_cterm n) k0 (mk_nat n0) e2 e1 (Peano.max k0 k)) as h1.
     autodimp h1 hyp; try (apply max_prop1).

@@ -414,6 +414,63 @@ Proof.
   apply lsubstc_mk_free_from_atoms.
 Qed.
 
+Lemma lsubstc_mk_free_from_defs {o} :
+  forall t1 t2 sub,
+  forall w1 : @wf_term o t1,
+  forall w2 : @wf_term o t2,
+  forall w  : wf_term (mk_free_from_defs t1 t2),
+  forall c1 : cover_vars t1 sub,
+  forall c2 : cover_vars t2 sub,
+  forall c  : cover_vars (mk_free_from_defs t1 t2) sub,
+    lsubstc (mk_free_from_defs t1 t2) w sub c
+    = mkc_free_from_defs (lsubstc t1 w1 sub c1) (lsubstc t2 w2 sub c2).
+Proof.
+  sp; unfold lsubstc; simpl.
+  assert (csubst (mk_free_from_defs t1 t2) sub
+          = mk_free_from_defs (csubst t1 sub) (csubst t2 sub))
+         by (unfold csubst; simpl;
+             change_to_lsubst_aux4; simpl;
+             rw @sub_filter_nil_r;
+             allrw @fold_nobnd;
+             rw @fold_free_from_defs; sp).
+  apply cterm_eq; auto.
+Qed.
+
+Lemma lsubstc_mk_free_from_defs_ex {o} :
+  forall t1 t2 sub,
+  forall w : wf_term (@mk_free_from_defs o t1 t2),
+  forall c : cover_vars (mk_free_from_defs t1 t2) sub,
+  {w1 : wf_term t1
+   & {w2 : wf_term t2
+   & {c1 : cover_vars t1 sub
+   & {c2 : cover_vars t2 sub
+   & lsubstc (mk_free_from_defs t1 t2) w sub c
+     = mkc_free_from_defs (lsubstc t1 w1 sub c1) (lsubstc t2 w2 sub c2) }}}}.
+Proof.
+  sp.
+
+  assert (wf_term t1) as w1.
+  { allrw <- @wf_free_from_defs_iff; sp. }
+
+  assert (wf_term t2) as w2.
+  { allrw <- @wf_free_from_defs_iff; sp. }
+
+  assert (cover_vars t1 sub) as c1.
+  { unfold cover_vars in c; allsimpl.
+    repeat (rw remove_nvars_nil_l in c).
+    rw app_nil_r in c.
+    repeat (rw @over_vars_app_l in c); sp. }
+
+  assert (cover_vars t2 sub) as c2.
+  { unfold cover_vars in c; allsimpl.
+    repeat (rw remove_nvars_nil_l in c).
+    rw app_nil_r in c.
+    repeat (rw @over_vars_app_l in c); sp. }
+
+  exists w1 w2 c1 c2.
+  apply lsubstc_mk_free_from_defs.
+Qed.
+
 Lemma lsubstc_mk_equality {o} :
   forall t1 t2 T sub,
   forall w1 : @wf_term o t1,

@@ -46,6 +46,7 @@ Require Export dest_close_product.
 Require Export dest_close_set.
 (*Require Export dest_close_tunion.*)
 Require Export dest_close_approx.
+Require Export dest_close_ffdefs.
 Require Export dest_close_cequiv.
 (*Require Export dest_close_texc.*)
 Require Export dest_close_union.
@@ -286,6 +287,25 @@ Ltac dest_close_lr h :=
         H4 : close ?ts ?lib ?T ?T' ?eq
       |- _ ] =>
       generalize (dest_close_per_tunion_r ts lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h*)
+
+    (* ffdefs *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A ?A' (?eaa lib' x)),
+        H4 : computes_to_valc ?lib ?T (mkc_free_from_defs ?A ?a),
+        H5 : close ?ts ?lib ?T ?T' ?eq,
+        H' : context[per_ffdefs_eq_bar ?lib ?ea]
+      |- _ ] =>
+      generalize (dest_close_per_ffdefs_l ts lib T A a A' T' eq ea H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) lib' ?A' ?A (?eaa lib' x)),
+        H4 : computes_to_valc ?lib ?T' (mkc_free_from_defs ?A ?a),
+        H5 : close ?ts ?lib ?T ?T' ?eq,
+        H' : context[per_ffdefs_eq_bar ?lib ?ea]
+      |- _ ] =>
+      generalize (dest_close_per_ffdefs_r ts lib T A a A' T' eq ea H1 H2 H3 H4 H5); intro h; no_duplicate h
 
     (* approx *)
     | [ H1 : type_system ?ts,
