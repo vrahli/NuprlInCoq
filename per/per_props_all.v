@@ -54,6 +54,7 @@ Require Export per_props_squash.
 Require Export per_props_cequiv2.
 Require Export per_props_cs.
 Require Export per_props_uni2.
+Require Export per_props_ffdefs.
 
 (*
 (* NOT FIXED *)

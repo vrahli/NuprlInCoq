@@ -31,6 +31,8 @@
 *)
 
 
+Require Export per_props_ffdefs.
+Require Export per_props_nat.
 Require Export rules_choice_util3.
 
 
@@ -467,6 +469,50 @@ Definition cs_size {o} (lib : @library o) (name : choice_sequence_name) : nat :=
   | None => 0
   end.
 
+Lemma substc2_ffdefs {o} :
+  forall v x (w : @CTerm o) (t u : CVTerm [v,x]),
+    alphaeqcv
+      [v]
+      (substc2 v w x (mkcv_free_from_defs [v,x] t u))
+      (mkcv_free_from_defs [v] (substc2 v w x t) (substc2 v w x u)).
+Proof.
+  introv.
+  destruct_cterms.
+  unfold alphaeqcv; simpl.
+  unfold subst.
+  repeat (rw @cl_lsubst_lsubst_aux; eauto 3 with slow).
+Qed.
+
+Lemma mkcv_ffdefs_substc {o} :
+  forall v a b (t : @CTerm o),
+    substc t v (mkcv_free_from_defs [v] a b)
+    = mkc_free_from_defs (substc t v a) (substc t v b).
+Proof.
+  introv.
+  destruct_cterms.
+  apply cterm_eq; simpl.
+  repeat unfsubst.
+Qed.
+Hint Rewrite @mkcv_ffdefs_substc : slow.
+
+Lemma substc2_mkcv_csprop {o} :
+  forall x (t : @CTerm o) v i,
+    substc2 x t v (mkcv_csprop _ i)
+    = mkcv_csprop _ i.
+Proof.
+  introv; destruct_cterms; apply cvterm_eq; simpl; unfsubst.
+Qed.
+Hint Rewrite @substc2_mkcv_csprop : slow.
+
+Lemma substc_mkcv_csprop {o} :
+  forall (t : @CTerm o) v i,
+    substc t v (mkcv_csprop _ i)
+    = mkc_csprop i.
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; unfsubst.
+Qed.
+Hint Rewrite @substc_mkcv_csprop : slow.
+
 
 
 
@@ -572,8 +618,58 @@ Proof.
 
   intros lib' ext x1 x2 eqx.
 
+  eapply alphaeqc_preserving_equality in eqx;
+    [|apply substc_alphaeqcv; apply substc2_ffdefs].
+  autorewrite with slow in *.
+
+  apply equality_in_mkc_ffdefs in eqx; exrepnd.
+  clear eqx0 eqx1.
+
   eapply equality_monotone in eqA;[|eauto];[].
   eapply equality_monotone in eqa;[|eauto];[].
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  clear dependent lib.
+  rename lib' into lib.
+  rename safe' into safe.
+
+  eapply alphaeqc_preserving_equality;
+    [|apply substc_alphaeqcv;apply alphaeqcv_sym;apply substc2_fun];[].
+  autorewrite with slow.
+  eapply alphaeqc_preserving_equality;
+    [|apply alphaeqc_sym; apply mkcv_fun_substc].
+  repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+  autorewrite with slow.
+
+  apply all_in_ex_bar_equality_implies_equality.
+  eapply all_in_ex_bar_modus_ponens1;[|exact eqx2]; clear eqx2; introv ext eqx2.
+
+  eapply equality_monotone in eqA;[|eauto];[].
+  eapply equality_monotone in eqa;[|eauto];[].
+  eapply equality_monotone in eqx;[|eauto];[].
+
+  unfold ex_nodefsc_eq in *; exrepnd.
+  rename eqx1 into eqw.
+  rename eqx0 into nodefs.
+
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  clear dependent lib.
+  rename lib' into lib.
+  rename safe' into safe.
+
+  apply equality_in_fun.
+  dands.
+
+  { admit. }
+
+  { admit. }
+
+  intros lib' ext z1 z2 eqz.
+
+  eapply equality_monotone in eqA;[|eauto];[].
+  eapply equality_monotone in eqa;[|eauto];[].
+  eapply equality_monotone in eqx;[|eauto];[].
+  eapply equality_monotone in eqw;[|eauto];[].
+
   assert (safe_library lib') as safe' by eauto 3 with slow.
   clear dependent lib.
   rename lib' into lib.
@@ -588,8 +684,11 @@ Proof.
   apply equality_refl in eqA.
   apply equality_refl in eqa.
   apply equality_refl in eqx.
+  apply equality_refl in eqz.
+  GC.
 
-  clear A2 a2 x2.
+  clear eqA.
+  rename eqw into eqA.
 
   eapply inhabited_type_bar_respects_alphaeqc;
     [apply alphaeqc_sym;apply substc_alphaeqcv;apply substc2_product;tcsp|];[].
@@ -598,10 +697,11 @@ Proof.
   autorewrite with slow.
 
   apply equality_in_csname in eqa.
+  unfold equality_of_csname_bar in eqa.
   eapply all_in_ex_bar_modus_ponens1;[|exact eqa]; clear eqa; introv ext eqa.
 
   eapply equality_monotone in eqA;[|eauto];[].
-  eapply equality_monotone in eqx;[|eauto];[].
+  eapply member_monotone in eqz;[|eauto];[].
   assert (safe_library lib') as safe' by eauto 3 with slow.
   clear dependent lib.
   rename lib' into lib.
@@ -609,7 +709,7 @@ Proof.
 
   unfold equality_of_csname in eqa; exrepnd; GC; spcast.
 
-  eapply member_respects_cequivc_type in eqx;
+  eapply member_respects_cequivc_type in eqz;
     [|apply implies_ccequivc_ext_apply;
       [apply ccequivc_ext_refl
       |apply computes_to_valc_implies_ccequivc_ext;eauto]
@@ -630,11 +730,14 @@ Proof.
 
   { admit. }
 
-  exists (@mkc_pair _ (mkc_nat (cs_size lib name)) (mkc_lam b (mkcv_lam _ x (mk_cv _ x1)))).
+  exists (@mkc_pair
+            _
+            (mkc_nat (cs_size lib name))
+            (mkc_lam b (mkcv_lam _ x (mk_cv _ z1)))).
 
   apply in_ext_implies_all_in_ex_bar.
   introv ext.
-  exists (@mkc_nat o (cs_size lib name)) (mkc_lam b (mkcv_lam _ x (mk_cv _ x1))).
+  exists (@mkc_nat o (cs_size lib name)) (mkc_lam b (mkcv_lam _ x (mk_cv _ z1))).
   dands; spcast; eauto 3 with slow;[].
 
   rewrite substc2_substc3_eq.
