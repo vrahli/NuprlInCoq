@@ -513,6 +513,875 @@ Proof.
 Qed.
 Hint Rewrite @substc_mkcv_csprop : slow.
 
+Lemma isprog_vars_substc5 {o} :
+  forall {x} {vt : @NTerm o} {v} {wt : @NTerm o} {w} {zt} {z} {u},
+    isprog vt
+    -> isprog wt
+    -> isprog zt
+    -> isprog_vars [x,v,w,z] u
+    -> isprog_vars [x] (lsubst u [(z,zt),(w,wt),(v,vt)]).
+Proof.
+  introv ispa ispb ispc ispd.
+  apply isprog_vars_eq in ispd; repnd.
+  applydup @closed_if_isprog in ispa.
+  applydup @closed_if_isprog in ispb.
+  applydup @closed_if_isprog in ispc.
+
+  apply isprog_vars_eq; auto; dands.
+
+  { allrw subvars_eq; introv i.
+    apply eqset_free_vars_disjoint in i; simpl in *.
+    apply in_app_iff in i; repndors.
+
+    { apply in_remove_nvars in i; simpl in *; repnd.
+      repeat (rw @not_over_or in i); repnd; GC.
+      apply ispd0 in i0; simpl in *; repndors; subst; tcsp. }
+
+    boolvar; simpl in *; autorewrite with slow in *;
+      try (rw ispa0 in i);
+      try (rw ispb0 in i);
+      try (rw ispc0 in i);
+      simpl in *; tcsp. }
+
+  apply lsubst_wf_if_eauto; eauto 3 with slow.
+  repeat (apply wf_sub_cons; eauto 3 with slow).
+Qed.
+
+Definition substc5 {o} x (vt : @CTerm o) v (wt : @CTerm o) (w : NVar) (zt : CTerm) z (u : CVTerm [x,v,w,z]) : CVTerm [x] :=
+  let (a,pa) := vt in
+  let (b,pb) := wt in
+  let (c,pc) := zt in
+  let (d,pd) := u in
+  exist (isprog_vars [x]) (lsubst d [(z,c),(w,b),(v,a)]) (isprog_vars_substc5 pa pb pc pd).
+
+Lemma substc4_mkcv_function {o} :
+  forall (t1 t2 t3 : @CTerm o) v w z a x b,
+    v <> w
+    -> w <> z
+    -> x <> v
+    -> x <> z
+    -> x <> w
+    -> substc4 t1 v t2 w t3 z (mkcv_function [v,w,z] a x b)
+       = mkc_function (substc4 t1 v t2 w t3 z a) x (substc5 x t1 v t2 w t3 z b).
+Proof.
+  introv d1 d2 d3 d4 d5; destruct_cterms; apply cterm_eq; simpl.
+  repeat (unflsubst; eauto 3 with slow;
+          [|repeat (apply cl_sub_cons; dands; eauto 3 with slow)];[]).
+  simpl; autorewrite with slow; boolvar; simpl in *; tcsp.
+Qed.
+
+Lemma substc4_mkcv_csname {o} :
+  forall (t1 t2 t3 : @CTerm o) v w z n,
+    substc4 t1 v t2 w t3 z (mkcv_csname _ n) = mkc_csname n.
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl.
+  unflsubst; eauto 3 with slow.
+  repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+Qed.
+Hint Rewrite @substc4_mkcv_csname : slow.
+
+Lemma eq_option_refl {o} :
+  forall (x : option (@NTerm o)),
+    eq_option x x.
+Proof.
+  introv; destruct x; simpl; auto.
+Qed.
+Hint Resolve eq_option_refl : slow.
+
+Lemma eq_lsubst_aux_cons_not_in {o} :
+  forall (t : @NTerm o) v u sub,
+    cl_sub sub
+    -> closed u
+    -> !LIn v (free_vars t)
+    -> lsubst_aux t ((v, u) :: sub) = lsubst_aux t sub.
+Proof.
+  introv cl1 cl2 ni.
+  apply eq_lsubst_aux_if_ext_eq; simpl; eauto 3 with slow.
+
+  { introv i; simpl; boolvar; tcsp; eauto 3 with slow. }
+
+  { rw cl2; simpl.
+    rw @sub_free_vars_if_cl_sub; auto. }
+
+  { rw @sub_free_vars_if_cl_sub; auto. }
+Qed.
+
+Lemma eq_lsubst_aux_cons_cons_swap {o} :
+  forall (t : @NTerm o) v u z w sub,
+    v <> z
+    -> cl_sub sub
+    -> closed u
+    -> closed w
+    -> lsubst_aux t ((v,u) :: (z,w) :: sub)
+       = lsubst_aux t ((z,w) :: (v,u) :: sub).
+Proof.
+  introv d cl1 cl2 cl3.
+  apply eq_lsubst_aux_if_ext_eq; simpl; eauto 3 with slow.
+
+  { introv i; simpl; boolvar; tcsp; eauto 3 with slow. }
+
+  { rw cl2; simpl.
+    rw cl3; simpl.
+    rw @sub_free_vars_if_cl_sub; auto. }
+
+  { rw cl2; simpl.
+    rw cl3; simpl.
+    rw @sub_free_vars_if_cl_sub; auto. }
+Qed.
+
+Lemma eq_lsubst_aux_cons_cons_cons_swap {o} :
+  forall (t : @NTerm o) v u z w x y sub,
+    v <> x
+    -> z <> x
+    -> cl_sub sub
+    -> closed u
+    -> closed w
+    -> closed y
+    -> lsubst_aux t ((v,u) :: (z,w) :: (x,y) :: sub)
+       = lsubst_aux t ((x,y) :: (v,u) :: (z,w) :: sub).
+Proof.
+  introv d1 d2 cl1 cl2 cl3 cl4.
+  apply eq_lsubst_aux_if_ext_eq; simpl; eauto 3 with slow.
+
+  { introv i; simpl; boolvar; tcsp; eauto 3 with slow. }
+
+  { rw cl2; simpl.
+    rw cl3; simpl.
+    rw cl4; simpl.
+    rw @sub_free_vars_if_cl_sub; auto. }
+
+  { rw cl2; simpl.
+    rw cl3; simpl.
+    rw cl4; simpl.
+    rw @sub_free_vars_if_cl_sub; auto. }
+Qed.
+
+Lemma substc5_mkcv_fun {o} :
+  forall (t1 t2 t3 : @CTerm o) x v w z a b,
+    alphaeqcv
+      _
+      (substc5 x t1 v t2 w t3 z (mkcv_fun _ a b))
+      (mkcv_fun _ (substc5 x t1 v t2 w t3 z a) (substc5 x t1 v t2 w t3 z b)).
+Proof.
+  introv.
+  destruct_cterms.
+  unfold alphaeqcv; simpl.
+  repeat (unflsubst;repeat (apply cl_sub_cons; dands; eauto 3 with slow);[]).
+
+  simpl.
+  autorewrite with slow.
+
+  unfold mk_fun; simpl.
+
+  remember (newvar x3) as nv1.
+  pose proof (newvar_prop x3) as p1.
+  rewrite <- Heqnv1 in p1.
+
+  remember (newvar (lsubst_aux x3 [(z, x0), (w, x1), (v, x2)])) as nv2.
+  pose proof (newvar_prop (lsubst_aux x3 [(z, x0), (w, x1), (v, x2)])) as p2.
+  rewrite <- Heqnv2 in p2.
+
+  unfold mk_function, nobnd.
+  repeat prove_alpha_eq4.
+
+  pose proof (ex_fresh_var (all_vars (lsubst_aux x3
+                                                 (if beq_var z nv1
+                                                  then
+                                                    if beq_var w nv1
+                                                    then if beq_var v nv1 then [] else [(v, x2)]
+                                                    else (w, x1) :: (if beq_var v nv1 then [] else [(v, x2)])
+                                                  else
+                                                    (z, x0)
+                                                      :: (if beq_var w nv1
+                                                          then if beq_var v nv1 then [] else [(v, x2)]
+                                                          else (w, x1) :: (if beq_var v nv1 then [] else [(v, x2)]))))
+                                     ++ all_vars (lsubst_aux x3 [(z, x0), (w, x1), (v, x2)]))) as fv.
+  exrepnd.
+
+  apply (al_bterm_aux [v0]); auto.
+  {
+    apply disjoint_singleton_l; auto.
+  }
+
+  assert (!LIn nv1 (free_vars (lsubst_aux x3 [(z, x0), (w, x1), (v, x2)]))) as ni1.
+  {
+    introv h.
+    apply free_vars_lsubst_aux_subset in h.
+    rewrite sub_free_vars_if_cl_sub in h;
+      repeat (apply cl_sub_cons; dands; eauto 3 with slow);[].
+    autorewrite with slow in h.
+    apply in_remove_nvars in h; sp.
+  }
+
+  simpl.
+  remember (beq_var z nv1) as b1.
+  destruct b1; simpl; autorewrite with slow in *.
+
+  {
+    apply beq_var_true in Heqb1; subst z.
+    unfold var_ren; simpl.
+
+    remember (beq_var w nv1) as b2.
+    destruct b2; simpl; autorewrite with slow in *.
+
+    {
+      apply beq_var_true in Heqb2; subst w.
+
+      remember (beq_var v nv1) as b3.
+      destruct b3; simpl; autorewrite with slow in *.
+
+      {
+        apply beq_var_true in Heqb3; subst v.
+
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv1,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto];[].
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv2,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto];[].
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv1,x0),(nv1,x1),(nv1,x2)]);
+          [|simpl;repeat (apply disjoint_cons_r; dands; auto)];[].
+        eauto 3 with slow.
+      }
+
+      {
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv2,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto];[].
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv1,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto; intro xx;
+            rewrite free_vars_lsubst_aux_cl in xx; eauto 3 with slow; simpl in *;
+            apply in_remove_nvars in xx; simpl in *; repnd; tcsp];[].
+        rewrite (eq_lsubst_aux_cons_not_in _ nv1); eauto 3 with slow;
+          repeat (apply cl_sub_cons; dands; eauto 3 with slow);[].
+        rewrite (eq_lsubst_aux_cons_not_in _ nv1); eauto 3 with slow;
+          repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+      }
+    }
+
+    {
+      remember (beq_var v nv1) as b3.
+      destruct b3; simpl; autorewrite with slow in *.
+
+      {
+        apply beq_var_true in Heqb3; subst v.
+
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv2,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto];[].
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv1,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto; intro xx;
+            rewrite free_vars_lsubst_aux_cl in xx; eauto 3 with slow; simpl in *;
+            apply in_remove_nvars in xx; simpl in *; repnd; tcsp];[].
+        rewrite (eq_lsubst_aux_cons_not_in _ nv1); eauto 3 with slow;
+          repeat (apply cl_sub_cons; dands; eauto 3 with slow);[].
+        rewrite eq_lsubst_aux_cons_cons_swap; eauto 3 with slow;
+          try (intro xx; subst w; autorewrite with slow in *; ginv);[].
+        rewrite (eq_lsubst_aux_cons_not_in _ nv1); eauto 3 with slow;
+          repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+      }
+
+      {
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv2,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto];[].
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv1,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto; intro xx;
+            rewrite free_vars_lsubst_aux_cl in xx; eauto 3 with slow; simpl in *;
+            repeat (apply cl_sub_cons; dands; eauto 3 with slow);
+            apply in_remove_nvars in xx; simpl in *; repnd; tcsp];[].
+        rewrite (eq_lsubst_aux_cons_not_in _ nv1); eauto 3 with slow;
+          repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+      }
+    }
+  }
+
+  {
+    unfold var_ren; simpl.
+
+    remember (beq_var w nv1) as b2.
+    destruct b2; simpl; autorewrite with slow in *.
+
+    {
+      apply beq_var_true in Heqb2; subst w.
+
+      remember (beq_var v nv1) as b3.
+      destruct b3; simpl; autorewrite with slow in *.
+
+      {
+        apply beq_var_true in Heqb3; subst v.
+
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv1,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto; intro xx;
+            rewrite free_vars_lsubst_aux_cl in xx; eauto 3 with slow; simpl in *;
+            repeat (apply cl_sub_cons; dands; eauto 3 with slow);
+            apply in_remove_nvars in xx; simpl in *; repnd; tcsp];[].
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv2,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto];[].
+        rewrite eq_lsubst_aux_cons_cons_swap; eauto 3 with slow;
+          try (intro xx; subst z; autorewrite with slow in *; ginv);[].
+        rewrite (eq_lsubst_aux_cons_not_in _ nv1); eauto 3 with slow;
+          repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+        rewrite eq_lsubst_aux_cons_cons_swap; eauto 3 with slow;
+          try (intro xx; subst z; autorewrite with slow in *; ginv);[].
+        rewrite (eq_lsubst_aux_cons_not_in _ nv1); eauto 3 with slow;
+          repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+      }
+
+      {
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv2,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto];[].
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv1,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto; intro xx;
+            rewrite free_vars_lsubst_aux_cl in xx; eauto 3 with slow; simpl in *;
+            repeat (apply cl_sub_cons; dands; eauto 3 with slow);
+            apply in_remove_nvars in xx; simpl in *; repnd; tcsp];[].
+        rewrite (eq_lsubst_aux_cons_cons_swap _ z _ nv1); eauto 3 with slow;
+          try (intro xx; subst z; autorewrite with slow in *; ginv);[].
+        rewrite (eq_lsubst_aux_cons_not_in _ nv1); eauto 3 with slow;
+          repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+      }
+    }
+
+    {
+      remember (beq_var v nv1) as b3.
+      destruct b3; simpl; autorewrite with slow in *.
+
+      {
+        apply beq_var_true in Heqb3; subst v.
+
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv2,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto];[].
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv1,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto; intro xx;
+            rewrite free_vars_lsubst_aux_cl in xx; eauto 3 with slow; simpl in *;
+            repeat (apply cl_sub_cons; dands; eauto 3 with slow);
+            apply in_remove_nvars in xx; simpl in *; repnd; tcsp];[].
+        rewrite eq_lsubst_aux_cons_cons_cons_swap; eauto 3 with slow;
+          try (complete (intro xx; subst z; autorewrite with slow in *; ginv));
+          try (complete (intro xx; subst w; autorewrite with slow in *; ginv)).
+        rewrite (eq_lsubst_aux_cons_not_in _ nv1); eauto 3 with slow;
+          repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+      }
+
+      {
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv2,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto];[].
+        rewrite (lsubst_aux_trivial_cl_term _ [(nv1,vterm v0)]);
+          [|simpl;apply disjoint_singleton_r; auto; intro xx;
+            rewrite free_vars_lsubst_aux_cl in xx; eauto 3 with slow; simpl in *;
+            repeat (apply cl_sub_cons; dands; eauto 3 with slow);
+            apply in_remove_nvars in xx; simpl in *; repnd; tcsp];[].
+        eauto 3 with slow.
+      }
+    }
+  }
+Qed.
+
+Lemma substc5_mkcv_equality {o} :
+  forall (t1 t2 t3 : @CTerm o) x v w z a b c,
+    substc5 x t1 v t2 w t3 z (mkcv_equality _ a b c)
+    = mkcv_equality
+        _
+        (substc5 x t1 v t2 w t3 z a)
+        (substc5 x t1 v t2 w t3 z b)
+        (substc5 x t1 v t2 w t3 z c).
+Proof.
+  introv.
+  destruct_cterms.
+  apply cvterm_eq; simpl.
+  repeat (unflsubst;repeat (apply cl_sub_cons; dands; eauto 3 with slow)).
+Qed.
+Hint Rewrite @substc5_mkcv_equality : slow.
+
+Lemma substc5_mkcv_apply {o} :
+  forall (t1 t2 t3 : @CTerm o) x v w z a b,
+    substc5 x t1 v t2 w t3 z (mkcv_apply _ a b)
+    = mkcv_apply
+        _
+        (substc5 x t1 v t2 w t3 z a)
+        (substc5 x t1 v t2 w t3 z b).
+Proof.
+  introv.
+  destruct_cterms.
+  apply cvterm_eq; simpl.
+  repeat (unflsubst;repeat (apply cl_sub_cons; dands; eauto 3 with slow)).
+Qed.
+Hint Rewrite @substc5_mkcv_apply : slow.
+
+Lemma substc5_var2 {o} :
+  forall (t1 t2 t3 : @CTerm o) x u v w,
+    v <> w
+    -> substc5 x t1 u t2 v t3 w (mk_cv_app_r [w] [x, u, v] (mk_cv_app_l [x, u] [v] (mkc_var v)))
+       = mk_cv _ t2.
+Proof.
+  introv d1; destruct_cterms; apply cvterm_eq; simpl.
+  unflsubst; simpl;repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+  autorewrite with slow; boolvar; tcsp.
+Qed.
+
+Lemma substc5_var0 {o} :
+  forall (t1 t2 t3 : @CTerm o) x u v w,
+    w <> x
+    -> v <> x
+    -> u <> x
+    -> substc5 x t1 u t2 v t3 w (mk_cv_app_r [u, v, w] [x] (mkc_var x))
+       = mkc_var x.
+Proof.
+  introv d1 d2 d3; destruct_cterms; apply cvterm_eq; simpl.
+  unflsubst; simpl;repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+  autorewrite with slow; boolvar; tcsp.
+Qed.
+
+Lemma substc5_var3 {o} :
+  forall (t1 t2 t3 : @CTerm o) x u v w,
+    substc5 x t1 u t2 v t3 w (mk_cv_app_l [x, u, v] [w] (mkc_var w))
+    = mk_cv _ t3.
+Proof.
+  introv; destruct_cterms; apply cvterm_eq; simpl.
+  unflsubst; simpl;repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+  autorewrite with slow; boolvar; tcsp.
+Qed.
+Hint Rewrite @substc5_var3 : slow.
+
+Lemma substc5_mkcv_tnat {o} :
+  forall (t1 t2 t3 : @CTerm o) x v w z,
+    substc5 x t1 v t2 w t3 z (mkcv_tnat _)
+    = mkcv_tnat _.
+Proof.
+  introv; destruct_cterms; apply cvterm_eq; simpl.
+  rewrite cl_lsubst_trivial; simpl; eauto 3 with slow.
+  repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+Qed.
+Hint Rewrite @substc5_mkcv_tnat : slow.
+
+Lemma alpha_eq_mk_set {o} :
+  forall v (a1 a2 : @NTerm o) v1 v2 b1 b2,
+    !LIn v (all_vars b1)
+    -> !LIn v (all_vars b2)
+    -> alpha_eq a1 a2
+    -> alpha_eq (subst_aux b1 v1 (mk_var v)) (subst_aux b2 v2 (mk_var v))
+    -> alpha_eq (mk_set a1 v1 b1) (mk_set a2 v2 b2).
+Proof.
+  introv ni1 ni2 aeqa aeqb.
+  constructor; simpl; auto.
+  introv i.
+  repeat (destruct n; tcsp); unfold selectbt; simpl.
+  - apply alphaeqbt_nilv2; auto.
+  - apply (al_bterm _ _ [v]); simpl; auto.
+    allrw disjoint_singleton_l; allrw in_app_iff; sp.
+    rewrite lsubst_lsubst_aux; simpl;
+      [|apply disjoint_singleton_r;
+        intro j; apply bound_vars_subset_allvars in j;
+        pose proof (allvars_eq_all_vars b1) as q; apply eqvars_is_eqset in q;
+        apply q in j; tcsp];[].
+    rewrite lsubst_lsubst_aux; simpl;
+      [|apply disjoint_singleton_r;
+        intro j; apply bound_vars_subset_allvars in j;
+        pose proof (allvars_eq_all_vars b2) as q; apply eqvars_is_eqset in q;
+        apply q in j; tcsp];[].
+    auto.
+Qed.
+
+Lemma alpha_eq_mk_product {o} :
+  forall v (a1 a2 : @NTerm o) v1 v2 b1 b2,
+    !LIn v (all_vars b1)
+    -> !LIn v (all_vars b2)
+    -> alpha_eq a1 a2
+    -> alpha_eq (subst_aux b1 v1 (mk_var v)) (subst_aux b2 v2 (mk_var v))
+    -> alpha_eq (mk_product a1 v1 b1) (mk_product a2 v2 b2).
+Proof.
+  introv ni1 ni2 aeqa aeqb.
+  constructor; simpl; auto.
+  introv i.
+  repeat (destruct n; tcsp); unfold selectbt; simpl.
+  - apply alphaeqbt_nilv2; auto.
+  - apply (al_bterm _ _ [v]); simpl; auto.
+    allrw disjoint_singleton_l; allrw in_app_iff; sp.
+    rewrite lsubst_lsubst_aux; simpl;
+      [|apply disjoint_singleton_r;
+        intro j; apply bound_vars_subset_allvars in j;
+        pose proof (allvars_eq_all_vars b1) as q; apply eqvars_is_eqset in q;
+        apply q in j; tcsp];[].
+    rewrite lsubst_lsubst_aux; simpl;
+      [|apply disjoint_singleton_r;
+        intro j; apply bound_vars_subset_allvars in j;
+        pose proof (allvars_eq_all_vars b2) as q; apply eqvars_is_eqset in q;
+        apply q in j; tcsp];[].
+    auto.
+Qed.
+
+Lemma alpha_eq_mk_function {o} :
+  forall v (a1 a2 : @NTerm o) v1 v2 b1 b2,
+    !LIn v (all_vars b1)
+    -> !LIn v (all_vars b2)
+    -> alpha_eq a1 a2
+    -> alpha_eq (subst_aux b1 v1 (mk_var v)) (subst_aux b2 v2 (mk_var v))
+    -> alpha_eq (mk_function a1 v1 b1) (mk_function a2 v2 b2).
+Proof.
+  introv ni1 ni2 aeqa aeqb.
+  constructor; simpl; auto.
+  introv i.
+  repeat (destruct n; tcsp); unfold selectbt; simpl.
+  - apply alphaeqbt_nilv2; auto.
+  - apply (al_bterm _ _ [v]); simpl; auto.
+    allrw disjoint_singleton_l; allrw in_app_iff; sp.
+    rewrite lsubst_lsubst_aux; simpl;
+      [|apply disjoint_singleton_r;
+        intro j; apply bound_vars_subset_allvars in j;
+        pose proof (allvars_eq_all_vars b1) as q; apply eqvars_is_eqset in q;
+        apply q in j; tcsp];[].
+    rewrite lsubst_lsubst_aux; simpl;
+      [|apply disjoint_singleton_r;
+        intro j; apply bound_vars_subset_allvars in j;
+        pose proof (allvars_eq_all_vars b2) as q; apply eqvars_is_eqset in q;
+        apply q in j; tcsp];[].
+    auto.
+Qed.
+
+Lemma alpha_eq_mk_less {o} :
+  forall (a1 a2 b1 b2 c1 c2 d1 d2 : @NTerm o),
+    alpha_eq a1 a2
+    -> alpha_eq b1 b2
+    -> alpha_eq c1 c2
+    -> alpha_eq d1 d2
+    -> alpha_eq (mk_less a1 b1 c1 d1) (mk_less a2 b2 c2 d2).
+Proof.
+  introv aeqa aeqb aeqc aeqd.
+  constructor; simpl; auto.
+  introv i.
+  repeat (destruct n; tcsp); unfold selectbt; simpl; apply alphaeqbt_nilv2; auto.
+Qed.
+
+Lemma alpha_eq_mk_less_than {o} :
+  forall (a1 a2 b1 b2 : @NTerm o),
+    alpha_eq a1 a2
+    -> alpha_eq b1 b2
+    -> alpha_eq (mk_less_than a1 b1) (mk_less_than a2 b2).
+Proof.
+  introv aeqa aeqb.
+  constructor; simpl; auto.
+  introv i.
+  repeat (destruct n; tcsp); unfold selectbt; simpl; apply alphaeqbt_nilv2; auto.
+Qed.
+
+Hint Rewrite VarBeq_refl : slow.
+
+Lemma trivial_sub_find_if_None {o} :
+  forall (t : @NTerm o) v w,
+    sub_find (if beq_var w v then [] else [(w, t)]) v = None.
+Proof.
+  introv; boolvar; simpl; tcsp; boolvar; tcsp.
+Qed.
+Hint Rewrite @trivial_sub_find_if_None : slow.
+
+Lemma VarBeq_as_beq_var :
+  forall v1 v2,
+    VarBeq v1 v2 = beq_var (nvar v1) (nvar v2).
+Proof.
+  tcsp.
+Qed.
+
+Hint Resolve VarLt_implies_VarLe : slow.
+Hint Resolve not_VarLt_implies_VarLe : slow.
+Hint Resolve VarLe_trans : slow.
+Hint Resolve sort_issorted : slow.
+
+Lemma implies_issorted_insert :
+  forall x l,
+    issorted l
+    -> issorted (insert x l).
+Proof.
+  induction l; introv h; simpl in *; eauto 3 with slow.
+  { constructor; simpl in *; tcsp; eauto. }
+  destruct a; simpl in *.
+  inversion h as [|? ? imp iss]; subst; simpl in *; clear h.
+  boolvar; eauto 3 with slow.
+  { constructor; eauto 3 with slow.
+    introv q.
+    destruct x0; simpl in *.
+    apply in_insert in q; repndors; subst; tcsp; eauto 3 with slow;[].
+    apply imp in q; auto. }
+  { constructor; eauto 3 with slow.
+    introv q; simpl in *; repndors; subst; tcsp; eauto 3 with slow;[].
+    destruct x0; simpl in *.
+    apply imp in q; eauto 3 with slow. }
+Qed.
+Hint Resolve implies_issorted_insert : slow.
+
+Lemma VarBeq_insert_false :
+  forall v w l,
+    VarBeq w (fresh_var_aux v (insert w (sort l))) = false.
+Proof.
+  introv; unfold VarBeq; boolvar; auto.
+  pose proof (fresh_var_aux_sorted_not_in (insert w (sort l))) as q.
+  autodimp q hyp; eauto 3 with slow.
+  pose proof (q v) as q.
+  rewrite <- e in q; destruct q.
+  apply in_insert; tcsp.
+Qed.
+Hint Rewrite VarBeq_insert_false : slow.
+
+Lemma sub_find_single_same {o} :
+  forall v (t : @NTerm o),
+    sub_find [(v, t)] v = Some t.
+Proof.
+  introv; simpl; boolvar; auto.
+Qed.
+Hint Rewrite @sub_find_single_same : slow.
+
+Hint Resolve newvar_prop : slow.
+
+Lemma not_in_newvar_mk_less_than_snd {o} :
+  forall (u t : @NTerm o),
+    ! LIn (newvar (mk_less_than u t)) (free_vars t).
+Proof.
+  introv i.
+  pose proof (newvar_prop (mk_less_than u t)) as q; simpl in *.
+  autorewrite with list slow in *.
+  rw in_app_iff in q; apply not_over_or in q; repnd; tcsp.
+Qed.
+Hint Resolve not_in_newvar_mk_less_than_snd : slow.
+
+Lemma beq_var_newvar_mk_less_then_var {o} :
+  forall v (t : @NTerm o),
+    beq_var v (newvar (mk_less_than (mk_var v) t)) = false.
+Proof.
+  introv; boolvar; auto.
+  pose proof (newvar_prop (mk_less_than (mk_var v) t)) as q; simpl in q.
+  apply not_over_or in q; repnd; tcsp.
+Qed.
+Hint Rewrite @beq_var_newvar_mk_less_then_var : slow.
+
+Lemma VarBeq_fresh_var_insert_as {o} :
+  forall v (t : @NTerm o),
+    VarBeq
+      (fresh_var_aux
+         varx
+         (insert (fresh_var_aux varx (sort (free_vars t))) (sort (free_vars t))))
+      v
+    = beq_var (fresh_var (newvar t :: (free_vars t))) (nvar v).
+Proof.
+  tcsp.
+Qed.
+
+Lemma newvar_not_in_cl_lsubst {o} :
+  forall (t : @NTerm o) sub,
+    cl_sub sub
+    -> !LIn (newvar t) (free_vars (lsubst_aux t sub)).
+Proof.
+  introv cl i.
+  pose proof (newvar_prop t) as q; simpl in q.
+  rewrite free_vars_lsubst_aux_cl in i; auto.
+  apply in_remove_nvars in i; repnd; tcsp.
+Qed.
+Hint Resolve newvar_not_in_cl_lsubst : slow.
+
+Lemma newvar_mk_less_than_not_in_cl_lsubst {o} :
+  forall (u t : @NTerm o) sub,
+    cl_sub sub
+    -> !LIn (newvar (mk_less_than u t)) (free_vars (lsubst_aux t sub)).
+Proof.
+  introv cl i.
+  pose proof (newvar_prop (mk_less_than u t)) as q; simpl in q.
+  autorewrite with slow in *.
+  rw in_app_iff in q; rw not_over_or in q; repnd.
+  rewrite free_vars_lsubst_aux_cl in i; auto.
+  apply in_remove_nvars in i; repnd; tcsp.
+Qed.
+Hint Resolve newvar_mk_less_than_not_in_cl_lsubst : slow.
+
+
+Lemma alpha_eq_lsubst_mk_natk {o} :
+  forall (t : @NTerm o) sub,
+    cl_sub sub
+    -> alpha_eq (lsubst (mk_natk t) sub) (mk_natk (lsubst t sub)).
+Proof.
+  introv cl.
+  repeat unflsubst; simpl; autorewrite with slow.
+  unfold  mk_natk, mk_natk_aux.
+  fold_terms.
+
+  match goal with
+  | [ |- alpha_eq (mk_set _ _ ?a) (mk_set _ _ ?b) ] =>
+    pose proof (ex_fresh_var ((fresh_var (newvar t :: free_vars t))
+                                :: fresh_var (newvar (lsubst_aux t sub) :: free_vars (lsubst_aux t sub))
+                                :: all_vars a ++ all_vars b)) as fvv
+  end.
+  exrepnd.
+  rw @in_cons_iff in fvv0;rw @in_cons_iff in fvv0;rw @in_app_iff in fvv0.
+  rw not_over_or in fvv0;rw not_over_or in fvv0;rw not_over_or in fvv0.
+  repnd.
+
+  apply (alpha_eq_mk_set v); auto;[].
+  unfold subst_aux; simpl in *; autorewrite with slow in *; fold_terms.
+
+  repeat (rewrite lsubst_aux_sub_filter;
+          [|apply disjoint_singleton_r; eauto 3 with slow];[]).
+  repeat (rewrite lsubst_aux_sub_filter in fvv1;
+          [|apply disjoint_singleton_r; eauto 3 with slow];[]).
+
+  match goal with
+  | [ |- alpha_eq (mk_product _ _ ?a) (mk_product _ _ ?b) ] =>
+    pose proof (ex_fresh_var (all_vars a ++ all_vars b)) as fvw
+  end.
+  exrepnd.
+  rw @in_app_iff in fvw0; rw not_over_or in fvw0; repnd.
+
+  apply (alpha_eq_mk_product v0); auto;[].
+  unfold subst_aux; simpl in *; autorewrite with slow in *; fold_terms.
+
+  destruct v; simpl.
+  apply alpha_eq_mk_less_than; auto;[|].
+
+  {
+    repeat rewrite VarBeq_fresh_var_insert_as.
+    boolvar; eauto 3 with slow.
+
+    { pose proof (fresh_var_not_in (newvar t :: free_vars t)) as q.
+      rewrite Heqb in q; simpl in q; apply not_over_or in q; repnd; tcsp. }
+
+    { pose proof (fresh_var_not_in (newvar (lsubst_aux t sub) :: free_vars (lsubst_aux t sub))) as q.
+      rewrite Heqb0 in q; simpl in q; apply not_over_or in q; repnd; tcsp. }
+  }
+
+  {
+    rewrite (lsubst_aux_trivial3 (lsubst_aux t sub));
+      [|simpl; introv h; repndors; tcsp; ginv; simpl; dands; eauto 3 with slow;
+        apply disjoint_singleton_l; intro xx;
+        destruct fvv0; right;
+        rw in_app_iff; right; simpl;
+        right; right; right; right;
+        rw in_app_iff; left; auto];[].
+
+    rewrite (lsubst_aux_trivial3 (lsubst_aux t sub)) in fvw1;
+      [|simpl; introv h; repndors; tcsp; ginv; simpl; dands; eauto 3 with slow;
+        apply disjoint_singleton_l; intro xx;
+        destruct fvv0; right;
+        rw in_app_iff; right; simpl;
+        right; right; right; right;
+        rw in_app_iff; left; auto];[].
+
+    rewrite (lsubst_aux_trivial3 (lsubst_aux t sub)) in fvw0;
+      [|simpl; introv h; repndors; tcsp; ginv; simpl; dands; eauto 3 with slow;
+        apply disjoint_singleton_l; intro xx;
+        destruct fvv0; right;
+        rw in_app_iff; right; simpl;
+        right; right; right; right;
+        rw in_app_iff; left; auto];[].
+
+    rewrite (lsubst_aux_trivial3 (lsubst_aux t sub));
+      [|simpl; introv h; repndors; tcsp; ginv; simpl; dands; eauto 3 with slow;
+        apply disjoint_singleton_l; intro xx;
+        destruct fvw0; right;
+        rw in_app_iff; right; simpl;
+        rw in_app_iff; left; auto];[].
+
+    rewrite (lsubst_aux_trivial3 (lsubst_aux t sub));
+      [|simpl; introv h; repndors; tcsp; ginv; simpl; dands; eauto 3 with slow;
+        apply disjoint_singleton_l; intro xx;
+        destruct fvv0; right;
+        rw in_app_iff; right; simpl;
+        right; right; right; right;
+        rw in_app_iff; left; auto];[].
+
+    rewrite (lsubst_aux_trivial3 (lsubst_aux t sub));
+      [|simpl; introv h; repndors; tcsp; ginv; simpl; dands; eauto 3 with slow;
+        apply disjoint_singleton_l; intro xx;
+        destruct fvw0; right;
+        rw in_app_iff; right; auto;
+        rw in_app_iff; left; auto];[].
+
+    eauto 3 with slow.
+  }
+Qed.
+Hint Resolve alpha_eq_lsubst_mk_natk : slow.
+
+Lemma substc5_mkcv_natk {o} :
+  forall (t1 t2 t3 : @CTerm o) x v w z a,
+    alphaeqcv
+      _
+      (substc5 x t1 v t2 w t3 z (mkcv_natk _ a))
+      (mkcv_natk _ (substc5 x t1 v t2 w t3 z a)).
+Proof.
+  introv; destruct_cterms; unfold alphaeqcv; simpl.
+  remember [(z, x0), (w, x1), (v, x2)] as sub.
+  assert (cl_sub sub) as cl by (subst; repeat (apply cl_sub_cons; dands; eauto 3 with slow)).
+  eauto 3 with slow.
+Qed.
+Hint Resolve substc5_mkcv_natk : slow.
+
+Lemma implies_alphaeqcv_mkcv_fun {o} :
+  forall vs (a b c d : @CVTerm o vs),
+    alphaeqcv _ a b
+    -> alphaeqcv _ c d
+    -> alphaeqcv _ (mkcv_fun _ a c) (mkcv_fun _ b d).
+Proof.
+  introv aeq1 aeq2; destruct_cterms; unfold alphaeqcv in *; simpl in *.
+  apply alpha_eq_mk_fun; auto.
+Qed.
+Hint Resolve implies_alphaeqcv_mkcv_fun : slow.
+
+Hint Resolve alphaeqcv_refl : slow.
+
+Lemma substc5_mkcv_natk2nat {o} :
+  forall (t1 t2 t3 : @CTerm o) x v w z a,
+    alphaeqcv
+      _
+      (substc5 x t1 v t2 w t3 z (mkcv_natk2nat _ a))
+      (mkcv_natk2nat _ (substc5 x t1 v t2 w t3 z a)).
+Proof.
+  introv; unfold mkcv_natk2nat.
+  eapply alphaeqcv_trans;[apply substc5_mkcv_fun|].
+  autorewrite with slow; eauto 3 with slow.
+Qed.
+
+Lemma alphaeq_mk_equality {o} :
+  forall (a1 a2 b1 b2 c1 c2 : @NTerm o),
+    alphaeq a1 a2
+    -> alphaeq b1 b2
+    -> alphaeq c1 c2
+    -> alphaeq (mk_equality a1 b1 c1) (mk_equality a2 b2 c2).
+Proof.
+  introv aeq1 aeq2 aeq3.
+  constructor; simpl; auto.
+  introv j.
+  apply alphaeqbt_eq.
+  repeat (destruct n; tcsp; try omega); unfold selectbt; simpl;
+    apply alphaeqbt_nilv2; apply alphaeq_eq; auto.
+Qed.
+Hint Resolve alphaeq_mk_equality : slow.
+
+Lemma alpha_eq_mk_equality {o} :
+  forall (a1 a2 b1 b2 c1 c2 : @NTerm o),
+    alpha_eq a1 a2
+    -> alpha_eq b1 b2
+    -> alpha_eq c1 c2
+    -> alpha_eq (mk_equality a1 b1 c1) (mk_equality a2 b2 c2).
+Proof.
+  introv aeq1 aeq2 aeq3.
+  allrw <- @alphaeq_eq; eauto 3 with slow.
+Qed.
+Hint Resolve alpha_eq_mk_equality : slow.
+
+Lemma implies_alphaeqcv_mkcv_equality {o} :
+  forall vs (a1 a2 b1 b2 c1 c2 : @CVTerm o vs),
+    alphaeqcv _ a1 a2
+    -> alphaeqcv _ b1 b2
+    -> alphaeqcv _ c1 c2
+    -> alphaeqcv _ (mkcv_equality _ a1 b1 c1) (mkcv_equality _ a2 b2 c2).
+Proof.
+  introv aeq1 aeq2 eqa3; destruct_cterms; unfold alphaeqcv in *; simpl in *; eauto 3 with slow.
+Qed.
+Hint Resolve implies_alphaeqcv_mkcv_equality : slow.
+
+Lemma substc5_var1 {o} :
+  forall (t1 t2 t3 : @CTerm o) x u v w,
+    w <> u
+    -> v <> u
+    -> substc5 x t1 u t2 v t3 w (mk_cv_app_r [v,w] [x,u] (mk_cv_app_l [x] [u] (mkc_var u)))
+       = mk_cv _ t1.
+Proof.
+  introv d1 d2; destruct_cterms; apply cvterm_eq; simpl.
+  unflsubst; simpl;repeat (apply cl_sub_cons; dands; eauto 3 with slow).
+  autorewrite with slow; boolvar; tcsp.
+Qed.
+
 
 
 
@@ -535,6 +1404,9 @@ Lemma rule_ls3_true {o} :
          (d1 : A <> a)
          (d2 : n <> A)
          (d3 : n <> a)
+         (d4 : b <> n)
+         (d5 : b <> A)
+         (d6 : b <> a)
          (safe : safe_library lib),
     rule_true lib (rule_ls3 lib A a b n x y i H).
 Proof.
@@ -740,10 +1612,42 @@ Proof.
   exists (@mkc_nat o (cs_size lib name)) (mkc_lam b (mkcv_lam _ x (mk_cv _ z1))).
   dands; spcast; eauto 3 with slow;[].
 
+  eapply equality_monotone in eqA;[|eauto];[].
+  eapply member_monotone in eqz;[|eauto];[].
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+
+  rename lib into lib1.
+  rename safe into safe1.
+  rename lib' into lib.
+  rename safe' into safe.
+
   rewrite substc2_substc3_eq.
   rewrite substc3_2_substc_eq.
+  rewrite substc4_mkcv_function; tcsp.
+  autorewrite with slow.
 
-  (* TODO: assume that [A1] is free from definitions/choice sequences *)
+  eapply member_respects_alphaeqc_r;
+    [apply implies_alphaeqc_mk_function;
+     apply alphaeqcv_sym;
+     apply substc5_mkcv_fun|].
+  autorewrite with slow.
+  rewrite substc5_var2; tcsp;[].
+  rewrite substc5_var0; tcsp;[].
+
+  eapply member_respects_alphaeqc_r;
+    [apply implies_alphaeqc_mk_function;
+     apply implies_alphaeqcv_mkcv_fun;
+     [|apply alphaeqcv_refl];
+     apply implies_alphaeqcv_mkcv_equality;
+     [apply alphaeqcv_refl|apply alphaeqcv_refl|];
+     apply alphaeqcv_sym;apply substc5_mkcv_natk2nat
+    |];[].
+  autorewrite with slow.
+  rewrite substc5_var1; tcsp;[].
+
+
+  (* Replace [A1] by [u] everywhere *)
+
 
 
 Qed.
