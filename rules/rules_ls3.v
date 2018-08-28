@@ -1370,6 +1370,17 @@ Proof.
 Qed.
 Hint Resolve implies_alphaeqcv_mkcv_equality : slow.
 
+Lemma implies_alphaeqc_mkc_equality {o} :
+  forall (a1 a2 b1 b2 c1 c2 : @CTerm o),
+    alphaeqc a1 a2
+    -> alphaeqc b1 b2
+    -> alphaeqc c1 c2
+    -> alphaeqc (mkc_equality a1 b1 c1) (mkc_equality a2 b2 c2).
+Proof.
+  introv aeq1 aeq2 eqa3; destruct_cterms; unfold alphaeqc in *; simpl in *; eauto 3 with slow.
+Qed.
+Hint Resolve implies_alphaeqc_mkc_equality : slow.
+
 Lemma substc5_var1 {o} :
   forall (t1 t2 t3 : @CTerm o) x u v w,
     w <> u
@@ -1381,6 +1392,207 @@ Proof.
   unflsubst; simpl;repeat (apply cl_sub_cons; dands; eauto 3 with slow).
   autorewrite with slow; boolvar; tcsp.
 Qed.
+
+Lemma equality_in_mkc_csprop_implies_tequality {o} :
+  forall lib (a b c d : @CTerm o) i,
+    equality lib a b (mkc_csprop i)
+    -> equality lib c d (mkc_csname 0)
+    -> tequality lib (mkc_apply a c) (mkc_apply b d).
+Proof.
+  introv equp equc.
+  unfold mkc_csprop in equp.
+  apply equality_in_fun in equp; repnd.
+  eapply equality_in_uni.
+  apply equp; eauto 3 with slow.
+Qed.
+
+Lemma equality_in_mkc_csprop_implies_tequality_cs {o} :
+  forall name lib (a b : @CTerm o) i,
+    compatible_choice_sequence_name 0 name
+    -> equality lib a b (mkc_csprop i)
+    -> tequality
+         lib
+         (mkc_apply a (mkc_choice_seq name))
+         (mkc_apply b (mkc_choice_seq name)).
+Proof.
+  introv comp equ.
+  eapply equality_in_mkc_csprop_implies_tequality; eauto; eauto 3 with slow.
+  apply equality_in_csname_iff.
+  exists (trivial_bar lib); introv br ext; simpl in *.
+  exists name; dands; spcast; eauto 3 with slow.
+Qed.
+
+Lemma tequality_preserves_member {o} :
+  forall lib (a A B : @CTerm o),
+    tequality lib A B
+    -> member lib a A
+    -> member lib a B.
+Proof.
+  introv teq mem; eapply tequality_preserving_equality in mem; eauto.
+Qed.
+
+Ltac rev_assert T h :=
+    match goal with
+    | [ |- ?C ] =>
+      assert (T -> C) as h;[introv h|apply h;clear h]
+    end.
+
+Lemma equality_in_mkc_csprop_preserves_tequality {o} :
+  forall lib (a b c d : @CTerm o) i,
+    equality lib a b (mkc_csprop i)
+    -> equality lib c d (mkc_csname 0)
+    -> tequality lib (mkc_apply a c) (mkc_apply a d)
+    -> tequality lib (mkc_apply b c) (mkc_apply b d).
+Proof.
+  introv equp equc teq.
+  unfold mkc_csprop in equp.
+  apply equality_in_fun in equp; repnd.
+
+  dup equc as equc'.
+
+  apply equp in equc; eauto 3 with slow.
+  apply equality_in_uni in equc.
+  eapply tequality_trans;[|eauto].
+
+  apply equality_refl in equc'.
+  apply equp in equc'; eauto 3 with slow.
+  apply equality_in_uni in equc'.
+  apply tequality_sym; auto.
+Qed.
+Hint Resolve equality_in_mkc_csprop_preserves_tequality : slow.
+
+Lemma equality_in_mkc_csprop_preserves_type {o} :
+  forall lib (a b c d : @CTerm o) i,
+    equality lib a b (mkc_csprop i)
+    -> equality lib c d (mkc_csname 0)
+    -> type lib (mkc_apply a c)
+    -> type lib (mkc_apply b c).
+Proof.
+  introv equp equc teq.
+  eapply equality_in_mkc_csprop_preserves_tequality;eauto;eauto 3 with slow.
+  apply equality_refl in equc; auto.
+Qed.
+Hint Resolve equality_in_mkc_csprop_preserves_type : slow.
+
+Lemma computes_to_valc_apply {o} :
+  forall lib (f : @CTerm o) v a w,
+    computes_to_valc lib f v
+    -> computes_to_valc lib (mkc_apply f a) w
+    -> computes_to_valc lib (mkc_apply v a) w.
+Proof.
+  introv compf compa.
+  destruct_cterms; unfold computes_to_valc in *; simpl in *.
+  unfold computes_to_value in *; repnd; dands; auto.
+  assert (reduces_to lib (mk_apply x2 x0) (mk_apply x1 x0)) as r.
+  { apply reduces_to_prinarg; auto. }
+  eapply reduces_to_value_eq in r;[|split;[exact compa0|];auto];[].
+  destruct r; auto.
+Qed.
+
+Definition cs_swap : Type := choice_sequence_name * choice_sequence_name.
+
+Definition swap_cs (r : cs_swap) (n : choice_sequence_name) : choice_sequence_name :=
+  let (n1,n2) := r in
+  if choice_sequence_name_deq n n1 then n2
+  else if choice_sequence_name_deq n n2 then n1
+       else n.
+
+Definition swap_cs_can {o} (r : cs_swap) (can : @CanonicalOp o) : CanonicalOp :=
+  match can with
+  | Ncseq name => Ncseq (swap_cs r name)
+  | _ => can
+  end.
+
+Definition swap_cs_op {o} (r : cs_swap) (op : @Opid o) : Opid :=
+  match op with
+  | Can can => Can (swap_cs_can r can)
+  | _ => op
+  end.
+
+Fixpoint swap_cs_term {o} (r : cs_swap) (t : @NTerm o) : NTerm :=
+  match t with
+  | vterm v => vterm v
+  | oterm op bs => oterm (swap_cs_op r op) (map (swap_cs_bterm r) bs)
+  end
+with swap_cs_bterm {o} (r : cs_swap) (bt : @BTerm o) : BTerm :=
+       match bt with
+       | bterm vs t => bterm vs (swap_cs_term r t)
+       end.
+
+Lemma free_vars_swap_cs_term {o} :
+  forall (r : cs_swap) (t : @NTerm o),
+    free_vars (swap_cs_term r t) = free_vars t.
+Proof.
+  sp_nterm_ind1 t as [v|op bs ind] Case; introv; simpl; tcsp;[].
+  induction bs; simpl; auto.
+  rewrite IHbs; clear IHbs; simpl in *; tcsp;[|introv i; eapply ind; eauto].
+  destruct a; simpl.
+  erewrite ind; eauto.
+Defined.
+Hint Rewrite @free_vars_swap_cs_term : slow.
+
+Lemma closed_rename_term {o} :
+  forall (r : cs_swap) (t : @NTerm o),
+    closed t
+    -> closed (swap_cs_term r t).
+Proof.
+  introv cl.
+  unfold closed in *; autorewrite with slow in *; auto.
+Qed.
+Hint Resolve closed_rename_term : slow.
+
+Lemma OpBindings_swap_cs_op {o} :
+  forall r (op : @Opid o),
+    OpBindings (swap_cs_op r op) = OpBindings op.
+Proof.
+  destruct op as [can| | |]; simpl; tcsp.
+  destruct can; simpl; auto.
+Qed.
+Hint Rewrite @OpBindings_swap_cs_op : slow.
+
+Lemma implies_wf_term_swap_cs_term {o} :
+  forall (r : cs_swap) (t : @NTerm o),
+    wf_term t
+    -> wf_term (swap_cs_term r t).
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv wf; simpl; tcsp.
+
+  - Case "oterm".
+    allrw @wf_oterm_iff.
+    allrw map_map; unfold compose.
+    autorewrite with slow.
+    repnd; dands; auto.
+
+    + rewrite <- wf0.
+      apply eq_maps; introv i.
+      destruct x; unfold num_bvars; simpl; auto.
+
+    + introv i.
+      allrw in_map_iff; exrepnd; subst.
+      destruct a; simpl in *.
+      apply wf_bterm_iff.
+      eapply ind; eauto.
+      apply wf in i1.
+      allrw @wf_bterm_iff; tcsp.
+Qed.
+Hint Resolve implies_wf_term_swap_cs_term : slow.
+
+Lemma implies_isprog_swap_cs_term {o} :
+  forall r {t : @NTerm o},
+    isprog t
+    -> isprog (swap_cs_term r t).
+Proof.
+  introv isp.
+  allrw @isprog_eq.
+  destruct isp.
+  split; dands; allrw @nt_wf_eq; eauto 3 with slow.
+Qed.
+Hint Resolve implies_isprog_swap_cs_term : slow.
+
+Definition swap_cs_cterm {o} r (ct : @CTerm o) : CTerm :=
+  let (t,isp) := ct in
+  mk_ct (swap_cs_term r t) (implies_isprog_swap_cs_term r isp).
+
 
 
 
@@ -1407,6 +1619,7 @@ Lemma rule_ls3_true {o} :
          (d4 : b <> n)
          (d5 : b <> A)
          (d6 : b <> a)
+         (d7 : x <> b)
          (safe : safe_library lib),
     rule_true lib (rule_ls3 lib A a b n x y i H).
 Proof.
@@ -1597,6 +1810,9 @@ Proof.
 
   clear a1 eqa2.
 
+  applydup (@equality_in_mkc_csprop_implies_tequality_cs o name) in eqA as teq; auto;[].
+  eapply tequality_preserves_member in eqz;[|eauto].
+
   apply inhabited_product.
   dands; eauto 3 with slow;[|].
 
@@ -1613,7 +1829,7 @@ Proof.
   dands; spcast; eauto 3 with slow;[].
 
   eapply equality_monotone in eqA;[|eauto];[].
-  eapply member_monotone in eqz;[|eauto];[].
+(*  eapply member_monotone in eqz;[|eauto];[].*)
   assert (safe_library lib') as safe' by eauto 3 with slow.
 
   rename lib into lib1.
@@ -1645,9 +1861,182 @@ Proof.
   autorewrite with slow.
   rewrite substc5_var1; tcsp;[].
 
+  rev_assert (member
+                lib
+                (mkc_lam b (mkcv_lam [b] x (mk_cv [x, b] z1)))
+                (mkc_function
+                   (mkc_csname 0)
+                   b
+                   (mkcv_fun
+                      [b]
+                      (mkcv_equality
+                         [b]
+                         (mk_cv [b] (mkc_choice_seq name))
+                         (mkc_var b)
+                         (mkcv_natk2nat [b] (mk_cv [b] (mkc_nat (cs_size lib1 name)))))
+                      (mkcv_apply [b] (mk_cv [b] u) (mkc_var b))))) mem.
+  {
+    apply equality_in_function3 in mem; repnd.
+    apply equality_in_function3; dands; auto.
+    introv xt ea.
+    pose proof (mem _ xt _ _ ea) as mem; repnd.
+    dands.
 
-  (* Replace [A1] by [u] everywhere *)
+    {
+      eapply tequality_respects_alphaeqc_left; [apply alphaeqc_sym;apply substc_mkcv_fun|].
+      eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply substc_mkcv_fun|].
+      eapply tequality_respects_alphaeqc_left  in mem1;[|apply substc_mkcv_fun].
+      eapply tequality_respects_alphaeqc_right in mem1;[|apply substc_mkcv_fun].
+      autorewrite with slow in *.
 
+      apply tequality_fun in mem1; repnd.
+      apply tequality_fun; dands; auto.
+      introv xt1 inh.
+      apply mem1 in inh; auto; eauto 3 with slow;[].
+      eapply equality_in_mkc_csprop_preserves_tequality;
+        [apply equality_sym| |]; eauto 3 with slow.
+    }
 
+    {
+      eapply alphaeqc_preserving_equality;[|apply alphaeqc_sym;apply substc_mkcv_fun].
+      eapply alphaeqc_preserving_equality in mem;[|apply substc_mkcv_fun].
+      autorewrite with slow in *.
+
+      apply equality_in_fun in mem; repnd.
+      apply equality_in_fun; dands; auto.
+
+      {
+        introv xt1 inh.
+        eapply equality_in_mkc_csprop_preserves_type;
+          [apply equality_sym| |]; eauto 3 with slow.
+      }
+
+      {
+        introv xt1 eb.
+        eapply tequality_preserving_equality;
+          [|apply tequality_sym;eapply equality_in_mkc_csprop_implies_tequality];eauto;
+            eauto 3 with slow.
+        eapply equality_refl; eauto 3 with slow.
+      }
+    }
+  }
+
+  apply equality_sym in eqA; apply equality_refl in eqA.
+  clear dependent A1.
+
+  apply equality_in_function3; dands; eauto 3 with slow;[].
+
+  introv ext1 ecs.
+  rename a0 into b1.
+  rename a' into b2.
+  dands.
+
+  { admit. }
+
+  eapply alphaeqc_preserving_equality;[|apply alphaeqc_sym;apply substc_mkcv_fun].
+  autorewrite with slow.
+  eapply alphaeqc_preserving_equality;
+    [|apply alphaeqc_sym;apply alphaeqc_mkc_fun;
+      [|apply alphaeqc_refl];
+      apply implies_alphaeqc_mkc_equality;
+      [apply alphaeqc_refl|apply alphaeqc_refl|];
+      apply substc_mkcv_natk2nat].
+  autorewrite with slow.
+
+  apply equality_in_fun.
+  dands; eauto 3 with slow.
+
+  { admit. }
+
+  { admit. }
+
+  introv ext2 eb.
+
+  eapply equality_respects_cequivc_left;
+    [apply ccequivc_ext_sym;apply sp_implies_ccequivc_ext_apply;
+     apply ccequivc_ext_beta|].
+  rewrite mkcv_lam_substc; tcsp;[].
+  eapply equality_respects_cequivc_left;
+    [apply ccequivc_ext_sym; apply ccequivc_ext_beta|].
+  autorewrite with slow.
+
+  eapply equality_respects_cequivc_right;
+    [apply ccequivc_ext_sym;apply sp_implies_ccequivc_ext_apply;
+     apply ccequivc_ext_beta|].
+  rewrite mkcv_lam_substc; tcsp;[].
+  eapply equality_respects_cequivc_right;
+    [apply ccequivc_ext_sym; apply ccequivc_ext_beta|].
+  autorewrite with slow.
+
+  apply equality_refl in ecs.
+  clear b2.
+  apply equality_in_mkc_equality in eb; repnd.
+  clear eb eb1.
+  rw @member_eq.
+
+  assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
+  eapply member_monotone in ecs;[|exact ext2];[].
+(*  eapply member_monotone in eqz;[|exact xt];[].*)
+  eapply member_monotone in eqA;[|exact xt];[].
+  assert (safe_library lib'0) as safe' by eauto 3 with slow.
+  clear dependent lib'.
+  clear dependent lib.
+  rename lib'0 into lib.
+  rename safe' into safe.
+
+  apply equality_in_csname_iff in ecs.
+  unfold equality_of_csname_bar in ecs.
+
+  apply equality_natk2nat_implies2 in eb0.
+  apply all_in_ex_bar_member_implies_member.
+
+  eapply all_in_ex_bar_modus_ponens2;[|exact eb0|exact ecs]; clear eb0 ecs; introv xt eb0 ecs.
+
+  eapply member_monotone in eqA;[|exact xt];[].
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  clear dependent lib.
+  rename lib' into lib.
+  rename safe' into safe.
+
+  unfold equality_of_csname in ecs; exrepnd; spcast; GC.
+  rename name0 into name'.
+
+  rev_assert (member lib z1 (mkc_apply u (mkc_choice_seq name'))) mem.
+  {
+    pose proof (equality_in_mkc_csprop_implies_tequality lib u u b1 (mkc_choice_seq name') i) as teq.
+    repeat (autodimp teq hyp); eauto 3 with slow.
+    { apply equality_in_csname_iff; exists (trivial_bar lib); introv br ext; simpl in *.
+      exists name'; dands; spcast; eauto 3 with slow. }
+    eapply tequality_preserving_equality;[|apply tequality_sym;eauto]; auto.
+  }
+
+  assert (forall m,
+             m < cs_size lib1 name
+             ->
+             exists k,
+               ((mkc_apply (mkc_choice_seq name) (mkc_nat m)) ===>(lib) (mkc_nat k))
+                 # (mkc_apply (mkc_choice_seq name') (mkc_nat m)) ===>(lib) (mkc_nat k)) as imp.
+  {
+    introv h; apply eb0 in h; exrepnd; exists k; spcast; dands; spcast; auto.
+    eapply computes_to_valc_apply; eauto.
+  }
+  clear dependent b1.
+
+  (* === We might have to squash the application in the conclusion === *)
+
+  (* === We have to show that because of [imp], [lib1] can be extended with [name']
+         equivalent to [name] up to [cs_size lib1 name] === *)
+
+  auto.
+
+  Lemma xxx {o} :
+    forall lib (t v : @NTerm o) name1 name2,
+      computes_to_value lib t v
+      -> computes_to_value
+           (lib (* extend [lib] with [name'] *))
+           (swap_cs_term (name1,name2) t)
+           (swap_cs_term (name1,name2) v).
+  Proof.
+  Qed.
 
 Qed.
