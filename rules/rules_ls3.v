@@ -33,6 +33,7 @@
 
 Require Export per_props_ffdefs.
 Require Export per_props_nat.
+Require Export per_props_nat2.
 Require Export rules_choice_util3.
 
 
@@ -1489,39 +1490,39 @@ Proof.
   destruct r; auto.
 Qed.
 
-Definition cs_swap : Type := choice_sequence_name * choice_sequence_name.
+(* renames fst to snd *)
+Definition cs_ren : Type := choice_sequence_name * choice_sequence_name.
 
-Definition swap_cs (r : cs_swap) (n : choice_sequence_name) : choice_sequence_name :=
+Definition ren_cs (r : cs_ren) (n : choice_sequence_name) : choice_sequence_name :=
   let (n1,n2) := r in
   if choice_sequence_name_deq n n1 then n2
-  else if choice_sequence_name_deq n n2 then n1
-       else n.
+  else n.
 
-Definition swap_cs_can {o} (r : cs_swap) (can : @CanonicalOp o) : CanonicalOp :=
+Definition ren_cs_can {o} (r : cs_ren) (can : @CanonicalOp o) : CanonicalOp :=
   match can with
-  | Ncseq name => Ncseq (swap_cs r name)
+  | Ncseq name => Ncseq (ren_cs r name)
   | _ => can
   end.
 
-Definition swap_cs_op {o} (r : cs_swap) (op : @Opid o) : Opid :=
+Definition ren_cs_op {o} (r : cs_ren) (op : @Opid o) : Opid :=
   match op with
-  | Can can => Can (swap_cs_can r can)
+  | Can can => Can (ren_cs_can r can)
   | _ => op
   end.
 
-Fixpoint swap_cs_term {o} (r : cs_swap) (t : @NTerm o) : NTerm :=
+Fixpoint ren_cs_term {o} (r : cs_ren) (t : @NTerm o) : NTerm :=
   match t with
   | vterm v => vterm v
-  | oterm op bs => oterm (swap_cs_op r op) (map (swap_cs_bterm r) bs)
+  | oterm op bs => oterm (ren_cs_op r op) (map (ren_cs_bterm r) bs)
   end
-with swap_cs_bterm {o} (r : cs_swap) (bt : @BTerm o) : BTerm :=
+with ren_cs_bterm {o} (r : cs_ren) (bt : @BTerm o) : BTerm :=
        match bt with
-       | bterm vs t => bterm vs (swap_cs_term r t)
+       | bterm vs t => bterm vs (ren_cs_term r t)
        end.
 
-Lemma free_vars_swap_cs_term {o} :
-  forall (r : cs_swap) (t : @NTerm o),
-    free_vars (swap_cs_term r t) = free_vars t.
+Lemma free_vars_ren_cs_term {o} :
+  forall (r : cs_ren) (t : @NTerm o),
+    free_vars (ren_cs_term r t) = free_vars t.
 Proof.
   sp_nterm_ind1 t as [v|op bs ind] Case; introv; simpl; tcsp;[].
   induction bs; simpl; auto.
@@ -1529,31 +1530,31 @@ Proof.
   destruct a; simpl.
   erewrite ind; eauto.
 Defined.
-Hint Rewrite @free_vars_swap_cs_term : slow.
+Hint Rewrite @free_vars_ren_cs_term : slow.
 
 Lemma closed_rename_term {o} :
-  forall (r : cs_swap) (t : @NTerm o),
+  forall (r : cs_ren) (t : @NTerm o),
     closed t
-    -> closed (swap_cs_term r t).
+    -> closed (ren_cs_term r t).
 Proof.
   introv cl.
   unfold closed in *; autorewrite with slow in *; auto.
 Qed.
 Hint Resolve closed_rename_term : slow.
 
-Lemma OpBindings_swap_cs_op {o} :
+Lemma OpBindings_ren_cs_op {o} :
   forall r (op : @Opid o),
-    OpBindings (swap_cs_op r op) = OpBindings op.
+    OpBindings (ren_cs_op r op) = OpBindings op.
 Proof.
   destruct op as [can| | |]; simpl; tcsp.
   destruct can; simpl; auto.
 Qed.
-Hint Rewrite @OpBindings_swap_cs_op : slow.
+Hint Rewrite @OpBindings_ren_cs_op : slow.
 
-Lemma implies_wf_term_swap_cs_term {o} :
-  forall (r : cs_swap) (t : @NTerm o),
+Lemma implies_wf_term_ren_cs_term {o} :
+  forall (r : cs_ren) (t : @NTerm o),
     wf_term t
-    -> wf_term (swap_cs_term r t).
+    -> wf_term (ren_cs_term r t).
 Proof.
   nterm_ind t as [v|op bs ind] Case; introv wf; simpl; tcsp.
 
@@ -1575,23 +1576,23 @@ Proof.
       apply wf in i1.
       allrw @wf_bterm_iff; tcsp.
 Qed.
-Hint Resolve implies_wf_term_swap_cs_term : slow.
+Hint Resolve implies_wf_term_ren_cs_term : slow.
 
-Lemma implies_isprog_swap_cs_term {o} :
+Lemma implies_isprog_ren_cs_term {o} :
   forall r {t : @NTerm o},
     isprog t
-    -> isprog (swap_cs_term r t).
+    -> isprog (ren_cs_term r t).
 Proof.
   introv isp.
   allrw @isprog_eq.
   destruct isp.
   split; dands; allrw @nt_wf_eq; eauto 3 with slow.
 Qed.
-Hint Resolve implies_isprog_swap_cs_term : slow.
+Hint Resolve implies_isprog_ren_cs_term : slow.
 
-Definition swap_cs_cterm {o} r (ct : @CTerm o) : CTerm :=
+Definition ren_cs_cterm {o} r (ct : @CTerm o) : CTerm :=
   let (t,isp) := ct in
-  mk_ct (swap_cs_term r t) (implies_isprog_swap_cs_term r isp).
+  mk_ct (ren_cs_term r t) (implies_isprog_ren_cs_term r isp).
 
 
 
@@ -1979,10 +1980,12 @@ Proof.
 (*  eapply member_monotone in eqz;[|exact xt];[].*)
   eapply member_monotone in eqA;[|exact xt];[].
   assert (safe_library lib'0) as safe' by eauto 3 with slow.
+  assert (lib_extends lib'0 lib1) as ext' by eauto 3 with slow.
   clear dependent lib'.
   clear dependent lib.
   rename lib'0 into lib.
   rename safe' into safe.
+  rename ext'  into ext.
 
   apply equality_in_csname_iff in ecs.
   unfold equality_of_csname_bar in ecs.
@@ -1994,9 +1997,11 @@ Proof.
 
   eapply member_monotone in eqA;[|exact xt];[].
   assert (safe_library lib') as safe' by eauto 3 with slow.
+  assert (lib_extends lib' lib1) as ext' by eauto 3 with slow.
   clear dependent lib.
   rename lib' into lib.
   rename safe' into safe.
+  rename ext' into ext.
 
   unfold equality_of_csname in ecs; exrepnd; spcast; GC.
   rename name0 into name'.
@@ -2005,7 +2010,7 @@ Proof.
   {
     pose proof (equality_in_mkc_csprop_implies_tequality lib u u b1 (mkc_choice_seq name') i) as teq.
     repeat (autodimp teq hyp); eauto 3 with slow.
-    { apply equality_in_csname_iff; exists (trivial_bar lib); introv br ext; simpl in *.
+    { apply equality_in_csname_iff; exists (trivial_bar lib); introv br xt; simpl in *.
       exists name'; dands; spcast; eauto 3 with slow. }
     eapply tequality_preserving_equality;[|apply tequality_sym;eauto]; auto.
   }
@@ -2013,11 +2018,13 @@ Proof.
   assert (forall m,
              m < cs_size lib1 name
              ->
-             exists k,
-               ((mkc_apply (mkc_choice_seq name) (mkc_nat m)) ===>(lib) (mkc_nat k))
-                 # (mkc_apply (mkc_choice_seq name') (mkc_nat m)) ===>(lib) (mkc_nat k)) as imp.
+             {k : nat
+             & computes_to_valc lib (mkc_apply (mkc_choice_seq name) (mkc_nat m)) (mkc_nat k)
+             # computes_to_valc lib (mkc_apply (mkc_choice_seq name') (mkc_nat m)) (mkc_nat k)}) as imp.
   {
-    introv h; apply eb0 in h; exrepnd; exists k; spcast; dands; spcast; auto.
+    introv h; apply eb0 in h.
+    apply equality_of_nat_imp_tt in h; unfold equality_of_nat_tt in h; exrepnd.
+    exists k; dands; spcast; auto.
     eapply computes_to_valc_apply; eauto.
   }
   clear dependent b1.
@@ -2027,16 +2034,108 @@ Proof.
   (* === We have to show that because of [imp], [lib1] can be extended with [name']
          equivalent to [name] up to [cs_size lib1 name] === *)
 
-  auto.
+  destruct (choice_sequence_name_deq name' name) as [d|d];[subst;eauto 3 with slow|];[].
+
+
+  Definition up_to_name {o} (name : choice_sequence_name) (t : @NTerm o) :=
+    subset (get_defs t) [defk_cs name].
+
+  Lemma compute_step_preserves_ren_cs {o} :
+    forall lib lib' (t u : @NTerm o) name1 name2,
+      name1 <> name2
+      -> lib_extends lib' lib
+      -> up_to_name name1 t
+      -> (forall m : nat,
+             m < cs_size lib name1
+             ->
+             {k : nat
+              & computes_to_valc lib' (mkc_apply (mkc_choice_seq name1) (mkc_nat m)) (mkc_nat k)
+              # computes_to_valc lib' (mkc_apply (mkc_choice_seq name2) (mkc_nat m)) (mkc_nat k)})
+      -> compute_step lib t = csuccess u
+      -> compute_step
+           (lib' (* extend [lib] with [name2] *))
+           (ren_cs_term (name1,name2) t)
+         = csuccess (ren_cs_term (name1,name2) u).
+  Proof.
+    nterm_ind1s t as [v|op bs ind] Case; introv dname ext upto imp comp; tcsp.
+
+    { Case "vterm".
+      csunf comp; simpl in *; ginv. }
+
+    Case "oterm".
+    dopid op as [can|ncan|exc|abs] SCase.
+
+    { SCase "Can".
+      csunf comp; simpl in *; ginv.
+      csunf; simpl; auto. }
+
+    { SCase "NCan".
+
+      destruct bs; try (complete (allsimpl; ginv)).
+      destruct b as [l t]; try (complete (allsimpl; ginv)).
+      destruct l; try (complete (allsimpl; ginv));[|].
+
+      { destruct t as [x|op bts]; try (complete (allsimpl; ginv));[].
+
+        dopid op as [can2|ncan2|exc2|abs2] SSCase.
+
+        { SSCase "Can".
+
+          dopid_noncan ncan SSSCase.
+
+          { SSSCase "NApply".
+            csunf comp; simpl in *.
+            apply compute_step_apply_success in comp; repndors; exrepnd; subst; simpl in *;
+              csunf; simpl; auto.
+            unfold apply_bterm; simpl.
+
+            SearchAbout lsubst ren_cs_term.
+            (* PROVE THAT! *)
+          }
+
+        }
+
+        { SSCase "NCan".
+        }
+
+        { SSCase "Exc".
+        }
+
+        { SSCase "Abs".
+        }
+
+      }
+
+      { (* fresh case *)
+      }
+
+    }
+
+    { SCase "Exc".
+    }
+
+    { SCase "Abs".
+    }
+
+
+  Qed.
 
   Lemma xxx {o} :
-    forall lib (t v : @NTerm o) name1 name2,
-      computes_to_value lib t v
+    forall lib lib' (t v : @NTerm o) name1 name2,
+      lib_extends lib' lib
+      -> (forall m : nat,
+             m < cs_size lib name1
+             ->
+             {k : nat
+              & computes_to_valc lib' (mkc_apply (mkc_choice_seq name1) (mkc_nat m)) (mkc_nat k)
+              # computes_to_valc lib' (mkc_apply (mkc_choice_seq name2) (mkc_nat m)) (mkc_nat k)})
+      -> computes_to_value lib t v
       -> computes_to_value
-           (lib (* extend [lib] with [name'] *))
-           (swap_cs_term (name1,name2) t)
-           (swap_cs_term (name1,name2) v).
+           (lib' (* extend [lib] with [name2] *))
+           (ren_cs_term (name1,name2) t)
+           (ren_cs_term (name1,name2) v).
   Proof.
+
   Qed.
 
 Qed.
