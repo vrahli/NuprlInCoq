@@ -150,11 +150,179 @@ Qed.
 Hint Rewrite @vars_hyps_substitute_hyps : slow.
 Hint Rewrite @vars_hyps_lsubst_hyps : slow.
 
+Lemma alphaeqc_lsubstc_snoc_lsubstc {o} :
+  forall (u t : @NTerm o) wt wu s v ct c ws cs,
+    !LIn v (dom_csub s)
+    -> alphaeqc
+         (lsubstc u wu (snoc s (v, lsubstc t wt s ct)) c)
+         (lsubstc (subst u v t) ws s cs).
+Proof.
+  introv ni.
+  destruct_cterms; unfold alphaeqc; simpl.
+  rewrite <- csubst_swap; auto;[].
+  apply alpha_eq_sym.
+  eapply alpha_eq_trans;[apply combine_sub_nest|]; simpl; auto.
+Qed.
+
+
+
 
 
 (*
-  H, J[u/t] |-  C[u/t]  ext  z[u/t]
-      By generalization  u t X
+  H |- C[u/t] ext z[u/t]
+      By generalization u t X
+   H |- t \in X
+  H, u:X |- C ext z
+*)
+
+
+Definition rule_generalization_simple_concl {o}
+           (H : @bhyps o) (u : NVar) (t C z : NTerm) :=
+  mk_baresequent
+    H
+    (mk_concl (subst C u t) (subst z u t)).
+
+Definition rule_generalization_simple_hyp1 {o}
+           (H : @bhyps o) (t X : NTerm) :=
+  mk_baresequent H (mk_conclax (mk_member t X)).
+
+Definition rule_generalization_simple_hyp2 {o}
+           (H : @bhyps o) (u : NVar) (X C z : NTerm) :=
+  mk_baresequent
+    (snoc H (mk_hyp u X))
+    (mk_concl C z).
+
+
+Definition rule_generalization_simple {o}
+           (H : @bhyps o)
+           (u : NVar)
+           (t C z X : NTerm) : rule :=
+  mk_rule
+    (rule_generalization_simple_concl H u t C z)
+    [
+      rule_generalization_simple_hyp1 H t X,
+      rule_generalization_simple_hyp2 H u X C z
+    ]
+    [sarg_term t].
+
+Lemma rule_generalization_simple_true {o} :
+  forall (lib : library)
+         (H : @bhyps o)
+         (u : NVar)
+         (t C z X : NTerm),
+    rule_true3 lib (rule_generalization_simple H u t C z X).
+Proof.
+  unfold rule_generalization_simple, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros; repnd.
+
+  pose proof (cargs (sarg_term t)) as cargs; simpl in cargs; autodimp cargs hyp.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  destruct Hyp  as [ ws1 hyp1 ].
+  destruct Hyp0 as [ ws2 hyp2 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  match goal with
+  | [ |- sequent_true2 _ ?s ] => assert (wf_csequent s) as wfs
+  end.
+  { clear hyp1 hyp2.
+    unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl; simpl.
+    dwfseq2.
+    rw @vswf_hypotheses_nil_eq.
+    apply wf_member_iff2 in wfct0; repnd.
+    dands; tcsp; eauto 3 with slow.
+    { apply subst_preserves_wf_term; auto. }
+    { introv i; apply eqset_free_vars_disjoint in i; simpl in *.
+      allrw in_app_iff; allrw in_remove_nvars; allrw in_single_iff.
+      autorewrite with slow in *.
+      repndors; repnd; tcsp.
+      { apply ce in i0.
+        apply in_snoc in i0; repndors; subst; tcsp. }
+      boolvar; simpl in *; autorewrite with list in *; tcsp. } }
+
+  exists wfs.
+  unfold wf_csequent, wf_sequent, wf_concl in wfs; allsimpl; repnd; proof_irr; GC.
+
+  assert (! LIn u (vars_hyps H)) as niuH.
+  {
+    clear hyp1 hyp2.
+    unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl; simpl.
+    dwfseq2; auto.
+  }
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  vr_seq_true in hyp1.
+  vr_seq_true in hyp2.
+
+  dup hyp1 as dhyp1.
+  hide_hyp dhyp1.
+  pose proof (hyp1 s1 s2) as hyp1.
+  repeat (autodimp hyp1 hyp); eauto 3 with slow.
+
+  exrepnd.
+  lsubst_tac.
+  apply member_if_inhabited in hyp1.
+  applydup @tequality_mkc_member_implies_sp in hyp0; auto.
+  apply tequality_mkc_member_sp in hyp0; repnd.
+  clear hyp0 hyp1.
+
+  assert (! LIn u (dom_csub s1)) as niu1.
+  { apply similarity_dom in sim; repnd; allrw; auto. }
+
+  assert (! LIn u (dom_csub s2)) as niu2.
+  { apply similarity_dom in sim; repnd; allrw; auto. }
+
+  pose proof (hyp2 (snoc s1 (u,lsubstc t wt s1 ct1))
+                   (snoc s2 (u,lsubstc t wt s2 ct2)))as q.
+
+  repeat (autodimp q hyp);[| |].
+
+  {
+    introv sim'.
+    apply @similarity_snoc in sim'; exrepnd; subst; cpx.
+    simpl in *; GC; clear_irr.
+
+    apply eq_hyps_snoc; simpl.
+    assert (cover_vars X s2a) as cov2 by (eapply similarity_cover_vars; eauto).
+    exists s1a s2a (lsubstc t wt s1a ct1) t2 wT cT cov2.
+    dands; auto; simpl;[].
+
+    pose proof (dhyp1 s1a s2a) as dhyp1; repeat (autodimp dhyp1 hyp); eauto 3 with slow;[].
+    exrepnd; clear_irr; auto.
+    lsubst_tac.
+    apply tequality_mkc_member_sp in dhyp0; repnd; auto.
+  }
+
+  { sim_snoc2; dands; clear_irr; auto. }
+
+  exrepnd.
+
+  dands;[|].
+
+  {
+    eapply tequality_respects_alphaeqc_left;
+      [|eapply tequality_respects_alphaeqc_right;[|eauto] ];
+      apply alphaeqc_lsubstc_snoc_lsubstc; auto.
+  }
+
+  {
+    eapply alphaeqc_preserving_equality;
+      [eapply equality_respects_alphaeqc_left;
+       [|eapply equality_respects_alphaeqc_right;
+         [|eauto] ]
+      |]; apply alphaeqc_lsubstc_snoc_lsubstc; auto.
+  }
+Qed.
+
+
+
+
+(*
+  H, J[u/t] |- C[u/t] ext z[u/t]
+      By generalization u t X
    H |- t \in X
   H, u:X, J |- C ext z
 *)
