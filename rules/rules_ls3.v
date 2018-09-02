@@ -1959,6 +1959,334 @@ Qed.
 
 Hint Rewrite @get_param_from_cop_pk2can : slow.
 
+Lemma compute_step_preserves_ren_cs {o} :
+  forall lib lib' (t u : @NTerm o) name1 name2,
+    name1 <> name2
+    -> lib_extends lib' lib
+    -> up_to_name name1 t
+    -> (forall m : nat,
+           m < cs_size lib name1
+           ->
+           {k : nat
+            & find_cs_value_at lib' name1 m = Some (mkc_nat k)
+            # find_cs_value_at lib' name2 m = Some (mkc_nat k)})
+    -> compute_step lib t = csuccess u
+    -> compute_step
+         (lib' (* extend [lib] with [name2] *))
+         (ren_cs_term (name1,name2) t)
+       = csuccess (ren_cs_term (name1,name2) u).
+Proof.
+  nterm_ind1s t as [v|op bs ind] Case; introv dname ext upto imp comp; tcsp.
+
+  { Case "vterm".
+    csunf comp; simpl in *; ginv. }
+
+  Case "oterm".
+  dopid op as [can|ncan|exc|abs] SCase.
+
+  { SCase "Can".
+    csunf comp; simpl in *; ginv.
+    csunf; simpl; auto. }
+
+  { SCase "NCan".
+
+    destruct bs; try (complete (allsimpl; ginv)).
+    destruct b as [l t]; try (complete (allsimpl; ginv)).
+    destruct l; try (complete (allsimpl; ginv));[|].
+
+    { destruct t as [x|op bts]; try (complete (allsimpl; ginv));[].
+
+      dopid op as [can2|ncan2|exc2|abs2] SSCase.
+
+      { SSCase "Can".
+
+        dopid_noncan ncan SSSCase.
+
+        { SSSCase "NApply".
+          csunf comp; simpl in *.
+          apply compute_step_apply_success in comp; repndors; exrepnd; subst; simpl in *;
+            csunf; simpl; auto.
+          unfold apply_bterm; simpl.
+          rewrite <- subst_ren_cs_term; simpl; auto. }
+
+        { SSSCase "NEApply".
+          csunf comp; simpl in *.
+          apply compute_step_eapply_success in comp; repndors; exrepnd; subst; simpl in *;
+            csunf; simpl; auto.
+          repndors; exrepnd; subst; simpl;
+            [| |].
+
+          { apply compute_step_eapply2_success in comp1; repnd; subst; simpl in *.
+            repndors; exrepnd; subst; unfold mk_lam, mk_choice_seq in *; ginv; simpl in *; GC;
+              [|].
+
+            { apply iscan_implies in comp0; exrepnd; subst; simpl in *; dcwf h.
+              unfold compute_step_eapply2; unfold apply_bterm; simpl.
+              rewrite <- lsubst_ren_cs_term; simpl; auto. }
+
+            { unfold up_to_name in upto; simpl in upto.
+              apply singleton_subset in upto; simpl in upto; repndors; tcsp; ginv.
+              pose proof (imp n) as imp; autodimp imp hyp; eauto 3 with slow;[].
+              exrepnd.
+              eapply lib_extends_preserves_find_cs_value_at in comp5;[|eauto].
+              rewrite imp1 in comp5; inversion comp5; subst; clear comp5.
+              simpl in *; fold_terms.
+              boolvar; tcsp; GC;[].
+
+              dcwf h; simpl; boolvar; subst; autorewrite with slow in *; GC; try omega;[].
+              rewrite imp0; auto. }
+          }
+
+          { apply isexc_implies2 in comp0; exrepnd; subst; simpl in *.
+            dcwf h; auto.
+            apply (eapply_wf_def_implies_eapply_wf_ren_cs_term_true (name1,name2)) in comp2.
+            simpl in *; rewrite comp2 in Heqh; ginv. }
+
+          { fold_terms.
+            pose proof (ind arg2 arg2 []) as ind.
+            repeat (autodimp ind hyp); eauto 3 with slow;[].
+            pose proof (ind x name1 name2) as ind.
+            repeat (autodimp ind hyp); eauto 3 with slow;[].
+            rewrite ind.
+            rewrite implies_compute_step_eapply_success_if_isnoncan_like; auto; eauto 3 with slow.
+            apply (implies_eapply_wf_def_ren_cs_term (name1,name2)) in comp2; simpl in *; auto. }
+        }
+
+        { SSSCase "NFix".
+          csunf comp; simpl in *.
+          apply compute_step_fix_success in comp; repnd; subst; simpl in *.
+          csunf; simpl; auto. }
+
+        { SSSCase "NSpread".
+          csunf comp; simpl in *.
+          apply compute_step_spread_success in comp; exrepnd; subst; simpl in *.
+          csunf; simpl; auto.
+          unfold apply_bterm; simpl.
+          rewrite <- lsubst_ren_cs_term; simpl; auto. }
+
+        { SSSCase "NDsup".
+          csunf comp; simpl in *.
+          apply compute_step_dsup_success in comp; exrepnd; subst; simpl in *.
+          csunf; simpl; auto.
+          unfold apply_bterm; simpl.
+          rewrite <- lsubst_ren_cs_term; simpl; auto. }
+
+        { SSSCase "NDecide".
+          csunf comp; simpl in *.
+          apply compute_step_decide_success in comp; exrepnd; subst; simpl in *.
+          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto;
+            unfold apply_bterm; simpl;
+              rewrite <- subst_ren_cs_term; simpl; auto. }
+
+        { SSSCase "NCbv".
+          csunf comp; simpl in *.
+          apply compute_step_cbv_success in comp; exrepnd; subst; simpl in *.
+          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto.
+          unfold apply_bterm; simpl.
+          rewrite <- subst_ren_cs_term; simpl; auto. }
+
+        { SSSCase "NSleep".
+          csunf comp; simpl in *.
+          apply compute_step_sleep_success in comp; exrepnd; subst; simpl in *.
+          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto. }
+
+        { SSSCase "NTUni".
+          csunf comp; simpl in *.
+          apply compute_step_tuni_success in comp; exrepnd; subst; simpl in *.
+          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto.
+          unfold compute_step_tuni; simpl; boolvar; try omega; autorewrite with slow; auto. }
+
+        { SSSCase "NMinus".
+          csunf comp; simpl in *.
+          apply compute_step_minus_success in comp; exrepnd; subst; simpl in *.
+          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto. }
+
+        { SSSCase "NFresh".
+          csunf comp; simpl in *; ginv. }
+
+        { SSSCase "NTryCatch".
+          csunf comp; simpl in *.
+          apply compute_step_try_success in comp; exrepnd; subst; simpl in *.
+          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto. }
+
+        { SSSCase "NParallel".
+          csunf comp; simpl in *.
+          apply compute_step_parallel_success in comp; exrepnd; subst; simpl in *.
+          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto. }
+
+        { SSSCase "NCompSeq1".
+          csunf comp; simpl in *.
+          apply compute_step_comp_seq1_success in comp; exrepnd; subst; simpl in *.
+          Opaque choice_sequence_name_deq.
+          repndors; exrepnd; subst; csunf; simpl; auto;[|];
+            [|autorewrite with slow; boolvar; try omega; auto];[].
+          unfold mk_fresh_choice_nat_seq; simpl; fold_terms.
+          boolvar; auto; subst; simpl in *;[].
+
+          Print mk_comp_seq2.
+
+          (* comp_seq1 and comp_seq2 terms need to contain the default choice sequence name
+               as a parameter? *)
+
+          admit. }
+
+        { SSSCase "NCompSeq2".
+          csunf comp; simpl in *.
+          apply compute_step_comp_seq2_success in comp; exrepnd; subst; simpl in *.
+          Opaque choice_sequence_name_deq.
+          repndors; exrepnd; subst; csunf; simpl; auto;[|];
+            [|autorewrite with slow; boolvar; try omega; auto];[].
+          boolvar; auto; subst; simpl in *; auto; tcsp; ginv; try omega;
+            autorewrite with slow; try reflexivity;[].
+
+          (* comp_seq1 and comp_seq2 terms need to contain the default choice sequence name *)
+
+          admit. }
+
+        { SSSCase "NCompOp".
+          apply compute_step_ncompop_can1_success in comp; repnd.
+          repndors; exrepnd; subst;[| |].
+
+          { apply compute_step_compop_success_can_can in comp1.
+            exrepnd; subst; ginv.
+            repndors; exrepnd; subst; csunf; simpl; dcwf h; simpl; tcsp; ginv.
+
+            { apply get_param_from_cop_pki in comp3.
+              apply get_param_from_cop_pki in comp4.
+              subst; simpl in *.
+              unfold compute_step_comp; simpl; boolvar; auto. }
+
+            { apply (co_wf_def_implies_co_wf_ren_cs_term_true (name1,name2)) in comp0; simpl in *.
+              rewrite comp0 in Heqh; ginv. }
+
+            { apply get_param_from_cop_some in comp3.
+              apply get_param_from_cop_some in comp4.
+              subst; simpl in *.
+              unfold compute_step_comp; simpl; autorewrite with slow.
+              repeat rewrite ren_cs_can_pk2can.
+              autorewrite with slow; boolvar; subst; tcsp;[].
+              destruct pk1, pk2; simpl in *; ginv; tcsp;[].
+              boolvar; subst; ginv; tcsp;[|].
+              { apply up_to_name_snd in upto.
+                unfold up_to_name in *; simpl in *.
+                apply singleton_subset in upto; simpl in upto; repndors; tcsp; ginv; tcsp. }
+              { apply up_to_name_fst in upto.
+                unfold up_to_name in *; simpl in *.
+                apply singleton_subset in upto; simpl in upto; repndors; tcsp; ginv; tcsp. }
+            }
+
+            { apply (co_wf_def_implies_co_wf_ren_cs_term_true (name1,name2)) in comp0; simpl in *.
+              rewrite comp0 in Heqh; ginv. }
+          }
+
+          { admit. }
+
+          { admit. }
+        }
+
+        { SSSCase "NArithOp".
+
+          admit.
+        }
+
+        { SSSCase "NCanTest".
+
+          admit.
+        }
+      }
+
+      { SSCase "NCan".
+        csunf comp; simpl in *.
+        remember (compute_step lib (oterm (NCan ncan2) bts)) as c.
+        symmetry in Heqc; destruct c; ginv;[].
+        pose proof (ind (oterm (NCan ncan2) bts) (oterm (NCan ncan2) bts) []) as ind.
+        repeat (autodimp ind hyp); eauto 3 with slow;[].
+        pose proof (ind n name1 name2) as ind.
+        repeat (autodimp ind hyp); eauto 3 with slow;[].
+        csunf; simpl in *.
+        rewrite ind; simpl; auto.
+      }
+
+      { SSCase "Exc".
+        csunf comp; simpl in *.
+        apply compute_step_catch_success in comp.
+        repndors; exrepnd; subst; simpl in *.
+
+        { csunf; simpl; auto.
+          rewrite <- subst_ren_cs_term; simpl; auto. }
+
+        { csunf; simpl.
+          rewrite compute_step_catch_non_trycatch; auto. }
+      }
+
+      { SSCase "Abs".
+        csunf comp; simpl in *.
+        remember (compute_step lib (oterm (Abs abs2) bts)) as c.
+        symmetry in Heqc; destruct c; ginv;[].
+        pose proof (ind (oterm (Abs abs2) bts) (oterm (Abs abs2) bts) []) as ind.
+        repeat (autodimp ind hyp); eauto 3 with slow;[].
+        pose proof (ind n name1 name2) as ind.
+        repeat (autodimp ind hyp); eauto 3 with slow;[].
+        csunf; simpl in *.
+        rewrite ind; simpl; auto.
+      }
+    }
+
+    { (* fresh case *)
+
+      csunf comp.
+
+      admit.
+    }
+  }
+
+  { SCase "Exc".
+    csunf comp; simpl in *; ginv; simpl; auto.
+  }
+
+  { SCase "Abs".
+    csunf comp; simpl in *.
+    apply compute_step_lib_success in comp; exrepnd; subst.
+
+    admit.
+  }
+Admitted.
+
+Definition up_to_namec {o} (name : choice_sequence_name) (t : @CTerm o) :=
+  up_to_name name (get_cterm t).
+
+Lemma compute_to_valc_preserves_ren_cs {o} :
+  forall lib lib' (t v : @CTerm o) name1 name2,
+    name1 <> name2
+    -> lib_extends lib' lib
+    -> up_to_namec name1 t
+    -> (forall m : nat,
+           m < cs_size lib name1
+           ->
+           {k : nat
+            & find_cs_value_at lib' name1 m = Some (mkc_nat k)
+            # find_cs_value_at lib' name2 m = Some (mkc_nat k)})
+    -> computes_to_valc lib t v
+    -> computes_to_valc
+         (lib' (* extend [lib] with [name2] *))
+         (ren_cs_cterm (name1,name2) t)
+         (ren_cs_cterm (name1,name2) v).
+Proof.
+Admitted.
+
+Lemma hasvaluec_implies_computes_to_valc {o} :
+  forall lib (t : @CTerm o),
+    hasvaluec lib t
+    -> {v : CTerm & computes_to_valc lib t v}.
+Proof.
+  introv h.
+  destruct_cterms.
+  unfold hasvaluec, hasvalue in h; simpl in *; exrepnd.
+  destruct h0 as [comp isv].
+  inversion isv as [? isp isc]; subst.
+  exists (mk_cterm t' isp); unfold computes_to_valc; simpl.
+  split; auto.
+Qed.
 
 
 
@@ -2149,6 +2477,7 @@ Proof.
 
   apply equality_in_csname in eqa.
   unfold equality_of_csname_bar in eqa.
+  apply all_in_ex_bar_inhabited_type_bar_implies_inhabited_type_bar.
   eapply all_in_ex_bar_modus_ponens1;[|exact eqa]; clear eqa; introv ext eqa.
 
   eapply equality_monotone in eqA;[|eauto];[].
@@ -2166,7 +2495,7 @@ Proof.
       |apply computes_to_valc_implies_ccequivc_ext;eauto]
     ];[].
 
-  eapply inhabited_type_cequivc;
+  eapply inhabited_type_bar_cequivc;
     [apply ccequivc_ext_sym;
      apply implies_ccequivc_ext_product;
      [apply ccequivc_ext_refl
@@ -2178,6 +2507,20 @@ Proof.
 
   applydup (@equality_in_mkc_csprop_implies_tequality_cs o name) in eqA as teq; auto;[].
   eapply tequality_preserves_member in eqz;[|eauto].
+
+  applydup @inhabited_implies_tequality in eqz as tya.
+  apply types_converge in tya.
+  eapply all_in_ex_bar_modus_ponens1;[|exact tya]; clear tya; introv ext tya.
+  unfold chaltsc in tya; spcast.
+  apply hasvaluec_implies_computes_to_valc in tya; exrepnd.
+
+  eapply member_monotone in eqz;[|eauto];[].
+  eapply equality_monotone in eqA;[|eauto];[].
+  eapply tequality_monotone in teq;[|eauto];[].
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  clear dependent lib.
+  rename lib' into lib.
+  rename safe' into safe.
 
   apply inhabited_product.
   dands; eauto 3 with slow;[|].
@@ -2416,314 +2759,63 @@ Proof.
 
   destruct (choice_sequence_name_deq name' name) as [d|d];[subst;eauto 3 with slow|];[].
 
+  Check compute_to_valc_preserves_ren_cs.
 
-  Lemma compute_step_preserves_ren_cs {o} :
-    forall lib lib' (t u : @NTerm o) name1 name2,
-      name1 <> name2
-      -> lib_extends lib' lib
-      -> up_to_name name1 t
-      -> (forall m : nat,
-             m < cs_size lib name1
-             ->
-             {k : nat
-              & find_cs_value_at lib' name1 m = Some (mkc_nat k)
-              # find_cs_value_at lib' name2 m = Some (mkc_nat k)})
-      -> compute_step lib t = csuccess u
-      -> compute_step
-           (lib' (* extend [lib] with [name2] *))
-           (ren_cs_term (name1,name2) t)
-         = csuccess (ren_cs_term (name1,name2) u).
-  Proof.
-    nterm_ind1s t as [v|op bs ind] Case; introv dname ext upto imp comp; tcsp.
+(* Inspired from name_invariance stuff *)
+Lemma implies_close_ren_cs {o} :
+  forall name1 name2 lib lib' (u : cts(o)) (t1 t2 : @CTerm o) e,
+    name1 <> name2
+    -> lib_extends lib' lib
+    -> up_to_namec name1 t1
+    -> up_to_namec name1 t2
+    -> (forall m : nat,
+           m < cs_size lib name1
+           ->
+           {k : nat
+            & find_cs_value_at lib' name1 m = Some (mkc_nat k)
+            # find_cs_value_at lib' name2 m = Some (mkc_nat k)})
+    -> (forall lib t1 t2 e,
+           u lib t1 t2 e
+           -> u (ren_cs_lib r lib) (ren_cs_cterm r t1) (ren_cs_cterm r t2) (ren_cs_per r e))
+    -> close u lib t1 t2 e
+    -> close
+         u
+         lib'
+         (ren_cs_cterm r t1)
+         (ren_cs_cterm r t2)
+         (xren_cs_per r e).
+Proof.
+  introv imp cl.
+  close_cases (induction cl using @close_ind') Case; subst.
 
-    { Case "vterm".
-      csunf comp; simpl in *; ginv. }
+Qed
 
-    Case "oterm".
-    dopid op as [can|ncan|exc|abs] SCase.
+Lemma implies_equality_ren_cs {o} :
+  forall name1 name2 lib lib' (t1 t2 T : @CTerm o),
+    name1 <> name2
+    -> lib_extends lib' lib
+    -> up_to_namec name1 T
+    -> (forall m : nat,
+           m < cs_size lib name1
+           ->
+           {k : nat
+            & find_cs_value_at lib' name1 m = Some (mkc_nat k)
+            # find_cs_value_at lib' name2 m = Some (mkc_nat k)})
+    -> equality lib t1 t2 T
+    -> equality
+         lib'
+         (ren_cs_cterm (name1,name2) t1)
+         (ren_cs_cterm (name1,name2) t2)
+         (ren_cs_cterm (name1,name2) T).
+Proof.
+  introv equ.
+  unfold equality, nuprl in *; exrepnd.
+(*  exists (rename_per r eq).
+  unfold rename_per; autorewrite with slow in *.
+  dands; auto;[].
+  fold (rename_per r eq).
+  apply implies_close_univ_rename; auto.*)
+Admitted.
 
-    { SCase "Can".
-      csunf comp; simpl in *; ginv.
-      csunf; simpl; auto. }
-
-    { SCase "NCan".
-
-      destruct bs; try (complete (allsimpl; ginv)).
-      destruct b as [l t]; try (complete (allsimpl; ginv)).
-      destruct l; try (complete (allsimpl; ginv));[|].
-
-      { destruct t as [x|op bts]; try (complete (allsimpl; ginv));[].
-
-        dopid op as [can2|ncan2|exc2|abs2] SSCase.
-
-        { SSCase "Can".
-
-          dopid_noncan ncan SSSCase.
-
-          { SSSCase "NApply".
-            csunf comp; simpl in *.
-            apply compute_step_apply_success in comp; repndors; exrepnd; subst; simpl in *;
-              csunf; simpl; auto.
-            unfold apply_bterm; simpl.
-            rewrite <- subst_ren_cs_term; simpl; auto. }
-
-          { SSSCase "NEApply".
-            csunf comp; simpl in *.
-            apply compute_step_eapply_success in comp; repndors; exrepnd; subst; simpl in *;
-              csunf; simpl; auto.
-            repndors; exrepnd; subst; simpl;
-              [| |].
-
-            { apply compute_step_eapply2_success in comp1; repnd; subst; simpl in *.
-              repndors; exrepnd; subst; unfold mk_lam, mk_choice_seq in *; ginv; simpl in *; GC;
-                [|].
-
-              { apply iscan_implies in comp0; exrepnd; subst; simpl in *; dcwf h.
-                unfold compute_step_eapply2; unfold apply_bterm; simpl.
-                rewrite <- lsubst_ren_cs_term; simpl; auto. }
-
-              { unfold up_to_name in upto; simpl in upto.
-                apply singleton_subset in upto; simpl in upto; repndors; tcsp; ginv.
-                pose proof (imp n) as imp; autodimp imp hyp; eauto 3 with slow;[].
-                exrepnd.
-                eapply lib_extends_preserves_find_cs_value_at in comp5;[|eauto].
-                rewrite imp1 in comp5; inversion comp5; subst; clear comp5.
-                simpl in *; fold_terms.
-                boolvar; tcsp; GC;[].
-
-                dcwf h; simpl; boolvar; subst; autorewrite with slow in *; GC; try omega;[].
-                rewrite imp0; auto. }
-            }
-
-            { apply isexc_implies2 in comp0; exrepnd; subst; simpl in *.
-              dcwf h; auto.
-              apply (eapply_wf_def_implies_eapply_wf_ren_cs_term_true (name1,name2)) in comp2.
-              simpl in *; rewrite comp2 in Heqh; ginv. }
-
-            { fold_terms.
-              pose proof (ind arg2 arg2 []) as ind.
-              repeat (autodimp ind hyp); eauto 3 with slow;[].
-              pose proof (ind x name1 name2) as ind.
-              repeat (autodimp ind hyp); eauto 3 with slow;[].
-              rewrite ind.
-              rewrite implies_compute_step_eapply_success_if_isnoncan_like; auto; eauto 3 with slow.
-              apply (implies_eapply_wf_def_ren_cs_term (name1,name2)) in comp2; simpl in *; auto. }
-          }
-
-          { SSSCase "NFix".
-            csunf comp; simpl in *.
-            apply compute_step_fix_success in comp; repnd; subst; simpl in *.
-            csunf; simpl; auto. }
-
-          { SSSCase "NSpread".
-            csunf comp; simpl in *.
-            apply compute_step_spread_success in comp; exrepnd; subst; simpl in *.
-            csunf; simpl; auto.
-            unfold apply_bterm; simpl.
-            rewrite <- lsubst_ren_cs_term; simpl; auto. }
-
-          { SSSCase "NDsup".
-            csunf comp; simpl in *.
-            apply compute_step_dsup_success in comp; exrepnd; subst; simpl in *.
-            csunf; simpl; auto.
-            unfold apply_bterm; simpl.
-            rewrite <- lsubst_ren_cs_term; simpl; auto. }
-
-          { SSSCase "NDecide".
-            csunf comp; simpl in *.
-            apply compute_step_decide_success in comp; exrepnd; subst; simpl in *.
-            repndors; exrepnd; subst; simpl in *; csunf; simpl; auto;
-              unfold apply_bterm; simpl;
-                rewrite <- subst_ren_cs_term; simpl; auto. }
-
-          { SSSCase "NCbv".
-            csunf comp; simpl in *.
-            apply compute_step_cbv_success in comp; exrepnd; subst; simpl in *.
-            repndors; exrepnd; subst; simpl in *; csunf; simpl; auto.
-            unfold apply_bterm; simpl.
-            rewrite <- subst_ren_cs_term; simpl; auto. }
-
-          { SSSCase "NSleep".
-            csunf comp; simpl in *.
-            apply compute_step_sleep_success in comp; exrepnd; subst; simpl in *.
-            repndors; exrepnd; subst; simpl in *; csunf; simpl; auto. }
-
-          { SSSCase "NTUni".
-            csunf comp; simpl in *.
-            apply compute_step_tuni_success in comp; exrepnd; subst; simpl in *.
-            repndors; exrepnd; subst; simpl in *; csunf; simpl; auto.
-            unfold compute_step_tuni; simpl; boolvar; try omega; autorewrite with slow; auto. }
-
-          { SSSCase "NMinus".
-            csunf comp; simpl in *.
-            apply compute_step_minus_success in comp; exrepnd; subst; simpl in *.
-            repndors; exrepnd; subst; simpl in *; csunf; simpl; auto. }
-
-          { SSSCase "NFresh".
-            csunf comp; simpl in *; ginv. }
-
-          { SSSCase "NTryCatch".
-            csunf comp; simpl in *.
-            apply compute_step_try_success in comp; exrepnd; subst; simpl in *.
-            repndors; exrepnd; subst; simpl in *; csunf; simpl; auto. }
-
-          { SSSCase "NParallel".
-            csunf comp; simpl in *.
-            apply compute_step_parallel_success in comp; exrepnd; subst; simpl in *.
-            repndors; exrepnd; subst; simpl in *; csunf; simpl; auto. }
-
-          { SSSCase "NCompSeq1".
-            csunf comp; simpl in *.
-            apply compute_step_comp_seq1_success in comp; exrepnd; subst; simpl in *.
-            Opaque choice_sequence_name_deq.
-            repndors; exrepnd; subst; csunf; simpl; auto;[|];
-              [|autorewrite with slow; boolvar; try omega; auto];[].
-            unfold mk_fresh_choice_nat_seq; simpl; fold_terms.
-            boolvar; auto; subst; simpl in *;[].
-
-            (* comp_seq1 and comp_seq2 terms need to contain the default choice sequence name *)
-
-            admit. }
-
-          { SSSCase "NCompSeq2".
-            csunf comp; simpl in *.
-            apply compute_step_comp_seq2_success in comp; exrepnd; subst; simpl in *.
-            Opaque choice_sequence_name_deq.
-            repndors; exrepnd; subst; csunf; simpl; auto;[|];
-              [|autorewrite with slow; boolvar; try omega; auto];[].
-            boolvar; auto; subst; simpl in *; auto; tcsp; ginv; try omega;
-              autorewrite with slow; try reflexivity;[].
-
-            (* comp_seq1 and comp_seq2 terms need to contain the default choice sequence name *)
-
-            admit. }
-
-          { SSSCase "NCompOp".
-            apply compute_step_ncompop_can1_success in comp; repnd.
-            repndors; exrepnd; subst;[| |].
-
-            { apply compute_step_compop_success_can_can in comp1.
-              exrepnd; subst; ginv.
-              repndors; exrepnd; subst; csunf; simpl; dcwf h; simpl; tcsp; ginv.
-
-              { apply get_param_from_cop_pki in comp3.
-                apply get_param_from_cop_pki in comp4.
-                subst; simpl in *.
-                unfold compute_step_comp; simpl; boolvar; auto. }
-
-              { apply (co_wf_def_implies_co_wf_ren_cs_term_true (name1,name2)) in comp0; simpl in *.
-                rewrite comp0 in Heqh; ginv. }
-
-              { apply get_param_from_cop_some in comp3.
-                apply get_param_from_cop_some in comp4.
-                subst; simpl in *.
-                unfold compute_step_comp; simpl; autorewrite with slow.
-                repeat rewrite ren_cs_can_pk2can.
-                autorewrite with slow; boolvar; subst; tcsp;[].
-                destruct pk1, pk2; simpl in *; ginv; tcsp;[].
-                boolvar; subst; ginv; tcsp;[|].
-                { apply up_to_name_snd in upto.
-                  unfold up_to_name in *; simpl in *.
-                  apply singleton_subset in upto; simpl in upto; repndors; tcsp; ginv; tcsp. }
-                { apply up_to_name_fst in upto.
-                  unfold up_to_name in *; simpl in *.
-                  apply singleton_subset in upto; simpl in upto; repndors; tcsp; ginv; tcsp. }
-              }
-
-              { apply (co_wf_def_implies_co_wf_ren_cs_term_true (name1,name2)) in comp0; simpl in *.
-                rewrite comp0 in Heqh; ginv. }
-            }
-
-            { admit. }
-
-            { admit. }
-          }
-
-          { SSSCase "NArithOp".
-
-            admit.
-          }
-
-          { SSSCase "NCanTest".
-
-            admit.
-          }
-        }
-
-        { SSCase "NCan".
-          csunf comp; simpl in *.
-          remember (compute_step lib (oterm (NCan ncan2) bts)) as c.
-          symmetry in Heqc; destruct c; ginv;[].
-          pose proof (ind (oterm (NCan ncan2) bts) (oterm (NCan ncan2) bts) []) as ind.
-          repeat (autodimp ind hyp); eauto 3 with slow;[].
-          pose proof (ind n name1 name2) as ind.
-          repeat (autodimp ind hyp); eauto 3 with slow;[].
-          csunf; simpl in *.
-          rewrite ind; simpl; auto.
-        }
-
-        { SSCase "Exc".
-          csunf comp; simpl in *.
-          apply compute_step_catch_success in comp.
-          repndors; exrepnd; subst; simpl in *.
-
-          { csunf; simpl; auto.
-            rewrite <- subst_ren_cs_term; simpl; auto. }
-
-          { csunf; simpl.
-            rewrite compute_step_catch_non_trycatch; auto. }
-        }
-
-        { SSCase "Abs".
-          csunf comp; simpl in *.
-          remember (compute_step lib (oterm (Abs abs2) bts)) as c.
-          symmetry in Heqc; destruct c; ginv;[].
-          pose proof (ind (oterm (Abs abs2) bts) (oterm (Abs abs2) bts) []) as ind.
-          repeat (autodimp ind hyp); eauto 3 with slow;[].
-          pose proof (ind n name1 name2) as ind.
-          repeat (autodimp ind hyp); eauto 3 with slow;[].
-          csunf; simpl in *.
-          rewrite ind; simpl; auto.
-        }
-      }
-
-      { (* fresh case *)
-
-        csunf comp.
-
-        admit.
-      }
-    }
-
-    { SCase "Exc".
-      csunf comp; simpl in *; ginv; simpl; auto.
-    }
-
-    { SCase "Abs".
-      csunf comp; simpl in *.
-      apply compute_step_lib_success in comp; exrepnd; subst.
-
-    }
-
-
-  Qed.
-
-  Lemma xxx {o} :
-    forall lib lib' (t v : @NTerm o) name1 name2,
-      lib_extends lib' lib
-      -> (forall m : nat,
-             m < cs_size lib name1
-             ->
-             {k : nat
-              & computes_to_valc lib' (mkc_apply (mkc_choice_seq name1) (mkc_nat m)) (mkc_nat k)
-              # computes_to_valc lib' (mkc_apply (mkc_choice_seq name2) (mkc_nat m)) (mkc_nat k)})
-      -> computes_to_value lib t v
-      -> computes_to_value
-           (lib' (* extend [lib] with [name2] *))
-           (ren_cs_term (name1,name2) t)
-           (ren_cs_term (name1,name2) v).
-  Proof.
-
-  Qed.
 
 Qed.
