@@ -32,10 +32,11 @@
 
 
 Require Export sequents_equality.
-Require Export per_props_psquash.
 Require Export sequents_tacs2.
 Require Export per_can.
 Require Export per_props_squash.
+Require Export per_props_psquash.
+Require Export per_props_usquash.
 Require Export subst_tacs_aeq.
 Require Export lsubst_hyps.
 Require Export list. (* !!WTF *)
@@ -966,5 +967,150 @@ Proof.
     exrepnd.
     lsubst_tac.
     allrw <- @member_member_iff; auto.
+  }
+Qed.
+
+
+
+(*
+   H |- usquash(t1) = usquash(t2) ∈ U(i)
+
+     By EqualUSquash
+
+     H |- t1 in U(i)
+     H |- t2 in U(i)
+     H, z : t1 |- t2
+     H, z : t2 |- t1
+
+ *)
+Definition rule_equal_usquash {o}
+           (H : barehypotheses)
+           (i : nat)
+           (t1 t2 : @NTerm o)
+           (z : NVar)
+           (e1 e2 : NTerm)
+  :=
+  mk_rule
+    (mk_baresequent H (mk_conclax (mk_equality (mk_usquash t1) (mk_usquash t2) (mk_uni i))))
+    [ mk_baresequent H (mk_conclax (mk_member t1 (mk_uni i))),
+      mk_baresequent H (mk_conclax (mk_member t2 (mk_uni i))),
+      mk_baresequent (snoc H (mk_hyp z t1)) (mk_concl t2 e2),
+      mk_baresequent (snoc H (mk_hyp z t2)) (mk_concl t1 e1)
+    ]
+    [].
+
+Lemma rule_equal_usquash_true {o} :
+  forall lib (H : barehypotheses) (i : nat)
+         (t1 t2 : @NTerm o) (z : NVar) (e1 e2 : NTerm),
+    rule_true lib (rule_equal_usquash H i t1 t2 z e1 e2).
+Proof.
+  unfold rule_equal_usquash, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  rename Hyp1 into hyp2.
+  rename Hyp2 into hyp3.
+  rename Hyp3 into hyp4.
+  destseq; allsimpl; proof_irr; GC.
+  exists (@covered_axiom o (nh_vars_hyps H)).
+
+  assert (!LIn z (vars_hyps H)
+          # !LIn z (free_vars t1)
+          # !LIn z (free_vars t2)) as vhyps.
+
+  {
+    clear hyp1 hyp2 hyp3 hyp4.
+    dwfseq.
+    sp.
+  }
+
+  destruct vhyps as [ nzH  vhyps ].
+  destruct vhyps as [ nzt1 nzt2  ].
+
+  vr_seq_true.
+  lsubst_tac.
+  allrw <- @member_equality_iff.
+  teq_and_eq (@mk_uni o i) (mk_usquash t1) (mk_usquash t2) s1 s2 H; eauto 3 with slow;[].
+
+  vr_seq_true in hyp1.
+  vr_seq_true in hyp2.
+  pose proof (hyp1 s1 s2 hf sim) as hypa; exrepnd; clear_irr.
+  pose proof (hyp2 s1 s2 hf sim) as hypb; exrepnd; clear_irr.
+
+  hide_hyp hyp1.
+  hide_hyp hyp2.
+
+  lsubst_tac.
+  allrw <- @member_member_iff.
+  apply tequality_mkc_member_implies_sp in hypa0; auto;[].
+  apply tequality_mkc_member_implies_sp in hypb0; auto;[].
+
+  apply equality_mkc_usquash_in_uni; dands; eauto 3 with slow;[|].
+
+  { apply equality_sym in hypb0; apply equality_refl in hypb0; auto. }
+
+  introv.
+  split; intro h.
+
+  {
+    unfold inhabited_type in h; exrepnd.
+    vr_seq_true in hyp3.
+    pose proof (hyp3 (snoc s1 (z,t)) (snoc s2 (z,t))) as hyp3.
+    repeat (autodimp hyp3 hyp).
+
+    { apply hyps_functionality_snoc2; simpl; auto;[].
+
+      introv equ sim'.
+
+      pose proof (hyp1 s1 s') as hypc.
+      repeat (autodimp hypc hyp);[].
+      exrepnd.
+      lsubst_tac.
+      allrw <- @member_member_iff.
+      apply tequality_mkc_member_implies_sp in hypc0; auto;[].
+      apply equality_in_uni in hypc0; auto. }
+
+    { sim_snoc2;[].
+      dands; auto;[].
+      proof_irr; auto. }
+
+    exrepnd.
+    lsubst_tac.
+    apply equality_refl in hyp3.
+    eapply inhabited_type_tequality;[eauto|]; auto.
+    eexists; eauto.
+  }
+
+  {
+    unfold inhabited_type in h; exrepnd.
+    vr_seq_true in hyp4.
+    pose proof (hyp4 (snoc s1 (z,t)) (snoc s2 (z,t))) as hyp4.
+    repeat (autodimp hyp4 hyp).
+
+    { apply hyps_functionality_snoc2; simpl; auto;[].
+
+      introv equ sim'.
+
+      pose proof (hyp2 s1 s') as hypc.
+      repeat (autodimp hypc hyp);[].
+      exrepnd.
+      lsubst_tac.
+      allrw <- @member_member_iff.
+      apply tequality_mkc_member_implies_sp in hypc0; auto;[].
+      apply equality_in_uni in hypc0; auto. }
+
+    { sim_snoc2;[].
+      dands; auto;[].
+      proof_irr; auto.
+      apply equality_in_uni in hypb0.
+      eapply tequality_preserving_equality;[|apply tequality_sym;eauto];auto. }
+
+    exrepnd.
+    lsubst_tac.
+    apply equality_refl in hyp4.
+    eexists; eauto.
   }
 Qed.

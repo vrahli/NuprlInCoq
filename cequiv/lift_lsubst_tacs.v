@@ -45,6 +45,7 @@ Require Export compare_cterm.
 Require Export terms_try.
 Require Export csubst_fresh.
 Require Export psquash.
+Require Export usquash.
 
 
 Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
@@ -1438,6 +1439,16 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [w1 name];
         destruct name as [c1 name];
         clear_irr; tac
+
+    (* USquash *)
+    | context [lsubstc (mk_usquash ?x) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let c1 := fresh "c1" in
+      generalize (lsubstc_mk_usquash_ex2 x w s c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [c1 name];
+        clear_irr; tac
   end.
 
 Lemma implies_prod_left :
@@ -1719,13 +1730,21 @@ Ltac lift_lsubsts2 :=
 
 Tactic Notation "one_lift_lsubst_squash" constr(T) ident(name) tactic(tac) :=
   match T with
-    | context [lsubstc (mk_psquash ?a) ?w ?s ?c] =>
-      let w1 := fresh "w1" in
-      let c1 := fresh "c1" in
-      pose proof (lsubstc_mk_psquash_ex2 a w s c) as name;
-        destruct name as [w1 name];
-        destruct name as [c1 name];
-        clear_irr; tac
+  | context [lsubstc (mk_psquash ?a) ?w ?s ?c] =>
+    let w1 := fresh "w1" in
+    let c1 := fresh "c1" in
+    pose proof (lsubstc_mk_psquash_ex2 a w s c) as name;
+    destruct name as [w1 name];
+    destruct name as [c1 name];
+    clear_irr; tac
+
+  | context [lsubstc (mk_usquash ?a) ?w ?s ?c] =>
+    let w1 := fresh "w1" in
+    let c1 := fresh "c1" in
+    pose proof (lsubstc_mk_usquash_ex2 a w s c) as name;
+    destruct name as [w1 name];
+    destruct name as [c1 name];
+    clear_irr; tac
   end.
 
 Ltac one_lift_lsubst_squash_concl :=
