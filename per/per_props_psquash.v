@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -838,4 +839,643 @@ Proof.
 
   apply equality_in_mkc_pertype2 in k; repnd.
   apply member_iff_inhabited_mkc_apply2_mkc_psquash_per in k0; sp.
+Qed.
+
+Ltac ntsi :=
+  match goal with
+      [ p : POpid , H : context[nuprli ?lib ?i] |- _ ] =>
+      pose proof (@nuprli_type_system p lib i) as nts;
+        destruct nts as [ nts_uv nts ];
+        destruct nts as [ nts_ext nts ];
+        destruct nts as [ nts_tys nts ];
+        destruct nts as [ nts_tyt nts ];
+        destruct nts as [ nts_tyv nts ];
+        destruct nts as [ nts_tes nts ];
+        destruct nts as [ nts_tet nts_tev ]
+  end.
+
+Lemma nuprli_value_respecting_left {o} :
+  forall lib i (t1 t2 t3 : @CTerm o) eq,
+    nuprli lib i t1 t2 eq
+    -> cequivc lib t1 t3
+    -> nuprli lib i t3 t2 eq.
+Proof.
+  intros.
+  ntsi.
+  assert (nuprli lib i t1 t3 eq) as eq13
+      by (apply nts_tyv; auto; apply nts_tyt with (T2 := t2); auto).
+  apply nts_tyt with (T2 := t1); auto.
+Qed.
+
+Lemma nuprli_value_respecting_right {o} :
+  forall lib i (t1 t2 t3 : @CTerm o) eq,
+    nuprli lib i t1 t2 eq
+    -> cequivc lib t2 t3
+    -> nuprli lib i t1 t3 eq.
+Proof.
+  intros.
+  ntsi.
+  assert (nuprli lib i t2 t3 eq) as eq23
+    by (apply nts_tyv; auto; apply nts_tyt with (T2 := t1); auto).
+  apply nts_tyt with (T2 := t2); auto.
+Qed.
+
+Hint Resolve alphaeqc_implies_cequivc : slow.
+
+Lemma nuprli_respects_alphaeqc_left {o} :
+  forall lib i (t1 t2 t3 : @CTerm o) eq,
+    nuprli lib i t1 t2 eq
+    -> alphaeqc t1 t3
+    -> nuprli lib i t3 t2 eq.
+Proof.
+  intros.
+  eapply nuprli_value_respecting_left; eauto; eauto 3 with slow.
+Qed.
+
+Lemma nuprli_respects_alphaeqc_right {o} :
+  forall lib i (t1 t2 t3 : @CTerm o) eq,
+    nuprli lib i t1 t2 eq
+    -> alphaeqc t2 t3
+    -> nuprli lib i t1 t3 eq.
+Proof.
+  intros.
+  eapply nuprli_value_respecting_right; eauto; eauto 3 with slow.
+Qed.
+
+Hint Rewrite @substc2_member : slow.
+Hint Rewrite @mkcv_member_substc : slow.
+Hint Rewrite @mkc_var_substc : slow.
+Hint Rewrite @mkcv_halts_substc : slow.
+Hint Rewrite @mkcv_isaxiom_substc : slow.
+Hint Resolve approxc_refl : slow.
+
+Lemma mkc_halts_mkc_axiom {o} :
+  forall (lib : @library o),
+    cequivc lib (mkc_halts mkc_axiom) mkc_true.
+Proof.
+  introv.
+  rewrite <- fold_mkc_halts.
+  rewrite mkc_true_eq.
+  apply cequivc_decomp_approx; dands; eauto 3 with slow.
+  unfold cequivc; simpl.
+  apply computes_to_value_implies_cequiv; eauto 3 with slow.
+  apply isprogram_cbv_iff; dands; eauto 3 with slow.
+Qed.
+
+Lemma not_cbv_bot_reduces_to_is_value_like {p} :
+  forall lib v u (t : @NTerm p),
+    is_value_like lib t
+    -> !reduces_to lib (mk_cbv mk_bot v u) t.
+Proof.
+  introv isv r.
+  unfold reduces_to in r; sp.
+  revert t isv r.
+  induction k as [? ind] using comp_ind_type; sp; allsimpl.
+  destruct k.
+
+  - allrw @reduces_in_atmost_k_steps_0; subst.
+    unfold is_value_like, isvalue_like in isv; simpl in *; repndors; tcsp.
+
+  - allrw @reduces_in_atmost_k_steps_S; exrepnd.
+    csunf r1; simpl in r1; ginv.
+    destruct k.
+
+    + allrw @reduces_in_atmost_k_steps_0; subst.
+      unfold is_value_like, isvalue_like in isv; simpl in *; repndors; tcsp.
+
+    + allrw @reduces_in_atmost_k_steps_S; exrepnd.
+      csunf r0; simpl in r0; ginv.
+      unfold apply_bterm, lsubst in r1; allsimpl.
+      apply ind in r1; tcsp.
+Qed.
+
+Lemma mkc_halts_mkc_bot {o} :
+  forall (lib : @library o),
+    cequivc lib (mkc_halts mkc_bot) mkc_false.
+Proof.
+  introv.
+  rewrite <- fold_mkc_halts.
+  rewrite mkc_false_eq.
+  apply cequivc_decomp_approx; dands; eauto 3 with slow.
+  unfold cequivc; simpl.
+  split;[|apply bottom_approx_any;apply isprogram_cbv_iff;dands;eauto 3 with slow];[].
+  apply approx_assume_hasvalue; eauto 3 with slow;
+    try (complete (apply isprogram_cbv_iff;dands;eauto 3 with slow));[].
+  introv hv.
+  assert False; tcsp.
+  unfold hasvalue_like in hv; exrepnd.
+  apply not_cbv_bot_reduces_to_is_value_like in hv1; tcsp.
+Qed.
+
+Lemma mkc_halts_mkc_zero {o} :
+  forall (lib : @library o),
+    cequivc lib (mkc_halts mkc_zero) mkc_true.
+Proof.
+  introv.
+  rewrite <- fold_mkc_halts.
+  rewrite mkc_true_eq.
+  apply cequivc_decomp_approx; dands; eauto 3 with slow.
+  unfold cequivc; simpl.
+  apply computes_to_value_implies_cequiv; eauto 3 with slow.
+  apply isprogram_cbv_iff; dands; eauto 3 with slow.
+Qed.
+
+Lemma nuprli_mkc_uand_implies {o} :
+  forall lib i (t1 t2 t3 t4 : @CTerm o) per,
+    nuprli lib i (mkc_uand t1 t2) (mkc_uand t3 t4) per
+    -> (exists per1, nuprli lib i t1 t3 per1) # (exists per2, nuprli lib i t2 t4 per2).
+Proof.
+  introv h.
+  eapply nuprli_respects_alphaeqc_left  in h;[|apply (mkc_uand_aeq nvarx)].
+  eapply nuprli_respects_alphaeqc_right in h;[|apply (mkc_uand_aeq nvarx)].
+  inversion h; subst; try not_univ;[].
+  clear h.
+
+  match goal with
+  | [ H : context[per_isect] |- _ ] => rename H into pi
+  end.
+  unfold per_isect in *; exrepnd.
+  unfold type_family in *; exrepnd.
+  computes_to_value_isvalue; GC.
+
+  fold (nuprli lib i) in *.
+  inversion pi4; subst; try not_univ;[].
+  clear pi4.
+  match goal with
+  | [ H : context[per_base] |- _ ] => rename H into pb
+  end.
+  unfold per_base in *; repnd.
+  computes_to_value_isvalue; GC.
+
+  dands.
+
+  {
+    assert (mkc_axiom ~=~(lib) mkc_axiom) as ea by (spcast; eauto 3 with slow).
+    apply pb in ea.
+
+    pose proof (pi0 _ _ ea) as pa.
+    eapply nuprli_respects_alphaeqc_left  in pa;[|apply substc_mkcv_ufun].
+    eapply nuprli_respects_alphaeqc_right in pa;[|apply substc_mkcv_ufun].
+    autorewrite with slow in *.
+
+    repeat (rewrite <- fold_mkc_ufun in pa).
+    inversion pa; subst; try not_univ;[].
+    clear pa.
+
+    match goal with
+    | [ H : context[per_isect] |- _ ] => rename H into pi
+    end.
+    unfold per_isect in *; exrepnd.
+    unfold type_family in *; exrepnd.
+    computes_to_value_isvalue; GC.
+    fold (nuprli lib i) in *.
+
+    eapply nuprli_value_respecting_left  in pi6;[|apply mkc_halts_mkc_axiom].
+    eapply nuprli_value_respecting_right in pi6;[|apply mkc_halts_mkc_axiom].
+
+    assert (eqa0 <=2=> (fun t t' => t ===>(lib) mkc_axiom # t' ===>(lib) mkc_axiom)) as eqae.
+    {
+      rewrite mkc_true_eq in pi6.
+      inversion pi6; subst; try not_univ;[].
+      clear pi6.
+      match goal with
+      | [ H : context[per_approx] |- _ ] => rename H into pax
+      end.
+      unfold per_approx in *; exrepnd.
+      computes_to_value_isvalue; GC.
+      introv.
+      rw pax1.
+      split; intro q; repnd; dands; auto; spcast; eauto 3 with slow.
+    }
+
+    assert (eqa0 mkc_axiom mkc_axiom) as eax.
+    { apply eqae; dands; spcast; eauto 3 with slow. }
+
+    pose proof (pi2 _ _ eax) as eq1.
+    autorewrite with slow in *.
+
+    eapply nuprli_value_respecting_left  in eq1;[|apply mkc_isaxiom_axiom].
+    eapply nuprli_value_respecting_right in eq1;[|apply mkc_isaxiom_axiom].
+    eauto.
+  }
+
+  {
+    assert (mkc_zero ~=~(lib) mkc_zero) as ea by (spcast; eauto 3 with slow).
+    apply pb in ea.
+
+    pose proof (pi0 _ _ ea) as pa.
+    eapply nuprli_respects_alphaeqc_left  in pa;[|apply substc_mkcv_ufun].
+    eapply nuprli_respects_alphaeqc_right in pa;[|apply substc_mkcv_ufun].
+    autorewrite with slow in *.
+
+    repeat (rewrite <- fold_mkc_ufun in pa).
+    inversion pa; subst; try not_univ;[].
+    clear pa.
+
+    match goal with
+    | [ H : context[per_isect] |- _ ] => rename H into pi
+    end.
+    unfold per_isect in *; exrepnd.
+    unfold type_family in *; exrepnd.
+    computes_to_value_isvalue; GC.
+    fold (nuprli lib i) in *.
+
+    eapply nuprli_value_respecting_left  in pi6;[|apply mkc_halts_mkc_zero].
+    eapply nuprli_value_respecting_right in pi6;[|apply mkc_halts_mkc_zero].
+
+    assert (eqa0 <=2=> (fun t t' => t ===>(lib) mkc_axiom # t' ===>(lib) mkc_axiom)) as eqae.
+    {
+      rewrite mkc_true_eq in pi6.
+      inversion pi6; subst; try not_univ;[].
+      clear pi6.
+      match goal with
+      | [ H : context[per_approx] |- _ ] => rename H into pax
+      end.
+      unfold per_approx in *; exrepnd.
+      computes_to_value_isvalue; GC.
+      introv.
+      rw pax1.
+      split; intro q; repnd; dands; auto; spcast; eauto 3 with slow.
+    }
+
+    assert (eqa0 mkc_axiom mkc_axiom) as eax.
+    { apply eqae; dands; spcast; eauto 3 with slow. }
+
+    pose proof (pi2 _ _ eax) as eq1.
+    autorewrite with slow in *.
+
+    eapply nuprli_value_respecting_left  in eq1;[|apply mkc_isaxiom_zero].
+    eapply nuprli_value_respecting_right in eq1;[|apply mkc_isaxiom_zero].
+    eauto.
+  }
+Qed.
+
+Lemma nuprli_mkc_member_implies {o} :
+  forall lib i (t1 t2 T1 T2 : @CTerm o) per,
+    nuprli lib i (mkc_member t1 T1) (mkc_member t2 T2) per
+    -> exists per1, nuprli lib i T1 T2 per1.
+Proof.
+  introv h.
+  repeat (rewrite <- fold_mkc_member in h).
+  inversion h; subst; try not_univ;[].
+  clear h.
+
+  match goal with
+  | [ H : context[per_eq] |- _ ] => rename H into pi
+  end.
+  unfold per_eq in *; exrepnd.
+  computes_to_value_isvalue; GC; eauto.
+Qed.
+
+Hint Resolve mkc_uni_in_nuprl : slow.
+
+Lemma equality_base_in_uni {o} :
+  forall (lib : @library o) i,
+    equality lib mkc_base mkc_base (mkc_uni i).
+Proof.
+  introv.
+  exists (fun A A' => {eqa : per(o) , close lib (univi lib i) A A' eqa}).
+  dands; eauto 3 with slow.
+  exists (fun t t' => (t) ~=~(lib) (t')).
+  apply CL_base; unfold per_base; dands; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve equality_base_in_uni : slow.
+
+Definition approx_mk_isect {o} :
+  forall lib (a1 a2 : @NTerm o) v b1 b2,
+    isprog_vars [v] b1
+    -> isprog_vars [v] b2
+    -> approx lib a1 a2
+    -> approx_open lib b1 b2
+    -> approx lib (mk_isect a1 v b1) (mk_isect a2 v b2).
+Proof.
+  introv ispb1 ispb2 apr1 apr2.
+  applydup @approx_isprog in apr1.
+  repnd.
+  unfold mk_isect.
+  repeat (prove_approx; tcsp; eauto 2 with slow).
+  fold (approx_open_bterm lib).
+  apply approx_open_implies_approx_open_bterm; auto.
+Qed.
+
+Definition cequiv_mk_isect {o} :
+  forall lib (a1 a2 : @NTerm o) v b1 b2,
+    isprog_vars [v] b1
+    -> isprog_vars [v] b2
+    -> cequiv lib a1 a2
+    -> cequiv_open lib b1 b2
+    -> cequiv lib (mk_isect a1 v b1) (mk_isect a2 v b2).
+Proof.
+  introv isp1 isp2 ceq1 ceq2.
+  allunfold @cequiv; repnd.
+  allapply @olift_cequiv_approx; repnd.
+  dands; apply approx_mk_isect; auto.
+Qed.
+
+Lemma implies_cequivc_ufun {o} :
+  forall lib (a b c d : @CTerm o),
+    cequivc lib a b
+    -> cequivc lib c d
+    -> cequivc lib (mkc_ufun a c) (mkc_ufun b d).
+Proof.
+  introv ceqa ceqb.
+  destruct_cterms.
+  unfold cequivc in *; simpl in *.
+  unfold mk_ufun.
+  repeat (rewrite newvar_prog; auto;[]).
+  apply cequiv_mk_isect; eauto 3 with slow.
+  apply cequiv_implies_cequiv_open; auto.
+Qed.
+
+Lemma equality_mkc_psquash_in_uni {o} :
+  forall lib (t1 t2 : @CTerm o) i,
+    equality lib (mkc_psquash t1) (mkc_psquash t2) (mkc_uni i)
+    <=> (member lib t1 (mkc_uni i)
+         # member lib t2 (mkc_uni i)
+         # (forall t, member lib t t1 <=> member lib t t2)).
+Proof.
+  introv.
+  sp_iff Case; introv h; repnd.
+
+  - Case "->".
+    unfold equality, nuprl in h; exrepnd.
+    inversion h1; subst; try not_univ;[].
+    duniv j q.
+    allrw @univi_exists_iff; exrepd.
+    computes_to_value_isvalue; GC.
+    discover; exrepnd.
+    rename eqa into eqi.
+    ioneclose; subst; try not_univ; try (unfold mkc_psquash in *; not_univ).
+
+    match goal with
+    | [ H : context[per_pertype] |- _ ] => rename H into per
+    end.
+    unfold per_pertype in *; exrepnd.
+
+    computes_to_value_isvalue; GC.
+    apply mkc_pertype_eq in per0; subst.
+    apply mkc_pertype_eq in per2; subst.
+    fold (nuprli lib j0) in *.
+
+    dands.
+
+    { exists eq; dands; auto.
+      apply t.
+
+      pose proof (per3 mkc_axiom mkc_axiom) as pa.
+      eapply nuprli_value_respecting_left   in pa;[|apply cequivc_beta2].
+      eapply nuprli_value_respecting_right  in pa;[|apply cequivc_beta2].
+      repeat (rw @mkcv_lam_substc in pa; try (complete (intro xx; ginv));[]).
+      eapply nuprli_value_respecting_left   in pa;[|apply cequivc_beta].
+      eapply nuprli_value_respecting_right  in pa;[|apply cequivc_beta].
+      eapply nuprli_respects_alphaeqc_left  in pa;[|apply substc_alphaeqcv; apply substc2_uand].
+      eapply nuprli_respects_alphaeqc_right in pa;[|apply substc_alphaeqcv; apply substc2_uand].
+      eapply nuprli_respects_alphaeqc_left  in pa;[|apply substc_mkcv_uand].
+      eapply nuprli_respects_alphaeqc_right in pa;[|apply substc_mkcv_uand].
+      autorewrite with slow in *.
+      rewrite substc2_mk_cv_app_r in pa;[|introv xx;ginv];[].
+      autorewrite with slow in *.
+      apply nuprli_mkc_uand_implies in pa; exrepnd.
+      apply nuprli_mkc_member_implies in pa2; auto. }
+
+    { exists eq; dands; auto.
+      apply t.
+
+      pose proof (per4 mkc_axiom mkc_axiom) as pa.
+      eapply nuprli_value_respecting_left   in pa;[|apply cequivc_beta2].
+      eapply nuprli_value_respecting_right  in pa;[|apply cequivc_beta2].
+      repeat (rw @mkcv_lam_substc in pa; try (complete (intro xx; ginv));[]).
+      eapply nuprli_value_respecting_left   in pa;[|apply cequivc_beta].
+      eapply nuprli_value_respecting_right  in pa;[|apply cequivc_beta].
+      eapply nuprli_respects_alphaeqc_left  in pa;[|apply substc_alphaeqcv; apply substc2_uand].
+      eapply nuprli_respects_alphaeqc_right in pa;[|apply substc_alphaeqcv; apply substc2_uand].
+      eapply nuprli_respects_alphaeqc_left  in pa;[|apply substc_mkcv_uand].
+      eapply nuprli_respects_alphaeqc_right in pa;[|apply substc_mkcv_uand].
+      autorewrite with slow in *.
+      rewrite substc2_mk_cv_app_r in pa;[|introv xx;ginv];[].
+      autorewrite with slow in *.
+      apply nuprli_mkc_uand_implies in pa; exrepnd.
+      apply nuprli_mkc_member_implies in pa2; auto. }
+
+    { introv.
+
+      pose proof (per3 t0 t0) as pa.
+      eapply nuprli_value_respecting_left   in pa;[|apply cequivc_beta2].
+      eapply nuprli_value_respecting_right  in pa;[|apply cequivc_beta2].
+      repeat (rw @mkcv_lam_substc in pa; try (complete (intro xx; ginv));[]).
+      eapply nuprli_value_respecting_left   in pa;[|apply cequivc_beta].
+      eapply nuprli_value_respecting_right  in pa;[|apply cequivc_beta].
+      eapply nuprli_respects_alphaeqc_left  in pa;[|apply substc_alphaeqcv; apply substc2_uand].
+      eapply nuprli_respects_alphaeqc_right in pa;[|apply substc_alphaeqcv; apply substc2_uand].
+      eapply nuprli_respects_alphaeqc_left  in pa;[|apply substc_mkcv_uand].
+      eapply nuprli_respects_alphaeqc_right in pa;[|apply substc_mkcv_uand].
+      autorewrite with slow in *.
+      rewrite substc2_mk_cv_app_r in pa;[|introv xx;ginv];[].
+      autorewrite with slow in *.
+
+      pose proof (per4 t0 t0) as pb.
+      eapply nuprli_value_respecting_left   in pb;[|apply cequivc_beta2].
+      eapply nuprli_value_respecting_right  in pb;[|apply cequivc_beta2].
+      repeat (rw @mkcv_lam_substc in pb; try (complete (intro xx; ginv));[]).
+      eapply nuprli_value_respecting_left   in pb;[|apply cequivc_beta].
+      eapply nuprli_value_respecting_right  in pb;[|apply cequivc_beta].
+      eapply nuprli_respects_alphaeqc_left  in pb;[|apply substc_alphaeqcv; apply substc2_uand].
+      eapply nuprli_respects_alphaeqc_right in pb;[|apply substc_alphaeqcv; apply substc2_uand].
+      eapply nuprli_respects_alphaeqc_left  in pb;[|apply substc_mkcv_uand].
+      eapply nuprli_respects_alphaeqc_right in pb;[|apply substc_mkcv_uand].
+      autorewrite with slow in *.
+      rewrite substc2_mk_cv_app_r in pb;[|introv xx;ginv];[].
+      autorewrite with slow in *.
+
+      pose proof (per5 t0 t0) as pc.
+
+      assert ((inhabited_type lib (mkc_uand (mkc_member t0 t1) (mkc_member t0 t1)))
+                <=> inhabited_type lib (mkc_uand (mkc_member t0 t2) (mkc_member t0 t2))) as inh.
+      { split; intro h.
+        - eapply inhabited_type_iff_inhabited_i;[eauto|]; apply pc.
+          eapply inhabited_type_iff_inhabited_i;[eauto|]; auto.
+        - eapply inhabited_type_iff_inhabited_i;[eauto|]; apply pc.
+          eapply inhabited_type_iff_inhabited_i;[eauto|]; auto. }
+      clear pc.
+      repeat (rw @inhabited_mkc_uand in inh).
+      destruct inh as [inh1 inh2].
+
+      split; intro mem.
+
+      { autodimp inh1 hyp; auto.
+        - exists (@mkc_axiom o); dands; eauto 3 with slow;
+            rw <- @member_member_iff; auto.
+        - exrepnd; GC.
+          apply equality_in_member in inh1; tcsp. }
+
+      { autodimp inh2 hyp; auto.
+        - exists (@mkc_axiom o); dands; eauto 3 with slow;
+            rw <- @member_member_iff; auto.
+        - exrepnd; GC.
+          apply equality_in_member in inh2; tcsp. }
+    }
+
+  - unfold mkc_psquash.
+    apply mkc_pertype_equality_in_uni.
+    dands; introv;
+      [| | |].
+
+    { eapply member_respects_cequivc;[apply cequivc_sym;apply cequivc_beta2|].
+      repeat (rw @mkcv_lam_substc; try (complete (intro xx; ginv));[]).
+      eapply member_respects_cequivc;[apply cequivc_sym;apply cequivc_beta|].
+      eapply member_respects_alphaeqc_l;[apply alphaeqc_sym;apply substc_alphaeqcv; apply substc2_uand|].
+      eapply member_respects_alphaeqc_l;[apply alphaeqc_sym;apply substc_mkcv_uand|].
+      autorewrite with slow.
+      rewrite substc2_mk_cv_app_r;[|introv xx;ginv];[].
+      autorewrite with slow in *.
+
+      eapply member_respects_alphaeqc_l;[apply alphaeqc_sym;apply (mkc_uand_aeq nvarx)|].
+      apply equality_isect; dands; eauto 3 with slow;[].
+      introv eb.
+      apply equality_in_base in eb; spcast.
+
+      eapply equality_respects_alphaeqc_left;[apply alphaeqc_sym;apply substc_mkcv_ufun|].
+      eapply equality_respects_alphaeqc_right;[apply alphaeqc_sym;apply substc_mkcv_ufun|].
+      autorewrite with slow.
+
+      eapply equality_respects_cequivc_left;
+        [apply cequivc_sym;apply implies_cequivc_ufun;
+         [apply implies_cequivc_halts;eauto
+         |apply cequivc_mkc_isaxiom;
+          [eauto|apply cequivc_refl|apply cequivc_refl] ] |].
+      clear dependent a.
+      rename a' into a.
+
+      repeat rewrite <- fold_mkc_ufun.
+      apply equality_isect; dands; eauto 3 with slow.
+
+      { apply equality_in_uni_mkc_halts; eauto 3 with slow. }
+
+      introv eh.
+      autorewrite with slow.
+      apply equality_in_halts in eh; repnd; spcast.
+      clear dependent a0.
+      clear dependent a'.
+      apply hasvaluec_computes_to_valc_implies in eh0; exrepnd.
+
+      eapply equality_respects_cequivc_left;
+        [apply cequivc_mkc_isaxiom;
+         [apply cequivc_sym;apply computes_to_valc_implies_cequivc;eauto
+         |apply cequivc_refl
+         |apply cequivc_refl]
+        |].
+
+      eapply equality_respects_cequivc_right;
+        [apply cequivc_mkc_isaxiom;
+         [apply cequivc_sym;apply computes_to_valc_implies_cequivc;eauto
+         |apply cequivc_refl
+         |apply cequivc_refl]
+        |].
+
+      rw @computes_to_valc_iff_reduces_toc in eh1; repnd.
+      clear eh0.
+
+      destruct (decidable_mkc_axiom b); subst.
+
+      { eapply equality_respects_cequivc_left;
+          [apply cequivc_sym;apply mkc_isaxiom_axiom|].
+        eapply equality_respects_cequivc_right;
+          [apply cequivc_sym;apply mkc_isaxiom_axiom|].
+        repeat rewrite <- fold_mkc_member.
+        apply equality_mkc_equality2_sp_in_uni; dands; auto.
+        split; right; spcast; eauto 3 with slow. }
+
+      { eapply equality_respects_cequivc_left;
+          [apply cequivc_sym;apply mkc_isaxiom_not_axiom;auto|].
+        eapply equality_respects_cequivc_right;
+          [apply cequivc_sym;apply mkc_isaxiom_not_axiom;auto|].
+        repeat rewrite <- fold_mkc_member.
+        apply equality_mkc_equality2_sp_in_uni; dands; auto.
+        split; right; spcast; eauto 3 with slow. }
+    }
+
+    { eapply member_respects_cequivc;[apply cequivc_sym;apply cequivc_beta2|].
+      repeat (rw @mkcv_lam_substc; try (complete (intro xx; ginv));[]).
+      eapply member_respects_cequivc;[apply cequivc_sym;apply cequivc_beta|].
+      eapply member_respects_alphaeqc_l;[apply alphaeqc_sym;apply substc_alphaeqcv; apply substc2_uand|].
+      eapply member_respects_alphaeqc_l;[apply alphaeqc_sym;apply substc_mkcv_uand|].
+      autorewrite with slow.
+      rewrite substc2_mk_cv_app_r;[|introv xx;ginv];[].
+      autorewrite with slow in *.
+
+      eapply member_respects_alphaeqc_l;[apply alphaeqc_sym;apply (mkc_uand_aeq nvarx)|].
+      apply equality_isect; dands; eauto 3 with slow;[].
+      introv eb.
+      apply equality_in_base in eb; spcast.
+
+      eapply equality_respects_alphaeqc_left;[apply alphaeqc_sym;apply substc_mkcv_ufun|].
+      eapply equality_respects_alphaeqc_right;[apply alphaeqc_sym;apply substc_mkcv_ufun|].
+      autorewrite with slow.
+
+      eapply equality_respects_cequivc_left;
+        [apply cequivc_sym;apply implies_cequivc_ufun;
+         [apply implies_cequivc_halts;eauto
+         |apply cequivc_mkc_isaxiom;
+          [eauto|apply cequivc_refl|apply cequivc_refl] ] |].
+      clear dependent a.
+      rename a' into a.
+
+      repeat rewrite <- fold_mkc_ufun.
+      apply equality_isect; dands; eauto 3 with slow.
+
+      { apply equality_in_uni_mkc_halts; eauto 3 with slow. }
+
+      introv eh.
+      autorewrite with slow.
+      apply equality_in_halts in eh; repnd; spcast.
+      clear dependent a0.
+      clear dependent a'.
+      apply hasvaluec_computes_to_valc_implies in eh0; exrepnd.
+
+      eapply equality_respects_cequivc_left;
+        [apply cequivc_mkc_isaxiom;
+         [apply cequivc_sym;apply computes_to_valc_implies_cequivc;eauto
+         |apply cequivc_refl
+         |apply cequivc_refl]
+        |].
+
+      eapply equality_respects_cequivc_right;
+        [apply cequivc_mkc_isaxiom;
+         [apply cequivc_sym;apply computes_to_valc_implies_cequivc;eauto
+         |apply cequivc_refl
+         |apply cequivc_refl]
+        |].
+
+      rw @computes_to_valc_iff_reduces_toc in eh1; repnd.
+      clear eh0.
+
+      destruct (decidable_mkc_axiom b); subst.
+
+      { eapply equality_respects_cequivc_left;
+          [apply cequivc_sym;apply mkc_isaxiom_axiom|].
+        eapply equality_respects_cequivc_right;
+          [apply cequivc_sym;apply mkc_isaxiom_axiom|].
+        repeat rewrite <- fold_mkc_member.
+        apply equality_mkc_equality2_sp_in_uni; dands; auto.
+        split; right; spcast; eauto 3 with slow. }
+
+      { eapply equality_respects_cequivc_left;
+          [apply cequivc_sym;apply mkc_isaxiom_not_axiom;auto|].
+        eapply equality_respects_cequivc_right;
+          [apply cequivc_sym;apply mkc_isaxiom_not_axiom;auto|].
+        repeat rewrite <- fold_mkc_member.
+        apply equality_mkc_equality2_sp_in_uni; dands; auto.
+        split; right; spcast; eauto 3 with slow. }
+    }
+
+    { repeat rw @member_iff_inhabited_mkc_apply2_mkc_psquash_per.
+      split; intro q; repnd; dands; apply h; tcsp. }
+
+    { unfold is_per_type; dands.
+
+      + introv inh.
+        allrw @member_iff_inhabited_mkc_apply2_mkc_psquash_per; sp.
+
+      + introv inh1 inh2.
+        allrw @member_iff_inhabited_mkc_apply2_mkc_psquash_per; sp. }
 Qed.

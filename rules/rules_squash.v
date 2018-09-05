@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -766,4 +767,204 @@ Proof.
     rw @sub_find_none_if; eauto 3 with slow.
     rw @dom_csub_eq.
     apply similarity_dom in sim6; repnd; rw sim6; auto.
+Qed.
+
+
+Hint Resolve tequality_mkc_uni : slow.
+
+
+(*
+   H |- psquash(t1) = psquash(t2) ∈ U(i)
+
+     By EqualPSquash
+
+     H |- t1 in U(i)
+     H |- t2 in U(i)
+     H , t : Base, z : t ∈ t1 |- t ∈ t2
+     H , t : Base, z : t ∈ t2 |- t ∈ t1
+
+ *)
+Definition rule_equal_psquash {o}
+           (H : barehypotheses)
+           (i : nat)
+           (t1 t2 : @NTerm o)
+           (x z : NVar)
+  :=
+  mk_rule
+    (mk_baresequent H (mk_conclax (mk_equality (mk_psquash t1) (mk_psquash t2) (mk_uni i))))
+    [ mk_baresequent H (mk_conclax (mk_member t1 (mk_uni i))),
+      mk_baresequent H (mk_conclax (mk_member t2 (mk_uni i))),
+      mk_baresequent
+        (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp z (mk_member (mk_var x) t1)))
+        (mk_conclax (mk_member (mk_var x) t2)),
+      mk_baresequent
+        (snoc (snoc H (mk_hyp x mk_base)) (mk_hyp z (mk_member (mk_var x) t2)))
+        (mk_conclax (mk_member (mk_var x) t1))
+    ]
+    [].
+
+Lemma rule_equal_psquash_true {o} :
+  forall lib (H : barehypotheses) (i : nat)
+         (t1 t2 : @NTerm o) (x z : NVar),
+    rule_true lib (rule_equal_psquash H i t1 t2 x z).
+Proof.
+  unfold rule_equal_psquash, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  clear cargs.
+
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  rename Hyp1 into hyp2.
+  rename Hyp2 into hyp3.
+  rename Hyp3 into hyp4.
+  destseq; allsimpl; proof_irr; GC.
+  exists (@covered_axiom o (nh_vars_hyps H)).
+
+  assert (x <> z
+          # !LIn x (vars_hyps H)
+          # !LIn z (vars_hyps H)
+          # !LIn x (free_vars t1)
+          # !LIn z (free_vars t1)
+          # !LIn x (free_vars t2)
+          # !LIn z (free_vars t2)) as vhyps.
+
+  {
+    clear hyp1 hyp2 hyp3 hyp4.
+    dwfseq.
+    sp.
+  }
+
+  destruct vhyps as [ nxz  vhyps ].
+  destruct vhyps as [ nxH  vhyps ].
+  destruct vhyps as [ nzH  vhyps ].
+  destruct vhyps as [ nxt1 vhyps ].
+  destruct vhyps as [ nzt1 vhyps ].
+  destruct vhyps as [ nxt2 nzt2 ].
+
+  vr_seq_true.
+  lsubst_tac.
+  allrw <- @member_equality_iff.
+  teq_and_eq (@mk_uni o i) (mk_psquash t1) (mk_psquash t2) s1 s2 H; eauto 3 with slow;[].
+
+  vr_seq_true in hyp1.
+  vr_seq_true in hyp2.
+  pose proof (hyp1 s1 s2 hf sim) as hypa; exrepnd; clear_irr.
+  pose proof (hyp2 s1 s2 hf sim) as hypb; exrepnd; clear_irr.
+
+  hide_hyp hyp1.
+  hide_hyp hyp2.
+
+  lsubst_tac.
+  allrw <- @member_member_iff.
+  apply tequality_mkc_member_implies_sp in hypa0; auto;[].
+  apply tequality_mkc_member_implies_sp in hypb0; auto;[].
+
+  apply equality_mkc_psquash_in_uni; dands; eauto 3 with slow;[|].
+
+  { apply equality_sym in hypb0; apply equality_refl in hypb0; auto. }
+
+  introv.
+  split; intro h.
+
+  {
+    vr_seq_true in hyp3.
+    pose proof (hyp3 (snoc (snoc s1 (x,t)) (z,mkc_axiom))
+                     (snoc (snoc s2 (x,t)) (z,mkc_axiom))) as hyp3.
+    repeat (autodimp hyp3 hyp).
+
+    { apply hyps_functionality_snoc2; simpl; auto;[|].
+
+      { introv equ sim'.
+        apply similarity_snoc in sim'; simpl in sim'.
+        exrepnd; subst; cpx.
+        lsubst_tac.
+        apply equality_in_base in sim'1; spcast.
+
+        pose proof (hyp1 s1a s2a) as hypc.
+        repeat (autodimp hypc hyp);[].
+        exrepnd.
+        lsubst_tac.
+        allrw <- @member_member_iff.
+        apply tequality_mkc_member_implies_sp in hypc0; auto;[].
+        apply equality_in_uni in hypc0.
+        apply tequality_mkc_member_sp; dands; auto;[].
+        right; spcast; auto. }
+
+      apply hyps_functionality_snoc2; simpl; auto;[].
+      introv equ sim'.
+      lsubst_tac; eauto 3 with slow. }
+
+    { assert (cover_vars (mk_member (mk_var x) t1) (snoc s1 (x, t))) as cov2.
+      { apply cover_vars_member; dands; eauto 3 with slow.
+        - apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp.
+        - apply cover_vars_snoc_weak; auto. }
+      sim_snoc2;[].
+      dands; auto;[|].
+
+      { sim_snoc2;[].
+        dands; auto;[].
+        lsubst_tac; eauto 3 with slow.
+        apply equality_in_base_iff; spcast; eauto 3 with slow. }
+
+      lsubst_tac.
+      rw <- @member_member_iff; auto. }
+
+    exrepnd.
+    lsubst_tac.
+    allrw <- @member_member_iff.
+    apply tequality_mkc_member in hyp0; repnd.
+    apply hyp6; auto.
+  }
+
+  {
+    vr_seq_true in hyp4.
+    pose proof (hyp4 (snoc (snoc s1 (x,t)) (z,mkc_axiom))
+                     (snoc (snoc s2 (x,t)) (z,mkc_axiom))) as hyp4.
+    repeat (autodimp hyp4 hyp).
+
+    { apply hyps_functionality_snoc2; simpl; auto;[|].
+
+      { introv equ sim'.
+        apply similarity_snoc in sim'; simpl in sim'.
+        exrepnd; subst; cpx.
+        lsubst_tac.
+        apply equality_in_base in sim'1; spcast.
+
+        pose proof (hyp2 s1a s2a) as hypc.
+        repeat (autodimp hypc hyp);[].
+        exrepnd.
+        lsubst_tac.
+        allrw <- @member_member_iff.
+        apply tequality_mkc_member_implies_sp in hypc0; auto;[].
+        apply equality_in_uni in hypc0.
+        apply tequality_mkc_member_sp; dands; auto;[].
+        right; spcast; auto. }
+
+      apply hyps_functionality_snoc2; simpl; auto;[].
+      introv equ sim'.
+      lsubst_tac; eauto 3 with slow. }
+
+    { assert (cover_vars (mk_member (mk_var x) t2) (snoc s1 (x, t))) as cov2.
+      { apply cover_vars_member; dands; eauto 3 with slow.
+        - apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp.
+        - apply cover_vars_snoc_weak; auto. }
+      sim_snoc2;[].
+      dands; auto;[|].
+
+      { sim_snoc2;[].
+        dands; auto;[].
+        lsubst_tac; eauto 3 with slow.
+        apply equality_in_base_iff; spcast; eauto 3 with slow. }
+
+      lsubst_tac.
+      rw <- @member_member_iff; auto.
+      apply equality_in_uni in hypb0.
+      eapply tequality_preserving_equality;[exact h|].
+      apply tequality_sym;auto. }
+
+    exrepnd.
+    lsubst_tac.
+    allrw <- @member_member_iff; auto.
+  }
 Qed.
