@@ -219,13 +219,14 @@ Proof.
     pose proof (hypb s1a s2a1) as hypb.
     repeat (autodimp hypb hyp); exrepnd.
 
-    { generalize (hyps_functionality_init_seg_snoc lib
-                                                   s1a t6 t7 H (mk_hyp x (mk_equality t1 t2 (mk_pertype R))) w4 p1);
-        simpl; intro k.
+    { pose proof (hyps_functionality_init_seg_snoc
+                    lib
+                    s1a t6 t7 H (mk_hyp x (mk_equality t1 t2 (mk_pertype R))) w4 p1) as k.
+      simpl in *; lsubst_tac.
       apply k; sp.
 
-      apply hyps_functionality_init_seg with (s3 := s2b1) in eqh; sp.
-      rw @substitute_hyps_snoc_sub_weak in sim10; sp.
+      { apply hyps_functionality_init_seg with (s3 := s2b1) in eqh; sp.
+        rw @substitute_hyps_snoc_sub_weak in sim10; sp. }
 
       rw @similarity_snoc in sim15; simpl in sim15; exrepnd; cpx.
       lsubst_tac; sp. }
