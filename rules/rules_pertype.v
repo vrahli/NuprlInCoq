@@ -57,6 +57,16 @@ Require Export list. (* why *)
   The following rule is called the ``pertype member equality'' rule.
   It allows one to prove that terms are well-formed partial
   equivalence relations, i.e., members of a ``pertype'' type.
+
+  The 3rd subgoal is necessary because we have to prove [R[s1] t1[s1] t2[s2]]
+  is inhabited, but from the 2nd subgoal we only know that [R[s1] t1[s1] t2[s1]]
+  is inhabited and that [R[s1] t1[s1] t2[s1]] and [R[s2] t1[s2] t2[s2]] are
+  equal types.  Therefore, we need to go from [R[s1] t1[s1] t2[s2]] to either
+  [R[s1] t1[s1] t2[s1]] or [R[s2] t1[s2] t2[s2]].
+  For that we use the 1st subgoal which says that [R[s1] x y] is inhabited iff
+  [R[s2] x y] is inhabited.  We now get that [R[s2] t1[s1] t2[s2]] is inhabited.
+  Finally because t1[s1] ~ t1[s2] we get that [R[s2] t1[s2] t2[s2]] is inhabited.
+
 <<
    H |- t1 = t2 in pertype(R)
 
@@ -97,9 +107,9 @@ Proof.
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
   dLin_hyp; exrepnd.
-  rename Hyp0 into hyp1.
-  rename Hyp1 into hyp2.
-  rename Hyp2 into hyp3.
+  rename Hyp0 into hypa.
+  rename Hyp1 into hypb.
+  rename Hyp2 into hypc.
   destseq; allsimpl; proof_irr; GC.
 
   exists (@covered_axiom o (nh_vars_hyps H)).
@@ -114,14 +124,14 @@ Proof.
   rw @member_eq.
   rw <- @member_equality_iff.
 
-  vr_seq_true in hyp1.
-  generalize (hyp1 s1 s2); intro h.
-  repeat (autodimp h hyp); exrepnd.
+  vr_seq_true in hypa.
+  pose proof (hypa s1 s2) as hypa'.
+  repeat (autodimp hypa' hyp); exrepnd.
   lsubst_tac.
   allrw @member_eq.
   allrw <- @member_member_iff.
   allapply @member_in_uni.
-  apply tequality_in_uni_implies_tequality in h0; auto.
+  apply tequality_in_uni_implies_tequality in hypa'0; auto.
 
   generalize (teq_and_eq_if_equality lib
                 (mk_pertype R) t1 t2 s1 s2 H wT w1 w2 c1 c3 c2 c4 cT cT0
@@ -132,32 +142,35 @@ Proof.
   introv hf sim.
   lsubst_tac.
 
-  generalize (hyp1 s1 s2 hf sim); clear hyp1; intro hyp1; exrepnd.
+  pose proof (hypa s1 s2 hf sim) as hypa; exrepnd.
 
-  vr_seq_true in hyp2.
-  generalize (hyp2 s1 s2 hf sim); clear hyp2; intro hyp2; exrepnd.
+  vr_seq_true in hypb.
+  pose proof (hypb s1 s2 hf sim) as hypb; exrepnd.
 
-  vr_seq_true in hyp3.
-  generalize (hyp3 s1 s2 hf sim); clear hyp3; intro hyp3; exrepnd.
+  vr_seq_true in hypc.
+  pose proof (hypc s1 s2 hf sim) as hypc; exrepnd.
 
   lsubst_tac.
   allrw @member_eq.
   allrw <- @member_member_iff.
   allrw @tequality_mkc_member_base.
   allapply @member_in_uni.
-  apply tequality_in_uni_implies_tequality in hyp0; auto.
+
+  (* trivial hyp *)
+  clear hypc1.
+
+  apply tequality_in_uni_implies_tequality in hypa0; auto.
   allapply @inhabited_type_if_equality.
-  rw @tequality_mkc_pertype in hyp0; repnd.
+  rw @tequality_mkc_pertype in hypa0; repnd.
   spcast.
 
   rw @equality_in_mkc_pertype2; dands; auto.
-  apply hyp8.
+  apply hypa4.
   apply @inhabited_type_cequivc with (a := mkc_apply2 (lsubstc R w0 s2 c0)
-                                                     (lsubstc t1 w1 s2 ct2)
-                                                     (lsubstc t2 w2 s2 cb2)); auto.
-  apply implies_cequivc_apply2; sp.
-  apply cequivc_sym; auto.
-  apply @inhabited_type_tequality in hyp4; auto.
+                                                      (lsubstc t1 w1 s2 ct2)
+                                                      (lsubstc t2 w2 s2 cb2)); auto;
+    [apply implies_cequivc_apply2; sp;apply cequivc_sym; auto|];[].
+  apply @inhabited_type_tequality in hypb0; auto.
 Qed.
 
 (* begin hide *)
@@ -229,16 +242,16 @@ Proof.
                       (mk_conclax (mk_member (mk_apply2 R t1 t2) (mk_uni i))))
                    (inr (inl eq_refl)));
     simpl; intros hyp1 hyp2.
-  destruct hyp1 as [ ws1 hyp1 ].
-  destruct hyp2 as [ ws2 hyp2 ].
+  destruct hyp1 as [ ws1 hypa ].
+  destruct hyp2 as [ ws2 hypb ].
   destseq; allsimpl; proof_irr; GC.
   clear hyps.
 
   assert (covered e
                   (nh_vars_hyps
                      (snoc H (mk_hyp x (mk_equality t1 t2 (mk_pertype R))) ++ J))) as cs.
-  clear hyp1 hyp2.
-  dwfseq; prove_seq; unfold covered; allrw subvars_prop; sp.
+  { clear hypa hypb.
+    dwfseq; prove_seq; unfold covered; allrw subvars_prop; sp. }
 
   exists cs.
 
@@ -252,21 +265,23 @@ Proof.
            # !LIn z (free_vars_hyps J)
            # !LIn z (vars_hyps J)) as vhyps.
 
-  clear hyp1 hyp2.
-  dwfseq.
-  sp;
-    try (complete (discover; allrw in_snoc; sp));
-    try (complete (generalize (wg9 x); allrw remove_nvars_nil_l; allrw app_nil_r; sp));
-    try (complete (generalize (wfh7 z); allrw in_snoc; sp));
-    try (complete (generalize (wfh z); allrw in_app_iff; allrw in_snoc; sp));
-    try (complete (generalize (cg z); allrw in_app_iff; allrw in_snoc; sp));
-    try (complete (generalize (ce0 z); allrw @nh_vars_hyps_app; allrw @nh_vars_hyps_snoc;
-                   allsimpl; allrw in_app_iff; allrw in_snoc; sp;
-                   generalize (subvars_hs_vars_hyps H); intros;
-                   generalize (subvars_hs_vars_hyps J); intros;
-                   allrw subvars_prop; apply_in_hyp p; sp)).
+  {
+    clear hypa hypb.
+    dwfseq.
+    sp;
+      try (complete (discover; allrw in_snoc; sp));
+      try (complete (generalize (wg9 x); allrw remove_nvars_nil_l; allrw app_nil_r; sp));
+      try (complete (generalize (wfh7 z); allrw in_snoc; sp));
+      try (complete (generalize (wfh z); allrw in_app_iff; allrw in_snoc; sp));
+      try (complete (generalize (cg z); allrw in_app_iff; allrw in_snoc; sp));
+      try (complete (generalize (ce0 z); allrw @nh_vars_hyps_app; allrw @nh_vars_hyps_snoc;
+                     allsimpl; allrw in_app_iff; allrw in_snoc; sp;
+                     generalize (subvars_hs_vars_hyps H); intros;
+                     generalize (subvars_hs_vars_hyps J); intros;
+                     allrw subvars_prop; apply_in_hyp p; sp)).
+  }
 
-  destruct vhyps as [ nixr vhyps ].
+  destruct vhyps as [ nixr  vhyps ].
   destruct vhyps as [ nixt1 vhyps ].
   destruct vhyps as [ nixt2 vhyps ].
   destruct vhyps as [ nizc  vhyps ].
@@ -286,102 +301,105 @@ Proof.
   rw @equality_in_mkc_equality in sim2; repnd.
   rw @equality_in_mkc_pertype in sim0; repnd.
 
-  vr_seq_true in hyp1.
+  vr_seq_true in hypa.
   unfold inhabited_type in sim7; exrepnd.
-  generalize (hyp1 ((snoc (snoc s1a0 (x, t0)) (z, t)) ++ s1b)
-                   ((snoc (snoc s2a0 (x, t3)) (z, t)) ++ s2b));
-    clear hyp1; intro hyp1.
-  repeat (autodimp hyp1 hyp); exrepnd.
+  pose proof (hypa ((snoc (snoc s1a0 (x, t0)) (z, t)) ++ s1b)
+                   ((snoc (snoc s2a0 (x, t3)) (z, t)) ++ s2b)) as hypa.
+  repeat (autodimp hypa hyp); exrepnd.
 
-  (* hyps_functionality *)
-  introv sim.
-  rw @similarity_app in sim; simpl in sim; exrepnd; subst; cpx.
-  apply app_split in sim7; repnd; subst; repeat (rw length_snoc);
-  try (complete (allrw; sp)).
-  rw @similarity_snoc in sim14; simpl in sim14; exrepnd; subst; cpx.
-  lsubst_tac.
-  generalize (eqh (s2a1 ++ s2b0)); intro j.
-  autodimp j hyp.
+  {
+    (* hyps_functionality *)
+    introv sim.
+    rw @similarity_app in sim; simpl in sim; exrepnd; subst; cpx.
+    apply app_split in sim7; repnd; subst; repeat (rw length_snoc);
+      try (complete (allrw; sp)).
+    rw @similarity_snoc in sim14; simpl in sim14; exrepnd; subst; cpx.
+    lsubst_tac.
+    generalize (eqh (s2a1 ++ s2b0)); intro j.
+    autodimp j hyp.
 
-  rw @similarity_app; simpl.
-  exists (snoc s1a0 (x, t0)) s1b0 s2a1 s2b0; repeat (rw length_snoc); sp.
-  rewrite substitute_hyps_snoc_sub_weak in sim10; sp.
+    rw @similarity_app; simpl.
+    exists (snoc s1a0 (x, t0)) s1b0 s2a1 s2b0; repeat (rw length_snoc); sp.
+    rewrite substitute_hyps_snoc_sub_weak in sim10; sp.
 
-  rw @eq_hyps_app in j; simpl in j; exrepnd; allrw length_snoc.
-  apply app_split in j0; repnd; subst; repeat (rw length_snoc);
-  try (complete (allrw; sp)).
-  apply app_split in j2; repnd; subst; repeat (rw length_snoc);
-  try (complete (allrw; sp)).
+    rw @eq_hyps_app in j; simpl in j; exrepnd; allrw length_snoc.
+    apply app_split in j0; repnd; subst; repeat (rw length_snoc);
+      try (complete (allrw; sp)).
+    apply app_split in j2; repnd; subst; repeat (rw length_snoc);
+      try (complete (allrw; sp)).
 
-  duplicate j5 as dup_eqhyps_snoc.
-  rw @eq_hyps_snoc in j5; simpl in j5; exrepnd; subst; cpx.
-  lsubst_tac.
+    duplicate j5 as dup_eqhyps_snoc.
+    rw @eq_hyps_snoc in j5; simpl in j5; exrepnd; subst; cpx.
+    lsubst_tac.
 
-  rw @eq_hyps_app; simpl.
-  exists (snoc (snoc s1a (x, t6)) (z, t4))
-         s1b
-         (snoc (snoc s2a1 (x, t7)) (z, t5))
-         s2b1; repeat (rw length_snoc); dands; try (complete sp).
+    rw @eq_hyps_app; simpl.
+    exists (snoc (snoc s1a (x, t6)) (z, t4))
+           s1b
+           (snoc (snoc s2a1 (x, t7)) (z, t5))
+           s2b1;
+      repeat (rw length_snoc); dands;
+        try (complete sp);
+        try (complete (apply sub_eq_hyps_snoc_weak; sp));[].
 
-  assert (cover_vars (mk_apply2 R t1 t2) (snoc s2a1 (x, t7)))
-         as cv
-         by (apply cover_vars_apply2; sp;
-             try (apply cover_vars_var);
-             repeat (apply cover_vars_snoc_weak); sp;
-             repeat (rw dom_csub_snoc); simpl; repeat (rw in_snoc); sp).
+    assert (cover_vars (mk_apply2 R t1 t2) (snoc s2a1 (x, t7)))
+      as cv
+        by (apply cover_vars_apply2; sp;
+            try (apply cover_vars_var);
+            repeat (apply cover_vars_snoc_weak); sp;
+            repeat (rw dom_csub_snoc); simpl; repeat (rw in_snoc); sp).
 
-  rw @eq_hyps_snoc; simpl.
-  exists (snoc s1a (x, t6)) (snoc s2a1 (x, t7)) t4 t5 w3 p0 cv;
-    dands; try (complete sp).
+    rw @eq_hyps_snoc; simpl.
+    exists (snoc s1a (x, t6)) (snoc s2a1 (x, t7)) t4 t5 w3 p0 cv;
+      dands; try (complete sp).
 
-  lsubst_tac.
+    lsubst_tac.
 
-  vr_seq_true in hyp2.
-  generalize (hyp2 s1a s2a1); clear hyp2; intro hyp2.
-  repeat (autodimp hyp2 hyp); exrepnd.
-  generalize (hyps_functionality_init_seg_snoc lib
-                s1a t6 t7 H (mk_hyp x (mk_equality t1 t2 (mk_pertype R))) w4 p1);
-    simpl; intro k.
-  apply k; sp.
+    vr_seq_true in hypb.
+    pose proof (hypb s1a s2a1) as hypb.
+    repeat (autodimp hypb hyp); exrepnd.
 
-  apply hyps_functionality_init_seg with (s3 := s2b1) in eqh; sp.
-  rw @substitute_hyps_snoc_sub_weak in sim10; sp.
+    { generalize (hyps_functionality_init_seg_snoc lib
+                                                   s1a t6 t7 H (mk_hyp x (mk_equality t1 t2 (mk_pertype R))) w4 p1);
+        simpl; intro k.
+      apply k; sp.
 
-  rw @similarity_snoc in sim15; simpl in sim15; exrepnd; cpx.
-  lsubst_tac; sp.
+      apply hyps_functionality_init_seg with (s3 := s2b1) in eqh; sp.
+      rw @substitute_hyps_snoc_sub_weak in sim10; sp.
 
-  rw @similarity_snoc in sim15; simpl in sim15; exrepnd; cpx.
-  lsubst_tac.
-  rw @tequality_mkc_member in hyp0; repnd.
-  repdors.
-  apply equality_in_uni in hyp4; sp.
-  spcast; apply type_respects_cequivc_right; sp.
+      rw @similarity_snoc in sim15; simpl in sim15; exrepnd; cpx.
+      lsubst_tac; sp. }
 
-  apply sub_eq_hyps_snoc_weak; sp.
+    { rw @similarity_snoc in sim15; simpl in sim15; exrepnd; cpx. }
 
+    lsubst_tac.
+    allrw @member_eq.
+    allrw <- @member_member_iff.
+    apply tequality_mkc_member_implies_sp in hypb0; auto;[].
+    apply equality_in_uni in hypb0; sp.
+  }
 
-  (* similarity *)
-  rw @similarity_app; simpl.
-  exists (snoc (snoc s1a0 (x, t0)) (z, t))
-         s1b
-         (snoc (snoc s2a0 (x, t3)) (z, t))
-         s2b; repeat (rw length_snoc); sp.
+  {
+    (* similarity *)
+    rw @similarity_app; simpl.
+    exists (snoc (snoc s1a0 (x, t0)) (z, t))
+           s1b
+           (snoc (snoc s2a0 (x, t3)) (z, t))
+           s2b; repeat (rw length_snoc); sp;
+      try (complete (rewrite substitute_hyps_snoc_sub_weak; sp));[].
 
-  assert (wf_term (mk_apply2 R t1 t2))
-         as wfap by (apply wf_apply2; sp).
+    assert (wf_term (mk_apply2 R t1 t2))
+      as wfap by (apply wf_apply2; sp).
 
-  assert (cover_vars (mk_apply2 R t1 t2) (snoc s1a0 (x, t0)))
-         as cvap
-         by (apply cover_vars_snoc_weak; rw @cover_vars_apply2; sp).
+    assert (cover_vars (mk_apply2 R t1 t2) (snoc s1a0 (x, t0)))
+      as cvap
+        by (apply cover_vars_snoc_weak; rw @cover_vars_apply2; sp).
 
-  rw @similarity_snoc; simpl.
-  exists (snoc s1a0 (x, t0)) (snoc s2a0 (x, t3)) t t wfap cvap; sp.
+    rw @similarity_snoc; simpl.
+    exists (snoc s1a0 (x, t0)) (snoc s2a0 (x, t3)) t t wfap cvap; sp;[].
 
-  lsubst_tac.
-  rw @member_eq; sp.
-
-  rewrite substitute_hyps_snoc_sub_weak; sp.
-  (* similarity proved *)
+    lsubst_tac.
+    rw @member_eq; sp.
+  }
 
   assert (lsubstc C wfct (snoc (snoc s1a0 (x, t0)) (z, t) ++ s1b) pC0
           = lsubstc C wfct (snoc s1a0 (x, t0) ++ s1b) pC1)
@@ -403,15 +421,17 @@ Proof.
          as eq4
          by (apply lsubstc_eq_if_csubst; apply subset_free_vars_csub_snoc_app; sp).
 
-  rw eq1 in hyp0.
-  rw eq1 in hyp1.
-  rw eq2 in hyp0.
-  rw eq3 in hyp1.
-  rw eq4 in hyp1.
+  rw eq1 in hypa0.
+  rw eq1 in hypa1.
+  rw eq2 in hypa0.
+  rw eq3 in hypa1.
+  rw eq4 in hypa1.
   sp.
 Qed.
 
+
 (* begin hide *)
+
 
 Lemma rule_pertype_elimination_true_ex {o} :
   forall lib i z R t1 t2 C e x H J,

@@ -1,6 +1,10 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -24,6 +28,8 @@
 *)
 
 
+Require Export sequents_equality.
+Require Export sequents_tacs2.
 Require Import sequents_tacs.
 Require Import sequents_useful.
 Require Import tactics2.
@@ -31,7 +37,7 @@ Require Import cequiv_tacs.
 Require Import subst_tacs.
 Require Export rules_pertype.
 Require Export subst_per.
-Require Export per_props2.
+Require Export per_props_pertype.
 
 
 (**
@@ -39,8 +45,8 @@ Require Export per_props2.
   This is the kind of subgoal we get from using [rule_pertype_elimination4]
 
  *)
-Definition rule_sqper_type
-           (R : NTerm)
+Definition rule_sqper_type {o}
+           (R : @NTerm o)
            (x v1 v2 : NVar)
            (H J : barehypotheses) :=
   mk_rule
@@ -49,11 +55,12 @@ Definition rule_sqper_type
     [ ]
     [ ].
 
-Lemma rule_sqper_type_true :
-  forall R : NTerm,
+Lemma rule_sqper_type_true {o} :
+  forall lib (R : @NTerm o),
   forall x v1 v2 : NVar,
   forall H J : barehypotheses,
-    rule_true (rule_sqper_type
+    rule_true lib
+              (rule_sqper_type
                  R
                  x v1 v2
                  H J).
