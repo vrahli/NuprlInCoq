@@ -5,7 +5,7 @@
 {2672,addEquality}                          rules/rules_arith.v                       : rule_arithop_equality_true3
 {40,addExceptionCases}                      rules/rules_arith_exception.v             : rule_arith_exception_cases_true
 {2,addInverse}                              rules/rules_integer_ring.v                : rule_add_inverse_true
-{7,addMonotonic}                            .                                         : .
+{1,addMonotonic}                            rules/rules_integer_ordered_ring.v        : rule_add_monotonic_true 
 {1,addZero}                                 rules/rules_integer_ring.v                : rule_add_zero_true
 {9447,applyEquality}                        rules/rules_function.v                    : rule_apply_equality_true
 {70,applyExceptionCases}                    rules/rules_apply_callbyvalue.v           : rule_isexc_apply_cases_true
@@ -182,6 +182,7 @@
 {223,lessCases}                             .                                         : .
 {1,lessDiscrete}                            .                                         : .
 {25,lessExceptionCases}                     rules/rules_less_exception.v              : rule_less_exception_cases_true
+{2,lessTransitive}                          rules/rules_integer_ordered_ring.v        : rule_less_transitive_true 
 {6,lessTrichotomy}                          .                                         : .
 {7,minusExceptionCases}                     rules/rules_arith_exception.v             : rule_minus_exception_cases_true
 {1,multiplyAssociative}                     rules/rules_integer_ring.v                : rule_mul_associative_true
@@ -190,7 +191,7 @@
 {957,multiplyEquality}                      rules/rules_arith.v                       : rule_arithop_equality_true3
 {11,multiplyExceptionCases}                 rules/rules_arith_exception.v             : rule_arith_exception_cases_true
 {1,multiplyOne}                             rules/rules_integer_ring.v                : rule_mul_one_true
-{2,multiplyPositive}                        .                                         : .
+{2,multiplyPositive}                        rules/rules_integer_ordered_ring.v        : rule_multiply_positive_true 
 {7257,natural_numberEquality}               rules/rules_number.v                      : rule_natural_number_equality_true3
 {1,parameterizedRecEquality}                .                                         : .
 {6,perfunctionExtensionality}               .                                         : .
@@ -260,5 +261,5 @@
 {7964,voidElimination}                      rules/rules_void.v                        : rule_void_elimination_true
 {6596,voidEquality}                         rules/rules_void.v                        : rule_void_equality_true3
 
-TOTAL RULES PROVED: 151 out of 261
+TOTAL RULES PROVED: 154 out of 262
 (not counting 2 UNFINISHED)
