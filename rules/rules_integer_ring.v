@@ -690,7 +690,7 @@ Proof.
      (apply mkc_integer_eq_iff; omega).
     exists z; sp; spcast; auto.
     rw<- eq. apply @computes_to_valc_arithop; auto.
-    apply computes_to_valc_refl.
+    apply computes_to_valc_refl. 
     apply iscvalue_mkc_integer.
 
 Qed.

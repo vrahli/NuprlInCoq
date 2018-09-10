@@ -27,39 +27,7 @@
 
 Require Export substitution.
 Require Export terms_props.
-Require Export cvterm.
-
-Lemma isprog_int_eq {o} :
-  forall a b c d : @NTerm o,
-    isprog (mk_int_eq a b c d)
-    <=> (isprog a
-         # isprog b
-         # isprog c
-         # isprog d).
-Proof.
-  introv.
-  allrw @isprog_vars_nil_iff_isprog.
-  apply isprog_vars_less.
-Qed.
-
-Lemma isprog_int_eq_implies {o} :
-  forall a b c d : @NTerm o,
-    isprog a
-    -> isprog b
-    -> isprog c
-    -> isprog d
-    -> isprog (mk_int_eq a b c d).
-Proof.
-  introv u v w z.
-  apply isprog_less; sp.
-Qed.
-
-Definition mkc_int_eq {o} (t1 t2 t3 t4 : @CTerm o) : CTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  let (c,z) := t3 in
-  let (d,w) := t4 in
-    exist isprog (mk_int_eq a b c d) (isprog_int_eq_implies a b c d x y z w).
+Require Export cvterm4.
 
 
 Lemma isprog_atom_eq {o} :
@@ -126,7 +94,7 @@ Lemma lsubstc_mk_int_eq {o} :
   forall c2 : cover_vars t2 sub,
   forall c  : cover_vars (mk_int_eq m n t1 t2) sub,
     lsubstc (mk_int_eq m n t1 t2) w sub c
-    = mkc_int_eq (lsubstc m wm sub cm)
+    = mkc_inteq (lsubstc m wm sub cm)
                  (lsubstc n wn sub cn)
                  (lsubstc t1 w1 sub c1)
                  (lsubstc t2 w2 sub c2).
@@ -153,7 +121,7 @@ Lemma lsubstc_mk_int_eq_ex {o} :
    & {c1 : cover_vars t1 sub
    & {c2 : cover_vars t2 sub
       & lsubstc (mk_int_eq m n t1 t2) w sub c
-           = mkc_int_eq (lsubstc m wm sub cm)
+           = mkc_inteq (lsubstc m wm sub cm)
                         (lsubstc n wn sub cn)
                         (lsubstc t1 w1 sub c1)
                         (lsubstc t2 w2 sub c2)}}}}}}}}.

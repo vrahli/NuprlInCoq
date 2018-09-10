@@ -124,7 +124,7 @@ Qed.
 
 Lemma cequiv_mk_div_integer {o} :
   forall lib (k1 k2 : Z),
-    @cequiv o lib (mk_div (mk_integer k1) (mk_integer k2)) (mk_integer (k1 / k2)).
+    @cequiv o lib (mk_div (mk_integer k1) (mk_integer k2)) (mk_integer (Z.quot k1  k2)).
 Proof.
   introv.
   apply reduces_to_implies_cequiv; eauto 3 with slow.
@@ -133,7 +133,7 @@ Qed.
 
 Lemma cequivc_mkc_div_integer {o} :
   forall lib (k1 k2 : Z),
-    @cequivc o lib (mkc_div (mkc_integer k1) (mkc_integer k2)) (mkc_integer (k1 / k2)).
+    @cequivc o lib (mkc_div (mkc_integer k1) (mkc_integer k2)) (mkc_integer (Z.quot k1 k2)).
 Proof.
   introv.
   unfold cequivc; simpl.
@@ -290,7 +290,7 @@ Proof.
     eapply equality_respects_cequivc_right;
       [apply cequivc_sym;apply cequivc_mkc_div_integer|].
     apply equality_in_int.
-    exists (k0 / k)%Z; dands; spcast; apply computes_to_valc_refl; auto 3 with slow.
+    exists (Z.quot k0  k)%Z; dands; spcast; apply computes_to_valc_refl; auto 3 with slow.
   }
 
   {

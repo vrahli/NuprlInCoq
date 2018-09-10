@@ -53,3 +53,19 @@ Proof.
   introv; split; sp; spcast.
   apply approxc_refl.
 Qed.
+
+Lemma tequality_true {p} :
+  forall lib, @tequality p lib mkc_true mkc_true.
+Proof. intro. pose proof (@nuprl_mkc_true p lib) as xx. eapply tequality_if_nuprl. eauto. 
+Qed.
+Hint Immediate tequality_true.
+
+Lemma equality_axiom_true {p} :
+  forall lib, @equality p lib mkc_axiom mkc_axiom mkc_true.
+Proof. intro. pose proof (@nuprl_mkc_true p lib) as xx.  eapply eq_equality1.
+ 2: { eauto. } 
+ simpl. split; unfold ccomputes_to_valc; spcast; apply computes_to_valc_refl; auto.
+Qed.
+Hint Immediate equality_axiom_true.
+
+

@@ -515,7 +515,7 @@ Definition get_arith_op (a :ArithOp) : (Z->Z->Z) :=
     | ArithOpAdd => Z.add
     | ArithOpMul => Z.mul
     | ArithOpSub => Z.sub
-    | ArithOpDiv => Z.div
+    | ArithOpDiv => Z.quot
     | ArithOpRem => Z.rem
   end.
 

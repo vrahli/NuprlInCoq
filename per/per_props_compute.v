@@ -32,7 +32,7 @@
 
 Require Export nuprl_props.
 Require Export choice.
-Require Export cvterm.
+Require Export cvterm4.
 (*Require Export per_props.*)
 
 
@@ -73,6 +73,10 @@ Proof.
   boolvar; auto; try omega.
 Qed.
 
+
+
+
+
 Lemma mkc_less_than_comp2 {o} :
   forall lib (a b : @CTerm o) n m,
     computes_to_valc lib a (mkc_integer n)
@@ -103,6 +107,235 @@ Proof.
   unfold compute_step_comp; simpl.
   boolvar; auto; try omega.
 Qed.
+
+Definition mk_not_less_than {p} (a b : @NTerm p) := mk_less a b mk_false mk_true.
+Definition mk_eqint {p} (a b : @NTerm p) := mk_int_eq a b mk_true mk_false.
+Definition mk_not_eqint {p} (a b : @NTerm p) := mk_int_eq a b mk_false mk_true.
+Definition mkc_not_less_than {p} (a b : @CTerm p) := mkc_less a b mkc_false mkc_true.
+Definition mkc_eqint {p} (a b : @CTerm p) := mkc_inteq a b mkc_true mkc_false.
+Definition mkc_not_eqint {p} (a b : @CTerm p) := mkc_inteq a b mkc_false mkc_true.
+
+Lemma mkc_eqint_eq {o} :
+  forall a b : @CTerm o,
+    mkc_eqint a b = mkc_inteq a b mkc_true mkc_false.
+Proof.
+  introv.
+  destruct_cterms.
+  apply cterm_eq; simpl; sp.
+Qed.
+
+Lemma mkc_not_eqint_eq {o} :
+  forall a b : @CTerm o,
+    mkc_not_eqint a b = mkc_inteq a b mkc_false mkc_true.
+Proof.
+  introv.
+  destruct_cterms.
+  apply cterm_eq; simpl; sp.
+Qed.
+
+Lemma mkc_not_less_than_eq {o} :
+  forall a b : @CTerm o,
+    mkc_not_less_than a b = mkc_less a b mkc_false mkc_true.
+Proof.
+  introv.
+  destruct_cterms.
+  apply cterm_eq; simpl; sp.
+Qed.
+
+Lemma mkc_not_less_than_comp1 {o} :
+  forall lib (a b : @CTerm o) n m,
+    computes_to_valc lib a (mkc_integer n)
+    -> computes_to_valc lib b (mkc_integer m)
+    -> (n < m)%Z
+    -> computes_to_valc lib (mkc_not_less_than a b) mkc_false.
+Proof.
+  introv comp1 comp2 h.
+  rw @mkc_not_less_than_eq.
+  destruct_cterms.
+  allunfold @computes_to_valc; allsimpl.
+  allunfold @computes_to_value; repnd; dands; auto.
+  pose proof (reduce_to_prinargs_comp
+                lib CompOpLess
+                x0 x
+                [nobnd mk_false, nobnd mk_true]
+                (mk_integer n)
+                (mk_integer m)) as r.
+  repeat (autodimp r hyp).
+  { unfold computes_to_value; dands; auto. }
+  { unfold iswfpk; eauto 3 with slow. }
+  allrw @fold_nobnd.
+  allrw @fold_less.
+  eapply reduces_to_trans; eauto.
+  apply reduces_to_if_step.
+  csunf; simpl.
+  dcwf q; allsimpl.
+  unfold compute_step_comp; simpl.
+  boolvar; auto; try omega.
+Qed.
+
+
+
+
+
+Lemma mkc_not_less_than_comp2 {o} :
+  forall lib (a b : @CTerm o) n m,
+    computes_to_valc lib a (mkc_integer n)
+    -> computes_to_valc lib b (mkc_integer m)
+    -> (m <= n)%Z
+    -> computes_to_valc lib (mkc_not_less_than a b) mkc_true.
+Proof.
+  introv comp1 comp2 h.
+  rw @mkc_not_less_than_eq.
+  destruct_cterms.
+  allunfold @computes_to_valc; allsimpl.
+  allunfold @computes_to_value; repnd; dands; auto.
+  pose proof (reduce_to_prinargs_comp
+                lib CompOpLess
+                x0 x
+                [nobnd mk_false, nobnd mk_true]
+                (mk_integer n)
+                (mk_integer m)) as r.
+  repeat (autodimp r hyp).
+  { unfold computes_to_value; dands; auto. }
+  { unfold iswfpk; eauto 3 with slow. }
+  allrw @fold_nobnd.
+  allrw @fold_less.
+  eapply reduces_to_trans; eauto.
+  apply reduces_to_if_step.
+  csunf; simpl.
+  dcwf q; allsimpl.
+  unfold compute_step_comp; simpl.
+  boolvar; auto; try omega.
+Qed.
+
+
+Lemma mkc_eqint_comp1 {o} :
+  forall lib (a b : @CTerm o) n m,
+    computes_to_valc lib a (mkc_integer n)
+    -> computes_to_valc lib b (mkc_integer m)
+    -> (n = m)
+    -> computes_to_valc lib (mkc_eqint a b) mkc_true.
+Proof.
+  introv comp1 comp2 h.
+  rw @mkc_eqint_eq.
+  destruct_cterms.
+  allunfold @computes_to_valc; allsimpl.
+  allunfold @computes_to_value; repnd; dands; auto. 
+  rw h in comp3. clear h comp1.
+  pose proof (reduce_to_prinargs_comp
+                lib CompOpEq
+                x0 x
+                [nobnd mk_true, nobnd mk_false]
+                (mk_integer m)
+                (mk_integer m)) as r.
+  repeat (autodimp r hyp).
+  { unfold computes_to_value; dands; auto. }
+  { unfold iswfpk; eauto 3 with slow. }
+  allrw @fold_nobnd.
+  allrw @fold_less.
+  eapply reduces_to_trans; eauto.
+  apply reduces_to_if_step.
+  csunf; simpl.
+  dcwf q; allsimpl.
+  unfold compute_step_comp; simpl.
+  boolvar; auto; try omega.  destruct n0. reflexivity.
+Qed.
+
+Lemma mkc_eqint_comp2 {o} :
+  forall lib (a b : @CTerm o) n m,
+    computes_to_valc lib a (mkc_integer n)
+    -> computes_to_valc lib b (mkc_integer m)
+    -> (n <> m)
+    -> computes_to_valc lib (mkc_eqint a b) mkc_false.
+Proof.
+  introv comp1 comp2 h.
+  rw @mkc_eqint_eq.
+  destruct_cterms.
+  allunfold @computes_to_valc; allsimpl.
+  allunfold @computes_to_value; repnd; dands; auto. 
+  pose proof (reduce_to_prinargs_comp
+                lib CompOpEq
+                x0 x
+                [nobnd mk_true, nobnd mk_false]
+                (mk_integer n)
+                (mk_integer m)) as r.
+  repeat (autodimp r hyp).
+  { unfold computes_to_value; dands; auto. }
+  { unfold iswfpk; eauto 3 with slow. }
+  allrw @fold_nobnd.
+  allrw @fold_less.
+  eapply reduces_to_trans; eauto.
+  apply reduces_to_if_step.
+  csunf; simpl.
+  dcwf q; allsimpl.
+  unfold compute_step_comp; simpl.
+  boolvar; auto; try omega. inversion e. destruct h. auto.
+Qed.
+
+Lemma mkc_not_eqint_comp1 {o} :
+  forall lib (a b : @CTerm o) n m,
+    computes_to_valc lib a (mkc_integer n)
+    -> computes_to_valc lib b (mkc_integer m)
+    -> (n = m)
+    -> computes_to_valc lib (mkc_not_eqint a b) mkc_false.
+Proof.
+  introv comp1 comp2 h.
+  rw @mkc_not_eqint_eq.
+  destruct_cterms.
+  allunfold @computes_to_valc; allsimpl.
+  allunfold @computes_to_value; repnd; dands; auto. 
+  rw h in comp3. clear h comp1.
+  pose proof (reduce_to_prinargs_comp
+                lib CompOpEq
+                x0 x
+                [nobnd mk_false, nobnd mk_true]
+                (mk_integer m)
+                (mk_integer m)) as r.
+  repeat (autodimp r hyp).
+  { unfold computes_to_value; dands; auto. }
+  { unfold iswfpk; eauto 3 with slow. }
+  allrw @fold_nobnd.
+  allrw @fold_less.
+  eapply reduces_to_trans; eauto.
+  apply reduces_to_if_step.
+  csunf; simpl.
+  dcwf q; allsimpl.
+  unfold compute_step_comp; simpl.
+  boolvar; auto; try omega.  destruct n0. reflexivity.
+Qed.
+
+Lemma mkc_not_eqint_comp2 {o} :
+  forall lib (a b : @CTerm o) n m,
+    computes_to_valc lib a (mkc_integer n)
+    -> computes_to_valc lib b (mkc_integer m)
+    -> (n <> m)
+    -> computes_to_valc lib (mkc_not_eqint a b) mkc_true.
+Proof.
+  introv comp1 comp2 h.
+  rw @mkc_not_eqint_eq.
+  destruct_cterms.
+  allunfold @computes_to_valc; allsimpl.
+  allunfold @computes_to_value; repnd; dands; auto. 
+  pose proof (reduce_to_prinargs_comp
+                lib CompOpEq
+                x0 x
+                [nobnd mk_false, nobnd mk_true]
+                (mk_integer n)
+                (mk_integer m)) as r.
+  repeat (autodimp r hyp).
+  { unfold computes_to_value; dands; auto. }
+  { unfold iswfpk; eauto 3 with slow. }
+  allrw @fold_nobnd.
+  allrw @fold_less.
+  eapply reduces_to_trans; eauto.
+  apply reduces_to_if_step.
+  csunf; simpl.
+  dcwf q; allsimpl.
+  unfold compute_step_comp; simpl.
+  boolvar; auto; try omega. inversion e. destruct h. auto.
+Qed.
+
+
 
 Lemma nuprl_computes_left {o} :
   forall lib (t1 t2 t3 : @CTerm o) eq,
