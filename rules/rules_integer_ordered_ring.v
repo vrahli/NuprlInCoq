@@ -35,7 +35,8 @@ Require Export rules_integer_division.
    But it is easier to verify the rules
    if we state only a simple form of monotonicity of addition
    and add the transitivity of <  as an additional rule.
-   So we have three rules for the ordered ring properies of the integers.
+   We also have a trichotomy rule for < and a discretness rule for <.
+   So we have five rules for the ordered ring properies of the integers.
  *)
 
 
@@ -83,6 +84,54 @@ Definition rule_less_transitive {o}
       mk_baresequent H (mk_conclax (mk_member c mk_int))
     ]
     [].
+
+(*
+   H |- a = b in Z
+
+     By lessTrichotomy 
+
+     H |- less a b False True
+     H |- less b a False True
+     H |- a in Z
+     H |- b in Z
+ *)
+
+Definition rule_less_trichotomy {o}
+           (H : barehypotheses)
+           (a b: @NTerm o) :=
+    mk_rule
+    (mk_baresequent H (mk_conclax (mk_equality a b mk_int)))
+    [ mk_baresequent H (mk_conclax (mk_not_less_than a b)),
+      mk_baresequent H (mk_conclax (mk_not_less_than b a)),
+      mk_baresequent H (mk_conclax (mk_member a mk_int)),
+      mk_baresequent H (mk_conclax (mk_member b mk_int))
+    ]
+    [].
+
+(*
+   H |- (1+a) = b in Z
+
+     By lessDiscrete
+
+     H |- less a b True False
+     H |- less (1+a) b False True
+     H |- a in Z
+     H |- b in Z
+ *)
+
+Definition rule_less_discrete {o}
+           (H : barehypotheses)
+           (a b: @NTerm o) :=
+    mk_rule
+    (mk_baresequent H (mk_conclax (mk_equality (mk_add (mk_integer 1) a) b mk_int)))
+    [ mk_baresequent H (mk_conclax (mk_less_than a b)),
+      mk_baresequent H (mk_conclax (mk_not_less_than (mk_add (mk_integer 1) a) b)),
+      mk_baresequent H (mk_conclax (mk_member a mk_int)),
+      mk_baresequent H (mk_conclax (mk_member b mk_int))
+    ]
+    [].
+
+
 
 
 (*    H |- less 0 (a * b) True False 
@@ -424,6 +473,211 @@ Proof.
     split;auto; split;auto.
     auto.
 Qed.
+
+
+Lemma rule_less_trichotomy_true {o} :
+  forall lib (H : barehypotheses)
+         (y z: @NTerm o),
+    rule_true lib (rule_less_trichotomy H y z).
+Proof.
+  unfold rule_less_trichotomy, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold mk_not_eqint.
+  intros.
+  clear cargs.
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  rename Hyp1 into hyp2.
+  rename Hyp2 into hyp3.
+  rename Hyp3 into hyp4.
+  destseq; allsimpl; proof_irr; GC.
+  exists (@covered_axiom o (nh_vars_hyps H)).
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  vr_seq_true in hyp1.
+  pose proof (hyp1 s1 s2 eqh sim) as hyp; clear hyp1.
+  vr_seq_true in hyp2.
+  pose proof (hyp2 s1 s2 eqh sim) as hyp1; clear hyp2.
+  vr_seq_true in hyp3.
+  pose proof (hyp3 s1 s2 eqh sim) as hyp2; clear hyp3.
+  vr_seq_true in hyp4.
+  pose proof (hyp4 s1 s2 eqh sim) as hyp3; clear hyp4.
+  exrepnd. 
+  unfold mk_not_less_than in hyp1.
+  unfold mk_not_less_than in hyp7.
+  fold_mk_arithop. 
+  lsubst_tac.
+  allrw @lsubstc_mk_true .
+  allrw @lsubstc_mk_false .
+  allrw (@equality_in_member o).
+  exrepnd.
+  apply (@tequality_member_int o) in hyp4; auto.
+  apply (@tequality_member_int o) in hyp0; auto.
+  generalize_lsubstc_terms y1.
+  generalize_lsubstc_terms z1.
+  generalize_lsubstc_terms y2.
+  generalize_lsubstc_terms z2.
+  apply @equality_of_int_imp_tt in hyp4. destruct hyp4.
+  apply @equality_of_int_imp_tt in hyp0. destruct hyp0.
+  exrepnd.
+  assert (x0 <= x)%Z.  clear - hyp7 p1 p2.
+    (* From these three hyps we can prove x0 <= x *) 
+     pose proof (Z.le_decidable x0 x) as xx. destruct xx; auto.
+     assert (equality lib mkc_axiom mkc_axiom mkc_false).
+     pose proof (@respects_cequivc_equality o lib). destruct X. destruct p.
+    unfold respects3_r in r1.
+     specialize (r1 mkc_axiom mkc_axiom (mkc_less y1 z1 mkc_false mkc_true) mkc_false). 
+     apply r1; auto. 
+     apply computes_to_valc_implies_cequivc. 
+     pose proof (@mkc_not_less_than_comp1 o lib y1 z1 x x0) as xx.
+     rw @mkc_not_less_than_eq in xx.
+     apply xx; auto. 
+     omega. 
+    (* we have a member of False *)
+    rw @equality_in_false in H0. inversion H0.
+   (* Now we have x0 <= x *)
+  assert (x <= x0)%Z.  clear - hyp1 p1 p2.
+    (* From these three hyps we can prove x <= x0 *) 
+     pose proof (Z.le_decidable x x0) as xx. destruct xx; auto.
+     assert (equality lib mkc_axiom mkc_axiom mkc_false).
+     pose proof (@respects_cequivc_equality o lib). destruct X. destruct p.
+    unfold respects3_r in r1.
+     specialize (r1 mkc_axiom mkc_axiom (mkc_less z1 y1 mkc_false mkc_true) mkc_false). 
+     apply r1; auto. 
+     apply computes_to_valc_implies_cequivc. 
+     pose proof (@mkc_not_less_than_comp1 o lib z1 y1 x0 x) as xx.
+     rw @mkc_not_less_than_eq in xx.
+     apply xx; auto. 
+     omega. 
+    (* we have a member of False *)
+    rw @equality_in_false in H0. inversion H0.
+   (* Now we have x <= x0 *)
+  assert (x = x0)%Z. omega.
+  split.
+   - (* tequality *) apply @tequality_mkc_equality_sp; split.
+    + apply tequality_int.
+    + split; left; apply equality_in_int; auto.
+      unfold equality_of_int. exists x%Z. split; unfold ccomputes_to_valc; spcast; auto.
+      unfold equality_of_int. exists x0%Z. split; unfold ccomputes_to_valc; spcast; auto.
+  - (* equality *)
+     rw @member_eq. rw <- @member_equality_iff.
+     rw @equality_in_int.
+     unfold equality_of_int. exists x%Z. split; unfold ccomputes_to_valc; spcast; auto.
+     rw H2.
+     auto. 
+ Qed.
+
+
+Lemma rule_less_discrete_true {o} :
+  forall lib (H : barehypotheses)
+         (y z: @NTerm o),
+    rule_true lib (rule_less_discrete H y z).
+Proof.
+  unfold rule_less_discrete, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  unfold mk_not_eqint.
+  intros.
+  clear cargs.
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+  rename Hyp0 into hyp1.
+  rename Hyp1 into hyp2.
+  rename Hyp2 into hyp3.
+  rename Hyp3 into hyp4.
+  destseq; allsimpl; proof_irr; GC.
+  exists (@covered_axiom o (nh_vars_hyps H)).
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+  vr_seq_true in hyp1.
+  pose proof (hyp1 s1 s2 eqh sim) as hyp; clear hyp1.
+  vr_seq_true in hyp2.
+  pose proof (hyp2 s1 s2 eqh sim) as hyp1; clear hyp2.
+  vr_seq_true in hyp3.
+  pose proof (hyp3 s1 s2 eqh sim) as hyp2; clear hyp3.
+  vr_seq_true in hyp4.
+  pose proof (hyp4 s1 s2 eqh sim) as hyp3; clear hyp4.
+  exrepnd. 
+  unfold mk_not_less_than in hyp1.
+  unfold mk_less_than in hyp7.
+  fold_mk_arithop. 
+  lsubst_tac.
+  allrw @lsubstc_mk_true .
+  allrw @lsubstc_mk_false .
+  allrw (@equality_in_member o).
+  exrepnd.
+  apply (@tequality_member_int o) in hyp4; auto.
+  apply (@tequality_member_int o) in hyp0; auto.
+  generalize_lsubstc_terms y1.
+  generalize_lsubstc_terms z1.
+  generalize_lsubstc_terms y2.
+  generalize_lsubstc_terms z2.
+  apply @equality_of_int_imp_tt in hyp4. destruct hyp4.
+  apply @equality_of_int_imp_tt in hyp0. destruct hyp0.
+  exrepnd.
+  assert (x < x0)%Z.  clear - hyp7 p1 p2.
+    (* From these three hyps we can prove x < x0 *) 
+     pose proof (Z.lt_decidable x x0) as xx. destruct xx; auto.
+     assert (equality lib mkc_axiom mkc_axiom mkc_false).
+     pose proof (@respects_cequivc_equality o lib). destruct X. destruct p.
+    unfold respects3_r in r1.
+     specialize (r1 mkc_axiom mkc_axiom (mkc_less y1 z1 mkc_true mkc_false) mkc_false). 
+     apply r1; auto. 
+     apply computes_to_valc_implies_cequivc. 
+     pose proof (@mkc_less_than_comp2 o lib y1 z1 x x0) as xx.
+     rw @mkc_less_than_eq in xx.
+     apply xx; auto. 
+     omega. 
+    (* we have a member of False *)
+    rw @equality_in_false in H0. inversion H0.
+   (* Now we have x < x0 *)
+  assert (x0 <= 1+x)%Z.  clear - hyp1 p1 p2.
+    (* From these three hyps we can prove x0 <= 1+x *) 
+     pose proof (Z.le_decidable x0 (1+x)) as xx. destruct xx; auto.
+     assert (equality lib mkc_axiom mkc_axiom mkc_false).
+     pose proof (@respects_cequivc_equality o lib). destruct X. destruct p.
+    unfold respects3_r in r1.
+     specialize (r1 mkc_axiom mkc_axiom (mkc_less (mkc_arithop ArithOpAdd (mkc_integer 1) y1) z1 mkc_false mkc_true)
+                mkc_false). 
+     apply r1; auto. 
+     apply computes_to_valc_implies_cequivc. 
+     pose proof (@mkc_not_less_than_comp1 o lib (mkc_arithop ArithOpAdd (mkc_integer 1) y1) z1 (1+x) x0) as xx.
+     rw @mkc_not_less_than_eq in xx.
+     apply xx; auto.
+     unfold ccomputes_to_valc. spcast.
+    pose proof (@computes_to_valc_arithop o lib ArithOpAdd (mkc_integer 1) y1 1 x) as xxx.
+    apply xxx; auto. 
+    apply computes_to_valc_refl. apply iscvalue_mkc_integer. 
+    omega.
+    (* we have a member of False *)
+    rw @equality_in_false in H0. inversion H0.
+   (* Now we have x0 <= 1+x *)
+  assert (1+x = x0)%Z. omega.
+  split.
+   - (* tequality *) apply @tequality_mkc_equality_sp; split.
+    + apply tequality_int.
+    + split; left; apply equality_in_int; auto.
+      unfold equality_of_int. exists (1+x)%Z. split; unfold ccomputes_to_valc; spcast; auto.
+    pose proof (@computes_to_valc_arithop o lib ArithOpAdd (mkc_integer 1) y1 1 x) as xxx.
+    apply xxx; auto. 
+    apply computes_to_valc_refl. apply iscvalue_mkc_integer. 
+    pose proof (@computes_to_valc_arithop o lib ArithOpAdd (mkc_integer 1) y2 1 x) as xxx.
+    apply xxx; auto. 
+    apply computes_to_valc_refl. apply iscvalue_mkc_integer. 
+      unfold equality_of_int. exists x0%Z. split; unfold ccomputes_to_valc; spcast; auto.
+  - (* equality *)
+     rw @member_eq. rw <- @member_equality_iff.
+     rw @equality_in_int.
+     unfold equality_of_int. exists (1+x)%Z. split; unfold ccomputes_to_valc; spcast; auto.
+     pose proof (@computes_to_valc_arithop o lib ArithOpAdd (mkc_integer 1) y1 1 x) as xxx.
+    apply xxx; auto. 
+    apply computes_to_valc_refl. apply iscvalue_mkc_integer. 
+     rw H2.
+     exact p1. 
+ Qed.
+
 
 
 

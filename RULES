@@ -180,10 +180,10 @@
 {10310,lambdaFormation}                     rules/rules_function.v                    : rule_lambda_formation_true
 {14232,lemma_by_obid}                       .                                         : .
 {223,lessCases}                             .                                         : .
-{1,lessDiscrete}                            .                                         : .
+{1,lessDiscrete}                            rules/rules_integer_ordered_ring.v        : rule_less_discrete_true 
 {25,lessExceptionCases}                     rules/rules_less_exception.v              : rule_less_exception_cases_true
 {2,lessTransitive}                          rules/rules_integer_ordered_ring.v        : rule_less_transitive_true 
-{6,lessTrichotomy}                          .                                         : .
+{6,lessTrichotomy}                          rules/rules_integer_ordered_ring.v        : rule_less_trichotomy_true 
 {7,minusExceptionCases}                     rules/rules_arith_exception.v             : rule_minus_exception_cases_true
 {1,multiplyAssociative}                     rules/rules_integer_ring.v                : rule_mul_associative_true
 {1,multiplyCommutative}                     rules/rules_integer_ring.v                : rule_mul_commutative_true
@@ -261,5 +261,5 @@
 {7964,voidElimination}                      rules/rules_void.v                        : rule_void_elimination_true
 {6596,voidEquality}                         rules/rules_void.v                        : rule_void_equality_true3
 
-TOTAL RULES PROVED: 154 out of 262
+TOTAL RULES PROVED: 156 out of 262
 (not counting 2 UNFINISHED)
