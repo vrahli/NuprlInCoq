@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -35,37 +36,42 @@ Require Export choice.
 Require Export cvterm.
 
 
+Hint Resolve iscvalue_mkc_approx : slow.
+Hint Resolve approxc_refl : slow.
+Hint Resolve computes_to_valc_refl : slow.
+
 
 Lemma nuprl_mkc_true {o} :
-  forall lib, @nuprl o lib
-                     mkc_true
-                     mkc_true
-                     (fun t t' => t ===>(lib) mkc_axiom # t' ===>(lib) mkc_axiom).
+  forall lib,
+    @nuprl o lib
+           mkc_true
+           mkc_true
+           (fun t t' => t ===>(lib) mkc_axiom # t' ===>(lib) mkc_axiom).
 Proof.
   introv.
   apply CL_approx.
   rw @mkc_true_eq.
   unfold per_approx.
-  eexists; eexists; eexists; eexists; dands; spcast.
-  apply computes_to_valc_refl; apply iscvalue_mkc_approx.
-  apply computes_to_valc_refl; apply iscvalue_mkc_approx.
-  sp.
-  introv; split; sp; spcast.
-  apply approxc_refl.
+  eexists; eexists; eexists; eexists; dands; spcast;
+    try (apply computes_to_valc_refl; eauto 3 with slow); tcsp;[].
+  introv; split; sp; spcast; eauto 3 with slow.
 Qed.
 
 Lemma tequality_true {p} :
   forall lib, @tequality p lib mkc_true mkc_true.
-Proof. intro. pose proof (@nuprl_mkc_true p lib) as xx. eapply tequality_if_nuprl. eauto. 
+Proof.
+  introv.
+  eapply tequality_if_nuprl; apply nuprl_mkc_true.
 Qed.
 Hint Immediate tequality_true.
+Hint Resolve tequality_true : slow.
 
 Lemma equality_axiom_true {p} :
   forall lib, @equality p lib mkc_axiom mkc_axiom mkc_true.
-Proof. intro. pose proof (@nuprl_mkc_true p lib) as xx.  eapply eq_equality1.
- 2: { eauto. } 
- simpl. split; unfold ccomputes_to_valc; spcast; apply computes_to_valc_refl; auto.
+Proof.
+  introv.
+  eapply eq_equality1;[|apply nuprl_mkc_true]; simpl.
+  dands; spcast; eauto 3 with slow.
 Qed.
 Hint Immediate equality_axiom_true.
-
-
+Hint Resolve equality_axiom_true : slow.

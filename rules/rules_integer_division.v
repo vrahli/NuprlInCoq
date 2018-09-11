@@ -1,6 +1,10 @@
 (*
+
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -24,24 +28,32 @@
 *)
 
 
-Require Export rules_integer_ring.  
-Require Export rules_minus.  
+Require Export rules_integer_ring.
+Require Export rules_minus.
 Require Export per_props_compute.
 Require Export per_props_true.
 Require Export cequiv_seq_util.
 
+
 Lemma equality_of_int_mkc_integer {o} :
-    forall lib n, @equality_of_int o lib (mkc_integer n) (mkc_integer n).
-Proof. intros. apply equality_in_int. rw @member_eq. apply @member_int_iff. spcast. exists n.
-   apply computes_to_valc_refl; apply iscvalue_mkc_integer.
-Qed. 
+  forall lib n,
+    @equality_of_int o lib (mkc_integer n) (mkc_integer n).
+Proof.
+  introv; exists n; dands; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve equality_of_int_mkc_integer : slow.
+
+
+Hint Rewrite @lsubstc_mk_true : slow.
+Hint Rewrite @lsubstc_mk_false : slow.
+
 
 (* Two rules about div and rem state equalities. They are div_rem_sum and rem_zero. *)
 
 (*
    H |- a = (a div b) * b + (a rem b) in Z
 
-     By divideRemainderSum 
+     By divideRemainderSum
 
      H |- int_eq b 0 False True
      H |- a in Z
@@ -101,67 +113,69 @@ Proof.
 
   (* we now start proving the sequent *)
   vr_seq_true.
-  vr_seq_true in hyp1.
-  pose proof (hyp1 s1 s2 eqh sim) as hyp; clear hyp1.
-  vr_seq_true in hyp2.
-  pose proof (hyp2 s1 s2 eqh sim) as hyp1; clear hyp2.
-  vr_seq_true in hyp3.
-  pose proof (hyp3 s1 s2 eqh sim) as hyp2; clear hyp3.
-  exrepnd. 
-  fold_mk_arithop. 
+
   lsubst_tac.
-  repeat rw @lsubstc_mk_true in hyp4.
-  repeat rw @lsubstc_mk_false in hyp4.
-  repeat rw @lsubstc_mk_true in hyp5.
-  repeat rw @lsubstc_mk_false in hyp5.
-  allrw (@equality_in_member o).
+  rw <- @member_equality_iff.
+  teq_and_eq (@mk_int o) m (mk_add (mk_mul (mk_div m n) n) (mk_rem m n)) s1 s2 H;
+    eauto 3 with slow;[].
+
+  vr_seq_true in hyp1.
+  pose proof (hyp1 s1 s2 hf sim) as hyp; clear hyp1.
+  vr_seq_true in hyp2.
+  pose proof (hyp2 s1 s2 hf sim) as hyp1; clear hyp2.
+  vr_seq_true in hyp3.
+  pose proof (hyp3 s1 s2 hf sim) as hyp2; clear hyp3.
   exrepnd.
-  apply (@tequality_member_int o) in hyp3; auto.
-  apply (@tequality_member_int o) in hyp0; auto.
-  generalize_lsubstc_terms m1.
+  fold_mk_arithop.
+  lsubst_tac.
+  autorewrite with slow in *.
+
+  match goal with
+  | [ H : cover_vars _ _ |- _ ] => clear H
+  | [ H : wf_term _ |- _ ] => clear H
+  end.
+
+  allrw <- @member_member_iff.
+  apply tequality_mkc_member_implies_sp in hyp3; auto;[].
+  apply tequality_mkc_member_implies_sp in hyp0; auto;[].
+
+  revert hyp0 hyp3.
   generalize_lsubstc_terms n1.
-  generalize_lsubstc_terms m2.
   generalize_lsubstc_terms n2.
-  split.
-  - (* tequality *) apply @tequality_mkc_equality_sp; split.
-    + apply tequality_int.
-    + split; left; apply equality_in_int; auto;
-      repeat (apply @equality_of_int_arithop; auto).
- 
-  - (* equality *)
-     rw @member_eq. rw <- @member_equality_iff.
-     rw @equality_in_int. 
-     clear dependent n2. clear dependent m2.
-    allrw @member_int_iff. spcast. exrepnd.
-   unfold equality_of_int.
-   exists z.
-   sp; auto; spcast; auto.
-   
-    assert (z0 <> 0%Z) as nz. clear - hyp1 hyp5.
+  generalize_lsubstc_terms m1.
+  generalize_lsubstc_terms m2.
+  introv hyp0 hyp3.
+
+  eapply equality_trans;[exact hyp3|].
+  apply equality_sym in hyp0; apply equality_refl in hyp0.
+  apply equality_sym in hyp3; apply equality_refl in hyp3.
+  eapply tequality_preserving_equality in hyp5;[|eauto];[].
+  clear dependent m1; clear dependent n1.
+
+  allrw @member_int_iff; spcast; exrepnd.
+  apply equality_in_int; exists z; dands; spcast; auto;[].
+
+  assert (z0 <> 0%Z) as nz.
+  {
+    clear - hyp2 hyp5.
     (* from these two hyps we can prove z0 is not 0 *)
-    pose proof (Z.eq_dec z0 0) as xx. destruct xx; auto. 
-    assert (equality lib mkc_axiom mkc_axiom mkc_false).
-    pose proof (@respects_cequivc_equality o lib). destruct X. destruct p.
-    unfold respects3_r in r1. 
-    specialize (r1 mkc_axiom mkc_axiom (mkc_inteq n1 (mkc_integer 0) mkc_false mkc_true) mkc_false).
-    apply r1; auto.  rw e in hyp1. clear -hyp1.
-    apply computes_to_valc_implies_cequivc.
-    fold (@mkc_not_eqint o).
-    pose proof (@mkc_not_eqint_comp1 o lib n1 (mkc_integer 0) 0 0) as xx.
-     apply xx; auto.  
-     apply computes_to_valc_refl. apply iscvalue_mkc_integer.  
-   (* we have a member of False *)
-    rw @equality_in_false in H; auto.
+    introv xx; subst.
+    rewrite <- mkc_not_eqint_eq in hyp5.
+    eapply cequivc_preserving_equality in hyp5;
+      [|apply computes_to_valc_implies_cequivc;
+        eapply mkc_not_eqint_comp1;eauto 3 with slow].
+    apply equality_in_false in hyp5; tcsp.
+  }
 
+  (* now we have z0 not eq 0 *)
 
-   (* now we have z0 not eq 0 *)
+  assert (mkc_integer z = @mkc_integer o (((Z.quot z z0)*z0)+(Z.rem z z0))) as eq.
+  { apply mkc_integer_eq_iff.
+    pose proof Z.quot_rem z z0.
+    rw Z.mul_comm; auto. }
 
-   assert ( (mkc_integer z) = @mkc_integer o (((Z.quot z z0)*z0)+(Z.rem z z0))) as eq.
-   apply mkc_integer_eq_iff. 
-   pose proof Z.quot_rem z z0. rw Z.mul_comm. auto. 
-   
-   rw eq. repeat (apply computes_to_valc_arithop;auto).
-
+  rewrite mkc_add_is_mkc_arithop.
+  rw eq; repeat (apply computes_to_valc_arithop;auto).
 Qed.
 
 
@@ -1062,6 +1076,3 @@ Proof.
     split; auto. 
     auto.
 Qed.
-
-
-
