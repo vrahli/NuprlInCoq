@@ -136,6 +136,8 @@ Require Import rules_isint.
 Require Import rules_arith.
 Require Import rules_integer.
 Require Import rules_integer_ring.
+Require Import rules_integer_division.
+Require Import rules_integer_ordered_ring.
 Require Import rules_minus.
 Require Import rules_number.
 
