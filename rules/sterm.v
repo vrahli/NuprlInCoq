@@ -28,8 +28,8 @@
 
 *)
 
-
 Require Export rules_isect.
+(* Require Export rules_isect. *)
 
 
 (* simple terms --- without choice sequences *)
