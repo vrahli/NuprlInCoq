@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -46,6 +47,7 @@ Require Export terms_try.
 Require Export csubst_fresh.
 Require Export psquash.
 Require Export usquash.
+Require Export istype.
 
 
 Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
@@ -1126,6 +1128,16 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [w2 name];
         destruct name as [c1 name];
         destruct name as [c2 name];
+        clear_irr; tac
+
+    (* Istype *)
+    | context [lsubstc (mk_istype ?a) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let c1 := fresh "c1" in
+      generalize (lsubstc_mk_istype a s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [c1 name];
         clear_irr; tac
 
     (* Uniform non-dependent Function *)

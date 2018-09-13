@@ -25,7 +25,6 @@
 *)
 
 
-Require Export per_props_subtype_rel.
 Require Export sterm.
 Require Export sequents_tacs.
 Require Export per_props_tequality.
@@ -37,122 +36,143 @@ Require Export rules_useful.
 Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
 Require Export variables.
+Require Export per_props_subtype_rel.
 
-
-
-
-(** printing |- $\vdash$ *)
-(** printing ->  $\rightarrow$ *)
-(* begin hide *)
-(* end hide *)
-
-(**
-  We can use  (T subtype_rel T) which is (\x.x in T -> T) to
-  express the judgement that T is a type.
-  
-
- *)
-Definition mk_istype {o} (T : @NTerm o) :=
-  mk_subtype_rel T T.
-Definition mkc_istype {o} (T : @CTerm o) :=
-  mkc_subtype_rel T T.
-
-Lemma wf_mk_istype {p} : forall T : NTerm, wf_term (mk_istype T) <-> @wf_term  p T.
-Proof. unfold mk_istype. intros. split; intro. 
-   rw @wf_subtype_rel_iff in H. exrepnd. auto.
-   rw @wf_subtype_rel_iff . split; auto.
-Qed.
-
-Lemma cover_vars_mk_istype {p} : forall (T : NTerm) (s : CSub), cover_vars (@mk_istype p T) s <-> cover_vars T s.
-Proof. unfold mk_istype. intros. split; intros.
-  rw @cover_vars_subtype_rel in H. exrepnd. auto.
-   rw @cover_vars_subtype_rel . split; auto.
-Qed.
-
-Lemma lsubstc_mk_istype {o} :
-  (forall (T: @NTerm o)(s : CSub) (wf : wf_term (mk_istype T)) (c : cover_vars (mk_istype T) s),
-    {w : wf_term T $
-    {c': cover_vars T s $
-      alphaeqc (lsubstc (mk_istype T) wf s c)  (mkc_istype (lsubstc T w s c'))}}).
-Proof. intros. unfold mk_istype. unfold mkc_istype.
-       eexists. eexists.
-       lsubst_tac. 
-       assert (alphaeqc (mkc_subtype_rel (lsubstc T w1 s c1) (lsubstc T w1 s c1))
-  (mkc_subtype_rel (lsubstc T w1 s c1) (lsubstc T w1 s c1))). apply alphaeqc_refl.
-       refine X.
-   Unshelve. rw @wf_mk_istype in wf. auto.
-             rw @cover_vars_mk_istype in c. auto.
-Qed.
 
 Lemma equality_subtype_rel_refl {o} :
-    forall lib (A: @CTerm o),
-      type lib A ->
-      equality lib mkc_axiom mkc_axiom (mkc_subtype_rel A A).
-Proof. intros.
-       rw @equality_in_subtype_rel. 
-         split. spcast. eauto 2 with slow. split. spcast. eauto 2 with slow.
-         split; auto. split; auto. unfold subtype_rel. auto.
+  forall lib (A: @CTerm o),
+    type lib A
+    -> equality lib mkc_axiom mkc_axiom (mkc_subtype_rel A A).
+Proof.
+  intros.
+  rw @equality_in_subtype_rel.
+  split. spcast. eauto 2 with slow. split. spcast. eauto 2 with slow.
+  split; auto. split; auto. unfold subtype_rel. auto.
 Qed.
+Hint Resolve equality_subtype_rel_refl : slow.
+
+Lemma subtype_rel_refl {o} :
+  forall lib (A : @CTerm o),
+    subtype_rel lib A A.
+Proof.
+  introv h; tcsp.
+Qed.
+Hint Resolve subtype_rel_refl : slow.
+
+Lemma equality_in_mkc_istype {o} :
+  forall lib a b (A: @CTerm o),
+    equality lib a b (mkc_istype A)
+    <=> type lib A # ccomputes_to_valc lib a mkc_axiom # ccomputes_to_valc lib b mkc_axiom.
+Proof.
+  intros.
+  rw @equality_in_subtype_rel.
+  split; intro h; repnd; dands; spcast; eauto 3 with slow.
+Qed.
+
+Lemma equality_axiom_in_mkc_istype {o} :
+  forall lib (A: @CTerm o),
+    equality lib mkc_axiom mkc_axiom (mkc_istype A)
+    <=> type lib A.
+Proof.
+  introv; rw @equality_in_mkc_istype; split; intro h; repnd; dands; spcast; eauto 3 with slow.
+Qed.
+
+Lemma implies_equality_in_mkc_istype {o} :
+  forall lib (A: @CTerm o),
+    type lib A
+    -> equality lib mkc_axiom mkc_axiom (mkc_istype A).
+Proof.
+  introv h.
+  apply equality_in_mkc_istype; dands; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve implies_equality_in_mkc_istype : slow.
 
 Lemma tequality_subtype_rel_refl {o} :
-    forall lib (A B: @CTerm o),
-      tequality lib A B ->
-      tequality lib  (mkc_subtype_rel A A) (mkc_subtype_rel B B) .
-Proof. intros. rw @mkc_subtype_rel_eq. rw @mkc_subtype_rel_eq. apply tequality_mkc_member_sp.
-       split.
-       2:{ right. spcast. eauto 2 with slow. }
-       apply tequality_fun. split; auto.
+  forall lib (A B: @CTerm o),
+    tequality lib A B
+    -> tequality lib (mkc_subtype_rel A A) (mkc_subtype_rel B B) .
+Proof.
+  intros.
+  rw @mkc_subtype_rel_eq. rw @mkc_subtype_rel_eq. apply tequality_mkc_member_sp.
+  split.
+  { apply tequality_fun. split; auto. }
+  { right. spcast. eauto 2 with slow. }
+Qed.
+Hint Resolve tequality_subtype_rel_refl : slow.
+
+Lemma tequality_mkc_subtype_rel {o} :
+  forall lib (A B C D: @CTerm o),
+    tequality lib (mkc_subtype_rel A B) (mkc_subtype_rel C D)
+    <=> (tequality lib A C # (inhabited_type lib A -> tequality lib B D)).
+Proof.
+  introv; repeat rewrite mkc_subtype_rel_eq; split; intro h.
+  { apply tequality_mkc_member_sp in h; repnd.
+    apply tequality_mkc_fun in h0; repnd; tcsp. }
+  { repnd.
+    apply tequality_mkc_member_sp.
+    rw @tequality_mkc_fun; dands; tcsp.
+    right; spcast; eauto 3 with slow. }
 Qed.
 
-Lemma teq_and_eq_istype {o} :
-   forall lib (T : @NTerm o) (s1 s2: CSub) 
-    (wf1 : wf_term (mk_istype T)) 
-    (wf : wf_term T)
-    (c : cover_vars  T s1)
-    (c' : cover_vars T s2)
-    (c1 : cover_vars (mk_istype T) s1)
-    (c2 : cover_vars (mk_istype T) s2),
- tequality lib (lsubstc T wf s1 c)  (lsubstc T wf s2 c') ->   
-tequality lib (lsubstc (mk_istype T) wf1 s1 c1)  (lsubstc (mk_istype T) wf1 s2 c2)
-# equality lib mkc_axiom mkc_axiom (lsubstc (mk_istype T) wf1 s1 c1).
+Lemma tequality_mkc_istype {o} :
+  forall lib (A B : @CTerm o),
+    tequality lib (mkc_istype A) (mkc_istype B) <=> tequality lib A B.
 Proof.
-   unfold mk_istype. intros. lsubst_tac.
-   generalize_lsubstc_terms A.
-   generalize_lsubstc_terms B. clear - H.
-   split.
-   apply @tequality_subtype_rel_refl. auto.
-   apply @equality_subtype_rel_refl. 
-   unfold type. eapply tequality_refl. eauto.
+  introv.
+  unfold mkc_istype.
+  rw @tequality_mkc_subtype_rel; split; intro h; repnd; tcsp.
+Qed.
+
+Lemma tequality_implies_type_left {o} :
+  forall lib (a b : @CTerm o),
+    tequality lib a b -> type lib a.
+Proof.
+  introv teq; eauto 3 with slow.
+  apply tequality_refl in teq; auto.
+Qed.
+Hint Resolve tequality_implies_type_left : slow.
+
+Lemma tequality_implies_type_right {o} :
+  forall lib (a b : @CTerm o),
+    tequality lib a b -> type lib b.
+Proof.
+  introv teq; eauto 3 with slow.
+  apply tequality_sym in teq; apply tequality_refl in teq; auto.
+Qed.
+Hint Resolve tequality_implies_type_right : slow.
+
+Lemma teq_and_eq_istype {o} :
+  forall lib
+         (T1 T2 : @CTerm o),
+    tequality lib T1 T2
+    -> tequality lib (mkc_istype T1) (mkc_istype T2)
+       # equality lib mkc_axiom mkc_axiom (mkc_istype T1).
+Proof.
+  introv teq.
+  rw @tequality_mkc_istype; dands; eauto 3 with slow.
 Qed.
 
 Lemma cover_vars_family {o} :
-   forall  (x y : NVar) (B : NTerm) (s : CSub) (a : CTerm),
-cover_vars_upto B (csub_filter s [x]) [x] -> cover_vars (subst B x (@mk_var  o y)) (snoc s (y, a)).
-Proof. intros. unfold cover_vars_upto in H. unfold cover_vars. unfold over_vars.
-  simpl in H. rw @dom_csub_csub_filter in H.
-  rw @dom_csub_snoc. simpl. 
-  unfold subvars in H. rw assert_sub_vars in H. 
-  unfold subvars. rw assert_sub_vars.
-  intros. rw in_snoc.
-  assert ( LIn x0 (remove_nvars [x] (free_vars B)) + (x0 = y)). 
-  2: {destruct X0.  rw in_remove_nvars in l. exrepnd. 
-      specialize (H x0 l0) as H. left. 
-      rw @in_cons_iff in H. destruct H. destruct l. simpl. auto.
-      rw @in_remove_nvars in l1. exrepnd. auto. right. auto.
-      }
-  rw @in_remove_nvars. pose proof (deq_nvar x0 y). destruct H0;auto. left.
-  unfold subst in X.
-  pose proof (deq_nvar x0 x). destruct H0. rewrite <- e in X. clear e.
-  assert (False). 2:{ destruct H0. }
-  Search (free_vars (lsubst _ _)).
-   admit.
-  pose proof (@free_vars_lsubst2 o B [(x, mk_var y)] x0 X) as xx. destruct xx.
-  split; auto. simpl. intro. destruct H0; auto.
-  exrepnd. assert (False). 2:{ destruct H0. }
-  simpl in s1. destruct s1;auto. inversion e. rewrite <- H2 in s0. simpl in s0.
-  destruct s0; auto.
-    
-Admitted.
+  forall  (x y : NVar) (B : NTerm) (s : CSub) (a : CTerm),
+    cover_vars_upto B (csub_filter s [x]) [x]
+    -> cover_vars (subst B x (@mk_var  o y)) (snoc s (y, a)).
+Proof.
+  introv cov.
+  unfold cover_vars_upto in cov.
+  unfold cover_vars.
+  unfold over_vars; simpl in *.
+  rw @dom_csub_csub_filter in cov.
+  rw @dom_csub_snoc. simpl.
+  allrw subvars_eq.
+  introv i; allrw in_snoc.
+  apply eqset_free_vars_disjoint in i; simpl in *.
+  allrw in_app_iff; allrw in_remove_nvars; allrw in_single_iff.
+  boolvar; repndors; repnd; tcsp;
+    unfold sub_free_vars in *; simpl in *; repndors; subst; tcsp;
+      apply cov in i0; simpl in *; allrw in_remove_nvars; allrw in_single_iff;
+        repndors; repnd; subst; tcsp.
+Qed.
+
 
 (* This rule says that in order to prove that T is a type
    it is enough to prove that it is inhabited.
@@ -165,7 +185,6 @@ Admitted.
 Definition rule_inhabited_type {o}
            (H : barehypotheses)
            (T t: @NTerm o) :=
-  
   mk_rule
     (mk_baresequent H (mk_conclax (mk_istype T)))
     [ mk_baresequent H (mk_conclax (mk_member t T))
@@ -196,7 +215,6 @@ Lemma rule_inhabited_type_true {o} :
     rule_true lib (rule_inhabited_type H T t).
 Proof.
   unfold rule_inhabited_type, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
-  unfold mk_istype.
   intros.
   clear cargs.
   (* We prove the well-formedness of things *)
@@ -210,54 +228,25 @@ Proof.
   vr_seq_true.
   vr_seq_true in hyp1.
   pose proof (hyp1 s1 s2 eqh sim) as hyp; clear hyp1.
-  exrepnd. 
-  lsubst_tac.
-  allrw (@equality_in_member o).
   exrepnd.
-  generalize_lsubstc_terms T1.
-  generalize_lsubstc_terms T2.
-  revert hyp0.
-  generalize_lsubstc_terms t1.
-  generalize_lsubstc_terms t2.
-  intro.
-  split.
-  - (* tequality *)
-    rw @mkc_subtype_rel_eq.
-    rw @mkc_subtype_rel_eq.
-    rw @tequality_mkc_member in hyp0.
-    exrepnd.
-    unfold mkc_subtype_rel.
-    rw @tequality_mkc_member.
-    assert (tequality lib (mkc_fun T1 T1) (mkc_fun T2 T2)) by
-          (rw @tequality_mkc_fun; split; auto).
-    split. auto. split. split; intro.
-   pose proof (@tequality_preserves_member o lib (mkc_fun T1 T1) (mkc_fun T2 T2) mkc_id) as xx.
-   apply xx; auto.
-   pose proof (@tequality_preserves_member o lib (mkc_fun T2 T2) (mkc_fun T1 T1) mkc_id) as xx.
-   apply xx; auto. apply tequality_sym; auto.
-   right. spcast. auto.
-  - (* equality *)
-  apply equality_in_subtype_rel. split. auto. split. auto.
-  assert (type lib T1).
-  eapply inhabited_implies_tequality. eauto.
-  split. auto. split; auto. 
-  unfold subtype_rel. auto.
+  lsubst_tac.
+  apply teq_and_eq_istype.
+  allrw @tequality_mkc_member_sp; tcsp.
 Qed.
 
 Lemma mk_istype_true2_implies {o} :
-   forall lib (H : barehypotheses) 
-           (A : @NTerm o),
-           (sequent_true2 lib (mk_baresequent H (mk_conclax (mk_istype A)))) -> 
-       (forall (s1 s2 : CSub)
-               (w : wf_term A)
-              (c1 : cover_vars A s1)
-              (c2 : cover_vars A s2)
-       ,
+   forall lib (H : barehypotheses)
+          (A : @NTerm o),
+     (sequent_true2 lib (mk_baresequent H (mk_conclax (mk_istype A)))) ->
+     (forall (s1 s2 : CSub)
+             (w : wf_term A)
+             (c1 : cover_vars A s1)
+             (c2 : cover_vars A s2),
        hyps_functionality lib s1 H ->
-       similarity lib s1 s2 H -> 
-        (type lib (lsubstc A w s1 c1) 
+       similarity lib s1 s2 H ->
+       (type lib (lsubstc A w s1 c1)
         # (tequality lib (lsubstc A w s1 c1) (lsubstc A w s2 c2)))).
-Proof. 
+Proof.
     unfold mk_istype.
     intros. destruct X as [ ws1 hyp1 ].
     vr_seq_true in hyp1.
@@ -279,6 +268,16 @@ Proof.
     auto.
 Qed.
 
+Lemma implies_cover_vars_var_snoc {o} :
+  forall v (s : @CSub o) t,
+    cover_vars (mk_var v) (snoc s (v, t)).
+Proof.
+  introv; apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp.
+Qed.
+Hint Resolve implies_cover_vars_var_snoc : slow.
+
+
+
 (* We can prove that a:A -> B, a:A x B, {a:A | B}, and isect(a:A,B) are types when
     A is a type and  a:A |-  B is a type  *)
 
@@ -294,7 +293,6 @@ Definition rule_function_type {o}
            (H : barehypotheses)
            x y
            (A B: @NTerm o) :=
-  
   mk_rule
     (mk_baresequent H (mk_conclax (mk_istype (mk_function A x B))))
     [ mk_baresequent H (mk_conclax (mk_istype A)),
@@ -307,7 +305,6 @@ Lemma rule_function_type_true3 {o} :
            (A B: @NTerm o),
    rule_true3 lib (rule_function_type H x y A B).
 Proof.
-
   unfold rule_function_type, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
   repnd.
@@ -315,7 +312,7 @@ Proof.
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
   dLin_hyp.
-  
+
 (* We will use the first Hyp to get that A is a type, i.e. functional *)
   pose proof (@mk_istype_true2_implies o lib H A Hyp) as Atype.
 (* We will use the second Hyp0 to get that B is a type family *)
@@ -363,76 +360,41 @@ Proof.
   (* done with proving these simple facts *)
   vr_seq_true.
   lsubst_tac.
-  assert (
-  forall (s s' : CSub) (ca1 : cover_vars mk_axiom s) (cb2 : cover_vars mk_axiom s')
-  (pC1 : cover_vars (mk_istype (mk_function A x B)) s)
-  (pC2 : cover_vars (mk_istype (mk_function A x B)) s'),
-   hyps_functionality lib s H ->
-   similarity lib s s' H ->
-   tequality lib (lsubstc (mk_istype (mk_function A x B)) wf1 s pC1)
-  (lsubstc (mk_istype (mk_function A x B)) wf1 s' pC2) # 
-   equality lib (@mkc_axiom o)  (@mkc_axiom o)
-  (lsubstc (mk_istype (mk_function A x B)) wf1 s pC1)). 
- 2: {
-  pose proof (@teq_and_eq_if_equality o lib (mk_istype (mk_function A x B))
- (@mk_axiom o) (@mk_axiom o) s1 s2 H wf1 wfce0 wfce0 pt1 pt2 pt1 pt2 pC1 pC2 eqh sim) as xx.
-  exrepnd.
-  autodimp xx G. eapply H0; eauto.
-  }
-  clear pt1 pt2 eqh sim pC1 pC2 s1 s2. intros.
-  eapply @teq_and_eq_istype; eauto.
-   rw @wf_mk_istype in wf1.
-  rw @cover_vars_mk_istype in pC1.
-  rw @cover_vars_mk_istype in pC2.
-  assert ( forall (w : wf_term (mk_function A x B)) 
-                  (c1 : cover_vars (mk_function A x B) s)
-                  (c2 : cover_vars (mk_function A x B) s'),
-   
-     tequality lib (lsubstc (mk_function A x B) w s c1) (lsubstc (mk_function A x B) w s' c2)).
-   2 : { apply H2. }
-   clear pC1 pC2 ca1 cb2.
-   intros.
-   lsubst_tac.
-   
-   apply tequality_function.
-   exrepnd.
-   split. apply Atype; auto.
-   intros.
-   pose proof (@sim_cons o lib a a' s s' (mk_hyp y A) H w1 c0 H2 H1) as simX.
-   simpl in simX.
-   assert (hyps_functionality lib (snoc s (y, a)) (snoc H (mk_hyp y A))).
-   pose proof (@hyps_functionality_snoc o lib H (mk_hyp y A) s a) as xx.
-   simpl in xx. apply xx. intros. proof_irr; GC. apply Atype; auto. auto.
-    rw @wf_mk_istype in wfct.
-   assert (cover_vars (subst B x (mk_var y)) (snoc s (y, a))) as csy.
-   rw @cover_vars_function in c1. exrepnd.
-   apply @cover_vars_family. auto.
-  assert (cover_vars (subst B x (mk_var y)) (snoc s' (y, a'))) as csy'.
-    rw @cover_vars_function in c1. exrepnd.
-   apply @cover_vars_family. auto.
-   assert (tequality lib (lsubstc (subst B x (mk_var y)) wfct (snoc s (y, a)) csy)
-            (lsubstc (subst B x (mk_var y)) wfct (snoc s' (y, a')) csy')).
-     intros. apply Btype; auto.
-    assert (forall (s:CSub) a (csy : cover_vars (subst B x (mk_var y)) (snoc s (y, a)))
-            (c3 : cover_vars_upto B (csub_filter s [x]) [x]),
-((lsubstc (subst B x (mk_var y)) wfct (snoc s (y, a)) csy) 
-             = (lsubstc_vars B w2 (csub_filter s [x]) [x] c3) [[x \\ a]])).
-     admit.
-  pose proof (H5 s a csy c3) as xx. rewrite <- xx.
-  pose proof (H5 s' a' csy' c5) as yy. rewrite <- yy.
-  auto.
+  apply teq_and_eq_istype.
+  apply tequality_function.
 
-Admitted.
-  
- 
+  pose proof (Atype s1 s2 w0 c0 c4) as q.
+  repeat (autodimp q hyp); repnd; dands; auto;[].
+  introv eqa.
+  repeat substc_lsubstc_vars3.
 
-(* begin hide *)
+  assert (wf_term (subst B x (mk_var y))) as wfs by eauto 3 with slow.
+  assert (cover_vars (subst B x (mk_var y)) (snoc s1 (y,a))) as cov1.
+  { eauto 3 with slow.
+    apply cover_vars_family.
+    apply cover_vars_function in c1; tcsp. }
+  assert (cover_vars (subst B x (mk_var y)) (snoc s2 (y,a'))) as cov2.
+  { eauto 3 with slow.
+    apply cover_vars_family.
+    apply cover_vars_function in c3; tcsp. }
+  pose proof (Btype (snoc s1 (y,a)) (snoc s2 (y,a')) wfs cov1 cov2) as z.
 
-(* end hide *)
+  assert (cover_vars (mk_var y) (snoc s1 (y, a))) as covy1 by eauto 3 with slow.
+  assert (cover_vars (mk_var y) (snoc s2 (y, a'))) as covy2 by eauto 3 with slow.
 
+  repeat (autodimp z hyp); repnd; auto.
 
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)
+  { apply hyps_functionality_snoc2; simpl; auto;[].
+    introv equa sim'.
+    pose proof (Atype s1 s' w0 c0 c') as xx.
+    repeat (autodimp xx hyp); repnd; dands; auto;[].
+    proof_irr; auto. }
+
+  { sim_snoc; dands; auto. }
+
+  repeat (lsubstc_subst_aeq2;[]).
+  repeat (substc_lsubstc_vars3;[]).
+  progress lsubst_tac.
+  repeat lsubstc_snoc2.
+  GC; proof_irr; auto.
+Qed.
