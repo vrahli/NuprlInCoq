@@ -422,7 +422,7 @@ Proof.
   pose proof (H5 s' a' csy' c5) as yy. rewrite <- yy.
   auto.
 
-Qed.
+Admitted.
   
  
 

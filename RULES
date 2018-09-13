@@ -93,8 +93,10 @@
 {6,divideExceptionCases}                    rules/rules_arith_exception.v             : rule_arith_exception_cases_true
 {1,divideRemainderSum}                      rules/integer_division.v                  : rule_div_rem_sum_true
 {3049,equalityElimination}                  .                                         : .
-{6351,equalityEquality}                     .                                         : .
-{3,equalityEqualityBase}                    rules/rules_equality.v                    : rule_equality_equality_base_or_true
+{7,equalityEquality}                        rules/rules_equality3.v                   : rule_equality_equality_true3
+{1,equalityEqualityBase}                    rules/rules_equality3.v                   : rule_equality_equality_base_true3
+{1,equalityEqualityBase1}                   rules/rules_equality3.v                   : rule_equality_equality_base1_true3
+{1,equalityEqualityBase2}                   rules/rules_equality3.v                   : rule_equality_equality_base2_true3
 {10012,equalitySymmetry}                    rules/rules_equality5.v                   : rule_equality_symmetry_true3
 {9855,equalityTransitivity}                 rules/rules_equality5.v                   : rule_equality_transitivity_true3
 {450,equalityUniverse}                      rules/rules_equality6.v                   : rule_equality_universe_true3
@@ -194,7 +196,6 @@
 {2,multiplyPositive}                        rules/rules_integer_ordered_ring.v        : rule_multiply_positive_true 
 {7257,natural_numberEquality}               rules/rules_number.v                      : rule_natural_number_equality_true3
 {1,parameterizedRecEquality}                .                                         : .
-{6,perfunctionExtensionality}               .                                         : .
 {341,pertypeElimination}                    rules/rules_pertype.v                     : rule_pertype_elimination_t_true
 {10,pertypeEquality}                        rules/rules_pertype.v                     : rule_pertype_equality_true
 {10,pertypeMemberEquality}                  rules/rules_pertype.v                     : rule_pertype_member_equality_true
@@ -260,6 +261,6 @@
 {7415,universeEquality}                     rules/rules_uni.v                         : rule_universe_equality_true3
 {7964,voidElimination}                      rules/rules_void.v                        : rule_void_elimination_true
 {6596,voidEquality}                         rules/rules_void.v                        : rule_void_equality_true3
-
-TOTAL RULES PROVED: 156 out of 262
+--------------------------------------------------------------------------------------------------------------------------------
+TOTAL RULES PROVED: 160 out of 263
 (not counting 2 UNFINISHED)
