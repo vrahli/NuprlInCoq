@@ -250,4 +250,9 @@ Require Import rules_atom_struct.
 Require Import rules_free_from_atom.
 
 
+(* Typehood: *)
+Require Import rules_typehood.
+Require Import rules_using_typehood.
+
+
 (* Require Import rules_per_function. *)
