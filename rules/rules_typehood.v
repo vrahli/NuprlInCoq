@@ -286,10 +286,10 @@ Hint Resolve implies_cover_vars_var_snoc : slow.
 
 (*  Here is the rule for the function type:
 
-    H |-  istype(a:A->B)
-        By functionType 
+    H |-  istype(x:A->B)
+        By functionType y
     H |-  istype(A)
-    H, a:A |- istype(B)
+    H, y:A |- istype(B[x/y])
 *)
 
 Definition rule_function_type {o}
@@ -401,3 +401,485 @@ Proof.
   repeat lsubstc_snoc2.
   GC; proof_irr; auto.
 Qed.
+
+(*  Next is the rule for the product type:
+
+    H |-  istype(x:A x B)
+        By productType y
+    H |-  istype(A)
+    H, y:A |- istype(B[x/y])
+*)
+
+Definition rule_product_type {o}
+           (H : barehypotheses)
+           x y
+           (A B: @NTerm o) :=
+  mk_rule
+    (mk_baresequent H (mk_conclax (mk_istype (mk_product A x B))))
+    [ mk_baresequent H (mk_conclax (mk_istype A)),
+      mk_baresequent (snoc H (mk_hyp y A)) (mk_conclax (mk_istype (subst B x (mk_var y))))
+    ]
+    [ sarg_var y ].
+
+Lemma rule_product_type_true3 {o} :
+   forall lib (H : barehypotheses) x y
+           (A B: @NTerm o),
+   rule_true3 lib (rule_product_type H x y A B).
+Proof.
+  unfold rule_product_type, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp.
+
+(* We will use the first Hyp to get that A is a type, i.e. functional *)
+  pose proof (@mk_istype_true2_implies o lib H A Hyp) as Atype.
+(* We will use the second Hyp0 to get that B is a type family *)
+  pose proof (@mk_istype_true2_implies o lib (snoc H (mk_hyp y A)) (subst B x (mk_var y)) Hyp0) as Btype.
+  destruct Hyp as [ ws1 hyp1].
+  destruct Hyp0 as [ ws2 hyp2].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent ((H) ||- (mk_conclax (mk_istype (mk_function A x B))))) as wfc.
+  {
+    unfold wf_csequent, wf_sequent, wf_concl; simpl.
+    dands; eauto 2 with slow.
+  }
+
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+  clear hyp1 hyp2.
+
+  (* We prove some simple facts on our sequents *)
+  assert ((y <> x -> !LIn y (free_vars B))
+          # !LIn y (free_vars A)
+          # !LIn y (vars_hyps H)) as vhyps.
+
+  { dwfseq.
+    sp;
+      try (complete (generalize (wfc0 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
+                     right; tcsp));
+      try (complete (generalize (wfc1 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
+                     right; tcsp));
+      try (complete (generalize (wfc2 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
+                     right; tcsp)).
+  }
+
+  destruct vhyps as [ nyB vhyps ].
+  destruct vhyps as [ nyA vhyps ].
+  (* done with proving these simple facts *)
+  vr_seq_true.
+  lsubst_tac.
+  apply teq_and_eq_istype.
+  apply tequality_product.
+
+  pose proof (Atype s1 s2 w0 c2 c4) as q.
+  repeat (autodimp q hyp); repnd; dands; auto;[].
+  introv eqa.
+  repeat substc_lsubstc_vars3.
+
+  assert (wf_term (subst B x (mk_var y))) as wfs by eauto 3 with slow.
+  assert (cover_vars (subst B x (mk_var y)) (snoc s1 (y,a))) as cov1.
+  { eauto 3 with slow.
+    apply cover_vars_family.
+    apply cover_vars_function in c1; tcsp. }
+  assert (cover_vars (subst B x (mk_var y)) (snoc s2 (y,a'))) as cov2.
+  { eauto 3 with slow.
+    apply cover_vars_family.
+    apply cover_vars_product in c0; tcsp.
+ }
+  pose proof (Btype (snoc s1 (y,a)) (snoc s2 (y,a')) wfs cov1 cov2) as z.
+
+  assert (cover_vars (mk_var y) (snoc s1 (y, a))) as covy1 by eauto 3 with slow.
+  assert (cover_vars (mk_var y) (snoc s2 (y, a'))) as covy2 by eauto 3 with slow.
+
+  repeat (autodimp z hyp); repnd; auto.
+
+  { apply hyps_functionality_snoc2; simpl; auto;[].
+    introv equa sim'.
+    pose proof (Atype s1 s' w0 c2 c') as xx.
+    repeat (autodimp xx hyp); repnd; dands; auto;[].
+    proof_irr; auto. }
+
+  { sim_snoc; dands; auto. }
+
+  repeat (lsubstc_subst_aeq2;[]).
+  repeat (substc_lsubstc_vars3;[]).
+  progress lsubst_tac.
+  repeat lsubstc_snoc2.
+  GC; proof_irr; auto.
+Qed.
+
+(*  Next is the rule for the intersection type:
+
+    H |-  istype(isect(x:A, B)
+        By isectType y
+    H |-  istype(A)
+    H, y:A |- istype(B[x/y])
+*)
+
+Definition rule_isect_type {o}
+           (H : barehypotheses)
+           x y
+           (A B: @NTerm o) :=
+  mk_rule
+    (mk_baresequent H (mk_conclax (mk_istype (mk_isect A x B))))
+    [ mk_baresequent H (mk_conclax (mk_istype A)),
+      mk_baresequent (snoc H (mk_hyp y A)) (mk_conclax (mk_istype (subst B x (mk_var y))))
+    ]
+    [ sarg_var y ].
+
+Lemma rule_isect_type_true3 {o} :
+   forall lib (H : barehypotheses) x y
+           (A B: @NTerm o),
+   rule_true3 lib (rule_isect_type H x y A B).
+Proof.
+  unfold rule_isect_type, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp.
+
+(* We will use the first Hyp to get that A is a type, i.e. functional *)
+  pose proof (@mk_istype_true2_implies o lib H A Hyp) as Atype.
+(* We will use the second Hyp0 to get that B is a type family *)
+  pose proof (@mk_istype_true2_implies o lib (snoc H (mk_hyp y A)) (subst B x (mk_var y)) Hyp0) as Btype.
+  destruct Hyp as [ ws1 hyp1].
+  destruct Hyp0 as [ ws2 hyp2].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent ((H) ||- (mk_conclax (mk_istype (mk_function A x B))))) as wfc.
+  {
+    unfold wf_csequent, wf_sequent, wf_concl; simpl.
+    dands; eauto 2 with slow.
+  }
+
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+  clear hyp1 hyp2.
+
+  (* We prove some simple facts on our sequents *)
+  assert ((y <> x -> !LIn y (free_vars B))
+          # !LIn y (free_vars A)
+          # !LIn y (vars_hyps H)) as vhyps.
+
+  { dwfseq.
+    sp;
+      try (complete (generalize (wfc0 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
+                     right; tcsp));
+      try (complete (generalize (wfc1 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
+                     right; tcsp));
+      try (complete (generalize (wfc2 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
+                     right; tcsp)).
+  }
+
+  destruct vhyps as [ nyB vhyps ].
+  destruct vhyps as [ nyA vhyps ].
+  (* done with proving these simple facts *)
+  vr_seq_true.
+  lsubst_tac.
+  apply teq_and_eq_istype.
+  apply tequality_isect.
+
+  pose proof (Atype s1 s2 w0 c0 c4) as q.
+  repeat (autodimp q hyp); repnd; dands; auto;[].
+  introv eqa.
+  repeat substc_lsubstc_vars3.
+
+  assert (wf_term (subst B x (mk_var y))) as wfs by eauto 3 with slow.
+  assert (cover_vars (subst B x (mk_var y)) (snoc s1 (y,a))) as cov1.
+  { eauto 3 with slow.
+    apply cover_vars_family.
+    apply cover_vars_function in c1; tcsp. }
+  assert (cover_vars (subst B x (mk_var y)) (snoc s2 (y,a'))) as cov2.
+  { eauto 3 with slow.
+    apply cover_vars_family.
+    apply cover_vars_isect in c3; tcsp.
+ }
+  pose proof (Btype (snoc s1 (y,a)) (snoc s2 (y,a')) wfs cov1 cov2) as z.
+
+  assert (cover_vars (mk_var y) (snoc s1 (y, a))) as covy1 by eauto 3 with slow.
+  assert (cover_vars (mk_var y) (snoc s2 (y, a'))) as covy2 by eauto 3 with slow.
+
+  repeat (autodimp z hyp); repnd; auto.
+
+  { apply hyps_functionality_snoc2; simpl; auto;[].
+    introv equa sim'.
+    pose proof (Atype s1 s' w0 c7 c') as xx.
+    repeat (autodimp xx hyp); repnd; dands; auto;[].
+    proof_irr; auto. }
+
+  { sim_snoc; dands; auto. }
+
+  repeat (lsubstc_subst_aeq2;[]).
+  repeat (substc_lsubstc_vars3;[]).
+  progress lsubst_tac.
+  repeat lsubstc_snoc2.
+  GC; proof_irr; auto.
+Qed.
+
+(*  Next is the rule for the set type:
+
+    H |-  istype({x:A | B})
+        By setType y
+    H |-  istype(A)
+    H, y:A |- istype(B[x/y])
+*)
+
+Definition rule_set_type {o}
+           (H : barehypotheses)
+           x y
+           (A B: @NTerm o) :=
+  mk_rule
+    (mk_baresequent H (mk_conclax (mk_istype (mk_set A x B))))
+    [ mk_baresequent H (mk_conclax (mk_istype A)),
+      mk_baresequent (snoc H (mk_hyp y A)) (mk_conclax (mk_istype (subst B x (mk_var y))))
+    ]
+    [ sarg_var y ].
+
+Lemma rule_set_type_true3 {o} :
+   forall lib (H : barehypotheses) x y
+           (A B: @NTerm o),
+   rule_true3 lib (rule_set_type H x y A B).
+Proof.
+  unfold rule_set_type, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp.
+
+(* We will use the first Hyp to get that A is a type, i.e. functional *)
+  pose proof (@mk_istype_true2_implies o lib H A Hyp) as Atype.
+(* We will use the second Hyp0 to get that B is a type family *)
+  pose proof (@mk_istype_true2_implies o lib (snoc H (mk_hyp y A)) (subst B x (mk_var y)) Hyp0) as Btype.
+  destruct Hyp as [ ws1 hyp1].
+  destruct Hyp0 as [ ws2 hyp2].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent ((H) ||- (mk_conclax (mk_istype (mk_function A x B))))) as wfc.
+  {
+    unfold wf_csequent, wf_sequent, wf_concl; simpl.
+    dands; eauto 2 with slow.
+  }
+
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+  clear hyp1 hyp2.
+
+  (* We prove some simple facts on our sequents *)
+  assert ((y <> x -> !LIn y (free_vars B))
+          # !LIn y (free_vars A)
+          # !LIn y (vars_hyps H)) as vhyps.
+
+  { dwfseq.
+    sp;
+      try (complete (generalize (wfc0 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
+                     right; tcsp));
+      try (complete (generalize (wfc1 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
+                     right; tcsp));
+      try (complete (generalize (wfc2 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
+                     right; tcsp)).
+  }
+
+  destruct vhyps as [ nyB vhyps ].
+  destruct vhyps as [ nyA vhyps ].
+  (* done with proving these simple facts *)
+  vr_seq_true.
+  lsubst_tac.
+  apply teq_and_eq_istype.
+  apply tequality_set.
+
+  pose proof (Atype s1 s2 w0 c0 c4) as q.
+  repeat (autodimp q hyp); repnd; dands; auto;[].
+  introv eqa.
+  repeat substc_lsubstc_vars3.
+
+  assert (wf_term (subst B x (mk_var y))) as wfs by eauto 3 with slow.
+  assert (cover_vars (subst B x (mk_var y)) (snoc s1 (y,a))) as cov1.
+  { eauto 3 with slow.
+    apply cover_vars_family.
+    apply cover_vars_function in c1; tcsp. }
+  assert (cover_vars (subst B x (mk_var y)) (snoc s2 (y,a'))) as cov2.
+  { eauto 3 with slow.
+    apply cover_vars_family.
+    apply cover_vars_isect in c3; tcsp.
+ }
+  pose proof (Btype (snoc s1 (y,a)) (snoc s2 (y,a')) wfs cov1 cov2) as z.
+
+  assert (cover_vars (mk_var y) (snoc s1 (y, a))) as covy1 by eauto 3 with slow.
+  assert (cover_vars (mk_var y) (snoc s2 (y, a'))) as covy2 by eauto 3 with slow.
+
+  repeat (autodimp z hyp); repnd; auto.
+
+  { apply hyps_functionality_snoc2; simpl; auto;[].
+    introv equa sim'.
+    pose proof (Atype s1 s' w0 c7 c') as xx.
+    repeat (autodimp xx hyp); repnd; dands; auto;[].
+    proof_irr; auto. }
+
+  { sim_snoc; dands; auto. }
+
+  repeat (lsubstc_subst_aeq2;[]).
+  repeat (substc_lsubstc_vars3;[]).
+  progress lsubst_tac.
+  repeat lsubstc_snoc2.
+  GC; proof_irr; auto.
+Qed.
+
+
+(*  Next is the rule for the dependent intersection type:
+
+    H |-  istype(x:A isect B)
+        By depIsectType y
+    H |-  istype(A)
+    H, y:A |- istype(B[x/y])
+*)
+
+Definition rule_dep_isect_type {o}
+           (H : barehypotheses)
+           x y
+           (A B: @NTerm o) :=
+  mk_rule
+    (mk_baresequent H (mk_conclax (mk_istype (mk_disect A x B))))
+    [ mk_baresequent H (mk_conclax (mk_istype A)),
+      mk_baresequent (snoc H (mk_hyp y A)) (mk_conclax (mk_istype (subst B x (mk_var y))))
+    ]
+    [ sarg_var y ].
+
+Lemma rule_dep_isect_type_true3 {o} :
+   forall lib (H : barehypotheses) x y
+           (A B: @NTerm o),
+   rule_true3 lib (rule_dep_isect_type H x y A B).
+Proof.
+  unfold rule_dep_isect_type, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp.
+
+(* We will use the first Hyp to get that A is a type, i.e. functional *)
+  pose proof (@mk_istype_true2_implies o lib H A Hyp) as Atype.
+(* We will use the second Hyp0 to get that B is a type family *)
+  pose proof (@mk_istype_true2_implies o lib (snoc H (mk_hyp y A)) (subst B x (mk_var y)) Hyp0) as Btype.
+  destruct Hyp as [ ws1 hyp1].
+  destruct Hyp0 as [ ws2 hyp2].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent ((H) ||- (mk_conclax (mk_istype (mk_function A x B))))) as wfc.
+  {
+    unfold wf_csequent, wf_sequent, wf_concl; simpl.
+    dands; eauto 2 with slow.
+  }
+
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+  clear hyp1 hyp2.
+
+  (* We prove some simple facts on our sequents *)
+  assert ((y <> x -> !LIn y (free_vars B))
+          # !LIn y (free_vars A)
+          # !LIn y (vars_hyps H)) as vhyps.
+
+  { dwfseq.
+    sp;
+      try (complete (generalize (wfc0 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
+                     right; tcsp));
+      try (complete (generalize (wfc1 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
+                     right; tcsp));
+      try (complete (generalize (wfc2 y); intro p;
+                     allrw in_app_iff;
+                     allrw in_remove_nvars; allsimpl;
+                     autodimp p hyp; tcsp;
+                     right; tcsp)).
+  }
+
+  destruct vhyps as [ nyB vhyps ].
+  destruct vhyps as [ nyA vhyps ].
+  (* done with proving these simple facts *)
+  vr_seq_true.
+  lsubst_tac.
+  apply teq_and_eq_istype.
+  apply tequality_disect.
+
+  pose proof (Atype s1 s2 w0 c0 c4) as q.
+  repeat (autodimp q hyp); repnd; dands; auto;[].
+  introv eqa.
+  repeat substc_lsubstc_vars3.
+
+  assert (wf_term (subst B x (mk_var y))) as wfs by eauto 3 with slow.
+  assert (cover_vars (subst B x (mk_var y)) (snoc s1 (y,a))) as cov1.
+  { eauto 3 with slow.
+    apply cover_vars_family.
+    apply cover_vars_function in c1; tcsp. }
+  assert (cover_vars (subst B x (mk_var y)) (snoc s2 (y,a'))) as cov2.
+  { eauto 3 with slow.
+    apply cover_vars_family.
+    apply cover_vars_isect in c3; tcsp.
+ }
+  pose proof (Btype (snoc s1 (y,a)) (snoc s2 (y,a')) wfs cov1 cov2) as z.
+
+  assert (cover_vars (mk_var y) (snoc s1 (y, a))) as covy1 by eauto 3 with slow.
+  assert (cover_vars (mk_var y) (snoc s2 (y, a'))) as covy2 by eauto 3 with slow.
+
+  repeat (autodimp z hyp); repnd; auto.
+
+  { apply hyps_functionality_snoc2; simpl; auto;[].
+    introv equa sim'.
+    pose proof (Atype s1 s' w0 c7 c') as xx.
+    repeat (autodimp xx hyp); repnd; dands; auto;[].
+    proof_irr; auto. }
+
+  { sim_snoc; dands; auto. }
+
+  repeat (lsubstc_subst_aeq2;[]).
+  repeat (substc_lsubstc_vars3;[]).
+  progress lsubst_tac.
+  repeat lsubstc_snoc2.
+  GC; proof_irr; auto.
+Qed.
+
+
+
+
+
