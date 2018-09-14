@@ -31,6 +31,7 @@
 Require Export sterm.
 Require Export sequents_tacs.
 Require Export per_props_tequality.
+Require Export per_props_disect.
 Require Export subst_tacs.
 Require Export per_props_equality.
 Require Export sequents_equality.
@@ -878,8 +879,3 @@ Proof.
   repeat lsubstc_snoc2.
   GC; proof_irr; auto.
 Qed.
-
-
-
-
-

@@ -321,6 +321,7 @@ Proof.
 
     SearchAbout tequality mkc_pertype.
 
+    Locate sqper_rel.
   }
 
   {
