@@ -678,3 +678,371 @@ Proof.
   unfold rule_true_ex in rt; sp.
 Qed.
 
+
+
+(* [28] ============ FUNCTION EXTENSIONALITY  (ALT) ============ *)
+
+(**
+
+  The following rule called the ``function extensionality rule''
+  states that the equality between functions in Nuprl is extensional.
+<<
+   H |- f1 = f2 in x:A->B
+
+     By functionExtensionality  z ()
+
+     H z : A |- f1 z = f2 z in B[x\z]
+     H |- istype(A)
+>>
+ *)
+
+Definition rule_function_extensionality_alt {o}
+           (A B f1 f2 : NTerm)
+           (x z : NVar)
+           (H : @barehypotheses o) :=
+  mk_rule
+    (mk_baresequent
+       H
+       (mk_conclax (mk_equality f1 f2 (mk_function A x B))))
+    [ mk_baresequent
+        (snoc H (mk_hyp z A))
+        (mk_conclax (mk_equality
+                       (mk_apply f1 (mk_var z))
+                       (mk_apply f2 (mk_var z))
+                       (subst B x (mk_var z)))),
+      mk_baresequent
+        H
+        (mk_conclax (mk_istype A)) ]
+    [sarg_var z].
+
+Lemma rule_function_extensionality_alt_true {o} :
+  forall lib (A B f1 f2 : NTerm)
+         (x z : NVar)
+         (H   : @barehypotheses o)
+         (bc1 : !LIn z (bound_vars B)),
+    rule_true lib (rule_function_extensionality_alt A B f1 f2 x z H).
+Proof.
+  intros.
+  unfold rule_function_extensionality_alt, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  generalize (hyps (mk_baresequent (snoc H (mk_hyp z A))
+                                  (mk_conclax (mk_equality
+                                                 (mk_apply f1 (mk_var z))
+                                                 (mk_apply f2 (mk_var z))
+                                                 (subst B x (mk_var z)))))
+                   (inl eq_refl))
+             (hyps (mk_baresequent H (mk_conclax (mk_istype A)))
+                   (inr (inl eq_refl)));
+    simpl; intros hyp1 hyp2.
+  destruct hyp1 as [ ws1 hyp1 ].
+  destruct hyp2 as [ ws2 hyp2 ].
+  destseq; allsimpl; proof_irr; GC.
+
+  allunfold @closed_type; allunfold @closed_extract; allsimpl.
+  duplicate wfct as wfi.
+  rw <- @wf_equality_iff in wfct.
+  destruct wfct as [ wf1 wfct ].
+  destruct wfct as [ wf2 wfct ].
+  rw <- @wf_function_iff in wfct.
+  destruct wfct as [ wA wB ].
+
+  exists (@covered_axiom o (nh_vars_hyps H)); GC.
+
+  (* We prove some simple facts on our sequents *)
+  assert ((z <> x -> !LIn z (free_vars B))
+          # !LIn z (free_vars f1)
+          # !LIn z (free_vars f2)
+          # !LIn z (free_vars A)
+          # !LIn z (vars_hyps H)) as vhyps.
+
+  clear hyp1 hyp2.
+  dwfseq.
+  sp;
+  try (complete (generalize (cg z); sp;
+                 allrw in_remove_nvars; allsimpl;
+                 autodimp X0 h; sp));
+  try (complete (generalize (cg0 z); sp;
+                 allrw in_remove_nvars; allsimpl;
+                 autodimp X0 h; sp));
+  try (complete (generalize (cg1 z); sp;
+                 allrw in_remove_nvars; allsimpl;
+                 autodimp X0 h; sp));
+  try (complete (apply_in_hyp p;
+                 generalize (subvars_hs_vars_hyps H); intro sv;
+                 rw subvars_prop in sv;
+                 apply sv in p; sp)).
+
+  destruct vhyps as [ nzB  vhyps ].
+  destruct vhyps as [ nzf1 vhyps ].
+  destruct vhyps as [ nzf2 vhyps ].
+  destruct vhyps as [ nzA  nzH ].
+  (* done with proving these simple facts *)
+
+  (* we now start proving the sequent *)
+  vr_seq_true.
+
+  lift_lsubst.
+  rw @member_eq.
+  rw <- @member_equality_iff.
+
+  assert (tequality lib
+            (mkc_function (lsubstc A wA s1 c4) x
+                          (lsubstc_vars B wB (csub_filter s1 [x]) [x] c5))
+            (mkc_function (lsubstc A wA s2 c6) x
+                          (lsubstc_vars B wB (csub_filter s2 [x]) [x] c7))) as eqfunc.
+
+  rw @tequality_function.
+
+  split.
+
+  (* First, we prove that the a's are types *)
+  vr_seq_true in hyp2.
+  generalize (hyp2 s1 s2 eqh sim); clear hyp2; intro hyp2.
+  exrepd.
+  lift_lsubst in t.
+  lift_lsubst in e.
+  rw @tequality_mkc_istype in t. auto.
+  
+  (* Then we prove that the b's are type families *)
+  intros a a' eqaa'.
+  vr_seq_true in hyp1.
+  generalize (hyp1 (snoc s1 (z, a)) (snoc s2 (z, a'))); clear hyp1; intro hyp1.
+  autodimp hyp1 hyp.
+
+  (* we have to prove the functionality of our hypotheses *)
+  apply hyps_functionality_snoc2; simpl; try (complete sp).
+  introv eq s.
+  vr_seq_true in hyp2.
+  generalize (hyp2 s1 s' eqh s); clear hyp2; intro hyp2.
+  exrepd.
+  lift_lsubst in t.
+  lift_lsubst in e.
+  rw @tequality_mkc_istype in t. auto.
+  
+  (* we have to prove the similarity of our hypotheses *)
+  autodimp hyp1 hyp.
+  rw @similarity_snoc; simpl.
+  exists s1 s2 a a' wA c4; sp.
+
+  (* we can now use hyp1 *)
+  exrepnd; lsubst_tac.
+
+  (* we use hyp0 *)
+  rw @tequality_mkc_equality2_sp in hyp0; repnd.
+
+  (* we use hyp3 *)
+  assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s1 (z, a)) cT1
+          = substc a x (lsubstc_vars B wB (csub_filter s1 [x]) [x] c5)) as eq1
+         by (apply lsubstc_subst_snoc_eq; try (complete sp);
+             allapply @similarity_dom; exrepd; allrw; sp).
+
+  rewrite eq1 in hyp3.
+
+  assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s2 (z, a')) cT2
+          = substc a' x (lsubstc_vars B wB (csub_filter s2 [x]) [x] c7)) as eq2
+         by (apply lsubstc_subst_snoc_eq; try (complete sp);
+             allapply @similarity_dom; exrepd; allrw; sp).
+
+  rewrite eq2 in hyp3.
+
+  sp.
+
+
+  (* we prove the membership *)
+  assert (forall a a' s1 s2,
+            hyps_functionality lib s1 H
+            -> similarity lib s1 s2 H
+            -> {c1f : cover_vars f1 s1
+                , {c2f : cover_vars f2 s2
+                , {c1A : cover_vars A s1
+                , {c1B : cover_vars_upto B (csub_filter s1 [x]) [x]
+                , equality lib a a' (lsubstc A wA s1 c1A)
+                  -> equality lib
+                       (mkc_apply (lsubstc f1 wf1 s1 c1f) a)
+                       (mkc_apply (lsubstc f2 wf2 s2 c2f) a')
+                       (substc a x (lsubstc_vars B wB (csub_filter s1 [x]) [x] c1B))}}}}) as eqlam.
+  introv eqh0 sim0.
+
+  assert (cover_vars f1 s0) as c1f1.
+  clear eqfunc.
+  allapply @similarity_dom; repnd.
+  allrw @cover_vars_eq.
+  allrw.
+  rw sim2 in c1; sp.
+
+  assert (cover_vars f1 s3) as c2f1.
+  clear eqfunc.
+  allapply @similarity_dom; repnd.
+  allrw @cover_vars_eq.
+  allrw.
+  rw sim2 in c1; sp.
+
+  assert (cover_vars f2 s0) as c1f2.
+  clear eqfunc.
+  allapply @similarity_dom; repnd.
+  allrw @cover_vars_eq.
+  allrw.
+  rw sim2 in c2; sp.
+
+  assert (cover_vars f2 s3) as c2f2.
+  clear eqfunc.
+  allapply @similarity_dom; repnd.
+  allrw @cover_vars_eq.
+  allrw.
+  rw sim2 in c2; sp.
+
+  assert (cover_vars_upto B (csub_filter s0 [x]) [x]) as cB0.
+  clear eqfunc.
+  allapply @similarity_dom; repnd.
+  allunfold @cover_vars_upto.
+  allrw @dom_csub_csub_filter.
+  allrw.
+  rw sim in c7; sp.
+
+  assert (cover_vars_upto B (csub_filter s3 [x]) [x]) as cB3.
+  clear eqfunc.
+  allapply @similarity_dom; repnd.
+  allunfold @cover_vars_upto.
+  allrw @dom_csub_csub_filter.
+  allrw.
+  rw sim in c7; sp.
+
+  assert (cover_vars A s0) as cA0.
+  clear eqfunc.
+  allrw @cover_vars_eq.
+  allapply @similarity_dom; repnd.
+  allrw.
+  rw sim in c6; sp.
+
+  assert (cover_vars A s3) as cA3.
+  clear eqfunc.
+  allrw @cover_vars_eq.
+  allapply @similarity_dom; repnd.
+  allrw.
+  rw sim in c6; sp.
+
+  exists c1f1 c2f2 cA0 cB0.
+  introv eqaa'.
+
+  vr_seq_true in hyp1.
+  generalize (hyp1 (snoc s0 (z, a)) (snoc s3 (z, a'))); clear hyp1; intro hyp1.
+  autodimp hyp1 hyp.
+
+  (* we have to prove the functionality of our hypotheses *)
+  apply hyps_functionality_snoc2; simpl; try (complete sp).
+  introv eq s.
+  vr_seq_true in hyp2.
+  generalize (hyp2 s0 s' eqh0 s); clear hyp2; intro hyp2.
+  exrepd.
+  lift_lsubst in t.
+  lift_lsubst in e.
+  rw @tequality_mkc_istype in t. auto.
+  
+  (* we have to prove the similarity of our hypotheses *)
+  autodimp hyp1 hyp.
+  rw @similarity_snoc; simpl.
+  exists s0 s3 a a' wA cA0; sp.
+
+  (* we can now use hyp1 *)
+  exrepnd; lsubst_tac.
+  rw @tequality_mkc_equality2_sp in hyp0; repnd.
+  rw @member_eq in hyp1.
+  rw <- @member_equality_iff in hyp1.
+  clear_irr; GC.
+
+  assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s0 (z, a)) cT1
+          = substc a x (lsubstc_vars B wB (csub_filter s0 [x]) [x] cB0)) as eq1
+         by (apply lsubstc_subst_snoc_eq; try (complete sp);
+             allapply @similarity_dom; exrepd; allrw; sp).
+
+  rewrite eq1 in hyp0.
+  rewrite eq1 in hyp1.
+  rewrite eq1 in hyp3.
+  clear eq1.
+
+  assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s3 (z, a')) cT2
+          = substc a' x (lsubstc_vars B wB (csub_filter s3 [x]) [x] cB3)) as eq2
+         by (apply lsubstc_subst_snoc_eq; try (complete sp);
+             allapply @similarity_dom; exrepd; allrw; sp).
+
+  rewrite eq2 in hyp3.
+  clear eq2.
+
+  apply @cequorsq2_prop in hyp0; try (complete auto).
+
+  (* a few useful assertions *)
+  assert (similarity lib s1 s1 H)
+         as sim1
+         by (allapply @similarity_refl; sp).
+  assert (similarity lib s2 s2 H)
+         as sim2
+         by (apply @similarity_sym in sim; allapplydup @similarity_refl; sp;
+             apply eqh in sim; sp).
+  assert (hyps_functionality lib s2 H)
+         as eqh2
+         by (apply @similarity_hyps_functionality_trans with (s1 := s1); sp).
+
+
+  (* we start proving our conclusion *)
+  rw @equality_in_function2.
+  dands; try (complete sp).
+
+
+  (* tequality *)
+  rw @tequality_mkc_equality2_sp.
+  dands; try (complete sp).
+
+  (* we prove cequorsq2 *)
+  split.
+
+  (* application in B *)
+  left.
+  rw @equality_in_function2.
+  split; try (complete (apply @tequality_refl in eqfunc; sp)).
+  introv e.
+  assert (equality lib a' a' (lsubstc A wA s2 c6))
+         as e'
+         by (apply @equality_sym in e; apply @equality_refl in e;
+             rw @tequality_function in eqfunc; repnd;
+             eapply @tequality_preserving_equality;
+             try (exact e); sp).
+
+  generalize (eqlam a a' s1 s2 eqh sim); intro k1; exrepnd; clear_irr; sp.
+  generalize (eqlam a' a' s2 s2 eqh2 sim2); intro k2; exrepnd; clear_irr; sp.
+
+  eapply @equality_trans; sp.
+  exact k1.
+  apply @equality_sym.
+  eapply @tequality_preserving_equality.
+  exact k2.
+  apply @tequality_sym.
+  rw @tequality_function in eqfunc; repnd; sp.
+
+  (* application in B *)
+  left.
+  rw @equality_in_function2.
+  split; try (complete (apply @tequality_refl in eqfunc; sp)).
+  introv e.
+  assert (equality lib a a (lsubstc A wA s1 c4)) as e' by (allapply @equality_refl; sp).
+
+  generalize (eqlam a a' s1 s2 eqh sim); intro k1; exrepnd; clear_irr; sp.
+  generalize (eqlam a a s1 s1 eqh sim1); intro k2; exrepnd; clear_irr; sp.
+
+  eapply @equality_trans; sp.
+  apply equality_sym.
+  exact k2.
+  auto.
+
+
+  (* type *)
+  apply @tequality_refl in eqfunc; sp.
+
+
+  (* application in B *)
+  introv e.
+  generalize (eqlam a a' s1 s1 eqh sim1); intro k; exrepnd; clear_irr; sp.
+Qed.
+
