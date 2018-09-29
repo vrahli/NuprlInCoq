@@ -40,6 +40,9 @@ Require Import sosub_variant.
 Require Import swap.
 
 
+Require Import functionality.
+
+
 (* contains a proof that n:Nat->Univ(n) is a Nuprl type: *)
 Require Import function_all_types.
 (* contains a proof that U(n:Nat;Univ(n)) is a Nuprl type: *)

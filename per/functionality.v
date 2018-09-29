@@ -1,6 +1,10 @@
 (*
 
   Copyright 2014 Cornell University
+  Copyright 2015 Cornell University
+  Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -26,9 +30,10 @@
 
 Require Import sequents.
 
-Lemma pointwise_implies_pairwise :
-  forall s : csequent,
-    AN_sequent_true_pairwise s -> VR_sequent_true s.
+
+Lemma pointwise_implies_pairwise {o} :
+  forall lib (s : @csequent o),
+    AN_sequent_true_pairwise lib s -> VR_sequent_true lib s.
 Proof.
   introv seq.
   unfold VR_sequent_true.
@@ -37,3 +42,12 @@ Proof.
   generalize (seq s1 s2); clear seq; intro seq.
   destruct (destruct_csequent s); destruct ec; exrepnd; intros sim eqh; auto.
 Qed.
+
+Definition pairwise_sequent_true {o} lib (s : @baresequent o) :=
+  {c : wf_csequent s & AN_sequent_true_pairwise lib (mk_wcseq s c)}.
+
+Definition pairwise_rule_true2 {o} lib (R : @rule o) : Type :=
+  forall pwf   : pwf_sequent (goal R),
+  forall cargs : args_constraints (sargs R) (hyps (goal R)),
+  forall hyps  : (forall s, LIn s (subgoals R) -> pairwise_sequent_true lib s),
+    pairwise_sequent_true lib (goal R).
