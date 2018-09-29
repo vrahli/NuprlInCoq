@@ -126,7 +126,7 @@
 {11,freeFromAtomSet}                        .                                         : .
 {23,freeFromAtomTriviality}                 .                                         : .
 {5937,functionEquality}                     rules/rules_function.v                    : rule_function_equality_true
-{840,functionExtensionality}                .                                         : .
+{840,functionExtensionality}                rules/rules_function.v                    : rule_function_extensionality_true
 {221,hyp_replacement}                       rules/rules_equality7.v                   : rule_hyp_replacement_true3
 {14505,hypothesis}                          rules/rules_struct.v                      : rule_hypothesis_true3
 {13819,hypothesisEquality}                  rules/rules_struct.v                      : rule_hypothesis_equality_true
@@ -262,5 +262,5 @@
 {7964,voidElimination}                      rules/rules_void.v                        : rule_void_elimination_true
 {6596,voidEquality}                         rules/rules_void.v                        : rule_void_equality_true3
 --------------------------------------------------------------------------------------------------------------------------------
-TOTAL RULES PROVED: 160 out of 263
+TOTAL RULES PROVED: 161 out of 263
 (not counting 2 UNFINISHED)

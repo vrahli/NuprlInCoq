@@ -32,6 +32,7 @@ Require Export sterm.
 Require Export sequents_tacs.
 Require Export per_props_tequality.
 Require Export per_props_disect.
+Require Export per_props_union.
 Require Export subst_tacs.
 Require Export per_props_equality.
 Require Export sequents_equality.
@@ -879,3 +880,64 @@ Proof.
   repeat lsubstc_snoc2.
   GC; proof_irr; auto.
 Qed.
+
+(*  Next is the rule for the disjoint union type:
+
+    H |-  istype(A + B)
+        By unionType 
+    H |- istype(A)
+    H |- istype(B)
+*)
+
+Definition rule_union_type {o}
+           (H : barehypotheses)
+           (A B: @NTerm o) :=
+  mk_rule
+    (mk_baresequent H (mk_conclax (mk_istype (mk_union A B))))
+    [ mk_baresequent H (mk_conclax (mk_istype A)),
+      mk_baresequent H (mk_conclax (mk_istype B))]
+    [ ].
+
+
+Lemma rule_union_type_true3 {o} :
+   forall lib (H : barehypotheses)
+           (A B: @NTerm o),
+   rule_true3 lib (rule_union_type H A B).
+Proof.
+  unfold rule_union_type, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  repnd.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp.
+
+(* We will use the first Hyp to get that A is a type, i.e. functional *)
+  pose proof (@mk_istype_true2_implies o lib H A Hyp) as Atype.
+(* We will use the second Hyp to get that B is a type, i.e. functional *)
+  pose proof (@mk_istype_true2_implies o lib H B Hyp0) as Btype.
+  destruct Hyp as [ ws1 hyp1].
+  destruct Hyp0 as [ ws2 hyp2].
+  destseq; allsimpl; proof_irr; GC.
+
+  assert (wf_csequent ((H) ||- (mk_conclax (mk_istype (mk_union A B))))) as wfc.
+  {
+    unfold wf_csequent, wf_sequent, wf_concl; simpl.
+    dands; eauto 2 with slow.
+  }
+
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
+  clear hyp1 hyp2.
+
+  vr_seq_true.
+  lsubst_tac.
+  apply teq_and_eq_istype.
+  rw @tequality_mkc_union.
+
+  pose proof (Atype s1 s2 w0 c2 c4) as q.
+  repeat (autodimp q hyp); repnd; dands; auto;[].
+  pose proof (Btype s1 s2 w2 c3 c5) as r.
+  repeat (autodimp r hyp). repnd. auto.
+Qed.
+
