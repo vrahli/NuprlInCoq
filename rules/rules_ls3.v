@@ -470,6 +470,18 @@ Definition cs_size {o} (lib : @library o) (name : choice_sequence_name) : nat :=
   | None => 0
   end.
 
+Definition entry_size {o} (entry : @library_entry o) : nat :=
+  match entry with
+  | lib_cs _ e => length (cse_vals e)
+  | _ => 0
+  end.
+
+Fixpoint lib_size {o} (lib : @library o) : nat :=
+  match lib with
+  | [] => 0
+  | entry :: entries => Peano.max (entry_size entry) (lib_size entries)
+  end.
+
 Lemma substc2_ffdefs {o} :
   forall v x (w : @CTerm o) (t u : CVTerm [v,x]),
     alphaeqcv
@@ -1829,6 +1841,29 @@ Proof.
 Qed.
 Hint Resolve find_cs_value_at_implies_lt_cs_size : slow.
 
+Lemma cs_size_le_lib_size {o} :
+  forall name (lib : @library o),
+    cs_size lib name <= lib_size lib.
+Proof.
+  introv.
+  unfold cs_size.
+  induction lib; simpl; auto.
+  destruct a; simpl; boolvar; eauto 3 with slow.
+  eapply le_trans;[eauto|]; eauto 3 with slow.
+Qed.
+Hint Resolve cs_size_le_lib_size : slow.
+
+Lemma find_cs_value_at_implies_lt_lib_size {o} :
+  forall (lib : @library o) name n v,
+    find_cs_value_at lib name n = Some v
+    -> n < lib_size lib.
+Proof.
+  introv h.
+  apply find_cs_value_at_implies_lt_cs_size in h.
+  pose proof (cs_size_le_lib_size name lib) as q; omega.
+Qed.
+Hint Resolve find_cs_value_at_implies_lt_lib_size : slow.
+
 Lemma eapply_wf_def_implies_eapply_wf_ren_cs_term_true {o} :
   forall r (t : @NTerm o),
     eapply_wf_def t
@@ -2250,7 +2285,7 @@ Proof.
 
     admit.
   }
-Admitted.
+Abort.
 
 Definition up_to_namec {o} (name : choice_sequence_name) (t : @CTerm o) :=
   up_to_name name (get_cterm t).
@@ -2272,7 +2307,7 @@ Lemma compute_to_valc_preserves_ren_cs {o} :
          (ren_cs_cterm (name1,name2) t)
          (ren_cs_cterm (name1,name2) v).
 Proof.
-Admitted.
+Abort.
 
 Lemma hasvaluec_implies_computes_to_valc {o} :
   forall lib (t : @CTerm o),
@@ -2286,6 +2321,245 @@ Proof.
   inversion isv as [? isp isc]; subst.
   exists (mk_cterm t' isp); unfold computes_to_valc; simpl.
   split; auto.
+Qed.
+
+(* swaps fst and snd *)
+Definition cs_swap : Type := choice_sequence_name * choice_sequence_name.
+
+Definition swap_cs (r : cs_swap) (n : choice_sequence_name) : choice_sequence_name :=
+  let (n1,n2) := r in
+  if choice_sequence_name_deq n n1 then n2
+  else if choice_sequence_name_deq n n2 then n1
+       else n.
+
+Definition swap_cs_can {o} (r : cs_swap) (can : @CanonicalOp o) : CanonicalOp :=
+  match can with
+  | Ncseq name => Ncseq (swap_cs r name)
+  | _ => can
+  end.
+
+Definition swap_cs_op {o} (r : cs_swap) (op : @Opid o) : Opid :=
+  match op with
+  | Can can => Can (swap_cs_can r can)
+  | _ => op
+  end.
+
+Fixpoint swap_cs_term {o} (r : cs_swap) (t : @NTerm o) : NTerm :=
+  match t with
+  | vterm v => vterm v
+  | oterm op bs => oterm (swap_cs_op r op) (map (swap_cs_bterm r) bs)
+  end
+with swap_cs_bterm {o} (r : cs_swap) (bt : @BTerm o) : BTerm :=
+       match bt with
+       | bterm vs t => bterm vs (swap_cs_term r t)
+       end.
+
+Lemma free_vars_swap_cs_term {o} :
+  forall (r : cs_swap) (t : @NTerm o),
+    free_vars (swap_cs_term r t) = free_vars t.
+Proof.
+  sp_nterm_ind1 t as [v|op bs ind] Case; introv; simpl; tcsp;[].
+  induction bs; simpl; auto.
+  rewrite IHbs; clear IHbs; simpl in *; tcsp;[|introv i; eapply ind; eauto].
+  destruct a; simpl.
+  erewrite ind; eauto.
+Defined.
+Hint Rewrite @free_vars_swap_cs_term : slow.
+
+Lemma closed_swap_cs_term {o} :
+  forall (r : cs_ren) (t : @NTerm o),
+    closed t
+    -> closed (swap_cs_term r t).
+Proof.
+  introv cl.
+  unfold closed in *; autorewrite with slow in *; auto.
+Qed.
+Hint Resolve closed_swap_cs_term : slow.
+
+Lemma OpBindings_swap_cs_op {o} :
+  forall r (op : @Opid o),
+    OpBindings (swap_cs_op r op) = OpBindings op.
+Proof.
+  destruct op as [can| | |]; simpl; tcsp.
+  destruct can; simpl; auto.
+Qed.
+Hint Rewrite @OpBindings_swap_cs_op : slow.
+
+Lemma implies_wf_term_swap_cs_term {o} :
+  forall (r : cs_ren) (t : @NTerm o),
+    wf_term t
+    -> wf_term (swap_cs_term r t).
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv wf; simpl; tcsp.
+
+  - Case "oterm".
+    allrw @wf_oterm_iff.
+    allrw map_map; unfold compose.
+    autorewrite with slow.
+    repnd; dands; auto.
+
+    + rewrite <- wf0.
+      apply eq_maps; introv i.
+      destruct x; unfold num_bvars; simpl; auto.
+
+    + introv i.
+      allrw in_map_iff; exrepnd; subst.
+      destruct a; simpl in *.
+      apply wf_bterm_iff.
+      eapply ind; eauto.
+      apply wf in i1.
+      allrw @wf_bterm_iff; tcsp.
+Qed.
+Hint Resolve implies_wf_term_swap_cs_term : slow.
+
+Lemma implies_isprog_swap_cs_term {o} :
+  forall r {t : @NTerm o},
+    isprog t
+    -> isprog (swap_cs_term r t).
+Proof.
+  introv isp.
+  allrw @isprog_eq.
+  destruct isp.
+  split; dands; allrw @nt_wf_eq; eauto 3 with slow.
+Qed.
+Hint Resolve implies_isprog_swap_cs_term : slow.
+
+Definition swap_cs_cterm {o} r (ct : @CTerm o) : CTerm :=
+  let (t,isp) := ct in
+  mk_ct (swap_cs_term r t) (implies_isprog_swap_cs_term r isp).
+
+Fixpoint swap_cs_sub {o} r (sub : @Sub o) :=
+  match sub with
+  | [] => []
+  | (v,t) :: sub => (v, swap_cs_term r t) :: swap_cs_sub r sub
+  end.
+
+Lemma sub_find_swap_cs_sub {o} :
+  forall r (sub : @Sub o) v,
+    sub_find (swap_cs_sub r sub) v
+    = match sub_find sub v with
+      | Some t => Some (swap_cs_term r t)
+      | None => None
+      end.
+Proof.
+  induction sub; introv; simpl; auto; repnd; simpl; boolvar; auto.
+Qed.
+
+Lemma sub_filter_swap_cs_sub {o} :
+  forall r (sub : @Sub o) l,
+    sub_filter (swap_cs_sub r sub) l
+    = swap_cs_sub r (sub_filter sub l).
+Proof.
+  induction sub; introv; simpl; auto; repnd; simpl; boolvar; auto.
+  rewrite IHsub; simpl; auto.
+Qed.
+
+Lemma lsubst_aux_swap_cs_term {o} :
+  forall r (t : @NTerm o) sub,
+    lsubst_aux (swap_cs_term r t) (swap_cs_sub r sub)
+    = swap_cs_term r (lsubst_aux t sub).
+Proof.
+  nterm_ind t as [v|t op ind] Case; introv; simpl; auto.
+
+  { Case "vterm".
+    rewrite sub_find_swap_cs_sub.
+    destruct (sub_find sub v); auto. }
+
+  Case "oterm".
+  f_equal.
+  allrw map_map; unfold compose; simpl.
+  apply eq_maps; introv i.
+  destruct x; simpl; f_equal.
+  rewrite sub_filter_swap_cs_sub.
+  erewrite ind; eauto.
+Qed.
+
+Lemma bound_vars_swap_cs_term {o} :
+  forall (r : cs_ren) (t : @NTerm o),
+    bound_vars (swap_cs_term r t) = bound_vars t.
+Proof.
+  sp_nterm_ind1 t as [v|op bs ind] Case; introv; simpl; tcsp;[].
+  induction bs; simpl; auto.
+  rewrite IHbs; clear IHbs; simpl in *; tcsp;[|introv i; eapply ind; eauto].
+  destruct a; simpl.
+  erewrite ind; eauto.
+Defined.
+Hint Rewrite @bound_vars_swap_cs_term : slow.
+
+Lemma all_vars_swap_cs_term {o} :
+  forall (r : cs_ren) (t : @NTerm o),
+    all_vars (swap_cs_term r t) = all_vars t.
+Proof.
+  introv; unfold all_vars; autorewrite with slow; auto.
+Defined.
+Hint Rewrite @all_vars_swap_cs_term : slow.
+
+Lemma flat_map_free_vars_range_swap_cs_sub {o} :
+  forall r (sub : @Sub o),
+    flat_map free_vars (range (swap_cs_sub r sub))
+    = flat_map free_vars (range sub).
+Proof.
+  induction sub; introv; simpl; auto; repnd; simpl.
+  rewrite IHsub; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @flat_map_free_vars_range_swap_cs_sub : slow.
+
+Lemma swap_cs_sub_if_allvars_sub {o} :
+  forall r (sub : @Sub o),
+    allvars_sub sub
+    -> swap_cs_sub r sub = sub.
+Proof.
+  induction sub; introv allvs; simpl in *; auto; repnd; simpl in *.
+  apply allvars_sub_cons in allvs; repnd.
+  rewrite IHsub; auto.
+  apply isvariable_implies in allvs0; exrepnd; subst; simpl; auto.
+Qed.
+
+Lemma lsubst_aux_swap_cs_term_if_allvars_sub {o} :
+  forall r (t : @NTerm o) sub,
+    allvars_sub sub
+    -> lsubst_aux (swap_cs_term r t) sub
+       = swap_cs_term r (lsubst_aux t sub).
+Proof.
+  introv allvs.
+  rewrite <- lsubst_aux_swap_cs_term.
+  rewrite swap_cs_sub_if_allvars_sub; auto.
+Qed.
+
+Lemma change_bvars_alpha_swap_cs_term {o} :
+  forall l r (t : @NTerm o),
+    change_bvars_alpha l (swap_cs_term r t)
+    = swap_cs_term r (change_bvars_alpha l t).
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
+  f_equal.
+  allrw map_map; unfold compose.
+  apply eq_maps; introv i; destruct x; simpl.
+  erewrite ind;eauto; autorewrite with slow.
+  f_equal.
+  rewrite lsubst_aux_swap_cs_term_if_allvars_sub; eauto 3 with slow.
+Qed.
+
+Lemma lsubst_swap_cs_term {o} :
+  forall r (t : @NTerm o) sub,
+    lsubst (swap_cs_term r t) (swap_cs_sub r sub)
+    = swap_cs_term r (lsubst t sub).
+Proof.
+  introv.
+  unfold lsubst; autorewrite with slow.
+  destruct (dec_disjointv (bound_vars t) (flat_map free_vars (range sub)));
+    try rewrite lsubst_aux_swap_cs_term; auto.
+  rewrite change_bvars_alpha_swap_cs_term.
+  rewrite lsubst_aux_swap_cs_term; auto.
+Qed.
+
+Lemma subst_swap_cs_term {o} :
+  forall r (t : @NTerm o) v u,
+    subst (swap_cs_term r t) v (swap_cs_term r u)
+    = swap_cs_term r (subst t v u).
+Proof.
+  introv.
+  unfold subst; rewrite <- lsubst_swap_cs_term; simpl; auto.
 Qed.
 
 
@@ -2529,12 +2803,12 @@ Proof.
 
   exists (@mkc_pair
             _
-            (mkc_nat (cs_size lib name))
+            (mkc_nat (lib_size lib))
             (mkc_lam b (mkcv_lam _ x (mk_cv _ z1)))).
 
   apply in_ext_implies_all_in_ex_bar.
   introv ext.
-  exists (@mkc_nat o (cs_size lib name)) (mkc_lam b (mkcv_lam _ x (mk_cv _ z1))).
+  exists (@mkc_nat o (lib_size lib)) (mkc_lam b (mkcv_lam _ x (mk_cv _ z1))).
   dands; spcast; eauto 3 with slow;[].
 
   eapply equality_monotone in eqA;[|eauto];[].
@@ -2582,7 +2856,7 @@ Proof.
                          [b]
                          (mk_cv [b] (mkc_choice_seq name))
                          (mkc_var b)
-                         (mkcv_natk2nat [b] (mk_cv [b] (mkc_nat (cs_size lib1 name)))))
+                         (mkcv_natk2nat [b] (mk_cv [b] (mkc_nat (lib_size lib1)))))
                       (mkcv_apply [b] (mk_cv [b] u) (mkc_var b))))) mem.
   {
     apply equality_in_function3 in mem; repnd.
@@ -2724,7 +2998,7 @@ Proof.
   }
 
   assert (forall m,
-             m < cs_size lib1 name
+             m < lib_size lib1
              ->
              {k : nat
              & computes_to_valc lib (mkc_apply (mkc_choice_seq name) (mkc_nat m)) (mkc_nat k)
@@ -2738,7 +3012,7 @@ Proof.
   clear dependent b1.
 
   assert (forall m,
-             m < cs_size lib1 name
+             m < lib_size lib1
              ->
              {k : nat
               & find_cs_value_at lib name  m = Some (mkc_nat k)
@@ -2755,38 +3029,307 @@ Proof.
   (* === We might have to squash the application in the conclusion === *)
 
   (* === We have to show that because of [imp], [lib1] can be extended with [name']
-         equivalent to [name] up to [cs_size lib1 name] === *)
+         equivalent to [name] up to [lib_size lib1] === *)
 
   destruct (choice_sequence_name_deq name' name) as [d|d];[subst;eauto 3 with slow|];[].
 
-  Check compute_to_valc_preserves_ren_cs.
+
+
+  (* TODO *)
+  Definition swap_cs_lib_entry {o} (r : cs_swap) (e : @library_entry o) := e.
+
+  (* TODO *)
+  Definition swap_cs_lib {o} (r : cs_swap) (lib : @library o) := lib.
+
+  (* TODO *)
+  Lemma swap_cs_member {o} :
+    forall lib sw (a : @CTerm o) A,
+      member lib a A
+      -> member (swap_cs_lib sw lib) (swap_cs_cterm sw a) (swap_cs_cterm sw A).
+  Proof.
+  Admitted.
+
+  (* TODO *)
+  Lemma swap_cs_cterm_apply {o} :
+    forall sw (a b : @CTerm o),
+      swap_cs_cterm sw (mkc_apply a b)
+      = mkc_apply (swap_cs_cterm sw a) (swap_cs_cterm sw b).
+  Proof.
+  Admitted.
+
+  (* TODO *)
+  Lemma swap_cs_cterm_mkc_choice_seq_same {o} :
+    forall name name',
+      swap_cs_cterm (name, name') (@mkc_choice_seq o name)
+      = mkc_choice_seq name'.
+  Proof.
+  Admitted.
+
+  (* TODO *)
+  Lemma swap_cs_cterm_if_nodefsc {o} :
+    forall sw (a : @CTerm o),
+      nodefsc a
+      -> swap_cs_cterm sw a = a.
+  Proof.
+  Admitted.
+
+  Lemma swap_cs_lib_idem {o} :
+    forall sw (lib : @library o),
+      swap_cs_lib sw (swap_cs_lib sw lib)
+      = lib.
+  Proof.
+  Admitted.
+
+  Lemma swap_entry_in_library {o} :
+    forall sw entry (lib : @library o),
+      entry_in_library entry lib
+      -> entry_in_library (swap_cs_lib_entry sw entry) (swap_cs_lib sw lib).
+  Proof.
+    induction lib; introv h; simpl in *; tcsp.
+  Qed.
+
+  Lemma implies_lib_extends_swap_cs_lib {o} :
+    forall name name' (lib lib1 : @library o),
+      lib_extends lib lib1
+      -> (forall m : nat,
+             m < lib_size lib1
+             -> {k : nat
+                 $ find_cs_value_at lib name m = Some (mkc_nat k)
+                 # find_cs_value_at lib name' m = Some (mkc_nat k)})
+      -> lib_extends lib (swap_cs_lib (name,name') lib1).
+  Proof.
+    introv ext imp.
+    destruct ext as [ext safe sub].
+    split.
+
+    { introv i.
+      apply (swap_entry_in_library (name,name')) in i.
+      rewrite swap_cs_lib_idem in i.
+      apply ext in i.
+
+      (* This is not provable because other parts of the library will be renamed too *)
+
+
+    }
+
+  Abort.
+
+  pose proof (swap_cs_member lib1 (name,name') z1 (mkc_apply u (mkc_choice_seq name))) as equ'.
+  autodimp equ' hyp.
+  rewrite swap_cs_cterm_apply in equ'.
+  rewrite swap_cs_cterm_mkc_choice_seq_same in equ'.
+  rewrite (swap_cs_cterm_if_nodefsc _ u) in equ'; auto;[].
+
+  assert (lib_extends lib (swap_cs_lib (name,name') lib1)) as ext'.
+  { }
+*)
+
+
+
+
+
+Definition ren_cs_per {o} r (e : per(o)) : per :=
+  fun a b => e (ren_cs_cterm r a) (ren_cs_cterm r b).
+
+Definition ren_cs_lib_per {o} {lib lib'}
+           (r : cs_ren)
+           (x : lib_extends lib' lib)
+           (eqa : lib-per(lib,o)) : lib-per(lib',o).
+Proof.
+  exists (fun lib'' (xt : lib_extends lib'' lib') => ren_cs_per r (eqa lib'' (lib_extends_trans xt x)));[].
+  repeat introv; simpl.
+  unfold ren_cs_per.
+  apply eqa.
+Defined.
+
+Fixpoint replace_first_vals_with {o}
+         (lib   : @library o)
+         (name  : choice_sequence_name)
+         (vals  : @ChoiceSeqVals o)
+         (restr : @ChoiceSeqRestriction o): library :=
+  match lib with
+  | [] => [lib_cs name (MkChoiceSeqEntry _ vals restr)]
+  | entry :: entries =>
+    match entry with
+    | lib_cs name' (MkChoiceSeqEntry _ vals' restr) =>
+      if choice_sequence_name_deq name name' then
+        let n := length vals in
+        lib_cs name' (MkChoiceSeqEntry _ (vals ++ skipn n vals') restr) :: entries
+      else entry :: replace_first_vals_with entries name vals restr
+    | _ => entry :: replace_first_vals_with entries name vals restr
+    end
+  end.
+
+Definition ren_cs_lib_upto {o}
+         (r   : cs_ren)
+         (lib : @library o) :=
+  let (name1,name2) := r in
+  match find_cs lib name1 with
+  | Some (MkChoiceSeqEntry _ vals1 restr1) => replace_first_vals_with lib name1 vals1 restr1
+  | None => lib
+  end.
+
+(*
+(* Inspired from name_invariance stuff *)
+Lemma implies_close_ren_cs {o} :
+  forall name1 name2 lib (u : cts(o)) (t1 t2 : @CTerm o) e,
+    name1 <> name2
+    -> up_to_namec name1 t1
+    -> up_to_namec name1 t2
+    -> (forall lib t1 t2 e,
+           u lib t1 t2 e
+           -> u (ren_cs_lib_upto (name1,name2) lib)
+                (ren_cs_cterm (name1,name2) t1)
+                (ren_cs_cterm (name1,name2) t2)
+                (ren_cs_per (name1,name2) e))
+    -> close u lib t1 t2 e
+    -> close
+         u
+         (ren_cs_lib_upto (name1,name2) lib)
+         (ren_cs_cterm (name1,name2) t1)
+         (ren_cs_cterm (name1,name2) t2)
+         (ren_cs_per (name1,name2) e).
+Proof.
+  introv dn upto1 upto2 imp cl.
+  close_cases (induction cl using @close_ind') Case; introv; subst.
+
+  { Case "CL_init".
+    apply CL_init.
+    apply imp; auto.
+  }
+
+  { Case "CL_bar".
+    clear per.
+    apply CL_bar.
+    unfold per_bar.
+
+
+    Definition raise_bar_ren_cs_upto {o} {lib}
+               (r   : cs_ren)
+               (bar : @BarLib o lib) : @BarLib o (ren_cs_lib_upto r lib).
+    Proof.
+      Print bar_lib.
+      exists (fun (lib0 : library) =>
+                exists lib1,
+                  bar_lib_bar bar lib1
+                  /\ lib_extends lib0 (ren_cs_lib_upto r lib1)).
+
+      - introv e.
+        destruct bar as [bar1 bars1 ext1].
+        simpl in *.
+
+        pose proof (bars1 infLib) as q; autodimp q hyp; eauto 3 with slow.
+        exrepnd.
+
+        pose proof (intersect_inf_lib_extends2 infLib lib' lib'0) as h.
+        repeat (autodimp h hyp).
+        exrepnd.
+        exists lib0; dands; eauto 3 with slow.
+        exists lib'0; dands; eauto 3 with slow.
+
+      - introv h; exrepnd; auto.
+    Defined.
+
+    Locate raise_bar.
+    exists (raise_bar bar ext) (ren_cs_lib_per (name1,name2) ext eqa).
+    dands.
+
+    - introv br xt; introv; simpl in *; exrepnd.
+      pose proof (reca _ br1 _ (lib_extends_trans xt br2) (lib_extends_trans x ext)) as reca; simpl in *.
+      repeat (autodimp reca hyp); eauto 3 with slow.
+      pose proof (reca lib'1) as reca; repeat (autodimp reca hyp); eauto 3 with slow.
+
+      {
+      }
+    SearchAbout BarLib lib_extends.
+  }
+
+Qed
+ *)
+
+Definition cs_compatible_in_ext {o}
+           (name1 name2 : choice_sequence_name)
+           (lib' lib : @library o) :=
+  forall m : nat,
+    m < cs_size lib name1
+    ->
+    {k : nat
+     & find_cs_value_at lib' name1 m = Some (mkc_nat k)
+     # find_cs_value_at lib' name2 m = Some (mkc_nat k)}.
+
+Record lib_extends_cs_ren {o}
+       (name1 name2 : choice_sequence_name)
+       (lib' lib : @library o) :=
+  MkLibExtendsCsRen {
+      lib_ext_cs_ren_ext  :> lib_extends lib' lib;
+      lib_ext_cs_ren_comp : cs_compatible_in_ext name1 name2 lib' lib;
+    }.
+
+Lemma cs_compatible_in_ext_refl {o} :
+  forall name1 name2 (lib : @library o),
+    compatible_choice_sequence_name 0 name1
+    -> cs_compatible_in_ext name1 name2 lib lib.
+Proof.
+  introv comp lts.
+Abort.
+
+
+Lemma lib_extends_cs_ren_refl {o} :
+  forall name1 name2 (lib : @library o),
+    lib_extends_cs_ren name1 name2 lib lib.
+Proof.
+  introv.
+  split; eauto 3 with slow.
+Abort.
+
 
 (* Inspired from name_invariance stuff *)
 Lemma implies_close_ren_cs {o} :
   forall name1 name2 lib lib' (u : cts(o)) (t1 t2 : @CTerm o) e,
     name1 <> name2
-    -> lib_extends lib' lib
     -> up_to_namec name1 t1
     -> up_to_namec name1 t2
-    -> (forall m : nat,
-           m < cs_size lib name1
-           ->
-           {k : nat
-            & find_cs_value_at lib' name1 m = Some (mkc_nat k)
-            # find_cs_value_at lib' name2 m = Some (mkc_nat k)})
-    -> (forall lib t1 t2 e,
-           u lib t1 t2 e
-           -> u (ren_cs_lib r lib) (ren_cs_cterm r t1) (ren_cs_cterm r t2) (ren_cs_per r e))
+    -> (forall lib' lib t1 t2 e,
+           lib_extends_cs_ren name1 name2 lib' lib
+           -> u lib t1 t2 e
+           -> u lib'
+                (ren_cs_cterm (name1,name2) t1)
+                (ren_cs_cterm (name1,name2) t2)
+                (ren_cs_per (name1,name2) e))
+    -> lib_extends_cs_ren name1 name2 lib' lib
     -> close u lib t1 t2 e
     -> close
          u
          lib'
-         (ren_cs_cterm r t1)
-         (ren_cs_cterm r t2)
-         (xren_cs_per r e).
+         (ren_cs_cterm (name1,name2) t1)
+         (ren_cs_cterm (name1,name2) t2)
+         (ren_cs_per (name1,name2) e).
 Proof.
-  introv imp cl.
-  close_cases (induction cl using @close_ind') Case; subst.
+  introv dn upto1 upto2 imp ext cl.
+  revert dependent lib'.
+  close_cases (induction cl using @close_ind') Case; introv ext; subst.
+
+  { Case "CL_init".
+    apply CL_init.
+    eapply imp; eauto.
+  }
+
+  { Case "CL_bar".
+    clear per.
+    apply CL_bar.
+    unfold per_bar.
+    exists (raise_bar bar ext) (ren_cs_lib_per (name1,name2) ext eqa).
+    dands.
+
+    - introv br xt; introv; simpl in *; exrepnd.
+      pose proof (reca _ br1 _ (lib_extends_trans xt br2) (lib_extends_trans x ext)) as reca; simpl in *.
+      repeat (autodimp reca hyp); eauto 3 with slow.
+      pose proof (reca lib'1) as reca; repeat (autodimp reca hyp); eauto 3 with slow.
+
+      {
+      }
+    SearchAbout BarLib lib_extends.
+  }
 
 Qed
 
@@ -2815,7 +3358,7 @@ Proof.
   dands; auto;[].
   fold (rename_per r eq).
   apply implies_close_univ_rename; auto.*)
-Admitted.
+Abort.
 
 
 Qed.
