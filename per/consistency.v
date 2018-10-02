@@ -343,10 +343,3 @@ Proof.
 *)
 
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

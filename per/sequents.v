@@ -2013,6 +2013,8 @@ Inductive similarity {o} (lib : @library o) : @CSub o -> @CSub o -> @bhyps o -> 
                    (snoc s1 (hvar h, t1))
                    (snoc s2 (hvar h, t2))
                    (snoc hs h).
+Hint Constructors similarity.
+
 
 (* begin hide *)
 
