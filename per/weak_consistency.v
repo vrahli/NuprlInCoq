@@ -52,7 +52,8 @@ Require Export sequents_lib.
 
 Lemma not_VR_sequent_true_false {o} :
   forall lib (t : @NTerm o) c,
-    !VR_sequent_true lib (mk_wcseq ([]) ||- (mk_concl mk_false t) c).
+    VR_sequent_true lib (mk_wcseq ([]) ||- (mk_concl mk_false t) c)
+    -> False.
 Proof.
   introv st.
   rw @VR_sequent_true_ex in st; allsimpl.
@@ -66,7 +67,8 @@ Qed.
 
 Lemma not_sequent_true_ext_lib_false {o} :
   forall lib (t : @NTerm o) c,
-    !sequent_true_ext_lib lib (mk_wcseq ([]) ||- (mk_concl mk_false t) c).
+    sequent_true_ext_lib lib (mk_wcseq ([]) ||- (mk_concl mk_false t) c)
+    -> False.
 Proof.
   introv st.
   pose proof (st lib (lib_extends_refl lib)) as st.
@@ -76,7 +78,8 @@ Qed.
 Lemma weak_consistency {o} :
   forall lib (t : @NTerm o),
     wf_term t
-    -> !rule_true lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] []).
+    -> rule_true lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] [])
+    -> False.
 Proof.
   introv wft rt; unfold rule_true in rt; allsimpl.
   assert (wf_sequent (mk_baresequent [] (mk_concl mk_false t))) as wg
@@ -93,7 +96,8 @@ Qed.
 Lemma weak_consistency_ext_lib {o} :
   forall lib (t : @NTerm o),
     wf_term t
-    -> !rule_true_ext_lib lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] []).
+    -> rule_true_ext_lib lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] [])
+    -> False.
 Proof.
   introv wf rt.
   unfold rule_true_ext_lib in *; simpl in *.

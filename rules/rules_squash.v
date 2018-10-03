@@ -1339,7 +1339,7 @@ Proof.
     apply eq_hyps_snoc in h; exrepnd; allsimpl; cpx; ginv.
     lsubst_tac.
     rw @tequality_mkc_usquash in h0; auto.
-  }
+(*  }
 
   { sim_snoc2; dands; lsubst_tac; auto.
     apply cover_vars_app_weak; apply cover_vars_snoc_weak; auto.
@@ -1347,11 +1347,11 @@ Proof.
 
   exrepnd.
   lsubst_tac.
-  dands; auto.
-Qed.
+  dands; auto.*)
+Abort.
 
 
-
+(*
 Definition rule_usquash_elim {o}
            (H J : barehypotheses)
            (t a b C : @NTerm o)
@@ -1630,3 +1630,4 @@ Qed.
     rw @dom_csub_eq.
     apply similarity_dom in sim6; repnd; rw sim6; auto.
 Qed.
+ *)
