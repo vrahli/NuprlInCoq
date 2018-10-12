@@ -47,3 +47,6 @@ Require Export rules_choice4.
 
 (* Contains a proof of the validity of the extensional version of LS2 *)
 Require Export rules_choice5.
+
+(* Contains a proof that choice sequences cannot be constant *)
+Require Export rules_choice6.
