@@ -259,4 +259,8 @@ Require Import rules_typehood.
 Require Import rules_using_typehood.
 
 
+(* further type system properties: *)
+Require Import per_props_equality2.
+
+
 (* Require Import rules_per_function. *)
