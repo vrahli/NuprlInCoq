@@ -674,13 +674,23 @@ Proof.
         apply @nuprli_implies_nuprl in w2.
         apply nuprl_refl in w1.
         eapply nuprl_uniquely_valued in w1;[|apply nuprl_refl in w3; exact w3].
-        apply nuprl_refl in w2.
-
-        admit. }
+        apply nuprl_sym in w2; apply nuprl_refl in w2.
+        apply nuprl_sym in w3; apply nuprl_refl in w3.
+        eapply nuprl_uniquely_valued in w2;[|exact w3].
+        apply w2; apply w1; auto. }
 
       apply recb with (ep := ep2) (per2 := eqb1 p2 p3 ep1 a1 a2 ea'); auto.
-
-      { admit. }
+      { pose proof (c12 _ _ ep) as w1.
+        pose proof (c7 _ _ ep1) as w2.
+        pose proof (cla _ _ ep2) as w3.
+        apply @nuprli_implies_nuprl in w1.
+        apply @nuprli_implies_nuprl in w2.
+        apply nuprl_refl in w1.
+        eapply nuprl_uniquely_valued in w1;[|apply nuprl_refl in w3; exact w3].
+        apply nuprl_sym in w2; apply nuprl_refl in w2.
+        apply nuprl_sym in w3; apply nuprl_refl in w3.
+        eapply nuprl_uniquely_valued in w2;[|exact w3].
+        apply w2; auto. }
 
       { pose proof (c13 _ _ _ _ _ ea) as impa.
         apply nuprli_refl in impa; auto. }
@@ -691,12 +701,141 @@ Proof.
 
     { introv eb.
 
-      admit. }
+      assert (eqp p2 p3) as ep2 by (apply c0; auto).
+      assert (eqa p2 p3 ep2 a1 a2) as ea'.
+      { pose proof (c12 _ _ ep) as w1.
+        pose proof (cla _ _ ep2) as w2.
+        apply @nuprli_implies_nuprl in w1.
+        apply nuprl_refl in w1.
+        apply nuprl_refl in w2.
+        eapply nuprl_uniquely_valued in w1;[|exact w2].
+        apply w1; auto. }
+
+      pose proof (eqc _ _ _ _ _ ea' b1 b2) as w.
+      apply c0; apply w; clear w.
+
+      pose proof (clb _ _ _ _ _ ea') as w1.
+      pose proof (c13 _ _ _ _ _ ea) as w2.
+      apply @nuprli_implies_nuprl in w2.
+      apply nuprl_refl in w1.
+      apply nuprl_refl in w2.
+      eapply nuprl_uniquely_valued in w1;[|exact w2].
+      apply w1; auto. }
 
     { apply c0; auto. }
 
   - Case "CL_pm".
-    admit.
+    subst.
+    allunfold_per; exrepnd; spcast.
+    repeat computes_to_eqval.
+    repeat ceq_comp_nuprli_hyp.
+    ceq_comp_nuprli_concl; auto.
+
+    inversion cloa; try not_univ;[].
+    inversion clob; try not_univ;[].
+    clear cloa clob.
+    allunfold_per; exrepnd; spcast.
+    computes_to_value_isvalue; GC.
+
+    applydup @nuprli_implies_nuprl in c11.
+    eapply nuprl_uniquely_valued in c0;[|apply nuprl_refl in cl; exact cl].
+    apply eq_term_equals_sym in c0.
+
+    applydup @nuprli_implies_nuprl in c6.
+    eapply nuprl_uniquely_valued in c9;[|apply nuprl_sym in cl; apply nuprl_refl in cl; exact cl].
+    apply eq_term_equals_sym in c9.
+
+    repeat (autodimp IHcl hyp);[].
+    pose proof (IHcl eqp2 eqp1) as IHcl.
+    repeat (autodimp IHcl hyp);[].
+
+    dup IHcl as np.
+    eapply nuprli_ext in np;[|eauto].
+
+    apply CL_pm.
+    exists eqp2 eqa2 eqb2.
+    exists p0 p1 cp0 cp1 ca0 ca1 cb0 cb1; exists C0 C1.
+    dands; auto;[].
+
+    allfold (@nuprli o lib i).
+    allfold (@nuprl o lib).
+
+    exists P0 P1 ap0 ap1 A0 A1 bp0 bp1; exists ba0 ba1 B0 B1.
+    dands; spcast; eauto 3 with slow;[| | |].
+
+    { introv.
+      assert (eqp1 p2 p3) as e' by (apply c9; apply c0; auto).
+      apply reca with (per2 := eqa1 _ _ e'); auto.
+
+      { apply c0; auto. }
+
+      { pose proof (c12 _ _ ep) as impa.
+        apply nuprli_refl in impa; auto. }
+
+      { pose proof (c7 _ _ e') as impa.
+        apply nuprli_sym in impa.
+        apply nuprli_refl in impa; auto. } }
+
+    { introv.
+      assert (eqp1 p2 p3) as ep1 by (apply c9; apply c0; auto).
+      assert (eqp p2 p3) as ep2 by (apply c9; auto).
+      assert (eqa1 p2 p3 ep1 a1 a2) as ea'.
+      { pose proof (c12 _ _ ep) as w1.
+        pose proof (c7 _ _ ep1) as w2.
+        pose proof (cla _ _ ep2) as w3.
+        apply @nuprli_implies_nuprl in w1.
+        apply @nuprli_implies_nuprl in w2.
+        apply nuprl_refl in w1.
+        eapply nuprl_uniquely_valued in w1;[|apply nuprl_refl in w3; exact w3].
+        apply nuprl_sym in w2; apply nuprl_refl in w2.
+        apply nuprl_sym in w3; apply nuprl_refl in w3.
+        eapply nuprl_uniquely_valued in w2;[|exact w3].
+        apply w2; apply w1; auto. }
+
+      apply recb with (ep := ep2) (per2 := eqb1 p2 p3 ep1 a1 a2 ea'); auto.
+      { pose proof (c12 _ _ ep) as w1.
+        pose proof (c7 _ _ ep1) as w2.
+        pose proof (cla _ _ ep2) as w3.
+        apply @nuprli_implies_nuprl in w1.
+        apply @nuprli_implies_nuprl in w2.
+        apply nuprl_refl in w1.
+        eapply nuprl_uniquely_valued in w1;[|apply nuprl_refl in w3; exact w3].
+        apply nuprl_sym in w2; apply nuprl_refl in w2.
+        apply nuprl_sym in w3; apply nuprl_refl in w3.
+        eapply nuprl_uniquely_valued in w2;[|exact w3].
+        apply w2; auto. }
+
+      { pose proof (c13 _ _ _ _ _ ea) as impa.
+        apply nuprli_refl in impa; auto. }
+
+      { pose proof (c8 _ _ _ _ _ ea') as impa.
+        apply nuprli_sym in impa.
+        apply nuprli_refl in impa; auto. } }
+
+    { introv eb.
+
+      assert (eqp p2 p3) as ep2 by (apply c0; auto).
+      assert (eqa p2 p3 ep2 a1 a2) as ea'.
+      { pose proof (c12 _ _ ep) as w1.
+        pose proof (cla _ _ ep2) as w2.
+        apply @nuprli_implies_nuprl in w1.
+        apply nuprl_refl in w1.
+        apply nuprl_refl in w2.
+        eapply nuprl_uniquely_valued in w1;[|exact w2].
+        apply w1; auto. }
+
+      pose proof (eqc _ _ _ _ _ ea' b1 b2) as w.
+      apply c0; apply w; clear w.
+
+      pose proof (clb _ _ _ _ _ ea') as w1.
+      pose proof (c13 _ _ _ _ _ ea) as w2.
+      apply @nuprli_implies_nuprl in w2.
+      apply nuprl_refl in w1.
+      apply nuprl_refl in w2.
+      eapply nuprl_uniquely_valued in w1;[|exact w2].
+      apply w1; auto. }
+
+    { apply c0; auto. }
 
   - Case "CL_texc".
     subst.
@@ -1124,7 +1263,7 @@ Proof.
     { pose proof (c6 _ _ e') as impa.
       apply nuprli_sym in impa.
       apply nuprli_refl in impa; auto. }
-Admitted.
+Qed.
 
 Lemma implies_equality_in_uni {o} :
   forall lib (T1 T2 : @CTerm o) i,
