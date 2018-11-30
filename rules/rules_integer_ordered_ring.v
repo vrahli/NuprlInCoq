@@ -556,9 +556,10 @@ Proof.
    (* Now we have x <= x0 *)
   assert (x = x0)%Z. omega.
   split.
-   - (* tequality *) apply @tequality_mkc_equality_sp; split.
+   - (* tequality *) 
+     apply @tequality_mkc_equality2. split.
     + apply tequality_int.
-    + split; left; apply equality_in_int; auto.
+    + split;  apply equality_in_int; auto.
       unfold equality_of_int. exists x%Z. split; unfold ccomputes_to_valc; spcast; auto.
       unfold equality_of_int. exists x0%Z. split; unfold ccomputes_to_valc; spcast; auto.
   - (* equality *)
@@ -656,9 +657,9 @@ Proof.
    (* Now we have x0 <= 1+x *)
   assert (1+x = x0)%Z. omega.
   split.
-   - (* tequality *) apply @tequality_mkc_equality_sp; split.
+   - (* tequality *) apply @tequality_mkc_equality2; split.
     + apply tequality_int.
-    + split; left; apply equality_in_int; auto.
+    + split; apply equality_in_int; auto.
       unfold equality_of_int. exists (1+x)%Z. split; unfold ccomputes_to_valc; spcast; auto.
     pose proof (@computes_to_valc_arithop o lib ArithOpAdd (mkc_integer 1) y1 1 x) as xxx.
     apply xxx; auto. 

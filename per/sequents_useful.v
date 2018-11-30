@@ -44,6 +44,7 @@ Lemma subtype_equality {o} :
             wc)
     -> equality lib t1 t2 (lsubstc U wu s cu).
 Proof.
+  
   introv nixh nixu cvu cvt sim hf eq seqt.
   vr_seq_true in seqt.
 
@@ -159,14 +160,15 @@ Proof.
 
   generalize (subtype_tequality lib s1a s2a H T U x t3 t' w w1 c c6 c9 wc); intro k;
   repeat (autodimp k hyp).
+  revert k. revert j. revert sim2. generalize (lsubstc U w1 s1a c6). generalize (lsubstc U w1 s2a c9).
+  intros.
 
-  apply tequality_mkc_equality; sp.
-
-  split; sp; try (complete (apply @equality_refl with (t2 := t4); sp)).
-  apply equality_sym in j.
-  assert (equality lib t4 t0 (lsubstc U w1 s1a c6))
-    as eq by (apply @equality_trans with (t2 := t3); sp).
-  apply tequality_preserving_equality with (A := lsubstc U w1 s1a c6); sp.
+  apply tequality_mkc_equality;  sp; split; sp.
+  - apply @equality_refl with (t2 := t3); sp; apply equality_sym; auto.
+  - apply @equality_refl with (t2 := t4); sp; apply equality_sym; auto.
+  - apply @equality_refl with (t2 := t3); sp; apply equality_sym; auto.
+  - apply @equality_refl with (t2 := t4); sp; apply equality_sym; auto.
+ 
 Qed.
 
 Lemma similarity_widening {o} :
@@ -422,10 +424,10 @@ Proof.
     intro ceq; repeat (autodimp ceq hyp); try (complete (apply cequivc_sym; auto)).
 
   apply tequality_in_uni_implies_tequality in q0; sp.
+  pose proof (tequality_in_uni_implies_tequality lib).
   spcast; apply tequality_respects_cequivc_right with (T2 := mkc_apply2 (lsubstc R1 w1 s2a0 c11) t0 t1); sp.
   apply cequivc_sym; sp.
-  apply member_in_uni in q; sp.
-
+  
   generalize (hyps_functionality_snoc lib
                 (snoc H (mk_hyp x mk_base))
                 (mk_hyp y mk_base)
@@ -703,7 +705,6 @@ Proof.
   apply tequality_in_uni_implies_tequality in q0; sp.
   apply tequality_respects_cequivc_right with (T2 := mkc_apply2 (lsubstc R w s2a0 c10) t0 t1); sp.
   apply cequivc_sym; sp.
-  apply member_in_uni in q; sp.
 
   generalize (hyps_functionality_snoc lib
                 (snoc H (mk_hyp x mk_base))
@@ -834,7 +835,6 @@ Proof.
   apply tequality_in_uni_implies_tequality in q0; sp.
   apply tequality_respects_cequivc_right with (T2 := mkc_apply2 (lsubstc R w s2a0 c15) t4 t0); sp.
   apply cequivc_sym; sp.
-  apply member_in_uni in q; sp.
 
   (* u *)
   generalize (hyps_functionality_snoc lib
@@ -866,7 +866,6 @@ Proof.
   apply tequality_in_uni_implies_tequality in q0; sp.
   apply tequality_respects_cequivc_right with (T2 := mkc_apply2 (lsubstc R w s2a c14) t5 t3); sp.
   apply cequivc_sym; sp.
-  apply member_in_uni in q; sp.
 
   (* z *)
   generalize (hyps_functionality_snoc lib
@@ -1069,7 +1068,20 @@ Proof.
   rw <- @member_member_iff.
   rw <- @member_equality_iff in seq1.
   dands; try (complete (apply equality_refl in seq1; auto)).
-  rw @tequality_mkc_member_sp.
-  rw @tequality_mkc_equality in seq0; repnd.
+  revert seq0. revert seq1.
+  generalize (lsubstc a w1 s1 c1) as a1.
+  generalize (lsubstc b w2 s1 c2) as b1.
+  generalize (lsubstc T wT s1 cT) as T1.
+  generalize (lsubstc a w1 s2 c0) as a2.
+  generalize (lsubstc b w2 s2 c3) as b2.
+  generalize (lsubstc T wT s2 cT0) as T2.
+  intros.
+  apply (tequality_mkc_equality_implies) in seq0. repnd.
+  rw @tequality_mkc_member.
   dands; auto.
+  split; intro.
+  apply seq3 in seq1.
+  apply equality_refl in seq1; auto.
+  apply equality_refl in seq1; auto.
+  
 Qed.

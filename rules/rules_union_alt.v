@@ -202,11 +202,11 @@ Proof.
   dimp teq1.
   assert ( type lib B1 ) as Btyp.
   { apply equality_axiom_in_mkc_istype in hyp2. auto. }
-  
+
   assert (equality lib a11 a22  A1) as eq2.
-  + eapply equality_trans with (t2 := a12). 
-    { destruct teq; auto; spcast. apply equality_respects_cequivc; auto. eapply equality_refl. eauto. }
-    { eapply tequality_preserving_equality; [exact hyp |apply tequality_sym;auto ]. }
+  + apply equality_trans with (t2 := a12); auto. apply teq3. 
+    apply equality_refl in eq. auto.
+    eapply tequality_preserving_equality; [exact hyp |apply tequality_sym;auto ]. 
   + apply equality_mkc_union; dands; auto.
   * eapply tequality_refl; eauto.
   * left. eexists; eexists; dands; [spcast | spcast | exact eq2];
@@ -282,10 +282,9 @@ Proof.
   assert ( type lib A1 ) as Atyp.
   { apply equality_axiom_in_mkc_istype in hyp2.
     auto. }
-
   assert (equality lib b11 b22  B1) as eq2.
-  + eapply equality_trans with (t2 := b12).
-    { destruct teq; auto; spcast. apply equality_respects_cequivc; auto. eapply equality_refl. eauto. }
+  + eapply equality_trans with (t2 := b12); auto. apply teq3.
+    apply equality_refl in eq. auto.
     { eapply tequality_preserving_equality; [exact hyp |apply tequality_sym;auto ]. }
   + apply equality_mkc_union; dands; auto.
   * eapply tequality_refl; eauto.

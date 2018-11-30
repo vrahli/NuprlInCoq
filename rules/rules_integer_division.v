@@ -219,10 +219,13 @@ Proof.
   assert (equality_of_int lib (mkc_integer 0) (mkc_integer 0)).
     apply equality_of_int_mkc_integer. 
   split.
-  - (* tequality *) apply @tequality_mkc_equality_sp; split.
-    + apply tequality_int.
-    + split; left; apply equality_in_int; auto.
-      repeat (apply @equality_of_int_arithop; auto). 
+  - (* tequality *) 
+     apply @tequality_mkc_equality2; split.
+    apply tequality_int. split;
+    rw @equality_in_int; 
+    repeat (apply equality_of_int_arithop; auto).
+    apply equality_of_int_mkc_integer; auto.
+    
   - (* equality *)
      rw @member_eq. rw <- @member_equality_iff.
      rw @equality_in_int. 

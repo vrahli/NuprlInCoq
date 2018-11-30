@@ -27,6 +27,78 @@
 Require Export type_sys.
 Require Import dest_close.
 
+Lemma cequivc_eqindomain {p} :
+  forall lib,
+  forall(a b : @CTerm p),
+  forall (eqa: per),
+  term_equality_symmetric eqa ->
+  term_equality_transitive eqa ->
+  term_equality_respecting lib eqa ->
+  cequivc lib a b -> eqindomain eqa a b.
+Proof.  intros. unfold eqindomain.
+ unfold term_equality_symmetric in H.
+ unfold term_equality_transitive in H0.
+ unfold term_equality_respecting in H1.
+ split; try split; intro.
+ assert (eqa a b). apply H1; auto. sp. spcast. auto.
+ assert (eqa b a). apply H; auto. eapply H0; eauto.
+ assert (eqa b a). apply H1; auto. sp. spcast. apply cequivc_sym. auto.
+ assert (eqa a b). apply H; auto. eapply H0; eauto.
+ apply H1; auto. sp. spcast. auto.
+Qed.
+
+Lemma eqindomain_sym {p} :
+  forall(a b : @CTerm p),
+  forall (eqa: per),
+  term_equality_symmetric eqa ->
+  eqindomain eqa a b -> eqindomain eqa b a.
+Proof.  intros. unfold eqindomain.
+ unfold term_equality_symmetric in H.
+ split; try split; intro. apply H0; auto. apply H0; auto. 
+ assert (eqa a b). apply H0; auto. apply H0; auto. apply H. auto.
+ 
+Qed.
+
+Lemma eqindomain_trans {p} :
+  forall(a b c: @CTerm p),
+  forall (eqa: per),
+  term_equality_transitive eqa ->
+  eqindomain eqa a b -> eqindomain eqa b c -> eqindomain eqa a c.
+Proof.  unfold eqindomain. intros.
+ unfold term_equality_symmetric in H. sp. rw H3; auto.
+ assert (eqa b c). apply H1; rw <- H4; auto.
+ eapply H; eauto.
+Qed.
+
+Lemma eqindomain_combine {p} :
+  forall(a1 a2 b1 b2 : @CTerm p),
+  forall (eqa: per),
+  term_equality_symmetric eqa ->
+  term_equality_transitive eqa ->
+  eqindomain eqa a1 b1 -> eqindomain eqa a2 b2 -> eqa a1 a2 -> eqa b1 b2.
+Proof.  intros. unfold eqindomain.
+ unfold term_equality_symmetric in H.
+ unfold term_equality_transitive in H0.
+ assert (eqa a1 b1). apply H1. eapply H0; eauto.
+ assert (eqa a2 b2). apply H2. eapply H0; eauto.
+ eapply H0; eauto.
+ 
+Qed.
+
+Lemma eq_term_equals_eqindomain {p} :
+  
+  forall (eq1 eq2: per),
+  eq1 <=2=> eq2 ->
+  forall(a b : @CTerm p),
+  eqindomain eq1 a b <=> eqindomain eq2 a b.
+Proof.  intros. unfold eqindomain.
+ repeat (rw H). sp.
+ 
+Qed.
+
+
+
+
 
 Lemma close_type_system_eq {p} :
   forall lib (ts : cts(p)),
@@ -36,8 +108,8 @@ Lemma close_type_system_eq {p} :
     -> computes_to_valc lib T (mkc_equality a1 a2 A)
     -> computes_to_valc lib T' (mkc_equality b1 b2 B)
     -> close lib ts A B eqa
-    -> eqorceq lib eqa a1 b1
-    -> eqorceq lib eqa a2 b2
+    -> eqindomain eqa a1 b1
+    -> eqindomain eqa a2 b2
     -> (forall t t' : CTerm,
           eq t t' <=>
              ccomputes_to_valc lib t mkc_axiom
@@ -84,17 +156,18 @@ Proof.
     apply cequivc_mkc_equality with (t' := T3) in c0; sp.
     exists A T'0 a1 a2 a' b' eqa; sp; spcast; sp; try (complete (right; spcast; sp)).
     allunfold @type_sys_props; sp.
+    pose proof (cequivc_eqindomain lib a1 a' eqa). apply H0; auto; apply IHX1.
+    pose proof (cequivc_eqindomain lib a2 b' eqa). apply H0; auto; apply IHX1.
 
     duplicate c2 as c0.
     apply cequivc_mkc_equality with (t' := T3) in c0; sp.
     exists B T'0 b1 b2 a' b' eqa; sp; spcast; sp; try (complete (right; spcast; sp)).
     allunfold @type_sys_props; sp.
+    pose proof (cequivc_eqindomain lib b1 a' eqa). apply H0; auto; apply IHX1.
+    pose proof (cequivc_eqindomain lib b2 b' eqa). apply H0; auto; apply IHX1.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-    rw eqiff; split; sp.
-    eapply eqorceq_commutes with (a := a1) (c := a2); eauto.
-    eapply eqorceq_commutes with (a := b1) (c := b2); eauto.
-    apply eqorceq_sym; auto.
-    apply eqorceq_sym; auto.
+    rw eqiff; split; sp. eapply eqindomain_combine; eauto.
+    pose proof (eqindomain_combine b1 b2 a1 a2 eqa) as xx; apply xx; auto; apply eqindomain_sym; auto.
 
   + SCase "term_symmetric".
     unfold term_equality_symmetric; sp.
@@ -124,48 +197,45 @@ Proof.
     try (assert (eq_term_equals eqa eqa0)
                 as eqt by (apply uv with (T3 := A0); sp));
     try (assert (eq_term_equals eqa eqa0)
-                as eqt by (apply uv with (T3 := B0); sp));
-    apply eqorceq_eq_term_equals with (eq2 := eqa) in e0; auto;
-    try (complete (apply eq_term_equals_sym; auto));
-    apply eqorceq_eq_term_equals with (eq2 := eqa) in e; auto;
-    try (complete (apply eq_term_equals_sym; auto)).
+                as eqt by (apply uv with (T3 := B0); sp)).
+    
 
     (* 1 *)
-    exists B0 A b0 b3 a1 a2 eqa0; sp; spcast; sp.
-
+    exists B0 A b0 b3 a1 a2 eqa0.
+    assert (term_equality_symmetric eqa0).
+     unfold term_equality_symmetric; intros; rw <- eqt; apply tes; rw eqt; auto.
+    assert (forall a b : CTerm, eqindomain eqa a b <=> eqindomain eqa0 a b) as sameeq.
+    apply eq_term_equals_eqindomain; auto. 
+    
+    sp; spcast; sp.
     generalize (tygs A B0 eqa0); intro i; autodimp i h; rw <- i; sp.
-
-    apply eqorceq_eq_term_equals with (eq2 := eqa); auto;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply eqorceq_sym; auto.
-    apply eqorceq_eq_term_equals with (eq2 := eqa); auto;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply eqorceq_sym; auto.
-
+    apply eqindomain_sym; auto.
+    apply eqindomain_sym; auto.
+   
     rw t; repeat (rw <- eqt).
     split; sp.
-    eapply eqorceq_commutes with (a := a1) (c := a2); eauto.
-    eapply eqorceq_commutes with (a := b0) (c := b3); eauto.
-    apply eqorceq_sym; auto.
-    apply eqorceq_sym; auto.
-
+    pose proof (eqindomain_combine a1 a2 b0 b3 eqa) as xx; apply xx; auto;
+    rw sameeq; auto.
+    pose proof (eqindomain_combine b0 b3 a1 a2 eqa) as xx; apply xx; auto;
+    apply eqindomain_sym; auto; rw sameeq; auto.
+    
     (* 2 *)
-    exists A A0 a1 a2 a0 a3 eqa0; sp; spcast; sp.
-
-    apply eqorceq_eq_term_equals with (eq2 := eqa); eauto;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply eqorceq_sym; auto.
-    apply eqorceq_eq_term_equals with (eq2 := eqa); auto;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply eqorceq_sym; auto.
+    exists A A0 a1 a2 a0 a3 eqa0.
+    assert (term_equality_symmetric eqa0).
+     unfold term_equality_symmetric; intros; rw <- eqt; apply tes; rw eqt; auto. 
+    assert (forall a b : CTerm, eqindomain eqa a b <=> eqindomain eqa0 a b) as sameeq.
+    apply eq_term_equals_eqindomain; auto. 
+     sp; spcast; sp.
+    apply eqindomain_sym; auto.
+    apply eqindomain_sym; auto.
 
     rw t; repeat (rw <- eqt).
     split; sp.
-    eapply @eqorceq_commutes with (a := a0) (c := a3); eauto.
-    eapply @eqorceq_commutes with (a := a1) (c := a2); eauto.
-    apply eqorceq_sym; auto.
-    apply eqorceq_sym; auto.
-
+    pose proof (eqindomain_combine a0 a3 a1 a2 eqa) as xx; apply xx; auto;
+    rw sameeq; auto.
+    pose proof (eqindomain_combine a1 a2 a0 a3 eqa) as xx; apply xx; auto;
+    apply eqindomain_sym; auto; rw sameeq; auto.
+    
   + SCase "type_gtransitive"; sp.
 
   + SCase "type_mtransitive".
@@ -184,77 +254,71 @@ Proof.
     assert (eq_term_equals eqa eqa1) as eqt1 by (apply uv with (T3 := A1); sp).
     assert (eq_term_equals eqa eqa0) as eqt2 by (apply uv with (T3 := B0); sp).
     assert (close lib ts A1 B0 eqa0) as eqta2 by (generalize (tymt A A1 B0 eqa1 eqa0); sp).
+    assert (forall a b : CTerm, eqindomain eqa a b <=> eqindomain eqa0 a b) as sameeq1.
+    apply eq_term_equals_eqindomain; auto. 
+    assert (forall a b : CTerm, eqindomain eqa a b <=> eqindomain eqa1 a b) as sameeq2.
+    apply eq_term_equals_eqindomain; auto. 
 
-    apply @eqorceq_eq_term_equals with (eq2 := eqa) in e2;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_eq_term_equals with (eq2 := eqa) in e1;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_eq_term_equals with (eq2 := eqa) in e0;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_eq_term_equals with (eq2 := eqa) in e;
-    try (complete (apply eq_term_equals_sym; auto)).
-
+    
     dands; apply CL_eq; unfold per_eq.
 
-    exists A1 B0 a4 a5 b0 b3 eqa0; sp; spcast; sp.
-    apply @eqorceq_eq_term_equals with (eq2 := eqa); auto;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply eqorceq_trans with (b := a1); auto.
-    apply @eqorceq_eq_term_equals with (eq2 := eqa); auto;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_trans with (b := a2); auto.
+    exists A1 B0 a4 a5 b0 b3 eqa0. 
+    allrw <- sameeq1.
+    allrw <- sameeq2.
+    sp; spcast; sp.
+    eapply eqindomain_trans; eauto.
+    eapply eqindomain_trans; eauto.
+    
     rw t0.
     allrw <-; sp.
 
-    exists A1 B0 a4 a5 b0 b3 eqa0; sp; spcast; sp.
-    apply @eqorceq_eq_term_equals with (eq2 := eqa); auto;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_trans with (b := a1); auto.
-    apply @eqorceq_eq_term_equals with (eq2 := eqa); auto;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_trans with (b := a2); auto.
-    rw t; repeat (rw <- eqt2); split; sp.
-    eapply @eqorceq_commutes with (a := a1) (c := a2); eauto;
-    try (complete (apply eqorceq_sym; auto)).
-    eapply @eqorceq_commutes with (a := a4) (c := a5); eauto;
-    try (complete (apply eqorceq_sym; auto)).
+    exists A1 B0 a4 a5 b0 b3 eqa0.
+    allrw <- sameeq1.
+    allrw <- sameeq2.
+    sp; spcast; sp.
+    eapply eqindomain_trans; eauto.
+    eapply eqindomain_trans; eauto.
+    
+    rw t.
+    allrw <-; sp.
+  
+    rw eqiff; split; intros; sp.
+    pose proof (eqindomain_combine a1 a2 a4 a5 eqa) as xx; apply xx; auto;
+    apply eqindomain_sym; auto.
+    pose proof (eqindomain_combine a4 a5 a1 a2 eqa) as xx; apply xx; auto.
+
+ 
 
     (* 2 *)
     assert (close lib ts B A1 eqa1) as eqta1 by (generalize (tymt B A1 B eqa1 eqa); sp).
     assert (eq_term_equals eqa eqa1) as eqt1 by (apply uv with (T3 := A1); sp).
     assert (eq_term_equals eqa eqa0) as eqt2 by (apply uv with (T3 := B0); sp).
     assert (close lib ts A1 B0 eqa1) as cl by (generalize (tymt B A1 B0 eqa1 eqa0); intro i; autodimp i h; sp).
-
-    apply @eqorceq_eq_term_equals with (eq2 := eqa) in e2;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_eq_term_equals with (eq2 := eqa) in e1;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_eq_term_equals with (eq2 := eqa) in e0;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_eq_term_equals with (eq2 := eqa) in e;
-    try (complete (apply eq_term_equals_sym; auto)).
+    assert (forall a b : CTerm, eqindomain eqa a b <=> eqindomain eqa0 a b) as sameeq1.
+    apply eq_term_equals_eqindomain; auto. 
+    assert (forall a b : CTerm, eqindomain eqa a b <=> eqindomain eqa1 a b) as sameeq2.
+    apply eq_term_equals_eqindomain; auto. 
 
     dands; apply CL_eq; unfold per_eq.
 
-    exists A1 B0 a4 a5 b0 b3 eqa1; sp; spcast; sp.
-    apply @eqorceq_eq_term_equals with (eq2 := eqa); auto;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_trans with (b := b1); auto.
-    apply @eqorceq_eq_term_equals with (eq2 := eqa); auto;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_trans with (b := b2); auto.
-
-    exists A1 B0 a4 a5 b0 b3 eqa1; sp; spcast; sp.
-    apply @eqorceq_eq_term_equals with (eq2 := eqa); auto;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_trans with (b := b1); auto.
-    apply @eqorceq_eq_term_equals with (eq2 := eqa); auto;
-    try (complete (apply eq_term_equals_sym; auto)).
-    apply @eqorceq_trans with (b := b2); auto.
+    exists A1 B0 a4 a5 b0 b3 eqa1.
+    allrw <- sameeq1.
+    allrw <- sameeq2.
+    sp; spcast; sp.
+    eapply eqindomain_trans; eauto.
+    eapply eqindomain_trans; eauto.
+    
+    exists A1 B0 a4 a5 b0 b3 eqa1.
+    allrw <- sameeq1.
+    allrw <- sameeq2.
+    sp; spcast; sp. 
+    eapply eqindomain_trans; eauto.
+    eapply eqindomain_trans; eauto.
+    
     rw t; repeat (rw <- eqt1); repeat (rw <- eqt2); split; sp.
-    eapply @eqorceq_commutes with (a := b1) (c := b2); eauto;
-    try (complete (apply eqorceq_sym; auto)).
-    eapply @eqorceq_commutes with (a := a4) (c := a5); eauto;
-    try (complete (apply eqorceq_sym; auto)).
+    pose proof (eqindomain_combine b1 b2 a4 a5 eqa) as xx; apply xx; auto;
+    apply eqindomain_sym; auto.
+    pose proof (eqindomain_combine a4 a5 b1 b2 eqa) as xx; apply xx; auto.
+
 Qed.
 

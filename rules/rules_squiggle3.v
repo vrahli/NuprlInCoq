@@ -149,9 +149,11 @@ Proof.
         lsubst_tac.
         allrw @member_eq.
         allrw <- @member_member_iff.
-        allrw @tequality_in_uni_iff_tequality.
-        allapply @cequorsq_mkc_halts_implies.
-        allrw <-; sp.
+        apply @tequality_in_uni_implies_tequality in hyp0.
+        repnd.
+        apply hyp0 in hyp1.
+        rw @tequality_mkc_halts in hyp1.
+        apply hyp1; auto.
       }
 
       assert (cover_vars (mk_halts a) s1) as cvh1 by (rw @cover_vars_halts; sp).
@@ -186,13 +188,15 @@ Proof.
 
         vr_seq_true in hyp4.
         generalize (hyp4 s1 s' eqh s); clear hyp3; intro hyp3; exrepnd.
-        clear hyp2.
         lsubst_tac.
-        allrw @tequality_in_uni_iff_tequality.
-        apply cequorsq_mkc_isexc in hyp0.
-        apply hyp0; auto.
+            allrw @member_eq.
+            allrw <- @member_member_iff.
+            apply @tequality_in_uni_implies_tequality in hyp0.
+            repnd.
+            apply hyp0 in hyp2.
+            rw @tequality_mkc_isexc in hyp2.
+            apply hyp2. sp.         
       }
-
       assert (cover_vars (mk_isexc a) s1) as cvh1 by (rw @cover_vars_isexc; sp).
 
       dest_imp hyp2 hyp.
@@ -211,7 +215,7 @@ Proof.
     }
   }
 
-  { (* The prove the same thing but for s2 instead of s1 *)
+  { (* Then prove the same thing but for s2 instead of s1 *)
     assert (capproxc lib (lsubstc a w1 s2 c0) (lsubstc b w2 s2 c3)) as apx2.
     (* for that we can assume that the term on the left computes to a value *)
     { spcast.
@@ -238,9 +242,12 @@ Proof.
           lsubst_tac.
           allrw @member_eq.
           allrw <- @member_member_iff.
-          allrw @tequality_in_uni_iff_tequality.
-          allrw @cequorsq_mkc_halts.
-          spcast; apply hyp0; auto.
+          apply @tequality_in_uni_implies_tequality in hyp0.
+        repnd.
+        apply hyp0 in hyp1.
+        rw @tequality_mkc_halts in hyp1.
+        apply hyp1; auto.
+          
         }
 
         assert (cover_vars (mk_halts a) s1) as cvh1 by (rw @cover_vars_halts; sp).
@@ -259,9 +266,12 @@ Proof.
             lsubst_tac.
             allrw @member_eq.
             allrw <- @member_member_iff.
-            allrw @tequality_in_uni_iff_tequality.
-            allrw @cequorsq_mkc_halts.
-            split; intro q; spcast; apply hyp0; auto.
+            apply @tequality_in_uni_implies_tequality in hyp0.
+            repnd.
+            apply hyp0 in hyp1.
+            rw @tequality_mkc_halts in hyp1.
+            rw hyp1. sp.
+            
           }
 
           allrw @similarity_snoc; simpl.
@@ -296,9 +306,11 @@ Proof.
           lsubst_tac.
           allrw @member_eq.
           allrw <- @member_member_iff.
-          allrw @tequality_in_uni_iff_tequality.
-          allrw @cequorsq_mkc_isexc.
-          spcast; apply hyp0; auto.
+          apply @tequality_in_uni_implies_tequality in hyp0.
+          repnd.
+          apply hyp0 in hyp2.
+          rw @tequality_mkc_isexc in hyp2.
+          apply hyp2; auto.
         }
 
         assert (cover_vars (mk_isexc a) s1) as cvh1 by (rw @cover_vars_isexc; sp).
@@ -317,9 +329,12 @@ Proof.
             lsubst_tac.
             allrw @member_eq.
             allrw <- @member_member_iff.
-            allrw @tequality_in_uni_iff_tequality.
-            allrw @cequorsq_mkc_isexc.
-            split; intro q; spcast; apply hyp0; auto.
+            apply @tequality_in_uni_implies_tequality in hyp0.
+            repnd.
+            apply hyp0 in hyp2.
+            rw @tequality_mkc_isexc in hyp2.
+            rw hyp2. sp.
+            
           }
 
           allrw @similarity_snoc; simpl.
@@ -504,9 +519,11 @@ Proof.
       lsubst_tac.
       allrw @member_eq.
       allrw <- @member_member_iff.
-      allrw @tequality_in_uni_iff_tequality.
-      apply cequorsq_mkc_halts_like in hyp0.
-      allrw <-; sp.
+      apply @tequality_in_uni_implies_tequality in hyp0.
+      repnd.
+      apply hyp0 in hyp1.
+      rw @tequality_mkc_halts_like in hyp1.
+      apply hyp1; auto.
     }
 
     assert (cover_vars (mk_halts_like a) s1) as cvh1 by (rw @cover_vars_halts_like; sp).
@@ -552,9 +569,12 @@ Proof.
         lsubst_tac.
         allrw @member_eq.
         allrw <- @member_member_iff.
-        allrw @tequality_in_uni_iff_tequality.
-        allrw @cequorsq_mkc_halts_like.
-        spcast; apply hyp0; auto.
+        apply @tequality_in_uni_implies_tequality in hyp0.
+        repnd.
+        apply hyp0 in hyp1.
+      rw @tequality_mkc_halts_like in hyp1.
+      apply hyp1; auto.
+        
       }
 
       assert (cover_vars (mk_halts_like a) s1) as cvh1 by (rw @cover_vars_halts_like; sp).
@@ -573,9 +593,12 @@ Proof.
           lsubst_tac.
           allrw @member_eq.
           allrw <- @member_member_iff.
-          allrw @tequality_in_uni_iff_tequality.
-          allrw @cequorsq_mkc_halts_like.
-          split; intro q; spcast; apply hyp0; auto.
+          apply @tequality_in_uni_implies_tequality in hyp0.
+          repnd.
+          apply hyp0 in hyp1.
+          rw @tequality_mkc_halts_like in hyp1.
+          rw hyp1; auto.
+        
         }
 
         allrw @similarity_snoc; simpl.

@@ -81,13 +81,11 @@ Proof.
   pose proof (hyp1 s1 s2 eqh sim) as h; exrepnd; clear hyp1.
 
   lsubst_tac.
+  split.
+  - apply tequality_mkc_member_if_equal; split; auto.
+  - apply equality_in_member. apply equality_refl in h1; dands; auto; spcast;
+    apply computes_to_valc_refl; eauto 3 with slow.
 
-  allrw @tequality_mkc_member_sp.
-  allrw @equality_in_member.
-
-  dands; auto; spcast;
-  try (apply computes_to_valc_refl; eauto 3 with slow).
-  apply equality_refl in h1; auto.
 Qed.
 
 Lemma rule_equality_to_extract_true_ext_lib {p} :

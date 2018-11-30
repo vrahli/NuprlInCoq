@@ -73,7 +73,7 @@ Proof.
   apply equs; auto.
 Qed.
 
-(* This lemma is useful to prove membeships *)
+(* This lemma is useful to prove memberships *)
 Lemma teq_and_member_if_member {o} :
   forall lib (A : @NTerm o) a s1 s2 H wA wa ca1 ca2 cA1 cA2,
     hyps_functionality lib s1 H
@@ -92,10 +92,9 @@ Proof.
   generalize (teq_and_eq_if_equality lib
                 A a a s1 s2 H wA wa wa ca1 ca2 ca1 ca2 cA1 cA2
                 hf sim teq mem); intro h; repnd; dands.
-  allrw @tequality_mkc_equality2; repnd.
+  apply tequality_mkc_equality_implies in h0. repnd.
   rw @tequality_mkc_member; sp.
-
-  allapply @equality_refl; sp.
+  apply equality_refl in h. auto.
 Qed.
 
 Ltac lsubst_tac_c :=

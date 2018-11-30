@@ -183,6 +183,9 @@ Proof.
         { apply type_tnat. }
 
         introv equn.
+        pose proof (equality_nat2nat_apply lib a0 a' a1 a'0 equnn equn) as eqap.
+        dup eqap as m1. apply equality_refl in m1.
+        dup eqap as m2. apply equality_sym in m2. apply equality_refl in m2.
         repeat substc_lsubstc_vars3.
         lsubst_tac.
         allrw @lsubstc_mkc_tnat.
@@ -191,25 +194,9 @@ Proof.
         apply tequality_mkc_prod; dands.
 
         {
-          apply tequality_mkc_equality2.
-          dands.
-
-          { apply type_tnat. }
-
-          {
-            split; intro h; eapply equality_trans; try (exact h);
-              apply equality_nat2nat_apply; auto;
-                try (complete (apply equality_sym; auto)).
-          }
-
-          {
-            unfold equorsq2, equorsq; dands; try left.
-
-            { apply equality_nat2nat_apply; auto. }
-
-            { rw @mkc_one_as_mkc_nat.
-              apply nat_in_nat. }
-          }
+          apply tequality_mkc_equality.
+          dands; try complete (try split; intro; auto).
+          apply type_tnat.
         }
 
         {
@@ -230,17 +217,22 @@ Proof.
           {
             apply tequality_not.
             allrw @lsubstc_mkc_tnat.
-            apply tequality_mkc_equality_sp; dands; tcsp.
+            apply tequality_mkc_equality; dands; tcsp.
             apply type_tnat.
+            split; intro. apply equality_trans with (t2 := a2); auto. apply equality_sym; auto.
+                          apply equality_trans with (t2 := a'1); auto. apply equality_sym; auto.
+            split; intro. apply equality_trans with (t2 := a1); auto. apply equality_sym; auto.
+                          apply equality_trans with (t2 := a'0); auto. apply equality_sym; auto.
           }
 
           {
             introv inh1.
             allrw @lsubstc_mkc_tnat.
-            apply tequality_mkc_equality_sp; dands; tcsp.
+            apply tequality_mkc_equality2; dands; tcsp.
             { apply type_tnat. }
-            { left; apply equality_nat2nat_apply; auto. }
-            { right; spcast; auto. }
+            {eapply equality_nat2nat_apply; eauto. 
+            }
+            {pose proof (@equality_in_tnat_nat o lib 0). rw @mkc_zero_eq; auto. }
           }
         }
       }
@@ -284,6 +276,9 @@ Proof.
         { apply type_tnat. }
 
         introv equn.
+        pose proof (equality_nat2nat_apply lib a0 a' a1 a'0 equnn equn) as eqap.
+        dup eqap as m1. apply equality_refl in m1.
+        dup eqap as m2. apply equality_sym in m2. apply equality_refl in m2.
         repeat substc_lsubstc_vars3.
         lsubst_tac.
         allrw @lsubstc_mkc_tnat.
@@ -292,25 +287,10 @@ Proof.
         apply tequality_mkc_prod; dands.
 
         {
-          apply tequality_mkc_equality2.
-          dands.
+          apply tequality_mkc_equality.
+          dands; try complete (try split; intro; auto).
+              apply type_tnat.
 
-          { apply type_tnat. }
-
-          {
-            split; intro h; eapply equality_trans; try (exact h);
-              apply equality_nat2nat_apply; auto;
-                try (complete (apply equality_sym; auto)).
-          }
-
-          {
-            unfold equorsq2, equorsq; dands; try left.
-
-            { apply equality_nat2nat_apply; auto. }
-
-            { rw @mkc_one_as_mkc_nat.
-              apply nat_in_nat. }
-          }
         }
 
         {
@@ -331,17 +311,17 @@ Proof.
           {
             apply tequality_not.
             allrw @lsubstc_mkc_tnat.
-            apply tequality_mkc_equality_sp; dands; tcsp.
-            apply type_tnat.
+            apply tequality_mkc_equality2; dands; tcsp.
+            apply type_tnat. 
           }
 
           {
             introv inh1.
             allrw @lsubstc_mkc_tnat.
-            apply tequality_mkc_equality_sp; dands; tcsp.
+            apply tequality_mkc_equality2; dands; tcsp.
             { apply type_tnat. }
-            { left; apply equality_nat2nat_apply; auto. }
-            { right; spcast; auto. }
+            { eapply equality_nat2nat_apply; eauto. }
+            { pose proof (@equality_in_tnat_nat o lib 0). rw @mkc_zero_eq; auto. }
           }
         }
       }
@@ -406,21 +386,12 @@ Proof.
 
                 { apply type_tnat. }
 
-                {
-                  split; intro h; eapply equality_trans; try (exact h);
-                    apply equality_nat2nat_apply; auto;
-                      try (complete (apply equality_sym; auto));
-                      rw @member_eq; apply one_at_zero_is_nat2nat.
+                { eapply equality_nat2nat_apply; eauto.
+                  apply one_at_zero_is_nat2nat.
                 }
 
-                {
-                  unfold equorsq2, equorsq; dands; try left.
-
-                  { apply equality_nat2nat_apply; auto.
-                    rw @member_eq; apply one_at_zero_is_nat2nat. }
-
-                  { rw @mkc_one_as_mkc_nat.
-                    apply nat_in_nat. }
+                {  rw @mkc_one_as_mkc_nat.
+                    apply nat_in_nat.
                 }
               }
 
@@ -441,18 +412,18 @@ Proof.
                 {
                   apply tequality_not.
                   allrw @lsubstc_mkc_tnat.
-                  apply tequality_mkc_equality_sp; dands; tcsp.
+                  apply tequality_mkc_equality2; dands; tcsp.
                   apply type_tnat.
                 }
 
                 {
                   introv inh1.
                   allrw @lsubstc_mkc_tnat.
-                  apply tequality_mkc_equality_sp; dands; tcsp.
+                  apply tequality_mkc_equality2; dands; tcsp.
                   { apply type_tnat. }
-                  { left; apply equality_nat2nat_apply; auto.
+                  { apply equality_nat2nat_apply; auto.
                     apply one_at_zero_is_nat2nat. }
-                  { right; spcast; auto. }
+                  { pose proof (@equality_in_tnat_nat o lib 0). rw @mkc_zero_eq; auto. }
                 }
               }
             }
@@ -512,21 +483,12 @@ Proof.
 
                 { apply type_tnat. }
 
-                {
-                  split; intro h; eapply equality_trans; try (exact h);
-                    apply equality_nat2nat_apply; auto;
-                      try (complete (apply equality_sym; auto));
-                      rw @member_eq; apply one_at_zero_is_nat2nat.
+                { apply equality_nat2nat_apply; auto;
+                       apply one_at_zero_is_nat2nat.
                 }
 
-                {
-                  unfold equorsq2, equorsq; dands; try left.
-
-                  { apply equality_nat2nat_apply; auto.
-                    rw @member_eq; apply one_at_zero_is_nat2nat. }
-
-                  { rw @mkc_one_as_mkc_nat.
-                    apply nat_in_nat. }
+                {rw @mkc_one_as_mkc_nat.
+                    apply nat_in_nat. 
                 }
               }
 
@@ -547,18 +509,18 @@ Proof.
                 {
                   apply tequality_not.
                   allrw @lsubstc_mkc_tnat.
-                  apply tequality_mkc_equality_sp; dands; tcsp.
+                  apply tequality_mkc_equality2; dands; tcsp.
                   apply type_tnat.
                 }
 
                 {
                   introv inh2.
                   allrw @lsubstc_mkc_tnat.
-                  apply tequality_mkc_equality_sp; dands; tcsp.
+                  apply tequality_mkc_equality2; dands; tcsp.
                   { apply type_tnat. }
-                  { left; apply equality_nat2nat_apply; auto.
+                  { apply equality_nat2nat_apply; auto.
                     apply one_at_zero_is_nat2nat. }
-                  { right; spcast; auto. }
+                  { pose proof (@equality_in_tnat_nat o lib 0). rw @mkc_zero_eq; auto. }
                 }
               }
             }
@@ -584,18 +546,16 @@ Proof.
                 apply tequality_mkc_prod; dands.
 
                 {
-                  apply tequality_mkc_equality_sp; dands; eauto 3 with slow.
+                  apply tequality_mkc_equality2; dands; eauto 3 with slow.
 
                   { apply type_tnat. }
 
-                  {
-                    apply equality_int_nat_implies_cequivc in equn.
-                    right; spcast.
-                    apply implies_cequivc_apply; auto.
+                  { apply equality_nat2nat_apply; auto.
+                    apply one_at_zero_is_nat2nat.
                   }
 
-                  {
-                    right; spcast; auto.
+                  { rw @mkc_one_as_mkc_nat.
+                    apply nat_in_nat. 
                   }
                 }
 
@@ -616,19 +576,20 @@ Proof.
                   {
                     apply tequality_not.
                     allrw @lsubstc_mkc_tnat.
-                    apply tequality_mkc_equality_sp; dands; tcsp.
+                    apply tequality_mkc_equality2; dands; tcsp.
                     apply type_tnat.
                   }
 
                   {
                     introv inh2.
                     allrw @lsubstc_mkc_tnat.
-                    apply tequality_mkc_equality_sp; dands; tcsp.
+                    apply tequality_mkc_equality2; dands; tcsp.
                     { apply type_tnat. }
-                    { left; apply equality_nat2nat_apply; auto.
+                    { apply equality_nat2nat_apply; auto.
                       apply one_at_zero_is_nat2nat. }
-                    { right; spcast; auto. }
-                  }
+                    { allrw @mkc_zero_eq.
+                      apply nat_in_nat. }
+                    }
                 }
               }
 
@@ -671,19 +632,21 @@ Proof.
                     {
                       apply tequality_not.
                       allrw @lsubstc_mkc_tnat.
-                      apply tequality_mkc_equality_sp; dands; tcsp.
+                      apply tequality_mkc_equality2; dands; tcsp.
                       { apply type_tnat. }
-                      { right; spcast; auto. }
+                      { rw @mkc_zero_eq.
+                        apply nat_in_nat. } 
                     }
 
                     {
                       introv inh2.
                       allrw @lsubstc_mkc_tnat.
-                      apply tequality_mkc_equality_sp; dands; tcsp.
+                      apply tequality_mkc_equality2; dands; tcsp.
                       { apply type_tnat. }
-                      { left; apply equality_nat2nat_apply; auto.
+                      { apply equality_nat2nat_apply; auto.
                         apply one_at_zero_is_nat2nat. }
-                      { right; spcast; auto. }
+                      { rw @mkc_zero_eq.
+                        apply nat_in_nat. }
                     }
                   }
 
@@ -717,19 +680,21 @@ Proof.
                       {
                         apply tequality_not.
                         allrw @lsubstc_mkc_tnat.
-                        apply tequality_mkc_equality_sp; dands; tcsp.
+                        apply tequality_mkc_equality2; dands; tcsp.
                         { apply type_tnat. }
-                        { right; spcast; auto. }
+                        { rw @mkc_zero_eq.
+                        apply nat_in_nat.  }
                       }
 
                       {
                         introv inh2.
                         allrw @lsubstc_mkc_tnat.
-                        apply tequality_mkc_equality_sp; dands; tcsp.
+                        apply tequality_mkc_equality2; dands; tcsp.
                         { apply type_tnat. }
-                        { left; apply equality_nat2nat_apply; auto.
+                        { apply equality_nat2nat_apply; auto.
                           apply one_at_zero_is_nat2nat. }
-                        { right; spcast; auto. }
+                        { rw @mkc_zero_eq.
+                        apply nat_in_nat.  }
                       }
                     }
 
@@ -743,10 +708,11 @@ Proof.
                       {
                         apply tequality_not.
                         allrw @lsubstc_mkc_tnat.
-                        apply tequality_mkc_equality_sp; dands; tcsp.
+                        apply tequality_mkc_equality2; dands; tcsp.
                         { apply type_tnat. }
-                        { right; spcast; auto. }
-                        { right; spcast; auto. }
+                        { apply equality_refl in ea; auto. }
+                        { rw @mkc_zero_eq.
+                        apply nat_in_nat.  }
                       }
 
                       {
@@ -844,21 +810,12 @@ Proof.
 
                 { apply type_tnat. }
 
-                {
-                  split; intro h; eapply equality_trans; try (exact h);
-                    apply equality_nat2nat_apply; auto;
-                      try (complete (apply equality_sym; auto));
-                      rw @member_eq; apply all_zero_is_nat2nat.
+                { apply equality_nat2nat_apply; auto;
+                  apply all_zero_is_nat2nat.
                 }
 
-                {
-                  unfold equorsq2, equorsq; dands; try left.
-
-                  { apply equality_nat2nat_apply; auto.
-                    rw @member_eq; apply all_zero_is_nat2nat. }
-
-                  { rw @mkc_one_as_mkc_nat.
-                    apply nat_in_nat. }
+                {rw @mkc_one_as_mkc_nat.
+                    apply nat_in_nat.
                 }
               }
 
@@ -879,18 +836,19 @@ Proof.
                 {
                   apply tequality_not.
                   allrw @lsubstc_mkc_tnat.
-                  apply tequality_mkc_equality_sp; dands; tcsp.
+                  apply tequality_mkc_equality2; dands; tcsp.
                   apply type_tnat.
                 }
 
                 {
                   introv inh1.
                   allrw @lsubstc_mkc_tnat.
-                  apply tequality_mkc_equality_sp; dands; tcsp.
+                  apply tequality_mkc_equality2; dands; tcsp.
                   { apply type_tnat. }
-                  { left; apply equality_nat2nat_apply; auto.
+                  { apply equality_nat2nat_apply; auto.
                     apply all_zero_is_nat2nat. }
-                  { right; spcast; auto. }
+                  { rw @mkc_zero_eq.
+                        apply nat_in_nat.  }
                 }
               }
             }

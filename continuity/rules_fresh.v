@@ -201,7 +201,7 @@ Proof.
 
     + exrepnd.
       lsubst_tac.
-      apply tequality_mkc_member_sp in hyp0; repnd; auto.
+      apply tequality_mkc_member in hyp0; repnd; auto.
 
   - clear dependent s1.
     clear dependent s2.
@@ -1338,7 +1338,7 @@ Proof.
           pose proof (hyp3 s1a s2a eqh sim'3) as hyp; clear hyp3; exrepnd.
           clear hyp1.
           lsubst_tac.
-          apply tequality_mkc_member_sp in hyp0; repnd; auto. }
+          apply tequality_mkc_member in hyp0; repnd; auto. }
 
         pose proof (lsubstc_vars_csub_filter_snoc_ex t w1 s1a a (mkc_utoken ua) [v] c6) as equ.
         rw in_single_iff in equ.
@@ -1427,7 +1427,7 @@ Proof.
 
     + exrepnd.
       lsubst_tac.
-      apply tequality_mkc_member_sp in hyp0; repnd; auto.
+      apply tequality_mkc_member in hyp0; repnd; auto.
 
   - clear dependent s1.
     clear dependent s2.
@@ -1471,7 +1471,7 @@ Proof.
           pose proof (hyp3 s1a s2a hf sim'3) as hyp; clear hyp3; exrepnd.
           clear hyp1.
           lsubst_tac.
-          apply tequality_mkc_member_sp in hyp0; repnd; auto. }
+          apply tequality_mkc_member in hyp0; repnd; auto. }
 
         pose proof (lsubstc_vars_csub_filter_snoc_ex t w1 s1a a (mkc_utoken ua) [v] c6) as equ.
         rw in_single_iff in equ.
@@ -1608,7 +1608,7 @@ Proof.
 
           { pose proof (hyp3 s1a s2a hf sim'3) as hyp; clear hyp3; exrepnd.
             lsubst_tac.
-            apply tequality_mkc_member_sp in hyp1; repnd; auto. }
+            apply tequality_mkc_member in hyp1; repnd; auto. }
 
           pose proof (lsubstc_vars_csub_filter_snoc_ex t w1 s1a a (mkc_utoken ua) [v] c20) as equ.
           rw in_single_iff in equ.

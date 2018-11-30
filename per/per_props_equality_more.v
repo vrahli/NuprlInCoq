@@ -33,27 +33,45 @@
 
 (*Require Export per_props_more.*)
 Require Export per_props_equality.
+Require Export per_props_uni.
 
+Lemma tequality_in_uni_iff {p} :
+  forall lib (T1 T2 : @CTerm p) i,
+    tequality lib (mkc_member T1 (mkc_uni i))
+              (mkc_member T2 (mkc_uni i))
+    <=> (member lib T1 (mkc_uni i) <=> member lib T2 (mkc_uni i))
+         # (member lib T1 (mkc_uni i) -> equality lib T1 T2 (mkc_uni i)).
+Proof.
+  introv; rw (@tequality_mkc_member p); split; intro; repnd; sp.
+  apply tequality_mkc_uni.
+Qed.
 
+Lemma tequality_in_uni_implies_tequality {p} :
+  forall lib (T1 T2 : @CTerm p) i,
+    tequality lib (mkc_member T1 (mkc_uni i))
+              (mkc_member T2 (mkc_uni i))
+    -> (member lib T1 (mkc_uni i) <=> member lib T2 (mkc_uni i))
+         # (member lib T1 (mkc_uni i) -> tequality lib T1 T2).
+Proof.
+  intros.
+  dup H as H1; rw (@tequality_mkc_member p) in H1; repnd; split; sp.
+  apply tequality_in_uni_implies_tequality in H; auto. 
+Qed.
+
+(*
 Lemma tequality_in_uni_iff_tequality {p} :
   forall lib (T1 T2 : @CTerm p) i,
     tequality lib (mkc_member T1 (mkc_uni i))
               (mkc_member T2 (mkc_uni i))
-    <=> equorsq lib T1 T2 (mkc_uni i).
+    <=> (member lib T1 (mkc_uni i) <=> member lib T2 (mkc_uni i))
+         # (member lib T1 (mkc_uni i) -> tequality lib T1 T2).
 Proof.
-  introv.
-  allrw <- @fold_mkc_member.
-  rw @tequality_mkc_equality.
-  split; intro k; repnd; try (complete sp).
-
-  dands; try (complete sp).
-  apply tequality_mkc_uni.
-  split; intro e.
-  generalize (cequorsq_equality_trans2 lib T1 T1 T2 (mkc_uni i)); intro e1.
-  repeat (dest_imp e1 hyp).
-  apply equality_sym in e1.
-  apply equality_refl in e1; sp.
-  generalize (cequorsq_equality_trans1 lib T1 T2 T2 (mkc_uni i)); intro e1.
-  repeat (dest_imp e1 hyp).
-  apply equality_refl in e1; sp.
+  introv; split; intro. 
+  - apply tequality_in_uni_implies_tequality; auto.
+  -  sp.   rw (@tequality_mkc_member p).
+  split; try (apply tequality_mkc_uni); sp.
+  dup H1 as H2; apply H0 in H2; clear H0.
+  need the lemma Vincent is proving 
+  
 Qed.
+*)

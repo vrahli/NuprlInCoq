@@ -420,33 +420,20 @@ Proof.
         { apply type_tnat. }
 
         introv equn.
+        pose proof (equality_nat2nat_apply lib a0 a' a1 a'0 equnn equn) as eqap.
+        dup eqap as m1. apply equality_refl in m1.
+        dup eqap as m2. apply equality_sym in m2. apply equality_refl in m2.
         repeat substc_lsubstc_vars3.
         lsubst_tac.
         allrw @lsubstc_mkc_tnat.
         allrw @lsubstc_mk_one.
 
-        apply tequality_mkc_equality2.
-        dands.
-
-        { apply type_tnat. }
-
-        {
-          split; intro h; eapply equality_trans; try (exact h);
-            apply equality_nat2nat_apply; auto;
-              try (complete (apply equality_sym; auto)).
-        }
+        apply tequality_mkc_equality.
+        dands; try complete (try split; intro; auto).
+        apply type_tnat.
+       }
 
         {
-          unfold equorsq2, equorsq; dands; try left.
-
-          { apply equality_nat2nat_apply; auto. }
-
-          { rw @mkc_one_as_mkc_nat.
-            apply nat_in_nat. }
-        }
-      }
-
-      {
         introv inh.
         apply equality_in_uni in h0; auto.
       }
@@ -485,30 +472,17 @@ Proof.
         { apply type_tnat. }
 
         introv equn.
+        pose proof (equality_nat2nat_apply lib a0 a' a1 a'0 equnn equn) as eqap.
+        dup eqap as m1. apply equality_refl in m1.
+        dup eqap as m2. apply equality_sym in m2. apply equality_refl in m2.
         repeat substc_lsubstc_vars3.
         lsubst_tac.
         allrw @lsubstc_mkc_tnat.
         allrw @lsubstc_mk_one.
+        apply tequality_mkc_equality.
+        dands; try complete (try split; intro; auto).
+        apply type_tnat.
 
-        apply tequality_mkc_equality2.
-        dands.
-
-        { apply type_tnat. }
-
-        {
-          split; intro h; eapply equality_trans; try (exact h);
-            apply equality_nat2nat_apply; auto;
-              try (complete (apply equality_sym; auto)).
-        }
-
-        {
-          unfold equorsq2, equorsq; dands; try left.
-
-          { apply equality_nat2nat_apply; auto. }
-
-          { rw @mkc_one_as_mkc_nat.
-            apply nat_in_nat. }
-        }
       }
 
       {
@@ -558,32 +532,18 @@ Proof.
               { apply type_tnat. }
 
               introv equn.
+              assert (equality lib (one_at_zero x) (one_at_zero x) nat2nat) as equnn. 
+               { rw @member_eq; apply one_at_zero_is_nat2nat.  }
+               pose proof (equality_nat2nat_apply lib  (one_at_zero x)  (one_at_zero x) a0 a' equnn equn) as eqap.
+              dup eqap as m1. apply equality_refl in m1.
+              dup eqap as m2. apply equality_sym in m2. apply equality_refl in m2.
               repeat substc_lsubstc_vars3.
               lsubst_tac.
               allrw @lsubstc_mkc_tnat.
               allrw @lsubstc_mk_one.
-
-              apply tequality_mkc_equality2.
-              dands.
-
-              { apply type_tnat. }
-
-              {
-                split; intro h; eapply equality_trans; try (exact h);
-                  apply equality_nat2nat_apply; auto;
-                    try (complete (apply equality_sym; auto));
-                    rw @member_eq; apply one_at_zero_is_nat2nat.
-              }
-
-              {
-                unfold equorsq2, equorsq; dands; try left.
-
-                { apply equality_nat2nat_apply; auto.
-                  rw @member_eq; apply one_at_zero_is_nat2nat. }
-
-                { rw @mkc_one_as_mkc_nat.
-                  apply nat_in_nat. }
-              }
+              apply tequality_mkc_equality.
+              dands; try complete (try split; intro; auto).
+              apply type_tnat.
             }
 
             {
@@ -622,32 +582,19 @@ Proof.
               { apply type_tnat. }
 
               introv equn.
+              assert (equality lib (one_at_zero x) (one_at_zero x) nat2nat) as equnn. 
+               { rw @member_eq; apply one_at_zero_is_nat2nat.  }
+               pose proof (equality_nat2nat_apply lib  (one_at_zero x)  (one_at_zero x) a0 a' equnn equn) as eqap.
+              dup eqap as m1. apply equality_refl in m1.
+              dup eqap as m2. apply equality_sym in m2. apply equality_refl in m2.
               repeat substc_lsubstc_vars3.
               lsubst_tac.
               allrw @lsubstc_mkc_tnat.
               allrw @lsubstc_mk_one.
-
-              apply tequality_mkc_equality2.
-              dands.
-
-              { apply type_tnat. }
-
-              {
-                split; intro h; eapply equality_trans; try (exact h);
-                  apply equality_nat2nat_apply; auto;
-                    try (complete (apply equality_sym; auto));
-                    rw @member_eq; apply one_at_zero_is_nat2nat.
-              }
-
-              {
-                unfold equorsq2, equorsq; dands; try left.
-
-                { apply equality_nat2nat_apply; auto.
-                  rw @member_eq; apply one_at_zero_is_nat2nat. }
-
-                { rw @mkc_one_as_mkc_nat.
-                  apply nat_in_nat. }
-              }
+              apply tequality_mkc_equality.
+              dands; try complete (try split; intro; auto).
+              apply type_tnat.
+              
             }
 
             {
@@ -667,20 +614,15 @@ Proof.
                 lsubst_tac.
                 allrw @lsubstc_mkc_tnat.
                 allrw @lsubstc_mk_one.
+                assert (equality lib (one_at_zero x) (one_at_zero x) nat2nat) as equnn. 
+               { rw @member_eq; apply one_at_zero_is_nat2nat.  }
+               pose proof (equality_nat2nat_apply lib  (one_at_zero x)  (one_at_zero x) a1 a'0 equnn equn) as eqap.
+              dup eqap as m1. apply equality_refl in m1.
+              dup eqap as m2. apply equality_sym in m2. apply equality_refl in m2.
+              apply tequality_mkc_equality.
+              dands; try complete (try split; intro; auto).
+              apply type_tnat.
 
-                apply tequality_mkc_equality_sp; dands; eauto 3 with slow.
-
-                { apply type_tnat. }
-
-                {
-                  apply equality_int_nat_implies_cequivc in equn.
-                  right; spcast.
-                  apply implies_cequivc_apply; auto.
-                }
-
-                {
-                  right; spcast; auto.
-                }
               }
 
               {
@@ -747,28 +689,16 @@ Proof.
               lsubst_tac.
               allrw @lsubstc_mkc_tnat.
               allrw @lsubstc_mk_one.
+             assert (equality lib (all_zero x) (all_zero x) nat2nat) as equnn. 
+               { rw @member_eq; apply all_zero_is_nat2nat.  }
+               pose proof (equality_nat2nat_apply lib  (all_zero x)  (all_zero x) a0 a' equnn equn) as eqap.
+              dup eqap as m1. apply equality_refl in m1.
+              dup eqap as m2. apply equality_sym in m2. apply equality_refl in m2.
+              
+              apply tequality_mkc_equality.
+              dands; try complete (try split; intro; auto).
+              apply type_tnat.
 
-              apply tequality_mkc_equality2.
-              dands.
-
-              { apply type_tnat. }
-
-              {
-                split; intro h; eapply equality_trans; try (exact h);
-                  apply equality_nat2nat_apply; auto;
-                    try (complete (apply equality_sym; auto));
-                    rw @member_eq; apply all_zero_is_nat2nat.
-              }
-
-              {
-                unfold equorsq2, equorsq; dands; try left.
-
-                { apply equality_nat2nat_apply; auto.
-                  rw @member_eq; apply all_zero_is_nat2nat. }
-
-                { rw @mkc_one_as_mkc_nat.
-                  apply nat_in_nat. }
-              }
             }
 
             {

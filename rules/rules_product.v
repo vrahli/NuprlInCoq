@@ -1044,7 +1044,7 @@ Proof.
       pose proof (hyp1 s1 s3 eqh sim') as h; clear hyp1; exrepnd.
       lsubst_tac; proof_irr.
       clear h1.
-      apply tequality_mkc_member_sp in h0; repnd; auto.
+      apply tequality_mkc_member in h0; repnd; auto.
 
     + intros a1 a2 ea.
       repeat (substc_lsubstc_vars3;[]).
@@ -1060,17 +1060,16 @@ Proof.
         pose proof (hyp1 s1 s' eqh sim'') as h; clear hyp1; exrepnd.
         lsubst_tac; proof_irr.
         clear h1.
-        apply tequality_mkc_member_sp in h0; repnd; auto.
+        apply tequality_mkc_member in h0; repnd; auto.
 
       * sim_snoc; dands; auto.
 
       * exrepnd.
         lsubst_tac; proof_irr.
         apply member_if_inhabited in h1.
-        apply member_in_uni in h1.
-        apply tequality_in_uni_implies_tequality in h0; auto;[].
-
-        clear h1.
+        (* apply member_in_uni in h1. *)
+        apply tequality_in_uni_implies_tequality in h0; auto.
+        
 
         assert (cover_vars (mk_var z) (snoc s1 (z, a1))) as cov1.
         { apply cover_vars_var; rw @dom_csub_snoc; simpl; rw in_snoc; tcsp. }
@@ -1081,7 +1080,8 @@ Proof.
         repeat (substc_lsubstc_vars3;[]).
         lsubst_tac.
         repeat (lsubstc_snoc2;[]).
-        proof_irr; auto. }
+        proof_irr; auto. 
+      }
 
   dands.
 
@@ -1108,10 +1108,9 @@ Proof.
   - vr_seq_true in hyp1.
     pose proof (hyp1 s1 s2 eqh sim) as h; clear hyp1; exrepnd.
     lsubst_tac; proof_irr.
-    apply tequality_mkc_member_sp in h0; repnd.
+    apply tequality_mkc_member in h0; repnd.
     apply member_if_inhabited in h1.
-    allrw @fold_equorsq.
-    eapply cequorsq_equality_trans2;[eauto|];auto.
+    sp.
 
   - repeat (substc_lsubstc_vars3;[]).
     vr_seq_true in hyp2.
@@ -1281,7 +1280,7 @@ Proof.
       pose proof (hyp1 s0 s3 eqh' sim') as h; clear hyp1; exrepnd.
       lsubst_tac; proof_irr.
       clear h1.
-      apply tequality_mkc_equality_sp in h0; repnd; auto.
+      apply tequality_mkc_equality in h0; repnd; auto.
 
     + intros a a' ea.
       repeat (substc_lsubstc_vars3;[]).
@@ -1297,14 +1296,14 @@ Proof.
         pose proof (hyp1 s0 s' eqh' sim'') as h; clear hyp1; exrepnd.
         lsubst_tac; proof_irr.
         clear h1.
-        apply tequality_mkc_equality_sp in h0; repnd; auto.
+        apply tequality_mkc_equality in h0; repnd; auto.
 
       * sim_snoc; dands; auto.
 
       * exrepnd.
         lsubst_tac; proof_irr.
         apply member_if_inhabited in h1.
-        apply member_in_uni in h1.
+        (* apply member_in_uni in h1. *)
         apply tequality_in_uni_implies_tequality in h0; auto;[].
 
         clear h1.
@@ -1355,27 +1354,30 @@ Proof.
   - vr_seq_true in hyp1.
     pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
     lsubst_tac; proof_irr.
-    apply tequality_mkc_equality_sp in h0; repnd.
+    apply tequality_mkc_equality in h0; repnd.
     rw <- @member_equality_iff in h1.
-    allrw @fold_equorsq.
-    eapply cequorsq_equality_trans2;[eauto|];auto.
+    eapply equality_trans. exact h1. apply h0.
+    apply equality_sym in h1; apply equality_refl in h1. auto.
+    
 
   - repeat (substc_lsubstc_vars3;[]).
     vr_seq_true in hyp2.
     pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
     lsubst_tac; proof_irr.
-    apply tequality_mkc_equality_sp in h0; repnd.
+    apply tequality_mkc_equality in h0; repnd.
     rw <- @member_equality_iff in h1.
-    allrw @fold_equorsq.
-    clear h2.
-
+    
     assert (cover_vars a1 s2) as cov.
     { eapply similarity_cover_vars in sim; eauto. }
+    assert (equality lib (lsubstc b1 w5 s1 c3) (lsubstc b2 w7 s2 c5) (lsubstc (subst B x a1) wT0 s1 cT)).
+    { eapply equality_trans. exact h1. apply h0. 
+     apply equality_sym in h1; apply equality_refl in h1. auto. 
+    }
 
     repeat lsubstc_subst_aeq.
     repeat (substc_lsubstc_vars3;[]).
     proof_irr; auto.
-    eapply cequorsq_equality_trans2;[eauto|];auto.
+   
 Qed.
 
 (* !!MOVE *)
@@ -1649,22 +1651,21 @@ Proof.
 
         lsubstc_snoc_vs.
 
-        apply tequality_mkc_equality_sp; dands.
+        apply tequality_mkc_equality_if_equal; dands.
 
         { pose proof (hyp1 s1a s2a0) as q.
           repeat (autodimp q hyp); exrepnd; proof_irr.
           lsubst_tac; auto.
-          apply tequality_mkc_equality_sp in q0; repnd; auto. }
+          apply tequality_mkc_equality in q0; repnd; auto. }
 
-        { left.
+        { 
           pose proof (hyp1 s1a s2a0) as q.
           repeat (autodimp q hyp); exrepnd; proof_irr.
           lsubst_tac; auto.
           rw <- @member_equality_iff in q1; auto.
           apply equality_commutes3 in q0; auto. }
 
-        { left.
-          apply equality_in_product; dands; auto;[].
+        { apply equality_in_product; dands; auto;[].
           eexists; eexists; eexists; eexists; dands; spcast;
           try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|];
           try (complete (allsimpl; auto));[].
@@ -1702,7 +1703,7 @@ Proof.
           repeat (autodimp q hyp); exrepnd; proof_irr.
           lsubst_tac; auto.
           clear q1.
-          apply tequality_mkc_equality_sp in q0; repnd.
+          apply tequality_mkc_equality in q0; repnd.
           clear q0 q2.
           apply tequality_product in q1; repnd.
           clear q0.
@@ -1719,7 +1720,7 @@ Proof.
           repeat (autodimp q hyp); exrepnd; proof_irr;[].
           clear q1.
           lsubst_tac; auto.
-          apply tequality_mkc_equality_sp in q0; repnd.
+          apply tequality_mkc_equality in q0; repnd.
           clear q0 q2.
           apply tequality_product in q1; repnd; auto. }
 
@@ -1794,7 +1795,7 @@ Proof.
 
     + exrepnd.
       lsubst_tac.
-      apply tequality_mkc_equality_sp in q0; repnd.
+      apply tequality_mkc_equality in q0; repnd.
       allrw @fold_equorsq.
 
       assert (cover_vars (mk_pair (mk_var a) (mk_var b))
@@ -1908,23 +1909,16 @@ Proof.
         rw <- @member_equality_iff in equ.
 
         lsubstc_snoc_vs.
-
-        apply tequality_mkc_equality_sp; dands.
-
-        { pose proof (hyp1 s1a s2a0) as q.
+        pose proof (hyp1 s1a s2a0) as q.
           repeat (autodimp q hyp); exrepnd; proof_irr.
           lsubst_tac; auto.
-          apply tequality_mkc_equality_sp in q0; repnd; auto. }
+        apply tequality_mkc_equality in q0; repnd; auto.
+        rw <- @member_equality_iff in q1; auto.
 
-        { left.
-          pose proof (hyp1 s1a s2a0) as q.
-          repeat (autodimp q hyp); exrepnd; proof_irr.
-          lsubst_tac; auto.
-          rw <- @member_equality_iff in q1; auto.
-          apply equality_commutes3 in q0; auto. }
+        apply tequality_mkc_equality_if_equal; dands; sp.
+        { apply q4. apply equality_refl in q1; auto. }
 
-        { left.
-          apply equality_in_product; dands; auto;[].
+        { apply equality_in_product; dands; auto;[].
           eexists; eexists; eexists; eexists; dands; spcast;
           try (complete (apply computes_to_valc_refl; eauto 3 with slow));[|];
           try (complete (allsimpl; auto));[].
@@ -1962,7 +1956,7 @@ Proof.
           repeat (autodimp q hyp); exrepnd; proof_irr.
           lsubst_tac; auto.
           clear q1.
-          apply tequality_mkc_equality_sp in q0; repnd.
+          apply tequality_mkc_equality in q0; repnd.
           clear q0 q2.
           apply tequality_product in q1; repnd.
           clear q0.
@@ -1979,7 +1973,7 @@ Proof.
           repeat (autodimp q hyp); exrepnd; proof_irr;[].
           clear q1.
           lsubst_tac; auto.
-          apply tequality_mkc_equality_sp in q0; repnd.
+          apply tequality_mkc_equality in q0; repnd.
           clear q0 q2.
           apply tequality_product in q1; repnd; auto. }
 
@@ -2273,10 +2267,8 @@ Proof.
 
   lsubst_tac.
   allrw <- @member_equality_iff.
-  rw @tequality_mkc_equality2_sp in hyp0; repnd.
-  rw @tequality_mkc_equality2_sp.
-  repeat (rw prod_assoc).
-  allunfold @equorsq2; repnd.
+  rw @tequality_mkc_equality in hyp0; repnd.
+  
 
   assert (cequivc
             lib
@@ -2383,18 +2375,22 @@ Proof.
     apply in_dom_csub_exists in vs1; exrepnd.
     rw vs1; simpl; auto.
   }
-
-  dands; try (complete sp).
-
-  - left.
-    eapply @equality_respects_cequivc_left;[apply cequivc_sym; exact ceq1|].
-    apply @equality_sym.
-    eapply @equality_respects_cequivc_left;[apply cequivc_sym;exact ceq2|].
-    apply @equality_sym.
-    unfold equorsq in hyp3; repdors; spcast; sp.
-    apply @equality_respects_cequivc; sp.
-    allapply @equality_refl; sp.
-
+  split.
+   - apply  @tequality_mkc_equality_if_equal; auto.
+     + dimp hyp4. apply equality_refl in hyp1; auto.
+      apply cequivc_sym in ceq1.
+      eapply equality_respects_cequivc_left. exact ceq1.
+      eapply equality_trans. exact hyp.
+      apply equality_sym.
+      apply equality_respects_cequivc.
+      auto. 
+      apply equality_sym in hyp. apply equality_refl in hyp.
+      apply cequivc_sym in ceq2.
+      eapply equality_respects_cequivc_right. exact ceq2.
+      eapply equality_respects_cequivc_left. exact ceq2. auto. 
+   + apply hyp0. apply equality_sym in hyp1. apply equality_refl in hyp1. auto.
   - eapply @equality_respects_cequivc_left;[apply cequivc_sym;exact ceq1|].
-    auto.
+     auto.
+
+ 
 Qed.

@@ -68,8 +68,8 @@ Proof. introv ceq compa.
   apply tequality_int.
   apply computes_to_integer_member_int in compa.
   apply computes_to_integer_member_int in compb.
-  split; auto.
-  unfold ccequivc; right; auto. 
+  split; auto. 
+  apply equality_respects_cequivc; auto. 
 Qed.
 
 Lemma tequality_member_int {o} :
@@ -80,8 +80,6 @@ Lemma tequality_member_int {o} :
    equality_of_int lib t1 t2.
 Proof. introv teq mem. apply equality_in_int. apply tequality_mkc_member in teq.
        exrepnd. repndors; auto.
-       apply cequiv_stable in teq.
-      apply equality_respects_cequivc; auto.
 Qed.
 
 

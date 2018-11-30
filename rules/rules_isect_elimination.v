@@ -197,7 +197,7 @@ Proof.
                   mkc_axiom) as k; simpl in k.
     apply k; try (complete auto); clear k.
     introv eq sim; GC; lsubst_tac.
-    rw @tequality_mkc_member_sp.
+    
     apply equality_refl in eq.
     rw <- @member_member_iff in eq.
 
@@ -206,16 +206,12 @@ Proof.
     repeat (autodimp hyp1 h); exrepnd.
     lsubst_tac.
     allapply @member_if_inhabited.
-    rw @tequality_mkc_member_sp in hyp0; repnd.
+    rw @tequality_mkc_member in hyp0; repnd.
 
     assert (equality lib (lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) ct3)
                      (lsubstc a wa s' ct4)
                      (lsubstc A w1 s1a0 c1)) as eqa.
-    {
-      sp.
-      unfold member in hyp1.
-      spcast; apply @equality_respects_cequivc_right with (t2 := lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) ct3); sp.
-    }
+    { sp. }
 
     applydup sim5 in eqa.
 
@@ -247,17 +243,8 @@ Proof.
 
     repeat (substc_lsubstc_vars3;[]).
 
-    dands.
-
-    {
-      repeat (lsubstc_subst_aeq2;[]).
-      repeat (substc_lsubstc_vars3;[]).
-      repeat (lsubstc_weak;[]).
-      proof_irr.
-      auto.
-    }
-
     rw @similarity_app in sim; simpl in sim; exrepnd; subst; cpx.
+
     apply app_split in sim7; repnd; allrw length_snoc;
     try (complete (allrw; sp)); subst; cpx.
     apply app_split in sim9; repnd; allrw length_snoc;
@@ -267,13 +254,28 @@ Proof.
     rw @equality_in_isect in sim9; repnd.
     applydup sim9 in eqa as eqf.
 
-    left.
-    repeat (lsubstc_subst_aeq2;[]).
-    repeat (substc_lsubstc_vars3;[]).
-    repeat (lsubstc_weak;[]).
-    proof_irr.
-    auto.
-  }
+    assert (tequality lib (lsubstc (subst B x a) wT (snoc s1a0 (f, t1) ++ s1b) cT)
+            (lsubstc (subst B x a) wT (snoc s2a (f, t4) ++ s2b1) cT0)).
+     { repeat (lsubstc_subst_aeq2;[]).
+      repeat (substc_lsubstc_vars3;[]).
+      repeat (lsubstc_weak;[]).
+      proof_irr.
+      exact teq.
+    }
+    assert (equality lib t1 t4 (lsubstc (subst B x a) wT (snoc s1a0 (f, t1) ++ s1b) cT)).
+    { assert (tequality lib (lsubstc (subst B x a) wT (snoc s1a0 (f, t1) ++ s1b) cT)
+       (lsubstc_vars B w2 (csub_filter s1a0 [x]) [x] c2) 
+        [[x \\ lsubstc a wa (snoc s1a0 (f, t1) ++ s1b) ct3]]). 
+       repeat (lsubstc_subst_aeq2;[]).
+      repeat (substc_lsubstc_vars3;[]).
+      repeat (lsubstc_weak;[]).
+      proof_irr. 
+     unfold equality in eqf. exrepnd. eapply tequality_if_nuprl. eauto.
+     eapply tequality_preserving_equality; eauto.
+     apply tequality_sym; auto.
+    }
+    apply tequality_mkc_member_if_equal; auto.
+   }
 
 
   {
@@ -320,7 +322,7 @@ Proof.
     repeat (autodimp hyp1 h); exrepnd.
     lsubst_tac.
     allapply @member_if_inhabited.
-    rw @tequality_mkc_member_sp in hyp0; repnd.
+    rw @tequality_mkc_member in hyp0; repnd.
     unfold member in hyp1.
     apply sim2 in hyp1.
 

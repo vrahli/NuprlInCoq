@@ -567,7 +567,7 @@ Proof.
     lsubst_tac.
     apply tequality_in_uni_implies_tequality in h0; auto.
     apply member_if_inhabited in h1.
-    apply member_in_uni in h1; auto.
+    auto.
   }
 
 
@@ -644,7 +644,7 @@ Proof.
     lsubst_tac.
     apply tequality_in_uni_implies_tequality in h0; auto.
     apply member_if_inhabited in h1.
-    apply member_in_uni in h1; auto.
+    auto.
   }
 
 

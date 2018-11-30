@@ -85,9 +85,11 @@ Proof.
 
   dands.
 
-  apply tequality_mkc_equality2_sp; dands.
+  apply tequality_equality_if_cequivc; dands.
   apply tequality_uatom.
-  split; right; spcast; apply cequivc_refl.
+  apply cequivc_refl.
+  apply cequivc_refl.
+  
   apply equality_in_uatom_iff.
   exists (@app_utok_c (set_dset_string o) (mk_dset D deq fresh) s f14); dands; auto;
   spcast; apply computes_to_value_isvalue_refl; repeat constructor; simpl; sp.

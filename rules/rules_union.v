@@ -274,9 +274,9 @@ Proof.
               wT w1 w2 c1 c0 c2 c3  cT cT0  eqh sim 
               ); intro k; lsubst_tac; apply k; clear k; auto.
  
-  - apply tequality_mkc_union; dands; auto; destruct h2 as [xx | yy];  auto.
-    + apply equality_in_uni in xx; auto.
-    + spcast. eapply equality_in_uni. apply equality_respects_cequivc; eauto.
+  - apply tequality_mkc_union; dands; auto. 
+    dimp h2. apply equality_in_uni in hyp; auto.
+    
   - clear dependent s1.
   clear dependent s2.
   introv hf sim.
@@ -306,9 +306,9 @@ Proof.
    eapply tequality_refl; eauto. }
   
   assert (equality lib a11 a22  A1) as eq2.
-  + eapply equality_trans with (t2 := a12). 
-    { destruct teq; auto; spcast. apply equality_respects_cequivc; auto. eapply equality_refl. eauto. }
-    { eapply tequality_preserving_equality; [exact hyp |apply tequality_sym;auto ]. }
+  + apply equality_trans with (t2 := a12); auto. apply teq3. 
+    apply equality_refl in eq. auto.
+    eapply tequality_preserving_equality; [exact hyp |apply tequality_sym;auto ]. 
   + apply equality_mkc_union; dands; auto.
   * eapply tequality_refl; eauto.
   * left. eexists; eexists; dands; [spcast | spcast | exact eq2];
@@ -356,9 +356,9 @@ Proof.
               wT w1 w2 c1 c0 c2 c3  cT cT0  eqh sim
               ); intro k; lsubst_tac; apply k; clear k; auto.
 
-  - apply tequality_mkc_union; dands; auto; destruct h2 as [xx | yy];  auto.
-    + apply equality_in_uni in xx; auto.
-    + spcast. eapply equality_in_uni. apply equality_respects_cequivc; eauto.
+  - apply tequality_mkc_union; dands; auto. 
+    dimp h2. apply equality_in_uni in hyp; auto.
+   
   - clear dependent s1.
   clear dependent s2.
   introv hf sim.
@@ -388,8 +388,8 @@ Proof.
    eapply tequality_refl; eauto. }
 
   assert (equality lib b11 b22  B1) as eq2.
-  + eapply equality_trans with (t2 := b12).
-    { destruct teq; auto; spcast. apply equality_respects_cequivc; auto. eapply equality_refl. eauto. }
+  + eapply equality_trans with (t2 := b12); auto. apply teq3.
+    apply equality_refl in eq. auto.
     { eapply tequality_preserving_equality; [exact hyp |apply tequality_sym;auto ]. }
   + apply equality_mkc_union; dands; auto.
   * eapply tequality_refl; eauto.
@@ -436,8 +436,7 @@ Proof.
   lsubst_tac.
 
   rw <- @member_member_iff in h1.
-  apply tequality_in_uni_implies_tequality in h0;
-    [|eapply member_in_uni; eauto].
+  apply tequality_in_uni_implies_tequality in h0.
   rw @tequality_mkc_union.
   rw @equality_mkc_union.
   dands; auto;
@@ -447,6 +446,7 @@ Proof.
   left.
   exists (lsubstc s wfce0 s1 pt4) (lsubstc s wfce0 s2 pt5).
   dands; spcast; auto; try (apply computes_to_valc_refl; eauto 3 with slow).
+  auto.
 Qed.
 
 Lemma rule_inr_formation_true3 {p} :
@@ -488,8 +488,7 @@ Proof.
   lsubst_tac.
 
   rw <- @member_member_iff in h1.
-  apply tequality_in_uni_implies_tequality in h0;
-    [|eapply member_in_uni; eauto].
+  apply tequality_in_uni_implies_tequality in h0.
   rw @tequality_mkc_union.
   rw @equality_mkc_union.
   dands; auto;
@@ -499,6 +498,7 @@ Proof.
   right.
   exists (lsubstc s wfce0 s1 pt4) (lsubstc s wfce0 s2 pt5).
   dands; spcast; auto; try (apply computes_to_valc_refl; eauto 3 with slow).
+  auto.
 Qed.
 
 Lemma rule_union_equality_true {p} :
@@ -582,36 +582,21 @@ Proof.
     revert hyp3. generalize_lsubstc_terms A21.
     revert hyp6. generalize_lsubstc_terms A12.
     introv aa. 
-    assert (equality lib A11 A12 (mkc_uni i)) as eq1 by
-      ( destruct aa; auto;
-        spcast; apply equality_respects_cequivc; auto;
-         eapply equality_refl; eauto).
+    assert (equality lib A11 A12 (mkc_uni i)) as eq1.
+     { apply equality_refl in hyp1. apply aa in hyp1. exact hyp1. }
     assert (equality lib A21 A11 (mkc_uni i)) by
       (apply equality_sym; auto).
     introv bb. 
-    assert (equality lib A21 A22 (mkc_uni i)) as eq2 by
-      (destruct bb; auto;
-        spcast; apply equality_respects_cequivc; auto;
-         eapply equality_refl; eauto).
+    assert (equality lib A21 A22 (mkc_uni i)) as eq2.
+    { apply equality_sym in hyp1. apply equality_refl in hyp1. apply bb in hyp1. exact hyp1. }
+      
     eapply equality_trans; [exact hyp1 | auto].
     
   -  generalize_lsubstc_terms B11.
     generalize_lsubstc_terms B22.
-    revert hyp0. generalize_lsubstc_terms B21.
-    revert hyp9. generalize_lsubstc_terms B12.
-    introv aa. 
-    assert (equality lib B11 B12 (mkc_uni i)) as eq1 by
-      ( destruct aa; auto;
-        spcast; apply equality_respects_cequivc; auto;
-         eapply equality_refl; eauto).
-    assert (equality lib B21 B11 (mkc_uni i)) by
-      (apply equality_sym; auto).
-    introv bb. 
-    assert (equality lib B21 B22 (mkc_uni i)) as eq2 by
-      (destruct bb; auto;
-        spcast; apply equality_respects_cequivc; auto;
-         eapply equality_refl; eauto).
-    eapply equality_trans; [exact hyp2 | auto].
+    dimp hyp10. apply equality_refl in hyp2; auto.
+    dimp hyp0. apply equality_sym in hyp2; apply equality_refl in hyp2; auto.
+    eapply equality_trans. exact hyp2. auto.
 Qed.
 
 

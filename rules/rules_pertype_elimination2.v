@@ -220,6 +220,7 @@ Proof.
 
   lsubst_tac.
   apply @tequality_in_uni_implies_tequality with (i := i); sp.
+  apply member_if_inhabited in hyp1; auto.
 
   apply sub_eq_hyps_snoc_weak; sp.
 

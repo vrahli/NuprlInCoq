@@ -158,7 +158,7 @@ Proof.
       pose proof (hyp2 s1 s' eqh sim') as q; clear hyp2.
       exrepnd.
       lsubst_tac.
-      apply tequality_mkc_equality_sp in q0; sp.
+      apply tequality_mkc_equality in q0; sp.
     }
 
     {
@@ -179,7 +179,7 @@ Proof.
 
     exrepnd.
     lsubst_tac.
-    apply tequality_mkc_equality_sp in h0; repnd.
+    apply tequality_mkc_equality in h0; repnd.
     clear h0 h1 h3.
 
     assert (!LIn z (dom_csub s1)) as nizs1.
@@ -236,7 +236,7 @@ Proof.
       pose proof (hyp2 s1 s' eqh sim') as q; clear hyp2.
       exrepnd.
       lsubst_tac.
-      apply tequality_mkc_equality_sp in q0; sp.
+      apply tequality_mkc_equality in q0; sp.
     }
 
     {

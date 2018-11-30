@@ -195,7 +195,7 @@ Proof.
   exrepnd; lsubst_tac.
 
   (* we use hyp0 *)
-  rw @tequality_mkc_equality2_sp in hyp0; repnd.
+  rw @tequality_mkc_equality in hyp0; repnd.
 
   (* we use hyp3 *)
   assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s1 (z, a)) cT1
@@ -270,7 +270,7 @@ Proof.
 
   exrepnd.
   lsubst_tac.
-  rw @tequality_mkc_equality2_sp in hyp0; repnd.
+  rw @tequality_mkc_equality in hyp0; repnd.
   clear hyp1 hyp0.
 
   assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s1 (z, a)) cT
@@ -831,7 +831,7 @@ Proof.
   exrepnd; lsubst_tac.
 
   (* we use hyp0 *)
-  rw @tequality_mkc_equality2_sp in hyp0; repnd.
+  rw @tequality_mkc_equality in hyp0; repnd.
 
   (* we use hyp3 *)
   assert (lsubstc (subst B x (mk_var z)) wT0 (snoc s1 (z, a)) cT1
@@ -948,7 +948,7 @@ Proof.
 
   (* we can now use hyp1 *)
   exrepnd; lsubst_tac.
-  rw @tequality_mkc_equality2_sp in hyp0; repnd.
+  rw @tequality_mkc_equality in hyp0; repnd.
   rw @member_eq in hyp1.
   rw <- @member_equality_iff in hyp1.
   clear_irr; GC.
@@ -971,9 +971,7 @@ Proof.
   rewrite eq2 in hyp3.
   clear eq2.
 
-  apply @cequorsq2_prop in hyp0; try (complete auto).
-
-  (* a few useful assertions *)
+   (* a few useful assertions *)
   assert (similarity lib s1 s1 H)
          as sim1
          by (allapply @similarity_refl; sp).
@@ -985,21 +983,18 @@ Proof.
          as eqh2
          by (apply @similarity_hyps_functionality_trans with (s1 := s1); sp).
 
-
+  eapply equality_trans. exact hyp1. apply hyp0. 
+  apply equality_sym in hyp1. apply equality_refl in hyp1. auto.
   (* we start proving our conclusion *)
   rw @equality_in_function2.
   dands; try (complete sp).
 
 
   (* tequality *)
-  rw @tequality_mkc_equality2_sp.
-  dands; try (complete sp).
+  apply tequality_mkc_equality_if_equal; try (complete sp).
 
-  (* we prove cequorsq2 *)
-  split.
-
+  
   (* application in B *)
-  left.
   rw @equality_in_function2.
   split; try (complete (apply @tequality_refl in eqfunc; sp)).
   introv e.
@@ -1011,7 +1006,10 @@ Proof.
              try (exact e); sp).
 
   generalize (eqlam a a' s1 s2 eqh sim); intro k1; exrepnd; clear_irr; sp.
-  generalize (eqlam a' a' s2 s2 eqh2 sim2); intro k2; exrepnd; clear_irr; sp.
+  assert (hyps_functionality lib s2 H) as hf2. 
+  eapply similarity_hyps_functionality_trans; eauto.
+  assert (similarity lib s2 s2 H) as sim2. eapply similarity_refl; apply similarity_sym; eauto.
+  generalize (eqlam a' a' s2 s2 hf2 sim2). intro k2; exrepnd; clear_irr; sp.
 
   eapply @equality_trans; sp.
   exact k1.
@@ -1022,13 +1020,13 @@ Proof.
   rw @tequality_function in eqfunc; repnd; sp.
 
   (* application in B *)
-  left.
   rw @equality_in_function2.
   split; try (complete (apply @tequality_refl in eqfunc; sp)).
   introv e.
   assert (equality lib a a (lsubstc A wA s1 c4)) as e' by (allapply @equality_refl; sp).
 
   generalize (eqlam a a' s1 s2 eqh sim); intro k1; exrepnd; clear_irr; sp.
+  assert (similarity lib s1 s1 H ) as sim1. eapply similarity_refl; eauto.
   generalize (eqlam a a s1 s1 eqh sim1); intro k2; exrepnd; clear_irr; sp.
 
   eapply @equality_trans; sp.
@@ -1042,6 +1040,8 @@ Proof.
 
 
   (* application in B *)
+  assert (similarity lib s1 s1 H ) as sim1. 
+  eapply similarity_refl; eauto.
   introv e.
   generalize (eqlam a a' s1 s1 eqh sim1); intro k; exrepnd; clear_irr; sp.
 Qed.

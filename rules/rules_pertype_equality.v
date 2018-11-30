@@ -126,7 +126,6 @@ Proof.
   lsubst_tac.
   allrw @member_eq.
   allrw <- @member_member_iff.
-  allapply @member_in_uni.
   apply tequality_in_uni_implies_tequality in hypa'0; auto.
 
   generalize (teq_and_eq_if_equality lib
@@ -150,23 +149,25 @@ Proof.
   allrw @member_eq.
   allrw <- @member_member_iff.
   allrw @tequality_mkc_member_base.
-  allapply @member_in_uni.
+   assert (type lib (mkc_pertype (lsubstc R w0 s1 c1))).
+    { allapply @member_in_uni. auto. }
 
   (* trivial hyp *)
   clear hypc1.
 
   apply tequality_in_uni_implies_tequality in hypa0; auto.
-  allapply @inhabited_type_if_equality.
+  
   rw @tequality_mkc_pertype in hypa0; repnd.
   spcast.
 
   rw @equality_in_mkc_pertype2; dands; auto.
   apply hypa4.
-  apply @inhabited_type_cequivc with (a := mkc_apply2 (lsubstc R w0 s2 c0)
-                                                      (lsubstc t1 w1 s2 ct2)
-                                                      (lsubstc t2 w2 s2 cb2)); auto;
-    [apply implies_cequivc_apply2; sp;apply cequivc_sym; auto|];[].
   apply @inhabited_type_tequality in hypb0; auto.
+  eapply @inhabited_type_cequivc; try (exact hypb0).
+  apply implies_cequivc_apply2; sp;apply cequivc_sym; auto.
+  eapply inhabited_type_if_equality.
+  exact hypb1.
+  
 Qed.
 
 
@@ -359,7 +360,8 @@ Proof.
     intro impinh; repeat (autodimp impinh hyp).
   apply @similarity_refl in sim2; auto.
   generalize (fty1 x0 y0); intro k; repnd.
-  apply iff_inhabited_type_if_tequality_mem in k0; rw <- k0; auto.
+  apply iff_inhabited_type_if_tequality_mem in k0. rw <- k0; auto.
+  auto.
 
   generalize (implies_inhabited_apply2
                 lib H x y z x0 y0 R2 R1 i e2 s2 s2 w3 w0 c0 cvr12
@@ -368,7 +370,7 @@ Proof.
     intro impinh; repeat (autodimp impinh hyp).
   apply @similarity_refl in sim2; auto.
   generalize (fty1 x0 y0); intro k; repnd.
-  apply iff_inhabited_type_if_tequality_mem in k0; rw k0; auto.
+  apply iff_inhabited_type_if_tequality_mem in k0; auto. rw k0; auto.
 
   unfold is_per_type; repnd; dands.
 

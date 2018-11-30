@@ -50,6 +50,43 @@ Require Export list. (* why *)
 
 *)
 
+
+
+Lemma tequality_equality_in_mkc_spertype_implies_tequality_apply {p} :
+  forall lib (a b c d R1 R2 : @CTerm p),
+    (forall x y : CTerm, type lib (mkc_apply2 R1 x y))->
+    inhabited_type lib (mkc_apply2 R1 a b) ->
+    tequality lib
+      (mkc_equality a b (mkc_spertype R1))
+      (mkc_equality c d (mkc_spertype R2))
+    -> tequality lib
+         (mkc_apply2 R1 a b)
+         (mkc_apply2 R2 c d).
+Proof.
+  introv wf inh teq.
+  rw @tequality_mkc_equality in teq; repnd.
+  rw @tequality_mkc_spertype in teq0; repnd.
+  assert (tequality lib (mkc_apply2 R1 a b) (mkc_apply2 R1 c d)) as e.
+  2: { eapply tequality_trans. exact e. apply teq4. }
+  clear dependent R2.
+  assert (inhabited_type lib (mkc_apply2 R1 a a)) as inha.
+   { unfold is_per_type in teq0. repnd. unfold trans_type in teq0.
+    eapply teq0. exact inh. apply teq4. auto. }
+  assert (inhabited_type lib (mkc_apply2 R1 b b)) as inhb.
+   { unfold is_per_type in teq0. repnd. unfold trans_type in teq0.
+    eapply teq0.  apply teq4. exact inh. auto. }
+  allrw @equality_in_mkc_spertype2.
+  assert (type lib (mkc_spertype R1)).
+  { apply type_mkc_spertype. dands; auto. }
+  dimp teq. sp. clear teq.
+  dimp teq2. sp. clear teq2.
+  pose proof (teq5 a b c hyp2) as xx.
+  pose proof (teq6 c b d hyp0) as yy.
+  eapply tequality_trans. exact xx. auto.
+  
+Qed.
+
+
 (* [14] ============ SPERTYPE MEMBER EQUALITY ============ *)
 
 (**
@@ -120,7 +157,6 @@ Proof.
   lsubst_tac.
   allrw @member_eq.
   allrw <- @member_member_iff.
-  allapply @member_in_uni.
   apply tequality_in_uni_implies_tequality in h0; auto.
 
   generalize (teq_and_eq_if_equality
@@ -132,7 +168,7 @@ Proof.
   introv hf sim.
   lsubst_tac.
 
-  generalize (hyp1 s1 s2 hf sim); clear hyp1; intro hyp1; exrepnd.
+  generalize (hyp1 s1 s2 hf sim). clear hyp1; intro hyp1. exrepnd.
 
   vr_seq_true in hyp2.
   generalize (hyp2 s1 s2 hf sim); clear hyp2; intro hyp2; exrepnd.
@@ -144,11 +180,14 @@ Proof.
   allrw @member_eq.
   allrw <- @member_member_iff.
   allrw @tequality_mkc_member_base.
-  allapply @member_in_uni.
   apply tequality_in_uni_implies_tequality in hyp0; auto.
-  allapply @inhabited_type_if_equality.
+  
+  
+  
+ (* allapply @inhabited_type_if_equality. *)
   rw @tequality_mkc_spertype in hyp0; repnd.
-  spcast.
+  
+  spcast; auto.
 
   rw @equality_in_mkc_spertype2; dands; auto.
   apply @inhabited_type_tequality with (a := mkc_apply2 (lsubstc R w0 s1 c1)
@@ -163,6 +202,8 @@ Proof.
                                                                 (lsubstc t2 w2 s2 cb2)); auto.
   apply implies_cequivc_apply2; sp.
   apply cequivc_sym; auto.
+  - allapply @inhabited_type_if_equality. auto.
+  - allapply @member_in_uni. auto.
 Qed.
 
 (* begin hide *)
@@ -319,6 +360,7 @@ Proof.
 
   lsubst_tac.
   apply @tequality_equality_in_mkc_spertype_implies_tequality_apply; auto.
+  eapply inhabited_type_if_equality. exact sim13.
 
   apply sub_eq_hyps_snoc_weak; sp.
 
@@ -937,7 +979,9 @@ Proof.
   rw @similarity_snoc in sim'6; simpl in sim'6; exrepnd; cpx.
   lsubst_tac.
   apply @tequality_equality_in_mkc_spertype_implies_tequality_apply.
-  rw @tequality_mkc_equality_sp; dands; auto.
+  apply equality_in_mkc_spertype in sim'3; repnd; auto.
+  eapply inhabited_type_if_equality; eauto.
+  apply @tequality_mkc_equality_if_equal; auto.
 
   apply sub_eq_hyps_snoc_weak; sp.
 
@@ -1176,7 +1220,9 @@ Proof.
   rw @similarity_snoc in sim'6; simpl in sim'6; exrepnd; cpx.
   lsubst_tac.
   apply @tequality_equality_in_mkc_spertype_implies_tequality_apply.
-  rw @tequality_mkc_equality_sp; dands; auto.
+  { apply equality_in_mkc_spertype in sim'3; repnd; auto. }
+  { eapply inhabited_type_if_equality. eauto. }
+  apply @tequality_mkc_equality_if_equal; auto.
 
   (* similarity *)
   assert (cover_vars (mk_apply2 R (mk_var x) (mk_var x)) (snoc s1a0 (x,t1) ++s1b))

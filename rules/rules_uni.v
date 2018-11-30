@@ -170,10 +170,9 @@ Proof.
   lsubst_tac.
   apply member_if_inhabited in q1.
 
-  apply tequality_mkc_member_sp in q0; repnd; clear q2.
-  repndors; spcast;
-    [|eapply equality_respects_cequivc_right;[exact q0|] ];
-    eapply cumulativity;eauto.
+  apply tequality_mkc_member in q0; repnd; clear q2.
+  dimp q0. eapply cumulativity;eauto.
+  
 Qed.
 
 Lemma rule_cumulativity_true_ext_lib {o} :

@@ -283,7 +283,7 @@ Proof.
       apply equality_in_mkc_equality in equ; repnd.
       allrw @equality_in_member; repnd.
 
-      apply tequality_mkc_equality_sp.
+      apply tequality_mkc_equality2.
 
       pose proof (eqh (snoc s2a0 (x,mkc_axiom))) as h.
       autodimp h hyp.
@@ -295,7 +295,7 @@ Proof.
       - apply eq_hyps_snoc in h; simpl in h.
         exrepnd; cpx.
         lsubst_tac.
-        allrw @tequality_mkc_member_sp; tcsp.
+        rw @tequality_mkc_member in h0; tcsp.
     }
 
     apply hyps_functionality_snoc2; simpl; auto.
@@ -314,7 +314,7 @@ Proof.
       - apply eq_hyps_snoc in h; simpl in h.
         exrepnd; cpx.
         lsubst_tac.
-        allrw @tequality_mkc_member_sp; tcsp.
+        allrw @tequality_mkc_member; tcsp.
     }
 
     apply (hyps_functionality_init_seg_snoc2 _ _ t1 t2 _  _ _ w p) in eqh; auto.

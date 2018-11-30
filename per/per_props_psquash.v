@@ -356,10 +356,9 @@ Lemma type_mkc_member {o} :
     type lib (mkc_member a A)
     <=> type lib A.
 Proof.
-  introv.
-  rw @tequality_mkc_member_sp.
-  split; intro k; repnd; dands; auto.
-  right; spcast; auto.
+  introv; split; intro.
+  rw @tequality_mkc_member in H; repnd; auto.
+  apply @tequality_mkc_member_if_cequivc; sp.
 Qed.
 
 Lemma equality_in_uand {o} :
@@ -1381,17 +1380,20 @@ Proof.
           [apply cequivc_sym;apply mkc_isaxiom_axiom|].
         eapply equality_respects_cequivc_right;
           [apply cequivc_sym;apply mkc_isaxiom_axiom|].
+        
         repeat rewrite <- fold_mkc_member.
-        apply equality_mkc_equality2_sp_in_uni; dands; auto.
-        split; right; spcast; eauto 3 with slow. }
+        apply equality_mkc_equality2_sp_in_uni;
+         dands; auto.
+      }
 
       { eapply equality_respects_cequivc_left;
           [apply cequivc_sym;apply mkc_isaxiom_not_axiom;auto|].
         eapply equality_respects_cequivc_right;
           [apply cequivc_sym;apply mkc_isaxiom_not_axiom;auto|].
         repeat rewrite <- fold_mkc_member.
+       
         apply equality_mkc_equality2_sp_in_uni; dands; auto.
-        split; right; spcast; eauto 3 with slow. }
+      }
     }
 
     { eapply member_respects_cequivc;[apply cequivc_sym;apply cequivc_beta2|].
@@ -1457,7 +1459,7 @@ Proof.
           [apply cequivc_sym;apply mkc_isaxiom_axiom|].
         repeat rewrite <- fold_mkc_member.
         apply equality_mkc_equality2_sp_in_uni; dands; auto.
-        split; right; spcast; eauto 3 with slow. }
+      }
 
       { eapply equality_respects_cequivc_left;
           [apply cequivc_sym;apply mkc_isaxiom_not_axiom;auto|].
@@ -1465,7 +1467,7 @@ Proof.
           [apply cequivc_sym;apply mkc_isaxiom_not_axiom;auto|].
         repeat rewrite <- fold_mkc_member.
         apply equality_mkc_equality2_sp_in_uni; dands; auto.
-        split; right; spcast; eauto 3 with slow. }
+      }
     }
 
     { repeat rw @member_iff_inhabited_mkc_apply2_mkc_psquash_per.

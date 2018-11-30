@@ -85,7 +85,7 @@ Proof.
 
   vr_seq_true.
   lsubst_tac.
-  rw @tequality_mkc_member_sp.
+  rw @tequality_mkc_member.
   rw @equality_in_member.
   dands; auto;
     try (apply tequality_int);

@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -246,7 +247,7 @@ Proof.
   lsubst_tac.
 
   apply member_if_inhabited in h1.
-  apply tequality_mkc_member_sp in h0; repnd.
+  apply tequality_mkc_member in h0; repnd.
   allrw @fold_equorsq.
   clear h2.
 
@@ -254,13 +255,17 @@ Proof.
   allrw @lsubstc_mkc_tnat.
   eapply member_respects_alphaeqc_r in h1;
     [|apply alphaeqc_mkc_fun;[apply lsubstc_mk_nat2nat|apply alphaeqc_refl] ].
-  eapply respects_alphaeqc_equorsq3 in h0;
-    [|apply alphaeqc_mkc_fun;[apply lsubstc_mk_nat2nat|apply alphaeqc_refl] ].
+  autodimp h0 hyp.
+  { clear - h1.
+    lsubst_tac.
+    eapply member_respects_alphaeqc_r;
+      [apply alphaeqc_sym;apply alphaeqc_mkc_fun;[apply lsubstc_mk_nat2nat|apply alphaeqc_refl]|].
+    autorewrite with slow in *; auto. }
+  eapply alphaeqc_preserving_equality in h0;
+    [|apply lsubstc_nat2nat_to_nat];[].
 
   dup h1 as memF.
-  eapply cequorsq_equality_trans1 in memF;[|apply equorsq_sym;exact h0].
-  apply equality_sym in memF.
-  clear h0.
+  dup h0 as eqF.
 
   prove_and teq.
 
@@ -324,8 +329,8 @@ Proof.
 
           { eapply alphaeqc_preserving_equality;
             [|apply alphaeqc_sym; apply lsubstc_mk_natU].
-            apply equality_in_fun in memF; repnd; clear memF0 memF1.
-            apply memF in en2n; auto.
+            apply equality_in_fun in eqF; repnd; clear eqF0 eqF1.
+            apply eqF in en2n; auto.
             apply equality_in_bunion_left; eauto 2 with slow. }
         }
 

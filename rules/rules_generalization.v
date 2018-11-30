@@ -266,7 +266,7 @@ Proof.
   lsubst_tac.
   apply member_if_inhabited in hyp1.
   applydup @tequality_mkc_member_implies_sp in hyp0; auto.
-  apply tequality_mkc_member_sp in hyp0; repnd.
+  apply tequality_mkc_member in hyp0; repnd.
   clear hyp0 hyp1.
 
   assert (! LIn u (dom_csub s1)) as niu1.
@@ -293,7 +293,7 @@ Proof.
     pose proof (dhyp1 s1a s2a) as dhyp1; repeat (autodimp dhyp1 hyp); eauto 3 with slow;[].
     exrepnd; clear_irr; auto.
     lsubst_tac.
-    apply tequality_mkc_member_sp in dhyp0; repnd; auto.
+    apply tequality_mkc_member in dhyp0; repnd; auto.
   }
 
   { sim_snoc2; dands; clear_irr; auto. }
@@ -427,7 +427,7 @@ Proof.
   lsubst_tac.
   apply member_if_inhabited in hyp1.
   applydup @tequality_mkc_member_implies_sp in hyp0; auto.
-  apply tequality_mkc_member_sp in hyp0; repnd.
+  apply tequality_mkc_member in hyp0; repnd.
   clear hyp0 hyp1.
 
   pose proof (hyp2 (snoc s1a (u,lsubstc t wt s1a ct1) ++ s1b)
@@ -482,7 +482,7 @@ Proof.
         { eapply hyps_functionality_init_seg in eqh; eauto. }
         exrepnd; clear_irr; auto.
         lsubst_tac.
-        apply tequality_mkc_member_sp in dhyp0; repnd; auto.
+        apply tequality_mkc_member in dhyp0; repnd; auto.
       }
     }
 

@@ -150,6 +150,7 @@ Require Import unsquashed_continuity.
 
 (* Functionality rules *)
 Require Import rules_functionality.
+Require Import rules_functionality_alt.
 
 
 (* Set type *)
@@ -160,6 +161,8 @@ Require Import rules_set.
 Require Import rules_equality.
 Require Import rules_equality2.
 Require Import rules_equality3.
+Require Import rules_equality_equality.
+Require Import rules_equality_istype.
 Require Import rules_equality4.
 Require Import rules_equality5.
 Require Import rules_equality6.
@@ -172,6 +175,7 @@ Require Import rules_tequality.
 
 (* Intersection type *)
 Require Import rules_isect.
+Require Import rules_isect_alt.
 Require Import rules_isect2.
 
 
@@ -192,11 +196,13 @@ Require Import sterm.
 
 (* Function/pi type *)
 Require Import rules_function.
+Require Import rules_function_alt.
 Require Import rules_function2.
 
 
 (* Product/sum type *)
 Require Import rules_product.
+Require Import rules_product_alt.
 
 
 (* Image type *)
@@ -205,6 +211,8 @@ Require Import rules_image.
 
 (* PER types *)
 Require Import rules_pertype.
+Require Import rules_pertype_alt.
+Require Import rules_pertype_equality_alt.
 Require Import rules_ipertype.
 Require Import rules_spertype.
 Require Import rules_iper_function.
@@ -238,6 +246,7 @@ Require Import rules_void.
 
 (* Union type: *)
 Require Import rules_union.
+Require Import rules_union_alt.
 
 
 (* Squash rules (derivable) *)

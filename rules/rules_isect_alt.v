@@ -150,7 +150,7 @@ Proof.
 
       exrepnd.
       lsubst_tac.
-      apply tequality_mkc_equality_sp in hyp0; repnd.
+      apply tequality_mkc_equality in hyp0; repnd.
       clear hyp0 hyp4.
 
       assert (cover_vars (mk_var z) (snoc s1 (z, a))) as covz1.
@@ -248,7 +248,7 @@ Proof.
         exrepnd.
         lsubst_tac.
 
-        apply tequality_mkc_equality_sp in hyp0; repnd.
+        apply tequality_mkc_equality in hyp0; repnd.
         clear hyp0 hyp4.
 
         assert (cover_vars (mk_var z) (snoc s1 (z, a))) as covz1.

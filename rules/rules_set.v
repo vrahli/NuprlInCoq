@@ -735,7 +735,7 @@ Proof.
       * exrepnd.
         lsubst_tac.
         apply member_member_iff in h1.
-        apply tequality_mkc_member_sp in h0; repnd.
+        apply tequality_mkc_member in h0; repnd.
 
         assert (!LIn z (dom_csub s1))
           as nizs1 by (allapply @similarity_dom; repnd; allrw; auto).
@@ -760,15 +760,10 @@ Proof.
 
         repeat substc_lsubstc_vars3.
         proof_irr.
-
-        dorn h0.
-
-        { apply equality_in_uni in h0; auto. }
-
-        { spcast.
-          apply cequivc_sym in h0.
-          rwg h0.
-          apply equality_in_uni in h1; auto. }
+        dup h1 as hh.
+        apply h0 in h1.
+        apply equality_in_uni in h0; auto.
+        
 
   - lsubst_tac.
     apply tequality_set in teq; repnd.

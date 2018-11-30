@@ -564,6 +564,9 @@ Definition per_compute {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : 
  *)
 
 Definition eqorceq {p} lib (eq : per(p)) a b : [U] := eq a b {+} a ~=~(lib) b.
+Definition eqindomain {p}  (eq : per(p)) a b : [U] := 
+   ((eq a a) <=> (eq b b)) #
+   ((eq a a) -> (eq a b)).
 
 (**
 
@@ -617,8 +620,8 @@ Definition per_eq {p} lib (ts : cts(p)) T1 T2 (eq : per(p)) : [U] :=
       , T1 ===>(lib) (mkc_equality a1 a2 A)
       # T2 ===>(lib) (mkc_equality b1 b2 B)
       # ts A B eqa
-      # eqorceq lib eqa a1 b1
-      # eqorceq lib eqa a2 b2
+      # eqindomain  eqa a1 b1
+      # eqindomain  eqa a2 b2
       # (forall t t',
             eq t t' <=> (t ===>(lib) mkc_axiom # t' ===>(lib) mkc_axiom # eqa a1 a2)) }}.
 
@@ -2025,8 +2028,8 @@ Definition close_ind' {pp}
                  (c2 : T' ===>(lib) (mkc_equality b1 b2 B))
                  (cla : close lib ts A B eqa)
                  (reca : P ts A B eqa)
-                 (eos1 : eqorceq lib eqa a1 b1)
-                 (eos2 : eqorceq lib eqa a2 b2)
+                 (eos1 : eqindomain eqa a1 b1)
+                 (eos2 : eqindomain eqa a2 b2)
                  (eqiff : forall t t',
                             eq t t'
                                <=> t ===>(lib) mkc_axiom

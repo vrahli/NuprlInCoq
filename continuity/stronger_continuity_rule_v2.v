@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -2030,6 +2031,23 @@ Proof.
   apply differ_force_nat; auto.
 Qed.
 
+Lemma lsubstc_nat2T_to_nat {o} :
+  forall T w (s : @CSub o) c w' c',
+    alphaeqc
+      (lsubstc (mk_fun (mk_nat2T T) mk_tnat) w s c)
+      (mkc_fun (nat2T (lsubstc T w' s c')) mkc_tnat).
+Proof.
+  introv.
+  unfold alphaeqc; simpl.
+  eapply alpha_eq_trans;[apply csubst_mk_fun|].
+  autorewrite with slow.
+  apply alpha_eq_mk_fun; auto.
+  unfold mk_nat2T.
+  eapply alpha_eq_trans;[apply csubst_mk_fun|].
+  autorewrite with slow; auto.
+Qed.
+Hint Resolve lsubstc_nat2T_to_nat : slow.
+
 
 
 (* XXXXXXXXXXXXXXXXX *)
@@ -2117,11 +2135,11 @@ Proof.
   lsubst_tac.
 
   apply equality_in_member in hTT1; repnd.
-  apply tequality_mkc_member_sp in hTT0; repnd.
+  apply tequality_mkc_member in hTT0; repnd.
   clear hTT0 hTT2 hTT3.
 
   apply member_if_inhabited in h1.
-  apply tequality_mkc_member_sp in h0; repnd.
+  apply tequality_mkc_member in h0; repnd.
   allrw @fold_equorsq.
   clear h2.
 
@@ -2131,14 +2149,19 @@ Proof.
   eapply member_respects_alphaeqc_r in h1;
     [|apply alphaeqc_mkc_fun;[|apply alphaeqc_refl];
       apply (lsubstc_mk_nat2T_sp1 T w0 s1 c2 wT cT)].
-  eapply respects_alphaeqc_equorsq3 in h0;
-    [|apply alphaeqc_mkc_fun;[|apply alphaeqc_refl];
-      apply (lsubstc_mk_nat2T_sp1 T w0 s1 c2 wT cT)].
+  autodimp h0 hyp.
+  { clear - h1.
+    lsubst_tac.
+    autorewrite with slow in *.
+    eapply member_respects_alphaeqc_r;
+      [apply alphaeqc_sym;apply alphaeqc_mkc_fun;
+       [apply (lsubstc_mk_nat2T_sp1 T _ s1 _ wT cT)|apply alphaeqc_refl] |].
+    autorewrite with slow in *; auto. }
+  eapply alphaeqc_preserving_equality in h0;
+    [|apply (lsubstc_nat2T_to_nat _ _ _ _ wT cT)];[].
 
   dup h1 as memF.
-  eapply cequorsq_equality_trans1 in memF;[|apply equorsq_sym;exact h0].
-  apply equality_sym in memF.
-  clear h0.
+  dup h0 as eqF.
 
   prove_and teq.
 
@@ -2228,8 +2251,8 @@ Proof.
 
         { eapply alphaeqc_preserving_equality;
           [|apply alphaeqc_sym; apply lsubstc_mk_natU].
-          apply equality_in_fun in memF; repnd; clear memF0 memF1.
-          apply memF in en2n; auto.
+          apply equality_in_fun in eqF; repnd; clear eqF0 eqF1.
+          apply eqF in en2n; auto.
           apply equality_in_bunion_left; eauto 2 with slow. }
 
   - apply equality_in_mkc_squash; dands;

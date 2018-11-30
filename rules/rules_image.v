@@ -498,7 +498,7 @@ Proof.
               ); intro k; lsubst_tac; apply k; clear k; auto.
  
   - apply tequality_image; dands; auto; destruct h2 as [xx | yy]; auto.
-    spcast. apply equality_respects_cequivc; auto.
+    
   - clear dependent s1.
   clear dependent s2.
   introv hf sim.
@@ -510,9 +510,9 @@ Proof.
   allrw <- @member_equality_iff.
   apply tequality_mkc_equality_implies in hyp3.
   repnd.
-  assert ((lsubstc f w0 s1 c1) ~=~( lib)(lsubstc f w0 s2 c0)) by
-  ( destruct hyp3 as [xx | yy];
-  try (apply equality_in_base in xx); auto).
+  assert ((lsubstc f w0 s1 c1) ~=~( lib)(lsubstc f w0 s2 c0)). 
+   { dimp hyp3. apply equality_refl in hyp2; auto. apply equality_in_base in hyp. auto. }
+  
   spcast.
   generalize_lsubstc_terms f1.
   generalize_lsubstc_terms a11.
@@ -529,8 +529,9 @@ Proof.
   repnd.
   dimp teq1.
   assert (equality lib a11 a22  A1) as eq2.
+  
   + eapply equality_trans with (t2 := a12). 
-    { destruct teq; auto; spcast. apply equality_respects_cequivc; auto. eapply equality_refl. eauto. }
+    { apply teq3. apply equality_refl in eq. auto. }
     { eapply tequality_preserving_equality; [exact hyp |apply tequality_sym;auto ]. }
   +  apply equality_in_mkc_image; dands.
   * eapply tequality_refl; eauto.
@@ -618,17 +619,14 @@ Proof.
     revert hyp0. generalize_lsubstc_terms A21.
     revert hyp9. generalize_lsubstc_terms A12.
     introv aa.
-    assert (equality lib A11 A12 (mkc_uni i)) as eq1 by
-      ( destruct aa; auto;
-        spcast; apply equality_respects_cequivc; auto;
-         eapply equality_refl; eauto).
+    assert (equality lib A11 A12 (mkc_uni i)) as eq1.
+     { apply hyp10. apply equality_refl in hyp2; auto. }
     assert (equality lib A21 A11 (mkc_uni i)) by
       (apply equality_sym; auto).
     introv bb.
-    assert (equality lib A21 A22 (mkc_uni i)) as eq2 by
-      (destruct bb; auto;
-        spcast; apply equality_respects_cequivc; auto;
-         eapply equality_refl; eauto).
+    assert (equality lib A21 A22 (mkc_uni i)) as eq2.
+     { apply bb. apply equality_sym in hyp2; apply equality_refl in hyp2; auto. }
+      
     eapply equality_trans; [exact hyp2 | auto].
 
   - allrw @equality_in_base_iff.
@@ -638,11 +636,11 @@ Proof.
     generalize_lsubstc_terms f21.
     generalize_lsubstc_terms f22.
     introv aa.
-    assert ((f11) ~=~( lib)(f12)) as e1 by
-     (destruct aa; auto; apply equality_in_base in H0; auto).
+    assert ((f11) ~=~( lib)(f12)) as e1.
+     {apply aa; auto. spcast. apply cequivc_refl. }
     introv bb.
-    assert ((f21) ~=~( lib)(f22)) as e2 by
-     (destruct bb; auto; apply equality_in_base in H0; auto).
+    assert ((f21) ~=~( lib)(f22)) as e2.
+     {apply bb; auto; spcast. apply cequivc_refl. }
     spcast.
     eapply cequivc_trans; [exact hyp1| auto].
 Qed.

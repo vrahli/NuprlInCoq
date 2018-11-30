@@ -77,136 +77,92 @@ Proof.
       apply computes_to_valc_refl; eauto 3 with slow.
 Qed.
 
+Lemma equality_base_implies_equality {o} :
+  forall lib (x y T : @CTerm o),
+     type lib T -> equality lib x y mkc_base -> member lib x T -> equality lib x y T.
+Proof. 
+   intros. 
+   rw @equality_in_base_iff in H0.
+   spcast.
+   eapply equality_respects_cequivc_right; eauto.
+Qed.
 
-(**
+Lemma equality_mkc_equality_in_uni_equal_base {o} :
+  forall (lib : library) (i : nat) (a1 a2 b1 b2 A B : @CTerm o),
+  equality lib A B (mkc_uni i) ->
+  equality lib a1 b1 A ->
+  equality lib a2 b2 mkc_base ->
+  equality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) (mkc_uni i) .
+Proof. intros. dup H0 as h1. dup H0 as h2. 
+       apply equality_refl in h1. apply equality_sym in h2. apply equality_refl in h2.
+       dup H1 as e. apply equality_in_base in e. spcast.
+       apply equality_mkc_equality2_sp_in_uni; dands; sp; try (split; intro).
+       - pose proof (equality_respects_cequivc lib a2 b2 A e H2).
+         apply equality_sym in H3. apply equality_refl in H3. auto.
+       - apply cequivc_sym in e.
+         pose proof (equality_respects_cequivc lib b2 a2 A e H2).
+         apply equality_sym in H3. apply equality_refl in H3. auto.
+       - apply equality_respects_cequivc; auto.
+Qed.
 
-<<
-   H |- (a1 = a2 in A) = (b1 = b2 in B) in U(i)
+Lemma equality_mkc_equality_in_uni_equal_equal {o} :
+  forall (lib : library) (i : nat) (a1 a2 b1 b2 A B : @CTerm o),
+  equality lib A B (mkc_uni i) ->
+  equality lib a1 b1 A ->
+  equality lib a2 b2 A ->
+  equality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) (mkc_uni i) .
+Proof. intros. dup H0 as h1. dup H0 as h2. 
+       apply equality_refl in h1. apply equality_sym in h2. apply equality_refl in h2.
+       dup H1 as r1. dup H1 as r2. 
+       apply equality_refl in r1. apply equality_sym in r2. apply equality_refl in r2.
+       
+       apply equality_mkc_equality2_sp_in_uni; dands; sp; try (split; intro).
+       
+Qed.
 
-     By equalityEqualityBase
+Lemma equality_mkc_equality_in_uni_base_equal {o} :
+  forall (lib : library) (i : nat) (a1 a2 b1 b2 A B : @CTerm o),
+  equality lib A B (mkc_uni i) ->
+  equality lib a1 b1 mkc_base ->
+  equality lib a2 b2 A ->
+  equality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) (mkc_uni i) .
+Proof. intros. dup H1 as h1. dup H1 as h2. 
+       apply equality_refl in h1. apply equality_sym in h2. apply equality_refl in h2.
+       dup H0 as e. apply equality_in_base in e. spcast.
+       apply equality_mkc_equality2_sp_in_uni; dands; sp; try (split; intro).
+       - pose proof (equality_respects_cequivc lib a1 b1 A e H2).
+         apply equality_sym in H3. apply equality_refl in H3. auto.
+       - apply cequivc_sym in e.
+         pose proof (equality_respects_cequivc lib b1 a1 A e H2).
+         apply equality_sym in H3. apply equality_refl in H3. auto.
+       - apply equality_respects_cequivc; auto.
+Qed.
 
-     H |- A = B in U(i)
-     H |- squash(a1 = b1 in A \/ a1 ~ b1)
-     H |- squash(a2 = b2 in A \/ a2 ~ b2)
->>
- *)
-Definition rule_equality_equality_base_or {o}
-           (H  : @barehypotheses o)
-           (A B a1 a2 b1 b2 : NTerm)
-           (i : nat) :=
-  mk_rule
-    (mk_baresequent
-       H
-       (mk_conclax (mk_equality
-                      (mk_equality a1 a2 A)
-                      (mk_equality b1 b2 B)
-                      (mk_uni i))))
-    [ mk_baresequent H (mk_conclax (mk_equality A B (mk_uni i))),
-      mk_baresequent H (mk_conclax (mk_squash (mk_or (mk_equality a1 b1 A) (mk_cequiv a1 b1)))),
-      mk_baresequent H (mk_conclax (mk_squash (mk_or (mk_equality a2 b2 A) (mk_cequiv a2 b2))))
-    ]
-    [].
-
-Lemma rule_equality_equality_base_or_true {o} :
-  forall lib (H : @barehypotheses o)
-         (A B a1 a2 b1 b2 : NTerm)
-         (i : nat),
-    rule_true lib (rule_equality_equality_base_or H A B a1 a2 b1 b2 i).
-Proof.
-  unfold rule_equality_equality_base_or, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
-  intros.
-  clear cargs.
-
-  (* We prove the well-formedness of things *)
-  destseq; allsimpl.
-  dLin_hyp.
-  destruct Hyp as [wf1 hyp1].
-  destruct Hyp0 as [wf2 hyp2].
-  destruct Hyp1 as [wf3 hyp3].
-  destseq; allsimpl; proof_irr; GC.
-
-  exists (@covered_axiom o (nh_vars_hyps H)).
-
-  (* We prove some simple facts on our sequents *)
-  (* done with proving these simple facts *)
-
-  vr_seq_true.
-  lsubst_tac.
-  rw <- @member_equality_iff.
-
-  pose proof (teq_and_eq_if_equality
-                lib (mk_uni i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
-                s1 s2 H wT w1 w2 c1 c6 c2 c7 cT cT2
-                eqh sim) as eqp.
-  lsubst_tac.
-  repeat (autodimp eqp hyp);[apply tequality_mkc_uni|].
-
-  clear dependent s1.
-  clear dependent s2.
-
-  introv hf sim.
-  lsubst_tac.
-  apply equality_mkc_equality2_sp_in_uni; dands.
-
-  - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
-    lsubst_tac.
-    rw <- @member_equality_iff in h1.
-    apply equality_commutes in h0; auto.
-
-  - split.
-
-    + vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
-      lsubst_tac.
-      apply equality_in_mkc_squash in h1; repnd.
-      clear h2 h3.
-      rw @tequality_mkc_squash in h0.
-      apply tequality_mkc_or in h0; repnd.
-      rw @tequality_mkc_equality_sp in h2; repnd.
-      allrw @fold_equorsq.
-      apply inhabited_mkc_or in h1; repnd.
-
-      repndors.
-
-      * apply inhabited_mkc_equality in h1.
-        eapply cequorsq_equality_trans2 in h1;[|eauto].
-        left; auto.
-
-      * rw @inhabited_cequiv in h1.
-        destruct h2 as [d|d]; spcast.
-
-        { eapply equality_respects_cequivc_left in d;[|apply cequivc_sym; eauto].
-          left; auto. }
-
-        { eapply cequivc_trans in d;[|eauto].
-          right; spcast; auto. }
-
-    + vr_seq_true in hyp3.
-      pose proof (hyp3 s1 s2 hf sim) as h; clear hyp2; exrepnd.
-      lsubst_tac.
-      apply equality_in_mkc_squash in h1; repnd.
-      clear h2 h3.
-      rw @tequality_mkc_squash in h0.
-      apply tequality_mkc_or in h0; repnd.
-      rw @tequality_mkc_equality_sp in h2; repnd.
-      allrw @fold_equorsq.
-      apply inhabited_mkc_or in h1; repnd.
-
-      repndors.
-
-      * apply inhabited_mkc_equality in h1.
-        eapply cequorsq_equality_trans2 in h1;[|eauto].
-        left; auto.
-
-      * rw @inhabited_cequiv in h1.
-        destruct h2 as [d|d]; spcast.
-
-        { eapply equality_respects_cequivc_left in d;[|apply cequivc_sym; eauto].
-          left; auto. }
-
-        { eapply cequivc_trans in d;[|eauto].
-          right; spcast; auto. }
+Lemma equality_mkc_equality_in_uni_base_base {o} :
+  forall (lib : library) (i : nat) (a1 a2 b1 b2 A B : @CTerm o),
+  equality lib A B (mkc_uni i) ->
+  equality lib a1 b1 mkc_base ->
+  equality lib a2 b2 mkc_base ->
+  equality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) (mkc_uni i) .
+Proof. intros. 
+       apply equality_in_base in H0. spcast. 
+       apply equality_in_base in H1. spcast.
+       dup H0 as e0. apply cequivc_sym in e0.
+       dup H1 as e1. apply cequivc_sym in e1.
+       pose proof (equality_respects_cequivc lib a1 b1 A H0) as X0.
+       pose proof (equality_respects_cequivc lib b1 a1 A e0) as Y0.
+       pose proof (equality_respects_cequivc lib a2 b2 A H1) as X1.
+       pose proof (equality_respects_cequivc lib b2 a2 A e1) as Y1.
+       apply equality_mkc_equality2_sp_in_uni; dands; sp; try (split; intro).
+       - apply X0 in H2.
+         apply equality_sym in H2. apply equality_refl in H2. auto.
+       - apply Y0 in H2.
+         apply equality_sym in H2. apply equality_refl in H2. auto.
+       - apply X1 in H2.
+         apply equality_sym in H2. apply equality_refl in H2. auto.
+       - apply Y1 in H2.
+         apply equality_sym in H2. apply equality_refl in H2. auto.
+       
 Qed.
 
 
@@ -299,32 +255,37 @@ Proof.
 
   introv hf sim.
   lsubst_tac.
-  apply equality_mkc_equality2_sp_in_uni; dands.
-
-  - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+  vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as X; clear hyp1; exrepnd.
     lsubst_tac.
-    apply equality_in_mkc_equality in h1; repnd.
-    clear h1 h3.
-    apply equality_commutes in h0; auto.
-
-  - split; left.
-
-    + vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+   vr_seq_true in hyp2.
+      pose proof (hyp2 s1 s2 hf sim) as Y; clear hyp2; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
-      apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
-
-    + vr_seq_true in hyp3.
-      pose proof (hyp3 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+   vr_seq_true in hyp3.
+      pose proof (hyp3 s1 s2 hf sim) as Z; clear hyp3; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
-      apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
+    rw @tequality_mkc_equality in X0; 
+    rw @tequality_mkc_equality in Y0;
+    rw @tequality_mkc_equality in Z0.
+    apply equality_in_mkc_equality in X1;
+    apply equality_in_mkc_equality in Y1;
+    apply equality_in_mkc_equality in Z1.
+    repnd.
+    dup Z6 as ZZ1. apply equality_refl in ZZ1.
+    dup Z6 as ZZ2. apply equality_sym in ZZ2. apply equality_refl in ZZ2.
+    dimp Z4. auto. clear Z4.
+    dimp Z0. auto. clear Z0.
+    dup Y6 as YY1. apply equality_refl in YY1.
+    dup Y6 as YY2. apply equality_sym in YY2. apply equality_refl in YY2.
+    dimp Y4. auto. clear Y4.
+    dimp Y0. auto. clear Y0.
+    apply @equality_mkc_equality_in_uni_equal_equal.
+    
+   - eapply equality_trans. exact X6. apply X0.
+     apply equality_sym in X6; apply equality_refl in X6; auto.
+   - eapply equality_trans. exact Y6.  auto.
+   - eapply equality_trans. exact Z6. auto.
+ 
 Qed.
 
 Lemma rule_equality_equality_true_ext_lib {o} :
@@ -447,34 +408,35 @@ Proof.
 
   introv hf sim.
   lsubst_tac.
-  apply equality_mkc_equality2_sp_in_uni; dands.
-
-  - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+  vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as X; clear hyp1; exrepnd.
     lsubst_tac.
-    apply equality_in_mkc_equality in h1; repnd.
-    clear h1 h3.
-    apply equality_commutes in h0; auto.
-
-  - split; right.
-
-    + vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+   vr_seq_true in hyp2.
+      pose proof (hyp2 s1 s2 hf sim) as Y; clear hyp2; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
-      apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
-      apply equality_in_base in h4; auto.
-
-    + vr_seq_true in hyp3.
-      pose proof (hyp3 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+   vr_seq_true in hyp3.
+      pose proof (hyp3 s1 s2 hf sim) as Z; clear hyp3; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
-      apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
-      apply equality_in_base in h4; auto.
+    rw @tequality_mkc_equality in X0; 
+    rw @tequality_mkc_equality in Y0;
+    rw @tequality_mkc_equality in Z0.
+    apply equality_in_mkc_equality in X1;
+    apply equality_in_mkc_equality in Y1;
+    apply equality_in_mkc_equality in Z1.
+    repnd.
+    dimp Z0. apply member_base. clear Z0 Z5.
+    dimp Z4. apply member_base. clear Z3 Z4.
+    dup Y6 as YY1. apply equality_refl in YY1.
+    dup Y6 as YY2. apply equality_sym in YY2. apply equality_refl in YY2.
+    dimp Y4. auto. clear Y4.
+    dimp Y0. auto. clear Y0.
+    apply @equality_mkc_equality_in_uni_base_base.
+    
+   - eapply equality_trans. exact X6. apply X0.
+     apply equality_sym in X6; apply equality_refl in X6; auto.
+   - eapply equality_trans. exact Y6.  auto.
+   - eapply equality_trans. exact Z6.  auto.
+  
 Qed.
 
 Lemma rule_equality_equality_base_true_ext_lib {o} :
@@ -593,34 +555,35 @@ Proof.
 
   introv hf sim.
   lsubst_tac.
-
-  apply equality_mkc_equality2_sp_in_uni; dands.
-
-  - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+  vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as X; clear hyp1; exrepnd.
     lsubst_tac.
-    apply equality_in_mkc_equality in h1; repnd.
-    clear h1 h3.
-    apply equality_commutes in h0; auto.
-
-  - split; [right|left].
-
-    + vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+   vr_seq_true in hyp2.
+      pose proof (hyp2 s1 s2 hf sim) as Y; clear hyp2; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
-      apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
-      apply equality_in_base in h4; auto.
-
-    + vr_seq_true in hyp3.
-      pose proof (hyp3 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+   vr_seq_true in hyp3.
+      pose proof (hyp3 s1 s2 hf sim) as Z; clear hyp3; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
-      apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
+    rw @tequality_mkc_equality in X0; 
+    rw @tequality_mkc_equality in Y0;
+    rw @tequality_mkc_equality in Z0.
+    apply equality_in_mkc_equality in X1;
+    apply equality_in_mkc_equality in Y1;
+    apply equality_in_mkc_equality in Z1.
+    repnd.
+    dimp Y0. apply member_base. clear Y0 Y5.
+    dimp Y4. apply member_base. clear Y3 Y4.
+    dup Z6 as ZZ1. apply equality_refl in ZZ1.
+    dup Z6 as ZZ2. apply equality_sym in ZZ2. apply equality_refl in ZZ2.
+    dimp Z4. auto. clear Z4.
+    dimp Z0. auto. clear Z0.
+    apply @equality_mkc_equality_in_uni_base_equal.
+    
+   - eapply equality_trans. exact X6. apply X0.
+     apply equality_sym in X6; apply equality_refl in X6; auto.
+   - eapply equality_trans. exact Y6.  auto.
+   - eapply equality_trans. exact Z6. auto.
+ 
 Qed.
 
 Lemma rule_equality_equality_base1_true_ext_lib {o} :
@@ -688,6 +651,9 @@ Definition rule_equality_equality_base2 {o}
     ]
     [].
 
+
+
+
 Lemma rule_equality_equality_base2_true3 {o} :
   forall lib (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
@@ -738,34 +704,37 @@ Proof.
 
   introv hf sim.
   lsubst_tac.
-
-  apply equality_mkc_equality2_sp_in_uni; dands.
-
-  - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+  vr_seq_true in hyp1.
+    pose proof (hyp1 s1 s2 hf sim) as X; clear hyp1; exrepnd.
     lsubst_tac.
-    apply equality_in_mkc_equality in h1; repnd.
-    clear h1 h3.
-    apply equality_commutes in h0; auto.
-
-  - split; [left|right].
-
-    + vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+   vr_seq_true in hyp2.
+      pose proof (hyp2 s1 s2 hf sim) as Y; clear hyp2; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
-      apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
-
-    + vr_seq_true in hyp3.
-      pose proof (hyp3 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+   vr_seq_true in hyp3.
+      pose proof (hyp3 s1 s2 hf sim) as Z; clear hyp3; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
-      apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
-      apply equality_in_base in h4; auto.
+    rw @tequality_mkc_equality in X0; 
+    rw @tequality_mkc_equality in Y0;
+    rw @tequality_mkc_equality in Z0.
+    apply equality_in_mkc_equality in X1;
+    apply equality_in_mkc_equality in Y1;
+    apply equality_in_mkc_equality in Z1.
+    repnd.
+    dimp Z0. apply member_base. clear Z0 Z5.
+    dimp Z4. apply member_base. clear Z3 Z4.
+    dup Y6 as YY1. apply equality_refl in YY1.
+    dup Y6 as YY2. apply equality_sym in YY2. apply equality_refl in YY2.
+    dimp Y4. auto. clear Y4.
+    dimp Y0. auto. clear Y0.
+    apply @equality_mkc_equality_in_uni_equal_base.
+    
+   - eapply equality_trans. exact X6. apply X0.
+     apply equality_sym in X6; apply equality_refl in X6; auto.
+   - eapply equality_trans. exact Y6.  auto.
+   - apply equality_base_implies_equality. apply equality_refl in X6; auto.
+       eapply equality_trans. exact Z6. auto.
+       apply member_base.
+ 
 Qed.
 
 Lemma rule_equality_equality_base2_true_ext_lib {o} :

@@ -147,7 +147,7 @@ Proof.
   applydup hyp0 in hyp1.
   clear hyp0.
   rw <- @member_equality_iff.
-  rw @tequality_mkc_equality_sp.
+  rw @tequality_mkc_equality.
 
   apply if_raises_exceptionc_arithop in hyp1.
   repndors; exrepnd.
@@ -187,7 +187,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp3.
-    rw @tequality_mkc_equality_sp in hyp0; repnd.
+    rw @tequality_mkc_equality in hyp0; repnd.
     sp.
 
   -  vr_seq_true in hyp2.
@@ -256,7 +256,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp7.
-    rw @tequality_mkc_equality_sp in hyp2; repnd.
+    rw @tequality_mkc_equality in hyp2; repnd.
     sp.
    }
 Qed.
@@ -331,7 +331,7 @@ Proof.
   applydup hyp0 in hyp1.
   clear hyp0.
   rw <- @member_equality_iff.
-  rw @tequality_mkc_equality_sp.
+  rw @tequality_mkc_equality.
 
   apply @if_raises_exceptionc_minus  in hyp1.
   apply @if_raises_exceptionc_minus  in hyp4.
@@ -371,7 +371,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp2.
-    rw @tequality_mkc_equality_sp in hyp0; repnd.
+    rw @tequality_mkc_equality in hyp0; repnd.
     sp.
 Qed.
 

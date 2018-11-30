@@ -86,7 +86,7 @@ Proof.
   - vr_seq_true in hyp1.
     pose proof (hyp1 s1 s2 eqh sim) as hyp; clear hyp1; exrepnd; clear_irr.
     lsubst_tac.
-    apply tequality_mkc_member_sp in hyp0; repnd.
+    apply tequality_mkc_member in hyp0; repnd.
     apply sp_implies_tequality_mkc_psquash; auto.
 
   - vr_seq_true in hyp1.
@@ -468,18 +468,14 @@ Proof.
   allrw <- @member_member_iff.
   unfold member in h1.
   rw @equality_in_mkc_squash in h1; repnd; spcast.
-  apply tequality_mkc_member_sp in h0; repnd.
+  apply tequality_mkc_member in h0; repnd.
   rw @tequality_mkc_cequiv.
-  rw @tequality_mkc_squash in h4.
-  dands; split; try (intro xx); spcast; auto;
-  try (complete (apply computes_to_valc_implies_cequivc; auto)).
-  apply cequiv_stable; repndors.
-
-  - apply equality_in_mkc_squash in h0; repnd; spcast.
-    apply computes_to_valc_implies_cequivc; auto.
-
-  - spcast.
-    eapply cequivc_trans;[apply cequivc_sym;eauto|]; auto.
+  apply computes_to_valc_implies_cequivc in h2.
+  dands; split; try (intro xx);
+  apply equality_in_mkc_squash in h0; repnd; spcast;
+  try (apply computes_to_valc_implies_cequivc; auto);
+  try (apply equality_in_mkc_squash; sp; spcast; auto).
+ 
 Qed.
 
 
@@ -634,7 +630,7 @@ Proof.
     exrepnd; lsubst_tac.
     apply tequality_in_uni_implies_tequality in h0; auto.
     rw <- @member_member_iff in h1.
-    apply member_in_uni in h1; auto.
+    auto.
 
   - dup sim as simbackup.
 
@@ -694,8 +690,8 @@ Proof.
         pose proof (hyp3 s1a s2a1 h sim'5) as hh; clear hyp2; exrepnd.
         lsubst_tac.
         apply tequality_in_uni_implies_tequality in hh0; auto.
-        apply inhabited_implies_tequality in sim2; auto.
-
+        rw @equality_in_member in hh1; sp.
+        
       - apply (hyps_functionality_psquash_implies lib s1a0 s1b t w0 c1); auto.
 
         introv sim'.
@@ -711,7 +707,7 @@ Proof.
         pose proof (hyp3 s1a0 s3 h sim') as hh; clear hyp2; exrepnd.
         lsubst_tac.
         apply tequality_in_uni_implies_tequality in hh0; auto.
-        apply inhabited_implies_tequality in sim2; auto.
+         rw @equality_in_member in hh1; sp.
     }
 
     { sim_snoc2.
@@ -889,8 +885,8 @@ Proof.
         allrw <- @member_member_iff.
         apply tequality_mkc_member_implies_sp in hypc0; auto;[].
         apply equality_in_uni in hypc0.
-        apply tequality_mkc_member_sp; dands; auto;[].
-        right; spcast; auto. }
+        apply tequality_mkc_member_if_cequivc; dands; auto.
+      }
 
       apply hyps_functionality_snoc2; simpl; auto;[].
       introv equ sim'.
@@ -939,8 +935,8 @@ Proof.
         allrw <- @member_member_iff.
         apply tequality_mkc_member_implies_sp in hypc0; auto;[].
         apply equality_in_uni in hypc0.
-        apply tequality_mkc_member_sp; dands; auto;[].
-        right; spcast; auto. }
+        apply tequality_mkc_member_if_cequivc; dands; auto.
+      }
 
       apply hyps_functionality_snoc2; simpl; auto;[].
       introv equ sim'.

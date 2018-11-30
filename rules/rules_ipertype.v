@@ -120,8 +120,8 @@ Proof.
   lsubst_tac.
   allrw @member_eq.
   allrw <- @member_member_iff.
-  allapply @member_in_uni.
   apply tequality_in_uni_implies_tequality in h0; auto.
+  (* allapply @member_in_uni. *)
 
   generalize (teq_and_eq_if_equality
                 lib (mk_ipertype R) t1 t2 s1 s2 H wT w1 w2 c1 c3 c2 c4 cT cT0
@@ -144,8 +144,10 @@ Proof.
   allrw @member_eq.
   allrw <- @member_member_iff.
   allrw @tequality_mkc_member_base.
-  allapply @member_in_uni.
+  assert (type lib (mkc_ipertype (lsubstc R w0 s1 c1))).
+     { allapply @member_in_uni. auto. }
   apply tequality_in_uni_implies_tequality in hyp0; auto.
+  
   allapply @inhabited_type_if_equality.
   rw @tequality_mkc_ipertype in hyp0; repnd.
   spcast.
@@ -163,6 +165,7 @@ Proof.
                                                                 (lsubstc t2 w2 s2 cb2)); auto.
   apply implies_cequivc_apply2; sp.
   apply cequivc_sym; auto.
+  
 Qed.
 
 (* begin hide *)
@@ -349,10 +352,9 @@ rw @equality_in_mkc_ipertype in j5; repnd.
 
   rw @similarity_snoc in sim15; simpl in sim15; exrepnd; cpx.
   lsubst_tac.
-  rw @tequality_mkc_member in hyp0; repnd.
-  repdors.
-  apply equality_in_uni in hyp4; sp.
-  spcast; apply type_respects_cequivc_right; sp.
+  eapply tequality_in_uni_implies_tequality. exact hyp0. 
+  eapply member_if_inhabited. exact hyp1.
+  
 
   apply sub_eq_hyps_snoc_weak; sp.
 
@@ -1014,6 +1016,7 @@ Proof.
 
   lsubst_tac.
   apply @tequality_in_uni_implies_tequality with (i := i); sp.
+  eapply member_if_inhabited. exact hyp1.
 
   apply sub_eq_hyps_snoc_weak; sp.
 

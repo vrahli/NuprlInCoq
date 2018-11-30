@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -38,6 +39,24 @@ Require Export per_props_squash.
 Require Export per_props_isect.
 Require Export lift_lsubst_tacs.
 
+
+Lemma zero_in_int {o} :
+  forall (lib : @library o), member lib mkc_zero mkc_int.
+Proof.
+  introv.
+  rewrite mkc_zero_eq.
+  apply nat_in_int.
+Qed.
+Hint Resolve zero_in_int : slow.
+
+Lemma inhabited_type_mkc_int {o} :
+  forall  (lib : @library o), inhabited_type lib mkc_int.
+Proof.
+  introv.
+  exists (@mkc_zero o).
+  eauto 3 with slow.
+Qed.
+Hint Resolve inhabited_type_mkc_int : slow.
 
 Definition simple_eq_typec {o} lib (T : @NTerm o) :=
   forall w s c, simple_eq_type lib (lsubstc T w s c).
@@ -147,7 +166,7 @@ Proof.
   - apply tequality_mkc_squash.
     allrw @member_eq.
     allrw <- @member_member_iff.
-    allrw @tequality_mkc_member_sp; repnd.
+    allrw @tequality_mkc_member; repnd.
     allrw @fold_equorsq.
 
     unfold continuous_type_v2, continuous_type_aux_v2; simpl.
@@ -165,8 +184,7 @@ Proof.
     apply tequality_isect; dands.
 
     { lsubst_tac.
-      apply tequality_fun; dands; tcsp.
-      apply tequality_int. }
+      auto. }
 
     introv e2.
 
@@ -187,7 +205,7 @@ Proof.
         introv e3.
         repeat substc_lsubstc_vars3.
         repeat one_lift_lsubst_concl.
-        apply tequality_mkc_member_sp; dands.
+        apply tequality_mkc_member_if_cequivc; dands.
 
         + unfold mk_natk_aux.
           repeat one_lift_lsubst_concl.
@@ -235,14 +253,13 @@ Proof.
           exrepnd.
 
           apply tequality_mkc_less_than.
-          exists (Z.of_nat k) (Z.of_nat k3) (Z.of_nat k) (Z.of_nat k3).
+          exists (Z.of_nat k) (Z.of_nat k4) (Z.of_nat k) (Z.of_nat k4).
           dands; spcast; auto.
 
-          destruct (Z_lt_ge_dec (Z.of_nat k) (Z.of_nat k3)); tcsp.
+          destruct (Z_lt_ge_dec (Z.of_nat k) (Z.of_nat k4)); tcsp.
           right; dands; omega.
 
-        + right.
-          unfold absolute_value, mk_natk_aux.
+        + unfold absolute_value, mk_natk_aux.
           repeat one_lift_lsubst2_concl.
           repeat one_lift_lsubst_concl.
           repeat one_lift_lsubst2_concl.
@@ -262,20 +279,18 @@ Proof.
         lsubstc_snoc.
         clear_cv.
 
-        apply tequality_mkc_equality_sp; dands; tcsp.
+        apply tequality_fun in k2; repnd.
+        autodimp k2 hyp; eauto 3 with slow.
+
+        apply tequality_mkc_equality_if_equal; dands; auto.
 
         { revert k0.
           repeat one_lift_lsubst2_concl; intro k.
           apply equality_in_set in e3; repnd.
-          dorn k.
-
-          - left.
-            apply equality_in_fun in k; repnd.
-            apply k; auto.
-
-          - right.
-            apply equality_in_int_implies_cequiv in e4; spcast.
-            apply implies_cequivc_apply; auto.
+          clear - k1 e4 k.
+          autodimp k hyp; lsubst_tac; auto.
+          apply equality_in_fun in k; repnd.
+          apply k; auto.
         }
 
         { revert e2; intro e2.
@@ -283,7 +298,6 @@ Proof.
           repeat (one_lift_lsubst_hyp e2).
           repeat (one_lift_lsubst2_hyp e2).
           apply equality_in_set in e3; repnd.
-          left.
           apply equality_in_fun in e2; repnd.
           apply e2; auto.
         }
@@ -296,30 +310,27 @@ Proof.
       revert h1 h0; intros h0 h1.
       unfold member in h0.
       repeat (one_lift_lsubst_hyp h0).
-      eapply cequorsq_equality_trans2 in h1;[clear h0|exact h0].
-      repeat (one_lift_lsubst2_hyp h1).
-      apply tequality_mkc_equality_sp; dands.
+      autodimp h1 hyp.
+      { clear - h0.
+        lsubst_tac; auto. }
+      autodimp k0 hyp.
+      { clear - k1.
+        lsubst_tac; auto. }
+
+      clear - k0 h1 e2.
+      lsubst_tac.
+
+      apply tequality_mkc_equality_if_equal.
 
       { apply tequality_int. }
 
-      { left.
-        apply equality_in_fun in h1; repnd.
+      { apply equality_in_fun in h1; repnd.
         apply h1.
-        repeat (one_lift_lsubst_concl).
-        repeat (one_lift_lsubst2_concl).
+        lsubst_tac; auto. }
 
-        revert k1 k0; intros k0 k1.
-        unfold member in k0.
-        repeat (one_lift_lsubst_hyp k0).
-        repeat (one_lift_lsubst2_hyp k0).
-        repeat (one_lift_lsubst2_hyp k1).
-        eapply cequorsq_equality_trans2 in k1;[clear k0|exact k0].
-        auto.
-      }
-
-      { left.
-        apply equality_in_fun in h1; repnd.
-        apply h1; auto. }
+      { apply equality_in_fun in h1; repnd.
+        apply h1; auto.
+        lsubst_tac; auto. }
     }
 
   - apply equality_in_mkc_squash; dands; spcast; auto;
@@ -327,7 +338,7 @@ Proof.
 
     allrw @member_eq.
     allrw <- @member_member_iff.
-    allrw @tequality_mkc_member_sp; repnd.
+    allrw @tequality_mkc_member; repnd.
     allrw @fold_equorsq.
 
     pose proof (continuity_axiom_v2
@@ -422,7 +433,25 @@ Proof.
       revert teq3.
       lsubstc_snoc_concl.
       intro teq3.
-      apply tequality_mkc_equality_sp in teq3; repnd.
+      apply tequality_mkc_equality in teq3; repnd.
+
+      GC.
+      autodimp k0 hyp.
+      autodimp teq3 hyp.
+      { clear - h1 e1 d.
+        lsubst_tac.
+        apply equality_in_fun in h1; repnd.
+        apply h1.
+        lsubst_tac; auto.
+        apply equality_refl in e1; auto. }
+      autodimp h0 hyp.
+      autodimp teq6 hyp.
+      { clear - h1 k0.
+        lsubst_tac.
+        apply equality_in_fun in h1; repnd.
+        apply h1.
+        lsubst_tac.
+        apply equality_refl in k0; auto.  }
 
       revert e1; intro e1.
       repeat (one_lift_lsubst_hyp e1).
@@ -462,7 +491,7 @@ Proof.
           repeat (one_lift_lsubst_hyp inh3).
           exists (@mkc_axiom p).
           rw <- @member_member_iff.
-          apply tequality_mkc_member_sp in inh3; repnd.
+          apply tequality_mkc_member in inh3; repnd.
           allrw @fold_type.
           clear inh3.
 

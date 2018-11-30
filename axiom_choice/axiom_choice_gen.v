@@ -533,7 +533,7 @@ Proof.
   lsubst_tac.
   allapply @member_if_inhabited.
   apply tequality_mkc_member_implies_sp in qq0; auto;[].
-  allrw @tequality_mkc_member_sp; repnd.
+  allrw @tequality_mkc_member; repnd.
 
   lsubst_tac.
   allrw @lsubstc_mkc_tnat.

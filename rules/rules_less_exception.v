@@ -151,7 +151,7 @@ Proof.
   applydup hyp0 in hyp1.
   clear hyp0.
   rw <- @member_equality_iff.
-  rw @tequality_mkc_equality_sp.
+  rw @tequality_mkc_equality.
  
 
 
@@ -198,7 +198,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp4.
-    rw @tequality_mkc_equality_sp in hyp0; repnd.
+    rw @tequality_mkc_equality in hyp0; repnd.
     sp.
  
 
@@ -260,7 +260,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp8.
-    rw @tequality_mkc_equality_sp in hyp3; repnd.
+    rw @tequality_mkc_equality in hyp3; repnd.
     sp.
    }
  - (* Both n and m are integers. Use hyp2. *)
@@ -316,7 +316,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp8.
-    rw @tequality_mkc_equality_sp in hyp2; repnd.
+    rw @tequality_mkc_equality in hyp2; repnd.
     sp.
    }
    

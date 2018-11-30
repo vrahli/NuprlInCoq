@@ -118,7 +118,7 @@ Proof.
   applydup hyp0 in hyp1.
   clear hyp0.
   rw <- @member_equality_iff.
-  rw @tequality_mkc_equality_sp.
+  rw @tequality_mkc_equality.
 
   apply if_raises_exceptionc_cbv in hyp1.
   repndors; exrepnd.
@@ -159,7 +159,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp3.
-    rw @tequality_mkc_equality_sp in hyp0; repnd.
+    rw @tequality_mkc_equality in hyp0; repnd.
     sp.
 
   - (* t has a value,  so we use hyp2 *)
@@ -205,7 +205,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp2.
-    rw @tequality_mkc_equality_sp in hyp0; repnd.
+    rw @tequality_mkc_equality in hyp0; repnd.
     sp.
    }  
 Qed.

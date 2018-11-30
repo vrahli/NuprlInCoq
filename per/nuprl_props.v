@@ -266,11 +266,41 @@ Proof.
   apply eqt; sp.
 Qed.
 
-Lemma eqorceq_commutes_equality {p} :
+Lemma eqindomain_sym {p} :
+  forall(a b : @CTerm p),
+  forall (eqa: per),
+  term_equality_symmetric eqa ->
+  eqindomain eqa a b -> eqindomain eqa b a.
+Proof.  intros. unfold eqindomain.
+ unfold term_equality_symmetric in H.
+ split; try split; intro. apply H0; auto. apply H0; auto. 
+ assert (eqa a b). apply H0; auto. apply H0; auto. apply H. auto.
+ 
+Qed.
+
+Lemma eqindomain_commutes {p} :
+  forall  (a b c d : @CTerm p) eq,
+    term_equality_symmetric eq
+    -> term_equality_transitive eq
+    -> eqindomain eq a b
+    -> eqindomain eq c d
+    -> eq a c
+    -> eq b d.
+Proof.  intros. unfold eqindomain.
+ unfold term_equality_symmetric in H.
+ unfold term_equality_transitive in H0.
+ assert (eq a b). apply H1. eapply H0; eauto.
+ assert (eq c d). apply H2. eapply H0; eauto.
+ eapply H0; eauto.
+ 
+Qed.
+
+
+Lemma eqindomain_commutes_equality {p} :
   forall lib a b c d eq A B,
     @nuprl p lib A B eq
-    -> eqorceq lib eq a b
-    -> eqorceq lib eq c d
+    -> eqindomain eq a b
+    -> eqindomain eq c d
     -> (equality lib a c A <=> equality lib b d B).
 Proof.
   introv n eos1 eos2.
@@ -281,18 +311,11 @@ Proof.
   rw <- (equality_eq1 lib B A b d eq n0).
   nts.
   split; sp.
-  apply (eqorceq_commutes lib) with (a := a) (c := c); auto.
-  apply nts_tev with (T := A); auto.
-  apply nts_tes with (T := A) (T' := A); auto.
-  apply nts_tet with (T := A) (T' := A); auto.
-  apply (eqorceq_commutes lib) with (a := b) (c := d); auto.
-  apply nts_tev with (T := A); auto.
-  apply nts_tes with (T := A) (T' := A); auto.
-  apply nts_tet with (T := A) (T' := A); auto.
-  apply eqorceq_sym; auto.
-  apply nts_tes with (T := A) (T' := A); auto.
-  apply eqorceq_sym; auto.
-  apply nts_tes with (T := A) (T' := A); auto.
+  eapply (eqindomain_commutes); eauto. 
+  eapply (eqindomain_commutes); eauto;
+  apply eqindomain_sym; auto;
+  eapply nts_tes; eauto.
+  
 Qed.
 
 Lemma eq_equality1 {p} :
@@ -809,17 +832,6 @@ Proof.
   apply ts_ext with (eq := eq1); sp.
 Qed.
 
-Lemma eqorceq_iff_equorsq {o} :
-  forall lib (A B a b : @CTerm o) eq,
-    nuprl lib A B eq
-    -> (eqorceq lib eq a b <=> equorsq lib a b A).
-Proof.
-  introv n.
-  unfold eqorceq, equorsq.
-  split; intro k; dorn k; auto; left; apply nuprl_refl in n; auto.
-  - exists eq; dands; auto.
-  - pose proof (equality_eq lib A a b eq n) as h; apply h; auto.
-Qed.
 
 Lemma equorsq_tequality {o} :
   forall lib (A B a b : @CTerm o),
@@ -867,39 +879,30 @@ Proof.
 Qed.
 
 
-Lemma eqorceq_commutes_nuprl {p} :
+Lemma eqindomain_commutes_nuprl {p} :
   forall lib (a b c d : @CTerm p) eq A B,
     nuprl lib A B eq
-    -> eqorceq lib eq a b
-    -> eqorceq lib eq c d
+    -> eqindomain eq a b
+    -> eqindomain eq c d
     -> eq a c
     -> eq b d.
 Proof.
   introv n e1 e2 e3.
-  apply (eqorceq_commutes lib) with (a := a) (c := c); sp.
+  eapply (eqindomain_commutes); eauto; sp; nts.
 
-  nts.
-  unfold term_value_respecting in nts_tev.
-  apply nts_tev with (T := A).
-  allapply @nuprl_refl; sp.
-
-  nts.
-  unfold term_symmetric in nts_tes.
-  apply nts_tes with (T := A) (T' := B); sp.
-
-  nts.
-  unfold term_transitive in nts_tet.
-  apply nts_tet with (T := A) (T' := B); sp.
+  eapply nts_tes; eauto.
+  eapply nts_tet; eauto.
+  
 Qed.
 
-Lemma eqorceq_sym_trans {p} :
+Lemma eqindomain_sym_trans {p} :
   forall lib eq (a b A B : @CTerm p),
     nuprl lib A B eq
-    -> eqorceq lib eq a b
-    -> eqorceq lib eq b a.
+    -> eqindomain eq a b
+    -> eqindomain eq b a.
 Proof.
   introv n e.
-  apply eqorceq_sym; sp.
+  apply eqindomain_sym; sp.
   nts.
   unfold term_symmetric in nts_tes.
   apply nts_tes with (T := A) (T' := B); sp.
@@ -924,28 +927,7 @@ Proof.
   apply nts_ext with (T := t1) (T' := t2) (eq := eq1); sp.
 Qed.
 
-Lemma equality_or_cequivc_eqorceq {p} :
-  forall lib (A a b : @CTerm p) eq,
-    nuprl lib A A eq
-    -> (eqorceq lib eq a b <=> (equality lib a b A {+} ccequivc lib a b)).
-Proof.
-  unfold eqorceq; introv n; split; intro e; repdors; try (complete sp);
-  left;
-  apply @equality_eq with (a := a) (b := b) in n;
-  allrw <-; sp;
-  allrw; sp.
-Qed.
 
-Lemma eqorceq_implies_equality_or_cequivc {p} :
-  forall lib (A a b : @CTerm p) eq,
-    nuprl lib A A eq
-    -> eqorceq lib eq a b
-    -> (equality lib a b A {+} ccequivc lib a b).
-Proof.
-  introv n e.
-  generalize (equality_or_cequivc_eqorceq lib A a b eq); sp.
-  allrw <-; sp.
-Qed.
 
 Lemma false_not_inhabited {p} :
   forall lib (t : @CTerm p), !member lib t mkc_false.

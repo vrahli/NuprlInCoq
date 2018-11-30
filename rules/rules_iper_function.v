@@ -209,6 +209,7 @@ Proof.
   autodimp teq hyp.
   rwpers.
   repeat substc_lsubstc_vars3; lsubst_tac; auto; rwpers; repnd; auto.
+  rw @tequality_mkc_equality in teq0; repnd. auto. 
 
   introv ea.
   generalize (teq a1 a1); clear teq; intro teq.
@@ -224,9 +225,9 @@ Proof.
   rwpers.
   repeat substc_lsubstc_vars3.
   apply tequality_uand_implies in teq; exrepnd.
-  clear teq3.
+  clear teq1.
   lsubst_tac.
-  rw @tequality_mkc_tequality in teq4; repnd.
+  rw @tequality_mkc_tequality in teq2; repnd. 
   apply tequality_trans with (t2 := mkc_apply (lsubstc B wB s1 cB1) a2); auto.
 Qed.
 
@@ -392,7 +393,7 @@ Proof.
                 mkc_axiom); simpl; intro k.
   apply k; try (complete auto); clear k.
   introv eq sim; GC; lsubst_tac.
-  rw @tequality_mkc_member.
+  apply @tequality_mkc_member_if_equal.
   apply equality_refl in eq.
   rw <- @member_member_iff in eq.
 
@@ -403,15 +404,15 @@ Proof.
   rw @member_eq in hyp1.
   rw <- @member_member_iff in hyp1.
   rw @tequality_mkc_member in hyp0; repnd.
+  dup hyp1 as hh. apply hyp0 in hh. clear hyp0. 
+  dup hh as hyp0. apply equality_sym in hyp0; apply equality_refl in hyp0.
+  clear hyp3.
 
   assert (equality lib (lsubstc a w2 (snoc s1a0 (f, t1) ++ s1b) c2)
                    (lsubstc a w2 s' c4)
                    (lsubstc A wa s1a0 ca)) as eqa.
   sp.
-  unfold member in hyp1.
-  spcast; apply @equality_respects_cequivc_right with (t2 := lsubstc a w2 (snoc s1a0 (f, t1) ++ s1b) c2); sp.
-  clear hyp0.
-
+  
   applydup sim2 in eqa.
 
   duplicate sim as sim'.
@@ -440,14 +441,7 @@ Proof.
   apply equality_in_iper_function in sim8; exrepnd; cbv zeta in sim8; repnd; proof_irr; GC.
   applydup sim8 in eqa as eqf; repnd.
 
-  split; try (complete (left; auto)).
-
-  split; intro m; try (complete auto).
-  apply equality_sym in eqf0.
-  apply equality_refl in eqf0.
-  allunfold @member.
-  apply @tequality_preserving_equality with (A := mkc_apply (lsubstc B wb s1a0 cb)
-                                                           (lsubstc a w2 (snoc s1a0 (f, t1) ++ s1b) c2)); sp.
+  auto.
 
   (* similarity *)
 
@@ -457,7 +451,7 @@ Proof.
 
   assert (cover_vars (mk_member (mk_apply (mk_var f) a) (mk_apply B a))
                      (snoc s1a0 (f, t1) ++ s1b)) as cm.
-  (* end proof of assert *)
+  (* proof of assert *)
   apply cover_vars_member; sp; apply cover_vars_apply; sp.
   apply cover_vars_var.
   rw @dom_csub_app; rw @dom_csub_snoc; rw in_app_iff; rw in_snoc; simpl; sp.

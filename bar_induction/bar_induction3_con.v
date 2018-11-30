@@ -412,8 +412,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     apply tequality_in_uni_implies_tequality in h0; auto.
-    apply member_if_inhabited in h1.
-    apply member_in_uni in h1; auto.
+    apply member_if_inhabited in h1. auto.
   }
 
 
@@ -490,7 +489,7 @@ Proof.
     lsubst_tac.
     apply tequality_in_uni_implies_tequality in h0; auto.
     apply member_if_inhabited in h1.
-    apply member_in_uni in h1; auto.
+    auto.
   }
 
   pose proof (bar_induction_meta4_con
@@ -1333,4 +1332,5 @@ Proof.
     lsubst_tac.
     apply inhabited_type_if_equality in hf1.
     dands; auto.
+
 Qed.

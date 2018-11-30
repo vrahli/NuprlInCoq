@@ -3451,9 +3451,11 @@ Proof.
     exists (rename_per r eqa).
     dands; spcast; eauto;[| |].
 
-    + destruct eos1 as [eos1|eos1];[left|right]; spcast; eauto 3 with slow.
+    + unfold eqindomain. unfold rename_per.
+      autorewrite with slow; tcsp.
 
-    + destruct eos2 as [eos2|eos2];[left|right]; spcast; eauto 3 with slow.
+    + unfold eqindomain. unfold rename_per.
+      autorewrite with slow; tcsp.
 
     + introv; unfold rename_per.
       rw eqiff; autorewrite with slow; tcsp.

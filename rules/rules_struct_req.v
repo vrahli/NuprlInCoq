@@ -215,7 +215,7 @@ Proof.
   rw @tequality_mkc_requality in t; repnd.
   rw @equality_in_mkc_requality in e0; exrepnd; computes_to_value_isvalue.
 
-  rw @tequality_mkc_equality_sp.
+  rw @tequality_mkc_equality.
   rw <- @member_equality_iff.
   dands; auto.
 Qed.

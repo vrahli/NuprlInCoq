@@ -303,12 +303,14 @@ Proof.
 
       { exrepnd.
         lsubst_tac.
+        dup hyp3 as h3.
         apply inhabited_implies_tequality in hyp3.
         apply tequality_mkc_cequiv.
-        apply tequality_in_uni_implies_tequality in hyp2;
-          [|apply tequality_mkc_cequiv; sp];[].
-        rw @tequality_mkc_cequiv in hyp2; auto.
-      }
+        apply tequality_in_uni_implies_tequality in hyp2.
+       rw @tequality_mkc_cequiv in hyp2; auto.
+       apply member_member_iff. auto.
+       
+       }
 
     - apply hyps_functionality_snoc2; simpl; auto.
 
@@ -409,18 +411,19 @@ Proof.
   rw <- @member_cequiv_iff.
   rw @tequality_mkc_cequiv.
   allrw <- @member_member_iff.
-  allrw @tequality_mkc_member_sp.
+  allrw @tequality_mkc_member.
   repnd.
+(*
   allrw @fold_equorsq.
   eapply cequorsq_equality_trans2 in hyp0;[|exact hyp1].
-  clear hyp1 hyp2.
+  clear hyp1 hyp2. *)
 
   assert (ccequivc
             lib
             (mkc_add (lsubstc n wt s1 ct0)
                      (mkc_exception (lsubstc a w0 s1 c0) (lsubstc b w3 s1 c3)))
             (mkc_exception (lsubstc a w0 s1 c0) (lsubstc b w3 s1 c3))) as ceq1.
-  { apply equality_in_int in hyp0.
+  { apply equality_in_int in hyp0; auto.
     unfold equality_of_int in hyp0; exrepnd; spcast.
     eapply cequivc_trans;
       [apply implies_cequivc_mkc_add;
@@ -436,11 +439,11 @@ Proof.
             (mkc_add (lsubstc n wt s2 ct1)
                      (mkc_exception (lsubstc a w0 s2 c6) (lsubstc b w3 s2 c7)))
             (mkc_exception (lsubstc a w0 s2 c6) (lsubstc b w3 s2 c7))) as ceq2.
-  { apply equality_in_int in hyp0.
+  { apply equality_in_int in hyp0; auto.
     unfold equality_of_int in hyp0; exrepnd; spcast.
     eapply cequivc_trans;
       [apply implies_cequivc_mkc_add;
-        [apply computes_to_valc_implies_cequivc;exact hyp1
+        [apply computes_to_valc_implies_cequivc;exact hyp4
         |apply cequivc_refl]
       |].
     apply reduces_toc_implies_cequivc.
@@ -536,7 +539,7 @@ Proof.
   applydup hyp0 in hyp1.
   clear hyp0.
   rw <- @member_equality_iff.
-  rw @tequality_mkc_equality_sp.
+  rw @tequality_mkc_equality.
 
   apply if_raises_exceptionc_spread0 in hyp1.
   repndors; exrepnd.
@@ -577,7 +580,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp3.
-    rw @tequality_mkc_equality_sp in hyp0; repnd.
+    rw @tequality_mkc_equality in hyp0; repnd.
     sp.
 
   - vr_seq_true in hyp2.
@@ -588,7 +591,7 @@ Proof.
     { apply hyps_functionality_snoc2; simpl; auto;[].
       introv equ' sim'.
       lsubst_tac.
-      apply tequality_mkc_member_sp.
+      apply tequality_mkc_member_if_cequivc.
 
       dands.
 
@@ -608,7 +611,8 @@ Proof.
         repeat (autodimp hyp hyp').
         exrepnd.
         lsubst_tac.
-        apply tequality_mkc_member_base in hyp2; sp.
+        apply tequality_mkc_member_base in hyp2.
+        apply cequiv_stable. auto.
     }
 
     { assert (wf_term (mk_member t (mk_prod mk_top mk_top))) as wit by auto.
@@ -635,7 +639,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp6.
-    rw @tequality_mkc_equality_sp in hyp2; repnd.
+    rw @tequality_mkc_equality in hyp2; repnd.
     sp.
 Qed.
 

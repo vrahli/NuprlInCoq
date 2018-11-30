@@ -114,7 +114,7 @@ Proof.
   - apply tequality_mkc_squash.
     allrw @member_eq.
     allrw <- @member_member_iff.
-    allrw @tequality_mkc_member_sp; repnd.
+    allrw @tequality_mkc_member; repnd.
     allrw @fold_equorsq.
 
     unfold continuous_type, continuous_type_aux; simpl.
@@ -157,7 +157,7 @@ Proof.
         introv e3.
         repeat substc_lsubstc_vars3.
         repeat one_lift_lsubst_concl.
-        apply tequality_mkc_member_sp; dands.
+        apply tequality_mkc_member; dands.
 
         + unfold mk_natk_aux.
           repeat one_lift_lsubst_concl.
@@ -299,7 +299,7 @@ Proof.
 
     allrw @member_eq.
     allrw <- @member_member_iff.
-    allrw @tequality_mkc_member_sp; repnd.
+    allrw @tequality_mkc_member; repnd.
     allrw @fold_equorsq.
 
     pose proof (continuity_axiom lib (lsubstc F wt0 s1 ct2)) as cont.
@@ -420,7 +420,7 @@ Proof.
           repeat (one_lift_lsubst_hyp inh3).
           exists (@mkc_axiom p).
           rw <- @member_member_iff.
-          apply tequality_mkc_member_sp in inh3; repnd.
+          apply tequality_mkc_member in inh3; repnd.
           allrw @fold_type.
           clear inh3.
 

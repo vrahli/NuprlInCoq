@@ -715,7 +715,7 @@ Proof.
 
     apply tequality_in_uni_implies_tequality in wf0; auto;[].
     apply member_if_inhabited in wf1.
-    apply member_in_uni in wf1; auto.
+     auto.
   }
 
   dands.

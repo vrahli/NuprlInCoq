@@ -133,10 +133,11 @@ Proof.
   vr_seq_true in hyp2.
   generalize (hyp2 s1 s2 eqh sim); clear hyp2; intro hyp2; exrepnd.
   lsubst_tac.
+   apply tequality_in_uni_implies_tequality in hyp0; auto.
   rw @member_eq in hyp2.
   rw <- @member_member_iff in hyp2.
-  apply member_in_uni in hyp2.
-  apply tequality_in_uni_implies_tequality in hyp0; auto.
+  auto.
+  
 
   (* -- B is a family over A -- *)
   introv ea.
@@ -151,7 +152,6 @@ Proof.
   lsubst_tac.
   rw @member_eq in hyp1.
   rw <- @member_member_iff in hyp1.
-  apply member_in_uni in hyp1.
   apply tequality_in_uni_implies_tequality in hyp0; auto.
 
   (* --- similarity --- *)
@@ -201,7 +201,7 @@ Proof.
   lsubst_tac.
   rw @member_eq in hyp1.
   rw <- @member_member_iff in hyp1.
-  apply member_in_uni in hyp1.
+  
   apply tequality_in_uni_implies_tequality in hyp0; auto.
 
   (* --- similarity --- *)
@@ -237,7 +237,7 @@ Proof.
   lsubst_tac.
   rw @member_eq in hyp1.
   rw <- @member_member_iff in hyp1.
-  apply member_in_uni in hyp1.
+  
   apply tequality_in_uni_implies_tequality in hyp0; auto.
 
   (* --- similarity --- *)

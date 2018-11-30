@@ -98,10 +98,10 @@ Lemma tequality_subtype_rel_refl {o} :
     -> tequality lib (mkc_subtype_rel A A) (mkc_subtype_rel B B) .
 Proof.
   intros.
-  rw @mkc_subtype_rel_eq. rw @mkc_subtype_rel_eq. apply tequality_mkc_member_sp.
+  rw @mkc_subtype_rel_eq. rw @mkc_subtype_rel_eq. apply tequality_mkc_member_if_cequivc.
   split.
   { apply tequality_fun. split; auto. }
-  { right. spcast. eauto 2 with slow. }
+  { eauto 2 with slow. }
 Qed.
 Hint Resolve tequality_subtype_rel_refl : slow.
 
@@ -111,12 +111,12 @@ Lemma tequality_mkc_subtype_rel {o} :
     <=> (tequality lib A C # (inhabited_type lib A -> tequality lib B D)).
 Proof.
   introv; repeat rewrite mkc_subtype_rel_eq; split; intro h.
-  { apply tequality_mkc_member_sp in h; repnd.
+  { apply tequality_mkc_member in h; repnd.
     apply tequality_mkc_fun in h0; repnd; tcsp. }
   { repnd.
-    apply tequality_mkc_member_sp.
+    apply tequality_mkc_member_if_cequivc.
     rw @tequality_mkc_fun; dands; tcsp.
-    right; spcast; eauto 3 with slow. }
+  }
 Qed.
 
 Lemma tequality_mkc_istype {o} :
@@ -236,7 +236,7 @@ Proof.
   exrepnd.
   lsubst_tac.
   apply teq_and_eq_istype.
-  allrw @tequality_mkc_member_sp; tcsp.
+  allrw @tequality_mkc_member; tcsp.
 Qed.
 
 Lemma mk_istype_true2_implies {o} :
@@ -266,7 +266,7 @@ Proof.
     clear - hyp0.
     rw @mkc_subtype_rel_eq in hyp0.
     rw @mkc_subtype_rel_eq in hyp0.
-    rw @tequality_mkc_member_sp in hyp0.
+    rw @tequality_mkc_member in hyp0.
     exrepnd.
     rw @tequality_mkc_fun in hyp1.
     exrepnd.

@@ -242,7 +242,9 @@ Proof.
       dands;
       try (complete sp);
       try (complete (lsubst_tac; apply tequality_base)).
+   (* end of the eq_hyps proof *)
 
+   (* tequality it will follow from squiggle equality*)
     lsubst_tac; GC.
     assert (tequality lib (lsubstc A w s1a p) (lsubstc A w s2a1 c7))
            as teq
@@ -251,12 +253,8 @@ Proof.
                try (rw @similarity_snoc; simpl);
                try (exists s1a s2a1 t2 t0 w p; sp);
                rw @eq_hyps_snoc in imp; simpl in imp; exrepnd; cpx; proof_irr; sp).
-    rw @tequality_mkc_equality; dands; try (complete sp); try (complete (right; spcast; sp)).
-    split; sp.
-    apply @tequality_preserving_equality with (A := lsubstc A w s1a p); sp.
-    apply equality_respects_cequivc_left with (t1 := t2); sp.
-    apply @equality_respects_cequivc_right with (t2 := t0); sp.
-
+    apply @tequality_equality_if_cequivc; dands; try (complete sp); sp.
+    { (* sub_eq_hyps *)
     apply sub_eq_hyps_snoc_weak; sp.
     apply sub_eq_hyps_snoc_weak; sp.
 
@@ -273,6 +271,8 @@ Proof.
     try (complete (allrw @similarity_dom; repnd; allrw; sp)).
     apply app_split in imp2; repnd; subst; allrw length_snoc; cpx;
     try (complete (allrw @similarity_dom; repnd; allrw; sp)).
+   }
+  
 
 
     (* Now we prove the similarity part of hyp2 *)
@@ -418,14 +418,14 @@ Proof.
 
     clear eqc1 eqc2 eqc3 eqc4.
     proof_irr; GC.
-
-    rw @tequality_mkc_equality2 in hyp0; repnd.
-    rw @member_eq in hyp2.
+    
     rw <- @member_equality_iff in hyp2.
-    applydup hyp4 in hyp2.
-    apply cequorsq2_prop in hyp0; sp.
-    apply @equality_in_uni in hyp0; sp.
-
+    apply tequality_mkc_equality in hyp0. repnd.
+    dup hyp2 as hh. apply equality_sym in hh. apply equality_refl in hh.
+    apply hyp0 in hh.
+    apply equality_in_uni with (i0 := i).
+    eapply equality_trans; eauto.
+    
   - vr_seq_true in hyp1.
 
     generalize (hyp1
@@ -477,6 +477,7 @@ Proof.
     lsubst_tac; apply @tequality_base.
 
     lsubst_tac; proof_irr; GC.
+    (* tequality it will follow from squiggle equality*)
     assert (tequality lib (lsubstc A w s1a p) (lsubstc A w s2a c))
            as eqt
            by (generalize (eqh (snoc s2a (x,t2))); intro imp;
@@ -484,12 +485,8 @@ Proof.
                try (rw @similarity_snoc; simpl);
                try (exists s1a s2a t0 t2 w p; sp);
                rw @eq_hyps_snoc in imp; simpl in imp; exrepnd; cpx; proof_irr; sp).
-    rw @tequality_mkc_member; dands; sp; try (complete (right; spcast; sp)).
-    split; sp.
-    apply @equality_respects_cequivc_left with (t1 := t0); sp.
-    apply @equality_respects_cequivc_right with (t2 := t0); sp.
-    apply @tequality_preserving_equality with (A := lsubstc A w s1a p); sp.
-
+    apply @tequality_mkc_member_if_cequivc; dands; try (complete sp); sp.
+    
     apply sub_eq_hyps_snoc_weak; sp.
     generalize (eqh' (snoc s2a (x, t4) ++ s2b0)); intro imp.
     autodimp imp hyp.
@@ -505,7 +502,7 @@ Proof.
     apply app_split in imp2; simpl; repnd; subst; allrw length_snoc; cpx;
     try (complete (allrw @similarity_dom; repnd; allrw; sp)).
 
-
+ 
     (* First we prove the similarity part of hyp1 *)
     autodimp hyp1 hyp.
 
@@ -776,10 +773,12 @@ Proof.
   - vr_seq_true in hyp1.
     generalize (hyp1 s1 s2 eqh sim); clear hyp1; intro hyp1; exrepnd.
     lsubst_tac.
+     apply tequality_in_uni_implies_tequality in hyp0; auto.
+     
     allrw @member_eq.
     allrw <- @member_member_iff.
-    allapply @member_in_uni.
-    apply @tequality_in_uni_implies_tequality in hyp0; auto.
+    auto.
+    
 
   - clear dependent s1.
     clear dependent s2.

@@ -258,10 +258,11 @@ Proof.
           (mkc_arithop op m2 n2)) by (apply @equality_of_int_arithop; auto).
  *) split.
 
-  - (* tequality *) apply @tequality_mkc_equality_sp; split.
-    apply tequality_int. split; left; apply equality_in_int; 
-    auto; apply equality_of_int_arithop; auto.
- 
+  - (* tequality *) apply @tequality_mkc_equality2; split.
+    apply tequality_int. split;
+    rw @equality_in_int; 
+    apply equality_of_int_arithop; auto.
+     
   - (* equality *)
      rw @member_eq. rw <- @member_equality_iff.
      rw @equality_in_int. 
@@ -311,10 +312,13 @@ Proof.
   generalize_lsubstc_terms n2.
   generalize_lsubstc_terms k2.
   split.
-  - (* tequality *) apply @tequality_mkc_equality_sp; split.
-    + apply tequality_int.
-    + split; left; apply equality_in_int; auto;
-      repeat (apply @equality_of_int_arithop; auto).
+  -
+ (* tequality *) 
+  apply @tequality_mkc_equality2; split.
+    apply tequality_int. split;
+    rw @equality_in_int; 
+    repeat (apply equality_of_int_arithop; auto).
+ 
  
   - (* equality *)
      rw @member_eq. rw <- @member_equality_iff.
@@ -361,11 +365,12 @@ Proof.
   generalize_lsubstc_terms m2.
   generalize_lsubstc_terms n2.
   split.
-  - (* tequality *) apply @tequality_mkc_equality_sp; split.
-    + apply tequality_int.
-    + split; left; apply equality_in_int; auto;
-      repeat (apply @equality_of_int_arithop; auto).
- 
+  - (* tequality *) 
+     apply @tequality_mkc_equality2; split.
+    apply tequality_int. split;
+    rw @equality_in_int; 
+    repeat (apply equality_of_int_arithop; auto).
+
   - (* equality *)
      rw @member_eq. rw <- @member_equality_iff.
      rw @equality_in_int. 
@@ -417,11 +422,13 @@ Proof.
   generalize_lsubstc_terms n2.
   generalize_lsubstc_terms k2.
   split.
-  - (* tequality *) apply @tequality_mkc_equality_sp; split.
-    + apply tequality_int.
-    + split; left; apply equality_in_int; auto;
-      repeat (apply @equality_of_int_arithop; auto).
- 
+  - (* tequality *) 
+      apply @tequality_mkc_equality2; split.
+    apply tequality_int. split;
+    rw @equality_in_int; 
+    repeat (apply equality_of_int_arithop; auto).
+
+
   - (* equality *)
      rw @member_eq. rw <- @member_equality_iff.
      rw @equality_in_int. 
@@ -473,11 +480,13 @@ Proof.
   generalize_lsubstc_terms n2.
   generalize_lsubstc_terms k2.
   split.
-  - (* tequality *) apply @tequality_mkc_equality_sp; split.
-    + apply tequality_int.
-    + split; left; apply equality_in_int; auto;
-      repeat (apply @equality_of_int_arithop; auto).
- 
+  - (* tequality *) 
+     apply @tequality_mkc_equality2; split.
+    apply tequality_int. split;
+    rw @equality_in_int; 
+    repeat (apply equality_of_int_arithop; auto).
+
+
   - (* equality *)
      rw @member_eq. rw <- @member_equality_iff.
      rw @equality_in_int. 
@@ -524,10 +533,12 @@ Proof.
   generalize_lsubstc_terms m2.
   generalize_lsubstc_terms n2.
   split.
-  - (* tequality *) apply @tequality_mkc_equality_sp; split.
-    + apply tequality_int.
-    + split; left; apply equality_in_int; auto;
-      repeat (apply @equality_of_int_arithop; auto).
+  - (* tequality *)
+     apply @tequality_mkc_equality2; split.
+    apply tequality_int. split;
+    rw @equality_in_int; 
+    repeat (apply equality_of_int_arithop; auto). 
+   
  
   - (* equality *)
      rw @member_eq. rw <- @member_equality_iff.
@@ -574,10 +585,15 @@ Proof.
   generalize_lsubstc_terms m2.
   generalize_lsubstc_terms n2.
   split.
-  - (* tequality *) apply @tequality_mkc_equality_sp; split.
-    + apply tequality_int.
-    + split; left; apply equality_in_int; auto;
-      repeat (apply @equality_of_int_arithop; auto).
+  - (* tequality *) 
+     apply @tequality_mkc_equality2; split.
+    apply tequality_int. split;
+    rw @equality_in_int; 
+    repeat (apply equality_of_int_arithop; auto).
+    
+    auto.
+
+
  
   - (* equality *)
      rw @member_eq. rw <- @member_equality_iff.
@@ -622,12 +638,15 @@ Proof.
   generalize_lsubstc_terms n1.
   generalize_lsubstc_terms n2.
   split.
-  - (* tequality *) apply @tequality_mkc_equality_sp; split.
-    + apply tequality_int.
-    + split; left; apply equality_in_int; auto;
-      repeat (apply @equality_of_int_arithop; auto).
-     apply equality_of_int_mkc_integer; auto.
- 
+  - (* tequality *) 
+    apply @tequality_mkc_equality2; split.
+    apply tequality_int. split;
+    rw @equality_in_int; 
+    repeat (apply equality_of_int_arithop; auto).
+    apply equality_of_int_mkc_integer; auto.
+    auto.
+
+
   - (* equality *)
      rw @member_eq. rw <- @member_equality_iff.
      rw @equality_in_int. 
@@ -674,12 +693,14 @@ Proof.
   generalize_lsubstc_terms n1.
   generalize_lsubstc_terms n2.
   split.
-  - (* tequality *) apply @tequality_mkc_equality_sp; split.
-    + apply tequality_int.
-    + split; left; apply equality_in_int; auto;
-      repeat (apply @equality_of_int_arithop; auto).
-     apply equality_of_int_mkc_integer; auto.
- 
+  - (* tequality *) 
+      apply @tequality_mkc_equality2; split.
+    apply tequality_int. split;
+    rw @equality_in_int; 
+    repeat (apply equality_of_int_arithop; auto).
+    apply equality_of_int_mkc_integer; auto.
+    auto.
+    
   - (* equality *)
      rw @member_eq. rw <- @member_equality_iff.
      rw @equality_in_int. 

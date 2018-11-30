@@ -90,19 +90,19 @@ Proof.
   (* we now start proving the sequent *)
   vr_seq_true.
   lsubst_tac.
-  rw @tequality_mkc_member_sp.
-  rw <- @member_member_iff.
-  rewrite member_eq.
-  rw <- @member_equality_iff.
-
   vr_seq_true in hyp1.
   pose proof (hyp1 s1 s2) as q; clear hyp1.
   repeat (autodimp q hyp); exrepnd.
   lsubst_tac; auto.
+  dup q0 as qq.
+  apply tequality_mkc_equality in qq; repnd.
   apply equality_in_mkc_equality in q1; repnd.
-
-  dands; auto.
-  right; spcast; auto.
+  split.
+  - apply tequality_mkc_member_if_equal; split; auto.
+    rw <- @member_equality_iff; auto.
+  - rw <- @member_member_iff.
+    rw <- @member_equality_iff.
+    auto.
 Qed.
 
 Lemma rule_axiom_equality_true_ext_lib {o} :

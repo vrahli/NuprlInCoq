@@ -114,7 +114,7 @@ Proof.
   lsubst_tac.
 
   apply equality_in_member in hTT1; repnd.
-  apply tequality_mkc_member_sp in hTT0; repnd.
+  apply tequality_mkc_member in hTT0; repnd.
   clear hTT0 hTT2 hTT3.
 
   clear subt0.
@@ -123,7 +123,7 @@ Proof.
   clear subt0 subt2 subt3 subt4.
 
   apply member_if_inhabited in h1.
-  apply tequality_mkc_member_sp in h0; repnd.
+  apply tequality_mkc_member in h0; repnd.
   allrw @fold_equorsq.
   clear h2.
 

@@ -216,7 +216,7 @@ Proof.
   vr_seq_true.
   lsubst_tac.
   rw <- @member_member_iff.
-  rw @tequality_mkc_member_sp.
+  rw @tequality_mkc_member.
   dands; auto;
     try (apply tequality_mkc_uni);
     try (complete (right; spcast; auto));

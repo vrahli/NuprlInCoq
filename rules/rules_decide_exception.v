@@ -116,7 +116,7 @@ Proof.
   applydup hyp0 in hyp1.
   clear hyp0.
   rw <- @member_equality_iff.
-  rw @tequality_mkc_equality_sp.
+  rw @tequality_mkc_equality.
 
   apply if_raises_exceptionc_decide0 in hyp1.
   repndors; exrepnd.
@@ -157,7 +157,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp3.
-    rw @tequality_mkc_equality_sp in hyp0; repnd.
+    rw @tequality_mkc_equality in hyp0; repnd.
     sp.
 
   - vr_seq_true in hyp2.
@@ -168,18 +168,17 @@ Proof.
     { apply hyps_functionality_snoc2; simpl; auto;[].
       introv equ' sim'.
       lsubst_tac.
-      apply tequality_mkc_member_sp.
-
-      dands.
-
-      - apply tequality_mkc_union; dands; allrw @fold_type; eauto 3 with slow.
-
-      - vr_seq_true in hyp4.
+      vr_seq_true in hyp4.
         pose proof (hyp4 s1 s') as hyp; clear hyp4.
         repeat (autodimp hyp hyp').
         exrepnd.
         lsubst_tac.
-        apply tequality_mkc_member_base in hyp2; sp.
+        apply tequality_mkc_member_base in hyp2; spcast.
+        repeat (rw <- @fold_mkc_member).
+        apply tequality_equality_if_cequivc; auto;
+        apply tequality_mkc_union; split;
+        rw @fold_type;
+        apply type_mkc_top.
     }
 
     { assert (wf_term (mk_member t (mk_union mk_top mk_top))) as wit by auto.
@@ -196,7 +195,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp6.
-    rw @tequality_mkc_equality_sp in hyp2; repnd.
+    rw @tequality_mkc_equality in hyp2; repnd.
     sp.
 
   - vr_seq_true in hyp2.
@@ -207,18 +206,18 @@ Proof.
     { apply hyps_functionality_snoc2; simpl; auto;[].
       introv equ' sim'.
       lsubst_tac.
-      apply tequality_mkc_member_sp.
-
-      dands.
-
-      - apply tequality_mkc_union; dands; allrw @fold_type; eauto 3 with slow.
-
-      - vr_seq_true in hyp4.
+      vr_seq_true in hyp4.
         pose proof (hyp4 s1 s') as hyp; clear hyp4.
         repeat (autodimp hyp hyp').
         exrepnd.
         lsubst_tac.
-        apply tequality_mkc_member_base in hyp2; sp.
+        apply tequality_mkc_member_base in hyp2; spcast.
+        repeat (rw <- @fold_mkc_member).
+        apply tequality_equality_if_cequivc; auto;
+        apply tequality_mkc_union; split;
+        rw @fold_type;
+        apply type_mkc_top.
+      
     }
 
     { assert (wf_term (mk_member t (mk_union mk_top mk_top))) as wit by auto.
@@ -235,7 +234,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in hyp6.
-    rw @tequality_mkc_equality_sp in hyp2; repnd.
+    rw @tequality_mkc_equality in hyp2; repnd.
     sp.
 Qed.
 

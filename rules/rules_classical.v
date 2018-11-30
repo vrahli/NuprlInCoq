@@ -119,7 +119,6 @@ Proof.
   lsubst_tac.
   rw @member_eq in hyp1.
   rw <- @member_member_iff in hyp1.
-  apply member_in_uni in hyp1.
   apply tequality_in_uni_implies_tequality in hyp0; auto.
   (* end proof of assert *)
 

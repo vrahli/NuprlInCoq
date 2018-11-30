@@ -96,7 +96,7 @@ Proof.
     vr_seq_true in hyp1.
     pose proof (hyp1 s1 s2 eqh sim) as q; clear hyp1; exrepnd.
     lsubst_tac.
-    apply tequality_mkc_equality_sp in q0; sp.
+    apply tequality_mkc_equality in q0; sp.
   }
 
   {
@@ -111,7 +111,7 @@ Proof.
     clear q1 q3.
     applydup @equality_commutes4 in q0; auto.
     apply equality_sym; auto.
-    apply tequality_mkc_equality_sp in q0; repnd.
+    apply tequality_mkc_equality in q0; repnd.
     eapply tequality_preserving_equality;[exact q1|]; auto.
   }
 Qed.
@@ -195,7 +195,7 @@ Proof.
     vr_seq_true in hyp1.
     pose proof (hyp1 s1 s2 eqh sim) as q; clear hyp1; exrepnd.
     lsubst_tac.
-    apply tequality_mkc_equality_sp in q0; sp.
+    apply tequality_mkc_equality in q0; sp.
   }
 
   {
