@@ -264,4 +264,10 @@ Require Import rules_typehood.
 Require Import rules_using_typehood.
 
 
+(* ?? *)
+Require Import rules_subtype.
+Require Import rules_pertype_equality_alt.
+Require Import rules_isint_cases.
+
+
 (* Require Import rules_per_function. *)
