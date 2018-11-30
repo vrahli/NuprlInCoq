@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -744,7 +746,7 @@ Proof.
 
     + exrepnd.
       lsubst_tac.
-      apply tequality_mkc_equality_sp in hyp0; repnd; auto.
+      apply tequality_mkc_equality in hyp0; repnd; auto.
 
   - clear dependent s1.
     clear dependent s2.

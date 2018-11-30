@@ -396,8 +396,8 @@ Proof.
           { introv inh.
             pose proof (equality_in_modulus_fun_type_u_implies lib M1 M2 n1 n2 f1 f2) as h.
             repeat (autodimp h hyp).
-            apply equality_in_fun in memF; repnd; clear memF0 memF1.
-            apply memF in en2n; auto.
+            apply equality_in_fun in eqF; repnd; clear eqF0 eqF1.
+            apply eqF in en2n; auto.
             apply equality_in_natU_implies_cequivc in h; spcast.
             apply equality_in_tnat_implies_cequivc in en2n.
             apply tequality_equality_if_cequivc; eauto 3 with slow.

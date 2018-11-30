@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -276,14 +278,19 @@ Proof.
   eapply member_respects_alphaeqc_r in h1;
     [|apply alphaeqc_mkc_fun;[|apply alphaeqc_refl];
       apply (lsubstc_mk_nat2T_sp1 T w0 s1 c2 wT cT)].
-  eapply respects_alphaeqc_equorsq3 in h0;
-    [|apply alphaeqc_mkc_fun;[|apply alphaeqc_refl];
-      apply (lsubstc_mk_nat2T_sp1 T w0 s1 c2 wT cT)].
+  autodimp h0 hyp.
+  { clear - h1.
+    lsubst_tac.
+    autorewrite with slow in *.
+    eapply member_respects_alphaeqc_r;
+      [apply alphaeqc_sym;apply alphaeqc_mkc_fun;
+       [apply (lsubstc_mk_nat2T_sp1 T _ s1 _ wT cT)|apply alphaeqc_refl] |].
+    autorewrite with slow in *; auto. }
+  eapply alphaeqc_preserving_equality in h0;
+    [|apply (lsubstc_nat2T_to_nat _ _ _ _ wT cT)];[].
 
   dup h1 as memF.
-  eapply cequorsq_equality_trans1 in memF;[|apply equorsq_sym;exact h0].
-  apply equality_sym in memF.
-  clear h0.
+  dup h0 as eqF.
 
   prove_and teq.
 
@@ -349,8 +356,8 @@ Proof.
 
           { eapply alphaeqc_preserving_equality;
             [|apply alphaeqc_sym; apply lsubstc_mk_natU].
-            apply equality_in_fun in memF; repnd; clear memF0 memF1.
-            apply memF in en2n; auto.
+            apply equality_in_fun in eqF; repnd; clear eqF0 eqF1.
+            apply eqF in en2n; auto.
             apply equality_in_bunion_left; eauto 2 with slow. }
         }
 
@@ -418,8 +425,8 @@ Proof.
             pose proof (equality_in_modulus_fun_type_u_implies_v2
                           lib M1 M2 n1 n2 f1 f2 (lsubstc T wT s1 cT)) as h.
             repeat (autodimp h hyp).
-            apply equality_in_fun in memF; repnd; clear memF0 memF1.
-            apply memF in en2n; auto.
+            apply equality_in_fun in eqF; repnd; clear eqF0 eqF1.
+            apply eqF in en2n; auto.
             apply equality_in_natU_implies_cequivc in h; spcast.
             apply equality_in_tnat_implies_cequivc in en2n.
             apply tequality_equality_if_cequivc; eauto 3 with slow.
