@@ -4,6 +4,7 @@
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
   Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -38,6 +39,9 @@ Require Import sosub_variant.
 
 (* contains an alternate definition of alphaeq in terms of variable swapping: *)
 Require Import swap.
+
+
+Require Import functionality.
 
 
 (* contains a proof that n:Nat->Univ(n) is a Nuprl type: *)
@@ -262,6 +266,10 @@ Require Import rules_free_from_atom.
 (* Typehood: *)
 Require Import rules_typehood.
 Require Import rules_using_typehood.
+
+
+(* further type system properties: *)
+Require Import per_props_equality2.
 
 
 (* ?? *)

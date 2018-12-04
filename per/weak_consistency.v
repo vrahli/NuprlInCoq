@@ -3,6 +3,8 @@
   Copyright 2014 Cornell University
   Copyright 2015 Cornell University
   Copyright 2016 Cornell University
+  Copyright 2017 Cornell University
+  Copyright 2018 Cornell University
 
   This file is part of VPrl (the Verified Nuprl project).
 
@@ -28,7 +30,10 @@
 
 *)
 
+
 Require Export sequents.
+Require Export sequents_lib.
+
 
 (* ========= CONSISTENCY ========= *)
 
@@ -45,6 +50,31 @@ Require Export sequents.
 
  *)
 
+Lemma not_VR_sequent_true_false {o} :
+  forall lib (t : @NTerm o) c,
+    VR_sequent_true lib (mk_wcseq ([]) ||- (mk_concl mk_false t) c)
+    -> False.
+Proof.
+  introv st.
+  rw @VR_sequent_true_ex in st; allsimpl.
+  pose proof (st [] []) as st.
+  repeat (autodimp st hyp); eauto 3 with slow; exrepnd.
+  allrewrite @lsubstc_mk_false.
+  proof_irr.
+  allapply @equality_refl.
+  allapply @false_not_inhabited; sp.
+Qed.
+
+Lemma not_sequent_true_ext_lib_false {o} :
+  forall lib (t : @NTerm o) c,
+    sequent_true_ext_lib lib (mk_wcseq ([]) ||- (mk_concl mk_false t) c)
+    -> False.
+Proof.
+  introv st.
+  pose proof (st lib (lib_extends_refl lib)) as st.
+  apply not_VR_sequent_true_false in st; auto.
+Qed.
+
 Lemma weak_consistency {o} :
   forall lib (t : @NTerm o),
     wf_term t
@@ -54,29 +84,25 @@ Proof.
   introv wft rt; unfold rule_true in rt; allsimpl.
   assert (wf_sequent (mk_baresequent [] (mk_concl mk_false t))) as wg
          by (repeat constructor; simpl; sp).
-  generalize (rt wg); clear rt; intro rt.
   assert (closed_type_baresequent
             (mk_baresequent [] (mk_concl mk_false t))) as cg
          by (unfold closed_type_baresequent, closed_type; simpl; sp).
-  generalize (rt cg); clear rt; intro rt.
-  repeat (dest_imp rt hyp; sp).
-  rw @sequent_true_eq_VR in s.
-  rw @VR_sequent_true_ex in s; allsimpl.
-  generalize (s [] []); clear s; intro s.
-  dest_imp s hyp; sp.
-  dest_imp s hyp; sp; allsimpl.
-  allrewrite @lsubstc_mk_false.
-  proof_irr.
-  allapply @equality_refl.
-  allapply @false_not_inhabited; sp.
+  pose proof (rt wg cg) as rt.
+  repeat (autodimp rt hyp); tcsp; exrepnd.
+  rw @sequent_true_eq_VR in rt0.
+  apply not_VR_sequent_true_false in rt0; auto.
 Qed.
 
-(*
-(* get a universe inconsistency error *)
-Lemma weak_consistency2 {o} :
+Lemma weak_consistency_ext_lib {o} :
   forall lib (t : @NTerm o),
     wf_term t
-    -> !(rule_true lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] [])).
+    -> rule_true_ext_lib lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] [])
+    -> False.
 Proof.
+  introv wf rt.
+  unfold rule_true_ext_lib in *; simpl in *.
+  repeat (autodimp rt hyp); eauto 3 with slow;
+    try (complete (repeat constructor; simpl; tcsp));[].
+  unfold sequent_true_ext_lib_wf in *; exrepnd.
+  apply not_sequent_true_ext_lib_false in rt0; auto.
 Qed.
-*)

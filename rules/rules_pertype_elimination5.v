@@ -305,6 +305,8 @@ Proof.
 
     Time lsubst_tac.
 
+    Check tequality_mkc_cequiv.
+
     apply equality_in_mkc_cequiv in hypb1; repnd.
     apply tequality_mkc_cequiv in hypb0.
     clear hypb2 hypb3.
