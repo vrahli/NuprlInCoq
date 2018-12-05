@@ -470,9 +470,15 @@ Definition cs_size {o} (lib : @library o) (name : choice_sequence_name) : nat :=
   | None => 0
   end.
 
+Definition cs_name_restr_size (name : choice_sequence_name) : nat :=
+  match csn_kind name with
+  | cs_kind_nat n => 0
+  | cs_kind_seq l => length l
+  end.
+
 Definition entry_size {o} (entry : @library_entry o) : nat :=
   match entry with
-  | lib_cs _ e => length (cse_vals e)
+  | lib_cs name e => Peano.max (length (cse_vals e)) (cs_name_restr_size name)
   | _ => 0
   end.
 
@@ -1841,6 +1847,11 @@ Proof.
 Qed.
 Hint Resolve find_cs_value_at_implies_lt_cs_size : slow.
 
+Hint Resolve Nat.le_max_l : num.
+Hint Resolve Nat.le_max_r : num.
+Hint Resolve Nat.le_refl : num.
+Hint Resolve le_trans : num.
+
 Lemma cs_size_le_lib_size {o} :
   forall name (lib : @library o),
     cs_size lib name <= lib_size lib.
@@ -1848,8 +1859,7 @@ Proof.
   introv.
   unfold cs_size.
   induction lib; simpl; auto.
-  destruct a; simpl; boolvar; eauto 3 with slow.
-  eapply le_trans;[eauto|]; eauto 3 with slow.
+  destruct a; simpl; boolvar; subst; eauto 3 with slow num.
 Qed.
 Hint Resolve cs_size_le_lib_size : slow.
 
@@ -2730,7 +2740,20 @@ Proof.
   rewrite swap_cs_cterm_idem; auto.
 Defined.
 
-Definition swap_cs_choice_seq_restr {o} (r : cs_swap) (restr : @ChoiceSeqRestriction o) : ChoiceSeqRestriction :=
+Definition cs_name2restr {o} (name : choice_sequence_name) : option (@ChoiceSeqRestriction o) :=
+  match csn_kind name with
+  | cs_kind_nat n =>
+    if deq_nat n 0
+    then Some csc_nat
+    else if deq_nat n 1
+         then Some csc_bool
+         else None
+  | cs_kind_seq l => Some (natSeq2restriction l)
+  end.
+
+Definition swap_cs_choice_seq_restr {o}
+           (r     : cs_swap)
+           (restr : @ChoiceSeqRestriction o) : ChoiceSeqRestriction :=
   match restr with
   | csc_type d M Md =>
     csc_type
@@ -2740,7 +2763,21 @@ Definition swap_cs_choice_seq_restr {o} (r : cs_swap) (restr : @ChoiceSeqRestric
   | csc_coq_law f => csc_coq_law (fun n => swap_cs_cterm r (f n))
   end.
 
-Definition swap_cs_choice_seq_entry {o} (r : cs_swap) (e : @ChoiceSeqEntry o) : ChoiceSeqEntry :=
+(* We make sure that we generate compatible restrictions in case one name
+   in the swapping has a [cs_kind_nat 0] space, while the other one has a
+   [cs_kind_seq l] space, for example. *)
+Definition swap_cs_choice_seq_restr_comp {o}
+           (r     : cs_swap)
+           (name  : choice_sequence_name)
+           (restr : @ChoiceSeqRestriction o) : ChoiceSeqRestriction :=
+  match cs_name2restr name with
+  | Some restr => restr
+  | None => swap_cs_choice_seq_restr r restr
+  end.
+
+Definition swap_cs_choice_seq_entry {o}
+           (r : cs_swap)
+           (e : @ChoiceSeqEntry o) : ChoiceSeqEntry :=
   match e with
   | MkChoiceSeqEntry _ vals restr =>
     MkChoiceSeqEntry _ (swap_cs_choice_seq_vals r vals) (swap_cs_choice_seq_restr r restr)
@@ -3390,6 +3427,203 @@ Proof.
 Qed.
 Hint Resolve same_libraries_implies_lib_extends : slow.
 
+Definition swap_cs_inf_choice_seq_vals {o} (r : cs_swap) (vals : @InfChoiceSeqVals o) : InfChoiceSeqVals :=
+  fun n => swap_cs_cterm r (vals n).
+
+Definition swap_cs_inf_choice_seq_entry {o} (r : cs_swap) (e : @InfChoiceSeqEntry o) : InfChoiceSeqEntry :=
+  match e with
+  | MkInfChoiceSeqEntry _ vals restr =>
+    MkInfChoiceSeqEntry _ (swap_cs_inf_choice_seq_vals r vals) (swap_cs_choice_seq_restr r restr)
+  end.
+
+Definition swap_cs_inf_lib_entry {o} (r : cs_swap) (e : @inf_library_entry o) : inf_library_entry :=
+  match e with
+  | inf_lib_cs name e =>
+    inf_lib_cs (swap_cs r name) (swap_cs_inf_choice_seq_entry r e)
+  | inf_lib_abs abs vars rhs correct =>
+    inf_lib_abs abs vars (swap_cs_soterm r rhs) (swap_cs_correct_abs r abs vars rhs correct)
+  end.
+
+Definition swap_cs_inf_lib {o}
+           (sw : cs_swap)
+           (ilib : @inf_library o) : inf_library :=
+  fun n => swap_cs_inf_lib_entry sw (ilib n).
+
+Definition swap_cs_per {o} sw (p : per(o)) : per(o) :=
+  fun a b => p (swap_cs_cterm sw a) (swap_cs_cterm sw b).
+
+Lemma swap_same_restrictions {o} :
+  forall sw (restr1 restr2 : @ChoiceSeqRestriction o),
+    same_restrictions restr1 restr2
+    -> same_restrictions
+         (swap_cs_choice_seq_restr sw restr1)
+         (swap_cs_choice_seq_restr sw restr2).
+Proof.
+  introv same; destruct restr1, restr2; simpl in *; repnd; dands; tcsp; introv; try congruence.
+
+  { unfold swap_cs_default; try congruence. }
+
+  { unfold swap_cs_restriction_pred; tcsp. }
+Qed.
+Hint Resolve swap_same_restrictions : slow.
+
+Lemma option_map_Some :
+  forall {A B} (f : A -> B) (o : option A) x,
+    option_map f o = Some x <-> exists a, o = Some a /\ x = f a.
+Proof.
+  destruct o; introv; simpl; split; intro h; exrepnd; ginv; eauto.
+Qed.
+
+Lemma swap_inf_choice_sequence_vals_extend {o} :
+  forall sw vals1 (vals2 : @ChoiceSeqVals o),
+    inf_choice_sequence_vals_extend vals1 vals2
+    -> inf_choice_sequence_vals_extend
+         (swap_cs_inf_choice_seq_vals sw vals1)
+         (swap_cs_choice_seq_vals sw vals2).
+Proof.
+  introv ext sel.
+  unfold swap_cs_choice_seq_vals in sel.
+  rewrite select_map in sel.
+  apply option_map_Some in sel; exrepnd; subst; simpl in *.
+  apply ext in sel1; subst; auto.
+Qed.
+Hint Resolve swap_inf_choice_sequence_vals_extend : slow.
+
+Lemma swap_inf_choice_sequence_entry_extend {o} :
+  forall sw e1 (e2 : @ChoiceSeqEntry o),
+    inf_choice_sequence_entry_extend e1 e2
+    -> inf_choice_sequence_entry_extend
+         (swap_cs_inf_choice_seq_entry sw e1)
+         (swap_cs_choice_seq_entry sw e2).
+Proof.
+  introv ext.
+  unfold inf_choice_sequence_entry_extend in *.
+  repnd.
+  destruct e1 as [vals1 restr1], e2 as [vals2 restr2]; simpl in *.
+  dands; eauto 3 with slow.
+Qed.
+Hint Resolve swap_inf_choice_sequence_entry_extend : slow.
+
+Lemma swap_inf_entry_extends {o} :
+  forall sw e1 (e2 : @library_entry o),
+    inf_entry_extends e1 e2
+    -> inf_entry_extends (swap_cs_inf_lib_entry sw e1) (swap_cs_lib_entry sw e2).
+Proof.
+  introv i.
+  unfold inf_entry_extends; simpl in *.
+  destruct e1, e2; simpl in *; repnd; subst; tcsp.
+  dands; auto; eauto 2 with slow.
+Qed.
+Hint Resolve swap_inf_entry_extends : slow.
+
+Lemma inf_matching_entries_swap_iff {o} :
+  forall (sw : cs_swap) e1 (e2 : @library_entry o),
+    inf_matching_entries (swap_cs_inf_lib_entry sw e1) (swap_cs_lib_entry sw e2)
+    <-> inf_matching_entries e1 e2.
+Proof.
+  introv.
+  unfold inf_matching_entries; simpl.
+  destruct e1, e2; simpl in *; tcsp.
+  split; intro h; subst; ginv; tcsp.
+  apply swap_cs_inj in h; auto.
+Qed.
+Hint Rewrite @inf_matching_entries_swap_iff : slow.
+
+Lemma swap_entry_in_inf_library_extends {o} :
+  forall sw entry n (ilib : @inf_library o),
+    entry_in_inf_library_extends entry n ilib
+    -> entry_in_inf_library_extends (swap_cs_lib_entry sw entry) n (swap_cs_inf_lib sw ilib).
+Proof.
+  induction n; introv i; simpl in *; tcsp;[].
+  repndors; repnd; subst; simpl in *; auto;[left|right].
+
+  { unfold swap_cs_inf_lib; eauto 3 with slow. }
+
+  dands; eauto 3 with slow.
+  unfold swap_cs_inf_lib; simpl.
+  autorewrite with slow; auto.
+Qed.
+Hint Resolve swap_entry_in_inf_library_extends : slow.
+
+Lemma swap_same_entry_libraries {o} :
+  forall sw (e1 e2 : @library_entry o),
+    same_library_entries e1 e2
+    -> same_library_entries (swap_cs_lib_entry sw e1) (swap_cs_lib_entry sw e2).
+Proof.
+  introv same.
+  destruct e1, e2; simpl in *; repnd; subst; dands; tcsp; ginv.
+
+  { destruct entry as [vals1 restr1], entry0 as [vals2 restr2]; simpl in *.
+    unfold same_choice_seq_entries in *; simpl in *; repnd; subst; simpl in *.
+    dands; eauto 3 with slow. }
+
+  { inversion same; subst; auto.
+    f_equal; eauto with pi. }
+Qed.
+Hint Resolve swap_same_entry_libraries : slow.
+
+Lemma same_choice_seq_entries_trans {o} :
+  forall (e1 e2 e3 : @ChoiceSeqEntry o),
+    same_choice_seq_entries e1 e2
+    -> same_choice_seq_entries e2 e3
+    -> same_choice_seq_entries e1 e3.
+Proof.
+  introv same1 same2; unfold same_choice_seq_entries in *; repnd; dands; subst; tcsp; eauto 3 with slow.
+  destruct e1 as [vals1 restr1], e2 as [vals2 restr2], e3 as [vals3 restr3]; simpl in *; subst; auto.
+Qed.
+Hint Resolve same_choice_seq_entries_trans : slow.
+
+Lemma same_library_entries_trans {o} :
+  forall (e1 e2 e3 : @library_entry o),
+    same_library_entries e1 e2
+    -> same_library_entries e2 e3
+    -> same_library_entries e1 e3.
+Proof.
+  introv same1 same2.
+  unfold same_library_entries in *.
+  destruct e1, e2, e3; simpl in *; repnd; subst; dands; tcsp; eauto 3 with slow; ginv.
+Qed.
+Hint Resolve same_library_entries_trans : slow.
+
+Lemma same_library_entries_preserves_inf_entry_extends {o} :
+  forall e (e1 e2 : @library_entry o),
+    same_library_entries e1 e2
+    -> inf_entry_extends e e2
+    -> inf_entry_extends e e1.
+Proof.
+  introv same i.
+  destruct e, e1, e2; simpl in *; repnd; subst; tcsp; ginv.
+
+  { dands; auto; eauto 3 with slow. }
+
+  { inversion same; subst; dands; auto. }
+Qed.
+Hint Resolve same_library_entries_preserves_inf_entry_extends : slow.
+
+Lemma same_library_entries_preserves_not_inf_matching_entries {o} :
+  forall e (e1 e2 : @library_entry o),
+    same_library_entries e1 e2
+    -> ~ inf_matching_entries e e2
+    -> ~ inf_matching_entries e e1.
+Proof.
+  introv same nm m.
+  destruct nm.
+  destruct e, e1, e2; simpl in *; repnd; subst; tcsp; ginv.
+Qed.
+Hint Resolve same_library_entries_preserves_not_inf_matching_entries : slow.
+
+Lemma same_library_entries_preserves_entry_in_inf_library_extends {o} :
+  forall e1 e2 n (lib : @inf_library o),
+    same_library_entries e1 e2
+    -> entry_in_inf_library_extends e2 n lib
+    -> entry_in_inf_library_extends e1 n lib.
+Proof.
+  induction n; introv same i; simpl in *; tcsp;[].
+  repndors; repnd; [left|right]; eauto 3 with slow.
+  dands; eauto 3 with slow.
+Qed.
+Hint Resolve same_library_entries_preserves_entry_in_inf_library_extends : slow.
+
 
 
 
@@ -3862,6 +4096,21 @@ Proof.
   destruct (choice_sequence_name_deq name' name) as [d|d];[subst;eauto 3 with slow|];[].
 
 
+  (*Print compatible_choice_sequence_name.
+  Print compatible_cs_kind.
+  Print choice_sequence_name.
+  Print cs_kind.
+  Print correct_restriction.
+
+  Definition compatible_cs_kinds (k1 k2 : cs_kind) :=
+    match k1, k2 with
+    | cs_kind_nat n, cs_kind_nat m => n = m
+    | cs_kind_nat n, cs_kind_seq l => n = 0 /\
+
+  Definition compatible_choice_sequences (name1 name2 : choice_sequence_name) :=
+      compatible_cs_kinds (csn_kind name1) (csn_kind name2).*)
+
+
   (* xxxxxxxxxxxx *)
 
 
@@ -3875,205 +4124,8 @@ Proof.
   Proof.
   Admitted.
 
-  Definition swap_cs_inf_choice_seq_vals {o} (r : cs_swap) (vals : @InfChoiceSeqVals o) : InfChoiceSeqVals :=
-    fun n => swap_cs_cterm r (vals n).
 
-  Definition swap_cs_inf_choice_seq_entry {o} (r : cs_swap) (e : @InfChoiceSeqEntry o) : InfChoiceSeqEntry :=
-    match e with
-    | MkInfChoiceSeqEntry _ vals restr =>
-      MkInfChoiceSeqEntry _ (swap_cs_inf_choice_seq_vals r vals) (swap_cs_choice_seq_restr r restr)
-    end.
-
-  Definition swap_cs_inf_lib_entry {o} (r : cs_swap) (e : @inf_library_entry o) : inf_library_entry :=
-    match e with
-    | inf_lib_cs name e =>
-      inf_lib_cs (swap_cs r name) (swap_cs_inf_choice_seq_entry r e)
-    | inf_lib_abs abs vars rhs correct =>
-      inf_lib_abs abs vars (swap_cs_soterm r rhs) (swap_cs_correct_abs r abs vars rhs correct)
-    end.
-
-  Definition swap_cs_inf_lib {o}
-             (sw : cs_swap)
-             (ilib : @inf_library o) : inf_library :=
-    fun n => swap_cs_inf_lib_entry sw (ilib n).
-
-  Definition swap_cs_per {o} sw (p : per(o)) : per(o) :=
-    fun a b => p (swap_cs_cterm sw a) (swap_cs_cterm sw b).
-
-  Lemma swap_same_restrictions {o} :
-    forall sw (restr1 restr2 : @ChoiceSeqRestriction o),
-      same_restrictions restr1 restr2
-      -> same_restrictions
-           (swap_cs_choice_seq_restr sw restr1)
-           (swap_cs_choice_seq_restr sw restr2).
-  Proof.
-    introv same; destruct restr1, restr2; simpl in *; repnd; dands; tcsp; introv; try congruence.
-
-    { unfold swap_cs_default; try congruence. }
-
-    { unfold swap_cs_restriction_pred; tcsp. }
-  Qed.
-  Hint Resolve swap_same_restrictions : slow.
-
-  Lemma option_map_Some :
-    forall {A B} (f : A -> B) (o : option A) x,
-      option_map f o = Some x <-> exists a, o = Some a /\ x = f a.
-  Proof.
-    destruct o; introv; simpl; split; intro h; exrepnd; ginv; eauto.
-  Qed.
-
-  Lemma swap_inf_choice_sequence_vals_extend {o} :
-    forall sw vals1 (vals2 : @ChoiceSeqVals o),
-      inf_choice_sequence_vals_extend vals1 vals2
-      -> inf_choice_sequence_vals_extend
-           (swap_cs_inf_choice_seq_vals sw vals1)
-           (swap_cs_choice_seq_vals sw vals2).
-  Proof.
-    introv ext sel.
-    unfold swap_cs_choice_seq_vals in sel.
-    rewrite select_map in sel.
-    apply option_map_Some in sel; exrepnd; subst; simpl in *.
-    apply ext in sel1; subst; auto.
-  Qed.
-  Hint Resolve swap_inf_choice_sequence_vals_extend : slow.
-
-  Lemma swap_inf_choice_sequence_entry_extend {o} :
-    forall sw e1 (e2 : @ChoiceSeqEntry o),
-      inf_choice_sequence_entry_extend e1 e2
-      -> inf_choice_sequence_entry_extend
-           (swap_cs_inf_choice_seq_entry sw e1)
-           (swap_cs_choice_seq_entry sw e2).
-  Proof.
-    introv ext.
-    unfold inf_choice_sequence_entry_extend in *.
-    repnd.
-    destruct e1 as [vals1 restr1], e2 as [vals2 restr2]; simpl in *.
-    dands; eauto 3 with slow.
-  Qed.
-  Hint Resolve swap_inf_choice_sequence_entry_extend : slow.
-
-  Lemma swap_inf_entry_extends {o} :
-    forall sw e1 (e2 : @library_entry o),
-      inf_entry_extends e1 e2
-      -> inf_entry_extends (swap_cs_inf_lib_entry sw e1) (swap_cs_lib_entry sw e2).
-  Proof.
-    introv i.
-    unfold inf_entry_extends; simpl in *.
-    destruct e1, e2; simpl in *; repnd; subst; tcsp.
-    dands; auto; eauto 2 with slow.
-  Qed.
-  Hint Resolve swap_inf_entry_extends : slow.
-
-  Lemma inf_matching_entries_swap_iff {o} :
-    forall (sw : cs_swap) e1 (e2 : @library_entry o),
-      inf_matching_entries (swap_cs_inf_lib_entry sw e1) (swap_cs_lib_entry sw e2)
-      <-> inf_matching_entries e1 e2.
-  Proof.
-    introv.
-    unfold inf_matching_entries; simpl.
-    destruct e1, e2; simpl in *; tcsp.
-    split; intro h; subst; ginv; tcsp.
-    apply swap_cs_inj in h; auto.
-  Qed.
-  Hint Rewrite @inf_matching_entries_swap_iff : slow.
-
-  Lemma swap_entry_in_inf_library_extends {o} :
-    forall sw entry n (ilib : @inf_library o),
-      entry_in_inf_library_extends entry n ilib
-      -> entry_in_inf_library_extends (swap_cs_lib_entry sw entry) n (swap_cs_inf_lib sw ilib).
-  Proof.
-    induction n; introv i; simpl in *; tcsp;[].
-    repndors; repnd; subst; simpl in *; auto;[left|right].
-
-    { unfold swap_cs_inf_lib; eauto 3 with slow. }
-
-    dands; eauto 3 with slow.
-    unfold swap_cs_inf_lib; simpl.
-    autorewrite with slow; auto.
-  Qed.
-  Hint Resolve swap_entry_in_inf_library_extends : slow.
-
-  Lemma swap_same_entry_libraries {o} :
-    forall sw (e1 e2 : @library_entry o),
-      same_library_entries e1 e2
-      -> same_library_entries (swap_cs_lib_entry sw e1) (swap_cs_lib_entry sw e2).
-  Proof.
-    introv same.
-    destruct e1, e2; simpl in *; repnd; subst; dands; tcsp; ginv.
-
-    { destruct entry as [vals1 restr1], entry0 as [vals2 restr2]; simpl in *.
-      unfold same_choice_seq_entries in *; simpl in *; repnd; subst; simpl in *.
-      dands; eauto 3 with slow. }
-
-    { inversion same; subst; auto.
-      f_equal; eauto with pi. }
-  Qed.
-  Hint Resolve swap_same_entry_libraries : slow.
-
-  Lemma same_choice_seq_entries_trans {o} :
-    forall (e1 e2 e3 : @ChoiceSeqEntry o),
-      same_choice_seq_entries e1 e2
-      -> same_choice_seq_entries e2 e3
-      -> same_choice_seq_entries e1 e3.
-  Proof.
-    introv same1 same2; unfold same_choice_seq_entries in *; repnd; dands; subst; tcsp; eauto 3 with slow.
-    destruct e1 as [vals1 restr1], e2 as [vals2 restr2], e3 as [vals3 restr3]; simpl in *; subst; auto.
-  Qed.
-  Hint Resolve same_choice_seq_entries_trans : slow.
-
-  Lemma same_library_entries_trans {o} :
-    forall (e1 e2 e3 : @library_entry o),
-      same_library_entries e1 e2
-      -> same_library_entries e2 e3
-      -> same_library_entries e1 e3.
-  Proof.
-    introv same1 same2.
-    unfold same_library_entries in *.
-    destruct e1, e2, e3; simpl in *; repnd; subst; dands; tcsp; eauto 3 with slow; ginv.
-  Qed.
-  Hint Resolve same_library_entries_trans : slow.
-
-  Lemma same_library_entries_preserves_inf_entry_extends {o} :
-    forall e (e1 e2 : @library_entry o),
-      same_library_entries e1 e2
-      -> inf_entry_extends e e2
-      -> inf_entry_extends e e1.
-  Proof.
-    introv same i.
-    destruct e, e1, e2; simpl in *; repnd; subst; tcsp; ginv.
-
-    { dands; auto; eauto 3 with slow. }
-
-    { inversion same; subst; dands; auto. }
-  Qed.
-  Hint Resolve same_library_entries_preserves_inf_entry_extends : slow.
-
-  Lemma same_library_entries_preserves_not_inf_matching_entries {o} :
-    forall e (e1 e2 : @library_entry o),
-      same_library_entries e1 e2
-      -> ~ inf_matching_entries e e2
-      -> ~ inf_matching_entries e e1.
-  Proof.
-    introv same nm m.
-    destruct nm.
-    destruct e, e1, e2; simpl in *; repnd; subst; tcsp; ginv.
-  Qed.
-  Hint Resolve same_library_entries_preserves_not_inf_matching_entries : slow.
-
-  Lemma same_library_entries_preserves_entry_in_inf_library_extends {o} :
-    forall e1 e2 n (lib : @inf_library o),
-      same_library_entries e1 e2
-      -> entry_in_inf_library_extends e2 n lib
-      -> entry_in_inf_library_extends e1 n lib.
-  Proof.
-    induction n; introv same i; simpl in *; tcsp;[].
-    repndors; repnd; [left|right]; eauto 3 with slow.
-    dands; eauto 3 with slow.
-  Qed.
-  Hint Resolve same_library_entries_preserves_entry_in_inf_library_extends : slow.
-
-
-  Lemma swap_correct_restriction {o} :
+(*  Lemma swap_correct_restriction {o} :
     forall sw name (restr : @ChoiceSeqRestriction o),
       correct_restriction name restr
       -> correct_restriction (swap_cs sw name) (swap_cs_choice_seq_restr sw restr).
@@ -4108,6 +4160,11 @@ Proof.
           { unfold swap_cs_default; simpl.
             unfold is_nat_restriction in cor; repnd.
             rewrite cor0; rewrite mkc_zero_eq; autorewrite with slow.
+
+            Print correct_restriction.
+            Print compatible_choice_sequence_name.
+            Print compatible_cs_kind.
+            Print is_nat_restriction.
 
             (* the two names in the swapping have to be compatible *)
 
@@ -4262,7 +4319,7 @@ xxxxxx
     SearchAbout BarLib lib_extends.
   }
 
-Qed
+Qed.*)
 
   (* TODO *)
   Lemma swap_preserves_member {o} :
