@@ -4992,7 +4992,7 @@ Lemma swap_is_cs_default_entry {o} :
     -> is_cs_default_entry (swap_cs_lib_entry sw entry).
 Proof.
   introv sane safe def.
-  unfold  is_cs_default_entry in *.
+  unfold is_cs_default_entry in *.
   destruct entry; simpl in *; tcsp; repnd.
   dands; eauto 3 with slow.
 Qed.
@@ -5030,6 +5030,57 @@ Proof.
   autorewrite with slow in *; auto.
 Qed.
 
+Lemma implies_swap_inf_lib_extends_ext_entries {o} :
+  forall sw infLib (lib : @library o),
+    sane_swapping sw
+    -> safe_library_sw sw lib
+    -> inf_lib_extends_ext_entries infLib lib
+    -> inf_lib_extends_ext_entries (swap_cs_inf_lib sw infLib) (swap_cs_lib sw lib).
+Proof.
+  introv sane safe ext i.
+  applydup @entry_in_swap_library_implies in i; exrepnd; subst; simpl in *.
+  applydup ext in i0.
+  repndors; exrepnd;[left; exists n|right].
+
+  { apply (swap_entry_in_inf_library_extends sw) in i2; auto. }
+
+  { apply (swap_entry_in_inf_library_default sw) in i1; auto; eauto 3 with slow. }
+Qed.
+Hint Resolve implies_swap_inf_lib_extends_ext_entries : slow.
+
+Lemma matching_inf_entries_swap_iff {o} :
+  forall (sw : cs_swap) e1 (e2 : @inf_library_entry o),
+    matching_inf_entries (swap_cs_inf_lib_entry sw e1) (swap_cs_inf_lib_entry sw e2)
+    <-> matching_inf_entries e1 e2.
+Proof.
+  introv.
+  unfold matching_inf_entries; simpl.
+  destruct e1, e2; simpl in *; tcsp.
+  split; intro h; subst; ginv; tcsp.
+  apply swap_cs_inj in h; auto.
+Qed.
+Hint Rewrite @matching_inf_entries_swap_iff : slow.
+
+Lemma swap_entry_in_inf_library_n_right {o} :
+  forall sw entry n (ilib : @inf_library o),
+    entry_in_inf_library_n n entry (swap_cs_inf_lib sw ilib)
+    -> exists e,
+      entry = swap_cs_inf_lib_entry sw e
+      /\ entry_in_inf_library_n n e ilib.
+Proof.
+  induction n; introv i; simpl in *; tcsp;[].
+  repndors; repnd; subst; simpl in *; auto.
+
+  { exists (ilib 0); dands; tcsp. }
+
+  pose proof (IHn (shift_inf_lib ilib)) as IHn; autodimp IHn hyp;[].
+  exrepnd; subst.
+  exists e; dands; tcsp.
+  right; dands; auto.
+  intro xx; destruct i0.
+  apply matching_inf_entries_swap_iff; auto.
+Qed.
+
 
   (* TODO *)
   Lemma member_implies_contains_only {o} :
@@ -5041,66 +5092,101 @@ Qed.
   Proof.
   Admitted.
 
-  Lemma implies_swap_inf_lib_extends_ext_entries {o} :
-    forall sw infLib (lib : @library o),
-      sane_swapping sw
-      -> strong_safe_library lib
-      -> inf_lib_extends_ext_entries infLib lib
-      -> inf_lib_extends_ext_entries (swap_cs_inf_lib sw infLib) (swap_cs_lib sw lib).
-  Proof.
-    introv sane safe ext i.
-    apply entry_in_swap_library_implies in i; exrepnd; subst; simpl in *.
-    apply ext in i1.
-    repndors; exrepnd;[left; exists n|right].
-
-    { apply (swap_entry_in_inf_library_extends sw) in i0; auto. }
-
-    { apply (swap_entry_in_inf_library_default sw) in i1; auto; eauto 3 with slow.
-
-      SearchAbout entry_in_inf_library_default safe_library_entry_sw.
-
-
-XXXXXXXXX
-    apply (swap_entry_in_library sw) in i.
-    pose proof (swap_cs_lib_idem sw lib) as same.
-    repeat (autodimp same hyp); auto;[].
-    eapply entry_in_same_library_implies in i;[|apply same_libraries_sym;eauto];[].
-    exrepnd.
-    apply ext in i1.
-    repndors;[left|right].
-
-    { exrepnd; exists n; eauto 3 with slow.
-      apply (swap_entry_in_inf_library_extends sw) in i2.
-      apply (swap_same_entry_libraries sw) in i0.
-      pose proof (swap_cs_lib_entry_idem sw entry) as z.
-      repeat (autodimp z hyp); eauto 3 with slow.
-
-XXXXXXXXX
-      eapply same_library_entries_trans in z;[|exact i0]; clear i0; eauto 3 with slow. }
-
-    {
-
-  Qed.
-  Hint Resolve implies_swap_inf_lib_extends_ext_entries : slow.
-
   Lemma implies_swap_inf_lib_extends {o} :
     forall sw infLib (lib : @library o),
-      inf_lib_extends infLib lib
+      sane_swapping sw
+      -> safe_library lib
+      -> safe_library_sw sw lib
+      -> inf_lib_extends infLib lib
       -> inf_lib_extends (swap_cs_inf_lib sw infLib) (swap_cs_lib sw lib).
   Proof.
-    introv ext.
+    introv sane safe1 safe2 ext.
     destruct ext as [ext safe].
-    split; eauto 3 with slow.
-  Qed.
-  Hint Resolve implies_swap_inf_lib_extends : slow.
+    split; eauto 3 with slow;[].
+    introv safecs i.
+    autodimp safe hyp;[].
+    unfold entry_in_inf_library in i; repndors; exrepnd.
+
+    { apply swap_entry_in_inf_library_n_right in i0; exrepnd; subst.
+      pose proof (safe e) as q; autodimp q hyp.
+      { left; eauto. }
+  Abort.
 
   Lemma implies_swap_inf_lib_extends_left {o} :
     forall sw infLib (lib : @library o),
       inf_lib_extends infLib (swap_cs_lib sw lib)
       -> inf_lib_extends (swap_cs_inf_lib sw infLib) lib.
   Proof.
-  Qed.
-  Hint Resolve implies_swap_inf_lib_extends_left : slow.
+    introv ext.
+    destruct ext as [ext safe].
+    split; eauto 3 with slow.
+
+Lemma implies_swap_inf_lib_extends_ext_entries_right {o} :
+  forall sw infLib (lib : @library o),
+    inf_lib_extends_ext_entries infLib (swap_cs_lib sw lib)
+    -> inf_lib_extends_ext_entries (swap_cs_inf_lib sw infLib) lib.
+Proof.
+  introv ext i.
+  apply (swap_entry_in_library sw) in i.
+  apply ext in i.
+  repndors; exrepnd;[left; exists n|right].
+
+  { SearchAbout entry_in_inf_library_extends swap_cs_lib_entry.
+
+
+Lemma swap_entry_in_inf_library_extends_left {o} :
+  forall sw entry n (ilib : @inf_library o),
+    entry_in_inf_library_extends (swap_cs_lib_entry sw entry) n ilib
+    -> entry_in_inf_library_extends entry n (swap_cs_inf_lib sw ilib).
+Proof.
+  induction n; introv i; simpl in *; tcsp;[].
+  repndors; repnd; subst; simpl in *; auto;[left|right].
+
+  { unfold swap_cs_inf_lib; eauto 3 with slow.
+    SearchAbout inf_entry_extends swap_cs_lib_entry.
+
+Lemma swap_inf_entry_extends_right {o} :
+  forall sw e1 (e2 : @library_entry o),
+    inf_entry_extends e1 (swap_cs_lib_entry sw e2)
+    -> inf_entry_extends (swap_cs_inf_lib_entry sw e1) e2.
+Proof.
+  introv i.
+  unfold inf_entry_extends; simpl in *.
+  destruct e1, e2; simpl in *; repnd; subst; tcsp;
+    dands; auto; autorewrite with slow; eauto 2 with slow.
+
+  unfold inf_choice_sequence_entry_extend in *; simpl in *; repnd; dands; eauto 3 with slow.
+
+  { unfold same_restrictions in *.
+    destruct entry as [vals restr]; simpl in *.
+    unfold swap_cs_inf_choice_seq_entry_normalize; simpl.
+Qed.
+Hint Resolve swap_inf_entry_extends : slow.
+
+  }
+
+  dands; eauto 3 with slow.
+  unfold swap_cs_inf_lib; simpl.
+  autorewrite with slow; auto.
+Qed.
+Hint Resolve swap_entry_in_inf_library_extends : slow.
+
+
+    SearchAbout entry_in_library swap_cs_lib.
+  Print inf_lib_extends_ext_entries.
+  Check entry_in_swap_library_implies.
+    in i; exrepnd; subst; simpl in *.
+  applydup ext in i0.
+  repndors; exrepnd;[left; exists n|right].
+
+  { apply (swap_entry_in_inf_library_extends sw) in i2; auto. }
+
+  { apply (swap_entry_in_inf_library_default sw) in i1; auto; eauto 3 with slow. }
+Qed.
+Hint Resolve implies_swap_inf_lib_extends_ext_entries : slow.
+
+    SearchAbout inf_lib_extends_ext_entries swap_cs_inf_lib.
+  Abort.
 
     Definition swap_cs_bar {o} {lib}
                (sw  : cs_swap)
