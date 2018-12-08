@@ -4081,482 +4081,6 @@ Proof.
 Qed.
 Hint Resolve swap_safe_choice_sequence_entry_same_name : slow.
 
-
-
-
-(* *************************************************************** *)
-(* ****** LS3 ****** *)
-
-Definition rule_ls3 {o}
-           (lib : @library o)
-           (A a b n x y : NVar)
-           (i : nat)
-           (H : @bhyps o) :=
-  mk_rule
-    (mk_baresequent H (mk_concl (ls3 A a b n i) (ls3_extract A a x y)))
-    []
-    [].
-
-Lemma rule_ls3_true {o} :
-  forall lib
-         (A a b n x y : NVar) (i : nat) (H : @bhyps o)
-         (d1 : A <> a)
-         (d2 : n <> A)
-         (d3 : n <> a)
-         (d4 : b <> n)
-         (d5 : b <> A)
-         (d6 : b <> a)
-         (d7 : x <> b)
-         (safe : safe_library lib),
-    rule_true lib (rule_ls3 lib A a b n x y i H).
-Proof.
-  unfold rule_ls3, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
-  intros.
-  clear cargs.
-
-  (* We prove the well-formedness of things *)
-  destseq; allsimpl.
-  dLin_hyp; exrepnd.
-
-  assert (@covered o (ls3_extract A a x y) (nh_vars_hyps H)) as cv.
-  { dwfseq; tcsp; introv h; autorewrite with slow in *; simpl in *; tcsp. }
-  exists cv.
-
-  vr_seq_true.
-  autorewrite with slow.
-
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  clear lib safe ext.
-  rename lib' into lib; rename safe' into safe.
-
-  dands.
-
-  { admit. }
-
-  apply equality_in_function3.
-  dands.
-
-  { admit. }
-
-  intros lib' ext A1 A2 eqA.
-
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  clear dependent lib.
-  rename lib' into lib.
-  rename safe' into safe.
-
-  dands.
-
-  { admit. }
-
-  rewrite substc_mkcv_function; auto;[].
-  autorewrite with slow.
-
-  rewrite substcv_as_substc2.
-
-  apply equality_in_function3.
-  dands.
-
-  { admit. }
-
-  intros lib' ext a1 a2 eqa.
-
-  eapply equality_monotone in eqA;[|eauto];[].
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  clear dependent lib.
-  rename lib' into lib.
-  rename safe' into safe.
-
-  dands.
-
-  { admit. }
-
-  eapply alphaeqc_preserving_equality;
-    [|apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_fun].
-  eapply alphaeqc_preserving_equality;
-    [|apply alphaeqc_sym; apply mkcv_fun_substc].
-
-  unfold mkcv_exists.
-  autorewrite with slow.
-  repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
-  autorewrite with slow.
-
-  apply equality_in_fun.
-  dands.
-
-  { admit. }
-
-  { admit. }
-
-  intros lib' ext x1 x2 eqx.
-
-  eapply alphaeqc_preserving_equality in eqx;
-    [|apply substc_alphaeqcv; apply substc2_ffdefs].
-  autorewrite with slow in *.
-
-  apply equality_in_mkc_ffdefs in eqx; exrepnd.
-  clear eqx0 eqx1.
-
-  eapply equality_monotone in eqA;[|eauto];[].
-  eapply equality_monotone in eqa;[|eauto];[].
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  clear dependent lib.
-  rename lib' into lib.
-  rename safe' into safe.
-
-  eapply alphaeqc_preserving_equality;
-    [|apply substc_alphaeqcv;apply alphaeqcv_sym;apply substc2_fun];[].
-  autorewrite with slow.
-  eapply alphaeqc_preserving_equality;
-    [|apply alphaeqc_sym; apply mkcv_fun_substc].
-  repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
-  autorewrite with slow.
-
-  apply all_in_ex_bar_equality_implies_equality.
-  eapply all_in_ex_bar_modus_ponens1;[|exact eqx2]; clear eqx2; introv ext eqx2.
-
-  eapply equality_monotone in eqA;[|eauto];[].
-  eapply equality_monotone in eqa;[|eauto];[].
-  eapply equality_monotone in eqx;[|eauto];[].
-
-  unfold ex_nodefsc_eq in *; exrepnd.
-  rename eqx1 into eqw.
-  rename eqx0 into nodefs.
-
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  clear dependent lib.
-  rename lib' into lib.
-  rename safe' into safe.
-
-  apply equality_in_fun.
-  dands.
-
-  { admit. }
-
-  { admit. }
-
-  intros lib' ext z1 z2 eqz.
-
-  eapply equality_monotone in eqA;[|eauto];[].
-  eapply equality_monotone in eqa;[|eauto];[].
-  eapply equality_monotone in eqx;[|eauto];[].
-  eapply equality_monotone in eqw;[|eauto];[].
-
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  clear dependent lib.
-  rename lib' into lib.
-  rename safe' into safe.
-
-  eapply equality_respects_cequivc_left;
-    [apply ccequivc_ext_sym;apply apply3_ls3c_extract_ccequivc_ext|].
-  eapply equality_respects_cequivc_right;
-    [apply ccequivc_ext_sym;apply apply3_ls3c_extract_ccequivc_ext|].
-
-  apply equality_in_mkc_squash_ax.
-  apply equality_refl in eqA.
-  apply equality_refl in eqa.
-  apply equality_refl in eqx.
-  apply equality_refl in eqz.
-  GC.
-
-  clear eqA.
-  rename eqw into eqA.
-
-  eapply inhabited_type_bar_respects_alphaeqc;
-    [apply alphaeqc_sym;apply substc_alphaeqcv;apply substc2_product;tcsp|];[].
-
-  rewrite mkcv_product_substc; auto;[].
-  autorewrite with slow.
-
-  apply equality_in_csname in eqa.
-  unfold equality_of_csname_bar in eqa.
-  apply all_in_ex_bar_inhabited_type_bar_implies_inhabited_type_bar.
-  eapply all_in_ex_bar_modus_ponens1;[|exact eqa]; clear eqa; introv ext eqa.
-
-  eapply equality_monotone in eqA;[|eauto];[].
-  eapply member_monotone in eqz;[|eauto];[].
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  clear dependent lib.
-  rename lib' into lib.
-  rename safe' into safe.
-
-  unfold equality_of_csname in eqa; exrepnd; GC; spcast.
-
-  eapply member_respects_cequivc_type in eqz;
-    [|apply implies_ccequivc_ext_apply;
-      [apply ccequivc_ext_refl
-      |apply computes_to_valc_implies_ccequivc_ext;eauto]
-    ];[].
-
-  eapply inhabited_type_bar_cequivc;
-    [apply ccequivc_ext_sym;
-     apply implies_ccequivc_ext_product;
-     [apply ccequivc_ext_refl
-     |apply implies_bcequivc_ext_substc2_1;
-      apply computes_to_valc_implies_ccequivc_ext;eauto]
-    |].
-
-  clear a1 eqa2.
-
-  applydup (@equality_in_mkc_csprop_implies_tequality_cs o name) in eqA as teq; auto;[].
-  eapply tequality_preserves_member in eqz;[|eauto].
-
-  applydup @inhabited_implies_tequality in eqz as tya.
-  apply types_converge in tya.
-  eapply all_in_ex_bar_modus_ponens1;[|exact tya]; clear tya; introv ext tya.
-  unfold chaltsc in tya; spcast.
-  apply hasvaluec_implies_computes_to_valc in tya; exrepnd.
-
-  eapply member_monotone in eqz;[|eauto];[].
-  eapply equality_monotone in eqA;[|eauto];[].
-  eapply tequality_monotone in teq;[|eauto];[].
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  clear dependent lib.
-  rename lib' into lib.
-  rename safe' into safe.
-
-  apply inhabited_product.
-  dands; eauto 3 with slow;[|].
-
-  { admit. }
-
-  exists (@mkc_pair
-            _
-            (mkc_nat (lib_size lib))
-            (mkc_lam b (mkcv_lam _ x (mk_cv _ z1)))).
-
-  apply in_ext_implies_all_in_ex_bar.
-  introv ext.
-  exists (@mkc_nat o (lib_size lib)) (mkc_lam b (mkcv_lam _ x (mk_cv _ z1))).
-  dands; spcast; eauto 3 with slow;[].
-
-  eapply equality_monotone in eqA;[|eauto];[].
-(*  eapply member_monotone in eqz;[|eauto];[].*)
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-
-  rename lib into lib1.
-  rename safe into safe1.
-  rename lib' into lib.
-  rename safe' into safe.
-
-  rewrite substc2_substc3_eq.
-  rewrite substc3_2_substc_eq.
-  rewrite substc4_mkcv_function; tcsp.
-  autorewrite with slow.
-
-  eapply member_respects_alphaeqc_r;
-    [apply implies_alphaeqc_mk_function;
-     apply alphaeqcv_sym;
-     apply substc5_mkcv_fun|].
-  autorewrite with slow.
-  rewrite substc5_var2; tcsp;[].
-  rewrite substc5_var0; tcsp;[].
-
-  eapply member_respects_alphaeqc_r;
-    [apply implies_alphaeqc_mk_function;
-     apply implies_alphaeqcv_mkcv_fun;
-     [|apply alphaeqcv_refl];
-     apply implies_alphaeqcv_mkcv_equality;
-     [apply alphaeqcv_refl|apply alphaeqcv_refl|];
-     apply alphaeqcv_sym;apply substc5_mkcv_natk2nat
-    |];[].
-  autorewrite with slow.
-  rewrite substc5_var1; tcsp;[].
-
-  rev_assert (member
-                lib
-                (mkc_lam b (mkcv_lam [b] x (mk_cv [x, b] z1)))
-                (mkc_function
-                   (mkc_csname 0)
-                   b
-                   (mkcv_fun
-                      [b]
-                      (mkcv_equality
-                         [b]
-                         (mk_cv [b] (mkc_choice_seq name))
-                         (mkc_var b)
-                         (mkcv_natk2nat [b] (mk_cv [b] (mkc_nat (lib_size lib1)))))
-                      (mkcv_apply [b] (mk_cv [b] u) (mkc_var b))))) mem.
-  {
-    apply equality_in_function3 in mem; repnd.
-    apply equality_in_function3; dands; auto.
-    introv xt ea.
-    pose proof (mem _ xt _ _ ea) as mem; repnd.
-    dands.
-
-    {
-      eapply tequality_respects_alphaeqc_left; [apply alphaeqc_sym;apply substc_mkcv_fun|].
-      eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply substc_mkcv_fun|].
-      eapply tequality_respects_alphaeqc_left  in mem1;[|apply substc_mkcv_fun].
-      eapply tequality_respects_alphaeqc_right in mem1;[|apply substc_mkcv_fun].
-      autorewrite with slow in *.
-
-      apply tequality_fun in mem1; repnd.
-      apply tequality_fun; dands; auto.
-      introv xt1 inh.
-      apply mem1 in inh; auto; eauto 3 with slow;[].
-      eapply equality_in_mkc_csprop_preserves_tequality;
-        [apply equality_sym| |]; eauto 3 with slow.
-    }
-
-    {
-      eapply alphaeqc_preserving_equality;[|apply alphaeqc_sym;apply substc_mkcv_fun].
-      eapply alphaeqc_preserving_equality in mem;[|apply substc_mkcv_fun].
-      autorewrite with slow in *.
-
-      apply equality_in_fun in mem; repnd.
-      apply equality_in_fun; dands; auto.
-
-      {
-        introv xt1 inh.
-        eapply equality_in_mkc_csprop_preserves_type;
-          [apply equality_sym| |]; eauto 3 with slow.
-      }
-
-      {
-        introv xt1 eb.
-        eapply tequality_preserving_equality;
-          [|apply tequality_sym;eapply equality_in_mkc_csprop_implies_tequality];eauto;
-            eauto 3 with slow.
-        eapply equality_refl; eauto 3 with slow.
-      }
-    }
-  }
-
-  apply equality_sym in eqA; apply equality_refl in eqA.
-  clear dependent A1.
-
-  apply equality_in_function3; dands; eauto 3 with slow;[].
-
-  introv ext1 ecs.
-  rename a0 into b1.
-  rename a' into b2.
-  dands.
-
-  { admit. }
-
-  eapply alphaeqc_preserving_equality;[|apply alphaeqc_sym;apply substc_mkcv_fun].
-  autorewrite with slow.
-  eapply alphaeqc_preserving_equality;
-    [|apply alphaeqc_sym;apply alphaeqc_mkc_fun;
-      [|apply alphaeqc_refl];
-      apply implies_alphaeqc_mkc_equality;
-      [apply alphaeqc_refl|apply alphaeqc_refl|];
-      apply substc_mkcv_natk2nat].
-  autorewrite with slow.
-
-  apply equality_in_fun.
-  dands; eauto 3 with slow.
-
-  { admit. }
-
-  { admit. }
-
-  introv ext2 eb.
-
-  eapply equality_respects_cequivc_left;
-    [apply ccequivc_ext_sym;apply sp_implies_ccequivc_ext_apply;
-     apply ccequivc_ext_beta|].
-  rewrite mkcv_lam_substc; tcsp;[].
-  eapply equality_respects_cequivc_left;
-    [apply ccequivc_ext_sym; apply ccequivc_ext_beta|].
-  autorewrite with slow.
-
-  eapply equality_respects_cequivc_right;
-    [apply ccequivc_ext_sym;apply sp_implies_ccequivc_ext_apply;
-     apply ccequivc_ext_beta|].
-  rewrite mkcv_lam_substc; tcsp;[].
-  eapply equality_respects_cequivc_right;
-    [apply ccequivc_ext_sym; apply ccequivc_ext_beta|].
-  autorewrite with slow.
-
-  apply equality_refl in ecs.
-  clear b2.
-  apply equality_in_mkc_equality in eb; repnd.
-  clear eb eb1.
-  rw @member_eq.
-
-  assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
-  eapply member_monotone in ecs;[|exact ext2];[].
-(*  eapply member_monotone in eqz;[|exact xt];[].*)
-  eapply member_monotone in eqA;[|exact xt];[].
-  assert (safe_library lib'0) as safe' by eauto 3 with slow.
-  assert (lib_extends lib'0 lib1) as ext' by eauto 3 with slow.
-  clear dependent lib'.
-  clear dependent lib.
-  rename lib'0 into lib.
-  rename safe' into safe.
-  rename ext'  into ext.
-
-  apply equality_in_csname_iff in ecs.
-  unfold equality_of_csname_bar in ecs.
-
-  apply equality_natk2nat_implies2 in eb0.
-  apply all_in_ex_bar_member_implies_member.
-
-  eapply all_in_ex_bar_modus_ponens2;[|exact eb0|exact ecs]; clear eb0 ecs; introv xt eb0 ecs.
-
-  eapply member_monotone in eqA;[|exact xt];[].
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  assert (lib_extends lib' lib1) as ext' by eauto 3 with slow.
-  clear dependent lib.
-  rename lib' into lib.
-  rename safe' into safe.
-  rename ext' into ext.
-
-  unfold equality_of_csname in ecs; exrepnd; spcast; GC.
-  rename name0 into name'.
-
-  rev_assert (member lib z1 (mkc_apply u (mkc_choice_seq name'))) mem.
-  {
-    pose proof (equality_in_mkc_csprop_implies_tequality lib u u b1 (mkc_choice_seq name') i) as teq.
-    repeat (autodimp teq hyp); eauto 3 with slow.
-    { apply equality_in_csname_iff; exists (trivial_bar lib); introv br xt; simpl in *.
-      exists name'; dands; spcast; eauto 3 with slow. }
-    eapply tequality_preserving_equality;[|apply tequality_sym;eauto]; auto.
-  }
-
-  assert (forall m,
-             m < lib_size lib1
-             ->
-             {k : nat
-             & computes_to_valc lib (mkc_apply (mkc_choice_seq name) (mkc_nat m)) (mkc_nat k)
-             # computes_to_valc lib (mkc_apply (mkc_choice_seq name') (mkc_nat m)) (mkc_nat k)}) as imp.
-  {
-    introv h; apply eb0 in h.
-    apply equality_of_nat_imp_tt in h; unfold equality_of_nat_tt in h; exrepnd.
-    exists k; dands; spcast; auto.
-    eapply computes_to_valc_apply; eauto.
-  }
-  clear dependent b1.
-
-  assert (forall m,
-             m < lib_size lib1
-             ->
-             {k : nat
-              & find_cs_value_at lib name  m = Some (mkc_nat k)
-              # find_cs_value_at lib name' m = Some (mkc_nat k)}) as imp'.
-  {
-    introv h; apply imp in h; exrepnd.
-    exists k.
-    apply computes_to_valc_nat_implies_find_cs_value_at_if_safe in h1; auto.
-    apply computes_to_valc_nat_implies_find_cs_value_at_if_safe in h0; auto.
-  }
-  clear dependent imp.
-  rename imp' into imp.
-
-  (* === We might have to squash the application in the conclusion === *)
-
-  (* === We have to show that because of [imp], [lib1] can be extended with [name']
-         equivalent to [name] up to [lib_size lib1] === *)
-
-  destruct (choice_sequence_name_deq name' name) as [d|d];[subst;eauto 3 with slow|];[].
-
-
-
-  (* xxxxxxxxxxxx *)
-
-
 Lemma swap_safe_choice_sequence_entry_normalize {o} :
   forall name sw (entry : @ChoiceSeqEntry o),
     sane_swapping sw
@@ -5081,6 +4605,900 @@ Proof.
   apply matching_inf_entries_swap_iff; auto.
 Qed.
 
+Lemma swap_correct_restriction0 {o} :
+  forall sw name (restr : @ChoiceSeqRestriction o),
+    correct_restriction name restr
+    -> correct_restriction name (swap_cs_choice_seq_restr sw restr).
+Proof.
+  introv cor.
+  unfold correct_restriction in *.
+  destruct name as [name kind]; simpl in *.
+  destruct sw as [n1 n2]; simpl.
+  destruct kind; simpl in *; boolvar; subst; simpl in *; tcsp; eauto 3 with slow.
+Qed.
+Hint Resolve swap_correct_restriction0 : slow.
+
+Lemma swap_safe_choice_sequence_entry {o} :
+  forall name sw (entry : @ChoiceSeqEntry o),
+    safe_choice_sequence_entry name entry
+    -> safe_choice_sequence_entry name (swap_cs_choice_seq_entry sw entry).
+Proof.
+  introv safe.
+  unfold safe_choice_sequence_entry in *.
+  destruct entry as [vals restr]; simpl in *; repnd.
+  dands; eauto 3 with slow.
+Qed.
+Hint Resolve swap_safe_choice_sequence_entry : slow.
+
+Lemma swap_safe_choice_sequence_entry_normalize2 {o} :
+  forall name sw (entry : @ChoiceSeqEntry o),
+    sane_swapping sw
+    -> name <> swap_cs sw name
+    -> safe_choice_sequence_entry name entry
+    -> safe_choice_sequence_entry (swap_cs sw name) entry
+    -> safe_choice_sequence_entry
+         name
+         (normalize_choice_seq_entry
+            (swap_cs sw name)
+            (swap_cs_choice_seq_entry sw entry)).
+Proof.
+  introv sane eqn safe safesw.
+  unfold normalize_choice_seq_entry.
+  unfold safe_choice_sequence_entry in *.
+  destruct entry as [vals restr]; simpl in *; repnd; GC.
+  unfold swap_cs_choice_seq_vals.
+  destruct sw as [n1 n2]; simpl in *.
+  boolvar; subst; tcsp;[|].
+
+  { destruct n2 as [n2 k2]; simpl in *.
+    unfold cs_name2restr; simpl.
+    destruct k2;[|].
+
+    { unfold correct_restriction in safesw0; simpl in *.
+      boolvar; subst; simpl in *; dands; eauto 3 with slow;GC;[| |].
+
+      { introv sel.
+        rewrite select_map in sel.
+        apply option_map_Some in sel; exrepnd; subst.
+        autorewrite with slow.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        apply safe in sel1.
+        apply safesw0 in sel1; auto. }
+
+      { introv sel.
+        rewrite select_map in sel.
+        apply option_map_Some in sel; exrepnd; subst; simpl in *.
+        autorewrite with slow.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        apply safe in sel1.
+        apply safesw0 in sel1; auto. }
+
+      { unfold choice_sequence_satisfies_restriction; simpl.
+        unfold swap_cs_choice_seq_restr; simpl.
+        destruct restr; autorewrite with list slow.
+
+        { introv sel.
+          rewrite select_map in sel; apply option_map_Some in sel; exrepnd; subst.
+          simpl in *.
+          unfold swap_cs_restriction_pred; simpl; autorewrite with slow.
+          apply safe; auto. }
+
+        { introv h.
+          rewrite select_map.
+          unfold choice_sequence_satisfies_restriction in *.
+          applydup safe in h; unfold ChoiceSeqVal in *; rewrite h0; simpl; auto. } } }
+
+    { unfold correct_restriction in *; simpl in *.
+      destruct n1 as [n1 k1]; simpl in *.
+      unfold compatible_choice_sequences in *; simpl in *.
+      unfold compatible_cs_kinds in *; simpl in *.
+      destruct k1; simpl in *; boolvar; subst; simpl in *; dands; eauto 3 with slow; tcsp; GC.
+
+      { introv; unfold natSeq2default.
+        unfold is_nat_seq_restriction, is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd.
+        remember (select n l) as sel; symmetry in Heqsel; destruct sel; simpl; auto.
+        pose proof (safesw1 n) as q; autodimp q hyp; eauto 3 with slow.
+        unfold cterm_is_nth in q; rewrite Heqsel in q; exrepnd; ginv. }
+
+      { introv; unfold natSeq2restrictionPred.
+        unfold is_nat_seq_restriction, is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd; tcsp.
+        remember (select n l) as sel; symmetry in Heqsel; destruct sel; simpl; auto; tcsp.
+        split; introv h; subst; eauto 3 with slow.
+        pose proof (safesw3 n v) as q; autodimp q hyp; eauto 3 with slow.
+        pose proof (safe0 n v) as z; apply z in h; apply q in h; clear q z.
+        unfold cterm_is_nth in h; rewrite Heqsel in h.
+        exrepnd; ginv. }
+
+      { introv sel; rewrite select_map in sel; apply option_map_Some in sel; exrepnd; subst.
+        unfold natSeq2restrictionPred; simpl.
+        unfold is_nat_seq_restriction in safesw0.
+        unfold is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        applydup safe in sel1.
+        remember (select n l) as sel; symmetry in Heqsel; destruct sel; simpl.
+
+        { pose proof (safesw3 n a) as q; autodimp q hyp; eauto 3 with slow.
+          apply q in sel0.
+          unfold cterm_is_nth in sel0.
+          rewrite Heqsel in sel0; exrepnd; ginv; autorewrite with slow; auto. }
+
+        { autorewrite with slow.
+          apply safe0 in sel0; auto. } }
+
+      { introv h.
+        unfold cterm_is_nth.
+        unfold natSeq2default.
+        unfold is_nat_seq_restriction, is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        pose proof (safe1 n) as q; autodimp q hyp.
+        unfold cterm_is_nth in q; exrepnd.
+        rewrite q1.
+        eexists; dands; eauto.
+        remember (select n l) as sel; symmetry in Heqsel; destruct sel.
+
+        { pose proof (safesw1 n) as w; autodimp w hyp; eauto 3 with slow.
+          unfold cterm_is_nth in w; rewrite Heqsel in w; exrepnd; ginv. }
+
+        { applydup @nth_select2 in Heqsel.
+          pose proof (safesw2 n) as w; autodimp w hyp; try congruence. } }
+
+      { introv h.
+        unfold cterm_is_nth.
+        unfold natSeq2default.
+        unfold is_nat_seq_restriction, is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        pose proof (safe2 n) as q; autodimp q hyp.
+        remember (select n l) as sel; symmetry in Heqsel; destruct sel; auto;[].
+        pose proof (safesw1 n) as w; autodimp w hyp; eauto 3 with slow.
+        unfold cterm_is_nth in w; rewrite Heqsel in w; exrepnd; ginv. }
+
+      { introv h.
+        unfold natSeq2restrictionPred.
+        unfold cterm_is_nth.
+        unfold is_nat_seq_restriction, is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        pose proof (safe1 n) as q; autodimp q hyp.
+        unfold cterm_is_nth in q; exrepnd; rewrite q1.
+        remember (select n l) as sel; symmetry in Heqsel; destruct sel; auto.
+
+        { pose proof (safesw1 n) as w; autodimp w hyp; eauto 3 with slow.
+          unfold cterm_is_nth in w; rewrite Heqsel in w; exrepnd; ginv.
+          split; intro w; subst; exrepnd; ginv.
+          eexists; dands; eauto; try congruence. }
+
+        { apply nth_select2 in Heqsel.
+          split; intro w; subst; exrepnd; ginv; eauto 3 with slow;[].
+          eexists; dands; eauto.
+          pose proof (safesw2 n) as z; autodimp z hyp.
+          pose proof (safesw0 n v) as u; apply u in w; clear u; auto.
+          apply safe3 in w; auto.
+          unfold cterm_is_nth in w.
+          rewrite q1 in w; exrepnd; ginv. } }
+
+      { introv h.
+        unfold natSeq2restrictionPred.
+        unfold cterm_is_nth.
+        unfold is_nat_seq_restriction, is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        pose proof (safe2 n) as q; autodimp q hyp.
+        remember (select n l) as sel; symmetry in Heqsel; destruct sel; tcsp;[].
+        split; intro z; subst; eauto 3 with slow.
+        pose proof (safe0 n v) as w; autodimp w hyp; apply w in z; clear w.
+        pose proof (safesw3 n v) as w; autodimp w hyp; eauto 3 with slow.
+        apply w in z; clear w.
+        unfold cterm_is_nth in z; rewrite Heqsel in z; exrepnd; ginv. }
+
+      { introv sel; rewrite select_map in sel; apply option_map_Some in sel; exrepnd; subst; simpl in *.
+        unfold natSeq2restrictionPred; simpl.
+        unfold is_nat_seq_restriction in safesw0.
+        unfold is_bool_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        applydup safe in sel1.
+        remember (select n l) as sel; symmetry in Heqsel; destruct sel; simpl.
+
+        { pose proof (safesw3 n a) as q; autodimp q hyp; eauto 3 with slow.
+          apply q in sel0.
+          unfold cterm_is_nth in sel0.
+          rewrite Heqsel in sel0; exrepnd; ginv; autorewrite with slow; auto. }
+
+        { apply nth_select2 in Heqsel.
+          pose proof (safesw0 n a) as q; autodimp q hyp.
+          apply q in sel0.
+          autorewrite with slow; auto. } } } }
+
+  { destruct n1 as [n1 k1]; simpl in *.
+    unfold cs_name2restr; simpl.
+    destruct k1;[|].
+
+    { unfold correct_restriction in safesw0; simpl in *.
+      boolvar; subst; simpl in *; dands; eauto 3 with slow;GC;[| |].
+
+      { introv sel.
+        rewrite select_map in sel.
+        apply option_map_Some in sel; exrepnd; subst.
+        autorewrite with slow.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        apply safe in sel1.
+        apply safesw0 in sel1; auto. }
+
+      { introv sel.
+        rewrite select_map in sel.
+        apply option_map_Some in sel; exrepnd; subst; simpl in *.
+        autorewrite with slow.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        apply safe in sel1.
+        apply safesw0 in sel1; auto. }
+
+      { unfold choice_sequence_satisfies_restriction; simpl.
+        unfold swap_cs_choice_seq_restr; simpl.
+        destruct restr; autorewrite with list slow.
+
+        { introv sel.
+          rewrite select_map in sel; apply option_map_Some in sel; exrepnd; subst.
+          simpl in *.
+          unfold swap_cs_restriction_pred; simpl; autorewrite with slow.
+          apply safe; auto. }
+
+        { introv h.
+          rewrite select_map.
+          unfold choice_sequence_satisfies_restriction in *.
+          applydup safe in h; unfold ChoiceSeqVal in *; rewrite h0; simpl; auto. } } }
+
+    { unfold correct_restriction in *; simpl in *.
+      destruct n2 as [n2 k2]; simpl in *.
+      unfold compatible_choice_sequences in *; simpl in *.
+      unfold compatible_cs_kinds in *; simpl in *.
+      destruct k2; simpl in *; boolvar; subst; simpl in *; dands; eauto 3 with slow; tcsp; GC.
+
+      { introv; unfold natSeq2default.
+        unfold is_nat_seq_restriction, is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd.
+        remember (select n0 l) as sel; symmetry in Heqsel; destruct sel; simpl; auto.
+        pose proof (safesw1 n0) as q; autodimp q hyp; eauto 3 with slow.
+        unfold cterm_is_nth in q; rewrite Heqsel in q; exrepnd; ginv. }
+
+      { introv; unfold natSeq2restrictionPred.
+        unfold is_nat_seq_restriction, is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd; tcsp.
+        remember (select n0 l) as sel; symmetry in Heqsel; destruct sel; simpl; auto; tcsp.
+        split; introv h; subst; eauto 3 with slow.
+        pose proof (safesw3 n0 v) as q; autodimp q hyp; eauto 3 with slow.
+        pose proof (safe0 n0 v) as z; apply z in h; apply q in h; clear q z.
+        unfold cterm_is_nth in h; rewrite Heqsel in h.
+        exrepnd; ginv. }
+
+      { introv sel; rewrite select_map in sel; apply option_map_Some in sel; exrepnd; subst.
+        unfold natSeq2restrictionPred; simpl.
+        unfold is_nat_seq_restriction in safesw0.
+        unfold is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        applydup safe in sel1.
+        remember (select n0 l) as sel; symmetry in Heqsel; destruct sel; simpl.
+
+        { pose proof (safesw3 n0 a) as q; autodimp q hyp; eauto 3 with slow.
+          apply q in sel0.
+          unfold cterm_is_nth in sel0.
+          rewrite Heqsel in sel0; exrepnd; ginv; autorewrite with slow; auto. }
+
+        { autorewrite with slow.
+          apply safe0 in sel0; auto. } }
+
+      { introv h.
+        unfold cterm_is_nth.
+        unfold natSeq2default.
+        unfold is_nat_seq_restriction, is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        pose proof (safe1 n0) as q; autodimp q hyp.
+        unfold cterm_is_nth in q; exrepnd.
+        rewrite q1.
+        eexists; dands; eauto.
+        remember (select n0 l) as sel; symmetry in Heqsel; destruct sel.
+
+        { pose proof (safesw1 n0) as w; autodimp w hyp; eauto 3 with slow.
+          unfold cterm_is_nth in w; rewrite Heqsel in w; exrepnd; ginv. }
+
+        { applydup @nth_select2 in Heqsel.
+          pose proof (safesw2 n0) as w; autodimp w hyp; try congruence. } }
+
+      { introv h.
+        unfold cterm_is_nth.
+        unfold natSeq2default.
+        unfold is_nat_seq_restriction, is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        pose proof (safe2 n0) as q; autodimp q hyp.
+        remember (select n0 l) as sel; symmetry in Heqsel; destruct sel; auto;[].
+        pose proof (safesw1 n0) as w; autodimp w hyp; eauto 3 with slow.
+        unfold cterm_is_nth in w; rewrite Heqsel in w; exrepnd; ginv. }
+
+      { introv h.
+        unfold natSeq2restrictionPred.
+        unfold cterm_is_nth.
+        unfold is_nat_seq_restriction, is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        pose proof (safe1 n0) as q; autodimp q hyp.
+        unfold cterm_is_nth in q; exrepnd; rewrite q1.
+        remember (select n0 l) as sel; symmetry in Heqsel; destruct sel; auto.
+
+        { pose proof (safesw1 n0) as w; autodimp w hyp; eauto 3 with slow.
+          unfold cterm_is_nth in w; rewrite Heqsel in w; exrepnd; ginv.
+          split; intro w; subst; exrepnd; ginv.
+          eexists; dands; eauto; try congruence. }
+
+        { apply nth_select2 in Heqsel.
+          split; intro w; subst; exrepnd; ginv; eauto 3 with slow;[].
+          eexists; dands; eauto.
+          pose proof (safesw2 n0) as z; autodimp z hyp.
+          pose proof (safesw0 n0 v) as u; apply u in w; clear u; auto.
+          apply safe3 in w; auto.
+          unfold cterm_is_nth in w.
+          rewrite q1 in w; exrepnd; ginv. } }
+
+      { introv h.
+        unfold natSeq2restrictionPred.
+        unfold cterm_is_nth.
+        unfold is_nat_seq_restriction, is_nat_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        pose proof (safe2 n0) as q; autodimp q hyp.
+        remember (select n0 l) as sel; symmetry in Heqsel; destruct sel; tcsp;[].
+        split; intro z; subst; eauto 3 with slow.
+        pose proof (safe0 n0 v) as w; autodimp w hyp; apply w in z; clear w.
+        pose proof (safesw3 n0 v) as w; autodimp w hyp; eauto 3 with slow.
+        apply w in z; clear w.
+        unfold cterm_is_nth in z; rewrite Heqsel in z; exrepnd; ginv. }
+
+      { introv sel; rewrite select_map in sel; apply option_map_Some in sel; exrepnd; subst; simpl in *.
+        unfold natSeq2restrictionPred; simpl.
+        unfold is_nat_seq_restriction in safesw0.
+        unfold is_bool_restriction in *.
+        destruct restr; simpl in *; tcsp; repnd;[].
+        applydup safe in sel1.
+        remember (select n0 l) as sel; symmetry in Heqsel; destruct sel; simpl.
+
+        { pose proof (safesw3 n0 a) as q; autodimp q hyp; eauto 3 with slow.
+          apply q in sel0.
+          unfold cterm_is_nth in sel0.
+          rewrite Heqsel in sel0; exrepnd; ginv; autorewrite with slow; auto. }
+
+        { apply nth_select2 in Heqsel.
+          pose proof (safesw0 n0 a) as q; autodimp q hyp.
+          apply q in sel0.
+          autorewrite with slow; auto. } } } }
+Qed.
+Hint Resolve swap_safe_choice_sequence_entry_normalize2 : slow.
+
+Lemma same_library_entries_preserves_is_cs_default_entry {o} :
+  forall (e1 e2 : @library_entry o),
+    same_library_entries e1 e2
+    -> is_cs_default_entry e2
+    -> is_cs_default_entry e1.
+Proof.
+  introv same ics.
+  unfold is_cs_default_entry in *.
+  destruct e1, e2; simpl in *; repnd; subst; tcsp; ginv; dands; eauto 3 with slow.
+Qed.
+Hint Resolve same_library_entries_preserves_is_cs_default_entry : slow.
+
+Lemma same_library_entries_preserves_entry_in_inf_library_default {o} :
+  forall e1 e2 (lib : @inf_library o),
+    same_library_entries e1 e2
+    -> entry_in_inf_library_default e2 lib
+    -> entry_in_inf_library_default e1 lib.
+Proof.
+  introv same i.
+  unfold entry_in_inf_library_default in *; repnd.
+  dands; eauto 3 with slow.
+Qed.
+Hint Resolve same_library_entries_preserves_entry_in_inf_library_default : slow.
+
+Lemma implies_swap_inf_lib_extends_ext_entries_right {o} :
+  forall sw infLib (lib : @library o),
+    sane_swapping sw
+    -> safe_library lib
+    -> safe_library_sw sw lib
+    -> inf_lib_extends_ext_entries infLib (swap_cs_lib sw lib)
+    -> inf_lib_extends_ext_entries (swap_cs_inf_lib sw infLib) lib.
+Proof.
+  introv sane safe safesw ext i.
+  applydup (@swap_entry_in_library o sw) in i.
+  applydup safe in i as safe0.
+  applydup safesw in i as safe1.
+  apply ext in i0.
+  repndors; exrepnd;[left; exists n|right].
+
+  { apply (swap_entry_in_inf_library_extends sw) in i1.
+    pose proof (swap_cs_lib_entry_idem sw entry) as q.
+    repeat (autodimp q hyp); auto;[].
+    eapply same_library_entries_preserves_entry_in_inf_library_extends in i1;
+      [|apply same_library_entries_sym; eauto]; auto. }
+
+  { apply (swap_entry_in_inf_library_default sw) in i0; auto; eauto 3 with slow;
+      [|destruct entry; simpl in *; tcsp;[]; autorewrite with slow;
+        unfold swap_cs_choice_seq_entry_normalize; boolvar; eauto 3 with slow];[].
+    pose proof (swap_cs_lib_entry_idem sw entry) as q.
+    repeat (autodimp q hyp);[].
+    eapply same_library_entries_preserves_entry_in_inf_library_default in i0;
+      [|apply same_library_entries_sym; eauto]; auto. }
+Qed.
+Hint Resolve implies_swap_inf_lib_extends_ext_entries_right : slow.
+
+
+
+
+(* *************************************************************** *)
+(* ****** LS3 ****** *)
+
+Definition rule_ls3 {o}
+           (lib : @library o)
+           (A a b n x y : NVar)
+           (i : nat)
+           (H : @bhyps o) :=
+  mk_rule
+    (mk_baresequent H (mk_concl (ls3 A a b n i) (ls3_extract A a x y)))
+    []
+    [].
+
+Lemma rule_ls3_true {o} :
+  forall lib
+         (A a b n x y : NVar) (i : nat) (H : @bhyps o)
+         (d1 : A <> a)
+         (d2 : n <> A)
+         (d3 : n <> a)
+         (d4 : b <> n)
+         (d5 : b <> A)
+         (d6 : b <> a)
+         (d7 : x <> b)
+         (safe : safe_library lib),
+    rule_true lib (rule_ls3 lib A a b n x y i H).
+Proof.
+  unfold rule_ls3, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros.
+  clear cargs.
+
+  (* We prove the well-formedness of things *)
+  destseq; allsimpl.
+  dLin_hyp; exrepnd.
+
+  assert (@covered o (ls3_extract A a x y) (nh_vars_hyps H)) as cv.
+  { dwfseq; tcsp; introv h; autorewrite with slow in *; simpl in *; tcsp. }
+  exists cv.
+
+  vr_seq_true.
+  autorewrite with slow.
+
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  clear lib safe ext.
+  rename lib' into lib; rename safe' into safe.
+
+  dands.
+
+  { admit. }
+
+  apply equality_in_function3.
+  dands.
+
+  { admit. }
+
+  intros lib' ext A1 A2 eqA.
+
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  clear dependent lib.
+  rename lib' into lib.
+  rename safe' into safe.
+
+  dands.
+
+  { admit. }
+
+  rewrite substc_mkcv_function; auto;[].
+  autorewrite with slow.
+
+  rewrite substcv_as_substc2.
+
+  apply equality_in_function3.
+  dands.
+
+  { admit. }
+
+  intros lib' ext a1 a2 eqa.
+
+  eapply equality_monotone in eqA;[|eauto];[].
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  clear dependent lib.
+  rename lib' into lib.
+  rename safe' into safe.
+
+  dands.
+
+  { admit. }
+
+  eapply alphaeqc_preserving_equality;
+    [|apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_fun].
+  eapply alphaeqc_preserving_equality;
+    [|apply alphaeqc_sym; apply mkcv_fun_substc].
+
+  unfold mkcv_exists.
+  autorewrite with slow.
+  repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+  autorewrite with slow.
+
+  apply equality_in_fun.
+  dands.
+
+  { admit. }
+
+  { admit. }
+
+  intros lib' ext x1 x2 eqx.
+
+  eapply alphaeqc_preserving_equality in eqx;
+    [|apply substc_alphaeqcv; apply substc2_ffdefs].
+  autorewrite with slow in *.
+
+  apply equality_in_mkc_ffdefs in eqx; exrepnd.
+  clear eqx0 eqx1.
+
+  eapply equality_monotone in eqA;[|eauto];[].
+  eapply equality_monotone in eqa;[|eauto];[].
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  clear dependent lib.
+  rename lib' into lib.
+  rename safe' into safe.
+
+  eapply alphaeqc_preserving_equality;
+    [|apply substc_alphaeqcv;apply alphaeqcv_sym;apply substc2_fun];[].
+  autorewrite with slow.
+  eapply alphaeqc_preserving_equality;
+    [|apply alphaeqc_sym; apply mkcv_fun_substc].
+  repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
+  autorewrite with slow.
+
+  apply all_in_ex_bar_equality_implies_equality.
+  eapply all_in_ex_bar_modus_ponens1;[|exact eqx2]; clear eqx2; introv ext eqx2.
+
+  eapply equality_monotone in eqA;[|eauto];[].
+  eapply equality_monotone in eqa;[|eauto];[].
+  eapply equality_monotone in eqx;[|eauto];[].
+
+  unfold ex_nodefsc_eq in *; exrepnd.
+  rename eqx1 into eqw.
+  rename eqx0 into nodefs.
+
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  clear dependent lib.
+  rename lib' into lib.
+  rename safe' into safe.
+
+  apply equality_in_fun.
+  dands.
+
+  { admit. }
+
+  { admit. }
+
+  intros lib' ext z1 z2 eqz.
+
+  eapply equality_monotone in eqA;[|eauto];[].
+  eapply equality_monotone in eqa;[|eauto];[].
+  eapply equality_monotone in eqx;[|eauto];[].
+  eapply equality_monotone in eqw;[|eauto];[].
+
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  clear dependent lib.
+  rename lib' into lib.
+  rename safe' into safe.
+
+  eapply equality_respects_cequivc_left;
+    [apply ccequivc_ext_sym;apply apply3_ls3c_extract_ccequivc_ext|].
+  eapply equality_respects_cequivc_right;
+    [apply ccequivc_ext_sym;apply apply3_ls3c_extract_ccequivc_ext|].
+
+  apply equality_in_mkc_squash_ax.
+  apply equality_refl in eqA.
+  apply equality_refl in eqa.
+  apply equality_refl in eqx.
+  apply equality_refl in eqz.
+  GC.
+
+  clear eqA.
+  rename eqw into eqA.
+
+  eapply inhabited_type_bar_respects_alphaeqc;
+    [apply alphaeqc_sym;apply substc_alphaeqcv;apply substc2_product;tcsp|];[].
+
+  rewrite mkcv_product_substc; auto;[].
+  autorewrite with slow.
+
+  apply equality_in_csname in eqa.
+  unfold equality_of_csname_bar in eqa.
+  apply all_in_ex_bar_inhabited_type_bar_implies_inhabited_type_bar.
+  eapply all_in_ex_bar_modus_ponens1;[|exact eqa]; clear eqa; introv ext eqa.
+
+  eapply equality_monotone in eqA;[|eauto];[].
+  eapply member_monotone in eqz;[|eauto];[].
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  clear dependent lib.
+  rename lib' into lib.
+  rename safe' into safe.
+
+  unfold equality_of_csname in eqa; exrepnd; GC; spcast.
+
+  eapply member_respects_cequivc_type in eqz;
+    [|apply implies_ccequivc_ext_apply;
+      [apply ccequivc_ext_refl
+      |apply computes_to_valc_implies_ccequivc_ext;eauto]
+    ];[].
+
+  eapply inhabited_type_bar_cequivc;
+    [apply ccequivc_ext_sym;
+     apply implies_ccequivc_ext_product;
+     [apply ccequivc_ext_refl
+     |apply implies_bcequivc_ext_substc2_1;
+      apply computes_to_valc_implies_ccequivc_ext;eauto]
+    |].
+
+  clear a1 eqa2.
+
+  applydup (@equality_in_mkc_csprop_implies_tequality_cs o name) in eqA as teq; auto;[].
+  eapply tequality_preserves_member in eqz;[|eauto].
+
+  applydup @inhabited_implies_tequality in eqz as tya.
+  apply types_converge in tya.
+  eapply all_in_ex_bar_modus_ponens1;[|exact tya]; clear tya; introv ext tya.
+  unfold chaltsc in tya; spcast.
+  apply hasvaluec_implies_computes_to_valc in tya; exrepnd.
+
+  eapply member_monotone in eqz;[|eauto];[].
+  eapply equality_monotone in eqA;[|eauto];[].
+  eapply tequality_monotone in teq;[|eauto];[].
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  clear dependent lib.
+  rename lib' into lib.
+  rename safe' into safe.
+
+  apply inhabited_product.
+  dands; eauto 3 with slow;[|].
+
+  { admit. }
+
+  exists (@mkc_pair
+            _
+            (mkc_nat (lib_size lib))
+            (mkc_lam b (mkcv_lam _ x (mk_cv _ z1)))).
+
+  apply in_ext_implies_all_in_ex_bar.
+  introv ext.
+  exists (@mkc_nat o (lib_size lib)) (mkc_lam b (mkcv_lam _ x (mk_cv _ z1))).
+  dands; spcast; eauto 3 with slow;[].
+
+  eapply equality_monotone in eqA;[|eauto];[].
+(*  eapply member_monotone in eqz;[|eauto];[].*)
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+
+  rename lib into lib1.
+  rename safe into safe1.
+  rename lib' into lib.
+  rename safe' into safe.
+
+  rewrite substc2_substc3_eq.
+  rewrite substc3_2_substc_eq.
+  rewrite substc4_mkcv_function; tcsp.
+  autorewrite with slow.
+
+  eapply member_respects_alphaeqc_r;
+    [apply implies_alphaeqc_mk_function;
+     apply alphaeqcv_sym;
+     apply substc5_mkcv_fun|].
+  autorewrite with slow.
+  rewrite substc5_var2; tcsp;[].
+  rewrite substc5_var0; tcsp;[].
+
+  eapply member_respects_alphaeqc_r;
+    [apply implies_alphaeqc_mk_function;
+     apply implies_alphaeqcv_mkcv_fun;
+     [|apply alphaeqcv_refl];
+     apply implies_alphaeqcv_mkcv_equality;
+     [apply alphaeqcv_refl|apply alphaeqcv_refl|];
+     apply alphaeqcv_sym;apply substc5_mkcv_natk2nat
+    |];[].
+  autorewrite with slow.
+  rewrite substc5_var1; tcsp;[].
+
+  rev_assert (member
+                lib
+                (mkc_lam b (mkcv_lam [b] x (mk_cv [x, b] z1)))
+                (mkc_function
+                   (mkc_csname 0)
+                   b
+                   (mkcv_fun
+                      [b]
+                      (mkcv_equality
+                         [b]
+                         (mk_cv [b] (mkc_choice_seq name))
+                         (mkc_var b)
+                         (mkcv_natk2nat [b] (mk_cv [b] (mkc_nat (lib_size lib1)))))
+                      (mkcv_apply [b] (mk_cv [b] u) (mkc_var b))))) mem.
+  {
+    apply equality_in_function3 in mem; repnd.
+    apply equality_in_function3; dands; auto.
+    introv xt ea.
+    pose proof (mem _ xt _ _ ea) as mem; repnd.
+    dands.
+
+    {
+      eapply tequality_respects_alphaeqc_left; [apply alphaeqc_sym;apply substc_mkcv_fun|].
+      eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply substc_mkcv_fun|].
+      eapply tequality_respects_alphaeqc_left  in mem1;[|apply substc_mkcv_fun].
+      eapply tequality_respects_alphaeqc_right in mem1;[|apply substc_mkcv_fun].
+      autorewrite with slow in *.
+
+      apply tequality_fun in mem1; repnd.
+      apply tequality_fun; dands; auto.
+      introv xt1 inh.
+      apply mem1 in inh; auto; eauto 3 with slow;[].
+      eapply equality_in_mkc_csprop_preserves_tequality;
+        [apply equality_sym| |]; eauto 3 with slow.
+    }
+
+    {
+      eapply alphaeqc_preserving_equality;[|apply alphaeqc_sym;apply substc_mkcv_fun].
+      eapply alphaeqc_preserving_equality in mem;[|apply substc_mkcv_fun].
+      autorewrite with slow in *.
+
+      apply equality_in_fun in mem; repnd.
+      apply equality_in_fun; dands; auto.
+
+      {
+        introv xt1 inh.
+        eapply equality_in_mkc_csprop_preserves_type;
+          [apply equality_sym| |]; eauto 3 with slow.
+      }
+
+      {
+        introv xt1 eb.
+        eapply tequality_preserving_equality;
+          [|apply tequality_sym;eapply equality_in_mkc_csprop_implies_tequality];eauto;
+            eauto 3 with slow.
+        eapply equality_refl; eauto 3 with slow.
+      }
+    }
+  }
+
+  apply equality_sym in eqA; apply equality_refl in eqA.
+  clear dependent A1.
+
+  apply equality_in_function3; dands; eauto 3 with slow;[].
+
+  introv ext1 ecs.
+  rename a0 into b1.
+  rename a' into b2.
+  dands.
+
+  { admit. }
+
+  eapply alphaeqc_preserving_equality;[|apply alphaeqc_sym;apply substc_mkcv_fun].
+  autorewrite with slow.
+  eapply alphaeqc_preserving_equality;
+    [|apply alphaeqc_sym;apply alphaeqc_mkc_fun;
+      [|apply alphaeqc_refl];
+      apply implies_alphaeqc_mkc_equality;
+      [apply alphaeqc_refl|apply alphaeqc_refl|];
+      apply substc_mkcv_natk2nat].
+  autorewrite with slow.
+
+  apply equality_in_fun.
+  dands; eauto 3 with slow.
+
+  { admit. }
+
+  { admit. }
+
+  introv ext2 eb.
+
+  eapply equality_respects_cequivc_left;
+    [apply ccequivc_ext_sym;apply sp_implies_ccequivc_ext_apply;
+     apply ccequivc_ext_beta|].
+  rewrite mkcv_lam_substc; tcsp;[].
+  eapply equality_respects_cequivc_left;
+    [apply ccequivc_ext_sym; apply ccequivc_ext_beta|].
+  autorewrite with slow.
+
+  eapply equality_respects_cequivc_right;
+    [apply ccequivc_ext_sym;apply sp_implies_ccequivc_ext_apply;
+     apply ccequivc_ext_beta|].
+  rewrite mkcv_lam_substc; tcsp;[].
+  eapply equality_respects_cequivc_right;
+    [apply ccequivc_ext_sym; apply ccequivc_ext_beta|].
+  autorewrite with slow.
+
+  apply equality_refl in ecs.
+  clear b2.
+  apply equality_in_mkc_equality in eb; repnd.
+  clear eb eb1.
+  rw @member_eq.
+
+  assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
+  eapply member_monotone in ecs;[|exact ext2];[].
+(*  eapply member_monotone in eqz;[|exact xt];[].*)
+  eapply member_monotone in eqA;[|exact xt];[].
+  assert (safe_library lib'0) as safe' by eauto 3 with slow.
+  assert (lib_extends lib'0 lib1) as ext' by eauto 3 with slow.
+  clear dependent lib'.
+  clear dependent lib.
+  rename lib'0 into lib.
+  rename safe' into safe.
+  rename ext'  into ext.
+
+  apply equality_in_csname_iff in ecs.
+  unfold equality_of_csname_bar in ecs.
+
+  apply equality_natk2nat_implies2 in eb0.
+  apply all_in_ex_bar_member_implies_member.
+
+  eapply all_in_ex_bar_modus_ponens2;[|exact eb0|exact ecs]; clear eb0 ecs; introv xt eb0 ecs.
+
+  eapply member_monotone in eqA;[|exact xt];[].
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  assert (lib_extends lib' lib1) as ext' by eauto 3 with slow.
+  clear dependent lib.
+  rename lib' into lib.
+  rename safe' into safe.
+  rename ext' into ext.
+
+  unfold equality_of_csname in ecs; exrepnd; spcast; GC.
+  rename name0 into name'.
+
+  rev_assert (member lib z1 (mkc_apply u (mkc_choice_seq name'))) mem.
+  {
+    pose proof (equality_in_mkc_csprop_implies_tequality lib u u b1 (mkc_choice_seq name') i) as teq.
+    repeat (autodimp teq hyp); eauto 3 with slow.
+    { apply equality_in_csname_iff; exists (trivial_bar lib); introv br xt; simpl in *.
+      exists name'; dands; spcast; eauto 3 with slow. }
+    eapply tequality_preserving_equality;[|apply tequality_sym;eauto]; auto.
+  }
+
+  assert (forall m,
+             m < lib_size lib1
+             ->
+             {k : nat
+             & computes_to_valc lib (mkc_apply (mkc_choice_seq name) (mkc_nat m)) (mkc_nat k)
+             # computes_to_valc lib (mkc_apply (mkc_choice_seq name') (mkc_nat m)) (mkc_nat k)}) as imp.
+  {
+    introv h; apply eb0 in h.
+    apply equality_of_nat_imp_tt in h; unfold equality_of_nat_tt in h; exrepnd.
+    exists k; dands; spcast; auto.
+    eapply computes_to_valc_apply; eauto.
+  }
+  clear dependent b1.
+
+  assert (forall m,
+             m < lib_size lib1
+             ->
+             {k : nat
+              & find_cs_value_at lib name  m = Some (mkc_nat k)
+              # find_cs_value_at lib name' m = Some (mkc_nat k)}) as imp'.
+  {
+    introv h; apply imp in h; exrepnd.
+    exists k.
+    apply computes_to_valc_nat_implies_find_cs_value_at_if_safe in h1; auto.
+    apply computes_to_valc_nat_implies_find_cs_value_at_if_safe in h0; auto.
+  }
+  clear dependent imp.
+  rename imp' into imp.
+
+  (* === We might have to squash the application in the conclusion === *)
+
+  (* === We have to show that because of [imp], [lib1] can be extended with [name']
+         equivalent to [name] up to [lib_size lib1] === *)
+
+  destruct (choice_sequence_name_deq name' name) as [d|d];[subst;eauto 3 with slow|];[].
+
+
+
+  (* xxxxxxxxxxxx *)
+
+
 
   (* TODO *)
   Lemma member_implies_contains_only {o} :
@@ -5114,79 +5532,18 @@ Qed.
 
   Lemma implies_swap_inf_lib_extends_left {o} :
     forall sw infLib (lib : @library o),
-      inf_lib_extends infLib (swap_cs_lib sw lib)
+      sane_swapping sw
+      -> safe_library lib
+      -> safe_library_sw sw lib
+      -> inf_lib_extends infLib (swap_cs_lib sw lib)
       -> inf_lib_extends (swap_cs_inf_lib sw infLib) lib.
   Proof.
-    introv ext.
+    introv sane safelib safesw ext.
     destruct ext as [ext safe].
     split; eauto 3 with slow.
+    introv xx; GC.
 
-Lemma implies_swap_inf_lib_extends_ext_entries_right {o} :
-  forall sw infLib (lib : @library o),
-    inf_lib_extends_ext_entries infLib (swap_cs_lib sw lib)
-    -> inf_lib_extends_ext_entries (swap_cs_inf_lib sw infLib) lib.
-Proof.
-  introv ext i.
-  apply (swap_entry_in_library sw) in i.
-  apply ext in i.
-  repndors; exrepnd;[left; exists n|right].
-
-  { SearchAbout entry_in_inf_library_extends swap_cs_lib_entry.
-
-
-Lemma swap_entry_in_inf_library_extends_left {o} :
-  forall sw entry n (ilib : @inf_library o),
-    entry_in_inf_library_extends (swap_cs_lib_entry sw entry) n ilib
-    -> entry_in_inf_library_extends entry n (swap_cs_inf_lib sw ilib).
-Proof.
-  induction n; introv i; simpl in *; tcsp;[].
-  repndors; repnd; subst; simpl in *; auto;[left|right].
-
-  { unfold swap_cs_inf_lib; eauto 3 with slow.
-    SearchAbout inf_entry_extends swap_cs_lib_entry.
-
-Lemma swap_inf_entry_extends_right {o} :
-  forall sw e1 (e2 : @library_entry o),
-    inf_entry_extends e1 (swap_cs_lib_entry sw e2)
-    -> inf_entry_extends (swap_cs_inf_lib_entry sw e1) e2.
-Proof.
-  introv i.
-  unfold inf_entry_extends; simpl in *.
-  destruct e1, e2; simpl in *; repnd; subst; tcsp;
-    dands; auto; autorewrite with slow; eauto 2 with slow.
-
-  unfold inf_choice_sequence_entry_extend in *; simpl in *; repnd; dands; eauto 3 with slow.
-
-  { unfold same_restrictions in *.
-    destruct entry as [vals restr]; simpl in *.
-    unfold swap_cs_inf_choice_seq_entry_normalize; simpl.
-Qed.
-Hint Resolve swap_inf_entry_extends : slow.
-
-  }
-
-  dands; eauto 3 with slow.
-  unfold swap_cs_inf_lib; simpl.
-  autorewrite with slow; auto.
-Qed.
-Hint Resolve swap_entry_in_inf_library_extends : slow.
-
-
-    SearchAbout entry_in_library swap_cs_lib.
-  Print inf_lib_extends_ext_entries.
-  Check entry_in_swap_library_implies.
-    in i; exrepnd; subst; simpl in *.
-  applydup ext in i0.
-  repndors; exrepnd;[left; exists n|right].
-
-  { apply (swap_entry_in_inf_library_extends sw) in i2; auto. }
-
-  { apply (swap_entry_in_inf_library_default sw) in i1; auto; eauto 3 with slow. }
-Qed.
-Hint Resolve implies_swap_inf_lib_extends_ext_entries : slow.
-
-    SearchAbout inf_lib_extends_ext_entries swap_cs_inf_lib.
-  Abort.
+  Qed.
 
     Definition swap_cs_bar {o} {lib}
                (sw  : cs_swap)
