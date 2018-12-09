@@ -5530,6 +5530,165 @@ Proof.
       { left; eauto. }
   Abort.
 
+  Lemma implies_swap_safe_library {o} :
+    forall sw (lib : @library o),
+      sane_swapping sw
+      -> safe_library lib
+      -> safe_library_sw sw lib
+      -> safe_library (swap_cs_lib sw lib).
+  Proof.
+    introv sane safe safesw i.
+    apply entry_in_swap_library_implies in i; exrepnd; subst; eauto 3 with slow.
+    applydup safesw in i1; eauto 3 with slow.
+  Qed.
+  Hint Resolve implies_swap_safe_library : slow.
+
+  Definition same_inf_choice_seq_entries {o} (e1 e2 : @InfChoiceSeqEntry o) :=
+    icse_vals e1 = icse_vals e2
+    /\ same_restrictions (icse_restriction e1) (icse_restriction e2).
+
+  Definition same_inf_library_entries {o} (e1 e2 : @inf_library_entry o) :=
+    match e1, e2 with
+    | inf_lib_cs name1 e1, inf_lib_cs name2 e2 => name1 = name2 /\ same_inf_choice_seq_entries e1 e2
+    | _, _ => e1 = e2
+    end.
+
+  Lemma swap_cs_inf_choice_seq_vals_idem {o} :
+    forall sw (vals : @InfChoiceSeqVals o),
+      swap_cs_inf_choice_seq_vals sw (swap_cs_inf_choice_seq_vals sw vals) = vals.
+  Proof.
+    introv; unfold swap_cs_inf_choice_seq_vals.
+    apply functional_extensionality; introv; autorewrite with slow; auto.
+  Qed.
+  Hint Rewrite @swap_cs_inf_choice_seq_vals_idem : slow.
+  Hint Resolve swap_cs_inf_choice_seq_vals_idem : slow.
+
+  Lemma swap_cs_inf_choice_seq_entry_idem {o} :
+    forall sw (entry : @InfChoiceSeqEntry o),
+      same_inf_choice_seq_entries
+        (swap_cs_inf_choice_seq_entry
+           sw
+           (swap_cs_inf_choice_seq_entry sw entry))
+        entry.
+  Proof.
+    introv.
+    unfold swap_cs_inf_choice_seq_entry.
+    destruct entry as [vals restr]; simpl.
+    autorewrite with slow.
+    unfold same_inf_choice_seq_entries; simpl; dands; eauto 3 with slow.
+  Qed.
+  Hint Resolve swap_cs_inf_choice_seq_entry_idem : slow.
+
+  Lemma swap_cs_inf_choice_seq_entry_normalize_idem {o} :
+    forall sw name (entry : @InfChoiceSeqEntry o),
+      sane_swapping sw
+      -> safe_inf_choice_sequence_entry name entry
+      -> same_inf_choice_seq_entries
+           (swap_cs_inf_choice_seq_entry_normalize
+              (swap_cs sw name)
+              name sw
+              (swap_cs_inf_choice_seq_entry_normalize name (swap_cs sw name) sw entry))
+           entry.
+  Proof.
+    introv sane safe.
+    unfold swap_cs_inf_choice_seq_entry_normalize.
+    destruct sw as [n1 n2]; simpl.
+    boolvar; subst; simpl in *; GC; eauto 3 with slow; tcsp;[|].
+
+    { destruct entry as [vals restr]; simpl in *; repnd.
+      remember (cs_name2restr n2) as opr2; symmetry in Heqopr2.
+      destruct opr2; simpl in *.
+
+      { remember (cs_name2restr n1) as opr1; symmetry in Heqopr1.
+        destruct opr1; simpl in *; autorewrite with slow; eauto 3 with slow;
+          unfold same_inf_choice_seq_entries; simpl; dands; eauto 3 with slow.
+        apply (@compatible_choice_sequences_implies_cs_name2restr_none o) in sane; auto.
+        rewrite sane in *; ginv. }
+
+      { remember (cs_name2restr n1) as opr1; symmetry in Heqopr1.
+        destruct opr1; simpl in *; autorewrite with slow; eauto 3 with slow;
+          unfold same_inf_choice_seq_entries; simpl; dands; eauto 3 with slow. } }
+
+    { destruct entry as [vals restr]; simpl in *; repnd.
+      remember (cs_name2restr n1) as opr1; symmetry in Heqopr1.
+      destruct opr1; simpl in *;
+        remember (cs_name2restr n2) as opr2; symmetry in Heqopr2;
+          destruct opr2; simpl in *;
+            unfold same_inf_choice_seq_entries; simpl; dands; eauto 3 with slow;[].
+      apply compatible_choice_sequences_sym in sane.
+      apply (@compatible_choice_sequences_implies_cs_name2restr_none o) in sane; auto.
+      rewrite sane in *; ginv. }
+  Qed.
+  Hint Resolve swap_cs_inf_choice_seq_entry_normalize_idem : slow.
+
+  Lemma swap_cs_inf_lib_entry_idem {o} :
+    forall sw (e : @inf_library_entry o),
+      sane_swapping sw
+      -> safe_inf_library_entry e
+      -> same_inf_library_entries (swap_cs_inf_lib_entry sw (swap_cs_inf_lib_entry sw e)) e.
+  Proof.
+    introv sane safe.
+    destruct e; simpl in *; autorewrite with slow; dands; auto; eauto 3 with slow; GC;[].
+
+    remember (swap_cs_correct_abs
+                sw opabs vars (swap_cs_soterm sw rhs)
+                (swap_cs_correct_abs sw opabs vars rhs correct)) as w.
+    clear Heqw.
+    revert w.
+    autorewrite with slow; introv.
+    f_equal; eauto with pi.
+  Qed.
+  Hint Resolve swap_cs_inf_lib_entry_idem : slow.
+
+  Lemma entry_in_swap_inf_library_n_implies {o} :
+    forall sw entry n (lib : @inf_library o),
+      entry_in_inf_library_n n entry (swap_cs_inf_lib sw lib)
+      -> exists e,
+        entry_in_inf_library_n n e lib
+        /\ entry = swap_cs_inf_lib_entry sw e.
+  Proof.
+    induction n; introv h; simpl in *; tcsp;[].
+    repndors; subst; repnd; tcsp.
+
+    { exists (lib 0); dands; tcsp. }
+
+    pose proof (IHn (shift_inf_lib lib)) as IHn; autodimp IHn hyp;[].
+    exrepnd; subst.
+    exists e; dands; tcsp.
+    right; dands; auto.
+    unfold swap_cs_inf_lib in *; simpl in *.
+    autorewrite with slow in *; tcsp.
+  Qed.
+
+  Lemma swap_entry_in_inf_library_n {o} :
+    forall sw entry n (lib : @inf_library o),
+      entry_in_inf_library_n n entry lib
+      -> entry_in_inf_library_n n (swap_cs_inf_lib_entry sw entry) (swap_cs_inf_lib sw lib).
+  Proof.
+    induction n; introv h; simpl in *; tcsp;[].
+    repndors; repnd; subst; simpl in *; auto;[].
+    right.
+    pose proof (IHn (shift_inf_lib lib)) as IHn; autodimp IHn hyp.
+    unfold swap_cs_inf_lib; simpl.
+    dands; auto; autorewrite with slow; tcsp.
+  Qed.
+  Hint Resolve swap_entry_in_inf_library_n : slow.
+
+  Lemma swap_inf_choice_sequence_satisfies_restriction {o} :
+    forall sw (vals : @InfChoiceSeqVals o) restr,
+      inf_choice_sequence_satisfies_restriction vals restr
+      -> inf_choice_sequence_satisfies_restriction
+           (swap_cs_inf_choice_seq_vals sw vals)
+           (swap_cs_choice_seq_restr sw restr).
+  Proof.
+    introv sat.
+    unfold swap_cs_inf_choice_seq_vals.
+    unfold inf_choice_sequence_satisfies_restriction in *.
+    destruct restr; simpl in *; introv; try congruence;[].
+    unfold swap_cs_restriction_pred; autorewrite with slow; auto.
+  Qed.
+  Hint Resolve swap_inf_choice_sequence_satisfies_restriction : slow.
+
   Lemma implies_swap_inf_lib_extends_left {o} :
     forall sw infLib (lib : @library o),
       sane_swapping sw
@@ -5542,6 +5701,154 @@ Proof.
     destruct ext as [ext safe].
     split; eauto 3 with slow.
     introv xx; GC.
+    autodimp safe hyp; eauto 3 with slow;[].
+
+    Lemma implies_swap_safe_inf_library {o} :
+      forall sw (lib : @inf_library o),
+        sane_swapping sw
+        -> safe_inf_library lib
+        -> safe_inf_library (swap_cs_inf_lib sw lib).
+    Proof.
+      introv sane safe i.
+
+      Lemma swap_entry_in_inf_library {o} :
+        forall sw entry (lib : @inf_library o),
+          entry_in_inf_library entry lib
+          -> entry_in_inf_library (swap_cs_inf_lib_entry sw entry) (swap_cs_inf_lib sw lib).
+      Proof.
+        introv h.
+        unfold entry_in_inf_library in *; repndors; exrepnd;[left; exists n|right]; eauto 3 with slow.
+
+
+  Lemma swap_inf_entry_in_inf_library_default {o} :
+    forall sw entry (lib : @inf_library o),
+      inf_entry_in_inf_library_default entry lib
+      -> inf_entry_in_inf_library_default (swap_cs_inf_lib_entry sw entry) (swap_cs_inf_lib sw lib).
+  Proof.
+    introv h.
+    unfold inf_entry_in_inf_library_default in *; repnd.
+    dands; eauto 3 with slow.
+    { introv; unfold swap_cs_inf_lib; autorewrite with slow; tcsp. }
+
+    Lemma implies_safe_swap_cs_inf_library_entry {o} :
+      forall sw (entry : @inf_library_entry o),
+        sane_swapping sw
+        -> safe_inf_library_entry entry
+        -> safe_inf_library_entry (swap_cs_inf_lib_entry sw entry).
+    Proof.
+      introv sane safe.
+      destruct entry; simpl in *; tcsp.
+      destruct entry as [vals restr]; simpl in *; repnd.
+      unfold safe_inf_choice_sequence_entry; simpl.
+      unfold swap_cs_inf_choice_seq_entry_normalize; simpl.
+      boolvar; simpl; dands; eauto 3 with slow.
+
+      destruct sw as [n1 n2]; simpl; repeat (boolvar; subst; simpl in *; tcsp; GC);[|];
+        destruct n1 as [n1 k1]; destruct n2 as [n2 k2]; simpl in *;
+          unfold cs_name2restr in *; simpl in *.
+
+      { unfold compatible_choice_sequences in *; simpl in *.
+        destruct k2; boolvar; subst; simpl in *; tcsp; dands; eauto 3 with slow;[| | |].
+
+        { introv; unfold swap_cs_inf_choice_seq_vals; autorewrite with slow.
+          unfold correct_restriction in *; simpl in *.
+          unfold inf_choice_sequence_satisfies_restriction in *.
+          destruct k1; boolvar; subst; simpl in *; tcsp; destruct restr; simpl in *;
+            repnd; tcsp; try (complete (apply safe0; tcsp));[].
+          pose proof (safe n0) as q.
+          destruct (lt_dec n0 (length l)).
+          { apply safe3 in q; auto.
+            unfold cterm_is_nth in q; exrepnd; allrw; eauto 3 with slow. }
+          { apply safe0 in q; try omega; auto. } }
+
+        { introv; unfold swap_cs_inf_choice_seq_vals; autorewrite with slow.
+          unfold correct_restriction in *; simpl in *.
+          unfold inf_choice_sequence_satisfies_restriction in *.
+          destruct k1; boolvar; subst; simpl in *; tcsp; destruct restr; simpl in *;
+            repnd; tcsp; try (complete (apply safe0; tcsp)). }
+
+        { introv; unfold swap_cs_inf_choice_seq_vals; autorewrite with slow.
+          unfold correct_restriction in *; simpl in *.
+          unfold inf_choice_sequence_satisfies_restriction in *.
+          destruct k1; boolvar; subst; simpl in *; tcsp; destruct restr; simpl in *;
+            repnd; tcsp; try (complete (apply safe0; tcsp)). }
+
+        { introv; unfold swap_cs_inf_choice_seq_vals; autorewrite with slow.
+          unfold correct_restriction in *; simpl in *.
+          unfold inf_choice_sequence_satisfies_restriction in *.
+          destruct k1; boolvar; subst; simpl in *; tcsp; destruct restr; simpl in *;
+            repnd; tcsp; try (complete (apply safe0; tcsp));[|].
+
+          { (* rewrite to get rid of the swap *)
+
+        SearchAbout choice_sequence_satisfies_restriction swap_cs_choice_seq_vals.
+    Qed.
+
+    SearchAbout safe_inf_library_entry swap_cs_inf_lib_entry.
+
+  Qed.
+  Hint Resolve swap_inf_entry_in_inf_library_default : slow.
+
+XXXXXXXXXx
+        induction lib; introv h; simpl in *; tcsp;[].
+        repndors; repnd; subst; simpl in *; auto;[].
+        right.
+        dands; auto.
+        rewrite matching_entries_swap_iff; auto.
+      Qed.
+
+      SearchAbout entry_in_library swap_cs_lib.
+      Print safe_inf_library_entry.
+      SearchAbout swap_cs_inf_lib.
+      SearchAbout entry_in_inf_library swap_cs_inf_lib.
+
+      Lemma entry_in_swap_inf_library_implies {o} :
+        forall sw entry (lib : @inf_library o),
+          entry_in_inf_library entry (swap_cs_inf_lib sw lib)
+          -> exists e,
+            entry_in_inf_library e lib
+            /\ entry = swap_cs_inf_lib_entry sw e.
+      Proof.
+        introv h.
+        unfold entry_in_inf_library in *; repndors; exrepnd.
+
+        { apply entry_in_swap_inf_library_n_implies in h0; exrepnd; subst.
+          exists e; dands; tcsp.
+          left; exists n; auto. }
+
+        Lemma inf_entry_in_swap_inf_library_default_implies {o} :
+          forall sw entry (lib : @inf_library o),
+            inf_entry_in_inf_library_default entry (swap_cs_inf_lib sw lib)
+            -> exists e,
+              inf_entry_in_inf_library_default e lib
+              /\ entry = swap_cs_inf_lib_entry sw e.
+        Proof.
+          introv h.
+          unfold inf_entry_in_inf_library_default in *; repnd.
+
+          SearchAbout safe_inf_library_entry swap_cs_inf_lib_entry.
+          Print matching_inf_entries.
+
+          exists (swap_cs_inf_lib_entry sw entry).
+
+          Print is_cs_default_inf_entry.
+          Print is_primitive_kind.
+          SearchAbout swap_cs_inf_lib_entry.
+        Qed.
+
+
+        Print inf_entry_in_inf_library_default.
+      Qed.
+
+
+      apply entry_in_swap_library_implies in i; exrepnd; subst; eauto 3 with slow.
+      applydup safesw in i1; eauto 3 with slow.
+    Qed.
+    Hint Resolve implies_swap_safe_library : slow.
+
+    SearchAbout safe_library swap_cs_lib.
+
+    SearchAbout safe_library swap_cs_lib.
 
   Qed.
 
