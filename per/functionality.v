@@ -28,7 +28,7 @@
 *)
 
 
-Require Import sequents.
+Require Import sequents2.
 
 
 Lemma pointwise_implies_pairwise {o} :
@@ -51,3 +51,151 @@ Definition pairwise_rule_true2 {o} lib (R : @rule o) : Type :=
   forall cargs : args_constraints (sargs R) (hyps (goal R)),
   forall hyps  : (forall s, LIn s (subgoals R) -> pairwise_sequent_true lib s),
     pairwise_sequent_true lib (goal R).
+
+Definition pairwise_rule_true3 {o} lib (R : @rule o) : Type :=
+  forall pwf   : wf_bseq (goal R),
+  forall cargs : args_constraints (sargs R) (hyps (goal R)),
+  forall hyps  : (forall s, LIn s (subgoals R) -> pairwise_sequent_true lib s),
+    pairwise_sequent_true lib (goal R).
+
+Lemma pairwise_rule_true3_implies_pairwise_rule_true2 {o} :
+  forall lib (R : @rule o), pairwise_rule_true3 lib R -> pairwise_rule_true2 lib R.
+Proof.
+  introv rt wf args imp.
+  unfold pairwise_rule_true3 in rt.
+  repeat (autodimp rt hyp); eauto 3 with slow.
+Qed.
+Hint Resolve pairwise_rule_true3_implies_pairwise_rule_true2 : slow.
+
+Lemma AN_sequent_true_pairwise_all {o} :
+  forall lib (S : @csequent o),
+    AN_sequent_true_pairwise lib S
+    <=>
+    forall s1 s2,
+      match destruct_csequent S with
+      | cseq_comps H T wh wt ct ec =>
+        forall pC1 : cover_vars T s1,
+        forall pC2 : cover_vars T s2,
+          similarity lib s1 s2 H
+          -> eq_hyps lib s1 s2 H
+          -> match ec with
+             | Some (existT _ ext (we, ce)) =>
+               forall pt1 : cover_vars ext s1,
+               forall pt2 : cover_vars ext s2,
+                 tequality lib (lsubstc T wt s1 pC1)
+                           (lsubstc T wt s2 pC2)
+                           # equality lib (lsubstc ext we s1 pt1)
+                           (lsubstc ext we s2 pt2)
+                           (lsubstc T wt s1 pC1)
+             | None => tequality lib (lsubstc T wt s1 pC1)
+                                 (lsubstc T wt s2 pC2)
+             end
+      end.
+Proof.
+  unfold AN_sequent_true_pairwise; split; intro h;
+    destruct (destruct_csequent S); destruct ec; exrepnd; introv.
+
+  { introv sim eqh; introv.
+    pose proof (h s2 s3 sim eqh) as h.
+    rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in h; auto.
+    rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in h; auto.
+    rewrite lsubstc_replace with (w2 := s1) (p2 := pt1) in h; auto.
+    rewrite lsubstc_replace with (w2 := s1) (p2 := pt2) in h; auto. }
+
+  { introv sim eqh.
+    pose proof (h s1 s2 sim eqh) as h.
+    rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in h; auto.
+    rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in h; tcsp. }
+
+  { introv eqh; eapply h; auto. }
+
+  { introv eqh; dands; auto. }
+Qed.
+
+Lemma AN_sequent_true_pairwise_ex {o} :
+  forall lib (S : @csequent o),
+    AN_sequent_true_pairwise lib S
+    <=>
+    forall s1 s2,
+      match destruct_csequent S with
+      | cseq_comps H T wh wt ct ec =>
+        similarity lib s1 s2 H
+        -> eq_hyps lib s1 s2 H
+        -> {pC1 : cover_vars T s1
+            & {pC2 : cover_vars T s2
+            & tequality lib (lsubstc T wt s1 pC1)
+                        (lsubstc T wt s2 pC2)
+              #
+              match ec with
+              | Some (existT _ ext (we, ce)) =>
+                {pt1 : cover_vars ext s1
+                 & {pt2 : cover_vars ext s2
+                 & equality lib (lsubstc ext we s1 pt1)
+                            (lsubstc ext we s2 pt2)
+                            (lsubstc T wt s1 pC1)}}
+              | None => True
+              end}}
+      end.
+Proof.
+  unfold AN_sequent_true_pairwise; split; intro h;
+    destruct (destruct_csequent S); destruct ec; exrepnd; introv; auto.
+
+  { introv sim eqh.
+    pose proof (h s2 s3 sim eqh) as h; repnd.
+    exists (s_cover_typ1 lib T s2 s3 hs ct sim)
+           (s_cover_typ2 lib T s2 s3 hs ct sim); sp.
+    exists (s_cover_ex1 lib t s2 s3 hs s0 sim)
+           (s_cover_ex2 lib t s2 s3 hs s0 sim); sp. }
+
+  { introv sim eqh.
+    pose proof (h s1 s2 sim eqh) as h; repnd.
+    exists (s_cover_typ1 lib T s1 s2 hs ct sim)
+           (s_cover_typ2 lib T s1 s2 hs ct sim); sp. }
+
+  { introv eqh.
+    pose proof (h s2 s3 p eqh) as h; exrepnd.
+    rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
+    rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
+    rewrite lsubstc_replace with (w2 := s1) (p2 := pt1); auto.
+    rewrite lsubstc_replace with (w2 := s1) (p2 := pt2); auto. }
+
+  { introv eqh.
+    pose proof (h s1 s2 p eqh ) as h; exrepnd.
+    rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
+    rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto. }
+Qed.
+
+Tactic Notation "seq_true_pairwise" :=
+  rw @AN_sequent_true_pairwise_all;
+  simpl;
+  introv sim eqh;
+  introv;
+  proof_irr;
+  GC.
+
+Ltac seq_true_pairwise_ltac H :=
+  trw_h AN_sequent_true_pairwise_ex  H;
+  simpl in H.
+
+Tactic Notation "seq_true_pairwise" "in" ident(H) :=
+  seq_true_pairwise_ltac H.
+
+Ltac prove_eq_hyps_snoc :=
+  match goal with
+  | [ |- eq_hyps _ (snoc ?s1 (?x1,?t1)) (snoc ?s2 (?x2,?t2)) (snoc ?hs ?h) ] =>
+    let wf := fresh "wf" in
+    let cov1 := fresh "cov1" in
+    let cov2 := fresh "cov2" in
+    assert (wf_term (htyp h)) as wf;
+    [simpl;auto
+    |assert (cover_vars (htyp h) s1) as cov1;
+     [simpl;auto
+     |assert (cover_vars (htyp h) s2) as cov2;
+      [simpl;auto
+      |apply eq_hyps_snoc;
+       exists s1 s2 t1 t2 wf cov1 cov2;
+       simpl;dands;auto
+      ]
+     ]
+    ]
+  end.
