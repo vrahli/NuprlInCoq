@@ -6649,79 +6649,164 @@ Proof.
   Qed.
   Hint Resolve sub_per_refl : slow.
 
-      Lemma lib_extends_preserves_cs_compatible_in_ext {o} :
-        forall name1 name2 (lib lib' lib0 : @library o),
-        lib_extends lib' lib
-        -> cs_compatible_in_ext name1 name2 lib lib0
-        -> cs_compatible_in_ext name1 name2 lib' lib0.
-      Proof.
-        introv ext comp h.
-        pose proof (comp _ h) as comp; exrepnd.
-        exists k.
-        apply (lib_extends_preserves_find_cs_value_at _ _ _ _ _ ext) in comp1.
-        apply (lib_extends_preserves_find_cs_value_at _ _ _ _ _ ext) in comp0.
-        tcsp.
-      Qed.
-      Hint Resolve lib_extends_preserves_cs_compatible_in_ext : slow.
+  Lemma lib_extends_preserves_cs_compatible_in_ext {o} :
+    forall name1 name2 (lib lib' lib0 : @library o),
+      lib_extends lib' lib
+      -> cs_compatible_in_ext name1 name2 lib lib0
+      -> cs_compatible_in_ext name1 name2 lib' lib0.
+  Proof.
+    introv ext comp h.
+    pose proof (comp _ h) as comp; exrepnd.
+    exists k.
+    apply (lib_extends_preserves_find_cs_value_at _ _ _ _ _ ext) in comp1.
+    apply (lib_extends_preserves_find_cs_value_at _ _ _ _ _ ext) in comp0.
+    tcsp.
+  Qed.
+  Hint Resolve lib_extends_preserves_cs_compatible_in_ext : slow.
 
-      Lemma lib_extends_cs_ren_trans {o} :
-        forall name1 name2 (lib lib' lib0 : @library o),
-          lib_extends lib' lib
-          -> lib_extends_cs_ren name1 name2 lib lib0
-          -> lib_extends_cs_ren name1 name2 lib' lib0.
-      Proof.
-        introv ext xt.
-        destruct xt as [xt comp].
-        split; dands; eauto 2 with slow.
-      Qed.
-      Hint Resolve lib_extends_cs_ren_trans : slow.
+  Lemma lib_extends_cs_ren_trans {o} :
+    forall name1 name2 (lib lib' lib0 : @library o),
+      lib_extends lib' lib
+      -> lib_extends_cs_ren name1 name2 lib lib0
+      -> lib_extends_cs_ren name1 name2 lib' lib0.
+  Proof.
+    introv ext xt.
+    destruct xt as [xt comp].
+    split; dands; eauto 2 with slow.
+  Qed.
+  Hint Resolve lib_extends_cs_ren_trans : slow.
 
-Definition bar_per {o} {lib} (bar : @BarLib o lib) :=
-  forall lib1 (b : bar_lib_bar bar lib1)
-         lib2 (ext : lib_extends lib2 lib1)
-         (x : lib_extends lib2 lib), per(o).
-
-Definition bar_per2per {o} {lib} {bar : @BarLib o lib} (p : bar_per bar) : per :=
-  fun t1 t2 =>
+  Definition bar_per_type {o} {lib} (bar : @BarLib o lib) :=
     forall lib1 (b : bar_lib_bar bar lib1)
            lib2 (ext : lib_extends lib2 lib1)
-           (x : lib_extends lib2 lib),
-      p lib1 b lib2 ext x t1 t2.
+           (x : lib_extends lib2 lib), per(o).
 
-Definition bar_per2lib_per {o} {lib} {bar : @BarLib o lib} (p : bar_per bar) : lib-per(lib,o).
-Proof.
-  exists (fun lib2 (x : lib_extends lib2 lib) t1 t2 =>
-            forall lib1 (b : bar_lib_bar bar lib1) (ext : lib_extends lib2 lib1),
-              p lib1 b lib2 ext x t1 t2).
-  repeat introv.
-Abort.
+  Definition bar_per_type_cond {o} {lib} {bar : @BarLib o lib}
+             (p : bar_per_type bar) :=
+    forall (lib' lib1 : library)
+           (b : bar_lib_bar bar lib1)
+           (ext : lib_extends lib' lib1)
+           (x y : lib_extends lib' lib),
+      (p lib1 b lib' ext x) <=2=> (p lib1 b lib' ext y).
 
-Lemma all_in_bar_ext_exists_per_implies_exists2 {o} :
-  forall {lib} (bar : @BarLib o lib) F,
-    all_in_bar_ext bar (fun lib' x => exists (e : per(o)), F lib' x e)
-    ->
-    exists (f : bar_per(bar)),
-    forall lib1 (br : bar_lib_bar bar lib1)
-           lib2 (ext : lib_extends lib2 lib1)
-           (x : lib_extends lib2 lib),
-      F lib2 x (f lib1 br lib2 ext x).
-Proof.
-  introv.
-  apply all_in_bar_ext_exists_per_implies_exists.
-Defined.
+  Record bar_per {o} {lib} (bar : @BarLib o lib) :=
+    MkBarPer
+      {
+        bar_per_per :> bar_per_type bar;
+        bar_per_cond : bar_per_type_cond bar_per_per
+      }.
 
-    Lemma ren_cs_term_preserves_ccomputes_to_valc {o} :
-      forall lib lib' name1 name2 (a b : @CTerm o),
-        a ===>(lib) b
-        -> lib_extends_cs_ren name1 name2 lib' lib
-        -> (ren_cs_cterm (name1,name2) a) ===>(lib') (ren_cs_cterm (name1,name2) b).
-    Proof.
-    Admitted.
+  Definition bar_per2per {o} {lib} {bar : @BarLib o lib} (p : bar_per bar) : per :=
+    fun t1 t2 =>
+      forall lib1 (b : bar_lib_bar bar lib1)
+             lib2 (ext : lib_extends lib2 lib1)
+             (x : lib_extends lib2 lib),
+        bar_per_per _ p lib1 b lib2 ext x t1 t2.
+
+  Definition bar_per2lib_per {o} {lib}
+             {bar : @BarLib o lib}
+             (p : bar_per bar)
+    : lib-per(lib,o).
+  Proof.
+    exists (fun lib2 (x : lib_extends lib2 lib) t1 t2 =>
+              forall lib1 (b : bar_lib_bar bar lib1) (ext : lib_extends lib2 lib1),
+                bar_per_per _ p lib1 b lib2 ext x t1 t2).
+    repeat introv.
+    split; intro q; introv; eapply (bar_per_cond _ p); eauto.
+  Defined.
+
+  Lemma all_in_bar_ext_exists_per_implies_exists2 {o} :
+    forall {lib}
+           (bar : @BarLib o lib)
+           (F : forall lib' (x : lib_extends lib' lib) (p : per(o)), Prop),
+      (forall lib' (x y : lib_extends lib' lib) (p q : per(o)),
+          F lib' x p
+          -> F lib' y q
+          -> (p <=2=> q))
+      -> all_in_bar_ext bar (fun lib' x => exists (e : per(o)), F lib' x e)
+      ->
+      exists (f : bar_per(bar)),
+      forall lib1 (br : bar_lib_bar bar lib1)
+             lib2 (ext : lib_extends lib2 lib1)
+             (x : lib_extends lib2 lib),
+        F lib2 x (bar_per_per _ f lib1 br lib2 ext x).
+  Proof.
+    introv cond h.
+    pose proof (DependentFunctionalChoice_on
+                  (pack_lib_bar bar)
+                  (fun x => per(o))
+                  (fun x e => F (plb_lib2 _ x)
+                                (plb_x _ x)
+                                e)) as C.
+    simpl in C.
+    repeat (autodimp C hyp).
+    { introv; destruct x; simpl in *; eapply h; eauto. }
+    exrepnd.
+
+    assert (bar_per_type_cond
+              (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
+                 (f (MkPackLibBar lib1 br lib2 ext x)))) as C.
+    {
+      repeat introv; simpl.
+      pose proof (C0 (MkPackLibBar lib1 b lib' ext x)) as q1; simpl in q1.
+      pose proof (C0 (MkPackLibBar lib1 b lib' ext y)) as q2; simpl in q2.
+      eapply cond; eauto.
+    }
+    exists (MkBarPer
+              _ _ _
+              (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
+                 (f (MkPackLibBar lib1 br lib2 ext x)))
+              C).
+    introv.
+    pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
+  Defined.
+
+  Lemma sub_per_per_bar_eq_raise_right {o} :
+    forall {lib lib'}
+           (bar  : @BarLib o lib)
+           (eqa  : lib-per(lib,o))
+           (extb : lib_extends lib' lib)
+           (f    : bar_per (raise_bar bar extb)),
+      (forall (lib1 : library)
+              (br : bar_lib_bar (raise_bar bar extb) lib1)
+              (lib2 : library)
+              (ext : lib_extends lib2 lib1)
+              (x : lib_extends lib2 lib'),
+          sub_per (eqa lib2 (lib_extends_trans x extb)) (bar_per_per _ f lib1 br lib2 ext x))
+      -> sub_per
+           (per_bar_eq bar eqa)
+           (per_bar_eq (raise_bar bar extb) (bar_per2lib_per f)).
+  Proof.
+    introv cond equ.
+
+    introv br ext; introv; simpl in *; exrepnd.
+    pose proof (equ _ br1 _ (lib_extends_trans ext br2) (lib_extends_trans x extb)) as equ; simpl in *.
+    exrepnd.
+    exists bar'.
+
+    introv br' ext'; introv; simpl in *; exrepnd.
+    pose proof (equ0 _ br' _ ext' x0) as equ0; simpl in *.
+    apply cond.
+    eapply (lib_per_cond _ eqa); eauto.
+  Qed.
+
+  Lemma ren_cs_term_preserves_ccomputes_to_valc {o} :
+    forall lib lib' name1 name2 (a b : @CTerm o),
+      a ===>(lib) b
+      -> lib_extends_cs_ren name1 name2 lib' lib
+      -> (ren_cs_cterm (name1,name2) a) ===>(lib') (ren_cs_cterm (name1,name2) b).
+  Proof.
+  Admitted.
 
 (* Inspired from name_invariance stuff *)
 Lemma implies_close_ren_cs {o} :
   forall name1 name2 lib lib0 lib' (u : cts(o)) (t1 t2 : @CTerm o) e,
-    name1 <> name2
+    local_ts u
+    -> ts_implies_per_bar u
+    -> type_system u
+    -> defines_only_universes u
+    -> type_monotone u
+    -> name1 <> name2
     -> up_to_namec name1 t1
     -> up_to_namec name1 t2
     -> (forall lib lib0 lib' t1 t2 e,
@@ -6748,6 +6833,7 @@ Lemma implies_close_ren_cs {o} :
              (ren_cs_cterm (name1,name2) t2)
              e'.
 Proof.
+  introv locts iperbar tsts dou mon.
   introv dn upto1 upto2 imp exta extb extc cl.
   revert dependent lib0.
   revert dependent lib'.
@@ -6799,12 +6885,26 @@ Proof.
     clear reca; rename reca' into reca.
 
     (* we need a lib-per instead *)
-    apply all_in_bar_ext_exists_per_implies_exists2 in reca; exrepnd.
+    apply all_in_bar_ext_exists_per_implies_exists2 in reca; exrepnd;
+      [|introv a b; repnd;
+        eapply close_uniquely_valued; try exact a; try exact b; auto];[].
 
-    exists (per_bar_eq (raise_bar bar extb) (bar_per2per f)).
-    exists eq; dands; eauto 3 with slow.
+    exists (per_bar_eq (raise_bar bar extb) (bar_per2lib_per f)).
+    dands; eauto 3 with slow.
+
+    {
+      eapply sub_per_eq_eq_term_equals_left;[eauto|].
+      eapply sub_per_per_bar_eq_raise_right.
+      introv; apply reca0.
+    }
+
     apply CL_bar; unfold per_bar.
-    exists (raise_bar bar extb).
+    exists (raise_bar bar extb) (bar_per2lib_per f).
+    dands; tcsp;[].
+    introv br ext; introv.
+    pose proof (reca0 _ br _ ext x) as reca0; repnd.
+    simpl in *; auto.
+
 
 
 
