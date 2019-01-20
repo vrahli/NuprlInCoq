@@ -6790,13 +6790,14 @@ Proof.
     eapply (lib_per_cond _ eqa); eauto.
   Qed.
 
-  Lemma ren_cs_term_preserves_ccomputes_to_valc {o} :
-    forall lib lib' name1 name2 (a b : @CTerm o),
-      a ===>(lib) b
-      -> lib_extends_cs_ren name1 name2 lib' lib
-      -> (ren_cs_cterm (name1,name2) a) ===>(lib') (ren_cs_cterm (name1,name2) b).
+  Lemma type_system_implies_type_extensionality {o} :
+    forall (ts : cts(o)),
+      type_system ts
+      -> type_extensionality ts.
   Proof.
-  Admitted.
+    introv h; destruct h; tcsp.
+  Qed.
+  Hint Resolve type_system_implies_type_extensionality : slow.
 
 (* Inspired from name_invariance stuff *)
 Lemma implies_close_ren_cs {o} :
@@ -6902,32 +6903,61 @@ Proof.
     exists (raise_bar bar extb) (bar_per2lib_per f).
     dands; tcsp;[].
     introv br ext; introv.
-    pose proof (reca0 _ br _ ext x) as reca0; repnd.
+    pose proof (reca0 _ br _ ext x) as reca; repnd.
     simpl in *; auto.
 
-
-
-
-    (*    apply CL_bar.
-    unfold per_bar.
-    exists (raise_bar bar ext) (ren_cs_lib_per (name1,name2) ext eqa).
-    dands.
-
-    - introv br xt; introv; simpl in *; exrepnd.
-      pose proof (reca _ br1 _ (lib_extends_trans xt br2) (lib_extends_trans x ext)) as reca; simpl in *.
-      repeat (autodimp reca hyp); eauto 3 with slow.
-      pose proof (reca lib'1) as reca; repeat (autodimp reca hyp); eauto 3 with slow.
-
-      {
-      }
-    SearchAbout BarLib lib_extends.*)
-    admit.
+    eapply close_extensionality; try exact reca; eauto 2 with slow;[].
+    introv; split; intro q; try apply q;[].
+    introv.
+    pose proof (reca0 _ b _ ext0 x) as reca0; repnd.
+    eapply close_uniquely_valued; try exact reca; try exact reca0; auto.
   }
 
   { Case "CL_int".
     unfold per_int in *; repnd.
 
+  Lemma ren_cs_term_preserves_ccomputes_to_valc {o} :
+    forall lib lib' name1 name2 (a b : @CTerm o),
+      a ===>(lib) b
+      -> lib_extend lib' lib
+      -> lib_extend lib lib0
+      -> lib_extends_cs_ren name1 name2 lib' lib0
+      -> (ren_cs_cterm (name1,name2) a) ===>(lib') (ren_cs_cterm (name1,name2) b).
+  Proof.
+  Admitted.
+
     apply (ren_cs_term_preserves_ccomputes_to_valc _ lib' name1 name2) in per0; auto.
+
+
+
+  Lemma lib_extends_preserves_cs_compatible_in_ext_right {o} :
+    forall name1 name2 (lib lib0 lib1 : @library o),
+      lib_extends lib1 lib0
+      -> lib_extends lib lib1
+      -> cs_compatible_in_ext name1 name2 lib lib0
+      -> cs_compatible_in_ext name1 name2 lib lib1.
+  Proof.
+    introv exta extb comp h.
+    apply comp.
+
+  Qed.
+  Hint Resolve lib_extends_preserves_cs_compatible_in_ext_right : slow.
+
+  Lemma lib_extends_cs_ren_trans_right {o} :
+    forall name1 name2 (lib lib0 lib1 : @library o),
+      lib_extends lib1 lib0
+      -> lib_extends lib lib1
+      -> lib_extends_cs_ren name1 name2 lib lib0
+      -> lib_extends_cs_ren name1 name2 lib lib1.
+  Proof.
+    introv exta extb xt.
+    destruct xt as [xt comp].
+    split; dands; eauto 2 with slow.
+
+  Qed.
+  Hint Resolve lib_extends_cs_ren_trans : slow.
+
+    SearchAbout lib_extends_cs_ren.
     apply (ren_cs_term_preserves_ccomputes_to_valc _ lib' name1 name2) in per1; auto.
     autorewrite with slow in *.
 
