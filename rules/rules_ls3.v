@@ -6790,6 +6790,36 @@ Proof.
     eapply (lib_per_cond _ eqa); eauto.
   Qed.
 
+  Lemma sub_per_per_bar_eq_raise_right2 {o} :
+    forall {lib lib'}
+           (bar  : @BarLib o lib)
+           (eqa  : lib-per(lib,o))
+           (extb : lib_extends lib' lib)
+           (f    : bar_per bar),
+      (forall (lib1 : library)
+              (br : bar_lib_bar bar lib1)
+              (lib2 : library)
+              (ext : lib_extends lib2 lib1)
+              (x : lib_extends lib2 lib),
+          sub_per (eqa lib2 x) (bar_per_per _ f lib1 br lib2 ext x))
+      -> sub_per
+           (per_bar_eq bar eqa)
+           (per_bar_eq (raise_bar bar extb) (raise_lib_per (bar_per2lib_per f) extb)).
+  Proof.
+    introv cond equ.
+
+    introv br ext; introv; simpl in *; exrepnd.
+    pose proof (equ _ br1 _ (lib_extends_trans ext br2) (lib_extends_trans x extb)) as equ; simpl in *.
+    exrepnd.
+    exists bar'.
+
+    introv br' ext'; introv; simpl in *; exrepnd.
+    pose proof (equ0 _ br' _ ext' x0) as equ0; simpl in *.
+    introv.
+    apply cond; auto.
+    eapply (lib_per_cond _ eqa); eauto.
+  Qed.
+
   Lemma type_system_implies_type_extensionality {o} :
     forall (ts : cts(o)),
       type_system ts
@@ -6801,7 +6831,7 @@ Proof.
 
 (* Inspired from name_invariance stuff *)
 Lemma implies_close_ren_cs {o} :
-  forall name1 name2 lib lib0 lib' (u : cts(o)) (t1 t2 : @CTerm o) e,
+  forall name1 name2 lib lib' (u : cts(o)) (t1 t2 : @CTerm o) e,
     local_ts u
     -> ts_implies_per_bar u
     -> type_system u
@@ -6810,10 +6840,9 @@ Lemma implies_close_ren_cs {o} :
     -> name1 <> name2
     -> up_to_namec name1 t1
     -> up_to_namec name1 t2
-    -> (forall lib lib0 lib' t1 t2 e,
-           lib_extends_cs_ren name1 name2 lib' lib0
-           -> lib_extends lib' lib
-           -> lib_extends lib lib0
+    -> (forall lib lib' t1 t2 e,
+           (lib_extends_cs_ren name1 name2 lib' lib
+            [+] lib_extends lib lib')
            -> u lib t1 t2 e
            -> exists e',
                sub_per e e'
@@ -6821,9 +6850,8 @@ Lemma implies_close_ren_cs {o} :
                     (ren_cs_cterm (name1,name2) t1)
                     (ren_cs_cterm (name1,name2) t2)
                     e')
-    -> lib_extends_cs_ren name1 name2 lib' lib0
-    -> lib_extends lib' lib
-    -> lib_extends lib lib0
+    -> (lib_extends_cs_ren name1 name2 lib' lib
+        [+] lib_extends lib lib')
     -> close u lib t1 t2 e
     -> exists e',
         sub_per e e'
@@ -6835,13 +6863,12 @@ Lemma implies_close_ren_cs {o} :
              e'.
 Proof.
   introv locts iperbar tsts dou mon.
-  introv dn upto1 upto2 imp exta extb extc cl.
-  revert dependent lib0.
+  introv dn upto1 upto2 imp exta cl.
   revert dependent lib'.
-  close_cases (induction cl using @close_ind') Case; introv extb exta extc; subst.
+  close_cases (induction cl using @close_ind') Case; introv exta; subst.
 
   { Case "CL_init".
-    pose proof (imp lib lib0 lib' T T' eq) as imp.
+    pose proof (imp lib lib' T T' eq) as imp.
     repeat (autodimp imp hyp); exrepnd.
     exists e'; dands; auto.
   }
@@ -6852,8 +6879,6 @@ Proof.
     assert (all_in_bar_ext
               bar
               (fun (lib' : library) (x : lib_extends lib' lib) =>
-                 lib_extends_cs_ren name1 name2 lib' lib0
-                 ->
                  exists e',
                    sub_per (eqa lib' x) e'
                    /\
@@ -6861,7 +6886,7 @@ Proof.
                          (ren_cs_cterm (name1, name2) T)
                          (ren_cs_cterm (name1, name2) T') e')) as reca'.
     {
-      introv br xt comp.
+      introv br xt; introv.
       pose proof (reca _ br _ xt x) as reca; simpl in reca.
       repeat (autodimp reca hyp).
       pose proof (reca lib'1) as reca.
@@ -6869,7 +6894,7 @@ Proof.
     }
     clear reca; rename reca' into reca.
 
-    assert (all_in_bar_ext
+(*    assert (all_in_bar_ext
               (raise_bar bar extb)
               (fun (lib'' : library) (x : lib_extends lib'' lib') =>
                  exists e',
@@ -6883,34 +6908,41 @@ Proof.
       pose proof (reca _ br1 _ (lib_extends_trans ext br2) (lib_extends_trans x extb)) as reca; simpl in reca.
       repeat (autodimp reca hyp); eauto 3 with slow.
     }
-    clear reca; rename reca' into reca.
+    clear reca; rename reca' into reca.*)
 
-    (* we need a lib-per instead *)
     apply all_in_bar_ext_exists_per_implies_exists2 in reca; exrepnd;
       [|introv a b; repnd;
         eapply close_uniquely_valued; try exact a; try exact b; auto];[].
 
-    exists (per_bar_eq (raise_bar bar extb) (bar_per2lib_per f)).
-    dands; eauto 3 with slow.
+    repndors.
 
     {
-      eapply sub_per_eq_eq_term_equals_left;[eauto|].
-      eapply sub_per_per_bar_eq_raise_right.
-      introv; apply reca0.
+      exists (per_bar_eq (raise_bar bar exta) (raise_lib_per (bar_per2lib_per f) exta)).
+      dands; eauto 3 with slow.
+
+      {
+        eapply sub_per_eq_eq_term_equals_left;[eauto|].
+        eapply sub_per_per_bar_eq_raise_right2.
+        introv; apply reca0.
+      }
+
+      apply CL_bar; unfold per_bar.
+      exists (raise_bar bar exta) (raise_lib_per (bar_per2lib_per f) exta).
+      dands; tcsp;[].
+      introv br ext; introv.
+      simpl in *; exrepnd.
+      pose proof (reca0 _ br1 _ (lib_extends_trans ext br2) (lib_extends_trans x exta)) as reca; repnd.
+
+      eapply close_extensionality; try exact reca; eauto 2 with slow;[].
+      introv; split; intro q; try apply q;[].
+      introv.
+      pose proof (reca0 _ b _ ext0 (lib_extends_trans x exta)) as reca0; repnd.
+      eapply close_uniquely_valued; try exact reca; try exact reca0; auto.
     }
 
-    apply CL_bar; unfold per_bar.
-    exists (raise_bar bar extb) (bar_per2lib_per f).
-    dands; tcsp;[].
-    introv br ext; introv.
-    pose proof (reca0 _ br _ ext x) as reca; repnd.
-    simpl in *; auto.
-
-    eapply close_extensionality; try exact reca; eauto 2 with slow;[].
-    introv; split; intro q; try apply q;[].
-    introv.
-    pose proof (reca0 _ b _ ext0 x) as reca0; repnd.
-    eapply close_uniquely_valued; try exact reca; try exact reca0; auto.
+    {
+      
+    }
   }
 
   { Case "CL_int".
