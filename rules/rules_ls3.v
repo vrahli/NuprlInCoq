@@ -6202,6 +6202,859 @@ Proof.
 Qed.
 Hint Resolve sub_per_equality_of_int_bar_eq : slow.
 
+Lemma sub_per_refl {o} : forall (eq : per(o)), sub_per eq eq.
+Proof.
+  introv h; auto.
+Qed.
+Hint Resolve sub_per_refl : slow.
+
+Lemma lib_extends_preserves_cs_compatible_in_ext {o} :
+  forall name1 name2 (lib lib' lib0 : @library o),
+    lib_extends lib' lib
+    -> cs_compatible_in_ext name1 name2 lib lib0
+    -> cs_compatible_in_ext name1 name2 lib' lib0.
+Proof.
+  introv ext comp h.
+  pose proof (comp _ h) as comp; exrepnd.
+  exists k.
+  apply (lib_extends_preserves_find_cs_value_at _ _ _ _ _ ext) in comp1.
+  apply (lib_extends_preserves_find_cs_value_at _ _ _ _ _ ext) in comp0.
+  tcsp.
+Qed.
+Hint Resolve lib_extends_preserves_cs_compatible_in_ext : slow.
+
+Lemma lib_extends_cs_ren_trans {o} :
+  forall name1 name2 (lib lib' lib0 : @library o),
+    lib_extends lib' lib
+    -> lib_extends_cs_ren name1 name2 lib lib0
+    -> lib_extends_cs_ren name1 name2 lib' lib0.
+Proof.
+  introv ext xt.
+  destruct xt as [xt comp].
+  split; dands; eauto 2 with slow.
+Qed.
+Hint Resolve lib_extends_cs_ren_trans : slow.
+
+Definition bar_per_type {o} {lib} (bar : @BarLib o lib) :=
+  forall lib1 (b : bar_lib_bar bar lib1)
+         lib2 (ext : lib_extends lib2 lib1)
+         (x : lib_extends lib2 lib), per(o).
+
+Definition bar_per_type_cond {o} {lib} {bar : @BarLib o lib}
+           (p : bar_per_type bar) :=
+  forall (lib' lib1 : library)
+         (b : bar_lib_bar bar lib1)
+         (ext : lib_extends lib' lib1)
+         (x y : lib_extends lib' lib),
+    (p lib1 b lib' ext x) <=2=> (p lib1 b lib' ext y).
+
+Record bar_per {o} {lib} (bar : @BarLib o lib) :=
+  MkBarPer
+    {
+      bar_per_per :> bar_per_type bar;
+      bar_per_cond : bar_per_type_cond bar_per_per
+    }.
+
+Definition bar_per2per {o} {lib} {bar : @BarLib o lib} (p : bar_per bar) : per :=
+  fun t1 t2 =>
+    forall lib1 (b : bar_lib_bar bar lib1)
+           lib2 (ext : lib_extends lib2 lib1)
+           (x : lib_extends lib2 lib),
+      bar_per_per _ p lib1 b lib2 ext x t1 t2.
+
+Definition bar_per2lib_per {o} {lib}
+           {bar : @BarLib o lib}
+           (p : bar_per bar)
+  : lib-per(lib,o).
+Proof.
+  exists (fun lib2 (x : lib_extends lib2 lib) t1 t2 =>
+            forall lib1 (b : bar_lib_bar bar lib1) (ext : lib_extends lib2 lib1),
+              bar_per_per _ p lib1 b lib2 ext x t1 t2).
+  repeat introv.
+  split; intro q; introv; eapply (bar_per_cond _ p); eauto.
+Defined.
+
+Lemma all_in_bar_ext_exists_per_implies_exists2 {o} :
+  forall {lib}
+         (bar : @BarLib o lib)
+         (F : forall lib' (x : lib_extends lib' lib) (p : per(o)), Prop),
+    (forall lib' (x y : lib_extends lib' lib) (p q : per(o)),
+        F lib' x p
+        -> F lib' y q
+        -> (p <=2=> q))
+    -> all_in_bar_ext bar (fun lib' x => exists (e : per(o)), F lib' x e)
+    ->
+    exists (f : bar_per(bar)),
+    forall lib1 (br : bar_lib_bar bar lib1)
+           lib2 (ext : lib_extends lib2 lib1)
+           (x : lib_extends lib2 lib),
+      F lib2 x (bar_per_per _ f lib1 br lib2 ext x).
+Proof.
+  introv cond h.
+  pose proof (DependentFunctionalChoice_on
+                (pack_lib_bar bar)
+                (fun x => per(o))
+                (fun x e => F (plb_lib2 _ x)
+                              (plb_x _ x)
+                              e)) as C.
+  simpl in C.
+  repeat (autodimp C hyp).
+  { introv; destruct x; simpl in *; eapply h; eauto. }
+  exrepnd.
+
+  assert (bar_per_type_cond
+            (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
+               (f (MkPackLibBar lib1 br lib2 ext x)))) as C.
+  {
+    repeat introv; simpl.
+    pose proof (C0 (MkPackLibBar lib1 b lib' ext x)) as q1; simpl in q1.
+    pose proof (C0 (MkPackLibBar lib1 b lib' ext y)) as q2; simpl in q2.
+    eapply cond; eauto.
+  }
+  exists (MkBarPer
+            _ _ _
+            (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
+               (f (MkPackLibBar lib1 br lib2 ext x)))
+            C).
+  introv.
+  pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
+Defined.
+
+Lemma sub_per_per_bar_eq_raise_right {o} :
+  forall {lib lib'}
+         (bar  : @BarLib o lib)
+         (eqa  : lib-per(lib,o))
+         (extb : lib_extends lib' lib)
+         (f    : bar_per (raise_bar bar extb)),
+    (forall (lib1 : library)
+            (br : bar_lib_bar (raise_bar bar extb) lib1)
+            (lib2 : library)
+            (ext : lib_extends lib2 lib1)
+            (x : lib_extends lib2 lib'),
+        sub_per (eqa lib2 (lib_extends_trans x extb)) (bar_per_per _ f lib1 br lib2 ext x))
+    -> sub_per
+         (per_bar_eq bar eqa)
+         (per_bar_eq (raise_bar bar extb) (bar_per2lib_per f)).
+Proof.
+  introv cond equ.
+
+  introv br ext; introv; simpl in *; exrepnd.
+  pose proof (equ _ br1 _ (lib_extends_trans ext br2) (lib_extends_trans x extb)) as equ; simpl in *.
+  exrepnd.
+  exists bar'.
+
+  introv br' ext'; introv; simpl in *; exrepnd.
+  pose proof (equ0 _ br' _ ext' x0) as equ0; simpl in *.
+  apply cond.
+  eapply (lib_per_cond _ eqa); eauto.
+Qed.
+
+Lemma sub_per_per_bar_eq_raise_right2 {o} :
+  forall {lib lib'}
+         (bar  : @BarLib o lib)
+         (eqa  : lib-per(lib,o))
+         (extb : lib_extends lib' lib)
+         (f    : bar_per bar),
+    (forall (lib1 : library)
+            (br : bar_lib_bar bar lib1)
+            (lib2 : library)
+            (ext : lib_extends lib2 lib1)
+            (x : lib_extends lib2 lib),
+        sub_per (eqa lib2 x) (bar_per_per _ f lib1 br lib2 ext x))
+    -> sub_per
+         (per_bar_eq bar eqa)
+         (per_bar_eq (raise_bar bar extb) (raise_lib_per (bar_per2lib_per f) extb)).
+Proof.
+  introv cond equ.
+
+  introv br ext; introv; simpl in *; exrepnd.
+  pose proof (equ _ br1 _ (lib_extends_trans ext br2) (lib_extends_trans x extb)) as equ; simpl in *.
+  exrepnd.
+  exists bar'.
+
+  introv br' ext'; introv; simpl in *; exrepnd.
+  pose proof (equ0 _ br' _ ext' x0) as equ0; simpl in *.
+  introv.
+  apply cond; auto.
+  eapply (lib_per_cond _ eqa); eauto.
+Qed.
+
+Lemma type_system_implies_type_extensionality {o} :
+  forall (ts : cts(o)),
+    type_system ts
+    -> type_extensionality ts.
+Proof.
+  introv h; destruct h; tcsp.
+Qed.
+Hint Resolve type_system_implies_type_extensionality : slow.
+
+(* [n2]'s name with [n1]'s space *)
+Definition adopt_space (n1 n2 : choice_sequence_name) : choice_sequence_name :=
+  MkChoiceSequenceName (csn_name n2) (csn_kind n1).
+
+(* We traverse [lib], and remove [n2] as we go, until we reach [n1], in which case
+     we rename it to n2 *)
+Fixpoint rename_cs_lib {o}
+         (lib : @library o)
+         (n1 n2 : choice_sequence_name) : library :=
+  match lib with
+  | [] => []
+  | lib_cs name e as entry :: lib =>
+    if choice_sequence_name_deq name n1
+    then lib_cs n2 e :: rename_cs_lib lib n1 n2
+    else if choice_sequence_name_deq name n2
+         then rename_cs_lib lib n1 n2
+         else entry :: rename_cs_lib lib n1 n2
+  | lib_abs _ _ _ _ as entry :: lib => entry :: rename_cs_lib lib n1 n2
+  end.
+
+Definition extend_lib_with {o}
+           (lib : @library o)
+           (n1 n2 : choice_sequence_name) : library :=
+  match find_cs lib n1 with
+  | Some e =>
+    lib_cs (adopt_space n1 n2) e :: lib
+  | None => lib
+  end.
+
+Definition inf_lib_extends_ext_entries_upto {o}
+           (infl : inf_library)
+           (lib  : @library o)
+           (n    : nat) :=
+  forall entry : library_entry,
+    entry_in_library entry lib ->
+    entry_in_inf_library_extends entry n infl
+                                 {+} entry_in_inf_library_default entry infl.
+
+Lemma inf_lib_extends_ext_entries_implies {o} :
+  forall (infl : inf_library) (lib : @library o),
+    inf_lib_extends_ext_entries infl lib
+    -> exists n, inf_lib_extends_ext_entries_upto infl lib n.
+Proof.
+  induction lib using rev_list_ind; introv i; simpl in *.
+
+  { exists 0; introv h; tcsp. }
+
+  applydup @inf_lib_extends_ext_entries_snoc_implies_head in i.
+  autodimp IHlib hyp; exrepnd.
+
+  remember (forallb (diff_entry_names a) lib) as b; symmetry in Heqb.
+  destruct b;
+    [fold (non_shadowed_entry a lib) in Heqb
+    |fold (shadowed_entry a lib) in Heqb].
+
+  { apply inf_lib_extends_ext_entries_snoc_implies_entry_ext in i; auto.
+    repndors; exrepnd.
+
+    { exists (Peano.max k n).
+      introv j.
+
+      apply entry_in_library_snoc_implies in j.
+      repndors; tcsp.
+
+      { apply IHlib0 in j.
+        repndors; tcsp;[].
+        left.
+        eapply le_preserves_entry_in_inf_library_extends;[|eauto].
+        eauto 3 with slow. }
+
+      repnd; subst; GC.
+      left.
+      eapply le_preserves_entry_in_inf_library_extends;[|eauto].
+      eauto 3 with slow. }
+
+    exists n.
+    introv j.
+
+    apply entry_in_library_snoc_implies in j.
+    repndors; tcsp;[].
+    repnd; subst; GC; tcsp. }
+
+  exists n.
+  introv j.
+
+  apply entry_in_library_snoc_implies in j.
+  repndors; tcsp.
+  repnd; subst; GC.
+  unfold non_shadowed_entry in j.
+  rewrite Heqb in j; ginv.
+Qed.
+
+Fixpoint cs_name_in_inf_library {o}
+         (name : choice_sequence_name)
+         (lib  : @inf_library o)
+         (n    : nat) : bool :=
+  match n with
+  | 0 => false
+  | S n =>
+    match lib 0 with
+    | inf_lib_cs name' _ =>
+      if choice_sequence_name_deq name name' then true
+      else cs_name_in_inf_library name (shift_inf_lib lib) n
+    | _ => cs_name_in_inf_library name (shift_inf_lib lib) n
+    end
+  end.
+
+Lemma cs_name_in_library_implies {o} :
+  forall name (lib : @library o),
+    cs_name_in_library name lib = true
+    -> exists e,
+      entry_in_library (lib_cs name e) lib.
+Proof.
+  induction lib; introv i; simpl in *; tcsp.
+  destruct a; simpl in *; tcsp; boolvar; subst; tcsp; GC;[| |].
+
+  { exists entry; tcsp. }
+
+  { autodimp IHlib hyp; exrepnd.
+    exists e; dands; tcsp. }
+
+  { autodimp IHlib hyp; exrepnd.
+    exists e; dands; tcsp. }
+Qed.
+
+Definition cons_inf_lib_entry {o}
+           (e   : inf_library_entry)
+           (lib : @inf_library o) : inf_library :=
+  fun n =>
+    if deq_nat n 0 then e
+    else lib (pred n).
+
+Lemma entry_in_inf_library_extends_implies_exists {o} :
+  forall e n (infLib : @inf_library o),
+    entry_in_inf_library_extends e n infLib
+    -> exists k,
+      inf_entry_extends (infLib k) e
+      /\ forall j, j < k -> ~inf_matching_entries (infLib j) e.
+Proof.
+  induction n; introv i; simpl in *; tcsp.
+  repndors; repnd.
+
+  { exists 0; dands; tcsp. }
+
+  applydup IHn in i.
+  exrepnd.
+  exists (S k); simpl.
+  dands; eauto 3 with slow.
+  introv ltk.
+  destruct j; auto.
+  apply i2; omega.
+Qed.
+
+(* The 2 names have different names but the same kind/space *)
+Definition similar_cs_names (n1 n2 : choice_sequence_name) :=
+  csn_name n1 <> csn_name n2
+  /\ csn_kind n1 = csn_kind n2.
+
+Lemma entry_in_rename_cs_lib_implies {o} :
+  forall n1 n2 e (lib : @library o),
+    entry_in_library (lib_cs n2 e) (rename_cs_lib lib n1 n2)
+    -> entry_in_library (lib_cs n1 e) lib.
+Proof.
+  induction lib; introv i; simpl in *; tcsp.
+  destruct a; boolvar; simpl in *; subst; tcsp;
+    repndors; ginv; tcsp; repnd;[].
+  destruct i0; tcsp.
+Qed.
+Hint Resolve entry_in_rename_cs_lib_implies : slow.
+
+Lemma diff_implies_entry_in_rename_cs_lib {o} :
+  forall n1 n2 name e (lib : @library o),
+    name <> n1
+    -> name <> n2
+    -> entry_in_library (lib_cs name e) lib
+    -> entry_in_library (lib_cs name e) (rename_cs_lib lib n1 n2).
+Proof.
+  induction lib; introv d1 d2 i; simpl in *; tcsp.
+  repndors; repnd; subst; simpl in *; tcsp; boolvar; subst; tcsp.
+  destruct a; simpl in *; tcsp; boolvar; subst; tcsp.
+Qed.
+Hint Resolve diff_implies_entry_in_rename_cs_lib : slow.
+
+Lemma if_diff_entry_in_rename_cs_lib {o} :
+  forall n1 n2 name e (lib : @library o),
+    name <> n1
+    -> name <> n2
+    -> entry_in_library (lib_cs name e) (rename_cs_lib lib n1 n2)
+    -> entry_in_library (lib_cs name e) lib.
+Proof.
+  induction lib; introv d1 d2 i; simpl in *; tcsp.
+  repndors; repnd; subst; simpl in *; tcsp; boolvar; subst; tcsp.
+  destruct a; simpl in *; tcsp; boolvar; subst; tcsp;
+    simpl in *; repndors; repnd; ginv; tcsp.
+Qed.
+Hint Resolve if_diff_entry_in_rename_cs_lib : slow.
+
+Lemma abs_implies_entry_in_rename_cs_lib {o} :
+  forall n1 n2 abs vars rhs cor (lib : @library o),
+    entry_in_library (lib_abs abs vars rhs cor) lib
+    -> entry_in_library (lib_abs abs vars rhs cor) (rename_cs_lib lib n1 n2).
+Proof.
+  induction lib; introv i; simpl in *; tcsp.
+  repndors; repnd; subst; simpl in *; tcsp; boolvar; subst; tcsp.
+  destruct a; simpl in *; tcsp; boolvar; subst; tcsp.
+Qed.
+Hint Resolve abs_implies_entry_in_rename_cs_lib : slow.
+
+Lemma if_abs_entry_in_rename_cs_lib {o} :
+  forall n1 n2 abs vars rhs cor (lib : @library o),
+    entry_in_library (lib_abs abs vars rhs cor) (rename_cs_lib lib n1 n2)
+    -> entry_in_library (lib_abs abs vars rhs cor) lib.
+Proof.
+  induction lib; introv i; simpl in *; tcsp.
+  destruct a; simpl in *; tcsp; boolvar; subst; tcsp;
+    repndors; repnd; subst; simpl in *; tcsp; boolvar; subst; tcsp;
+      repndors; repnd; ginv; tcsp.
+Qed.
+Hint Resolve if_abs_entry_in_rename_cs_lib : slow.
+
+Lemma diff_implies_entry_in_inf_library_default_cons_two {o} :
+  forall n e n1 e1 n2 e2 (infLib : @inf_library o),
+    n <> n1
+    -> n <> n2
+    -> entry_in_inf_library_default (lib_cs n e) infLib
+    -> entry_in_inf_library_default
+         (lib_cs n e)
+         (cons_inf_lib_entry
+            (inf_lib_cs n1 e1)
+            (cons_inf_lib_entry
+               (inf_lib_cs n2 e2)
+               infLib)).
+Proof.
+  introv d1 d2 i.
+  unfold entry_in_inf_library_default in *; repnd.
+  dands; eauto 3 with slow.
+  introv x.
+  unfold inf_matching_entries in x; simpl in x.
+  unfold cons_inf_lib_entry in x; simpl in x.
+  boolvar; subst; simpl in *; subst; tcsp.
+Qed.
+Hint Resolve diff_implies_entry_in_inf_library_default_cons_two : slow.
+
+Lemma abs_entry_not_in_inf_library_default {o} :
+  forall opabs vars rhs correct (infLib : @inf_library o),
+    ~ entry_in_inf_library_default (lib_abs opabs vars rhs correct) infLib.
+Proof.
+  introv h.
+  unfold entry_in_inf_library_default in h; repnd; simpl in *; tcsp.
+Qed.
+
+Lemma entry_not_in_rename_cs_lib {o} :
+  forall n1 n2 e (lib : @library o),
+    n1 <> n2
+    -> ~ entry_in_library (lib_cs n1 e) (rename_cs_lib lib n1 n2).
+Proof.
+  induction lib; simpl; tcsp.
+  introv d h.
+  destruct a; simpl in *; boolvar; subst; tcsp;
+    simpl in *; repndors; ginv; simpl in *; tcsp.
+Qed.
+
+Lemma rename_cs_lib_same {o} :
+  forall n (lib : @library o),
+    rename_cs_lib lib n n = lib.
+Proof.
+  induction lib; simpl in *; tcsp.
+  destruct a; simpl in *; rewrite IHlib; tcsp.
+  boolvar; subst; tcsp.
+Qed.
+Hint Rewrite @rename_cs_lib_same : slow.
+
+Lemma similar_cs_names_preserves_correct_restriction {o} :
+  forall n1 n2 (restr : @ChoiceSeqRestriction o),
+    similar_cs_names n1 n2
+    -> correct_restriction n1 restr
+    -> correct_restriction n2 restr.
+Proof.
+  introv sim cor.
+  unfold similar_cs_names in sim; simpl in *; repnd; subst; auto.
+  unfold correct_restriction in *; allrw <-; auto.
+Qed.
+Hint Resolve similar_cs_names_preserves_correct_restriction : slow.
+
+Lemma similar_cs_names_preserves_safe_library_entry {o} :
+  forall n1 n2 (e : @ChoiceSeqEntry o),
+    similar_cs_names n1 n2
+    -> safe_library_entry (lib_cs n1 e)
+    -> safe_library_entry (lib_cs n2 e).
+Proof.
+  introv sim safe; simpl in *.
+  unfold safe_choice_sequence_entry in *.
+  destruct e; simpl in *; repnd.
+  dands; eauto 3 with slow.
+Qed.
+Hint Resolve similar_cs_names_preserves_safe_library_entry : slow.
+
+Lemma implies_safe_rename_cs_lib {o} :
+  forall n1 n2 (lib : @library o),
+    similar_cs_names n1 n2
+    -> safe_library lib
+    -> safe_library (rename_cs_lib lib n1 n2).
+Proof.
+  introv sim safe i.
+
+  destruct (choice_sequence_name_deq n1 n2); subst;
+    autorewrite with slow in *; tcsp;[].
+
+  destruct entry.
+
+  { destruct (choice_sequence_name_deq name n1); subst; eauto 3 with slow.
+
+    { apply entry_not_in_rename_cs_lib in i; tcsp. }
+
+    destruct (choice_sequence_name_deq name n2); subst; eauto 3 with slow.
+
+    apply entry_in_rename_cs_lib_implies in i.
+    apply safe in i; auto; eauto 2 with slow. }
+
+  { apply if_abs_entry_in_rename_cs_lib in i.
+    apply safe in i; auto. }
+Qed.
+Hint Resolve implies_safe_rename_cs_lib : slow.
+
+Lemma shift_inf_lib_cons_inf_lib_entry {o} :
+  forall e (infLib : @inf_library o),
+    shift_inf_lib (cons_inf_lib_entry e infLib) = infLib.
+Proof.
+  introv.
+  apply functional_extensionality; introv; simpl.
+  unfold shift_inf_lib.
+  unfold cons_inf_lib_entry.
+  boolvar; simpl; ginv; auto.
+Qed.
+Hint Rewrite @shift_inf_lib_cons_inf_lib_entry : slow.
+
+Lemma entry_in_inf_library_zero {o} :
+  forall (infLib : @inf_library o),
+    entry_in_inf_library (infLib 0) infLib.
+Proof.
+  introv; left; exists 1; simpl; tcsp.
+Qed.
+Hint Resolve entry_in_inf_library_zero : slow.
+
+Lemma entry_in_inf_library_n_implies_entry_in_inf_library {o} :
+  forall n e (infLib : @inf_library o),
+    entry_in_inf_library_n n e infLib
+    -> entry_in_inf_library e infLib.
+Proof.
+  induction n; introv h; simpl in *; tcsp.
+  repndors; subst; repnd; tcsp; eauto 3 with slow.
+Qed.
+Hint Resolve entry_in_inf_library_n_implies_entry_in_inf_library : slow.
+
+Lemma cons_inf_lib_entry_S {o} :
+  forall e (infLib : @inf_library o) n,
+    cons_inf_lib_entry e infLib (S n) = infLib n.
+Proof.
+  introv.
+  unfold cons_inf_lib_entry.
+  boolvar; simpl; ginv; auto.
+Qed.
+Hint Rewrite @cons_inf_lib_entry_S : slow.
+
+Lemma cons_inf_lib_entry_zero {o} :
+  forall e (infLib : @inf_library o),
+    cons_inf_lib_entry e infLib 0 = e.
+Proof.
+  introv.
+  unfold cons_inf_lib_entry; simpl; auto.
+Qed.
+Hint Rewrite @cons_inf_lib_entry_zero : slow.
+
+Lemma not_matching_inf_entries_implies_not_same_name {o} :
+  forall (e1 e2 : @inf_library_entry o),
+    ~ matching_inf_entries e2 e1
+    -> ~ same_entry_name (inf_entry2name e1) (inf_entry2name e2).
+Proof.
+  introv h same; destruct h.
+  destruct e1, e2; simpl in *; subst; tcsp.
+  unfold matching_inf_entries; simpl; auto.
+  apply same_opabs_sym; auto.
+Qed.
+Hint Resolve not_matching_inf_entries_implies_not_same_name : slow.
+
+Lemma entry_in_inf_library_entry_implies {o} :
+  forall e1 e2 (infLib : @inf_library o),
+    entry_in_inf_library e1 (cons_inf_lib_entry e2 infLib)
+    -> e1 = e2
+       \/ (entry_in_inf_library e1 infLib
+           /\ ~ same_entry_name (inf_entry2name e1) (inf_entry2name e2)).
+Proof.
+  introv i.
+  unfold entry_in_inf_library in i; repndors; exrepnd.
+
+  { destruct n; simpl in *; tcsp.
+    repndors; exrepnd; subst; simpl in *.
+
+    { unfold cons_inf_lib_entry; simpl; tcsp. }
+
+    autorewrite with slow in *.
+    unfold cons_inf_lib_entry in i1; simpl in *.
+    right; dands; eauto 3 with slow. }
+
+  { unfold inf_entry_in_inf_library_default in i; repnd.
+    right; dands; eauto 3 with slow.
+
+    { right.
+      unfold inf_entry_in_inf_library_default.
+      dands; eauto 3 with slow.
+      introv m.
+      destruct (i0 (S n)).
+      autorewrite with slow; auto. }
+
+    { pose proof (i0 0) as i0; autorewrite with slow in *; eauto 3 with slow. } }
+Qed.
+
+Lemma implies_safe_inf_library_cons_inf_lib_entry {o} :
+  forall e (infLib : @inf_library o),
+    safe_inf_library_entry e
+    -> safe_inf_library infLib
+    -> safe_inf_library (cons_inf_lib_entry e infLib).
+Proof.
+  introv safee safel i.
+  apply entry_in_inf_library_entry_implies in i; repndors; repnd; subst; auto.
+Qed.
+Hint Resolve implies_safe_inf_library_cons_inf_lib_entry : slow.
+
+Lemma similar_cs_name_sym :
+  forall n1 n2,
+    similar_cs_names n1 n2
+    -> similar_cs_names n2 n1.
+Proof.
+  introv sim.
+  unfold similar_cs_names in *; repnd; dands; tcsp.
+Qed.
+Hint Resolve similar_cs_name_sym : slow.
+
+Lemma similar_cs_names_preserves_safe_in_library_entry {o} :
+  forall n1 n2 (entry : @InfChoiceSeqEntry o),
+    similar_cs_names n1 n2
+    -> safe_inf_library_entry (inf_lib_cs n2 entry)
+    -> safe_inf_library_entry (inf_lib_cs n1 entry).
+Proof.
+  introv sim safe; simpl in *.
+  unfold safe_inf_choice_sequence_entry in *.
+  destruct entry as [vals restr]; simpl in *; repnd.
+  dands; auto; eauto 3 with slow.
+Qed.
+Hint Resolve similar_cs_names_preserves_safe_in_library_entry : slow.
+
+Lemma similar_cs_names_imply_diff :
+  forall n1 n2,
+    similar_cs_names n1 n2
+    -> n1 <> n2.
+Proof.
+  introv sim h; subst.
+  unfold similar_cs_names in sim; repnd; tcsp.
+Qed.
+Hint Resolve similar_cs_names_imply_diff : slow.
+
+Lemma implies_entry_in_rename_cs_lib {o} :
+  forall n1 n2 e (lib : @library o),
+    entry_in_library (lib_cs n1 e) lib
+    -> entry_in_library (lib_cs n2 e) (rename_cs_lib lib n1 n2).
+Proof.
+  induction lib; introv i; simpl in *; tcsp.
+  destruct a; boolvar; simpl in *; subst; tcsp;
+    repndors; ginv; tcsp; repnd;[].
+  destruct i0; tcsp.
+Qed.
+Hint Resolve implies_entry_in_rename_cs_lib : slow.
+
+Lemma implies_entry_in_rename_cs_lib_extends {o} :
+  forall n1 n2 e (lib : @library o),
+    entry_in_library_extends (lib_cs n1 e) lib
+    -> entry_in_library_extends (lib_cs n2 e) (rename_cs_lib lib n1 n2).
+Proof.
+  induction lib; introv i; simpl in *; tcsp.
+  destruct a; boolvar; simpl in *; subst; tcsp;
+    repndors; ginv; tcsp; repnd;[].
+  destruct i0; tcsp.
+Qed.
+Hint Resolve implies_entry_in_rename_cs_lib_extends : slow.
+
+Lemma diff_implies_entry_in_rename_cs_lib_extends {o} :
+  forall n1 n2 name e (lib : @library o),
+    name <> n1
+    -> name <> n2
+    -> entry_in_library_extends (lib_cs name e) lib
+    -> entry_in_library_extends (lib_cs name e) (rename_cs_lib lib n1 n2).
+Proof.
+  induction lib; introv d1 d2 i; simpl in *; tcsp.
+  repndors; repnd; subst; simpl in *; tcsp; boolvar; subst; tcsp;
+    destruct a; simpl in *; tcsp; boolvar; subst; tcsp.
+  repnd; subst; tcsp; GC; simpl in *; tcsp.
+Qed.
+Hint Resolve diff_implies_entry_in_rename_cs_lib_extends : slow.
+
+Lemma abs_implies_entry_in_rename_cs_lib_extends {o} :
+  forall n1 n2 abs vars rhs cor (lib : @library o),
+    entry_in_library_extends (lib_abs abs vars rhs cor) lib
+    -> entry_in_library_extends (lib_abs abs vars rhs cor) (rename_cs_lib lib n1 n2).
+Proof.
+  induction lib; introv i; simpl in *; tcsp.
+  repndors; repnd; subst; simpl in *; tcsp; boolvar; subst; tcsp;
+    destruct a; simpl in *; tcsp; boolvar; subst; tcsp; ginv.
+Qed.
+Hint Resolve abs_implies_entry_in_rename_cs_lib_extends : slow.
+
+Lemma rename_cs_lib_preserves_lib_extends_entries {o} :
+  forall n1 n2 (lib1 lib2 : @library o),
+    similar_cs_names n1 n2
+    -> lib_extends_entries lib2 lib1
+    -> lib_extends_entries (rename_cs_lib lib2 n1 n2) (rename_cs_lib lib1 n1 n2).
+Proof.
+  introv sim ext i.
+  destruct entry.
+  { destruct (choice_sequence_name_deq name n1); subst.
+    { apply entry_not_in_rename_cs_lib in i; tcsp; eauto 3 with slow. }
+    destruct (choice_sequence_name_deq name n2); subst.
+    { apply entry_in_rename_cs_lib_implies in i.
+      apply ext in i; eauto 3 with slow. }
+    apply if_diff_entry_in_rename_cs_lib in i; auto.
+    apply ext in i; eauto 3 with slow. }
+  { apply if_abs_entry_in_rename_cs_lib in i; eauto 3 with slow. }
+Qed.
+Hint Resolve rename_cs_lib_preserves_lib_extends_entries : slow.
+
+Lemma cs_not_in_rename_cs_lib {o} :
+  forall n1 n2 e (lib : @library o),
+    n1 <> n2
+    -> ~ List.In (lib_cs n1 e) (rename_cs_lib lib n1 n2).
+Proof.
+  induction lib; simpl; tcsp.
+  introv d h.
+  destruct a; simpl in *; boolvar; subst; tcsp;
+    simpl in *; repndors; ginv; simpl in *; tcsp.
+Qed.
+
+Lemma in_rename_cs_lib_implies {o} :
+  forall n1 n2 e (lib : @library o),
+    List.In (lib_cs n2 e) (rename_cs_lib lib n1 n2)
+    -> List.In (lib_cs n1 e) lib.
+Proof.
+  induction lib; introv i; simpl in *; tcsp.
+  destruct a; boolvar; simpl in *; subst; tcsp;
+    repndors; ginv; tcsp; repnd.
+Qed.
+Hint Resolve in_rename_cs_lib_implies : slow.
+
+Lemma implies_in_rename_cs_lib_extends {o} :
+  forall n1 n2 e (lib : @library o),
+    List.In (lib_cs n1 e) lib
+    -> List.In (lib_cs n2 e) (rename_cs_lib lib n1 n2).
+Proof.
+  induction lib; introv i; simpl in *; tcsp.
+  destruct a; boolvar; simpl in *; subst; tcsp;
+    repndors; ginv; tcsp; repnd.
+Qed.
+Hint Resolve implies_in_rename_cs_lib_extends : slow.
+
+Lemma if_diff_in_rename_cs_lib {o} :
+  forall n1 n2 name e (lib : @library o),
+    name <> n1
+    -> name <> n2
+    -> List.In (lib_cs name e) (rename_cs_lib lib n1 n2)
+    -> List.In (lib_cs name e) lib.
+Proof.
+  induction lib; introv d1 d2 i; simpl in *; tcsp.
+  repndors; repnd; subst; simpl in *; tcsp; boolvar; subst; tcsp.
+  destruct a; simpl in *; tcsp; boolvar; subst; tcsp;
+    simpl in *; repndors; repnd; ginv; tcsp.
+Qed.
+Hint Resolve if_diff_in_rename_cs_lib : slow.
+
+Lemma diff_implies_in_rename_cs_lib_extends {o} :
+  forall n1 n2 name e (lib : @library o),
+    name <> n1
+    -> name <> n2
+    -> List.In (lib_cs name e) lib
+    -> List.In (lib_cs name e) (rename_cs_lib lib n1 n2).
+Proof.
+  induction lib; introv d1 d2 i; simpl in *; tcsp.
+  repndors; repnd; subst; simpl in *; tcsp; boolvar; subst; tcsp;
+    destruct a; simpl in *; tcsp; boolvar; subst; tcsp.
+Qed.
+Hint Resolve diff_implies_in_rename_cs_lib_extends : slow.
+
+Lemma abs_implies_in_rename_cs_lib {o} :
+  forall n1 n2 abs vars rhs cor (lib : @library o),
+    List.In (lib_abs abs vars rhs cor) lib
+    -> List.In (lib_abs abs vars rhs cor) (rename_cs_lib lib n1 n2).
+Proof.
+  induction lib; introv i; simpl in *; tcsp.
+  repndors; repnd; subst; simpl in *; tcsp; boolvar; subst; tcsp.
+  destruct a; simpl in *; tcsp; boolvar; subst; tcsp.
+Qed.
+Hint Resolve abs_implies_in_rename_cs_lib : slow.
+
+Lemma if_abs_in_rename_cs_lib {o} :
+  forall n1 n2 abs vars rhs cor (lib : @library o),
+    List.In (lib_abs abs vars rhs cor) (rename_cs_lib lib n1 n2)
+    -> List.In (lib_abs abs vars rhs cor) lib.
+Proof.
+  induction lib; introv i; simpl in *; tcsp.
+  destruct a; simpl in *; tcsp; boolvar; subst; tcsp;
+    repndors; repnd; subst; simpl in *; tcsp; boolvar; subst; tcsp;
+      repndors; repnd; ginv; tcsp.
+Qed.
+Hint Resolve if_abs_in_rename_cs_lib : slow.
+
+Lemma rename_cs_lib_preserves_subset_library {o} :
+  forall n1 n2 (lib1 lib2 : @library o),
+    similar_cs_names n1 n2
+    -> subset_library lib2 lib1
+    -> subset_library (rename_cs_lib lib2 n1 n2) (rename_cs_lib lib1 n1 n2).
+Proof.
+  introv sim ext i.
+  destruct entry1.
+  { destruct (choice_sequence_name_deq name n1); subst.
+    { apply cs_not_in_rename_cs_lib in i; tcsp; eauto 3 with slow. }
+    destruct (choice_sequence_name_deq name n2); subst.
+    { apply in_rename_cs_lib_implies in i.
+      apply ext in i; exrepnd.
+      destruct entry2; simpl in *; repnd; subst; tcsp; ginv.
+      exists (lib_cs n2 entry0); simpl; dands; eauto 3 with slow. }
+    apply if_diff_in_rename_cs_lib in i; auto.
+    apply ext in i; exrepnd.
+    destruct entry2; simpl in *; repnd; subst; tcsp; ginv.
+    exists (lib_cs name entry0); simpl; dands; eauto 3 with slow. }
+  { apply if_abs_in_rename_cs_lib in i.
+    apply ext in i; exrepnd.
+    destruct entry2; simpl in *; ginv.
+    inversion i0; subst; proof_irr.
+    pose proof (correct_abs_proof_irrelevance _ _ _ correct correct0); subst; GC.
+    exists (lib_abs opabs vars rhs correct0); simpl; dands; eauto 3 with slow. }
+Qed.
+Hint Resolve rename_cs_lib_preserves_subset_library : slow.
+
+Lemma rename_cs_lib_preserves_safe_library {o} :
+  forall n1 n2 (lib1 lib2 : @library o),
+    similar_cs_names n1 n2
+    -> safe_library lib1
+    -> (safe_library lib1 -> safe_library lib2)
+    -> safe_library (rename_cs_lib lib1 n1 n2)
+    -> safe_library (rename_cs_lib lib2 n1 n2).
+Proof.
+  introv sim safe1 imp safe.
+  autodimp imp hyp.
+  apply implies_safe_rename_cs_lib; auto.
+Qed.
+Hint Resolve rename_cs_lib_preserves_safe_library : slow.
+
+Lemma rename_cs_lib_preserves_lib_extends {o} :
+  forall n1 n2 (lib1 lib2 : @library o),
+    similar_cs_names n1 n2
+    -> safe_library lib1
+    -> lib_extends lib2 lib1
+    -> lib_extends (rename_cs_lib lib2 n1 n2) (rename_cs_lib lib1 n1 n2).
+Proof.
+  introv sim safe1 ext.
+  destruct ext as [ext safe sub].
+  split; eauto 3 with slow.
+Qed.
+Hint Resolve rename_cs_lib_preserves_lib_extends : slow.
+
 
 
 
@@ -6680,362 +7533,6 @@ Proof.
   (* xxxxxxxxxxxx *)
 
 
-  Lemma sub_per_refl {o} : forall (eq : per(o)), sub_per eq eq.
-  Proof.
-    introv h; auto.
-  Qed.
-  Hint Resolve sub_per_refl : slow.
-
-  Lemma lib_extends_preserves_cs_compatible_in_ext {o} :
-    forall name1 name2 (lib lib' lib0 : @library o),
-      lib_extends lib' lib
-      -> cs_compatible_in_ext name1 name2 lib lib0
-      -> cs_compatible_in_ext name1 name2 lib' lib0.
-  Proof.
-    introv ext comp h.
-    pose proof (comp _ h) as comp; exrepnd.
-    exists k.
-    apply (lib_extends_preserves_find_cs_value_at _ _ _ _ _ ext) in comp1.
-    apply (lib_extends_preserves_find_cs_value_at _ _ _ _ _ ext) in comp0.
-    tcsp.
-  Qed.
-  Hint Resolve lib_extends_preserves_cs_compatible_in_ext : slow.
-
-  Lemma lib_extends_cs_ren_trans {o} :
-    forall name1 name2 (lib lib' lib0 : @library o),
-      lib_extends lib' lib
-      -> lib_extends_cs_ren name1 name2 lib lib0
-      -> lib_extends_cs_ren name1 name2 lib' lib0.
-  Proof.
-    introv ext xt.
-    destruct xt as [xt comp].
-    split; dands; eauto 2 with slow.
-  Qed.
-  Hint Resolve lib_extends_cs_ren_trans : slow.
-
-  Definition bar_per_type {o} {lib} (bar : @BarLib o lib) :=
-    forall lib1 (b : bar_lib_bar bar lib1)
-           lib2 (ext : lib_extends lib2 lib1)
-           (x : lib_extends lib2 lib), per(o).
-
-  Definition bar_per_type_cond {o} {lib} {bar : @BarLib o lib}
-             (p : bar_per_type bar) :=
-    forall (lib' lib1 : library)
-           (b : bar_lib_bar bar lib1)
-           (ext : lib_extends lib' lib1)
-           (x y : lib_extends lib' lib),
-      (p lib1 b lib' ext x) <=2=> (p lib1 b lib' ext y).
-
-  Record bar_per {o} {lib} (bar : @BarLib o lib) :=
-    MkBarPer
-      {
-        bar_per_per :> bar_per_type bar;
-        bar_per_cond : bar_per_type_cond bar_per_per
-      }.
-
-  Definition bar_per2per {o} {lib} {bar : @BarLib o lib} (p : bar_per bar) : per :=
-    fun t1 t2 =>
-      forall lib1 (b : bar_lib_bar bar lib1)
-             lib2 (ext : lib_extends lib2 lib1)
-             (x : lib_extends lib2 lib),
-        bar_per_per _ p lib1 b lib2 ext x t1 t2.
-
-  Definition bar_per2lib_per {o} {lib}
-             {bar : @BarLib o lib}
-             (p : bar_per bar)
-    : lib-per(lib,o).
-  Proof.
-    exists (fun lib2 (x : lib_extends lib2 lib) t1 t2 =>
-              forall lib1 (b : bar_lib_bar bar lib1) (ext : lib_extends lib2 lib1),
-                bar_per_per _ p lib1 b lib2 ext x t1 t2).
-    repeat introv.
-    split; intro q; introv; eapply (bar_per_cond _ p); eauto.
-  Defined.
-
-  Lemma all_in_bar_ext_exists_per_implies_exists2 {o} :
-    forall {lib}
-           (bar : @BarLib o lib)
-           (F : forall lib' (x : lib_extends lib' lib) (p : per(o)), Prop),
-      (forall lib' (x y : lib_extends lib' lib) (p q : per(o)),
-          F lib' x p
-          -> F lib' y q
-          -> (p <=2=> q))
-      -> all_in_bar_ext bar (fun lib' x => exists (e : per(o)), F lib' x e)
-      ->
-      exists (f : bar_per(bar)),
-      forall lib1 (br : bar_lib_bar bar lib1)
-             lib2 (ext : lib_extends lib2 lib1)
-             (x : lib_extends lib2 lib),
-        F lib2 x (bar_per_per _ f lib1 br lib2 ext x).
-  Proof.
-    introv cond h.
-    pose proof (DependentFunctionalChoice_on
-                  (pack_lib_bar bar)
-                  (fun x => per(o))
-                  (fun x e => F (plb_lib2 _ x)
-                                (plb_x _ x)
-                                e)) as C.
-    simpl in C.
-    repeat (autodimp C hyp).
-    { introv; destruct x; simpl in *; eapply h; eauto. }
-    exrepnd.
-
-    assert (bar_per_type_cond
-              (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
-                 (f (MkPackLibBar lib1 br lib2 ext x)))) as C.
-    {
-      repeat introv; simpl.
-      pose proof (C0 (MkPackLibBar lib1 b lib' ext x)) as q1; simpl in q1.
-      pose proof (C0 (MkPackLibBar lib1 b lib' ext y)) as q2; simpl in q2.
-      eapply cond; eauto.
-    }
-    exists (MkBarPer
-              _ _ _
-              (fun lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib) =>
-                 (f (MkPackLibBar lib1 br lib2 ext x)))
-              C).
-    introv.
-    pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
-  Defined.
-
-  Lemma sub_per_per_bar_eq_raise_right {o} :
-    forall {lib lib'}
-           (bar  : @BarLib o lib)
-           (eqa  : lib-per(lib,o))
-           (extb : lib_extends lib' lib)
-           (f    : bar_per (raise_bar bar extb)),
-      (forall (lib1 : library)
-              (br : bar_lib_bar (raise_bar bar extb) lib1)
-              (lib2 : library)
-              (ext : lib_extends lib2 lib1)
-              (x : lib_extends lib2 lib'),
-          sub_per (eqa lib2 (lib_extends_trans x extb)) (bar_per_per _ f lib1 br lib2 ext x))
-      -> sub_per
-           (per_bar_eq bar eqa)
-           (per_bar_eq (raise_bar bar extb) (bar_per2lib_per f)).
-  Proof.
-    introv cond equ.
-
-    introv br ext; introv; simpl in *; exrepnd.
-    pose proof (equ _ br1 _ (lib_extends_trans ext br2) (lib_extends_trans x extb)) as equ; simpl in *.
-    exrepnd.
-    exists bar'.
-
-    introv br' ext'; introv; simpl in *; exrepnd.
-    pose proof (equ0 _ br' _ ext' x0) as equ0; simpl in *.
-    apply cond.
-    eapply (lib_per_cond _ eqa); eauto.
-  Qed.
-
-  Lemma sub_per_per_bar_eq_raise_right2 {o} :
-    forall {lib lib'}
-           (bar  : @BarLib o lib)
-           (eqa  : lib-per(lib,o))
-           (extb : lib_extends lib' lib)
-           (f    : bar_per bar),
-      (forall (lib1 : library)
-              (br : bar_lib_bar bar lib1)
-              (lib2 : library)
-              (ext : lib_extends lib2 lib1)
-              (x : lib_extends lib2 lib),
-          sub_per (eqa lib2 x) (bar_per_per _ f lib1 br lib2 ext x))
-      -> sub_per
-           (per_bar_eq bar eqa)
-           (per_bar_eq (raise_bar bar extb) (raise_lib_per (bar_per2lib_per f) extb)).
-  Proof.
-    introv cond equ.
-
-    introv br ext; introv; simpl in *; exrepnd.
-    pose proof (equ _ br1 _ (lib_extends_trans ext br2) (lib_extends_trans x extb)) as equ; simpl in *.
-    exrepnd.
-    exists bar'.
-
-    introv br' ext'; introv; simpl in *; exrepnd.
-    pose proof (equ0 _ br' _ ext' x0) as equ0; simpl in *.
-    introv.
-    apply cond; auto.
-    eapply (lib_per_cond _ eqa); eauto.
-  Qed.
-
-  Lemma type_system_implies_type_extensionality {o} :
-    forall (ts : cts(o)),
-      type_system ts
-      -> type_extensionality ts.
-  Proof.
-    introv h; destruct h; tcsp.
-  Qed.
-  Hint Resolve type_system_implies_type_extensionality : slow.
-
-  (* [n2]'s name with [n1]'s space *)
-  Definition adopt_space (n1 n2 : choice_sequence_name) : choice_sequence_name :=
-    MkChoiceSequenceName (csn_name n2) (csn_kind n1).
-
-  (* We traverse [lib], and remove [n2] as we go, until we reach [n1], in which case
-     we rename it to n2 *)
-  Fixpoint rename_cs_lib {o}
-           (lib : @library o)
-           (n1 n2 : choice_sequence_name) : library :=
-    match lib with
-    | [] => []
-    | lib_cs name e as entry :: lib =>
-      if choice_sequence_name_deq name n1
-      then lib_cs n2 e :: rename_cs_lib lib n1 n2
-      else if choice_sequence_name_deq name n2
-           then rename_cs_lib lib n1 n2
-           else entry :: rename_cs_lib lib n1 n2
-    | lib_abs _ _ _ _ as entry :: lib => entry :: rename_cs_lib lib n1 n2
-    end.
-
-  Definition extend_lib_with {o}
-             (lib : @library o)
-             (n1 n2 : choice_sequence_name) : library :=
-    match find_cs lib n1 with
-    | Some e =>
-      lib_cs (adopt_space n1 n2) e :: lib
-    | None => lib
-    end.
-
-  Definition inf_lib_extends_ext_entries_upto {o}
-             (infl : inf_library)
-             (lib  : @library o)
-             (n    : nat) :=
-    forall entry : library_entry,
-      entry_in_library entry lib ->
-      entry_in_inf_library_extends entry n infl
-      {+} entry_in_inf_library_default entry infl.
-
-  Lemma inf_lib_extends_ext_entries_implies {o} :
-    forall (infl : inf_library) (lib : @library o),
-      inf_lib_extends_ext_entries infl lib
-      -> exists n, inf_lib_extends_ext_entries_upto infl lib n.
-  Proof.
-    induction lib using rev_list_ind; introv i; simpl in *.
-
-    { exists 0; introv h; tcsp. }
-
-    applydup @inf_lib_extends_ext_entries_snoc_implies_head in i.
-    autodimp IHlib hyp; exrepnd.
-
-    remember (forallb (diff_entry_names a) lib) as b; symmetry in Heqb.
-    destruct b;
-      [fold (non_shadowed_entry a lib) in Heqb
-      |fold (shadowed_entry a lib) in Heqb].
-
-    { apply inf_lib_extends_ext_entries_snoc_implies_entry_ext in i; auto.
-      repndors; exrepnd.
-
-      { exists (Peano.max k n).
-        introv j.
-
-        apply entry_in_library_snoc_implies in j.
-        repndors; tcsp.
-
-        { apply IHlib0 in j.
-          repndors; tcsp;[].
-          left.
-          eapply le_preserves_entry_in_inf_library_extends;[|eauto].
-          eauto 3 with slow. }
-
-        repnd; subst; GC.
-        left.
-        eapply le_preserves_entry_in_inf_library_extends;[|eauto].
-        eauto 3 with slow. }
-
-      exists n.
-      introv j.
-
-      apply entry_in_library_snoc_implies in j.
-      repndors; tcsp;[].
-      repnd; subst; GC; tcsp. }
-
-    exists n.
-    introv j.
-
-    apply entry_in_library_snoc_implies in j.
-    repndors; tcsp.
-    repnd; subst; GC.
-    unfold non_shadowed_entry in j.
-    rewrite Heqb in j; ginv.
-  Qed.
-
-  Fixpoint cs_name_in_inf_library {o}
-           (name : choice_sequence_name)
-           (lib  : @inf_library o)
-           (n    : nat) : bool :=
-    match n with
-    | 0 => false
-    | S n =>
-      match lib 0 with
-      | inf_lib_cs name' _ =>
-        if choice_sequence_name_deq name name' then true
-        else cs_name_in_inf_library name (shift_inf_lib lib) n
-      | _ => cs_name_in_inf_library name (shift_inf_lib lib) n
-      end
-    end.
-
-  Lemma cs_name_in_library_implies {o} :
-    forall name (lib : @library o),
-      cs_name_in_library name lib = true
-      -> exists e,
-        entry_in_library (lib_cs name e) lib.
-  Proof.
-    induction lib; introv i; simpl in *; tcsp.
-    destruct a; simpl in *; tcsp; boolvar; subst; tcsp; GC;[| |].
-
-    { exists entry; tcsp. }
-
-    { autodimp IHlib hyp; exrepnd.
-      exists e; dands; tcsp. }
-
-    { autodimp IHlib hyp; exrepnd.
-      exists e; dands; tcsp. }
-  Qed.
-
-  Definition cons_inf_lib_entry {o}
-             (e   : inf_library_entry)
-             (lib : @inf_library o) : inf_library :=
-    fun n =>
-      if deq_nat n 0 then e
-      else lib (pred n).
-
-  Lemma entry_in_inf_library_extends_implies_exists {o} :
-    forall e n (infLib : @inf_library o),
-      entry_in_inf_library_extends e n infLib
-      -> exists k,
-        inf_entry_extends (infLib k) e
-        /\ forall j, j < k -> ~inf_matching_entries (infLib j) e.
-  Proof.
-    induction n; introv i; simpl in *; tcsp.
-    repndors; repnd.
-
-    { exists 0; dands; tcsp. }
-
-    applydup IHn in i.
-    exrepnd.
-    exists (S k); simpl.
-    dands; eauto 3 with slow.
-    introv ltk.
-    destruct j; auto.
-    apply i2; omega.
-  Qed.
-
-  (* The 2 names have different names but the same kind/space *)
-  Definition similar_cs_names (n1 n2 : choice_sequence_name) :=
-    csn_name n1 <> csn_name n2
-    /\ csn_kind n1 = csn_kind n2.
-
-  Lemma entry_in_rename_cs_lib_implies {o} :
-    forall n1 n2 e (lib : @library o),
-      entry_in_library (lib_cs n2 e) (rename_cs_lib lib n1 n2)
-      -> entry_in_library (lib_cs n1 e) lib.
-  Proof.
-    induction lib; introv i; simpl in *; tcsp.
-    destruct a; boolvar; simpl in *; subst; tcsp;
-      repndors; ginv; tcsp; repnd;[].
-    destruct i0; tcsp.
-  Qed.
-  Hint Resolve entry_in_rename_cs_lib_implies : slow.
-
 (* Inspired from name_invariance stuff *)
 (* We assume that [n1] and [n2] have the same space but different names *)
 Lemma implies_close_ren_cs {o} :
@@ -7093,8 +7590,10 @@ Proof.
     (* We assume that [n1] and [n2] have the same space but different names *)
     Definition rename_cs_bar
                {o} {lib}
-               (bar : @BarLib o lib)
-               (n1 n2 : choice_sequence_name) : BarLib (rename_cs_lib lib n1 n2).
+               (bar   : @BarLib o lib)
+               (n1 n2 : choice_sequence_name)
+               (sim   : similar_cs_names n1 n2)
+               (safeL : safe_library lib) : BarLib (rename_cs_lib lib n1 n2).
     Proof.
       exists (fun (lib' : library) =>
                 exists lib1,
@@ -7103,6 +7602,7 @@ Proof.
 
       - introv e.
         destruct bar as [bar1 bars1 ext1]; simpl in *.
+        dup e as infLibExt.
         destruct e as [iext isafe].
 
         apply inf_lib_extends_ext_entries_implies in iext; exrepnd.
@@ -7144,6 +7644,14 @@ Proof.
               { applydup @entry_in_inf_library_extends_implies_exists in w1; exrepnd.
                 remember (infLib k) as ie; destruct ie; simpl in *; repnd; subst; tcsp;[].
 
+                assert (entry_in_inf_library (infLib k) infLib) as j.
+                { apply implies_entry_in_inf_library.
+                  introv ltk.
+                  apply w3 in ltk.
+                  rewrite <- Heqie.
+                  unfold inf_matching_entries in ltk; simpl in ltk.
+                  unfold matching_inf_entries; simpl; auto. }
+
                 remember (cons_inf_lib_entry
                             (inf_lib_cs n1 entry)
                             (cons_inf_lib_entry
@@ -7183,6 +7691,63 @@ Proof.
                                       lib) as q.
                         repeat (autodimp q hyp).
                         repndors;[ginv|destruct q; tcsp]; eauto 3 with slow. }
+
+                      applydup (@diff_implies_entry_in_rename_cs_lib o n1 n2) in i; auto;[].
+                      applydup iext0 in i0.
+                      repndors.
+
+                      { left.
+                        exists (S (S n)).
+                        simpl.
+                        right; dands; tcsp. }
+
+                      { right.
+                        simpl; eauto 3 with slow. } }
+
+                    { left.
+                      apply (abs_implies_entry_in_rename_cs_lib n1 n2) in i.
+                      apply iext0 in i.
+                      repndors.
+
+                      { exists (S (S n)); simpl; tcsp. }
+
+                      { apply abs_entry_not_in_inf_library_default in i; tcsp. } } }
+
+                  { introv safeLib.
+                    applydup (@implies_safe_rename_cs_lib o n1 n2) in safeLib; auto.
+                    applydup isafe in safeLib0.
+                    repeat apply implies_safe_inf_library_cons_inf_lib_entry; eauto 3 with slow.
+
+                    { applydup safeLib1 in j.
+                      rewrite <- Heqie in j1; eauto 3 with slow. }
+
+                    { simpl.
+                      apply implies_safe_inf_choice_sequence_entry2inf.
+                      apply safeLib in j0; simpl in j0; auto. } } }
+
+                exrepnd.
+                exists (rename_cs_lib lib' n1 n2).
+                dands; eauto 3 with slow;[].
+
+                Lemma xxx {o} :
+                  forall n1 n2 (lib' lib : @library o) e1 e2 infLib,
+                    lib_extends lib' lib
+                    -> entry_in_inf_library (inf_lib_cs n2 e1) infLib
+                    -> inf_lib_extends infLib (rename_cs_lib lib n1 n2)
+                    -> inf_lib_extends
+                         (cons_inf_lib_entry
+                            (inf_lib_cs n1 e1)
+                            (cons_inf_lib_entry
+                               (library_entry2inf (lib_cs n2 e2))
+                               infLib))
+                         lib'
+                    -> inf_lib_extends infLib (rename_cs_lib lib' n1 n2).
+                Proof.
+                Qed.
+
+
+                    Print safe_inf_library.
+                    Print safe_inf_library.
 
 
 
