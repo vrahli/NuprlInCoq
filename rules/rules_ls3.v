@@ -10063,6 +10063,34 @@ Proof.
    Proof.
    Admitted.
 
+   Lemma lib_extends_entries_keep_only {o} :
+     forall name (lib : @library o),
+       lib_extends_entries lib (keep_only name lib).
+   Proof.
+     introv i.
+     apply entry_in_library_keep_only in i; repnd; eauto 3 with slow.
+   Qed.
+   Hint Resolve lib_extends_entries_keep_only : slow.
+
+   Lemma subset_library_keep_only {o} :
+     forall name (lib : @library o),
+       subset_library (keep_only name lib) lib.
+   Proof.
+     introv i.
+     apply in_library_keep_only in i; repnd.
+     eexists; dands; eauto; eauto 3 with slow.
+   Qed.
+   Hint Resolve subset_library_keep_only : slow.
+
+   Lemma lib_extends_keep_only {o} :
+     forall name (lib : @library o),
+       safe_library lib
+       -> lib_extends lib (keep_only name lib).
+   Proof.
+     introv safe; split; eauto 3 with slow.
+   Qed.
+   Hint Resolve lib_extends_keep_only : slow.
+
   (* TODO *)
   Lemma member_implies_keep_only {o} :
     forall name lib (t T : @CTerm o),
@@ -10090,6 +10118,7 @@ Proof.
         -> type_system u
         -> defines_only_universes u
         -> type_monotone u
+        -> type_monotone_func u
         -> (forall lib t1 t2 e,
                contains_atmost name t1
                -> contains_atmost name t2
@@ -10102,7 +10131,7 @@ Proof.
             close u (keep_only name lib) t1 t2 e'
             /\ inhabited_iff e e'.
     Proof.
-      introv prim conta contb safe local tsimp tysys dou mon imp; introv cl.
+      introv prim conta contb safe local tsimp tysys dou mon monf; introv imp cl.
       close_cases (induction cl using @close_ind') Case; introv; subst.
 
       { Case "CL_init".
@@ -10124,16 +10153,123 @@ Proof.
           repeat (autodimp reca hyp); eauto 3 with slow. }
         clear reca; rename h into reca.
 
+Lemma implies_lib_extends_keep_only_trans_safe {o} :
+  forall name {lib lib' lib'' : @library o},
+    safe_library lib
+    -> lib_extends lib' lib
+    -> lib_extends lib'' lib'
+    -> lib_extends lib'' (keep_only name lib').
+Proof.
+  introv safe exta extb.
+  eapply lib_extends_trans;[eauto|]; eauto 3 with slow.
+Qed.
+
+Definition bar_per2lib_per_keep_only {o} {lib}
+           {bar  : @BarLib o lib}
+           (name : choice_sequence_name)
+           (p    : bar_per bar)
+  : lib-per(keep_only name lib,o).
+Proof.
+  exists (fun lib2 (x : lib_extends lib2 (keep_only name lib)) t1 t2 =>
+            forall lib1
+                   (b : bar_lib_bar bar lib1)
+                   (ext : lib_extends lib2 lib1)
+                   (y   : lib_extends lib2 lib),
+              bar_per_per _ p lib1 b lib2 ext y t1 t2).
+  introv xt1 xt2; repeat introv.
+  split; intro q; introv; auto.
+Defined.
+
+(*        assert (all_in_bar_ext
+                  bar
+                  (fun (lib' : library) (x : lib_extends lib' lib) =>
+                     exists (e' : lib-per(keep_only name lib',o)),
+                       forall lib'' (y : lib_extends lib'' lib'),
+                         close ts lib'' T T' (e' lib'' (implies_lib_extends_keep_only_trans_safe name safe x y))
+                         /\ inhabited_iff (eqa lib'' (lib_extends_trans y x)) (e' lib'' (implies_lib_extends_keep_only_trans_safe name safe x y)))) as xxx.
+        { introv br ext; introv.
+          pose proof (reca _ br _ ext x) as recb; simpl in *; exrepnd.
+          applydup @close_monotone_func in recb1; exrepnd; auto.
+          exists eq'; introv.
+          pose proof (recb3 _ (implies_lib_extends_keep_only_trans_safe name safe x y)) as recb4; repnd.
+          dands; auto.
+
+          pose proof (reca _ br _ ext x) as recc; simpl in *.
+        }*)
+
         apply all_in_bar_ext_exists_per_implies_exists2 in reca; exrepnd;
           [|introv a b; repnd;
             eapply close_uniquely_valued; try exact a; try exact b; eauto];[].
 
-        exists (per_bar_eq (bar_keep_only name prim safe bar) (bar_per2lib_per f)).
+(*        assert (exists (f : ext-per(keep_only name lib,o)),
+                   forall lib' (br : bar_lib_bar bar lib')
+                          lib''
+                          (ext : lib_extends lib'' (keep_only name lib))
+                          (x : lib_extends lib'' lib),
+                     close ts lib'' T T' (f lib'' ext)
+                     /\ inhabited_iff (eqa lib'' x) (f lib'' ext)).
+        { exists (fun lib2 (x : lib_extends lib2 (keep_only name lib)) t1 t2 =>
+                    forall lib' (br : bar_lib_bar bar lib')
+                           (ext : lib_extends lib2 lib')
+                           (x : lib_extends lib2 lib),
+                      bar_per_per _ f _ br lib2 ext x t1 t2).
+          introv br xt; introv; simpl.
+          pose proof (reca0 _ br lib'') as reca0.
+          dands.
+
+          {
+
+          }
+
+        }*)
+
+(*        assert (forall lib' (br : bar_lib_bar bar lib')
+                       lib'' (ext : lib_extends lib'' lib')
+                       (x : lib_extends lib'' lib),
+                   close ts (keep_only name lib'') T T' xxx
+                   /\ inhabited_iff (eqa lib'' x) xxx).*)
+
+(*        assert (all_in_bar_ext
+                  bar
+                  (fun (lib' : library) (x : lib_extends lib' lib) =>
+                     exists (e' : lib-per(keep_only name lib',o)),
+                       forall lib'' (y : lib_extends lib'' (keep_only name lib')),
+                         close ts (keep_only name lib') T T' (e' lib'' y)
+                         /\ inhabited_iff (eqa lib'' y) (e' lib'' y))).*)
+
+(*assert (forall (lib1 : library)
+               (br   : bar lib1)
+               (lib2 : library)
+               (ext  : lib_extends lib2 lib1)
+               (x    : lib_extends lib2 lib)
+               (lib3 : library)
+               (y    : lib_extends lib2 (keep_only_name lib2)),
+           close ts (keep_only name lib2) T T' (f lib1 br lib2 ext x)
+           /\ inhabited_iff (eqa lib2 x) (f lib1 br lib2 ext x)*)
+
+        exists (per_bar_eq (bar_keep_only name prim safe bar) (bar_per2lib_per_keep_only name f)).
         dands; auto.
 
         { apply CL_bar.
           unfold per_bar.
-          exists bar.
+          exists (bar_keep_only name prim safe bar)
+                 (bar_per2lib_per_keep_only name f).
+          dands; tcsp;[].
+          simpl.
+
+          introv br ext xt.
+          simpl in *; exrepnd.
+
+          assert (lib_extends lib1 lib) as xt1 by eauto 3 with slow.
+          assert (lib_extends (keep_only name lib1 ++ lib1) lib1) as xt2 by eauto 4 with slow.
+          assert (lib_extends (keep_only name lib1 ++ lib1) lib) as xt3 by eauto 3 with slow.
+
+          pose proof (reca0 _ br1) as recb.
+
+          (keep_only name lib1 ++ lib1) xt2 xt3) as recb.
+          repnd.
+
+          SearchAbout keep_only app.
 
         }
 
