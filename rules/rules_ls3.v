@@ -8598,6 +8598,7 @@ Proof.
 Qed.
 Hint Resolve lib_extends_preserves_cs_name_in_library : slow.
 
+(* [sw_cs_lib] swaps [n1] and [n2] *)
 Fixpoint sw_cs_lib {o}
          (lib : @library o)
          (n1 n2 : choice_sequence_name) : library :=
@@ -9597,7 +9598,6 @@ Defined.
 
 
 
-
 (* *************************************************************** *)
 (* ****** LS3 ****** *)
 
@@ -10082,6 +10082,8 @@ Proof.
   Definition libraries_agree_on {o} name (lib1 lib2 : @library o) :=
     find_cs lib1 name = find_cs lib2 name.
 
+  Set Nested Proofs Allowed.
+
   Lemma implies_inhabited_iff_equality_of_int_bar_agree {o} :
     forall name lib liba (eq : per(o)),
       libraries_agree_on name liba lib
@@ -10388,6 +10390,147 @@ Proof.
      apply eq_term_equals_sym in eqe; eauto 3 with slow.
    Qed.
    Hint Resolve eq_term_equals_preserves_non_inhabited_iff_left : slow.
+
+   Definition libraries_agree_on_names {o}
+              name1 (lib1 : @library o)
+              name2 (lib2 : @library o) :=
+     find_cs lib1 name1 = find_cs lib2 name2.
+
+   (* Can we just
+       - remove [name] from the library, and replacing it with the name with the right space?
+       - rename that one
+       - reintroduce the new name in the library *)
+
+    (* [e] could use anything from [lib], even entries that are not in [liba] *)
+    Lemma implies_xxx {o} :
+      forall name name' lib (u : cts(o)) (t1 t2 : @CTerm o) e,
+        is_primitive_kind name
+        -> similar_cs_names name name'
+        -> contains_atmost name t1
+        -> contains_atmost name t2
+        -> safe_library lib
+        -> local_ts u
+        -> ts_implies_per_bar u
+        -> type_system u
+        -> defines_only_universes u
+        -> type_monotone u
+        -> type_monotone_func u
+        -> (forall lib t1 t2 e,
+               contains_atmost name t1
+               -> contains_atmost name t2
+               -> u lib t1 t2 e
+               -> forall liba,
+                   safe_library liba
+                   -> libraries_agree_on_names name lib name' liba
+                   -> u liba t1 t2 (xxx name name' e))
+        -> close u lib t1 t2 e
+        -> forall liba,
+            safe_library liba
+            -> libraries_agree_on_names name lib name' liba
+            -> close u liba t1 t2 (xxx name name' e).
+    Proof.
+      introv prim conta contb safe local tsimp tysys dou mon monf; introv imp cl.
+      close_cases (induction cl using @close_ind') Case; introv safea agree; subst.
+
+      { Case "CL_init".
+        pose proof (imp lib T T' eq) as imp; repeat (autodimp imp hyp); exrepnd.
+        pose proof (imp _ safea agree) as imp; repeat (autodimp imp hyp); exrepnd.
+        exists e'; dands; auto.
+      }
+
+      { Case "CL_bar".
+        clear per.
+
+        assert (all_in_bar_ext
+                  bar
+                  (fun (lib' : library) (x : lib_extends lib' lib) =>
+                     forall liba (safea : safe_library liba) (cond : libraries_agree_on name liba lib'),
+                     exists e',
+                       close ts liba T T' e'
+                       /\ non_inhabited_iff (eqa lib' x) e')) as h.
+        { introv br xt; introv.
+          pose proof (reca _ br _ xt x) as reca; simpl in reca.
+          repeat (autodimp reca hyp); eauto 3 with slow. }
+        clear reca; rename h into reca.
+
+        apply all_in_bar_ext_exists_per_implies_exists3 in reca; exrepnd;
+          [|introv a b; repnd; eapply close_uniquely_valued;
+            try exact a; try exact b; eauto];[].
+
+        assert (lib_extends liba (keep_only name lib)) as xta by eauto 3 with slow.
+
+        (* we need a [lib-per(liba,o)] *)
+
+        exists (per_bar_eq (raise_bar (bar_keep_only name prim safe bar) xta)
+                           (bar_per_agree2lib_per liba f)).
+        dands; auto.
+
+        { apply CL_bar.
+          unfold per_bar.
+          exists (raise_bar (bar_keep_only name prim safe bar) xta)
+                 (bar_per_agree2lib_per liba f).
+          dands; tcsp;[].
+          simpl.
+
+          introv br ext xt.
+          simpl in *; exrepnd.
+
+          assert (lib_extends lib0 lib) as xt1 by eauto 3 with slow.
+          assert (lib_extends (keep_only name lib'0 ++ lib0) lib0) as xt2 by eauto 4 with slow.
+          assert (lib_extends (keep_only name lib'0 ++ lib0) lib) as xt3 by eauto 3 with slow.
+          assert (lib_extends lib'0 (keep_only name lib0)) as xt4 by eauto 3 with slow.
+          assert (safe_library lib'0) as safe1 by eauto 3 with slow.
+          pose proof (libraries_agree_on_keep_only_app name lib'0 lib0) as agree1.
+          autodimp agree1 hyp; eauto 3 with slow;[].
+
+          pose proof (reca0 _ br1 (keep_only name lib'0 ++ lib0)
+                            xt2 xt3 lib'0 safe1 agree1) as recb; repnd.
+
+          assert (type_extensionality (close ts)) as text by eauto 3 with slow.
+          assert (uniquely_valued (close ts)) as tuv by (apply close_uniquely_valued; auto).
+          eapply text;[eauto|].
+          introv; simpl.
+
+          split; intro h; exrepnd.
+          { exists lib0 br1 (keep_only name lib'0 ++ lib0); eauto. }
+          pose proof (reca0 _ b _ ext0 y lib'0 safe0 cond) as q; repnd.
+          eapply tuv in q0; autodimp q0 hyp;[exact recb0|].
+          apply q0; auto. }
+
+        { eapply eq_term_equals_preserves_non_inhabited_iff_left;[apply eq_term_equals_sym;exact eqiff|].
+          unfold non_inhabited_iff, non_inhabited; split; introv h w.
+
+          { apply (non_dep_all_in_ex_bar_implies liba).
+            exists (raise_bar (bar_keep_only name prim safe bar) xta).
+            introv br ext.
+            assert (lib_extends lib'0 liba) as xt1 by eauto 3 with slow.
+            pose proof (w _ br _ ext xt1) as z; simpl in z; exrepnd.
+            apply (non_dep_all_in_ex_bar_implies lib'0).
+            exists bar'.
+            introv br' ext'.
+            assert (lib_extends lib'2 lib'0) as xt2 by eauto 3 with slow.
+            pose proof (z0 _ br' _ ext' xt2) as u; simpl in u; exrepnd.
+            pose proof (reca0 _ b lib2 ext0 y lib'2 safe0 cond) as recb; repnd.
+            
+            SearchAbout all_in_bar.
+
+          }
+
+          {
+          }
+        }
+
+      }
+
+      { Case "CL_int".
+        unfold per_int in per; repnd.
+        exists (equality_of_int_bar liba).
+        dands; eauto 3 with slow;[].
+        apply CL_int; unfold per_int.
+        dands; spcast; auto; try (apply (contains_atmost_implies_computes_to_valc_agree name lib)); auto.
+      }
+
+    Qed.
 
   (* TODO *)
   Lemma member_implies_keep_only {o} :

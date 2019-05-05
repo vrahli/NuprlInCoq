@@ -34,6 +34,7 @@
 Require Export terms_union.
 Require Export computation_preserves_lib.
 Require Import computation_choice_seq.
+Require Export List.
 Require Export list. (* Why? *)
 
 

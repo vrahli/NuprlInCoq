@@ -35,6 +35,7 @@ Require Export computation3.
 Require Export substitution3.
 Require Export natk.
 Require Export alphaeq3.
+Require Export List.
 
 
 Definition mkcv_free_from_atom {p} vs (t1 t2 t3 : @CVTerm p vs) : CVTerm vs :=

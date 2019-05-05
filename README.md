@@ -11,7 +11,7 @@ Then run "make" (or alternatively if your machine has multiple cores,
 run make -j n, where n is the number of cores you want to use) to
 compile everything.  This will take a while.
 
-Our implementation compiles with Coq version 8.7.1.
+Our implementation compiles with Coq version 8.9.0.
 
 
 DESCRIPTION
@@ -136,5 +136,6 @@ CONTRIBUTORS
 ============
 
 * Vincent Rahli
+* Liron Cohen
 * Abhishek Anand
 * Mark Bickford
