@@ -27,6 +27,7 @@
 
 Require Export continuity3_2.
 Require Export continuity_defs_ceq.
+Require Export List.
 Require Export list.  (* WTF!! *)
 
 
