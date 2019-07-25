@@ -230,6 +230,7 @@ Require Import rules_product.
 Require Import rules_not_classical.
 Require Import rules_not_MP.
 Require Import rules_not_IP.
+Require Import rules_not_LPO.
 
 
 (*
