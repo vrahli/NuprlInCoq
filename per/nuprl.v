@@ -103,7 +103,7 @@ Definition univ' {p} lib (T T' : @CTerm p) eq :=
  *)
 
 Definition univi_eq_bar {o} (ts : cts(o)) lib (A A' : @CTerm o) :=
-  {eqa : per , {bar : BarLib lib , all_in_bar bar (fun lib => close ts lib A A' eqa)}}.
+  {eqa : per , {bar : BarLib lib , e_all_in_bar bar (fun lib => close ts lib A A' eqa)}}.
 
 Definition univi_eq_ext {o} (ts : cts(o)) lib (A A' : @CTerm o) :=
   {eqa : per , in_ext lib (fun lib => close ts lib A A' eqa)}.
@@ -266,7 +266,7 @@ Definition defines_only_universes0 {o} (ts : cts(o)) :=
 
 Definition computes_to_uni {o} lib (T : @CTerm o) :=
   exists (bar : @BarLib o lib),
-    all_in_bar bar (fun lib => {i : nat , T ===>(lib) (mkc_uni i)}).
+    e_all_in_bar bar (fun lib => {i : nat , T ===>(lib) (mkc_uni i)}).
 
 Definition defines_only_universes {o} (ts : cts(o)) :=
   forall lib (T : @CTerm o) eq,
@@ -363,8 +363,10 @@ Proof.
   introv u.
   unfold univi_bar, per_bar in *; exrepnd.
   exists bar eqa; dands; auto.
-  try introv b e; repeat introv.
-  pose proof (u0 lib' b lib'0 e) as u0; simpl in *; tcsp.
+  introv b; introv.
+  pose proof (u0 lib' b lib'0 e) as u0; simpl in *.
+  unfold ex_finite_ext_ext in *; simpl in *; exrepnd.
+  exists lib'' xt'; introv; simpl in *; tcsp.
 Qed.
 Hint Resolve implies_univi_bar_successor : slow.
 
@@ -385,7 +387,8 @@ Proof.
   - Case "CL_bar".
     apply CL_bar.
     exists bar eqa; dands; auto.
-    try introv b e; repeat introv; eapply reca; eauto.
+    eapply e_all_in_bar_ext_modus_ponens1;[|exact reca].
+    introv u; apply u; auto.
 
   - Case "CL_eq".
     apply CL_eq; unfold per_eq; sp.
@@ -721,6 +724,15 @@ Proof.
 Qed.
 Hint Resolve in_ext_ext_implies_all_in_bar_ext : slow.
 
+Lemma in_ext_ext_implies_e_all_in_bar_ext {o} :
+  forall lib (bar : @BarLib o lib) F,
+    in_ext_ext lib F
+    -> e_all_in_bar_ext bar F.
+Proof.
+  introv i; eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_ext_implies_e_all_in_bar_ext : slow.
+
 Lemma univi_bar_implies_univ {o} :
   forall i lib (T T' : @CTerm o) eq,
     univi_bar i lib T T' eq
@@ -729,9 +741,8 @@ Proof.
   introv u.
   unfold univi_bar, per_bar in u; exrepnd.
   exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (u0 _ br _ ext x) as u0; simpl in *.
-  exists i; auto.
+  eapply e_all_in_bar_ext_modus_ponens1;[|eauto].
+  introv u; exists i; auto.
 Qed.
 Hint Resolve univi_bar_implies_univ : slow.
 
@@ -751,7 +762,8 @@ Proof.
   - Case "CL_bar".
     apply CL_bar.
     exists bar eqa; dands; auto.
-    try introv b e; repeat introv; eapply reca; eauto.
+    eapply e_all_in_bar_ext_modus_ponens1;[|exact reca].
+    introv u; eapply u; eauto.
 
   - Case "CL_eq".
     apply CL_eq.

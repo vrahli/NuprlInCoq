@@ -29,6 +29,7 @@
 
 
 Require Export terms_props.
+Require Export List.
 Require Export list. (* why? *)
 
 

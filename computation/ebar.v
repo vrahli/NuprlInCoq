@@ -119,14 +119,34 @@ Definition ChoiceSequenceEntry2entry {o} (e : @ChoiceSequenceEntry o) : library_
 Definition ChoiceSequenceEntries2lib {o} (l : list (@ChoiceSequenceEntry o)) : library :=
   map ChoiceSequenceEntry2entry l.
 
-(* do we need to say that the renamings cover the extension? *)
+Definition ChoiceSequenceEntries {o} := list (@ChoiceSequenceEntry o).
+
+Record CsRens :=
+  MkCsRens
+    {
+      csr_ren :> nat -> cs_ren;
+    }.
+
+Definition ext_ren {o}
+           (lib  : @library o)
+           (lext : ChoiceSequenceEntries)
+           (rens : CsRens)
+           (n    : nat) :=
+  lib ++ ChoiceSequenceEntries2lib (cs_ren_ChoiceSequenceEntries (rens n) lext).
+
+(* QUESTION:
+   (1) We probably need to say that the renamings cover the extension.
+   (2) We probably need to say that all renamings are different from each other *)
 Definition ex_finite_ext {o}
            (lib : @library o)
            (F   : @library o -> Prop) :=
-  exists (ext : list ChoiceSequenceEntry),
-  exists (rens : nat -> cs_ren),
+  exists (lib' : library) (xt : lib_extends lib' lib),
+    in_ext lib' F.
+
+(*  exists (lext : ChoiceSequenceEntries),
+  exists (rens : CsRens),
   forall n,
-    F (lib ++ ChoiceSequenceEntries2lib (cs_ren_ChoiceSequenceEntries (rens n) ext)).
+    F (ext_ren lib lext rens n).*)
 
 Definition e_in_ext {o} (lib : @library o) (F : @library o -> Prop) :=
   forall (lib' : library),
@@ -221,21 +241,53 @@ Proof.
 Qed.
 Hint Resolve safe_ren_ChoiceSequenceEntries2lib : slow.
 
+Lemma lib_extends_ext_ren {o} :
+  forall (lib : @library o) lext rens n,
+    lib_extends (ext_ren lib lext rens n) lib.
+Proof.
+  introv; apply implies_lib_extends_app_r; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_ext_ren : slow.
+
+Definition all_in_ex_bar {o} (lib : @library o) F :=
+  exists (bar : BarLib lib), all_in_bar bar F.
+
+Definition in_ext_ext {o} (lib : @library o) (F : forall (lib' : @library o), lib_extends lib' lib -> Prop) :=
+  forall (lib' : library) (e : lib_extends lib' lib), F lib' e.
+
+Definition all_in_bar_ext {o} {lib}
+           (bar : BarLib lib)
+           (F : forall (lib' : @library o), lib_extends lib' lib -> Prop) :=
+  forall (lib' : library) (b : bar_lib_bar bar lib'),
+    in_ext_ext
+      lib'
+      (fun l e =>
+         forall (x : lib_extends l lib),
+                F l x).
+
+Definition all_in_ex_bar_ext {o} (lib : @library o) F :=
+  exists (bar : BarLib lib), all_in_bar_ext bar F.
+
 Definition ex_finite_ext_ext {o}
            (lib lib' : @library o)
            (xt  : lib_extends lib' lib)
            (F   : forall (lib' : @library o), lib_extends lib' lib -> Prop) :=
-  exists (ext : list ChoiceSequenceEntry),
-  exists (rens : nat -> cs_ren),
+  exists (lib'' : library) (xt' : lib_extends lib'' lib'),
+    in_ext_ext lib'' (fun lib0 x => F lib0 (lib_extends_trans (lib_extends_trans x xt') xt)).
+
+(*  exists (lext : ChoiceSequenceEntries),
+  exists (rens : CsRens),
   forall n,
-    F (lib' ++ ChoiceSequenceEntries2lib (cs_ren_ChoiceSequenceEntries (rens n) ext))
+    F (ext_ren lib' lext rens n)
       (lib_extends_trans
          (implies_lib_extends_app_r
             lib'
-            (safe_ren_ChoiceSequenceEntries2lib ext (rens n)))
-         xt).
+            (safe_ren_ChoiceSequenceEntries2lib lext (rens n)))
+         xt).*)
 
-Definition e_in_ext_ext {o} (lib : @library o) (F : forall (lib' : @library o), lib_extends lib' lib -> Prop) :=
+Definition e_in_ext_ext {o}
+           (lib : @library o)
+           (F : forall (lib' : @library o), lib_extends lib' lib -> Prop) :=
   forall (lib' : library) (e : lib_extends lib' lib),
     ex_finite_ext_ext lib lib' e F.
 
@@ -248,3 +300,218 @@ Definition e_all_in_bar_ext {o} {lib}
       (fun l e =>
          forall (x : lib_extends l lib),
            F l x).
+
+Definition e_all_in_ex_bar {o} (lib : @library o) F :=
+  exists (bar : BarLib lib), e_all_in_bar bar F.
+
+(* MOVE *)
+Definition e_all_in_ex_bar_ext {o} (lib : @library o) F :=
+  exists (bar : BarLib lib), e_all_in_bar_ext bar F.
+
+(* MOVE *)
+Definition emCsRens : CsRens := MkCsRens (fun (n : nat) => []).
+
+
+Lemma ext_ren_nil {o} :
+  forall (lib : @library o) rens n,
+    ext_ren lib [] rens n = lib.
+Proof.
+  unfold ext_ren; introv; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @ext_ren_nil : slow.
+
+Lemma lib_extends_preserves_in_ext {o} :
+  forall (lib1 lib2 : @library o) F,
+    lib_extends lib2 lib1
+    -> in_ext lib1 F
+    -> in_ext lib2 F.
+Proof.
+  introv ext h xt.
+  apply h; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_in_ext : slow.
+
+Lemma all_in_bar_implies_e_all_in_bar {o} :
+  forall (lib : @library o) (bar : BarLib lib) F,
+    all_in_bar bar F
+    -> e_all_in_bar bar F.
+Proof.
+  introv h b e.
+  pose proof (h _ b) as h.
+  exists lib'0 (lib_extends_refl lib'0); auto; eauto 3 with slow.
+Qed.
+Hint Resolve all_in_bar_implies_e_all_in_bar : slow.
+
+Lemma all_in_ex_bar_implies_e_all_in_ex_bar {o} :
+  forall (lib : @library o) F,
+    all_in_ex_bar lib F
+    -> e_all_in_ex_bar lib F.
+Proof.
+  introv h.
+  unfold e_all_in_ex_bar.
+  unfold all_in_ex_bar in h; exrepnd.
+  exists bar; eauto 3 with slow.
+Qed.
+Hint Resolve all_in_ex_bar_implies_e_all_in_ex_bar : slow.
+
+Lemma all_in_bar_ext_implies_e_all_in_bar_ext {o} :
+  forall (lib : @library o) (bar : BarLib lib) F,
+    all_in_bar_ext bar F
+    -> e_all_in_bar_ext bar F.
+Proof.
+  introv h b; introv.
+  pose proof (h _ b) as h; simpl in *.
+  exists lib'0 (lib_extends_refl lib'0); auto.
+  introv xt; introv.
+  apply h; eauto 3 with slow.
+Qed.
+Hint Resolve all_in_bar_ext_implies_e_all_in_bar_ext : slow.
+
+Lemma all_in_ex_bar_ext_implies_e_all_in_ex_bar_ext {o} :
+  forall (lib : @library o) F,
+    all_in_ex_bar_ext lib F
+    -> e_all_in_ex_bar_ext lib F.
+Proof.
+  introv h.
+  unfold e_all_in_ex_bar_ext.
+  unfold all_in_ex_bar_ext in h; exrepnd.
+  exists bar; eauto 3 with slow.
+Qed.
+Hint Resolve all_in_ex_bar_implies_e_all_in_ex_bar : slow.
+
+
+Lemma e_all_in_bar_modus_ponens1 {o} :
+  forall (lib : @library o) (bar : BarLib lib) (F G : library -> Prop),
+    in_ext lib (fun lib => G lib -> F lib)
+    -> e_all_in_bar bar G
+    -> e_all_in_bar bar F.
+Proof.
+  introv h q b e; repeat introv.
+  pose proof (q _ b _ e) as q.
+  unfold ex_finite_ext in *; exrepnd; simpl in *.
+  exists lib'1 xt; auto.
+  introv xt'.
+  apply h; auto; eauto 5 with slow.
+Qed.
+
+Lemma e_all_in_bar_ext_modus_ponens1 {o} :
+  forall (lib : @library o) (bar : BarLib lib) (F G : forall (lib' : library) (e : lib_extends lib' lib), Prop),
+    in_ext_ext lib (fun lib' (e : lib_extends lib' lib) => G lib' e -> F lib' e)
+    -> e_all_in_bar_ext bar G
+    -> e_all_in_bar_ext bar F.
+Proof.
+  introv h q b; introv.
+  pose proof (q _ b _ e) as q.
+  unfold ex_finite_ext_ext in *; exrepnd; simpl in *.
+  exists lib'' xt'; auto.
+  introv xt; introv; apply h; eauto.
+Qed.
+
+Lemma e_all_in_ex_bar_modus_ponens1 {o} :
+  forall (lib : @library o) (F G : library -> Prop),
+    in_ext lib (fun lib => G lib -> F lib)
+    -> e_all_in_ex_bar lib G
+    -> e_all_in_ex_bar lib F.
+Proof.
+  introv h q; repeat introv.
+  unfold e_all_in_ex_bar in *; exrepnd; exists bar.
+  eapply e_all_in_bar_modus_ponens1;[|eauto]; auto.
+Qed.
+
+Lemma e_all_in_ex_bar_ext_modus_ponens1 {o} :
+  forall (lib : @library o) (F G : forall (lib' : library) (e : lib_extends lib' lib), Prop),
+    in_ext_ext lib (fun lib' (e : lib_extends lib' lib) => G lib' e -> F lib' e)
+    -> e_all_in_ex_bar_ext lib G
+    -> e_all_in_ex_bar_ext lib F.
+Proof.
+  introv h q; repeat introv.
+  unfold e_all_in_ex_bar_ext in *; exrepnd; exists bar.
+  eapply e_all_in_bar_ext_modus_ponens1;[|eauto]; auto.
+Qed.
+
+Lemma ex_finite_ext_pres {o} :
+  forall (lib : @library o) (F G : @library o -> Prop),
+    in_ext lib (fun lib' => F lib' -> G lib')
+    -> ex_finite_ext lib F
+    -> ex_finite_ext lib G.
+Proof.
+  introv imp h.
+  unfold ex_finite_ext in *; exrepnd.
+  exists lib' xt; eauto.
+  introv x; apply imp; eauto 3 with slow.
+Qed.
+
+Lemma ex_finite_ext_ext_pres {o} :
+  forall (lib1 lib2 lib3 : @library o)
+         (xt1 : lib_extends lib3 lib1)
+         (xt2 : lib_extends lib3 lib2)
+         (F : forall lib', lib_extends lib' lib1 -> Prop)
+         (G : forall lib', lib_extends lib' lib2 -> Prop),
+    in_ext_ext
+      lib3
+      (fun lib' (x : lib_extends lib' lib3) =>
+         F lib' (lib_extends_trans x xt1)
+         -> G lib' (lib_extends_trans x xt2))
+    -> ex_finite_ext_ext lib1 lib3 xt1 F
+    -> ex_finite_ext_ext lib2 lib3 xt2 G.
+Proof.
+  introv imp h.
+  unfold ex_finite_ext_ext in *; exrepnd.
+  exists lib'' xt'; eauto.
+  introv; eapply imp; eauto.
+Qed.
+
+Lemma e_all_in_ex_bar_ext_pres {o} :
+  forall (lib : @library o)
+         (F G : forall lib' (x : lib_extends lib' lib), Prop),
+    (forall (bar : BarLib lib)
+            lib' (br : bar_lib_bar bar lib')
+            lib'' (x : lib_extends lib'' lib')
+            (y : lib_extends lib'' lib),
+        F lib'' y
+        -> G lib'' y)
+    -> e_all_in_ex_bar_ext lib F
+    -> e_all_in_ex_bar_ext lib G.
+Proof.
+  introv imp h.
+  unfold e_all_in_ex_bar_ext in *; exrepnd.
+  exists bar; introv br; introv.
+  pose proof (h0 _ br _ e) as h0.
+  eapply ex_finite_ext_ext_pres; eauto.
+  introv xta z; introv; eauto.
+  eapply imp; eauto; eauto 3 with slow.
+Qed.
+
+Lemma e_all_in_ex_bar_pres {o} :
+  forall (lib : @library o)
+         (F G : library -> Prop),
+    (forall (bar : BarLib lib)
+            lib' (br : bar_lib_bar bar lib')
+            lib'' (x : lib_extends lib'' lib'),
+        F lib''
+        -> G lib'')
+    -> e_all_in_ex_bar lib F
+    -> e_all_in_ex_bar lib G.
+Proof.
+  introv imp h.
+  unfold e_all_in_ex_bar in *; exrepnd.
+  exists bar; introv br e; introv.
+  pose proof (h0 _ br _ e) as h0.
+  eapply ex_finite_ext_pres;[|eauto].
+  introv xta z; introv; eauto.
+  eapply imp; eauto; eauto 3 with slow.
+Qed.
+
+Lemma in_ext_implies {o} :
+  forall (lib : @library o) F,
+    in_ext lib F -> F lib.
+Proof.
+  introv h; apply h; eauto 3 with slow.
+Qed.
+
+Lemma in_ext_ext_implies {o} :
+  forall (lib : @library o) F,
+    in_ext_ext lib F -> F lib (lib_extends_refl lib).
+Proof.
+  introv h; apply h.
+Qed.

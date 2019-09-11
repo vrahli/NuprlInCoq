@@ -121,13 +121,19 @@ Lemma all_in_bar_ext_eq_term_equals_preserves_per_bar_eq {o} :
     -> per_bar_eq bar eqa t1 t2
     -> per_bar_eq bar eqb t1 t2.
 Proof.
-  introv alla allb br ext; introv.
+  introv alla allb br; introv.
   unfold per_bar_eq in *.
-  pose proof (allb _ br _ ext x) as allb; simpl in *; exrepnd.
-  exists bar'.
-  introv br' ext'; introv.
-  apply (alla _ br _ (lib_extends_trans x0 ext)).
-  apply (allb0 _ br' _ ext' x0).
+  pose proof (allb _ br _ e) as allb; simpl in *; exrepnd.
+
+  eapply ex_finite_ext_ext_pres; eauto.
+  introv ext h; repeat introv.
+  pose proof (h x) as h.
+
+  eapply e_all_in_ex_bar_ext_pres; eauto.
+  introv br' xt' q.
+
+  assert (lib_extends lib'' lib') as xt by eauto 3 with slow.
+  apply (alla _ br _ xt (lib_extends_trans y x)); auto.
 Qed.
 
 (*Lemma per_bar_eq_preserves_all_in_bar_ext_eq_term_equals {o} :
@@ -279,3 +285,37 @@ Proof.
     destruct b as [bar2 bars2 ext2]; simpl in *.
     eauto 4 with slow.
 Defined.
+
+Lemma in_open_bar_ext_eq_term_equals_preserves_per_bar_eq {o} :
+  forall lib (bar : @BarLib o lib) (eqa eqb : lib-per(lib,o)) t1 t2,
+    in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
+    -> per_bar_eq bar eqa t1 t2
+    -> per_bar_eq bar eqb t1 t2.
+Proof.
+  introv alla allb.
+  unfold per_bar_eq in *.
+
+  apply e_all_in_bar_ext_as in allb.
+  apply e_all_in_bar_ext_as.
+  introv ext.
+  pose proof (allb _ ext) as allb; exrepnd.
+  exists lib'' y; introv xt; introv.
+  pose proof (allb1 _ xt z) as allb1; simpl in *.
+
+  apply e_all_in_ex_bar_ext_as in allb1.
+  apply e_all_in_ex_bar_ext_as.
+  introv ext'.
+  pose proof (allb1 _ ext') as allb1; exrepnd.
+
+  assert (lib_extends lib''0 lib) as x by eauto 3 with slow.
+  pose proof (alla _ x) as alla; exrepnd.
+
+  assert (lib_extends lib''1 lib'1) as w by eauto 3 with slow.
+  exists lib''1 w.
+
+ introv xt'; introv.
+ assert (lib_extends lib'2 lib''0) as w' by eauto 3 with slow.
+ pose proof (allb1 lib'2 w' z0) as allb1; simpl in *; auto.
+ pose proof (alla1 lib'2 xt' (lib_extends_trans z0 z)) as alla1; simpl in *; auto.
+ apply alla1; auto.
+Qed.

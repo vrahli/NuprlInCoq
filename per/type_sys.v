@@ -2014,7 +2014,9 @@ Proof.
   introv h; unfold computes_to_uni in h; exrepnd.
   pose proof (bar_non_empty bar) as ne; exrepnd.
   pose proof (h0 _ ne0 lib' (lib_extends_refl lib')) as h0; simpl in *; exrepnd.
-  exists lib' i; dands; auto; eauto 3 with slow.
+  unfold ex_finite_ext in h0; exrepnd.
+  apply in_ext_implies in h0; exrepnd.
+  exists lib'0 i; dands; auto; eauto 3 with slow.
 Qed.
 
 Ltac apply_defines_only_universes0 :=
@@ -2098,8 +2100,11 @@ Proof.
   pose proof (a _ ne0 lib'0 (lib_extends_refl lib'0)) as a.
   pose proof (h0 _ ne0 lib'0 (lib_extends_refl lib'0)) as h0.
   simpl in *; exrepnd.
+  unfold ex_finite_ext in *; exrepnd.
+  apply in_ext_implies in h0; exrepnd.
+  eapply ccomputes_to_valc_ext_monotone in a;[|eauto].
   spcast; computes_to_eqval.
-  apply cequivc_uni_left_iscvalue in eqt; eauto 3 with slow.
+  apply cequivc_uni_right_iscvalue in eqt; eauto 3 with slow.
 Qed.
 
 Ltac apply_defines_only_universes_bar_left :=
@@ -2170,14 +2175,23 @@ Proof.
   apply (implies_all_in_bar_intersect_bars_right _ (raise_bar b ext)) in h0.
   remember (intersect_bars (raise_bar b ext) bar) as B; clear HeqB.
   pose proof (bar_non_empty B) as ne; exrepnd.
-  pose proof (a _ ne0 lib'0 (lib_extends_refl lib'0)) as a.
-  pose proof (h0 _ ne0 lib'0 (lib_extends_refl lib'0)) as h0.
+
+  (* This is where we have to jump from one branch in [a] to the other in [h0] *)
+
+  pose proof (a _ ne0 lib'0 (lib_extends_refl lib'0)) as a; simpl in *; exrepnd.
+  unfold ex_finite_ext in *; exrepnd.
+  apply in_ext_implies in a1; simpl in *; exrepnd.
+
+  pose proof (h0 _ ne0 lib'1 xt) as h0.
   simpl in *; exrepnd.
+  apply in_ext_implies in h0; simpl in *; exrepnd.
+
+  eapply ccomputes_to_valc_ext_monotone in a1;[|eauto].
   spcast.
   computes_to_eqval.
-  eapply cequivc_uni_left_iscvalue in eqt; eauto 3 with slow; subst.
+  eapply cequivc_uni_right_iscvalue in eqt; eauto 3 with slow; subst.
   eapply cequivc_uni in a0;[|eauto 3 with slow].
-  exists lib'0 i; spcast; auto.
+  exists lib'1 i; spcast; auto.
 Qed.
 
 Ltac apply_defines_only_universes_bar_ceq_left :=

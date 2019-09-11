@@ -23,6 +23,7 @@
 
 
   Websites: http://nuprl.org/html/verification/
+
             http://nuprl.org/html/Nuprl2Coq
             https://github.com/vrahli/NuprlInCoq
 
@@ -32,6 +33,7 @@
 
 
 Require Export nuprl.
+Require Export raise_bar.
 Require Export nat_defs.
 Require Export computation_choice_seq.
 Require Export computation_lib_extends2.
@@ -1296,6 +1298,232 @@ Proof.
 Qed.
 Hint Resolve computes_to_valc_implies_iscvalue : slow.
 
+(*Lemma e_all_in_bar_equality_of_nat_implies {o} :
+  forall lib (bar : @BarLib o lib) a a',
+    e_all_in_bar bar (fun lib => equality_of_nat lib a a')
+    ->
+    exists (Flib : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), library),
+    exists (Fext : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), lib_extends (Flib _ b _ ext) lib''),
+    exists (Fnat : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), nat),
+    forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'),
+      a  ===>(Flib _ b _ ext) (mkc_nat (Fnat _ b _ ext))
+    # a' ===>(Flib _ b _ ext) (mkc_nat (Fnat _ b _ ext)).
+Proof.
+  introv h.
+
+  pose proof (FunctionalChoice_on
+                (pack_all_in_bar bar)
+                (@library o)
+                (fun p lib3 =>
+                   exists (xt : lib_extends lib3 (pack_lib2 _ p)),
+                     equality_of_nat lib3 a a')) as q.
+  autodimp q hyp; tcsp.
+  { introv.
+    destruct a0 as [lib' br lib'' ext].
+    eapply h; eauto. }
+  exrepnd.
+  rename f into Flib.
+  rename q0 into q.
+  exists (fun lib' br lib'' ext => Flib (MkPackAllInBar lib' br lib'' ext)); introv.
+
+  pose proof (DependentFunctionalChoice_on
+                (pack_all_in_bar bar)
+                (fun p => lib_extends (Flib p) (pack_lib2 _ p))
+                (fun p xt => equality_of_nat (Flib p) a a')) as q'.
+  autodimp q' hyp; tcsp.
+  exrepnd.
+  clear q.
+  rename f into Fext.
+  rename q'0 into q.
+  exists (fun lib' br lib'' ext => Fext (MkPackAllInBar lib' br lib'' ext)); introv.
+
+  pose proof (FunctionalChoice_on
+                (pack_all_in_bar bar)
+                nat
+                (fun p k =>
+                   a ===>(Flib p) (mkc_nat k)
+                     # a' ===>(Flib p) (mkc_nat k))) as q'.
+  autodimp q' hyp; tcsp.
+  exrepnd.
+  clear q.
+  rename f into Fnat.
+  rename q'0 into q.
+  exists (fun lib' br lib'' ext => Fnat (MkPackAllInBar lib' br lib'' ext)); introv.
+
+  apply (q (MkPackAllInBar lib' b lib'' ext)).
+Qed.*)
+
+(*Definition e_extend_bar_nat_following_coq_law_upto {o} {lib}
+           (bar   : @BarLib o lib)
+           (safe  : safe_library lib)
+           (Flext : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), @ChoiceSequenceEntries o)
+           (Frens : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), CsRens)
+           (Fnat  : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib') (n : nat), nat)
+  : BarLib lib.
+Proof.
+  exists (fun (lib' : library) =>
+            exists (lib0 : library) (b : bar_lib_bar bar lib0),
+              lib' = extend_library_following_coq_law_upto
+                       lib0
+                       seq_0
+                       (S (Fnat _ b _ (lib_extends_refl lib0) 0))).
+
+  - introv ext'; simpl.
+    destruct bar as [bar cond ext]; simpl in *.
+    pose proof (cond infLib ext') as q.
+
+    exrepnd.
+
+    exists (extend_library_following_coq_law_upto
+              lib' seq_0
+              (S (Fnat lib' q1 lib' (lib_extends_refl lib') 0))).
+    dands; eauto 3 with slow.
+
+  - introv b; exrepnd; subst.
+    eauto 3 with slow.
+Defined.*)
+
+(*
+Definition e_extend_bar_nat_following_coq_law_upto2 {o} {lib} {a} {a'}
+           (bar   : @BarLib o lib)
+           (safe  : safe_library lib)
+           {Flext : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), ChoiceSequenceEntries}
+           {Frens : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), CsRens}
+           {Fnat  : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib') (n : nat), nat}
+           (G     : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib') (n : nat),
+               a ===>(ext_ren lib'' (Flext _ b _ ext) (Frens _ b _ ext) n) (mkc_nat (Fnat _ b _ ext n))
+                 # a' ===>(ext_ren lib'' (Flext _ b _ ext) (Frens _ b _ ext) n) (mkc_nat (Fnat _ b _ ext n)))
+  : BarLib lib.
+Proof.
+  exists (fun (lib' : library) =>
+            exists (lib0 : library) (b : bar_lib_bar bar lib0) (n : nat),
+              lib' = ext_ren
+                       (extend_library_following_coq_law_upto
+                          lib0
+                          seq_0
+                          (S (Fnat _ b _ (lib_extends_refl lib0) n)))
+                       (Flext _ b _ (lib_extends_refl lib0))
+                       (Frens _ b _ (lib_extends_refl lib0))
+                       (Fnat  _ b _ (lib_extends_refl lib0) n)).
+
+  - introv ext'; simpl.
+    destruct bar as [bar cond ext]; simpl in *.
+    pose proof (cond infLib ext') as q.
+
+    exrepnd.
+
+    exists (ext_ren
+              (extend_library_following_coq_law_upto
+                 lib' seq_0
+                 (S (Fnat lib' q1 lib' (lib_extends_refl lib') 0)))
+              (Flext _ q1 _ (lib_extends_refl lib'))
+              (Frens _ q1 _ (lib_extends_refl lib'))
+              (Fnat  _ q1 _ (lib_extends_refl lib') 0)).
+    dands; eauto 3 with slow.
+    eexists; eexists; eexists; dands; eauto.
+
+  - introv b; exrepnd; subst.
+    pose proof (G lib0 b lib0 (lib_extends_refl _)) as z; repnd.
+    eauto 3 with slow.
+Defined.
+*)
+
+Definition CsRens2Const (rens : CsRens) (n : nat) : CsRens :=
+  MkCsRens (fun _ => rens n).
+
+Lemma ext_ren_CsRens2Const {o} :
+  forall (lib : @library o) lext rens n k,
+    ext_ren lib lext (CsRens2Const rens n) k
+    = ext_ren lib lext rens n.
+Proof.
+  tcsp.
+Qed.
+Hint Rewrite @ext_ren_CsRens2Const : slow.
+
+Lemma implies_entry_in_library_extends_app_if_left {o} :
+  forall entry (lib1 lib2 : @library o),
+    entry_in_library_extends entry lib1
+    -> entry_in_library_extends entry (lib1 ++ lib2).
+Proof.
+  induction lib1; introv h; simpl in *; tcsp.
+Qed.
+Hint Resolve implies_entry_in_library_extends_app_if_left : slow.
+
+Lemma implies_entry_in_library_extends_app_right {o} :
+  forall (lib1 lib2 : @library o) e,
+    entry_in_library_extends e lib2
+    -> (forall e', LIn e' lib1 -> ~ matching_entries e e')
+    -> entry_in_library_extends e (lib1 ++ lib2).
+Proof.
+  induction lib1; introv h q; simpl in *; auto.
+  right; dands; auto.
+Qed.
+
+(*Lemma e_all_in_bar_ext_implies {o} :
+  forall lib (bar : @BarLib o lib) (F : forall lib', lib_extends lib' lib -> Prop),
+    e_all_in_bar_ext bar F
+    ->
+    exists (Flext : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), ChoiceSequenceEntries),
+    exists (Frens : forall lib' (b : bar_lib_bar bar lib') lib'' (ext : lib_extends lib'' lib'), CsRens),
+    forall lib' (b : bar_lib_bar bar lib')
+           lib'' (ext : lib_extends lib'' lib')
+           (n : nat)
+           (x : lib_extends (ext_ren lib'' (Flext _ b _ ext) (Frens _ b _ ext) n) lib),
+      F (ext_ren lib'' (Flext _ b _ ext) (Frens _ b _ ext) n) x.
+Proof.
+  introv h.
+
+  pose proof (FunctionalChoice_on
+                (pack_all_in_bar bar)
+                (ChoiceSequenceEntries)
+                (fun p lext =>
+                   exists (rens : CsRens),
+                     forall n xt, F (ext_ren (pack_lib2 _ p) lext rens n) xt)) as q.
+  autodimp q hyp; tcsp.
+  { introv.
+    destruct a as [lib' br lib'' ext]; simpl in *.
+    apply (h _ br _ ext). }
+  exrepnd.
+  rename f into Flext.
+  rename q0 into q.
+  exists (fun lib' br lib'' ext => Flext (MkPackAllInBar lib' br lib'' ext)); introv.
+
+  pose proof (FunctionalChoice_on
+                (pack_all_in_bar bar)
+                (CsRens)
+                (fun p rens =>
+                   forall n xt, F (ext_ren
+                                     (pack_lib2 _ p)
+                                     (Flext p)
+                                     rens n) xt)) as q'.
+  autodimp q' hyp; tcsp.
+  exrepnd.
+  clear q.
+  rename f into Frens.
+  rename q'0 into q.
+  exists (fun lib' br lib'' ext => Frens (MkPackAllInBar lib' br lib'' ext)).
+  introv; tcsp.
+
+  apply (q (MkPackAllInBar lib' b lib'' ext)).
+Qed.*)
+
+Lemma implies_ccomputes_to_valc_ext_apply_cs {o} :
+  forall (lib1 lib2 : @library o) s n i j,
+    lib_extends lib2 lib1
+    -> n ===>(lib1) (mkc_nat i)
+    -> find_cs_value_at lib2 s i = Some (mkc_nat j)
+    -> (mkc_apply (mkc_choice_seq s) n) ===>(lib2) (mkc_nat j).
+Proof.
+  introv ext comp fn xt.
+  assert (lib_extends lib' lib1) as xt' by eauto 3 with slow.
+  pose proof (comp _ xt') as comp; simpl in comp; exrepnd; spcast.
+  apply cequivc_nat_implies_computes_to_valc in comp0.
+  apply computes_to_valc_isvalue_eq in comp0; eauto 3 with slow; subst.
+  exists (@mkc_nat o j); dands; spcast; eauto 3 with slow.
+  eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl; eauto 3 with slow.
+Qed.
+Hint Resolve implies_ccomputes_to_valc_ext_apply_cs : slow.
+
 
 (*
 
@@ -1354,69 +1582,43 @@ Proof.
   {
     unfold per_func_eq.
     try (exists (@trivial_bar o lib_0)); simpl.
+
+    apply all_in_bar_ext_implies_e_all_in_bar_ext.
+    Opaque mkc_apply.
     introv xt1 xt2 x en; simpl in *.
 
     unfold equality_of_nat_bar in *; exrepnd.
+    apply e_all_in_ex_bar_as in en.
+    apply e_all_in_ex_bar_as.
+    introv ext.
+    pose proof (en _ ext) as en; exrepnd.
+    apply in_ext_implies in en1.
+    unfold equality_of_nat in *; exrepnd.
 
-    applydup @lib_extends_preserves_safe in xt2 as safe; eauto 3 with slow.
-    apply all_in_bar_equality_of_nat_implies in en0; exrepnd.
-
-    exists (extend_bar_nat_following_coq_law_upto bar safe en1).
-    introv b z; simpl in *.
-    exrepnd; subst.
-
-    first[assert (lib_extends lib'2 lib0) as ext1 by eauto 2 with slow
-         |assert (lib_extends lib'1 lib0) as ext1 by eauto 2 with slow
-         |assert (lib_extends lib'0 lib0) as ext1 by eauto 2 with slow].
-    first[assert (lib_extends lib'2 lib_0) as ext2 by eauto 4 with slow
-         |assert (lib_extends lib'1 lib_0) as ext2 by eauto 4 with slow
-         |assert (lib_extends lib'0 lib_0) as ext2 by eauto 4 with slow].
-    assert (lib_extends lib0 lib_0) as ext3 by eauto 4 with slow.
-
-    pose proof (en1 lib0 b lib0 (lib_extends_refl _)) as w; repnd; simpl in *.
-    remember (F lib0 b lib0 (lib_extends_refl lib0)) as k; clear Heqk.
-    clear dependent F.
-
-    pose proof (bar_preserves_safe bar lib0) as safe1.
-    repeat (autodimp safe1 hyp);[].
-
-    dup ext1 as safe2.
-    apply @lib_extends_safe in safe2; auto;[].
-
-    eapply (lib_extends_preserves_find_cs _ _ seq_0) in ext3;[|simpl; eauto].
+    assert (lib_extends lib'' lib_0) as ext0 by eauto 5 with slow.
+    applydup @lib_extends_preserves_safe in ext0 as safe0; eauto 3 with slow.
+    eapply (lib_extends_preserves_find_cs _ _ seq_0) in ext0;[|simpl; eauto].
     exrepnd.
     simpl in *.
-    unfold choice_sequence_vals_extend in ext0; exrepnd; simpl in *; subst.
+    unfold choice_sequence_vals_extend in ext1; exrepnd; simpl in *; subst.
     destruct entry2 as [vals2 restr2]; simpl in *.
-    unfold law_0 in ext4.
+    unfold law_0 in ext2.
     destruct restr2; simpl in *; ginv; tcsp;[].
 
-    dup z as ee.
-    eapply extend_library_follow_coq_law_upto_implies_find_cs in ee;
-      [|auto|allrw; eauto].
-    unfold const_0 in ee.
+    assert (lib_extends (extend_library_following_coq_law_upto lib'' seq_0 (S n)) lib'1) as xt' by eauto 3 with slow.
+    exists (extend_library_following_coq_law_upto lib'' seq_0 (S n)) xt'.
+    introv xt''.
+    exists 0.
 
-    exists 0; simpl.
-    rewrite ext4 in ee; unfold const_0 in ee.
-    dands; spcast.
-
-    {
-      introv ext.
-      pose proof (w0 _ (lib_extends_trans ext ext1)) as w1; simpl in w1; exrepnd; spcast.
-      apply cequivc_nat_implies_computes_to_valc in w2.
-      apply computes_to_valc_isvalue_eq in w2; eauto 3 with slow;subst;[].
-      eexists; dands; spcast;[| |apply cequivc_refl];eauto 2 with slow.
-      eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl; eauto 4 with slow.
-    }
-
-    {
-      introv ext.
-      pose proof (w _ (lib_extends_trans ext ext1)) as w1; simpl in w1; exrepnd; spcast.
-      apply cequivc_nat_implies_computes_to_valc in w2.
-      apply computes_to_valc_isvalue_eq in w2; eauto 3 with slow;subst;[].
-      eexists; dands; spcast;[| |apply cequivc_refl]; eauto 2 with slow.
-      eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl; eauto 3 with slow.
-    }
+    dands; eauto 3 with slow.
+    { eapply implies_ccomputes_to_valc_ext_apply_cs; try exact en0; eauto 3 with slow.
+      eapply (extend_library_follow_coq_law_upto_implies_find_cs _ _ _ n _ f) in ext0; try apply lib_extends_refl; auto.
+      rewrite ext2 in ext0; auto.
+      eapply lib_extends_preserves_find_cs_value_at; eauto. }
+    { eapply implies_ccomputes_to_valc_ext_apply_cs; try exact en1; eauto 3 with slow.
+      eapply (extend_library_follow_coq_law_upto_implies_find_cs _ _ _ n _ f) in ext0; try apply lib_extends_refl; auto.
+      rewrite ext2 in ext0; auto.
+      eapply lib_extends_preserves_find_cs_value_at; eauto. }
   }
 Qed.
 
@@ -2553,6 +2755,34 @@ Proof.
       pose proof (ext l0) as q; tcsp.
 Qed*)
 
+Definition inf_cs_entry_0 {o} : @InfChoiceSeqEntry o := MkInfChoiceSeqEntry _ (fun _ => mkc_zero) law_0.
+
+Definition inf_lib_entry_0 {o} : @inf_library_entry o := inf_lib_cs seq_0 inf_cs_entry_0.
+
+Lemma safe_inf_library_entry_inf_lib_entry_0 {o} :
+  @safe_inf_library_entry o inf_lib_entry_0.
+Proof.
+  unfold safe_inf_library_entry; simpl; dands; tcsp.
+  introv; unfold const_0.
+  rewrite mkc_zero_eq; auto.
+Qed.
+Hint Resolve safe_inf_library_entry_inf_lib_entry_0 : slow.
+
+Lemma exists_extend_library_lawless_upto {o} :
+  forall name n (lib : @library o),
+    safe_library lib
+    ->
+    exists lib',
+      extend_library_lawless_upto lib' lib name n
+      /\ lib_extends lib' lib.
+Proof.
+  introv safe.
+  pose proof (exists_extend_library_lawless_upto_following_infinite (library2inf lib inf_lib_entry_0) name n lib) as q.
+  repeat (autodimp q hyp); eauto 3 with slow;[].
+  exrepnd.
+  exists lib'; dands; eauto 3 with slow.
+Qed.
+
 Lemma seq1_in_nat2nat {o} :
   @member o lib_1 (mkc_choice_seq seq_1) Nat2Nat.
 Proof.
@@ -2602,61 +2832,40 @@ Proof.
   {
     unfold per_func_eq.
     try (exists (@trivial_bar o lib_1)); simpl.
+
+    apply all_in_bar_ext_implies_e_all_in_bar_ext.
+    Opaque mkc_apply.
     introv xt1 xt2 x en; introv; simpl in *.
 
     unfold equality_of_nat_bar in *; exrepnd.
+    apply e_all_in_ex_bar_as in en.
+    apply e_all_in_ex_bar_as.
+    introv ext.
+    pose proof (en _ ext) as en; exrepnd.
+    apply in_ext_implies in en1.
+    unfold equality_of_nat in *; exrepnd.
 
-    applydup @lib_extends_preserves_safe in xt2 as safe; eauto 3 with slow.
-    apply all_in_bar_equality_of_nat_implies in en0; exrepnd.
+    assert (lib_extends lib'' lib_1) as ext0 by eauto 5 with slow.
+    applydup @lib_extends_preserves_safe in ext0 as safe0; eauto 3 with slow.
+    eapply (lib_extends_preserves_find_cs _ _ seq_1) in ext0;[|simpl; eauto].
+    exrepnd.
+    simpl in *.
+    unfold choice_sequence_vals_extend in ext1; exrepnd; simpl in *; subst.
+    destruct entry2 as [vals2 restr2]; simpl in *.
+    unfold law_1 in ext2.
+    destruct restr2; simpl in *; ginv; tcsp; repnd;[].
 
-    exists (extend_bar_nat_lawless_upto bar safe en1).
-    introv b; simpl in *.
-    exrepnd; subst.
+    pose proof (exists_extend_library_lawless_upto seq_1 (S n) lib'') as h.
+    autodimp h hyp; exrepnd.
+    eapply extend_library_lawless_upto_implies_find_cs in h1; auto;
+      [|apply find_cs_some_implies_entry_in_library;eauto]; exrepnd.
+    apply ext2 in h2.
+    unfold is_nat in h2; exrepnd; subst; simpl in *.
 
-    pose proof (en1 lib0 b lib0 (lib_extends_refl _)) as w; repnd; simpl in *.
-    remember (F lib0 b lib0 (lib_extends_refl lib0)) as k; clear Heqk.
-    clear dependent F.
-
-    introv lext.
-
-    pose proof (bar_preserves_safe bar lib0) as safe1.
-    repeat (autodimp safe1 hyp);[].
-
-    applydup @extend_library_lawless_upto_preserves_safe_library in b1 as safe2; auto;[].
-
-    assert (lib_extends lib0 lib_1) as ext by (eauto 4 with slow).
-    apply lib_extends_lib1_implies_entry_in_library in ext; exrepnd.
-
-    destruct restr; simpl in *; tcsp; repnd;[].
-
-    pose proof (extend_library_lawless_upto_implies_find_cs lib'1 lib0 seq_1 k vals d typ typd) as q.
-    repeat (autodimp q hyp); exrepnd.
-    eapply lib_extends_preserves_find_cs_value_at in q1;[|eauto].
-
-    apply ext0 in q0.
-    unfold is_nat in q0; exrepnd; subst.
-    exists i; simpl.
-
-    dands; spcast.
-
-    {
-      introv ext.
-      assert (lib_extends lib'3 lib0) as xt by (eauto 4 with slow).
-      pose proof (w0 _ xt) as w1; simpl in w1; exrepnd; spcast.
-      apply cequivc_nat_implies_computes_to_valc in w2.
-      apply computes_to_valc_isvalue_eq in w2; eauto 3 with slow;subst;[].
-      eexists; dands; spcast;[| |apply cequivc_refl]; eauto 2 with slow.
-      eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl; eauto 3 with slow.
-    }
-
-    {
-      introv ext.
-      assert (lib_extends lib'3 lib0) as xt by (eauto 4 with slow).
-      pose proof (w _ xt) as w1; simpl in w1; exrepnd; spcast.
-      apply cequivc_nat_implies_computes_to_valc in w2.
-      apply computes_to_valc_isvalue_eq in w2; eauto 3 with slow;subst;[].
-      eexists; dands; spcast;[| |apply cequivc_refl]; eauto 2 with slow.
-      eapply implies_compute_to_valc_apply_choice_seq; eauto; simpl; eauto 3 with slow.
-    }
+    assert (lib_extends lib'2 lib'1) as xt' by eauto 3 with slow.
+    exists lib'2 xt'.
+    introv xt''.
+    exists i.
+    dands; eauto 3 with slow.
   }
 Qed.

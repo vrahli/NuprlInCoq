@@ -135,19 +135,17 @@ Proof.
   exists (fun lib' x => per_func_ext_eq lib' (raise_lib_per eqa x) (raise_lib_per_fam eqb x)).
   repeat introv.
   unfold per_func_ext_eq; split; intro h; exrepnd;
-    exists bar; introv br ext; introv.
+    eapply e_all_in_ex_bar_ext_pres; eauto; introv br xt q.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *.
-    unfold per_func_eq, raise_ext_per_fam, raise_ext_per in *; simpl in *; introv.
-    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
+  - unfold per_func_eq, raise_ext_per_fam, raise_ext_per in *; simpl in *; introv.
+    pose proof (lib_per_cond _ eqa lib'' (lib_extends_trans y0 y) (lib_extends_trans y0 e)) as e1.
     dup e0 as e2; apply e1 in e2; clear e1.
-    eapply (lib_per_fam_cond _ eqb lib'1 (lib_extends_trans x y) (lib_extends_trans x e) a a' e0 e2); eauto.
+    eapply (lib_per_fam_cond _ eqb lib'' (lib_extends_trans y0 y) (lib_extends_trans y0 e) a a' e0 e2); eauto; apply q.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *.
-    unfold per_func_eq, raise_ext_per_fam, raise_ext_per in *; simpl in *; introv.
-    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
+  - unfold per_func_eq, raise_ext_per_fam, raise_ext_per in *; simpl in *; introv.
+    pose proof (lib_per_cond _ eqa lib'' (lib_extends_trans y0 y) (lib_extends_trans y0 e)) as e1.
     dup e0 as e2; apply e1 in e2; clear e1.
-    eapply (lib_per_fam_cond _ eqb lib'1 (lib_extends_trans x y) (lib_extends_trans x e) a a' e2 e0); eauto.
+    eapply (lib_per_fam_cond _ eqb lib'' (lib_extends_trans y0 y) (lib_extends_trans y0 e) a a' e2 e0); eauto; apply q.
 Defined.
 
 Lemma per_func_monotone_func {o} :
@@ -170,19 +168,17 @@ Proof.
   exists (fun lib' x => per_qtime_eq_bar lib' (raise_lib_per eqa x)).
   repeat introv.
   unfold per_qtime_eq_bar; split; intro h; exrepnd;
-    exists bar; introv br ext; introv.
+    eapply e_all_in_ex_bar_ext_pres; eauto; introv br xt q.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *.
-    unfold per_qtime_eq, raise_ext_per in *; simpl in *; introv; exrepnd.
-    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
-    dup h0 as e2; apply e1 in e2; clear e1.
-    exists x0 y0; dands; auto.
+  - unfold per_qtime_eq, raise_ext_per in *; simpl in *; introv; exrepnd.
+    pose proof (lib_per_cond _ eqa lib'' (lib_extends_trans y0 y) (lib_extends_trans y0 e)) as e1.
+    dup q1 as e2; apply e1 in e2; clear e1.
+    exists x y1; dands; auto.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *.
-    unfold per_qtime_eq, raise_ext_per in *; simpl in *; introv; exrepnd.
-    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
-    dup h0 as e2; apply e1 in e2; clear e1.
-    exists x0 y0; dands; auto.
+  - unfold per_qtime_eq, raise_ext_per in *; simpl in *; introv; exrepnd.
+    pose proof (lib_per_cond _ eqa lib'' (lib_extends_trans y0 y) (lib_extends_trans y0 e)) as e1.
+    dup q1 as e2; apply e1 in e2; clear e1.
+    exists x y1; dands; auto.
 Defined.
 
 Lemma per_qtime_monotone_func {o} :
@@ -205,17 +201,15 @@ Proof.
   exists (fun lib' x => per_union_eq_bar lib' (raise_lib_per eqa x) (raise_lib_per eqb x)).
   repeat introv.
   unfold per_union_eq_bar; split; intro h; exrepnd;
-    exists bar; introv br ext; introv.
+    eapply e_all_in_ex_bar_ext_pres; eauto; introv br xt q.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *.
-    unfold per_union_eq, per_union_eq_L, per_union_eq_R, raise_ext_per in *; simpl in *; introv.
-    repndors; exrepnd; spcast;[left|right]; exists x0 y0; dands; spcast; eauto 3 with slow.
+  - unfold per_union_eq, per_union_eq_L, per_union_eq_R, raise_ext_per in *; simpl in *; introv.
+    repndors; exrepnd; spcast;[left|right]; exists x y1; dands; spcast; eauto 3 with slow.
     { eapply (lib_per_cond _ eqa); eauto. }
     { eapply (lib_per_cond _ eqb); eauto. }
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *.
-    unfold per_union_eq, per_union_eq_L, per_union_eq_R, raise_ext_per in *; simpl in *; introv.
-    repndors; exrepnd; spcast;[left|right]; exists x0 y0; dands; spcast; eauto 3 with slow.
+  - unfold per_union_eq, per_union_eq_L, per_union_eq_R, raise_ext_per in *; simpl in *; introv.
+    repndors; exrepnd; spcast;[left|right]; exists x y1; dands; spcast; eauto 3 with slow.
     { eapply (lib_per_cond _ eqa); eauto. }
     { eapply (lib_per_cond _ eqb); eauto. }
 Defined.
@@ -241,28 +235,17 @@ Definition per_bar_eq_bar_lib_per {o}
 Proof.
   exists (fun lib' (x : lib_extends lib' lib) => per_bar_eq (raise_bar bar x) (raise_lib_per eqa x)).
   repeat introv.
-  unfold per_bar_eq; split; introv h br ext; introv; exrepnd.
+  unfold per_bar_eq; split; introv h;
+    eapply e_all_in_bar_ext_raise_bar_pres; eauto; introv br xt q.
 
-  - unfold raise_lib_per, raise_ext_per; simpl in *; exrepnd.
-    pose proof (h lib'0) as h; autodimp h hyp; simpl in *.
-    { exists lib1; dands; eauto 4 with slow. }
-    pose proof (h lib'1 ext x) as h; simpl in *.
-    unfold raise_ext_per in h; exrepnd.
-
-    exists bar'.
-    introv br' e'; introv.
-    pose proof (h0 _ br' _ e' x0) as h0; simpl in *.
+  - unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
+    eapply e_all_in_ex_bar_ext_pres; eauto.
+    introv br' xt' w.
     eapply (lib_per_cond _ eqa); eauto.
 
-  - unfold raise_lib_per, raise_ext_per; simpl in *; exrepnd.
-    pose proof (h lib'0) as h; autodimp h hyp; simpl in *.
-    { exists lib1; dands; eauto 4 with slow. }
-    pose proof (h lib'1 ext x) as h; simpl in *.
-    unfold raise_ext_per in h; exrepnd.
-
-    exists bar'.
-    introv br' e'; introv.
-    pose proof (h0 _ br' _ e' x0) as h0; simpl in *.
+  - unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
+    eapply e_all_in_ex_bar_ext_pres; eauto.
+    introv br' xt' w.
     eapply (lib_per_cond _ eqa); eauto.
 Defined.
 
@@ -294,20 +277,18 @@ Definition per_set_eq_bar_lib_per {o}
 Proof.
   exists (fun lib' x => per_set_eq_bar lib' (raise_lib_per eqa x) (raise_lib_per_fam eqb x)).
   repeat introv.
-  unfold per_set_eq_bar, per_set_eq; split; intro h; exrepnd;
-    exists bar; introv br ext; introv.
+  unfold per_set_eq_bar, per_set_eq; split; intro h;
+    eapply e_all_in_ex_bar_ext_pres; eauto; introv br xt q; exrepnd.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *; exrepnd.
-    unfold raise_ext_per in *; simpl in *.
-    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
+  - unfold raise_ext_per in *; simpl in *.
+    pose proof (lib_per_cond _ eqa lib'' (lib_extends_trans y0 y) (lib_extends_trans y0 e)) as e1.
     dup e0 as e2; apply e1 in e2; clear e1.
     exists e2; auto.
     eapply eq_term_equals_preserves_inhabited;[|eauto].
     apply lib_per_fam_cond.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *; exrepnd.
-    unfold raise_ext_per in *; simpl in *.
-    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
+  - unfold raise_ext_per in *; simpl in *.
+    pose proof (lib_per_cond _ eqa lib'' (lib_extends_trans y0 y) (lib_extends_trans y0 e)) as e1.
     dup e0 as e2; apply e1 in e2; clear e1.
     exists e2; auto.
     eapply eq_term_equals_preserves_inhabited;[|eauto].
@@ -336,22 +317,20 @@ Definition per_product_eq_bar_lib_per {o}
 Proof.
   exists (fun lib' x => per_product_eq_bar lib' (raise_lib_per eqa x) (raise_lib_per_fam eqb x)).
   repeat introv.
-  unfold per_product_eq_bar, per_product_eq; split; intro h; exrepnd;
-    exists bar; introv br ext; introv.
+  unfold per_product_eq_bar, per_product_eq; split; intro h;
+    eapply e_all_in_ex_bar_ext_pres; eauto; introv br xt q; exrepnd.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *; exrepnd.
-    unfold raise_ext_per in *; simpl in *.
-    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
+  - unfold raise_ext_per in *; simpl in *.
+    pose proof (lib_per_cond _ eqa lib'' (lib_extends_trans y0 y) (lib_extends_trans y0 e)) as e1.
     dup e0 as e2; apply e1 in e2; clear e1.
     exists a a' b b' e2; dands; auto.
-    eapply (lib_per_fam_cond _ eqb lib'1 (lib_extends_trans x y) (lib_extends_trans x e) a a' e2 e0); eauto.
+    eapply (lib_per_fam_cond _ eqb lib'' (lib_extends_trans y0 y) (lib_extends_trans y0 e) a a' e2 e0); eauto.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *; exrepnd.
-    unfold raise_ext_per in *; simpl in *.
-    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
+  - unfold raise_ext_per in *; simpl in *.
+    pose proof (lib_per_cond _ eqa lib'' (lib_extends_trans y0 y) (lib_extends_trans y0 e)) as e1.
     dup e0 as e2; apply e1 in e2; clear e1.
     exists a a' b b' e2; dands; auto.
-    eapply (lib_per_fam_cond _ eqb lib'1 (lib_extends_trans x y) (lib_extends_trans x e) a a' e0 e2); eauto.
+    eapply (lib_per_fam_cond _ eqb lib'' (lib_extends_trans y0 y) (lib_extends_trans y0 e) a a' e0 e2); eauto.
 Defined.
 
 Lemma per_product_monotone_func {o} :
@@ -376,13 +355,13 @@ Definition eq_per_eq_bar_lib_per {o}
 Proof.
   exists (fun lib' (x : lib_extends lib' lib) => eq_per_eq_bar lib' a1 a2 (raise_lib_per eqa x)).
   repeat introv.
-  unfold eq_per_eq_bar, eq_per_eq; split; introv h; exrepnd; exists bar; introv br ext; introv.
+  unfold eq_per_eq_bar, eq_per_eq; split; introv h;
+    eapply e_all_in_ex_bar_ext_pres; eauto; introv br xt q;
+      repnd; dands; auto.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *; repnd; dands; auto.
-    eapply (lib_per_cond _ eqa); eauto.
+  - unfold raise_lib_per in *; eapply (lib_per_cond _ eqa); eauto.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *; repnd; dands; auto.
-    eapply (lib_per_cond _ eqa); eauto.
+  - unfold raise_lib_per in *; eapply (lib_per_cond _ eqa); eauto.
 Defined.
 
 Definition eq_per_union_bar_lib_per {o}
@@ -393,16 +372,14 @@ Proof.
   exists (fun lib' x => eq_per_union_bar lib' (eqa lib' x) (eqb lib' x)).
   repeat introv.
   unfold eq_per_union_bar; split; intro h; exrepnd;
-    exists bar; introv br ext; introv.
+    eapply e_all_in_ex_bar_pres; eauto; introv br xt q.
 
-  - pose proof (h0 _ br _ ext) as h0; simpl in *.
-    unfold per_union_eq, per_union_eq_L, per_union_eq_R, raise_ext_per in *; simpl in *; introv.
+  - unfold per_union_eq, per_union_eq_L, per_union_eq_R, raise_ext_per in *; simpl in *; introv.
     repndors; exrepnd; spcast;[left|right]; exists x y0; dands; spcast; eauto 3 with slow.
     { eapply (lib_per_cond _ eqa); eauto. }
     { eapply (lib_per_cond _ eqb); eauto. }
 
-  - pose proof (h0 _ br _ ext) as h0; simpl in *.
-    unfold per_union_eq, per_union_eq_L, per_union_eq_R, raise_ext_per in *; simpl in *; introv.
+  - unfold per_union_eq, per_union_eq_L, per_union_eq_R, raise_ext_per in *; simpl in *; introv.
     repndors; exrepnd; spcast;[left|right]; exists x y0; dands; spcast; eauto 3 with slow.
     { eapply (lib_per_cond _ eqa); eauto. }
     { eapply (lib_per_cond _ eqb); eauto. }
@@ -447,14 +424,12 @@ Proof.
   exists (fun lib' x => per_image_eq_bar lib' (raise_lib_per eqa x) f).
   repeat introv.
   unfold per_image_eq_bar; split; intro h; exrepnd;
-    exists bar; introv br ext; introv.
+    eapply e_all_in_ex_bar_ext_pres; eauto; introv br xt q.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *.
-    eapply implies_eq_term_equals_eq_image_eq;[|eauto]; simpl.
+  - eapply implies_eq_term_equals_eq_image_eq;[|eauto]; simpl.
     eapply lib_per_cond.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *.
-    eapply implies_eq_term_equals_eq_image_eq;[|eauto]; simpl.
+  - eapply implies_eq_term_equals_eq_image_eq;[|eauto]; simpl.
     eapply lib_per_cond.
 Defined.
 
@@ -624,9 +599,11 @@ Proof.
   dands; auto; eauto 3 with slow;[].
   exists (raise_bar bar x) (raise_lib_per eqa x).
   dands; tcsp;[].
-  introv br xt; introv; simpl in *; exrepnd.
-  eapply type_extensionality_univi;[apply (h0 lib1 br1 lib'1 (lib_extends_trans xt br2))|].
-  introv; split; intro h; eauto.
+
+  eapply e_all_in_bar_ext_raise_bar_pres2; eauto; introv br xt q.
+
+  eapply type_extensionality_univi;[eauto|].
+  eapply (lib_per_cond _ eqa).
 Qed.
 Hint Resolve univi_monotone_func_implies_univi_bar_monotone_func : slow.
 

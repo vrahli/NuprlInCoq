@@ -26,6 +26,8 @@
 
 Require Export bin_rels.
 Require Export tactics2.
+Require Export String.
+Require Export List.
 
 
 Fixpoint LIn {A : Type} (a:A) (l:list A) : [univ] :=

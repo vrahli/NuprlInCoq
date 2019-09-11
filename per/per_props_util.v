@@ -210,10 +210,6 @@ Proof.
       eapply eqorceq_commutes_equality; try exact h; eauto 3 with slow.
 Qed.
 
-(* MOVE *)
-Definition all_in_ex_bar {o} (lib : @library o) F :=
-  {bar : BarLib lib , all_in_bar bar F}.
-
 Lemma implies_all_in_ex_bar_equality_or_ccequivc_ext {o} :
   forall {lib} (bar : @BarLib o lib) a b A B (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => nuprl lib' A B (eqa lib' x))

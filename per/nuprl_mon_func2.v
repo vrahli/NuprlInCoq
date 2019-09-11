@@ -223,14 +223,13 @@ Lemma sub_per_per_func_ext_eq2 {o} :
 Proof.
   introv y h; repeat introv.
   unfold per_func_ext_eq in *; exrepnd.
-  exists (raise_bar bar y).
-  introv br xt; repeat introv.
+  eapply e_all_in_ex_bar_ext_pres_ext; try exact h; eauto.
+  introv br xt q; repeat introv.
   unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
   unfold raise_lib_per_fam, raise_ext_per_fam; simpl in *; tcsp.
-  assert (eqa lib'1 (lib_extends_trans (lib_extends_trans x0 y) x) a0 a') as f by (eapply (lib_per_cond _ eqa); eauto).
-  pose proof (h0 _ br1 lib'1 (lib_extends_trans xt br2) (lib_extends_trans x0 y) a0 a' f) as h0; simpl in *.
-  eapply (lib_per_fam_cond _ eqb).
-  eapply h0; eauto 3 with slow.
+  assert (eqa lib2 (lib_extends_trans y0 x) a0 a') as f by (eapply (lib_per_cond _ eqa); eauto).
+  pose proof (q a0 a' f) as q.
+  eapply (lib_per_fam_cond _ eqb); eauto.
 Qed.
 Hint Resolve sub_per_per_func_ext_eq2 : slow.
 
@@ -266,12 +265,11 @@ Lemma sub_per_per_qtime_eq_bar2 {o} :
 Proof.
   introv y h; repeat introv.
   unfold per_qtime_eq_bar in *; exrepnd.
-  exists (raise_bar bar y).
-  introv br xt; repeat introv.
+  eapply e_all_in_ex_bar_ext_pres_ext; try exact h; eauto.
+  introv br xt q; repeat introv.
   unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
-  pose proof (h0 _ br1 _ (lib_extends_trans xt br2) (lib_extends_trans x0 y)) as h0; simpl in h0.
   unfold per_qtime_eq in *; exrepnd.
-  exists x1 y0; dands; auto.
+  exists x0 y1; dands; auto.
   eapply (lib_per_cond _ eqa); eauto.
 Qed.
 Hint Resolve sub_per_per_qtime_eq_bar2 : slow.
@@ -307,17 +305,11 @@ Lemma sub_per_per_bar_eq2 {o} :
             (per_bar_eq (raise_bar bar w) (raise_lib_per eqa w)).
 Proof.
   introv y h.
-  unfold per_bar_eq in *; exrepnd.
-  introv br' e; introv; simpl in *; exrepnd.
-  unfold raise_ext_per.
-
-  pose proof (h lib'0) as h; simpl in *; autodimp h hyp.
-  { exists lib1; dands; auto; eauto 3 with slow. }
-  pose proof (h lib'1 e (lib_extends_trans x0 y)) as h; simpl in *.
-  exrepnd.
-  exists bar'.
-  introv br'' e''; introv.
-  pose proof (h0 _ br'' _ e'' x1) as h0; simpl in *.
+  unfold per_bar_eq in *; exrepnd; simpl in *.
+  eapply e_all_in_bar_ext_raise_bar_pres3; try exact h; eauto 3 with slow.
+  introv br ext q; exrepnd.
+  eapply e_all_in_ex_bar_ext_pres; eauto.
+  introv br' ext' q'.
   eapply (lib_per_cond _ eqa); eauto.
 Qed.
 Hint Resolve sub_per_per_bar_eq2 : slow.
@@ -352,13 +344,11 @@ Lemma sub_per_per_set_bar_eq2 {o} :
 Proof.
   introv y h; repeat introv.
   unfold per_set_eq_bar, per_set_eq in *; exrepnd.
-  exists (raise_bar bar y).
-  introv br xt; repeat introv.
+  eapply e_all_in_ex_bar_ext_pres_ext; try exact h; eauto 3 with slow.
+  introv br xt q; exrepnd.
   unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
   unfold raise_lib_per_fam, raise_ext_per_fam; simpl in *; tcsp.
-  pose proof (h0 _ br1 lib'1 (lib_extends_trans xt br2) (lib_extends_trans x0 y)) as h0; simpl in *.
-  exrepnd.
-  assert (eqa lib'1 (lib_extends_trans x0 w) a b) as f by (eapply (lib_per_cond _ eqa); eauto).
+  assert (eqa lib2 (lib_extends_trans z w) a b) as f by (eapply (lib_per_cond _ eqa); eauto).
   exists f.
   eapply eq_term_equals_preserves_inhabited;[|eauto].
   apply lib_per_fam_cond.
@@ -399,13 +389,11 @@ Lemma sub_per_per_product_bar_eq2 {o} :
 Proof.
   introv y h; repeat introv.
   unfold per_product_eq_bar, per_product_eq in *; exrepnd.
-  exists (raise_bar bar y).
-  introv br xt; repeat introv.
+  eapply e_all_in_ex_bar_ext_pres_ext; try exact h; eauto 3 with slow;[].
+  introv br xt q; exrepnd.
   unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
   unfold raise_lib_per_fam, raise_ext_per_fam; simpl in *; tcsp.
-  pose proof (h0 _ br1 lib'1 (lib_extends_trans xt br2) (lib_extends_trans x0 y)) as h0; simpl in *.
-  exrepnd.
-  assert (eqa lib'1 (lib_extends_trans x0 w) a0 a') as f by (eapply (lib_per_cond _ eqa); eauto).
+  assert (eqa lib2 (lib_extends_trans z w) a0 a') as f by (eapply (lib_per_cond _ eqa); eauto).
   exists a0 a' b0 b' f; dands; auto.
   eapply (lib_per_fam_cond _ eqb); eauto.
 Qed.
@@ -446,9 +434,8 @@ Lemma sub_per_eq_per_eq_bar2 {o} :
 Proof.
   introv y h.
   unfold eq_per_eq_bar in *; exrepnd.
-  exists (raise_bar bar y).
-  introv br xt; introv; simpl in *; exrepnd.
-  pose proof (h0 _ br1 lib'1 (lib_extends_trans xt br2) (lib_extends_trans x0 y)) as h0; simpl in *.
+  eapply e_all_in_ex_bar_ext_pres_ext; try exact h; eauto 3 with slow.
+  introv br xt q; simpl in *; exrepnd.
   unfold eq_per_eq in *; repnd; dands; auto; simpl in *.
   unfold raise_ext_per in *.
   eapply (lib_per_cond _ eqa); eauto.
@@ -490,9 +477,8 @@ Lemma sub_per_per_image_eq_bar2 {o} :
 Proof.
   introv y h.
   unfold per_image_eq_bar in *; exrepnd.
-  exists (raise_bar bar y).
-  introv br xt; introv; simpl in *; exrepnd.
-  pose proof (h0 _ br1 lib'1 (lib_extends_trans xt br2) (lib_extends_trans x0 y)) as h0; simpl in *.
+  eapply e_all_in_ex_bar_ext_pres_ext; try exact h; eauto 3 with slow;[].
+  introv br xt q; simpl in *; exrepnd.
   eapply implies_eq_term_equals_eq_image_eq;[|eauto].
   apply lib_per_cond.
 Qed.
@@ -533,9 +519,8 @@ Lemma sub_per_per_union_eq_bar2 {o} :
 Proof.
   introv y h.
   unfold per_union_eq_bar in *; exrepnd.
-  exists (raise_bar bar y).
-  introv br xt; introv; simpl in *; exrepnd.
-  pose proof (h0 _ br1 lib'1 (lib_extends_trans xt br2) (lib_extends_trans x0 y)) as h0; simpl in *.
+  eapply e_all_in_ex_bar_ext_pres_ext; try exact h; eauto 3 with slow;[].
+  introv br xt q; simpl in *; exrepnd.
   unfold per_union_eq, per_union_eq_L, per_union_eq_R in *; repndors; exrepnd;
     [left|right]; eexists; eexists; dands; eauto; unfold raise_ext_per in *;
       try eapply (lib_per_cond _ eqa); eauto;
@@ -708,9 +693,10 @@ Proof.
   dands; auto; eauto 3 with slow;[].
   exists (raise_bar bar x) (raise_lib_per eqa x).
   dands; tcsp;[].
-  introv br xt; introv; simpl in *; exrepnd.
-  eapply type_extensionality_univi;[apply (h0 lib1 br1 lib'1 (lib_extends_trans xt br2))|].
-  introv; split; intro h; eauto.
+  eapply e_all_in_bar_ext_raise_bar_pres2; try exact h0.
+  introv br xt q; simpl in *; exrepnd.
+  eapply type_extensionality_univi; eauto.
+  apply (lib_per_cond _ eqa).
 Qed.
 Hint Resolve univi_monotone_func2_implies_univi_bar_monotone_func2 : slow.
 

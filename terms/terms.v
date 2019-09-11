@@ -2091,7 +2091,7 @@ Lemma NTerm_better_ind_direct {p} :
     -> forall t : NTerm, P t.
 Proof.
   introv Hv Hind.
-  fix 1.
+  fix ind 1.
   intro t.
   destruct t as [|o lbt];[apply Hv;fail|].
   apply Hind.
@@ -2099,8 +2099,8 @@ Proof.
   induction lbt as [| bt lbt HBInd];[inverts Hin|].
   destruct bt as [blv bnt].
   dorn Hin.
-  - symmetry in Hin. inverts Hin. apply NTerm_better_ind_direct.
-  - clear NTerm_better_ind_direct.
+  - symmetry in Hin. inverts Hin. apply ind.
+  - clear ind.
     apply HBInd in Hin. auto.
 Defined.
 
