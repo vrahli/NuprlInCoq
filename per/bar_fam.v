@@ -36,6 +36,18 @@ Require Export axiom_func_choice_on.
 Require Export computation_lib_extends2.
 
 
+(* MOVE *)
+Lemma in_open_bar_ext_comb_per {o} :
+  forall (lib : @library o) (F G : forall lib' (x : lib_extends lib' lib), per(o)) a b,
+    in_open_bar_ext lib (fun lib' x => (F lib' x) <=2=> (G lib' x))
+    -> in_open_bar_ext lib (fun lib' x => G lib' x a b)
+    -> in_open_bar_ext lib (fun lib' x => F lib' x a b).
+Proof.
+  introv h q.
+  eapply in_open_bar_ext_pres2;[|exact h|exact q]; clear h q; introv h q; apply h; auto.
+Qed.
+Hint Resolve in_open_bar_ext_comb_per : slow.
+
 Definition bar_fam {o} {lib} (bar : @BarLib o lib) :=
   forall lib1 (b : bar_lib_bar bar lib1)
          lib2 (ext : lib_extends lib2 lib1)
@@ -115,7 +127,7 @@ Proof.
 Qed.
 Hint Resolve ccomputes_to_valc_implies_all_in_bar : slow.
 
-Lemma all_in_bar_ext_eq_term_equals_preserves_per_bar_eq {o} :
+(*Lemma all_in_bar_ext_eq_term_equals_preserves_per_bar_eq {o} :
   forall lib (bar : @BarLib o lib) (eqa eqb : lib-per(lib,o)) t1 t2,
     all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
     -> per_bar_eq bar eqa t1 t2
@@ -134,7 +146,7 @@ Proof.
 
   assert (lib_extends lib'' lib') as xt by eauto 3 with slow.
   apply (alla _ br _ xt (lib_extends_trans y x)); auto.
-Qed.
+Qed.*)
 
 (*Lemma per_bar_eq_preserves_all_in_bar_ext_eq_term_equals {o} :
   forall {lib} (bar : @BarLib o lib) eqa eqb t1 t2,
@@ -287,35 +299,15 @@ Proof.
 Defined.
 
 Lemma in_open_bar_ext_eq_term_equals_preserves_per_bar_eq {o} :
-  forall lib (bar : @BarLib o lib) (eqa eqb : lib-per(lib,o)) t1 t2,
+  forall (lib : @library o) (eqa eqb : lib-per(lib,o)) t1 t2,
     in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
-    -> per_bar_eq bar eqa t1 t2
-    -> per_bar_eq bar eqb t1 t2.
+    -> per_bar_eq lib eqa t1 t2
+    -> per_bar_eq lib eqb t1 t2.
 Proof.
   introv alla allb.
   unfold per_bar_eq in *.
-
-  apply e_all_in_bar_ext_as in allb.
-  apply e_all_in_bar_ext_as.
-  introv ext.
-  pose proof (allb _ ext) as allb; exrepnd.
-  exists lib'' y; introv xt; introv.
-  pose proof (allb1 _ xt z) as allb1; simpl in *.
-
-  apply e_all_in_ex_bar_ext_as in allb1.
-  apply e_all_in_ex_bar_ext_as.
-  introv ext'.
-  pose proof (allb1 _ ext') as allb1; exrepnd.
-
-  assert (lib_extends lib''0 lib) as x by eauto 3 with slow.
-  pose proof (alla _ x) as alla; exrepnd.
-
-  assert (lib_extends lib''1 lib'1) as w by eauto 3 with slow.
-  exists lib''1 w.
-
- introv xt'; introv.
- assert (lib_extends lib'2 lib''0) as w' by eauto 3 with slow.
- pose proof (allb1 lib'2 w' z0) as allb1; simpl in *; auto.
- pose proof (alla1 lib'2 xt' (lib_extends_trans z0 z)) as alla1; simpl in *; auto.
- apply alla1; auto.
+  eapply in_open_bar_ext_comb;[|exact allb]; clear allb.
+  eapply in_open_bar_ext_comb;[|exact alla]; clear alla.
+  apply in_ext_ext_implies_in_open_bar_ext; simpl.
+  introv h q; apply h; auto.
 Qed.

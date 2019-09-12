@@ -362,11 +362,8 @@ Lemma implies_univi_bar_successor {o} :
 Proof.
   introv u.
   unfold univi_bar, per_bar in *; exrepnd.
-  exists bar eqa; dands; auto.
-  introv b; introv.
-  pose proof (u0 lib' b lib'0 e) as u0; simpl in *.
-  unfold ex_finite_ext_ext in *; simpl in *; exrepnd.
-  exists lib'' xt'; introv; simpl in *; tcsp.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear u1; introv h; tcsp.
 Qed.
 Hint Resolve implies_univi_bar_successor : slow.
 
@@ -386,8 +383,8 @@ Proof.
 
   - Case "CL_bar".
     apply CL_bar.
-    exists bar eqa; dands; auto.
-    eapply e_all_in_bar_ext_modus_ponens1;[|exact reca].
+    exists eqa; dands; auto.
+    eapply in_open_bar_ext_pres;[|exact reca].
     introv u; apply u; auto.
 
   - Case "CL_eq".
@@ -740,8 +737,8 @@ Lemma univi_bar_implies_univ {o} :
 Proof.
   introv u.
   unfold univi_bar, per_bar in u; exrepnd.
-  exists bar eqa; dands; auto.
-  eapply e_all_in_bar_ext_modus_ponens1;[|eauto].
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_pres;[|eauto].
   introv u; exists i; auto.
 Qed.
 Hint Resolve univi_bar_implies_univ : slow.
@@ -761,8 +758,8 @@ Proof.
 
   - Case "CL_bar".
     apply CL_bar.
-    exists bar eqa; dands; auto.
-    eapply e_all_in_bar_ext_modus_ponens1;[|exact reca].
+    exists eqa; dands; auto.
+    eapply in_open_bar_ext_pres;[|exact reca].
     introv u; eapply u; eauto.
 
   - Case "CL_eq".

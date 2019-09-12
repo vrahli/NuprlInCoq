@@ -51,7 +51,7 @@ Proof.
   - Case "CL_bar".
     apply CL_bar.
     unfold per_bar.
-    exists bar eqa; dands; auto.
+    exists eqa; dands; auto.
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
@@ -175,7 +175,7 @@ Lemma type_extensionality_univi_bar {o} :
 Proof.
   introv h ext.
   unfold univi_bar, per_bar in *; exrepnd.
-  exists bar eqa; dands; auto.
+  exists eqa; dands; auto.
   eapply eq_term_equals_trans;[|eauto].
   apply eq_term_equals_sym; auto.
 Qed.
@@ -194,7 +194,7 @@ Proof.
   introv u e.
   unfold univ in *; exrepnd.
   unfold per_bar in *; exrepnd.
-  exists bar eqa; dands;auto.
+  exists eqa; dands;auto.
   eapply eq_term_equals_trans;[|eauto].
   apply eq_term_equals_sym; auto.
 Qed.

@@ -515,22 +515,6 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
-Lemma per_union_bar_monotone {o} :
-  forall (ts : cts(o)) lib lib' T T' eq,
-    per_union_bar (close ts) lib T T' eq
-    -> lib_extends lib' lib
-    -> exists eq', per_union_bar (close ts) lib' T T' eq'.
-Proof.
-  introv per ext.
-  unfold per_union_bar in *; exrepnd.
-  exists (per_union_eq_bar lib' (raise_lib_per eqa ext) (raise_lib_per eqb ext))
-         (raise_lib_per eqa ext)
-         (raise_lib_per eqb ext) A1 A2 B1 B2.
-  dands; eauto 3 with slow.
-  exists (raise_bar bar ext).
-  dands; eauto 3 with slow.
-Qed.
-
 Definition raise_bar_per {o} :
   forall {lib lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib),
     bar-per(lib,bar,o) -> bar-per(lib',raise_bar bar ext,o).
@@ -550,23 +534,14 @@ Proof.
 Defined.
 
 Lemma sub_per_per_bar_eq {o} :
-  forall {lib} {lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) eq eqa,
-    (eq <=2=> (per_bar_eq bar eqa))
-    -> sub_per eq (per_bar_eq (raise_bar bar ext) (raise_lib_per eqa ext)).
+  forall {lib lib' : @library o} (ext : lib_extends lib' lib) eq eqa,
+    (eq <=2=> (per_bar_eq lib eqa))
+    -> sub_per eq (per_bar_eq lib' (raise_lib_per eqa ext)).
 Proof.
   introv eqiff h.
   apply eqiff in h; clear eqiff.
   unfold per_bar_eq in *; exrepnd.
-  introv br'; introv; simpl in *; exrepnd.
-  unfold raise_ext_per.
-  pose proof (h _ br'1 _ (lib_extends_trans e br'2)) as h; simpl in *.
-
-  eapply ex_finite_ext_ext_pres; eauto; introv xta z; introv; eauto.
-  pose proof (z (lib_extends_trans x ext)) as z; simpl in *.
-
-  eapply e_all_in_ex_bar_ext_pres; eauto.
-  introv br xt q.
-  eapply (lib_per_cond _ eqa); eauto.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in h; simpl in *; auto.
 Qed.
 Hint Resolve sub_per_per_bar_eq : slow.
 
@@ -576,9 +551,9 @@ Proof.
   introv per ext.
   unfold per_bar in *; exrepnd.
 
-  exists (per_bar_eq (raise_bar bar ext) (raise_lib_per eqa ext)); dands; eauto 3 with slow.
-  exists (raise_bar bar ext) (raise_lib_per eqa ext).
-  dands; tcsp; eauto 3 with slow.
+  exists (per_bar_eq lib' (raise_lib_per eqa ext)); dands; eauto 3 with slow;[].
+  exists (raise_lib_per eqa ext); dands; eauto 3 with slow.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in per1; simpl in *; auto.
 Qed.
 Hint Resolve per_bar_monotone : slow.
 
@@ -934,13 +909,11 @@ Lemma univi_monotone_implies_univi_bar_monotone {o} :
 Proof.
   introv mon h ext.
   unfold univi_bar, per_bar in *; exrepnd.
-  exists (per_bar_eq (raise_bar bar ext) (raise_lib_per eqa ext)).
+  exists (per_bar_eq lib' (raise_lib_per eqa ext)).
   dands; auto; eauto 3 with slow.
-  exists (raise_bar bar ext) (raise_lib_per eqa ext).
+  exists (raise_lib_per eqa ext).
   dands; tcsp;[].
-  introv br; introv; simpl in *; exrepnd.
-  pose proof (h0 lib1 br1 lib'1 (lib_extends_trans e br2)) as h0.
-  eapply ex_finite_ext_ext_pres; eauto; introv xta z; introv; eauto.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in h1; simpl in *; auto.
 Qed.
 Hint Resolve univi_monotone_implies_univi_bar_monotone : slow.
 

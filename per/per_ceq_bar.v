@@ -34,38 +34,6 @@ Require Import dest_close_tacs.
 Require Export bar_fam.
 
 
-Lemma per_bar_eq_as {o} :
-  forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2,
-    per_bar_eq bar eqa t1 t2
-    <-> in_open_bar_ext lib (fun lib' x => eqa lib' x t1 t2).
-Proof.
-  unfold per_bar_eq.
-  introv; split; intro h.
-
-  { apply e_all_in_bar_ext_as in h.
-    introv ext.
-    pose proof (h _ ext) as h; exrepnd.
-    apply in_ext_ext_implies in h1.
-    pose proof (h1 (lib_extends_trans y ext)) as h1.
-
-    apply e_all_in_ex_bar_ext_as in h1.
-    pose proof (h1 _ (lib_extends_refl _)) as h1; exrepnd.
-
-    exists lib''0 (lib_extends_trans y0 y).
-    introv xt; introv.
-    pose proof (h1 lib'0 xt (lib_extends_trans xt y0)) as h1; simpl in *.
-    eapply (lib_per_cond _ eqa); eauto. }
-
-  { apply e_all_in_bar_ext_as.
-    introv xta.
-    exists lib' (lib_extends_refl lib').
-    introv xtb; introv.
-    apply e_all_in_ex_bar_ext_as.
-    apply (lib_extends_preserves_in_open_bar_ext _ _ _ z) in h.
-    eapply in_open_bar_ext_pres; eauto.
-    introv q; auto. }
-Qed.
-
 (* !!MOVE *)
 Lemma computes_to_value_implies_isprogram {o} :
   forall lib (t1 t2 : @NTerm o), (t1 =v>( lib) t2) -> isprogram t2.
@@ -211,7 +179,7 @@ Proof.
 Qed.
 Hint Resolve ccequivc_ext_ccomputes_to_valc_ext : slow.
 
-Lemma type_extensionality_per_approx_bar {o} :
+(*Lemma type_extensionality_per_approx_bar {o} :
   forall (ts : cts(o)),
     type_extensionality (per_approx_bar ts).
 Proof.
@@ -221,7 +189,7 @@ Proof.
   eapply eq_term_equals_trans;[|eauto].
   apply eq_term_equals_sym; auto.
 Qed.
-Hint Resolve type_extensionality_per_approx_bar : slow.
+Hint Resolve type_extensionality_per_approx_bar : slow.*)
 
 (*Lemma eq_per_approx_eq_bar {o} :
   forall {lib} (bar : @BarLib o lib) (a1 a2 b1 b2 : @CTerm o),
@@ -5472,9 +5440,9 @@ Proof.
 Qed.
 
 Definition local_ts_T {o} (ts : cts(o)) (lib : @library o) (T : @CTerm o) :=
-  forall (bar : @BarLib o lib) T' eq eqa,
-    (eq <=2=> (per_bar_eq bar eqa))
-    -> all_in_bar_ext bar (fun lib' x => ts lib' T T' (eqa lib' x))
+  forall T' eq eqa,
+    (eq <=2=> (per_bar_eq lib eqa))
+    -> in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
     -> ts lib T T' eq.
 
 Lemma implies_in_ext_ext_raise_ext_per {o} :
@@ -5511,9 +5479,9 @@ Proof.
 Qed.
 
 Definition local_ts_T2 {o} (ts : cts(o)) (lib : @library o) (T' : @CTerm o) :=
-  forall (bar : @BarLib o lib) T eq eqa,
-    (eq <=2=> (per_bar_eq bar eqa))
-    -> all_in_bar_ext bar (fun lib' x => ts lib' T T' (eqa lib' x))
+  forall T eq eqa,
+    (eq <=2=> (per_bar_eq lib eqa))
+    -> in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
     -> ts lib T T' eq.
 
 Definition per_bar_eq_bi {o} {lib}

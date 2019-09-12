@@ -583,6 +583,20 @@ Proof.
 Qed.
 Hint Resolve in_open_bar_ext_comb : slow.
 
+Lemma in_open_bar_ext_comb2 {o} :
+  forall (lib : @library o) (F : library -> Prop) (G : forall lib' (x : lib_extends lib' lib), Prop),
+    in_open_bar_ext lib (fun lib' x => F lib' -> G lib' x)
+    -> in_open_bar lib F
+    -> in_open_bar_ext lib G.
+Proof.
+  introv h q ext.
+  pose proof (h _ ext) as h; exrepnd.
+  pose proof (q _ (lib_extends_trans y ext)) as q; exrepnd.
+  exists lib''0 (lib_extends_trans xt y).
+  introv z; introv; apply h1; eauto 3 with slow.
+Qed.
+Hint Resolve in_open_bar_ext_comb2 : slow.
+
 Lemma in_ext_ext_implies_in_open_bar_ext {o} :
   forall (lib : @library o) (F : forall lib' (x : lib_extends lib' lib), Prop),
     in_ext_ext lib F
@@ -593,5 +607,51 @@ Proof.
   introv xt; introv; eauto.
 Qed.
 Hint Resolve in_ext_ext_implies_in_open_bar_ext : slow.
+
+Lemma in_ext_implies_in_open_bar {o} :
+  forall (lib : @library o) (F : library -> Prop),
+    in_ext lib F
+    -> in_open_bar lib F.
+Proof.
+  introv h ext.
+  exists lib' (lib_extends_refl lib').
+  introv xt; introv; eauto 3 with slow.
+Qed.
+Hint Resolve in_ext_implies_in_open_bar : slow.
+
+Lemma in_open_bar_comb2 {o} :
+  forall (lib : @library o) (F : forall lib' (x : lib_extends lib' lib), Prop) (G : library -> Prop),
+    in_open_bar_ext lib (fun lib' x => F lib' x -> G lib')
+    -> in_open_bar_ext lib F
+    -> in_open_bar lib G.
+Proof.
+  introv h q ext.
+  pose proof (h _ ext) as h; exrepnd.
+  pose proof (q _ (lib_extends_trans y ext)) as q; exrepnd.
+  exists lib''0 (lib_extends_trans y0 y).
+  introv z; introv.
+  assert (lib_extends lib'0 lib) as xt by eauto 4 with slow.
+  apply (h1 _ (lib_extends_trans z y0) xt); auto.
+Qed.
+Hint Resolve in_open_bar_comb2 : slow.
+
+Lemma in_open_bar_ext_in_open_bar {o} :
+  forall (lib : @library o) (F : library -> Prop),
+    in_open_bar_ext lib (fun lib' x => in_open_bar lib' F)
+    <-> in_open_bar lib F.
+Proof.
+  introv; split; intro h.
+
+  { introv ext.
+    pose proof (h _ ext) as h; exrepnd; simpl in *.
+    apply in_ext_ext_implies in h1.
+    autodimp h1 hyp; eauto 3 with slow.
+    pose proof (h1 _ (lib_extends_refl _)) as h1; exrepnd.
+    exists lib''0 (lib_extends_trans xt y); auto. }
+
+  { apply in_ext_ext_implies_in_open_bar_ext.
+    introv ext; eauto 3 with slow. }
+Qed.
+Hint Rewrite @in_open_bar_ext_in_open_bar : slow.
 
 (* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *)

@@ -230,23 +230,14 @@ Abort.
 
 Definition per_bar_eq_bar_lib_per {o}
            (lib : @library o)
-           (bar : @BarLib o lib)
            (eqa : lib-per(lib,o)) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) => per_bar_eq (raise_bar bar x) (raise_lib_per eqa x)).
+  exists (fun lib' (x : lib_extends lib' lib) => per_bar_eq lib' (raise_lib_per eqa x)).
   repeat introv.
   unfold per_bar_eq; split; introv h;
-    eapply e_all_in_bar_ext_raise_bar_pres; eauto; introv br xt q.
-
-  - unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
-    eapply e_all_in_ex_bar_ext_pres; eauto.
-    introv br' xt' w.
-    eapply (lib_per_cond _ eqa); eauto.
-
-  - unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
-    eapply e_all_in_ex_bar_ext_pres; eauto.
-    introv br' xt' w.
-    eapply (lib_per_cond _ eqa); eauto.
+    eapply in_open_bar_ext_pres; eauto; clear h; introv h; simpl in *;
+      unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd;
+        eapply (lib_per_cond _ eqa); eauto.
 Defined.
 
 Definition per_bar_monotone_func {o} :
@@ -254,10 +245,11 @@ Definition per_bar_monotone_func {o} :
 Proof.
   introv per.
   unfold per_bar in *; exrepnd.
-  exists (per_bar_eq_bar_lib_per lib bar eqa); introv.
+  exists (per_bar_eq_bar_lib_per lib eqa); introv.
   dands; simpl; eauto 3 with slow.
-  exists (raise_bar bar x) (raise_lib_per eqa x).
+  exists (raise_lib_per eqa x).
   dands; tcsp; eauto 3 with slow.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ x) in per1; simpl in *; auto.
 Qed.
 
 Lemma eq_term_equals_preserves_inhabited {o} :
@@ -595,15 +587,11 @@ Lemma univi_monotone_func_implies_univi_bar_monotone_func {o} :
 Proof.
   introv mon h.
   unfold univi_bar, per_bar in *; exrepnd.
-  exists (per_bar_eq_bar_lib_per lib bar eqa); introv; simpl.
+  exists (per_bar_eq_bar_lib_per lib eqa); introv; simpl.
   dands; auto; eauto 3 with slow;[].
-  exists (raise_bar bar x) (raise_lib_per eqa x).
+  exists (raise_lib_per eqa x).
   dands; tcsp;[].
-
-  eapply e_all_in_bar_ext_raise_bar_pres2; eauto; introv br xt q.
-
-  eapply type_extensionality_univi;[eauto|].
-  eapply (lib_per_cond _ eqa).
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ x) in h1; simpl in *; auto.
 Qed.
 Hint Resolve univi_monotone_func_implies_univi_bar_monotone_func : slow.
 

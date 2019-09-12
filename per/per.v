@@ -555,6 +555,11 @@ Definition per_atom {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U]
   # T2 ===>(lib) mkc_atom
   # eq <=2=> (equality_of_atom_bar lib).
 
+Definition per_atom_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  in_open_bar lib (fun lib => T1 ===>(lib) mkc_atom)
+  # in_open_bar lib (fun lib => T2 ===>(lib) mkc_atom)
+  # eq <=2=> (equality_of_atom_bar lib).
+
 
 
 Definition equality_of_uatom {p} lib (a b : @CTerm p) :=
@@ -2339,27 +2344,21 @@ Definition per_bar {o}
   # eq <=2=> (per_bar_eq bar eqa) }}.*)
 
 Definition per_bar_eq {o}
-           {lib}
-           (bar : @BarLib o lib)
+           (lib : @library o)
            (eqa : lib-per(lib,o))
            (t1 t2 : CTerm) :=
-  e_all_in_bar_ext
-    bar
-    (fun lib' (x : lib_extends lib' lib) =>
-       e_all_in_ex_bar_ext
-         lib'
-         (fun lib'' (y : lib_extends lib'' lib') =>
-            eqa lib'' (lib_extends_trans y x) t1 t2) ).
+  in_open_bar_ext
+    lib
+    (fun lib' (y : lib_extends lib' lib) => eqa lib' y t1 t2).
 
 Definition per_bar {o}
            (ts    : cts(o))
            (lib   : library)
            (T1 T2 : CTerm)
            (eq    : per(o)) : [U] :=
-  {bar : BarLib lib
-  , {eqa : lib-per(lib,o)
-  , e_all_in_bar_ext bar (fun lib' x => ts lib' T1 T2 (eqa lib' x))
-  # eq <=2=> (per_bar_eq bar eqa) }}.
+  {eqa : lib-per(lib,o)
+  , in_open_bar_ext lib (fun lib' x => ts lib' T1 T2 (eqa lib' x))
+  # eq <=2=> (per_bar_eq lib eqa) }.
 
 
 (**
@@ -2514,11 +2513,10 @@ Definition close_ind' {pp}
                  (lib   : library)
                  (T T'  : @CTerm pp)
                  (eq    : per)
-                 (bar   : BarLib lib)
                  (eqa   : lib-per(lib,pp))
-                 (cla   : e_all_in_bar_ext bar (fun lib' x => close ts lib' T T' (eqa lib' x)))
-                 (reca  : e_all_in_bar_ext bar (fun lib' x => P ts lib' T T' (eqa lib' x)))
-                 (eqiff : eq <=2=> (per_bar_eq bar eqa))
+                 (cla   : in_open_bar_ext lib (fun lib' x => close ts lib' T T' (eqa lib' x)))
+                 (reca  : in_open_bar_ext lib (fun lib' x => P ts lib' T T' (eqa lib' x)))
+                 (eqiff : eq <=2=> (per_bar_eq lib eqa))
                  (per   : per_bar (close ts) lib T T' eq),
       P ts lib T T' eq)
 
@@ -3325,27 +3323,22 @@ Definition close_ind' {pp}
    | CL_init   pts => init   ts lib T T' eq pts
 
    | CL_bar    pts =>
-     let (bar,  x) := pts in
-     let (eqa,  x) := x in
+     let (eqa,  x) := pts in
      let (alla, eqiff) := x in
      pbar ts lib T T' eq
-          bar
           eqa
           alla
-          (fun (lib1 : library)
-               (br   : bar_lib_bar bar lib1)
-               (lib2 : library)
-               (ext  : lib_extends lib2 lib1) =>
-             let (lib3, xx) := alla lib1 br lib2 ext in
-             let (xt, xx) := xx in
+          (fun (lib1 : library) (ext1 : lib_extends lib1 lib) =>
+             let (lib2, xx) := alla lib1 ext1 in
+             let (ext2, xx) := xx in
              ex_intro
                _
-               lib3
+               lib2
                (ex_intro
                   _
-                  xt
-                  (fun lib4 (y : lib_extends lib4 lib3) (x : lib_extends lib4 lib) =>
-                     rec ts _ T T' (eqa _ x) (xx lib4 y x))))
+                  ext2
+                  (fun lib3 (y : lib_extends lib3 lib2) (x : lib_extends lib3 lib) =>
+                     rec ts _ T T' (eqa _ x) (xx lib3 y x))))
           eqiff
           pts
 
@@ -4284,6 +4277,7 @@ Ltac one_unfold_per :=
     | [ H : per_csname      _ _ _ _ _ |- _ ] => unfold per_csname      in H; exrepd
 (*    | [ H : per_csname_bar  _ _ _ _ _ |- _ ] => unfold per_csname_bar  in H; exrepd*)
     | [ H : per_atom        _ _ _ _ _ |- _ ] => unfold per_atom        in H; exrepd
+    | [ H : per_atom_bar    _ _ _ _ _ |- _ ] => unfold per_atom_bar    in H; exrepd
     | [ H : per_uatom       _ _ _ _ _ |- _ ] => unfold per_uatom       in H; exrepd
     | [ H : per_base        _ _ _ _ _ |- _ ] => unfold per_base        in H; exrepd
     | [ H : per_approx      _ _ _ _ _ |- _ ] => unfold per_approx      in H; exrepd
