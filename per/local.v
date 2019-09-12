@@ -408,39 +408,24 @@ Proof.
   introv; tcsp.
 Defined.
 
-Lemma local_per_bar {o} :
-  forall (ts : cts(o)),
-    type_extensionality ts
-    -> uniquely_valued ts
-    -> local_ts (per_bar ts).
-Proof.
-  introv text uv eqiff alla.
-  unfold per_bar in *.
-
-  (* XXXXXXXXXX *)
-  (* Something like [lib_per_per_bar]? *)
-  apply in_open_bar_ext_choice in alla; exrepnd.
-  apply in_open_bar_eqa_choice in alla0; exrepnd.
-  exists (lib_fun_dep_eqa Feqa).
-  dands;[|eapply eq_term_equals_trans;[exact eqiff|];clear eqiff].
-
-2:{
-
-Set Nested Proofs Allowed.
-
 Lemma eq_per_bar_eq_lib_fun_dep_eqa {o} :
-  forall lib (eqa : lib-per(lib, o)) (Flib : FunLibExt lib) (Feqa : FunDepEqa Flib),
-    in_ext_ext
-      lib
-      (fun lib1 (ext1 : lib_extends lib1 lib) =>
-         in_ext_ext
-           (Flib lib1 ext1)
-           (fun lib2 (ext2 : lib_extends lib2 (Flib lib1 ext1)) =>
-              forall (z : lib_extends lib2 lib),
-                (eqa lib2 z) <=2=> (per_bar_eq lib2 (Feqa lib1 ext1 lib2 ext2 z))))
+  forall (ts : cts(o)) T T' lib (eqa : lib-per(lib, o)) (Flib : FunLibExt lib) (Feqa : FunDepEqa Flib),
+    uniquely_valued ts
+    -> in_ext_ext
+         lib
+         (fun lib1 (ext1 : lib_extends lib1 lib) =>
+            in_ext_ext
+              (Flib lib1 ext1)
+              (fun lib2 (ext2 : lib_extends lib2 (Flib lib1 ext1)) =>
+                 forall (z : lib_extends lib2 lib),
+                   in_open_bar_ext
+                     lib2
+                     (fun lib' (x : lib_extends lib' lib2) =>
+                        ts lib' T T' ((Feqa lib1 ext1 lib2 ext2 z) lib' x))
+                     # (eqa lib2 z) <=2=> (per_bar_eq lib2 (Feqa lib1 ext1 lib2 ext2 z))))
     -> (per_bar_eq lib eqa) <=2=> (per_bar_eq lib (lib_fun_dep_eqa Feqa)).
 Proof.
-  introv imp; repeat introv; split; intro h.
+  introv unival imp; repeat introv; split; intro h.
 
   { unfold per_bar_eq in *.
     introv ext.
@@ -463,39 +448,65 @@ Proof.
 
     pose proof (h _ ext) as h; exrepnd; simpl in *.
     apply in_ext_ext_implies in h1.
-    pose proof (h1 (lib_extends_trans y ext)) as h1; simpl in *; exrepnd.
+    autodimp h1 hyp; eauto 3 with slow; simpl in *; exrepnd.
 
     exists lib'' y.
     introv xta; introv.
 
-    pose proof (imp _ ext1 lib'0 (lib_extends_trans xta (lib_extends_trans z ext2)) z0) as imp; simpl in *.
-    apply imp.
-    apply in_ext_ext_implies_in_open_bar_ext.
+    pose proof (imp _ ext1 lib'0 (lib_extends_trans xta (lib_extends_trans z ext2)) z0) as imp'; simpl in *; repnd.
+    apply imp'; clear imp'.
+    pose proof (imp _ ext1 lib2 ext2 ext3) as imp; simpl in *; repnd; clear imp.
 
-    pose proof (imp 
+    apply (lib_extends_preserves_in_open_bar_ext _ _ _ (lib_extends_trans xta z)) in imp0; simpl in *.
+    eapply in_open_bar_ext_pres2;[|exact imp0|exact imp'0]; clear imp0 imp'0; simpl.
+    apply (lib_extends_preserves_in_ext_ext xta) in h1.
 
-
-XXXXXXX
-
-    pose proof (imp _ (lib_extends_trans y ext)) as  imp; simpl in *.
-
-    exists (Flib lib'' (lib_extends_trans y ext)) (lib_extends_trans (lib_ext_ext (Flib lib'' (lib_extends_trans y ext))) y).
-    introv xta; introv.
-
-    pose proof (imp lib'0 xta z) as imp; simpl in *.
-    apply imp.
-    introv xtb.
-    pose proof (h1 lib'1 (lib_extends_trans xtb (lib_extends_trans xta (lib_ext_ext (Flib lib'' (lib_extends_trans y ext)))))) as h1; simpl in *.
-    autodimp h1 hyp; eauto 3 with slow;[].
-    exrepnd.
-    exists lib'1 (lib_extends_refl lib'1).
-
-
-    apply in_ext_ext_implies in imp; simpl in *.
-    pose proof (imp (lib_extends_trans (lib_extends_trans (lib_ext_ext (Flib lib'' (lib_extends_trans y ext))) y) ext)) as imp.
-
+    introv wa wb.
+    pose proof (h1 _ e) as h1; simpl in *.
+    eapply unival in wa; autodimp wa hyp; try exact wb.
+    apply wa; auto.
+    eapply (lib_per_cond _ (Feqa lib1 ext1 lib2 ext2 ext3)); eauto. }
 Qed.
 
+Lemma local_per_bar {o} :
+  forall (ts : cts(o)),
+    type_extensionality ts
+    -> uniquely_valued ts
+    -> local_ts (per_bar ts).
+Proof.
+  introv text uv eqiff alla.
+  unfold per_bar in *.
+
+  (* XXXXXXXXXX *)
+  (* Something like [lib_per_per_bar]? *)
+  apply in_open_bar_ext_choice in alla; exrepnd.
+  apply in_open_bar_eqa_choice in alla0; exrepnd.
+  exists (lib_fun_dep_eqa Feqa).
+  dands;
+    [|eapply eq_term_equals_trans;[exact eqiff|];clear eqiff;
+      eapply eq_per_bar_eq_lib_fun_dep_eqa; eauto];[].
+
+  introv ext.
+  pose proof (alla1 _ ext) as alla0; simpl in *.
+  apply in_ext_ext_implies in alla0.
+  pose proof (alla0 (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext)) as alla0; repnd.
+  pose proof (alla2 _ (lib_extends_refl _)) as alla2; exrepnd.
+  exists lib'' (lib_extends_trans y (lib_ext_ext (Flib lib' ext))).
+  introv xta xtb.
+  pose proof (alla2 _ xta (lib_extends_trans xta y)) as alla2; simpl in *.
+  eapply text;[eauto|].
+
+  introv; split; introv w.
+
+  { eexists; eexists; eexists; eexists; eexists; eexists.
+    eauto. }
+
+  exrepnd.
+
+  pose proof (alla1 lib0 br1 lib3 ext1 x1) as z; repnd.
+  pose proof (z0 lib4 fb lib'0 w (lib_extends_trans w (bar_lib_ext (fbar lib0 br1 lib3 ext1 x1) lib4 fb))) as z0; simpl in *.
+  eapply uv in z0; autodimp z0 hyp;[exact alla2|].
+  apply z0; auto.
 
 XXXXXX
 
