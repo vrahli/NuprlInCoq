@@ -45,7 +45,8 @@ Proof.
   introv locts comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
   eapply locts; eauto.
-  introv br ext; introv; eapply reca; eauto 3 with slow.
+  eapply in_open_bar_ext_comb;[|exact reca];clear reca.
+  apply in_ext_ext_implies_in_open_bar_ext; introv reca; apply reca; eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_uni_r {p} :
@@ -58,7 +59,8 @@ Proof.
   introv locts comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
   eapply locts; eauto.
-  introv br ext; introv; eapply reca; eauto 3 with slow.
+  eapply in_open_bar_ext_comb;[|exact reca];clear reca.
+  apply in_ext_ext_implies_in_open_bar_ext; introv reca; apply reca; eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_uni_comp_l {p} :
@@ -71,7 +73,8 @@ Proof.
   introv locts comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
   eapply locts; eauto.
-  introv br ext; introv; eapply reca; eauto 3 with slow.
+  eapply in_open_bar_ext_comb;[|exact reca];clear reca.
+  apply in_ext_ext_implies_in_open_bar_ext; introv reca; apply reca; eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_uni_comp_r {p} :
@@ -84,7 +87,8 @@ Proof.
   introv locts comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
   eapply locts; eauto.
-  introv br ext; introv; eapply reca; eauto 3 with slow.
+  eapply in_open_bar_ext_comb;[|exact reca];clear reca.
+  apply in_ext_ext_implies_in_open_bar_ext; introv reca; apply reca; eauto 3 with slow.
 Qed.
 
 (*

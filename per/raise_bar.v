@@ -654,4 +654,44 @@ Proof.
 Qed.
 Hint Rewrite @in_open_bar_ext_in_open_bar : slow.
 
+Lemma in_open_bar_ext_dup {o} :
+  forall (lib : @library o) (F : forall lib' (x : lib_extends lib' lib), Prop),
+    in_open_bar_ext
+      lib
+      (fun lib1 x1 =>
+         in_open_bar_ext
+           lib1
+           (fun lib2 x2 =>
+              forall (z : lib_extends lib2 lib),
+                F lib2 z))
+    -> in_open_bar_ext lib F.
+Proof.
+  introv h.
+  introv ext.
+  pose proof (h _ ext) as h; exrepnd; simpl in *.
+  apply in_ext_ext_implies in h1.
+  pose proof (h1 (lib_extends_trans y ext)) as h1.
+  pose proof (h1 _ (lib_extends_refl _)) as h1; exrepnd.
+  exists lib''0 (lib_extends_trans y0 y); auto.
+  introv xt; introv.
+  pose proof (h1 _ xt (lib_extends_trans xt y0) z) as h1; simpl in *; auto.
+Qed.
+
+Lemma in_open_bar_ext_twice {o} :
+  forall (lib : @library o) (F : forall lib' (x : lib_extends lib' lib), Prop),
+    in_open_bar_ext lib F
+    -> in_open_bar_ext
+         lib
+         (fun lib1 x1 =>
+            in_open_bar_ext
+              lib1
+              (fun lib2 x2 => F lib2 (lib_extends_trans x2 x1))).
+Proof.
+  introv h.
+  apply in_ext_ext_implies_in_open_bar_ext.
+  introv ext.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ e) in h.
+  apply h; eauto 3 with slow.
+Qed.
+
 (* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *)

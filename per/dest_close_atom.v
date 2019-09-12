@@ -54,18 +54,10 @@ Lemma per_bar_eq_equality_of_atom_bar_implies {o} :
 Proof.
   introv alla.
   unfold per_bar_eq in alla.
-  unfold equality_of_atom_bar.
-  apply e_all_in_ex_bar_as.
-
-  introv ext.
-  pose proof (alla _ ext) as alla; exrepnd.
-  apply in_ext_ext_implies in alla1.
-  pose proof (alla1 (lib_extends_trans y ext)) as alla1; simpl in *.
-
-  unfold equality_of_atom_bar in *.
-  rewrite e_all_in_ex_bar_as in alla1.
-  pose proof (alla1 _ (lib_extends_refl _)) as alla1; exrepnd.
-  exists lib''0 (lib_extends_trans xt y); auto.
+  unfold equality_of_atom_bar; apply e_all_in_ex_bar_as.
+  apply in_open_bar_ext_in_open_bar.
+  eapply in_open_bar_ext_pres; eauto; clear alla; introv alla; simpl in *; auto.
+  unfold equality_of_atom_bar in *; apply e_all_in_ex_bar_as in alla; auto.
 Qed.
 Hint Resolve per_bar_eq_equality_of_atom_bar_implies : slow.
 

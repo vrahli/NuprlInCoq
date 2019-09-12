@@ -52,12 +52,12 @@ Lemma per_union_implies_per_bar {o} :
 Proof.
   introv per.
 
-  unfold per_union in *; exrepnd.
-  exists (trivial_bar lib) (per_union_eq_bar_lib_per eqa eqb).
+  unfold per_union, per_bar in *; exrepnd.
+  exists (per_union_eq_bar_lib_per eqa eqb).
   dands; auto.
 
   {
-    apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
+    apply in_ext_ext_implies_in_open_bar_ext.
     introv.
     exists (raise_lib_per eqa e) (raise_lib_per eqb e) A1 A2 B1 B2; simpl.
     dands; spcast; eauto 3 with slow;

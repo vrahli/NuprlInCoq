@@ -105,7 +105,7 @@ Lemma type_extensionality_per_bar {o} :
 Proof.
   introv per eqiff.
   unfold per_bar in *; exrepnd.
-  exists bar eqa; dands; auto.
+  exists eqa; dands; auto.
   eapply eq_term_equals_trans;[|eauto].
   apply eq_term_equals_sym; auto.
 Qed.
@@ -118,14 +118,12 @@ Lemma type_symmetric_per_bar {o} :
 Proof.
   introv sym per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
-  apply sym; auto.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; introv h; auto.
 Qed.
 Hint Resolve type_symmetric_per_bar : slow.
 
-Lemma per_bar_eq_intersect_bars_left {o} :
+(*Lemma per_bar_eq_intersect_bars_left {o} :
   forall {lib} (bar bar' : @BarLib o lib) eqa,
     (per_bar_eq (intersect_bars bar bar') eqa) <=2=> (per_bar_eq bar eqa).
 Proof.
@@ -133,7 +131,7 @@ Proof.
   apply per_bar_eq_iff2.
   exists bar'; auto.
 Qed.
-Hint Resolve per_bar_eq_intersect_bars_left : slow.
+Hint Resolve per_bar_eq_intersect_bars_left : slow.*)
 
 Lemma implies_all_in_bar_ext_intersect_bars_swap {o} :
   forall {lib} (bar bar' : @BarLib o lib) F,
@@ -145,7 +143,7 @@ Proof.
   eexists; eexists; dands; eauto.
 Qed.
 
-Lemma per_bar_eq_intersect_bars_right {o} :
+(*Lemma per_bar_eq_intersect_bars_right {o} :
   forall {lib} (bar bar' : @BarLib o lib) eqa,
     (per_bar_eq (intersect_bars bar' bar) eqa) <=2=> (per_bar_eq bar eqa).
 Proof.
@@ -154,7 +152,7 @@ Proof.
   exists bar'; auto.
   apply implies_all_in_bar_ext_intersect_bars_swap; auto.
 Qed.
-Hint Resolve per_bar_eq_intersect_bars_right : slow.
+Hint Resolve per_bar_eq_intersect_bars_right : slow.*)
 
 Lemma type_transitive_per_bar {o} :
   forall (ts : cts(o)),
@@ -166,19 +164,12 @@ Lemma type_transitive_per_bar {o} :
 Proof.
   introv uv text sym trans pera perb.
   unfold per_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar) eqa0; dands; auto.
-
-  {
-    introv br ext; introv; simpl in *; exrepnd.
-    pose proof (pera0 _ br0 lib'0 (lib_extends_trans ext br3) x) as pera0; simpl in *.
-    pose proof (perb0 _ br2 lib'0 (lib_extends_trans ext br1) x) as perb0; simpl in *.
-    eapply uniquely_valued_trans7; eauto.
-  }
-
-  {
-    eapply eq_term_equals_trans;[exact pera1|].
-    apply eq_term_equals_sym; eauto 3 with slow.
-  }
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_comb;[|exact pera1]; clear pera1.
+  eapply in_open_bar_ext_comb;[|exact perb1]; clear perb1.
+  apply in_ext_ext_implies_in_open_bar_ext.
+  introv pera1 perb1.
+  eapply uniquely_valued_trans7; eauto.
 Qed.
 Hint Resolve type_transitive_per_bar : slow.
 
@@ -189,9 +180,9 @@ Lemma type_value_respecting_per_bar {o} :
 Proof.
   introv resp per ceq.
   unfold per_bar in *; exrepnd.
-  exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_comb;[|exact per1]; clear per1.
+  apply in_ext_ext_implies_in_open_bar_ext; introv h; auto.
   apply resp; eauto 3 with slow.
 Qed.
 Hint Resolve type_value_respecting_per_bar : slow.
@@ -207,17 +198,28 @@ Proof.
   eapply sym; eauto.
 Qed.
 
-Lemma per_bar_eq_sym {o} :
-  forall {lib} (bar1 bar2 : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2,
-    all_in_bar_ext bar1 (fun lib' x => term_equality_symmetric (eqa lib' x))
-    -> per_bar_eq bar2 eqa t1 t2
-    -> per_bar_eq bar2 eqa t2 t1.
+Lemma term_symmetric_in_open_bar_ext_implies {o} :
+  forall (lib : @library o) ts T T' (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
+    -> term_symmetric ts
+    -> in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x)).
 Proof.
-  introv sym per; unfold per_bar_eq in *; introv br ext; introv.
-  pose proof (per _ br _ ext x) as per; simpl in *; exrepnd.
-  exists (intersect_bars bar' (raise_bar bar1 x)).
-  introv br' ext'; introv; simpl in *; exrepnd.
-  pose proof (per0 _ br'0 _ (lib_extends_trans ext' br'3) x0) as per0; simpl in *.
+  introv alla sym.
+  eapply in_open_bar_ext_comb;[|exact alla]; clear alla.
+  apply in_ext_ext_implies_in_open_bar_ext; introv h.
+  eapply sym; eauto.
+Qed.
+
+Lemma per_bar_eq_sym {o} :
+  forall (lib : @library o) (eqa : lib-per(lib,o)) t1 t2,
+    in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> per_bar_eq lib eqa t1 t2
+    -> per_bar_eq lib eqa t2 t1.
+Proof.
+  introv sym per; unfold per_bar_eq in *.
+  eapply in_open_bar_ext_comb;[|exact sym];clear sym.
+  eapply in_open_bar_ext_comb;[|exact per];clear per.
+  apply in_ext_ext_implies_in_open_bar_ext; introv per sym.
   eapply sym; eauto 3 with slow.
 Qed.
 Hint Resolve per_bar_eq_sym : slow.
@@ -229,8 +231,8 @@ Lemma term_symmetric_per_bar {o} :
 Proof.
   introv sym per e.
   unfold per_bar in *; exrepnd.
-  allrw per1.
-  apply term_symmetric_all_in_bar_ext_implies in per0; eauto 3 with slow.
+  allrw per0.
+  apply term_symmetric_in_open_bar_ext_implies in per1; eauto 3 with slow.
 Qed.
 Hint Resolve term_symmetric_per_bar : slow.
 
@@ -245,20 +247,30 @@ Proof.
   eapply sym; eauto.
 Qed.
 
-Lemma per_bar_eq_trans {o} :
-  forall {lib} (bar1 bar2 : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2 t3,
-    all_in_bar_ext bar1 (fun lib' x => term_equality_transitive (eqa lib' x))
-    -> per_bar_eq bar2 eqa t1 t2
-    -> per_bar_eq bar2 eqa t2 t3
-    -> per_bar_eq bar2 eqa t1 t3.
+Lemma term_transitive_in_open_bar_ext_implies {o} :
+  forall (lib : @library o) ts T T' (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
+    -> term_transitive ts
+    -> in_open_bar_ext lib (fun lib' x => term_equality_transitive (eqa lib' x)).
 Proof.
-  introv trans pera perb; unfold per_bar_eq in *; introv br ext; introv.
-  pose proof (pera _ br _ ext x) as pera; simpl in *; exrepnd.
-  pose proof (perb _ br _ ext x) as perb; simpl in *; exrepnd.
-  exists (intersect3bars bar' bar'0 (raise_bar bar1 x)).
-  introv br' ext'; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br'0 lib'2 (lib_extends_trans ext' br'3) x0) as pera0; simpl in *.
-  pose proof (perb0 _ br'4 lib'2 (lib_extends_trans (lib_extends_trans ext' br'1) br'6) x0) as perb0; simpl in *.
+  introv alla sym.
+  eapply in_open_bar_ext_comb;[|exact alla];clear alla.
+  apply in_ext_ext_implies_in_open_bar_ext; introv alla.
+  eapply sym; eauto.
+Qed.
+
+Lemma per_bar_eq_trans {o} :
+  forall (lib : @library o) (eqa : lib-per(lib,o)) t1 t2 t3,
+    in_open_bar_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> per_bar_eq lib eqa t1 t2
+    -> per_bar_eq lib eqa t2 t3
+    -> per_bar_eq lib eqa t1 t3.
+Proof.
+  introv trans pera perb; unfold per_bar_eq in *.
+  eapply in_open_bar_ext_comb;[|exact trans];clear trans.
+  eapply in_open_bar_ext_comb;[|exact pera];clear pera.
+  eapply in_open_bar_ext_comb;[|exact perb];clear perb.
+  apply in_ext_ext_implies_in_open_bar_ext; introv pera perb trans.
   eapply trans; eauto 4 with slow.
 Qed.
 Hint Resolve per_bar_eq_trans : slow.
@@ -270,8 +282,8 @@ Lemma term_transitive_per_bar {o} :
 Proof.
   introv sym per e1 e2.
   unfold per_bar in *; exrepnd.
-  allrw per1.
-  apply term_transitive_all_in_bar_ext_implies in per0; eauto 3 with slow.
+  allrw per0.
+  apply term_transitive_in_open_bar_ext_implies in per1; eauto 3 with slow.
 Qed.
 Hint Resolve term_transitive_per_bar : slow.
 
@@ -286,18 +298,29 @@ Proof.
   eapply val; eauto.
 Qed.
 
-Lemma per_bar_eq_value_respecting {o} :
-  forall {lib} (bar1 bar2 : @BarLib o lib) (eqa : lib-per(lib,o)) t t',
-    all_in_bar_ext bar1 (fun lib' x => term_equality_respecting lib' (eqa lib' x))
-    -> ccequivc_ext lib t t'
-    -> per_bar_eq bar2 eqa t t
-    -> per_bar_eq bar2 eqa t t'.
+Lemma term_value_respecting_in_open_bar_ext_implies {o} :
+  forall (lib : @library o) ts T (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => ts lib' T T (eqa lib' x))
+    -> term_value_respecting ts
+    -> in_open_bar_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x)).
 Proof.
-  introv resp ceq pera; unfold per_bar_eq in *; introv br ext; introv.
-  pose proof (pera _ br _ ext x) as pera; simpl in *; exrepnd.
-  exists (intersect_bars bar' (raise_bar bar1 x)).
-  introv br' ext'; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br'0 _ (lib_extends_trans ext' br'3) x0) as pera0; simpl in *.
+  introv alla val.
+  eapply in_open_bar_ext_comb;[|exact alla];clear alla.
+  apply in_ext_ext_implies_in_open_bar_ext; introv alla.
+  eapply val; eauto.
+Qed.
+
+Lemma per_bar_eq_value_respecting {o} :
+  forall (lib : @library o) (eqa : lib-per(lib,o)) t t',
+    in_open_bar_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> ccequivc_ext lib t t'
+    -> per_bar_eq lib eqa t t
+    -> per_bar_eq lib eqa t t'.
+Proof.
+  introv resp ceq pera; unfold per_bar_eq in *.
+  eapply in_open_bar_ext_comb;[|exact resp];clear resp.
+  eapply in_open_bar_ext_comb;[|exact pera];clear pera.
+  apply in_ext_ext_implies_in_open_bar_ext; introv pera resp.
   eapply resp; eauto 3 with slow.
 Qed.
 Hint Resolve per_bar_eq_value_respecting : slow.
@@ -309,8 +332,8 @@ Lemma term_value_respecting_per_bar {o} :
 Proof.
   introv val per e1 e2.
   unfold per_bar in *; exrepnd.
-  allrw per1.
-  apply term_value_respecting_all_in_bar_ext_implies in per0; eauto 3 with slow.
+  allrw per0.
+  apply term_value_respecting_in_open_bar_ext_implies in per1; eauto 3 with slow.
 Qed.
 Hint Resolve term_value_respecting_per_bar : slow.
 
@@ -324,39 +347,25 @@ Lemma uniquely_valued2_per_bar {o} :
     -> uniquely_valued2 (per_bar ts).
 Proof.
   introv uv p q.
-  unfold per_bar in *; exrepnd.
+  unfold per_bar, per_bar_eq in *; exrepnd.
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
-  clear p1 q1.
+  clear p0 q0.
 
-  introv; split; introv h br ext; introv.
+  introv; split; introv h.
 
-  - apply per_bar_eq_iff in h.
-    unfold per_bar_eq_bi in h; exrepnd.
-    exists (raise_bar (intersect_bars bar0 bar') x).
-    introv br' ext'; introv; simpl in *; exrepnd.
-    pose proof (h0 lib1) as h0; autodimp h0 hyp; simpl in *.
-    { simpl; eexists; eexists; dands; eauto. }
-    pose proof (h0 lib'2 (lib_extends_trans ext' br'2) (lib_extends_trans x0 x)) as h0; simpl in *.
+  - eapply in_open_bar_ext_comb;[|exact p1];clear p1.
+    eapply in_open_bar_ext_comb;[|exact q1];clear q1.
+    eapply in_open_bar_ext_comb;[|exact h];clear h.
+    apply in_ext_ext_implies_in_open_bar_ext; introv h q1 p1.
+    eapply uv in p1; autodimp p1 hyp;[exact q1|].
+    apply p1; auto.
 
-    pose proof (p0 _ br'3 lib'2 (lib_extends_trans ext' (lib_extends_trans br'2 br'5)) (lib_extends_trans x0 x)) as p0; simpl in *.
-    pose proof (q0 _ br lib'2 (lib_extends_trans x0 ext) (lib_extends_trans x0 x)) as q0; simpl in *.
-
-    eapply uv in p0; autodimp p0 hyp;[exact q0|].
-    apply p0; auto.
-
-  - apply per_bar_eq_iff in h.
-    unfold per_bar_eq_bi in h; exrepnd.
-    exists (raise_bar (intersect_bars bar bar') x).
-    introv br' ext'; introv; simpl in *; exrepnd.
-    pose proof (h0 lib1) as h0; autodimp h0 hyp; simpl in *.
-    { simpl; eexists; eexists; dands; eauto. }
-    pose proof (h0 lib'2 (lib_extends_trans ext' br'2) (lib_extends_trans x0 x)) as h0; simpl in *.
-
-    pose proof (p0 _ br lib'2 (lib_extends_trans x0 ext) (lib_extends_trans x0 x)) as p0; simpl in *.
-    pose proof (q0 _ br'3 lib'2 (lib_extends_trans ext' (lib_extends_trans br'2 br'5)) (lib_extends_trans x0 x)) as q0; simpl in *.
-
-    eapply uv in p0; autodimp p0 hyp;[exact q0|].
-    apply p0; auto.
+  - eapply in_open_bar_ext_comb;[|exact p1];clear p1.
+    eapply in_open_bar_ext_comb;[|exact q1];clear q1.
+    eapply in_open_bar_ext_comb;[|exact h];clear h.
+    apply in_ext_ext_implies_in_open_bar_ext; introv h q1 p1.
+    eapply uv in p1; autodimp p1 hyp;[exact q1|].
+    apply p1; auto.
 Qed.
 Hint Resolve uniquely_valued2_per_bar : slow.

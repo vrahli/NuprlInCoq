@@ -446,6 +446,11 @@ Definition per_int {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] 
   # T2 ===>(lib) mkc_int
   # eq <=2=> (equality_of_int_bar lib).
 
+Definition per_int_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  in_open_bar lib (fun lib => T1 ===>(lib) mkc_int)
+  # in_open_bar lib (fun lib => T2 ===>(lib) mkc_int)
+  # eq <=2=> (equality_of_int_bar lib).
+
 
 
 Definition equality_of_nat {o} lib (t t' : @CTerm o) :=
@@ -460,6 +465,11 @@ Definition equality_of_nat_bar {o} lib (t t' : @CTerm o) :=
 Definition per_nat {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   T1 ===>(lib) mkc_Nat
   # T2 ===>(lib) mkc_Nat
+  # eq <=2=> (equality_of_nat_bar lib).
+
+Definition per_nat_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  in_open_bar lib (fun lib => T1 ===>(lib) mkc_Nat)
+  # in_open_bar lib (fun lib => T2 ===>(lib) mkc_Nat)
   # eq <=2=> (equality_of_nat_bar lib).
 
 
@@ -572,6 +582,11 @@ Definition equality_of_uatom_bar {o} lib (t t' : @CTerm o) :=
 Definition per_uatom {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   T1 ===>(lib) mkc_uatom
   # T2 ===>(lib) mkc_uatom
+  # eq <=2=> (equality_of_uatom_bar lib).
+
+Definition per_uatom_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  in_open_bar lib (fun lib => T1 ===>(lib) mkc_uatom)
+  # in_open_bar lib (fun lib => T2 ===>(lib) mkc_uatom)
   # eq <=2=> (equality_of_uatom_bar lib).
 
 
@@ -4271,14 +4286,17 @@ Ltac one_dest_per_fam eqa feqb A1 A2 v1 v2 B1 B2 c1 c2 tsa tsb eqt :=
 Ltac one_unfold_per :=
   match goal with
     | [ H : per_int         _ _ _ _ _ |- _ ] => unfold per_int         in H; exrepd
+    | [ H : per_int_bar     _ _ _ _ _ |- _ ] => unfold per_int_bar     in H; exrepd
     | [ H : per_bar         _ _ _ _ _ |- _ ] => unfold per_bar         in H; exrepd
     | [ H : per_nat         _ _ _ _ _ |- _ ] => unfold per_nat         in H; exrepd
+    | [ H : per_nat_bar     _ _ _ _ _ |- _ ] => unfold per_nat_bar     in H; exrepd
     | [ H : per_qnat        _ _ _ _ _ |- _ ] => unfold per_qnat        in H; exrepd
     | [ H : per_csname      _ _ _ _ _ |- _ ] => unfold per_csname      in H; exrepd
 (*    | [ H : per_csname_bar  _ _ _ _ _ |- _ ] => unfold per_csname_bar  in H; exrepd*)
     | [ H : per_atom        _ _ _ _ _ |- _ ] => unfold per_atom        in H; exrepd
     | [ H : per_atom_bar    _ _ _ _ _ |- _ ] => unfold per_atom_bar    in H; exrepd
     | [ H : per_uatom       _ _ _ _ _ |- _ ] => unfold per_uatom       in H; exrepd
+    | [ H : per_uatom_bar   _ _ _ _ _ |- _ ] => unfold per_uatom_bar   in H; exrepd
     | [ H : per_base        _ _ _ _ _ |- _ ] => unfold per_base        in H; exrepd
     | [ H : per_approx      _ _ _ _ _ |- _ ] => unfold per_approx      in H; exrepd
     | [ H : per_cequiv      _ _ _ _ _ |- _ ] => unfold per_cequiv      in H; exrepd

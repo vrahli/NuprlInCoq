@@ -48,60 +48,50 @@ Qed.
 Hint Resolve local_equality_of_uatom_bar : slow.
 
 Lemma per_bar_eq_equality_of_uatom_bar_implies {o} :
-  forall {lib} (bar : @BarLib o lib) t1 t2,
-    per_bar_eq bar (equality_of_uatom_bar_lib_per lib) t1 t2
+  forall (lib : @library o) t1 t2,
+    per_bar_eq lib (equality_of_uatom_bar_lib_per lib) t1 t2
     -> equality_of_uatom_bar lib t1 t2.
 Proof.
   introv alla.
   unfold per_bar_eq in alla.
-  apply all_in_bar_ext_exists_bar_implies in alla; exrepnd; simpl in *.
-  apply all_in_bar_ext_exists_fbar_implies in alla0; exrepnd; simpl in *.
-
-  exists (bar_of_bar_fam_fam ffbar).
-  introv br ext; simpl in *; exrepnd.
-  pose proof (alla1 _ br _ ext0 x _ br' _ ext' x') as alla0; simpl in *.
-  eapply alla0; eauto.
+  unfold equality_of_uatom_bar; apply e_all_in_ex_bar_as.
+  apply in_open_bar_ext_in_open_bar.
+  eapply in_open_bar_ext_pres; eauto; clear alla; introv alla; simpl in *; auto.
+  unfold equality_of_uatom_bar in *; apply e_all_in_ex_bar_as in alla; auto.
 Qed.
 Hint Resolve per_bar_eq_equality_of_uatom_bar_implies : slow.
 
 Lemma all_in_bar_ext_equal_equality_of_uatom_bar_implies_per_bar_eq_implies_equality_of_uatom_bar {o} :
-  forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)),
-    all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (equality_of_uatom_bar lib'))
-    -> (per_bar_eq bar eqa) <=2=> (equality_of_uatom_bar lib).
+  forall (lib : @library o) (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (equality_of_uatom_bar lib'))
+    -> (per_bar_eq lib eqa) <=2=> (equality_of_uatom_bar lib).
 Proof.
   introv alla; introv; split; introv h.
 
-  - pose proof (all_in_bar_ext_eq_term_equals_preserves_per_bar_eq
-                  _ bar eqa (equality_of_uatom_bar_lib_per lib) t1 t2 alla h) as q.
+  - pose proof (in_open_bar_ext_eq_term_equals_preserves_per_bar_eq
+                  _ eqa (equality_of_uatom_bar_lib_per lib) t1 t2 alla h) as q.
     eauto 3 with slow.
 
-  - introv br ext; introv.
-    exists (trivial_bar lib'0).
-    introv br' ext'; introv; simpl in *.
-    apply (alla _ br _ (lib_extends_trans x0 ext) (lib_extends_trans x0 x)).
-    eapply sub_per_equality_of_uatom_bar;[|eauto]; eauto 3 with slow.
+  - apply e_all_in_ex_bar_as in h.
+    eapply in_open_bar_ext_comb_per;[exact alla|]; clear alla.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv ext.
+    apply e_all_in_ex_bar_as; eauto 3 with slow.
 Qed.
 Hint Resolve all_in_bar_ext_equal_equality_of_uatom_bar_implies_per_bar_eq_implies_equality_of_uatom_bar : slow.
 
 Lemma local_per_uatom_bar {o} :
-  forall {lib} (bar : @BarLib o lib) ts T T' eq eqa,
-    (eq <=2=> (per_bar_eq bar eqa))
-    -> all_in_bar_ext bar (fun lib' x => per_uatom_bar ts lib' T T' (eqa lib' x))
+  forall (lib : @library o) ts T T' eq eqa,
+    (eq <=2=> (per_bar_eq lib eqa))
+    -> in_open_bar_ext lib (fun lib' x => per_uatom_bar ts lib' T T' (eqa lib' x))
     -> per_uatom_bar ts lib T T' eq.
 Proof.
   introv eqiff alla.
   unfold per_uatom_bar in *.
-  apply all_in_bar_ext_and_implies in alla; repnd.
-
-  apply all_in_bar_ext_exists_bar_implies in alla0.
-  exrepnd.
-  dands.
-
-  {
-    exists (bar_of_bar_fam fbar).
-    dands; introv br ext; simpl in *; exrepnd; eapply alla1; eauto.
-  }
-
+  apply @in_open_bar_ext_prod in alla; repnd.
+  apply @in_open_bar_ext_prod in alla; repnd.
+  autorewrite with slow in *.
+  dands; auto;[].
   eapply eq_term_equals_trans;[eauto|]; eauto 3 with slow.
 Qed.
 
@@ -113,9 +103,7 @@ Proof.
   introv per.
   unfold per_uatom in per; repnd.
   unfold per_uatom_bar.
-  dands; auto.
-  exists (trivial_bar lib).
-  dands; eauto 3 with slow.
+  dands; auto; apply in_ext_implies_in_open_bar; introv ext; eauto 3 with slow.
 Qed.
 Hint Resolve per_uatom_implies_per_uatom_bar : slow.
 
@@ -133,7 +121,8 @@ Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
   eapply local_per_uatom_bar; eauto.
-  introv br ext; introv; apply (reca lib' br lib'0 ext x); eauto 3 with slow.
+  eapply in_open_bar_ext_comb;[|exact reca];clear reca.
+  apply in_ext_ext_implies_in_open_bar_ext; introv reca; apply reca; eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_uatom_r {p} :
@@ -147,7 +136,8 @@ Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
   eapply local_per_uatom_bar; eauto.
-  introv br ext; introv; apply (reca lib' br lib'0 ext x); eauto 3 with slow.
+  eapply in_open_bar_ext_comb;[|exact reca];clear reca.
+  apply in_ext_ext_implies_in_open_bar_ext; introv reca; apply reca; eauto 3 with slow.
 Qed.
 
 (*
