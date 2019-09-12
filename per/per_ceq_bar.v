@@ -3621,53 +3621,53 @@ Proof.
     apply eq_term_equals_sym; auto.
 Qed.
 
-(*Lemma implies_eq_term_equals_per_union_bar {p} :
-  forall lib (bar : BarLib lib) (eqa1 eqa2 eqb1 eqb2 : lib-per(lib,p)),
-    all_in_bar_ext bar (fun lib' x => (eqa1 lib' x) <=2=> (eqa2 lib' x))
-    -> all_in_bar_ext bar (fun lib' x => (eqb1 lib' x) <=2=> (eqb2 lib' x))
+Lemma implies_eq_term_equals_per_union_bar {o} :
+  forall (lib : @library o) (eqa1 eqa2 eqb1 eqb2 : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => (eqa1 lib' x) <=2=> (eqa2 lib' x))
+    -> in_open_bar_ext lib (fun lib' x => (eqb1 lib' x) <=2=> (eqb2 lib' x))
     -> (per_union_eq_bar lib eqa1 eqb1) <=2=> (per_union_eq_bar lib eqa2 eqb2).
 Proof.
   introv eqta eqtb; introv.
-  unfold per_union_eq_bar; split; introv h; exrepnd.
+  unfold per_union_eq_bar; split; introv h; exrepnd;
+    apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as.
 
-  - exists (intersect_bars bar bar0).
-    introv br ext; introv; simpl in *; exrepnd.
-    pose proof (h0 lib2 br2 lib'0 (lib_extends_trans ext br1) x) as h0; simpl in *.
-    pose proof (eqta lib1 br0 lib'0 (lib_extends_trans ext br3) x) as eqta; simpl in *.
-    pose proof (eqtb lib1 br0 lib'0 (lib_extends_trans ext br3) x) as eqtb; simpl in *.
+  - eapply in_open_bar_ext_comb;[|exact eqta]; clear eqta.
+    eapply in_open_bar_ext_comb;[|exact eqtb]; clear eqtb.
+    eapply in_open_bar_ext_comb;[|exact h]; clear h.
+    apply in_ext_ext_implies_in_open_bar_ext; introv h eqta eqtb.
     unfold per_union_eq, per_union_eq_L, per_union_eq_R in *.
     repndors; exrepnd;[left|right];
       eexists; eexists; dands; eauto;
         try (complete (apply eqta; auto));
         try (complete (apply eqtb; auto)).
 
-  - exists (intersect_bars bar bar0).
-    introv br ext; introv; simpl in *; exrepnd.
-    pose proof (h0 lib2 br2 lib'0 (lib_extends_trans ext br1) x) as h0; simpl in *.
-    pose proof (eqta lib1 br0 lib'0 (lib_extends_trans ext br3) x) as eqta; simpl in *.
-    pose proof (eqtb lib1 br0 lib'0 (lib_extends_trans ext br3) x) as eqtb; simpl in *.
+  - eapply in_open_bar_ext_comb;[|exact eqta]; clear eqta.
+    eapply in_open_bar_ext_comb;[|exact eqtb]; clear eqtb.
+    eapply in_open_bar_ext_comb;[|exact h]; clear h.
+    apply in_ext_ext_implies_in_open_bar_ext; introv h eqta eqtb.
     unfold per_union_eq, per_union_eq_L, per_union_eq_R in *.
     repndors; exrepnd;[left|right];
       eexists; eexists; dands; eauto;
         try (complete (apply eqta; auto));
         try (complete (apply eqtb; auto)).
-Qed.*)
+Qed.
 
-(*Lemma per_union_eq_bar_symmetric {p} :
-  forall lib (bar : BarLib lib) (eqa eqb : lib-per(lib,p)) t1 t2,
-    all_in_bar_ext bar (fun lib' x => term_equality_symmetric (eqa lib' x))
-    -> all_in_bar_ext bar (fun lib' x => term_equality_symmetric (eqb lib' x))
+Lemma per_union_eq_bar_symmetric {p} :
+  forall lib (eqa eqb : lib-per(lib,p)) t1 t2,
+    in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqb lib' x))
     -> per_union_eq_bar lib eqa eqb t1 t2
     -> per_union_eq_bar lib eqa eqb t2 t1.
 Proof.
   introv tes tet per.
-  unfold per_union_eq_bar, per_union_eq, per_union_eq_L, per_union_eq_R in *.
-  exrepnd; exists (intersect_bars bar bar0); introv br ext; introv; simpl in *; exrepnd.
-  pose proof (per0 lib2 br2 lib'0 (lib_extends_trans ext br1) x) as per0; simpl in *.
-  pose proof (tes lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tes; simpl in *.
-  pose proof (tet lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tet; simpl in *.
+  unfold per_union_eq_bar, per_union_eq, per_union_eq_L, per_union_eq_R in *;
+    apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
+  eapply in_open_bar_ext_comb;[|exact tes]; clear tes.
+  eapply in_open_bar_ext_comb;[|exact tet]; clear tet.
+  eapply in_open_bar_ext_comb;[|exact per]; clear per.
+  apply in_ext_ext_implies_in_open_bar_ext; introv per tet tes.
   repndors; exrepnd;[left|right]; eexists; eexists; dands; eauto.
-Qed.*)
+Qed.
 
 Lemma implies_approx_inl {o} :
   forall lib (A1 A2 : @NTerm o),
@@ -3785,32 +3785,30 @@ Proof.
   eqconstr ceq1; auto.
 Qed.
 
-(*Lemma per_union_eq_bar_transitive {p} :
-  forall lib (bar : BarLib lib) (eqa eqb : lib-per(lib,p)) t1 t2 t3,
-    all_in_bar_ext bar (fun lib' x => term_equality_transitive (eqa lib' x))
-    -> all_in_bar_ext bar (fun lib' x => term_equality_transitive (eqb lib' x))
-    -> all_in_bar_ext bar (fun lib' x => term_equality_symmetric (eqa lib' x))
-    -> all_in_bar_ext bar (fun lib' x => term_equality_symmetric (eqb lib' x))
-    -> all_in_bar_ext bar (fun lib' x => term_equality_respecting lib' (eqa lib' x))
-    -> all_in_bar_ext bar (fun lib' x => term_equality_respecting lib' (eqb lib' x))
+Lemma per_union_eq_bar_transitive {p} :
+  forall lib (eqa eqb : lib-per(lib,p)) t1 t2 t3,
+    in_open_bar_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_transitive (eqb lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqb lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_respecting lib' (eqb lib' x))
     -> per_union_eq_bar lib eqa eqb t1 t2
     -> per_union_eq_bar lib eqa eqb t2 t3
     -> per_union_eq_bar lib eqa eqb t1 t3.
 Proof.
   introv teta tetb syma symb respa respb pera perb.
   unfold per_union_eq_bar, per_union_eq, per_union_eq_L, per_union_eq_R in *.
-  exrepnd.
-  exists (intersect3bars bar bar0 bar1); introv br ext; introv.
-  simpl in *; exrepnd.
-
-  pose proof (pera0 lib3 br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as q; simpl in q.
-  pose proof (perb0 lib0 br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as h; simpl in h.
-  pose proof (teta lib1 br0 lib'0 (lib_extends_trans ext br3) x) as teta; simpl in *.
-  pose proof (tetb lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tetb; simpl in *.
-  pose proof (syma lib1 br0 lib'0 (lib_extends_trans ext br3) x) as syma; simpl in *.
-  pose proof (symb lib1 br0 lib'0 (lib_extends_trans ext br3) x) as symb; simpl in *.
-  pose proof (respa lib1 br0 lib'0 (lib_extends_trans ext br3) x) as respa; simpl in *.
-  pose proof (respb lib1 br0 lib'0 (lib_extends_trans ext br3) x) as respb; simpl in *.
+  apply e_all_in_ex_bar_ext_as in pera; apply e_all_in_ex_bar_ext_as in perb; apply e_all_in_ex_bar_ext_as.
+  eapply in_open_bar_ext_comb;[|exact teta]; clear teta.
+  eapply in_open_bar_ext_comb;[|exact tetb]; clear tetb.
+  eapply in_open_bar_ext_comb;[|exact syma]; clear syma.
+  eapply in_open_bar_ext_comb;[|exact symb]; clear symb.
+  eapply in_open_bar_ext_comb;[|exact respa]; clear respa.
+  eapply in_open_bar_ext_comb;[|exact respb]; clear respb.
+  eapply in_open_bar_ext_comb;[|exact pera]; clear pera.
+  eapply in_open_bar_ext_comb;[|exact perb]; clear perb.
+  apply in_ext_ext_implies_in_open_bar_ext; introv perb pera respb respa symb syma tetb teta.
 
   repndors; exrepnd; computes_to_eqval_ext;
     try (complete (eapply ccequivc_ext_inl in ceq;[|apply ccomputes_to_valc_ext_refl; eauto 3 with slow];
@@ -3839,16 +3837,16 @@ Proof.
 
     { eapply tetb;[eauto|].
       apply symb; auto. }
-Qed.*)
+Qed.
 
-(*Lemma per_union_eq_bar_cequiv {p} :
-  forall lib (bar1 bar2 : BarLib lib) (eqa eqb : lib-per(lib,p)) t1 t2,
-    all_in_bar_ext bar1 (fun lib' x => term_equality_respecting lib' (eqa lib' x))
-    -> all_in_bar_ext bar2 (fun lib' x => term_equality_respecting lib' (eqb lib' x))
-    -> all_in_bar_ext bar1 (fun lib' x => term_equality_symmetric (eqa lib' x))
-    -> all_in_bar_ext bar2 (fun lib' x => term_equality_symmetric (eqb lib' x))
-    -> all_in_bar_ext bar1 (fun lib' x => term_equality_transitive (eqa lib' x))
-    -> all_in_bar_ext bar2 (fun lib' x => term_equality_transitive (eqb lib' x))
+Lemma per_union_eq_bar_cequiv {p} :
+  forall lib (eqa eqb : lib-per(lib,p)) t1 t2,
+    in_open_bar_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_respecting lib' (eqb lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqb lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_transitive (eqb lib' x))
     -> ccequivc_ext lib t1 t2
     -> per_union_eq_bar lib eqa eqb t1 t1
     -> per_union_eq_bar lib eqa eqb t1 t2.
@@ -3856,17 +3854,16 @@ Proof.
   introv tera terb tesa tesb teta tetb ceq per.
 
   unfold per_union_eq_bar, per_union_eq, per_union_eq_L, per_union_eq_R in *; exrepnd.
-  exists (intersect3bars bar1 bar2 bar).
-  introv br ext; introv; simpl in *; exrepnd.
-
-  pose proof (tera lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tera; simpl in *.
-  pose proof (terb lib0 br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as terb; simpl in *.
-  pose proof (per0 lib3 br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as per0; simpl in *.
-  pose proof (teta lib1 br0 lib'0 (lib_extends_trans ext br3) x) as teta; simpl in *.
-  pose proof (tesa lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tesa; simpl in *.
-  pose proof (tetb lib0 br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as tetb; simpl in *.
-  pose proof (tesb lib0 br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as tesb; simpl in *.
-  apply (lib_extends_preserves_ccequivc_ext _ lib'0) in ceq; eauto 4 with slow;[].
+  apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
+  eapply in_open_bar_ext_comb;[|exact tera]; clear tera.
+  eapply in_open_bar_ext_comb;[|exact terb]; clear terb.
+  eapply in_open_bar_ext_comb;[|exact tesa]; clear tesa.
+  eapply in_open_bar_ext_comb;[|exact tesb]; clear tesb.
+  eapply in_open_bar_ext_comb;[|exact teta]; clear teta.
+  eapply in_open_bar_ext_comb;[|exact tetb]; clear tetb.
+  eapply in_open_bar_ext_comb;[|exact per]; clear per.
+  apply in_ext_ext_implies_in_open_bar_ext; introv per tetb teta tesb tesa terb tera.
+  apply (lib_extends_preserves_ccequivc_ext _ lib') in ceq; eauto 4 with slow;[].
   spcast.
 
   repndors; exrepnd; spcast; computes_to_eqval;[left|right].
@@ -3876,7 +3873,7 @@ Proof.
 
   { eapply ccequivc_ext_inr in ceq;[|eauto]; exrepnd.
     eexists; eexists; dands; spcast; eauto. }
-Qed.*)
+Qed.
 
 Lemma approx_decomp_union {o} :
   forall lib (a b c d : @NTerm o),

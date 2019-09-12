@@ -92,6 +92,60 @@ Proof.
   introv tsa tsb comp eqiff alla.
   unfold per_bar in *.
 
+  apply in_open_bar_ext_choice in alla; exrepnd.
+  apply in_open_bar_eqa_choice in alla0; exrepnd.
+  apply in_open_data_open_choice in alla1; exrepnd.
+  exists (lib_fun_dep_eqa Feqa Flib2).
+  dands.
+
+  {
+    introv ext.
+    pose proof (alla0 _ ext) as alla1; simpl in *.
+    apply in_ext_ext_implies in alla1.
+    pose proof (alla1 (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext)) as alla1; repnd.
+    pose proof (alla2 _ (lib_extends_refl _)) as alla2; simpl in *.
+
+    assert (lib_extends
+              (Flib2 lib' ext (Flib lib' ext) (lib_extends_refl (Flib lib' ext))
+                     (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext) (Flib lib' ext)
+                     (lib_extends_refl (Flib lib' ext))) lib') as xta by eauto 3 with slow.
+
+    exists (Flib2 lib' ext (Flib lib' ext) (lib_extends_refl (Flib lib' ext))
+                  (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext) (Flib lib' ext)
+                  (lib_extends_refl (Flib lib' ext))) xta.
+    introv xtb xtc.
+    assert (lib_extends lib'0 (Flib lib' ext)) as xtd by eauto 3 with slow.
+    pose proof (alla2 _ xtb xtd) as alla2; simpl in *.
+
+    unfold per_union in *; exrepnd.
+    exists eqa1 eqb0 A1 A2 B1 B2; dands; auto.
+    apply eq_term_equals_sym; introv; split; introv w.
+
+    { exists lib' ext (Flib lib' ext) (lib_extends_refl (Flib lib' ext))
+             (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext)
+             (Flib lib' ext) (lib_extends_refl (Flib lib' ext)).
+      exists lib'0 xtb.
+      exists xtd (lib_extends_refl lib'0); auto.
+      apply alla2; auto. }
+
+    exrepnd.
+
+    pose proof (alla0 lib1 ext1 lib2 ext2 extz) as xx; simpl in *; repnd; clear xx.
+    assert (lib_extends lib4 lib2) as xte by eauto 3 with slow.
+    pose proof (xx0 lib3 ext3 lib'0 (lib_extends_trans w ext4) z) as xx0; simpl in *.
+
+    exrepnd.
+    apply xx0 in w0.
+
+XXXXXXXXXXx
+Check implies_eq_term_equals_per_union_bar.
+
+    eapply uv in xx0; autodimp xx0 hyp;[exact alla2|].
+    apply xx0; auto.
+
+
+XXXXXXXXXXXX
+
   apply all_in_bar_ext_exists_bar_implies in alla; exrepnd.
   exists (bar_of_bar_fam fbar).
   apply all_in_bar_ext2_exists_eqa_implies in alla0; exrepnd.
