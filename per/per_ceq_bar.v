@@ -6201,3 +6201,27 @@ Proof.
     pose proof (tyvrt1 (B)[[v\\a]] (B0)[[v0\\a]] (B'0)[[v'0\\a']] (eqb1 lib' e a a' e0)) as q.
     repeat (autodimp q hyp); eauto 3 with slow.
 Qed.
+
+Lemma in_ext_ext_type_ceq_sym {o} :
+  forall ts (lib lib0 : @library o) A A' A1 A2 (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib0,o)),
+    lib_extends lib0 lib
+    -> ccequivc_ext lib0 A2 A
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+    -> in_ext_ext lib0 (fun lib' x => ts lib' A1 A2 (eqa1 lib' x))
+    -> in_ext_ext lib0 (fun lib' x => ts lib' A2 A1 (eqa1 lib' x)).
+Proof.
+  introv ext ceq tya tsa; introv.
+  pose proof (tya lib' (lib_extends_trans e ext)) as tya; simpl in *.
+  pose proof (tsa lib' e) as tsa; simpl in *.
+  onedtsp4 uv1 tys1 tyvr1 tyvrt1 tyvrt11 tes1 tet1 tevr1 tygs1 tygt1 dum1.
+  unfold type_equality_respecting_trans1 in *.
+  unfold type_equality_respecting_trans2 in *.
+
+  pose proof (tyvrt1 A A2 A1 (eqa1 lib' e)) as tsb.
+  repeat (autodimp tsb hyp); eauto 3 with slow;[].
+
+  pose proof (tyvr1 A A2) as tsc; repeat (autodimp tsc hyp); eauto 3 with slow;[].
+  apply tygs1 in tsc.
+  eapply dum1 in tsb; try exact tsc; tcsp.
+Qed.
+Hint Resolve in_ext_ext_type_ceq_sym : slow.

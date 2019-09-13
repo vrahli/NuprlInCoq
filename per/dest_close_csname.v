@@ -51,38 +51,33 @@ Qed.
 Hint Resolve local_equality_of_csname_bar : slow.
 
 Lemma per_bar_eq_equality_of_csname_bar_implies {o} :
-  forall {lib} (bar : @BarLib o lib) n t1 t2,
-    per_bar_eq bar (equality_of_csname_bar_lib_per lib n) t1 t2
+  forall (lib : @library o) n t1 t2,
+    per_bar_eq lib (equality_of_csname_bar_lib_per lib n) t1 t2
     -> equality_of_csname_bar lib n t1 t2.
 Proof.
   introv alla.
   unfold per_bar_eq in alla.
-  apply all_in_bar_ext_exists_bar_implies in alla; exrepnd; simpl in *.
-  apply all_in_bar_ext_exists_fbar_implies in alla0; exrepnd; simpl in *.
-
-  exists (bar_of_bar_fam_fam ffbar).
-  introv br ext; simpl in *; exrepnd.
-  pose proof (alla1 _ br _ ext0 x _ br' _ ext' x') as alla0; simpl in *.
-  eapply alla0; eauto.
+  unfold equality_of_csname_bar; apply e_all_in_ex_bar_as.
+  apply in_open_bar_ext_in_open_bar.
+  eapply in_open_bar_ext_pres; eauto; clear alla; introv h; simpl in *.
+  unfold equality_of_csname_bar in h; apply e_all_in_ex_bar_as in h; auto.
 Qed.
 Hint Resolve per_bar_eq_equality_of_csname_bar_implies : slow.
 
 Lemma all_in_bar_ext_equal_equality_of_csname_bar_implies_per_bar_eq_implies_equality_of_csname_bar {o} :
-  forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)) n,
-    all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (equality_of_csname_bar lib' n))
-    -> (per_bar_eq bar eqa) <=2=> (equality_of_csname_bar lib n).
+  forall (lib : @library o) (eqa : lib-per(lib,o)) n,
+    in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (equality_of_csname_bar lib' n))
+    -> (per_bar_eq lib eqa) <=2=> (equality_of_csname_bar lib n).
 Proof.
-  introv alla; introv; split; introv h.
+  introv alla; introv; unfold per_bar_eq, equality_of_int_bar; split; introv h.
 
-  - pose proof (all_in_bar_ext_eq_term_equals_preserves_per_bar_eq
-                  _ bar eqa (equality_of_csname_bar_lib_per lib n) t1 t2 alla h) as q.
+  - pose proof (in_open_bar_ext_eq_term_equals_preserves_per_bar_eq
+                  _ eqa (equality_of_csname_bar_lib_per lib n) t1 t2 alla h) as q.
     eauto 3 with slow.
 
-  - introv br ext; introv.
-    exists (trivial_bar lib'0).
-    introv br' ext'; introv; simpl in *.
-    apply (alla _ br _ (lib_extends_trans x0 ext) (lib_extends_trans x0 x)).
-    eapply sub_per_equality_of_csname_bar;[|eauto]; eauto 3 with slow.
+  - apply e_all_in_ex_bar_as in h.
+    eapply in_open_bar_ext_pres;[|exact alla]; clear alla; introv alla; apply alla; clear alla.
+    unfold equality_of_csname_bar; apply e_all_in_ex_bar_as; eauto 3 with slow.
 Qed.
 Hint Resolve all_in_bar_ext_equal_equality_of_csname_bar_implies_per_bar_eq_implies_equality_of_csname_bar : slow.
 
@@ -99,80 +94,61 @@ Lemma local_per_csname_bar {o} :
   forall (ts : cts(o)), local_ts (per_bar (per_csname ts)).
 Proof.
   introv eqiff alla.
-
-  apply all_in_bar_ext_exists_bar_implies in alla; exrepnd.
-  exists (bar_of_bar_fam fbar).
+  unfold per_bar in *.
   exists (equality_of_csname_bar_to_lib_per lib T).
   dands.
 
-  {
-    introv br ext; introv; simpl in *; exrepnd.
-    pose proof (alla0 _ br _ ext0 x0) as alla0; exrepnd.
-    remember (fbar lib1 br lib2 ext0 x0) as bb.
-    pose proof (alla0 _ br0 _ ext (lib_extends_trans ext (bar_lib_ext bb lib' br0))) as alla0; simpl in *.
+  { apply in_open_bar_ext_dup.
+    eapply in_open_bar_ext_pres; eauto; clear alla; introv alla; exrepnd.
+    eapply in_open_bar_ext_pres; eauto; clear alla1; introv alla; exrepnd.
+    introv.
     unfold per_csname in *; exrepnd.
-    exists n; dands; auto.
+    exists n; dands; simpl; auto.
     introv; split; intro h; exrepnd; dands; auto.
     - spcast; computes_to_eqval; apply_cequivc_val; auto.
-    - exists n; dands; auto.
-  }
+    - exists n; dands; auto. }
 
-  {
-    eapply eq_term_equals_trans;[eauto|]; clear eqiff.
-    introv.
-    split; intro h; exrepnd.
+  eapply eq_term_equals_trans;[exact eqiff|]; clear eqiff.
+  unfold per_bar_eq; introv; split; intro h.
 
-    - rw @per_bar_eq_iff in h; unfold per_bar_eq_bi in h; exrepnd.
-      apply per_bar_eq_iff2.
-      exists bar'.
-      introv br ext; introv; simpl in *; exrepnd.
+  { apply in_open_bar_ext_dup.
+    eapply in_open_bar_ext_comb;[|exact h]; clear h.
+    eapply in_open_bar_ext_comb;[|exact alla]; clear alla.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv alla h; exrepnd.
+    apply alla0 in h; clear alla0.
+    unfold per_bar_eq in *; simpl in *.
 
-      pose proof (h0 lib') as h0; simpl in *; autodimp h0 hyp.
-      { eexists; eexists; dands; eauto 4 with slow. }
-      pose proof (h0 _ ext x) as h0; simpl in *.
+    eapply in_open_bar_ext_comb;[|exact h]; clear h.
+    eapply in_open_bar_ext_comb;[|exact alla1]; clear alla1.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv alla h ext; exrepnd.
 
-      assert (lib_extends lib'0 lib0) as xt1 by eauto 5 with slow.
+    unfold per_csname in *; exrepnd.
+    apply alla0 in h.
+    exists n; dands; auto. }
 
-      pose proof (alla0 _ br lib'0 xt1 x) as allb; exrepnd.
-      apply allb0 in h0; clear allb0.
-      rw @per_bar_eq_iff in h0; unfold per_bar_eq_bi in *; exrepnd.
+  { eapply in_open_bar_ext_comb;[|exact h]; clear h.
+    eapply in_open_bar_ext_comb;[|exact alla]; clear alla.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv alla h; exrepnd.
+    apply alla0; clear alla0.
+    unfold per_bar_eq in *; simpl in *; exrepnd.
+    unfold equality_of_csname_bar in *; apply e_all_in_ex_bar_as in h0.
 
-      exists (intersect_bars (fbar lib0 br lib'0 xt1 x) bar'0).
-      introv br' ext' x'.
-      pose proof (h1 _ br' _ ext' x') as h1; simpl in h1.
-      simpl in *; exrepnd.
+    apply in_open_bar_ext_in_open_bar in h0.
 
-      assert (lib_extends lib'2 lib4) as xt2 by eauto 3 with slow.
-      pose proof (allb1 _ br'0 lib'2 xt2 x') as allb1; simpl in *.
-      unfold per_csname in allb1; exrepnd.
-      apply allb0 in h1; clear allb0.
-      exists n; dands; auto.
+    eapply in_open_bar_ext_comb2;[|exact h0]; clear h0.
+    eapply in_open_bar_ext_comb;[|exact alla1]; clear alla1.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv alla h; exrepnd.
 
-    - rw @per_bar_eq_iff.
-      exists (bar_of_bar_fam fbar).
-      introv br ext; introv; simpl in *; exrepnd.
-      assert (lib_extends lib'0 lib0) as xt1 by eauto 5 with slow.
-      pose proof (alla0 _ br lib'0 xt1 x) as allb; simpl in *; exrepnd.
-      apply allb0; clear allb0.
-
-      introv br' ext'; introv.
-      pose proof (h lib'1) as h; simpl in *; autodimp h hyp.
-      { eexists; eexists; eexists; eexists; eexists; eauto. }
-      assert (lib_extends lib'2 lib) as xt2 by eauto 3 with slow.
-      pose proof (h lib'2 ext' xt2) as h; simpl in h; exrepnd.
-      exists bar'.
-
-      introv br'' ext''; introv.
-      pose proof (h0 _ br'' _ ext'' x2) as h0; simpl in *; exrepnd.
-
-      assert (lib_extends lib'4 lib'1) as xt3 by eauto 3 with slow.
-      assert (lib_extends lib'4 lib'0) as xt4 by eauto 3 with slow.
-      pose proof (allb1 _ br' lib'4 xt3 xt4) as allb0; simpl in *.
-
-      unfold per_csname in allb0; exrepnd.
-      eapply (lib_per_cond _ eqa0); apply allb2.
-      spcast; computes_to_eqval; apply_cequivc_val; auto.
-  }
+    unfold per_csname in *; exrepnd.
+    eapply lib_extends_preserves_ccomputes_to_valc in h1; eauto.
+    computes_to_eqval; apply_cequivc_val; auto.
+    apply alla0; auto.
+    repeat (autodimp h hyp).
+    unfold equality_of_csname_bar; apply e_all_in_ex_bar_as; auto. }
 Qed.
 
 Lemma per_csname_implies_per_bar_per_csname {o} :
@@ -182,22 +158,18 @@ Lemma per_csname_implies_per_bar_per_csname {o} :
 Proof.
   introv per.
   unfold per_csname in per; exrepnd.
-  exists (trivial_bar lib) (equality_of_csname_bar_lib_per lib n).
-  dands; auto.
-  - introv br ext; introv; simpl in *.
-    exists n; dands; tcsp; eauto 3 with slow.
-  - eapply eq_term_equals_trans;[eauto|].
-    introv; split; introv h.
-    + introv br ext; introv; simpl in *.
-      exists (trivial_bar lib'0).
-      introv br' ext' x'.
-      eapply sub_per_equality_of_csname_bar;[|eauto]; eauto 3 with slow.
-    + pose proof (h lib (lib_extends_refl lib) lib (lib_extends_refl lib) (lib_extends_refl lib)) as h; simpl in *; auto.
-      exrepnd.
-      apply all_in_bar_ext_exists_bar_implies in h0; exrepnd.
-      exists (bar_of_bar_fam fbar).
-      introv br ext; simpl in *; exrepnd.
-      eapply h1; eauto.
+  exists (equality_of_csname_bar_lib_per lib n).
+  dands; auto; simpl.
+
+  - apply in_ext_ext_implies_in_open_bar_ext; introv ext.
+    exists n; dands; eauto 3 with slow.
+
+  - eapply eq_term_equals_trans;[exact per0|]; clear per0.
+    eapply eq_term_equals_trans;
+      [|apply eq_term_equals_sym;
+        apply all_in_bar_ext_equal_equality_of_csname_bar_implies_per_bar_eq_implies_equality_of_csname_bar];
+      [apply eq_term_equals_refl|]; simpl.
+    apply in_ext_ext_implies_in_open_bar_ext; introv; tcsp.
 Qed.
 Hint Resolve per_csname_implies_per_bar_per_csname : slow.
 
@@ -215,7 +187,8 @@ Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
   eapply local_per_csname_bar; eauto.
-  introv br ext; introv; apply (reca lib' br lib'0 ext x); eauto 3 with slow.
+  eapply in_open_bar_ext_comb;[|exact reca];clear reca.
+  apply in_ext_ext_implies_in_open_bar_ext; introv reca; apply reca; eauto 3 with slow.
 Qed.
 
 Lemma dest_close_per_csname_r {p} :
@@ -229,7 +202,8 @@ Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
   eapply local_per_csname_bar; eauto.
-  introv br ext; introv; apply (reca lib' br lib'0 ext x); eauto 3 with slow.
+  eapply in_open_bar_ext_comb;[|exact reca];clear reca.
+  apply in_ext_ext_implies_in_open_bar_ext; introv reca; apply reca; eauto 3 with slow.
 Qed.
 
 (*Lemma dest_close_per_csname_bar_l {p} :

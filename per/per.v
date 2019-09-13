@@ -487,6 +487,10 @@ Definition per_qnat {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U]
   # T2 ===>(lib) mkc_qnat
   # eq <=2=> (equality_of_qnat_bar lib).
 
+Definition per_qnat_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  in_open_bar lib (fun lib => T1 ===>(lib) mkc_qnat)
+  # in_open_bar lib (fun lib => T2 ===>(lib) mkc_qnat)
+  # eq <=2=> (equality_of_qnat_bar lib).
 
 
 
@@ -544,6 +548,11 @@ Definition per_csname {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [
   # T2 ===>(lib) (mkc_csname n)
   # eq <=2=> (equality_of_csname_bar lib n) }.
 
+Definition per_csname_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  {n : nat
+  , in_open_bar lib (fun lib => T1 ===>(lib) (mkc_csname n))
+  # in_open_bar lib (fun lib => T2 ===>(lib) (mkc_csname n))
+  # eq <=2=> (equality_of_csname_bar lib n) }.
 
 
 (**
@@ -685,6 +694,11 @@ Definition per_base {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U]
   # T2 ===>(lib) mkc_base
   # eq <=2=> (per_base_eq lib).
 
+Definition per_base_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  in_open_bar lib (fun lib => T1 ===>(lib) mkc_base)
+  # in_open_bar lib (fun lib => T2 ===>(lib) mkc_base)
+  # eq <=2=> (per_base_eq lib).
+
 (**
 
   The approximation type was introduced in Nuprl in 2013 in order to
@@ -716,6 +730,10 @@ Definition computes_to_valc_ceq_bar {o} {lib} (bar : @BarLib o lib) (t1 t2 : @CT
   e_all_in_bar bar (fun lib => {t : CTerm , t1 ===>(lib) t # ccequivc (*ccequivc_ext*) lib t t2}).
 Notation "t1 ==b==>( bar ) t2" := (computes_to_valc_ceq_bar bar t1 t2) (at level 0).
 
+Definition computes_to_valc_ceq_open {o} (lib : @library o) (t1 t2 : @CTerm o) :=
+  in_open_bar lib (fun lib => {t : CTerm , t1 ===>(lib) t # ccequivc (*ccequivc_ext*) lib t t2}).
+Notation "t1 ==o==>( lib ) t2" := (computes_to_valc_ceq_open lib t1 t2) (at level 0).
+
 Definition computes_to_valc_bar {o} {lib} (bar : @BarLib o lib) (a b : @CTerm o) :=
   e_all_in_bar bar (fun lib => a ===>(lib) b).
 Notation "a =b==>( bar ) b" := (computes_to_valc_bar bar a b) (at level 0).
@@ -742,6 +760,16 @@ Definition per_approx {p}
    # in_ext lib (fun lib => a ~<~(lib) b <=> c ~<~(lib) d)
    # eq <=2=> (per_approx_eq_bar lib a b) }.
 
+Definition per_approx_bar {p}
+           (ts    : cts(p))
+           (lib   : library)
+           (T1 T2 : @CTerm p)
+           (eq    : per(p)) : [U] :=
+ {a, b, c, d : CTerm
+  , T1 ==o==>(lib) (mkc_approx a b)
+  # T2 ==o==>(lib) (mkc_approx c d)
+  # in_open_bar lib (fun lib => (a ~<~(lib) b <=> c ~<~(lib) d))
+  # eq <=2=> (per_approx_eq_bar lib a b) }.
 
 
 (**
@@ -774,6 +802,17 @@ Definition per_cequiv {p}
    # T2 ===>(lib) (mkc_cequiv c d)
    # in_ext lib (fun lib => a ~=~(lib) b <=> c ~=~(lib) d)
    # eq <=2=> (per_cequiv_eq_bar lib a b) }.
+
+Definition per_cequiv_bar {p}
+           (ts    : cts(p))
+           (lib   : library)
+           (T1 T2 : @CTerm p)
+           (eq    : per(p)) : [U] :=
+ {a, b, c, d : CTerm
+  , T1 ==o==>(lib) (mkc_cequiv a b)
+  # T2 ==o==>(lib) (mkc_cequiv c d)
+  # in_open_bar lib (fun lib => (a ~=~(lib) b <=> c ~=~(lib) d))
+  # eq <=2=> (per_cequiv_eq_bar lib a b) }.
 
 
 
@@ -4291,15 +4330,19 @@ Ltac one_unfold_per :=
     | [ H : per_nat         _ _ _ _ _ |- _ ] => unfold per_nat         in H; exrepd
     | [ H : per_nat_bar     _ _ _ _ _ |- _ ] => unfold per_nat_bar     in H; exrepd
     | [ H : per_qnat        _ _ _ _ _ |- _ ] => unfold per_qnat        in H; exrepd
+    | [ H : per_qnat_bar    _ _ _ _ _ |- _ ] => unfold per_qnat_bar    in H; exrepd
     | [ H : per_csname      _ _ _ _ _ |- _ ] => unfold per_csname      in H; exrepd
-(*    | [ H : per_csname_bar  _ _ _ _ _ |- _ ] => unfold per_csname_bar  in H; exrepd*)
+    | [ H : per_csname_bar  _ _ _ _ _ |- _ ] => unfold per_csname_bar  in H; exrepd
     | [ H : per_atom        _ _ _ _ _ |- _ ] => unfold per_atom        in H; exrepd
     | [ H : per_atom_bar    _ _ _ _ _ |- _ ] => unfold per_atom_bar    in H; exrepd
     | [ H : per_uatom       _ _ _ _ _ |- _ ] => unfold per_uatom       in H; exrepd
     | [ H : per_uatom_bar   _ _ _ _ _ |- _ ] => unfold per_uatom_bar   in H; exrepd
     | [ H : per_base        _ _ _ _ _ |- _ ] => unfold per_base        in H; exrepd
+    | [ H : per_base_bar    _ _ _ _ _ |- _ ] => unfold per_base_bar    in H; exrepd
     | [ H : per_approx      _ _ _ _ _ |- _ ] => unfold per_approx      in H; exrepd
+    | [ H : per_approx_bar  _ _ _ _ _ |- _ ] => unfold per_approx_bar  in H; exrepd
     | [ H : per_cequiv      _ _ _ _ _ |- _ ] => unfold per_cequiv      in H; exrepd
+    | [ H : per_cequiv_bar  _ _ _ _ _ |- _ ] => unfold per_cequiv_bar  in H; exrepd
     | [ H : per_eq          _ _ _ _ _ |- _ ] => unfold per_eq          in H; exrepd
     | [ H : per_req         _ _ _ _ _ |- _ ] => unfold per_req         in H; exrepd
     | [ H : per_teq         _ _ _ _ _ |- _ ] => unfold per_teq         in H; exrepd
