@@ -262,41 +262,6 @@ Proof.
 Qed.
  *)
 
-Lemma per_bar_eq_per_approx_eq_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib) a b,
-    (per_bar_eq bar (per_approx_eq_bar_lib_per lib a b))
-    <=2=> (per_approx_eq_bar lib a b).
-Proof.
-  introv; simpl; split; intro h; eauto 3 with slow.
-
-  - unfold per_bar_eq, per_approx_eq_bar_lib_per in h; simpl in *.
-    unfold per_approx_eq_bar in h.
-
-    assert (all_in_bar_ext
-              bar
-              (fun lib' x =>
-                 exists (bar : BarLib lib'),
-                   all_in_bar bar (fun lib => per_approx_eq lib a b t1 t2))) as q.
-    {
-      introv br ext x.
-      pose proof (h _ br _ ext x) as h; simpl in h.
-      apply collapse2bars in h; auto.
-    }
-    clear h.
-
-    apply all_in_bar_ext_exists_bar_implies in q; exrepnd; simpl in *.
-    exists (bar_of_bar_fam fbar).
-    introv br ext; simpl in *; exrepnd.
-    pose proof (q0 _ br _ ext0 x _ br0 _ ext) as h0; simpl in *; auto.
-
-  - unfold per_approx_eq_bar in h; exrepnd.
-    introv br ext; introv.
-    exists (raise_bar bar0 x); introv br' ext'; introv; simpl in *; exrepnd.
-    exists (trivial_bar lib'2).
-    apply in_ext_implies_all_in_bar_trivial_bar; introv y.
-    apply (h0 _ br'1 lib'3); eauto 3 with slow.
-Qed.
-
 Lemma per_approx_uniquely_valued {p} :
   forall (ts : cts(p)), uniquely_valued (per_approx ts).
 Proof.

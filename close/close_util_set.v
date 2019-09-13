@@ -50,21 +50,20 @@ Definition per_set_eq_bar_lib_per {o}
 Proof.
   exists (fun lib' x => per_set_eq_bar lib' (raise_lib_per eqa x) (raise_lib_per_fam eqb x)).
   repeat introv.
-  unfold per_set_eq_bar, per_set_eq; split; intro h; exrepnd;
-    exists bar; introv br ext; introv.
+  unfold per_set_eq_bar, per_set_eq.
+  split; intro h; exrepnd; apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as;
+      eapply in_open_bar_ext_comb; try exact h; clear h;
+        apply in_ext_ext_implies_in_open_bar_ext; introv h; simpl in *; exrepnd;
+          unfold raise_ext_per in *; simpl in *.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *; exrepnd.
-    unfold raise_ext_per in *; simpl in *.
-    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
-    dup e0 as e2; apply e1 in e2; clear e1.
+  - pose proof (lib_per_cond _ eqa lib'0 (lib_extends_trans e0 y) (lib_extends_trans e0 e)) as x.
+    dup e1 as e2; apply x in e2; clear x.
     exists e2; auto.
     eapply eq_term_equals_preserves_inhabited;[|eauto].
     apply lib_per_fam_cond.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *; exrepnd.
-    unfold raise_ext_per in *; simpl in *.
-    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
-    dup e0 as e2; apply e1 in e2; clear e1.
+  - pose proof (lib_per_cond _ eqa lib'0 (lib_extends_trans e0 y) (lib_extends_trans e0 e)) as x.
+    dup e1 as e2; apply x in e2; clear x.
     exists e2; auto.
     eapply eq_term_equals_preserves_inhabited;[|eauto].
     apply lib_per_fam_cond.
@@ -77,16 +76,17 @@ Lemma implies_eq_term_equals_per_set_eq_bar {o} :
     -> (per_set_eq_bar lib eqa eqc) <=2=> (per_set_eq_bar lib eqb eqd).
 Proof.
   introv eqas eqbs; introv.
-  unfold per_set_eq_bar, per_set_eq; introv; split; intro h; exrepnd; exists bar;
-    introv br ext; repeat introv.
+  unfold per_set_eq_bar, per_set_eq; introv; split; intro h;
+    apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as;
+      eapply in_open_bar_ext_comb; try exact h; clear h;
+        apply in_ext_ext_implies_in_open_bar_ext; introv h;
+          exrepnd.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *; exrepnd.
-    dup e as u; apply eqas in u.
+  - dup e0 as u; apply eqas in u.
     exists u.
     eapply eq_term_equals_preserves_inhabited; eauto.
 
-  - pose proof (h0 _ br _ ext x) as h0; simpl in *; exrepnd.
-    dup e as u; apply eqas in u.
+  - dup e0 as u; apply eqas in u.
     exists u.
     eapply eq_term_equals_preserves_inhabited;[|eauto].
     apply eq_term_equals_sym; eauto.
@@ -114,58 +114,31 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_set_eq_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib) (eqa : lib-per(lib,o)) eqb,
-    (per_bar_eq bar (per_set_eq_bar_lib_per eqa eqb))
+  forall (lib : @library o) (eqa : lib-per(lib,o)) eqb,
+    (per_bar_eq lib (per_set_eq_bar_lib_per eqa eqb))
     <=2=> (per_set_eq_bar lib eqa eqb).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
 
-  - unfold per_bar_eq, per_set_eq_bar_lib_per, per_set_eq_bar in h; simpl in *.
+  - unfold per_set_eq_bar; apply e_all_in_ex_bar_ext_as.
+    eapply in_open_bar_ext_dup.
+    eapply in_open_bar_ext_pres; eauto; clear h.
+    introv h; simpl in *.
+    unfold per_set_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+    eapply in_open_bar_ext_pres; eauto; clear h.
+    introv h; introv; simpl in *.
+    eapply implies_eq_term_equals_per_set_eq; try exact h;
+      try apply (lib_per_cond _ eqa);
+      try apply (lib_per_fam_cond _ eqb).
 
-    assert (all_in_bar_ext
-              bar
-              (fun lib' x =>
-                 exists (bar : BarLib lib'),
-                   all_in_bar_ext
-                     bar
-                     (fun lib'' y =>
-                        per_set_eq
-                          (raise_ext_per eqa x lib'' y)
-                          (raise_ext_per_fam eqb x lib'' y)
-                          t1 t2))) as q.
-    {
-      introv br ext; introv.
-      pose proof (h _ br _ ext x) as h; simpl in h.
-      unfold raise_ext_per in *.
-      apply collapse2bars_ext.
-
-      { introv; apply implies_eq_term_equals_per_set_eq; try apply (lib_per_cond _ eqa).
-        introv; unfold raise_ext_per_fam; try apply (lib_per_fam_cond _ eqb). }
-
-      exrepnd; exists bar'.
-      introv br' ext'; introv.
-      pose proof (h0 _ br' _ ext' x0) as h0; simpl in *; exrepnd.
-      exists bar0; introv br'' ext''; introv.
-      pose proof (h1 _ br'' _ ext'' x1) as h1; simpl in *.
-      eapply implies_eq_term_equals_per_set_eq;[| |eauto].
-      { apply (lib_per_cond _ eqa). }
-      { introv; unfold raise_ext_per_fam; try apply (lib_per_fam_cond _ eqb). }
-    }
-    clear h.
-
-    apply all_in_bar_ext_exists_bar_implies in q; exrepnd; simpl in *.
-    exists (bar_of_bar_fam fbar).
-    introv br ext; introv; simpl in *; exrepnd.
-    assert (lib_extends lib'0 lib2) as xt by eauto 3 with slow.
-    pose proof (q0 _ br _ ext0 x0 _ br0 _ ext xt) as h0; simpl in *; auto.
-    eapply implies_eq_term_equals_per_set_eq;[| |eauto].
-    { apply (lib_per_cond _ eqa). }
-    { introv; unfold raise_ext_per_fam; try apply (lib_per_fam_cond _ eqb). }
-
-  - unfold per_set_eq_bar in *; exrepnd.
-    introv br ext; introv.
-    exists (raise_bar bar0 x); introv br' ext'; introv; simpl in *; exrepnd.
-    exists (trivial_bar lib'2).
-    apply in_ext_ext_implies_all_in_bar_ext_trivial_bar; introv.
-    apply (h0 _ br'1 lib'3); eauto 3 with slow.
+  - unfold per_set_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+    eapply in_open_bar_ext_twice in h.
+    eapply in_open_bar_ext_pres; eauto; clear h.
+    introv h; simpl in *.
+    unfold per_set_eq_bar; apply e_all_in_ex_bar_ext_as.
+    eapply in_open_bar_ext_pres; eauto; clear h.
+    introv h; introv; simpl in *.
+    eapply implies_eq_term_equals_per_set_eq; try exact h;
+      try apply (lib_per_cond _ eqa);
+      try apply (lib_per_fam_cond _ eqb).
 Qed.
