@@ -110,11 +110,9 @@ Proof.
 
   + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.
 
-    { apply per_uatom_bar_implies_close; allunfold @per_uatom_bar; sp.
-      exists bar; dands; eauto. }
+    { apply per_uatom_bar_implies_close; allunfold @per_uatom_bar; sp. }
 
-    { apply per_uatom_bar_implies_close; allunfold @per_uatom_bar; sp.
-      exists bar; dands; eauto. }
+    { apply per_uatom_bar_implies_close; allunfold @per_uatom_bar; sp. }
 
   + SCase "type_gtransitive"; sp.
 

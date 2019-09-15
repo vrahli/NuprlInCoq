@@ -317,8 +317,8 @@ Proof.
   }
 
   eapply eq_term_equals_trans;[eauto|].
-  apply (approx_iff_implies_eq_per_approx_eq_bar (trivial_bar lib)).
-  apply in_ext_implies_all_in_bar_trivial_bar; auto.
+  apply (approx_iff_implies_eq_per_approx_eq_bar lib).
+  apply in_ext_implies_in_open_bar; auto.
 Qed.
 Hint Resolve per_approx_type_symmetric : slow.
 
@@ -381,9 +381,9 @@ Proof.
   introv per.
   apply CL_bar.
   unfold per_bar in per; exrepnd.
-  exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_comb; eauto; clear per1.
+  apply in_ext_ext_implies_in_open_bar_ext; introv per1.
   apply CL_approx; auto.
 Qed.
 
@@ -485,8 +485,9 @@ Proof.
   allrw pera1; clear pera1.
 
   unfold per_approx_eq_bar in *; exrepnd.
-  exists bar; introv br ext; introv.
-  pose proof (perb0 _ br _ ext) as perb0; simpl in *.
+  apply e_all_in_ex_bar_as in perb; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_pres; eauto; clear perb.
+  introv ext perb.
 
   unfold per_approx_eq in *; repnd; dands; auto.
 Qed.
@@ -508,9 +509,10 @@ Proof.
   allrw per1; clear per1.
 
   unfold per_approx_eq_bar in *; exrepnd.
-  exists (intersect_bars bar bar0); introv br ext; introv; simpl in *; exrepnd.
-  pose proof (e1 _ br2 lib'0 (lib_extends_trans ext br1)) as e1; simpl in *.
-  pose proof (e0 _ br0 lib'0 (lib_extends_trans ext br3)) as e0; simpl in *.
+  apply e_all_in_ex_bar_as in e2; apply e_all_in_ex_bar_as in e1; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_comb; try exact e1; clear e1.
+  eapply in_open_bar_comb; try exact e2; clear e2.
+  apply in_ext_implies_in_open_bar; introv ext e2 e1.
 
   unfold per_approx_eq in *; repnd; dands; auto.
 Qed.
@@ -541,10 +543,11 @@ Proof.
   allrw per1; clear per1.
 
   unfold per_approx_eq_bar in *; exrepnd.
-  exists bar; introv br ext; introv; simpl in *; exrepnd.
-  pose proof (e0 _ br _ ext) as e0; simpl in *.
+  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_comb; try exact e; clear e.
+  apply in_ext_implies_in_open_bar; introv ext e.
 
-  eapply per_approx_eq_ccequivc_ext_terms; try exact e0; eauto 4 with slow.
+  eapply per_approx_eq_ccequivc_ext_terms; try exact e; eauto 4 with slow.
 Qed.
 Hint Resolve per_approx_term_value_respecting : slow.
 

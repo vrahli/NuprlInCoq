@@ -116,10 +116,8 @@ Proof.
   + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.
 
     * apply per_qnat_bar_implies_close; allunfold @per_qnat_bar; sp.
-      exists bar; dands; auto.
 
     * apply per_qnat_bar_implies_close; allunfold @per_qnat_bar; sp.
-      exists bar; dands; auto.
 
   + SCase "type_gtransitive"; sp.
 

@@ -34,20 +34,13 @@ Require Export per_ceq_bar.
 
 
 Lemma implies_eq_term_equals_per_bar_eq {o} :
-  forall {lib} (bar1 bar2 : @BarLib o lib) (eqa eqb : lib-per(lib,o)),
-    all_in_bar_ext (intersect_bars bar1 bar2) (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
-    -> (per_bar_eq bar1 eqa) <=2=> (per_bar_eq bar2 eqb).
+  forall (lib : @library o) (eqa eqb : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
+    -> (per_bar_eq lib eqa) <=2=> (per_bar_eq lib eqb).
 Proof.
-  introv alla; introv; split; intro h.
-
-  - apply (per_bar_eq_intersect_bars_right bar2 bar1).
-    eapply all_in_bar_ext_eq_term_equals_preserves_per_bar_eq; eauto.
-    apply (per_bar_eq_intersect_bars_left bar1 bar2); auto.
-
-  - apply (per_bar_eq_intersect_bars_left bar1 bar2).
-    apply all_in_bar_ext_eq_term_equals_sym in alla.
-    eapply all_in_bar_ext_eq_term_equals_preserves_per_bar_eq; eauto.
-    apply (per_bar_eq_intersect_bars_right bar2 bar1); auto.
+  introv alla; introv; split; intro h;
+    eapply in_open_bar_ext_eq_term_equals_preserves_per_bar_eq; eauto.
+  eapply in_open_bar_ext_pres; try exact alla; introv q; apply eq_term_equals_sym; auto.
 Qed.
 
 Definition uniquely_valued_def {o} (ts : cts(o)) lib T :=
@@ -65,14 +58,12 @@ Proof.
   unfold per_bar in *; exrepnd.
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
-  clear pera1 perb1.
+  clear pera0 perb0.
 
   apply implies_eq_term_equals_per_bar_eq.
-  introv br ext; introv; simpl in *; exrepnd.
-
-  pose proof (pera0 _ br0 lib'0 (lib_extends_trans ext br3) x) as pera0.
-  pose proof (perb0 _ br2 lib'0 (lib_extends_trans ext br1) x) as perb0.
-  simpl in *.
+  eapply in_open_bar_ext_comb; try exact pera1; clear pera1.
+  eapply in_open_bar_ext_comb; try exact perb1; clear perb1.
+  apply in_ext_ext_implies_in_open_bar_ext; introv perb1 pera1.
   eapply uv; eauto.
 Qed.
 

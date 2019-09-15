@@ -72,7 +72,6 @@ Lemma per_int_bar_type_symmetric {p} :
   forall (ts : cts(p)), type_symmetric (per_int_bar ts).
 Proof.
   unfold type_symmetric, per_int_bar; sp.
-  exists bar; dands; auto.
 Qed.
 Hint Resolve per_int_bar_type_symmetric : slow.
 
@@ -89,9 +88,10 @@ Proof.
   introv h e.
   unfold per_int_bar in h; exrepnd.
   apply h in e; apply h.
-  unfold equality_of_int_bar, equality_of_int in *; exrepnd; exists bar0.
-  introv ie i; apply e0 in i; auto.
-  exrepnd; exists k; tcsp.
+  unfold equality_of_int_bar in *.
+  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_pres; eauto; clear e; introv ext e.
+  unfold equality_of_int in *; exrepnd; exists k; dands; eauto 3 with slow.
 Qed.
 Hint Resolve per_int_bar_term_symmetric : slow.
 
@@ -102,9 +102,9 @@ Proof.
   unfold per_int in h; exrepnd.
   apply h in e; apply h.
   unfold equality_of_int_bar, equality_of_int in *; exrepnd.
-  exists bar.
-  introv ie i; apply e0 in i; auto.
-  exrepnd; exists k; tcsp.
+  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_pres; eauto; clear e; introv ext e.
+  exrepnd; exists k; dands; eauto 3 with slow.
 Qed.
 Hint Resolve per_int_term_symmetric : slow.
 
@@ -114,11 +114,7 @@ Proof.
   introv per ceq.
   unfold type_value_respecting, per_int_bar in *; exrepnd; GC.
   dands; auto;[].
-  exists bar; dands; auto.
-  introv ie i.
-  applydup per0 in i; auto.
-  assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
-  eauto 3 with slow.
+  eapply in_open_bar_pres; eauto; clear per0; introv ext h; eauto 3 with slow.
 Qed.
 Hint Resolve per_int_bar_type_value_respecting : slow.
 
@@ -137,10 +133,11 @@ Proof.
   introv h e ceq.
   unfold per_int_bar in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
-  unfold equality_of_int_bar, equality_of_int in *; exrepnd; exists bar0.
-  introv ie i; applydup e0 in i; auto.
-  exrepnd; exists k; repnd; dands; auto.
-  assert (lib_extends lib'0 lib) as ext by eauto 3 with slow; eauto 3 with slow.
+  unfold equality_of_int_bar in *.
+  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_pres; eauto; clear e; introv ext e.
+  unfold equality_of_int in *; exrepnd.
+  exists k; repnd; dands; eauto 3 with slow.
 Qed.
 Hint Resolve per_int_bar_term_value_respecting : slow.
 
@@ -150,10 +147,10 @@ Proof.
   introv h e ceq.
   unfold per_int in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
-  unfold equality_of_int_bar, equality_of_int in *; exrepnd; exists bar.
-  introv ie i; applydup e0 in i; auto.
-  exrepnd; exists k; repnd; dands; auto.
-  assert (lib_extends lib'0 lib) as ext by eauto 3 with slow; eauto 3 with slow.
+  unfold equality_of_int_bar, equality_of_int in *; exrepnd.
+  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_pres; eauto; clear e; introv ext e; exrepnd.
+  exists k; repnd; dands; eauto 3 with slow.
 Qed.
 Hint Resolve per_int_term_value_respecting : slow.
 
@@ -163,17 +160,6 @@ Proof.
   introv per1 per2.
   unfold type_transitive, per_int_bar in *; exrepnd.
   dands; auto.
-
-  exists (intersect_bars bar bar0).
-  dands.
-
-  - introv i j; simpl in *; exrepnd.
-    pose proof (per3 lib2) as q; autodimp q hyp.
-    pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
-
-  - introv i j; simpl in *; exrepnd.
-    pose proof (per4 lib1) as q; autodimp q hyp.
-    pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
 Qed.
 Hint Resolve per_int_bar_type_transitive : slow.
 
@@ -209,16 +195,12 @@ Proof.
 
   clear per per0 per1.
 
-  exists (intersect_bars bar1 bar0).
-  unfold equality_of_int in *.
-  introv i j; simpl in *; exrepnd.
+  apply e_all_in_ex_bar_as in i; apply e_all_in_ex_bar_as in j; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_comb; try exact j; clear j.
+  eapply in_open_bar_comb; try exact i; clear i.
+  apply in_ext_implies_in_open_bar; introv ext i j.
 
-  pose proof (i0 lib1) as q; autodimp q hyp; clear i0.
-  pose proof (q lib'0) as w; clear q; autodimp w hyp; eauto 2 with slow; simpl in w.
-
-  pose proof (j0 lib2) as q; autodimp q hyp; clear j0.
-  pose proof (q lib'0) as z; clear q; autodimp z hyp; eauto 2 with slow; simpl in z.
-  exrepnd; spcast.
+  unfold equality_of_int in *; exrepnd.
   computes_to_eqval_ext.
   apply ccequivc_ext_mkc_integer_implies in ceq; subst.
   exists k0; dands; spcast; auto.
@@ -236,16 +218,12 @@ Proof.
 
   clear per per0 per1.
 
-  exists (intersect_bars bar0 bar).
-  unfold equality_of_int in *.
-  introv i j; simpl in *; exrepnd.
+  apply e_all_in_ex_bar_as in i; apply e_all_in_ex_bar_as in j; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_comb; try exact j; clear j.
+  eapply in_open_bar_comb; try exact i; clear i.
+  apply in_ext_implies_in_open_bar; introv ext i j.
 
-  pose proof (i0 lib1) as q; autodimp q hyp; clear i0.
-  pose proof (q lib'0) as w; clear q; autodimp w hyp; eauto 2 with slow; simpl in w.
-
-  pose proof (j0 lib2) as q; autodimp q hyp; clear j0.
-  pose proof (q lib'0) as z; clear q; autodimp z hyp; eauto 2 with slow; simpl in z.
-  exrepnd; spcast.
+  unfold equality_of_int in *; exrepnd.
   computes_to_eqval_ext.
   apply ccequivc_ext_mkc_integer_implies in ceq; subst.
 
@@ -277,15 +255,12 @@ Qed.
 Hint Resolve equality_of_int_bar_monotone : slow.
 
 Lemma per_bar_eq_equality_of_int_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib),
-    (per_bar_eq bar (equality_of_int_bar_lib_per lib))
+  forall (lib : @library o),
+    (per_bar_eq lib (equality_of_int_bar_lib_per lib))
     <=2=> (equality_of_int_bar lib).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
-  introv br ext; introv; simpl.
-  exists (trivial_bar lib'0).
-  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
-  introv y; eauto 3 with slow.
+  apply in_ext_ext_implies_in_open_bar_ext; introv; simpl; eauto 3 with slow.
 Qed.
 
 Lemma per_int_bar_implies_close {o} :
@@ -296,12 +271,12 @@ Proof.
   introv per.
   apply CL_bar.
   unfold per_int_bar in per; exrepnd.
-  exists bar (equality_of_int_bar_lib_per lib).
+  exists (equality_of_int_bar_lib_per lib).
   dands; eauto 3 with slow.
 
-  - introv br ext; introv; simpl.
-    pose proof (per0 _ br _ ext) as per0; simpl in *.
-    pose proof (per1 _ br _ ext) as per1; simpl in *.
+  - eapply in_open_bar_ext_comb2;try exact per0; clear per0.
+    eapply in_open_bar_ext_comb2;try exact per1; clear per1.
+    apply in_ext_ext_implies_in_open_bar_ext; introv pre1 per0.
     apply CL_int.
     unfold per_int; dands; auto.
 

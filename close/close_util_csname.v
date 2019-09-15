@@ -225,15 +225,12 @@ Qed.
 Hint Resolve equality_of_csname_bar_monotone : slow.
 
 Lemma per_bar_eq_equality_of_csname_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib) n,
-    (per_bar_eq bar (equality_of_csname_bar_lib_per lib n))
+  forall (lib : @library o) n,
+    (per_bar_eq lib (equality_of_csname_bar_lib_per lib n))
     <=2=> (equality_of_csname_bar lib n).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
-  introv br ext; introv; simpl.
-  exists (trivial_bar lib'0).
-  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
-  introv y; eauto 3 with slow.
+  apply in_ext_ext_implies_in_open_bar_ext; introv; simpl; eauto 3 with slow.
 Qed.
 
 (*Lemma per_csname_bar_implies_close {o} :
@@ -297,9 +294,9 @@ Proof.
   introv per.
   apply CL_bar.
   unfold per_bar in per; exrepnd.
-  exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_comb;try exact per1; clear per1.
+  apply in_ext_ext_implies_in_open_bar_ext; introv pre1.
   apply CL_csname; auto.
 Qed.
 
@@ -359,18 +356,12 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_csname_eq_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib) n,
-    (per_bar_eq bar (equality_of_csname_bar_lib_per lib n))
+  forall (lib : @library o) n,
+    (per_bar_eq lib (equality_of_csname_bar_lib_per lib n))
     <=2=> (equality_of_csname_bar lib n).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
-
-  unfold equality_of_csname_bar in h; exrepnd.
-  introv br ext; introv.
-  exists (raise_bar bar0 x); introv br' ext'; introv; simpl in *; exrepnd.
-  exists (trivial_bar lib'2).
-  apply in_ext_implies_all_in_bar_trivial_bar; introv y.
-  apply (h0 _ br'1 lib'3); eauto 3 with slow.
+  apply in_ext_ext_implies_in_open_bar_ext; introv; simpl; eauto 3 with slow.
 Qed.
 
 Lemma ccequivc_ext_mkc_csname_implies {o} :
@@ -525,10 +516,9 @@ Proof.
   allrw pera0; clear pera0.
 
   unfold equality_of_csname_bar in *; exrepnd.
-  exists bar; introv br ext; introv.
-  pose proof (perb0 _ br _ ext) as perb0; simpl in *.
-
-  unfold equality_of_csname in *; exrepnd; exists name; dands; auto.
+  apply e_all_in_ex_bar_as in perb; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_pres; eauto; clear perb; introv ext perb.
+  unfold equality_of_csname in *; exrepnd; exists name; dands; eauto 3 with slow.
 Qed.
 Hint Resolve per_csname_term_symmetric : slow.
 
@@ -567,9 +557,11 @@ Proof.
   allrw per0; clear per0.
 
   unfold equality_of_csname_bar in *; exrepnd.
-  exists (intersect_bars bar bar0); introv br ext; introv; simpl in *; exrepnd.
-  pose proof (e1 _ br2 lib'0 (lib_extends_trans ext br1)) as e1; simpl in *.
-  pose proof (e0 _ br0 lib'0 (lib_extends_trans ext br3)) as e0; simpl in *.
+
+  apply e_all_in_ex_bar_as in e1; apply e_all_in_ex_bar_as in e2; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_comb; try exact e1; clear e1.
+  eapply in_open_bar_comb; try exact e2; clear e2.
+  apply in_ext_implies_in_open_bar; introv ext i j.
 
   unfold equality_of_csname in *; exrepnd.
   computes_to_eqval_ext.
@@ -594,10 +586,9 @@ Proof.
   allrw per0; clear per0.
 
   unfold equality_of_csname_bar in *; exrepnd.
-  exists bar; introv br ext; introv; simpl in *; exrepnd.
-  pose proof (e0 _ br _ ext) as e0; simpl in *.
+  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_pres; eauto; clear e; introv ext e.
   unfold equality_of_csname in *; exrepnd; dands; auto.
-  assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
   exists name; dands; spcast; auto; eauto 3 with slow.
 Qed.
 Hint Resolve per_csname_term_value_respecting : slow.
@@ -626,25 +617,10 @@ Proof.
   clear dependent eq.
   clear dependent eq'.
 
-  eapply eq_term_equals_trans;
-    [apply eq_term_equals_sym;
-     eapply (per_bar_eq_intersect_bars_left _ bar)|].
-  eapply eq_term_equals_trans;
-    [|eapply (per_bar_eq_intersect_bars_right _ bar0)].
-
-  apply (implies_all_in_bar_ext_intersect_bars_left _ bar) in pera0.
-  apply (implies_all_in_bar_ext_intersect_bars_right _ bar0) in perb0.
-
-  remember (intersect_bars bar0 bar) as b.
-  clear dependent bar0.
-  clear dependent bar.
   apply implies_eq_term_equals_per_bar_eq.
-  apply all_in_bar_ext_intersect_bars_same.
-
-  introv br ext; introv.
-  pose proof (pera0 _ br _ ext x) as pera0.
-  pose proof (perb0 _ br _ ext x) as perb0.
-  simpl in *.
+  eapply in_open_bar_ext_comb; try exact pera1; clear pera1.
+  eapply in_open_bar_ext_comb; try exact perb1; clear perb1.
+  apply in_ext_ext_implies_in_open_bar_ext; introv perb1 pera1.
   unfold per_csname in *; exrepnd; spcast.
 
   computes_to_eqval_ext.

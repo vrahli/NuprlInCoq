@@ -53,7 +53,6 @@ Lemma per_base_bar_type_symmetric {p} :
   forall (ts : cts(p)), type_symmetric (per_base_bar ts).
 Proof.
   introv h; unfold per_base_bar in *; exrepnd; dands; auto.
-  exists bar; dands; auto.
 Qed.
 Hint Resolve per_base_bar_type_symmetric : slow.
 
@@ -62,17 +61,6 @@ Lemma per_base_bar_type_transitive {p} :
 Proof.
   introv per1 per2.
   unfold per_base_bar in *; exrepnd; dands; auto.
-
-  exists (intersect_bars bar bar0).
-  dands.
-
-  - introv i j; simpl in *; exrepnd.
-    pose proof (per3 lib2) as q; autodimp q hyp.
-    pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
-
-  - introv i j; simpl in *; exrepnd.
-    pose proof (per4 lib1) as q; autodimp q hyp.
-    pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
 Qed.
 Hint Resolve per_base_bar_type_transitive : slow.
 
@@ -82,10 +70,7 @@ Proof.
   introv per ceq.
   unfold type_value_respecting, per_base_bar in *; exrepnd.
   dands; auto;[].
-  exists bar; dands; auto.
-  introv ie i.
-  applydup per0 in i; auto.
-  assert (lib_extends lib'0 lib); eauto 3 with slow.
+  eapply in_open_bar_pres; eauto; clear per0; introv ext h; eauto 3 with slow.
 Qed.
 Hint Resolve per_base_bar_type_value_respecting : slow.
 
@@ -97,9 +82,8 @@ Proof.
   allrw.
   apply k in e.
   unfold per_base_eq in *; exrepnd.
-  exists bar.
-  introv ie i.
-  apply e0 in i; eauto 3 with slow.
+  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_pres; eauto; clear e; introv ext e.
   spcast; apply cequivc_sym; auto.
 Qed.
 Hint Resolve per_base_bar_term_symmetric : slow.
@@ -113,16 +97,11 @@ Proof.
   rw per in i; rw per in j; rw per; clear per.
   allunfold @per_base_eq; exrepnd.
 
-  exists (intersect_bars bar1 bar0).
-  introv i j; simpl in *; exrepnd.
-
-  pose proof (i0 lib1) as q; autodimp q hyp; clear i0.
-  pose proof (q lib'0) as w; clear q; autodimp w hyp; eauto 2 with slow; simpl in w.
-
-  pose proof (j0 lib2) as q; autodimp q hyp; clear j0.
-  pose proof (q lib'0) as z; clear q; autodimp z hyp; eauto 2 with slow; simpl in z.
-  exrepnd; spcast.
-  eapply cequivc_trans; eauto.
+  apply e_all_in_ex_bar_as in i; apply e_all_in_ex_bar_as in j; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_comb; try exact j; clear j.
+  eapply in_open_bar_comb; try exact i; clear i.
+  apply in_ext_implies_in_open_bar; introv ext i j.
+  spcast; eapply cequivc_trans; eauto.
 Qed.
 Hint Resolve per_base_bar_term_transitive : slow.
 
@@ -133,9 +112,9 @@ Proof.
   unfold per_nat_bar in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
   unfold per_base_eq in *.
-  exrepnd; exists bar.
-  introv ie i; applydup e0 in i; auto.
-  apply (ceq lib'0); eauto 3 with slow.
+  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_pres; eauto; clear e; introv ext e.
+  pose proof (ceq _ ext) as ceq; simpl in *; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve per_base_bar_term_value_respecting : slow.
 
@@ -156,15 +135,12 @@ Qed.
 Hint Resolve per_base_eq_monotone : slow.
 
 Lemma per_bar_eq_per_base_eq_lib_per {o} :
-  forall lib (bar : @BarLib o lib),
-    (per_bar_eq bar (per_base_eq_lib_per lib))
+  forall (lib : @library o),
+    (per_bar_eq lib (per_base_eq_lib_per lib))
     <=2=> (per_base_eq lib).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
-  introv br ext; introv; simpl.
-  exists (trivial_bar lib'0).
-  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
-  introv y; eauto 3 with slow.
+  apply in_ext_ext_implies_in_open_bar_ext; introv; simpl; eauto 3 with slow.
 Qed.
 
 Lemma per_base_bar_implies_close {o} :
@@ -175,12 +151,12 @@ Proof.
   introv per.
   apply CL_bar.
   unfold per_base_bar in per; exrepnd.
-  exists bar (per_base_eq_lib_per lib).
+  exists (per_base_eq_lib_per lib).
   dands; eauto 3 with slow.
 
-  - introv br ext; introv; simpl.
-    pose proof (per0 _ br _ ext) as per0; simpl in *.
-    pose proof (per1 _ br _ ext) as per1; simpl in *.
+  - eapply in_open_bar_ext_comb2;try exact per0; clear per0.
+    eapply in_open_bar_ext_comb2;try exact per1; clear per1.
+    apply in_ext_ext_implies_in_open_bar_ext; introv pre1 per0.
     apply CL_base.
     unfold per_base; dands; auto.
 

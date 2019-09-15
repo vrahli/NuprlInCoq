@@ -56,7 +56,6 @@ Lemma per_qnat_bar_type_symmetric {p} :
   forall (ts : cts(p)), type_symmetric (per_qnat_bar ts).
 Proof.
   unfold type_symmetric, per_qnat_bar; sp.
-  exists bar; dands; auto.
 Qed.
 Hint Resolve per_qnat_bar_type_symmetric : slow.
 
@@ -75,8 +74,13 @@ Proof.
   introv h e.
   unfold per_qnat_bar in h; exrepnd.
   apply h in e; apply h.
-  unfold equality_of_qnat_bar in *; exrepnd; exists bar0.
-  introv ie i; apply e0 in i; eauto 2 with slow.
+  unfold equality_of_qnat_bar in *.
+  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_pres; eauto; clear e; introv ext e.
+  unfold equality_of_qnat in *; exrepnd.
+  dands.
+  { exists n; dands; eauto 3 with slow. }
+  { exists n0; dands; eauto 3 with slow. }
 Qed.
 Hint Resolve per_qnat_bar_term_symmetric : slow.
 
@@ -99,10 +103,7 @@ Proof.
   introv per ceq.
   unfold type_value_respecting, per_qnat_bar in *; exrepnd; GC.
   dands; auto;[].
-  exists bar; dands; auto.
-  introv ie i.
-  applydup per0 in i; auto.
-  assert (lib_extends lib'0 lib) as ext; eauto 3 with slow.
+  eapply in_open_bar_pres; eauto; clear per0; introv ext h; eauto 3 with slow.
 Qed.
 Hint Resolve per_qnat_bar_type_value_respecting : slow.
 
@@ -113,11 +114,10 @@ Proof.
   unfold per_qnat_bar in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
   unfold equality_of_qnat_bar in *.
-  exrepnd; exists bar0.
-  introv ie i; applydup e0 in i; auto.
+  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_pres; eauto; clear e; introv ext e.
   unfold equality_of_qnat in *; exrepnd; GC; dands; eauto.
-  assert (lib_extends lib'0 lib) as xt by eauto 4 with slow.
-  pose proof (ceq _ xt) as ceq; simpl in *; spcast.
+  pose proof (ceq _ ext) as ceq; simpl in *; spcast.
   exists n; spcast.
   apply cequivc_nat_implies_computes_to_valc.
   eapply cequivc_trans;[|eauto].
@@ -132,17 +132,6 @@ Proof.
   introv per1 per2.
   unfold type_transitive, per_qnat_bar in *; exrepnd.
   dands; auto.
-
-  exists (intersect_bars bar bar0).
-  dands.
-
-  - introv i j; simpl in *; exrepnd.
-    pose proof (per3 lib2) as q; autodimp q hyp.
-    pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
-
-  - introv i j; simpl in *; exrepnd.
-    pose proof (per4 lib1) as q; autodimp q hyp.
-    pose proof (q lib'0) as w; simpl in w; autodimp w hyp; eauto 2 with slow.
 Qed.
 Hint Resolve per_qnat_bar_type_transitive : slow.
 
@@ -169,16 +158,13 @@ Proof.
 
   clear per per0 per1.
 
-  exists (intersect_bars bar1 bar0).
-  unfold equality_of_qnat in *.
-  introv i j; simpl in *; exrepnd.
+  apply e_all_in_ex_bar_as in i; apply e_all_in_ex_bar_as in j; apply e_all_in_ex_bar_as.
+  eapply in_open_bar_comb; try exact j; clear j.
+  eapply in_open_bar_comb; try exact i; clear i.
+  apply in_ext_implies_in_open_bar; introv ext i j.
 
-  pose proof (i0 lib1) as q; autodimp q hyp; clear i0.
-  pose proof (q lib'0) as w; clear q; autodimp w hyp; eauto 2 with slow; simpl in w.
-
-  pose proof (j0 lib2) as q; autodimp q hyp; clear j0.
-  pose proof (q lib'0) as z; clear q; autodimp z hyp; eauto 2 with slow; simpl in z.
-  exrepnd; spcast; dands; eexists; spcast; eauto.
+  unfold equality_of_qnat in *; exrepnd.
+  dands; eexists; eauto.
 Qed.
 Hint Resolve per_qnat_bar_term_transitive : slow.
 
@@ -216,15 +202,12 @@ Qed.
 Hint Resolve equality_of_qnat_bar_monotone : slow.
 
 Lemma per_bar_eq_equality_of_qnat_bar_lib_per {o} :
-  forall lib (bar : @BarLib o lib),
-    (per_bar_eq bar (equality_of_qnat_bar_lib_per lib))
+  forall (lib : @library o),
+    (per_bar_eq lib (equality_of_qnat_bar_lib_per lib))
     <=2=> (equality_of_qnat_bar lib).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
-  introv br ext; introv; simpl.
-  exists (trivial_bar lib'0).
-  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
-  introv y; eauto 3 with slow.
+  apply in_ext_ext_implies_in_open_bar_ext; introv; simpl; eauto 3 with slow.
 Qed.
 
 Lemma per_qnat_bar_implies_close {o} :
@@ -235,12 +218,12 @@ Proof.
   introv per.
   apply CL_bar.
   unfold per_qnat_bar in per; exrepnd.
-  exists bar (equality_of_qnat_bar_lib_per lib).
+  exists (equality_of_qnat_bar_lib_per lib).
   dands; eauto 3 with slow.
 
-  - introv br ext; introv; simpl.
-    pose proof (per0 _ br _ ext) as per0; simpl in *.
-    pose proof (per1 _ br _ ext) as per1; simpl in *.
+  - eapply in_open_bar_ext_comb2;try exact per0; clear per0.
+    eapply in_open_bar_ext_comb2;try exact per1; clear per1.
+    apply in_ext_ext_implies_in_open_bar_ext; introv pre1 per0.
     apply CL_qnat.
     unfold per_qnat; dands; auto.
 

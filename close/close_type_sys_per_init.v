@@ -45,9 +45,8 @@ Proof.
   introv ceq comp.
   unfold computes_to_uni in *; exrepnd.
   exists bar.
-  introv br ext.
-  pose proof (comp0 _ br _ ext) as comp0; simpl in *.
-  assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
+  apply e_all_in_bar_as in comp0; apply e_all_in_bar_as.
+  eapply in_open_bar_pres; eauto; clear comp0; introv ext h.
   exrepnd; exists i; eauto 3 with slow.
 Qed.
 Hint Resolve ccequivc_ext_preserves_computes_to_uni : slow.

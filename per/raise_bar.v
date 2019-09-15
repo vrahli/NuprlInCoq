@@ -694,4 +694,18 @@ Proof.
   apply h; eauto 3 with slow.
 Qed.
 
+Lemma in_open_bar_comb {o} :
+  forall (lib : @library o) (F G : library -> Prop),
+    in_open_bar lib (fun lib' => F lib' -> G lib')
+    -> in_open_bar lib F
+    -> in_open_bar lib G.
+Proof.
+  introv h q ext.
+  pose proof (h _ ext) as h; exrepnd.
+  pose proof (q _ (lib_extends_trans xt ext)) as q; exrepnd.
+  exists lib''0 (lib_extends_trans xt0 xt).
+  introv z; introv.
+  apply h1; eauto 3 with slow.
+Qed.
+
 (* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *)

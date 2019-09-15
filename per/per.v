@@ -913,6 +913,17 @@ Definition per_eq {o} (ts : cts(o)) lib T1 T2 (eq : per(o)) : [U] :=
       # eqorceq_ext lib eqa a2 b2
       # eq <=2=> (eq_per_eq_bar lib a1 a2 eqa) }}.
 
+Definition per_eq_bar {o} (ts : cts(o)) lib (T1 T2 : @CTerm o) (eq : per(o)) : [U] :=
+  {A, B, a1, a2, b1, b2 : CTerm
+  , {eqa : lib-per(lib,o)
+  , T1 ==o==>(lib) (mkc_equality a1 a2 A)
+  # T2 ==o==>(lib) (mkc_equality b1 b2 B)
+  # in_open_bar_ext lib (fun lib' x => ts lib' A B (eqa lib' x))
+  # in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a1 b1)
+  # in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a2 b2)
+  # eq <=2=> (eq_per_eq_bar lib a1 a2 eqa) }}.
+
+
 
 Definition per_req_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) :=
   { x1 , x2 : CTerm
@@ -4344,6 +4355,7 @@ Ltac one_unfold_per :=
     | [ H : per_cequiv      _ _ _ _ _ |- _ ] => unfold per_cequiv      in H; exrepd
     | [ H : per_cequiv_bar  _ _ _ _ _ |- _ ] => unfold per_cequiv_bar  in H; exrepd
     | [ H : per_eq          _ _ _ _ _ |- _ ] => unfold per_eq          in H; exrepd
+    | [ H : per_eq_bar      _ _ _ _ _ |- _ ] => unfold per_eq_bar      in H; exrepd
     | [ H : per_req         _ _ _ _ _ |- _ ] => unfold per_req         in H; exrepd
     | [ H : per_teq         _ _ _ _ _ |- _ ] => unfold per_teq         in H; exrepd
     | [ H : per_isect       _ _ _ _ _ |- _ ] => unfold per_isect       in H; exrepd
