@@ -1128,7 +1128,6 @@ Definition per_product_eq {p}
    , {e : eqa a a'
       , t ===>(lib) (mkc_pair a b)
       # t' ===>(lib) (mkc_pair a' b')
-      # eqa a a'
       # eqb a a' e b b'}}.
 
 Definition per_product {p}

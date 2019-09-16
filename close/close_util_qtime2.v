@@ -46,76 +46,49 @@ Lemma per_bar_per_qtime_implies_eq_term_equals_per_qtime_eq_bar {o} :
 Proof.
   introv comp tsa per.
   unfold per_bar in *; exrepnd.
-  eapply eq_term_equals_trans;[eauto|]; clear per1.
+  eapply eq_term_equals_trans;[eauto|]; clear per0.
 
   introv; split; intro h.
 
-  - unfold per_qtime_eq_bar, per_qtime_eq.
-    apply collapse2bars_ext.
-    { introv; split; intro q; introv; introv.
-      - exrepnd; eexists; eexists; dands; eauto.
-        eapply (lib_per_cond _ eqa); eauto.
-      - exrepnd; eexists; eexists; dands; eauto.
-        eapply (lib_per_cond _ eqa); eauto. }
+  - unfold per_qtime_eq_bar; apply e_all_in_ex_bar_ext_as.
+    apply in_open_bar_ext_dup.
+    unfold per_bar_eq in *.
+    eapply in_open_bar_ext_comb; try exact per1; clear per1.
+    eapply in_open_bar_ext_comb; try exact h; clear h.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv h per1; exrepnd.
 
-    exists bar.
-    introv br ext; introv.
-    pose proof (h _ br _ ext x) as h; simpl in *.
-    exrepnd.
+    unfold per_qtime in per1; exrepnd.
+    apply per0 in h; clear per0.
+    unfold per_qtime_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+    eapply in_open_bar_ext_pres; try exact h; clear h; introv h; introv.
 
-    apply collapse2bars_ext.
-    { introv; split; intro q; introv; introv.
-      - exrepnd; eexists; eexists; dands; eauto.
-        eapply (lib_per_cond _ eqa); eauto.
-      - exrepnd; eexists; eexists; dands; eauto.
-        eapply (lib_per_cond _ eqa); eauto. }
-
-    exists bar'.
-    introv br' ext'; introv.
-    pose proof (h0 _ br' _ ext' x0) as h0; simpl in *.
-
-    assert (lib_extends lib'2 lib') as xt1 by eauto 3 with slow.
-    pose proof (per0 _ br lib'2 xt1 (lib_extends_trans x0 x)) as per0; simpl in *.
-    unfold per_qtime in per0; exrepnd.
-    apply per1 in h0; clear per1.
-    unfold per_qtime_eq_bar, per_qtime_eq in h0; exrepnd.
-
-    exists bar0.
-    introv br'' ext''; introv.
-    pose proof (h1 _ br'' _ ext'' x1) as h1; simpl in *; exrepnd.
-    eexists; eexists; dands; eauto.
-
-    assert (lib_extends lib'2 lib) as xt2 by eauto 3 with slow.
-    eapply lib_extends_preserves_ccomputes_to_valc in comp; try exact xt2; eauto.
+    eapply lib_extends_preserves_ccomputes_to_valc in comp; try exact e; eauto.
     computes_to_eqval_ext.
     apply cequivc_ext_mkc_qtime_right in ceq; eauto 3 with slow;[]; repnd.
 
-    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ xt2) in per3;
+    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ e) in per3;
       try exact tsa; eauto 3 with slow.
-    pose proof (per3 _ x1) as per3; simpl in *.
-    eapply (lib_per_cond _ eqa); apply per3; auto.
+    pose proof (per3 _ e0) as per3; simpl in *.
+    eapply implies_eq_term_equals_per_qtime_eq;[|eauto].
+    eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
+    eapply (lib_per_cond _ eqa); auto.
 
-  - introv br ext; introv.
-    exists (raise_bar bar x); introv br' ext'; introv; simpl in *; exrepnd.
-    pose proof (per0 _ br'1 lib'2 (lib_extends_trans ext' br'2) (lib_extends_trans x0 x)) as per0; simpl in *.
-    unfold per_qtime in per0; exrepnd.
-    apply per1; clear per1.
+  - eapply in_open_bar_ext_comb; try exact per1; clear per1.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv per1; introv.
+    unfold per_qtime in per1; exrepnd.
+    apply per0; clear per0.
 
-    assert (lib_extends lib'2 lib) as xt by eauto 3 with slow.
-    eapply lib_extends_preserves_ccomputes_to_valc in comp; try exact xt2; eauto.
+    eapply lib_extends_preserves_ccomputes_to_valc in comp; try exact e; eauto.
     computes_to_eqval_ext.
     apply cequivc_ext_mkc_qtime_right in ceq; eauto 3 with slow;[]; repnd.
 
-    apply (sub_per_per_qtime_eq_bar _ _ (lib_extends_trans x0 x)) in h.
+    apply (sub_per_per_qtime_eq_bar _ _ e) in h.
     eapply implies_eq_term_equals_per_qtime_eq_bar; try exact h.
 
-    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ xt) in per3;
+    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ e) in per3;
       try exact tsa; eauto 3 with slow.
-    simpl; unfold raise_ext_per; auto.
-    introv.
-    pose proof (per3 _ e) as per3; simpl in *.
-    eapply eq_term_equals_trans;[eauto|].
-    introv; split; intro w; eapply (lib_per_cond _ eqa); eauto.
 Qed.
 
 Lemma per_bar_per_qtime_implies_close {o} :
@@ -126,9 +99,8 @@ Proof.
   introv per.
   apply CL_bar.
   unfold per_bar in per; exrepnd.
-  exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_pres; try exact per1; clear per1; introv per1; introv.
   apply CL_qtime; auto.
 Qed.
 
@@ -143,18 +115,17 @@ Lemma type_value_respecting_trans_per_bar_per_qtime1 {o} :
 Proof.
   introv tsa comp1 comp2 ceqa per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; try exact per1; clear per1; introv per1; introv.
 
   unfold per_qtime in *; exrepnd.
 
-  eapply ccomputes_to_valc_ext_monotone in comp1;[|exact x].
-  eapply ccomputes_to_valc_ext_monotone in comp2;[|exact x].
+  eapply ccomputes_to_valc_ext_monotone in comp1;[|exact e].
+  eapply ccomputes_to_valc_ext_monotone in comp2;[|exact e].
   computes_to_eqval_ext.
   apply cequivc_ext_mkc_qtime_right in ceq; eauto 3 with slow;[]; repnd.
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
 
   exists eqa1 A B; dands; eauto 3 with slow.
 
@@ -173,18 +144,17 @@ Lemma type_value_respecting_trans_per_bar_per_qtime2 {o} :
 Proof.
   introv tsa comp1 comp2 ceqa per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; try exact per1; clear per1; introv per1; introv.
 
   unfold per_qtime in *; exrepnd.
 
-  eapply ccomputes_to_valc_ext_monotone in comp1;[|exact x].
-  eapply ccomputes_to_valc_ext_monotone in comp2;[|exact x].
+  eapply ccomputes_to_valc_ext_monotone in comp1;[|exact e].
+  eapply ccomputes_to_valc_ext_monotone in comp2;[|exact e].
   computes_to_eqval_ext.
   apply cequivc_ext_mkc_qtime_right in ceq; eauto 3 with slow;[]; repnd.
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
 
   exists eqa1 A A0; dands; eauto 3 with slow.
 
@@ -201,14 +171,14 @@ Proof.
   introv tsa per.
 
   unfold per_qtime_eq_bar in *; exrepnd.
-  exists bar; introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
+  eapply in_open_bar_ext_pres; try exact per; clear per; introv per.
 
-  pose proof (tsa _ x) as tsa; simpl in *.
+  pose proof (tsa _ e) as tsa; simpl in *.
   apply type_sys_props4_implies_term_equality_symmetric in tsa.
 
   unfold per_qtime_eq in *; exrepnd.
-  exists y x0; dands; eauto 3 with slow.
+  exists y x; dands; eauto 3 with slow.
 Qed.
 
 Lemma per_qtime_eq_bar_trans {o} :
@@ -221,18 +191,18 @@ Proof.
   introv tsa pera perb.
 
   unfold per_qtime_eq_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar); introv br ext; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br0 _ (lib_extends_trans ext br3) x) as pera0; simpl in *.
-  pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
+  apply e_all_in_ex_bar_ext_as in pera; apply e_all_in_ex_bar_ext_as in perb; apply e_all_in_ex_bar_ext_as.
+  eapply in_open_bar_ext_comb; try exact perb; clear perb.
+  eapply in_open_bar_ext_pres; try exact pera; clear pera; introv pera perb.
 
-  pose proof (tsa _ x) as tsa; simpl in *.
+  pose proof (tsa _ e) as tsa; simpl in *.
   apply type_sys_props4_implies_term_equality_transitive in tsa.
 
   unfold per_qtime_eq in *; exrepnd; spcast.
   pose proof (pera3 _ (lib_extends_refl _)) as h1; simpl in *.
   pose proof (perb3 _ (lib_extends_refl _)) as h2; simpl in *.
   spcast.
-  exists x1 y0; dands; spcast; eauto 3 with slow.
+  exists x0 y0; dands; spcast; eauto 3 with slow.
   eapply cequivc_trans;[apply cequivc_sym|]; eauto.
 Qed.
 
@@ -246,17 +216,17 @@ Proof.
   introv tsa per ceq.
 
   unfold per_qtime_eq_bar in *; exrepnd.
-  exists bar; introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
+  eapply in_open_bar_ext_pres; try exact per; clear per; introv per.
 
-  pose proof (tsa _ x) as tsa; simpl in *.
+  pose proof (tsa _ e) as tsa; simpl in *.
   applydup @type_sys_props4_implies_term_equality_symmetric in tsa as syma.
   applydup @type_sys_props4_implies_term_equality_transitive in tsa as transa.
   applydup @type_sys_props4_implies_term_equality_respecing in tsa as respa.
 
   unfold per_qtime_eq in *; exrepnd.
-  pose proof (ceq _ x) as h1; simpl in *.
-  exists x0 y; dands; spcast; eauto 3 with slow.
+  pose proof (ceq _ e) as h1; simpl in *.
+  exists x y; dands; spcast; eauto 3 with slow.
   eapply cequivc_trans;[|eauto]; apply cequivc_sym;auto.
 Qed.
 
@@ -269,16 +239,15 @@ Lemma per_bar_per_qtime_sym {o} :
 Proof.
   introv tsa comp per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; try exact per1; clear per1; introv per1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp;[|exact x].
+  eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
   unfold per_qtime in *; exrepnd.
   computes_to_eqval_ext.
   apply cequivc_ext_mkc_qtime_right in ceq; eauto 3 with slow;[]; repnd.
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
   exists eqa1 B A; dands; eauto 3 with slow.
   eapply in_ext_ext_type_sys_props4_in_ext_ext_sym; eauto;
     try (complete (eapply in_ext_ext_type_sys_props_type_value_respecting_trans1;
@@ -294,16 +263,15 @@ Lemma per_bar_per_qtime_sym_rev {o} :
 Proof.
   introv tsa comp per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; try exact per1; clear per1; introv per1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp;[|exact x].
+  eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
   unfold per_qtime in *; exrepnd.
   computes_to_eqval_ext.
   apply cequivc_ext_mkc_qtime_right in ceq; eauto 3 with slow;[]; repnd.
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
   exists eqa1 A A0; dands; eauto 3 with slow.
   eapply in_ext_ext_type_sys_props_type_value_respecting_trans2;
     try exact tspa; eauto; eauto 3 with slow.
@@ -319,23 +287,19 @@ Lemma per_bar_per_qtime_trans1 {o} :
 Proof.
   introv tsa comp pera perb.
   unfold per_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar) eqa1; dands; auto;
-    [|eapply eq_term_equals_trans;[eauto|];
-      apply eq_term_equals_sym;
-      apply per_bar_eq_intersect_bars_left].
-  introv br ext; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br0 _ (lib_extends_trans ext br3) x) as pera0; simpl in *.
-  pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
+  exists eqa1; dands; auto.
+  eapply in_open_bar_ext_comb; try exact perb1; clear perb1.
+  eapply in_open_bar_ext_pres; try exact pera1; clear pera1; introv pera1 perb1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp;[|exact x].
+  eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
   unfold per_qtime in *; exrepnd.
   computes_to_eqval_ext.
-  hide_hyp perb0.
+  hide_hyp perb1.
   computes_to_eqval_ext.
   apply cequivc_ext_mkc_qtime_right in ceq; eauto 3 with slow;[]; repnd.
   apply cequivc_ext_mkc_qtime_right in ceq0; eauto 3 with slow;[]; repnd.
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
   exists eqa3 A1 B; dands; eauto 3 with slow.
   eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_trans1; try exact tsa; eauto.
   { eapply in_ext_ext_type_sys_props4_in_ext_ext_sym; eauto.
@@ -355,23 +319,19 @@ Lemma per_bar_per_qtime_trans2 {o} :
 Proof.
   introv tsa comp pera perb.
   unfold per_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar) eqa0; dands; auto;
-    [|eapply eq_term_equals_trans;[eauto|];
-      apply eq_term_equals_sym;
-      apply per_bar_eq_intersect_bars_right].
-  introv br ext; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br0 _ (lib_extends_trans ext br3) x) as pera0; simpl in *.
-  pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_comb; try exact perb1; clear perb1.
+  eapply in_open_bar_ext_pres; try exact pera1; clear pera1; introv pera1 perb1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp;[|exact x].
+  eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
   unfold per_qtime in *; exrepnd.
   computes_to_eqval_ext.
-  hide_hyp perb0.
+  hide_hyp perb1.
   computes_to_eqval_ext.
   apply cequivc_ext_mkc_qtime_right in ceq; eauto 3 with slow;[]; repnd.
   apply cequivc_ext_mkc_qtime_right in ceq0; eauto 3 with slow;[]; repnd.
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
   exists eqa2 A1 B; dands; eauto 3 with slow.
   eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_trans2; try exact tsa; eauto.
   { eapply in_ext_ext_type_sys_props4_in_ext_ext_sym; eauto.
@@ -391,23 +351,19 @@ Lemma per_bar_per_qtime_trans3 {o} :
 Proof.
   introv tsa comp pera perb.
   unfold per_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar) eqa1; dands; auto;
-    [|eapply eq_term_equals_trans;[eauto|];
-      apply eq_term_equals_sym;
-      apply per_bar_eq_intersect_bars_left].
-  introv br ext; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br0 _ (lib_extends_trans ext br3) x) as pera0; simpl in *.
-  pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
+  exists eqa1; dands; auto.
+  eapply in_open_bar_ext_comb; try exact perb1; clear perb1.
+  eapply in_open_bar_ext_pres; try exact pera1; clear pera1; introv pera1 perb1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp;[|exact x].
+  eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
   unfold per_qtime in *; exrepnd.
   computes_to_eqval_ext.
-  hide_hyp perb0.
+  hide_hyp perb1.
   computes_to_eqval_ext.
   apply cequivc_ext_mkc_qtime_right in ceq; eauto 3 with slow;[]; repnd.
   apply cequivc_ext_mkc_qtime_right in ceq0; eauto 3 with slow;[]; repnd.
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
   exists eqa3 A1 B; dands; eauto 3 with slow.
   eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_trans3; try exact tsa; eauto.
   { apply in_ext_ext_type_sys_props4_sym in tsa.
@@ -429,23 +385,19 @@ Lemma per_bar_per_qtime_trans4 {o} :
 Proof.
   introv tsa comp pera perb.
   unfold per_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar) eqa0; dands; auto;
-    [|eapply eq_term_equals_trans;[eauto|];
-      apply eq_term_equals_sym;
-      apply per_bar_eq_intersect_bars_right].
-  introv br ext; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br0 _ (lib_extends_trans ext br3) x) as pera0; simpl in *.
-  pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_comb; try exact perb1; clear perb1.
+  eapply in_open_bar_ext_pres; try exact pera1; clear pera1; introv pera1 perb1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp;[|exact x].
+  eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
   unfold per_qtime in *; exrepnd.
   computes_to_eqval_ext.
-  hide_hyp perb0.
+  hide_hyp perb1.
   computes_to_eqval_ext.
   apply cequivc_ext_mkc_qtime_right in ceq; eauto 3 with slow;[]; repnd.
   apply cequivc_ext_mkc_qtime_right in ceq0; eauto 3 with slow;[]; repnd.
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
   exists eqa2 A1 B; dands; eauto 3 with slow.
   eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_trans4; try exact tsa; eauto.
   { apply in_ext_ext_type_sys_props4_sym in tsa.
@@ -534,16 +486,15 @@ Lemma type_value_respecting_trans_per_bar_per_qtime3 {o} :
 Proof.
   introv tsa comp1 ceqa per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; try exact per1; clear per1; introv per1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp1;[|exact x].
+  eapply ccomputes_to_valc_ext_monotone in comp1;[|exact e].
   unfold per_qtime in *; exrepnd.
   computes_to_eqval_ext.
   apply cequivc_ext_mkc_qtime_right in ceq; eauto 3 with slow;[]; repnd.
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
 
   exists eqa1 A B; dands; eauto 3 with slow.
   eapply in_ext_ext_type_sys_props_type_value_respecting_trans1; eauto; eauto 3 with slow.

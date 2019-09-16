@@ -122,70 +122,51 @@ Lemma per_bar_per_image_implies_eq_term_equals_per_image_eq_bar {o} :
 Proof.
   introv comp tsa per.
   unfold per_bar in *; exrepnd.
-  eapply eq_term_equals_trans;[eauto|]; clear per1.
+  eapply eq_term_equals_trans;[eauto|]; clear per0.
 
   introv; split; intro h.
 
-  - unfold per_image_eq_bar.
-    apply collapse2bars_ext.
-    { introv; split; intro q; introv;
-        eapply implies_eq_term_equals_eq_image_eq; try exact q; apply lib_per_cond. }
+  - unfold per_image_eq_bar; apply e_all_in_ex_bar_ext_as.
+    apply in_open_bar_ext_dup.
+    unfold per_bar_eq in *.
+    eapply in_open_bar_ext_comb; try exact per1; clear per1.
+    eapply in_open_bar_ext_comb; try exact h; clear h.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv h per1; exrepnd.
 
-    exists bar.
-    introv br ext; introv.
-    pose proof (h _ br _ ext x) as h; simpl in *.
-    exrepnd.
+    unfold per_image in per1; exrepnd.
+    apply per0 in h; clear per0.
+    unfold per_image_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+    eapply in_open_bar_ext_pres; try exact h; clear h; introv h; introv.
 
-    apply collapse2bars_ext.
-    { introv; split; intro q; introv;
-        eapply implies_eq_term_equals_eq_image_eq; try exact q; apply lib_per_cond. }
-
-    exists bar'.
-    introv br' ext'; introv.
-    pose proof (h0 _ br' _ ext' x0) as h0; simpl in *.
-
-    assert (lib_extends lib'2 lib') as xt1 by eauto 3 with slow.
-    pose proof (per0 _ br lib'2 xt1 (lib_extends_trans x0 x)) as per0; simpl in *.
-    unfold per_image in per0; exrepnd.
-    apply per1 in h0; clear per1.
-    unfold per_image_eq_bar in h0; exrepnd.
-
-    exists bar0.
-    introv br'' ext''; introv.
-    pose proof (h1 _ br'' _ ext'' x1) as h1; simpl in *.
-
-    assert (lib_extends lib'2 lib) as xt2 by eauto 3 with slow.
-
-    eapply ccomputes_to_valc_ext_monotone in comp;[|exact xt2].
+    eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
     computes_to_eqval_ext.
     apply cequivc_ext_mkc_image_implies in ceq; repnd.
 
     dup per3 as eqas.
-    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ xt2) in eqas;
+    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ e) in eqas;
       [|exact tsa|]; eauto 3 with slow;[].
 
-    eapply eq_term_equals_per_image_eq_if; try exact h1; eauto 3 with slow.
-    pose proof (eqas _ x1) as q; simpl in q.
+    eapply eq_term_equals_per_image_eq_if; try exact h; eauto 3 with slow.
+    pose proof (eqas _ e0) as q; simpl in q.
     eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
     apply lib_per_cond.
 
-  - introv br ext; introv.
-    exists (raise_bar bar x); introv br' ext'; introv; simpl in *; exrepnd.
-    pose proof (per0 _ br'1 lib'2 (lib_extends_trans ext' br'2) (lib_extends_trans x0 x)) as per0; simpl in *.
-    unfold per_image in per0; exrepnd; spcast.
+  - eapply in_open_bar_ext_comb; try exact per1; clear per1.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv per1; introv.
+    unfold per_image in per1; exrepnd.
+    apply per0; clear per0.
 
-    eapply ccomputes_to_valc_ext_monotone in comp;[|exact (lib_extends_trans x0 x)].
+    eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
     computes_to_eqval_ext.
     apply cequivc_ext_mkc_image_implies in ceq; repnd.
-    apply per1.
-
-    assert (lib_extends lib'2 lib) as xt by eauto 3 with slow.
 
     dup per3 as eqas.
-    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ (lib_extends_trans x0 x)) in eqas;
+    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ e) in eqas;
       [|exact tsa|]; eauto 3 with slow.
 
-    apply (sub_per_per_image_eq_bar _ _ (lib_extends_trans x0 x)) in h.
+    apply (sub_per_per_image_eq_bar _ _ e) in h.
     eapply implies_eq_term_equals_per_image_eq_bar;[| |eauto]; eauto 3 with slow.
 Qed.
 
@@ -197,9 +178,8 @@ Proof.
   introv per.
   apply CL_bar.
   unfold per_bar in per; exrepnd.
-  exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear per1; introv per1.
   apply CL_image; auto.
 Qed.
 
@@ -224,16 +204,15 @@ Lemma type_value_respecting_trans_per_bar_per_image1 {o} :
 Proof.
   introv tsa comp1 comp2 ceqa ceqb per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear per1; introv per1.
 
   unfold per_image in *; exrepnd.
 
-  eapply ccomputes_to_valc_ext_monotone in comp1;[|exact x].
-  eapply ccomputes_to_valc_ext_monotone in comp2;[|exact x].
+  eapply ccomputes_to_valc_ext_monotone in comp1;[|exact e].
+  eapply ccomputes_to_valc_ext_monotone in comp2;[|exact e].
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
 
   spcast; computes_to_eqval_ext.
   apply cequivc_ext_mkc_image_implies in ceq; repnd.
@@ -257,16 +236,15 @@ Lemma type_value_respecting_trans_per_bar_per_image2 {o} :
 Proof.
   introv tsa comp1 comp2 ceqa ceqb per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear per1; introv per1.
 
   unfold per_image in *; exrepnd.
 
-  eapply ccomputes_to_valc_ext_monotone in comp1;[|exact x].
-  eapply ccomputes_to_valc_ext_monotone in comp2;[|exact x].
+  eapply ccomputes_to_valc_ext_monotone in comp1;[|exact e].
+  eapply ccomputes_to_valc_ext_monotone in comp2;[|exact e].
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
 
   spcast; computes_to_eqval_ext.
   apply cequivc_ext_mkc_image_implies in ceq; repnd.
@@ -332,12 +310,11 @@ Lemma per_bar_per_image_sym {o} :
 Proof.
   introv tsa comp per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear per1; introv per1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp;[|exact x].
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
 
   eapply per_image_sym; try exact comp; eauto.
 Qed.
@@ -351,12 +328,11 @@ Lemma per_bar_per_image_sym_rev {o} :
 Proof.
   introv tsa comp per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear per1; introv per1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp;[|exact x].
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
 
   eapply per_image_sym_rev; try exact comp; eauto.
 Qed.
@@ -497,16 +473,12 @@ Lemma per_bar_per_image_trans1 {o} :
 Proof.
   introv tsa comp pera perb.
   unfold per_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar) eqa1; dands; auto;
-    [|eapply eq_term_equals_trans;[eauto|];
-      apply eq_term_equals_sym;
-      apply per_bar_eq_intersect_bars_left].
-  introv br ext; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br0 _ (lib_extends_trans ext br3) x) as pera0; simpl in *.
-  pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
+  exists eqa1; dands; auto.
+  eapply in_open_bar_ext_comb; try exact perb1; clear perb1.
+  eapply in_open_bar_ext_pres; eauto; clear pera1; introv pera1 perb1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp;[|exact x].
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
 
   eapply per_image_trans1; try exact comp; eauto.
 Qed.
@@ -521,16 +493,12 @@ Lemma per_bar_per_image_trans2 {o} :
 Proof.
   introv tsa comp pera perb.
   unfold per_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar) eqa0; dands; auto;
-    [|eapply eq_term_equals_trans;[eauto|];
-      apply eq_term_equals_sym;
-      apply per_bar_eq_intersect_bars_right].
-  introv br ext; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br0 _ (lib_extends_trans ext br3) x) as pera0; simpl in *.
-  pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_comb; try exact perb1; clear perb1.
+  eapply in_open_bar_ext_pres; eauto; clear pera1; introv pera1 perb1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp;[|exact x].
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
 
   eapply per_image_trans2; try exact comp; eauto.
 Qed.
@@ -545,16 +513,12 @@ Lemma per_bar_per_image_trans3 {o} :
 Proof.
   introv tsa comp pera perb.
   unfold per_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar) eqa1; dands; auto;
-    [|eapply eq_term_equals_trans;[eauto|];
-      apply eq_term_equals_sym;
-      apply per_bar_eq_intersect_bars_left].
-  introv br ext; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br0 _ (lib_extends_trans ext br3) x) as pera0; simpl in *.
-  pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
+  exists eqa1; dands; auto.
+  eapply in_open_bar_ext_comb; try exact perb1; clear perb1.
+  eapply in_open_bar_ext_pres; eauto; clear pera1; introv pera1 perb1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp;[|exact x].
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
 
   eapply per_image_trans3; try exact comp; eauto.
 Qed.
@@ -569,37 +533,33 @@ Lemma per_bar_per_image_trans4 {o} :
 Proof.
   introv tsa comp pera perb.
   unfold per_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar) eqa0; dands; auto;
-    [|eapply eq_term_equals_trans;[eauto|];
-      apply eq_term_equals_sym;
-      apply per_bar_eq_intersect_bars_right].
-  introv br ext; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br0 _ (lib_extends_trans ext br3) x) as pera0; simpl in *.
-  pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_comb; try exact perb1; clear perb1.
+  eapply in_open_bar_ext_pres; eauto; clear pera1; introv pera1 perb1.
 
-  eapply ccomputes_to_valc_ext_monotone in comp;[|exact x].
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
 
   eapply per_image_trans4; try exact comp; eauto.
 Qed.
 
-Lemma per_image_eq_bar_symmetric {p} :
-  forall lib (bar : BarLib lib) (eqa : lib-per(lib,p)) f t1 t2,
-    all_in_bar_ext bar (fun lib' x => term_equality_symmetric (eqa lib' x))
+Lemma per_image_eq_bar_symmetric {o} :
+  forall (lib : @library o) (eqa : lib-per(lib,o)) f t1 t2,
+    in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
     -> per_image_eq_bar lib eqa f t1 t2
     -> per_image_eq_bar lib eqa f t2 t1.
 Proof.
   introv tes per.
   unfold per_image_eq_bar in *; exrepnd.
-  exists (intersect_bars bar bar0); introv br ext; introv; simpl in *; exrepnd.
-  pose proof (per0 lib2 br2 lib'0 (lib_extends_trans ext br1) x) as per0; simpl in *.
-  pose proof (tes lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tes; simpl in *.
+  apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
+  eapply in_open_bar_ext_comb; try exact tes; clear tes.
+  eapply in_open_bar_ext_pres; eauto; clear per; introv per tes.
   apply per_image_eq_sym; auto.
 Qed.
 
-Lemma per_image_eq_bar_transitive {p} :
-  forall lib (bar : BarLib lib) (eqa : lib-per(lib,p)) f t1 t2 t3,
-    all_in_bar_ext bar (fun lib' x => term_equality_transitive (eqa lib' x))
+Lemma per_image_eq_bar_transitive {o} :
+  forall (lib : @library o) (eqa : lib-per(lib,o)) f t1 t2 t3,
+    in_open_bar_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
     -> per_image_eq_bar lib eqa f t1 t2
     -> per_image_eq_bar lib eqa f t2 t3
     -> per_image_eq_bar lib eqa f t1 t3.
@@ -607,21 +567,18 @@ Proof.
   introv teta pera perb.
   unfold per_image_eq_bar in *.
   exrepnd.
-  exists (intersect3bars bar bar0 bar1); introv br ext; introv.
-  simpl in *; exrepnd.
-
-  pose proof (pera0 lib3 br5 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br2) x) as q; simpl in q.
-  pose proof (perb0 lib0 br4 lib'0 (lib_extends_trans (lib_extends_trans ext br1) br6) x) as h; simpl in h.
-  pose proof (teta lib1 br0 lib'0 (lib_extends_trans ext br3) x) as teta; simpl in *.
-  repndors; exrepnd; ccomputes_to_eqval.
+  apply e_all_in_ex_bar_ext_as in pera; apply e_all_in_ex_bar_ext_as in perb; apply e_all_in_ex_bar_ext_as.
+  eapply in_open_bar_ext_comb; try exact perb; clear perb.
+  eapply in_open_bar_ext_comb; try exact pera; clear pera.
+  eapply in_open_bar_ext_pres; eauto; clear teta; introv teta pera perb.
   eapply per_image_eq_trans; eauto.
 Qed.
 
-Lemma per_image_eq_bar_cequiv {p} :
-  forall lib (bar1 : BarLib lib) (eqa : lib-per(lib,p)) f t1 t2,
-    all_in_bar_ext bar1 (fun lib' x => term_equality_respecting lib' (eqa lib' x))
-    -> all_in_bar_ext bar1 (fun lib' x => term_equality_symmetric (eqa lib' x))
-    -> all_in_bar_ext bar1 (fun lib' x => term_equality_transitive (eqa lib' x))
+Lemma per_image_eq_bar_cequiv {o} :
+  forall (lib : @library o) (eqa : lib-per(lib,o)) f t1 t2,
+    in_open_bar_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
     -> ccequivc_ext lib t1 t2
     -> per_image_eq_bar lib eqa f t1 t1
     -> per_image_eq_bar lib eqa f t1 t2.
@@ -629,17 +586,12 @@ Proof.
   introv tera tesa teta ceq per.
 
   unfold per_image_eq_bar in *; exrepnd.
-  exists (intersect_bars bar1 bar).
-  introv br ext; introv; simpl in *; exrepnd.
-
-  pose proof (tera lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tera; simpl in *.
-  pose proof (per0 lib2 br2 lib'0 (lib_extends_trans ext br1) x) as per0; simpl in *.
-  pose proof (teta lib1 br0 lib'0 (lib_extends_trans ext br3) x) as teta; simpl in *.
-  pose proof (tesa lib1 br0 lib'0 (lib_extends_trans ext br3) x) as tesa; simpl in *.
-  apply (lib_extends_preserves_ccequivc_ext _ lib'0) in ceq; eauto 4 with slow;[].
-  spcast.
-
-  eapply per_image_eq_cequiv; eauto.
+  apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
+  eapply in_open_bar_ext_comb; try exact per; clear per.
+  eapply in_open_bar_ext_comb; try exact teta; clear teta.
+  eapply in_open_bar_ext_comb; try exact tesa; clear tesa.
+  eapply in_open_bar_ext_pres; eauto; clear tera; introv tera tesa teta per.
+  eapply per_image_eq_cequiv; eauto 3 with slow.
 Qed.
 
 Lemma implies_type_value_respecting_trans1_per_image {o} :
@@ -706,15 +658,14 @@ Lemma type_value_respecting_trans_per_bar_per_image3 {o} :
 Proof.
   introv tsa comp1 ceqa per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear per1; introv per1.
 
   unfold per_image in *; exrepnd.
 
-  eapply ccomputes_to_valc_ext_monotone in comp1;[|exact x].
+  eapply ccomputes_to_valc_ext_monotone in comp1;[|exact e].
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ x) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
 
   spcast; computes_to_eqval_ext.
   apply cequivc_ext_mkc_image_implies in ceq; repnd.

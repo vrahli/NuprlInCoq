@@ -73,11 +73,11 @@ Proof.
         apply in_ext_ext_implies_in_open_bar_ext; introv h;
           repeat introv; exrepnd.
 
-  - dup h3 as u; apply eqas in u.
+  - dup e0 as u; apply eqas in u.
     exists a a' b b' u; dands; auto.
     apply (eqbs lib' e a a' e0 u); auto.
 
-  - dup h3 as u; apply eqas in u.
+  - dup e0 as u; apply eqas in u.
     exists a a' b b' u; dands; auto.
     apply (eqbs lib' e a a' u e0); auto.
 Qed.

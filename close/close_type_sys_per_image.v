@@ -93,17 +93,17 @@ Proof.
   - SCase "term_symmetric".
     introv ee.
     apply eqiff in ee; apply eqiff; clear eqiff.
-    apply (per_image_eq_bar_symmetric _ (trivial_bar lib)); eauto 3 with slow.
+    apply per_image_eq_bar_symmetric; eauto 3 with slow.
 
   - SCase "term_transitive".
     introv ee1 ee2.
     apply eqiff in ee1; apply eqiff in ee2; apply eqiff; clear eqiff.
-    eapply (per_image_eq_bar_transitive _ (trivial_bar lib)); eauto 3 with slow.
+    eapply per_image_eq_bar_transitive; eauto 3 with slow.
 
   - SCase "term_value_respecting".
     introv ee ceq.
     apply eqiff in ee; apply eqiff.
-    eapply (per_image_eq_bar_cequiv _ (trivial_bar lib)); eauto 3 with slow.
+    eapply per_image_eq_bar_cequiv; eauto 3 with slow.
 
   - SCase "type_gsymmetric".
     dup tsa as tsa'.

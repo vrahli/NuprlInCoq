@@ -56,9 +56,7 @@ Lemma implies_computes_to_uni {o} :
     -> computes_to_uni lib T.
 Proof.
   introv comp.
-  exists (trivial_bar lib).
-  apply in_ext_implies_all_in_bar_trivial_bar.
-  introv x.
+  apply e_all_in_ex_bar_as; apply in_ext_implies_in_open_bar; introv ext.
   exists i; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve implies_computes_to_uni : slow.
@@ -76,11 +74,9 @@ Lemma defines_only_universes_univi_bar {o} :
 Proof.
   introv u.
   unfold univi_bar, per_bar in u; exrepnd.
-  exists bar.
-  introv br ext.
-
-  assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
-  pose proof (u0 _ br _ ext x) as per0; simpl in *; exrepnd.
+  apply e_all_in_ex_bar_as.
+  eapply in_open_bar_comb2; eauto; clear u1.
+  apply in_ext_ext_implies_in_open_bar_ext; introv u1.
   allrw @univi_exists_iff; exrepnd.
   exists j; auto.
 Qed.
@@ -91,11 +87,9 @@ Lemma defines_only_universes_univ {o} :
 Proof.
   unfold defines_only_universes, univ, univ_ex; introv per.
   unfold per_bar in *; exrepnd.
-  exists bar.
-  introv br ext.
-
-  assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *; exrepnd.
+  apply e_all_in_ex_bar_as.
+  eapply in_open_bar_comb2; eauto; clear per1.
+  apply in_ext_ext_implies_in_open_bar_ext; introv u1; exrepnd.
   allrw @univi_exists_iff; exrepnd.
   exists j; auto.
 Qed.
@@ -132,36 +126,20 @@ Proof.
   unfold per_bar in *; exrepnd.
   eapply eq_term_equals_trans;[eauto|].
   eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
-  eapply eq_term_equals_trans;[|apply (per_bar_eq_intersect_bars_left _ bar0)].
-  eapply eq_term_equals_trans;[apply eq_term_equals_sym;apply (per_bar_eq_intersect_bars_right _ bar)|].
 
   unfold per_bar_eq; introv; split; intro h.
 
-  - introv br ext; introv.
-    pose proof (h _ br _ ext x) as h; simpl in *; exrepnd.
-    exists bar'.
-
-    introv br' ext'; introv.
-    pose proof (h0 _ br' _ ext' x0) as h0; simpl in *.
-
-    pose proof (u0 _ br2 _ (lib_extends_trans x0 (lib_extends_trans ext br1)) (lib_extends_trans x0 x)) as u0.
-    pose proof (v0 _ br0 _ (lib_extends_trans x0 (lib_extends_trans ext br3)) (lib_extends_trans x0 x)) as v0.
-    simpl in *.
+  - eapply in_open_bar_ext_comb; try exact u1; clear u1.
+    eapply in_open_bar_ext_comb; try exact v1; clear v1.
+    eapply in_open_bar_ext_pres; try exact h; clear h; introv h v1 u1.
     allrw @univi_exists_iff; exrepnd; spcast.
     computes_to_eqval_ext.
     apply ccequivc_ext_uni_uni_implies in ceq; subst.
     apply v2; apply u2; auto.
 
-  - introv br ext; introv.
-    pose proof (h _ br _ ext x) as h; simpl in *; exrepnd.
-    exists bar'.
-
-    introv br' ext'; introv.
-    pose proof (h0 _ br' _ ext' x0) as h0; simpl in *.
-
-    pose proof (u0 _ br2 _ (lib_extends_trans x0 (lib_extends_trans ext br1)) (lib_extends_trans x0 x)) as u0.
-    pose proof (v0 _ br0 _ (lib_extends_trans x0 (lib_extends_trans ext br3)) (lib_extends_trans x0 x)) as v0.
-    simpl in *.
+  - eapply in_open_bar_ext_comb; try exact u1; clear u1.
+    eapply in_open_bar_ext_comb; try exact v1; clear v1.
+    eapply in_open_bar_ext_pres; try exact h; clear h; introv h v1 u1.
     allrw @univi_exists_iff; exrepnd; spcast.
     computes_to_eqval_ext.
     apply ccequivc_ext_uni_uni_implies in ceq; subst.
@@ -228,10 +206,10 @@ Proof.
   unfold univi_bar in *; exrepnd.
 
   applydup @per_bar_monotone_func2 in u; exrepnd.
-  exists (trivial_bar lib) eq'.
+  exists eq'.
   dands.
 
-  { apply in_ext_ext_implies_all_in_bar_ext; introv.
+  { apply in_ext_ext_implies_in_open_bar_ext; introv.
     apply u1. }
 
   { eapply implies_eq_term_equals_per_bar_eq_trivial_bar_mon; eauto; eauto 3 with slow. }
@@ -245,18 +223,13 @@ Lemma term_symmetric_univi_bar {o} :
 Proof.
   introv IND u e.
   unfold univi_bar, per_bar in u; exrepnd.
-  apply u1 in e; apply u1; clear u1.
+  apply u0 in e; apply u0; clear u0.
   unfold per_bar_eq in *.
-  introv br ext; introv.
-  pose proof (e _ br _ ext x) as e; simpl in *; exrepnd.
-  exists bar'.
-  introv br' ext'; introv.
-  pose proof (e0 _ br' _ ext' x0) as e0; simpl in *.
-
-  pose proof (u0 _ br lib'2 (lib_extends_trans x0 ext) (lib_extends_trans x0 x)) as u0; simpl in *.
+  eapply in_open_bar_ext_comb; try exact u1; clear u1.
+  eapply in_open_bar_ext_pres; eauto; clear e; introv h u1.
   allrw @univi_exists_iff; exrepnd.
   spcast.
-  apply u1 in e0; apply u1; clear u1.
+  apply u0 in h; apply u0; clear u0.
   unfold univi_eq in *; exrepnd.
   exists eqa0.
 
@@ -271,31 +244,26 @@ Lemma term_transitive_univi_bar {o} :
 Proof.
   introv IND u e f.
   unfold univi_bar, per_bar in u; exrepnd.
-  apply u1 in e; apply u1 in f; apply u1; clear u1.
+  apply u0 in e; apply u0 in f; apply u0; clear u0.
   unfold per_bar_eq in *.
-  introv br ext; introv.
-  pose proof (e _ br _ ext x) as e; simpl in *; exrepnd.
-  pose proof (f _ br _ ext x) as f; simpl in *; exrepnd.
-  exists (intersect_bars bar' bar'0).
-  introv br' ext'; introv; simpl in *; exrepnd.
-  pose proof (e0 _ br'0 _ (lib_extends_trans ext' br'3) x0) as e0; simpl in *.
-  pose proof (f0 _ br'2 _ (lib_extends_trans ext' br'1) x0) as f0; simpl in *.
+  eapply in_open_bar_ext_comb; try exact u1; clear u1.
+  eapply in_open_bar_ext_comb; try exact e; clear e.
+  eapply in_open_bar_ext_pres; try exact f; clear f; introv f h u1.
 
-  pose proof (u0 _ br lib'2 (lib_extends_trans x0 ext) (lib_extends_trans x0 x)) as u0; simpl in *.
   allrw @univi_exists_iff; exrepnd.
   spcast.
-  apply u1 in e0; apply u1 in f0; apply u1; clear u1.
+  apply u0 in h; apply u0 in f; apply u0; clear u0.
   unfold univi_eq in *; exrepnd.
   exists eqa0.
 
   eapply close_type_transitive; eauto; eauto 3 with slow.
   eapply close_type_extensionality; eauto 2 with slow.
 
-  assert (close (univi_bar j) lib'2 t2 t2 eqa1) as h1.
+  assert (close (univi_bar j) lib' t2 t2 eqa1) as h1.
   { eapply close_type_transitive; eauto; eauto 3 with slow.
     eapply close_type_symmetric; eauto; eauto 3 with slow. }
 
-  assert (close (univi_bar j) lib'2 t2 t2 eqa0) as h2.
+  assert (close (univi_bar j) lib' t2 t2 eqa0) as h2.
   { eapply close_type_transitive; eauto; eauto 3 with slow.
     eapply close_type_symmetric; eauto; eauto 3 with slow. }
 
@@ -310,18 +278,13 @@ Lemma term_value_respecting_univi_bar {o} :
 Proof.
   introv IND u e c.
   unfold univi_bar, per_bar in u; exrepnd.
-  apply u1 in e; apply u1; clear u1.
+  apply u0 in e; apply u0; clear u0.
   unfold per_bar_eq in *.
-  introv br ext; introv.
-  pose proof (e _ br _ ext x) as e; simpl in *; exrepnd.
-  exists bar'.
-  introv br' ext'; introv.
-  pose proof (e0 _ br' _ ext' x0) as e0; simpl in *.
-
-  pose proof (u0 _ br lib'2 (lib_extends_trans x0 ext) (lib_extends_trans x0 x)) as u0; simpl in *.
+  eapply in_open_bar_ext_comb; try exact u1; clear u1.
+  eapply in_open_bar_ext_pres; try exact e; clear e; introv h u1.
   allrw @univi_exists_iff; exrepnd.
   spcast.
-  apply u1 in e0; apply u1; clear u1.
+  apply u0 in h; apply u0; clear u0.
   unfold univi_eq in *; exrepnd.
   exists eqa0.
 
@@ -507,19 +470,14 @@ Lemma term_symmetric_univ {o} :
 Proof.
   introv u e.
   unfold univ, per_bar in u; exrepnd.
-  apply u1 in e; apply u1; clear u1.
+  apply u0 in e; apply u0; clear u0.
   unfold per_bar_eq in *.
-  introv br ext; introv.
-  pose proof (e _ br _ ext x) as e; simpl in *; exrepnd.
-  exists bar'.
-  introv br' ext'; introv.
-  pose proof (e0 _ br' _ ext' x0) as e0; simpl in *.
-
-  pose proof (u0 _ br lib'2 (lib_extends_trans x0 ext) (lib_extends_trans x0 x)) as u0; simpl in *.
+  eapply in_open_bar_ext_comb; try exact u1; clear u1.
+  eapply in_open_bar_ext_pres; try exact e; clear e; introv h u1.
   unfold univ_ex in *; exrepnd.
   allrw @univi_exists_iff; exrepnd.
   spcast.
-  apply u0 in e0; apply u0; clear u0.
+  apply u1 in h; apply u1; clear u1.
   unfold univi_eq in *; exrepnd.
   exists eqa0.
 
@@ -532,32 +490,27 @@ Lemma term_transitive_univ {o} :
 Proof.
   introv u e f.
   unfold univ, per_bar in u; exrepnd.
-  apply u1 in e; apply u1 in f; apply u1; clear u1.
+  apply u0 in e; apply u0 in f; apply u0; clear u0.
   unfold per_bar_eq in *.
-  introv br ext; introv.
-  pose proof (e _ br _ ext x) as e; simpl in *; exrepnd.
-  pose proof (f _ br _ ext x) as f; simpl in *; exrepnd.
-  exists (intersect_bars bar' bar'0).
-  introv br' ext'; introv; simpl in *; exrepnd.
-  pose proof (e0 _ br'0 _ (lib_extends_trans ext' br'3) x0) as e0; simpl in *.
-  pose proof (f0 _ br'2 _ (lib_extends_trans ext' br'1) x0) as f0; simpl in *.
+  eapply in_open_bar_ext_comb; try exact u1; clear u1.
+  eapply in_open_bar_ext_comb; try exact e; clear e.
+  eapply in_open_bar_ext_pres; try exact f; clear f; introv f h u1.
 
-  pose proof (u0 _ br lib'2 (lib_extends_trans x0 ext) (lib_extends_trans x0 x)) as u0; simpl in *.
   unfold univ_ex in *; exrepnd.
   allrw @univi_exists_iff; exrepnd.
   spcast.
-  apply u0 in e0; apply u0 in f0; apply u0; clear u0.
+  apply u1 in h; apply u1 in f; apply u1; clear u1.
   unfold univi_eq in *; exrepnd.
   exists eqa0.
 
   eapply close_type_transitive; eauto; eauto 3 with slow.
   eapply close_type_extensionality; eauto 2 with slow.
 
-  assert (close (univi_bar j) lib'2 t2 t2 eqa1) as h1.
+  assert (close (univi_bar j) lib' t2 t2 eqa1) as h1.
   { eapply close_type_transitive; eauto; eauto 3 with slow.
     eapply close_type_symmetric; eauto; eauto 3 with slow. }
 
-  assert (close (univi_bar j) lib'2 t2 t2 eqa0) as h2.
+  assert (close (univi_bar j) lib' t2 t2 eqa0) as h2.
   { eapply close_type_transitive; eauto; eauto 3 with slow.
     eapply close_type_symmetric; eauto; eauto 3 with slow. }
 
@@ -570,19 +523,15 @@ Lemma term_value_respecting_univ {o} :
 Proof.
   introv u e c.
   unfold univ, per_bar in u; exrepnd.
-  apply u1 in e; apply u1; clear u1.
+  apply u0 in e; apply u0; clear u0.
   unfold per_bar_eq in *.
-  introv br ext; introv.
-  pose proof (e _ br _ ext x) as e; simpl in *; exrepnd.
-  exists bar'.
-  introv br' ext'; introv.
-  pose proof (e0 _ br' _ ext' x0) as e0; simpl in *.
+  eapply in_open_bar_ext_comb; try exact u1; clear u1.
+  eapply in_open_bar_ext_pres; try exact e; clear e; introv h u1.
 
-  pose proof (u0 _ br lib'2 (lib_extends_trans x0 ext) (lib_extends_trans x0 x)) as u0; simpl in *.
   unfold univ_ex in *; exrepnd.
   allrw @univi_exists_iff; exrepnd.
   spcast.
-  apply u0 in e0; apply u0; clear u0.
+  apply u1 in h; apply u1; clear u1.
   unfold univi_eq in *; exrepnd.
   exists eqa0.
 

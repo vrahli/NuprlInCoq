@@ -607,30 +607,28 @@ Proof.
   introv u.
   exists (S i); dands; try omega.
   unfold univ, univi_bar, per_bar in *; exrepnd.
-  exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (u0 _ br _ ext x) as u0; simpl in *.
-  unfold univ_ex in u0; exrepnd.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
+  unfold univ_ex in u1; exrepnd.
   allrw @univi_exists_iff; exrepnd; GC.
   apply ccomputes_to_valc_ext_implies_ccequivc_ext in u3.
   apply ccequivc_ext_uni_uni_implies in u3; subst.
-  left; dands; spcast; auto; eauto 3 with slow.
+  exists j; dands; eauto 3 with slow.
 Qed.
 
 Lemma univ_implies_univi_bar2 {o} :
   forall lib i (eq : per(o)),
     univ lib (mkc_uni i) (mkc_uni i) eq
     ->
-    exists (bar : BarLib lib) (eqa : lib-per(lib,o)),
-      (eq <=2=> (per_bar_eq bar eqa))
-        # all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (univi_eq (univi_bar i) lib')).
+    exists (eqa : lib-per(lib,o)),
+      (eq <=2=> (per_bar_eq lib eqa))
+        # in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (univi_eq (univi_bar i) lib')).
 Proof.
   introv u.
   unfold univ, univi_bar, per_bar in u; exrepnd.
-  exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (u0 _ br _ ext x) as u0; simpl in *.
-  unfold univ_ex in u0; exrepnd.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
+  unfold univ_ex in u1; exrepnd.
   allrw @univi_exists_iff; exrepnd; GC.
   apply ccomputes_to_valc_ext_implies_ccequivc_ext in u3.
   apply ccequivc_ext_uni_uni_implies in u3; subst; auto.
@@ -639,16 +637,12 @@ Qed.
 Lemma univ_implies_univi_bar3 {o} :
   forall lib i (eq : per(o)),
     univ lib (mkc_uni i) (mkc_uni i) eq
-    ->
-    exists (bar : BarLib lib),
-      eq <=2=> (per_bar_eq bar (univi_eq_lib_per lib i)).
+    -> eq <=2=> (per_bar_eq lib (univi_eq_lib_per lib i)).
 Proof.
   introv u.
   apply univ_implies_univi_bar2 in u; exrepnd.
-  exists bar.
   eapply eq_term_equals_trans;[eauto|].
-  apply implies_eq_term_equals_per_bar_eq.
-  apply all_in_bar_ext_intersect_bars_same; simpl; auto.
+  apply implies_eq_term_equals_per_bar_eq; auto.
 Qed.
 
 Lemma ts_implies_per_bar_nuprl {o} :
@@ -664,7 +658,7 @@ Lemma local_ts_nuprl {o} :
 Proof.
   introv e alla.
   apply CL_bar.
-  exists bar eqa; dands; auto.
+  exists eqa; dands; auto.
 Qed.
 Hint Resolve local_ts_nuprl : slow.
 
@@ -744,39 +738,17 @@ Proof.
   apply dest_nuprl_uni in teq1.
   apply univ_implies_univi_bar3 in teq1; exrepnd.
 
-  apply teq2 in teq0.
+  apply teq1 in teq0; clear teq1.
   unfold per_bar_eq in teq0.
   exists eq0; dands; auto.
   apply ts_implies_per_bar_nuprl in e1.
   unfold per_bar in e1; exrepnd.
   apply CL_bar.
   fold (@nuprl o) in *.
-  exists (intersect_bars bar bar0) eqa; dands;
-    [|eapply eq_term_equals_trans;[eauto|];
-      apply eq_term_equals_sym;
-      apply per_bar_eq_intersect_bars_right];[].
 
-  introv br ext; introv; simpl in *; exrepnd.
-  pose proof (e2 _ br2 _ (lib_extends_trans ext br1) x) as e2.
-  pose proof (teq0 _ br0 _ (lib_extends_trans ext br3) x) as teq0.
-  simpl in *.
-  exrepnd.
-
-  clear dependent eq.
-  clear dependent eq0.
-
-  apply ts_implies_per_bar_nuprl in e2.
-  unfold per_bar in e2; exrepnd.
-  apply CL_bar.
-  fold (@nuprl o) in *.
-  exists (intersect_bars bar' bar1) eqa0; dands;
-    [|eapply eq_term_equals_trans;[eauto|];
-      apply eq_term_equals_sym;
-      apply per_bar_eq_intersect_bars_right];[].
-
-  introv br' ext'; introv; simpl in *; exrepnd.
-  pose proof (e0 _ br'2 _ (lib_extends_trans ext' br'1) x0) as e0.
-  pose proof (teq1 _ br'0 _ (lib_extends_trans ext' br'3) x0) as teq1.
+  exists eqa; dands; auto;[].
+  eapply in_open_bar_ext_comb; try exact e1; clear e1.
+  eapply in_open_bar_ext_pres; eauto; clear teq0; introv teq0 e1.
   simpl in *; eauto 3 with slow.
 Qed.
 
@@ -1232,23 +1204,21 @@ Lemma dest_nuprl_approx2 {o} :
   forall lib (eq : per(o)) a b c d,
     nuprl lib (mkc_approx a b) (mkc_approx c d) eq
     ->
-    exists (bar : BarLib lib),
-      (eq <=2=> (per_bar_eq bar (per_approx_eq_bar_lib_per lib a b)))
-        # all_in_bar bar (fun lib => (capproxc lib a b <=> capproxc lib c d)).
+    (
+      (eq <=2=> (per_bar_eq lib (per_approx_eq_bar_lib_per lib a b)))
+        # in_open_bar lib (fun lib => (capproxc lib a b <=> capproxc lib c d))
+    ).
 Proof.
   introv u.
   apply dest_nuprl_approx in u.
   unfold per_bar in u; exrepnd.
-  exists bar.
 
   dands.
 
   {
     eapply eq_term_equals_trans;[eauto|].
     apply implies_eq_term_equals_per_bar_eq.
-    apply all_in_bar_ext_intersect_bars_same; simpl; auto.
-    introv br ext; introv.
-    pose proof (u0 _ br _ ext x) as u0; simpl in *.
+    eapply in_open_bar_ext_pres; eauto; clear u1; introv u1; simpl.
     unfold per_approx in *; exrepnd; spcast.
 
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in u2.
@@ -1261,10 +1231,8 @@ Proof.
   }
 
   {
-    apply all_in_bar_in_ext_implies.
-    introv br ext.
-    assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
-    pose proof (u0 _ br _ ext xt) as u0; simpl in *.
+    eapply in_open_bar_comb2; eauto; clear u1.
+    apply in_ext_ext_implies_in_open_bar_ext; introv u1.
     unfold per_approx in *; exrepnd.
 
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in u2.
@@ -1272,8 +1240,28 @@ Proof.
     apply cequivc_ext_mkc_approx_right in u2.
     apply cequivc_ext_mkc_approx_right in u3.
     repnd.
-    eapply implies_in_ext_ccequiv_iff; eauto.
+    eapply implies_in_ext_ccequiv_iff; eauto 3 with slow.
   }
+Qed.
+
+Lemma in_open_bar_ext_const {o} :
+  forall (lib : @library o) (P : Prop),
+    in_open_bar_ext lib (fun lib' x => P)
+    -> P.
+Proof.
+  introv h.
+  pose proof (h _ (lib_extends_refl _)) as h; exrepnd.
+  pose proof (h1 _ (lib_extends_refl _)) as h1; simpl in *; apply h1; eauto 3 with slow.
+Qed.
+
+Lemma in_open_bar_const {o} :
+  forall (lib : @library o) (P : Prop),
+    in_open_bar lib (fun lib' => P)
+    -> P.
+Proof.
+  introv h.
+  pose proof (h _ (lib_extends_refl _)) as h; exrepnd.
+  pose proof (h1 _ (lib_extends_refl _)) as h1; simpl in *; apply h1; eauto 3 with slow.
 Qed.
 
 Lemma false_not_inhabited {p} :
@@ -1283,21 +1271,16 @@ Proof.
   rewrite mkc_false_eq in m.
   unfold member, equality, nuprl in m; exrepnd.
   apply dest_nuprl_approx2 in m1; exrepnd.
-  apply m1 in m0; clear m2.
+  apply m2 in m0; clear m2.
 
   unfold per_bar_eq in m0.
-  pose proof (bar_non_empty bar) as na; exrepnd.
-  assert (lib_extends lib' lib) as x by eauto 3 with slow.
-  pose proof (m0 _ na0 lib' (lib_extends_refl lib') x) as m0; simpl in *.
-  exrepnd.
+  apply (in_open_bar_ext_const lib).
+  eapply in_open_bar_ext_comb2; try exact m1; clear m1.
+  eapply in_open_bar_ext_pres; try exact m0; clear m0; introv m0 m1; simpl in *.
 
-  pose proof (bar_non_empty bar') as nb; exrepnd.
-  assert (lib_extends lib'0 lib') as y by eauto 3 with slow.
-  pose proof (m2 _ nb0 lib'0 (lib_extends_refl lib'0) y) as m2; simpl in *.
-
-  unfold per_approx_eq_bar in *; exrepnd.
-  pose proof (bar_non_empty bar0) as nc; exrepnd.
-  pose proof (m0 _ nc0 lib'1 (lib_extends_refl lib'1)) as m0; simpl in *.
+  unfold per_approx_eq_bar in m0; apply e_all_in_ex_bar_as in m0.
+  apply (in_open_bar_const lib').
+  eapply in_open_bar_pres; eauto; clear m0; introv ext m0.
 
   unfold per_approx_eq in m0; repnd; spcast.
   apply not_axiom_approxc_bot in m0; auto.

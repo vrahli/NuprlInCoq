@@ -918,62 +918,49 @@ Proof.
 Qed.
 Hint Resolve all_in_bar_eqorceq_refl : slow.
 
-(*Lemma eqorceq_implies_iff_per_eq_eq {o} :
-  forall lib (bar : @BarLib o lib) a1 a2 b1 b2 (eqa eqb : lib-per(lib,o)),
-    all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
-    -> all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a1 b1)
-    -> all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a2 b2)
-    -> all_in_bar_ext bar (fun lib' x => term_equality_symmetric (eqa lib' x))
-    -> all_in_bar_ext bar (fun lib' x => term_equality_transitive (eqa lib' x))
-    -> all_in_bar_ext bar (fun lib' x => term_equality_respecting lib' (eqa lib' x))
+Lemma eqorceq_implies_iff_per_eq_eq {o} :
+  forall (lib : @library o) a1 a2 b1 b2 (eqa eqb : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
+    -> in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a1 b1)
+    -> in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a2 b2)
+    -> in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> in_open_bar_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
     -> (eq_per_eq_bar lib a1 a2 eqa) <=2=> (eq_per_eq_bar lib b1 b2 eqb).
 Proof.
   introv eqeq alla allb tes tet ter; introv.
-  unfold eq_per_eq_bar, eq_per_eq; split; introv h; exrepnd.
+  unfold eq_per_eq_bar, eq_per_eq; split; introv h; exrepnd;
+    apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as.
 
-  - exists (intersect_bars bar bar0).
-    introv b e; repeat introv.
-
-    simpl in *; exrepnd.
-    pose proof (h0 lib2 b4 lib'0 (lib_extends_trans e b3) x) as q; simpl in q; repnd.
-    dands; auto.
-
-    pose proof (eqeq lib1 b0 lib'0 (lib_extends_trans e b5) x) as eqeq; simpl in *.
+  - eapply in_open_bar_ext_comb; try exact h; clear h.
+    eapply in_open_bar_ext_comb; try exact ter; clear ter.
+    eapply in_open_bar_ext_comb; try exact tet; clear tet.
+    eapply in_open_bar_ext_comb; try exact tes; clear tes.
+    eapply in_open_bar_ext_comb; try exact alla; clear alla.
+    eapply in_open_bar_ext_comb; try exact allb; clear allb.
+    eapply in_open_bar_ext_comb; try exact eqeq; clear eqeq.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv eqeq allb alla tes tet ter h.
+    repnd; dands; auto.
     apply eqeq.
-
-    pose proof (alla lib1 b0) as h.
-    pose proof (h lib'0 (lib_extends_trans e b5)) as h ; simpl in h.
-
-    pose proof (allb lib1 b0) as w.
-    pose proof (w lib'0 (lib_extends_trans e b5)) as w; simpl in w.
-
-    pose proof (ter lib1 b0) as z.
-    pose proof (z lib'0 (lib_extends_trans e b5)) as z; simpl in z.
     eapply eqorceq_commutes;eauto;
       try (right; auto); try (eapply tes); try (eapply tet); eauto 3 with slow.
 
-  - exists (intersect_bars bar bar0).
-    introv b e; repeat introv.
-
-    simpl in *; exrepnd.
-    pose proof (h0 lib2 b4 lib'0 (lib_extends_trans e b3) x) as q; simpl in q; repnd.
-    dands; auto.
-
-    pose proof (eqeq lib1 b0 lib'0 (lib_extends_trans e b5) x) as eqeq; simpl in *.
-    apply eqeq in q.
-
-    pose proof (alla lib1 b0) as h.
-    pose proof (h lib'0 (lib_extends_trans e b5)) as h; simpl in h.
-
-    pose proof (allb lib1 b0) as w.
-    pose proof (w lib'0 (lib_extends_trans e b5)) as w; simpl in w.
-
-    pose proof (ter lib1 b0) as z.
-    pose proof (z lib'0 (lib_extends_trans e b5) x) as z; simpl in z.
+  - eapply in_open_bar_ext_comb; try exact h; clear h.
+    eapply in_open_bar_ext_comb; try exact ter; clear ter.
+    eapply in_open_bar_ext_comb; try exact tet; clear tet.
+    eapply in_open_bar_ext_comb; try exact tes; clear tes.
+    eapply in_open_bar_ext_comb; try exact alla; clear alla.
+    eapply in_open_bar_ext_comb; try exact allb; clear allb.
+    eapply in_open_bar_ext_comb; try exact eqeq; clear eqeq.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv eqeq allb alla tes tet ter h.
+    repnd; dands; auto.
+    apply eqeq in h.
     eapply eqorceq_commutes;eauto; try (apply eqorceq_sym; auto);
       try eapply tes; try eapply tet; eauto 3 with slow.
 Qed.
-Hint Resolve eqorceq_implies_iff_per_eq_eq : slow.*)
+Hint Resolve eqorceq_implies_iff_per_eq_eq : slow.
 
 (*Lemma type_equality_respecting_trans_per_eq_bar_implies {o} :
   forall (ts : cts(o)) lib (bar : BarLib lib) T T' a b A a' b' A',
@@ -1716,14 +1703,14 @@ Proof.
 
   { eapply in_open_bar_ext_pres; eauto; introv q; clear h.
     unfold per_product_eq in *; exrepnd.
-    dup q3 as xx.
+    dup e0 as xx.
     apply eqas in xx; eauto 3 with slow.
     eexists; eexists; eexists; eexists; exists xx; dands; eauto.
     eapply eqbs; eauto 3 with slow. }
 
   { eapply in_open_bar_ext_pres; eauto; introv q; clear h.
     unfold per_product_eq in *; exrepnd.
-    dup q3 as xx.
+    dup e0 as xx.
     apply eqas in xx; eauto 3 with slow.
     eexists; eexists; eexists; eexists; exists xx; dands; eauto.
     eapply eqbs; eauto 3 with slow. }

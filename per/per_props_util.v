@@ -125,50 +125,49 @@ Qed.
 Hint Resolve nuprl_term_equality_symmetric : slow.
 
 Lemma all_in_bar_ext_nuprl_implies_nuprl {o} :
-  forall {lib} (bar : @BarLib o lib) A B (eqa : lib-per(lib,o)),
-    all_in_bar_ext bar (fun lib' x => nuprl lib' A B (eqa lib' x))
-    -> nuprl lib A B (per_bar_eq bar eqa).
+  forall (lib : @library o) A B (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+    -> nuprl lib A B (per_bar_eq lib eqa).
 Proof.
   introv all.
-  apply CL_bar; exists bar eqa; dands; auto.
+  apply CL_bar; exists eqa; dands; auto.
 Qed.
 Hint Resolve all_in_bar_ext_nuprl_implies_nuprl : slow.
 
 Lemma all_in_bar_ext_nuprl_implies_tequality {o} :
-  forall {lib} (bar : @BarLib o lib) A B (eqa : lib-per(lib,o)),
-    all_in_bar_ext bar (fun lib' x => nuprl lib' A B (eqa lib' x))
+  forall (lib : @library o) A B (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
     -> tequality lib A B.
 Proof.
   introv all.
-  exists (per_bar_eq bar eqa); eauto 3 with slow.
+  exists (per_bar_eq lib eqa); eauto 3 with slow.
 Qed.
 Hint Resolve all_in_bar_ext_nuprl_implies_tequality : slow.
 
 Lemma all_in_bar_ext_nuprl_implies_type {o} :
-  forall {lib} (bar : @BarLib o lib) A (eqa : lib-per(lib,o)),
-    all_in_bar_ext bar (fun lib' x => nuprl lib' A A (eqa lib' x))
+  forall (lib : @library o) A (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => nuprl lib' A A (eqa lib' x))
     -> type lib A.
 Proof.
   introv all.
-  exists (per_bar_eq bar eqa); eauto 3 with slow.
+  exists (per_bar_eq lib eqa); eauto 3 with slow.
 Qed.
 Hint Resolve all_in_bar_ext_nuprl_implies_type : slow.
 
 Lemma all_in_bar_ext_eqorceq_commutes_equality {o} :
-  forall {lib} (bar : @BarLib o lib) a b c d A B (eqa : lib-per(lib,o)),
-    all_in_bar_ext bar (fun lib' x => nuprl lib' A B (eqa lib' x))
-    -> all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a b)
-    -> all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) c d)
+  forall (lib : @library o) a b c d A B (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+    -> in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a b)
+    -> in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) c d)
     -> equality lib a c A <=> equality lib b d B.
 Proof.
   introv n eoa eob; split; intro h.
 
-  - exists (per_bar_eq bar eqa); dands; auto.
+  - exists (per_bar_eq lib eqa); dands; auto.
 
-    + apply CL_bar; exists bar eqa; dands; auto.
+    + apply CL_bar; exists eqa; dands; auto.
       fold (@nuprl o).
-      introv br ext; introv.
-      pose proof (n _ br _ ext x) as n; simpl in *.
+      eapply in_open_bar_ext_pres; try exact n; clear n; introv n.
       apply nuprl_sym in n; apply nuprl_refl in n; auto.
 
     + introv br ext; introv.

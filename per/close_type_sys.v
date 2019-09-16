@@ -205,32 +205,32 @@ Abort.
 
 
 Lemma ih_implies_all_in_bar_type_sys_props4 {o} :
-  forall {lib} (bar : @BarLib o lib) ts A B eqa,
+  forall (lib : @library o) ts A B eqa,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> all_in_bar bar
+    -> in_open_bar lib
                   (fun lib =>
                      type_system ts
                      -> defines_only_universes ts
                      -> type_monotone ts
                      -> type_sys_props4 (close ts) lib A B eqa)
-    -> all_in_bar bar (fun lib => type_sys_props4 (close ts) lib A B eqa).
+    -> in_open_bar lib (fun lib => type_sys_props4 (close ts) lib A B eqa).
 Proof.
-  introv tsts dou mon alla br ext.
-  apply (alla lib' br lib'0 ext); auto.
+  introv tsts dou mon alla.
+  eapply in_open_bar_pres; eauto; introv ext h; tcsp.
 Qed.
 Hint Resolve ih_implies_all_in_bar_type_sys_props4 : slow.
 
 Lemma ih_implies_all_in_bar_ext_type_sys_props4 {o} :
-  forall {lib} (bar : @BarLib o lib) ts A B eqa,
+  forall (lib : @library o) ts A B eqa,
     local_ts ts
     -> ts_implies_per_bar ts
     -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> all_in_bar_ext
-         bar
+    -> in_open_bar_ext
+         lib
          (fun lib' x =>
             local_ts ts
             -> ts_implies_per_bar ts
@@ -238,10 +238,10 @@ Lemma ih_implies_all_in_bar_ext_type_sys_props4 {o} :
             -> defines_only_universes ts
             -> type_monotone ts
             -> type_sys_props4 (close ts) lib' A B (eqa lib' x))
-    -> all_in_bar_ext bar (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x)).
+    -> in_open_bar_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x)).
 Proof.
-  introv locts ibar tsts dou mon alla br ext; introv.
-  apply (alla lib' br lib'0 ext x); auto.
+  introv locts ibar tsts dou mon alla.
+  eapply in_open_bar_ext_pres; eauto; introv h; tcsp.
 Qed.
 Hint Resolve ih_implies_all_in_bar_ext_type_sys_props4 : slow.
 

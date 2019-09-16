@@ -72,8 +72,8 @@ Proof.
        |eapply ccequivc_ext_trans;[apply ccequivc_ext_sym;exact ceq2|exact ceq4]
       ]; eauto 3 with slow.
 
-    eapply (simple_implies_iff_per_eq_eq _ (trivial_bar lib')); try exact h.
-    apply in_ext_ext_implies_all_in_bar_ext.
+    eapply simple_implies_iff_per_eq_eq; try exact h.
+    apply in_ext_ext_implies_in_open_bar_ext.
 
     introv.
     pose proof (pera3 _ e) as pera3; simpl in *.
@@ -87,8 +87,8 @@ Proof.
        |eapply ccequivc_ext_trans;[apply ccequivc_ext_sym;exact ceq4|exact ceq2]
       ]; eauto 3 with slow.
 
-    eapply (simple_implies_iff_per_eq_eq _ (trivial_bar lib')); try exact h.
-    apply in_ext_ext_implies_all_in_bar_ext.
+    eapply simple_implies_iff_per_eq_eq; try exact h.
+    apply in_ext_ext_implies_in_open_bar_ext.
 
     introv.
     pose proof (pera3 _ e) as pera3; simpl in *.
@@ -106,9 +106,8 @@ Proof.
   introv per.
   apply CL_bar.
   unfold per_bar in per; exrepnd.
-  exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear per1; introv per1.
   apply CL_eq; auto.
 Qed.
 
@@ -148,9 +147,7 @@ Proof.
     { eapply in_ext_ext_type_sys_props4_ccequivc_ext_implies; eauto 3 with slow. }
 
     eapply eq_term_equals_trans;[eauto|].
-    apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib));
-      try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
-      try apply in_ext_implies_all_in_bar_trivial_bar; eauto 3 with slow.
+    apply eqorceq_implies_iff_per_eq_eq; eauto 3 with slow.
 Qed.
 
 Lemma type_value_respecting_trans_per_bar_per_eq1 {o} :
@@ -166,21 +163,20 @@ Lemma type_value_respecting_trans_per_bar_per_eq1 {o} :
 Proof.
   introv tsp comp1 comp2 ceq1 ceq2 ceq3 per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear per1; introv per1.
 
   unfold per_eq in *; exrepnd.
-  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
-  eapply lib_extends_preserves_ccomputes_to_valc in comp2;[|exact x].
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact e].
+  eapply lib_extends_preserves_ccomputes_to_valc in comp2;[|exact e].
   computes_to_eqval_ext.
   apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
 
   exists A B0 a1 a2 b1 b2 eqa1; dands; spcast; eauto 3 with slow.
 
   - introv.
-    pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
-    pose proof (per4 lib'1 e) as per4; simpl in *.
+    pose proof (tsp lib'0 (lib_extends_trans e0 e)) as tsp; simpl in *.
+    pose proof (per4 lib'0 e0) as per4; simpl in *.
     onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
     eapply tyvrt1; eauto; eauto 4 with slow.
 
@@ -207,8 +203,8 @@ Proof.
 
     { eapply eq_per_eq_bar_respects_ccequivc_ext in h;
         [| | |
-         |eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext;[exact x|exact ceq1] |exact ceq0]
-         |eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext;[exact x|exact ceq2] |exact ceq4]
+         |eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext;[exact e|exact ceq1] |exact ceq0]
+         |eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext;[exact e|exact ceq2] |exact ceq4]
         ]; eauto 3 with slow.
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
           try exact tsp; try exact per4; eauto 3 with slow. }
@@ -219,8 +215,8 @@ Proof.
 
     { eapply eq_per_eq_bar_respects_ccequivc_ext in h;
         [| | |
-         |eapply ccequivc_ext_trans;apply ccequivc_ext_sym;[exact ceq0|eapply lib_extends_preserves_ccequivc_ext;[exact x|exact ceq1] ]
-         |eapply ccequivc_ext_trans;apply ccequivc_ext_sym;[exact ceq4|eapply lib_extends_preserves_ccequivc_ext;[exact x|exact ceq2] ]
+         |eapply ccequivc_ext_trans;apply ccequivc_ext_sym;[exact ceq0|eapply lib_extends_preserves_ccequivc_ext;[exact e|exact ceq1] ]
+         |eapply ccequivc_ext_trans;apply ccequivc_ext_sym;[exact ceq4|eapply lib_extends_preserves_ccequivc_ext;[exact e|exact ceq2] ]
         ]; eauto 3 with slow.
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
           try exact tsp; try exact per4; eauto 3 with slow. }
@@ -243,20 +239,19 @@ Lemma type_value_respecting_trans_per_bar_per_eq2 {o} :
 Proof.
   introv tsp comp1 comp2 ceq1 ceq2 ceq3 per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear per1; introv per1.
 
   unfold per_eq in *; exrepnd.
-  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
-  eapply lib_extends_preserves_ccomputes_to_valc in comp2;[|exact x].
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact e].
+  eapply lib_extends_preserves_ccomputes_to_valc in comp2;[|exact e].
   computes_to_eqval_ext.
   apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
   exists A A0 a1 a2 a0 a3 eqa1; dands; spcast; eauto 3 with slow.
 
   - introv.
-    pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
-    pose proof (per4 lib'1 e) as per4; simpl in *.
+    pose proof (tsp lib'0 (lib_extends_trans e0 e)) as tsp; simpl in *.
+    pose proof (per4 lib'0 e0) as per4; simpl in *.
     onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
     eapply tyvrt1; eauto; eauto 4 with slow.
 
@@ -278,8 +273,8 @@ Proof.
 
   - eapply eq_term_equals_trans;[eauto|].
     apply eq_term_equals_sym.
-    apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib'0));
-      try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
+    apply eqorceq_implies_iff_per_eq_eq;
+      try apply in_ext_ext_implies_in_open_bar_ext;
       try apply in_ext_implies_all_in_bar_trivial_bar;
       eauto 3 with slow;
       try (eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 3 with slow);
@@ -296,9 +291,9 @@ Lemma eq_per_eq_bar_sym {o} :
     eq_per_eq_bar lib a1 a2 eqa t1 t2
     -> eq_per_eq_bar lib a1 a2 eqa t2 t1.
 Proof.
-  introv e; unfold eq_per_eq_bar in *; exrepnd.
-  exists bar; introv br ext; introv.
-  pose proof (e0 _ br _ ext x) as e0; simpl in *.
+  introv h; unfold eq_per_eq_bar in *; exrepnd.
+  apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as.
+  eapply in_open_bar_ext_pres; eauto; clear h; introv h.
   unfold eq_per_eq in *.
   repnd; dands; auto.
 Qed.
@@ -310,10 +305,9 @@ Lemma eq_per_eq_bar_trans {o} :
     -> eq_per_eq_bar lib a1 a2 eqa t1 t3.
 Proof.
   introv e1 e2; unfold eq_per_eq_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar); introv br ext; introv.
-  simpl in *; exrepnd.
-  pose proof (e2 _ br0 lib'0 (lib_extends_trans ext br3) x) as e2; simpl in *.
-  pose proof (e0 _ br2 lib'0 (lib_extends_trans ext br1) x) as e0; simpl in *.
+  apply e_all_in_ex_bar_ext_as in e1; apply e_all_in_ex_bar_ext_as in e2; apply e_all_in_ex_bar_ext_as.
+  eapply in_open_bar_ext_comb; try exact e2; clear e2.
+  eapply in_open_bar_ext_pres; eauto; clear e1; introv e1 e2.
   unfold eq_per_eq in *.
   repnd; dands; auto.
 Qed.
@@ -324,10 +318,9 @@ Lemma eq_per_eq_bar_resp {o} :
     -> ccequivc_ext lib t1 t2
     -> eq_per_eq_bar lib a1 a2 eqa t1 t2.
 Proof.
-  introv e ceq; unfold eq_per_eq_bar in *; exrepnd.
-  exists bar; introv br ext; introv.
-  simpl in *; exrepnd.
-  pose proof (e0 _ br _ ext x) as e0; simpl in *.
+  introv h ceq; unfold eq_per_eq_bar in *; exrepnd.
+  apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as.
+  eapply in_open_bar_ext_pres; eauto; clear h; introv h.
   unfold eq_per_eq in *.
   repnd; dands; spcast; eauto 3 with slow.
 Qed.
@@ -341,19 +334,18 @@ Lemma type_symmetric_per_bar_per_eq1 {o} :
 Proof.
   introv tsp comp1 per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear per1; introv per1.
 
   unfold per_eq in *; exrepnd.
-  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact e].
   computes_to_eqval_ext.
   apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
   exists B0 A b1 b2 a1 a2 eqa1; dands; spcast; eauto 3 with slow.
 
   - introv.
-    pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
-    pose proof (per4 lib'1 e) as per4; simpl in *.
+    pose proof (tsp lib'0 (lib_extends_trans e0 e)) as tsp; simpl in *.
+    pose proof (per4 lib'0 e0) as per4; simpl in *.
     onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
     eapply tygs; eauto 5 with slow.
 
@@ -381,9 +373,9 @@ Proof.
 
   - eapply eq_term_equals_trans;[eauto|].
     apply eq_term_equals_sym;
-    apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib'0));
-      try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
-      try apply in_ext_implies_all_in_bar_trivial_bar;
+      apply eqorceq_implies_iff_per_eq_eq;
+      try apply in_ext_ext_implies_in_open_bar_ext;
+      try apply in_ext_implies_in_open_bar;
       try (apply eqorceq_ext_sym; auto);
       try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
                      try exact tsp; try exact per4; eauto 3 with slow));
@@ -403,27 +395,14 @@ Lemma type_symmetric_per_bar_per_eq2 {o} :
 Proof.
   introv tsp comp1 per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear per1; introv per1.
 
   unfold per_eq in *; exrepnd.
-  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact e].
   computes_to_eqval_ext.
   apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
   exists B0 A0 b1 b2 a0 a3 eqa1; dands; spcast; eauto 3 with slow.
-
-  - introv.
-    pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
-    pose proof (per4 lib'1 e) as per4; simpl in *.
-    onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
-
-    pose proof (tyvrt1 A B0 A0 (eqa1 lib'1 e)) as w.
-    repeat (autodimp w hyp); eauto 3 with slow.
-    pose proof (tyvr A B0) as z; repeat (autodimp z hyp); eauto 3 with slow.
-    apply tygs in z.
-    pose proof (dum A B0 A0 (eqa lib'1 (lib_extends_trans e x)) (eqa1 lib'1 e)) as u.
-    repeat (autodimp u hyp); tcsp.
 
   - eapply eqorceq_ext_sym; auto.
     eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
@@ -435,9 +414,9 @@ Proof.
 
   - eapply eq_term_equals_trans;[eauto|].
     apply eq_term_equals_sym.
-    apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib'0));
-      try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
-      try apply in_ext_implies_all_in_bar_trivial_bar;
+    apply eqorceq_implies_iff_per_eq_eq;
+      try apply in_ext_ext_implies_in_open_bar_ext;
+      try apply in_ext_implies_in_open_bar;
       try (apply eqorceq_ext_sym; auto);
       try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
                      try exact tsp; try exact per4; eauto 3 with slow));
@@ -458,38 +437,33 @@ Lemma type_transitive_per_bar_per_eq1 {o} :
 Proof.
   introv tsp comp1 pera perb.
   unfold per_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar) eqa1; dands; auto;
-    [|eapply eq_term_equals_trans;[eauto|];
-      apply eq_term_equals_sym; apply per_bar_eq_intersect_bars_left
-    ];[].
-
-  introv br ext; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br0 _ (lib_extends_trans ext br3) x) as pera0; simpl in *.
-  pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
+  exists eqa1; dands; auto.
+  eapply in_open_bar_ext_comb; try exact perb1; clear perb1.
+  eapply in_open_bar_ext_pres; eauto; clear pera1; introv pera1 perb1.
 
   unfold per_eq in *; exrepnd.
-  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact e].
   computes_to_eqval_ext.
-  hide_hyp perb0.
+  hide_hyp perb1.
   computes_to_eqval_ext.
   apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
   apply ccequivc_ext_mkc_equality_implies in ceq0; repnd.
   exists A1 B0 a4 a5 b1 b2 eqa2; dands; spcast; eauto 3 with slow.
 
   - introv.
-    pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
-    pose proof (pera4 lib'1 e) as pera4; simpl in *.
-    pose proof (perb4 lib'1 e) as perb4; simpl in *.
+    pose proof (tsp lib'0 (lib_extends_trans e0 e)) as tsp; simpl in *.
+    pose proof (pera4 lib'0 e0) as pera4; simpl in *.
+    pose proof (perb4 lib'0 e0) as perb4; simpl in *.
     onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
 
-    pose proof (tyvrt1 A B1 A1 (eqa3 lib'1 e)) as xx.
+    pose proof (tyvrt1 A B1 A1 (eqa3 lib'0 e0)) as xx.
     repeat (autodimp xx hyp); eauto 2 with slow;[].
 
-    pose proof (tyvrt1 A A0 B0 (eqa2 lib'1 e)) as yy.
+    pose proof (tyvrt1 A A0 B0 (eqa2 lib'0 e0)) as yy.
     repeat (autodimp yy hyp); eauto 2 with slow;[].
     apply tygs in xx.
 
-    pose proof (dum A A1 B0 (eqa3 lib'1 e) (eqa2 lib'1 e)) as q.
+    pose proof (dum A A1 B0 (eqa3 lib'0 e0) (eqa2 lib'0 e0)) as q.
     repeat (autodimp q hyp); tcsp.
 
   - eapply eqorceq_ext_trans1; eauto;
@@ -535,9 +509,9 @@ Proof.
         try exact tsp; try exact pera4; try exact perb4; eauto 3 with slow. }
 
   - eapply eq_term_equals_trans;[eauto|].
-    apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib'0));
-      try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
-      try apply in_ext_implies_all_in_bar_trivial_bar;
+    apply eqorceq_implies_iff_per_eq_eq;
+      try apply in_ext_ext_implies_in_open_bar_ext;
+      try apply in_ext_implies_in_open_bar;
       try apply eqorceq_ext_refl.
     { eapply in_ext_ext_type_sys_props4_ccequivc_ext_trans_implies_eq_term_equals1;
         try exact tsp; try exact pera4; try exact perb4; eauto 2 with slow. }
@@ -559,38 +533,33 @@ Lemma type_transitive_per_bar_per_eq2 {o} :
 Proof.
   introv tsp comp1 pera perb.
   unfold per_bar in *; exrepnd.
-  exists (intersect_bars bar0 bar) eqa0; dands; auto;
-    [|eapply eq_term_equals_trans;[eauto|];
-      apply eq_term_equals_sym; apply per_bar_eq_intersect_bars_right
-    ];[].
-
-  introv br ext; introv; simpl in *; exrepnd.
-  pose proof (pera0 _ br0 _ (lib_extends_trans ext br3) x) as pera0; simpl in *.
-  pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_comb; try exact perb1; clear perb1.
+  eapply in_open_bar_ext_pres; eauto; clear pera1; introv pera1 perb1.
 
   unfold per_eq in *; exrepnd.
-  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact e].
   computes_to_eqval_ext.
-  hide_hyp perb0.
+  hide_hyp perb1.
   computes_to_eqval_ext.
   apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
   apply ccequivc_ext_mkc_equality_implies in ceq0; repnd.
   exists A1 B0 a4 a5 b1 b2 eqa2; dands; spcast; eauto 3 with slow.
 
   - introv.
-    pose proof (tsp lib'1 (lib_extends_trans e x)) as tsp; simpl in *.
-    pose proof (pera4 lib'1 e) as pera4; simpl in *.
-    pose proof (perb4 lib'1 e) as perb4; simpl in *.
+    pose proof (tsp lib'0 (lib_extends_trans e0 e)) as tsp; simpl in *.
+    pose proof (pera4 lib'0 e0) as pera4; simpl in *.
+    pose proof (perb4 lib'0 e0) as perb4; simpl in *.
     onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
 
-    pose proof (tyvrt1 A B1 A1 (eqa3 lib'1 e)) as xx.
+    pose proof (tyvrt1 A B1 A1 (eqa3 lib'0 e0)) as xx.
     repeat (autodimp xx hyp); eauto 2 with slow;[].
 
-    pose proof (tyvrt1 A A0 B0 (eqa2 lib'1 e)) as yy.
+    pose proof (tyvrt1 A A0 B0 (eqa2 lib'0 e0)) as yy.
     repeat (autodimp yy hyp); eauto 2 with slow;[].
     apply tygs in xx.
 
-    pose proof (dum A A1 B0 (eqa3 lib'1 e) (eqa2 lib'1 e)) as q.
+    pose proof (dum A A1 B0 (eqa3 lib'0 e0) (eqa2 lib'0 e0)) as q.
     repeat (autodimp q hyp); tcsp.
 
   - eapply eqorceq_ext_trans1; eauto;
@@ -636,9 +605,9 @@ Proof.
         try exact tsp; try exact pera4; try exact perb4; eauto 3 with slow. }
 
   - eapply eq_term_equals_trans;[eauto|].
-    apply (eqorceq_implies_iff_per_eq_eq _ (trivial_bar lib'0));
-      try apply in_ext_ext_implies_all_in_bar_ext_trivial_bar;
-      try apply in_ext_implies_all_in_bar_trivial_bar;
+    apply eqorceq_implies_iff_per_eq_eq;
+      try apply in_ext_ext_implies_in_open_bar_ext;
+      try apply in_ext_implies_in_open_bar;
       try apply eqorceq_ext_refl;
       try (complete (introv; tcsp));
       try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
@@ -755,12 +724,11 @@ Lemma type_value_respecting_trans_per_bar_per_eq3 {o} :
 Proof.
   introv tsp comp1 ceq1 per.
   unfold per_bar in *; exrepnd.
-  exists bar eqa0; dands; auto.
-  introv br ext; introv.
-  pose proof (per0 _ br _ ext x) as per0; simpl in *.
+  exists eqa0; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear per1; introv per1.
 
   unfold per_eq in *; exrepnd.
-  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact x].
+  eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact e].
   computes_to_eqval_ext.
   apply ccequivc_ext_mkc_equality_implies in ceq; repnd.
 
