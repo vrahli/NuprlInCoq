@@ -352,37 +352,34 @@ Proof.
 
     apply dest_nuprl_uni in G1.
     apply univ_implies_univi_bar3 in G1; exrepnd.
-    apply G2 in G0.
+    apply G1 in G0.
     clear dependent eq.
 
-    assert (exists (bar : BarLib lib'), per_bar_eq bar (univi_eq_lib_per lib' i) (substc a0 v1 B1) (substc a1 v2 B2)) as h by (exists bar; auto).
-    clear dependent bar.
-    unfold per_bar_eq in h; simpl in *.
+    apply in_open_bar_ext_choice in G0; exrepnd.
+    apply in_open_bar_eqa_choice_non_dep in G1; exrepnd.
 
-    pose proof (@collapse2bars_ext o lib' (fun lib'' x => univi_eq (univi_bar i) lib'' (substc a0 v1 B1) (substc a1 v2 B2))) as q.
-    simpl in q; autodimp q hyp; tcsp;[].
-    apply q in h; clear q.
-    exrepnd.
-    unfold univi_eq in h0; fold (@nuprli o i) in *.
+    exists (per_bar_eq _ (lib_fun_non_dep_eqa Feqa)).
+    apply CL_bar; exists (lib_fun_non_dep_eqa Feqa); dands; auto.
+    fold (@nuprli o i); simpl in *.
+    introv xt.
+    assert (lib_extends (Flib lib'0 xt) lib'0) as xta by eauto 3 with slow.
+    exists (Flib lib'0 xt) xta.
+    introv xtb xtc.
 
-    apply all_in_bar_ext_exists_per_implies_exists in h0; exrepnd.
-    exists (per_bar_eq bar (bar_per2lib_per feqa)).
-    apply CL_bar.
-    exists bar (bar_per2lib_per feqa).
-    dands; tcsp;[].
-
-    introv br xt ; introv; simpl; try (fold (@nuprli o i)).
-    pose proof (h1 _ br _ xt x) as q.
+    pose proof (G0 _ xt _ xtb xtc) as q; simpl in *.
     eapply nuprli_type_extensionality;[eauto|].
     introv; split; intro h.
 
-    { exists lib'0 br xt x; auto. }
+    { exists lib'0 xt lib'1 xtb xtc (lib_extends_refl lib'1); auto. }
 
     exrepnd.
-    pose proof (h1 _ br0 _ ext0 x0) as h1.
-    eapply nuprli_uniquely_valued in h1; try exact q.
-    apply h1; auto.
+    pose proof (G0 _ ext1 _ ext2 extz) as w.
+    eapply nuprli_monotone in w; autodimp w hyp; try exact z; exrepnd.
+    apply nuprli_refl in w1.
+    apply nuprli_refl in q.
+    eapply nuprli_uniquely_valued in w1; try exact q; apply w1; clear w1; apply w0; auto.
   }
+
   clear F.
   exrepnd.
 

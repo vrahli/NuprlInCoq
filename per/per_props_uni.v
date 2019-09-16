@@ -39,20 +39,11 @@ Require Export cvterm.
 
 
 Lemma per_bar_eq_univi_eq_lib_per_implies {o} :
-  forall {lib} (bar : @BarLib o lib) i a b,
-    per_bar_eq bar (univi_eq_lib_per lib i) a b
-    -> exists (bar : BarLib lib), all_in_bar_ext bar (fun (lib' : library) x => univi_eq (univi_bar i) lib' a b).
+  forall (lib : @library o) i a b,
+    per_bar_eq lib (univi_eq_lib_per lib i) a b
+    -> in_open_bar_ext lib (fun (lib' : library) x => univi_eq (univi_bar i) lib' a b).
 Proof.
-  introv per.
-
-  assert (exists (bar : BarLib lib), per_bar_eq bar (univi_eq_lib_per lib i) a b) as h by (exists bar; auto).
-  clear per; rename h into per.
-
-  pose proof (@collapse2bars_ext o lib (fun lib' x => univi_eq (univi_bar i) lib' a b)) as q.
-  simpl in q; autodimp q hyp; tcsp;[].
-  apply q in per; clear q.
-  exrepnd.
-  exists bar0; auto.
+  introv per; tcsp.
 Qed.
 
 Lemma equality_in_uni {o} :
@@ -64,30 +55,35 @@ Proof.
 
   apply dest_nuprl_uni in e1.
   apply univ_implies_univi_bar3 in e1; exrepnd.
-  apply e2 in e0.
+  apply e1 in e0.
   clear dependent eq.
-
-  apply per_bar_eq_univi_eq_lib_per_implies in e0.
-  clear dependent bar; exrepnd.
-  unfold univi_eq in e1.
+  unfold per_bar_eq in e0; simpl in *.
+  unfold univi_eq in e0.
   fold (@nuprli o i) in *.
 
-  apply all_in_bar_ext_exists_per_implies_exists in e1; exrepnd.
-  exists (per_bar_eq bar (bar_per2lib_per feqa)).
-  apply CL_bar; exists bar (bar_per2lib_per feqa); dands; tcsp;[].
+  apply in_open_bar_ext_choice in e0; exrepnd.
+  apply in_open_bar_eqa_choice_non_dep in e1; exrepnd.
 
-  introv br xt ; introv; simpl; fold (@nuprl o).
-  pose proof (e0 _ br _ xt x) as q.
+  exists (per_bar_eq lib (lib_fun_non_dep_eqa Feqa)).
+  apply CL_bar; exists (lib_fun_non_dep_eqa Feqa); dands; auto.
+  fold (@nuprl o); simpl.
+  introv ext.
+  assert (lib_extends (Flib lib' ext) lib') as xta by eauto 3 with slow.
+  exists (Flib _ ext) xta.
+  introv xtb xtc.
+
+  pose proof (e0 _ ext _ xtb xtc) as q; simpl in *.
   eapply type_extensionality_nuprl;[eauto 3 with slow|].
-
   introv; split; intro h.
 
-  { exists lib' br xt x; auto. }
+  { exists lib' ext lib'0 xtb xtc (lib_extends_refl lib'0); auto. }
 
   exrepnd.
-  pose proof (e0 _ br0 _ ext x0) as e0.
-  eapply nuprli_uniquely_valued in e0; try exact q.
-  apply e0; auto.
+  pose proof (e0 _ ext1 _ ext2 extz) as w.
+  eapply nuprli_monotone in w; autodimp w hyp; try exact z; exrepnd.
+  apply nuprli_refl in w1.
+  apply nuprli_refl in q.
+  eapply nuprli_uniquely_valued in w1; try exact q; apply w1; clear w1; apply w0; auto.
 Qed.
 Hint Resolve equality_in_uni : slow.
 
@@ -100,12 +96,13 @@ Qed.
 Hint Resolve member_in_uni : slow.
 
 Lemma mkc_uni_in_nuprl {o} :
-  forall (lib : @library o) (i : nat) (bar : BarLib lib),
-    nuprl lib (mkc_uni i) (mkc_uni i) (per_bar_eq bar (univi_eq_lib_per lib i)).
+  forall (lib : @library o) (i : nat),
+    nuprl lib (mkc_uni i) (mkc_uni i) (per_bar_eq lib (univi_eq_lib_per lib i)).
 Proof.
   introv.
   apply CL_init.
-  exists bar (univi_eq_lib_per lib i); dands; tcsp.
+  exists (univi_eq_lib_per lib i); dands; tcsp.
+  apply in_ext_ext_implies_in_open_bar_ext; introv.
   exists (S i); simpl.
   left; sp; eauto 3 with slow.
 Qed.
@@ -116,18 +113,13 @@ Lemma uni_in_uni {o} :
 Proof.
   introv h.
   unfold member, equality.
-  exists (per_bar_eq (trivial_bar lib) (univi_eq_lib_per lib j)); dands; eauto 2 with slow.
+  exists (per_bar_eq lib (univi_eq_lib_per lib j)); dands; eauto 2 with slow.
 
-  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar; introv.
-  exists (trivial_bar lib').
-  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar; introv.
-  simpl.
-
-  exists (per_bar_eq (trivial_bar lib'0) (univi_eq_lib_per lib'0 i)); dands; eauto 2 with slow.
-
+  apply in_ext_ext_implies_in_open_bar_ext; introv; simpl.
+  exists (per_bar_eq lib' (univi_eq_lib_per lib' i)); dands; eauto 2 with slow.
   apply CL_init.
-  exists (trivial_bar lib'0) (univi_eq_lib_per lib'0 i); dands; tcsp.
-  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar; introv.
+  exists (univi_eq_lib_per lib' i); dands; tcsp.
+  apply in_ext_ext_implies_in_open_bar_ext; introv.
   apply univi_exists_iff.
   exists i; dands; spcast; eauto 3 with slow.
 Qed.
@@ -142,21 +134,16 @@ Proof.
   unfold member, equality in *; exrepnd.
   apply dest_nuprl_uni in e1.
   apply univ_implies_univi_bar3 in e1; exrepnd.
-  apply e2 in e0.
+  apply e1 in e0; clear e1.
 
-  exists (per_bar_eq bar (univi_eq_lib_per lib j)); dands; eauto 2 with slow.
-  introv br ext; introv.
-  pose proof (e0 _ br _ ext x) as e0; simpl in *.
-  exrepnd.
-  exists bar'.
-  introv br' ext' x'.
-  pose proof (e1 _ br' _ ext' x') as e1; simpl in *.
+  exists (per_bar_eq lib (univi_eq_lib_per lib j)); dands; eauto 2 with slow.
+  eapply in_open_bar_ext_pres; try exact e0; clear e0; introv e0; simpl in *.
 
   unfold univi_eq in *; exrepnd.
   exists eqa.
   fold (@nuprli o i) in *.
   fold (@nuprli o j) in *.
-  pose proof (typable_in_higher_univ i lib'2 A B eqa e0 (j - i)) as q.
+  pose proof (typable_in_higher_univ i lib' A B eqa e1 (j - i)) as q.
   rewrite minus_plus_n in q; auto; try omega.
 Qed.
 
@@ -165,7 +152,7 @@ Lemma nuprl_mkc_uni {p} :
     {eq : per(p) , nuprl lib (mkc_uni i) (mkc_uni i) eq}.
 Proof.
   introv.
-  exists (per_bar_eq (trivial_bar lib) (univi_eq_lib_per lib i)); eauto 2 with slow.
+  exists (per_bar_eq lib (univi_eq_lib_per lib i)); eauto 2 with slow.
 Qed.
 
 Lemma tequality_mkc_uni {p} :
@@ -183,33 +170,38 @@ Qed.
 Hint Resolve type_mkc_uni : slow.
 
 Lemma per_bar_eq_univi_eq_lib_per_implies_eq_nuprli {o} :
-  forall lib (bar : BarLib lib) i (A B : @CTerm o),
-    per_bar_eq bar (univi_eq_lib_per lib i) A B
+  forall lib i (A B : @CTerm o),
+    per_bar_eq lib (univi_eq_lib_per lib i) A B
     -> exists eq', nuprli i lib A B eq'.
 Proof.
   introv e0.
   unfold per_bar_eq in e0; simpl in *.
-  apply per_bar_eq_univi_eq_lib_per_implies in e0.
-  clear dependent bar.
-  exrepnd.
-  unfold univi_eq in e1.
-  apply all_in_bar_ext_exists_per_implies_exists in e1; exrepnd.
+  unfold univi_eq in e0.
 
-  exists (per_bar_eq bar (bar_per2lib_per feqa)).
-  apply CL_bar; exists bar (bar_per2lib_per feqa); dands; tcsp;[].
-  introv br ext; introv.
-  pose proof (e0 _ br _ ext x) as q; simpl in *.
+  apply in_open_bar_ext_choice in e0; exrepnd.
+  apply in_open_bar_eqa_choice_non_dep in e1; exrepnd.
+
+  exists (per_bar_eq lib (lib_fun_non_dep_eqa Feqa)).
+  apply CL_bar; exists (lib_fun_non_dep_eqa Feqa); dands; auto.
+  fold (@nuprl o); simpl.
+  introv ext.
+  assert (lib_extends (Flib lib' ext) lib') as xta by eauto 3 with slow.
+  exists (Flib _ ext) xta.
+  introv xtb xtc.
   fold (@nuprli o i) in *.
-  eapply nuprli_type_extensionality;[eauto 3 with slow|].
 
+  pose proof (e0 _ ext _ xtb xtc) as q; simpl in *.
+  eapply nuprli_type_extensionality;[eauto 3 with slow|].
   introv; split; intro h.
 
-  { exists lib' br ext x; auto. }
+  { exists lib' ext lib'0 xtb xtc (lib_extends_refl lib'0); auto. }
 
   exrepnd.
-  pose proof (e0 _ br0 _ ext0 x0) as e0.
-  eapply nuprli_uniquely_valued in e0; try exact q.
-  apply e0; auto.
+  pose proof (e0 _ ext1 _ ext2 extz) as w.
+  eapply nuprli_monotone in w; autodimp w hyp; try exact z; exrepnd.
+  apply nuprli_refl in w1.
+  apply nuprli_refl in q.
+  eapply nuprli_uniquely_valued in w1; try exact q; apply w1; clear w1; apply w0; auto.
 Qed.
 
 Lemma equality_nuprli {o} :
@@ -222,7 +214,7 @@ Proof.
   unfold equality in e; exrepnd.
   apply dest_nuprl_uni in e1.
   apply univ_implies_univi_bar3 in e1; exrepnd.
-  apply e2 in e0.
+  apply e1 in e0; clear e1.
   apply per_bar_eq_univi_eq_lib_per_implies_eq_nuprli in e0; exrepnd.
   eapply nuprli_type_extensionality;[eauto|].
   apply nuprli_refl in e1.

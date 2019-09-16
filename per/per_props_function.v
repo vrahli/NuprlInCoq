@@ -119,8 +119,7 @@ Proof.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
 
   eapply local_per_bar_per_func_ext_nuprl; eauto.
-  introv br ext; introv.
-  pose proof (reca _ br _ ext x) as reca; simpl in *.
+  eapply in_open_bar_ext_pres; try exact reca; clear reca; introv reca.
   eapply reca; eauto 3 with slow.
 Qed.
 
@@ -210,18 +209,151 @@ Proof.
     eapply (lib_per_fam_cond _  (lpaf_eqb (feqa lib1 br lib' ext y0))); eauto.
 Defined.
 
+Definition FunDepEqaFam {o} {lib} {Flib : @FunLibExt o lib} (Feqa : FunDepEqa Flib) :=
+  forall lib1 (ext1 : lib_extends lib1 lib)
+         lib2 (ext2 : lib_extends lib2 (Flib lib1 ext1))
+         (z : lib_extends lib2 lib),
+    lib-per-fam(lib2,Feqa lib1 ext1 lib2 ext2 z,o).
+
+Lemma in_open_bar_eqa_fam_choice {o} :
+  forall (lib : @library o)
+         (Flib : FunLibExt lib)
+         (Feqa : FunDepEqa Flib)
+         (G : forall lib1 (ext1 : lib_extends lib1 lib)
+                     lib2 (ext2 : lib_extends lib2 (Flib lib1 ext1))
+                     (z : lib_extends lib2 lib)
+                     (eqb : lib-per-fam(lib2,Feqa lib1 ext1 lib2 ext2 z,o)), Prop),
+    in_ext_ext
+      lib
+      (fun lib1 (ext1 : lib_extends lib1 lib) =>
+         in_ext_ext
+           (Flib lib1 ext1)
+           (fun lib2 (ext2 : lib_extends lib2 (Flib lib1 ext1)) =>
+              forall (z : lib_extends lib2 lib),
+              exists (eqb : lib-per-fam(lib2,Feqa lib1 ext1 lib2 ext2 z,o)),
+                G lib1 ext1 lib2 ext2 z eqb))
+    -> exists (Feqb : FunDepEqaFam Feqa),
+      in_ext_ext
+        lib
+        (fun lib1 (ext1 : lib_extends lib1 lib) =>
+           in_ext_ext
+             (Flib lib1 ext1)
+             (fun lib2 (ext2 : lib_extends lib2 (Flib lib1 ext1)) =>
+                forall (z : lib_extends lib2 lib),
+                  G lib1 ext1 lib2 ext2 z (Feqb lib1 ext1 lib2 ext2 z))).
+Proof.
+  introv h.
+  pose proof (DependentFunctionalChoice_on
+                (DepLibExt lib Flib)
+                (fun d => lib-per-fam(lib_ext_lib2 d,Feqa (lib_ext_lib1 d) (lib_ext_ext1 d) (lib_ext_lib2 d) (lib_ext_ext2 d) (lib_ext_extz d),o))
+                (fun d eqb =>
+                   G (lib_ext_lib1 d) (lib_ext_ext1 d)
+                     (lib_ext_lib2 d) (lib_ext_ext2 d)
+                     (lib_ext_extz d)
+                     eqb)) as C.
+  simpl in C.
+  repeat (autodimp C hyp).
+  { introv; destruct x as [lib1 ext1 lib2 ext2 extz]; simpl in *.
+    pose proof (h lib1 ext1 lib2 ext2 extz) as h; exrepnd.
+    exists eqb; auto. }
+
+  exrepnd.
+  exists (fun lib1 ext1 lib2 ext2 z => f (MkDepLibExt lib1 ext1 lib2 ext2 z)).
+  repeat introv.
+  apply (C0 (MkDepLibExt lib' e lib'0 e0 z)).
+Qed.
+
+Definition fun_lib_dep_eqa {o}
+           {lib   : @library o}
+           {Flib  : FunLibExt lib}
+           (Feqa  : FunDepEqa Flib)
+  : lib-per(lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) t1 t2 =>
+            {lib1 : library
+            , {ext1 : lib_extends lib1 lib
+            , {lib2 : library
+            , {ext2 : lib_extends lib2 (Flib lib1 ext1)
+            , {extz : lib_extends lib2 lib
+            , {z : lib_extends lib' lib2
+            , Feqa lib1 ext1 lib2 ext2 extz lib' z t1 t2 }}}}}} ).
+  introv; tcsp.
+Defined.
+
+Definition FunDeqEqa_cond
+           {o} {lib : @library o}
+           {Flib  : FunLibExt lib}
+           (Feqa  : FunDepEqa Flib) :=
+  forall lib1a ext1a lib2a ext2a extza
+         lib1b ext1b lib2b ext2b extzb
+         lib' xta xtb,
+    (Feqa lib1a ext1a lib2a ext2a extza lib' xta)
+    <=2=>
+    (Feqa lib1b ext1b lib2b ext2b extzb lib' xtb).
+
+Lemma fun_lib_dep_eqa_to {o} {lib : @library o}
+      {Flib : FunLibExt lib}
+      {Feqa : FunDepEqa Flib}
+      (cond : FunDeqEqa_cond Feqa)
+      {lib'}
+      {x : lib_extends lib' lib}
+      {a a'}
+      (e    : fun_lib_dep_eqa Feqa lib' x a a')
+      (lib1 : library)
+      (ext1 : lib_extends lib1 lib)
+      (lib2 : library)
+      (ext2 : lib_extends lib2 (Flib lib1 ext1))
+      (extz : lib_extends lib2 lib)
+      (z    : lib_extends lib' lib2) :
+  Feqa lib1 ext1 lib2 ext2 extz lib' z a a'.
+Proof.
+  unfold fun_lib_dep_eqa in *; simpl in *; exrepnd.
+  eapply cond; eauto.
+Qed.
+
+Definition fun_lib_dep_eqb {o}
+           {lib  : @library o}
+           {Flib : FunLibExt lib}
+           {Feqa : FunDepEqa Flib}
+           (cond : FunDeqEqa_cond Feqa)
+           (Feqb : FunDepEqaFam Feqa)
+  : lib-per-fam(lib,fun_lib_dep_eqa Feqa,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) a a' (e : fun_lib_dep_eqa Feqa lib' x a a') t1 t2 =>
+            {lib1 : library
+            , {ext1 : lib_extends lib1 lib
+            , {lib2 : library
+            , {ext2 : lib_extends lib2 (Flib lib1 ext1)
+            , {extz : lib_extends lib2 lib
+            , {z : lib_extends lib' lib2
+            , Feqb lib1 ext1 lib2 ext2 extz lib' z a a'
+                   (fun_lib_dep_eqa_to cond e lib1 ext1 lib2 ext2 extz z)
+                   t1 t2 }}}}}} ).
+  repeat introv; tcsp.
+  split; introv h; exrepnd;
+    exists lib1 ext1 lib2 ext2 extz z; simpl in *;
+      eapply lib_per_fam_cond; eauto.
+Defined.
+
 Lemma dest_nuprl_function2 {o} :
   forall lib (eq : per(o)) A v B C w D,
     nuprl lib (mkc_function A v B) (mkc_function C w D) eq
     ->
-    exists (bar : BarLib lib) (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)),
-      eq <=2=> (per_bar_eq bar (per_func_ext_eq_bar_lib_per lib eqa eqb))
-      # all_in_bar_ext bar (fun lib' x => nuprl lib' A C (eqa lib' x))
-      # all_in_bar_ext bar (fun lib' x => forall a a' (e : eqa lib' x a a'), nuprl lib' (substc a v B) (substc a' w D) (eqb lib' x a a' e)).
+    exists (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)),
+      eq <=2=> (per_bar_eq lib (per_func_ext_eq_bar_lib_per lib eqa eqb))
+      # in_open_bar_ext lib (fun lib' x => nuprl lib' A C (eqa lib' x))
+      # in_open_bar_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), nuprl lib' (substc a v B) (substc a' w D) (eqb lib' x a a' e)).
 Proof.
   introv u.
   apply dest_nuprl_function in u.
   unfold per_bar in u; exrepnd.
+
+  unfold per_func_ext in u1.
+  apply in_open_bar_ext_choice in u1; exrepnd.
+  apply in_open_bar_eqa_choice in u2; exrepnd.
+  apply in_open_bar_eqa_fam_choice in u1; exrepnd.
+
+XXXXXXXXXXx
 
   apply all_in_bar_ext_exists_per_and_fam_implies_exists in u0; exrepnd.
 
