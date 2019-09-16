@@ -37,10 +37,10 @@ Require Export per_props_compute.
 
 
 Definition chaltsc_bar {o} lib (t : @CTerm o) :=
-  all_in_ex_bar lib (fun lib => chaltsc lib t).
+  in_open_bar lib (fun lib => chaltsc lib t).
 
 Definition comp_val_bar {o} lib (t : @CTerm o) :=
-  all_in_ex_bar lib (fun lib => exists v, ccomputes_to_valc_ext lib t v).
+  in_open_bar lib (fun lib => exists v, ccomputes_to_valc_ext lib t v).
 
 Hint Resolve computes_to_valc_implies_hasvaluec : slow.
 
@@ -62,9 +62,7 @@ Lemma computes_to_valc_implies_chaltsc_bar_left {o} :
     -> chaltsc_bar lib a.
 Proof.
   introv comp.
-  exists (trivial_bar lib).
-  apply in_ext_implies_all_in_bar_trivial_bar; introv x.
-  spcast; eauto 3 with slow.
+  apply in_ext_implies_in_open_bar; introv ext; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve computes_to_valc_implies_chaltsc_bar_left : slow.
 
@@ -74,9 +72,7 @@ Lemma ccomputes_to_valc_ext_implies_comp_val_bar {o} :
     -> comp_val_bar lib a.
 Proof.
   introv comp.
-  exists (trivial_bar lib).
-  apply in_ext_implies_all_in_bar_trivial_bar; introv x.
-  exists b; eauto 3 with slow.
+  apply in_ext_implies_in_open_bar; introv ext; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve ccomputes_to_valc_ext_implies_comp_val_bar : slow.
 
@@ -94,22 +90,16 @@ Proof.
   {
     rename_hyp_with @univ h.
     unfold univ, per_bar in h; exrepnd.
-    exists bar.
-    introv br ext.
-    assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
-    pose proof (h0 _ br _ ext x) as h0; simpl in *.
+    eapply in_open_bar_comb2; try exact h1; clear h1.
+    apply in_ext_ext_implies_in_open_bar_ext; introv h1.
     unfold univ_ex in *; exrepnd.
     rw @univi_exists_iff in h2; exrepnd.
     spcast; eauto 3 with slow.
   }
 
   {
-    apply collapse_all_in_ex_bar.
-    exists bar.
-    introv br ext.
-    assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
-    fold (chaltsc_bar lib'0 T').
-    apply (reca _ br); eauto 3 with slow.
+    eapply in_open_bar_ext_in_open_bar.
+    eapply in_open_bar_ext_pres; try exact reca; clear reca; introv ext reca; apply reca; auto.
   }
 Qed.
 
@@ -126,21 +116,15 @@ Proof.
   {
     rename_hyp_with @univ h.
     unfold univ, per_bar in h; exrepnd.
-    exists bar.
-    introv br ext.
-    assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
-    pose proof (h0 _ br _ ext x) as h0; simpl in *.
+    eapply in_open_bar_comb2; try exact h1; clear h1.
+    apply in_ext_ext_implies_in_open_bar_ext; introv h1.
     unfold univ_ex in *; exrepnd.
     rw @univi_exists_iff in h2; exrepnd.
     spcast; eauto 3 with slow.
   }
 
   {
-    apply collapse_all_in_ex_bar.
-    exists bar.
-    introv br ext.
-    assert (lib_extends lib'0 lib) as x by eauto 3 with slow.
-    fold (chaltsc_bar lib'0 T').
-    apply (reca _ br); eauto 3 with slow.
+    eapply in_open_bar_ext_in_open_bar.
+    eapply in_open_bar_ext_pres; try exact reca; clear reca; introv ext reca; apply reca; auto.
   }
 Qed.

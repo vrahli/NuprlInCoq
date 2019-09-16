@@ -41,8 +41,7 @@ Proof.
   introv.
   rw @mkc_false_eq.
   rw @tequality_mkc_approx.
-  exists (trivial_bar lib).
-  apply in_ext_implies_all_in_bar_trivial_bar; introv e.
+  apply in_ext_implies_in_open_bar; introv ext.
   split; intro k; spcast; apply not_axiom_approxc_bot in k; sp.
 Qed.
 Hint Resolve tequality_false : slow.
@@ -53,9 +52,8 @@ Proof.
   introv; split; intro e; sp.
   rw @mkc_false_eq in e.
   rw <- @equality_in_approx in e.
-  unfold all_in_ex_bar in e; exrepnd.
-  pose proof (bar_non_empty bar) as q; exrepnd.
-  pose proof (e0 _ q0 _ (lib_extends_refl lib')) as e0; simpl in *; repnd; spcast.
+  apply (in_open_bar_const lib).
+  eapply in_open_bar_pres; eauto; clear e; introv ext h; simpl in *; repnd; spcast.
   allapply @not_axiom_approxc_bot; sp.
 Qed.
 
