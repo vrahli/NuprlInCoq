@@ -76,8 +76,8 @@ Proof.
   }
 
   {
-    exists (trivial_bar lib).
-    apply implies_all_in_bar_ext_trivial_bar.
+    unfold eq_per_eq_bar; apply e_all_in_ex_bar_ext_as.
+    apply in_ext_ext_implies_in_open_bar_ext; introv; simpl.
     introv; unfold eq_per_eq; dands; spcast; eauto 3 with slow refl; try apply q0.
   }
 Qed.
@@ -117,41 +117,40 @@ Lemma ccequivc_ext_implies_eq_per_eq_bar {o} :
     -> (eq_per_eq_bar lib a1 b1 eqa) <=2=> (eq_per_eq_bar lib a2 b2 eqb).
 Proof.
   introv resp sym trans alla ceqa ceqb; introv.
-  unfold eq_per_eq_bar, eq_per_eq; split; introv h; exrepnd; exists bar.
+  unfold eq_per_eq_bar, eq_per_eq; split; introv h;
+    apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as;
+      eapply in_open_bar_ext_pres; try exact h; clear h; introv h;
+        repnd; dands; auto.
 
-  - introv br ext; introv.
-    pose proof (h0 _ br _ ext x) as h0; simpl in *; repnd; dands; auto.
-    apply alla.
+  - apply alla.
 
-    assert (eqa lib'0 x a1 a2) as w.
+    assert (eqa lib' e a1 a2) as w.
     { apply resp; eauto 3 with slow.
       eapply trans;[eauto|].
       apply sym; auto. }
 
-    assert (eqa lib'0 x b1 b2) as z.
+    assert (eqa lib' e b1 b2) as z.
     { apply resp; eauto 3 with slow.
       eapply trans;[|eauto].
       apply sym; auto. }
 
     eapply trans;[apply sym;eauto|].
-    eapply trans;[exact h0|]; auto.
+    eapply trans;[exact h|]; auto.
 
-  - introv br ext; introv.
-    pose proof (h0 _ br _ ext x) as h0; simpl in *; repnd; dands; auto.
-    apply alla in h0.
+  - apply alla in h.
 
-    assert (eqa lib'0 x a1 a2) as w.
+    assert (eqa lib' e a1 a2) as w.
     { apply sym; apply resp; eauto 3 with slow.
       eapply trans;[eauto|].
       apply sym; auto. }
 
-    assert (eqa lib'0 x b1 b2) as z.
+    assert (eqa lib' e b1 b2) as z.
     { apply sym; apply resp; eauto 3 with slow.
       eapply trans;[|eauto].
       apply sym; auto. }
 
     eapply trans;[exact w|].
-    eapply trans;[exact h0|].
+    eapply trans;[exact h|].
     apply sym; auto.
 Qed.
 
@@ -244,8 +243,7 @@ Proof.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
 
   eapply local_per_bar_per_eq_nuprl; eauto.
-  introv br ext; introv.
-  pose proof (reca _ br _ ext x) as reca; simpl in *.
+  eapply in_open_bar_ext_pres; try exact reca; clear reca; introv reca.
   eapply reca; eauto 3 with slow.
 Qed.
 
@@ -262,8 +260,7 @@ Proof.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
 
   eapply local_per_bar_per_eq_nuprli; eauto.
-  introv br ext; introv.
-  pose proof (reca _ br _ ext x) as reca; simpl in *.
+  eapply in_open_bar_ext_pres; try exact reca; clear reca; introv reca.
   eapply reca; eauto 3 with slow.
 Qed.
 
@@ -289,22 +286,56 @@ Proof.
     try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
 Qed.
 
+Lemma in_ext_ext_Flib_implies_in_open_bar_ext {o} :
+  forall (lib : @library o) (Flib : FunLibExt lib)
+         (F : forall lib1 (ext1 : lib_extends lib1 lib), Prop)
+         (G : forall lib1 (ext1 : lib_extends lib1 lib)
+                     lib2 (ext2 : lib_extends lib2 (Flib lib1 ext1))
+                     (z : lib_extends lib2 lib), Prop),
+    in_ext_ext
+      lib
+      (fun lib1 ext1 =>
+         in_ext_ext
+           (Flib lib1 ext1)
+           (fun lib2 ext2 =>
+              forall z : lib_extends lib2 lib,
+                G lib1 ext1 lib2 ext2 z
+                -> F lib2 z))
+    -> in_ext_ext
+         lib
+         (fun lib1 ext1 =>
+            in_ext_ext
+              (Flib lib1 ext1)
+              (fun lib2 ext2 =>
+                 forall z : lib_extends lib2 lib,
+                   G lib1 ext1 lib2 ext2 z))
+    -> in_open_bar_ext lib F.
+Proof.
+  introv imp h ext.
+  pose proof (h _ ext) as h; simpl in *.
+  assert (lib_extends (Flib lib' ext) lib') as xta by eauto 3 with slow.
+  exists (Flib lib' ext) xta.
+  introv xtb; introv.
+  pose proof (h _ xtb z) as h.
+  eapply imp; eauto.
+Qed.
+
 Lemma dest_nuprl_equality2 {o} :
   forall lib (eq : per(o)) a1 a2 A b1 b2 B,
     nuprl lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
     ->
-    exists (bar : BarLib lib) (eqa : lib-per(lib,o)),
-      (eq <=2=> (per_bar_eq bar (eq_per_eq_bar_lib_per lib a1 a2 eqa)))
-        # all_in_bar_ext bar (fun lib' x => nuprl lib' A B (eqa lib' x))
-        # all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a1 b1)
-        # all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a2 b2).
+    exists (eqa : lib-per(lib,o)),
+      (eq <=2=> (per_bar_eq lib (eq_per_eq_bar_lib_per lib a1 a2 eqa)))
+        # in_open_bar_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+        # in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a1 b1)
+        # in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a2 b2).
 Proof.
   introv u.
   apply dest_nuprl_equality in u.
   unfold per_bar in u; exrepnd.
 
-  assert (all_in_bar_ext
-            bar
+  assert (in_open_bar_ext
+            lib
             (fun lib' x =>
                {eqa0 : lib-per(lib',o)
                , in_ext_ext lib' (fun lib'' y => nuprl lib'' A B (eqa0 lib'' y))
@@ -312,8 +343,7 @@ Proof.
                # eqorceq_ext lib' eqa0 a2 b2
                # (eqa lib' x) <=2=> (eq_per_eq_bar lib' a1 a2 eqa0) })) as e.
   {
-    introv br ext; introv.
-    pose proof (u0 _ br _ ext x) as u0; simpl in *.
+    eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
     unfold per_eq in *; exrepnd.
     repeat ccomputes_to_valc_ext_val.
     eapply in_ext_ext_nuprl_value_respecting_left  in u4;[|apply ccequivc_ext_sym;eauto].
@@ -326,115 +356,86 @@ Proof.
     eapply eq_term_equals_trans;[eauto|].
     eapply ccequivc_ext_implies_eq_per_eq_bar; eauto 3 with slow.
   }
-  clear u0.
+  clear u1.
 
-  eapply all_in_bar_ext_exists_lib_per_implies_exists in e; exrepnd.
+  apply in_open_bar_ext_choice in e; exrepnd.
+  apply in_open_bar_eqa_choice in e0; exrepnd.
 
-  exists bar (bar_lib_per2lib_per feqa).
-
+  exists (fun_lib_dep_eqa Feqa).
   dands.
 
   {
     eapply eq_term_equals_trans;[eauto|].
     clear dependent eq.
 
-    apply implies_eq_term_equals_per_bar_eq.
-    apply all_in_bar_ext_intersect_bars_same.
-    introv br ext; introv.
-    pose proof (e0 _ br _ ext x) as u2; repnd.
-    eapply eq_term_equals_trans;[eauto|].
+    apply implies_eq_term_equals_per_bar_eq; simpl.
+    eapply in_ext_ext_Flib_implies_in_open_bar_ext; try exact e1.
+    introv h; repnd.
+    eapply eq_term_equals_trans;[eauto|]; simpl.
+    apply simple_implies_iff_per_eq_eq; simpl in *.
+    apply in_ext_ext_implies_in_open_bar_ext; introv.
+    introv; simpl; unfold raise_ext_per; split; intro q.
 
-    simpl.
-    apply (simple_implies_iff_per_eq_eq _ (trivial_bar lib'0)).
-    apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
-    introv; simpl; unfold raise_ext_per.
+    { exists lib' e lib'0 e0 z e2; auto. }
 
-    split; intro h.
-
-    - exists lib' br (lib_extends_trans e ext) (lib_extends_trans e x).
-      pose proof (u0 _ e) as u0; simpl in *.
-
-      pose proof (e0 lib' br _ (lib_extends_trans e ext) (lib_extends_trans e x)) as q.
-      unfold type_family_ext in q; exrepnd; spcast.
-      pose proof (q0 _ (lib_extends_refl lib'1)) as q0; simpl in *.
-      apply nuprl_refl in q0.
-      apply nuprl_refl in u0.
-      eapply nuprl_uniquely_valued in q0; try exact u0.
-      apply q0; auto.
-
-    - exrepnd.
-      pose proof (u0 _ e) as u0; simpl in *.
-
-      pose proof (e0 lib1 br0 _ ext0 x0) as q; repnd.
-      pose proof (q0 _ (lib_extends_refl lib'1)) as q0; simpl in *.
-      apply nuprl_refl in q0.
-      apply nuprl_refl in u0.
-      eapply nuprl_uniquely_valued in q0; try exact u0.
-      apply q0; auto.
+    exrepnd.
+    pose proof (e1 _ ext1 _ ext2 extz) as e1; repnd.
+    pose proof (e3 _ z0) as e3; simpl in *.
+    pose proof (h0 _ e2) as h0; simpl in *.
+    apply nuprl_refl in h0; apply nuprl_refl in e3.
+    eapply nuprl_uniquely_valued in h0; try exact e3; apply h0; auto.
   }
 
   {
-    introv br ext; introv.
-    pose proof (e0 _ br _ ext x) as h; simpl in *; repnd.
-    pose proof (h0 _ (lib_extends_refl lib'0)) as h0; simpl in *.
+    eapply in_ext_ext_Flib_implies_in_open_bar_ext; try exact e1.
+    introv h; repnd; simpl.
+    pose proof (h0 _ (lib_extends_refl _)) as h0; simpl in *.
     eapply type_extensionality_nuprl;[eauto|].
-    clear h.
+    introv; split; intro q.
 
-    split; intro h.
+    { exists lib' e lib'0 e0 z (lib_extends_refl lib'0); auto. }
 
-    - exists lib' br ext x; auto.
-
-    - exrepnd.
-      pose proof (e0 _ br0 _ ext0 x0) as e0; repnd.
-      pose proof (e1 _ (lib_extends_refl lib'0)) as e1; simpl in *.
-      apply nuprl_refl in e1.
-      apply nuprl_refl in h0.
-      eapply nuprl_uniquely_valued in e1; try exact h0.
-      apply e1; auto.
+    exrepnd.
+    pose proof (e1 _ ext1 _ ext2 extz) as e1; repnd.
+    pose proof (e2 _ z0) as e2; simpl in *.
+    apply nuprl_refl in h0; apply nuprl_refl in e2.
+    eapply nuprl_uniquely_valued in h0; try exact e2; apply h0; auto.
   }
 
   {
-    introv br ext; introv.
-    pose proof (e0 _ br _ ext x) as h; simpl in *; repnd.
-    clear h.
-    pose proof (h0 _ (lib_extends_refl lib'0)) as h0; simpl in *.
-    pose proof (h1 _ (lib_extends_refl lib'0)) as h1; simpl in *.
-    eapply eqorceq_eq_term_equals;[|eauto].
-    introv.
+    eapply in_ext_ext_Flib_implies_in_open_bar_ext; try exact e1.
+    introv h; repnd; simpl.
+    pose proof (h0 _ (lib_extends_refl _)) as h0; simpl in *.
+    pose proof (h1 _ (lib_extends_refl _)) as h1; simpl in *.
+    eapply eqorceq_eq_term_equals; eauto.
+    apply eq_term_equals_sym.
+    introv; split; intro q.
 
-    split; intro h.
+    { exists lib' e lib'0 e0 z (lib_extends_refl lib'0); auto. }
 
-    - exrepnd.
-      pose proof (e0 _ br0 _ ext0 x0) as e0; repnd.
-      pose proof (e1 _ (lib_extends_refl lib'0)) as e1; simpl in *.
-      apply nuprl_refl in e1.
-      apply nuprl_refl in h0.
-      eapply nuprl_uniquely_valued in e1; try exact h0.
-      apply e1; auto.
-
-    - exists lib' br ext x; simpl; auto.
+    exrepnd.
+    pose proof (e1 _ ext1 _ ext2 extz) as e1; repnd.
+    pose proof (e2 _ z0) as e2; simpl in *.
+    apply nuprl_refl in h0; apply nuprl_refl in e2.
+    eapply nuprl_uniquely_valued in h0; try exact e2; apply h0; auto.
   }
 
   {
-    introv br ext; introv.
-    pose proof (e0 _ br _ ext x) as h; simpl in *; repnd.
-    clear h.
-    pose proof (h0 _ (lib_extends_refl lib'0)) as h0; simpl in *.
-    pose proof (h1 _ (lib_extends_refl lib'0)) as h1; simpl in *.
-    eapply eqorceq_eq_term_equals;[|eauto].
-    introv.
+    eapply in_ext_ext_Flib_implies_in_open_bar_ext; try exact e1.
+    introv h; repnd; simpl.
+    pose proof (h0 _ (lib_extends_refl _)) as h0; simpl in *.
+    pose proof (h2 _ (lib_extends_refl _)) as h2; simpl in *.
+    eapply eqorceq_eq_term_equals; eauto.
+    apply eq_term_equals_sym.
+    introv; split; intro q.
 
-    split; intro h.
+    { exists lib' e lib'0 e0 z (lib_extends_refl lib'0); auto. }
 
-    - exrepnd.
-      pose proof (e0 _ br0 _ ext0 x0) as e0; repnd.
-      pose proof (e1 _ (lib_extends_refl lib'0)) as e1; simpl in *.
-      apply nuprl_refl in e1.
-      apply nuprl_refl in h0.
-      eapply nuprl_uniquely_valued in e1; try exact h0.
-      apply e1; auto.
-
-    - exists lib' br ext x; simpl; auto.
+    exrepnd.
+    pose proof (e1 _ ext1 _ ext2 extz) as e1; repnd.
+    pose proof (e2 _ z0) as e2; simpl in *.
+    apply nuprl_refl in h0; apply nuprl_refl in e2.
+    eapply nuprl_uniquely_valued in h0; try exact e2; apply h0; auto.
   }
 Qed.
 
@@ -442,18 +443,18 @@ Lemma dest_nuprli_equality2 {o} :
   forall i lib (eq : per(o)) a1 a2 A b1 b2 B,
     nuprli i lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
     ->
-    exists (bar : BarLib lib) (eqa : lib-per(lib,o)),
-      (eq <=2=> (per_bar_eq bar (eq_per_eq_bar_lib_per lib a1 a2 eqa)))
-        # all_in_bar_ext bar (fun lib' x => nuprli i lib' A B (eqa lib' x))
-        # all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a1 b1)
-        # all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a2 b2).
+    exists (eqa : lib-per(lib,o)),
+      (eq <=2=> (per_bar_eq lib (eq_per_eq_bar_lib_per lib a1 a2 eqa)))
+        # in_open_bar_ext lib (fun lib' x => nuprli i lib' A B (eqa lib' x))
+        # in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a1 b1)
+        # in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a2 b2).
 Proof.
   introv u.
   apply dest_nuprli_equality in u.
   unfold per_bar in u; exrepnd.
 
-  assert (all_in_bar_ext
-            bar
+  assert (in_open_bar_ext
+            lib
             (fun lib' x =>
                {eqa0 : lib-per(lib',o)
                , in_ext_ext lib' (fun lib'' y => nuprli i lib'' A B (eqa0 lib'' y))
@@ -461,8 +462,7 @@ Proof.
                # eqorceq_ext lib' eqa0 a2 b2
                # (eqa lib' x) <=2=> (eq_per_eq_bar lib' a1 a2 eqa0) })) as e.
   {
-    introv br ext; introv.
-    pose proof (u0 _ br _ ext x) as u0; simpl in *.
+    eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
     unfold per_eq in *; exrepnd.
     repeat ccomputes_to_valc_ext_val.
     eapply in_ext_ext_nuprli_value_respecting_left  in u4;[|apply ccequivc_ext_sym;eauto].
@@ -475,115 +475,86 @@ Proof.
     eapply eq_term_equals_trans;[eauto|].
     eapply ccequivc_ext_implies_eq_per_eq_bar; eauto 3 with slow.
   }
-  clear u0.
+  clear u1.
 
-  eapply all_in_bar_ext_exists_lib_per_implies_exists in e; exrepnd.
+  apply in_open_bar_ext_choice in e; exrepnd.
+  apply in_open_bar_eqa_choice in e0; exrepnd.
 
-  exists bar (bar_lib_per2lib_per feqa).
-
+  exists (fun_lib_dep_eqa Feqa).
   dands.
 
   {
     eapply eq_term_equals_trans;[eauto|].
     clear dependent eq.
 
-    apply implies_eq_term_equals_per_bar_eq.
-    apply all_in_bar_ext_intersect_bars_same.
-    introv br ext; introv.
-    pose proof (e0 _ br _ ext x) as u2; repnd.
-    eapply eq_term_equals_trans;[eauto|].
+    apply implies_eq_term_equals_per_bar_eq; simpl.
+    eapply in_ext_ext_Flib_implies_in_open_bar_ext; try exact e1.
+    introv h; repnd.
+    eapply eq_term_equals_trans;[eauto|]; simpl.
+    apply simple_implies_iff_per_eq_eq; simpl in *.
+    apply in_ext_ext_implies_in_open_bar_ext; introv.
+    introv; simpl; unfold raise_ext_per; split; intro q.
 
-    simpl.
-    apply (simple_implies_iff_per_eq_eq _ (trivial_bar lib'0)).
-    apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
-    introv; simpl; unfold raise_ext_per.
+    { exists lib' e lib'0 e0 z e2; auto. }
 
-    split; intro h.
-
-    - exists lib' br (lib_extends_trans e ext) (lib_extends_trans e x).
-      pose proof (u0 _ e) as u0; simpl in *.
-
-      pose proof (e0 lib' br _ (lib_extends_trans e ext) (lib_extends_trans e x)) as q.
-      unfold type_family_ext in q; exrepnd; spcast.
-      pose proof (q0 _ (lib_extends_refl lib'1)) as q0; simpl in *.
-      apply nuprli_refl in q0.
-      apply nuprli_refl in u0.
-      eapply nuprli_uniquely_valued in q0; try exact u0.
-      apply q0; auto.
-
-    - exrepnd.
-      pose proof (u0 _ e) as u0; simpl in *.
-
-      pose proof (e0 lib1 br0 _ ext0 x0) as q; repnd.
-      pose proof (q0 _ (lib_extends_refl lib'1)) as q0; simpl in *.
-      apply nuprli_refl in q0.
-      apply nuprli_refl in u0.
-      eapply nuprli_uniquely_valued in q0; try exact u0.
-      apply q0; auto.
+    exrepnd.
+    pose proof (e1 _ ext1 _ ext2 extz) as e1; repnd.
+    pose proof (e3 _ z0) as e3; simpl in *.
+    pose proof (h0 _ e2) as h0; simpl in *.
+    apply nuprli_refl in h0; apply nuprli_refl in e3.
+    eapply nuprli_uniquely_valued in h0; try exact e3; apply h0; auto.
   }
 
   {
-    introv br ext; introv.
-    pose proof (e0 _ br _ ext x) as h; simpl in *; repnd.
-    pose proof (h0 _ (lib_extends_refl lib'0)) as h0; simpl in *.
+    eapply in_ext_ext_Flib_implies_in_open_bar_ext; try exact e1.
+    introv h; repnd; simpl.
+    pose proof (h0 _ (lib_extends_refl _)) as h0; simpl in *.
     eapply nuprli_type_extensionality;[eauto|].
-    clear h.
+    introv; split; intro q.
 
-    split; intro h.
+    { exists lib' e lib'0 e0 z (lib_extends_refl lib'0); auto. }
 
-    - exists lib' br ext x; auto.
-
-    - exrepnd.
-      pose proof (e0 _ br0 _ ext0 x0) as e0; repnd.
-      pose proof (e1 _ (lib_extends_refl lib'0)) as e1; simpl in *.
-      apply nuprli_refl in e1.
-      apply nuprli_refl in h0.
-      eapply nuprli_uniquely_valued in e1; try exact h0.
-      apply e1; auto.
+    exrepnd.
+    pose proof (e1 _ ext1 _ ext2 extz) as e1; repnd.
+    pose proof (e2 _ z0) as e2; simpl in *.
+    apply nuprli_refl in h0; apply nuprli_refl in e2.
+    eapply nuprli_uniquely_valued in h0; try exact e2; apply h0; auto.
   }
 
   {
-    introv br ext; introv.
-    pose proof (e0 _ br _ ext x) as h; simpl in *; repnd.
-    clear h.
-    pose proof (h0 _ (lib_extends_refl lib'0)) as h0; simpl in *.
-    pose proof (h1 _ (lib_extends_refl lib'0)) as h1; simpl in *.
-    eapply eqorceq_eq_term_equals;[|eauto].
-    introv.
+    eapply in_ext_ext_Flib_implies_in_open_bar_ext; try exact e1.
+    introv h; repnd; simpl.
+    pose proof (h0 _ (lib_extends_refl _)) as h0; simpl in *.
+    pose proof (h1 _ (lib_extends_refl _)) as h1; simpl in *.
+    eapply eqorceq_eq_term_equals; eauto.
+    apply eq_term_equals_sym.
+    introv; split; intro q.
 
-    split; intro h.
+    { exists lib' e lib'0 e0 z (lib_extends_refl lib'0); auto. }
 
-    - exrepnd.
-      pose proof (e0 _ br0 _ ext0 x0) as e0; repnd.
-      pose proof (e1 _ (lib_extends_refl lib'0)) as e1; simpl in *.
-      apply nuprli_refl in e1.
-      apply nuprli_refl in h0.
-      eapply nuprli_uniquely_valued in e1; try exact h0.
-      apply e1; auto.
-
-    - exists lib' br ext x; simpl; auto.
+    exrepnd.
+    pose proof (e1 _ ext1 _ ext2 extz) as e1; repnd.
+    pose proof (e2 _ z0) as e2; simpl in *.
+    apply nuprli_refl in h0; apply nuprli_refl in e2.
+    eapply nuprli_uniquely_valued in h0; try exact e2; apply h0; auto.
   }
 
   {
-    introv br ext; introv.
-    pose proof (e0 _ br _ ext x) as h; simpl in *; repnd.
-    clear h.
-    pose proof (h0 _ (lib_extends_refl lib'0)) as h0; simpl in *.
-    pose proof (h1 _ (lib_extends_refl lib'0)) as h1; simpl in *.
-    eapply eqorceq_eq_term_equals;[|eauto].
-    introv.
+    eapply in_ext_ext_Flib_implies_in_open_bar_ext; try exact e1.
+    introv h; repnd; simpl.
+    pose proof (h0 _ (lib_extends_refl _)) as h0; simpl in *.
+    pose proof (h2 _ (lib_extends_refl _)) as h2; simpl in *.
+    eapply eqorceq_eq_term_equals; eauto.
+    apply eq_term_equals_sym.
+    introv; split; intro q.
 
-    split; intro h.
+    { exists lib' e lib'0 e0 z (lib_extends_refl lib'0); auto. }
 
-    - exrepnd.
-      pose proof (e0 _ br0 _ ext0 x0) as e0; repnd.
-      pose proof (e1 _ (lib_extends_refl lib'0)) as e1; simpl in *.
-      apply nuprli_refl in e1.
-      apply nuprli_refl in h0.
-      eapply nuprli_uniquely_valued in e1; try exact h0.
-      apply e1; auto.
-
-    - exists lib' br ext x; simpl; auto.
+    exrepnd.
+    pose proof (e1 _ ext1 _ ext2 extz) as e1; repnd.
+    pose proof (e2 _ z0) as e2; simpl in *.
+    apply nuprli_refl in h0; apply nuprli_refl in e2.
+    eapply nuprli_uniquely_valued in h0; try exact e2; apply h0; auto.
   }
 Qed.
 
@@ -611,26 +582,16 @@ Proof.
 
   allunfold @member; allunfold @equality; exrepnd.
   apply dest_nuprl_equality2 in e1; exrepnd.
-  apply e2 in e0.
-  exists (per_bar_eq bar eqa); dands.
+  apply e1 in e0.
+  exists (per_bar_eq lib eqa); dands.
 
-  { apply CL_bar; exists bar eqa; dands; auto. }
+  { apply CL_bar; exists eqa; dands; auto. }
 
-  introv br ext; introv.
-  pose proof (e0 _ br _ ext x) as e0; simpl in *.
-  exrepnd.
-
-  apply collapse2bars_ext; simpl;[introv; eapply lib_per_cond|];[].
-  exists bar'.
-  introv br' ext'; introv.
-  pose proof (e5 _ br' _ ext' x0) as e5; simpl in *.
-  unfold eq_per_eq_bar in e5; simpl in *.
-  unfold raise_ext_per in *.
-  exrepnd.
-  exists bar0.
-  introv br'' ext''; introv.
-  pose proof (e0 _ br'' _ ext'' x1) as e0; simpl in *.
-  unfold eq_per_eq in e0; repnd.
+  apply in_open_bar_ext_dup.
+  eapply in_open_bar_ext_pres; try exact e0; clear e0; introv e0; simpl in *.
+  unfold eq_per_eq_bar in e0; apply e_all_in_ex_bar_ext_as in e0.
+  eapply in_open_bar_ext_pres; try exact e0; clear e0; introv m0; simpl in *; introv.
+  unfold eq_per_eq, raise_ext_per in *; exrepnd.
   eapply lib_per_cond; eauto.
 Qed.
 
@@ -666,28 +627,19 @@ Qed.
 Lemma member_equality_is_axiom {p} :
   forall lib (t1 t2 T a b : @CTerm p),
     equality lib a b (mkc_equality t1 t2 T)
-    -> all_in_ex_bar lib (fun lib => a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom).
+    -> in_open_bar lib (fun lib => a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom).
 Proof.
   unfold equality, nuprl; introv e; exrepd.
   apply dest_nuprl_equality2 in c; exrepnd.
-  apply c0 in e.
+  apply c1 in e.
   clear dependent eq.
 
-  apply collapse2bars.
-  exists bar.
-  introv br ext x.
-  pose proof (e _ br _ ext x) as e; simpl in *; exrepnd.
-
-  apply collapse2bars.
-  exists bar'.
-  introv br' ext' x'.
-  pose proof (e0 _ br' _ ext' x') as e0; simpl in *; exrepnd.
-  unfold eq_per_eq_bar, eq_per_eq in e0; exrepnd.
-
-  exists bar0.
-  introv br'' ext''.
-  assert (lib_extends lib'4 lib'2) as xt by eauto 3 with slow.
-  pose proof (e1 _ br'' _ ext'' xt) as e1; simpl in *; tcsp.
+  apply in_open_bar_ext_in_open_bar.
+  eapply in_open_bar_ext_pres; try exact e; clear e; introv h; simpl in *.
+  unfold eq_per_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+  eapply in_open_bar_comb2; try exact h; clear h.
+  apply in_ext_ext_implies_in_open_bar_ext; introv h; simpl in *.
+  unfold eq_per_eq, raise_ext_per in *; exrepnd; dands; auto.
 Qed.
 
 Lemma tequality_equality_if_cequivc {p} :
@@ -715,7 +667,7 @@ Lemma tequality_mkc_equality_implies {o} :
     (
       tequality lib A B
       # (equality lib a1 a2 A -> equality lib b1 b2 B)
-      # all_in_ex_bar lib (fun lib => (equality lib a1 b1 A {+} ccequivc_ext lib a1 b1))
+      # in_open_bar lib (fun lib => (equality lib a1 b1 A {+} ccequivc_ext lib a1 b1))
     ).
 Proof.
   introv teq; unfold tequality in teq; exrepnd.
@@ -724,7 +676,7 @@ Proof.
   dands; tcsp; eauto 3 with slow;[].
 
   introv ea.
-  eapply (all_in_bar_ext_eqorceq_commutes_equality bar a1 b1 a2 b2); eauto.
+  eapply (all_in_bar_ext_eqorceq_commutes_equality lib a1 b1 a2 b2); eauto.
 Qed.
 
 Lemma tequality_mkc_equality_in_universe_true {p} :
@@ -755,8 +707,8 @@ Lemma tequality_mkc_equality {o} :
     (
       tequality lib A B
       # (equality lib a1 a2 A <=> equality lib b1 b2 B)
-      # all_in_ex_bar lib (fun lib' => equality lib' a1 b1 A {+} ccequivc_ext lib' a1 b1)
-      # all_in_ex_bar lib (fun lib' => equality lib' a2 b2 A {+} ccequivc_ext lib' a2 b2)
+      # in_open_bar lib (fun lib' => equality lib' a1 b1 A {+} ccequivc_ext lib' a1 b1)
+      # in_open_bar lib (fun lib' => equality lib' a2 b2 A {+} ccequivc_ext lib' a2 b2)
     ).
 Proof.
   introv; split; intro k.
@@ -771,42 +723,40 @@ Proof.
 
     pose proof (nuprl_monotone_func lib A B eq k3) as tya; exrepnd.
     rename eq' into eqa.
-
-    unfold all_in_ex_bar in *; exrepnd.
-    apply (implies_all_in_bar_intersect_bars_left _ bar) in k4.
-    apply (implies_all_in_bar_intersect_bars_right _ bar0) in k0.
-    remember (intersect_bars bar0 bar) as b.
-    clear dependent bar.
-    clear dependent bar0.
-    exists (per_bar_eq b (eq_per_eq_bar_lib_per lib a1 a2 eqa)).
-    apply CL_bar; exists b (eq_per_eq_bar_lib_per lib a1 a2 eqa); dands; auto.
-    introv br ext; introv.
+    exists (per_bar_eq lib (eq_per_eq_bar_lib_per lib a1 a2 eqa)).
+    apply CL_bar; exists (eq_per_eq_bar_lib_per lib a1 a2 eqa).
+    dands; tcsp;[]; simpl.
+    eapply in_open_bar_ext_comb2; try exact k2; clear k2.
+    eapply in_open_bar_ext_comb2; try exact k; clear k.
+    apply in_ext_ext_implies_in_open_bar_ext; introv k k2.
     apply CL_eq.
-    exists A B a1 a2 b1 b2 (raise_lib_per eqa x); simpl.
+    exists A B a1 a2 b1 b2 (raise_lib_per eqa e); simpl.
     fold (@nuprl o) in *.
     dands; spcast; eauto 3 with slow; simpl in *.
 
     {
       introv; simpl; unfold raise_ext_per.
-      pose proof (tya0 _ (lib_extends_trans e x)) as q; repnd; auto.
+      pose proof (tya0 _ (lib_extends_trans e0 e)) as q; repnd; auto.
     }
 
     {
       introv.
       unfold eqorceq; simpl; unfold raise_ext_per.
-      pose proof (k4 _ br _ (lib_extends_trans e ext)) as k4; simpl in *.
-      repndors; tcsp; left.
-      pose proof (tya0 _ (lib_extends_trans e x)) as tya0; repnd.
-      apply (equality_eq1 lib'1 A B a1 b1 (eqa lib'1 (lib_extends_trans e x))); auto.
+      repndors; tcsp; eauto 3 with slow; left;
+        pose proof (tya0 _ (lib_extends_trans e0 e)) as tya0; repnd;
+        try (eapply equality_monotone in k; eauto);
+        try (eapply equality_monotone in k2; eauto);
+        eapply (equality_eq1 lib'0 A B); auto.
     }
 
     {
       introv.
       unfold eqorceq; simpl; unfold raise_ext_per.
-      pose proof (k0 _ br _ (lib_extends_trans e ext)) as k0; simpl in *.
-      repndors; tcsp; left.
-      pose proof (tya0 _ (lib_extends_trans e x)) as tya0; repnd.
-      apply (equality_eq1 lib'1 A B a2 b2 (eqa lib'1 (lib_extends_trans e x))); auto.
+      repndors; tcsp; eauto 3 with slow; left;
+        pose proof (tya0 _ (lib_extends_trans e0 e)) as tya0; repnd;
+        try (eapply equality_monotone in k; eauto);
+        try (eapply equality_monotone in k2; eauto);
+        eapply (equality_eq1 lib'0 A B); auto.
     }
 Qed.
 
@@ -816,8 +766,8 @@ Lemma tequality_mkc_equality_sp {o} :
     <=>
     (
       tequality lib A B
-      # all_in_ex_bar lib (fun lib => equality lib a1 b1 A {+} ccequivc_ext lib a1 b1)
-      # all_in_ex_bar lib (fun lib => equality lib a2 b2 A {+} ccequivc_ext lib a2 b2)
+      # in_open_bar lib (fun lib => equality lib a1 b1 A {+} ccequivc_ext lib a1 b1)
+      # in_open_bar lib (fun lib => equality lib a2 b2 A {+} ccequivc_ext lib a2 b2)
     ).
 Proof.
   introv; split; intro k.
@@ -832,42 +782,40 @@ Proof.
 
     pose proof (nuprl_monotone_func lib A B eq k2) as tya; exrepnd.
     rename eq' into eqa.
-
-    unfold all_in_ex_bar in *; exrepnd.
-    apply (implies_all_in_bar_intersect_bars_left _ bar) in k3.
-    apply (implies_all_in_bar_intersect_bars_right _ bar0) in k0.
-    remember (intersect_bars bar0 bar) as b.
-    clear dependent bar.
-    clear dependent bar0.
-    exists (per_bar_eq b (eq_per_eq_bar_lib_per lib a1 a2 eqa)).
-    apply CL_bar; exists b (eq_per_eq_bar_lib_per lib a1 a2 eqa); dands; auto.
-    introv br ext; introv.
+    exists (per_bar_eq lib (eq_per_eq_bar_lib_per lib a1 a2 eqa)).
+    apply CL_bar; exists (eq_per_eq_bar_lib_per lib a1 a2 eqa).
+    dands; tcsp;[]; simpl.
+    eapply in_open_bar_ext_comb2; try exact k1; clear k1.
+    eapply in_open_bar_ext_comb2; try exact k; clear k.
+    apply in_ext_ext_implies_in_open_bar_ext; introv k k1.
     apply CL_eq.
-    exists A B a1 a2 b1 b2 (raise_lib_per eqa x); simpl.
+    exists A B a1 a2 b1 b2 (raise_lib_per eqa e); simpl.
     fold (@nuprl o) in *.
     dands; spcast; eauto 3 with slow; simpl in *.
 
     {
       introv; simpl; unfold raise_ext_per.
-      pose proof (tya0 _ (lib_extends_trans e x)) as q; repnd; auto.
+      pose proof (tya0 _ (lib_extends_trans e0 e)) as q; repnd; auto.
     }
 
     {
       introv.
       unfold eqorceq; simpl; unfold raise_ext_per.
-      pose proof (k3 _ br _ (lib_extends_trans e ext)) as k3; simpl in *.
-      repndors; tcsp; left.
-      pose proof (tya0 _ (lib_extends_trans e x)) as tya0; repnd.
-      apply (equality_eq1 lib'1 A B a1 b1 (eqa lib'1 (lib_extends_trans e x))); auto.
+      repndors; tcsp; eauto 3 with slow; left;
+        pose proof (tya0 _ (lib_extends_trans e0 e)) as tya0; repnd;
+        try (eapply equality_monotone in k; eauto);
+        try (eapply equality_monotone in k1; eauto);
+        eapply (equality_eq1 lib'0 A B); auto.
     }
 
     {
       introv.
       unfold eqorceq; simpl; unfold raise_ext_per.
-      pose proof (k0 _ br _ (lib_extends_trans e ext)) as k0; simpl in *.
-      repndors; tcsp; left.
-      pose proof (tya0 _ (lib_extends_trans e x)) as tya0; repnd.
-      apply (equality_eq1 lib'1 A B a2 b2 (eqa lib'1 (lib_extends_trans e x))); auto.
+      repndors; tcsp; eauto 3 with slow; left;
+        pose proof (tya0 _ (lib_extends_trans e0 e)) as tya0; repnd;
+        try (eapply equality_monotone in k; eauto);
+        try (eapply equality_monotone in k1; eauto);
+        eapply (equality_eq1 lib'0 A B); auto.
     }
 Qed.
 
@@ -920,7 +868,7 @@ Lemma tequality_mkc_member {p} :
     (
       tequality lib A B
       # (member lib a A <=> member lib b B)
-      # all_in_ex_bar lib (fun lib => equality lib a b A {+} ccequivc_ext lib a b)
+      # in_open_bar lib (fun lib => equality lib a b A {+} ccequivc_ext lib a b)
     ).
 Proof.
   sp; repeat (rewrite <- fold_mkc_member).
@@ -933,7 +881,7 @@ Lemma tequality_mkc_member_sp {p} :
     <=>
     (
       tequality lib A B
-      # all_in_ex_bar lib (fun lib => equality lib a b A {+} ccequivc_ext lib a b)
+      # in_open_bar lib (fun lib => equality lib a b A {+} ccequivc_ext lib a b)
     ).
 Proof.
   sp; repeat (rewrite <- fold_mkc_member).
@@ -999,39 +947,28 @@ Lemma equality_in_mkc_equality {o} :
   forall lib (t1 t2 T a b : @CTerm o),
     equality lib a b (mkc_equality t1 t2 T)
     <=> (equality lib t1 t2 T
-         # all_in_ex_bar lib (fun lib => a ===>(lib) mkc_axiom)
-         # all_in_ex_bar lib (fun lib => b ===>(lib) mkc_axiom)).
+         # in_open_bar lib (fun lib => a ===>(lib) mkc_axiom)
+         # in_open_bar lib (fun lib => b ===>(lib) mkc_axiom)).
 Proof.
   introv; split; intro i.
 
   {
-    applydup @member_equality_is_axiom in i; repnd; sp.
+    applydup @member_equality_is_axiom in i; repnd; sp;
+      try (complete (eapply in_open_bar_pres; eauto; clear i0; introv ext i0; tcsp)).
 
-    {
-      clear i0.
-      unfold equality in i; exrepnd.
-      apply dest_nuprl_equality2 in i1; exrepnd.
-      apply i2 in i0.
-      clear dependent eq.
-      exists (per_bar_eq bar eqa); dands; auto; eauto 3 with slow;[].
+    clear i0.
+    unfold equality in i; exrepnd.
+    apply dest_nuprl_equality2 in i1; exrepnd.
+    apply i1 in i0.
+    clear dependent eq.
+    exists (per_bar_eq lib eqa); dands; auto; eauto 3 with slow;[].
 
-      introv br ext; introv.
-      apply per_bar_eq_eq_per_eq_bar_lib_per in i0.
-      unfold eq_per_eq_bar, eq_per_eq in i0; exrepnd.
-      exists (raise_bar bar0 x).
-      introv br' ext'; introv; simpl in *; exrepnd.
-      pose proof (i2 _ br'1 _ (lib_extends_trans ext' br'2) (lib_extends_trans x0 x)) as i2; simpl in *; repnd; auto.
-    }
-
-    {
-      unfold all_in_ex_bar in *; exrepnd; exists bar; introv br ext; introv.
-      pose proof (i1 _ br _ ext) as i1; simpl in *; repnd; auto.
-    }
-
-    {
-      unfold all_in_ex_bar in *; exrepnd; exists bar; introv br ext; introv.
-      pose proof (i1 _ br _ ext) as i1; simpl in *; repnd; auto.
-    }
+    apply in_open_bar_ext_dup.
+    eapply in_open_bar_ext_pres; try exact i0; clear i0; introv h; simpl in *.
+    unfold eq_per_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+    eapply in_open_bar_ext_pres; try exact h; clear h; introv h; simpl in *; introv.
+    unfold eq_per_eq, raise_ext_per in *; exrepnd; dands; auto.
+    eapply lib_per_cond; eauto.
   }
 
   {
@@ -1051,20 +988,12 @@ Proof.
     }
 
     {
-      unfold all_in_ex_bar in *; exrepnd.
-      apply (implies_all_in_bar_intersect_bars_left _ bar) in i4.
-      apply (implies_all_in_bar_intersect_bars_right _ bar0) in i3.
-      remember (intersect_bars bar0 bar) as bar1.
-      clear dependent bar.
-      clear dependent bar0.
-      rename bar1 into bar.
-
-      exists bar; introv br ext; introv.
-      pose proof (i4 _ br _ ext) as i4.
-      pose proof (i3 _ br _ ext) as i3.
-      simpl in *.
+      unfold eq_per_eq_bar; apply e_all_in_ex_bar_ext_as.
+      eapply in_open_bar_ext_comb2; try exact i1; clear i1.
+      eapply in_open_bar_ext_comb2; try exact i; clear i.
+      apply in_ext_ext_implies_in_open_bar_ext; introv i i1.
       unfold eq_per_eq; dands; auto.
-      pose proof (tya0 _ x) as tya0; repnd; eauto.
+      pose proof (tya0 _ e) as tya0; repnd; tcsp.
     }
   }
 Qed.
@@ -1082,64 +1011,31 @@ Proof.
     dands.
 
     + apply ccequivc_ext_bar_iff_ccequivc_bar.
-      unfold ccequivc_ext_bar, all_in_ex_bar.
-      apply collapse2bars.
-      exists bar.
-
-      introv br ext x.
-      pose proof (k2 _ br _ ext x) as k2; simpl in *.
-      pose proof (k3 _ br _ ext x) as k3; simpl in *.
-      unfold eqorceq in k3; repndors; tcsp.
-
-      {
-        apply dest_nuprl_base2 in k2.
-        apply k2 in k3.
-        unfold per_base_eq in k3; exrepnd.
-        exists bar0; introv br' ext' x'.
-        apply (k4 _ br'); eauto 3 with slow.
-      }
-
-      {
-        exists (trivial_bar lib'0).
-        apply in_ext_implies_all_in_bar_trivial_bar.
-        introv e; eauto 3 with slow.
-      }
+      apply in_open_bar_ext_in_open_bar.
+      eapply in_open_bar_ext_comb; try exact k2; clear k2.
+      eapply in_open_bar_ext_comb; try exact k3; clear k3.
+      eapply in_open_bar_ext_pres; try exact k1; clear k1; introv k1 k3 k2.
+      apply dest_nuprl_base2 in k2.
+      unfold eqorceq in k3; repndors; tcsp; eauto 3 with slow.
+      apply k2 in k3.
+      unfold per_base_eq in *; apply e_all_in_ex_bar_as in k3.
+      apply ccequivc_ext_bar_iff_ccequivc_bar in k3; auto.
 
     + apply ccequivc_ext_bar_iff_ccequivc_bar.
-      unfold ccequivc_ext_bar, all_in_ex_bar.
-      apply collapse2bars.
-      exists bar.
-
-      introv br ext x.
-      pose proof (k2 _ br _ ext x) as k2; simpl in *.
-      pose proof (k0 _ br _ ext x) as k0; simpl in *.
-      unfold eqorceq in k0; repndors; tcsp.
-
-      {
-        apply dest_nuprl_base2 in k2.
-        apply k2 in k0.
-        unfold per_base_eq in k0; exrepnd.
-        exists bar0; introv br' ext' x'.
-        apply (k4 _ br'); eauto 3 with slow.
-      }
-
-      {
-        exists (trivial_bar lib'0).
-        apply in_ext_implies_all_in_bar_trivial_bar.
-        introv e; eauto 3 with slow.
-      }
+      apply in_open_bar_ext_in_open_bar.
+      eapply in_open_bar_ext_comb; try exact k2; clear k2.
+      eapply in_open_bar_ext_comb; try exact k3; clear k3.
+      eapply in_open_bar_ext_pres; try exact k1; clear k1; introv k1 k3 k2.
+      apply dest_nuprl_base2 in k2.
+      unfold eqorceq in k1; repndors; tcsp; eauto 3 with slow.
+      apply k2 in k1.
+      unfold per_base_eq in *; apply e_all_in_ex_bar_as in k1.
+      apply ccequivc_ext_bar_iff_ccequivc_bar in k1; auto.
 
   - repnd.
     apply ccequivc_ext_bar_iff_ccequivc_bar in k0.
     apply ccequivc_ext_bar_iff_ccequivc_bar in k.
-    unfold ccequivc_ext_bar, all_in_ex_bar in *; repnd; exrepnd.
-    apply (implies_all_in_bar_intersect_bars_left _ bar) in k2.
-    apply (implies_all_in_bar_intersect_bars_right _ bar0) in k1.
-    remember (intersect_bars bar0 bar) as bar1.
-    clear dependent bar.
-    clear dependent bar0.
-    rename bar1 into bar.
-
+    unfold ccequivc_ext_bar in *.
     exists (eq_per_eq_bar lib t1 t2 (per_base_eq_lib_per lib)).
     apply CL_eq.
     exists (@mkc_base o) (@mkc_base o) t1 t2 t3 t4 (per_base_eq_lib_per lib).
@@ -1153,16 +1049,16 @@ Proof.
 
     {
       introv; simpl.
-      left; exists (raise_bar bar e).
-      introv br ext; simpl in *; exrepnd.
-      pose proof (k2 _ br1 lib'0 br2) as k2; simpl in *; eauto.
+      left; unfold per_base_eq; apply e_all_in_ex_bar_as.
+      apply ccequivc_ext_bar_iff_ccequivc_bar; auto.
+      unfold ccequivc_ext_bar; eauto 3 with slow.
     }
 
     {
       introv; simpl.
-      left; exists (raise_bar bar e).
-      introv br ext; simpl in *; exrepnd.
-      pose proof (k1 _ br1 lib'0 br2) as k1; simpl in *; eauto.
+      left; unfold per_base_eq; apply e_all_in_ex_bar_as.
+      apply ccequivc_ext_bar_iff_ccequivc_bar; auto.
+      unfold ccequivc_ext_bar; eauto 3 with slow.
     }
 Qed.
 
@@ -1176,7 +1072,8 @@ Lemma tequality_equality_if_eqorceq {p} :
 Proof.
   introv teq eoa eob.
   apply tequality_mkc_equality.
-  repndors; dands; eauto 3 with slow.
+  repndors; dands; eauto 3 with slow;
+    try (complete (apply in_ext_implies_in_open_bar; introv ext; right; eauto 3 with slow)).
 
   - split; intro h.
     { eapply equality_respects_cequivc_left;[eauto|].
@@ -1187,14 +1084,6 @@ Proof.
       eapply tequality_preserving_equality; eauto.
       apply tequality_sym;auto. }
 
-  - exists (trivial_bar lib).
-    apply in_ext_implies_all_in_bar_trivial_bar; introv e.
-    right; eauto 3 with slow.
-
-  - exists (trivial_bar lib).
-    apply in_ext_implies_all_in_bar_trivial_bar; introv e.
-    right; eauto 3 with slow.
-
   - split; intro h.
     { eapply tequality_preserving_equality;eauto.
       eapply equality_trans;[apply equality_sym;eauto|].
@@ -1204,10 +1093,6 @@ Proof.
       eapply tequality_preserving_equality; eauto.
       apply tequality_sym;auto. }
 
-  - exists (trivial_bar lib).
-    apply in_ext_implies_all_in_bar_trivial_bar; introv e.
-    right; eauto 3 with slow.
-
   - split; intro h.
     { eapply tequality_preserving_equality;eauto.
       eapply equality_trans;[|eauto].
@@ -1216,10 +1101,6 @@ Proof.
       eapply equality_respects_cequivc_left;[apply ccequivc_ext_sym;eauto|].
       eapply tequality_preserving_equality; eauto.
       apply tequality_sym;auto. }
-
-  - exists (trivial_bar lib).
-    apply in_ext_implies_all_in_bar_trivial_bar; introv e.
-    right; eauto 3 with slow.
 
   - split; intro h.
     { eapply tequality_preserving_equality;eauto.
@@ -1241,28 +1122,17 @@ Proof.
   rw @tequality_mkc_member; split; intro e; repnd; dands; eauto 3 with slow.
 
   {
-    unfold all_in_ex_bar in e; exrepnd.
-    apply collapse2bars.
-    exists bar.
-    introv br ext x.
-    pose proof (e2 _ br _ ext) as e2; simpl in *.
-    repndors; tcsp.
-
-    - apply equality_in_base_iff in e2.
-      unfold per_base_eq in e2; exrepnd.
-      exists bar0; eauto 3 with slow.
-
-    - exists (trivial_bar lib'0).
-      apply in_ext_implies_all_in_bar_trivial_bar; introv e; eauto 3 with slow.
+    apply collapse_all_in_ex_bar.
+    eapply in_open_bar_pres; eauto; clear e; introv ext h; repndors; eauto 3 with slow;[].
+    apply equality_in_base_iff in h.
+    unfold per_base_eq in h; apply e_all_in_ex_bar_as in h; auto.
   }
 
   { split; intro h; eauto 3 with slow. }
 
   {
     apply ccequivc_ext_bar_iff_ccequivc_bar in e.
-    unfold ccequivc_ext_bar, all_in_ex_bar in e; exrepnd.
-    exists bar.
-    introv br ext; pose proof (e0 _ br _ ext) as e0; tcsp.
+    eapply in_open_bar_pres; try exact e; clear e; introv ext h; tcsp.
   }
 Qed.
 
@@ -1332,6 +1202,8 @@ Proof.
   apply equality_in_mkc_equality in e; repnd; auto.
 Qed.
 
+Hint Resolve meta_type_monotone : slow.
+
 Lemma tequality_in_uni_implies_tequality {p} :
   forall lib (T1 T2 : @CTerm p) i,
     tequality lib (mkc_member T1 (mkc_uni i))
@@ -1342,12 +1214,8 @@ Proof.
   introv teq typ.
   rw @tequality_mkc_member_sp in teq; repnd.
   apply all_in_ex_bar_tequality_implies_tequality.
-  unfold all_in_ex_bar in *; exrepnd.
-  exists bar.
-  introv br ext.
-  pose proof (teq1 _ br _ ext) as teq1; simpl in *.
-  repndors; try apply equality_in_uni in teq1; eauto 3 with slow.
-  apply type_respects_cequivc_right; eauto 4 with slow.
+  eapply in_open_bar_pres; try exact teq; clear teq; introv ext teq; repndors; eauto 3 with slow.
+  apply tequality_sym; apply type_respects_cequivc_left; eauto 3 with slow.
 Qed.
 
 Lemma iff_inhabited_type_if_tequality_mem {o} :
@@ -1357,7 +1225,6 @@ Lemma iff_inhabited_type_if_tequality_mem {o} :
 Proof.
   introv teq.
   rw @tequality_mkc_member in teq; repnd.
-  unfold all_in_ex_bar in teq; exrepnd.
   split; intro inh.
 
   {
@@ -1365,19 +1232,19 @@ Proof.
 
     pose proof (nuprl_monotone_func lib T1 T1 eq inh0) as tya; exrepnd.
     rename eq' into eqa.
-    exists (per_bar_eq bar eqa) t.
+    exists (per_bar_eq lib eqa) t.
     dands.
 
     {
-      apply CL_bar; exists bar eqa; dands; auto.
+      apply CL_bar; exists eqa; dands; auto.
       fold (@nuprl o).
-      introv br ext; introv.
-      pose proof (teq2 _ br _ ext) as teq2; simpl in *.
-      pose proof (tya0 _ x) as tya0; repnd.
-      repndors.
+      eapply in_open_bar_ext_comb2; try exact teq; clear teq.
+      apply in_ext_ext_implies_in_open_bar_ext; introv teq.
+      pose proof (tya0 _ e) as tya0; repnd.
+      repndors; eauto 3 with slow.
 
-      - apply equality_in_uni in teq2.
-        unfold tequality in teq2; exrepnd.
+      - apply equality_in_uni in teq.
+        unfold tequality in teq; exrepnd.
         eapply nuprl_trans;[|eauto].
         eapply nuprl_trans;[|eauto].
         apply nuprl_sym.
@@ -1390,11 +1257,9 @@ Proof.
     }
 
     {
-      introv br ext; introv.
-      exists (trivial_bar lib'0).
-      apply in_ext_ext_implies_all_in_bar_ext_trivial_bar; introv.
-      pose proof (tya0 _ (lib_extends_trans e x)) as q; repnd.
-      apply q; auto.
+      apply in_ext_ext_implies_in_open_bar_ext; introv.
+      pose proof (tya0 _ e) as tya0; repnd.
+      apply tya0; auto.
     }
   }
 
@@ -1403,35 +1268,32 @@ Proof.
 
     pose proof (nuprl_monotone_func lib T2 T2 eq inh0) as tya; exrepnd.
     rename eq' into eqa.
-    exists (per_bar_eq bar eqa) t.
+    exists (per_bar_eq lib eqa) t.
     dands.
 
     {
-      apply CL_bar; exists bar eqa; dands; auto.
+      apply CL_bar; exists eqa; dands; auto.
       fold (@nuprl o).
-      introv br ext; introv.
-      pose proof (teq2 _ br _ ext) as teq2; simpl in *.
-      pose proof (tya0 _ x) as tya0; repnd.
-      repndors.
+      eapply in_open_bar_ext_comb2; try exact teq; clear teq.
+      apply in_ext_ext_implies_in_open_bar_ext; introv teq.
+      pose proof (tya0 _ e) as tya0; repnd.
+      repndors; eauto 3 with slow.
 
-      - apply equality_in_uni in teq2.
-        unfold tequality in teq2; exrepnd.
+      - apply equality_in_uni in teq.
+        unfold tequality in teq; exrepnd.
         eapply nuprl_trans;[|apply nuprl_sym;eauto].
-        eapply nuprl_trans;[|eauto].
-        eapply type_extensionality_nuprl;[eauto|].
-        apply nuprl_sym in teq3; apply nuprl_refl in teq3.
-        eapply uniquely_valued_nuprl; eauto.
+        applydup @nuprl_refl2 in teq2.
+        eapply uniquely_valued_nuprl in teq3; autodimp teq3 hyp; try exact tya1.
+        eapply type_extensionality_nuprl;eauto.
 
       - eapply nuprl_value_respecting_right;[|apply ccequivc_ext_sym;eauto].
         eapply nuprl_value_respecting_left;[|apply ccequivc_ext_sym;eauto]; auto.
     }
 
     {
-      introv br ext; introv.
-      exists (trivial_bar lib'0).
-      apply in_ext_ext_implies_all_in_bar_ext_trivial_bar; introv.
-      pose proof (tya0 _ (lib_extends_trans e x)) as q; repnd.
-      apply q; auto.
+      apply in_ext_ext_implies_in_open_bar_ext; introv.
+      pose proof (tya0 _ e) as tya0; repnd.
+      apply tya0; auto.
     }
   }
 Qed.
@@ -1439,8 +1301,8 @@ Qed.
 Lemma equality_in_member {p} :
   forall lib (a b t T : @CTerm p),
     equality lib a b (mkc_member t T)
-    <=> (all_in_ex_bar lib (fun lib => a ===>(lib) mkc_axiom)
-         # all_in_ex_bar lib (fun lib => b ===>(lib) mkc_axiom)
+    <=> (in_open_bar lib (fun lib => a ===>(lib) mkc_axiom)
+         # in_open_bar lib (fun lib => b ===>(lib) mkc_axiom)
          # member lib t T).
 Proof.
   introv.
@@ -1462,28 +1324,25 @@ Proof.
   unfold member, equality in mem; exrepnd.
   pose proof (nuprl_monotone_func lib A A eq mem1) as tya; exrepnd.
   rename eq' into eqa.
-  exists (per_bar_eq bar eqa).
+  exists (per_bar_eq lib eqa).
   dands.
 
   {
-    apply CL_bar; exists bar eqa; dands; auto.
+    apply CL_bar; exists eqa; dands; auto.
     fold (@nuprl o).
-    introv br ext; introv.
-    pose proof (teq1 _ br _ ext) as teq1; simpl in *.
-    pose proof (tya0 _ x) as tya0; repnd; auto.
+    eapply in_ext_ext_implies_in_open_bar_ext; introv; apply tya0.
   }
 
   {
-    introv br ext; introv.
-    exists (trivial_bar lib'0).
-    apply in_ext_ext_implies_all_in_bar_ext_trivial_bar; introv.
-    pose proof (tya0 _ (lib_extends_trans e x)) as tya0; repnd.
-    apply tya0 in mem0.
-    apply (equality_eq1 lib'1 A A a b (eqa lib'1 (lib_extends_trans e x))); auto.
-    apply (equality_eq1 lib'1 A A a a (eqa lib'1 (lib_extends_trans e x))) in mem0; auto.
-
-    pose proof (teq1 _ br _ (lib_extends_trans e ext)) as teq1; simpl in *; repndors; auto.
+    eapply in_open_bar_ext_comb2; try exact teq; clear teq.
+    apply in_ext_ext_implies_in_open_bar_ext; introv teq.
+    pose proof (tya0 _ e) as tya0; repnd.
+    repndors.
+    { eapply equality_eq1; eauto. }
+    eapply equality_eq1; eauto.
     eapply equality_respects_cequivc_right;[eauto|]; auto.
+    apply tya0 in mem0.
+    eapply equality_eq1 in mem0; eauto.
   }
 Qed.
 
@@ -1500,6 +1359,17 @@ Proof.
   - rw @tequality_mkc_equality_sp in h; repnd; eauto 3 with slow.
   - apply tequality_mkc_equality_sp; dands; eauto 3 with slow.
 Qed.
+
+Lemma lib_extends_preserves_equorsq {o} :
+  forall (lib1 lib2 : @library o) a b A,
+    lib_extends lib2 lib1
+    -> equorsq lib1 a b A
+    -> equorsq lib2 a b A.
+Proof.
+  introv ext h.
+  unfold equorsq in *; repndors; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_equorsq : slow.
 
 Lemma equality_mkc_equality2_sp_in_uni {o} :
   forall lib i (a1 a2 b1 b2 A B : @CTerm o),
@@ -1519,33 +1389,24 @@ Proof.
 
     applydup @dest_nuprl_uni in e1.
     apply univ_implies_univi_bar3 in e2; exrepnd.
-    apply e3 in e0.
+    apply e2 in e0.
 
     apply per_bar_eq_univi_eq_lib_per_implies_eq_nuprli in e0; exrepnd.
-    apply dest_nuprli_equality2 in e2; exrepnd.
+    apply dest_nuprli_equality2 in e3; exrepnd.
     unfold equorsq2_bar.
     dands.
 
     + exists eq; dands; auto.
-      apply e3.
-      introv br ext; introv; simpl.
-      exists (raise_bar bar0 x).
-      introv br' ext' x'; simpl in *; exrepnd.
-      pose proof (e4 _ br'1 _ (lib_extends_trans ext' br'2) (lib_extends_trans x' x)) as e4; simpl in *.
-      exists (eqa lib'2 (lib_extends_trans x' x)); auto.
+      apply e2.
+      eapply in_open_bar_ext_pres; try exact e4; clear e4; introv h; simpl.
+      exists (eqa lib' e); auto.
 
-    + exists bar0.
-      introv br ext.
-      assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
-      pose proof (e5 _ br _ ext xt) as e5; simpl in *.
-      pose proof (e4 _ br _ ext xt) as e4; simpl in *.
+    + eapply in_open_bar_comb2; try exact e4; clear e4.
+      eapply in_open_bar_ext_pres; try exact e5; clear e5; introv h q; simpl.
       eapply eqorceq_iff_equorsq; eauto 3 with slow.
 
-    + exists bar0.
-      introv br ext.
-      assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
-      pose proof (e2 _ br _ ext xt) as e2; simpl in *.
-      pose proof (e4 _ br _ ext xt) as e4; simpl in *.
+    + eapply in_open_bar_comb2; try exact e4; clear e4.
+      eapply in_open_bar_ext_pres; try exact e0; clear e0; introv h q; simpl.
       eapply eqorceq_iff_equorsq; eauto 3 with slow.
 
   - Case "<-".
@@ -1556,46 +1417,37 @@ Proof.
 
     applydup @dest_nuprl_uni in e1.
     apply univ_implies_univi_bar3 in e2; exrepnd.
-    apply e3 in e0.
+    apply e2 in e0.
 
     apply per_bar_eq_univi_eq_lib_per_implies_eq_nuprli in e0; exrepnd.
     exists eq; dands; auto.
-    apply e3.
+    apply e2.
     clear dependent eq.
 
-    introv br ext; introv; simpl.
+    eapply in_open_bar_ext_comb2; try exact eo1; clear eo1.
+    eapply in_open_bar_ext_comb2; try exact eo2; clear eo2.
+    apply in_ext_ext_implies_in_open_bar_ext; introv eo2 eo1; simpl.
 
-    unfold equorsq_bar in *.
-    unfold all_in_ex_bar in *; repnd; exrepnd.
-    apply (implies_all_in_bar_intersect_bars_left _ bar0) in eo2.
-    apply (implies_all_in_bar_intersect_bars_right _ bar1) in eo0.
-    remember (intersect_bars bar1 bar0) as bar'.
-    clear dependent bar0.
-    clear dependent bar1.
-
-
-    exists (raise_bar bar' x).
-    introv br' ext' x'; simpl in *; exrepnd.
-
-    pose proof (nuprli_monotone_func i lib A B eq' e2) as tya; exrepnd.
+    pose proof (nuprli_monotone_func i lib A B eq' e3) as tya; exrepnd.
     rename eq'0 into eqa.
 
-    exists (eq_per_eq_bar lib'2 a1 a2 (raise_lib_per eqa (lib_extends_trans x' x))).
+    exists (eq_per_eq_bar lib' a1 a2 (raise_lib_per eqa e)).
     fold (@nuprli o i).
     apply CL_eq.
-    exists A B a1 a2 b1 b2 (raise_lib_per eqa (lib_extends_trans x' x)).
+    exists A B a1 a2 b1 b2 (raise_lib_per eqa e).
     fold (@nuprli o i).
+    pose proof (tya0 _ e) as tyb; repnd.
     dands; spcast; eauto 3 with slow; simpl; try unfold raise_ext_per.
 
     + introv; eapply tya0.
 
     + introv; simpl; unfold raise_ext_per.
-      pose proof (eo2 _ br'1 _ (lib_extends_trans e (lib_extends_trans ext' br'2))) as eo2; simpl in *.
+      eapply lib_extends_preserves_equorsq in eo1; eauto.
       eapply eqorceq_iff_equorsq; eauto.
       eapply nuprli_implies_nuprl; eapply tya0.
 
     + introv; simpl; unfold raise_ext_per.
-      pose proof (eo0 _ br'1 _ (lib_extends_trans e (lib_extends_trans ext' br'2))) as eo0; simpl in *.
+      eapply lib_extends_preserves_equorsq in eo2; eauto.
       eapply eqorceq_iff_equorsq; eauto.
       eapply nuprli_implies_nuprl; eapply tya0.
 Qed.
