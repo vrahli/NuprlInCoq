@@ -43,11 +43,11 @@ Proof.
   introv cl.
   eapply dest_close_per_qnat_l in cl; eauto 3 with slow.
   unfold per_qnat_bar in *; exrepnd.
-  exists bar (equality_of_qnat_bar_lib_per lib).
-  dands; auto.
+  exists (equality_of_qnat_bar_lib_per lib).
+  dands; auto; simpl.
 
   {
-    introv br ext; introv.
+    apply in_ext_ext_implies_in_open_bar_ext; introv ext.
     unfold per_qnat; dands; spcast; eauto 3 with slow.
   }
 
@@ -67,11 +67,9 @@ Proof.
   unfold per_bar in u; exrepnd.
 
   eapply eq_term_equals_trans;[eauto|].
-  eapply eq_term_equals_trans;[|apply (per_bar_eq_equality_of_qnat_bar_lib_per _ bar)].
+  eapply eq_term_equals_trans;[|apply per_bar_eq_equality_of_qnat_bar_lib_per].
   apply implies_eq_term_equals_per_bar_eq.
-  apply all_in_bar_ext_intersect_bars_same; simpl; auto.
-  introv br ext; introv.
-  pose proof (u0 _ br _ ext x) as u0; simpl in *.
+  eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
   unfold per_qnat in *; exrepnd; spcast; auto.
 Qed.
 
@@ -287,7 +285,8 @@ Lemma equality_nat_in_qnat {o} :
 Proof.
   introv.
   apply equality_in_qnat; eauto 2 with slow.
-  apply in_ext_implies_all_in_ex_bar; introv xt.
+  unfold equality_of_qnat_bar; apply e_all_in_ex_bar_as.
+  apply in_ext_implies_in_open_bar; introv xt.
   unfold equality_of_qnat.
   dands; eexists; spcast; eauto 3 with slow.
 Qed.

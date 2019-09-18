@@ -58,11 +58,11 @@ Qed.
 (* MOVE *)
 Lemma all_in_ex_bar_in_ext_implies {o} :
   forall (lib : @library o) F,
-    all_in_ex_bar lib (fun lib' => in_ext lib' F) -> all_in_ex_bar lib F.
+    in_open_bar lib (fun lib' => in_ext lib' F) -> in_open_bar lib F.
 Proof.
-  introv h; unfold all_in_ex_bar in *; exrepnd; exists bar.
-  introv br ext.
-  apply (h0 _ br _ ext _ (lib_extends_refl _)).
+  introv h ext.
+  pose proof (h _ ext) as h; exrepnd.
+  exists lib'' xt; apply h1; eauto 3 with slow.
 Qed.
 
 Lemma tt_not_ccequivc_ext_ff {o} :
@@ -429,7 +429,7 @@ Hint Resolve equality_in_tnat_nat : slow.
 Lemma member_tnat_implies_computes {o} :
   forall lib (t : @CTerm o),
     member lib t mkc_tnat
-    -> all_in_ex_bar lib (fun lib => {k : nat , ccomputes_to_valc_ext lib t (mkc_nat k)}).
+    -> in_open_bar lib (fun lib => {k : nat , ccomputes_to_valc_ext lib t (mkc_nat k)}).
 Proof.
   introv mem.
   apply equality_in_tnat in mem.
@@ -441,7 +441,7 @@ Qed.
 Lemma member_tnat_iff {o} :
   forall lib (t : @CTerm o),
     member lib t mkc_tnat
-    <=> all_in_ex_bar lib (fun lib => {k : nat , ccomputes_to_valc_ext lib t (mkc_nat k)}).
+    <=> in_open_bar lib (fun lib => {k : nat , ccomputes_to_valc_ext lib t (mkc_nat k)}).
 Proof.
   introv; split; introv mem.
   - apply member_tnat_implies_computes; auto.

@@ -344,7 +344,7 @@ Qed.
 
 Lemma implies_equality_natk2nat_bar {o} :
   forall lib (f g : @CTerm o) n,
-    all_in_ex_bar
+    in_open_bar
       lib
       (fun lib =>
          forall m,
@@ -400,7 +400,7 @@ Qed.
 
 Lemma implies_member_natk2nat_bar {o} :
   forall lib (f : @CTerm o) n,
-    all_in_ex_bar
+    in_open_bar
       lib
       (fun lib =>
          forall m,
@@ -627,6 +627,8 @@ Proof.
   apply implies_member_natk2nat_bar.
 
   (* first we need to add the sequence to the library *)
+  apply e_all_in_ex_bar_as.
+  apply all_in_ex_bar_implies_e_all_in_ex_bar.
   exists (extend_seq_to_bar lib safe k name isn).
 
   introv br ext ltm.
@@ -660,6 +662,7 @@ Proof.
   apply equality_in_csname in ecs.
 
   apply all_in_ex_bar_equality_implies_equality.
+  apply e_all_in_ex_bar_as in ecs.
   eapply all_in_ex_bar_modus_ponens1;[|exact ecs]; clear ecs; introv y ecs; exrepnd; spcast.
   eapply lib_extends_preserves_ccomputes_to_valc in comp;[|eauto].
   assert (safe_library lib') as safe' by eauto 3 with slow.
@@ -740,10 +743,30 @@ Proof.
     eapply w0; eauto 3 with slow. }
 Qed.
 
+Lemma nat2in_open_bar2open {o} :
+  forall (n   : nat)
+         (lib : @library o)
+         (f   : nat -> library -> Prop)
+         (F   : forall m, m < n -> in_open_bar lib (f m)),
+    in_open_bar lib (fun lib => forall m, m < n -> f m lib).
+Proof.
+  induction n; introv F.
+
+  { apply in_ext_implies_in_open_bar; introv ext h; omega. }
+
+  pose proof (IHn lib f) as q; clear IHn.
+  autodimp q hyp;[].
+  pose proof (F n) as w; autodimp w hyp; []; clear F.
+  eapply in_open_bar_comb; try exact q; clear q.
+  eapply in_open_bar_pres; try exact w; clear w; introv ext w q h.
+  destruct (lt_dec m n) as [d|d]; eauto;[].
+  assert (m = n) as xx by omega; subst; auto.
+Qed.
+
 Lemma equality_natk2nat_implies2 {o} :
   forall lib (f g : @CTerm o) n,
     equality lib f g (natk2nat (mkc_nat n))
-    -> all_in_ex_bar
+    -> in_open_bar
          lib
          (fun lib =>
             forall m,
@@ -756,21 +779,18 @@ Proof.
 
   assert (forall m,
              m < n
-             -> all_in_ex_bar lib (fun lib => {k : nat
+             -> in_open_bar lib (fun lib => {k : nat
                 , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
                 # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)})) as h.
   { introv ltn; eapply equality_natk2nat_implies; eauto. }
   clear mem.
 
-  apply nat2all_in_ex_bar2bar in h; exrepnd.
-  exists b.
-  introv br ext ltn.
-  eapply h0; eauto 3 with slow.
+  apply nat2in_open_bar2open in h; auto.
 Qed.
 
 Lemma all_in_ex_bar_inhabited_type_bar_implies_inhabited_type_bar {o} :
   forall lib (A : @CTerm o),
-    all_in_ex_bar lib (fun lib => inhabited_type_bar lib A)
+    in_open_bar lib (fun lib => inhabited_type_bar lib A)
     -> inhabited_type_bar lib A.
 Proof.
   introv h.
@@ -1289,6 +1309,8 @@ Proof.
   eauto 3 with slow.
 
   exists (@mkc_pair o (mkc_choice_seq name) mkc_axiom).
+  apply e_all_in_ex_bar_as.
+  apply all_in_ex_bar_implies_e_all_in_ex_bar.
   exists (extend_seq_to_bar lib safe k name isn).
   introv br ext.
   exists (@mkc_choice_seq o name) (@mkc_axiom o).
@@ -1298,7 +1320,8 @@ Proof.
 
   {
     apply equality_in_csname_iff.
-    apply in_ext_implies_all_in_ex_bar; introv xt.
+    apply e_all_in_ex_bar_as.
+    apply in_ext_implies_in_open_bar; introv xt.
     exists name; dands; spcast; eauto 3 with slow.
   }
 
@@ -1345,7 +1368,7 @@ Hint Resolve rule_ls1_true : slow.
 
 Lemma implies_member_nat2nat_bar {o} :
   forall lib (f : @CTerm o),
-    all_in_ex_bar
+    in_open_bar
       lib
       (fun lib => forall m, {k : nat , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)})
     -> member lib f nat2nat.
@@ -1385,11 +1408,11 @@ Qed.
 
 Lemma implies_member_nat2nat_bar2 {o} :
   forall lib (f : @CTerm o),
-    all_in_ex_bar
+    in_open_bar
       lib
       (fun lib =>
          forall m,
-           all_in_ex_bar
+           in_open_bar
              lib
              (fun lib => {k : nat , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)}))
     -> member lib f nat2nat.
@@ -1443,6 +1466,8 @@ Proof.
   rename m into k.
 
   (* first we need to add the sequence to the library *)
+  apply e_all_in_ex_bar_as.
+  apply all_in_ex_bar_implies_e_all_in_ex_bar.
   exists (extend_seq_to_bar lib safe (S k) name isn).
 
   introv br ext.
@@ -1473,6 +1498,7 @@ Proof.
   apply equality_in_csname in ecs.
 
   apply all_in_ex_bar_equality_implies_equality.
+  apply e_all_in_ex_bar_as in ecs.
   eapply all_in_ex_bar_modus_ponens1;[|exact ecs]; clear ecs; introv y ecs; exrepnd; spcast.
   assert (safe_library lib') as safe' by eauto 3 with slow.
   clear lib y safe.

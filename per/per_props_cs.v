@@ -71,11 +71,9 @@ Proof.
   unfold per_bar in u; exrepnd.
 
   eapply eq_term_equals_trans;[eauto|].
-  eapply eq_term_equals_trans;[|apply (per_bar_eq_equality_of_csname_bar_lib_per _ bar)].
+  eapply eq_term_equals_trans;[|apply per_bar_eq_equality_of_csname_bar_lib_per].
   apply implies_eq_term_equals_per_bar_eq.
-  apply all_in_bar_ext_intersect_bars_same; simpl; auto.
-  introv br ext; introv.
-  pose proof (u0 _ br _ ext x) as u0; simpl in *.
+  eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
   unfold per_csname in *; exrepnd; spcast; auto; GC.
   ccomputes_to_valc_ext_val; auto.
 Qed.

@@ -136,16 +136,11 @@ Definition exists_1_choice {o} (a : choice_sequence_name) (n : NVar) : @CTerm o 
 Lemma int_in_uni {o} : forall i lib, @equality o lib mkc_int mkc_int (mkc_uni i).
 Proof.
   introv.
-  exists (per_bar_eq (trivial_bar lib) (univi_eq_lib_per lib i)).
+  exists (per_bar_eq lib (univi_eq_lib_per lib i)).
   dands; auto; eauto 3 with slow;[].
 
-  introv br ext; introv.
-  exists (trivial_bar lib'0).
-  apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
-  introv; simpl.
-  unfold univi_eq.
-
-  exists (equality_of_int_bar lib'1).
+  apply in_ext_ext_implies_in_open_bar_ext; introv; simpl.
+  exists (equality_of_int_bar lib').
   apply CL_int.
   unfold per_int; dands; spcast; eauto 3 with slow.
 Qed.
@@ -405,8 +400,7 @@ Proof.
   introv.
   rw @mkc_false_eq.
   apply mkc_approx_equality_in_uni.
-  exists (trivial_bar lib).
-  apply in_ext_implies_all_in_bar_trivial_bar; introv e.
+  apply in_ext_implies_in_open_bar; introv ext.
   split; intro k; spcast; apply not_axiom_approxc_bot in k; sp.
 Qed.
 Hint Resolve false_in_uni : slow.
@@ -424,8 +418,7 @@ Proof.
   introv.
   rw @mkc_true_eq.
   apply mkc_approx_equality_in_uni.
-  exists (trivial_bar lib).
-  apply in_ext_implies_all_in_bar_trivial_bar; introv e.
+  apply in_ext_implies_in_open_bar; introv ext.
   split; intro k; spcast; tcsp.
 Qed.
 Hint Resolve true_in_uni : slow.
@@ -598,6 +591,7 @@ Proof.
   autorewrite with slow.
   apply equality_in_int in ea.
   apply all_in_ex_bar_equality_implies_equality.
+  apply e_all_in_ex_bar_as in ea.
   eapply all_in_ex_bar_modus_ponens1;[|exact ea]; clear ea; introv y ea; exrepnd; spcast.
   unfold equality_of_int in ea; exrepnd; spcast.
 

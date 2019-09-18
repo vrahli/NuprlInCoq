@@ -68,11 +68,11 @@ Qed.
 Lemma equality_in_qtnat {p} :
   forall lib (t1 t2 : @CTerm p),
     equality lib t1 t2 mkc_qtnat
-    <=> all_in_ex_bar lib (fun lib => {a1, a2 : CTerm
+    <=> in_open_bar lib (fun lib => {a1, a2 : CTerm
              , ccequivc lib t1 a1
              # ccequivc lib t2 a2
              # ccequivc_ext lib t1 t2
-             # all_in_ex_bar lib (fun lib => {n : nat
+             # in_open_bar lib (fun lib => {n : nat
                     , ccomputes_to_valc_ext lib a1 (mkc_nat n)
                     # ccomputes_to_valc_ext lib a2 (mkc_nat n)})}).
 Proof.

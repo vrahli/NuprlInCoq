@@ -115,7 +115,7 @@ Lemma equality_natk2nat_implies {o} :
   forall lib m (f g : @CTerm o) n,
     m < n
     -> equality lib f g (natk2nat (mkc_nat n))
-    -> all_in_ex_bar lib (fun lib => {k : nat
+    -> in_open_bar lib (fun lib => {k : nat
         , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
         # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)}).
 Proof.
@@ -140,7 +140,7 @@ Lemma member_natk2nat_implies {o} :
   forall lib m (f : @CTerm o) n,
     m < n
     -> member lib f (natk2nat (mkc_nat n))
-    -> all_in_ex_bar lib (fun lib => {k : nat , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)}).
+    -> in_open_bar lib (fun lib => {k : nat , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)}).
 Proof.
   introv ltm mem.
   eapply equality_natk2nat_implies in mem;[|exact ltm].

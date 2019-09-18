@@ -217,23 +217,21 @@ Proof.
 
   {
     unfold univ, univi_bar, per_bar in *; exrepnd.
-    pose proof (bar_non_empty bar) as q; exrepnd.
-    assert (lib_extends lib' lib) as ext by eauto 3 with slow.
-    pose proof (u0 _ q0 _ (lib_extends_refl lib') ext) as u0; simpl in *.
-    unfold univ_ex in u0; exrepnd.
+    apply (in_open_bar_ext_const lib).
+    eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
+    unfold univ_ex in u1; exrepnd.
     allrw @univi_exists_iff; exrepnd; spcast.
     repeat ccomputes_to_valc_ext_val; auto.
   }
 
   exists (S i1); dands; try omega.
   unfold univ, univi_bar, per_bar in *; exrepnd.
-  exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (u0 _ br _ ext x) as u0; simpl in *.
-  unfold univ_ex in u0; exrepnd.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
+  unfold univ_ex in u1; exrepnd.
   allrw @univi_exists_iff; exrepnd; spcast.
   repeat ccomputes_to_valc_ext_val; auto.
-  left; dands; spcast; auto; eauto 3 with slow.
+  exists j; dands; eauto 3 with slow.
 Qed.
 
 Lemma univ_implies_univi_bar2_diff {o} :
@@ -241,9 +239,9 @@ Lemma univ_implies_univi_bar2_diff {o} :
     univ lib (mkc_uni i1) (mkc_uni i2) eq
     ->
     i1 = i2 #
-    exists (bar : BarLib lib) (eqa : lib-per(lib,o)),
-      (eq <=2=> (per_bar_eq bar eqa))
-        # all_in_bar_ext bar (fun lib' x => (eqa lib' x) <=2=> (univi_eq (univi_bar i2) lib')).
+    exists (eqa : lib-per(lib,o)),
+      (eq <=2=> (per_bar_eq lib eqa))
+        # in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (univi_eq (univi_bar i2) lib')).
 Proof.
   introv u.
   unfold univ, univi_bar, per_bar in u; exrepnd.
@@ -251,18 +249,16 @@ Proof.
   dands.
 
   {
-    pose proof (bar_non_empty bar) as q; exrepnd.
-    assert (lib_extends lib' lib) as ext by eauto 3 with slow.
-    pose proof (u0 _ q0 _ (lib_extends_refl lib') ext) as u0; simpl in *.
-    unfold univ_ex in u0; exrepnd.
+    apply (in_open_bar_ext_const lib).
+    eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
+    unfold univ_ex in u1; exrepnd.
     allrw @univi_exists_iff; exrepnd; spcast.
     repeat ccomputes_to_valc_ext_val; auto.
   }
 
-  exists bar eqa; dands; auto.
-  introv br ext; introv.
-  pose proof (u0 _ br _ ext x) as u0; simpl in *.
-  unfold univ_ex in u0; exrepnd.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
+  unfold univ_ex in u1; exrepnd.
   allrw @univi_exists_iff; exrepnd; spcast.
   repeat ccomputes_to_valc_ext_val; auto.
  Qed.
@@ -271,17 +267,13 @@ Lemma univ_implies_univi_bar3_diff {o} :
   forall lib i1 i2 (eq : per(o)),
     univ lib (mkc_uni i1) (mkc_uni i2) eq
     ->
-    i1 = i2 #
-    exists (bar : BarLib lib),
-      eq <=2=> (per_bar_eq bar (univi_eq_lib_per lib i1)).
+    i1 = i2 # eq <=2=> (per_bar_eq lib (univi_eq_lib_per lib i1)).
 Proof.
   introv u.
   apply univ_implies_univi_bar2_diff in u; exrepnd; subst.
   dands; auto.
-  exists bar.
   eapply eq_term_equals_trans;[eauto|].
-  apply implies_eq_term_equals_per_bar_eq.
-  apply all_in_bar_ext_intersect_bars_same; simpl; auto.
+  apply implies_eq_term_equals_per_bar_eq; auto.
 Qed.
 
 
@@ -331,7 +323,7 @@ Lemma dest_nuprl_tuni_sub_per {o} :
     ccomputes_to_valc_ext lib a (mkc_nat i)
     -> ccomputes_to_valc_ext lib b (mkc_nat i)
     -> nuprl lib (mkc_tuni a) (mkc_tuni b) eq
-    -> exists bar, (eq) <=2=> (per_bar_eq bar (univi_eq_lib_per lib i)).
+    -> (eq) <=2=> (per_bar_eq lib (univi_eq_lib_per lib i)).
 Proof.
   introv compa compb cl.
   apply ccomputes_to_valc_ext_implies_ccequivc_ext in compa.
@@ -376,6 +368,7 @@ Lemma equality_of_nat_bar_implies_tequality_mkc_uni {o} :
 Proof.
   introv e.
   apply all_in_ex_bar_tequality_implies_tequality.
+  eapply e_all_in_ex_bar_as in e.
   eapply all_in_ex_bar_modus_ponens1;[|exact e]; clear e; introv x e.
   unfold equality_of_nat in *; exrepnd; eauto 3 with slow.
 Qed.

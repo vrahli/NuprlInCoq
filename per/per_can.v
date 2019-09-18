@@ -46,7 +46,7 @@ Lemma cequorsq_mkc_halts {p} :
   forall lib i (a b : @CTerm p),
     equorsq lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
     <=>
-    all_in_ex_bar lib (fun lib => chaltsc lib a <=> chaltsc lib b).
+    in_open_bar lib (fun lib => chaltsc lib a <=> chaltsc lib b).
 Proof.
   unfold equorsq; introv; split; introv h.
 
@@ -119,7 +119,7 @@ Qed.
 Lemma tequality_mkc_isexc {o} :
   forall lib (a b : @CTerm o),
     tequality lib (mkc_isexc a) (mkc_isexc b)
-    <=> all_in_ex_bar lib (fun lib => craises_exceptionc lib a <=> craises_exceptionc lib b).
+    <=> in_open_bar lib (fun lib => craises_exceptionc lib a <=> craises_exceptionc lib b).
 Proof.
   introv.
   allrw @mkc_isexc_eq.
@@ -130,7 +130,7 @@ Proof.
 Qed.
 
 Definition raises_exceptionc_bar {o} lib (t : @CTerm o) :=
-  all_in_ex_bar lib (fun lib => craises_exceptionc lib t).
+  in_open_bar lib (fun lib => craises_exceptionc lib t).
 
 Lemma member_isexc_iff {p} :
   forall lib (t : @CTerm p),
@@ -178,7 +178,7 @@ Lemma equality_in_uni_mkc_isexc {p} :
   forall lib i (a b : @CTerm p),
     equality lib (mkc_isexc a) (mkc_isexc b) (mkc_uni i)
     <=>
-    all_in_ex_bar lib (fun lib => craises_exceptionc lib a <=> craises_exceptionc lib b).
+    in_open_bar lib (fun lib => craises_exceptionc lib a <=> craises_exceptionc lib b).
 Proof.
   introv.
   allrw @mkc_isexc_eq.
@@ -192,7 +192,7 @@ Lemma cequorsq_mkc_isexc {p} :
   forall lib i (a b : @CTerm p),
     equorsq lib (mkc_isexc a) (mkc_isexc b) (mkc_uni i)
     <=>
-    all_in_ex_bar lib (fun lib => craises_exceptionc lib a <=> craises_exceptionc lib b).
+    in_open_bar lib (fun lib => craises_exceptionc lib a <=> craises_exceptionc lib b).
 Proof.
   unfold equorsq; introv; split; introv h.
 
@@ -466,7 +466,7 @@ Proof.
 Qed.
 
 Definition hasvalue_likec_bar {o} lib (a : @CTerm o) :=
-  all_in_ex_bar lib (fun lib => chasvalue_likec lib a).
+  in_open_bar lib (fun lib => chasvalue_likec lib a).
 
 Lemma member_halts_like_iff {p} :
   forall lib (t : @CTerm p),
@@ -524,7 +524,7 @@ Qed.
 Lemma tequality_mkc_halts_like {o} :
   forall lib (a b : @CTerm o),
     tequality lib (mkc_halts_like a) (mkc_halts_like b)
-    <=> all_in_ex_bar lib (fun lib => chasvalue_likec lib a <=> chasvalue_likec lib b).
+    <=> in_open_bar lib (fun lib => chasvalue_likec lib a <=> chasvalue_likec lib b).
 Proof.
   introv.
   allrw @mkc_halts_like_eq.
@@ -600,7 +600,7 @@ Lemma equality_in_uni_mkc_halts_like {p} :
   forall lib i (a b : @CTerm p),
     equality lib (mkc_halts_like a) (mkc_halts_like b) (mkc_uni i)
     <=>
-    all_in_ex_bar lib (fun lib => chasvalue_likec lib a <=> chasvalue_likec lib b).
+    in_open_bar lib (fun lib => chasvalue_likec lib a <=> chasvalue_likec lib b).
 Proof.
   introv.
   allrw @mkc_halts_like_eq.
@@ -634,7 +634,7 @@ Lemma cequorsq_mkc_halts_like {p} :
   forall lib i (a b : @CTerm p),
     equorsq lib (mkc_halts_like a) (mkc_halts_like b) (mkc_uni i)
     <=>
-    all_in_ex_bar lib (fun lib => chasvalue_likec lib a <=> chasvalue_likec lib b).
+    in_open_bar lib (fun lib => chasvalue_likec lib a <=> chasvalue_likec lib b).
 Proof.
   unfold equorsq; introv; split; introv h.
 

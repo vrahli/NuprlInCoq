@@ -74,12 +74,11 @@ Proof.
 
   {
     introv; split; intro k; tcsp.
-    unfold per_approx_eq_bar in k.
-    exrepnd.
-    pose proof (bar_non_empty bar) as q; exrepnd.
-    pose proof (k0 _ q0 _ (lib_extends_refl lib'0)) as k0; simpl in *.
-    unfold per_approx_eq in k0; repnd; spcast.
-    apply not_axiom_approxc_bot in k0; sp.
+    unfold per_approx_eq_bar in k; apply e_all_in_ex_bar_as in k.
+    apply (in_open_bar_const lib').
+    eapply in_open_bar_pres; try exact k; clear k; introv ext k.
+    unfold per_approx_eq in k; repnd; spcast.
+    apply not_axiom_approxc_bot in k; sp.
   }
 Qed.
 
