@@ -126,6 +126,7 @@ Proof.
 
   apply all_in_ex_bar_equality_implies_equality.
   apply e_all_in_ex_bar_as in hyp0.
+  apply e_all_in_ex_bar_as in hyp3.
   eapply all_in_ex_bar_modus_ponens2;
     [|exact hyp0|exact hyp3]; clear hyp0 hyp3; introv y hyp0 hyp3.
   unfold equality_of_csname in hyp0; exrepnd.
@@ -213,7 +214,7 @@ Proof.
   autorewrite with slow in *.
 
   clear hyp1.
-  apply equality_in_tnat in hyp0.
+  apply equality_in_tnat in hyp0; eapply e_all_in_ex_bar_as in hyp0.
 
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens1;[|exact hyp0]; clear hyp0; introv y hyp0.

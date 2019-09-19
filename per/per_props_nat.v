@@ -2534,12 +2534,8 @@ Proof.
 Qed.
 Hint Resolve type_tnat : slow.
 
-Definition equality_of_nat {p} lib (n m : @CTerm p) :=
-  {k : nat , n ===>(lib) (mkc_nat k)
-           # m ===>(lib) (mkc_nat k)}.
-
-Definition equality_of_nat_bar {o} lib (n m : @CTerm o) :=
-  in_open_bar lib (fun lib => equality_of_nat lib n m).
+(*Definition equality_of_nat_bar {o} lib (n m : @CTerm o) :=
+  in_open_bar lib (fun lib => equality_of_nat lib n m).*)
 
 Lemma equality_in_tnat {o} :
   forall lib (a b : @CTerm o),
@@ -2555,7 +2551,7 @@ Proof.
   rw @mkc_var_substc.
   split; introv k; exrepnd; dands.
 
-  - apply e_all_in_ex_bar_as in k1.
+  - apply e_all_in_ex_bar_as in k1; apply e_all_in_ex_bar_as.
     eapply in_open_bar_comb; try exact k1; clear k1.
     eapply in_open_bar_pres; try exact k; clear k; introv ext k k1.
     unfold equality_of_int in k1; exrepnd; spcast; repeat computes_to_eqval.
@@ -2571,8 +2567,8 @@ Proof.
     allrw @mkc_var_substc.
     apply equality_in_int in e.
     apply all_in_ex_bar_tequality_implies_tequality.
+    apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as in k.
     eapply lib_extends_preserves_all_in_ex_bar in k;[|exact x].
-    apply e_all_in_ex_bar_as in e.
     eapply in_open_bar_comb; try exact e; clear e.
     eapply in_open_bar_pres; try exact k; clear k; introv ext k k1.
     unfold equality_of_int, equality_of_nat in *; exrepnd; spcast.
@@ -2581,12 +2577,13 @@ Proof.
     destruct (Z_le_gt_dec 0 k0); sp.
     right; sp; omega.
 
-  - apply e_all_in_ex_bar_as.
+  - apply e_all_in_ex_bar_as; apply e_all_in_ex_bar_as in k.
     eapply in_open_bar_pres; try exact k; clear k; introv ext k.
     unfold equality_of_int, equality_of_nat in *; exrepnd; spcast.
-    exists (Z.of_nat k0); dands; spcast; auto.
+    exists (Z.of_nat n); dands; spcast; auto.
 
-  - eapply in_open_bar_pres; try exact k; clear k; introv ext k.
+  - eapply e_all_in_ex_bar_as in k.
+    eapply in_open_bar_pres; try exact k; clear k; introv ext k.
     unfold equality_of_int, equality_of_nat in *; exrepnd; spcast.
     eapply inhabited_le_aux; eauto 3 with slow;
       allrw @mkc_integer_as_mk_zero; eauto 2 with slow; try omega.
@@ -2601,7 +2598,7 @@ Proof.
   introv e inh.
   apply equality_in_tnat.
   apply equality_in_int in e.
-  apply e_all_in_ex_bar_as in e.
+  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb; try exact e; clear e.
   eapply in_open_bar_pres; try exact inh; clear inh; introv ext inh h.
   unfold equality_of_nat.
@@ -2622,7 +2619,7 @@ Proof.
   unfold equality_of_nat in e; exrepnd; spcast.
   unfold equality_of_int.
   allrw @mkc_nat_eq.
-  exists (Z.of_nat k); dands; spcast; auto.
+  exists (Z.of_nat n); dands; spcast; auto.
 Qed.
 
 Lemma equality_in_int_implies_cequiv {o} :

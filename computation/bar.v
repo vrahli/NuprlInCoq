@@ -35,14 +35,21 @@ Require Export computation_lib_extends.
 
 
 
-Definition InfChoiceSeqVals {o} := nat -> @ChoiceSeqVal o.
+Definition InfChoiceSeqVals {o} := nat -> option (@ChoiceSeqVal o).
+
+Definition on_some {A B} (o : option A) (f : A -> B) (b : B):=
+  match o with
+  | Some a => f a
+  | None => b
+  end.
 
 Definition inf_choice_sequence_satisfies_restriction {o}
            (vals       : @InfChoiceSeqVals o)
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
-  | csc_type d M Md => forall n, M n (vals n)
-  | csc_coq_law f => forall n, vals n = f n
+  | csc_type d M Md => forall n, on_some (vals n) (M n) False
+  | csc_coq_law f => forall n, on_some (vals n) (fun v => v = f n) False
+  | csc_res M => forall n, on_some (vals n) (M n) True
   end.
 
 (*Definition ex_choice {o}
@@ -126,8 +133,9 @@ Definition is_default_inf_choice_sequence {o}
            (vals       : @InfChoiceSeqVals o)
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
-  | csc_type d M Md => forall n, vals n = d n
-  | csc_coq_law f => forall n, vals n = f n
+  | csc_type d M Md => forall n, on_some (vals n) (fun v => v = d n) False
+  | csc_coq_law f => forall n, on_some (vals n) (fun v => v = f n) False
+  | csc_res M => False (* no default values *)
   end.
 
 Definition is_default_inf_choice_seq_entry {o}
@@ -176,7 +184,7 @@ Definition inf_choice_sequence_vals_extend {o}
            (vals2 : @ChoiceSeqVals o) : Prop :=
   forall n v,
     select n vals2 = Some v
-    -> vals1 n = v.
+    -> vals1 n = Some v.
 
 (* [entry1] extends [entry2] *)
 Definition inf_choice_sequence_entry_extend {o} (*{M}*)
@@ -227,6 +235,7 @@ Definition is_default_choice_sequence {o}
   match constraint with
   | csc_type d M Md => forall n v, select n vals = Some v -> v = d n
   | csc_coq_law f => forall n v, select n vals = Some v -> v = f n
+  | csc_res M => True
   end.
 
 Definition is_default_choice_seq_entry {o}
@@ -442,15 +451,16 @@ Qed.
 Definition choice_seq_vals2inf {o} (vals : @ChoiceSeqVals o) f : InfChoiceSeqVals :=
   fun n =>
     match select n vals with
-    | Some v => v
+    | Some v => Some v
     | None => (f n)
     end.
 
 Definition restriction2default {o}
-           (r : @ChoiceSeqRestriction o) : nat -> ChoiceSeqVal :=
+           (r : @ChoiceSeqRestriction o) : nat -> option ChoiceSeqVal :=
   match r with
-  | csc_type d _ _ => d
-  | csc_coq_law f => fun n => f n
+  | csc_type d _ _ => fun n => Some (d n)
+  | csc_coq_law f => fun n => Some (f n)
+  | csc_res _ => fun _ => None (* no default values *)
   end.
 
 Definition choice_seq_entry2inf {o} (e : @ChoiceSeqEntry o) : InfChoiceSeqEntry :=
@@ -494,6 +504,12 @@ Definition natSeq2default {o} (l : list nat) : nat -> @ChoiceSeqVal o :=
     | None => mkc_zero
     end.
 
+Definition natSeq2some {o} (f : nat -> @ChoiceSeqVal o) : nat -> option ChoiceSeqVal :=
+  fun n => Some (f n).
+
+Definition natSeq2default_op {o} (l : list nat) : nat -> option (@ChoiceSeqVal o) :=
+  natSeq2some (natSeq2default l).
+
 Definition natSeq2restrictionPred {o} (l : list nat) : @RestrictionPred o :=
   fun n v =>
     match select n l with
@@ -516,8 +532,8 @@ Definition natSeq2restriction {o} (l : list nat) : @ChoiceSeqRestriction o :=
 Definition simple_inf_choice_seq_entry {o}
            (name : choice_sequence_name) : @InfChoiceSeqEntry o :=
   match csn_kind name with
-  | cs_kind_nat _ => MkInfChoiceSeqEntry _ (fun _ => mkc_zero) csc_nat
-  | cs_kind_seq l => MkInfChoiceSeqEntry _ (natSeq2default l) (natSeq2restriction l)
+  | cs_kind_nat _ => MkInfChoiceSeqEntry _ (fun _ => Some mkc_zero) csc_nat
+  | cs_kind_seq l => MkInfChoiceSeqEntry _ (natSeq2default_op l) (natSeq2restriction l)
   end.
 
 Definition simple_inf_choice_seq {o} (name : choice_sequence_name) : @inf_library_entry o :=
@@ -558,13 +574,17 @@ Proof.
 
   - unfold choice_seq_vals2inf.
     remember (select n vals) as s; symmetry in Heqs.
-    destruct s; auto.
+    destruct s; simpl; auto.
 
   - unfold choice_seq_vals2inf.
     remember (select n vals) as s; symmetry in Heqs.
-    destruct s; auto.
+    destruct s; simpl; auto.
     rewrite (h n) in Heqs;[inversion Heqs; auto|].
     eapply select_lt; eauto.
+
+  - unfold choice_seq_vals2inf.
+    remember (select n vals) as s; symmetry in Heqs.
+    destruct s; simpl; auto.
 Qed.
 Hint Resolve implies_safe_inf_choice_sequence_entry2inf : slow.
 
@@ -938,10 +958,9 @@ Lemma same_restrictions_trans {o} :
     -> same_restrictions r2 r3
     -> same_restrictions r1 r3.
 Proof.
-  introv h q; destruct r1, r2, r3; simpl in *; repnd; tcsp; dands; introv.
-  { rewrite h0; auto. }
-  { rewrite h; auto. }
-  { rewrite h; auto. }
+  introv h q; destruct r1, r2, r3; simpl in *; repnd; tcsp; dands; introv;
+    try (complete (rewrite h; auto));
+    try (complete (rewrite h0; auto)).
 Qed.
 Hint Resolve same_restrictions_trans : slow.
 
@@ -1676,26 +1695,29 @@ Proof.
     right; apply IHl; exists x; tcsp.
 Qed.
 
-Lemma inf_library_extends_implies {o} :
-  forall (e : @library_entry o) n inflib,
-    entry_in_inf_library_extends e n inflib
-    -> exists k,
-        k < n
-        /\ inf_entry_extends (inflib k) e
-        /\ forall j, j < k -> ~ inf_matching_entries (inflib j) e.
+Lemma entry_in_inf_library_n_shift_implies {o} :
+  forall n (inflib : @inf_library o) e,
+    ~ matching_inf_entries (inflib 0) e
+    -> entry_in_inf_library_n n e (shift_inf_lib inflib)
+    -> entry_in_inf_library_n (S n) e inflib.
 Proof.
-  induction n; introv h; simpl in *; tcsp.
-  repndors; repnd; tcsp.
-
-  - exists 0; dands; auto; try omega.
-    introv q; try omega.
-
-  - applydup IHn in h; exrepnd.
-    exists (S k); simpl; dands; auto; try omega.
-    introv q.
-    destruct j; auto.
-    apply h2; try omega.
+  tcsp.
 Qed.
+
+Lemma entry_in_inf_library_shift_implies {o} :
+  forall (inflib : @inf_library o) e,
+    ~ matching_inf_entries (inflib 0) e
+    -> entry_in_inf_library e (shift_inf_lib inflib)
+    -> entry_in_inf_library e inflib.
+Proof.
+  introv ni h.
+  unfold entry_in_inf_library in *.
+  repndors; exrepnd.
+  { left; exists (S n); apply entry_in_inf_library_n_shift_implies; auto. }
+  right; unfold inf_entry_in_inf_library_default in *; repnd; dands; tcsp.
+  introv; destruct n; tcsp.
+Qed.
+Hint Resolve entry_in_inf_library_shift_implies : slow.
 
 Lemma inf_entry_extends_implies_inf_matching_entries {o} :
   forall ie (e x : @library_entry o),
@@ -1725,6 +1747,86 @@ Proof.
 Qed.
 Hint Resolve matching_entries_preserves_inf_matching_entries : slow.
 
+Lemma inf_entry_extends_implies_inf_matching_entries2 {o} :
+  forall (ie ie' : @inf_library_entry o) (e : library_entry),
+    matching_inf_entries ie ie'
+    -> inf_entry_extends ie e
+    -> inf_matching_entries ie e.
+Proof.
+  introv m h; unfold inf_entry_extends in h.
+  unfold inf_matching_entries.
+  unfold matching_inf_entries in m.
+  destruct ie, ie', e; simpl in *; repnd; subst; tcsp.
+  rewrite <- matching_entry_sign_is_same_opabs in *.
+  eapply implies_matching_entry_sign_refl; eauto.
+Qed.
+Hint Resolve inf_entry_extends_implies_inf_matching_entries2 : slow.
+
+Lemma matching_inf_entries_sym {o} :
+  forall (e1 e2 : @inf_library_entry o),
+    matching_inf_entries e1 e2
+    -> matching_inf_entries e2 e1.
+Proof.
+  introv h; unfold matching_inf_entries in *.
+  eapply same_entry_name_sym; eauto.
+Qed.
+Hint Resolve matching_inf_entries_sym : slow.
+
+Lemma matching_inf_entries_preserves_inf_matching_entries {o} :
+  forall ie1 ie2 (e : @library_entry o),
+    inf_matching_entries ie1 e
+    -> matching_inf_entries ie2 ie1
+    -> inf_matching_entries ie2 e.
+Proof.
+  introv im mi.
+  unfold inf_matching_entries in *; simpl in *.
+  unfold matching_inf_entries in *; simpl in *.
+  destruct ie1, ie2, e; simpl in *; tcsp; ginv.
+  eapply same_opabs_trans;eauto.
+Qed.
+Hint Resolve matching_inf_entries_preserves_inf_matching_entries : slow.
+
+Lemma inf_entry_extends_implies_inf_matching_entries3 {o} :
+  forall (ie ie' : @inf_library_entry o) (e : library_entry),
+    matching_inf_entries ie ie'
+    -> inf_entry_extends ie e
+    -> inf_matching_entries ie' e.
+Proof.
+  introv m h; unfold inf_entry_extends in h.
+  unfold inf_matching_entries.
+  unfold matching_inf_entries in m.
+  destruct ie, ie', e; simpl in *; repnd; subst; tcsp.
+  rewrite <- matching_entry_sign_is_same_opabs in *.
+  apply matching_entry_sign_sym; auto.
+Qed.
+Hint Resolve inf_entry_extends_implies_inf_matching_entries3 : slow.
+
+Lemma inf_library_extends_implies {o} :
+  forall (e : @library_entry o) n inflib,
+    entry_in_inf_library_extends e n inflib
+    -> exists k,
+        k < n
+        /\ inf_entry_extends (inflib k) e
+        /\ entry_in_inf_library (inflib k) inflib
+        /\ forall j, j < k -> ~ inf_matching_entries (inflib j) e.
+Proof.
+  induction n; introv h; simpl in *; tcsp.
+  repndors; repnd; tcsp.
+
+  - exists 0; dands; auto; try omega.
+    { left; exists 1; simpl; tcsp. }
+    introv q; try omega.
+
+  - applydup IHn in h; exrepnd.
+    exists (S k); simpl; dands; auto; try omega; eauto 3 with slow.
+    { apply entry_in_inf_library_shift_implies; auto.
+      introv xx; apply matching_inf_entries_sym in xx.
+      eapply inf_entry_extends_implies_inf_matching_entries3 in xx; eauto. }
+    introv q.
+    destruct j; auto.
+    apply h2; try omega.
+Qed.
+
 Lemma inf_library_extends_two_matching_entries {o} :
   forall (e1 e2 : @library_entry o) n1 n2 inflib,
     matching_entries e1 e2
@@ -1744,7 +1846,7 @@ Proof.
 
   pose proof (Nat.lt_trichotomy k k0) as w; repndors; subst.
 
-  - pose proof (ext4 k) as q; autodimp q hyp.
+  - pose proof (ext5 k) as q; autodimp q hyp.
     destruct q.
     eapply inf_entry_extends_implies_inf_matching_entries in ext3;
       [|apply matching_entries_sym;eauto].
@@ -1755,7 +1857,7 @@ Proof.
 
   - pose proof (ext0 k0) as q; autodimp q hyp.
     destruct q.
-    eapply inf_entry_extends_implies_inf_matching_entries in ext5;[|eauto].
+    eapply inf_entry_extends_implies_inf_matching_entries in ext6;[|eauto].
     eapply matching_entries_preserves_inf_matching_entries;[|eauto]; auto.
 Qed.
 
@@ -1768,7 +1870,7 @@ Fixpoint combine_choice_seq_vals {o}
   end.
 
 Lemma exists_combine_choice_seq_vals_1 {o} :
-  forall (vals1 vals2 : @ChoiceSeqVals o) vals,
+  forall (vals1 vals2 : @ChoiceSeqVals o) (vals : nat -> ChoiceSeqVal),
     (forall n v, select n vals1 = Some v -> vals n = v)
     -> (forall n v, select n vals2 = Some v -> vals n = v)
     -> exists vals0, combine_choice_seq_vals vals1 vals2 = vals1 ++ vals0.
@@ -1787,8 +1889,28 @@ Proof.
       exists vals0; auto.
 Qed.
 
+Lemma exists_combine_choice_seq_vals_op_1 {o} :
+  forall (vals1 vals2 : @ChoiceSeqVals o) (vals : nat -> option (ChoiceSeqVal)),
+    (forall n v, select n vals1 = Some v -> vals n = Some v)
+    -> (forall n v, select n vals2 = Some v -> vals n = Some v)
+    -> exists vals0, combine_choice_seq_vals vals1 vals2 = vals1 ++ vals0.
+Proof.
+  induction vals1; introv imp1 imp2; simpl in *.
+
+  - exists vals2; auto.
+
+  - destruct vals2; simpl.
+
+    + exists ([] : @ChoiceSeqVals o); autorewrite with slow; auto.
+
+    + pose proof (IHvals1 vals2 (fun n => vals (S n))) as q; clear IHvals1.
+      repeat (autodimp q hyp).
+      exrepnd; allrw.
+      exists vals0; auto.
+Qed.
+
 Lemma exists_combine_choice_seq_vals_2 {o} :
-  forall (vals1 vals2 : @ChoiceSeqVals o) vals,
+  forall (vals1 vals2 : @ChoiceSeqVals o) (vals : nat -> ChoiceSeqVal),
     (forall n v, select n vals1 = Some v -> vals n = v)
     -> (forall n v, select n vals2 = Some v -> vals n = v)
     -> exists vals0, combine_choice_seq_vals vals1 vals2 = vals2 ++ vals0.
@@ -1811,13 +1933,37 @@ Proof.
       subst; auto.
 Qed.
 
+Lemma exists_combine_choice_seq_vals_op_2 {o} :
+  forall (vals1 vals2 : @ChoiceSeqVals o) (vals : nat -> option ChoiceSeqVal),
+    (forall n v, select n vals1 = Some v -> vals n = Some v)
+    -> (forall n v, select n vals2 = Some v -> vals n = Some v)
+    -> exists vals0, combine_choice_seq_vals vals1 vals2 = vals2 ++ vals0.
+Proof.
+  induction vals1; introv imp1 imp2; simpl in *.
+
+  - exists ([] : @ChoiceSeqVals o); autorewrite with slow; auto.
+
+  - destruct vals2; simpl.
+
+    + exists (a :: vals1); auto.
+
+    + pose proof (IHvals1 vals2 (fun n => vals (S n))) as q; clear IHvals1.
+      repeat (autodimp q hyp).
+      exrepnd; allrw.
+      exists vals0; auto.
+
+      pose proof (imp1 0 a) as z; simpl in z; autodimp z hyp.
+      pose proof (imp2 0 c) as w; simpl in w; autodimp w hyp.
+      rewrite z in w; ginv.
+Qed.
+
 Lemma same_restrictions_sym {o} :
   forall (r1 r2 : @ChoiceSeqRestriction o),
     same_restrictions r1 r2
     -> same_restrictions r2 r1.
 Proof.
-  introv same; destruct r1, r2; simpl in *; repnd; dands; tcsp.
-  introv; symmetry; auto.
+  introv same; destruct r1, r2; simpl in *; repnd; dands; tcsp;
+    introv; symmetry; auto.
 Qed.
 Hint Resolve same_restrictions_sym : slow.
 
@@ -1846,9 +1992,9 @@ Proof.
   simpl; dands; auto; unfold choice_sequence_entry_extend; simpl; dands; auto;
     unfold choice_sequence_vals_extend; eauto 3 with slow;[|].
 
-  - eapply exists_combine_choice_seq_vals_1; eauto.
+  - eapply exists_combine_choice_seq_vals_op_1; eauto.
 
-  - eapply exists_combine_choice_seq_vals_2; eauto.
+  - eapply exists_combine_choice_seq_vals_op_2; eauto.
 Qed.
 
 Lemma select_combine_choice_seq_vals_implies_or {o} :
@@ -1887,9 +2033,9 @@ Proof.
   simpl; dands; auto; unfold choice_sequence_entry_extend; simpl; dands; auto;
     unfold choice_sequence_vals_extend; eauto 3 with slow;[| |].
 
-  - eapply exists_combine_choice_seq_vals_1; eauto.
+  - eapply exists_combine_choice_seq_vals_op_1; eauto.
 
-  - eapply exists_combine_choice_seq_vals_2; eauto.
+  - eapply exists_combine_choice_seq_vals_op_2; eauto.
 
   - introv i; apply select_combine_choice_seq_vals_implies_or in i; repndors; tcsp.
 Qed.
@@ -2002,12 +2148,13 @@ Proof.
   unfold inf_choice_sequence_satisfies_restriction in safe.
   unfold inf_choice_sequence_vals_extend in *.
   unfold choice_sequence_satisfies_restriction.
-  destruct restr2; simpl in *; repnd; dands; tcsp; eauto 3 with slow;[|].
+  destruct restr2; simpl in *; repnd; dands; tcsp; eauto 3 with slow;[| |].
 
   - introv i.
     destruct restr1; simpl in *; repnd; tcsp.
     rewrite <- ext0.
     apply ext in i; subst; tcsp.
+    pose proof (safe n) as w; rewrite i in w; simpl in *; auto.
 
   - introv j.
     destruct restr1; simpl in *; repnd; tcsp.
@@ -2016,7 +2163,14 @@ Proof.
     rewrite q.
     apply ext in q.
     rewrite <- q.
-    rewrite safe; auto.
+    pose proof (safe i) as w; rewrite q in w; simpl in *; auto.
+    allrw; auto.
+
+  - introv i.
+    destruct restr1; simpl in *; repnd; tcsp.
+    rewrite <- ext0.
+    apply ext in i; subst; tcsp.
+    pose proof (safe n) as w; rewrite i in w; simpl in *; auto.
 Qed.
 Hint Resolve inf_entry_extends_preserves_safe_library_entry : slow.
 
@@ -2201,20 +2355,6 @@ Proof.
 Qed.
 Hint Resolve implies_entry_in_inf_library : slow.
 
-Lemma matching_inf_entries_preserves_inf_matching_entries {o} :
-  forall ie1 ie2 (e : @library_entry o),
-    inf_matching_entries ie1 e
-    -> matching_inf_entries ie2 ie1
-    -> inf_matching_entries ie2 e.
-Proof.
-  introv im mi.
-  unfold inf_matching_entries in *; simpl in *.
-  unfold matching_inf_entries in *; simpl in *.
-  destruct ie1, ie2, e; simpl in *; tcsp; ginv.
-  eapply same_opabs_trans;eauto.
-Qed.
-Hint Resolve matching_inf_entries_preserves_inf_matching_entries : slow.
-
 Lemma is_cs_default_entry_implies_matching_entries_sym {o} :
   forall (e1 e2 : @library_entry o),
     is_cs_default_entry e1
@@ -2253,8 +2393,8 @@ Definition choice_sequence_name2restriction {o} (name : choice_sequence_name) : 
 
 Definition choice_sequence_name2inf_choice_seq_vals {o} (name : choice_sequence_name) : @InfChoiceSeqVals o :=
   match csn_kind name with
-  | cs_kind_nat n => fun _ => mkc_zero
-  | cs_kind_seq l => natSeq2default l
+  | cs_kind_nat n => fun _ => Some mkc_zero
+  | cs_kind_seq l => natSeq2default_op l
   end.
 
 Definition choice_sequence_name2inf_choice_seq_entry {o} (name : choice_sequence_name) : @InfChoiceSeqEntry o :=
@@ -2397,7 +2537,7 @@ Proof.
 
     { unfold inf_choice_sequence_vals_extend; introv w; simpl.
       unfold choice_sequence_name2inf_choice_seq_vals; simpl.
-      unfold natSeq2default.
+      unfold natSeq2default_op, natSeq2default, natSeq2some.
       applydup h in w; subst.
       remember (select n seq) as x; symmetry in Heqx; destruct x.
       - pose proof (safe1 n) as q; autodimp q hyp; eauto 3 with slow.
@@ -3239,31 +3379,6 @@ Proof.
 Qed.
 Hint Resolve implies_inf_lib_extends_cons : slow.
 
-Lemma inf_entry_extends_implies_inf_matching_entries2 {o} :
-  forall (ie ie' : @inf_library_entry o) (e : library_entry),
-    matching_inf_entries ie ie'
-    -> inf_entry_extends ie e
-    -> inf_matching_entries ie e.
-Proof.
-  introv m h; unfold inf_entry_extends in h.
-  unfold inf_matching_entries.
-  unfold matching_inf_entries in m.
-  destruct ie, ie', e; simpl in *; repnd; subst; tcsp.
-  rewrite <- matching_entry_sign_is_same_opabs in *.
-  eapply implies_matching_entry_sign_refl; eauto.
-Qed.
-Hint Resolve inf_entry_extends_implies_inf_matching_entries2 : slow.
-
-Lemma matching_inf_entries_sym {o} :
-  forall (e1 e2 : @inf_library_entry o),
-    matching_inf_entries e1 e2
-    -> matching_inf_entries e2 e1.
-Proof.
-  introv h; unfold matching_inf_entries in *.
-  eapply same_entry_name_sym; eauto.
-Qed.
-Hint Resolve matching_inf_entries_sym : slow.
-
 Lemma entry_in_inf_library_default_implies_safe {o} :
   forall (entry : @library_entry o) infLib,
     entry_in_inf_library_default entry infLib
@@ -3286,15 +3401,6 @@ Proof.
   apply inf_library_extends_implies in i0.
   exrepnd.
   eapply inf_entry_extends_preserves_safe_library_entry; eauto.
-
-  apply (safe (infLib k)).
-  apply implies_entry_in_inf_library.
-  introv ltmn.
-  pose proof (i1 m ltmn) as q; clear i1.
-  introv minf; destruct q.
-
-  eapply matching_inf_entries_preserves_inf_matching_entries;[|eauto].
-  eauto 3 with slow.
 Qed.
 Hint Resolve inf_lib_extends_implies_safe_library : slow.
 
@@ -3339,7 +3445,7 @@ Proof.
   unfold choice_sequence_vals_extend in *; exrepnd; subst.
   unfold choice_sequence_satisfies_restriction in *.
   destruct restr1, restr2; dands; tcsp; eauto 3 with slow;
-    simpl in *; repnd; tcsp;[|].
+    simpl in *; repnd; tcsp;[| |].
 
   - introv i.
     apply ext0.
@@ -3353,6 +3459,12 @@ Proof.
     autodimp q hyp; try omega.
     rewrite ext0 in q.
     rewrite select_app_left in q; auto.
+
+  - introv i.
+    apply ext0.
+    apply safe.
+    rewrite select_app_left; auto.
+    eapply select_lt; eauto.
 Qed.
 Hint Resolve entry_extends_preserves_safe_library_entry : slow.
 
@@ -3759,7 +3871,7 @@ Proof.
   destruct name as [name k]; simpl in *.
   unfold choice_sequence_name2choice_seq_vals_upto.
   destruct k as [k|seq]; simpl in *; boolvar; subst; tcsp; GC;
-    destruct restr; simpl in *; simpl; introv h; repnd;
+    destruct restr; simpl in *; simpl; auto; introv h; repnd;
       rewrite select_fun2list in h; boolvar; tcsp; ginv;
         try (complete (allrw; auto)).
   unfold natSeq2default.
@@ -4523,8 +4635,10 @@ Proof.
   destruct restr1, restr2 in *; repnd; tcsp; introv z.
   - applydup w in z; subst.
     rewrite <- q0; auto.
+    pose proof (h n) as y; rewrite z0 in y; simpl in *; auto.
   - applydup w in z; subst.
     rewrite <- q; eauto.
+    pose proof (h n) as y; rewrite z0 in y; simpl in *; auto.
 Qed.
 Hint Resolve is_default_inf_choice_sequence_implies_is_default_choice_sequence : slow.
 
@@ -5596,6 +5710,7 @@ Definition memNat_restriction {o} (restr : @ChoiceSeqRestriction o) : Prop :=
   match restr with
   | csc_type d M Md => forall n x, M n x <-> is_nat n x
   | csc_coq_law f => True
+  | csc_res M => False
   end.
 
 Definition has_memNat_restriction {o} (e : @library_entry o) name : Prop :=
@@ -5671,12 +5786,16 @@ Fixpoint inf_choice_seq_vals2choice_seq_vals {o}
          (n    : nat) : ChoiceSeqVals :=
   match n with
   | 0 => []
-  | S n => iseq 0 :: inf_choice_seq_vals2choice_seq_vals (shift_inf_choice_seq_vals iseq) n
+  | S n =>
+    match iseq 0 with
+    | Some v => v :: inf_choice_seq_vals2choice_seq_vals (shift_inf_choice_seq_vals iseq) n
+    | None => inf_choice_seq_vals2choice_seq_vals (shift_inf_choice_seq_vals iseq) n
+    end
   end.
 
 Lemma inf_choice_seq_vals2choice_seq_vals_length_eq {o} :
   forall (vals : ChoiceSeqVals) (ivals : @InfChoiceSeqVals o),
-    (forall n v, select n vals = Some v -> ivals n = v)
+    (forall n v, select n vals = Some v -> ivals n = Some v)
     -> inf_choice_seq_vals2choice_seq_vals ivals (length vals) = vals.
 Proof.
   induction vals; introv imp; simpl in *; auto.
@@ -5689,7 +5808,7 @@ Qed.
 
 Lemma inf_choice_seq_vals2choice_seq_vals_shift {o} :
   forall (vals : ChoiceSeqVals) (ivals : @InfChoiceSeqVals o) k,
-    (forall n v, select n vals = Some v -> ivals n = v)
+    (forall n v, select n vals = Some v -> ivals n = Some v)
     -> inf_choice_seq_vals2choice_seq_vals ivals (Init.Nat.max (length vals) k)
        = vals
            ++
@@ -5713,22 +5832,44 @@ Proof.
     compute; tcsp.
 Qed.
 
+Definition regular_inf_seq {o} (iseq : @InfChoiceSeqVals o) :=
+  forall n, match iseq n with
+            | Some _ => True
+            | None => False
+            end.
+
+Lemma implies_regular_inf_seq {o} :
+  forall (iseq : @InfChoiceSeqVals o),
+    regular_inf_seq iseq
+    -> regular_inf_seq (shift_inf_choice_seq_vals iseq).
+Proof.
+  introv h; introv; apply h.
+Qed.
+Hint Resolve implies_regular_inf_seq : slow.
+
 Lemma length_inf_choice_seq_vals2choice_seq_vals {o} :
   forall k (iseq : @InfChoiceSeqVals o),
-    length (inf_choice_seq_vals2choice_seq_vals iseq k) = k.
+    regular_inf_seq iseq
+    -> length (inf_choice_seq_vals2choice_seq_vals iseq k) = k.
 Proof.
-  induction k; introv; simpl; auto.
+  induction k; introv reg; simpl; auto.
+  remember (iseq 0) as vop; symmetry in Heqvop; destruct vop; simpl.
+  { rewrite IHk; auto; eauto 3 with slow. }
+  { pose proof (reg 0) as reg; rewrite Heqvop in *; tcsp. }
 Qed.
-Hint Rewrite @length_inf_choice_seq_vals2choice_seq_vals : slow.
+(*Hint Rewrite @length_inf_choice_seq_vals2choice_seq_vals : slow.*)
 
 Lemma select_inf_choice_seq_vals2choice_seq_vals {o} :
   forall n k (iseq : @InfChoiceSeqVals o),
-    select n (inf_choice_seq_vals2choice_seq_vals iseq k) =
-    if lt_dec n k then Some (iseq n) else None.
+    regular_inf_seq iseq
+    -> select n (inf_choice_seq_vals2choice_seq_vals iseq k) =
+       if lt_dec n k then iseq n else None.
 Proof.
-  induction n; introv; simpl; destruct k; simpl; auto.
-  rewrite IHn.
-  unfold shift_inf_choice_seq_vals; boolvar; try omega; auto.
+  induction n; introv reg; simpl; destruct k; simpl; auto;
+    remember (iseq 0) as v; symmetry in Heqv; destruct v;simpl; auto;
+      try (complete (pose proof (reg 0) as reg; rewrite Heqv in *; tcsp));[].
+  rewrite IHn; eauto 3 with slow.
+  boolvar; try omega; auto.
 Qed.
 
 Lemma entry_extends_preserves_inf_matching_entries {o} :
@@ -5746,16 +5887,30 @@ Hint Resolve entry_extends_preserves_inf_matching_entries : slow.
 
 Lemma select_inf_choice_seq_vals2choice_seq_vals_implies {o} :
   forall k n v (iseq : @InfChoiceSeqVals o),
-    select n (inf_choice_seq_vals2choice_seq_vals iseq k) = Some v
-    -> n < k /\ v = iseq n.
+    regular_inf_seq iseq
+    -> select n (inf_choice_seq_vals2choice_seq_vals iseq k) = Some v
+    -> n < k /\ Some v = iseq n.
 Proof.
-  induction k; introv i; simpl in *; tcsp; autorewrite with list in *; ginv;[].
+  induction k; introv reg i; simpl in *; tcsp; autorewrite with list in *; ginv;[].
+  remember (iseq 0) as x; symmetry in Heqx; destruct x;
+    try (complete (pose proof (reg 0) as reg; rewrite Heqx in *; tcsp)).
   destruct n; simpl in *; ginv.
 
   - dands; tcsp; try omega.
 
-  - applydup IHk in i; exrepnd; subst.
+  - applydup IHk in i; exrepnd; subst; eauto 3 with slow.
     dands; auto; try omega.
+Qed.
+
+Lemma on_some_prop_eta :
+  forall {A} (f g : A -> Prop) d x,
+    (forall a, f a <-> g a)
+    -> on_some x f d
+    -> on_some x g d.
+Proof.
+  introv imp h.
+  destruct x; simpl in *; auto.
+  apply imp; auto.
 Qed.
 
 Lemma same_restrictions_preserves_inf_choice_sequence_satisfies_restriction {o} :
@@ -5765,9 +5920,9 @@ Lemma same_restrictions_preserves_inf_choice_sequence_satisfies_restriction {o} 
     -> inf_choice_sequence_satisfies_restriction ivals restr2.
 Proof.
   introv same sat.
-  destruct restr1, restr2; simpl in *; repnd; tcsp; introv.
-  { apply same; eauto. }
-  { rewrite <- same; eauto. }
+  destruct restr1, restr2; simpl in *; repnd; tcsp; introv;
+    eapply on_some_prop_eta; eauto;[].
+  introv; simpl; rewrite same; tcsp.
 Qed.
 Hint Resolve same_restrictions_preserves_inf_choice_sequence_satisfies_restriction : slow.
 
@@ -5827,6 +5982,30 @@ Proof.
 Qed.
 Hint Resolve inf_entry_extends_implies_entry_in_inf_library_extends_same_names_lt : slow.
 
+Lemma same_restrictions_csc_type_implies_regular {o} :
+  forall irestr (ivals : nat -> option (@ChoiceSeqVal o)) d M Md,
+    same_restrictions irestr (csc_type d M Md)
+    -> inf_choice_sequence_satisfies_restriction ivals irestr
+    -> regular_inf_seq ivals.
+Proof.
+  introv same sat; introv.
+  remember (ivals n) as x; symmetry in Heqx; destruct x; auto.
+  unfold inf_choice_sequence_satisfies_restriction in sat.
+  destruct irestr; simpl in *; tcsp; repnd.
+  pose proof (sat n) as sat; rewrite Heqx in *; simpl in *; auto.
+Qed.
+Hint Resolve same_restrictions_csc_type_implies_regular : slow.
+
+Lemma regular_inf_seq_shift_inf_choice_seq_vals_ntimes {o} :
+  forall n (ivals : nat -> option (@ChoiceSeqVal o)),
+    regular_inf_seq ivals
+    -> regular_inf_seq (shift_inf_choice_seq_vals_ntimes ivals n).
+Proof.
+  induction n; introv h; simpl in *; tcsp.
+  apply IHn; eauto 3 with slow.
+Qed.
+Hint Resolve regular_inf_seq_shift_inf_choice_seq_vals_ntimes : slow.
+
 Lemma entry_in_inf_library_extends_implies_extend_library_entry_lawless_upto {o} :
   forall n (infLib : @inf_library o) entry name k,
     safe_inf_library infLib
@@ -5839,6 +6018,7 @@ Proof.
   introv safe i.
   applydup @inf_library_extends_implies in i.
   exrepnd.
+  applydup safe in i3 as safeie.
 
   remember (infLib k0) as infentry.
   destruct infentry, entry; simpl in *; tcsp; repnd; subst;
@@ -5849,7 +6029,8 @@ Proof.
 
   destruct entry as [vals restr].
   destruct restr;
-    [|exists (lib_cs name1 (MkChoiceSeqEntry _ vals (csc_coq_law f))); simpl; boolvar; subst; tcsp];[].
+    [|exists (lib_cs name1 (MkChoiceSeqEntry _ vals (csc_coq_law f))); simpl; boolvar; subst; tcsp
+     |exists (lib_cs name1 (MkChoiceSeqEntry _ vals (csc_res typ))); simpl; boolvar; subst; tcsp];[].
 
   destruct entry0 as [ivals irestr].
   unfold inf_choice_sequence_entry_extend in i2; simpl in *; repnd; subst.
@@ -5873,8 +6054,10 @@ Proof.
 
     { apply inf_choice_seq_vals2choice_seq_vals_shift; auto. }
 
+    { rewrite length_inf_choice_seq_vals2choice_seq_vals; eauto 3 with slow. }
+
     { introv j.
-      applydup @select_inf_choice_seq_vals2choice_seq_vals_implies in j.
+      applydup @select_inf_choice_seq_vals2choice_seq_vals_implies in j; eauto 3 with slow.
       exrepnd; subst; autorewrite with slow.
       pose proof (safe (infLib k0)) as h.
 
@@ -5887,14 +6070,15 @@ Proof.
 
       rewrite <- Heqinfentry in h; simpl in h; repnd.
       eapply same_restrictions_preserves_inf_choice_sequence_satisfies_restriction in h;[|eauto].
-      pose proof (h (length vals + n0)) as w; clear h; auto. }
+      pose proof (h (length vals + n0)) as w; clear h; auto.
+      rewrite shift_inf_choice_seq_vals_ntimes_app in j0; rewrite <- j0 in w; simpl in w; auto. }
 
   - eapply inf_entry_extends_implies_entry_in_inf_library_extends_same_names_lt;
       simpl; eauto; simpl; auto.
     rewrite <- Heqinfentry; simpl; dands; auto.
     unfold inf_choice_sequence_entry_extend; simpl; dands; auto.
     introv h.
-    rewrite select_inf_choice_seq_vals2choice_seq_vals in h; boolvar; ginv.
+    rewrite select_inf_choice_seq_vals2choice_seq_vals in h; boolvar; ginv; eauto 3 with slow.
 Qed.
 
 Lemma extend_library_entry_lawless_upto_choice_sequence_name2entry_upto_same {o} :
@@ -6097,7 +6281,8 @@ Proof.
   destruct entry as [vals restr].
 
   destruct restr;
-    [|exists (lib_cs name0 (MkChoiceSeqEntry _ vals (csc_coq_law f))); simpl; boolvar; subst; tcsp];[].
+    [|exists (lib_cs name0 (MkChoiceSeqEntry _ vals (csc_coq_law f))); simpl; boolvar; subst; tcsp
+     |exists (lib_cs name0 (MkChoiceSeqEntry _ vals (csc_res typ))); simpl; boolvar; subst; tcsp];[].
 
   exists (lib_cs
             name0

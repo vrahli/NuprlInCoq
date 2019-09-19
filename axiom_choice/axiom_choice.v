@@ -259,10 +259,522 @@ Proof.
   apply (C0 (MkNatDepLibExt k lib' e lib'0 e0 z)).
 Qed.
 
+Lemma fresh_choice_seq_name_in_library_with_kind {o} :
+  forall (lib : @library o) k,
+  exists (name : choice_sequence_name),
+    find_cs lib name = None
+    /\ csn_kind name = k.
+Proof.
+  introv.
+  pose proof (fresh_string (map csn_name (library2choice_sequence_names lib))) as q.
+  exrepnd.
+  exists (MkChoiceSequenceName x k); simpl; dands; auto.
+  apply not_in_library2choice_sequence_names_iff_find_cs_none; auto.
+  introv xx; destruct q0.
+  apply in_map_iff; eexists; eauto.
+Qed.
+
+Lemma member_nat2nat {o} :
+  forall (lib : @library o) f,
+    member lib f nat2nat
+    <=> in_ext lib (fun lib => forall (k : nat), member lib (mkc_apply f (mkc_nat k)) mkc_tnat).
+Proof.
+  introv.
+  rw @equality_in_fun.
+  split; introv h; repnd; dands; eauto 3 with slow.
+
+  { introv ext; introv.
+    apply h; eauto 3 with slow. }
+
+  { introv ext q.
+    apply equality_in_tnat in q; apply e_all_in_ex_bar_as in q.
+    apply all_in_ex_bar_equality_implies_equality.
+    eapply in_open_bar_pres; eauto; clear q; introv xta q.
+    unfold equality_of_nat in q; exrepnd.
+    eapply equality_respects_cequivc_left;
+      [apply implies_ccequivc_ext_apply;
+       [apply ccequivc_ext_refl
+       |apply ccequivc_ext_sym;
+        apply ccomputes_to_valc_ext_implies_ccequivc_ext;
+        eauto]|].
+    eapply equality_respects_cequivc_right;
+      [apply implies_ccequivc_ext_apply;
+       [apply ccequivc_ext_refl
+       |apply ccequivc_ext_sym;
+        apply ccomputes_to_valc_ext_implies_ccequivc_ext;
+        eauto]|].
+    apply h; eauto 3 with slow. }
+Qed.
+
 Hint Rewrite @mkcv_apply_substc : slow.
 Hint Rewrite @substc2_apply : slow.
 
 Definition lam_ax {o} := @mkc_lam o nvarx (mkcv_axiom nvarx).
+
+Definition mk_cs_res_entry {o}
+           {lib  : @library o}
+           {Flib : NatFunLibExt lib}
+           (Fnat : NatFunLibExtNat Flib) : @ChoiceSeqEntry o :=
+  MkChoiceSeqEntry
+    o
+    []
+    (csc_res
+       (fun i t =>
+          exists (lib1 : library)
+                 (ext1 : lib_extends lib1 lib)
+                 (lib2 : library)
+                 (ext2 : lib_extends lib2 (Flib i lib1 ext1))
+                 (extz : lib_extends lib2 lib),
+            t = mkc_nat (Fnat i lib1 ext1 lib2 ext2 extz))).
+
+Definition mk_cs_res {o}
+           (name : choice_sequence_name)
+           {lib  : @library o}
+           {Flib : NatFunLibExt lib}
+           (Fnat : NatFunLibExtNat Flib) : library_entry :=
+  lib_cs name (mk_cs_res_entry Fnat).
+
+Lemma safe_library_entry_mk_cs_ren {o} :
+  forall (name : choice_sequence_name)
+         {lib  : @library o}
+         {Flib : NatFunLibExt lib}
+         (Fnat : NatFunLibExtNat Flib),
+    csn_kind name = cs_kind_nat 2
+    -> safe_library_entry (mk_cs_res name Fnat).
+Proof.
+  introv eqk.
+  unfold safe_library_entry; simpl.
+  unfold correct_restriction; simpl.
+  allrw; simpl; dands; auto.
+  introv h; autorewrite with list in *; ginv.
+Qed.
+Hint Resolve safe_library_entry_mk_cs_ren : slow.
+
+Lemma find_cs_none_implies_non_shadowed_entry_mk_cs_res {o} :
+  forall (name : choice_sequence_name)
+         {lib  : @library o}
+         {Flib : NatFunLibExt lib}
+         (Fnat : NatFunLibExtNat Flib)
+         (lib' : library),
+    find_cs lib' name = None
+    -> non_shadowed_entry (mk_cs_res name Fnat) lib'.
+Proof.
+  introv h.
+  unfold non_shadowed_entry.
+  apply forallb_forall; introv i.
+  eapply find_cs_none_implies_diff_entry_names; eauto.
+Qed.
+Hint Resolve find_cs_none_implies_non_shadowed_entry_mk_cs_res : slow.
+
+Fixpoint to_list {T} i k (f : nat -> T) : list T :=
+  match k with
+  | 0 => []
+  | S m => f i :: to_list (S i) m f
+  end.
+
+Lemma entry_extends_preserves_matching_entries_right_rev {o} :
+  forall (e1 e2 e : @library_entry o),
+    entry_extends e1 e2
+    -> matching_entries e e1
+    -> matching_entries e e2.
+Proof.
+  introv ext m.
+  destruct e1, e2; simpl in *; tcsp; repnd; subst; eauto 3 with slow; ginv.
+Qed.
+
+Lemma entry_extends_preserves_matching_entries_right_rev2 {o} :
+  forall (e1 e2 e : @library_entry o),
+    entry_extends e1 e2
+    -> matching_entries e e2
+    -> matching_entries e e1.
+Proof.
+  introv ext m.
+  destruct e1, e2, e; simpl in *; tcsp; repnd; subst; ginv; eauto 3 with slow.
+Qed.
+
+Lemma implies_lib_extends_cons_same {o} :
+  forall e1 e2 (lib : @library o),
+    safe_library_entry e1
+    -> entry_extends e1 e2
+    -> lib_extends (e1 :: lib) (e2 :: lib).
+Proof.
+  introv safee1 ext.
+  split; simpl in *.
+
+  - introv i; simpl in *; repndors; repnd; subst; tcsp.
+    right; dands; tcsp; eauto 3 with slow.
+    intro xx.
+    eapply entry_extends_preserves_matching_entries_right_rev in ext; eauto.
+
+  - introv safe1 i; simpl in *; repndors; repnd; subst; tcsp.
+    apply safe1; simpl; tcsp.
+    right; dands; tcsp.
+    introv xx.
+    eapply entry_extends_preserves_matching_entries_right_rev2 in ext; eauto.
+
+  - introv i; simpl in *; repndors; subst; tcsp.
+    { exists e1; tcsp. }
+    exists entry1; dands; tcsp; eauto 3 with slow.
+Qed.
+Hint Resolve implies_lib_extends_cons_same : slow.
+
+Lemma select_app :
+  forall {A} (l1 l2 : list A) (n : nat),
+    select n (l1 ++ l2) = if lt_dec n (length l1) then select n l1 else select (n - length l1) l2.
+Proof.
+  induction n; introv; simpl; destruct l1; simpl in *; tcsp.
+  boolvar; try omega; tcsp.
+  { rewrite select_app_l; auto; try omega. }
+  { rewrite select_app_r; auto; try omega. }
+  { rewrite select_app_r; auto; try omega. }
+Qed.
+
+Lemma lib_extends_nat_fun_lib_ext {o} {lib} (k : nat) (Flib : @NatFunLibExt o lib) {lib'} (ext : lib_extends lib' lib) :
+  lib_extends (Flib k lib' ext) lib.
+Proof.
+  eauto 3 with slow.
+Qed.
+
+Definition lib_extends_LibExt {o}
+           {lib' lib : @library o}
+           (ext : lib_extends lib' lib)
+           (h   : LibExt lib') : LibExt lib :=
+  MkLibExt h (lib_extends_trans (lib_ext_ext h) ext).
+
+Definition app2LibExt {o}
+           {lib : @library o}
+           (F : forall lib' (x : lib_extends lib' lib), LibExt lib')
+           (h : LibExt lib) : LibExt lib :=
+  lib_extends_LibExt (lib_ext_ext h) (F h (lib_ext_ext h)).
+
+Fixpoint lib_extends_stack {o}
+         (k    : nat)
+         {lib  : @library o}
+         {lib' : library}
+         (ext  : lib_extends lib' lib)
+         (Flib : NatFunLibExt lib) : LibExt lib :=
+  app2LibExt
+    (Flib k)
+    (match k with
+     | 0 => MkLibExt _ ext
+     | S m => lib_extends_stack m ext Flib
+     end).
+
+Fixpoint old_lib_extends_stack {o}
+         (k    : nat)
+         (i    : nat)
+         {lib  : @library o}
+         {lib' : library}
+         (ext  : lib_extends lib' lib)
+         (Flib : NatFunLibExt lib) : LibExt lib :=
+  match k with
+  | 0 => lib_extends_LibExt ext (Flib i lib' ext)
+  | S m => old_lib_extends_stack m (S i) (lib_extends_nat_fun_lib_ext i Flib ext) Flib
+  end.
+
+Fixpoint lib_extends_lib_extends_stack {o}
+         (k    : nat)
+         {lib  : @library o}
+         {lib' : library}
+         (ext  : lib_extends lib' lib)
+         (Flib : NatFunLibExt lib) : lib_extends (lib_extends_stack k ext Flib) lib' :=
+  match k return lib_extends (lib_extends_stack k ext Flib) lib' with
+  | 0 => lib_ext_ext (Flib 0 lib' ext)
+  | S m => lib_extends_trans
+             (lib_ext_ext (Flib (S m) (lib_extends_stack m ext Flib) (lib_ext_ext (lib_extends_stack m ext Flib))))
+             (lib_extends_lib_extends_stack m ext Flib)
+  end.
+Hint Resolve lib_extends_lib_extends_stack : slow.
+
+Lemma select_to_list_some_implies :
+  forall n {A} (f : nat -> A) i j v,
+    select n (to_list i j f) = Some v
+    -> v = f (n + i).
+Proof.
+  induction n; introv h; simpl in *.
+  { destruct j; simpl in *; tcsp; ginv; auto. }
+  destruct j; simpl in *; tcsp.
+  apply IHn in h; simpl in *.
+  rewrite Nat.add_succ_r in h; auto.
+Qed.
+
+Lemma implies_lib_extends_cons_diff {o} :
+  forall e1 e2 (lib1 lib2 : @library o),
+    safe_library_entry e1
+    -> entry_extends e1 e2
+    -> lib_extends (lib1 ++ e1 :: lib2) (lib1 ++ e2 :: lib2).
+Proof.
+  introv safee1 ext.
+  split; simpl in *.
+
+  - introv i; simpl in *; repndors; repnd; subst; tcsp.
+    apply entry_in_library_app_implies in i; repndors; repnd; eauto 3 with slow;[].
+    apply implies_entry_in_library_extends_app_right; tcsp.
+    { simpl in *; repndors; repnd; subst; tcsp; eauto 3 with slow;[].
+      right; dands; tcsp; eauto 3 with slow.
+      intro xx.
+      eapply entry_extends_preserves_matching_entries_right_rev in ext; eauto. }
+    introv j; apply i; apply LIn_implies_In; auto.
+
+  - introv safe1 i; simpl in *; repndors; repnd; subst; tcsp.
+    apply entry_in_library_app_implies in i; repndors; repnd; eauto 3 with slow;[].
+    simpl in *; repndors; repnd; subst; tcsp;[].
+    apply safe1; simpl; tcsp.
+    apply implies_entry_in_library_app_right; tcsp; simpl; tcsp.
+    { right; dands; tcsp.
+      introv xx.
+      eapply entry_extends_preserves_matching_entries_right_rev2 in ext; eauto. }
+    introv j; apply i; apply LIn_implies_In; auto.
+
+  - introv i; simpl in *; repndors; subst; tcsp.
+    apply List.in_app_iff in i; simpl in *; repndors; subst; tcsp; eauto.
+    { exists entry1; rewrite List.in_app_iff; simpl; dands; tcsp; eauto 3 with slow. }
+    { exists e1; tcsp; rewrite List.in_app_iff; simpl; dands; tcsp; eauto 3 with slow. }
+    { exists entry1; rewrite List.in_app_iff; simpl; dands; tcsp; eauto 3 with slow. }
+Qed.
+Hint Resolve implies_lib_extends_cons_diff : slow.
+
+Lemma lib_ext_lib_lib_extends_LibExt {o} :
+  forall {lib lib'} (ext : lib_extends lib' lib) (x : @LibExt o lib'),
+    lib_ext_lib (lib_extends_LibExt ext x) = x.
+Proof.
+  introv; destruct x; simpl; auto.
+Qed.
+Hint Rewrite @lib_ext_lib_lib_extends_LibExt : slow.
+
+Lemma extend_lib_cs_res {o} :
+  forall k (F : nat -> ChoiceSeqVal) (lib : @library o) name vals typ,
+    correct_restriction name (csc_res typ)
+    -> (forall n v, select n vals = Some v -> typ n v)
+    -> (forall n, length vals <= n -> typ n (F n))
+    -> find_cs lib name = Some (MkChoiceSeqEntry _ vals (csc_res typ))
+    -> exists lib' lib1 lib2,
+        lib_extends lib' lib
+        /\ find_cs lib' name = Some (MkChoiceSeqEntry _ (vals ++ to_list (length vals) (k - length vals) F) (csc_res typ))
+        /\ lib = lib1 ++ lib_cs name (MkChoiceSeqEntry _ vals (csc_res typ)) :: lib2
+        /\ lib' = lib1 ++ lib_cs name (MkChoiceSeqEntry _ (vals ++ to_list (length vals) (k - length vals) F) (csc_res typ)) :: lib2.
+Proof.
+  induction lib; introv cor sel typf h; simpl in *; tcsp.
+  destruct a; simpl in *; tcsp; boolvar; subst; tcsp; ginv; GC.
+
+  { exists (lib_cs name0 (MkChoiceSeqEntry _ (vals ++ to_list (length vals) (k - length vals) F) (csc_res typ)) :: lib)
+           ([] : @library o)
+           lib.
+    simpl; boolvar; tcsp.
+    dands; tcsp; eauto 3 with slow;[].
+    apply implies_lib_extends_cons_same; simpl; dands; eauto 3 with slow.
+
+    { unfold safe_library_entry; simpl; dands; tcsp.
+      introv xx.
+      rewrite select_app in xx; boolvar.
+      { apply sel; auto. }
+      applydup select_to_list_some_implies in xx; subst.
+      apply Nat.nlt_ge in n0.
+      rewrite Nat.sub_add; auto. }
+
+    { unfold choice_sequence_entry_extend; simpl; dands; tcsp.
+      unfold choice_sequence_vals_extend; eexists; eauto. } }
+
+  { apply IHlib in h; auto.
+    exrepnd.
+    exists (lib_cs name0 entry :: lib') (lib_cs name0 entry :: lib1) lib2.
+    simpl; boolvar; tcsp; GC;[].
+    dands; tcsp; try congruence;[].
+    subst; simpl.
+    repeat rewrite (app_comm_cons _ _ (lib_cs name0 entry)).
+    apply implies_lib_extends_cons_diff; simpl; dands; eauto 3 with slow;[|].
+
+    { unfold safe_library_entry; simpl; dands; tcsp.
+      introv xx.
+      rewrite select_app in xx; boolvar.
+      { apply sel; auto. }
+      applydup select_to_list_some_implies in xx; subst.
+      apply Nat.nlt_ge in n1.
+      rewrite Nat.sub_add; auto. }
+
+    { unfold choice_sequence_entry_extend; simpl; dands; tcsp.
+      unfold choice_sequence_vals_extend; eexists; eauto. } }
+
+  { apply IHlib in h; auto.
+    exrepnd.
+    exists (lib_abs opabs vars rhs correct :: lib') (lib_abs opabs vars rhs correct :: lib1) lib2.
+    simpl; tcsp; GC;[].
+    dands; tcsp; try congruence;[].
+    subst; simpl.
+    repeat rewrite (app_comm_cons _ _ (lib_abs opabs vars rhs correct)).
+    apply implies_lib_extends_cons_diff; simpl; dands; eauto 3 with slow;[|].
+
+    { unfold safe_library_entry; simpl; dands; tcsp.
+      introv xx.
+      rewrite select_app in xx; boolvar.
+      { apply sel; auto. }
+      applydup select_to_list_some_implies in xx; subst.
+      apply Nat.nlt_ge in n0.
+      rewrite Nat.sub_add; auto. }
+
+    { unfold choice_sequence_entry_extend; simpl; dands; tcsp.
+      unfold choice_sequence_vals_extend; eexists; eauto. } }
+Qed.
+
+Lemma implies_select_to_list_some :
+  forall n {A} (f : nat -> A) i j,
+    n < j
+    -> select n (to_list i j f) = Some (f (n + i)).
+Proof.
+  induction n; introv h; simpl in *.
+  { destruct j; simpl in *; tcsp; ginv; auto. }
+  destruct j; simpl in *; tcsp.
+  rewrite IHn; try omega.
+  rewrite Nat.add_succ_r; auto.
+Qed.
+
+Lemma ext_lib_extends_stack_implies_ex_nat {o} :
+  forall (name : choice_sequence_name)
+         {lib  : @library o}
+         (safe : safe_library lib)
+         {Flib : NatFunLibExt lib}
+         (Fnat : NatFunLibExtNat Flib)
+         (k    : nat)
+         (k'   : nat)
+         (ltk  : k < k')
+         (lib1 : library)
+         (ext1 : lib_extends lib1 lib)
+         (ext' : lib_extends lib1 (mk_cs_res name Fnat :: lib))
+         (lib2 : library)
+         (ext2 : lib_extends lib2 (lib_extends_stack k' ext1 Flib)),
+  exists (lib3 : library) i,
+    lib_extends lib3 lib2
+    /\ find_cs_value_at lib3 name k = Some (mkc_nat i).
+Proof.
+  introv safe ltk ext' ext2.
+
+  pose proof (lib_extends_preserves_find_cs
+                (mk_cs_res name Fnat :: lib)
+                lib2
+                name
+                (mk_cs_res_entry Fnat)) as q.
+  simpl in q; boolvar; tcsp;[]; GC.
+  repeat (autodimp q hyp); eauto 3 with slow;[].
+  exrepnd.
+  destruct entry2 as [vals restr]; simpl in *.
+  unfold same_restrictions in q2.
+  destruct restr; tcsp.
+
+  assert (lib_extends lib2 lib) as ext by eauto 3 with slow.
+  assert (safe_library lib2) as safe2 by eauto 3 with slow.
+
+  remember (fun n => match n with
+                     | 0 =>
+                       Fnat
+                         0
+                         lib1
+                         ext1
+                         (Flib 0 lib1 ext1)
+                         (lib_extends_refl _)
+                         (lib_extends_trans (lib_ext_ext (Flib 0 lib1 ext1)) ext1)
+                     | S m =>
+                       Fnat
+                         (S m)
+                         (lib_extends_stack m ext1 Flib)
+                         (lib_ext_ext (lib_extends_stack m ext1 Flib))
+                         (Flib (S m)
+                               (lib_extends_stack m ext1 Flib)
+                               (lib_ext_ext (lib_extends_stack m ext1 Flib)))
+                         (lib_extends_refl _)
+                         (lib_ext_ext (lib_extends_stack (S m) ext1 Flib))
+                     end) as f.
+
+  assert (correct_restriction name (csc_res typ)) as cor.
+  { apply find_cs_some_implies_entry_in_library in q1.
+    apply safe2 in q1; simpl in *; tcsp. }
+
+  assert (forall (n : nat) (v : CTerm), select n vals = Some v -> typ n v) as sel.
+  { apply find_cs_some_implies_entry_in_library in q1.
+    apply safe2 in q1; simpl in *; repnd; tcsp. }
+
+  assert (forall n : nat, length vals <= n -> typ n (mkc_nat (f n))) as typf.
+  { introv len.
+    apply q2.
+    subst f.
+    destruct n; eauto; eexists; eexists; eexists; eexists; eexists; eauto. }
+
+  apply (extend_lib_cs_res k' (fun n => mkc_nat (f n))) in q1; auto.
+
+  exrepnd.
+  exists lib'.
+  unfold find_cs_value_at; rewrite q4; simpl.
+  rewrite find_value_of_cs_at_is_select.
+  destruct (lt_dec k (length vals)) as [d|d].
+
+  { applydup @select_lt_length in d; exrepnd.
+    applydup sel in d1.
+    apply q2 in d0; exrepnd; subst a.
+    exists (Fnat k lib4 ext0 lib5 ext3 extz).
+    dands; auto.
+    rewrite select_app_l; auto. }
+
+  { apply Nat.nlt_ge in d.
+    exists (f k); dands; auto.
+    rewrite select_app_r; auto;try omega;[].
+    rewrite implies_select_to_list_some; try omega;
+      [|apply Nat.lt_add_lt_sub_r; rewrite Nat.sub_add; auto];[].
+    rewrite Nat.sub_add; auto. }
+Qed.
+
+Lemma mk_cs_ren_in_nat2nat {o} :
+  forall (name : choice_sequence_name)
+         {lib  : @library o}
+         {Flib : NatFunLibExt lib}
+         (Fnat : NatFunLibExtNat Flib)
+         (lib' : library),
+    safe_library lib
+    -> find_cs lib name = None
+    -> csn_kind name = cs_kind_nat 2
+    -> lib_extends lib' (mk_cs_res name Fnat :: lib)
+    -> member lib' (mkc_choice_seq name) nat2nat.
+Proof.
+  introv safe fnd eqk ext.
+  apply member_nat2nat.
+  introv xta; introv.
+  apply member_tnat_iff.
+
+  assert (lib_extends (mk_cs_res name Fnat :: lib) lib) as xtb.
+  { apply implies_lib_extends_cons_left; eauto 3 with slow. }
+
+  apply collapse_all_in_ex_bar.
+  introv xtc.
+  assert (lib_extends lib'1 lib) as xtd by eauto 4 with slow.
+  assert (lib_extends lib'1 lib') as xte by eauto 4 with slow.
+
+  exists (lib_extends_stack (S k) xtd Flib) (lib_extends_lib_extends_stack (S k) xtd Flib).
+  introv xtf xtg.
+
+  assert (lib_extends lib'1 (mk_cs_res name Fnat :: lib)) as xth by eauto 3 with slow.
+  assert (lib_extends lib'3 (lib_extends_stack (S k) xtd Flib)) as xti by eauto 3 with slow.
+
+  pose proof (ext_lib_extends_stack_implies_ex_nat name safe Fnat k (S k)) as q.
+  autodimp q hyp;[].
+  pose proof (q lib'1 xtd xth lib'3 xti) as q.
+  exrepnd.
+  exists lib3 q0.
+  introv xtj.
+  exists i.
+
+  apply (implies_ccomputes_to_valc_ext_apply_cs lib3 lib'4 name (mkc_nat k) k i); eauto 3 with slow.
+Qed.
+
+Lemma mkc_apply_lam_ax_comp_ax {o} :
+  forall (lib : @library o) a,
+    (mkc_apply lam_ax a) ===b>(lib) mkc_axiom.
+Proof.
+  introv.
+  apply in_ext_implies_in_open_bar; introv xta xtb.
+  exists (@mkc_axiom o); dands; spcast; eauto 3 with slow.
+  apply computes_to_valc_iff_reduces_toc; dands; eauto 3 with slow.
+  destruct_cterms; unfold reduces_toc; simpl.
+  apply reduces_to_if_step; tcsp.
+Qed.
+Hint Resolve mkc_apply_lam_ax_comp_ax : slow.
 
 
 (*
@@ -278,6 +790,7 @@ Lemma axiom_of_choice_00 {o} :
   forall lib f m n (P : @CTerm o),
     n <> m
     -> f <> m
+    -> safe_library lib
     -> (forall a b,
           member lib a mkc_tnat
           -> member lib b mkc_tnat
@@ -315,7 +828,7 @@ Lemma axiom_of_choice_00 {o} :
                                            (mk_cv_app_l [m] [f] (mkc_var f))
                                            (mk_cv_app_r [f] [m] (mkc_var m))))))).
 Proof.
-  introv d1 d2 impp inh.
+  introv d1 d2 safe impp inh.
 
   unfold mkc_forall in inh.
   apply inhabited_function in inh.
@@ -400,39 +913,16 @@ Proof.
   { introv; pose proof (yy k _ (lib_extends_refl _)) as h; exrepnd; eauto. }
 *)
 
-  pose proof (fresh_choice_seq_name_in_library lib') as w; exrepnd.
+  pose proof (fresh_choice_seq_name_in_library_with_kind lib' (cs_kind_nat 2)) as w; exrepnd.
   apply @nat_in_open_bar_choice in xx; exrepnd.
   apply nat_in_open_bar_choice_nat in xx0; exrepnd.
 
-  (* WARNING *)
-  Parameter xxxxx : False.
-  (* We need other kinds of choice sequence restriction
-     without default values *)
 
-  remember (lib_cs
-              name
-              (MkChoiceSeqEntry
-                 o
-                 []
-                 (csc_type
-                    (fun i => mkc_zero)
-                    (fun i t =>
-                       exists (lib1 : library)
-                              (ext1 : lib_extends lib1 lib')
-                              (lib2 : library)
-                              (ext2 : lib_extends lib2 (Flib i lib1 ext1))
-                              (extz : lib_extends lib2 lib'),
-                         t = mkc_nat (Fnat i lib1 ext1 lib2 ext2 extz))
-                    (fun i => match xxxxx with end)))) as entry.
-  hide_hyp Heqentry.
-
-  exists (entry :: lib').
+  exists (mk_cs_res name Fnat :: lib').
 
   (* WARNING *)
-  assert (lib_extends (entry :: lib') lib') as xta.
-  { apply implies_lib_extends_cons_left; eauto 3 with slow.
-    { admit. }
-    { admit. } }
+  assert (lib_extends (mk_cs_res name Fnat :: lib') lib') as xta.
+  { apply implies_lib_extends_cons_left; eauto 3 with slow. }
   exists xta.
 
   introv xtb.
@@ -444,7 +934,7 @@ Proof.
   exists (@mkc_choice_seq o name) (@lam_ax o).
   dands; eauto 3 with slow.
 
-  { (* ?? *) admit. }
+  { apply (mk_cs_ren_in_nat2nat name Fnat); auto; eauto 3 with slow. }
 
   unfold mkcv_forall.
   repeat (rw @substc_mkcv_function; auto).
@@ -460,26 +950,32 @@ Proof.
   autorewrite with slow.
   repeat (rewrite substc2_mk_cv_app_r; tcsp;[]).
   autorewrite with slow.
-  apply equality_in_tnat in eqn.
-  unfold equality_of_nat_bar in eqn.
+  apply equality_in_tnat in eqn; apply e_all_in_ex_bar_as in eqn.
   apply all_in_ex_bar_equality_implies_equality.
   eapply in_open_bar_pres; try exact eqn; clear eqn; introv xte eqn.
   unfold equality_of_nat in eqn; exrepnd.
+  rename n0 into k.
   apply equality_in_mkc_squash.
-  dands; eauto 3 with slow.
-
-  { admit. }
-  { admit. }
+  dands; eauto 3 with slow;[].
 
   pose proof (xx1 k) as xx1.
   introv xtf.
-  assert (lib_extends lib'4 lib') as xtg by admit.
+  assert (lib_extends lib'4 lib') as xtg by eauto 6 with slow.
+
+
+(* XX *)
+(* First, we need to extend [lib'4] so that we have [S(k)] choices *)
+(* expand [ext_lib_extends_stack_implies_ex_nat], so that we get a characterization
+   of [i] in terms of [name]'s restriction *)
+(* XX *)
+
+
   pose proof (xx1 _ xtg) as xx1; simpl in xx1.
   assert (lib_extends (Flib k lib'4 xtg) lib'4) as xth by eauto 3 with slow.
   (* We have to get [S(k)] choices *)
   exists (Flib k lib'4 xtg) xth.
   introv xti.
-  assert (lib_extends lib'5 lib') as xtj by admit.
+  assert (lib_extends lib'5 lib') as xtj by eauto 3 with slow.
   pose proof (xx1 _ xti xtj) as xx1; simpl in xx1.
 
 XXXXXXXXXX

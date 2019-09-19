@@ -43,4 +43,6 @@ Proof.
   apply equality_in_tnat in en.
   allrw @mkcv_tuni_substc; spcast.
   allrw @mkc_var_substc; eauto 3 with slow.
+SearchAbout tequality mkc_tuni.
+Locate equality_of_nat_bar.
 Qed.

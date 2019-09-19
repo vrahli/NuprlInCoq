@@ -82,14 +82,14 @@ Proof.
 
   - eapply all_in_ex_bar_modus_ponens1;[|exact h]; clear h; introv x h; exrepnd; spcast.
     exists a1 a2; dands; spcast; auto.
-    apply equality_in_tnat in h2.
+    apply equality_in_tnat in h2; apply e_all_in_ex_bar_as in h2.
     eapply all_in_ex_bar_modus_ponens1;[|exact h2]; clear h2; introv y h2; exrepnd; spcast.
     unfold equality_of_nat in h2; exrepnd.
     eexists; dands; eauto.
 
   - eapply all_in_ex_bar_modus_ponens1;[|exact h]; clear h; introv x h; exrepnd; spcast.
     exists a1 a2; dands; spcast; auto.
-    apply equality_in_tnat.
+    apply equality_in_tnat; apply e_all_in_ex_bar_as.
     eapply all_in_ex_bar_modus_ponens1;[|exact h1]; clear h1; introv y h1; exrepnd; spcast.
     unfold equality_of_nat; exrepnd.
     eexists; dands; eauto.

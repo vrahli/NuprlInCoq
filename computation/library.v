@@ -194,7 +194,9 @@ Inductive ChoiceSeqRestriction {o} :=
 (* [d] is a default value e*)
 | csc_type (d : nat -> @ChoiceSeqVal o) (typ : @RestrictionPred o) (typd : forall n, typ n (d n))
 (* constrains the values of the sequence to follow the law given by the function *)
-| csc_coq_law (f : nat -> @CTerm o).
+| csc_coq_law (f : nat -> @CTerm o)
+(* no default *)
+| csc_res  (typ : @RestrictionPred o).
 
 (* no constraints *)
 Definition csc_no {o} : @ChoiceSeqRestriction o :=

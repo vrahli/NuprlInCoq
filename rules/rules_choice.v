@@ -387,7 +387,7 @@ Proof.
   assert (m < n) as ltm by omega.
   clear e0.
 
-  apply equality_in_tnat.
+  apply equality_in_tnat; apply e_all_in_ex_bar_as.
   assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
   clear dependent lib'.
   eapply lib_extends_preserves_all_in_ex_bar in imp;[|exact xt].
@@ -490,6 +490,12 @@ Proof.
     unfold is_nat_or_seq_kind in *.
     destruct name0 as [name kd]; simpl in *.
     destruct kd; subst; boolvar; tcsp.
+
+  - unfold correct_restriction in *.
+    subst.
+    unfold is_nat_or_seq_kind in *.
+    destruct name0 as [name kd]; simpl in *.
+    destruct kd; subst; boolvar; tcsp.
 Qed.
 Hint Resolve cs_entry_in_library_lawless_upto_implies_length_ge : slow.
 
@@ -545,6 +551,12 @@ Proof.
         eauto 3 with slow.
 
       * apply cor in sel; auto; try omega.
+
+  - unfold correct_restriction in *.
+    subst.
+    unfold is_nat_or_seq_kind in *.
+    destruct name0 as [name kd]; simpl in *.
+    destruct kd; subst; boolvar; tcsp.
 
   - unfold correct_restriction in *.
     subst.
@@ -931,7 +943,7 @@ Proof.
   assert (m < n) as ltm by omega.
   clear e0.
 
-  apply equality_in_tnat.
+  apply equality_in_tnat; apply e_all_in_ex_bar_as.
   pose proof (imp m ltm) as h; exrepnd.
   apply in_ext_implies_all_in_ex_bar; introv z.
   exists k; dands; spcast; eauto 4 with slow.
@@ -1029,7 +1041,7 @@ Proof.
 
     repeat (rewrite substc_mkcv_function;[|auto];[]).
 
-    apply equality_in_tnat in ea.
+    apply equality_in_tnat in ea; eapply e_all_in_ex_bar_as in ea.
     apply all_in_ex_bar_tequality_implies_tequality.
     eapply all_in_ex_bar_modus_ponens1;[|exact ea]; clear ea; introv y ea; exrepnd; spcast.
 
@@ -1130,7 +1142,7 @@ Proof.
 
   repeat (rewrite substc_mkcv_function;[|auto];[]).
 
-  apply equality_in_tnat in ea.
+  apply equality_in_tnat in ea; apply e_all_in_ex_bar_as in ea.
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens1;[|exact ea]; clear ea; introv y ea; exrepnd; spcast.
 
@@ -1311,7 +1323,7 @@ Proof.
   exists (@mkc_pair o (mkc_choice_seq name) mkc_axiom).
   apply e_all_in_ex_bar_as.
   apply all_in_ex_bar_implies_e_all_in_ex_bar.
-  exists (extend_seq_to_bar lib safe k name isn).
+  exists (extend_seq_to_bar lib safe n0 name isn).
   introv br ext.
   exists (@mkc_choice_seq o name) (@mkc_axiom o).
   autorewrite with slow.
@@ -1337,7 +1349,7 @@ Proof.
   apply name_in_library_implies_entry_in_library in br2; exrepnd.
   applydup safe' in br2.
 
-  pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry k) as q.
+  pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry n0) as q.
   repeat (autodimp q hyp); exrepnd.
 
   apply implies_equality_natk2nat_prop.
@@ -1381,7 +1393,7 @@ Proof.
   clear lib ext.
   rename lib' into lib.
 
-  apply equality_in_tnat in ea.
+  apply equality_in_tnat in ea; apply e_all_in_ex_bar_as in ea.
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens2;[|exact ea|exact imp]; clear ea imp; introv ext ea imp.
 
@@ -1398,12 +1410,12 @@ Proof.
      [apply ccequivc_ext_refl|apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto]
     |].
 
-  apply equality_in_tnat.
+  apply equality_in_tnat; apply e_all_in_ex_bar_as.
   apply in_ext_implies_all_in_ex_bar.
   introv ext.
   unfold equality_of_nat.
-  pose proof (imp k) as imp; exrepnd.
-  exists k0; dands; spcast; eauto 4 with slow.
+  pose proof (imp n) as imp; exrepnd.
+  exists k; dands; spcast; eauto 4 with slow.
 Qed.
 
 Lemma implies_member_nat2nat_bar2 {o} :
@@ -1425,7 +1437,7 @@ Proof.
   clear lib ext.
   rename lib' into lib.
 
-  apply equality_in_tnat in ea.
+  apply equality_in_tnat in ea; apply e_all_in_ex_bar_as in ea.
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens2;[|exact ea|exact imp]; clear ea imp; introv ext ea imp.
 
@@ -1442,11 +1454,11 @@ Proof.
      [apply ccequivc_ext_refl|apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto]
     |].
 
-  pose proof (imp k) as imp; exrepnd.
-  apply equality_in_tnat.
+  pose proof (imp n) as imp; exrepnd.
+  apply equality_in_tnat; apply e_all_in_ex_bar_as.
   eapply all_in_ex_bar_modus_ponens1;[|exact imp]; clear imp; introv ext imo; exrepnd; spcast.
   unfold equality_of_nat.
-  exists k0; dands; spcast; eauto 3 with slow.
+  exists k; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma mkc_choice_seq_in_nat2nat {o} :
