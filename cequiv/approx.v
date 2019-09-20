@@ -516,7 +516,7 @@ Lemma le_bin_rel_approx {p} :
   le_bin_rel l r
   -> le_bin_rel (@approx_aux p lib l) (approx_aux lib r).
 Proof.
-  cofix. introv Hle HH.
+  cofix ind. introv Hle HH.
   invertsn HH.
   constructor.
   eapply close_comput_mon; eauto.

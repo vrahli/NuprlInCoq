@@ -36,6 +36,7 @@ Require Export csubst.
 (*Require Export computation3.*)
 Require Export substitution3.
 Require Export subst_tacs2.
+Require Export List.
 Require Export list. (* WTF!!*)
 
 
