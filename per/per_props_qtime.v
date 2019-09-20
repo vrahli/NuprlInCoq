@@ -456,15 +456,38 @@ Proof.
       try (introv; apply lib_per_fam_cond).
 Qed.
 
+Inductive equal_in_qtime {p} lib (A t1 t2 : @CTerm p) : [U] :=
+| eq_in_qtime_cl :
+    forall t,
+      equal_in_qtime lib A t1 t
+      -> equal_in_qtime lib A t t2
+      -> equal_in_qtime lib A t1 t2
+| eq_in_qtime_eq :
+    forall a1 a2,
+      ccequivc lib t1 a1
+      -> ccequivc lib t2 a2
+      -> equality lib a1 a2 A
+      -> equal_in_qtime lib A t1 t2.
+
+Lemma per_qtime_eq_iff_equal_in_qtime {o} :
+  forall (lib : @library o) A eqa,
+    nuprl lib A A eqa
+    -> (per_qtime_eq lib eqa) <=2=> (equal_in_qtime lib A).
+Proof.
+  introv h; introv; split; intro q; induction q.
+  { eapply eq_in_qtime_cl; eauto. }
+  { eapply eq_in_qtime_eq; eauto.
+    eapply (equality_eq1 lib A A x y eqa); eauto. }
+  { eapply qtime_eq_cl; eauto. }
+  { eapply qtime_eq_eq; eauto.
+    eapply (equality_eq1 lib A A a1 a2 eqa); eauto. }
+Qed.
+
 Lemma equality_mkc_qtime {p} :
   forall lib (t1 t2 A : @CTerm p),
     equality lib t1 t2 (mkc_qtime A)
     <=> (type lib A
-         # all_in_ex_bar lib (fun lib => {a1, a2 : CTerm
-             , ccequivc lib t1 a1
-             # ccequivc lib t2 a2
-             # ccequivc_ext lib t1 t2
-             # equality lib a1 a2 A})).
+         # all_in_ex_bar lib (fun lib => equal_in_qtime lib A t1 t2)).
 Proof.
   intros; split; intro e.
 
@@ -485,10 +508,7 @@ Proof.
     assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
     pose proof (e2 _ br _ ext xt) as e2; simpl in *.
     pose proof (e1 _ br _ ext xt) as e1; simpl in *.
-
-    unfold per_qtime_eq in *; exrepnd.
-    eexists; eexists; dands; eauto.
-    apply (equality_eq1 lib'0 A A x y (eqa lib'0 xt)); auto.
+    eapply per_qtime_eq_iff_equal_in_qtime; eauto.
 
   - exrepnd.
     unfold type, tequality in e0; exrepnd.
@@ -506,8 +526,6 @@ Proof.
 
     unfold all_in_ex_bar in e; exrepnd; exists bar; introv br ext; introv.
     pose proof (e0 _ br _ ext) as e0; simpl in *; exrepnd.
-    unfold per_qtime_eq.
-    exists a1 a2; dands; auto.
-    apply (equality_eq1 lib'0 A A a1 a2 (eqa' lib'0 x)); eauto 3 with slow.
+    eapply per_qtime_eq_iff_equal_in_qtime; eauto.
     apply tya0.
 Qed.

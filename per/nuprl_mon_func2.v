@@ -270,9 +270,7 @@ Proof.
   introv br xt; repeat introv.
   unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
   pose proof (h0 _ br1 _ (lib_extends_trans xt br2) (lib_extends_trans x0 y)) as h0; simpl in h0.
-  unfold per_qtime_eq in *; exrepnd.
-  exists x1 y0; dands; auto.
-  eapply (lib_per_cond _ eqa); eauto.
+  eapply implies_eq_term_equals_eq_qtime_eq; try exact h0; apply lib_per_cond.
 Qed.
 Hint Resolve sub_per_per_qtime_eq_bar2 : slow.
 

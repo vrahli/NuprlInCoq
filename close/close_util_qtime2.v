@@ -50,13 +50,10 @@ Proof.
 
   introv; split; intro h.
 
-  - unfold per_qtime_eq_bar, per_qtime_eq.
+  - unfold per_qtime_eq_bar.
     apply collapse2bars_ext.
-    { introv; split; intro q; introv; introv.
-      - exrepnd; eexists; eexists; dands; eauto.
-        eapply (lib_per_cond _ eqa); eauto.
-      - exrepnd; eexists; eexists; dands; eauto.
-        eapply (lib_per_cond _ eqa); eauto. }
+    { introv; split; intro q; introv;
+        eapply implies_eq_term_equals_eq_qtime_eq; try exact q; apply lib_per_cond. }
 
     exists bar.
     introv br ext; introv.
@@ -64,11 +61,8 @@ Proof.
     exrepnd.
 
     apply collapse2bars_ext.
-    { introv; split; intro q; introv; introv.
-      - exrepnd; eexists; eexists; dands; eauto.
-        eapply (lib_per_cond _ eqa); eauto.
-      - exrepnd; eexists; eexists; dands; eauto.
-        eapply (lib_per_cond _ eqa); eauto. }
+    { introv; split; intro q; introv;
+        eapply implies_eq_term_equals_eq_qtime_eq; try exact q; apply lib_per_cond. }
 
     exists bar'.
     introv br' ext'; introv.
@@ -78,12 +72,12 @@ Proof.
     pose proof (per0 _ br lib'2 xt1 (lib_extends_trans x0 x)) as per0; simpl in *.
     unfold per_qtime in per0; exrepnd.
     apply per1 in h0; clear per1.
-    unfold per_qtime_eq_bar, per_qtime_eq in h0; exrepnd.
+    unfold per_qtime_eq_bar in h0; exrepnd.
 
     exists bar0.
     introv br'' ext''; introv.
     pose proof (h1 _ br'' _ ext'' x1) as h1; simpl in *; exrepnd.
-    eexists; eexists; dands; eauto.
+    eapply implies_eq_term_equals_eq_qtime_eq; try exact h1.
 
     assert (lib_extends lib'2 lib) as xt2 by eauto 3 with slow.
     eapply lib_extends_preserves_ccomputes_to_valc in comp; try exact xt2; eauto.
@@ -93,7 +87,8 @@ Proof.
     eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ xt2) in per3;
       try exact tsa; eauto 3 with slow.
     pose proof (per3 _ x1) as per3; simpl in *.
-    eapply (lib_per_cond _ eqa); apply per3; auto.
+    eapply eq_term_equals_trans;[|apply eq_term_equals_sym;exact per3].
+    apply lib_per_cond.
 
   - introv br ext; introv.
     exists (raise_bar bar x); introv br' ext'; introv; simpl in *; exrepnd.
@@ -192,6 +187,29 @@ Proof.
     try exact tsa; eauto; eauto 3 with slow.
 Qed.
 
+Lemma per_qtime_eq_sym {o} :
+  forall lib (eqa : per(o)) t1 t2,
+    term_equality_symmetric eqa
+    -> per_qtime_eq lib eqa t1 t2
+    -> per_qtime_eq lib eqa t2 t1.
+Proof.
+  introv sym h; induction h; eauto.
+  { eapply qtime_eq_cl; eauto. }
+  { eapply qtime_eq_eq; eauto. }
+Qed.
+Hint Resolve per_qtime_eq_sym : slow.
+
+Lemma per_qtime_eq_trans {o} :
+  forall lib (eqa : per(o)) t1 t2 t3,
+    per_qtime_eq lib eqa t1 t2
+    -> per_qtime_eq lib eqa t2 t3
+    -> per_qtime_eq lib eqa t1 t3.
+Proof.
+  introv h q.
+  eapply qtime_eq_cl; eauto.
+Qed.
+Hint Resolve per_qtime_eq_trans : slow.
+
 Lemma per_qtime_eq_bar_sym {o} :
   forall ts lib (eqa : lib-per(lib,o)) A A' t1 t2,
     in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
@@ -206,9 +224,7 @@ Proof.
 
   pose proof (tsa _ x) as tsa; simpl in *.
   apply type_sys_props4_implies_term_equality_symmetric in tsa.
-
-  unfold per_qtime_eq in *; exrepnd.
-  exists y x0; dands; eauto 3 with slow.
+  eauto 3 with slow.
 Qed.
 
 Lemma per_qtime_eq_bar_trans {o} :
@@ -226,14 +242,21 @@ Proof.
   pose proof (perb0 _ br2 _ (lib_extends_trans ext br1) x) as perb0; simpl in *.
 
   pose proof (tsa _ x) as tsa; simpl in *.
-  apply type_sys_props4_implies_term_equality_transitive in tsa.
+  apply type_sys_props4_implies_term_equality_transitive in tsa; eauto 3 with slow.
+Qed.
 
-  unfold per_qtime_eq in *; exrepnd; spcast.
-  pose proof (pera3 _ (lib_extends_refl _)) as h1; simpl in *.
-  pose proof (perb3 _ (lib_extends_refl _)) as h2; simpl in *.
-  spcast.
-  exists x1 y0; dands; spcast; eauto 3 with slow.
-  eapply cequivc_trans;[apply cequivc_sym|]; eauto.
+Lemma per_qtime_eq_resp {o} :
+  forall lib (eqa : per(o)) t1 t2 t3,
+     ccequivc_ext lib t2 t3
+     -> per_qtime_eq lib eqa t1 t2
+     -> per_qtime_eq lib eqa t1 t3.
+Proof.
+  introv ceq h; revert dependent t3.
+  induction h; introv ceq.
+  { eapply qtime_eq_cl; eauto. }
+  { eapply qtime_eq_eq; eauto.
+    pose proof (ceq _ (lib_extends_refl _)) as ceq; simpl in *; spcast.
+    eapply cequivc_trans;[|eauto]; apply cequivc_sym; auto. }
 Qed.
 
 Lemma per_qtime_eq_bar_resp {o} :
@@ -253,11 +276,7 @@ Proof.
   applydup @type_sys_props4_implies_term_equality_symmetric in tsa as syma.
   applydup @type_sys_props4_implies_term_equality_transitive in tsa as transa.
   applydup @type_sys_props4_implies_term_equality_respecing in tsa as respa.
-
-  unfold per_qtime_eq in *; exrepnd.
-  pose proof (ceq _ x) as h1; simpl in *.
-  exists x0 y; dands; spcast; eauto 3 with slow.
-  eapply cequivc_trans;[|eauto]; apply cequivc_sym;auto.
+  eapply per_qtime_eq_resp; try exact per0; eauto 3 with slow.
 Qed.
 
 Lemma per_bar_per_qtime_sym {o} :

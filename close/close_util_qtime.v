@@ -27,6 +27,7 @@
 *)
 
 
+Require Export nuprl_mon_func.
 Require Export type_sys.
 Require Export per_ceq_bar.
 Require Export close_util_bar.
@@ -45,14 +46,10 @@ Proof.
   split; intro h; exrepnd; introv; exists bar; introv br ext; repeat introv.
 
   - pose proof (h0 _ br _ ext x) as h0; simpl in h0.
-    unfold per_qtime_eq in *; exrepnd.
-    exists x0 y0; dands; eauto 3 with slow.
-    eapply (lib_per_cond _ eqa); eauto.
+    eapply implies_eq_term_equals_eq_qtime_eq; try exact h0; apply lib_per_cond.
 
   - pose proof (h0 _ br _ ext x) as h0; simpl in h0.
-    unfold per_qtime_eq in *; exrepnd.
-    exists x0 y0; dands; eauto 3 with slow.
-    eapply (lib_per_cond _ eqa); eauto.
+    eapply implies_eq_term_equals_eq_qtime_eq; try exact h0; apply lib_per_cond.
 Defined.
 
 Lemma implies_eq_term_equals_per_qtime_eq_bar {o} :
@@ -64,8 +61,8 @@ Proof.
   unfold per_qtime_eq_bar; introv; split; intro h; exrepnd; exists bar;
     introv br ext; repeat introv;
       pose proof (h0 _ br _ ext x) as h0; simpl in *;
-        unfold per_qtime_eq in *; exrepnd; eexists; eexists; dands; eauto;
-          eapply eqas; eauto.
+        eapply implies_eq_term_equals_eq_qtime_eq; try exact h0; try apply eqas;
+          apply eq_term_equals_sym; eapply eqas.
 Qed.
 
 Lemma implies_eq_term_equals_per_qtime_eq {o} :
@@ -74,8 +71,7 @@ Lemma implies_eq_term_equals_per_qtime_eq {o} :
     -> (per_qtime_eq lib eqa) <=2=> (per_qtime_eq lib eqb).
 Proof.
   introv eqas; introv.
-  unfold per_qtime_eq; introv; split; intro h; introv; exrepnd;
-    eexists; eexists; dands; eauto; apply eqas; eauto.
+  eapply implies_eq_term_equals_eq_qtime_eq; auto.
 Qed.
 
 Lemma per_bar_eq_per_qtime_eq_bar_lib_per {o} :

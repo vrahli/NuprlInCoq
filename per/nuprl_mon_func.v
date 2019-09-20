@@ -163,6 +163,16 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma implies_eq_term_equals_eq_qtime_eq {o} :
+  forall lib (eqa eqb : per(o)),
+    (eqa <=2=> eqb)
+    -> (per_qtime_eq lib eqa) <=2=> (per_qtime_eq lib eqb).
+Proof.
+  introv h; introv; split; intro p; induction p; auto;
+    try (complete (eapply qtime_eq_cl; eauto));
+    try (complete (eapply qtime_eq_eq; eauto; apply h; auto)).
+Qed.
+
 Definition per_qtime_eq_bar_lib_per {o}
            (lib : @library o)
            (eqa : lib-per(lib,o)) : lib-per(lib,o).
@@ -173,16 +183,12 @@ Proof.
     exists bar; introv br ext; introv.
 
   - pose proof (h0 _ br _ ext x) as h0; simpl in *.
-    unfold per_qtime_eq, raise_ext_per in *; simpl in *; introv; exrepnd.
-    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
-    dup h0 as e2; apply e1 in e2; clear e1.
-    exists x0 y0; dands; auto.
+    eapply implies_eq_term_equals_eq_qtime_eq; try exact h0.
+    apply lib_per_cond.
 
   - pose proof (h0 _ br _ ext x) as h0; simpl in *.
-    unfold per_qtime_eq, raise_ext_per in *; simpl in *; introv; exrepnd.
-    pose proof (lib_per_cond _ eqa lib'1 (lib_extends_trans x y) (lib_extends_trans x e)) as e1.
-    dup h0 as e2; apply e1 in e2; clear e1.
-    exists x0 y0; dands; auto.
+    eapply implies_eq_term_equals_eq_qtime_eq; try exact h0.
+    apply lib_per_cond.
 Defined.
 
 Lemma per_qtime_monotone_func {o} :

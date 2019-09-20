@@ -503,6 +503,20 @@ Definition per_qnat {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U]
 
 
 
+Inductive per_qtime_eq {p} lib (eqa : per(p)) (t1 t2 : @CTerm p) : [U] :=
+| qtime_eq_cl :
+    forall t,
+      per_qtime_eq lib eqa t1 t
+      -> per_qtime_eq lib eqa t t2
+      -> per_qtime_eq lib eqa t1 t2
+| qtime_eq_eq :
+    forall x y,
+      ccequivc lib t1 x
+      -> ccequivc lib t2 y
+      -> eqa x y
+      -> per_qtime_eq lib eqa t1 t2.
+
+(*
 (* When using [ccequivc], we cannot prove that [per_qtime_eq_bar] is transitive *)
 Definition per_qtime_eq {p} lib (eqa : per) (t t' : @CTerm p) : [U] :=
   {x, y : CTerm
@@ -510,6 +524,7 @@ Definition per_qtime_eq {p} lib (eqa : per) (t t' : @CTerm p) : [U] :=
   # ccequivc lib t' y
   # ccequivc_ext lib t t'
   # eqa x y}.
+*)
 
 Definition per_qtime_eq_bar {o}
            (lib  : library)

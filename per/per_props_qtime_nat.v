@@ -65,45 +65,41 @@ Proof.
   eapply ccomputes_to_valc_ext_integer_implies_computes_to_valc_in_ext;[|eauto]; eauto 2 with slow.
 Qed.
 
+
 Lemma equality_in_qtnat {p} :
   forall lib (t1 t2 : @CTerm p),
     equality lib t1 t2 mkc_qtnat
-    <=> all_in_ex_bar lib (fun lib => {a1, a2 : CTerm
-             , ccequivc lib t1 a1
-             # ccequivc lib t2 a2
-             # ccequivc_ext lib t1 t2
-             # all_in_ex_bar lib (fun lib => {n : nat
-                    , ccomputes_to_valc_ext lib a1 (mkc_nat n)
-                    # ccomputes_to_valc_ext lib a2 (mkc_nat n)})}).
+    <=> all_in_ex_bar lib (fun lib => equal_in_qtime lib mkc_tnat t1 t2).
 Proof.
   introv.
   rw @equality_mkc_qtime.
-  split; intro h; repnd; dands; eauto 2 with slow;[|].
-
-  - eapply all_in_ex_bar_modus_ponens1;[|exact h]; clear h; introv x h; exrepnd; spcast.
-    exists a1 a2; dands; spcast; auto.
-    apply equality_in_tnat in h2.
-    eapply all_in_ex_bar_modus_ponens1;[|exact h2]; clear h2; introv y h2; exrepnd; spcast.
-    unfold equality_of_nat in h2; exrepnd.
-    eexists; dands; eauto.
-
-  - eapply all_in_ex_bar_modus_ponens1;[|exact h]; clear h; introv x h; exrepnd; spcast.
-    exists a1 a2; dands; spcast; auto.
-    apply equality_in_tnat.
-    eapply all_in_ex_bar_modus_ponens1;[|exact h1]; clear h1; introv y h1; exrepnd; spcast.
-    unfold equality_of_nat; exrepnd.
-    eexists; dands; eauto.
+  split; intro h; repnd; dands; eauto 2 with slow.
 Qed.
+
+Lemma nat_in_tnat {o} :
+  forall (lib : @library o) k,
+    equality lib (mkc_nat k) (mkc_nat k) mkc_tnat.
+Proof.
+  introv.
+  apply equality_in_tnat.
+  apply in_ext_implies_all_in_ex_bar; introv xt'.
+  exists k; dands; eauto 2 with slow.
+Qed.
+Hint Resolve nat_in_tnat : slow.
+
+Lemma equal_in_qtime_nat {o} :
+  forall (lib : @library o) k,
+    equal_in_qtime lib mkc_tnat (mkc_nat k) (mkc_nat k).
+Proof.
+  introv; apply (eq_in_qtime_eq _ _ _ _ (mkc_nat k) (mkc_nat k)); spcast; eauto 3 with slow.
+Qed.
+Hint Resolve equal_in_qtime_nat : slow.
 
 Lemma equality_nat_in_qtnat {o} :
   forall (lib : @library o) k, equality lib (mkc_nat k) (mkc_nat k) mkc_qtnat.
 Proof.
   introv.
   apply equality_in_qtnat; eauto 2 with slow.
-  apply in_ext_implies_all_in_ex_bar; introv xt.
-  exists (@mkc_nat o k) (@mkc_nat o k).
-  dands; spcast; eauto 2 with slow.
-  apply in_ext_implies_all_in_ex_bar; introv xt'.
-  exists k; dands; eauto 2 with slow.
+  apply in_ext_implies_all_in_ex_bar; introv xt; eauto 3 with slow.
 Qed.
 Hint Resolve equality_nat_in_qtnat : slow.
