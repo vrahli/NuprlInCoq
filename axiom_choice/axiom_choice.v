@@ -644,7 +644,11 @@ Lemma ext_lib_extends_stack_implies_ex_nat {o} :
          (ext2 : lib_extends lib2 (lib_extends_stack k' ext1 Flib)),
   exists (lib3 : library) i,
     lib_extends lib3 lib2
-    /\ find_cs_value_at lib3 name k = Some (mkc_nat i).
+    /\ find_cs_value_at lib3 name k = Some (mkc_nat i)
+    /\ exists (liba : library) (exta : lib_extends liba lib)
+              (libb : library) (extb : lib_extends libb (Flib k liba exta))
+              (extz : lib_extends libb lib),
+        i = Fnat k liba exta libb extb extz.
 Proof.
   introv safe ltk ext' ext2.
 
@@ -711,14 +715,16 @@ Proof.
     apply q2 in d0; exrepnd; subst a.
     exists (Fnat k lib4 ext0 lib5 ext3 extz).
     dands; auto.
-    rewrite select_app_l; auto. }
+    { rewrite select_app_l; auto. }
+    { repeat eexists. } }
 
   { apply Nat.nlt_ge in d.
     exists (f k); dands; auto.
-    rewrite select_app_r; auto;try omega;[].
-    rewrite implies_select_to_list_some; try omega;
-      [|apply Nat.lt_add_lt_sub_r; rewrite Nat.sub_add; auto];[].
-    rewrite Nat.sub_add; auto. }
+    { rewrite select_app_r; auto;try omega;[].
+      rewrite implies_select_to_list_some; try omega;
+        [|apply Nat.lt_add_lt_sub_r; rewrite Nat.sub_add; auto];[].
+      rewrite Nat.sub_add; auto. }
+    { subst; destruct k; simpl; repeat eexists. } }
 Qed.
 
 Lemma mk_cs_ren_in_nat2nat {o} :
@@ -959,15 +965,29 @@ Proof.
   dands; eauto 3 with slow;[].
 
   pose proof (xx1 k) as xx1.
+
+(* XX *)
+  apply collapse_all_in_ex_bar.
   introv xtf.
   assert (lib_extends lib'4 lib') as xtg by eauto 6 with slow.
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  assert (lib_extends (lib_extends_stack (S k) xtg Flib) lib'4) as xth by eauto 3 with slow.
+  exists (lib_extends_stack (S k) xtg Flib) xth.
+  assert (lib_extends lib'4 (mk_cs_res name Fnat :: lib')) as xti by eauto 5 with slow.
+  introv xtj xtk.
+
+  pose proof (ext_lib_extends_stack_implies_ex_nat name safe' Fnat k (S k)) as z.
+  autodimp z hyp.
+  pose proof (z lib'4 xtg xti lib'6 (lib_extends_trans xtk xtj)) as z.
+  exrepnd.
+  pose proof (xx1 liba exta libb extb extz) as xx1; simpl in xx1.
+
 
 
 (* XX *)
 (* First, we need to extend [lib'4] so that we have [S(k)] choices *)
 (* expand [ext_lib_extends_stack_implies_ex_nat], so that we get a characterization
    of [i] in terms of [name]'s restriction *)
-(* XX *)
 
 
   pose proof (xx1 _ xtg) as xx1; simpl in xx1.
