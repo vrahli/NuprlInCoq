@@ -311,61 +311,6 @@ Hint Rewrite @substc2_apply : slow.
 
 Definition lam_ax {o} := @mkc_lam o nvarx (mkcv_axiom nvarx).
 
-Definition mk_cs_res_entry {o}
-           {lib  : @library o}
-           {Flib : NatFunLibExt lib}
-           (Fnat : NatFunLibExtNat Flib) : @ChoiceSeqEntry o :=
-  MkChoiceSeqEntry
-    o
-    []
-    (csc_res
-       (fun i t =>
-          exists (lib1 : library)
-                 (ext1 : lib_extends lib1 lib)
-                 (lib2 : library)
-                 (ext2 : lib_extends lib2 (Flib i lib1 ext1))
-                 (extz : lib_extends lib2 lib),
-            t = mkc_nat (Fnat i lib1 ext1 lib2 ext2 extz))).
-
-Definition mk_cs_res {o}
-           (name : choice_sequence_name)
-           {lib  : @library o}
-           {Flib : NatFunLibExt lib}
-           (Fnat : NatFunLibExtNat Flib) : library_entry :=
-  lib_cs name (mk_cs_res_entry Fnat).
-
-Lemma safe_library_entry_mk_cs_ren {o} :
-  forall (name : choice_sequence_name)
-         {lib  : @library o}
-         {Flib : NatFunLibExt lib}
-         (Fnat : NatFunLibExtNat Flib),
-    csn_kind name = cs_kind_nat 2
-    -> safe_library_entry (mk_cs_res name Fnat).
-Proof.
-  introv eqk.
-  unfold safe_library_entry; simpl.
-  unfold correct_restriction; simpl.
-  allrw; simpl; dands; auto.
-  introv h; autorewrite with list in *; ginv.
-Qed.
-Hint Resolve safe_library_entry_mk_cs_ren : slow.
-
-Lemma find_cs_none_implies_non_shadowed_entry_mk_cs_res {o} :
-  forall (name : choice_sequence_name)
-         {lib  : @library o}
-         {Flib : NatFunLibExt lib}
-         (Fnat : NatFunLibExtNat Flib)
-         (lib' : library),
-    find_cs lib' name = None
-    -> non_shadowed_entry (mk_cs_res name Fnat) lib'.
-Proof.
-  introv h.
-  unfold non_shadowed_entry.
-  apply forallb_forall; introv i.
-  eapply find_cs_none_implies_diff_entry_names; eauto.
-Qed.
-Hint Resolve find_cs_none_implies_non_shadowed_entry_mk_cs_res : slow.
-
 Fixpoint to_list {T} i k (f : nat -> T) : list T :=
   match k with
   | 0 => []
@@ -628,6 +573,64 @@ Proof.
   rewrite Nat.add_succ_r; auto.
 Qed.
 
+
+
+
+Definition mk_cs_res_entry {o}
+           {lib  : @library o}
+           {Flib : NatFunLibExt lib}
+           (Fnat : NatFunLibExtNat Flib) : @ChoiceSeqEntry o :=
+  MkChoiceSeqEntry
+    o
+    []
+    (csc_res
+       (fun i t =>
+          exists (lib1 : library)
+                 (ext1 : lib_extends lib1 lib)
+                 (lib2 : library)
+                 (ext2 : lib_extends lib2 (Flib i lib1 ext1))
+                 (extz : lib_extends lib2 lib),
+            t = mkc_nat (Fnat i lib1 ext1 lib2 ext2 extz))).
+
+Definition mk_cs_res {o}
+           (name : choice_sequence_name)
+           {lib  : @library o}
+           {Flib : NatFunLibExt lib}
+           (Fnat : NatFunLibExtNat Flib) : library_entry :=
+  lib_cs name (mk_cs_res_entry Fnat).
+
+Lemma safe_library_entry_mk_cs_ren {o} :
+  forall (name : choice_sequence_name)
+         {lib  : @library o}
+         {Flib : NatFunLibExt lib}
+         (Fnat : NatFunLibExtNat Flib),
+    csn_kind name = cs_kind_nat 2
+    -> safe_library_entry (mk_cs_res name Fnat).
+Proof.
+  introv eqk.
+  unfold safe_library_entry; simpl.
+  unfold correct_restriction; simpl.
+  allrw; simpl; dands; auto.
+  introv h; autorewrite with list in *; ginv.
+Qed.
+Hint Resolve safe_library_entry_mk_cs_ren : slow.
+
+Lemma find_cs_none_implies_non_shadowed_entry_mk_cs_res {o} :
+  forall (name : choice_sequence_name)
+         {lib  : @library o}
+         {Flib : NatFunLibExt lib}
+         (Fnat : NatFunLibExtNat Flib)
+         (lib' : library),
+    find_cs lib' name = None
+    -> non_shadowed_entry (mk_cs_res name Fnat) lib'.
+Proof.
+  introv h.
+  unfold non_shadowed_entry.
+  apply forallb_forall; introv i.
+  eapply find_cs_none_implies_diff_entry_names; eauto.
+Qed.
+Hint Resolve find_cs_none_implies_non_shadowed_entry_mk_cs_res : slow.
+
 Lemma ext_lib_extends_stack_implies_ex_nat {o} :
   forall (name : choice_sequence_name)
          {lib  : @library o}
@@ -700,7 +703,7 @@ Proof.
   { introv len.
     apply q2.
     subst f.
-    destruct n; eauto; eexists; eexists; eexists; eexists; eexists; eauto. }
+    destruct n; repeat eexists. }
 
   apply (extend_lib_cs_res k' (fun n => mkc_nat (f n))) in q1; auto.
 
@@ -924,9 +927,9 @@ Proof.
   apply nat_in_open_bar_choice_nat in xx0; exrepnd.
 
 
+  (* WARNING *)
   exists (mk_cs_res name Fnat :: lib').
 
-  (* WARNING *)
   assert (lib_extends (mk_cs_res name Fnat :: lib') lib') as xta.
   { apply implies_lib_extends_cons_left; eauto 3 with slow. }
   exists xta.
@@ -979,6 +982,7 @@ Proof.
   pose proof (ext_lib_extends_stack_implies_ex_nat name safe' Fnat k (S k)) as z.
   autodimp z hyp.
   pose proof (z lib'4 xtg xti lib'6 (lib_extends_trans xtk xtj)) as z.
+
   exrepnd.
   pose proof (xx1 liba exta libb extb extz) as xx1; simpl in xx1.
 

@@ -828,7 +828,7 @@ Proof.
       rewrite select_map in q.
       autodimp q hyp.
       { erewrite nth_select1; auto; unfold option_map; rewrite q0 at 1; eauto. }
-      autorewrite with slow in q.
+      autorewrite with slow in q; apply some_inj in q.
       rewrite mkc_zero_eq in q.
       apply mkc_nat_eq_implies in q; auto.
     }
@@ -982,7 +982,7 @@ Proof.
       autodimp q hyp.
       { erewrite nth_select1; auto; unfold option_map; rewrite q0 at 1; eauto. }
       autorewrite with slow in q.
-      rewrite select_ntimes in q; boolvar.
+      rewrite select_ntimes in q; boolvar; try (apply some_inj in q).
 
       { rewrite mkc_zero_eq in q.
         apply mkc_nat_eq_implies in q; auto. }
@@ -1085,136 +1085,6 @@ Proof.
   apply computes_to_valc_isvalue_eq in comp0; eauto 2 with slow; subst; auto.
 Qed.
 Hint Resolve ccomputes_to_valc_ext_nat_implies_ccomputes_to_valc : slow.
-
-Lemma not_exists_1_choice {o} :
-  forall (lib : @library o) name v n restr,
-    csn_kind name = cs_kind_seq []
-    -> same_restrictions restr (csc_seq [])
-    -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero) restr)) lib
-    -> safe_library lib
-    -> inhabited_type lib (exists_1_choice name v)
-    -> False.
-Proof.
-  introv ck srestr ilib safe inh.
-  unfold exists_1_choice in inh.
-  apply inhabited_exists in inh; exrepnd.
-  clear inh0 inh1.
-  rename inh2 into inh.
-
-  unfold all_in_ex_bar in inh; exrepnd.
-
-  assert (exists n restr lib',
-             lib_extends lib' lib
-             /\ bar_lib_bar bar lib'
-             /\ same_restrictions restr (csc_seq [])
-             /\ entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero) restr)) lib') as blib.
-  {
-    pose proof (fresh_choice_seq_name_in_library lib []) as h; exrepnd.
-    pose proof (bar_lib_bars bar (library2inf lib (simple_inf_choice_seq name0))) as q.
-    autodimp q hyp; eauto 3 with slow;[].
-    exrepnd.
-    applydup q2 in ilib.
-
-    apply entry_in_library_extends_implies_entry_in_library in ilib0; exrepnd.
-    assert (safe_library_entry entry') as safe' by eauto 3 with slow.
-
-    assert (name <> name0) as dname.
-    { introv xx; subst name0.
-      apply entry_in_library_implies_find_cs_some in ilib.
-      rewrite ilib in *; ginv. }
-
-    pose proof (entry_extends_cs_zeros_implies lib name name0 n restr lib' entry') as q.
-    repeat (autodimp q hyp).
-    exrepnd; subst.
-    exists n0 restr0 lib'; dands; auto.
-  }
-
-  clear n restr srestr ilib.
-  exrepnd.
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  pose proof (inh0 _ blib2 _ (lib_extends_refl lib')) as inh0.
-  cbv beta in inh0.
-
-  clear lib bar safe blib1 blib2.
-  rename lib' into lib.
-  rename safe' into safe.
-  exrepnd.
-  autorewrite with slow in *.
-
-  apply member_tnat_iff in inh2.
-  apply equality_in_mkc_equality in inh0; repnd.
-  clear inh4 inh0.
-  apply equality_in_tnat in inh3.
-  unfold equality_of_nat_bar in inh3.
-  unfold equality_of_nat in inh3.
-
-  unfold all_in_ex_bar in *; exrepnd.
-  apply (implies_all_in_bar_intersect_bars_left _ bar) in inh3.
-  apply (implies_all_in_bar_intersect_bars_right _ bar0) in inh0.
-  remember (intersect_bars bar0 bar) as bar1.
-  clear bar0 bar Heqbar1.
-  rename bar1 into bar.
-
-  assert (exists n restr lib',
-             lib_extends lib' lib
-             /\ bar_lib_bar bar lib'
-             /\ same_restrictions restr (csc_seq [])
-             /\ entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero) restr)) lib') as blib.
-  {
-    pose proof (fresh_choice_seq_name_in_library lib []) as h; exrepnd.
-    pose proof (bar_lib_bars bar (library2inf lib (simple_inf_choice_seq name0))) as q.
-    autodimp q hyp; eauto 3 with slow;[].
-    exrepnd.
-    applydup q2 in blib0.
-
-    apply entry_in_library_extends_implies_entry_in_library in blib1; exrepnd.
-    assert (safe_library_entry entry') as safe' by eauto 3 with slow.
-
-    assert (name <> name0) as dname.
-    { introv xx; subst name0.
-      apply entry_in_library_implies_find_cs_some in blib0.
-      rewrite blib0 in *; ginv. }
-
-    pose proof (entry_extends_cs_zeros_implies lib name name0 n restr lib' entry') as q.
-    repeat (autodimp q hyp).
-    exrepnd; subst.
-    exists n0 restr0 lib'; dands; auto.
-  }
-
-  clear n restr blib3 blib0.
-  exrepnd.
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  pose proof (inh0 _ blib2 _ (lib_extends_refl lib')) as inh0.
-  pose proof (inh3 _ blib2 _ (lib_extends_refl lib')) as inh3.
-  cbv beta in inh0, inh3.
-
-  clear lib bar safe blib1 blib2 inh1.
-  rename lib' into lib.
-  rename safe' into safe.
-  exrepnd; spcast.
-
-  rw @mkc_one_eq in inh1; repeat (rw @mkc_nat_eq in inh1).
-  ccomputes_to_valc_ext_val.
-  apply Nat2Z.inj in inh1; subst.
-
-  applydup @ccomputes_to_valc_ext_nat_implies_ccomputes_to_valc in inh2; spcast.
-  applydup @ccomputes_to_valc_ext_nat_implies_ccomputes_to_valc in inh0; spcast.
-
-  pose proof (implies_compute_to_valc_apply_choice_seq lib a name k0 mkc_zero) as q.
-  repeat (autodimp q hyp); eauto 3 with slow; try computes_to_eqval;[].
-
-  pose proof (computes_to_valc_apply_choice_seq_implies_find_cs_value_at_some lib name a k0 mkc_one) as w.
-  repeat (autodimp w hyp); eauto 3 with slow;[]; exrepnd.
-
-  apply entry_in_library_implies_find_cs_some in blib0.
-  unfold find_cs_value_at in *.
-  rewrite blib0 in *.
-  simpl in *.
-  rewrite find_value_of_cs_at_vals_as_select.
-  rewrite find_value_of_cs_at_vals_as_select in w0.
-  rewrite select_ntimes in *.
-  boolvar; tcsp.
-Qed.
 
 Lemma entry_extends_preserves_matching_entries_right {o} :
   forall (entry1 entry2 entry : @library_entry o),
@@ -1534,7 +1404,8 @@ Proof.
   autorewrite with slow.
   apply member_equality.
   apply equality_in_tnat.
-  apply in_ext_implies_all_in_ex_bar.
+  apply e_all_in_ex_bar_as.
+  apply in_ext_implies_in_open_bar.
   introv ext'.
 
   assert (lib_extends lib'0 lib) as ext0 by eauto 3 with slow.
@@ -1548,3 +1419,126 @@ Proof.
   rewrite select_app_r; autorewrite with slow; try omega.
   simpl; auto.
 Qed.
+
+Lemma one_in_nat {o} :
+  forall (lib : @library o), equality lib mkc_one mkc_one mkc_tnat.
+Proof.
+  introv.
+  allrw @mkc_one_eq; eauto 3 with slow.
+Qed.
+Hint Resolve one_in_nat : slow.
+
+Lemma not_exists_1_choice {o} :
+  forall (lib : @library o) name v n restr,
+    csn_kind name = cs_kind_seq []
+    -> same_restrictions restr (csc_seq [])
+    -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero) restr)) lib
+    -> safe_library lib
+    -> inhabited_type lib (exists_1_choice name v)
+    -> False.
+Proof.
+  introv ck srestr ilib safe inh.
+  unfold exists_1_choice in inh.
+  apply inhabited_exists in inh; exrepnd.
+  clear inh0 inh1.
+  rename inh2 into inh.
+
+  dup inh as iob.
+
+  pose proof (inh _ (lib_extends_refl _)) as inh; exrepnd.
+  pose proof (inh1 _ (lib_extends_refl _)) as inh1; cbv beta in inh1.
+  applydup xt in ilib.
+  apply entry_in_library_extends_implies_entry_in_library in ilib0; exrepnd.
+  apply entry_extends_cs_zeros in ilib1; eauto 3 with slow;[]; exrepnd.
+  subst.
+  autorewrite with slow in *.
+
+  eapply lib_extends_preserves_in_open_bar in iob; eauto.
+
+  assert (safe_library lib'') as safe'' by eauto 3 with slow.
+  clear dependent lib.
+  clear dependent restr.
+  rename lib'' into lib.
+  rename restr0 into restr.
+
+  apply member_tnat_iff in inh2.
+  apply equality_in_mkc_equality in inh1; repnd; GC.
+  clear inh4.
+  apply equality_in_tnat in inh3.
+  apply e_all_in_ex_bar_as in inh3.
+  unfold equality_of_nat in inh3.
+
+  apply (in_open_bar_const lib).
+  eapply in_open_bar_comb; try exact inh3; clear inh3.
+  eapply in_open_bar_pres; try exact inh2; clear inh2; introv ext inh2 inh3.
+  exrepnd.
+
+(*
+  unfold all_in_ex_bar in *; exrepnd.
+  apply (implies_all_in_bar_intersect_bars_left _ bar) in inh3.
+  apply (implies_all_in_bar_intersect_bars_right _ bar0) in inh0.
+  remember (intersect_bars bar0 bar) as bar1.
+  clear bar0 bar Heqbar1.
+  rename bar1 into bar.
+
+  assert (exists n restr lib',
+             lib_extends lib' lib
+             /\ bar_lib_bar bar lib'
+             /\ same_restrictions restr (csc_seq [])
+             /\ entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero) restr)) lib') as blib.
+  {
+    pose proof (fresh_choice_seq_name_in_library lib []) as h; exrepnd.
+    pose proof (bar_lib_bars bar (library2inf lib (simple_inf_choice_seq name0))) as q.
+    autodimp q hyp; eauto 3 with slow;[].
+    exrepnd.
+    applydup q2 in blib0.
+
+    apply entry_in_library_extends_implies_entry_in_library in blib1; exrepnd.
+    assert (safe_library_entry entry') as safe' by eauto 3 with slow.
+
+    assert (name <> name0) as dname.
+    { introv xx; subst name0.
+      apply entry_in_library_implies_find_cs_some in blib0.
+      rewrite blib0 in *; ginv. }
+
+    pose proof (entry_extends_cs_zeros_implies lib name name0 n restr lib' entry') as q.
+    repeat (autodimp q hyp).
+    exrepnd; subst.
+    exists n0 restr0 lib'; dands; auto.
+  }
+
+  clear n restr blib3 blib0.
+  exrepnd.
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  pose proof (inh0 _ blib2 _ (lib_extends_refl lib')) as inh0.
+  pose proof (inh3 _ blib2 _ (lib_extends_refl lib')) as inh3.
+  cbv beta in inh0, inh3.
+
+  clear lib bar safe blib1 blib2 inh1.
+  rename lib' into lib.
+  rename safe' into safe.
+  exrepnd; spcast.
+
+  rw @mkc_one_eq in inh1; repeat (rw @mkc_nat_eq in inh1).
+  ccomputes_to_valc_ext_val.
+  apply Nat2Z.inj in inh1; subst.
+
+  applydup @ccomputes_to_valc_ext_nat_implies_ccomputes_to_valc in inh2; spcast.
+  applydup @ccomputes_to_valc_ext_nat_implies_ccomputes_to_valc in inh0; spcast.
+
+  pose proof (implies_compute_to_valc_apply_choice_seq lib a name k0 mkc_zero) as q.
+  repeat (autodimp q hyp); eauto 3 with slow; try computes_to_eqval;[].
+
+  pose proof (computes_to_valc_apply_choice_seq_implies_find_cs_value_at_some lib name a k0 mkc_one) as w.
+  repeat (autodimp w hyp); eauto 3 with slow;[]; exrepnd.
+
+  apply entry_in_library_implies_find_cs_some in blib0.
+  unfold find_cs_value_at in *.
+  rewrite blib0 in *.
+  simpl in *.
+  rewrite find_value_of_cs_at_vals_as_select.
+  rewrite find_value_of_cs_at_vals_as_select in w0.
+  rewrite select_ntimes in *.
+  boolvar; tcsp.
+*)
+Abort.

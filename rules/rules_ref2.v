@@ -107,7 +107,7 @@ Proof.
 
   clear hyp1 hyp2.
   apply equality_in_csname in hyp0.
-  apply equality_in_tnat in hyp3.
+  apply equality_in_tnat in hyp3; eapply e_all_in_ex_bar_as in hyp3.
 
   apply all_in_ex_bar_equality_implies_equality.
   eapply e_all_in_ex_bar_as in hyp0.
@@ -125,14 +125,14 @@ Proof.
   apply equality_in_qtnat.
   apply in_ext_implies_all_in_ex_bar; introv xt.
 
-  pose proof (exists_ccomputes_to_valc_mkc_last_cs_choice_seq lib'1 name k) as w.
+  pose proof (exists_ccomputes_to_valc_mkc_last_cs_choice_seq lib'1 name n) as w.
   repeat (autodimp w hyp);[eauto 4 with slow|].
   exrepnd; spcast.
-  exists (@mkc_nat o n) (@mkc_nat o n).
+  exists (@mkc_nat o n0) (@mkc_nat o n0).
   dands; spcast; eauto 3 with slow;[].
 
-  apply in_ext_implies_all_in_ex_bar; introv xt'.
-  exists n; dands; eauto 3 with slow.
+  apply in_ext_implies_in_open_bar; introv xt'.
+  exists n0; dands; eauto 3 with slow.
 Qed.
 
 
@@ -202,7 +202,7 @@ Proof.
   autorewrite with slow in *.
 
   clear hyp1.
-  apply equality_in_tnat in hyp0.
+  apply equality_in_tnat in hyp0; eapply e_all_in_ex_bar_as in hyp0.
 
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens1;[|exact hyp0]; clear hyp0; introv y hyp0.

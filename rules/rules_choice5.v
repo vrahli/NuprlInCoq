@@ -246,8 +246,8 @@ Proof.
   repeat rewrite substc2_mk_cv_app_r; tcsp.
   autorewrite with slow.
 
-  apply equality_in_csname_iff in ea.
-  apply equality_in_csname_iff in eb.
+  apply equality_in_csname_iff in ea; eapply e_all_in_ex_bar_as in ea.
+  apply equality_in_csname_iff in eb; eapply e_all_in_ex_bar_as in eb.
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens2;[|exact ea|exact eb]; clear ea eb; introv y ea eb; exrepnd; spcast.
   unfold equality_of_csname in *; exrepnd; spcast.
@@ -323,8 +323,8 @@ Proof.
       unfold compute_step_comp; simpl; boolvar; tcsp. }
 
     apply member_equality.
-    apply equality_in_csname_iff.
-    apply in_ext_implies_all_in_ex_bar; introv xt; exists name; dands; spcast; eauto 3 with slow.
+    apply equality_in_csname_iff; apply e_all_in_ex_bar_as.
+    apply in_ext_implies_in_open_bar; introv xt; exists name; dands; spcast; eauto 3 with slow.
   }
 
   {
@@ -356,14 +356,12 @@ Proof.
 
     introv xt inh.
     apply inhabited_mkc_equality in inh.
-    apply equality_in_csname_iff in inh.
-    unfold equality_of_csname_bar in inh; exrepnd.
+    apply equality_in_csname_iff in inh; apply e_all_in_ex_bar_as in inh.
+    pose proof (inh _ (lib_extends_refl _)) as inh; exrepnd.
+    pose proof (inh1 _ (lib_extends_refl _)) as inh1; simpl in *.
+    unfold equality_of_csname in inh1; exrepnd; spcast.
 
-    pose proof (bar_non_empty bar) as q; exrepnd.
-    pose proof (inh0 _ q0 lib'0) as inh0; autodimp inh0 hyp; eauto 3 with slow; simpl in *.
-    unfold equality_of_csname in inh0; exrepnd; spcast.
-
-    assert (lib_extends lib'0 lib) as xt1 by eauto 3 with slow.
+    assert (lib_extends lib'' lib) as xt1 by eauto 3 with slow.
 
     eapply lib_extends_preserves_ccomputes_to_valc in ea2;[|exact xt1].
     eapply lib_extends_preserves_ccomputes_to_valc in eb2;[|exact xt1].
@@ -549,6 +547,12 @@ Proof.
       subst.
       unfold is_nat_or_seq_kind in *.
       destruct name0 as [name kd]; simpl in *.
+      destruct kd; subst; boolvar; tcsp.
+
+    - unfold correct_restriction in *.
+      subst.
+      unfold is_nat_or_seq_kind in *.
+      destruct name0 as [name kd]; simpl in *.
       destruct kd; subst; boolvar; tcsp. }
 
   { eapply IHlib; eauto.
@@ -644,6 +648,14 @@ Proof.
 
   - introv h; autorewrite with slow in *.
     rewrite select_snoc_eq; boolvar; tcsp; subst; try omega.
+    unfold correct_restriction in *.
+    unfold compatible_choice_sequence_name in *.
+    unfold compatible_cs_kind in *; boolvar; tcsp; GC.
+    destruct name as [name kd]; simpl in *.
+    destruct kd; subst; tcsp; boolvar; tcsp.
+
+  - introv h; autorewrite with slow in *.
+    rw @select_snoc_eq in h; boolvar; tcsp; subst; try omega; ginv.
     unfold correct_restriction in *.
     unfold compatible_choice_sequence_name in *.
     unfold compatible_cs_kind in *; boolvar; tcsp; GC.
@@ -945,8 +957,8 @@ Proof.
   repeat rewrite substc2_mk_cv_app_r; tcsp.
   autorewrite with slow.
 
-  apply equality_in_csname_iff in ea.
-  apply equality_in_csname_iff in eb.
+  apply equality_in_csname_iff in ea; eapply e_all_in_ex_bar_as in ea.
+  apply equality_in_csname_iff in eb; eapply e_all_in_ex_bar_as in eb.
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens2;[|exact ea|exact eb]; clear ea eb; introv y ea eb; exrepnd; spcast.
   unfold equality_of_csname in *; exrepnd; spcast.
@@ -1023,8 +1035,8 @@ Proof.
 
     apply member_equality.
     apply equality_in_csname_implies_equality_in_nat2nat; auto.
-    apply equality_in_csname_iff.
-    apply in_ext_implies_all_in_ex_bar; introv xt; exists name; dands; spcast; eauto 3 with slow.
+    apply equality_in_csname_iff; apply e_all_in_ex_bar_as.
+    apply in_ext_implies_in_open_bar; introv xt; exists name; dands; spcast; eauto 3 with slow.
   }
 
   {
@@ -1188,15 +1200,13 @@ Proof.
       [|apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto].
 
     apply (equality_nat2nat_apply _ _ _ (mkc_nat (length vals)) (mkc_nat (length vals))) in inh; eauto 3 with slow;[].
-    apply equality_in_tnat in inh.
-    unfold per_props_nat.equality_of_nat_bar, all_in_ex_bar in inh; exrepnd.
+    apply equality_in_tnat in inh; apply e_all_in_ex_bar_as in inh.
 
-    pose proof (bar_non_empty bar) as q; exrepnd.
-    pose proof (inh0 _ q0 lib') as inh0; autodimp inh0 hyp; eauto 3 with slow; simpl in *.
-    unfold per_props_nat.equality_of_nat in inh0; exrepnd; spcast.
+    pose proof (inh _ (lib_extends_refl _)) as inh; exrepnd.
+    pose proof (inh1 _ (lib_extends_refl _)) as inh1; cbv beta in inh1.
+    unfold equality_of_nat in inh1; exrepnd; spcast.
 
-    assert (lib_extends lib' lib) as ext by eauto 3 with slow.
-    clear bar q0.
+    assert (lib_extends lib'' lib) as ext by eauto 3 with slow.
     eapply lib_extends_preserves_find_cs in h2;[|eauto].
     eapply lib_extends_preserves_find_cs in h0;[|eauto].
     exrepnd; simpl in *.
@@ -1205,7 +1215,7 @@ Proof.
     eapply lib_extends_preserves_ccomputes_to_valc in ea2;[|eauto].
     eapply lib_extends_preserves_ccomputes_to_valc in eb2;[|eauto].
 
-    pose proof (implies_ccomputes_to_valc_ext_apply_choice_seq lib' (mkc_nat (length vals)) name0 (length vals) mkc_one) as w.
+    pose proof (implies_ccomputes_to_valc_ext_apply_choice_seq lib'' (mkc_nat (length vals)) name0 (length vals) mkc_one) as w.
     repeat (autodimp w hyp); eauto 3 with slow.
 
     {
@@ -1215,7 +1225,7 @@ Proof.
       rewrite select_snoc_eq; boolvar; try omega; tcsp.
     }
 
-    pose proof (implies_ccomputes_to_valc_ext_apply_choice_seq lib' (mkc_nat (length vals)) name (length vals) mkc_zero) as z.
+    pose proof (implies_ccomputes_to_valc_ext_apply_choice_seq lib'' (mkc_nat (length vals)) name (length vals) mkc_zero) as z.
     repeat (autodimp z hyp); eauto 3 with slow.
 
     {
@@ -1229,7 +1239,7 @@ Proof.
     rw @mkc_zero_eq in ceq; repeat (rw @mkc_nat_eq in ceq).
     ccomputes_to_valc_ext_val.
     apply Nat2Z.inj in ceq; subst.
-    hide_hyp inh1.
+    hide_hyp inh0.
 
     computes_to_eqval_ext.
     rw @mkc_one_eq in ceq; repeat (rw @mkc_nat_eq in ceq).

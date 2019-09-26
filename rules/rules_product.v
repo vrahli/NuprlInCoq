@@ -32,6 +32,7 @@
 *)
 
 
+Require Export sequents2.
 Require Export rules_useful.
 Require Export subst_tacs_aeq.
 Require Export subst_tacs3.
@@ -1001,16 +1002,16 @@ Definition rule_pair_formation {p}
     [sarg_var z, sarg_term a].
 
 
-Lemma rule_pair_formation_true {p} :
+Lemma rule_pair_formation_true3 {p} :
   forall lib (A B a b : NTerm)
          (x z : NVar)
          (i   : nat)
          (H   : @barehypotheses p),
-    rule_true lib (rule_pair_formation A B a b x z i H).
+    rule_true3 lib (rule_pair_formation A B a b x z i H).
 Proof.
   intros.
-  unfold rule_pair_formation, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
-  intros.
+  unfold rule_pair_formation, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
+  intros; repnd.
 
   unfold args_constraints in cargs; allsimpl.
   pose proof (cargs (sarg_var z)) as arg1; autodimp arg1 hyp.
@@ -1021,19 +1022,24 @@ Proof.
   (* We prove the well-formedness of things *)
   destseq; allsimpl.
   dLin_hyp; exrepnd.
-  rename Hyp0 into hyp1.
-  rename Hyp1 into hyp2.
-  rename Hyp2 into hyp3.
+  rename Hyp into hyp1.
+  rename Hyp0 into hyp2.
+  rename Hyp1 into hyp3.
+  destruct hyp1 as [ ws1 hyp1 ].
+  destruct hyp2 as [ ws2 hyp2 ].
+  destruct hyp3 as [ ws3 hyp3 ].
   destseq; allsimpl; proof_irr; GC.
 
-  assert (closed_extract H (mk_concl (mk_product A x B) (mk_pair a b))) as cp.
+  assert (wf_csequent (H) ||- (mk_concl (mk_product A x B) (mk_pair a b))) as wfc.
   { clear hyp1 hyp2 hyp3.
-    unfold closed_extract; simpl.
+    unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl in *; repnd; simpl in *.
+    prove_seq; eauto 3 with slow.
+    { apply wf_pair_iff; dands; auto. }
     allunfold @covered; allsimpl.
     autorewrite with slow core in *.
     allrw subvars_app_l; repnd; dands; auto. }
-
-  exists cp; GC.
+  exists wfc.
+  unfold wf_csequent, wf_sequent, wf_concl in wfc; allsimpl; repnd; proof_irr; GC.
 
   (* We prove some simple facts on our sequents *)
   assert ((z <> x -> !LIn z (free_vars B))
@@ -1178,6 +1184,18 @@ Proof.
     repeat lsubstc_subst_aeq.
     repeat (substc_lsubstc_vars3;[]).
     proof_irr; auto.
+Qed.
+
+Lemma rule_pair_formation_true {p} :
+  forall lib (A B a b : NTerm)
+         (x z : NVar)
+         (i   : nat)
+         (H   : @barehypotheses p),
+    rule_true lib (rule_pair_formation A B a b x z i H).
+Proof.
+  introv.
+  apply rule_true3_implies_rule_true.
+  apply rule_pair_formation_true3; auto.
 Qed.
 
 (* begin hide *)

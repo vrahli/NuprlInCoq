@@ -547,7 +547,6 @@ Proof.
 Qed.
 
 
-
 (**
 
 <<
@@ -606,7 +605,7 @@ Proof.
 
     repeat (rewrite substc_mkcv_function;[|auto];[]).
 
-    apply equality_in_tnat in ea.
+    apply equality_in_tnat in ea; apply e_all_in_ex_bar_as in ea.
     apply all_in_ex_bar_tequality_implies_tequality.
     eapply all_in_ex_bar_modus_ponens1;[|exact ea]; clear ea; introv y ea; exrepnd; spcast.
 
@@ -616,7 +615,7 @@ Proof.
     clear lib y safe.
     rename lib' into lib; rename safe' into safe.
 
-    unfold per_props_nat.equality_of_nat in ea; exrepnd; spcast.
+    unfold equality_of_nat in ea; exrepnd; spcast.
 
     eapply tequality_respects_alphaeqc_left;
       [apply alphaeqc_sym; apply implies_alphaeqc_mk_function;
@@ -706,7 +705,7 @@ Proof.
 
   repeat (rewrite substc_mkcv_function;[|auto];[]).
 
-  apply equality_in_tnat in ea.
+  apply equality_in_tnat in ea; apply e_all_in_ex_bar_as in ea.
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens1;[|exact ea]; clear ea; introv y ea; exrepnd; spcast.
 
@@ -716,7 +715,7 @@ Proof.
   clear lib y safe.
   rename lib' into lib; rename safe' into safe.
 
-  unfold per_props_nat.equality_of_nat in ea; exrepnd; spcast.
+  unfold equality_of_nat in ea; exrepnd; spcast.
 
   eapply alphaeqc_preserving_equality;
     [|apply alphaeqc_sym; apply implies_alphaeqc_mk_function;
@@ -875,8 +874,12 @@ Proof.
   remember (MkChoiceSequenceName "a" (cs_kind_seq l)) as name.
   assert (is_nat_or_seq_kind name) as isn by (subst; eauto 3 with slow; tcsp).
 
-  exists (extend_seq_to_bar lib safe k name isn).
-  introv br ext.
+  introv ext.
+  pose proof (exists_extend_library_lawless_upto_name_in name n0 lib') as q.
+  repeat (autodimp q hyp); eauto 3 with slow;[].
+  exrepnd.
+  assert (lib_extends lib'' lib') as xt by eauto 3 with slow.
+  exists lib'' xt; introv ext'.
 
   exists (mkc_comp_seq1 a0 a1) (mkc_comp_seq1 a' a'0) (@mkc_axiom o) (@mkc_axiom o).
   dands; spcast; eauto 3 with slow.
@@ -905,8 +908,8 @@ Proof.
        apply enf0 in ss; repnd; spcast; eauto 4 with slow|].
     unfold mkc_fresh_choice_nat_seq.
 
-    apply equality_in_csname_iff.
-    apply in_ext_implies_all_in_ex_bar; introv xt'.
+    apply equality_in_csname_iff; apply e_all_in_ex_bar_as.
+    apply in_ext_implies_in_open_bar; introv xt'.
     unfold equality_of_csname.
     eexists; dands; spcast;[|eauto 3 with slow|eauto 3 with slow].
     unfold compatible_choice_sequence_name; simpl.
@@ -924,29 +927,28 @@ Proof.
      apply ccomputes_to_valc_ext_implies_ccequivc_ext;
      apply mkc_comp_seq1_reduces_to_choice_seq; eauto;
      introv ss;
-     apply enf0 in ss; repnd; spcast; eauto 4 with slow|].
+     apply enf0 in ss; repnd; spcast; eauto 5 with slow|].
 
   eapply cequivc_preserving_equality;
     [|apply ccequivc_ext_sym;
-      introv xt; spcast; apply implies_cequivc_natk2nat;
+      introv xt'; spcast; apply implies_cequivc_natk2nat;
       apply ccomputes_to_valc_ext_implies_cequivc;
       eapply lib_extends_preserves_ccomputes_to_valc;
       [|eauto];eauto 4 with slow ].
 
   simpl in *; exrepnd.
 
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  apply name_in_library_implies_entry_in_library in br2; exrepnd.
-  applydup safe' in br2.
+  assert (safe_library lib'') as safe' by eauto 4 with slow.
+  apply name_in_library_implies_entry_in_library in q1; exrepnd.
+  applydup safe' in q1.
 
-  pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry k) as q.
-
+  pose proof (extend_library_lawless_upto_implies_exists_nats name lib'' lib'0 entry n0) as q.
   repeat (autodimp q hyp); exrepnd.
 
   apply implies_equality_natk2nat_prop.
   introv ltk.
 
-  pose proof (q1 m (nth m vals mkc_zero)) as w.
+  pose proof (q6 m (nth m vals mkc_zero)) as w.
   autodimp w hyp;[apply nth_select1; omega|];[].
   unfold is_nat in w; exrepnd.
   assert (select m vals = Some (mkc_nat i)) as xx.
@@ -964,7 +966,7 @@ Proof.
   exists i.
   dands; spcast;[eauto 5 with slow|];[].
 
-  apply in_ext_computes_to_valc_implies_ccomputes_to_valc_ext; introv xt; spcast.
+  apply in_ext_computes_to_valc_implies_ccomputes_to_valc_ext; introv xt'; spcast.
   unfold computes_to_valc; simpl.
   split; eauto 3 with slow.
   eapply reduces_to_if_split2;[csunf; simpl; reflexivity|].
@@ -973,8 +975,8 @@ Proof.
   unfold compute_step_eapply; simpl; boolvar; try omega;[].
   autorewrite with slow.
 
-  assert (lib_extends lib'1 lib') as xt' by eauto 3 with slow.
-  eapply lib_extends_preserves_find_cs in q0;[|exact xt'].
+  assert (lib_extends lib'2 lib'') as xt'' by eauto 3 with slow.
+  eapply lib_extends_preserves_find_cs in q5;[|exact xt''].
   exrepnd; simpl in *.
   destruct entry2; simpl in *.
   unfold find_cs_value_at.

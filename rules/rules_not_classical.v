@@ -166,7 +166,7 @@ Proof.
     eapply all_in_ex_bar_modus_ponens1;[|exact ea]; clear ea; introv y ea; exrepnd; spcast.
 
     apply equality_mkc_equality2_sp_in_uni; dands; eauto 3 with slow.
-    split; exists (trivial_bar lib'0); apply in_ext_implies_all_in_bar_trivial_bar;
+    split; apply in_ext_implies_in_open_bar;
       introv ext'; right; eauto 3 with slow.
   }
 

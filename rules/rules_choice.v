@@ -980,6 +980,64 @@ Proof.
     apply mkc_nat_eq_implies in h1; subst; auto.
 Qed.
 
+Lemma exists_extend_library_lawless_upto_name_in {o} :
+  forall name n (lib : @library o),
+    is_nat_or_seq_kind name
+    -> safe_library lib
+    ->
+    exists lib'' lib',
+      extend_library_lawless_upto lib'' lib' name n
+      /\ lib_extends lib' lib
+      /\ name_in_library name lib''.
+Proof.
+  introv isns safe.
+  pose proof (exists_extend_library_with_name (library2inf lib inf_lib_entry_0) name lib) as h.
+  repeat (autodimp h hyp); eauto 3 with slow;[].
+  exrepnd.
+  assert (safe_library lib') as safe' by eauto 3 with slow.
+  pose proof (exists_extend_library_lawless_upto_following_infinite (library2inf lib' inf_lib_entry_0) name n lib') as q.
+  repeat (autodimp q hyp); eauto 3 with slow;[].
+  exrepnd.
+  exists lib'0 lib'; dands; eauto 3 with slow.
+Qed.
+
+Lemma name_in_library_if_entry_in_library {o} :
+  forall name entry (lib : @library o),
+    entry_in_library entry lib
+    -> entry2name entry = entry_name_cs name
+    -> name_in_library name lib.
+Proof.
+  induction lib; introv h q; simpl in *; tcsp.
+  destruct a; simpl in *; repndors; repnd; subst; tcsp; GC;
+    simpl in *; ginv; tcsp.
+  destruct (choice_sequence_name_deq name name0); subst; tcsp.
+Qed.
+
+Lemma entry_extends_implies_entry2name {o} :
+  forall (entry1 entry2 : @library_entry o),
+    entry_extends entry1 entry2
+    -> entry2name entry1 = entry2name entry2.
+Proof.
+  introv h.
+  destruct entry1, entry2; simpl in *; repnd; subst; tcsp; ginv.
+  inversion h; subst; tcsp.
+Qed.
+
+Lemma lib_extends_preserves_name_in_library {o} :
+  forall (lib lib' : @library o) name,
+    lib_extends lib' lib
+    -> name_in_library name lib
+    -> name_in_library name lib'.
+Proof.
+  introv ext i.
+  apply name_in_library_implies_entry_in_library in i; exrepnd.
+  apply ext in i1.
+  apply entry_in_library_extends_implies_entry_in_library in i1; exrepnd.
+  eapply name_in_library_if_entry_in_library; eauto.
+  apply entry_extends_implies_entry2name in i2; try congruence.
+Qed.
+Hint Resolve lib_extends_preserves_name_in_library : slow.
+
 
 
 (**
