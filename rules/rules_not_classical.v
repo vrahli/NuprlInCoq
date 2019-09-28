@@ -34,6 +34,109 @@
 Require Export rules_choice_util.
 
 
+Lemma find_cs_split {o} :
+  forall name (e : @ChoiceSeqEntry o) lib,
+    find_cs lib name = Some e
+    ->
+    exists lib1 lib2,
+      lib = lib1 ++ lib_cs name e :: lib2
+      /\ forall e', List.In e' lib1 -> entry2name e' <> entry_name_cs name.
+Proof.
+  induction lib; introv fcs; simpl in *; ginv.
+  destruct a; simpl in *; boolvar; subst; ginv; tcsp.
+  { exists ([] : @library o) lib; simpl; tcsp. }
+  { apply IHlib in fcs; exrepnd; subst.
+    exists (lib_cs name0 entry :: lib1) lib2; simpl; dands; tcsp.
+    introv q; repndors; subst; simpl in *; tcsp.
+    { introv xx; ginv; tcsp. }
+    apply fcs1; auto. }
+  { apply IHlib in fcs; exrepnd; subst.
+    exists (lib_abs opabs vars rhs correct :: lib1) lib2; simpl; dands; tcsp.
+    introv q; repndors; subst; simpl in *; tcsp.
+    { introv xx; ginv; tcsp. }
+    apply fcs1; auto. }
+Qed.
+
+Lemma entry_extends_implies_lib_extends {o} :
+  forall name (e1 e2 : @ChoiceSeqEntry o) lib,
+    find_cs lib name = Some e1
+    -> safe_choice_sequence_entry name e2
+    -> choice_sequence_entry_extend e2 e1
+    -> exists lib',
+        lib_extends lib' lib
+        /\ find_cs lib' name = Some e2.
+Proof.
+  introv fcs safe ext.
+  apply find_cs_split in fcs; exrepnd; subst.
+  exists (lib1 ++ lib_cs name e2 :: lib2).
+  dands; auto.
+
+  { SearchAbout lib_extends app.
+Qed.
+
+Lemma exists_1_choice_true {o} :
+  forall (lib : @library o) name v n restr,
+    csn_kind name = cs_kind_seq []
+    -> same_restrictions restr (csc_seq [])
+    -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero) restr)) lib
+    -> safe_library lib
+    -> inhabited_type_bar lib (exists_1_choice name v).
+Proof.
+  introv ck srestr ilib safe.
+  unfold exists_1_choice.
+  introv xta.
+
+  Opaque mkcv_equality mkcv_apply mkc_exists.
+  applydup xta in ilib.
+  apply lib_cs_in_library_extends_implies in ilib0; exrepnd; simpl in *.
+  unfold choice_sequence_vals_extend in ilib1; exrepnd; subst; simpl in *.
+  destruct entry' as [vals' restr']; simpl in *; subst; simpl in *.
+
+  pose proof (entry_extends_implies_lib_extends
+                name
+                (MkChoiceSeqEntry _ (ntimes n mkc_zero ++ vals) restr')
+                (MkChoiceSeqEntry _ (ntimes n mkc_zero ++ vals ++ [mkc_one]) restr')
+                lib') as q.
+  simpl in q.
+  repeat (autodimp q hyp).
+  { admit. }
+  { admit. }
+
+  exrepnd.
+
+  exists lib'0 q1.
+  introv xtb.
+
+  unfold inhabited_type.
+  exists (mkc_pair (@mkc_nat o (n + length vals)) mkc_axiom).
+  apply member_product2; dands.
+
+  { admit. }
+
+  apply in_ext_implies_in_open_bar.
+  introv xtc.
+  exists (@mkc_nat o (n + length vals)) (@mkc_axiom o).
+  dands; eauto 3 with slow.
+
+  autorewrite with slow.
+  apply member_equality.
+
+  pose proof (implies_mkc_apply_mkc_choice_seq_ccomputes_to_valc_ext
+                lib'0 lib'2 name
+                (ntimes n mkc_zero ++ vals ++ [mkc_one]) restr'
+                (n + length vals)
+                mkc_one) as q.
+  repeat (autodimp q hyp); eauto 3 with slow.
+
+  { rewrite select_app_r; autorewrite with slow; try omega.
+    rewrite select_app_r; autorewrite with slow; try omega.
+    simpl; auto. }
+
+  eapply equality_respects_cequivc_left;
+    [apply ccequivc_ext_sym; apply ccomputes_to_valc_ext_implies_ccequivc_ext; eauto|].
+  eauto 2 with slow.
+Qed.
+
 
 (* end hide*)
 
