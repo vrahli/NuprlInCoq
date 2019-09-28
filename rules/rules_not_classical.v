@@ -57,6 +57,57 @@ Proof.
     apply fcs1; auto. }
 Qed.
 
+Lemma lib_extends_middle {o} :
+  forall (lib1 lib2 : @library o) name e1 e2,
+    safe_choice_sequence_entry name e2
+    -> choice_sequence_entry_extend e2 e1
+    -> lib_extends (lib1 ++ lib_cs name e2 :: lib2) (lib1 ++ lib_cs name e1 :: lib2).
+Proof.
+  introv safe ext.
+  split.
+  { introv i.
+    apply entry_in_library_app_implies in i; simpl in *;
+      repeat (repndors; repnd); eauto 3 with slow.
+    { subst; simpl in *.
+      apply implies_entry_in_library_extends_app_right; simpl; tcsp.
+      introv j k.
+      apply LIn_implies_In in j.
+      apply i in j; tcsp. }
+    { apply implies_entry_in_library_extends_app_right; simpl; tcsp.
+      { right; dands; tcsp; eauto 3 with slow. }
+      introv j k.
+      apply LIn_implies_In in j.
+      apply i in j; tcsp. } }
+  { introv safel i.
+    apply entry_in_library_app_implies in i; simpl in *;
+      repeat (repndors; repnd); eauto 3 with slow.
+    { subst; simpl in *; auto. }
+    apply safel.
+    apply implies_entry_in_library_app_right; simpl; tcsp.
+    introv j k.
+    apply LIn_implies_In in j.
+    apply i in j; tcsp. }
+  { introv i.
+    apply list_in_app in i; simpl in *; repndors; subst; tcsp.
+    { exists entry1; dands; eauto 3 with slow.
+      allrw @list_in_app; simpl in *; tcsp. }
+    { exists (lib_cs name e2); simpl; dands; tcsp.
+      allrw @list_in_app; simpl in *; tcsp. }
+    { exists entry1; dands; eauto 3 with slow.
+      allrw @list_in_app; simpl in *; tcsp. } }
+Qed.
+
+Lemma find_cs_app_right {o} :
+  forall name (lib1 lib2 : @library o),
+    (forall e, List.In e lib1 -> entry2name e <> entry_name_cs name)
+    -> find_cs (lib1 ++ lib2) name = find_cs lib2 name.
+Proof.
+  induction lib1; introv h; simpl in *; tcsp.
+  destruct a; simpl in *; tcsp; boolvar; subst; tcsp.
+  pose proof (h (lib_cs name0 entry)) as h; simpl in *; tcsp.
+  autodimp h hyp; tcsp.
+Qed.
+
 Lemma entry_extends_implies_lib_extends {o} :
   forall name (e1 e2 : @ChoiceSeqEntry o) lib,
     find_cs lib name = Some e1
@@ -71,8 +122,33 @@ Proof.
   exists (lib1 ++ lib_cs name e2 :: lib2).
   dands; auto.
 
-  { SearchAbout lib_extends app.
+  { apply lib_extends_middle; auto. }
+
+  { rewrite find_cs_app_right; simpl; tcsp; boolvar; subst; tcsp. }
 Qed.
+
+Lemma implies_choice_sequence_satisfies_restriction_app_one {o} :
+  forall vals name (restr : @ChoiceSeqRestriction o),
+    csn_kind name = cs_kind_seq []
+    -> correct_restriction name restr
+    -> choice_sequence_satisfies_restriction vals restr
+    -> choice_sequence_satisfies_restriction (vals ++ [mkc_one]) restr.
+Proof.
+  introv eqk cor sat.
+  unfold choice_sequence_satisfies_restriction in *.
+  unfold correct_restriction in *.
+  rewrite eqk in *.
+  destruct restr; simpl in *; tcsp; ginv; repnd.
+  introv sel.
+  destruct (lt_dec n (length vals)) as [x|x].
+  { rewrite select_app_l in sel; auto. }
+  { rewrite select_app_r in sel; try omega.
+    simpl in *.
+    remember (n - Datatypes.length vals) as k; clear Heqk.
+    repeat (destruct k; simpl in *; ginv).
+    apply cor; try omega; eauto 3 with slow. }
+Qed.
+Hint Resolve implies_choice_sequence_satisfies_restriction_app_one : slow.
 
 Lemma exists_1_choice_true {o} :
   forall (lib : @library o) name v n restr,
@@ -99,8 +175,16 @@ Proof.
                 lib') as q.
   simpl in q.
   repeat (autodimp q hyp).
-  { admit. }
-  { admit. }
+  { applydup safe in ilib; simpl in *; repnd.
+    assert (safe_library lib') as safe' by eauto 3 with slow.
+    apply find_cs_some_implies_entry_in_library in ilib0.
+    apply safe' in ilib0; simpl in *; repnd.
+    dands; auto; eauto 3 with slow.
+    rewrite app_assoc; eauto 3 with slow. }
+  { unfold choice_sequence_entry_extend; simpl; dands; eauto 3 with slow.
+    unfold choice_sequence_vals_extend.
+    exists [@mkc_one o].
+    rewrite app_assoc; auto. }
 
   exrepnd.
 
@@ -111,7 +195,14 @@ Proof.
   exists (mkc_pair (@mkc_nat o (n + length vals)) mkc_axiom).
   apply member_product2; dands.
 
-  { admit. }
+  { apply tequality_product; dands; eauto 3 with slow.
+    introv xtc en.
+    autorewrite with slow.
+    apply equality_int_nat_implies_cequivc in en.
+    apply ccequivc_ext_bar_iff_ccequivc_bar in en.
+    apply all_in_ex_bar_tequality_implies_tequality.
+    eapply in_open_bar_pres; try exact en; clear en; introv xtd en.
+    apply tequality_equality_if_cequivc; eauto 3 with slow. }
 
   apply in_ext_implies_in_open_bar.
   introv xtc.
