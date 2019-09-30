@@ -139,34 +139,39 @@ Proof.
   rename lib' into lib.
    *)
 
-  generalize (classic (all_in_ex_bar lib (fun lib => inhabited_type lib (lsubstc P w0 s1 c0)))); intro inh.
+  introv ext.
+
+  generalize (classic (exists (lib'' : library) (ext'' : lib_extends lib'' lib'), inhabited_type lib'' (lsubstc P w0 s1 c0))); intro inh.
   destruct inh as [inh | ninh].
 
   {
-    (* First, we assume that P is inhabited *)
-    eapply all_in_ex_bar_modus_ponens1;try exact inh; clear inh; introv y inh; exrepnd; spcast.
-    (*destruct inh as [lib' [ext' inh] ].*)
-    destruct inh as [t inh].
+    exrepnd.
+    exists lib'' ext''.
+    introv xta.
+    eapply lib_extends_inhabited_type in inh1; eauto.
+    destruct inh1 as [t inh].
     exists (mkc_inl t).
+    applydup @inhabited_implies_tequality in inh.
     rw @equality_mkc_union; dands; auto;
       try (complete (allapply @tequality_refl; eauto 3 with slow));
       try (complete (rw @tequality_not; allapply @tequality_refl; eauto 3 with slow));[].
-    apply in_ext_implies_all_in_ex_bar; introv xt'.
+    apply equality_implies_all_in_ex_bar_equality in inh.
+    eapply in_open_bar_pres; try exact inh; clear inh; introv xtb inh.
     left.
     exists t t; auto; dands; spcast; eauto 3 with slow.
   }
 
   {
     (* Now, we assume that P is not inhabited *)
-    apply in_ext_implies_all_in_ex_bar; introv xt.
+    exists lib' (lib_extends_refl lib'); introv xta.
     exists (@mkc_inr o mkc_axiom).
     rw @equality_mkc_union; dands; auto;
       try (complete (allapply @tequality_refl; eauto 3 with slow));
-      try (complete (rw @tequality_not; allapply @tequality_refl; eauto 3 with slow)).
+      try (complete (rw @tequality_not; allapply @tequality_refl; eauto 3 with slow));[].
     apply in_ext_implies_all_in_ex_bar; introv xt'.
     right.
     exists (@mkc_axiom o) (@mkc_axiom o); auto; dands; spcast; eauto 3 with slow.
-    rw @equality_in_not; dands; auto; allapply @tequality_refl; eauto 3 with slow.
+    rw @equality_in_not; dands; auto; allapply @tequality_refl; eauto 4 with slow.
 
     (*
         To prove the negation of this squashed LEM, we need a proposition which is false
@@ -175,7 +180,8 @@ Proof.
 
     introv y inh.
     destruct ninh.
-
+    assert (lib_extends lib'2 lib') as xtb by eauto 3 with slow.
+    exists lib'2 xtb; auto.
   }
 Qed.
 
@@ -184,6 +190,8 @@ Qed.
 (* end hide *)
 
 
+
+(*
 
 (*
    H |- squash(P)
@@ -290,3 +298,4 @@ Proof.
   allrw @lsubstc_mk_false.
   apply equality_in_false in q1; auto.
 Qed.
+*)

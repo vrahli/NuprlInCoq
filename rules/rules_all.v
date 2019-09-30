@@ -41,6 +41,7 @@ Require Export rules_ref2.
 Require Export rules_product.
 Require Export rules_union.
 (*Require Export rules_not_classical.*)
+Require Export rules_classical.
 Require Export rules_function.
 Require Export rules_function2.
 (*TO FIX*)(*Require Export rules_apply.*)
