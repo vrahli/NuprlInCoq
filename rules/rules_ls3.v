@@ -10068,6 +10068,12 @@ Proof.
 
   assert (lib_extends_cs_ren name name' lib lib1) as extren by (split; auto).
 
+Print get_defs.
+Locate free_from_atom.
+Print safe_choice_sequence_entry.
+Print choice_sequence_satisfies_restriction.
+Print correct_restriction.
+Print is_nat_seq_restriction.
 
 
 
@@ -10395,6 +10401,7 @@ Proof.
               name1 (lib1 : @library o)
               name2 (lib2 : @library o) :=
      find_cs lib1 name1 = find_cs lib2 name2.
+
 
    (* Can we just
        - remove [name] from the library, and replacing it with the name with the right space?

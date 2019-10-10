@@ -88,6 +88,7 @@ Lemma is_nat_fun_zero_fun {o} : forall n, @is_nat_fun o n zero_fun.
 Proof.
   introv.
   unfold is_nat_fun.
+  (* TODO: Prove that using the rules instead! *)
   apply implies_member_nat2nat_bar2.
   apply in_ext_implies_all_in_ex_bar; introv ext1; introv.
   apply in_ext_implies_all_in_ex_bar; introv ext2; introv.
