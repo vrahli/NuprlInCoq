@@ -922,10 +922,11 @@ Proof.
   { introv; pose proof (yy k _ (lib_extends_refl _)) as h; exrepnd; eauto. }
 *)
 
-  pose proof (fresh_choice_seq_name_in_library_with_kind lib' (cs_kind_nat 2)) as w; exrepnd.
   apply @nat_in_open_bar_choice in xx; exrepnd.
   apply nat_in_open_bar_choice_nat in xx0; exrepnd.
 
+
+  pose proof (fresh_choice_seq_name_in_library_with_kind lib' (cs_kind_nat 2)) as w; exrepnd.
 
   (* WARNING *)
   exists (mk_cs_res name Fnat :: lib').
@@ -982,8 +983,8 @@ Proof.
   pose proof (ext_lib_extends_stack_implies_ex_nat name safe' Fnat k (S k)) as z.
   autodimp z hyp.
   pose proof (z lib'4 xtg xti lib'6 (lib_extends_trans xtk xtj)) as z.
-
   exrepnd.
+
   pose proof (xx1 liba exta libb extb extz) as xx1; simpl in xx1.
 
 

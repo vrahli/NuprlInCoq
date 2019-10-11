@@ -100,6 +100,7 @@ Proof.
   vr_seq_true in hyp1.
 
   pose proof (hyp1
+                _ ext
                 (snoc (s1a0 ++ s1b) (x,t1))
                 (snoc (s2a0 ++ s2b) (x,t2)))
     as h; clear hyp1; rename h into hyp1.
@@ -107,12 +108,13 @@ Proof.
   (* ========== hyps_functionality ========== *)
 
   autodimp hyp1 hyp.
-  apply hyps_functionality_move_to_last; auto.
+  { introv xta.
+    apply hyps_functionality_move_to_last; auto. }
 
   (* ========== similarity ========== *)
 
   autodimp hyp1 hyp.
-  apply similarity_move_to_last; auto.
+  { apply similarity_move_to_last; auto. }
 
   (* ========== now we use hyp1 ========== *)
 
@@ -222,6 +224,7 @@ Proof.
   vr_seq_true in hyp1.
 
   pose proof (hyp1
+                _ ext
                 ((s1a ++ snoc s1b0 (x,t1)) ++ s1b)
                 ((s2a ++ snoc s2b0 (x,t2)) ++ s2b))
     as h; clear hyp1; rename h into hyp1.
@@ -233,15 +236,16 @@ Proof.
 
   autodimp hyp1 hyp.
 
-  repeat (rw snoc_append_l).
-  apply hyps_functionality_move_down; auto.
+  { repeat (rw snoc_append_l).
+    introv xta.
+    apply hyps_functionality_move_down; auto. }
 
   (* ========== similarity ========== *)
 
   autodimp hyp1 hyp.
 
-  repeat (rw snoc_append_l).
-  apply similarity_move_down; auto.
+  { repeat (rw snoc_append_l).
+    apply similarity_move_down; auto. }
 
   (* ========== now we use hyp1 ========== *)
 
@@ -386,6 +390,7 @@ Proof.
   vr_seq_true in hyp1.
 
   pose proof (hyp1
+                _ ext
                 ((snoc s1a0 (x,t1) ++ s1a) ++ s1b)
                 ((snoc s2a0 (x,t2) ++ s2a) ++ s2b))
     as h; clear hyp1; rename h into hyp1.
@@ -397,15 +402,16 @@ Proof.
 
   autodimp hyp1 hyp.
 
-  repeat (rw snoc_append_l in eqh).
-  apply hyps_functionality_move_down; auto.
+  { repeat (rw snoc_append_l in eqh).
+    introv xta.
+    apply hyps_functionality_move_down; auto. }
 
   (* ========== similarity ========== *)
 
   autodimp hyp1 hyp.
 
-  repeat (rw snoc_append_l in sim').
-  apply similarity_move_down; auto.
+  { repeat (rw snoc_append_l in sim').
+    apply similarity_move_down; auto. }
 
   (* ========== now we use hyp1 ========== *)
 
