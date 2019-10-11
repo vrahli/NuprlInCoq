@@ -313,86 +313,86 @@ Proof.
   (* ========== hyps_functionality ========== *)
 
 
-  introv sim'.
-  apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx.
+  { introv sim'.
+    apply similarity_snoc in sim'; simpl in sim'; exrepnd; cpx.
 
-  assert (cover_vars (subst B v (mk_var y)) s2a)
-    as cv1
-      by (eapply cover_vars_change_sub;[|eauto];
-          allapply @similarity_dom; repnd; allrw; auto).
+    assert (cover_vars (subst B v (mk_var y)) s2a)
+      as cv1
+        by (eapply cover_vars_change_sub;[|eauto];
+            allapply @similarity_dom; repnd; allrw; auto).
 
-  apply similarity_snoc in sim'3; simpl in sim'3; exrepnd; cpx.
+    apply similarity_snoc in sim'3; simpl in sim'3; exrepnd; cpx.
 
-  apply eq_hyps_snoc; simpl.
-  exists (snoc (snoc s1a0 (x, t4) ++ s1b) (y, t4))
-         (snoc s2a1 (y, t5))
-         t0 t3 w0 p1 cv1; dands; auto.
+    apply eq_hyps_snoc; simpl.
+    exists (snoc (snoc s1a0 (x, t4) ++ s1b) (y, t4))
+           (snoc s2a1 (y, t5))
+           t0 t3 w0 p1 cv1; dands; auto.
 
-  assert (cover_vars A s2a1)
-    as cv2
-      by (eapply cover_vars_change_sub;[|eauto];
-          allapply @similarity_dom; repnd; allrw; auto).
+    { assert (cover_vars A s2a1)
+      as cv2
+        by (eapply cover_vars_change_sub;[|eauto];
+            allapply @similarity_dom; repnd; allrw; auto).
 
-  apply eq_hyps_snoc; simpl.
-  exists (snoc s1a0 (x, t4) ++ s1b) s2a1 t4 t5 w3 p2 cv2; dands; auto.
+      apply eq_hyps_snoc; simpl.
+      exists (snoc s1a0 (x, t4) ++ s1b) s2a1 t4 t5 w3 p2 cv2; dands; auto.
 
-  applydup eqh in sim'4 as eqh'.
-  apply eq_hyps_app in eqh'; exrepnd; subst; cpx.
-  apply app_split in eqh'0; [|complete (rw length_snoc; allrw; auto)].
-  repnd; subst; cpx.
-  apply eq_hyps_snoc in eqh'5; simpl in eqh'5; exrepnd; cpx.
-  lsubst_tac.
-  apply tequality_set in eqh'0; repnd; auto.
+      applydup eqh in sim'4 as eqh'.
+      apply eq_hyps_app in eqh'; exrepnd; subst; cpx.
+      apply app_split in eqh'0; [|complete (rw length_snoc; allrw; auto)].
+      repnd; subst; cpx.
+      apply eq_hyps_snoc in eqh'5; simpl in eqh'5; exrepnd; cpx.
+      lsubst_tac.
+      apply tequality_set in eqh'0; repnd; auto. }
 
-  assert (disjoint (free_vars (subst B v (mk_var y))) (dom_csub s1b))
-    as disj
-      by (allapply @similarity_dom; repnd;
-          allrw @vars_hyps_substitute_hyps; allrw; auto).
+    assert (disjoint (free_vars (subst B v (mk_var y))) (dom_csub s1b))
+      as disj
+        by (allapply @similarity_dom; repnd;
+            allrw @vars_hyps_substitute_hyps; allrw; auto).
 
-  applydup eqh in sim'4 as eqh'.
-  apply eq_hyps_app in eqh'; exrepnd; subst; cpx.
-  apply app_split in eqh'0; [|complete (rw length_snoc; allrw; auto)].
-  repnd; subst; cpx.
-  apply eq_hyps_snoc in eqh'5; simpl in eqh'5; exrepnd; cpx.
-  lsubst_tac.
-  apply tequality_set in eqh'0; repnd; auto.
-  apply eqh'0 in sim'2.
-  substc_lsubstc_vars2;[complete(allapply @similarity_dom; repnd; allrw; auto)|].
-  substc_lsubstc_vars2;[complete(allapply @eq_hyps_dom; repnd; allrw; auto)|].
+    applydup eqh in sim'4 as eqh'.
+    apply eq_hyps_app in eqh'; exrepnd; subst; cpx.
+    apply app_split in eqh'0; [|complete (rw length_snoc; allrw; auto)].
+    repnd; subst; cpx.
+    apply eq_hyps_snoc in eqh'5; simpl in eqh'5; exrepnd; cpx.
+    lsubst_tac.
+    apply tequality_set in eqh'0; repnd; auto.
+    apply eqh'0 in sim'2.
+    substc_lsubstc_vars2;[complete(allapply @similarity_dom; repnd; allrw; auto)|].
+    substc_lsubstc_vars2;[complete(allapply @eq_hyps_dom; repnd; allrw; auto)|].
 
-  pose proof (lsubstc_subst_snoc_eq_ex (snoc s1a (x, t1) ++ s1b0) B v y t1 w0 p1) as h.
-  repeat (autodimp h hyp);
-    [ rw @dom_csub_app; repeat (rw @dom_csub_snoc); simpl; rw in_app_iff; rw in_snoc;
-      allapply @similarity_dom; repnd; allrw;
-      rw @vars_hyps_substitute_hyps; sp
-    | ].
-  exrepnd.
-  rw h1; clear h1.
-  repeat substc_lsubstc_vars3.
+    pose proof (lsubstc_subst_snoc_eq_ex (snoc s1a (x, t1) ++ s1b0) B v y t1 w0 p1) as h.
+    repeat (autodimp h hyp);
+      [ rw @dom_csub_app; repeat (rw @dom_csub_snoc); simpl; rw in_app_iff; rw in_snoc;
+        allapply @similarity_dom; repnd; allrw;
+        rw @vars_hyps_substitute_hyps; sp
+      | ].
+    exrepnd.
+    rw h1; clear h1.
+    repeat substc_lsubstc_vars3.
 
-  pose proof (lsubstc_subst_snoc_eq_ex (snoc s2a1 (x, t6) ++ s2b0) B v y t5 w0 cv1) as h.
-  repeat (autodimp h hyp);
-    [ rw @dom_csub_app; repeat (rw @dom_csub_snoc); simpl; rw in_app_iff; rw in_snoc;
-      allapply @eq_hyps_dom; allapply @sub_eq_hyps_dom; repnd; allrw; sp
-    | ].
-  exrepnd.
-  rw h1; clear h1.
-  repeat substc_lsubstc_vars3.
+    pose proof (lsubstc_subst_snoc_eq_ex (snoc s2a1 (x, t6) ++ s2b0) B v y t5 w0 cv1) as h.
+    repeat (autodimp h hyp);
+      [ rw @dom_csub_app; repeat (rw @dom_csub_snoc); simpl; rw in_app_iff; rw in_snoc;
+        allapply @eq_hyps_dom; allapply @sub_eq_hyps_dom; repnd; allrw; sp
+      | ].
+    exrepnd.
+    rw h1; clear h1.
+    repeat substc_lsubstc_vars3.
 
-  revert c7 c10; repeat (rw app_comm_cons); introv.
-  lsubst_tac.
+    revert c7 c10; repeat (rw app_comm_cons); introv.
+    lsubst_tac.
 
-  revert c11 c12; repeat (rw cons_snoc); introv.
-  lsubst_tac.
+    revert c11 c12; repeat (rw cons_snoc); introv.
+    lsubst_tac.
 
-  pose proof (lsubstc_snoc_app_move_to_last B [] s1a v t1 w2 c8) as h; simpl in h.
-  autodimp h hyp; [allapply @eq_hyps_dom; repnd; allrw; auto|].
-  exrepnd; PI; rw h0; clear h0.
+    pose proof (lsubstc_snoc_app_move_to_last B [] s1a v t1 w2 c8) as h; simpl in h.
+    autodimp h hyp; [allapply @eq_hyps_dom; repnd; allrw; auto|].
+    exrepnd; PI; rw h0; clear h0.
 
-  pose proof (lsubstc_snoc_app_move_to_last B [] s2a1 v t5 w2 c13) as h; simpl in h.
-  autodimp h hyp; [allapply @eq_hyps_dom; repnd; allrw; auto|].
-  exrepnd; PI; rw h0; clear h0.
-  auto.
+    pose proof (lsubstc_snoc_app_move_to_last B [] s2a1 v t5 w2 c13) as h; simpl in h.
+    autodimp h hyp; [allapply @eq_hyps_dom; repnd; allrw; auto|].
+    exrepnd; PI; rw h0; clear h0.
+    auto. }
 
 
   (* ========== similarity ========== *)
@@ -400,61 +400,61 @@ Proof.
 
   autodimp hyp1 hyp.
 
-  assert (wf_term (subst B v (mk_var y)))
-    as wsb
-      by (apply lsubst_preserves_wf_term; auto;
-          unfold wf_sub, sub_range_sat; simpl; sp; cpx).
+  { assert (wf_term (subst B v (mk_var y)))
+      as wsb
+        by (apply lsubst_preserves_wf_term; auto;
+            unfold wf_sub, sub_range_sat; simpl; sp; cpx).
 
-  assert (cover_vars (subst B v (mk_var y))
-                     (snoc (snoc s1a0 (x, t1) ++ s1b) (y, t1))) as cvsb.
-  destseq; allsimpl; dwfseq.
-  allunfold @cover_vars_upto; allsimpl.
-  rw @cover_vars_eq; rw subvars_prop; introv h.
-  pose proof (eqvars_free_vars_disjoint B [(v,mk_var y)]) as ev.
-  fold (subst B v (mk_var y)) in ev.
-  eapply eqvars_prop in ev; apply ev in h; clear ev; simpl in h.
-  rw in_app_iff in h.
-  rw @dom_csub_snoc; rw @dom_csub_app; rw @dom_csub_snoc; simpl.
-  rw in_snoc; rw in_app_iff; rw in_snoc.
-  allapply @similarity_dom; repnd; allrw; rw @vars_hyps_substitute_hyps.
-  dorn h; discover; sp.
-  revert h; boolvar; intro h; simpl in h; sp.
+    assert (cover_vars (subst B v (mk_var y))
+                       (snoc (snoc s1a0 (x, t1) ++ s1b) (y, t1))) as cvsb.
+    { destseq; allsimpl; dwfseq.
+      allunfold @cover_vars_upto; allsimpl.
+      rw @cover_vars_eq; rw subvars_prop; introv h.
+      pose proof (eqvars_free_vars_disjoint B [(v,mk_var y)]) as ev.
+      fold (subst B v (mk_var y)) in ev.
+      eapply eqvars_prop in ev; apply ev in h; clear ev; simpl in h.
+      rw in_app_iff in h.
+      rw @dom_csub_snoc; rw @dom_csub_app; rw @dom_csub_snoc; simpl.
+      rw in_snoc; rw in_app_iff; rw in_snoc.
+      allapply @similarity_dom; repnd; allrw; rw @vars_hyps_substitute_hyps.
+      dorn h; discover; sp.
+      revert h; boolvar; intro h; simpl in h; sp. }
 
-  apply similarity_snoc; simpl.
-  exists (snoc (snoc s1a0 (x, t1) ++ s1b) (y, t1))
-         (snoc (snoc s2a0 (x, t2) ++ s2b) (y, t2))
-         t t wsb cvsb; dands; auto.
+    apply similarity_snoc; simpl.
+    exists (snoc (snoc s1a0 (x, t1) ++ s1b) (y, t1))
+           (snoc (snoc s2a0 (x, t2) ++ s2b) (y, t2))
+           t t wsb cvsb; dands; auto.
 
-  assert (cover_vars A (snoc s1a0 (x, t1) ++ s1b))
-    as cva by (apply cover_vars_app_weak; apply cover_vars_snoc_weak; auto).
+    { assert (cover_vars A (snoc s1a0 (x, t1) ++ s1b))
+        as cva by (apply cover_vars_app_weak; apply cover_vars_snoc_weak; auto).
 
-  apply similarity_snoc; simpl.
-  exists (snoc s1a0 (x, t1) ++ s1b)
-         (snoc s2a0 (x, t2) ++ s2b)
-         t1 t2 w1 cva; dands; auto.
-  lsubst_tac; auto.
+      apply similarity_snoc; simpl.
+      exists (snoc s1a0 (x, t1) ++ s1b)
+             (snoc s2a0 (x, t2) ++ s2b)
+             t1 t2 w1 cva; dands; auto.
+      lsubst_tac; auto. }
 
-  substc_lsubstc_vars2;[complete(allapply @similarity_dom; repnd; allrw; auto)|].
+    substc_lsubstc_vars2;[complete(allapply @similarity_dom; repnd; allrw; auto)|].
 
-  pose proof (lsubstc_subst_snoc_eq_ex (snoc s1a0 (x, t1) ++ s1b) B v y t1 wsb cvsb) as h.
-  repeat (autodimp h hyp);
-    [ rw @dom_csub_app; repeat (rw @dom_csub_snoc); simpl; rw in_app_iff; rw in_snoc;
-      allapply @similarity_dom; repnd; allrw;
-      rw @vars_hyps_substitute_hyps; sp
-    | ].
-  exrepnd.
-  rw h1; clear h1.
-  repeat substc_lsubstc_vars3.
+    pose proof (lsubstc_subst_snoc_eq_ex (snoc s1a0 (x, t1) ++ s1b) B v y t1 wsb cvsb) as h.
+    repeat (autodimp h hyp);
+      [ rw @dom_csub_app; repeat (rw @dom_csub_snoc); simpl; rw in_app_iff; rw in_snoc;
+        allapply @similarity_dom; repnd; allrw;
+        rw @vars_hyps_substitute_hyps; sp
+      | ].
+    exrepnd.
+    rw h1; clear h1.
+    repeat substc_lsubstc_vars3.
 
-  revert c3; rw app_comm_cons; introv.
-  lsubst_tac.
+    revert c3; rw app_comm_cons; introv.
+    lsubst_tac.
 
-  revert c4; rw cons_snoc; introv.
-  lsubst_tac.
+    revert c4; rw cons_snoc; introv.
+    lsubst_tac.
 
-  pose proof (lsubstc_snoc_app_move_to_last B [] s1a0 v t1 w2 c5) as h; simpl in h.
-  autodimp h hyp; [allapply @similarity_dom; repnd; allrw; auto|].
-  exrepnd; PI; rw h0; clear h0; auto.
+    pose proof (lsubstc_snoc_app_move_to_last B [] s1a0 v t1 w2 c5) as h; simpl in h.
+    autodimp h hyp; [allapply @similarity_dom; repnd; allrw; auto|].
+    exrepnd; PI; rw h0; clear h0; auto. }
 
 
   (* ========== now we use hyp1 ========== *)
@@ -763,7 +763,6 @@ Proof.
         dup h1 as hh.
         apply h0 in h1.
         apply equality_in_uni in h0; auto.
-        
 
   - lsubst_tac.
     apply tequality_set in teq; repnd.
