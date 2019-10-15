@@ -31,8 +31,8 @@
 Require Export computation_mark.
 
 
-Lemma computes_to_val_like_iff_hasvalue_like {o} :
-  forall lib (t : @NTerm o),
+Lemma computes_to_val_like_iff_hasvalue_like {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o),
     hasvalue_like lib t <=> {v : NTerm & computes_to_val_like lib t v}.
 Proof.
   introv; unfold hasvalue_like, computes_to_val_like, reduces_to, computes_to_val_like_in_max_k_steps;
@@ -51,8 +51,8 @@ Proof.
 Qed.
 Hint Resolve isvalue_like_isvalue : slow.
 
-Lemma hasvalue_like_if_hasvalue {o} :
-  forall lib (t : @NTerm o),
+Lemma hasvalue_like_if_hasvalue {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o),
     hasvalue lib t
     -> hasvalue_like lib t.
 Proof.
@@ -63,8 +63,8 @@ Proof.
 Qed.
 Hint Resolve hasvalue_like_if_hasvalue : slow.
 
-Lemma hasvalue_like_if_raises_exception {o} :
-  forall lib (t : @NTerm o),
+Lemma hasvalue_like_if_raises_exception {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o),
     raises_exception lib t
     -> hasvalue_like lib t.
 Proof.
@@ -77,7 +77,7 @@ Hint Resolve hasvalue_like_if_raises_exception : slow.
 
 (*
 Lemma reduces_in_atmost_k_steps_implies_marks {p} :
-  forall lib (a b : @NTerm p) k,
+  forall (lib : @library o lv) (a b : @NTerm p) k,
     reduces_in_atmost_k_steps lib a b k
     -> ismrk lib b
     -> isprogram b
@@ -93,7 +93,7 @@ Qed.
 
 (*
 Lemma marker_in_atmost_k_steps_alpha {p} :
-  forall lib (t1 t2 : @NTerm p),
+  forall (lib : @library o lv) (t1 t2 : @NTerm p),
     alpha_eq t1 t2
     -> forall k m,
          computes_to_marker_in_max_k_steps lib t1 m k
@@ -116,7 +116,7 @@ Proof.
 Qed.
 
 Theorem compute_to_marker_alpha {p} :
-  forall lib (t1 t2 : @NTerm p) m,
+  forall (lib : @library o lv) (t1 t2 : @NTerm p) m,
     alpha_eq t1 t2
     -> computes_to_marker lib t1 m
     -> computes_to_marker lib t2 m.
@@ -130,8 +130,8 @@ Proof.
 Qed.
  *)
 
-Lemma reduces_to_if_split2 {p} :
-  forall lib (t : @NTerm p) u v,
+Lemma reduces_to_if_split2 {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) u v,
   compute_step lib t = csuccess u
   -> reduces_to lib u v
   -> reduces_to lib t v.
@@ -141,8 +141,8 @@ Proof.
   exists u; sp.
 Qed.
 
-Lemma reduces_to_if_split3 {p} :
-  forall lib (t : @NTerm p) u v,
+Lemma reduces_to_if_split3 {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) u v,
   computes_in_1step lib t u
   -> reduces_to lib u v
   -> reduces_to lib t v.
@@ -155,7 +155,7 @@ Qed.
 
 (*
 Lemma computes_in_kstep_alpha_implies_mrk {p} :
-  forall lib k (t : @NTerm p) m,
+  forall (lib : @library o lv) k (t : @NTerm p) m,
     is_mrk lib m
     -> computes_in_kstep_alpha lib k t (mk_marker m)
     -> computes_to_marker lib t m.
@@ -182,7 +182,7 @@ Proof.
 Qed.
 
 Lemma computes_to_marker_alpha {p} :
-  forall lib (t1 t2 : @NTerm p) m,
+  forall (lib : @library o lv) (t1 t2 : @NTerm p) m,
     alpha_eq t1 t2
     -> computes_to_marker lib t1 m
     -> computes_to_marker lib t2 m.
@@ -205,7 +205,7 @@ Proof.
 Qed.
 
 Lemma reduces_to_computes_to_marker {p} :
-  forall lib a b m,
+  forall (lib : @library o lv) a b m,
     @reduces_to p lib a b
     -> computes_to_marker lib b m
     -> computes_to_marker lib a m.
@@ -216,7 +216,7 @@ Proof.
 Qed.
 
 Lemma reduces_to_marker_eq {p} :
-  forall lib (t u : @NTerm p) m,
+  forall (lib : @library o lv) (t u : @NTerm p) m,
     computes_to_marker lib t m
     -> reduces_to lib t u
     -> computes_to_marker lib u m.
@@ -229,7 +229,7 @@ Proof.
 Qed.
 
 Lemma exception_doesnt_mark {o} :
-  forall lib a (e : @NTerm o) m,
+  forall (lib : @library o lv) a (e : @NTerm o) m,
     computes_to_marker lib (mk_exception a e) m -> False.
 Proof.
   introv comp.
@@ -243,8 +243,8 @@ Qed.
 
 Definition mk_vid {p} (v : NVar) : @NTerm p := mk_lam v (mk_var v).
 
-Lemma reduces_in_atmost_k_steps_apply_vid {o} :
-  forall lib (t : @NTerm o) v u k,
+Lemma reduces_in_atmost_k_steps_apply_vid {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) v u k,
     isvalue_like u
     -> reduces_in_atmost_k_steps lib (mk_apply (mk_vid v) t) u k
     -> {n : nat
@@ -263,8 +263,8 @@ Proof.
     unfold apply_bterm, lsubst in r0; allsimpl; boolvar; auto.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_vbot {o} :
-  forall lib v (u : @NTerm o) k,
+Lemma reduces_in_atmost_k_steps_vbot {o} {lv} :
+  forall (lib : @library o lv) v (u : @NTerm o) k,
     isvalue_like u
     -> reduces_in_atmost_k_steps lib (mk_vbot v) u k
     -> False.
@@ -287,8 +287,8 @@ Proof.
       apply ind in r1; auto.
 Qed.
 
-Lemma reduces_to_vbot_if_isvalue_like {o} :
-  forall lib v (u : @NTerm o),
+Lemma reduces_to_vbot_if_isvalue_like {o} {lv} :
+  forall (lib : @library o lv) v (u : @NTerm o),
     isvalue_like u
     -> reduces_to lib (mk_vbot v) u
     -> False.

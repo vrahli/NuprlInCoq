@@ -37,19 +37,19 @@ Require Export alphaeq_sub.
 
 
 (* same as [isvalue_like] but includes markers too *)
-Definition is_value_like {o} lib (t : @NTerm o) :=
+Definition is_value_like {o} {l} (lib : @library o l) (t : @NTerm o) :=
   isvalue_like t [+] ismrk lib t.
 
-Definition hasvalue_like {p} lib (t : @NTerm p) :=
+Definition hasvalue_like {o} {l} (lib : @library o l) (t : @NTerm o) :=
   {v : NTerm & reduces_to lib t v # isvalue_like v}.
 
-Definition has_value_like {p} lib (t : @NTerm p) :=
+Definition has_value_like {o} {l} (lib : @library o l) (t : @NTerm o) :=
   {v : NTerm & reduces_to lib t v # is_value_like lib v}.
 
-Definition converges_to_value_like {p} lib (t : @NTerm p) :=
+Definition converges_to_value_like {o} {l} (lib : @library o l) (t : @NTerm o) :=
   {u : NTerm & reduces_to lib t u # isvalue_like u}.
 
-Definition converges_to_is_value_like {p} lib (t : @NTerm p) :=
+Definition converges_to_is_value_like {o} {l} (lib : @library o l) (t : @NTerm o) :=
   {u : NTerm & reduces_to lib t u # is_value_like lib u}.
 
 
@@ -243,8 +243,8 @@ Proof.
 Qed.
 Hint Resolve isvalue_like_ncan : slow.
 
-Lemma is_value_like_ncan {o} :
-  forall lib (bs : list (@BTerm o)) ncan,
+Lemma is_value_like_ncan {o} {l} :
+  forall (lib : @library o l) (bs : list (@BTerm o)) ncan,
     is_value_like lib (oterm (NCan ncan) bs) -> False.
 Proof.
   introv isv.
@@ -263,8 +263,8 @@ Qed.
 Hint Resolve isvalue_like_marker.
 *)
 
-Lemma reduces_in_atmost_k_steps_ncan_primarg_apply_id {o} :
-  forall lib ncan (t : @NTerm o) bs u k,
+Lemma reduces_in_atmost_k_steps_ncan_primarg_apply_id {o} {l} :
+  forall (lib : @library o l) ncan (t : @NTerm o) bs u k,
     isvalue_like u
     -> reduces_in_atmost_k_steps
          lib
@@ -286,8 +286,8 @@ Proof.
     csunf r1; simpl in r1; ginv; auto.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_ncan_primarg_apply_id_if_is_value_like {o} :
-  forall lib ncan (t : @NTerm o) bs u k,
+Lemma reduces_in_atmost_k_steps_ncan_primarg_apply_id_if_is_value_like {o} {lv} :
+  forall (lib : @library o lv) ncan (t : @NTerm o) bs u k,
     is_value_like lib u
     -> reduces_in_atmost_k_steps
          lib
@@ -309,8 +309,8 @@ Proof.
     csunf r1; simpl in r1; ginv; auto.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_ncan_primarg_bot {o} :
-  forall lib ncan (bs : list (@BTerm o)) u k,
+Lemma reduces_in_atmost_k_steps_ncan_primarg_bot {o} {lv} :
+  forall (lib : @library o lv) ncan (bs : list (@BTerm o)) u k,
     isvalue_like u
     -> reduces_in_atmost_k_steps
          lib
@@ -335,8 +335,8 @@ Proof.
       apply ind in r1; auto.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_ncan_primarg_bot_if_is_value_like {o} :
-  forall lib ncan (bs : list (@BTerm o)) u k,
+Lemma reduces_in_atmost_k_steps_ncan_primarg_bot_if_is_value_like {o} {lv} :
+  forall (lib : @library o lv) ncan (bs : list (@BTerm o)) u k,
     is_value_like lib u
     -> reduces_in_atmost_k_steps
          lib
@@ -380,8 +380,8 @@ Proof.
   rw @sub_filter_nil_r; auto.
 Qed.
 
-Lemma reduces_to_apply_id {o} :
-  forall (lib : @library o) t,
+Lemma reduces_to_apply_id {o} {lv} :
+  forall (lib : @library o lv) t,
     reduces_to lib (mk_apply mk_id t) t.
 Proof.
   introv.
@@ -1163,8 +1163,8 @@ Proof.
   apply dom_sub_bot_sub.
 Qed.
 
-Lemma compute_step_ncompop_can1 {o} :
-  forall (lib : @library o) comp can ncbts rest x,
+Lemma compute_step_ncompop_can1 {o} {lv} :
+  forall (lib : @library o lv) comp can ncbts rest x,
     compute_step lib
       (oterm (NCan (NCompOp comp))
              (bterm [] (oterm (Can can) ncbts) :: rest)) = csuccess x
@@ -1187,8 +1187,8 @@ Proof.
     exists (@Exc o) l bs'; auto.
 Qed.
 
-Lemma compute_step_narithop_can1 {o} :
-  forall (lib : @library o) a can ncbts rest x,
+Lemma compute_step_narithop_can1 {o} {lv} :
+  forall (lib : @library o lv) a can ncbts rest x,
     compute_step lib
       (oterm (NCan (NArithOp a))
              (bterm [] (oterm (Can can) ncbts) :: rest)) = csuccess x
@@ -1231,8 +1231,8 @@ Proof.
   apply sub_find_bot_sub_some_if_in; auto.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_ncompop_primarg2_apply_id {o} :
-  forall lib ncop can l (t : @NTerm o) bs u k,
+Lemma reduces_in_atmost_k_steps_ncompop_primarg2_apply_id {o} {lv} :
+  forall (lib : @library o lv) ncop can l (t : @NTerm o) bs u k,
     isvalue_like u
     -> reduces_in_atmost_k_steps
          lib
@@ -1258,8 +1258,8 @@ Proof.
     dcwf h; allsimpl; ginv; tcsp.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_ncompop_primarg2_bot {o} :
-  forall lib ncop can l (bs : list (@BTerm o)) u k,
+Lemma reduces_in_atmost_k_steps_ncompop_primarg2_bot {o} {lv} :
+  forall (lib : @library o lv) ncop can l (bs : list (@BTerm o)) u k,
     isvalue_like u
     -> reduces_in_atmost_k_steps
          lib
@@ -1285,8 +1285,8 @@ Proof.
       apply ind in r1; auto.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_narithop_primarg2_apply_id {o} :
-  forall lib naop can l (t : @NTerm o) bs u k,
+Lemma reduces_in_atmost_k_steps_narithop_primarg2_apply_id {o} {lv} :
+  forall (lib : @library o lv) naop can l (t : @NTerm o) bs u k,
     isvalue_like u
     -> reduces_in_atmost_k_steps
          lib
@@ -1312,8 +1312,8 @@ Proof.
     dcwf h; allsimpl; ginv; tcsp.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_narithop_primarg2_bot {o} :
-  forall lib naop can l (bs : list (@BTerm o)) u k,
+Lemma reduces_in_atmost_k_steps_narithop_primarg2_bot {o} {lv} :
+  forall (lib : @library o lv) naop can l (bs : list (@BTerm o)) u k,
     isvalue_like u
     -> reduces_in_atmost_k_steps
          lib
@@ -1339,8 +1339,8 @@ Proof.
       apply ind in r1; auto.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_ncompop_primarg2_apply_id_if_is_value_like {o} :
-  forall lib ncop can l (t : @NTerm o) bs u k,
+Lemma reduces_in_atmost_k_steps_ncompop_primarg2_apply_id_if_is_value_like {o} {lv} :
+  forall (lib : @library o lv) ncop can l (t : @NTerm o) bs u k,
     is_value_like lib u
     -> reduces_in_atmost_k_steps
          lib
@@ -1366,8 +1366,8 @@ Proof.
     dcwf h; allsimpl; ginv; tcsp.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_ncompop_primarg2_bot_if_is_value_like {o} :
-  forall lib ncop can l (bs : list (@BTerm o)) u k,
+Lemma reduces_in_atmost_k_steps_ncompop_primarg2_bot_if_is_value_like {o} {lv} :
+  forall (lib : @library o lv) ncop can l (bs : list (@BTerm o)) u k,
     is_value_like lib u
     -> reduces_in_atmost_k_steps
          lib
@@ -1393,8 +1393,8 @@ Proof.
       apply ind in r1; auto.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_narithop_primarg2_apply_id_if_is_value_like {o} :
-  forall lib naop can l (t : @NTerm o) bs u k,
+Lemma reduces_in_atmost_k_steps_narithop_primarg2_apply_id_if_is_value_like {o} {lv} :
+  forall (lib : @library o lv) naop can l (t : @NTerm o) bs u k,
     is_value_like lib u
     -> reduces_in_atmost_k_steps
          lib
@@ -1420,8 +1420,8 @@ Proof.
     dcwf h; allsimpl; ginv; tcsp.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_narithop_primarg2_bot_if_is_value_like {o} :
-  forall lib naop can l (bs : list (@BTerm o)) u k,
+Lemma reduces_in_atmost_k_steps_narithop_primarg2_bot_if_is_value_like {o} {lv} :
+  forall (lib : @library o lv) naop can l (bs : list (@BTerm o)) u k,
     is_value_like lib u
     -> reduces_in_atmost_k_steps
          lib
@@ -1447,15 +1447,15 @@ Proof.
       apply ind in r1; auto.
 Qed.
 
-Lemma isvalue_like_implies_is_value_like {o} :
-  forall lib (t : @NTerm o),
+Lemma isvalue_like_implies_is_value_like {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o),
     isvalue_like t -> is_value_like lib t.
 Proof. sp.
 Qed.
 Hint Resolve isvalue_like_implies_is_value_like : slow.
 
-Lemma hasvalue_like_implies_has_value_like {o} :
-  forall lib (t : @NTerm o),
+Lemma hasvalue_like_implies_has_value_like {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o),
     hasvalue_like lib t -> has_value_like lib t.
 Proof.
   introv hv.
@@ -1466,8 +1466,8 @@ Proof.
 Qed.
 Hint Resolve hasvalue_like_implies_has_value_like : slow.
 
-Lemma is_value_like_mk_marker {o} :
-  forall (lib : @library o) m,
+Lemma is_value_like_mk_marker {o} {lv} :
+  forall (lib : @library o lv) m,
     is_mrk lib m -> is_value_like lib (mk_marker m).
 Proof.
   unfold is_value_like; simpl; introv ism.
@@ -1475,24 +1475,24 @@ Proof.
 Qed.
 Hint Resolve is_value_like_mk_marker : slow.
 
-Lemma is_value_like_bot {o} :
-  forall (lib : @library o), is_value_like lib mk_bot -> False.
+Lemma is_value_like_bot {o} {lv} :
+  forall (lib : @library o lv), is_value_like lib mk_bot -> False.
 Proof.
   introv isv.
   unfold is_value_like in isv; repndors; tcsp.
   apply isvalue_like_bot in isv; sp.
 Qed.
 
-Lemma is_value_like_apply {o} :
-  forall lib (a b : @NTerm o), is_value_like lib (mk_apply a b) -> False.
+Lemma is_value_like_apply {o} {lv} :
+  forall (lib : @library o lv) (a b : @NTerm o), is_value_like lib (mk_apply a b) -> False.
 Proof.
   introv isv.
   unfold is_value_like in isv; repndors; tcsp.
   apply isvalue_like_apply in isv; sp.
 Qed.
 
-Lemma not_bot_reduces_to_is_value_like {p} :
-  forall lib (t : @NTerm p), is_value_like lib t -> !reduces_to lib mk_bot t.
+Lemma not_bot_reduces_to_is_value_like {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o), is_value_like lib t -> !reduces_to lib mk_bot t.
 Proof.
   introv isv r.
   unfold reduces_to in r; sp.
@@ -1516,8 +1516,8 @@ Proof.
       apply ind in r1; tcsp.
 Qed.
 
-Lemma not_fresh_id_reduces_to_is_value_like {p} :
-  forall lib (t : @NTerm p) v,
+Lemma not_fresh_id_reduces_to_is_value_like {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) v,
     is_value_like lib t
     -> !reduces_to lib (mk_fresh v (mk_var v)) t.
 Proof.
@@ -1536,8 +1536,8 @@ Proof.
     apply ind in r0; tcsp.
 Qed.
 
-Lemma has_value_like_if_marks {o} :
-  forall lib (t : @NTerm o),
+Lemma has_value_like_if_marks {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o),
     marks lib t
     -> has_value_like lib t.
 Proof.
@@ -1549,8 +1549,8 @@ Proof.
 Qed.
 Hint Resolve has_value_like_if_marks : slow.
 
-Lemma bottom_doesnt_converge_to_value_like {p} :
-  forall (lib : @library p),
+Lemma bottom_doesnt_converge_to_value_like {o} {lv} :
+  forall (lib : @library o lv),
     converges_to_value_like lib mk_bottom
     -> False.
 Proof.
@@ -1580,8 +1580,8 @@ Proof.
       apply Hind in c; sp.
 Qed.
 
-Lemma bottom_doesnt_converge_to_is_value_like {p} :
-  forall (lib : @library p),
+Lemma bottom_doesnt_converge_to_is_value_like {o} {lv} :
+  forall (lib : @library o lv),
     converges_to_is_value_like lib mk_bottom
     -> False.
 Proof.
@@ -1611,13 +1611,13 @@ Proof.
       apply Hind in c; sp.
 Qed.
 
-Lemma reduces_to_if_isvalue_like {p} :
-  forall lib (a t : @NTerm p), isvalue_like a -> reduces_to lib a t -> t = a.
+Lemma reduces_to_if_isvalue_like {o} {lv} :
+  forall (lib : @library o lv) (a t : @NTerm o), isvalue_like a -> reduces_to lib a t -> t = a.
 Proof.
   introv isv r.
   destruct a; auto.
   - provefalse; unfold isvalue_like in isv; sp.
-  - dopid o as [can|ncan|exc|abs] Case.
+  - dopid o0 as [can|ncan|exc|abs] Case.
     + Case "Can".
       unfold reduces_to in r; exrepnd.
       induction k.
@@ -1637,8 +1637,8 @@ Proof.
 Qed.
 
 (* !!MOVE to library *)
-Lemma find_entry_eq_unfold_abs {o} :
-  forall lib abs (bs : list (@BTerm o)),
+Lemma find_entry_eq_unfold_abs {o} {lv} :
+  forall (lib : @library o lv) abs (bs : list (@BTerm o)),
     match find_entry lib abs bs with
     | Some (lib_cs _ _) => unfold_abs lib abs bs = None
     | Some (lib_abs oa vars rhs correct) =>
@@ -1652,8 +1652,8 @@ Proof.
       try (complete (apply IHlib)).
 Qed.
 
-Lemma reduces_to_abs_if_doesnt_find_entry {o} :
-  forall lib abs (l : list (@BTerm o)) t,
+Lemma reduces_to_abs_if_doesnt_find_entry {o} {lv} :
+  forall (lib : @library o lv) abs (l : list (@BTerm o)) t,
     find_entry lib abs l = None
     -> reduces_to lib (oterm (Abs abs) l) t
     -> t = oterm (Abs abs) l.
@@ -1669,13 +1669,13 @@ Proof.
     unfold compute_step_lib in r0; rw h in r0; ginv.
 Qed.
 
-Lemma reduces_to_if_is_value_like {p} :
-  forall lib (a t : @NTerm p), is_value_like lib a -> reduces_to lib a t -> t = a.
+Lemma reduces_to_if_is_value_like {o} {lv} :
+  forall (lib : @library o lv) (a t : @NTerm o), is_value_like lib a -> reduces_to lib a t -> t = a.
 Proof.
   introv isv r.
   destruct a.
   - provefalse; unfold is_value_like, isvalue_like in isv; sp.
-  - dopid o as [can|ncan|exc|abs] Case.
+  - dopid o0 as [can|ncan|exc|abs] Case.
     + Case "Can".
       unfold reduces_to in r; exrepnd.
       induction k.
@@ -1695,8 +1695,8 @@ Proof.
       apply reduces_to_abs_if_doesnt_find_entry in r; auto.
 Qed.
 
-Lemma converge_to_value_like_reduces_to {p} :
-  forall (lib : @library p) a b,
+Lemma converge_to_value_like_reduces_to {o} {lv} :
+  forall (lib : @library o lv) a b,
     converges_to_value_like lib a
     -> reduces_to lib a b
     -> converges_to_value_like lib b.
@@ -1710,8 +1710,8 @@ Proof.
   repeat (autodimp e hyp); subst; auto.
 Qed.
 
-Lemma converge_to_is_value_like_reduces_to {p} :
-  forall (lib : @library p) a b,
+Lemma converge_to_is_value_like_reduces_to {o} {lv} :
+  forall (lib : @library o lv) a b,
     converges_to_is_value_like lib a
     -> reduces_to lib a b
     -> converges_to_is_value_like lib b.
@@ -1725,16 +1725,16 @@ Proof.
   repeat (autodimp e hyp); subst; auto.
 Qed.
 
-Lemma reduces_to_if_step_lib {p} :
-  forall lib abs bs (u : @NTerm p),
+Lemma reduces_to_if_step_lib {o} {lv} :
+  forall (lib : @library o lv) abs bs (u : @NTerm o),
     compute_step_lib lib abs bs = csuccess u
     -> reduces_to lib (oterm (Abs abs) bs) u.
 Proof.
  unfold reduces_to; sp; exists 1; simpl; sp.
 Qed.
 
-Lemma converges_to_value_like_ncan {o} :
-  forall (lib : @library o) ncan t bs,
+Lemma converges_to_value_like_ncan {o} {lv} :
+  forall (lib : @library o lv) ncan t bs,
     converges_to_value_like lib (oterm (NCan ncan) (nobnd t :: bs))
     -> {u : NTerm & reduces_to lib t u # (isexc u [+] iscan u)}.
 Proof.
@@ -1778,8 +1778,8 @@ Proof.
         eapply reduces_to_trans; eauto.
 Qed.
 
-Lemma converges_to_is_value_like_ncan {o} :
-  forall (lib : @library o) ncan t bs,
+Lemma converges_to_is_value_like_ncan {o} {lv} :
+  forall (lib : @library o lv) ncan t bs,
     converges_to_is_value_like lib (oterm (NCan ncan) (nobnd t :: bs))
     -> {u : NTerm & reduces_to lib t u # (isexc u [+] iscan u)}.
 Proof.
@@ -1824,8 +1824,8 @@ Proof.
       eapply reduces_to_trans; eauto.
 Qed.
 
-Lemma converges_to_value_like_ncompop {o} :
-  forall (lib : @library o) ncop can l t bs,
+Lemma converges_to_value_like_ncompop {o} {lv} :
+  forall (lib : @library o lv) ncop can l t bs,
     converges_to_value_like
       lib
       (oterm (NCan (NCompOp ncop))
@@ -1894,8 +1894,8 @@ Proof.
         eapply reduces_to_trans; eauto.
 Qed.
 
-Lemma converges_to_value_like_narithop {o} :
-  forall (lib : @library o) a can l t bs,
+Lemma converges_to_value_like_narithop {o} {lv} :
+  forall (lib : @library o lv) a can l t bs,
     converges_to_value_like
       lib
       (oterm (NCan (NArithOp a))
@@ -1968,8 +1968,8 @@ Qed.
 
 Hint Resolve computes_to_value_step : slow.
 
-Lemma computes_to_pk_step {p} :
-  forall lib (t1 t2 : @NTerm p) pk,
+Lemma computes_to_pk_step {o} {lv} :
+  forall (lib : @library o lv) (t1 t2 : @NTerm o) pk,
   computes_to_pk lib t2 pk
   -> compute_step lib t1 = csuccess t2
   -> computes_to_pk lib t1 pk.
@@ -1978,8 +1978,8 @@ Proof.
 Qed.
 Hint Resolve computes_to_pk_step : slow.
 
-Lemma converges_to_is_value_like_ncompop {o} :
-  forall (lib : @library o) ncop can l t bs,
+Lemma converges_to_is_value_like_ncompop {o} {lv} :
+  forall (lib : @library o lv) ncop can l t bs,
     converges_to_is_value_like
       lib
       (oterm (NCan (NCompOp ncop))
@@ -2048,8 +2048,8 @@ Proof.
         eapply reduces_to_trans; eauto.
 Qed.
 
-Lemma converges_to_is_value_like_narithop {o} :
-  forall (lib : @library o) a can l t bs,
+Lemma converges_to_is_value_like_narithop {o} {lv} :
+  forall (lib : @library o lv) a can l t bs,
     converges_to_is_value_like
       lib
       (oterm (NCan (NArithOp a))
@@ -2120,8 +2120,8 @@ Proof.
         eapply reduces_to_trans; eauto.
 Qed.
 
-Lemma converges_to_value_like_step {o} :
-  forall lib (t u : @NTerm o),
+Lemma converges_to_value_like_step {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o),
     compute_step lib t = csuccess u
     -> converges_to_value_like lib u
     -> converges_to_value_like lib t.
@@ -2133,8 +2133,8 @@ Proof.
   eapply reduces_to_trans; eauto.
 Qed.
 
-Lemma converges_to_is_value_like_step {o} :
-  forall lib (t u : @NTerm o),
+Lemma converges_to_is_value_like_step {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o),
     compute_step lib t = csuccess u
     -> converges_to_is_value_like lib u
     -> converges_to_is_value_like lib t.
@@ -2146,8 +2146,8 @@ Proof.
   eapply reduces_to_trans; eauto.
 Qed.
 
-Lemma computes_steps_prinargs_arith_can {p} :
-  forall lib a (ntp1 ntp2 : @NTerm p) lbt k1 k2 ntpc1 ntpc2,
+Lemma computes_steps_prinargs_arith_can {o} {lv} :
+  forall (lib : @library o lv) a (ntp1 ntp2 : @NTerm o) lbt k1 k2 ntpc1 ntpc2,
     compute_at_most_k_steps lib k1 ntp1 = csuccess ntpc1
     -> isinteger ntpc1
     -> compute_at_most_k_steps lib k2 ntp2 = csuccess ntpc2
@@ -2200,8 +2200,8 @@ Proof.
       rw Hck; clear Hck; simpl; auto.
 Qed.
 
-Lemma reduce_to_prinargs_arith_can {p} :
-  forall lib a (ntp1 ntp2 : @NTerm p) lbt ntpv1 ntpc2,
+Lemma reduce_to_prinargs_arith_can {o} {lv} :
+  forall (lib : @library o lv) a (ntp1 ntp2 : @NTerm o) lbt ntpv1 ntpc2,
     reduces_to lib ntp1 ntpv1
     -> isinteger ntpv1
     -> reduces_to lib ntp2 ntpc2
@@ -2220,8 +2220,8 @@ Proof.
   exists j; sp.
 Qed.
 
-Lemma computes_steps_prinargs_comp_can {p} :
-  forall lib a (ntp1 ntp2 : @NTerm p) lbt k1 k2 ntpc1 ntpc2,
+Lemma computes_steps_prinargs_comp_can {o} {lv} :
+  forall (lib : @library o lv) a (ntp1 ntp2 : @NTerm o) lbt k1 k2 ntpc1 ntpc2,
     compute_at_most_k_steps lib k1 ntp1 = csuccess ntpc1
     -> iswfpk a ntpc1
     -> compute_at_most_k_steps lib k2 ntp2 = csuccess ntpc2
@@ -2285,8 +2285,8 @@ Proof.
         rw Hck; clear Hck; auto.
 Qed.
 
-Lemma reduce_to_prinargs_comp_can {p} :
-  forall lib a (ntp1 ntp2 : @NTerm p) lbt ntpv1 ntpc2,
+Lemma reduce_to_prinargs_comp_can {o} {lv} :
+  forall (lib : @library o lv) a (ntp1 ntp2 : @NTerm o) lbt ntpv1 ntpc2,
     reduces_to lib ntp1 ntpv1
     -> iswfpk a ntpv1
     -> reduces_to lib ntp2 ntpc2
@@ -2393,7 +2393,7 @@ Qed.
 
 (*
 Lemma compute_step_lib_if_is_mrk {o} :
-  forall (lib : @library o) m,
+  forall (lib : @library o lv) m,
     is_mrk lib m
     -> compute_step_lib lib (abs_marker m) []
        = cfailure compute_step_error_abs (mk_marker m).
@@ -2406,7 +2406,7 @@ Proof.
 Qed.
 
 Lemma compute_step_if_is_mrk {o} :
-  forall (lib : @library o) m,
+  forall (lib : @library o lv) m,
     is_mrk lib m
     -> compute_step lib (mk_marker m)
        = cfailure compute_step_error_abs (mk_marker m).
@@ -2480,8 +2480,8 @@ Proof.
     rw @sub_filter_swap; auto.
 Qed.
 
-Lemma converges_to_value_like_alpha_eq {o} :
-  forall lib (t1 t2 : @NTerm o),
+Lemma converges_to_value_like_alpha_eq {o} {lv} :
+  forall (lib : @library o lv) (t1 t2 : @NTerm o),
     nt_wf t1
     -> alpha_eq t1 t2
     -> converges_to_value_like lib t1
@@ -2508,7 +2508,7 @@ Qed.
 
 (*
 Lemma converges_to_is_value_like_fresh_implies {o} :
-  forall lib (t : @NTerm o) v,
+  forall (lib : @library o lv) (t : @NTerm o) v,
     wf_term t
     -> converges_to_is_value_like lib (mk_fresh v t)
     -> forall a,
@@ -2636,8 +2636,8 @@ Qed.
 (* !! MOVE *)
 Hint Resolve wf_sub_filter : slow.
 
-Lemma converges_to_is_value_like_if {o} :
-  forall lib (t : @NTerm o),
+Lemma converges_to_is_value_like_if {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o),
     converges_to_value_like lib t
     -> converges_to_is_value_like lib t.
 Proof.
@@ -2649,8 +2649,8 @@ Proof.
   apply isvalue_like_implies_is_value_like; auto.
 Qed.
 
-Lemma reduces_to_free_vars {o} :
-  forall lib (t u : @NTerm o),
+Lemma reduces_to_free_vars {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o),
     nt_wf t
     -> reduces_to lib t u
     -> subset (free_vars u) (free_vars t).
@@ -2774,8 +2774,8 @@ Proof.
   rw memvar_cons; boolvar; tcsp.
 Qed.
 
-Lemma converges_to_value_like_bot {o} :
-  forall (lib : @library o), !(converges_to_value_like lib mk_bot).
+Lemma converges_to_value_like_bot {o} {lv} :
+  forall (lib : @library o lv), !(converges_to_value_like lib mk_bot).
 Proof.
   introv conv.
   unfold converges_to_value_like in conv; exrepnd.
@@ -2801,8 +2801,8 @@ Proof.
 Qed.
 Hint Resolve wf_marker : slow.
 
-Lemma computes_to_value_implies_reduces_to {o} :
-  forall lib (t v : @NTerm o),
+Lemma computes_to_value_implies_reduces_to {o} {lv} :
+  forall (lib : @library o lv) (t v : @NTerm o),
     computes_to_value lib t v
     -> reduces_to lib t v.
 Proof.
@@ -2811,8 +2811,8 @@ Proof.
 Qed.
 Hint Resolve computes_to_value_implies_reduces_to : slow.
 
-Lemma computes_to_pk_implies_reduces_to {o} :
-  forall lib (t : @NTerm o) pk,
+Lemma computes_to_pk_implies_reduces_to {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) pk,
     computes_to_pk lib t pk
     -> reduces_to lib t (pk2term pk).
 Proof.
@@ -2820,8 +2820,8 @@ Proof.
 Qed.
 Hint Resolve computes_to_pk_implies_reduces_to : slow.
 
-Lemma is_value_like_pk2term {o} :
-  forall lib (pk : @param_kind o),
+Lemma is_value_like_pk2term {o} {lv} :
+  forall (lib : @library o lv) (pk : @param_kind o),
     is_value_like lib (pk2term pk).
 Proof.
   introv.
@@ -2830,8 +2830,8 @@ Proof.
 Qed.
 Hint Resolve is_value_like_pk2term : slow.
 
-Lemma computes_to_pk_implies_converges_to_is_value_like {o} :
-  forall lib (t : @NTerm o) pk,
+Lemma computes_to_pk_implies_converges_to_is_value_like {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) pk,
     computes_to_pk lib t pk
     -> converges_to_is_value_like lib t.
 Proof.
@@ -2865,7 +2865,7 @@ Hint Resolve ca_wf_def_implies_isinteger : slow.
 
 (*
 Lemma compute_step_to_atom {o} :
-  forall lib (t : @NTerm o) x m u vs,
+  forall (lib : @library o lv) (t : @NTerm o) x m u vs,
     is_mrk lib m
     -> wf_term t
     -> subvars (free_vars t) vs
@@ -4352,7 +4352,7 @@ Proof.
 Qed.
 
 Lemma compute_step_to_atom2 {o} :
-  forall lib (t : @NTerm o) x m u,
+  forall (lib : @library o lv) (t : @NTerm o) x m u,
     is_mrk lib m
     -> wf_term t
     -> compute_step lib (lsubst_aux t ((x, mk_marker m) :: bot_sub_fv t)) = csuccess u
@@ -4368,7 +4368,7 @@ Qed.
 
 (*
 Lemma reduces_to_preserves {o} :
-  forall lib (t u : @NTerm o),
+  forall (lib : @library o lv) (t u : @NTerm o),
     reduces_to lib t u
     -> (subvars (free_vars u) (free_vars t)
         # subset (get_markers u) (get_markers t ++ get_markers_lib lib)
@@ -4395,7 +4395,7 @@ Definition not_marked_lib {o} (m : marker) (t : @NTerm o) (lib : @library o) :=
   !LIn m (get_markers t ++ get_markers_lib lib).
 
 Lemma not_marked_if_subset {o} :
-  forall lib m (t u : @NTerm o),
+  forall (lib : @library o lv) m (t u : @NTerm o),
     not_marked_lib m t lib
     -> subset (get_markers u) (get_markers t ++ get_markers_lib lib)
     -> not_marked_lib m u lib.
@@ -4412,8 +4412,8 @@ Proof.
 Qed.
 *)
 
-Lemma reduces_to_preserves {o} :
-  forall lib (t u : @NTerm o),
+Lemma reduces_to_preserves {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o),
     wf_term t
     -> reduces_to lib t u
     -> (subvars (free_vars u) (free_vars t)
@@ -4434,8 +4434,8 @@ Proof.
     apply compute_step_preserves_utokens in comp1; auto.
 Qed.
 
-Lemma reduces_to_preserves_wf {o} :
-  forall lib (t u : @NTerm o),
+Lemma reduces_to_preserves_wf {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o),
     reduces_to lib t u
     -> wf_term t
     -> wf_term u.
@@ -4588,7 +4588,7 @@ Proof.
 Qed.
 
 Lemma computes_to_marker_lsubst_aux_bot_sub {o} :
-  forall lib (t : @NTerm o) m x,
+  forall (lib : @library o lv) (t : @NTerm o) m x,
     wf_term t
     -> not_marked_lib m t lib
     -> computes_to_marker
@@ -4691,8 +4691,8 @@ Proof.
   apply in_bot_sub; auto.
 Qed.
 
-Lemma computes_to_marker_refl {o} :
-  forall (lib : @library o) m,
+Lemma computes_to_marker_refl {o} {lv} :
+  forall (lib : @library o lv) m,
     is_mrk lib m
     -> computes_to_marker lib (mk_marker m) m.
 Proof.
@@ -4716,7 +4716,7 @@ Qed.
 
 (*
 Lemma computes_to_marker_lsubst_bot_sub {o} :
-  forall lib (t : @NTerm o) m x,
+  forall (lib : @library o lv) (t : @NTerm o) m x,
     wf_term t
     -> not_marked_lib m t lib
     -> computes_to_marker
@@ -4735,7 +4735,7 @@ Proof.
 Qed.
 
 Lemma exists_marker {o} :
-  forall (lib : @library o) (t : @NTerm o),
+  forall (lib : @library o lv) (t : @NTerm o),
     {m : marker & not_marked_lib m t lib}.
 Proof.
   introv.

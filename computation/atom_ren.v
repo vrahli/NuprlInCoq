@@ -163,16 +163,16 @@ Proof.
 Qed.
 Hint Resolve ut_sub_implies_prog_sub : slow.
 
-Lemma nr_ut_sub_implies_wf_sub {o} :
-  forall lib (sub : @Sub o) t,
+Lemma nr_ut_sub_implies_wf_sub {o} {lv} :
+  forall (lib : @library o lv) (sub : @Sub o) t,
     nr_ut_sub lib t sub -> wf_sub sub.
 Proof.
   induction sub; introv nrut; eauto with slow.
 Qed.
 Hint Resolve nr_ut_sub_implies_wf_sub : slow.
 
-Lemma nr_ut_sub_implies_prog_sub {o} :
-  forall lib (sub : @Sub o) t,
+Lemma nr_ut_sub_implies_prog_sub {o} {lv} :
+  forall (lib : @library o lv) (sub : @Sub o) t,
     nr_ut_sub lib t sub -> prog_sub sub.
 Proof.
   induction sub; introv nrut; eauto with slow.
@@ -506,8 +506,8 @@ Proof.
     rw not_over_or in ni1; sp.
 Qed.
 
-Lemma nrut_sub_implies_nr_ut_sub {o} :
-  forall lib (sub : @Sub o) l t,
+Lemma nrut_sub_implies_nr_ut_sub {o} {lv} :
+  forall (lib : @library o lv) (sub : @Sub o) l t,
     subset (get_utokens_lib lib t) l
     -> nrut_sub l sub
     -> nr_ut_sub lib t sub.
@@ -527,7 +527,7 @@ Hint Resolve nrut_sub_implies_nr_ut_sub : slow.
 
 (*
 Lemma reduces_to_vterm_nrut_sub_change {o} :
-  forall lib t (sub1 sub2 : @Sub o) l v,
+  forall (lib : @library o lv) t (sub1 sub2 : @Sub o) l v,
     subset (get_utokens t) l
     -> nrut_sub l sub1
     -> nrut_sub l sub2
@@ -1735,11 +1735,11 @@ Proof.
 Qed.
 Hint Resolve subset_diff_same_l : slow.
 
-Definition library_has_no_utokens {o} (lib : @library o) :=
+Definition library_has_no_utokens {o} {lv} (lib : @library o lv) :=
   get_utokens_library lib = [].
 
-Lemma library_has_no_utokens_cons_lib_cs_implies_left {o} :
-  forall name entry (lib : @library o),
+Lemma library_has_no_utokens_cons_lib_cs_implies_left {o} {lv} :
+  forall name entry (lib : @library o lv),
     library_has_no_utokens (lib_cs name entry :: lib)
     -> (forall v, LIn v (cse_vals entry) -> get_utokens (CSVal2term v) = []).
 Proof.
@@ -1750,8 +1750,8 @@ Proof.
   apply h0 in i; auto.
 Qed.
 
-Lemma library_has_no_utokens_cons_implies_right {o} :
-  forall entry (lib : @library o),
+Lemma library_has_no_utokens_cons_implies_right {o} {lv} :
+  forall entry (lib : @library o lv),
     library_has_no_utokens (entry :: lib)
     -> library_has_no_utokens lib.
 Proof.
@@ -1770,8 +1770,8 @@ Proof.
   apply IHvals in h; tcsp.
 Qed.
 
-Lemma library_has_no_utokens_implies_find_cs_value_at_has_no_utokens {o} :
-  forall (lib : @library o) name n v,
+Lemma library_has_no_utokens_implies_find_cs_value_at_has_no_utokens {o} {lv} :
+  forall (lib : @library o lv) name n v,
     library_has_no_utokens lib
     -> find_cs_value_at lib name n = Some v
     -> get_utokens (CSVal2term v) = [].
@@ -1807,8 +1807,8 @@ Proof.
   destruct n; ginv; eauto 3 with slow.
 Qed.
 
-Lemma utokens_find_cs_value_at_subset_library {o} :
-  forall (lib : @library o) name n v,
+Lemma utokens_find_cs_value_at_subset_library {o} {lv} :
+  forall (lib : @library o lv) name n v,
     find_cs_value_at lib name n = Some v
     -> subset (get_utokens (CSVal2term v)) (get_utokens_library lib).
 Proof.
@@ -1834,8 +1834,8 @@ Proof.
       eapply IHlib;[unfold find_cs_value_at;allrw;eauto|]; auto.
 Qed.
 
-Lemma ren_utokens_find_last_entry_default {o} :
-  forall ren lib name (d : @NTerm o),
+Lemma ren_utokens_find_last_entry_default {o} {lv} :
+  forall ren (lib : @library o lv) name (d : @NTerm o),
     disjoint (get_utokens_library lib) (dom_utok_ren ren)
     -> ren_utokens ren (find_last_entry_default lib name d)
        = find_last_entry_default lib name (ren_utokens ren d).
@@ -1850,8 +1850,8 @@ Proof.
   apply disj in i; tcsp.
 Qed.
 
-Lemma compute_step_ren_utokens {o} :
-  forall lib (t u : @NTerm o) ren,
+Lemma compute_step_ren_utokens {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
     -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
@@ -2462,8 +2462,8 @@ Proof.
       rw @ren_utokens_mk_instance; auto.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_ren_utokens {o} :
-  forall lib k (t u : @NTerm o) ren,
+Lemma reduces_in_atmost_k_steps_ren_utokens {o} {lv} :
+  forall (lib : @library o lv) k (t u : @NTerm o) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
     -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
@@ -2485,8 +2485,8 @@ Proof.
       apply compute_step_preserves_utokens in r1; auto.
 Qed.
 
-Lemma reduces_to_ren_utokens {o} :
-  forall lib (t u : @NTerm o) ren,
+Lemma reduces_to_ren_utokens {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
     -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
@@ -2520,8 +2520,8 @@ Proof.
 Qed.
 Hint Resolve isvalue_ren_utokens : slow.
 
-Lemma computes_to_value_ren_utokens {o} :
-  forall lib (t u : @NTerm o) ren,
+Lemma computes_to_value_ren_utokens {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
     -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
@@ -2713,8 +2713,8 @@ Proof.
   f_equal; apply inv_ren_utokens2; auto.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_preserves_utokens {o} :
-  forall lib k (t u : @NTerm o),
+Lemma reduces_in_atmost_k_steps_preserves_utokens {o} {lv} :
+  forall (lib : @library o lv) k (t u : @NTerm o),
     nt_wf t
     -> reduces_in_atmost_k_steps lib t u k
     -> subset (get_utokens_lib lib u) (get_utokens_lib lib t).
@@ -2727,8 +2727,8 @@ Proof.
     apply IHk in r0; auto.
 Qed.
 
-Lemma reduces_to_preserves_utokens {o} :
-  forall lib (t u : @NTerm o),
+Lemma reduces_to_preserves_utokens {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o),
     nt_wf t
     -> reduces_to lib t u
     -> subset (get_utokens_lib lib u) (get_utokens_lib lib t).
@@ -2738,8 +2738,8 @@ Proof.
   eapply reduces_in_atmost_k_steps_preserves_utokens; eauto.
 Qed.
 
-Lemma computes_to_value_preserves_utokens {o} :
-  forall lib (t u : @NTerm o),
+Lemma computes_to_value_preserves_utokens {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o),
     nt_wf t
     -> computes_to_value lib t u
     -> subset (get_utokens_lib lib u) (get_utokens_lib lib t).
@@ -3209,8 +3209,8 @@ Proof.
     unfold lsubst; simpl; rw k2; auto.
 Qed.
 
-Lemma computes_to_value_change_utok_sub {o} :
-  forall lib (t u : @NTerm o) (sub sub' : Sub),
+Lemma computes_to_value_change_utok_sub {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o) (sub sub' : Sub),
     nt_wf t
     -> computes_to_value lib (lsubst t sub) u
     -> nr_ut_sub lib t sub
@@ -5054,8 +5054,8 @@ Proof.
   f_equal; apply inv_ren_utokens; auto.
 Qed.
 
-Lemma computes_to_exception_ren_utokens {o} :
-  forall lib (t a e : NTerm) ren,
+Lemma computes_to_exception_ren_utokens {o} {lv} :
+  forall (lib : @library o lv) (t a e : NTerm) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
     -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
@@ -5068,8 +5068,8 @@ Proof.
   apply (reduces_to_ren_utokens _ _ _ ren) in r; auto.
 Qed.
 
-Lemma computes_to_exception_preserves_utokens {o} :
-  forall lib (t a e : @NTerm o),
+Lemma computes_to_exception_preserves_utokens {o} {lv} :
+  forall (lib : @library o lv) (t a e : @NTerm o),
     nt_wf t
     -> computes_to_exception lib a t e
     -> (subset (get_utokens_lib lib a) (get_utokens_lib lib t)
@@ -5081,8 +5081,8 @@ Proof.
   - apply reduces_to_preserves_utokens in r; allsimpl; allrw app_nil_r; allrw subset_app; sp.
 Qed.
 
-Lemma computes_to_marker_ren_utokens {o} :
-  forall lib (t : @NTerm o) m ren,
+Lemma computes_to_marker_ren_utokens {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) m ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
     -> disjoint (get_utokens_library lib) (dom_utok_ren ren)

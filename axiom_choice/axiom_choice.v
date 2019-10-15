@@ -970,6 +970,18 @@ Proof.
 
   pose proof (xx1 k) as xx1.
 
+(*
+
+We have to somehow enforce that any library that extends [mk_cs_res_name Fnat :: lib'] should
+also extend the libraries mentioned in the constraint.
+Could we do that though the safety requirement?
+
+-> By ensuring that that type of entry is of the form (exist lib, P lib), so that for each choice
+the quantified library is always smaller than any library that extends the library that contains
+the entry.
+
+*)
+
 (* XX *)
   apply collapse_all_in_ex_bar.
   introv xtf.

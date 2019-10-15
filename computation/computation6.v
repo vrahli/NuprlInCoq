@@ -34,8 +34,8 @@ Require Export computation5.
 Require Export atom_ren.
 
 
-Lemma computes_to_val_like_in_max_k_steps_preserves_program {p} :
-  forall lib k (t1 t2 : @NTerm p),
+Lemma computes_to_val_like_in_max_k_steps_preserves_program {o} {lv} :
+  forall (lib : @library o lv) k (t1 t2 : @NTerm o),
     computes_to_val_like_in_max_k_steps lib t1 t2 k
     -> isprogram t1
     -> isprogram t2.
@@ -112,9 +112,9 @@ Proof.
   allrw @isprogram_eq; auto.
 Qed.
 
-Lemma computes_to_val_like_in_max_k_steps_can_iff {p} :
-  forall lib c bterms a k,
-    computes_to_val_like_in_max_k_steps lib (oterm (@Can p c) bterms) a k
+Lemma computes_to_val_like_in_max_k_steps_can_iff {o} {lv} :
+  forall (lib : @library o lv) c bterms a k,
+    computes_to_val_like_in_max_k_steps lib (oterm (@Can o c) bterms) a k
     <=> a = oterm (Can c) bterms.
 Proof.
   introv; split; intro comp; subst.
@@ -125,14 +125,14 @@ Proof.
   rw IHk; simpl; sp.
 Qed.
 
-Lemma computes_to_val_like_in_max_k_steps_sleep_implies {p} :
-  forall lib k t v,
+Lemma computes_to_val_like_in_max_k_steps_sleep_implies {o} {lv} :
+  forall (lib : @library o lv) k t v,
     computes_to_val_like_in_max_k_steps lib (mk_sleep t) v k
     -> {x : NTerm
         & {m : nat
            & k = S m
            # computes_to_val_like_in_max_k_steps lib t x m
-           # ({z : Z & v = mk_axiom # x = @mk_integer p z}
+           # ({z : Z & v = mk_axiom # x = @mk_integer o z}
               [+]
               (isexc x # x = v))}}.
 Proof.
@@ -144,13 +144,13 @@ Proof.
 
   - rw @computes_to_val_like_in_max_k_steps_S in comp; exrepnd.
     destruct t; ginv.
-    dopid o as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
+    dopid o0 as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
       destruct l; try (complete (inversion comp1)).
       destruct can; inversion comp1; subst.
       apply computes_to_val_like_in_max_k_steps_can_iff in comp0; subst.
-      exists (@mk_integer p z) k; dands; auto.
+      exists (@mk_integer o z) k; dands; auto.
       apply computes_to_val_like_in_max_k_steps_can_iff; sp.
       left; exists z; sp.
 
@@ -177,14 +177,14 @@ Proof.
       exists n; auto.
 Qed.
 
-Lemma computes_to_val_like_in_max_k_steps_tuni_implies {p} :
-  forall lib k t v,
+Lemma computes_to_val_like_in_max_k_steps_tuni_implies {o} {lv} :
+  forall (lib : @library o lv) k t v,
     computes_to_val_like_in_max_k_steps lib (mk_tuni t) v k
     -> {x : NTerm
         & {m : nat
            & k = S m
            # computes_to_val_like_in_max_k_steps lib t x m
-           # ({n : nat & v = mk_uni n # x = @mk_integer p (Z.of_nat n)}
+           # ({n : nat & v = mk_uni n # x = @mk_integer o (Z.of_nat n)}
               [+]
               (isexc x # x = v))}}.
 Proof.
@@ -196,7 +196,7 @@ Proof.
 
   - rw @computes_to_val_like_in_max_k_steps_S in comp; exrepnd.
     destruct t; ginv.
-    dopid o as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
+    dopid o0 as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
       destruct l; try (complete (inversion comp1)).
@@ -205,7 +205,7 @@ Proof.
       destruct can; allsimpl; try (complete (inversion comp1)).
       destruct (Z_le_gt_dec 0 z); inversion comp1; subst; GC.
       apply computes_to_val_like_in_max_k_steps_can_iff in comp0; subst.
-      exists (@mk_integer p z) k; dands; auto.
+      exists (@mk_integer o z) k; dands; auto.
       apply computes_to_val_like_in_max_k_steps_can_iff; sp.
       left; exists (Z.to_nat z); sp.
       rw Znat.Z2Nat.id; sp.
@@ -243,9 +243,9 @@ Proof.
   exists nt2; dands; eauto with slow.
 Qed.
 
-Lemma computes_step_minus_ncan {p} :
-  forall lib n l,
-    compute_step lib (mk_minus (oterm (@NCan p n) l))
+Lemma computes_step_minus_ncan {o} {lv} :
+  forall (lib : @library o lv) n l,
+    compute_step lib (mk_minus (oterm (@NCan o n) l))
     = match compute_step lib (oterm (NCan n) l) with
         | csuccess t => csuccess (mk_minus t)
         | cfailure m t => cfailure m t
@@ -254,23 +254,23 @@ Proof.
   introv; csunf; simpl; auto.
 Qed.
 
-Lemma computes_step_minus_abs {p} :
-  forall lib o l,
-    compute_step lib (mk_minus (oterm (@Abs p o) l))
+Lemma computes_step_minus_abs {x} {lv} :
+  forall (lib : @library x lv) o l,
+    compute_step lib (mk_minus (oterm (@Abs x o) l))
     = match compute_step lib (oterm (Abs o) l) with
         | csuccess t => csuccess (mk_minus t)
         | cfailure m t => cfailure m t
       end.
 Proof. sp. Qed.
 
-Lemma computes_to_val_like_in_max_k_steps_minus_implies {p} :
-  forall lib k t v,
+Lemma computes_to_val_like_in_max_k_steps_minus_implies {o} {lv} :
+  forall (lib : @library o lv) k t v,
     computes_to_val_like_in_max_k_steps lib (mk_minus t) v k
     -> {x : NTerm
         & {m : nat
            & k = S m
            # computes_to_val_like_in_max_k_steps lib t x m
-           # ({z : Z & v = mk_integer (- z) # x = @mk_integer p z}
+           # ({z : Z & v = mk_integer (- z) # x = @mk_integer o z}
               [+]
               (isexc x # x = v))}}.
 Proof.
@@ -282,7 +282,7 @@ Proof.
 
   - rw @computes_to_val_like_in_max_k_steps_S in comp; exrepnd.
     destruct t; ginv.
-    dopid o as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
+    dopid o0 as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
       destruct l; try (complete (inversion comp1)).
@@ -290,7 +290,7 @@ Proof.
       unfold compute_step_minus in comp1; simpl in comp1.
       destruct can; allsimpl; ginv.
       apply computes_to_val_like_in_max_k_steps_can_iff in comp0; subst.
-      exists (@mk_integer p z) k; dands; auto.
+      exists (@mk_integer o z) k; dands; auto.
       * apply computes_to_val_like_in_max_k_steps_can_iff; sp.
       * left; exists z; sp.
 
@@ -316,8 +316,8 @@ Proof.
       exists n; auto.
 Qed.
 
-Lemma computes_to_val_like_in_max_k_steps_parallel_implies {o} :
-  forall lib k (bs : list (@BTerm o)) v,
+Lemma computes_to_val_like_in_max_k_steps_parallel_implies {o} {lv} :
+  forall (lib : @library o lv) k (bs : list (@BTerm o)) v,
     computes_to_val_like_in_max_k_steps lib (oterm (NCan NParallel) bs) v k
     -> {x : NTerm
         & {u : NTerm
@@ -377,8 +377,8 @@ Proof.
   inversion h; subst; allsimpl; tcsp.
 Qed.
 
-Lemma computes_to_value_implies_val_like {p} :
-  forall lib (a b : @NTerm p),
+Lemma computes_to_value_implies_val_like {o} {lv} :
+  forall (lib : @library o lv) (a b : @NTerm o),
     computes_to_value lib a b
     -> computes_to_val_like lib a b.
 Proof.
@@ -392,8 +392,8 @@ Proof.
   allapply @isvalue_implies; repnd; auto.
 Qed.
 
-Lemma computes_to_exception_implies_val_like {p} :
-  forall lib en (a b : @NTerm p),
+Lemma computes_to_exception_implies_val_like {o} {lv} :
+  forall (lib : @library o lv) en (a b : @NTerm o),
     computes_to_exception lib en a b
     -> computes_to_val_like lib a (mk_exception en b).
 Proof.
@@ -406,19 +406,19 @@ Proof.
   constructor.
 Qed.
 
-Lemma computes_to_val_like_in_max_k_steps_0 {p} :
-  forall lib (t u : @NTerm p),
+Lemma computes_to_val_like_in_max_k_steps_0 {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o),
     computes_to_val_like_in_max_k_steps lib t u 0 <=> (t = u # isvalue_like u).
 Proof.
   introv; unfold computes_to_val_like_in_max_k_steps.
   rw @reduces_in_atmost_k_steps_0; sp.
 Qed.
 
-Definition has_value_like_k {p} lib k (t : @NTerm p) :=
+Definition has_value_like_k {o} {lv} (lib : @library o lv) k (t : @NTerm o) :=
   {u : NTerm & computes_to_val_like_in_max_k_steps lib t u k}.
 
-Lemma has_value_like_0 {o} :
-  forall lib (t : @NTerm o),
+Lemma has_value_like_0 {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o),
     has_value_like_k lib 0 t <=> isvalue_like t.
 Proof.
   introv; unfold has_value_like_k; split; intro k; exrepnd.
@@ -426,8 +426,8 @@ Proof.
   - exists t; allrw @computes_to_val_like_in_max_k_steps_0; auto.
 Qed.
 
-Lemma has_value_like_S {o} :
-  forall lib k (t : @NTerm o),
+Lemma has_value_like_S {o} {lv} :
+  forall (lib : @library o lv) k (t : @NTerm o),
     has_value_like_k lib (S k) t
     <=> {u : NTerm
          & compute_step lib t = csuccess u
@@ -441,8 +441,8 @@ Proof.
     eexists; eauto.
 Qed.
 
-Lemma if_has_value_like_k_ncompop_can1 {o} :
-  forall lib c can bs k (t : @NTerm o) l,
+Lemma if_has_value_like_k_ncompop_can1 {o} {lv} :
+  forall (lib : @library o lv) c can bs k (t : @NTerm o) l,
     has_value_like_k
       lib k
       (oterm (NCan (NCompOp c))
@@ -483,8 +483,8 @@ Proof.
       exists n; tcsp.
 Qed.
 
-Lemma if_has_value_like_k_narithop_can1 {o} :
-  forall lib c can bs k (t : @NTerm o) l,
+Lemma if_has_value_like_k_narithop_can1 {o} {lv} :
+  forall (lib : @library o lv) c can bs k (t : @NTerm o) l,
     has_value_like_k
       lib k
       (oterm (NCan (NArithOp c))
@@ -525,8 +525,8 @@ Proof.
       exists n; tcsp.
 Qed.
 
-Lemma has_value_like_k_lt {o} :
-  forall lib k1 k2 (t : @NTerm o),
+Lemma has_value_like_k_lt {o} {lv} :
+  forall (lib : @library o lv) k1 k2 (t : @NTerm o),
     has_value_like_k lib k1 t
     -> k1 < k2
     -> has_value_like_k lib k2 t.
@@ -541,8 +541,8 @@ Proof.
   rw e in hh; auto.
 Qed.
 
-Lemma computes_to_val_like_in_max_k_steps_if_isvalue_like {o} :
-  forall lib (t u : @NTerm o) k,
+Lemma computes_to_val_like_in_max_k_steps_if_isvalue_like {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o) k,
     computes_to_val_like_in_max_k_steps lib t u k
     -> isvalue_like t
     -> t = u.
@@ -552,8 +552,8 @@ Proof.
   apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; auto.
 Qed.
 
-Lemma if_has_value_like_k_cbv_primarg {o} :
-  forall lib k (t : @NTerm o) bs,
+Lemma if_has_value_like_k_cbv_primarg {o} {lv} :
+  forall (lib : @library o lv) k (t : @NTerm o) bs,
     has_value_like_k lib k (oterm (NCan NCbv) (bterm [] t :: bs))
     -> {j : nat & j < k # has_value_like_k lib j t}.
 Proof.
@@ -612,8 +612,8 @@ Proof.
 Qed.
 Hint Resolve isvalue_like_uni : slow.
 
-Lemma if_has_value_like_k_ncan_primarg {o} :
-  forall lib ncan k (t : @NTerm o) bs,
+Lemma if_has_value_like_k_ncan_primarg {o} {lv} :
+  forall (lib : @library o lv) ncan k (t : @NTerm o) bs,
     has_value_like_k lib k (oterm (NCan ncan) (bterm [] t :: bs))
     -> {j : nat & j < k # has_value_like_k lib j t}.
 Proof.
@@ -675,8 +675,8 @@ Proof.
 Qed.
 Hint Resolve closed_mk_vbot : slow.
 
-Lemma alphaeq_preserves_computes_to_val_like_in_max_k_steps {o} :
-  forall lib k (t1 t2 : @NTerm o) u,
+Lemma alphaeq_preserves_computes_to_val_like_in_max_k_steps {o} {lv} :
+  forall (lib : @library o lv) k (t1 t2 : @NTerm o) u,
     nt_wf t1
     -> alpha_eq t1 t2
     -> computes_to_val_like_in_max_k_steps lib t1 u k
@@ -690,8 +690,8 @@ Proof.
   eapply alpha_eq_preserves_isvalue_like; eauto.
 Qed.
 
-Lemma alphaeq_preserves_has_value_like_k {o} :
-  forall lib k (t1 t2 : @NTerm o),
+Lemma alphaeq_preserves_has_value_like_k {o} {lv} :
+  forall (lib : @library o lv) k (t1 t2 : @NTerm o),
     nt_wf t1
     -> alpha_eq t1 t2
     -> has_value_like_k lib k t1
@@ -704,8 +704,8 @@ Proof.
   exists v; auto.
 Qed.
 
-Lemma has_value_like_k_ren_utokens {o} :
-  forall lib k (t : @NTerm o) ren,
+Lemma has_value_like_k_ren_utokens {o} {lv} :
+  forall (lib : @library o lv) k (t : @NTerm o) ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
     -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
@@ -720,8 +720,8 @@ Proof.
   exists (ren_utokens ren u); dands; eauto with slow.
 Qed.
 
-Lemma reduces_in_atmost_k_steps_refl {o} :
-  forall (lib : library) (k : nat) (t : @NTerm o),
+Lemma reduces_in_atmost_k_steps_refl {o} {lv} :
+  forall (lib : @library o lv) (k : nat) (t : @NTerm o),
     isvalue_like t
     -> reduces_in_atmost_k_steps lib t t k.
 Proof.
@@ -741,8 +741,8 @@ Proof.
   introv; pose proof (eqvars_free_vars_disjoint t sub) as h; rw eqvars_prop in h; auto.
 Qed.
 
-Lemma has_value_like_k_fresh_implies {o} :
-  forall lib k a v (t : @NTerm o),
+Lemma has_value_like_k_fresh_implies {o} {lv} :
+  forall (lib : @library o lv) k a v (t : @NTerm o),
     wf_term t
     -> !LIn a (get_utokens_lib lib t)
     -> has_value_like_k lib k (mk_fresh v t)
@@ -865,8 +865,8 @@ Proof.
       eexists; dands; eauto.
 Qed.
 
-Lemma has_value_like_k_vbot {o} :
-  forall (lib : @library o) k v,
+Lemma has_value_like_k_vbot {o} {lv} :
+  forall (lib : @library o lv) k v,
     !has_value_like_k lib k (mk_vbot v).
 Proof.
   introv hv.
@@ -874,8 +874,8 @@ Proof.
   apply reduces_in_atmost_k_steps_vbot in hv1; tcsp.
 Qed.
 
-Lemma has_value_like_k_fresh_id {o} :
-  forall (lib : @library o) k v,
+Lemma has_value_like_k_fresh_id {o} {lv} :
+  forall (lib : @library o lv) k v,
     !has_value_like_k lib k (mk_fresh v (mk_var v)).
 Proof.
   introv hv.
@@ -885,12 +885,12 @@ Proof.
   eauto 3 with slow.
 Qed.
 
-Definition computes_to_can {p} lib (t1 t2 : @NTerm p) :=
+Definition computes_to_can {o} {lv} (lib : @library o lv) (t1 t2 : @NTerm o) :=
   reduces_to lib t1 t2
   # iscan t2.
 
-Lemma computes_to_exception_mk_less {o} :
-  forall lib (a b c d : @NTerm o) n e,
+Lemma computes_to_exception_mk_less {o} {lv} :
+  forall (lib : @library o lv) (a b c d : @NTerm o) n e,
     wf_term a
     -> wf_term b
     -> wf_term c
@@ -936,8 +936,8 @@ Proof.
     + exists k2; auto.
 Qed.
 
-Lemma computes_to_can_in_max_k_steps_implies_reduces_in_atmost_k_steps {o} :
-  forall lib k (t : @NTerm o) u,
+Lemma computes_to_can_in_max_k_steps_implies_reduces_in_atmost_k_steps {o} {lv} :
+  forall (lib : @library o lv) k (t : @NTerm o) u,
     computes_to_can_in_max_k_steps lib k t u
     -> reduces_in_atmost_k_steps lib t u k.
 Proof.
@@ -946,8 +946,8 @@ Proof.
 Qed.
 Hint Resolve computes_to_can_in_max_k_steps_implies_reduces_in_atmost_k_steps : slow.
 
-Lemma computes_to_val_like_in_max_k_steps_implies_has_value_like_k {o} :
-  forall lib (t u : @NTerm o) k,
+Lemma computes_to_val_like_in_max_k_steps_implies_has_value_like_k {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o) k,
     computes_to_val_like_in_max_k_steps lib t u k
     -> has_value_like_k lib k t.
 Proof.
@@ -957,8 +957,8 @@ Proof.
 Qed.
 Hint Resolve computes_to_val_like_in_max_k_steps_implies_has_value_like_k : slow.
 
-Lemma has_value_like_k_mk_less {o} :
-  forall lib k (a b c d : @NTerm o),
+Lemma has_value_like_k_mk_less {o} {lv} :
+  forall (lib : @library o lv) k (a b c d : @NTerm o),
     wf_term a
     -> wf_term b
     -> wf_term c

@@ -94,7 +94,7 @@ Inductive EntryName :=
 | entry_name_cs (name : choice_sequence_name)
 | entry_name_abs (name : opabs).
 
-Definition entry2name {o} (e : @library_entry o) : EntryName :=
+Definition entry2name {o} {l} (e : @library_entry o l) : EntryName :=
   match e with
   | lib_cs name _ => entry_name_cs name
   | lib_abs opabs _ _ _ => entry_name_abs opabs
@@ -115,16 +115,16 @@ Proof.
   - destruct (same_opabs_dec name name0);[left|right]; tcsp.
 Defined.
 
-Definition in_lib {o}
+Definition in_lib {o} {l}
            (name : EntryName)
-           (lib  : @library o) :=
-  exists (e : library_entry),
+           (lib  : @library o l) :=
+  exists (e : @library_entry o l),
     List.In e lib
     /\ same_entry_name name (entry2name e).
 
-Lemma in_lib_dec {o} :
+Lemma in_lib_dec {o} {l} :
   forall (name : EntryName)
-         (lib  : @library o),
+         (lib  : @library o l),
     decidable (in_lib name lib).
 Proof.
   unfold in_lib; induction lib; simpl.
@@ -157,8 +157,8 @@ Proof.
             destruct k; eexists; eexists; eauto. }
 Defined.
 
-Lemma found_entry_in {o} :
-  forall lib oa0 (bs : list (@BTerm o)) oa vars rhs correct,
+Lemma found_entry_in {o} {l} :
+  forall (lib : @library o l) oa0 (bs : list (@BTerm o)) oa vars rhs correct,
     found_entry lib oa0 bs oa vars rhs correct
     -> LIn (lib_abs oa vars rhs correct) lib.
 Proof.
@@ -237,8 +237,8 @@ Proof.
   induction l; simpl; tcsp.
 Qed.
 
-Lemma found_entry_add_new_abs {o} :
-  forall lib abs (bs : list (@BTerm o)) oa2 vars0 rhs0 correct0 opabs vars rhs correct,
+Lemma found_entry_add_new_abs {o} {l} :
+  forall (lib : @library o l) abs (bs : list (@BTerm o)) oa2 vars0 rhs0 correct0 opabs vars rhs correct,
     !in_lib (entry_name_abs opabs) lib
     -> found_entry lib abs bs oa2 vars0 rhs0 correct0
     -> found_entry
@@ -265,8 +265,8 @@ Proof.
   apply matching_parameters_sym; auto.
 Qed.
 
-Lemma implies_in_lib_cons {o} :
-  forall e e' (lib : @library o),
+Lemma implies_in_lib_cons {o} {l} :
+  forall e e' (lib : @library o l),
     in_lib e lib
     -> in_lib e (e' :: lib).
 Proof.
@@ -275,8 +275,8 @@ Proof.
 Qed.
 Hint Resolve implies_in_lib_cons : slow.
 
-Lemma find_cs_value_at_some_implies_in_lib {o} :
-  forall name n v (lib : @library o),
+Lemma find_cs_value_at_some_implies_in_lib {o} {l} :
+  forall name n v (lib : @library o l),
     find_cs_value_at lib name n = Some v
     -> in_lib (entry_name_cs name) lib.
 Proof.
@@ -383,8 +383,8 @@ Proof.
 Qed.
 Hint Resolve same_entry_name_trans : slow.
 
-Lemma same_entry_name_preserves_in_lib {o} :
-  forall name1 name2 (lib : @library o),
+Lemma same_entry_name_preserves_in_lib {o} {l} :
+  forall name1 name2 (lib : @library o l),
     same_entry_name name1 name2
     -> in_lib name1 lib
     -> in_lib name2 lib.
@@ -394,8 +394,8 @@ Proof.
   apply same_entry_name_sym; auto.
 Qed.
 
-Lemma not_same_entry_name_preserves_find_cs_value_at_cons {o} :
-  forall (lib : @library o) name n v e,
+Lemma not_same_entry_name_preserves_find_cs_value_at_cons {o} {l} :
+  forall (lib : @library o l) name n v e,
     find_cs_value_at lib name n = Some v
     -> !same_entry_name (entry2name e) (entry_name_cs name)
     -> find_cs_value_at (e :: lib) name n = Some v.
@@ -406,8 +406,8 @@ Proof.
   boolvar; tcsp.
 Qed.
 
-Lemma not_in_lib_preserves_find_cs_value_at_cons {o} :
-  forall (lib : @library o) e name n v,
+Lemma not_in_lib_preserves_find_cs_value_at_cons {o} {l} :
+  forall (lib : @library o l) e name n v,
     ! in_lib (entry2name e) lib
     -> find_cs_value_at lib name n = Some v
     -> find_cs_value_at (e :: lib) name n = Some v.
@@ -496,8 +496,8 @@ Hint Resolve wf_term_fresh_implies_subterm1 : wf.
 Hint Resolve wf_term_implies : wf.
 Hint Resolve nt_wf_implies : wf.
 
-Lemma utoken_not_in_get_utokens_lib_cons_implies {o} :
-  forall a e (lib : @library o) t,
+Lemma utoken_not_in_get_utokens_lib_cons_implies {o} {l} :
+  forall a e (lib : @library o l) t,
     !LIn a (get_utokens_lib (e :: lib) t)
     -> !LIn a (get_utokens_lib lib t).
 Proof.
@@ -506,8 +506,8 @@ Proof.
 Qed.
 Hint Resolve utoken_not_in_get_utokens_lib_cons_implies : slow.
 
-Lemma not_in_get_utokens_lib_implies_nr_ut_sub_cons {o} :
-  forall n a (lib : @library o) t,
+Lemma not_in_get_utokens_lib_implies_nr_ut_sub_cons {o} {l} :
+  forall n a (lib : @library o l) t,
     !LIn a (get_utokens_lib lib t)
     -> nr_ut_sub lib t [(n, mk_utoken a)].
 Proof.
@@ -528,8 +528,8 @@ Hint Resolve wf_fresh_implies_wf_subst : wf.
 
 Hint Rewrite Znat.Nat2Z.id : slow.
 
-Lemma not_in_get_utokens_lib_implies_not_in_get_utokens {o} :
-  forall a (lib : @library o) t,
+Lemma not_in_get_utokens_lib_implies_not_in_get_utokens {o} {l} :
+  forall a (lib : @library o l) t,
     !LIn a (get_utokens_lib lib t)
     -> !LIn a (get_utokens t).
 Proof.
@@ -1005,7 +1005,7 @@ Proof.
   rewrite <- Heqm; sp.
 Defined.
 
-Fixpoint found_entry_b {o} (lib : @library o) opabs (bs : list (@BTerm o)) : bool :=
+Fixpoint found_entry_b {o} {l} (lib : @library o l) opabs (bs : list (@BTerm o)) : bool :=
   match lib with
   | [] => false
   | lib_cs _ _ :: l => found_entry_b l opabs bs
@@ -1015,7 +1015,7 @@ Fixpoint found_entry_b {o} (lib : @library o) opabs (bs : list (@BTerm o)) : boo
     else found_entry_b l opabs bs
   end.
 
-Fixpoint found_entry_sign {o} (lib : @library o) name : bool :=
+Fixpoint found_entry_sign {o} {l} (lib : @library o l) name : bool :=
   match lib with
   | [] => false
   | entry :: entries =>
@@ -1039,12 +1039,12 @@ with get_all_abs_b {o} (b : @BTerm o) : OList opabs :=
        | bterm vs t => get_all_abs t
        end.
 
-Definition all_abs_are_defined {o} (lib : @library o) (t : @NTerm o) : Prop :=
+Definition all_abs_are_defined {o} {l} (lib : @library o l) (t : @NTerm o) : Prop :=
   forall opabs,
     in_olist opabs (get_all_abs t)
     -> found_entry_sign lib (entry_name_abs opabs) = true.
 
-Definition all_abs_are_defined_cterm {o} lib (t : @CTerm o) : Prop :=
+Definition all_abs_are_defined_cterm {o} {l} (lib : @library o l) (t : @CTerm o) : Prop :=
   all_abs_are_defined lib (get_cterm t).
 
 (*
@@ -1066,13 +1066,13 @@ with all_abstractions_are_defined_b {o} lib : @BTerm o -> Type :=
       -> all_abstractions_are_defined_b lib (bterm vs t).
 *)
 
-Definition found_opid_in_library_sign {o} (lib : @library o) (op : @Opid o) : bool :=
+Definition found_opid_in_library_sign {o} {l} (lib : @library o l) (op : @Opid o) : bool :=
   match op with
   | Abs abs => found_entry_sign lib (entry_name_abs abs)
   | _ => true
   end.
 
-Fixpoint all_abstractions_are_defined {o} lib (t : @NTerm o) : obool :=
+Fixpoint all_abstractions_are_defined {o} {l} (lib : @library o l) (t : @NTerm o) : obool :=
   match t with
   | vterm _ => otrue
   | oterm op bs =>
@@ -1080,13 +1080,13 @@ Fixpoint all_abstractions_are_defined {o} lib (t : @NTerm o) : obool :=
       (bool2obool (found_opid_in_library_sign lib op))
       (oball (map (all_abstractions_are_defined_b lib) bs))
   end
-with all_abstractions_are_defined_b {o} lib (b : @BTerm o) : obool :=
+with all_abstractions_are_defined_b {o} {l} (lib : @library o l) (b : @BTerm o) : obool :=
        match b with
        | bterm vs t => all_abstractions_are_defined lib t
        end.
 
-Lemma all_abs_are_defined_eq {o} :
-  forall lib (t : @NTerm o),
+Lemma all_abs_are_defined_eq {o} {l} :
+  forall (lib : @library o l) (t : @NTerm o),
     all_abs_are_defined lib t
     <=> isotrue (all_abstractions_are_defined lib t).
 Proof.
@@ -1128,15 +1128,15 @@ Proof.
     + destruct op; allsimpl; try (complete (inversion i; subst; tcsp)).
 
     + apply in_olist_OLL_map in i; exrepnd.
-      destruct a as [l t]; allsimpl.
+      destruct a as [x t]; allsimpl.
       applydup h in i1; allsimpl.
-      pose proof (ind t l i1) as q.
+      pose proof (ind t x i1) as q.
       apply q in i2.
       apply i2; auto.
 Qed.
 
-Lemma isotrue_all_abstractions_are_defined_implies_eq_term2otrue {o} :
-  forall lib (t : @NTerm o),
+Lemma isotrue_all_abstractions_are_defined_implies_eq_term2otrue {o} {l} :
+  forall (lib : @library o l) (t : @NTerm o),
     isotrue (all_abstractions_are_defined lib t)
     -> all_abstractions_are_defined lib t = term2otrue t.
 Proof.
@@ -1149,13 +1149,13 @@ Proof.
     rewrite h0; simpl.
     f_equal.
     apply eq_maps; introv i.
-    destruct x as [l t]; allsimpl.
+    destruct x as [x t]; allsimpl.
     applydup h in i; allsimpl.
-    pose proof (ind t l i) as q; apply q in i0; auto.
+    pose proof (ind t x i) as q; apply q in i0; auto.
 Qed.
 
-Lemma oball_map_all_abstractions_are_defined_eq_implies {o} :
-  forall lib (bs : list (@BTerm o)) b,
+Lemma oball_map_all_abstractions_are_defined_eq_implies {o} {l} :
+  forall (lib : @library o l) (bs : list (@BTerm o)) b,
     oball (map (all_abstractions_are_defined_b lib) bs) = oball (map bterm2otrue bs)
     -> LIn b bs
     -> all_abstractions_are_defined_b lib b = bterm2otrue b.
@@ -1165,12 +1165,12 @@ Proof.
   rewrite <- e in h; clear e.
   rw @isotrue_oball_map in h.
   applydup h in i.
-  destruct b as [l t]; allsimpl.
+  destruct b as [x t]; allsimpl.
   apply isotrue_all_abstractions_are_defined_implies_eq_term2otrue; auto.
 Qed.
 
-Lemma isotrue_all_abstractions_are_defined_if_eq_term2otrue {o} :
-  forall lib (t : @NTerm o),
+Lemma isotrue_all_abstractions_are_defined_if_eq_term2otrue {o} {l} :
+  forall (lib : @library o l) (t : @NTerm o),
     all_abstractions_are_defined lib t = term2otrue t
     -> isotrue (all_abstractions_are_defined lib t).
 Proof.
@@ -1180,13 +1180,13 @@ Proof.
     remember (found_opid_in_library_sign lib op) as b; destruct b; allsimpl; auto;
     try (complete (symmetry in h; apply oball_map_bterm2otrue_not_ofalse in h; sp)).
     apply isotrue_oball_map; introv i.
-    destruct x as [l t]; allsimpl.
-    pose proof (ind t l i) as q; clear ind; apply q.
+    destruct x as [x t]; allsimpl.
+    pose proof (ind t x i) as q; clear ind; apply q.
     eapply oball_map_all_abstractions_are_defined_eq_implies in h;[|eauto]; allsimpl; auto.
 Qed.
 
-Lemma isotrue_all_abstractions_are_defined_iff_eq_term2otrue {o} :
-  forall lib (t : @NTerm o),
+Lemma isotrue_all_abstractions_are_defined_iff_eq_term2otrue {o} {l} :
+  forall (lib : @library o l) (t : @NTerm o),
     isotrue (all_abstractions_are_defined lib t)
     <=>
     all_abstractions_are_defined lib t = term2otrue t.
@@ -1196,14 +1196,14 @@ Proof.
   - apply isotrue_all_abstractions_are_defined_if_eq_term2otrue; auto.
 Qed.
 
-Definition all_abstractions_are_defined_cterm {o} lib (t : @CTerm o) : obool :=
+Definition all_abstractions_are_defined_cterm {o} {l} (lib : @library o l) (t : @CTerm o) : obool :=
   all_abstractions_are_defined lib (get_cterm t).
 
-Definition all_abstractions_are_defined_sub {o} lib (sub : @Sub o) : obool :=
+Definition all_abstractions_are_defined_sub {o} {l} (lib : @library o l) (sub : @Sub o) : obool :=
   oball (map (all_abstractions_are_defined lib) (range sub)).
 
-Lemma isotrue_all_abstractions_are_defined_sub_iff {o} :
-  forall lib (sub : @Sub o),
+Lemma isotrue_all_abstractions_are_defined_sub_iff {o} {l} :
+  forall (lib : @library o l) (sub : @Sub o),
     isotrue (all_abstractions_are_defined_sub lib sub)
     <=> (forall v t, LIn (v,t) sub -> isotrue (all_abstractions_are_defined lib t)).
 Proof.
@@ -1215,11 +1215,11 @@ Proof.
   - apply in_range in i; exrepnd; eauto.
 Qed.
 
-Definition all_abstractions_are_defined_utok_sub {o} lib (sub : @utok_sub o) : obool :=
+Definition all_abstractions_are_defined_utok_sub {o} {l} (lib : @library o l) (sub : @utok_sub o) : obool :=
   oball (map (all_abstractions_are_defined lib) (utok_sub_range sub)).
 
-Lemma isotrue_all_abstractions_are_defined_utok_sub_iff {o} :
-  forall lib (sub : @utok_sub o),
+Lemma isotrue_all_abstractions_are_defined_utok_sub_iff {o} {l} :
+  forall (lib : @library o l) (sub : @utok_sub o),
     isotrue (all_abstractions_are_defined_utok_sub lib sub)
     <=> (forall a t, LIn (a,t) sub -> isotrue (all_abstractions_are_defined lib t)).
 Proof.
@@ -1232,8 +1232,8 @@ Proof.
     eapply h; eauto.
 Qed.
 
-Lemma implies_isotrue_all_abstractions_are_defined_sub_sub_filter {o} :
-  forall lib (sub : @Sub o) l,
+Lemma implies_isotrue_all_abstractions_are_defined_sub_sub_filter {o} {lv} :
+  forall (lib : @library o lv) (sub : @Sub o) l,
     isotrue (all_abstractions_are_defined_sub lib sub)
     -> isotrue (all_abstractions_are_defined_sub lib (sub_filter sub l)).
 Proof.
@@ -1245,8 +1245,8 @@ Proof.
 Qed.
 Hint Resolve implies_isotrue_all_abstractions_are_defined_sub_sub_filter : slow.
 
-Lemma implies_isotrue_all_abstractions_are_defined_lsubst_aux {o} :
-  forall lib (t : @NTerm o) sub,
+Lemma implies_isotrue_all_abstractions_are_defined_lsubst_aux {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) sub,
     isotrue (all_abstractions_are_defined lib t)
     -> isotrue (all_abstractions_are_defined_sub lib sub)
     -> isotrue (all_abstractions_are_defined lib (lsubst_aux t sub)).
@@ -1291,8 +1291,8 @@ Proof.
   introv; auto.
 Qed.
 
-Lemma all_abstractions_are_defined_preserves_cswap {o} :
-  forall lib (t : @NTerm o) sw,
+Lemma all_abstractions_are_defined_preserves_cswap {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) sw,
     all_abstractions_are_defined lib (cswap sw t)
     = all_abstractions_are_defined lib t.
 Proof.
@@ -1308,8 +1308,8 @@ Proof.
 Qed.
 Hint Rewrite @all_abstractions_are_defined_preserves_cswap : slow.
 
-Lemma all_abstractions_are_defined_apply_list {o} :
-  forall lib ts (t : @NTerm o),
+Lemma all_abstractions_are_defined_apply_list {o} {lv} :
+  forall (lib : @library o lv) ts (t : @NTerm o),
     all_abstractions_are_defined lib (apply_list t ts)
     = oband (all_abstractions_are_defined lib t)
             (oball (map (all_abstractions_are_defined lib) ts)).
@@ -1319,11 +1319,11 @@ Proof.
   rewrite oband_assoc; autorewrite with slow; auto.
 Qed.
 
-Definition all_abstractions_are_defined_so {o} lib (t : @SOTerm o) :=
+Definition all_abstractions_are_defined_so {o} {l} (lib : @library o l) (t : @SOTerm o) :=
   all_abstractions_are_defined lib (soterm2nterm t).
 
-Lemma all_abstractions_are_defined_so_preserves_so_swap {o} :
-  forall lib (t : @SOTerm o) sw,
+Lemma all_abstractions_are_defined_so_preserves_so_swap {o} {lv} :
+  forall (lib : @library o lv) (t : @SOTerm o) sw,
     all_abstractions_are_defined_so lib (so_swap sw t)
     = all_abstractions_are_defined_so lib t.
 Proof.
@@ -1347,8 +1347,8 @@ Proof.
 Qed.
 Hint Rewrite @all_abstractions_are_defined_so_preserves_so_swap : slow.
 
-Lemma all_abstractions_are_defined_preserves_alphaeq {o} :
-  forall lib (t u : @NTerm o),
+Lemma all_abstractions_are_defined_preserves_alphaeq {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o),
     alphaeq t u
     -> all_abstractions_are_defined lib t = all_abstractions_are_defined lib u.
 Proof.
@@ -1376,8 +1376,8 @@ Proof.
     autorewrite with slow in *; auto.
 Qed.
 
-Lemma all_abstractions_are_defined_so_preserves_so_alphaeq {o} :
-  forall lib (t u : @SOTerm o),
+Lemma all_abstractions_are_defined_so_preserves_so_alphaeq {o} {lv} :
+  forall (lib : @library o lv) (t u : @SOTerm o),
     so_alphaeq t u
     -> all_abstractions_are_defined_so lib t = all_abstractions_are_defined_so lib u.
 Proof.
@@ -1415,8 +1415,8 @@ Proof.
     autorewrite with slow in *; auto.
 Qed.
 
-Lemma implies_isotrue_all_abstractions_are_defined_lsubst {o} :
-  forall lib (t : @NTerm o) sub,
+Lemma implies_isotrue_all_abstractions_are_defined_lsubst {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) sub,
     isotrue (all_abstractions_are_defined lib t)
     -> isotrue (all_abstractions_are_defined_sub lib sub)
     -> isotrue (all_abstractions_are_defined lib (lsubst t sub)).
@@ -1430,8 +1430,8 @@ Proof.
   apply alphaeq_eq; auto.
 Qed.
 
-Lemma implies_isotrue_all_abstractions_are_defined_subst {o} :
-  forall lib (t : @NTerm o) x u,
+Lemma implies_isotrue_all_abstractions_are_defined_subst {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) x u,
     isotrue (all_abstractions_are_defined lib t)
     -> isotrue (all_abstractions_are_defined lib u)
     -> isotrue (all_abstractions_are_defined lib (subst t x u)).
@@ -1442,8 +1442,8 @@ Proof.
   repndors; ginv; tcsp.
 Qed.
 
-Lemma isotrue_all_abstractions_are_defined_oterm {o} :
-  forall lib op (bs : list (@BTerm o)),
+Lemma isotrue_all_abstractions_are_defined_oterm {o} {lv} :
+  forall (lib : @library o lv) op (bs : list (@BTerm o)),
     isotrue (all_abstractions_are_defined lib (oterm op bs))
     <=> (found_opid_in_library_sign lib op = true
          # forall b, LIn b bs -> isotrue (all_abstractions_are_defined_b lib b)).
@@ -1454,8 +1454,8 @@ Proof.
   remember (found_opid_in_library_sign lib op) as b; destruct b; simpl; split; tcsp.
 Qed.
 
-Lemma implies_isotrue_all_abstractions_are_defined_subst_utokens_aux {o} :
-  forall lib (t : @NTerm o) sub,
+Lemma implies_isotrue_all_abstractions_are_defined_subst_utokens_aux {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) sub,
     isotrue (all_abstractions_are_defined lib t)
     -> isotrue (all_abstractions_are_defined_utok_sub lib sub)
     -> isotrue (all_abstractions_are_defined lib (subst_utokens_aux t sub)).
@@ -1494,8 +1494,8 @@ Proof.
     apply isot in i1; auto.
 Qed.
 
-Lemma implies_isotrue_all_abstractions_are_defined_subst_utokens {o} :
-  forall lib (t : @NTerm o) sub,
+Lemma implies_isotrue_all_abstractions_are_defined_subst_utokens {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) sub,
     isotrue (all_abstractions_are_defined lib t)
     -> isotrue (all_abstractions_are_defined_utok_sub lib sub)
     -> isotrue (all_abstractions_are_defined lib (subst_utokens t sub)).
@@ -1538,7 +1538,7 @@ Proof.
 Qed.
 
 (*Lemma compute_step_preseves_get_all_abs {o} :
-  forall lib (t : @NTerm o) u,
+  forall (lib : @library o lv) (t : @NTerm o) u,
     compute_step lib t = csuccess u
     -> osubset (get_all_abs u) (get_all_abs t).
 Proof.
@@ -1905,8 +1905,8 @@ Proof.
 Qed.
 Hint Resolve matching_entry_implies_sign : slow.
 
-Lemma found_entry_implies_sign {o} :
-  forall lib abs bts oa vars (rhs : @SOTerm o) correct,
+Lemma found_entry_implies_sign {o} {lv} :
+  forall (lib : @library o lv) abs bts oa vars (rhs : @SOTerm o) correct,
     found_entry lib abs bts oa vars rhs correct
     -> found_entry_sign lib (entry_name_abs abs) = true.
 Proof.
@@ -1923,8 +1923,8 @@ Proof.
 Qed.
 Hint Resolve found_entry_implies_sign : slow.
 
-Lemma all_abstractions_are_defined_pushdown_fresh {o} :
-  forall lib n (t : @NTerm o),
+Lemma all_abstractions_are_defined_pushdown_fresh {o} {lv} :
+  forall (lib : @library o lv) n (t : @NTerm o),
     all_abstractions_are_defined lib (pushdown_fresh n t)
     = all_abstractions_are_defined lib t.
 Proof.
@@ -1940,11 +1940,11 @@ Proof.
 Qed.
 Hint Rewrite @all_abstractions_are_defined_pushdown_fresh : slow.
 
-Definition all_abstractions_are_defined_sosub {o} lib (sub : @SOSub o) : obool :=
+Definition all_abstractions_are_defined_sosub {o} {lv} (lib : @library o lv) (sub : @SOSub o) : obool :=
   oball (map (fun x => all_abstractions_are_defined lib (sosk_t (snd x))) sub).
 
-Lemma isotrue_all_abstractions_are_defined_sosub_iff {o} :
-  forall lib (sub : @SOSub o),
+Lemma isotrue_all_abstractions_are_defined_sosub_iff {o} {lv} :
+  forall (lib : @library o lv) (sub : @SOSub o),
     isotrue (all_abstractions_are_defined_sosub lib sub)
     <=> (forall v t, LIn (v,t) sub -> isotrue (all_abstractions_are_defined lib (sosk_t t))).
 Proof.
@@ -1956,8 +1956,8 @@ Proof.
     eapply h; eauto.
 Qed.
 
-Lemma implies_isotrue_all_abstractions_are_defined_sosub_sub_filter {o} :
-  forall lib (sub : @SOSub o) l,
+Lemma implies_isotrue_all_abstractions_are_defined_sosub_sub_filter {o} {lv} :
+  forall (lib : @library o lv) (sub : @SOSub o) l,
     isotrue (all_abstractions_are_defined_sosub lib sub)
     -> isotrue (all_abstractions_are_defined_sosub lib (sosub_filter sub l)).
 Proof.
@@ -1970,8 +1970,8 @@ Proof.
 Qed.
 Hint Resolve implies_isotrue_all_abstractions_are_defined_sosub_sub_filter : slow.
 
-Lemma implies_isotrue_all_abstractions_are_defined_sosub_aux {o} :
-  forall lib (t : @SOTerm o) sub,
+Lemma implies_isotrue_all_abstractions_are_defined_sosub_aux {o} {lv} :
+  forall (lib : @library o lv) (t : @SOTerm o) sub,
     isotrue (all_abstractions_are_defined_so lib t)
     -> isotrue (all_abstractions_are_defined_sosub lib sub)
     -> isotrue (all_abstractions_are_defined lib (sosub_aux sub t)).
@@ -2032,8 +2032,8 @@ Proof.
   rewrite IHts; simpl; fold_terms; auto.
 Qed.
 
-Lemma all_abstractions_are_defined_sosub_preserves_alphaeq_sosub {o} :
-  forall lib (sub1 sub2 : @SOSub o),
+Lemma all_abstractions_are_defined_sosub_preserves_alphaeq_sosub {o} {lv} :
+  forall (lib : @library o lv) (sub1 sub2 : @SOSub o),
     alphaeq_sosub sub1 sub2
     -> all_abstractions_are_defined_sosub lib sub1
        = all_abstractions_are_defined_sosub lib sub2.
@@ -2051,8 +2051,8 @@ Proof.
     + apply IHsub1; auto.
 Qed.
 
-Lemma implies_isotrue_all_abstractions_are_defined_sosub {o} :
-  forall lib (t : @SOTerm o) sub,
+Lemma implies_isotrue_all_abstractions_are_defined_sosub {o} {lv} :
+  forall (lib : @library o lv) (t : @SOTerm o) sub,
     isotrue (all_abstractions_are_defined_so lib t)
     -> isotrue (all_abstractions_are_defined_sosub lib sub)
     -> isotrue (all_abstractions_are_defined lib (sosub sub t)).
@@ -2067,8 +2067,8 @@ Proof.
     rewrite <- q0; auto.
 Qed.
 
-Lemma implies_isotrue_all_abstractions_are_defined_mk_instance {o} :
-  forall lib vars bs (t : @SOTerm o),
+Lemma implies_isotrue_all_abstractions_are_defined_mk_instance {o} {lv} :
+  forall (lib : @library o lv) vars bs (t : @SOTerm o),
     isotrue (all_abstractions_are_defined_so lib t)
     -> (forall b : BTerm, LIn b bs -> isotrue (all_abstractions_are_defined_b lib b))
     -> isotrue (all_abstractions_are_defined lib (mk_instance vars bs t)).
@@ -2084,7 +2084,7 @@ Proof.
   apply mk_abs_subst_some_prop1 in i; auto.
 Qed.
 
-Definition no_undefined_abs_in_entry {o} lib (entry : @library_entry o) :=
+Definition no_undefined_abs_in_entry {o} {lv} (lib : @library o lv) (entry : @library_entry o lv) :=
   match entry with
   | lib_cs _ _ => False
   | lib_abs opabs vars rhs correct =>
@@ -2092,7 +2092,7 @@ Definition no_undefined_abs_in_entry {o} lib (entry : @library_entry o) :=
   end.
 
 (* entries can only depend on earlier abstractions, i.e., on the right in the list *)
-Fixpoint no_undefined_abs_in_lib {o} (lib : @library o) :=
+Fixpoint no_undefined_abs_in_lib {o} {l} (lib : @library o l) :=
   match lib with
   | [] => True
   | entry :: entries =>
@@ -2106,7 +2106,7 @@ Definition entry2soterm {o} (entry : @library_entry o) : @SOTerm o :=
   | lib_abs opabs vars rhs correct => rhs
   end.
 
-Definition simple_no_undefined_abs_in_lib {o} (lib : @library o) :=
+Definition simple_no_undefined_abs_in_lib {o} (lib : @library o l) :=
   forall entry,
     LIn entry lib
     -> isotrue (all_abstractions_are_defined_so lib (entry2soterm entry)).
@@ -2596,7 +2596,7 @@ Proof.
 Qed.
  *)
 
-Fixpoint find_entry_sign {o} (lib : @library o) name : option library_entry :=
+Fixpoint find_entry_sign {o} {l} (lib : @library o l) name : option (@library_entry o l) :=
   match lib with
   | [] => None
   | entry :: entries =>
@@ -2604,7 +2604,7 @@ Fixpoint find_entry_sign {o} (lib : @library o) name : option library_entry :=
     else find_entry_sign entries name
   end.
 
-Definition libraries_agree_on_intersection {o} (lib1 lib2 : @library o) : Type :=
+Definition libraries_agree_on_intersection {o} {l} (lib1 lib2 : @library o l) : Type :=
   forall name,
     match find_entry_sign lib1 name, find_entry_sign lib2 name with
     | Some (lib_abs opabs1 vars1 rhs1 correct1),
@@ -2628,14 +2628,14 @@ Proof.
   destruct (opsign_dec (map (fun v : NVar # nat => snd v) vars) sign); tcsp.
 Defined.
 
-Definition wf_entry {o} (e : @library_entry o) : bool :=
+Definition wf_entry {o} {l} (e : @library_entry o l) : bool :=
   match e with
   | lib_cs _ _ => true
   | lib_abs opabs vars rhs correct =>
     if matching_sign_dec vars (opabs_sign opabs) then true else false
   end.
 
-Definition wf_library {o} (lib : @library o) : bool :=
+Definition wf_library {o} {l} (lib : @library o l) : bool :=
   ball (map wf_entry lib).
 
 Lemma matching_bterms_as_matching_sign {o} :
@@ -2657,7 +2657,7 @@ Proof.
 Qed.
 
 (*Lemma found_entry_iff_sign {o} :
-  forall (lib : @library o) opabs bs oa vars rhs correct,
+  forall (lib : @library o l) opabs bs oa vars rhs correct,
     opabs_sign opabs = map num_bvars bs (* i.e., wf_term (oterm (Abs opabs) bs) *)
     -> assert (wf_library lib)
     -> (found_entry lib opabs bs oa vars rhs correct
@@ -2708,7 +2708,7 @@ Proof.
       apply q; auto.
 Qed.*)
 
-Inductive no_repeats_lib {o} : @library o -> Type :=
+Inductive no_repeats_lib {o} {lv} : @library o lv -> Type :=
 | no_rep_lib_em : no_repeats_lib []
 | no_rep_lib_cons :
     forall e l,
@@ -2726,8 +2726,8 @@ Proof.
   eapply implies_matching_parameters_refl; eauto.
 Qed.
 
-Lemma same_entry_name_preserves_find_entry {o} :
-  forall (lib : @library o) name1 name2 e,
+Lemma same_entry_name_preserves_find_entry {o} {l} :
+  forall (lib : @library o l) name1 name2 e,
     find_entry_sign lib name1 = Some e
     -> same_entry_name name1 name2
     -> find_entry_sign lib name2 = Some e.
@@ -2741,8 +2741,8 @@ Proof.
   - pose proof (IHlib name1 name2 e) as q; repeat (autodimp q hyp).
 Qed.
 
-Lemma find_entry_sign_implies_in_lib {o} :
-  forall (lib : @library o) opabs e,
+Lemma find_entry_sign_implies_in_lib {o} {l} :
+  forall (lib : @library o l) opabs e,
     find_entry_sign lib opabs = Some e
     -> in_lib opabs lib.
 Proof.
@@ -2766,16 +2766,16 @@ Proof.
     exists e0; simpl; tcsp.
 Qed.
 
-Lemma find_entry_sign_implies_same_entry_name {o} :
-  forall (lib : @library o) (name : EntryName) (e : library_entry),
+Lemma find_entry_sign_implies_same_entry_name {o} {l} :
+  forall (lib : @library o l) (name : EntryName) (e : @library_entry o l),
     find_entry_sign lib name = Some e
     -> same_entry_name name (entry2name e).
 Proof.
   induction lib; simpl in *; introv h; tcsp; boolvar; ginv; auto.
 Qed.
 
-Lemma agreeing_libraries_cons_right_implies {o} :
-  forall (lib1 lib2 : @library o) e,
+Lemma agreeing_libraries_cons_right_implies {o} {l} :
+  forall (lib1 lib2 : @library o l) e,
     !in_lib (entry2name e) lib2
     -> libraries_agree_on_intersection lib1 (e :: lib2)
     -> libraries_agree_on_intersection lib1 lib2.

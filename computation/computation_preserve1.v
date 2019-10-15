@@ -113,8 +113,8 @@ Proof.
     introv i; repndors; subst; tcsp; allrw @bt_wf_iff; auto.
 Qed.
 
-Lemma compute_step_last_cs_success {o} :
-  forall lib can (t : @NTerm o) bts bs u,
+Lemma compute_step_last_cs_success {o} {k} :
+  forall (lib : @library o k) can (t : @NTerm o) bts bs u,
     compute_step_last_cs lib can t bts bs = csuccess u
     -> {name : choice_sequence_name
         & {d : NTerm
@@ -131,8 +131,8 @@ Proof.
   eexists; eexists; dands; unfold nobnd; eauto.
 Qed.
 
-Lemma compute_step_comp_seq1_success {o} :
-  forall lib can (t : @NTerm o) bts bs u,
+Lemma compute_step_comp_seq1_success {o} {k} :
+  forall (lib : @library o k) can (t : @NTerm o) bts bs u,
     compute_step_comp_seq1 lib can t bts bs = csuccess u
     -> {i : nat
         & {f : NTerm
@@ -167,8 +167,8 @@ Proof.
     right; dands; auto; try omega. }
 Qed.
 
-Lemma compute_step_comp_seq2_success {o} :
-  forall lib nfo can (t : @NTerm o) bts bs u,
+Lemma compute_step_comp_seq2_success {o} {k} :
+  forall (lib : @library o k) nfo can (t : @NTerm o) bts bs u,
     compute_step_comp_seq2 lib nfo can t bts bs = csuccess u
     -> {l : list nat
         & {i : nat
@@ -279,15 +279,15 @@ Proof.
 Qed.
 Hint Resolve implies_nt_wf_apply : slow.
 
-Lemma nt_wf_mk_fresh_choice_nat_seq {o} :
-  forall (lib : @library o) l, nt_wf (mk_fresh_choice_nat_seq lib l).
+Lemma nt_wf_mk_fresh_choice_nat_seq {o} {k} :
+  forall (lib : @library o k) l, nt_wf (mk_fresh_choice_nat_seq lib l).
 Proof.
   introv; repeat constructor; simpl; tcsp.
 Qed.
 Hint Resolve nt_wf_mk_fresh_choice_nat_seq : slow.
 
-Lemma free_vars_find_last_entry_default_subvars {o} :
-  forall lib name (d : @NTerm o),
+Lemma free_vars_find_last_entry_default_subvars {o} {k} :
+  forall (lib : @library o k) name (d : @NTerm o),
     subvars (free_vars (find_last_entry_default lib name d)) (free_vars d).
 Proof.
   introv; allrw subvars_eq; introv i.
@@ -298,8 +298,8 @@ Proof.
 Qed.
 Hint Resolve free_vars_find_last_entry_default_subvars : slow.
 
-Lemma nt_wf_find_last_entry_default {o} :
-  forall lib name (d : @NTerm o),
+Lemma nt_wf_find_last_entry_default {o} {k} :
+  forall (lib : @library o k) name (d : @NTerm o),
     nt_wf d
     -> nt_wf (find_last_entry_default lib name d).
 Proof.
@@ -311,8 +311,8 @@ Proof.
 Qed.
 Hint Resolve nt_wf_find_last_entry_default : slow.
 
-Lemma compute_step_preserves {o} :
-  forall lib (t u : @NTerm o),
+Lemma compute_step_preserves {o} {k} :
+  forall (lib : @library o k) (t u : @NTerm o),
     nt_wf t
     -> compute_step lib t = csuccess u
     -> (subvars (free_vars u) (free_vars t) # nt_wf u).
@@ -968,7 +968,7 @@ Proof.
 
         { allrw @nt_wf_oterm_iff; allsimpl; repnd.
           dands; tcsp.
-          introv k; repndors; subst; tcsp.
+          introv kk; repndors; subst; tcsp.
           constructor.
           apply nt_wf_eq.
           eapply wf_mk_instance; eauto.
@@ -976,7 +976,7 @@ Proof.
           autodimp h hyp.
           inversion h as [? ? w]; subst; clear h.
           apply nt_wf_oterm_iff in w; repnd.
-          introv k; apply w in k.
+          introv kk; apply w in kk.
           apply bt_wf_eq; auto.
         }
       }
@@ -1003,9 +1003,9 @@ Proof.
           rw remove_nvars_app_r; simpl.
           rw remove_nvars_eq; rw app_nil_r.
           apply subars_remove_nvars_lr.
-          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom lib t))) [n]) as k; repeat (autodimp k hyp); clear ind.
+          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom lib t))) [n]) as kk; repeat (autodimp kk hyp); clear ind.
           { rw @simple_osize_subst; eauto 3 with slow. }
-          pose proof (k x) as h; clear k.
+          pose proof (kk x) as h; clear kk.
           allrw @nt_wf_fresh.
           repeat (autodimp h hyp; repnd).
           { apply nt_wf_subst; eauto 3 with slow. }
@@ -1032,9 +1032,9 @@ Proof.
 
         - allsimpl; repnd; subst; allsimpl; allrw app_nil_r.
           allrw @nt_wf_fresh.
-          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom lib t))) [n]) as k; repeat (autodimp k hyp); clear ind.
+          pose proof (ind t (subst t n (mk_utoken (get_fresh_atom lib t))) [n]) as kk; repeat (autodimp kk hyp); clear ind.
           { rw @simple_osize_subst; eauto 3 with slow. }
-          pose proof (k x) as h; clear k.
+          pose proof (kk x) as h; clear kk.
           repeat (autodimp h hyp); repnd.
           { apply nt_wf_subst; eauto 3 with slow. }
           allrw @nt_wf_eq.
@@ -1063,8 +1063,8 @@ Proof.
       }
 Qed.
 
-Lemma preserve_compute_step {p} :
-  forall lib (t1 t2 : @NTerm p),
+Lemma preserve_compute_step {o} {k} :
+  forall (lib : @library o k) (t1 t2 : @NTerm o),
     compute_step lib t1 = csuccess t2
     -> isprogram t1
     -> isprogram t2.
@@ -1078,9 +1078,9 @@ Proof.
   rw subvars_nil_r in h0; auto.
 Qed.
 
-Lemma computek_preserves_program {p} :
-  forall lib k t1 t2,
-    compute_at_most_k_steps lib k t1 = @csuccess p t2
+Lemma computek_preserves_program {o} {n} :
+  forall (lib : @library o n) k t1 t2,
+    compute_at_most_k_steps lib k t1 = csuccess t2
     -> isprogram t1
     -> isprogram t2.
 Proof.
@@ -1090,8 +1090,8 @@ Proof.
   apply preserve_compute_step in Hck; auto.
 Qed.
 
-Lemma preserve_program {p} :
-  forall lib (t1 t2 : @NTerm p),
+Lemma preserve_program {o} {k} :
+  forall (lib : @library o k) (t1 t2 : NTerm),
     computes_to_value lib t1 t2
     -> isprogram t1
     -> isprogram t2.
@@ -1100,8 +1100,8 @@ Proof.
   apply computek_preserves_program in Hcv; auto.
 Qed.
 
-Lemma computek_preserves_program_exc {p} :
-  forall lib a k (t1 t2 : @NTerm p),
+Lemma computek_preserves_program_exc {o} {n} :
+  forall (lib : @library o n) a k (t1 t2 : NTerm),
     computes_to_exception_in_max_k_steps lib a t1 t2 k
     -> isprogram t1
     -> isprogram t2.
@@ -1112,8 +1112,8 @@ Proof.
   rw @isprogram_exception_iff in c; sp.
 Qed.
 
-Lemma preserve_program_exc {p} :
-  forall lib a (t1 t2 : @NTerm p),
+Lemma preserve_program_exc {o} {k} :
+  forall (lib : @library o k) a (t1 t2 : NTerm),
     computes_to_exception lib a t1 t2
     -> isprogram t1
     -> isprogram t2.
@@ -1125,8 +1125,8 @@ Proof.
   rw @isprogram_exception_iff in Hcv; sp.
 Qed.
 
-Lemma preserve_nt_wf_compute_step {p} :
-  forall lib (t1 t2 : @NTerm p),
+Lemma preserve_nt_wf_compute_step {o} {k} :
+  forall (lib : @library o k) (t1 t2 : NTerm),
     compute_step lib t1 = csuccess t2
     -> nt_wf t1
     -> nt_wf t2.
@@ -1135,9 +1135,9 @@ Proof.
   pose proof (compute_step_preserves lib t1 t2) as h; sp.
 Qed.
 
-Lemma reduces_to_preserves_program {p} :
-  forall lib t1 t2,
-    @reduces_to p lib t1 t2
+Lemma reduces_to_preserves_program {o} {k} :
+  forall (lib : @library o k) t1 t2,
+    reduces_to lib t1 t2
     -> isprogram t1
     -> isprogram t2.
 Proof.

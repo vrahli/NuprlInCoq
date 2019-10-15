@@ -211,11 +211,29 @@ Definition correct_restriction {o} (name : choice_sequence_name) (restr : @Choic
   | cs_kind_seq l => is_nat_seq_restriction l restr
   end.
 
+Definition is_exists_lib_restriction {o} (typ : RestrictionPred) (lib : @library o) (n : nat) (t : CTerm) :=
+  
+  typ <=> 
+Proof.
+  destruct typ.
+Qed.
+
+Definition choice_sequence_exists_lib_restriction {o} (restr : @ChoiceSeqRestriction o) :=
+  match restr with
+  | csc_type _ _ _ => True
+  | csc_coq_law _ => True
+  | csc_res typ =>
+    forall (n : nat) (t : CTerm),
+    exists (P : @library o -> Prop),
+    typ n t <=> exists (lib: library), P lib
+  end.
+
 Definition safe_choice_sequence_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntry o) :=
   match e with
   | MkChoiceSeqEntry _ vals restriction =>
     correct_restriction name restriction
     /\ choice_sequence_satisfies_restriction vals restriction
+    /\ choice_sequence_exists_lib_restriction restriction
   end.
 
 Definition upd_restr_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntry o) :=
@@ -249,12 +267,19 @@ Definition lib_extends_entries {o} (lib1 lib0 : @library o) :=
     -> entry_in_library_extends entry lib1.
 
 (* [lib1] extends [lib0] *)
-Record lib_extends {o} (lib1 lib0 : @library o) : Prop :=
-  MkLibExtends
-    {
-      lib_extends_ext  : lib_extends_entries lib1 lib0;
-      lib_extends_safe : safe_library lib0 -> safe_library lib1;
-      lib_extends_sub  : subset_library lib0 lib1;
+Inductive lib_extends {o} (lib1 lib0 : @library o) : Prop :=
+| MkLibExtends
+    (lib_extends_ext  : lib_extends_entries lib1 lib0)
+    (lib_extends_safe : safe_library lib0 -> safe_library lib1)
+    (lib_extends_sub  : subset_library lib0 lib1)
+    (lib_extends_xxx  :
+        forall name vals restr n t P,
+          entry_in_library (lib_cs name (MkChoiceSeqEntry _ vals restr)) lib0
+          -> select n vals = Some t
+          -> restr n t <=> (exists lib, P lib)
+          -> ).
+
+
     }.
 Arguments MkLibExtends [o] [lib1] [lib0] _ _ _.
 

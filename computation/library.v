@@ -189,41 +189,66 @@ Definition CSVal2term {o} (v : @ChoiceSeqVal o) : NTerm := get_cterm v.
 
 Definition RestrictionPred {o} := nat -> @CTerm o -> Prop.
 
-Inductive ChoiceSeqRestriction {o} :=
+Inductive ChoiceSeqRestriction_L {o} L :=
 (* constrains the values of the sequence to have that type *)
 (* [d] is a default value e*)
-| csc_type (d : nat -> @ChoiceSeqVal o) (typ : @RestrictionPred o) (typd : forall n, typ n (d n))
+| csc_type
+    (d    : nat -> @ChoiceSeqVal o)
+    (typ  : @RestrictionPred o)
+    (typd : forall n, typ n (d n))
 (* constrains the values of the sequence to follow the law given by the function *)
 | csc_coq_law (f : nat -> @CTerm o)
 (* no default *)
-| csc_res  (typ : @RestrictionPred o).
+| csc_res (typ : nat -> @CTerm o -> L -> Prop).
 
-(* no constraints *)
-Definition csc_no {o} : @ChoiceSeqRestriction o :=
-  csc_type (fun _ => mkc_zero) (fun _ _ => True) (fun _ => I).
+Arguments csc_type {o} [L] _ _ _.
+Arguments csc_coq_law {o} [L] _.
+Arguments csc_res {o} [L] _.
 
-(* A way to define a coq law using the type restriction *)
-Definition csc_coq_law_as_type {o} (f : nat -> @CTerm o) : @ChoiceSeqRestriction o :=
-  csc_type f (fun n v => v = f n) (fun _ => eq_refl).
-
-Record ChoiceSeqEntry {o} :=
-  MkChoiceSeqEntry
-    {
+Record ChoiceSeqEntry_L {o} L :=
+  MkChoiceSeqEntry {
       cse_vals        :> @ChoiceSeqVals o;
-      cse_restriction : @ChoiceSeqRestriction o;
+      cse_restriction : @ChoiceSeqRestriction_L o L
     }.
 
-Inductive library_entry {o} :=
+Arguments cse_vals {o} [L] _.
+Arguments cse_restriction {o} [L] _.
+
+Inductive library_entry_L {o} L :=
 (* a choice sequence *)
 | lib_cs
     (name : choice_sequence_name)
-    (entry : @ChoiceSeqEntry o)
+    (entry : @ChoiceSeqEntry_L o L)
 (* a regular abstraction *)
 | lib_abs
     (opabs : opabs)
     (vars  : list sovar_sig)
     (rhs   : @SOTerm o)
     (correct : correct_abs opabs vars rhs).
+
+Arguments lib_cs {o} [L] _ _.
+Arguments lib_abs {o} [L] _ _ _ _.
+
+Fixpoint library_entry_n {o} (n : nat) : Type :=
+  match n with
+  | 0 => False
+  | S n => @library_entry_L o (list (@library_entry_n o n))
+  end.
+
+Definition library_n {o} n := list (@library_entry_n o n).
+Definition library_entry {o} (n : nat) := @library_entry_L o (@library_n o n).
+Definition library {o} n := list (@library_entry o n).
+
+Definition ChoiceSeqRestriction {o} n := @ChoiceSeqRestriction_L o (@library_n o n).
+Definition ChoiceSeqEntry {o} n := @ChoiceSeqEntry_L o (@library_n o n).
+
+(* no constraints *)
+Definition csc_no {o} n : @ChoiceSeqRestriction o n :=
+  csc_type (fun _ => mkc_zero) (fun _ _ => True) (fun _ => I).
+
+(* A way to define a coq law using the type restriction *)
+Definition csc_coq_law_as_type {o} n (f : nat -> @CTerm o) : @ChoiceSeqRestriction o n :=
+  csc_type f (fun n v => v = f n) (fun _ => eq_refl).
 
 Definition matching_bterms {o} (vars : list sovar_sig) (bs : list (@BTerm o)) :=
   map (fun v => snd v) vars = map num_bvars bs.
@@ -282,10 +307,10 @@ Definition mk_instance {o}
            (rhs  : SOTerm) :=
   sosub (mk_abs_subst vars bs) rhs.
 
-Definition unfold_abs_entry {o}
-           (entry : @library_entry o)
+Definition unfold_abs_entry {o} {n}
+           (entry : @library_entry o n)
            (opabs : opabs)
-           (bs : list (@BTerm o)): option (@NTerm o) :=
+           (bs    : list (@BTerm o)) : option (@NTerm o) :=
   match entry with
   | lib_cs _ _ => None
   | lib_abs oa vars rhs correct =>
@@ -296,11 +321,9 @@ Definition unfold_abs_entry {o}
     else None
   end.
 
-Definition library {o} := list (@library_entry o).
+Definition emlib {o} {n} : @library o n := [].
 
-Definition emlib {o} : @library o := [].
-
-Fixpoint find_cs {o} lib name : option (@ChoiceSeqEntry o) :=
+Fixpoint find_cs {o} {n} (lib : @library o n) name : option (@ChoiceSeqEntry o n) :=
   match lib with
   | [] => None
   | lib_cs name' e :: l =>
@@ -323,13 +346,13 @@ Proof.
   induction n; introv; simpl; destruct L; simpl; auto.
 Qed.
 
-Definition find_cs_value_at {o} lib name n : option (@ChoiceSeqVal o) :=
+Definition find_cs_value_at {o} {k} (lib : @library o k) name n : option (@ChoiceSeqVal o) :=
   match find_cs lib name with
   | Some L => find_value_of_cs_at L n
   | None => None
   end.
 
-Fixpoint find_entry {o} lib oa0 (bs : list (@BTerm o)) : option (@library_entry o) :=
+Fixpoint find_entry {o} {k} (lib : @library o k) oa0 (bs : list (@BTerm o)) : option (@library_entry o k) :=
   match lib with
   | [] => None
   | lib_cs _ _ :: l => find_entry l oa0 bs
@@ -339,13 +362,13 @@ Fixpoint find_entry {o} lib oa0 (bs : list (@BTerm o)) : option (@library_entry 
     else find_entry l oa0 bs
   end.
 
-Definition found_entry {o}
-           lib oa0 (bs : list (@BTerm o))
+Definition found_entry {o} {k}
+           (lib : @library o k) oa0 (bs : list (@BTerm o))
            oa vars rhs correct :=
   find_entry lib oa0 bs = Some (lib_abs oa vars rhs correct).
 
 Lemma found_entry_implies_matching_entry {o} :
-  forall lib oa0 (bs : list (@BTerm o))
+  forall {k} (lib : @library o k) oa0 (bs : list (@BTerm o))
          oa vars rhs correct,
     found_entry lib oa0 bs oa vars rhs correct
     -> matching_entry oa0 oa vars bs.
@@ -358,8 +381,8 @@ Proof.
   inversion f; subst; auto.
 Qed.
 
-Fixpoint unfold_abs {o}
-         (lib : @library o)
+Fixpoint unfold_abs {o} {k}
+         (lib : @library o k)
          (opabs : opabs)
          (bs : list (@BTerm o)): option (@NTerm o) :=
   match lib with
@@ -371,7 +394,7 @@ Fixpoint unfold_abs {o}
       end
   end.
 
-Definition unfold {o} (lib : @library o) (t : @NTerm o) : option (@NTerm o) :=
+Definition unfold {o} {k} (lib : @library o k) (t : @NTerm o) : option (@NTerm o) :=
   match t with
     | oterm (Abs opabs) bs => unfold_abs lib opabs bs
     | _ => None
@@ -431,7 +454,7 @@ Proof.
 Qed.
 
 Lemma isprogram_subst_lib {o} :
-  forall oa0 oa vars rhs (lib : @library o) bs correct,
+  forall {l} oa0 oa vars rhs (lib : @library o l) bs correct,
     found_entry lib oa0 bs oa vars rhs correct
     -> (forall b, LIn b bs -> isprogram_bt b)
     -> isprogram (mk_instance vars bs rhs).
@@ -518,7 +541,7 @@ Proof.
 Qed.
 
 Lemma found_entry_change_bs {o} :
-  forall oa0 oa vars rhs (lib : @library o) bs correct bs2,
+  forall {l} oa0 oa vars rhs (lib : @library o l) bs correct bs2,
     found_entry lib oa0 bs oa vars rhs correct
     -> map num_bvars bs = map num_bvars bs2
     -> found_entry lib oa0 bs2 oa vars rhs correct.
@@ -541,7 +564,7 @@ Proof.
 Qed.
 
 Lemma unfold_abs_success_change_bs {o} :
-  forall (lib : @library o) oa1 oa2 bs1 bs2 vars rhs correct,
+  forall {k} (lib : @library o k) oa1 oa2 bs1 bs2 vars rhs correct,
     map num_bvars bs1 = map num_bvars bs2
     -> found_entry lib oa1 bs1 oa2 vars rhs correct
     -> unfold_abs lib oa1 bs2 = Some (mk_instance vars bs2 rhs).
@@ -623,20 +646,20 @@ Proof.
     allunfold @num_bvars; allsimpl; sp.
 Qed.
 
-Definition bound_vars_entry {o} (entry : @library_entry o) : list sovar_sig :=
+Definition bound_vars_entry {o} {k} (entry : @library_entry o k) : list sovar_sig :=
   match entry with
   | lib_cs _ e => vars2sovars (flat_map (fun t => bound_vars (CSVal2term t)) (cse_vals e))
   | lib_abs opabs vars rhs correct => vars ++ so_bound_vars rhs
   end.
 
-Fixpoint bound_vars_lib {o} (lib : @library o) : list sovar_sig :=
+Fixpoint bound_vars_lib {o} {k} (lib : @library o k) : list sovar_sig :=
   match lib with
     | [] => []
     | entry :: entries => bound_vars_entry entry ++ bound_vars_lib entries
   end.
 
 Lemma ni_bound_vars_if_found_entry {o} :
-  forall (lib : @library o) v oa1 bs oa2 vars rhs correct,
+  forall {k} (lib : @library o k) v oa1 bs oa2 vars rhs correct,
     !LIn v (bound_vars_lib lib)
     -> found_entry lib oa1 bs oa2 vars rhs correct
     -> !LIn v (so_bound_vars rhs).

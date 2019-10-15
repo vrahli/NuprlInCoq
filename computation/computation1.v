@@ -156,8 +156,8 @@ Definition compute_step_apseq {o}
   end.
 *)
 
-Definition compute_step_eapply2 {o}
-           lib
+Definition compute_step_eapply2 {o} {k}
+           (lib : @library o k)
            (t arg1 arg2 : @NTerm o)
            (bs : list (@BTerm o)) :=
   match bs with
@@ -181,8 +181,8 @@ Definition compute_step_eapply2 {o}
   | _ => cfailure bad_args t
   end.
 
-Definition compute_step_eapply1 {o}
-           lib
+Definition compute_step_eapply1 {o} {k}
+           (lib : @library o k)
            (bs    : list BTerm)
            (t     : @NTerm o)
            (cstep : Comput_Result)
@@ -235,8 +235,8 @@ Proof.
       left; left; eexists; unfold mk_choice_seq; eauto. }
 Qed.
 
-Definition compute_step_eapply {o}
-           lib
+Definition compute_step_eapply {o} {k}
+           (lib : @library o k)
            (bs    : list BTerm)
            (t     : @NTerm o)
            (cstep : Comput_Result)
@@ -646,14 +646,14 @@ Definition atom_sub_dom {o} (s : @atom_sub o) : list NVar :=
    either the library or the term we're computing.
    But then the definition will become messier.
  *)
-Record compenv {o} :=
+Record compenv {o} {k} :=
   {
-    ce_library : @library o;
+    ce_library : @library o k;
     ce_atom_sub : @atom_sub o
   }.
 
-Definition add_atom_sub {o}
-           (ce : @compenv o)
+Definition add_atom_sub {o k}
+           (ce : @compenv o k)
            (v : NVar)
            (a : get_patom_set o) : compenv :=
   {|
@@ -691,7 +691,7 @@ Fixpoint find_atom {o} (s : @atom_sub o) (var : NVar) : option (get_patom_set o)
     | (v, t) :: xs => if beq_var v var then Some t else find_atom xs var
   end.
 
-Definition compute_var {o} (v : NVar) (ce : @compenv o) (f : get_patom_set o -> @Comput_Result o) : Comput_Result :=
+Definition compute_var {o} {k} (v : NVar) (ce : @compenv o k) (f : get_patom_set o -> @Comput_Result o) : Comput_Result :=
   match find_atom (ce_atom_sub ce) v with
     | None => cfailure compute_step_error_not_closed (vterm v)
     | Some a => f a
@@ -951,8 +951,8 @@ Record ComputationContext {o} :=
   }.
 *)
 
-Definition compute_step_lib {o}
-           (lib : @library o)
+Definition compute_step_lib {o k}
+           (lib : @library o k)
            (opabs : opabs)
            (bs : list (@BTerm o)) :=
   match unfold_abs lib opabs bs with
@@ -1005,32 +1005,32 @@ Definition subst_utokens {p} (t : @NTerm p) (sub : utok_sub) : NTerm :=
   else subst_utokens_aux (change_bvars_alpha sfr t) sub.
 
 
-Definition get_utokens_library_entry {p} (entry : @library_entry p) : list (get_patom_set p) :=
+Definition get_utokens_library_entry {p} {k} (entry : @library_entry p k) : list (get_patom_set p) :=
   match entry with
   | lib_cs _ e => flat_map getc_utokens (cse_vals e)
   | lib_abs opabs vars rhs correct => get_utokens_so rhs
   end.
 
-Definition get_utokens_library {p} (lib : @library p) : list (get_patom_set p) :=
+Definition get_utokens_library {p} {k} (lib : @library p k) : list (get_patom_set p) :=
   flat_map get_utokens_library_entry lib.
 
-Definition get_utokens_ce {o} (ce : @compenv o) : list (get_patom_set o) :=
+Definition get_utokens_ce {o} {k} (ce : @compenv o k) : list (get_patom_set o) :=
   get_utokens_library (ce_library ce)
   ++ atom_sub_range (ce_atom_sub ce).
 
-Definition valid_atom_sub {o} (sub : @atom_sub o) (ce : @compenv o) (t : @NTerm o) :=
+Definition valid_atom_sub {o} {k} (sub : @atom_sub o) (ce : @compenv o k) (t : @NTerm o) :=
   disjoint (atom_sub_range sub)
            (get_utokens_library (ce_library ce) ++ get_utokens t)
   # atom_sub_dom sub = atom_sub_dom (ce_atom_sub ce).
 
-Definition mk_ce {o} (lib : @library o) (sub : @atom_sub o) : compenv :=
+Definition mk_ce {o} {k} (lib : @library o k) (sub : @atom_sub o) : compenv :=
   {| ce_library := lib; ce_atom_sub := sub |}.
 
-Definition ce_change_atom_sub {o} (ce : @compenv o) (sub : @atom_sub o) : compenv :=
+Definition ce_change_atom_sub {o} {k} (ce : @compenv o k) (sub : @atom_sub o) : compenv :=
   mk_ce (ce_library ce) sub.
 
 (* maps the atoms from [ce] to the atoms in [sub] *)
-Definition mk_utok_sub {o} (sub : @atom_sub o) (ce : @compenv o) : @utok_sub o :=
+Definition mk_utok_sub {o} {k} (sub : @atom_sub o) (ce : @compenv o k) : @utok_sub o :=
   combine (atom_sub_range (ce_atom_sub ce))
           (map mk_utoken (atom_sub_range sub)).
 
@@ -1247,14 +1247,14 @@ Proof.
     eapply ind; eauto 3 with slow.
 Qed.
 
-Definition get_utokens_lib {o} lib (t : @NTerm o) :=
+Definition get_utokens_lib {o} {k} (lib : @library o k) (t : @NTerm o) :=
   get_utokens t ++ get_utokens_library lib.
 
-Definition get_fresh_atom {o} lib (t : @NTerm o) : get_patom_set o :=
+Definition get_fresh_atom {o} {k} (lib : @library o k) (t : @NTerm o) : get_patom_set o :=
   projT1 (fresh_atom o (get_utokens_lib lib t)).
 
 Lemma get_fresh_atom_prop {o} :
-  forall lib (t : @NTerm o),
+  forall {k} (lib : @library o k) (t : @NTerm o),
     !LIn (get_fresh_atom lib t) (get_utokens t).
 Proof.
   introv i.
@@ -1267,7 +1267,7 @@ Proof.
 Qed.
 
 Lemma get_fresh_atom_prop_lib {o} :
-  forall lib (t : @NTerm o),
+  forall {k} (lib : @library o k) (t : @NTerm o),
     !LIn (get_fresh_atom lib t) (get_utokens_library lib).
 Proof.
   introv i.
@@ -1280,7 +1280,7 @@ Proof.
 Qed.
 
 Lemma get_fresh_atom_prop2 {o} :
-  forall lib (t : @NTerm o),
+  forall {k} (lib : @library o k) (t : @NTerm o),
     !LIn (get_fresh_atom lib t) (get_utokens t).
 Proof.
   introv i.
@@ -1289,7 +1289,7 @@ Proof.
 Qed.
 
 Lemma eq_fresh_atom {o} :
-  forall lib (t1 t2 : @NTerm o),
+  forall {k} (lib : @library o k) (t1 t2 : @NTerm o),
     get_utokens t1 = get_utokens t2
     -> get_fresh_atom lib t1 = get_fresh_atom lib t2.
 Proof.
@@ -1340,8 +1340,8 @@ Definition pushdown_fresh {o} (v : NVar) (t : @NTerm o) :=
     | oterm op bs => oterm op (mk_fresh_bterms v bs)
   end.
 
-Definition compute_step_fresh {o}
-           (lib : @library o)
+Definition compute_step_fresh {o} {k}
+           (lib : @library o k)
            (ncan : NonCanonicalOp)
            (t : @NTerm o)
            (v : NVar)

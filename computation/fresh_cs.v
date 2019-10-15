@@ -304,18 +304,18 @@ Proof.
   exists (fresh_cs vars); apply fresh_cs_not_in.
 Qed.
 
-Definition choice_seq_names_in_entry {o} (e : @library_entry o) : list choice_sequence_name :=
+Definition choice_seq_names_in_entry {o} {k} (e : @library_entry o k) : list choice_sequence_name :=
   match e with
   | lib_cs n l => [n]
   | lib_abs _ _ _ _ => []
   end.
 
-Fixpoint choice_seq_names_in_lib {o} (lib : @library o) : list choice_sequence_name :=
+Fixpoint choice_seq_names_in_lib {o} {k} (lib : @library o k) : list choice_sequence_name :=
   match lib with
   | [] => []
   | e :: es =>
     (choice_seq_names_in_entry e) ++ (choice_seq_names_in_lib es)
   end.
 
-Definition fresh_cs_in_lib {o} (lib : @library o) : cs_name :=
+Definition fresh_cs_in_lib {o} {k} (lib : @library o k) : cs_name :=
   fresh_cs (map csn_name (choice_seq_names_in_lib lib)).

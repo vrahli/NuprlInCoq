@@ -46,8 +46,8 @@ Hint Resolve eapply_wf_def_mk_choice_seq : slow.
 
 Hint Rewrite Nat2Z.id : slow.
 
-Lemma implies_reduces_to_eapply_choice_seq {o} :
-  forall lib (f a : @NTerm o) name n v,
+Lemma implies_reduces_to_eapply_choice_seq {o} {lv} :
+  forall (lib : @library o lv) (f a : @NTerm o) name n v,
     find_cs_value_at lib name n = Some v
     -> f =v>( lib) (mk_choice_seq name)
     -> a =v>(lib) (mk_nat n)
@@ -68,8 +68,8 @@ Proof.
 Qed.
 Hint Resolve implies_reduces_to_eapply_choice_seq : slow.
 
-Lemma eapply_choice_seq_exception_implies {o} :
-  forall lib (t : @NTerm o) name a n e,
+Lemma eapply_choice_seq_exception_implies {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) name a n e,
     (t =v>(lib) (mk_choice_seq name))
     -> (a =e>(n,lib) e)
     -> ((mk_eapply t a) =e>(n,lib) e).
@@ -83,8 +83,8 @@ Proof.
 Qed.
 Hint Resolve eapply_choice_seq_exception_implies : slow.
 
-Lemma reduces_in_atmost_k_steps_eapply_choice_seq_to_isvalue_like {o} :
-  forall lib name v k (a : @NTerm o),
+Lemma reduces_in_atmost_k_steps_eapply_choice_seq_to_isvalue_like {o} {lv} :
+  forall (lib : @library o lv) name v k (a : @NTerm o),
     reduces_in_atmost_k_steps lib (mk_eapply (mk_choice_seq name) a) v k
     -> isvalue_like v
     -> {val : ChoiceSeqVal
@@ -128,8 +128,8 @@ Proof.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 Qed.
 
-Lemma implies_compute_to_valc_apply_choice_seq {o} :
-  forall lib (a : @CTerm o) name n v,
+Lemma implies_compute_to_valc_apply_choice_seq {o} {lv} :
+  forall (lib : @library o lv) (a : @CTerm o) name n v,
     computes_to_valc lib a (mkc_nat n)
     -> find_cs_value_at lib name n = Some v
     -> iscvalue v

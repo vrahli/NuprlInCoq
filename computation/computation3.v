@@ -306,9 +306,9 @@ Proof.
   applydup IHk in H0; sp.
 Qed.*)
 
-Lemma compute_step_mk_cbv_ncan {p} :
-  forall lib c l v u,
-    compute_step lib (mk_cbv (oterm (@NCan p c) l) v u)
+Lemma compute_step_mk_cbv_ncan {o} {k} :
+  forall (lib : @library o k) c l v u,
+    compute_step lib (mk_cbv (oterm (NCan c) l) v u)
     = match compute_step lib (oterm (NCan c) l) with
         | csuccess f => csuccess (mk_cbv f v u)
         | cfailure str ts => cfailure str ts
@@ -317,8 +317,8 @@ Proof.
   introv; rw @compute_step_eq_unfold; sp.
 Qed.
 
-Lemma compute_step_mk_cbv_abs {o} :
-  forall (lib : @library o) x l v u,
+Lemma compute_step_mk_cbv_abs {o} {k} :
+  forall (lib : @library o k) x l v u,
     compute_step lib (mk_cbv (oterm (Abs x) l) v u)
     = match compute_step_lib lib x l with
         | csuccess f => csuccess (mk_cbv f v u)
@@ -328,8 +328,8 @@ Proof.
   introv; rw @compute_step_eq_unfold; sp.
 Qed.
 
-Lemma reduces_to_apply_id {p} :
-  forall lib (t : @NTerm p), reduces_to lib (mk_apply mk_id t) t.
+Lemma reduces_to_apply_id {o} {k} :
+  forall (lib : @library o k) (t : NTerm), reduces_to lib (mk_apply mk_id t) t.
 Proof.
   unfold reduces_to; sp.
   exists 1.
@@ -339,26 +339,26 @@ Qed.
 
 Hint Immediate reduces_to_apply_id.
 
-Lemma reduces_toc_apply_id {p} :
-  forall lib (t : @CTerm p), reduces_toc lib (mkc_apply mkc_id t) t.
+Lemma reduces_toc_apply_id {o} {k} :
+  forall (lib : @library o k) (t : CTerm), reduces_toc lib (mkc_apply mkc_id t) t.
 Proof.
   destruct t; unfold reduces_toc; simpl.
-  fold (@mk_id p); sp.
+  fold (@mk_id o); sp.
 Qed.
 
 Hint Immediate reduces_toc_apply_id.
 
-Lemma is_compute_step_apply {p} :
-  forall lib c l a,
-    @compute_step p lib (mk_apply (oterm (Can c) l) a)
+Lemma is_compute_step_apply {o} {k} :
+  forall (lib : @library o k) c l a,
+    compute_step lib (mk_apply (oterm (Can c) l) a)
     = compute_step_apply c (mk_apply (oterm (Can c) l) a) l [nobnd a].
 Proof.
   sp.
 Qed.
 
-Lemma is_compute_step_decide {p} :
-  forall lib c l x f y g,
-    compute_step lib (mk_decide (oterm (@Can p c) l) x f y g)
+Lemma is_compute_step_decide {o} {k} :
+  forall (lib : @library o k) c l x f y g,
+    compute_step lib (mk_decide (oterm (Can c) l) x f y g)
     = compute_step_decide c (mk_decide (oterm (Can c) l) x f y g) l [bterm [x] f, bterm [y] g].
 Proof.
   sp.
@@ -392,7 +392,7 @@ Qed.
 
 (*
 Lemma ismrk_implies {o} :
-  forall lib (t : @NTerm o),
+  forall (lib : @library o k) (t : @NTerm o),
     ismrk lib t ->
     {opabs : opabs
      & {bs : list BTerm
@@ -408,7 +408,7 @@ Qed.
 
 (*
 Lemma reduces_to_marker {p} :
-  forall lib e (t : @NTerm p), ismrk lib e -> reduces_to lib e t -> t = e.
+  forall (lib : @library o k) e (t : @NTerm p), ismrk lib e -> reduces_to lib e t -> t = e.
 Proof.
   introv ism r.
   unfold reduces_to in r; exrepnd.
@@ -426,7 +426,7 @@ Qed.
 
 (*
 Lemma compute_at_most_k_stepsf_marker {o} :
-  forall lib k (t u : @NTerm o),
+  forall (lib : @library o k) k (t u : @NTerm o),
     ismrk lib t
     -> compute_at_most_k_stepsf lib k t = csuccess u
     -> u = t.
@@ -454,17 +454,17 @@ Proof.
   apply iscan_mk_exception in isc; sp.
 Qed.
 
-Lemma cbv_reduce0 {pp} :
-  forall lib t v u,
+Lemma cbv_reduce0 {o} {k} :
+  forall (lib : @library o k) t v u,
     isprog t
-    -> @isprog pp u
+    -> isprog u
     -> hasvalue lib t
     -> reduces_to lib (mk_cbv t v u) u.
 Proof.
   unfold hasvalue, computes_to_value, reduces_to.
   introv ispt ispu comp; exrepnd.
   revert t comp2 ispt.
-  induction k; simpl; sp.
+  induction k0; simpl; sp.
 
   - allrw @reduces_in_atmost_k_steps_0; subst.
     exists 1; rw @reduces_in_atmost_k_steps_S.
@@ -481,17 +481,17 @@ Proof.
     applydup @preserve_compute_step in comp2;
       try (complete (allrw @isprogram_eq; sp)).
     allrw @isprogram_eq.
-    applydup IHk in comp1; tcsp; exrepnd.
+    applydup IHk0 in comp1; tcsp; exrepnd.
     destruct t as [x|op bs].
     { csunf comp2; ginv. }
     dopid op as [c|nc|exc|abs] Case.
 
     + Case "Can".
       rw @compute_step_eq_unfold in comp2; allsimpl; ginv.
-      exists k0; auto.
+      exists k1; auto.
 
     + Case "NCan".
-      exists (S k0); allrw @reduces_in_atmost_k_steps_S.
+      exists (S k1); allrw @reduces_in_atmost_k_steps_S.
       rw @compute_step_eq_unfold; simpl.
       rw comp2; simpl.
       eexists; dands; eauto.
@@ -503,12 +503,12 @@ Proof.
       fold_terms.
       allrw (@fold_exception).
       pose proof (reduces_to_exception lib (mk_exception a t) t') as ee;
-        repeat (autodimp ee hyp); sp; try (exists k; auto).
+        repeat (autodimp ee hyp); sp; try (exists k0; auto).
       subst.
       allapply @isvalue_mk_exception; sp.
 
     + Case "Abs".
-      exists (S k0); allrw @reduces_in_atmost_k_steps_S.
+      exists (S k1); allrw @reduces_in_atmost_k_steps_S.
       rw @compute_step_eq_unfold; simpl.
       rw comp2; simpl.
       eexists; dands; eauto.
@@ -548,16 +548,16 @@ Proof.
   inversion isp; allsimpl; allapply not_assert_false; sp.
 Qed.
 
-Lemma cbv_reduce {p} :
-  forall lib t v u x,
-    @isprog p t
+Lemma cbv_reduce {o} {k} :
+  forall (lib : @library o k) t v u x,
+    isprog t
     -> computes_to_value lib t x
     -> reduces_to lib (mk_cbv t v u) (subst u v x).
 Proof.
   unfold hasvalue, computes_to_value, reduces_to.
   introv isp comp; exrepnd.
   revert dependent t.
-  induction k; simpl; introv isp e.
+  induction k0; simpl; introv isp e.
 
   - allrw @reduces_in_atmost_k_steps_0; subst.
     exists 1; rw @reduces_in_atmost_k_steps_S.
@@ -579,7 +579,7 @@ Proof.
     applydup @preserve_compute_step in e1;
       try (complete (allrw @isprogram_eq; sp)).
     allrw @isprogram_eq.
-    applydup IHk in e0; sp.
+    applydup IHk0 in e0; sp.
     destruct t as [z|op bs].
     { allapply @isprog_vterm; sp. }
 
@@ -587,10 +587,10 @@ Proof.
 
     + Case "Can".
       rw @compute_step_eq_unfold in e1; allsimpl; ginv.
-      exists k0; sp.
+      exists k1; sp.
 
     + Case "NCan".
-      exists (S k0); allrw @reduces_in_atmost_k_steps_S.
+      exists (S k1); allrw @reduces_in_atmost_k_steps_S.
       rw @compute_step_eq_unfold; simpl; rw e1; simpl.
       eexists; dands; eauto.
 
@@ -601,19 +601,19 @@ Proof.
       allrw @fold_exception.
       rw @compute_step_exception in e1; sp; ginv.
       pose proof (reduces_to_exception lib (mk_exception a t) x) as ee;
-        repeat (autodimp ee hyp); sp; try (exists k; auto).
+        repeat (autodimp ee hyp); sp; try (exists k0; auto).
       subst.
       allapply @isvalue_mk_exception; sp.
 
     + Case "Abs".
-      exists (S k0); allrw @reduces_in_atmost_k_steps_S.
+      exists (S k1); allrw @reduces_in_atmost_k_steps_S.
       rw @compute_step_eq_unfold; simpl; rw e1; simpl.
       eexists; dands; eauto.
 Qed.
 
-Lemma if_hasvalue_cbv0 {p} :
-  forall lib t v u,
-    @isprog p t
+Lemma if_hasvalue_cbv0 {o} {n} :
+  forall (lib : @library o n) t v u,
+    isprog t
     -> hasvalue lib (mk_cbv t v u)
     -> hasvalue lib t.
 Proof.
@@ -643,7 +643,7 @@ Proof.
       try (complete (inversion comp)).
 
       allrw @fold_nobnd; allrw @fold_cbv.
-      assert (isprog n) as in0 by (apply preserve_compute_step in Heqc; sp; allrw @isprogram_eq; sp).
+      assert (isprog n0) as in0 by (apply preserve_compute_step in Heqc; sp; allrw @isprogram_eq; sp).
       applydup IHk in in0; sp.
       exists t'0; sp.
       exists (S k0).
@@ -667,7 +667,7 @@ Proof.
      unfold mk_cbv, nobnd in comp.
      rw @compute_step_ncan_abs in comp.
      remember (compute_step_lib lib abs bs) as c; destruct c; try (complete (inversion comp)).
-     pose proof (compute_step_lib_success lib abs bs n) as h.
+     pose proof (compute_step_lib_success lib abs bs n0) as h.
      autodimp h hyp; exrepnd; subst.
      allrw @fold_nobnd; allrw @fold_cbv.
 
@@ -695,12 +695,12 @@ Proof.
 Qed.
 Hint Resolve isprog_can_implies_isvalue : slow.
 
-Lemma if_hasvalue_cbv {p} :
-  forall lib t v u,
+Lemma if_hasvalue_cbv {o} {l} :
+  forall (lib : @library o l) t v u,
     isprog t
     -> isprog_vars [v] u
     -> hasvalue lib (mk_cbv t v u)
-    -> {x : @NTerm p & computes_to_value lib t x # hasvalue lib (subst u v x)}.
+    -> {x : NTerm & computes_to_value lib t x # hasvalue lib (subst u v x)}.
 Proof.
   unfold hasvalue, computes_to_value, reduces_to, reduces_in_atmost_k_steps.
   introv pt pu hv; exrepd.
@@ -788,13 +788,13 @@ Proof.
 Qed.
 Hint Resolve isvalue_mk_choice_seq : slow.
 
-Lemma if_hasvalue_apply {pp} :
-  forall lib f a,
+Lemma if_hasvalue_apply {o} {l} :
+  forall (lib : @library o l) f a,
     isprog f
     -> isprog a
     -> hasvalue lib (mk_apply f a)
     -> {v : NVar
-        & {b : @NTerm pp
+        & {b : NTerm
         & computes_to_value lib f (mk_lam v b)
         # hasvalue lib (subst b v a)}}
        [+] {n : choice_sequence_name
@@ -893,8 +893,8 @@ Proof.
         { eexists; dands;[eexists;exact comp4|]; auto. }
 Qed.
 
-Lemma if_computes_to_value_apply {o} :
-  forall lib (f a x : @NTerm o),
+Lemma if_computes_to_value_apply {o} {l} :
+  forall (lib : @library o l) (f a x : @NTerm o),
     isprog f
     -> isprog a
     -> computes_to_value lib (mk_apply f a) x
@@ -997,8 +997,8 @@ Proof.
           eexists; dands; eauto. }
 Qed.
 
-Lemma compute_step_value_like {p} :
-  forall lib (t : @NTerm p), isvalue_like t -> compute_step lib t = csuccess t.
+Lemma compute_step_value_like {o} {l} :
+  forall (lib : @library o l) (t : NTerm), isvalue_like t -> compute_step lib t = csuccess t.
 Proof.
   introv h.
   dorn h.
@@ -1009,8 +1009,8 @@ Proof.
     try (complete (dorn h; allsimpl; sp)).
 Qed.
 
-Lemma reduces_in_atmost_k_steps_if_isvalue_like {o} :
-  forall lib k (t1 t2 : @NTerm o),
+Lemma reduces_in_atmost_k_steps_if_isvalue_like {o} {l} :
+  forall (lib : @library o l) k (t1 t2 : @NTerm o),
     reduces_in_atmost_k_steps lib t1 t2 k
     -> isvalue_like t1
     -> t2 = t1.
@@ -1043,9 +1043,9 @@ Proof.
 Qed.
 Hint Resolve isvalue_like_utoken : slow.
 
-Lemma implies_computes_to_value_apply {p} :
-  forall lib f a v b x,
-    computes_to_value lib f (@mk_lam p v b)
+Lemma implies_computes_to_value_apply {o} {l} :
+  forall (lib : @library o l) f a v b x,
+    computes_to_value lib f (mk_lam v b)
     -> computes_to_value lib (subst b v a) x
     -> computes_to_value lib (mk_apply f a) x.
 Proof.
@@ -1103,9 +1103,9 @@ Proof.
         exists u0; sp.
 Qed.
 
-Lemma implies_computes_to_value_inl_decide {pp} :
-  forall lib d x f y g a v,
-    computes_to_value lib d (@mk_inl pp a)
+Lemma implies_computes_to_value_inl_decide {o} {l} :
+  forall (lib : @library o l) d x f y g a v,
+    computes_to_value lib d (mk_inl a)
     -> computes_to_value lib (subst f x a) v
     -> computes_to_value lib (mk_decide d x f y g) v.
 Proof.
@@ -1162,9 +1162,9 @@ Proof.
         exists u0; sp.
 Qed.
 
-Lemma implies_computes_to_value_inr_decide {pp} :
-  forall lib d x f y g a v,
-    computes_to_value lib d (@mk_inr pp a)
+Lemma implies_computes_to_value_inr_decide {o} {l} :
+  forall (lib : @library o l) d x f y g a v,
+    computes_to_value lib d (mk_inr a)
     -> computes_to_value lib (subst g y a) v
     -> computes_to_value lib (mk_decide d x f y g) v.
 Proof.
@@ -1221,14 +1221,14 @@ Proof.
         exists u0; sp.
 Qed.
 
-Definition computes_to_pk {o} lib (t : @NTerm o) (pk : param_kind) :=
+Definition computes_to_pk {o} {l} (lib : @library o l) (t : @NTerm o) (pk : param_kind) :=
   computes_to_value lib t (pk2term pk).
 
 Definition mk_compop_eq {p} (a b c d : @NTerm p) :=
   oterm (NCan (NCompOp CompOpEq)) [nobnd a, nobnd b, nobnd c, nobnd d].
 
-Lemma reduces_in_atmost_k_steps_exception {o} :
-  forall lib bs (t : @NTerm o) k,
+Lemma reduces_in_atmost_k_steps_exception {o} {l} :
+  forall (lib : @library o l) bs (t : @NTerm o) k,
     reduces_in_atmost_k_steps lib (oterm Exc bs) t k
     -> t = oterm Exc bs.
 Proof.
@@ -1238,8 +1238,8 @@ Proof.
   ginv; auto.
 Qed.
 
-Lemma implies_computes_to_value_comp {p} :
-  forall lib (a b c d : @NTerm p) pk1 pk2 v,
+Lemma implies_computes_to_value_comp {o} {l} :
+  forall (lib : @library o l) (a b c d : NTerm) pk1 pk2 v,
     computes_to_pk lib a pk1
     -> computes_to_pk lib b pk2
     -> computes_to_value lib (if param_kind_deq pk1 pk2 then c else d) v
@@ -1330,15 +1330,15 @@ Proof.
       eexists; dands; eauto.
 Qed.
 
-Lemma computes_to_value_implies_computes_to_pk {o} :
-  forall lib (t : @NTerm o) pk,
+Lemma computes_to_value_implies_computes_to_pk {o} {l} :
+  forall (lib : @library o l) (t : @NTerm o) pk,
     computes_to_value lib t (pk2term pk)
     -> computes_to_pk lib t pk.
 Proof. sp. Qed.
 Hint Resolve computes_to_value_implies_computes_to_pk : slow.
 
-Lemma reduces_in_atmost_k_steps_implies_computes_to_value {o} :
-  forall lib (t : @NTerm o) u k,
+Lemma reduces_in_atmost_k_steps_implies_computes_to_value {o} {l} :
+  forall (lib : @library o l) (t : @NTerm o) u k,
     reduces_in_atmost_k_steps lib t u k
     -> isvalue u
     -> computes_to_value lib t u.
@@ -1349,8 +1349,8 @@ Proof.
 Qed.
 Hint Resolve reduces_in_atmost_k_steps_implies_computes_to_value : slow.
 
-Lemma implies_computes_to_value_trycatch {p} :
-  forall lib a (t : @NTerm p) v pk x b,
+Lemma implies_computes_to_value_trycatch {o} {l} :
+  forall (lib : @library o l) a (t : NTerm) v pk x b,
     computes_to_value lib t v
     -> computes_to_pk lib a pk
     -> computes_to_value lib (mk_try t a x b) v.
@@ -1418,8 +1418,8 @@ Proof.
       eexists; dands; eauto.
 Qed.
 
-Lemma can_doesnt_raise_an_exception {p} :
-  forall lib a c bterms (e : @NTerm p),
+Lemma can_doesnt_raise_an_exception {o} {l} :
+  forall (lib : @library o l) a c bterms (e : NTerm),
     computes_to_exception lib a (oterm (Can c) bterms) e -> False.
 Proof.
   introv ce.
@@ -1430,8 +1430,8 @@ Proof.
   inversion r; subst.
 Qed.
 
-Lemma not_bot_reduces_to_value {p} :
-  forall lib t, @isvalue p t -> !reduces_to lib mk_bot t.
+Lemma not_bot_reduces_to_value {o} {l} :
+  forall (lib : @library o l) t, isvalue t -> !reduces_to lib mk_bot t.
 Proof.
   introv isv red.
   unfold reduces_to, reduces_in_atmost_k_steps in red; sp.
@@ -1442,7 +1442,7 @@ Proof.
 
   - allapply @isvalue_ncan; sp.
 
-  - destruct k; try (complete (inversion l)).
+  - destruct k; try (complete (inversion l0)).
     simpl in e.
     destruct k; simpl in e; ginv;[allapply @isvalue_ncan; sp|].
     destruct k; simpl in e; ginv.
@@ -1457,31 +1457,31 @@ Proof.
       apply ind in e; sp.
 Qed.
 
-Lemma bottom_diverges {p} :
-  forall lib t, !@computes_to_value p lib mk_bot t.
+Lemma bottom_diverges {o} {l} :
+  forall (lib : @library o l) t, !computes_to_value lib mk_bot t.
 Proof.
   introv comp.
   unfold computes_to_value in comp; repnd.
   apply not_bot_reduces_to_value in comp0; auto.
 Qed.
 
-Lemma not_hasvalue_bot {p} : forall lib, @hasvalue p lib mk_bot -> False.
+Lemma not_hasvalue_bot {o} {l} : forall (lib : @library o l), hasvalue lib mk_bot -> False.
 Proof.
   introv Hsc; repnud Hsc; exrepnd.
   apply bottom_diverges in Hsc0; cpx.
 Qed.
 
-Lemma bottom_doesnt_converge {p} :
-  forall lib a,
-    @computes_to_value p lib mk_bottom a
+Lemma bottom_doesnt_converge {o} {l} :
+  forall (lib : @library o l) a,
+    computes_to_value lib mk_bottom a
     -> False.
 Proof.
   introv comp.
   apply bottom_diverges in comp; sp.
 Qed.
 
-Lemma bottom_doesnt_raise_an_exception {p} :
-  forall lib a (e : @NTerm p),
+Lemma bottom_doesnt_raise_an_exception {o} {l} :
+  forall (lib : @library o l) a (e : NTerm),
     computes_to_exception lib a mk_bottom e
     -> False.
 Proof.
@@ -1517,8 +1517,8 @@ Proof.
       apply Hind in Hc; sp.
 Qed.
 
-Lemma not_vbot_reduces_to_value {p} :
-  forall lib v t, @isvalue p t -> !reduces_to lib (mk_vbot v) t.
+Lemma not_vbot_reduces_to_value {o} {l} :
+  forall (lib : @library o l) v t, isvalue t -> !reduces_to lib (mk_vbot v) t.
 Proof.
   introv isv red.
   unfold reduces_to, reduces_in_atmost_k_steps in red; sp.
@@ -1529,7 +1529,7 @@ Proof.
 
   - allapply @isvalue_ncan; sp.
 
-  - destruct k; try (complete (inversion l)).
+  - destruct k; try (complete (inversion l0)).
     simpl in e.
     destruct k; allsimpl; ginv; allapply @isvalue_ncan; tcsp.
     destruct k; allsimpl; ginv.
@@ -1551,16 +1551,16 @@ Proof.
         apply ind in e; sp.
 Qed.
 
-Lemma vbot_diverges {p} :
-  forall lib v t, !@computes_to_value p lib (mk_vbot v) t.
+Lemma vbot_diverges {o} {l} :
+  forall (lib : @library o l) v t, !computes_to_value lib (mk_vbot v) t.
 Proof.
   introv comp.
   unfold computes_to_value in comp; repnd.
   apply not_vbot_reduces_to_value in comp0; auto.
 Qed.
 
-Lemma vbot_doesnt_raise_an_exception {p} :
-  forall lib a v (e : @NTerm p),
+Lemma vbot_doesnt_raise_an_exception {o} {l} :
+  forall (lib : @library o l) a v (e : NTerm),
     !computes_to_exception lib a (mk_vbot v) e.
 Proof.
   introv Hcv.
@@ -1591,23 +1591,23 @@ Proof.
       apply Hind in Hc; sp.
 Qed.
 
-Lemma axiom_doesnt_raise_an_exception {p} :
-  forall lib a (e : @NTerm p),
+Lemma axiom_doesnt_raise_an_exception {o} {l} :
+  forall (lib : @library o l) a (e : NTerm),
     computes_to_exception lib a mk_axiom e -> False.
 Proof.
   introv c.
   apply can_doesnt_raise_an_exception in c; sp.
 Qed.
 
-Lemma apply_compute_step_prinargcan {p} :
-  forall lib arg1c arg1lbt lbt tc,
+Lemma apply_compute_step_prinargcan {o} {l} :
+  forall (lib : @library o l) arg1c arg1lbt lbt tc,
     compute_step lib
         (oterm (NCan NApply)
         (bterm [] (oterm (Can arg1c) arg1lbt) :: lbt))
       = csuccess tc
       -> (arg1c = NLambda
           # {lamv : NVar
-             & {lamb,applicand : @NTerm p
+             & {lamb,applicand : NTerm
              $ arg1lbt = [bterm [lamv] lamb]
              # lbt = [bterm [] applicand]
              # tc = subst lamb lamv applicand }})
@@ -1647,8 +1647,8 @@ Ltac destructbtdeep bt Hcomp :=
   try(destruct btlv as [| btlv3]; inverts Hcomp as Hcomp).
 
 
-Lemma compute_step_lib_success_change_bs {o} :
-  forall (lib : @library o) oa1 oa2 bs1 bs2 vars rhs correct,
+Lemma compute_step_lib_success_change_bs {o} {l} :
+  forall (lib : @library o l) oa1 oa2 bs1 bs2 vars rhs correct,
     map num_bvars bs1 = map num_bvars bs2
     -> found_entry lib oa1 bs1 oa2 vars rhs correct
     -> compute_step_lib lib oa1 bs2 = csuccess (mk_instance vars bs2 rhs).
@@ -1676,8 +1676,8 @@ Proof.
     autodimp x hyp; omega.
 Qed.
 
-Lemma alpha_eq_lsubst_mk_abs_subst {o} :
-  forall lib oa1 oa2 rhs vars correct (bs1 bs2 : list (@BTerm o)),
+Lemma alpha_eq_lsubst_mk_abs_subst {o} {l} :
+  forall (lib : @library o l) oa1 oa2 rhs vars correct (bs1 bs2 : list (@BTerm o)),
     found_entry lib oa1 bs1 oa2 vars rhs correct
     -> found_entry lib oa1 bs2 oa2 vars rhs correct
     -> map num_bvars bs1 = map num_bvars bs2
@@ -2033,8 +2033,8 @@ Proof.
 Qed.
 Hint Resolve atom_sub_compat_refl : slow.
 
-Lemma ce_change_atom_sub_trivial {o} :
-  forall lib : @compenv o,
+Lemma ce_change_atom_sub_trivial {o} {l} :
+  forall (lib : @compenv o l),
     ce_change_atom_sub lib (ce_atom_sub lib) = lib.
 Proof.
   introv.
@@ -2044,7 +2044,7 @@ Qed.
 
 (*
 Lemma compute_step_ncan_utoken_success {o} :
-  forall lib ncan a (bs : list (@BTerm o)) u,
+  forall (lib : @library o k) ncan a (bs : list (@BTerm o)) u,
     compute_step lib (oterm (NCan ncan) (nobnd (mk_utoken a) :: bs))
     = csuccess u
     -> (ncan = NFix
@@ -2395,8 +2395,8 @@ Proof.
   inversion aeq; subst; allsimpl; cpx.
 Qed.
 
-Lemma compute_step_eapply_iscan_isnoncan_like {o} :
-  forall lib (x t : @NTerm o) bs,
+Lemma compute_step_eapply_iscan_isnoncan_like {o} {l} :
+  forall (lib : @library o l) (x t : @NTerm o) bs,
     eapply_wf_def x
     -> isnoncan_like t
     -> compute_step lib (oterm (NCan NEApply) (nobnd x :: nobnd t :: bs))
@@ -2419,8 +2419,8 @@ Proof.
                    try (complete (unfold compute_step_eapply; dcwf h)))).
 Qed.
 
-Lemma compute_step_eapply_lam_iscan {o} :
-  forall lib v (b t : @NTerm o) bs,
+Lemma compute_step_eapply_lam_iscan {o} {l} :
+  forall (lib : @library o l) v (b t : @NTerm o) bs,
     iscan t
     -> compute_step lib (oterm (NCan NEApply) (nobnd (mk_lam v b) :: nobnd t :: bs))
        = match bs with
@@ -2496,8 +2496,8 @@ Proof.
       allrw @get_utokens_step_seq_cswap; auto. }
 Qed.
 
-Lemma compute_step_eapply_iscan_isexc {o} :
-  forall lib (x t : @NTerm o) bs,
+Lemma compute_step_eapply_iscan_isexc {o} {l} :
+  forall (lib : @library o l) (x t : @NTerm o) bs,
     eapply_wf_def x
     -> iscan x
     -> isexc t
@@ -2648,8 +2648,8 @@ Qed.
 
 Hint Rewrite Nat2Z.id : slow.
 
-Lemma implies_alpha_eq_find_last_entry_default {o} :
-  forall lib name (a b : @NTerm o),
+Lemma implies_alpha_eq_find_last_entry_default {o} {l} :
+  forall (lib : @library o l) name (a b : @NTerm o),
     alpha_eq a b
     -> alpha_eq
          (find_last_entry_default lib name a)
@@ -2667,12 +2667,12 @@ Hint Resolve implies_alpha_eq_find_last_entry_default : slow.
 (* end hide *)
 
 
-Theorem compute_step_alpha {p} :
-  forall lib t1 t2 t1',
+Theorem compute_step_alpha {o} {l} :
+  forall (lib : @library o l) t1 t2 t1',
     nt_wf t1
     -> alpha_eq t1 t2
     -> compute_step lib t1 = csuccess t1'
-    -> { t2' : @NTerm p
+    -> { t2' : NTerm
         & compute_step lib t2 = csuccess t2'
         # alpha_eq t1' t2'}.
 Proof.
@@ -2768,7 +2768,7 @@ Proof.
                 pose proof (H1alarg0 0) as aeq; autodimp aeq hyp.
                 unfold selectbt in aeq; allsimpl.
 
-                destruct x as [l t].
+                destruct x as [l0 t].
                 applydup @alphaeqbt1v2 in aeq; exrepnd; subst; fold_terms.
 
                 allrw disjoint_singleton_l.
@@ -2919,7 +2919,7 @@ Proof.
               allsimpl.
               apply compute_step_sleep_success in Hcomp; exrepnd; subst; allsimpl; cpx.
               destruct lbt2; allsimpl; cpx; GC.
-              exists (@mk_axiom p); dands; auto.
+              exists (@mk_axiom o); dands; auto.
 
             - SSSSSCase "NTUni".
 
@@ -2927,7 +2927,7 @@ Proof.
               allsimpl.
               apply compute_step_tuni_success in Hcomp; exrepnd; subst; allsimpl; cpx.
               destruct lbt2; allsimpl; cpx; GC.
-              exists (@mk_uni p n); dands; auto.
+              exists (@mk_uni o n); dands; auto.
               unfold compute_step_tuni; simpl.
               destruct (Z_le_gt_dec 0 (Z.of_nat n)); sp; try omega.
               rw Znat.Nat2Z.id; sp.
@@ -2938,7 +2938,7 @@ Proof.
               allsimpl.
               apply compute_step_minus_success in Hcomp; exrepnd; subst; allsimpl; cpx.
               destruct lbt2; allsimpl; cpx; GC.
-              exists (@mk_integer p (- z)); dands; auto.
+              exists (@mk_integer o (- z)); dands; auto.
 
             - SSSSSCase "NFresh".
               csunf Hcomp; csunf; allsimpl.
@@ -2963,7 +2963,7 @@ Proof.
 
               csunf Hcomp; allsimpl.
               apply compute_step_parallel_success in Hcomp; subst; allsimpl.
-              exists (@mk_axiom p); dands; auto.
+              exists (@mk_axiom o); dands; auto.
 
             - SSSSSCase "NLastCs".
 
@@ -3249,13 +3249,13 @@ Proof.
               applydup @alpha_eq_ot_numvars in backup.
               simpl in backup0; cpx.
               allunfold @num_bvars; allsimpl; cpx.
-              destruct l; allsimpl; cpx.
+              destruct l0; allsimpl; cpx.
               destruct x0; allsimpl; cpx.
-              destruct l; allsimpl; cpx.
+              destruct l0; allsimpl; cpx.
               destruct y; allsimpl; cpx.
-              repeat (destruct l; allsimpl; cpx).
+              repeat (destruct l0; allsimpl; cpx).
               destruct y0; allsimpl; cpx.
-              repeat (destruct l; allsimpl; cpx).
+              repeat (destruct l0; allsimpl; cpx).
               generalize (H1alarg0 0); intro k0; autodimp k0 hyp.
               unfold selectbt in k0; simpl in k0.
               generalize (H1alarg0 1); intro k1; autodimp k1 hyp.
@@ -3314,7 +3314,7 @@ Proof.
           repndors; exrepnd; subst; allsimpl;
           clear backup; apply alpha_eq_mk_fresh in Hal; exrepnd; subst.
 
-          - exists (@mk_fresh p v' (mk_var v')).
+          - exists (@mk_fresh o v' (mk_var v')).
             apply alphaeqbt_1v in Hal1; exrepnd; ginv.
             allrw disjoint_singleton_l; simphyps; allrw not_over_or; repnd.
 
@@ -3485,38 +3485,38 @@ Qed.
 (* begin hide *)
 
 
-Lemma compute_at_most_steps_var {p} :
-  forall lib n v,
+Lemma compute_at_most_steps_var {o} {l} :
+  forall (lib : @library o l) n v,
     compute_at_most_k_steps lib (S n) (vterm v)
-    = cfailure compute_step_error_not_closed (@vterm p v) .
+    = cfailure compute_step_error_not_closed (vterm v) .
 Proof.
   induction n; allsimpl; cpx.
   intro. rewrite IHn. refl.
 Qed.
 
-Lemma compute_in_k_steps_var {p} :
-  forall lib n v,
+Lemma compute_in_k_steps_var {o} {l} :
+  forall (lib : @library o l) n v,
     computes_k_steps lib (S n) (vterm v)
-    = cfailure compute_step_error_not_closed (@vterm p v) .
+    = cfailure compute_step_error_not_closed (vterm v) .
 Proof.
   introv.
   rw @computes_k_steps_eq_f; simpl; sp.
 Qed.
 
-Lemma compute_1_step_success_implies_compute_step {p} :
- forall lib (t1 t2 : @NTerm p),
+Lemma compute_1_step_success_implies_compute_step {o} {l} :
+ forall (lib : @library o l) (t1 t2 : NTerm),
   compute_1_step lib t1 = csuccess t2
   -> compute_step lib t1 = csuccess t2.
 Proof.
   introv k.
   unfold compute_1_step in k.
   destruct t1; ginv.
-  destruct o; auto; inversion k.
+  destruct o0; auto; inversion k.
 Qed.
 
-Lemma compute_step_ncan_implies_compute_1_step {p} :
- forall lib nc bts res,
-  compute_step lib (oterm (@NCan p nc) bts) = res
+Lemma compute_step_ncan_implies_compute_1_step {o} {l} :
+ forall (lib : @library o l) nc bts res,
+  compute_step lib (oterm (NCan nc) bts) = res
   -> compute_1_step lib (oterm (NCan nc) bts) = res.
 Proof. sp. Qed.
 
@@ -3534,8 +3534,8 @@ Proof.
 Qed.
 *)
 
-Lemma compute_step_exact_implies_atmost {p} :
- forall lib n (t1 t2 : @NTerm p),
+Lemma compute_step_exact_implies_atmost {o} {l} :
+ forall (lib : @library o l) n (t1 t2 : NTerm),
   computes_k_steps lib n t1 = csuccess t2
   -> compute_at_most_k_steps lib n t1 = csuccess t2.
 Proof.
@@ -3548,8 +3548,8 @@ Proof.
   apply compute_1_step_success_implies_compute_step in c; auto.
 Qed.
 
-Lemma compute_step_atmost_exact {p} :
- forall lib n (t1 t2 : @NTerm p),
+Lemma compute_step_atmost_exact {o} {l} :
+ forall (lib : @library o l) n (t1 t2 : NTerm),
   compute_at_most_k_steps lib n t1 = csuccess t2
   -> { m : nat & m <=n # computes_k_steps lib m t1 = csuccess t2  }.
 Proof.
@@ -3560,7 +3560,7 @@ Proof.
   symmetry in HeqHdeq. applydup IHn in HeqHdeq.
   exrepnd.
   destruct ss;[inverts Hc|];[].
-  dopid o as [c|nc|exc|abs] Case.
+  dopid o0 as [c|nc|exc|abs] Case.
   - Case "Can".
     csunf Hc; allsimpl; ginv.
     exists m. allsimpl. split; spc.
@@ -3602,14 +3602,14 @@ Proof.
 Qed.
 *)
 
-Lemma compute_1_step_mk_try {p} :
-  forall lib a (t : @NTerm p) x b,
+Lemma compute_1_step_mk_try {o} {l} :
+  forall (lib : @library o l) a (t : NTerm) x b,
     compute_1_step lib (mk_try t a x b)
     = compute_step lib (mk_try t a x b).
 Proof. sp. Qed.
 
-Lemma implies_reduces_to_trycatch {p} :
-  forall lib a a' (t : @NTerm p) e x b,
+Lemma implies_reduces_to_trycatch {o} {l} :
+  forall (lib : @library o l) a a' (t : NTerm) e x b,
     computes_to_exception lib a t e
     -> reduces_to lib (mk_try t a' x b) (mk_atom_eq a' a (subst b x e) (mk_exception a e)).
 Proof.
@@ -3657,8 +3657,8 @@ Proof.
       eexists; dands; eauto.
 Qed.
 
-Lemma compute_at_most_k_steps_preserves_wf {o} :
-  forall lib k (t1 t2 : @NTerm o),
+Lemma compute_at_most_k_steps_preserves_wf {o} {l} :
+  forall (lib : @library o l) k (t1 t2 : @NTerm o),
     compute_at_most_k_steps lib k t1 = csuccess t2
     -> nt_wf t1
     -> nt_wf t2.
@@ -3672,13 +3672,13 @@ Proof.
     apply preserve_nt_wf_compute_step in comp; auto.
 Qed.
 
-Theorem reduces_in_atmost_k_steps_alpha {p} :
-  forall lib (t1 t2 : NTerm),
+Theorem reduces_in_atmost_k_steps_alpha {o} {l} :
+  forall (lib : @library o l) (t1 t2 : NTerm),
     nt_wf t1
     -> alpha_eq t1 t2
     -> forall k t1',
         reduces_in_atmost_k_steps lib t1 t1' k
-        -> { t2':@NTerm p & reduces_in_atmost_k_steps lib t2 t2' k
+        -> { t2': NTerm & reduces_in_atmost_k_steps lib t2 t2' k
               # alpha_eq t1' t2'}.
 Proof.
   introv wf Hal.
@@ -3715,8 +3715,8 @@ Proof.
   exists nt0 nt2; sp.
 Qed.
 
-Lemma reduces_in_atmost_k_Steps_preserves_wf {o} :
-  forall lib k (t1 t2 : @NTerm o),
+Lemma reduces_in_atmost_k_Steps_preserves_wf {o} {l} :
+  forall (lib : @library o l) k (t1 t2 : @NTerm o),
     reduces_in_atmost_k_steps lib t1 t2 k
     -> nt_wf t1
     -> nt_wf t2.
@@ -3725,8 +3725,8 @@ Proof.
   apply compute_at_most_k_steps_preserves_wf in r; auto.
 Qed.
 
-Theorem exception_in_atmost_k_steps_alpha {p} :
-  forall lib a (t1 t2 : @NTerm p),
+Theorem exception_in_atmost_k_steps_alpha {o} {l} :
+  forall (lib : @library o l) a (t1 t2 : NTerm),
     nt_wf t1
     -> alpha_eq t1 t2
     -> forall k t1',
@@ -3787,8 +3787,8 @@ Qed. *)
 
 
 
-Lemma reduces_to_alpha {o} :
-  forall lib (t1 t2 t1' : @NTerm o),
+Lemma reduces_to_alpha {o} {l} :
+  forall (lib : @library o l) (t1 t2 t1' : @NTerm o),
     nt_wf t1
     -> alpha_eq t1 t2
     -> reduces_to lib t1 t1'
@@ -3803,12 +3803,12 @@ Proof.
   exists k; auto.
 Qed.
 
-Theorem compute_to_value_alpha {p} :
-  forall lib (t1 t2 t1' : NTerm),
+Theorem compute_to_value_alpha {o} {l} :
+  forall (lib : @library o l) (t1 t2 t1' : NTerm),
     nt_wf t1
     -> alpha_eq t1 t2
     -> computes_to_value lib t1 t1'
-    -> {t2':@NTerm p
+    -> {t2': NTerm
         & computes_to_value lib t2 t2'
         # alpha_eq t1' t2'}.
 Proof.
@@ -3821,8 +3821,8 @@ Proof.
   apply alpha_preserves_value in Xc3; auto.
 Qed.
 
-Theorem compute_to_exception_alpha {p} :
-  forall lib a (t1 t2 t1' : @NTerm p),
+Theorem compute_to_exception_alpha {o} {l} :
+  forall (lib : @library o l) a (t1 t2 t1' : NTerm),
     nt_wf t1
     -> alpha_eq t1 t2
     -> computes_to_exception lib a t1 t1'
@@ -3840,8 +3840,8 @@ Proof.
   exists a' e'; dands; auto.
 Qed.
 
-Lemma compute_split {p} :
-  forall lib n m (t1 t2 t3 : @NTerm p),
+Lemma compute_split {o} {l} :
+  forall (lib : @library o l) n m (t1 t2 t3 : NTerm),
     compute_at_most_k_steps lib n t1 = csuccess t2
     -> compute_at_most_k_steps lib m t1 = csuccess t3
     -> n<=m
@@ -3863,9 +3863,9 @@ Hint Resolve preserve_compute_step is_program_ot_subst1: slow.
 
 
 
-Lemma computes_to_val_like_in_max_k_steps_can {p} :
-  forall lib c bterms a k,
-    @computes_to_val_like_in_max_k_steps p lib (oterm (Can c) bterms) a k
+Lemma computes_to_val_like_in_max_k_steps_can {o} {l} :
+  forall (lib : @library o l) c bterms a k,
+    computes_to_val_like_in_max_k_steps lib (oterm (Can c) bterms) a k
     -> a = oterm (Can c) bterms.
 Proof.
   introv comp.
@@ -3874,8 +3874,8 @@ Proof.
   inversion comp0; subst; sp.
 Qed.
 
-Lemma computes_to_val_like_in_max_k_steps_exc {p} :
-  forall lib bterms (t : @NTerm p) k,
+Lemma computes_to_val_like_in_max_k_steps_exc {o} {l} :
+  forall (lib : @library o l) bterms (t : NTerm) k,
     computes_to_val_like_in_max_k_steps lib (oterm Exc bterms) t k
     -> t = oterm Exc bterms.
 Proof.
@@ -3928,8 +3928,8 @@ Proof.
 Qed.
 *)
 
-Lemma compute_step_fresh_if_isvalue_like2 {o} :
-  forall lib v vs (t : @NTerm o) bs,
+Lemma compute_step_fresh_if_isvalue_like2 {o} {l} :
+  forall (lib : @library o l) v vs (t : @NTerm o) bs,
     isvalue_like t
     -> compute_step lib (oterm (NCan NFresh) (bterm (v :: vs) t :: bs))
        = match vs, bs with
@@ -4127,8 +4127,8 @@ Proof.
   unfold isvalue_like in isv; tcsp.
 Qed.
 
-Lemma not_bot_reduces_to_value_like {p} :
-  forall lib (t : @NTerm p), isvalue_like t -> !reduces_to lib mk_bot t.
+Lemma not_bot_reduces_to_value_like {o} {l} :
+  forall (lib : @library o l) (t : NTerm), isvalue_like t -> !reduces_to lib mk_bot t.
 Proof.
   introv isv r.
   unfold reduces_to in r; sp.
@@ -4568,8 +4568,8 @@ Proof.
 Qed.
 Hint Resolve isnoncan_like_lsubst : slow.
 
-Lemma compute_step_ncan_vterm_success {o} :
-  forall lib ncan (bs : list (@BTerm o)) u a,
+Lemma compute_step_ncan_vterm_success {o} {l} :
+  forall (lib : @library o l) ncan (bs : list (@BTerm o)) u a,
     compute_step lib (oterm (NCan ncan) (bterm [] (mk_utoken a) :: bs))
     = csuccess u
     -> (
@@ -4654,8 +4654,8 @@ Proof.
     right; right; right; right; left.
     boolvar; tcsp; ginv.
     destruct bs; ginv; try (complete (allsimpl; dcwf h));[].
-    destruct b as [l t].
-    destruct l; ginv; try (complete (allsimpl; dcwf h));[].
+    destruct b as [l0 t].
+    destruct l0; ginv; try (complete (allsimpl; dcwf h));[].
     destruct t as [v1|op1 bs1]; try (complete (allsimpl; dcwf h));[].
 
     dcwf h.
@@ -4813,8 +4813,8 @@ Proof.
     apply swapvar_implies3; auto.
 Qed.
 
-Lemma compute_step_ncompop_can1_success {o} :
-  forall lib c can (bts bs : list (@BTerm o)) u,
+Lemma compute_step_ncompop_can1_success {o} {l} :
+  forall (lib : @library o l) c can (bts bs : list (@BTerm o)) u,
     compute_step lib (oterm (NCan (NCompOp c)) (bterm [] (oterm (Can can) bts) :: bs))
     = csuccess u
     -> co_wf_def c can bts
@@ -4848,8 +4848,8 @@ Proof.
   csunf comp; allsimpl.
   dcwf h; dands; auto;[].
   destruct bs as [|b bs]; ginv;[].
-  destruct b as [l t].
-  destruct l as [|v vs]; ginv;[].
+  destruct b as [l0 t].
+  destruct l0 as [|v vs]; ginv;[].
   destruct t as [v|op bs1]; ginv;[].
   dopid op as [can1|ncan1|exc1|abs1] Case; ginv.
   - Case "Can".
@@ -4871,8 +4871,8 @@ Proof.
     exists (oterm (Abs abs1) bs1) n bs; dands; auto.
 Qed.
 
-Lemma compute_step_narithop_can1_success {o} :
-  forall lib c can (bts bs : list (@BTerm o)) u,
+Lemma compute_step_narithop_can1_success {o} {l} :
+  forall (lib : @library o l) c can (bts bs : list (@BTerm o)) u,
     compute_step lib (oterm (NCan (NArithOp c)) (bterm [] (oterm (Can can) bts) :: bs))
     = csuccess u
     -> ca_wf_def can bts
@@ -4903,8 +4903,8 @@ Proof.
   csunf comp; allsimpl.
   dcwf h; dands; auto;[].
   destruct bs as [|b bs]; ginv;[].
-  destruct b as [l t];[].
-  destruct l as [|v vs]; ginv;[].
+  destruct b as [l0 t];[].
+  destruct l0 as [|v vs]; ginv;[].
   destruct t as [v|op bs1]; ginv;[].
   dopid op as [can1|ncan1|exc1|abs1] Case; ginv.
   - Case "Can".
@@ -4952,8 +4952,8 @@ Proof.
   - destruct bs; allsimpl; ginv; sp.
 Qed.
 
-Lemma compute_step_narithop_ncanlike2 {p} :
-  forall lib ar c cbts (t : @NTerm p) rest,
+Lemma compute_step_narithop_ncanlike2 {o} {l} :
+  forall (lib : @library o l) ar c cbts (t : NTerm) rest,
     isnoncan_like t
     -> compute_step
          lib
@@ -5033,8 +5033,8 @@ Proof.
 Qed.
 Hint Resolve alpha_eq_mk_bot_lsubst : slow.
 
-Lemma compute_step_fresh_if_isnoncan_like {o} :
-  forall lib v vs (t : @NTerm o) bs,
+Lemma compute_step_fresh_if_isnoncan_like {o} {l} :
+  forall (lib : @library o l) v vs (t : @NTerm o) bs,
     isnoncan_like t
     -> compute_step lib (oterm (NCan NFresh) (bterm (v :: vs) t :: bs))
        = match vs with
@@ -5431,7 +5431,7 @@ Inductive nr_ut_sub {o} : @Sub o -> Type :=
       -> nr_ut_sub ((v,mk_utoken a) :: s).
 *)
 
-Inductive nr_ut_sub {o} lib : @NTerm o -> @Sub o -> Type :=
+Inductive nr_ut_sub {o} {n} (lib : @library o n) : @NTerm o -> @Sub o -> Type :=
 | nr_ut_sub_nil : forall t, nr_ut_sub lib t []
 | nr_ut_sub_cons :
     forall v a s t,
@@ -5440,8 +5440,8 @@ Inductive nr_ut_sub {o} lib : @NTerm o -> @Sub o -> Type :=
       -> nr_ut_sub lib t ((v,mk_utoken a) :: s).
 Hint Constructors nr_ut_sub.
 
-Lemma nr_ut_sub_cons_iff {o} :
-  forall lib v t (s : @Sub o) u,
+Lemma nr_ut_sub_cons_iff {o} {l} :
+  forall (lib : @library o l) v t (s : @Sub o) u,
     nr_ut_sub lib u ((v,t) :: s)
     <=> {a : get_patom_set o
          & t = mk_utoken a
@@ -5452,8 +5452,8 @@ Proof.
   inversion k; subst; eexists; dands; eauto.
 Qed.
 
-Lemma cl_nr_ut_sub {o} :
-  forall lib (sub : @Sub o) u,
+Lemma cl_nr_ut_sub {o} {l} :
+  forall (lib : @library o l) (sub : @Sub o) u,
     nr_ut_sub lib u sub
     -> cl_sub sub.
 Proof.
@@ -5464,8 +5464,8 @@ Proof.
 Qed.
 Hint Resolve cl_nr_ut_sub : slow.
 
-Lemma in_nr_ut_sub {o} :
-  forall lib (s : @Sub o) v t u,
+Lemma in_nr_ut_sub {o} {l} :
+  forall (lib : @library o l) (s : @Sub o) v t u,
     LIn (v,t) s
     -> nr_ut_sub lib u s
     -> {a : get_patom_set o & t = mk_utoken a}.
@@ -5477,8 +5477,8 @@ Proof.
   - eapply IHs; eauto.
 Qed.
 
-Lemma sub_find_some_eq_doms_nr_ut_sub {o} :
-  forall lib (sub1 sub2 : @Sub o) v u,
+Lemma sub_find_some_eq_doms_nr_ut_sub {o} {l} :
+  forall (lib : @library o l) (sub1 sub2 : @Sub o) v u,
     nr_ut_sub lib u sub2
     -> dom_sub sub1 = dom_sub sub2
     -> match sub_find sub1 v with
@@ -5520,8 +5520,8 @@ Proof.
     destruct bs; allsimpl; cpx; GC.
 Qed.
 
-Lemma get_utokens_lib_subst {o} :
-  forall lib (t : @NTerm o) v u,
+Lemma get_utokens_lib_subst {o} {l} :
+  forall (lib : @library o l) (t : @NTerm o) v u,
     eqset (get_utokens_lib lib (subst t v u))
           (get_utokens_lib lib t ++ (if memvar v (free_vars t) then get_utokens u else [])).
 Proof.
@@ -5531,23 +5531,23 @@ Proof.
   - left; apply get_utokens_subst; allrw in_app_iff; repndors; tcsp.
 Qed.
 
-Lemma get_utokens_subset_get_utokens_lib {o} :
-  forall lib (t : @NTerm o),
+Lemma get_utokens_subset_get_utokens_lib {o} {l} :
+  forall (lib : @library o l) (t : @NTerm o),
     subset (get_utokens t) (get_utokens_lib lib t).
 Proof.
   introv i; unfold get_utokens_lib; apply in_app_iff; tcsp.
 Qed.
 
-Lemma in_get_utokens_implies_in_get_utokens_lib {o} :
-  forall lib (t : @NTerm o) v,
+Lemma in_get_utokens_implies_in_get_utokens_lib {o} {l} :
+  forall (lib : @library o l) (t : @NTerm o) v,
     LIn v (get_utokens t) -> LIn v (get_utokens_lib lib t).
 Proof.
   introv i; apply get_utokens_subset_get_utokens_lib; auto.
 Qed.
 Hint Resolve in_get_utokens_implies_in_get_utokens_lib : slow.
 
-Lemma nr_ut_sub_in_false {o} :
-  forall lib (sub : @Sub o) v a u,
+Lemma nr_ut_sub_in_false {o} {l} :
+  forall (lib : @library o l) (sub : @Sub o) v a u,
     nr_ut_sub lib u sub
     -> sub_find sub v = Some (mk_utoken a)
     -> LIn a (get_utokens_lib lib u)
@@ -5568,8 +5568,8 @@ Proof.
       rw in_remove_nvars; simpl; sp.
 Qed.
 
-Lemma nr_ut_sub_some_eq {o} :
-  forall lib (sub : @Sub o) v1 v2 a u,
+Lemma nr_ut_sub_some_eq {o} {l} :
+  forall (lib : @library o l) (sub : @Sub o) v1 v2 a u,
     nr_ut_sub lib u sub
     -> sub_find sub v1 = Some (mk_utoken a)
     -> sub_find sub v2 = Some (mk_utoken a)
@@ -5612,8 +5612,8 @@ Proof.
 Qed.
 
 
-Lemma nr_ut_sub_some_diff2 {o} :
-  forall lib (sub : @Sub o) v1 v2 a1 a2 u,
+Lemma nr_ut_sub_some_diff2 {o} {l} :
+  forall (lib : @library o l) (sub : @Sub o) v1 v2 a1 a2 u,
     nr_ut_sub lib u sub
     -> sub_find sub v1 = Some (mk_utoken a1)
     -> sub_find sub v2 = Some (mk_utoken a2)
@@ -5626,8 +5626,8 @@ Proof.
   pose proof (nr_ut_sub_some_eq lib sub v1 v2 a2 u); sp.
 Qed.
 
-Lemma nr_ut_sub_some_diff {o} :
-  forall lib (sub : @Sub o) v1 v2 a1 a2 u,
+Lemma nr_ut_sub_some_diff {o} {l} :
+  forall (lib : @library o l) (sub : @Sub o) v1 v2 a1 a2 u,
     nr_ut_sub lib u sub
     -> sub_find sub v1 = Some (mk_utoken a1)
     -> sub_find sub v2 = Some (mk_utoken a2)
@@ -5641,8 +5641,8 @@ Proof.
   eapply IHsub; eauto.
 Qed.
 
-Lemma isnoncan_like_lsubst_aux_nr_ut_implies {o} :
-  forall lib (t : @NTerm o) sub u,
+Lemma isnoncan_like_lsubst_aux_nr_ut_implies {o} {l} :
+  forall (lib : @library o l) (t : @NTerm o) sub u,
     nr_ut_sub lib u sub
     -> isnoncan_like (lsubst_aux t sub)
     -> isnoncan_like t.
@@ -5655,8 +5655,8 @@ Proof.
   exrepnd; subst; inversion isn; sp.
 Qed.
 
-Lemma lsubst_sub_nr_ut_sub {o} :
-  forall lib (sub1 sub2 : @Sub o) u,
+Lemma lsubst_sub_nr_ut_sub {o} {l} :
+  forall (lib : @library o l) (sub1 sub2 : @Sub o) u,
     nr_ut_sub lib u sub1
     -> lsubst_sub sub1 sub2 = sub1.
 Proof.
@@ -5683,8 +5683,8 @@ Qed.
 Hint Resolve nr_ut_sub_sub_filter : slow.
 *)
 
-Lemma isexc_lsubst_aux_nr_ut_sub {o} :
-  forall lib (t : @NTerm o) sub u,
+Lemma isexc_lsubst_aux_nr_ut_sub {o} {l} :
+  forall (lib : @library o l) (t : @NTerm o) sub u,
     nr_ut_sub lib u sub
     -> isexc (lsubst_aux t sub)
     -> isexc t.
@@ -5767,8 +5767,8 @@ Proof.
 Qed.
 Hint Resolve implies_shallow_sub_cons : slow.
 
-Lemma nr_ut_sub_is_shallow {o} :
-  forall lib (sub : @Sub o) u,
+Lemma nr_ut_sub_is_shallow {o} {l} :
+  forall (lib : @library o l) (sub : @Sub o) u,
     nr_ut_sub lib u sub
     -> shallow_sub sub.
 Proof.
@@ -5850,16 +5850,16 @@ Proof.
   introv eqs ss i; apply eqset_sym in eqs; apply eqs in i; apply ss in i; auto.
 Qed.
 
-Lemma subset_get_utokens_implies_subset_get_utokens_lib {o} :
-  forall lib (t u : @NTerm o),
+Lemma subset_get_utokens_implies_subset_get_utokens_lib {o} {l} :
+  forall (lib : @library o l) (t u : @NTerm o),
     subset (get_utokens t) (get_utokens u)
     -> subset (get_utokens_lib lib t) (get_utokens_lib lib u).
 Proof.
   introv ss i; allunfold @get_utokens_lib; allrw in_app_iff; repndors; tcsp.
 Qed.
 
-Lemma nr_ut_sub_change_term {o} :
-  forall lib sub (t u : @NTerm o),
+Lemma nr_ut_sub_change_term {o} {l} :
+  forall (lib : @library o l) sub (t u : @NTerm o),
     subvars (free_vars t) (free_vars u)
     -> subset (get_utokens t) (get_utokens u)
     -> nr_ut_sub lib u sub
@@ -5904,8 +5904,8 @@ Proof.
   rw @cl_sub_eq2 in cl; eapply cl; eauto.
 Qed.
 
-Lemma nr_ut_sub_sub_filter_disj {o} :
-  forall lib (sub : @Sub o) vs u,
+Lemma nr_ut_sub_sub_filter_disj {o} {l} :
+  forall (lib : @library o l) (sub : @Sub o) vs u,
     disjoint vs (free_vars u)
     -> nr_ut_sub lib u sub
     -> nr_ut_sub lib u (sub_filter sub vs).
@@ -5923,8 +5923,8 @@ Proof.
 Qed.
 Hint Resolve nr_ut_sub_sub_filter_disj : slow.
 
-Lemma implies_nr_ut_sub_app {o} :
-  forall lib (sub1 sub2 : @Sub o) t,
+Lemma implies_nr_ut_sub_app {o} {l} :
+  forall (lib : @library o l) (sub1 sub2 : @Sub o) t,
     nr_ut_sub lib t sub1
     -> nr_ut_sub lib (lsubst t sub1) sub2
     -> nr_ut_sub lib t (sub1 ++ sub2).
@@ -5940,8 +5940,8 @@ Proof.
 Qed.
 Hint Resolve implies_nr_ut_sub_app : slow.
 
-Lemma nr_ut_sub_sub_filter_change_term_disj {o} :
-  forall lib sub (t u : @NTerm o) vs,
+Lemma nr_ut_sub_sub_filter_change_term_disj {o} {l} :
+  forall (lib : @library o l) sub (t u : @NTerm o) vs,
     disjoint vs (free_vars u)
     -> subvars (free_vars t) (free_vars u ++ vs)
     -> subset (get_utokens t) (get_utokens u)
@@ -6149,8 +6149,8 @@ Proof.
     eauto with slow.
 Qed.
 
-Lemma nr_ut_some_implies {o} :
-  forall lib (sub : @Sub o) v t u,
+Lemma nr_ut_some_implies {o} {l} :
+  forall (lib : @library o l) (sub : @Sub o) v t u,
     nr_ut_sub lib u sub
     -> sub_find sub v = Some t
     -> {a : get_patom_set o & t = mk_utoken a}.

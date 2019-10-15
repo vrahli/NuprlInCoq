@@ -33,8 +33,8 @@
 Require Export computation_preserve4.
 
 
-Lemma get_utokens_lib_subst_utokens_aux_subset {o} :
-  forall lib (t : @NTerm o) sub,
+Lemma get_utokens_lib_subst_utokens_aux_subset {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) sub,
     subset (get_utokens_lib lib (subst_utokens_aux t sub))
            (diff (get_patom_deq o) (utok_sub_dom sub) (get_utokens_lib lib t)
                  ++ get_utokens_utok_ren sub
@@ -45,8 +45,8 @@ Proof.
   apply get_utokens_subst_utokens_aux_subset in i; allrw in_app_iff; repndors; tcsp.
 Qed.
 
-Lemma get_utokens_lib_subst_utokens_subset {o} :
-  forall lib (t : @NTerm o) sub,
+Lemma get_utokens_lib_subst_utokens_subset {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) sub,
     subset (get_utokens_lib lib (subst_utokens t sub))
            (diff (get_patom_deq o) (utok_sub_dom sub) (get_utokens_lib lib t)
                  ++ get_utokens_utok_ren sub
@@ -58,8 +58,8 @@ Proof.
   apply get_utokens_lib_subst_utokens_aux_subset; auto.
 Qed.
 
-Lemma get_utokens_lib_subst_utokens_aux_subset2 {o} :
-  forall lib (t : @NTerm o) sub,
+Lemma get_utokens_lib_subst_utokens_aux_subset2 {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) sub,
     wf_term t
     -> subset (diff (get_patom_deq o) (utok_sub_dom sub) (get_utokens_lib lib t))
               (get_utokens_lib lib (subst_utokens_aux t sub)).
@@ -72,8 +72,8 @@ Proof.
   { apply in_diff in i; tcsp. }
 Qed.
 
-Lemma get_utokens_lib_subst_utokens_subset2 {o} :
-  forall lib (t : @NTerm o) sub,
+Lemma get_utokens_lib_subst_utokens_subset2 {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) sub,
     wf_term t
     -> subset
          (diff (get_patom_deq o) (utok_sub_dom sub) (get_utokens_lib lib t))
@@ -97,13 +97,13 @@ Qed.
 
  *)
 
-Lemma compute_decompose_aux {p} :
-forall lib (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm),
+Lemma compute_decompose_aux {o} {lv} :
+forall (lib : @library o lv) (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm),
   isprogram (oterm (NCan op) lbt)
   -> computes_to_val_like_in_max_k_steps lib (oterm (NCan op) lbt) a (S k)
   -> { la : NTerm
       $ { lbtt: list BTerm
-      $ { t : @NTerm p
+      $ { t : @NTerm o
       $ { m : nat
         $ m <= k
         # lbt = bterm [] la :: lbtt
@@ -430,13 +430,13 @@ Proof.
     }
 Qed.
 
-Lemma compute_decompose {p} :
-forall lib (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm),
+Lemma compute_decompose {o} {lv} :
+forall (lib : @library o lv) (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm),
   isprogram (oterm (NCan op) lbt)
   -> computes_to_value_in_max_k_steps lib (S k) (oterm (NCan op) lbt) a
   -> { la : NTerm
       $ { lbtt: list BTerm
-      $ { t : @NTerm p
+      $ { t : @NTerm o
       $ { m : nat
         $ m <= k
         # lbt = (bterm [] la)::lbtt
@@ -593,8 +593,8 @@ Proof.
   apply alphaeq_preserves_free_vars in aeq1; rw <- aeq1 in i; sp.
 Qed.
 
-Lemma reduces_to_fresh {o} :
-  forall lib (t : @NTerm o) u v,
+Lemma reduces_to_fresh {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) u v,
     let a := get_fresh_atom lib t in
     wf_term t
     -> reduces_to lib (subst t v (mk_utoken a)) u
@@ -737,8 +737,8 @@ Proof.
     }
 Qed.
 
-Lemma reduces_to_change_utok_sub {o} :
-  forall lib (t u : @NTerm o) sub sub',
+Lemma reduces_to_change_utok_sub {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o) sub sub',
     nt_wf t
     -> reduces_to lib (lsubst t sub) u
     -> nr_ut_sub lib t sub

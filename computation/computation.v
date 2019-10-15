@@ -187,12 +187,12 @@ Definition mk_comp_seq1 {o} (n f : @NTerm o) :=
 Definition mk_comp_seq2 {o} l i (n f : @NTerm o) :=
   oterm (NCan (NCompSeq2 (MkCompSeqNfo l i))) [nobnd n, nobnd f].
 
-Definition mk_fresh_choice_nat_seq {o} (lib : @library o) (l : list nat) : @NTerm o :=
+Definition mk_fresh_choice_nat_seq {o} {k} (lib : @library o k) (l : list nat) : @NTerm o :=
   let cs := "a" (*fresh_cs_in_lib lib*) in
   mk_choice_seq (MkChoiceSequenceName cs (cs_kind_seq l)).
 
-Definition compute_step_comp_seq1 {o}
-           (lib : @library o)
+Definition compute_step_comp_seq1 {o} {k}
+           (lib : @library o k)
            (arg1c : @CanonicalOp o)
            (t : @NTerm o)
            (arg1bts btsr : list (@BTerm o)) :=
@@ -212,8 +212,8 @@ Definition compute_step_comp_seq1 {o}
   | _ => cfailure bad_args t
   end.
 
-Definition compute_step_comp_seq2 {o}
-           (lib : @library o)
+Definition compute_step_comp_seq2 {o} {k}
+           (lib : @library o k)
            (nfo : CompSeqNfo)
            (arg1c : @CanonicalOp o)
            (t : @NTerm o)
@@ -244,7 +244,7 @@ Fixpoint last_cs_entry {o} (l : @ChoiceSeqVals o) : option ChoiceSeqVal :=
   | _ :: k => last_cs_entry k
   end.
 
-Definition find_last_entry_default {o} (lib : @library o) name (d : NTerm) : NTerm :=
+Definition find_last_entry_default {o} {k} (lib : @library o k) name (d : NTerm) : NTerm :=
   match find_cs lib name with
   | Some entry =>
     match last_cs_entry entry with
@@ -254,8 +254,8 @@ Definition find_last_entry_default {o} (lib : @library o) name (d : NTerm) : NTe
   | None => d
   end.
 
-Definition compute_step_last_cs {o}
-           (lib   : @library o)
+Definition compute_step_last_cs {o} {k}
+           (lib   : @library o k)
            (arg1c : @CanonicalOp o)
            (t     : @NTerm o)
            (arg1bts btsr : list (@BTerm o)) :=
@@ -264,8 +264,8 @@ Definition compute_step_last_cs {o}
   | _, _, _ => cfailure bad_args t
   end.
 
-Definition compute_step_can {o}
-           lib
+Definition compute_step_can {o} {k}
+           (lib : @library o k)
            (t : @NTerm o)
            (ncr : NonCanonicalOp)
            (arg1c : CanonicalOp)
@@ -528,8 +528,8 @@ Proof.
   introv; simpl; omega.
 Qed.
 
-Definition compute_step {o}
-           (lib : @library o)
+Definition compute_step {o} {k}
+           (lib : @library o k)
            (t : @NTerm o) : Comput_Result :=
   @Fix NTerm
        (fun a b => lt (size a) (size b))
@@ -567,8 +567,8 @@ Definition compute_step {o}
           end)
        t.
 
-Definition compute_step_unfold {o}
-         (lib : @library o)
+Definition compute_step_unfold {o} {k}
+         (lib : @library o k)
          (t : @NTerm o) : Comput_Result :=
   match t with
     | vterm v => cfailure compute_step_error_not_closed t
@@ -598,8 +598,8 @@ Definition compute_step_unfold {o}
   end.
 
 
-Lemma compute_step_eq_unfold {o} :
-  forall lib (t : @NTerm o),
+Lemma compute_step_eq_unfold {o} {k} :
+  forall (lib : @library o k) (t : @NTerm o),
     compute_step lib t = compute_step_unfold lib t.
 Proof.
   destruct t as [v|op bs]; simpl; try reflexivity.
@@ -806,10 +806,10 @@ Tactic Notation "csunf" ident(h) := rewrite @compute_step_eq_unfold in h.
 Tactic Notation "csunf" := rewrite @compute_step_eq_unfold.
 
 
-Lemma compute_step_ncan_ncan {p} :
-  forall lib nc nc2 bt2 rest,
+Lemma compute_step_ncan_ncan {o} {k} :
+  forall (lib : @library o k) nc nc2 bt2 rest,
     compute_step lib
-      (oterm (NCan nc) (bterm [] (oterm (@NCan p nc2) bt2) :: rest))
+      (oterm (NCan nc) (bterm [] (oterm (NCan nc2) bt2) :: rest))
     = match compute_step lib (oterm (NCan nc2) bt2) with
         | csuccess f => csuccess (oterm (NCan nc) ((bterm [] f) :: rest))
         | cfailure str ts => cfailure str ts
@@ -818,10 +818,10 @@ Proof.
   introv; csunf; simpl; auto.
 Qed.
 
-Lemma compute_step_ncan_abs {p} :
-  forall lib nc x bt2 rest,
+Lemma compute_step_ncan_abs {o} {k} :
+  forall (lib : @library o k) nc x bt2 rest,
     compute_step lib
-      (oterm (NCan nc) (bterm [] (oterm (@Abs p x) bt2) :: rest))
+      (oterm (NCan nc) (bterm [] (oterm (Abs x) bt2) :: rest))
     = match compute_step_lib lib x bt2 with
         | csuccess f => csuccess (oterm (NCan nc) ((bterm [] f) :: rest))
         | cfailure str ts => cfailure str ts
@@ -830,8 +830,8 @@ Proof.
   introv; csunf; simpl; auto.
 Qed.
 
-Lemma compute_step_try_ncan {p} :
-  forall lib a nc (bts : list (@BTerm p)) v b,
+Lemma compute_step_try_ncan {o} {k} :
+  forall (lib : @library o k) a nc (bts : list BTerm) v b,
     compute_step lib (mk_try (oterm (NCan nc) bts) a v b)
     = match compute_step lib (oterm (NCan nc) bts) with
         | csuccess f => csuccess (mk_try f a v b)
@@ -841,8 +841,8 @@ Proof.
   introv; csunf; simpl; auto.
 Qed.
 
-Lemma compute_step_try_abs {p} :
-  forall lib a x (bts : list (@BTerm p)) v b,
+Lemma compute_step_try_abs {o} {k} :
+  forall (lib : @library o k) a x (bts : list BTerm) v b,
     compute_step lib (mk_try (oterm (Abs x) bts) a v b)
     = match compute_step_lib lib x bts with
         | csuccess f => csuccess (mk_try f a v b)
@@ -853,21 +853,21 @@ Proof.
 Qed.
 
 
-Example comp_test1 {p} :
-  forall lib,
+Example comp_test1 {o} {k} :
+  forall (lib : @library o k),
     compute_step lib (mk_apply (mk_lam nvarx (vterm nvarx)) (mk_nat 0))
-    = csuccess (@mk_nat p 0).
+    = csuccess (mk_nat 0).
 Proof.
   reflexivity.
 Qed.
 
-Example comp_test2 {p} :
-  forall lib,
+Example comp_test2 {o} {k} :
+  forall (lib : @library o k),
     compute_step lib
       (mk_apply
          (mk_apply (mk_lam nvarx (vterm nvarx)) (mk_lam nvarx (vterm nvarx)))
          (mk_nat 0))
-    = csuccess (mk_apply (mk_lam nvarx (vterm nvarx)) (@mk_nat p 0)).
+    = csuccess (mk_apply (mk_lam nvarx (vterm nvarx)) (mk_nat 0)).
 Proof.
   reflexivity.
 Qed.
@@ -901,8 +901,8 @@ Proof.
 Qed.
 *)
 
-Example comp_test_ex_1 {p} :
-  forall lib,
+Example comp_test_ex_1 {o} {k} :
+  forall (lib : @library o k),
     compute_step lib
       (mk_try
          (mk_add (mk_nat 1) (mk_nat 1))
@@ -913,13 +913,13 @@ Example comp_test_ex_1 {p} :
                   (mk_nat 2)
                   (mk_token "")
                   nvarx
-                  (@mk_var p nvarx)).
+                  (mk_var nvarx)).
 Proof.
   introv; csunf; simpl; auto.
 Qed.
 
-Example comp_test_ex3 {p} :
-  forall lib,
+Example comp_test_ex3 {o} {k} :
+  forall (lib : @library o k),
     compute_step lib
       (mk_try
          (mk_add (mk_nat 1) (mk_exception (mk_token "") mk_zero))
@@ -930,19 +930,19 @@ Example comp_test_ex3 {p} :
                   (mk_exception (mk_token "")  mk_zero)
                   (mk_token "")
                   nvarx
-                  (@mk_var p nvarx)).
+                  (mk_var nvarx)).
 Proof.
   introv; csunf; simpl; auto.
 Qed.
 
-Definition maybe_compute_step {o} lib (t : @NTerm o) :=
+Definition maybe_compute_step {o} {k} (lib : @library o k) (t : @NTerm o) :=
   match compute_step lib t with
     | csuccess x => x
     | cfailure _ _ => t
   end.
 
-Example comp_test_ex4 {p} :
-  forall lib,
+Example comp_test_ex4 {o} {k} :
+  forall (lib : @library o k),
     on_success
       (compute_step lib
                     (mk_try
@@ -951,30 +951,30 @@ Example comp_test_ex4 {p} :
                        nvarx
                        (mk_var nvarx)))
       (fun x => maybe_compute_step lib x)
-    = csuccess (@mk_zero p).
+    = csuccess mk_zero.
 Proof.
   introv; csunf; simpl.
   unfold maybe_compute_step.
   csunf; simpl; unfold co; boolvar; simpl; boolvar; ginv; tcsp.
 Qed.
 
-Lemma compute_step_value {p} :
-  forall lib t, (@isvalue p t) -> compute_step lib t = csuccess t.
+Lemma compute_step_value {o} {k} :
+  forall (lib : @library o k) t, (isvalue t) -> compute_step lib t = csuccess t.
 Proof.
   introv h.
   inversion h; subst.
   allapply @iscan_implies; repndors; exrepnd; subst; reflexivity.
 Qed.
 
-Lemma compute_step_ovalue {p} :
-  forall lib t, @isovalue p t -> compute_step lib t = csuccess t.
+Lemma compute_step_ovalue {o} {k} :
+  forall (lib : @library o k) t, isovalue t -> compute_step lib t = csuccess t.
 Proof.
   introv h.
   inversion h; subst.
   allapply @iscan_implies; repndors; exrepnd; subst; reflexivity.
 Qed.
 
-Definition compute_1step {p} lib (t u : @CTerm p) :=
+Definition compute_1step {o} {k} (lib : @library o k) (t u : CTerm) :=
   compute_step lib (get_cterm t) = csuccess (get_cterm u).
 
 (* end hide *)

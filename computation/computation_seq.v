@@ -40,8 +40,8 @@ Notation "t1 =e>( lib ) t2" := (computes_to_exception lib None t1 t2) (at level 
 Notation "t =m>( lib ) m" := (computes_to_marker lib t m) (at level 99).
 
 
-Lemma reduces_in_atmost_k_steps_eapply_lam_to_isvalue_like {o} :
-  forall lib x (b : @NTerm o) v k a,
+Lemma reduces_in_atmost_k_steps_eapply_lam_to_isvalue_like {o} {lv} :
+  forall (lib : @library o lv) x (b : @NTerm o) v k a,
     reduces_in_atmost_k_steps lib (mk_eapply (mk_lam x b) a) v k
     -> isvalue_like v
     -> {c : NTerm
@@ -91,8 +91,8 @@ Proof.
 Qed.
 Hint Resolve eapply_wf_def_lam : slow.
 
-Lemma implies_eapply_red_aux {o} :
-  forall lib (t a v : @NTerm o),
+Lemma implies_eapply_red_aux {o} {lv} :
+  forall (lib : @library o lv) (t a v : @NTerm o),
     eapply_wf_def t
     -> reduces_to lib a v
     -> reduces_to lib (mk_eapply t a) (mk_eapply t v).
@@ -129,8 +129,8 @@ Proof.
         rw comp1; auto.
 Qed.
 
-Lemma implies_eapply_red {o} :
-  forall lib (f t a v : @NTerm o),
+Lemma implies_eapply_red {o} {lv} :
+  forall (lib : @library o lv) (f t a v : @NTerm o),
     eapply_wf_def t
     -> reduces_to lib f t
     -> reduces_to lib a v
@@ -167,8 +167,8 @@ Proof.
         csunf; simpl; rw comp1; simpl; auto.
 Qed.
 
-Lemma eapply_lam_can_implies {o} :
-  forall lib (a : @NTerm o) v b z,
+Lemma eapply_lam_can_implies {o} {lv} :
+  forall (lib : @library o lv) (a : @NTerm o) v b z,
     computes_to_can lib a z
     -> reduces_to lib (mk_eapply (mk_lam v b) a) (subst b v z).
 Proof.
@@ -183,8 +183,8 @@ Proof.
   unfold apply_bterm; simpl; auto.
 Qed.
 
-Lemma eapply_lam_val_implies {o} :
-  forall lib (a : @NTerm o) v b z,
+Lemma eapply_lam_val_implies {o} {lv} :
+  forall (lib : @library o lv) (a : @NTerm o) v b z,
     (a =v>(lib) z)
     -> reduces_to lib (mk_eapply (mk_lam v b) a) (subst b v z).
 Proof.
@@ -194,8 +194,8 @@ Proof.
   allunfold @computes_to_can; dands; auto.
 Qed.
 
-Lemma eapply_red_lam_val_implies {o} :
-  forall lib (f a : @NTerm o) v b z,
+Lemma eapply_red_lam_val_implies {o} {lv} :
+  forall (lib : @library o lv) (f a : @NTerm o) v b z,
     (f =v>(lib) (mk_lam v b))
     -> (a =v>(lib) z)
     -> reduces_to lib (mk_eapply f a) (subst b v z).
@@ -213,8 +213,8 @@ Proof.
   unfold apply_bterm; simpl; auto.
 Qed.
 
-Lemma eapply_lam_exception_implies {o} :
-  forall lib (t : @NTerm o) v b a n e,
+Lemma eapply_lam_exception_implies {o} {lv} :
+  forall (lib : @library o lv) (t : @NTerm o) v b a n e,
     (t =v>(lib) (mk_lam v b))
     -> (a =e>(n,lib) e)
     -> ((mk_eapply t a) =e>(n,lib) e).
@@ -241,8 +241,8 @@ Proof.
     left; eexists; eexists; dands; eauto.
 Qed.
 
-Lemma raises_exception_step {o} :
-  forall lib (t u : @NTerm o),
+Lemma raises_exception_step {o} {lv} :
+  forall (lib : @library o lv) (t u : @NTerm o),
     compute_step lib t = csuccess u
     -> raises_exception lib u
     -> raises_exception lib t.
@@ -253,8 +253,8 @@ Proof.
   eapply reduces_to_if_split2; eauto.
 Qed.
 
-Lemma hasvalue_like_eapply_lam_implies {o} :
-  forall lib v b (t : @NTerm o),
+Lemma hasvalue_like_eapply_lam_implies {o} {lv} :
+  forall (lib : @library o lv) v b (t : @NTerm o),
     nt_wf t
     -> hasvalue_like lib (mk_eapply (mk_lam v b) t)
     -> hasvalue_like lib t.
@@ -285,8 +285,8 @@ Proof.
       eapply reduces_to_if_split2; eauto.
 Qed.
 
-Lemma has_value_like_k_eapply_lam_implies {o} :
-  forall lib v b k (t : @NTerm o),
+Lemma has_value_like_k_eapply_lam_implies {o} {lv} :
+  forall (lib : @library o lv) v b k (t : @NTerm o),
     nt_wf t
     -> has_value_like_k lib k (mk_eapply (mk_lam v b) t)
     -> {j : nat & j < k # has_value_like_k lib j t}.
