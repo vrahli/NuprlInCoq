@@ -42,11 +42,11 @@ Require Import computation_choice_seq.
   | lib_abs oa _ _ _ => oa
   end.*)
 
-Definition matching_entries {o} (entry1 entry2 : @library_entry o) : Prop :=
+Definition matching_entries {o} {lv} (entry1 entry2 : @library_entry o lv) : Prop :=
   same_entry_name (entry2name entry1) (entry2name entry2).
 (*  matching_entry_sign (opabs_of_lib_entry entry1) (opabs_of_lib_entry entry2).*)
 
-Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : library) : Prop :=
+Fixpoint entry_in_library {o} {lv} (entry : @library_entry o lv) (lib : @library o lv) : Prop :=
   match lib with
   | [] => False
   | entry' :: entries =>
@@ -71,16 +71,16 @@ Definition choice_sequence_vals_extend {o} (vals1 vals2 : @ChoiceSeqVals o) : Pr
 (*(* MOVE: Move to library.v and use it in [csc_type]'s definition! *)
 Definition Mem {o} := @ChoiceSeqVal o -> Prop.*)
 
-Definition choice_sequence_satisfies_restriction {o}
+Definition choice_sequence_satisfies_restriction {o} {lv}
            (vals       : @ChoiceSeqVals o)
-           (constraint : ChoiceSeqRestriction) : Prop :=
+           (constraint : @ChoiceSeqRestriction o lv) : Prop :=
   match constraint with
   | csc_type d M Md =>
     forall n v, select n vals = Some v -> M n v (* TODO: Is that going to be enough? *)
   | csc_coq_law f =>
     forall (i : nat), i < length vals -> select i vals = Some (f i)
   | csc_res M =>
-    forall n v, select n vals = Some v -> M n v
+    forall n v, select n vals = Some v -> exists lib, M n v lib
   end.
 
 
@@ -97,7 +97,7 @@ Proof.
 Qed.
 Hint Resolve is_nat_zero : slow.
 
-Definition csc_nat {o} : @ChoiceSeqRestriction o :=
+Definition csc_nat {o} {lv} : @ChoiceSeqRestriction o lv :=
   csc_type (fun _ => mkc_zero) is_nat is_nat_zero.
 (* =============== *)
 
@@ -119,18 +119,52 @@ Proof.
 Qed.
 Hint Resolve extension_satisfies_restriction_refl : slow.*)
 
-Definition same_restrictions {o} (restr1 restr2 : @ChoiceSeqRestriction o) :=
+Definition same_restrictions {o} {lv} (restr1 restr2 : @ChoiceSeqRestriction o lv) :=
   match restr1, restr2 with
   | csc_type d1 M1 Md1, csc_type d2 M2 Md2 =>
     (forall n, d1 n = d2 n)
     /\ (forall n v, M1 n v <-> M2 n v)
   | csc_coq_law f1, csc_coq_law f2 => forall n, f1 n = f2 n
-  | csc_res M1, csc_res M2 => forall n v, M1 n v <-> M2 n v
+  | csc_res M1, csc_res M2 => forall n v (lib : @library_n o lv), M1 n v lib <-> M2 n v lib
+  | _, _ => False
+  end.
+
+(* [lv' >= lv] *)
+Definition raise_choice_seq_restriction {o} {lv} lv' (e : @ChoiceSeqRestriction o lv) : @ChoiceSeqRestriction o lv' :=
+  match e with
+  | csc_typ d typ typd => csc_typ d typ typd
+  | csc_coq_law f => csc_coq_law f
+  | csc_res (typ : nat -> @CTerm o -> @library_n o lv) =>
+    csc_res (fun n t (lib : @library_n o lv') => )
+  end.
+
+Definition raise_choice_seq_entry {o} {lv} lv' (e : @ChoiceSeqEntry o lv) : @ChoiceSeqEntry o lv' :=
+  match e with
+  | MkChoiceSeqEntry _ _ vals restr => MkChoiceSeqEntry _ _ vals (raise_choice_seq_restriction lv' restr)
+  end.
+
+Definition raise_library_entry {o} {lv} lv' (e : @library_entry o lv) : @library_entry o lv' :=
+  match e with
+  | lib_cs name entry => lib_cs name (raise_choice_seq_entry lv' entry)
+  | lib_abs opabs vars rhs correct => lib_abs opabs vars rhs correct
+  end.
+
+Definition raise_library {o} {lv} lv' (lib : @library o lv) : @library o lv' :=
+  map (raise_library_entry lv') lib.
+
+(* [lv1 >= lv2] *)
+Definition extends_restrictions {o} {lv1} {lv2} (restr1 : @ChoiceSeqRestriction o lv1) (restr2 : @ChoiceSeqRestriction o lv2) :=
+  match restr1, restr2 with
+  | csc_type d1 M1 Md1, csc_type d2 M2 Md2 =>
+    (forall n, d1 n = d2 n)
+    /\ (forall n v, M1 n v <-> M2 n v)
+  | csc_coq_law f1, csc_coq_law f2 => forall n, f1 n = f2 n
+  | csc_res M1, csc_res M2 => forall n v lib, M1 n v lib <-> M2 n v lib
   | _, _ => False
   end.
 
 (* [entry1] extends [entry2] *)
-Definition choice_sequence_entry_extend {o} (entry1 entry2 : @ChoiceSeqEntry o) : Prop :=
+Definition choice_sequence_entry_extend {o} {lv1} {lv2} (entry1 : @ChoiceSeqEntry o lv1) (entry2 : @ChoiceSeqEntry o lv2) : Prop :=
   (* the extension has the same restriction has the current sequence *)
   (*cse_restriction entry1 = cse_restriction entry2*)
   same_restrictions (cse_restriction entry1) (cse_restriction entry2)
@@ -141,7 +175,7 @@ Definition choice_sequence_entry_extend {o} (entry1 entry2 : @ChoiceSeqEntry o) 
   /\ extension_satisfies_restriction M entry1 entry2*).
 
 (* [entry1] extends [entry2] *)
-Definition entry_extends {o} (entry1 entry2 : @library_entry o) : Prop :=
+Definition entry_extends {o} {lv1} {lv2} (entry1 : @library_entry o lv1) (entry2 : @library_entry o lv2) : Prop :=
   match entry1, entry2 with
   | lib_cs name1 entry1, lib_cs name2 entry2 =>
     name1 = name2
@@ -151,9 +185,9 @@ Definition entry_extends {o} (entry1 entry2 : @library_entry o) : Prop :=
   end.
 
 (* true if there is an extended version of [entry] in [lib] *)
-Fixpoint entry_in_library_extends {o}
-         (entry : @library_entry o)
-         (lib   : library) : Prop :=
+Fixpoint entry_in_library_extends {o} {lv0} {lv}
+         (entry : @library_entry o lv0)
+         (lib   : @library o lv) : Prop :=
   match lib with
   | [] => False
   | entry' :: entries =>
@@ -176,7 +210,7 @@ Definition is0kind (name : choice_sequence_name) : bool :=
   | _ => false
   end.
 
-Definition is_nat_restriction {o} (restr : @ChoiceSeqRestriction o) :=
+Definition is_nat_restriction {o} {lv} (restr : @ChoiceSeqRestriction o lv) :=
   match restr with
   | csc_type d M Md =>
     (forall n, d n = mkc_zero)
@@ -188,7 +222,7 @@ Definition is_nat_restriction {o} (restr : @ChoiceSeqRestriction o) :=
 Definition cterm_is_nth {o} (t : @CTerm o) n l :=
   exists i, select n l = Some i /\ t = mkc_nat i.
 
-Definition is_nat_seq_restriction {o} (l : list nat) (restr : @ChoiceSeqRestriction o) :=
+Definition is_nat_seq_restriction {o} {lv} (l : list nat) (restr : @ChoiceSeqRestriction o lv) :=
   match restr with
   | csc_type d M Md =>
     (* the choice sequence matches the default values up to [length l] *)
@@ -203,7 +237,7 @@ Definition is_nat_seq_restriction {o} (l : list nat) (restr : @ChoiceSeqRestrict
   | csc_res _ => False
   end.
 
-Definition correct_restriction {o} (name : choice_sequence_name) (restr : @ChoiceSeqRestriction o) :=
+Definition correct_restriction {o} {lv} (name : choice_sequence_name) (restr : @ChoiceSeqRestriction o lv) :=
   match csn_kind name with
   | cs_kind_nat n =>
     if deq_nat n 0 then is_nat_restriction restr
@@ -211,49 +245,31 @@ Definition correct_restriction {o} (name : choice_sequence_name) (restr : @Choic
   | cs_kind_seq l => is_nat_seq_restriction l restr
   end.
 
-Definition is_exists_lib_restriction {o} (typ : RestrictionPred) (lib : @library o) (n : nat) (t : CTerm) :=
-  
-  typ <=> 
-Proof.
-  destruct typ.
-Qed.
-
-Definition choice_sequence_exists_lib_restriction {o} (restr : @ChoiceSeqRestriction o) :=
-  match restr with
-  | csc_type _ _ _ => True
-  | csc_coq_law _ => True
-  | csc_res typ =>
-    forall (n : nat) (t : CTerm),
-    exists (P : @library o -> Prop),
-    typ n t <=> exists (lib: library), P lib
-  end.
-
-Definition safe_choice_sequence_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntry o) :=
+Definition safe_choice_sequence_entry {o} {lv} (name : choice_sequence_name) (e : @ChoiceSeqEntry o lv) :=
   match e with
-  | MkChoiceSeqEntry _ vals restriction =>
+  | MkChoiceSeqEntry _ _ vals restriction =>
     correct_restriction name restriction
     /\ choice_sequence_satisfies_restriction vals restriction
-    /\ choice_sequence_exists_lib_restriction restriction
   end.
 
-Definition upd_restr_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntry o) :=
+Definition upd_restr_entry {o} {lv} (name : choice_sequence_name) (e : @ChoiceSeqEntry o lv) :=
   if is0kind name then
     match e with
-    | MkChoiceSeqEntry _ vals restriction => MkChoiceSeqEntry o vals csc_nat
+    | MkChoiceSeqEntry _ _ vals restriction => MkChoiceSeqEntry _ _ vals csc_nat
     end
   else e.
 
-Definition safe_library_entry {o} (e : @library_entry o) :=
+Definition safe_library_entry {o} {lv} (e : @library_entry o lv) :=
   match e with
   | lib_cs name cse =>
     safe_choice_sequence_entry name ((*upd_restr_entry name*) cse)
   | _ => True
   end.
 
-Definition safe_library {o} (lib : @library o) :=
+Definition safe_library {o} {lv} (lib : @library o lv) :=
   forall entry, entry_in_library entry lib -> safe_library_entry entry.
 
-Definition subset_library {o} (lib1 lib2 : @library o) :=
+Definition subset_library {o} {lv} (lib1 lib2 : @library o lv) :=
   forall entry1,
     List.In entry1 lib1
     ->
@@ -261,23 +277,24 @@ Definition subset_library {o} (lib1 lib2 : @library o) :=
       List.In entry2 lib2
       /\ entry_extends entry2 entry1.
 
-Definition lib_extends_entries {o} (lib1 lib0 : @library o) :=
-  forall entry,
+(* [lib1] extends [lib0], so [l1 >= l0] *)
+Definition lib_extends_entries {o} {l1} {l0} (lib1 : @library o l1) (lib0 : @library o l0) :=
+  forall (entry : @library_entry o l0),
     entry_in_library entry lib0
     -> entry_in_library_extends entry lib1.
 
 (* [lib1] extends [lib0] *)
-Inductive lib_extends {o} (lib1 lib0 : @library o) : Prop :=
+Inductive lib_extends {o} {l1} {l0} (lib1 : @library o l1) (lib0 : @library o l0) : Prop :=
 | MkLibExtends
     (lib_extends_ext  : lib_extends_entries lib1 lib0)
     (lib_extends_safe : safe_library lib0 -> safe_library lib1)
     (lib_extends_sub  : subset_library lib0 lib1)
     (lib_extends_xxx  :
-        forall name vals restr n t P,
-          entry_in_library (lib_cs name (MkChoiceSeqEntry _ vals restr)) lib0
+        forall name vals (n : nat) t {l} (lib : @library_n o l) restr,
+          entry_in_library (lib_cs name (MkChoiceSeqEntry _ _ vals (csc_res restr))) lib0
           -> select n vals = Some t
-          -> restr n t <=> (exists lib, P lib)
-          -> ).
+          -> restr n t lib
+          -> lib_extends lib1 lib).
 
 
     }.
