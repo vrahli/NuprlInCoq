@@ -188,6 +188,7 @@ Definition ChoiceSeqVals {o} := list (@ChoiceSeqVal o).
 Definition CSVal2term {o} (v : @ChoiceSeqVal o) : NTerm := get_cterm v.
 
 Definition RestrictionPred {o} := nat -> @CTerm o -> Prop.
+Definition RestrictionPredT {o} := nat -> @CTerm o -> Type.
 
 Inductive ChoiceSeqRestriction {o} :=
 (* constrains the values of the sequence to have that type *)
@@ -196,7 +197,7 @@ Inductive ChoiceSeqRestriction {o} :=
 (* constrains the values of the sequence to follow the law given by the function *)
 | csc_coq_law (f : nat -> @CTerm o)
 (* no default *)
-| csc_res  (typ : @RestrictionPred o).
+| csc_res  (typ : @RestrictionPredT o).
 
 (* no constraints *)
 Definition csc_no {o} : @ChoiceSeqRestriction o :=

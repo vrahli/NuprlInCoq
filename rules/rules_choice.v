@@ -811,23 +811,6 @@ Proof.
 Qed.
 Hint Resolve all_in_ex_bar_inhabited_type_bar_implies_inhabited_type_bar : slow.
 
-Lemma select_snoc_eq :
-  forall {A} n (l : list A) x,
-    select n (snoc l x) =
-    if lt_dec n (length l)
-    then select n l
-    else if deq_nat n (length l) then Some x else None.
-Proof.
-  induction n; introv; simpl in *.
-
-  { destruct l; simpl; auto. }
-
-  destruct l; simpl in *; autorewrite with slow; auto.
-  rewrite IHn.
-  boolvar; tcsp; try omega.
-Qed.
-
-Hint Rewrite length_snoc : slow.
 
 Lemma computes_upto_implies_exists_nat_seq {o} :
   forall lib (a1 a2 : @CTerm o) k,
