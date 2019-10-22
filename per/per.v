@@ -439,7 +439,7 @@ Definition equality_of_int {p} lib (n m : @CTerm p) :=
 
 
 Definition equality_of_int_bar {o} lib (t t' : @CTerm o) :=
-  e_all_in_ex_bar lib (fun lib => equality_of_int lib t t').
+  in_open_bar lib (fun lib => equality_of_int lib t t').
 
 Definition per_int {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   T1 ===>(lib) mkc_int
@@ -460,7 +460,7 @@ Definition equality_of_nat {o} lib (t t' : @CTerm o) :=
 
 (* This is just for testing, we've also defined nat using int and the set type *)
 Definition equality_of_nat_bar {o} lib (t t' : @CTerm o) :=
-  e_all_in_ex_bar lib (fun lib => equality_of_nat lib t t').
+  in_open_bar lib (fun lib => equality_of_nat lib t t').
 
 Definition per_nat {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   T1 ===>(lib) mkc_Nat
@@ -480,7 +480,7 @@ Definition equality_of_qnat {o} lib (t t' : @CTerm o) :=
   # {n : nat , ccomputes_to_valc lib t' (mkc_nat n)}.
 
 Definition equality_of_qnat_bar {o} lib (t t' : @CTerm o) :=
-  e_all_in_ex_bar lib (fun lib => equality_of_qnat lib t t').
+  in_open_bar lib (fun lib => equality_of_qnat lib t t').
 
 Definition per_qnat {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   T1 ===>(lib) mkc_qnat
@@ -506,7 +506,7 @@ Definition per_qtime_eq_bar {o}
            (lib  : library)
            (eqa  : lib-per(lib,o))
            (t t' : @CTerm o) : [U] :=
-  e_all_in_ex_bar_ext lib (fun lib' x => per_qtime_eq lib' (eqa lib' x) t t').
+  in_open_bar_ext lib (fun lib' x => per_qtime_eq lib' (eqa lib' x) t t').
 
 Definition per_qtime {o}
            (ts : cts)
@@ -540,7 +540,7 @@ Definition equality_of_csname {o} lib n (t t' : @CTerm o) :=
   # t' ===>(lib) (mkc_choice_seq name)}.
 
 Definition equality_of_csname_bar {o} lib n (t t' : @CTerm o) :=
-  e_all_in_ex_bar lib (fun lib => equality_of_csname lib n t t').
+  in_open_bar lib (fun lib => equality_of_csname lib n t t').
 
 Definition per_csname {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   {n : nat
@@ -567,7 +567,7 @@ Definition equality_of_atom {p} lib (a b : @CTerm p) :=
                      # b ===>(lib) (mkc_token s)}.
 
 Definition equality_of_atom_bar {o} lib (t t' : @CTerm o) :=
-  e_all_in_ex_bar lib (fun lib => equality_of_atom lib t t').
+  in_open_bar lib (fun lib => equality_of_atom lib t t').
 
 Definition per_atom {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   T1 ===>(lib) mkc_atom
@@ -586,7 +586,7 @@ Definition equality_of_uatom {p} lib (a b : @CTerm p) :=
                        # b ===>(lib) (mkc_utoken u)}.
 
 Definition equality_of_uatom_bar {o} lib (t t' : @CTerm o) :=
-  e_all_in_ex_bar lib (fun lib => equality_of_uatom lib t t').
+  in_open_bar lib (fun lib => equality_of_uatom lib t t').
 
 Definition per_uatom {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   T1 ===>(lib) mkc_uatom
@@ -687,7 +687,7 @@ Print Universes.
 *)
 
 Definition per_base_eq {o} lib (t t' : @CTerm o) :=
-  e_all_in_ex_bar lib (fun lib => t ~=~(lib) t').
+  in_open_bar lib (fun lib => t ~=~(lib) t').
 
 Definition per_base {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   T1 ===>(lib) mkc_base
@@ -747,7 +747,7 @@ Definition per_approx_eq {o} lib a b (t t' : @CTerm o) :=
   # a ~<~(lib) b.
 
 Definition per_approx_eq_bar {o} lib a b (t t' : @CTerm o) :=
-  e_all_in_ex_bar lib (fun lib => per_approx_eq lib a b t t').
+  in_open_bar lib (fun lib => per_approx_eq lib a b t t').
 
 Definition per_approx {p}
            (ts : cts(p))
@@ -790,7 +790,7 @@ Definition per_cequiv_eq {o} lib a b (t t' : @CTerm o) :=
   # a ~=~(lib) b.
 
 Definition per_cequiv_eq_bar {o} lib a b (t t' : @CTerm o) :=
-  e_all_in_ex_bar lib (fun lib => per_cequiv_eq lib a b t t').
+  in_open_bar lib (fun lib => per_cequiv_eq lib a b t t').
 
 Definition per_cequiv {p}
            (ts : cts(p))
@@ -898,7 +898,7 @@ Definition eq_per_eq {o}
   /\ eqa a1 a2.
 
 Definition eq_per_eq_bar {o} lib a b (eqa : lib-per(lib,o)) (t t' : @CTerm o) :=
-  e_all_in_ex_bar_ext lib (fun lib' x => eq_per_eq lib' a b (eqa lib' x) t t').
+  in_open_bar_ext lib (fun lib' x => eq_per_eq lib' a b (eqa lib' x) t t').
 
 Definition eqorceq_ext {o} lib (eqa : lib-per(lib,o)) a b :=
   in_ext_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a b).
@@ -1102,7 +1102,7 @@ Definition per_func_ext_eq {o}
            (eqa  : lib-per(lib,o))
            (eqb  : lib-per-fam(lib,eqa))
            (t t' : @CTerm o) :=
-  e_all_in_ex_bar_ext lib (fun lib' x => per_func_eq (eqa lib' x) (eqb lib' x) t t').
+  in_open_bar_ext lib (fun lib' x => per_func_eq (eqa lib' x) (eqb lib' x) t t').
 
 Definition per_func_ext {o} (ts : cts(o)) lib T1 T2 (eq : per(o)) : [U] :=
   {eqa : lib-per(lib,o)
@@ -1145,7 +1145,7 @@ Definition per_product_eq_bar {o}
            (eqa  : lib-per(lib,o))
            (eqb  : lib-per-fam(lib,eqa))
            (t t' : CTerm) : [U] :=
-  e_all_in_ex_bar_ext lib (fun lib' x => per_product_eq lib' (eqa lib' x) (eqb lib' x) t t').
+  in_open_bar_ext lib (fun lib' x => per_product_eq lib' (eqa lib' x) (eqb lib' x) t t').
 
 (* I was using [type_family_bar] here before but then it doesn't make
    sense because the elements of the sum type could use a lower bar than
@@ -1255,13 +1255,13 @@ Definition per_union_eq_bar {o}
            (lib     : library)
            (eqa eqb : lib-per(lib,o))
            (t t'    : @CTerm o) : [U] :=
-  e_all_in_ex_bar_ext lib (fun lib' x => per_union_eq lib' (eqa lib' x) (eqb lib' x) t t').
+  in_open_bar_ext lib (fun lib' x => per_union_eq lib' (eqa lib' x) (eqb lib' x) t t').
 
 Definition eq_per_union_bar {o}
            (lib     : library)
            (eqa eqb : per(o))
            (t t'    : @CTerm o) : [U] :=
-  e_all_in_ex_bar lib (fun lib' => per_union_eq lib' eqa eqb t t').
+  in_open_bar lib (fun lib' => per_union_eq lib' eqa eqb t t').
 
 Definition per_union {o}
            (ts : cts)
@@ -1375,7 +1375,7 @@ Definition per_image_eq_bar {o}
            (eqa  : lib-per(lib,o))
            (f    : CTerm)
            (t t' : CTerm) : [U] :=
-  e_all_in_ex_bar_ext lib (fun lib' x => per_image_eq lib' (eqa lib' x) f t t').
+  in_open_bar_ext lib (fun lib' x => per_image_eq lib' (eqa lib' x) f t t').
 
 Definition per_image {o}
            (ts    : cts)
@@ -1760,7 +1760,7 @@ Definition per_set_eq_bar {o}
            (eqa  : lib-per(lib,o))
            (eqb  : lib-per-fam(lib,eqa))
            (t t' : CTerm) : [U] :=
-  e_all_in_ex_bar_ext lib (fun lib' x => per_set_eq (eqa lib' x) (eqb lib' x) t t').
+  in_open_bar_ext lib (fun lib' x => per_set_eq (eqa lib' x) (eqb lib' x) t t').
 
 Definition per_set {o}
            (ts    : cts)
@@ -2316,7 +2316,7 @@ Definition e_all_in_bar_ext2 {o} {lib}
     in_ext_ext lib' (F lib' b).
 
 
-Lemma implies_computes_to_valc_seq_bar_raise_bar {o} :
+(*Lemma implies_computes_to_valc_seq_bar_raise_bar {o} :
   forall {lib lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) t v,
     t ==b==>(bar) v
     -> t ==b==>(raise_bar bar ext) v.
@@ -2325,7 +2325,7 @@ Proof.
   simpl in *; exrepnd.
   apply (comp lib1 br1); eauto 3 with slow.
 Qed.
-Hint Resolve implies_computes_to_valc_seq_bar_raise_bar : slow.
+Hint Resolve implies_computes_to_valc_seq_bar_raise_bar : slow.*)
 
 Definition raise_ext_per {o} {lib lib'}
            (per : ext-per(lib,o))
@@ -2374,7 +2374,7 @@ Proof.
   { exists lib' br' ext; eapply (bar_per_cond _ per); eauto. }
 Defined.
 
-Definition bar_per_type_intersect_left
+(*Definition bar_per_type_intersect_left
            {o} {lib} {bar : @BarLib o lib}
            (per : bar_per_type bar)
            (bar' : @BarLib o lib) : bar_per_type (intersect_bars bar bar').
@@ -2382,7 +2382,7 @@ Proof.
   introv br ext x; introv.
   simpl in *; exrepnd.
 
-Abort.
+Abort.*)
 
 
 (*(* raise eqa *)

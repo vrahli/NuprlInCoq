@@ -76,7 +76,7 @@ Ltac close_diff_ext :=
     try computes_to_valc_diff
   end.
 
-Ltac close_diff_bar_bar :=
+(*Ltac close_diff_bar_bar :=
   allunfold_per;
   match goal with
   | [ H1 : all_in_bar ?bar1 (fun lib => ?T ===>(lib) _),
@@ -101,10 +101,10 @@ Ltac close_diff_bar_bar :=
     pose proof (b1 lib') as b2; autodimp b2 xxx;
     simpl in a2,b2;
     try (spcast; computes_to_valc_diff)
-  end.
+  end.*)
 
 
-Ltac close_diff_bar_ceq_bar :=
+(*Ltac close_diff_bar_ceq_bar :=
   allunfold_per;
   match goal with
   | [ H1 : all_in_bar ?bar1 (fun lib => ?T ===>(lib) _),
@@ -134,9 +134,9 @@ Ltac close_diff_bar_ceq_bar :=
     spcast;
     apply_cequivc_val;
     try (spcast; computes_to_valc_diff)
-  end.
+  end.*)
 
-Ltac close_diff_ceq_bar_ceq_bar0 :=
+(*Ltac close_diff_ceq_bar_ceq_bar0 :=
   match goal with
   | [ H1 : computes_to_valc_ceq_bar ?bar1 ?T _,
       H2 : computes_to_valc_ceq_bar ?bar2 ?T _ |- _ ] =>
@@ -168,11 +168,11 @@ Ltac close_diff_ceq_bar_ceq_bar0 :=
     spcast;
     repeat apply_cequivc_val;
     try (spcast; computes_to_valc_diff)
-  end.
+  end.*)
 
-Ltac close_diff_ceq_bar_ceq_bar :=
+(*Ltac close_diff_ceq_bar_ceq_bar :=
   allunfold_per;
-  close_diff_ceq_bar_ceq_bar0.
+  close_diff_ceq_bar_ceq_bar0.*)
 
 Ltac close_diff_ext_bar :=
   allunfold_per;
@@ -326,10 +326,10 @@ Ltac close_diff_all :=
         (*| complete close_diff_bar*)
         (*| complete close_diff_ceq_bar*)
         | complete close_diff_ext
-        | complete close_diff_bar_bar
-        | complete close_diff_bar_ceq_bar
-        | complete close_diff_ceq_bar_ceq_bar0
-        | complete close_diff_ceq_bar_ceq_bar
+        (*| complete close_diff_bar_bar*)
+        (*| complete close_diff_bar_ceq_bar*)
+        (*| complete close_diff_ceq_bar_ceq_bar0*)
+        (*| complete close_diff_ceq_bar_ceq_bar*)
         | complete close_diff_ext_bar
         | complete close_diff_ext_ceq_bar
         | complete close_diff_init_bar_left
@@ -452,7 +452,7 @@ Ltac computes_to_eqbars_step :=
     computes_to_eqval;
     try (hide_hyp H1)
 
-  | [ H1 : all_in_bar ?bar1 (fun lib => ?T ===>(lib) ?T1),
+(*  | [ H1 : all_in_bar ?bar1 (fun lib => ?T ===>(lib) ?T1),
       H2 : all_in_bar ?bar2 (fun lib => ?T ===>(lib) ?T2) |- _ ] =>
     let h    := fresh "h"    in
     let q    := fresh "q"    in
@@ -480,9 +480,9 @@ Ltac computes_to_eqbars_step :=
     spcast;
     clear q w;
     computes_to_eqval;
-    try (hide_hyp H1)
+    try (hide_hyp H1)*)
 
-  | [ H1 : computes_to_valc_ceq_bar ?bar1 ?T _,
+(*  | [ H1 : computes_to_valc_ceq_bar ?bar1 ?T _,
       H2 : computes_to_valc_ceq_bar ?bar2 ?T _ |- _ ] =>
     let h    := fresh "h"    in
     let q    := fresh "q"    in
@@ -519,7 +519,7 @@ Ltac computes_to_eqbars_step :=
     ccequivc_ext_same_left;
     (*repeat apply_cequivc_val;
     computes_to_eqval;*)
-    try (hide_hyp H1)
+    try (hide_hyp H1)*)
   end.
 
 Ltac computes_to_eqbars :=

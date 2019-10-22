@@ -161,7 +161,7 @@ Definition e_in_bar {o} (lib : @library o) (F : @library o -> Prop) :=
   exists (bar : BarLib lib), e_all_in_bar bar F.
 
 
-Lemma implies_e_all_in_bar_intersect_bars_left {o} :
+(*Lemma implies_e_all_in_bar_intersect_bars_left {o} :
   forall {lib} (bar bar' : @BarLib o lib) F,
     e_all_in_bar bar F
     -> e_all_in_bar (intersect_bars bar bar') F.
@@ -170,9 +170,9 @@ Proof.
   simpl in *; exrepnd.
   eapply a; eauto 2 with slow.
 Qed.
-Hint Resolve implies_e_all_in_bar_intersect_bars_left : slow.
+Hint Resolve implies_e_all_in_bar_intersect_bars_left : slow.*)
 
-Lemma implies_e_all_in_bar_intersect_bars_right {o} :
+(*Lemma implies_e_all_in_bar_intersect_bars_right {o} :
   forall {lib} (bar bar' : @BarLib o lib) F,
     e_all_in_bar bar F
     -> e_all_in_bar (intersect_bars bar' bar) F.
@@ -181,7 +181,7 @@ Proof.
   simpl in *; exrepnd.
   eapply a; eauto 2 with slow.
 Qed.
-Hint Resolve implies_e_all_in_bar_intersect_bars_right : slow.
+Hint Resolve implies_e_all_in_bar_intersect_bars_right : slow.*)
 
 
 
@@ -215,14 +215,16 @@ Proof.
 Qed.
 Hint Resolve subset_library_app_l : slow.
 
-Lemma implies_lib_extends_app_r {o} :
+(*Lemma implies_lib_extends_app_r {o} :
   forall (lib1 : @library o) {lib2},
     safe_library lib2
     -> lib_extends (lib1 ++ lib2) lib1.
 Proof.
-  introv safe; split; eauto 3 with slow.
+  introv safe.
+
+ ; split; eauto 3 with slow.
 Qed.
-Hint Resolve implies_lib_extends_app_r : slow.
+Hint Resolve implies_lib_extends_app_r : slow.*)
 
 Lemma safe_ren_ChoiceSequenceEntries2lib {o} :
   forall (ext : list (@ChoiceSequenceEntry o)) ren,
@@ -241,13 +243,13 @@ Proof.
 Qed.
 Hint Resolve safe_ren_ChoiceSequenceEntries2lib : slow.
 
-Lemma lib_extends_ext_ren {o} :
+(*Lemma lib_extends_ext_ren {o} :
   forall (lib : @library o) lext rens n,
     lib_extends (ext_ren lib lext rens n) lib.
 Proof.
   introv; apply implies_lib_extends_app_r; eauto 3 with slow.
 Qed.
-Hint Resolve lib_extends_ext_ren : slow.
+Hint Resolve lib_extends_ext_ren : slow.*)
 
 Definition all_in_ex_bar {o} (lib : @library o) F :=
   exists (bar : BarLib lib), all_in_bar bar F.
@@ -267,6 +269,8 @@ Definition all_in_bar_ext {o} {lib}
 
 Definition all_in_ex_bar_ext {o} (lib : @library o) F :=
   exists (bar : BarLib lib), all_in_bar_ext bar F.
+
+Arguments lib_extends_trans [o] [lib1] [lib2] [lib3] _ _.
 
 Definition ex_finite_ext_ext {o}
            (lib lib' : @library o)
@@ -479,7 +483,6 @@ Proof.
   pose proof (h0 _ br _ e) as h0.
   eapply ex_finite_ext_ext_pres; eauto.
   introv xta z; introv; eauto.
-  eapply imp; eauto; eauto 3 with slow.
 Qed.
 
 Lemma e_all_in_ex_bar_pres {o} :
@@ -499,7 +502,6 @@ Proof.
   pose proof (h0 _ br _ e) as h0.
   eapply ex_finite_ext_pres;[|eauto].
   introv xta z; introv; eauto.
-  eapply imp; eauto; eauto 3 with slow.
 Qed.
 
 Lemma in_ext_implies {o} :

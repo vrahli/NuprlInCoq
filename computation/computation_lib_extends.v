@@ -286,6 +286,38 @@ Fixpoint add_choice {o} (name : choice_sequence_name) (t : @ChoiceSeqVal o) (lib
     end
   end.
 
+Fixpoint add_choice_rel {o}
+         (name   : choice_sequence_name)
+         (v      : @ChoiceSeqVal o)
+         (n      : nat)
+         (restr  : ChoiceSeqRestriction)
+         (lib1   : @library o)
+         (lib2   : library) :=
+  match lib1, lib2 with
+  | [], [] => True
+  | e1 :: entries1, e2 :: entries2 =>
+    match e1, e2 with
+    | lib_cs name1 entry1, lib_cs name2 entry2 =>
+      if choice_sequence_name_deq name name1
+      then
+        if choice_sequence_name_deq name name2
+        then
+          same_restrictions restr (cse_restriction entry1)
+          /\ same_restrictions restr (cse_restriction entry2)
+          /\ n = length (cse_vals entry1)
+          /\ cse_vals entry2 = snoc (cse_vals entry1) v
+        else False
+      else e1 = e2 /\ add_choice_rel name v n restr entries1 entries2
+    | lib_abs _ _ _ _, lib_abs _ _ _ _ =>
+      e1 = e2 /\ add_choice_rel name v n restr entries1 entries2
+    | _, _ => False
+    end
+  | _, _ => False
+  end.
+
+Definition not_in_lib {o} (name : EntryName) (lib : @library o) :=
+  !List.In name (map entry2name lib).
+
 Inductive lib_extends {o} : @library o -> @library o -> Prop :=
 | lib_extends_ref :
     forall (lib : library),
