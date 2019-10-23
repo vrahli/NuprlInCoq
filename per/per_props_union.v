@@ -591,7 +591,7 @@ Proof.
 
   - apply in_open_bar_ext_dup.
     eapply in_open_bar_ext_pres; eauto; clear; introv h; simpl in *.
-    unfold per_union_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+    unfold per_union_eq_bar in h.
     eapply in_open_bar_ext_pres; eauto; clear; introv h; simpl in *.
     introv.
     eapply implies_eq_term_equals_per_union_eq; try exact h;
@@ -599,7 +599,7 @@ Proof.
 
   - apply in_open_bar_ext_twice in h.
     eapply in_open_bar_ext_pres; eauto; clear; introv h; simpl in *.
-    unfold per_union_eq_bar; apply e_all_in_ex_bar_ext_as.
+    unfold per_union_eq_bar.
     eapply in_open_bar_ext_pres; eauto; clear; introv h; simpl in *.
     eapply implies_eq_term_equals_per_union_eq; try exact h;
       try (apply lib_per_cond).
@@ -668,7 +668,6 @@ Proof.
       { introv; apply tyb0. }
     }
 
-    apply e_all_in_ex_bar_ext_as.
     apply in_ext_ext_implies_in_open_bar_ext; introv.
     repndors;[left|right]; exrepnd; spcast.
 

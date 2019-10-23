@@ -105,7 +105,7 @@ Lemma equality_of_int_bar_same_nat {o} :
     equality_of_int_bar lib (mkc_nat n) (mkc_nat n).
 Proof.
   introv.
-  unfold equality_of_int_bar; apply e_all_in_ex_bar_as.
+  unfold equality_of_int_bar.
   apply in_ext_implies_in_open_bar; introv ext.
   exists (Z_of_nat n); rw <- @mkc_nat_eq; dands; eauto 2 with slow.
 Qed.
@@ -1169,7 +1169,7 @@ Proof.
   autorewrite with slow.
   apply equality_in_int in ea.
   apply all_in_ex_bar_tequality_implies_tequality.
-  unfold equality_of_int_bar in ea; apply e_all_in_ex_bar_as in ea.
+  unfold equality_of_int_bar in ea.
   eapply in_open_bar_pres; eauto; clear ea; introv ext ea.
 
   clear dependent lib.
@@ -1382,7 +1382,7 @@ Proof.
 
   apply equality_in_int in ea.
   apply all_in_ex_bar_tequality_implies_tequality.
-  unfold equality_of_int_bar in ea; apply e_all_in_ex_bar_as in ea.
+  unfold equality_of_int_bar in ea.
   eapply in_open_bar_pres; eauto; clear ea; introv ext ea.
 
   clear dependent lib.
@@ -1965,7 +1965,7 @@ Proof.
     pose proof (h1 _ (lib_extends_refl lib) (mkc_integer k) (mkc_integer k)) as h.
     autodimp h hyp.
     { apply equality_in_int.
-      unfold equality_of_int_bar; apply e_all_in_ex_bar_as.
+      unfold equality_of_int_bar.
       apply in_ext_implies_in_open_bar; introv ext.
       unfold equality_of_int; exists k; dands; spcast; auto; eauto 3 with slow. }
     allrw @tequality_mkc_prod; repnd.
@@ -1981,7 +1981,7 @@ Proof.
 
     apply equality_in_int in ei.
     apply all_in_ex_bar_tequality_implies_tequality.
-    unfold equality_of_int_bar in ei; apply e_all_in_ex_bar_as in ei.
+    unfold equality_of_int_bar in ei.
     eapply in_open_bar_pres; eauto; clear ei; introv ext ei.
     unfold equality_of_int in ei; exrepnd.
 
@@ -2291,7 +2291,7 @@ Proof.
 
   - clear h0.
     allrw @equality_in_int.
-    unfold equality_of_int_bar in h1; apply e_all_in_ex_bar_as in h1.
+    unfold equality_of_int_bar in h1.
     apply collapse_all_in_ex_bar.
     eapply in_open_bar_comb; try exact h; clear h.
     eapply in_open_bar_pres; eauto; clear h1; introv ext h1 h.
@@ -2319,7 +2319,7 @@ Proof.
     allrw @equality_in_int.
     apply all_in_ex_bar_tequality_implies_tequality.
     eapply lib_extends_preserves_all_in_ex_bar in h;[|exact x].
-    unfold equality_of_int_bar in ei; apply e_all_in_ex_bar_as in ei.
+    unfold equality_of_int_bar in ei.
     eapply in_open_bar_comb; try exact ei; clear ei.
     eapply in_open_bar_pres; eauto; clear h; introv ext h ei; exrepnd.
 
@@ -2344,7 +2344,6 @@ Proof.
       destruct (Z_lt_le_dec k0 k); tcsp.
 
   - apply equality_in_int.
-    apply e_all_in_ex_bar_as.
     eapply in_open_bar_pres; eauto; clear h; introv ext h; exrepnd; spcast.
     exists (Z.of_nat m); dands; spcast; auto.
 
@@ -2521,7 +2520,7 @@ Proof.
   allrw @mkc_var_substc.
   apply equality_in_int in e.
   apply all_in_ex_bar_tequality_implies_tequality.
-  unfold equality_of_int_bar in e; apply e_all_in_ex_bar_as in e.
+  unfold equality_of_int_bar in e.
   eapply in_open_bar_pres; eauto; clear e; introv ext h.
 
   unfold equality_of_int in h; exrepnd; spcast.
@@ -2551,8 +2550,7 @@ Proof.
   rw @mkc_var_substc.
   split; introv k; exrepnd; dands.
 
-  - apply e_all_in_ex_bar_as in k1; apply e_all_in_ex_bar_as.
-    eapply in_open_bar_comb; try exact k1; clear k1.
+  - eapply in_open_bar_comb; try exact k1; clear k1.
     eapply in_open_bar_pres; try exact k; clear k; introv ext k k1.
     unfold equality_of_int in k1; exrepnd; spcast; repeat computes_to_eqval.
     eapply inhabited_le_aux in k; eauto 3 with slow;
@@ -2567,7 +2565,6 @@ Proof.
     allrw @mkc_var_substc.
     apply equality_in_int in e.
     apply all_in_ex_bar_tequality_implies_tequality.
-    apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as in k.
     eapply lib_extends_preserves_all_in_ex_bar in k;[|exact x].
     eapply in_open_bar_comb; try exact e; clear e.
     eapply in_open_bar_pres; try exact k; clear k; introv ext k k1.
@@ -2577,13 +2574,11 @@ Proof.
     destruct (Z_le_gt_dec 0 k0); sp.
     right; sp; omega.
 
-  - apply e_all_in_ex_bar_as; apply e_all_in_ex_bar_as in k.
-    eapply in_open_bar_pres; try exact k; clear k; introv ext k.
+  - eapply in_open_bar_pres; try exact k; clear k; introv ext k.
     unfold equality_of_int, equality_of_nat in *; exrepnd; spcast.
     exists (Z.of_nat n); dands; spcast; auto.
 
-  - eapply e_all_in_ex_bar_as in k.
-    eapply in_open_bar_pres; try exact k; clear k; introv ext k.
+  - eapply in_open_bar_pres; try exact k; clear k; introv ext k.
     unfold equality_of_int, equality_of_nat in *; exrepnd; spcast.
     eapply inhabited_le_aux; eauto 3 with slow;
       allrw @mkc_integer_as_mk_zero; eauto 2 with slow; try omega.
@@ -2598,7 +2593,6 @@ Proof.
   introv e inh.
   apply equality_in_tnat.
   apply equality_in_int in e.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb; try exact e; clear e.
   eapply in_open_bar_pres; try exact inh; clear inh; introv ext inh h.
   unfold equality_of_nat.
@@ -2629,7 +2623,6 @@ Lemma equality_in_int_implies_cequiv {o} :
 Proof.
   introv e.
   apply equality_in_int in e.
-  apply e_all_in_ex_bar_as in e.
   eapply in_open_bar_pres; try exact e; clear e; introv ext h.
   unfold equality_of_int in h; exrepnd.
   eapply ccomputes_to_valc_ext_integer_implies_computes_to_valc_in_ext in h0;[|apply lib_extends_refl].

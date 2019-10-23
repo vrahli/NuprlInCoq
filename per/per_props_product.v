@@ -665,7 +665,7 @@ Proof.
 
   - apply in_open_bar_ext_dup.
     eapply in_open_bar_ext_pres; try exact h; clear h; introv h; simpl in *.
-    unfold per_product_eq_bar in h; eapply e_all_in_ex_bar_ext_as in h.
+    unfold per_product_eq_bar in h.
     eapply in_open_bar_ext_pres; try exact h; clear h; introv h; simpl in *.
     introv.
     eapply implies_eq_term_equals_per_product_eq; try exact h; introv;
@@ -674,7 +674,7 @@ Proof.
 
   - eapply in_open_bar_ext_twice in h.
     eapply in_open_bar_ext_pres; try exact h; clear h; introv h; simpl in *.
-    unfold per_product_eq_bar; eapply e_all_in_ex_bar_ext_as.
+    unfold per_product_eq_bar.
     eapply in_open_bar_ext_pres; try exact h; clear h; introv h; simpl in *.
     introv.
     eapply implies_eq_term_equals_per_product_eq; try exact h; introv;
@@ -727,7 +727,7 @@ Proof.
       eapply in_open_bar_ext_comb; try exact e3; clear e3.
       eapply in_open_bar_ext_pres; try exact e1; clear e1; introv m1 m3 m0; simpl in *.
       unfold raise_ext_per_fam.
-      unfold per_product_eq_bar in m0; apply e_all_in_ex_bar_ext_as in m0; simpl in m0.
+      unfold per_product_eq_bar in m0; simpl in m0.
 
       eapply in_open_bar_ext_comb; try exact m0; clear m0.
       eapply in_open_bar_ext_comb; try exact m3; clear m3.
@@ -792,7 +792,7 @@ Proof.
       introv; apply tya0.
     }
 
-    unfold per_product_eq_bar; apply e_all_in_ex_bar_ext_as.
+    unfold per_product_eq_bar.
     eapply in_open_bar_ext_comb2; eauto; clear e.
     apply in_ext_ext_implies_in_open_bar_ext; introv h; exrepnd.
 

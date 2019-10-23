@@ -368,7 +368,6 @@ Lemma equality_of_nat_bar_implies_tequality_mkc_uni {o} :
 Proof.
   introv e.
   apply all_in_ex_bar_tequality_implies_tequality.
-  eapply e_all_in_ex_bar_as in e.
   eapply all_in_ex_bar_modus_ponens1;[|exact e]; clear e; introv x e.
   unfold equality_of_nat in *; exrepnd; eauto 3 with slow.
 Qed.

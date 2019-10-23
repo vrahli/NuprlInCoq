@@ -74,7 +74,7 @@ Proof.
 
   {
     introv; split; intro k; tcsp.
-    unfold per_approx_eq_bar in k; apply e_all_in_ex_bar_as in k.
+    unfold per_approx_eq_bar in k.
     apply (in_open_bar_const lib').
     eapply in_open_bar_pres; try exact k; clear k; introv ext k.
     unfold per_approx_eq in k; repnd; spcast.

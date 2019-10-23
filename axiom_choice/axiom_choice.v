@@ -287,7 +287,7 @@ Proof.
     apply h; eauto 3 with slow. }
 
   { introv ext q.
-    apply equality_in_tnat in q; apply e_all_in_ex_bar_as in q.
+    apply equality_in_tnat in q.
     apply all_in_ex_bar_equality_implies_equality.
     eapply in_open_bar_pres; eauto; clear q; introv xta q.
     unfold equality_of_nat in q; exrepnd.
@@ -337,13 +337,74 @@ Proof.
   destruct e1, e2, e; simpl in *; tcsp; repnd; subst; ginv; eauto 3 with slow.
 Qed.
 
+Fixpoint select_with_iseg {A} (n : nat) (iseg : list A) (l : list A) {struct n} : option (list A * A) :=
+  match n with
+  | 0 => match l with
+         | [] => None
+         | x :: _ => Some (iseg, x)
+         end
+  | S m => match l with
+           | [] => None
+           | x :: t => select_with_iseg m (snoc iseg x) t
+           end
+  end.
+
+Definition safe_choice_seq_restriction_upto2 {o}
+           (name  : choice_sequence_name)
+           (vals  : @ChoiceSeqVals o)
+           (restr : @ChoiceSeqRestriction o)
+           (lib   : @library o) :=
+  match restr with
+  | csc_res M =>
+    forall n v iseg,
+      select_with_iseg n [] vals = Some (iseg, v)
+      -> exists (Q : nat -> ChoiceSeqVal -> library -> Prop)
+                (e : M n v = {l : @library o & Q n v l})
+                (p : M n v),
+        lib_extends
+          (lib_cs name (MkChoiceSeqEntry _ iseg restr) :: lib)
+          (projT1 (eq_rect _ (fun n => n) p _ e))
+  | _ => True
+  end.
+
+Definition safe_choice_sequence_entry_upto2 {o}
+           (name : choice_sequence_name)
+           (e    : @ChoiceSeqEntry o)
+           (lib  : @library o) :=
+  match e with
+  | MkChoiceSeqEntry _ vals restr =>
+    correct_restriction name restr
+    /\ choice_sequence_satisfies_restriction vals restr
+    /\ safe_choice_seq_restriction_upto2 name vals restr lib
+  end.
+
+Definition safe_library_entry_upto2 {o} (e : @library_entry o) (lib : @library o) :=
+  match e with
+  | lib_cs name restr => safe_choice_sequence_entry_upto2 name restr lib
+  | _ => True
+  end.
+
 Lemma implies_lib_extends_cons_same {o} :
   forall e1 e2 (lib : @library o),
-    safe_library_entry e1
+    safe_library_entry_upto e1 lib
     -> entry_extends e1 e2
     -> lib_extends (e1 :: lib) (e2 :: lib).
 Proof.
   introv safee1 ext.
+  destruct e1, e2; simpl in *; repnd; subst; tcsp; ginv.
+  unfold choice_sequence_entry_extend in *; repnd.
+  destruct entry as [vals1 restr1]; simpl in *; repnd.
+  destruct entry0 as [vals2 restr2]; simpl in *.
+  unfold choice_sequence_vals_extend in *; exrepnd; subst.
+
+  destruct restr1, restr2; simpl in *; GC; repnd; tcsp.
+
+  { induction vals using rev_list_ind; simpl in *; autorewrite with slow; eauto.
+    {
+
+Print safe_choice_seq_restriction_upto.
+
+XXXXX
   split; simpl in *.
 
   - introv i; simpl in *; repndors; repnd; subst; tcsp.

@@ -80,7 +80,7 @@ Proof.
 
   exrepnd.
   pose proof (e0 _ ext1 _ ext2 extz) as w.
-  eapply nuprli_monotone in w; autodimp w hyp; try exact z; exrepnd.
+  apply (nuprli_monotone _ _ lib'0) in w; try exact z; exrepnd.
   apply nuprli_refl in w1.
   apply nuprli_refl in q.
   eapply nuprli_uniquely_valued in w1; try exact q; apply w1; clear w1; apply w0; auto.
@@ -198,7 +198,7 @@ Proof.
 
   exrepnd.
   pose proof (e0 _ ext1 _ ext2 extz) as w.
-  eapply nuprli_monotone in w; autodimp w hyp; try exact z; exrepnd.
+  apply (nuprli_monotone _ _ lib'0) in w; try exact z; exrepnd.
   apply nuprli_refl in w1.
   apply nuprli_refl in q.
   eapply nuprli_uniquely_valued in w1; try exact q; apply w1; clear w1; apply w0; auto.

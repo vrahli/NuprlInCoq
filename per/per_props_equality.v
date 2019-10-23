@@ -76,7 +76,7 @@ Proof.
   }
 
   {
-    unfold eq_per_eq_bar; apply e_all_in_ex_bar_ext_as.
+    unfold eq_per_eq_bar.
     apply in_ext_ext_implies_in_open_bar_ext; introv; simpl.
     introv; unfold eq_per_eq; dands; spcast; eauto 3 with slow refl; try apply q0.
   }
@@ -118,7 +118,6 @@ Lemma ccequivc_ext_implies_eq_per_eq_bar {o} :
 Proof.
   introv resp sym trans alla ceqa ceqb; introv.
   unfold eq_per_eq_bar, eq_per_eq; split; introv h;
-    apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as;
       eapply in_open_bar_ext_pres; try exact h; clear h; introv h;
         repnd; dands; auto.
 
@@ -555,7 +554,7 @@ Proof.
 
   apply in_open_bar_ext_dup.
   eapply in_open_bar_ext_pres; try exact e0; clear e0; introv e0; simpl in *.
-  unfold eq_per_eq_bar in e0; apply e_all_in_ex_bar_ext_as in e0.
+  unfold eq_per_eq_bar in e0.
   eapply in_open_bar_ext_pres; try exact e0; clear e0; introv m0; simpl in *; introv.
   unfold eq_per_eq, raise_ext_per in *; exrepnd.
   eapply lib_per_cond; eauto.
@@ -602,7 +601,7 @@ Proof.
 
   apply in_open_bar_ext_in_open_bar.
   eapply in_open_bar_ext_pres; try exact e; clear e; introv h; simpl in *.
-  unfold eq_per_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+  unfold eq_per_eq_bar in h.
   eapply in_open_bar_comb2; try exact h; clear h.
   apply in_ext_ext_implies_in_open_bar_ext; introv h; simpl in *.
   unfold eq_per_eq, raise_ext_per in *; exrepnd; dands; auto.
@@ -931,7 +930,7 @@ Proof.
 
     apply in_open_bar_ext_dup.
     eapply in_open_bar_ext_pres; try exact i0; clear i0; introv h; simpl in *.
-    unfold eq_per_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+    unfold eq_per_eq_bar in h.
     eapply in_open_bar_ext_pres; try exact h; clear h; introv h; simpl in *; introv.
     unfold eq_per_eq, raise_ext_per in *; exrepnd; dands; auto.
     eapply lib_per_cond; eauto.
@@ -954,7 +953,7 @@ Proof.
     }
 
     {
-      unfold eq_per_eq_bar; apply e_all_in_ex_bar_ext_as.
+      unfold eq_per_eq_bar.
       eapply in_open_bar_ext_comb2; try exact i1; clear i1.
       eapply in_open_bar_ext_comb2; try exact i; clear i.
       apply in_ext_ext_implies_in_open_bar_ext; introv i i1.
@@ -984,7 +983,7 @@ Proof.
       apply dest_nuprl_base2 in k2.
       unfold eqorceq in k3; repndors; tcsp; eauto 3 with slow.
       apply k2 in k3.
-      unfold per_base_eq in *; apply e_all_in_ex_bar_as in k3.
+      unfold per_base_eq in *.
       apply ccequivc_ext_bar_iff_ccequivc_bar in k3; auto.
 
     + apply ccequivc_ext_bar_iff_ccequivc_bar.
@@ -995,7 +994,7 @@ Proof.
       apply dest_nuprl_base2 in k2.
       unfold eqorceq in k1; repndors; tcsp; eauto 3 with slow.
       apply k2 in k1.
-      unfold per_base_eq in *; apply e_all_in_ex_bar_as in k1.
+      unfold per_base_eq in *.
       apply ccequivc_ext_bar_iff_ccequivc_bar in k1; auto.
 
   - repnd.
@@ -1015,14 +1014,14 @@ Proof.
 
     {
       introv; simpl.
-      left; unfold per_base_eq; apply e_all_in_ex_bar_as.
+      left; unfold per_base_eq.
       apply ccequivc_ext_bar_iff_ccequivc_bar; auto.
       unfold ccequivc_ext_bar; eauto 3 with slow.
     }
 
     {
       introv; simpl.
-      left; unfold per_base_eq; apply e_all_in_ex_bar_as.
+      left; unfold per_base_eq.
       apply ccequivc_ext_bar_iff_ccequivc_bar; auto.
       unfold ccequivc_ext_bar; eauto 3 with slow.
     }
@@ -1091,7 +1090,7 @@ Proof.
     apply collapse_all_in_ex_bar.
     eapply in_open_bar_pres; eauto; clear e; introv ext h; repndors; eauto 3 with slow;[].
     apply equality_in_base_iff in h.
-    unfold per_base_eq in h; apply e_all_in_ex_bar_as in h; auto.
+    unfold per_base_eq in h; auto.
   }
 
   { split; intro h; eauto 3 with slow. }

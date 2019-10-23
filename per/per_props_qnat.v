@@ -285,7 +285,7 @@ Lemma equality_nat_in_qnat {o} :
 Proof.
   introv.
   apply equality_in_qnat; eauto 2 with slow.
-  unfold equality_of_qnat_bar; apply e_all_in_ex_bar_as.
+  unfold equality_of_qnat_bar.
   apply in_ext_implies_in_open_bar; introv xt.
   unfold equality_of_qnat.
   dands; eexists; spcast; eauto 3 with slow.

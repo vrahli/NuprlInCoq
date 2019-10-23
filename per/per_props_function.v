@@ -483,7 +483,7 @@ Proof.
     eapply in_open_bar_ext_comb; try exact m4; clear m4.
     eapply in_open_bar_ext_pres; try exact m2; clear m2; introv m2 m4 m0; simpl in *.
     unfold raise_ext_per_fam.
-    unfold per_func_ext_eq in m0; apply e_all_in_ex_bar_ext_as in m0; simpl in m0.
+    unfold per_func_ext_eq in m0; simpl in m0.
 
     eapply in_open_bar_ext_comb; try exact m0; clear m0.
     eapply in_open_bar_ext_comb; try exact m4; clear m4.
@@ -596,7 +596,7 @@ Proof.
     introv; apply tya0.
   }
 
-  unfold per_func_ext_eq; apply e_all_in_ex_bar_ext_as.
+  unfold per_func_ext_eq.
   apply in_ext_ext_implies_in_open_bar_ext.
   repeat introv.
   pose proof (eqap0 lib' e a a' e0) as q;repnd.
@@ -675,7 +675,7 @@ Proof.
     eapply in_open_bar_ext_comb; try exact e4; clear e4.
     eapply in_open_bar_ext_pres; try exact e2; clear e2; introv m2 m4 m0; simpl in *.
     unfold raise_ext_per_fam.
-    unfold per_func_ext_eq in m0; apply e_all_in_ex_bar_ext_as in m0; simpl in m0.
+    unfold per_func_ext_eq in m0; simpl in m0.
 
     eapply in_open_bar_ext_comb; try exact m0; clear m0.
     eapply in_open_bar_ext_comb; try exact m4; clear m4.
@@ -725,7 +725,7 @@ Proof.
       eapply in_open_bar_ext_comb; try exact e4; clear e4.
       eapply in_open_bar_ext_pres; try exact e2; clear e2; introv m2 m4 m0; simpl in *.
       unfold raise_ext_per_fam.
-      unfold per_func_ext_eq in m0; apply e_all_in_ex_bar_ext_as in m0; simpl in m0.
+      unfold per_func_ext_eq in m0; simpl in m0.
 
       eapply in_open_bar_ext_comb; try exact m0; clear m0.
       eapply in_open_bar_ext_comb; try exact m4; clear m4.
@@ -768,7 +768,7 @@ Proof.
       eapply in_open_bar_ext_comb; try exact e4; clear e4.
       eapply in_open_bar_ext_pres; try exact e2; clear e2; introv m2 m4 m0; simpl in *.
       unfold raise_ext_per_fam.
-      unfold per_func_ext_eq in m0; apply e_all_in_ex_bar_ext_as in m0; simpl in m0.
+      unfold per_func_ext_eq in m0; simpl in m0.
 
       eapply in_open_bar_ext_comb; try exact m0; clear m0.
       eapply in_open_bar_ext_comb; try exact m4; clear m4.

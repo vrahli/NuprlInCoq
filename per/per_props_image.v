@@ -391,14 +391,14 @@ Proof.
 
   - apply in_open_bar_ext_dup; auto.
     eapply in_open_bar_ext_pres; eauto; clear h; introv h; simpl in *.
-    unfold per_image_eq_bar in *; apply e_all_in_ex_bar_ext_as in h.
+    unfold per_image_eq_bar in *.
     eapply in_open_bar_ext_pres; eauto; clear h; introv h; simpl in *.
     introv.
     eapply implies_eq_term_equals_eq_image_eq; try exact h; apply lib_per_cond.
 
   - apply in_open_bar_ext_twice in h.
     eapply in_open_bar_ext_pres; eauto; clear h; introv h; simpl in *.
-    unfold per_image_eq_bar in *; apply e_all_in_ex_bar_ext_as.
+    unfold per_image_eq_bar in *.
     eapply in_open_bar_ext_pres; eauto; clear h; introv h; simpl in *.
     eapply implies_eq_term_equals_eq_image_eq; try exact h; apply lib_per_cond.
 Qed.
@@ -485,7 +485,7 @@ Proof.
       introv; apply tya0.
     }
 
-    unfold per_image_eq_bar; apply e_all_in_ex_bar_ext_as.
+    unfold per_image_eq_bar.
     eapply in_open_bar_ext_comb2; eauto; clear e.
     apply in_ext_ext_implies_in_open_bar_ext; introv h.
     pose proof (tya0 _ e) as tya0; repnd.
