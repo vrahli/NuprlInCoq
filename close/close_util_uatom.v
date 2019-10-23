@@ -83,7 +83,6 @@ Proof.
   allrw.
   apply k in e.
   unfold equality_of_uatom_bar, equality_of_uatom in *; exrepnd.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear e; introv ext e.
   exrepnd; exists u; dands; eauto 3 with slow.
 Qed.
@@ -117,7 +116,6 @@ Proof.
   rw per in i; rw per in j; rw per; clear per.
   unfold equality_of_uatom_bar, equality_of_uatom in *; exrepnd.
 
-  apply e_all_in_ex_bar_as in i; apply e_all_in_ex_bar_as in j; apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb; try exact j; clear j.
   eapply in_open_bar_comb; try exact i; clear i.
   apply in_ext_implies_in_open_bar; introv ext i j.
@@ -136,7 +134,6 @@ Proof.
   unfold per_nat_bar in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
   unfold equality_of_uatom_bar, equality_of_uatom in *.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear e; introv ext e; exrepnd.
   exists u; repnd; dands; eauto 3 with slow.
 Qed.

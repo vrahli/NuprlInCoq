@@ -44,9 +44,7 @@ Lemma ccequivc_ext_preserves_computes_to_uni {o} :
 Proof.
   introv ceq comp.
   unfold computes_to_uni in *; exrepnd.
-  exists bar.
-  apply e_all_in_bar_as in comp0; apply e_all_in_bar_as.
-  eapply in_open_bar_pres; eauto; clear comp0; introv ext h.
+  eapply in_open_bar_pres; eauto; clear comp; introv ext h.
   exrepnd; exists i; eauto 3 with slow.
 Qed.
 Hint Resolve ccequivc_ext_preserves_computes_to_uni : slow.

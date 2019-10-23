@@ -36,7 +36,7 @@ Require Export bar_fam.
 Require Export local.
 
 
-Lemma local_equality_of_qnat_bar {o} :
+(*Lemma local_equality_of_qnat_bar {o} :
   forall {lib} (bar : @BarLib o lib) t1 t2,
     all_in_bar_ext bar (fun lib' (x : lib_extends lib' lib) => equality_of_qnat_bar lib' t1 t2)
     -> equality_of_qnat_bar lib t1 t2.
@@ -47,7 +47,7 @@ Proof.
   introv br ext; simpl in *; exrepnd.
   eapply alla0; eauto.
 Qed.
-Hint Resolve local_equality_of_qnat_bar : slow.
+Hint Resolve local_equality_of_qnat_bar : slow.*)
 
 Lemma per_bar_eq_equality_of_qnat_bar_implies {o} :
   forall (lib : @library o) t1 t2,
@@ -56,10 +56,10 @@ Lemma per_bar_eq_equality_of_qnat_bar_implies {o} :
 Proof.
   introv alla.
   unfold per_bar_eq in alla.
-  unfold equality_of_int_bar; apply e_all_in_ex_bar_as.
+  unfold equality_of_int_bar.
   apply in_open_bar_ext_in_open_bar.
   eapply in_open_bar_ext_pres; eauto; clear alla; introv h; simpl in *.
-  unfold equality_of_qnat_bar in h; apply e_all_in_ex_bar_as in h; auto.
+  unfold equality_of_qnat_bar in h; auto.
 Qed.
 Hint Resolve per_bar_eq_equality_of_qnat_bar_implies : slow.
 
@@ -74,9 +74,8 @@ Proof.
                   _ eqa (equality_of_qnat_bar_lib_per lib) t1 t2 alla h) as q.
     eauto 3 with slow.
 
-  - apply e_all_in_ex_bar_as in h.
-    eapply in_open_bar_ext_pres;[|exact alla]; clear alla; introv alla; apply alla; clear alla.
-    unfold equality_of_qnat_bar; apply e_all_in_ex_bar_as; eauto 3 with slow.
+  - eapply in_open_bar_ext_pres;[|exact alla]; clear alla; introv alla; apply alla; clear alla.
+    unfold equality_of_qnat_bar; eauto 3 with slow.
 Qed.
 Hint Resolve all_in_bar_ext_equal_equality_of_qnat_bar_implies_per_bar_eq_implies_equality_of_qnat_bar : slow.
 

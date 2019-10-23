@@ -82,7 +82,6 @@ Proof.
   allrw.
   apply k in e.
   unfold per_base_eq in *; exrepnd.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear e; introv ext e.
   spcast; apply cequivc_sym; auto.
 Qed.
@@ -97,7 +96,6 @@ Proof.
   rw per in i; rw per in j; rw per; clear per.
   allunfold @per_base_eq; exrepnd.
 
-  apply e_all_in_ex_bar_as in i; apply e_all_in_ex_bar_as in j; apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb; try exact j; clear j.
   eapply in_open_bar_comb; try exact i; clear i.
   apply in_ext_implies_in_open_bar; introv ext i j.
@@ -112,7 +110,6 @@ Proof.
   unfold per_nat_bar in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
   unfold per_base_eq in *.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear e; introv ext e.
   pose proof (ceq _ ext) as ceq; simpl in *; spcast; eauto 3 with slow.
 Qed.

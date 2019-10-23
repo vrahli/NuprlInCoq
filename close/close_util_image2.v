@@ -126,7 +126,7 @@ Proof.
 
   introv; split; intro h.
 
-  - unfold per_image_eq_bar; apply e_all_in_ex_bar_ext_as.
+  - unfold per_image_eq_bar.
     apply in_open_bar_ext_dup.
     unfold per_bar_eq in *.
     eapply in_open_bar_ext_comb; try exact per1; clear per1.
@@ -136,7 +136,7 @@ Proof.
 
     unfold per_image in per1; exrepnd.
     apply per0 in h; clear per0.
-    unfold per_image_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+    unfold per_image_eq_bar in h.
     eapply in_open_bar_ext_pres; try exact h; clear h; introv h; introv.
 
     eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
@@ -551,7 +551,6 @@ Lemma per_image_eq_bar_symmetric {o} :
 Proof.
   introv tes per.
   unfold per_image_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_comb; try exact tes; clear tes.
   eapply in_open_bar_ext_pres; eauto; clear per; introv per tes.
   apply per_image_eq_sym; auto.
@@ -567,7 +566,6 @@ Proof.
   introv teta pera perb.
   unfold per_image_eq_bar in *.
   exrepnd.
-  apply e_all_in_ex_bar_ext_as in pera; apply e_all_in_ex_bar_ext_as in perb; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_comb; try exact perb; clear perb.
   eapply in_open_bar_ext_comb; try exact pera; clear pera.
   eapply in_open_bar_ext_pres; eauto; clear teta; introv teta pera perb.
@@ -586,7 +584,6 @@ Proof.
   introv tera tesa teta ceq per.
 
   unfold per_image_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_comb; try exact per; clear per.
   eapply in_open_bar_ext_comb; try exact teta; clear teta.
   eapply in_open_bar_ext_comb; try exact tesa; clear tesa.

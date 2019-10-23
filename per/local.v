@@ -232,7 +232,7 @@ Proof.
 Qed.
 Hint Resolve eq_term_equals_per_bar_eq_bar_of_bar_fam : slow.*)
 
-Definition per_bar_eq2 {o}
+(*Definition per_bar_eq2 {o}
            {lib}
            (bar : @BarLib o lib)
            (eqa : lib-per(lib,o))
@@ -244,9 +244,9 @@ Definition per_bar_eq2 {o}
          {bar' : BarLib lib'
          , all_in_bar_ext
              bar' (fun lib'' (y : lib_extends lib'' lib') =>
-                     eqa lib'' (lib_extends_trans y x) t1 t2) })}.
+                     eqa lib'' (lib_extends_trans y x) t1 t2) })}.*)
 
-Lemma all_in_bar_ext_intersect_bars_same {o} :
+(*Lemma all_in_bar_ext_intersect_bars_same {o} :
   forall {lib} (bar : @BarLib o lib) F,
     all_in_bar_ext (intersect_bars bar bar) F
     <=> all_in_bar_ext bar F.
@@ -258,7 +258,7 @@ Proof.
 
   - exrepnd.
     eapply (h _ br0 lib'0); eauto 3 with slow.
-Qed.
+Qed.*)
 
 (*Lemma per_bar_eq_iff2 {o} :
   forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2,

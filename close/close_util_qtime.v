@@ -43,7 +43,6 @@ Proof.
   repeat introv.
   unfold per_qtime_eq_bar, raise_lib_per, raise_ext_per; simpl.
   split; intro h; exrepnd;
-    apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as;
       eapply in_open_bar_ext_comb; try exact h; clear h;
         apply in_ext_ext_implies_in_open_bar_ext; introv h.
 
@@ -63,10 +62,9 @@ Lemma implies_eq_term_equals_per_qtime_eq_bar {o} :
 Proof.
   introv eqas; introv.
   unfold per_qtime_eq_bar; introv; split; intro h; exrepnd;
-    apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as;
-      eapply in_open_bar_ext_pres; eauto; clear h; introv h;
-        unfold per_qtime_eq in *; exrepnd; eexists; eexists; dands; eauto;
-          eapply eqas; eauto.
+    eapply in_open_bar_ext_pres; eauto; clear h; introv h;
+      unfold per_qtime_eq in *; exrepnd; eexists; eexists; dands; eauto;
+        eapply eqas; eauto.
 Qed.
 
 Lemma implies_eq_term_equals_per_qtime_eq {o} :
@@ -86,21 +84,21 @@ Lemma per_bar_eq_per_qtime_eq_bar_lib_per {o} :
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
 
-  - unfold per_qtime_eq_bar; apply e_all_in_ex_bar_ext_as.
+  - unfold per_qtime_eq_bar.
     eapply in_open_bar_ext_dup.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
-    unfold per_qtime_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+    unfold per_qtime_eq_bar in h.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_qtime_eq; try exact h;
       try apply (lib_per_cond _ eqa).
 
-  - unfold per_qtime_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+  - unfold per_qtime_eq_bar in h.
     eapply in_open_bar_ext_twice in h.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
-    unfold per_qtime_eq_bar; apply e_all_in_ex_bar_ext_as.
+    unfold per_qtime_eq_bar.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_qtime_eq; try exact h;

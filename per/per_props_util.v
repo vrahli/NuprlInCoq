@@ -623,7 +623,7 @@ Proof.
 
   exrepnd.
   pose proof (a1 _ ext1 _ ext2 extz) as w.
-  eapply nuprl_monotone in w; autodimp w hyp; try exact z0; exrepnd.
+  eapply (nuprl_monotone _ lib'0) in w; try exact z0; exrepnd.
   apply nuprl_refl in w1.
   apply nuprl_refl in a2.
   eapply nuprl_uniquely_valued in w1; try exact a2; apply w1; clear w1; apply w0; auto.
@@ -722,7 +722,7 @@ Proof.
     exrepnd.
     pose proof (h1 _ ext1 _ ext2 extz) as w; repnd.
     apply nuprl_refl in w0; apply nuprl_refl in h0.
-    eapply nuprl_monotone in w0; autodimp w0 hyp; try exact z0; exrepnd.
+    eapply (nuprl_monotone _ lib'0) in w0; try exact z0; exrepnd.
     eapply nuprl_uniquely_valued in w0; try exact h0.
     apply w0; apply w1; auto.
   }

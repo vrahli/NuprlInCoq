@@ -37,7 +37,7 @@ Require Export per_ceq_bar.
 Require Export local.
 
 
-Lemma local_equality_of_approx_bar {o} :
+(*Lemma local_equality_of_approx_bar {o} :
   forall {lib} (bar : @BarLib o lib) a b t1 t2,
     all_in_bar_ext bar (fun lib' (x : lib_extends lib' lib) => per_approx_eq_bar lib' a b t1 t2)
     -> per_approx_eq_bar lib a b t1 t2.
@@ -47,7 +47,7 @@ Proof.
   exists (bar_of_bar_fam fbar).
   introv br ext; simpl in *; exrepnd.
   eapply alla0; eauto.
-Qed.
+Qed.*)
 
 (*Lemma per_approx_bar_eq {o} :
   forall ts lib (T1 T2 : @CTerm o) eq,
@@ -129,19 +129,19 @@ Lemma per_bar_eq_per_approx_eq_bar_lib_per {o} :
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
 
-  - unfold per_approx_eq_bar; apply e_all_in_ex_bar_as.
+  - unfold per_approx_eq_bar.
     apply in_open_bar_ext_in_open_bar.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
-    unfold per_approx_eq_bar in h; apply e_all_in_ex_bar_as in h.
+    unfold per_approx_eq_bar in h.
     eapply in_open_bar_pres; eauto; clear h.
     introv ext h; introv; simpl in *; auto.
 
-  - unfold per_approx_eq_bar in h; apply e_all_in_ex_bar_as in h.
+  - unfold per_approx_eq_bar in h.
     apply in_open_bar_ext_in_open_bar in h.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
-    unfold per_approx_eq_bar; apply e_all_in_ex_bar_as.
+    unfold per_approx_eq_bar.
     eapply in_open_bar_pres; eauto; clear h.
     introv ext h; introv; simpl in *; auto.
 Qed.
@@ -184,7 +184,6 @@ Lemma per_approx_eq_bar_respects_ccequivc_ext {o} :
 Proof.
   introv per ceqa ceqb.
   unfold per_approx_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_as in per; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear per; introv ext h.
   unfold per_approx_eq in *; repnd.
   dands; eauto 3 with slow.

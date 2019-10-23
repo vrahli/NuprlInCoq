@@ -57,7 +57,6 @@ Proof.
   introv; split; intro h.
 
   - unfold per_product_eq_bar, per_product_eq.
-    apply e_all_in_ex_bar_ext_as.
     apply in_open_bar_ext_dup.
     unfold per_bar_eq in *.
     unfold per_product_bar in *.
@@ -67,7 +66,7 @@ Proof.
     introv h per1; exrepnd.
     apply per1 in h; clear per1.
 
-    unfold per_product_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+    unfold per_product_eq_bar in h.
     eapply in_open_bar_ext_pres; try exact h; clear h; introv h; introv.
     unfold per_product_eq in h; exrepnd.
 
@@ -209,7 +208,6 @@ Proof.
   apply in_ext_ext_type_sys_props4_dep_implies_in_ext_term_equality_symmetric_dep in symb.
 
   unfold per_product_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_pres; eauto; clear per; introv per.
 
   pose proof (tsa _ e) as tsa; simpl in *.
@@ -251,7 +249,6 @@ Proof.
   apply in_ext_ext_type_sys_props4_dep_implies_in_ext_term_equality_symmetric_dep in symb.
 
   unfold per_product_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in pera; apply e_all_in_ex_bar_ext_as in perb; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_comb; try exact perb; clear perb.
   eapply in_open_bar_ext_comb; try exact pera; clear pera.
   apply in_ext_ext_implies_in_open_bar_ext; introv pera perb.
@@ -322,7 +319,6 @@ Proof.
   apply in_ext_ext_type_sys_props4_dep_implies_in_ext_term_equality_symmetric_dep in symb.
 
   unfold per_product_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_pres; eauto; clear per; introv per.
 
   pose proof (tsa _ e) as tsa; simpl in *.

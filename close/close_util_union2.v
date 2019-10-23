@@ -77,7 +77,6 @@ Proof.
   introv; split; intro h.
 
   - unfold per_union_eq_bar, per_union_eq.
-    apply e_all_in_ex_bar_ext_as.
     apply in_open_bar_ext_dup.
     unfold per_bar_eq in *.
     unfold per_union in *.
@@ -87,7 +86,7 @@ Proof.
     introv h per1; exrepnd.
     apply per1 in h; clear per1.
 
-    unfold per_union_eq_bar, per_union in h; apply e_all_in_ex_bar_ext_as in h.
+    unfold per_union_eq_bar, per_union in h.
     eapply in_open_bar_ext_pres; try exact h; clear h; introv h; introv.
 
     eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].

@@ -70,7 +70,7 @@ Proof.
       [| | |
        |eapply ccequivc_ext_trans;[apply ccequivc_ext_sym;exact ceq1|exact ceq3]
        |eapply ccequivc_ext_trans;[apply ccequivc_ext_sym;exact ceq2|exact ceq4]
-      ]; eauto 3 with slow.
+      ]; eauto 2 with slow.
 
     eapply simple_implies_iff_per_eq_eq; try exact h.
     apply in_ext_ext_implies_in_open_bar_ext.
@@ -85,7 +85,7 @@ Proof.
       [| | |
        |eapply ccequivc_ext_trans;[apply ccequivc_ext_sym;exact ceq3|exact ceq1]
        |eapply ccequivc_ext_trans;[apply ccequivc_ext_sym;exact ceq4|exact ceq2]
-      ]; eauto 3 with slow.
+      ]; eauto 2 with slow.
 
     eapply simple_implies_iff_per_eq_eq; try exact h.
     apply in_ext_ext_implies_in_open_bar_ext.
@@ -180,21 +180,23 @@ Proof.
     onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
     eapply tyvrt1; eauto; eauto 4 with slow.
 
-  - eapply cequivc_ext_eqorceq_ext_trans1; try exact per5; eauto 3 with slow.
+  - eapply cequivc_ext_eqorceq_ext_trans1; try exact per5; eauto 2 with slow.
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
         try exact tsp; try exact per4; eauto 3 with slow. }
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
         try exact tsp; try exact per4; eauto 3 with slow. }
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
         try exact tsp; try exact per4; eauto 3 with slow. }
+    { eauto 3 with slow. }
 
-  - eapply cequivc_ext_eqorceq_ext_trans1; eauto; eauto 3 with slow.
+  - eapply cequivc_ext_eqorceq_ext_trans1; eauto; eauto 2 with slow.
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
         try exact tsp; try exact per4; eauto 3 with slow. }
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per;
         try exact tsp; try exact per4; eauto 3 with slow. }
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
         try exact tsp; try exact per4; eauto 3 with slow. }
+    { eauto 3 with slow. }
 
   - eapply eq_term_equals_trans;[eauto|].
     apply eq_term_equals_sym.
@@ -205,7 +207,7 @@ Proof.
         [| | |
          |eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext;[exact e|exact ceq1] |exact ceq0]
          |eapply ccequivc_ext_trans;[eapply lib_extends_preserves_ccequivc_ext;[exact e|exact ceq2] |exact ceq4]
-        ]; eauto 3 with slow.
+        ]; eauto 2 with slow.
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
           try exact tsp; try exact per4; eauto 3 with slow. }
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
@@ -217,7 +219,7 @@ Proof.
         [| | |
          |eapply ccequivc_ext_trans;apply ccequivc_ext_sym;[exact ceq0|eapply lib_extends_preserves_ccequivc_ext;[exact e|exact ceq1] ]
          |eapply ccequivc_ext_trans;apply ccequivc_ext_sym;[exact ceq4|eapply lib_extends_preserves_ccequivc_ext;[exact e|exact ceq2] ]
-        ]; eauto 3 with slow.
+        ]; eauto 2 with slow.
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per;
           try exact tsp; try exact per4; eauto 3 with slow. }
       { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
@@ -255,35 +257,38 @@ Proof.
     onedtsp4 uv tys tyvr tyvrt1 tyvrt2 tes tet tevr tygs tygt dum.
     eapply tyvrt1; eauto; eauto 4 with slow.
 
-  - eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 3 with slow.
+  - eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 2 with slow.
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
         try exact tsp; try exact per4; eauto 3 with slow. }
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
         try exact tsp; try exact per4; eauto 3 with slow. }
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
         try exact tsp; try exact per4; eauto 3 with slow. }
+    { eauto 3 with slow. }
 
-  - eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 3 with slow.
+  - eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 2 with slow.
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
         try exact tsp; try exact per4; eauto 3 with slow. }
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
         try exact tsp; try exact per4; eauto 3 with slow. }
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
         try exact tsp; try exact per4; eauto 3 with slow. }
+    { eauto 3 with slow. }
 
   - eapply eq_term_equals_trans;[eauto|].
     apply eq_term_equals_sym.
     apply eqorceq_implies_iff_per_eq_eq;
       try apply in_ext_ext_implies_in_open_bar_ext;
       try apply in_ext_implies_all_in_bar_trivial_bar;
-      eauto 3 with slow;
-      try (eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 3 with slow);
+      eauto 2 with slow;
+      try (eapply cequivc_ext_eqorceq_ext_trans2; eauto; eauto 2 with slow);
       try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_respecting_change_per3;
                      try exact tsp; try exact per4; eauto 3 with slow));
       try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_transitive_change_per3;
                      try exact tsp; try exact per4; eauto 3 with slow));
       try (complete (eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per3;
-                     try exact tsp; try exact per4; eauto 3 with slow)).
+                     try exact tsp; try exact per4; eauto 3 with slow));
+      eauto 3 with slow.
 Qed.
 
 Lemma eq_per_eq_bar_sym {o} :
@@ -292,7 +297,6 @@ Lemma eq_per_eq_bar_sym {o} :
     -> eq_per_eq_bar lib a1 a2 eqa t2 t1.
 Proof.
   introv h; unfold eq_per_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_pres; eauto; clear h; introv h.
   unfold eq_per_eq in *.
   repnd; dands; auto.
@@ -305,7 +309,6 @@ Lemma eq_per_eq_bar_trans {o} :
     -> eq_per_eq_bar lib a1 a2 eqa t1 t3.
 Proof.
   introv e1 e2; unfold eq_per_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in e1; apply e_all_in_ex_bar_ext_as in e2; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_comb; try exact e2; clear e2.
   eapply in_open_bar_ext_pres; eauto; clear e1; introv e1 e2.
   unfold eq_per_eq in *.
@@ -319,7 +322,6 @@ Lemma eq_per_eq_bar_resp {o} :
     -> eq_per_eq_bar lib a1 a2 eqa t1 t2.
 Proof.
   introv h ceq; unfold eq_per_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_pres; eauto; clear h; introv h.
   unfold eq_per_eq in *.
   repnd; dands; spcast; eauto 3 with slow.
@@ -351,7 +353,7 @@ Proof.
 
   - eapply eqorceq_ext_sym; auto;
       [eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
-       try exact tsp; try exact per4; eauto 3 with slow
+       try exact tsp; try exact per4; eauto 2 with slow
       |eapply eqorceq_ext_trans;[| | |apply ccequivc_ext_implies_eqorceq_ext;eauto|eauto] ].
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
         try exact tsp; try exact per4; eauto 3 with slow. }
@@ -362,7 +364,7 @@ Proof.
 
   - eapply eqorceq_ext_sym; auto;
       [eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
-       try exact tsp; try exact per4; eauto 3 with slow
+       try exact tsp; try exact per4; eauto 2 with slow
       |eapply eqorceq_ext_trans;[| | |apply ccequivc_ext_implies_eqorceq_ext;eauto|eauto] ].
     { eapply in_ext_ext_type_sys_props4_implies_in_ext_ext_term_equality_symmetric_change_per;
         try exact tsp; try exact per4; eauto 3 with slow. }

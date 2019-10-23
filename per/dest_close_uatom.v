@@ -34,7 +34,7 @@ Require Export dest_close_tacs.
 Require Export bar_fam.
 
 
-Lemma local_equality_of_uatom_bar {o} :
+(*Lemma local_equality_of_uatom_bar {o} :
   forall {lib} (bar : @BarLib o lib) t1 t2,
     all_in_bar_ext bar (fun lib' (x : lib_extends lib' lib) => equality_of_uatom_bar lib' t1 t2)
     -> equality_of_uatom_bar lib t1 t2.
@@ -45,7 +45,7 @@ Proof.
   introv br ext; simpl in *; exrepnd.
   eapply alla0; eauto.
 Qed.
-Hint Resolve local_equality_of_uatom_bar : slow.
+Hint Resolve local_equality_of_uatom_bar : slow.*)
 
 Lemma per_bar_eq_equality_of_uatom_bar_implies {o} :
   forall (lib : @library o) t1 t2,
@@ -54,10 +54,9 @@ Lemma per_bar_eq_equality_of_uatom_bar_implies {o} :
 Proof.
   introv alla.
   unfold per_bar_eq in alla.
-  unfold equality_of_uatom_bar; apply e_all_in_ex_bar_as.
+  unfold equality_of_uatom_bar.
   apply in_open_bar_ext_in_open_bar.
   eapply in_open_bar_ext_pres; eauto; clear alla; introv alla; simpl in *; auto.
-  unfold equality_of_uatom_bar in *; apply e_all_in_ex_bar_as in alla; auto.
 Qed.
 Hint Resolve per_bar_eq_equality_of_uatom_bar_implies : slow.
 
@@ -72,11 +71,10 @@ Proof.
                   _ eqa (equality_of_uatom_bar_lib_per lib) t1 t2 alla h) as q.
     eauto 3 with slow.
 
-  - apply e_all_in_ex_bar_as in h.
-    eapply in_open_bar_ext_comb_per;[exact alla|]; clear alla.
+  - eapply in_open_bar_ext_comb_per;[exact alla|]; clear alla.
     apply in_ext_ext_implies_in_open_bar_ext.
-    introv ext.
-    apply e_all_in_ex_bar_as; eauto 3 with slow.
+    introv ext; eauto 3 with slow.
+    eapply sub_per_equality_of_uatom_bar; eauto.
 Qed.
 Hint Resolve all_in_bar_ext_equal_equality_of_uatom_bar_implies_per_bar_eq_implies_equality_of_uatom_bar : slow.
 

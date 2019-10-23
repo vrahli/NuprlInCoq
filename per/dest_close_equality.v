@@ -48,11 +48,11 @@ Lemma local_equality_of_eq_bar {o} :
     -> eq_per_eq_bar lib a b eqa t1 t2.
 Proof.
   introv alla.
-  unfold eq_per_eq_bar; apply e_all_in_ex_bar_ext_as.
+  unfold eq_per_eq_bar.
   apply in_open_bar_ext_dup.
   eapply in_open_bar_ext_pres; eauto; clear alla.
   introv h.
-  unfold eq_per_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+  unfold eq_per_eq_bar in h.
   eapply in_open_bar_ext_pres; eauto; clear h.
   introv h; introv.
   simpl in *.
@@ -147,8 +147,7 @@ Lemma simple_implies_iff_per_eq_eq {o} :
     -> (eq_per_eq_bar lib a b eqa) <=2=> (eq_per_eq_bar lib a b eqb).
 Proof.
   introv alla; introv.
-  unfold eq_per_eq_bar, eq_per_eq; split; introv h; exrepnd;
-    apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as.
+  unfold eq_per_eq_bar, eq_per_eq; split; introv h; exrepnd.
 
   - eapply in_open_bar_ext_comb;[|exact h];clear h.
     eapply in_open_bar_ext_comb;[|exact alla];clear alla.
@@ -185,7 +184,6 @@ Lemma eq_per_eq_bar_respects_ccequivc_ext {o} :
 Proof.
   introv resp sym trans per ceqa ceqb.
   unfold eq_per_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_comb; eauto; clear per.
   apply in_ext_ext_implies_in_open_bar_ext; introv per.
   unfold eq_per_eq in *; repnd; dands; auto.
@@ -211,8 +209,7 @@ Lemma implies_eq_term_equals_eq_per_eq_bar {o} :
     -> (eq_per_eq_bar lib a b eqa) <=2=> (eq_per_eq_bar lib c d eqb).
 Proof.
   introv resp sym tran ceqa ceqb alla; introv.
-  unfold eq_per_eq_bar, eq_per_eq; split; introv h; exrepnd;
-    apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as.
+  unfold eq_per_eq_bar, eq_per_eq; split; introv h; exrepnd.
 
   - eapply in_open_bar_ext_comb;[|exact h];clear h.
     eapply in_open_bar_ext_comb;[|exact alla];clear alla.
@@ -466,24 +463,21 @@ Lemma per_bar_eq_eq_per_eq_bar_lib_per {o} :
 Proof.
   introv; simpl; unfold per_bar_eq; split; intro h; eauto 3 with slow.
 
-  - unfold eq_per_eq_bar; apply e_all_in_ex_bar_ext_as.
+  - unfold eq_per_eq_bar.
     eapply in_open_bar_ext_dup.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
     unfold eq_per_eq_bar in h.
-    apply e_all_in_ex_bar_ext_as in h.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_eq_per_eq; try exact h;
       try apply (lib_per_cond _ eqa).
 
   - unfold eq_per_eq_bar in *.
-    apply e_all_in_ex_bar_ext_as in h.
     apply in_open_bar_ext_twice in h.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
     unfold eq_per_eq_bar.
-    apply e_all_in_ex_bar_ext_as.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_eq_per_eq; try exact h;
@@ -586,7 +580,7 @@ Proof.
 
     applydup @in_ext_ext_type_sys_props4_sym in tsp.
     eapply (eq_per_eq_bar_change_pers ts lib lib'0 A B B0 A0 B1 A1 a0 a3 a1 a2); eauto.
-    { eapply in_ext_ext_type_ceq_sym; auto; try exact tsp0; auto. }
+    { eapply in_ext_ext_type_ceq_sym; try exact tsp0; auto. }
     { eauto 3 with slow. }
   }
 

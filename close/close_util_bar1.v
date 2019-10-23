@@ -1558,8 +1558,8 @@ Proof.
 Qed.
 Hint Resolve all_in_bar_ext_type_sys_props4_implies_type_symmetric_per_bar1 : slow.
 
-Definition intersect4bars {o} {lib} (bar1 bar2 bar3 bar4 : @BarLib o lib) : BarLib lib :=
-  intersect_bars (intersect_bars bar1 bar2) (intersect_bars bar3 bar4).
+(*Definition intersect4bars {o} {lib} (bar1 bar2 bar3 bar4 : @BarLib o lib) : BarLib lib :=
+  intersect_bars (intersect_bars bar1 bar2) (intersect_bars bar3 bar4).*)
 
 Lemma type_sys_props4_implies_type_transitive0 {o} :
   forall lib (ts : cts(o)) T T1 T2 T3 T4 eq eq1 eq2,

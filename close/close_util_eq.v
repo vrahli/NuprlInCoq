@@ -50,24 +50,21 @@ Lemma per_bar_eq_eq_per_eq_bar_lib_per {o} :
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
 
-  - unfold eq_per_eq_bar; apply e_all_in_ex_bar_ext_as.
+  - unfold eq_per_eq_bar.
     eapply in_open_bar_ext_dup.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
     unfold eq_per_eq_bar in h.
-    apply e_all_in_ex_bar_ext_as in h.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_eq_per_eq; try exact h;
       try apply (lib_per_cond _ eqa).
 
   - unfold eq_per_eq_bar in *.
-    apply e_all_in_ex_bar_ext_as in h.
     apply in_open_bar_ext_twice in h.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
     unfold eq_per_eq_bar.
-    apply e_all_in_ex_bar_ext_as.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_eq_per_eq; try exact h;

@@ -99,7 +99,6 @@ Lemma implies_eq_term_equals_per_image_eq_bar {o} :
 Proof.
   introv ceq h; introv.
   unfold per_image_eq_bar; split; intro q; exrepnd;
-    apply e_all_in_ex_bar_ext_as; apply e_all_in_ex_bar_ext_as in q;
       eapply in_open_bar_ext_pres; eauto; clear q; introv q;
         eapply implies_eq_term_equals_eq_image_eq2; try exact q; eauto 3 with slow;
           apply eq_term_equals_sym; eapply h.
@@ -437,7 +436,7 @@ Proof.
 
     applydup @in_ext_ext_type_sys_props4_sym in tsa.
     eapply (per_image_eq_bar_change_pers ts lib lib'0 A A' A2 A1 A3 A0); eauto.
-    { eapply in_ext_ext_type_ceq_sym; auto; try exact tsa0; auto. }
+    { eapply in_ext_ext_type_ceq_sym; try exact tsa0; auto. }
     { eauto 3 with slow. }
   }
 

@@ -350,7 +350,7 @@ Proof.
     apply xx; auto.
 
     pose proof (teq0 _ ext1 _ ext2 extz) as teq0.
-    eapply nuprli_monotone in teq0; autodimp teq0 hyp; try exact z; exrepnd.
+    eapply (nuprli_monotone _ _ lib'0) in teq0; try exact z; exrepnd.
     apply teq3 in h1.
     eapply nuprli_uniquely_valued in teq0; try exact teq2; apply teq0; auto.
   }
@@ -422,7 +422,7 @@ Proof.
     apply xx; auto.
 
     pose proof (teq0 _ ext1 _ ext2 extz) as teq0.
-    eapply nuprli_monotone in teq0; autodimp teq0 hyp; try exact z; exrepnd.
+    eapply (nuprli_monotone _ _ lib'0) in teq0; try exact z; exrepnd.
     apply teq3 in h1.
     eapply nuprli_uniquely_valued in teq0; try exact teq2; apply teq0; auto.
   }

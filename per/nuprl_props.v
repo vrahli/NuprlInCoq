@@ -1278,7 +1278,7 @@ Proof.
   eapply in_open_bar_ext_comb2; try exact m1; clear m1.
   eapply in_open_bar_ext_pres; try exact m0; clear m0; introv m0 m1; simpl in *.
 
-  unfold per_approx_eq_bar in m0; apply e_all_in_ex_bar_as in m0.
+  unfold per_approx_eq_bar in m0.
   apply (in_open_bar_const lib').
   eapply in_open_bar_pres; eauto; clear m0; introv ext m0.
 

@@ -133,7 +133,7 @@ Proof.
 Qed.
 Hint Resolve per_bar_eq_intersect_bars_left : slow.*)
 
-Lemma implies_all_in_bar_ext_intersect_bars_swap {o} :
+(*Lemma implies_all_in_bar_ext_intersect_bars_swap {o} :
   forall {lib} (bar bar' : @BarLib o lib) F,
     all_in_bar_ext (intersect_bars bar bar') F
     -> all_in_bar_ext (intersect_bars bar' bar) F.
@@ -141,7 +141,7 @@ Proof.
   introv h br ext; introv; simpl in *; exrepnd.
   pose proof (h lib') as h; simpl in *; autodimp h hyp.
   eexists; eexists; dands; eauto.
-Qed.
+Qed.*)
 
 (*Lemma per_bar_eq_intersect_bars_right {o} :
   forall {lib} (bar bar' : @BarLib o lib) eqa,

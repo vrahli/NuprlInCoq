@@ -75,7 +75,6 @@ Proof.
   unfold per_qnat_bar in h; exrepnd.
   apply h in e; apply h.
   unfold equality_of_qnat_bar in *.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear e; introv ext e.
   unfold equality_of_qnat in *; exrepnd.
   dands.
@@ -114,7 +113,6 @@ Proof.
   unfold per_qnat_bar in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
   unfold equality_of_qnat_bar in *.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear e; introv ext e.
   unfold equality_of_qnat in *; exrepnd; GC; dands; eauto.
   pose proof (ceq _ ext) as ceq; simpl in *; spcast.
@@ -158,7 +156,6 @@ Proof.
 
   clear per per0 per1.
 
-  apply e_all_in_ex_bar_as in i; apply e_all_in_ex_bar_as in j; apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb; try exact j; clear j.
   eapply in_open_bar_comb; try exact i; clear i.
   apply in_ext_implies_in_open_bar; introv ext i j.
