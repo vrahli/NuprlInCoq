@@ -91,7 +91,7 @@ Proof.
   assert (m < n) as ltm by omega.
   clear e0.
 
-  apply equality_in_tnat; eapply e_all_in_ex_bar_as.
+  apply equality_in_tnat.
   pose proof (imp m ltm) as h; exrepnd.
   apply in_ext_implies_all_in_ex_bar; introv z.
   exists k; dands; eauto 4 with slow.
@@ -130,7 +130,7 @@ Proof.
     apply in_ext_implies_all_in_ex_bar; introv x.
     exists m; dands; try omega; rw @mkc_nat_eq; eauto 3 with slow. }
 
-  eapply equality_in_tnat in h; eapply e_all_in_ex_bar_as in h.
+  eapply equality_in_tnat in h.
   eapply all_in_ex_bar_modus_ponens1;try exact h; clear h; introv x h; exrepnd; spcast.
   unfold equality_of_nat in h; exrepnd.
   exists n0; auto; dands; spcast; auto.

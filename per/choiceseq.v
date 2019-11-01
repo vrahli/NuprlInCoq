@@ -71,7 +71,7 @@ Hint Rewrite @csubst_mk_cv : slow.
 Definition simple_choice_seq_entry {o} (name : choice_sequence_name) : @ChoiceSeqEntry o :=
   match csn_kind name with
   | cs_kind_nat _ => MkChoiceSeqEntry _ [] csc_nat
-  | cs_kind_seq l => MkChoiceSeqEntry _ [] (natSeq2restriction l)
+  | cs_kind_seq l => MkChoiceSeqEntry _ [] (csc_seq l)
   end.
 
 Definition simple_choice_seq {o} (name : choice_sequence_name) : @library_entry o :=
@@ -527,13 +527,8 @@ Proof.
   rewrite select_follow_coq_low_ite in i; try omega.
   boolvar; ginv; cpx.
   rewrite Nat.sub_add; auto.
-
-  unfold safe_inf_choice_sequence_entry in safe.
-  destruct entry1 as [restr vals1]; simpl in *; repnd.
-
-  unfold same_restrictions in h0.
-  destruct vals1; tcsp.
-  rewrite <- h0; eauto 3 with slow.
+  destruct entry1 as [vals1 restr1]; simpl in *; repnd; subst; simpl in *.
+  pose proof (safe n) as safe; remember (vals1 n) as w; destruct w; simpl in *; subst; tcsp.
 Qed.
 Hint Resolve implies_inf_choice_sequence_entry_extend_extend_choice_seq_entry_following_coq_law_upto : slow.
 
@@ -1718,12 +1713,10 @@ Proof.
 
     dands; eauto 3 with slow.
     { eapply implies_ccomputes_to_valc_ext_apply_cs; try exact en1; eauto 3 with slow.
-      eapply (extend_library_follow_coq_law_upto_implies_find_cs _ _ _ n _ f) in ext0; try apply lib_extends_refl; auto.
-      rewrite ext2 in ext0; auto.
+      eapply (extend_library_follow_coq_law_upto_implies_find_cs _ _ _ n _ const_0) in ext0; try apply lib_extends_refl; auto.
       eapply lib_extends_preserves_find_cs_value_at; eauto. }
     { eapply implies_ccomputes_to_valc_ext_apply_cs; try exact en0; eauto 3 with slow.
-      eapply (extend_library_follow_coq_law_upto_implies_find_cs _ _ _ n _ f) in ext0; try apply lib_extends_refl; auto.
-      rewrite ext2 in ext0; auto.
+      eapply (extend_library_follow_coq_law_upto_implies_find_cs _ _ _ n _ const_0) in ext0; try apply lib_extends_refl; auto.
       eapply lib_extends_preserves_find_cs_value_at; eauto. }
   }
 Qed.
@@ -2829,9 +2822,8 @@ Lemma entry_in_library_extends_lib_entry_1_implies_entry_in_library {o} :
   forall (lib : @library o),
     entry_in_library_extends lib_entry_1 lib
     ->
-    exists vals restr,
-      same_restrictions restr csc_nat
-      /\ entry_in_library (lib_cs seq_1 (MkChoiceSeqEntry _ vals restr)) lib.
+    exists vals,
+      entry_in_library (lib_cs seq_1 (MkChoiceSeqEntry _ vals csc_nat)) lib.
 Proof.
   induction lib; introv ext; simpl in *; tcsp.
   repndors; exrepnd; tcsp.
@@ -2839,10 +2831,10 @@ Proof.
   - destruct a; simpl in *; repnd; subst; tcsp; ginv.
     destruct entry as [vals restr]; simpl in *.
     unfold choice_sequence_entry_extend in ext; simpl in *; repnd; subst.
-    exists vals restr; tcsp.
+    exists vals; tcsp.
 
   - autodimp IHlib hyp; exrepnd.
-    exists vals restr; tcsp.
+    exists vals; tcsp.
 Qed.
 
 (*Lemma lib_extends_lib1_implies_entry_in_library {o} :
@@ -2987,7 +2979,7 @@ Proof.
     repeat (autodimp h hyp); exrepnd; eauto 4 with slow;[].
     eapply extend_library_lawless_upto_implies_find_cs in h1; auto;
       [|apply find_cs_some_implies_entry_in_library;eauto]; exrepnd.
-    apply ext2 in h2.
+    inversion ext2; subst.
     unfold is_nat in h2; exrepnd; subst; simpl in *.
 
     assert (lib_extends lib'1 lib'0) as xt' by eauto 3 with slow.

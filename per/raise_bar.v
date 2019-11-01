@@ -113,15 +113,13 @@ Proof.
   unfold choice_sequence_vals_extend in *; exrepnd.
   destruct entry', entry; simpl in *; subst; eauto 3 with slow.
   unfold is_default_choice_sequence, same_restrictions in *.
-  destruct cse_restriction, cse_restriction0; simpl in *; repnd; tcsp; introv s.
+  destruct cse_restriction0; simpl in *; repnd; tcsp; introv s.
 
   - pose proof (q n v) as q.
     rewrite select_app_l in q; eauto 3 with slow.
-    autodimp q hyp; subst; eauto.
 
   - pose proof (q n v) as q.
     rewrite select_app_l in q; eauto 3 with slow.
-    autodimp q hyp; subst; eauto.
 Qed.
 Hint Resolve choice_sequence_entry_extend_preserves_is_default_choice_seq_entry : slow.
 

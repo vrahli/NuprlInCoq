@@ -175,25 +175,19 @@ Proof.
   destruct kd; subst; boolvar; tcsp; GC.
 
   {
-    unfold is_nat_restriction in *.
-    unfold choice_sequence_satisfies_restriction in *.
-    destruct restr; repnd; dands; tcsp.
+    unfold is_nat_restriction in *; subst; simpl in *.
     apply in_implies_select in iv; exrepnd.
-    apply sat in iv0; apply cor in iv0; exists n; auto.
+    apply sat in iv0; eauto.
   }
 
   {
-    unfold is_nat_seq_restriction in *.
-    unfold choice_sequence_satisfies_restriction in *.
-    destruct restr; repnd; dands; tcsp.
+    unfold is_nat_seq_restriction in *; subst; simpl in *.
     apply in_implies_select in iv; exrepnd.
     exists n.
     applydup sat in iv0.
-    destruct (lt_dec n (length l)).
-    { apply cor2 in iv1; auto.
-      unfold cterm_is_nth in iv1; exrepnd; exrepnd.
-      pose proof (cor2 n v) as q; autodimp q hyp; subst; eauto 2 with slow. }
-    { apply cor in iv1; auto; try omega. }
+    unfold natSeq2restrictionPred in iv1.
+    remember (select n l) as sel; symmetry in Heqsel; destruct sel;
+      auto; subst; tcsp; eauto 3 with slow.
   }
 Qed.
 

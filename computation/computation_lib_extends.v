@@ -81,7 +81,7 @@ Definition choice_sequence_satisfies_restriction {o}
   | csc_coq_law f =>
     forall (i : nat), i < length vals -> select i vals = Some (f i)
   | csc_res M =>
-    forall n v, select n vals = Some v -> Cast (M n v)
+    forall n v, select n vals = Some v -> M n v
   end.
 
 
@@ -101,6 +101,38 @@ Hint Resolve is_nat_zero : slow.
 Definition csc_nat {o} : @ChoiceSeqRestriction o :=
   csc_type (fun _ => mkc_zero) is_nat is_nat_zero.
 (* =============== *)
+
+Definition natSeq2default {o} (l : list nat) : nat -> @ChoiceSeqVal o :=
+  fun n =>
+    match select n l with
+    | Some i => mkc_nat i
+    | None => mkc_zero
+    end.
+
+Definition natSeq2some {o} (f : nat -> @ChoiceSeqVal o) : nat -> option ChoiceSeqVal :=
+  fun n => Some (f n).
+
+Definition natSeq2default_op {o} (l : list nat) : nat -> option (@ChoiceSeqVal o) :=
+  natSeq2some (natSeq2default l).
+
+Definition natSeq2restrictionPred {o} (l : list nat) : @RestrictionPred o :=
+  fun n v =>
+    match select n l with
+    | Some i => v = mkc_nat i
+    | None => is_nat n v
+    end.
+
+Lemma natSeq2default_restr {o} (l : list nat) :
+  forall n, @natSeq2restrictionPred o l n (natSeq2default l n).
+Proof.
+  introv.
+  unfold natSeq2restrictionPred, natSeq2default.
+  remember (select n l) as k; destruct k; auto; eauto 3 with slow.
+Qed.
+Hint Resolve natSeq2default_restr : slow.
+
+Definition csc_seq {o} (l : list nat) : @ChoiceSeqRestriction o :=
+  csc_type (natSeq2default l) (natSeq2restrictionPred l) (natSeq2default_restr l).
 
 (*(*
   (M v T) is meant to be (v is a member of T)
@@ -134,7 +166,7 @@ Definition same_restrictions {o} (restr1 restr2 : @ChoiceSeqRestriction o) :=
 Definition choice_sequence_entry_extend {o} (entry1 entry2 : @ChoiceSeqEntry o) : Prop :=
   (* the extension has the same restriction has the current sequence *)
   (*cse_restriction entry1 = cse_restriction entry2*)
-  same_restrictions (cse_restriction entry1) (cse_restriction entry2)
+  cse_restriction entry1 = cse_restriction entry2
   (* the extension is an extension *)
   /\ choice_sequence_vals_extend entry1 entry2
 (* -- This is now part of lib_extends -- *)
@@ -178,31 +210,13 @@ Definition is0kind (name : choice_sequence_name) : bool :=
   end.
 
 Definition is_nat_restriction {o} (restr : @ChoiceSeqRestriction o) :=
-  match restr with
-  | csc_type d M Md =>
-    (forall n, d n = mkc_zero)
-    /\ (forall n v, M n v <-> is_nat n v)
-  | csc_coq_law _ => False
-  | csc_res _ => False
-  end.
+  restr = csc_nat.
 
 Definition cterm_is_nth {o} (t : @CTerm o) n l :=
   exists i, select n l = Some i /\ t = mkc_nat i.
 
 Definition is_nat_seq_restriction {o} (l : list nat) (restr : @ChoiceSeqRestriction o) :=
-  match restr with
-  | csc_type d M Md =>
-    (* the choice sequence matches the default values up to [length l] *)
-    (forall n , n < length l -> cterm_is_nth (d n) n l)
-    (* above [length l], the default value is 0 *)
-    /\ (forall n , length l <= n -> d n = mkc_zero)
-    (* [M] restricts the choice sequence to [l] up to [length l] *)
-    /\ (forall n v, n < length l -> (M n v <-> cterm_is_nth v n l))
-    (* above [length l], the choice sequence can return any integer *)
-    /\ (forall n v, length l <= n -> (M n v <-> is_nat n v))
-  | csc_coq_law _ => False
-  | csc_res _ => False
-  end.
+  restr = csc_seq l.
 
 Definition correct_restriction {o} (name : choice_sequence_name) (restr : @ChoiceSeqRestriction o) :=
   match csn_kind name with
@@ -256,7 +270,7 @@ Definition choice_satisfies_restriction {o}
   match restr with
   | csc_type d M Md => M n v
   | csc_coq_law f => f n = v
-  | csc_res M => Cast (M n v)
+  | csc_res M => M n v
   end.
 
 Definition add_choice_entry {o} (t : @ChoiceSeqVal o) (e : ChoiceSeqEntry) : nat * ChoiceSeqRestriction * ChoiceSeqEntry :=
@@ -347,10 +361,13 @@ Inductive lib_extends {o} : @library o -> @library o -> Prop :=
       -> f n = v
       -> lib_extends lib' lib
 | lib_extends_res :
-    forall lib name v n (M : RestrictionPredT) lib'
-           Q (e : M n v = {l : @library o & Q n v l}) (p : M n v),
-      add_choice name v lib = (n, csc_res M, lib')
-      -> lib_extends lib (projT1 (eq_rect _ (fun n => n) p _ e))
+    forall lib name v n (M : RestrictionPred) lib'
+           (Q : nat -> ChoiceSeqVal -> library -> Prop)
+           (e : M n v = exists (l : @library o), Q n v l)
+           (p : M n v) (l : library) (q : Q n v l),
+      eq_ind _ (fun n => n) p _ e = ex_intro _ l q
+      -> add_choice name v lib = (n, csc_res M, lib')
+      -> lib_extends lib l
       -> lib_extends lib' lib.
 Hint Constructors lib_extends.
 
@@ -1232,10 +1249,11 @@ Definition entry2restriction {o} (e : @ChoiceSeqEntry o) : ChoiceSeqRestriction 
 Lemma choice_sequence_entry_extend_preserves_entry2restriction {o} :
   forall (entry1 entry2 : @ChoiceSeqEntry o),
     choice_sequence_entry_extend entry1 entry2
-    -> same_restrictions (entry2restriction entry1) (entry2restriction entry2).
+    -> entry2restriction entry1 = entry2restriction entry2.
 Proof.
   introv h; destruct entry1, entry2; simpl in *.
-  unfold choice_sequence_entry_extend in h; simpl in *; repnd; auto.
+  unfold choice_sequence_entry_extend in h; simpl in *; repnd; auto;
+    allrw; eauto 3 with slow.
 Qed.
 Hint Resolve choice_sequence_entry_extend_preserves_entry2restriction : slow.
 
@@ -1245,7 +1263,7 @@ Lemma lib_cs_in_library_extends_implies {o} :
     ->
     exists (entry' : ChoiceSeqEntry),
       find_cs lib name = Some entry'
-      /\ same_restrictions (entry2restriction entry') (entry2restriction entry)
+      /\ entry2restriction entry' = entry2restriction entry
       /\ choice_sequence_vals_extend entry' entry.
 Proof.
   induction lib; introv h; simpl in *; tcsp.
@@ -1918,7 +1936,7 @@ Lemma lib_extends_preserves_find_cs {o} :
     ->
     exists (entry2 : ChoiceSeqEntry),
       find_cs lib2 name = Some entry2
-      /\ same_restrictions (entry2restriction entry2) (entry2restriction entry1)
+      /\ entry2restriction entry2 = entry2restriction entry1
       /\ choice_sequence_vals_extend entry2 entry1.
 Proof.
   introv ext fcs.
