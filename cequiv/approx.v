@@ -103,7 +103,7 @@ Definition close_comput {p} lib (R: NTrel) (tl tr : @NTerm p) : [univ]:=
 (** % \noindent \\* %  At this point, one could directly define [approx] as: *)
 
 CoInductive approx_bad {p} :
-  @library p -> @NTerm p -> @NTerm p -> [univ] :=
+  @pre_library p -> @NTerm p -> @NTerm p -> [univ] :=
 | approxC: forall lib tl tr,
   close_comput lib (approx_bad lib) tl tr
   -> approx_bad lib tl tr.
@@ -132,7 +132,7 @@ Definition bot2 {p} (x y : @NTerm p) := False.
 Hint Unfold bot2.
 
 CoInductive approx_aux {p}
-            (lib : library)
+            (lib : pre_library)
             (R : bin_rel NTerm)
             (tl tr: @NTerm p): [univ] :=
 |approx_fold:
@@ -152,7 +152,7 @@ Definition approx {p} lib := @approx_aux p lib bot2.
  *)
 
 Theorem approx_acc {p} :
-  forall (lib : library)
+  forall (lib : pre_library)
          (l r0 : bin_rel (@NTerm p))
          (OBG: forall (r: bin_rel NTerm)
                       (INC: r0 =2> r) (CIH: l =2> r),
@@ -363,7 +363,7 @@ Definition has_value_likec {p} lib (t : @CTerm p) :=
   has_value_like lib (get_cterm t).
 
 Lemma approxc_assume_hasvalue {p} :
-  forall (lib : @library p) a b,
+  forall (lib : @pre_library p) a b,
     (hasvalue_likec lib a -> approxc lib a b)
     -> approxc lib a b.
 Proof.

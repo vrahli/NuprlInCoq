@@ -280,7 +280,7 @@ Qed.
 Hint Resolve implies_nt_wf_apply : slow.
 
 Lemma nt_wf_mk_fresh_choice_nat_seq {o} :
-  forall (lib : @library o) l, nt_wf (mk_fresh_choice_nat_seq lib l).
+  forall (lib : @pre_library o) l, nt_wf (mk_fresh_choice_nat_seq lib l).
 Proof.
   introv; repeat constructor; simpl; tcsp.
 Qed.

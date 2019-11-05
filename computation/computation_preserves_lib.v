@@ -117,14 +117,14 @@ Defined.
 
 Definition in_lib {o}
            (name : EntryName)
-           (lib  : @library o) :=
+           (lib  : @pre_library o) :=
   exists (e : library_entry),
     List.In e lib
     /\ same_entry_name name (entry2name e).
 
 Lemma in_lib_dec {o} :
   forall (name : EntryName)
-         (lib  : @library o),
+         (lib  : @pre_library o),
     decidable (in_lib name lib).
 Proof.
   unfold in_lib; induction lib; simpl.
@@ -133,7 +133,7 @@ Proof.
 
     { destruct name.
       - destruct (choice_sequence_name_deq name name0); subst.
-        + left; exists (lib_cs name0 entry); simpl; dands; auto.
+        + left; exists (lib_cs name0 vals); simpl; dands; auto.
         + destruct IHlib as [k|k].
           * left; exrepnd; exists e; dands; auto.
           * right; intro zz; exrepnd; destruct k.
@@ -266,7 +266,7 @@ Proof.
 Qed.
 
 Lemma implies_in_lib_cons {o} :
-  forall e e' (lib : @library o),
+  forall e e' (lib : @pre_library o),
     in_lib e lib
     -> in_lib e (e' :: lib).
 Proof.
@@ -276,7 +276,7 @@ Qed.
 Hint Resolve implies_in_lib_cons : slow.
 
 Lemma find_cs_value_at_some_implies_in_lib {o} :
-  forall name n v (lib : @library o),
+  forall name n v (lib : @pre_library o),
     find_cs_value_at lib name n = Some v
     -> in_lib (entry_name_cs name) lib.
 Proof.
@@ -290,11 +290,10 @@ Proof.
     + boolvar; subst.
 
       * unfold in_lib; simpl.
-        exists (lib_cs name0 entry); simpl; tcsp.
+        exists (lib_cs name0 vals); simpl; tcsp.
 
       * remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
-        autodimp IHlib hyp; eauto 2 with slow.
-        unfold find_cs_value_at; allrw; auto.
+        autodimp IHlib hyp; eauto 2 with slow; unfold find_cs_value_at; allrw; auto.
 
     + remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; ginv.
       autodimp IHlib hyp; eauto 2 with slow.
@@ -384,7 +383,7 @@ Qed.
 Hint Resolve same_entry_name_trans : slow.
 
 Lemma same_entry_name_preserves_in_lib {o} :
-  forall name1 name2 (lib : @library o),
+  forall name1 name2 (lib : @pre_library o),
     same_entry_name name1 name2
     -> in_lib name1 lib
     -> in_lib name2 lib.
@@ -395,7 +394,7 @@ Proof.
 Qed.
 
 Lemma not_same_entry_name_preserves_find_cs_value_at_cons {o} :
-  forall (lib : @library o) name n v e,
+  forall (lib : @pre_library o) name n v e,
     find_cs_value_at lib name n = Some v
     -> !same_entry_name (entry2name e) (entry_name_cs name)
     -> find_cs_value_at (e :: lib) name n = Some v.
@@ -407,7 +406,7 @@ Proof.
 Qed.
 
 Lemma not_in_lib_preserves_find_cs_value_at_cons {o} :
-  forall (lib : @library o) e name n v,
+  forall (lib : @pre_library o) e name n v,
     ! in_lib (entry2name e) lib
     -> find_cs_value_at lib name n = Some v
     -> find_cs_value_at (e :: lib) name n = Some v.
@@ -1005,7 +1004,7 @@ Proof.
   rewrite <- Heqm; sp.
 Defined.
 
-Fixpoint found_entry_b {o} (lib : @library o) opabs (bs : list (@BTerm o)) : bool :=
+Fixpoint found_entry_b {o} (lib : @pre_library o) opabs (bs : list (@BTerm o)) : bool :=
   match lib with
   | [] => false
   | lib_cs _ _ :: l => found_entry_b l opabs bs
@@ -1015,7 +1014,7 @@ Fixpoint found_entry_b {o} (lib : @library o) opabs (bs : list (@BTerm o)) : boo
     else found_entry_b l opabs bs
   end.
 
-Fixpoint found_entry_sign {o} (lib : @library o) name : bool :=
+Fixpoint found_entry_sign {o} (lib : @pre_library o) name : bool :=
   match lib with
   | [] => false
   | entry :: entries =>
@@ -1066,7 +1065,7 @@ with all_abstractions_are_defined_b {o} lib : @BTerm o -> Type :=
       -> all_abstractions_are_defined_b lib (bterm vs t).
 *)
 
-Definition found_opid_in_library_sign {o} (lib : @library o) (op : @Opid o) : bool :=
+Definition found_opid_in_library_sign {o} (lib : @pre_library o) (op : @Opid o) : bool :=
   match op with
   | Abs abs => found_entry_sign lib (entry_name_abs abs)
   | _ => true
@@ -2092,7 +2091,7 @@ Definition no_undefined_abs_in_entry {o} lib (entry : @library_entry o) :=
   end.
 
 (* entries can only depend on earlier abstractions, i.e., on the right in the list *)
-Fixpoint no_undefined_abs_in_lib {o} (lib : @library o) :=
+Fixpoint no_undefined_abs_in_lib {o} (lib : @pre_library o) :=
   match lib with
   | [] => True
   | entry :: entries =>
@@ -2596,7 +2595,7 @@ Proof.
 Qed.
  *)
 
-Fixpoint find_entry_sign {o} (lib : @library o) name : option library_entry :=
+Fixpoint find_entry_sign {o} (lib : @pre_library o) name : option library_entry :=
   match lib with
   | [] => None
   | entry :: entries =>
@@ -2604,7 +2603,7 @@ Fixpoint find_entry_sign {o} (lib : @library o) name : option library_entry :=
     else find_entry_sign entries name
   end.
 
-Definition libraries_agree_on_intersection {o} (lib1 lib2 : @library o) : Type :=
+Definition libraries_agree_on_intersection {o} (lib1 lib2 : @pre_library o) : Type :=
   forall name,
     match find_entry_sign lib1 name, find_entry_sign lib2 name with
     | Some (lib_abs opabs1 vars1 rhs1 correct1),
@@ -2708,7 +2707,7 @@ Proof.
       apply q; auto.
 Qed.*)
 
-Inductive no_repeats_lib {o} : @library o -> Type :=
+Inductive no_repeats_lib {o} : @pre_library o -> Type :=
 | no_rep_lib_em : no_repeats_lib []
 | no_rep_lib_cons :
     forall e l,
@@ -2727,7 +2726,7 @@ Proof.
 Qed.
 
 Lemma same_entry_name_preserves_find_entry {o} :
-  forall (lib : @library o) name1 name2 e,
+  forall (lib : @pre_library o) name1 name2 e,
     find_entry_sign lib name1 = Some e
     -> same_entry_name name1 name2
     -> find_entry_sign lib name2 = Some e.
@@ -2742,7 +2741,7 @@ Proof.
 Qed.
 
 Lemma find_entry_sign_implies_in_lib {o} :
-  forall (lib : @library o) opabs e,
+  forall (lib : @pre_library o) opabs e,
     find_entry_sign lib opabs = Some e
     -> in_lib opabs lib.
 Proof.
@@ -2767,7 +2766,7 @@ Proof.
 Qed.
 
 Lemma find_entry_sign_implies_same_entry_name {o} :
-  forall (lib : @library o) (name : EntryName) (e : library_entry),
+  forall (lib : @pre_library o) (name : EntryName) (e : library_entry),
     find_entry_sign lib name = Some e
     -> same_entry_name name (entry2name e).
 Proof.
@@ -2775,7 +2774,7 @@ Proof.
 Qed.
 
 Lemma agreeing_libraries_cons_right_implies {o} :
-  forall (lib1 lib2 : @library o) e,
+  forall (lib1 lib2 : @pre_library o) e,
     !in_lib (entry2name e) lib2
     -> libraries_agree_on_intersection lib1 (e :: lib2)
     -> libraries_agree_on_intersection lib1 lib2.

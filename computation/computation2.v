@@ -54,9 +54,9 @@ Require Export terms5.
 *)
 
 Fixpoint compute_at_most_k_steps {p}
-         (lib : library)
-         (k : nat)
-         (t : NTerm) : @Comput_Result p :=
+         (lib : pre_library)
+         (k   : nat)
+         (t   : NTerm) : @Comput_Result p :=
   match k with
     | 0 => csuccess t
     | S n => match compute_at_most_k_steps lib n t with
@@ -166,7 +166,7 @@ Qed.
 Definition reduces_in_atmost_k_steps {p} lib (t1 t2 : @NTerm p) (k : nat) :=
   compute_at_most_k_steps lib k t1 = csuccess t2.
 
-Definition reduces_to {p} lib (t1 t2 : @NTerm p) :=
+Definition reduces_to {o} (lib : @pre_library o) (t1 t2 : @NTerm o) :=
   {k : nat & reduces_in_atmost_k_steps lib t1 t2 k}.
 
 
@@ -210,7 +210,7 @@ Definition ismrk {o} lib (t : @NTerm o) :=
     | _ => False
   end.
 
-Definition is_mrk {o} (lib : @library o) (m : marker) :=
+Definition is_mrk {o} (lib : @pre_library o) (m : marker) :=
   ismrk lib (mk_marker m).
 
 Definition computes_to_marker_in_max_k_steps {p} lib (a : @NTerm p) m k :=
@@ -1661,7 +1661,7 @@ Proof.
 Qed.
 
 Lemma compute_step_lib_success {o} :
-  forall (lib : @library o) oa1 bs u,
+  forall (lib : @pre_library o) oa1 bs u,
     compute_step_lib lib oa1 bs = csuccess u
     -> {oa2 : opabs
         & {vars : list sovar_sig
@@ -1689,7 +1689,7 @@ Proof.
 Qed.
 
 Lemma isprogram_compute_step_lib {o} :
-  forall (lib : @library o) x bs t,
+  forall (lib : @pre_library o) x bs t,
     isprogram (oterm (Abs x) bs)
     -> compute_step_lib lib x bs = csuccess t
     -> isprogram t.
@@ -2788,7 +2788,7 @@ Proof.
 Qed.
 
 Lemma wf_mk_instance {o} :
-  forall oa0 oa vars rhs (lib : @library o) bs correct,
+  forall oa0 oa vars rhs (lib : @pre_library o) bs correct,
     found_entry lib oa0 bs oa vars rhs correct
     -> (forall b, LIn b bs -> wf_bterm b)
     -> wf_term (mk_instance vars bs rhs).
@@ -3884,7 +3884,7 @@ Proof.
 Qed.
 
 Lemma find_entry_implies_unfold_abs {o} :
-  forall (lib : @library o) oa1 oa2 bs vars rhs correct,
+  forall (lib : @pre_library o) oa1 oa2 bs vars rhs correct,
     find_entry lib oa1 bs = Some (lib_abs oa2 vars rhs correct)
     -> unfold_abs lib oa1 bs = Some (mk_instance vars bs rhs).
 Proof.
@@ -3897,7 +3897,7 @@ Proof.
 Qed.
 
 Lemma found_entry_implies_compute_step_lib_success {o} :
-  forall (lib : @library o) oa1 oa2 bs vars rhs correct,
+  forall (lib : @pre_library o) oa1 oa2 bs vars rhs correct,
     found_entry lib oa1 bs oa2 vars rhs correct
     -> compute_step_lib lib oa1 bs
        = csuccess (mk_instance vars bs rhs).

@@ -1903,7 +1903,7 @@ Proof.
 Qed.
 
 Lemma wf_compute_step_lib {o} :
-  forall lib (x : opabs) (bs : list BTerm) (t : @NTerm o),
+  forall (lib : pre_library) (x : opabs) (bs : list BTerm) (t : @NTerm o),
     wf_term (oterm (Abs x) bs)
     -> compute_step_lib lib x bs = csuccess t
     -> wf_term t.

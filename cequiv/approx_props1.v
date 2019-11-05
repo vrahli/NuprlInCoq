@@ -751,7 +751,7 @@ Qed.
 Hint Resolve respects_alpha_l_approx_aux : slow.
 
 Theorem approx_acc_resp {p} :
-  forall (lib : library)
+  forall (lib : pre_library)
          (l r0 : bin_rel (@NTerm p))
          (resp_l_l : respects_alpha_l l)
          (resp_r_l : respects_alpha_r l)
@@ -1513,7 +1513,7 @@ Require Import sqle.
 
 
 Lemma map_ren_atom_get_utokens_library_if_disjoint_dom {o} :
-  forall (lib : @library o) ren,
+  forall (lib : @pre_library o) ren,
     disjoint (get_utokens_library lib) (dom_utok_ren ren)
     -> map (ren_atom ren) (get_utokens_library lib)
        = get_utokens_library lib.
@@ -1577,7 +1577,7 @@ Definition get_utokens_lib_b {o} lib (b : @BTerm o) :=
   get_utokens_b b ++ get_utokens_library lib.
 
 Lemma get_utokens_lib_b_tl_subterms_subset_get_utokens_lib {o} :
-  forall (lib : @library o) op bs n,
+  forall (lib : @pre_library o) op bs n,
     n < length bs
     -> subset (get_utokens_lib_b lib (bs {[n]}))
               (get_utokens_lib lib (oterm op bs)).

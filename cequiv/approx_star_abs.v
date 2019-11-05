@@ -1473,7 +1473,7 @@ Proof.
 Qed.
 
 Lemma sosub_approx_star_congr {p} :
-  forall (lib : library)
+  forall (lib : pre_library)
          (opr : Opid)
          (t : @SOTerm p)
          (sub1 sub2 : SOSub),
@@ -1520,7 +1520,7 @@ Proof.
 Qed.
 
 Lemma mk_instance_approx_star_congr {p} :
-  forall (lib : library)
+  forall (lib : pre_library)
          (opr : @Opid p)
          (t : @SOTerm p)
          (vars : list sovar_sig)

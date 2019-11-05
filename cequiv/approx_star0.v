@@ -1219,7 +1219,7 @@ Definition extensional_op_ind {p} lib k :=
 
 Definition extensional_op {p} (o : @Opid p) :=
   forall
-    (lib : library)
+    (lib : pre_library)
     (lbt lbt' : list BTerm)
     (a : NTerm)
     (k : nat)
@@ -2351,7 +2351,7 @@ Proof.
 Qed.
 
 Lemma isvalue_mk_fresh_choice_nat_seq {o} :
-  forall (lib : @library o) l,
+  forall (lib : @pre_library o) l,
     isvalue (mk_fresh_choice_nat_seq lib l).
 Proof.
   introv.
@@ -2385,7 +2385,7 @@ Proof.
 Qed.
 
 Lemma approx_starbts_nil {o} :
-  forall (lib : @library o) nc, approx_starbts lib nc [] [].
+  forall (lib : @pre_library o) nc, approx_starbts lib nc [] [].
 Proof.
   introv; unfold approx_starbts, lblift_sub; simpl; dands; tcsp.
 Qed.
@@ -2418,7 +2418,7 @@ Qed.
 Hint Resolve implies_approx_star_mk_apply : slow.
 
 Lemma implies_approx_star_mk_zero {o} :
-  forall (lib : @library o),
+  forall (lib : @pre_library o),
     approx_star lib mk_zero mk_zero.
 Proof.
   introv.
@@ -2429,7 +2429,7 @@ Hint Resolve implies_approx_star_mk_zero : slow.
 Hint Resolve isprogram_mk_nat : slow.
 
 Lemma implies_approx_star_mk_nat {o} :
-  forall (lib : @library o) k,
+  forall (lib : @pre_library o) k,
     approx_star lib (mk_nat k) (mk_nat k).
 Proof.
   introv.

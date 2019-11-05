@@ -647,19 +647,16 @@ Definition atom_sub_dom {o} (s : @atom_sub o) : list NVar :=
    But then the definition will become messier.
  *)
 Record compenv {o} :=
-  {
-    ce_library : @library o;
-    ce_atom_sub : @atom_sub o
-  }.
+  MkCompEnv {
+      ce_library  :> @pre_library o;
+      ce_atom_sub : @atom_sub o
+    }.
 
 Definition add_atom_sub {o}
            (ce : @compenv o)
-           (v : NVar)
-           (a : get_patom_set o) : compenv :=
-  {|
-    ce_atom_sub := (v,a) :: ce_atom_sub ce;
-    ce_library := ce_library ce
-  |}.
+           (v  : NVar)
+           (a  : get_patom_set o) : compenv :=
+  MkCompEnv _ (ce_library ce) ((v,a) :: ce_atom_sub ce).
 
 (*
 Definition ce_is_fresh_atom {o} (ce : @compenv o) (a : get_patom_set o) :=
@@ -952,7 +949,7 @@ Record ComputationContext {o} :=
 *)
 
 Definition compute_step_lib {o}
-           (lib : @library o)
+           (lib : @pre_library o)
            (opabs : opabs)
            (bs : list (@BTerm o)) :=
   match unfold_abs lib opabs bs with
@@ -1007,11 +1004,11 @@ Definition subst_utokens {p} (t : @NTerm p) (sub : utok_sub) : NTerm :=
 
 Definition get_utokens_library_entry {p} (entry : @library_entry p) : list (get_patom_set p) :=
   match entry with
-  | lib_cs _ e => flat_map getc_utokens (cse_vals e)
+  | lib_cs _ e => flat_map getc_utokens e
   | lib_abs opabs vars rhs correct => get_utokens_so rhs
   end.
 
-Definition get_utokens_library {p} (lib : @library p) : list (get_patom_set p) :=
+Definition get_utokens_library {p} (lib : @pre_library p) : list (get_patom_set p) :=
   flat_map get_utokens_library_entry lib.
 
 Definition get_utokens_ce {o} (ce : @compenv o) : list (get_patom_set o) :=
@@ -1023,8 +1020,8 @@ Definition valid_atom_sub {o} (sub : @atom_sub o) (ce : @compenv o) (t : @NTerm 
            (get_utokens_library (ce_library ce) ++ get_utokens t)
   # atom_sub_dom sub = atom_sub_dom (ce_atom_sub ce).
 
-Definition mk_ce {o} (lib : @library o) (sub : @atom_sub o) : compenv :=
-  {| ce_library := lib; ce_atom_sub := sub |}.
+Definition mk_ce {o} (lib : @pre_library o) (sub : @atom_sub o) : compenv :=
+  MkCompEnv _ lib sub.
 
 Definition ce_change_atom_sub {o} (ce : @compenv o) (sub : @atom_sub o) : compenv :=
   mk_ce (ce_library ce) sub.
@@ -1341,7 +1338,7 @@ Definition pushdown_fresh {o} (v : NVar) (t : @NTerm o) :=
   end.
 
 Definition compute_step_fresh {o}
-           (lib : @library o)
+           (lib : @pre_library o)
            (ncan : NonCanonicalOp)
            (t : @NTerm o)
            (v : NVar)

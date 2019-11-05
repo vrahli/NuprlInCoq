@@ -310,7 +310,7 @@ Definition choice_seq_names_in_entry {o} (e : @library_entry o) : list choice_se
   | lib_abs _ _ _ _ => []
   end.
 
-Fixpoint choice_seq_names_in_lib {o} (lib : @library o) : list choice_sequence_name :=
+Fixpoint choice_seq_names_in_lib {o} (lib : @pre_library o) : list choice_sequence_name :=
   match lib with
   | [] => []
   | e :: es =>

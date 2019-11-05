@@ -318,7 +318,7 @@ Proof.
 Qed.
 
 Lemma compute_step_mk_cbv_abs {o} :
-  forall (lib : @library o) x l v u,
+  forall (lib : @pre_library o) x l v u,
     compute_step lib (mk_cbv (oterm (Abs x) l) v u)
     = match compute_step_lib lib x l with
         | csuccess f => csuccess (mk_cbv f v u)
@@ -1648,7 +1648,7 @@ Ltac destructbtdeep bt Hcomp :=
 
 
 Lemma compute_step_lib_success_change_bs {o} :
-  forall (lib : @library o) oa1 oa2 bs1 bs2 vars rhs correct,
+  forall (lib : @pre_library o) oa1 oa2 bs1 bs2 vars rhs correct,
     map num_bvars bs1 = map num_bvars bs2
     -> found_entry lib oa1 bs1 oa2 vars rhs correct
     -> compute_step_lib lib oa1 bs2 = csuccess (mk_instance vars bs2 rhs).

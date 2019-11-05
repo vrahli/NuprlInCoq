@@ -1735,13 +1735,13 @@ Proof.
 Qed.
 Hint Resolve subset_diff_same_l : slow.
 
-Definition library_has_no_utokens {o} (lib : @library o) :=
+Definition library_has_no_utokens {o} (lib : @pre_library o) :=
   get_utokens_library lib = [].
 
 Lemma library_has_no_utokens_cons_lib_cs_implies_left {o} :
-  forall name entry (lib : @library o),
-    library_has_no_utokens (lib_cs name entry :: lib)
-    -> (forall v, LIn v (cse_vals entry) -> get_utokens (CSVal2term v) = []).
+  forall name vals (lib : @pre_library o),
+    library_has_no_utokens (lib_cs name vals :: lib)
+    -> (forall v, LIn v vals -> get_utokens (CSVal2term v) = []).
 Proof.
   introv h i; unfold library_has_no_utokens in h.
   simpl in *.
@@ -1751,7 +1751,7 @@ Proof.
 Qed.
 
 Lemma library_has_no_utokens_cons_implies_right {o} :
-  forall entry (lib : @library o),
+  forall entry (lib : @pre_library o),
     library_has_no_utokens (entry :: lib)
     -> library_has_no_utokens lib.
 Proof.
@@ -1771,7 +1771,7 @@ Proof.
 Qed.
 
 Lemma library_has_no_utokens_implies_find_cs_value_at_has_no_utokens {o} :
-  forall (lib : @library o) name n v,
+  forall (lib : @pre_library o) name n v,
     library_has_no_utokens lib
     -> find_cs_value_at lib name n = Some v
     -> get_utokens (CSVal2term v) = [].
@@ -1785,7 +1785,7 @@ Proof.
 
     + boolvar; subst; simpl in *.
 
-      * pose proof (library_has_no_utokens_cons_lib_cs_implies_left name0 entry lib h) as w.
+      * pose proof (library_has_no_utokens_cons_lib_cs_implies_left name0 vals lib h) as w.
         apply find_value_of_cs_at_implies_in in q.
         apply w in q; auto.
 
@@ -1808,7 +1808,7 @@ Proof.
 Qed.
 
 Lemma utokens_find_cs_value_at_subset_library {o} :
-  forall (lib : @library o) name n v,
+  forall (lib : @pre_library o) name n v,
     find_cs_value_at lib name n = Some v
     -> subset (get_utokens (CSVal2term v)) (get_utokens_library lib).
 Proof.
