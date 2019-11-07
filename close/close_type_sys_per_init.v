@@ -89,7 +89,7 @@ Proof.
   repndors; subst; dclose_lr; auto.
 Qed.
 
-Lemma computes_to_valc_uni_implies_all_in_bar_trivial {o} :
+(*Lemma computes_to_valc_uni_implies_all_in_bar_trivial {o} :
   forall lib (T : @CTerm o) i,
     (T ===>(lib) (mkc_uni i))
     -> all_in_bar (trivial_bar lib) (fun lib => (T ===>(lib) (mkc_uni i))).
@@ -97,7 +97,7 @@ Proof.
   introv comp br ext; simpl in *.
   apply (ccomputes_to_valc_ext_monotone lib lib'0); eauto 3 with slow.
 Qed.
-Hint Resolve computes_to_valc_uni_implies_all_in_bar_trivial : slow.
+Hint Resolve computes_to_valc_uni_implies_all_in_bar_trivial : slow.*)
 
 
 Lemma close_type_system_init {p} :

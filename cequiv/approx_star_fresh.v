@@ -1508,7 +1508,7 @@ Proof.
 Qed.
 
 Lemma reduces_in_atmost_k_steps_mk_fresh_id {o} :
-  forall (lib : @library o) v k u,
+  forall (lib : @pre_library o) v k u,
     reduces_in_atmost_k_steps lib (mk_fresh v (vterm v)) u k
     -> u = mk_fresh v (vterm v).
 Proof.
@@ -1520,7 +1520,7 @@ Proof.
 Qed.
 
 Lemma reduces_in_atmost_k_steps_mk_fresh_id2 {o} :
-  forall (lib : @library o) v k,
+  forall (lib : @pre_library o) v k,
     reduces_in_atmost_k_steps lib (mk_fresh v (vterm v)) (mk_fresh v (vterm v)) k.
 Proof.
   induction k; introv.

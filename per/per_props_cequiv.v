@@ -445,7 +445,7 @@ Lemma member_approx_iff {o} :
     <=> member lib mkc_axiom (mkc_approx t1 t2).
 Proof.
   introv; split; intro e;
-    try (complete (unfold all_in_ex_bar in *; exrepnd; eapply member_approx_bar; eauto)).
+    try (complete (exrepnd; eapply member_approx_bar; eauto)).
 
   unfold member, equality in *; exrepnd.
   apply dest_nuprl_approx2 in e1.
@@ -575,7 +575,6 @@ Proof.
   }
 
   {
-    unfold all_in_ex_bar in k; exrepnd.
     exists (per_bar_eq lib (per_approx_eq_bar_lib_per lib a b)); dands; auto.
     apply CL_bar.
     exists (per_approx_eq_bar_lib_per lib a b); dands; auto;[]; simpl.

@@ -1141,23 +1141,23 @@ Proof.
     try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
 Qed.
 
-Lemma implies_all_in_bar_in_ext {o} :
+(*Lemma implies_all_in_bar_in_ext {o} :
   forall {lib} (bar : @BarLib o lib) F,
     all_in_bar bar F
     -> all_in_bar bar (fun lib' => in_ext lib' F).
 Proof.
   introv h br ext x.
   apply (h _ br lib'1); eauto 3 with slow.
-Qed.
+Qed.*)
 
-Lemma all_in_bar_in_ext_implies {o} :
+(*Lemma all_in_bar_in_ext_implies {o} :
   forall {lib} (bar : @BarLib o lib) F,
     all_in_bar bar (fun lib' => in_ext lib' F)
     -> all_in_bar bar F.
 Proof.
   introv h br ext.
   apply (h _ br lib'0); eauto 3 with slow.
-Qed.
+Qed.*)
 
 Lemma ccequivc_ext_implies_eq_term_equals_per_approx_eq_bar {o} :
   forall lib (a1 a2 b1 b2 : @CTerm o),

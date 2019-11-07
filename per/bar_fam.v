@@ -48,12 +48,12 @@ Proof.
 Qed.
 Hint Resolve in_open_bar_ext_comb_per : slow.
 
-Definition bar_fam {o} {lib} (bar : @BarLib o lib) :=
+(*Definition bar_fam {o} {lib} (bar : @BarLib o lib) :=
   forall lib1 (b : bar_lib_bar bar lib1)
          lib2 (ext : lib_extends lib2 lib1)
-         (x : lib_extends lib2 lib), BarLib lib2.
+         (x : lib_extends lib2 lib), BarLib lib2.*)
 
-Definition bar_of_bar_fam {o} {lib} {bar : @BarLib o lib} (h : bar_fam bar) : BarLib lib.
+(*Definition bar_of_bar_fam {o} {lib} {bar : @BarLib o lib} (h : bar_fam bar) : BarLib lib.
 Proof.
   exists (fun lib' =>
             exists lib1,
@@ -81,33 +81,33 @@ Proof.
     destruct bar as [bar1 bars1 ext1]; simpl in *.
     destruct b as [bar2 bars2 ext2]; simpl in *.
     eauto 3 with slow.
-Defined.
+Defined.*)
 
-Lemma all_in_bar_ext_and_implies {o} :
+(*Lemma all_in_bar_ext_and_implies {o} :
   forall {lib} (bar : @BarLib o lib) (p1 p2 : forall lib' (x : lib_extends lib' lib), [U]),
     all_in_bar_ext bar (fun lib' x => p1 lib' x # p2 lib' x)
     -> (all_in_bar_ext bar p1 # all_in_bar_ext bar p2).
 Proof.
   introv h; dands; introv br ext; introv; eapply h; eauto.
-Qed.
+Qed.*)
 
-Lemma all_in_bar_ext_and_implies1 {o} :
+(*Lemma all_in_bar_ext_and_implies1 {o} :
   forall {lib} (bar : @BarLib o lib) (p1 p2 : forall lib' (x : lib_extends lib' lib), [U]),
     all_in_bar_ext bar (fun lib' x => p1 lib' x # p2 lib' x)
     -> all_in_bar_ext bar p1.
 Proof.
   introv h; dands; introv br ext; introv; eapply h; eauto.
-Qed.
+Qed.*)
 
-Lemma all_in_bar_ext_and_implies2 {o} :
+(*Lemma all_in_bar_ext_and_implies2 {o} :
   forall {lib} (bar : @BarLib o lib) (p1 p2 : forall lib' (x : lib_extends lib' lib), [U]),
     all_in_bar_ext bar (fun lib' x => p1 lib' x # p2 lib' x)
     -> all_in_bar_ext bar p2.
 Proof.
   introv h; dands; introv br ext; introv; eapply h; eauto.
-Qed.
+Qed.*)
 
-Record pack_lib_bar {o} {lib} (bar : @BarLib o lib) :=
+(*Record pack_lib_bar {o} {lib} (bar : @BarLib o lib) :=
   MkPackLibBar
     {
       plb_lib1 : library;
@@ -116,16 +116,16 @@ Record pack_lib_bar {o} {lib} (bar : @BarLib o lib) :=
       plb_ext  : lib_extends plb_lib2 plb_lib1;
       plb_x    : lib_extends plb_lib2 lib
     }.
-Arguments MkPackLibBar {o} {lib} [bar] _ _ _ _ _.
+Arguments MkPackLibBar {o} {lib} [bar] _ _ _ _ _.*)
 
-Lemma ccomputes_to_valc_implies_all_in_bar {o} :
+(*Lemma ccomputes_to_valc_implies_all_in_bar {o} :
   forall lib (bar : @BarLib o lib) a b,
     a ===>(lib) b
     -> all_in_bar bar (fun lib' => a ===>(lib') b).
 Proof.
   introv comp br ext; spcast; eauto 4 with slow.
 Qed.
-Hint Resolve ccomputes_to_valc_implies_all_in_bar : slow.
+Hint Resolve ccomputes_to_valc_implies_all_in_bar : slow.*)
 
 (*Lemma all_in_bar_ext_eq_term_equals_preserves_per_bar_eq {o} :
   forall lib (bar : @BarLib o lib) (eqa eqb : lib-per(lib,o)) t1 t2,
@@ -159,7 +159,7 @@ Proof.
   eapply per; eauto.
 Qed.*)
 
-Lemma all_in_bar_ext_exists_bar_implies {o} :
+(*Lemma all_in_bar_ext_exists_bar_implies {o} :
   forall {lib} (bar : @BarLib o lib) F,
     all_in_bar_ext bar (fun lib' x => {bar' : BarLib lib' , F lib' x bar'})
     ->
@@ -184,18 +184,18 @@ Proof.
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
-Qed.
+Qed.*)
 
-Definition bar_fam_fam {o} {lib} (bar : @BarLib o lib) (fbar : bar_fam bar) :=
+(*Definition bar_fam_fam {o} {lib} (bar : @BarLib o lib) (fbar : bar_fam bar) :=
   forall lib1 (b : bar_lib_bar bar lib1)
          lib2 (ext : lib_extends lib2 lib1)
          (x : lib_extends lib2 lib),
   forall lib1' (b' : bar_lib_bar (fbar lib1 b lib2 ext x) lib1')
          lib2' (ext' : lib_extends lib2' lib1')
          (x' : lib_extends lib2' lib2),
-    BarLib lib2'.
+    BarLib lib2'.*)
 
-Record pack_lib_bar_fam {o} {lib} (bar : @BarLib o lib) (fbar : bar_fam bar) :=
+(*Record pack_lib_bar_fam {o} {lib} (bar : @BarLib o lib) (fbar : bar_fam bar) :=
   MkPackLibBarFam
     {
       plbf_lib1  : library;
@@ -209,9 +209,9 @@ Record pack_lib_bar_fam {o} {lib} (bar : @BarLib o lib) (fbar : bar_fam bar) :=
       plbf_ext'  : lib_extends plbf_lib2' plbf_lib1';
       plbf_x'    : lib_extends plbf_lib2' plbf_lib2;
     }.
-Arguments MkPackLibBarFam {o} {lib} [bar] [fbar] _ _ _ _ _ _ _ _ _ _.
+Arguments MkPackLibBarFam {o} {lib} [bar] [fbar] _ _ _ _ _ _ _ _ _ _.*)
 
-Lemma all_in_bar_ext_exists_fbar_implies {o} :
+(*Lemma all_in_bar_ext_exists_fbar_implies {o} :
   forall {lib} (bar : @BarLib o lib) (fbar : bar_fam bar) (F : forall lib2 lib' (x : lib_extends lib' lib2) (b : BarLib lib'), Prop),
   (forall lib1 (br : bar_lib_bar bar lib1)
           lib2 (ext : lib_extends lib2 lib1)
@@ -251,9 +251,9 @@ Proof.
             (f (MkPackLibBarFam lib1 br lib2 ext x lib1' br' lib2' ext' x'))).
   introv; simpl in *.
   pose proof (C0 (MkPackLibBarFam lib1 br lib2 ext x lib1' br' lib2' ext' x')) as w; auto.
-Qed.
+Qed.*)
 
-Definition bar_of_bar_fam_fam {o} {lib}
+(*Definition bar_of_bar_fam_fam {o} {lib}
            {bar : @BarLib o lib} {f : bar_fam bar}
            (h : bar_fam_fam bar f) : BarLib lib.
 Proof.
@@ -296,7 +296,7 @@ Proof.
     destruct bar as [bar1 bars1 ext1]; simpl in *.
     destruct b as [bar2 bars2 ext2]; simpl in *.
     eauto 4 with slow.
-Defined.
+Defined.*)
 
 Lemma in_open_bar_ext_eq_term_equals_preserves_per_bar_eq {o} :
   forall (lib : @library o) (eqa eqb : lib-per(lib,o)) t1 t2,

@@ -439,7 +439,7 @@ Proof.
   eapply nuprli_uniquely_valued; eauto.
 Qed.
 
-Lemma bar_and_fam_per2lib_per_implies_lpaf_eqa_i {o} :
+(*Lemma bar_and_fam_per2lib_per_implies_lpaf_eqa_i {o} :
   forall {lib lib'} {bar : @BarLib o lib} {feqa : bar-and-fam-per(lib,bar,o)}
          {A v B C w D i}
          (F : forall lib1 (br : bar_lib_bar bar lib1) lib2 (ext : lib_extends lib2 lib1) (x : lib_extends lib2 lib), type_family_ext mkc_product (nuprli i) lib2 (mkc_product A v B) (mkc_product C w D) (lpaf_eqa (feqa lib1 br lib2 ext x)) (lpaf_eqb (feqa lib1 br lib2 ext x)))
@@ -459,9 +459,9 @@ Proof.
   simpl in *.
   pose proof (q1 _ (lib_extends_refl lib')) as q1; simpl in *.
   apply q1; auto.
-Qed.
+Qed.*)
 
-Definition bar_and_fam_per2lib_per_fam_i {o}
+(*Definition bar_and_fam_per2lib_per_fam_i {o}
            {lib  : @library o}
            {bar  : BarLib lib}
            (feqa : bar-and-fam-per(lib,bar,o))
@@ -488,7 +488,7 @@ Proof.
     eapply (lib_per_fam_cond _  (lpaf_eqb (feqa lib1 br lib' ext y0))); eauto.
   - exists lib1 br ext y0; auto.
     eapply (lib_per_fam_cond _  (lpaf_eqb (feqa lib1 br lib' ext y0))); eauto.
-Defined.
+Defined.*)
 
 Lemma dest_nuprli_product2 {o} :
   forall i lib (eq : per(o)) A v B C w D,

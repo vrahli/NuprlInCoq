@@ -528,7 +528,7 @@ Proof.
     pose proof (nuprl_monotone_func lib T1 T2 eq teq1) as tya; exrepnd.
     rename eq' into eqa'.
     apply ccequivc_ext_bar_iff_ccequivc_bar in teq.
-    unfold ccequivc_ext_bar, all_in_ex_bar in teq; exrepnd.
+    unfold ccequivc_ext_bar in teq; exrepnd.
 
     exists (per_bar_eq lib (per_image_eq_bar_lib_per lib eqa' f1)).
     apply CL_bar; exists (per_image_eq_bar_lib_per lib eqa' f1); dands; auto;[].

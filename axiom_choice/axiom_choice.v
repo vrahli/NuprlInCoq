@@ -359,19 +359,19 @@ Fixpoint removen {A} (n : nat) (l : list A) : list A :=
     end
   end.
 
-Definition replace_choices_entry {o} (vals : @ChoiceSeqVals o) (e : ChoiceSeqEntry) : ChoiceSeqEntry :=
+(*Definition replace_choices_entry {o} (vals : @ChoiceSeqVals o) (e : ChoiceSeqEntry) : ChoiceSeqEntry :=
   match e with
   | MkChoiceSeqEntry _ _ restr => MkChoiceSeqEntry _ vals restr
-  end.
+  end.*)
 
-Fixpoint replace_choices {o} (name : choice_sequence_name) (vals : @ChoiceSeqVals o) (lib : @library o) : library :=
+Fixpoint replace_choices {o} (name : choice_sequence_name) (vals : @ChoiceSeqVals o) (lib : @pre_library o) : pre_library :=
   match lib with
   | [] => []
   | entry :: entries =>
     match entry with
     | lib_cs name' e =>
       if choice_sequence_name_deq name name'
-      then lib_cs name' (replace_choices_entry vals e) :: entries
+      then lib_cs name' vals :: entries
       else entry :: replace_choices name vals entries
     | lib_abs _ _ _ _ => entry :: replace_choices name vals entries
     end
@@ -384,33 +384,33 @@ Definition safe_choice_seq_restriction_upto2 {o}
            (k     : nat)
            (lib   : @library o) :=
   match restr with
-  | csc_res M =>
+  | csc_res Q M =>
     forall n v,
       k <= n
       -> select n vals = Some v
-      -> exists (Q : nat -> ChoiceSeqVal -> library -> Prop)
-                (e : M n v = exists (l : @library o), Q n v l)
-                (p : M n v) (l : library) (q : Q n v l),
-        eq_ind _ (fun n => n) p _ e = ex_intro _ l q
-        /\ lib_extends (replace_choices name (firstn n vals) lib) l
+      -> lib_extends
+           (MkLibrary (replace_choices name (firstn n vals) lib) (lib_res lib))
+           (mk_lib_keep_restrictions_in (proj1_sig (M n v)) (lib_res lib))
   | _ => True
   end.
 
 Definition safe_choice_sequence_entry_upto2 {o}
-           (name : choice_sequence_name)
-           (e    : @ChoiceSeqEntry o)
-           (n    : nat)
-           (lib  : @library o) :=
-  match e with
-  | MkChoiceSeqEntry _ vals restr =>
-    correct_restriction name restr
-    /\ choice_sequence_satisfies_restriction vals restr
-    /\ safe_choice_seq_restriction_upto2 name vals restr n lib
-  end.
+           (name  : choice_sequence_name)
+           (vals  : @ChoiceSeqVals o)
+           (restr : @ChoiceSeqRestriction o)
+           (n     : nat)
+           (lib   : @library o) :=
+  correct_restriction name restr
+  /\ choice_sequence_satisfies_restriction vals restr
+  /\ safe_choice_seq_restriction_upto2 name vals restr n lib.
 
 Definition safe_library_entry_upto2 {o} (e : @library_entry o) (n : nat) (lib : @library o) :=
   match e with
-  | lib_cs name entry => safe_choice_sequence_entry_upto2 name entry n lib
+  | lib_cs name vals =>
+    match find_restriction (lib_res lib) name with
+    | Some restr => safe_choice_sequence_entry_upto2 name vals restr n lib
+    | None => False
+    end
   | _ => True
   end.
 
@@ -464,7 +464,7 @@ Qed.
 
 Definition entry2size {o} (e : @library_entry o) : nat :=
   match e with
-  | lib_cs name entry => length (cse_vals entry)
+  | lib_cs name vals => length vals
   | _ => 0
   end.
 

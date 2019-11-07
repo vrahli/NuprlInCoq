@@ -39,8 +39,8 @@ Require Export per_props_cequiv.
 Require Export per_props_uni.
 
 
-Definition chaltsc_bar {o} lib (a : @CTerm o) :=
-  all_in_ex_bar lib (fun lib => chaltsc lib a).
+(*Definition chaltsc_bar {o} lib (a : @CTerm o) :=
+  all_in_ex_bar lib (fun lib => chaltsc lib a).*)
 
 Lemma cequorsq_mkc_halts {p} :
   forall lib i (a b : @CTerm p),

@@ -138,7 +138,7 @@ Proof.
 Qed.
 *)
 
-Lemma all_in_bar_ext_exists_lib_per_implies_exists {o} :
+(*Lemma all_in_bar_ext_exists_lib_per_implies_exists {o} :
   forall {lib} (bar : @BarLib o lib)
          (F : forall lib' (x : lib_extends lib' lib) (eqa : lib-per(lib',o)), Prop),
     all_in_bar_ext bar (fun lib' x => {eqa : lib-per(lib',o) , F lib' x eqa})
@@ -164,14 +164,14 @@ Proof.
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
-Qed.
+Qed.*)
 
-Notation "bar-per( lib , bar , o )" :=
+(*Notation "bar-per( lib , bar , o )" :=
   (forall (lib1 : library) (br : bar_lib_bar bar lib1)
           (lib2 : library) (ext : lib_extends lib2 lib1)
-          (x : lib_extends lib2 lib), per(o)).
+          (x : lib_extends lib2 lib), per(o)).*)
 
-Lemma all_in_bar_ext_exists_per_implies_exists {o} :
+(*Lemma all_in_bar_ext_exists_per_implies_exists {o} :
   forall {lib} (bar : @BarLib o lib)
          (F : forall lib' (x : lib_extends lib' lib) (eqa : per(o)), Prop),
     all_in_bar_ext bar (fun lib' x => {eqa : per(o) , F lib' x eqa})
@@ -197,7 +197,7 @@ Proof.
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
-Qed.
+Qed.*)
 
 Lemma nuprli_type_extensionality {o} :
   forall i, @type_extensionality o (nuprli i).
@@ -206,7 +206,7 @@ Proof.
 Qed.
 Hint Resolve nuprli_type_extensionality : slow.
 
-Definition bar_per2lib_per {o}
+(*Definition bar_per2lib_per {o}
            {lib  : @library o}
            {bar  : BarLib lib}
            (feqa : bar-per(lib,bar,o)) : lib-per(lib,o).
@@ -222,7 +222,7 @@ Proof.
   split; introv h; exrepnd.
   - exists lib1 br ext x0; auto.
   - exists lib1 br ext x0; auto.
-Defined.
+Defined.*)
 
 Definition FunNonDepEqa {o} {lib} (F : @FunLibExt o lib) :=
   forall lib1 (ext1 : lib_extends lib1 lib)

@@ -197,7 +197,7 @@ Proof.
 Qed.
 
 Lemma reduces_to_fresh2 {o} :
-  forall (lib : library) (t u : @NTerm o) (v : NVar) a,
+  forall (lib : pre_library) (t u : @NTerm o) (v : NVar) a,
   wf_term t
   -> !LIn a (get_utokens_lib lib t)
   -> reduces_to lib (subst t v (mk_utoken a)) u

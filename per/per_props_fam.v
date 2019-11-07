@@ -154,13 +154,13 @@ Record lib_per_and_fam {o} {lib} :=
       lpaf_eqb : lib-per-fam(lib,lpaf_eqa,o);
     }.
 
-Notation "bar-and-fam-per( lib , bar , o )" :=
+(*Notation "bar-and-fam-per( lib , bar , o )" :=
   (forall (lib1 : library) (br : bar_lib_bar bar lib1)
           (lib2 : library) (ext : lib_extends lib2 lib1)
           (x : lib_extends lib2 lib),
-      @lib_per_and_fam o lib2).
+      @lib_per_and_fam o lib2).*)
 
-Lemma all_in_bar_ext_exists_per_and_fam_implies_exists {o} :
+(*Lemma all_in_bar_ext_exists_per_and_fam_implies_exists {o} :
   forall {lib} (bar : @BarLib o lib)
          (F : forall lib' (x : lib_extends lib' lib) (eqa : lib-per(lib',o)) (eqb : lib-per-fam(lib',eqa,o)), Prop),
     all_in_bar_ext bar (fun lib' x => {eqa : lib-per(lib',o) , {eqb : lib-per-fam(lib',eqa,o) , F lib' x eqa eqb }})
@@ -190,9 +190,9 @@ Proof.
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
-Qed.
+Qed.*)
 
-Definition bar_and_fam_per2lib_per {o}
+(*Definition bar_and_fam_per2lib_per {o}
            {lib  : @library o}
            {bar  : BarLib lib}
            (feqa : bar-and-fam-per(lib,bar,o)) : lib-per(lib,o).
@@ -208,7 +208,7 @@ Proof.
   split; introv h; exrepnd.
   - exists lib1 br ext x0; auto.
   - exists lib1 br ext x0; auto.
-Defined.
+Defined.*)
 
 Definition lib_per_fam2lib_per {o} {lib}
            {eqa : lib-per(lib,o)}

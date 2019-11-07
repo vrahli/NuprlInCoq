@@ -977,7 +977,7 @@ Proof.
 Qed.
 
 Lemma type_family_cequivc {p} :
-  forall C (ts : cts(p)) lib T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
+  forall C (ts : cts(p)) (lib : library) T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
     cequivc lib T1 T2
     -> ccomputes_to_valc_ext lib T1 (C A1 v1 B1)
     -> ccomputes_to_valc_ext lib T2 (C A2 v2 B2)
@@ -1019,7 +1019,7 @@ Proof.
 Qed.
 
 Lemma type_family_cequivc2 {p} :
-  forall C (ts : cts(p)) lib T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
+  forall C (ts : cts(p)) (lib : library) T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
     cequivc lib T1 T2
     -> ccomputes_to_valc_ext lib T1 (C A1 v1 B1)
     -> ccomputes_to_valc_ext lib T2 (C A2 v2 B2)

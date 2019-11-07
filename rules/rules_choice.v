@@ -58,7 +58,7 @@ Definition entry_free_from_choice_seq_name {o} (e : @library_entry o) (name : ch
   | lib_abs _ _ _ _ => True
   end.
 
-Fixpoint lib_free_from_choice_seq_name {o} (lib : @library o) (name : choice_sequence_name) :=
+Fixpoint lib_free_from_choice_seq_name {o} (lib : @pre_library o) (name : choice_sequence_name) :=
   match lib with
   | [] => True
   | e :: es =>
@@ -417,7 +417,7 @@ Proof.
 Qed.
 
 Lemma name_in_library_implies_entry_in_library {o} :
-  forall name (lib : @library o),
+  forall name (lib : @pre_library o),
     name_in_library name lib
     ->
     exists entry,
@@ -427,10 +427,10 @@ Proof.
   induction lib; introv h; simpl in *; tcsp.
   destruct a; simpl in *; repndors; repnd; subst; tcsp; GC.
 
-  - exists (lib_cs name0 entry); simpl; dands; tcsp.
+  - exists (lib_cs name0 vals); simpl; dands; tcsp.
 
   - autodimp IHlib hyp; exrepnd.
-    exists entry0; simpl; dands; tcsp.
+    exists entry; simpl; dands; tcsp.
     right; dands; tcsp.
     unfold matching_entries; allrw; simpl; auto.
 
@@ -467,11 +467,11 @@ Hint Resolve compatible_choice_sequence_name_0_implies_is_nat_or_seq_kind : slow
 Hint Resolve entry_in_library_implies_find_cs_some : slow.
 
 Lemma cs_entry_in_library_lawless_upto_implies_length_ge {o} :
-  forall (lib lib' : @library o) name k vals restr,
+  forall (lib lib' : @library o) name k vals (restr : @ChoiceSeqRestriction o),
     is_nat_or_seq_kind name
     -> correct_restriction name restr
     -> extend_library_lawless_upto lib lib' name k
-    -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ vals restr)) lib
+    -> entry_in_library (lib_cs name vals) lib
     -> k <= length vals.
 Proof.
   induction lib; introv isn cor ext ilib; simpl in *; tcsp.

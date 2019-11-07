@@ -495,7 +495,7 @@ Definition per_qnat_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) :
 
 
 (* When using [ccequivc], we cannot prove that [per_qtime_eq_bar] is transitive *)
-Definition per_qtime_eq {p} lib (eqa : per) (t t' : @CTerm p) : [U] :=
+Definition per_qtime_eq {p} (lib : library) (eqa : per) (t t' : @CTerm p) : [U] :=
   {x, y : CTerm
   , ccequivc lib t x
   # ccequivc lib t' y
@@ -519,7 +519,6 @@ Definition per_qtime {o}
    # T2 ===>(lib) (mkc_qtime B)
    # in_ext_ext lib (fun lib' x => ts lib' A B (eqa lib' x))
    # eq <=2=> (per_qtime_eq_bar lib eqa)}}.
-
 
 
 Definition compatible_cs_kind (n : nat) (k : cs_kind) :=
@@ -726,18 +725,18 @@ Definition per_base_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) :
 
  *)
 
-Definition computes_to_valc_ceq_bar {o} {lib} (bar : @BarLib o lib) (t1 t2 : @CTerm o) :=
+(*Definition computes_to_valc_ceq_bar {o} {lib} (bar : @BarLib o lib) (t1 t2 : @CTerm o) :=
   e_all_in_bar bar (fun lib => {t : CTerm , t1 ===>(lib) t # ccequivc (*ccequivc_ext*) lib t t2}).
-Notation "t1 ==b==>( bar ) t2" := (computes_to_valc_ceq_bar bar t1 t2) (at level 0).
+Notation "t1 ==b==>( bar ) t2" := (computes_to_valc_ceq_bar bar t1 t2) (at level 0).*)
 
 Definition computes_to_valc_ceq_open {o} (lib : @library o) (t1 t2 : @CTerm o) :=
   in_open_bar lib (fun lib => {t : CTerm , t1 ===>(lib) t # ccequivc (*ccequivc_ext*) lib t t2}).
 Notation "t1 ==o==>( lib ) t2" := (computes_to_valc_ceq_open lib t1 t2) (at level 0).
 
-Definition computes_to_valc_bar {o} {lib} (bar : @BarLib o lib) (a b : @CTerm o) :=
+(*Definition computes_to_valc_bar {o} {lib} (bar : @BarLib o lib) (a b : @CTerm o) :=
   e_all_in_bar bar (fun lib => a ===>(lib) b).
 Notation "a =b==>( bar ) b" := (computes_to_valc_bar bar a b) (at level 0).
-(*Notation "a ==e==>( , lib ) b" := (computes_to_valc_ext lib a b) (at level 0).*)
+(*Notation "a ==e==>( , lib ) b" := (computes_to_valc_ext lib a b) (at level 0).*)*)
 
 
 
@@ -943,8 +942,8 @@ Definition per_req {p} (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
    # eqorceq lib eqa a2 b2
    # eq <=2=> (per_req_eq lib a1 a2 eqa) }}.
 
-Definition per_req_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-  in_bar lib (fun lib' => per_req ts lib' T1 T2 eq).
+(*Definition per_req_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  in_bar lib (fun lib' => per_req ts lib' T1 T2 eq).*)
 
 (**
 
@@ -967,8 +966,8 @@ Definition per_teq {p} (ts : cts(p)) lib T1 T2 (eq : per(p)) : [U] :=
       # ts lib a1 a2 eqa
       # eq <=2=> true_per}}.
 
-Definition per_teq_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-  in_bar lib (fun lib' => per_teq ts lib' T1 T2 eq).
+(*Definition per_teq_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+  in_bar lib (fun lib' => per_teq ts lib' T1 T2 eq).*)
 
 (**
 
@@ -2278,12 +2277,12 @@ Definition close_compute {p} (ts : cts) lib (T1 T2 : @CTerm p) (eq : per(p)) :=
 
 
 
-Definition bar_per_type {o} {lib} (bar : @BarLib o lib) :=
+(*Definition bar_per_type {o} {lib} (bar : @BarLib o lib) :=
   forall (lib1 : library) (br : bar_lib_bar bar lib1)
          (lib2 : library) (ext : lib_extends lib2 lib1),
-    per(o).
+    per(o).*)
 
-Definition bar_per_preserves {o} {lib} {bar : @BarLib o lib}
+(*Definition bar_per_preserves {o} {lib} {bar : @BarLib o lib}
            (eqa : bar_per_type bar) :=
   forall lib1 lib2
          (b1 : bar_lib_bar bar lib1)
@@ -2291,29 +2290,29 @@ Definition bar_per_preserves {o} {lib} {bar : @BarLib o lib}
          lib3
          (ext1 : lib_extends lib3 lib1)
          (ext2 : lib_extends lib3 lib2),
-    (eqa lib1 b1 lib3 ext1) <=2=> (eqa lib2 b2 lib3 ext2).
+    (eqa lib1 b1 lib3 ext1) <=2=> (eqa lib2 b2 lib3 ext2).*)
 
-Record bar_per {o} {lib} (bar : @BarLib o lib) :=
+(*Record bar_per {o} {lib} (bar : @BarLib o lib) :=
   MkBarPer
     {
       bar_per_per  :> bar_per_type bar;
       bar_per_cond : bar_per_preserves bar_per_per;
-    }.
+    }.*)
 
-Notation "bar-per( lib , bar , o )" := (@bar_per o lib bar).
+(*Notation "bar-per( lib , bar , o )" := (@bar_per o lib bar).*)
 
 (*Notation "bar-lib-per( lib , bar , o )" :=
   (forall (lib1 : library) (br : bar_lib_bar bar lib1)
           (lib2 : library) (ext : lib_extends lib2 lib1),
       lib-per(lib2,o)).*)
 
-Definition e_all_in_bar_ext2 {o} {lib}
+(*Definition e_all_in_bar_ext2 {o} {lib}
            (bar : @BarLib o lib)
            (F : forall (lib1 : library) (br : bar_lib_bar bar lib1)
                        (lib2 : library) (ext : lib_extends lib2 lib1),
                Prop) :=
   forall (lib' : library) (b : bar_lib_bar bar lib'),
-    in_ext_ext lib' (F lib' b).
+    in_ext_ext lib' (F lib' b).*)
 
 
 (*Lemma implies_computes_to_valc_seq_bar_raise_bar {o} :
@@ -2340,12 +2339,12 @@ Proof.
   introv; apply per.
 Defined.
 
-Definition sub_bar {o} {lib} (bar1 bar2 : @BarLib o lib) :=
+(*Definition sub_bar {o} {lib} (bar1 bar2 : @BarLib o lib) :=
   forall lib1,
     bar_lib_bar bar1 lib1
-    -> exists lib2, bar_lib_bar bar2 lib2 # lib_extends lib2 lib1.
+    -> exists lib2, bar_lib_bar bar2 lib2 # lib_extends lib2 lib1.*)
 
-Definition bar_per_type_change_bar
+(*Definition bar_per_type_change_bar
            {o} {lib} {bar : @BarLib o lib}
            (per : bar_per_type bar)
            (bar' : @BarLib o lib) : bar_per_type bar'.
@@ -2356,9 +2355,9 @@ Proof.
              exists (br' : bar_lib_bar bar lib'),
                exists (ext : lib_extends lib2 lib'),
                      per lib' br' lib2 ext t1 t2).
-Defined.
+Defined.*)
 
-Definition bar_per_change_bar
+(*Definition bar_per_change_bar
            {o} {lib} {bar : @BarLib o lib}
            (per : bar-per(lib,bar,o))
            (bar' : @BarLib o lib) : bar-per(lib,bar',o).
@@ -2372,7 +2371,7 @@ Proof.
   { exists lib' br' ext; eapply (bar_per_cond _ per); eauto. }
 
   { exists lib' br' ext; eapply (bar_per_cond _ per); eauto. }
-Defined.
+Defined.*)
 
 (*Definition bar_per_type_intersect_left
            {o} {lib} {bar : @BarLib o lib}

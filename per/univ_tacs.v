@@ -779,7 +779,7 @@ Ltac not_univ_p2 :=
   match goal with
     | [ H : computes_to_valc  _ _ _ |- _ ] => complete computes_to_value_isvalue
     | [ H : ccomputes_to_valc _ _ _ |- _ ] => complete computes_to_value_isvalue
-    | [ H : all_in_bar _ (fun lib => ccomputes_to_valc _ _ _) |- _ ] => complete computes_to_value_isvalue
+    (*| [ H : all_in_bar _ (fun lib => ccomputes_to_valc _ _ _) |- _ ] => complete computes_to_value_isvalue*)
     (*| [ H : computes_to_valc_ceq_bar _ _ _ |- _ ] => complete computes_to_valc_ceq_bar_false*)
     (* univi cases *)
     | [ H : univi _ _ (mkc_equality _ _ _) _ _           |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2

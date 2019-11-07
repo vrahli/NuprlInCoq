@@ -710,7 +710,7 @@ Proof.
 Qed.
  *)
 
-Lemma in_ext_ext_implies_all_in_bar_ext {o} :
+(*Lemma in_ext_ext_implies_all_in_bar_ext {o} :
   forall lib (bar : @BarLib o lib) F,
     in_ext_ext lib F
     -> all_in_bar_ext bar F.
@@ -718,7 +718,7 @@ Proof.
   introv i br ext; introv.
   apply i; auto.
 Qed.
-Hint Resolve in_ext_ext_implies_all_in_bar_ext : slow.
+Hint Resolve in_ext_ext_implies_all_in_bar_ext : slow.*)
 
 (*Lemma in_ext_ext_implies_e_all_in_bar_ext {o} :
   forall lib (bar : @BarLib o lib) F,

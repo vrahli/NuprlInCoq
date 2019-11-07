@@ -203,8 +203,10 @@ Proof.
   assert (entry_in_library (lib_cs name e) lib) as i by eauto 2 with slow.
   clear find.
   apply safe in i; simpl in *.
-  destruct e as [vals restr]; simpl in *; repnd.
+  remember (find_restriction (lib_res lib) name) as findr; symmetry in Heqfindr.
+  destruct findr; tcsp.
   apply last_cs_entry_implies_in in lcs.
+  unfold safe_choice_sequence_entry in i; repnd.
   eapply compatible_cs_kind_0_implies_is_nat_restriction in comp; eauto; exrepnd.
   unfold is_nat in comp0; exrepnd; subst.
   exists i1; simpl; auto.

@@ -1282,7 +1282,6 @@ Lemma tequality_mkc_member_implies_sp {o} :
 Proof.
   introv teq mem.
   allrw @tequality_mkc_member_sp; repnd.
-  unfold all_in_ex_bar in *; exrepnd.
 
   unfold member, equality in mem; exrepnd.
   pose proof (nuprl_monotone_func lib A A eq mem1) as tya; exrepnd.

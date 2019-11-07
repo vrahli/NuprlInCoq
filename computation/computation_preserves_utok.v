@@ -212,7 +212,7 @@ Proof.
 Qed.
 
 Lemma not_in_get_utokens_lib_implies_not_in_get_utokens {o} :
-  forall (lib : library) (t : @NTerm o) (a : get_patom_set o),
+  forall (lib : pre_library) (t : @NTerm o) (a : get_patom_set o),
     !LIn a (get_utokens_lib lib t)
     -> !LIn a (get_utokens t).
 Proof.

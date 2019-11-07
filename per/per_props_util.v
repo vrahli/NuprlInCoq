@@ -36,7 +36,7 @@ Require Export choice.
 Require Export cvterm.
 
 
-(* MOVE *)
+(*(* MOVE *)
 Lemma implies_all_in_bar_ext_trivial_bar {o} :
   forall (lib : @library o) F,
     in_ext_ext lib F
@@ -44,7 +44,7 @@ Lemma implies_all_in_bar_ext_trivial_bar {o} :
 Proof.
   introv i br ext; simpl in *.
   eapply i; eauto 3 with slow.
-Qed.
+Qed.*)
 
 Definition pair2lib_per2 {o}
            {lib A B u v}
@@ -93,7 +93,7 @@ Proof.
   simpl in *; auto.
 Qed.
 
-Definition bar_lib_per2lib_per {o}
+(*Definition bar_lib_per2lib_per {o}
            {lib  : @library o}
            {bar  : BarLib lib}
            (feqa : bar-lib-per(lib,bar,o)) : lib-per(lib,o).
@@ -109,7 +109,7 @@ Proof.
   split; introv h; exrepnd.
   - exists lib1 br ext x0; auto.
   - exists lib1 br ext x0; auto.
-Defined.
+Defined.*)
 
 (* !!MOVE *)
 Lemma nuprl_term_equality_symmetric {o} :
@@ -490,7 +490,6 @@ Proof.
   pose proof (nuprl_monotone_func lib T T eq ea1) as tya; exrepnd.
   rename eq' into eqa.
 
-  unfold all_in_ex_bar in *; exrepnd.
   exists (per_bar_eq lib eqa).
   dands; auto; eauto 3 with slow.
 
@@ -559,7 +558,7 @@ Proof.
 Qed.
 Hint Resolve equality_respects_equorsq_bar2 : slow.
 
-Lemma all_in_bar_exists_per_implies_exists {o} :
+(*Lemma all_in_bar_exists_per_implies_exists {o} :
   forall {lib} (bar : @BarLib o lib)
          (F : forall lib' (eqa : per(o)), Prop),
     all_in_bar bar (fun lib' => {eqa : per(o) , F lib' eqa})
@@ -584,7 +583,7 @@ Proof.
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
-Qed.
+Qed.*)
 
 Lemma in_open_bar_implies_in_open_bar_ext {o} :
   forall (lib : @library o) (F : library -> Prop),
@@ -867,7 +866,7 @@ Proof.
 
   - eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd; eauto 3 with slow.
 
-  - unfold ccequivc_bar, ccequivc_ext_bar, all_in_ex_bar in *; exrepnd.
+  - unfold ccequivc_bar, ccequivc_ext_bar in *; exrepnd.
     apply implies_in_open_bar_in_ext; auto.
 Qed.
 

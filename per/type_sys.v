@@ -2098,7 +2098,7 @@ Proof.
   apply cequivc_sym in eqt; apply cequivc_uni_right_iscvalue in eqt; eauto 3 with slow.
 Qed.
 
-Ltac apply_defines_only_universes_bar_left :=
+(*Ltac apply_defines_only_universes_bar_left :=
   match goal with
   | [ H1 : type_system ?ts,
       H2 : defines_only_universes ?ts,
@@ -2123,9 +2123,9 @@ Ltac apply_defines_only_universes_bar_left :=
     autodimp h1 h';[eauto 2 with slow|];[];
     destruct h1 as [i1 h1];
     try (dest_cterms h1; inversion h1; fail)
-  end.
+  end.*)
 
-Ltac apply_defines_only_universes_bar_right :=
+(*Ltac apply_defines_only_universes_bar_right :=
   match goal with
   | [ H1 : type_system ?ts,
       H2 : defines_only_universes ?ts,
@@ -2150,7 +2150,7 @@ Ltac apply_defines_only_universes_bar_right :=
     autodimp h2 h';[eauto 2 with slow|];[];
     destruct h2 as [i2 h2];
     try (dest_cterms h2; inversion h2; fail)
-  end.
+  end.*)
 
 (*Lemma computes_to_uni_in_bar_implies_bar_ceq {o} :
   forall {lib lib' : @library o} (b : @BarLib o lib) T v,
@@ -2309,8 +2309,8 @@ Ltac use_computes_to_uni :=
 Ltac apply_defines_only_universes :=
   first
     [ use_computes_to_uni
-    | apply_defines_only_universes_bar_left
-    | apply_defines_only_universes_bar_right
+    (*| apply_defines_only_universes_bar_left*)
+    (*| apply_defines_only_universes_bar_right*)
     (*| apply_defines_only_universes_bar_ceq_left*)
     (*| apply_defines_only_universes_bar_ceq_right*)
     | apply_defines_only_universes_basic

@@ -35,7 +35,7 @@ Require Export bar.
 Require Export ebar.
 
 
-Lemma choice_sequence_vals_extend_preserves_inf_choice_sequence_vals_extend {o} :
+(*Lemma choice_sequence_vals_extend_preserves_inf_choice_sequence_vals_extend {o} :
   forall (entry0 entry1 : @ChoiceSeqEntry o) entry,
     choice_sequence_vals_extend entry0 entry1
     -> inf_choice_sequence_vals_extend entry entry0
@@ -48,9 +48,9 @@ Proof.
   rewrite select_app_left; auto.
   apply select_lt in sel; auto.
 Qed.
-Hint Resolve choice_sequence_vals_extend_preserves_inf_choice_sequence_vals_extend : slow.
+Hint Resolve choice_sequence_vals_extend_preserves_inf_choice_sequence_vals_extend : slow.*)
 
-Lemma choice_sequence_entry_extend_preserves_inf_choice_sequence_entry_extend {o} :
+(*Lemma choice_sequence_entry_extend_preserves_inf_choice_sequence_entry_extend {o} :
   forall (entry0 entry1 : @ChoiceSeqEntry o) entry,
     choice_sequence_entry_extend entry0 entry1
     -> inf_choice_sequence_entry_extend entry entry0
@@ -61,9 +61,9 @@ Proof.
   unfold choice_sequence_entry_extend in *; repnd.
   dands; try congruence; eauto 3 with slow.
 Qed.
-Hint Resolve choice_sequence_entry_extend_preserves_inf_choice_sequence_entry_extend : slow.
+Hint Resolve choice_sequence_entry_extend_preserves_inf_choice_sequence_entry_extend : slow.*)
 
-Lemma entry_extends_preserves_inf_entry_extends {o} :
+(*Lemma entry_extends_preserves_inf_entry_extends {o} :
   forall (e' e : @library_entry o) ie,
     entry_extends e' e
     -> inf_entry_extends ie e'
@@ -73,7 +73,7 @@ Proof.
   destruct ie, e', e; simpl in *; repnd; subst; dands; tcsp; ginv; eauto 3 with slow;
     try (complete (inversion ext1; subst; auto)).
 Qed.
-Hint Resolve entry_extends_preserves_inf_entry_extends : slow.
+Hint Resolve entry_extends_preserves_inf_entry_extends : slow.*)
 
 Lemma entry_extends_preserves_inf_matching_entries {o} :
   forall (e' e : @library_entry o) ie,
@@ -88,7 +88,7 @@ Proof.
 Qed.
 Hint Resolve entry_extends_preserves_inf_matching_entries : slow.
 
-Lemma entry_extends_preserves_entry_in_inf_library_extends {o} :
+(*Lemma entry_extends_preserves_entry_in_inf_library_extends {o} :
   forall n (entry' entry : @library_entry o) infLib,
     entry_extends entry' entry
     -> entry_in_inf_library_extends entry' n infLib
@@ -100,9 +100,9 @@ Proof.
   dands; eauto 3 with slow.
   introv m; destruct i0; eauto 3 with slow.
 Qed.
-Hint Resolve entry_extends_preserves_entry_in_inf_library_extends : slow.
+Hint Resolve entry_extends_preserves_entry_in_inf_library_extends : slow.*)
 
-Lemma choice_sequence_entry_extend_preserves_is_default_choice_seq_entry {o} :
+(*Lemma choice_sequence_entry_extend_preserves_is_default_choice_seq_entry {o} :
   forall (entry' entry : @ChoiceSeqEntry o),
     choice_sequence_entry_extend entry' entry
     -> is_default_choice_seq_entry entry'
@@ -121,9 +121,9 @@ Proof.
   - pose proof (q n v) as q.
     rewrite select_app_l in q; eauto 3 with slow.
 Qed.
-Hint Resolve choice_sequence_entry_extend_preserves_is_default_choice_seq_entry : slow.
+Hint Resolve choice_sequence_entry_extend_preserves_is_default_choice_seq_entry : slow.*)
 
-Lemma entry_extends_preserves_is_cs_default_entry {o} :
+(*Lemma entry_extends_preserves_is_cs_default_entry {o} :
   forall (entry entry' : @library_entry o),
     entry_extends entry' entry
     -> is_cs_default_entry entry'
@@ -133,9 +133,9 @@ Proof.
   unfold is_cs_default_entry, entry_extends in *.
   destruct entry, entry'; repnd; subst; tcsp; dands; ginv; eauto 3 with slow.
 Qed.
-Hint Resolve entry_extends_preserves_is_cs_default_entry : slow.
+Hint Resolve entry_extends_preserves_is_cs_default_entry : slow.*)
 
-Lemma entry_extends_preserves_entry_in_inf_library_default {o} :
+(*Lemma entry_extends_preserves_entry_in_inf_library_default {o} :
   forall (entry entry' : @library_entry o) infLib,
     entry_extends entry' entry
     -> entry_in_inf_library_default entry' infLib
@@ -146,7 +146,7 @@ Proof.
   dands; eauto 3 with slow.
   introv xx; destruct (w0 n); eauto 3 with slow.
 Qed.
-Hint Resolve entry_extends_preserves_entry_in_inf_library_default : slow.
+Hint Resolve entry_extends_preserves_entry_in_inf_library_default : slow.*)
 
 (*Lemma inf_lib_extends_lib_extends_trans {o} :
   forall infLib (lib' lib : @library o),
