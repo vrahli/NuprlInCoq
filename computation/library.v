@@ -208,8 +208,8 @@ Definition RestrictionPred {o} := nat -> @CTerm o -> Prop.
 Definition RestrictionPredLibCond {o} :=
   nat -> @CTerm o -> @pre_library o -> Prop.
 
-Definition RestrictionPredLib {o} (Q : RestrictionPredLibCond) :=
-  forall (n : nat) (v : @CTerm o), {lib : @pre_library o | Q n v lib}.
+(*Definition RestrictionPredLib {o} (Q : RestrictionPredLibCond) :=
+  forall (n : nat) (v : @CTerm o), {lib : @pre_library o | Q n v lib}.*)
 
 Inductive ChoiceSeqRestriction {o} :=
 (* constrains the values of the sequence to have that type *)
@@ -218,7 +218,7 @@ Inductive ChoiceSeqRestriction {o} :=
 (* constrains the values of the sequence to follow the law given by the function *)
 | csc_coq_law (f : nat -> @CTerm o)
 (* no default *)
-| csc_res (Q : @RestrictionPredLibCond o) (M : RestrictionPredLib Q).
+| csc_res (Q : @RestrictionPredLibCond o) (*(M : RestrictionPredLib Q)*).
 
 (* no constraints *)
 Definition csc_no {o} : @ChoiceSeqRestriction o :=

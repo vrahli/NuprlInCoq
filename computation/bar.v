@@ -48,7 +48,7 @@ Definition inf_choice_sequence_satisfies_restriction {o}
   match constraint with
   | csc_type d M Md => forall n, on_some (vals n) (M n) False
   | csc_coq_law f => forall n, on_some (vals n) (fun v => v = f n) False
-  | csc_res Q M => forall n, on_some (vals n) (fun v => exists l, Q n v l) True
+  | csc_res Q => forall n, on_some (vals n) (fun v => exists l, Q n v l) True
   end.
 
 (*Definition ex_choice {o}
@@ -134,7 +134,7 @@ Definition is_default_inf_choice_sequence {o}
   match constraint with
   | csc_type d M Md => forall n, on_some (vals n) (fun v => v = d n) False
   | csc_coq_law f => forall n, on_some (vals n) (fun v => v = f n) False
-  | csc_res Q M => False (* no default values *)
+  | csc_res Q => False (* no default values *)
   end.
 
 Definition is_default_inf_choice_seq_entry {o}
@@ -233,7 +233,7 @@ Definition is_default_choice_sequence {o}
   match constraint with
   | csc_type d M Md => forall n v, select n vals = Some v -> v = d n
   | csc_coq_law f => forall n v, select n vals = Some v -> v = f n
-  | csc_res Q M => True
+  | csc_res Q => True
   end.
 
 (*Definition is_default_choice_seq_entry {o}
@@ -470,7 +470,7 @@ Definition restriction2default {o}
   match r with
   | csc_type d _ _ => fun n => Some (d n)
   | csc_coq_law f => fun n => Some (f n)
-  | csc_res _ _ => fun _ => None (* no default values *)
+  | csc_res _ => fun _ => None (* no default values *)
   end.
 
 (*
@@ -1617,10 +1617,12 @@ Definition safe_choice_seq_restriction_upto {o}
            (restr : @ChoiceSeqRestriction o)
            (lib   : @library o) :=
   match restr with
-  | csc_res Q M =>
+  | csc_res Q =>
     forall n v,
       select n vals = Some v
-      -> lib_extends lib (mk_lib_keep_restrictions_in (proj1_sig (M n v)) (lib_res lib))
+      -> exists l,
+        Q n v l
+        /\ lib_extends lib (mk_lib_keep_restrictions_in l (lib_res lib))
   | _ => True
   end.
 
@@ -1799,9 +1801,9 @@ Qed.
 Hint Resolve add_choice_csc_type_preserves_safe_rev : slow.
 
 Lemma add_choice_csc_res_preserves_safe_rev {o} :
-  forall name v (lib : @pre_library o) n Q M lib' R,
+  forall name v (lib : @pre_library o) n Q lib' R,
     add_choice name v lib = (n, lib')
-    -> find_restriction R name = Some (csc_res Q M)
+    -> find_restriction R name = Some (csc_res Q)
     -> (exists l, Q n v l)
     -> safe_library (MkLibrary lib' R)
     -> safe_library (MkLibrary lib R).
@@ -1907,15 +1909,16 @@ Proof.
     pose proof (lib_extends_res
                   (lib_cs name vals :: lib)
                   name a (length vals)
-                  Q M
+                  Q
                   (lib_cs name (snoc vals a) :: lib)
-                  (MkRes name (csc_res Q M) :: lib_res lib)) as w.
+                  (MkRes name (csc_res Q) :: lib_res lib)
+                  l) as w.
     repeat (autodimp w hyp); eauto; try unfold add_choice; simpl; boolvar; tcsp;[].
     eapply lib_extends_trans;[eauto|].
-    dup safe' as j.
+    dup safe'0 as j.
     eapply lib_extends_preserves_not_in_lib in j;[|eauto]; simpl in j.
     unfold mk_lib_keep_restrictions_in; simpl.
-    remember (found_entry_sign (proj1_sig (M (Datatypes.length vals) a)) (entry_name_cs name)) as b.
+    remember (found_entry_sign l (entry_name_cs name)) as b.
     destruct b; auto; symmetry in Heqb;[].
     eapply found_entry_sign_implies_in_lib in Heqb; tcsp. }
 Qed.
@@ -6221,7 +6224,7 @@ Definition memNat_restriction {o} (restr : @ChoiceSeqRestriction o) : Prop :=
   match restr with
   | csc_type d M Md => forall n x, M n x <-> is_nat n x
   | csc_coq_law f => True
-  | csc_res Q M => False
+  | csc_res Q => False
   end.
 
 Definition has_memNat_restriction {o} (r : @restriction o) name : Prop :=

@@ -80,7 +80,7 @@ Definition choice_sequence_satisfies_restriction {o}
     forall n v, select n vals = Some v -> M n v (* TODO: Is that going to be enough? *)
   | csc_coq_law f =>
     forall (i : nat), i < length vals -> select i vals = Some (f i)
-  | csc_res Q M =>
+  | csc_res Q =>
     forall n v, select n vals = Some v -> exists lib, Q n v lib
   end.
 
@@ -158,7 +158,7 @@ Definition same_restrictions {o} (restr1 restr2 : @ChoiceSeqRestriction o) :=
     (forall n, d1 n = d2 n)
     /\ (forall n v, M1 n v <-> M2 n v)
   | csc_coq_law f1, csc_coq_law f2 => forall n, f1 n = f2 n
-  | csc_res Q1 M1, csc_res Q2 M2 => forall n v, Q1 n v = Q2 n v
+  | csc_res Q1, csc_res Q2 => forall n v, Q1 n v = Q2 n v
   | _, _ => False
   end.
 
@@ -296,7 +296,7 @@ Definition choice_satisfies_restriction {o}
   match restr with
   | csc_type d M Md => M n v
   | csc_coq_law f => f n = v
-  | csc_res Q M => exists l, Q n v l
+  | csc_res Q => exists l, Q n v l
   end.
 
 Fixpoint add_choice {o} (name : choice_sequence_name) (t : @ChoiceSeqVal o) (lib : @pre_library o) : nat * pre_library :=
@@ -403,11 +403,12 @@ Inductive lib_extends {o} : @library o -> @library o -> Prop :=
       -> f n = v
       -> lib_extends (MkLibrary lib' R) (MkLibrary lib R)
 | lib_extends_res :
-    forall lib name v n Q M lib' R,
+    forall lib name v n Q lib' R l,
       add_choice name v lib = (n, lib')
-      -> find_restriction R name = Some (csc_res Q M)
+      -> find_restriction R name = Some (csc_res Q)
+      -> Q n v l
       (* It should be good enough to restrict R to the names in [(proj1_sig (M n v))] *)
-      -> lib_extends (MkLibrary lib R) (mk_lib_keep_restrictions_in (proj1_sig (M n v)) R)
+      -> lib_extends (MkLibrary lib R) (mk_lib_keep_restrictions_in l R)
       -> lib_extends (MkLibrary lib' R) (MkLibrary lib R).
 Hint Constructors lib_extends.
 
@@ -653,10 +654,10 @@ Qed.
 Hint Resolve implies_safe_choice_sequence_entry_snoc_law : slow.
 
 Lemma implies_safe_choice_sequence_entry_snoc_res {o} :
-  forall name (vals : @ChoiceSeqVals o) v (Q : RestrictionPredLibCond) M l,
+  forall name (vals : @ChoiceSeqVals o) v (Q : RestrictionPredLibCond) l,
     Q (length vals) v l
-    -> safe_choice_sequence_entry name vals (csc_res Q M)
-    -> safe_choice_sequence_entry name (snoc vals v) (csc_res Q M).
+    -> safe_choice_sequence_entry name vals (csc_res Q)
+    -> safe_choice_sequence_entry name (snoc vals v) (csc_res Q).
 Proof.
   introv cond h.
   unfold safe_choice_sequence_entry in *; repnd; dands; auto.
@@ -699,9 +700,9 @@ Qed.
 Hint Resolve add_choice_csc_coq_law_preserves_safe : slow.
 
 Lemma add_choice_csc_res_preserves_safe {o} :
-  forall name v (lib : @pre_library o) n Q M lib' R,
+  forall name v (lib : @pre_library o) n Q lib' R,
     add_choice name v lib = (n, lib')
-    -> find_restriction R name = Some (csc_res Q M)
+    -> find_restriction R name = Some (csc_res Q)
     -> (exists l, Q n v l)
     -> safe_library (MkLibrary lib R)
     -> safe_library (MkLibrary lib' R).
