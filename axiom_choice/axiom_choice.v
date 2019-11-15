@@ -1417,10 +1417,12 @@ Lemma stored_in_mk_cs_res_pred {o} :
          {Flib : NatFunLibExt lib}
          (Fnat : NatFunLibExtNat Flib)
          name k vals1 vals2 t,
-    lib_extends lib2 lib1
+    wf_lib lib
+    -> lib_extends lib2 lib1
     -> lib_extends lib1 lib
-    -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ vals2 (csc_res (mk_cs_res_pred Fnat)))) lib2
-    -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ vals1 (csc_res (mk_cs_res_pred Fnat)))) lib1
+    -> entry_in_library (lib_cs name vals2) lib2
+    -> entry_in_library (lib_cs name vals1) lib1
+    -> find_restriction (lib_res lib1) name = Some (mk_cs_res_csr Fnat)
     -> length vals1 <= k
     -> select k vals2 = Some t
     -> exists (liba : library) (exta : lib_extends liba lib)
@@ -1429,10 +1431,10 @@ Lemma stored_in_mk_cs_res_pred {o} :
               (extw : lib_extends lib2 libb),
           t = mkc_nat (Fnat k liba exta libb extb extz).
 Proof.
-  introv ext.
+  introv wf ext.
   revert dependent lib.
   revert vals1 vals2 t.
-  lib_ext_ind ext Case; introv ext' i j len sel.
+  lib_ext_ind ext Case; introv wf ext' i j fr len sel.
 
   { Case "lib_ext_refl".
     eapply two_entry_in_library_implies_or in i; try exact j.
@@ -1446,8 +1448,6 @@ Proof.
     applydup q in j.
     apply entry_in_library_extends_implies_entry_in_library in j0; exrepnd.
     destruct entry'; simpl in *; ginv; repnd; subst.
-    destruct entry as [vals restr]; simpl in *.
-    unfold choice_sequence_entry_extend in j1; simpl in *; repnd; subst.
     unfold choice_sequence_vals_extend in j1; exrepnd; subst.
 
     destruct (dec_le (length (vals1 ++ vals0)) k) as [d|d].
@@ -1462,8 +1462,6 @@ Proof.
         applydup h in j0.
         apply entry_in_library_extends_implies_entry_in_library in j1; exrepnd.
         destruct entry'; simpl in *; ginv; repnd; subst.
-        destruct entry as [vals restr]; simpl in *.
-        unfold choice_sequence_entry_extend in j2; simpl in *; repnd; subst.
         unfold choice_sequence_vals_extend in j2; exrepnd; subst.
         eapply two_entry_in_library_implies_or in j1; try exact i; simpl in j1;[].
         unfold matching_entries in j1; simpl in j1.
@@ -1492,7 +1490,8 @@ Proof.
 
   { Case "lib_ext_cs".
     eapply add_choice_implies in addc; eauto.
-    simpl in *; repndors; exrepnd; ginv;[].
+    simpl in *.
+    repndors; exrepnd; ginv; try (complete (rewrite findr in *; ginv));[].
     eapply two_entry_in_library_implies_or in addc0; try exact i; simpl in addc0;[].
     unfold matching_entries in addc0; simpl in addc0.
     repndors; tcsp; ginv;[].
@@ -1500,7 +1499,7 @@ Proof.
 
   { Case "lib_ext_law".
     eapply add_choice_implies in addc; eauto.
-    simpl in *; repndors; exrepnd; ginv;[].
+    simpl in *; repndors; exrepnd; ginv; try (complete (rewrite findr in *; ginv));[].
     eapply two_entry_in_library_implies_or in addc0; try exact i; simpl in addc0;[].
     unfold matching_entries in addc0; simpl in addc0.
     repndors; tcsp; ginv;[].
@@ -1508,8 +1507,7 @@ Proof.
 
   { Case "lib_ext_res".
     rename_hyp_with @add_choice ac.
-    rename_hyp_with ex_intro exi.
-    assert (lib_extends lib' lib) as xta by eauto.
+    assert (lib_extends (MkLibrary lib' R) (MkLibrary lib R)) as xta by eauto.
     eapply add_choice_implies in ac; eauto.
     simpl in *; repndors; exrepnd; ginv.
 
@@ -1525,18 +1523,42 @@ Proof.
     rewrite select_snoc_eq in sel.
     boolvar; tcsp; ginv; try omega;[].
 
-    unfold mk_cs_res_pred in *; exrepnd; simpl in *.
+    rewrite fr in *.
+    inversion addc as [xx]; clear addc; subst Q.
 
-    assert (mk_cs_res_pred_cond Fnat (length vals) t addc) as xx.
-    {
+    unfold mk_cs_res_pred_cond in findr.
+    exrepnd; simpl in *.
 
- admit. }
+
+
+
+
+    (*
+
+      we want to show that [mk_lib_keep_restrictions_in l R]
+      is essentially [MkLibrary l R2]
+      - 1st, we should be able to change the restriction R2 to R, since they are all "safe"
+      We'll have to change R2 to R in the 'ext' hypotheses, but we cannot change the restrictions
+      of the Flib library.  Should we require that it can have a different list of restrictions
+      in the constrains?
+
+      But we cannot change the restrictions in 'findr0'...
+
+     *)
+
+(*    Lemma xxx {o} :
+      forall (lib : @library o),
+        safe_library lib
+        -> lib_extends (MkLibrary lib1 R1) lib0
+        -> lib_extends (MkLibrary lib1 R1) lib0
 
     unfold mk_cs_res_pred_cond in xx; exrepnd.
     assert (lib_extends lib' addc) as xtb by eauto 3 with slow.
     exists lib1 ext1 addc ext2 extz xtb; auto. }
-Admitted.
+*)
+Abort.
 
+(*
 Lemma find_cs_extends_stack0_implies_exists_nat {o} :
   forall k name
          (lib  : @library o)
@@ -1781,7 +1803,7 @@ XXXXxx
 Qed.*)
 
 
-
+(*
 XXXXXXXx
   apply collapse_all_in_ex_bar.
   introv xtc.
@@ -1808,7 +1830,10 @@ XXXXXXXx
   exists i.
 
   apply (implies_ccomputes_to_valc_ext_apply_cs lib3 lib'4 name (mkc_nat k) k i); eauto 3 with slow.
-Qed.
+*)
+Abort.
+
+Abort.
 
 Lemma mkc_apply_lam_ax_comp_ax {o} :
   forall (lib : @library o) a,
