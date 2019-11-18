@@ -72,9 +72,9 @@ Definition choice_sequence_vals_extend {o} (vals1 vals2 : @ChoiceSeqVals o) : Pr
 Definition Mem {o} := @ChoiceSeqVal o -> Prop.*)
 
 
-Definition choice_sequence_satisfies_restriction {o}
+Definition choice_sequence_satisfies_restriction {o} {L}
            (vals       : @ChoiceSeqVals o)
-           (constraint : ChoiceSeqRestriction) : Prop :=
+           (constraint : ChoiceSeqRestriction L) : Prop :=
   match constraint with
   | csc_type d M Md =>
     forall n v, select n vals = Some v -> M n v (* TODO: Is that going to be enough? *)
@@ -98,7 +98,7 @@ Proof.
 Qed.
 Hint Resolve is_nat_zero : slow.
 
-Definition csc_nat {o} : @ChoiceSeqRestriction o :=
+Definition csc_nat {o} {L} : @ChoiceSeqRestriction o L :=
   csc_type (fun _ => mkc_zero) is_nat is_nat_zero.
 (* =============== *)
 
@@ -131,7 +131,7 @@ Proof.
 Qed.
 Hint Resolve natSeq2default_restr : slow.
 
-Definition csc_seq {o} (l : list nat) : @ChoiceSeqRestriction o :=
+Definition csc_seq {o} {L} (l : list nat) : @ChoiceSeqRestriction o L :=
   csc_type (natSeq2default l) (natSeq2restrictionPred l) (natSeq2default_restr l).
 
 (*(*
@@ -152,7 +152,7 @@ Proof.
 Qed.
 Hint Resolve extension_satisfies_restriction_refl : slow.*)
 
-Definition same_restrictions {o} (restr1 restr2 : @ChoiceSeqRestriction o) :=
+Definition same_restrictions {o} {L} (restr1 restr2 : @ChoiceSeqRestriction o L) :=
   match restr1, restr2 with
   | csc_type d1 M1 Md1, csc_type d2 M2 Md2 =>
     (forall n, d1 n = d2 n)
@@ -211,16 +211,16 @@ Definition is0kind (name : choice_sequence_name) : bool :=
   | _ => false
   end.
 
-Definition is_nat_restriction {o} (restr : @ChoiceSeqRestriction o) :=
+Definition is_nat_restriction {o} {L} (restr : @ChoiceSeqRestriction o L) :=
   restr = csc_nat.
 
 Definition cterm_is_nth {o} (t : @CTerm o) n l :=
   exists i, select n l = Some i /\ t = mkc_nat i.
 
-Definition is_nat_seq_restriction {o} (l : list nat) (restr : @ChoiceSeqRestriction o) :=
+Definition is_nat_seq_restriction {o} {L} (l : list nat) (restr : @ChoiceSeqRestriction o L) :=
   restr = csc_seq l.
 
-Definition correct_restriction {o} (name : choice_sequence_name) (restr : @ChoiceSeqRestriction o) :=
+Definition correct_restriction {o} {L} (name : choice_sequence_name) (restr : @ChoiceSeqRestriction o L) :=
   match csn_kind name with
   | cs_kind_nat n =>
     if deq_nat n 0 then is_nat_restriction restr
@@ -246,7 +246,7 @@ Definition upd_restr_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntr
   else e.
 *)
 
-Fixpoint find_restriction {o} (l : @restrictions o) name : option (@ChoiceSeqRestriction o) :=
+Fixpoint find_restriction {o} {L} (l : @restrictions o L) name : option (@ChoiceSeqRestriction o L) :=
   match l with
   | [] => None
   | MkRes name' r :: l =>
@@ -254,14 +254,14 @@ Fixpoint find_restriction {o} (l : @restrictions o) name : option (@ChoiceSeqRes
     else find_restriction l name
   end.
 
-Definition safe_choice_sequence_entry {o}
+Definition safe_choice_sequence_entry {o} {L}
            (name  : choice_sequence_name)
            (vals  : @ChoiceSeqVals o)
-           (restr : @ChoiceSeqRestriction o) :=
+           (restr : @ChoiceSeqRestriction o L) :=
   correct_restriction name restr
   /\ choice_sequence_satisfies_restriction vals restr.
 
-Definition safe_library_entry {o} (R : restrictions) (e : @library_entry o) :=
+Definition safe_library_entry {o} {L} (R : restrictions L) (e : @library_entry o) :=
   match e with
   | lib_cs name vals =>
     match find_restriction R name with
@@ -271,10 +271,21 @@ Definition safe_library_entry {o} (R : restrictions) (e : @library_entry o) :=
   | _ => True
   end.
 
+
+Definition lib2L {o} (lib : @library o) : @libraryL o (match lib_lvl lib with
+                                                       | 0 => False
+                                                       | S n => @libraryn o n
+                                                       end).
+Proof.
+  destruct lib as [lvl lib], lvl; exact lib.
+Qed.
+(*Coercion lib2L : library >-> libraryL.*)
+
+
 Definition safe_library {o} (lib : @library o) :=
   forall entry,
     entry_in_library entry lib
-    -> safe_library_entry (lib_res lib) entry.
+    -> safe_library_entry (lib_res (lib2L lib)) entry.
 
 Definition subset_library {o} (lib1 lib2 : @pre_library o) :=
   forall entry1,
@@ -289,10 +300,10 @@ Definition lib_extends_entries {o} (lib1 lib0 : @pre_library o) :=
     entry_in_library entry lib0
     -> entry_in_library_extends entry lib1.
 
-Definition choice_satisfies_restriction {o}
+Definition choice_satisfies_restriction {o} {L}
            (n     : nat)
            (v     : @ChoiceSeqVal o)
-           (restr : ChoiceSeqRestriction) : Prop :=
+           (restr : ChoiceSeqRestriction L) : Prop :=
   match restr with
   | csc_type d M Md => M n v
   | csc_coq_law f => f n = v
@@ -348,17 +359,30 @@ Fixpoint add_choice {o} (name : choice_sequence_name) (t : @ChoiceSeqVal o) (lib
 Definition not_in_lib {o} (name : EntryName) (lib : @pre_library o) :=
   !List.In name (map entry2name lib).
 
-Definition add_entry {o} (e : @library_entry o) (lib : @library o) : library :=
-  MkLibrary
-    (e :: lib_lib lib)
-    (lib_res lib).
+Definition on_pre_lib {o} (lib: @library o) (f : @pre_library o -> @pre_library o) : @library o.
+Proof.
+  destruct lib as [lvl lib].
+  destruct lvl; simpl in lib; destruct lib as [lib R].
+  { exact (MkLibrary 0 (MkLibraryL (f lib) R)). }
+  { exact (MkLibrary (S lvl) (MkLibraryL (f lib) R)). }
+Defined.
 
-Definition add_cs {o} (name : choice_sequence_name) (r : ChoiceSeqRestriction) (lib : @library o) : library :=
-  MkLibrary
+Definition add_entry {o} {n}
+           (e   : @library_entry o)
+           (lib : @libraryn o (S n)) : @libraryn o (S n) :=
+  MkLibraryL (e :: lib) (lib_res lib).
+
+Definition ChoiceSeqRestrictionN {o} n := @ChoiceSeqRestriction o (@libraryn o n).
+
+Definition add_cs {o} {n}
+           (name : choice_sequence_name)
+           (r    : ChoiceSeqRestrictionN n)
+           (lib  : @libraryn o (S n)) : libraryn (S n) :=
+  MkLibraryL
     (lib_cs name [] :: lib_lib lib)
     (MkRes name r :: lib_res lib).
 
-Fixpoint keep_restrictions_in {o} (R : @restrictions o) (lib : @pre_library o) : restrictions :=
+Fixpoint keep_restrictions_in {o} {L} (R : @restrictions o L) (lib : @pre_library o) : restrictions L :=
   match R with
   | [] => []
   | MkRes name r :: K =>
@@ -367,24 +391,36 @@ Fixpoint keep_restrictions_in {o} (R : @restrictions o) (lib : @pre_library o) :
     else keep_restrictions_in K lib
   end.
 
-Definition mk_lib_keep_restrictions_in {o} (lib : @pre_library o) (R : @restrictions o) : library :=
-  MkLibrary
+Definition restrictionsN {o} n := @restrictions o (@libraryn o n).
+
+Definition mk_lib_keep_restrictions_in {o} {n} (lib : @pre_library o) (R : @restrictionsN o n) : @libraryn o (S n) :=
+  MkLibraryL
     lib
     (keep_restrictions_in R lib).
 
-Inductive lib_extends {o} : @library o -> @library o -> Prop :=
+Definition pre_libraryn {o} n : Type :=
+  match n with
+  | 0 => False
+  | S n => @libraryn o n
+  end.
+
+Inductive lib_extends {o} :
+  forall {n} (lib1 : @libraryn o n) {m} (lib2 : @libraryn o m), Prop :=
 | lib_extends_ref :
-    forall (lib : library),
+    forall {n} (lib : libraryn n),
       lib_extends lib lib
 | lib_extends_trans :
-    forall (lib1 lib2 lib3 : library),
+    forall {n} (lib1 : libraryn n)
+           {m} (lib2 : libraryn m)
+           {k} (lib3 : libraryn k),
       lib_extends lib1 lib2
       -> lib_extends lib2 lib3
       -> lib_extends lib1 lib3
 | lib_extends_new_abs :
-    forall (lib : library) op vars rhs correct,
+    forall {n} (lib : libraryn n) op vars rhs correct,
       !in_lib (entry_name_abs op) lib
-      -> lib_extends (add_entry (lib_abs op vars rhs correct) lib) lib
+      -> lib_extends (add_entry (lib_abs op vars rhs correct) lib) lib.
+
 | lib_extends_new_cs :
     forall (lib : library) name restr,
       correct_restriction name restr

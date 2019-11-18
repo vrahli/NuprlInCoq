@@ -205,48 +205,76 @@ Definition emlib {o} : @pre_library o := [].
 
 Definition RestrictionPred {o} := nat -> @CTerm o -> Prop.
 
-Definition RestrictionPredLibCond {o} :=
-  nat -> @CTerm o -> @pre_library o -> Prop.
+Definition RestrictionPredLibCond {o} (L : Type) :=
+  nat -> @CTerm o -> L -> Prop.
 
 (*Definition RestrictionPredLib {o} (Q : RestrictionPredLibCond) :=
   forall (n : nat) (v : @CTerm o), {lib : @pre_library o | Q n v lib}.*)
 
-Inductive ChoiceSeqRestriction {o} :=
+Inductive ChoiceSeqRestriction {o} (L : Type) :=
 (* constrains the values of the sequence to have that type *)
 (* [d] is a default value e*)
 | csc_type (d : nat -> @ChoiceSeqVal o) (typ : @RestrictionPred o) (typd : forall n, typ n (d n))
 (* constrains the values of the sequence to follow the law given by the function *)
 | csc_coq_law (f : nat -> @CTerm o)
 (* no default *)
-| csc_res (Q : @RestrictionPredLibCond o) (*(M : RestrictionPredLib Q)*).
+| csc_res (Q : @RestrictionPredLibCond o L) (*(M : RestrictionPredLib Q)*).
+Arguments csc_type    [o] [L] _ _ _.
+Arguments csc_coq_law [o] [L] _.
+Arguments csc_res     [o] [L] _.
 
 (* no constraints *)
-Definition csc_no {o} : @ChoiceSeqRestriction o :=
+Definition csc_no {o} {L} : @ChoiceSeqRestriction o L :=
   csc_type (fun _ => mkc_zero) (fun _ _ => True) (fun _ => I).
 
 (* A way to define a coq law using the type restriction *)
-Definition csc_coq_law_as_type {o} (f : nat -> @CTerm o) : @ChoiceSeqRestriction o :=
+Definition csc_coq_law_as_type {o} {L} (f : nat -> @CTerm o) : @ChoiceSeqRestriction o L :=
   csc_type f (fun n v => v = f n) (fun _ => eq_refl).
 
-Record restriction {o} :=
+Record restriction {o} L :=
   MkRes
     {
       res_name : choice_sequence_name;
-      res_res  : @ChoiceSeqRestriction o;
+      res_res  : @ChoiceSeqRestriction o L;
     }.
-Arguments MkRes [o] _ _.
+Arguments MkRes    [o] [L] _ _.
+Arguments res_name [o] [L] _.
+Arguments res_res  [o] [L] _.
 
-Definition restrictions {o} := list (@restriction o).
+Definition restrictions {o} L := list (@restriction o L).
+
+Record libraryL {o} L :=
+  MkLibraryL
+    {
+      lib_lib :> @pre_library o;
+      lib_res : @restrictions o L;
+    }.
+Arguments MkLibraryL [o] [L] _ _.
+Arguments lib_lib    [o] [L] _.
+Arguments lib_res    [o] [L] _.
+
+Fixpoint libraryn {o} (n : nat) : Type :=
+  @libraryL o match n with
+              | 0 => False
+              | S n => @libraryn o n
+              end.
+
+Definition libraryn2list {o} {n} : @libraryn o n -> list library_entry :=
+  match n with
+  | 0 => fun lib => lib_lib lib
+  | S _ => fun lib => lib_lib lib
+  end.
+Coercion libraryn2list : libraryn >-> list.
 
 Record library {o} :=
   MkLibrary
     {
-      lib_lib :> @pre_library o;
-      lib_res : @restrictions o;
+      lib_lvl  : nat;
+      lib_libn :> @libraryn o lib_lvl;
     }.
 Arguments MkLibrary [o] _ _.
 
-Definition lib2list {o} (lib : @library o) : list library_entry := lib_lib lib.
+Definition lib2list {o} (lib : @library o) : list library_entry := lib.
 Coercion lib2list : library >-> list.
 
 Ltac dlib lib :=
