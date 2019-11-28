@@ -71,8 +71,10 @@ Definition choice_sequence_vals_extend {o} (vals1 vals2 : @ChoiceSeqVals o) : Pr
 (*(* MOVE: Move to library.v and use it in [csc_type]'s definition! *)
 Definition Mem {o} := @ChoiceSeqVal o -> Prop.*)
 
+Definition InhAt {o} := @library o -> @CTerm o -> Prop.
 
 Definition choice_sequence_satisfies_restriction {o}
+           (inh        : InhAt)
            (vals       : @ChoiceSeqVals o)
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
@@ -80,8 +82,8 @@ Definition choice_sequence_satisfies_restriction {o}
     forall n v, select n vals = Some v -> M n v (* TODO: Is that going to be enough? *)
   | csc_coq_law f =>
     forall (i : nat), i < length vals -> select i vals = Some (f i)
-  | csc_res Q =>
-    forall n v, select n vals = Some v -> exists lib, Q n v lib
+  | csc_res P =>
+    forall n v, select n vals = Some v -> exists lib, inh lib (mkc_apply2 P (mkc_nat n) v)
   end.
 
 
@@ -158,7 +160,7 @@ Definition same_restrictions {o} (restr1 restr2 : @ChoiceSeqRestriction o) :=
     (forall n, d1 n = d2 n)
     /\ (forall n v, M1 n v <-> M2 n v)
   | csc_coq_law f1, csc_coq_law f2 => forall n, f1 n = f2 n
-  | csc_res Q1, csc_res Q2 => forall n v, Q1 n v = Q2 n v
+  | csc_res P1, csc_res P2 => P1 = P2
   | _, _ => False
   end.
 
@@ -255,26 +257,30 @@ Fixpoint find_restriction {o} (l : @restrictions o) name : option (@ChoiceSeqRes
   end.
 
 Definition safe_choice_sequence_entry {o}
+           (inh   : InhAt)
            (name  : choice_sequence_name)
            (vals  : @ChoiceSeqVals o)
            (restr : @ChoiceSeqRestriction o) :=
   correct_restriction name restr
-  /\ choice_sequence_satisfies_restriction vals restr.
+  /\ choice_sequence_satisfies_restriction inh vals restr.
 
-Definition safe_library_entry {o} (R : restrictions) (e : @library_entry o) :=
+Definition safe_library_entry {o}
+           (inh : InhAt)
+           (R   : restrictions)
+           (e   : @library_entry o) :=
   match e with
   | lib_cs name vals =>
     match find_restriction R name with
-    | Some res => safe_choice_sequence_entry name vals res
+    | Some res => safe_choice_sequence_entry inh name vals res
     | None => False
     end
   | _ => True
   end.
 
-Definition safe_library {o} (lib : @library o) :=
+Definition safe_library {o} inh (lib : @library o) :=
   forall entry,
     entry_in_library entry lib
-    -> safe_library_entry (lib_res lib) entry.
+    -> safe_library_entry inh (lib_res lib) entry.
 
 Definition subset_library {o} (lib1 lib2 : @pre_library o) :=
   forall entry1,
@@ -289,15 +295,15 @@ Definition lib_extends_entries {o} (lib1 lib0 : @pre_library o) :=
     entry_in_library entry lib0
     -> entry_in_library_extends entry lib1.
 
-Definition choice_satisfies_restriction {o}
+(*Definition choice_satisfies_restriction {o}
            (n     : nat)
            (v     : @ChoiceSeqVal o)
            (restr : ChoiceSeqRestriction) : Prop :=
   match restr with
   | csc_type d M Md => M n v
   | csc_coq_law f => f n = v
-  | csc_res Q => exists l, Q n v l
-  end.
+  | csc_res P => exists l, Q n v l
+  end.*)
 
 Fixpoint add_choice {o} (name : choice_sequence_name) (t : @ChoiceSeqVal o) (lib : @pre_library o) : nat * pre_library :=
   match lib with
@@ -372,44 +378,80 @@ Definition mk_lib_keep_restrictions_in {o} (lib : @pre_library o) (R : @restrict
     lib
     (keep_restrictions_in R lib).
 
-Inductive lib_extends {o} : @library o -> @library o -> Prop :=
+Definition LibRel {o} := @library o -> @library o -> Prop.
+
+Record LibExtP {o} (ext : LibRel) (lib : @library o) :=
+  MkLibExtP
+    {
+      lib_ext_p_lib :> @library o;
+      lib_ext_p_ext : ext lib_ext_p_lib lib;
+    }.
+Arguments MkLibExtP     [o] [ext] [lib] _ _.
+Arguments lib_ext_p_lib [o] [ext] [lib] _.
+Arguments lib_ext_p_ext [o] [ext] [lib] _.
+
+Definition NatFunLibExtP {o} (ext : LibRel) (lib : @library o) :=
+  forall (n : nat) lib' (x : ext lib' lib), LibExtP ext lib'.
+
+Definition NatFunLibExtNatP {o}
+           (ext : LibRel)
+           {lib  : @library o}
+           (Flib : NatFunLibExtP ext lib) :=
+  forall (n : nat)
+         lib1 (ext1 : ext lib1 lib)
+         lib2 (ext2 : ext lib2 (Flib n lib1 ext1))
+         (z : ext lib2 lib),
+    nat.
+
+Definition NatFunLibExtNatResP {o}
+           (ext  : LibRel)
+           {lib  : @library o}
+           {Flib : NatFunLibExtP ext lib}
+           (Fnat : NatFunLibExtNatP ext Flib) : RestrictionPredLibCond :=
+  fun (i : nat) (t : @ChoiceSeqVal o) _ =>
+    exists (lib1 : library)
+           (ext1 : ext lib1 lib)
+           (lib2 : library)
+           (ext2 : ext lib2 (Flib i lib1 ext1))
+           (extz : ext lib2 lib),
+      t = mkc_nat (Fnat i lib1 ext1 lib2 ext2 extz).
+
+Inductive lib_extends {o} (inh : InhAt) : @library o -> @library o -> Prop :=
 | lib_extends_ref :
     forall (lib : library),
-      lib_extends lib lib
+      lib_extends inh lib lib
 | lib_extends_trans :
     forall (lib1 lib2 lib3 : library),
-      lib_extends lib1 lib2
-      -> lib_extends lib2 lib3
-      -> lib_extends lib1 lib3
+      lib_extends inh lib1 lib2
+      -> lib_extends inh lib2 lib3
+      -> lib_extends inh lib1 lib3
 | lib_extends_new_abs :
     forall (lib : library) op vars rhs correct,
       !in_lib (entry_name_abs op) lib
-      -> lib_extends (add_entry (lib_abs op vars rhs correct) lib) lib
+      -> lib_extends inh (add_entry (lib_abs op vars rhs correct) lib) lib
 | lib_extends_new_cs :
     forall (lib : library) name restr,
       correct_restriction name restr
       -> !in_lib (entry_name_cs name) lib
-      -> lib_extends (add_cs name restr lib) lib
+      -> lib_extends inh (add_cs name restr lib) lib
 | lib_extends_cs :
     forall lib name v n M d Md lib' R,
       add_choice name v lib = (n, lib')
       -> find_restriction R name = Some (csc_type d M Md)
       -> M n v
-      -> lib_extends (MkLibrary lib' R) (MkLibrary lib R)
+      -> lib_extends inh (MkLibrary lib' R) (MkLibrary lib R)
 | lib_extends_law :
     forall lib name v n f lib' R,
       add_choice name v lib = (n, lib')
       -> find_restriction R name = Some (csc_coq_law f)
       -> f n = v
-      -> lib_extends (MkLibrary lib' R) (MkLibrary lib R)
+      -> lib_extends inh (MkLibrary lib' R) (MkLibrary lib R)
 | lib_extends_res :
-    forall lib name v n Q lib' R l,
+    forall lib name v n P lib' R,
       add_choice name v lib = (n, lib')
-      -> find_restriction R name = Some (csc_res Q)
-      -> Q n v l
-      (* It should be good enough to restrict R to the names in [(proj1_sig (M n v))] *)
-      -> lib_extends (MkLibrary lib R) (mk_lib_keep_restrictions_in l R)
-      -> lib_extends (MkLibrary lib' R) (MkLibrary lib R).
+      -> find_restriction R name = Some (csc_res P)
+      -> inh (MkLibrary lib R) (mkc_apply2 P (mkc_nat n) v)
+      -> lib_extends inh (MkLibrary lib' R) (MkLibrary lib R).
 Hint Constructors lib_extends.
 
 Tactic Notation "lib_ext_ind" ident(ext) ident(c) ident(cor) ident(ni) ident(addc) ident(cond) :=
@@ -418,7 +460,7 @@ Tactic Notation "lib_ext_ind" ident(ext) ident(c) ident(cor) ident(ni) ident(add
                     |? ? ? cor ni
                     |? ? ? ? ? ? ? ? ? addc findr cond
                     |? ? ? ? ? ? ? addc findr cond
-                    |? ? ? ? ? ? ? ? ? addc findr cond];
+                    |? ? ? ? ? ? ? addc findr cond];
   [ Case_aux c "lib_ext_refl"
   | Case_aux c "lib_ext_trans"
   | Case_aux c "lib_ext_new_abs"
@@ -459,14 +501,14 @@ Arguments MkLibExtends [o] [lib1] [lib0] _ _ _.*)
       library_safe : safe_library library_lib;
     }.*)
 
-Definition in_ext {o} (lib : @library o) (F : @library o -> Prop) :=
+Definition in_ext {o} inh (lib : @library o) (F : @library o -> Prop) :=
   forall (lib' : library),
-    lib_extends lib' lib
+    lib_extends inh lib' lib
     -> F lib'.
 
-Definition inExt {o} (lib : @library o) (F : @library o -> Type) :=
+Definition inExt {o} inh (lib : @library o) (F : @library o -> Type) :=
   forall (lib' : library),
-    lib_extends lib' lib
+    lib_extends inh lib' lib
     -> F lib'.
 
 Lemma select_nil :
@@ -477,8 +519,8 @@ Qed.
 Hint Rewrite @select_nil : list.
 
 Lemma choice_sequence_satisfies_restriction_nil {o} :
-  forall (restr : @ChoiceSeqRestriction o),
-    choice_sequence_satisfies_restriction [] restr.
+  forall inh (restr : @ChoiceSeqRestriction o),
+    choice_sequence_satisfies_restriction inh [] restr.
 Proof.
   introv.
   unfold choice_sequence_satisfies_restriction; destruct restr; simpl; tcsp; introv;
@@ -626,10 +668,10 @@ Qed.
 Hint Resolve entry_in_library_implies_find_cs : slow.
 
 Lemma implies_safe_choice_sequence_entry_snoc_type {o} :
-  forall name (vals : @ChoiceSeqVals o) v d (M : RestrictionPred) Md,
+  forall inh name (vals : @ChoiceSeqVals o) v d (M : RestrictionPred) Md,
     M (length vals) v
-    -> safe_choice_sequence_entry name vals (csc_type d M Md)
-    -> safe_choice_sequence_entry name (snoc vals v) (csc_type d M Md).
+    -> safe_choice_sequence_entry name inh vals (csc_type d M Md)
+    -> safe_choice_sequence_entry name inh (snoc vals v) (csc_type d M Md).
 Proof.
   introv cond h.
   unfold safe_choice_sequence_entry in *; repnd; dands; auto.
@@ -640,9 +682,9 @@ Qed.
 Hint Resolve implies_safe_choice_sequence_entry_snoc_type : slow.
 
 Lemma implies_safe_choice_sequence_entry_snoc_law {o} :
-  forall name (vals : @ChoiceSeqVals o) (f : nat -> ChoiceSeqVal),
-    safe_choice_sequence_entry name vals (csc_coq_law f)
-    -> safe_choice_sequence_entry name (snoc vals (f (length vals))) (csc_coq_law f).
+  forall inh name (vals : @ChoiceSeqVals o) (f : nat -> ChoiceSeqVal),
+    safe_choice_sequence_entry inh name vals (csc_coq_law f)
+    -> safe_choice_sequence_entry inh name (snoc vals (f (length vals))) (csc_coq_law f).
 Proof.
   introv h.
   unfold safe_choice_sequence_entry in *; repnd; dands; auto.
@@ -654,10 +696,10 @@ Qed.
 Hint Resolve implies_safe_choice_sequence_entry_snoc_law : slow.
 
 Lemma implies_safe_choice_sequence_entry_snoc_res {o} :
-  forall name (vals : @ChoiceSeqVals o) v (Q : RestrictionPredLibCond) l,
-    Q (length vals) v l
-    -> safe_choice_sequence_entry name vals (csc_res Q)
-    -> safe_choice_sequence_entry name (snoc vals v) (csc_res Q).
+  forall (inh : InhAt) name (vals : @ChoiceSeqVals o) v P l,
+    inh l (mkc_apply2 P (mkc_nat (length vals)) v)
+    -> safe_choice_sequence_entry inh name vals (csc_res P)
+    -> safe_choice_sequence_entry inh name (snoc vals v) (csc_res P).
 Proof.
   introv cond h.
   unfold safe_choice_sequence_entry in *; repnd; dands; auto.
@@ -668,12 +710,12 @@ Qed.
 Hint Resolve implies_safe_choice_sequence_entry_snoc_res : slow.
 
 Lemma add_choice_csc_type_preserves_safe {o} :
-  forall name v (lib : @pre_library o) n d M Md lib' R,
+  forall inh name v (lib : @pre_library o) n d M Md lib' R,
     add_choice name v lib = (n, lib')
     -> find_restriction R name = Some (csc_type d M Md)
     -> M n v
-    -> safe_library (MkLibrary lib R)
-    -> safe_library (MkLibrary lib' R).
+    -> safe_library inh (MkLibrary lib R)
+    -> safe_library inh (MkLibrary lib' R).
 Proof.
   introv add findr p safe i; simpl in *.
   eapply add_choice_implies2 in add; eauto.
@@ -684,12 +726,12 @@ Qed.
 Hint Resolve add_choice_csc_type_preserves_safe : slow.
 
 Lemma add_choice_csc_coq_law_preserves_safe {o} :
-  forall name v (lib : @pre_library o) n f lib' R,
+  forall inh name v (lib : @pre_library o) n f lib' R,
     add_choice name v lib = (n, lib')
     -> find_restriction R name = Some (csc_coq_law f)
     -> f n = v
-    -> safe_library (MkLibrary lib R)
-    -> safe_library (MkLibrary lib' R).
+    -> safe_library inh (MkLibrary lib R)
+    -> safe_library inh (MkLibrary lib' R).
 Proof.
   introv add findr p safe i.
   eapply add_choice_implies2 in add; eauto.
@@ -700,12 +742,12 @@ Qed.
 Hint Resolve add_choice_csc_coq_law_preserves_safe : slow.
 
 Lemma add_choice_csc_res_preserves_safe {o} :
-  forall name v (lib : @pre_library o) n Q lib' R,
+  forall inh name v (lib : @pre_library o) n P lib' R,
     add_choice name v lib = (n, lib')
-    -> find_restriction R name = Some (csc_res Q)
-    -> (exists l, Q n v l)
-    -> safe_library (MkLibrary lib R)
-    -> safe_library (MkLibrary lib' R).
+    -> find_restriction R name = Some (csc_res P)
+    -> (exists l, inh l (mkc_apply2 P (mkc_nat n) v))
+    -> safe_library inh (MkLibrary lib R)
+    -> safe_library inh (MkLibrary lib' R).
 Proof.
   introv add findr cond safe i.
   eapply add_choice_implies2 in add; eauto.
@@ -716,9 +758,9 @@ Qed.
 Hint Resolve add_choice_csc_res_preserves_safe : slow.
 
 Lemma implies_safe_choice_sequence_entry_nil {o} :
-  forall name (restr : @ChoiceSeqRestriction o),
+  forall inh name (restr : @ChoiceSeqRestriction o),
     correct_restriction name restr
-    -> safe_choice_sequence_entry name [] restr.
+    -> safe_choice_sequence_entry inh name [] restr.
 Proof.
   introv cor.
   unfold safe_choice_sequence_entry; dands; auto; eauto 3 with slow.
@@ -726,10 +768,10 @@ Qed.
 Hint Resolve implies_safe_choice_sequence_entry_nil : slow.
 
 Lemma safe_library_add_cs {o} :
-  forall name restr (lib : @library o),
+  forall inh name restr (lib : @library o),
     correct_restriction name restr
-    -> safe_library lib
-    -> safe_library (add_cs name restr lib).
+    -> safe_library inh lib
+    -> safe_library inh (add_cs name restr lib).
 Proof.
   introv cor safe i; simpl in *.
   repndors; repnd; subst; simpl in * ; boolvar; subst; tcsp; eauto 2 with slow.
@@ -740,9 +782,9 @@ Qed.
 Hint Resolve safe_library_add_cs : slow.
 
 Lemma safe_library_add_abs {o} :
-  forall op vars rhs correct (lib : @library o),
-    safe_library lib
-    -> safe_library (add_entry (lib_abs op vars rhs correct) lib).
+  forall inh op vars rhs correct (lib : @library o),
+    safe_library inh lib
+    -> safe_library inh (add_entry (lib_abs op vars rhs correct) lib).
 Proof.
   introv safe i; simpl in *.
   repndors; repnd; subst; simpl in * ; boolvar; subst; tcsp; eauto 2 with slow.
@@ -750,10 +792,10 @@ Qed.
 Hint Resolve safe_library_add_abs : slow.
 
 Lemma lib_extends_preserves_safe {o} :
-  forall (lib1 lib2 : @library o),
-    lib_extends lib1 lib2
-    -> safe_library lib2
-    -> safe_library lib1.
+  forall inh (lib1 lib2 : @library o),
+    lib_extends inh lib1 lib2
+    -> safe_library inh lib2
+    -> safe_library inh lib1.
 Proof.
   introv ext.
   lib_ext_ind ext Case;
@@ -889,7 +931,7 @@ Qed.
 Hint Resolve lib_extends_entries_refl : slow.
 
 Lemma lib_extends_refl {o} :
-  forall (lib : @library o), lib_extends lib lib.
+  forall inh (lib : @library o), lib_extends inh lib lib.
 Proof.
   eauto.
 Qed.
@@ -1612,8 +1654,8 @@ Qed.
 Hint Resolve add_choice_preserves_subset_library : slow.
 
 Lemma implies_lib_extends_ext {o} :
-  forall (lib1 lib0 : @library o),
-    lib_extends lib1 lib0
+  forall inh (lib1 lib0 : @library o),
+    lib_extends inh lib1 lib0
     -> lib_extends_entries lib1 lib0.
 Proof.
   introv ext.
@@ -1642,8 +1684,8 @@ Qed.
 Hint Resolve implies_lib_extends_ext : slow.
 
 Lemma implies_lib_extends_sub {o} :
-  forall (lib1 lib0 : @library o),
-    lib_extends lib1 lib0
+  forall inh (lib1 lib0 : @library o),
+    lib_extends inh lib1 lib0
     -> subset_library lib0 lib1.
 Proof.
   introv ext.
@@ -1653,8 +1695,8 @@ Qed.
 Hint Resolve implies_lib_extends_sub : slow.
 
 Lemma lib_extends_preserves_find_entry {o} :
-  forall (lib1 lib2 : @library o) abs bs (e : library_entry),
-    lib_extends lib2 lib1
+  forall inh (lib1 lib2 : @library o) abs bs (e : library_entry),
+    lib_extends inh lib2 lib1
     -> find_entry lib1 abs bs = Some e
     -> find_entry lib2 abs bs = Some e.
 Proof.
@@ -1663,7 +1705,7 @@ Proof.
   destruct lib2 as [lib2 R2]; simpl in *.
   apply find_entry_some_decomp in fe; exrepnd; subst.
 
-  pose proof (implies_lib_extends_ext _ _ ext (lib_abs oa vars rhs correct)) as h.
+  pose proof (implies_lib_extends_ext _ _ _ ext (lib_abs oa vars rhs correct)) as h.
   simpl in h; autodimp h hyp; eauto 3 with slow;[].
 
   apply implies_entry_in_library_app_right;[simpl; tcsp|].
@@ -1678,14 +1720,14 @@ Proof.
 Qed.
 
 Lemma lib_extends_implies_subset_get_utokens_library {o} :
-  forall (lib1 lib2 : @library o),
-    lib_extends lib2 lib1
+  forall inh (lib1 lib2 : @library o),
+    lib_extends inh lib2 lib1
     -> subset (get_utokens_library lib1) (get_utokens_library lib2).
 Proof.
   introv ext i.
   allrw @LIn_iff_In_name.
   allrw @list_in_get_utokens_library_iff; exrepnd.
-  apply (implies_lib_extends_sub _ _ ext) in i1.
+  apply (implies_lib_extends_sub _ _ _ ext) in i1.
   exrepnd.
   exists entry2; dands; auto; eauto 3 with slow.
 Qed.
@@ -2068,8 +2110,8 @@ Proof.
 Abort.*)
 
 Lemma lib_extends_preserves_find_cs {o} :
-  forall (lib1 lib2 : @library o) name vals1,
-    lib_extends lib2 lib1
+  forall inh (lib1 lib2 : @library o) name vals1,
+    lib_extends inh lib2 lib1
     -> find_cs lib1 name = Some vals1
     ->
     exists (vals2 : ChoiceSeqVals),
@@ -2082,8 +2124,8 @@ Proof.
 Qed.
 
 Lemma lib_extends_preserves_find_cs_value_at {o} :
-  forall (lib1 lib2 : @library o) name n v,
-    lib_extends lib2 lib1
+  forall inh (lib1 lib2 : @library o) name n v,
+    lib_extends inh lib2 lib1
     -> find_cs_value_at lib1 name n = Some v
     -> find_cs_value_at lib2 name n = Some v.
 Proof.
@@ -2096,8 +2138,8 @@ Qed.
 Hint Resolve lib_extends_preserves_find_cs_value_at : slow.
 
 Lemma lib_extends_preserves_unfold_abs {o} :
-  forall (lib1 lib2 : @library o) abs bs t,
-    lib_extends lib2 lib1
+  forall inh (lib1 lib2 : @library o) abs bs t,
+    lib_extends inh lib2 lib1
     -> unfold_abs lib1 abs bs = Some t
     -> unfold_abs lib2 abs bs = Some t.
 Proof.
@@ -2110,8 +2152,8 @@ Proof.
 Qed.
 
 Lemma lib_extends_preserves_compute_step_lib {o} :
-  forall (lib1 lib2 : @library o) abs bs t,
-    lib_extends lib2 lib1
+  forall inh (lib1 lib2 : @library o) abs bs t,
+    lib_extends inh lib2 lib1
     -> compute_step_lib lib1 abs bs = csuccess t
     -> compute_step_lib lib2 abs bs = csuccess t.
 Proof.

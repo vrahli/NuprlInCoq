@@ -218,7 +218,7 @@ Inductive ChoiceSeqRestriction {o} :=
 (* constrains the values of the sequence to follow the law given by the function *)
 | csc_coq_law (f : nat -> @CTerm o)
 (* no default *)
-| csc_res (Q : @RestrictionPredLibCond o) (*(M : RestrictionPredLib Q)*).
+| csc_res (P : @CTerm o) (*(M : RestrictionPredLib Q)*).
 
 (* no constraints *)
 Definition csc_no {o} : @ChoiceSeqRestriction o :=

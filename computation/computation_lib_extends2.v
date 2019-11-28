@@ -49,8 +49,8 @@ Hint Resolve nt_wf_oterm_snd : slow.
 Hint Resolve nt_wf_oterm_fst : slow.
 
 Lemma lib_extends_implies_subset_get_utokens_lib {o} :
-  forall (lib1 lib2 : @library o) t,
-    lib_extends lib2 lib1
+  forall inh (lib1 lib2 : @library o) t,
+    lib_extends inh lib2 lib1
     -> subset (get_utokens_lib lib1 t) (get_utokens_lib lib2 t).
 Proof.
   introv ext i.
@@ -60,8 +60,8 @@ Proof.
 Qed.
 
 Lemma lib_extends_preserves_not_in_get_utokens_lib {o} :
-  forall (lib1 lib2 : @library o) t a,
-    lib_extends lib2 lib1
+  forall inh (lib1 lib2 : @library o) t a,
+    lib_extends inh lib2 lib1
     -> !LIn a (get_utokens_lib lib2 t)
     -> !LIn a (get_utokens_lib lib1 t).
 Proof.
