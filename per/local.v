@@ -74,10 +74,10 @@ Proof.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
 Qed.*)
 
-Definition local_ts {o} (ts : cts(o)) :=
+Definition local_ts {o} inh (ts : cts(o)) :=
   forall (lib : @library o) T T' eq eqa,
-    (eq <=2=> (per_bar_eq lib eqa))
-    -> in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
+    (eq <=2=> (per_bar_eq inh lib eqa))
+    -> in_open_bar_ext inh lib (fun lib' x => ts lib' T T' (eqa lib' x))
     -> ts lib T T' eq.
 
 (*Definition lib_per_per_bar {o}
@@ -129,9 +129,9 @@ Proof.
 Qed.*)
 
 Lemma uniquely_valued_per_bar {o} :
-  forall (ts : cts(o)),
+  forall inh (ts : cts(o)),
     uniquely_valued ts
-    -> uniquely_valued (per_bar ts).
+    -> uniquely_valued (per_bar inh ts).
 Proof.
   introv uv p q.
   unfold per_bar in *; exrepnd.
@@ -158,15 +158,15 @@ Qed.
 Hint Resolve uniquely_valued_per_bar : slow.
 
 Definition local_unique {o} (ts : cts(o)) :=
-  forall (lib : @library o) T T' eq (eqa : lib-per(lib,o)),
+  forall inh (lib : @library o) T T' eq (eqa : lib-per(inh,lib,o)),
     ts lib T T' eq
-    -> in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
-    -> sub_per (per_bar_eq lib eqa) eq.
+    -> in_open_bar_ext inh lib (fun lib' x => ts lib' T T' (eqa lib' x))
+    -> sub_per (per_bar_eq inh lib eqa) eq.
 
 Lemma close_local_unique {o} :
-  forall (ts : cts(o)),
+  forall inh (ts : cts(o)),
     local_unique ts
-    -> local_unique (close ts).
+    -> local_unique (close inh ts).
 Proof.
   introv loc cl.
   close_cases (induction cl using @close_ind') Case; introv alla.
@@ -289,37 +289,37 @@ Proof.
     eapply (lib_per_cond _ eqa); eauto.
 Qed.*)
 
-Record LibExt {o} (lib : @library o) :=
+Record LibExt {o} inh (lib : @library o) :=
   MkLibExt
     {
       lib_ext_lib :> @library o;
-      lib_ext_ext : lib_extends lib_ext_lib lib;
+      lib_ext_ext : lib_extends inh lib_ext_lib lib;
     }.
-Arguments MkLibExt [o] [lib] _ _.
-Arguments lib_ext_lib [o] [lib] _.
-Arguments lib_ext_ext [o] [lib] _.
+Arguments MkLibExt [o] [inh] [lib] _ _.
+Arguments lib_ext_lib [o] [inh] [lib] _.
+Arguments lib_ext_ext [o] [inh] [lib] _.
 
-Definition FunLibExt {o} (lib : @library o) :=
-  forall lib' (x : lib_extends lib' lib), LibExt lib'.
+Definition FunLibExt {o} inh (lib : @library o) :=
+  forall lib' (x : lib_extends inh lib' lib), LibExt inh lib'.
 
-Definition FunLibExtProp {o} (lib : @library o) :=
-  forall lib' (x : lib_extends lib' lib), Prop.
+Definition FunLibExtProp {o} inh (lib : @library o) :=
+  forall lib' (x : lib_extends inh lib' lib), Prop.
 
 Lemma in_open_bar_ext_choice {o} :
-  forall (lib : @library o) (F : FunLibExtProp lib),
-    in_open_bar_ext lib F
-    -> exists (Flib : FunLibExt lib),
+  forall inh (lib : @library o) (F : FunLibExtProp inh lib),
+    in_open_bar_ext inh lib F
+    -> exists (Flib : FunLibExt inh lib),
       in_ext_ext
-        lib
+        inh lib
         (fun lib' x =>
-           in_ext_ext (Flib lib' x) (fun lib0 x0 => forall (z : lib_extends lib0 lib), F lib0 z)).
+           in_ext_ext inh (Flib lib' x) (fun lib0 x0 => forall (z : lib_extends inh lib0 lib), F lib0 z)).
 Proof.
   introv h.
   pose proof (DependentFunctionalChoice_on
-                (LibExt lib)
-                LibExt
+                (LibExt inh lib)
+                (LibExt inh)
                 (fun le1 le2 =>
-                   in_ext_ext le2 (fun lib0 x0 => forall (z : lib_extends lib0 lib), F lib0 z))) as C.
+                   in_ext_ext inh le2 (fun lib0 x0 => forall (z : lib_extends inh lib0 lib), F lib0 z))) as C.
   simpl in C.
   repeat (autodimp C hyp).
   { introv; destruct x as [lib' ext'].
@@ -332,55 +332,57 @@ Proof.
   apply (C0 (MkLibExt lib' e)).
 Qed.
 
-Record DepLibExt {o} (lib : @library o) (F : FunLibExt lib) :=
+Record DepLibExt {o} inh (lib : @library o) (F : FunLibExt inh lib) :=
   MkDepLibExt
     {
       lib_ext_lib1 :> @library o;
-      lib_ext_ext1 : lib_extends lib_ext_lib1 lib;
+      lib_ext_ext1 : lib_extends inh lib_ext_lib1 lib;
       lib_ext_lib2 : @library o;
-      lib_ext_ext2 : lib_extends lib_ext_lib2 (F lib_ext_lib1 lib_ext_ext1);
-      lib_ext_extz : lib_extends lib_ext_lib2 lib;
+      lib_ext_ext2 : lib_extends inh lib_ext_lib2 (F lib_ext_lib1 lib_ext_ext1);
+      lib_ext_extz : lib_extends inh lib_ext_lib2 lib;
     }.
-Arguments MkDepLibExt [o] [lib] [F] _ _ _ _ _.
-Arguments lib_ext_lib1 [o] [lib] [F] _.
-Arguments lib_ext_ext1 [o] [lib] [F] _.
-Arguments lib_ext_lib2 [o] [lib] [F] _.
-Arguments lib_ext_ext2 [o] [lib] [F] _.
-Arguments lib_ext_extz [o] [lib] [F] _.
+Arguments MkDepLibExt  [o] [inh] [lib] [F] _ _ _ _ _.
+Arguments lib_ext_lib1 [o] [inh] [lib] [F] _.
+Arguments lib_ext_ext1 [o] [inh] [lib] [F] _.
+Arguments lib_ext_lib2 [o] [inh] [lib] [F] _.
+Arguments lib_ext_ext2 [o] [inh] [lib] [F] _.
+Arguments lib_ext_extz [o] [inh] [lib] [F] _.
 
-Definition FunDepEqa {o} {lib} (F : @FunLibExt o lib) :=
-  forall lib1 (ext1 : lib_extends lib1 lib)
-         lib2 (ext2 : lib_extends lib2 (F lib1 ext1))
-         (z : lib_extends lib2 lib),
-    lib-per(lib2,o).
+Definition FunDepEqa {o} {inh} {lib} (F : @FunLibExt o inh lib) :=
+  forall lib1 (ext1 : lib_extends inh lib1 lib)
+         lib2 (ext2 : lib_extends inh lib2 (F lib1 ext1))
+         (z : lib_extends inh lib2 lib),
+    lib-per(inh,lib2,o).
 
 Lemma in_open_bar_eqa_choice {o} :
-  forall (lib : @library o)
-         (F : FunLibExt lib)
-         (G : forall lib1 (ext1 : lib_extends lib1 lib) lib2 (ext2 : lib_extends lib2 (F lib1 ext1)) (z : lib_extends lib2 lib) (eqa : lib-per(lib2,o)), Prop),
+  forall inh (lib : @library o)
+         (F : FunLibExt inh lib)
+         (G : forall lib1 (ext1 : lib_extends inh lib1 lib) lib2 (ext2 : lib_extends inh lib2 (F lib1 ext1)) (z : lib_extends inh lib2 lib) (eqa : lib-per(inh,lib2,o)), Prop),
     in_ext_ext
-      lib
-      (fun lib1 (ext1 : lib_extends lib1 lib) =>
+      inh lib
+      (fun lib1 (ext1 : lib_extends inh lib1 lib) =>
          in_ext_ext
+           inh
            (F lib1 ext1)
-           (fun lib2 (ext2 : lib_extends lib2 (F lib1 ext1)) =>
-              forall (z : lib_extends lib2 lib),
-              exists (eqa : lib-per(lib2,o)),
+           (fun lib2 (ext2 : lib_extends inh lib2 (F lib1 ext1)) =>
+              forall (z : lib_extends inh lib2 lib),
+              exists (eqa : lib-per(inh,lib2,o)),
                 G lib1 ext1 lib2 ext2 z eqa))
     -> exists (Feqa : FunDepEqa F),
       in_ext_ext
-        lib
-        (fun lib1 (ext1 : lib_extends lib1 lib) =>
+        inh lib
+        (fun lib1 (ext1 : lib_extends inh lib1 lib) =>
            in_ext_ext
+             inh
              (F lib1 ext1)
-             (fun lib2 (ext2 : lib_extends lib2 (F lib1 ext1)) =>
-                forall (z : lib_extends lib2 lib),
+             (fun lib2 (ext2 : lib_extends inh lib2 (F lib1 ext1)) =>
+                forall (z : lib_extends inh lib2 lib),
                   G lib1 ext1 lib2 ext2 z (Feqa lib1 ext1 lib2 ext2 z))).
 Proof.
   introv h.
   pose proof (DependentFunctionalChoice_on
-                (DepLibExt lib F)
-                (fun d => lib-per(lib_ext_lib2 d,o))
+                (DepLibExt inh lib F)
+                (fun d => lib-per(inh,lib_ext_lib2 d,o))
                 (fun d eqa =>
                    G (lib_ext_lib1 d) (lib_ext_ext1 d) (lib_ext_lib2 d) (lib_ext_ext2 d) (lib_ext_extz d) eqa)) as C.
   simpl in C.
@@ -395,85 +397,86 @@ Proof.
   apply (C0 (MkDepLibExt lib' e lib'0 e0 z)).
 Qed.
 
-Definition FunLibExt2 {o} {lib} (F : @FunLibExt o lib) :=
-  forall lib1 (ext1 : lib_extends lib1 lib)
-         lib2 (ext2 : lib_extends lib2 (F lib1 ext1))
-         (z : lib_extends lib2 lib),
-    FunLibExt lib2.
+Definition FunLibExt2 {o} {inh} {lib} (F : @FunLibExt o inh lib) :=
+  forall lib1 (ext1 : lib_extends inh lib1 lib)
+         lib2 (ext2 : lib_extends inh lib2 (F lib1 ext1))
+         (z : lib_extends inh lib2 lib),
+    FunLibExt inh lib2.
 
-Definition FunLibExtProp2 {o} {lib} (F : @FunLibExt o lib) :=
-  forall lib1 (ext1 : lib_extends lib1 lib)
-         lib2 (ext2 : lib_extends lib2 (F lib1 ext1))
-         (z : lib_extends lib2 lib),
-    FunLibExtProp lib2.
+Definition FunLibExtProp2 {o} {inh} {lib} (F : @FunLibExt o inh lib) :=
+  forall lib1 (ext1 : lib_extends inh lib1 lib)
+         lib2 (ext2 : lib_extends inh lib2 (F lib1 ext1))
+         (z : lib_extends inh lib2 lib),
+    FunLibExtProp inh lib2.
 
-Definition FunLibExtProp1 {o} {lib} (F : @FunLibExt o lib) :=
-  forall lib1 (ext1 : lib_extends lib1 lib)
-         lib2 (ext2 : lib_extends lib2 (F lib1 ext1))
-         (z : lib_extends lib2 lib), Prop.
+Definition FunLibExtProp1 {o} {inh} {lib} (F : @FunLibExt o inh lib) :=
+  forall lib1 (ext1 : lib_extends inh lib1 lib)
+         lib2 (ext2 : lib_extends inh lib2 (F lib1 ext1))
+         (z : lib_extends inh lib2 lib), Prop.
 
-Record DepLibExt2 {o} (lib : @library o) (F : FunLibExt lib) :=
+Record DepLibExt2 {o} inh (lib : @library o) (F : FunLibExt inh lib) :=
   MkDepLibExt2
     {
       lib_ext2_lib1 :> @library o;
-      lib_ext2_ext1 : lib_extends lib_ext2_lib1 lib;
+      lib_ext2_ext1 : lib_extends inh lib_ext2_lib1 lib;
       lib_ext2_lib2 : @library o;
-      lib_ext2_ext2 : lib_extends lib_ext2_lib2 (F lib_ext2_lib1 lib_ext2_ext1);
-      lib_ext2_extz : lib_extends lib_ext2_lib2 lib;
+      lib_ext2_ext2 : lib_extends inh lib_ext2_lib2 (F lib_ext2_lib1 lib_ext2_ext1);
+      lib_ext2_extz : lib_extends inh lib_ext2_lib2 lib;
       lib_ext2_lib3 : @library o;
-      lib_ext2_ext3 : lib_extends lib_ext2_lib3 lib_ext2_lib2;
+      lib_ext2_ext3 : lib_extends inh lib_ext2_lib3 lib_ext2_lib2;
     }.
-Arguments MkDepLibExt2 [o] [lib] [F] _ _ _ _ _.
-Arguments lib_ext2_lib1 [o] [lib] [F] _.
-Arguments lib_ext2_ext1 [o] [lib] [F] _.
-Arguments lib_ext2_lib2 [o] [lib] [F] _.
-Arguments lib_ext2_ext2 [o] [lib] [F] _.
-Arguments lib_ext2_extz [o] [lib] [F] _.
-Arguments lib_ext2_lib3 [o] [lib] [F] _.
-Arguments lib_ext2_ext3 [o] [lib] [F] _.
+Arguments MkDepLibExt2  [o] [inh] [lib] [F] _ _ _ _ _.
+Arguments lib_ext2_lib1 [o] [inh] [lib] [F] _.
+Arguments lib_ext2_ext1 [o] [inh] [lib] [F] _.
+Arguments lib_ext2_lib2 [o] [inh] [lib] [F] _.
+Arguments lib_ext2_ext2 [o] [inh] [lib] [F] _.
+Arguments lib_ext2_extz [o] [inh] [lib] [F] _.
+Arguments lib_ext2_lib3 [o] [inh] [lib] [F] _.
+Arguments lib_ext2_ext3 [o] [inh] [lib] [F] _.
 
 Lemma in_open_data_open_choice {o} :
-  forall (lib  : @library o)
-         (Flib : FunLibExt lib)
+  forall inh (lib  : @library o)
+         (Flib : FunLibExt inh lib)
          (F : FunLibExtProp2 Flib)
          (G : FunLibExtProp1 Flib),
     in_ext_ext
-      lib
-      (fun lib1 (ext1 : lib_extends lib1 lib) =>
+      inh lib
+      (fun lib1 (ext1 : lib_extends inh lib1 lib) =>
          in_ext_ext
+           inh
            (Flib lib1 ext1)
-           (fun lib2 (ext2 : lib_extends lib2 (Flib lib1 ext1)) =>
-              forall (z : lib_extends lib2 lib),
-                in_open_bar_ext lib2 (F lib1 ext1 lib2 ext2 z)
+           (fun lib2 (ext2 : lib_extends inh lib2 (Flib lib1 ext1)) =>
+              forall (z : lib_extends inh lib2 lib),
+                in_open_bar_ext inh lib2 (F lib1 ext1 lib2 ext2 z)
                 # G lib1 ext1 lib2 ext2 z))
     -> exists (Flib2 : FunLibExt2 Flib),
       in_ext_ext
-        lib
-        (fun lib1 (ext1 : lib_extends lib1 lib) =>
+        inh lib
+        (fun lib1 (ext1 : lib_extends inh lib1 lib) =>
            in_ext_ext
-             (Flib lib1 ext1)
-             (fun lib2 (ext2 : lib_extends lib2 (Flib lib1 ext1)) =>
-                forall (z : lib_extends lib2 lib),
+             inh (Flib lib1 ext1)
+             (fun lib2 (ext2 : lib_extends inh lib2 (Flib lib1 ext1)) =>
+                forall (z : lib_extends inh lib2 lib),
                   in_ext_ext
-                    lib2
-                    (fun lib' (x : lib_extends lib' lib2) =>
+                    inh lib2
+                    (fun lib' (x : lib_extends inh lib' lib2) =>
                        in_ext_ext
-                         (Flib2 lib1 ext1 lib2 ext2 z lib' x)
+                         inh (Flib2 lib1 ext1 lib2 ext2 z lib' x)
                          (fun lib0 x0 =>
-                            forall (w : lib_extends lib0 lib2),
+                            forall (w : lib_extends inh lib0 lib2),
                               F lib1 ext1 lib2 ext2 z lib0 w))
                   # G lib1 ext1 lib2 ext2 z)).
 Proof.
   introv h.
 
   pose proof (DependentFunctionalChoice_on
-                (DepLibExt2 lib Flib)
-                (fun d => LibExt (lib_ext2_lib3 d))
+                (DepLibExt2 inh lib Flib)
+                (fun d => LibExt inh (lib_ext2_lib3 d))
                 (fun d e =>
                    in_ext_ext
-                     e
+                     inh e
                      (fun lib0 x0 =>
-                        forall (z : lib_extends lib0 (lib_ext2_lib2 d)),
+                        forall (z : lib_extends inh lib0 (lib_ext2_lib2 d)),
                           F (lib_ext2_lib1 d)
                             (lib_ext2_ext1 d)
                             (lib_ext2_lib2 d)
@@ -496,31 +499,32 @@ Proof.
 Qed.
 
 Definition lib_fun_dep_eqa {o}
+           {inh}
            {lib   : @library o}
-           {Flib  : FunLibExt lib}
+           {Flib  : FunLibExt inh lib}
            (Feqa  : FunDepEqa Flib)
            (Flib2 : FunLibExt2 Flib)
-  : lib-per(lib,o).
+  : lib-per(inh,lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) t1 t2 =>
+  exists (fun lib' (x : lib_extends inh lib' lib) t1 t2 =>
             {lib1 : library
-            , {ext1 : lib_extends lib1 lib
+            , {ext1 : lib_extends inh lib1 lib
             , {lib2 : library
-            , {ext2 : lib_extends lib2 (Flib lib1 ext1)
-            , {extz : lib_extends lib2 lib
+            , {ext2 : lib_extends inh lib2 (Flib lib1 ext1)
+            , {extz : lib_extends inh lib2 lib
             , {lib3 : library
-            , {ext3 : lib_extends lib3 lib2
+            , {ext3 : lib_extends inh lib3 lib2
             , {lib4 : library
-            , {ext4 : lib_extends lib4 (Flib2 lib1 ext1 lib2 ext2 extz lib3 ext3)
-            , {z : lib_extends lib' lib2
-            , {w : lib_extends lib' lib4
+            , {ext4 : lib_extends inh lib4 (Flib2 lib1 ext1 lib2 ext2 extz lib3 ext3)
+            , {z : lib_extends inh lib' lib2
+            , {w : lib_extends inh lib' lib4
             , Feqa lib1 ext1 lib2 ext2 extz lib' z t1 t2 }}}}}}}}}}} ).
   introv; tcsp.
 Defined.
 
 Lemma lib_extends_Flib {o} :
-  forall lib lib' (Flib : @FunLibExt o lib) (ext : lib_extends lib' lib),
-    lib_extends (Flib lib' ext) lib'.
+  forall inh lib lib' (Flib : @FunLibExt o inh lib) (ext : lib_extends inh lib' lib),
+    lib_extends inh (Flib lib' ext) lib'.
 Proof.
   introv.
   apply (lib_ext_ext (Flib lib' ext)).
@@ -528,9 +532,9 @@ Qed.
 Hint Resolve lib_extends_Flib : slow.
 
 Lemma lib_extends_Flib2 {o} :
-  forall lib (Flib : @FunLibExt o lib) (Flib2 : FunLibExt2 Flib)
+  forall inh lib (Flib : @FunLibExt o inh lib) (Flib2 : FunLibExt2 Flib)
          lib1 ext1 lib2 ext2 extz lib3 ext3,
-    lib_extends (Flib2 lib1 ext1 lib2 ext2 extz lib3 ext3) lib3.
+    lib_extends inh (Flib2 lib1 ext1 lib2 ext2 extz lib3 ext3) lib3.
 Proof.
   introv.
   apply (lib_ext_ext (Flib2 lib1 ext1 lib2 ext2 extz lib3 ext3)).
@@ -538,29 +542,29 @@ Qed.
 Hint Resolve lib_extends_Flib2 : slow.
 
 Lemma eq_per_bar_eq_lib_fun_dep_eqa_part1 {o} :
-  forall (ts : cts(o)) T T' lib (eqa : lib-per(lib, o))
-         (Flib  : FunLibExt lib)
+  forall inh (ts : cts(o)) T T' lib (eqa : lib-per(inh,lib, o))
+         (Flib  : FunLibExt inh lib)
          (Feqa  : FunDepEqa Flib)
          (Flib2 : FunLibExt2 Flib)
          t1 t2,
     in_ext_ext
-      lib
-      (fun lib1 (ext1 : lib_extends lib1 lib) =>
+      inh lib
+      (fun lib1 (ext1 : lib_extends inh lib1 lib) =>
          in_ext_ext
-           (Flib lib1 ext1)
-           (fun lib2 (ext2 : lib_extends lib2 (Flib lib1 ext1)) =>
-              forall (z : lib_extends lib2 lib),
+           inh (Flib lib1 ext1)
+           (fun lib2 (ext2 : lib_extends inh lib2 (Flib lib1 ext1)) =>
+              forall (z : lib_extends inh lib2 lib),
                 in_ext_ext
-                  lib2
-                  (fun lib' (x : lib_extends lib' lib2) =>
+                  inh lib2
+                  (fun lib' (x : lib_extends inh lib' lib2) =>
                      in_ext_ext
-                       (Flib2 lib1 ext1 lib2 ext2 z lib' x)
-                       (fun lib0 (_ : lib_extends lib0 (Flib2 lib1 ext1 lib2 ext2 z lib' x)) =>
-                          forall w : lib_extends lib0 lib2,
+                       inh (Flib2 lib1 ext1 lib2 ext2 z lib' x)
+                       (fun lib0 (_ : lib_extends inh lib0 (Flib2 lib1 ext1 lib2 ext2 z lib' x)) =>
+                          forall w : lib_extends inh lib0 lib2,
                             ts lib0 T T' ((Feqa lib1 ext1 lib2 ext2 z) lib0 w)))
-                  # (eqa lib2 z) <=2=> (per_bar_eq lib2 (Feqa lib1 ext1 lib2 ext2 z))))
-    -> per_bar_eq lib eqa t1 t2
-    -> per_bar_eq lib (lib_fun_dep_eqa Feqa Flib2) t1 t2.
+                  # (eqa lib2 z) <=2=> (per_bar_eq inh lib2 (Feqa lib1 ext1 lib2 ext2 z))))
+    -> per_bar_eq inh lib eqa t1 t2
+    -> per_bar_eq inh lib (lib_fun_dep_eqa Feqa Flib2) t1 t2.
 Proof.
   introv imp h ext.
   unfold per_bar_eq in *.
@@ -575,7 +579,7 @@ Proof.
                          lib' ext lib'' y
                          (lib_extends_trans y (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext))
                          lib''
-                         (lib_extends_refl lib'')))) as h1.
+                         (lib_extends_refl inh lib'')))) as h1.
   exrepnd.
 
   exists lib''0 (lib_extends_trans
@@ -586,24 +590,25 @@ Proof.
                             lib' ext lib'' y
                             (lib_extends_trans y (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext))
                             lib''
-                            (lib_extends_refl lib'')))
+                            (lib_extends_refl inh lib'')))
                       (lib_extends_trans y (lib_ext_ext (Flib lib' ext))))).
   introv xta xtb.
   exists lib' ext lib'' y
          (lib_extends_trans y (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext))
          lib''
-         (lib_extends_refl lib'')
+         (lib_extends_refl inh lib'')
          (Flib2
             lib' ext lib'' y
             (lib_extends_trans y (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext))
             lib''
-            (lib_extends_refl lib''))
+            (lib_extends_refl inh lib''))
          (lib_extends_refl
+            inh
             (Flib2
                lib' ext lib'' y
                (lib_extends_trans y (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext))
                lib''
-               (lib_extends_refl lib''))).
+               (lib_extends_refl inh lib''))).
   exists (lib_extends_trans
             xta
             (lib_extends_trans
@@ -613,35 +618,35 @@ Proof.
                      lib' ext lib'' y
                      (lib_extends_trans y (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext))
                      lib''
-                     (lib_extends_refl lib''))))).
+                     (lib_extends_refl inh lib''))))).
   exists (lib_extends_trans xta y0).
   introv.
   apply h1; eauto 2 with slow.
 Qed.
 
 Lemma eq_per_bar_eq_lib_fun_dep_eqa {o} :
-  forall (ts : cts(o)) T T' lib (eqa : lib-per(lib, o))
-         (Flib  : FunLibExt lib)
+  forall inh (ts : cts(o)) T T' lib (eqa : lib-per(inh,lib, o))
+         (Flib  : FunLibExt inh lib)
          (Feqa  : FunDepEqa Flib)
          (Flib2 : FunLibExt2 Flib),
     uniquely_valued ts
     -> in_ext_ext
-         lib
-         (fun lib1 (ext1 : lib_extends lib1 lib) =>
+         inh lib
+         (fun lib1 (ext1 : lib_extends inh lib1 lib) =>
             in_ext_ext
-              (Flib lib1 ext1)
-              (fun lib2 (ext2 : lib_extends lib2 (Flib lib1 ext1)) =>
-                 forall (z : lib_extends lib2 lib),
+              inh (Flib lib1 ext1)
+              (fun lib2 (ext2 : lib_extends inh lib2 (Flib lib1 ext1)) =>
+                 forall (z : lib_extends inh lib2 lib),
                    in_ext_ext
-                     lib2
-                     (fun lib' (x : lib_extends lib' lib2) =>
+                     inh lib2
+                     (fun lib' (x : lib_extends inh lib' lib2) =>
                         in_ext_ext
-                          (Flib2 lib1 ext1 lib2 ext2 z lib' x)
-                          (fun lib0 (_ : lib_extends lib0 (Flib2 lib1 ext1 lib2 ext2 z lib' x)) =>
-                             forall w : lib_extends lib0 lib2,
+                          inh (Flib2 lib1 ext1 lib2 ext2 z lib' x)
+                          (fun lib0 (_ : lib_extends inh lib0 (Flib2 lib1 ext1 lib2 ext2 z lib' x)) =>
+                             forall w : lib_extends inh lib0 lib2,
                                ts lib0 T T' ((Feqa lib1 ext1 lib2 ext2 z) lib0 w)))
-                     # (eqa lib2 z) <=2=> (per_bar_eq lib2 (Feqa lib1 ext1 lib2 ext2 z))))
-    -> (per_bar_eq lib eqa) <=2=> (per_bar_eq lib (lib_fun_dep_eqa Feqa Flib2)).
+                     # (eqa lib2 z) <=2=> (per_bar_eq inh lib2 (Feqa lib1 ext1 lib2 ext2 z))))
+    -> (per_bar_eq inh lib eqa) <=2=> (per_bar_eq inh lib (lib_fun_dep_eqa Feqa Flib2)).
 Proof.
   introv unival imp; repeat introv; split; intro h.
 
@@ -653,10 +658,10 @@ Proof.
   pose proof (h (Flib lib' ext)) as h; exrepnd; simpl in *.
   autodimp h hyp; eauto 3 with slow;[]; exrepnd.
 
-  assert (lib_extends lib'' lib') as xta by eauto 3 with slow.
+  assert (lib_extends inh lib'' lib') as xta by eauto 3 with slow.
   exists lib'' xta; introv xtb; introv.
 
-  assert (lib_extends lib'' lib) as xtc by eauto 3 with slow.
+  assert (lib_extends inh lib'' lib) as xtc by eauto 3 with slow.
   pose proof (imp _ ext lib'0 (lib_extends_trans xtb y) z) as imp'; simpl in *; repnd.
   apply imp'; clear imp'.
   introv xtd.
@@ -678,10 +683,10 @@ Proof.
 Qed.
 
 Lemma local_per_bar {o} :
-  forall (ts : cts(o)),
+  forall inh (ts : cts(o)),
     type_extensionality ts
     -> uniquely_valued ts
-    -> local_ts (per_bar ts).
+    -> local_ts inh (per_bar inh ts).
 Proof.
   introv text uv eqiff alla.
   unfold per_bar in *.
@@ -698,34 +703,35 @@ Proof.
   pose proof (alla0 _ ext) as alla1; simpl in *.
   apply in_ext_ext_implies in alla1.
   pose proof (alla1 (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext)) as alla1; repnd.
-  pose proof (alla2 _ (lib_extends_refl _)) as alla2; simpl in *.
+  pose proof (alla2 _ (lib_extends_refl _ _)) as alla2; simpl in *.
 
   assert (lib_extends
-            (Flib2 lib' ext (Flib lib' ext) (lib_extends_refl (Flib lib' ext))
+            _
+            (Flib2 lib' ext (Flib lib' ext) (lib_extends_refl _ (Flib lib' ext))
                    (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext) (Flib lib' ext)
-                   (lib_extends_refl (Flib lib' ext))) lib') as xta by eauto 3 with slow.
+                   (lib_extends_refl _ (Flib lib' ext))) lib') as xta by eauto 3 with slow.
 
-  exists (Flib2 lib' ext (Flib lib' ext) (lib_extends_refl (Flib lib' ext))
+  exists (Flib2 lib' ext (Flib lib' ext) (lib_extends_refl _ (Flib lib' ext))
                 (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext) (Flib lib' ext)
-                (lib_extends_refl (Flib lib' ext))) xta.
+                (lib_extends_refl _ (Flib lib' ext))) xta.
   introv xtb xtc.
-  assert (lib_extends lib'0 (Flib lib' ext)) as xtd by eauto 3 with slow.
+  assert (lib_extends inh lib'0 (Flib lib' ext)) as xtd by eauto 3 with slow.
   pose proof (alla2 _ xtb xtd) as alla2; simpl in *.
 
   eapply text;[eauto|].
 
   introv; split; introv w.
 
-  { exists lib' ext (Flib lib' ext) (lib_extends_refl (Flib lib' ext))
+  { exists lib' ext (Flib lib' ext) (lib_extends_refl inh (Flib lib' ext))
            (lib_extends_trans (lib_ext_ext (Flib lib' ext)) ext)
-           (Flib lib' ext) (lib_extends_refl (Flib lib' ext)).
+           (Flib lib' ext) (lib_extends_refl inh (Flib lib' ext)).
     exists lib'0 xtb.
-    exists xtd (lib_extends_refl lib'0); auto. }
+    exists xtd (lib_extends_refl inh lib'0); auto. }
 
   exrepnd.
 
   pose proof (alla0 lib1 ext1 lib2 ext2 extz) as xx; simpl in *; repnd; clear xx.
-  assert (lib_extends lib4 lib2) as xte by eauto 3 with slow.
+  assert (lib_extends inh lib4 lib2) as xte by eauto 3 with slow.
   pose proof (xx0 lib3 ext3 lib'0 (lib_extends_trans w ext4) z) as xx0; simpl in *.
   eapply uv in xx0; autodimp xx0 hyp;[exact alla2|].
   apply xx0; auto.
@@ -753,14 +759,14 @@ Proof.
     introv br ext; introv.
     simpl in *; exrepnd.
 
-    assert (lib_extends lib'0 lib1) as xt1 by eauto 4 with slow.
-    assert (lib_extends lib'0 lib2) as xt2 by eauto 3 with slow.
+    assert (lib_extends inh lib'0 lib1) as xt1 by eauto 4 with slow.
+    assert (lib_extends inh lib'0 lib2) as xt2 by eauto 3 with slow.
 
     pose proof (alla0 lib1 br lib2 ext0 x0) as allb.
     exrepnd.
     remember (fbar lib1 br lib2 ext0 x0) as b1.
 
-    assert (lib_extends lib'0 lib1) as x1 by eauto 4 with slow.
+    assert (lib_extends inh lib'0 lib1) as x1 by eauto 4 with slow.
 
     pose proof (alla0 _ br _ x1 x) as allc.
     exrepnd.
@@ -781,16 +787,16 @@ Proof.
 Qed.*)
 
 Lemma ccequivc_ext_uni_uni_implies {o} :
-  forall (lib : @library o) i j,
-    ccequivc_ext lib (mkc_uni i) (mkc_uni j) -> i = j.
+  forall inh (lib : @library o) i j,
+    ccequivc_ext inh lib (mkc_uni i) (mkc_uni j) -> i = j.
 Proof.
-  introv ceq; pose proof (ceq _ (lib_extends_refl _)) as ceq; simpl in ceq; spcast.
+  introv ceq; pose proof (ceq _ (lib_extends_refl _ _)) as ceq; simpl in ceq; spcast.
   apply cequivc_uni_right_iscvalue in ceq; eauto 3 with slow.
   eqconstr ceq; auto.
 Qed.
 
 Lemma uniquely_valued_univi {o} :
-  forall i, @uniquely_valued o (univi i).
+  forall inh uni i, @uniquely_valued o (univi i inh uni).
 Proof.
   introv u v.
   allrw @univi_exists_iff; exrepnd.
@@ -801,27 +807,74 @@ Proof.
 Qed.
 Hint Resolve uniquely_valued_univi : slow.
 
-Lemma uniquely_valued_univ_ex {o} : @uniquely_valued o univ_ex.
+Lemma uniquely_valued_univi_ex {o} inh uni : @uniquely_valued o (univi_ex inh uni).
 Proof.
   introv u v.
-  unfold univ_ex in *; exrepnd.
+  unfold univi_ex in *; exrepnd.
 
   eapply uni_in_higher_univ in u0.
   eapply uni_in_higher_univ_r in v0.
   eapply uniquely_valued_univi in v0; autodimp v0 hyp;[exact u0|].
   apply eq_term_equals_sym; auto.
 Qed.
-Hint Resolve uniquely_valued_univ_ex : slow.
+Hint Resolve uniquely_valued_univi_ex : slow.
 
-Lemma local_univi_bar {o} :
-  forall i, @local_ts o (univi_bar i).
+Lemma uniquely_valued_univi_ex_bar {o} inh uni : @uniquely_valued o (univi_ex_bar inh uni).
+Proof.
+  introv u v.
+  unfold univi_ex_bar in *; exrepnd.
+  unfold per_bar in *; exrepnd.
+  eapply eq_term_equals_trans;[exact u0|]; clear u0.
+  eapply eq_term_equals_trans;[|apply eq_term_equals_sym;exact v0]; clear v0.
+  clear dependent eq.
+  clear dependent eq'.
+
+  introv; split; intro h; introv ext; unfold per_bar_eq in *.
+
+  { pose proof (u1 _ ext) as u1; exrepnd.
+    pose proof (v1 _ (lib_extends_trans y ext)) as v1; exrepnd.
+    pose proof (h _ (lib_extends_trans y0 (lib_extends_trans y ext))) as h; exrepnd.
+    exists lib''1 (lib_extends_trans y1 (lib_extends_trans y0 y)).
+    introv xt; introv.
+    pose proof (h1 _ xt z) as h1; simpl in h1.
+    pose proof (v1 _ (lib_extends_trans xt y1) z) as v1; simpl in v1.
+    pose proof (u1 _ (lib_extends_trans xt (lib_extends_trans y1 y0)) z) as u1; simpl in u1.
+    eapply uniquely_valued_univi_ex;[exact v1|exact u1|]; auto. }
+
+  { pose proof (u1 _ ext) as u1; exrepnd.
+    pose proof (v1 _ (lib_extends_trans y ext)) as v1; exrepnd.
+    pose proof (h _ (lib_extends_trans y0 (lib_extends_trans y ext))) as h; exrepnd.
+    exists lib''1 (lib_extends_trans y1 (lib_extends_trans y0 y)).
+    introv xt; introv.
+    pose proof (h1 _ xt z) as h1; simpl in h1.
+    pose proof (v1 _ (lib_extends_trans xt y1) z) as v1; simpl in v1.
+    pose proof (u1 _ (lib_extends_trans xt (lib_extends_trans y1 y0)) z) as u1; simpl in u1.
+    eapply uniquely_valued_univi_ex;[exact u1|exact v1|]; auto. }
+Qed.
+Hint Resolve uniquely_valued_univi_ex_bar : slow.
+
+(*Lemma local_univi_bar {o} :
+  forall inh uni i, @local_ts o inh (univi_bar i inh uni).
 Proof.
   introv eqiff alla.
   eapply local_per_bar in alla; eauto 3 with slow.
 Qed.
 Hint Resolve local_univi_bar : slow.
+*)
 
-Lemma local_univ {o} : @local_ts o univ.
+Lemma type_extensionality_univi_ex {o} :
+  forall inh uni, @type_extensionality o (univi_ex inh uni).
+Proof.
+  introv h q.
+  unfold univi_ex in *; exrepnd; exists i.
+  allrw @univi_exists_iff; exrepnd.
+  exists j; dands; tcsp.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym;auto.
+Qed.
+Hint Resolve type_extensionality_univi_ex : slow.
+
+Lemma local_univ {o} : @local_ts o nuprla_ex_inh univ.
 Proof.
   introv eqiff alla.
   eapply local_per_bar; eauto; eauto 3 with slow.

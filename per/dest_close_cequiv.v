@@ -90,9 +90,9 @@ Qed.*)
   {+} per_bar ts lib T T' eq.*)
 
 Lemma per_bar_eq_per_cequiv_eq_bar_lib_per {o} :
-  forall (lib : @library o) a b,
-    (per_bar_eq lib (per_cequiv_eq_bar_lib_per lib a b))
-    <=2=> (per_cequiv_eq_bar lib a b).
+  forall inh (lib : @library o) a b,
+    (per_bar_eq inh lib (per_cequiv_eq_bar_lib_per inh lib a b))
+    <=2=> (per_cequiv_eq_bar inh lib a b).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
 
@@ -114,13 +114,13 @@ Proof.
 Qed.
 
 Lemma per_cequiv_implies_per_bar {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_cequiv ts lib T T' eq
-    -> per_bar (per_cequiv ts) lib T T' eq.
+  forall inh ts lib (T T' : @CTerm o) eq,
+    per_cequiv inh ts lib T T' eq
+    -> per_bar inh (per_cequiv inh ts) lib T T' eq.
 Proof.
   introv per.
   unfold per_cequiv in *; exrepnd.
-  exists (per_cequiv_eq_bar_lib_per lib a b).
+  exists (per_cequiv_eq_bar_lib_per inh lib a b).
   dands; auto.
 
   - apply in_ext_ext_implies_in_open_bar_ext; introv.
@@ -157,20 +157,21 @@ Qed.
 Hint Resolve uniquely_valued_per_cequiv_bar : slow.*)
 
 Definition per_cequiv_eq_to_lib_per {o}
+           inh
            (lib : library)
-           (T : @CTerm o) : lib-per(lib,o).
+           (T : @CTerm o) : lib-per(inh,lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) t t' =>
-            {a : CTerm , {b : CTerm , T ===>(lib') (mkc_cequiv a b) # per_cequiv_eq_bar lib' a b t t' }}).
+  exists (fun lib' (x : lib_extends inh lib' lib) t t' =>
+            {a : CTerm , {b : CTerm , T ===>(inh,lib') (mkc_cequiv a b) # per_cequiv_eq_bar inh lib' a b t t' }}).
   introv x y; introv; simpl; tcsp.
 Defined.
 
 Lemma per_cequiv_eq_bar_respects_ccequivc_ext {o} :
-  forall lib (a1 a2 b1 b2 : @CTerm o) t1 t2,
-    per_cequiv_eq_bar lib a1 b1 t1 t2
-    -> ccequivc_ext lib a1 a2
-    -> ccequivc_ext lib b1 b2
-    -> per_cequiv_eq_bar lib a2 b2 t1 t2.
+  forall inh lib (a1 a2 b1 b2 : @CTerm o) t1 t2,
+    per_cequiv_eq_bar inh lib a1 b1 t1 t2
+    -> ccequivc_ext inh lib a1 a2
+    -> ccequivc_ext inh lib b1 b2
+    -> per_cequiv_eq_bar inh lib a2 b2 t1 t2.
 Proof.
   introv per ceqa ceqb.
   unfold per_cequiv_eq_bar in *; exrepnd.
@@ -187,10 +188,10 @@ Qed.
 Hint Resolve per_cequiv_eq_bar_respects_ccequivc_ext : slow.
 
 Lemma two_ccomputes_to_valc_ext_cequiv_implies {o} :
-  forall (lib : @library o) T a1 b1 a2 b2,
-    (T ===>(lib) (mkc_cequiv a1 b1))
-    -> (T ===>(lib) (mkc_cequiv a2 b2))
-    -> (ccequivc_ext lib a1 a2 # ccequivc_ext lib b1 b2).
+  forall inh (lib : @library o) T a1 b1 a2 b2,
+    (T ===>(inh,lib) (mkc_cequiv a1 b1))
+    -> (T ===>(inh,lib) (mkc_cequiv a2 b2))
+    -> (ccequivc_ext inh lib a1 a2 # ccequivc_ext inh lib b1 b2).
 Proof.
   introv comp1 comp2; split; introv ext;
     eapply lib_extends_preserves_ccomputes_to_valc in comp1; eauto;
@@ -201,12 +202,12 @@ Proof.
 Qed.
 
 Lemma local_per_bar_per_cequiv {o} :
-  forall (ts : cts(o)), local_ts (per_bar (per_cequiv ts)).
+  forall inh (ts : cts(o)), local_ts inh (per_bar inh (per_cequiv inh ts)).
 Proof.
   introv eqiff alla.
   unfold per_bar in *.
 
-  exists (per_cequiv_eq_to_lib_per lib T); simpl in *.
+  exists (per_cequiv_eq_to_lib_per inh lib T); simpl in *.
   dands.
 
   { eapply in_open_bar_ext_dup.
@@ -256,12 +257,12 @@ Qed.
 (* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_cequiv_l {p} :
-  forall (ts : cts(p)) lib T A B T' eq,
-    type_system ts
-    -> defines_only_universes ts
-    -> ccomputes_to_valc_ext lib T (mkc_cequiv A B)
-    -> close ts lib T T' eq
-    -> per_bar (per_cequiv (close ts)) lib T T' eq.
+  forall inh (ts : cts(p)) lib T A B T' eq,
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> ccomputes_to_valc_ext inh lib T (mkc_cequiv A B)
+    -> close inh ts lib T T' eq
+    -> per_bar inh (per_cequiv inh (close inh ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
@@ -272,12 +273,12 @@ Proof.
 Qed.
 
 Lemma dest_close_per_cequiv_r {p} :
-  forall (ts : cts(p)) lib T A B T' eq,
-    type_system ts
-    -> defines_only_universes ts
-    -> ccomputes_to_valc_ext lib T' (mkc_cequiv A B)
-    -> close ts lib T T' eq
-    -> per_bar (per_cequiv (close ts)) lib T T' eq.
+  forall inh (ts : cts(p)) lib T A B T' eq,
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> ccomputes_to_valc_ext inh lib T' (mkc_cequiv A B)
+    -> close inh ts lib T T' eq
+    -> per_bar inh (per_cequiv inh (close inh ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.

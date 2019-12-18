@@ -32,12 +32,12 @@ Require Export close_util_base.
 
 
 Lemma close_type_system_base {p} :
-  forall lib (ts : cts(p)) T T' eq,
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> per_base (close ts) lib T T' eq
-    -> type_sys_props4 (close ts) lib T T' eq.
+  forall inh lib (ts : cts(p)) T T' eq,
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> per_base inh (close inh ts) lib T T' eq
+    -> type_sys_props4 inh (close inh ts) lib T T' eq.
 Proof.
   introv tysys dou mon per.
 
@@ -49,7 +49,7 @@ Proof.
     dclose_lr.
 
     * SSCase "CL_base".
-      assert (uniquely_valued (per_base_bar (close ts))) as uv
+      assert (uniquely_valued (per_base_bar inh (close inh ts))) as uv
         by (apply per_base_bar_uniquely_valued).
       eapply uv; eauto.
       eapply uniquely_valued_trans5; eauto 3 with slow.
@@ -58,16 +58,16 @@ Proof.
       apply per_base_bar_implies_close;
       apply per_base_implies_per_base_bar in per.
 
-    assert (type_symmetric (per_base_bar (close ts))) as tys
+    assert (type_symmetric (per_base_bar inh (close inh ts))) as tys
       by (apply per_base_bar_type_symmetric);
-    assert (type_extensionality (per_base_bar (close ts))) as tye
+    assert (type_extensionality (per_base_bar inh (close inh ts))) as tye
       by (apply per_base_bar_type_extensionality);
     apply tye with (eq := eq); auto.
 
   + SCase "type_value_respecting"; repdors; subst;
       apply per_base_bar_implies_close;
       apply per_base_implies_per_base_bar in per;
-      assert (type_value_respecting (per_base_bar (close ts)))
+      assert (type_value_respecting inh (per_base_bar inh (close inh ts)))
         as tvr
           by (apply per_base_bar_type_value_respecting).
 
@@ -86,19 +86,19 @@ Proof.
     apply type_system_implies_type_equality_respecting_trans2; eauto 3 with slow.
 
   + SCase "term_symmetric".
-    assert (term_symmetric (per_base_bar (close ts)))
+    assert (term_symmetric (per_base_bar inh (close inh ts)))
       as tes
         by (apply per_base_bar_term_symmetric).
     eapply tes; eauto 3 with slow.
 
   + SCase "term_transitive".
-    assert (term_transitive (per_base_bar (close ts)))
+    assert (term_transitive (per_base_bar inh (close inh ts)))
       as tet
         by (apply per_base_bar_term_transitive).
     eapply tet; eauto 3 with slow.
 
   + SCase "term_value_respecting".
-    assert (term_value_respecting (per_base_bar (close ts)))
+    assert (term_value_respecting inh (per_base_bar inh (close inh ts)))
       as tvr
         by (apply per_base_bar_term_value_respecting).
     apply tvr with (T := T); auto.

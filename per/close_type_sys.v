@@ -205,17 +205,17 @@ Abort.
 
 
 Lemma ih_implies_all_in_bar_type_sys_props4 {o} :
-  forall (lib : @library o) ts A B eqa,
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> in_open_bar lib
+  forall inh (lib : @library o) ts A B eqa,
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> in_open_bar inh lib
                   (fun lib =>
-                     type_system ts
-                     -> defines_only_universes ts
-                     -> type_monotone ts
-                     -> type_sys_props4 (close ts) lib A B eqa)
-    -> in_open_bar lib (fun lib => type_sys_props4 (close ts) lib A B eqa).
+                     type_system inh ts
+                     -> defines_only_universes inh ts
+                     -> type_monotone inh ts
+                     -> type_sys_props4 inh (close inh ts) lib A B eqa)
+    -> in_open_bar inh lib (fun lib => type_sys_props4 inh (close inh ts) lib A B eqa).
 Proof.
   introv tsts dou mon alla.
   eapply in_open_bar_pres; eauto; introv ext h; tcsp.
@@ -223,22 +223,22 @@ Qed.
 Hint Resolve ih_implies_all_in_bar_type_sys_props4 : slow.
 
 Lemma ih_implies_all_in_bar_ext_type_sys_props4 {o} :
-  forall (lib : @library o) ts A B eqa,
-    local_ts ts
-    -> ts_implies_per_bar ts
-    -> type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
+  forall inh (lib : @library o) ts A B eqa,
+    local_ts inh ts
+    -> ts_implies_per_bar inh ts
+    -> type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
     -> in_open_bar_ext
-         lib
+         inh lib
          (fun lib' x =>
-            local_ts ts
-            -> ts_implies_per_bar ts
-            -> type_system ts
-            -> defines_only_universes ts
-            -> type_monotone ts
-            -> type_sys_props4 (close ts) lib' A B (eqa lib' x))
-    -> in_open_bar_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x)).
+            local_ts inh ts
+            -> ts_implies_per_bar inh ts
+            -> type_system inh ts
+            -> defines_only_universes inh ts
+            -> type_monotone inh ts
+            -> type_sys_props4 inh (close inh ts) lib' A B (eqa lib' x))
+    -> in_open_bar_ext inh lib (fun lib' x => type_sys_props4 inh (close inh ts) lib' A B (eqa lib' x)).
 Proof.
   introv locts ibar tsts dou mon alla.
   eapply in_open_bar_ext_pres; eauto; introv h; tcsp.
@@ -246,17 +246,17 @@ Qed.
 Hint Resolve ih_implies_all_in_bar_ext_type_sys_props4 : slow.
 
 Lemma ih_implies_in_ext_type_sys_props4 {o} :
-  forall lib ts (A B : @CTerm o) eqa,
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> in_ext lib
+  forall inh lib ts (A B : @CTerm o) eqa,
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> in_ext inh lib
               (fun lib =>
-                 type_system ts
-                 -> defines_only_universes ts
-                 -> type_monotone ts
-                 -> type_sys_props4 (close ts) lib A B (eqa lib))
-    -> in_ext lib (fun lib => type_sys_props4 (close ts) lib A B (eqa lib)).
+                 type_system inh ts
+                 -> defines_only_universes inh ts
+                 -> type_monotone inh ts
+                 -> type_sys_props4 inh (close inh ts) lib A B (eqa lib))
+    -> in_ext inh lib (fun lib => type_sys_props4 inh (close inh ts) lib A B (eqa lib)).
 Proof.
   introv tsts dou mon i ext.
   apply (i lib' ext); auto.
@@ -264,22 +264,22 @@ Qed.
 Hint Resolve ih_implies_in_ext_type_sys_props4 : slow.
 
 Lemma ih_implies_in_ext_ext_type_sys_props4 {o} :
-  forall lib ts (A B : @CTerm o) eqa,
-    local_ts ts
-    -> ts_implies_per_bar ts
-    -> type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
+  forall inh lib ts (A B : @CTerm o) eqa,
+    local_ts inh ts
+    -> ts_implies_per_bar inh ts
+    -> type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
     -> in_ext_ext
-         lib
+         inh lib
          (fun lib' x =>
-            local_ts ts
-            -> ts_implies_per_bar ts
-            -> type_system ts
-            -> defines_only_universes ts
-            -> type_monotone ts
-            -> type_sys_props4 (close ts) lib' A B (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x)).
+            local_ts inh ts
+            -> ts_implies_per_bar inh ts
+            -> type_system inh ts
+            -> defines_only_universes inh ts
+            -> type_monotone inh ts
+            -> type_sys_props4 inh (close inh ts) lib' A B (eqa lib' x))
+    -> in_ext_ext inh lib (fun lib' x => type_sys_props4 inh (close inh ts) lib' A B (eqa lib' x)).
 Proof.
   introv loc ibar tsts dou mon i; introv.
   apply (i lib' e); auto.
@@ -287,21 +287,21 @@ Qed.
 Hint Resolve ih_implies_in_ext_ext_type_sys_props4 : slow.
 
 Lemma ih_implies_in_ext_type_sys_props4_dep {o} :
-  forall lib (ts : cts(o)) v B v' B' eqa eqb,
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> in_ext lib
+  forall inh lib (ts : cts(o)) v B v' B' eqa eqb,
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> in_ext inh lib
               (fun lib =>
                  forall a a' (e : eqa lib a a'),
-                   type_system ts
-                   -> defines_only_universes ts
-                   -> type_monotone ts
-                   -> type_sys_props4 (close ts) lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
-    -> in_ext lib
+                   type_system inh ts
+                   -> defines_only_universes inh ts
+                   -> type_monotone inh ts
+                   -> type_sys_props4 inh (close inh ts) lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e))
+    -> in_ext inh lib
               (fun lib =>
                  forall a a' (e : eqa lib a a'),
-                   type_sys_props4 (close ts) lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e)).
+                   type_sys_props4 inh (close inh ts) lib (B)[[v\\a]] (B')[[v'\\a']] (eqb lib a a' e)).
 Proof.
   introv tsts dou mon i ext; introv.
   apply (i lib' ext); auto.
@@ -309,27 +309,27 @@ Qed.
 Hint Resolve ih_implies_in_ext_type_sys_props4_dep : slow.
 
 Lemma ih_implies_in_ext_ext_type_sys_props4_dep {o} :
-  forall lib (ts : cts(o)) v B v' B' eqa eqb,
-    local_ts ts
-    -> ts_implies_per_bar ts
-    -> type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
+  forall inh lib (ts : cts(o)) v B v' B' eqa eqb,
+    local_ts inh ts
+    -> ts_implies_per_bar inh ts
+    -> type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
     -> in_ext_ext
-         lib
+         inh lib
          (fun lib' x =>
             forall a a' (e : eqa lib' x a a'),
-              local_ts ts
-              -> ts_implies_per_bar ts
-              -> type_system ts
-              -> defines_only_universes ts
-              -> type_monotone ts
-              -> type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+              local_ts inh ts
+              -> ts_implies_per_bar inh ts
+              -> type_system inh ts
+              -> defines_only_universes inh ts
+              -> type_monotone inh ts
+              -> type_sys_props4 inh (close inh ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> in_ext_ext
-         lib
+         inh lib
          (fun lib' x =>
             forall a a' (e : eqa lib' x a a'),
-              type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e)).
+              type_sys_props4 inh (close inh ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e)).
 Proof.
   introv loc ibar tsts dou mon i; introv.
   apply (i lib' e); auto.
@@ -337,13 +337,13 @@ Qed.
 Hint Resolve ih_implies_in_ext_ext_type_sys_props4_dep : slow.
 
 Lemma close_type_system {o} :
-  forall (ts : cts(o)),
-    local_ts ts
-    -> ts_implies_per_bar ts
-    -> type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> type_system (close ts).
+  forall inh (ts : cts(o)),
+    local_ts inh ts
+    -> ts_implies_per_bar inh ts
+    -> type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> type_system inh (close inh ts).
 Proof.
   introv locts ibar tsts dou mon.
   apply type_system_prop4.
@@ -470,13 +470,13 @@ Qed.
 (* begin hide *)
 
 Lemma close_uniquely_valued {o} :
-  forall (ts : cts(o)),
-    local_ts ts
-    -> ts_implies_per_bar ts
-    -> type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> uniquely_valued (close ts).
+  forall inh (ts : cts(o)),
+    local_ts inh ts
+    -> ts_implies_per_bar inh ts
+    -> type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> uniquely_valued (close inh ts).
 Proof.
   intros.
   apply close_type_system in X; auto.
@@ -484,13 +484,13 @@ Proof.
 Qed.
 
 Lemma close_type_symmetric {o} :
-  forall (ts : cts(o)),
-    local_ts ts
-    -> ts_implies_per_bar ts
-    -> type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> type_symmetric (close ts).
+  forall inh (ts : cts(o)),
+    local_ts inh ts
+    -> ts_implies_per_bar inh ts
+    -> type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> type_symmetric (close inh ts).
 Proof.
   intros.
   apply close_type_system in X; auto.
@@ -498,13 +498,13 @@ Proof.
 Qed.
 
 Lemma close_type_extensionality {o} :
-  forall (ts : cts(o)),
-    local_ts ts
-    -> ts_implies_per_bar ts
-    -> type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> type_extensionality (close ts).
+  forall inh (ts : cts(o)),
+    local_ts inh ts
+    -> ts_implies_per_bar inh ts
+    -> type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> type_extensionality (close inh ts).
 Proof.
   intros.
   apply close_type_system in X; auto.
@@ -512,13 +512,13 @@ Proof.
 Qed.
 
 Lemma close_type_transitive {o} :
-  forall (ts : cts(o)),
-    local_ts ts
-    -> ts_implies_per_bar ts
-    -> type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> type_transitive (close ts).
+  forall inh (ts : cts(o)),
+    local_ts inh ts
+    -> ts_implies_per_bar inh ts
+    -> type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> type_transitive (close inh ts).
 Proof.
   intros.
   apply close_type_system in X; auto.
@@ -526,13 +526,13 @@ Proof.
 Qed.
 
 Lemma close_type_value_respecting {o} :
-  forall (ts : cts(o)),
-    local_ts ts
-    -> ts_implies_per_bar ts
-    -> type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> type_value_respecting (close ts).
+  forall inh (ts : cts(o)),
+    local_ts inh ts
+    -> ts_implies_per_bar inh ts
+    -> type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> type_value_respecting inh (close inh ts).
 Proof.
   intros.
   apply close_type_system in X; auto.

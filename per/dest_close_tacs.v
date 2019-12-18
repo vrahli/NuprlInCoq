@@ -66,7 +66,7 @@ Ltac close_diff_ext :=
   allunfold_per; spcast;
   match goal with
   | [ comp1 : computes_to_valc ?lib ?T _,
-      comp2 : in_ext ?lib (fun v => ccomputes_to_valc v ?T _)
+      comp2 : in_ext ?inh ?lib (fun v => ccomputes_to_valc v ?T _)
     |- _ ] =>
 
     let h1  := fresh "h1" in
@@ -275,7 +275,7 @@ Ltac close_diff_ext :=
 
 Ltac close_diff_init_ext :=
   match goal with
-  | [ H : in_ext ?lib (fun lib => ?T ===>(lib) _) |- _ ] =>
+  | [ H : in_ext ?inh ?lib (fun lib => ?T ===>(?inh,lib) _) |- _ ] =>
     let h   := fresh "h"   in
     let xxx := fresh "xxx" in
     pose proof (H lib) as h; autodimp h xxx; eauto 2 with slow; simpl in h; spcast;
@@ -338,9 +338,9 @@ Ltac close_diff_all :=
         ].
 
 Lemma cequivc_ext_mkc_approx_right {o} :
-  forall lib (a b c d : @CTerm o),
-    ccequivc_ext lib (mkc_approx a b) (mkc_approx c d)
-    -> ccequivc_ext lib a c # ccequivc_ext lib b d.
+  forall inh lib (a b c d : @CTerm o),
+    ccequivc_ext inh lib (mkc_approx a b) (mkc_approx c d)
+    -> ccequivc_ext inh lib a c # ccequivc_ext inh lib b d.
 Proof.
   introv ceq; dands; introv ext; pose proof (ceq lib' ext) as q; simpl in q;
     clear ceq; spcast; apply cequivc_decomp_approx in q; sp.
@@ -398,9 +398,9 @@ Proof.
 Qed.
 
 Lemma cequivc_ext_mkc_cequiv_right {o} :
-  forall lib (a b c d : @CTerm o),
-    ccequivc_ext lib (mkc_cequiv a b) (mkc_cequiv c d)
-    -> ccequivc_ext lib a c # ccequivc_ext lib b d.
+  forall inh lib (a b c d : @CTerm o),
+    ccequivc_ext inh lib (mkc_cequiv a b) (mkc_cequiv c d)
+    -> ccequivc_ext inh lib a c # ccequivc_ext inh lib b d.
 Proof.
   introv ceq; dands; introv ext; pose proof (ceq lib' ext) as q; simpl in q;
     clear ceq; spcast; apply cequivc_decomp_cequiv in q; sp.

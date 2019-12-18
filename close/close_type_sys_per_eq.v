@@ -37,20 +37,20 @@ Require Export close_util_eq2.
 
 
 Lemma close_type_system_eq {o} :
-  forall lib (ts : cts(o))
-         T T' (eq : per) A B a1 a2 b1 b2 (eqa : lib-per(lib,o)),
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
-    -> ccomputes_to_valc_ext lib T' (mkc_equality b1 b2 B)
-    -> in_ext_ext lib (fun lib' x => close ts lib' A B (eqa lib' x))
-    -> eqorceq_ext lib eqa a1 b1
-    -> eqorceq_ext lib eqa a2 b2
-    -> (eq <=2=> (eq_per_eq_bar lib a1 a2 eqa))
-    -> per_eq (close ts) lib T T' eq
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x))
-    -> type_sys_props4 (close ts) lib T T' eq.
+  forall inh lib (ts : cts(o))
+         T T' (eq : per) A B a1 a2 b1 b2 (eqa : lib-per(inh,lib,o)),
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T (mkc_equality a1 a2 A)
+    -> ccomputes_to_valc_ext inh lib T' (mkc_equality b1 b2 B)
+    -> in_ext_ext inh lib (fun lib' x => close inh ts lib' A B (eqa lib' x))
+    -> eqorceq_ext inh lib eqa a1 b1
+    -> eqorceq_ext inh lib eqa a2 b2
+    -> (eq <=2=> (eq_per_eq_bar inh lib a1 a2 eqa))
+    -> per_eq inh (close inh ts) lib T T' eq
+    -> in_ext_ext inh lib (fun lib' x => type_sys_props4 inh (close inh ts) lib' A B (eqa lib' x))
+    -> type_sys_props4 inh (close inh ts) lib T T' eq.
 Proof.
   introv tsts dou mon c1 c2 inextcl eos1 eos2 eqiff per; introv inexttsp.
 

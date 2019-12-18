@@ -33,20 +33,20 @@ Require Export close_util_qtime2.
 
 
 Lemma close_type_system_qtime {o} :
-  forall lib (ts : cts(o))
+  forall inh lib (ts : cts(o))
          T T'
          (eq : per)
          A B
-         (eqa : lib-per(lib,o)),
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T (mkc_qtime A)
-    -> ccomputes_to_valc_ext lib T' (mkc_qtime B)
-    -> in_ext_ext lib (fun lib' x => close ts lib' A B (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x))
-    -> (eq <=2=> (per_qtime_eq_bar lib eqa))
-    -> type_sys_props4 (close ts) lib T T' eq.
+         (eqa : lib-per(inh,lib,o)),
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T (mkc_qtime A)
+    -> ccomputes_to_valc_ext inh lib T' (mkc_qtime B)
+    -> in_ext_ext inh lib (fun lib' x => close inh ts lib' A B (eqa lib' x))
+    -> in_ext_ext inh lib (fun lib' x => type_sys_props4 inh (close inh ts) lib' A B (eqa lib' x))
+    -> (eq <=2=> (per_qtime_eq_bar inh lib eqa))
+    -> type_sys_props4 inh (close inh ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp1 comp2 cla tsa eqiff.
 

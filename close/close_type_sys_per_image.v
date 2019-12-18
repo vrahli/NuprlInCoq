@@ -32,21 +32,21 @@ Require Export close_util_image2.
 
 
 Lemma close_type_system_image {o} :
-  forall lib (ts : cts(o))
+  forall inh lib (ts : cts(o))
          T T'
          (eq : per)
-         A A' f f' (eqa : lib-per(lib,o)),
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T (mkc_image A f)
-    -> ccomputes_to_valc_ext lib T' (mkc_image A' f')
-    -> in_ext_ext lib (fun lib' x => close ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
-    -> ccequivc_ext lib f f'
-    -> eq <=2=> (per_image_eq_bar lib eqa f)
-    -> per_image (close ts) lib T T' eq
-    -> type_sys_props4 (close ts) lib T T' eq.
+         A A' f f' (eqa : lib-per(inh,lib,o)),
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T (mkc_image A f)
+    -> ccomputes_to_valc_ext inh lib T' (mkc_image A' f')
+    -> in_ext_ext inh lib (fun lib' x => close inh ts lib' A A' (eqa lib' x))
+    -> in_ext_ext inh lib (fun lib' x => type_sys_props4 inh (close inh ts) lib' A A' (eqa lib' x))
+    -> ccequivc_ext inh lib f f'
+    -> eq <=2=> (per_image_eq_bar inh lib eqa f)
+    -> per_image inh (close inh ts) lib T T' eq
+    -> type_sys_props4 inh (close inh ts) lib T T' eq.
 Proof.
   introv tysys dou mon c1 c2 cla tsa ceqf eqiff per.
 

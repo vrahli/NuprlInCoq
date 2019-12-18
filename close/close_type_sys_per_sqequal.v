@@ -32,13 +32,12 @@ Require Export close_util_cequiv.
 
 
 Lemma close_type_system_cequiv {p} :
-  forall lib (ts : cts(p)),
-  forall T T' eq,
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> per_cequiv (close ts) lib T T' eq
-    -> type_sys_props4 (close ts) lib T T' eq.
+  forall inh lib (ts : cts(p)) T T' eq,
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> per_cequiv inh (close inh ts) lib T T' eq
+    -> type_sys_props4 inh (close inh ts) lib T T' eq.
 Proof.
   introv tsts dou mon per.
 
@@ -49,7 +48,7 @@ Proof.
   + SCase "uniquely_valued".
     dclose_lr.
 
-    assert (uniquely_valued (per_bar (per_cequiv (close ts))))
+    assert (uniquely_valued (per_bar inh (per_cequiv inh (close inh ts))))
       as uv
         by (apply per_bar_per_cequiv_uniquely_valued).
     eapply uv; eauto.
@@ -59,10 +58,10 @@ Proof.
       apply per_bar_per_cequiv_implies_close;
       apply per_cequiv_implies_per_bar in per.
 
-    assert (type_symmetric (per_bar (per_cequiv (close ts))))
+    assert (type_symmetric (per_bar inh (per_cequiv inh (close inh ts))))
       as tys
         by (apply per_bar_per_cequiv_type_symmetric).
-    assert (type_extensionality (per_bar (per_cequiv (close ts))))
+    assert (type_extensionality (per_bar inh (per_cequiv inh (close inh ts))))
       as tye
         by (apply per_bar_per_cequiv_type_extensionality).
     apply tye with (eq := eq); auto.
@@ -70,7 +69,7 @@ Proof.
   + SCase "type_value_respecting"; repdors; subst;
       apply per_bar_per_cequiv_implies_close;
       apply per_cequiv_implies_per_bar in per;
-      assert (type_value_respecting (per_bar (per_cequiv (close ts))))
+      assert (type_value_respecting inh (per_bar inh (per_cequiv inh (close inh ts))))
         as tvr
           by (apply per_bar_per_cequiv_type_value_respecting).
 
@@ -89,19 +88,19 @@ Proof.
     apply type_system_implies_type_equality_respecting_trans2; eauto 3 with slow.
 
   + SCase "term_symmetric".
-    assert (term_symmetric (per_bar (per_cequiv (close ts))))
+    assert (term_symmetric (per_bar inh (per_cequiv inh (close inh ts))))
       as tes
         by (apply per_bar_per_cequiv_term_symmetric).
     apply (tes lib T T'); eauto 3 with slow.
 
   + SCase "term_transitive".
-    assert (term_transitive (per_bar (per_cequiv (close ts))))
+    assert (term_transitive (per_bar inh (per_cequiv inh (close inh ts))))
       as tet
         by (apply per_bar_per_cequiv_term_transitive).
     apply (tet lib T T'); eauto 3 with slow.
 
   + SCase "term_value_respecting".
-    assert (term_value_respecting (per_bar (per_cequiv (close ts))))
+    assert (term_value_respecting inh (per_bar inh (per_cequiv inh (close inh ts))))
       as tvr
         by (apply per_bar_per_cequiv_term_value_respecting).
     apply tvr with (T := T); auto.

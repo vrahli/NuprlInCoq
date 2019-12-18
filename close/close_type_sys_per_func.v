@@ -33,31 +33,31 @@ Require Export close_util_func2.
 
 
 Lemma close_type_system_func {o} :
-  forall lib (ts : cts(o))
+  forall inh lib (ts : cts(o))
          T T'
          (eq : per)
          A A' v v' B B'
-         (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)),
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T (mkc_function A v B)
-    -> ccomputes_to_valc_ext lib T' (mkc_function A' v' B')
-    -> in_ext_ext lib (fun lib' x => close ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
+         (eqa : lib-per(inh,lib,o)) (eqb : lib-per-fam(inh,lib,eqa,o)),
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T (mkc_function A v B)
+    -> ccomputes_to_valc_ext inh lib T' (mkc_function A' v' B')
+    -> in_ext_ext inh lib (fun lib' x => close inh ts lib' A A' (eqa lib' x))
+    -> in_ext_ext inh lib (fun lib' x => type_sys_props4 inh (close inh ts) lib' A A' (eqa lib' x))
     -> in_ext_ext
-         lib
+         inh lib
          (fun lib' x =>
             forall (a a' : CTerm) (e : eqa lib' x a a'),
-              close ts lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e))
+              close inh ts lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e))
     -> in_ext_ext
-         lib
+         inh lib
          (fun lib' x =>
             forall (a a' : CTerm) (e : eqa lib' x a a'),
-              type_sys_props4 (close ts) lib' (substc a v B) (substc a' v' B')
+              type_sys_props4 inh (close inh ts) lib' (substc a v B) (substc a' v' B')
                               (eqb lib' x a a' e))
-    -> (eq <=2=> (per_func_ext_eq lib eqa eqb))
-    -> type_sys_props4 (close ts) lib T T' eq.
+    -> (eq <=2=> (per_func_ext_eq inh lib eqa eqb))
+    -> type_sys_props4 inh (close inh ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp1 comp2 cla tsa clb tsb eqiff.
 

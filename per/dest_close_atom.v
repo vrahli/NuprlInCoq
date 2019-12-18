@@ -48,9 +48,9 @@ Qed.
 Hint Resolve local_equality_of_atom_bar : slow.*)
 
 Lemma per_bar_eq_equality_of_atom_bar_implies {o} :
-  forall (lib : @library o) t1 t2,
-    per_bar_eq lib (equality_of_atom_bar_lib_per lib) t1 t2
-    -> equality_of_atom_bar lib t1 t2.
+  forall inh (lib : @library o) t1 t2,
+    per_bar_eq inh lib (equality_of_atom_bar_lib_per inh lib) t1 t2
+    -> equality_of_atom_bar inh lib t1 t2.
 Proof.
   introv alla.
   unfold per_bar_eq in alla.
@@ -61,27 +61,27 @@ Qed.
 Hint Resolve per_bar_eq_equality_of_atom_bar_implies : slow.
 
 Lemma in_ext_equality_of_atom_implies_equality_of_atom_bar {o} :
-  forall (lib1 lib2 : @library o) t1 t2,
-    lib_extends lib2 lib1
-    -> in_ext lib1 (fun lib => equality_of_atom lib t1 t2)
-    -> equality_of_atom_bar lib2 t1 t2.
+  forall inh (lib1 lib2 : @library o) t1 t2,
+    lib_extends inh lib2 lib1
+    -> in_ext inh lib1 (fun lib => equality_of_atom inh lib t1 t2)
+    -> equality_of_atom_bar inh lib2 t1 t2.
 Proof.
   introv ext h.
   unfold equality_of_atom_bar.
   introv xt.
-  exists lib' (lib_extends_refl lib'); eauto 3 with slow.
+  exists lib' (lib_extends_refl inh lib'); eauto 3 with slow.
 Qed.
 Hint Resolve in_ext_equality_of_atom_implies_equality_of_atom_bar : slow.
 
 Lemma in_open_bar_ext_equal_equality_of_atom_bar_implies_per_bar_eq_implies_equality_of_atom_bar {o} :
-  forall (lib : @library o) (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (equality_of_atom_bar lib'))
-    -> (per_bar_eq lib eqa) <=2=> (equality_of_atom_bar lib).
+  forall inh (lib : @library o) (eqa : lib-per(inh,lib,o)),
+    in_open_bar_ext inh lib (fun lib' x => (eqa lib' x) <=2=> (equality_of_atom_bar inh lib'))
+    -> (per_bar_eq inh lib eqa) <=2=> (equality_of_atom_bar inh lib).
 Proof.
   introv alla; introv; split; introv h.
 
   - pose proof (in_open_bar_ext_eq_term_equals_preserves_per_bar_eq
-                  _ eqa (equality_of_atom_bar_lib_per lib) t1 t2 alla h) as q.
+                  _ _ eqa (equality_of_atom_bar_lib_per inh lib) t1 t2 alla h) as q.
     eauto 3 with slow.
 
   - eapply in_open_bar_ext_comb_per;[exact alla|]; clear alla.
@@ -92,10 +92,10 @@ Qed.
 Hint Resolve in_open_bar_ext_equal_equality_of_atom_bar_implies_per_bar_eq_implies_equality_of_atom_bar : slow.
 
 Lemma local_per_atom_bar {o} :
-  forall (lib : @library o) ts T T' eq eqa,
-    (eq <=2=> (per_bar_eq lib eqa))
-    -> in_open_bar_ext lib (fun lib' x => per_atom_bar ts lib' T T' (eqa lib' x))
-    -> per_atom_bar ts lib T T' eq.
+  forall inh (lib : @library o) ts T T' eq eqa,
+    (eq <=2=> (per_bar_eq inh lib eqa))
+    -> in_open_bar_ext inh lib (fun lib' x => per_atom_bar inh ts lib' T T' (eqa lib' x))
+    -> per_atom_bar inh ts lib T T' eq.
 Proof.
   introv eqiff alla.
   unfold per_atom_bar in *.
@@ -107,9 +107,9 @@ Proof.
 Qed.
 
 Lemma per_atom_implies_per_atom_bar {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_atom ts lib T T' eq
-    -> per_atom_bar ts lib T T' eq.
+  forall inh ts lib (T T' : @CTerm o) eq,
+    per_atom inh ts lib T T' eq
+    -> per_atom_bar inh ts lib T T' eq.
 Proof.
   introv per.
   unfold per_atom in per; repnd.
@@ -122,12 +122,12 @@ Hint Resolve per_atom_implies_per_atom_bar : slow.
 (* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_atom_l {p} :
-  forall (ts : cts(p)) lib T T' eq,
-    type_system ts
-    -> defines_only_universes ts
-    -> ccomputes_to_valc_ext lib T mkc_atom
-    -> close ts lib T T' eq
-    -> per_atom_bar (close ts) lib T T' eq.
+  forall inh (ts : cts(p)) lib T T' eq,
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> ccomputes_to_valc_ext inh lib T mkc_atom
+    -> close inh ts lib T T' eq
+    -> per_atom_bar inh (close inh ts) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
@@ -138,12 +138,12 @@ Proof.
 Qed.
 
 Lemma dest_close_per_atom_r {p} :
-  forall (ts : cts(p)) lib T T' eq,
-    type_system ts
-    -> defines_only_universes ts
-    -> ccomputes_to_valc_ext lib T' mkc_atom
-    -> close ts lib T T' eq
-    -> per_atom_bar (close ts) lib T T' eq.
+  forall inh (ts : cts(p)) lib T T' eq,
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> ccomputes_to_valc_ext inh lib T' mkc_atom
+    -> close inh ts lib T T' eq
+    -> per_atom_bar inh (close inh ts) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.

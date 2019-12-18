@@ -36,10 +36,10 @@ Require Export local.
 
 
 Lemma dest_close_per_uni_l {p} :
-  forall (ts : cts(p)) lib T i T' eq,
-    local_ts ts
-    -> ccomputes_to_valc_ext lib T (mkc_uni i)
-    -> close ts lib T T' eq
+  forall inh (ts : cts(p)) lib T i T' eq,
+    local_ts inh ts
+    -> ccomputes_to_valc_ext inh lib T (mkc_uni i)
+    -> close inh ts lib T T' eq
     -> ts lib  T T' eq.
 Proof.
   introv locts comp cl.
@@ -50,10 +50,10 @@ Proof.
 Qed.
 
 Lemma dest_close_per_uni_r {p} :
-  forall (ts : cts(p)) lib T i T' eq,
-    local_ts ts
-    -> ccomputes_to_valc_ext lib T' (mkc_uni i)
-    -> close ts lib T T' eq
+  forall inh (ts : cts(p)) lib T i T' eq,
+    local_ts inh ts
+    -> ccomputes_to_valc_ext inh lib T' (mkc_uni i)
+    -> close inh ts lib T T' eq
     -> ts lib T T' eq.
 Proof.
   introv locts comp cl.
@@ -64,10 +64,10 @@ Proof.
 Qed.
 
 Lemma dest_close_per_uni_comp_l {p} :
-  forall (ts : cts(p)) lib T T' eq,
-    local_ts ts
-    -> computes_to_uni lib T
-    -> close ts lib T T' eq
+  forall inh (ts : cts(p)) lib T T' eq,
+    local_ts inh ts
+    -> computes_to_uni inh lib T
+    -> close inh ts lib T T' eq
     -> ts lib  T T' eq.
 Proof.
   introv locts comp cl.
@@ -78,10 +78,38 @@ Proof.
 Qed.
 
 Lemma dest_close_per_uni_comp_r {p} :
-  forall (ts : cts(p)) lib T T' eq,
-    local_ts ts
-    -> computes_to_uni lib T'
-    -> close ts lib T T' eq
+  forall inh (ts : cts(p)) lib T T' eq,
+    local_ts inh ts
+    -> computes_to_uni inh lib T'
+    -> close inh ts lib T T' eq
+    -> ts lib T T' eq.
+Proof.
+  introv locts comp cl.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  eapply locts; eauto.
+  eapply in_open_bar_ext_comb;[|exact reca];clear reca.
+  apply in_ext_ext_implies_in_open_bar_ext; introv reca; apply reca; eauto 3 with slow.
+Qed.
+
+Lemma dest_close_per_uni_like_comp_l {p} :
+  forall inh (ts : cts(p)) lib T T' eq,
+    local_ts inh ts
+    -> computes_to_uni_like inh lib T
+    -> close inh ts lib T T' eq
+    -> ts lib  T T' eq.
+Proof.
+  introv locts comp cl.
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  eapply locts; eauto.
+  eapply in_open_bar_ext_comb;[|exact reca];clear reca.
+  apply in_ext_ext_implies_in_open_bar_ext; introv reca; apply reca; eauto 3 with slow.
+Qed.
+
+Lemma dest_close_per_uni_like_comp_r {p} :
+  forall inh (ts : cts(p)) lib T T' eq,
+    local_ts inh ts
+    -> computes_to_uni_like inh lib T'
+    -> close inh ts lib T T' eq
     -> ts lib T T' eq.
 Proof.
   introv locts comp cl.

@@ -2040,10 +2040,23 @@ Ltac apply_defines_only_universes0 :=
     exrepnd
   end.
 
+Lemma computes_to_uni_like_in_bar_implies {o} :
+  forall inh (lib : @library o) T,
+    computes_to_uni_like inh lib T
+    -> exists lib' i,
+      lib_extends inh lib' lib
+      /\ (T ===>(inh,lib') (mkc_uni i) \/ T ===>(inh,lib') (mkc_index i)).
+Proof.
+  introv h; unfold computes_to_uni in h; exrepnd.
+  pose proof (h _ (lib_extends_refl _ _)) as h; exrepnd.
+  pose proof (h1 _ (lib_extends_refl _ _)) as h1; simpl in *; exrepnd.
+  exists lib'' i; dands; eauto 3 with slow.
+Qed.
+
 Ltac apply_defines_only_universes_basic :=
   match goal with
-  | [ H1 : type_system ?ts,
-      H2 : defines_only_universes ?ts,
+  | [ H1 : type_system ?inh ?ts,
+      H2 : defines_only_universes ?inh ?ts,
       H3 : ?ts ?lib ?T1 ?T2 ?eq |- _ ] =>
     let h  := fresh "h" in
     let h' := fresh "h'" in
@@ -2055,7 +2068,33 @@ Ltac apply_defines_only_universes_basic :=
     let i2 := fresh "i2" in
     let f1 := fresh "f1" in
     let f2 := fresh "f2" in
-    pose proof (type_system_ts_refl ts lib T1 T2 eq) as h;
+    pose proof (type_system_ts_refl inh ts lib T1 T2 eq) as h;
+    repeat (autodimp h h');
+    destruct h as [e1 e2];
+    apply H2 in e1;
+    apply H2 in e2;
+    apply computes_to_uni_like_in_bar_implies in e1;
+    apply computes_to_uni_like_in_bar_implies in e2;
+    destruct e1 as [l1 [i1 [e1 f1] ] ]; destruct f1 as [f1|f1];
+    destruct e2 as [l2 [i2 [e2 f2] ] ]; destruct f2 as [f2|f2]
+  end.
+
+(*Ltac apply_defines_only_universes_basic :=
+  match goal with
+  | [ H1 : type_system ?inh ?ts,
+      H2 : defines_only_universes ?inh ?ts,
+      H3 : ?ts ?lib ?T1 ?T2 ?eq |- _ ] =>
+    let h  := fresh "h" in
+    let h' := fresh "h'" in
+    let e1 := fresh "e1" in
+    let e2 := fresh "e2" in
+    let l1 := fresh "l1" in
+    let l2 := fresh "l2" in
+    let i1 := fresh "i1" in
+    let i2 := fresh "i2" in
+    let f1 := fresh "f1" in
+    let f2 := fresh "f2" in
+    pose proof (type_system_ts_refl inh ts lib T1 T2 eq) as h;
     repeat (autodimp h h');
     destruct h as [e1 e2];
     apply H2 in e1;
@@ -2064,7 +2103,7 @@ Ltac apply_defines_only_universes_basic :=
     apply computes_to_uni_in_bar_implies in e2;
     destruct e1 as [l1 [i1 [e1 f1] ] ];
     destruct e2 as [l2 [i2 [e2 f2] ] ]
-  end.
+  end.*)
 
 Lemma cequivc_uni_left_iscvalue {o} :
   forall lib (t : @CTerm o) (n : nat),
@@ -2255,11 +2294,11 @@ Qed.*)
 
 Ltac usedou :=
   match goal with
-  | [ H1 : defines_only_universes ?ts, H2 : ?ts ?lib ?T1 ?T2 ?eq |- _ ] =>
+  | [ H1 : defines_only_universes ?inh ?ts, H2 : ?ts ?lib ?T1 ?T2 ?eq |- _ ] =>
     let cu1 := fresh "cu1" in
     let cu2 := fresh "cu2" in
     let xxx := fresh "xxx" in
-    pose proof (type_system_ts_refl ts lib T1 T2 eq) as cu1;
+    pose proof (type_system_ts_refl inh ts lib T1 T2 eq) as cu1;
     repeat (autodimp cu1 xxx);
     destruct cu1 as [cu1 cu2];
     apply H1 in cu1;
@@ -2275,6 +2314,16 @@ Proof.
   unfold computes_to_uni in *; eauto 3 with slow.
 Qed.
 Hint Resolve computes_to_uni_monotone : slow.
+
+Lemma computes_to_uni_like_monotone {o} :
+  forall inh {lib lib'} (x : lib_extends inh lib' lib) (T : @CTerm o),
+    computes_to_uni_like inh lib T
+    -> computes_to_uni_like inh lib' T.
+Proof.
+  introv x comp.
+  unfold computes_to_uni_like in *; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_uni_like_monotone : slow.
 
 Lemma computes_to_uni_implies_eq {o} :
   forall inh lib (T : @CTerm o) v,
@@ -2292,14 +2341,84 @@ Proof.
   apply cequivc_uni_right_iscvalue in compv0; eauto 3 with slow; subst.
 Qed.
 
+Lemma cequivc_index {o} :
+  forall lib (t t' : @CTerm o) n,
+    computes_to_valc lib t (mkc_index n)
+    -> cequivc lib t t'
+    -> computes_to_valc lib t' (mkc_index n).
+Proof.
+  sp.
+  allapply @computes_to_valc_to_valuec; allsimpl.
+  apply @cequivc_canonical_form with (t' := t') in X; sp.
+  apply lblift_cequiv0 in p; subst; auto.
+Qed.
+
+Lemma iscvalue_mkc_index {p} : forall i : nat, @iscvalue p (mkc_index i).
+Proof.
+  repeat constructor; sp; allsimpl; sp.
+Qed.
+Hint Resolve iscvalue_mkc_index : slow.
+
+Lemma cequivc_index_left_iscvalue {o} :
+  forall lib (t : @CTerm o) (n : nat),
+    cequivc lib (mkc_index n) t
+    -> iscvalue t
+    -> t = mkc_index n.
+Proof.
+  introv ceq isc.
+  eapply cequivc_index in ceq;[|apply computes_to_valc_refl;eauto 3 with slow].
+  apply computes_to_valc_isvalue_eq in ceq; auto.
+Qed.
+
+Lemma cequivc_index_right_iscvalue {o} :
+  forall lib (t : @CTerm o) (n : nat),
+    cequivc lib t (mkc_index n)
+    -> iscvalue t
+    -> t = mkc_index n.
+Proof.
+  introv ceq isc.
+  apply cequivc_sym in ceq.
+  eapply cequivc_index_left_iscvalue; eauto.
+Qed.
+
+Lemma computes_to_uni_like_implies_eq {o} :
+  forall inh lib (T : @CTerm o) v,
+    computes_to_uni_like inh lib T
+    -> ccomputes_to_valc_ext inh lib T v
+    -> exists i, v = mkc_uni i \/ v = mkc_index i.
+Proof.
+  introv compu compv.
+  apply computes_to_uni_like_in_bar_implies in compu; exrepnd; spcast.
+  pose proof (compv _ compu0) as compv; simpl in *.
+  repndors.
+  { pose proof (compu1 _ (lib_extends_refl _ _)) as compu1; simpl in *.
+    exrepnd.
+    uncast; computes_to_eqval.
+    apply cequivc_uni_left_iscvalue in compu2; eauto 3 with slow; subst.
+    apply cequivc_uni_right_iscvalue in compv0; eauto 3 with slow; subst. }
+  { pose proof (compu1 _ (lib_extends_refl _ _)) as compu1; simpl in *.
+    exrepnd.
+    uncast; computes_to_eqval.
+    apply cequivc_index_left_iscvalue in compu2; eauto 3 with slow; subst.
+    apply cequivc_index_right_iscvalue in compv0; eauto 3 with slow; subst. }
+Qed.
+
 Ltac use_computes_to_uni :=
   match goal with
-  | [ H1 : computes_to_uni ?lib ?T,
-      H2 : ccomputes_to_valc_ext ?lib ?T ?v |- _ ] =>
+  | [ H1 : computes_to_uni ?inh ?lib ?T,
+      H2 : ccomputes_to_valc_ext ?inh ?lib ?T ?v |- _ ] =>
     let h := fresh "h" in
     let i := fresh "i" in
-    pose proof (computes_to_uni_implies_eq lib T v H1 H2) as h;
+    pose proof (computes_to_uni_implies_eq inh lib T v H1 H2) as h;
     destruct h as [i h];
+    try (dest_cterms h; inversion h; fail)
+
+  | [ H1 : computes_to_uni_like ?inh ?lib ?T,
+      H2 : ccomputes_to_valc_ext ?inh ?lib ?T ?v |- _ ] =>
+    let h := fresh "h" in
+    let i := fresh "i" in
+    pose proof (computes_to_uni_like_implies_eq inh lib T v H1 H2) as h;
+    destruct h as [i h]; destruct h as [h|h];
     try (dest_cterms h; inversion h; fail)
 
 (*  | [ H1 : computes_to_uni ?lib ?T,
@@ -3245,8 +3364,8 @@ Ltac cequivc_false :=
 
 Ltac computes_to_valc_diff_ext :=
   match goal with
-  | [ H1 : ccomputes_to_valc_ext ?lib1 ?T ?T2,
-           H2 : ccomputes_to_valc_ext ?lib2 ?T ?T1
+  | [ H1 : ccomputes_to_valc_ext ?inh ?lib1 ?T ?T2,
+      H2 : ccomputes_to_valc_ext ?inh ?lib2 ?T ?T1
       |- _ ] =>
     let ext := fresh "eqt" in
     let eqt := fresh "eqt" in
@@ -3258,9 +3377,9 @@ Ltac computes_to_valc_diff_ext :=
     let e2  := fresh "e2" in
     let x1  := fresh "x1" in
     let x2  := fresh "x2" in
-    assert (lib_extends lib2 lib1) as ext by eauto 3 with slow;
+    assert (lib_extends inh lib2 lib1) as ext by eauto 3 with slow;
     pose proof (H1 lib2 ext) as c1; simpl in c1; destruct c1 as [x1 [c1 [d1 e1] ] ];
-    pose proof (H2 lib2 (lib_extends_refl lib2)) as c2; simpl in c2; destruct c2 as [x2 [c2 [d2 e2] ] ];
+    pose proof (H2 lib2 (lib_extends_refl inh lib2)) as c2; simpl in c2; destruct c2 as [x2 [c2 [d2 e2] ] ];
     hide_hyp H1; hide_hyp H2;
     uncast;
     assert (x1 = x2) as eqt by (apply (computes_to_valc_eq lib2 T); auto);
@@ -3282,8 +3401,8 @@ Ltac close_diff_diff :=
 
 Ltac computes_to_eqval_ext :=
   match goal with
-    | [ H1 : ccomputes_to_valc_ext ?lib ?T ?T2,
-        H2 : ccomputes_to_valc_ext ?lib ?T ?T1
+    | [ H1 : ccomputes_to_valc_ext ?inh ?lib ?T ?T2,
+        H2 : ccomputes_to_valc_ext ?inh ?lib ?T ?T1
         |- _ ] =>
       let ceq  := fresh "ceq" in
       let lib' := fresh "lib'" in
@@ -3297,7 +3416,7 @@ Ltac computes_to_eqval_ext :=
       let e2   := fresh "e2" in
       let x1   := fresh "x1" in
       let x2   := fresh "x2" in
-      assert (ccequivc_ext lib T1 T2) as ceq;
+      assert (ccequivc_ext inh lib T1 T2) as ceq;
       [intros lib' ext;
        pose proof (H1 _ ext) as c1; simpl in c1; destruct c1 as [x1 [c1 [d1 e1] ] ];
        pose proof (H2 _ ext) as c2; simpl in c2; destruct c2 as [x2 [c2 [d2 e2] ] ];
@@ -3322,7 +3441,7 @@ Ltac dupcomp T h :=
 
 Ltac use_dou :=
   match goal with
-    | [ H1 : defines_only_universes ?ts, H2 : ?ts ?lib ?T1 ?T2 ?eq |- _ ] =>
+    | [ H1 : defines_only_universes ?inh ?ts, H2 : ?ts ?lib ?T1 ?T2 ?eq |- _ ] =>
       let c1 := fresh "c1" in
       let c2 := fresh "c2" in
       let h  := fresh "h" in
@@ -3400,17 +3519,17 @@ Ltac find_term_equalities := repeat find_term_equalities_step.
 (* simple reasoning on type systems *)
 Ltac spts :=
   match goal with
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T ?T1 ?eq1, H2 : ?ts ?lib ?T ?T2 ?eq2
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T ?T1 ?eq1, H2 : ?ts ?lib ?T ?T2 ?eq2
         |- eq_term_equals ?eq1 ?eq2 ] =>
-      generalize (uniquely_valued_eq_ts ts lib T T1 T2 eq1 eq2);
+      generalize (uniquely_valued_eq_ts inh ts lib T T1 T2 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T ?eq1, H2 : ?ts ?lib ?T ?T2 ?eq2
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T1 ?T ?eq1, H2 : ?ts ?lib ?T ?T2 ?eq2
         |- eq_term_equals ?eq1 ?eq2 ] =>
-      generalize (uniquely_valued_eq2_ts ts lib T T1 T2 eq1 eq2);
+      generalize (uniquely_valued_eq2_ts inh ts lib T T1 T2 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T ?T' ?eq1, H2 : eq_term_equals ?eq1 ?eq2
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T ?T' ?eq1, H2 : eq_term_equals ?eq1 ?eq2
         |- ?ts ?lib ?T ?T' ?eq2 ] =>
       unfold type_system in H;
         repnd;
@@ -3421,77 +3540,77 @@ Ltac spts :=
               complete sp
         end
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T2 ?T3 ?eq2
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T2 ?T3 ?eq2
         |- ?ts ?lib ?T1 ?T3 ?eq1 ] =>
       unfold type_system in H;
         repnd;
         generalize (uniquely_valued_trans2 ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T2 ?T3 ?eq2
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T2 ?T3 ?eq2
         |- ?ts ?lib ?T3 ?T3 ?eq1 ] =>
       unfold type_system in H;
         repnd;
         generalize (uniquely_valued_trans2_r ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T2 ?T3 ?eq2
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T2 ?T3 ?eq2
         |- ?ts ?lib ?T1 ?T3 ?eq2 ] =>
       unfold type_system in H;
         repnd;
         generalize (uniquely_valued_trans4 ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T2 ?T3 ?eq2
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T2 ?T3 ?eq2
         |- ?ts ?lib ?T3 ?T3 ?eq2 ] =>
       unfold type_system in H;
         repnd;
         generalize (uniquely_valued_trans4_r ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T1 ?T3 ?eq2
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T1 ?T3 ?eq2
         |- ?ts ?lib ?T2 ?T3 ?eq1 ] =>
       unfold type_system in H;
         repnd;
         generalize (uniquely_valued_trans7 ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T1 ?T3 ?eq2
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T1 ?T3 ?eq2
         |- ?ts ?lib ?T3 ?T3 ?eq1 ] =>
       unfold type_system in H;
         repnd;
         generalize (uniquely_valued_trans7_r ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T1 ?T3 ?eq2
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T1 ?T3 ?eq2
         |- ?ts ?lib ?T2 ?T3 ?eq2 ] =>
       unfold type_system in H;
         repnd;
         generalize (uniquely_valued_trans8 ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T1 ?T3 ?eq2
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq1, H2 : ?ts ?lib ?T1 ?T3 ?eq2
         |- ?ts ?lib ?T3 ?T3 ?eq2 ] =>
       unfold type_system in H;
         repnd;
         generalize (uniquely_valued_trans8_r ts lib T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq, H2 : ccequivc_ext ?lib ?T1 ?T3
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq, H2 : ccequivc_ext ?inh ?lib ?T1 ?T3
         |- ?ts ?lib ?T1 ?T3 ?eq ] =>
       unfold type_system in H;
         repnd;
-        generalize (type_reduces_to_symm ts lib T1 T2 T3 eq);
+        generalize (type_reduces_to_symm inh ts lib T1 T2 T3 eq);
         complete sp
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T2 ?T1 ?eq, H2 : ccequivc_ext ?lib ?T1 ?T3
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T2 ?T1 ?eq, H2 : ccequivc_ext ?inh ?lib ?T1 ?T3
         |- ?ts ?lib ?T1 ?T3 ?eq ] =>
       unfold type_system in H;
         repnd;
-        generalize (type_reduces_to_symm2 ts lib T1 T2 T3 eq);
+        generalize (type_reduces_to_symm2 inh ts lib T1 T2 T3 eq);
         complete sp
 
-    | [ H : type_system ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq
+    | [ H : type_system ?inh ?ts, H1 : ?ts ?lib ?T1 ?T2 ?eq
         |- ?ts ?lib ?T2 ?T1 ?eq ] =>
       unfold type_system in H;
         complete sp

@@ -36,29 +36,29 @@ Require Export close_util_product2.
 
 
 Lemma close_type_system_product {o} :
-  forall lib (ts : cts(o))
+  forall inh lib (ts : cts(o))
          T T'
          (eq : per)
-         A A' v v' B B' (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)),
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T (mkc_product A v B)
-    -> ccomputes_to_valc_ext lib T' (mkc_product A' v' B')
-    -> in_ext_ext lib (fun lib' x => close ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
+         A A' v v' B B' (eqa : lib-per(inh,lib,o)) (eqb : lib-per-fam(inh,lib,eqa,o)),
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T (mkc_product A v B)
+    -> ccomputes_to_valc_ext inh lib T' (mkc_product A' v' B')
+    -> in_ext_ext inh lib (fun lib' x => close inh ts lib' A A' (eqa lib' x))
+    -> in_ext_ext inh lib (fun lib' x => type_sys_props4 inh (close inh ts) lib' A A' (eqa lib' x))
     -> in_ext_ext
-         lib
+         inh lib
          (fun lib' x =>
             forall a a' (e : eqa lib' x a a'),
-              close ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+              close inh ts lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
     -> in_ext_ext
-         lib
+         inh lib
          (fun lib' x =>
             forall a a' (e : eqa lib' x a a'),
-              type_sys_props4 (close ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
-    -> (eq <=2=> (per_product_eq_bar lib eqa eqb))
-    -> type_sys_props4 (close ts) lib T T' eq.
+              type_sys_props4 inh (close inh ts) lib' (B)[[v\\a]] (B')[[v'\\a']] (eqb lib' x a a' e))
+    -> (eq <=2=> (per_product_eq_bar inh lib eqa eqb))
+    -> type_sys_props4 inh (close inh ts) lib T T' eq.
 Proof.
   introv tsts dou mon comp1 comp2 cla tsa clb tsb eqiff.
 

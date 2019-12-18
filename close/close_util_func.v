@@ -33,13 +33,13 @@ Require Export close_util_bar.
 
 
 Definition per_func_ext_eq_lib_per
-           {o}
+           {o} {inh}
            {lib : @library o}
-           (eqa : lib-per(lib,o))
-           (eqb : lib-per-fam(lib,eqa,o)) : lib-per(lib,o).
+           (eqa : lib-per(inh,lib,o))
+           (eqb : lib-per-fam(inh,lib,eqa,o)) : lib-per(inh,lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) =>
-            per_func_ext_eq lib' (raise_lib_per eqa x) (raise_lib_per_fam eqb x)).
+  exists (fun lib' (x : lib_extends inh lib' lib) =>
+            per_func_ext_eq inh lib' (raise_lib_per inh eqa x) (raise_lib_per_fam inh eqb x)).
 
   repeat introv.
   unfold per_func_ext_eq, raise_lib_per_fam, raise_lib_per, raise_ext_per, raise_ext_per_fam; simpl.
@@ -50,23 +50,23 @@ Proof.
   - repeat introv.
     pose proof (h a a') as h; simpl in *.
     assert (eqa lib'0 (lib_extends_trans e0 e) a a') as e2.
-    { eapply (lib_per_cond _ eqa); eauto. }
+    { eapply (lib_per_cond _ _ eqa); eauto. }
     pose proof (h e2) as h.
-    eapply (lib_per_fam_cond _ eqb); eauto.
+    eapply (lib_per_fam_cond _ _ eqb); eauto.
 
   - repeat introv.
     pose proof (h a a') as h; simpl in *.
     assert (eqa lib'0 (lib_extends_trans e0 y) a a') as e2.
-    { eapply (lib_per_cond _ eqa); eauto. }
+    { eapply (lib_per_cond _ _ eqa); eauto. }
     pose proof (h e2) as h.
-    eapply (lib_per_fam_cond _ eqb); eauto.
+    eapply (lib_per_fam_cond _ _ eqb); eauto.
 Defined.
 
 Lemma implies_eq_term_equals_per_func_ext_eq {o} :
-  forall lib (eqa eqb : lib-per(lib,o)) (eqc : lib-per-fam(lib,eqa,o)) (eqd : lib-per-fam(lib,eqb,o)),
-    (in_ext_ext lib (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x)))
-    -> (in_ext_ext lib (fun lib' x => forall a a' (u : eqa lib' x a a') (v : eqb lib' x a a'), (eqc lib' x a a' u) <=2=> (eqd lib' x a a' v)))
-    -> (per_func_ext_eq lib eqa eqc) <=2=> (per_func_ext_eq lib eqb eqd).
+  forall inh lib (eqa eqb : lib-per(inh,lib,o)) (eqc : lib-per-fam(inh,lib,eqa,o)) (eqd : lib-per-fam(inh,lib,eqb,o)),
+    (in_ext_ext inh lib (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x)))
+    -> (in_ext_ext inh lib (fun lib' x => forall a a' (u : eqa lib' x a a') (v : eqb lib' x a a'), (eqc lib' x a a' u) <=2=> (eqd lib' x a a' v)))
+    -> (per_func_ext_eq inh lib eqa eqc) <=2=> (per_func_ext_eq inh lib eqb eqd).
 Proof.
   introv eqas eqbs; introv.
   unfold per_func_ext_eq; introv; split; intro h;
@@ -102,9 +102,9 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_func_ext_eq_lib_per {o} :
-  forall (lib : @library o) (eqa : lib-per(lib,o)) eqb,
-    (per_bar_eq lib (per_func_ext_eq_lib_per eqa eqb))
-    <=2=> (per_func_ext_eq lib eqa eqb).
+  forall inh (lib : @library o) (eqa : lib-per(inh,lib,o)) eqb,
+    (per_bar_eq inh lib (per_func_ext_eq_lib_per eqa eqb))
+    <=2=> (per_func_ext_eq inh lib eqa eqb).
 Proof.
   introv; simpl; unfold per_bar_eq; split; intro h; eauto 3 with slow.
 
@@ -116,8 +116,8 @@ Proof.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_func_eq; try exact h;
-      try apply (lib_per_cond _ eqa);
-      try apply (lib_per_fam_cond _ eqb).
+      try apply (lib_per_cond _ _ eqa);
+      try apply (lib_per_fam_cond _ _ eqb).
 
   - unfold per_func_ext_eq in h.
     eapply in_open_bar_ext_twice in h.
@@ -127,6 +127,6 @@ Proof.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_func_eq; try exact h;
-      try apply (lib_per_cond _ eqa);
-      try apply (lib_per_fam_cond _ eqb).
+      try apply (lib_per_cond _ _ eqa);
+      try apply (lib_per_fam_cond _ _ eqb).
 Qed.

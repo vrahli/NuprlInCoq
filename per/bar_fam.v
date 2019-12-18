@@ -38,10 +38,10 @@ Require Export computation_lib_extends2.
 
 (* MOVE *)
 Lemma in_open_bar_ext_comb_per {o} :
-  forall (lib : @library o) (F G : forall lib' (x : lib_extends lib' lib), per(o)) a b,
-    in_open_bar_ext lib (fun lib' x => (F lib' x) <=2=> (G lib' x))
-    -> in_open_bar_ext lib (fun lib' x => G lib' x a b)
-    -> in_open_bar_ext lib (fun lib' x => F lib' x a b).
+  forall inh (lib : @library o) (F G : forall lib' (x : lib_extends inh lib' lib), per(o)) a b,
+    in_open_bar_ext inh lib (fun lib' x => (F lib' x) <=2=> (G lib' x))
+    -> in_open_bar_ext inh lib (fun lib' x => G lib' x a b)
+    -> in_open_bar_ext inh lib (fun lib' x => F lib' x a b).
 Proof.
   introv h q.
   eapply in_open_bar_ext_pres2;[|exact h|exact q]; clear h q; introv h q; apply h; auto.
@@ -299,10 +299,10 @@ Proof.
 Defined.*)
 
 Lemma in_open_bar_ext_eq_term_equals_preserves_per_bar_eq {o} :
-  forall (lib : @library o) (eqa eqb : lib-per(lib,o)) t1 t2,
-    in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
-    -> per_bar_eq lib eqa t1 t2
-    -> per_bar_eq lib eqb t1 t2.
+  forall inh (lib : @library o) (eqa eqb : lib-per(inh,lib,o)) t1 t2,
+    in_open_bar_ext inh lib (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x))
+    -> per_bar_eq inh lib eqa t1 t2
+    -> per_bar_eq inh lib eqb t1 t2.
 Proof.
   introv alla allb.
   unfold per_bar_eq in *.

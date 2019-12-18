@@ -33,12 +33,12 @@ Require Export close_util_bar.
 
 
 Definition per_qtime_eq_bar_lib_per
-           {o}
+           {o} {inh}
            {lib : @library o}
-           (eqa : lib-per(lib,o)) : lib-per(lib,o).
+           (eqa : lib-per(inh,lib,o)) : lib-per(inh,lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) =>
-            per_qtime_eq_bar lib' (raise_lib_per eqa x)).
+  exists (fun lib' (x : lib_extends inh lib' lib) =>
+            per_qtime_eq_bar inh lib' (raise_lib_per inh eqa x)).
 
   repeat introv.
   unfold per_qtime_eq_bar, raise_lib_per, raise_ext_per; simpl.
@@ -48,17 +48,17 @@ Proof.
 
   - unfold per_qtime_eq in *; exrepnd.
     exists x y0; dands; eauto 3 with slow.
-    eapply (lib_per_cond _ eqa); eauto.
+    eapply (lib_per_cond _ _ eqa); eauto.
 
   - unfold per_qtime_eq in *; exrepnd.
     exists x y0; dands; eauto 3 with slow.
-    eapply (lib_per_cond _ eqa); eauto.
+    eapply (lib_per_cond _ _ eqa); eauto.
 Defined.
 
 Lemma implies_eq_term_equals_per_qtime_eq_bar {o} :
-  forall lib (eqa eqb : lib-per(lib,o)),
-    (in_ext_ext lib (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x)))
-    -> (per_qtime_eq_bar lib eqa) <=2=> (per_qtime_eq_bar lib eqb).
+  forall inh lib (eqa eqb : lib-per(inh,lib,o)),
+    (in_ext_ext inh lib (fun lib' x => (eqa lib' x) <=2=> (eqb lib' x)))
+    -> (per_qtime_eq_bar inh lib eqa) <=2=> (per_qtime_eq_bar inh lib eqb).
 Proof.
   introv eqas; introv.
   unfold per_qtime_eq_bar; introv; split; intro h; exrepnd;
@@ -68,9 +68,9 @@ Proof.
 Qed.
 
 Lemma implies_eq_term_equals_per_qtime_eq {o} :
-  forall lib (eqa eqb : per(o)),
+  forall inh lib (eqa eqb : per(o)),
     (eqa <=2=> eqb)
-    -> (per_qtime_eq lib eqa) <=2=> (per_qtime_eq lib eqb).
+    -> (per_qtime_eq inh lib eqa) <=2=> (per_qtime_eq inh lib eqb).
 Proof.
   introv eqas; introv.
   unfold per_qtime_eq; introv; split; intro h; introv; exrepnd;
@@ -78,9 +78,9 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_qtime_eq_bar_lib_per {o} :
-  forall (lib : @library o) (eqa : lib-per(lib,o)),
-    (per_bar_eq lib (per_qtime_eq_bar_lib_per eqa))
-    <=2=> (per_qtime_eq_bar lib eqa).
+  forall inh (lib : @library o) (eqa : lib-per(inh,lib,o)),
+    (per_bar_eq inh lib (per_qtime_eq_bar_lib_per eqa))
+    <=2=> (per_qtime_eq_bar inh lib eqa).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
 
@@ -92,7 +92,7 @@ Proof.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_qtime_eq; try exact h;
-      try apply (lib_per_cond _ eqa).
+      try apply (lib_per_cond _ _ eqa).
 
   - unfold per_qtime_eq_bar in h.
     eapply in_open_bar_ext_twice in h.
@@ -102,5 +102,5 @@ Proof.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_qtime_eq; try exact h;
-      try apply (lib_per_cond _ eqa).
+      try apply (lib_per_cond _ _ eqa).
 Qed.

@@ -34,7 +34,7 @@ Require Export per_ceq_bar.
 
 
 Lemma per_uatom_bar_uniquely_valued {p} :
-  forall (ts : cts(p)), uniquely_valued (per_uatom_bar ts).
+  forall inh (ts : cts(p)), uniquely_valued (per_uatom_bar inh ts).
 Proof.
  unfold uniquely_valued, per_uatom_bar, eq_term_equals; sp.
  allrw; sp.
@@ -42,7 +42,7 @@ Qed.
 Hint Resolve per_uatom_bar_uniquely_valued : slow.
 
 Lemma per_uatom_bar_type_extensionality {p} :
-  forall (ts : cts(p)), type_extensionality (per_uatom_bar ts).
+  forall inh (ts : cts(p)), type_extensionality (per_uatom_bar inh ts).
 Proof.
   unfold type_extensionality, per_uatom_bar, eq_term_equals; sp.
   allrw <-; sp.
@@ -50,7 +50,7 @@ Qed.
 Hint Resolve per_uatom_bar_type_extensionality : slow.
 
 Lemma per_uatom_bar_type_symmetric {p} :
-  forall (ts : cts(p)), type_symmetric (per_uatom_bar ts).
+  forall inh (ts : cts(p)), type_symmetric (per_uatom_bar inh ts).
 Proof.
   introv per.
   unfold per_uatom_bar in *; exrepnd; dands; auto.
@@ -58,7 +58,7 @@ Qed.
 Hint Resolve per_uatom_bar_type_symmetric : slow.
 
 Lemma per_uatom_bar_type_transitive {p} :
-  forall (ts : cts(p)), type_transitive (per_uatom_bar ts).
+  forall inh (ts : cts(p)), type_transitive (per_uatom_bar inh ts).
 Proof.
   introv per1 per2.
   unfold per_uatom_bar in *; exrepnd; dands; auto.
@@ -66,7 +66,7 @@ Qed.
 Hint Resolve per_uatom_bar_type_transitive : slow.
 
 Lemma per_uatom_bar_type_value_respecting {p} :
-  forall (ts : cts(p)), type_value_respecting (per_uatom_bar ts).
+  forall inh (ts : cts(p)), type_value_respecting inh (per_uatom_bar inh ts).
 Proof.
   introv per ceq.
   unfold type_value_respecting, per_uatom_bar in *; exrepnd.
@@ -76,7 +76,7 @@ Qed.
 Hint Resolve per_uatom_bar_type_value_respecting : slow.
 
 Lemma per_uatom_bar_term_symmetric {p} :
-  forall (ts : cts(p)), term_symmetric (per_uatom_bar ts).
+  forall inh (ts : cts(p)), term_symmetric (per_uatom_bar inh ts).
 Proof.
   introv; unfold term_symmetric, term_equality_symmetric, per_uatom_bar.
   introv k e; repnd.
@@ -96,8 +96,8 @@ Qed.
 Hint Resolve iscvalue_mkc_utoken : slow.
 
 Lemma ccequivc_ext_mkc_utoken_implies {o} :
-  forall (lib : @library o) k1 k2,
-    ccequivc_ext lib (mkc_utoken k1) (mkc_utoken k2)
+  forall inh (lib : @library o) k1 k2,
+    ccequivc_ext inh lib (mkc_utoken k1) (mkc_utoken k2)
     -> k1 = k2.
 Proof.
   introv ceq.
@@ -108,7 +108,7 @@ Proof.
 Qed.
 
 Lemma per_uatom_bar_term_transitive {p} :
-  forall (ts : cts(p)), term_transitive (per_uatom_bar ts).
+  forall inh (ts : cts(p)), term_transitive (per_uatom_bar inh ts).
 Proof.
   unfold term_transitive, term_equality_transitive, per_uatom_bar.
   introv cts per i j.
@@ -128,7 +128,7 @@ Qed.
 Hint Resolve per_uatom_bar_term_transitive : slow.
 
 Lemma per_uatom_bar_term_value_respecting {p} :
-  forall (ts : cts(p)), term_value_respecting (per_uatom_bar ts).
+  forall inh (ts : cts(p)), term_value_respecting inh (per_uatom_bar inh ts).
 Proof.
   introv h e ceq.
   unfold per_nat_bar in *; exrepnd; spcast.
@@ -140,39 +140,39 @@ Qed.
 Hint Resolve per_uatom_bar_term_value_respecting : slow.
 
 Lemma per_uatom_bar_type_system {p} :
-  forall (ts : cts(p)), type_system (per_uatom_bar ts).
+  forall inh (ts : cts(p)), type_system inh (per_uatom_bar inh ts).
 Proof.
   intros; unfold type_system; sp; eauto 3 with slow.
 Qed.
 Hint Resolve per_uatom_bar_type_system : slow.
 
 Lemma equality_of_uatom_bar_monotone {o} :
-  forall {lib' lib : @library o} (ext : lib_extends lib' lib) t1 t2,
-    equality_of_uatom_bar lib t1 t2
-    -> equality_of_uatom_bar lib' t1 t2.
+  forall {inh} {lib' lib : @library o} (ext : lib_extends inh lib' lib) t1 t2,
+    equality_of_uatom_bar inh lib t1 t2
+    -> equality_of_uatom_bar inh lib' t1 t2.
 Proof.
   introv h; eapply sub_per_equality_of_uatom_bar; eauto 3 with slow.
 Qed.
 Hint Resolve equality_of_uatom_bar_monotone : slow.
 
 Lemma per_bar_eq_equality_of_uatom_bar_lib_per {o} :
-  forall (lib : @library o),
-    (per_bar_eq lib (equality_of_uatom_bar_lib_per lib))
-    <=2=> (equality_of_uatom_bar lib).
+  forall inh (lib : @library o),
+    (per_bar_eq inh lib (equality_of_uatom_bar_lib_per inh lib))
+    <=2=> (equality_of_uatom_bar inh lib).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
   apply in_ext_ext_implies_in_open_bar_ext; introv; simpl; eauto 3 with slow.
 Qed.
 
 Lemma per_uatom_bar_implies_close {o} :
-  forall (ts : cts(o)) lib T T' eq,
-    per_uatom_bar (close ts) lib T T' eq
-    -> close ts lib T T' eq.
+  forall inh (ts : cts(o)) lib T T' eq,
+    per_uatom_bar inh (close inh ts) lib T T' eq
+    -> close inh ts lib T T' eq.
 Proof.
   introv per.
   apply CL_bar.
   unfold per_uatom_bar in per; exrepnd.
-  exists (equality_of_uatom_bar_lib_per lib).
+  exists (equality_of_uatom_bar_lib_per inh lib).
   dands; eauto 3 with slow.
 
   - eapply in_open_bar_ext_comb2;try exact per0; clear per0.
@@ -187,23 +187,23 @@ Proof.
 Qed.
 
 Lemma ccequivc_ext_preserves_computes_to_valc_uatom {o} :
-  forall lib (T T' : @CTerm o),
-    ccequivc_ext lib T T'
-    -> ccomputes_to_valc_ext lib T mkc_uatom
-    -> T' ===>(lib) mkc_uatom.
+  forall inh lib (T T' : @CTerm o),
+    ccequivc_ext inh lib T T'
+    -> ccomputes_to_valc_ext inh lib T mkc_uatom
+    -> T' ===>(inh,lib) mkc_uatom.
 Proof.
   introv ceq comp; eauto 3 with slow.
 Qed.
 
 Lemma type_equality_respecting_trans1_per_uatom_bar_implies {o} :
-  forall (ts : cts(o)) lib T T',
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T mkc_uatom
-    -> ccomputes_to_valc_ext lib T' mkc_uatom
-    -> type_equality_respecting_trans1 (per_uatom_bar (close ts)) lib T T'
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+  forall inh (ts : cts(o)) lib T T',
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T mkc_uatom
+    -> ccomputes_to_valc_ext inh lib T' mkc_uatom
+    -> type_equality_respecting_trans1 inh (per_uatom_bar inh (close inh ts)) lib T T'
+    -> type_equality_respecting_trans1 inh (close inh ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_uatom_bar_implies_close.
@@ -224,14 +224,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans2_per_uatom_bar_implies {o} :
-  forall (ts : cts(o)) lib T T',
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T mkc_uatom
-    -> ccomputes_to_valc_ext lib T' mkc_uatom
-    -> type_equality_respecting_trans2 (per_uatom_bar (close ts)) lib T T'
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+  forall inh (ts : cts(o)) lib T T',
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T mkc_uatom
+    -> ccomputes_to_valc_ext inh lib T' mkc_uatom
+    -> type_equality_respecting_trans2 inh (per_uatom_bar inh (close inh ts)) lib T T'
+    -> type_equality_respecting_trans2 inh (close inh ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_uatom_bar_implies_close.

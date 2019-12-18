@@ -37,9 +37,9 @@ Require Export type_sys.
 
 
 Lemma close_extensionality {o} :
-  forall {ts : cts(o)},
+  forall inh {ts : cts(o)},
     type_extensionality ts
-    -> type_extensionality (close ts).
+    -> type_extensionality (close inh ts).
 Proof.
   introv text cl.
   close_cases (induction cl using @close_ind') Case; introv ext.
@@ -160,7 +160,7 @@ Qed.
 Hint Resolve close_extensionality : slow.
 
 Lemma type_extensionality_univi {o} :
-  forall i, @type_extensionality o (univi i).
+  forall inh uni i, @type_extensionality o (univi i inh uni).
 Proof.
   introv h e.
   allrw @univi_exists_iff; exrepnd.
@@ -171,7 +171,7 @@ Qed.
 Hint Resolve type_extensionality_univi : slow.
 
 Lemma type_extensionality_univi_bar {o} :
-  forall i, @type_extensionality o (univi_bar i).
+  forall inh uni i, @type_extensionality o (univi_bar i inh uni).
 Proof.
   introv h ext.
   unfold univi_bar, per_bar in *; exrepnd.
@@ -181,21 +181,79 @@ Proof.
 Qed.
 Hint Resolve type_extensionality_univi_bar : slow.
 
-Lemma type_extensionality_univ_ex {o} : @type_extensionality o univ_ex.
+(*Lemma type_extensionality_univ_ex {o} inh : @type_extensionality o (univ_ex inh).
 Proof.
   introv u e.
   unfold univ_ex in *; exrepnd; exists i.
   eapply type_extensionality_univi; eauto.
 Qed.
-Hint Resolve type_extensionality_univ_ex : slow.
+Hint Resolve type_extensionality_univ_ex : slow.*)
 
 Lemma type_extensionality_univ {o} : @type_extensionality o univ.
 Proof.
   introv u e.
-  unfold univ in *; exrepnd.
-  unfold per_bar in *; exrepnd.
+  unfold univ, univi_ex_bar, per_bar in *; exrepnd.
   exists eqa; dands;auto.
   eapply eq_term_equals_trans;[|eauto].
   apply eq_term_equals_sym; auto.
 Qed.
 Hint Resolve type_extensionality_univ : slow.
+
+Lemma type_extensionality_univi_ex_bar {o} :
+  forall inh uni, @type_extensionality o (univi_ex_bar inh uni).
+Proof.
+  introv h ext.
+  unfold univi_ex_bar, per_bar in *; exrepnd.
+  exists eqa; dands; auto.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym; auto.
+Qed.
+Hint Resolve type_extensionality_univi_ex_bar : slow.
+
+Lemma type_extensionality_univa {o} : forall i, @type_extensionality o (univa i).
+Proof.
+  introv u e.
+  allrw @univa_iff; exrepnd.
+  exists j; dands; tcsp.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym; auto.
+Qed.
+Hint Resolve type_extensionality_univa : slow.
+
+Lemma type_extensionality_univa_ex {o} : @type_extensionality o univa_ex.
+Proof.
+  introv u e.
+  unfold univa_ex in *; exrepnd.
+  exists i; eauto 3 with slow.
+  eapply type_extensionality_univa; eauto.
+Qed.
+Hint Resolve type_extensionality_univa_ex : slow.
+
+Lemma type_extensionality_univa_ex_bar {o} :
+  @type_extensionality o univa_ex_bar.
+Proof.
+  introv h ext.
+  unfold univa_ex_bar, per_bar in *; exrepnd.
+  exists eqa; dands; auto.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym; auto.
+Qed.
+Hint Resolve type_extensionality_univa_ex_bar : slow.
+
+Lemma type_extensionality_univia {o} : @type_extensionality o univia.
+Proof.
+  introv u e.
+  unfold univia, per_bar in *; exrepnd.
+  exists eqa; dands; auto.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym; auto.
+Qed.
+Hint Resolve type_extensionality_univia : slow.
+
+Lemma type_extensionality_nuprl {o} : @type_extensionality o nuprl.
+Proof.
+  introv u e.
+  unfold nuprl in *; exrepnd.
+  eapply close_extensionality; try exact u; auto; eauto 3 with slow.
+Qed.
+Hint Resolve type_extensionality_nuprl : slow.

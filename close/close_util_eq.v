@@ -35,18 +35,18 @@ Require Export close_util_bar.
 
 
 Lemma implies_eq_term_equals_eq_per_eq {o} :
-  forall lib a b (eqa eqb : per(o)),
+  forall inh lib a b (eqa eqb : per(o)),
     (eqa <=2=> eqb)
-    -> (eq_per_eq lib a b eqa) <=2=> (eq_per_eq lib a b eqb).
+    -> (eq_per_eq inh lib a b eqa) <=2=> (eq_per_eq inh lib a b eqb).
 Proof.
   introv eqiff; introv; unfold eq_per_eq; introv; split; intro h; repnd; dands;
     auto; apply eqiff; auto.
 Qed.
 
 Lemma per_bar_eq_eq_per_eq_bar_lib_per {o} :
-  forall (lib : @library o) a b (eqa : lib-per(lib,o)),
-    (per_bar_eq lib (eq_per_eq_bar_lib_per lib a b eqa))
-    <=2=> (eq_per_eq_bar lib a b eqa).
+  forall inh (lib : @library o) a b (eqa : lib-per(inh,lib,o)),
+    (per_bar_eq inh lib (eq_per_eq_bar_lib_per inh lib a b eqa))
+    <=2=> (eq_per_eq_bar inh lib a b eqa).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
 
@@ -58,7 +58,7 @@ Proof.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_eq_per_eq; try exact h;
-      try apply (lib_per_cond _ eqa).
+      try apply (lib_per_cond _ _ eqa).
 
   - unfold eq_per_eq_bar in *.
     apply in_open_bar_ext_twice in h.
@@ -68,5 +68,5 @@ Proof.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_eq_per_eq; try exact h;
-      try apply (lib_per_cond _ eqa).
+      try apply (lib_per_cond _ _ eqa).
 Qed.

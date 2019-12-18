@@ -34,12 +34,12 @@ Require Export close_util_bar.
 
 
 Definition per_union_eq_bar_lib_per
-           {o}
+           {o} {inh}
            {lib : @library o}
-           (eqa eqb : lib-per(lib,o)) : lib-per(lib,o).
+           (eqa eqb : lib-per(inh,lib,o)) : lib-per(inh,lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) =>
-            per_union_eq_bar lib' (raise_lib_per eqa x) (raise_lib_per eqb x)).
+  exists (fun lib' (x : lib_extends inh lib' lib) =>
+            per_union_eq_bar inh lib' (raise_lib_per inh eqa x) (raise_lib_per inh eqb x)).
 
   repeat introv.
   unfold per_union_eq_bar, raise_lib_per, raise_ext_per; simpl.
@@ -49,20 +49,20 @@ Proof.
 
   - unfold per_union_eq, per_union_eq_L, per_union_eq_R in *; repndors; exrepnd;
       [left|right]; eexists; eexists; dands; eauto.
-    { eapply (lib_per_cond _ eqa); eauto. }
-    { eapply (lib_per_cond _ eqb); eauto. }
+    { eapply (lib_per_cond _ _ eqa); eauto. }
+    { eapply (lib_per_cond _ _ eqb); eauto. }
 
   - unfold per_union_eq, per_union_eq_L, per_union_eq_R in *; repndors; exrepnd;
       [left|right]; eexists; eexists; dands; eauto.
-    { eapply (lib_per_cond _ eqa); eauto. }
-    { eapply (lib_per_cond _ eqb); eauto. }
+    { eapply (lib_per_cond _ _ eqa); eauto. }
+    { eapply (lib_per_cond _ _ eqb); eauto. }
 Defined.
 
 Lemma implies_eq_term_equals_per_union_eq {o} :
-  forall lib (eqa eqb eqc eqd : per(o)),
+  forall inh lib (eqa eqb eqc eqd : per(o)),
     (eqa <=2=> eqb)
     -> (eqc <=2=> eqd)
-    -> (per_union_eq lib eqa eqc) <=2=> (per_union_eq lib eqb eqd).
+    -> (per_union_eq inh lib eqa eqc) <=2=> (per_union_eq inh lib eqb eqd).
 Proof.
   introv eqas eqbs; introv.
   unfold per_union_eq, per_union_eq_L, per_union_eq_R; introv; split; intro h; introv;
@@ -72,9 +72,9 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_union_eq_bar_lib_per {o} :
-  forall (lib : @library o) (eqa eqb : lib-per(lib,o)),
-    (per_bar_eq lib (per_union_eq_bar_lib_per eqa eqb))
-    <=2=> (per_union_eq_bar lib eqa eqb).
+  forall inh (lib : @library o) (eqa eqb : lib-per(inh,lib,o)),
+    (per_bar_eq inh lib (per_union_eq_bar_lib_per eqa eqb))
+    <=2=> (per_union_eq_bar inh lib eqa eqb).
 Proof.
   introv; simpl; unfold per_bar_eq; split; intro h; eauto 3 with slow.
 
@@ -86,8 +86,8 @@ Proof.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_union_eq; try exact h;
-      try apply (lib_per_cond _ eqa);
-      try apply (lib_per_cond _ eqb).
+      try apply (lib_per_cond _ _ eqa);
+      try apply (lib_per_cond _ _ eqb).
 
   - unfold per_union_eq_bar in *.
     apply in_open_bar_ext_twice in h.
@@ -97,6 +97,6 @@ Proof.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_union_eq; try exact h;
-      try apply (lib_per_cond _ eqa);
-      try apply (lib_per_cond _ eqb).
+      try apply (lib_per_cond _ _ eqa);
+      try apply (lib_per_cond _ _ eqb).
 Qed.

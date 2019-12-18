@@ -206,18 +206,18 @@ Hint Resolve per_csname_bar_type_system : slow.
 *)
 
 Lemma ccequivc_ext_preserves_computes_to_valc_csname {o} :
-  forall lib (T T' : @CTerm o) n,
-    ccequivc_ext lib T T'
-    -> ccomputes_to_valc_ext lib T (mkc_csname n)
-    -> T' ===>(lib) (mkc_csname n).
+  forall inh lib (T T' : @CTerm o) n,
+    ccequivc_ext inh lib T T'
+    -> ccomputes_to_valc_ext inh lib T (mkc_csname n)
+    -> T' ===>(inh,lib) (mkc_csname n).
 Proof.
   introv ceq comp; eauto 3 with slow.
 Qed.
 
 Lemma equality_of_csname_bar_monotone {o} :
-  forall {lib' lib : @library o} (ext : lib_extends lib' lib) n t1 t2,
-    equality_of_csname_bar lib n t1 t2
-    -> equality_of_csname_bar lib' n t1 t2.
+  forall {inh} {lib' lib : @library o} (ext : lib_extends inh lib' lib) n t1 t2,
+    equality_of_csname_bar inh lib n t1 t2
+    -> equality_of_csname_bar inh lib' n t1 t2.
 Proof.
   introv ext h.
   eapply sub_per_equality_of_csname_bar; eauto 3 with slow.
@@ -225,9 +225,9 @@ Qed.
 Hint Resolve equality_of_csname_bar_monotone : slow.
 
 Lemma per_bar_eq_equality_of_csname_bar_lib_per {o} :
-  forall (lib : @library o) n,
-    (per_bar_eq lib (equality_of_csname_bar_lib_per lib n))
-    <=2=> (equality_of_csname_bar lib n).
+  forall inh (lib : @library o) n,
+    (per_bar_eq inh lib (equality_of_csname_bar_lib_per inh lib n))
+    <=2=> (equality_of_csname_bar inh lib n).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
   apply in_ext_ext_implies_in_open_bar_ext; introv; simpl; eauto 3 with slow.
@@ -287,9 +287,9 @@ Qed.
 
 
 Lemma per_bar_per_csname_implies_close {o} :
-  forall (ts : cts(o)) lib T T' eq,
-    per_bar (per_csname (close ts)) lib T T' eq
-    -> close ts lib T T' eq.
+  forall inh (ts : cts(o)) lib T T' eq,
+    per_bar inh (per_csname inh (close inh ts)) lib T T' eq
+    -> close inh ts lib T T' eq.
 Proof.
   introv per.
   apply CL_bar.
@@ -301,8 +301,8 @@ Proof.
 Qed.
 
 Lemma ccequivc_ext_csname {o} :
-  forall lib (T T' : @CTerm o) n,
-    ccequivc_ext lib T T'
+  forall inh lib (T T' : @CTerm o) n,
+    ccequivc_ext inh lib T T'
     -> computes_to_valc lib T (mkc_csname n)
     -> ccomputes_to_valc lib T' (mkc_csname n).
 Proof.
@@ -312,14 +312,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans1_per_csname_bar_implies {o} :
-  forall (ts : cts(o)) lib T T' n n',
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T (mkc_csname n)
-    -> ccomputes_to_valc_ext lib T' (mkc_csname n')
-    -> type_equality_respecting_trans1 (per_bar (per_csname (close ts))) lib T T'
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+  forall inh (ts : cts(o)) lib T T' n n',
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T (mkc_csname n)
+    -> ccomputes_to_valc_ext inh lib T' (mkc_csname n')
+    -> type_equality_respecting_trans1 inh (per_bar inh (per_csname inh (close inh ts))) lib T T'
+    -> type_equality_respecting_trans1 inh (close inh ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_bar_per_csname_implies_close.
@@ -340,14 +340,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans2_per_csname_bar_implies {o} :
-  forall (ts : cts(o)) lib T T' n n',
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T (mkc_csname n)
-    -> ccomputes_to_valc_ext lib T' (mkc_csname n')
-    -> type_equality_respecting_trans2 (per_bar (per_csname (close ts))) lib T T'
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+  forall inh (ts : cts(o)) lib T T' n n',
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T (mkc_csname n)
+    -> ccomputes_to_valc_ext inh lib T' (mkc_csname n')
+    -> type_equality_respecting_trans2 inh (per_bar inh (per_csname inh (close inh ts))) lib T T'
+    -> type_equality_respecting_trans2 inh (close inh ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_bar_per_csname_implies_close.
@@ -356,17 +356,17 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_csname_eq_bar_lib_per {o} :
-  forall (lib : @library o) n,
-    (per_bar_eq lib (equality_of_csname_bar_lib_per lib n))
-    <=2=> (equality_of_csname_bar lib n).
+  forall inh (lib : @library o) n,
+    (per_bar_eq inh lib (equality_of_csname_bar_lib_per inh lib n))
+    <=2=> (equality_of_csname_bar inh lib n).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
   apply in_ext_ext_implies_in_open_bar_ext; introv; simpl; eauto 3 with slow.
 Qed.
 
 Lemma ccequivc_ext_mkc_csname_implies {o} :
-  forall (lib : @library o) k1 k2,
-    ccequivc_ext lib (mkc_csname k1) (mkc_csname k2)
+  forall inh (lib : @library o) k1 k2,
+    ccequivc_ext inh lib (mkc_csname k1) (mkc_csname k2)
     -> k1 = k2.
 Proof.
   introv ceq.
@@ -377,7 +377,7 @@ Proof.
 Qed.
 
 Lemma per_csname_uniquely_valued {p} :
-  forall (ts : cts(p)), uniquely_valued (per_csname ts).
+  forall inh (ts : cts(p)), uniquely_valued (per_csname inh ts).
 Proof.
   unfold uniquely_valued, per_csname, eq_term_equals; sp.
   computes_to_eqval_ext.
@@ -387,14 +387,14 @@ Qed.
 Hint Resolve per_csname_uniquely_valued : slow.
 
 Lemma per_bar_per_csname_uniquely_valued {p} :
-  forall (ts : cts(p)), uniquely_valued (per_bar (per_csname ts)).
+  forall inh (ts : cts(p)), uniquely_valued (per_bar inh (per_csname inh ts)).
 Proof.
   introv; eauto 3 with slow.
 Qed.
 Hint Resolve per_bar_per_csname_uniquely_valued : slow.
 
 Lemma per_csname_type_extensionality {p} :
-  forall (ts : cts(p)), type_extensionality (per_csname ts).
+  forall inh (ts : cts(p)), type_extensionality (per_csname inh ts).
 Proof.
   introv per eqiff.
   unfold per_csname in *; exrepnd.
@@ -405,14 +405,14 @@ Qed.
 Hint Resolve per_csname_type_extensionality : slow.
 
 Lemma per_bar_per_csname_type_extensionality {p} :
-  forall (ts : cts(p)), type_extensionality (per_bar (per_csname ts)).
+  forall inh (ts : cts(p)), type_extensionality (per_bar inh (per_csname inh ts)).
 Proof.
   introv; eauto 3 with slow.
 Qed.
 Hint Resolve per_bar_per_csname_type_extensionality : slow.
 
 Lemma per_csname_type_symmetric {p} :
-  forall (ts : cts(p)), type_symmetric (per_csname ts).
+  forall inh (ts : cts(p)), type_symmetric (per_csname inh ts).
 Proof.
   introv per.
   unfold per_csname in *; exrepnd.
@@ -421,14 +421,14 @@ Qed.
 Hint Resolve per_csname_type_symmetric : slow.
 
 Lemma per_bar_per_csname_type_symmetric {p} :
-  forall (ts : cts(p)), type_symmetric (per_bar (per_csname ts)).
+  forall inh (ts : cts(p)), type_symmetric (per_bar inh (per_csname inh ts)).
 Proof.
   introv; eauto 3 with slow.
 Qed.
 Hint Resolve per_csname_type_symmetric : slow.
 
 Lemma per_csname_type_transitive {p} :
-  forall (ts : cts(p)), type_transitive (per_csname ts).
+  forall inh (ts : cts(p)), type_transitive (per_csname inh ts).
 Proof.
   introv pera perb.
   unfold per_csname in *; exrepnd.
@@ -439,14 +439,14 @@ Qed.
 Hint Resolve per_csname_type_transitive : slow.
 
 Lemma per_bar_per_csname_type_transitive {p} :
-  forall (ts : cts(p)), type_transitive (per_bar (per_csname ts)).
+  forall inh (ts : cts(p)), type_transitive (per_bar inh (per_csname inh ts)).
 Proof.
   introv; eauto 3 with slow.
 Qed.
 Hint Resolve per_csname_type_transitive : slow.
 
 Lemma per_csname_type_value_respecting {p} :
-  forall (ts : cts(p)), type_value_respecting (per_csname ts).
+  forall inh (ts : cts(p)), type_value_respecting inh (per_csname inh ts).
 Proof.
   introv per ceq.
   unfold per_csname in *; exrepnd.
@@ -457,21 +457,21 @@ Qed.
 Hint Resolve per_csname_type_value_respecting : slow.
 
 Lemma per_bar_per_csname_type_value_respecting {p} :
-  forall (ts : cts(p)), type_value_respecting (per_bar (per_csname ts)).
+  forall inh (ts : cts(p)), type_value_respecting inh (per_bar inh (per_csname inh ts)).
 Proof.
   introv; eauto 3 with slow.
 Qed.
 Hint Resolve per_csname_type_value_respecting : slow.
 
 Lemma type_equality_respecting_trans1_per_bar_per_csname_implies {o} :
-  forall (ts : cts(o)) lib T T' n n',
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T  (mkc_csname n)
-    -> ccomputes_to_valc_ext lib T' (mkc_csname n')
-    -> type_equality_respecting_trans1 (per_bar (per_csname (close ts))) lib T T'
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+  forall inh (ts : cts(o)) lib T T' n n',
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T  (mkc_csname n)
+    -> ccomputes_to_valc_ext inh lib T' (mkc_csname n')
+    -> type_equality_respecting_trans1 inh (per_bar inh (per_csname inh (close inh ts))) lib T T'
+    -> type_equality_respecting_trans1 inh (close inh ts) lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_bar_per_csname_implies_close.
@@ -492,14 +492,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans2_per_bar_per_csname_implies {o} :
-  forall (ts : cts(o)) lib T T' n n',
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T  (mkc_csname n)
-    -> ccomputes_to_valc_ext lib T' (mkc_csname n')
-    -> type_equality_respecting_trans2 (per_bar (per_csname (close ts))) lib T T'
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+  forall inh (ts : cts(o)) lib T T' n n',
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T  (mkc_csname n)
+    -> ccomputes_to_valc_ext inh lib T' (mkc_csname n')
+    -> type_equality_respecting_trans2 inh (per_bar inh (per_csname inh (close inh ts))) lib T T'
+    -> type_equality_respecting_trans2 inh (close inh ts) lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_bar_per_csname_implies_close.
@@ -508,7 +508,7 @@ Proof.
 Qed.
 
 Lemma per_csname_term_symmetric {p} :
-  forall (ts : cts(p)), term_symmetric (per_csname ts).
+  forall inh (ts : cts(p)), term_symmetric (per_csname inh ts).
 Proof.
   introv pera perb.
   unfold per_csname in *; exrepnd.
@@ -522,7 +522,7 @@ Qed.
 Hint Resolve per_csname_term_symmetric : slow.
 
 Lemma per_bar_per_csname_term_symmetric {p} :
-  forall (ts : cts(p)), term_symmetric (per_bar (per_csname ts)).
+  forall inh (ts : cts(p)), term_symmetric (per_bar inh (per_csname inh ts)).
 Proof.
   introv; eauto 3 with slow.
 Qed.
@@ -536,8 +536,8 @@ Qed.
 Hint Resolve iscvalue_mkc_choice_seq : slow.
 
 Lemma ccequivc_ext_mkc_choice_seq_implies {o} :
-  forall (lib : @library o) k1 k2,
-    ccequivc_ext lib (mkc_choice_seq k1) (mkc_choice_seq k2)
+  forall inh (lib : @library o) k1 k2,
+    ccequivc_ext inh lib (mkc_choice_seq k1) (mkc_choice_seq k2)
     -> k1 = k2.
 Proof.
   introv ceq.
@@ -548,7 +548,7 @@ Proof.
 Qed.
 
 Lemma per_csname_term_transitive {p} :
-  forall (ts : cts(p)), term_transitive (per_csname ts).
+  forall inh (ts : cts(p)), term_transitive (per_csname inh ts).
 Proof.
   introv per e1 e2.
   unfold per_csname in *; exrepnd.
@@ -570,14 +570,14 @@ Qed.
 Hint Resolve per_csname_term_transitive : slow.
 
 Lemma per_bar_per_csname_term_transitive {p} :
-  forall (ts : cts(p)), term_transitive (per_bar (per_csname ts)).
+  forall inh (ts : cts(p)), term_transitive (per_bar inh (per_csname inh ts)).
 Proof.
   introv; eauto 3 with slow.
 Qed.
 Hint Resolve per_csname_term_transitive : slow.
 
 Lemma per_csname_term_value_respecting {p} :
-  forall (ts : cts(p)), term_value_respecting (per_csname ts).
+  forall inh (ts : cts(p)), term_value_respecting inh (per_csname inh ts).
 Proof.
   introv per e ceq.
   unfold per_csname in *; exrepnd.
@@ -591,21 +591,21 @@ Qed.
 Hint Resolve per_csname_term_value_respecting : slow.
 
 Lemma per_bar_per_csname_term_value_respecting {p} :
-  forall (ts : cts(p)), term_value_respecting (per_bar (per_csname ts)).
+  forall inh (ts : cts(p)), term_value_respecting inh (per_bar inh (per_csname inh ts)).
 Proof.
   introv; eauto 3 with slow.
 Qed.
 Hint Resolve per_csname_term_value_respecting : slow.
 
 Lemma per_bar_per_csname_type_system {p} :
-  forall (ts : cts(p)), type_system (per_bar (per_csname ts)).
+  forall inh (ts : cts(p)), type_system inh (per_bar inh (per_csname inh ts)).
 Proof.
   intros; unfold type_system; sp; eauto 3 with slow.
 Qed.
 Hint Resolve per_bar_per_csname_type_system : slow.
 
 Lemma per_bar_per_csname_uniquely_valued2 {p} :
-  forall (ts : cts(p)), uniquely_valued2 (per_bar (per_csname ts)).
+  forall inh (ts : cts(p)), uniquely_valued2 (per_bar inh (per_csname inh ts)).
 Proof.
   unfold uniquely_valued2; introv pera perb; allunfold @per_bar; exrepnd.
   eapply eq_term_equals_trans;[eauto|].
@@ -630,7 +630,7 @@ Qed.
 Hint Resolve per_bar_per_csname_uniquely_valued2 : slow.
 
 (*Lemma per_cequiv_uniquely_valued2 {p} :
-  forall (ts : cts(p)), uniquely_valued2 (per_cequiv ts).
+  forall inh (ts : cts(p)), uniquely_valued2 (per_cequiv ts).
 Proof.
   unfold uniquely_valued2, per_cequiv, eq_term_equals; sp.
   spcast; repeat computes_to_eqval.
@@ -639,7 +639,7 @@ Qed.
 Hint Resolve per_cequiv_uniquely_valued2 : slow.
 
 Lemma per_bar_per_cequiv_uniquely_valued2 {p} :
-  forall (ts : cts(p)), uniquely_valued2 (per_bar (per_cequiv ts)).
+  forall inh (ts : cts(p)), uniquely_valued2 (per_bar inh (per_cequiv ts)).
 Proof.
   introv; eauto 3 with slow.
 Qed.

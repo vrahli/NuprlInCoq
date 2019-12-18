@@ -100,8 +100,8 @@ Proof.
 Qed.*)
 
 Lemma type_extensionality_per_bar {o} :
-  forall (ts : cts(o)),
-    type_extensionality (per_bar ts).
+  forall inh (ts : cts(o)),
+    type_extensionality (per_bar inh ts).
 Proof.
   introv per eqiff.
   unfold per_bar in *; exrepnd.
@@ -112,9 +112,9 @@ Qed.
 Hint Resolve type_extensionality_per_bar : slow.
 
 Lemma type_symmetric_per_bar {o} :
-  forall (ts : cts(o)),
+  forall inh (ts : cts(o)),
     type_symmetric ts
-    -> type_symmetric (per_bar ts).
+    -> type_symmetric (per_bar inh ts).
 Proof.
   introv sym per.
   unfold per_bar in *; exrepnd.
@@ -155,12 +155,12 @@ Qed.
 Hint Resolve per_bar_eq_intersect_bars_right : slow.*)
 
 Lemma type_transitive_per_bar {o} :
-  forall (ts : cts(o)),
+  forall inh (ts : cts(o)),
     uniquely_valued ts
     -> type_extensionality ts
     -> type_symmetric ts
     -> type_transitive ts
-    -> type_transitive (per_bar ts).
+    -> type_transitive (per_bar inh ts).
 Proof.
   introv uv text sym trans pera perb.
   unfold per_bar in *; exrepnd.
@@ -174,9 +174,9 @@ Qed.
 Hint Resolve type_transitive_per_bar : slow.
 
 Lemma type_value_respecting_per_bar {o} :
-  forall (ts : cts(o)),
-    type_value_respecting ts
-    -> type_value_respecting (per_bar ts).
+  forall inh (ts : cts(o)),
+    type_value_respecting inh ts
+    -> type_value_respecting inh (per_bar inh ts).
 Proof.
   introv resp per ceq.
   unfold per_bar in *; exrepnd.
@@ -199,10 +199,10 @@ Proof.
 Qed.*)
 
 Lemma term_symmetric_in_open_bar_ext_implies {o} :
-  forall (lib : @library o) ts T T' (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
+  forall inh (lib : @library o) ts T T' (eqa : lib-per(inh,lib,o)),
+    in_open_bar_ext inh lib (fun lib' x => ts lib' T T' (eqa lib' x))
     -> term_symmetric ts
-    -> in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x)).
+    -> in_open_bar_ext inh lib (fun lib' x => term_equality_symmetric (eqa lib' x)).
 Proof.
   introv alla sym.
   eapply in_open_bar_ext_comb;[|exact alla]; clear alla.
@@ -211,10 +211,10 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_sym {o} :
-  forall (lib : @library o) (eqa : lib-per(lib,o)) t1 t2,
-    in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x))
-    -> per_bar_eq lib eqa t1 t2
-    -> per_bar_eq lib eqa t2 t1.
+  forall inh (lib : @library o) (eqa : lib-per(inh,lib,o)) t1 t2,
+    in_open_bar_ext inh lib (fun lib' x => term_equality_symmetric (eqa lib' x))
+    -> per_bar_eq inh lib eqa t1 t2
+    -> per_bar_eq inh lib eqa t2 t1.
 Proof.
   introv sym per; unfold per_bar_eq in *.
   eapply in_open_bar_ext_comb;[|exact sym];clear sym.
@@ -225,9 +225,9 @@ Qed.
 Hint Resolve per_bar_eq_sym : slow.
 
 Lemma term_symmetric_per_bar {o} :
-  forall (ts : cts(o)),
+  forall inh (ts : cts(o)),
     term_symmetric ts
-    -> term_symmetric (per_bar ts).
+    -> term_symmetric (per_bar inh ts).
 Proof.
   introv sym per e.
   unfold per_bar in *; exrepnd.
@@ -248,10 +248,10 @@ Proof.
 Qed.*)
 
 Lemma term_transitive_in_open_bar_ext_implies {o} :
-  forall (lib : @library o) ts T T' (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
+  forall inh (lib : @library o) ts T T' (eqa : lib-per(inh,lib,o)),
+    in_open_bar_ext inh lib (fun lib' x => ts lib' T T' (eqa lib' x))
     -> term_transitive ts
-    -> in_open_bar_ext lib (fun lib' x => term_equality_transitive (eqa lib' x)).
+    -> in_open_bar_ext inh lib (fun lib' x => term_equality_transitive (eqa lib' x)).
 Proof.
   introv alla sym.
   eapply in_open_bar_ext_comb;[|exact alla];clear alla.
@@ -260,11 +260,11 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_trans {o} :
-  forall (lib : @library o) (eqa : lib-per(lib,o)) t1 t2 t3,
-    in_open_bar_ext lib (fun lib' x => term_equality_transitive (eqa lib' x))
-    -> per_bar_eq lib eqa t1 t2
-    -> per_bar_eq lib eqa t2 t3
-    -> per_bar_eq lib eqa t1 t3.
+  forall inh (lib : @library o) (eqa : lib-per(inh,lib,o)) t1 t2 t3,
+    in_open_bar_ext inh lib (fun lib' x => term_equality_transitive (eqa lib' x))
+    -> per_bar_eq inh lib eqa t1 t2
+    -> per_bar_eq inh lib eqa t2 t3
+    -> per_bar_eq inh lib eqa t1 t3.
 Proof.
   introv trans pera perb; unfold per_bar_eq in *.
   eapply in_open_bar_ext_comb;[|exact trans];clear trans.
@@ -276,9 +276,9 @@ Qed.
 Hint Resolve per_bar_eq_trans : slow.
 
 Lemma term_transitive_per_bar {o} :
-  forall (ts : cts(o)),
+  forall inh (ts : cts(o)),
     term_transitive ts
-    -> term_transitive (per_bar ts).
+    -> term_transitive (per_bar inh ts).
 Proof.
   introv sym per e1 e2.
   unfold per_bar in *; exrepnd.
@@ -299,10 +299,10 @@ Proof.
 Qed.*)
 
 Lemma term_value_respecting_in_open_bar_ext_implies {o} :
-  forall (lib : @library o) ts T (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => ts lib' T T (eqa lib' x))
-    -> term_value_respecting ts
-    -> in_open_bar_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x)).
+  forall inh (lib : @library o) ts T (eqa : lib-per(inh,lib,o)),
+    in_open_bar_ext inh lib (fun lib' x => ts lib' T T (eqa lib' x))
+    -> term_value_respecting inh ts
+    -> in_open_bar_ext inh lib (fun lib' x => term_equality_respecting inh lib' (eqa lib' x)).
 Proof.
   introv alla val.
   eapply in_open_bar_ext_comb;[|exact alla];clear alla.
@@ -311,11 +311,11 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_value_respecting {o} :
-  forall (lib : @library o) (eqa : lib-per(lib,o)) t t',
-    in_open_bar_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x))
-    -> ccequivc_ext lib t t'
-    -> per_bar_eq lib eqa t t
-    -> per_bar_eq lib eqa t t'.
+  forall inh (lib : @library o) (eqa : lib-per(inh,lib,o)) t t',
+    in_open_bar_ext inh lib (fun lib' x => term_equality_respecting inh lib' (eqa lib' x))
+    -> ccequivc_ext inh lib t t'
+    -> per_bar_eq inh lib eqa t t
+    -> per_bar_eq inh lib eqa t t'.
 Proof.
   introv resp ceq pera; unfold per_bar_eq in *.
   eapply in_open_bar_ext_comb;[|exact resp];clear resp.
@@ -326,9 +326,9 @@ Qed.
 Hint Resolve per_bar_eq_value_respecting : slow.
 
 Lemma term_value_respecting_per_bar {o} :
-  forall (ts : cts(o)),
-    term_value_respecting ts
-    -> term_value_respecting (per_bar ts).
+  forall inh (ts : cts(o)),
+    term_value_respecting inh ts
+    -> term_value_respecting inh (per_bar inh ts).
 Proof.
   introv val per e1 e2.
   unfold per_bar in *; exrepnd.
@@ -342,9 +342,9 @@ Definition uniquely_valued2 {p} (ts : cts(p)) :=
     ts lib T T1 eq -> ts lib T T2 eq' -> eq <=2=> eq'.
 
 Lemma uniquely_valued2_per_bar {o} :
-  forall (ts : cts(o)),
+  forall inh (ts : cts(o)),
     uniquely_valued2 ts
-    -> uniquely_valued2 (per_bar ts).
+    -> uniquely_valued2 (per_bar inh ts).
 Proof.
   introv uv p q.
   unfold per_bar, per_bar_eq in *; exrepnd.

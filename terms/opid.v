@@ -245,6 +245,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
 
   *)
  | NUni           : nat -> CanonicalOp
+ | NIndex         : nat -> CanonicalOp
  | NFreeFromAtom  : CanonicalOp
  | NEFreeFromAtom : CanonicalOp
  | NFreeFromAtoms : CanonicalOp
@@ -316,6 +317,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
 (*  | Nseq _         => []*)
   | Ncseq _        => []
   | NUni _         => []
+  | NIndex _       => []
   | NTok _         => []
   | NUTok _        => []
   | NFreeFromAtom  => [0,0,0]
@@ -654,8 +656,10 @@ Lemma canonical_dec {o} :
 Proof.
   introv dc ns.
   destruct x; destruct y;
-  try (left; auto; fail);
-  try (right; sp; inversion H; fail).
+    try (left; auto; fail);
+    try (right; sp; inversion H; fail);
+    try (complete (destruct (deq_nat n n0) as [d|d]; subst; tcsp;
+                   right; intro k; ginv; tcsp)).
 
   - destruct (can_inj_deq c c0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
@@ -672,12 +676,6 @@ Proof.
   - assert (Deq (get_patom_set o)) as d by (destruct o; destruct patom0; auto).
     pose proof (d g g0) as h; dorn h; subst; sp.
     right; intro k; inversion k; sp.
-
-  - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
-
-  - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
 
   - destruct (get_dp dc g g0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
@@ -793,9 +791,11 @@ Lemma canonical_dec_no_const {p} :
 Proof.
   introv nc ns.
   destruct x; destruct y; allsimpl;
-  try (left; auto; fail);
-  try (right; sp; inversion H; fail);
-  try (complete (inversion nc)).
+    try (left; auto; fail);
+    try (right; sp; inversion H; fail);
+    try (complete (inversion nc));
+    try (complete (destruct (deq_nat n n0) as [d|d]; subst; tcsp;
+                   right; intro k; ginv; tcsp)).
 
   - destruct (can_inj_deq c c0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
@@ -812,12 +812,6 @@ Proof.
   - assert (Deq (get_patom_set p)) as d by (destruct p; destruct patom0; auto).
     pose proof (d g g0) as h; dorn h; subst; sp.
     right; intro k; inversion k; sp.
-
-  - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
-
-  - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
 Qed.
 
 Lemma opid_dec_no_const {p} :

@@ -35,9 +35,9 @@ Require Export close_util_bar.
 
 
 Lemma implies_eq_term_equals_per_image_eq {o} :
-  forall lib (eqa eqb : per(o)) f,
+  forall inh lib (eqa eqb : per(o)) f,
     (eqa <=2=> eqb)
-    -> (per_image_eq lib eqa f) <=2=> (per_image_eq lib eqb f).
+    -> (per_image_eq inh lib eqa f) <=2=> (per_image_eq inh lib eqb f).
 Proof.
   introv eqas; introv.
   split; introv h; induction h; eauto 2 with slow.
@@ -48,9 +48,9 @@ Proof.
 Qed.
 
 Lemma per_bar_eq_per_image_eq_bar_lib_per {o} :
-  forall (lib : @library o) (eqa : lib-per(lib,o)) f,
-    (per_bar_eq lib (per_image_eq_bar_lib_per lib eqa f))
-    <=2=> (per_image_eq_bar lib eqa f).
+  forall inh (lib : @library o) (eqa : lib-per(inh,lib,o)) f,
+    (per_bar_eq inh lib (per_image_eq_bar_lib_per inh lib eqa f))
+    <=2=> (per_image_eq_bar inh lib eqa f).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
 
@@ -62,7 +62,7 @@ Proof.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_image_eq; try exact h;
-      try apply (lib_per_cond _ eqa).
+      try apply (lib_per_cond _ _ eqa).
 
   - unfold per_image_eq_bar in h.
     eapply in_open_bar_ext_twice in h.
@@ -72,5 +72,5 @@ Proof.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_image_eq; try exact h;
-      try apply (lib_per_cond _ eqa).
+      try apply (lib_per_cond _ _ eqa).
 Qed.

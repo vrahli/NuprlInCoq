@@ -37,7 +37,7 @@ Require Export per_ceq_bar.
 
 
 Lemma per_nat_bar_uniquely_valued {p} :
-  forall (ts : cts(p)), uniquely_valued (per_nat_bar ts).
+  forall inh (ts : cts(p)), uniquely_valued (per_nat_bar inh ts).
 Proof.
  unfold uniquely_valued, per_nat_bar, eq_term_equals; sp.
  allrw; sp.
@@ -45,7 +45,7 @@ Qed.
 Hint Resolve per_nat_bar_uniquely_valued : slow.
 
 Lemma per_nat_bar_type_extensionality {p} :
-  forall (ts : cts(p)), type_extensionality (per_nat_bar ts).
+  forall inh (ts : cts(p)), type_extensionality (per_nat_bar inh ts).
 Proof.
   unfold type_extensionality, per_nat_bar, eq_term_equals; sp.
   allrw <-; sp.
@@ -53,16 +53,16 @@ Qed.
 Hint Resolve per_nat_bar_type_extensionality : slow.
 
 Lemma per_nat_bar_type_symmetric {p} :
-  forall (ts : cts(p)), type_symmetric (per_nat_bar ts).
+  forall inh (ts : cts(p)), type_symmetric (per_nat_bar inh ts).
 Proof.
   unfold type_symmetric, per_nat_bar; sp.
 Qed.
 Hint Resolve per_nat_bar_type_symmetric : slow.
 
 Lemma equality_of_nat_sym {o} :
-  forall lib (t1 t2 : @CTerm o),
-    equality_of_nat lib t1 t2
-    -> equality_of_nat lib t2 t1.
+  forall inh lib (t1 t2 : @CTerm o),
+    equality_of_nat inh lib t1 t2
+    -> equality_of_nat inh lib t2 t1.
 Proof.
   introv e; unfold equality_of_nat in *; exrepnd.
   exists n; auto.
@@ -70,7 +70,7 @@ Qed.
 Hint Resolve equality_of_nat_sym : slow.
 
 Lemma per_nat_bar_term_symmetric {p} :
-  forall (ts : cts(p)), term_symmetric (per_nat_bar ts).
+  forall inh (ts : cts(p)), term_symmetric (per_nat_bar inh ts).
 Proof.
   introv h e.
   unfold per_nat_bar in h; exrepnd.
@@ -95,7 +95,7 @@ Qed.
 Hint Resolve cequivc_Nat : slow.
 
 Lemma per_nat_bar_type_value_respecting {p} :
-  forall (ts : cts(p)), type_value_respecting (per_nat_bar ts).
+  forall inh (ts : cts(p)), type_value_respecting inh (per_nat_bar inh ts).
 Proof.
   introv per ceq.
   unfold type_value_respecting, per_nat_bar in *; exrepnd; GC.
@@ -105,7 +105,7 @@ Qed.
 Hint Resolve per_nat_bar_type_value_respecting : slow.
 
 Lemma per_nat_bar_term_value_respecting {p} :
-  forall (ts : cts(p)), term_value_respecting (per_nat_bar ts).
+  forall inh (ts : cts(p)), term_value_respecting inh (per_nat_bar inh ts).
 Proof.
   introv h e ceq.
   unfold per_nat_bar in *; exrepnd; spcast.
@@ -118,7 +118,7 @@ Qed.
 Hint Resolve per_nat_bar_term_value_respecting : slow.
 
 Lemma per_nat_bar_type_transitive {p} :
-  forall (ts : cts(p)), type_transitive (per_nat_bar ts).
+  forall inh (ts : cts(p)), type_transitive (per_nat_bar inh ts).
 Proof.
   introv per1 per2.
   unfold type_transitive, per_nat_bar in *; exrepnd.
@@ -127,8 +127,8 @@ Qed.
 Hint Resolve per_nat_bar_type_transitive : slow.
 
 Lemma ccequivc_ext_mkc_nat_implies {o} :
-  forall (lib : @library o) k1 k2,
-    ccequivc_ext lib (mkc_nat k1) (mkc_nat k2)
+  forall inh (lib : @library o) k1 k2,
+    ccequivc_ext inh lib (mkc_nat k1) (mkc_nat k2)
     -> k1 = k2.
 Proof.
   introv ceq.
@@ -139,7 +139,7 @@ Proof.
 Qed.
 
 Lemma per_nat_bar_term_transitive {p} :
-  forall (ts : cts(p)), term_transitive (per_nat_bar ts).
+  forall inh (ts : cts(p)), term_transitive (per_nat_bar inh ts).
 Proof.
   introv per i j.
   unfold per_nat_bar in per; exrepnd.
@@ -161,7 +161,7 @@ Qed.
 Hint Resolve per_nat_bar_term_transitive : slow.
 
 Lemma per_nat_type_system {p} :
-  forall (ts : cts(p)), type_system (per_nat_bar ts).
+  forall inh (ts : cts(p)), type_system inh (per_nat_bar inh ts).
 Proof.
   intros; unfold type_system; sp.
   - apply per_nat_bar_uniquely_valued.
@@ -176,41 +176,41 @@ Qed.
 Hint Resolve per_nat_type_system : slow.
 
 Lemma ccequivc_ext_preserves_computes_to_valc_nat {o} :
-  forall lib (T T' : @CTerm o),
-    ccequivc_ext lib T T'
-    -> ccomputes_to_valc_ext lib T mkc_Nat
-    -> T' ===>(lib) mkc_Nat.
+  forall inh lib (T T' : @CTerm o),
+    ccequivc_ext inh lib T T'
+    -> ccomputes_to_valc_ext inh lib T mkc_Nat
+    -> T' ===>(inh,lib) mkc_Nat.
 Proof.
   introv ceq comp; eauto 3 with slow.
 Qed.
 
 Lemma equality_of_nat_bar_monotone {o} :
-  forall {lib' lib : @library o} (ext : lib_extends lib' lib) t1 t2,
-    equality_of_nat_bar lib t1 t2
-    -> equality_of_nat_bar lib' t1 t2.
+  forall {inh} {lib' lib : @library o} (ext : lib_extends inh lib' lib) t1 t2,
+    equality_of_nat_bar inh lib t1 t2
+    -> equality_of_nat_bar inh lib' t1 t2.
 Proof.
   introv h; eapply sub_per_equality_of_nat_bar; eauto 3 with slow.
 Qed.
 Hint Resolve equality_of_nat_bar_monotone : slow.
 
 Lemma per_bar_eq_equality_of_nat_bar_lib_per {o} :
-  forall (lib : @library o),
-    (per_bar_eq lib (equality_of_nat_bar_lib_per lib))
-    <=2=> (equality_of_nat_bar lib).
+  forall inh (lib : @library o),
+    (per_bar_eq inh lib (equality_of_nat_bar_lib_per inh lib))
+    <=2=> (equality_of_nat_bar inh lib).
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
   apply in_ext_ext_implies_in_open_bar_ext; introv; simpl; eauto 3 with slow.
 Qed.
 
 Lemma per_nat_bar_implies_close {o} :
-  forall (ts : cts(o)) lib T T' eq,
-    per_nat_bar (close ts) lib T T' eq
-    -> close ts lib T T' eq.
+  forall inh (ts : cts(o)) lib T T' eq,
+    per_nat_bar inh (close inh ts) lib T T' eq
+    -> close inh ts lib T T' eq.
 Proof.
   introv per.
   apply CL_bar.
   unfold per_nat_bar in per; exrepnd.
-  exists (equality_of_nat_bar_lib_per lib).
+  exists (equality_of_nat_bar_lib_per inh lib).
   simpl in *; dands; eauto 3 with slow.
 
   - eapply in_open_bar_ext_comb2;try exact per0; clear per0.
@@ -225,14 +225,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans1_per_nat_bar_implies {o} :
-  forall (ts : cts(o)) lib T T',
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T mkc_Nat
-    -> ccomputes_to_valc_ext lib T' mkc_Nat
-    -> type_equality_respecting_trans1 (per_nat_bar (close ts)) lib T T'
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+  forall inh (ts : cts(o)) lib T T',
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T mkc_Nat
+    -> ccomputes_to_valc_ext inh lib T' mkc_Nat
+    -> type_equality_respecting_trans1 inh (per_nat_bar inh (close inh ts)) lib T T'
+    -> type_equality_respecting_trans1 inh (close inh ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_nat_bar_implies_close.
@@ -254,14 +254,14 @@ Qed.
 Hint Resolve type_equality_respecting_trans1_per_nat_bar_implies : slow.
 
 Lemma type_equality_respecting_trans2_per_nat_bar_implies {o} :
-  forall (ts : cts(o)) lib T T',
-    type_system ts
-    -> defines_only_universes ts
-    -> type_monotone ts
-    -> ccomputes_to_valc_ext lib T mkc_Nat
-    -> ccomputes_to_valc_ext lib T' mkc_Nat
-    -> type_equality_respecting_trans2 (per_nat_bar (close ts)) lib T T'
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+  forall inh (ts : cts(o)) lib T T',
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> type_monotone inh ts
+    -> ccomputes_to_valc_ext inh lib T mkc_Nat
+    -> ccomputes_to_valc_ext inh lib T' mkc_Nat
+    -> type_equality_respecting_trans2 inh (per_nat_bar inh (close inh ts)) lib T T'
+    -> type_equality_respecting_trans2 inh (close inh ts) lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_nat_bar_implies_close.

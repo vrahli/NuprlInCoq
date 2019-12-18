@@ -108,19 +108,17 @@ Qed.
 
 
 Definition mk_integer {p} n : @NTerm p := oterm (Can (Nint n)) [].
-
-Definition mk_nat {p} (n : nat) : @NTerm p := mk_integer (Z_of_nat n).
-
-Definition mk_uni {p} n : @NTerm p := oterm (Can (NUni n)) [].
-
-Definition mk_tuni {p} n : @NTerm p := oterm (NCan NTUni) [nobnd n].
-
-Definition mk_minus {p} n : @NTerm p := oterm (NCan NMinus) [nobnd n].
+Definition mk_nat     {p} n : @NTerm p := mk_integer (Z_of_nat n).
+Definition mk_uni     {p} n : @NTerm p := oterm (Can (NUni n)) [].
+Definition mk_index   {p} n : @NTerm p := oterm (Can (NIndex n)) [].
 
 Definition mk_base  {p} : @NTerm p := oterm (Can NBase)  [].
 Definition mk_int   {p} : @NTerm p := oterm (Can NInt)   [].
 Definition mk_atom  {p} : @NTerm p := oterm (Can NAtom)  [].
 Definition mk_uatom {p} : @NTerm p := oterm (Can NUAtom) [].
+
+Definition mk_tuni  {p} n : @NTerm p := oterm (NCan NTUni) [nobnd n].
+Definition mk_minus {p} n : @NTerm p := oterm (NCan NMinus) [nobnd n].
 
 Definition mk_pair {p} (a b : @NTerm p) := oterm (Can NPair) [nobnd a , nobnd b].
 
@@ -1823,6 +1821,28 @@ Lemma wf_mk_uni {p} : forall n : nat, @wf_term p (mk_uni n).
 Proof.
   sp.
 Qed.
+
+
+Lemma isprogram_mk_index {p} : forall n : nat, @isprogram p (mk_index n).
+Proof.
+  repeat constructor. intros. allsimpl; sp.
+Qed.
+
+Lemma isprog_mk_index {p} : forall n : nat, @isprog p (mk_index n).
+Proof.
+  repeat constructor.
+Qed.
+
+Lemma isvalue_mk_index {p} : forall n : nat, @isvalue p (mk_index n).
+Proof.
+  repeat constructor. intros. allsimpl; sp.
+Qed.
+
+Lemma wf_mk_index {p} : forall n : nat, @wf_term p (mk_index n).
+Proof.
+  sp.
+Qed.
+
 
 Lemma wf_mk_var {p} : forall v, @wf_term p (mk_var v).
 Proof.
@@ -5472,6 +5492,7 @@ Definition mkc_nat {p} (n : nat) : @CTerm p :=
 Definition mkw_nat {p} (n : nat) : @WTerm p :=
   exist wf_term (mk_nat n) (wf_mk_nat n).
 
+
 Definition mkc_uni {p} (i : nat) : @CTerm p :=
   exist isprog (mk_uni i) (isprog_mk_uni i).
 Definition mkw_uni {p} (i : nat) : @WTerm p :=
@@ -5485,6 +5506,22 @@ Proof.
   unfold mkc_uni; sp.
   inversion H; sp.
 Qed.
+
+
+Definition mkc_index {p} (i : nat) : @CTerm p :=
+  exist isprog (mk_index i) (isprog_mk_index i).
+Definition mkw_index {p} (i : nat) : @WTerm p :=
+  exist wf_term (mk_index i) (wf_mk_index i).
+
+Lemma mkc_index_eq {p} :
+  forall a b,
+    @mkc_index p a = mkc_index b
+    -> a = b.
+Proof.
+  unfold mkc_index; sp.
+  inversion H; sp.
+Qed.
+
 
 Definition mkc_base {p} : @CTerm p :=
   exist isprog mk_base isprog_base.

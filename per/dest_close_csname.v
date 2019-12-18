@@ -51,9 +51,9 @@ Qed.
 Hint Resolve local_equality_of_csname_bar : slow.*)
 
 Lemma per_bar_eq_equality_of_csname_bar_implies {o} :
-  forall (lib : @library o) n t1 t2,
-    per_bar_eq lib (equality_of_csname_bar_lib_per lib n) t1 t2
-    -> equality_of_csname_bar lib n t1 t2.
+  forall inh (lib : @library o) n t1 t2,
+    per_bar_eq inh lib (equality_of_csname_bar_lib_per inh lib n) t1 t2
+    -> equality_of_csname_bar inh lib n t1 t2.
 Proof.
   introv alla.
   unfold per_bar_eq in alla.
@@ -65,14 +65,14 @@ Qed.
 Hint Resolve per_bar_eq_equality_of_csname_bar_implies : slow.
 
 Lemma all_in_bar_ext_equal_equality_of_csname_bar_implies_per_bar_eq_implies_equality_of_csname_bar {o} :
-  forall (lib : @library o) (eqa : lib-per(lib,o)) n,
-    in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (equality_of_csname_bar lib' n))
-    -> (per_bar_eq lib eqa) <=2=> (equality_of_csname_bar lib n).
+  forall inh (lib : @library o) (eqa : lib-per(inh,lib,o)) n,
+    in_open_bar_ext inh lib (fun lib' x => (eqa lib' x) <=2=> (equality_of_csname_bar inh lib' n))
+    -> (per_bar_eq inh lib eqa) <=2=> (equality_of_csname_bar inh lib n).
 Proof.
   introv alla; introv; unfold per_bar_eq, equality_of_int_bar; split; introv h.
 
   - pose proof (in_open_bar_ext_eq_term_equals_preserves_per_bar_eq
-                  _ eqa (equality_of_csname_bar_lib_per lib n) t1 t2 alla h) as q.
+                  _ _ eqa (equality_of_csname_bar_lib_per inh lib n) t1 t2 alla h) as q.
     eauto 3 with slow.
 
   - eapply in_open_bar_ext_pres;[|exact alla]; clear alla; introv alla; apply alla; clear alla.
@@ -81,20 +81,20 @@ Qed.
 Hint Resolve all_in_bar_ext_equal_equality_of_csname_bar_implies_per_bar_eq_implies_equality_of_csname_bar : slow.
 
 Definition equality_of_csname_bar_to_lib_per {o}
-           (lib : library)
-           (T : @CTerm o) : lib-per(lib,o).
+           inh (lib : library)
+           (T : @CTerm o) : lib-per(inh,lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) t t' =>
-            {n : nat , T ===>(lib') (mkc_csname n) # equality_of_csname_bar lib' n t t' }).
+  exists (fun lib' (x : lib_extends inh lib' lib) t t' =>
+            {n : nat , T ===>(inh,lib') (mkc_csname n) # equality_of_csname_bar inh lib' n t t' }).
   introv x y; introv; simpl; tcsp.
 Defined.
 
 Lemma local_per_csname_bar {o} :
-  forall (ts : cts(o)), local_ts (per_bar (per_csname ts)).
+  forall inh (ts : cts(o)), local_ts inh (per_bar inh (per_csname inh ts)).
 Proof.
   introv eqiff alla.
   unfold per_bar in *.
-  exists (equality_of_csname_bar_to_lib_per lib T).
+  exists (equality_of_csname_bar_to_lib_per inh lib T).
   dands.
 
   { apply in_open_bar_ext_dup.
@@ -150,13 +150,13 @@ Proof.
 Qed.
 
 Lemma per_csname_implies_per_bar_per_csname {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_csname ts lib T T' eq
-    -> per_bar (per_csname ts) lib T T' eq.
+  forall inh ts lib (T T' : @CTerm o) eq,
+    per_csname inh ts lib T T' eq
+    -> per_bar inh (per_csname inh ts) lib T T' eq.
 Proof.
   introv per.
   unfold per_csname in per; exrepnd.
-  exists (equality_of_csname_bar_lib_per lib n).
+  exists (equality_of_csname_bar_lib_per inh lib n).
   dands; auto; simpl.
 
   - apply in_ext_ext_implies_in_open_bar_ext; introv ext.
@@ -175,12 +175,12 @@ Hint Resolve per_csname_implies_per_bar_per_csname : slow.
 (* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_csname_l {p} :
-  forall (ts : cts(p)) lib T T' eq n,
-    type_system ts
-    -> defines_only_universes ts
-    -> ccomputes_to_valc_ext lib T (mkc_csname n)
-    -> close ts lib T T' eq
-    -> per_bar (per_csname (close ts)) lib T T' eq.
+  forall inh (ts : cts(p)) lib T T' eq n,
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> ccomputes_to_valc_ext inh lib T (mkc_csname n)
+    -> close inh ts lib T T' eq
+    -> per_bar inh (per_csname inh (close inh ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
@@ -190,12 +190,12 @@ Proof.
 Qed.
 
 Lemma dest_close_per_csname_r {p} :
-  forall (ts : cts(p)) lib T T' eq n,
-    type_system ts
-    -> defines_only_universes ts
-    -> ccomputes_to_valc_ext lib T' (mkc_csname n)
-    -> close ts lib T T' eq
-    -> per_bar (per_csname (close ts)) lib T T' eq.
+  forall inh (ts : cts(p)) lib T T' eq n,
+    type_system inh ts
+    -> defines_only_universes inh ts
+    -> ccomputes_to_valc_ext inh lib T' (mkc_csname n)
+    -> close inh ts lib T T' eq
+    -> per_bar inh (per_csname inh (close inh ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
