@@ -242,7 +242,6 @@ Definition univi_ex {o} inh uni lib T T' (eq : per(o)) := {i : nat , univi i inh
 Definition univi_ex_bar {o} inh uni : cts(o) := per_bar inh (univi_ex inh uni).
 
 (* xxxxxxxxxxxxxxxxxxxxxxxxxxx *)
-
 (* non-cumulative?
 
    If these types are cumulative, then we cannot know what approximation to use
@@ -251,7 +250,6 @@ Definition univi_ex_bar {o} inh uni : cts(o) := per_bar inh (univi_ex inh uni).
    If they're not cumulative, how can we prove that [univa_ex] and [nuprla_ex]
    are transitive?
  *)
-
 Fixpoint nuprla {p} (i : nat) lib (T T' : @CTerm p) (per : per(p)) : [U] :=
   match i with
   | 0 => False
@@ -276,10 +274,29 @@ with univa {p} (i : nat) lib (T T' : @CTerm p) (per : per(p)) : [U] :=
     )
     {+} univa n lib T T' per
   end.
-
 (* xxxxxxxxxxxxxxxxxxxxxxxxxxx *)
 
-Definition univa_ex {o} lib T T' (eq : per(o)) := {i : nat , univa i lib T T' eq}.
+
+(* xxxxxxxxxxxxxxxxxxxxxxxxxxx *)
+(* The types cannot be cumulative with such a definition *)
+Definition univ   {o} lib T T' (eq : per(o)) := {i : nat , forall j, i <= j -> univa  i lib T T' eq}.
+Definition nuprl  {o} lib T T' (eq : per(o)) := {i : nat , forall j, i <= j -> nuprla i lib T T' eq}.
+Definition nuprli {o} (i : nat) lib T T' (eq : per(o)) :=
+  {j : nat , forall n, i <= j ->
+  let inh := inh_cts (nuprla n) in
+  let uab := univa n in
+  let uni := per_bar inh (cts_or (univi i inh uab) uab) in
+  close inh uni lib T T' eq}.
+(* xxxxxxxxxxxxxxxxxxxxxxxxxxx *)
+
+
+(* xxxxxxxxxxxxxxxxxxxxxxxxxxx *)
+(* The problem with those definitions is that given an extension at the generic
+   [nuprla_ex_inh] level, then we get an extension at some level [nuprla i]
+   but that might not be the level of [univa j]  So what level should we use
+   for [univa j] extensions?
+ *)
+(*Definition univa_ex {o} lib T T' (eq : per(o)) := {i : nat , univa i lib T T' eq}.
 Definition nuprla_ex {o} lib T T' (eq : per(o)) := {i : nat , nuprla i lib T T' eq}.
 Definition nuprla_ex_inh {o} := @inh_cts o nuprla_ex.
 Definition univa_ex_bar {o} : cts(o) := per_bar nuprla_ex_inh univa_ex.
@@ -287,7 +304,8 @@ Definition univia {o} : cts(o) := per_bar nuprla_ex_inh (cts_or (univi_ex nuprla
 Definition univia_i {o} (i : nat) : cts(o) := per_bar nuprla_ex_inh (cts_or (univi i nuprla_ex_inh univa_ex) univa_ex).
 Definition nuprl {o} : cts(o) := close nuprla_ex_inh univia.
 Definition nuprli {o} (i : nat) : cts(o) := close nuprla_ex_inh (univia_i i).
-Definition univ {o} : cts(o) := univi_ex_bar nuprla_ex_inh univa_ex.
+Definition univ {o} : cts(o) := univi_ex_bar nuprla_ex_inh univa_ex.*)
+(* xxxxxxxxxxxxxxxxxxxxxxxxxxx *)
 
 
 Lemma univa_iff {p} :
