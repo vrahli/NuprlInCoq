@@ -875,6 +875,58 @@ Proof.
   apply cterm_eq; simpl; auto.
 Qed.
 
+
+Lemma alpha_eq_mk_ffdefs {o} :
+  forall (t : @NTerm o) a u,
+    alpha_eq (mk_free_from_defs t a) u
+    -> {t' : NTerm
+        & {a' : NTerm
+        & u = mk_free_from_defs t' a'
+        # alpha_eq t t'
+        # alpha_eq a a' }}.
+Proof.
+  introv aeq.
+  inversion aeq as [|? ? ? len i]; subst; allsimpl.
+  destruct lbt2; allsimpl; repeat cpx.
+  pose proof (i 0) as h1; autodimp h1 hyp; allsimpl.
+  pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
+  clear i.
+  unfold selectbt in h1, h2; allsimpl.
+  inversion h1 as [? ? ? ? ? disj1 ? ? norep1 aeq1]; subst; allsimpl; cpx; clear h1.
+  inversion h2 as [? ? ? ? ? disj2 ? ? norep2 aeq2]; subst; allsimpl; cpx; clear h2.
+  allrw @var_ren_nil_l; allrw @lsubst_nil.
+  eexists; eexists; dands; try reflexivity; auto.
+Qed.
+
+Lemma isprog_ffdefs_iff {o} :
+  forall (a b : @NTerm o), isprog (mk_free_from_defs a b) <=> (isprog a # isprog b).
+Proof.
+  introv.
+  allrw @isprog_eq.
+  allrw <- @isprogram_free_from_defs_iff; tcsp.
+Qed.
+
+Lemma alphaeqc_mkc_ffdefs {o} :
+  forall (t : @CTerm o) a u,
+    alphaeqc (mkc_free_from_defs t a) u
+    -> {t' : CTerm
+        & {a' : CTerm
+        & u = mkc_free_from_defs t' a'
+        # alphaeqc t t'
+        # alphaeqc a a' }}.
+Proof.
+  introv aeq.
+  destruct_cterms; simpl in *.
+  unfold alphaeqc in *; simpl in *.
+  apply alpha_eq_mk_ffdefs in aeq; exrepnd; subst.
+  dup i as j.
+  apply isprog_ffdefs_iff in j; repnd.
+
+  exists (mk_ct t' j0) (mk_ct a' j); simpl; dands; auto.
+  apply cterm_eq; simpl; auto.
+Qed.
+
+
 Lemma alpha_eq_mk_tequality {o} :
   forall (t : @NTerm o) a u,
     alpha_eq (mk_tequality t a) u
@@ -1683,6 +1735,7 @@ Ltac alphaeqc_decompose :=
   | [ H : alphaeqc (mkc_union           _ _) _ |- _ ] => apply alphaeqc_mkc_union     in H; exrepnd; try subst
   | [ H : alphaeqc (mkc_image           _ _) _ |- _ ] => apply alphaeqc_mkc_image     in H; exrepnd; try subst
   | [ H : alphaeqc (mkc_free_from_atoms _ _) _ |- _ ] => apply alphaeqc_mkc_ffatoms   in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_free_from_defs  _ _) _ |- _ ] => apply alphaeqc_mkc_ffdefs    in H; exrepnd; try subst
   | [ H : alphaeqc (mkc_tequality       _ _) _ |- _ ] => apply alphaeqc_mkc_tequality in H; exrepnd; try subst
   | [ H : alphaeqc (mkc_sup             _ _) _ |- _ ] => apply alphaeqc_mkc_sup       in H; exrepnd; try subst
 

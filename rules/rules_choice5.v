@@ -450,7 +450,7 @@ Hint Resolve tequality_nat2nat : slow.
 
 Lemma exists_extend_library_with_name2 {o} :
   forall name (lib : @library o),
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> safe_library lib
     ->
     exists lib',
@@ -526,7 +526,7 @@ Fixpoint cs_entry_size {o} (lib : @library o) (name : choice_sequence_name) : na
 Lemma cs_entry_in_library_lawless_upto_implies_length_eq {o} :
   forall (lib lib' : @library o) name k vals restr,
     cs_entry_size lib' name <= k
-    -> is_nat_or_seq_kind name
+    -> is_primitive_kind name
     -> correct_restriction name restr
     -> extend_library_lawless_upto lib lib' name k
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ vals restr)) lib
@@ -537,7 +537,7 @@ Proof.
   repndors; repnd; subst; simpl in *; eauto.
 
   { destruct l; simpl in *; tcsp; ginv; boolvar; subst; tcsp; GC.
-    destruct restr; tcsp.
+    destruct restr; tcsp; try omega.
 
     - destruct entry.
       destruct cse_restriction; repnd; exrepnd; subst; ginv;[].
@@ -545,15 +545,15 @@ Proof.
 
     - unfold correct_restriction in *.
       subst.
-      unfold is_nat_or_seq_kind in *.
+      unfold is_primitive_kind in *.
       destruct name0 as [name kd]; simpl in *.
-      destruct kd; subst; boolvar; tcsp.
+      destruct kd; subst; boolvar; tcsp; try omega.
 
     - unfold correct_restriction in *.
       subst.
-      unfold is_nat_or_seq_kind in *.
+      unfold is_primitive_kind in *.
       destruct name0 as [name kd]; simpl in *.
-      destruct kd; subst; boolvar; tcsp. }
+      destruct kd; subst; boolvar; tcsp; try omega. }
 
   { eapply IHlib; eauto.
     destruct l; simpl in *; tcsp;[].

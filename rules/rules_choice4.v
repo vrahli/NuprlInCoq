@@ -872,7 +872,8 @@ Proof.
   }
 
   remember (MkChoiceSequenceName "a" (cs_kind_seq l)) as name.
-  assert (is_nat_or_seq_kind name) as isn by (subst; eauto 3 with slow; tcsp).
+  assert (is_primitive_kind name) as prim by (subst; eauto 3 with slow; tcsp).
+  assert (compatible_choice_sequence_name 0 name) as comp by (subst; simpl; tcsp).
 
   introv ext.
   pose proof (exists_extend_library_lawless_upto_name_in name n0 lib') as q.

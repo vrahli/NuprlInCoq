@@ -559,7 +559,7 @@ Proof.
 Qed.
 Hint Resolve equality_respects_equorsq_bar2 : slow.
 
-Lemma all_in_bar_exists_per_implies_exists {o} :
+(*Lemma all_in_bar_exists_per_implies_exists {o} :
   forall {lib} (bar : @BarLib o lib)
          (F : forall lib' (eqa : per(o)), Prop),
     all_in_bar bar (fun lib' => {eqa : per(o) , F lib' eqa})
@@ -584,7 +584,7 @@ Proof.
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
-Qed.
+Qed.*)
 
 Lemma in_open_bar_implies_in_open_bar_ext {o} :
   forall (lib : @library o) (F : library -> Prop),

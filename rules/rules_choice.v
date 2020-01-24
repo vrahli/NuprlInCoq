@@ -440,35 +440,37 @@ Proof.
     unfold matching_entries; allrw; simpl; auto.
 Qed.
 
-Lemma is_nat_or_seq_kind_implies_compatible_choice_sequence_name_0 :
+(*Lemma is_nat_or_seq_kind_implies_compatible_choice_sequence_name_0 :
   forall name,
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> compatible_choice_sequence_name 0 name.
 Proof.
   introv h; destruct name as [name k]; simpl in *.
-  unfold is_nat_or_seq_kind in *; simpl in *.
+  unfold is_primitive_kind in *; simpl in *.
   unfold compatible_choice_sequence_name; simpl.
   unfold compatible_cs_kind; boolvar; tcsp.
+Locate compatible_choice_sequence_name.
 Qed.
-Hint Resolve is_nat_or_seq_kind_implies_compatible_choice_sequence_name_0 : slow.
+Hint Resolve is_primitive_kind_implies_compatible_choice_sequence_name_0 : slow.*)
 
-Lemma compatible_choice_sequence_name_0_implies_is_nat_or_seq_kind :
+Lemma compatible_choice_sequence_name_0_implies_is_primitive_kind :
   forall name,
     compatible_choice_sequence_name 0 name
-    -> is_nat_or_seq_kind name.
+    -> is_primitive_kind name.
 Proof.
   introv h; destruct name as [name k]; simpl in *.
-  unfold is_nat_or_seq_kind in *; simpl in *.
+  unfold is_primitive_kind in *; simpl in *.
   unfold compatible_choice_sequence_name in *; simpl.
   unfold compatible_cs_kind in *; boolvar; tcsp.
+  simpl in *; GC; destruct k; subst; tcsp.
 Qed.
-Hint Resolve compatible_choice_sequence_name_0_implies_is_nat_or_seq_kind : slow.
+Hint Resolve compatible_choice_sequence_name_0_implies_is_primitive_kind : slow.
 
 Hint Resolve entry_in_library_implies_find_cs_some : slow.
 
 Lemma cs_entry_in_library_lawless_upto_implies_length_ge {o} :
   forall (lib lib' : @library o) name k vals restr,
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> correct_restriction name restr
     -> extend_library_lawless_upto lib lib' name k
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ vals restr)) lib
@@ -487,15 +489,15 @@ Proof.
 
   - unfold correct_restriction in *.
     subst.
-    unfold is_nat_or_seq_kind in *.
+    unfold is_primitive_kind in *.
     destruct name0 as [name kd]; simpl in *.
-    destruct kd; subst; boolvar; tcsp.
+    destruct kd; subst; boolvar; tcsp; try omega.
 
   - unfold correct_restriction in *.
     subst.
-    unfold is_nat_or_seq_kind in *.
+    unfold is_primitive_kind in *.
     destruct name0 as [name kd]; simpl in *.
-    destruct kd; subst; boolvar; tcsp.
+    destruct kd; subst; boolvar; tcsp; try omega.
 Qed.
 Hint Resolve cs_entry_in_library_lawless_upto_implies_length_ge : slow.
 
@@ -518,7 +520,7 @@ Hint Resolve cterm_is_nth_implies_is_nat : slow.
 
 Lemma cs_entry_in_library_lawless_upto_implies_is_nat {o} :
   forall (lib lib' : @library o) name k vals restr n v,
-    is_nat_or_seq_kind name
+    compatible_choice_sequence_name 0 name
     -> correct_restriction name restr
     -> choice_sequence_satisfies_restriction vals restr
     -> extend_library_lawless_upto lib lib' name k
@@ -539,7 +541,7 @@ Proof.
     destruct cse_restriction; repnd; exrepnd; subst; ginv;[].
     unfold correct_restriction in *; simpl in *.
     destruct name0 as [name0 kd]; simpl in *.
-    destruct kd; boolvar; tcsp; subst; GC; repnd.
+    destruct kd; boolvar; tcsp; subst; GC; repnd; simpl in *; try omega.
 
     + apply sat in sel.
       apply cor in sel; auto.
@@ -554,13 +556,13 @@ Proof.
 
   - unfold correct_restriction in *.
     subst.
-    unfold is_nat_or_seq_kind in *.
+    unfold is_primitive_kind in *.
     destruct name0 as [name kd]; simpl in *.
     destruct kd; subst; boolvar; tcsp.
 
   - unfold correct_restriction in *.
     subst.
-    unfold is_nat_or_seq_kind in *.
+    unfold is_primitive_kind in *.
     destruct name0 as [name kd]; simpl in *.
     destruct kd; subst; boolvar; tcsp.
 Qed.
@@ -568,7 +570,7 @@ Hint Resolve cs_entry_in_library_lawless_upto_implies_is_nat : slow.
 
 Lemma extend_library_lawless_upto_implies_exists_nats {o} :
   forall name (lib lib' : @library o) entry k,
-    is_nat_or_seq_kind name
+    compatible_choice_sequence_name 0 name
     -> entry_in_library entry lib
     -> entry2name entry = entry_name_cs name
     -> safe_library_entry entry
@@ -631,7 +633,7 @@ Qed.
 
 Lemma mkc_choice_seq_in_natk2nat {o} :
   forall (lib : @library o) (name : choice_sequence_name) k,
-    is_nat_or_seq_kind name
+    compatible_choice_sequence_name 0 name
     -> safe_library lib
     -> member lib (mkc_choice_seq name) (natk2nat (mkc_nat k)).
 Proof.
@@ -641,7 +643,7 @@ Proof.
   (* first we need to add the sequence to the library *)
   apply e_all_in_ex_bar_as.
   apply all_in_ex_bar_implies_e_all_in_ex_bar.
-  exists (extend_seq_to_bar lib safe k name isn).
+  exists (extend_seq_to_bar lib safe k name (compatible_choice_sequence_name_0_implies_is_primitive_kind _ isn)).
 
   introv br ext ltm.
   simpl in * |-; exrepnd.
@@ -890,16 +892,16 @@ Proof.
     eexists; dands;eauto. }
 Qed.
 
-Lemma csn_kind_seq_implies_is_nat_or_seq_kind :
+Lemma csn_kind_seq_implies_is_primitive_kind :
   forall name l,
     csn_kind name = cs_kind_seq l
-    -> is_nat_or_seq_kind name.
+    -> is_primitive_kind name.
 Proof.
   introv h.
-  unfold is_nat_or_seq_kind.
+  unfold is_primitive_kind.
   allrw; simpl; auto.
 Qed.
-Hint Resolve csn_kind_seq_implies_is_nat_or_seq_kind : slow.
+Hint Resolve csn_kind_seq_implies_is_primitive_kind : slow.
 
 Lemma implies_equality_natk2nat_prop {o} :
   forall lib (f g : @CTerm o) n,
@@ -982,7 +984,7 @@ Qed.
 
 Lemma exists_extend_library_lawless_upto_name_in {o} :
   forall name n (lib : @library o),
-    is_nat_or_seq_kind name
+    is_primitive_kind name
     -> safe_library lib
     ->
     exists lib'' lib',
@@ -1125,7 +1127,7 @@ Qed.
 
 Lemma mkc_choice_seq_in_nat2nat {o} :
   forall (lib : @library o) (name : choice_sequence_name),
-    is_nat_or_seq_kind name
+    compatible_choice_sequence_name 0 name
     -> safe_library lib
     -> member lib (mkc_choice_seq name) nat2nat.
 Proof.
@@ -1142,7 +1144,7 @@ Proof.
   (* first we need to add the sequence to the library *)
   apply e_all_in_ex_bar_as.
   apply all_in_ex_bar_implies_e_all_in_ex_bar.
-  exists (extend_seq_to_bar lib safe (S k) name isn).
+  exists (extend_seq_to_bar lib safe (S k) name (compatible_choice_sequence_name_0_implies_is_primitive_kind _ isn)).
 
   introv br ext.
   simpl in * |-; exrepnd.

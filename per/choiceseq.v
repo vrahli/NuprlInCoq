@@ -48,7 +48,7 @@ Require Export axiom_func_choice_on.
 
 Definition const_0 {o} : nat -> @CTerm o := fun n => mkc_nat 0.
 
-Definition seq_0 : choice_sequence_name := MkChoiceSequenceName "seq0" (cs_kind_nat 1).
+Definition seq_0 : choice_sequence_name := MkChoiceSequenceName "seq0" (cs_kind_nat 2).
 
 Definition law_0 {o} : @ChoiceSeqRestriction o := csc_coq_law const_0.
 
@@ -70,7 +70,10 @@ Hint Rewrite @csubst_mk_cv : slow.
 
 Definition simple_choice_seq_entry {o} (name : choice_sequence_name) : @ChoiceSeqEntry o :=
   match csn_kind name with
-  | cs_kind_nat _ => MkChoiceSeqEntry _ [] csc_nat
+  | cs_kind_nat n =>
+    if deq_nat n 0 then MkChoiceSeqEntry _ [] csc_nat
+    else if deq_nat n 1 then MkChoiceSeqEntry _ [] csc_bool
+         else MkChoiceSeqEntry _ [] csc_nat
   | cs_kind_seq l => MkChoiceSeqEntry _ [] (natSeq2restriction l)
   end.
 
@@ -122,8 +125,10 @@ Lemma safe_choice_sequence_entry_simple_choice_seq_entry {o} :
 Proof.
   introv; unfold safe_choice_sequence_entry; simpl.
   unfold simple_choice_seq_entry; simpl.
-  destruct name as [name kind], kind as [n|seq]; simpl; dands; eauto 3 with slow;
-    introv; autorewrite with slow in *; tcsp.
+  destruct name as [name kind], kind as [n|seq]; simpl; boolvar;
+    subst; simpl; dands; eauto 3 with slow;
+      introv; autorewrite with slow in *; tcsp;
+        try (complete (unfold correct_restriction; simpl; boolvar; tcsp)).
 Qed.
 Hint Resolve safe_choice_sequence_entry_simple_choice_seq_entry : slow.
 
@@ -133,6 +138,13 @@ Proof.
   introv; unfold safe_library_entry; simpl; eauto 3 with slow.
 Qed.
 Hint Resolve safe_library_entry_simple_choice_seq : slow.
+
+Lemma correct_restriction_seq_0 {o} :
+  @correct_restriction o seq_0 law_0.
+Proof.
+  tcsp.
+Qed.
+Hint Resolve correct_restriction_seq_0 : slow.
 
 Lemma safe_library_lib0 {o} : @safe_library o lib_0.
 Proof.
@@ -1628,7 +1640,7 @@ Qed.
 
 
 
-Definition seq_1 : choice_sequence_name := MkChoiceSequenceName "seq1" (cs_kind_nat 1).
+Definition seq_1 : choice_sequence_name := MkChoiceSequenceName "seq1" (cs_kind_nat 2).
 
 Definition law_1 {o} : @ChoiceSeqRestriction o := csc_nat.
 

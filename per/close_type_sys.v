@@ -53,6 +53,7 @@ Require Export close_type_sys_per_product.
 Require Export close_type_sys_per_union.
 Require Export close_type_sys_per_image.
 Require Export close_type_sys_per_qtime.
+Require Export close_type_sys_per_ffdefs.
 
 (*Require Export close_type_sys_per_req.
  Require Export close_type_sys_per_teq.
@@ -456,6 +457,9 @@ Proof.
 
 (*  - Case "CL_ffatoms".
     eapply close_type_system_ffatoms; eauto.*)
+
+  - Case "CL_ffdefs".
+    eapply close_type_system_ffdefs; eauto; eauto 3 with slow.
 
   - Case "CL_set".
     eapply close_type_system_set; eauto; eauto 3 with slow.

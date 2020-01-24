@@ -43,7 +43,7 @@ Lemma dest_close_per_tuni_l {p} :
     -> ts lib T T' eq.
 Proof.
   introv locts comp cl.
-  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
+  close_cases (induction cl using @close_ind') Case; subst; try complete close_diff_all; auto.
   eapply locts; eauto.
   eapply in_open_bar_ext_comb;[|exact reca];clear reca.
   apply in_ext_ext_implies_in_open_bar_ext; introv reca; apply reca; eauto 3 with slow.

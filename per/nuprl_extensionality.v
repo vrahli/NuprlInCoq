@@ -143,6 +143,12 @@ Proof.
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
+  - Case "CL_ffdefs".
+    apply CL_ffdefs.
+    exists A1 A2 x1 x2 eqa; dands; auto.
+    eapply eq_term_equals_trans;[|eauto].
+    apply eq_term_equals_sym; auto.
+
   - Case "CL_set".
     apply CL_set.
     exists eqa eqb; dands; auto.

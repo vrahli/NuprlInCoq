@@ -551,6 +551,50 @@ Proof.
 Qed.
 Hint Resolve per_union_monotone_func2 : slow.
 
+Lemma sub_per_per_ffdefs_eq_bar2 {o} :
+  forall {lib lib' lib'' : @library o}
+         (x : lib_extends lib' lib)
+         (y : lib_extends lib'' lib')
+         (w : lib_extends lib'' lib)
+         (eqa : lib-per(lib,o)) t,
+    sub_per (per_ffdefs_eq_bar lib' (raise_lib_per eqa x) t)
+            (per_ffdefs_eq_bar lib'' (raise_lib_per eqa w) t).
+Proof.
+  introv y h.
+  unfold per_ffdefs_eq_bar, per_ffdefs_eq.
+  eapply e_all_in_ex_bar_ext_pres_ext; try exact h; eauto 3 with slow.
+  introv br xt q; simpl in *; exrepnd.
+  unfold per_ffdefs_eq in *; repnd; dands; auto; simpl in *.
+  unfold raise_ext_per in *; eauto 3 with slow.
+Qed.
+Hint Resolve sub_per_per_ffdefs_eq_bar2 : slow.
+
+Lemma sub_lib_per_per_ffdefs_eq_bar_lib_per {o} :
+  forall {lib lib'} (eqa : lib-per(lib,o)) (x : @lib_extends o lib' lib) t,
+    sub_lib_per (per_ffdefs_eq_bar_lib_per lib eqa t) x.
+Proof.
+  introv h z; simpl in *.
+  eapply sub_per_per_ffdefs_eq_bar2; try exact z; eauto.
+Qed.
+Hint Resolve sub_lib_per_per_ffdefs_eq_bar_lib_per : slow.
+
+Lemma per_ffdefs_monotone_func2 {o} :
+  forall (ts : cts(o)), type_monotone_func2 (per_ffdefs ts).
+Proof.
+  introv per.
+  unfold per_ffdefs in *; exrepnd.
+
+  exists (per_ffdefs_eq_bar_lib_per lib eqa x1).
+  introv; simpl in *.
+  dands; eauto 3 with slow;[].
+
+  exists A1 A2 x1 x2 (raise_lib_per eqa x).
+  dands; spcast; eauto 3 with slow.
+
+  introv; simpl; unfold raise_ext_per; eapply per4.
+Qed.
+Hint Resolve per_ffdefs_monotone_func2 : slow.
+
 Lemma close_monotone_func2 {o} :
   forall (ts : cts(o)),
     type_monotone_func2 ts
@@ -651,6 +695,12 @@ Proof.
 
   - Case "CL_image".
     pose proof (per_image_monotone_func2 (close ts) lib T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
+      repnd; dands; eauto 3 with slow.
+
+  - Case "CL_ffdefs".
+    pose proof (per_ffdefs_monotone_func2 (close ts) lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.

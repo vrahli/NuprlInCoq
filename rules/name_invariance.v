@@ -1845,6 +1845,15 @@ Proof.
 Qed.
 Hint Rewrite @rename_cterm_mkc_free_from_atoms : slow.
 
+Lemma rename_cterm_mkc_free_from_defs {o} :
+  forall r (a b : @CTerm o),
+    rename_cterm r (mkc_free_from_defs a b)
+    = mkc_free_from_defs (rename_cterm r a) (rename_cterm r b).
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @rename_cterm_mkc_free_from_defs : slow.
+
 Lemma rename_cterm_mkc_apply {o} :
   forall r (a b : @CTerm o),
     rename_cterm r (mkc_apply a b)
@@ -4137,6 +4146,38 @@ Proof.
     introv; unfold rename_per at 1; simpl.
     rw eqiff.
     unfold per_ffatoms_eq.
+
+    split; introv h; exrepnd; spcast.
+
+    + apply (computes_to_valc_rename r) in h0.
+      apply (computes_to_valc_rename r) in h1.
+      autorewrite with slow in *.
+      dands; spcast; auto.
+      exists (rename_cterm r y); dands; eauto 3 with slow.
+
+    + apply (computes_to_valc_rename r) in h0.
+      apply (computes_to_valc_rename r) in h1.
+      autorewrite with slow in *.
+      dands; spcast; auto.
+      unfold rename_per in *; simpl in *; autorewrite with slow in *.
+      exists (rename_cterm r y); dands; eauto 3 with slow.
+
+  - Case "CL_ffdefs".
+    repeat (autodimp IHcl hyp).
+    apply CL_ffdefs.
+    spcast.
+    unfold per_ffdefs.
+    apply (computes_to_valc_rename r) in c1.
+    apply (computes_to_valc_rename r) in c2.
+    autorewrite with slow in *.
+
+    eexists; eexists; eexists; eexists.
+    exists (rename_per r eqa).
+    dands; spcast; eauto; eauto 3 with slow; tcsp.
+
+    introv; unfold rename_per at 1; simpl.
+    rw eqiff.
+    unfold per_ffdefs_eq.
 
     split; introv h; exrepnd; spcast.
 

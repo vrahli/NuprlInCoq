@@ -1939,6 +1939,7 @@ Ltac eqconstr0 name :=
     | mkc_efree_from_atom _ _ _ = mkc_efree_from_atom _ _ _ => apply mkc_efree_from_atom_eq in name
 
     | mkc_free_from_atoms _ _ = mkc_free_from_atoms _ _ => apply mkc_free_from_atoms_eq in name
+    | mkc_free_from_defs  _ _ = mkc_free_from_defs  _ _ => apply mkc_free_from_defs_eq  in name
 
     | mkc_pw _ _ _ _ _ _ _ _ _ _ _ = mkc_pw _ _ _ _ _ _ _ _ _ _ _ => appdup mkc_pw_eq1 name; repd; subst; apply mkc_pw_eq2 in name
     | mkc_pm _ _ _ _ _ _ _ _ _ _ _ = mkc_pm _ _ _ _ _ _ _ _ _ _ _ => appdup mkc_pm_eq1 name; repd; subst; apply mkc_pm_eq2 in name
@@ -2480,6 +2481,35 @@ Proof.
   apply computes_to_valc_isvalue_eq in ceq; auto.
 Qed.
 
+Lemma cequiv_mk_free_from_defs {p} :
+  forall lib t t' a b,
+    computes_to_value lib t (mk_free_from_defs a b)
+    -> cequiv lib t t'
+    -> {a', b' : @NTerm p $
+         computes_to_value lib t' (mk_free_from_defs a' b')
+         # cequiv lib a a'
+         # cequiv lib b b'}.
+Proof. prove_cequiv_mk; allrw <- isprogram_free_from_defs_iff; sp.
+Qed.
+
+Lemma cequivc_mkc_free_from_defs {p} :
+  forall lib t t' a b,
+    computes_to_valc lib t (mkc_free_from_defs a b)
+    -> cequivc lib t t'
+    -> {a', b' : @CTerm p $
+         computes_to_valc lib t' (mkc_free_from_defs a' b')
+         # cequivc lib a a'
+         # cequivc lib b b'}.
+Proof.
+  unfold computes_to_valc, cequivc; intros; destruct_cterms; allsimpl.
+  generalize (cequiv_mk_free_from_defs lib x2 x1 x0 x); intro k.
+  repeat (dest_imp k hyp); exrepnd.
+  applydup @computes_to_value_isvalue in k0 as j.
+  inversion j as [u isp v]; subst.
+  allrw <- @isprogram_free_from_defs_iff; repnd.
+  exists (mk_cterm a' isp0) (mk_cterm b' isp); simpl; sp.
+Qed.
+
 Ltac apply_cequivc_val :=
 
   (* mkc_approx *)
@@ -2698,6 +2728,59 @@ Ltac apply_cequivc_val :=
     try (hide_hyp H);
     apply cequivc_sym in c;
     eapply cequivc_mkc_union in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_free_from_defs *)
+
+  | [ H : cequivc _ (mkc_free_from_defs _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    eapply cequivc_mkc_free_from_defs in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_free_from_defs _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_free_from_defs in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_free_from_defs _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_free_from_defs in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_free_from_defs _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_free_from_defs in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
     destruct c as [a [b [c [h1 h2] ] ] ];
     apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
     try (eqconstr H)

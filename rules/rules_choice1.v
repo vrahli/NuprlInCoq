@@ -36,14 +36,15 @@ Qed.
 
 Lemma correct_restriction_csc_seq {o} :
   forall name l n,
-    0 < n
+    1 < n
     -> csn_kind name = cs_kind_nat n
     -> @correct_restriction o name (csc_seq l).
 Proof.
   introv ltn h.
   unfold correct_restriction; simpl.
   rewrite h; simpl; auto.
-  boolvar; subst; tcsp.
+  boolvar; subst; tcsp; try omega.
+  apply Nat.lt_irrefl in ltn; tcsp.
 Qed.
 Hint Resolve correct_restriction_csc_seq : slow.
 
@@ -56,7 +57,7 @@ Lemma correct_restriction_csc_nat_0 {o} :
 Proof.
   introv h.
   apply correct_restriction_csc_nat.
-  unfold is_nat_choice_sequence_name; allrw; auto.
+  unfold is_nat_choice_sequence_name; allrw; auto; boolvar; tcsp.
 Qed.
 Hint Resolve correct_restriction_csc_nat_0 : slow.
 
@@ -94,8 +95,7 @@ Lemma compatible_choice_sequence_name_0_if_kind_nat_0 :
     -> compatible_choice_sequence_name 0 name.
 Proof.
   introv h.
-  apply is_nat_or_seq_kind_implies_compatible_choice_sequence_name_0.
-  unfold is_nat_or_seq_kind; allrw; auto.
+  unfold compatible_choice_sequence_name, compatible_cs_kind; simpl; allrw; simpl; auto.
 Qed.
 Hint Resolve compatible_choice_sequence_name_0_if_kind_nat_0 : slow.
 

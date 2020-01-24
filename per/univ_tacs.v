@@ -96,6 +96,16 @@ Proof.
 Qed.
 
 (* !!MOVE *)
+Lemma iscvalue_mkc_free_from_defs {p} :
+  forall a b : @CTerm p, iscvalue (mkc_free_from_defs a b).
+Proof.
+  introv; destruct_cterms; allsimpl; allsimpl.
+  unfold iscvalue; simpl.
+  constructor; simpl; auto.
+  apply isprogram_free_from_defs; eauto 3 with slow.
+Qed.
+
+(* !!MOVE *)
 Lemma iscvalue_mkc_requality {p} :
   forall t1 t2 T : @CTerm p, iscvalue (mkc_requality t1 t2 T).
 Proof.
@@ -134,6 +144,7 @@ Ltac apply_iscvalue :=
             | apply iscvalue_mkc_free_from_atom
             | apply iscvalue_mkc_efree_from_atom
             | apply iscvalue_mkc_free_from_atoms
+            | apply iscvalue_mkc_free_from_defs
             | apply iscvalue_mkc_w
             | apply iscvalue_mkc_m
             | apply iscvalue_mkc_pw
@@ -800,6 +811,7 @@ Ltac not_univ_p2 :=
     | [ H : univi _ _ (mkc_free_from_atom _ _ _) _ _     |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_efree_from_atom _ _ _) _ _    |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_free_from_atoms _ _) _ _      |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
+    | [ H : univi _ _ (mkc_free_from_defs _ _) _ _       |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_w _ _ _) _ _                  |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_m _ _ _) _ _                  |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
     | [ H : univi _ _ (mkc_pw _ _ _ _ _ _ _ _ _ _ _) _ _ |- _ ] => trw_h univi_exists_iff H; exrepd; not_univ_p2
@@ -834,6 +846,7 @@ Ltac not_univ_p2 :=
     | [ H : univ _ (mkc_free_from_atom _ _ _) _ _     |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_efree_from_atom _ _ _) _ _    |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_free_from_atoms _ _) _ _      |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
+    | [ H : univ _ (mkc_free_from_defs _ _) _ _       |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_w _ _ _) _ _                  |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_m _ _ _) _ _                  |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2
     | [ H : univ _ (mkc_pw _ _ _ _ _ _ _ _ _ _ _) _ _ |- _ ] => let i := fresh "i" in destruct H as [ i H ]; not_univ_p2

@@ -31,8 +31,11 @@
  *)
 
 
+Require Export terms_union.
 Require Export computation_preserves_lib.
 Require Import computation_choice_seq.
+Require Export List.
+Require Export list. (* Why? *)
 
 
 (* This is entry2name *)
@@ -99,6 +102,24 @@ Hint Resolve is_nat_zero : slow.
 
 Definition csc_nat {o} : @ChoiceSeqRestriction o :=
   csc_type (fun _ => mkc_zero) is_nat is_nat_zero.
+(* =============== *)
+
+(* =============== *)
+(* bool restriction *)
+Definition mkc_boolean {o} (b : bool) : @CTerm o :=
+  if b then tt else ff.
+
+Definition is_bool {o} : @RestrictionPred o :=
+  fun n t => exists b, t = mkc_boolean b.
+
+Lemma is_bool_true {o} : forall n, @is_bool o n tt.
+Proof.
+  introv; exists true; tcsp.
+Qed.
+Hint Resolve is_bool_true : slow.
+
+Definition csc_bool {o} : @ChoiceSeqRestriction o :=
+  csc_type (fun _ => tt) is_bool is_bool_true.
 (* =============== *)
 
 (*(*
@@ -185,6 +206,15 @@ Definition is_nat_restriction {o} (restr : @ChoiceSeqRestriction o) :=
   | csc_res _ => False
   end.
 
+Definition is_bool_restriction {o} (restr : @ChoiceSeqRestriction o) :=
+  match restr with
+  | csc_type d M Md =>
+    (forall n, d n = tt)
+    /\ (forall n v, M n v <-> is_bool n v)
+  | csc_coq_law _ => False
+  | csc_res _ => False
+  end.
+
 Definition cterm_is_nth {o} (t : @CTerm o) n l :=
   exists i, select n l = Some i /\ t = mkc_nat i.
 
@@ -207,7 +237,8 @@ Definition correct_restriction {o} (name : choice_sequence_name) (restr : @Choic
   match csn_kind name with
   | cs_kind_nat n =>
     if deq_nat n 0 then is_nat_restriction restr
-    else True
+    else if deq_nat n 1 then is_bool_restriction restr
+         else True
   | cs_kind_seq l => is_nat_seq_restriction l restr
   end.
 

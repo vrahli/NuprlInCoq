@@ -455,6 +455,102 @@ Proof.
 Qed.
 Hint Resolve per_union_monotone_func : slow.
 
+Lemma ex_nodefsc_change_per {o} :
+  forall (eqa : per(o))
+         (eqb : per(o))
+         t,
+    (eqa <=2=> eqb)
+    -> ex_nodefsc eqa t
+    -> ex_nodefsc eqb t.
+Proof.
+  introv imp h.
+  unfold ex_nodefsc in *; exrepnd.
+  exists u; dands; auto; apply imp; auto.
+Qed.
+Hint Resolve ex_nodefsc_change_per : slow.
+
+Lemma ex_nodefsc_change_lib_per {o} :
+  forall lib lib'
+         (eqa : lib-per(lib,o))
+         (eqb : lib-per(lib,o))
+         (x1  : lib_extends lib' lib)
+         (x2  : lib_extends lib' lib)
+         t,
+    (forall lib' x, (eqa lib' x) <=2=> (eqb lib' x))
+    -> ex_nodefsc (eqa lib' x1) t
+    -> ex_nodefsc (eqb lib' x2) t.
+Proof.
+  introv imp h.
+  unfold ex_nodefsc in *; exrepnd.
+  exists u; dands; auto.
+  apply imp.
+  eapply lib_per_cond; eauto.
+Qed.
+Hint Resolve ex_nodefsc_change_lib_per : slow.
+
+Lemma ex_nodefsc_change_ext {o} :
+  forall lib lib'
+         (eqa : lib-per(lib,o))
+         (x1  : lib_extends lib' lib)
+         (x2  : lib_extends lib' lib)
+         t,
+    ex_nodefsc (eqa lib' x1) t
+    -> ex_nodefsc (eqa lib' x2) t.
+Proof.
+  introv h.
+  unfold ex_nodefsc in *; exrepnd.
+  exists u; dands; auto.
+  eapply lib_per_cond; eauto.
+Qed.
+Hint Resolve ex_nodefsc_change_ext : slow.
+
+Lemma ex_nodefsc_raise_ext_per_change_ext {o} :
+  forall lib lib1 lib2
+         (eqa  : lib-per(lib,o))
+         (e1   : lib_extends lib1 lib)
+         (e2   : lib_extends lib2 lib)
+         (lib3 : @library o)
+         (x1   : lib_extends lib3 lib1)
+         (x2   : lib_extends lib3 lib2)
+         t,
+    ex_nodefsc (raise_ext_per eqa e1 lib3 x1) t
+    -> ex_nodefsc (raise_ext_per eqa e2 lib3 x2) t.
+Proof.
+  introv h.
+  eapply ex_nodefsc_change_ext; eauto.
+Qed.
+Hint Resolve ex_nodefsc_raise_ext_per_change_ext : slow.
+
+Definition per_ffdefs_eq_bar_lib_per {o}
+           (lib : @library o)
+           (eqa : lib-per(lib,o))
+           (t   : @CTerm o) : lib-per(lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) => per_ffdefs_eq_bar lib' (raise_lib_per eqa x) t).
+  repeat introv.
+  unfold per_ffdefs_eq_bar, per_ffdefs_eq; split; introv h;
+    eapply e_all_in_ex_bar_ext_pres; eauto; introv br xt q;
+      repnd; dands; auto; simpl in *;
+        repnd; dands; auto; eauto 3 with slow.
+Defined.
+
+Lemma per_ffdefs_monotone_func {o} :
+  forall (ts : cts(o)), type_monotone_func (per_ffdefs ts).
+Proof.
+  introv per.
+  unfold per_ffdefs in *; exrepnd.
+
+  exists (per_ffdefs_eq_bar_lib_per lib eqa x1).
+  introv; simpl in *.
+  dands; eauto 3 with slow;[].
+
+  exists A1 A2 x1 x2 (raise_lib_per eqa x).
+  dands; spcast; eauto 3 with slow.
+
+  simpl; introv; unfold raise_ext_per; eapply per4.
+Qed.
+Hint Resolve per_ffdefs_monotone_func : slow.
+
 Lemma close_monotone_func {o} :
   forall (ts : cts(o)),
     type_monotone_func ts
@@ -555,6 +651,12 @@ Proof.
 
   - Case "CL_image".
     pose proof (per_image_monotone_func (close ts) lib T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
+      repnd; dands; eauto 3 with slow.
+
+  - Case "CL_ffdefs".
+    pose proof (per_ffdefs_monotone_func (close ts) lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.

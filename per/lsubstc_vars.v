@@ -422,6 +422,86 @@ Proof.
   allrw @sub_filter_nil_r; auto.
 Qed.
 
+Lemma lsubstc_vars_mk_not_as_mkcv {o} :
+  forall (t1 : @NTerm o) w s vs c,
+    {w1 : wf_term t1
+     & {c1 : cover_vars_upto t1 s vs
+     & lsubstc_vars (mk_not t1) w s vs c
+       = mkcv_not
+           vs
+           (lsubstc_vars t1 w1 s vs c1)}}.
+Proof.
+  introv.
+
+  dup w as w'.
+  rw @wf_not in w'; repnd.
+  exists w'.
+
+  dup c as c'.
+  rw @cover_vars_upto_not in c'; repnd.
+  exists c'.
+
+  apply cvterm_eq; simpl.
+  unfold csubst.
+  repeat unflsubst; simpl.
+  fold_terms.
+  allrw @sub_filter_nil_r; auto.
+  autorewrite with slow; auto.
+Qed.
+
+Lemma implies_isprog_vars_assert {o} :
+  forall vs (t : @NTerm o), isprog_vars vs t -> isprog_vars vs (mk_assert t).
+Proof.
+  introv isp.
+  unfold mk_assert; apply isprog_vars_ite_implies; eauto 3 with slow.
+Qed.
+
+Definition mkcv_assert {o} vs (t : @CVTerm o vs) : CVTerm vs :=
+  let (a,x) := t in exist (isprog_vars vs) (mk_assert a) (implies_isprog_vars_assert vs a x).
+
+Lemma wf_assert {o} :
+  forall (A : @NTerm o), wf_term (mk_assert A) <=> wf_term A.
+Proof.
+  introv; unfold mk_assert.
+  rw @wf_ite; split; intro h; repnd; dands; eauto 3 with slow.
+Qed.
+
+Lemma cover_vars_upto_assert {o} :
+  forall vs (a : @NTerm o) (sub : CSub),
+    cover_vars_upto (mk_assert a) sub vs <=> cover_vars_upto a sub vs.
+Proof.
+  introv; unfold mk_ite.
+  rw @cover_vars_upto_ite.
+  split; intro h; repnd; dands; eauto 3 with slow.
+Qed.
+
+Lemma lsubstc_vars_mk_assert_as_mkcv {o} :
+  forall (t1 : @NTerm o) w s vs c,
+    {w1 : wf_term t1
+     & {c1 : cover_vars_upto t1 s vs
+     & lsubstc_vars (mk_assert t1) w s vs c
+       = mkcv_assert
+           vs
+           (lsubstc_vars t1 w1 s vs c1)}}.
+Proof.
+  introv.
+
+  dup w as w'.
+  rw @wf_assert in w'; repnd.
+  exists w'.
+
+  dup c as c'.
+  rw @cover_vars_upto_assert in c'; repnd.
+  exists c'.
+
+  apply cvterm_eq; simpl.
+  unfold csubst.
+  repeat unflsubst; simpl.
+  fold_terms.
+  allrw @sub_filter_nil_r; auto.
+  autorewrite with slow; auto.
+Qed.
+
 Ltac propagate_true_step :=
   match goal with
   | [ |- context[?x = ?x] ] => trw true_eq_same
@@ -449,6 +529,28 @@ Ltac lsubstc_vars_as_mkcv :=
       let wf := fresh "w" in
       let cv := fresh "c" in
       pose proof (lsubstc_vars_mk_squash_as_mkcv t w s vs c) as hyp;
+        destruct hyp as [wf hyp];
+        destruct hyp as [cv hyp];
+        rewrite hyp in H;
+        clear hyp;
+        proof_irr
+
+    | [ H : context[lsubstc_vars (mk_not ?t) ?w ?s ?vs ?c] |- _ ] =>
+      let hyp := fresh "hyp" in
+      let wf := fresh "w" in
+      let cv := fresh "c" in
+      pose proof (lsubstc_vars_mk_not_as_mkcv t w s vs c) as hyp;
+        destruct hyp as [wf hyp];
+        destruct hyp as [cv hyp];
+        rewrite hyp in H;
+        clear hyp;
+        proof_irr
+
+    | [ H : context[lsubstc_vars (mk_assert ?t) ?w ?s ?vs ?c] |- _ ] =>
+      let hyp := fresh "hyp" in
+      let wf := fresh "w" in
+      let cv := fresh "c" in
+      pose proof (lsubstc_vars_mk_assert_as_mkcv t w s vs c) as hyp;
         destruct hyp as [wf hyp];
         destruct hyp as [cv hyp];
         rewrite hyp in H;
