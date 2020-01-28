@@ -44,9 +44,7 @@ Lemma ccequivc_ext_preserves_computes_to_uni {o} :
 Proof.
   introv ceq comp.
   unfold computes_to_uni in *; exrepnd.
-  exists bar.
-  apply e_all_in_bar_as in comp0; apply e_all_in_bar_as.
-  eapply in_open_bar_pres; eauto; clear comp0; introv ext h.
+  eapply in_open_bar_pres; eauto; clear comp; introv ext h.
   exrepnd; exists i; eauto 3 with slow.
 Qed.
 Hint Resolve ccequivc_ext_preserves_computes_to_uni : slow.
@@ -91,7 +89,7 @@ Proof.
   repndors; subst; dclose_lr; auto.
 Qed.
 
-Lemma computes_to_valc_uni_implies_all_in_bar_trivial {o} :
+(*Lemma computes_to_valc_uni_implies_all_in_bar_trivial {o} :
   forall lib (T : @CTerm o) i,
     (T ===>(lib) (mkc_uni i))
     -> all_in_bar (trivial_bar lib) (fun lib => (T ===>(lib) (mkc_uni i))).
@@ -100,7 +98,7 @@ Proof.
   apply (ccomputes_to_valc_ext_monotone lib lib'0); eauto 3 with slow.
 Qed.
 Hint Resolve computes_to_valc_uni_implies_all_in_bar_trivial : slow.
-
+*)
 
 Lemma close_type_system_init {p} :
   forall (ts : cts(p)) lib T T' eq,

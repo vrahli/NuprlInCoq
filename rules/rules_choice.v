@@ -387,7 +387,7 @@ Proof.
   assert (m < n) as ltm by omega.
   clear e0.
 
-  apply equality_in_tnat; apply e_all_in_ex_bar_as.
+  apply equality_in_tnat.
   assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
   clear dependent lib'.
   eapply lib_extends_preserves_all_in_ex_bar in imp;[|exact xt].
@@ -481,23 +481,14 @@ Proof.
   repndors; repnd; subst; simpl in *; eauto;[].
 
   destruct l; simpl in *; tcsp; ginv; boolvar; subst; tcsp; GC.
-  destruct restr; tcsp.
+  inversion ext0 as [? ? ? ? ? ? ext'|? ? ? ? ? ext'|]; subst; clear ext0;
+    try (complete (unfold extend_choice_seq_vals_lawless_upto in *;
+                   exrepnd; subst; rewrite length_app; try omega)).
 
-  - destruct entry.
-    destruct cse_restriction; repnd; exrepnd; subst; ginv;[].
-    rewrite length_app; allrw; omega.
-
-  - unfold correct_restriction in *.
-    subst.
-    unfold is_primitive_kind in *.
-    destruct name0 as [name kd]; simpl in *.
-    destruct kd; subst; boolvar; tcsp; try omega.
-
-  - unfold correct_restriction in *.
-    subst.
-    unfold is_primitive_kind in *.
-    destruct name0 as [name kd]; simpl in *.
-    destruct kd; subst; boolvar; tcsp; try omega.
+  { destruct name0 as [name kd]; simpl in *.
+    unfold correct_restriction in *; simpl in *.
+    destruct kd; boolvar; subst; tcsp; [].
+    unfold is_primitive_kind in *; simpl in *; try omega. }
 Qed.
 Hint Resolve cs_entry_in_library_lawless_upto_implies_length_ge : slow.
 
@@ -518,6 +509,27 @@ Proof.
 Qed.
 Hint Resolve cterm_is_nth_implies_is_nat : slow.
 
+Lemma is_nat_if_compatible_and_correct {o} :
+  forall name res vals n (v : @ChoiceSeqVal o),
+    correct_restriction name res
+    -> compatible_choice_sequence_name 0 name
+    -> choice_sequence_satisfies_restriction vals res
+    -> select n vals = Some v
+    -> is_nat n v.
+Proof.
+  introv cor comp sat sel.
+  unfold choice_sequence_satisfies_restriction, correct_restriction, compatible_choice_sequence_name in *.
+  destruct res, name as [name kd], kd; simpl in *; tcsp; boolvar; subst; repnd; tcsp.
+
+  { apply cor; auto. }
+
+  destruct (lt_dec n (length l)) as [dd|dd].
+
+  { apply sat in sel; apply cor2 in sel; auto; eauto 3 with slow. }
+
+  apply cor; auto; try omega.
+Qed.
+
 Lemma cs_entry_in_library_lawless_upto_implies_is_nat {o} :
   forall (lib lib' : @library o) name k vals restr n v,
     compatible_choice_sequence_name 0 name
@@ -535,36 +547,9 @@ Proof.
   clear IHlib ext.
 
   destruct l; simpl in *; tcsp; ginv; boolvar; subst; tcsp; GC.
-  destruct restr; tcsp.
-
-  - destruct entry.
-    destruct cse_restriction; repnd; exrepnd; subst; ginv;[].
-    unfold correct_restriction in *; simpl in *.
-    destruct name0 as [name0 kd]; simpl in *.
-    destruct kd; boolvar; tcsp; subst; GC; repnd; simpl in *; try omega.
-
-    + apply sat in sel.
-      apply cor in sel; auto.
-
-    + apply sat in sel.
-      destruct (lt_dec n (length l)) as [dd|dd].
-
-      * apply cor2 in sel; auto.
-        eauto 3 with slow.
-
-      * apply cor in sel; auto; try omega.
-
-  - unfold correct_restriction in *.
-    subst.
-    unfold is_primitive_kind in *.
-    destruct name0 as [name kd]; simpl in *.
-    destruct kd; subst; boolvar; tcsp.
-
-  - unfold correct_restriction in *.
-    subst.
-    unfold is_primitive_kind in *.
-    destruct name0 as [name kd]; simpl in *.
-    destruct kd; subst; boolvar; tcsp.
+  inversion ext0 as [? ? ? ? ? ? ext'|? ? ? ? ext'|]; subst; clear ext0;
+    try (unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst);
+    try (complete (eapply is_nat_if_compatible_and_correct; eauto)).
 Qed.
 Hint Resolve cs_entry_in_library_lawless_upto_implies_is_nat : slow.
 
@@ -599,6 +584,14 @@ Proof.
   rewrite select_app_l; eauto 3 with slow.
 Qed.
 
+Lemma choice_sequence_vals_extend_app {o} :
+  forall (vals vals' : @ChoiceSeqVals o),
+    choice_sequence_vals_extend (vals ++ vals') vals.
+Proof.
+  introv; unfold choice_sequence_vals_extend; eauto.
+Qed.
+Hint Resolve choice_sequence_vals_extend_app : slow.
+
 (* MOVE *)
 Lemma implies_mkc_apply_mkc_choice_seq_ccomputes_to_valc_ext {o} :
   forall lib lib' name vals restr m (v : @CTerm o),
@@ -624,36 +617,60 @@ Proof.
 
   eapply lib_extends_preserves_find_cs in findcs;[|eauto].
   exrepnd; simpl in *.
-  destruct entry2; simpl in *.
+  unfold choice_sequence_vals_extend in *; exrepnd; subst.
   unfold find_cs_value_at.
   allrw;simpl.
   rewrite find_value_of_cs_at_is_select.
-  erewrite choice_sequence_vals_extends_implies_select_some; eauto; simpl; auto.
+  erewrite choice_sequence_vals_extends_implies_select_some; eauto; simpl; auto; eauto 3 with slow.
+Qed.
+
+Lemma extend_seq_to_ext {o} :
+  forall (lib  : @library o)
+         (norp : no_repeats_library lib)
+         (safe : safe_library lib)
+         (k    : nat)
+         (name : choice_sequence_name)
+         (isn  : is_primitive_kind name),
+  exists lib' lib'',
+    lib_extends lib' lib
+    /\ name_in_library name lib''
+    /\ extend_library_lawless_upto lib'' lib' name k.
+Proof.
+  introv norep safe isn.
+  exists (add_cs_if_not_in name lib).
+  pose proof (exists_extend_library_lawless_upto name k (add_cs_if_not_in name lib)) as q.
+  repeat (autodimp q hyp); eauto 3 with slow;[].
+  exrepnd.
+  exists lib'; dands; eauto 3 with slow.
 Qed.
 
 Lemma mkc_choice_seq_in_natk2nat {o} :
   forall (lib : @library o) (name : choice_sequence_name) k,
     compatible_choice_sequence_name 0 name
+    -> no_repeats_library lib
     -> safe_library lib
     -> member lib (mkc_choice_seq name) (natk2nat (mkc_nat k)).
 Proof.
-  introv isn safe.
+  introv comp norep safe.
   apply implies_member_natk2nat_bar.
+  applydup compatible_choice_sequence_name_0_implies_is_primitive_kind in comp as isn.
 
   (* first we need to add the sequence to the library *)
-  apply e_all_in_ex_bar_as.
-  apply all_in_ex_bar_implies_e_all_in_ex_bar.
-  exists (extend_seq_to_bar lib safe k name (compatible_choice_sequence_name_0_implies_is_primitive_kind _ isn)).
-
-  introv br ext ltm.
-  simpl in * |-; exrepnd.
+  introv ext.
+  assert (no_repeats_library lib') as norep' by eauto 3 with slow.
   assert (safe_library lib') as safe' by eauto 3 with slow.
-  apply name_in_library_implies_entry_in_library in br2; exrepnd.
-  applydup safe' in br2.
+  pose proof (extend_seq_to_ext lib' norep' safe' k name isn) as q; exrepnd.
+  assert (lib_extends lib'' lib') as xta by eauto 4 with slow.
+  exists lib'' xta.
+  introv xtb ltm.
+  simpl in * |-; exrepnd.
+  assert (safe_library lib'') as safe'' by eauto 3 with slow.
+  apply name_in_library_implies_entry_in_library in q2; exrepnd.
+  applydup safe'' in q2.
 
-  pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry k) as q.
+  pose proof (extend_library_lawless_upto_implies_exists_nats name lib'' lib'0 entry k) as q.
   repeat (autodimp q hyp); exrepnd.
-  pose proof (q1 m (nth m vals mkc_zero)) as w.
+  pose proof (q6 m (nth m vals mkc_zero)) as w.
   autodimp w hyp;[apply nth_select1; omega|];[].
   unfold is_nat in w; exrepnd.
   assert (select m vals = Some (mkc_nat i)) as xx.
@@ -667,20 +684,21 @@ Qed.
 
 Lemma equality_in_csname_implies_equality_in_natk2nat {o} :
   forall lib (a b t : @CTerm o) k,
-    safe_library lib
+    no_repeats_library lib
+    -> safe_library lib
     -> ccomputes_to_valc_ext lib t (mkc_nat k)
     -> equality lib a b (mkc_csname 0)
     -> equality lib a b (natk2nat t).
 Proof.
-  introv safe comp ecs.
+  introv norep safe comp ecs.
   apply equality_in_csname in ecs.
 
   apply all_in_ex_bar_equality_implies_equality.
-  apply e_all_in_ex_bar_as in ecs.
   eapply all_in_ex_bar_modus_ponens1;[|exact ecs]; clear ecs; introv y ecs; exrepnd; spcast.
   eapply lib_extends_preserves_ccomputes_to_valc in comp;[|eauto].
   assert (safe_library lib') as safe' by eauto 3 with slow.
-  clear lib y safe.
+  assert (no_repeats_library lib') as norep' by eauto 3 with slow.
+  clear lib y safe norep.
   rename lib' into lib.
 
   unfold equality_of_csname in ecs; exrepnd; spcast.
@@ -731,7 +749,7 @@ Proof.
   apply cequiv_refl; compute; fold_terms; dands; eauto 3 with slow.
 Qed.
 
-Lemma nat2all_in_ex_bar2bar {o} :
+(*Lemma nat2all_in_ex_bar2bar {o} :
   forall (n   : nat)
          (lib : @library o)
          (f   : nat -> library -> Prop)
@@ -755,7 +773,7 @@ Proof.
 
   { assert (m = n) as xx by omega; subst.
     eapply w0; eauto 3 with slow. }
-Qed.
+Qed.*)
 
 Lemma nat2in_open_bar2open {o} :
   forall (n   : nat)
@@ -945,7 +963,7 @@ Proof.
   assert (m < n) as ltm by omega.
   clear e0.
 
-  apply equality_in_tnat; apply e_all_in_ex_bar_as.
+  apply equality_in_tnat.
   pose proof (imp m ltm) as h; exrepnd.
   apply in_ext_implies_all_in_ex_bar; introv z.
   exists k; dands; spcast; eauto 4 with slow.
@@ -985,6 +1003,7 @@ Qed.
 Lemma exists_extend_library_lawless_upto_name_in {o} :
   forall name n (lib : @library o),
     is_primitive_kind name
+    -> no_repeats_library lib
     -> safe_library lib
     ->
     exists lib'' lib',
@@ -992,15 +1011,10 @@ Lemma exists_extend_library_lawless_upto_name_in {o} :
       /\ lib_extends lib' lib
       /\ name_in_library name lib''.
 Proof.
-  introv isns safe.
-  pose proof (exists_extend_library_with_name (library2inf lib inf_lib_entry_0) name lib) as h.
-  repeat (autodimp h hyp); eauto 3 with slow;[].
-  exrepnd.
-  assert (safe_library lib') as safe' by eauto 3 with slow.
-  pose proof (exists_extend_library_lawless_upto_following_infinite (library2inf lib' inf_lib_entry_0) name n lib') as q.
-  repeat (autodimp q hyp); eauto 3 with slow;[].
-  exrepnd.
-  exists lib'0 lib'; dands; eauto 3 with slow.
+  introv isns norep safe.
+  pose proof (extend_seq_to_ext lib) as h; repeat (autodimp h hyp).
+  pose proof (h n name) as h; autodimp h hyp; exrepnd.
+  exists lib'' lib'; dands; auto.
 Qed.
 
 Lemma name_in_library_if_entry_in_library {o} :
@@ -1020,10 +1034,34 @@ Lemma entry_extends_implies_entry2name {o} :
     entry_extends entry1 entry2
     -> entry2name entry1 = entry2name entry2.
 Proof.
-  introv h.
-  destruct entry1, entry2; simpl in *; repnd; subst; tcsp; ginv.
-  inversion h; subst; tcsp.
+  introv h; inversion h; subst; tcsp.
 Qed.
+
+Lemma add_choice_preserves_name_in_library {o} :
+  forall x name v (lib : @library o) n r lib',
+    add_choice x v lib = Some (n, r, lib')
+    -> name_in_library name lib
+    -> name_in_library name lib'.
+Proof.
+  induction lib; introv addc h; simpl in *; tcsp.
+  destruct a; simpl in *; tcsp; repndors; repnd; subst; tcsp; GC.
+
+  { destruct entry as [vals restr]; boolvar; subst; tcsp.
+    { inversion addc; subst; simpl in *; tcsp. }
+    remember (add_choice x v lib) as w; symmetry in Heqw; destruct w; repnd; tcsp.
+    inversion addc; subst; simpl in *; tcsp. }
+
+  { destruct entry as [vals restr]; boolvar; subst; tcsp.
+    { inversion addc; subst; simpl in *; tcsp. }
+    remember (add_choice x v lib) as w; symmetry in Heqw; destruct w; repnd; tcsp.
+    inversion addc; subst; simpl in *; tcsp.
+    pose proof (IHlib n r p) as IHlib; repeat (autodimp IHlib hyp). }
+
+  { remember (add_choice x v lib) as w; symmetry in Heqw; destruct w; repnd; tcsp.
+    inversion addc; subst; simpl in *; tcsp.
+    pose proof (IHlib n r p) as IHlib; repeat (autodimp IHlib hyp). }
+Qed.
+Hint Resolve add_choice_preserves_name_in_library : slow.
 
 Lemma lib_extends_preserves_name_in_library {o} :
   forall (lib lib' : @library o) name,
@@ -1031,12 +1069,8 @@ Lemma lib_extends_preserves_name_in_library {o} :
     -> name_in_library name lib
     -> name_in_library name lib'.
 Proof.
-  introv ext i.
-  apply name_in_library_implies_entry_in_library in i; exrepnd.
-  apply ext in i1.
-  apply entry_in_library_extends_implies_entry_in_library in i1; exrepnd.
-  eapply name_in_library_if_entry_in_library; eauto.
-  apply entry_extends_implies_entry2name in i2; try congruence.
+  introv ext; lib_ext_ind ext Case; introv h; tcsp; eauto 3 with slow.
+  destruct (choice_sequence_name_deq name name0); subst; tcsp.
 Qed.
 Hint Resolve lib_extends_preserves_name_in_library : slow.
 
@@ -1057,7 +1091,7 @@ Proof.
   clear lib ext.
   rename lib' into lib.
 
-  apply equality_in_tnat in ea; apply e_all_in_ex_bar_as in ea.
+  apply equality_in_tnat in ea.
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens2;[|exact ea|exact imp]; clear ea imp; introv ext ea imp.
 
@@ -1074,7 +1108,7 @@ Proof.
      [apply ccequivc_ext_refl|apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto]
     |].
 
-  apply equality_in_tnat; apply e_all_in_ex_bar_as.
+  apply equality_in_tnat.
   apply in_ext_implies_all_in_ex_bar.
   introv ext.
   unfold equality_of_nat.
@@ -1101,7 +1135,7 @@ Proof.
   clear lib ext.
   rename lib' into lib.
 
-  apply equality_in_tnat in ea; apply e_all_in_ex_bar_as in ea.
+  apply equality_in_tnat in ea.
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens2;[|exact ea|exact imp]; clear ea imp; introv ext ea imp.
 
@@ -1119,7 +1153,7 @@ Proof.
     |].
 
   pose proof (imp n) as imp; exrepnd.
-  apply equality_in_tnat; apply e_all_in_ex_bar_as.
+  apply equality_in_tnat.
   eapply all_in_ex_bar_modus_ponens1;[|exact imp]; clear imp; introv ext imo; exrepnd; spcast.
   unfold equality_of_nat.
   exists k; dands; spcast; eauto 3 with slow.
@@ -1128,33 +1162,38 @@ Qed.
 Lemma mkc_choice_seq_in_nat2nat {o} :
   forall (lib : @library o) (name : choice_sequence_name),
     compatible_choice_sequence_name 0 name
+    -> no_repeats_library lib
     -> safe_library lib
     -> member lib (mkc_choice_seq name) nat2nat.
 Proof.
-  introv isn safe.
+  introv comp norep safe.
   apply implies_member_nat2nat_bar2.
   apply in_ext_implies_all_in_ex_bar.
   introv ext; introv.
+  applydup compatible_choice_sequence_name_0_implies_is_primitive_kind in comp as isn.
 
   assert (safe_library lib') as safe' by eauto 3 with slow.
-  clear lib safe ext.
-  rename lib' into lib; rename safe' into safe.
+  assert (no_repeats_library lib') as norep' by eauto 3 with slow.
+  clear lib safe norep ext.
+  rename lib' into lib; rename safe' into safe; rename norep' into norep.
   rename m into k.
 
   (* first we need to add the sequence to the library *)
-  apply e_all_in_ex_bar_as.
-  apply all_in_ex_bar_implies_e_all_in_ex_bar.
-  exists (extend_seq_to_bar lib safe (S k) name (compatible_choice_sequence_name_0_implies_is_primitive_kind _ isn)).
-
-  introv br ext.
-  simpl in * |-; exrepnd.
+  introv ext.
+  assert (no_repeats_library lib') as norep' by eauto 3 with slow.
   assert (safe_library lib') as safe' by eauto 3 with slow.
-  apply name_in_library_implies_entry_in_library in br2; exrepnd.
-  applydup safe' in br2.
+  pose proof (extend_seq_to_ext lib' norep' safe' (S k) name isn) as q; exrepnd.
+  assert (lib_extends lib'' lib') as xta by eauto 4 with slow.
+  exists lib'' xta.
+  introv xtb.
+  simpl in * |-; exrepnd.
+  assert (safe_library lib'') as safe'' by eauto 3 with slow.
+  apply name_in_library_implies_entry_in_library in q2; exrepnd.
+  applydup safe'' in q2.
 
-  pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry (S k)) as q.
+  pose proof (extend_library_lawless_upto_implies_exists_nats name lib'' lib'0 entry (S k)) as q.
   repeat (autodimp q hyp); exrepnd;[].
-  pose proof (q1 k (nth k vals mkc_zero)) as w.
+  pose proof (q6 k (nth k vals mkc_zero)) as w.
   autodimp w hyp;[apply nth_select1; try omega|];[].
   unfold is_nat in w; exrepnd.
   assert (select k vals = Some (mkc_nat i)) as xx.
@@ -1166,18 +1205,19 @@ Qed.
 
 Lemma equality_in_csname_implies_equality_in_nat2nat {o} :
   forall lib (a b : @CTerm o),
-    safe_library lib
+    no_repeats_library lib
+    -> safe_library lib
     -> equality lib a b (mkc_csname 0)
     -> equality lib a b nat2nat.
 Proof.
-  introv safe ecs.
+  introv norep safe ecs.
   apply equality_in_csname in ecs.
 
   apply all_in_ex_bar_equality_implies_equality.
-  apply e_all_in_ex_bar_as in ecs.
   eapply all_in_ex_bar_modus_ponens1;[|exact ecs]; clear ecs; introv y ecs; exrepnd; spcast.
   assert (safe_library lib') as safe' by eauto 3 with slow.
-  clear lib y safe.
+  assert (no_repeats_library lib') as norep' by eauto 3 with slow.
+  clear lib y safe norep.
   rename lib' into lib.
 
   unfold equality_of_csname in ecs; exrepnd; spcast.
@@ -1196,3 +1236,51 @@ Proof.
   apply mkc_choice_seq_in_nat2nat; eauto 3 with slow.
 Qed.
 Hint Resolve equality_in_csname_implies_equality_in_nat2nat : slow.
+
+Lemma non_shadowed_entry_implies_not_in_lib {o} :
+  forall e (lib : @library o),
+    non_shadowed_entry e lib
+    -> !in_lib (entry2name e) lib.
+Proof.
+  introv nsh i.
+  unfold in_lib, non_shadowed_entry in *.
+  allrw forallb_forall; exrepnd.
+  applydup nsh in i1.
+  unfold diff_entry_names in *; boolvar; tcsp.
+Qed.
+Hint Resolve non_shadowed_entry_implies_not_in_lib : slow.
+
+Lemma implies_lib_extends_cons_left {o} :
+  forall e (lib : @library o),
+    safe_library_entry e
+    -> non_shadowed_entry e lib
+    -> lib_extends (e :: lib) lib.
+Proof.
+  introv safee allt.
+  applydup @non_shadowed_entry_implies_not_in_lib in allt as ni.
+
+  destruct e; simpl in *; eauto;[].
+  destruct entry as [vals restr]; simpl in *; repnd.
+  induction vals using rev_list_ind; simpl in *; eauto.
+
+  { eapply lib_extends_new_cs; auto. }
+
+  repeat (autodimp IHvals hyp); eauto 3 with slow;[].
+  eapply lib_extends_trans;[|eauto]; clear IHvals.
+  destruct restr; simpl in *.
+
+  { apply (lib_extends_cs _ name a (length vals) typ d typd); tcsp.
+    { simpl; boolvar; tcsp. }
+    apply safee; rewrite select_snoc_eq; boolvar; try omega; auto. }
+
+  { apply (lib_extends_law _ name a (length vals) f); tcsp.
+    { simpl; boolvar; tcsp. }
+    pose proof (safee (length vals)) as safee; autorewrite with slow in *.
+    autodimp safee hyp.
+    rewrite select_snoc_eq in safee; boolvar; try omega; auto; inversion safee; auto. }
+
+  { apply (lib_extends_res _ name a (length vals) typ); tcsp.
+    { simpl; boolvar; tcsp. }
+    apply safee; rewrite select_snoc_eq; boolvar; try omega; auto. }
+Qed.
+Hint Resolve implies_lib_extends_cons_left : slow.

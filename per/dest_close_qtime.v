@@ -392,7 +392,7 @@ Proof.
 
     applydup @in_ext_ext_type_sys_props4_sym in tsa.
     eapply (per_qtime_eq_bar_change_pers ts lib lib'0 A A' B A0 B0 A1); eauto.
-    { eapply in_ext_ext_type_ceq_sym; auto; try exact tsa0; auto. }
+    { eapply (in_ext_ext_type_ceq_sym ts lib lib'0); auto; try exact tsa0; auto. }
     { eauto 3 with slow. }
   }
 

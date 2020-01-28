@@ -37,7 +37,7 @@ Require Export per_ceq_bar.
 Require Export local.
 
 
-Lemma local_equality_of_csname_bar {o} :
+(*Lemma local_equality_of_csname_bar {o} :
   forall {lib} (bar : @BarLib o lib) n t1 t2,
     all_in_bar_ext bar (fun lib' (x : lib_extends lib' lib) => equality_of_csname_bar lib' n t1 t2)
     -> equality_of_csname_bar lib n t1 t2.
@@ -48,7 +48,7 @@ Proof.
   introv br ext; simpl in *; exrepnd.
   eapply alla0; eauto.
 Qed.
-Hint Resolve local_equality_of_csname_bar : slow.
+Hint Resolve local_equality_of_csname_bar : slow.*)
 
 Lemma per_bar_eq_equality_of_csname_bar_implies {o} :
   forall (lib : @library o) n t1 t2,
@@ -57,10 +57,10 @@ Lemma per_bar_eq_equality_of_csname_bar_implies {o} :
 Proof.
   introv alla.
   unfold per_bar_eq in alla.
-  unfold equality_of_csname_bar; apply e_all_in_ex_bar_as.
+  unfold equality_of_csname_bar.
   apply in_open_bar_ext_in_open_bar.
   eapply in_open_bar_ext_pres; eauto; clear alla; introv h; simpl in *.
-  unfold equality_of_csname_bar in h; apply e_all_in_ex_bar_as in h; auto.
+  unfold equality_of_csname_bar in h; auto.
 Qed.
 Hint Resolve per_bar_eq_equality_of_csname_bar_implies : slow.
 
@@ -75,9 +75,8 @@ Proof.
                   _ eqa (equality_of_csname_bar_lib_per lib n) t1 t2 alla h) as q.
     eauto 3 with slow.
 
-  - apply e_all_in_ex_bar_as in h.
-    eapply in_open_bar_ext_pres;[|exact alla]; clear alla; introv alla; apply alla; clear alla.
-    unfold equality_of_csname_bar; apply e_all_in_ex_bar_as; eauto 3 with slow.
+  - eapply in_open_bar_ext_pres;[|exact alla]; clear alla; introv alla; apply alla; clear alla.
+    unfold equality_of_csname_bar; eauto 3 with slow.
 Qed.
 Hint Resolve all_in_bar_ext_equal_equality_of_csname_bar_implies_per_bar_eq_implies_equality_of_csname_bar : slow.
 
@@ -134,7 +133,7 @@ Proof.
     introv alla h; exrepnd.
     apply alla0; clear alla0.
     unfold per_bar_eq in *; simpl in *; exrepnd.
-    unfold equality_of_csname_bar in *; apply e_all_in_ex_bar_as in h0.
+    unfold equality_of_csname_bar in *.
 
     apply in_open_bar_ext_in_open_bar in h0.
 
@@ -147,8 +146,7 @@ Proof.
     eapply lib_extends_preserves_ccomputes_to_valc in h1; eauto.
     computes_to_eqval; apply_cequivc_val; auto.
     apply alla0; auto.
-    repeat (autodimp h hyp).
-    unfold equality_of_csname_bar; apply e_all_in_ex_bar_as; auto. }
+    repeat (autodimp h hyp). }
 Qed.
 
 Lemma per_csname_implies_per_bar_per_csname {o} :

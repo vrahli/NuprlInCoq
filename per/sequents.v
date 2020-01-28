@@ -3414,8 +3414,6 @@ Proof.
   inversion hta; subst; cpx.
   eapply member_monotone in m;[|eauto].
   econstructor; eauto.
-  introv ext equ.
-  eapply hf; eauto 3 with slow.
 Qed.
 Hint Resolve hyps_true_at_monotone : slow.
 

@@ -44,7 +44,6 @@ Proof.
   repeat introv.
   unfold per_union_eq_bar, raise_lib_per, raise_ext_per; simpl.
   split; intro h; exrepnd;
-    apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as;
       eapply in_open_bar_ext_comb; try exact h; clear h;
         apply in_ext_ext_implies_in_open_bar_ext; introv h.
 
@@ -79,12 +78,11 @@ Lemma per_bar_eq_per_union_eq_bar_lib_per {o} :
 Proof.
   introv; simpl; unfold per_bar_eq; split; intro h; eauto 3 with slow.
 
-  - unfold per_union_eq_bar; apply e_all_in_ex_bar_ext_as.
+  - unfold per_union_eq_bar.
     eapply in_open_bar_ext_dup.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
     unfold per_union_eq_bar in h.
-    apply e_all_in_ex_bar_ext_as in h.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_union_eq; try exact h;
@@ -92,12 +90,10 @@ Proof.
       try apply (lib_per_cond _ eqb).
 
   - unfold per_union_eq_bar in *.
-    apply e_all_in_ex_bar_ext_as in h.
     apply in_open_bar_ext_twice in h.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
     unfold per_union_eq_bar.
-    apply e_all_in_ex_bar_ext_as.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_union_eq; try exact h;

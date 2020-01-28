@@ -156,7 +156,7 @@ Proof.
   auto.
 Qed.
 
-Lemma bar_and_fam_per2lib_per_implies_lpaf_eqa {o} :
+(*Lemma bar_and_fam_per2lib_per_implies_lpaf_eqa {o} :
   forall {lib lib'} {bar : @BarLib o lib} {feqa : bar-and-fam-per(lib,bar,o)}
          {A v B C w D}
          {Cons}
@@ -178,9 +178,9 @@ Proof.
   simpl in *.
   pose proof (q1 _ (lib_extends_refl lib')) as q1; simpl in *.
   apply q1; auto.
-Qed.
+Qed.*)
 
-Definition bar_and_fam_per2lib_per_fam {o}
+(*Definition bar_and_fam_per2lib_per_fam {o}
            {lib  : @library o}
            {bar  : BarLib lib}
            (feqa : bar-and-fam-per(lib,bar,o))
@@ -209,7 +209,7 @@ Proof.
     eapply (lib_per_fam_cond _  (lpaf_eqb (feqa lib1 br lib' ext y0))); eauto.
   - exists lib1 br ext y0; auto.
     eapply (lib_per_fam_cond _  (lpaf_eqb (feqa lib1 br lib' ext y0))); eauto.
-Defined.
+Defined.*)
 
 Definition FunDepEqaFam {o} {lib} {Flib : @FunLibExt o lib} (Feqa : FunDepEqa Flib) :=
   forall lib1 (ext1 : lib_extends lib1 lib)

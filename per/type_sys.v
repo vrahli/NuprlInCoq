@@ -2013,11 +2013,9 @@ Lemma computes_to_uni_in_bar_implies {o} :
     -> exists lib' i, lib_extends lib' lib /\ T ===>(lib') (mkc_uni i).
 Proof.
   introv h; unfold computes_to_uni in h; exrepnd.
-  pose proof (bar_non_empty bar) as ne; exrepnd.
-  pose proof (h0 _ ne0 lib' (lib_extends_refl lib')) as h0; simpl in *; exrepnd.
-  unfold ex_finite_ext in h0; exrepnd.
-  apply in_ext_implies in h0; exrepnd.
-  exists lib'0 i; dands; auto; eauto 3 with slow.
+  pose proof (h _ (lib_extends_refl _)) as h; exrepnd.
+  pose proof (h1 _ (lib_extends_refl _)) as h1; simpl in *; exrepnd.
+  exists lib'' i; dands; eauto 3 with slow.
 Qed.
 
 Ltac apply_defines_only_universes0 :=
@@ -2086,26 +2084,19 @@ Proof.
 Qed.
 
 Lemma computes_to_uni_in_bar_implies_bar {o} :
-  forall {lib lib' : @library o} (b : @BarLib o lib) T v,
-    all_in_bar b (fun lib => T ===>(lib) v)
+  forall {lib lib' : @library o} T v,
+    in_open_bar lib (fun lib => T ===>(lib) v)
     -> computes_to_uni lib' T
     -> lib_extends lib' lib
     -> exists i, v = mkc_uni i.
 Proof.
   introv a h ext; unfold computes_to_uni in *; exrepnd.
-  apply (implies_all_in_bar_raise_bar _ ext) in a.
-  apply (implies_all_in_bar_intersect_bars_left _ bar) in a.
-  apply (implies_all_in_bar_intersect_bars_right _ (raise_bar b ext)) in h0.
-  remember (intersect_bars (raise_bar b ext) bar) as B; clear HeqB.
-  pose proof (bar_non_empty B) as ne; exrepnd.
-  pose proof (a _ ne0 lib'0 (lib_extends_refl lib'0)) as a.
-  pose proof (h0 _ ne0 lib'0 (lib_extends_refl lib'0)) as h0.
-  simpl in *; exrepnd.
-  unfold ex_finite_ext in *; exrepnd.
-  apply in_ext_implies in h0; exrepnd.
-  eapply ccomputes_to_valc_ext_monotone in a;[|eauto].
+  pose proof (h _ (lib_extends_refl _)) as h; exrepnd.
+  pose proof (a _ (lib_extends_trans xt ext)) as a; exrepnd.
+  pose proof (a1 _ (lib_extends_refl _)) as a1; simpl in a1.
+  pose proof (h1 _ xt0) as h1; simpl in h1; exrepnd.
   spcast; computes_to_eqval.
-  apply cequivc_uni_right_iscvalue in eqt; eauto 3 with slow.
+  apply cequivc_sym in eqt; apply cequivc_uni_right_iscvalue in eqt; eauto 3 with slow.
 Qed.
 
 Ltac apply_defines_only_universes_bar_left :=
@@ -2113,7 +2104,7 @@ Ltac apply_defines_only_universes_bar_left :=
   | [ H1 : type_system ?ts,
       H2 : defines_only_universes ?ts,
       H3 : ?ts ?lib ?T1 ?T2 ?eq,
-      H4 : all_in_bar ?bar (fun lib => ccomputes_to_valc lib ?T1 ?v) |- _ ] =>
+      H4 : in_open_bar ?lib (fun lib => ccomputes_to_valc lib ?T1 ?v) |- _ ] =>
     let h  := fresh "h" in
     let h' := fresh "h'" in
     let e1 := fresh "e1" in
@@ -2129,7 +2120,7 @@ Ltac apply_defines_only_universes_bar_left :=
     destruct h as [e1 e2];
     apply H2 in e1;
     apply H2 in e2;
-    pose proof (computes_to_uni_in_bar_implies_bar bar T1 v H4 e1) as h1;
+    pose proof (computes_to_uni_in_bar_implies_bar T1 v H4 e1) as h1;
     autodimp h1 h';[eauto 2 with slow|];[];
     destruct h1 as [i1 h1];
     try (dest_cterms h1; inversion h1; fail)
@@ -2140,7 +2131,7 @@ Ltac apply_defines_only_universes_bar_right :=
   | [ H1 : type_system ?ts,
       H2 : defines_only_universes ?ts,
       H3 : ?ts ?lib ?T1 ?T2 ?eq,
-      H4 : all_in_bar ?bar (fun lib => ccomputes_to_valc lib ?T2 ?v) |- _ ] =>
+      H4 : in_open_bar ?lib (fun lib => ccomputes_to_valc lib ?T2 ?v) |- _ ] =>
     let h  := fresh "h" in
     let h' := fresh "h'" in
     let e1 := fresh "e1" in
@@ -2156,13 +2147,13 @@ Ltac apply_defines_only_universes_bar_right :=
     destruct h as [e1 e2];
     apply H2 in e1;
     apply H2 in e2;
-    pose proof (computes_to_uni_in_bar_implies_bar bar T2 v H4 e2) as h2;
+    pose proof (computes_to_uni_in_bar_implies_bar T2 v H4 e2) as h2;
     autodimp h2 h';[eauto 2 with slow|];[];
     destruct h2 as [i2 h2];
     try (dest_cterms h2; inversion h2; fail)
   end.
 
-Lemma computes_to_uni_in_bar_implies_bar_ceq {o} :
+(*Lemma computes_to_uni_in_bar_implies_bar_ceq {o} :
   forall {lib lib' : @library o} (b : @BarLib o lib) T v,
     computes_to_valc_ceq_bar b T v
     -> computes_to_uni lib' T
@@ -2193,9 +2184,9 @@ Proof.
   eapply cequivc_uni_right_iscvalue in eqt; eauto 3 with slow; subst.
   eapply cequivc_uni in a0;[|eauto 3 with slow].
   exists lib'1 i; spcast; auto.
-Qed.
+Qed.*)
 
-Ltac apply_defines_only_universes_bar_ceq_left :=
+(*Ltac apply_defines_only_universes_bar_ceq_left :=
   match goal with
   | [ H1 : type_system ?ts,
       H2 : defines_only_universes ?ts,
@@ -2224,9 +2215,9 @@ Ltac apply_defines_only_universes_bar_ceq_left :=
     uncast;
     apply computes_to_valc_isvalue_eq in h1;[|eauto 2 with slow];[];
     try (dest_cterms h1; inversion h1; fail)
-  end.
+  end.*)
 
-Ltac apply_defines_only_universes_bar_ceq_right :=
+(*Ltac apply_defines_only_universes_bar_ceq_right :=
   match goal with
   | [ H1 : type_system ?ts,
       H2 : defines_only_universes ?ts,
@@ -2255,7 +2246,7 @@ Ltac apply_defines_only_universes_bar_ceq_right :=
     uncast;
     apply computes_to_valc_isvalue_eq in h2;[|eauto 2 with slow];[];
     try (dest_cterms h2; inversion h2; fail)
-  end.
+  end.*)
 
 Ltac usedou :=
   match goal with
@@ -2276,10 +2267,7 @@ Lemma computes_to_uni_monotone {o} :
     -> computes_to_uni lib' T.
 Proof.
   introv x comp.
-  unfold computes_to_uni in *.
-  exrepnd.
-  exists (raise_bar bar x).
-  eauto 3 with slow.
+  unfold computes_to_uni in *; eauto 3 with slow.
 Qed.
 Hint Resolve computes_to_uni_monotone : slow.
 
@@ -2324,8 +2312,8 @@ Ltac apply_defines_only_universes :=
     [ use_computes_to_uni
     | apply_defines_only_universes_bar_left
     | apply_defines_only_universes_bar_right
-    | apply_defines_only_universes_bar_ceq_left
-    | apply_defines_only_universes_bar_ceq_right
+    (*| apply_defines_only_universes_bar_ceq_left*)
+    (*| apply_defines_only_universes_bar_ceq_right*)
     | apply_defines_only_universes_basic
     ].
 

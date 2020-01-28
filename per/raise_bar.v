@@ -50,7 +50,7 @@ Proof.
 Qed.
 Hint Resolve choice_sequence_vals_extend_preserves_inf_choice_sequence_vals_extend : slow.
 
-Lemma choice_sequence_entry_extend_preserves_inf_choice_sequence_entry_extend {o} :
+(*Lemma choice_sequence_entry_extend_preserves_inf_choice_sequence_entry_extend {o} :
   forall (entry0 entry1 : @ChoiceSeqEntry o) entry,
     choice_sequence_entry_extend entry0 entry1
     -> inf_choice_sequence_entry_extend entry entry0
@@ -61,9 +61,9 @@ Proof.
   unfold choice_sequence_entry_extend in *; repnd.
   dands; try congruence; eauto 3 with slow.
 Qed.
-Hint Resolve choice_sequence_entry_extend_preserves_inf_choice_sequence_entry_extend : slow.
+Hint Resolve choice_sequence_entry_extend_preserves_inf_choice_sequence_entry_extend : slow.*)
 
-Lemma entry_extends_preserves_inf_entry_extends {o} :
+(*Lemma entry_extends_preserves_inf_entry_extends {o} :
   forall (e' e : @library_entry o) ie,
     entry_extends e' e
     -> inf_entry_extends ie e'
@@ -73,7 +73,7 @@ Proof.
   destruct ie, e', e; simpl in *; repnd; subst; dands; tcsp; ginv; eauto 3 with slow;
     try (complete (inversion ext1; subst; auto)).
 Qed.
-Hint Resolve entry_extends_preserves_inf_entry_extends : slow.
+Hint Resolve entry_extends_preserves_inf_entry_extends : slow.*)
 
 Lemma entry_extends_preserves_inf_matching_entries {o} :
   forall (e' e : @library_entry o) ie,
@@ -88,7 +88,7 @@ Proof.
 Qed.
 Hint Resolve entry_extends_preserves_inf_matching_entries : slow.
 
-Lemma entry_extends_preserves_entry_in_inf_library_extends {o} :
+(*Lemma entry_extends_preserves_entry_in_inf_library_extends {o} :
   forall n (entry' entry : @library_entry o) infLib,
     entry_extends entry' entry
     -> entry_in_inf_library_extends entry' n infLib
@@ -100,9 +100,9 @@ Proof.
   dands; eauto 3 with slow.
   introv m; destruct i0; eauto 3 with slow.
 Qed.
-Hint Resolve entry_extends_preserves_entry_in_inf_library_extends : slow.
+Hint Resolve entry_extends_preserves_entry_in_inf_library_extends : slow.*)
 
-Lemma choice_sequence_entry_extend_preserves_is_default_choice_seq_entry {o} :
+(*Lemma choice_sequence_entry_extend_preserves_is_default_choice_seq_entry {o} :
   forall (entry' entry : @ChoiceSeqEntry o),
     choice_sequence_entry_extend entry' entry
     -> is_default_choice_seq_entry entry'
@@ -123,7 +123,7 @@ Proof.
     rewrite select_app_l in q; eauto 3 with slow.
     autodimp q hyp; subst; eauto.
 Qed.
-Hint Resolve choice_sequence_entry_extend_preserves_is_default_choice_seq_entry : slow.
+Hint Resolve choice_sequence_entry_extend_preserves_is_default_choice_seq_entry : slow.*)
 
 Lemma entry_extends_preserves_is_cs_default_entry {o} :
   forall (entry entry' : @library_entry o),
@@ -131,9 +131,12 @@ Lemma entry_extends_preserves_is_cs_default_entry {o} :
     -> is_cs_default_entry entry'
     -> is_cs_default_entry entry.
 Proof.
-  introv h q.
-  unfold is_cs_default_entry, entry_extends in *.
-  destruct entry, entry'; repnd; subst; tcsp; dands; ginv; eauto 3 with slow.
+  introv h q; inversion h; subst; eauto; clear h.
+  unfold is_cs_default_entry, is_default_choice_seq_entry in *; repnd.
+  dands; ginv; eauto 3 with slow.
+  destruct restr; simpl in *; tcsp.
+  { introv sel; apply q; rewrite select_app_l; eauto 3 with slow. }
+  { introv sel; apply q; rewrite select_app_l; eauto 3 with slow. }
 Qed.
 Hint Resolve entry_extends_preserves_is_cs_default_entry : slow.
 
@@ -150,7 +153,7 @@ Proof.
 Qed.
 Hint Resolve entry_extends_preserves_entry_in_inf_library_default : slow.
 
-Lemma inf_lib_extends_lib_extends_trans {o} :
+(*Lemma inf_lib_extends_lib_extends_trans {o} :
   forall infLib (lib' lib : @library o),
     inf_lib_extends infLib lib'
     -> lib_extends lib' lib
@@ -170,9 +173,9 @@ Proof.
   - introv s.
     eapply lib_extends_safe in s;[|eauto]; tcsp.
 Qed.
-Hint Resolve inf_lib_extends_lib_extends_trans : slow.
+Hint Resolve inf_lib_extends_lib_extends_trans : slow.*)
 
-Definition raise_bar {o} {lib lib'}
+(*Definition raise_bar {o} {lib lib'}
            (bar : @BarLib o lib)
            (ext : lib_extends lib' lib) : @BarLib o lib'.
 Proof.
@@ -196,9 +199,9 @@ Proof.
     exists lib'0; dands; eauto 3 with slow.
 
   - introv h; exrepnd; auto.
-Defined.
+Defined.*)
 
-Lemma implies_all_in_bar_raise_bar {o} :
+(*Lemma implies_all_in_bar_raise_bar {o} :
   forall {lib lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) F,
     all_in_bar bar F
     -> all_in_bar (raise_bar bar ext) F.
@@ -207,9 +210,9 @@ Proof.
   simpl in *; exrepnd.
   apply (alla lib1 br1); eauto 3 with slow.
 Qed.
-Hint Resolve implies_all_in_bar_raise_bar : slow.
+Hint Resolve implies_all_in_bar_raise_bar : slow.*)
 
-Lemma implies_e_all_in_bar_raise_bar {o} :
+(*Lemma implies_e_all_in_bar_raise_bar {o} :
   forall {lib lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib) F,
     e_all_in_bar bar F
     -> e_all_in_bar (raise_bar bar ext) F.
@@ -218,9 +221,9 @@ Proof.
   simpl in *; exrepnd.
   apply (alla lib1 br1); eauto 3 with slow.
 Qed.
-Hint Resolve implies_e_all_in_bar_raise_bar : slow.
+Hint Resolve implies_e_all_in_bar_raise_bar : slow.*)
 
-Lemma e_all_in_ex_bar_ext_pres_ext {o} :
+(*Lemma e_all_in_ex_bar_ext_pres_ext {o} :
   forall (lib lib' : @library o)
          (F : forall lib' (x : lib_extends lib' lib), Prop)
          (G : forall lib'' (x : lib_extends lib'' lib'), Prop),
@@ -246,9 +249,9 @@ Proof.
   assert (lib_extends lib'2 lib) as xt' by eauto 3 with slow.
   assert (lib_extends lib'2 lib1) as xt'' by eauto 3 with slow.
   apply (imp _ _ br1 _ xt'' xt' x); auto.
-Qed.
+Qed.*)
 
-Lemma e_all_in_ex_bar_pres_ext {o} :
+(*Lemma e_all_in_ex_bar_pres_ext {o} :
   forall (lib lib' : @library o)
          (F G : library -> Prop),
     lib_extends lib' lib
@@ -269,9 +272,9 @@ Proof.
   eapply ex_finite_ext_pres;[|eauto].
   introv xta z; introv; eauto.
   eapply imp; eauto; eauto 3 with slow.
-Qed.
+Qed.*)
 
-Lemma e_all_in_bar_ext_raise_bar_pres {o} :
+(*Lemma e_all_in_bar_ext_raise_bar_pres {o} :
   forall (lib lib' : @library o)
          (bar : BarLib lib)
          (xt1 xt2 : lib_extends lib' lib)
@@ -295,9 +298,9 @@ Proof.
   assert (lib_extends lib'2 lib) as xt' by eauto 3 with slow.
   assert (lib_extends lib'2 lib1) as xt'' by eauto 3 with slow.
   apply (imp _ br1 _ xt'' x); eauto.
-Qed.
+Qed.*)
 
-Lemma e_all_in_bar_ext_pres {o} :
+(*Lemma e_all_in_bar_ext_pres {o} :
   forall (lib : @library o)
          (bar : BarLib lib)
          (F G : forall lib'' (x : lib_extends lib'' lib), Prop),
@@ -315,9 +318,9 @@ Proof.
   eapply ex_finite_ext_ext_pres; eauto.
   introv xta z; introv; eauto.
   eapply imp; eauto; eauto 3 with slow.
-Qed.
+Qed.*)
 
-Lemma e_all_in_bar_ext_raise_bar_pres2 {o} :
+(*Lemma e_all_in_bar_ext_raise_bar_pres2 {o} :
   forall (lib lib' : @library o)
          (bar : BarLib lib)
          (xt : lib_extends lib' lib)
@@ -341,9 +344,9 @@ Proof.
   assert (lib_extends lib'2 lib) as xa by eauto 3 with slow.
   assert (lib_extends lib'2 lib1) as xb by eauto 3 with slow.
   apply (imp _ br1 _ xb xa x); auto.
-Qed.
+Qed.*)
 
-Lemma e_all_in_bar_ext_raise_bar_pres3 {o} :
+(*Lemma e_all_in_bar_ext_raise_bar_pres3 {o} :
   forall (lib lib' lib'' : @library o)
          (bar : BarLib lib)
          (xt1 : lib_extends lib' lib)
@@ -371,7 +374,7 @@ Proof.
   assert (lib_extends lib'2 lib') as xt' by eauto 3 with slow.
   assert (lib_extends lib'2 lib1) as xt'' by eauto 3 with slow.
   apply (imp _ br1 _ xt'' xt' x); auto.
-Qed.
+Qed.*)
 
 
 (* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *)
@@ -387,7 +390,7 @@ Definition in_open_bar {o} (lib : @library o) F :=
     -> exists (lib'' : library) (xt : lib_extends lib'' lib'),
       in_ext lib'' F.
 
-Lemma e_all_in_ex_bar_as {o} :
+(*Lemma e_all_in_ex_bar_as {o} :
   forall (lib : @library o) F,
     e_all_in_ex_bar lib F
     <-> in_open_bar lib F.
@@ -407,9 +410,9 @@ Proof.
     introv br ext; simpl in *.
     pose proof (h _ (lib_extends_trans ext br)) as h; exrepnd.
     exists lib'' xt; auto. }
-Qed.
+Qed.*)
 
-Lemma e_all_in_bar_as {o} :
+(*Lemma e_all_in_bar_as {o} :
   forall {lib} (bar : @BarLib o lib) F,
     e_all_in_bar bar F
     <-> in_open_bar lib F.
@@ -428,7 +431,7 @@ Proof.
     assert (lib_extends lib' lib) as xt by eauto 3 with slow.
     pose proof (h _ (lib_extends_trans ext xt)) as h; exrepnd.
     exists lib'' xt0; auto. }
-Qed.
+Qed.*)
 
 Definition in_open_bar_ext {o}
            (lib : @library o)
@@ -437,7 +440,7 @@ Definition in_open_bar_ext {o}
   exists (lib'' : library) (y : lib_extends lib'' lib'),
     in_ext_ext lib'' (fun lib0 x0 => forall (z : lib_extends lib0 lib), F lib0 z).
 
-Lemma e_all_in_ex_bar_ext_as {o} :
+(*Lemma e_all_in_ex_bar_ext_as {o} :
   forall (lib : @library o) F,
     e_all_in_ex_bar_ext lib F
     <-> in_open_bar_ext lib F.
@@ -459,9 +462,9 @@ Proof.
     introv br; repeat introv; simpl in *.
     pose proof (h _ (lib_extends_trans e br)) as h; exrepnd.
     exists lib'' y; eauto. }
-Qed.
+Qed.*)
 
-Lemma e_all_in_bar_ext_as {o} :
+(*Lemma e_all_in_bar_ext_as {o} :
   forall {lib} (bar : @BarLib o lib) F,
     e_all_in_bar_ext bar F
     <-> in_open_bar_ext lib F.
@@ -483,7 +486,7 @@ Proof.
     pose proof (h _ (lib_extends_trans e xt)) as h; exrepnd.
     exists lib'' y.
     introv; auto. }
-Qed.
+Qed.*)
 
 Lemma lib_extends_preserves_in_open_bar {o} :
   forall (lib1 lib2 : @library o) F,

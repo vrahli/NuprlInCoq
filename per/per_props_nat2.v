@@ -229,7 +229,7 @@ Proof.
   introv compk e.
 
   eapply equality_in_natk_aux in e; exrepnd; eauto.
-  apply equality_in_tnat; apply e_all_in_ex_bar_as.
+  apply equality_in_tnat.
   eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd.
   exists m; dands; spcast; auto.
 Qed.
@@ -243,7 +243,6 @@ Proof.
   introv m e.
 
   allrw @equality_in_tnat.
-  apply e_all_in_ex_bar_as in m.
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens1;try exact m; clear m; introv x m; exrepnd.
   allunfold @equality_of_nat; exrepnd; spcast; GC.
@@ -263,7 +262,7 @@ Lemma nat_in_nat {o} :
     member lib (mkc_nat n) mkc_tnat.
 Proof.
   introv.
-  apply equality_in_tnat; apply e_all_in_ex_bar_as.
+  apply equality_in_tnat.
   apply in_ext_implies_all_in_ex_bar; introv y; eauto 3 with slow.
   exists n; dands; eauto 3 with slow.
 Qed.
@@ -420,7 +419,7 @@ Lemma equality_in_tnat_nat {o} :
   forall (lib : @library o) n, equality lib (mkc_nat n) (mkc_nat n) mkc_tnat.
 Proof.
   introv.
-  apply equality_in_tnat; apply e_all_in_ex_bar_as.
+  apply equality_in_tnat.
   apply in_ext_implies_all_in_ex_bar; introv x.
   unfold equality_of_nat; exists n.
   dands; eauto 3 with slow.
@@ -433,7 +432,7 @@ Lemma member_tnat_implies_computes {o} :
     -> in_open_bar lib (fun lib => {k : nat , ccomputes_to_valc_ext lib t (mkc_nat k)}).
 Proof.
   introv mem.
-  apply equality_in_tnat in mem; apply e_all_in_ex_bar_as in mem.
+  apply equality_in_tnat in mem.
   eapply all_in_ex_bar_modus_ponens1;try exact mem; clear mem; introv x mem; exrepnd.
   unfold equality_of_nat in mem; exrepnd.
   exists n; spcast; auto.
@@ -446,7 +445,7 @@ Lemma member_tnat_iff {o} :
 Proof.
   introv; split; introv mem.
   - apply member_tnat_implies_computes; auto.
-  - apply equality_in_tnat; apply e_all_in_ex_bar_as.
+  - apply equality_in_tnat.
     eapply all_in_ex_bar_modus_ponens1;try exact mem; clear mem; introv x mem; exrepnd; spcast.
     exists k; dands; spcast; auto.
 Qed.
@@ -469,7 +468,7 @@ Lemma equality_int_nat_implies_cequivc {o} :
     -> ccequivc_bar lib a b.
 Proof.
   introv e.
-  apply equality_in_tnat in e; apply e_all_in_ex_bar_as in e.
+  apply equality_in_tnat in e.
   apply all_in_ex_bar_in_ext_implies.
   eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd; spcast.
   unfold equality_of_nat in e; exrepnd.

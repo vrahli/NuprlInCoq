@@ -246,8 +246,8 @@ Proof.
   repeat rewrite substc2_mk_cv_app_r; tcsp.
   autorewrite with slow.
 
-  apply equality_in_csname_iff in ea; eapply e_all_in_ex_bar_as in ea.
-  apply equality_in_csname_iff in eb; eapply e_all_in_ex_bar_as in eb.
+  apply equality_in_csname_iff in ea.
+  apply equality_in_csname_iff in eb.
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens2;[|exact ea|exact eb]; clear ea eb; introv y ea eb; exrepnd; spcast.
   unfold equality_of_csname in *; exrepnd; spcast.
@@ -323,7 +323,7 @@ Proof.
       unfold compute_step_comp; simpl; boolvar; tcsp. }
 
     apply member_equality.
-    apply equality_in_csname_iff; apply e_all_in_ex_bar_as.
+    apply equality_in_csname_iff.
     apply in_ext_implies_in_open_bar; introv xt; exists name; dands; spcast; eauto 3 with slow.
   }
 
@@ -356,7 +356,7 @@ Proof.
 
     introv xt inh.
     apply inhabited_mkc_equality in inh.
-    apply equality_in_csname_iff in inh; apply e_all_in_ex_bar_as in inh.
+    apply equality_in_csname_iff in inh.
     pose proof (inh _ (lib_extends_refl _)) as inh; exrepnd.
     pose proof (inh1 _ (lib_extends_refl _)) as inh1; simpl in *.
     unfold equality_of_csname in inh1; exrepnd; spcast.
@@ -483,8 +483,7 @@ Lemma entry_extends_implies_same_entry2name {o} :
     -> entry2name entry1 = entry2name entry2.
 Proof.
   introv h.
-  unfold entry_extends in *; destruct entry1, entry2; simpl in *; repnd; subst; tcsp; ginv.
-  inversion h; subst; tcsp.
+  inversion h; subst; auto.
 Qed.
 
 Lemma name_in_library_monotone {o} :
@@ -493,12 +492,7 @@ Lemma name_in_library_monotone {o} :
     -> name_in_library name lib1
     -> name_in_library name lib2.
 Proof.
-  introv ext i.
-  apply name_in_library_implies_entry_in_library in i; exrepnd.
-  apply ext in i1.
-  apply entry_in_library_extends_implies_entry_in_library in i1; exrepnd.
-  eapply entry_in_library_implies_name_in_library; eauto.
-  apply entry_extends_implies_same_entry2name in i2; congruence.
+  introv ext i; eauto 3 with slow.
 Qed.
 Hint Resolve name_in_library_monotone : slow.
 
@@ -537,23 +531,11 @@ Proof.
   repndors; repnd; subst; simpl in *; eauto.
 
   { destruct l; simpl in *; tcsp; ginv; boolvar; subst; tcsp; GC.
-    destruct restr; tcsp; try omega.
-
-    - destruct entry.
-      destruct cse_restriction; repnd; exrepnd; subst; ginv;[].
-      rewrite length_app; allrw; simpl in *; try omega.
-
-    - unfold correct_restriction in *.
-      subst.
-      unfold is_primitive_kind in *.
-      destruct name0 as [name kd]; simpl in *.
-      destruct kd; subst; boolvar; tcsp; try omega.
-
-    - unfold correct_restriction in *.
-      subst.
-      unfold is_primitive_kind in *.
-      destruct name0 as [name kd]; simpl in *.
-      destruct kd; subst; boolvar; tcsp; try omega. }
+    inversion ext0 as [? ? ? ? ? ? ext'|? ? ? ? ? ext'|]; clear ext0; subst; simpl in *; tcsp;
+      unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst; autorewrite with slow list; try omega.
+    unfold is_primitive_kind, correct_restriction in *.
+    destruct name0 as [name kd]; simpl in *.
+    destruct kd; subst; boolvar; tcsp; try omega. }
 
   { eapply IHlib; eauto.
     destruct l; simpl in *; tcsp;[].

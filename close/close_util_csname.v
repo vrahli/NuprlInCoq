@@ -516,7 +516,6 @@ Proof.
   allrw pera0; clear pera0.
 
   unfold equality_of_csname_bar in *; exrepnd.
-  apply e_all_in_ex_bar_as in perb; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear perb; introv ext perb.
   unfold equality_of_csname in *; exrepnd; exists name; dands; eauto 3 with slow.
 Qed.
@@ -558,7 +557,6 @@ Proof.
 
   unfold equality_of_csname_bar in *; exrepnd.
 
-  apply e_all_in_ex_bar_as in e1; apply e_all_in_ex_bar_as in e2; apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb; try exact e1; clear e1.
   eapply in_open_bar_comb; try exact e2; clear e2.
   apply in_ext_implies_in_open_bar; introv ext i j.
@@ -586,7 +584,6 @@ Proof.
   allrw per0; clear per0.
 
   unfold equality_of_csname_bar in *; exrepnd.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear e; introv ext e.
   unfold equality_of_csname in *; exrepnd; dands; auto.
   exists name; dands; spcast; auto; eauto 3 with slow.

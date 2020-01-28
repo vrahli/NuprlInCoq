@@ -292,7 +292,6 @@ Lemma eq_per_eq_bar_sym {o} :
     -> eq_per_eq_bar lib a1 a2 eqa t2 t1.
 Proof.
   introv h; unfold eq_per_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_pres; eauto; clear h; introv h.
   unfold eq_per_eq in *.
   repnd; dands; auto.
@@ -305,7 +304,6 @@ Lemma eq_per_eq_bar_trans {o} :
     -> eq_per_eq_bar lib a1 a2 eqa t1 t3.
 Proof.
   introv e1 e2; unfold eq_per_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in e1; apply e_all_in_ex_bar_ext_as in e2; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_comb; try exact e2; clear e2.
   eapply in_open_bar_ext_pres; eauto; clear e1; introv e1 e2.
   unfold eq_per_eq in *.
@@ -319,7 +317,6 @@ Lemma eq_per_eq_bar_resp {o} :
     -> eq_per_eq_bar lib a1 a2 eqa t1 t2.
 Proof.
   introv h ceq; unfold eq_per_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_pres; eauto; clear h; introv h.
   unfold eq_per_eq in *.
   repnd; dands; spcast; eauto 3 with slow.

@@ -125,8 +125,6 @@ Proof.
   apply equality_in_tnat in hyp3.
 
   apply all_in_ex_bar_equality_implies_equality.
-  apply e_all_in_ex_bar_as in hyp0.
-  apply e_all_in_ex_bar_as in hyp3.
   eapply all_in_ex_bar_modus_ponens2;
     [|exact hyp0|exact hyp3]; clear hyp0 hyp3; introv y hyp0 hyp3.
   unfold equality_of_csname in hyp0; exrepnd.
@@ -139,7 +137,6 @@ Proof.
   eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym;apply implies_ccequivc_ext_last_cs;eauto|].
 
   apply equality_in_qnat.
-  eapply e_all_in_ex_bar_as.
   apply in_ext_implies_all_in_ex_bar; introv xt.
 
   assert (safe_library lib'1) as safe' by eauto 4 with slow.
@@ -214,7 +211,7 @@ Proof.
   autorewrite with slow in *.
 
   clear hyp1.
-  apply equality_in_tnat in hyp0; eapply e_all_in_ex_bar_as in hyp0.
+  apply equality_in_tnat in hyp0.
 
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens1;[|exact hyp0]; clear hyp0; introv y hyp0.

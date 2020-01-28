@@ -76,7 +76,7 @@ Ltac close_diff_ext :=
     try computes_to_valc_diff
   end.
 
-Ltac close_diff_bar_bar :=
+(*Ltac close_diff_bar_bar :=
   allunfold_per;
   match goal with
   | [ H1 : all_in_bar ?bar1 (fun lib => ?T ===>(lib) _),
@@ -101,10 +101,10 @@ Ltac close_diff_bar_bar :=
     pose proof (b1 lib') as b2; autodimp b2 xxx;
     simpl in a2,b2;
     try (spcast; computes_to_valc_diff)
-  end.
+  end.*)
 
 
-Ltac close_diff_bar_ceq_bar :=
+(*Ltac close_diff_bar_ceq_bar :=
   allunfold_per;
   match goal with
   | [ H1 : all_in_bar ?bar1 (fun lib => ?T ===>(lib) _),
@@ -134,9 +134,9 @@ Ltac close_diff_bar_ceq_bar :=
     spcast;
     apply_cequivc_val;
     try (spcast; computes_to_valc_diff)
-  end.
+  end.*)
 
-Ltac close_diff_ceq_bar_ceq_bar0 :=
+(*Ltac close_diff_ceq_bar_ceq_bar0 :=
   match goal with
   | [ H1 : computes_to_valc_ceq_bar ?bar1 ?T _,
       H2 : computes_to_valc_ceq_bar ?bar2 ?T _ |- _ ] =>
@@ -168,13 +168,13 @@ Ltac close_diff_ceq_bar_ceq_bar0 :=
     spcast;
     repeat apply_cequivc_val;
     try (spcast; computes_to_valc_diff)
-  end.
+  end.*)
 
-Ltac close_diff_ceq_bar_ceq_bar :=
+(*Ltac close_diff_ceq_bar_ceq_bar :=
   allunfold_per;
-  close_diff_ceq_bar_ceq_bar0.
+  close_diff_ceq_bar_ceq_bar0.*)
 
-Ltac close_diff_ext_bar :=
+(*Ltac close_diff_ext_bar :=
   allunfold_per;
   match goal with
   | [ H1 : in_ext ?lib (fun lib => ?T ===>(lib) _),
@@ -192,9 +192,9 @@ Ltac close_diff_ext_bar :=
     pose proof (b1 lib') as b2; autodimp b2 xxx; eauto 2 with slow; simpl in b2;
     spcast;
     try computes_to_valc_diff
-  end.
+  end.*)
 
-Ltac close_diff_ext_ceq_bar :=
+(*Ltac close_diff_ext_ceq_bar :=
   allunfold_per;
   match goal with
   | [ H1 : in_ext ?lib (fun lib => ?T ===>(lib) _),
@@ -217,9 +217,9 @@ Ltac close_diff_ext_ceq_bar :=
     spcast;
     apply_cequivc_val;
     try computes_to_valc_diff
-  end.
+  end.*)
 
-Ltac close_diff_init_bar_left :=
+(*Ltac close_diff_init_bar_left :=
   allunfold_per;
   match goal with
   | [ M  : type_monotone ?ts,
@@ -244,9 +244,9 @@ Ltac close_diff_init_bar_left :=
     pose proof (b1 lib') as b2; autodimp b2 xxx; eauto 2 with slow; simpl in b2;
     spcast;
     try computes_to_valc_diff
-  end.
+  end.*)
 
-Ltac close_diff_init_bar_right :=
+(*Ltac close_diff_init_bar_right :=
   allunfold_per;
   match goal with
   | [ M  : type_monotone ?ts,
@@ -271,7 +271,7 @@ Ltac close_diff_init_bar_right :=
     pose proof (b1 lib') as b2; autodimp b2 xxx; eauto 2 with slow; simpl in b2;
     spcast;
     try computes_to_valc_diff
-  end.
+  end.*)
 
 Ltac close_diff_init_ext :=
   match goal with
@@ -326,14 +326,14 @@ Ltac close_diff_all :=
         (*| complete close_diff_bar*)
         (*| complete close_diff_ceq_bar*)
         | complete close_diff_ext
-        | complete close_diff_bar_bar
-        | complete close_diff_bar_ceq_bar
-        | complete close_diff_ceq_bar_ceq_bar0
-        | complete close_diff_ceq_bar_ceq_bar
-        | complete close_diff_ext_bar
-        | complete close_diff_ext_ceq_bar
-        | complete close_diff_init_bar_left
-        | complete close_diff_init_bar_right
+        (*| complete close_diff_bar_bar*)
+        (*| complete close_diff_bar_ceq_bar*)
+        (*| complete close_diff_ceq_bar_ceq_bar0*)
+        (*| complete close_diff_ceq_bar_ceq_bar*)
+        (*| complete close_diff_ext_bar*)
+        (*| complete close_diff_ext_ceq_bar*)
+        (*| complete close_diff_init_bar_left*)
+        (*| complete close_diff_init_bar_right*)
         | complete close_diff_init_ext
         ].
 
@@ -423,7 +423,7 @@ Ltac ccequivc_ext_same_left :=
     try (apply cequivc_ext_mkc_cequiv_right in H2; repnd)
   end.
 
-Ltac computes_to_eqbars_step :=
+(*Ltac computes_to_eqbars_step :=
   match goal with
   | [ B  : BarLib ?lib,
       H1 : all_in_bar ?bar (fun lib => ?T ===>(lib) ?T1),
@@ -520,13 +520,13 @@ Ltac computes_to_eqbars_step :=
     (*repeat apply_cequivc_val;
     computes_to_eqval;*)
     try (hide_hyp H1)
-  end.
+  end.*)
 
-Ltac computes_to_eqbars :=
+(*Ltac computes_to_eqbars :=
   repeat computes_to_eqbars_step;
   repeat match goal with
          | [ H : Something |- _ ] => show_hyp H
-         end.
+         end.*)
 
 Hint Resolve iscvalue_mkc_approx : slow.
 Hint Resolve iscvalue_mkc_cequiv : slow.

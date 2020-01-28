@@ -89,7 +89,6 @@ Proof.
   unfold per_int_bar in h; exrepnd.
   apply h in e; apply h.
   unfold equality_of_int_bar in *.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear e; introv ext e.
   unfold equality_of_int in *; exrepnd; exists k; dands; eauto 3 with slow.
 Qed.
@@ -102,7 +101,6 @@ Proof.
   unfold per_int in h; exrepnd.
   apply h in e; apply h.
   unfold equality_of_int_bar, equality_of_int in *; exrepnd.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear e; introv ext e.
   exrepnd; exists k; dands; eauto 3 with slow.
 Qed.
@@ -134,7 +132,6 @@ Proof.
   unfold per_int_bar in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
   unfold equality_of_int_bar in *.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear e; introv ext e.
   unfold equality_of_int in *; exrepnd.
   exists k; repnd; dands; eauto 3 with slow.
@@ -148,7 +145,6 @@ Proof.
   unfold per_int in *; exrepnd; spcast.
   apply h in e; apply h; clear h.
   unfold equality_of_int_bar, equality_of_int in *; exrepnd.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear e; introv ext e; exrepnd.
   exists k; repnd; dands; eauto 3 with slow.
 Qed.
@@ -195,7 +191,6 @@ Proof.
 
   clear per per0 per1.
 
-  apply e_all_in_ex_bar_as in i; apply e_all_in_ex_bar_as in j; apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb; try exact j; clear j.
   eapply in_open_bar_comb; try exact i; clear i.
   apply in_ext_implies_in_open_bar; introv ext i j.
@@ -218,7 +213,6 @@ Proof.
 
   clear per per0 per1.
 
-  apply e_all_in_ex_bar_as in i; apply e_all_in_ex_bar_as in j; apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb; try exact j; clear j.
   eapply in_open_bar_comb; try exact i; clear i.
   apply in_ext_implies_in_open_bar; introv ext i j.

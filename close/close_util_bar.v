@@ -32,16 +32,16 @@ Require Export local.
 Require Export per_ceq_bar.
 
 
-Lemma in_ext_implies_all_in_bar_trivial_bar {o} :
+(*Lemma in_ext_implies_all_in_bar_trivial_bar {o} :
   forall (lib : @library o) F,
     in_ext lib F
     -> all_in_bar (trivial_bar lib) F.
 Proof.
   introv f br ext; introv.
   eapply f; eauto 3 with slow.
-Qed.
+Qed.*)
 
-Lemma collapse2bars {o} :
+(*Lemma collapse2bars {o} :
   forall {lib} F,
     (exists (bar : @BarLib o lib),
         all_in_bar_ext
@@ -64,9 +64,9 @@ Proof.
     apply in_ext_implies_all_in_bar_trivial_bar.
     introv y.
     eapply h0; eauto 3 with slow.
-Qed.
+Qed.*)
 
-Lemma collapse2bars_ext {o} :
+(*Lemma collapse2bars_ext {o} :
   forall {lib}
          (F : forall (lib' : library) (x : lib_extends lib' lib), Prop)
          (cond : forall lib' (x y : lib_extends lib' lib), F lib' x <=> F lib' y),
@@ -97,7 +97,7 @@ Proof.
     apply in_ext_ext_implies_all_in_bar_ext_trivial_bar.
     introv.
     eapply h0; eauto 3 with slow.
-Qed.
+Qed.*)
 
 Lemma type_extensionality_per_bar {o} :
   forall (ts : cts(o)),
@@ -133,7 +133,7 @@ Proof.
 Qed.
 Hint Resolve per_bar_eq_intersect_bars_left : slow.*)
 
-Lemma implies_all_in_bar_ext_intersect_bars_swap {o} :
+(*Lemma implies_all_in_bar_ext_intersect_bars_swap {o} :
   forall {lib} (bar bar' : @BarLib o lib) F,
     all_in_bar_ext (intersect_bars bar bar') F
     -> all_in_bar_ext (intersect_bars bar' bar) F.
@@ -141,7 +141,7 @@ Proof.
   introv h br ext; introv; simpl in *; exrepnd.
   pose proof (h lib') as h; simpl in *; autodimp h hyp.
   eexists; eexists; dands; eauto.
-Qed.
+Qed.*)
 
 (*Lemma per_bar_eq_intersect_bars_right {o} :
   forall {lib} (bar bar' : @BarLib o lib) eqa,
@@ -187,7 +187,7 @@ Proof.
 Qed.
 Hint Resolve type_value_respecting_per_bar : slow.
 
-Lemma term_symmetric_all_in_bar_ext_implies {o} :
+(*Lemma term_symmetric_all_in_bar_ext_implies {o} :
   forall {lib} (bar : @BarLib o lib) ts T T' (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => ts lib' T T' (eqa lib' x))
     -> term_symmetric ts
@@ -196,7 +196,7 @@ Proof.
   introv alla sym br ext; introv.
   pose proof (alla _ br _ ext x) as alla; simpl in *.
   eapply sym; eauto.
-Qed.
+Qed.*)
 
 Lemma term_symmetric_in_open_bar_ext_implies {o} :
   forall (lib : @library o) ts T T' (eqa : lib-per(lib,o)),
@@ -236,7 +236,7 @@ Proof.
 Qed.
 Hint Resolve term_symmetric_per_bar : slow.
 
-Lemma term_transitive_all_in_bar_ext_implies {o} :
+(*Lemma term_transitive_all_in_bar_ext_implies {o} :
   forall {lib} (bar : @BarLib o lib) ts T T' (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => ts lib' T T' (eqa lib' x))
     -> term_transitive ts
@@ -245,7 +245,7 @@ Proof.
   introv alla sym br ext; introv.
   pose proof (alla _ br _ ext x) as alla; simpl in *.
   eapply sym; eauto.
-Qed.
+Qed.*)
 
 Lemma term_transitive_in_open_bar_ext_implies {o} :
   forall (lib : @library o) ts T T' (eqa : lib-per(lib,o)),
@@ -287,7 +287,7 @@ Proof.
 Qed.
 Hint Resolve term_transitive_per_bar : slow.
 
-Lemma term_value_respecting_all_in_bar_ext_implies {o} :
+(*Lemma term_value_respecting_all_in_bar_ext_implies {o} :
   forall {lib} (bar : @BarLib o lib) ts T (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => ts lib' T T (eqa lib' x))
     -> term_value_respecting ts
@@ -296,7 +296,7 @@ Proof.
   introv alla val br ext; introv.
   pose proof (alla _ br _ ext x) as alla; simpl in *.
   eapply val; eauto.
-Qed.
+Qed.*)
 
 Lemma term_value_respecting_in_open_bar_ext_implies {o} :
   forall (lib : @library o) ts T (eqa : lib-per(lib,o)),

@@ -279,21 +279,19 @@ Lemma per_bar_eq_per_cequiv_eq_bar_lib_per {o} :
 Proof.
   introv; simpl; split; intro h; eauto 3 with slow.
 
-  - unfold per_cequiv_eq_bar; apply e_all_in_ex_bar_as.
+  - unfold per_cequiv_eq_bar.
     apply in_open_bar_ext_in_open_bar.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
     unfold per_cequiv_eq_bar in h.
-    apply e_all_in_ex_bar_as in h.
     eapply in_open_bar_pres; eauto; clear h.
     introv h; introv; simpl in *; tcsp.
 
-  - unfold per_cequiv_eq_bar in h; apply e_all_in_ex_bar_as in h.
+  - unfold per_cequiv_eq_bar in h.
     apply in_open_bar_ext_in_open_bar in h.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
     unfold per_cequiv_eq_bar.
-    apply e_all_in_ex_bar_as.
     eapply in_open_bar_pres; eauto; clear h.
     introv h; introv; simpl in *; tcsp.
 Qed.
@@ -484,7 +482,6 @@ Proof.
   allrw pera1; clear pera1.
 
   unfold per_cequiv_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_as in perb; eapply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear perb.
   introv ext perb.
   unfold per_cequiv_eq in *; repnd; dands; auto.
@@ -507,7 +504,6 @@ Proof.
   allrw per1; clear per1.
 
   unfold per_cequiv_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_as in e1; apply e_all_in_ex_bar_as in e2; apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb; try exact e1; clear e1.
   eapply in_open_bar_comb; try exact e2; clear e2.
   apply in_ext_implies_in_open_bar; introv ext e2 e1.
@@ -540,7 +536,6 @@ Proof.
   allrw per1; clear per1.
 
   unfold per_cequiv_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb; try exact e; clear e.
   apply in_ext_implies_in_open_bar; introv ext e.
 

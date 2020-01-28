@@ -305,7 +305,7 @@ Proof.
   }
 
   {
-    unfold per_approx_eq_bar; apply e_all_in_ex_bar_as.
+    unfold per_approx_eq_bar.
     apply in_ext_implies_in_open_bar; introv ext.
     unfold per_approx_eq; dands; spcast;
       eauto 3 with slow refl; try apply computes_to_valc_refl; eauto 3 with slow.
@@ -325,7 +325,7 @@ Proof.
   }
 
   {
-    unfold per_approx_eq_bar; apply e_all_in_ex_bar_as.
+    unfold per_approx_eq_bar.
     apply in_ext_implies_in_open_bar; introv ext.
     unfold per_cequiv_eq; dands; spcast;
       eauto 3 with slow refl; try apply computes_to_valc_refl; eauto 3 with slow.
@@ -361,7 +361,7 @@ Proof.
     apply CL_base.
     unfold per_base; dands; spcast; eauto 3 with slow.
   }
-  unfold per_approx_eq_bar; apply e_all_in_ex_bar_as.
+  unfold per_approx_eq_bar.
   apply in_ext_implies_in_open_bar; introv ext.
   spcast; eauto 3 with slow.
 Qed.
@@ -380,7 +380,7 @@ Proof.
     exists t1 t2 t1 t2; dands; spcast; auto; eauto 3 with slow.
   }
 
-  unfold per_approx_eq_bar; apply e_all_in_ex_bar_as.
+  unfold per_approx_eq_bar.
   apply in_ext_implies_in_open_bar; introv ext.
   unfold per_cequiv_eq; dands; eauto 3 with slow; spcast; eauto 3 with slow.
 Qed.
@@ -398,7 +398,7 @@ Proof.
     exists t1 t2 t1 t2; dands; spcast; eauto 3 with slow.
   }
 
-  unfold per_approx_eq_bar; apply e_all_in_ex_bar_as.
+  unfold per_approx_eq_bar.
   eapply in_open_bar_pres; eauto; clear ceq; introv ext ceq.
   unfold per_cequiv_eq; dands; spcast; eauto 2 with slow.
 Qed.
@@ -416,7 +416,7 @@ Proof.
     exists t1 t2 t1 t2; dands; spcast; eauto 3 with slow.
   }
 
-  unfold per_approx_eq_bar; apply e_all_in_ex_bar_as.
+  unfold per_approx_eq_bar.
   apply in_ext_implies_in_open_bar; introv ext.
   unfold per_approx_eq; dands; eauto 3 with slow; spcast; eauto 3 with slow.
 Qed.
@@ -434,7 +434,7 @@ Proof.
     exists t1 t2 t1 t2; dands; spcast; eauto 3 with slow.
   }
 
-  unfold per_approx_eq_bar; apply e_all_in_ex_bar_as.
+  unfold per_approx_eq_bar.
   eapply in_open_bar_pres; eauto; clear apr; introv ext apr.
   unfold per_approx_eq; dands; spcast; eauto 3 with slow.
 Qed.
@@ -445,7 +445,7 @@ Lemma member_approx_iff {o} :
     <=> member lib mkc_axiom (mkc_approx t1 t2).
 Proof.
   introv; split; intro e;
-    try (complete (unfold all_in_ex_bar in *; exrepnd; eapply member_approx_bar; eauto)).
+    try (complete (eapply member_approx_bar; eauto)).
 
   unfold member, equality in *; exrepnd.
   apply dest_nuprl_approx2 in e1.
@@ -455,7 +455,7 @@ Proof.
 
   apply in_open_bar_ext_in_open_bar.
   eapply in_open_bar_ext_pres; try exact e0; clear e0; introv e0; simpl in *.
-  unfold per_approx_eq_bar in e0; apply e_all_in_ex_bar_as in e0.
+  unfold per_approx_eq_bar in e0.
   eapply in_open_bar_pres; eauto; clear e0; introv ext e0.
   unfold per_approx_eq in *; tcsp.
 Qed.
@@ -575,7 +575,6 @@ Proof.
   }
 
   {
-    unfold all_in_ex_bar in k; exrepnd.
     exists (per_bar_eq lib (per_approx_eq_bar_lib_per lib a b)); dands; auto.
     apply CL_bar.
     exists (per_approx_eq_bar_lib_per lib a b); dands; auto;[]; simpl.
@@ -635,9 +634,9 @@ Proof.
   apply m2 in m0.
   clear dependent eq.
   apply in_open_bar_ext_in_open_bar.
-  eapply in_open_bar_ext_pres; eauto; clear m0; introv m0.
-  unfold per_approx_eq_bar in m0; apply e_all_in_ex_bar_as in m0.
-  eapply in_open_bar_pres; eauto; clear m0; introv m0.
+  eapply in_open_bar_ext_pres; try exact m0; clear m0; introv m0; simpl in *.
+  unfold per_approx_eq_bar in m0.
+  eapply in_open_bar_pres; try exact m0; clear m0; introv m0.
   unfold per_approx_eq in *; tcsp.
 Qed.
 
@@ -656,9 +655,9 @@ Proof.
   apply e2 in e0.
   clear dependent eq.
   apply in_open_bar_ext_in_open_bar.
-  eapply in_open_bar_ext_pres; eauto; clear e0; introv e0.
-  unfold per_approx_eq_bar in e0; apply e_all_in_ex_bar_as in e0.
-  eapply in_open_bar_pres; eauto; clear e0; introv e0.
+  eapply in_open_bar_ext_pres; try exact e0; clear e0; introv e0; simpl in *.
+  unfold per_cequiv_eq_bar in e0.
+  eapply in_open_bar_pres; try exact e0; clear e0; introv e0.
   unfold per_cequiv_eq in *; tcsp.
 Qed.
 
@@ -702,7 +701,7 @@ Proof.
     }
 
     {
-      unfold per_approx_eq_bar; apply e_all_in_ex_bar_as.
+      unfold per_approx_eq_bar.
       eapply in_open_bar_pres; eauto; clear e; introv ext h; repnd.
       unfold per_approx_eq; tcsp.
     }
@@ -712,9 +711,9 @@ Proof.
     apply e2 in e0.
     clear dependent eq.
     apply in_open_bar_ext_in_open_bar.
-    eapply in_open_bar_ext_pres; eauto; clear e0; introv e0.
-    unfold per_approx_eq_bar in e0; apply e_all_in_ex_bar_as in e0.
-    eapply in_open_bar_pres; eauto; clear e0; introv ext e0.
+    eapply in_open_bar_ext_pres; try exact e0; clear e0; introv e0; simpl in *.
+    unfold per_approx_eq_bar in e0.
+    eapply in_open_bar_pres; try exact e0; clear e0; introv ext e0.
     unfold per_approx_eq in *; tcsp.
 Qed.
 
@@ -732,22 +731,15 @@ Proof.
     apply e2 in e0.
     clear dependent eq.
     apply in_open_bar_ext_in_open_bar.
-    eapply in_open_bar_ext_pres; eauto; clear e0; introv e0.
-    unfold per_approx_eq_bar in e0; apply e_all_in_ex_bar_as in e0.
-    eapply in_open_bar_pres; eauto; clear e0; introv ext e0.
+    eapply in_open_bar_ext_pres; try exact e0; clear e0; introv e0; simpl in *.
+    unfold per_cequiv_eq_bar in e0.
+    eapply in_open_bar_pres; try exact e0; clear e0; introv ext e0.
     unfold per_cequiv_eq in *; tcsp.
 
   - unfold member, equality.
     exists (per_cequiv_eq_bar lib t1 t2); dands; auto.
-
-    {
-      apply CL_cequiv.
-      exists t1 t2 t1 t2; dands; spcast; eauto 3 with slow.
-    }
-
-    {
-      unfold per_cequiv_eq_bar; apply e_all_in_ex_bar_as; tcsp.
-    }
+    apply CL_cequiv.
+    exists t1 t2 t1 t2; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma inhabited_cequiv {o} :
@@ -780,9 +772,9 @@ Proof.
   apply h2 in h1.
   clear dependent eq.
   apply in_open_bar_ext_in_open_bar.
-  eapply in_open_bar_ext_pres; eauto; clear h1; introv h1.
-  unfold per_approx_eq_bar in h1; apply e_all_in_ex_bar_as in h1.
-  eapply in_open_bar_pres; eauto; clear h1; introv ext h1.
+  eapply in_open_bar_ext_pres; try exact h1; clear h1; introv h1; simpl in *.
+  unfold per_approx_eq_bar in h1.
+  eapply in_open_bar_pres; try exact h1; clear h1; introv ext h1.
   unfold per_approx_eq in *; repnd; spcast.
 
   apply hasvaluec_as_approxc; auto.

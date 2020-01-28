@@ -56,7 +56,7 @@ Lemma implies_computes_to_uni {o} :
     -> computes_to_uni lib T.
 Proof.
   introv comp.
-  apply e_all_in_ex_bar_as; apply in_ext_implies_in_open_bar; introv ext.
+  apply in_ext_implies_in_open_bar; introv ext.
   exists i; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve implies_computes_to_uni : slow.
@@ -74,7 +74,6 @@ Lemma defines_only_universes_univi_bar {o} :
 Proof.
   introv u.
   unfold univi_bar, per_bar in u; exrepnd.
-  apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb2; eauto; clear u1.
   apply in_ext_ext_implies_in_open_bar_ext; introv u1.
   allrw @univi_exists_iff; exrepnd.
@@ -87,7 +86,6 @@ Lemma defines_only_universes_univ {o} :
 Proof.
   unfold defines_only_universes, univ, univ_ex; introv per.
   unfold per_bar in *; exrepnd.
-  apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb2; eauto; clear per1.
   apply in_ext_ext_implies_in_open_bar_ext; introv u1; exrepnd.
   allrw @univi_exists_iff; exrepnd.

@@ -485,7 +485,6 @@ Proof.
   allrw pera1; clear pera1.
 
   unfold per_approx_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_as in perb; apply e_all_in_ex_bar_as.
   eapply in_open_bar_pres; eauto; clear perb.
   introv ext perb.
 
@@ -509,7 +508,6 @@ Proof.
   allrw per1; clear per1.
 
   unfold per_approx_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_as in e2; apply e_all_in_ex_bar_as in e1; apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb; try exact e1; clear e1.
   eapply in_open_bar_comb; try exact e2; clear e2.
   apply in_ext_implies_in_open_bar; introv ext e2 e1.
@@ -543,7 +541,6 @@ Proof.
   allrw per1; clear per1.
 
   unfold per_approx_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_as in e; apply e_all_in_ex_bar_as.
   eapply in_open_bar_comb; try exact e; clear e.
   apply in_ext_implies_in_open_bar; introv ext e.
 

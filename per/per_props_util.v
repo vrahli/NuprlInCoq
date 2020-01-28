@@ -36,7 +36,7 @@ Require Export choice.
 Require Export cvterm.
 
 
-(* MOVE *)
+(*(* MOVE *)
 Lemma implies_all_in_bar_ext_trivial_bar {o} :
   forall (lib : @library o) F,
     in_ext_ext lib F
@@ -44,7 +44,7 @@ Lemma implies_all_in_bar_ext_trivial_bar {o} :
 Proof.
   introv i br ext; simpl in *.
   eapply i; eauto 3 with slow.
-Qed.
+Qed.*)
 
 Definition pair2lib_per2 {o}
            {lib A B u v}
@@ -93,7 +93,7 @@ Proof.
   simpl in *; auto.
 Qed.
 
-Definition bar_lib_per2lib_per {o}
+(*Definition bar_lib_per2lib_per {o}
            {lib  : @library o}
            {bar  : BarLib lib}
            (feqa : bar-lib-per(lib,bar,o)) : lib-per(lib,o).
@@ -109,7 +109,7 @@ Proof.
   split; introv h; exrepnd.
   - exists lib1 br ext x0; auto.
   - exists lib1 br ext x0; auto.
-Defined.
+Defined.*)
 
 (* !!MOVE *)
 Lemma nuprl_term_equality_symmetric {o} :
@@ -490,7 +490,6 @@ Proof.
   pose proof (nuprl_monotone_func lib T T eq ea1) as tya; exrepnd.
   rename eq' into eqa.
 
-  unfold all_in_ex_bar in *; exrepnd.
   exists (per_bar_eq lib eqa).
   dands; auto; eauto 3 with slow.
 
@@ -623,10 +622,10 @@ Proof.
 
   exrepnd.
   pose proof (a1 _ ext1 _ ext2 extz) as w.
-  eapply nuprl_monotone in w; autodimp w hyp; try exact z0; exrepnd.
+  eapply (nuprl_monotone lib2 lib'0) in w; auto; exrepnd.
   apply nuprl_refl in w1.
   apply nuprl_refl in a2.
-  eapply nuprl_uniquely_valued in w1; try exact a2; apply w1; clear w1; apply w0; auto.
+  eapply nuprl_uniquely_valued in w1; try exact a2; apply w1; clear w1; tcsp.
 Qed.
 Hint Resolve all_in_ex_bar_tequality_implies_tequality : slow.
 
@@ -722,7 +721,7 @@ Proof.
     exrepnd.
     pose proof (h1 _ ext1 _ ext2 extz) as w; repnd.
     apply nuprl_refl in w0; apply nuprl_refl in h0.
-    eapply nuprl_monotone in w0; autodimp w0 hyp; try exact z0; exrepnd.
+    eapply (nuprl_monotone lib2 lib'0) in w0; auto; exrepnd.
     eapply nuprl_uniquely_valued in w0; try exact h0.
     apply w0; apply w1; auto.
   }
@@ -867,7 +866,7 @@ Proof.
 
   - eapply all_in_ex_bar_modus_ponens1;try exact e; clear e; introv x e; exrepnd; eauto 3 with slow.
 
-  - unfold ccequivc_bar, ccequivc_ext_bar, all_in_ex_bar in *; exrepnd.
+  - unfold ccequivc_bar, ccequivc_ext_bar in *; exrepnd.
     apply implies_in_open_bar_in_ext; auto.
 Qed.
 

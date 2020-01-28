@@ -37,12 +37,12 @@ Require Export per_ceq_bar.
 Require Export nuprl_mon.
 
 
-Notation "bar-lib-per( lib , bar , o )" :=
+(*Notation "bar-lib-per( lib , bar , o )" :=
   (forall (lib1 : library) (br : bar_lib_bar bar lib1)
           (lib2 : library) (ext : lib_extends lib2 lib1)
-          (x : lib_extends lib2 lib), lib-per(lib2,o)).
+          (x : lib_extends lib2 lib), lib-per(lib2,o)).*)
 
-Lemma all_in_bar_ext2_exists_eqa_implies {o} :
+(*Lemma all_in_bar_ext2_exists_eqa_implies {o} :
   forall {lib} (bar : @BarLib o lib) F,
     (forall lib1 (br : bar_lib_bar bar lib1)
             lib2 (ext : lib_extends lib2 lib1)
@@ -72,7 +72,7 @@ Proof.
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
-Qed.
+Qed.*)
 
 Definition local_ts {o} (ts : cts(o)) :=
   forall (lib : @library o) T T' eq eqa,
@@ -80,7 +80,7 @@ Definition local_ts {o} (ts : cts(o)) :=
     -> in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
     -> ts lib T T' eq.
 
-Definition lib_per_per_bar {o}
+(*Definition lib_per_per_bar {o}
            {lib  : @library o}
            {bar  : BarLib lib}
            (fbar : bar_fam bar)
@@ -101,17 +101,17 @@ Proof.
                       (bar_lib_ext (fbar lib1 br lib2 ext x) lib0 fb))
                    t1 t2}}}}}}}}).
   introv; tcsp.
-Defined.
+Defined.*)
 
-Definition sub_per_from_bar {o} {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) :=
+(*Definition sub_per_from_bar {o} {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) :=
   forall lib1 (br : bar_lib_bar bar lib1)
          lib2 (x1 : lib_extends lib2 lib1)
          (y1 : lib_extends lib2 lib)
          lib3 (x2 : lib_extends lib3 lib2)
          (y2 : lib_extends lib3 lib),
-    sub_per (eqa lib2 y1) (eqa lib3 y2).
+    sub_per (eqa lib2 y1) (eqa lib3 y2).*)
 
-Lemma all_in_bar_ext_lib_per_implies_mon {o} :
+(*Lemma all_in_bar_ext_lib_per_implies_mon {o} :
   forall {lib} (bar : @BarLib o lib) ts T T' (eqa : lib-per(lib,o)),
     uniquely_valued ts
     -> type_monotone ts
@@ -126,7 +126,7 @@ Proof.
   exrepnd.
   apply w0 in e; clear w0.
   eapply uv in q; autodimp q hyp;[exact w1|]; apply q; auto.
-Qed.
+Qed.*)
 
 Lemma uniquely_valued_per_bar {o} :
   forall (ts : cts(o)),
@@ -232,7 +232,7 @@ Proof.
 Qed.
 Hint Resolve eq_term_equals_per_bar_eq_bar_of_bar_fam : slow.*)
 
-Definition per_bar_eq2 {o}
+(*Definition per_bar_eq2 {o}
            {lib}
            (bar : @BarLib o lib)
            (eqa : lib-per(lib,o))
@@ -244,9 +244,9 @@ Definition per_bar_eq2 {o}
          {bar' : BarLib lib'
          , all_in_bar_ext
              bar' (fun lib'' (y : lib_extends lib'' lib') =>
-                     eqa lib'' (lib_extends_trans y x) t1 t2) })}.
+                     eqa lib'' (lib_extends_trans y x) t1 t2) })}.*)
 
-Lemma all_in_bar_ext_intersect_bars_same {o} :
+(*Lemma all_in_bar_ext_intersect_bars_same {o} :
   forall {lib} (bar : @BarLib o lib) F,
     all_in_bar_ext (intersect_bars bar bar) F
     <=> all_in_bar_ext bar F.
@@ -258,7 +258,7 @@ Proof.
 
   - exrepnd.
     eapply (h _ br0 lib'0); eauto 3 with slow.
-Qed.
+Qed.*)
 
 (*Lemma per_bar_eq_iff2 {o} :
   forall {lib} (bar : @BarLib o lib) (eqa : lib-per(lib,o)) t1 t2,

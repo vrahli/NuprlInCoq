@@ -50,7 +50,7 @@ Proof.
 
   introv; split; intro h.
 
-  - unfold per_qtime_eq_bar; apply e_all_in_ex_bar_ext_as.
+  - unfold per_qtime_eq_bar.
     apply in_open_bar_ext_dup.
     unfold per_bar_eq in *.
     eapply in_open_bar_ext_comb; try exact per1; clear per1.
@@ -60,7 +60,7 @@ Proof.
 
     unfold per_qtime in per1; exrepnd.
     apply per0 in h; clear per0.
-    unfold per_qtime_eq_bar in h; apply e_all_in_ex_bar_ext_as in h.
+    unfold per_qtime_eq_bar in h.
     eapply in_open_bar_ext_pres; try exact h; clear h; introv h; introv.
 
     eapply lib_extends_preserves_ccomputes_to_valc in comp; try exact e; eauto.
@@ -171,7 +171,6 @@ Proof.
   introv tsa per.
 
   unfold per_qtime_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_pres; try exact per; clear per; introv per.
 
   pose proof (tsa _ e) as tsa; simpl in *.
@@ -191,7 +190,6 @@ Proof.
   introv tsa pera perb.
 
   unfold per_qtime_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in pera; apply e_all_in_ex_bar_ext_as in perb; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_comb; try exact perb; clear perb.
   eapply in_open_bar_ext_pres; try exact pera; clear pera; introv pera perb.
 
@@ -216,7 +214,6 @@ Proof.
   introv tsa per ceq.
 
   unfold per_qtime_eq_bar in *; exrepnd.
-  apply e_all_in_ex_bar_ext_as in per; apply e_all_in_ex_bar_ext_as.
   eapply in_open_bar_ext_pres; try exact per; clear per; introv per.
 
   pose proof (tsa _ e) as tsa; simpl in *.

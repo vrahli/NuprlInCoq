@@ -43,7 +43,7 @@ Proof.
 
   repeat introv.
   unfold per_func_ext_eq, raise_lib_per_fam, raise_lib_per, raise_ext_per, raise_ext_per_fam; simpl.
-  split; intro h; exrepnd; apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as;
+  split; intro h; exrepnd;
       eapply in_open_bar_ext_comb; try exact h; clear h;
         apply in_ext_ext_implies_in_open_bar_ext; introv h.
 
@@ -70,7 +70,6 @@ Lemma implies_eq_term_equals_per_func_ext_eq {o} :
 Proof.
   introv eqas eqbs; introv.
   unfold per_func_ext_eq; introv; split; intro h;
-    apply e_all_in_ex_bar_ext_as in h; apply e_all_in_ex_bar_ext_as;
       eapply in_open_bar_ext_comb; try exact h; clear h;
         apply in_ext_ext_implies_in_open_bar_ext; introv h;
           repeat introv.
@@ -109,22 +108,22 @@ Lemma per_bar_eq_per_func_ext_eq_lib_per {o} :
 Proof.
   introv; simpl; unfold per_bar_eq; split; intro h; eauto 3 with slow.
 
-  - unfold per_func_ext_eq; apply e_all_in_ex_bar_ext_as.
+  - unfold per_func_ext_eq.
     eapply in_open_bar_ext_dup.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
-    unfold per_func_ext_eq in h; apply e_all_in_ex_bar_ext_as in h.
+    unfold per_func_ext_eq in h.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_func_eq; try exact h;
       try apply (lib_per_cond _ eqa);
       try apply (lib_per_fam_cond _ eqb).
 
-  - unfold per_func_ext_eq in h; apply e_all_in_ex_bar_ext_as in h.
+  - unfold per_func_ext_eq in h.
     eapply in_open_bar_ext_twice in h.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; simpl in *.
-    unfold per_func_ext_eq; apply e_all_in_ex_bar_ext_as.
+    unfold per_func_ext_eq.
     eapply in_open_bar_ext_pres; eauto; clear h.
     introv h; introv; simpl in *.
     eapply implies_eq_term_equals_per_func_eq; try exact h;

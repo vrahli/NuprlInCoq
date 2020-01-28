@@ -464,8 +464,8 @@ Proof.
     repeat rewrite substc2_mk_cv_app_r; tcsp.
     autorewrite with slow.
 
-    apply equality_in_csname_iff in ea; eapply e_all_in_ex_bar_as in ea.
-    apply equality_in_csname_iff in eb; eapply e_all_in_ex_bar_as in eb.
+    apply equality_in_csname_iff in ea.
+    apply equality_in_csname_iff in eb.
     apply all_in_ex_bar_tequality_implies_tequality.
     eapply all_in_ex_bar_modus_ponens2;[|exact ea|exact eb]; clear ea eb; introv y ea eb; exrepnd; spcast.
     unfold equality_of_csname in *; exrepnd; spcast.
@@ -539,8 +539,8 @@ Proof.
     repeat rewrite substc2_mk_cv_app_r; tcsp.
     autorewrite with slow.
 
-    apply equality_in_csname_iff in ea; eapply e_all_in_ex_bar_as in ea.
-    apply equality_in_csname_iff in eb; eapply e_all_in_ex_bar_as in eb.
+    apply equality_in_csname_iff in ea.
+    apply equality_in_csname_iff in eb.
     apply all_in_ex_bar_tequality_implies_tequality.
     eapply all_in_ex_bar_modus_ponens2;[|exact ea|exact eb]; clear ea eb; introv y ea eb; exrepnd; spcast.
     unfold equality_of_csname in *; exrepnd; spcast.
@@ -598,8 +598,8 @@ Proof.
   repeat rewrite substc2_mk_cv_app_r; tcsp.
   autorewrite with slow.
 
-  apply equality_in_csname_iff in ea; eapply e_all_in_ex_bar_as in ea.
-  apply equality_in_csname_iff in eb; eapply e_all_in_ex_bar_as in eb.
+  apply equality_in_csname_iff in ea.
+  apply equality_in_csname_iff in eb.
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens2;[|exact ea|exact eb]; clear ea eb; introv y ea eb; exrepnd; spcast.
   unfold equality_of_csname in *; exrepnd; spcast.

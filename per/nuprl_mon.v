@@ -59,9 +59,7 @@ Lemma sub_per_equality_of_int_bar {o} :
     sub_per (equality_of_int_bar lib) (equality_of_int_bar lib').
 Proof.
   introv ext h.
-  unfold equality_of_int_bar in *; exrepnd.
-  eapply e_all_in_ex_bar_pres_ext; eauto.
-  introv br xt z; auto.
+  unfold equality_of_int_bar in *; eauto 3 with slow.
 Qed.
 Hint Resolve sub_per_equality_of_int_bar : slow.
 
@@ -88,9 +86,7 @@ Lemma sub_per_equality_of_nat_bar {o} :
     sub_per (equality_of_nat_bar lib) (equality_of_nat_bar lib').
 Proof.
   introv ext h.
-  unfold equality_of_nat_bar, equality_of_nat in *; exrepnd.
-  eapply e_all_in_ex_bar_pres_ext; eauto.
-  introv br xt z; eauto.
+  unfold equality_of_nat_bar, equality_of_nat in *; exrepnd; eauto 3 with slow.
 Qed.
 Hint Resolve sub_per_equality_of_nat_bar : slow.
 
@@ -117,9 +113,7 @@ Lemma sub_per_equality_of_qnat_bar {o} :
     sub_per (equality_of_qnat_bar lib) (equality_of_qnat_bar lib').
 Proof.
   introv ext h.
-  unfold equality_of_qnat_bar, equality_of_qnat in *; exrepnd.
-  eapply e_all_in_ex_bar_pres_ext; eauto.
-  introv br xt z; eauto.
+  unfold equality_of_qnat_bar, equality_of_qnat in *; exrepnd; eauto 3 with slow.
 Qed.
 Hint Resolve sub_per_equality_of_qnat_bar : slow.
 
@@ -148,9 +142,7 @@ Lemma sub_per_equality_of_csname_bar {o} :
     sub_per (equality_of_csname_bar lib n) (equality_of_csname_bar lib' n).
 Proof.
   introv ext h.
-  unfold equality_of_csname_bar, equality_of_csname in *; exrepnd.
-  eapply e_all_in_ex_bar_pres_ext; eauto.
-  introv br xt z; eauto.
+  unfold equality_of_csname_bar, equality_of_csname in *; exrepnd; eauto 3 with slow.
 Qed.
 Hint Resolve sub_per_equality_of_csname_bar : slow.
 
@@ -178,9 +170,7 @@ Lemma sub_per_equality_of_atom_bar {o} :
     sub_per (equality_of_atom_bar lib) (equality_of_atom_bar lib').
 Proof.
   introv ext h.
-  unfold equality_of_atom_bar in *; exrepnd.
-  eapply e_all_in_ex_bar_pres_ext; eauto.
-  introv br xt z; eauto.
+  unfold equality_of_atom_bar in *; exrepnd; eauto 3 with slow.
 Qed.
 Hint Resolve sub_per_equality_of_atom_bar : slow.
 
@@ -207,9 +197,7 @@ Lemma sub_per_equality_of_uatom_bar {o} :
     sub_per (equality_of_uatom_bar lib) (equality_of_uatom_bar lib').
 Proof.
   introv ext h.
-  unfold equality_of_uatom_bar in *; exrepnd.
-  eapply e_all_in_ex_bar_pres_ext; eauto.
-  introv br xt z; eauto.
+  unfold equality_of_uatom_bar in *; exrepnd; eauto 3 with slow.
 Qed.
 Hint Resolve sub_per_equality_of_uatom_bar : slow.
 
@@ -236,9 +224,7 @@ Lemma sub_per_base_eq {o} :
     sub_per (per_base_eq lib) (per_base_eq lib').
 Proof.
   introv ext h.
-  unfold per_base_eq in *; exrepnd.
-  eapply e_all_in_ex_bar_pres_ext; eauto.
-  introv br xt z; eauto.
+  unfold per_base_eq in *; exrepnd; eauto 3 with slow.
 Qed.
 Hint Resolve sub_per_base_eq : slow.
 
@@ -257,9 +243,7 @@ Lemma sub_eq_per_base {o} :
     sub_per (per_base_eq lib) (per_base_eq lib').
 Proof.
   introv ext h.
-  unfold per_base_eq in *; exrepnd.
-  eapply e_all_in_ex_bar_pres_ext; eauto.
-  introv br xt z; eauto.
+  unfold per_base_eq in *; exrepnd; eauto 3 with slow.
 Qed.
 Hint Resolve sub_eq_per_base : slow.
 
@@ -276,9 +260,7 @@ Lemma sub_per_approx_eq_bar {o} :
     sub_per (per_approx_eq_bar lib a b) (per_approx_eq_bar lib' a b).
 Proof.
   introv ext h.
-  unfold per_approx_eq_bar in *; exrepnd.
-  eapply e_all_in_ex_bar_pres_ext; eauto.
-  introv br xt z; eauto.
+  unfold per_approx_eq_bar in *; exrepnd; eauto 3 with slow.
 Qed.
 Hint Resolve sub_per_approx_eq_bar : slow.
 
@@ -306,9 +288,7 @@ Lemma sub_per_cequiv_eq_bar {o} :
     sub_per (per_cequiv_eq_bar lib a b) (per_cequiv_eq_bar lib' a b).
 Proof.
   introv ext h.
-  unfold per_cequiv_eq_bar in *; exrepnd.
-  eapply e_all_in_ex_bar_pres_ext; eauto.
-  introv br xt z; eauto.
+  unfold per_cequiv_eq_bar in *; exrepnd; eauto 3 with slow.
 Qed.
 Hint Resolve sub_per_cequiv_eq_bar : slow.
 
@@ -340,7 +320,7 @@ Proof.
 Qed.
 Hint Resolve implies_in_ext_ext_ts_raise_lib_per : slow.
 
-Lemma implies_all_in_bar_ext_ts_raise_lib_per {o} :
+(*Lemma implies_all_in_bar_ext_ts_raise_lib_per {o} :
   forall (ts : cts(o)) lib (bar : BarLib lib) lib' (ext : lib_extends lib' lib) A A' (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => ts lib' A A' (eqa lib' x))
     -> all_in_bar_ext (raise_bar bar ext) (fun lib'' x => ts lib'' A A' (raise_lib_per eqa ext lib'' x)).
@@ -349,9 +329,9 @@ Proof.
   unfold raise_ext_per.
   eapply ie; eauto 3 with slow.
 Qed.
-Hint Resolve implies_all_in_bar_ext_ts_raise_lib_per : slow.
+Hint Resolve implies_all_in_bar_ext_ts_raise_lib_per : slow.*)
 
-Lemma implies_all_in_bar_ext_eqorceq_raise_lib_per {o} :
+(*Lemma implies_all_in_bar_ext_eqorceq_raise_lib_per {o} :
   forall lib (bar : BarLib lib) lib' (ext : lib_extends lib' lib) a b (eqa : lib-per(lib,o)),
     all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a b)
     -> all_in_bar_ext (raise_bar bar ext) (fun lib'' x => eqorceq lib'' (raise_lib_per eqa ext lib'' x) a b).
@@ -359,9 +339,9 @@ Proof.
   introv ie br lex; repeat introv; simpl in *; exrepnd.
   eapply ie; eauto 3 with slow.
 Qed.
-Hint Resolve implies_all_in_bar_ext_eqorceq_raise_lib_per : slow.
+Hint Resolve implies_all_in_bar_ext_eqorceq_raise_lib_per : slow.*)
 
-Lemma implies_e_all_in_bar_ext_ts_raise_lib_per {o} :
+(*Lemma implies_e_all_in_bar_ext_ts_raise_lib_per {o} :
   forall (ts : cts(o)) lib (bar : BarLib lib) lib' (ext : lib_extends lib' lib) A A' (eqa : lib-per(lib,o)),
     e_all_in_bar_ext bar (fun lib' x => ts lib' A A' (eqa lib' x))
     -> e_all_in_bar_ext (raise_bar bar ext) (fun lib'' x => ts lib'' A A' (raise_lib_per eqa ext lib'' x)).
@@ -372,9 +352,9 @@ Proof.
   eapply ex_finite_ext_ext_pres; eauto.
   introv xta h; introv; eauto.
 Qed.
-Hint Resolve implies_e_all_in_bar_ext_ts_raise_lib_per : slow.
+Hint Resolve implies_e_all_in_bar_ext_ts_raise_lib_per : slow.*)
 
-Lemma implies_e_all_in_bar_ext_eqorceq_raise_lib_per {o} :
+(*Lemma implies_e_all_in_bar_ext_eqorceq_raise_lib_per {o} :
   forall lib (bar : BarLib lib) lib' (ext : lib_extends lib' lib) a b (eqa : lib-per(lib,o)),
     e_all_in_bar_ext bar (fun lib' x => eqorceq lib' (eqa lib' x) a b)
     -> e_all_in_bar_ext (raise_bar bar ext) (fun lib'' x => eqorceq lib'' (raise_lib_per eqa ext lib'' x) a b).
@@ -385,7 +365,7 @@ Proof.
   eapply ex_finite_ext_ext_pres; eauto.
   introv xta z; introv; eauto.
 Qed.
-Hint Resolve implies_e_all_in_bar_ext_eqorceq_raise_lib_per : slow.
+Hint Resolve implies_e_all_in_bar_ext_eqorceq_raise_lib_per : slow.*)
 
 (*Lemma per_eq_monotone {o} :
   forall (ts : cts(o)) lib lib' T T' eq,
@@ -458,14 +438,9 @@ Lemma sub_per_per_func_ext_eq {o} :
     sub_per (per_func_ext_eq lib eqa eqb)
             (per_func_ext_eq lib' (raise_lib_per eqa ext) (raise_lib_per_fam eqb ext)).
 Proof.
-  introv h; repeat introv.
-  unfold per_func_ext_eq in *; exrepnd.
-  eapply e_all_in_ex_bar_ext_pres_ext; eauto.
-  introv br xt q; repeat introv.
-  unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
-  unfold raise_lib_per_fam, raise_ext_per_fam; simpl in *; tcsp.
-  dup e as f; apply (lib_per_cond _ _ _ y) in f.
-  apply (lib_per_fam_cond _ _ _ _ _ _ _ f); eauto.
+  introv h.
+  unfold per_func_ext_eq in *; exrepnd; simpl.
+  eapply lib_extends_preserves_in_open_bar_ext in h; eauto.
 Qed.
 Hint Resolve sub_per_per_func_ext_eq : slow.
 
@@ -488,17 +463,9 @@ Lemma sub_per_per_qtime_eq_bar {o} :
     sub_per (per_qtime_eq_bar lib eqa)
             (per_qtime_eq_bar lib' (raise_lib_per eqa ext)).
 Proof.
-  introv h; repeat introv.
-  unfold per_qtime_eq_bar in *; exrepnd.
-  unfold e_all_in_ex_bar_ext in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br; repeat introv.
-  unfold raise_lib_per, raise_ext_per in *; simpl in *; exrepnd.
-  unfold raise_lib_per_fam, raise_ext_per_fam; simpl in *; tcsp.
-
-  assert (lib_extends lib'1 lib1) as xt by eauto 3 with slow.
-  pose proof (h0 _ br1 _ xt) as h0; simpl in *.
-  eapply ex_finite_ext_ext_pres; eauto; introv xta z; introv; eauto.
+  introv h.
+  unfold per_qtime_eq_bar in *.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in h; auto.
 Qed.
 Hint Resolve sub_per_per_qtime_eq_bar : slow.
 
@@ -515,7 +482,7 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
-Definition raise_bar_per {o} :
+(*Definition raise_bar_per {o} :
   forall {lib lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib),
     bar-per(lib,bar,o) -> bar-per(lib',raise_bar bar ext,o).
 Proof.
@@ -531,7 +498,7 @@ Proof.
   split; introv h; exrepnd.
   { exists lib0 z1 z2; eapply (bar_per_cond _ b); eauto 3 with slow. }
   { exists lib4 w1 w2; eapply (bar_per_cond _ b); eauto 3 with slow. }
-Defined.
+Defined.*)
 
 Lemma sub_per_per_bar_eq {o} :
   forall {lib lib' : @library o} (ext : lib_extends lib' lib) eq eqa,
@@ -623,11 +590,7 @@ Lemma sub_per_per_union_eq_bar {o} :
 Proof.
   introv h.
   unfold per_union_eq_bar in *; exrepnd.
-  unfold e_all_in_ex_bar_ext in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br; introv; simpl in *; exrepnd.
-  pose proof (h0 lib1 br1 lib'1 (lib_extends_trans e br2)) as h0; simpl in *; auto.
-  eapply ex_finite_ext_ext_pres; eauto; introv xtb w; introv; eauto.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in h; simpl in *; auto.
 Qed.
 Hint Resolve sub_per_per_union_eq_bar : slow.
 
@@ -651,11 +614,8 @@ Lemma sub_per_eq_per_union_bar {o} :
 Proof.
   introv ext suba subb h.
   unfold eq_per_union_bar in *; exrepnd.
-  unfold e_all_in_ex_bar in *; exrepnd.
-  exists (raise_bar bar ext); introv br x; simpl in *; exrepnd.
-  assert (lib_extends lib'1 lib1) as xt by eauto 3 with slow.
-  pose proof (h0 _ br1 _ xt) as h0.
-  eapply ex_finite_ext_pres; eauto; introv xtb w; introv; eauto.
+  apply (lib_extends_preserves_in_open_bar _ _ _ ext) in h; simpl in *; auto.
+  eapply in_open_bar_pres; eauto; clear h; introv xt h.
   eapply sub_per_per_union_eq; try apply lib_extends_refl; eauto.
 Qed.
 Hint Resolve sub_per_eq_per_union_bar : slow.
@@ -665,15 +625,8 @@ Lemma sub_per_per_product_bar_eq {o} :
     sub_per (per_product_eq_bar lib eqa eqb)
             (per_product_eq_bar lib' (raise_lib_per eqa ext) (raise_lib_per_fam eqb ext)).
 Proof.
-  introv h; repeat introv.
-  unfold raise_lib_per in *.
-  unfold raise_lib_per_fam; simpl in *; tcsp.
-  unfold per_product_eq_bar, per_product_eq in *; exrepnd.
-  unfold e_all_in_ex_bar_ext in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br; introv; simpl in *; exrepnd.
-  pose proof (h0 lib1 br1 lib'1 (lib_extends_trans e br2)) as q; simpl in q.
-  eapply ex_finite_ext_ext_pres; eauto; introv xta z; introv; eauto.
+  introv h.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in h; simpl in *; auto.
 Qed.
 Hint Resolve sub_per_per_product_bar_eq : slow.
 
@@ -696,15 +649,8 @@ Lemma sub_per_per_set_eq_bar {o} :
     sub_per (per_set_eq_bar lib eqa eqb)
             (per_set_eq_bar lib' (raise_lib_per eqa ext) (raise_lib_per_fam eqb ext)).
 Proof.
-  introv h; repeat introv.
-  unfold raise_lib_per in *.
-  unfold raise_lib_per_fam; simpl in *; tcsp.
-  unfold per_set_eq_bar, per_set_eq in *; exrepnd.
-  unfold e_all_in_ex_bar_ext in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br; introv; simpl in *; exrepnd.
-  pose proof (h0 lib1 br1 lib'1 (lib_extends_trans e br2)) as q; simpl in q.
-  eapply ex_finite_ext_ext_pres; eauto; introv xta z; introv; eauto.
+  introv h.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in h; simpl in *; auto.
 Qed.
 Hint Resolve sub_per_per_set_eq_bar : slow.
 
@@ -727,13 +673,7 @@ Lemma sub_per_eq_per_eq_bar {o} :
     sub_per (eq_per_eq_bar lib a b eqa) (eq_per_eq_bar lib' a b (raise_lib_per eqa ext)).
 Proof.
   introv h.
-  unfold eq_per_eq_bar in *; exrepnd.
-  unfold e_all_in_ex_bar_ext in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br; introv; simpl in *; exrepnd.
-  assert (lib_extends lib'1 lib1) as xt by eauto 3 with slow.
-  pose proof (h0 _ br1 _ xt) as h0.
-  eapply ex_finite_ext_ext_pres; eauto; introv xta z; eauto.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in h; simpl in *; auto.
 Qed.
 Hint Resolve sub_per_eq_per_eq_bar : slow.
 
@@ -779,13 +719,7 @@ Lemma sub_per_per_image_eq_bar {o} :
     sub_per (per_image_eq_bar lib eqa f) (per_image_eq_bar lib' (raise_lib_per eqa ext) f).
 Proof.
   introv h.
-  unfold per_image_eq_bar in *; exrepnd.
-  unfold e_all_in_ex_bar_ext in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br; introv; simpl in *; exrepnd.
-  assert (lib_extends lib'1 lib1) as xt by eauto 3 with slow.
-  pose proof (h0 _ br1 _ xt) as h0.
-  eapply ex_finite_ext_ext_pres; eauto; introv xta z; eauto.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in h; simpl in *; auto.
 Qed.
 Hint Resolve sub_per_per_image_eq_bar : slow.
 
@@ -810,12 +744,7 @@ Lemma sub_per_per_ffdefs_eq_bar {o} :
       (per_ffdefs_eq_bar lib' (raise_lib_per eqa ext) x).
 Proof.
   introv h.
-  unfold per_ffdefs_eq_bar, per_ffdefs_eq, e_all_in_ex_bar_ext in *; exrepnd.
-  exists (raise_bar bar ext).
-  introv br; introv; simpl in *; exrepnd.
-  assert (lib_extends lib'1 lib1) as xt by eauto 3 with slow.
-  pose proof (h0 _ br1 _ xt) as h0.
-  eapply ex_finite_ext_ext_pres; eauto; introv xta z; eauto.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in h; simpl in *; auto.
 Qed.
 Hint Resolve sub_per_per_ffdefs_eq_bar : slow.
 
@@ -989,8 +918,7 @@ Lemma univ_ex_monotone {o} : @type_monotone o univ_ex.
 Proof.
   introv u e.
   unfold univ_ex in *; exrepnd.
-  eapply univi_monotone in u0; autodimp u0 hyp; eauto.
-  exrepnd.
+  apply (univi_monotone _ _ lib') in u0; auto; exrepnd.
   exists eq'; dands; auto.
   exists i; auto.
 Qed.
@@ -1000,7 +928,7 @@ Lemma univ_monotone {o} : @type_monotone o univ.
 Proof.
   introv u e.
   unfold univ in *; exrepnd.
-  eapply per_bar_monotone in u; autodimp u hyp; eauto.
+  apply (per_bar_monotone _ _ lib') in u; auto.
 Qed.
 Hint Resolve univ_monotone : slow.
 
