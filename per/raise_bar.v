@@ -125,7 +125,7 @@ Proof.
 Qed.
 Hint Resolve choice_sequence_entry_extend_preserves_is_default_choice_seq_entry : slow.*)
 
-Lemma entry_extends_preserves_is_cs_default_entry {o} :
+(*Lemma entry_extends_preserves_is_cs_default_entry {o} :
   forall (entry entry' : @library_entry o),
     entry_extends entry' entry
     -> is_cs_default_entry entry'
@@ -138,9 +138,9 @@ Proof.
   { introv sel; apply q; rewrite select_app_l; eauto 3 with slow. }
   { introv sel; apply q; rewrite select_app_l; eauto 3 with slow. }
 Qed.
-Hint Resolve entry_extends_preserves_is_cs_default_entry : slow.
+Hint Resolve entry_extends_preserves_is_cs_default_entry : slow.*)
 
-Lemma entry_extends_preserves_entry_in_inf_library_default {o} :
+(*Lemma entry_extends_preserves_entry_in_inf_library_default {o} :
   forall (entry entry' : @library_entry o) infLib,
     entry_extends entry' entry
     -> entry_in_inf_library_default entry' infLib
@@ -151,7 +151,7 @@ Proof.
   dands; eauto 3 with slow.
   introv xx; destruct (w0 n); eauto 3 with slow.
 Qed.
-Hint Resolve entry_extends_preserves_entry_in_inf_library_default : slow.
+Hint Resolve entry_extends_preserves_entry_in_inf_library_default : slow.*)
 
 (*Lemma inf_lib_extends_lib_extends_trans {o} :
   forall infLib (lib' lib : @library o),
@@ -712,3 +712,4 @@ Proof.
 Qed.
 
 (* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *)
+

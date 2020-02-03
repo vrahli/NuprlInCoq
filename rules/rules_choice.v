@@ -481,14 +481,9 @@ Proof.
   repndors; repnd; subst; simpl in *; eauto;[].
 
   destruct l; simpl in *; tcsp; ginv; boolvar; subst; tcsp; GC.
-  inversion ext0 as [? ? ? ? ? ? ext'|? ? ? ? ? ext'|]; subst; clear ext0;
+  inversion ext0 as [? ? ? ? ext'|? ? ? ? ? ext'|]; subst; clear ext0;
     try (complete (unfold extend_choice_seq_vals_lawless_upto in *;
                    exrepnd; subst; rewrite length_app; try omega)).
-
-  { destruct name0 as [name kd]; simpl in *.
-    unfold correct_restriction in *; simpl in *.
-    destruct kd; boolvar; subst; tcsp; [].
-    unfold is_primitive_kind in *; simpl in *; try omega. }
 Qed.
 Hint Resolve cs_entry_in_library_lawless_upto_implies_length_ge : slow.
 
@@ -519,15 +514,14 @@ Lemma is_nat_if_compatible_and_correct {o} :
 Proof.
   introv cor comp sat sel.
   unfold choice_sequence_satisfies_restriction, correct_restriction, compatible_choice_sequence_name in *.
-  destruct res, name as [name kd], kd; simpl in *; tcsp; boolvar; subst; repnd; tcsp.
+  destruct res, name as [name kd], kd; simpl in *; tcsp; boolvar; subst; repnd; tcsp;
+    try (complete (apply cor; auto)).
 
-  { apply cor; auto. }
+  { destruct (lt_dec n (length l)) as [dd|dd];
+      try (complete (apply cor; auto; try omega)).
+    apply sat in sel; apply cor0 in sel; auto; eauto 3 with slow. }
 
-  destruct (lt_dec n (length l)) as [dd|dd].
-
-  { apply sat in sel; apply cor2 in sel; auto; eauto 3 with slow. }
-
-  apply cor; auto; try omega.
+  { rewrite sat in sel; eauto 3 with slow; inversion sel; subst; auto. }
 Qed.
 
 Lemma cs_entry_in_library_lawless_upto_implies_is_nat {o} :
@@ -547,7 +541,7 @@ Proof.
   clear IHlib ext.
 
   destruct l; simpl in *; tcsp; ginv; boolvar; subst; tcsp; GC.
-  inversion ext0 as [? ? ? ? ? ? ext'|? ? ? ? ext'|]; subst; clear ext0;
+  inversion ext0 as [? ? ? ? ext'|? ? ? ? ext'|? ? ? ? ext']; subst; clear ext0;
     try (unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst);
     try (complete (eapply is_nat_if_compatible_and_correct; eauto)).
 Qed.
@@ -988,14 +982,14 @@ Proof.
   - remember (select n vals) as s; symmetry in Heqs; destruct s.
 
     + applydup sat in Heqs.
-      apply cor2 in Heqs0; auto.
+      apply cor0 in Heqs0; auto.
       unfold cterm_is_nth in Heqs0; exrepnd.
       rewrite h in Heqs0; ginv.
 
     + apply nth_select2 in Heqs; omega.
 
   - applydup sat in h.
-    apply cor2 in h0; auto.
+    apply cor0 in h0; auto.
     unfold cterm_is_nth in h0; exrepnd.
     apply mkc_nat_eq_implies in h1; subst; auto.
 Qed.
@@ -1269,7 +1263,7 @@ Proof.
   eapply lib_extends_trans;[|eauto]; clear IHvals.
   destruct restr; simpl in *.
 
-  { apply (lib_extends_cs _ name a (length vals) typ d typd); tcsp.
+  { apply (lib_extends_cs _ name a (length vals) typ); tcsp.
     { simpl; boolvar; tcsp. }
     apply safee; rewrite select_snoc_eq; boolvar; try omega; auto. }
 

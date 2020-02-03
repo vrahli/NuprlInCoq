@@ -683,7 +683,7 @@ Proof.
 Qed.
 Hint Resolve entry_in_inf_library_extends_const : slow.
 
-Lemma matching_entries_preserves_inf_matching_entries_library_entry2inf {o} :
+(*Lemma matching_entries_preserves_inf_matching_entries_library_entry2inf {o} :
   forall (e1 e2 : @library_entry o) e,
     matching_entries e1 e2
     -> inf_entry_extends (library_entry2inf e2) e
@@ -694,9 +694,9 @@ Proof.
   unfold matching_entries in m.
   destruct e1, e2, e; simpl in *; repnd; subst; tcsp.
 Qed.
-Hint Resolve matching_entries_preserves_inf_matching_entries_library_entry2inf : slow.
+Hint Resolve matching_entries_preserves_inf_matching_entries_library_entry2inf : slow.*)
 
-Lemma entry_in_inf_library_extends_library2inf_implies {o} :
+(*Lemma entry_in_inf_library_extends_library2inf_implies {o} :
   forall n entry d (lib : @library o),
     entry_in_inf_library_extends entry n (library2inf lib d)
     -> inf_entry_extends d entry
@@ -721,7 +721,7 @@ Proof.
   right; exists e; dands; tcsp.
   right; dands; auto.
   introv m; apply matching_entries_sym in m; destruct i0; eauto 2 with slow.
-Qed.
+Qed.*)
 
 Lemma inf_entry_extends_lib_cs_implies_matching {o} :
   forall (e : @inf_library_entry o) name x,
@@ -731,14 +731,14 @@ Proof.
   destruct e; simpl in *; repnd; subst; tcsp.
 Qed.
 
-Lemma inf_entry2name_library_entry2inf {o} :
+(*Lemma inf_entry2name_library_entry2inf {o} :
   forall (e : @library_entry o),
     inf_entry2name (library_entry2inf e)
     = entry2name e.
 Proof.
   introv; destruct e; simpl; auto.
 Qed.
-Hint Rewrite @inf_entry2name_library_entry2inf : slow.
+Hint Rewrite @inf_entry2name_library_entry2inf : slow.*)
 
 Lemma two_entries_in_library_with_same_name {o} :
   forall (e1 e2 : @library_entry o) name lib,
@@ -772,7 +772,7 @@ Proof.
 Qed.
 Hint Resolve implies_list_eq_ntimes : slow.
 
-Lemma entry_extends_choice_sequence_name2entry_implies {o} :
+(*Lemma entry_extends_choice_sequence_name2entry_implies {o} :
   forall (lib : @library o) name name0 lib' entry',
     name <> name0
     -> safe_library_entry entry'
@@ -847,7 +847,7 @@ Proof.
     rewrite safe2 in q; try omega.
     rewrite mkc_zero_eq in q.
     apply mkc_nat_eq_implies in q; auto.
-Qed.
+Qed.*)
 
 Lemma select_ntimes :
   forall {A} n m (a : A),
@@ -875,25 +875,10 @@ Proof.
 
   { introv.
     destruct (lt_dec n (length l)) as [x|x].
-    { pose proof (h0 n) as h0; autodimp h0 hyp.
-      unfold cterm_is_nth in h0; exrepnd.
-      unfold natSeq2default; allrw; auto. }
-    { pose proof (h1 n) as h1; autodimp h1 hyp; try omega.
-      allrw; tcsp.
-      unfold natSeq2default.
-      rewrite select_none; auto; try omega. } }
-
-  introv.
-  unfold natSeq2restrictionPred.
-  destruct (lt_dec n (length l)) as [x|x].
-  { rewrite h2; auto.
-    unfold cterm_is_nth; split; intro q; exrepnd; subst; allrw; tcsp.
-    remember (select n l) as sel; destruct sel; subst; tcsp.
-    { exists n0; dands; tcsp. }
-    symmetry in Heqsel.
-    apply nth_select2 in Heqsel; try omega. }
-  { rewrite h; try omega.
-    rewrite select_none; try omega; tcsp. }
+    { rewrite h0; auto.
+      rewrite natSeq2restrictionPred_iff_cterm_is_nth; tcsp. }
+    { rewrite h; try omega.
+      rewrite natSeq2restrictionPred_iff_is_nat; tcsp; try omega. } }
 Qed.
 Hint Resolve is_nat_seq_restriction_implies_same_restrictions : slow.
 
@@ -942,7 +927,7 @@ Proof.
   }
 
   exrepnd; subst.
-  exists (ntimes n 0 ++ l) (csc_type d typ typd); dands; auto.
+  exists (ntimes n 0 ++ l) (csc_type typ); dands; auto.
 
   {
     rewrite map_app.
@@ -951,13 +936,11 @@ Proof.
   }
 
   unfold same_restrictions; simpl; dands; auto.
-  { introv; rewrite safe2; try omega.
-    unfold natSeq2default; autorewrite with slow; auto. }
   { introv; rewrite safe0; try omega.
     unfold natSeq2restrictionPred; autorewrite with slow; tcsp. }
 Qed.
 
-Lemma entry_extends_cs_zeros_implies {o} :
+(*Lemma entry_extends_cs_zeros_implies {o} :
   forall (lib : @library o) name name0 n restr lib' entry',
     name <> name0
     -> safe_library_entry entry'
@@ -1038,7 +1021,7 @@ Proof.
     rewrite safe2 in q; try omega.
     rewrite mkc_zero_eq in q.
     apply mkc_nat_eq_implies in q; auto.
-Qed.
+Qed.*)
 
 Lemma iscvalue_mkc_one {o} :
   @iscvalue o mkc_one.
@@ -1158,9 +1141,6 @@ Proof.
     unfold same_restrictions in *.
     destruct restr; simpl in *; repnd; tcsp.
     dands; tcsp.
-    { introv h.
-      rewrite srestr0.
-      unfold natSeq2default; autorewrite with slow; auto. }
     { introv h.
       rewrite srestr.
       unfold natSeq2restrictionPred; autorewrite with slow; tcsp. }
@@ -1335,7 +1315,7 @@ Proof.
   clear IHvals'.
   destruct restr; simpl in *.
 
-  { apply (lib_extends_cs _ name a (length (vals ++ vals')) typ d typd); auto.
+  { apply (lib_extends_cs _ name a (length (vals ++ vals')) typ); auto.
     { rewrite add_choice_if_not_in_left; tcsp.
       rewrite snoc_append_l; auto. }
     apply safe.
@@ -1375,8 +1355,6 @@ Proof.
     { destruct restr; simpl in *; repnd; tcsp.
       destruct name as [name kind]; simpl in *; subst; simpl in *; tcsp.
       unfold correct_restriction; simpl; dands; tcsp.
-      { introv len.
-        pose proof (same0 n0) as same0; unfold natSeq2default in *; autorewrite with slow in *; auto. }
       { introv len.
         pose proof (same n0) as same; unfold natSeq2restrictionPred in *; autorewrite with slow in *; auto. } }
     { unfold choice_sequence_satisfies_restriction; destruct restr; simpl in *; tcsp.

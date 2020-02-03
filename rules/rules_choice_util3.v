@@ -532,8 +532,6 @@ Proof.
   introv cor same.
   destruct restr, name as [name kind]; simpl in *; repnd; subst; simpl in *;
     unfold correct_restriction; simpl in *; dands; tcsp.
-  { introv len.
-    rewrite same0; unfold natSeq2default; autorewrite with list; auto. }
   { introv len; rewrite same; unfold natSeq2restrictionPred; autorewrite with slow; tcsp. }
 Qed.
 Hint Resolve same_csc_seq_nil_implies_correct_restriction : slow.

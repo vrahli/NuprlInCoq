@@ -78,7 +78,7 @@ Definition choice_sequence_satisfies_restriction {o}
            (vals       : @ChoiceSeqVals o)
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
-  | csc_type d M Md =>
+  | csc_type M =>
     forall n v, select n vals = Some v -> M n v (* TODO: Is that going to be enough? *)
   | csc_coq_law f =>
     forall (i : nat), i < length vals -> select i vals = Some (f i)
@@ -101,7 +101,7 @@ Qed.
 Hint Resolve is_nat_zero : slow.
 
 Definition csc_nat {o} : @ChoiceSeqRestriction o :=
-  csc_type (fun _ => mkc_zero) is_nat is_nat_zero.
+  csc_type is_nat.
 (* =============== *)
 
 (* =============== *)
@@ -119,7 +119,7 @@ Qed.
 Hint Resolve is_bool_true : slow.
 
 Definition csc_bool {o} : @ChoiceSeqRestriction o :=
-  csc_type (fun _ => tt) is_bool is_bool_true.
+  csc_type is_bool.
 (* =============== *)
 
 (*(*
@@ -142,9 +142,7 @@ Hint Resolve extension_satisfies_restriction_refl : slow.*)
 
 Definition same_restrictions {o} (restr1 restr2 : @ChoiceSeqRestriction o) :=
   match restr1, restr2 with
-  | csc_type d1 M1 Md1, csc_type d2 M2 Md2 =>
-    (forall n, d1 n = d2 n)
-    /\ (forall n v, M1 n v <-> M2 n v)
+  | csc_type M1, csc_type M2 => forall n v, M1 n v <-> M2 n v
   | csc_coq_law f1, csc_coq_law f2 => forall n, f1 n = f2 n
   | csc_res M1, csc_res M2 => forall n v, M1 n v <-> M2 n v
   | _, _ => False
@@ -199,20 +197,16 @@ Definition is0kind (name : choice_sequence_name) : bool :=
 
 Definition is_nat_restriction {o} (restr : @ChoiceSeqRestriction o) :=
   match restr with
-  | csc_type d M Md =>
-    (forall n, d n = mkc_zero)
-    /\ (forall n v, M n v <-> is_nat n v)
-  | csc_coq_law _ => False
-  | csc_res _ => False
+  | csc_type M => forall n v, M n v <-> is_nat n v
+  | csc_coq_law f => forall n, is_nat n (f n)
+  | csc_res M => forall n v, M n v <-> is_nat n v
   end.
 
 Definition is_bool_restriction {o} (restr : @ChoiceSeqRestriction o) :=
   match restr with
-  | csc_type d M Md =>
-    (forall n, d n = tt)
-    /\ (forall n v, M n v <-> is_bool n v)
-  | csc_coq_law _ => False
-  | csc_res _ => False
+  | csc_type M => forall n v, M n v <-> is_bool n v
+  | csc_coq_law f => forall n, is_bool n (f n)
+  | csc_res M => forall n v, M n v <-> is_bool n v
   end.
 
 Definition cterm_is_nth {o} (t : @CTerm o) n l :=
@@ -220,13 +214,9 @@ Definition cterm_is_nth {o} (t : @CTerm o) n l :=
 
 Definition is_nat_seq_restriction {o} (l : list nat) (restr : @ChoiceSeqRestriction o) :=
   match restr with
-  | csc_type d M Md =>
-    (* the choice sequence matches the default values up to [length l] *)
-    (forall n , n < length l -> cterm_is_nth (d n) n l)
-    (* above [length l], the default value is 0 *)
-    /\ (forall n , length l <= n -> d n = mkc_zero)
+  | csc_type M =>
     (* [M] restricts the choice sequence to [l] up to [length l] *)
-    /\ (forall n v, n < length l -> (M n v <-> cterm_is_nth v n l))
+    (forall n v, n < length l -> (M n v <-> cterm_is_nth v n l))
     (* above [length l], the choice sequence can return any integer *)
     /\ (forall n v, length l <= n -> (M n v <-> is_nat n v))
   | csc_coq_law _ => False
@@ -324,8 +314,8 @@ Inductive lib_extends {o} : @library o -> @library o -> Prop :=
       -> !in_lib (entry_name_cs name) lib
       -> lib_extends (add_cs name restr lib) lib
 | lib_extends_cs :
-    forall lib name v n M d Md lib',
-      add_choice name v lib = Some (n, csc_type d M Md, lib')
+    forall lib name v n M lib',
+      add_choice name v lib = Some (n, csc_type M, lib')
       -> M n v
       -> lib_extends lib' lib
 | lib_extends_law :
@@ -346,7 +336,7 @@ Tactic Notation "lib_ext_ind" ident(ext) ident(c) ident(cor) ident(ni) ident(add
   induction ext as [|
                     |? ? ? ? ? ni
                     |? ? ? cor ni
-                    |? ? ? ? ? ? ? ? addc cond
+                    |? ? ? ? ? ? addc cond
                     |? ? ? ? ? ? addc cond
                     |? ? ? ? ? ? addc cond];
   [ Case_aux c "lib_ext_refl"
@@ -516,8 +506,8 @@ Proof.
 Qed.
 
 Lemma add_choice_csc_type_preserves_safe {o} :
-  forall name v (lib : @library o) n d M Md lib',
-    add_choice name v lib = Some (n, csc_type d M Md, lib')
+  forall name v (lib : @library o) n M lib',
+    add_choice name v lib = Some (n, csc_type M, lib')
     -> M n v
     -> safe_library lib
     -> safe_library lib'.

@@ -40,6 +40,55 @@ Require Export computation_lib_extends2.
 
 Require Export axiom_func_choice_on.
 
+Definition satisfies_restriction {o} (n : nat) (v : @ChoiceSeqVal o) restr :=
+  match restr with
+  | csc_type M => M n v
+  | csc_coq_law f => f n = v
+  | csc_res M => M n v
+  end.
+
+Definition satisfies_choice {o} (name : choice_sequence_name) (v : nat -> @ChoiceSeqVal o) :=
+  forall n, satisfies_restriction n (v n) (choice_sequence_name2restriction name).
+
+Lemma satisfies_choice_type {o} :
+  forall name (v : nat -> @ChoiceSeqVal o) M,
+    is_primitive_kind name
+    -> satisfies_choice name v
+    -> correct_restriction name (csc_type M)
+    -> forall n, M n (v n).
+Proof.
+  introv prim sat cor; introv.
+  unfold correct_restriction, satisfies_choice, satisfies_restriction in *.
+  unfold choice_sequence_name2restriction in *; simpl in *.
+  unfold is_primitive_kind in *; simpl in *.
+  pose proof (sat n) as sat.
+  destruct name as [name kind]; simpl in *.
+  destruct kind; simpl in *; tcsp; repnd; repeat (boolvar; simpl in *; subst; tcsp; GC);
+    try (complete (apply cor; auto)); try omega.
+  destruct (lt_dec n (length l)) as [d|d].
+  { apply cor0; auto.
+    apply natSeq2restrictionPred_iff_cterm_is_nth; auto. }
+  { apply cor; try omega.
+    apply natSeq2restrictionPred_iff_is_nat in sat; auto; try omega. }
+Qed.
+
+Lemma satisfies_choice_res {o} :
+  forall name (v : nat -> @ChoiceSeqVal o) M,
+    is_primitive_kind name
+    -> satisfies_choice name v
+    -> correct_restriction name (csc_res M)
+    -> forall n, M n (v n).
+Proof.
+  introv prim sat cor; introv.
+  unfold correct_restriction, satisfies_choice, satisfies_restriction in *.
+  unfold choice_sequence_name2restriction in *; simpl in *.
+  unfold is_primitive_kind in *; simpl in *.
+  pose proof (sat n) as sat.
+  destruct name as [name kind]; simpl in *.
+  destruct kind; simpl in *; tcsp; repnd; repeat (boolvar; simpl in *; subst; tcsp; GC);
+    try (complete (apply cor; auto)); try omega.
+Qed.
+
 
 (*Definition memNat {o} : @Mem o :=
   fun c => exists (n : nat), c = mkc_nat n.*)
@@ -48,7 +97,7 @@ Require Export axiom_func_choice_on.
 
 Definition const_0 {o} : nat -> @CTerm o := fun n => mkc_nat 0.
 
-Definition seq_0 : choice_sequence_name := MkChoiceSequenceName "seq0" (cs_kind_nat 2).
+Definition seq_0 : choice_sequence_name := MkChoiceSequenceName "seq0" (cs_kind_nat 0).
 
 Definition law_0 {o} : @ChoiceSeqRestriction o := csc_coq_law const_0.
 
@@ -139,10 +188,22 @@ Proof.
 Qed.
 Hint Resolve safe_library_entry_simple_choice_seq : slow.
 
+Lemma is_nat_mkc_nat {o} : forall n k, @is_nat o n (mkc_nat k).
+Proof.
+  introv; exists k; auto.
+Qed.
+Hint Resolve is_nat_mkc_nat : slow.
+
+Lemma is_nat_const_0 {o} : forall n, @is_nat o n (const_0 n).
+Proof.
+  introv; unfold const_0; eauto 3 with slow.
+Qed.
+Hint Resolve is_nat_const_0 : slow.
+
 Lemma correct_restriction_seq_0 {o} :
   @correct_restriction o seq_0 law_0.
 Proof.
-  tcsp.
+  unfold correct_restriction; simpl; introv; eauto 3 with slow.
 Qed.
 Hint Resolve correct_restriction_seq_0 : slow.
 
@@ -199,21 +260,23 @@ Proof.
 Qed.
 
 Definition extend_choice_seq_vals_following_law_upto {o}
+           (name  : choice_sequence_name)
            (vals  : @ChoiceSeqVals o)
            (restr : @ChoiceSeqRestriction o)
-           (n : nat) : ChoiceSeqVals :=
+           (n     : nat) : ChoiceSeqVals :=
   match restr with
-  | csc_type d _ _ => vals ++ follow_law (length vals) (n - length vals) d
+  | csc_type _ => vals ++ follow_law (length vals) (n - length vals) (choice_sequence_name2default name)
   | csc_coq_law f => vals ++ follow_law (length vals) (n - length vals) f
-  | csc_res _ => vals
+  | csc_res _ => vals ++ follow_law (length vals) (n - length vals) (choice_sequence_name2default name)
   end.
 
 Definition extend_choice_seq_entry_following_law_upto {o}
+           (name : choice_sequence_name)
            (e : @ChoiceSeqEntry o)
            (n : nat) : ChoiceSeqEntry :=
   match e with
   | MkChoiceSeqEntry _ vals restr =>
-    MkChoiceSeqEntry _ (extend_choice_seq_vals_following_law_upto vals restr n) restr
+    MkChoiceSeqEntry _ (extend_choice_seq_vals_following_law_upto name vals restr n) restr
   end.
 
 Definition extend_library_entry_following_law_upto {o}
@@ -223,7 +286,7 @@ Definition extend_library_entry_following_law_upto {o}
   match e with
   | lib_cs name' x =>
     if choice_sequence_name_deq name name' then
-      lib_cs name' (extend_choice_seq_entry_following_law_upto x n)
+      lib_cs name' (extend_choice_seq_entry_following_law_upto name x n)
     else e
   | _ => e
   end.
@@ -356,12 +419,26 @@ Proof.
     intro m; destruct i0; eauto 2 with slow.
 Qed.
 
+Lemma satisfies_choice_default {o} :
+  forall name, @satisfies_choice o name (choice_sequence_name2default name).
+Proof.
+  repeat introv.
+  unfold satisfies_restriction; simpl.
+  destruct name as [name kind]; simpl.
+  unfold choice_sequence_name2restriction; simpl.
+  destruct kind; simpl; repeat (boolvar; subst; simpl; tcsp);
+    unfold choice_sequence_name2default; simpl; eauto 3 with slow.
+  repeat boolvar; subst; simpl; tcsp; eauto 3 with slow.
+Qed.
+Hint Resolve satisfies_choice_default : slow.
+
 Lemma safe_library_entry_extend_library_entry_following_law_upto {o} :
   forall (e : @library_entry o) name n,
-    safe_library_entry e
+    is_primitive_kind name
+    -> safe_library_entry e
     -> safe_library_entry (extend_library_entry_following_law_upto e name n).
 Proof.
-  introv safe; destruct e; simpl in *; boolvar; subst; tcsp.
+  introv prim safe; destruct e; simpl in *; boolvar; subst; tcsp.
   destruct entry as [vals restr]; simpl in *; repnd; dands; auto.
   destruct restr; simpl in *; tcsp.
 
@@ -377,33 +454,54 @@ Proof.
       exrepnd; subst.
       rewrite Nat.add_sub in j.
       destruct (lt_dec p (n - length vals)) as [xx|xx].
-      { rewrite select_follow_law in j; auto; try omega; inversion j; tcsp. }
+      { rewrite select_follow_law in j; auto; try omega; inversion j; subst; tcsp.
+        eapply satisfies_choice_type; eauto 3 with slow. }
       { rewrite select_follow_law_none in j; try omega; ginv. }
   }
 
-  introv j.
-  allrw length_app; autorewrite with slow in *.
-  destruct (lt_dec i (length vals)) as [d|d].
+  {
+    introv j.
+    allrw length_app; autorewrite with slow in *.
+    destruct (lt_dec i (length vals)) as [dd|dd].
 
-  - applydup safe in d.
-    rewrite select_app_l; auto.
+    - applydup safe in dd.
+      rewrite select_app_l; auto.
 
-  - rewrite select_app_r; try omega.
-    pose proof (Nat.le_exists_sub (length vals) i) as q.
-    autodimp q hyp; try omega.
-    exrepnd; subst.
-    rewrite Nat.add_sub.
-    rewrite le_plus_minus_r in j; try omega.
-    rewrite select_follow_law; auto; try omega.
+    - rewrite select_app_r; try omega.
+      pose proof (Nat.le_exists_sub (length vals) i) as q.
+      autodimp q hyp; try omega.
+      exrepnd; subst.
+      rewrite Nat.add_sub.
+      rewrite le_plus_minus_r in j; try omega.
+      rewrite select_follow_law; auto; try omega.
+  }
+
+  {
+    introv j.
+    destruct (lt_dec n0 (length vals)) as [dd|dd].
+
+    - rewrite select_app_l in j; auto.
+
+    - rewrite select_app_r in j; try omega.
+      pose proof (Nat.le_exists_sub (length vals) n0) as q.
+      autodimp q hyp; try omega.
+      exrepnd; subst.
+      rewrite Nat.add_sub in j.
+      destruct (lt_dec p (n - length vals)) as [xx|xx].
+      { rewrite select_follow_law in j; auto; try omega; inversion j; subst; tcsp.
+        eapply satisfies_choice_res; eauto 3 with slow. }
+      { rewrite select_follow_law_none in j; try omega; ginv. }
+  }
 Qed.
 Hint Resolve safe_library_entry_extend_library_entry_following_law_upto : slow.
 
 Lemma implies_safe_library_extend_library_following_law_upto {o} :
   forall (lib : @library o) name n,
-    safe_library lib
+    is_primitive_kind name
+    -> safe_library lib
     -> safe_library (extend_library_following_law_upto lib name n).
 Proof.
-  introv safe i.
+  introv prim safe i.
   apply entry_in_library_extend_library_following_law_upto_implies in i.
   exrepnd; subst.
   apply safe in i1; eauto 2 with slow.
@@ -456,7 +554,7 @@ Lemma extend_library_following_law_upto_in {o} :
     exists lib1 lib2 e,
       lib = lib1 ++ lib_cs name e :: lib2
       /\ extend_library_following_law_upto lib name n
-         = lib1 ++ lib_cs name (extend_choice_seq_entry_following_law_upto e n) :: lib2.
+         = lib1 ++ lib_cs name (extend_choice_seq_entry_following_law_upto name e n) :: lib2.
 Proof.
   induction lib; introv norep i; simpl in *; repnd; tcsp.
   repndors; subst; simpl in *; tcsp.
@@ -499,20 +597,39 @@ Proof.
 Qed.
 Hint Resolve no_repeats_library_implies_not_in_lib : slow.
 
+Lemma not_in_lib_implies_non_shadowed_entry {o} :
+  forall name e (lib : @library o),
+    !in_lib (entry_name_cs name) lib
+    -> non_shadowed_entry (lib_cs name e) lib.
+Proof.
+  introv ni.
+  unfold non_shadowed_entry; rewrite forallb_forall; introv i.
+  apply non_matching_entries_iff_diff_entry_names_true; intro m; destruct ni.
+  eexists; dands; eauto.
+Qed.
+Hint Resolve not_in_lib_implies_non_shadowed_entry : slow.
+
 Lemma extend_library_following_law_upto_extends {o} :
   forall name n (lib : @library o),
-    no_repeats_library lib
+    is_primitive_kind name
+    -> no_repeats_library lib
+    -> safe_library lib
     -> lib_extends (extend_library_following_law_upto lib name n) lib.
 Proof.
-  introv norep.
+  introv prim norep safe.
   destruct (in_deq _ Deq_EntryName (entry_name_cs name) (map entry2name lib)).
 
   { applydup (extend_library_following_law_upto_in lib name n) in l; auto; exrepnd; subst.
     rewrite l1; clear l1.
     clear l.
     apply no_repeats_library_implies_not_in_lib in norep.
+    assert (safe_choice_sequence_entry name e) as safee.
+    { apply (safe (lib_cs name e)); simpl.
+      rewrite <- snoc_append_r.
+      apply implies_entry_in_library_app_if_left.
+      apply entry_in_library_snoc_tail2; eauto 3 with slow. }
     unfold extend_choice_seq_entry_following_law_upto; simpl.
-    destruct e as [vals restr].
+    destruct e as [vals restr]; simpl in *; repnd.
     unfold extend_choice_seq_vals_following_law_upto.
     destruct restr; eauto 3 with slow.
 
@@ -520,9 +637,10 @@ Proof.
       induction k;[|rewrite follow_law_S]; simpl; autorewrite with list; auto.
       eapply lib_extends_trans;[|eauto]; clear IHk.
       rewrite snoc_append_l.
-      eapply (lib_extends_cs _ name (d (length vals + k)) (length vals + k) typ d typd); auto.
-      rewrite add_choice_if_not_in_left; auto.
-      autorewrite with list; autorewrite with slow; auto. }
+      eapply (lib_extends_cs _ name _ (length vals + k) typ); auto.
+      { rewrite add_choice_if_not_in_left; auto.
+        autorewrite with list; autorewrite with slow; auto. }
+      eapply satisfies_choice_type; eauto 3 with slow. }
 
     { remember (n - Datatypes.length vals) as k; clear Heqk.
       induction k;[|rewrite follow_law_S]; simpl; autorewrite with list; auto.
@@ -530,15 +648,25 @@ Proof.
       rewrite snoc_append_l.
       eapply (lib_extends_law _ name (f (length vals + k)) (length vals + k) f); auto.
       rewrite add_choice_if_not_in_left; auto.
-      autorewrite with list; autorewrite with slow; auto. } }
+      autorewrite with list; autorewrite with slow; auto. }
+
+    { remember (n - Datatypes.length vals) as k; clear Heqk.
+      induction k;[|rewrite follow_law_S]; simpl; autorewrite with list; auto.
+      eapply lib_extends_trans;[|eauto]; clear IHk.
+      rewrite snoc_append_l.
+      eapply (lib_extends_res _ name _ (length vals + k) typ); auto.
+      { rewrite add_choice_if_not_in_left; auto.
+        autorewrite with list; autorewrite with slow; auto. }
+      eapply satisfies_choice_res; eauto 3 with slow. }
+  }
 
   apply (extend_library_following_law_upto_not_in lib name n) in n0; allrw; auto.
 Qed.
 Hint Resolve extend_library_following_law_upto_extends : slow.
 
 Lemma restriction_extend_choice_seq_entry_following_law_upto {o} :
-  forall (entry : @ChoiceSeqEntry o) m,
-    cse_restriction (extend_choice_seq_entry_following_law_upto entry m)
+  forall name (entry : @ChoiceSeqEntry o) m,
+    cse_restriction (extend_choice_seq_entry_following_law_upto name entry m)
     = cse_restriction entry.
 Proof.
   introv; destruct entry as [vals restr]; simpl; auto.
@@ -862,7 +990,7 @@ Lemma find_cs_same_extend_library_following_law_upto {o} :
   forall (lib : @library o) name n,
     find_cs (extend_library_following_law_upto lib name n) name
     = match find_cs lib name with
-      | Some entry => Some (extend_choice_seq_entry_following_law_upto entry n)
+      | Some entry => Some (extend_choice_seq_entry_following_law_upto name entry n)
       | None => None
       end.
 Proof.
@@ -1833,6 +1961,18 @@ Proof.
     rewrite select_follow_law; auto; try omega.
 Qed.*)
 
+Lemma is_primitive_kind_seq_0 : is_primitive_kind seq_0.
+Proof.
+  introv; unfold is_primitive_kind; simpl; auto.
+Qed.
+Hint Resolve is_primitive_kind_seq_0 : slow.
+
+Lemma satisfies_choice_seq_0 {o} : @satisfies_choice o seq_0 (fun _ => mkc_zero).
+Proof.
+  introv; simpl; eauto 3 with slow.
+Qed.
+Hint Resolve satisfies_choice_seq_0 : slow.
+
 
 (*
 
@@ -1909,7 +2049,7 @@ Proof.
     unfold choice_sequence_vals_extend in ext1; exrepnd; simpl in *; subst.
 
     assert (lib_extends (extend_library_following_law_upto lib'' seq_0 (S n)) lib'') as xta.
-    { apply extend_library_following_law_upto_extends; auto.
+    { apply extend_library_following_law_upto_extends; eauto 3 with slow;[].
       assert (lib_extends lib'' lib_0) as xta by eauto 3 with slow.
       eapply lib_extends_preserves_no_repeats;[eauto|]; eauto 3 with slow. }
     assert (lib_extends (extend_library_following_law_upto lib'' seq_0 (S n)) lib'0) as xtb.
@@ -1930,7 +2070,7 @@ Qed.
 
 
 
-Definition seq_1 : choice_sequence_name := MkChoiceSequenceName "seq1" (cs_kind_nat 2).
+Definition seq_1 : choice_sequence_name := MkChoiceSequenceName "seq1" (cs_kind_nat 0).
 
 Definition law_1 {o} : @ChoiceSeqRestriction o := csc_nat.
 
@@ -1939,6 +2079,12 @@ Definition cs_entry_1 {o} : @ChoiceSeqEntry o := MkChoiceSeqEntry _ [] law_1.
 Definition lib_entry_1 {o} : @library_entry o := lib_cs seq_1 cs_entry_1.
 
 Definition lib_1 {o} : @library o := [lib_entry_1].
+
+Lemma correct_restriction_seq_1 {o} : @correct_restriction o seq_1 law_1.
+Proof.
+  introv; tcsp.
+Qed.
+Hint Resolve correct_restriction_seq_1 : slow.
 
 Lemma safe_library_lib1 {o} : @safe_library o lib_1.
 Proof.
@@ -2017,7 +2163,7 @@ Proof.
     eapply can_lib_preserves_safe_library; eauto.
 Qed.*)
 
-Lemma inf_lib_extends_cons_implies {o} :
+(*Lemma inf_lib_extends_cons_implies {o} :
   forall (infLib : @inf_library o) entry lib,
     safe_library_entry entry
     -> inf_lib_extends infLib (entry :: lib)
@@ -2035,7 +2181,7 @@ Proof.
   - introv safe'.
     apply safe.
     introv i; simpl in *; repndors; subst; tcsp.
-Qed.
+Qed.*)
 
 Lemma list_in_inf_choice_seq_vals2choice_seq_vals_implies {o} :
   forall v k (iseq : @InfChoiceSeqVals o),
@@ -2197,7 +2343,7 @@ Proof.
   simpl in *.
   boolvar; repeat subst; tcsp; ginv; tcsp;[].
   destruct entry as [vals1 restr1], entry0 as [vals2 restr2]; simpl in *; repnd.
-  inversion ext as [? ? ? ? ? ? ext'|? ? ? ? ext'|]; clear ext; subst; tcsp.
+  inversion ext as [? ? ? ? ext'|? ? ? ? ext'|? ? ? ? ext']; clear ext; subst; tcsp.
 
   { exrepnd; subst; dands; auto; eauto 3 with slow;[].
     introv i.
@@ -2226,6 +2372,18 @@ Proof.
       rewrite (nth_select1 _ _ mkc_zero); simpl in *; allrw; auto.
       apply (implies_lt_minus _ _ (length vals2)) in j; try omega.
       rewrite minus_plus in j; auto. } }
+
+  { exrepnd; subst; dands; auto; eauto 3 with slow;[].
+    introv i.
+    unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst.
+
+    destruct (lt_dec n0 (length vals2)) as [z|z].
+
+    { rewrite select_app_left in i; auto. }
+
+    { rewrite select_app_r in i; try omega.
+      apply ext'0 in i.
+      rewrite le_plus_minus_r in i; auto; try omega. } }
 Qed.
 Hint Resolve extend_library_entry_lawless_upto_preserves_safe_library_entry : slow.
 
@@ -2991,9 +3149,9 @@ Proof.
 Qed.
 
 Lemma extend_library_lawless_upto_implies_find_cs {o} :
-  forall (lib1 lib2 : @library o) name k vals d T Td,
+  forall (lib1 lib2 : @library o) name k vals T,
     safe_library lib2
-    -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ vals (csc_type d T Td))) lib2
+    -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ vals (csc_type T))) lib2
     -> extend_library_lawless_upto lib1 lib2 name (S k)
     -> exists n, find_cs_value_at lib1 name k = Some n /\ T k n.
 Proof.
@@ -3001,7 +3159,7 @@ Proof.
   eapply extend_library_lawless_upto_implies_right in ext;[|eauto].
   exrepnd.
   destruct e; simpl in *; boolvar; subst; GC; ginv; tcsp.
-  inversion ext0 as [? ? ? ? ? ? ext'| |]; subst; clear ext0.
+  inversion ext0 as [? ? ? ? ext'| |]; subst; clear ext0.
   unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst.
 
   apply entry_in_library_implies_find_cs_some in ext1; simpl in ext1.
@@ -3087,48 +3245,86 @@ Definition inf_lib_entry_0 {o} : @inf_library_entry o := inf_lib_cs seq_0 inf_cs
 Lemma safe_inf_library_entry_inf_lib_entry_0 {o} :
   @safe_inf_library_entry o inf_lib_entry_0.
 Proof.
-  unfold safe_inf_library_entry; simpl; dands; tcsp.
+  unfold safe_inf_library_entry; simpl; dands; tcsp; eauto 3 with slow.
   introv; unfold const_0.
   rewrite mkc_zero_eq; auto.
 Qed.
 Hint Resolve safe_inf_library_entry_inf_lib_entry_0 : slow.
 
+Lemma safe_library_entry_cons_if_not_in {o} :
+  forall e (lib : @library o),
+    !in_lib (entry2name e) lib
+    -> (safe_library (e :: lib) <-> (safe_library_entry e /\ safe_library lib)).
+Proof.
+  introv h; split; intro safe; repnd; dands.
+
+  { apply safe; simpl; tcsp. }
+
+  { introv i.
+    destruct entry; simpl in *; auto.
+    destruct (Deq_EntryName (entry2name e) (entry_name_cs name)).
+
+    { apply entry_in_library_implies_in in i.
+      destruct h; eexists; dands; eauto; simpl.
+      destruct e; simpl in *; ginv; tcsp. }
+
+    { apply (safe (lib_cs name entry)); simpl; right; dands; tcsp.
+      introv m.
+      destruct e; simpl in *; tcsp.
+      unfold matching_entries in *; simpl in *; subst; tcsp. } }
+
+  { introv i; simpl in *; repndors; subst; tcsp. }
+Qed.
+
 Lemma extend_library_lawless_upto_extend_library_following_lawless_upto {o} :
   forall name n (lib : @library o),
-    extend_library_lawless_upto (extend_library_following_law_upto lib name n) lib name n.
+    is_primitive_kind name
+    -> safe_library lib
+    -> no_repeats_library lib
+    -> extend_library_lawless_upto (extend_library_following_law_upto lib name n) lib name n.
 Proof.
-  induction lib; introv; simpl; tcsp.
-  dands; tcsp; clear IHlib.
+  induction lib; introv prim safe norep; simpl in *; repnd; tcsp.
+  apply safe_library_entry_cons_if_not_in in safe; repnd; auto.
+  repeat (autodimp IHlib hyp).
+  dands; tcsp; clear IHlib;[].
   destruct a; simpl; boolvar; subst; tcsp;
     unfold extend_library_entry_lawless_upto; boolvar; subst; tcsp; GC;[].
-  destruct entry as [vals restr], restr; simpl; eauto.
+  destruct entry as [vals restr], restr; simpl in *; repnd; eauto;
+    econstructor; autorewrite with slow; tcsp.
 
-  { econstructor; autorewrite with slow; tcsp.
-    eexists; dands; eauto; autorewrite with slow; auto.
+  { eexists; dands; eauto; autorewrite with slow; auto.
+    introv sel.
+    rewrite select_follow_law_ite in sel; boolvar; tcsp.
+    inversion sel; clear sel; subst.
+    rewrite (Nat.add_comm _ n0); tcsp.
+    eapply satisfies_choice_type; eauto 3 with slow. }
+
+  { eexists; dands; eauto; autorewrite with slow; auto.
     introv sel.
     rewrite select_follow_law_ite in sel; boolvar; tcsp.
     inversion sel; subst.
     rewrite (Nat.add_comm n0); tcsp. }
 
-  { econstructor; autorewrite with slow; tcsp.
-    eexists; dands; eauto; autorewrite with slow; auto.
+  { eexists; dands; eauto; autorewrite with slow; auto.
     introv sel.
     rewrite select_follow_law_ite in sel; boolvar; tcsp.
-    inversion sel; subst.
-    rewrite (Nat.add_comm n0); tcsp. }
+    inversion sel; clear sel; subst.
+    rewrite (Nat.add_comm _ n0); tcsp.
+    eapply satisfies_choice_res; eauto 3 with slow. }
 Qed.
 Hint Resolve extend_library_lawless_upto_extend_library_following_lawless_upto : slow.
 
 Lemma exists_extend_library_lawless_upto {o} :
   forall name n (lib : @library o),
-    safe_library lib
+    is_primitive_kind name
+    -> safe_library lib
     -> no_repeats_library lib
     ->
     exists lib',
       extend_library_lawless_upto lib' lib name n
       /\ lib_extends lib' lib.
 Proof.
-  introv safe norep.
+  introv prim safe norep.
   exists (extend_library_following_law_upto lib name n).
   dands; eauto 3 with slow.
 Qed.
@@ -3138,6 +3334,18 @@ Proof.
   introv; simpl; dands; tcsp; intro xx; unfold in_lib in xx; simpl in *; exrepnd; tcsp.
 Qed.
 Hint Resolve no_repeats_library_1 : slow.
+
+Lemma is_primitive_kind_seq_1 : is_primitive_kind seq_1.
+Proof.
+  introv; unfold is_primitive_kind; simpl; auto.
+Qed.
+Hint Resolve is_primitive_kind_seq_1 : slow.
+
+Lemma satisfies_choice_seq_1 {o} : @satisfies_choice o seq_1 (fun _ => mkc_zero).
+Proof.
+  introv; simpl; eauto 3 with slow.
+Qed.
+Hint Resolve satisfies_choice_seq_1 : slow.
 
 Lemma seq1_in_nat2nat {o} :
   @member o lib_1 (mkc_choice_seq seq_1) Nat2Nat.

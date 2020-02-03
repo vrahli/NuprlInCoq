@@ -506,8 +506,9 @@ Proof.
   introv cor comp sat sel.
   unfold choice_sequence_satisfies_restriction, correct_restriction, compatible_choice_sequence_name in *.
   destruct res, name as [name kd], kd; simpl in *; tcsp; boolvar; subst; repnd; tcsp;
-    try (complete (unfold compatible_cs_kind in *; boolvar; try omega)).
-  apply cor; auto.
+    try (complete (unfold compatible_cs_kind in *; boolvar; try omega));
+    try (complete (apply cor; auto)).
+  rewrite sat in sel; eauto 3 with slow; inversion sel; subst; auto.
 Qed.
 
 Lemma cs_entry_in_library_bool_seq_upto_implies_is_bool {o} :
@@ -527,7 +528,7 @@ Proof.
   clear IHlib ext.
 
   destruct l; simpl in *; tcsp; ginv; boolvar; subst; tcsp; GC.
-  inversion ext0 as [? ? ? ? ? ? ext'|? ? ? ? ? ext'|]; subst; clear ext0;
+  inversion ext0 as [? ? ? ? ext'|? ? ? ? ? ext'|? ? ? ? ext']; subst; clear ext0;
     try (complete (eapply is_bool_if_compatible_and_correct; eauto)).
 Qed.
 Hint Resolve cs_entry_in_library_bool_seq_upto_implies_is_bool : slow.
@@ -921,21 +922,21 @@ Definition choice_seq_entry2inf_def {o} (e : @ChoiceSeqEntry o) v : InfChoiceSeq
       restr
   end.
 
-Definition library_entry2inf_def {o} (e : @library_entry o) nm v : inf_library_entry :=
+(*Definition library_entry2inf_def {o} (e : @library_entry o) nm v : inf_library_entry :=
   match e with
   | lib_cs name entry =>
     if choice_sequence_name_deq name nm
     then inf_lib_cs name (choice_seq_entry2inf_def entry v)
     else inf_lib_cs name (choice_seq_entry2inf entry)
   | lib_abs abs vars rhs correct => inf_lib_abs abs vars rhs correct
-  end.
+  end.*)
 
-Definition library2inf_def {o} (lib : @library o) (d : inf_library_entry) name v : inf_library :=
+(*Definition library2inf_def {o} (lib : @library o) (d : inf_library_entry) name v : inf_library :=
   fun n =>
     match select n lib with
     | Some entry => library_entry2inf_def entry name v
     | None => d
-    end.
+    end.*)
 
 Lemma inf_choice_sequence_entry_extend_choice_seq_entry2inf_def {o} :
   forall (entry : @ChoiceSeqEntry o) v,
@@ -950,7 +951,7 @@ Proof.
 Qed.
 Hint Resolve inf_choice_sequence_entry_extend_choice_seq_entry2inf_def : slow.
 
-Lemma inf_matching_entries_library_entry2inf_def_implies {o} :
+(*Lemma inf_matching_entries_library_entry2inf_def_implies {o} :
   forall (entry1 entry2 : @library_entry o) name v,
     inf_matching_entries (library_entry2inf_def entry1 name v) entry2
     -> matching_entries entry1 entry2.
@@ -960,9 +961,9 @@ Proof.
     destruct entry2; simpl in *; tcsp; boolvar; subst; simpl in *; subst; simpl in *;
       eauto 3 with slow; tcsp.
 Qed.
-Hint Resolve inf_matching_entries_library_entry2inf_def_implies : slow.
+Hint Resolve inf_matching_entries_library_entry2inf_def_implies : slow.*)
 
-Lemma matching_entries_implies_matching_inf_def_entries {o} :
+(*Lemma matching_entries_implies_matching_inf_def_entries {o} :
   forall (e1 e2 : @library_entry o) name1 name2 v1 v2,
     matching_entries e1 e2
     -> matching_inf_entries (library_entry2inf_def e1 name1 v1) (library_entry2inf_def e2 name2 v2).
@@ -970,9 +971,9 @@ Proof.
   introv m.
   destruct e1, e2; simpl in *; tcsp; boolvar; simpl; tcsp.
 Qed.
-Hint Resolve matching_entries_implies_matching_inf_def_entries : slow.
+Hint Resolve matching_entries_implies_matching_inf_def_entries : slow.*)
 
-Lemma entry_in_inf_library_n_library2inf_def_implies {o} :
+(*Lemma entry_in_inf_library_n_library2inf_def_implies {o} :
   forall n entry d (lib : @library o) name v,
     entry_in_inf_library_n n entry (library2inf_def lib d name v)
     -> entry = d
@@ -997,7 +998,7 @@ Proof.
   right; exists e; dands; tcsp.
   right; dands; auto.
   introv m; apply matching_entries_sym in m; destruct i0; eauto 2 with slow.
-Qed.
+Qed.*)
 
 Definition is_primitive_nat_kind (name : choice_sequence_name) :=
   match csn_kind name with
@@ -1005,7 +1006,7 @@ Definition is_primitive_nat_kind (name : choice_sequence_name) :=
   | cs_kind_seq _ => False
   end.
 
-Lemma implies_safe_inf_choice_sequence_entry2inf_def {o} :
+(*Lemma implies_safe_inf_choice_sequence_entry2inf_def {o} :
   forall name (entry : @ChoiceSeqEntry o) r v,
     is_primitive_nat_kind name
     -> correct_restriction name r
@@ -1028,8 +1029,11 @@ Proof.
     destruct kind; boolvar; subst; simpl in *; repnd; try omega.
 
     + destruct r; simpl in *; tcsp; repnd.
-      apply h0.
-      apply (cor 0); apply sat; simpl; auto.
+      { apply h0; apply (cor 0); apply sat; simpl; auto. }
+      { pose proof (sat 0) as sat; simpl in sat; autodimp sat hyp; inversion sat; subst; auto.
+        apply h0; auto.
+        destruct n; auto.
+        simpl in *; destruct vals; ginv.
 
     + destruct r; simpl in *; tcsp; repnd.
       apply h0.
@@ -1058,9 +1062,9 @@ Proof.
     unfold is_primitive_nat_kind in *; simpl in *.
     destruct kind; boolvar; subst; simpl in *; repnd; try omega.
 Qed.
-Hint Resolve implies_safe_inf_choice_sequence_entry2inf_def : slow.
+Hint Resolve implies_safe_inf_choice_sequence_entry2inf_def : slow.*)
 
-Lemma implies_safe_inf_library_library2inf_def {o} :
+(*Lemma implies_safe_inf_library_library2inf_def {o} :
   forall (lib : @library o) d name v r,
     is_primitive_nat_kind name
     -> correct_restriction name r
@@ -1080,9 +1084,9 @@ Proof.
 
   - unfold inf_entry_in_inf_library_default in *; tcsp.
 Qed.
-Hint Resolve implies_safe_inf_library_library2inf_def : slow.
+Hint Resolve implies_safe_inf_library_library2inf_def : slow.*)
 
-Lemma inf_lib_extends_library2inf_def {o} :
+(*Lemma inf_lib_extends_library2inf_def {o} :
   forall (lib : @library o) d name v r,
     is_primitive_nat_kind name
     -> correct_restriction name r
@@ -1114,7 +1118,7 @@ Proof.
       unfold library2inf_def in h; simpl in h; eauto 3 with slow.
   }
 Qed.
-Hint Resolve inf_lib_extends_library2inf_def : slow.
+Hint Resolve inf_lib_extends_library2inf_def : slow.*)
 
 Lemma csn_kind_nat_1_implies_is_primitive_nat_kind :
   forall (name : choice_sequence_name),
@@ -1144,7 +1148,7 @@ Proof.
 Qed.
 Hint Resolve csn_kind_nat_1_implies_satisfies_restriction_ff : slow.
 
-Lemma matching_entries_preserves_inf_matching_entries_library_entry2inf_def {o} :
+(*Lemma matching_entries_preserves_inf_matching_entries_library_entry2inf_def {o} :
   forall (e1 e2 : @library_entry o) e name v,
     matching_entries e1 e2
     -> inf_entry_extends (library_entry2inf_def e2 name v) e
@@ -1155,9 +1159,9 @@ Proof.
   unfold matching_entries in m.
   destruct e1, e2, e; simpl in *; repnd; subst; tcsp; boolvar; repnd; subst; tcsp.
 Qed.
-Hint Resolve matching_entries_preserves_inf_matching_entries_library_entry2inf_def : slow.
+Hint Resolve matching_entries_preserves_inf_matching_entries_library_entry2inf_def : slow.*)
 
-Lemma entry_in_inf_library_extends_library2inf_def_implies {o} :
+(*Lemma entry_in_inf_library_extends_library2inf_def_implies {o} :
   forall n entry d (lib : @library o) name v,
     entry_in_inf_library_extends entry n (library2inf_def lib d name v)
     -> inf_entry_extends d entry
@@ -1182,16 +1186,16 @@ Proof.
   right; exists e; dands; tcsp.
   right; dands; auto.
   introv m; apply matching_entries_sym in m; destruct i0; eauto 2 with slow.
-Qed.
+Qed.*)
 
-Lemma inf_entry2name_library_entry2inf_def {o} :
+(*Lemma inf_entry2name_library_entry2inf_def {o} :
   forall (e : @library_entry o) name v,
     inf_entry2name (library_entry2inf_def e name v)
     = entry2name e.
 Proof.
   introv; destruct e; simpl; auto; boolvar; simpl; tcsp.
 Qed.
-Hint Rewrite @inf_entry2name_library_entry2inf_def : slow.
+Hint Rewrite @inf_entry2name_library_entry2inf_def : slow.*)
 
 Lemma find_cs_implies_select {o} :
   forall (lib : @library o) name e,
@@ -1398,6 +1402,12 @@ Proof.
     unfold library2inf_def; allrw; simpl; boolvar; simpl; auto.
 Qed.*)
 
+Lemma is_bool_restriction_bool {o} : @is_bool_restriction o csc_bool.
+Proof.
+  introv; tcsp.
+Qed.
+Hint Resolve is_bool_restriction_bool : slow.
+
 Lemma safe_library_entry_ff {o} :
   forall name n (restr : @ChoiceSeqRestriction o),
     csn_kind name = cs_kind_nat 1
@@ -1409,7 +1419,7 @@ Proof.
 
   {
     unfold correct_restriction.
-    allrw; eauto 3 with slow.
+    allrw; simpl; eauto 3 with slow.
   }
 
   {

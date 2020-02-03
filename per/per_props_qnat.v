@@ -178,8 +178,16 @@ Proof.
     unfold is_nat_restriction in *.
     unfold choice_sequence_satisfies_restriction in *.
     destruct restr; repnd; dands; tcsp.
-    apply in_implies_select in iv; exrepnd.
-    apply sat in iv0; apply cor in iv0; exists n; auto.
+
+    { apply in_implies_select in iv; exrepnd.
+      apply sat in iv0; apply cor in iv0; exists n; auto. }
+
+    { apply in_implies_select in iv; exrepnd.
+      rewrite sat in iv0; eauto 3 with slow; inversion iv0; subst.
+      exists n; auto. }
+
+    { apply in_implies_select in iv; exrepnd.
+      apply sat in iv0; apply cor in iv0; exists n; auto. }
   }
 
   {
@@ -190,9 +198,9 @@ Proof.
     exists n.
     applydup sat in iv0.
     destruct (lt_dec n (length l)).
-    { apply cor2 in iv1; auto.
+    { apply cor0 in iv1; auto.
       unfold cterm_is_nth in iv1; exrepnd; exrepnd.
-      pose proof (cor2 n v) as q; autodimp q hyp; subst; eauto 2 with slow. }
+      pose proof (cor0 n v) as q; autodimp q hyp; subst; eauto 2 with slow. }
     { apply cor in iv1; auto; try omega. }
   }
 Qed.

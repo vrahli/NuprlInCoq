@@ -192,7 +192,8 @@ Definition RestrictionPred {o} := nat -> @CTerm o -> Prop.
 Inductive ChoiceSeqRestriction {o} :=
 (* constrains the values of the sequence to have that type *)
 (* [d] is a default value e*)
-| csc_type (d : nat -> @ChoiceSeqVal o) (typ : @RestrictionPred o) (typd : forall n, typ n (d n))
+(*| csc_type (d : nat -> @ChoiceSeqVal o) (typ : @RestrictionPred o) (typd : forall n, typ n (d n))*)
+| csc_type (typ : @RestrictionPred o)
 (* constrains the values of the sequence to follow the law given by the function *)
 | csc_coq_law (f : nat -> @CTerm o)
 (* no default *)
@@ -200,11 +201,11 @@ Inductive ChoiceSeqRestriction {o} :=
 
 (* no constraints *)
 Definition csc_no {o} : @ChoiceSeqRestriction o :=
-  csc_type (fun _ => mkc_zero) (fun _ _ => True) (fun _ => I).
+  csc_type (fun _ _ => True).
 
 (* A way to define a coq law using the type restriction *)
 Definition csc_coq_law_as_type {o} (f : nat -> @CTerm o) : @ChoiceSeqRestriction o :=
-  csc_type f (fun n v => v = f n) (fun _ => eq_refl).
+  csc_type (fun n v => v = f n).
 
 Record ChoiceSeqEntry {o} :=
   MkChoiceSeqEntry
