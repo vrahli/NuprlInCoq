@@ -12151,12 +12151,12 @@ Proof.
 
   exists (@mkc_pair
             _
-            (mkc_nat (lib_size lib))
+            (mkc_nat (S (lib_size lib)))
             (mkc_lam b (mkcv_lam _ x (mk_cv _ z1)))).
 
   apply in_ext_implies_all_in_ex_bar.
   introv ext.
-  exists (@mkc_nat o (lib_size lib)) (mkc_lam b (mkcv_lam _ x (mk_cv _ z1))).
+  exists (@mkc_nat o (S (lib_size lib))) (mkc_lam b (mkcv_lam _ x (mk_cv _ z1))).
   dands; spcast; eauto 3 with slow;[].
 
   eapply equality_monotone in eqA;[|eauto];[].
@@ -12204,7 +12204,7 @@ Proof.
                          [b]
                          (mk_cv [b] (mkc_choice_seq name))
                          (mkc_var b)
-                         (mkcv_natk2nat [b] (mk_cv [b] (mkc_nat (lib_size lib1)))))
+                         (mkcv_natk2nat [b] (mk_cv [b] (mkc_nat (S (lib_size lib1))))))
                       (mkcv_apply [b] (mk_cv [b] u) (mkc_var b))))) mem.
   {
     apply equality_in_function3 in mem; repnd.
@@ -12348,20 +12348,20 @@ Proof.
   }
 
   assert (forall m,
-             m < lib_size lib1
+             m <= lib_size lib1
              ->
              {k : nat
              , ccomputes_to_valc_ext lib (mkc_apply (mkc_choice_seq name) (mkc_nat m)) (mkc_nat k)
              # ccomputes_to_valc_ext lib (mkc_apply (mkc_choice_seq name') (mkc_nat m)) (mkc_nat k)}) as imp.
   {
-    introv h; apply eb0 in h; exrepnd.
+    introv h; pose proof (eb0 m) as eb0; autodimp eb0 hyp; try omega; exrepnd.
     exists k; dands; spcast; auto.
     eapply implies_ccomputes_to_valc_ext_left; eauto.
   }
   clear dependent b1.
 
   assert (forall m,
-             m < lib_size lib1
+             m <= lib_size lib1
              ->
              {k : nat
               , find_cs_value_at lib name  m = Some (mkc_nat k)
@@ -12379,7 +12379,7 @@ Proof.
   rename imp' into imp.
 
   assert (forall m,
-             m < lib_size lib1
+             m <= lib_size lib1
              ->
              {k : nat
               & find_cs_value_at lib name  m = Some (mkc_nat k)
@@ -12399,7 +12399,7 @@ Proof.
 
   destruct (choice_sequence_name_deq name' name) as [d|d];[subst;eauto 3 with slow|];[].
 
-  assert (lib_extends_cs_ren name name' lib lib1) as extren by (split; auto).
+  (*assert (lib_extends_cs_ren name name' lib lib1) as extren by (split; auto).*)
 
 
 
@@ -12441,37 +12441,410 @@ Print is_nat_seq_restriction.
   Admitted.
 
 
+Definition firstn_cs_entry {o} n (e : @ChoiceSeqEntry o) :=
+  match e with
+  | MkChoiceSeqEntry _ vals restr =>
+    MkChoiceSeqEntry _ (firstn n vals) restr
+  end.
+
+Definition is_nat_cs (name : choice_sequence_name) :=
+  match csn_kind name with
+  | cs_kind_nat 0 => True
+  | _ => False
+  end.
+
+Lemma lib_size_0 {o} :
+  forall name (lib : @library o),
+    is_nat_cs name
+    -> lib_size lib = 0
+    -> forall e,
+      find_cs lib name = Some e
+      -> length (cse_vals e) = 0.
+Proof.
+  induction lib; introv isn len h; simpl in *; auto; ginv.
+  destruct a; simpl in *; boolvar; subst; tcsp; ginv.
+
+  { remember (length (cse_vals e)) as xa; destruct xa; simpl in *; auto.
+    destruct name0 as [n k], k; unfold is_nat_cs in *; simpl in *; tcsp.
+    destruct n0; simpl in *; tcsp.
+    remember (lib_size lib) as ls; symmetry in Heqls; destruct ls; ginv. }
+
+  { remember (lib_size lib) as ls; symmetry in Heqls; destruct ls; simpl in *; tcsp.
+    clear IHlib.
+    pose proof (Max.le_max_r (Init.Nat.max (length (cse_vals entry)) (cs_name_restr_size name0)) (S ls)) as q.
+    rewrite len in q; omega. }
+Qed.
+
 Lemma to_library_with_equal_cs {o} :
   forall name name' (lib2 lib1 : @library o),
-    lib_extends lib2 lib1
+    is_nat_cs name
+    -> is_nat_cs name'
+    -> safe_library lib1
+    -> lib_extends lib2 lib1
     -> (forall m,
-           m < lib_size lib1
+           m <= lib_size lib1
            -> {k : nat
               $ find_cs_value_at lib2 name m = Some (mkc_nat k)
               # find_cs_value_at lib2 name' m = Some (mkc_nat k)})
     -> exists lib,
         lib_extends lib lib1
         /\ lib_extends lib2 lib
-        /\ (forall m,
-               m < lib_size lib1
-               -> exists k,
-                 find_cs_value_at lib2 name m = Some (mkc_nat k)
-                 /\ find_cs_value_at lib2 name' m = Some (mkc_nat k))
-        /\ (forall m,
-               lib_size lib1 <= m
-               -> find_cs_value_at lib2 name m = None
-                  /\ find_cs_value_at lib2 name' m = None).
+        /\ find_cs lib name = find_cs lib name'
+        /\ (forall m v, find_cs_value_at lib name m = Some v -> is_nat m v).
 Proof.
-  introv ext imp.
+  introv isna isnb safe ext imp.
 
   remember (find_cs lib2 name) as fcsa; symmetry in Heqfcsa.
-  destruct fcsa.
+  destruct fcsa;
+    try (complete (pose proof (imp 0) as imp; autodimp imp hyp; try omega; exrepnd;
+                   unfold find_cs_value_at in *; rewrite Heqfcsa in *; ginv)).
 
-  { remember (find_cs lib2 name') as fcsb; symmetry in Heqfcsb.
-    destruct fcsb.
+  remember (find_cs lib2 name') as fcsb; symmetry in Heqfcsb.
+  destruct fcsb;
+    try (complete (pose proof (imp 0) as imp; autodimp imp hyp; try omega; exrepnd;
+                   unfold find_cs_value_at in *; rewrite Heqfcsb in *; ginv)).
 
-    { exists (replace_cs_entry (replace_cs_entry lib1 name c) name' c0).
-      dands.
+
+  exists (replace_cs_entry
+            (replace_cs_entry lib1 name (firstn_cs_entry (lib_size lib1 + 1) c))
+            name' (firstn_cs_entry (lib_size lib1 + 1) c0)).
+  dands.
+
+
+  Inductive cs_entry_extends {o} : @ChoiceSeqEntry o -> @ChoiceSeqEntry o -> Prop :=
+  | cs_entry_ext :
+      forall vals vals' restr,
+        cs_entry_extends
+          (MkChoiceSeqEntry _ (vals ++ vals') restr)
+          (MkChoiceSeqEntry _ vals restr).
+
+Definition cs_entry_between {o} name (e2 e : @ChoiceSeqEntry o) (lib : @library o) :=
+  forall e1,
+    find_cs lib name = Some e1
+    -> (cs_entry_extends e2 e /\ cs_entry_extends e e1).
+
+Lemma app_right_is_nil : forall {A} (l : list A) k, l = l ++ k -> k = [].
+Proof.
+  induction l; simpl; introv h; auto.
+  inversion h; eapply IHl; auto.
+Qed.
+
+Lemma cs_entry_extends_implies_eq {o} :
+  forall (e e' : @ChoiceSeqEntry o),
+    cs_entry_extends e e'
+    -> cs_entry_extends e' e
+    -> e = e'.
+Proof.
+  introv exta extb.
+  inversion exta; subst; clear exta.
+  inversion extb as [? ? ? xx xxx]; subst; clear extb.
+  rewrite <- app_assoc in xxx; apply app_right_is_nil in xxx.
+  apply app_eq_nil in xxx; repnd; subst; simpl; autorewrite with slow; auto.
+Qed.
+
+Lemma find_cs_cs_entry_between_implies {o} :
+  forall (lib : @library o) name e e',
+    find_cs lib name = Some e
+    -> cs_entry_between name e e' lib
+    -> e = e'.
+Proof.
+  introv fcs betw.
+  applydup betw in fcs; repnd.
+  apply cs_entry_extends_implies_eq; auto.
+Qed.
+
+Lemma choice_sequence_satisfies_restriction_app_implies {o} :
+  forall (vals vals' : @ChoiceSeqVals o) restr,
+    choice_sequence_satisfies_restriction (vals ++ vals') restr
+    -> choice_sequence_satisfies_restriction vals restr.
+Proof.
+  introv sat.
+  unfold choice_sequence_satisfies_restriction in *.
+  destruct restr; simpl in *; simpl in *; introv sel.
+  { apply sat; rewrite select_app_l; auto; eauto 3 with slow. }
+  { rewrite <- sat; try rewrite length_app; try omega.
+    rewrite select_app_l; auto; eauto 3 with slow. }
+  { apply sat; rewrite select_app_l; auto; eauto 3 with slow. }
+Qed.
+Hint Resolve choice_sequence_satisfies_restriction_app_implies : slow.
+
+Lemma app_eq_app_implies :
+  forall {A} (l1 l2 l3 l4 : list A),
+    l1 ++ l2 = l3 ++ l4
+    -> if le_dec (length l1) (length l3) then
+         exists l,
+           l2 = l ++ l4
+           /\ l3 = l1 ++ l
+       else
+         exists l,
+           l1 = l3 ++ l
+           /\ l4 = l ++ l2.
+Proof.
+  induction l1; introv h; simpl in *; subst; tcsp.
+
+  - exists l3; dands; auto.
+
+  - boolvar.
+
+    + destruct l3; simpl in *; ginv; try omega.
+      apply le_S_n in l.
+      inversion h; subst; clear h.
+      match goal with
+      | [ H : _ = _ |- _ ] => rename H into h
+      end.
+      apply IHl1 in h; boolvar; try omega.
+      exrepnd; subst.
+      exists l5; dands; auto.
+
+    + assert (length l3 < S (length l1)) as q by omega; clear n.
+      destruct l3; simpl in *; ginv.
+
+      * exists (a :: l1); dands; auto.
+
+      * inversion h; subst; clear h.
+        match goal with
+        | [ H : _ = _ |- _ ] => rename H into h
+        end.
+        apply IHl1 in h; boolvar; try omega.
+        exrepnd; subst.
+        exists l; dands; auto.
+Qed.
+
+Lemma lib_extends_replace_cs_entry_app {o} :
+    forall (lib1 lib2 : @library o) name vals1 vals2 vals3 restr,
+      lib_extends lib2 lib1
+      -> find_cs lib2 name = Some (MkChoiceSeqEntry _ (vals1 ++ vals2 ++ vals3) restr)
+      -> find_cs lib1 name = Some (MkChoiceSeqEntry _ vals1 restr)
+      -> lib_extends lib2 (replace_cs_entry lib1 name (MkChoiceSeqEntry _ (vals1 ++ vals2) restr)).
+Proof.
+  introv ext.
+  revert vals1 vals2 vals3 restr.
+  lib_ext_ind ext Case; introv fcs btw; tcsp.
+
+  { Case "lib_ext_refl".
+    rewrite fcs in btw; inversion btw as [xx]; subst; clear btw.
+    symmetry in xx; apply app_right_is_nil in xx.
+    apply app_eq_nil in xx; repnd; subst; autorewrite with slow in *.
+    rewrite replace_cs_entry_if_find_cs_in; auto. }
+
+  { Case "lib_ext_trans".
+    dup btw as h.
+    eapply lib_extends_preserves_find_cs in h; eauto; exrepnd.
+    unfold choice_sequence_vals_extend in *; exrepnd; simpl in *; subst; simpl in *.
+    dup h1 as q.
+    eapply lib_extends_preserves_find_cs in q; eauto; exrepnd.
+    unfold choice_sequence_vals_extend in *; exrepnd; simpl in *; subst; simpl in *.
+    rewrite fcs in q1; inversion q1 as [xx]; clear q1.
+    rewrite <- app_assoc in xx.
+    apply app_inv_head in xx.
+    apply app_eq_app_implies in xx; boolvar; exrepnd; subst; simpl in *.
+
+    { pose proof (IHext1 (vals1 ++ vals2 ++ l0) vals4 [] restr) as IHext1.
+      autorewrite with slow in IHext1.
+      repeat rewrite <- app_assoc in IHext1.
+      repeat (autodimp IHext1 hyp).
+      pose proof (IHext2 vals1 vals2 l0 restr) as IHext2.
+      autorewrite with slow in IHext2.
+      repeat rewrite <- app_assoc in IHext2.
+      repeat (autodimp IHext2 hyp).
+      eapply lib_extends_trans;[|eauto]; auto. }
+
+    { repeat rewrite <- app_assoc in fcs.
+      pose proof (IHext1 (vals1 ++ vals) l vals3 restr) as IHext1.
+      autorewrite with slow in *.
+      repeat rewrite <- app_assoc in IHext1.
+      repeat (autodimp IHext1 hyp).
+      pose proof (IHext2 vals1 vals [] restr) as IHext2.
+      autorewrite with slow in *.
+      repeat rewrite <- app_assoc in IHext2.
+      repeat (autodimp IHext2 hyp).
+      eapply lib_extends_trans;[eauto|].
+      apply implies_lib_extends_replace_cs_entry; eauto 3 with slow.
+      eexists; dands; eauto. } }
+
+  { Case "lib_ext_new_abs".
+    rewrite fcs in btw; inversion btw as [xx]; clear btw.
+    symmetry in xx; apply app_right_is_nil in xx.
+    apply app_eq_nil in xx; repnd; subst; autorewrite with slow in *.
+    rewrite replace_cs_entry_if_find_cs_in; auto. }
+
+  { Case "lib_ext_new_cs".
+    boolvar; subst; simpl in *; tcsp.
+    { inversion fcs as [xx]; subst; clear fcs.
+      symmetry in xx.
+      repeat (apply app_eq_nil in xx; repnd; subst; autorewrite with slow in * ).
+      rewrite replace_cs_entry_if_find_cs_in; auto. }
+    rewrite fcs in btw; inversion btw as [xx]; clear btw.
+    symmetry in xx; apply app_right_is_nil in xx.
+    apply app_eq_nil in xx; repnd; subst; autorewrite with slow in *.
+    rewrite replace_cs_entry_if_find_cs_in; auto. }
+
+  { Case "lib_ext_cs".
+
+(* prove something about add_choice? *)
+Qed.
+
+Lemma lib_extends_replace_cs_entry_between {o} :
+  forall name e e' (lib2 lib1 : @library o),
+    safe_library lib1
+    -> find_cs lib2 name = Some e
+    -> cs_entry_between name e e' lib1
+    -> lib_extends lib2 lib1
+    -> lib_extends (replace_cs_entry lib1 name e') lib1
+       /\ lib_extends lib2 (replace_cs_entry lib1 name e').
+Proof.
+  introv safe fcs btw ext.
+  pose proof (lib_extends_find_some_left_implies name e lib2 lib1) as q.
+  repeat (autodimp q hyp).
+  repndors; exrepnd; subst.
+
+  { rewrite replace_cs_entry_if_find_none; auto; dands; eauto 3 with slow. }
+
+  applydup btw in q0; repnd.
+  inversion q2 as [? ? ? xa xb]; subst; clear q2.
+  inversion q3 as [? ? ? ya yb]; subst; clear q3.
+  rewrite <- app_assoc in ya.
+  apply app_inv_head in ya; subst; simpl in *.
+
+  dands.
+
+  { apply find_cs_some_implies_entry_in_library in q0.
+    apply entry_in_library_split in q0; exrepnd; subst; simpl in *.
+    repeat (rewrite replace_cs_entry_app_right; auto; simpl; boolvar; tcsp; GC).
+    apply lib_extends_middle; auto.
+    eapply lib_extends_preserves_safe in ext; eauto.
+    apply find_cs_some_implies_entry_in_library in fcs.
+    apply ext in fcs; simpl in *; repnd; dands; eauto 3 with slow.
+    rewrite app_assoc in fcs; eauto 3 with slow. }
+
+  
+
+
+SearchAbout choice_sequence_satisfies_restriction app.
+    SearchAbout safe_library lib_extends.
+    simpl.
+
+ }
+
+
+Check lib_extends_middle_add.
+
+SearchAbout lib_extends replace_cs_entry.
+SearchAbout (?x ++ _ = ?x ++ _).
+
+XXXXXXX
+  
+  introv fcs betw ext; revert dependent e; revert dependent e'.
+  lib_ext_ind ext Case; introv fcs betw; tcsp.
+
+  { Case "lib_ext_refl".
+    eapply find_cs_cs_entry_between_implies in betw; auto; subst.
+    rewrite replace_cs_entry_if_find_cs_in; auto. }
+
+  { Case "lib_ext_trans".
+    pose proof (lib_extends_find_some_left_implies name e lib1 lib2) as q.
+    repeat (autodimp q hyp).
+    repndors; exrepnd; subst.
+
+    { dup ext2 as h.
+      eapply lib_extends_find_none_left_implies in ext2; eauto.
+      rewrite replace_cs_entry_if_find_none; auto; dands; eauto 3 with slow. }
+
+    pose proof (lib_extends_find_some_left_implies name e'0 lib2 lib3) as h.
+    repeat (autodimp h hyp).
+    repndors; exrepnd; subst.
+
+    { rewrite replace_cs_entry_if_find_none; auto; dands; eauto 3 with slow. }
+
+    applydup betw in h0; repnd.
+
+Lemma cs_entry_extends_add_choices_to_cs_entry_implies {o} :
+  forall (e e' : @ChoiceSeqEntry o) vals,
+    cs_entry_extends (add_choices_to_cs_entry e vals) e'
+    -> cs_entry_extends e e' \/ cs_entry_extends e' e.
+
+SearchAbout replace_cs_entry find_cs None.
+
+SearchAbout lib_extends find_cs None.
+    pose proof (IHext1 e' e) as IHext1; repeat (autodimp IHext1 hyp); repnd.
+
+Lemma lib_extends_preserves_cs_entry_between {o} :
+  forall e e' (lib1 lib2 : @library o),
+    lib_extends lib2 lib3
+    -> cs_entry_between name e e' lib3
+    -> cs_entry_between name e e' lib2
+
+
+
+XXXXXXXXX
+    pose proof (lib_extends_find_some_left_implies name e lib1 lib2) as q.
+    repeat (autodimp q hyp).
+    repndors; exrepnd; subst.
+
+    { rewrite replace_cs_entry_if_find_none in IHext0; auto.
+      rewrite replace_cs_entry_if_find_none in IHext1; auto.
+      pose proof (lib_extends_find_none_left_implies name lib2 lib3) as h.
+      repeat (autodimp h hyp).
+      rewrite replace_cs_entry_if_find_none; auto.
+      dands; eauto 3 with slow. }
+
+    pose proof (IHext2 e') as IHext2.
+    repeat (autodimp IHext2 hyp); repnd.
+    dands.
+
+    { eapply lib_extends_trans;[|eauto].
+
+      pose proof (lib_extends_find_some_left_implies name e' lib2 lib3) as w.
+      repeat (autodimp w hyp).
+      repndors; exrepnd; subst.
+
+      { repeat (rewrite replace_cs_entry_if_find_none; auto). }
+
+      apply find_cs_some_implies_entry_in_library in w0.
+      apply entry_in_library_split in w0; exrepnd; subst; simpl in *.
+      repeat (rewrite replace_cs_entry_app_right; auto; simpl; boolvar; tcsp; GC).
+      apply lib_extends_middle_add; auto. }
+
+    eapply lib_extends_trans;[eauto|].
+
+    pose proof (lib_extends_find_some_left_implies name e' lib2 lib3) as w.
+    repeat (autodimp w hyp).
+    repndors; exrepnd; subst.
+
+    { repeat (rewrite (replace_cs_entry_if_find_none lib3); auto).
+      rewrite (replace_cs_entry_if_find_none lib3) in IHext2; auto.
+      eapply lib_extends_trans;[|eauto]; auto. }
+
+    apply implies_lib_extends_replace_cs_entry; auto.
+    autorewrite with slow; eauto 3 with slow. }
+
+  { Case "lib_ext_new_abs".
+    rewrite replace_cs_entry_if_find_cs_in; auto. }
+
+  { Case "lib_ext_new_cs".
+    boolvar; subst; tcsp; ginv; simpl in *; tcsp.
+    { rewrite replace_cs_entry_not_in; auto. }
+    rewrite replace_cs_entry_if_find_cs_in; auto. }
+
+  { Case "lib_ext_cs".
+    dup addc as w.
+    eapply replace_cs_entry_if_add_choice in w; eauto.
+    boolvar; allrw; dands; eauto 3 with slow. }
+
+  { Case "lib_ext_law".
+    dup addc as w.
+    eapply replace_cs_entry_if_add_choice in w; eauto.
+    boolvar; allrw; dands; eauto 3 with slow. }
+
+  { Case "lib_ext_res".
+    dup addc as w.
+    eapply replace_cs_entry_if_add_choice in w; eauto.
+    boolvar; allrw; dands; eauto 3 with slow. }
+Qed.
+
+
+
+XXXXXXXXXXX
 
       { pose proof (lib_extends_replace_cs_entry name c lib2 lib1) as q.
         repeat (autodimp q hyp); repnd.
@@ -12479,7 +12852,24 @@ Proof.
         pose proof (lib_extends_replace_cs_entry name' c0 lib2 (replace_cs_entry lib1 name c)) as w.
         repeat (autodimp w hyp); repnd; auto. }
 
-      {
+      { pose proof (lib_extends_replace_cs_entry name' c0 lib2 (replace_cs_entry lib1 name c)) as q.
+        repeat (autodimp q hyp); repnd; auto.
+        pose proof (lib_extends_replace_cs_entry name c lib2 lib1) as q.
+        repeat (autodimp q hyp); repnd; auto. }
+
+      { introv i.
+        pose proof (imp m) as imp; autodimp imp hyp; exrepnd; eauto. }
+
+      { introv len.
+        unfold find_cs_value_at.
+        allrw.
+        repeat rewrite find_value_of_cs_at_is_select.
+
+similar_cs_names name name'
+  compa : compatible_choice_sequence_name 0 name
+  compb : compatible_choice_sequence_name 0 name'
+SearchAbout safe_library find_cs.
+
 
 Qed.
 
