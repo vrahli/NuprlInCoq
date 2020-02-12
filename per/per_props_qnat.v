@@ -182,12 +182,13 @@ Proof.
     { apply in_implies_select in iv; exrepnd.
       apply sat in iv0; apply cor in iv0; exists n; auto. }
 
+(*
     { apply in_implies_select in iv; exrepnd.
       rewrite sat in iv0; eauto 3 with slow; inversion iv0; subst.
       exists n; auto. }
 
     { apply in_implies_select in iv; exrepnd.
-      apply sat in iv0; apply cor in iv0; exists n; auto. }
+      apply sat in iv0; apply cor in iv0; exists n; auto. }*)
   }
 
   {

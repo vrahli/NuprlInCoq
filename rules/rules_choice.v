@@ -481,7 +481,7 @@ Proof.
   repndors; repnd; subst; simpl in *; eauto;[].
 
   destruct l; simpl in *; tcsp; ginv; boolvar; subst; tcsp; GC.
-  inversion ext0 as [? ? ? ? ext'|? ? ? ? ? ext'|]; subst; clear ext0;
+  inversion ext0 as [? ? ? ? ext'(*|? ? ? ? ? ext'|*)]; subst; clear ext0;
     try (complete (unfold extend_choice_seq_vals_lawless_upto in *;
                    exrepnd; subst; rewrite length_app; try omega)).
 Qed.
@@ -521,7 +521,7 @@ Proof.
       try (complete (apply cor; auto; try omega)).
     apply sat in sel; apply cor0 in sel; auto; eauto 3 with slow. }
 
-  { rewrite sat in sel; eauto 3 with slow; inversion sel; subst; auto. }
+(*  { rewrite sat in sel; eauto 3 with slow; inversion sel; subst; auto. }*)
 Qed.
 
 Lemma cs_entry_in_library_lawless_upto_implies_is_nat {o} :
@@ -541,7 +541,7 @@ Proof.
   clear IHlib ext.
 
   destruct l; simpl in *; tcsp; ginv; boolvar; subst; tcsp; GC.
-  inversion ext0 as [? ? ? ? ext'|? ? ? ? ext'|? ? ? ? ext']; subst; clear ext0;
+  inversion ext0 as [? ? ? ? ext'(*|? ? ? ? ext'|? ? ? ? ext'*)]; subst; clear ext0;
     try (unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst);
     try (complete (eapply is_nat_if_compatible_and_correct; eauto)).
 Qed.
@@ -618,6 +618,39 @@ Proof.
   erewrite choice_sequence_vals_extends_implies_select_some; eauto; simpl; auto; eauto 3 with slow.
 Qed.
 
+Lemma lib_satisfies_default_add_cs_if_not_in {o} :
+  forall name (lib : @library o),
+    is_primitive_kind name
+    -> safe_library lib
+    -> lib_satisfies_default name (add_cs_if_not_in name lib) (choice_sequence_name2default name).
+Proof.
+  introv prim safe fcs; introv; simpl in *.
+  unfold add_cs_if_not_in in fcs.
+  remember (find_cs lib name) as fcs'; symmetry in Heqfcs'; destruct fcs'; simpl in *; tcsp.
+
+  { rewrite fcs in *; ginv.
+    apply find_cs_some_implies_entry_in_library in fcs.
+    apply safe in fcs; simpl in *.
+    destruct c as [vals restr]; simpl in *; repnd.
+    destruct restr; simpl in *.
+    destruct name as [name kind]; simpl in *.
+    unfold correct_restriction, is_primitive_kind, choice_sequence_name2default in *; simpl in *.
+    destruct kind; simpl in *; boolvar; subst; tcsp; repnd; try omega.
+    { apply fcs0; eauto 3 with slow. }
+    { apply fcs0; eauto 3 with slow. }
+    { destruct (lt_dec n (length l)) as [dd|dd].
+      { apply fcs1; auto; eauto 3 with slow. }
+      { apply fcs0; eauto 3 with slow; try omega. } } }
+
+  boolvar; subst; tcsp; GC.
+  inversion fcs; simpl in *; subst; GC.
+  unfold satisfies_restriction; simpl.
+  destruct name as [name kind]; simpl in *.
+  unfold is_primitive_kind, choice_sequence_name2restriction, choice_sequence_name2default in *; simpl in *.
+  destruct kind; simpl in *; boolvar; subst; simpl in *; tcsp; eauto 3 with slow.
+Qed.
+Hint Resolve lib_satisfies_default_add_cs_if_not_in : slow.
+
 Lemma extend_seq_to_ext {o} :
   forall (lib  : @library o)
          (norp : no_repeats_library lib)
@@ -632,8 +665,8 @@ Lemma extend_seq_to_ext {o} :
 Proof.
   introv norep safe isn.
   exists (add_cs_if_not_in name lib).
-  pose proof (exists_extend_library_lawless_upto name k (add_cs_if_not_in name lib)) as q.
-  repeat (autodimp q hyp); eauto 3 with slow;[].
+  pose proof (exists_extend_library_lawless_upto name k (add_cs_if_not_in name lib) (choice_sequence_name2default name)) as q.
+  repeat (autodimp q hyp); eauto 3 with slow.
   exrepnd.
   exists lib'; dands; eauto 3 with slow.
 Qed.
@@ -1267,7 +1300,7 @@ Proof.
     { simpl; boolvar; tcsp. }
     apply safee; rewrite select_snoc_eq; boolvar; try omega; auto. }
 
-  { apply (lib_extends_law _ name a (length vals) f); tcsp.
+(*  { apply (lib_extends_law _ name a (length vals) f); tcsp.
     { simpl; boolvar; tcsp. }
     pose proof (safee (length vals)) as safee; autorewrite with slow in *.
     autodimp safee hyp.
@@ -1275,6 +1308,6 @@ Proof.
 
   { apply (lib_extends_res _ name a (length vals) typ); tcsp.
     { simpl; boolvar; tcsp. }
-    apply safee; rewrite select_snoc_eq; boolvar; try omega; auto. }
+    apply safee; rewrite select_snoc_eq; boolvar; try omega; auto. }*)
 Qed.
 Hint Resolve implies_lib_extends_cons_left : slow.

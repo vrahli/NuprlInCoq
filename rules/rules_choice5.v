@@ -531,7 +531,7 @@ Proof.
   repndors; repnd; subst; simpl in *; eauto.
 
   { destruct l; simpl in *; tcsp; ginv; boolvar; subst; tcsp; GC.
-    inversion ext0 as [? ? ? ? ext'|? ? ? ? ? ext'|? ? ? ? ext']; clear ext0; subst; simpl in *; tcsp;
+    inversion ext0 as [? ? ? ? ext'(*|? ? ? ? ? ext'|? ? ? ? ext'*)]; clear ext0; subst; simpl in *; tcsp;
       unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst; autorewrite with slow list; try omega. }
 
   { eapply IHlib; eauto.

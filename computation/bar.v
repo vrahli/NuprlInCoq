@@ -48,8 +48,8 @@ Definition inf_choice_sequence_satisfies_restriction {o}
            (constraint : ChoiceSeqRestriction) : Prop :=
   match constraint with
   | csc_type M => forall n, on_some (vals n) (M n) False
-  | csc_coq_law f => forall n, on_some (vals n) (fun v => v = f n) False
-  | csc_res M => forall n, on_some (vals n) (M n) True
+(*  | csc_coq_law f => forall n, on_some (vals n) (fun v => v = f n) False
+  | csc_res M => forall n, on_some (vals n) (M n) True*)
   end.
 
 (*Definition ex_choice {o}
@@ -2144,7 +2144,7 @@ Proof.
   unfold inf_choice_sequence_satisfies_restriction in safe.
   unfold inf_choice_sequence_vals_extend in *.
   unfold choice_sequence_satisfies_restriction.
-  destruct restr2; simpl in *; repnd; dands; tcsp; eauto 3 with slow;[| |].
+  destruct restr2; simpl in *; repnd; dands; tcsp; eauto 3 with slow;[].
 
   - introv i.
     destruct restr1; simpl in *; repnd; tcsp.
@@ -2152,6 +2152,7 @@ Proof.
     apply ext in i; subst; tcsp.
     pose proof (safe n) as w; rewrite i in w; simpl in *; auto.
 
+(*
   - introv j.
     destruct restr1; simpl in *; repnd; tcsp.
     rewrite <- ext0.
@@ -2166,7 +2167,7 @@ Proof.
     destruct restr1; simpl in *; repnd; tcsp.
     rewrite <- ext0.
     apply ext in i; subst; tcsp.
-    pose proof (safe n) as w; rewrite i in w; simpl in *; auto.
+    pose proof (safe n) as w; rewrite i in w; simpl in *; auto.*)
 Qed.
 Hint Resolve inf_entry_extends_preserves_safe_library_entry : slow.
 
@@ -2598,11 +2599,11 @@ Definition choice_sequence_name2default {o} (name : choice_sequence_name) : nat 
 Definition choice_sequence_name2choice_seq_vals_upto {o}
            (n : nat)
            (name : choice_sequence_name)
-           (restr : ChoiceSeqRestriction) : @ChoiceSeqVals o :=
+           (restr : @ChoiceSeqRestriction o) : @ChoiceSeqVals o :=
   match restr with
   | csc_type M => fun2list n (choice_sequence_name2default name)
-  | csc_coq_law f => fun2list n f
-  | csc_res M => fun2list n (choice_sequence_name2default name)
+(*  | csc_coq_law f => fun2list n f
+  | csc_res M => fun2list n (choice_sequence_name2default name)*)
   end.
 
 Definition choice_sequence_name2choice_seq_entry_upto {o}
@@ -2962,25 +2963,7 @@ Proof.
       unfold choice_sequence_name2default; simpl.
       allrw; eauto 3 with slow. }
 
-    { introv h; simpl in *.
-      autorewrite with slow in *.
-      rewrite select_fun2list; boolvar; tcsp; try omega; GC. }
-
-    { introv h.
-      rewrite select_fun2list in h; boolvar; tcsp; ginv.
-      unfold choice_sequence_name2default; simpl.
-      allrw; eauto 3 with slow. }
-
   - destruct restr; simpl in *; tcsp; repnd.
-
-    { introv h.
-      rewrite select_fun2list in h; boolvar; tcsp; ginv.
-      unfold choice_sequence_name2default; simpl.
-      allrw; eauto 3 with slow. }
-
-    { introv h; simpl in *.
-      autorewrite with slow in *.
-      rewrite select_fun2list; boolvar; tcsp; try omega; GC. }
 
     { introv h.
       rewrite select_fun2list in h; boolvar; tcsp; ginv.
@@ -3508,13 +3491,14 @@ Proof.
 
   unfold choice_sequence_satisfies_restriction in *.
   destruct restr; dands; tcsp; eauto 3 with slow;
-    simpl in *; repnd; tcsp;[| |].
+    simpl in *; repnd; tcsp;[].
 
   - introv i.
     apply safe.
     rewrite select_app_left; auto.
     eapply select_lt; eauto.
 
+(*
   - introv h.
     pose proof (safe i) as q.
     allrw length_app.
@@ -3524,7 +3508,7 @@ Proof.
   - introv i.
     apply safe.
     rewrite select_app_left; auto.
-    eapply select_lt; eauto.
+    eapply select_lt; eauto.*)
 Qed.
 Hint Resolve entry_extends_preserves_safe_library_entry : slow.
 
@@ -4537,7 +4521,7 @@ Inductive extend_choice_seq_entry_lawless_upto {o} :
            (MkChoiceSeqEntry _ vals1 (csc_type M))
            (MkChoiceSeqEntry _ vals2 (csc_type M))
            n
-| ext_choice_seq_entry_lawless_upto_law :
+(*| ext_choice_seq_entry_lawless_upto_law :
     forall vals1 vals2 f n,
       extend_choice_seq_vals_lawless_upto vals1 vals2 (fun k v => f k = v) n
       -> extend_choice_seq_entry_lawless_upto
@@ -4550,7 +4534,7 @@ Inductive extend_choice_seq_entry_lawless_upto {o} :
       -> extend_choice_seq_entry_lawless_upto
            (MkChoiceSeqEntry _ vals1 (csc_res M))
            (MkChoiceSeqEntry _ vals2 (csc_res M))
-           n.
+           n*).
 Hint Constructors extend_choice_seq_entry_lawless_upto.
 
 Definition extend_library_entry_lawless_upto {o}
@@ -4669,12 +4653,12 @@ Proof.
     rewrite select_snoc_eq; boolvar; eauto 3 with slow; subst; try omega.
     { rewrite implies_select_none in q; auto; ginv. }
     { apply select_lt in q; try omega. } }
-  { pose proof (h i) as h; allrw length_snoc; autodimp h hyp.
+(*  { pose proof (h i) as h; allrw length_snoc; autodimp h hyp.
     rewrite select_snoc_eq in h; boolvar; tcsp. }
   { apply h.
     rewrite select_snoc_eq; boolvar; eauto 3 with slow; subst; try omega.
     { rewrite implies_select_none in q; auto; ginv. }
-    { apply select_lt in q; try omega. } }
+    { apply select_lt in q; try omega. } }*)
 Qed.
 Hint Resolve choice_sequence_satisfies_restriction_snoc_implies : slow.
 
@@ -4699,6 +4683,7 @@ Proof.
     apply safe.
     rewrite select_snoc_eq; boolvar; tcsp; try omega. }
 
+(*
   { apply (lib_extends_law _ name a (length vals) f); simpl; boolvar; tcsp.
     pose proof (safe (length vals)) as safe1; allrw length_snoc.
     autodimp safe1 hyp.
@@ -4715,7 +4700,7 @@ Proof.
                   typ
                   (lib_cs name (MkChoiceSeqEntry _ (snoc vals a) (csc_res typ)) :: lib)
                ) as w.
-    repeat (autodimp w hyp); eauto; try unfold add_choice; simpl; boolvar; tcsp. }
+    repeat (autodimp w hyp); eauto; try unfold add_choice; simpl; boolvar; tcsp. }*)
 Qed.
 
 Lemma find_cs_non_implies_not_in_lib {o} :
@@ -4997,7 +4982,7 @@ Lemma extend_choice_seq_entry_lawless_upto_implies_choice_sequence_entry_extend 
     -> entry_extends (lib_cs name entry1) (lib_cs name entry2).
 Proof.
   destruct entry1 as [vals1 restr1], entry2 as [vals2 restr2]; introv h; simpl in *.
-  inversion h as [? ? ? ? ext'| |]; subst; clear h; eauto 3 with slow;
+  inversion h as [? ? ? ? ext']; subst; clear h; eauto 3 with slow;
     unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst; eauto.
 Qed.
 Hint Resolve extend_choice_seq_entry_lawless_upto_implies_choice_sequence_entry_extend : slow.
@@ -5165,7 +5150,7 @@ Proof.
     boolvar; repeat subst; tcsp; ginv; tcsp.
 
   destruct entry as [vals1 restr1], entry0 as [vals2 restr2]; simpl in *.
-  inversion ext as [? ? ? ? ext'|? ? ? ? ext'|? ? ? ? ext']; clear ext; subst; repnd; dands; eauto 3 with slow.
+  inversion ext as [? ? ? ? ext']; clear ext; subst; repnd; dands; eauto 3 with slow.
 
   { unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst.
     introv i.
@@ -5178,6 +5163,7 @@ Proof.
       apply ext'0 in i.
       rewrite le_plus_minus_r in i; auto; try omega. } }
 
+(*
   { unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst.
     introv len.
     rewrite length_app in len.
@@ -5203,7 +5189,7 @@ Proof.
 
     { rewrite select_app_r in i; try omega.
       apply ext'0 in i.
-      rewrite le_plus_minus_r in i; auto; try omega. } }
+      rewrite le_plus_minus_r in i; auto; try omega. } }*)
 Qed.
 Hint Resolve extend_library_entry_lawless_upto_preserves_safe_library : slow.
 
@@ -5391,7 +5377,7 @@ Proof.
   apply extend_library_lawless_upto_no_repeats_implies_split in ext; auto;[].
   repndors; exrepnd; subst; auto;[].
 
-  inversion ext1 as [? ? ? ? ext'|? ? ? ? ext'|? ? ? ? ext']; clear ext1; subst; eauto.
+  inversion ext1 as [? ? ? ? ext'(*|? ? ? ? ext'|? ? ? ? ext'*)]; clear ext1; subst; eauto.
 
   { unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst.
     clear ext'2.
@@ -5416,6 +5402,7 @@ Proof.
       try (complete (apply Nat.lt_irrefl in l; tcsp));
       try (complete (destruct n1; auto)). }
 
+(*
   { unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst.
     clear ext'2.
 
@@ -5460,7 +5447,7 @@ Proof.
     apply ext'0.
     rewrite select_snoc_eq; boolvar; tcsp; simpl in *; try omega;
       try (complete (apply Nat.lt_irrefl in l; tcsp));
-      try (complete (destruct n1; auto)). }
+      try (complete (destruct n1; auto)). }*)
 Qed.
 Hint Resolve extend_library_lawless_upto_implies_lib_extends : slow.
 
@@ -6131,8 +6118,8 @@ Hint Resolve extend_library_entry_lawless_upto_preserves_diff_entry_names_false 
 Definition memNat_restriction {o} (restr : @ChoiceSeqRestriction o) : Prop :=
   match restr with
   | csc_type M => forall n x, M n x <-> is_nat n x
-  | csc_coq_law f => True
-  | csc_res M => False
+(*  | csc_coq_law f => True
+  | csc_res M => False*)
   end.
 
 Definition has_memNat_restriction {o} (e : @library_entry o) name : Prop :=
@@ -6340,8 +6327,8 @@ Lemma same_restrictions_preserves_inf_choice_sequence_satisfies_restriction {o} 
 Proof.
   introv same sat.
   destruct restr1, restr2; simpl in *; repnd; tcsp; introv;
-    eapply on_some_prop_eta; eauto;[].
-  introv; simpl; rewrite same; tcsp.
+    eapply on_some_prop_eta; eauto.
+(*  introv; simpl; rewrite same; tcsp.*)
 Qed.
 Hint Resolve same_restrictions_preserves_inf_choice_sequence_satisfies_restriction : slow.
 
@@ -6532,37 +6519,9 @@ Proof.
       rewrite select_fun2list in h; boolvar; ginv.
       apply cor; eauto 3 with slow. }
 
-    { rewrite (fun2list_split n m); auto.
-      exists (fun2list (n - m) (fun k => f (k + m))); autorewrite with slow.
-      dands; auto; try omega.
-      introv h.
-      rewrite select_fun2list in h; boolvar; ginv.
-      rewrite Nat.add_comm; auto. }
-
-    { rewrite (fun2list_split n m); auto.
-      exists (fun2list (n - m) (fun _ => @mkc_zero o)); autorewrite with slow.
-      dands; auto; try omega.
-      introv h.
-      rewrite select_fun2list in h; boolvar; ginv.
-      apply cor; eauto 3 with slow. }
-
   - unfold is_bool_restriction in *.
     destruct restr; auto; tcsp; repnd; GC; simpl in *; autorewrite with slow;
       constructor; unfold choice_sequence_name2choice_seq_vals_upto; simpl.
-
-    { rewrite (fun2list_split n m); auto.
-      exists (fun2list (n - m) (fun _ => @tt o)); autorewrite with slow.
-      dands; auto; try omega.
-      introv h.
-      rewrite select_fun2list in h; boolvar; ginv.
-      apply cor; eauto 3 with slow. }
-
-    { rewrite (fun2list_split n m); auto.
-      exists (fun2list (n - m) (fun k => f (k + m))); autorewrite with slow.
-      dands; auto; try omega.
-      introv h.
-      rewrite select_fun2list in h; boolvar; ginv.
-      rewrite Nat.add_comm; auto. }
 
     { rewrite (fun2list_split n m); auto.
       exists (fun2list (n - m) (fun _ => @tt o)); autorewrite with slow.
@@ -6623,37 +6582,9 @@ Proof.
       rewrite select_fun2list in h; boolvar; ginv; eauto 3 with slow.
       apply cor; eauto 3 with slow. }
 
-    { rewrite (fun2list_split (Init.Nat.max n m) m); auto; eauto 3 with slow.
-      exists (fun2list ((Peano.max n m) - m) (fun k => f (k + m))); autorewrite with slow.
-      dands; auto; try rewrite <- Nat.sub_max_distr_r; autorewrite with slow nat; auto.
-      introv h.
-      rewrite select_fun2list in h; boolvar; ginv; eauto 3 with slow.
-      rewrite Nat.add_comm; auto. }
-
-    { rewrite (fun2list_split (Init.Nat.max n m) m); auto; eauto 3 with slow.
-      exists (fun2list ((Peano.max n m) - m) (fun _ => @mkc_zero o)); autorewrite with slow.
-      dands; auto; try rewrite <- Nat.sub_max_distr_r; autorewrite with slow nat; auto.
-      introv h.
-      rewrite select_fun2list in h; boolvar; ginv; eauto 3 with slow.
-      apply cor; eauto 3 with slow. }
-
   - unfold is_bool_restriction in *.
     destruct restr; auto; tcsp; repnd; GC; simpl in *; autorewrite with slow;
       constructor; unfold choice_sequence_name2choice_seq_vals_upto; simpl.
-
-    { rewrite (fun2list_split (Init.Nat.max n m) m); auto; eauto 3 with slow.
-      exists (fun2list ((Peano.max n m) - m) (fun _ => @tt o)); autorewrite with slow.
-      dands; auto; try rewrite <- Nat.sub_max_distr_r; autorewrite with slow nat; auto.
-      introv h.
-      rewrite select_fun2list in h; boolvar; ginv; eauto 3 with slow.
-      apply cor; eauto 3 with slow. }
-
-    { rewrite (fun2list_split (Init.Nat.max n m) m); auto; eauto 3 with slow.
-      exists (fun2list ((Peano.max n m) - m) (fun k => f (k + m))); autorewrite with slow.
-      dands; auto; try rewrite <- Nat.sub_max_distr_r; autorewrite with slow nat; auto.
-      introv h.
-      rewrite select_fun2list in h; boolvar; ginv; eauto 3 with slow.
-      rewrite Nat.add_comm; auto. }
 
     { rewrite (fun2list_split (Init.Nat.max n m) m); auto; eauto 3 with slow.
       exists (fun2list ((Peano.max n m) - m) (fun _ => @tt o)); autorewrite with slow.

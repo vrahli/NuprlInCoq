@@ -508,7 +508,7 @@ Proof.
   destruct res, name as [name kd], kd; simpl in *; tcsp; boolvar; subst; repnd; tcsp;
     try (complete (unfold compatible_cs_kind in *; boolvar; try omega));
     try (complete (apply cor; auto)).
-  rewrite sat in sel; eauto 3 with slow; inversion sel; subst; auto.
+(*  rewrite sat in sel; eauto 3 with slow; inversion sel; subst; auto.*)
 Qed.
 
 Lemma cs_entry_in_library_bool_seq_upto_implies_is_bool {o} :
@@ -528,7 +528,7 @@ Proof.
   clear IHlib ext.
 
   destruct l; simpl in *; tcsp; ginv; boolvar; subst; tcsp; GC.
-  inversion ext0 as [? ? ? ? ext'|? ? ? ? ? ext'|? ? ? ? ext']; subst; clear ext0;
+  inversion ext0 as [? ? ? ? ext'(*|? ? ? ? ? ext'|? ? ? ? ext'*)]; subst; clear ext0;
     try (complete (eapply is_bool_if_compatible_and_correct; eauto)).
 Qed.
 Hint Resolve cs_entry_in_library_bool_seq_upto_implies_is_bool : slow.

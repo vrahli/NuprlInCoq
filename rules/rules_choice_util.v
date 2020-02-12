@@ -1321,6 +1321,7 @@ Proof.
     apply safe.
     rewrite select_snoc_eq; boolvar; tcsp; try omega. }
 
+(*
   { apply (lib_extends_law _ name a (length (vals ++ vals')) f); auto.
     { rewrite add_choice_if_not_in_left; tcsp.
       rewrite snoc_append_l; auto. }
@@ -1333,7 +1334,7 @@ Proof.
     { rewrite add_choice_if_not_in_left; tcsp.
       rewrite snoc_append_l; auto. }
     apply safe.
-    rewrite select_snoc_eq; boolvar; tcsp; try omega. }
+    rewrite select_snoc_eq; boolvar; tcsp; try omega. }*)
 Qed.
 
 Lemma entry_cs_zeros_implies_exists_extension_with_one {o} :

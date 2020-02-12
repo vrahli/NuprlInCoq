@@ -80,10 +80,10 @@ Definition choice_sequence_satisfies_restriction {o}
   match constraint with
   | csc_type M =>
     forall n v, select n vals = Some v -> M n v (* TODO: Is that going to be enough? *)
-  | csc_coq_law f =>
+(*  | csc_coq_law f =>
     forall (i : nat), i < length vals -> select i vals = Some (f i)
   | csc_res M =>
-    forall n v, select n vals = Some v -> M n v
+    forall n v, select n vals = Some v -> M n v*)
   end.
 
 
@@ -143,9 +143,9 @@ Hint Resolve extension_satisfies_restriction_refl : slow.*)
 Definition same_restrictions {o} (restr1 restr2 : @ChoiceSeqRestriction o) :=
   match restr1, restr2 with
   | csc_type M1, csc_type M2 => forall n v, M1 n v <-> M2 n v
-  | csc_coq_law f1, csc_coq_law f2 => forall n, f1 n = f2 n
+(*  | csc_coq_law f1, csc_coq_law f2 => forall n, f1 n = f2 n
   | csc_res M1, csc_res M2 => forall n v, M1 n v <-> M2 n v
-  | _, _ => False
+  | _, _ => False*)
   end.
 
 (*(* [entry1] extends [entry2] *)
@@ -198,15 +198,15 @@ Definition is0kind (name : choice_sequence_name) : bool :=
 Definition is_nat_restriction {o} (restr : @ChoiceSeqRestriction o) :=
   match restr with
   | csc_type M => forall n v, M n v <-> is_nat n v
-  | csc_coq_law f => forall n, is_nat n (f n)
-  | csc_res M => forall n v, M n v <-> is_nat n v
+(*  | csc_coq_law f => False (*forall n, is_nat n (f n)*)
+  | csc_res M => False (*forall n v, M n v <-> is_nat n v*)*)
   end.
 
 Definition is_bool_restriction {o} (restr : @ChoiceSeqRestriction o) :=
   match restr with
   | csc_type M => forall n v, M n v <-> is_bool n v
-  | csc_coq_law f => forall n, is_bool n (f n)
-  | csc_res M => forall n v, M n v <-> is_bool n v
+(*  | csc_coq_law f => False (*forall n, is_bool n (f n)*)
+  | csc_res M => False (*forall n v, M n v <-> is_bool n v*)*)
   end.
 
 Definition cterm_is_nth {o} (t : @CTerm o) n l :=
@@ -219,8 +219,8 @@ Definition is_nat_seq_restriction {o} (l : list nat) (restr : @ChoiceSeqRestrict
     (forall n v, n < length l -> (M n v <-> cterm_is_nth v n l))
     (* above [length l], the choice sequence can return any integer *)
     /\ (forall n v, length l <= n -> (M n v <-> is_nat n v))
-  | csc_coq_law _ => False
-  | csc_res _ => False
+(*  | csc_coq_law _ => False
+  | csc_res _ => False*)
   end.
 
 Definition correct_restriction {o} (name : choice_sequence_name) (restr : @ChoiceSeqRestriction o) :=
@@ -318,7 +318,7 @@ Inductive lib_extends {o} : @library o -> @library o -> Prop :=
       add_choice name v lib = Some (n, csc_type M, lib')
       -> M n v
       -> lib_extends lib' lib
-| lib_extends_law :
+(*| lib_extends_law :
     forall lib name v n f lib',
       add_choice name v lib = Some (n, csc_coq_law f, lib')
       -> f n = v
@@ -327,7 +327,7 @@ Inductive lib_extends {o} : @library o -> @library o -> Prop :=
     forall lib name v n P lib',
       add_choice name v lib = Some (n, csc_res P, lib')
       -> P n v
-      -> lib_extends lib' lib.
+      -> lib_extends lib' lib*).
 Hint Constructors lib_extends.
 
 Arguments lib_extends_trans [o] [lib1] [lib2] [lib3] _.
@@ -337,15 +337,15 @@ Tactic Notation "lib_ext_ind" ident(ext) ident(c) ident(cor) ident(ni) ident(add
                     |? ? ? ? ? ni
                     |? ? ? cor ni
                     |? ? ? ? ? ? addc cond
-                    |? ? ? ? ? ? addc cond
-                    |? ? ? ? ? ? addc cond];
+                    (*|? ? ? ? ? ? addc cond
+                    |? ? ? ? ? ? addc cond*)];
   [ Case_aux c "lib_ext_refl"
   | Case_aux c "lib_ext_trans"
   | Case_aux c "lib_ext_new_abs"
   | Case_aux c "lib_ext_new_cs"
   | Case_aux c "lib_ext_cs"
-  | Case_aux c "lib_ext_law"
-  | Case_aux c "lib_ext_res"
+(*  | Case_aux c "lib_ext_law"
+  | Case_aux c "lib_ext_res"*)
   ];
   simpl; eauto 3 with slow.
 
@@ -520,7 +520,7 @@ Proof.
 Qed.
 Hint Resolve add_choice_csc_type_preserves_safe : slow.
 
-Lemma add_choice_csc_coq_law_preserves_safe {o} :
+(*Lemma add_choice_csc_coq_law_preserves_safe {o} :
   forall name v (lib : @library o) n f lib',
     add_choice name v lib = Some (n, csc_coq_law f, lib')
     -> f n = v
@@ -550,7 +550,7 @@ Proof.
   introv h; autorewrite with slow in *.
   rewrite select_snoc_eq in h; boolvar; tcsp; subst; try omega; ginv; auto.
 Qed.
-Hint Resolve add_choice_csc_res_preserves_safe : slow.
+Hint Resolve add_choice_csc_res_preserves_safe : slow.*)
 
 Lemma choice_sequence_satisfies_restriction_nil {o} :
   forall (restr : @ChoiceSeqRestriction o), choice_sequence_satisfies_restriction [] restr.
