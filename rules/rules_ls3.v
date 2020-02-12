@@ -14471,31 +14471,6 @@ with get_ops_b {p} (bt : @BTerm p) : op_kinds :=
 Definition contains_upto {o} (name : choice_sequence_name) (t : @CTerm o) :=
   subset (get_ops (get_cterm t)) [opk_cs name].
 
-
-
-    Lemma implies_close_keep_only {o} :
-      forall name lib (u : cts(o)) (t1 t2 : @CTerm o) e,
-        contains_upto name t1
-        -> contains_upto name t2
-        -> (forall lib t1 t2 e,
-               contains_upto name t1
-               -> contains_upto name t2
-               -> u lib t1 t2 e
-               -> u (keep_only name lib) t1 t2 e)
-        -> close u lib t1 t2 e
-        -> close u (keep_only name lib) t1 t2 e.
-    Proof.
-      introv conta contb imp cl.
-      close_cases (induction cl using @close_ind') Case; introv; subst.
-
-      { Case "CL_init".
-        apply CL_init; eauto.
-      }
-
-      { Case "CL_bar".
-        clear per.
-        apply CL_bar.
-
 Definition replace_from {o} name (lib2 lib1 : @library o) :=
   match find_cs lib2 name with
   | Some e => replace_cs_entry lib1 name e
@@ -14539,16 +14514,189 @@ Proof.
   apply find_cs_implies_lib_extends_replace_cs_entry_app_left; auto.
 Qed.
 
-        Definition keep_only_lib_per {o} {lib} (safe : safe_library lib) name (eqa : lib-per(lib,o)) : lib-per(keep_only name lib,o).
-        Proof.
-          exists (fun lib' (x : lib_extends lib' (keep_only name lib)) =>
-                    eqa (replace_from name lib' lib) (implies_replace_from_names_extends safe x)).
+Definition keep_only_lib_per {o} {lib} (safe : safe_library lib) name (eqa : lib-per(lib,o)) : lib-per(keep_only name lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' (keep_only name lib)) =>
+            eqa (replace_from name lib' lib) (implies_replace_from_names_extends safe x)).
+  introv; apply lib_per_cond.
+Defined.
 
 
-        Defined.
 
-      }
-    Qed.
+Definition has_name {o} name (lib : @library o) :=
+  exists x, find_cs lib name = Some x.
+
+Lemma find_cs_implies_lib_extends_replace_cs_entry_ext_left {o} :
+  forall name (e e' : @ChoiceSeqEntry o) lib,
+    safe_choice_sequence_entry name e'
+    -> find_cs lib name = Some e
+    -> cs_entry_extends e' e
+    -> lib_extends (replace_cs_entry lib name e') lib.
+Proof.
+  introv safe fcs ext.
+  inversion ext; subst; clear ext; simpl in *; repnd.
+  apply find_cs_implies_lib_extends_replace_cs_entry_app_left; auto.
+Qed.
+
+Lemma safe_library_find_cs_implies {o} :
+  forall name (lib : @library o) e,
+    safe_library lib
+    -> find_cs lib name = Some e
+    -> safe_choice_sequence_entry name e.
+Proof.
+  introv safe fcs.
+  apply find_cs_some_implies_entry_in_library in fcs.
+  apply safe in fcs; simpl in *; auto.
+Qed.
+Hint Resolve safe_library_find_cs_implies : slow.
+
+Lemma lib_extends_replace_from_left {o} :
+  forall {name} {lib'' lib' lib : @library o},
+    has_name name lib
+    -> safe_library lib''
+    -> lib_extends lib'' (replace_from name lib' lib)
+    -> lib_extends (replace_from name lib'' lib') lib'.
+Proof.
+  introv hasn safe ext.
+  unfold replace_from in *.
+  remember (find_cs lib' name) as fcs; symmetry in Heqfcs; destruct fcs;
+    remember (find_cs lib'' name) as fcs'; symmetry in Heqfcs'; destruct fcs'; eauto;
+      try (complete (rewrite replace_cs_entry_if_find_none; eauto)).
+
+  eapply find_cs_implies_lib_extends_replace_cs_entry_ext_left; eauto; eauto 3 with slow.
+  apply implies_lib_extends_ext in ext.
+  assert (entry_in_library (lib_cs name c) (replace_cs_entry lib name c)) as i.
+  { apply find_cs_some_implies_entry_in_library.
+    rewrite find_cs_replace_cs_entry; boolvar; tcsp; GC.
+    unfold has_name in *; exrepnd; allrw; auto. }
+  apply ext in i.
+  apply entry_in_library_extends_implies_entry_in_library in i; exrepnd.
+  inversion i0; subst; clear i0; apply entry_in_library_implies_find_cs_some in i1;
+    rewrite i1 in *; ginv; eauto 3 with slow.
+Qed.
+
+Lemma implies_close_keep_only {o} :
+  forall name lib (u : cts(o)) (t1 t2 : @CTerm o) e,
+    contains_upto name t1
+    -> contains_upto name t2
+    -> strong_safe_library lib
+    -> has_name name lib
+    -> (forall lib t1 t2 e,
+           contains_upto name t1
+           -> contains_upto name t2
+           -> strong_safe_library lib
+           -> has_name name lib
+           -> u lib t1 t2 e
+           -> u (keep_only name lib) t1 t2 e)
+    -> close u lib t1 t2 e
+    -> close u (keep_only name lib) t1 t2 e.
+Proof.
+  introv conta contb safe hasn imp cl.
+  close_cases (induction cl using @close_ind') Case; introv; subst.
+
+  { Case "CL_init".
+    apply CL_init; eauto.
+  }
+
+  { Case "CL_bar".
+    clear per.
+    apply CL_bar.
+    assert (safe_library lib) as safe' by eauto 3 with slow.
+    exists (keep_only_lib_per safe' name eqa); simpl.
+
+    dands.
+
+    {
+
+
+Lemma implies_safe_library_replace_from {o} :
+  forall name (lib' lib : @library o),
+    safe_library lib'
+    -> safe_library lib
+    -> safe_library (replace_from name lib' lib).
+Proof.
+  introv safea safeb.
+  unfold replace_from.
+  remember (find_cs lib' name) as fcs; symmetry in Heqfcs; destruct fcs; eauto 3 with slow.
+Qed.
+Hint Resolve implies_safe_library_replace_from : slow.
+
+Lemma lib_extends_preserves_has_name {o} :
+  forall name (lib' lib : @library o),
+    lib_extends lib' lib
+    -> has_name name lib
+    -> has_name name lib'.
+Proof.
+  introv ext hn; unfold has_name in *; exrepnd.
+  eapply lib_extends_preserves_find_cs in hn0; eauto; exrepnd; eauto.
+Qed.
+Hint Resolve lib_extends_preserves_has_name : slow.
+
+Lemma has_name_keep_only {o} :
+  forall name (lib : @library o),
+    has_name name lib
+    -> has_name name (keep_only name lib).
+Proof.
+  introv hn; unfold has_name in *; exrepnd.
+  rewrite keep_only_equal; allrw; simpl; boolvar; tcsp; eauto.
+Qed.
+Hint Resolve has_name_keep_only : slow.
+
+Lemma in_open_bar_ext_keep_only_pres {o} :
+  forall name (lib : @library o)
+         (F : forall lib' (x : lib_extends lib' lib), Prop)
+         (G : forall lib' (x : lib_extends lib' (keep_only name lib)), Prop)
+         (safe : safe_library lib)
+         (hasn : has_name name lib),
+    in_ext_ext lib (fun lib' (x : lib_extends lib' lib) =>
+                      forall (y : lib_extends (keep_only name lib') (keep_only name lib)),
+                        F lib' x -> G (keep_only name lib') y)
+    -> in_open_bar_ext lib F
+    -> in_open_bar_ext (keep_only name lib) G.
+Proof.
+  introv safe hasn cond h.
+  introv ext.
+  pose proof (h _ (implies_replace_from_names_extends safe ext)) as h; simpl in *; exrepnd.
+
+  assert (safe_library lib'') as safe'.
+  { eapply lib_extends_preserves_safe; eauto.
+    apply implies_safe_library_replace_from; eauto 3 with slow. }
+
+  exists (replace_from name lib'' lib').
+  exists (lib_extends_replace_from_left hasn safe' y).
+
+  introv xta; introv.
+  assert (safe_library lib'0) as safe'' by eauto 3 with slow.
+  assert (has_name name lib') as hasn' by eauto 3 with slow.
+
+  assert (lib_extends (replace_from name lib'0 lib'') lib) as xtb.
+  {
+
+(* follows from [z] among other things *)
+}
+
+  pose proof (h1 _ (lib_extends_replace_from_left hasn' safe'' xta) xtb) as h1; simpl in h1.
+
+XXXXXXXX
+
+  pose proof (h _ (lib_extends_swap_right_to_left sane ext)) as h; simpl in h; exrepnd.
+  exists (swap_cs_lib sw lib'') (lib_extends_swap_right_to_left sane y).
+
+  introv xta; introv.
+  pose proof (cond _ (lib_extends_swap_right_to_left sane z)) as cond; simpl in cond.
+  rewrite swap_cs_lib_idem in cond.
+  apply cond.
+  apply h1.
+  apply lib_extends_swap_right_to_left; auto.
+Qed.
+
+
+SearchAbout in_open_bar_ext swap_cs_lib.
+
+
+}
+  }
+Qed.
 
 
   (*
