@@ -15255,6 +15255,15 @@ Proof.
   { eapply lib_extends_find_none_left_implies in ext; eauto; rewrite ext in *; ginv. }
 Qed.
 
+Lemma replace_from_same {o} :
+  forall name (lib : @library o), replace_from name lib lib = lib.
+Proof.
+  introv; unfold replace_from.
+  remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; auto.
+  rewrite replace_cs_entry_if_find_cs_in; auto.
+Qed.
+Hint Rewrite @replace_from_same : slow.
+
 
 Definition replace_from_lib_per3
            {o} {lib} {name} {lib'}
@@ -15279,6 +15288,14 @@ Proof.
   repeat introv.
   split; intro h; exrepnd; exists lib1 ext1 xta ext2; eapply lib_per_cond; eauto.
 Defined.
+
+Lemma ccomputes_to_valc_replace_from_if_contains_upto {o} :
+  forall name (t v : @CTerm o) lib lib',
+    contains_upto name t
+    -> t ===>(lib) v
+    -> t ===>(replace_from name lib lib') v.
+Proof.
+Admitted.
 
 Lemma implies_close_keep_only {o} :
   forall name lib (u : cts(o)) (t1 t2 : @CTerm o) e,
@@ -15436,7 +15453,65 @@ Proof.
       eapply close_uniquely_valued in w; auto.
       apply w; try exact hb1; auto. }
 
+    introv xta.
+    pose proof (reca0 _ xta) as recb; simpl in recb.
 
+    assert (lib_extends (replace_from name (Flib lib'0 xta) lib') (replace_from name lib lib')) as xtb.
+    { apply lib_extends_replace_from_trans2; eauto 3 with slow. }
+    pose proof (h _ xtb) as h; exrepnd; simpl in *.
+
+    assert (lib_extends (replace_from name lib'' (Flib lib'0 xta)) lib'0) as xtc.
+    { eapply lib_extends_replace_from_trans1; try exact y; eauto 4 with slow. }
+
+    exists (replace_from name lib'' (Flib lib'0 xta)) xtc.
+    introv xtd; introv.
+
+    assert (lib_extends (replace_from name lib'1 lib'') lib'') as xte.
+    { eapply lib_extends_replace_from_left; try exact xtd; eauto 3 with slow. }
+    assert (lib_extends (replace_from name lib'1 lib'') (replace_from name lib lib')) as xtf.
+    { eapply lib_extends_replace_from_trans1; try exact xtd; eauto 3 with slow. }
+
+    pose proof (h1 (replace_from name lib'1 lib'') xte xtf) as h1; simpl in h1; exrepnd.
+    remember (lib_extends_replace_from_trans1
+            (lib_extends_preserves_has_name name lib1 (replace_from name lib lib') ext1 (has_name_replace_form name lib lib' hn))
+            (lib_extends_preserves_safe (replace_from name lib'1 lib'') (replace_from name lib lib') xtf
+               (implies_safe_library_replace_from name lib lib' safe' sf))
+            (lib_extends_trans (lib_extends_Flib lib (replace_from name lib1 lib) Flib xta0) xta0) ext2)
+      as xtg; clear Heqxtg.
+    revert dependent xtg.
+    rewrite replace_from_replace_from2; eauto 3 with slow; introv h1.
+
+    assert (lib_extends lib'1 (Flib lib'0 xta)) as xth.
+    { eapply lib_extends_trans;[exact xtd|].
+      eapply lib_extends_replace_from_left; try exact y; eauto 4 with slow. }
+
+    pose proof (recb lib'1 xth z) as recb; simpl in recb.
+    repeat (autodimp recb hyp); eauto 3 with slow.
+    pose proof (recb lib'1) as recb; repeat (autodimp recb hyp); eauto 3 with slow.
+    autorewrite with slow in recb.
+
+    assert (lib_extends (replace_from name lib'1 (Flib (replace_from name lib1 lib) xta0)) (Flib (replace_from name lib1 lib) xta0)) as xti.
+    { eapply (lib_extends_replace_from_trans2 name _ _ (Flib (replace_from name lib1 lib) xta0)) in ext2; eauto 4 with slow.
+      { rewrite replace_from_replace_from2 in ext2; eauto 3 with slow.
+        rewrite replace_from_replace_from in ext2; eauto 3 with slow. }
+      apply implies_safe_library_replace_from; eauto 3 with slow. }
+
+    pose proof (reca0 _ xta0 (replace_from name lib'1 (Flib (replace_from name lib1 lib) xta0)) xti xtg) as recc; simpl in recc.
+    repeat (autodimp recc hyp); eauto 3 with slow.
+
+    pose proof (recc lib'1) as recc; repeat (autodimp recc hyp); eauto 3 with slow.
+    rewrite replace_from_replace_from in recc; eauto 3 with slow.
+
+    dup recc as recd.
+    eapply close_uniquely_valued in recc; auto.
+    autodimp recc hyp; try exact recb.
+    apply recc; auto. }
+
+  { Case "CL_int".
+    apply CL_int.
+    unfold per_int in *; repnd.
+    dands; eauto 3 with slow;
+      try (apply ccomputes_to_valc_replace_from_if_contains_upto; auto).
 
 Qed.
 
