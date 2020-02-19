@@ -15227,6 +15227,34 @@ Proof.
   eapply lib_extends_replace_from_left; eauto.
 Qed.
 
+Lemma lib_extends_replace_from_trans2 {o} :
+  forall name (lib1 lib2 lib : @library o),
+    safe_library lib2
+    -> has_name name lib2
+    -> lib_extends lib1 lib2
+    -> lib_extends (replace_from name lib1 lib) (replace_from name lib2 lib).
+Proof.
+  introv safe hn ext.
+  unfold replace_from.
+  remember (find_cs lib1 name) as fcsa; symmetry in Heqfcsa.
+  remember (find_cs lib2 name) as fcsb; symmetry in Heqfcsb.
+  destruct fcsa, fcsb; eauto 3 with slow.
+
+  { dup ext as xt; eapply find_cs_lib_extends_implies_cs_entry_extends in ext; eauto.
+    remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs;
+      [|repeat (rewrite replace_cs_entry_if_find_none; auto)].
+    inversion ext; subst; simpl in *.
+    eapply lib_extends_trans;[|eapply find_cs_implies_lib_extends_replace_cs_entry_app_left];
+      try (rewrite replace_cs_entry_twice; apply lib_extends_refl).
+    { eapply safe_library_find_cs_implies in Heqfcsb; auto; simpl in *; tcsp. }
+    { eapply safe_library_find_cs_implies in Heqfcsa; eauto 3 with slow; simpl in *; tcsp. }
+    { rewrite find_cs_replace_cs_entry; boolvar; tcsp; GC; allrw; tcsp. } }
+
+  { unfold has_name in *; exrepnd; rewrite hn0 in *; ginv. }
+
+  { eapply lib_extends_find_none_left_implies in ext; eauto; rewrite ext in *; ginv. }
+Qed.
+
 
 Definition replace_from_lib_per3
            {o} {lib} {name} {lib'}
@@ -15254,8 +15282,7 @@ Defined.
 
 Lemma implies_close_keep_only {o} :
   forall name lib (u : cts(o)) (t1 t2 : @CTerm o) e,
-    is_nat_cs name
-    -> type_monotone u
+    type_monotone u
     -> local_ts u
     -> ts_implies_per_bar u
     -> type_system u
@@ -15280,7 +15307,7 @@ Lemma implies_close_keep_only {o} :
         -> safe_library lib'
         -> close u (replace_from name lib lib') t1 t2 e.
 Proof.
-  introv isn mon locts impts tsts dou conta contb imp safe; introv  hasn cl.
+  introv mon locts impts tsts dou conta contb imp safe; introv hasn cl.
   close_cases (induction cl using @close_ind') Case; introv hn sf; subst.
 
   { Case "CL_init".
@@ -15295,8 +15322,7 @@ Proof.
 
     apply in_open_bar_ext_choice in reca; exrepnd.
 
-    exists (replace_from_lib_per3 Flib (*isn*) hn safe' sf eqa); simpl.
-    dands.
+    exists (replace_from_lib_per3 Flib hn safe' sf eqa); simpl; dands.
 
     { introv xta.
       applydup @lib_extends_replace_from_left in xta; eauto 3 with slow.
@@ -15342,6 +15368,73 @@ Proof.
       rewrite replace_from_replace_from in w; eauto 3 with slow.
       eapply close_uniquely_valued in w; auto.
       apply w in q; clear w; apply q; auto. }
+
+    eapply eq_term_equals_trans;[exact eqiff|]; clear eqiff.
+    unfold per_bar_eq; introv; split; intro h; simpl in *.
+
+    { introv xta.
+      applydup @lib_extends_replace_from_left in xta; eauto 3 with slow.
+      pose proof (reca0 _ xta0) as recb; simpl in recb.
+      assert (lib_extends (Flib (replace_from name lib'0 lib) xta0) lib) as xtb by eauto 3 with slow.
+      pose proof (h _ xtb) as hb; simpl in hb; exrepnd.
+      assert (lib_extends (Flib (replace_from name lib'0 lib) xta0) (replace_from name lib'0 lib)) as xtc by eauto 3 with slow.
+      assert (lib_extends (replace_from name lib'' lib'0) lib'0) as xtd.
+      eapply lib_extends_replace_from_left; try eapply lib_extends_trans; try exact y; try exact xtc; eauto 3 with slow.
+
+      exists (replace_from name lib'' lib'0) xtd.
+      introv xte; introv.
+
+      assert (lib_extends (replace_from name lib'1 lib'') lib'') as xtf.
+      { eapply lib_extends_replace_from_left; try exact xte; eauto 3 with slow. }
+
+      assert (lib_extends (replace_from name lib'1 lib'') lib) as xtg by eauto 3 with slow.
+
+      pose proof (recb (replace_from name lib'1 lib'') (lib_extends_trans xtf y) xtg) as recb; simpl in recb.
+      repeat (autodimp recb hyp); eauto 3 with slow.
+      pose proof (recb lib'1) as recb.
+      rewrite replace_from_replace_from in recb; eauto 3 with slow;[].
+      repeat (autodimp recb hyp); eauto 3 with slow.
+
+      pose proof (hb1 (replace_from name lib'1 lib'') xtf xtg) as hb1; simpl in hb1.
+
+      pose proof (reca0 (replace_from name lib'0 lib) xta0) as recc; simpl in recc.
+      pose proof (recc (replace_from name lib'1 (Flib (replace_from name lib'0 lib) xta0))) as recc; simpl in recc.
+
+      assert (lib_extends (replace_from name lib'1 (Flib (replace_from name lib'0 lib) xta0)) (Flib (replace_from name lib'0 lib) xta0)) as xth.
+      { eapply lib_extends_replace_from_left;
+          try (eapply lib_extends_trans; try exact xte; apply lib_extends_replace_from_trans2);
+          eauto 3 with slow. }
+      assert (lib_extends (replace_from name lib'1 (Flib (replace_from name lib'0 lib) xta0)) lib) as xti by eauto 3 with slow.
+      pose proof (recc xth xti) as recc.
+      repeat (autodimp recc hyp); eauto 3 with slow.
+      pose proof (recc lib'1) as recc.
+      rewrite replace_from_replace_from in recc; eauto 3 with slow;[].
+      repeat (autodimp recc hyp); eauto 3 with slow.
+
+      dup recc as recd.
+      eapply close_uniquely_valued in recc; auto.
+      autodimp recc hyp; try exact recb.
+      apply recc in hb1.
+
+      assert (lib_extends lib'1 (replace_from name (Flib (replace_from name lib'0 lib) xta0) lib'0)) as xtj.
+      { eapply lib_extends_trans;[exact xte|]; apply lib_extends_replace_from_trans2; eauto 3 with slow. }
+
+      exists lib'0 xta xta0 xtj.
+      remember (lib_extends_replace_from_trans1
+       (lib_extends_preserves_has_name name lib'0 (replace_from name lib lib') xta
+          (has_name_replace_form name lib lib' hn))
+       (lib_extends_preserves_safe lib'1 (replace_from name lib lib') z
+          (implies_safe_library_replace_from name lib lib' safe' sf))
+       (lib_extends_trans (lib_extends_Flib lib (replace_from name lib'0 lib) Flib xta0) xta0) xtj)
+        as xt; clear Heqxt.
+      pose proof (reca0 _ xta0 (replace_from name lib'1 (Flib (replace_from name lib'0 lib) xta0))) as w; simpl in w.
+      autodimp w hyp.
+      pose proof (w xt) as w.
+      repeat (autodimp w hyp); eauto 3 with slow.
+      pose proof (w lib'1) as w; repeat (autodimp w hyp); eauto 3 with slow.
+      rewrite replace_from_replace_from in w; eauto 3 with slow.
+      eapply close_uniquely_valued in w; auto.
+      apply w; try exact hb1; auto. }
 
 
 
