@@ -70,10 +70,3 @@ Proof.
     + apply found_entry_implies_matching_entry in fe2.
       unfold matching_entry in fe2; sp.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)
-

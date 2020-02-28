@@ -721,7 +721,7 @@ Proof.
 Qed.
 
 Lemma reduces_in_atmost_k_steps_refl {o} :
-  forall (lib : library) (k : nat) (t : @NTerm o),
+  forall (lib : plibrary) (k : nat) (t : @NTerm o),
     isvalue_like t
     -> reduces_in_atmost_k_steps lib t t k.
 Proof.
@@ -866,7 +866,7 @@ Proof.
 Qed.
 
 Lemma has_value_like_k_vbot {o} :
-  forall (lib : @library o) k v,
+  forall (lib : @plibrary o) k v,
     !has_value_like_k lib k (mk_vbot v).
 Proof.
   introv hv.
@@ -875,7 +875,7 @@ Proof.
 Qed.
 
 Lemma has_value_like_k_fresh_id {o} :
-  forall (lib : @library o) k v,
+  forall (lib : @plibrary o) k v,
     !has_value_like_k lib k (mk_fresh v (mk_var v)).
 Proof.
   introv hv.

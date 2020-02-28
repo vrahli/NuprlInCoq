@@ -538,19 +538,25 @@ Hint Resolve same_csc_seq_nil_implies_correct_restriction : slow.
 
 Lemma extend_bool_choice_sequence_zero {o} :
   forall (lib : @library o) name n restr k,
-    csn_kind name = cs_kind_seq []
+    lib_cond_sat_def lib
+    -> csn_kind name = cs_kind_seq []
     -> same_restrictions restr (csc_seq [])
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero) restr)) lib
-    -> exists lib',
-        map entry2name lib' = map entry2name lib
+    -> exists (lib' : library),
+        lib_names lib' = lib_names lib
         /\ lib_extends lib' lib
         /\ entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes (n + k) mkc_zero) restr)) lib'.
 Proof.
-  introv cor same i.
+  introv sat cor same i.
   apply entry_in_library_split in i; exrepnd; subst.
-  exists (lib1 ++ lib_cs name (MkChoiceSeqEntry _ (ntimes (n + k) mkc_zero) restr) :: lib2).
-  repeat (rewrite map_app; simpl); dands; tcsp.
-  { apply lib_extends_middle; simpl; dands; eauto 3 with slow.
+  destruct lib as [lib cond]; simpl in *; subst.
+  exists (add_mid_entry (MkLib lib1 cond) (lib_cs name (MkChoiceSeqEntry _ (ntimes (n + k) mkc_zero) restr)) (MkLib lib2 cond)).
+  dands; tcsp.
+
+  { unfold lib_names, add_mid_entry; simpl; repeat (rewrite map_app; simpl); tcsp. }
+
+  { apply lib_extends_middle; simpl; dands; eauto 3 with slow;
+      try (complete (introv i; apply in_ntimes in i; subst; apply sat)).
     destruct restr; simpl in *; repnd; tcsp.
     introv sel.
     rewrite select_ntimes in sel; boolvar; ginv.

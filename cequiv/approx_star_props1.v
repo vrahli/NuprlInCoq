@@ -483,11 +483,11 @@ Definition get_defs_entry {o} (entry : @library_entry o) : list marker :=
   | lib_abs opabs vars rhs correct => [opabs_name opabs]
   end.
 
-Definition get_defs_lib {o} (lib : @library o) : list marker :=
+Definition get_defs_lib {o} (lib : @plibrary o) : list marker :=
   flat_map get_defs_entry lib.
 
 Lemma find_entry_abs_marker_none_if_not_in {o} :
-  forall (lib : @library o) m bs,
+  forall (lib : @plibrary o) m bs,
     !LIn m (get_defs_lib lib)
     -> find_entry lib (abs_marker m) bs = None.
 Proof.

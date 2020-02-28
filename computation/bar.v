@@ -432,7 +432,7 @@ Proof.
   omega.
 Defined.
 
-Fixpoint library2choice_sequence_names {o} (lib : @library o) : list choice_sequence_name :=
+Fixpoint library2choice_sequence_names {o} (lib : @plibrary o) : list choice_sequence_name :=
   match lib with
   | [] => []
   | lib_cs name _ :: entries => name :: library2choice_sequence_names entries
@@ -440,7 +440,7 @@ Fixpoint library2choice_sequence_names {o} (lib : @library o) : list choice_sequ
   end.
 
 Lemma not_in_library2choice_sequence_names_iff_find_cs_none {o} :
-  forall (lib : @library o) (name : choice_sequence_name),
+  forall (lib : @plibrary o) (name : choice_sequence_name),
     !LIn name (library2choice_sequence_names lib)
     <-> find_cs lib name = None.
 Proof.
@@ -510,10 +510,10 @@ Qed.
 
 Definition natSeq2default {o} (l : list nat) : nat -> @ChoiceSeqVal o :=
   fun n =>
-    match select n l with
-    | Some i => mkc_nat i
-    | None => mkc_zero
-    end.
+    mkc_nat (match select n l with
+             | Some i => i
+             | None => 0
+             end).
 
 Definition natSeq2some {o} (f : nat -> @ChoiceSeqVal o) : nat -> option ChoiceSeqVal :=
   fun n => Some (f n).
@@ -527,6 +527,13 @@ Definition natSeq2restrictionPred {o} (l : list nat) : @RestrictionPred o :=
     | Some i => v = mkc_nat i
     | None => is_nat n v
     end.
+
+Lemma is_nat_nat {o} :
+  forall m n, @is_nat o m (mkc_nat n).
+Proof.
+  introv; exists n; auto.
+Qed.
+Hint Resolve is_nat_nat : slow.
 
 Lemma natSeq2default_restr {o} (l : list nat) :
   forall n, @natSeq2restrictionPred o l n (natSeq2default l n).
@@ -836,6 +843,12 @@ Proof.
 Qed.
 Hint Resolve cterm_is_nth_natSeq2default : slow.
 
+Lemma mkc_nat_as_zero {o} : @mkc_nat o 0 = mkc_zero.
+Proof.
+  apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @mkc_nat_as_zero : slow.
+
 Lemma natSeq2default_eq_zero {o} :
   forall seq n,
     length seq <= n
@@ -843,7 +856,7 @@ Lemma natSeq2default_eq_zero {o} :
 Proof.
   introv len.
   unfold natSeq2default.
-  apply nth_select2 in len; allrw; auto.
+  apply nth_select2 in len; allrw; auto; autorewrite with slow; auto.
 Qed.
 Hint Resolve natSeq2default_eq_zero : slow.
 
@@ -1040,14 +1053,14 @@ Qed.
 Hint Resolve lib_extends_trans : slow.*)
 
 Lemma nil_subset_library {o} :
-  forall (lib : @library o), subset_library [] lib.
+  forall (lib : @plibrary o), subset_library [] lib.
 Proof.
   introv i; simpl in *; tcsp.
 Qed.
 Hint Resolve nil_subset_library : slow.
 
 Lemma lib_extends_entries_nil_r {o} :
-  forall (lib : @library o), lib_extends_entries lib [].
+  forall (lib : @plibrary o), lib_extends_entries lib [].
 Proof.
   introv i; simpl in *; tcsp.
 Qed.
@@ -1061,7 +1074,7 @@ Qed.
 Hint Resolve lib_extends_nil : slow.*)
 
 Lemma implies_safe_library_cons {o} :
-  forall entry (lib : @library o),
+  forall entry (lib : @plibrary o),
     safe_library_entry entry
     -> safe_library lib
     -> safe_library (entry :: lib).
@@ -1110,7 +1123,7 @@ Proof.
 Qed.*)
 
 Lemma implies_entry_in_library_snoc {o} :
-  forall entry (lib : @library o) e,
+  forall entry (lib : @plibrary o) e,
     entry_in_library entry lib
     -> entry_in_library entry (snoc lib e).
 Proof.
@@ -1122,10 +1135,10 @@ Definition diff_entry_names {o} (e1 e2 : @library_entry o) : bool :=
   if same_entry_name_dec (entry2name e1) (entry2name e2)
   then false else true.
 
-Definition shadowed_entry {o} (e : @library_entry o) lib :=
+Definition shadowed_entry {o} (e : @library_entry o) (lib : plibrary) :=
   forallb (diff_entry_names e) lib = false.
 
-Definition non_shadowed_entry {o} (e : @library_entry o) lib :=
+Definition non_shadowed_entry {o} (e : @library_entry o) (lib : plibrary) :=
   forallb (diff_entry_names e) lib = true.
 
 Lemma non_shadowed_entry_nil {o} :
@@ -1143,7 +1156,7 @@ Qed.
 Hint Rewrite @non_shadowed_entry_nil_iff : slow.
 
 Lemma shadowed_entry_nil_iff {o} :
-  forall (e : @library_entry o), shadowed_entry e [] <-> False.
+  forall (e : @library_entry o), shadowed_entry e ([] : plibrary) <-> False.
 Proof.
   introv; unfold shadowed_entry; simpl; split; intro h; tcsp.
 Qed.
@@ -1188,7 +1201,7 @@ Qed.
 Hint Rewrite @shadowed_entry_cons : slow.
 
 Lemma entry_in_library_snoc_implies {o} :
-  forall entry (lib : @library o) e,
+  forall entry (lib : @plibrary o) e,
     entry_in_library entry (snoc lib e)
     -> entry_in_library entry lib
        \/
@@ -1217,7 +1230,7 @@ Proof.
 Qed.*)
 
 Lemma implies_safe_library_snoc {o} :
-  forall e (lib : @library o),
+  forall e (lib : @plibrary o),
     safe_library lib
     -> (non_shadowed_entry e lib -> safe_library_entry e)
     -> safe_library (snoc lib e).
@@ -1245,7 +1258,7 @@ Qed.
 Hint Resolve inf_lib_extends_snoc_implies_head : slow.*)
 
 Lemma safe_library_snoc_implies_head {o} :
-  forall (lib : @library o) e,
+  forall (lib : @plibrary o) e,
     safe_library (snoc lib e)
     -> safe_library lib.
 Proof.
@@ -1289,7 +1302,7 @@ Proof.
 Qed.
 
 Lemma entry_in_library_snoc_shadowed_implies {o} :
-  forall entry (lib : @library o) e,
+  forall entry (lib : @plibrary o) e,
     entry_in_library entry (snoc lib e)
     -> shadowed_entry e lib
     -> entry_in_library entry lib.
@@ -1333,7 +1346,7 @@ Proof.
 Qed.
 
 Lemma implies_entry_in_library_extends_snoc {o} :
-  forall entry e (lib : @library o),
+  forall entry e (lib : @plibrary o),
     entry_in_library_extends entry lib
     -> entry_in_library_extends entry (snoc lib e).
 Proof.
@@ -1342,7 +1355,7 @@ Qed.
 Hint Resolve implies_entry_in_library_extends_snoc : slow.
 
 Lemma implies_entry_in_library_extends_tail_if_all_diff {o} :
-  forall e (lib : @library o),
+  forall e (lib : @plibrary o),
     non_shadowed_entry e lib
     -> entry_in_library_extends e (snoc lib e).
 Proof.
@@ -1351,7 +1364,7 @@ Qed.
 Hint Resolve implies_entry_in_library_extends_tail_if_all_diff : slow.
 
 Lemma entry_in_library_snoc_tail {o} :
-  forall (lib : @library o) e,
+  forall (lib : @plibrary o) e,
     (forall x, List.In x lib -> diff_entry_names e x = true)
     -> entry_in_library e (snoc lib e).
 Proof.
@@ -1364,7 +1377,7 @@ Qed.
 Hint Resolve entry_in_library_snoc_tail : slow.
 
 Lemma entry_in_library_snoc_tail2 {o} :
-  forall (lib : @library o) e,
+  forall (lib : @plibrary o) e,
     non_shadowed_entry e lib
     -> entry_in_library e (snoc lib e).
 Proof.
@@ -1377,7 +1390,7 @@ Qed.
 Hint Resolve entry_in_library_snoc_tail2 : slow.
 
 Lemma safe_library_snoc_implies {o} :
-  forall (lib : @library o) (e : library_entry),
+  forall (lib : @plibrary o) (e : library_entry),
     safe_library (snoc lib e)
     ->
     (
@@ -1418,7 +1431,7 @@ Proof.
 Qed.
 
 Lemma in_implies_entry_in_library {o} :
-  forall (x e : @library_entry o) (lib : library),
+  forall (x e : @library_entry o) (lib : plibrary),
     matching_entries e x
     -> List.In e lib
     -> exists e', entry_in_library e' lib /\ matching_entries e e'.
@@ -1493,7 +1506,7 @@ Qed.
 Hint Resolve lib_extends_entries_preserves_non_shadowed_entry : slow.
 
 Lemma lib_extends_preserves_non_shadowed_entry {o} :
-  forall (e : @library_entry o) lib1 lib2,
+  forall (e : @library_entry o) (lib1 lib2 : library),
     lib_extends lib2 lib1
     -> non_shadowed_entry e lib2
     -> non_shadowed_entry e lib1.
@@ -1554,7 +1567,7 @@ Qed.
 Hint Resolve implies_lib_extends_snoc_left : slow.*)
 
 Lemma non_shadowed_and_in_library_implies_non_matching {o} :
-  forall e entry (lib : @library o),
+  forall e entry (lib : @plibrary o),
     non_shadowed_entry e lib
     -> entry_in_library entry lib
     -> ~ matching_entries entry e.
@@ -2256,7 +2269,7 @@ Qed.
 Hint Resolve implies_lib_extends_cons_snoc_left_if_extends : slow.*)
 
 Lemma matching_entries_implies_not_non_shadowed_entry {o} :
-  forall a e (lib : @library o),
+  forall a e (lib : @plibrary o),
     matching_entries a e
     -> ~ non_shadowed_entry a (e :: lib).
 Proof.
@@ -2936,7 +2949,6 @@ Lemma is_nat_natSeq2default {o} :
 Proof.
   introv.
   unfold is_nat, natSeq2default.
-  rewrite mkc_zero_eq.
   remember (select n seq) as x; symmetry in Heqx; destruct x; simpl; eexists; eauto.
 Qed.
 Hint Resolve is_nat_natSeq2default : slow.
@@ -3206,7 +3218,7 @@ Proof.
 Qed.*)
 
 Lemma forallb_diff_entry_names_false_implies_exists_entry {o} :
-  forall e (lib : @library o),
+  forall e (lib : @plibrary o),
     shadowed_entry e lib
     ->
     exists a,
@@ -3245,7 +3257,7 @@ Proof.
 Qed.*)
 
 Lemma exists_entry_implies_forallb_diff_entry_names_false {o} :
-  forall (e a : library_entry) (lib : @library o),
+  forall (e a : library_entry) (lib : @plibrary o),
     entry_in_library e lib
     -> matching_entries e a
     -> shadowed_entry a lib.
@@ -3268,7 +3280,7 @@ Proof.
 Qed.
 
 Lemma non_shadowed_entry_snoc {o} :
-  forall a e (lib : @library o),
+  forall a e (lib : @plibrary o),
     non_shadowed_entry a (snoc lib e)
     <-> (non_shadowed_entry a lib /\ ~matching_entries a e).
 Proof.
@@ -3316,7 +3328,7 @@ Qed.
 Hint Resolve implies_lib_extends_snoc_snoc_snoc : slow.*)
 
 Lemma entry_in_library_implies_safe_library_entry {o} :
-  forall e (lib : @library o),
+  forall e (lib : @plibrary o),
     entry_in_library e lib
     -> safe_library lib
     -> safe_library_entry e.
@@ -3512,7 +3524,7 @@ Proof.
 Qed.
 Hint Resolve entry_extends_preserves_safe_library_entry : slow.
 
-Record pre_lib_extends {o} (lib1 lib0 : @library o) : Prop :=
+Record pre_lib_extends {o} (lib1 lib0 : @plibrary o) : Prop :=
   MkPreLibExtends
     {
       pre_lib_extends_ext : lib_extends_entries lib1 lib0;
@@ -3521,14 +3533,14 @@ Record pre_lib_extends {o} (lib1 lib0 : @library o) : Prop :=
 Arguments MkPreLibExtends [o] [lib1] [lib0] _ _.
 
 Lemma pre_lib_extends_refl {o} :
-  forall (lib : @library o), pre_lib_extends lib lib.
+  forall (lib : @plibrary o), pre_lib_extends lib lib.
 Proof.
   introv; split; eauto 2 with slow.
 Qed.
 Hint Resolve pre_lib_extends_refl : slow.
 
 Lemma pre_lib_extends_nil {o} :
-  forall (lib : @library o), pre_lib_extends lib [].
+  forall (lib : @plibrary o), pre_lib_extends lib [].
 Proof.
   introv; split; simpl; tcsp; eauto 2 with slow.
 Qed.
@@ -3564,7 +3576,7 @@ Proof.
 Qed.*)
 
 Lemma implies_pre_lib_extends_snoc_lr_if_all_diff {o} :
-  forall (lib lib1 : @library o) (e : library_entry),
+  forall (lib lib1 : @plibrary o) (e : library_entry),
     pre_lib_extends lib lib1
     -> non_shadowed_entry e lib
     -> pre_lib_extends (snoc lib e) (snoc lib1 e).
@@ -3587,7 +3599,7 @@ Qed.
 Hint Resolve implies_pre_lib_extends_snoc_lr_if_all_diff : slow.
 
 Lemma implies_pre_lib_extends_snoc_left {o} :
-  forall e (lib lib2 : @library o),
+  forall e (lib lib2 : @plibrary o),
     pre_lib_extends lib lib2
     -> pre_lib_extends (snoc lib e) lib2.
 Proof.
@@ -3638,7 +3650,7 @@ Proof.
 Qed.*)
 
 Lemma implies_pre_lib_extends_snoc_snoc_snoc {o} :
-  forall e a (lib lib1 : @library o),
+  forall e a (lib lib1 : @plibrary o),
     pre_lib_extends lib lib1
     -> matching_entries e a
     -> entry_in_library e lib1
@@ -3681,7 +3693,7 @@ Qed.
 Hint Resolve implies_inf_lib_extends_ext_entries_snoc_snoc : slow.*)
 
 Lemma implies_pre_lib_extends_cons_left_snoc_right {o} :
-  forall e (lib : @library o) lib1,
+  forall e (lib : @plibrary o) lib1,
     non_shadowed_entry e lib1
     -> pre_lib_extends lib lib1
     -> pre_lib_extends (e :: lib) (snoc lib1 e).
@@ -3706,7 +3718,7 @@ Qed.
 Hint Resolve implies_pre_lib_extends_cons_left_snoc_right : slow.
 
 Lemma implies_pre_lib_extends_cons_left {o} :
-  forall e (lib lib2 : @library o),
+  forall e (lib lib2 : @plibrary o),
     pre_lib_extends lib lib2
     -> non_shadowed_entry e lib2
     -> pre_lib_extends (e :: lib) lib2.
@@ -3744,7 +3756,7 @@ Qed.
 Hint Resolve implies_inf_lib_extends_ext_entries_cons : slow.*)
 
 Lemma pre_lib_extends_snoc_lr_if_all_diff_false {o} :
-  forall e (lib lib1 : @library o),
+  forall e (lib lib1 : @plibrary o),
     pre_lib_extends lib lib1
     -> shadowed_entry e lib1
     -> pre_lib_extends (snoc lib e) (snoc lib1 e).
@@ -3783,7 +3795,7 @@ Qed.
 Hint Resolve implies_inf_lib_extends_ext_entries_snoc_shadowed : slow.*)
 
 Lemma pre_lib_extends_cons_snoc_diff {o} :
-  forall e a (lib lib1 : @library o),
+  forall e a (lib lib1 : @plibrary o),
     entry_extends e a
     -> non_shadowed_entry a lib1
     -> pre_lib_extends lib lib1
@@ -3819,7 +3831,7 @@ Qed.
 Hint Resolve pre_lib_extends_cons_snoc_diff : slow.
 
 Lemma implies_pre_lib_extends_cons_left_if_extends {o} :
-  forall (e e' : @library_entry o) (lib lib2 : @library o),
+  forall (e e' : @library_entry o) (lib lib2 : @plibrary o),
     pre_lib_extends lib lib2
     -> entry_extends e e'
     -> entry_in_library e' lib2
@@ -3954,7 +3966,7 @@ Qed.
 Hint Resolve entry_in_inf_library_default_choice_sequence_name2entry_upto : slow.*)
 
 Lemma pre_lib_extends_cons_snoc_if_in {o} :
-  forall e e1 a (lib lib1 : @library o),
+  forall e e1 a (lib lib1 : @plibrary o),
     matching_entries a e1
     -> entry_extends e e1
     -> entry_in_library e1 lib1
@@ -4356,7 +4368,7 @@ Definition is_zero_choice_sequence_name (n : choice_sequence_name) :=
   | _ => False
   end.
 
-Fixpoint name_in_library {o} (name : choice_sequence_name) (lib : @library o) : Prop :=
+Fixpoint name_in_library {o} (name : choice_sequence_name) (lib : @plibrary o) : Prop :=
   match lib with
   | [] => False
   | entry :: entries =>
@@ -4506,18 +4518,21 @@ Definition extend_choice_seq_vals_lawless_upto {o}
            (vals1 : @ChoiceSeqVals o)
            (vals2 : @ChoiceSeqVals o)
            (M     : RestrictionPred)
+           (C     : LibCond)
            (n     : nat) : Prop :=
   exists vals,
     vals1 = vals2 ++ vals
     /\ length vals = n - length vals2
-    /\ forall n v, select n vals = Some v -> M (length vals2 + n) v (*exists k, v = mkc_nat k*).
+    /\ (forall n v, select n vals = Some v -> M (length vals2 + n) v) (*exists k, v = mkc_nat k*)
+    /\ (forall v, LIn v vals -> C (get_cterm v)).
 
 Inductive extend_choice_seq_entry_lawless_upto {o} :
-  @ChoiceSeqEntry o -> @ChoiceSeqEntry o -> nat -> Prop :=
+  LibCond -> @ChoiceSeqEntry o -> @ChoiceSeqEntry o -> nat -> Prop :=
 | ext_choice_seq_entry_lawless_upto_type :
-    forall vals1 vals2 M n,
-      extend_choice_seq_vals_lawless_upto vals1 vals2 M n
+    forall C vals1 vals2 M n,
+      extend_choice_seq_vals_lawless_upto vals1 vals2 M C n
       -> extend_choice_seq_entry_lawless_upto
+           C
            (MkChoiceSeqEntry _ vals1 (csc_type M))
            (MkChoiceSeqEntry _ vals2 (csc_type M))
            n
@@ -4538,6 +4553,7 @@ Inductive extend_choice_seq_entry_lawless_upto {o} :
 Hint Constructors extend_choice_seq_entry_lawless_upto.
 
 Definition extend_library_entry_lawless_upto {o}
+           (C    : LibCond)
            (e1   : @library_entry o)
            (e2   : @library_entry o)
            (name : choice_sequence_name)
@@ -4546,31 +4562,45 @@ Definition extend_library_entry_lawless_upto {o}
   | lib_cs name1 x1, lib_cs name2 x2 =>
     if choice_sequence_name_deq name name1 then
       if choice_sequence_name_deq name name2 then
-        extend_choice_seq_entry_lawless_upto x1 x2 n
+        extend_choice_seq_entry_lawless_upto C x1 x2 n
       else False
     else e1 = e2
   | _, _ => e1 = e2
   end.
 
 (* [lib1] extend [lib2] *)
-Fixpoint extend_library_lawless_upto {o}
-         (lib1 : @library o)
-         (lib2 : @library o)
+Fixpoint extend_plibrary_lawless_upto {o}
+         (C    : LibCond)
+         (lib1 : @plibrary o)
+         (lib2 : @plibrary o)
          (name : choice_sequence_name)
          (n    : nat) : Prop :=
   match lib1, lib2 with
   | [], [] => True
   | entry1 :: entries1, entry2 :: entries2 =>
-    extend_library_entry_lawless_upto entry1 entry2 name n
-    /\ extend_library_lawless_upto entries1 entries2 name n
+    extend_library_entry_lawless_upto C entry1 entry2 name n
+    /\ extend_plibrary_lawless_upto C entries1 entries2 name n
   | _, _ => False
   end.
 
-Definition add_cs_if_not_in {o} name (lib : @library o) :=
+Definition same_conds {o} (lib1 lib2 : @library o) := lib_cond lib1 = lib_cond lib2.
+
+Definition extend_library_lawless_upto {o}
+           (lib1 : @library o)
+           (lib2 : @library o)
+           (name : choice_sequence_name)
+           (n    : nat) : Prop :=
+  extend_plibrary_lawless_upto (lib_cond lib1) lib1 lib2 name n
+  /\ same_conds lib1 lib2.
+
+Definition add_cs_if_not_in {o} name (lib : @plibrary o) :=
   match find_cs lib name with
   | Some e => lib
   | None => choice_sequence_name2entry name :: lib
   end.
+
+Definition add_one_cs_if_not_in {o} name (lib : @library o) :=
+  MkLib (add_cs_if_not_in name lib) (lib_cond lib).
 
 Lemma select_nil :
   forall {A} n, @select A n [] = None.
@@ -4616,7 +4646,7 @@ Qed.
 Hint Resolve find_cs_none_implies_diff_entry_names : slow.
 
 Lemma find_cs_none_implies_non_shadowed_entry_choice_sequence_name2entry {o} :
-  forall name (lib : @library o),
+  forall name (lib : @plibrary o),
     find_cs lib name = None
     -> non_shadowed_entry (choice_sequence_name2entry name) lib.
 Proof.
@@ -4631,8 +4661,15 @@ Definition add_cs_entry {o}
            (name : choice_sequence_name)
            (vals : @ChoiceSeqVals o)
            (r    : ChoiceSeqRestriction)
-           (lib  : @library o) : library :=
+           (lib  : @plibrary o) : plibrary :=
   lib_cs name (MkChoiceSeqEntry _ vals r) :: lib.
+
+Definition add_one_cs_entry {o}
+           (name : choice_sequence_name)
+           (vals : @ChoiceSeqVals o)
+           (r    : ChoiceSeqRestriction)
+           (lib  : @library o) : library :=
+  MkLib (add_cs_entry name vals r lib) (lib_cond lib).
 
 Lemma implies_select_none :
   forall {T} n (l : list T),
@@ -4662,26 +4699,119 @@ Proof.
 Qed.
 Hint Resolve choice_sequence_satisfies_restriction_snoc_implies : slow.
 
+
+(* *** Satisfiability w.r.t. a [LibCond] *** *)
+Definition sat_cond_choices {o} (c : @LibCond o) (vals : ChoiceSeqVals) :=
+  forall v, LIn v vals -> c (get_cterm v).
+
+Definition sat_cond_cs_entry {o} (c : @LibCond o) (e : ChoiceSeqEntry) :=
+  match e with
+  | MkChoiceSeqEntry _ vals restr =>
+    sat_cond_choices c vals
+    /\ c restr
+  end.
+
+Definition sat_cond_entry {o} (c : @LibCond o) (e : library_entry) :=
+  match e with
+  | lib_cs name e => sat_cond_cs_entry c e
+  | lib_abs op vars rhs cor => c (soterm2nterm rhs)
+  end.
+
+Definition sat_cond_lib {o} (c : @LibCond o) (lib : @plibrary o) :=
+  forall e, entry_in_library e lib -> sat_cond_entry c e.
+(* ********** *)
+
+
+(* *** Satisfiability w.r.t. a [library] *** *)
+Definition lib_cond_sat_choices {o} (lib : @library o) (vals : ChoiceSeqVals) :=
+  forall v, LIn v vals -> sat_cond_cterm lib v.
+
+Definition lib_cond_sat_cs_entry {o} (lib : @library o) (e : ChoiceSeqEntry) :=
+  match e with
+  | MkChoiceSeqEntry _ vals restr =>
+    lib_cond_sat_choices lib vals
+    /\ sat_cond_restr lib restr
+  end.
+
+Definition lib_cond_sat_entry {o} (lib : @library o) (e : library_entry) :=
+  match e with
+  | lib_cs name e => lib_cond_sat_cs_entry lib e
+  | lib_abs op vars rhs cor => sat_cond_soterm lib rhs
+  end.
+
+Definition sat_lib_cond {o} (lib : @library o) :=
+  forall e, entry_in_library e lib -> lib_cond_sat_entry lib e.
+(* ********** *)
+
+
+(* *** satisfiability of default values *** *)
+Definition sat_cond_def {o} (C : @LibCond o) :=
+  (forall n, C (mk_nat n))
+  /\ C mk_btrue
+  /\ C mk_bfalse
+  /\ C csc_nat
+  /\ C csc_bool
+  /\ (forall l, C (csc_seq l)).
+
+Definition lib_cond_sat_def {o} (lib : @library o) :=
+  sat_cond_def (lib_cond lib).
+(* ********** *)
+
+
+Lemma lib_cond_sat_choices_nil {o} :
+  forall (lib : @library o),
+    lib_cond_sat_choices lib [].
+Proof.
+  introv i; simpl in *; tcsp.
+Qed.
+Hint Resolve lib_cond_sat_choices_nil : slow.
+
+Lemma implies_lib_cond_sat_choices_app {o} :
+  forall (lib1 lib2 : @library o) vals1 vals2,
+    same_conds lib1 lib2
+    -> lib_cond_sat_choices lib1 vals2
+    -> lib_cond_sat_choices lib2 vals1
+    -> lib_cond_sat_choices lib2 (vals1 ++ vals2).
+Proof.
+  introv same sata satb i; apply in_app_iff in i; repndors; tcsp.
+  unfold sat_cond_cterm.
+  rewrite <- same; apply sata; auto.
+Qed.
+Hint Resolve implies_lib_cond_sat_choices_app : slow.
+
+Lemma lib_cond_sat_choices_sing {o} :
+  forall (lib : @library o) v,
+    sat_cond_cterm lib v
+    -> lib_cond_sat_choices lib [v].
+Proof.
+  introv sat i; simpl in *; repndors; subst; tcsp.
+Qed.
+Hint Resolve lib_cond_sat_choices_sing : slow.
+
+
 Lemma lib_extends_cons_new {o} :
   forall (lib : @library o) name vals r,
     safe_choice_sequence_entry name (MkChoiceSeqEntry _ vals r)
     -> !in_lib (entry_name_cs name) lib
-    -> lib_extends (add_cs_entry name vals r lib) lib.
+    -> lib_cond_sat_choices lib vals
+    -> sat_cond_restr lib r
+    -> lib_extends (add_one_cs_entry name vals r lib) lib.
 Proof.
-  introv safe ni.
+  introv safe ni cond satr.
   unfold add_cs_entry.
 
   induction vals using rev_list_indT; simpl in *; repnd; eauto.
   { apply lib_extends_new_cs; eauto 3 with slow. }
 
-  repeat (autodimp IHvals hyp); dands; eauto 3 with slow;[].
+  repeat (autodimp IHvals hyp); dands; eauto 3 with slow;[|].
+  { introv i; apply cond; apply in_snoc; tcsp. }
 
   eapply lib_extends_trans;[|exact IHvals].
   destruct r; simpl in *; eauto; GC.
 
-  { apply (lib_extends_cs _ name a (length vals) typ); simpl; boolvar; tcsp.
-    apply safe.
-    rewrite select_snoc_eq; boolvar; tcsp; try omega. }
+  { apply (lib_extends_cs _ name a (length vals) typ); simpl; boolvar; tcsp;
+      try (apply cond; apply in_snoc; tcsp).
+    apply safe; rewrite select_snoc_eq; boolvar; tcsp; try omega. }
 
 (*
   { apply (lib_extends_law _ name a (length vals) f); simpl; boolvar; tcsp.
@@ -4704,7 +4834,7 @@ Proof.
 Qed.
 
 Lemma find_cs_non_implies_not_in_lib {o} :
-  forall (lib : @library o) name,
+  forall (lib : @plibrary o) name,
     find_cs lib name = None
     -> !in_lib (entry_name_cs name) lib.
 Proof.
@@ -4728,28 +4858,37 @@ Proof.
 Qed.
 Hint Resolve safe_choice_sequence_entry_nil : slow.
 
+Definition add_one_entry {o} (e : @library_entry o) (lib : library) : library :=
+  MkLib (e :: lib_pre lib) (lib_cond lib).
+
+Definition sat_cond_name2restr {o} (lib : @library o) name :=
+  sat_cond_restr lib (choice_sequence_name2restriction name).
+
 Lemma find_cs_none_implies_lib_extends_choice_sequence_name2entry {o} :
   forall name (lib : @library o),
-    find_cs lib name = None
-    -> lib_extends (choice_sequence_name2entry name :: lib) lib.
+    sat_cond_name2restr lib name
+    -> find_cs lib name = None
+    -> lib_extends (add_one_entry (choice_sequence_name2entry name) lib) lib.
 Proof.
-  introv f.
-  apply lib_extends_cons_new; eauto 3 with slow.
+  introv sat f.
+  apply lib_extends_cons_new; eauto 3 with slow; simpl; tcsp.
 Qed.
 Hint Resolve find_cs_none_implies_lib_extends_choice_sequence_name2entry : slow.
 
 Lemma lib_extends_add_cs_if_not_in_name {o} :
   forall name (lib : @library o),
-    lib_extends (add_cs_if_not_in name lib) lib.
+    sat_cond_name2restr lib name
+    -> lib_extends (add_one_cs_if_not_in name lib) lib.
 Proof.
-  introv.
-  unfold add_cs_if_not_in.
+  introv sat.
+  destruct lib as [lib cond]; unfold add_one_cs_if_not_in, add_cs_if_not_in; simpl.
   remember (find_cs lib name) as w; symmetry in Heqw; destruct w; eauto 3 with slow.
+  apply (find_cs_none_implies_lib_extends_choice_sequence_name2entry _ (MkLib lib cond)); simpl; auto.
 Qed.
 Hint Resolve lib_extends_add_cs_if_not_in_name : slow.
 
 Lemma find_cs_some_implies_name_in_library {o} :
-  forall name (lib : @library o) c,
+  forall name (lib : @plibrary o) c,
     find_cs lib name = Some c
     -> name_in_library name lib.
 Proof.
@@ -4759,7 +4898,7 @@ Qed.
 Hint Resolve find_cs_some_implies_name_in_library : slow.
 
 Lemma name_in_library_add_cs_if_not_in {o} :
-  forall name (lib : @library o),
+  forall name (lib : @plibrary o),
     name_in_library name (add_cs_if_not_in name lib).
 Proof.
   introv.
@@ -4965,8 +5104,8 @@ Proof.
 Qed.*)
 
 Lemma extend_choice_seq_vals_lawless_upto_implies_choice_sequence_vals_extend {o} :
-  forall (vals1 vals2 : @ChoiceSeqVals o) typ n,
-    extend_choice_seq_vals_lawless_upto vals1 vals2 typ n
+  forall C (vals1 vals2 : @ChoiceSeqVals o) typ n,
+    extend_choice_seq_vals_lawless_upto vals1 vals2 typ C n
     -> choice_sequence_vals_extend vals1 vals2.
 Proof.
   introv h.
@@ -4977,8 +5116,8 @@ Qed.
 Hint Resolve extend_choice_seq_vals_lawless_upto_implies_choice_sequence_vals_extend : slow.
 
 Lemma extend_choice_seq_entry_lawless_upto_implies_choice_sequence_entry_extend {o} :
-  forall (entry1 entry2 : @ChoiceSeqEntry o) n name,
-    extend_choice_seq_entry_lawless_upto entry1 entry2 n
+  forall C (entry1 entry2 : @ChoiceSeqEntry o) n name,
+    extend_choice_seq_entry_lawless_upto C entry1 entry2 n
     -> entry_extends (lib_cs name entry1) (lib_cs name entry2).
 Proof.
   destruct entry1 as [vals1 restr1], entry2 as [vals2 restr2]; introv h; simpl in *.
@@ -4988,8 +5127,8 @@ Qed.
 Hint Resolve extend_choice_seq_entry_lawless_upto_implies_choice_sequence_entry_extend : slow.
 
 Lemma extend_library_entry_lawless_upto_implies_entry_extends {o} :
-  forall (entry1 entry2 : @library_entry o) name n,
-    extend_library_entry_lawless_upto entry1 entry2 name n
+  forall C (entry1 entry2 : @library_entry o) name n,
+    extend_library_entry_lawless_upto C entry1 entry2 name n
     -> entry_extends entry1 entry2.
 Proof.
   introv e; destruct entry1, entry2; simpl in *; boolvar;
@@ -4998,8 +5137,8 @@ Qed.
 Hint Resolve extend_library_entry_lawless_upto_implies_entry_extends : slow.
 
 Lemma extend_library_lawless_upto_preserves_entry_in_library_extends {o} :
-  forall entry (lib1 lib2 : @library o) name n,
-    extend_library_lawless_upto lib1 lib2 name n
+  forall C entry (lib1 lib2 : @plibrary o) name n,
+    extend_plibrary_lawless_upto C lib1 lib2 name n
     -> entry_in_library entry lib2
     -> entry_in_library_extends entry lib1.
 Proof.
@@ -5025,8 +5164,8 @@ Qed.
 Hint Resolve extend_library_lawless_upto_preserves_entry_in_library_extends : slow.
 
 Lemma extend_library_lawless_upto_preserves_lib_extends_entries {o} :
-  forall (lib1 lib2 : @library o) name n,
-    extend_library_lawless_upto lib1 lib2 name n
+  forall C (lib1 lib2 : @plibrary o) name n,
+    extend_plibrary_lawless_upto C lib1 lib2 name n
     -> lib_extends_entries lib1 lib2.
 Proof.
   introv ext i; eauto 2 with slow.
@@ -5034,8 +5173,8 @@ Qed.
 Hint Resolve extend_library_lawless_upto_preserves_lib_extends_entries : slow.
 
 Lemma extend_library_entry_lawless_upto_preserves_matching_entries_lr {o} :
-  forall (e1 e2 e : @library_entry o) name n,
-    extend_library_entry_lawless_upto e1 e2 name n
+  forall C (e1 e2 e : @library_entry o) name n,
+    extend_library_entry_lawless_upto C e1 e2 name n
     -> matching_entries e1 e
     -> matching_entries e2 e.
 Proof.
@@ -5044,8 +5183,8 @@ Qed.
 Hint Resolve extend_library_entry_lawless_upto_preserves_matching_entries_lr : slow.
 
 Lemma extend_library_entry_lawless_upto_preserves_matching_entries_rl {o} :
-  forall (e1 e2 e : @library_entry o) name n,
-    extend_library_entry_lawless_upto e1 e2 name n
+  forall C (e1 e2 e : @library_entry o) name n,
+    extend_library_entry_lawless_upto C e1 e2 name n
     -> matching_entries e2 e
     -> matching_entries e1 e.
 Proof.
@@ -5054,13 +5193,13 @@ Qed.
 Hint Resolve extend_library_entry_lawless_upto_preserves_matching_entries_rl : slow.
 
 Lemma extend_library_lawless_upto_implies {o} :
-  forall (lib1 lib2 : @library o) name n entry,
-    extend_library_lawless_upto lib1 lib2 name n
+  forall C (lib1 lib2 : @plibrary o) name n entry,
+    extend_plibrary_lawless_upto C lib1 lib2 name n
     -> entry_in_library entry lib1
     ->
     exists e,
       entry_in_library e lib2
-      /\ extend_library_entry_lawless_upto entry e name n.
+      /\ extend_library_entry_lawless_upto C entry e name n.
 Proof.
   induction lib1; introv ext i; simpl in *; tcsp.
   destruct lib2; tcsp.
@@ -5141,8 +5280,8 @@ Proof.
 Qed.
 
 Lemma extend_library_entry_lawless_upto_preserves_safe_library {o} :
-  forall (entry1 entry2 : @library_entry o) name n,
-    extend_library_entry_lawless_upto entry1 entry2 name n
+  forall C (entry1 entry2 : @library_entry o) name n,
+    extend_library_entry_lawless_upto C entry1 entry2 name n
     -> safe_library_entry entry2
     -> safe_library_entry entry1.
 Proof.
@@ -5150,7 +5289,7 @@ Proof.
     boolvar; repeat subst; tcsp; ginv; tcsp.
 
   destruct entry as [vals1 restr1], entry0 as [vals2 restr2]; simpl in *.
-  inversion ext as [? ? ? ? ext']; clear ext; subst; repnd; dands; eauto 3 with slow.
+  inversion ext as [? ? ? ? ? ext']; clear ext; subst; repnd; dands; eauto 3 with slow.
 
   { unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst.
     introv i.
@@ -5160,7 +5299,7 @@ Proof.
     { rewrite select_app_left in i; auto. }
 
     { rewrite select_app_r in i; try omega.
-      apply ext'0 in i.
+      apply ext'3 in i.
       rewrite le_plus_minus_r in i; auto; try omega. } }
 
 (*
@@ -5194,8 +5333,8 @@ Qed.
 Hint Resolve extend_library_entry_lawless_upto_preserves_safe_library : slow.
 
 Lemma extend_library_lawless_upto_preserves_safe_library {o} :
-  forall (lib1 lib2 : @library o) name n,
-    extend_library_lawless_upto lib1 lib2 name n
+  forall C (lib1 lib2 : @plibrary o) name n,
+    extend_plibrary_lawless_upto C lib1 lib2 name n
     -> safe_library lib2
     -> safe_library lib1.
 Proof.
@@ -5207,8 +5346,8 @@ Qed.
 Hint Resolve extend_library_lawless_upto_preserves_safe_library : slow.
 
 Lemma extend_library_lawless_upto_implies_subset_library {o} :
-  forall (lib1 lib2 : @library o) name n,
-    extend_library_lawless_upto lib1 lib2 name n
+  forall C (lib1 lib2 : @plibrary o) name n,
+    extend_plibrary_lawless_upto C lib1 lib2 name n
     -> subset_library lib2 lib1.
 Proof.
   induction lib1; introv ext i; simpl in *; destruct lib2; simpl in *; tcsp.
@@ -5223,15 +5362,15 @@ Proof.
 Qed.
 Hint Resolve extend_library_lawless_upto_implies_subset_library : slow.
 
-Fixpoint no_repeats_library {o} (lib : @library o) : Prop :=
+Fixpoint no_repeats_library {o} (lib : @plibrary o) : Prop :=
   match lib with
   | [] => True
   | entry :: entries => !in_lib (entry2name entry) entries /\ no_repeats_library entries
   end.
 
 Lemma extend_library_lawless_upto_not_in {o} :
-  forall (lib1 lib2 : @library o) name n,
-    extend_library_lawless_upto lib1 lib2 name n
+  forall C (lib1 lib2 : @plibrary o) name n,
+    extend_plibrary_lawless_upto C lib1 lib2 name n
     -> !LIn (entry_name_cs name) (map entry2name lib2)
     -> lib1 = lib2.
 Proof.
@@ -5242,7 +5381,7 @@ Proof.
 Qed.
 
 Lemma not_in_lib_cs_implies_not_in_names {o} :
-  forall name (lib : @library o),
+  forall name (lib : @plibrary o),
     !in_lib (entry_name_cs name) lib
     -> !LIn (entry_name_cs name) (map entry2name lib).
 Proof.
@@ -5256,16 +5395,16 @@ Qed.
 Hint Resolve not_in_lib_cs_implies_not_in_names : slow.
 
 Lemma extend_library_lawless_upto_no_repeats_implies_split {o} :
-  forall (lib1 lib2 : @library o) name n,
+  forall C (lib1 lib2 : @plibrary o) name n,
     no_repeats_library lib2
-    -> extend_library_lawless_upto lib1 lib2 name n
+    -> extend_plibrary_lawless_upto C lib1 lib2 name n
     -> (lib1 = lib2 /\ !in_lib (entry_name_cs name) lib2)
        \/
        exists liba libb e1 e2,
          lib1 = liba ++ lib_cs name e1 :: libb
          /\ lib2 = liba ++ lib_cs name e2 :: libb
          /\ !in_lib (entry_name_cs name) liba
-         /\ extend_choice_seq_entry_lawless_upto e1 e2 n.
+         /\ extend_choice_seq_entry_lawless_upto C e1 e2 n.
 Proof.
   induction lib1; introv norep ext; destruct lib2; simpl in *; repnd; tcsp.
 
@@ -5275,7 +5414,7 @@ Proof.
 
   { apply extend_library_lawless_upto_not_in in ext; auto; subst; eauto 3 with slow.
     right.
-    exists ([] : @library o) lib2 entry entry0; dands; tcsp.
+    exists ([] : @plibrary o) lib2 entry entry0; dands; tcsp.
     introv xx; unfold in_lib in xx; exrepnd; simpl in *; tcsp. }
 
   { apply IHlib1 in ext; auto;[].
@@ -5318,7 +5457,7 @@ Proof.
 Qed.
 
 Lemma in_lib_cs_cons {o} :
-  forall name name' e (lib : @library o),
+  forall name name' e (lib : @plibrary o),
     !in_lib name (lib_cs name' e :: lib)
     <-> (name <> entry_name_cs name' /\ !in_lib name lib).
 Proof.
@@ -5337,7 +5476,7 @@ Proof.
 Qed.
 
 Lemma in_lib_cs_abs_cons {o} :
-  forall name op vars rhs correct (lib : @library o),
+  forall name op vars rhs correct (lib : @plibrary o),
     !in_lib (entry_name_cs name) (lib_abs op vars rhs correct :: lib)
     <-> !in_lib (entry_name_cs name) lib.
 Proof.
@@ -5346,7 +5485,7 @@ Proof.
 Qed.
 
 Lemma add_choice_if_not_in_left {o} :
-  forall (liba libb : @library o) name a vals r,
+  forall (liba libb : @plibrary o) name a vals r,
     !in_lib (entry_name_cs name) liba
     -> add_choice name a (liba ++ lib_cs name (MkChoiceSeqEntry _ vals r) :: libb)
        = Some (length vals, r, liba ++ lib_cs name (MkChoiceSeqEntry _ (snoc vals a) r) :: libb).
@@ -5374,10 +5513,13 @@ Lemma extend_library_lawless_upto_implies_lib_extends {o} :
     -> lib_extends lib1 lib2.
 Proof.
   introv norep ext.
+  destruct ext as [ext same].
   apply extend_library_lawless_upto_no_repeats_implies_split in ext; auto;[].
-  repndors; exrepnd; subst; auto;[].
+  repndors; exrepnd; subst; auto;
+    destruct lib1 as [lib1 c1], lib2 as [lib2 c2]; unfold same_conds in *;
+      simpl in *; subst; eauto;[].
 
-  inversion ext1 as [? ? ? ? ext'(*|? ? ? ? ext'|? ? ? ? ext'*)]; clear ext1; subst; eauto.
+  inversion ext1 as [? ? ? ? ? ext'(*|? ? ? ? ext'|? ? ? ? ext'*)]; clear ext1; subst; eauto.
 
   { unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst.
     clear ext'2.
@@ -5386,21 +5528,26 @@ Proof.
     repeat (autodimp IHvals hyp).
 
     { introv sel.
-      apply ext'0.
+      apply ext'3.
       applydup @select_lt in sel.
       rewrite select_snoc_eq; boolvar; subst; tcsp; try omega. }
+
+    { introv i; apply ext'0; apply in_snoc; tcsp. }
 
     rewrite snoc_append_l.
     eapply lib_extends_trans;[|eauto].
     apply (lib_extends_cs _ name a (length (vals2 ++ vals)) M); auto.
 
-    { rewrite add_choice_if_not_in_left; auto. }
+    { unfold add_one_choice.
+      rewrite add_choice_if_not_in_left; auto. }
 
-    autorewrite with list.
-    apply ext'0.
-    rewrite select_snoc_eq; boolvar; tcsp; simpl in *; try omega;
-      try (complete (apply Nat.lt_irrefl in l; tcsp));
-      try (complete (destruct n1; auto)). }
+    { autorewrite with list.
+      apply ext'3.
+      rewrite select_snoc_eq; boolvar; tcsp; simpl in *; try omega;
+        try (complete (apply Nat.lt_irrefl in l; tcsp));
+        try (complete (destruct n1; auto)). }
+
+    { simpl; apply ext'0; apply in_snoc; tcsp. } }
 
 (*
   { unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst.
@@ -5452,12 +5599,12 @@ Qed.
 Hint Resolve extend_library_lawless_upto_implies_lib_extends : slow.
 
 Lemma in_extend_library_lawless_upto_implies {o} :
-  forall (lib1 lib2 : @library o) name n entry,
-    extend_library_lawless_upto lib2 lib1 name n
+  forall C (lib1 lib2 : @plibrary o) name n entry,
+    extend_plibrary_lawless_upto C lib2 lib1 name n
     -> List.In entry lib2
     -> exists entry',
         List.In entry' lib1
-        /\ extend_library_entry_lawless_upto entry entry' name n.
+        /\ extend_library_entry_lawless_upto C entry entry' name n.
 Proof.
   induction lib1; introv ext i; simpl in *; destruct lib2; simpl in *; tcsp.
   repnd.
@@ -5471,22 +5618,22 @@ Proof.
 Qed.
 
 Lemma implies_extend_library_lawless_upto_app {o} :
-  forall name n (lib1 lib1' lib2 lib2' : @library o),
-    extend_library_lawless_upto lib1' lib1 name n
-    -> extend_library_lawless_upto lib2' lib2 name n
-    -> extend_library_lawless_upto (lib1' ++ lib2') (lib1 ++ lib2) name n.
+  forall C name n (lib1 lib1' lib2 lib2' : @plibrary o),
+    extend_plibrary_lawless_upto C lib1' lib1 name n
+    -> extend_plibrary_lawless_upto C lib2' lib2 name n
+    -> extend_plibrary_lawless_upto C (lib1' ++ lib2') (lib1 ++ lib2) name n.
 Proof.
   induction lib1; introv ext1 ext2; destruct lib1'; simpl in *; tcsp.
 Qed.
 Hint Resolve implies_extend_library_lawless_upto_app : slow.
 
 Lemma in_right_extend_library_lawless_upto_implies {o} :
-  forall (lib1 lib2 : @library o) name n entry,
-    extend_library_lawless_upto lib2 lib1 name n
+  forall C (lib1 lib2 : @plibrary o) name n entry,
+    extend_plibrary_lawless_upto C lib2 lib1 name n
     -> List.In entry lib1
     -> exists entry',
         List.In entry' lib2
-        /\ extend_library_entry_lawless_upto entry' entry name n.
+        /\ extend_library_entry_lawless_upto C entry' entry name n.
 Proof.
   induction lib1; introv ext i; simpl in *; destruct lib2; simpl in *; tcsp.
   repnd.
@@ -5500,7 +5647,7 @@ Proof.
 Qed.
 
 (* [lib1] is shadowed by [lib2] *)
-Definition shadowed_library {o} (lib1 lib2 : @library o) : Prop :=
+Definition shadowed_library {o} (lib1 lib2 : @plibrary o) : Prop :=
   forall entry,
     List.In entry lib1
     -> exists entry', List.In entry' lib2 /\ matching_entries entry entry'.
@@ -5513,7 +5660,7 @@ Fixpoint bsplit {A} (f : A -> bool) (l : list A) : list A * list A :=
     if f x then (x :: l1, l2) else (l1, x :: l2)
   end.
 
-Fixpoint can_lib {o} (lib : @library o) : library * library :=
+Fixpoint can_lib {o} (lib : @plibrary o) : plibrary * plibrary :=
   match lib with
   | [] => ([], [])
   | entry :: entries =>
@@ -5522,7 +5669,7 @@ Fixpoint can_lib {o} (lib : @library o) : library * library :=
     (entry :: l1a, l1b ++ l2)
   end.
 
-Definition canLib {o} (lib : @library o) :=
+Definition canLib {o} (lib : @plibrary o) :=
   let (l1,l2) := can_lib lib in l1 ++ l2.
 
 Lemma bsplit_prop :
@@ -5590,7 +5737,7 @@ Proof.
 Qed.
 
 Lemma can_lib_preserves_list_in {o} :
-  forall entry (lib : @library o) lib1 lib2,
+  forall entry (lib : @plibrary o) lib1 lib2,
     can_lib lib = (lib1, lib2)
     -> List.In entry lib
     -> List.In entry (lib1 ++ lib2).
@@ -5609,7 +5756,7 @@ Qed.
 Hint Resolve can_lib_preserves_list_in : slow.
 
 Lemma can_lib_preserves_list_in2 {o} :
-  forall entry (lib : @library o) lib1 lib2,
+  forall entry (lib : @plibrary o) lib1 lib2,
     can_lib lib = (lib1, lib2)
     -> List.In entry (lib1 ++ lib2)
     -> List.In entry lib.
@@ -5632,14 +5779,14 @@ Proof.
 Qed.
 Hint Resolve can_lib_preserves_list_in2 : slow.
 
-Fixpoint canonicalize_library {o} (lib : @library o) : library :=
+Fixpoint canonicalize_library {o} (lib : @plibrary o) : plibrary :=
   match lib with
   | [] => []
   | entry :: entries =>
     entry :: filter (diff_entry_names entry) (canonicalize_library entries)
   end.
 
-Fixpoint is_canonical_library {o} (lib : @library o) : Prop :=
+Fixpoint is_canonical_library {o} (lib : @plibrary o) : Prop :=
   match lib with
   | [] => True
   | entry :: entries =>
@@ -5648,7 +5795,7 @@ Fixpoint is_canonical_library {o} (lib : @library o) : Prop :=
   end.
 
 Lemma implies_is_canonical_library_filter {o} :
-  forall f (lib : @library o),
+  forall f (lib : @plibrary o),
     is_canonical_library lib
     -> is_canonical_library (filter f lib).
 Proof.
@@ -5663,7 +5810,7 @@ Qed.
 Hint Resolve implies_is_canonical_library_filter : slow.
 
 Lemma is_canonical_canonicalize_library {o} :
-  forall (lib : @library o),
+  forall (lib : @plibrary o),
     is_canonical_library (canonicalize_library lib).
 Proof.
   induction lib; simpl in *; auto.
@@ -5717,7 +5864,7 @@ Proof.
 Qed.
 
 Lemma sublist_preserves_is_canonical_library {o} :
-  forall lib2 (lib1 : @library o),
+  forall lib2 (lib1 : @plibrary o),
     sublist lib1 lib2
     -> is_canonical_library lib2
     -> is_canonical_library lib1.
@@ -5760,7 +5907,7 @@ Proof.
 Qed.
 
 Lemma fst_can_lib_is_canonical {o} :
-  forall (lib : @library o),
+  forall (lib : @plibrary o),
     is_canonical_library (fst (can_lib lib)).
 Proof.
   induction lib; simpl in *; auto.
@@ -5844,7 +5991,7 @@ Proof.
 Qed.
 
 Lemma can_lib_preserves_entry_in_library {o} :
-  forall entry (lib : @library o) lib1 lib2,
+  forall entry (lib : @plibrary o) lib1 lib2,
     can_lib lib = (lib1, lib2)
     -> entry_in_library entry (lib1 ++ lib2)
     -> entry_in_library entry lib.
@@ -5869,7 +6016,7 @@ Qed.
 Hint Resolve can_lib_preserves_entry_in_library : slow.
 
 Lemma can_lib_preserves_entry_in_library2 {o} :
-  forall entry (lib : @library o) lib1 lib2,
+  forall entry (lib : @plibrary o) lib1 lib2,
     can_lib lib = (lib1, lib2)
     -> entry_in_library entry lib
     -> entry_in_library entry (lib1 ++ lib2).
@@ -5916,7 +6063,7 @@ Qed.
 Hint Resolve can_lib_preserves_safe_library2 : slow.
 
 Lemma implies_entry_in_library_app_if_left {o} :
-  forall entry (lib1 lib2 : @library o),
+  forall entry (lib1 lib2 : @plibrary o),
     entry_in_library entry lib1
     -> entry_in_library entry (lib1 ++ lib2).
 Proof.
@@ -5936,7 +6083,7 @@ Qed.
 Hint Resolve can_lib_preserves_safe_library_left : slow.
 
 Lemma can_lib_left_prop {o} :
-  forall (lib : @library o) lib1 lib2,
+  forall (lib : @plibrary o) lib1 lib2,
     can_lib lib = (lib1, lib2)
     -> shadowed_library lib2 lib1.
 Proof.
@@ -5973,7 +6120,7 @@ Proof.
 Qed.
 
 Lemma shadowed_library_nil_r_implies {o} :
-  forall (lib : @library o),
+  forall (lib : @plibrary o),
     shadowed_library lib [] -> lib = [].
 Proof.
   introv sh; destruct lib as [|entry lib]; auto.
@@ -5982,7 +6129,7 @@ Proof.
 Qed.
 
 Lemma shadowed_library_nil_l {o} :
-  forall (lib : @library o), shadowed_library [] lib.
+  forall (lib : @plibrary o), shadowed_library [] lib.
 Proof.
   introv i; simpl in *; tcsp.
 Qed.
@@ -6009,8 +6156,8 @@ Proof.
 Qed.
 
 Lemma extend_library_entry_lawless_upto_preserves_matching_entries2 {o} :
-  forall (entry entry1 entry2 : @library_entry o) name n,
-    extend_library_entry_lawless_upto entry1 entry2 name n
+  forall C (entry entry1 entry2 : @library_entry o) name n,
+    extend_library_entry_lawless_upto C entry1 entry2 name n
     -> matching_entries entry entry2
     -> matching_entries entry entry1.
 Proof.
@@ -6020,7 +6167,7 @@ Qed.
 Hint Resolve extend_library_entry_lawless_upto_preserves_matching_entries2 : slow.
 
 Lemma entry_in_library_app_implies {o} :
-  forall entry (lib1 lib2 : @library o),
+  forall entry (lib1 lib2 : @plibrary o),
     entry_in_library entry (lib1 ++ lib2)
     ->
     (
@@ -6042,7 +6189,7 @@ Proof.
 Qed.
 
 Lemma entry_in_library_app_shadowed_library {o} :
-  forall entry (lib1 lib2 : @library o),
+  forall entry (lib1 lib2 : @plibrary o),
     shadowed_library lib2 lib1
     -> entry_in_library entry (lib1 ++ lib2)
     -> entry_in_library entry lib1.
@@ -6054,10 +6201,10 @@ Proof.
 Qed.
 
 Definition extend_library_lawless_upto_preserves_shadowed {o} :
-  forall name n (lib2 lib2' lib1 lib1' : @library o),
+  forall C name n (lib2 lib2' lib1 lib1' : @plibrary o),
     shadowed_library lib2 lib1
-    -> extend_library_lawless_upto lib1' lib1 name n
-    -> extend_library_lawless_upto lib2' lib2 name n
+    -> extend_plibrary_lawless_upto C lib1' lib1 name n
+    -> extend_plibrary_lawless_upto C lib2' lib2 name n
     -> shadowed_library lib2' lib1'.
 Proof.
   induction lib2; introv sh ext1 ext2; destruct lib2'; simpl in *; tcsp; GC; eauto 2 with slow.
@@ -6077,37 +6224,37 @@ Proof.
 Qed.
 
 Lemma extend_library_lawless_upto_middle_right_implies {o} :
-  forall (lib1 lib2 : @library o) lib entry name n,
-    extend_library_lawless_upto lib (lib1 ++ entry :: lib2) name n
+  forall C (lib1 lib2 : @plibrary o) lib entry name n,
+    extend_plibrary_lawless_upto C lib (lib1 ++ entry :: lib2) name n
     ->
     exists l1 l2 e,
       lib = l1 ++ e :: l2
-      /\ extend_library_lawless_upto l1 lib1 name n
-      /\ extend_library_lawless_upto l2 lib2 name n
-      /\ extend_library_entry_lawless_upto e entry name n.
+      /\ extend_plibrary_lawless_upto C l1 lib1 name n
+      /\ extend_plibrary_lawless_upto C l2 lib2 name n
+      /\ extend_library_entry_lawless_upto C e entry name n.
 Proof.
   induction lib1; introv ext; simpl in *;
     destruct lib; simpl in *; tcsp; repnd.
 
-  - exists ([] : @library o) lib l; simpl; dands; auto.
+  - exists ([] : @plibrary o) lib l; simpl; dands; auto.
 
   - dup ext as ext'; eapply IHlib1 in ext'; exrepnd; subst.
     exists (l :: l1) l2 e; simpl; dands; auto.
 Qed.
 
 Lemma implies_extend_library_lawless_upto_snoc {o} :
-  forall (lib1 lib2 : @library o) e1 e2 name n,
-    extend_library_entry_lawless_upto e1 e2 name n
-    -> extend_library_lawless_upto lib1 lib2 name n
-    -> extend_library_lawless_upto (snoc lib1 e1) (snoc lib2 e2) name n.
+  forall C (lib1 lib2 : @plibrary o) e1 e2 name n,
+    extend_library_entry_lawless_upto C e1 e2 name n
+    -> extend_plibrary_lawless_upto C lib1 lib2 name n
+    -> extend_plibrary_lawless_upto C (snoc lib1 e1) (snoc lib2 e2) name n.
 Proof.
   induction lib1; introv ext1 ext2; simpl in *; tcsp; destruct lib2; simpl in *; tcsp.
 Qed.
 Hint Resolve implies_extend_library_lawless_upto_snoc : slow.
 
 Lemma extend_library_entry_lawless_upto_preserves_diff_entry_names_false {o} :
-  forall (e1 e2 : @library_entry o) name n e,
-    extend_library_entry_lawless_upto e1 e2 name n
+  forall C (e1 e2 : @library_entry o) name n e,
+    extend_library_entry_lawless_upto C e1 e2 name n
     -> diff_entry_names e e2 = false
     -> diff_entry_names e e1 = false.
 Proof.
@@ -6131,14 +6278,14 @@ Definition has_memNat_restriction {o} (e : @library_entry o) name : Prop :=
   | _ => True
   end.
 
-Fixpoint lib_has_memNat_restriction {o} (lib : @library o) name : Prop :=
+Fixpoint lib_has_memNat_restriction {o} (lib : @plibrary o) name : Prop :=
   match lib with
   | [] => True
   | e :: es => has_memNat_restriction e name /\ lib_has_memNat_restriction es name
   end.
 
 Lemma lib_has_memNat_restriction_snoc {o} :
-  forall (lib : @library o) e name,
+  forall (lib : @plibrary o) e name,
     lib_has_memNat_restriction (snoc lib e) name
     <-> (lib_has_memNat_restriction lib name /\ has_memNat_restriction e name).
 Proof.
@@ -6152,8 +6299,8 @@ Proof.
 Qed.
 
 Lemma extend_library_lawless_upto_preserves_forallb_diff_entry_names_false {o} :
-  forall (lib1 lib2 : @library o) name n e,
-    extend_library_lawless_upto lib1 lib2 name n
+  forall C (lib1 lib2 : @plibrary o) name n e,
+    extend_plibrary_lawless_upto C lib1 lib2 name n
     -> forallb (diff_entry_names e) lib2 = false
     -> forallb (diff_entry_names e) lib1 = false.
 Proof.
@@ -6490,18 +6637,30 @@ Proof.
     rewrite select_inf_choice_seq_vals2choice_seq_vals in h; boolvar; ginv; eauto 3 with slow.
 Qed.*)
 
+Lemma in_fun2list :
+  forall {A} m (f : nat -> A) v,
+    LIn v (fun2list m f)
+    -> exists n, n < m /\ v = f n.
+Proof.
+  induction m; introv i; simpl in *; tcsp.
+  apply in_snoc in i; repndors; subst; eauto.
+  apply IHm in i; exrepnd; subst; exists n; auto.
+Qed.
+
 Lemma extend_library_entry_lawless_upto_choice_sequence_name2entry_upto_same {o} :
-  forall n m name (restr : @ChoiceSeqRestriction o),
+  forall C n m name (restr : @ChoiceSeqRestriction o),
     m <= n
     -> is_primitive_kind name
     -> correct_restriction name restr
+    -> sat_cond_def C
     -> extend_library_entry_lawless_upto
+         C
          (choice_sequence_name2entry_upto n name restr)
          (choice_sequence_name2entry_upto m name restr)
          name
          n.
 Proof.
-  introv lena isn cor.
+  introv lena isn cor sat.
   unfold extend_library_entry_lawless_upto; simpl; boolvar; auto; tcsp; GC.
   unfold is_primitive_kind in *.
   unfold correct_restriction in *.
@@ -6515,9 +6674,10 @@ Proof.
     { rewrite (fun2list_split n m); auto.
       exists (fun2list (n - m) (fun _ => @mkc_zero o)); autorewrite with slow.
       dands; auto; try omega.
-      introv h.
-      rewrite select_fun2list in h; boolvar; ginv.
-      apply cor; eauto 3 with slow. }
+      { introv h.
+        rewrite select_fun2list in h; boolvar; ginv.
+        apply cor; eauto 3 with slow. }
+      { introv i; apply in_fun2list in i; exrepnd; subst; simpl; apply sat. } }
 
   - unfold is_bool_restriction in *.
     destruct restr; auto; tcsp; repnd; GC; simpl in *; autorewrite with slow;
@@ -6526,9 +6686,10 @@ Proof.
     { rewrite (fun2list_split n m); auto.
       exists (fun2list (n - m) (fun _ => @tt o)); autorewrite with slow.
       dands; auto; try omega.
-      introv h.
-      rewrite select_fun2list in h; boolvar; ginv.
-      apply cor; eauto 3 with slow. }
+      { introv h.
+        rewrite select_fun2list in h; boolvar; ginv.
+        apply cor; eauto 3 with slow. }
+      { introv i; apply in_fun2list in i; exrepnd; subst; simpl; apply sat. } }
 
   - unfold is_nat_seq_restriction in *; GC.
     destruct restr; auto; tcsp; simpl in *; autorewrite with slow in *; repnd.
@@ -6536,7 +6697,9 @@ Proof.
     unfold choice_sequence_name2choice_seq_vals_upto; simpl.
     rewrite (fun2list_split n m); auto.
     exists (fun2list (n - m) (fun k => @natSeq2default o seq (k + m))); autorewrite with slow.
-    dands; auto; try omega.
+    dands; auto; try omega;
+      try (introv i; apply in_fun2list in i; exrepnd; subst; simpl in *; apply sat).
+
     introv h.
     rewrite select_fun2list in h; boolvar; ginv.
     unfold natSeq2default.
@@ -6555,16 +6718,18 @@ Hint Rewrite Nat.sub_diag : slow nat.
 Hint Rewrite Max.max_0_r : slow nat.
 
 Lemma extend_library_entry_lawless_upto_choice_sequence_name2entry_upto_same_max {o} :
-  forall n m name (restr : @ChoiceSeqRestriction o),
+  forall C n m name (restr : @ChoiceSeqRestriction o),
     is_primitive_kind name
     -> correct_restriction name restr
+    -> sat_cond_def C
     -> extend_library_entry_lawless_upto
+         C
          (choice_sequence_name2entry_upto (Peano.max n m) name restr)
          (choice_sequence_name2entry_upto m name restr)
          name
          n.
 Proof.
-  introv isn cor.
+  introv isn cor sat.
   unfold extend_library_entry_lawless_upto; simpl; boolvar; auto; tcsp; GC.
   unfold is_primitive_kind in *.
   unfold correct_restriction in *.
@@ -6578,9 +6743,10 @@ Proof.
     { rewrite (fun2list_split (Init.Nat.max n m) m); auto; eauto 3 with slow.
       exists (fun2list ((Peano.max n m) - m) (fun _ => @mkc_zero o)); autorewrite with slow.
       dands; auto; try rewrite <- Nat.sub_max_distr_r; autorewrite with slow nat; auto.
-      introv h.
-      rewrite select_fun2list in h; boolvar; ginv; eauto 3 with slow.
-      apply cor; eauto 3 with slow. }
+      { introv h.
+        rewrite select_fun2list in h; boolvar; ginv; eauto 3 with slow.
+        apply cor; eauto 3 with slow. }
+      { introv i; apply in_fun2list in i; exrepnd; subst; apply sat. } }
 
   - unfold is_bool_restriction in *.
     destruct restr; auto; tcsp; repnd; GC; simpl in *; autorewrite with slow;
@@ -6589,9 +6755,10 @@ Proof.
     { rewrite (fun2list_split (Init.Nat.max n m) m); auto; eauto 3 with slow.
       exists (fun2list ((Peano.max n m) - m) (fun _ => @tt o)); autorewrite with slow.
       dands; auto; try rewrite <- Nat.sub_max_distr_r; autorewrite with slow nat; auto.
-      introv h.
-      rewrite select_fun2list in h; boolvar; ginv; eauto 3 with slow.
-      apply cor; eauto 3 with slow. }
+      { introv h.
+        rewrite select_fun2list in h; boolvar; ginv; eauto 3 with slow.
+        apply cor; eauto 3 with slow. }
+      { introv i; apply in_fun2list in i; exrepnd; subst; apply sat. } }
 
   - unfold is_nat_seq_restriction in *; GC.
     destruct restr; auto; tcsp; simpl in *; autorewrite with slow in *; repnd.
@@ -6599,9 +6766,9 @@ Proof.
     unfold choice_sequence_name2choice_seq_vals_upto; simpl.
     rewrite (fun2list_split (Init.Nat.max n m) m); auto; eauto 3 with slow.
     exists (fun2list ((Peano.max n m) - m) (fun k => @natSeq2default o seq (k + m))); autorewrite with slow.
-    dands; auto.
-
-    { rewrite <- Nat.sub_max_distr_r; autorewrite with slow nat; auto. }
+    dands; auto;
+      try (introv i; apply in_fun2list in i; exrepnd; subst; simpl; apply sat);
+      try (rewrite <- Nat.sub_max_distr_r; autorewrite with slow nat; auto).
 
     introv h.
     rewrite select_fun2list in h; boolvar; ginv; eauto 3 with slow.
@@ -6640,9 +6807,10 @@ Proof.
 Qed.
 
 Lemma extend_library_entry_lawless_upto_choice_sequence_name2entry_upto_diff {o} :
-  forall name1 name2 n1 n2 (restr : @ChoiceSeqRestriction o),
+  forall c name1 name2 n1 n2 (restr : @ChoiceSeqRestriction o),
     name1 <> name2
     -> extend_library_entry_lawless_upto
+         c
          (choice_sequence_name2entry_upto n2 name2 restr)
          (choice_sequence_name2entry_upto n2 name2 restr)
          name1
@@ -6792,8 +6960,8 @@ Proof.
 Qed.*)
 
 Lemma extend_library_lawless_upto_preserves_name_in_library {o} :
-  forall (lib1 lib2 : @library o) name k,
-    extend_library_lawless_upto lib1 lib2 name k
+  forall C (lib1 lib2 : @plibrary o) name k,
+    extend_plibrary_lawless_upto C lib1 lib2 name k
     -> name_in_library name lib2
     -> name_in_library name lib1.
 Proof.

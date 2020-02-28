@@ -318,7 +318,7 @@ Proof.
 Qed.
 
 Lemma compute_step_mk_cbv_abs {o} :
-  forall (lib : @library o) x l v u,
+  forall (lib : @plibrary o) x l v u,
     compute_step lib (mk_cbv (oterm (Abs x) l) v u)
     = match compute_step_lib lib x l with
         | csuccess f => csuccess (mk_cbv f v u)
@@ -368,7 +368,7 @@ Qed.
 
 (*
 Lemma compute_at_most_k_steps_marker {o} :
-  forall (lib : @library o) k t,
+  forall (lib : @plibrary o) k t,
     ismrk lib t
     -> compute_at_most_k_steps lib k t
        = csuccess t.
@@ -380,7 +380,7 @@ Qed.
 
 (*
 Lemma reduces_in_atmost_k_steps_marker {o} :
-  forall (lib : @library o) k mrk l v,
+  forall (lib : @plibrary o) k mrk l v,
     reduces_in_atmost_k_steps lib (oterm (Mrk mrk) l) v k
     -> v = oterm (Mrk mrk) l.
 Proof.
@@ -1648,7 +1648,7 @@ Ltac destructbtdeep bt Hcomp :=
 
 
 Lemma compute_step_lib_success_change_bs {o} :
-  forall (lib : @library o) oa1 oa2 bs1 bs2 vars rhs correct,
+  forall (lib : @plibrary o) oa1 oa2 bs1 bs2 vars rhs correct,
     map num_bvars bs1 = map num_bvars bs2
     -> found_entry lib oa1 bs1 oa2 vars rhs correct
     -> compute_step_lib lib oa1 bs2 = csuccess (mk_instance vars bs2 rhs).
@@ -3887,7 +3887,7 @@ Qed.
 
 (*
 Lemma compute_at_most_k_stepsf_primarg_marker {o} :
-  forall (lib : @library o) k nc mrk l bs,
+  forall (lib : @plibrary o) k nc mrk l bs,
     compute_at_most_k_stepsf
       lib
       k
@@ -3900,7 +3900,7 @@ Proof.
 Qed.
 
 Lemma compute_at_most_k_steps_primarg_marker {o} :
-  forall (lib : @library o) k nc mrk l bs,
+  forall (lib : @plibrary o) k nc mrk l bs,
     compute_at_most_k_steps
       lib
       k
@@ -3913,7 +3913,7 @@ Proof.
 Qed.
 
 Lemma reduces_in_atmost_k_steps_primarg_marker {o} :
-  forall (lib : @library o) k nc mrk l bs a,
+  forall (lib : @plibrary o) k nc mrk l bs a,
     reduces_in_atmost_k_steps
       lib
       (oterm (NCan nc) (nobnd (oterm (Mrk mrk) l) :: bs))

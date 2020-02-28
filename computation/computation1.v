@@ -648,7 +648,7 @@ Definition atom_sub_dom {o} (s : @atom_sub o) : list NVar :=
  *)
 Record compenv {o} :=
   {
-    ce_library : @library o;
+    ce_library : @plibrary o;
     ce_atom_sub : @atom_sub o
   }.
 
@@ -952,7 +952,7 @@ Record ComputationContext {o} :=
 *)
 
 Definition compute_step_lib {o}
-           (lib : @library o)
+           (lib : @plibrary o)
            (opabs : opabs)
            (bs : list (@BTerm o)) :=
   match unfold_abs lib opabs bs with
@@ -1011,7 +1011,7 @@ Definition get_utokens_library_entry {p} (entry : @library_entry p) : list (get_
   | lib_abs opabs vars rhs correct => get_utokens_so rhs
   end.
 
-Definition get_utokens_library {p} (lib : @library p) : list (get_patom_set p) :=
+Definition get_utokens_library {p} (lib : @plibrary p) : list (get_patom_set p) :=
   flat_map get_utokens_library_entry lib.
 
 Definition get_utokens_ce {o} (ce : @compenv o) : list (get_patom_set o) :=
@@ -1023,7 +1023,7 @@ Definition valid_atom_sub {o} (sub : @atom_sub o) (ce : @compenv o) (t : @NTerm 
            (get_utokens_library (ce_library ce) ++ get_utokens t)
   # atom_sub_dom sub = atom_sub_dom (ce_atom_sub ce).
 
-Definition mk_ce {o} (lib : @library o) (sub : @atom_sub o) : compenv :=
+Definition mk_ce {o} (lib : @plibrary o) (sub : @atom_sub o) : compenv :=
   {| ce_library := lib; ce_atom_sub := sub |}.
 
 Definition ce_change_atom_sub {o} (ce : @compenv o) (sub : @atom_sub o) : compenv :=
@@ -1341,7 +1341,7 @@ Definition pushdown_fresh {o} (v : NVar) (t : @NTerm o) :=
   end.
 
 Definition compute_step_fresh {o}
-           (lib : @library o)
+           (lib : @plibrary o)
            (ncan : NonCanonicalOp)
            (t : @NTerm o)
            (v : NVar)

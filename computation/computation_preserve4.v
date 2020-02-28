@@ -1123,7 +1123,7 @@ Qed.
 Hint Resolve isvalue_like_pushdown_fresh : slow.
 
 Lemma reduces_in_atmost_k_step_fresh_id {o} :
-  forall (lib : @library o) v t,
+  forall (lib : @plibrary o) v t,
     isvalue_like t
     -> !(reduces_to lib (mk_fresh v (mk_var v)) t).
 Proof.
@@ -1227,7 +1227,7 @@ Proof.
 Qed.
 
 Lemma compute_at_most_k_steps_S2 {o} :
-  forall (lib : library) (n : nat) (t : @NTerm o),
+  forall (lib : plibrary) (n : nat) (t : @NTerm o),
     compute_at_most_k_steps lib (S n) t
     = match compute_step lib t with
         | csuccess u => compute_at_most_k_steps lib n u
@@ -1882,7 +1882,7 @@ end.
     already canonical.  This notion is what Crary's right arrow(|->) means
     See Proposition 4.2. He says that for canonical terms
     are not allowed at the LHS of this relation*)
-Inductive computes_in_1step {p} : @library p -> @NTerm p -> @NTerm p -> [univ] :=
+Inductive computes_in_1step {p} : @plibrary p -> @NTerm p -> @NTerm p -> [univ] :=
 | c1step_nc :
     forall lib (no: NonCanonicalOp) (lbt : list BTerm) (tc : NTerm),
       compute_step lib (oterm (NCan no) lbt) = csuccess tc
@@ -1999,14 +1999,14 @@ Proof.
   eapply compute_1step_eq; eauto.
 Qed.
 
-Inductive computes_in_kstep_alpha {p} : @library p -> nat -> @NTerm p -> @NTerm p -> [univ]:=
+Inductive computes_in_kstep_alpha {p} : @plibrary p -> nat -> @NTerm p -> @NTerm p -> [univ]:=
 |ckainit : forall lib t1 t2,  alpha_eq t1 t2 -> computes_in_kstep_alpha lib 0 t1 t2
 |ckacons : forall lib k t1 t2 t3 ,
                         computes_in_1step_alpha lib t1 t2
                         -> computes_in_kstep_alpha lib k t2 t3
                         -> computes_in_kstep_alpha lib (S k) t1 t3.
 
-Inductive computes_in_kstep {p} : @library p -> nat -> @NTerm p -> @NTerm p -> [univ]:=
+Inductive computes_in_kstep {p} : @plibrary p -> nat -> @NTerm p -> @NTerm p -> [univ]:=
 |ckinit : forall lib t , computes_in_kstep lib 0 t t
 |ckcons : forall lib k t1 t2 t3 ,
                         computes_in_1step lib  t1 t2
@@ -2036,7 +2036,7 @@ Proof.
 Qed.
 
 Lemma noncan_tricot_abs {p} :
-  forall (lib : @library p) ab lbt,
+  forall (lib : @plibrary p) ab lbt,
   isprogram (oterm (Abs ab) lbt)
   -> { v : @NTerm p
        $ compute_step lib (oterm (Abs ab) lbt) = csuccess v

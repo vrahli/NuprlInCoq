@@ -116,7 +116,7 @@ Definition ChoiceSequenceEntry2entry {o} (e : @ChoiceSequenceEntry o) : library_
   | MkChoiceSequenceEntry name e safe => lib_cs name e
   end.
 
-Definition ChoiceSequenceEntries2lib {o} (l : list (@ChoiceSequenceEntry o)) : library :=
+Definition ChoiceSequenceEntries2lib {o} (l : list (@ChoiceSequenceEntry o)) : plibrary :=
   map ChoiceSequenceEntry2entry l.
 
 Definition ChoiceSequenceEntries {o} := list (@ChoiceSequenceEntry o).
@@ -128,7 +128,7 @@ Record CsRens :=
     }.
 
 Definition ext_ren {o}
-           (lib  : @library o)
+           (lib  : @plibrary o)
            (lext : ChoiceSequenceEntries)
            (rens : CsRens)
            (n    : nat) :=
@@ -187,7 +187,7 @@ Hint Resolve implies_e_all_in_bar_intersect_bars_right : slow.*)
 
 
 Lemma implies_lib_extends_entries_app_l {o} :
-  forall (lib1 lib2 : @library o),
+  forall (lib1 lib2 : @plibrary o),
     lib_extends_entries (lib1 ++ lib2) lib1.
 Proof.
   introv h.
@@ -197,7 +197,7 @@ Qed.
 Hint Resolve implies_lib_extends_entries_app_l : slow.
 
 Lemma implies_safe_library_app {o} :
-  forall (lib1 lib2 : @library o),
+  forall (lib1 lib2 : @plibrary o),
     safe_library lib1 -> safe_library lib2 -> safe_library (lib1 ++ lib2).
 Proof.
   introv safe1 safe2 i.
@@ -206,7 +206,7 @@ Qed.
 Hint Resolve implies_safe_library_app : slow.
 
 Lemma subset_library_app_l {o} :
-  forall (lib1 lib2 : @library o),
+  forall (lib1 lib2 : @plibrary o),
     subset_library lib1 (lib1 ++ lib2).
 Proof.
   introv i; exists entry1; dands; eauto 3 with slow.
@@ -312,7 +312,7 @@ Definition emCsRens : CsRens := MkCsRens (fun (n : nat) => []).
 
 
 Lemma ext_ren_nil {o} :
-  forall (lib : @library o) rens n,
+  forall (lib : @plibrary o) rens n,
     ext_ren lib [] rens n = lib.
 Proof.
   unfold ext_ren; introv; simpl; autorewrite with slow; auto.

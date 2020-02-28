@@ -297,11 +297,27 @@ Definition unfold_abs_entry {o}
     else None
   end.
 
-Definition library {o} := list (@library_entry o).
+(* pre-library *)
+Definition plibrary {o} := list (@library_entry o).
 
-Definition emlib {o} : @library o := [].
+(* conditions to constraint the kind of values we add *)
+Inductive LibCondKind {o} :=
+| lck_term  (t : @NTerm o)
+| lck_restr (r : @ChoiceSeqRestriction o).
+Definition LibCond {o} := @LibCondKind o -> Prop.
 
-Fixpoint find_cs {o} lib name : option (@ChoiceSeqEntry o) :=
+Record library {o} :=
+  MkLib {
+      lib_pre :> @plibrary o;
+      lib_cond : @LibCond o;
+    }.
+Arguments MkLib [o] _ _.
+
+Definition defLC {o} : @LibCond o := fun _ => True.
+
+Definition emlib {o} : @library o := MkLib [] defLC.
+
+Fixpoint find_cs {o} (lib : plibrary) name : option (@ChoiceSeqEntry o) :=
   match lib with
   | [] => None
   | lib_cs name' e :: l =>
@@ -330,7 +346,7 @@ Definition find_cs_value_at {o} lib name n : option (@ChoiceSeqVal o) :=
   | None => None
   end.
 
-Fixpoint find_entry {o} lib oa0 (bs : list (@BTerm o)) : option (@library_entry o) :=
+Fixpoint find_entry {o} (lib : plibrary) oa0 (bs : list (@BTerm o)) : option (@library_entry o) :=
   match lib with
   | [] => None
   | lib_cs _ _ :: l => find_entry l oa0 bs
@@ -341,7 +357,7 @@ Fixpoint find_entry {o} lib oa0 (bs : list (@BTerm o)) : option (@library_entry 
   end.
 
 Definition found_entry {o}
-           lib oa0 (bs : list (@BTerm o))
+           (lib : @plibrary o) oa0 (bs : list (@BTerm o))
            oa vars rhs correct :=
   find_entry lib oa0 bs = Some (lib_abs oa vars rhs correct).
 
@@ -360,7 +376,7 @@ Proof.
 Qed.
 
 Fixpoint unfold_abs {o}
-         (lib : @library o)
+         (lib : @plibrary o)
          (opabs : opabs)
          (bs : list (@BTerm o)): option (@NTerm o) :=
   match lib with
@@ -432,7 +448,7 @@ Proof.
 Qed.
 
 Lemma isprogram_subst_lib {o} :
-  forall oa0 oa vars rhs (lib : @library o) bs correct,
+  forall oa0 oa vars rhs (lib : @plibrary o) bs correct,
     found_entry lib oa0 bs oa vars rhs correct
     -> (forall b, LIn b bs -> isprogram_bt b)
     -> isprogram (mk_instance vars bs rhs).
@@ -519,7 +535,7 @@ Proof.
 Qed.
 
 Lemma found_entry_change_bs {o} :
-  forall oa0 oa vars rhs (lib : @library o) bs correct bs2,
+  forall oa0 oa vars rhs (lib : @plibrary o) bs correct bs2,
     found_entry lib oa0 bs oa vars rhs correct
     -> map num_bvars bs = map num_bvars bs2
     -> found_entry lib oa0 bs2 oa vars rhs correct.
@@ -542,7 +558,7 @@ Proof.
 Qed.
 
 Lemma unfold_abs_success_change_bs {o} :
-  forall (lib : @library o) oa1 oa2 bs1 bs2 vars rhs correct,
+  forall (lib : @plibrary o) oa1 oa2 bs1 bs2 vars rhs correct,
     map num_bvars bs1 = map num_bvars bs2
     -> found_entry lib oa1 bs1 oa2 vars rhs correct
     -> unfold_abs lib oa1 bs2 = Some (mk_instance vars bs2 rhs).
@@ -630,14 +646,14 @@ Definition bound_vars_entry {o} (entry : @library_entry o) : list sovar_sig :=
   | lib_abs opabs vars rhs correct => vars ++ so_bound_vars rhs
   end.
 
-Fixpoint bound_vars_lib {o} (lib : @library o) : list sovar_sig :=
+Fixpoint bound_vars_lib {o} (lib : @plibrary o) : list sovar_sig :=
   match lib with
     | [] => []
     | entry :: entries => bound_vars_entry entry ++ bound_vars_lib entries
   end.
 
 Lemma ni_bound_vars_if_found_entry {o} :
-  forall (lib : @library o) v oa1 bs oa2 vars rhs correct,
+  forall (lib : @plibrary o) v oa1 bs oa2 vars rhs correct,
     !LIn v (bound_vars_lib lib)
     -> found_entry lib oa1 bs oa2 vars rhs correct
     -> !LIn v (so_bound_vars rhs).

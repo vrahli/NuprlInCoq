@@ -187,12 +187,12 @@ Definition mk_comp_seq1 {o} (n f : @NTerm o) :=
 Definition mk_comp_seq2 {o} l i (n f : @NTerm o) :=
   oterm (NCan (NCompSeq2 (MkCompSeqNfo l i))) [nobnd n, nobnd f].
 
-Definition mk_fresh_choice_nat_seq {o} (lib : @library o) (l : list nat) : @NTerm o :=
+Definition mk_fresh_choice_nat_seq {o} (lib : @plibrary o) (l : list nat) : @NTerm o :=
   let cs := "a" (*fresh_cs_in_lib lib*) in
   mk_choice_seq (MkChoiceSequenceName cs (cs_kind_seq l)).
 
 Definition compute_step_comp_seq1 {o}
-           (lib : @library o)
+           (lib : @plibrary o)
            (arg1c : @CanonicalOp o)
            (t : @NTerm o)
            (arg1bts btsr : list (@BTerm o)) :=
@@ -213,7 +213,7 @@ Definition compute_step_comp_seq1 {o}
   end.
 
 Definition compute_step_comp_seq2 {o}
-           (lib : @library o)
+           (lib : @plibrary o)
            (nfo : CompSeqNfo)
            (arg1c : @CanonicalOp o)
            (t : @NTerm o)
@@ -244,7 +244,7 @@ Fixpoint last_cs_entry {o} (l : @ChoiceSeqVals o) : option ChoiceSeqVal :=
   | _ :: k => last_cs_entry k
   end.
 
-Definition find_last_entry_default {o} (lib : @library o) name (d : NTerm) : NTerm :=
+Definition find_last_entry_default {o} (lib : @plibrary o) name (d : NTerm) : NTerm :=
   match find_cs lib name with
   | Some entry =>
     match last_cs_entry entry with
@@ -255,7 +255,7 @@ Definition find_last_entry_default {o} (lib : @library o) name (d : NTerm) : NTe
   end.
 
 Definition compute_step_last_cs {o}
-           (lib   : @library o)
+           (lib   : @plibrary o)
            (arg1c : @CanonicalOp o)
            (t     : @NTerm o)
            (arg1bts btsr : list (@BTerm o)) :=
@@ -265,7 +265,7 @@ Definition compute_step_last_cs {o}
   end.
 
 Definition compute_step_can {o}
-           lib
+           (lib : plibrary)
            (t : @NTerm o)
            (ncr : NonCanonicalOp)
            (arg1c : CanonicalOp)
@@ -529,8 +529,8 @@ Proof.
 Qed.
 
 Definition compute_step {o}
-           (lib : @library o)
-           (t : @NTerm o) : Comput_Result :=
+           (lib : @plibrary o)
+           (t   : @NTerm o) : Comput_Result :=
   @Fix NTerm
        (fun a b => lt (size a) (size b))
        (measure_wf lt_wf size)
@@ -568,7 +568,7 @@ Definition compute_step {o}
        t.
 
 Definition compute_step_unfold {o}
-         (lib : @library o)
+         (lib : @plibrary o)
          (t : @NTerm o) : Comput_Result :=
   match t with
     | vterm v => cfailure compute_step_error_not_closed t

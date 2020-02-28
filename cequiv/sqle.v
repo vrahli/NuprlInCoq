@@ -48,7 +48,7 @@ Require Export computation4.
 
  *)
 
-Inductive sqle_n {o} (lib : @library o) :  nat -> @NTerm o -> @NTerm o -> [univ] :=
+Inductive sqle_n {o} (lib : @plibrary o) :  nat -> @NTerm o -> @NTerm o -> [univ] :=
  | sql0 : forall tl tr, isprogram tl -> isprogram tr -> sqle_n lib 0 tl tr
  | sql_add1 : forall n tl tr, (close_comput lib (sqle_n lib n)) tl tr
                                -> sqle_n lib (S n) tl tr.

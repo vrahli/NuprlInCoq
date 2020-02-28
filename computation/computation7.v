@@ -78,7 +78,7 @@ Proof.
 Qed.
 
 Definition compute_eager_exc {o}
-           (lib : library)
+           (lib : plibrary)
            (a e : @NTerm o) : Comput_Result :=
   match a with
     | vterm _ => cfailure compute_step_error_not_closed (mk_exception a e)
@@ -103,7 +103,7 @@ Definition compute_eager_exc {o}
   end.
 
 Fixpoint compute_at_most_k_steps_exc {p}
-         (lib : library)
+         (lib : plibrary)
          (k : nat)
          (t : NTerm) : @Comput_Result p :=
   match k with

@@ -310,12 +310,12 @@ Definition choice_seq_names_in_entry {o} (e : @library_entry o) : list choice_se
   | lib_abs _ _ _ _ => []
   end.
 
-Fixpoint choice_seq_names_in_lib {o} (lib : @library o) : list choice_sequence_name :=
+Fixpoint choice_seq_names_in_lib {o} (lib : @plibrary o) : list choice_sequence_name :=
   match lib with
   | [] => []
   | e :: es =>
     (choice_seq_names_in_entry e) ++ (choice_seq_names_in_lib es)
   end.
 
-Definition fresh_cs_in_lib {o} (lib : @library o) : cs_name :=
+Definition fresh_cs_in_lib {o} (lib : @plibrary o) : cs_name :=
   fresh_cs (map csn_name (choice_seq_names_in_lib lib)).

@@ -567,9 +567,10 @@ Definition rule_nsls1 {o}
     [].
 
 Lemma rule_nsls1_true {o} :
-  forall lib (n f a : NVar) (H : @bhyps o)
+  forall (lib : library) (n f a : NVar) (H : @bhyps o)
          (d1 : n <> f) (d2 : n <> a) (d3 : a <> f)
          (safe : safe_library lib)
+         (sat  : lib_cond_sat_def lib)
          (norep : no_repeats_library lib),
     rule_true lib (rule_nsls1 lib n f a H).
 Proof.
@@ -592,8 +593,9 @@ Proof.
 
   assert (safe_library lib') as safe' by eauto 3 with slow.
   assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-  clear lib safe norep ext.
-  rename lib' into lib; rename safe' into safe; rename norep' into norep.
+  assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
+  clear lib safe sat norep ext.
+  rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
   assert (tequality lib (nsls1c n f a) (nsls1c n f a)) as teq.
   {
@@ -603,9 +605,10 @@ Proof.
     eapply lib_extends_preserves_similarity in sim;[|eauto].
     eapply lib_extends_preserves_hyps_functionality_ext in eqh;[|eauto].
     assert (safe_library lib') as safe' by eauto 3 with slow.
+    assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
     assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-    clear lib xt safe norep.
-    rename lib' into lib; rename safe' into safe; rename norep' into norep.
+    clear lib xt safe norep sat.
+    rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
     repeat (rewrite substc_mkcv_function;[|auto];[]).
 
@@ -616,9 +619,10 @@ Proof.
     eapply lib_extends_preserves_similarity in sim;[|eauto].
     eapply lib_extends_preserves_hyps_functionality_ext in eqh;[|eauto].
     assert (safe_library lib') as safe' by eauto 3 with slow.
+    assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
     assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-    clear lib y safe norep.
-    rename lib' into lib; rename safe' into safe; rename norep' into norep.
+    clear lib y safe norep sat.
+    rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
     unfold equality_of_nat in ea; exrepnd; spcast.
 
@@ -653,9 +657,10 @@ Proof.
     eapply lib_extends_preserves_ccomputes_to_valc in ea1;[|eauto].
     eapply lib_extends_preserves_ccomputes_to_valc in ea0;[|eauto].
     assert (safe_library lib') as safe' by eauto 3 with slow.
+    assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
     assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-    clear lib xt safe norep.
-    rename lib' into lib; rename safe' into safe; rename norep' into norep.
+    clear lib xt safe norep sat.
+    rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
     eapply alphaeqc_preserving_equality in ef;[|apply substc_mkcv_natk2nat].
     autorewrite with slow in *.
@@ -673,8 +678,9 @@ Proof.
     eapply equality_monotone in ef;[|eauto].
     assert (safe_library lib') as safe' by eauto 3 with slow.
     assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-    clear lib xt safe norep.
-    rename lib' into lib; rename safe' into safe; rename norep' into norep.
+    assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
+    clear lib xt safe norep sat.
+    rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
     autorewrite with slow.
     repeat (rewrite substc2_mk_cv_app_r; auto;[]).
@@ -708,8 +714,9 @@ Proof.
   eapply lib_extends_preserves_hyps_functionality_ext in eqh;[|eauto].
   assert (safe_library lib') as safe' by eauto 3 with slow.
   assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-  clear lib xt safe norep.
-  rename lib' into lib; rename safe' into safe; rename norep' into norep.
+  assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
+  clear lib xt safe norep sat.
+  rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
   repeat (rewrite substc_mkcv_function;[|auto];[]).
 
@@ -721,8 +728,9 @@ Proof.
   eapply lib_extends_preserves_hyps_functionality_ext in eqh;[|eauto].
   assert (safe_library lib') as safe' by eauto 3 with slow.
   assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-  clear lib y safe norep.
-  rename lib' into lib; rename safe' into safe; rename norep' into norep.
+  assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
+  clear lib y safe norep sat.
+  rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
   unfold equality_of_nat in ea; exrepnd; spcast.
 
@@ -763,8 +771,9 @@ Proof.
     eapply lib_extends_preserves_ccomputes_to_valc in ea0;[|eauto].
     assert (safe_library lib') as safe' by eauto 3 with slow.
     assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-    clear lib xt safe norep.
-    rename lib' into lib; rename safe' into safe; rename norep' into norep.
+    assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
+    clear lib xt safe norep sat.
+    rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
     eapply alphaeqc_preserving_equality in ef;[|apply substc_mkcv_natk2nat].
     autorewrite with slow in *.
@@ -782,8 +791,9 @@ Proof.
     eapply equality_monotone in ef;[|eauto].
     assert (safe_library lib') as safe' by eauto 3 with slow.
     assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-    clear lib xt safe norep.
-    rename lib' into lib; rename safe' into safe; rename norep' into norep.
+    assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
+    clear lib xt safe norep sat.
+    rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
     autorewrite with slow.
     repeat (rewrite substc2_mk_cv_app_r; auto;[]).
@@ -812,8 +822,9 @@ Proof.
   eapply lib_extends_preserves_ccomputes_to_valc in ea0;[|eauto].
   assert (safe_library lib') as safe' by eauto 3 with slow.
   assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-  clear lib xt safe norep.
-  rename lib' into lib; rename safe' into safe; rename norep' into norep.
+  assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
+  clear lib xt safe norep sat.
+  rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
   eapply alphaeqc_preserving_equality in ef;[|apply substc_mkcv_natk2nat].
   autorewrite with slow in *.
@@ -844,8 +855,9 @@ Proof.
   eapply equality_monotone in en2n;[|eauto].
   assert (safe_library lib') as safe' by eauto 3 with slow.
   assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-  clear lib y safe norep.
-  rename lib' into lib; rename safe' into safe; rename norep' into norep.
+  assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
+  clear lib y safe norep sat.
+  rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
   apply computes_upto_implies_exists_nat_seq in enf; exrepnd.
 
@@ -862,8 +874,9 @@ Proof.
     eapply equality_monotone in en2n;[|eauto].
     assert (safe_library lib') as safe' by eauto 3 with slow.
     assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-    clear lib xt safe norep enf0.
-    rename lib' into lib; rename safe' into safe; rename norep' into norep.
+    assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
+    clear lib xt safe norep enf0 sat.
+    rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
     autorewrite with slow.
     repeat (rewrite substc2_mk_cv_app_r; auto;[]).
@@ -959,8 +972,8 @@ Proof.
   apply name_in_library_implies_entry_in_library in q1; exrepnd.
   applydup safe' in q1.
 
-  pose proof (extend_library_lawless_upto_implies_exists_nats name lib'' lib'0 entry n0) as q.
-  repeat (autodimp q hyp); exrepnd.
+  pose proof (extend_library_lawless_upto_implies_exists_nats (lib_cond lib'') name lib'' lib'0 entry n0) as q.
+  repeat (autodimp q hyp); exrepnd; try (complete (unfold extend_library_lawless_upto in *; tcsp)).
 
   apply implies_equality_natk2nat_prop.
   introv ltk.

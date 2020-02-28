@@ -146,7 +146,7 @@ Definition bcequivw (vs1 : list NVar) (t1 : WTerm) (vs2 : list NVar) (t2 : WTerm
 
 (** bterm version of cequiv on wf cterms *)
 Definition bcequivc {p}
-           (lib : library)
+           (lib : plibrary)
            (vs1 : list NVar)
            (t1  : @CVTerm p vs1)
            (vs2 : list NVar)
@@ -2385,7 +2385,7 @@ Proof.
 Qed.
 
 (* end hide *)
-Inductive cequiv_subst {p} (lib : @library p) : @Sub p -> @Sub p -> Type :=
+Inductive cequiv_subst {p} (lib : @plibrary p) : @Sub p -> @Sub p -> Type :=
   | ceq_sub_nil : cequiv_subst lib [] []
   | ceq_sub_cons :
     forall v t1 t2 s1 s2,

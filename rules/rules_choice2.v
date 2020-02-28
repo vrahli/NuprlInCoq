@@ -413,7 +413,7 @@ Definition rule_ls2 {o}
     [].
 
 Lemma rule_ls2_true {o} :
-  forall lib (a b : NVar) (H : @bhyps o) (d1 : a <> b) (safe : safe_library lib),
+  forall (lib : library) (a b : NVar) (H : @bhyps o) (d1 : a <> b) (safe : safe_library lib),
     rule_true lib (rule_ls2 lib a b H).
 Proof.
   unfold rule_ls2, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.

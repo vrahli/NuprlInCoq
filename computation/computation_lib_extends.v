@@ -49,7 +49,7 @@ Definition matching_entries {o} (entry1 entry2 : @library_entry o) : Prop :=
   same_entry_name (entry2name entry1) (entry2name entry2).
 (*  matching_entry_sign (opabs_of_lib_entry entry1) (opabs_of_lib_entry entry2).*)
 
-Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : library) : Prop :=
+Fixpoint entry_in_library {o} (entry : @library_entry o) (lib : plibrary) : Prop :=
   match lib with
   | [] => False
   | entry' :: entries =>
@@ -172,7 +172,7 @@ Hint Constructors entry_extends.
 (* true if there is an extended version of [entry] in [lib] *)
 Fixpoint entry_in_library_extends {o}
          (entry : @library_entry o)
-         (lib   : library) : Prop :=
+         (lib   : plibrary) : Prop :=
   match lib with
   | [] => False
   | entry' :: entries =>
@@ -253,10 +253,10 @@ Definition safe_library_entry {o} (e : @library_entry o) :=
   | _ => True
   end.
 
-Definition safe_library {o} (lib : @library o) :=
+Definition safe_library {o} (lib : @plibrary o) :=
   forall entry, entry_in_library entry lib -> safe_library_entry entry.
 
-Definition subset_library {o} (lib1 lib2 : @library o) :=
+Definition subset_library {o} (lib1 lib2 : @plibrary o) :=
   forall entry1,
     List.In entry1 lib1
     ->
@@ -264,17 +264,23 @@ Definition subset_library {o} (lib1 lib2 : @library o) :=
       List.In entry2 lib2
       /\ entry_extends entry2 entry1.
 
-Definition lib_extends_entries {o} (lib1 lib0 : @library o) :=
+Definition lib_extends_entries {o} (lib1 lib0 : @plibrary o) :=
   forall entry,
     entry_in_library entry lib0
     -> entry_in_library_extends entry lib1.
 
-Definition add_entry {o} (e : @library_entry o) (lib : @library o) : library := e :: lib.
+Definition add_entry {o} (e : @library_entry o) (lib : @plibrary o) : plibrary := e :: lib.
 
-Definition add_cs {o} (name : choice_sequence_name) (r : ChoiceSeqRestriction) (lib : @library o) : library :=
+Definition add_cs {o} (name : choice_sequence_name) (r : ChoiceSeqRestriction) (lib : @plibrary o) : plibrary :=
   lib_cs name (MkChoiceSeqEntry _ [] r) :: lib.
 
-Fixpoint add_choice {o} (name : choice_sequence_name) (t : @ChoiceSeqVal o) (lib : @library o) : option (nat * ChoiceSeqRestriction * library) :=
+Definition add_new_cs {o} (name : choice_sequence_name) (r : ChoiceSeqRestriction) (lib : @library o) : library :=
+  MkLib (add_cs name r lib) (lib_cond lib).
+
+Definition add_new_abs {o} op vars rhs correct (lib : @library o) : @library o :=
+  MkLib (lib_abs op vars rhs correct :: lib_pre lib) (lib_cond lib).
+
+Fixpoint add_choice {o} (name : choice_sequence_name) (t : @ChoiceSeqVal o) (lib : @plibrary o) : option (nat * ChoiceSeqRestriction * plibrary) :=
   match lib with
   | [] => None
   | entry :: entries =>
@@ -295,6 +301,27 @@ Fixpoint add_choice {o} (name : choice_sequence_name) (t : @ChoiceSeqVal o) (lib
     end
   end.
 
+Definition add_one_choice {o} (name : choice_sequence_name) (t : @ChoiceSeqVal o) (lib : @library o) : option (nat * ChoiceSeqRestriction * library) :=
+  match lib with
+  | MkLib l c =>
+    match add_choice name t l with
+    | Some (n, r, k) => Some (n, r, MkLib k c)
+    | None => None
+    end
+  end.
+
+Coercion lck_term : NTerm >-> LibCondKind.
+Coercion lck_restr : ChoiceSeqRestriction >-> LibCondKind.
+
+Definition sat_cond_soterm {o} (lib : @library o) (t : SOTerm) :=
+  lib_cond lib (soterm2nterm t).
+
+Definition sat_cond_cterm {o} (lib : @library o) (t : CTerm) :=
+  lib_cond lib (get_cterm t).
+
+Definition sat_cond_restr {o} (lib : @library o) (r : ChoiceSeqRestriction) :=
+  lib_cond lib r.
+
 Inductive lib_extends {o} : @library o -> @library o -> Prop :=
 | lib_extends_ref :
     forall (lib : library),
@@ -307,16 +334,19 @@ Inductive lib_extends {o} : @library o -> @library o -> Prop :=
 | lib_extends_new_abs :
     forall (lib : library) op vars rhs correct,
       !in_lib (entry_name_abs op) lib
-      -> lib_extends (lib_abs op vars rhs correct :: lib) lib
+      -> sat_cond_soterm lib rhs
+      -> lib_extends (add_new_abs op vars rhs correct lib) lib
 | lib_extends_new_cs :
     forall (lib : library) name restr,
       correct_restriction name restr
       -> !in_lib (entry_name_cs name) lib
-      -> lib_extends (add_cs name restr lib) lib
+      -> sat_cond_restr lib restr
+      -> lib_extends (add_new_cs name restr lib) lib
 | lib_extends_cs :
     forall lib name v n M lib',
-      add_choice name v lib = Some (n, csc_type M, lib')
+      add_one_choice name v lib = Some (n, csc_type M, lib')
       -> M n v
+      -> sat_cond_cterm lib v
       -> lib_extends lib' lib
 (*| lib_extends_law :
     forall lib name v n f lib',
@@ -332,11 +362,11 @@ Hint Constructors lib_extends.
 
 Arguments lib_extends_trans [o] [lib1] [lib2] [lib3] _.
 
-Tactic Notation "lib_ext_ind" ident(ext) ident(c) ident(cor) ident(ni) ident(addc) ident(cond) :=
+Tactic Notation "lib_ext_ind" ident(ext) ident(c) ident(cor) ident(ni) ident(addc) ident(cond) ident(sat) :=
   induction ext as [|
-                    |? ? ? ? ? ni
-                    |? ? ? cor ni
-                    |? ? ? ? ? ? addc cond
+                    |? ? ? ? ? ni sat
+                    |? ? ? cor ni sat
+                    |? ? ? ? ? ? addc cond sat
                     (*|? ? ? ? ? ? addc cond
                     |? ? ? ? ? ? addc cond*)];
   [ Case_aux c "lib_ext_refl"
@@ -354,7 +384,8 @@ Tactic Notation "lib_ext_ind" ident(ext) ident(c) :=
   let ni   := fresh "ni"   in
   let addc := fresh "addc" in
   let cond := fresh "cond" in
-  lib_ext_ind ext c cor ni addc cond.
+  let sat  := fresh "sat"  in
+  lib_ext_ind ext c cor ni addc cond sat.
 
 (*
 (* [lib1] extends [lib0] *)
@@ -379,7 +410,7 @@ Definition inExt {o} (lib : @library o) (F : @library o -> Type) :=
     -> F lib'.
 
 Lemma add_choice_implies {o} :
-  forall name v (lib : @library o) n r lib' entry,
+  forall name v (lib : @plibrary o) n r lib' entry,
     add_choice name v lib = Some (n, r, lib')
     -> entry_in_library entry lib
     -> (entry_in_library entry lib' /\ entry2name entry <> entry_name_cs name)
@@ -431,7 +462,7 @@ Proof.
 Qed.
 
 Lemma add_choice_implies2 {o} :
-  forall name v (lib : @library o) n r lib' entry,
+  forall name v (lib : @plibrary o) n r lib' entry,
     add_choice name v lib = Some (n, r, lib')
     -> entry_in_library entry lib'
     -> (entry_in_library entry lib /\ entry2name entry <> entry_name_cs name)
@@ -506,7 +537,7 @@ Proof.
 Qed.
 
 Lemma add_choice_csc_type_preserves_safe {o} :
-  forall name v (lib : @library o) n M lib',
+  forall name v (lib : @plibrary o) n M lib',
     add_choice name v lib = Some (n, csc_type M, lib')
     -> M n v
     -> safe_library lib
@@ -519,6 +550,20 @@ Proof.
   introv sel; rewrite select_snoc_eq in sel; boolvar; ginv; tcsp.
 Qed.
 Hint Resolve add_choice_csc_type_preserves_safe : slow.
+
+Lemma add_one_choice_csc_type_preserves_safe {o} :
+  forall name v (lib : @library o) n M lib',
+    add_one_choice name v lib = Some (n, csc_type M, lib')
+    -> M n v
+    -> safe_library lib
+    -> safe_library lib'.
+Proof.
+  introv add p safe i; simpl in *.
+  destruct lib as [lib c]; simpl in *.
+  remember (add_choice name v lib) as addc; symmetry in Heqaddc; destruct addc; repnd; ginv.
+  eapply add_choice_csc_type_preserves_safe; try exact Heqaddc; auto.
+Qed.
+Hint Resolve add_one_choice_csc_type_preserves_safe : slow.
 
 (*Lemma add_choice_csc_coq_law_preserves_safe {o} :
   forall name v (lib : @library o) n f lib',
@@ -561,7 +606,7 @@ Qed.
 Hint Resolve choice_sequence_satisfies_restriction_nil : slow.
 
 Lemma safe_library_add_cs {o} :
-  forall name restr (lib : @library o),
+  forall name restr (lib : @plibrary o),
     correct_restriction name restr
     -> safe_library lib
     -> safe_library (add_cs name restr lib).
@@ -571,12 +616,23 @@ Proof.
 Qed.
 Hint Resolve safe_library_add_cs : slow.
 
+Lemma safe_library_add_new_cs {o} :
+  forall name restr (lib : @library o),
+    correct_restriction name restr
+    -> safe_library lib
+    -> safe_library (add_new_cs name restr lib).
+Proof.
+  introv cor safe i; eapply safe_library_add_cs; eauto.
+Qed.
+Hint Resolve safe_library_add_new_cs : slow.
+
 Lemma safe_library_add_abs {o} :
   forall op vars rhs correct (lib : @library o),
     safe_library lib
-    -> safe_library (lib_abs op vars rhs correct :: lib).
+    -> safe_library (add_new_abs op vars rhs correct lib).
 Proof.
   introv safe i; simpl in *.
+  destruct lib as [lib cond]; simpl in *.
   repndors; repnd; subst; simpl in * ; boolvar; subst; tcsp; eauto 2 with slow.
 Qed.
 Hint Resolve safe_library_add_abs : slow.
@@ -588,6 +644,7 @@ Lemma lib_extends_preserves_safe {o} :
     -> safe_library lib1.
 Proof.
   introv ext; lib_ext_ind ext Case; introv safe.
+  apply safe_library_add_abs; auto.
 Qed.
 Hint Resolve lib_extends_preserves_safe : slow.
 
@@ -598,7 +655,7 @@ Hint Resolve lib_extends_preserves_safe : slow.
     List.In e lib
     /\ matching_entry_sign opabs (opabs_of_lib_entry e).*)
 
-Definition entry_not_in_lib {o} (e : @library_entry o) (l : @library o) :=
+Definition entry_not_in_lib {o} (e : @library_entry o) (l : @plibrary o) :=
   !in_lib (entry2name e) l.
 
 Hint Resolve matching_entry_sign_sym : slow.
@@ -691,7 +748,7 @@ Qed.
 Hint Resolve entry_extends_refl : slow.
 
 Lemma entry_in_library_implies_entry_in_library_extends {o} :
-  forall entry (lib : @library o),
+  forall entry (lib : @plibrary o),
     entry_in_library entry lib
     -> entry_in_library_extends entry lib.
 Proof.
@@ -701,7 +758,7 @@ Qed.
 Hint Resolve entry_in_library_implies_entry_in_library_extends : slow.
 
 Lemma subset_library_refl {o} :
-  forall (lib : @library o), subset_library lib lib.
+  forall (lib : @plibrary o), subset_library lib lib.
 Proof.
   introv i.
   exists entry1; dands; auto; eauto 2 with slow.
@@ -709,7 +766,7 @@ Qed.
 Hint Resolve subset_library_refl : slow.
 
 Lemma lib_extends_entries_refl {o} :
-  forall (lib : @library o), lib_extends_entries lib lib.
+  forall (lib : @plibrary o), lib_extends_entries lib lib.
 Proof.
   introv i; eauto 2 with slow.
 Qed.
@@ -723,7 +780,7 @@ Qed.
 Hint Resolve lib_extends_refl : slow.
 
 Lemma entry_in_library_implies_find_entry {o} :
-  forall (lib : @library o) abs opabs vars bs rhs correct,
+  forall (lib : @plibrary o) abs opabs vars bs rhs correct,
     matching_entry abs opabs vars bs
     -> entry_in_library (lib_abs opabs vars rhs correct) lib
     -> find_entry lib abs bs = Some (lib_abs opabs vars rhs correct).
@@ -753,10 +810,10 @@ Proof.
 Qed.
 
 Lemma find_entry_some_decomp {o} :
-  forall (lib : @library o) abs bs e,
+  forall (lib : @plibrary o) abs bs e,
     find_entry lib abs bs = Some e
-    <=> {lib1 : library
-         & {lib2 : library
+    <=> {lib1 : plibrary
+         & {lib2 : plibrary
          & {oa : opabs
          & {vars : list sovar_sig
          & {rhs : SOTerm
@@ -781,7 +838,7 @@ Proof.
 
     boolvar; ginv.
 
-    + exists ([] : @library o) lib opabs vars rhs correct; simpl.
+    + exists ([] : @plibrary o) lib opabs vars rhs correct; simpl.
       dands; auto.
 
     + apply IHlib in h; exrepnd; subst; clear IHlib.
@@ -813,7 +870,7 @@ Proof.
 Qed.
 
 Lemma implies_entry_in_library_app_right {o} :
-  forall (lib1 lib2 : @library o) e,
+  forall (lib1 lib2 : @plibrary o) e,
     entry_in_library e lib2
     -> (forall e', LIn e' lib1 -> ~ matching_entries e e')
     -> entry_in_library e (lib1 ++ lib2).
@@ -844,7 +901,7 @@ Proof.
 Qed.
 
 Lemma matching_entry_preserves_find_entry {o} :
-  forall (lib : @library o) abs1 abs2 vars bs,
+  forall (lib : @plibrary o) abs1 abs2 vars bs,
     matching_entry abs1 abs2 vars bs
     -> find_entry lib abs1 bs = find_entry lib abs2 bs.
 Proof.
@@ -896,7 +953,7 @@ Proof.
 Qed.
 
 Lemma find_entry_none_implies {o} :
-  forall (lib : @library o) abs bs e vars rhs correct,
+  forall (lib : @plibrary o) abs bs e vars rhs correct,
     matching_sign vars (opabs_sign abs)
     -> matching_sign vars (map num_bvars bs)
     -> find_entry lib abs bs = None
@@ -951,7 +1008,7 @@ Qed.
 Hint Resolve entry_in_libray_implies_find_entry_some : slow.
 
 Lemma entry_abs_in_library_extends_implies_entry_in_library {o} :
-  forall oa vars rhs correct (lib : @library o),
+  forall oa vars rhs correct (lib : @plibrary o),
     entry_in_library_extends (lib_abs oa vars rhs correct) lib
     -> entry_in_library (lib_abs oa vars rhs correct) lib.
 Proof.
@@ -1089,7 +1146,7 @@ Qed.
 Hint Resolve entry_extends_preserves_entry_in_library_extends : slow.
 
 Lemma entry_in_library_implies_in_lib_cs {o} :
-  forall entry name (lib : @library o),
+  forall entry name (lib : @plibrary o),
     same_entry_name (entry2name entry) (entry_name_cs name)
     -> entry_in_library entry lib
     -> in_lib (entry2name entry) lib.
@@ -1098,7 +1155,7 @@ Proof.
 Qed.
 
 Lemma entry_in_library_implies_in_lib_abs {o} :
-  forall entry op (lib : @library o),
+  forall entry op (lib : @plibrary o),
     same_entry_name (entry2name entry) (entry_name_abs op)
     -> entry_in_library entry lib
     -> in_lib (entry2name entry) lib.
@@ -1117,7 +1174,7 @@ Qed.
 Hint Resolve choice_sequence_vals_extend_snoc : slow.
 
 Lemma add_choice_preserves_lib_extends_entries {o} :
-  forall name v (lib : @library o) n r lib',
+  forall name v (lib : @plibrary o) n r lib',
     add_choice name v lib = Some (n, r, lib')
     -> lib_extends_entries lib' lib.
 Proof.
@@ -1144,8 +1201,18 @@ Proof.
 Qed.
 Hint Resolve add_choice_preserves_lib_extends_entries : slow.
 
-Lemma add_choice_preserves_subset_library {o} :
+Lemma add_one_choice_preserves_lib_extends_entries {o} :
   forall name v (lib : @library o) n r lib',
+    add_one_choice name v lib = Some (n, r, lib')
+    -> lib_extends_entries lib' lib.
+Proof.
+  introv h; destruct lib as [lib c]; simpl in *.
+  remember (add_choice name v lib) as addc; symmetry in Heqaddc; destruct addc; repnd; ginv; eauto 3 with slow.
+Qed.
+Hint Resolve add_one_choice_preserves_lib_extends_entries : slow.
+
+Lemma add_choice_preserves_subset_library {o} :
+  forall name v (lib : @plibrary o) n r lib',
     add_choice name v lib = Some (n, r, lib')
     -> subset_library lib lib'.
 Proof.
@@ -1176,6 +1243,17 @@ Proof.
 Qed.
 Hint Resolve add_choice_preserves_subset_library : slow.
 
+Lemma add_one_choice_preserves_subset_library {o} :
+  forall name v (lib : @library o) n r lib',
+    add_one_choice name v lib = Some (n, r, lib')
+    -> subset_library lib lib'.
+Proof.
+  introv h.
+  destruct lib as [lib c]; simpl in *.
+  remember (add_choice name v lib) as addc; symmetry in Heqaddc; destruct addc; repnd; ginv; eauto 3 with slow.
+Qed.
+Hint Resolve add_one_choice_preserves_subset_library : slow.
+
 Lemma implies_lib_extends_ext {o} :
   forall (lib1 lib0 : @library o),
     lib_extends lib1 lib0
@@ -1192,6 +1270,7 @@ Proof.
 
   { Case "lib_ext_new_abs".
     introv i; simpl in *.
+    destruct lib as [lib c]; simpl in *.
     right; dands; eauto 3 with slow.
     introv xx; simpl in *; apply matching_entries_implies_same_entry_name in xx; simpl in *.
     eapply entry_in_library_implies_in_lib_abs in i; eauto.
@@ -1199,6 +1278,7 @@ Proof.
 
   { Case "lib_ext_new_cs".
     introv i; simpl in *.
+    destruct lib as [lib c]; simpl in *.
     right; dands; eauto 3 with slow.
     introv xx; simpl in *; apply matching_entries_implies_same_entry_name in xx; simpl in *.
     eapply entry_in_library_implies_in_lib_cs in i; eauto.
@@ -1214,6 +1294,7 @@ Lemma lib_extends_preserves_find_entry {o} :
 Proof.
   introv ext fe.
   apply find_entry_some_decomp in fe; exrepnd; subst.
+  destruct lib1 as [lib1 c1]; simpl in *; subst; simpl in *.
 
   pose proof (implies_lib_extends_ext _ _ ext (lib_abs oa vars rhs correct)) as h.
   simpl in h; autodimp h hyp; eauto 3 with slow;[].
@@ -1230,7 +1311,7 @@ Proof.
 Qed.
 
 Lemma in_get_utokens_library_iff {o} :
-  forall (lib : @library o) a,
+  forall (lib : @plibrary o) a,
     LIn a (get_utokens_library lib)
     <=> {entry : library_entry & LIn entry lib # LIn a (get_utokens_library_entry entry) }.
 Proof.
@@ -1239,7 +1320,7 @@ Proof.
 Qed.
 
 Lemma list_in_get_utokens_library_iff {o} :
-  forall (lib : @library o) a,
+  forall (lib : @plibrary o) a,
     List.In a (get_utokens_library lib)
     <-> exists (entry : library_entry), List.In entry lib /\ List.In a (get_utokens_library_entry entry).
 Proof.
@@ -1290,7 +1371,7 @@ Qed.
 Hint Resolve entry_extends_preserves_get_utokens_library_entry : slow.
 
 Lemma subset_library_trans {o} :
-  forall (lib1 lib2 lib3 : @library o),
+  forall (lib1 lib2 lib3 : @plibrary o),
     subset_library lib1 lib2
     -> subset_library lib2 lib3
     -> subset_library lib1 lib3.
@@ -1302,6 +1383,24 @@ Proof.
 Qed.
 Hint Resolve subset_library_trans : slow.
 
+Lemma subset_library_add_new_abs {o} :
+  forall (lib : @library o) op vars rhs correct,
+    subset_library lib (add_new_abs op vars rhs correct lib).
+Proof.
+  introv; destruct lib as [lib c]; simpl in *; eauto 3 with slow.
+  introv i; simpl in *; exists entry1; dands; eauto 3 with slow.
+Qed.
+Hint Resolve subset_library_add_new_abs : slow.
+
+Lemma subset_library_add_new_cs {o} :
+  forall (lib : @library o) name restr,
+    subset_library lib (add_new_cs name restr lib).
+Proof.
+  introv; destruct lib as [lib c]; simpl in *; eauto 3 with slow.
+  introv i; simpl in *; exists entry1; dands; eauto 3 with slow.
+Qed.
+Hint Resolve subset_library_add_new_cs : slow.
+
 Lemma implies_lib_extends_sub {o} :
   forall (lib1 lib0 : @library o),
     lib_extends lib1 lib0
@@ -1309,7 +1408,7 @@ Lemma implies_lib_extends_sub {o} :
 Proof.
   introv ext.
   lib_ext_ind ext Case;
-    try (complete (introv i; simpl in *; exists entry1; dands; tcsp; eauto 3 with slow)).
+    try (introv i; simpl in *; exists entry1; dands; eauto 3 with slow).
 Qed.
 Hint Resolve implies_lib_extends_sub : slow.
 
@@ -1705,7 +1804,7 @@ Qed.
 Hint Resolve choice_sequence_entry_extend_preserves_entry2restriction : slow.*)
 
 Lemma lib_cs_in_library_extends_implies {o} :
-  forall (lib : @library o) name entry,
+  forall (lib : @plibrary o) name entry,
     entry_in_library_extends (lib_cs name entry) lib
     ->
     exists (vals' : ChoiceSeqVals),
@@ -1727,7 +1826,7 @@ Qed.
 Hint Resolve lib_cs_in_library_extends_implies : slow.
 
 Lemma find_cs_some_implies_entry_in_library {o} :
-  forall (lib : @library o) name vals,
+  forall (lib : @plibrary o) name vals,
     find_cs lib name = Some vals
     -> entry_in_library (lib_cs name vals) lib.
 Proof.
@@ -1801,7 +1900,7 @@ Qed.
 Hint Resolve subset_get_utokens_library_implies_subset_get_utokens_lib : slow.
 
 Lemma unfold_abs_iff_find_entry {o} :
-  forall (lib : @library o) oa bs t,
+  forall (lib : @plibrary o) oa bs t,
     unfold_abs lib oa bs = Some t
     <=> {oa' : opabs
          & {vars : list sovar_sig

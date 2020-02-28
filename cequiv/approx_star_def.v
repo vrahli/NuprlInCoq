@@ -92,7 +92,7 @@ Definition lblift_sub {o}
     toward the end of this section move to the next sections. *)
 
 Inductive approx_star {p} :
-  @library p -> @NTerm p -> @NTerm p -> [univ] :=
+  @plibrary p -> @NTerm p -> @NTerm p -> [univ] :=
 | apsv: forall lib v t2,
           (approx_open lib (vterm v) t2)
           -> (approx_star lib (vterm v) t2)
@@ -106,7 +106,7 @@ Inductive approx_star {p} :
           -> approx_star lib (oterm op lbt1) t2.
 Hint Constructors approx_star : slow.
 
-Definition approx_star_bterm {o} (lib : @library o) op :=
+Definition approx_star_bterm {o} (lib : @plibrary o) op :=
   blift_sub lib op (approx_star lib).
-Definition approx_starbts {o} (lib : @library o) op :=
+Definition approx_starbts {o} (lib : @plibrary o) op :=
   lblift_sub lib op (approx_star lib).

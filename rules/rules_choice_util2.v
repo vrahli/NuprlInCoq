@@ -331,7 +331,7 @@ Definition bool_choice_sequence_entry {o} (name : choice_sequence_name) : @libra
   lib_cs name bool_choice_seq_entry.
 
 Lemma fresh_choice_seq_name_in_library_nat {o} :
-  forall (lib : @library o) (n : nat),
+  forall (lib : @plibrary o) (n : nat),
   exists (name : choice_sequence_name),
     find_cs lib name = None
     /\ csn_kind name = cs_kind_nat n.
@@ -415,10 +415,11 @@ Lemma lib_extends_cons_bool_choice_sequence_entry {o} :
   forall name (lib : @library o),
     csn_kind name = cs_kind_nat 1
     -> find_cs lib name = None
-    -> lib_extends (bool_choice_sequence_entry name :: lib) lib.
+    -> lib_cond_sat_def lib
+    -> lib_extends (add_one_entry (bool_choice_sequence_entry name) lib) lib.
 Proof.
-  introv csk fcs.
-  constructor; eauto 3 with slow.
+  introv csk fcs def.
+  constructor; eauto 3 with slow; try apply def.
 Qed.
 Hint Resolve lib_extends_cons_bool_choice_sequence_entry : slow.
 
@@ -512,11 +513,11 @@ Proof.
 Qed.
 
 Lemma cs_entry_in_library_bool_seq_upto_implies_is_bool {o} :
-  forall (lib lib' : @library o) name k vals restr n v,
+  forall C (lib lib' : @plibrary o) name k vals restr n v,
     compatible_choice_sequence_name 1 name
     -> correct_restriction name restr
     -> choice_sequence_satisfies_restriction vals restr
-    -> extend_library_lawless_upto lib lib' name k
+    -> extend_plibrary_lawless_upto C lib lib' name k
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ vals restr)) lib
     -> select n vals = Some v
     -> is_bool n v.
@@ -534,12 +535,12 @@ Qed.
 Hint Resolve cs_entry_in_library_bool_seq_upto_implies_is_bool : slow.
 
 Lemma extend_library_bool_seq_upto_implies_exists_nats {o} :
-  forall name (lib lib' : @library o) entry k,
+  forall C name (lib lib' : @plibrary o) entry k,
     compatible_choice_sequence_name 1 name
     -> entry_in_library entry lib
     -> entry2name entry = entry_name_cs name
     -> safe_library_entry entry
-    -> extend_library_lawless_upto lib lib' name k
+    -> extend_plibrary_lawless_upto C lib lib' name k
     -> exists vals restr,
         find_cs lib name = Some (MkChoiceSeqEntry _ vals restr)
         /\ k <= length vals
@@ -583,9 +584,10 @@ Lemma mkc_choice_seq_in_nat2bool {o} :
     compatible_choice_sequence_name 1 name
     -> no_repeats_library lib
     -> safe_library lib
+    -> lib_cond_sat_def lib
     -> member lib (mkc_choice_seq name) nat2bool.
 Proof.
-  introv comp norep safe.
+  introv comp norep safe sat.
   applydup compatible_choice_sequence_name_1_implies_is_primitive_kind in comp as isn.
   apply implies_member_nat2bool_bar2.
   apply in_ext_implies_all_in_ex_bar.
@@ -593,25 +595,29 @@ Proof.
 
   assert (safe_library lib') as safe' by eauto 3 with slow.
   assert (no_repeats_library lib') as norep' by eauto 3 with slow.
-  clear lib safe norep ext.
-  rename lib' into lib; rename safe' into safe; rename norep' into norep.
+  assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
+  clear lib safe norep sat ext.
+  rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
   rename m into k.
 
   (* first we need to add the sequence to the library *)
   introv ext.
   assert (no_repeats_library lib') as norep' by eauto 3 with slow.
   assert (safe_library lib') as safe' by eauto 3 with slow.
-  pose proof (extend_seq_to_ext lib' norep' safe' (S k) name isn) as q; exrepnd.
+  assert (lib_cond_sat_def lib') as sat' by eauto 3 with slow.
+  pose proof (exists_extend_library_lawless_upto_name_in name (S k) lib') as q.
+  repeat (autodimp q hyp); exrepnd.
   assert (lib_extends lib'' lib') as xta by eauto 4 with slow.
   exists lib'' xta.
   introv ltm.
   simpl in * |-; exrepnd.
   assert (safe_library lib'') as safe'' by eauto 3 with slow.
-  apply name_in_library_implies_entry_in_library in q2; exrepnd.
-  applydup safe'' in q2.
+  apply name_in_library_implies_entry_in_library in q1; exrepnd.
+  applydup safe'' in q1.
 
-  pose proof (extend_library_bool_seq_upto_implies_exists_nats name lib'' lib'0 entry (S k)) as q.
-  repeat (autodimp q hyp); exrepnd.
+  pose proof (extend_library_bool_seq_upto_implies_exists_nats (lib_cond lib'') name lib'' lib'0 entry (S k)) as q.
+  repeat (autodimp q hyp); exrepnd;
+    try (complete (unfold extend_library_lawless_upto in *; tcsp)).
   pose proof (q6 k (nth k vals mkc_zero)) as w.
   autodimp w hyp;[apply nth_select1; try omega|];[].
   unfold is_bool in w; exrepnd.
@@ -629,9 +635,10 @@ Lemma mkc_choice_seq_equality_in_nat2bool {o} :
     compatible_choice_sequence_name 1 name
     -> safe_library lib
     -> no_repeats_library lib
+    -> lib_cond_sat_def lib
     -> equality lib (mkc_choice_seq name) (mkc_choice_seq name) nat2bool.
 Proof.
-  introv comp safe norep; apply mkc_choice_seq_in_nat2bool; auto.
+  introv comp safe norep sat; apply mkc_choice_seq_in_nat2bool; auto.
 Qed.
 Hint Resolve mkc_choice_seq_equality_in_nat2bool : slow.
 
@@ -698,7 +705,7 @@ Qed.
 Hint Resolve is_bool_mkc_boolean : slow.
 
 Lemma eq_maps_entry2name_implies_eq_forallb_diff {o} :
-  forall (lib lib' : @library o) a,
+  forall (lib lib' : @plibrary o) a,
     map entry2name lib = map entry2name lib'
     -> forallb (diff_entry_names a) lib = forallb (diff_entry_names a) lib'.
 Proof.
@@ -718,23 +725,28 @@ Qed.
 
 Lemma extends_bool_choice_sequence_entry2 {o} :
   forall (lib : @library o) name restr bs,
-    correct_restriction name restr
+    lib_cond_sat_def lib
+    -> correct_restriction name restr
     -> same_restrictions restr csc_bool
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ (map mkc_boolean bs) restr)) lib
     -> exists lib',
         lib_extends lib' lib
-        /\ map entry2name lib' = map entry2name lib
+        /\ lib_names lib' = lib_names lib
         /\ entry_in_library (lib_cs name (MkChoiceSeqEntry _ (map mkc_boolean (snoc bs true)) restr)) lib'.
 Proof.
-  introv cor same i.
+  introv sat cor same i.
   apply entry_in_library_split in i; exrepnd; subst.
-  exists (lib1 ++ lib_cs name (MkChoiceSeqEntry _ (map mkc_boolean (snoc bs true)) restr) :: lib2).
-  repeat (rewrite map_app; simpl); dands; tcsp.
+  destruct lib as [lib cond]; simpl in *; subst; simpl in *.
+  exists (add_mid_entry (MkLib lib1 cond) (lib_cs name (MkChoiceSeqEntry _ (map mkc_boolean (snoc bs true)) restr)) (MkLib lib2 cond)).
+  dands; tcsp.
   { apply lib_extends_middle; simpl; dands; eauto 3 with slow.
     { destruct restr; simpl in *; repnd; tcsp.
       introv sel.
       rewrite select_map in sel; apply option_map_Some in sel; exrepnd; subst; apply same; eauto 3 with slow. }
-    rewrite map_snoc; rewrite snoc_as_append; eauto. }
+    { introv i; apply in_map_iff in i; exrepnd; subst; destruct a; apply sat. }
+    { rewrite map_snoc; rewrite snoc_as_append; eauto. } }
+
+  { unfold lib_names; simpl; repeat (rewrite map_app; simpl); tcsp. }
 
   apply implies_entry_in_library_app_right; simpl; tcsp.
   introv i m; simpl in *.
@@ -1198,7 +1210,7 @@ Qed.
 Hint Rewrite @inf_entry2name_library_entry2inf_def : slow.*)
 
 Lemma find_cs_implies_select {o} :
-  forall (lib : @library o) name e,
+  forall (lib : @plibrary o) name e,
     find_cs lib name = Some e
     -> exists n, select n lib = Some (lib_cs name e).
 Proof.
@@ -1451,25 +1463,30 @@ Hint Resolve entry_add_ff_extends : slow.
 
 Lemma extend_bool_choice_sequence_ff {o} :
   forall (lib : @library o) name n restr k,
-    csn_kind name = cs_kind_nat 1
+    lib_cond_sat_def lib
+    -> csn_kind name = cs_kind_nat 1
     -> same_restrictions restr csc_bool
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n ff) restr)) lib
-    -> exists lib',
-        map entry2name lib' = map entry2name lib
+    -> exists (lib' : library),
+        lib_names lib' = lib_names lib
         /\ lib_extends lib' lib
         /\ entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes (n + k) ff) restr)) lib'.
 Proof.
-  introv cor same i.
+  introv sat cor same i.
   apply entry_in_library_split in i; exrepnd; subst.
-  exists (lib1 ++ lib_cs name (MkChoiceSeqEntry _ (ntimes (n + k) ff) restr) :: lib2).
-  repeat (rewrite map_app; simpl); dands; tcsp.
+  destruct lib as [lib cond]; simpl in *; subst.
+  exists (add_mid_entry (MkLib lib1 cond) (lib_cs name (MkChoiceSeqEntry _ (ntimes (n + k) ff) restr)) (MkLib lib2 cond)).
+  dands; tcsp.
+  { unfold lib_names, add_mid_entry; simpl; repeat (rewrite map_app; simpl); tcsp. }
+
   { apply lib_extends_middle; simpl; dands; eauto 3 with slow.
     { destruct restr, name as [name kind]; simpl in *; repnd; tcsp; subst; simpl in *.
       unfold correct_restriction in *; simpl in *; dands; tcsp. }
     { destruct restr; simpl in *; repnd; tcsp.
       introv sel.
       rewrite select_ntimes in sel; boolvar; ginv.
-      apply same; eauto 3 with slow. } }
+      apply same; eauto 3 with slow. }
+    { introv i; apply in_ntimes in i; subst; simpl; apply sat. } }
 
   apply implies_entry_in_library_app_right; simpl; tcsp.
   introv i m; simpl in *.

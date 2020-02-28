@@ -495,7 +495,7 @@ Definition per_qnat_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) :
 
 
 (* When using [ccequivc], we cannot prove that [per_qtime_eq_bar] is transitive *)
-Definition per_qtime_eq {p} lib (eqa : per) (t t' : @CTerm p) : [U] :=
+Definition per_qtime_eq {p} (lib : library) (eqa : per) (t t' : @CTerm p) : [U] :=
   {x, y : CTerm
   , ccequivc lib t x
   # ccequivc lib t' y

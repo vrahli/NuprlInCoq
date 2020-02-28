@@ -554,7 +554,7 @@ Proof.
     apply IHsub1 in c2; sp.
 Qed.
 
-Inductive approx_open_sub {p} (lib : @library p) : @Sub p -> @Sub p -> Type :=
+Inductive approx_open_sub {p} (lib : @plibrary p) : @Sub p -> @Sub p -> Type :=
   | apr_op_sub_nil : approx_open_sub lib [] []
   | apr_op_sub_cons :
       forall v t1 t2 s1 s2,
@@ -563,7 +563,7 @@ Inductive approx_open_sub {p} (lib : @library p) : @Sub p -> @Sub p -> Type :=
         -> approx_open_sub lib ((v,t1) :: s1) ((v,t2) :: s2).
 Hint Constructors approx_open_sub.
 
-Inductive approx_sub {p} (lib : @library p) : @Sub p -> @Sub p -> Type :=
+Inductive approx_sub {p} (lib : @plibrary p) : @Sub p -> @Sub p -> Type :=
   | apr_sub_nil : approx_sub lib [] []
   | apr_sub_cons :
       forall v t1 t2 s1 s2,

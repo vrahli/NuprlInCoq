@@ -206,7 +206,7 @@ Proof.
 Qed.
 Hint Resolve ext_subs_implies_ext_alpha_eq_subs : slow.
 
-Inductive cequiv_open_subst {p} (lib : @library p) : @Sub p -> @Sub p -> Type :=
+Inductive cequiv_open_subst {p} (lib : @plibrary p) : @Sub p -> @Sub p -> Type :=
 | ceq_open_sub_nil : cequiv_open_subst lib [] []
 | ceq_open_sub_cons :
     forall v t1 t2 s1 s2,
