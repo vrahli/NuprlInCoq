@@ -1850,6 +1850,35 @@ Proof.
   apply disj in i; tcsp.
 Qed.
 
+Lemma push_swap_cs_bterms_map_ren_utokens_b {o} :
+  forall n1 n2 ren (bs : list (@BTerm o)),
+    push_swap_cs_bterms n1 n2 (map (ren_utokens_b ren) bs)
+    = map (ren_utokens_b ren) (push_swap_cs_bterms n1 n2 bs).
+Proof.
+  introv; unfold push_swap_cs_bterms; repeat rewrite map_map; unfold compose.
+  apply eq_maps; introv i.
+  destruct x; simpl; f_equal.
+Qed.
+
+Lemma swap_cs_op_ren_utok_op {o} :
+  forall n1 n2 ren (op : @Opid o),
+    swap_cs_op (n1, n2) (ren_utok_op ren op)
+    = ren_utok_op ren (swap_cs_op (n1, n2) op).
+Proof.
+  introv; destruct op; simpl; auto.
+  destruct c; simpl; tcsp.
+Qed.
+
+Lemma ren_utok_match_can_eq {o} :
+  forall (can : @CanonicalOp o) ren,
+    match can with
+    | NUTok a => Can (NUTok (ren_atom ren a))
+    | _ => Can can
+    end = Can (match can with | NUTok a => NUTok (ren_atom ren a) | _ => can end).
+Proof.
+  introv; destruct can; simpl; auto.
+Qed.
+
 Lemma compute_step_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
     nt_wf t
@@ -2053,6 +2082,36 @@ Proof.
             csunf; simpl.
             destruct can2; allsimpl; tcsp.
           }
+
+          { SSSCase "NSwapCs1".
+            csunf comp; simpl in comp.
+            apply compute_step_swap_cs1_success in comp; repndors; exrepnd; subst.
+
+            { csunf; simpl; tcsp. }
+
+            { csunf; simpl; destruct can2; simpl in *; tcsp. }
+
+            { apply nt_wf_swap_cs1_iff in wf; exrepnd.
+              repeat (destruct l; simpl in *; ginv).
+              inversion wf1; subst; clear wf1.
+              eapply ind in comp2; try (right; left); eauto; eauto 3 with slow;
+                try (complete (eapply subset_disjoint_r; eauto; apply subset_diff_same_l;
+                               apply subset_get_utokens_implies_subset_get_utokens_lib;
+                               simpl; eauto with slow));[].
+              rewrite ren_utok_match_can_eq.
+              rewrite compute_step_swap_cs1_if_isnoncan_like; eauto 3 with slow;
+                try (complete (apply (isnoncan_like_ren_utokens _ ren) in comp3; simpl in *; tcsp));[].
+              simpl in *; allrw; tcsp. } }
+
+          { SSSCase "NSwapCs2".
+            csunf comp; simpl in comp.
+            apply compute_step_swap_cs2_success in comp; repndors; exrepnd; subst.
+            csunf; simpl.
+            unfold push_swap_cs_can.
+            repeat rewrite ren_utok_match_can_eq; auto.
+            rewrite push_swap_cs_bterms_map_ren_utokens_b; auto.
+            f_equal; f_equal.
+            destruct can2; simpl; auto. }
 
           { SSSCase "NLastCs".
             csunf comp; simpl in comp.
@@ -3282,10 +3341,6 @@ Qed.
 Definition bound_vars_bterms {o} (bs : list (@BTerm o)) :=
   flat_map bound_vars_bterm bs.
 
-Definition alpha_eq_bterms {o} (bs1 bs2 : list (@BTerm o)) :=
-  length bs1 = length bs2
-  # forall b1 b2, LIn (b1,b2) (combine bs1 bs2) -> alpha_eq_bterm b1 b2.
-
 Lemma alpha_eq_bterms_cons {o} :
   forall (b1 b2 : @BTerm o) bs1 bs2,
     alpha_eq_bterms (b1 :: bs1) (b2 :: bs2)
@@ -3484,36 +3539,6 @@ Proof.
     rw lin_flat_map.
     exists (mk_utoken a0); simpl; sp.
   - pose proof (IHsub v1 v2 t l); sp.
-Qed.
-
-Lemma in_nth_combine :
-  forall A B (l1 : list A) (l2 : list B) n d1 d2,
-    length l1 = length l2
-    -> n < length l1
-    -> LIn (nth n l1 d1, nth n l2 d2) (combine l1 l2).
-Proof.
-  induction l1; destruct l2; introv len k; allsimpl; tcsp.
-  destruct n; cpx.
-Qed.
-
-Lemma in_nth_combine_iff :
-  forall A B d1 d2 (l1 : list A) (l2 : list B) x1 x2,
-    LIn (x1,x2) (combine l1 l2)
-    <=> {n : nat
-         & x1 = nth n l1 d1
-         # x2 = nth n l2 d2
-         # n < length l1
-         # n < length l2}.
-Proof.
-  induction l1; destruct l2; introv; simpl; split; introv k; exrepnd; tcsp.
-  - repndors; cpx.
-    + exists 0; dands; auto; try omega.
-    + rw IHl1 in k; exrepnd; subst.
-      exists (S n); dands; auto; try omega.
-  - destruct n; cpx; subst; tcsp.
-    right.
-    apply IHl1.
-    exists n; dands; auto.
 Qed.
 
 Lemma length_lsubst_bterms_aux {o} :

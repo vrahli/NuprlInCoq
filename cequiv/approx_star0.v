@@ -2268,8 +2268,8 @@ Proof.
 Qed.
 
 Lemma isprogram_comp_seq1_implies_ex {o} :
-  forall (l : list (@BTerm o)),
-    isprogram (oterm (NCan NCompSeq1) l)
+  forall a (l : list (@BTerm o)),
+    isprogram (oterm (NCan (NCompSeq1 a)) l)
     -> {t1 : NTerm & {t2 : NTerm
         & l = [nobnd t1, nobnd t2]
         # isprogram t1
@@ -2318,17 +2318,17 @@ Proof.
 Qed.
 
 Lemma isprogram_comp_seq1_implies {o} :
-  forall (a b : @NTerm o),
-    isprogram (mk_comp_seq1 a b)
-    -> (isprogram a # isprogram b).
+  forall a (b c : @NTerm o),
+    isprogram (mk_comp_seq1 a b c)
+    -> (isprogram b # isprogram c).
 Proof.
   introv isp.
   apply isprogram_comp_seq1_implies_ex in isp; exrepnd; ginv; tcsp.
 Qed.
 
 Lemma isprogram_comp_seq2_implies {o} :
-  forall l k (a b : @NTerm o),
-    isprogram (mk_comp_seq2 l k a b)
+  forall z l k (a b : @NTerm o),
+    isprogram (mk_comp_seq2 z l k a b)
     -> (isprogram a # isprogram b).
 Proof.
   introv isp.
@@ -2351,8 +2351,8 @@ Proof.
 Qed.
 
 Lemma isvalue_mk_fresh_choice_nat_seq {o} :
-  forall (lib : @plibrary o) l,
-    isvalue (mk_fresh_choice_nat_seq lib l).
+  forall n (lib : @plibrary o) l,
+    isvalue (mk_fresh_choice_nat_seq n lib l).
 Proof.
   introv.
   repeat constructor; simpl; tcsp.
@@ -2360,10 +2360,10 @@ Qed.
 Hint Resolve isvalue_mk_fresh_choice_nat_seq : slow.
 
 Lemma implies_isprogram_mk_comp_seq2 {o} :
-  forall l i (a b : @NTerm o),
+  forall n l i (a b : @NTerm o),
     isprogram a
     -> isprogram b
-    -> isprogram (mk_comp_seq2 l i a b).
+    -> isprogram (mk_comp_seq2 n l i a b).
 Proof.
   introv ispa ispb.
   unfold isprogram, closed in *; repnd; simpl in *.
@@ -2392,10 +2392,10 @@ Qed.
 Hint Resolve approx_starbts_nil : slow.
 
 Lemma implies_approx_star_mk_comp_seq2 {o} :
-  forall lib l i (a b c d : @NTerm o),
+  forall lib n l i (a b c d : @NTerm o),
     approx_star lib a c
     -> approx_star lib b d
-    -> approx_star lib (mk_comp_seq2 l i a b) (mk_comp_seq2 l i c d).
+    -> approx_star lib (mk_comp_seq2 n l i a b) (mk_comp_seq2 n l i c d).
 Proof.
   introv apra aprb.
   apply approx_star_congruence; simpl; auto.

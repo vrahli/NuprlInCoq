@@ -431,11 +431,25 @@ Defined.
 
  *)
 
-Record CompSeqNfo :=
-  MkCompSeqNfo
+Record CompSeqNfo1 :=
+  MkCompSeqNfo1
     {
-      comp_seq_nfo_list : list nat;
-      comp_seq_nfo_to   : nat;
+      comp_seq_nfo1_name : cs_name;
+    }.
+
+Record CompSeqNfo2 :=
+  MkCompSeqNfo2
+    {
+      comp_seq_nfo2_name : cs_name;
+      comp_seq_nfo2_list : list nat;
+      comp_seq_nfo2_to   : nat;
+    }.
+
+Record SwapCsNfo :=
+  MkSwapCsNfo
+    {
+      swap_cs_nfo_name1 : choice_sequence_name;
+      swap_cs_nfo_name2 : choice_sequence_name;
     }.
 
 Inductive NonCanonicalOp : Set :=
@@ -453,9 +467,11 @@ Inductive NonCanonicalOp : Set :=
  | NFresh     : NonCanonicalOp
  | NTryCatch  : NonCanonicalOp (* named try/catch *)
  | NParallel  : NonCanonicalOp
+ | NSwapCs1   : NonCanonicalOp
+ | NSwapCs2   : SwapCsNfo -> NonCanonicalOp
  | NLastCs    : NonCanonicalOp
- | NCompSeq1  : NonCanonicalOp
- | NCompSeq2  : CompSeqNfo    -> NonCanonicalOp
+ | NCompSeq1  : CompSeqNfo1   -> NonCanonicalOp
+ | NCompSeq2  : CompSeqNfo2   -> NonCanonicalOp
  | NCompOp    : ComparisonOp  -> NonCanonicalOp
  | NArithOp   : ArithOp       -> NonCanonicalOp
  | NCanTest   : CanonicalTest -> NonCanonicalOp.
@@ -482,8 +498,10 @@ Definition OpBindingsNCan (nc : NonCanonicalOp) : opsign :=
   | NFresh       => [1] (* fresh(x.e[x]) generates a fresh atom "a" and subst x for "a" in "e" *)
   | NTryCatch    => [0,0,1] (* 1: try part; 2: name; 3: catch part*)
   | NParallel    => [0,0]
+  | NSwapCs1     => [0,0,0]
+  | NSwapCs2 _   => [0]
   | NLastCs      => [0,0]
-  | NCompSeq1    => [0,0]
+  | NCompSeq1  _ => [0,0]
   | NCompSeq2  _ => [0,0]
   | NCompOp    _ => [0,0,0,0]
   | NArithOp   _ => [0,0]
@@ -601,6 +619,8 @@ Tactic Notation "dopid_noncan" ident(onc) ident(c) :=
   | Case_aux c "NFresh"
   | Case_aux c "NTryCatch"
   | Case_aux c "NParallel"
+  | Case_aux c "NSwapCs1"
+  | Case_aux c "NSwapCs2"
   | Case_aux c "NLastCs"
   | Case_aux c "NCompSeq1"
   | Case_aux c "NCompSeq2"
@@ -719,13 +739,35 @@ Proof.
   introv; apply deq_nat.
 Defined.
 
-Lemma comp_seq_nfo_dec : Deq CompSeqNfo.
+Lemma comp_seq_nfo1_dec : Deq CompSeqNfo1.
 Proof.
   introv.
-  destruct x as [l a], y as [k b].
+  destruct x as [l], y as [k].
+  destruct (String.string_dec l k); subst;
+    try (complete (right; introv xx; inversion xx; subst; tcsp)).
+  left; tcsp.
+Defined.
+
+Lemma comp_seq_nfo2_dec : Deq CompSeqNfo2.
+Proof.
+  introv.
+  destruct x as [n l a], y as [m k b].
+  destruct (String.string_dec n m); subst;
+    try (complete (right; introv xx; inversion xx; subst; tcsp)).
   destruct (deq_list deq_nat l k); subst;
     try (complete (right; introv xx; inversion xx; subst; tcsp)).
   destruct (deq_nat a b); subst;
+    try (complete (right; introv xx; inversion xx; subst; tcsp)).
+  left; tcsp.
+Defined.
+
+Lemma swap_cs_nfo_dec : Deq SwapCsNfo.
+Proof.
+  introv.
+  destruct x as [n l a], y as [m k b].
+  destruct (choice_sequence_name_deq n m); subst;
+    try (complete (right; introv xx; inversion xx; subst; tcsp)).
+  destruct (choice_sequence_name_deq l k); subst;
     try (complete (right; introv xx; inversion xx; subst; tcsp)).
   left; tcsp.
 Defined.
@@ -751,7 +793,11 @@ Proof.
   - destruct ncan1; destruct ncan2;
       try (left; auto; fail);
       try (right; sp; inversion H; fail).
-    + destruct (comp_seq_nfo_dec c c0); subst; tcsp;
+    + destruct (swap_cs_nfo_dec s s0); subst; tcsp;
+        try (complete (right; introv xx; inversion xx; subst; tcsp)).
+    + destruct (comp_seq_nfo1_dec c c0); subst; tcsp;
+        try (complete (right; introv xx; inversion xx; subst; tcsp)).
+    + destruct (comp_seq_nfo2_dec c c0); subst; tcsp;
         try (complete (right; introv xx; inversion xx; subst; tcsp)).
     + try destruct c; try destruct c0;
       try (left; auto; fail);
@@ -841,7 +887,11 @@ Proof.
   - destruct ncan1; destruct ncan2;
       try (left; auto; fail);
       try (right; sp; inversion H; fail).
-    + destruct (comp_seq_nfo_dec c c0); subst; tcsp;
+    + destruct (swap_cs_nfo_dec s s0); subst; tcsp;
+        try (complete (right; introv xx; inversion xx; subst; tcsp)).
+    + destruct (comp_seq_nfo1_dec c c0); subst; tcsp;
+        try (complete (right; introv xx; inversion xx; subst; tcsp)).
+    + destruct (comp_seq_nfo2_dec c c0); subst; tcsp;
         try (complete (right; introv xx; inversion xx; subst; tcsp)).
     + try destruct c; try destruct c0;
       try (left; auto; fail);

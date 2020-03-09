@@ -121,9 +121,9 @@ Proof.
         make_red_val_like XX0 hh.
         applydup @isprogram_comp_seq2_implies in Hprt'; repnd.
 
-        pose proof (Hi (mk_comp_seq2 (snoc l k0) i (mk_apply f (mk_nat (S (length l)))) f)
+        pose proof (Hi (mk_comp_seq2 a0 (snoc l k0) i (mk_apply f (mk_nat (S (length l)))) f)
                        c
-                       (mk_comp_seq2 (snoc l k0) i (mk_apply fr (mk_nat (S (length l)))) fr)) as q.
+                       (mk_comp_seq2 a0 (snoc l k0) i (mk_apply fr (mk_nat (S (length l)))) fr)) as q.
         repeat (autodimp q hyp); eauto 2 with slow;
           try (apply implies_isprogram_mk_comp_seq2; eauto 2 with slow).
         { apply implies_approx_star_mk_comp_seq2; eauto 2 with slow. }
@@ -153,8 +153,8 @@ Proof.
     apply approx_implies_approx_open.
     apply computes_to_exception_implies_approx; auto; prove_isprogram.
     allrw @computes_to_exception_as_reduces_to.
-    destruct nfo as [ln kn].
-    apply reduces_to_trans with (b := mk_comp_seq2 ln kn (mk_exception a' e') t2r).
+    destruct nfo as [an ln kn].
+    apply reduces_to_trans with (b := mk_comp_seq2 an ln kn (mk_exception a' e') t2r).
     { apply reduces_to_prinarg; auto. }
     apply reduces_to_if_step; reflexivity.
 Qed.

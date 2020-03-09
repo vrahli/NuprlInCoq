@@ -35,6 +35,7 @@ Require Export substitution.
 Require Export computation1.
 
 Require Export fresh_cs.
+Require Export swap_cs.
 
 
 (** printing #  $\times$ #×# *)
@@ -181,45 +182,47 @@ Definition size_bs {o} (bs : list (@BTerm o)) :=
     while evaluating a non-canonical term, its priciple argumens
     must be first evaluated down to a normal form. *)
 
-Definition mk_comp_seq1 {o} (n f : @NTerm o) :=
-  oterm (NCan NCompSeq1) [nobnd n, nobnd f].
+Definition mk_comp_seq1 {o} a (n f : @NTerm o) :=
+  oterm (NCan (NCompSeq1 (MkCompSeqNfo1 a))) [nobnd n, nobnd f].
 
-Definition mk_comp_seq2 {o} l i (n f : @NTerm o) :=
-  oterm (NCan (NCompSeq2 (MkCompSeqNfo l i))) [nobnd n, nobnd f].
+Definition mk_comp_seq2 {o} a l i (n f : @NTerm o) :=
+  oterm (NCan (NCompSeq2 (MkCompSeqNfo2 a l i))) [nobnd n, nobnd f].
 
-Definition mk_fresh_choice_nat_seq {o} (lib : @plibrary o) (l : list nat) : @NTerm o :=
-  let cs := "a" (*fresh_cs_in_lib lib*) in
-  mk_choice_seq (MkChoiceSequenceName cs (cs_kind_seq l)).
+Definition mk_fresh_choice_nat_seq {o} (cs : cs_name) (lib : @plibrary o) (l : list nat) : @NTerm o :=
+  mk_axiom.
+(* We disable that for now because swapping does not preserves generating choice sequence names *)
+(*  mk_choice_seq (MkChoiceSequenceName cs (cs_kind_seq l)).*)
 
 Definition compute_step_comp_seq1 {o}
            (lib : @plibrary o)
+           (nfo : CompSeqNfo1)
            (arg1c : @CanonicalOp o)
            (t : @NTerm o)
            (arg1bts btsr : list (@BTerm o)) :=
-  match arg1c with
-  | Nint z =>
+  match nfo, arg1c with
+  | MkCompSeqNfo1 a, Nint z =>
     if Z_le_gt_dec 0 z
     then
       let i := Z.to_nat z in
       match arg1bts, btsr with
       | [], [bterm [] f] =>
         if deq_nat i 0
-        then csuccess (mk_fresh_choice_nat_seq lib [])
-        else csuccess (mk_comp_seq2 [] i (mk_apply f mk_zero) f)
+        then csuccess (mk_fresh_choice_nat_seq a lib [])
+        else csuccess (mk_comp_seq2 a [] i (mk_apply f mk_zero) f)
       | _, _ => cfailure bad_args t
       end
     else cfailure bad_args t
-  | _ => cfailure bad_args t
+  | _, _ => cfailure bad_args t
   end.
 
 Definition compute_step_comp_seq2 {o}
            (lib : @plibrary o)
-           (nfo : CompSeqNfo)
+           (nfo : CompSeqNfo2)
            (arg1c : @CanonicalOp o)
            (t : @NTerm o)
            (arg1bts btsr : list (@BTerm o)) :=
   match nfo, arg1c with
-  | MkCompSeqNfo l i, Nint z =>
+  | MkCompSeqNfo2 a l i, Nint z =>
     if le_gt_dec i (length l)
     then cfailure bad_args t
     else
@@ -229,8 +232,8 @@ Definition compute_step_comp_seq2 {o}
         match arg1bts, btsr with
         | [], [bterm [] f] =>
           if deq_nat i (S (length l))
-          then csuccess (mk_fresh_choice_nat_seq lib (snoc l k))
-          else csuccess (mk_comp_seq2 (snoc l k) i (mk_apply f (mk_nat (S (length l)))) f)
+          then csuccess (mk_fresh_choice_nat_seq a lib (snoc l k))
+          else csuccess (mk_comp_seq2 a (snoc l k) i (mk_apply f (mk_nat (S (length l)))) f)
         | _, _ => cfailure bad_args t
         end
       else cfailure bad_args t
@@ -264,6 +267,44 @@ Definition compute_step_last_cs {o}
   | _, _, _ => cfailure bad_args t
   end.
 
+Definition push_swap_cs_bterm {o} a b (bt : @BTerm o) : BTerm :=
+  match bt with
+  | bterm vs t => bterm vs (mk_swap_cs2 a b t)
+  end.
+
+Definition push_swap_cs_bterms {o} a b (bs : list (@BTerm o)) : list BTerm :=
+  map (push_swap_cs_bterm a b) bs.
+
+Definition push_swap_cs_can {o} a b can (bs : list (@BTerm o)) : NTerm :=
+  oterm (Can (swap_cs_can (a,b) can)) (push_swap_cs_bterms a b bs).
+
+Definition compute_step_swap_cs2 {o} nfo arg1c arg1bts (btsr : list (@BTerm o)) (t : @NTerm o) :=
+  match btsr with
+  | [] => csuccess (push_swap_cs_can (swap_cs_nfo_name1 nfo) (swap_cs_nfo_name2 nfo) arg1c arg1bts)
+  | _ => cfailure bad_args t
+  end.
+
+Definition compute_step_swap_cs1_aux {p}
+           (arg1c arg2c : @CanonicalOp p)
+           (arg1bts arg2bts btsr : list (@BTerm p))
+           (t : NTerm) :=
+  match arg1c, arg2c, arg1bts, arg2bts, btsr with
+  | Ncseq n1, Ncseq n2, [], [], [bterm [] t] => csuccess (mk_swap_cs2 n1 n2 t)
+  | _, _, _, _, _ => cfailure bad_args t
+  end.
+
+Definition compute_step_swap_cs1 {o} btsr (t : @NTerm o) arg1c arg1bts cstep arg1 ncr :=
+  match btsr with
+    | [] => cfailure bad_args t
+    | bterm (_ :: _) _ :: _ => cfailure bad_args t
+    | bterm [] (vterm v) :: btsr3 => cfailure bad_args t
+    | bterm [] (oterm (Can arg2c) arg2bts) :: btsr3 =>
+      compute_step_swap_cs1_aux arg1c arg2c arg1bts arg2bts btsr3 t
+    | bterm [] (oterm Exc _ as arg2nt) :: _ => csuccess arg2nt
+    | bterm [] (oterm _ _) :: btsr3 => (* ncan/abs *)
+      on_success cstep (fun f => oterm (NCan ncr) (bterm [] arg1::bterm [] f::btsr3))
+  end.
+
 Definition compute_step_can {o}
            (lib : plibrary)
            (t : @NTerm o)
@@ -289,8 +330,10 @@ Definition compute_step_can {o}
     | NTryCatch      => compute_step_try t arg1 btsr
     | NParallel      => compute_step_parallel arg1c t arg1bts btsr
     | NLastCs        => compute_step_last_cs   lib arg1c t arg1bts btsr
-    | NCompSeq1      => compute_step_comp_seq1 lib arg1c t arg1bts btsr
+    | NCompSeq1  nfo => compute_step_comp_seq1 lib nfo arg1c t arg1bts btsr
     | NCompSeq2  nfo => compute_step_comp_seq2 lib nfo arg1c t arg1bts btsr
+    | NSwapCs1       => compute_step_swap_cs1 btsr t arg1c arg1bts comp arg1 ncr
+    | NSwapCs2   nfo => compute_step_swap_cs2 nfo arg1c arg1bts btsr t
     | NCompOp    op  => co btsr t arg1bts arg1c op comp arg1 ncr
     | NArithOp   op  => ca btsr t arg1bts arg1c op comp arg1 ncr
     | NCanTest   top => compute_step_can_test top arg1c t arg1bts btsr

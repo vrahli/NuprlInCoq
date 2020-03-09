@@ -37,27 +37,27 @@ Require Export per_can.
 
 
 Lemma isprog_vars_comp_seq1_implies {p} :
-  forall (a b : @NTerm p) vs,
+  forall n (a b : @NTerm p) vs,
     isprog_vars vs a
     -> isprog_vars vs b
-    -> isprog_vars vs (mk_comp_seq1 a b).
+    -> isprog_vars vs (mk_comp_seq1 n a b).
 Proof.
   introv ispa ispb.
   apply isprog_vars_apply; sp.
 Qed.
 
 Lemma isprog_vars_comp_seq2_implies {p} :
-  forall l k (a b : @NTerm p) vs,
+  forall n l k (a b : @NTerm p) vs,
     isprog_vars vs a
     -> isprog_vars vs b
-    -> isprog_vars vs (mk_comp_seq2 l k a b).
+    -> isprog_vars vs (mk_comp_seq2 n l k a b).
 Proof.
   introv ispa ispb.
   apply isprog_vars_apply; sp.
 Qed.
 
 Lemma isprogram_comp_seq1 {p} :
-  forall (a b : @NTerm p), isprogram a -> isprogram b -> isprogram (mk_comp_seq1 a b).
+  forall n (a b : @NTerm p), isprogram a -> isprogram b -> isprogram (mk_comp_seq1 n a b).
 Proof.
   sp; allunfold @isprogram; sp.
   unfold closed.
@@ -73,7 +73,7 @@ Proof.
 Qed.
 
 Lemma isprogram_comp_seq2 {p} :
-  forall l k (a b : @NTerm p), isprogram a -> isprogram b -> isprogram (mk_comp_seq2 l k a b).
+  forall n l k (a b : @NTerm p), isprogram a -> isprogram b -> isprogram (mk_comp_seq2 n l k a b).
 Proof.
   sp; allunfold @isprogram; sp.
   unfold closed.
@@ -89,38 +89,38 @@ Proof.
 Qed.
 
 Theorem isprog_comp_seq1 {p} :
-  forall (a b : @NTerm p), isprog a -> isprog b -> isprog (mk_comp_seq1 a b).
+  forall n (a b : @NTerm p), isprog a -> isprog b -> isprog (mk_comp_seq1 n a b).
 Proof.
   sp; allrw @isprog_eq.
   apply isprogram_comp_seq1; auto.
 Qed.
 
 Theorem isprog_comp_seq2 {p} :
-  forall l k (a b : @NTerm p), isprog a -> isprog b -> isprog (mk_comp_seq2 l k a b).
+  forall n l k (a b : @NTerm p), isprog a -> isprog b -> isprog (mk_comp_seq2 n l k a b).
 Proof.
   sp; allrw @isprog_eq.
   apply isprogram_comp_seq2; auto.
 Qed.
 
-Definition mkc_comp_seq1 {p} (t1 t2 : @CTerm p) : CTerm :=
+Definition mkc_comp_seq1 {p} n (t1 t2 : @CTerm p) : CTerm :=
   let (a,x) := t1 in
   let (b,y) := t2 in
-    exist isprog (mk_comp_seq1 a b) (isprog_comp_seq1 a b x y).
+    exist isprog (mk_comp_seq1 n a b) (isprog_comp_seq1 n a b x y).
 
-Definition mkc_comp_seq2 {p} l k (t1 t2 : @CTerm p) : CTerm :=
+Definition mkc_comp_seq2 {p} n l k (t1 t2 : @CTerm p) : CTerm :=
   let (a,x) := t1 in
   let (b,y) := t2 in
-    exist isprog (mk_comp_seq2 l k a b) (isprog_comp_seq2 l k a b x y).
+    exist isprog (mk_comp_seq2 n l k a b) (isprog_comp_seq2 n l k a b x y).
 
-Definition mkcv_comp_seq1 {p} vs (t1 t2 : @CVTerm p vs) : CVTerm vs :=
+Definition mkcv_comp_seq1 {p} vs n (t1 t2 : @CVTerm p vs) : CVTerm vs :=
   let (a,x) := t1 in
   let (b,y) := t2 in
-    exist (isprog_vars vs) (mk_comp_seq1 a b) (isprog_vars_comp_seq1_implies a b vs x y).
+    exist (isprog_vars vs) (mk_comp_seq1 n a b) (isprog_vars_comp_seq1_implies n a b vs x y).
 
-Definition mkcv_comp_seq2 {p} vs l k (t1 t2 : @CVTerm p vs) : CVTerm vs :=
+Definition mkcv_comp_seq2 {p} vs n l k (t1 t2 : @CVTerm p vs) : CVTerm vs :=
   let (a,x) := t1 in
   let (b,y) := t2 in
-    exist (isprog_vars vs) (mk_comp_seq2 l k a b) (isprog_vars_comp_seq2_implies l k a b vs x y).
+    exist (isprog_vars vs) (mk_comp_seq2 n l k a b) (isprog_vars_comp_seq2_implies n l k a b vs x y).
 
 
 Definition nsls1 {o} (n f a : NVar) : @NTerm o :=
@@ -156,10 +156,10 @@ Definition nsls1c {o} (n f a : NVar) : @CTerm o :=
              (mk_cv_app_r [f,n] _ (mkc_var a))
              (mk_cv_app_l [a,f] _ (mkcv_natk2nat _ (mkc_var n)))))).
 
-Definition nsls1_extract {o} (n f : NVar) : @NTerm o :=
-  mk_lam n (mk_lam f (mk_pair (mk_comp_seq1 (mk_var n) (mk_var f)) mk_axiom)).
+Definition nsls1_extract {o} c (n f : NVar) : @NTerm o :=
+  mk_lam n (mk_lam f (mk_pair (mk_comp_seq1 c (mk_var n) (mk_var f)) mk_axiom)).
 
-Definition nsls1c_extract {o} (n f : NVar) : @CTerm o :=
+Definition nsls1c_extract {o} c (n f : NVar) : @CTerm o :=
   mkc_lam
     n
     (mkcv_lam
@@ -169,6 +169,7 @@ Definition nsls1c_extract {o} (n f : NVar) : @CTerm o :=
           _
           (mkcv_comp_seq1
              _
+             c
              (mk_cv_app_l [f] _ (mkc_var n))
              (mk_cv_app_r [n] _ (mkc_var f)))
           (mkcv_ax _))).
@@ -184,8 +185,8 @@ Qed.
 Hint Rewrite @lsubstc_nsls1_eq : slow.
 
 Lemma lsubstc_nsls1_extract_eq {o} :
-  forall n f (w : @wf_term o (nsls1_extract n f)) s c,
-    lsubstc (nsls1_extract n f) w s c = nsls1c_extract n f.
+  forall x n f (w : @wf_term o (nsls1_extract x n f)) s c,
+    lsubstc (nsls1_extract x n f) w s c = nsls1c_extract x n f.
 Proof.
   introv.
   apply cterm_eq; simpl.
@@ -249,8 +250,8 @@ Proof.
 Qed.
 
 Lemma isprog_vars_lam_pair_comp_seq1 {o} :
-  forall n f,
-    @isprog_vars o [n] (mk_lam f (mk_pair (mk_comp_seq1 (mk_var n) (mk_var f)) mk_axiom)).
+  forall x n f,
+    @isprog_vars o [n] (mk_lam f (mk_pair (mk_comp_seq1 x (mk_var n) (mk_var f)) mk_axiom)).
 Proof.
   introv.
   repeat constructor; simpl; autorewrite with slow.
@@ -260,9 +261,9 @@ Qed.
 Hint Resolve isprog_vars_lam_pair_comp_seq1 : slow.
 
 Lemma isprogram_lam_pair_comp_seq1 {o} :
-  forall f (x : @NTerm o),
+  forall n f (x : @NTerm o),
     isprogram x
-    -> isprogram (mk_lam f (mk_pair (mk_comp_seq1 x (mk_var f)) mk_axiom)).
+    -> isprogram (mk_lam f (mk_pair (mk_comp_seq1 n x (mk_var f)) mk_axiom)).
 Proof.
   introv isp.
   repeat constructor; simpl.
@@ -277,17 +278,18 @@ Qed.
 Hint Resolve isprogram_lam_pair_comp_seq1 : slow.
 
 Lemma ccequivc_ext_mkc_apply_nsls1c_extract {o} :
-  forall lib (a : @CTerm o) n f k (d : n <> f),
+  forall lib (a : @CTerm o) x n f k (d : n <> f),
     ccomputes_to_valc_ext lib a (mkc_nat k)
     -> ccequivc_ext
          lib
-         (mkc_apply (nsls1c_extract n f) a)
+         (mkc_apply (nsls1c_extract x n f) a)
          (mkc_lam
             f
             (mkcv_pair
                _
                (mkcv_comp_seq1
                   _
+                  x
                   (mk_cv _ a)
                   (mkc_var f))
                (mkcv_ax _))).
@@ -304,9 +306,9 @@ Proof.
 Qed.
 
 Lemma isprog_vars_pair_comp_seq1 {o} :
-  forall n f,
+  forall x n f,
     isprog n
-    -> @isprog_vars o [f] (mk_pair (mk_comp_seq1 n (mk_var f)) mk_axiom).
+    -> @isprog_vars o [f] (mk_pair (mk_comp_seq1 x n (mk_var f)) mk_axiom).
 Proof.
   introv isp.
   repeat constructor; simpl; autorewrite with slow.
@@ -322,10 +324,10 @@ Qed.
 Hint Resolve isprog_vars_pair_comp_seq1 : slow.
 
 Lemma isprogram_pair_comp_seq1 {o} :
-  forall (a b : @NTerm o),
+  forall x (a b : @NTerm o),
     isprogram a
     -> isprogram b
-    -> isprogram (mk_pair (mk_comp_seq1 a b) mk_axiom).
+    -> isprogram (mk_pair (mk_comp_seq1 x a b) mk_axiom).
 Proof.
   introv ispa ispb.
   repeat constructor; simpl.
@@ -340,13 +342,13 @@ Qed.
 Hint Resolve isprogram_pair_comp_seq1 : slow.
 
 Lemma ccequivc_ext_mkc_apply_mkc_lam_pair_comp_seq1 {o} :
-  forall lib n f (a : @CTerm o),
+  forall lib x n f (a : @CTerm o),
     ccequivc_ext
       lib
       (mkc_apply
-         (mkc_lam f (mkcv_pair _ (mkcv_comp_seq1 _ (mk_cv _ n) (mkc_var f)) (mkcv_ax _)))
+         (mkc_lam f (mkcv_pair _ (mkcv_comp_seq1 _ x (mk_cv _ n) (mkc_var f)) (mkcv_ax _)))
          a)
-      (mkc_pair (mkc_comp_seq1 n a) mkc_axiom).
+      (mkc_pair (mkc_comp_seq1 x n a) mkc_axiom).
 Proof.
   introv ext; spcast.
   destruct_cterms.
@@ -360,10 +362,10 @@ Proof.
 Qed.
 
 Lemma implies_approx_comp_seq1 {p} :
-  forall lib f g a b,
+  forall lib x f g a b,
     approx lib f g
     -> @approx p lib a b
-    -> approx lib (mk_comp_seq1 f a) (mk_comp_seq1 g b).
+    -> approx lib (mk_comp_seq1 x f a) (mk_comp_seq1 x g b).
 Proof.
   introv H1p H2p.
   applydup @approx_relates_only_progs in H1p.
@@ -374,10 +376,10 @@ Proof.
 Qed.
 
 Lemma implies_cequivc_comp_seq1 {p} :
-  forall lib f g a b,
+  forall lib x f g a b,
     cequivc lib f g
     -> @cequivc p lib a b
-    -> cequivc lib (mkc_comp_seq1 f a) (mkc_comp_seq1 g b).
+    -> cequivc lib (mkc_comp_seq1 x f a) (mkc_comp_seq1 x g b).
 Proof.
   unfold cequivc. introv H1c H2c.
   destruct_cterms. allsimpl. apply isprogram_eq in i0.
@@ -389,10 +391,10 @@ Proof.
 Qed.
 
 Lemma implies_ccequivc_ext_comp_seq1 {o} :
-  forall lib (f g a b : @CTerm o),
+  forall lib n (f g a b : @CTerm o),
     ccequivc_ext lib f g
     -> ccequivc_ext lib a b
-    -> ccequivc_ext lib (mkc_comp_seq1 f a) (mkc_comp_seq1 g b).
+    -> ccequivc_ext lib (mkc_comp_seq1 n f a) (mkc_comp_seq1 n g b).
 Proof.
   introv ceqa ceqb x.
   pose proof (ceqa _ x) as ceqa.
@@ -407,14 +409,14 @@ Definition mkc_fresh_choice_nat_seq {o} (l : list nat) : @CTerm o :=
   mkc_choice_seq (MkChoiceSequenceName cs (cs_kind_seq l)).
 
 Lemma mk_comp_seq2_reduces_to_choice_seq {o} :
-  forall lib (f : @NTerm o) l w,
+  forall lib (f : @NTerm o) x l w,
     0 < length l
     -> (forall n i,
            select n l = Some i -> mk_apply f (mk_nat (length w + n)) =v>(lib) mk_nat i)
     -> reduces_to
          lib
-         (mk_comp_seq2 w (length w + length l) (mk_apply f (mk_nat (length w))) f)
-         (mk_fresh_choice_nat_seq lib (w ++ l)).
+         (mk_comp_seq2 x w (length w + length l) (mk_apply f (mk_nat (length w))) f)
+         (mk_fresh_choice_nat_seq x lib (w ++ l)).
 Proof.
   induction l; introv cond imp; simpl in *; autorewrite with slow nat; try omega.
 
@@ -445,12 +447,12 @@ Proof.
 Qed.
 
 Lemma mk_comp_seq1_reduces_to_choice_seq {o} :
-  forall lib k (f : @NTerm o) l,
+  forall lib x k (f : @NTerm o) l,
     length l = k
     -> (forall n i,
            select n l = Some i
            -> computes_to_value lib (mk_apply f (mk_nat n)) (mk_nat i))
-    -> computes_to_value lib (mk_comp_seq1 (mk_nat k) f) (mk_fresh_choice_nat_seq lib l).
+    -> computes_to_value lib (mk_comp_seq1 x (mk_nat k) f) (mk_fresh_choice_nat_seq x lib l).
 Proof.
   introv eqlen imp.
   destruct (deq_nat k 0).
@@ -466,7 +468,7 @@ Proof.
 
   split; eauto 2 with slow.
 
-  pose proof (mk_comp_seq2_reduces_to_choice_seq lib f l []) as q.
+  pose proof (mk_comp_seq2_reduces_to_choice_seq lib f x l []) as q.
   simpl in *; autorewrite with slow in *.
   repeat (autodimp q hyp); try omega.
 Qed.
@@ -534,7 +536,7 @@ Lemma mkc_comp_seq1_reduces_to_choice_seq {o} :
     -> (forall n i,
            select n l = Some i
            -> (mkc_apply f (mkc_nat n)) ===>(lib) (mkc_nat i))
-    -> ccomputes_to_valc_ext lib (mkc_comp_seq1 (mkc_nat k) f) (mkc_fresh_choice_nat_seq l).
+    -> ccomputes_to_valc_ext lib (mkc_comp_seq1 "a" (mkc_nat k) f) (mkc_fresh_choice_nat_seq l).
 Proof.
   introv eqlen imp.
   apply in_ext_computes_to_valc_implies_ccomputes_to_valc_ext; introv ext.
@@ -562,7 +564,7 @@ Definition rule_nsls1 {o}
            (n f a : NVar)
            (H     : @bhyps o) :=
   mk_rule
-    (mk_baresequent H (mk_concl (nsls1 n f a) (nsls1_extract n f)))
+    (mk_baresequent H (mk_concl (nsls1 n f a) (nsls1_extract "a" n f)))
     []
     [].
 
@@ -582,7 +584,7 @@ Proof.
   destseq; allsimpl.
   dLin_hyp; exrepnd.
 
-  assert (@covered o (nsls1_extract n f) (nh_vars_hyps H)) as cv.
+  assert (@covered o (nsls1_extract "a" n f) (nh_vars_hyps H)) as cv.
   { dwfseq; tcsp.
     introv xx.
     autorewrite with slow in xx; simpl in *; tcsp. }
@@ -910,7 +912,7 @@ Proof.
   assert (lib_extends lib'' lib') as xt by eauto 3 with slow.
   exists lib'' xt; introv ext'.
 
-  exists (mkc_comp_seq1 a0 a1) (mkc_comp_seq1 a' a'0) (@mkc_axiom o) (@mkc_axiom o).
+  exists (mkc_comp_seq1 "a" a0 a1) (mkc_comp_seq1 "a" a' a'0) (@mkc_axiom o) (@mkc_axiom o).
   dands; spcast; eauto 3 with slow.
 
   {

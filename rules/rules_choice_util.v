@@ -113,10 +113,7 @@ Hint Rewrite @mkcv_not_substc : slow.
 Lemma isprog_vars_choice_seq_implies {o} :
   forall vs name, @isprog_vars o vs (mk_choice_seq name).
 Proof.
-  introv.
-  allrw @isprog_vars_eq.
-  simpl in *; autorewrite with slow.
-  repnd; dands; auto; eauto 3 with slow.
+  introv; eauto 3 with slow.
 Qed.
 Hint Resolve isprog_vars_choice_seq_implies : slow.
 

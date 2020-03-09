@@ -132,29 +132,31 @@ Proof.
 Qed.
 
 Lemma compute_step_comp_seq1_success {o} :
-  forall lib can (t : @NTerm o) bts bs u,
-    compute_step_comp_seq1 lib can t bts bs = csuccess u
-    -> {i : nat
+  forall lib nfo can (t : @NTerm o) bts bs u,
+    compute_step_comp_seq1 lib nfo can t bts bs = csuccess u
+    -> {a : cs_name
+        & {i : nat
         & {f : NTerm
-        & can = Nint (Z.of_nat i)
+        & nfo = MkCompSeqNfo1 a
+        # can = Nint (Z.of_nat i)
         # bts = []
         # bs = [nobnd f]
         #
         (
-          (i = 0 # u = mk_fresh_choice_nat_seq lib [])
+          (i = 0 # u = mk_fresh_choice_nat_seq a lib [])
           [+]
-          (i > 0 # u = mk_comp_seq2 [] i (mk_apply f mk_zero) f)
+          (i > 0 # u = mk_comp_seq2 a [] i (mk_apply f mk_zero) f)
         )
-       }}.
+       }}}.
 Proof.
-  introv e; allsimpl; destruct can; allsimpl; ginv; boolvar; ginv.
+  introv e; allsimpl; destruct can, nfo as [a]; allsimpl; ginv; boolvar; ginv.
 
   { destruct bts; allsimpl; ginv.
     destruct bs; allsimpl; ginv.
     destruct b.
     destruct l0; ginv.
     destruct bs; allsimpl; ginv.
-    exists (Z.to_nat z) n.
+    exists a (Z.to_nat z) n.
     rewrite Z2Nat.id; dands; tcsp. }
 
   { destruct bts; allsimpl; ginv.
@@ -162,7 +164,7 @@ Proof.
     destruct b.
     destruct l0; ginv.
     destruct bs; allsimpl; ginv.
-    exists (Z.to_nat z) n0.
+    exists a (Z.to_nat z) n0.
     rewrite Z2Nat.id; dands; tcsp.
     right; dands; auto; try omega. }
 Qed.
@@ -170,26 +172,27 @@ Qed.
 Lemma compute_step_comp_seq2_success {o} :
   forall lib nfo can (t : @NTerm o) bts bs u,
     compute_step_comp_seq2 lib nfo can t bts bs = csuccess u
-    -> {l : list nat
+    -> {a : cs_name
+        & {l : list nat
         & {i : nat
         & {k : nat
         & {f : NTerm
-        & nfo = MkCompSeqNfo l i
+        & nfo = MkCompSeqNfo2 a l i
         # can = Nint (Z.of_nat k)
         # bts = []
         # bs = [nobnd f]
         #
         (
-          (i = S (length l) # u = mk_fresh_choice_nat_seq lib (snoc l k))
+          (i = S (length l) # u = mk_fresh_choice_nat_seq a lib (snoc l k))
           [+]
-          (i > S (length l) # u = mk_comp_seq2 (snoc l k) i (mk_apply f (mk_nat (S (length l)))) f)
+          (i > S (length l) # u = mk_comp_seq2 a (snoc l k) i (mk_apply f (mk_nat (S (length l)))) f)
         )
-       }}}}.
+       }}}}}.
 Proof.
   introv e; allsimpl.
   unfold compute_step_comp_seq2 in e.
-  destruct nfo as [l i]; allsimpl.
-  exists l i.
+  destruct nfo as [a l i]; allsimpl.
+  exists a l i.
   destruct can; allsimpl; ginv; boolvar; ginv; subst;[|].
 
 
@@ -214,10 +217,10 @@ Proof.
 Qed.
 
 Lemma implies_nt_wf_mk_comp_seq2 {o} :
-  forall l i (a b : @NTerm o),
+  forall n l i (a b : @NTerm o),
     nt_wf a
     -> nt_wf b
-    -> nt_wf (mk_comp_seq2 l i a b).
+    -> nt_wf (mk_comp_seq2 n l i a b).
 Proof.
   introv wfa wfb.
   repeat constructor; introv k; simpl in *; repndors; subst; tcsp;
@@ -226,8 +229,8 @@ Qed.
 Hint Resolve implies_nt_wf_mk_comp_seq2 : slow.
 
 Lemma nt_wf_mk_comp_seq1_iff {o} :
-  forall (a b : @NTerm o),
-    nt_wf (mk_comp_seq1 a b) <=> (nt_wf a # nt_wf b).
+  forall n (a b : @NTerm o),
+    nt_wf (mk_comp_seq1 n a b) <=> (nt_wf a # nt_wf b).
 Proof.
   introv; split; intro h.
 
@@ -247,8 +250,8 @@ Proof.
 Qed.
 
 Lemma nt_wf_mk_comp_seq2_iff {o} :
-  forall l i (a b : @NTerm o),
-    nt_wf (mk_comp_seq2 l i a b) <=> (nt_wf a # nt_wf b).
+  forall n l i (a b : @NTerm o),
+    nt_wf (mk_comp_seq2 n l i a b) <=> (nt_wf a # nt_wf b).
 Proof.
   introv; split; intro h.
 
@@ -280,7 +283,7 @@ Qed.
 Hint Resolve implies_nt_wf_apply : slow.
 
 Lemma nt_wf_mk_fresh_choice_nat_seq {o} :
-  forall (lib : @plibrary o) l, nt_wf (mk_fresh_choice_nat_seq lib l).
+  forall n (lib : @plibrary o) l, nt_wf (mk_fresh_choice_nat_seq n lib l).
 Proof.
   introv; repeat constructor; simpl; tcsp.
 Qed.
@@ -310,6 +313,176 @@ Proof.
   eauto 3 with slow.
 Qed.
 Hint Resolve nt_wf_find_last_entry_default : slow.
+
+Lemma compute_step_swap_cs1_success {o} :
+  forall btsr (t : @NTerm o) arg1c arg1bts cstep arg1 ncr b,
+    compute_step_swap_cs1 btsr t arg1c arg1bts cstep arg1 ncr = csuccess b
+    -> {n1 : choice_sequence_name
+       & {n2 : choice_sequence_name
+       & {u : NTerm
+       & arg1c = Ncseq n1
+       # btsr = [bterm [] (oterm (Can (Ncseq n2)) []), bterm [] u]
+       # arg1bts = []
+       # b = mk_swap_cs2 n1 n2 u }}}
+       [+]
+       {l : list BTerm
+       & {k : list BTerm
+       & btsr = bterm [] (oterm Exc l) :: k
+       # b = oterm Exc l }}
+       [+]
+       {op : Opid
+       & {bs : list BTerm
+       & {l : list BTerm
+       & {u : NTerm
+       & btsr = bterm [] (oterm op bs) :: l
+       # cstep = csuccess u
+       # isnoncan_like (oterm op bs)
+       # b = oterm (NCan ncr) (bterm [] arg1 :: bterm [] u :: l) }}}}.
+Proof.
+  introv comp.
+  destruct btsr; simpl in *; ginv.
+  destruct b0; simpl in *; tcsp.
+  destruct l; simpl in *; tcsp; ginv.
+  destruct n; simpl in *; tcsp; ginv.
+  destruct o0; simpl in *; tcsp.
+  { unfold compute_step_swap_cs2 in *.
+    destruct arg1c; simpl in *; tcsp; ginv.
+    destruct c; simpl in *; tcsp; ginv.
+    destruct arg1bts; simpl in *; tcsp; ginv.
+    destruct l; simpl in *; tcsp; ginv.
+    destruct btsr; simpl in *; tcsp; ginv.
+    destruct b0; simpl in *; tcsp; ginv.
+    destruct l; simpl in *; tcsp; ginv.
+    destruct btsr; simpl in *; tcsp; ginv.
+    left.
+    exists c0 c n; dands; auto. }
+  { destruct cstep; simpl in *; ginv.
+    right; right.
+    exists (@NCan o n) l btsr n0; dands; tcsp. }
+  { ginv.
+    right; left.
+    exists l btsr; dands; auto. }
+  { destruct cstep; simpl in *; ginv.
+    right; right.
+    exists (@Abs o o0) l btsr n; dands; tcsp. }
+Qed.
+
+Lemma compute_step_swap_cs2_success {o} :
+  forall nfo arg1c arg1bts btsr (t : @NTerm o) b,
+    compute_step_swap_cs2 nfo arg1c arg1bts btsr t = csuccess b
+    -> btsr = [] # b = push_swap_cs_can (swap_cs_nfo_name1 nfo) (swap_cs_nfo_name2 nfo) arg1c arg1bts.
+Proof.
+  introv comp.
+  destruct btsr; simpl in *; ginv; auto.
+Qed.
+
+Lemma implies_nt_wf_mk_swap_cs1 {o} :
+  forall (a b c : @NTerm o),
+    nt_wf a
+    -> nt_wf b
+    -> nt_wf c
+    -> nt_wf (mk_swap_cs1 a b c).
+Proof.
+  introv wfa wfb wfc.
+  constructor; simpl; tcsp.
+  introv i; repndors; subst; tcsp; constructor; auto.
+Qed.
+Hint Resolve implies_nt_wf_mk_swap_cs1 : slow.
+
+Lemma implies_nt_wf_mk_swap_cs2 {o} :
+  forall a b (c : @NTerm o),
+    nt_wf c
+    -> nt_wf (mk_swap_cs2 a b c).
+Proof.
+  introv wfc.
+  constructor; simpl; tcsp.
+  introv i; repndors; subst; tcsp; constructor; auto.
+Qed.
+Hint Resolve implies_nt_wf_mk_swap_cs2 : slow.
+
+Lemma map_num_bvars_push_swap_cs_bterms {o} :
+  forall n1 n2 (bs : list (@BTerm o)),
+    map num_bvars (push_swap_cs_bterms n1 n2 bs)
+    = map num_bvars bs.
+Proof.
+  introv; unfold push_swap_cs_bterms; rewrite map_map; unfold compose.
+  apply eq_maps; introv i; destruct x; simpl; tcsp.
+Qed.
+Hint Rewrite @map_num_bvars_push_swap_cs_bterms : slow.
+
+Lemma implies_nt_wf_push_swap_cs_oterm {o} :
+  forall n1 n2 can (bs : list (@BTerm o)),
+    nt_wf (oterm (Can can) bs)
+    -> nt_wf (push_swap_cs_can n1 n2 can bs).
+Proof.
+  introv wf; unfold push_swap_cs_can.
+  allrw @nt_wf_oterm_iff; repnd; simpl in *; autorewrite with slow; dands; auto.
+  introv i; unfold push_swap_cs_bterms in i; apply in_map_iff in i; exrepnd; subst.
+  apply wf in i1; destruct a; simpl in *.
+  allrw @bt_wf_iff; eauto 4 with slow.
+Qed.
+Hint Resolve implies_nt_wf_push_swap_cs_oterm : slow.
+
+Lemma nt_wf_swap_cs1_iff {o} :
+  forall (l : list (@BTerm o)),
+    nt_wf (oterm (NCan NSwapCs1) l)
+    <=> {a : NTerm & {b : NTerm & {c : NTerm
+         & l = [nobnd a, nobnd b, nobnd c]
+         # nt_wf a
+         # nt_wf b
+         # nt_wf c}}}.
+Proof.
+  introv; split; intro h.
+  { inversion h as [|? ? imp eqm]; subst; clear h; simpl in *.
+    repeat (destruct l; simpl in *; ginv).
+    destruct b, b0, b1; unfold num_bvars in *; simpl in *.
+    destruct l, l0, l1; simpl in *; ginv.
+    dLin_hyp; allrw @bt_wf_iff.
+    exists n n0 n1; dands; tcsp. }
+  { exrepnd; subst.
+    repeat constructor; simpl; introv i; repndors; subst; tcsp; constructor; auto. }
+Qed.
+
+Lemma nt_wf_swap_cs2_iff {o} :
+  forall nfo (l : list (@BTerm o)),
+    nt_wf (oterm (NCan (NSwapCs2 nfo)) l)
+    <=> {a : NTerm
+         & l = [nobnd a]
+         # nt_wf a}.
+Proof.
+  introv; split; intro h.
+  { inversion h as [|? ? imp eqm]; subst; clear h; simpl in *.
+    repeat (destruct l; simpl in *; ginv); dLin_hyp.
+    destruct b; unfold num_bvars in *; simpl in *.
+    destruct l; simpl in *; ginv.
+    allrw @bt_wf_iff.
+    exists n; dands; tcsp. }
+  { exrepnd; subst.
+    repeat constructor; simpl; introv i; repndors; subst; tcsp; constructor; auto. }
+Qed.
+
+Lemma free_vars_push_swap_cs_oterm {o} :
+  forall n1 n2 can (bs : list (@BTerm o)),
+    free_vars (push_swap_cs_can n1 n2 can bs) = free_vars_bterms bs.
+Proof.
+  introv; simpl; tcsp.
+  unfold push_swap_cs_bterms.
+  rewrite flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i.
+  destruct x; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @free_vars_push_swap_cs_oterm : slow.
+
+Lemma flat_map_free_vars_bterm_push_swap_cs_bterms {o} :
+  forall n1 n2 (bs : list (@BTerm o)),
+    flat_map free_vars_bterm (push_swap_cs_bterms n1 n2 bs)
+    = free_vars_bterms bs.
+Proof.
+  introv; unfold free_vars_bterms, push_swap_cs_bterms.
+  rewrite flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i; destruct x; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @flat_map_free_vars_bterm_push_swap_cs_bterms : slow.
 
 Lemma compute_step_preserves {o} :
   forall lib (t u : @NTerm o),
@@ -653,6 +826,22 @@ Proof.
           allrw remove_nvars_nil_l; dands; simpl;
           autorewrite with slow; eauto with slow.
         }
+
+        { SSSCase "NSwapCs1".
+          allsimpl.
+          apply compute_step_swap_cs1_success in comp; repndors; exrepnd; subst; simpl in *; tcsp;
+            autorewrite with slow; allrw @nt_wf_swap_cs1_iff; exrepnd; ginv;
+              inversion wf1; subst; clear wf1; simpl; autorewrite with slow; dands; eauto 3 with slow.
+          { eapply ind in comp2; try (right; left); eauto; eauto 3 with slow; repnd.
+            dands; eauto 3 with slow. }
+          { eapply ind in comp2; try (right; left); eauto; eauto 3 with slow; repnd.
+            fold_terms; eexists; eexists; eexists; dands; eauto. } }
+
+        { SSSCase "NSwapCs2".
+          allsimpl.
+          apply compute_step_swap_cs2_success in comp; repndors; exrepnd; subst; simpl in *; tcsp;
+            autorewrite with slow; allrw @nt_wf_swap_cs2_iff; exrepnd; ginv;
+              inversion wf1; subst; clear wf1; simpl; autorewrite with slow; dands; eauto 3 with slow. }
 
         { SSSCase "NLastCs".
 

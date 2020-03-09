@@ -375,6 +375,35 @@ Proof.
             apply compute_step_parallel_success in comp; subst; allsimpl; fold_terms.
             exists (@mk_axiom o); dands; auto. }
 
+          { SSSCase "NSwapCs1".
+            simpl in *; autorewrite with slow in *.
+            csunf comp; simpl in *.
+            apply compute_step_swap_cs1_success in comp; repndors; exrepnd; subst; simpl in *;
+              autorewrite with slow in *.
+            { csunf; simpl; eexists; dands; eauto. }
+            { csunf; simpl; eexists; dands; eauto. }
+            { apply nt_wf_swap_cs1_iff in wf; exrepnd.
+              repeat (destruct l; simpl in *; ginv;[]).
+              unfold nobnd in wf1; inversion wf1; subst; GC; simpl in *; autorewrite with slow in *.
+              rewrite compute_step_swap_cs1_if_isnoncan_like; eauto 3 with slow.
+              eapply ind in comp2; try (right; left); eauto; simpl; eauto 3 with slow;
+                try (complete (eapply subvars_trans;[|eauto]; eauto 3 with slow)).
+              exrepnd; simpl in *; allrw; eexists; dands; eauto.
+              apply implies_alpha_eq_mk_swap_cs1; eauto 3 with slow. } }
+
+          { SSSCase "NSwapCs2".
+            simpl in *; autorewrite with slow in *.
+            csunf comp; simpl in *.
+            apply compute_step_swap_cs2_success in comp; repndors; exrepnd; subst; simpl in *;
+              autorewrite with slow in *.
+            csunf; simpl; eexists; dands; eauto.
+            apply alpha_eq_oterm_combine; unfold push_swap_cs_bterms; autorewrite with slow; dands; auto.
+            introv i.
+            rewrite <- map_combine in i; apply in_map_iff in i; exrepnd; ginv.
+            rewrite <- map_combine in i1; apply in_map_iff in i1; exrepnd; ginv.
+            apply in_combine_same in i1; repnd; subst.
+            destruct a1; simpl; apply alpha_eq_bterm_congr; autorewrite with slow; fold_terms; tcsp. }
+
           { SSSCase "NLastCs".
             csunf comp; allsimpl.
             apply compute_step_last_cs_success in comp; exrepnd; subst; simpl in *.

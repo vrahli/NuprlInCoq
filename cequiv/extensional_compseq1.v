@@ -34,7 +34,7 @@
 Require Export approx_star0.
 
 
-Lemma extensional_comp_seq1 {p} : extensional_op (@NCan p NCompSeq1).
+Lemma extensional_comp_seq1 {p} : forall nfo, extensional_op (@NCan p (NCompSeq1 nfo)).
 Proof.
   introv Hpra Hprt Hprt' Hcv Has Hi.
   applydup @compute_decompose_aux in Hcv; auto; exrepnd.
@@ -120,9 +120,9 @@ Proof.
         make_red_val_like XX0 hh.
         applydup @isprogram_comp_seq1_implies in Hprt'; repnd.
 
-        pose proof (Hi (mk_comp_seq2 [] i (mk_apply f mk_zero) f)
+        pose proof (Hi (mk_comp_seq2 a0 [] i (mk_apply f mk_zero) f)
                        c
-                       (mk_comp_seq2 [] i (mk_apply fr mk_zero) fr)) as q.
+                       (mk_comp_seq2 a0 [] i (mk_apply fr mk_zero) fr)) as q.
         repeat (autodimp q hyp); eauto 2 with slow;
           try (apply implies_isprogram_mk_comp_seq2; eauto 2 with slow).
         { apply implies_approx_star_mk_comp_seq2; eauto 2 with slow. }
@@ -152,7 +152,7 @@ Proof.
     apply approx_implies_approx_open.
     apply computes_to_exception_implies_approx; auto; prove_isprogram.
     allrw @computes_to_exception_as_reduces_to.
-    apply reduces_to_trans with (b := mk_comp_seq1 (mk_exception a' e') t2r).
-    { apply reduces_to_prinarg; auto. }
+    apply reduces_to_trans with (b := mk_comp_seq1 (comp_seq_nfo1_name nfo) (mk_exception a' e') t2r).
+    { destruct nfo; simpl; apply reduces_to_prinarg; auto. }
     apply reduces_to_if_step; reflexivity.
 Qed.

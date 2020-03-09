@@ -75,7 +75,7 @@ Definition ls3 {o} (A a b n : NVar) (i : nat) : @NTerm o :=
                       b
                       (mk_fun
                          (mk_equality (mk_var a) (mk_var b) (mk_natk2nat (mk_var n)))
-                         (mk_apply (mk_var A) (mk_var b))))))))).
+                         (mk_squash (mk_apply (mk_var A) (mk_var b)))))))))).
 
 Definition mkcv_free_from_defs {p} vs (A : @CVTerm p vs) (t : @CVTerm p vs) : CVTerm vs :=
   let (a,x) := A in
@@ -116,10 +116,12 @@ Definition ls3c {o} (A a b n : NVar) (i : nat) : @CTerm o :=
                             (mk_cv_app_r [A] _ (mk_cv_app_l [b,n] _ (mkc_var a)))
                             (mk_cv_app_r [n,a,A] _ (mkc_var b))
                             (mkcv_natk2nat _ (mk_cv_app_r [a,A] _ (mk_cv_app_l [b] _ (mkc_var n)))))
-                         (mkcv_apply
+                         (mkcv_squash
                             _
-                            (mk_cv_app_l [b,n,a] _ (mkc_var A))
-                            (mk_cv_app_r [n,a,A] _ (mkc_var b)))))))))).
+                            (mkcv_apply
+                               _
+                               (mk_cv_app_l [b,n,a] _ (mkc_var A))
+                               (mk_cv_app_r [n,a,A] _ (mkc_var b))))))))))).
 
 Definition ls3_extract {o} (A a x y : NVar) : @NTerm o :=
   mk_lam A (mk_lam a (mk_lam x (mk_lam y mk_axiom))).
@@ -194,6 +196,15 @@ Proof.
   simpl in *; repndors; subst; tcsp.
 Qed.
 Hint Rewrite @remove_nvars_trivial1 : slow.
+
+Lemma remove_nvars_trivial2 :
+  forall x y z w u v b,
+    remove_nvars [x, y, z, w, u, b, v] [b] = [].
+Proof.
+  introv.
+  unfold remove_nvars; simpl; repeat (boolvar; simpl; tcsp).
+Qed.
+Hint Rewrite remove_nvars_trivial2 : slow.
 
 Lemma lsubstc_ls3_eq {o} :
   forall A a b n i (w : @wf_term o (ls3 A a b n i)) s c,
@@ -2041,302 +2052,6 @@ Qed.
 
 Hint Rewrite @get_param_from_cop_pk2can : slow.
 
-Lemma compute_step_preserves_ren_cs {o} :
-  forall lib lib' (t u : @NTerm o) name1 name2,
-    name1 <> name2
-    -> lib_extends lib' lib
-    -> up_to_name name1 t
-    -> (forall m : nat,
-           m < cs_size lib name1
-           ->
-           {k : nat
-            & find_cs_value_at lib' name1 m = Some (mkc_nat k)
-            # find_cs_value_at lib' name2 m = Some (mkc_nat k)})
-    -> compute_step lib t = csuccess u
-    -> compute_step
-         (lib' (* extend [lib] with [name2] *))
-         (ren_cs_term (name1,name2) t)
-       = csuccess (ren_cs_term (name1,name2) u).
-Proof.
-  nterm_ind1s t as [v|op bs ind] Case; introv dname ext upto imp comp; tcsp.
-
-  { Case "vterm".
-    csunf comp; simpl in *; ginv. }
-
-  Case "oterm".
-  dopid op as [can|ncan|exc|abs] SCase.
-
-  { SCase "Can".
-    csunf comp; simpl in *; ginv.
-    csunf; simpl; auto. }
-
-  { SCase "NCan".
-
-    destruct bs; try (complete (allsimpl; ginv)).
-    destruct b as [l t]; try (complete (allsimpl; ginv)).
-    destruct l; try (complete (allsimpl; ginv));[|].
-
-    { destruct t as [x|op bts]; try (complete (allsimpl; ginv));[].
-
-      dopid op as [can2|ncan2|exc2|abs2] SSCase.
-
-      { SSCase "Can".
-
-        dopid_noncan ncan SSSCase.
-
-        { SSSCase "NApply".
-          csunf comp; simpl in *.
-          apply compute_step_apply_success in comp; repndors; exrepnd; subst; simpl in *;
-            csunf; simpl; auto.
-          unfold apply_bterm; simpl.
-          rewrite <- subst_ren_cs_term; simpl; auto. }
-
-        { SSSCase "NEApply".
-          csunf comp; simpl in *.
-          apply compute_step_eapply_success in comp; repndors; exrepnd; subst; simpl in *;
-            csunf; simpl; auto.
-          repndors; exrepnd; subst; simpl;
-            [| |].
-
-          { apply compute_step_eapply2_success in comp1; repnd; subst; simpl in *.
-            repndors; exrepnd; subst; unfold mk_lam, mk_choice_seq in *; ginv; simpl in *; GC;
-              [|].
-
-            { apply iscan_implies in comp0; exrepnd; subst; simpl in *; dcwf h.
-              unfold compute_step_eapply2; unfold apply_bterm; simpl.
-              rewrite <- lsubst_ren_cs_term; simpl; auto. }
-
-            { unfold up_to_name in upto; simpl in upto.
-              apply singleton_subset in upto; simpl in upto; repndors; tcsp; ginv.
-              pose proof (imp n) as imp; autodimp imp hyp; eauto 3 with slow;[].
-              exrepnd.
-              eapply lib_extends_preserves_find_cs_value_at in comp5;[|eauto].
-              rewrite imp1 in comp5; inversion comp5; subst; clear comp5.
-              simpl in *; fold_terms.
-              boolvar; tcsp; GC;[].
-
-              dcwf h; simpl; boolvar; subst; autorewrite with slow in *; GC; try omega;[].
-              rewrite imp0; auto. }
-          }
-
-          { apply isexc_implies2 in comp0; exrepnd; subst; simpl in *.
-            dcwf h; auto.
-            apply (eapply_wf_def_implies_eapply_wf_ren_cs_term_true (name1,name2)) in comp2.
-            simpl in *; rewrite comp2 in Heqh; ginv. }
-
-          { fold_terms.
-            pose proof (ind arg2 arg2 []) as ind.
-            repeat (autodimp ind hyp); eauto 3 with slow;[].
-            pose proof (ind x name1 name2) as ind.
-            repeat (autodimp ind hyp); eauto 3 with slow;[].
-            rewrite ind.
-            rewrite implies_compute_step_eapply_success_if_isnoncan_like; auto; eauto 3 with slow.
-            apply (implies_eapply_wf_def_ren_cs_term (name1,name2)) in comp2; simpl in *; auto. }
-        }
-
-        { SSSCase "NFix".
-          csunf comp; simpl in *.
-          apply compute_step_fix_success in comp; repnd; subst; simpl in *.
-          csunf; simpl; auto. }
-
-        { SSSCase "NSpread".
-          csunf comp; simpl in *.
-          apply compute_step_spread_success in comp; exrepnd; subst; simpl in *.
-          csunf; simpl; auto.
-          unfold apply_bterm; simpl.
-          rewrite <- lsubst_ren_cs_term; simpl; auto. }
-
-        { SSSCase "NDsup".
-          csunf comp; simpl in *.
-          apply compute_step_dsup_success in comp; exrepnd; subst; simpl in *.
-          csunf; simpl; auto.
-          unfold apply_bterm; simpl.
-          rewrite <- lsubst_ren_cs_term; simpl; auto. }
-
-        { SSSCase "NDecide".
-          csunf comp; simpl in *.
-          apply compute_step_decide_success in comp; exrepnd; subst; simpl in *.
-          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto;
-            unfold apply_bterm; simpl;
-              rewrite <- subst_ren_cs_term; simpl; auto. }
-
-        { SSSCase "NCbv".
-          csunf comp; simpl in *.
-          apply compute_step_cbv_success in comp; exrepnd; subst; simpl in *.
-          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto.
-          unfold apply_bterm; simpl.
-          rewrite <- subst_ren_cs_term; simpl; auto. }
-
-        { SSSCase "NSleep".
-          csunf comp; simpl in *.
-          apply compute_step_sleep_success in comp; exrepnd; subst; simpl in *.
-          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto. }
-
-        { SSSCase "NTUni".
-          csunf comp; simpl in *.
-          apply compute_step_tuni_success in comp; exrepnd; subst; simpl in *.
-          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto.
-          unfold compute_step_tuni; simpl; boolvar; try omega; autorewrite with slow; auto. }
-
-        { SSSCase "NMinus".
-          csunf comp; simpl in *.
-          apply compute_step_minus_success in comp; exrepnd; subst; simpl in *.
-          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto. }
-
-        { SSSCase "NFresh".
-          csunf comp; simpl in *; ginv. }
-
-        { SSSCase "NTryCatch".
-          csunf comp; simpl in *.
-          apply compute_step_try_success in comp; exrepnd; subst; simpl in *.
-          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto. }
-
-        { SSSCase "NParallel".
-          csunf comp; simpl in *.
-          apply compute_step_parallel_success in comp; exrepnd; subst; simpl in *.
-          repndors; exrepnd; subst; simpl in *; csunf; simpl; auto. }
-
-        { SSSCase "NLastCs".
-          admit. }
-
-        { SSSCase "NCompSeq1".
-          csunf comp; simpl in *.
-          apply compute_step_comp_seq1_success in comp; exrepnd; subst; simpl in *.
-          Opaque choice_sequence_name_deq.
-          repndors; exrepnd; subst; csunf; simpl; auto;[|];
-            [|autorewrite with slow; boolvar; try omega; auto];[].
-          unfold mk_fresh_choice_nat_seq; simpl; fold_terms.
-          boolvar; auto; subst; simpl in *;[].
-
-          Print mk_comp_seq2.
-
-          (* comp_seq1 and comp_seq2 terms need to contain the default choice sequence name
-               as a parameter? *)
-
-          admit. }
-
-        { SSSCase "NCompSeq2".
-          csunf comp; simpl in *.
-          apply compute_step_comp_seq2_success in comp; exrepnd; subst; simpl in *.
-          Opaque choice_sequence_name_deq.
-          repndors; exrepnd; subst; csunf; simpl; auto;[|];
-            [|autorewrite with slow; boolvar; try omega; auto];[].
-          boolvar; auto; subst; simpl in *; auto; tcsp; ginv; try omega;
-            autorewrite with slow; try reflexivity;[].
-
-          (* comp_seq1 and comp_seq2 terms need to contain the default choice sequence name *)
-
-          admit. }
-
-        { SSSCase "NCompOp".
-          apply compute_step_ncompop_can1_success in comp; repnd.
-          repndors; exrepnd; subst;[| |].
-
-          { apply compute_step_compop_success_can_can in comp1.
-            exrepnd; subst; ginv.
-            repndors; exrepnd; subst; csunf; simpl; dcwf h; simpl; tcsp; ginv.
-
-            { apply get_param_from_cop_pki in comp3.
-              apply get_param_from_cop_pki in comp4.
-              subst; simpl in *.
-              unfold compute_step_comp; simpl; boolvar; auto. }
-
-            { apply (co_wf_def_implies_co_wf_ren_cs_term_true (name1,name2)) in comp0; simpl in *.
-              rewrite comp0 in Heqh; ginv. }
-
-            { apply get_param_from_cop_some in comp3.
-              apply get_param_from_cop_some in comp4.
-              subst; simpl in *.
-              unfold compute_step_comp; simpl; autorewrite with slow.
-              repeat rewrite ren_cs_can_pk2can.
-              autorewrite with slow; boolvar; subst; tcsp;[].
-              destruct pk1, pk2; simpl in *; ginv; tcsp;[].
-              boolvar; subst; ginv; tcsp;[|].
-              { apply up_to_name_snd in upto.
-                unfold up_to_name in *; simpl in *.
-                apply singleton_subset in upto; simpl in upto; repndors; tcsp; ginv; tcsp. }
-              { apply up_to_name_fst in upto.
-                unfold up_to_name in *; simpl in *.
-                apply singleton_subset in upto; simpl in upto; repndors; tcsp; ginv; tcsp. }
-            }
-
-            { apply (co_wf_def_implies_co_wf_ren_cs_term_true (name1,name2)) in comp0; simpl in *.
-              rewrite comp0 in Heqh; ginv. }
-          }
-
-          { admit. }
-
-          { admit. }
-        }
-
-        { SSSCase "NArithOp".
-
-          admit.
-        }
-
-        { SSSCase "NCanTest".
-
-          admit.
-        }
-      }
-
-      { SSCase "NCan".
-        csunf comp; simpl in *.
-        remember (compute_step lib (oterm (NCan ncan2) bts)) as c.
-        symmetry in Heqc; destruct c; ginv;[].
-        pose proof (ind (oterm (NCan ncan2) bts) (oterm (NCan ncan2) bts) []) as ind.
-        repeat (autodimp ind hyp); eauto 3 with slow;[].
-        pose proof (ind n name1 name2) as ind.
-        repeat (autodimp ind hyp); eauto 3 with slow;[].
-        csunf; simpl in *.
-        rewrite ind; simpl; auto.
-      }
-
-      { SSCase "Exc".
-        csunf comp; simpl in *.
-        apply compute_step_catch_success in comp.
-        repndors; exrepnd; subst; simpl in *.
-
-        { csunf; simpl; auto.
-          rewrite <- subst_ren_cs_term; simpl; auto. }
-
-        { csunf; simpl.
-          rewrite compute_step_catch_non_trycatch; auto. }
-      }
-
-      { SSCase "Abs".
-        csunf comp; simpl in *.
-        remember (compute_step lib (oterm (Abs abs2) bts)) as c.
-        symmetry in Heqc; destruct c; ginv;[].
-        pose proof (ind (oterm (Abs abs2) bts) (oterm (Abs abs2) bts) []) as ind.
-        repeat (autodimp ind hyp); eauto 3 with slow;[].
-        pose proof (ind n name1 name2) as ind.
-        repeat (autodimp ind hyp); eauto 3 with slow;[].
-        csunf; simpl in *.
-        rewrite ind; simpl; auto.
-      }
-    }
-
-    { (* fresh case *)
-
-      csunf comp.
-
-      admit.
-    }
-  }
-
-  { SCase "Exc".
-    csunf comp; simpl in *; ginv; simpl; auto.
-  }
-
-  { SCase "Abs".
-    csunf comp; simpl in *.
-    apply compute_step_lib_success in comp; exrepnd; subst.
-
-    admit.
-  }
-Abort.
-
 Definition up_to_namec {o} (name : choice_sequence_name) (t : @CTerm o) :=
   up_to_name name (get_cterm t).
 
@@ -2373,301 +2088,6 @@ Proof.
   split; auto.
 Qed.
 
-(* swaps fst and snd *)
-Definition cs_swap : Type := choice_sequence_name * choice_sequence_name.
-
-Definition swap_cs (r : cs_swap) (n : choice_sequence_name) : choice_sequence_name :=
-  let (n1,n2) := r in
-  if choice_sequence_name_deq n n1 then n2
-  else if choice_sequence_name_deq n n2 then n1
-       else n.
-
-Definition swap_cs_can {o} (r : cs_swap) (can : @CanonicalOp o) : CanonicalOp :=
-  match can with
-  | Ncseq name => Ncseq (swap_cs r name)
-  | _ => can
-  end.
-
-Definition swap_cs_op {o} (r : cs_swap) (op : @Opid o) : Opid :=
-  match op with
-  | Can can => Can (swap_cs_can r can)
-  | _ => op
-  end.
-
-Fixpoint swap_cs_term {o} (r : cs_swap) (t : @NTerm o) : NTerm :=
-  match t with
-  | vterm v => vterm v
-  | oterm op bs => oterm (swap_cs_op r op) (map (swap_cs_bterm r) bs)
-  end
-with swap_cs_bterm {o} (r : cs_swap) (bt : @BTerm o) : BTerm :=
-       match bt with
-       | bterm vs t => bterm vs (swap_cs_term r t)
-       end.
-
-Lemma free_vars_swap_cs_term {o} :
-  forall (r : cs_swap) (t : @NTerm o),
-    free_vars (swap_cs_term r t) = free_vars t.
-Proof.
-  sp_nterm_ind1 t as [v|op bs ind] Case; introv; simpl; tcsp;[].
-  induction bs; simpl; auto.
-  rewrite IHbs; clear IHbs; simpl in *; tcsp;[|introv i; eapply ind; eauto].
-  destruct a; simpl.
-  erewrite ind; eauto.
-Defined.
-Hint Rewrite @free_vars_swap_cs_term : slow.
-
-Lemma closed_swap_cs_term {o} :
-  forall (r : cs_ren) (t : @NTerm o),
-    closed t
-    -> closed (swap_cs_term r t).
-Proof.
-  introv cl.
-  unfold closed in *; autorewrite with slow in *; auto.
-Qed.
-Hint Resolve closed_swap_cs_term : slow.
-
-Lemma OpBindings_swap_cs_op {o} :
-  forall r (op : @Opid o),
-    OpBindings (swap_cs_op r op) = OpBindings op.
-Proof.
-  destruct op as [can| | |]; simpl; tcsp.
-  destruct can; simpl; auto.
-Qed.
-Hint Rewrite @OpBindings_swap_cs_op : slow.
-
-Lemma implies_wf_term_swap_cs_term {o} :
-  forall (r : cs_ren) (t : @NTerm o),
-    wf_term t
-    -> wf_term (swap_cs_term r t).
-Proof.
-  nterm_ind t as [v|op bs ind] Case; introv wf; simpl; tcsp.
-
-  - Case "oterm".
-    allrw @wf_oterm_iff.
-    allrw map_map; unfold compose.
-    autorewrite with slow.
-    repnd; dands; auto.
-
-    + rewrite <- wf0.
-      apply eq_maps; introv i.
-      destruct x; unfold num_bvars; simpl; auto.
-
-    + introv i.
-      allrw in_map_iff; exrepnd; subst.
-      destruct a; simpl in *.
-      apply wf_bterm_iff.
-      eapply ind; eauto.
-      apply wf in i1.
-      allrw @wf_bterm_iff; tcsp.
-Qed.
-Hint Resolve implies_wf_term_swap_cs_term : slow.
-
-Lemma implies_isprog_swap_cs_term {o} :
-  forall r {t : @NTerm o},
-    isprog t
-    -> isprog (swap_cs_term r t).
-Proof.
-  introv isp.
-  allrw @isprog_eq.
-  destruct isp.
-  split; dands; allrw @nt_wf_eq; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isprog_swap_cs_term : slow.
-
-Definition swap_cs_cterm {o} r (ct : @CTerm o) : CTerm :=
-  let (t,isp) := ct in
-  mk_ct (swap_cs_term r t) (implies_isprog_swap_cs_term r isp).
-
-Fixpoint swap_cs_sub {o} r (sub : @Sub o) :=
-  match sub with
-  | [] => []
-  | (v,t) :: sub => (v, swap_cs_term r t) :: swap_cs_sub r sub
-  end.
-
-Lemma sub_find_swap_cs_sub {o} :
-  forall r (sub : @Sub o) v,
-    sub_find (swap_cs_sub r sub) v
-    = match sub_find sub v with
-      | Some t => Some (swap_cs_term r t)
-      | None => None
-      end.
-Proof.
-  induction sub; introv; simpl; auto; repnd; simpl; boolvar; auto.
-Qed.
-
-Lemma sub_filter_swap_cs_sub {o} :
-  forall r (sub : @Sub o) l,
-    sub_filter (swap_cs_sub r sub) l
-    = swap_cs_sub r (sub_filter sub l).
-Proof.
-  induction sub; introv; simpl; auto; repnd; simpl; boolvar; auto.
-  rewrite IHsub; simpl; auto.
-Qed.
-
-Lemma lsubst_aux_swap_cs_term {o} :
-  forall r (t : @NTerm o) sub,
-    lsubst_aux (swap_cs_term r t) (swap_cs_sub r sub)
-    = swap_cs_term r (lsubst_aux t sub).
-Proof.
-  nterm_ind t as [v|t op ind] Case; introv; simpl; auto.
-
-  { Case "vterm".
-    rewrite sub_find_swap_cs_sub.
-    destruct (sub_find sub v); auto. }
-
-  Case "oterm".
-  f_equal.
-  allrw map_map; unfold compose; simpl.
-  apply eq_maps; introv i.
-  destruct x; simpl; f_equal.
-  rewrite sub_filter_swap_cs_sub.
-  erewrite ind; eauto.
-Qed.
-
-Lemma bound_vars_swap_cs_term {o} :
-  forall (r : cs_ren) (t : @NTerm o),
-    bound_vars (swap_cs_term r t) = bound_vars t.
-Proof.
-  sp_nterm_ind1 t as [v|op bs ind] Case; introv; simpl; tcsp;[].
-  induction bs; simpl; auto.
-  rewrite IHbs; clear IHbs; simpl in *; tcsp;[|introv i; eapply ind; eauto].
-  destruct a; simpl.
-  erewrite ind; eauto.
-Defined.
-Hint Rewrite @bound_vars_swap_cs_term : slow.
-
-Lemma allvars_swap_cs_term {o} :
-  forall (r : cs_ren) (t : @NTerm o),
-    allvars (swap_cs_term r t) = allvars t.
-Proof.
-  sp_nterm_ind1 t as [v|op bs ind] Case; introv; simpl; tcsp;[].
-  induction bs; simpl; auto.
-  rewrite IHbs; clear IHbs; simpl in *; tcsp;[|introv i; eapply ind; eauto].
-  destruct a; simpl.
-  erewrite ind; eauto.
-Defined.
-Hint Rewrite @allvars_swap_cs_term : slow.
-
-Lemma all_vars_swap_cs_term {o} :
-  forall (r : cs_ren) (t : @NTerm o),
-    all_vars (swap_cs_term r t) = all_vars t.
-Proof.
-  introv; unfold all_vars; autorewrite with slow; auto.
-Defined.
-Hint Rewrite @all_vars_swap_cs_term : slow.
-
-Lemma flat_map_free_vars_range_swap_cs_sub {o} :
-  forall r (sub : @Sub o),
-    flat_map free_vars (range (swap_cs_sub r sub))
-    = flat_map free_vars (range sub).
-Proof.
-  induction sub; introv; simpl; auto; repnd; simpl.
-  rewrite IHsub; simpl; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @flat_map_free_vars_range_swap_cs_sub : slow.
-
-Lemma swap_cs_sub_if_allvars_sub {o} :
-  forall r (sub : @Sub o),
-    allvars_sub sub
-    -> swap_cs_sub r sub = sub.
-Proof.
-  induction sub; introv allvs; simpl in *; auto; repnd; simpl in *.
-  apply allvars_sub_cons in allvs; repnd.
-  rewrite IHsub; auto.
-  apply isvariable_implies in allvs0; exrepnd; subst; simpl; auto.
-Qed.
-
-Lemma lsubst_aux_swap_cs_term_if_allvars_sub {o} :
-  forall r (t : @NTerm o) sub,
-    allvars_sub sub
-    -> lsubst_aux (swap_cs_term r t) sub
-       = swap_cs_term r (lsubst_aux t sub).
-Proof.
-  introv allvs.
-  rewrite <- lsubst_aux_swap_cs_term.
-  rewrite swap_cs_sub_if_allvars_sub; auto.
-Qed.
-
-Lemma change_bvars_alpha_swap_cs_term {o} :
-  forall l r (t : @NTerm o),
-    change_bvars_alpha l (swap_cs_term r t)
-    = swap_cs_term r (change_bvars_alpha l t).
-Proof.
-  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
-  f_equal.
-  allrw map_map; unfold compose.
-  apply eq_maps; introv i; destruct x; simpl.
-  erewrite ind;eauto; autorewrite with slow.
-  f_equal.
-  rewrite lsubst_aux_swap_cs_term_if_allvars_sub; eauto 3 with slow.
-Qed.
-
-Lemma swap_cs_idem :
-  forall (r    : cs_swap)
-         (name : choice_sequence_name),
-    swap_cs r (swap_cs r name) = name.
-Proof.
-  destruct r; introv; simpl; boolvar; subst; tcsp.
-Qed.
-Hint Rewrite swap_cs_idem : slow.
-
-Lemma swap_cs_op_idem {o} :
-  forall (r  : cs_swap)
-         (op : @Opid o),
-    swap_cs_op r (swap_cs_op r op) = op.
-Proof.
-  destruct op; simpl; auto.
-  destruct c; simpl; auto; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @swap_cs_op_idem : slow.
-
-Lemma swap_cs_term_idem {o} :
-  forall (r : cs_swap)
-         (t : @NTerm o),
-    swap_cs_term r (swap_cs_term r t) = t.
-Proof.
-  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
-  autorewrite with slow.
-  f_equal.
-  allrw map_map; unfold compose.
-  apply eq_map_l; introv i.
-  destruct x; apply ind in i.
-  simpl; f_equal; auto.
-Qed.
-Hint Rewrite @swap_cs_term_idem : slow.
-
-Lemma swap_cs_cterm_idem {o} :
-  forall (r : cs_swap)
-         (t : @CTerm o),
-    swap_cs_cterm r (swap_cs_cterm r t) = t.
-Proof.
-  introv; destruct_cterms; apply cterm_eq; simpl.
-  autorewrite with slow; auto.
-Qed.
-Hint Rewrite @swap_cs_cterm_idem : slow.
-
-Lemma lsubst_swap_cs_term {o} :
-  forall r (t : @NTerm o) sub,
-    lsubst (swap_cs_term r t) (swap_cs_sub r sub)
-    = swap_cs_term r (lsubst t sub).
-Proof.
-  introv.
-  unfold lsubst; autorewrite with slow.
-  destruct (dec_disjointv (bound_vars t) (flat_map free_vars (range sub)));
-    try rewrite lsubst_aux_swap_cs_term; auto.
-  rewrite change_bvars_alpha_swap_cs_term.
-  rewrite lsubst_aux_swap_cs_term; auto.
-Qed.
-
-Lemma subst_swap_cs_term {o} :
-  forall r (t : @NTerm o) v u,
-    subst (swap_cs_term r t) v (swap_cs_term r u)
-    = swap_cs_term r (subst t v u).
-Proof.
-  introv.
-  unfold subst; rewrite <- lsubst_swap_cs_term; simpl; auto.
-Qed.
-
 Lemma in_implies_select :
   forall {A} (a : A) l,
     LIn a l
@@ -2679,14 +2099,6 @@ Proof.
   { apply IHl in i; exrepnd.
     exists (S n); simpl; auto. }
 Qed.
-
-Lemma swap_cs_term_nat {o} :
-  forall n sw,
-    @swap_cs_cterm o sw (mkc_nat n) = mkc_nat n.
-Proof.
-  introv; apply cterm_eq; auto.
-Qed.
-Hint Rewrite @swap_cs_term_nat : slow.
 
 Lemma choice_sequence_0_implies_nat {o} :
   forall name vals (restr : @ChoiceSeqRestriction o) x,
@@ -2918,16 +2330,6 @@ Proof.
   unfold socovered in *; autorewrite with slow; auto.
 Qed.
 Hint Resolve implies_socovered_swap_cs_soterm : slow.
-
-Lemma get_utokens_o_swap_cs_op {o} :
-  forall r (op : @Opid o),
-    get_utokens_o (swap_cs_op r op) = get_utokens_o op.
-Proof.
-  introv.
-  destruct op; simpl; tcsp.
-  destruct c; simpl; tcsp.
-Qed.
-Hint Rewrite @get_utokens_o_swap_cs_op : slow.
 
 Lemma get_utokens_so_swap_cs_soterm {o} :
   forall (r : cs_swap) (t : @SOTerm o),
@@ -3179,7 +2581,9 @@ Lemma get_defs_o_nil_implies_eq_swap {o} :
 Proof.
   introv h.
   destruct op; simpl in *; tcsp.
-  destruct c; simpl in *; tcsp.
+  { destruct c; simpl in *; tcsp. }
+  { destruct n; simpl in *; tcsp.
+    destruct s; simpl in *; tcsp. }
 Qed.
 
 Lemma nodefs_oterm {o} :
@@ -10160,6 +9564,8 @@ Ltac apply_comp_success :=
   | [ H : context[compute_step_last_cs]   |- _ ] => apply compute_step_last_cs_success   in H; repndors; exrepnd; subst; GC; ginv
   | [ H : context[compute_step_comp_seq1] |- _ ] => apply compute_step_comp_seq1_success in H; repndors; exrepnd; subst; GC; ginv
   | [ H : context[compute_step_comp_seq2] |- _ ] => apply compute_step_comp_seq2_success in H; repndors; exrepnd; subst; GC; ginv
+  | [ H : context[compute_step_swap_cs1]  |- _ ] => apply compute_step_swap_cs1_success  in H; repndors; exrepnd; subst; GC; ginv
+  | [ H : context[compute_step_swap_cs2]  |- _ ] => apply compute_step_swap_cs2_success  in H; repndors; exrepnd; subst; GC; ginv
   end.
 
 Lemma implies_isvalue_like_swap_cs_term {o} :
@@ -10714,6 +10120,40 @@ Proof.
   rewrite find_entry_swap; allrw; simpl; tcsp.
 Qed.
 
+Lemma swap_cs_can_twice {o} :
+  forall sw (c : @CanonicalOp o),
+    swap_cs_can sw (swap_cs_can sw c) = c.
+Proof.
+  introv; destruct c; simpl; auto; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @swap_cs_can_twice : slow.
+
+Lemma swap_cs_can_twice2 {o} :
+  forall sw nfo (c : @CanonicalOp o),
+    swap_cs_can
+      (swap_cs_nfo_name1 (swap_cs_nfo sw nfo),
+       swap_cs_nfo_name2 (swap_cs_nfo sw nfo))
+      (swap_cs_can sw c)
+    = swap_cs_can
+        sw
+        (swap_cs_can (swap_cs_nfo_name1 nfo, swap_cs_nfo_name2 nfo) c).
+Proof.
+  introv.
+  destruct c; simpl; auto.
+  destruct nfo as [n1 n2]; simpl; boolvar; subst; auto;
+    try apply swap_cs_inj in e; subst; auto; tcsp.
+Qed.
+
+Lemma implies_swap_cs_ncan_diff_try :
+  forall sw ncan,
+    ncan <> NTryCatch
+    -> swap_cs_ncan sw ncan <> NTryCatch.
+Proof.
+  introv h q.
+  destruct ncan; simpl in *; tcsp; ginv.
+Qed.
+Hint Resolve implies_swap_cs_ncan_diff_try : slow.
+
 Lemma swap_compute_step {o} :
   forall sw lib (a b : @NTerm o),
     compute_step lib a = csuccess b
@@ -10744,11 +10184,19 @@ Proof.
 
       { SSCase "NTUni".
         ginv; csunf; simpl in *; eauto.
-        unfold compute_step_tuni; simpl; boolvar; try omega; autorewrite with slow; auto. } }
+        unfold compute_step_tuni; simpl; boolvar; try omega; autorewrite with slow; auto. }
+
+      { SSCase "NSwapCs2".
+        ginv; csunf; simpl in *; eauto.
+        unfold push_swap_cs_can; tcsp.
+        rewrite swap_cs_can_twice2.
+        f_equal; f_equal.
+        unfold push_swap_cs_bterms; repeat rewrite map_map; unfold compose.
+        apply eq_maps; introv i; destruct x, s; simpl; auto. } }
 
     { apply compute_step_catch_success in comp; repndors; exrepnd; ginv; subst; simpl in *.
       csunf; simpl.
-      rewrite compute_step_catch_if_diff; tcsp. }
+      rewrite compute_step_catch_if_diff; tcsp; eauto 3 with slow. }
 
     { apply compute_step_fresh_success in comp; repeat (repndors; exrepnd; GC; ginv; subst; simpl in * );
         try (complete (csunf; simpl; boolvar; tcsp));
@@ -10788,23 +10236,25 @@ Proof.
         { fold_terms; rewrite compute_step_eapply_iscan_isnoncan_like; eauto 3 with slow.
           erewrite ind; try exact comp1; try (right; left;reflexivity); eauto 3 with slow. } }
 
+      { SSCase "NSwapCs1".
+        dterms w; ginv; csunf; simpl in *; repndors; repnd; subst; simpl in *;
+          unfold apply_bterm; autorewrite with slow; simpl; eauto.
+        { apply approx_star_swap.compute_step_swap_cs1_aux_success_implies in comp; exrepnd; subst; simpl in *; auto. }
+        { apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
+          eapply ind in comp1; try (right; left); eauto; eauto 3 with slow.
+          simpl in *; allrw; simpl; auto. }
+        { apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
+          eapply ind in comp1; try (right; left); eauto; eauto 3 with slow.
+          simpl in *; allrw; simpl; auto. } }
+
       { inversion comp3; subst; csunf; simpl; autorewrite with slow; tcsp. }
 
-      { inversion comp3; subst; repndors; repnd; subst; simpl in *; csunf; simpl; fold_terms.
-        { unfold mk_fresh_choice_nat_seq, mk_choice_seq.
+      { inversion comp4; subst; clear comp4; repndors; repnd; subst; simpl in *; csunf; simpl; fold_terms; tcsp.
+        boolvar; autorewrite with slow in *; subst; try omega; tcsp. }
 
-          (* For this one, we can add the 'default' cs name to the parameters of the operator *)
-
-          admit. }
-        { autorewrite with slow; boolvar; subst; tcsp; try omega. } }
-
-      { inversion comp4; subst; clear comp4; repndors; repnd; subst; simpl in *; csunf; simpl; fold_terms.
+      { inversion comp4; subst; clear comp4; repndors; repnd; subst; simpl in *; csunf; simpl; fold_terms; tcsp.
         { unfold sumbool_rec, sumbool_rect; simpl.
-          boolvar; try omega; GC.
-
-            (* same as above *)
-
-          admit. }
+          boolvar; try omega; GC; tcsp. }
         { boolvar; subst; try omega.
           autorewrite with slow; tcsp. } }
 
@@ -10855,7 +10305,7 @@ Proof.
       { inversion comp2; subst; simpl in *; clear comp2.
         csunf; simpl; autorewrite with slow; auto. }
       { csunf; simpl.
-        rewrite compute_step_catch_if_diff; tcsp. } }
+        rewrite compute_step_catch_if_diff; tcsp; eauto 3 with slow. } }
 
     { apply compute_step_fresh_success in comp; exrepnd; subst; simpl in *; ginv. } }
 
@@ -10867,7 +10317,7 @@ Proof.
     rewrite swap_cs_term_mk_instance.
     eapply found_entry_implies_compute_step_lib_success.
     apply implies_found_entry_swap_cs_plib; eauto. }
-Admitted.
+Qed.
 
 Lemma swap_compute_at_most_k_steps {o} :
   forall {sw} {lib : @plibrary o} n {a b : @NTerm o},
@@ -10899,53 +10349,6 @@ Proof.
   introv r; unfold reduces_to in *; exrepnd.
   eapply swap_reduces_in_atmost_k_steps in r0; eauto.
 Qed.
-
-Lemma implies_nt_wf_swap_cs_term {o} :
-  forall sw (b : @NTerm o),
-    nt_wf b
-    -> nt_wf (swap_cs_term sw b).
-Proof.
-  nterm_ind b as [v|op bs ind] Case; introv wf; simpl in *; tcsp.
-  inversion wf as [|? ? imp eqm]; subst; clear wf.
-  constructor.
-  { introv i; apply in_map_iff in i; exrepnd; subst.
-    destruct a; simpl; constructor; eapply ind; eauto.
-    apply imp in i1; inversion i1; subst; auto. }
-  { rewrite map_map; unfold compose; autorewrite with slow.
-    rewrite <- eqm; apply eq_maps; introv i; destruct x; simpl; tcsp. }
-Qed.
-Hint Resolve implies_nt_wf_swap_cs_term : slow.
-
-Lemma implies_isprogram_swap_cs_term {o} :
-  forall sw (b : @NTerm o),
-    isprogram b
-    -> isprogram (swap_cs_term sw b).
-Proof.
-  introv isp.
-  destruct isp as [c wf]; constructor; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isprogram_swap_cs_term : slow.
-
-Lemma implies_iscan_swap_cs_term {o} :
-  forall sw (b : @NTerm o),
-    iscan b
-    -> iscan (swap_cs_term sw b).
-Proof.
-  introv i.
-  apply iscan_implies in i; exrepnd; subst; simpl; auto.
-Qed.
-Hint Resolve implies_iscan_swap_cs_term : slow.
-
-Lemma implies_isvalue_swap_cs_term {o} :
-  forall sw (b : @NTerm o),
-    isvalue b
-    -> isvalue (swap_cs_term sw b).
-Proof.
-  introv isv.
-  destruct isv as [isp isc].
-  constructor; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isvalue_swap_cs_term : slow.
 
 Lemma swap_computes_to_value {o} :
   forall {sw} {lib : @plibrary o} {a b : @NTerm o},
@@ -10984,13 +10387,164 @@ Proof.
 Qed.
 Hint Resolve implies_ciscvalue_swap_cs_cterm : slow.
 
+Lemma nt_wf_swap_cs_term_implies {o} :
+  forall sw (b : @NTerm o),
+    nt_wf (swap_cs_term sw b) -> nt_wf b.
+Proof.
+  nterm_ind b as [v|op bs ind] Case; introv wf; auto.
+  simpl in *.
+  allrw @nt_wf_oterm_iff; repnd.
+  rewrite map_map in wf0; unfold compose in *; autorewrite with slow in *.
+  dands.
+  { rewrite <- wf0; apply eq_maps; introv i; destruct x; simpl in *; tcsp. }
+  introv i.
+  pose proof (wf (swap_cs_bterm sw b)) as wf; destruct b; simpl in *.
+  autodimp wf hyp.
+  { apply in_map_iff; eexists; dands; eauto. }
+  inversion wf; subst; constructor; eauto.
+Qed.
+
+Lemma isprogram_swap_cs_term_implies {o} :
+  forall sw (b : @NTerm o),
+    isprogram (swap_cs_term sw b) -> isprogram b.
+Proof.
+  introv isp.
+  destruct isp as [c wf]; constructor; eauto 3 with slow.
+  { unfold closed in *; autorewrite with slow in *; auto. }
+  eapply nt_wf_swap_cs_term_implies; eauto.
+Qed.
+
+Lemma respects_alpha_sum {o} :
+  forall (a b : @NTerm o -> @NTerm o -> Type),
+    respects_alpha a
+    -> respects_alpha b
+    -> respects_alpha (a \2/ b).
+Proof.
+  introv respa respb.
+  unfold respects_alpha in *; repnd; dands; introv aeq h; repndors; tcsp;
+    try (complete (left; eauto));
+    try (complete (right; eauto)).
+Qed.
+Hint Resolve respects_alpha_sum : slow.
+
+Lemma respects_alpha_bot2 {o} : respects_alpha (@bot2 o).
+Proof.
+  introv; split; introv aeq h; tcsp.
+Qed.
+Hint Resolve respects_alpha_bot2 : slow.
+
+Lemma implies_wf_swap_cs_sub {o} :
+  forall sw (sub : @Sub o),
+    wf_sub sub
+    -> wf_sub (swap_cs_sub sw sub).
+Proof.
+  induction sub; introv wf; repnd; simpl in *; auto.
+  allrw @wf_sub_cons_iff; repnd; dands; eauto 3 with slow.
+Qed.
+Hint Resolve implies_wf_swap_cs_sub : slow.
+
+Lemma swap_cs_sub_twice {o} :
+  forall sw (sub : @Sub o),
+    swap_cs_sub sw (swap_cs_sub sw sub) = sub.
+Proof.
+  induction sub; introv; repnd; simpl; auto; autorewrite with slow; allrw; auto.
+Qed.
+Hint Rewrite @swap_cs_sub_twice : slow.
+
+Lemma implies_isprogram_lsubst_swap_cs_sub {o} :
+  forall sw (t : @NTerm o) sub,
+    isprogram (lsubst (swap_cs_term sw t) sub)
+    -> isprogram (lsubst t (swap_cs_sub sw sub)).
+Proof.
+  introv isp.
+  pose proof (swap_cs_sub_twice sw sub) as ea.
+  rewrite <- ea in isp.
+  rewrite <- swap_cs_term_lsubst in isp.
+  apply isprogram_swap_cs_term_implies in isp; auto.
+Qed.
+Hint Resolve implies_isprogram_lsubst_swap_cs_sub : slow.
+
+Lemma implies_alpha_eq_bterm_swap_cs_bterm {o} :
+  forall sw (b1 b2 : @BTerm o),
+    alpha_eq_bterm b1 b2
+    -> alpha_eq_bterm (swap_cs_bterm sw b1) (swap_cs_bterm sw b2).
+Proof.
+  introv aeq.
+  destruct b1, b2; simpl in *.
+  inversion aeq as [? ? ? ? ? disj lena lenb norep aeq']; subst.
+  eapply al_bterm; autorewrite with slow; eauto.
+  repeat rewrite lsubst_swap_cs_term_var_ren; eauto 3 with slow.
+Qed.
+Hint Resolve implies_alpha_eq_bterm_swap_cs_bterm : slow.
+
+Lemma swap_cs_bterm_idem {o} :
+  forall (r : cs_swap)
+         (b : @BTerm o),
+    swap_cs_bterm r (swap_cs_bterm r b) = b.
+Proof.
+  introv; destruct b; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @swap_cs_bterm_idem : slow.
+
+Lemma swap_approx {o} :
+  forall sw lib (a b : @NTerm o),
+    approx lib a b
+    -> approx (swap_cs_plib sw lib) (swap_cs_term sw a) (swap_cs_term sw b).
+Proof.
+  cofix ind; introv apx.
+  destruct apx as [cc].
+  destruct cc as [isp1 [isp2 [cv [ce cc] ] ] ]; GC.
+  constructor.
+  unfold close_comput; dands; auto; eauto 2 with slow.
+
+  { introv compa.
+    apply (@swap_computes_to_value o sw) in compa.
+    rewrite swap_cs_term_idem, swap_cs_plib_idem in compa; simpl in compa.
+    apply cv in compa; exrepnd.
+    apply (@swap_computes_to_value o sw) in compa1; simpl in compa1.
+    rewrite swap_cs_can_twice in compa1.
+    eexists; dands; eauto.
+    unfold lblift in *; repnd; dands; try rewrite map_length in *; auto.
+    introv len.
+    applydup compa0 in len; clear compa0.
+    unfold blift in *; exrepnd.
+    exists lv (swap_cs_term sw nt1) (swap_cs_term sw nt2); dands; auto.
+    { unfold olift in *; repnd; dands; auto; eauto 2 with slow.
+      introv wf ispa ispb.
+      pose proof (len0 (swap_cs_sub sw sub)) as len0.
+      repeat (autodimp len0 hyp); eauto 3 with slow.
+      repndors; tcsp; left.
+      pose proof (swap_cs_sub_twice sw sub) as ea.
+      rewrite <- ea; repeat rewrite <- swap_cs_term_lsubst.
+      apply ind; auto. }
+    { rewrite selectbt_map in len2; auto.
+      apply (implies_alpha_eq_bterm_swap_cs_bterm sw) in len2.
+      rewrite swap_cs_bterm_idem in len2.
+      simpl in *; auto. }
+    { rewrite selectbt_map; auto; try rewrite <- compa2; auto.
+      apply (implies_alpha_eq_bterm_swap_cs_bterm sw) in len1.
+      simpl in *; auto. } }
+
+  { introv compa.
+    apply (@swap_reduces_to o sw) in compa; autorewrite with slow in compa.
+    simpl in compa; fold_terms.
+    apply ce in compa; exrepnd; repndors; tcsp;
+      try (complete (inversion compa2));
+      try (complete (inversion compa1)).
+    apply (@swap_reduces_to o sw) in compa0; simpl in *; fold_terms.
+    eexists; eexists; dands; try exact compa0; left.
+    { rewrite <- (swap_cs_term_idem sw a0); apply ind; auto. }
+    { rewrite <- (swap_cs_term_idem sw e); apply ind; auto. } }
+Qed.
+
 Lemma swap_approxc {o} :
   forall sw lib (a b : @CTerm o),
     approxc lib a b
     -> approxc (swap_cs_plib sw lib) (swap_cs_cterm sw a) (swap_cs_cterm sw b).
 Proof.
-  introv.
-Admitted.
+  introv apx; destruct_cterms; unfold approxc in *; simpl in *.
+  apply swap_approx; auto.
+Qed.
 
 Lemma swap_cequivc {o} :
   forall sw lib (a b : @CTerm o),
@@ -11372,8 +10926,8 @@ Proof.
     eapply in_open_bar_swap_cs_lib_pres; try exact q; clear q; auto.
     introv ext q.
     unfold equality_of_atom in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
     autorewrite with slow in *.
     eexists; dands; eauto. }
   { apply h; clear h.
@@ -11381,8 +10935,8 @@ Proof.
     eapply in_open_bar_swap_cs_lib_pres2; try exact q; clear q; auto.
     introv ext q.
     unfold equality_of_atom in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
     autorewrite with slow in *.
     eexists; dands; eauto. }
 Qed.
@@ -11398,8 +10952,8 @@ Proof.
     eapply in_open_bar_swap_cs_lib_pres; try exact q; clear q; auto.
     introv ext q.
     unfold equality_of_uatom in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
     autorewrite with slow in *.
     eexists; dands; eauto. }
   { apply h; clear h.
@@ -11407,8 +10961,8 @@ Proof.
     eapply in_open_bar_swap_cs_lib_pres2; try exact q; clear q; auto.
     introv ext q.
     unfold equality_of_uatom in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
     autorewrite with slow in *.
     eexists; dands; eauto. }
 Qed.
@@ -11424,8 +10978,8 @@ Proof.
     eapply in_open_bar_swap_cs_lib_pres; try exact q; clear q; auto.
     introv ext q.
     unfold equality_of_int in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
     autorewrite with slow in *.
     eexists; dands; eauto. }
   { apply h; clear h.
@@ -11433,8 +10987,8 @@ Proof.
     eapply in_open_bar_swap_cs_lib_pres2; try exact q; clear q; auto.
     introv ext q.
     unfold equality_of_int in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
     autorewrite with slow in *.
     eexists; dands; eauto. }
 Qed.
@@ -11450,8 +11004,8 @@ Proof.
     eapply in_open_bar_swap_cs_lib_pres; try exact q; clear q; auto.
     introv ext q.
     unfold equality_of_nat in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
     autorewrite with slow in *.
     eexists; dands; eauto. }
   { apply h; clear h.
@@ -11459,8 +11013,8 @@ Proof.
     eapply in_open_bar_swap_cs_lib_pres2; try exact q; clear q; auto.
     introv ext q.
     unfold equality_of_nat in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
     autorewrite with slow in *.
     eexists; dands; eauto. }
 Qed.
@@ -11523,8 +11077,8 @@ Proof.
     eapply in_open_bar_swap_cs_lib_pres; try exact q; clear q; auto.
     introv ext q.
     unfold equality_of_csname in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
-    apply (swap_ccomputes_to_valc_ext sw) in q2.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q2; auto.
     autorewrite with slow in *.
     exists (swap_cs sw name); dands; auto.
     eapply sane_swapping_implies_compatible_choice_sequence_name; eauto. }
@@ -11533,8 +11087,8 @@ Proof.
     eapply in_open_bar_swap_cs_lib_pres2; try exact q; clear q; auto.
     introv ext q.
     unfold equality_of_csname in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
-    apply (swap_ccomputes_to_valc_ext sw) in q2.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q2; auto.
     autorewrite with slow in *.
     exists (swap_cs sw name); dands; auto.
     eapply sane_swapping_implies_compatible_choice_sequence_name; eauto. }
@@ -11570,16 +11124,16 @@ Proof.
     eapply in_open_bar_swap_cs_lib_pres; try exact q; clear q; auto.
     introv ext q.
     unfold per_approx_eq in *; repnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
     autorewrite with slow in *; dands; auto.
     apply iff_swap_capproxc; auto. }
   { apply h; clear h.
     eapply in_open_bar_swap_cs_lib_pres2; try exact q; clear q; auto.
     introv ext q.
     unfold per_approx_eq in *; repnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
     autorewrite with slow in *; dands; auto.
     apply iff_swap_capproxc in q; auto. }
 Qed.
@@ -11595,16 +11149,16 @@ Proof.
     eapply in_open_bar_swap_cs_lib_pres; try exact q; clear q; auto.
     introv ext q.
     unfold per_cequiv_eq in *; repnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
     autorewrite with slow in *; dands; auto.
     apply iff_swap_ccequivc; auto. }
   { apply h; clear h.
     eapply in_open_bar_swap_cs_lib_pres2; try exact q; clear q; auto.
     introv ext q.
     unfold per_cequiv_eq in *; repnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
     autorewrite with slow in *; dands; auto.
     apply iff_swap_ccequivc in q; auto. }
 Qed.
@@ -11619,8 +11173,8 @@ Proof.
     eapply in_open_bar_ext_swap_cs_lib_pres; try exact q; clear q; auto.
     introv q.
     unfold eq_per_eq in *; repnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
     autorewrite with slow in *; dands; auto.
     simpl; unfold swap_cs_per.
     remember (lib_extends_swap_cs_lib_twice_implies (swap_lib_extends sane y)) as xe; clear Heqxe.
@@ -11630,8 +11184,8 @@ Proof.
     eapply in_open_bar_ext_swap_cs_lib_pres2; try exact q; clear q; auto.
     introv q.
     unfold eq_per_eq in *; repnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
     autorewrite with slow in *; dands; auto.
     simpl in *; unfold swap_cs_per in *.
     remember (lib_extends_swap_cs_lib_twice_implies (swap_lib_extends sane y)) as xe; clear Heqxe.
@@ -11649,8 +11203,8 @@ Proof.
     eapply in_open_bar_ext_swap_cs_lib_pres; try exact q; clear q; auto.
     introv q.
     unfold per_qtime_eq in *; exrepnd.
-    apply (swap_ccequivc sw) in q0.
-    apply (swap_ccequivc sw) in q2.
+    apply (swap_ccequivc sw) in q0; auto.
+    apply (swap_ccequivc sw) in q2; auto.
     apply (swap_ccequivc_ext sw) in q3; auto.
     autorewrite with slow in *; dands; auto.
     eexists; eexists; dands; eauto.
@@ -11742,8 +11296,8 @@ Proof.
     eapply in_open_bar_ext_swap_cs_lib_pres; try exact q; clear q; auto.
     introv q.
     unfold per_product_eq in *; exrepnd; simpl in *.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
-    apply (swap_ccomputes_to_valc_ext sw) in q2.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q2; auto.
     autorewrite with slow in *.
     unfold swap_cs_per in *; simpl in *.
     remember (lib_extends_swap_cs_lib_twice_implies (swap_lib_extends sane y)) as ex; clear Heqex.
@@ -11757,8 +11311,8 @@ Proof.
     eapply in_open_bar_ext_swap_cs_lib_pres2; try exact q; clear q; auto.
     introv q.
     unfold per_product_eq in *; exrepnd; simpl in *.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
-    apply (swap_ccomputes_to_valc_ext sw) in q2.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q2; auto.
     autorewrite with slow in *.
     unfold swap_cs_per in *; simpl in *.
     remember (lib_extends_swap_cs_lib_twice_implies (swap_lib_extends sane y)) as ex; clear Heqex.
@@ -11820,8 +11374,8 @@ Proof.
     introv q.
     unfold per_union_eq, per_union_eq_L, per_union_eq_R in *;
     repndors;[left|right]; exrepnd;
-      apply (swap_ccomputes_to_valc_ext sw) in q0;
-      apply (swap_ccomputes_to_valc_ext sw) in q2;
+      apply (swap_ccomputes_to_valc_ext sw) in q0; auto;
+      apply (swap_ccomputes_to_valc_ext sw) in q2; auto;
       autorewrite with slow in *; dands; auto;
         eexists; eexists; dands; eauto;
           simpl; unfold swap_cs_per;
@@ -11833,8 +11387,8 @@ Proof.
     introv q.
     unfold per_union_eq, per_union_eq_L, per_union_eq_R in *;
       repndors;[left|right]; exrepnd;
-      apply (swap_ccomputes_to_valc_ext sw) in q0;
-      apply (swap_ccomputes_to_valc_ext sw) in q2;
+      apply (swap_ccomputes_to_valc_ext sw) in q0; auto;
+      apply (swap_ccomputes_to_valc_ext sw) in q2; auto;
       autorewrite with slow in *; dands; auto;
         eexists; eexists; dands; eauto;
           simpl in *; unfold swap_cs_per in *;
@@ -11900,7 +11454,9 @@ Proof.
   rewrite flat_map_map; unfold compose.
   f_equal.
   { dopid op as [can|ncan|exc|abs] SCase; simpl; auto.
-    destruct can; simpl; auto. }
+    { destruct can; simpl; auto. }
+    { destruct ncan; simpl; auto.
+      destruct s; simpl; auto. } }
   apply eq_flat_maps; introv i; destruct x; simpl; eauto.
 Qed.
 
@@ -11936,8 +11492,8 @@ Proof.
     eapply in_open_bar_ext_swap_cs_lib_pres; try exact q; clear q; auto.
     introv q; simpl in *.
     unfold per_ffdefs_eq in *; repnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
     apply (implies_swap_ex_nodefsc sw) in q; simpl in q.
     autorewrite with slow in *; dands; eauto 3 with slow.
     eapply ex_nodefsc_change_per; try exact q; introv; unfold swap_cs_per; simpl.
@@ -11949,8 +11505,8 @@ Proof.
     remember (lib_extends_swap_cs_lib_twice_implies (swap_lib_extends sane y)) as xe; clear Heqxe.
     revert dependent xe; autorewrite with slow; introv q.
     unfold per_ffdefs_eq in *; repnd.
-    apply (swap_ccomputes_to_valc_ext sw) in q0.
-    apply (swap_ccomputes_to_valc_ext sw) in q1.
+    apply (swap_ccomputes_to_valc_ext sw) in q0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in q1; auto.
     apply (implies_swap_ex_nodefsc sw) in q; simpl in q.
     autorewrite with slow in *; dands; eauto 3 with slow.
     eapply ex_nodefsc_change_per; try exact q; introv; unfold swap_cs_per; simpl.
@@ -12033,8 +11589,8 @@ Proof.
   { Case "CL_int".
     apply CL_int.
     unfold per_int in *; repnd.
-    apply (swap_ccomputes_to_valc_ext sw) in per0.
-    apply (swap_ccomputes_to_valc_ext sw) in per1.
+    apply (swap_ccomputes_to_valc_ext sw) in per0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in per1; auto.
     autorewrite with slow in *.
     dands; eauto 3 with slow.
     apply swap_equality_of_int_bar; auto. }
@@ -12042,8 +11598,8 @@ Proof.
   { Case "CL_nat".
     apply CL_nat.
     unfold per_nat in *; repnd.
-    apply (swap_ccomputes_to_valc_ext sw) in per0.
-    apply (swap_ccomputes_to_valc_ext sw) in per1.
+    apply (swap_ccomputes_to_valc_ext sw) in per0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in per1; auto.
     autorewrite with slow in *.
     dands; eauto 3 with slow.
     apply swap_equality_of_nat_bar; auto. }
@@ -12051,8 +11607,8 @@ Proof.
   { Case "CL_qnat".
     apply CL_qnat.
     unfold per_qnat in *; repnd.
-    apply (swap_ccomputes_to_valc_ext sw) in per0.
-    apply (swap_ccomputes_to_valc_ext sw) in per1.
+    apply (swap_ccomputes_to_valc_ext sw) in per0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in per1; auto.
     autorewrite with slow in *.
     dands; eauto 3 with slow.
     apply swap_equality_of_qnat_bar; auto. }
@@ -12060,8 +11616,8 @@ Proof.
   { Case "CL_csname".
     apply CL_csname.
     unfold per_csname in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in per1.
-    apply (swap_ccomputes_to_valc_ext sw) in per2.
+    apply (swap_ccomputes_to_valc_ext sw) in per1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in per2; auto.
     autorewrite with slow in *.
     exists n; dands; eauto 3 with slow.
     apply swap_equality_of_csname_bar; auto. }
@@ -12069,8 +11625,8 @@ Proof.
   { Case "CL_atom".
     apply CL_atom.
     unfold per_atom in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in per1.
-    apply (swap_ccomputes_to_valc_ext sw) in per0.
+    apply (swap_ccomputes_to_valc_ext sw) in per1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in per0; auto.
     autorewrite with slow in *.
     dands; eauto 3 with slow.
     apply swap_equality_of_atom_bar; auto. }
@@ -12078,8 +11634,8 @@ Proof.
   { Case "CL_uatom".
     apply CL_uatom.
     unfold per_uatom in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in per1.
-    apply (swap_ccomputes_to_valc_ext sw) in per0.
+    apply (swap_ccomputes_to_valc_ext sw) in per1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in per0; auto.
     autorewrite with slow in *.
     dands; eauto 3 with slow.
     apply swap_equality_of_uatom_bar; auto. }
@@ -12087,8 +11643,8 @@ Proof.
   { Case "CL_base".
     apply CL_base.
     unfold per_base in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in per1.
-    apply (swap_ccomputes_to_valc_ext sw) in per0.
+    apply (swap_ccomputes_to_valc_ext sw) in per1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in per0; auto.
     autorewrite with slow in *.
     dands; eauto 3 with slow.
     apply swap_per_base_eq; auto. }
@@ -12096,8 +11652,8 @@ Proof.
   { Case "CL_approx".
     apply CL_approx.
     unfold per_approx in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in per0.
-    apply (swap_ccomputes_to_valc_ext sw) in per2.
+    apply (swap_ccomputes_to_valc_ext sw) in per0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in per2; auto.
     autorewrite with slow in *.
     eexists; eexists; eexists; eexists; dands; eauto.
     { introv xt.
@@ -12111,8 +11667,8 @@ Proof.
   { Case "CL_cequiv".
     apply CL_cequiv.
     unfold per_cequiv in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in per0.
-    apply (swap_ccomputes_to_valc_ext sw) in per2.
+    apply (swap_ccomputes_to_valc_ext sw) in per0; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in per2; auto.
     autorewrite with slow in *.
     eexists; eexists; eexists; eexists; dands; eauto.
     { introv xt.
@@ -12126,8 +11682,8 @@ Proof.
   { Case "CL_eq".
     apply CL_eq.
     clear per.
-    apply (swap_ccomputes_to_valc_ext sw) in c1.
-    apply (swap_ccomputes_to_valc_ext sw) in c2.
+    apply (swap_ccomputes_to_valc_ext sw) in c1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in c2; auto.
     autorewrite with slow in *.
     eexists; eexists; eexists; eexists; eexists; eexists.
     exists (swap_cs_lib_per sw sane eqa).
@@ -12145,8 +11701,8 @@ Proof.
 
   { Case "CL_qtime".
     apply CL_qtime; clear per.
-    apply (swap_ccomputes_to_valc_ext sw) in c1.
-    apply (swap_ccomputes_to_valc_ext sw) in c2.
+    apply (swap_ccomputes_to_valc_ext sw) in c1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in c2; auto.
     autorewrite with slow in *.
     unfold per_qtime.
     exists (swap_cs_lib_per sw sane eqa).
@@ -12164,8 +11720,8 @@ Proof.
 
   { Case "CL_func".
     apply CL_func; clear per.
-    apply (swap_ccomputes_to_valc_ext sw) in c1.
-    apply (swap_ccomputes_to_valc_ext sw) in c2.
+    apply (swap_ccomputes_to_valc_ext sw) in c1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in c2; auto.
     autorewrite with slow in *.
     unfold per_func_ext.
 
@@ -12197,8 +11753,8 @@ Proof.
 
   { Case "CL_union".
     apply CL_union; clear per.
-    apply (swap_ccomputes_to_valc_ext sw) in c1.
-    apply (swap_ccomputes_to_valc_ext sw) in c2.
+    apply (swap_ccomputes_to_valc_ext sw) in c1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in c2; auto.
     autorewrite with slow in *.
     unfold per_union.
     exists (swap_cs_lib_per sw sane eqa) (swap_cs_lib_per sw sane eqb).
@@ -12223,8 +11779,8 @@ Proof.
 
   { Case "CL_image".
     apply CL_image; clear per.
-    apply (swap_ccomputes_to_valc_ext sw) in c1.
-    apply (swap_ccomputes_to_valc_ext sw) in c2.
+    apply (swap_ccomputes_to_valc_ext sw) in c1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in c2; auto.
     apply (swap_ccequivc_ext sw) in ceq; auto.
     autorewrite with slow in *.
     unfold per_image.
@@ -12242,8 +11798,8 @@ Proof.
 
   { Case "CL_ffdefs".
     apply CL_ffdefs; clear per.
-    apply (swap_ccomputes_to_valc_ext sw) in c1.
-    apply (swap_ccomputes_to_valc_ext sw) in c2.
+    apply (swap_ccomputes_to_valc_ext sw) in c1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in c2; auto.
     autorewrite with slow in *.
     unfold per_ffdefs.
     eexists; eexists; eexists; eexists; exists (swap_cs_lib_per sw sane eqa).
@@ -12264,8 +11820,8 @@ Proof.
 
   { Case "CL_set".
     apply CL_set; clear per.
-    apply (swap_ccomputes_to_valc_ext sw) in c1.
-    apply (swap_ccomputes_to_valc_ext sw) in c2.
+    apply (swap_ccomputes_to_valc_ext sw) in c1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in c2; auto.
     autorewrite with slow in *.
     unfold per_set.
 
@@ -12297,8 +11853,8 @@ Proof.
 
   { Case "CL_product".
     apply CL_product; clear per.
-    apply (swap_ccomputes_to_valc_ext sw) in c1.
-    apply (swap_ccomputes_to_valc_ext sw) in c2.
+    apply (swap_ccomputes_to_valc_ext sw) in c1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in c2; auto.
     autorewrite with slow in *.
     unfold per_set.
 
@@ -12400,8 +11956,8 @@ Proof.
   induction i; introv sane u; simpl in *; tcsp.
   repndors; repnd;[left|right]; eauto;[].
 
-  apply (swap_ccomputes_to_valc_ext sw) in u0.
-  apply (swap_ccomputes_to_valc_ext sw) in u1.
+  apply (swap_ccomputes_to_valc_ext sw) in u0; auto.
+  apply (swap_ccomputes_to_valc_ext sw) in u1; auto.
   autorewrite with slow in *; dands; auto.
   apply swap_univi_eq; auto.
 Qed.
@@ -15415,9 +14971,21 @@ Definition get_cs_c {p} (c : @CanonicalOp p) : list choice_sequence_name :=
   | _ => []
   end.
 
+Definition get_cs_nfo (nfo : SwapCsNfo) : list choice_sequence_name :=
+  match nfo with
+  | MkSwapCsNfo n1 n2 => [n1, n2]
+  end.
+
+Definition get_cs_n (n : NonCanonicalOp) : list choice_sequence_name :=
+  match n with
+  | NSwapCs2 nfo => get_cs_nfo nfo
+  | _ => []
+  end.
+
 Definition get_cs_o {p} (o : @Opid p) : list choice_sequence_name :=
   match o with
   | Can c => get_cs_c c
+  | NCan n => get_cs_n n
   | _ => []
   end.
 
@@ -15468,7 +15036,7 @@ Proof.
   nterm_ind t as [v|op vs ind] Case; simpl; tcsp.
   split; intro h; allrw app_eq_nil_iff; repnd; dands;
     try (complete (destruct op; simpl in *; tcsp;
-                   destruct c; simpl in *; tcsp)).
+                   try destruct c; try destruct n; try destruct s; simpl in *; tcsp)).
 
   { allrw flat_map_map; unfold compose in *.
     allrw flat_map_empty; introv i.
@@ -16040,7 +15608,9 @@ Lemma get_cs_o_nil_implies_eq_swap {o} :
 Proof.
   introv h.
   destruct op; simpl in *; tcsp.
-  destruct c; simpl in *; tcsp.
+  { destruct c; simpl in *; tcsp. }
+  { destruct n; simpl in *; tcsp.
+    destruct s; simpl in *; tcsp. }
 Qed.
 
 Lemma swap_cs_soterm_trivial_if_no_cs {o} :
@@ -16161,7 +15731,9 @@ Lemma swap_cs_op_trivial_same {o} :
     swap_cs_op (name, name) op = op.
 Proof.
   introv; destruct op; simpl; tcsp.
-  destruct c; simpl; tcsp; boolvar; subst; tcsp.
+  { destruct c; simpl; tcsp; boolvar; subst; tcsp. }
+  { destruct n; simpl; tcsp; boolvar; subst; tcsp.
+    destruct s; simpl; tcsp; boolvar; subst; tcsp. }
 Qed.
 Hint Rewrite @swap_cs_op_trivial_same : slow.
 
@@ -17405,6 +16977,13 @@ Ltac one_move2ext ext :=
       let h := fresh H in
       assert (has_lib_cond_no_cs lib1) as h by eauto 3 with slow;
       clear H; rename h into H
+
+    | [ H : lib_cond_sat_def ?lib3 |- _ ] =>
+      let x := fresh "x" in
+      assert (lib3 = lib2) as x by reflexivity; clear x;
+      let h := fresh H in
+      assert (lib_cond_sat_def lib1) as h by eauto 3 with slow;
+      clear H; rename h into H
     end
   end.
 
@@ -17882,6 +17461,20 @@ Proof.
           try (complete (unfold isnoncan_like in *; simpl in *; tcsp));
           eexists; dands; eauto; prove_alpha_eq4; intros k w;
             repeat (destruct k; simpl in *; tcsp); prove_alpha_eq4; auto. } }
+
+    { SSSCase "NSwapCs1".
+      dterms w; tcsp.
+      { apply approx_star_swap.compute_step_swap_cs1_aux_success_implies in comp; exrepnd; subst; simpl.
+        csunf; simpl; eexists; dands; eauto. }
+      { apply on_success_csuccess in comp; exrepnd; subst.
+        eapply ind in comp1; try (right; left); eauto; eauto 3 with slow; exrepnd.
+        csunf; simpl; allrw; simpl; eexists; dands; eauto; prove_alpha_eq4;
+          intros k w; repeat (destruct k; simpl in *; tcsp); prove_alpha_eq4; auto. }
+      { csunf; simpl; eexists; dands; eauto. }
+      { apply on_success_csuccess in comp; exrepnd; subst.
+        eapply ind in comp1; try (right; left); eauto; eauto 3 with slow; exrepnd.
+        csunf; simpl; allrw; simpl; eexists; dands; eauto; prove_alpha_eq4;
+          intros k w; repeat (destruct k; simpl in *; tcsp); prove_alpha_eq4; auto. } }
 
     { SSSCase "NLastCs".
       apply compute_step_last_cs_success in comp; exrepnd; subst; simpl in *.
@@ -19501,6 +19094,534 @@ Proof.
 Qed.
 Hint Resolve sat_lib_cond_swap_cs_lib : slow.
 
+Lemma tequality_mkc_csprop {o} :
+  forall (lib : @library o) i,
+    tequality lib (mkc_csprop i) (mkc_csprop i).
+Proof.
+  introv; unfold mkc_csprop.
+  apply tequality_mkc_fun; dands; eauto 3 with slow.
+Qed.
+Hint Resolve tequality_mkc_csprop : slow.
+
+Lemma substc5_mkcv_squash {o} :
+  forall (t1 t2 t3 : @CTerm o) x v w z a,
+    substc5 x t1 v t2 w t3 z (mkcv_squash _ a)
+    = mkcv_squash
+        _
+        (substc5 x t1 v t2 w t3 z a).
+Proof.
+  introv.
+  destruct_cterms.
+  apply cvterm_eq; simpl.
+  repeat (unflsubst;repeat (apply cl_sub_cons; dands; eauto 3 with slow)).
+Qed.
+Hint Rewrite @substc5_mkcv_squash : slow.
+
+Lemma tequality_ls3c_aux7 {o} :
+  forall (lib : @library o) a1 a'0 a'1 a2 a'2 a3,
+    no_repeats_library lib
+    -> safe_library lib
+    -> lib_cond_sat_def lib
+    -> equality lib a1 a'0 (mkc_csname 0)
+    -> equality lib a2 a'1 mkc_tnat
+    -> equality lib a3 a'2 (mkc_csname 0)
+    -> tequality lib (mkc_equality a1 a3 (natk2nat a2)) (mkc_equality a'0 a'2 (natk2nat a'1)).
+Proof.
+  introv norep safe sat; introv equb eque equf.
+
+  apply tequality_mkc_equality_if_equal.
+  { apply equality_in_tnat in eque.
+    apply all_in_ex_bar_tequality_implies_tequality.
+    unfold equality_of_nat_bar in eque.
+    eapply lib_extends_preserves_in_open_bar in eque; eauto.
+    eapply in_open_bar_comb; eauto.
+    apply in_ext_implies_in_open_bar; introv xt e.
+    unfold equality_of_nat in e; exrepnd.
+    eapply tequality_natk2nat_aux;eauto.
+    introv xx; apply Z_of_nat_complete in xx; exrepnd; subst.
+    destruct (lt_dec n0 n);[left|right]; dands;
+      allrw <- Nat2Z.inj_lt; allrw <- Nat2Z.inj_le; auto; try omega. }
+
+  { apply equality_nat2nat_to_natk2nat.
+    { apply equality_refl in eque; eauto 3 with slow. }
+    apply equality_in_csname_implies_equality_in_nat2nat in equb; eauto 3 with slow. }
+
+  { apply equality_nat2nat_to_natk2nat.
+    { apply equality_refl in eque; eauto 3 with slow. }
+    apply equality_in_csname_implies_equality_in_nat2nat in equf; eauto 3 with slow. }
+Qed.
+
+Lemma tequality_ls3c_aux6 {o} :
+  forall (lib : @library o) i a0 a' a1 a'0 a'1 a2 a'2 a3,
+    no_repeats_library lib
+    -> safe_library lib
+    -> lib_cond_sat_def lib
+    -> equality lib a0 a' (mkc_csprop i)
+    -> equality lib a1 a'0 (mkc_csname 0)
+    -> equality lib a2 a'1 mkc_tnat
+    -> equality lib a3 a'2 (mkc_csname 0)
+    -> tequality
+         lib
+         (mkc_fun (mkc_equality a1 a3 (natk2nat a2)) (mkc_squash (mkc_apply a0 a3)))
+         (mkc_fun (mkc_equality a'0 a'2 (natk2nat a'1)) (mkc_squash (mkc_apply a' a'2))).
+Proof.
+  introv norep safe sat; introv equa equb eque equf.
+
+  apply tequality_fun; dands.
+
+  { apply tequality_ls3c_aux7; auto. }
+
+  introv extg equg.
+  apply tequality_mkc_squash.
+  apply inhabited_mkc_equality in equg.
+  apply (equality_in_mkc_csprop_implies_tequality _ _ _ _ _ i); eauto 3 with slow.
+Qed.
+
+Lemma tequality_ls3c_aux5 {o} :
+  forall (lib : @library o) A a b n i a0 a' a1 a'0 a'1 a2,
+    A <> a
+    -> n <> A
+    -> n <> a
+    -> b <> n
+    -> b <> A
+    -> b <> a
+    -> no_repeats_library lib
+    -> safe_library lib
+    -> lib_cond_sat_def lib
+    -> equality lib a0 a' (mkc_csprop i)
+    -> equality lib a1 a'0 (mkc_csname 0)
+    -> equality lib a2 a'1 mkc_tnat
+    -> tequality lib
+    (mkc_function (mkc_csname 0) b
+       (substc5 b a2 n a1 a a0 A
+          (mkcv_fun (([b, n] ++ [a]) ++ [A])
+             (mkcv_equality (([b, n] ++ [a]) ++ [A])
+                (mk_cv_app_r [A] ([b, n] ++ [a])
+                   (mk_cv_app_l [b, n] [a] (mkc_var a)))
+                (mk_cv_app_r [n, a, A] [b] (mkc_var b))
+                (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                   (mk_cv_app_r [a, A] ([b] ++ [n])
+                      (mk_cv_app_l [b] [n] (mkc_var n)))))
+             (mkcv_squash ([b, n, a] ++ [A])
+             (mkcv_apply ([b, n, a] ++ [A]) (mk_cv_app_l [b, n, a] [A] (mkc_var A))
+                (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))
+    (mkc_function (mkc_csname 0) b
+       (substc5 b a'1 n a'0 a a' A
+          (mkcv_fun [b, n, a, A]
+             (mkcv_equality (([b, n] ++ [a]) ++ [A])
+                (mk_cv_app_r [A] ([b, n] ++ [a])
+                   (mk_cv_app_l [b, n] [a] (mkc_var a)))
+                (mk_cv_app_r [n, a, A] [b] (mkc_var b))
+                (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                   (mk_cv_app_r [a, A] ([b] ++ [n])
+                                (mk_cv_app_l [b] [n] (mkc_var n)))))
+             (mkcv_squash ([b, n, a] ++ [A])
+             (mkcv_apply [b, n, a, A] (mk_cv_app_l [b, n, a] [A] (mkc_var A))
+                (mk_cv_app_r [n, a, A] [b] (mkc_var b))))))).
+Proof.
+  introv da db dc dd de df norep safe sat; introv equa equb eque.
+
+  apply tequality_function; dands; eauto 3 with slow.
+
+  introv extf equf.
+  eapply tequality_respects_alphaeqc_left;
+    [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc5_mkcv_fun;auto|].
+  eapply tequality_respects_alphaeqc_right;
+    [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc5_mkcv_fun;auto|].
+  eapply tequality_respects_alphaeqc_left;
+    [apply alphaeqc_sym; apply mkcv_fun_substc|].
+  eapply tequality_respects_alphaeqc_right;
+    [apply alphaeqc_sym; apply mkcv_fun_substc|].
+  autorewrite with slow.
+  repeat (rewrite substc5_var2; auto;[]).
+  repeat (rewrite substc5_var0; auto;[]).
+  autorewrite with slow.
+
+  eapply tequality_respects_alphaeqc_left;
+    [apply alphaeqc_mkc_fun;apply alphaeqc_sym;[|apply alphaeqc_refl];
+     apply implies_alphaeqc_mkc_equality;[apply alphaeqc_refl|apply alphaeqc_refl|];
+     apply substc_alphaeqcv; apply substc5_mkcv_natk2nat;auto|].
+  eapply tequality_respects_alphaeqc_right;
+    [apply alphaeqc_mkc_fun;apply alphaeqc_sym;[|apply alphaeqc_refl];
+     apply implies_alphaeqc_mkc_equality;[apply alphaeqc_refl|apply alphaeqc_refl|];
+     apply substc_alphaeqcv; apply substc5_mkcv_natk2nat;auto|].
+  eapply tequality_respects_alphaeqc_left;
+    [apply alphaeqc_mkc_fun;apply alphaeqc_sym;[|apply alphaeqc_refl];
+     apply implies_alphaeqc_mkc_equality;[apply alphaeqc_refl|apply alphaeqc_refl|];
+     apply substc_mkcv_natk2nat;auto|].
+  eapply tequality_respects_alphaeqc_right;
+    [apply alphaeqc_mkc_fun;apply alphaeqc_sym;[|apply alphaeqc_refl];
+     apply implies_alphaeqc_mkc_equality;[apply alphaeqc_refl|apply alphaeqc_refl|];
+     apply substc_mkcv_natk2nat;auto|].
+  repeat (rewrite substc5_var1; auto;[]).
+  autorewrite with slow.
+
+  eapply tequality_ls3c_aux6; eauto 3 with slow.
+Qed.
+
+Lemma tequality_ls3c_aux4 {o} :
+  forall (lib : @library o) A a b n i a0 a' a1 a'0,
+    A <> a
+    -> n <> A
+    -> n <> a
+    -> b <> n
+    -> b <> A
+    -> b <> a
+    -> no_repeats_library lib
+    -> safe_library lib
+    -> lib_cond_sat_def lib
+    -> equality lib a0 a' (mkc_csprop i)
+    -> equality lib a1 a'0 (mkc_csname 0)
+    -> tequality lib
+    (mkc_product mkc_tnat n
+       (substc2 n a1 a
+          (substc3 n a a0 A
+             (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
+                (mkcv_fun (([b, n] ++ [a]) ++ [A])
+                   (mkcv_equality (([b, n] ++ [a]) ++ [A])
+                      (mk_cv_app_r [A] ([b, n] ++ [a])
+                         (mk_cv_app_l [b, n] [a] (mkc_var a)))
+                      (mk_cv_app_r [n, a, A] [b] (mkc_var b))
+                      (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                         (mk_cv_app_r [a, A] ([b] ++ [n])
+                            (mk_cv_app_l [b] [n] (mkc_var n)))))
+                   (mkcv_squash ([b, n, a] ++ [A])
+                   (mkcv_apply ([b, n, a] ++ [A])
+                      (mk_cv_app_l [b, n, a] [A] (mkc_var A))
+                      (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))))
+    (mkc_product mkc_tnat n
+       (substc2 n a'0 a
+          (substc3 n a a' A
+             (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
+                (mkcv_fun [b, n, a, A]
+                   (mkcv_equality (([b, n] ++ [a]) ++ [A])
+                      (mk_cv_app_r [A] ([b, n] ++ [a])
+                         (mk_cv_app_l [b, n] [a] (mkc_var a)))
+                      (mk_cv_app_r [n, a, A] [b] (mkc_var b))
+                      (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                         (mk_cv_app_r [a, A] ([b] ++ [n])
+                            (mk_cv_app_l [b] [n] (mkc_var n)))))
+                   (mkcv_squash ([b, n, a] ++ [A])
+                   (mkcv_apply [b, n, a, A] (mk_cv_app_l [b, n, a] [A] (mkc_var A))
+                      (mk_cv_app_r [n, a, A] [b] (mkc_var b))))))))).
+Proof.
+  introv da db dc dd de df norep safe sat; introv equa equb.
+
+  apply tequality_product; dands; eauto 3 with slow.
+
+  introv exte eque.
+  repeat rewrite substc2_substc3_eq.
+  repeat rewrite substc3_2_substc_eq.
+  repeat (rewrite substc4_mkcv_function; tcsp; auto).
+  autorewrite with slow.
+
+  eapply tequality_ls3c_aux5; eauto 3 with slow.
+Qed.
+
+Lemma tequality_ls3c_aux3 {o} :
+  forall (lib : @library o) A a b n i a0 a' a1 a'0,
+    A <> a
+    -> n <> A
+    -> n <> a
+    -> b <> n
+    -> b <> A
+    -> b <> a
+    -> no_repeats_library lib
+    -> safe_library lib
+    -> lib_cond_sat_def lib
+    -> equality lib a0 a' (mkc_csprop i)
+    -> equality lib a1 a'0 (mkc_csname 0)
+    -> tequality lib
+    (mkc_fun (mkc_apply a0 a1)
+       (mkc_squash
+          (substc2 a a0 A
+             (mkcv_exists [a, A] (mkcv_tnat [a, A]) n
+                (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
+                   (mkcv_fun (([b, n] ++ [a]) ++ [A])
+                      (mkcv_equality (([b, n] ++ [a]) ++ [A])
+                         (mk_cv_app_r [A] ([b, n] ++ [a])
+                            (mk_cv_app_l [b, n] [a] (mkc_var a)))
+                         (mk_cv_app_r [n, a, A] [b] (mkc_var b))
+                         (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                            (mk_cv_app_r [a, A] ([b] ++ [n])
+                               (mk_cv_app_l [b] [n] (mkc_var n)))))
+                      (mkcv_squash ([b, n, a] ++ [A])
+                      (mkcv_apply ([b, n, a] ++ [A])
+                         (mk_cv_app_l [b, n, a] [A] (mkc_var A))
+                         (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))) [[a \\ a1]]))
+    (mkc_fun (mkc_apply a' a'0)
+       (mkc_squash
+          (substc2 a a' A
+             (mkcv_exists [a, A] (mkcv_tnat [a, A]) n
+                (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
+                   (mkcv_fun [b, n, a, A]
+                      (mkcv_equality (([b, n] ++ [a]) ++ [A])
+                         (mk_cv_app_r [A] ([b, n] ++ [a])
+                            (mk_cv_app_l [b, n] [a] (mkc_var a)))
+                         (mk_cv_app_r [n, a, A] [b] (mkc_var b))
+                         (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                            (mk_cv_app_r [a, A] ([b] ++ [n])
+                               (mk_cv_app_l [b] [n] (mkc_var n)))))
+                      (mkcv_squash ([b, n, a] ++ [A])
+                      (mkcv_apply [b, n, a, A]
+                         (mk_cv_app_l [b, n, a] [A] (mkc_var A))
+                         (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))) [[a \\ a'0]])).
+Proof.
+  introv da db dc dd de df norep safe sat; introv equa equb.
+
+  apply tequality_fun; dands.
+
+  { apply (equality_in_mkc_csprop_implies_tequality _ _ _ _ _ i); eauto; eauto 3 with slow. }
+
+  introv extd equd.
+  apply tequality_mkc_squash.
+  eapply tequality_respects_alphaeqc_left;
+    [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;auto|].
+  eapply tequality_respects_alphaeqc_right;
+    [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;auto|].
+  repeat (rewrite mkcv_product_substc; auto;[]).
+  autorewrite with slow.
+
+  eapply tequality_ls3c_aux4; eauto 3 with slow.
+Qed.
+
+Lemma tequality_ls3c_aux2 {o} :
+  forall (lib : @library o) A a b n i a0 a' a1 a'0,
+    A <> a
+    -> n <> A
+    -> n <> a
+    -> b <> n
+    -> b <> A
+    -> b <> a
+    -> no_repeats_library lib
+    -> safe_library lib
+    -> lib_cond_sat_def lib
+    -> equality lib a0 a' (mkc_csprop i)
+    -> equality lib a1 a'0 (mkc_csname 0)
+    -> tequality lib
+    (mkc_fun
+       (substc2 a a0 A
+          (mkcv_free_from_defs ([a] ++ [A]) (mkcv_csprop ([a] ++ [A]) i)
+             (mk_cv_app_l [a] [A] (mkc_var A)))) [[a \\ a1]]
+       (substc2 a a0 A
+          (mkcv_fun ([a] ++ [A])
+             (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
+                (mk_cv_app_r [A] [a] (mkc_var a)))
+             (mkcv_squash [a, A]
+                (mkcv_exists [a, A] (mkcv_tnat [a, A]) n
+                   (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
+                      (mkcv_fun (([b, n] ++ [a]) ++ [A])
+                         (mkcv_equality (([b, n] ++ [a]) ++ [A])
+                            (mk_cv_app_r [A] ([b, n] ++ [a])
+                               (mk_cv_app_l [b, n] [a] (mkc_var a)))
+                            (mk_cv_app_r [n, a, A] [b] (mkc_var b))
+                            (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                               (mk_cv_app_r [a, A] ([b] ++ [n])
+                                  (mk_cv_app_l [b] [n] (mkc_var n)))))
+                         (mkcv_squash ([b, n, a] ++ [A])
+                         (mkcv_apply ([b, n, a] ++ [A])
+                            (mk_cv_app_l [b, n, a] [A] (mkc_var A))
+                            (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))))) [[a \\
+       a1]])
+    (mkc_fun
+       (substc2 a a' A
+          (mkcv_free_from_defs ([a] ++ [A]) (mkcv_csprop ([a] ++ [A]) i)
+             (mk_cv_app_l [a] [A] (mkc_var A)))) [[a \\ a'0]]
+       (substc2 a a' A
+          (mkcv_fun ([a] ++ [A])
+             (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
+                (mk_cv_app_r [A] [a] (mkc_var a)))
+             (mkcv_squash [a, A]
+                (mkcv_exists [a, A] (mkcv_tnat [a, A]) n
+                   (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
+                      (mkcv_fun [b, n, a, A]
+                         (mkcv_equality (([b, n] ++ [a]) ++ [A])
+                            (mk_cv_app_r [A] ([b, n] ++ [a])
+                               (mk_cv_app_l [b, n] [a] (mkc_var a)))
+                            (mk_cv_app_r [n, a, A] [b] (mkc_var b))
+                            (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                               (mk_cv_app_r [a, A] ([b] ++ [n])
+                                  (mk_cv_app_l [b] [n] (mkc_var n)))))
+                         (mkcv_squash ([b, n, a] ++ [A])
+                         (mkcv_apply [b, n, a, A]
+                            (mk_cv_app_l [b, n, a] [A] (mkc_var A))
+                            (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))))) [[a \\
+       a'0]]).
+Proof.
+  introv da db dc dd de df norep safe sat; introv equa equb.
+
+  apply tequality_fun; dands.
+
+  { eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_ffdefs|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_ffdefs|].
+    autorewrite with slow.
+    apply tequality_mkc_ffdefs; dands; eauto 3 with slow. }
+
+  introv extc equc.
+  eapply inhabited_type_respects_alphaeqc in equc;
+    [|apply substc_alphaeqcv; apply substc2_ffdefs].
+  autorewrite with slow in equc.
+  eapply tequality_respects_alphaeqc_left;
+    [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_fun|].
+  eapply tequality_respects_alphaeqc_right;
+    [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_fun|].
+  eapply tequality_respects_alphaeqc_left;
+    [apply alphaeqc_sym; apply mkcv_fun_substc|].
+  eapply tequality_respects_alphaeqc_right;
+    [apply alphaeqc_sym; apply mkcv_fun_substc|].
+  autorewrite with slow.
+  repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+  autorewrite with slow.
+
+  eapply tequality_ls3c_aux3; eauto 3 with slow.
+Qed.
+
+Lemma tequality_ls3c_aux1 {o} :
+  forall (lib : @library o) A a b n i a0 a',
+    A <> a
+    -> n <> A
+    -> n <> a
+    -> b <> n
+    -> b <> A
+    -> b <> a
+    -> no_repeats_library lib
+    -> safe_library lib
+    -> lib_cond_sat_def lib
+    -> equality lib a0 a' (mkc_csprop i)
+    -> tequality lib
+                 (mkc_function (mkc_csname 0) a
+       (substcv [a] a0 A
+          (mkcv_fun ([a] ++ [A])
+             (mkcv_free_from_defs ([a] ++ [A]) (mkcv_csprop ([a] ++ [A]) i)
+                (mk_cv_app_l [a] [A] (mkc_var A)))
+             (mkcv_fun ([a] ++ [A])
+                (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
+                   (mk_cv_app_r [A] [a] (mkc_var a)))
+                (mkcv_squash [a, A]
+                   (mkcv_exists [a, A] (mkcv_tnat [a, A]) n
+                      (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
+                         (mkcv_fun (([b, n] ++ [a]) ++ [A])
+                            (mkcv_equality (([b, n] ++ [a]) ++ [A])
+                               (mk_cv_app_r [A] ([b, n] ++ [a])
+                                  (mk_cv_app_l [b, n] [a] (mkc_var a)))
+                               (mk_cv_app_r [n, a, A] [b] (mkc_var b))
+                               (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                                  (mk_cv_app_r [a, A] ([b] ++ [n])
+                                     (mk_cv_app_l [b] [n] (mkc_var n)))))
+                            (mkcv_squash ([b, n, a] ++ [A])
+                            (mkcv_apply ([b, n, a] ++ [A])
+                               (mk_cv_app_l [b, n, a] [A] (mkc_var A))
+                               (mk_cv_app_r [n, a, A] [b] (mkc_var b))))))))))))
+    (mkc_function (mkc_csname 0) a
+       (substcv [a] a' A
+          (mkcv_fun ([a] ++ [A])
+             (mkcv_free_from_defs ([a] ++ [A]) (mkcv_csprop ([a] ++ [A]) i)
+                (mk_cv_app_l [a] [A] (mkc_var A)))
+             (mkcv_fun ([a] ++ [A])
+                (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
+                   (mk_cv_app_r [A] [a] (mkc_var a)))
+                (mkcv_squash [a, A]
+                   (mkcv_exists [a, A] (mkcv_tnat [a, A]) n
+                      (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
+                         (mkcv_fun [b, n, a, A]
+                            (mkcv_equality (([b, n] ++ [a]) ++ [A])
+                               (mk_cv_app_r [A] ([b, n] ++ [a])
+                                  (mk_cv_app_l [b, n] [a] (mkc_var a)))
+                               (mk_cv_app_r [n, a, A] [b] (mkc_var b))
+                               (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                                  (mk_cv_app_r [a, A] ([b] ++ [n])
+                                     (mk_cv_app_l [b] [n] (mkc_var n)))))
+                            (mkcv_squash ([b, n, a] ++ [A])
+                            (mkcv_apply [b, n, a, A]
+                               (mk_cv_app_l [b, n, a] [A] (mkc_var A))
+                               (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))))))).
+Proof.
+  introv da db dc dd de df norep safe sat equa.
+
+  apply tequality_function; dands; eauto 3 with slow.
+  introv extb equb.
+  repeat rewrite substcv_as_substc2.
+  eapply tequality_respects_alphaeqc_left;
+    [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_fun|].
+  eapply tequality_respects_alphaeqc_right;
+    [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_fun|].
+  eapply tequality_respects_alphaeqc_left;
+    [apply alphaeqc_sym; apply mkcv_fun_substc|].
+  eapply tequality_respects_alphaeqc_right;
+    [apply alphaeqc_sym; apply mkcv_fun_substc|].
+
+  apply tequality_ls3c_aux2; eauto 3 with slow.
+Qed.
+
+Lemma tequality_ls3c {o} :
+  forall (lib : @library o) A a b n i,
+    A <> a
+    -> n <> A
+    -> n <> a
+    -> b <> n
+    -> b <> A
+    -> b <> a
+    -> no_repeats_library lib
+    -> safe_library lib
+    -> lib_cond_sat_def lib
+    -> tequality lib (ls3c A a b n i) (ls3c A a b n i).
+Proof.
+  introv da db dc dd de df norep safe sat.
+  unfold ls3c.
+
+  apply tequality_function; dands; eauto 3 with slow.
+  introv exta equa.
+  repeat (rewrite substc_mkcv_function; auto); autorewrite with slow.
+
+  apply tequality_ls3c_aux1; eauto 3 with slow.
+Qed.
+
+Lemma type_mkc_csprop {o} :
+  forall (lib : @library o) i, type lib (mkc_csprop i).
+Proof.
+  introv; unfold type; eauto 3 with slow.
+Qed.
+Hint Resolve type_mkc_csprop : slow.
+
+Lemma implies_equality_mkc_choice_seq_mkc_csname_0 {o} :
+  forall (lib : @library o) name,
+    compatible_choice_sequence_name 0 name
+    -> equality lib (mkc_choice_seq name) (mkc_choice_seq name) (mkc_csname 0).
+Proof.
+  introv comp; apply equality_in_csname_iff.
+  apply in_ext_implies_in_open_bar; introv xt.
+  unfold equality_of_csname; exists name; dands; eauto 3 with slow.
+Qed.
+Hint Resolve implies_equality_mkc_choice_seq_mkc_csname_0 : slow.
+
+Lemma ccequivc_app_app_ax {o} :
+  forall lib b x (u v : @CTerm o),
+    ccequivc_ext
+      lib
+      (mkc_apply (mkc_apply (mkc_lam b (mkcv_lam [b] x (mkcv_ax [x, b]))) u) v)
+      mkc_axiom.
+Proof.
+  introv ext; spcast.
+  destruct_cterms; unfold cequivc; simpl.
+  apply reduces_to_implies_cequiv; eauto 3 with slow.
+  { repeat apply isprogram_apply; eauto 3 with slow.
+    apply isprogram_lam; apply isprog_vars_lam_iff; simpl; eauto 3 with slow. }
+  eapply reduces_to_if_split2.
+  { csunf; simpl; eauto. }
+  unfold apply_bterm; simpl.
+  unflsubst.
+Qed.
+
+Lemma implies_type_mkc_squash {o} :
+  forall (lib : @library o) T,
+    type lib T
+    -> type lib (mkc_squash T).
+Proof.
+  introv t; apply tequality_mkc_squash; auto.
+Qed.
+Hint Resolve implies_type_mkc_squash : slow.
 
 
 
@@ -19530,6 +19651,7 @@ Lemma rule_ls3_true {o} :
          (safe  : strong_safe_library lib)
          (nodup : lib_nodup lib)
          (sat   : sat_lib_cond lib)
+         (satd  : lib_cond_sat_def lib)
          (nocs  : has_lib_cond_no_cs lib),
     rule_true lib (rule_ls3 lib A a b n x y i H).
 Proof.
@@ -19551,19 +19673,18 @@ Proof.
 
   dands.
 
-  { admit. }
+  { apply tequality_ls3c; eauto 3 with slow. }
 
   apply equality_in_function3.
-  dands.
-
-  { admit. }
+  dands; eauto 3 with slow;[].
 
   intros lib' ext A1 A2 eqA.
   move2ext ext.
 
   dands.
 
-  { admit. }
+  { repeat (rewrite substc_mkcv_function; auto); autorewrite with slow.
+    eapply tequality_ls3c_aux1; eauto 3 with slow. }
 
   rewrite substc_mkcv_function; auto;[].
   autorewrite with slow.
@@ -19571,9 +19692,7 @@ Proof.
   rewrite substcv_as_substc2.
 
   apply equality_in_function3.
-  dands.
-
-  { admit. }
+  dands; eauto 3 with slow;[].
 
   intros lib' ext a1 a2 eqa.
 
@@ -19582,7 +19701,17 @@ Proof.
 
   dands.
 
-  { admit. }
+  { repeat rewrite substcv_as_substc2.
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_fun|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_fun|].
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply mkcv_fun_substc|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym; apply mkcv_fun_substc|].
+    apply tequality_ls3c_aux2; eauto 3 with slow.
+    apply equality_refl in eqA; eauto 3 with slow. }
 
   eapply alphaeqc_preserving_equality;
     [|apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_fun].
@@ -19597,9 +19726,32 @@ Proof.
   apply equality_in_fun.
   dands.
 
-  { admit. }
+  { eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_ffdefs|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_ffdefs|].
+    autorewrite with slow.
+    apply tequality_mkc_ffdefs; dands; eauto 3 with slow.
+    apply equality_refl in eqA; eauto 3 with slow. }
 
-  { admit. }
+  { introv extc equc.
+    eapply inhabited_type_respects_alphaeqc in equc;
+      [|apply substc_alphaeqcv; apply substc2_ffdefs].
+    autorewrite with slow in equc.
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_fun|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_fun|].
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply mkcv_fun_substc|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym; apply mkcv_fun_substc|].
+    autorewrite with slow.
+    repeat (rewrite substc2_mk_cv_app_r; auto;[]).
+    autorewrite with slow.
+    eapply tequality_ls3c_aux3; eauto 3 with slow;
+      apply equality_refl in eqa; eauto 3 with slow;
+      apply equality_refl in eqA; eauto 3 with slow. }
 
   intros lib' ext x1 x2 eqx.
 
@@ -19607,6 +19759,7 @@ Proof.
     [|apply substc_alphaeqcv; apply substc2_ffdefs].
   autorewrite with slow in *.
 
+  dup eqx as eqf.
   apply equality_in_mkc_ffdefs in eqx; exrepnd.
   clear eqx0 eqx1.
 
@@ -19628,6 +19781,7 @@ Proof.
   eapply equality_monotone in eqA;[|eauto];[].
   eapply equality_monotone in eqa;[|eauto];[].
   eapply equality_monotone in eqx;[|eauto];[].
+  eapply equality_monotone in eqf;[|eauto];[].
 
   unfold ex_nodefsc_eq in *; exrepnd.
   rename eqx1 into eqw.
@@ -19638,15 +19792,27 @@ Proof.
   apply equality_in_fun.
   dands.
 
-  { admit. }
+  { apply equality_refl in eqa; apply equality_refl in eqA.
+    eapply equality_in_mkc_csprop_implies_tequality; eauto. }
 
-  { admit. }
+  { introv xt inh.
+    apply tequality_mkc_squash.
+    eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;auto|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;auto|].
+    repeat (rewrite mkcv_product_substc; auto;[]).
+    autorewrite with slow.
+
+    apply equality_refl in eqa; apply equality_refl in eqA;
+      eapply tequality_ls3c_aux4; eauto 3 with slow. }
 
   intros lib' ext z1 z2 eqz.
 
   eapply equality_monotone in eqA;[|eauto];[].
   eapply equality_monotone in eqa;[|eauto];[].
   eapply equality_monotone in eqx;[|eauto];[].
+  eapply equality_monotone in eqf;[|eauto];[].
   eapply equality_monotone in eqw;[|eauto];[].
 
   move2ext ext.
@@ -19660,6 +19826,7 @@ Proof.
   apply equality_refl in eqA.
   apply equality_refl in eqa.
   apply equality_refl in eqx.
+  apply equality_refl in eqf.
   apply equality_refl in eqz.
   GC.
 
@@ -19678,6 +19845,7 @@ Proof.
   eapply all_in_ex_bar_modus_ponens1;[|exact eqa]; clear eqa; introv ext eqa.
 
   eapply equality_monotone in eqA;[|eauto];[].
+  eapply equality_monotone in eqf;[|eauto];[].
   eapply member_monotone in eqz;[|eauto];[].
   move2ext ext.
 
@@ -19710,22 +19878,38 @@ Proof.
 
   eapply member_monotone in eqz;[|eauto];[].
   eapply equality_monotone in eqA;[|eauto];[].
+  eapply equality_monotone in eqf;[|eauto];[].
+  eapply member_monotone in eqz;[|eauto];[].
   eapply tequality_monotone in teq;[|eauto];[].
   move2ext ext.
 
   apply inhabited_product.
   dands; eauto 3 with slow;[|].
 
-  { admit. }
+  { introv exte eque.
+    repeat rewrite substc2_substc3_eq.
+    repeat rewrite substc3_2_substc_eq.
+    repeat (rewrite substc4_mkcv_function; tcsp; auto).
+    autorewrite with slow.
+    apply equality_refl in eqz; apply equality_refl in eqA; apply equality_refl in eqf;
+      eapply tequality_ls3c_aux5; eauto 3 with slow. }
 
+
+  (* ****************** *)
+  (* Could we get rid of the squash here and use:
+
+       [mkcv_swap_cs1 _ (mkcv_choice_seq _ name) (mkc_var b) z1]
+
+     instead of [mkcv_ax] ?*)
+  (* ****************** *)
   exists (@mkc_pair
-            _
+            o
             (mkc_nat (S (lib_depth lib)))
-            (mkc_lam b (mkcv_lam _ x (mk_cv _ z1)))).
+            (mkc_lam b (mkcv_lam _ x (mkcv_ax _)))).
 
   apply in_ext_implies_all_in_ex_bar.
   introv ext.
-  exists (@mkc_nat o (S (lib_depth lib))) (mkc_lam b (mkcv_lam _ x (mk_cv _ z1))).
+  exists (@mkc_nat o (S (lib_depth lib))) (@mkc_lam o b (mkcv_lam _ x (mkcv_ax _))).
   dands; spcast; eauto 3 with slow;[].
 
   eapply equality_monotone in eqA;[|eauto];[].
@@ -19774,7 +19958,7 @@ Proof.
 
   rev_assert (member
                 lib
-                (mkc_lam b (mkcv_lam [b] x (mk_cv [x, b] z1)))
+                (mkc_lam b (mkcv_lam [b] x (mkcv_ax _)))
                 (mkc_function
                    (mkc_csname 0)
                    b
@@ -19785,7 +19969,7 @@ Proof.
                          (mk_cv [b] (mkc_choice_seq name))
                          (mkc_var b)
                          (mkcv_natk2nat [b] (mk_cv [b] (mkc_nat (S (lib_depth lib1))))))
-                      (mkcv_apply [b] (mk_cv [b] u) (mkc_var b))))) mem.
+                      (mkcv_squash _ (mkcv_apply [b] (mk_cv [b] u) (mkc_var b)))))) mem.
   {
     apply equality_in_function3 in mem; repnd.
     apply equality_in_function3; dands; auto.
@@ -19804,6 +19988,7 @@ Proof.
       apply tequality_fun; dands; auto.
       introv xt1 inh.
       apply mem1 in inh; auto; eauto 3 with slow;[].
+      allrw @tequality_mkc_squash.
       eapply equality_in_mkc_csprop_preserves_tequality;
         [apply equality_sym| |]; eauto 3 with slow.
     }
@@ -19818,17 +20003,22 @@ Proof.
 
       {
         introv xt1 inh.
-        eapply equality_in_mkc_csprop_preserves_type;
-          [apply equality_sym| |]; eauto 3 with slow.
+        apply implies_type_mkc_squash.
+        apply equality_refl in eqA; apply equality_refl in ea.
+        eapply equality_in_mkc_csprop_implies_tequality; eauto 3 with slow.
       }
-        introv xt1 eb.
 
-      {
-        eapply tequality_preserving_equality;
-          [|apply tequality_sym;eapply equality_in_mkc_csprop_implies_tequality];eauto;
-            eauto 3 with slow.
-        eapply equality_refl; eauto 3 with slow.
-      }
+      introv xt1 eb.
+      eapply equality_respects_cequivc_left;[apply ccequivc_ext_sym;apply ccequivc_app_app_ax|].
+      eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym;apply ccequivc_app_app_ax|].
+      apply equality_in_mkc_squash_ax.
+      apply mem in eb; eauto 3 with slow;[].
+      eapply equality_in_mkc_squash in eb; repnd; auto.
+      eapply in_open_bar_pres; try exact eb;[]; introv xtt inh.
+      eapply inhabited_type_tequality;
+        [apply tequality_sym;eapply equality_in_mkc_csprop_implies_tequality|];
+        try exact inh; eapply equality_monotone; try exact xtt; eauto 3 with slow.
+      eapply equality_refl; eauto 3 with slow.
     }
   }
 
@@ -19842,7 +20032,21 @@ Proof.
   rename a' into b2.
   dands.
 
-  { admit. }
+  { eapply tequality_respects_alphaeqc_left;
+      [apply alphaeqc_sym; apply mkcv_fun_substc|].
+    eapply tequality_respects_alphaeqc_right;
+      [apply alphaeqc_sym; apply mkcv_fun_substc|].
+    autorewrite with slow.
+  eapply tequality_respects_alphaeqc_left;
+    [apply alphaeqc_mkc_fun;apply alphaeqc_sym;[|apply alphaeqc_refl];
+     apply implies_alphaeqc_mkc_equality;[apply alphaeqc_refl|apply alphaeqc_refl|];
+     apply substc_mkcv_natk2nat;auto|].
+  eapply tequality_respects_alphaeqc_right;
+    [apply alphaeqc_mkc_fun;apply alphaeqc_sym;[|apply alphaeqc_refl];
+     apply implies_alphaeqc_mkc_equality;[apply alphaeqc_refl|apply alphaeqc_refl|];
+     apply substc_mkcv_natk2nat;auto|].
+  autorewrite with slow.
+  eapply tequality_ls3c_aux6; eauto 3 with slow. }
 
   eapply alphaeqc_preserving_equality;[|apply alphaeqc_sym;apply substc_mkcv_fun].
   autorewrite with slow.
@@ -19857,27 +20061,17 @@ Proof.
   apply equality_in_fun.
   dands; eauto 3 with slow.
 
-  { admit. }
+  { apply equality_refl in ecs; apply tequality_ls3c_aux7; eauto 3 with slow. }
 
-  { admit. }
+  { apply equality_refl in ecs; introv extg equg.
+    apply inhabited_mkc_equality in equg.
+    apply implies_type_mkc_squash.
+    apply (equality_in_mkc_csprop_implies_tequality _ _ _ _ _ i); eauto 3 with slow. }
 
   introv ext2 eb.
 
-  eapply equality_respects_cequivc_left;
-    [apply ccequivc_ext_sym;apply sp_implies_ccequivc_ext_apply;
-     apply ccequivc_ext_beta|].
-  rewrite mkcv_lam_substc; tcsp;[].
-  eapply equality_respects_cequivc_left;
-    [apply ccequivc_ext_sym; apply ccequivc_ext_beta|].
-  autorewrite with slow.
-
-  eapply equality_respects_cequivc_right;
-    [apply ccequivc_ext_sym;apply sp_implies_ccequivc_ext_apply;
-     apply ccequivc_ext_beta|].
-  rewrite mkcv_lam_substc; tcsp;[].
-  eapply equality_respects_cequivc_right;
-    [apply ccequivc_ext_sym; apply ccequivc_ext_beta|].
-  autorewrite with slow.
+  eapply equality_respects_cequivc_left;[apply ccequivc_ext_sym;apply ccequivc_app_app_ax|].
+  eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym;apply ccequivc_app_app_ax|].
 
   apply equality_refl in ecs.
   clear b2.
@@ -19907,7 +20101,7 @@ Proof.
   unfold equality_of_csname in ecs; exrepnd; spcast; GC.
   rename name0 into name'.
 
-  rev_assert (member lib z1 (mkc_apply u (mkc_choice_seq name'))) mem.
+  rev_assert (member lib mkc_axiom (mkc_squash (mkc_apply u (mkc_choice_seq name')))) mem.
   {
     pose proof (equality_in_mkc_csprop_implies_tequality lib u u b1 (mkc_choice_seq name') i) as teq.
     repeat (autodimp teq hyp); eauto 3 with slow.
@@ -19915,8 +20109,12 @@ Proof.
       unfold equality_of_csname_bar.
       apply in_ext_implies_in_open_bar; introv xta.
       exists name'; dands; spcast; eauto 3 with slow. }
-    eapply tequality_preserving_equality;[|apply tequality_sym;eauto]; auto.
+    eapply tequality_preserving_equality;[|apply tequality_mkc_squash;apply tequality_sym;eauto]; auto.
   }
+
+  apply equality_in_mkc_squash_ax.
+  apply inhabited_type_implies_inhabited_type_bar.
+  exists (swap_cs_cterm (name,name') z1).
 
   assert (forall m,
              m <= lib_depth lib1
@@ -19968,7 +20166,8 @@ Proof.
   (* === We have to show that because of [imp], [lib1] can be extended with [name']
          equivalent to [name] up to [lib_depth lib1] === *)
 
-  destruct (choice_sequence_name_deq name' name) as [d|d];[subst;eauto 3 with slow|];[].
+  destruct (choice_sequence_name_deq name' name) as [d|d];
+    [subst; autorewrite with slow; eauto 3 with slow|];[].
 
   (* We will have to restrict [compatible_choice_sequence_name] to disallow sequences for those: *)
   assert (is_nat_cs name) as isna by admit.
@@ -20004,7 +20203,122 @@ Proof.
                 (swap_cs_cterm (name, name') z1)
                 (mkc_apply u (mkc_choice_seq name'))) as m.
   repeat (autodimp m hyp); simpl; eauto 3 with slow.
+Qed.
 
-  (* For this we can add a swapping operator to the computation system *)
+
+
+(*Lemma approx_swap {o} :
+  forall lib n1 n2 (t : @NTerm o),
+    isprogram t
+    -> approx
+         lib
+         (swap_cs_term (n1,n2) t)
+         (mk_swap_cs2 n1 n2 t).
+Proof.
+  cofix ind; introv isp.
+  constructor.
+  unfold close_comput; dands; eauto 2 with slow;[|].
+
+  { introv comp.
+
+Definition swap_cs_bterms {o} sw (bs : list (@BTerm o)) :=
+  map (swap_cs_bterm sw) bs.
+
+Lemma swap_cs_bterms_twice {o} :
+  forall sw (bs : list (@BTerm o)),
+    map (swap_cs_bterm sw) (map (swap_cs_bterm sw) bs)
+    = bs.
+Proof.
+  induction bs; simpl;auto; allrw;autorewrite with slow; auto.
+Qed.
+Hint Rewrite @swap_cs_bterms_twice : slow.
+
+Lemma xxx {o} :
+  forall (lib : @plibrary o) n1 n2 t (u : NTerm),
+    n1 <> n2
+    -> compute_step lib (swap_cs_term (n1,n2) t) = csuccess u
+    -> reduces_to lib (mk_swap_cs2 n1 n2 t) (mk_swap_cs2 n1 n2 (swap_cs_term (n1,n2) u)).
+Proof.
+  nterm_ind1s t as [v|op bs ind] Case; introv dn comp; tcsp.
+
+  { csunf comp; simpl in comp; ginv. }
+
+  dopid op as [can|ncan|exc|abs] SCase.
+
+  { csunf comp; simpl in *; ginv; simpl; autorewrite with slow; eauto 3 with slow. }
+
+  { csunf comp; simpl in *.
+    destruct bs; simpl in *; ginv.
+    destruct b; simpl in *; ginv.
+    destruct l; simpl in *; ginv.
+
+    { destruct n; simpl in *; ginv.
+      destruct o0; simpl in *; ginv.
+
+      { dopid_noncan ncan SSCase; simpl in *;
+          try apply_comp_success;
+          try (complete (dcwf h));
+          try (complete (ginv; csunf; simpl in *; eauto)).
+
+        { destruct c; simpl in *; ginv.
+          repeat (destruct l; simpl in *; ginv).
+          destruct b0; simpl in *; inversion comp2; subst; clear comp2.
+          repeat (destruct bs; simpl in *; ginv).
+          destruct b; simpl in *; inversion comp3; subst; clear comp3; simpl in *.
+          apply reduces_to_if_step; csunf; simpl; auto.
+          rewrite swap_cs_term_subst; autorewrite with slow; auto. }
+
+        { destruct c; simpl in *; ginv.
+          repeat (destruct l; simpl in *; ginv).
+          repeat (destruct bs; simpl in *; ginv).
+          destruct b; simpl in *; inversion comp3; subst; clear comp3; simpl in *.
+          apply reduces_to_if_step; csunf; simpl; auto.
+          boolvar; subst; tcsp; autorewrite with slow; auto. }
+
+        { repndors; exrepnd.
+
+          { destruct bs; simpl in *; ginv.
+            destruct b; simpl in *.
+            inversion comp0; subst; clear comp0.
+            apply compute_step_eapply2_success in comp1; exrepnd.
+            destruct bs; simpl in *; ginv.
+            repndors; exrepnd; subst; simpl in *; ginv.
+
+            { destruct c; simpl in *; ginv.
+              repeat (destruct l; simpl in *; ginv).
+              destruct b0; simpl in *.
+              inversion comp0; subst; clear comp0; simpl in *.
+              apply reduces_to_if_step; csunf; simpl.
+              apply iscan_implies in comp3; exrepnd.
+              destruct n; simpl in *; ginv.
+              destruct o0; simpl in *; ginv; simpl in *.
+              unfold apply_bterm; simpl.
+              rewrite swap_cs_term_lsubst; repeat (autorewrite with slow; simpl;auto). }
+
+            { destruct c; simpl in *; ginv.
+              repeat (destruct l; simpl in *; ginv).
+              destruct n; simpl in *; ginv.
+              destruct o0; simpl in *; ginv; GC.
+              destruct c0; simpl in *; ginv.
+              inversion comp4; subst; simpl in *.
+              destruct l; simpl in *; ginv.
+              apply reduces_to_if_step; csunf; simpl.
+              boolvar; subst; simpl in *; tcsp; inversion comp1; subst; simpl in *.
+              { csunf; simpl; auto.
+                unfold compute_step_eapply; simpl; boolvar; try omega; autorewrite with slow.
 
 Qed.
+
+Lemma xxx {o} :
+  forall (lib : @plibrary o) n1 n2 t can (bs : list BTerm),
+    (swap_cs_term (n1,n2) t) =v>(lib) (oterm (Can can) bs)
+    -> (mk_swap_cs2 n1 n2 t) =v>(lib) (oterm (Can (swap_cs_can (n1,n2) can)) (push_swap_cs_bterms n1 n2 (swap_cs_bterms (n1,n2) bs))).
+
+    apply (@swap_computes_to_value o (n1,n2)) in comp; autorewrite with slow in comp; simpl in comp.
+    apply (approx_star_swap.implies_reduces_to_mk_swap_cs2 _ n1 n2) in comp.
+
+SearchAbout mk_swap_cs2.
+SearchAbout swap_cs_term computes_to_value.
+
+Qed.
+*)

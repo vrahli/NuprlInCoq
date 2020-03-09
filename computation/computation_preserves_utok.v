@@ -2004,6 +2004,58 @@ Proof.
   eapply find_last_cs_implies_subset_get_utokens_CSVal2term in xx; eauto.
 Qed.
 
+Lemma subset_preserves_not_in_get_utokens_lib {o} :
+  forall lib (t u : @NTerm o) a,
+    subset (get_utokens t) (get_utokens u)
+    -> !LIn a (get_utokens_lib lib u)
+    -> !LIn a (get_utokens_lib lib t).
+Proof.
+  introv ss ni i; destruct ni; eauto 3 with slow.
+  revert dependent a.
+  apply subset_get_utokens_implies_subset_get_utokens_lib; auto.
+Qed.
+
+Lemma ren_utok_op_swap_cs_op {o} :
+  forall sw a b (op : @Opid o),
+    ren_utok_op (swap_cs_op sw op) a b
+    = swap_cs_op sw (ren_utok_op op a b).
+Proof.
+  introv; destruct op; simpl; tcsp.
+  destruct c; simpl; tcsp.
+  unfold ren_utok_op; simpl; simpl; boolvar; tcsp.
+Qed.
+
+Lemma ren_utok_match_can_as {o} :
+  forall (can : @CanonicalOp o) a b,
+    match match can with
+          | NUTok a => Some a
+          | _ => None
+          end with
+    | Some a' => if get_patom_deq o a a' then Can (NUTok b) else Can can
+    | None => Can can
+    end  = Can (match can with | NUTok a' => if get_patom_deq o a a' then NUTok b else can | _ => can end).
+Proof.
+  introv; destruct can; simpl; auto; boolvar; tcsp.
+Qed.
+
+Lemma subst_aux_oterm2 {o} :
+  forall op bs v (t : @NTerm o),
+    subst_aux (oterm op bs) v t
+    = oterm op (map (fun b => lsubst_bterm_aux b [(v,t)]) bs).
+Proof. sp. Qed.
+
+Lemma not_in_get_utokens_lib_implies_ren_utok_op_same {o} :
+  forall a b lib (t : @NTerm o) op,
+    !LIn a (get_utokens_lib lib t)
+    -> subset (get_utokens_o op) (get_utokens t)
+    -> ren_utok_op op a b = op.
+Proof.
+  introv ni ss.
+  unfold ren_utok_op; destruct op; simpl; auto.
+  destruct c; simpl; auto; boolvar; subst; auto.
+  simpl in *; destruct ni; eauto 3 with slow.
+Qed.
+
 Lemma compute_step_subst_utoken2 {o} :
   forall lib (t u : @NTerm o) v a b,
     nt_wf t
@@ -2064,7 +2116,7 @@ Proof.
         - allsimpl.
           unfold subst_aux in *; simpl in *; boolvar; simpl in *; ginv.
           apply compute_step_ncan_vterm_success in comp.
-          repndors; exrepnd; subst; tcsp;[| | | |].
+          repndors; exrepnd; subst; tcsp;[| | | | | |].
 
           + simpl in *.
             unfold ren_utok_op; simpl.
@@ -2197,6 +2249,56 @@ Proof.
               rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow.
               rewrite (not_in_get_utokens_implies_ren_utok_same _ _ a0); eauto 2 with slow.
               rewrite (not_in_get_utokens_implies_ren_utok_same _ _ b0); eauto 2 with slow.
+
+          + allrw @nt_wf_swap_cs1_iff; repndors; exrepnd; subst; simpl in *.
+
+            { repeat (destruct bs; simpl in *; ginv).
+              inversion wf1; subst; simpl in *; clear wf1.
+              repeat (destruct bs1; simpl in *; ginv).
+              inversion comp0; subst; simpl in *; clear comp0.
+              apply isnoncan_like_lsubst_aux_is_utok_sub_implies in comp3; eauto with slow;[].
+              unfold mk_utoken; rewrite compute_step_swap_cs1_if_isnoncan_like; eauto 3 with slow;[].
+              eapply ind in comp1; try (right; left); unfold nobnd; eauto; eauto 3 with slow;
+                [|eapply subset_preserves_not_in_get_utokens_lib; try exact nia
+                 |eapply subset_preserves_not_in_get_utokens_lib; try exact nib];
+                simpl; autorewrite with slow; eauto 3 with slow.
+              unfold mk_utoken in comp1; allrw; tcsp; fold_terms.
+              rewrite ren_utok_lsubst_aux; auto;[].
+              eapply not_in_get_utokens_lib_implies_not_in_get_utokens;
+                eapply subset_preserves_not_in_get_utokens_lib; try exact nia;
+                  simpl; autorewrite with slow; eauto 3 with slow. }
+
+            { repeat (destruct bs; simpl in *; ginv).
+              inversion wf1; subst; simpl in *; clear wf1.
+              repeat (destruct bs1; simpl in *; ginv).
+              inversion comp0; subst; simpl in *; clear comp0.
+              apply (isexc_lsubst_aux_nr_ut_sub lib _ _ b0) in comp2;
+                try (complete (constructor; simpl; tcsp; intro xx;
+                               eapply subset_preserves_not_in_get_utokens_lib; try exact nia;
+                               simpl; autorewrite with slow; eauto 3 with slow));[].
+              apply isexc_implies2 in comp2; exrepnd; subst; simpl in *.
+              csunf; simpl; tcsp.
+              unfold ren_utok_op; simpl; tcsp.
+              rewrite map_map; unfold compose.
+              f_equal; f_equal.
+              apply eq_maps; introv i; destruct x0; simpl; f_equal; boolvar; subst; autorewrite with slow; auto.
+              { symmetry; eapply not_in_get_utokens_lib_implies_ren_utok_same;
+                  eapply subset_preserves_not_in_get_utokens_lib; try exact nia;
+                    simpl; autorewrite with slow; eauto 3 with slow.
+                apply subset_app_r; eauto 3 with slow.
+                apply (subsetSingleFlatMap get_utokens_b) in i; simpl in i; auto. }
+              { rewrite ren_utok_lsubst_aux; auto;[].
+                eapply not_in_get_utokens_lib_implies_not_in_get_utokens;
+                  eapply subset_preserves_not_in_get_utokens_lib; try exact nia;
+                    simpl; autorewrite with slow; eauto 3 with slow.
+                apply subset_app_r; eauto 3 with slow.
+                apply (subsetSingleFlatMap get_utokens_b) in i; simpl in i; auto. } }
+
+          + allrw @nt_wf_swap_cs2_iff; repndors; exrepnd; subst; simpl in *.
+
+            repeat (destruct bs; simpl in *; ginv).
+            inversion wf1; subst; simpl in *; clear wf1.
+            csunf; simpl; autorewrite with slow; eauto 3 with slow.
 
           + allrw @nt_wf_NCanTest; exrepnd.
             unfold nobnd in *; ginv; simpl in *.
@@ -2611,6 +2713,118 @@ Proof.
               csunf; simpl.
               unfold compute_step_parallel; auto.
             }
+
+            { SSSCase "NSwapCs1".
+              csunf comp; simpl in *.
+              apply compute_step_swap_cs1_success in comp; repndors; exrepnd; subst; simpl in *.
+
+              { repeat (destruct bs; simpl in *; ginv).
+                repeat (destruct bts; simpl in *; ginv).
+                destruct b0, b1; simpl in *.
+                inversion comp2; subst; simpl in *; clear comp2.
+                destruct n; simpl in *; boolvar; ginv.
+                destruct l; simpl in *; ginv.
+                csunf; simpl.
+                unfold ren_utok_op; simpl; fold_terms.
+                rewrite ren_utok_lsubst_aux_gen; simpl; unfold ren_utok_op; simpl; boolvar; GC; tcsp.
+                erewrite not_in_get_utokens_lib_implies_ren_utok_same; tcsp.
+                eapply subset_preserves_not_in_get_utokens_lib; try exact nia;
+                  simpl; autorewrite with slow; eauto 3 with slow;
+                    apply subset_app_l; eauto 3 with slow;
+                      apply (subsetSingleFlatMap get_utokens_b) in i; simpl in i; auto. }
+
+              { destruct bs; simpl in *; ginv.
+                destruct b0; simpl in *.
+                inversion comp0; subst; simpl in *; clear comp0.
+                destruct n; simpl in *; boolvar; ginv.
+                csunf; unfold ren_utok_op; simpl.
+                rewrite map_map; unfold compose.
+                f_equal; f_equal; apply eq_maps; introv i; destruct x; simpl; f_equal; simpl.
+                boolvar; subst; tcsp; autorewrite with slow; fold_terms.
+                { erewrite not_in_get_utokens_lib_implies_ren_utok_same; tcsp.
+                  eapply subset_preserves_not_in_get_utokens_lib; try exact nia.
+                  simpl; autorewrite with slow; eauto 3 with slow.
+                  apply subset_app_l; apply subset_app_r.
+                  apply (subsetSingleFlatMap get_utokens_b) in i; simpl in i; auto. }
+                { rewrite ren_utok_lsubst_aux_gen; simpl; unfold ren_utok_op; simpl; boolvar; GC; tcsp.
+                  erewrite not_in_get_utokens_lib_implies_ren_utok_same; tcsp.
+                  eapply subset_preserves_not_in_get_utokens_lib; try exact nia.
+                  simpl; autorewrite with slow; eauto 3 with slow.
+                  apply subset_app_l; apply subset_app_r.
+                  apply (subsetSingleFlatMap get_utokens_b) in i; simpl in i; auto. } }
+
+              { destruct bs; simpl in *; ginv.
+                destruct b0; simpl in *.
+                inversion comp0; subst; simpl in *; clear comp0.
+                apply nt_wf_swap_cs1_iff in wf; exrepnd.
+                repeat (destruct bs; simpl in *; ginv).
+                destruct b1; inversion wf1; subst; simpl in *; clear wf1.
+                destruct b0; simpl in *; boolvar; ginv.
+                { unfold mk_utoken in *; ginv; simpl in *; fold_terms.
+                  inversion comp3; simpl in *; tcsp. }
+                unfold ren_utok_op; simpl.
+                rewrite ren_utok_match_can_as.
+                rewrite subst_aux_oterm; simpl.
+                unfold subst_bterm_aux; simpl.
+                rewrite compute_step_swap_cs1_if_isnoncan_like; eauto 3 with slow;[].
+                rewrite <- subst_aux_oterm2 in comp2.
+                eapply ind in comp2; try (right; left); try reflexivity; auto;
+                  [|
+                   |eapply subset_preserves_not_in_get_utokens_lib; try exact nia;
+                    simpl; autorewrite with slow; eauto 3 with slow
+                   |eapply subset_preserves_not_in_get_utokens_lib; try exact nib;
+                    simpl; autorewrite with slow; eauto 3 with slow]; eauto 3 with slow;[].
+                rewrite subst_aux_oterm in comp2; simpl in comp2.
+                unfold subst_bterm_aux in *; allrw; simpl.
+                f_equal.
+                rewrite ren_utok_lsubst_aux_gen; simpl.
+                unfold ren_utok_op; simpl; simpl; boolvar; GC; tcsp.
+                erewrite (not_in_get_utokens_lib_implies_ren_utok_same _ _ _ c); tcsp;
+                  try (complete (eapply subset_preserves_not_in_get_utokens_lib; try exact nia;
+                                 simpl; autorewrite with slow; eauto 3 with slow)); fold_terms.
+                f_equal; f_equal.
+                { destruct can2; simpl; auto; boolvar; subst; tcsp.
+                  destruct nia; apply in_get_utokens_implies_in_get_utokens_lib; simpl; autorewrite with slow; tcsp. }
+                rewrite map_map; unfold compose.
+                apply eq_maps; introv i; destruct x; simpl; f_equal.
+                boolvar; subst; tcsp; autorewrite with slow; fold_terms.
+                { erewrite not_in_get_utokens_lib_implies_ren_utok_same; tcsp.
+                  eapply subset_preserves_not_in_get_utokens_lib; try exact nia.
+                  simpl; autorewrite with slow; eauto 3 with slow.
+                  apply subset_app_r; apply subset_app_l.
+                  apply (subsetSingleFlatMap get_utokens_b) in i; simpl in i; auto. }
+                { rewrite ren_utok_lsubst_aux_gen; simpl; unfold ren_utok_op; simpl; boolvar; GC; tcsp.
+                  erewrite not_in_get_utokens_lib_implies_ren_utok_same; tcsp.
+                  eapply subset_preserves_not_in_get_utokens_lib; try exact nia.
+                  simpl; autorewrite with slow; eauto 3 with slow.
+                  apply subset_app_r; apply subset_app_l.
+                  apply (subsetSingleFlatMap get_utokens_b) in i; simpl in i; auto. } }
+            }
+
+            { SSSCase "NSwapCs2".
+              csunf comp; simpl in *.
+              apply compute_step_swap_cs2_success in comp; repndors; exrepnd; subst; simpl in *.
+
+              repeat (destruct bs; simpl in *; ginv).
+              csunf; simpl.
+              unfold push_swap_cs_can; simpl.
+              f_equal; f_equal.
+              { erewrite not_in_get_utokens_lib_implies_ren_utok_op_same; eauto.
+                simpl; autorewrite with slow; eauto 3 with slow. }
+              unfold push_swap_cs_bterms; repeat rewrite map_map; unfold compose.
+              apply eq_maps; introv i; destruct x; simpl; f_equal; simpl.
+              unfold ren_utok_op; simpl; boolvar; simpl; autorewrite with slow; fold_terms.
+              { erewrite not_in_get_utokens_lib_implies_ren_utok_same; tcsp.
+                eapply subset_preserves_not_in_get_utokens_lib; try exact nia;
+                  simpl; autorewrite with slow; eauto 3 with slow;
+                    apply subset_app_l; eauto 3 with slow;
+                      apply (subsetSingleFlatMap get_utokens_b) in i; simpl in i; auto. }
+              { rewrite ren_utok_lsubst_aux_gen; simpl; unfold ren_utok_op; simpl; boolvar; GC; tcsp.
+                erewrite not_in_get_utokens_lib_implies_ren_utok_same; tcsp.
+                eapply subset_preserves_not_in_get_utokens_lib; try exact nia;
+                  simpl; autorewrite with slow; eauto 3 with slow;
+                    apply subset_app_l; eauto 3 with slow;
+                      apply (subsetSingleFlatMap get_utokens_b) in i; simpl in i; auto. } }
 
             {
               SSSCase "NLastCs".

@@ -74,7 +74,7 @@ Proof.
     apply @no_change_after_val_like with (k2:=k) in Hcv10; auto; try omega; [].
     make_red_val_like Hcv10 g.
     apply Hi with (v := if d1 then c0 else d0) in g; auto;
-    try (complete (destruct d1; auto)).
+      try (complete (destruct d1; auto)).
 
     apply @approx_star_open_trans with (b := if d1 then c0 else d0); auto.
     apply approx_implies_approx_open.
@@ -172,9 +172,3 @@ Proof.
       allsimpl; ginv; fold_terms; allrw <- @pk2term_eq; eauto 3 with slow.
     }
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)
