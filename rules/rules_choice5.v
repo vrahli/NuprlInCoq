@@ -647,7 +647,7 @@ Proof.
 
     + apply cor; eauto 3 with slow.
 
-    + apply cor; auto; eauto 3 with slow.
+(*    + apply cor; auto; eauto 3 with slow.*)
 
 (*
   - introv h; autorewrite with slow in *.

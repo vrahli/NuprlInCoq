@@ -526,7 +526,10 @@ Definition compatible_cs_kind (n : nat) (k : cs_kind) :=
   if deq_nat n 0 then
     match k with
     | cs_kind_nat m => m = 0
-    | cs_kind_seq _ => True
+    | cs_kind_seq _ => False
+                         (* ******* *)
+                         (* I've disabled that for now because it gets complicated in LS3 *)
+                         (* True *)
     end
   else if deq_nat n 1 then
          match k with

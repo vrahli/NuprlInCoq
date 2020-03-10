@@ -191,7 +191,7 @@ Proof.
       apply sat in iv0; apply cor in iv0; exists n; auto. }*)
   }
 
-  {
+(*  {
     unfold is_nat_seq_restriction in *.
     unfold choice_sequence_satisfies_restriction in *.
     destruct restr; repnd; dands; tcsp.
@@ -203,7 +203,7 @@ Proof.
       unfold cterm_is_nth in iv1; exrepnd; exrepnd.
       pose proof (cor0 n v) as q; autodimp q hyp; subst; eauto 2 with slow. }
     { apply cor in iv1; auto; try omega. }
-  }
+  }*)
 Qed.
 
 Lemma compatible_cs_kind_0_implies_find_nat {o} :

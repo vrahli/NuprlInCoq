@@ -1859,7 +1859,7 @@ Proof.
   {
     unfold is_nat_seq_restriction in *.
     destruct restr; simpl in *; tcsp; repnd.
-    apply safe in Heqxx.
+(*    apply safe in Heqxx.
 
     destruct (lt_dec m (length l0)) as [w|w].
 
@@ -1875,7 +1875,7 @@ Proof.
       unfold is_nat in Heqxx; exrepnd; subst; simpl in *.
       apply reduces_to_if_value in comp0; eauto 3 with slow.
       apply mk_nat_eq_implies in comp0; subst; auto.
-    }
+    }*)
   }
 Qed.
 
@@ -2114,7 +2114,7 @@ Proof.
   destruct name as [name kind]; simpl in *.
   unfold correct_restriction in *; simpl in *.
   apply in_implies_select in i; exrepnd.
-  destruct kind; simpl in *; tcsp; subst; simpl in *; GC;[|].
+  destruct kind; simpl in *; tcsp; subst; simpl in *; GC;[(*|*)].
 
   { destruct restr; simpl in *; repnd; tcsp.
 
@@ -2129,7 +2129,7 @@ Proof.
       unfold is_nat in i0; exrepnd; subst; simpl; eauto. }*)
   }
 
-  { destruct restr; simpl in *; repnd; tcsp;[].
+(*  { destruct restr; simpl in *; repnd; tcsp;[].
     applydup sat in i0.
     destruct (lt_dec n (length l)) as [w|w].
 
@@ -2138,7 +2138,7 @@ Proof.
 
     { pose proof (cor n x) as z; autodimp z hyp; try omega;[].
       apply z in i1.
-      unfold is_nat in *; exrepnd; subst; eauto. } }
+      unfold is_nat in *; exrepnd; subst; eauto. } }*)
 Qed.
 
 (*Lemma is_nat_restriction_implies_is_nat_seq_restriction {o} :
@@ -19623,6 +19623,19 @@ Proof.
 Qed.
 Hint Resolve implies_type_mkc_squash : slow.
 
+Lemma compatible_choice_sequence_name_0_implies_is_nat_cs :
+  forall name,
+    compatible_choice_sequence_name 0 name
+    -> is_nat_cs name.
+Proof.
+  introv h.
+  unfold compatible_choice_sequence_name in *; simpl in *.
+  unfold compatible_cs_kind in *; simpl in *.
+  destruct name as [name kind]; simpl in *.
+  destruct kind; simpl in *; subst; tcsp.
+Qed.
+Hint Resolve compatible_choice_sequence_name_0_implies_is_nat_cs : slow.
+
 
 
 (* *************************************************************** *)
@@ -20170,8 +20183,9 @@ Proof.
     [subst; autorewrite with slow; eauto 3 with slow|];[].
 
   (* We will have to restrict [compatible_choice_sequence_name] to disallow sequences for those: *)
-  assert (is_nat_cs name) as isna by admit.
-  assert (is_nat_cs name') as isnb by admit.
+
+  assert (is_nat_cs name) as isna by eauto 3 with slow.
+  assert (is_nat_cs name') as isnb by eauto 3 with slow.
 
   pose proof (to_library_with_equal_cs name name' lib lib1) as q.
   repeat (autodimp q hyp);[].
