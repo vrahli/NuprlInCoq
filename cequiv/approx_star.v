@@ -57,6 +57,7 @@ Require Import extensional_compseq1.
 Require Import extensional_compseq2.
 Require Import extensional_swap_cs1.
 Require Import extensional_swap_cs2.
+Require Import extensional_ldepth.
 
 
 Theorem nuprl_extensional {p} : forall op, @extensional_op p op.
@@ -81,6 +82,7 @@ Proof.
     + Case "NParallel"; apply extensional_parallel.
     + Case "NSwapCs1";  apply extensional_swap_cs1.
     + Case "NSwapCs2";  apply extensional_swap_cs2.
+    + Case "NLDepth";   apply extensional_ldepth.
     + Case "NLastCs";   apply extensional_last_cs.
     + Case "NCompSeq1"; apply extensional_comp_seq1.
     + Case "NCompSeq2"; apply extensional_comp_seq2.

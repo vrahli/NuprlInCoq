@@ -42,7 +42,7 @@ Proof.
   applydup @compute_decompose_aux in Hcv; auto; exrepnd.
 
   repndors; exrepnd; allsimpl; repnd; subst; GC;
-  [apply isprogram_fresh_implies in Hprt; exrepnd; complete ginv|].
+    [apply isprogram_fresh_implies in Hprt; exrepnd; complete ginv| |ginv];[].
   fold_terms.
 
   assert (m <= S k) as XX by omega.

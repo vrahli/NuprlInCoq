@@ -130,7 +130,9 @@ forall lib (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm),
         # reduces_in_atmost_k_steps lib (oterm (NCan op) lbt) (mk_fresh v w) m
         # alpha_eq u w
         # isvalue_like u
-     }}}}}}.
+     }}}}}}
+     [+]
+     (op = NLDepth # lbt = [] # a = mk_nat (lib_depth lib)).
 Proof.
   induction k as [| k Hind]; introv Hpr Hcv.
   - repnud Hcv.
@@ -138,7 +140,10 @@ Proof.
     simpl in Hcv0.
     rename Hcv0 into Hcomp.
     dlist lbt SSCase as [| arg1]; invertsn Hcomp.
-             (**takes care of nilcase as no ncop takes 0 bterms*)
+    (**takes care of nilcase as no ncop takes 0 bterms*)
+
+    { csunf Hcomp; simpl in *.
+      apply compute_step_ncan_nil_success in Hcomp; simpl in *; repnd; subst; simpl in *; eauto. }
 
     SSCase "conscase".
     destruct arg1 as [arg1vs arg1nt];
@@ -191,7 +196,7 @@ Proof.
     }
 
     { SSSCase "conscase".
-      right.
+      right; left.
       csunf Hcomp; allsimpl.
       apply compute_step_fresh_success in Hcomp; exrepnd; subst.
       repndors; exrepnd; subst.
@@ -210,9 +215,12 @@ Proof.
   - unfold computes_to_val_like_in_max_k_steps in Hcv; repnd.
     rw @reduces_in_atmost_k_steps_S in Hcv0; exrepnd.
     rename Hcv0 into Hcomp.
-    dlist lbt SSCase as [| arg1];
-      [dopid_noncan op SSSCase; inverts Hcomp|];[].
-             (**takes care of nilcase as no ncop takes 0 bterms*)
+    dlist lbt SSCase as [| arg1];[|].
+    (**takes care of nilcase as no ncop takes 0 bterms*)
+
+    { csunf Hcomp; simpl in *.
+      apply compute_step_ncan_nil_success in Hcomp; repnd; subst; simpl in *.
+      apply reduces_in_atmost_k_steps_if_isvalue_like in Hcv1; eauto 3 with slow; subst; simpl in *; eauto. }
 
     SSCase "conscase".
     destruct arg1 as [arg1vs arg1nt];
@@ -276,7 +284,7 @@ Proof.
     { SSSCase "conscase".
       csunf Hcomp; allsimpl.
       apply compute_step_fresh_success in Hcomp; exrepnd; subst; fold_terms.
-      right.
+      right; left.
       exists arg1v1 arg1nt.
 
       repndors; exrepnd; subst.
@@ -463,7 +471,9 @@ forall lib (op : NonCanonicalOp) (k: nat) (lbt : list BTerm)  (a : NTerm),
         # reduces_in_atmost_k_steps lib (oterm (NCan op) lbt) (mk_fresh v w) m
         # alpha_eq u w
         # isvalue_like u
-     }}}}}}.
+     }}}}}}
+     [+]
+     (op = NLDepth # lbt = [] # a = mk_nat (lib_depth lib)).
 Proof.
   introv isp comp.
   apply @compute_decompose_aux with (a := a); auto.

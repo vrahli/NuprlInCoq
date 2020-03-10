@@ -2436,3 +2436,12 @@ Proof.
   apply approx_star_congruence; simpl; auto; eauto 2 with slow.
 Qed.
 Hint Resolve implies_approx_star_mk_nat : slow.
+
+Lemma isprogram_ldepth_implies {o} :
+  forall (bs : list (@BTerm o)),
+    isprogram (oterm (NCan NLDepth) bs) -> bs = [].
+Proof.
+  introv h.
+  inversion h as [cl wf]; subst; simpl in *.
+  inversion wf; subst; simpl in *; destruct bs; simpl in *; ginv.
+Qed.

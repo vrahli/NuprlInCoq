@@ -1005,6 +1005,14 @@ Proof.
 Qed.
 Hint Rewrite @get_utokens_c_swap_cs_can : slow.
 
+Lemma lsubst_nat {o} :
+  forall k (sub : @Sub o),
+    lsubst (mk_nat k) sub = mk_nat k.
+Proof.
+  introv; apply lsubst_trivial4; simpl; auto.
+Qed.
+Hint Rewrite @lsubst_nat : slow.
+
 Lemma compute_step_subst_utoken {o} :
   forall lib (t u : @NTerm o) sub,
     nt_wf t
@@ -1062,7 +1070,15 @@ Proof.
       eexists; dands; eauto.
 
     + SCase "NCan".
-      destruct bs; try (complete (allsimpl; ginv)).
+      destruct bs; try (complete (allsimpl; ginv));[|].
+
+      { csunf comp; simpl in *.
+        apply compute_step_ncan_nil_success in comp; repnd; subst; simpl in *.
+        exists (@mk_nat o (lib_depth lib)); simpl; autorewrite with slow.
+        dands; eauto 3 with slow.
+        introv nrut' eqdoms disj'.
+        csunf; simpl; eexists; dands; eauto. }
+
       destruct b as [l t]; try (complete (allsimpl; ginv)).
       destruct l; try (complete (allsimpl; ginv)).
 
@@ -2432,6 +2448,9 @@ Proof.
             rewrite <- map_combine in i1; apply in_map_iff in i1; exrepnd; ginv.
             apply in_combine_same in i1; repnd; subst.
             destruct a1; simpl; apply alpha_eq_bterm_congr; fold_terms; autorewrite with slow; tcsp. }
+
+          { SSSCase "NLDepth".
+            unflsubst in comp; csunf comp; simpl in *; ginv. }
 
           { SSSCase "NLastCs".
             unflsubst in comp; allsimpl.

@@ -2671,131 +2671,6 @@ Proof.
   destruct lbt2; simpl in *; ginv.
 Qed.
 
-Lemma bound_vars_swap_cs_term {o} :
-  forall r (t : @NTerm o),
-    bound_vars (swap_cs_term r t) = bound_vars t.
-Proof.
-  sp_nterm_ind1 t as [v|op bs ind] Case; introv; simpl; tcsp;[].
-  induction bs; simpl; auto.
-  rewrite IHbs; clear IHbs; simpl in *; tcsp;[|introv i; eapply ind; eauto].
-  destruct a; simpl.
-  erewrite ind; eauto.
-Defined.
-Hint Rewrite @bound_vars_swap_cs_term : slow.
-
-Lemma all_vars_swap_cs_term {o} :
-  forall r (t : @NTerm o),
-    all_vars (swap_cs_term r t) = all_vars t.
-Proof.
-  introv; unfold all_vars; autorewrite with slow; auto.
-Defined.
-Hint Rewrite @all_vars_swap_cs_term : slow.
-
-Fixpoint swap_cs_sub {o} r (sub : @Sub o) :=
-  match sub with
-  | [] => []
-  | (v,t) :: sub => (v, swap_cs_term r t) :: swap_cs_sub r sub
-  end.
-
-Lemma sub_find_swap_cs_sub {o} :
-  forall r (sub : @Sub o) v,
-    sub_find (swap_cs_sub r sub) v
-    = match sub_find sub v with
-      | Some t => Some (swap_cs_term r t)
-      | None => None
-      end.
-Proof.
-  induction sub; introv; simpl; auto; repnd; simpl; boolvar; auto.
-Qed.
-
-Lemma sub_filter_swap_cs_sub {o} :
-  forall r (sub : @Sub o) l,
-    sub_filter (swap_cs_sub r sub) l
-    = swap_cs_sub r (sub_filter sub l).
-Proof.
-  induction sub; introv; simpl; auto; repnd; simpl; boolvar; auto.
-  rewrite IHsub; simpl; auto.
-Qed.
-
-Lemma lsubst_aux_swap_cs_term {o} :
-  forall r (t : @NTerm o) sub,
-    lsubst_aux (swap_cs_term r t) (swap_cs_sub r sub)
-    = swap_cs_term r (lsubst_aux t sub).
-Proof.
-  nterm_ind t as [v|t op ind] Case; introv; simpl; auto.
-
-  { Case "vterm".
-    rewrite sub_find_swap_cs_sub.
-    destruct (sub_find sub v); auto. }
-
-  Case "oterm".
-  f_equal.
-  allrw map_map; unfold compose; simpl.
-  apply eq_maps; introv i.
-  destruct x; simpl; f_equal.
-  rewrite sub_filter_swap_cs_sub.
-  erewrite ind; eauto.
-Qed.
-
-Lemma swap_cs_sub_if_allvars_sub {o} :
-  forall r (sub : @Sub o),
-    allvars_sub sub
-    -> swap_cs_sub r sub = sub.
-Proof.
-  induction sub; introv allvs; simpl in *; auto; repnd; simpl in *.
-  apply allvars_sub_cons in allvs; repnd.
-  rewrite IHsub; auto.
-  apply isvariable_implies in allvs0; exrepnd; subst; simpl; auto.
-Qed.
-
-Lemma lsubst_aux_swap_cs_term_if_allvars_sub {o} :
-  forall r (t : @NTerm o) sub,
-    allvars_sub sub
-    -> lsubst_aux (swap_cs_term r t) sub
-       = swap_cs_term r (lsubst_aux t sub).
-Proof.
-  introv allvs.
-  rewrite <- lsubst_aux_swap_cs_term.
-  rewrite swap_cs_sub_if_allvars_sub; auto.
-Qed.
-
-Lemma change_bvars_alpha_swap_cs_term {o} :
-  forall l r (t : @NTerm o),
-    change_bvars_alpha l (swap_cs_term r t)
-    = swap_cs_term r (change_bvars_alpha l t).
-Proof.
-  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
-  f_equal.
-  allrw map_map; unfold compose.
-  apply eq_maps; introv i; destruct x; simpl.
-  erewrite ind;eauto; autorewrite with slow.
-  f_equal.
-  rewrite lsubst_aux_swap_cs_term_if_allvars_sub; eauto 3 with slow.
-Qed.
-
-Lemma flat_map_free_vars_range_swap_cs_sub {o} :
-  forall r (sub : @Sub o),
-    flat_map free_vars (range (swap_cs_sub r sub))
-    = flat_map free_vars (range sub).
-Proof.
-  induction sub; introv; simpl; auto; repnd; simpl.
-  rewrite IHsub; simpl; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @flat_map_free_vars_range_swap_cs_sub : slow.
-
-Lemma lsubst_swap_cs_term {o} :
-  forall r (t : @NTerm o) sub,
-    lsubst (swap_cs_term r t) (swap_cs_sub r sub)
-    = swap_cs_term r (lsubst t sub).
-Proof.
-  introv.
-  unfold lsubst; autorewrite with slow.
-  destruct (dec_disjointv (bound_vars t) (flat_map free_vars (range sub)));
-    try rewrite lsubst_aux_swap_cs_term; auto.
-  rewrite change_bvars_alpha_swap_cs_term.
-  rewrite lsubst_aux_swap_cs_term; auto.
-Qed.
-
 Lemma swap_cs_sub_combine {o} :
   forall sw l (ts : list (@NTerm o)),
     swap_cs_sub sw (combine l ts)
@@ -2825,15 +2700,6 @@ Lemma lsubst_swap_cs_term_var_ren {o} :
 Proof.
   introv.
   rewrite <- lsubst_swap_cs_term; autorewrite with slow; auto.
-Qed.
-
-Lemma subst_swap_cs_term {o} :
-  forall r (t : @NTerm o) v u,
-    subst (swap_cs_term r t) v (swap_cs_term r u)
-    = swap_cs_term r (subst t v u).
-Proof.
-  introv.
-  unfold subst; rewrite <- lsubst_swap_cs_term; simpl; auto.
 Qed.
 
 Hint Rewrite @lsubst_allvars_preserves_osize2 : slow.
@@ -3024,6 +2890,15 @@ Proof.
 Qed.
 Hint Resolve implies_alpha_eq_push_swap_cs_can : slow.
 
+Lemma alpha_eq_ldepth {o} :
+  forall (t : @NTerm o),
+    alpha_eq mk_lib_depth t
+    -> t = mk_lib_depth.
+Proof.
+  introv aeq.
+  inversion aeq; subst; simpl in *; cpx.
+Qed.
+
 
 (* end hide *)
 
@@ -3056,10 +2931,11 @@ Proof.
       on whether the opid of arg1(prin_arg) is canonical *)
 
       dlist lbt1 SSCase as [| arg1];
-        [ dopid_noncan nc1 SSSCase;
-          inverts Hcomp
-        |
-        ]; [].
+        [csunf Hcomp; simpl in *;
+         apply compute_step_ncan_nil_success in Hcomp; repnd; subst; simpl in *;
+         fold_terms; apply alpha_eq_ldepth in Hal; subst; simpl in *;
+         csunf; simpl; eexists; dands; eauto|];[].
+
       (*takes care of nilcase as no ncop takes 0 bterms*)
 
       * SSCase "conscase".
@@ -3366,6 +3242,9 @@ Proof.
                 allrw @nt_wf_swap_cs2_iff; exrepnd; try inversion wf1; subst; simpl in *; ginv.
               repeat (destruct lbt2 in *; ginv; try omega).
               csunf; simpl; eexists; dands; eauto; eauto 3 with slow.
+
+            - SSSSSCase "NLDepth".
+              csunf Hcomp; simpl in *; ginv.
 
             - SSSSSCase "NLastCs".
 

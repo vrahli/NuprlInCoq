@@ -334,6 +334,7 @@ Definition compute_step_can {o}
     | NCompSeq2  nfo => compute_step_comp_seq2 lib nfo arg1c t arg1bts btsr
     | NSwapCs1       => compute_step_swap_cs1 btsr t arg1c arg1bts comp arg1 ncr
     | NSwapCs2   nfo => compute_step_swap_cs2 nfo arg1c arg1bts btsr t
+    | NLDepth        => cfailure "LDepth has no arguments" t
     | NCompOp    op  => co btsr t arg1bts arg1c op comp arg1 ncr
     | NArithOp   op  => ca btsr t arg1bts arg1c op comp arg1 ncr
     | NCanTest   top => compute_step_can_test top arg1c t arg1bts btsr
@@ -571,6 +572,24 @@ Proof.
   introv; simpl; omega.
 Qed.
 
+Definition entry_depth {o} (entry : @library_entry o) : nat :=
+  match entry with
+  | lib_cs name e => length (cse_vals e) (*Peano.max (length (cse_vals e)) (cs_name_restr_size name)*)
+  | _ => 0
+  end.
+
+Fixpoint lib_depth {o} (lib : @plibrary o) : nat :=
+  match lib with
+  | [] => 0
+  | entry :: entries => Peano.max (entry_depth entry) (lib_depth entries)
+  end.
+
+Definition compute_step_ncan_nil {o} (lib : @plibrary o) ncan (t : @NTerm o) : Comput_Result :=
+  match ncan with
+  | NLDepth => csuccess (mk_nat (lib_depth lib))
+  | _ => cfailure bad_args t
+  end.
+
 Definition compute_step {o}
            (lib : @plibrary o)
            (t   : @NTerm o) : Comput_Result :=
@@ -583,7 +602,7 @@ Definition compute_step {o}
             | vterm v => fun _ => cfailure compute_step_error_not_closed t
             | oterm (Can _) _ => fun _ => csuccess t
             | oterm Exc _ => fun _ => csuccess t
-            | oterm (NCan _) [] => fun _ => cfailure "no args supplied" t
+            | oterm (NCan ncan) [] => fun _ => compute_step_ncan_nil lib ncan t
             | oterm (NCan nc) (bterm [] (vterm v) :: bs) => fun _ => cfailure compute_step_error_not_closed t
             | oterm (NCan ncan) (bterm (v::vs) u :: bs) =>
               fun F =>
@@ -617,7 +636,7 @@ Definition compute_step_unfold {o}
     | vterm v => cfailure compute_step_error_not_closed t
     | oterm (Can _) _ => csuccess t
     | oterm Exc _ => csuccess t
-    | oterm (NCan _) [] => cfailure "no args supplied" t
+    | oterm (NCan ncan) [] => compute_step_ncan_nil lib ncan t
     | oterm (NCan nc) (bterm [] (vterm v) :: bs) => cfailure compute_step_error_not_closed t
     | oterm (NCan ncan) (bterm (v::vs) u :: bs) =>
       let a := get_fresh_atom lib u in

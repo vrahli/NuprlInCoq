@@ -495,18 +495,6 @@ Definition cs_name_restr_size (name : choice_sequence_name) : nat :=
   | cs_kind_seq l => length l
   end.
 
-Definition entry_depth {o} (entry : @library_entry o) : nat :=
-  match entry with
-  | lib_cs name e => length (cse_vals e) (*Peano.max (length (cse_vals e)) (cs_name_restr_size name)*)
-  | _ => 0
-  end.
-
-Fixpoint lib_depth {o} (lib : @plibrary o) : nat :=
-  match lib with
-  | [] => 0
-  | entry :: entries => Peano.max (entry_depth entry) (lib_depth entries)
-  end.
-
 Lemma substc2_ffdefs {o} :
   forall v x (w : @CTerm o) (t u : CVTerm [v,x]),
     alphaeqcv
@@ -9566,6 +9554,7 @@ Ltac apply_comp_success :=
   | [ H : context[compute_step_comp_seq2] |- _ ] => apply compute_step_comp_seq2_success in H; repndors; exrepnd; subst; GC; ginv
   | [ H : context[compute_step_swap_cs1]  |- _ ] => apply compute_step_swap_cs1_success  in H; repndors; exrepnd; subst; GC; ginv
   | [ H : context[compute_step_swap_cs2]  |- _ ] => apply compute_step_swap_cs2_success  in H; repndors; exrepnd; subst; GC; ginv
+  | [ H : context[compute_step_ncan_nil]  |- _ ] => apply compute_step_ncan_nil_success  in H; repndors; exrepnd; subst; GC; ginv
   end.
 
 Lemma implies_isvalue_like_swap_cs_term {o} :
@@ -10154,6 +10143,23 @@ Proof.
 Qed.
 Hint Resolve implies_swap_cs_ncan_diff_try : slow.
 
+Lemma entry_depth_swap_cs_lib_entry {o} :
+  forall sw (e : @library_entry o),
+    entry_depth (swap_cs_lib_entry sw e) = entry_depth e.
+Proof.
+  introv; destruct e; simpl; auto.
+  destruct entry as [vals restr]; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @entry_depth_swap_cs_lib_entry : slow.
+
+Lemma lib_depth_swap_cs_plib {o} :
+  forall sw (lib : @plibrary o),
+    lib_depth (swap_cs_plib sw lib) = lib_depth lib.
+Proof.
+  induction lib; simpl; auto; allrw; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @lib_depth_swap_cs_plib : slow.
+
 Lemma swap_compute_step {o} :
   forall sw lib (a b : @NTerm o),
     compute_step lib a = csuccess b
@@ -10176,6 +10182,9 @@ Proof.
       try (complete (apply on_success_csuccess in comp; exrepnd; subst; simpl in *;
                      eapply ind in comp1; try (left; eauto); eauto 3 with slow; exrepnd;
                      csunf; simpl; allrw; simpl in *; allrw; simpl in *; auto)).
+
+    { apply compute_step_ncan_nil_success in comp; repnd; subst; simpl in *.
+      csunf; simpl; autorewrite with slow; auto. }
 
     { dopid_noncan ncan SSCase; simpl in *;
       try apply_comp_success;
@@ -17345,6 +17354,21 @@ Proof.
 Qed.
 Hint Resolve swapped_css_preserves_get_utokens_lib : slow.
 
+Lemma swapped_css_implies_eq_lib_depth {o} :
+  forall sw (lib1 lib2 : @plibrary o),
+    swapped_css sw lib1 lib2
+    -> lib_depth lib1 = lib_depth lib2.
+Proof.
+  introv h.
+  inversion h; subst.
+  repeat (rewrite lib_depth_app; simpl).
+  f_equal.
+  repeat rewrite (Nat.max_comm (length (cse_vals e1))).
+  repeat rewrite (Nat.max_comm (length (cse_vals e2))).
+  repeat rewrite <- Nat.max_assoc.
+  repeat rewrite (Nat.max_comm (length (cse_vals e1))); auto.
+Qed.
+
 Lemma swapped_css_compute_step {o} :
   forall {sw} {lib lib' : @plibrary o} {a b : @NTerm o},
     nt_wf a
@@ -17371,6 +17395,10 @@ Proof.
                      eapply ind in comp1; try (left; eauto); eauto 3 with slow; exrepnd;
                      csunf; simpl; allrw; simpl; eexists; dands; eauto;
                      repeat (prove_alpha_eq4; auto; intros k w; repeat (destruct k; simpl in *; tcsp)))).
+
+    { apply compute_step_ncan_nil_success in comp; repnd; subst; simpl in *.
+      apply swapped_css_implies_eq_lib_depth in swap; allrw.
+      csunf; simpl; eexists; dands; eauto. }
 
     { csunf; simpl.
       applydup @compute_step_fresh_bs_nil in comp; repnd; subst; GC.

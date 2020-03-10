@@ -1902,6 +1902,11 @@ Proof.
 
     + SCase "NCan".
       destruct bs; try (complete (allsimpl; ginv)).
+
+      { csunf comp; simpl in *.
+        apply compute_step_ncan_nil_success in comp; repnd; subst;simpl in *.
+        csunf; simpl; auto. }
+
       destruct b as [l t]; try (complete (allsimpl; ginv)).
       destruct l; try (complete (allsimpl; ginv)).
 
@@ -2112,6 +2117,9 @@ Proof.
             rewrite push_swap_cs_bterms_map_ren_utokens_b; auto.
             f_equal; f_equal.
             destruct can2; simpl; auto. }
+
+          { SSSCase "NLDepth".
+            csunf comp; simpl in *; ginv. }
 
           { SSSCase "NLastCs".
             csunf comp; simpl in comp.

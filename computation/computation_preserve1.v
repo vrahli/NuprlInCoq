@@ -484,6 +484,14 @@ Proof.
 Qed.
 Hint Rewrite @flat_map_free_vars_bterm_push_swap_cs_bterms : slow.
 
+Lemma compute_step_ncan_nil_success {o} :
+  forall lib ncan (t : @NTerm o) u,
+    compute_step_ncan_nil lib ncan t = csuccess u
+    -> ncan = NLDepth # u = mk_nat (lib_depth lib).
+Proof.
+  introv comp; destruct ncan; simpl in *; ginv; auto.
+Qed.
+
 Lemma compute_step_preserves {o} :
   forall lib (t u : @NTerm o),
     nt_wf t
@@ -504,6 +512,10 @@ Proof.
 
     + SCase "NCan".
       destruct bs; try (complete (allsimpl; ginv)).
+
+      { simpl in *; apply compute_step_ncan_nil_success in comp; repnd; subst;
+          simpl in *; dands; eauto 3 with slow. }
+
       destruct b as [l t]; try (complete (allsimpl; ginv)).
       destruct l; try (complete (allsimpl; ginv)).
 
@@ -842,6 +854,9 @@ Proof.
           apply compute_step_swap_cs2_success in comp; repndors; exrepnd; subst; simpl in *; tcsp;
             autorewrite with slow; allrw @nt_wf_swap_cs2_iff; exrepnd; ginv;
               inversion wf1; subst; clear wf1; simpl; autorewrite with slow; dands; eauto 3 with slow. }
+
+        { SSSCase "NLDepth".
+          simpl in *; ginv. }
 
         { SSSCase "NLastCs".
 

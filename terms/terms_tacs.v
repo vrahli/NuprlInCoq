@@ -194,6 +194,9 @@ Definition mk_swap_cs1 {o} (a b c : @NTerm o) :=
 Definition mk_swap_cs2 {o} a b (c : @NTerm o) :=
   oterm (NCan (NSwapCs2 (MkSwapCsNfo a b))) [nobnd c].
 
+Definition mk_lib_depth {o} : @NTerm o :=
+  oterm (NCan NLDepth) [].
+
 Ltac fold_terms_step :=
   match goal with
     | [ |- context[@oterm ?p (Can NAxiom) []] ] => fold (@mk_axiom p)
@@ -235,6 +238,7 @@ Ltac fold_terms_step :=
     | [ |- context[oterm (NCan (NCompOp CompOpLess)) [nobnd ?a, nobnd ?b, nobnd ?c, nobnd ?d]] ] => fold (mk_less a b c d)
     | [ |- context[oterm (NCan NSwapCs1) [nobnd ?a, nobnd ?b, nobnd ?c]] ] => fold (mk_swap_cs1 a b c)
     | [ |- context[oterm (NCan (NSwapCs2 (MkSwapCsNfo ?a ?b))) [nobnd ?c]] ] => fold (mk_swap_cs2 b a c)
+    | [ |- context[@oterm ?p (NCan NLDepth) [] ] ] => fold (@mk_lib_depth p)
     | [ |- context[oterm Exc [nobnd ?a, nobnd ?x]] ] => fold (mk_exception a x)
     | [ |- context[oterm (Can NIsect) [nobnd ?a, bterm [?v] ?b] ] ] => fold (mk_isect a v b)
     | [ |- context[oterm (Can NSet) [nobnd ?a, bterm [?v] ?b] ] ] => fold (mk_set a v b)
@@ -290,6 +294,7 @@ Ltac fold_terms_step :=
     | [ H : context[oterm (NCan (NCompOp CompOpLess)) [nobnd ?a, nobnd ?b, nobnd ?c, nobnd ?d]] |- _ ] => fold (mk_less a b c d) in H
     | [ H : context[oterm (NCan NSwapCs1) [nobnd ?a, nobnd ?b, nobnd ?c]] |- _ ] => fold (mk_swap_cs1 a b c) in H
     | [ H : context[oterm (NCan (NSwapCs2 (MkSwapCsNfo ?a ?b))) [nobnd ?c]] |- _ ] => fold (mk_swap_cs2 a b c) in H
+    | [ H : context[@oterm ?p (NCan NLDepth) [] ] |- _ ] => fold (@mk_lib_depth p) in H
     | [ H : context[oterm Exc [nobnd ?a, nobnd ?x]] |- _ ] => fold (mk_exception a x) in H
     | [ H : context[oterm (Can NIsect) [nobnd ?a, bterm [?v] ?b] ] |- _ ] => fold (mk_isect a v b) in H
     | [ H : context[oterm (Can NSet) [nobnd ?a, bterm [?v] ?b] ] |- _ ] => fold (mk_set a v b) in H

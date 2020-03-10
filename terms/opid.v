@@ -469,6 +469,7 @@ Inductive NonCanonicalOp : Set :=
  | NParallel  : NonCanonicalOp
  | NSwapCs1   : NonCanonicalOp
  | NSwapCs2   : SwapCsNfo -> NonCanonicalOp
+ | NLDepth    : NonCanonicalOp
  | NLastCs    : NonCanonicalOp
  | NCompSeq1  : CompSeqNfo1   -> NonCanonicalOp
  | NCompSeq2  : CompSeqNfo2   -> NonCanonicalOp
@@ -500,6 +501,7 @@ Definition OpBindingsNCan (nc : NonCanonicalOp) : opsign :=
   | NParallel    => [0,0]
   | NSwapCs1     => [0,0,0]
   | NSwapCs2 _   => [0]
+  | NLDepth      => []
   | NLastCs      => [0,0]
   | NCompSeq1  _ => [0,0]
   | NCompSeq2  _ => [0,0]
@@ -621,6 +623,7 @@ Tactic Notation "dopid_noncan" ident(onc) ident(c) :=
   | Case_aux c "NParallel"
   | Case_aux c "NSwapCs1"
   | Case_aux c "NSwapCs2"
+  | Case_aux c "NLDepth"
   | Case_aux c "NLastCs"
   | Case_aux c "NCompSeq1"
   | Case_aux c "NCompSeq2"

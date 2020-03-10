@@ -39,7 +39,7 @@ Proof.
   introv Hpra Hprt Hprt' Hcv Has Hi.
   applydup @compute_decompose_aux in Hcv; auto; exrepnd.
 
-  repndors; exrepnd; [|allsimpl; subst; repnd; complete ginv].
+  repndors; exrepnd; [|allsimpl; subst; repnd; complete ginv|simpl in *;ginv];[].
 
   assert (m <= S k) as XX by omega.
   repnud Hcv.

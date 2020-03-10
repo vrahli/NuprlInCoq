@@ -157,6 +157,11 @@ Proof.
 
     + SCase "NCan".
       destruct bs; try (complete (allsimpl; ginv)).
+
+      { csunf comp; simpl in *.
+        apply compute_step_ncan_nil_success in comp; repnd; subst; simpl in *.
+        csunf; simpl; eexists; dands; eauto. }
+
       destruct b as [l t]; try (complete (allsimpl; ginv)).
       destruct l; try (complete (allsimpl; ginv)).
 
@@ -403,6 +408,9 @@ Proof.
             rewrite <- map_combine in i1; apply in_map_iff in i1; exrepnd; ginv.
             apply in_combine_same in i1; repnd; subst.
             destruct a1; simpl; apply alpha_eq_bterm_congr; autorewrite with slow; fold_terms; tcsp. }
+
+          { SSSCase "NLDepth".
+            csunf comp; simpl in *; ginv. }
 
           { SSSCase "NLastCs".
             csunf comp; allsimpl.

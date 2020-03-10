@@ -2107,6 +2107,11 @@ Proof.
 
     + SCase "NCan".
       destruct bs; try (complete (allsimpl; ginv)).
+
+      { csunf comp; simpl in *.
+        apply compute_step_ncan_nil_success in comp; repnd; subst; simpl in *.
+        csunf; simpl; auto. }
+
       destruct b0 as [l t]; try (complete (allsimpl; ginv)).
       destruct l; try (complete (allsimpl; ginv)).
 
@@ -2825,6 +2830,9 @@ Proof.
                   simpl; autorewrite with slow; eauto 3 with slow;
                     apply subset_app_l; eauto 3 with slow;
                       apply (subsetSingleFlatMap get_utokens_b) in i; simpl in i; auto. } }
+
+            { SSSCase "NLDepth".
+              csunf comp; simpl in *; ginv. }
 
             {
               SSSCase "NLastCs".
