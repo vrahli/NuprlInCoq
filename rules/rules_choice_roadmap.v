@@ -50,4 +50,4 @@ Require Export rules_choice3.
 Require Export rules_choice5.
 
 (* A proof of a simple version of LS3 *)
-Require Export rules_ls3.
+Require Export rules_ls3_v0.
